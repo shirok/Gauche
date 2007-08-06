@@ -1,3 +1,12 @@
+2007-08-05  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (copy-file): Added :keep-mode keyword arg.
+
+2007-08-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub (sys-umask): Support omitting mode to query
+	  the current umask without changing it.
+
 2007-07-31  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/srfi-13.scm (%string-*case!): fixed a bug that caused an

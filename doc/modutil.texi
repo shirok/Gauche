@@ -3853,7 +3853,7 @@ See also @code{sys-utime} (@xref{File stats}).
 @c COMMON
 @end defun
 
-@defun copy-file src dst &keyword if-exists backup-suffix safe keep-timestamp
+@defun copy-file src dst &keyword if-exists backup-suffix safe keep-timestamp keep-mode
 @c EN
 Copies file from @var{src} to @var{dst}.  The source file @var{src} must exist.
 The behavior when the destination @var{dst} exists varies by the keyword
@@ -3926,6 +3926,21 @@ after copying.
 キーワード引数@var{keep-timestamp}に真の値が与えられた場合は、
 @code{copy-file}はコピー後にコピー先のファイルのタイムスタンプを
 コピー元のタイムスタンプに合わせます。
+@c COMMON
+
+@c EN
+If the keyword argument @var{keep-mode} is true, the destination file's 
+permission bits are set to the same as the source file's.  If it is false
+(default), the destination file's permission remains the same if
+the destination already exists and the @var{safe} argument is false,
+otherwise it becomes @code{#o666} masked by umask settings.
+@c JP
+キーワード引数@var{keep-mode}に真の値が与えられた場合は、
+コピー先のファイルのパーミッションビットはコピー元のそれに合わせられます。
+@var{keep-mode}が偽の場合(デフォルト)は、コピー先が既に存在して
+@var{safe}引数が偽の場合にコピー先のもとのパーミッションが保持され、
+そうでなければ@code{#o666}がumaskセッティングによってマスクされた
+値となります。
 @c COMMON
 @end defun
 

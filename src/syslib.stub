@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.128 2007-04-01 04:15:43 shirok Exp $
+;;; $Id: syslib.stub,v 1.129 2007-08-06 08:46:15 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -733,8 +733,14 @@
         "if (r < 0) Scm_SysError(\"rmdir failed\");"
         "SCM_RESULT = SCM_TRUE;"))
 
-(define-cproc sys-umask (mode::<fixnum>)
-  (call <int> "umask"))
+(define-cproc sys-umask (&optional mode)
+  (body <int>
+        (cond [(or (SCM_UNBOUNDP mode) (SCM_FALSEP mode))
+               (let* ((prev :: int (umask 0)))
+                 (umask prev)
+                 (result prev))]
+              [(SCM_INTP mode) (result (umask (SCM_INT_VALUE mode)))]
+              [else (SCM_TYPE_ERROR mode "fixnum or #f") (result 0)])))
 
 (define-cproc sys-sleep (seconds::<fixnum>)
   (body <int>

@@ -331,6 +331,10 @@
             (not (file-eq? "test.out/test5.o" "test.out/test.copy"))
             (file-equal? "test.out/test5.o" "test.out/test.copy")))
 
+(test* "copy-file (normal; permission check)"
+       (number->string (logand #o666 (lognot (sys-umask))) 8)
+       (number->string (file-perm "test.out/test.copy") 8))
+
 (test* "copy-file (:if-exists :error)" *test-error*
        (copy-file "test.out/test5.o" "test.out/test.copy"))
 
@@ -391,6 +395,25 @@
 (test* "copy-file (same file)" *test-error*
        (copy-file "test.out/test.copy" "test.out/test.copy"
                   :if-exists :supersede))
+
+(sys-unlink "test.out/test.copy")
+
+(test* "copy-file (keep-mode)" #o642
+       (begin (sys-chmod "test.out/test1.o" #o642)
+              (copy-file "test.out/test1.o" "test.out/test.copy"
+                         :keep-mode #t)
+              (file-perm "test.out/test.copy")))
+
+(sys-unlink "test.out/test.copy")
+
+(test* "copy-file (keep-mode w/safe)" #o624
+       (begin (sys-chmod "test.out/test1.o" #o624)
+              (copy-file "test.out/test1.o" "test.out/test.copy"
+                         :keep-mode #t)
+              (file-perm "test.out/test.copy")))
+
+(sys-chmod "test.out/test1.o" #o644)
+(sys-chmod "test.out/test.copy" #o644)
 
 (test* "move-file (normal)" #t
        (and (move-file "test.out/test.copy" "test.out/test.move")

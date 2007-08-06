@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.6 2007-03-02 07:39:12 shirok Exp $
+;;;  $Id: util.scm,v 1.7 2007-08-06 08:46:14 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -463,16 +463,19 @@
 ;;  backup-suffix
 ;;  safe
 ;;  keep-timestamp
+;;  keep-mode
 (define (copy-file src dst . opts)
   (let-keywords opts ((if-exists :error)
                       (backsfx :backup-suffix ".orig")
                       (safe #f)
-                      (keeptime :keep-timestamp #f))
-    (let* ((backfile  (string-append dst backsfx))
-           (times     '())
-           (tmpfile   #f)
-           (inport    #f)
-           (outport   #f))
+                      (keeptime :keep-timestamp #f)
+                      (keepmode :keep-mode #f))
+    (let ((backfile  (string-append dst backsfx))
+          (times     '())
+          (tmpfile   #f)
+          (inport    #f)
+          (outport   #f)
+          (default-perm (logand #o666 (lognot (sys-umask)))))
       (define (rollback)
         (cond (inport  => close-input-port))
         (cond (outport => close-output-port))
@@ -480,9 +483,12 @@
       (define (commit)
         (cond (inport  => close-input-port))
         (cond (outport => close-output-port))
-        (when tmpfile
-          (when (eq? if-exists :backup) (sys-rename dst backfile))
-          (sys-rename tmpfile dst))
+        (cond (tmpfile
+               (sys-chmod tmpfile (if keepmode (file-perm src) default-perm))
+               (when (eq? if-exists :backup) (sys-rename dst backfile))
+               (sys-rename tmpfile dst))
+              (else
+               (sys-chmod dst (if keepmode (file-perm src) default-perm))))
         (unless (null? times) (apply sys-utime dst times)))
       (define (open-destination)
         (if safe
@@ -545,7 +551,7 @@
     (define (do-copying)
       (and (copy-file src dst :if-exists if-exists
                       :backup-suffix backsfx 
-                      :safe #t :keep-timestamp #t)
+                      :safe #t :keep-timestamp #t :keep-mode #t)
            (begin (sys-unlink src) #t)))
     
     ;; body of move-file

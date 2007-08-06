@@ -11759,13 +11759,17 @@ in @code{file.util} (@ref{Directory utilities}).
 @c COMMON
 @end defun
 
-@defun sys-umask mode
+@defun sys-umask &optional mode
 [POSIX] 
 @c EN
 Sets umask setting to @var{mode}.  Returns previous umask setting.
+If @var{mode} is omitted or @code{#f}, just returns the current umask without
+changing it.
 See @code{man umask} for more details.
 @c JP
 umaskを@var{mode}にセットします。変更される前のumaskを返します。
+@var{mode}が省略されるか@code{#f}が渡された場合、
+現在のumaskを変更せずにその値を返します。
 umaskについては@code{man umask}を参照してください。
 @c COMMON
 @end defun
