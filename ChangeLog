@@ -1,5 +1,10 @@
 2007-08-05  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/test.scm: Avoid using "ip" for testing getprotobyname/
+	  getprotobynumber, since the official name of protocol number 0
+	  has been changed and we're in transition phase.  Using "icmp"
+	  instead.
+
 	* libsrc/file/util.scm (copy-file): Added :keep-mode keyword arg.
 
 2007-08-02  Shiro Kawai  <shiro@acm.org>
