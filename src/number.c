@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.148 2007-07-17 03:24:49 shirok Exp $
+ *  $Id: number.c,v 1.149 2007-08-07 08:28:35 shirok Exp $
  */
 
 #include <math.h>
@@ -339,10 +339,10 @@ ScmHalfFloat Scm_DoubleToHalf(double v)
        all 0 or not. */
 #if SIZEOF_LONG >= 8
     m = dd.components.mant >> (52-mbits-1);
-    r = dd.components.mant & ((1 << (52-mbits-1)) - 1);
+    r = dd.components.mant & ((1UL << (52-mbits-1)) - 1);
 #else  /*SIZEOF_LONG < 8*/
     m = dd.components.mant0 >> (20-mbits-1);
-    r = (dd.components.mant0 & ((1 << (20-mbits-1)) - 1))|dd.components.mant1;
+    r = (dd.components.mant0 & ((1UL << (20-mbits-1)) - 1))|dd.components.mant1;
 #endif /*SIZEOF_LONG < 8*/
     m += 1<<(mbits+1);          /* recover hidden bit */
     
