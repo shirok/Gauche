@@ -1,3 +1,22 @@
+2007-08-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (port_cleanup): resurrected unregister_buffered_port
+	  to remove active buffererd port entry when a port is closed.
+	  It was removed before, since when port_cleanup is called via
+	  port's finalizer, the entry is already cleared by GC.  However,
+	  it turned out that there was a case that number of closed ports
+	  retained from GC grew, prohibiting new ports from being registered
+	  to the active buffered port vector.  Note: maybe we can also
+	  clear some pointers in the port when it is closed, so that the
+	  stuff referenced from the port can be GCed even the closed port
+	  itself lives longer.
+
+2007-08-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_DoubleToHalf): fixed to make sure shifting long
+	  literal instead of int literal to generate a mask larger than 32bits.
+	  The bug yielded incorrect rounding behaviour on 64bit platforms.
+
 2007-08-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/test.scm: Avoid using "ip" for testing getprotobyname/

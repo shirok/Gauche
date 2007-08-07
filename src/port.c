@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.139 2007-04-16 03:47:13 shirok Exp $
+ *  $Id: port.c,v 1.140 2007-08-07 10:42:14 shirok Exp $
  */
 
 #include <unistd.h>
@@ -55,6 +55,7 @@
 static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void port_finalize(ScmObj obj, void* data);
 static void register_buffered_port(ScmPort *port);
+static void unregister_buffered_port(ScmPort *port);
 static void bufport_flush(ScmPort*, int, int);
 static void file_closer(ScmPort *p);
 
@@ -93,9 +94,11 @@ static void port_cleanup(ScmPort *port)
     if (SCM_PORT_CLOSED_P(port)) return;
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
-        if (SCM_PORT_DIR(port) == SCM_PORT_OUTPUT
-            && !SCM_PORT_ERROR_OCCURRED_P(port)) {
-            bufport_flush(port, 0, TRUE);
+        if (SCM_PORT_DIR(port) == SCM_PORT_OUTPUT) {
+            if (!SCM_PORT_ERROR_OCCURRED_P(port)) {
+                bufport_flush(port, 0, TRUE);
+            }
+            unregister_buffered_port(port);
         }
         if (port->ownerp && port->src.buf.closer) port->src.buf.closer(port);
         break;
@@ -171,10 +174,6 @@ void Scm_ClosePort(ScmPort *port)
 /*===============================================================
  * Locking ports
  */
-
-void Scm_PortLock(ScmPort *port)
-{
-}
 
 /*
  * External routine to access port exclusively
@@ -682,6 +681,27 @@ static void register_buffered_port(ScmPort *port)
             goto retry;
         }
     }
+}
+
+/* This should be called when the output buffered port is explicitly closed.
+   The ports collected by GC are automatically unregistered. */
+static void unregister_buffered_port(ScmPort *port)
+{
+    int i, h, c;
+    ScmObj p;
+    
+    h = i = PORT_HASH(port);
+    c = 0;
+    (void)SCM_INTERNAL_MUTEX_LOCK(active_buffered_ports.mutex);
+    do {
+        p = Scm_WeakVectorRef(active_buffered_ports.ports, i, SCM_FALSE);
+        if (!SCM_FALSEP(p) && SCM_EQ(SCM_OBJ(port), p)) {
+            Scm_WeakVectorSet(active_buffered_ports.ports, i, SCM_FALSE);
+            break;
+        }
+        i -= ++c; while (i<0) i+=PORT_VECTOR_SIZE;
+    } while (i != h);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(active_buffered_ports.mutex);
 }
 
 /* Flush all ports.  Note that it is possible that this routine can be
