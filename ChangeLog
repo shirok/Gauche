@@ -1,3 +1,9 @@
+2007-08-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/time.scm (gauche.time): export <time-counter>.  Although
+	  it is a pure abstract class, user may want to define a method
+	  specializing for a bunch of time-counter subclasses.
+
 2007-08-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/intlib.stub: include gauche/memory.h to get decl of 

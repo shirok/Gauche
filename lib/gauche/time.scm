@@ -30,13 +30,13 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: time.scm,v 1.7 2007-03-04 08:34:16 shirok Exp $
+;;;  $Id: time.scm,v 1.8 2007-08-09 21:19:01 shirok Exp $
 ;;;
 
 (define-module gauche.time
   (use srfi-11)
   (export time
-          <real-time-counter> <user-time-counter>
+          <time-counter> <real-time-counter> <user-time-counter>
           <system-time-counter> <process-time-counter>
           time-counter-start! time-counter-stop! time-counter-reset!
           time-counter-value with-time-counter
