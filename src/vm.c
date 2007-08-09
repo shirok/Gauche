@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.271 2007-06-23 06:47:14 shirok Exp $
+ *  $Id: vm.c,v 1.272 2007-08-09 21:53:49 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3030,7 +3030,7 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
 
     vm->handlers = prev;
     d[0] = (void*)result;
-    d[1] = (void*)vm->numVals;
+    d[1] = (void*)(intptr_t)vm->numVals;
     if (vm->numVals > 1) {
         ScmObj *array = SCM_NEW_ARRAY(ScmObj, (vm->numVals-1));
         memcpy(array, vm->vals, sizeof(ScmObj)*(vm->numVals-1));
@@ -3043,7 +3043,7 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
 static ScmObj dynwind_after_cc(ScmObj result, void **data)
 {
     ScmObj val0 = SCM_OBJ(data[0]);
-    int nvals = (int)data[1];
+    int nvals = (intptr_t)data[1];
     ScmVM *vm = theVM;
     
     vm->numVals = nvals;
@@ -3686,7 +3686,7 @@ static ScmObj process_queued_requests_cc(ScmObj result, void **data)
     ScmObj cp;
     ScmVM *vm = theVM;
     
-    vm->numVals = (int)data[0];
+    vm->numVals = (intptr_t)data[0];
     vm->val0 = data[1];
     if (vm->numVals > 1) {
         cp = SCM_OBJ(data[2]);
@@ -3703,7 +3703,7 @@ static void process_queued_requests(ScmVM *vm)
     void *data[3];
 
     /* preserve the current continuation */
-    data[0] = (void*)vm->numVals;
+    data[0] = (void*)(intptr_t)vm->numVals;
     data[1] = vm->val0;
     if (vm->numVals > 1) {
         int i;

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.152 2007-05-22 10:23:47 shirok Exp $
+ *  $Id: class.c,v 1.153 2007-08-09 21:53:48 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1363,7 +1363,7 @@ static ScmObj slot_ref_using_accessor(ScmObj obj,
  */
 static ScmObj slot_ref_cc(ScmObj result, void **data)
 {
-    return Scm_VMSlotRef(SCM_OBJ(data[0]), SCM_OBJ(data[1]), (int)data[2]);
+    return Scm_VMSlotRef(SCM_OBJ(data[0]), SCM_OBJ(data[1]), (intptr_t)data[2]);
 }
 
 ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp)
@@ -1375,7 +1375,7 @@ ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp)
     if (!SCM_FALSEP(klass->redefined)) {
         data[0] = obj;
         data[1] = slot;
-        data[2] = (void*)boundp;
+        data[2] = (void*)(intptr_t)boundp;
         Scm_VMPushCC(slot_ref_cc, data, 3);
         return instance_class_redefinition(obj, klass);
     }

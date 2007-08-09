@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.140 2007-08-07 10:42:14 shirok Exp $
+ *  $Id: port.c,v 1.141 2007-08-09 21:53:48 shirok Exp $
  */
 
 #include <unistd.h>
@@ -811,7 +811,7 @@ ScmObj Scm_GetBufferingMode(ScmPort *port)
 static int file_filler(ScmPort *p, int cnt)
 {
     int nread = 0, r;
-    int fd = (int)p->src.buf.data;
+    int fd = (intptr_t)p->src.buf.data;
     char *datptr = p->src.buf.end;
     SCM_ASSERT(fd >= 0);
     while (nread == 0) {
@@ -835,7 +835,7 @@ static int file_flusher(ScmPort *p, int cnt, int forcep)
 {
     int nwrote = 0, r;
     int datsiz = SCM_PORT_BUFFER_AVAIL(p);
-    int fd = (int)p->src.buf.data;
+    int fd = (intptr_t)p->src.buf.data;
     char *datptr = p->src.buf.buffer;
     
     SCM_ASSERT(fd >= 0);
@@ -856,26 +856,26 @@ static int file_flusher(ScmPort *p, int cnt, int forcep)
 
 static void file_closer(ScmPort *p)
 {
-    int fd = (int)p->src.buf.data;
+    int fd = (intptr_t)p->src.buf.data;
     SCM_ASSERT(fd >= 0);
     close(fd);
 }
 
 static int file_ready(ScmPort *p)
 {
-    int fd = (int)p->src.buf.data;
+    int fd = (intptr_t)p->src.buf.data;
     SCM_ASSERT(fd >= 0);
     return Scm_FdReady(fd, SCM_PORT_DIR(p));
 }
 
 static int file_filenum(ScmPort *p)
 {
-    return (int)p->src.buf.data;
+    return (intptr_t)p->src.buf.data;
 }
 
 static off_t file_seeker(ScmPort *p, off_t offset, int whence)
 {
-    return lseek((int)p->src.buf.data, offset, whence);
+    return lseek((intptr_t)p->src.buf.data, offset, whence);
 }
 
 ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
@@ -907,7 +907,7 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
     bufrec.ready = file_ready;
     bufrec.filenum = file_filenum;
     bufrec.seeker = file_seeker;
-    bufrec.data = (void*)fd;
+    bufrec.data = (void*)(intptr_t)fd;
     p = Scm_MakeBufferedPort(SCM_CLASS_PORT, SCM_MAKE_STR_COPYING(path),
                              dir, TRUE, &bufrec);
     return p;
@@ -935,7 +935,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
     bufrec.ready = file_ready;
     bufrec.filenum = file_filenum;
     bufrec.seeker = NULL;
-    bufrec.data = (void*)fd;
+    bufrec.data = (void*)(intptr_t)fd;
     
     p = Scm_MakeBufferedPort(SCM_CLASS_PORT, name, direction, ownerp, &bufrec);
     return p;
