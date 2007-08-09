@@ -1,3 +1,7 @@
+2007-08-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (Scm_Init): added missing call to Scm__InitCollection().
+
 2007-08-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c (port_cleanup): resurrected unregister_buffered_port
