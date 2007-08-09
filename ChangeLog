@@ -1,5 +1,8 @@
 2007-08-08  Shiro Kawai  <shiro@acm.org>
 
+	* src/intlib.stub: include gauche/memory.h to get decl of 
+	  GC_print_static_roots.
+
 	* src/core.c (Scm_Init): added missing call to Scm__InitCollection().
 
 2007-08-07  Shiro Kawai  <shiro@acm.org>
