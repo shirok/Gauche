@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.48 2007-05-22 13:17:55 shirok Exp $
+;;;  $Id: netlib.stub,v 1.49 2007-08-10 01:19:36 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -91,7 +91,6 @@
   (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
     (body <top>
           (let* ((a :: ScmSockAddrIn6* (cast ScmSockAddrIn6* addr))
-                 (|values[4]| :: ScmUInt32)
                  (p :: ScmUInt32*
                     (cast ScmUInt32* (ref (-> a addr) sin6_addr s6_addr)))
                  (i :: int)

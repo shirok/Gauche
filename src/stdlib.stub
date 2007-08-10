@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.130 2007-05-22 10:24:54 shirok Exp $
+;;; $Id: stdlib.stub,v 1.131 2007-08-10 01:19:36 shirok Exp $
 ;;;
 
 "
@@ -118,7 +118,8 @@
         (cond
          ((not (SCM_PAIRP args)) (result (SCM_MAKE_INT 0)))
          ((not (SCM_NUMBERP (SCM_CAR args)))
-          (Scm_Error "number required, but got %S" (SCM_CAR args)))
+          (Scm_Error "number required, but got %S" (SCM_CAR args))
+          (result SCM_UNDEFINED))       ;dummy
          (else
           (let* ((r :: ScmObj (SCM_CAR args)))
             (for-each (lambda (v) (set! r (Scm_Add r v))) (SCM_CDR args))
@@ -129,7 +130,8 @@
         (cond
          ((not (SCM_PAIRP args)) (result (SCM_MAKE_INT 1)))
          ((not (SCM_NUMBERP (SCM_CAR args)))
-          (Scm_Error "number required, but got %S" (SCM_CAR args)))
+          (Scm_Error "number required, but got %S" (SCM_CAR args))
+          (result SCM_UNDEFINED))       ;dummy
          (else
           (let* ((r :: ScmObj (SCM_CAR args)))
             (for-each (lambda (v) (set! r (Scm_Mul r v))) (SCM_CDR args))
@@ -589,8 +591,7 @@
   (inliner APPLY)
   (body <top>
         (let* ((head :: ScmObj)
-               (tail :: ScmObj)
-               (cp   :: ScmObj))
+               (tail :: ScmObj))
           (cond ((SCM_NULLP args) (result (Scm_VMApply proc arg1)))
                 (else
                  (set! head (Scm_Cons arg1 SCM_NIL)

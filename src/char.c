@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.54 2007-05-22 10:23:47 shirok Exp $
+ *  $Id: char.c,v 1.55 2007-08-10 01:19:36 shirok Exp $
  */
 
 #include <ctype.h>
@@ -240,7 +240,6 @@ static int cmp(ScmTreeCore *tc, intptr_t a, intptr_t b)
 static ScmCharSet *make_charset(void)
 {
     ScmCharSet *cs = SCM_NEW(ScmCharSet);
-    int i;
     SCM_SET_CLASS(cs, SCM_CLASS_CHARSET);
     Scm_BitsFill(cs->small, 0, SCM_CHAR_SET_SMALL_CHARS, 0);
     Scm_TreeCoreInit(&cs->large, cmp, NULL);
@@ -381,7 +380,6 @@ int Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y)
 ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
 {
     ScmDictEntry *e, *lo, *hi;
-    int lbound;
     
     if (to < from) return SCM_OBJ(cs);
     if (from < SCM_CHAR_SET_SMALL_CHARS) {
@@ -424,7 +422,6 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
 
 ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
 {
-    int i;
     ScmTreeIter iter;
     ScmDictEntry *e;
 
@@ -441,7 +438,7 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
 
 ScmObj Scm_CharSetComplement(ScmCharSet *cs)
 {
-    int i, last;
+    int last;
     ScmDictEntry *e, *n;
 
     Scm_BitsOperate(cs->small, SCM_BIT_NOT1, cs->small, NULL,
@@ -530,7 +527,6 @@ ScmObj Scm_CharSetRanges(ScmCharSet *cs)
 void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
 {
     int i;
-    struct ScmCharSetRange *r;
     Scm_Printf(port, "CharSet %p\nmask:", cs);
     for (i=0; i<SCM_BITS_NUM_WORDS(SCM_CHAR_SET_SMALL_CHARS); i++) {
 #if SIZEOF_LONG == 4

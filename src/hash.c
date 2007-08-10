@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.56 2007-07-26 07:17:33 shirok Exp $
+ *  $Id: hash.c,v 1.57 2007-08-10 01:19:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -63,7 +63,6 @@ typedef struct EntryRec {
 typedef Entry *SearchProc(ScmHashCore *core, intptr_t key, ScmDictOp op);
 
 static unsigned int round2up(unsigned int val);
-static void check_scm_hashtable(ScmHashTable *table);
 
 /*============================================================
  * Hash functions
@@ -456,6 +455,7 @@ static u_long multiword_hash(const ScmHashCore *table, intptr_t key)
     return h;
 }
 
+#if 0
 static Entry *multiword_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
 {
     u_long hashval, index;
@@ -472,6 +472,7 @@ static Entry *multiword_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
     }
     NOTFOUND(table, op, k, hashval, index);
 }
+#endif
 
 
 /*
@@ -628,7 +629,6 @@ void Scm_HashCoreCopy(ScmHashCore *dst, const ScmHashCore *src)
 void Scm_HashCoreClear(ScmHashCore *table)
 {
     int i;
-    Entry *e;
     for (i=0; i<table->numBuckets; i++) {
         table->buckets[i] = NULL;
     }
@@ -875,7 +875,7 @@ ScmHashEntry *Scm_HashTableAdd(ScmHashTable *ht, ScmObj key, ScmObj value)
     if (sizeof(intptr_t) != sizeof(void*)) {
         Scm_Error("[internal] Scm_HashTableGet is obsoleted on this platform.  You should use the new hashtable API.");
     }
-    if (!e->value) SCM_DICT_SET_VALUE(e, value);
+    if (!e->value) (void)SCM_DICT_SET_VALUE(e, value);
     return (ScmHashEntry*)e;
 }
 
@@ -886,7 +886,7 @@ ScmHashEntry *Scm_HashTablePut(ScmHashTable *ht, ScmObj key, ScmObj value)
     if (sizeof(intptr_t) != sizeof(void*)) {
         Scm_Error("[internal] Scm_HashTableGet is obsoleted on this platform.  You should use the new hashtable API.");
     }
-    SCM_DICT_SET_VALUE(e, value);
+    (void)SCM_DICT_SET_VALUE(e, value);
     return (ScmHashEntry*)e;
 }
 

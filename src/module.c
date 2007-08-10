@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.68 2007-04-09 02:09:45 shirok Exp $
+ *  $Id: module.c,v 1.69 2007-08-10 01:19:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -148,7 +148,7 @@ static ScmModule *lookup_module_create(ScmSymbol *name, int *created)
                            (intptr_t)name,
                            SCM_DICT_CREATE);
     if (e->value == 0) {
-        SCM_DICT_SET_VALUE(e, make_module(name));
+        (void)SCM_DICT_SET_VALUE(e, make_module(name));
         *created = TRUE;
     } else {
         *created = FALSE;
@@ -407,7 +407,7 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
         } else {
             g = SCM_GLOC(Scm_MakeGloc(s, module));
             g->exported = TRUE;
-            SCM_DICT_SET_VALUE(e, SCM_OBJ(g));
+            (void)SCM_DICT_SET_VALUE(e, SCM_OBJ(g));
             syms = Scm_Cons(SCM_OBJ(s), syms);
         }
     }

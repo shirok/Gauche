@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bits.c,v 1.3 2007-04-20 20:12:21 shirok Exp $
+ *  $Id: bits.c,v 1.4 2007-08-10 01:19:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -101,7 +101,7 @@ void Scm_BitsOperate(ScmBits *r, ScmBitOp op,
 
     /* NB: Not very optimized for speed.  Rewrite when we hit a bottleneck. */
     for (w = sw;w < ew + (eb?1:0); w++) {
-        u_long z;
+        u_long z = 0;
         switch (op) {
         case SCM_BIT_AND:  z = a[w] & b[w];    break;
         case SCM_BIT_IOR:  z = a[w] | b[w];    break;

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.153 2007-08-09 21:53:48 shirok Exp $
+ *  $Id: class.c,v 1.154 2007-08-10 01:19:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -596,9 +596,8 @@ static void find_core_allocator(ScmClass *klass)
 static void class_cpl_set(ScmClass *klass, ScmObj val)
 {
     /* have to make sure things are consistent */
-    int len, object_inherited = FALSE, applicable = FALSE;
+    int len;
     ScmObj cp;
-    ScmClass **p;
     if (!SCM_PAIRP(val)) goto err;
     /* check if the CPL begins with the class itself. */
     if (SCM_CAR(val) != SCM_OBJ(klass)) goto err;

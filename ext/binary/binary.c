@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.c,v 1.12 2007-03-02 07:39:04 shirok Exp $
+ *  $Id: binary.c,v 1.13 2007-08-10 01:19:36 shirok Exp $
  */
 
 #include <gauche.h>
@@ -187,6 +187,7 @@ static Endian symbol2endian(ScmSymbol *s)
     return SCM_BE;          /* dummy */
 }
 
+#if 0 /* not used (yet) */
 static ScmObj endian2symbol(Endian e)
 {
     switch (e) {
@@ -195,6 +196,7 @@ static ScmObj endian2symbol(Endian e)
     case SCM_ARM_LE: return SCM_OBJ(SCM_SYM_ARM_LITTLE_ENDIAN);
     }
 }
+#endif
 
 /*===========================================================
  * Readers
@@ -216,7 +218,6 @@ static inline int getbytes(char *buf, int len, ScmPort *iport)
 
 ScmObj Scm_ReadBinaryU8(ScmPort *iport, ScmSymbol *sendian)
 {
-    Endian endian = symbol2endian(sendian);
     int b;
     ENSURE_IPORT(iport);
     if ((b = Scm_Getb(iport)) == EOF) return SCM_EOF;
@@ -225,7 +226,6 @@ ScmObj Scm_ReadBinaryU8(ScmPort *iport, ScmSymbol *sendian)
 
 ScmObj Scm_ReadBinaryS8(ScmPort *iport, ScmSymbol *sendian)
 {
-    Endian endian = symbol2endian(sendian);
     int b;
     ENSURE_IPORT(iport);
     if ((b = Scm_Getb(iport)) == EOF) return SCM_EOF;
@@ -460,7 +460,7 @@ ScmObj Scm_GetBinaryS8(ScmUVector *uv, int off, ScmSymbol *sendian)
 ScmObj Scm_GetBinaryU16(ScmUVector *uv, int off, ScmSymbol *sendian)
 {
     Endian endian = symbol2endian(sendian);
-    union { char buf[2]; unsigned short val; } v;
+    union { unsigned char buf[2]; unsigned short val; } v;
     extract(uv, v.buf, off, 2);
     SWAP2();
     return SCM_MAKE_INT(v.val);
@@ -469,7 +469,7 @@ ScmObj Scm_GetBinaryU16(ScmUVector *uv, int off, ScmSymbol *sendian)
 ScmObj Scm_GetBinaryS16(ScmUVector *uv, int off, ScmSymbol *sendian)
 {
     Endian endian = symbol2endian(sendian);
-    union { char buf[2]; short val; } v;
+    union { unsigned char buf[2]; short val; } v;
     extract(uv, v.buf, off, 2);
     SWAP2();
     return SCM_MAKE_INT(v.val);
@@ -478,7 +478,7 @@ ScmObj Scm_GetBinaryS16(ScmUVector *uv, int off, ScmSymbol *sendian)
 ScmObj Scm_GetBinaryU32(ScmUVector *uv, int off, ScmSymbol *sendian)
 {
     Endian endian = symbol2endian(sendian);
-    union { char buf[4]; ScmUInt32 val; } v;
+    union { unsigned char buf[4]; ScmUInt32 val; } v;
     extract(uv, v.buf, off, 4);
     SWAP4();
     return Scm_MakeIntegerFromUI(v.val);
@@ -487,7 +487,7 @@ ScmObj Scm_GetBinaryU32(ScmUVector *uv, int off, ScmSymbol *sendian)
 ScmObj Scm_GetBinaryS32(ScmUVector *uv, int off, ScmSymbol *sendian)
 {
     Endian endian = symbol2endian(sendian);
-    union { char buf[4]; ScmInt32 val; } v;
+    union { unsigned char buf[4]; ScmInt32 val; } v;
     extract(uv, v.buf, off, 4);
     SWAP4();
     return Scm_MakeInteger(v.val);
@@ -496,7 +496,7 @@ ScmObj Scm_GetBinaryS32(ScmUVector *uv, int off, ScmSymbol *sendian)
 ScmObj Scm_GetBinaryU64(ScmUVector *uv, int off, ScmSymbol *sendian)
 {
     Endian endian = symbol2endian(sendian);
-    union { char buf[8]; ScmUInt64 val; } v;
+    union { unsigned char buf[8]; ScmUInt64 val; } v;
     extract(uv, v.buf, off, 8);
     SWAP8();
     return Scm_MakeIntegerU64(v.val);
@@ -505,7 +505,7 @@ ScmObj Scm_GetBinaryU64(ScmUVector *uv, int off, ScmSymbol *sendian)
 ScmObj Scm_GetBinaryS64(ScmUVector *uv, int off, ScmSymbol *sendian)
 {
     Endian endian = symbol2endian(sendian);
-    union { char buf[8]; ScmInt64 val; } v;
+    union { unsigned char buf[8]; ScmInt64 val; } v;
     extract(uv, v.buf, off, 8);
     SWAP8();
     return Scm_MakeInteger64(v.val);
@@ -514,7 +514,7 @@ ScmObj Scm_GetBinaryS64(ScmUVector *uv, int off, ScmSymbol *sendian)
 ScmObj Scm_GetBinaryF16(ScmUVector *uv, int off, ScmSymbol *sendian)
 {
     Endian endian = symbol2endian(sendian);
-    union { char buf[2]; ScmHalfFloat val; } v;
+    union { unsigned char buf[2]; ScmHalfFloat val; } v;
     extract(uv, v.buf, off, 2);
     SWAP2();
     return Scm_MakeFlonum(Scm_HalfToDouble(v.val));
@@ -523,7 +523,7 @@ ScmObj Scm_GetBinaryF16(ScmUVector *uv, int off, ScmSymbol *sendian)
 ScmObj Scm_GetBinaryF32(ScmUVector *uv, int off, ScmSymbol *sendian)
 {
     Endian endian = symbol2endian(sendian);
-    union { char buf[4]; float val; } v;
+    union { unsigned char buf[4]; float val; } v;
     extract(uv, v.buf, off, 4);
     SWAP4();
     return Scm_MakeFlonum((double)v.val);
@@ -532,7 +532,7 @@ ScmObj Scm_GetBinaryF32(ScmUVector *uv, int off, ScmSymbol *sendian)
 ScmObj Scm_GetBinaryF64(ScmUVector *uv, int off, ScmSymbol *sendian)
 {
     Endian endian = symbol2endian(sendian);
-    union { char buf[8]; double val;} v;
+    union { unsigned char buf[8]; double val;} v;
     extract(uv, v.buf, off, 8);
     SWAPD();
     return Scm_MakeFlonum(v.val);
@@ -573,7 +573,7 @@ void Scm_PutBinaryS8(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 void Scm_PutBinaryU16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
-    union { char buf[2]; u_short val; } v;
+    union { unsigned char buf[2]; u_short val; } v;
     v.val = Scm_GetIntegerU16Clamp(val, SCM_CLAMP_NONE, NULL);
     SWAP2();
     inject(uv, v.buf, off, 2);
@@ -582,7 +582,7 @@ void Scm_PutBinaryU16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 void Scm_PutBinaryS16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
-    union { char buf[2]; short val; } v;
+    union { unsigned char buf[2]; short val; } v;
     v.val = Scm_GetInteger16Clamp(val, SCM_CLAMP_NONE, NULL);
     SWAP2();
     inject(uv, v.buf, off, 2);
@@ -591,7 +591,7 @@ void Scm_PutBinaryS16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 void Scm_PutBinaryU32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
-    union { char buf[4]; ScmUInt32 val; } v;
+    union { unsigned char buf[4]; ScmUInt32 val; } v;
     v.val = Scm_GetIntegerU32Clamp(val, FALSE, FALSE);
     SWAP4();
     inject(uv, v.buf, off, 4);
@@ -600,7 +600,7 @@ void Scm_PutBinaryU32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 void Scm_PutBinaryS32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
-    union { char buf[4]; ScmInt32 val; } v;
+    union { unsigned char buf[4]; ScmInt32 val; } v;
     v.val = Scm_GetInteger32Clamp(val, FALSE, FALSE);
     SWAP4();
     inject(uv, v.buf, off, 4);
@@ -609,7 +609,7 @@ void Scm_PutBinaryS32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 void Scm_PutBinaryU64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
-    union { char buf[8]; ScmUInt64 val; } v;
+    union { unsigned char buf[8]; ScmUInt64 val; } v;
     v.val = Scm_GetIntegerU64Clamp(val, FALSE, FALSE);
     SWAP8();
     inject(uv, v.buf, off, 8);
@@ -618,7 +618,7 @@ void Scm_PutBinaryU64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 void Scm_PutBinaryS64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
-    union { char buf[8]; ScmInt64 val; } v;
+    union { unsigned char buf[8]; ScmInt64 val; } v;
     v.val = Scm_GetInteger64Clamp(val, FALSE, FALSE);
     SWAP8();
     inject(uv, v.buf, off, 8);
@@ -627,7 +627,7 @@ void Scm_PutBinaryS64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 void Scm_PutBinaryF16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
-    union { char buf[2]; ScmHalfFloat val; } v;
+    union { unsigned char buf[2]; ScmHalfFloat val; } v;
     v.val = Scm_DoubleToHalf(Scm_GetDouble(val));
     SWAP2();
     inject(uv, v.buf, off, 2);
@@ -636,7 +636,7 @@ void Scm_PutBinaryF16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 void Scm_PutBinaryF32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
-    union { char buf[4]; float val; } v;
+    union { unsigned char buf[4]; float val; } v;
     v.val = (float)Scm_GetDouble(val);
     SWAP4();
     inject(uv, v.buf, off, 4);
@@ -645,7 +645,7 @@ void Scm_PutBinaryF32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 void Scm_PutBinaryF64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
-    union { char buf[8]; double val; } v;
+    union { unsigned char buf[8]; double val; } v;
     v.val = Scm_GetDouble(val);
     SWAPD();
     inject(uv, v.buf, off, 8);

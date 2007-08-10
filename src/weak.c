@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: weak.c,v 1.15 2007-06-01 00:53:23 shirok Exp $
+ *  $Id: weak.c,v 1.16 2007-08-10 01:19:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -281,9 +281,11 @@ static int weak_key_compare(const ScmHashCore *hc, intptr_t key,
 }
 
 /* Scan through  */
+#if 0
 static void weak_hash_cleanup(ScmWeakHashTable *wh)
 {
 }
+#endif
 
 
 ScmObj Scm_MakeWeakHashTableSimple(ScmHashType type,
@@ -369,7 +371,7 @@ ScmObj Scm_WeakHashTableSet(ScmWeakHashTable *ht, ScmObj key, ScmObj value,
         if (flags&SCM_DICT_NO_OVERWRITE && e->value) {
             return SCM_DICT_VALUE(e);
         }
-        SCM_DICT_SET_VALUE(e, value);
+        (void)SCM_DICT_SET_VALUE(e, value);
         return value;
     }
 }

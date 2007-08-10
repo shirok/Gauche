@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.295 2007-06-01 00:53:23 shirok Exp $
+;;; $Id: extlib.stub,v 1.296 2007-08-10 01:19:36 shirok Exp $
 ;;;
 
 "
@@ -256,8 +256,8 @@
                                  (SCM_SET_CDR tail (SCM_CAR cp)))
                                (break))
                              (SCM_APPEND1 head tail (SCM_CAR cp)))
-                           args)
-            (result head)))))
+                           args))
+          (result head))))
 
 (define-cproc %delete (obj list::<list> &optional cmpmode)
   (expr <top> (Scm_Delete obj list (getcmpmode cmpmode))))
@@ -1160,7 +1160,7 @@
                 (set! e (,searcher (,xtractor ,dict) (cast intptr_t key)
                                    SCM_DICT_CREATE))
                 (unless (-> e value)
-                  (SCM_DICT_SET_VALUE e fallback))))
+                  (cast void (SCM_DICT_SET_VALUE e fallback)))))
          (set! (aref data 0) (cast void* e))
          (Scm_VMPushCC ,cc data 1)
          (result (Scm_VMApply1 proc (SCM_DICT_VALUE e))))]))
@@ -1172,7 +1172,7 @@
                                              (cast intptr_t key)
                                              SCM_DICT_CREATE))
               (prev (?: (-> e value) (SCM_DICT_VALUE e) '())))
-         (SCM_DICT_SET_VALUE e (Scm_Cons value prev)))]))
+         (cast void (SCM_DICT_SET_VALUE e (Scm_Cons value prev))))]))
 
  (define-cise-macro (dict-pop! form env)
    (match form
@@ -1191,7 +1191,7 @@
            (result fallback))
           (else
            (result (SCM_CAR (SCM_DICT_VALUE e)))
-           (SCM_DICT_SET_VALUE e (SCM_CDR (SCM_DICT_VALUE e))))))]))
+           (cast void (SCM_DICT_SET_VALUE e (SCM_CDR (SCM_DICT_VALUE e)))))))]))
  )
 
 ;;
@@ -1256,7 +1256,7 @@
 "static ScmObj hash_table_update_cc(ScmObj result, void **data)
  {
    ScmDictEntry *e = (ScmDictEntry*)data[0];
-   SCM_DICT_SET_VALUE(e, result);
+   (void)SCM_DICT_SET_VALUE(e, result);
    SCM_RETURN(result);
  }"
 
@@ -1401,7 +1401,7 @@
 "static ScmObj tree_map_update_cc(ScmObj result, void **data)
  {
    ScmDictEntry *e = (ScmDictEntry*)data[0];
-   SCM_DICT_SET_VALUE(e, result);
+   (void)SCM_DICT_SET_VALUE(e, result);
    SCM_RETURN(result);
  }"
 

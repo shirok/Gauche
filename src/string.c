@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.85 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: string.c,v 1.86 2007-08-10 01:19:36 shirok Exp $
  */
 
 #include <stdio.h>
@@ -64,6 +64,7 @@ static ScmString *make_str(int len, int siz, const char *p, int flags)
     return s;
 }
 
+#if 0
 static ScmStringBody *make_str_body(int len, int siz, const char *p, int flags)
 {
     ScmStringBody *b = SCM_NEW(ScmStringBody);
@@ -73,6 +74,7 @@ static ScmStringBody *make_str_body(int len, int siz, const char *p, int flags)
     b->flags = flags;
     return b;
 }
+#endif
 
 #define DUMP_LENGTH   50
 
