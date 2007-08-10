@@ -22,7 +22,7 @@ AC_INIT(gc,6.8,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.18 $)
+AC_REVISION($Revision: 1.19 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE
 
@@ -46,10 +46,10 @@ GC_CFLAGS=${gc_cflags}
 AC_SUBST(GC_CFLAGS)
 
 dnl [SK] Original Boehm GC checks gcc for the default thread support.
-dnl We removed it, since the thread support must be in sync with the
-dnl main Gauche compilation.
-AC_ARG_ENABLE(threads, [  --enable-threads=TYPE   choose threading package],
-  THREADS=$enableval, THREADS=no)
+dnl In our case we need the thread config in sync with the main Gauche
+dnl source tree.  The Gauche's configure leaves its thread settings in
+dnl 'config.threads' so we just read it.
+THREADS=`cat ${srcdir}/../config.threads`
 
 AC_ARG_ENABLE(parallel-mark,
 [  --enable-parallel-mark	parallelize marking and free list construction],

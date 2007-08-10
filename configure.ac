@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.100 2007-08-10 01:19:35 shirok Exp $
+dnl $Id: configure.ac,v 1.101 2007-08-10 08:48:04 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.11_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.100 $)
+AC_REVISION($Revision: 1.101 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -117,10 +117,10 @@ AC_ARG_WITH(rpath,
 dnl ----------------------------------------------------------
 dnl   enable-thread=TYPE
 dnl  
-GAUCHE_THREAD_TYPE=none
+GAUCHE_THREAD_TYPE=default
 AC_ARG_ENABLE(threads,
   AC_HELP_STRING([--enable-threads=TYPE],
-                 [Choose thread type.  Currently only 'none' or 'pthreads' is supported. ]),
+                 [Choose thread type.  Possible values are: 'none' for not using threads, 'pthreads' to use pthreads, and 'default' to choose system's suitable one (if any). ]),
   [
     case $enableval in
       pthreads) 
@@ -130,61 +130,86 @@ AC_ARG_ENABLE(threads,
       no|none)
        GAUCHE_THREAD_TYPE=none
       ;;
+      default)
+       GAUCHE_THREAD_TYPE=default
+      ;;
       *)
-       AC_MSG_ERROR([invalid value $enableval for --enable-threads option (must be either none or pthreads])
+       AC_MSG_ERROR([invalid value $enableval for --enable-threads option (must be either none, pthreads, or default])
       ;;
     esac
   ], [])
 
 dnl Platform-dependent thread configuration.  This must be in sync
 dnl with gc's configure.in.
-if test $GAUCHE_THREAD_TYPE = pthreads; then
-  THREADLIBS="-lpthread"
+case $GAUCHE_THREAD_TYPE in
+ pthreads|default)
   case "$target" in
     *-*-linux*)
       AC_DEFINE(GC_LINUX_THREADS,1,[Define to use Linux threads])
       AC_DEFINE(_REENTRANT,1,[Define to use reentrant libc])
+      THREADLIBS="-lpthread"
+      GAUCHE_THREAD_TYPE=pthreads
       ;;
     *-*-hpux*)
       AC_MSG_WARN("Only HP/UX 11 threads are supported.")
       AC_DEFINE(GC_HPUX_THREADS,1,[Define to use HP-UX threads])
       AC_DEFINE(_POSIX_C_SOURCE,199506L,[Define POSIX C version])
       THREADLIBS="-lpthread -lrt"
+      GAUCHE_THREAD_TYPE=pthreads
       ;;
     *-*-freebsd*|*-*-dragonfly*)
       AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
       AC_DEFINE(GC_FREEBSD_THREADS,1,[Define to use FreeBSD threads])
       INCLUDES="$INCLUDES -pthread"
-      THREADLIBS=-pthread
+      THREADLIBS="-pthread"
+      GAUCHE_THREAD_TYPE=pthreads
       ;;
     *-*-netbsd*)
       AC_MSG_WARN("Only on NetBSD 2.0 or later.")
       AC_DEFINE(GC_NETBSD_THREADS,1,[Define to use NetBSD threads])
       AC_DEFINE(_REENTRANT)
       AC_DEFINE(_PTHREADS)
+      THREADLIBS="-lpthread"
       THREADDLLIBS="-lpthread -lrt"
+      GAUCHE_THREAD_TYPE=pthreads
       ;;
     *-*-solaris*)
       AC_DEFINE(GC_SOLARIS_THREADS,1,[Define to use Solaris threads])
       AC_DEFINE(GC_SOLARIS_PTHREADS,1,[Define to use Solaris pthreads])
+      AC_DEFINE(_POSIX_PTHREAD_SEMANTICS,1,[Define to use Solaris pthreads])
+      THREADLIBS="-lpthread"
+      GAUCHE_THREAD_TYPE=pthreads
       ;;
     *-*-irix*)
       AC_DEFINE(GC_IRIX_THREADS,1,[Define to use IRIX threads])
+      THREADLIBS="-lpthread"
+      GAUCHE_THREAD_TYPE=pthreads
       ;;
     *-*-cygwin*)
       AC_DEFINE(GC_WIN32_THREADS,1,[Define to use Win32 threads])
+      THREADLIBS="-lpthread"
+      GAUCHE_THREAD_TYPE=pthreads
       ;;
     *-*-darwin*)
       AC_DEFINE(GC_DARWIN_THREADS,1,[Define to use Darwin threads])
       AC_DEFINE(GC_PTHREADS,1,[Define to use pthreads])
       INCLUDES="$INCLUDES -I/sw/include"
+      THREADLIBS="-lpthread"
+      GAUCHE_THREAD_TYPE=pthreads
       ;;
     *)
-      AC_MSG_ERROR([pthread is not supported on $target])
+      if test $GAUCHE_THREAD_TYPE = "pthreads"; then
+        AC_MSG_ERROR([pthread is not supported on $target])
+      else
+        GAUCHE_THREAD_TYPE=none
+      fi
       ;;
   esac
-fi
+ ;;
+esac
 LIBS="$LIBS $THREADLIBS"
+dnl Save thread model to be inherited by gc/ subdir.
+echo $GAUCHE_THREAD_TYPE > config.threads
 
 dnl ----------------------------------------------------------
 dnl   enable-framework

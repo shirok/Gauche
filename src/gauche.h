@@ -30,13 +30,21 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.493 2007-04-22 10:05:45 shirok Exp $
+ *  $Id: gauche.h,v 1.494 2007-08-10 08:48:06 shirok Exp $
  */
 
 #ifndef GAUCHE_H
 #define GAUCHE_H
 
+/* Read config.h _before_ other headers, for it may affect the behavior
+   of system header files.  Currently the only known instance of it is
+   sigwait() on Solaris---we need to define _POSIX_PTHREAD_SEMANTICS to
+   get pthread-compatible sigwait()---but we may encounter more of such
+   instances. */
+#include <gauche/config.h>
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdarg.h>
@@ -45,7 +53,6 @@
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
-#include <gauche/config.h>  /* read config.h _before_ gc.h */
 #include <gauche/int64.h>
 #include <gauche/float.h>
 

@@ -326,6 +326,9 @@
 /* Define POSIX C version */
 #undef _POSIX_C_SOURCE
 
+/* Define when using Solaris pthreads to get pthread compatible API. */
+#undef _POSIX_PTHREAD_SEMANTICS
+
 /* Define to use reentrant libc */
 #undef _REENTRANT
 

@@ -30,11 +30,9 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.51 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: signal.c,v 1.52 2007-08-10 08:48:06 shirok Exp $
  */
 
-#include <stdlib.h>
-#include <signal.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/vm.h"

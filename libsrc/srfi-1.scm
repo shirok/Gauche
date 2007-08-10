@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.1 2005-08-28 12:59:17 shirok Exp $
+;; $Id: srfi-1.scm,v 1.2 2007-08-10 08:48:06 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -91,13 +91,13 @@
 		  (others (cdr others)))
 	      (if (eq? list-a list-b)	; EQ? => LIST=
                 (lp1 list-b others)
-                (let lp2 ((list-a list-a) (list-b list-b))
+                (let lp2 ((list-a list-a) (list-c list-b))
                   (if (null-list? list-a)
-                    (and (null-list? list-b)
+                    (and (null-list? list-c)
                          (lp1 list-b others))
-                    (and (not (null-list? list-b))
-                         (= (car list-a) (car list-b))
-                         (lp2 (cdr list-a) (cdr list-b)))))))))))
+                    (and (not (null-list? list-c))
+                         (= (car list-a) (car list-c))
+                         (lp2 (cdr list-a) (cdr list-c)))))))))))
 			
 
 ;;;

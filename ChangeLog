@@ -1,5 +1,24 @@
 2007-08-09  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac: When --enable-threads is not given (or 'default' is
+	  given) we turn on pthreads support on available platforms, and
+	  turn off on others.  
+	  Also defines _POSIX_PTHREAD_SEMANTICS on Solaris with threads 
+	  so that we can get a pthread-compatible API 
+	  (more specifically, sigwait()).
+	* gc/configure.in: Adapted to the above change; now we ignore
+	  --enable-threads, and rely on the info the main 'configure.ac'
+	  left in 'config.threads'.
+	* src/gauche/config.h.in: added _POSIX_PTHREAD_SEMANTICS.
+	* src/gauche.h: Include gauche/config.h before any headers so that
+	  the definitions like _POSIX_PTHREAD_SEMANTICS can affect the
+	  system headers.
+	* src/signal.c: removed system header includes, since they are
+	  included in gauche.h anyway.
+
+	* libsrc/srfi-1.scm (list=): bug fix for handling more than three
+	  lists.  (Patch from OGURISU Osamu).
+
 	* ext/template.Makefile.in, lib/gauche/package/compile.scm:
 	  Supports separate buiddir during compiling extension packages
 	  (Patch from Leonardo Boiko).
