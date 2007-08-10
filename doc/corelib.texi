@@ -1729,14 +1729,8 @@ SRFI-1 (@ref{List library}) を使うと、@code{assoc}は
 @clindex symbol
 @c EN
 A class for symbols.
-
-In Gauche, all symbols are @emph{interned}, i.e. two symbols with
-the same print name are always @code{eq?}.
 @c JP
 シンボルを表すクラスです。
-
-Gaucheでは、全てのシンボルはintern、すなわち内部のテーブルに登録されています。
-そのため、同じ外部表記を持つシンボルは常に@code{eq?}です。
 @c COMMON
 @end  deftp
 

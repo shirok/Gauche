@@ -3002,7 +3002,7 @@ Returns the current modified julian day, a point in time as a real
 number of days since 1858-11-17T00:00:00Z
 (November 17, 1858 at midnight, UTC). 
 @c JP
-現在の改訂ユリウス日(Modified julian day)を返します。Modified julian dayは
+現在の修正ユリウス日(Modified julian day)を返します。Modified julian dayは
 1858-11-17T00:00:00Z (November 17, 1858 at midnight, UTC)
 からの日数を実数で表現したものです。
 @c COMMON
@@ -3284,7 +3284,7 @@ Conversions from julian-day to various date/time types.
 @c EN
 Conversions from modified julian-day to various date/time types.
 @c JP
-改訂ユリウス日から様々な様式の日付/時間に変換します。
+修正ユリウス日から様々な様式の日付/時間に変換します。
 @c COMMON
 @end defun
 
