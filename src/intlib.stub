@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.26 2007-08-09 08:49:08 shirok Exp $
+;;; $Id: intlib.stub,v 1.27 2007-08-10 02:00:19 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -181,8 +181,7 @@
    (<top> <top>)
    "ScmModule *mod = SCM_IDENTIFIER(id)->module;"
    "ScmGloc *gloc = Scm_FindBinding(mod, SCM_IDENTIFIER(id)->name, 0);"
-   "ScmObj gval, curmod;"
-   "int i;"
+   "ScmObj gval;"
    "SCM_RESULT0 = SCM_RESULT1 = SCM_FALSE;"
    "if (gloc) {"
    "  gval = SCM_GLOC_GET(gloc);"

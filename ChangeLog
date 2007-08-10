@@ -1,5 +1,8 @@
 2007-08-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/gencomp (allocate-code-vector): properly escape '/*' and '*/'
+	  in the inserted comments.
+
 	* src/class.c, src/port.c, src/vm.c: added casts between intptr_t and
 	  void* for proper operation on LP64.  (Patch from Rui Ueyama).
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.28 2007-04-23 23:17:50 shirok Exp $
+;;;  $Id: gencomp,v 1.29 2007-08-10 02:00:19 shirok Exp $
 ;;;
 
 ;;;
@@ -384,23 +384,29 @@
   (define (alloc-word initval)
     (cgen-allocate-static-datum 'runtime 'ScmWord initval))
 
+  (define (safe-comment str)
+    (regexp-replace-all* (x->string str) #/\/\*/ "/ *" #/\*\// "* /"))
+
   (define (loop cv lv count first-cexpr)
     (if (null? cv)
       first-cexpr
       (let* ((insn (car cv))
              (info (vm-find-insn-info (car insn)))
              (insnval (vm-build-insn insn))
-             (name-info (if first-cexpr ""
-                            (format "/* ~a */\n    " full-name)))
+             (name-info (if first-cexpr
+                          ""
+                          (format "/* ~a */\n    " (safe-comment full-name))))
              (insn-cexpr
               (alloc-word
                ;; We emit it as signed integer so that 64bit machine
                ;; correctly handles negative parameter value.
                (if (> insnval #x80000000)
-                 (format "~a-0x~8,'0x   /* ~3d ~s */"
-                         name-info (- #x100000000 insnval) count insn)
-                 (format "~a0x~8,'0x    /* ~3d ~s */"
-                         name-info insnval count insn))))
+                 (format "~a-0x~8,'0x   /* ~3d ~a */"
+                         name-info (- #x100000000 insnval) count
+                         (safe-comment insn))
+                 (format "~a0x~8,'0x    /* ~3d ~a */"
+                         name-info insnval count
+                         (safe-comment insn)))))
              (first-cexpr (or first-cexpr insn-cexpr)))
         (case (ref info 'operand-type)
           ((none)
@@ -414,17 +420,19 @@
            (alloc-word
             (if (cgen-literal-static? (cadr lv))
               (format "SCM_WORD(~a) /* ~a */"
-                      (cgen-cexpr (cadr lv)) (cadr cv))
+                      (cgen-cexpr (cadr lv))
+                      (safe-comment (write-to-string (cadr cv))))
               (format "SCM_WORD(SCM_UNDEFINED) /* ~a */"
-                      (cadr cv))))
+                      (safe-comment (write-to-string (cadr cv))))))
            (loop (cddr cv) (cddr lv) (+ count 2) first-cexpr))
           ((obj+addr)
            (alloc-word
             (if (cgen-literal-static? (cadr lv))
               (format "SCM_WORD(~a) /* ~a */"
-                      (cgen-cexpr (cadr lv)) (cadr cv))
+                      (cgen-cexpr (cadr lv))
+                      (safe-comment (write-to-string (cadr cv))))
               (format "SCM_WORD(SCM_UNDEFINED) /* ~a */"
-                      (cadr cv))))
+                      (safe-comment (write-to-string (cadr cv))))))
            (alloc-word
             (format "SCM_WORD((ScmWord*)~a + ~d)  /*    ~3d */"
                     first-cexpr (caddr cv) (caddr cv)))
