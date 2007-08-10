@@ -1,5 +1,9 @@
 2007-08-09  Shiro Kawai  <shiro@acm.org>
 
+	* ext/template.Makefile.in, lib/gauche/package/compile.scm:
+	  Supports separate buiddir during compiling extension packages
+	  (Patch from Leonardo Boiko).
+
 	* doc/corelib.texi (Symbols): removed the remark of "symbols are always
 	  interned", since gensym'ed symbols are not interned.
 

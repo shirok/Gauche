@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.8 2007-03-02 07:39:09 shirok Exp $
+;;;  $Id: compile.scm,v 1.9 2007-08-10 06:16:45 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -73,7 +73,7 @@
                       (verb? :verbose #f))
     (parameterize ((dry-run dry?)
                    (verbose-run verb?))
-      (let1 ofile (or output (path-swap-extension file OBJEXT))
+      (let1 ofile (or output (sys-basename (path-swap-extension file OBJEXT)))
         (unless (and (file-exists? ofile)
                      (file-mtime>? ofile file))
           (if (equal? (path-extension file) "stub")
@@ -126,7 +126,7 @@
                           (cond
                            ((equal? (path-extension src) OBJEXT) src)
                            (else (apply gauche-package-compile src args)
-                                 (path-swap-extension src OBJEXT))))
+                                 (sys-basename (path-swap-extension src OBJEXT)))))
                         `(,head.c ,@files ,tail.c))
           (apply gauche-package-link sofile objs args)
           sofile)))))
@@ -143,6 +143,6 @@
       (sys-unlink output))
     (dolist (f files)
       (unless (equal? (path-extension f) OBJEXT)
-        (sys-unlink (path-swap-extension f OBJEXT))))))
+        (sys-unlink (sys-basename (path-swap-extension f OBJEXT)))))))
 
 (provide "gauche/package/compile")
