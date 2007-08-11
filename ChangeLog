@@ -1,3 +1,10 @@
+2007-08-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (test-end): Let it return the number of
+	  failed tests.  May be useful if the test script wants to return
+	  non-zero exit status when test fails (e.g. (exit (test-end)) ).
+	  Suggested by Masatake YAMATO.
+
 2007-08-09  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: When --enable-threads is not given (or 'default' is

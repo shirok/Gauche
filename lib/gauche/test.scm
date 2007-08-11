@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.25 2007-04-08 01:03:45 shirok Exp $
+;;;  $Id: test.scm,v 1.26 2007-08-11 01:15:44 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -340,6 +340,8 @@
 
     (when *test-record-file*
       (write-summary))
-    ))
+
+    ;; Returns the number of failed tests.
+    (length *discrepancy-list*)))
 
 (provide "gauche/test")

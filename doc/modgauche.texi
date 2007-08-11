@@ -8673,9 +8673,9 @@ Marks beginning of the group of tests.  This is just for logging.
 
 @defun test-end
 @c EN
-Prints out list of failed tests.
+Prints out list of failed tests, and returns the number of failed tests.
 @c JP
-失敗したテストのリストを報告します。
+失敗したテストのリストを報告し、その総数を返します。
 @c COMMON
 @end defun
 
