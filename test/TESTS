@@ -17,6 +17,7 @@ exception.scm
 regexp.scm
 mb-chars
 system.scm
+load2.scm
 rfc.scm
 parseopt.scm
 logger.scm

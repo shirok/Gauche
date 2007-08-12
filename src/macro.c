@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.66 2007-03-02 07:39:13 shirok Exp $
+ *  $Id: macro.c,v 1.67 2007-08-12 03:16:55 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -219,7 +219,10 @@ ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name, ScmProcedure *proc)
 
 static ScmMacro *resolve_macro_autoload(ScmAutoload *adata)
 {
-    ScmObj mac = Scm_LoadAutoload(adata);
+    ScmObj mac = Scm_ResolveAutoload(adata, 0);
+    if (SCM_UNBOUNDP(mac)) {
+        Scm_Error("tried to autoload macro %S, but it caused circular autoload.", adata->name);
+    }
     if (!SCM_MACROP(mac)) {
         Scm_Error("tried to autoload macro %S, but it yields non-macro object: %S", adata->name, mac);
     }

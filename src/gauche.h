@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.494 2007-08-10 08:48:06 shirok Exp $
+ *  $Id: gauche.h,v 1.495 2007-08-12 03:16:55 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1107,9 +1107,8 @@ SCM_EXTERN ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists);
 
 /* Flags for Scm_FindBinding and Scm_GlobalVariableRef */
 enum {
-    SCM_BINDING_STAY_IN_MODULE = (1L<<0), /* do not search parent/imported */
-    SCM_BINDING_KEEP_AUTOLOAD = (1L<<1)   /* do not resolve autoload 
-                                             (Scm_GlobalVaribleRef only) */
+    /* do not search parent/imported */
+    SCM_BINDING_STAY_IN_MODULE = (1L<<0)
 };
 
 SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,

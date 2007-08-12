@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.272 2007-08-09 21:53:49 shirok Exp $
+ *  $Id: vm.c,v 1.273 2007-08-12 03:16:55 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -487,10 +487,11 @@ pthread_key_t Scm_VMKey(void)
             gloc = SCM_GLOC(v);                                         \
         }                                                               \
         v = SCM_GLOC_GET(gloc);                                         \
-        if (v == SCM_UNBOUND) {                                         \
+        if (SCM_AUTOLOADP(v)) {                                         \
+            v = Scm_ResolveAutoload(SCM_AUTOLOAD(v), 0);                \
+        }                                                               \
+        if (SCM_UNBOUNDP(v)) {                                          \
             VM_ERR(("unbound variable: %S", SCM_OBJ(gloc->name)));      \
-        } else if (SCM_AUTOLOADP(v)) {                                  \
-            v = Scm_LoadAutoload(SCM_AUTOLOAD(v));                      \
         }                                                               \
         INCR_PC;                                                        \
     } while (0)

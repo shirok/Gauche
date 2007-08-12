@@ -1,3 +1,28 @@
+2007-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_ResolveAutoload): Renamed from Scm_LoadAutoload,
+	  and changed so that it returns SCM_UNBOUND instead of raising an
+	  error when it detects the autoload is recursive.  That allows
+	  more natural handling in implicit binding checks like implicit
+	  generic definition by define-method or implicit redefinition
+	  check by define-class.  Note that the caller of Scm_ResolveAutoload
+	  must check if the return value is SCM_UNBOUND and take an appropriate
+	  action.
+
+	* src/gauche.h: Because of the above change, we dropped
+	  SCM_BINDING_KEEP_AUTOLOAD flag for Scm_GlobalVariableRef, since
+	  it was introduced only to avoid the recursive autoload in the
+	  implicit generic definition.  We no longer need it.
+	* src/module.c (Scm_GlobalVariableRef): Changed accordingly.
+	* src/moplib.stub (%ensure-generic-function): Changed accordingly.
+
+	* src/class.c (Scm_CheckClassBinding): Simplified according to
+	  the above change.
+
+	* test/load2.scm: Added to test the above autoload mechanisms.
+	  This can't be in load.scm, since we have to test it after
+	  object.scm.
+
 2007-08-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm (test-end): Let it return the number of

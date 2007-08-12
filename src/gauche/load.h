@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.h,v 1.2 2007-04-18 02:18:27 shirok Exp $
+ *  $Id: load.h,v 1.3 2007-08-12 03:16:55 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -138,7 +138,7 @@ SCM_EXTERN ScmObj Scm_MakeAutoload(ScmModule *where,
 				   ScmSymbol *import_from);
 SCM_EXTERN void   Scm_DefineAutoload(ScmModule *where, ScmObj file_or_module,
                                      ScmObj list);
-SCM_EXTERN ScmObj Scm_LoadAutoload(ScmAutoload *autoload);
+SCM_EXTERN ScmObj Scm_ResolveAutoload(ScmAutoload *autoload, int flags);
 
 #endif /* GAUCHE_LOAD_H */
 

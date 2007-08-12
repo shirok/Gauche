@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.113 2007-04-12 03:26:55 shirok Exp $
+ *  $Id: load.c,v 1.114 2007-08-12 03:16:55 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1041,18 +1041,21 @@ void Scm_DefineAutoload(ScmModule *where,
 }
 
 
-ScmObj Scm_LoadAutoload(ScmAutoload *adata)
+ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
 {
-    int error = FALSE;
+    int circular = FALSE;
     ScmModule *prev_module;
     ScmVM *vm = Scm_VM();
     
-    /* check if some other thread already loaded this before attempt to lock */
-    if (adata->loaded) {
-        return adata->value;
+    /* shortcut in case if somebody else already did the job. */
+    if (adata->loaded) return adata->value;
+
+    /* check to see if this autoload is recursive. */
+    if (!SCM_FALSEP(Scm_Assoc(SCM_OBJ(adata->path), ldinfo.providing, SCM_CMP_EQUAL))) {
+        return SCM_UNBOUND;
     }
 
-    /* obtain the right to load this autoload */
+    /* obtain the lock to load this autoload */
     (void)SCM_INTERNAL_MUTEX_LOCK(adata->mutex);
     do {
         if (adata->loaded) break;
@@ -1060,7 +1063,7 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
             adata->locker = vm;
         } else if (adata->locker == vm) {
             /* bad circular dependency */
-            error = TRUE;
+            circular = TRUE;
         } else if (adata->locker->state == SCM_VM_TERMINATED) {
             /* the loading thread have died prematurely.
                let's take over the task. */
@@ -1076,10 +1079,13 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
         return adata->value;
     }
     
-    if (error) {
+    if (circular) {
+        /* Since we have already checked recursive loading, it isn't normal
+           if we reach here.  Right now I have no idea how this happens, but
+           just in case we raise an error. */
         adata->locker = NULL;
         SCM_INTERNAL_COND_SIGNAL(adata->cv);
-        Scm_Error("Circular autoload dependency involving %S::%S\n",
+        Scm_Error("Attempted to trigger the same autoload %S#%S recursively.  Maybe circular autoload dependency?\n",
                   adata->module, adata->name);
     }
 

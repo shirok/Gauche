@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.296 2007-08-10 01:19:36 shirok Exp $
+;;; $Id: extlib.stub,v 1.297 2007-08-12 03:16:55 shirok Exp $
 ;;;
 
 "
@@ -1531,7 +1531,7 @@
   (expr <boolean>
         (not (SCM_UNBOUNDP
               (Scm_GlobalVariableRef (get_module_from_mod_or_name mod_or_name)
-                                     name FALSE)))))
+                                     name 0)))))
 
 (define-cproc global-variable-ref (mod_or_name name::<symbol>
                                                &optional

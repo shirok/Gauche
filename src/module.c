@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.69 2007-08-10 01:19:36 shirok Exp $
+ *  $Id: module.c,v 1.70 2007-08-12 03:16:55 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -268,9 +268,9 @@ ScmObj Scm_GlobalVariableRef(ScmModule *module,
     
     if (g == NULL) return SCM_UNBOUND;
     val = SCM_GLOC_GET(g);
-    if (!(flags & SCM_BINDING_KEEP_AUTOLOAD)
-        && SCM_AUTOLOADP(val)) {
-        val = Scm_LoadAutoload(SCM_AUTOLOAD(val));
+    if (SCM_AUTOLOADP(val)) {
+        /* NB: Scm_ResolveAutoload may return SCM_UNBOUND */
+        val = Scm_ResolveAutoload(SCM_AUTOLOAD(val), 0);
     }
     return val;
 }
