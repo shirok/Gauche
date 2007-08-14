@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.24 2007-04-27 03:37:08 shirok Exp $
+ *  $Id: port.h,v 1.25 2007-08-14 02:56:06 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_H
@@ -272,6 +272,7 @@ SCM_EXTERN int    Scm_PortLine(ScmPort *port);
 SCM_EXTERN ScmObj Scm_PortSeek(ScmPort *port, ScmObj off, int whence);
 SCM_EXTERN ScmObj Scm_PortSeekUnsafe(ScmPort *port, ScmObj off, int whence);
 SCM_EXTERN int    Scm_PortFileNo(ScmPort *port);
+SCM_EXTERN void   Scm_PortFdDup(ScmPort *dst, ScmPort *src);
 SCM_EXTERN int    Scm_FdReady(int fd, int dir);
 SCM_EXTERN int    Scm_ByteReady(ScmPort *port);
 SCM_EXTERN int    Scm_ByteReadyUnsafe(ScmPort *port);

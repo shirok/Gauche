@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.141 2007-08-09 21:53:48 shirok Exp $
+ *  $Id: port.c,v 1.142 2007-08-14 02:56:05 shirok Exp $
  */
 
 #include <unistd.h>
@@ -236,6 +236,40 @@ int Scm_PortFileNo(ScmPort *port)
         /* TODO: proc port */
         return -1;
     }
+}
+
+/* Duplicates the file descriptor of the source port, and set it to
+   the destination port.  Both source and destination port must be
+   file ports. */
+void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
+{
+    int r, srcfd, dstfd;
+
+    if (SCM_PORT_TYPE(dst) != SCM_PORT_FILE)
+        Scm_Error("file port required, but got %S", dst);
+    if (SCM_PORT_TYPE(src) != SCM_PORT_FILE)
+        Scm_Error("file port required, but got %S", src);
+    if (src->direction != dst->direction)
+        Scm_Error("port direction mismatch: got %S and %S",
+                  src, dst);
+        
+    srcfd = (intptr_t)src->src.buf.data;
+    dstfd = (intptr_t)dst->src.buf.data;
+
+    if (dst->direction == SCM_PORT_INPUT) {
+        /* discard the current buffer */
+        ScmVM *vm = Scm_VM();
+        PORT_LOCK(dst, vm);
+        dst->src.buf.current = dst->src.buf.buffer;
+        dst->src.buf.end = dst->src.buf.buffer;
+        PORT_UNLOCK(dst);
+    } else {
+        /* flush the current buffer */
+        Scm_Flush(dst);
+    }
+    SCM_SYSCALL(r, dup2(srcfd, dstfd));
+    if (r < 0) Scm_SysError("dup2 failed");
+    dst->src.buf.data = (void*)(intptr_t)r;
 }
 
 /* Low-level function to find if the file descriptor is ready or not.

@@ -1,5 +1,8 @@
 2007-08-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c (Scm_PortFdDup), src/extlib.stub (port-fd-dup!):
+	  Added an interface to dup2(2).  Patch from Rui Ueyama.
+
 	* src/bignum.c (Scm_BignumToDouble): Fixed a double rounding bug
 	  caused from using flonum arithmetic (see the comment for the
 	  details).

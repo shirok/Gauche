@@ -9295,6 +9295,51 @@ specifies whether @var{fd} should be closed when the port is closed.
 @c COMMON
 @end defun
 
+@defun port-fd-dup! toport fromport
+@c EN
+Interface to the system call @code{dup2(2)}.
+Atomically closes the file descriptor associated to @var{toport},
+creates a copy of the file descriptor associated to @var{fromport}, 
+and sets the new file descriptor to @var{toport}.
+Both @var{toport} and @var{fromport} must be file ports.
+Before the original file descriptor of @var{toport} is closed,
+any buffered output (when @var{toport} is an output port) is flushed,
+and any buffered input (when @var{toport} is an input port) is discarded.
+
+`Copy' means that, even the two file descriptors differ in their values,
+they both point to the same system's open file table entry.  For example
+they share the current file position; after @var{port-fd-dup!}, 
+if you call @code{port-seek} on @var{fromport}, the change is also visible
+from @var{toport}, and vice versa.  Note that this 'sharing' is in the
+system-level; if either @var{toport} or @var{fromport} is buffered,
+the buffered contents are not shared.
+
+This procedure is mainly intended for programs that needs to control 
+open file descriptos explicitly; e.g. a daemon process would want to redirect
+its I/O to a harmless device such as @file{/dev/null}, and a shell process
+would want to set up file descriptors before executing the child process.
+@c JP
+システムの@code{dup2(2)}のインタフェースです。
+アトミックに@var{toport}のファイルディスクリプタをクローズし、@var{fromport}の
+ファイルディスクリプタを複製したものを@var{toport}に設定します。
+@var{toport}、@var{fromport}はいずれもファイルポートでなければなりません。
+
+ファイルディスクリプタが「複製」されると、ふたつのディスクリプタ番号が異なっていても
+それらはシステムのオープンファイルテーブルの同じエントリを指します。
+例えば、現在の(システムレベルでの)ファイル上の読み書き位置は共有されます。
+@code{port-fd-dup!}の後で、@code{port-seek}を@var{fromport}に
+対して呼び出せば、その変更は@var{toport}の読み書き位置にも影響を与えるでしょうし、
+その逆もまたあります。ただし、共有されるのはシステムレベルの情報のみで、
+@var{toport}や@var{fromport}がバッファリングされている場合、バッファの内容は
+共有されません。
+
+この手続きは、主にファイルディスクリプタを明示的に制御する必要のあるプログラム
+のために用意されています。例えばデーモンプロセスがその入出力を@file{/dev/null}などの
+無難なデバイスに切り替えたり、シェルプロセスが子プロセスを@code{exec}する前に
+そのファイルディスクリプタをセットアップしたりするような場合です。
+@c COMMON
+@end defun
+
 @node String ports, Coding-aware ports, File ports, Input and output
 @subsection String ports
 @c NODE 文字列ポート

@@ -452,13 +452,9 @@ R5RS の @code{quotient} および @code{remainder} を使えます。
 @item dup
 @itemx dup2
 @c EN
-No equivalent function.  If you want to use this function to
-set up I/Os for the child process, you can use `iomap' argument
-of @code{sys-exec}.  @xref{Unix process management}.
+Not directly supported, but you can use @code{port-fd-dup!}.
 @c JP
-同等の関数はありません。子プロセス用の I/O を設定したいのであれば、
-@code{sys-exec} の `iomap' 引数が使えます。@ref{Unix process management}
-参照。
+直接はサポートされていませんが、@code{port-fd-dup!} が使えます。
 @c COMMON
 @item execl
 @itemx execle
