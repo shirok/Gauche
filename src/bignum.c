@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.64 2007-08-14 01:00:45 shirok Exp $
+ *  $Id: bignum.c,v 1.65 2007-08-14 01:45:00 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -439,10 +439,10 @@ double Scm_BignumToDouble(ScmBignum *b)
         }
     }
     if (exponent > 2046) {
-        dd.components.mant = dst;
+        dd.components.mant = 0;
         dd.components.exp = 2047;
     } else {
-        dd.components.mant = dst;
+        dd.components.mant = dst[0];
         dd.components.exp  = exponent;
     }
     dd.components.sign = (b->sign < 0);
