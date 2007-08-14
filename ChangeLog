@@ -1,3 +1,8 @@
+2007-08-14  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac: fixed a problem to set GAUCHE_USE_PTHREADS correctly
+	  when thread type isn't specified.
+
 2007-08-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c (Scm_PortFdDup), src/extlib.stub (port-fd-dup!):

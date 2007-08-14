@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.101 2007-08-10 08:48:04 shirok Exp $
+dnl $Id: configure.ac,v 1.102 2007-08-14 19:52:47 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.11_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.101 $)
+AC_REVISION($Revision: 1.102 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -125,7 +125,6 @@ AC_ARG_ENABLE(threads,
     case $enableval in
       pthreads) 
        GAUCHE_THREAD_TYPE=pthreads
-       AC_DEFINE(GAUCHE_USE_PTHREADS,1,[Define if we use pthreads])
       ;;
       no|none)
        GAUCHE_THREAD_TYPE=none
@@ -207,6 +206,14 @@ case $GAUCHE_THREAD_TYPE in
   esac
  ;;
 esac
+case $GAUCHE_THREAD_TYPE in
+  pthreads)        
+   AC_DEFINE(GAUCHE_USE_PTHREADS,1,[Define if we use pthreads])
+   ;;
+  *)
+   ;;
+esac
+
 LIBS="$LIBS $THREADLIBS"
 dnl Save thread model to be inherited by gc/ subdir.
 echo $GAUCHE_THREAD_TYPE > config.threads
