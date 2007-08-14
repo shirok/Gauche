@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.44 2007-05-20 08:41:20 shirok Exp $
+;;; $Id: autoloads.scm,v 1.45 2007-08-14 01:00:45 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.44 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.45 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -101,7 +101,7 @@
           sinh cosh tanh asinh acosh atanh)
 
 (autoload "gauche/logical"
-          logtest logbit? copy-bit bit-field copy-bit-field logcount
+          logtest logbit? copy-bit bit-field copy-bit-field
           integer-length)
 
 (autoload "gauche/common-macros"

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.297 2007-08-12 03:16:55 shirok Exp $
+;;; $Id: extlib.stub,v 1.298 2007-08-14 01:00:45 shirok Exp $
 ;;;
 
 "
@@ -91,11 +91,26 @@
 (define-cproc logior (x y &rest args) (body <top> (logop Scm_LogIor)))
 (define-cproc logxor (x y &rest args) (body <top> (logop Scm_LogXor)))
 
+(define-cproc logcount (n)
+  (body <int>
+        (cond
+         [(SCM_EQ n (SCM_MAKE_INT 0)) (result 0)]
+         [(SCM_INTP n)
+          (let* ((z :: ScmBits (cast ScmBits (cast long (SCM_INT_VALUE n)))))
+            (if (> (SCM_INT_VALUE n) 0)
+              (result (Scm_BitsCount1 (& z) 0 SCM_WORD_BITS))
+              (result (Scm_BitsCount0 (& z) 0 SCM_WORD_BITS))))]
+         [(SCM_BIGNUMP n)
+          (result (Scm_BignumLogCount (SCM_BIGNUM n)))]
+         [else
+          (SCM_TYPE_ERROR n "exact integer")
+          (result 0)])))
+
 (define-cproc fixnum? (x) (call <boolean> "SCM_INTP"))
 (define-cproc bignum? (x) (call <boolean> "SCM_BIGNUMP"))
 (define-cproc flonum? (x) (call <boolean> "SCM_FLONUMP"))
 
-;; As of 0.8.8 we support exact rational numbers.  Some existing
+;; As of 0.8.8 we started to support exact rational numbers.  Some existing
 ;; code may count on exact integer division to be coerced to flonum
 ;; if it isn't produce a whole number, and such programs start
 ;; running very slowly on 0.8.8 by introducing unintentional exact

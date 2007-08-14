@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.h,v 1.4 2007-03-22 11:20:30 shirok Exp $
+ *  $Id: bignum.h,v 1.5 2007-08-14 01:00:47 shirok Exp $
  */
 
 /* APIs concerning bignums.  They are not for general public use,
@@ -78,6 +78,7 @@ SCM_EXTERN ScmObj Scm_BignumLogIor(ScmBignum *bx, ScmBignum *by);
 SCM_EXTERN ScmObj Scm_BignumLogXor(ScmBignum *bx, ScmBignum *by);
 SCM_EXTERN ScmObj Scm_BignumLogNot(ScmBignum *bx);
 SCM_EXTERN ScmObj Scm_BignumLogBit(ScmBignum *bx, int bit);
+SCM_EXTERN int    Scm_BignumLogCount(ScmBignum *b);
 SCM_EXTERN ScmObj Scm_BignumAsh(ScmBignum *bx, int cnt);
 
 SCM_EXTERN ScmBignum *Scm_MakeBignumWithSize(int size, u_long init);

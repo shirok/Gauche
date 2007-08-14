@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.149 2007-08-07 08:28:35 shirok Exp $
+ *  $Id: number.c,v 1.150 2007-08-14 01:00:46 shirok Exp $
  */
 
 #include <math.h>
@@ -42,6 +42,7 @@
 #include "gauche.h"
 #include "gauche/bignum.h"
 #include "gauche/scmconst.h"
+#include "gauche/bits.h"
 
 /*================================================================
  * Some macros
@@ -192,46 +193,9 @@ ScmObj Scm_MakeFlonumToNumber(double d, int exact)
  * Cf. IEEE 754 Reference
  * http://babbage.cs.qc.edu/courses/cs341/IEEE-754references.html
  */
-union ieee_double {
-    double d;
-    struct {
-#ifdef DOUBLE_ARMENDIAN
-        /* ARM's mixed endian.  TODO: what if we have LP64 ARM? */
-        unsigned long mant0:20;
-        unsigned int exp:11;
-        unsigned int sign:1;
-        unsigned long mant1:32;
-#else  /*!DOUBLE_ARMENDIAN*/
-#ifdef WORDS_BIGENDIAN
-#if SIZEOF_LONG >= 8
-        unsigned int sign:1;
-        unsigned int exp:11;
-        unsigned long mant:52;
-#else  /*SIZEOF_LONG < 8*/
-        unsigned int sign:1;
-        unsigned int exp:11;
-        unsigned long mant0:20;
-        unsigned long mant1:32;
-#endif /*SIZEOF_LONG < 8*/
-#else  /*!WORDS_BIGENDIAN*/
-#if SIZEOF_LONG >= 8
-        unsigned long mant:52;
-        unsigned int  exp:11;
-        unsigned int  sign:1;
-#else  /*SIZEOF_LONG < 8*/
-        unsigned long mant1:32;
-        unsigned long mant0:20;
-        unsigned int  exp:11;
-        unsigned int  sign:1;
-#endif /*SIZEOF_LONG < 8*/
-#endif /*!WORDS_BIGENDIAN*/
-#endif /*!DOUBLE_ARMENDIAN*/
-    } components;
-};
-
 ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
 {
-    union ieee_double dd;
+    ScmIEEEDouble dd;
     ScmObj f;
     
     dd.d = d;
@@ -305,7 +269,7 @@ double Scm_HalfToDouble(ScmHalfFloat v)
 
 ScmHalfFloat Scm_DoubleToHalf(double v)
 {
-    union ieee_double dd;
+    ScmIEEEDouble dd;
     int e, mbits;
     unsigned long m, r;
     

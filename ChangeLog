@@ -1,3 +1,16 @@
+2007-08-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/bignum.c (Scm_BignumToDouble): Fixed a double rounding bug
+	  caused from using flonum arithmetic (see the comment for the
+	  details).
+	* src/bignum.c (Scm_BignumLogCount), src/extlib.stub (logcount):
+	  Implemented logcount natively on top of ScmBits API.
+	* src/gauche/float.h (ScmIEEEDouble): moved the structure definition
+	  from src/number.c, for it is now used by both number.c and
+	  bignum.c.
+	* lib/gauche/logical.scm: removed logcount.
+	* src/bits.c: finally a working version.
+
 2007-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_ResolveAutoload): Renamed from Scm_LoadAutoload,

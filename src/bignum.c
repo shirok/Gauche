@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.63 2007-03-02 07:39:12 shirok Exp $
+ *  $Id: bignum.c,v 1.64 2007-08-14 01:00:45 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -79,6 +79,7 @@ char *alloca ();
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/arith.h"
+#include "gauche/bits.h"
 
 #undef min
 #define min(x, y)   (((x) < (y))? (x) : (y))
@@ -199,6 +200,7 @@ ScmObj Scm_MakeBignumFromDouble(double val)
         Scm_Error("can't convert %lf to an integer", val);
     }
     b = Scm_Ash(mantissa, exponent);
+    if (sign < 0) b = Scm_Negate(b);
     /* always returns bignum */
     if (SCM_INTP(b)) {
         return Scm_MakeBignumFromSI(SCM_INT_VALUE(b));
@@ -400,23 +402,84 @@ ScmUInt64 Scm_BignumToUI64(ScmBignum *b, int clamp, int *oor)
 #endif /* SIZEOF_LONG == 4 */
 
 
-/* b must be normalized */
+/* Converts a bignum b to a double.  b must be normalized.
+   We don't rely on double arithmetic, for it may result
+   an error in the LSB from multiple roundings.  Instead we
+   extract bits directly from the bignum values array.
+   (We use ScmBits API by casting b->values to ScmBits*).
+ */
 double Scm_BignumToDouble(ScmBignum *b)
 {
-    double r;
-    switch (b->size) {
-    case 0: r = 0.0; break;
-    case 1: r = (double)b->values[0]; break;
-    case 2:
-        r = ldexp((double)b->values[1], WORD_BITS) + (double)b->values[0];
-        break;
-    default:
-        r = ldexp((double)b->values[b->size-1], WORD_BITS*(b->size-1))
-            + ldexp((double)b->values[b->size-2], WORD_BITS*(b->size-2))
-            + ldexp((double)b->values[b->size-3], WORD_BITS*(b->size-3));
-        break;
+    ScmIEEEDouble dd;
+    ScmBits *bits = (ScmBits*)b->values;
+    ScmBits dst[2];
+    int maxbit, exponent;
+
+    /* first, filter out a special case. */
+    if (b->size == 0) return 0.0;
+
+    maxbit = Scm_BitsHighest1(bits, 0, b->size*WORD_BITS);
+    exponent = maxbit+1023;
+#if SIZEOF_LONG >= 8
+    SCM_ASSERT(maxbit >= 54);   /* because b is normalized */
+    dst[0] = 0;
+    Scm_BitsCopyX(dst, 0, bits, maxbit-52, maxbit);
+    /* Rounding.  We have to round up if maxbit-53 == 1, EXCEPT
+       the special case where maxbit-52==0, maxbit-53==1, and all
+       bits below are 0 (round-to-even rule) */
+    if (SCM_BITS_TEST(bits, maxbit-53)
+        && (dst[0]&1 == 1
+            || (Scm_BitsCount1(bits, 0, maxbit-53) > 0))) {
+        dst[0]++;
+        if (dst[0] >= (1UL<<52)) {
+            /* Overflow.  We mask the hidden bit, then shift. */
+            dst[0] &= ~(1UL<<52);
+            dst[0] >>= 1;
+            exponent++;
+        }
     }
-    return (b->sign < 0)? -r : r;
+    if (exponent > 2046) {
+        dd.components.mant = dst;
+        dd.components.exp = 2047;
+    } else {
+        dd.components.mant = dst;
+        dd.components.exp  = exponent;
+    }
+    dd.components.sign = (b->sign < 0);
+#else  /*SIZEOF_LONG == 4 */
+    dst[0] = dst[1] = 0;
+    if (maxbit < 53) {
+        Scm_BitsCopyX(dst, 52-maxbit, bits, 0, maxbit);
+    } else {
+        Scm_BitsCopyX(dst, 0, bits, maxbit-52, maxbit);
+        /* Rounding.  See the above comment. */
+        if (SCM_BITS_TEST(bits, maxbit-53)
+            && (dst[0]&1 == 1
+                || (maxbit > 53 && Scm_BitsCount1(bits, 0, maxbit-53) > 0))) {
+            u_long inc = dst[0] + 1;
+            if (inc < dst[0]) dst[1]++;
+            dst[0] = inc;
+            if (dst[1] >= (1UL<<(52-32))) {
+                /* Overflow.  We mask the hidden bit, then shift. */
+                dst[1] &= ~(1UL<<(52-32));
+                dst[0] = (dst[0] >> 1) | (dst[1]&1 << 31);
+                dst[1] >>= 1;
+                exponent++;
+            }
+        }
+    }
+    if (exponent > 2046) {
+        dd.components.mant0 = 0;
+        dd.components.mant1 = 0;
+        dd.components.exp = 2047;
+    } else {
+        dd.components.mant0 = dst[1];
+        dd.components.mant1 = dst[0];
+        dd.components.exp = exponent;
+    }
+    dd.components.sign = (b->sign < 0);
+#endif /*SIZEOF_LONG==4*/
+    return dd.d;
 }
 
 /* return -b, normalized */
@@ -1175,6 +1238,21 @@ ScmObj Scm_BignumLogXor(ScmBignum *x, ScmBignum *y)
     ScmObj xory  = Scm_BignumLogIor(x, y);
     return Scm_LogAnd(xory, Scm_LogNot(xandy));
 }
+
+int Scm_BignumLogCount(ScmBignum *b)
+{
+    ScmBits *bits;
+    ScmBignum *z = (SCM_BIGNUM_SIGN(b)>0)? b : SCM_BIGNUM(Scm_BignumComplement(b));
+    int size = SCM_BIGNUM_SIZE(z) * SCM_WORD_BITS;
+
+    bits = (ScmBits*)z->values;
+    if (b->sign > 0) {
+        return Scm_BitsCount1(bits, 0, size);
+    } else {
+        return Scm_BitsCount0(bits, 0, size);
+    }
+}
+
 
 /*-----------------------------------------------------------------------
  * Printing

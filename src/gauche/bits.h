@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bits.h,v 1.2 2007-04-17 14:41:02 shirok Exp $
+ *  $Id: bits.h,v 1.3 2007-08-14 01:00:47 shirok Exp $
  */
 
 #ifndef GAUCHE_BITS_H
@@ -40,7 +40,15 @@
  * Bits
  */
 
-/* ScmBits utilities are to manage bit array in an array of u_longs.*/
+/* ScmBits utilities are to manage bit array in an array of u_longs.
+
+   The LSB of the first word is the bit #0.  The MSB of the first
+   word is the bit #31 or #63, and the LSB of the second word is the
+   bit #32 or #64, and so on.
+   The user can use ScmBits as opaque structure and don't need to
+   worry about the bit ordering.  For internal hackers: ScmBits are
+   also used in bignum.c, and it must maintain this bit ordering.
+*/
 
 typedef u_long ScmBits;
 
@@ -58,6 +66,13 @@ SCM_EXTERN ScmBits *Scm_MakeBits(int numbits);
 
 #define SCM_BITS_RESET(bits, index)               \
     ((bits)[(index)/SCM_WORD_BITS] &= ~(1UL<<((index)%SCM_WORD_BITS)))
+
+/* calculates a mask to extract bits between s (inclusive) and e (exclusive)
+   from a word.  e==0 means e is just left of the word (i.e. bits up to
+   the word boundary.  Assume 0 <= s < e' <= SCM_WORD_BITS, where e' = e
+   for 1 <= e < SCM_WORD_BITS, and e' = SCM_WORD_BITS if e == 0. */
+#define SCM_BITS_MASK(s, e) \
+    (((e)? (1UL<<(e)) - 1 : -1) & ~((1UL<<(s)) - 1))
 
 /* works on the range of bits, from start (inclusive) to end (exclusive) */
 

@@ -305,6 +305,9 @@
 (test* "exponent out-of-range 8" '(0.0 #t) (flonum-test '1e-1000))
 (test* "exponent out-of-range 9" '(0.0 #t) (flonum-test '1e-1000000000000000000000000000000000000000000000000000000000000000000))
 
+;;------------------------------------------------------------------
+(test-section "exact fractional number")
+
 (test* "exact fractonal number" 12345
        (string->number "#e1.2345e4"))
 (test* "exact fractonal number" 123450000000000
@@ -322,9 +325,9 @@
 (test* "exact fractonal number" -12345/1000000
        (string->number "#e-1.2345e-2"))
 
-(test* "exact fractonal number" (expt 10 296)
+(test* "exact fractonal number" (%expt 10 296)
        (string->number "#e0.0001e300"))
-(test* "exact fractonal number" (- (expt 10 296))
+(test* "exact fractonal number" (- (%expt 10 296))
        (string->number "#e-0.0001e300"))
 
 (test* "exact fractonal number" *test-error*
@@ -426,6 +429,121 @@
         "-340282366920938463463374607431768211457")
       (i-tester2 (exp2 127)))
 
+;;==================================================================
+;; Conversions
+;;
+
+;; We first test expt, for we need to use it to test exact<->inexact
+;; conversion stuff.
+(test-section "expt")
+
+(test* "exact expt" 1 (expt 5 0))
+(test* "exact expt" 9765625 (expt 5 10))
+(test* "exact expt" 1220703125 (expt 5 13))
+(test* "exact expt" 94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (expt 5 123))
+(test* "exact expt" 1/94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (expt 5 -123))
+(test* "exact expt" 1 (expt -5 0))
+(test* "exact expt" 9765625 (expt -5 10))
+(test* "exact expt" -1220703125 (expt -5 13))
+(test* "exact expt" -94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (expt -5 123))
+(test* "exact expt" -1/94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (expt -5 -123))
+(test* "exact expt" 1 (expt 1 720000))
+(test* "exact expt" 1 (expt -1 720000))
+(test* "exact expt" -1 (expt -1 720001))
+
+(test* "exact expt (ratinoal)" 8589934592/5559060566555523
+       (expt 2/3 33))
+(test* "exact expt (rational)" -8589934592/5559060566555523
+       (expt -2/3 33))
+(test* "exact expt (ratinoal)" 5559060566555523/8589934592
+       (expt 2/3 -33))
+
+(test* "expt (coercion to inexact)" 1.4142135623730951
+       (expt 2 1/2)
+       (lambda (x y) (nearly=? 10e7 x y))) ;; NB: pa$ will be tested later
+
+(test-section "exact<->inexact")
+
+(for-each
+ (lambda (e&i)
+   (let ((e (car e&i))
+         (i (cdr e&i)))
+     (test* (format "exact->inexact ~s" i) i (exact->inexact e))
+     (test* (format "exact->inexact ~s" (- i)) (- i) (exact->inexact (- e)))
+     (test* (format "inexact->exact ~s" e) e (inexact->exact i))
+     (test* (format "inexact->exact ~s" (- e)) (- e) (inexact->exact (- i)))
+     ))
+ `((0  . 0.0)
+   (1  . 1.0)
+   (-1 . -1.0)
+   (,(%expt 2 52) . ,(%expt 2.0 52))
+   (,(%expt 2 53) . ,(%expt 2.0 53))
+   (,(%expt 2 54) . ,(%expt 2.0 54))
+   ))
+
+;; Rounding bignum to flonum, edge cases.
+;; Test patterns:
+;;
+;;   <------53bits------->
+;;a) 100000000...000000000100000....0000       round down (r0)
+;;b) 100000000...000000000100000....0001       round up (r1)
+;;c) 100000000...000000001100000....0000       round up (r2)
+;;d) 100000000...000000001011111....1111       round down (r1)
+;;e) 111111111...111111111100000....0000       round up, carry over (* r0 2)
+;;f) 101111111...111111111100000....0000       round up, no carry over (r3)
+;;            <--32bits-->
+;;g) 100..0000111.....1111100000....0000       round up; boundary on ILP32 (r4)
+
+(let loop ((n 0)
+           (a (+ (expt 2 53) 1))
+           (c (+ (expt 2 53) 3))
+           (e (- (expt 2 54) 1))
+           (f (+ (expt 2 53) (expt 2 52) -1))
+           (g (+ (expt 2 53) (expt 2 33) -1))
+           (r0 (expt 2.0 53))
+           (r1 (+ (expt 2.0 53) 2.0))
+           (r2 (+ (expt 2.0 53) 4.0))
+           (r3 (+ (expt 2.0 53) (expt 2.0 52)))
+           (r4 (+ (expt 2.0 53) (expt 2.0 33))))
+  (when (< n 32)
+    (test* (format "exact->inexact, pattern a: round down (~d)" n)
+           r0 (exact->inexact a))
+    (test* (format "exact->inexact, pattern b: round up   (~d)" n)
+           r1 (exact->inexact (+ a 1)))
+    (test* (format "exact->inexact, pattern c: round up   (~d)" n)
+           r2 (exact->inexact c))
+    (test* (format "exact->inexact, pattern d: round down (~d)" n)
+           r1 (exact->inexact (- c 1)))
+    (test* (format "exact->inexact, pattern e: round up   (~d)" n)
+           (* r0 2.0) (exact->inexact e))
+    (test* (format "exact->inexact, pattern f: round up   (~d)" n)
+           r3 (exact->inexact f))
+    (test* (format "exact->inexact, pattern g: round up   (~d)" n)
+           r4 (exact->inexact g))
+    (loop (+ n 1) (ash a 1) (ash c 1) (ash e 1) (ash f 1) (ash g 1)
+          (* r0 2.0) (* r1 2.0) (* r2 2.0) (* r3 2.0) (* r4 2.0))))
+
+(test* "expt (ratnum with large denom and numer) with inexact conversion 1"
+       (expt 8/9 342.0)
+       (exact->inexact (expt 8/9 342))
+       (lambda (x y) (nearly=? 10e12 x y)))
+
+(test* "expt (ratnum with large denom and numer) with inexact conversion 2"
+       (expt -8/9 343.0)
+       (exact->inexact (expt -8/9 343))
+       (lambda (x y) (nearly=? 10e12 x y)))
+
+;; The following few tests covers RATNUM paths in Scm_GetDouble
+(test* "expt (ratnum with large denom and numer) with inexact conversion 3"
+       1.0e-308 (exact->inexact (/ (expt 10 20) (expt 10 328))))
+(test* "expt (ratnum with large denom and numer) with inexact conversion 4"
+       0.0 (exact->inexact (/ (expt 10 20) (expt 10 329))))
+(test* "expt (ratnum with large denom and numer) with inexact conversion 5"
+       1.0e308 (exact->inexact (/ (expt 10 328) (expt 10 20))))
+(test* "expt (ratnum with large denom and numer) with inexact conversion 6"
+       #i1/0 (exact->inexact (/ (expt 10 329) (expt 10 20))))
+(test* "expt (ratnum with large denom and numer) with inexact conversion 7"
+       #i-1/0 (exact->inexact (/ (expt -10 329) (expt 10 20))))
 
 ;;==================================================================
 ;; Predicates
@@ -1148,56 +1266,6 @@
 
 
 ;;------------------------------------------------------------------
-(test-section "expt")
-
-(test* "exact expt" 1 (expt 5 0))
-(test* "exact expt" 9765625 (expt 5 10))
-(test* "exact expt" 1220703125 (expt 5 13))
-(test* "exact expt" 94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (expt 5 123))
-(test* "exact expt" 1/94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (expt 5 -123))
-(test* "exact expt" 1 (expt -5 0))
-(test* "exact expt" 9765625 (expt -5 10))
-(test* "exact expt" -1220703125 (expt -5 13))
-(test* "exact expt" -94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (expt -5 123))
-(test* "exact expt" -1/94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (expt -5 -123))
-(test* "exact expt" 1 (expt 1 720000))
-(test* "exact expt" 1 (expt -1 720000))
-(test* "exact expt" -1 (expt -1 720001))
-
-(test* "exact expt (ratinoal)" 8589934592/5559060566555523
-       (expt 2/3 33))
-(test* "exact expt (rational)" -8589934592/5559060566555523
-       (expt -2/3 33))
-(test* "exact expt (ratinoal)" 5559060566555523/8589934592
-       (expt 2/3 -33))
-
-(test* "expt (coercion to inexact)" 1.4142135623730951
-       (expt 2 1/2)
-       (lambda (x y) (nearly=? 10e7 x y))) ;; NB: pa$ will be tested later
-
-(test* "expt (ratnum with large denom and numer) with inexact conversion 1"
-       (expt 8/9 342.0)
-       (exact->inexact (expt 8/9 342))
-       (lambda (x y) (nearly=? 10e12 x y)))
-
-(test* "expt (ratnum with large denom and numer) with inexact conversion 2"
-       (expt -8/9 343.0)
-       (exact->inexact (expt -8/9 343))
-       (lambda (x y) (nearly=? 10e12 x y)))
-
-;; The following few tests covers RATNUM paths in Scm_GetDouble
-(test* "expt (ratnum with large denom and numer) with inexact conversion 3"
-       1.0e-308 (exact->inexact (/ (expt 10 20) (expt 10 328))))
-(test* "expt (ratnum with large denom and numer) with inexact conversion 4"
-       0.0 (exact->inexact (/ (expt 10 20) (expt 10 329))))
-(test* "expt (ratnum with large denom and numer) with inexact conversion 5"
-       1.0e308 (exact->inexact (/ (expt 10 328) (expt 10 20))))
-(test* "expt (ratnum with large denom and numer) with inexact conversion 6"
-       #i1/0 (exact->inexact (/ (expt 10 329) (expt 10 20))))
-(test* "expt (ratnum with large denom and numer) with inexact conversion 7"
-       #i-1/0 (exact->inexact (/ (expt -10 329) (expt 10 20))))
-
-;;------------------------------------------------------------------
 (test-section "rounding")
 
 (define (round-tester value exactness cei flo tru rou)
@@ -1546,12 +1614,16 @@
 (test* "logtest" #f
       (logtest #xfeedbabe #x01100101))
 
-(test* "logcount" 4
-      (logcount #b10101010))
-(test* "logcount" 13
-      (logcount #b00010010001101000101011001111000))
-(test* "logcount" 4
-      (logcount #b-10101010))
+(let loop ((a 1)   ; 1, 10, 100, ...
+           (b 1)   ; 1, 11, 111, ...
+           (c 2)   ; 10, 101, 1001, ...
+           (n 1))  ; counter
+  (when (< n 69)
+    (test* (format "logcount (positive, 100...) ~a" n) 1 (logcount a))
+    (test* (format "logcount (positive, 111...) ~a" n) n (logcount b))
+    (test* (format "logcount (negative, 100...) ~a" n) (- n 1) (logcount (- a)))
+    (test* (format "logcount (negative, 100..1) ~a" n) 1 (logcount (- c)))
+    (loop (+ b 1) (+ b b 1) (+ b b 3) (+ n 1))))
 
 (test* "logbit?" '(#f #t #t #f #t #f #f)
               (map (lambda (i) (logbit? i #b10110)) '(0 1 2 3 4 5 6)))

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: float.h,v 1.2 2007-03-22 11:20:31 shirok Exp $
+ *  $Id: float.h,v 1.3 2007-08-14 01:00:47 shirok Exp $
  */
 
 /*
@@ -66,5 +66,45 @@ typedef long double     ScmLongDouble;
 typedef double          ScmLongDouble;
 #endif
 
+/* IEEE754 double flonum structure.  This info may be provided by
+ * a system header (e.g. ieee754.h) but for the portability we
+ * define by ourselves.
+ */
+typedef union {
+    double d;
+    struct {
+#ifdef DOUBLE_ARMENDIAN
+        /* ARM's mixed endian.  TODO: what if we have LP64 ARM? */
+        unsigned long mant0:20;
+        unsigned int exp:11;
+        unsigned int sign:1;
+        unsigned long mant1:32;
+#else  /*!DOUBLE_ARMENDIAN*/
+#ifdef WORDS_BIGENDIAN
+#if SIZEOF_LONG >= 8
+        unsigned int sign:1;
+        unsigned int exp:11;
+        unsigned long mant:52;
+#else  /*SIZEOF_LONG < 8*/
+        unsigned int sign:1;
+        unsigned int exp:11;
+        unsigned long mant0:20;
+        unsigned long mant1:32;
+#endif /*SIZEOF_LONG < 8*/
+#else  /*!WORDS_BIGENDIAN*/
+#if SIZEOF_LONG >= 8
+        unsigned long mant:52;
+        unsigned int  exp:11;
+        unsigned int  sign:1;
+#else  /*SIZEOF_LONG < 8*/
+        unsigned long mant1:32;
+        unsigned long mant0:20;
+        unsigned int  exp:11;
+        unsigned int  sign:1;
+#endif /*SIZEOF_LONG < 8*/
+#endif /*!WORDS_BIGENDIAN*/
+#endif /*!DOUBLE_ARMENDIAN*/
+    } components;
+} ScmIEEEDouble;
 
 #endif /*GAUCHE_FLOAT_H*/

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: logical.scm,v 1.4 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: logical.scm,v 1.5 2007-08-14 01:00:44 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -86,19 +86,6 @@
 ;material, there shall be no use of my name in any advertising,
 ;promotional, or sales literature without prior written consent in
 ;each case.
-
-(define (logcount n)
-  (check-arg integer? n)
-  (letrec ((rec
-            (lambda (n)
-              (if (zero? n)
-                  0
-                  (+ (vector-ref '#(0 1 1 2 1 2 2 3 1 2 2 3 2 3 3 4)
-                                 (logand n #xf))
-                     (rec (ash n -4)))))))
-    (if (negative? n)
-        (rec (lognot n))
-        (rec n))))
 
 (define (integer-length n)
   (check-arg integer? n)

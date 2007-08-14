@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bits.c,v 1.4 2007-08-10 01:19:36 shirok Exp $
+ *  $Id: bits.c,v 1.5 2007-08-14 01:00:45 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -199,42 +199,34 @@ static inline u_long count_bits(u_long word)
    bit (exclusiv) */
 int Scm_BitsCount1(const ScmBits *bits, int start, int end)
 {
-    int sw = start / SCM_WORD_BITS;
-    int ew = end   / SCM_WORD_BITS;
-    int sb = start % SCM_WORD_BITS;
-    int eb = end   % SCM_WORD_BITS;
+    int sw = start  / SCM_WORD_BITS;
+    int ew = (end-1)/ SCM_WORD_BITS;
+    int sb = start  % SCM_WORD_BITS;
+    int eb = end    % SCM_WORD_BITS;
     u_long num;
 
-    if (sw == ew) {
-        u_long mask = ((1UL<<eb) - 1) & ~((1UL<<sb) - 1);
-        return count_bits(bits[sw]&mask);
-    }
+    if (start == end) return 0;
+    if (sw == ew) return count_bits(bits[sw] & SCM_BITS_MASK(sb, eb));
 
-    num = count_bits(bits[sw] & ~((1UL<<sb)-1));
-    for (sw++; sw < ew; sw++) {
-        num += count_bits(bits[sw]);
-    }
-    return num + count_bits((bits[ew])&((1UL<<eb)-1));
+    num = count_bits(bits[sw] & SCM_BITS_MASK(sb, 0));
+    for (sw++; sw < ew; sw++) num += count_bits(bits[sw]);
+    return num + (count_bits((bits[ew]) & SCM_BITS_MASK(0, eb)));
 }
 
 int Scm_BitsCount0(const ScmBits *bits, int start, int end)
 {
-    int sw = start / SCM_WORD_BITS;
-    int ew = end   / SCM_WORD_BITS;
-    int sb = start % SCM_WORD_BITS;
-    int eb = end   % SCM_WORD_BITS;
+    int sw = start  / SCM_WORD_BITS;
+    int ew = (end-1)/ SCM_WORD_BITS;
+    int sb = start  % SCM_WORD_BITS;
+    int eb = end    % SCM_WORD_BITS;
     u_long num;
 
-    if (sw == ew) {
-        u_long mask = ((1UL<<eb) - 1) & ~((1UL<<sb) - 1);
-        return count_bits(~(bits[sw]&mask));
-    }
+    if (start == end) return 0;
+    if (sw == ew) return count_bits(~bits[sw] & SCM_BITS_MASK(sb, eb));
 
-    num = count_bits(~(bits[sw] & ~((1UL<<sb)-1)));
-    for (sw++; sw < ew; sw++) {
-        num += count_bits(~bits[sw]);
-    }
-    return num + count_bits(~((bits[ew])&((1UL<<eb)-1)));
+    num = count_bits(~bits[sw] & SCM_BITS_MASK(sb, 0));
+    for (sw++; sw < ew; sw++) num += count_bits(~bits[sw]);
+    return num + (count_bits(~bits[ew] & SCM_BITS_MASK(0, eb)));
 }
 
 /*===================================================================
@@ -294,20 +286,21 @@ int Scm_BitsLowest1(const ScmBits *bits, int start, int end)
 {
     int sw = start/SCM_WORD_BITS;
     int sb = start%SCM_WORD_BITS;
-    int ew = end/SCM_WORD_BITS;
+    int ew = (end-1)/SCM_WORD_BITS;
     int eb = end%SCM_WORD_BITS;
     
+    if (start == end) return -1;
     if (ew == sw) {
-        u_long w = bits[sw] & (((1UL<<eb)-1) & ~((1UL<<sb)-1));
+        u_long w = bits[sw] & SCM_BITS_MASK(sb, eb);
         if (w) return lowest_bit_number(w) + sw*SCM_WORD_BITS;
         else   return -1;
     } else {
-        u_long w = bits[sw] & ~((1UL<<sb)-1);
+        u_long w = bits[sw] & SCM_BITS_MASK(sb, 0);
         if (w) return lowest_bit_number(w) + sw*SCM_WORD_BITS;
         for (;sw < ew; sw++) {
             if (bits[sw]) return lowest_bit_number(bits[sw])+sw*SCM_WORD_BITS;
         }
-        w = bits[ew] & ((1UL<<eb)-1);
+        w = bits[ew] & SCM_BITS_MASK(0, eb);
         if (w) return lowest_bit_number(w) + ew*SCM_WORD_BITS;
         return -1;
     }
@@ -317,20 +310,21 @@ int Scm_BitsLowest0(const ScmBits *bits, int start, int end)
 {
     int sw = start/SCM_WORD_BITS;
     int sb = start%SCM_WORD_BITS;
-    int ew = end/SCM_WORD_BITS;
+    int ew = (end-1)/SCM_WORD_BITS;
     int eb = end%SCM_WORD_BITS;
     
+    if (start == end) return -1;
     if (ew == sw) {
-        u_long w = ~bits[sw] & (((1UL<<eb)-1) & ~((1UL<<sb)-1));
+        u_long w = ~bits[sw] & SCM_BITS_MASK(sb, eb);
         if (w) return lowest_bit_number(w) + sw*SCM_WORD_BITS;
         else   return -1;
     } else {
-        u_long w = ~bits[sw] & ~((1UL<<sb)-1);
+        u_long w = ~bits[sw] & SCM_BITS_MASK(sb, 0);
         if (w) return lowest_bit_number(w) + sw*SCM_WORD_BITS;
         for (;sw < ew; sw++) {
             if (~bits[sw]) return lowest_bit_number(~bits[sw])+sw*SCM_WORD_BITS;
         }
-        w = ~bits[ew] & ((1UL<<eb)-1);
+        w = ~bits[ew] & SCM_BITS_MASK(0, eb);
         if (w) return lowest_bit_number(w) + ew*SCM_WORD_BITS;
         return -1;
     }
@@ -342,21 +336,22 @@ int Scm_BitsHighest1(const ScmBits *bits, int start, int end)
 {
     int sw = start/SCM_WORD_BITS;
     int sb = start%SCM_WORD_BITS;
-    int ew = end/SCM_WORD_BITS;
+    int ew = (end-1)/SCM_WORD_BITS;
     int eb = end%SCM_WORD_BITS;
     
+    if (start == end) return -1;
     if (ew == sw) {
-        u_long w = bits[sw] & (((1UL<<eb)-1) & ~((1UL<<sb)-1));
+        u_long w = bits[sw] & SCM_BITS_MASK(sb, eb);
         if (w) return highest_bit_number(w) + sw*SCM_WORD_BITS;
         else   return -1;
     } else {
-        u_long w = bits[sw] & ~((1UL<<sb)-1);
-        if (w) return highest_bit_number(w) + sw*SCM_WORD_BITS;
-        for (;sw < ew; sw++) {
-            if (bits[sw]) return lowest_bit_number(bits[sw])+sw*SCM_WORD_BITS;
-        }
-        w = bits[ew] & ((1UL<<eb)-1);
+        u_long w = bits[ew] & SCM_BITS_MASK(0, eb);
         if (w) return highest_bit_number(w) + ew*SCM_WORD_BITS;
+        for (ew--;sw < ew; ew--) {
+            if (bits[ew]) return highest_bit_number(bits[ew])+ew*SCM_WORD_BITS;
+        }
+        w = bits[sw] & SCM_BITS_MASK(sb, 0);
+        if (w) return highest_bit_number(w) + sw*SCM_WORD_BITS;
         return -1;
     }
 }
@@ -365,21 +360,22 @@ int Scm_BitsHighest0(const ScmBits *bits, int start, int end)
 {
     int sw = start/SCM_WORD_BITS;
     int sb = start%SCM_WORD_BITS;
-    int ew = end/SCM_WORD_BITS;
+    int ew = (end-1)/SCM_WORD_BITS;
     int eb = end%SCM_WORD_BITS;
     
+    if (start == end) return -1;
     if (ew == sw) {
-        u_long w = ~bits[sw] & (((1UL<<eb)-1) & ~((1UL<<sb)-1));
+        u_long w = ~bits[sw] & SCM_BITS_MASK(sb, eb);
         if (w) return highest_bit_number(w) + sw*SCM_WORD_BITS;
         else   return -1;
     } else {
-        u_long w = ~bits[sw] & ~((1UL<<sb)-1);
-        if (w) return highest_bit_number(w) + sw*SCM_WORD_BITS;
-        for (;sw < ew; sw++) {
-            if (~bits[sw]) return lowest_bit_number(~bits[sw])+sw*SCM_WORD_BITS;
-        }
-        w = ~bits[ew] & ((1UL<<eb)-1);
+        u_long w = ~bits[ew] & SCM_BITS_MASK(0, eb);
         if (w) return highest_bit_number(w) + ew*SCM_WORD_BITS;
+        for (ew--;sw < ew; ew--) {
+            if (~bits[ew]) return highest_bit_number(~bits[ew])+ew*SCM_WORD_BITS;
+        }
+        w = ~bits[sw] & SCM_BITS_MASK(sb, 0);
+        if (w) return highest_bit_number(w) + sw*SCM_WORD_BITS;
         return -1;
     }
 }
