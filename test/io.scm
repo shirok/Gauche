@@ -126,12 +126,20 @@
          (list s1 (read-line p1))))
 
 (test* "port-fd-dup!" *test-error*
-       (port-fd-dup! (open-output-file "tmp1.o")
-                     (open-input-file "tmp2.o")))
+       (let* ((p1 (open-output-file "tmp1.o"))
+              (p2 (open-input-file "tmp2.o")))
+         (guard (e (else
+                    (close-output-port p1)
+                    (close-input-port p2)
+                    (raise e)))
+           (port-fd-dup! p1 p2))))
 
 (test* "port-fd-dup!" *test-error*
-       (port-fd-dup! (open-input-string "")
-                     (open-input-file "tmp2.o")))
+       (let* ((p1 (open-input-file "tmp2.o")))
+         (guard (e (else
+                    (close-input-port p1)
+                    (raise e)))
+           (port-fd-dup! (open-input-string "") p1))))
 
 ;;-------------------------------------------------------------------
 (test-section "input ports")
