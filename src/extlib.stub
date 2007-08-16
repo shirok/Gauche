@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.299 2007-08-14 02:56:05 shirok Exp $
+;;; $Id: extlib.stub,v 1.300 2007-08-16 11:29:50 shirok Exp $
 ;;;
 
 "
@@ -77,16 +77,12 @@
 
 (define-cproc lognot (x) (call "Scm_LogNot"))
 
-(eval*
- (use gauche.cgen.cise)
- (use util.match)
- (define-cise-macro (logop form env)
-   (match form
-     [(_ fn)
-      `(let* ((r (,fn x y)))
-         (for-each (lambda (v) (set! r (,fn r v))) args)
-         (result r))]))
- )
+(define-cise-stmt logop
+  [(_ fn)
+   `(let* ((r (,fn x y)))
+      (for-each (lambda (v) (set! r (,fn r v))) args)
+      (result r))])
+
 (define-cproc logand (x y &rest args) (body <top> (logop Scm_LogAnd)))
 (define-cproc logior (x y &rest args) (body <top> (logop Scm_LogIor)))
 (define-cproc logxor (x y &rest args) (body <top> (logop Scm_LogXor)))
@@ -687,17 +683,15 @@
                 (else (SCM_TYPE_ERROR regexp "regexp")))
           (result (Scm_RegExec rx str)))))
 
-(eval*
- (define-cise-macro (rxmatchop form env)
-   (define (template result)
-     `(cond ((SCM_FALSEP match) (result '#f))
-            ((SCM_REGMATCHP match) (result ,result))
-            (else (SCM_TYPE_ERROR match "regmatch object or #f")
-                  (result SCM_UNDEFINED))))
-   (match form
-     [(_ (exp ...)) (template exp)]
-     [(_ fn)        (template `(,fn (SCM_REGMATCH match) obj))]))
- )
+(define-cise-stmt rxmatchop
+  [(_ (exp ...)) (template exp)]
+  [(_ fn)        (template `(,fn (SCM_REGMATCH match) obj))]
+  :where
+  (define (template result)
+    `(cond ((SCM_FALSEP match) (result '#f))
+           ((SCM_REGMATCHP match) (result ,result))
+           (else (SCM_TYPE_ERROR match "regmatch object or #f")
+                 (result SCM_UNDEFINED)))))
 
 (define-cproc rxmatch-substring (match &optional (obj 0)) 
   (body <top> (rxmatchop Scm_RegMatchSubstr)))
@@ -1146,96 +1140,85 @@
 ;; Dictionary common macros
 ;;
 
-(eval*
- (define-cise-macro (dict-check-entry form env)
-   (match form
-     [(_ dict key expr)
-      `(when ,expr
-         (Scm_Error "%S doesn't have an entry for key %S" ,dict ,key))]))
+(define-cise-stmt dict-check-entry
+  [(_ dict key expr)
+   `(when ,expr
+      (Scm_Error "%S doesn't have an entry for key %S" ,dict ,key))])
 
- (define-cise-macro (dict-get form env)
-   (match form
-     [(_ dict referencer)
-      `(let* ((v (,referencer ,dict key fallback)))
-         (dict-check-entry ,dict key (SCM_UNBOUNDP v))
-         (result v))]))
+(define-cise-stmt dict-get
+  [(_ dict referencer)
+   `(let* ((v (,referencer ,dict key fallback)))
+      (dict-check-entry ,dict key (SCM_UNBOUNDP v))
+      (result v))])
 
- (define-cise-macro (dict-exists? form env)
-   (match form
-     [(_ dict referencer)
-      `(not (SCM_UNBOUNDP (,referencer ,dict key SCM_UNBOUND)))]))
+(define-cise-expr dict-exists?
+  [(_ dict referencer)
+   `(not (SCM_UNBOUNDP (,referencer ,dict key SCM_UNBOUND)))])
 
- (define-cise-macro (dict-update! form env)
-   (match form
-     [(_ dict searcher xtractor cc) ;; assumes key, proc, and fallback
-      `(let* ((e :: ScmDictEntry*)
-              (|data[1]| :: void*))
-         (cond ((SCM_UNBOUNDP fallback)
-                (set! e (,searcher (,xtractor ,dict) (cast intptr_t key)
-                                   SCM_DICT_GET))
-                (dict-check-entry ,dict key (== e NULL)))
-               (else
-                (set! e (,searcher (,xtractor ,dict) (cast intptr_t key)
-                                   SCM_DICT_CREATE))
-                (unless (-> e value)
-                  (cast void (SCM_DICT_SET_VALUE e fallback)))))
-         (set! (aref data 0) (cast void* e))
-         (Scm_VMPushCC ,cc data 1)
-         (result (Scm_VMApply1 proc (SCM_DICT_VALUE e))))]))
+(define-cise-stmt dict-update!
+  [(_ dict searcher xtractor cc) ;; assumes key, proc, and fallback
+   `(let* ((e :: ScmDictEntry*)
+           (|data[1]| :: void*))
+      (cond ((SCM_UNBOUNDP fallback)
+             (set! e (,searcher (,xtractor ,dict) (cast intptr_t key)
+                                SCM_DICT_GET))
+             (dict-check-entry ,dict key (== e NULL)))
+            (else
+             (set! e (,searcher (,xtractor ,dict) (cast intptr_t key)
+                                SCM_DICT_CREATE))
+             (unless (-> e value)
+               (cast void (SCM_DICT_SET_VALUE e fallback)))))
+      (set! (aref data 0) (cast void* e))
+      (Scm_VMPushCC ,cc data 1)
+      (result (Scm_VMApply1 proc (SCM_DICT_VALUE e))))])
 
- (define-cise-macro (dict-push! form env)
-   (match form
-     [(_ dict searcher xtractor)
-      `(let* ((e :: ScmDictEntry* (,searcher (,xtractor ,dict )
-                                             (cast intptr_t key)
-                                             SCM_DICT_CREATE))
-              (prev (?: (-> e value) (SCM_DICT_VALUE e) '())))
-         (cast void (SCM_DICT_SET_VALUE e (Scm_Cons value prev))))]))
+(define-cise-stmt dict-push!
+  [(_ dict searcher xtractor)
+   `(let* ((e :: ScmDictEntry* (,searcher (,xtractor ,dict )
+                                          (cast intptr_t key)
+                                          SCM_DICT_CREATE))
+           (prev (?: (-> e value) (SCM_DICT_VALUE e) '())))
+      (cast void (SCM_DICT_SET_VALUE e (Scm_Cons value prev))))])
 
- (define-cise-macro (dict-pop! form env)
-   (match form
-     [(_ dict searcher xtractor)
-      `(let* ((e :: ScmDictEntry* (,searcher (,xtractor ,dict)
-                                             (cast intptr_t key)
-                                             SCM_DICT_GET)))
-         (cond
-          ((not e)
-           (dict-check-entry ,dict key (SCM_UNBOUNDP fallback))
-           (result fallback))
-          ((not (SCM_PAIRP (SCM_DICT_VALUE e)))
-           (when (SCM_UNBOUNDP fallback)
-             (Scm_Error "%S's value for key %S is not a pair: %S"
-                        ,dict key (SCM_DICT_VALUE e)))
-           (result fallback))
-          (else
-           (result (SCM_CAR (SCM_DICT_VALUE e)))
-           (cast void (SCM_DICT_SET_VALUE e (SCM_CDR (SCM_DICT_VALUE e)))))))]))
- )
+(define-cise-stmt dict-pop!
+  [(_ dict searcher xtractor)
+   `(let* ((e :: ScmDictEntry* (,searcher (,xtractor ,dict)
+                                          (cast intptr_t key)
+                                          SCM_DICT_GET)))
+      (cond
+       ((not e)
+        (dict-check-entry ,dict key (SCM_UNBOUNDP fallback))
+        (result fallback))
+       ((not (SCM_PAIRP (SCM_DICT_VALUE e)))
+        (when (SCM_UNBOUNDP fallback)
+          (Scm_Error "%S's value for key %S is not a pair: %S"
+                     ,dict key (SCM_DICT_VALUE e)))
+        (result fallback))
+       (else
+        (result (SCM_CAR (SCM_DICT_VALUE e)))
+        (cast void (SCM_DICT_SET_VALUE e (SCM_CDR (SCM_DICT_VALUE e)))))))])
 
 ;;
 ;; Hashtable
 ;;
 
-(eval*
- (define-cise-macro (set-hash-type! form env)
-   (match form
-     [(_ cvar scmvar)
-      `(cond ((SCM_EQ ,scmvar 'eq?)      (set! ,cvar SCM_HASH_EQ))
-             ((SCM_EQ ,scmvar 'eqv?)     (set! ,cvar SCM_HASH_EQV))
-             ((SCM_EQ ,scmvar 'equal?)   (set! ,cvar SCM_HASH_EQUAL))
-             ((SCM_EQ ,scmvar 'string=?) (set! ,cvar SCM_HASH_STRING))
-             (else (Scm_Error "unsupported hash type: %S" ,scmvar)))]))
- (define-cise-macro (get-hash-type form env)
-   (match form
-     [(_ expr)
-      `(case ,expr
-         ((SCM_HASH_EQ)      (result 'eq?))
-         ((SCM_HASH_EQV)     (result 'eqv?))
-         ((SCM_HASH_EQUAL)   (result 'equal?))
-         ((SCM_HASH_STRING)  (result 'string=?))
-         (else (result '#f))           ; TODO: need to think over
-         )]))
- )
+(define-cise-stmt set-hash-type!
+  [(_ cvar scmvar)
+   `(cond ((SCM_EQ ,scmvar 'eq?)      (set! ,cvar SCM_HASH_EQ))
+          ((SCM_EQ ,scmvar 'eqv?)     (set! ,cvar SCM_HASH_EQV))
+          ((SCM_EQ ,scmvar 'equal?)   (set! ,cvar SCM_HASH_EQUAL))
+          ((SCM_EQ ,scmvar 'string=?) (set! ,cvar SCM_HASH_STRING))
+          (else (Scm_Error "unsupported hash type: %S" ,scmvar)))])
+
+(define-cise-stmt get-hash-type
+  [(_ expr)
+   `(case ,expr
+      ((SCM_HASH_EQ)      (result 'eq?))
+      ((SCM_HASH_EQV)     (result 'eqv?))
+      ((SCM_HASH_EQUAL)   (result 'equal?))
+      ((SCM_HASH_STRING)  (result 'string=?))
+      (else (result '#f))           ; TODO: need to think over
+      )])
 
 (define-cproc eq-hash (obj)  (call <ulong> "Scm_EqHash"))
 (define-cproc eqv-hash (obj) (call <ulong> "Scm_EqvHash"))

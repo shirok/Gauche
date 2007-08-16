@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cise.scm,v 1.3 2007-05-24 10:26:05 shirok Exp $
+;;;  $Id: cise.scm,v 1.4 2007-08-16 11:29:50 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.cise
@@ -44,6 +44,8 @@
   (export cise-render
           cise-emit-source-line
           define-cise-macro
+          define-cise-stmt
+          define-cise-expr
           )
   )
 (select-module gauche.cgen.cise)
@@ -136,15 +138,50 @@
 ;;  (strings, numbers, booleans, and characters) and function calls.
 ;;  All other stuff is handled by "cise macros"
 ;;
+;;  TBD: Currently some cise macros need to call render-rec recursively
+;;  to finish expansion.  We don't export render-rec, though, which
+;;  limits the ability of 
 
 (define *cgen-macro* (make-hash-table 'eq?))
 
 (define-syntax define-cise-macro
   (syntax-rules ()
-    ((_ (op form env) . body)
-     (hash-table-put! *cgen-macro* 'op (lambda (form env) . body)))))
+    [(_ (op form env) . body)
+     (hash-table-put! *cgen-macro* 'op (lambda (form env) . body))]))
 
-;; cise-render sexpr &optional port as-expr?
+(define-syntax define-cise-stmt
+  (syntax-rules ()
+    [(_ "clauses" op clauses (:where defs ...))
+     (define-cise-macro (op form env)
+       defs ...
+       (ensure-stmt-ctx form env)
+       (match form . clauses))]
+    [(_ "clauses" op clauses ())
+     (define-cise-macro (op form env)
+       (ensure-stmt-ctx form env)
+       (match form . clauses))]
+    [(_ "clauses" op (clause ...) (x . y))
+     (define-cise-stmt "clauses" op (clause ... x) y)]
+    [(_ op . clauses)
+     (define-cise-stmt "clauses" op () clauses)]))
+
+(define-syntax define-cise-expr
+  (syntax-rules ()
+    [(_ "clauses" op clauses (:where defs ...))
+     (define-cise-macro (op form env)
+       defs ...
+       (let1 expanded (match form . clauses)
+         (if (and (pair? expanded) (symbol? (car expanded)))
+           (render-rec expanded env)
+           (wrap-expr expanded env))))]
+    [(_ "clauses" op clauses ())
+     (define-cise-expr "clauses" op clauses (:where))]
+    [(_ "clauses" op (clause ...) (x . y))
+     (define-cise-expr "clauses" op (clause ... x) y)]
+    [(_ op . clauses)
+     (define-cise-expr "clauses" op () clauses)]))
+
+;; cise-render cise &optional port as-expr?
 (define (cise-render form . opts)
   (let-optionals* opts ((port (current-output-port))
                         (expr #f))
@@ -169,12 +206,14 @@
            (stree (render-rec form env)))
       (render-finish `(,@(render-env-decls env) ,stree)))))
 
-;; render-rec :: Sexpr, Env -> Stree
+;; render-rec :: Cise, Env -> Stree
 (define (render-rec form env)
   (match form
     [((? symbol? key) . args)
      (cond ((hash-table-get *cgen-macro* key #f)
-            => (lambda (expander) (render-rec (expander form env) env)))
+            => (lambda (expander)
+                 `(,@(source-info form env)
+                   ,@(render-rec (expander form env) env))))
            (else
             (let1 eenv (expr-env env)
               (wrap-expr
@@ -208,8 +247,8 @@
 (define-cise-macro (begin form env)
   (ensure-stmt-ctx form env)
   (match form
-    ((_ . forms)
-     `("{" ,@(map (cut render-rec <> env) forms) "}"))))
+    [(_ . forms)
+     `("{" ,@(map (cut render-rec <> env) forms) "}")]))
 
 (define-cise-macro (let* form env)
   (ensure-stmt-ctx form env)
@@ -243,15 +282,11 @@
          ,(render-rec then env)" else " ,(render-rec else env))]
       )))
 
-(define-cise-macro (when form env)
-  (ensure-stmt-ctx form env)
-  (match form
-    [(_ test . forms) `(if ,test (begin ,@forms))]))
+(define-cise-stmt when
+  [(_ test . forms) `(if ,test (begin ,@forms))])
 
-(define-cise-macro (unless form env)
-  (ensure-stmt-ctx form env)
-  (match form
-    [(_ test . forms) `(if (not ,test) (begin ,@forms))]))
+(define-cise-stmt unless
+  [(_ test . forms) `(if (not ,test) (begin ,@forms))])
 
 (define-cise-macro (for form env)
   (ensure-stmt-ctx form env)
@@ -266,9 +301,8 @@
        `("for (;;)" ,(render-rec `(begin ,@body) env))]
       )))
 
-(define-cise-macro (loop form env)
-  (ensure-stmt-ctx form env)
-  `(for () ,@(cdr form)))
+(define-cise-stmt loop
+  [form `(for () ,@(cdr form))])
 
 (define-cise-macro (for-each form env)
   (ensure-stmt-ctx form env)
@@ -299,13 +333,11 @@
   (match form
     [(_ expr) `("return (" ,(render-rec expr (expr-env env)) ");")]))
 
-(define-cise-macro (break form env)
-  (ensure-stmt-ctx form env)
-  (match form [(_) '("break;")]))
+(define-cise-stmt break
+  [(_) '("break;")])
 
-(define-cise-macro (continue form env)
-  (ensure-stmt-ctx form env)
-  (match form [(_) '("continue;")]))
+(define-cise-stmt continue
+  [(_) '("continue;")])
 
 (define-cise-macro (cond form env)
   (ensure-stmt-ctx form env)
@@ -329,8 +361,7 @@
   (let1 eenv (expr-env env)
     (match form
       [(_ expr (literalss . clauses) ...)
-       `(,@(source-info form env)
-         "switch (",(render-rec expr eenv)") {"
+       `("switch (",(render-rec expr eenv)") {"
          ,@(map (lambda (literals clause)
                   `(,@(source-info literals env)
                     ,@(if (eq? literals 'else)
@@ -452,7 +483,7 @@
     (wrap-expr
      (match form
        [(_ type expr)
-        `(,@(source-info form env)"((",type")(",(render-rec expr eenv)"))")])
+        `("((",type")(",(render-rec expr eenv)"))")])
      env)))
 
 (define-cise-macro (?: form env)
@@ -482,34 +513,28 @@
 ;; Embed raw c code.  NB: I'm not sure yet about the name.  It is
 ;; desirable to be consistent with genstub (currently it uses (c <expr>))
 ;; I'll think it a bit more.
-(define-cise-macro (C: form env)
-  (match form
-    [(_ stuff) (list (x->string stuff))]))
+(define-cise-expr C:
+  [(_ stuff) (list (x->string stuff))])
 
-(define-cise-macro (result form env)
-  (match form
-    [(_ expr) `(set! SCM_RESULT ,expr)]))
+(define-cise-expr result
+  [(_ expr) `(set! SCM_RESULT ,expr)])
 
-(define-cise-macro (list form env)
-  (match form
-    [(_)           '("SCM_NIL")]
-    [(_ a)         `(SCM_LIST1 ,a)]
-    [(_ a b)       `(SCM_LIST2 ,a ,b)]
-    [(_ a b c)     `(SCM_LIST3 ,a ,b ,c)]
-    [(_ a b c d)   `(SCM_LIST4 ,a ,b ,c ,d)]
-    [(_ a b c d e) `(SCM_LIST5 ,a ,b ,c ,d ,e)]
-    [(_ x ...)     (fold (lambda (elt r) `(Scm_Cons ,elt ,r)) '() x)]))
+(define-cise-expr list
+  [(_)           '("SCM_NIL")]
+  [(_ a)         `(SCM_LIST1 ,a)]
+  [(_ a b)       `(SCM_LIST2 ,a ,b)]
+  [(_ a b c)     `(SCM_LIST3 ,a ,b ,c)]
+  [(_ a b c d)   `(SCM_LIST4 ,a ,b ,c ,d)]
+  [(_ a b c d e) `(SCM_LIST5 ,a ,b ,c ,d ,e)]
+  [(_ x ...)     (fold (lambda (elt r) `(Scm_Cons ,elt ,r)) '() x)])
 
 ;; Using quote is a convenient way to embed Scheme constant in C code.
-(define-cise-macro (quote form env)
-  (wrap-expr
-   (match form
-     [(_ cst)
-      (unless (cgen-current-unit)
-        (error "cise: quote can't be used unless cgen-current-unit is set:"
-               form))
-      (list (source-info form env) (cgen-cexpr (cgen-literal cst)))])
-   env))
+(define-cise-expr quote
+  [(_ cst)
+   (unless (cgen-current-unit)
+     (error "cise: quote can't be used unless cgen-current-unit is set: '"
+            cst))
+   (list (cgen-cexpr (cgen-literal cst)))])
 
 ;;=============================================================
 ;; Other utilities

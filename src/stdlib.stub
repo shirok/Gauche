@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.131 2007-08-10 01:19:36 shirok Exp $
+;;; $Id: stdlib.stub,v 1.132 2007-08-16 11:29:50 shirok Exp $
 ;;;
 
 "
@@ -81,19 +81,14 @@
                (else (set! arg1 (SCM_CAR args)
                            args (SCM_CDR args)))))))
 
-(eval*
- (use gauche.cgen.cise)
- (use util.match)
- (define-cise-macro (numcmp form env)
-   (match form
-     ((_ op)
-      `(loop (cond
-              ((not (,op (Scm_NumCmp arg0 arg1) 0)) (result FALSE) (break))
-              ((SCM_NULLP args) (result TRUE) (break))
-              (else (set! arg0 arg1
-                          arg1 (SCM_CAR args)
-                          args (SCM_CDR args))))))))
- )
+(define-cise-stmt numcmp
+  [(_ op)
+   `(loop (cond
+           ((not (,op (Scm_NumCmp arg0 arg1) 0)) (result FALSE) (break))
+           ((SCM_NULLP args) (result TRUE) (break))
+           (else (set! arg0 arg1
+                       arg1 (SCM_CAR args)
+                       args (SCM_CDR args)))))])
 
 (define-cproc < (arg0 arg1 &rest args)  (body <boolean> (numcmp <)))
 (define-cproc <= (arg0 arg1 &rest args) (body <boolean> (numcmp <=)))
@@ -424,11 +419,8 @@
 (define-cproc char<=? (c1::<char> c2::<char>) (expr <boolean> "c1 <= c2"))
 (define-cproc char>=? (c1::<char> c2::<char>) (expr <boolean> "c1 >= c2"))
 
-(eval*
- (define-cise-macro (char-ci-cmp form env)
-   (match form
-     ((_ op) `(,op (SCM_CHAR_UPCASE c1) (SCM_CHAR_UPCASE c2)))))
- )
+(define-cise-expr char-ci-cmp
+  [(_ op) `(,op (SCM_CHAR_UPCASE c1) (SCM_CHAR_UPCASE c2))])
 
 (define-cproc char-ci=? (c1::<char> c2::<char>)
   (expr <boolean> (char-ci-cmp ==)))
@@ -482,14 +474,10 @@
         (let* ((r :: ScmChar (Scm_StringRef str k (SCM_UNBOUNDP fallback))))
           (result (?: (== r SCM_CHAR_INVALID) fallback (SCM_MAKE_CHAR r))))))
 
-(eval*
- (define-cise-macro (strcmp form env)
-   (match form
-     [(_ op) `(,op (Scm_StringCmp s1 s2) 0)]))
- (define-cise-macro (strcmp-ci form env)
-   (match form
-     [(_ op) `(,op (Scm_StringCiCmp s1 s2) 0)]))
- )
+(define-cise-expr strcmp
+  [(_ op) `(,op (Scm_StringCmp s1 s2) 0)])
+(define-cise-expr strcmp-ci
+  [(_ op) `(,op (Scm_StringCiCmp s1 s2) 0)])
         
 (define-cproc string=? (s1::<string> s2::<string>)
   (call <boolean> "Scm_StringEqual"))

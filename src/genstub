@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.141 2007-05-20 04:55:15 shirok Exp $
+;;;  $Id: genstub,v 1.142 2007-08-16 11:29:50 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -150,6 +150,10 @@
 ;;   define-enum-conditionally name
 ;;      Abbreviation of (if "defined(name)" (define-enum name))
 ;;
+;;   define-cise-stmt name clause ...
+;;   define-cise-expr name clause ...
+;;      Cise macro definitions (see gauche.cgen.cise).
+;;
 ;;   initcode <c-code>
 ;;      Insert <c-code> literally in the initialization function
 ;;
@@ -163,6 +167,8 @@
 ;;      Evaluates Scheme expressions inside a temporary anonymous
 ;;      module.  If the last expression returns a string or a list,
 ;;      it is processed again as a toplevel stub form.
+;;      NB: This is highly experimental feature even the author is
+;;      skeptical about.  Do not use this.
 
 ;;===================================================================
 ;; Form parsers
@@ -203,6 +209,13 @@
                (instance-pool->list <form-parser>))
          => (cut invoke <> form))
         (else (error "bad form:" form))))
+
+;; meta stuff
+(define-form-parser define-cise-stmt args
+  (eval `(define-cise-stmt ,@args) (current-module)))
+
+(define-form-parser define-cise-expr args
+  (eval `(define-cise-expr ,@args) (current-module)))
 
 ;;===================================================================
 ;; Type handling

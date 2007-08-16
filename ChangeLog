@@ -1,3 +1,12 @@
+2007-08-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm (define-cise-stmt, define-cise-expr):
+	  A bit of touch-up for cise API.
+	* src/genstub: recognize define-cise-stmt and define-cise-expr as
+	  a stub forms, so that one doesn't need to use eval* form.
+	  I'm ambivalent on the eval* stub form; maybe it should be removed.
+	* src/stdlib.stub, src/extlib.stub: changed accordingly.
+
 2007-08-14  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: fixed a problem to set GAUCHE_USE_PTHREADS correctly
