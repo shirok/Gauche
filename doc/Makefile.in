@@ -66,6 +66,8 @@ uninstall:
 	   then rm -rf gauche-refj.*; \
 	 fi)
 
+pre-package : texi
+
 check :
 
 test :

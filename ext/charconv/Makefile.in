@@ -2,6 +2,10 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
+GENERATED = Makefile charconv.h eucj2ucs.c ucs2eucj.c guess_tab.c
+XCLEANFILES = convlib.c convaux.c charconv_head.c charconv_tail.c 
+PRE_PACKAGE_FILES = eucj2ucs.c guess_tab.c pre-package-data
+
 include ../Makefile.ext
 
 XCPPFLAGS = @ICONV_CPPFLAGS@
@@ -12,9 +16,6 @@ SCM_CATEGORY = gauche
 
 LIBFILES = libcharconv.$(SOEXT)
 SCMFILES = charconv.scm
-
-GENERATED = Makefile charconv.h eucj2ucs.c ucs2eucj.c guess_tab.c
-XCLEANFILES = convlib.c convaux.c *_head.c *_tail.c 
 
 OBJECTS = charconv_head.$(OBJEXT) \
           charconv.$(OBJEXT)      \
@@ -46,6 +47,9 @@ eucj2ucs.c ucs2eucj.c : cvt.scm euc-jp-2000-std.txt
 
 guess_tab.c : guess.scm
 	$(GOSH) guess.scm guess_tab.c
+
+pre-package-data :
+	cd data; $(MAKE) GOSH=$(GOSH)
 
 install : install-std
 

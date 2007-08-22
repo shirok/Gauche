@@ -48,6 +48,9 @@ clean:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) clean); done
 	rm -rf core *~
 
+pre-package:
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) GOSH=$(GOSH) pre-package); done
+
 link :
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) link); done
 

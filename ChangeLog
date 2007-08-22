@@ -1,3 +1,8 @@
+2007-08-21  Shiro Kawai  <shiro@acm.org>
+
+	* DIST, */Makefile.in : adjusted pre-package make target so that 
+	  it does most of the pre-packaging job.  
+
 2007-08-16  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.8.11

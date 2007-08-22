@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.58 2007-08-10 08:48:04 shirok Exp $
+# $Id: Makefile.in,v 1.59 2007-08-22 01:17:31 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check pre-package install uninstall \
@@ -23,6 +23,8 @@ GAUCHE_VERSION  = @GAUCHE_VERSION@
 GAUCHE_DATA_DIR = $(datadir)/gauche
 GAUCHE_ACLOCAL_DIR = $(datadir)/gauche/$(GAUCHE_VERSION)/
 DESTDIR =
+
+GOSH = gosh
 
 CONFIG_GENERATED = Makefile config.cache config.log config.status config.threads \
 	           libtool configure.lineno autom4* gc/autom4*
@@ -49,7 +51,11 @@ install-check:
 # pre-package target should be run before creating distribution tarball.
 # it generates files that requires pre-installed gosh.
 pre-package:
-	cd src; $(MAKE) pre-package
+	cd src; $(MAKE) GOSH=$(GOSH) pre-package
+	cd ext; $(MAKE) GOSH=$(GOSH) pre-package
+	cd doc; $(MAKE) GOSH=$(GOSH) pre-package
+	$(GOSJ) doc/extract -en -o INSTALL INSTALL.in
+	$(GOSJ) doc/extract -jp -o INSTALL.eucjp INSTALL.in
 
 install: install-pkg install-doc
 	cd lib; $(MAKE) slibcat

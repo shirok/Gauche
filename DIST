@@ -1,10 +1,34 @@
 #!/bin/sh
+# TODO: once we implement scsh-ish process utility, rewrite 
+# this as Gauche script!
+
 TGZ_DEST="$HOME/shiro.dreamhost.com/scheme/vault/"
 MAN_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/man/"
 DOC_DEST="$HOME/src/test"
 RPMDIR="$HOME/rpm"
 CHANGELOG_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/ChangeLog.txt"
 XTRA_TEST_DIR="$HOME/src/test"
+
+maintainer_clean () {
+  if [ -f Makefile ]; then make maintainer-clean; fi
+  for xdir in spigot mqueue-cpp; do
+    if [ -f examples/$xdir/Makefile ]; then
+      (cd examples/$xdir; make maintainer-clean)
+    fi
+  done
+
+  find . -name '*~' -exec rm {} \;
+  
+  rm -f DIST_EXCLUDE_X
+  cat DIST_EXCLUDE > DIST_EXCLUDE_X
+  find . -name CVS -print -prune >> DIST_EXCLUDE_X
+}
+
+check_version () {
+  if [ ! -f VERSION ]; then echo "No VERSION; something wrong?"; exit 1; fi
+  VERSION=`cat VERSION`
+}
+
 
 while [ $# -gt 0 ]; do
   case $1 in
@@ -18,7 +42,8 @@ while [ $# -gt 0 ]; do
     rpm)  rpm=yes; shift;;
     rpmfiles) rpmfiles=yes; shift;;
     mingw) mingw=yes; shift;;
-    *) echo "DIST [doc][docs][tgz][test][testclean][rpm][rpmfiles]"; exit 0;;
+    winvc) winvc=yes; shift;;
+    *) echo "DIST [doc][docs][tgz][test][testclean][rpm][rpmfiles][mingw][winvc]"; exit 0;;
   esac
 done
 
@@ -30,37 +55,18 @@ if [ "$gen" = "yes" ]; then
 fi
 
 if [ "$tgz" = "yes" ]; then
-  if [ -f Makefile ]; then make maintainer-clean; fi
-  if [ -f examples/spigot/Makefile ]; then 
-    (cd examples/spigot; make maintainer-clean);
-  fi
+  maintainer_clean
   ./DIST gen
   ./configure --enable-threads=pthreads --enable-multibyte=utf8 -C || exit 1
   make GOSH=gosh pre-package
-  (cd ext/charconv/; make GOSH=gosh eucj2ucs.c) || exit 1
-  (cd ext/charconv/; make GOSH=gosh guess_tab.c) || exit 1
-  (cd ext/charconv/data; make GOSH=gosh) || exit 1
-  (cd doc; make GOSH=gosh texi) || exit 1
   make distclean || exit 1
 
-  if [ ! -f VERSION ]; then echo "No VERSION; something wrong?"; exit 1; fi
-  VERSION=`cat VERSION`
+  check_version
   rm -rf ../Gauche-$VERSION
-
-  rm -f DIST_EXCLUDE_X
-  cat DIST_EXCLUDE > DIST_EXCLUDE_X
-  find . -name CVS -print -prune >> DIST_EXCLUDE_X
-  gosh doc/extract -en -o INSTALL INSTALL.in
-  gosh doc/extract -jp -o INSTALL.eucjp INSTALL.in
-
   mkdir ../Gauche-$VERSION
   tar cvfX - DIST_EXCLUDE_X . | (cd ../Gauche-$VERSION; tar xf -)
   (cd ..; tar cvf - Gauche-$VERSION | gzip -9 > Gauche-$VERSION.tgz)
   rm -rf ../Gauche-$VERSION
-#  if [ -d $TGZ_DEST ]; then
-#    mv ../Gauche-$VERSION.tgz $TGZ_DEST
-#    cp ChangeLog $CHANGELOG_DEST
-#  fi
 fi
 
 if [ "$doc" = "yes" ]; then
@@ -82,8 +88,7 @@ if [ "$docs" = "yes" ]; then
 fi
 
 if [ "$test" = "yes" ]; then
-  if [ ! -f VERSION ]; then echo "No VERSION; do DIST tgz first"; exit 1; fi
-  VERSION=`cat VERSION`
+  check_version
   if [ ! -f ../Gauche-$VERSION.tgz ]; then echo "No tarball; do DIST tgz first"; exit 1; fi
   mkdir -p ../test
   rm -rf ../test/Gauche-$VERSION ../test/test-inst
@@ -104,8 +109,7 @@ if [ "$test" = "yes" ]; then
 fi
 
 if [ "$testcode" = "yes" ]; then
-  if [ ! -f VERSION ]; then echo "No VERSION; do DIST tgz first"; exit 1; fi
-  VERSION=`cat VERSION`
+  check_version
   if [ ! -f ../Gauche-$VERSION.tgz ]; then echo "No tarball; do DIST tgz first"; exit 1; fi
   mkdir -p ../test
   rm -rf ../test/Gauche-$VERSION
@@ -144,8 +148,7 @@ if [ "$rpmfiles" = "yes" ]; then
   # NB: you should be careful to run this _before_ installing any
   # additional Gauche packages.
   rm -f rpmfiles-common.txt rpmfiles-encoding.txt rpmfiles-gdbm.txt
-  if [ ! -f VERSION ]; then echo "No VERSION; do DIST tgz first"; exit 1; fi
-  VERSION=`cat VERSION`
+  check_version
   find /usr/share/gauche/$VERSION -type f -print | grep -v 'dbm/[ong]dbm' > rpmfiles-common.txt
   find /usr/share/gauche/$VERSION -type f -print | grep 'dbm/[ong]dbm' > rpmfiles-gdbm.txt
   find /usr/lib/gauche/$VERSION -type f -print | grep -v '/[ong]dbm' > rpmfiles-encoding.txt
@@ -153,8 +156,7 @@ if [ "$rpmfiles" = "yes" ]; then
 fi
 
 if [ "$rpm" = "yes" ]; then
-  if [ ! -f VERSION ]; then echo "No VERSION; do DIST tgz first"; exit 1; fi
-  VERSION=`cat VERSION`
+  check_version
   if [ ! -f ../Gauche-$VERSION.tgz ]; then echo "No tarball; do DIST tgz first"; exit 1; fi
   rm -f $RPMDIR/SOURCES/Gauche-$VERSION.tgz
   cp ../Gauche-$VERSION.tgz $RPMDIR/SOURCES/
@@ -188,16 +190,12 @@ if [ "$mingw" = "yes" ]; then
     *) echo "Set PATH to have MinGW bin directory first"
        exit 1;;
   esac
-  if [ -f Makefile ]; then make maintainer-clean; fi
-  if [ -f examples/spigot/Makefile ]; then 
-    (cd examples/spigot; make maintainer-clean);
-  fi
+  maintainer_clean
   distdir=`pwd`/../Gauche-mingw-dist
   rm -rf $distdir
   ./DIST gen
   ./configure --build=i686-pc-mingw32 --prefix=$distdir/Gauche
-  if [ ! -f VERSION ]; then echo "No VERSION; something wrong?"; exit 1; fi
-  VERSION=`cat VERSION`
+  check_version
   make
   # use Cygwin's gosh to install stuff
   make GOSH=$cyggosh install
@@ -213,3 +211,15 @@ if [ "$mingw" = "yes" ]; then
   cp $mingwdir/bin/mingwm10.dll $distdir/Gauche/bin
   (cd $distdir; zip -r Gauche-mingw-$VERSION.zip Gauche)
 fi
+
+# Windows/VC preparation
+# It seems quite complicated to run extra commands in middle of
+# building in VC++, so we pre-generate intermediate .c/.h files
+
+if [ "$winvc" = "yes" ]; then
+  maintainer_clean
+  ./DIST gen
+  ./configure
+  make GOSH=gosh pre-package
+fi
+

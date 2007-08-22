@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions  -*-mode: Makefile-*-
-## $Id: Makefile.ext.in,v 1.28 2007-02-16 11:14:51 shirok Exp $
+## $Id: Makefile.ext.in,v 1.29 2007-08-22 01:17:32 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -59,7 +59,8 @@ TESTRECORD = $(top_builddir)/test.record
 .SUFFIXES: .S .c .o .obj .s .stub
 
 .PHONY: default all check install install-check clean distclean \
-        maintainer-clean install-std uninstall link unlink
+        maintainer-clean install-std uninstall link unlink \
+	pre-package
 
 .c.obj:
 	$(COMPILE) -c `cygpath -w $<`
@@ -93,6 +94,8 @@ distclean : clean
 
 maintainer-clean : clean
 	rm -rf $(GENERATED)
+
+pre-package : $(PRE_PACKAGE_FILES)
 
 install-std : all
 	$(GAUCHE_INSTALL) -m 444 -T $(GAUCHE_INCDIR) $(HDRFILES)
