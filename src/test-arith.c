@@ -1,9 +1,8 @@
 /*
  * Test the lowest-level numeric routines.
- * $Id: test-arith.c,v 1.8 2007-02-17 12:19:57 shirok Exp $
+ * $Id: test-arith.c,v 1.9 2007-08-24 23:55:44 shirok Exp $
  */
 
-#include <stdio.h>
 #include "gauche.h"
 #include "gauche/arith.h"
 #include "gauche/scmconst.h"
@@ -19,7 +18,7 @@ void message(FILE *out, const char *m, int filler)
     int i;
     fprintf(out, "%s", m);
     if (filler) {
-        int len = 79 - strlen(m);
+        int len = 79 - (int)strlen(m);
         if (len < 0) len = 5;
         for (i=0; i<len; i++) putc(filler, out);
     }
@@ -460,7 +459,7 @@ void test_smulov(void)
  * Testing 32/64-bit conversion routines
  */
 
-int test_scm_c_scm(const char *msg, ScmObj expect, ScmObj val)
+void test_scm_c_scm(const char *msg, ScmObj expect, ScmObj val)
 {
     Scm_Printf(SCM_CUROUT, "testing %s, expects %S =>", msg, expect);
     if (Scm_EqualP(expect, val)) {
@@ -471,7 +470,7 @@ int test_scm_c_scm(const char *msg, ScmObj expect, ScmObj val)
     }
 }
 
-int test_true(const char *msg, int val)
+void test_true(const char *msg, int val)
 {
     Scm_Printf(SCM_CUROUT, "testing %s, expects TRUE =>", msg);
     if (val) {
@@ -484,7 +483,7 @@ int test_true(const char *msg, int val)
 
 
 
-int test_32_64(void)
+void test_32_64(void)
 {
     ScmObj vv;
     int oor;
@@ -654,7 +653,7 @@ int test_32_64(void)
  * Testing 16bit floats
  */
 
-int test_half(const char *msg, int expect, int val)
+void test_half(const char *msg, int expect, int val)
 {
     Scm_Printf(SCM_CUROUT, "testing %s, expects %04x =>", msg, expect);
     if (expect == val) {
@@ -665,7 +664,7 @@ int test_half(const char *msg, int expect, int val)
     }
 }
 
-int test_double(const char *msg, double expect, double val)
+void test_double(const char *msg, double expect, double val)
 {
     Scm_Printf(SCM_CUROUT, "testing %s, expects %lg =>", msg, expect);
     if (expect == val) {
@@ -678,7 +677,6 @@ int test_double(const char *msg, double expect, double val)
 
 void test_f16(void)
 {
-    ScmHalfFloat x;
     double z;
 
     TEST_SECTION("half floats");
@@ -701,8 +699,10 @@ void test_f16(void)
     test_double("half->double denormalized min", 5.960464477539063e-8,
                 Scm_HalfToDouble(0x0001));
 
-    test_double("half->double inf", 1.0/0.0, Scm_HalfToDouble(0x7c00));
-    test_double("half->double -inf", -1.0/0.0, Scm_HalfToDouble(0xfc00));
+    test_double("half->double inf", SCM_DBL_POSITIVE_INFINITY,
+                Scm_HalfToDouble(0x7c00));
+    test_double("half->double -inf", SCM_DBL_NEGATIVE_INFINITY,
+                Scm_HalfToDouble(0xfc00));
     z = Scm_HalfToDouble(0xffff);
     test_true("half->double nan", !(z==z));
     
@@ -726,9 +726,9 @@ void test_f16(void)
     test_half("double->half denormalized min", 0x0001,
               Scm_DoubleToHalf(5.960464477539063e-8));
 
-    test_half("double->half inf",  0x7c00, Scm_DoubleToHalf(1.0/0.0));
-    test_half("double->half -inf", 0xfc00, Scm_DoubleToHalf(-1.0/0.0));
-    test_half("double->half nan",  0x7fff, Scm_DoubleToHalf(0.0/0.0));
+    test_half("double->half inf",  0x7c00, Scm_DoubleToHalf(SCM_DBL_POSITIVE_INFINITY));
+    test_half("double->half -inf", 0xfc00, Scm_DoubleToHalf(SCM_DBL_NEGATIVE_INFINITY));
+    test_half("double->half nan",  0x7fff, Scm_DoubleToHalf(SCM_DBL_NAN));
 
     test_half("double->half, rounding", 0x4000,
               Scm_DoubleToHalf(1.999755859375)); /* m=#b1111111111.11 */
@@ -769,7 +769,7 @@ int main(int argc, char **argv)
     
     fprintf(stderr, "%-65s", testmsg);
     message(stdout, testmsg, '=');
-    
+
     test_uadd();
     test_uaddov();
     test_saddov();

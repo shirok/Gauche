@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.h,v 1.7 2007-03-22 11:20:31 shirok Exp $
+ *  $Id: code.h,v 1.8 2007-08-24 23:55:45 shirok Exp $
  */
 
 #ifndef GAUCHE_CODE_H
@@ -146,10 +146,10 @@ SCM_EXTERN void   Scm_CompiledCodeEmit(ScmCompiledCode *cc,
 /* Macros for transition to the packed code vector of NVM.
    In the packed code vector, VM insns are stored untagged.
    It eliminates the shift in the dispatcher. */
-#define SCM_VM_INSN_CODE(obj)       (SCM_WORD(obj)&0x0ff)
+#define SCM_VM_INSN_CODE(obj)       ((u_int)(SCM_WORD(obj)&0x0ff))
 #define SCM_VM_INSN_ARG(obj)        ((signed long)SCM_WORD(obj) >> 8)
-#define SCM_VM_INSN_ARG0(obj)       ((SCM_WORD(obj) >>  8) & 0x03ff)
-#define SCM_VM_INSN_ARG1(obj)       ((SCM_WORD(obj) >> 18) & 0x03ff)
+#define SCM_VM_INSN_ARG0(obj)       ((int)((SCM_WORD(obj) >>  8) & 0x03ff))
+#define SCM_VM_INSN_ARG1(obj)       ((int)((SCM_WORD(obj) >> 18) & 0x03ff))
 
 #define SCM_VM_INSN(code)           SCM_WORD(code)
 #define SCM_VM_INSN1(code, arg)     SCM_WORD((long)((arg)<<8) | (code))

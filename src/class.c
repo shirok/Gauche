@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.155 2007-08-12 03:16:55 shirok Exp $
+ *  $Id: class.c,v 1.156 2007-08-24 23:55:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1317,14 +1317,14 @@ static ScmObj slot_ref_using_accessor(ScmObj obj,
         void *data[3];
         data[0] = obj;
         data[1] = sa->name;
-        data[2] = (void*)(long)boundp;
+        data[2] = (void*)(intptr_t)boundp;
         Scm_VMPushCC(slot_boundp_using_accessor_cc, data, 3);
         return Scm_VMApply(sa->schemeBoundp, SCM_LIST1(obj));
     } else if (SCM_PROCEDUREP(sa->schemeGetter)) {
         void *data[3];
         data[0] = obj;
         data[1] = sa->name;
-        data[2] = (void*)(long)boundp;
+        data[2] = (void*)(intptr_t)boundp;
         Scm_VMPushCC(slot_ref_using_accessor_cc, data, 3);
         return Scm_VMApply(sa->schemeGetter, SCM_LIST1(obj));
     } else {
@@ -1353,7 +1353,7 @@ static ScmObj slot_ref_using_accessor(ScmObj obj,
  */
 static ScmObj slot_ref_cc(ScmObj result, void **data)
 {
-    return Scm_VMSlotRef(SCM_OBJ(data[0]), SCM_OBJ(data[1]), (intptr_t)data[2]);
+    return Scm_VMSlotRef(SCM_OBJ(data[0]), SCM_OBJ(data[1]), (int)(intptr_t)data[2]);
 }
 
 ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp)
@@ -2889,7 +2889,7 @@ void Scm_InitStaticClassWithMeta(ScmClass *klass,
         int nlen;
         char *metaname;
     
-        nlen = strlen(name);
+        nlen = (int)strlen(name);
         metaname = SCM_NEW_ATOMIC2(char *, nlen + 6);
 
         if (name[nlen - 1] == '>') {

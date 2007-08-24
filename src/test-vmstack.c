@@ -1,6 +1,6 @@
 /* 
  * Test VM stack sanity
- * $Id: test-vmstack.c,v 1.6 2007-01-16 08:16:46 shirok Exp $
+ * $Id: test-vmstack.c,v 1.7 2007-08-24 23:55:44 shirok Exp $
  */
 
 #include <stdio.h>
@@ -15,7 +15,7 @@ void message(FILE *out, const char *m, int filler)
     int i;
     fprintf(out, "%s", m);
     if (filler) {
-        int len = 79 - strlen(m);
+        int len = 79 - (int)strlen(m);
         if (len < 0) len = 5;
         for (i=0; i<len; i++) putc(filler, out);
     }

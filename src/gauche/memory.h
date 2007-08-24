@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: memory.h,v 1.8 2007-03-22 11:20:31 shirok Exp $
+ *  $Id: memory.h,v 1.9 2007-08-24 23:55:45 shirok Exp $
  */
 
 #ifndef GAUCHE_MEM_H
@@ -51,8 +51,12 @@
 
 /* These #define's must match the ones libgc.a was compiled with. */
 /* NB: when cross-compiling, SMALL_CONFIG is defined in GC. */
+#ifndef DONT_ADD_BYTE_AT_END
 #define DONT_ADD_BYTE_AT_END
+#endif
+#ifndef ALL_INTERIOR_POINTERS
 #define ALL_INTERIOR_POINTERS
+#endif
 
 /* gc_priv.h included by gc_inline.h redefines FALSE and TRUE without
    checking prior definition.  This is a workaround. */

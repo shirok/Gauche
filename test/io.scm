@@ -107,39 +107,43 @@
 ;;-------------------------------------------------------------------
 (test-section "port-fd-dup!")
 
-(test* "port-fd-dup!" '("foo" "bar")
-       (let* ((p1 (open-output-file "tmp1.o"))
-              (p2 (open-output-file "tmp2.o")))
-         (display "foo\n" p1)
-         (port-fd-dup! p1 p2)
-         (display "bar\n" p1)
-         (close-output-port p1)
-         (close-output-port p2)
-         (list (call-with-input-file "tmp1.o" read-line)
-               (call-with-input-file "tmp2.o" read-line))))
+(cond-expand
+ (gauche.os.windows #f)
+ (else
+  (test* "port-fd-dup!" '("foo" "bar")
+         (let* ((p1 (open-output-file "tmp1.o"))
+                (p2 (open-output-file "tmp2.o")))
+           (display "foo\n" p1)
+           (port-fd-dup! p1 p2)
+           (display "bar\n" p1)
+           (close-output-port p1)
+           (close-output-port p2)
+           (list (call-with-input-file "tmp1.o" read-line)
+                 (call-with-input-file "tmp2.o" read-line))))
 
-(test* "port-fd-dup!" '("foo" "bar")
-       (let* ((p1 (open-input-file "tmp1.o"))
-              (p2 (open-input-file "tmp2.o"))
-              (s1 (read-line p1)))
-         (port-fd-dup! p1 p2)
-         (list s1 (read-line p1))))
+  (test* "port-fd-dup!" '("foo" "bar")
+         (let* ((p1 (open-input-file "tmp1.o"))
+                (p2 (open-input-file "tmp2.o"))
+                (s1 (read-line p1)))
+           (port-fd-dup! p1 p2)
+           (list s1 (read-line p1))))
 
-(test* "port-fd-dup!" *test-error*
-       (let* ((p1 (open-output-file "tmp1.o"))
-              (p2 (open-input-file "tmp2.o")))
-         (guard (e (else
-                    (close-output-port p1)
-                    (close-input-port p2)
-                    (raise e)))
-           (port-fd-dup! p1 p2))))
+  (test* "port-fd-dup!" *test-error*
+         (let* ((p1 (open-output-file "tmp1.o"))
+                (p2 (open-input-file "tmp2.o")))
+           (guard (e (else
+                      (close-output-port p1)
+                      (close-input-port p2)
+                      (raise e)))
+             (port-fd-dup! p1 p2))))
 
-(test* "port-fd-dup!" *test-error*
-       (let* ((p1 (open-input-file "tmp2.o")))
-         (guard (e (else
-                    (close-input-port p1)
-                    (raise e)))
-           (port-fd-dup! (open-input-string "") p1))))
+  (test* "port-fd-dup!" *test-error*
+         (let* ((p1 (open-input-file "tmp2.o")))
+           (guard (e (else
+                      (close-input-port p1)
+                      (raise e)))
+             (port-fd-dup! (open-input-string "") p1))))
+  )) ; !gauche.os.windows
 
 ;;-------------------------------------------------------------------
 (test-section "input ports")

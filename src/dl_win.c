@@ -1,4 +1,4 @@
-/*
+/*-
  * dl_win.c - windows LoadLibrary interface
  *
  *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
@@ -8,7 +8,7 @@
  *   are met:
  * 
  *   1. Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
+ *     notice, this list of conditions and the following disclaimer.
  *
  *   2. Redistributions in binary form must reproduce the above copyright
  *      notice, this list of conditions and the following disclaimer in the
@@ -30,20 +30,22 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: dl_win.c,v 1.5 2007-03-02 07:39:13 shirok Exp $
+ *  $Id: dl_win.c,v 1.6 2007-08-24 23:55:42 shirok Exp $
  */
 
 /* This file is included in load.c */
 
 /* NB: if we use MT, we need a special wrapper around LoadLibrary
    (see gc/gc_dlopen.c).   For the time being we assume MT is off
-   on Windows/MinGW version. */
+   on Windows version. */
 
 #include <windows.h>
 
 static void *dl_open(const char *path)
 {
-    return (void*)LoadLibrary(path);
+    LPTSTR xpath;
+    xpath = SCM_MBS2WCS(path);
+    return (void*)LoadLibrary(xpath);
 }
 
 static const char *dl_error(void)

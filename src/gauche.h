@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.495 2007-08-12 03:16:55 shirok Exp $
+ *  $Id: gauche.h,v 1.496 2007-08-24 23:55:42 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -57,9 +57,13 @@
 #include <gauche/float.h>
 
 #if defined(LIBGAUCHE_BODY)
+#if !defined(GC_DLL)
 #define GC_DLL    /* for gc.h to handle Win32 crazyness */
+#endif
+#if !defined(GC_BUILD)
 #define GC_BUILD  /* ditto */
-#endif 
+#endif
+#endif /* LIBGAUCHE_BODY */ 
 #include <gc.h>
 
 #ifndef SCM_DECL_BEGIN
@@ -85,21 +89,29 @@ SCM_DECL_BEGIN
 # endif
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif /*HAVE_UNISTD_H*/
+
+/* For Windows platforms, we need some compatibility tricks. */
+#if defined(__MINGW32__) || defined(MSVC)
+#include <gauche/WIN-compat.h>
+#endif /* MINGW32 || WINDOWS */
+
 /* Ugly cliche for Win32. */
-#if defined(__CYGWIN__) || defined(__MINGW32__)
+#if defined(__CYGWIN__) || defined(GAUCHE_WINDOWS)
 # if defined(LIBGAUCHE_BODY)
-#  define SCM_EXTERN extern
+#  if defined(MSVC)
+#    define SCM_EXTERN extern __declspec(dllexport)
+#  else
+#    define SCM_EXTERN extern
+#  endif
 # else
 #  define SCM_EXTERN extern __declspec(dllimport)
 # endif
-#else  /*!(__CYGWIN__ || __MINGW32__)*/
+#else  /*!(__CYGWIN__ || GAUCHE_WINDOWS)*/
 # define SCM_EXTERN extern
-#endif /*!(__CYGWIN__ || __MINGW32__)*/
-
-/* For Mingw32, we need some tricks */
-#if defined(__MINGW32__)
-#include <gauche/mingw-compat.h>
-#endif /*__MINGW32__*/
+#endif /*!(__CYGWIN__ || GAUCHE_WINDOWS)*/
 
 /* Some useful macros */
 #ifndef FALSE
@@ -131,7 +143,7 @@ SCM_DECL_BEGIN
 /*
  * A word large enough to hold a pointer
  */
-typedef unsigned long ScmWord;
+typedef intptr_t ScmWord;
 
 /*
  * A byte
@@ -244,10 +256,10 @@ SCM_EXTERN int Scm_EqualM(ScmObj x, ScmObj y, int mode);
  */
 
 #define SCM_INTP(obj)        (SCM_TAG(obj) == 1)
-#define SCM_INT_VALUE(obj)   (((signed long int)(obj)) >> 2)
-#define SCM_MAKE_INT(obj)    SCM_OBJ(((long)(obj) << 2) + 1)
+#define SCM_INT_VALUE(obj)   (((signed long int)SCM_WORD(obj)) >> 2)
+#define SCM_MAKE_INT(obj)    SCM_OBJ(((intptr_t)(obj) << 2) + 1)
 
-#define SCM_UINTP(obj)       (SCM_INTP(obj)&&((signed long int)(obj)>=0))
+#define SCM_UINTP(obj)       (SCM_INTP(obj)&&((signed long int)SCM_WORD(obj)>=0))
 
 /*
  * CHARACTERS
@@ -261,7 +273,7 @@ SCM_EXTERN int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 #define	SCM_CHAR(obj)           ((ScmChar)(obj))
 #define	SCM_CHARP(obj)          ((SCM_WORD(obj)&0x07L) == 2)
 #define	SCM_CHAR_VALUE(obj)     SCM_CHAR(SCM_WORD(obj) >> 3)
-#define	SCM_MAKE_CHAR(ch)       SCM_OBJ((long)((ch) << 3) + 2)
+#define	SCM_MAKE_CHAR(ch)       SCM_OBJ(SCM_WORD((ch) << 3) + 2)
 
 #define SCM_CHAR_INVALID        ((ScmChar)(-1)) /* indicate invalid char */
 #define SCM_CHAR_MAX            (0x1fffffff)

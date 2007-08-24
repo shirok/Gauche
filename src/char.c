@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.55 2007-08-10 01:19:36 shirok Exp $
+ *  $Id: char.c,v 1.56 2007-08-24 23:55:42 shirok Exp $
  */
 
 #include <ctype.h>
@@ -431,7 +431,7 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
                     0, SCM_CHAR_SET_SMALL_CHARS);
     Scm_TreeIterInit(&iter, &src->large, NULL);
     while ((e = Scm_TreeIterNext(&iter)) != NULL) {
-        Scm_CharSetAddRange(dst, e->key, e->value);
+        Scm_CharSetAddRange(dst, SCM_CHAR(e->key), SCM_CHAR(e->value));
     }
     return SCM_OBJ(dst);
 }
@@ -451,7 +451,7 @@ ScmObj Scm_CharSetComplement(ScmCharSet *cs)
             n = Scm_TreeCoreSearch(&cs->large, last, SCM_DICT_CREATE);
             n->value = e->key-1;
         }
-        last = e->value+1;
+        last = (int)e->value+1;
     }
     if (last < SCM_CHAR_MAX) {
         n = Scm_TreeCoreSearch(&cs->large, last, SCM_DICT_CREATE);
@@ -742,7 +742,7 @@ ScmObj read_predef_charset(ScmPort *input, ScmObj *chars)
         *chars = Scm_Cons(SCM_MAKE_CHAR(ch), *chars);
         if (!SCM_CHAR_ASCII_P(ch)) break;
         if (ch != ']') {
-            name[i] = ch;
+            name[i] = (char)ch;
             continue;
         }
         if (strncmp(name, ":alnum:", 7) == 0) {

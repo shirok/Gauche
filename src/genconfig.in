@@ -3,7 +3,7 @@
 #
 # Generates gauche-config.c and gauche/arch.h
 #
-# $Id: genconfig.in,v 1.12 2007-03-17 00:38:03 shirok Exp $
+# $Id: genconfig.in,v 1.13 2007-08-24 23:55:42 shirok Exp $
 #
 
 # TODO: we have almost exactly the same table in gauche-config.c part
@@ -15,12 +15,10 @@ xtarget=@xtarget@
 gauche_version=@GAUCHE_VERSION@
 
 case "$xtarget" in
-  *mingw*)
-     # Since we cross-build Windows/MinGW version, we cannot use the
-     # directory prefix set by configure (which works on the build
-     # environment, but not on the runtime environment).  Instead,
-     # we find the location of the binary and calculate the prefix path
-     # from it.  The '@' mark will be replaced by the prefix path
+  *mingw*|*winnt*)
+     # On Windows we can't rely on the paths set by configure.
+     # We find the location of the binary and calculate the prefix path
+     # from it instead.  The '@' mark will be replaced by the prefix path
      # at runtime.
      prefix=@
      exec_prefix=@
@@ -100,7 +98,7 @@ cat > gauche-config.c <<EOF
 #include <errno.h>
 #include <ctype.h>
 
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(_WINDOWS)
 #include <windows.h>
 #include <shlwapi.h>
 #endif
@@ -206,9 +204,9 @@ static struct cmd_rec {
 
 static void print_output(struct cmd_rec *cmd) 
 {
-#if !defined(__MINGW32__)
+#if !defined(__MINGW32__) && !defined(_WINDOWS)
     printf("%s\\n", cmd->value);
-#else   /* __MINGW32__ */
+#else   /* __MINGW32__ || _WINDOWS */
     const char *dir_mark;
 
     if ((dir_mark = strchr(cmd->value, '@')) == NULL) {
@@ -243,7 +241,7 @@ static void print_output(struct cmd_rec *cmd)
 	fwrite(cmd->value, dir_mark - cmd->value, 1, stdout);
 	fprintf(stdout, "%s%s\\n", path, dir_mark+1);
     }
-#endif  /* __MINGW32__ */
+#endif  /* __MINGW32__ || _WINDOWS */
 }
 
 static void fixup_extension(int argc, char **argv)

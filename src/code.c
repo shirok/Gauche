@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.17 2007-05-16 03:27:09 shirok Exp $
+ *  $Id: code.c,v 1.18 2007-08-24 23:55:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -402,7 +402,7 @@ static void cc_builder_jumpopt(ScmCompiledCode *cc)
     u_int code, i;
     ScmWord *target;
 
-    for (i=0; i<cc->codeSize; i++) {
+    for (i=0; i<(u_int)cc->codeSize; i++) {
         code = SCM_VM_INSN_CODE(*cp); cp++;
         switch (Scm_VMInsnOperandType(code)) {
         case SCM_VM_OPERAND_OBJ:;
@@ -864,12 +864,12 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
    Addr operand -> integer offset from the beginning of the code */
 ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc)
 {
-    int i, off;
+    u_int i, off;
     ScmObj h = SCM_NIL, t = SCM_NIL;
     
-    for (i=0; i<cc->codeSize; i++) {
+    for (i=0; i<(u_int)cc->codeSize; i++) {
         ScmWord insn = cc->code[i];
-        int code = SCM_VM_INSN_CODE(insn);
+        u_int code = SCM_VM_INSN_CODE(insn);
         const char *name = Scm_VMInsnName(code);
         
         switch (Scm_VMInsnNumParams(code)) {
@@ -894,11 +894,11 @@ ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc)
             SCM_APPEND1(h, t, SCM_OBJ(cc->code[++i]));
             break;
         case SCM_VM_OPERAND_ADDR:
-            off = (ScmWord*)cc->code[++i] - cc->code;
+            off = (u_int)((ScmWord*)cc->code[++i] - cc->code);
             SCM_APPEND1(h, t, SCM_MAKE_INT(off));
             break;
         case SCM_VM_OPERAND_OBJ_ADDR:
-            off = (ScmWord*)cc->code[i+2] - cc->code;
+            off = (u_int)((ScmWord*)cc->code[i+2] - cc->code);
             SCM_APPEND(h, t, SCM_LIST2(SCM_OBJ(cc->code[i+1]),
                                        SCM_MAKE_INT(off)));
             i += 2;

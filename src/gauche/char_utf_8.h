@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char_utf_8.h,v 1.12 2007-03-22 11:20:30 shirok Exp $
+ *  $Id: char_utf_8.h,v 1.13 2007-08-24 23:55:45 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -88,7 +88,7 @@ SCM_EXTERN void Scm_CharUtf8Putc(unsigned char *, ScmChar);
         if (ch >= 0x80) {                               \
             Scm_CharUtf8Putc((unsigned char*)cp, ch);   \
         } else {                                        \
-            *(cp) = (ch);                               \
+            *(cp) = (unsigned char)(ch);                \
         }                                               \
     } while (0)
 
@@ -227,36 +227,36 @@ ScmChar Scm_CharUtf8Getc(const unsigned char *cp)
 void Scm_CharUtf8Putc(unsigned char *cp, ScmChar ch)
 {
     if (ch < 0x80) {
-        *cp = ch;
+        *cp = (u_char)ch;
     }
     else if (ch < 0x800) {
-        *cp++ = ((ch>>6)&0x1f) | 0xc0;
-        *cp = (ch&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>6)&0x1f) | 0xc0;
+        *cp = (u_char)(ch&0x3f) | 0x80;
     }
     else if (ch < 0x10000) {
-        *cp++ = ((ch>>12)&0x0f) | 0xe0;
-        *cp++ = ((ch>>6)&0x3f) | 0x80;
-        *cp = (ch&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>12)&0x0f) | 0xe0;
+        *cp++ = (u_char)((ch>>6)&0x3f) | 0x80;
+        *cp = (u_char)(ch&0x3f) | 0x80;
     }
     else if (ch < 0x200000) {
-        *cp++ = ((ch>>18)&0x07) | 0xf0;
-        *cp++ = ((ch>>12)&0x3f) | 0x80;
-        *cp++ = ((ch>>6)&0x3f) | 0x80;
-        *cp = (ch&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>18)&0x07) | 0xf0;
+        *cp++ = (u_char)((ch>>12)&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>6)&0x3f) | 0x80;
+        *cp = (u_char)(ch&0x3f) | 0x80;
     }
     else if (ch < 0x4000000) {
-        *cp++ = ((ch>>24)&0x03) | 0xf8;
-        *cp++ = ((ch>>18)&0x3f) | 0x80;
-        *cp++ = ((ch>>12)&0x3f) | 0x80;
-        *cp++ = ((ch>>6)&0x3f) | 0x80;
-        *cp = (ch&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>24)&0x03) | 0xf8;
+        *cp++ = (u_char)((ch>>18)&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>12)&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>6)&0x3f) | 0x80;
+        *cp = (u_char)(ch&0x3f) | 0x80;
     } else {
-        *cp++ = ((ch>>30)&0x1) | 0xfc;
-        *cp++ = ((ch>>24)&0x3f) | 0x80;
-        *cp++ = ((ch>>18)&0x3f) | 0x80;
-        *cp++ = ((ch>>12)&0x3f) | 0x80;
-        *cp++ = ((ch>>6)&0x3f) | 0x80;
-        *cp++ = (ch&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>30)&0x1) | 0xfc;
+        *cp++ = (u_char)((ch>>24)&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>18)&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>12)&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>6)&0x3f) | 0x80;
+        *cp++ = (u_char)(ch&0x3f) | 0x80;
     }
 }
 

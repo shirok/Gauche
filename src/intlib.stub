@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.28 2007-08-16 11:29:50 shirok Exp $
+;;; $Id: intlib.stub,v 1.29 2007-08-24 23:55:43 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -338,7 +338,8 @@
 (define-cproc vm-code->list (code::<compiled-code>)
   (call "Scm_CompiledCodeToList"))
 (define-cproc vm-insn-build (insn)
-  (call <ulong> "Scm_VMInsnBuild"))
+  (expr <ulong> (cast u_long (Scm_VMInsnBuild insn))))
+
 
 ;; Eval situation flag (for eval-when constrcut)
 (define-cproc vm-eval-situation (&optional val)

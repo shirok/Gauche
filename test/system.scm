@@ -9,8 +9,6 @@
 
 (test-start "system")
 
-(define *win32* (string-suffix? "-mingw32" (gauche-architecture)))
-
 ;;-------------------------------------------------------------------
 (test-section "system")
 ;; test this first, so that we can use system commands to verify our results.
@@ -18,14 +16,38 @@
 (test* "system" #t (begin (sys-system ":") #t))
 (test* "system" #t (begin (sys-system "") #t))
 
+;; shorthand of normalizing pathname.  this doesn't do anything on
+;; unix, but on Windows the separator in PATHNAME is replaced.
+(define (n pathname) (sys-normalize-pathname pathname))
+
+;; some common operations via command
+(define (cmd-rmrf dir)
+  (cond-expand
+   (gauche.os.windows
+    (sys-system #`"rmdir /q /s ,(n dir) > NUL")
+    (sys-system #`"del /q ,(n dir) > NUL"))
+   (else
+    (sys-system #`"rm -rf ,dir > /dev/null"))))
+
+(define (cmd-mkdir dir)
+  (cond-expand
+   (gauche.os.windows (sys-system #`"mkdir ,(n dir)"))
+   (else (sys-system #`"mkdir ,dir"))))
+
+(define (cmd-touch path)
+  (cond-expand
+   (gauche.os.windows (sys-system #`"echo \"\" > ,(n path)"))
+   (else (sys-system #`"touch ,path"))))
+
 (define (get-command-output command)
-  (sys-system "rm -rf test.out")
+  (cmd-rmrf "test.out")
   (sys-system (format #f "~a > test.out" command))
   (call-with-input-file "test.out"
     (lambda (in)
       (let loop ((line (read-line in)) (lines '()))
         (if (eof-object? line)
-            (begin (sys-system "rm -rf test.out")
+            (begin (close-input-port in)
+                   (cmd-rmrf "test.out")
                    (string-join (reverse lines) " "))
             (loop (read-line in) (cons line lines)))))))
 
@@ -35,22 +57,24 @@
 (define (get-pwd-via-pwd)
   ;; use pwd command to get pwd.  avoid using shell's built-in pwd,
   ;; for it may be confused by symlinks.
-  (cond (*win32* (get-command-output "cd"))
-	((sys-access "/bin/pwd" |X_OK|) (get-command-output "/bin/pwd"))
-        ((sys-access "/usr/bin/pwd" |X_OK|) (get-command-output "/usr/bin/pwd"))
-        ((sys-access "/sbin/pwd" |X_OK|) (get-command-output "/sbin/pwd"))
-        (else (get-command-output "pwd"))))
+  (cond-expand
+   (gauche.os.windows (get-command-output "cd"))
+   (else
+    (cond
+     ((sys-access "/bin/pwd" |X_OK|) (get-command-output "/bin/pwd"))
+     ((sys-access "/usr/bin/pwd" |X_OK|) (get-command-output "/usr/bin/pwd"))
+     ((sys-access "/sbin/pwd" |X_OK|) (get-command-output "/sbin/pwd"))
+     (else (get-command-output "pwd"))))))
 
-;; shorthand of normalizing pathname.  this doesn't do anything on
-;; unix, but on Windows the separator in PATHNAME is replaced.
-(define (n pathname) (sys-normalize-pathname pathname))
 
 ;;-------------------------------------------------------------------
 (test-section "environment")
 
 (test* "getenv"
        (string-trim-both
-	(get-command-output (if *win32* "echo %PATH%" "echo $PATH")))
+	(get-command-output (cond-expand
+                             (gauche.os.windows "echo %PATH%")
+                             (else "echo $PATH"))))
        (sys-getenv "PATH"))
 
 (test* "getcwd" (get-pwd-via-pwd)
@@ -84,7 +108,8 @@
 (test* "basename" ".." (sys-basename "../.."))
 (test* "dirname"  ".." (sys-dirname "../.."))
 
-(when *win32*
+(cond-expand
+ (gauche.os.windows
   ;; test with a drive letter
   (test* "dirname"  "d:\\" (sys-dirname  "d:"))
   (test* "basename" ""     (sys-basename "d:"))
@@ -99,15 +124,19 @@
   (test* "dirname"  "d:z"  (sys-dirname  "d:z/y"))
   (test* "basename" "y"    (sys-basename "d:z/y"))
   )
+ (else #f))
 
 (test* "normalize" (n (string-append (get-pwd-via-pwd) "/."))
        (sys-normalize-pathname "." :absolute #t))
 (test* "normalize" (n (string-append (get-pwd-via-pwd) "/"))
        (sys-normalize-pathname "" :absolute #t))
-(unless *win32*
+(cond-expand
+ (gauche.os-windows #t)
+ (else
   (test* "normalize"
          (n (string-append (get-command-output "echo $HOME") "/abc"))
-         (sys-normalize-pathname "~/abc" :expand #t)))
+         (sys-normalize-pathname "~/abc" :expand #t))))
+
 (test* "normalize" (n "/a/b/c/d/e")
        (sys-normalize-pathname "/a/b//.///c//d/./e"
                                :canonicalize #t))
@@ -140,22 +169,18 @@
 ;;-------------------------------------------------------------------
 (test-section "filesystem")
 
-(sys-system "rm -rf test.dir >/dev/null")
+(cmd-rmrf "test.dir")
 
 (test* "access" '(#f #f #f #f)
        (map (lambda (flag) (sys-access "test.dir" flag))
             (list |F_OK| |R_OK| |W_OK| |X_OK|)))
-(sys-system "mkdir test.dir")
-(sys-system "mkdir test.dir/999")
-(sys-system "chmod 0777 test.dir/999")
-(sys-system "touch test.dir/777")
-(sys-system "chmod 0777 test.dir/777")
-(sys-system "touch test.dir/500")
-(sys-system "chmod 0500 test.dir/500")
-(sys-system "touch test.dir/400")
-(sys-system "chmod 0400 test.dir/400")
-(sys-system "touch test.dir/000")
-(sys-system "chmod 0000 test.dir/000")
+
+(cmd-mkdir "test.dir")
+(cmd-mkdir "test.dir/999")
+(cmd-touch "test.dir/777")
+(cmd-touch "test.dir/500")
+(cmd-touch "test.dir/400")
+(cmd-touch "test.dir/000")
 
 ;; NB: access(2) causes problems on some platforms.
 ;; Since its use is discouraged because of security concern
@@ -184,32 +209,40 @@
 (test* "sys-glob" ()
        (sys-glob "test.dir/999/*"))
 
-(sys-system "rm -rf test.dir")
+(cmd-rmrf "test.dir")
 
-(sys-system "touch test.dir")
+(cmd-touch "test.dir")
 
 (test* "unlink" #f
        (begin
          (sys-unlink "test.dir") (sys-access "test.dir" |F_OK|)))
 
-(test* "mkdir" #/drw[sx]r-[sx]---/
-       (begin
-         (sys-mkdir "test.dir" #o750)
-         (get-lsmode "test.dir"))
-       rxmatch)
+(cond-expand
+ (gauche.os.windows
+  ;; we need entirey different scheme here, but for the time being we
+  ;; just omit the test.
+  (sys-mkdir "test.dir" #o750)
+  )
+ (else
+  (test* "mkdir" #/drw[sx]r-[sx]---/
+         (begin
+           (sys-mkdir "test.dir" #o750)
+           (get-lsmode "test.dir"))
+         rxmatch)
 
-(test* "chmod" #/drw[sx]r-[sx]r-x/
-       (begin
-         (sys-chmod "test.dir" #o755)
-         (get-lsmode "test.dir"))
-       rxmatch)
+  (test* "chmod" #/drw[sx]r-[sx]r-x/
+         (begin
+           (sys-chmod "test.dir" #o755)
+           (get-lsmode "test.dir"))
+         rxmatch)
 
-(test* "fchmod" #/drw[sx]r-[sx]---/
-       (begin
-         (call-with-input-file "test.dir"
-           (cut sys-fchmod <> #o750))
-         (get-lsmode "test.dir"))
-       rxmatch)
+  (test* "fchmod" #/drw[sx]r-[sx]---/
+         (begin
+           (call-with-input-file "test.dir"
+             (cut sys-fchmod <> #o750))
+           (get-lsmode "test.dir"))
+         rxmatch)
+  ))
 
 (define *fs-test-str* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -263,7 +296,7 @@
 ;;-------------------------------------------------------------------
 (test-section "stat")
 
-(sys-system "rm -rf test.dir > /dev/null")
+(cmd-rmrf "test.dir")
 (with-output-to-file "test.dir" (lambda () (display "01234")))
 (sys-chmod "test.dir" #o654)
 
@@ -348,19 +381,21 @@
 (test* "pipe and read-block(none)" 2
        (receive (in out) (sys-pipe :buffering :none)
          (display "ab" out)
-         (when *win32* (close-output-port out))
+         (cond-expand (gauche.os.windows (close-output-port out)) (else))
          (let1 r (string-size (read-block 1000 in))
            (close-input-port in)
-           (unless *win32* (close-output-port out))
+           (cond-expand ((not gauche.os.windows) (close-output-port out))
+                        (else))
            r)))
 
 (test* "pipe and read-block(line)" 2
        (receive (in out) (sys-pipe :buffering :line)
          (display "a\n" out)
-         (when *win32* (close-output-port out))
+         (cond-expand (gauche.os.windows (close-output-port out)) (else))
          (let1 r (string-size (read-block 1000 in))
            (close-input-port in)
-           (unless *win32* (close-output-port out))
+           (cond-expand ((not gauche.os.windows) (close-output-port out))
+                        (else))
            r)))
 
 ;;-------------------------------------------------------------------
@@ -371,29 +406,29 @@
    (gauche.sys.nanosleep (sys-nanosleep 200000000))  ;0.2s
    (else (sys-sleep 1))))
 
-(unless *win32*  ;; win32 doesn't support fork at all.
-
-(test* "fork & wait" #t
-       (let ((pid (sys-fork)))
-         (if (= pid 0)
+(cond-expand
+ ((not gauche.os.windows)  ;; win32 doesn't support fork at all.
+  (test* "fork & wait" #t
+         (let ((pid (sys-fork)))
+           (if (= pid 0)
              (sys-exit 5)
              (receive (rpid code) (sys-wait)
                (and (= rpid pid)
                     (sys-wait-exited? code)
                     (= (sys-wait-exit-status code) 5))))))
 
-(test* "fork & waitpid" #t
-       (let ((pid (sys-fork)))
-         (if (= pid 0)
+  (test* "fork & waitpid" #t
+         (let ((pid (sys-fork)))
+           (if (= pid 0)
              (sys-exit 10)
              (receive (rpid code) (sys-waitpid pid)
                (and (= rpid pid)
                     (sys-wait-exited? code)
                     (= (sys-wait-exit-status code) 10))))))
 
-(test* "fork, wait & kill" #t
-       (let ((pid (sys-fork)))
-         (if (= pid 0)
+  (test* "fork, wait & kill" #t
+         (let ((pid (sys-fork)))
+           (if (= pid 0)
              (begin (sys-pause) (sys-exit 0))
              (begin 
                (sys-kill pid |SIGKILL|)
@@ -402,9 +437,9 @@
                       (sys-wait-signaled? code)
                       (= (sys-wait-termsig code) |SIGKILL|)))))))
 
-(test* "fork, wait, kill & sleep" #t
-       (let1 pid (sys-fork)
-         (if (= pid 0)
+  (test* "fork, wait, kill & sleep" #t
+         (let1 pid (sys-fork)
+           (if (= pid 0)
              (begin (nap) (sys-exit 0))
              (begin 
                (sys-kill pid |SIGSTOP|) 
@@ -420,12 +455,12 @@
                                     )))
                       )))
              ))
-       )
+         )
 
-(test* "fork & pipe" 70000
-       (receive (in out) (sys-pipe)
-         (let1 pid (sys-fork)
-           (if (= pid 0)
+  (test* "fork & pipe" 70000
+         (receive (in out) (sys-pipe)
+           (let1 pid (sys-fork)
+             (if (= pid 0)
                (begin (close-input-port in)
                       (display (make-string 69999) out)
                       (with-error-handler
@@ -438,30 +473,30 @@
                           (nread  0))
                  (let1 r (string-size (read-block toread in))
                    (if (>= (+ nread r) 70000)
-                       (begin (sys-kill pid SIGTERM)
-                              (sys-waitpid pid)
-                              (+ nread r))
-                       (loop (- toread r) (+ nread r)))))
+                     (begin (sys-kill pid SIGTERM)
+                            (sys-waitpid pid)
+                            (+ nread r))
+                     (loop (- toread r) (+ nread r)))))
                ))))
 
-(test* "fork, exec and signal mask" #t
-       (let ((nmask (make <sys-sigset>))
-             (cmask (make <sys-sigset>)))
-         (sys-sigset-fill! nmask)
-         (let ((omask (sys-sigmask SIG_SETMASK nmask))
-               (zero  (open-input-file "/dev/zero")))
-           (receive (in out) (sys-pipe :buffering :none)
-             (let1 pid
-                 (sys-fork-and-exec "cat" '("cat")
-                                    :iomap `((0 . ,zero) (1 . ,out))
-                                    :sigmask cmask)
-               (read-byte in) ;; make sure 'cat' is started
-               (sys-kill pid SIGINT)
-               (sys-sigmask SIG_SETMASK omask)
-               (sys-waitpid pid)
-               #t)))))
-
-) ;; unless *win32*
+  (test* "fork, exec and signal mask" #t
+         (let ((nmask (make <sys-sigset>))
+               (cmask (make <sys-sigset>)))
+           (sys-sigset-fill! nmask)
+           (let ((omask (sys-sigmask SIG_SETMASK nmask))
+                 (zero  (open-input-file "/dev/zero")))
+             (receive (in out) (sys-pipe :buffering :none)
+               (let1 pid
+                   (sys-fork-and-exec "cat" '("cat")
+                                      :iomap `((0 . ,zero) (1 . ,out))
+                                      :sigmask cmask)
+                 (read-byte in) ;; make sure 'cat' is started
+                 (sys-kill pid SIGINT)
+                 (sys-sigmask SIG_SETMASK omask)
+                 (sys-waitpid pid)
+                 #t)))))
+  ) ; !gauche.os.windows
+ (else))
 
 ;;-------------------------------------------------------------------
 (test-section "select")
@@ -534,77 +569,79 @@
                     (sys-waitpid pid)))))
              ))
          )
-  )) ; cond-expand gauche.sys.select
+  )
+ (else)) ; cond-expand gauche.sys.select
 
 ;;-------------------------------------------------------------------
 (test-section "signal handling")
 
-(unless *win32*
+(cond-expand
+ ((not gauche.os.windows)
 
-(test* "sigalrm1" SIGALRM
-       (call/cc
-        (lambda (k)
-          (with-signal-handlers
-           ((SIGALRM => k)
-            (#t (k 0)))
-           (lambda ()
-             (sys-alarm 1)
-             (sys-pause))))))
-
-(test* "sigalrm2" 0
-       (call/cc
-        (lambda (k)
-          (with-signal-handlers
-           ((#t (k 0))
-            (SIGALRM => k))
-           (lambda ()
-             (sys-alarm 1)
-             (sys-pause))))))
-
-(test* "sigalrm3" *test-error*
-       (call/cc
-        (lambda (k)
-          (with-signal-handlers
-           ((SIGINT => k)
-            (SIGUSR1 => k))
-           (lambda ()
-             (sys-alarm 1)
-             (sys-pause))))))
-
-(test* "sigalrm4 (interrupting syscall)" SIGALRM
-       (call/cc
-        (lambda (k)
-          (with-signal-handlers
-           ((SIGALRM => k))
-           (lambda ()
-             (receive (in out) (sys-pipe)
+  (test* "sigalrm1" SIGALRM
+         (call/cc
+          (lambda (k)
+            (with-signal-handlers
+             ((SIGALRM => k)
+              (#t (k 0)))
+             (lambda ()
                (sys-alarm 1)
-               (read in)))))))
+               (sys-pause))))))
 
-(test* "sigalrm5 (interrupting syscall - restart)" '(a)
-       (receive (in out) (sys-pipe)
-         (with-signal-handlers
-          ((SIGALRM (write '(a) out) (flush out)))
-          (lambda ()
-            (sys-alarm 1)
-            (read in)))))
+  (test* "sigalrm2" 0
+         (call/cc
+          (lambda (k)
+            (with-signal-handlers
+             ((#t (k 0))
+              (SIGALRM => k))
+             (lambda ()
+               (sys-alarm 1)
+               (sys-pause))))))
 
-(when (global-variable-bound? 'gauche 'sys-select)
-  (test* "sigalrm6 (interrupting syscall - restart)" '(#t 0)
-         (let1 r #f
+  (test* "sigalrm3" *test-error*
+         (call/cc
+          (lambda (k)
+            (with-signal-handlers
+             ((SIGINT => k)
+              (SIGUSR1 => k))
+             (lambda ()
+               (sys-alarm 1)
+               (sys-pause))))))
+
+  (test* "sigalrm4 (interrupting syscall)" SIGALRM
+         (call/cc
+          (lambda (k)
+            (with-signal-handlers
+             ((SIGALRM => k))
+             (lambda ()
+               (receive (in out) (sys-pipe)
+                 (sys-alarm 1)
+                 (read in)))))))
+
+  (test* "sigalrm5 (interrupting syscall - restart)" '(a)
+         (receive (in out) (sys-pipe)
            (with-signal-handlers
-            ((SIGALRM (set! r #t)))
+            ((SIGALRM (write '(a) out) (flush out)))
             (lambda ()
               (sys-alarm 1)
-              (let1 s (sys-select #f #f #f 1500000)
-                (list r s))))))
-  )
+              (read in)))))
 
-(test* "fork & sigint" #t
-       (let ((pid (sys-fork))
-             (sigint  #f)
-             (sigchld #f))
-         (if (= pid 0)
+  (when (global-variable-bound? 'gauche 'sys-select)
+    (test* "sigalrm6 (interrupting syscall - restart)" '(#t 0)
+           (let1 r #f
+             (with-signal-handlers
+              ((SIGALRM (set! r #t)))
+              (lambda ()
+                (sys-alarm 1)
+                (let1 s (sys-select #f #f #f 1500000)
+                  (list r s))))))
+    )
+
+  (test* "fork & sigint" #t
+         (let ((pid (sys-fork))
+               (sigint  #f)
+               (sigchld #f))
+           (if (= pid 0)
              (let ((parent (sys-getppid)))
                (nap)
                (sys-kill parent SIGINT)
@@ -615,33 +652,33 @@
               (lambda ()
                 (let loop ()
                   (if (and sigint sigchld)
-                      #t
-                      (begin (sys-pause) (loop))))))
+                    #t
+                    (begin (sys-pause) (loop))))))
              )))
 
-(test* "sigchld" SIGCHLD
-       (call/cc
-        (lambda (k)
-          (with-signal-handlers
-           ((SIGCHLD (sys-wait) (k SIGCHLD)))
-           (lambda ()
-             (let ((pid (sys-fork)))
-               (if (= pid 0)
+  (test* "sigchld" SIGCHLD
+         (call/cc
+          (lambda (k)
+            (with-signal-handlers
+             ((SIGCHLD (sys-wait) (k SIGCHLD)))
+             (lambda ()
+               (let ((pid (sys-fork)))
+                 (if (= pid 0)
                    (sys-exit 0)
                    (sys-pause))))))))
 
-(test* "sigmask" 'hup
-       (let ((sig #f)
-             (chld #f)
-             (mask1 (sys-sigset SIGINT)))
-         (call/cc
-          (lambda (k)
-            (set-signal-handler! SIGINT  k)
-            (set-signal-handler! SIGCHLD (lambda (k) (sys-wait) (set! chld #t)))
-            (set-signal-handler! SIGHUP  (lambda (k) (set! sig 'hup)))
-            (sys-sigmask SIG_BLOCK mask1)
-            (let ((pid (sys-fork)))
-              (if (= pid 0)
+  (test* "sigmask" 'hup
+         (let ((sig #f)
+               (chld #f)
+               (mask1 (sys-sigset SIGINT)))
+           (call/cc
+            (lambda (k)
+              (set-signal-handler! SIGINT  k)
+              (set-signal-handler! SIGCHLD (lambda (k) (sys-wait) (set! chld #t)))
+              (set-signal-handler! SIGHUP  (lambda (k) (set! sig 'hup)))
+              (sys-sigmask SIG_BLOCK mask1)
+              (let ((pid (sys-fork)))
+                (if (= pid 0)
                   (begin
                     (sys-kill (sys-getppid) SIGINT)
                     (nap) ;; solaris seems to lose SIGHUP without this
@@ -658,82 +695,83 @@
                     ;;  (unless chld (loop)))
                     sig)))))))
 
-(let ()
-  (define (test-double-signal signals mask fire-sig)
-    (let ((flag #f)
-          (count 0))
-      (let/cc break
-        (set-signal-handler!
-         signals
-         (lambda (n)
-           (unless flag
-             (inc! count)
-             (when (> count 1) (break 'boo)) ;; avoid infinite reentrance
-             (sys-kill (sys-getpid) fire-sig)
-             (set! flag #t)))
-         mask)
-        (sys-kill (sys-getpid) SIGHUP)
-        flag)))
-
-  (test* "sigmask during interrupt handler (default)" #t
-         (test-double-signal SIGHUP #f SIGHUP))
-
-  (test* "sigmask during interrupt handler (explicit)" #t
-         (test-double-signal SIGHUP (sys-sigset SIGHUP) SIGHUP))
-
-  (test* "sigmask during interrupt handler (multi/default)" #t
-         (test-double-signal (sys-sigset SIGHUP SIGINT)
-                             #f SIGINT))
-
-  (test* "sigmask during interrupt handler (multi/explicit)" #t
-         (test-double-signal (sys-sigset SIGHUP SIGINT)
-                             (sys-sigset SIGINT) SIGINT))
-
-  (test* "sigmask during interrupt handler (reentrance)" 'boo
-         (test-double-signal SIGHUP (sys-sigset) SIGHUP))
-
-  (test* "sigmask during interrupt handler (multi/reentrance)" 'boo
-         (test-double-signal (sys-sigset SIGHUP SIGINT)
-                             (sys-sigset) SIGHUP))
-
-  (set-signal-handler! SIGINT #f)
-  )
-
-;; sys-sigwait
-(cond-expand
- (gauche.sys.sigwait
   (let ()
-    (define z (lambda (n) (raise 'foo)))
-  
-    (set-signal-handler! SIGCHLD #t)
-    (set-signal-handler! SIGINT z)
-  
-    (test* "sys-sigwait" SIGHUP
-           (receive (in out) (sys-pipe)
-             (let1 pid (sys-fork)
-               (cond ((= pid 0)
-                      (close-output-port out)
-                      ;; synchronize with parent process
-                      (read-char in)
-                      (sys-kill (sys-getppid) SIGHUP)
-                      (sys-exit 0))
-                     (else
-                      (close-input-port in)
-                      (let* ((sigset (sys-sigset SIGHUP SIGINT))
-                             (oldmask (sys-sigmask SIG_BLOCK sigset)))
-                        ;; close the pipe to synchronize with child process
+    (define (test-double-signal signals mask fire-sig)
+      (let ((flag #f)
+            (count 0))
+        (let/cc break
+          (set-signal-handler!
+           signals
+           (lambda (n)
+             (unless flag
+               (inc! count)
+               (when (> count 1) (break 'boo)) ;; avoid infinite reentrance
+               (sys-kill (sys-getpid) fire-sig)
+               (set! flag #t)))
+           mask)
+          (sys-kill (sys-getpid) SIGHUP)
+          flag)))
+
+    (test* "sigmask during interrupt handler (default)" #t
+           (test-double-signal SIGHUP #f SIGHUP))
+
+    (test* "sigmask during interrupt handler (explicit)" #t
+           (test-double-signal SIGHUP (sys-sigset SIGHUP) SIGHUP))
+
+    (test* "sigmask during interrupt handler (multi/default)" #t
+           (test-double-signal (sys-sigset SIGHUP SIGINT)
+                               #f SIGINT))
+
+    (test* "sigmask during interrupt handler (multi/explicit)" #t
+           (test-double-signal (sys-sigset SIGHUP SIGINT)
+                               (sys-sigset SIGINT) SIGINT))
+
+    (test* "sigmask during interrupt handler (reentrance)" 'boo
+           (test-double-signal SIGHUP (sys-sigset) SIGHUP))
+
+    (test* "sigmask during interrupt handler (multi/reentrance)" 'boo
+           (test-double-signal (sys-sigset SIGHUP SIGINT)
+                               (sys-sigset) SIGHUP))
+
+    (set-signal-handler! SIGINT #f)
+    )
+
+  ;; sys-sigwait
+  (cond-expand
+   (gauche.sys.sigwait
+    (let ()
+      (define z (lambda (n) (raise 'foo)))
+      
+      (set-signal-handler! SIGCHLD #t)
+      (set-signal-handler! SIGINT z)
+      
+      (test* "sys-sigwait" SIGHUP
+             (receive (in out) (sys-pipe)
+               (let1 pid (sys-fork)
+                 (cond ((= pid 0)
                         (close-output-port out)
-                        (let1 signo (sys-sigwait sigset)
-                          (sys-waitpid pid)
-                          (sys-sigmask SIG_SETMASK oldmask)
-                          signo)))))))
+                        ;; synchronize with parent process
+                        (read-char in)
+                        (sys-kill (sys-getppid) SIGHUP)
+                        (sys-exit 0))
+                       (else
+                        (close-input-port in)
+                        (let* ((sigset (sys-sigset SIGHUP SIGINT))
+                               (oldmask (sys-sigmask SIG_BLOCK sigset)))
+                          ;; close the pipe to synchronize with child process
+                          (close-output-port out)
+                          (let1 signo (sys-sigwait sigset)
+                            (sys-waitpid pid)
+                            (sys-sigmask SIG_SETMASK oldmask)
+                            signo)))))))
 
-    (test* "sys-sigwait / signal handler restoration" 'foo
-           (guard (e (else e))
-             (sys-kill (sys-getpid) SIGINT))))
-  )) ;; gauche.sys.sigwait
+      (test* "sys-sigwait / signal handler restoration" 'foo
+             (guard (e (else e))
+               (sys-kill (sys-getpid) SIGINT))))
+    )) ;; gauche.sys.sigwait
 
-) ;; unless *win32*
+  ) ;; (not gauche.os.windows)
+ (else))
 
 (test-end)
 

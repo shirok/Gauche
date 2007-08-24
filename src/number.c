@@ -30,19 +30,17 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.150 2007-08-14 01:00:46 shirok Exp $
+ *  $Id: number.c,v 1.151 2007-08-24 23:55:43 shirok Exp $
  */
 
-#include <math.h>
-#include <limits.h>
-#include <string.h>
-#include <ctype.h>
-#include <float.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/bignum.h"
 #include "gauche/scmconst.h"
 #include "gauche/bits.h"
+
+#include <limits.h>
+#include <float.h>
 
 /*================================================================
  * Some macros
@@ -251,10 +249,10 @@ double Scm_HalfToDouble(ScmHalfFloat v)
     int s = SCM_HALF_FLOAT_SIGN_BIT(v);
     if (e == 31) {              /* special */
         if (m == 0) {
-            if (s) return -1.0/0.0;
-            else   return  1.0/0.0;
+            if (s) return SCM_DBL_NEGATIVE_INFINITY;
+            else   return SCM_DBL_POSITIVE_INFINITY;
         } else {
-            return 0.0/0.0;
+            return SCM_DBL_NAN;
         }
     }
     if (e > 0) {                /* normalized */
@@ -336,7 +334,7 @@ ScmHalfFloat Scm_DoubleToHalf(double v)
        0x400 <= m <= 0x7ff, e > 0,  and denormalized numbers should get
        0 <= m <= 0x3ff, e == 0.  So we don't need to treat denormalized
        specially. */
-    return (dd.components.sign? 0x8000 : 0x0000)|(e << 10)|(m & 0x3ff);
+    return (ScmHalfFloat)((dd.components.sign? 0x8000 : 0x0000)|(e << 10)|(m & 0x3ff));
 }
 
 /*=====================================================================
@@ -826,8 +824,8 @@ ScmObj Scm_MakeInteger64(ScmInt64 i)
     return Scm_MakeBignumFromUIArray(0, val, 2); /* bignum checks sign */
 #else /*SCM_EMULATE_INT64*/
     u_long val[2];
-    val[0] = (uint64_t)i & ULONG_MAX;
-    val[1] = (uint64_t)i >> 32;
+    val[0] = (u_long)((uint64_t)i & ULONG_MAX);
+    val[1] = (u_long)((uint64_t)i >> 32);
     if (val[1] == 0 && val[0] <= LONG_MAX) return Scm_MakeInteger(val[0]);
     return Scm_NormalizeBignum(SCM_BIGNUM(Scm_MakeBignumFromUIArray(0, val, 2)));
 #endif
@@ -843,8 +841,8 @@ ScmObj Scm_MakeIntegerU64(ScmUInt64 i)
     return Scm_MakeBignumFromUIArray(1, val, 2);
 #else /*SCM_EMULATE_INT64*/
     u_long val[2];
-    val[0] = (uint64_t)i & ULONG_MAX;
-    val[1] = (uint64_t)i >> 32;
+    val[0] = (u_long)((uint64_t)i & ULONG_MAX);
+    val[1] = (u_long)((uint64_t)i >> 32);
     if (val[1] == 0) return Scm_MakeIntegerU(val[0]);
     return Scm_MakeBignumFromUIArray(1, val, 2);
 #endif
@@ -2827,24 +2825,24 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
             }
             if (!tc1) {
                 if (!tc2) {
-                    *buf++ = SCM_INT_VALUE(q) + '0';
+                    *buf++ = (char)SCM_INT_VALUE(q) + '0';
                     if (digs == point) *buf++ = '.', buflen--;
                     continue;
                 } else {
-                    *buf++ = SCM_INT_VALUE(q) + '1';
+                    *buf++ = (char)SCM_INT_VALUE(q) + '1';
                     break;
                 }
             } else {
                 if (!tc2) {
-                    *buf++ = SCM_INT_VALUE(q) + '0';
+                    *buf++ = (char)SCM_INT_VALUE(q) + '0';
                     break;
                 } else {
                     tc3 = numcmp3(r, r, s); /* r*2 <=> s */
                     if ((round && tc3 <= 0) || (!round && tc3 < 0)) {
-                        *buf++ = SCM_INT_VALUE(q) + '0';
+                        *buf++ = (char)SCM_INT_VALUE(q) + '0';
                         break;
                     } else {
-                        *buf++ = SCM_INT_VALUE(q) + '1';
+                        *buf++ = (char)SCM_INT_VALUE(q) + '1';
                         break;
                     }
                 }
@@ -2936,7 +2934,7 @@ void Scm_PrintDouble(ScmPort *port, double d, int flags)
 {
     char buf[FLT_BUF];
     double_print(buf, FLT_BUF, d, FALSE);
-    Scm_Putz(buf, strlen(buf), port);
+    Scm_Putz(buf, (int)strlen(buf), port);
 }
 
 /*
@@ -3026,7 +3024,7 @@ static ScmObj read_uint(const char **strp, int *lenp,
 
     if (!SCM_FALSEP(initval)) {
         if (SCM_INTP(initval)) {
-            if (SCM_INT_VALUE(initval) > limit) {
+            if ((u_long)SCM_INT_VALUE(initval) > limit) {
                 value_big = Scm_MakeBignumWithSize(4, SCM_INT_VALUE(initval));
             } else {
                 value_int = SCM_INT_VALUE(initval);
@@ -3056,7 +3054,7 @@ static ScmObj read_uint(const char **strp, int *lenp,
         } else {
             for (ptab = tab; ptab < tab+radix; ptab++) {
                 if (c == *ptab) {
-                    digval = ptab-tab;
+                    digval = (int)(ptab-tab);
                     digread = TRUE;
                     break;
                 }
@@ -3510,14 +3508,14 @@ void Scm__InitNumber(void)
             (u_long)floor((double)LONG_MAX/radix - radix);
         /* Find max D where R^(D+1)-1 <= LONG_MAX */
         for (i = 0, n = 1; ; i++, n *= radix) {
-            if (n >= LONG_MAX/radix) {
+            if (n >= (u_long)(LONG_MAX/radix)) {
                 longdigs[radix-RADIX_MIN] = i-1;
                 bigdig[radix-RADIX_MIN] = n;
                 break;
             }
         }
     }
-    
+
     SCM_2_63 = Scm_Ash(SCM_MAKE_INT(1), 63);
     SCM_2_64 = Scm_Ash(SCM_MAKE_INT(1), 64);
     SCM_2_64_MINUS_1 = Scm_Sub(SCM_2_64, SCM_MAKE_INT(1));
@@ -3528,9 +3526,9 @@ void Scm__InitNumber(void)
     SCM_2_31 = Scm_Ash(SCM_MAKE_INT(1), 31);
     SCM_MINUS_2_31 = Scm_Negate(SCM_2_31);
 
-    SCM_POSITIVE_INFINITY = Scm_MakeFlonum(1.0/0.0);
-    SCM_NEGATIVE_INFINITY = Scm_MakeFlonum(-1.0/0.0);
-    SCM_NAN               = Scm_MakeFlonum(0.0/0.0);
+    SCM_POSITIVE_INFINITY = Scm_MakeFlonum(SCM_DBL_POSITIVE_INFINITY);
+    SCM_NEGATIVE_INFINITY = Scm_MakeFlonum(SCM_DBL_NEGATIVE_INFINITY);
+    SCM_NAN               = Scm_MakeFlonum(SCM_DBL_NAN);
     
     dexpt2_minus_52 = ldexp(1.0, -52);
     dexpt2_minus_53 = ldexp(1.0, -53);

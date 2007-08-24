@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: float.h,v 1.3 2007-08-14 01:00:47 shirok Exp $
+ *  $Id: float.h,v 1.4 2007-08-24 23:55:45 shirok Exp $
  */
 
 /*
@@ -106,5 +106,19 @@ typedef union {
 #endif /*!DOUBLE_ARMENDIAN*/
     } components;
 } ScmIEEEDouble;
+
+/* NaN and Infinities.  The following works for most Unix platforms w/gcc.
+   However, MSVC requires a different treatment. */
+#ifndef SCM_DBL_POSITIVE_INFINITY
+#define SCM_DBL_POSITIVE_INFINITY  (1.0/0.0)
+#endif
+
+#ifndef SCM_DBL_NEGATIVE_INFINITY
+#define SCM_DBL_NEGATIVE_INFINITY  (-1.0/0.0)
+#endif
+
+#ifndef SCM_DBL_NAN
+#define SCM_DBL_NAN           (0.0/0.0)
+#endif
 
 #endif /*GAUCHE_FLOAT_H*/

@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.60 2007-08-22 01:41:42 shirok Exp $
+# $Id: Makefile.in,v 1.61 2007-08-24 23:56:30 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check pre-package install uninstall \
@@ -88,10 +88,12 @@ clean:
 
 distclean: clean
 	for d in $(SRIDBUS); do (cd $$d; $(MAKE) distclean); done
+	(cd winnt; $(MAKE) clean)
 	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean: clean
 	for d in $(SRIDBUS); do (cd $$d; $(MAKE) maintainer-clean); done
+	(cd winnt; $(MAKE) clean)
 	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL INSTALL.eucjp DIST_EXCLUDE_X gc/configure
 
 # MacOSX Framework specific stuff

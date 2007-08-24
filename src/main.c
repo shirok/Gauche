@@ -30,22 +30,23 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.101 2007-05-22 11:20:58 shirok Exp $
+ *  $Id: main.c,v 1.102 2007-08-24 23:55:43 shirok Exp $
  */
-
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <signal.h>
-#include <ctype.h>
 
 #define GAUCHE_API_0_9        /* temporary compatibility stuff */
 #include "gauche.h"
 
+#include <signal.h>
+#include <ctype.h>
+
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
+#ifdef MSVC
+int optind = 1;
+char *optarg = NULL;
+int getopt(int argc, char **argv, const char *spec);
+#endif /*MSVC*/
 
 /* options */
 int load_initfile = TRUE;       /* if false, not to load init files */
@@ -512,3 +513,62 @@ int main(int argc, char **argv)
     Scm_Exit(exit_code);
     return 0;
 }
+
+#if defined(MSVC)
+/* getopt emulation.  this is NOT a complete implementation of getopt;
+   we know how it is used in main.c, so we don't need full-spec. */
+int getopt(int argc, char **argv, const char *spec)
+{
+    static int clusterind = 0;
+
+    char optchar, *optspec;
+    
+    do {
+        if (optind >= argc) return -1;
+        if (clusterind > 0) {
+            /* remaining options */
+            if (argv[optind][clusterind] == '\0') {
+                clusterind = 0;
+                optind++;
+                continue;
+            } else {
+                optchar = argv[optind][clusterind];
+            }
+        } else {
+            if (argv[optind][0] != '-') return -1;
+            if (argv[optind][1] == '\0'
+                || (argv[optind][1] == '-' && argv[optind][2] == '\0')) {
+                return -1;
+            }
+            /* found an option. */
+            optchar = argv[optind][1];
+            clusterind = 2;
+        }
+
+        /* now we have option char in optchar.  we know spec[0] == '+' so
+           we skip it. */
+        if ((optspec = strchr(spec+1, optchar)) == NULL) return '?';
+        
+        if (optspec[1] != ':') return optchar;
+
+        /* look for the argument. */
+        if (argv[optind][clusterind] == '\0') {
+            if (optind == argc-1) {
+                optarg = NULL;
+                return '?';
+            } else {
+                optarg = argv[optind];
+                optind++;
+                clusterind = 0;
+                return optchar;
+            }
+        } else {
+            optarg = &(argv[optind][clusterind]);
+            optind++;
+            clusterind = 0;
+            return optchar;
+        }
+    } while (0);
+    return -1;
+}
+#endif /*MSVC*/

@@ -30,34 +30,32 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.89 2007-05-16 03:27:09 shirok Exp $
+ *  $Id: system.c,v 1.90 2007-08-24 23:55:44 shirok Exp $
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <locale.h>
-#include <errno.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#ifndef __MINGW32__
-#include <grp.h>
-#include <pwd.h>
-#else   /*__MINGW32__*/
-#include <windows.h>
-#include <lm.h>
-#include <tlhelp32.h>
-#endif  /*__MINGW32__*/
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/bignum.h"
 #include "gauche/builtin-syms.h"
+
+#include <locale.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <math.h>
+#if !defined(MSVC)
+#include <dirent.h>
+#endif /* !MSVC */
+#if !defined(GAUCHE_WINDOWS)
+#include <grp.h>
+#include <pwd.h>
+#else   /* GAUCHE_WINDOWS */
+#include <lm.h>
+#include <tlhelp32.h>
+#endif  /* GAUCHE_WINDOWS */
 
 #ifdef HAVE_GLOB_H
 #include <glob.h>
@@ -71,7 +69,7 @@
  * Scheme binding.
  */
 
-/*
+/*===============================================================
  * Conversion between off_t and Scheme integer.
  * off_t might be either 32bit or 64bit.  However, as far as I know,
  * on ILP32 machines off_t is kept 32bits for compabitility and
@@ -108,6 +106,23 @@ ScmObj Scm_OffsetToInteger(off_t off)
     }
 #endif
 }
+
+/*===============================================================
+ * Windows specific - conversion between mbs and wcs.
+ */
+#if defined(MSVC) && defined(UNICODE)
+#include "win-compat.c"
+
+WCHAR *Scm_MBS2WCS(const char *s)
+{
+    return mbs2wcs(s, Scm_Error);
+}
+
+const char *Scm_WCS2MBS(const WCHAR *s)
+{
+    return wcs2mbs(s, Scm_Error);
+}
+#endif /* defined(MSVC) && defined(UNICODE) */
 
 /*===============================================================
  * OBSOLETED: Wrapper to the system call to handle signals.
@@ -169,6 +184,7 @@ int Scm_GetPortFd(ScmObj port_or_fd, int needfd)
 ScmObj Scm_ReadDirectory(ScmString *pathname)
 {
     ScmObj head = SCM_NIL, tail = SCM_NIL;
+#if !defined(GAUCHE_WINDOWS)
     ScmVM *vm = Scm_VM();
     struct dirent *dire;
     DIR *dirp = opendir(Scm_GetStringConst(pathname));
@@ -184,6 +200,36 @@ ScmObj Scm_ReadDirectory(ScmString *pathname)
     SCM_SIGCHECK(vm);
     closedir(dirp);
     return head;
+#else  /* GAUCHE_WINDOWS */
+    HANDLE dirp;
+    WIN32_FIND_DATA fdata;
+    DWORD winerrno;
+    const char *path, *tpath;
+    ScmObj pattern;
+    
+    pattern = Scm_StringAppendC(pathname, "\\*", -1, -1);
+    path = Scm_GetStringConst(SCM_STRING(pattern));
+
+    dirp = FindFirstFile(SCM_MBS2WCS(path), &fdata);
+    if (dirp == INVALID_HANDLE_VALUE) {
+	if ((winerrno = GetLastError()) != ERROR_FILE_NOT_FOUND) goto err;
+	return head;
+    }
+    tpath = SCM_WCS2MBS(fdata.cFileName);
+    SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(tpath));
+    while (FindNextFile(dirp, &fdata) != 0) {
+        tpath = SCM_WCS2MBS(fdata.cFileName);
+	SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(tpath));
+    }
+    winerrno = GetLastError();
+    FindClose(dirp);
+    if (winerrno != ERROR_NO_MORE_FILES) goto err;
+    return head;
+ err:
+    Scm_Error("Searching directory failed by windows error %d",
+	      winerrno);
+    return SCM_UNDEFINED;	/* dummy */
+#endif
 }
 
 /* Glob()function. */
@@ -210,22 +256,23 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
     }
     globfree(&globbed);
     return head;
-#elif defined(__MINGW32__)
+#elif defined(GAUCHE_WINDOWS)
     /* We provide alternative using Windows API */
     HANDLE dirp;
     WIN32_FIND_DATA fdata;
     DWORD winerrno;
-    const char *path = Scm_GetStringConst(pattern);
+    const char *path = Scm_GetStringConst(pattern), *tpath;
     ScmObj head = SCM_NIL, tail = SCM_NIL;
-    
-    dirp = FindFirstFile(path, &fdata);
+
+    dirp = FindFirstFile(SCM_MBS2WCS(path), &fdata);
     if (dirp == INVALID_HANDLE_VALUE) {
 	if ((winerrno = GetLastError()) != ERROR_FILE_NOT_FOUND) goto err;
 	return head;
     }
-    SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(fdata.cFileName));
+    tpath = SCM_WCS2MBS(fdata.cFileName);
     while (FindNextFile(dirp, &fdata) != 0) {
-	SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(fdata.cFileName));
+        tpath = SCM_WCS2MBS(fdata.cFileName);
+	SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(tpath));
     }
     winerrno = GetLastError();
     FindClose(dirp);
@@ -235,10 +282,10 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
     Scm_Error("Searching directory failed by windows error %d",
 	      winerrno);
     return SCM_UNDEFINED;	/* dummy */
-#else  /*!HAVE_GLOB_H && !__MINGW32__*/
+#else  /*!HAVE_GLOB_H && !GAUCHE_WINDOWS */
     Scm_Error("glob-directory is not supported on this architecture.");
     return SCM_UNDEFINED;
-#endif /*!HAVE_GLOB_H && !__MINGW32__*/
+#endif /*!HAVE_GLOB_H && !GAUCHE_WINDOWS */
 }
 
 /*===============================================================
@@ -253,14 +300,14 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
 /* Returns the system's native pathname delimiter. */
 const char *Scm_PathDelimiter(void)
 {
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
     return "/";
-#else  /*__MINGW32__*/
+#else  /* GAUCHE_WINDOWS */
     return "\\";
-#endif /*__MINGW32__*/
+#endif /* GAUCHE_WINDOWS */
 }
 
-#ifdef __MINGW32__
+#if defined(GAUCHE_WINDOWS)
 #define SEPARATOR '\\'
 #define ROOTDIR   "\\"
 #else
@@ -331,7 +378,7 @@ static void put_user_home(ScmDString *dst,
             Scm_SysError("couldn't get home directory.\n");
         }
     } else {
-        int namesiz = end - name;
+        int namesiz = (int)(end - name);
         char *uname = (char*)SCM_MALLOC_ATOMIC(namesiz+1);
         memcpy(uname, name, namesiz);
         uname[namesiz] = '\0';
@@ -341,7 +388,7 @@ static void put_user_home(ScmDString *dst,
             Scm_Error("couldn't get home directory of user \"%s\".\n", uname);
         }
     }
-    dirlen = strlen(pwd->pw_dir);
+    dirlen = (int)strlen(pwd->pw_dir);
     Scm_DStringPutz(dst, pwd->pw_dir, dirlen);
     if (pwd->pw_dir[dirlen-1] != '/') Scm_DStringPutc(dst, '/');
 }
@@ -375,7 +422,7 @@ static void put_current_dir(ScmDString *dst)
         Scm_SigCheck(Scm_VM());
         Scm_SysError("couldn't get current directory.");
     }
-    dirlen = strlen(p);
+    dirlen = (int)strlen(p);
     Scm_DStringPutz(dst, p, dirlen);
     if (p[dirlen-1] != '/' && p[dirlen-1] != '\\') {
         Scm_DStringPutc(dst, SEPARATOR);
@@ -383,7 +430,7 @@ static void put_current_dir(ScmDString *dst)
 #undef GETCWD_PATH_MAX
 }
 
-#if defined(__MINGW32__)
+#if defined(GAUCHE_WINDOWS)
 /* win32 specific; copy pathname with replacing '/' by '\\'. */
 static void copy_win32_path(ScmDString *dst,
                             const char *srcp,
@@ -400,7 +447,7 @@ static void copy_win32_path(ScmDString *dst,
         srcp += SCM_CHAR_NBYTES(ch);
     }
 }
-#endif /* __MINGW32__ */
+#endif /* GAUCHE_WINDOWS */
 
 ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 {
@@ -416,7 +463,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
        current directory to the relative pathname if absolutize is required.
        For canonicalization, we also put any absolute prefix into buf, so
        that srcp points to the relative path part after this. */
-#if !defined(__MINGW32__)
+#if !defined(GAUCHE_WINDOWS)
     if ((flags & SCM_PATH_EXPAND) && size >= 1 && *str == '~') {
         srcp = expand_tilde(&buf, srcp, endp);
     } else if (endp > srcp && *srcp == '/') {
@@ -435,7 +482,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         Scm_DStringPutz(&buf, srcp, endp - srcp);
 	return Scm_DStringGet(&buf, 0);
     }
-#else /* __MINGW32__ */
+#else /* GAUCHE_WINDOWS */
     if (endp > srcp+1 && isalpha(*srcp) && *(srcp+1) == ':') {
         /* We first process the Evil Drive Letter */
         Scm_DStringPutc(&buf, *srcp++);
@@ -457,7 +504,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         copy_win32_path(&buf, srcp, endp);
 	return Scm_DStringGet(&buf, 0);
     }
-#endif /* __MINGW32__ */
+#endif /* GAUCHE_WINDOWS */
 
     /* Canonicalization.  We used to have a tricky piece of code here
        that avoids extra allocations, but have replaced it for
@@ -490,7 +537,8 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
                     wentup = FALSE;
                 }
             } else {
-                comps = Scm_Cons(Scm_MakeString(srcp, p-srcp, -1, 0), comps);
+                comps = Scm_Cons(Scm_MakeString(srcp, (int)(p-srcp), -1, 0),
+                                 comps);
                 cnt++;
                 wentup = FALSE;
             }
@@ -527,21 +575,21 @@ ScmObj Scm_BaseName(ScmString *filename)
     const char *path = Scm_GetStringContent(filename, &size, NULL, NULL);
     const char *endp, *last;
 
-#if defined(__MINGW32__)
+#if defined(GAUCHE_WINDOWS)
     /* Ignore drive letter, for it can never be a part of basename. */
     if (size >= 2 && path[1] == ':' && isalpha(path[0])) {
         path += 2;
         size -= 2;
     }
-#endif /* __MINGW32__ */
+#endif /* GAUCHE_WINDOWS) */
 
     if (size == 0) return SCM_MAKE_STR("");
     endp = truncate_trailing_separators(path, path+size);
     last = get_last_separator(path, endp);
     if (last == NULL) {
-        return Scm_MakeString(path, endp-path, -1, 0);
+        return Scm_MakeString(path, (int)(endp-path), -1, 0);
     } else {
-        return Scm_MakeString(last+1, endp-last-1, -1, 0);
+        return Scm_MakeString(last+1, (int)(endp-last-1), -1, 0);
     }
 }
 
@@ -550,14 +598,14 @@ ScmObj Scm_DirName(ScmString *filename)
     u_int size;
     const char *path = Scm_GetStringContent(filename, &size, NULL, NULL);
     const char *endp, *last;
-#if defined(__MINGW32__)
+#if defined(GAUCHE_WINDOWS)
     int drive_letter = -1;
     if (size >= 2 && path[1] == ':' && isalpha(path[0])) {
         drive_letter = path[0];
         path += 2;
         size -= 2;
     }
-#endif /* __MINGW32__ */
+#endif /* GAUCHE_WINDOWS */
 
     if (size == 0) { path = NULL; goto finale; }
     endp = truncate_trailing_separators(path, path+size);
@@ -570,10 +618,10 @@ ScmObj Scm_DirName(ScmString *filename)
     if (last == path) {
         path = ROOTDIR, size = 1;
     } else {
-        size = last - path;
+        size = (int)(last - path);
     }
  finale:
-#if defined(__MINGW32__)
+#if defined(GAUCHE_WINDOWS)
     if (drive_letter > 0) {
         ScmObj z;
         char p[3] = "x:";
@@ -585,7 +633,7 @@ ScmObj Scm_DirName(ScmString *filename)
             return Scm_StringAppendC(SCM_STRING(z), ROOTDIR, 1, -1);
         }
     }
-#endif /* __MINGW32__ */
+#endif /* GAUCHE_WINDOWS */
     if (path) return Scm_MakeString(path, size, -1, 0);
     else      return Scm_MakeString(".", 1, 1, 0);
 }
@@ -603,7 +651,7 @@ int Scm_Mkstemp(char *templat)
     return fd;
 #else   /*!defined(HAVE_MKSTEMP)*/
     /* Emulate mkstemp. */
-    int siz = strlen(templat);
+    int siz = (int)strlen(templat);
     if (siz < 6) {
         Scm_Error("mkstemp - invalid template: %s", templat);
     }
@@ -612,11 +660,11 @@ int Scm_Mkstemp(char *templat)
 	u_long seed = (u_long)time(NULL);
 	int numtry, flags;
 	char suffix[7];
-#if defined(__MINGW32__)
+#if defined(GAUCHE_WINDOWS)
 	flags = O_CREAT|O_EXCL|O_WRONLY|O_BINARY;
-#else  /* !__MINGW32__ */
+#else  /* !GAUCHE_WINDOWS */
 	flags = O_CREAT|O_EXCL|O_WRONLY;
-#endif /* !__MINGW32__ */
+#endif /* !GAUCHE_WINDOWS */
 	for (numtry=0; numtry<MKSTEMP_MAX_TRIALS; numtry++) {
 	    snprintf(suffix, 7, "%06x", seed&0xffffff);
 	    memcpy(templat+siz-6, suffix, 7);
@@ -808,15 +856,15 @@ void Scm_GetTimeOfDay(u_long *sec, u_long *usec)
     if (r < 0) Scm_SysError("gettimeofday failed");
     *sec = (u_long)tv.tv_sec;
     *usec = (u_long)tv.tv_usec;
-#elif defined(__MINGW32__)
+#elif defined(GAUCHE_WINDOWS)
     FILETIME ft;
     GetSystemTimeAsFileTime(&ft);
     SCM_FILETIME_TO_UNIXTIME(ft, *sec, *usec);
-#else  /* !HAVE_GETTIMEOFDAY && !__MINGW32 */
+#else  /* !HAVE_GETTIMEOFDAY && !GAUCHE_WINDOWS */
     /* Last resort */
     *sec = (u_long)time(NULL);
     *usec = 0;
-#endif /* !HAVE_GETTIMEOFDAY && !__MINGW32 */
+#endif /* !HAVE_GETTIMEOFDAY && !GAUCHE_WINDOWS */
 }
 
 
@@ -1057,7 +1105,7 @@ Scm_YieldCPU(void)
     tv.tv_sec = 0;
     tv.tv_usec = 1;
     select(0, NULL, NULL, NULL, &tv);
-#elif defined(__MINGW32__)
+#elif defined(GAUCHE_WINDOWS)
     Sleep(10);
 #else /* the last resort */
     sleep(1);
@@ -1230,11 +1278,11 @@ static ScmClassStaticSlotSpec pwd_slots[] = {
  */
 int Scm_IsSugid(void)
 {
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
     return (geteuid() != getuid() || getegid() != getgid());
-#else  /*__MINGW32__*/
+#else  /* GAUCHE_WINDOWS */
     return FALSE;
-#endif /*__MINGW32__*/
+#endif /* GAUCHE_WINDOWS */
 }
 
 /*===============================================================
@@ -1262,11 +1310,14 @@ int Scm_IsSugid(void)
 ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
                    ScmSysSigset *mask, int flags)
 {
-    int argc = Scm_Length(args), *fds;
+    int argc = Scm_Length(args);
     char **argv;
     const char *program;
     pid_t pid = 0;
     int forkp = flags & SCM_EXEC_WITH_FORK;
+#if !defined(GAUCHE_WINDOWS)
+    int *fds;
+#endif
 
     if (argc < 1) {
         Scm_Error("argument list must have at least one element: %S", args);
@@ -1276,7 +1327,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     argv = Scm_ListToCStringArray(args, TRUE, NULL);
     program = Scm_GetStringConst(file);
 
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
     /* setting up iomap table */
     fds = Scm_SysPrepareFdMap(iomap);
     
@@ -1300,15 +1351,15 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
 
     /* We come here only when fork is requested. */
     return Scm_MakeInteger(pid);
-#else  /* __MINGW32__ */
+#else  /* GAUCHE_WINDOWS */
     if (forkp) {
-	Scm_Error("fork() not supported on MinGW port");
+	Scm_Error("fork() not supported on Windows port");
     } else {
 	execvp(program, (const char *const*)argv);
 	Scm_Panic("exec failed: %s: %s", program, strerror(errno));	
     }
     return SCM_FALSE; /* dummy */
-#endif /* __MINGW32__ */
+#endif /* GAUCHE_WINDOWS */
 }
 
 /* Two auxiliary functions to support iomap feature.  They are exposed
@@ -1334,7 +1385,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
 int *Scm_SysPrepareFdMap(ScmObj iomap)
 {
     int *fds = NULL;
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
     if (SCM_PAIRP(iomap)) {
         ScmObj iop;
         int iollen = Scm_Length(iomap), i = 0;
@@ -1378,13 +1429,13 @@ int *Scm_SysPrepareFdMap(ScmObj iomap)
             i++;
         }
     }
-#endif /* __MINGW32__ */
+#endif /* GAUCHE_WINDOWS */
     return fds;
 }
 
 void Scm_SysSwapFds(int *fds)
 {
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
     int *tofd, *fromfd, nfds, maxfd, i, j, fd;
     
     if (fds == NULL) return;
@@ -1418,7 +1469,7 @@ void Scm_SysSwapFds(int *fds)
         for (j=0; j<nfds; j++) if (fd == tofd[j]) break;
         if (j == nfds) close(fd);
     }
-#endif /* __MINGW32__ */
+#endif /* GAUCHE_WINDOWS */
 }
 
 
@@ -1540,46 +1591,9 @@ ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
 #endif /* HAVE_SELECT */
 
 /*===============================================================
- * Emulation layer for MinGW port
+ * Emulation layer for Windows
  */
-#ifdef __MINGW32__
-
-/* wide character string -> Scheme-owned MB string.
-   the result is utf8.  we should convert it to Gauche's internal encoding,
-   but that's the later story... */
-static char *w2mdup(LPCWSTR wstr)
-{
-    char *dst = "";
-    if (wstr) {
-	/* first, count the required length */
-	int count;
-	int mbsize = WideCharToMultiByte(CP_UTF8, 0, wstr, -1,
-					 NULL, 0, NULL, NULL);
-	SCM_ASSERT(mbsize > 0);
-	dst = SCM_NEW_ATOMIC2(char*, mbsize+1);
-	count = WideCharToMultiByte(CP_UTF8, 0, wstr, -1,
-				    dst, mbsize+1, NULL, NULL);
-	dst[mbsize] = '\0';
-	SCM_ASSERT(count == mbsize);
-    }
-    return dst;
-}
-
-static wchar_t *m2wdup(const char *mbstr)
-{
-    wchar_t *dst = NULL;
-    if (mbstr) {
-	/* first, count the required length */
-	int count;
-	int wcsize = MultiByteToWideChar(CP_UTF8, 0, mbstr, -1, NULL, 0);
-	SCM_ASSERT(wcsize >= 0);
-	dst = SCM_NEW_ATOMIC2(wchar_t *, wcsize+1);
-	count = MultiByteToWideChar(CP_UTF8, 0, mbstr, -1, dst, wcsize);
-	dst[wcsize] = 0;
-	SCM_ASSERT(count == wcsize);
-    }
-    return dst;
-}
+#if defined(GAUCHE_WINDOWS)
 
 /*
  * Users and groups
@@ -1591,13 +1605,13 @@ static wchar_t *m2wdup(const char *mbstr)
 
 static void convert_user(const USER_INFO_2 *wuser, struct passwd *res)
 {
-    res->pw_name    = w2mdup(wuser->usri2_name);
+    res->pw_name    = Scm_WCS2MBS(wuser->usri2_name);
     res->pw_passwd  = "*";
     res->pw_uid     = 0;
     res->pw_gid     = 0;
-    res->pw_comment = w2mdup(wuser->usri2_comment);
-    res->pw_gecos   = w2mdup(wuser->usri2_full_name);
-    res->pw_dir     = w2mdup(wuser->usri2_home_dir);
+    res->pw_comment = Scm_WCS2MBS(wuser->usri2_comment);
+    res->pw_gecos   = Scm_WCS2MBS(wuser->usri2_full_name);
+    res->pw_dir     = Scm_WCS2MBS(wuser->usri2_home_dir);
     res->pw_shell   = "";
 }
 
@@ -1607,7 +1621,7 @@ static struct passwd pwbuf = { "dummy" };
 struct passwd *getpwnam(const char *name)
 {
     USER_INFO_2 *res;
-    if (NetUserGetInfo(NULL, m2wdup(name), 2, (LPBYTE*)&res) != NERR_Success) {
+    if (NetUserGetInfo(NULL, Scm_MBS2WCS(name), 2, (LPBYTE*)&res) != NERR_Success) {
 	return NULL;
     }
     convert_user(res, &pwbuf);
@@ -1620,12 +1634,12 @@ struct passwd *getpwuid(uid_t uid)
     /* for the time being, we just ignore uid and returns the current
        user info. */
 #define NAMELENGTH 256
-    char buf[NAMELENGTH];
+    TCHAR buf[NAMELENGTH];
     DWORD len = NAMELENGTH;
     if (GetUserName(buf, &len) == 0) {
 	return NULL;
     }
-    return getpwnam(buf);
+    return getpwnam(SCM_WCS2MBS(buf));
 }
 
 static struct group dummy_group = {
@@ -1758,7 +1772,7 @@ int link(const char *existing, const char *newpath)
 #endif
 }
 
-#endif /*__MINGW32__*/
+#endif /* GAUCHE_WINDOWS */
 
 
 /*===============================================================

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.67 2007-08-12 03:16:55 shirok Exp $
+ *  $Id: macro.c,v 1.68 2007-08-24 23:55:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -284,8 +284,8 @@ typedef struct {
 } PatternContext;
 
 #define PVREF_P(pvref)         SCM_PVREF_P(pvref)
-#define PVREF_LEVEL(pvref)     SCM_PVREF_LEVEL(pvref)
-#define PVREF_COUNT(pvref)     SCM_PVREF_COUNT(pvref)
+#define PVREF_LEVEL(pvref)     (int)SCM_PVREF_LEVEL(pvref)
+#define PVREF_COUNT(pvref)     (int)SCM_PVREF_COUNT(pvref)
 
 /* add pattern variable pvar.  called when compiling a pattern */
 static inline ScmObj add_pvar(PatternContext *ctx,

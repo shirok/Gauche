@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.31 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: portapi.c,v 1.32 2007-08-24 23:55:43 shirok Exp $
  */
 
 /* This file is included _twice_ by port.c to define safe- and unsafe-
@@ -108,7 +108,7 @@ void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         if (p->src.buf.current >= p->src.buf.end) {
-            SAFE_CALL(p, bufport_flush(p, p->src.buf.current - p->src.buf.buffer, FALSE));
+            SAFE_CALL(p, bufport_flush(p, (int)(p->src.buf.current - p->src.buf.buffer), FALSE));
         }
         SCM_ASSERT(p->src.buf.current < p->src.buf.end);
         *p->src.buf.current++ = b;
@@ -152,7 +152,7 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
     case SCM_PORT_FILE:
         nb = SCM_CHAR_NBYTES(c);
         if (p->src.buf.current+nb > p->src.buf.end) {
-            SAFE_CALL(p, bufport_flush(p, p->src.buf.current - p->src.buf.buffer, FALSE));
+            SAFE_CALL(p, bufport_flush(p, (int)(p->src.buf.current - p->src.buf.buffer), FALSE));
         }
         SCM_ASSERT(p->src.buf.current+nb <= p->src.buf.end);
         SCM_CHAR_PUT(p->src.buf.current, c);
@@ -245,7 +245,7 @@ void Scm_PutzUnsafe(const char *s, int siz, ScmPort *p)
     SHORTCUT(p, Scm_PutzUnsafe(s, siz, p); return);
     LOCK(p);
     CLOSE_CHECK(p);
-    if (siz < 0) siz = strlen(s);
+    if (siz < 0) siz = (int)strlen(s);
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         SAFE_CALL(p, bufport_write(p, s, siz));
@@ -416,7 +416,7 @@ int Scm_PeekbUnsafe(ScmPort *p)
 /* shift scratch buffer content */
 static inline void shift_scratch(ScmPort *p, int off)
 {
-    int i;
+    u_int i;
     for (i=0; i<p->scrcnt; i++) {
         p->scratch[i] = p->scratch[i+off];
     }
@@ -650,7 +650,7 @@ static int getz_scratch_unsafe(char *buf, int buflen, ScmPort *p)
 #endif
 {
     int i, n = 0;
-    if (p->scrcnt >= buflen) {
+    if (p->scrcnt >= (u_int)buflen) {
         memcpy(buf, p->scratch, buflen);
         p->scrcnt -= buflen;
         shift_scratch(p, buflen);

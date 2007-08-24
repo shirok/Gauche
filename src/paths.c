@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: paths.c,v 1.2 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: paths.c,v 1.3 2007-08-24 23:55:43 shirok Exp $
  *
  */
 
@@ -38,11 +38,10 @@
  * doesn't use ScmObj, so the function works on bare C strings.
  */
 
-#include <string.h>
-#include "gauche/config.h"
+#include "gauche.h"
 #include "gauche/arch.h"
 
-#if defined(__MINGW32__)
+#if defined(GAUCHE_WINDOWS)
 #include "getdir_win.c"
 #elif defined(GAUCHE_MACOSX_FRAMEWORK)
 #include "getdir_darwin.c"
@@ -57,12 +56,12 @@ void maybe_prepend_install_dir(const char *orig, char *buf, int buflen,
 {
     if (*orig == '@') {
         int len = get_install_dir(buf, buflen, errfn);
-        if (len + strlen(orig) > buflen) {
+        if (len + (int)strlen(orig) > buflen) {
             errfn("Pathname too long: %s", orig);
         }
         strcat(buf, orig+1);
     } else {
-        if (strlen(orig) >= buflen-1) {
+        if ((int)strlen(orig) >= buflen-1) {
             errfn("Pathname too long: %s", orig);
         }
         strcpy(buf, orig);

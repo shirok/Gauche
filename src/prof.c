@@ -30,11 +30,9 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: prof.c,v 1.9 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: prof.c,v 1.10 2007-08-24 23:55:43 shirok Exp $
  */
 
-#include <stdlib.h>
-#include <unistd.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/vm.h"
@@ -338,6 +336,7 @@ void Scm_ProfilerStart(void)
 int  Scm_ProfilerStop(void)
 {
     Scm_Error("profiler is not supported.");
+    return 0;
 }
 
 void Scm_ProfilerReset(void)

@@ -1,6 +1,6 @@
 ;;
 ;; test for listener
-;; $Id: listener.scm,v 1.4 2006-01-26 05:07:23 shirok Exp $
+;; $Id: listener.scm,v 1.5 2007-08-24 23:56:30 shirok Exp $
 
 (use gauche.test)
 
@@ -118,6 +118,12 @@
         (reverse r)
         (loop (read-line opipe-in) (cons l r)))))
 
+;; NB: at this moment, the tests don't work on windows because of
+;; some buffering weirdness.  We omit tests on them.
+(cond-expand
+ (gauche.os.windows)
+ (else
+
 (test* "listener" '("3")
        (begin
          (send-expr "(+ 1 2)\n")
@@ -172,5 +178,7 @@
          (send-expr "(+ 1 2)")
          (handler)
          (class-of *fatal*)))
+
+)) ;; (not gauche.os.windows)
 
 (test-end)

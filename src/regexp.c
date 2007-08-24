@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.68 2007-05-22 10:23:47 shirok Exp $
+ *  $Id: regexp.c,v 1.69 2007-08-24 23:55:43 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -1234,7 +1234,7 @@ static void rc3_seq(regcomp_ctx *ctx, ScmObj seq, int lastp)
             if (ctx->lookbehindp) h = Scm_ReverseX(h);
             if (nrun == 1) {
                 EMIT4(!ctx->casefoldp, RE_MATCH1, RE_MATCH1_RL, RE_MATCH1_CI, RE_MATCH1_CI_RL);
-                rc3_emit(ctx, SCM_CHAR_VALUE(SCM_CAR(h)));
+                rc3_emit(ctx, (char)SCM_CHAR_VALUE(SCM_CAR(h)));
             } else {
                 EMIT4(!ctx->casefoldp, RE_MATCH, RE_MATCH_RL, RE_MATCH_CI, RE_MATCH_CI_RL);
                 rc3_emit(ctx, (char)nrun);
@@ -1600,7 +1600,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
     if (SCM_EQ(type, SCM_SYM_BACKREF)) {
         SCM_ASSERT(SCM_INTP(SCM_CDR(ast)));
         EMIT4(!ctx->casefoldp, RE_BACKREF, RE_BACKREF_RL, RE_BACKREF_CI, RE_BACKREF_CI_RL);
-        rc3_emit(ctx, SCM_INT_VALUE(SCM_CDR(ast)));
+        rc3_emit(ctx, (char)SCM_INT_VALUE(SCM_CDR(ast)));
         return;
     }
     if (SCM_EQ(type, SCM_SYM_CPAT)) {
@@ -1626,7 +1626,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
         ScmObj npat = SCM_CADR(SCM_CDDR(ast));
         if (SCM_INTP(cond)) {
             rc3_emit(ctx, RE_CPAT);
-            rc3_emit(ctx, SCM_INT_VALUE(cond));
+            rc3_emit(ctx, (char)SCM_INT_VALUE(cond));
             ocodep1 = ctx->codep;
             rc3_emit_offset(ctx, 0); /* will be patched */
             rc3_seq(ctx, ypat, lastp);
@@ -1737,7 +1737,7 @@ void Scm_RegDump(ScmRegexp *rx)
             codep++;
             {
                 u_int numchars = (u_int)rx->code[codep];
-                int i;
+                u_int i;
                 Scm_Printf(SCM_CUROUT, "%4d  %s(%3d) '",
                            codep-1,
                            (code==RE_MATCH? "MATCH": code == RE_MATCH_CI? "MATCH_CI":
@@ -2444,7 +2444,7 @@ static void rex_rec(const unsigned char *code,
             const char *match = ctx->matches[grpno]->startp;
             const char *end = ctx->matches[grpno]->endp;
             if (!match || !end) return;
-            len = end - match;
+            len = (int)(end - match);
             if (input - len < ctx->input) return;
             bpos = input = input - len;
             while (len-- > 0) {
@@ -2477,7 +2477,7 @@ static void rex_rec(const unsigned char *code,
             ScmChar cx, cy;
             if (!match || !end) return;
 
-            len = end - match;
+            len = (int)(end - match);
             if (input - len < ctx->input) return;
             bpos = input = input - len;
             while (match+i < end) {
@@ -2646,9 +2646,9 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
 /* We want to avoid unnecessary character counting as much as
    possible. */
 
-#define MSUB_BEFORE_SIZE(rm, sub) ((sub)->startp - (rm)->input)
-#define MSUB_SIZE(rm, sub)        ((sub)->endp - (sub)->startp)
-#define MSUB_AFTER_SIZE(rm, sub)  ((rm)->input + (rm)->inputSize - (sub)->endp)
+#define MSUB_BEFORE_SIZE(rm, sub) ((int)((sub)->startp - (rm)->input))
+#define MSUB_SIZE(rm, sub)        ((int)((sub)->endp - (sub)->startp))
+#define MSUB_AFTER_SIZE(rm, sub)  ((int)((rm)->input + (rm)->inputSize - (sub)->endp))
 
 #define MSUB_BEFORE_LENGTH(rm, sub) \
     Scm_MBLen((rm)->input, (sub)->startp)
@@ -2788,7 +2788,8 @@ void Scm_RegMatchDump(ScmRegMatch *rm)
             Scm_Printf(SCM_CUROUT, "[%3d-%3d]  %S\n",
                        sub->startp - rm->input,
                        sub->endp - rm->input,
-                       Scm_MakeString(sub->startp, sub->endp-sub->startp,
+                       Scm_MakeString(sub->startp,
+                                      (int)(sub->endp-sub->startp),
                                       -1, 0));
         } else {
             Scm_Printf(SCM_CUROUT, "[---] #f\n");

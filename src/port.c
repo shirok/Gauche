@@ -30,18 +30,18 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.142 2007-08-14 02:56:05 shirok Exp $
+ *  $Id: port.c,v 1.143 2007-08-24 23:55:43 shirok Exp $
  */
 
-#include <unistd.h>
-#include <string.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <ctype.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/port.h"
+
+#include <string.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <ctype.h>
 
 #undef MAX
 #undef MIN
@@ -241,6 +241,7 @@ int Scm_PortFileNo(ScmPort *port)
 /* Duplicates the file descriptor of the source port, and set it to
    the destination port.  Both source and destination port must be
    file ports. */
+#if !defined(GAUCHE_WINDOWS)
 void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
 {
     int r, srcfd, dstfd;
@@ -253,8 +254,8 @@ void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
         Scm_Error("port direction mismatch: got %S and %S",
                   src, dst);
         
-    srcfd = (intptr_t)src->src.buf.data;
-    dstfd = (intptr_t)dst->src.buf.data;
+    srcfd = (int)(intptr_t)src->src.buf.data;
+    dstfd = (int)(intptr_t)dst->src.buf.data;
 
     if (dst->direction == SCM_PORT_INPUT) {
         /* discard the current buffer */
@@ -271,6 +272,7 @@ void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
     if (r < 0) Scm_SysError("dup2 failed");
     dst->src.buf.data = (void*)(intptr_t)r;
 }
+#endif /*!defined(GAUCHE_WINDOWS)*/
 
 /* Low-level function to find if the file descriptor is ready or not.
    DIR specifies SCM_PORT_INPUT or SCM_PORT_OUTPUT.
@@ -685,7 +687,7 @@ static void register_buffered_port(ScmPort *port)
     int need_gc  = FALSE;
     
   retry:
-    h = i = PORT_HASH(port);
+    h = i = (int)PORT_HASH(port);
     c = 0;
     /* search an available entry by quadratic hash */
     (void)SCM_INTERNAL_MUTEX_LOCK(active_buffered_ports.mutex);
@@ -724,7 +726,7 @@ static void unregister_buffered_port(ScmPort *port)
     int i, h, c;
     ScmObj p;
     
-    h = i = PORT_HASH(port);
+    h = i = (int)PORT_HASH(port);
     c = 0;
     (void)SCM_INTERNAL_MUTEX_LOCK(active_buffered_ports.mutex);
     do {
@@ -845,7 +847,7 @@ ScmObj Scm_GetBufferingMode(ScmPort *port)
 static int file_filler(ScmPort *p, int cnt)
 {
     int nread = 0, r;
-    int fd = (intptr_t)p->src.buf.data;
+    int fd = (int)(intptr_t)p->src.buf.data;
     char *datptr = p->src.buf.end;
     SCM_ASSERT(fd >= 0);
     while (nread == 0) {
@@ -869,7 +871,7 @@ static int file_flusher(ScmPort *p, int cnt, int forcep)
 {
     int nwrote = 0, r;
     int datsiz = SCM_PORT_BUFFER_AVAIL(p);
-    int fd = (intptr_t)p->src.buf.data;
+    int fd = (int)(intptr_t)p->src.buf.data;
     char *datptr = p->src.buf.buffer;
     
     SCM_ASSERT(fd >= 0);
@@ -890,26 +892,26 @@ static int file_flusher(ScmPort *p, int cnt, int forcep)
 
 static void file_closer(ScmPort *p)
 {
-    int fd = (intptr_t)p->src.buf.data;
+    int fd = (int)(intptr_t)p->src.buf.data;
     SCM_ASSERT(fd >= 0);
     close(fd);
 }
 
 static int file_ready(ScmPort *p)
 {
-    int fd = (intptr_t)p->src.buf.data;
+    int fd = (int)(intptr_t)p->src.buf.data;
     SCM_ASSERT(fd >= 0);
     return Scm_FdReady(fd, SCM_PORT_DIR(p));
 }
 
 static int file_filenum(ScmPort *p)
 {
-    return (intptr_t)p->src.buf.data;
+    return (int)(intptr_t)p->src.buf.data;
 }
 
 static off_t file_seeker(ScmPort *p, off_t offset, int whence)
 {
-    return lseek((intptr_t)p->src.buf.data, offset, whence);
+    return lseek((int)(intptr_t)p->src.buf.data, offset, whence);
 }
 
 ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
@@ -924,12 +926,12 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
     if (buffering < SCM_PORT_BUFFER_FULL || buffering > SCM_PORT_BUFFER_NONE) {
         Scm_Error("bad buffering flag: %d", buffering);
     }
-#if defined(__MINGW32__)
+#if defined(GAUCHE_WINDOWS)
     /* Force binary mode if not specified */
     if (!(flags & (O_TEXT|O_BINARY))) {
 	flags |= O_BINARY;
     }
-#endif /*__MINGW32__*/
+#endif /*GAUCHE_WINDOWS*/
     fd = open(path, flags, perm);
     if (fd < 0) return SCM_FALSE;
     bufrec.mode = buffering;
@@ -1060,25 +1062,26 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
         if (cp - sp >= nbytes
             && memcmp(cp - nbytes, cbuf, nbytes) == 0) {
             cp -= nbytes;       /* we can reuse buffer */
-            return Scm_MakeString(cp, ep-cp, -1, flags);
+            return Scm_MakeString(cp, (int)(ep-cp), -1, flags);
         } else {
             /* we need to copy */
-            return get_remaining_input_string_aux(cp, ep-cp, cbuf,
+            return get_remaining_input_string_aux(cp, (int)(ep-cp), cbuf,
                                                   nbytes, flags);
         }
     } else if (port->scrcnt > 0) {
         sp = port->src.istr.start;
-        if (cp - sp >= port->scrcnt
+        if (cp - sp >= (int)port->scrcnt
             && memcmp(cp - port->scrcnt, port->scratch, port->scrcnt) == 0) {
             cp -= port->scrcnt; /* we can reuse buffer */
-            return Scm_MakeString(cp, ep-cp, -1, flags);
+            return Scm_MakeString(cp, (int)(ep-cp), -1, flags);
         } else {
             /* we need to copy */
-            return get_remaining_input_string_aux(cp, ep-cp, port->scratch,
+            return get_remaining_input_string_aux(cp, (int)(ep-cp),
+                                                  port->scratch,
                                                   port->scrcnt, flags);
         }
     } else {
-        return Scm_MakeString(cp, ep-cp, -1, flags);
+        return Scm_MakeString(cp, (int)(ep-cp), -1, flags);
     }
 }
 
@@ -1302,7 +1305,7 @@ static void coding_port_recognize_encoding(ScmPort *port,
         }
     }
     data->pbuf = Scm_DStringGetz(&ds);
-    data->pbufsize = strlen(data->pbuf);
+    data->pbufsize = (int)strlen(data->pbuf);
     
     /* Look for the magic comment */
     encoding = look_for_encoding(data->pbuf);

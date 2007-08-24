@@ -30,11 +30,9 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.80 2007-08-09 08:22:35 shirok Exp $
+ *  $Id: core.c,v 1.81 2007-08-24 23:55:42 shirok Exp $
  */
 
-#include <stdlib.h>
-#include <unistd.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/arch.h"
@@ -355,7 +353,7 @@ void Scm_Panic(const char *msg, ...)
 /* Use this for absolute emergency.  Newline is not attached to msg. */
 void Scm_Abort(const char *msg)
 {
-    int size = strlen(msg);
+    int size = (int)strlen(msg);
     write(2, msg, size); /* this may return an error, but we don't care */
     _exit(1);
 }
@@ -410,7 +408,7 @@ init_cond_features()
         const char *module;
     } init_features[] = {
         { "gauche", NULL },
-#ifdef __MINGW32__
+#ifdef GAUCHE_WINDOWS
         { "gauche.os.windows", NULL },
         { "gauche-windows", NULL }, /* for backward compatibility */
 #endif

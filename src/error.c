@@ -30,18 +30,19 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.78 2007-05-16 03:27:09 shirok Exp $
+ *  $Id: error.c,v 1.79 2007-08-24 23:55:42 shirok Exp $
  */
 
-#include <errno.h>
-#include <string.h>
-#include <ctype.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/exception.h"
 #include "gauche/vm.h"
 #include "gauche/builtin-syms.h"
+
+#include <errno.h>
+#include <string.h>
+#include <ctype.h>
 
 static void   message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static ScmObj message_allocate(ScmClass *klass, ScmObj initargs);
@@ -548,29 +549,31 @@ void Scm_Error(const char *msg, ...)
 static ScmObj get_syserrmsg(int en)
 {
     ScmObj syserr;
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
     syserr = SCM_MAKE_STR_COPYING(strerror(en));
-#else  /*__MINGW32__*/
+#else  /*GAUCHE_WINDOWS*/
     LPTSTR msgbuf;
+    const char *xmsgbuf;
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,
 		  NULL,
 		  en,
 		  0,
 		  (LPTSTR)&msgbuf,
-		  0, NULL);
-    syserr = SCM_MAKE_STR_COPYING(msgbuf);
+                  0, NULL);
+    xmsgbuf = SCM_WCS2MBS(msgbuf);
+    syserr = SCM_MAKE_STR_COPYING(xmsgbuf);
     LocalFree(msgbuf);
-#endif /*__MINGW32__*/
+#endif /*GAUCHE_WINDOWS*/
     return syserr;
 }
 
 static int get_errno(void)
 {
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
     return errno;
-#else  /*__MINGW32__*/
+#else  /*GAUCHE_WINDOWS*/
     return GetLastError();
-#endif /*__MINGW32__*/
+#endif /*GAUCHE_WINDOWS*/
 }
 
 void Scm_SysError(const char *msg, ...)

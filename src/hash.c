@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.57 2007-08-10 01:19:36 shirok Exp $
+ *  $Id: hash.c,v 1.58 2007-08-24 23:55:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -100,7 +100,7 @@ static unsigned int round2up(unsigned int val);
     (result) = ((val)*2654435761UL)
 
 #define ADDRESS_HASH(result, val) \
-    (result) = ((SCM_WORD(val) >> 3)*2654435761UL)
+    (result) = (u_long)((SCM_WORD(val) >> 3)*2654435761UL)
 
 /* HASH2INDEX
    Map a hash value to bucket number.
@@ -126,7 +126,7 @@ u_long Scm_EqvHash(ScmObj obj)
         if (SCM_INTP(obj)) {
             SMALL_INT_HASH(hashval, SCM_INT_VALUE(obj));
         } else if (SCM_BIGNUMP(obj)) {
-            int i;
+            u_int i;
             u_long u = 0;
             for (i=0; i<SCM_BIGNUM_SIZE(obj); i++) {
                 u += SCM_BIGNUM(obj)->values[i];
@@ -156,7 +156,7 @@ u_long Scm_Hash(ScmObj obj)
 {
     u_long hashval;
     if (!SCM_PTRP(obj)) {
-        SMALL_INT_HASH(hashval, (u_long)obj);
+        SMALL_INT_HASH(hashval, (u_long)SCM_WORD(obj));
         return hashval;
     } else if (SCM_NUMBERP(obj)) {
         return Scm_EqvHash(obj);
@@ -506,7 +506,7 @@ static void hash_core_init(ScmHashCore *table,
                            void *data)
 {
     Entry **b;
-    int i;
+    u_int i;
     
     if (initSize != 0) initSize = round2up(initSize);
     else initSize = DEFAULT_NUM_BUCKETS;
@@ -950,6 +950,8 @@ ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
         return Scm_MakeHashTableFull(SCM_CLASS_HASH_TABLE, SCM_HASH_GENERAL,
                                      hashfn, cmpfn, initSize, NULL);
     }
+#else
+    return SCM_UNDEFINED;
 #endif
 }
 

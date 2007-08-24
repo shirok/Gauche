@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.273 2007-08-12 03:16:55 shirok Exp $
+ *  $Id: vm.c,v 1.274 2007-08-24 23:55:44 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -54,7 +54,6 @@ static int vm_stack_kind;
 static int vm_stack_mark_proc;
 #endif /*USE_CUSTOM_STACK_MARKER*/
 
-#include <unistd.h>
 #ifdef HAVE_SCHED_H
 #include <sched.h>
 #endif
@@ -367,7 +366,7 @@ pthread_key_t Scm_VMKey(void)
         newcont->prev = CONT;                           \
         newcont->env = ENV;                             \
         newcont->argp = ARGP;                           \
-        newcont->size = SP - ARGP;                      \
+        newcont->size = (int)(SP - ARGP);               \
         newcont->pc = next_pc;                          \
         newcont->base = BASE;                           \
         CONT = newcont;                                 \
@@ -547,7 +546,7 @@ pthread_key_t Scm_VMKey(void)
         ScmObj x_, y_ = VAL0;                                   \
         POP_ARG(x_);                                            \
         if (SCM_INTP(y_) && SCM_INTP(x_)) {                     \
-            r = ((signed long)x_ op (signed long)y_);           \
+            r = ((signed long)(intptr_t)x_ op (signed long)(intptr_t)y_); \
         } else if (SCM_FLONUMP(y_) && SCM_FLONUMP(x_)) {        \
             r = (SCM_FLONUM_VALUE(x_) op SCM_FLONUM_VALUE(y_)); \
         } else {                                                \
@@ -678,7 +677,7 @@ static void run_loop()
                 ScmObj *to;
                 int argc;
               tail_call_entry:
-                argc = SP - ARGP;
+                argc = (int)(SP - ARGP);
 
                 if (IN_STACK_P((ScmObj*)CONT)) {
                     to = CONT_FRAME_END(CONT);
@@ -707,7 +706,7 @@ static void run_loop()
                 int proctype;
                 ScmObj nm, mm, *fp;
               call_entry:
-                argc = SP - ARGP;
+                argc = (int)(SP - ARGP);
                 vm->numVals = 1; /* default */
 
                 /* object-apply hook.  shift args, and insert val0 into
@@ -1043,7 +1042,7 @@ static void run_loop()
                 NEXT;
             }
             CASE(SCM_VM_LOCAL_ENV_JUMP) {
-                int nargs = SP - ARGP;
+                int nargs = (int)(SP - ARGP);
                 int env_depth = SCM_VM_INSN_ARG(code);
                 ScmObj *to;
                 ScmEnvFrame *tenv = ENV;
@@ -1094,7 +1093,7 @@ static void run_loop()
                 NEXT;
             }
             CASE(SCM_VM_LOCAL_ENV_TAIL_CALL) {
-                int nargs = SP - ARGP;
+                int nargs = (int)(SP - ARGP);
                 ScmObj *to;
                 VM_ASSERT(SCM_CLOSUREP(VAL0));
                 if (IN_STACK_P((ScmObj*)CONT)) {
@@ -1112,7 +1111,7 @@ static void run_loop()
             }
             /*FALLTHROUGH*/
             CASE(SCM_VM_LOCAL_ENV_CALL) {
-                int nargs = SP - ARGP;
+                int nargs = (int)(SP - ARGP);
                 VM_ASSERT(SCM_CLOSUREP(VAL0));
                 if (nargs > 0) {
                     CHECK_STACK_PARANOIA(ENV_SIZE(0));
@@ -1839,7 +1838,7 @@ static void run_loop()
             CASE(SCM_VM_VALUES_N) {
                 int nvals;
                 VM_ASSERT(ENV);
-                nvals = ENV->size;
+                nvals = (int)ENV->size;
                 SCM_ASSERT(nvals < SCM_VM_MAX_VALUES);
                 vm->numVals = nvals;
                 for (; nvals > 1; nvals--) {
@@ -2403,7 +2402,7 @@ static inline ScmEnvFrame *save_env(ScmVM *vm, ScmEnvFrame *env_begin)
     if (!IN_STACK_P((ScmObj*)e)) return e;
 
     do {
-        int esize = e->size, i;
+        int esize = (int)e->size, i;
         ScmObj *d, *s;
 
         if (e->size < 0) {
@@ -2514,10 +2513,10 @@ static void save_cont(ScmVM *vm)
 static void save_stack(ScmVM *vm)
 {
     ScmObj *p;
-    struct timeval t0, t1;
-    int stats = SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_VM_STATS);
-
 #if HAVE_GETTIMEOFDAY
+    int stats = SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_VM_STATS);
+    struct timeval t0, t1;
+
     if (stats) {
         gettimeofday(&t0, NULL);
     }
@@ -3044,7 +3043,7 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
 static ScmObj dynwind_after_cc(ScmObj result, void **data)
 {
     ScmObj val0 = SCM_OBJ(data[0]);
-    int nvals = (intptr_t)data[1];
+    int nvals = (int)(intptr_t)data[1];
     ScmVM *vm = theVM;
     
     vm->numVals = nvals;
@@ -3687,7 +3686,7 @@ static ScmObj process_queued_requests_cc(ScmObj result, void **data)
     ScmObj cp;
     ScmVM *vm = theVM;
     
-    vm->numVals = (intptr_t)data[0];
+    vm->numVals = (int)(intptr_t)data[0];
     vm->val0 = data[1];
     if (vm->numVals > 1) {
         cp = SCM_OBJ(data[2]);
@@ -3784,7 +3783,7 @@ static ScmObj env2vec(ScmEnvFrame *env, struct EnvTab *etab)
             return etab->entries[i].vec;
         }
     }
-    vec = Scm_MakeVector(env->size+2, SCM_FALSE);
+    vec = Scm_MakeVector((int)env->size+2, SCM_FALSE);
     SCM_VECTOR_ELEMENT(vec, 0) = env2vec(env->up, etab);
     SCM_VECTOR_ELEMENT(vec, 1) = SCM_NIL; /*Scm_VMGetBindInfo(env->info);*/
     for (i=0; i<env->size; i++) {
@@ -3834,7 +3833,7 @@ static ScmObj get_debug_info(ScmCompiledCode *base, SCM_PCTYPE pc)
         || (pc < base->code || pc >= base->code + base->codeSize)) {
         return SCM_FALSE;
     }
-    off = pc - base->code - 1;  /* pc is already incremented, so -1. */
+    off = (int)(pc - base->code - 1);  /* pc is already incremented, so -1. */
     SCM_FOR_EACH(ip, base->info) {
         ScmObj p = SCM_CAR(ip);
         if (!SCM_PAIRP(p) || !SCM_INTP(SCM_CAR(p))) continue;

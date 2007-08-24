@@ -30,21 +30,17 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.114 2007-08-12 03:16:55 shirok Exp $
+ *  $Id: load.c,v 1.115 2007-08-24 23:55:43 shirok Exp $
  */
 
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <string.h>
-#include <ctype.h>
-#include <fcntl.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/arch.h"
 #include "gauche/port.h"
 #include "gauche/builtin-syms.h"
+
+#include <ctype.h>
+#include <fcntl.h>
 
 #define LOAD_SUFFIX ".scm"      /* default load suffix */
 
@@ -318,10 +314,10 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
     } else if (*ptr == '/'
                || (*ptr == '.' && *(ptr+1) == '/')
                || (*ptr == '.' && *(ptr+1) == '.' && *(ptr+2) == '/')
-#if defined(__CYGWIN__) || defined(__MINGW32__)
+#if defined(__CYGWIN__) || defined(GAUCHE_WINDOWS)
 	       /* support for wicked legacy DOS drive letter */
 	       || (isalpha(*ptr) && *(ptr+1) == ':')
-#endif /* __CYGWIN__ || __MINGW32__ */
+#endif /* __CYGWIN__ || GAUCHE_WINDOWS */
 	       ) {
         use_load_paths = FALSE;
     }
@@ -494,11 +490,11 @@ ScmObj Scm_GetDynLoadPath(void)
 static ScmObj break_env_paths(const char *envname)
 {
     const char *e = getenv(envname);
-#ifndef __MINGW32__
+#ifndef GAUCHE_WINDOWS
     char delim = ':';
-#else  /*__MINGW32__*/
+#else  /*GAUCHE_WINDOWS*/
     char delim = ';';
-#endif /*__MINGW32__*/
+#endif /*GAUCHE_WINDOWS*/
 
     if (e == NULL) {
 	return SCM_NIL;
@@ -618,7 +614,7 @@ typedef void (*ScmDynLoadInitFn)(void);
    not much point to avoid dlopen here. */
 #if defined(HAVE_DLOPEN)
 #include "dl_dlopen.c"
-#elif defined(__MINGW32__)
+#elif defined(GAUCHE_WINDOWS)
 #include "dl_win.c"
 #else
 #include "dl_dummy.c"

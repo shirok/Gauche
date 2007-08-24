@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.300 2007-08-16 11:29:50 shirok Exp $
+;;; $Id: extlib.stub,v 1.301 2007-08-24 23:55:42 shirok Exp $
 ;;;
 
 "
@@ -642,7 +642,7 @@
 (define-cproc string-pointer-copy (sp::<string-pointer>)
   (call "Scm_StringPointerCopy"))
 (define-cproc string-pointer-byte-index (sp::<string-pointer>)
-  (expr <int> (- (-> sp current) (-> sp start))))
+  (expr <int> (cast int (- (-> sp current) (-> sp start)))))
 
 (if "SCM_DEBUG_HELPER"
     (define-cproc %string-pointer-dump (sp::<string-pointer>)
@@ -962,8 +962,10 @@
   "  int i = Scm_PortFileNo(port);
   SCM_RETURN((i < 0)? SCM_FALSE : Scm_MakeInteger(i));")
 
-(define-cproc port-fd-dup! (dst::<port> src::<port>)
-  (call <void> "Scm_PortFdDup"))
+(when "!defined(GAUCHE_WINDOWS)"
+  (define-cproc port-fd-dup! (dst::<port> src::<port>)
+    (call <void> "Scm_PortFdDup"))
+  )
 
 (define-enum SEEK_SET)
 (define-enum SEEK_CUR)
@@ -1679,14 +1681,15 @@
 (define-cproc gc-stat ()
   (body <top>
         (result
-         (list (list ':total-heap-size
-                     (Scm_MakeIntegerFromUI (GC_get_heap_size)))
-               (list ':free-bytes
-                     (Scm_MakeIntegerFromUI (GC_get_free_bytes)))
-               (list ':bytes-since-gc
-                     (Scm_MakeIntegerFromUI (GC_get_bytes_since_gc)))
-               (list ':total-bytes
-                     (Scm_MakeIntegerFromUI (GC_get_total_bytes)))))))
+         (list
+          (list ':total-heap-size
+                (Scm_MakeIntegerFromUI (cast u_long (GC_get_heap_size))))
+          (list ':free-bytes
+                (Scm_MakeIntegerFromUI (cast u_long (GC_get_free_bytes))))
+          (list ':bytes-since-gc
+                (Scm_MakeIntegerFromUI (cast u_long (GC_get_bytes_since_gc))))
+          (list ':total-bytes
+                (Scm_MakeIntegerFromUI (cast u_long (GC_get_total_bytes))))))))
 
 ;; Profiler public API
 (define-cproc profiler-start () (call <void> "Scm_ProfilerStart"))

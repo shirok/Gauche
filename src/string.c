@@ -30,15 +30,14 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.86 2007-08-10 01:19:36 shirok Exp $
+ *  $Id: string.c,v 1.87 2007-08-24 23:55:43 shirok Exp $
  */
 
-#include <stdio.h>
-#include <ctype.h>
-#include <sys/types.h>
-#include <string.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+
+#include <ctype.h>
+#include <string.h>
 
 void Scm_DStringDump(FILE *out, ScmDString *dstr);
 
@@ -154,7 +153,7 @@ static inline int count_length(const char *str, int size)
    If the string is incomplete, returns -1. */
 int Scm_MBLen(const char *str, const char *stop)
 {
-    int size = (stop == NULL)? strlen(str) : (stop - str);
+    int size = (int)((stop == NULL)? strlen(str) : (stop - str));
     return count_length(str, size);
 }
 
@@ -529,7 +528,7 @@ ScmChar Scm_StringRef(ScmString *str, int pos, int range_error)
 int Scm_StringByteRef(ScmString *str, int offset, int range_error)
 {
     const ScmStringBody *b = SCM_STRING_BODY(str);
-    if (offset < 0 || offset >= SCM_STRING_BODY_SIZE(b)) {
+    if (offset < 0 || offset >= (int)SCM_STRING_BODY_SIZE(b)) {
         if (range_error) {
             Scm_Error("argument out of range: %d", offset);
         } else {
@@ -548,7 +547,7 @@ int Scm_StringByteRef(ScmString *str, int offset, int range_error)
 const char *Scm_StringPosition(ScmString *str, int offset)
 {
     const ScmStringBody *b = SCM_STRING_BODY(str);
-    if (offset < 0 || offset > SCM_STRING_BODY_LENGTH(b)) {
+    if (offset < 0 || offset > (int)SCM_STRING_BODY_LENGTH(b)) {
         Scm_Error("argument out of range: %d", offset);
     }
     if (SCM_STRING_BODY_INCOMPLETE_P(b)) {
@@ -787,7 +786,7 @@ static ScmObj substring(const ScmStringBody *xb, int start, int end,
             e = forward_pos(s, end - start);
             flags &= ~SCM_STRING_TERMINATED;
         }
-        return SCM_OBJ(make_str(end - start, e - s, s, flags));
+        return SCM_OBJ(make_str((int)(end - start), (int)(e - s), s, flags));
     }
 }
 
@@ -938,24 +937,28 @@ static ScmObj string_scan(ScmString *s1, const char *ss2,
                 case SCM_STRING_SCAN_INDEX:
                     return Scm_MakeInteger(i);
                 case SCM_STRING_SCAN_BEFORE:
-                    return Scm_MakeString(ss1, ssp-ss1, i, 0);
+                    return Scm_MakeString(ss1, (int)(ssp-ss1), i, 0);
                 case SCM_STRING_SCAN_AFTER:
-                    return Scm_MakeString(ssp+siz2, siz1-(ssp-ss1+siz2),
+                    return Scm_MakeString(ssp+siz2,
+                                          (int)(siz1-(ssp-ss1+siz2)),
                                           len1-i-len2, 0);
                 case SCM_STRING_SCAN_BEFORE2:
-                    return Scm_Values2(Scm_MakeString(ss1, ssp-ss1, i, 0),
-                                       Scm_MakeString(ssp, siz1-(ssp-ss1),
+                    return Scm_Values2(Scm_MakeString(ss1, (int)(ssp-ss1),
+                                                      i, 0),
+                                       Scm_MakeString(ssp,
+                                                      (int)(siz1-(ssp-ss1)),
                                                       len1-i, 0));
                 case SCM_STRING_SCAN_AFTER2:
-                    return Scm_Values2(Scm_MakeString(ss1, ssp-ss1+siz2,
+                    return Scm_Values2(Scm_MakeString(ss1,
+                                                      (int)(ssp-ss1+siz2),
                                                       i+len2, 0),
                                        Scm_MakeString(ssp+siz2,
-                                                      siz1-(ssp-ss1+siz2),
+                                                      (int)(siz1-(ssp-ss1+siz2)),
                                                       len1-i-len2, 0));
                 case SCM_STRING_SCAN_BOTH:
-                    return Scm_Values2(Scm_MakeString(ss1, ssp-ss1, i, 0),
+                    return Scm_Values2(Scm_MakeString(ss1, (int)(ssp-ss1), i, 0),
                                        Scm_MakeString(ssp+siz2,
-                                                      siz1-(ssp-ss1+siz2),
+                                                      (int)(siz1-(ssp-ss1+siz2)),
                                                       len1-i-len2, 0));
                 }
             }
@@ -1108,7 +1111,7 @@ const char **Scm_ListToConstCStringArray(ScmObj lis, int errp)
    otherwise, signals an error.
    If provided, alloc is used to allocate both a pointer array and char
    arrays.  Otherwise, SCM_ALLOC is used. */
-char **Scm_ListToCStringArray(ScmObj lis, int errp, void *alloc(size_t))
+char **Scm_ListToCStringArray(ScmObj lis, int errp, void *(*alloc)(size_t))
 {
     ScmObj lp;
     char **array, **p;
@@ -1223,7 +1226,7 @@ ScmObj Scm_MakeStringPointer(ScmString *src, int index, int start, int end)
         } else {
             eptr = forward_pos(sptr, end - start);
         }
-        effective_size = eptr - ptr;
+        effective_size = (int)(eptr - ptr);
     }
     sp = SCM_NEW(ScmStringPointer);
     SCM_SET_CLASS(sp, SCM_CLASS_STRING_POINTER);
@@ -1314,11 +1317,11 @@ ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int afterp)
     } else {
         if (afterp)
             return SCM_OBJ(make_str(sp->length - sp->index,
-                                    sp->start + sp->size - sp->current,
+                                    (int)(sp->start + sp->size - sp->current),
                                     sp->current, 0));
         else
             return SCM_OBJ(make_str(sp->index,
-                                    sp->current - sp->start,
+                                    (int)(sp->current - sp->start),
                                     sp->start, 0));
     }
 }
@@ -1491,7 +1494,7 @@ const char *Scm_DStringGetz(ScmDString *dstr)
 
 void Scm_DStringPutz(ScmDString *dstr, const char *str, int size)
 {
-    if (size < 0) size = strlen(str);
+    if (size < 0) size = (int)strlen(str);
     if (dstr->current + size > dstr->end) {
         Scm__DStringRealloc(dstr, size);
     }

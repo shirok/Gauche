@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.52 2007-08-10 08:48:06 shirok Exp $
+ *  $Id: signal.c,v 1.53 2007-08-24 23:55:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -62,17 +62,17 @@
  *  since GC uses it in the Linux/pthread environment.
  */
 
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
   #ifdef GAUCHE_USE_PTHREADS
   #define SIGPROCMASK pthread_sigmask
   #else
   #define SIGPROCMASK sigprocmask
   #endif
-#else  /* __MINGW32__ */
-  /* This isn't correct (we need some mechanism to block the signal),
-     but just for the time being ... */
-  #define SIGPROCMASK(mode, set, omask)  (0)
-#endif /* __MINGW32__ */
+#else  /* GAUCHE_WINDOWS */
+  /* emulation routine is defined below */
+  #define SIGPROCMASK sigprocmask_win
+  static int sigprocmask_win(int how, const sigset_t *set, sigset_t *oldset);
+#endif /* GAUCHE_WINDOWS */
 
 /* Master signal handler vector. */
 static struct sigHandlersRec {
@@ -541,9 +541,9 @@ static SCM_DEFINE_SUBR(through_sighandler_stub, 1, 0,
 #endif
 
 /*
- * An emulation stub for Windows/MinGW
+ * An emulation stub for Windows
  */
-#ifdef __MINGW32__
+#if defined(GAUCHE_WINDOWS)
 int sigaction(int signum, const struct sigaction *act,
 	      struct sigaction *oact)
 {
@@ -556,7 +556,14 @@ int sigaction(int signum, const struct sigaction *act,
 	return 0;
     }
 }
-#endif /* __MINGW32__ */
+
+int sigprocmask_win(int how, const sigset_t *set, sigset_t *oldset)
+{
+   /* This isn't correct (we need some mechanism to block the signal),
+      but just for the time being ... */
+    return 0;
+}
+#endif /* GAUCHE_WINDOWS */
 
 /*
  * set-signal-handler!
@@ -684,7 +691,7 @@ void Scm_SetMasterSigmask(sigset_t *set)
     struct sigdesc *desc = sigDesc;
     struct sigaction acton, actoff;
 
-    acton.sa_handler = (void(*)())sig_handle;
+    acton.sa_handler = (void(*)(int))sig_handle;
     acton.sa_mask = *set;
     acton.sa_flags = 0;
     actoff.sa_handler = SIG_DFL;
@@ -780,7 +787,7 @@ void Scm_ResetSignalHandlers(sigset_t *mask)
  */
 static void scm_sigsuspend(sigset_t *mask)
 {
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
     sigset_t omask;
     ScmVM *vm = Scm_VM();
     for (;;) {
@@ -795,9 +802,9 @@ static void scm_sigsuspend(sigset_t *mask)
     sigsuspend(mask);
     SIGPROCMASK(SIG_SETMASK, &omask, NULL);
     SCM_SIGCHECK(vm);
-#else  /*__MINGW32__*/
-    Scm_Error("sigsuspend not supported on MinGW port");
-#endif /*__MINGW32__*/
+#else  /* GAUCHE_WINDOWS */
+    Scm_Error("sigsuspend not supported on Windows port");
+#endif /* GAUCHE_WINDOWS */
 }
 
 ScmObj Scm_SigSuspend(ScmSysSigset *mask)

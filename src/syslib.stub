@@ -30,27 +30,19 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.129 2007-08-06 08:46:15 shirok Exp $
+;;; $Id: syslib.stub,v 1.130 2007-08-24 23:55:44 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
 ;; some non-posix functions which are important for programming on Unix.
 
-"#include <unistd.h>
-#include <sys/types.h>
-#include <dirent.h>
-#include <locale.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <signal.h>
+" #include <locale.h>
 #include <math.h>
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
 #include <sys/wait.h>
 #include <grp.h>
 #include <pwd.h>
-#else  /* __MINGW32__ */
-#include <windows.h>
-#endif /* __MINGW32__ */
+#endif /* !GAUCHE_WINDOWS */
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -367,14 +359,14 @@
 
 (define-cproc sys-rename (oldname::<const-cstring> newname::<const-cstring>)
   "  int r;
-#if defined(__MINGW32__)
+#if defined(GAUCHE_WINDOWS)
   /* Windows doesn't allow renaming to the existing file, so we unlink
      it first.  This breaks the atomicity of rename operation.
      We don't check and raise an error here, since the error will be
      caught by rename() call. */
   chmod(newname, 0666);
   unlink(newname);
-#endif /* __MINGW32__ */
+#endif /* GAUCHE_WINDOWS */
   SCM_SYSCALL(r, rename(oldname, newname));
   if (r < 0) Scm_SysError(\"renaming %s to %s failed\", oldname, newname);
   SCM_RETURN(SCM_TRUE);")
@@ -411,9 +403,12 @@
   (call <const-cstring>? "getenv"))
 
 ;; Note: the return value of system() is not portable.
+;; NB: on WinNT, system("") aborts, so we filter it.
 (define-cproc sys-system (command::<const-cstring>)
   (body <int>
-        "SCM_SYSCALL(SCM_RESULT, system(command));"))
+        (if (== (aref command 0) 0)
+          (result 0)
+          (SCM_SYSCALL SCM_RESULT (system command)))))
 
 (define-cproc sys-random ()
   "#if defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)
@@ -462,14 +457,14 @@
   if (r < 0) Scm_SysError(\"stat failed for %s\", path);
   SCM_RETURN(SCM_OBJ(s));")
 
-(if "!defined(__MINGW32__)"
-(define-cproc sys-lstat (path::<const-cstring>)
-  "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
+(when "!defined(GAUCHE_WINDOWS)"
+  (define-cproc sys-lstat (path::<const-cstring>)
+    "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
   int r;
   SCM_SYSCALL(r, lstat(path, &s->statrec));
   if (r < 0) Scm_SysError(\"lstat failed for %s\", path);
   SCM_RETURN(SCM_OBJ(s));")
-)
+  )
 
 (define-cproc sys-fstat (port-or-fd)
   "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
@@ -482,7 +477,7 @@
 ;;---------------------------------------------------------------------
 ;; sys/wait.h
 
-(when "!defined(__MINGW32__)"
+(when "!defined(GAUCHE_WINDOWS)"
 
 ;; returns pid and status 
 (define-cproc sys-wait ()
@@ -520,7 +515,7 @@
 (define-cproc sys-wait-stopsig (status::<int>)
   (call <int> "WSTOPSIG"))
 
-) ;; !defined(__MINGW32__)
+) ;; !defined(GAUCHE_WINDOWS)
 
 ;;---------------------------------------------------------------------
 ;; time.h
@@ -603,13 +598,13 @@
         "if (r < 0) Scm_SysError(\"chmod failed\");"
         "SCM_RESULT = SCM_TRUE;"))
 
-(if "!defined(__MINGW32__)"
+(if "!defined(GAUCHE_WINDOWS)"
   (define-cproc sys-fchmod (port-or-fd mode::<int>)
     (body "int fd = Scm_GetPortFd(port_or_fd, TRUE), r;"
           "SCM_SYSCALL(r, fchmod(fd, mode));"
           "if (r < 0) Scm_SysError(\"fchmod failed\");"
           "SCM_RESULT = SCM_TRUE;"))
-) ;; !defined(__MINGW32__)
+) ;; !defined(GAUCHE_WINDOWS)
 
 ;; NB: we force GC just befor fork().  It appeares necessary on some
 ;; platform to synchronize page dirty bit information, so that incremental
@@ -720,11 +715,11 @@
 
 (define-cproc sys-mkdir (pathname::<const-cstring> mode::<int>)
   (body "int r;"
-        "#ifndef __MINGW32__"
+        "#if !defined(GAUCHE_WINDOWS)"
         "SCM_SYSCALL(r, mkdir(pathname, mode));"
         "#else"
         "SCM_SYSCALL(r, mkdir(pathname));"
-        "#endif /*__MINGW32__*/"
+        "#endif /*GAUCHE_WINDOWS*/"
         "if (r < 0) Scm_SysError(\"mkdir failed\");"
         "SCM_RESULT = SCM_TRUE;"))
 
@@ -744,7 +739,7 @@
 
 (define-cproc sys-sleep (seconds::<fixnum>)
   (body <int>
-        "#if defined(__MINGW32__)"
+        "#if defined(GAUCHE_WINDOWS)"
         "  Sleep(seconds*1000); SCM_RESULT=0;"
         "#else"
         "  SCM_RESULT = sleep(seconds);"

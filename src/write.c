@@ -30,15 +30,15 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.68 2007-04-12 03:26:55 shirok Exp $
+ *  $Id: write.c,v 1.69 2007-08-24 23:55:44 shirok Exp $
  */
 
-#include <stdio.h>
-#include <ctype.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/port.h"
 #include "gauche/builtin-syms.h"
+
+#include <ctype.h>
 
 static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
@@ -665,11 +665,11 @@ static void format_sexp(ScmPort *out, ScmObj arg,
         const char *s = Scm_GetStringContent(tmpstr, NULL, NULL, NULL), *e;
         if (dots && maxcol > 4) {
             e = Scm_StringPosition(tmpstr, maxcol-4);
-            Scm_PutzUnsafe(s, e-s, out);
+            Scm_PutzUnsafe(s, (int)(e-s), out);
             Scm_PutzUnsafe(" ...", 4, out);
         } else {
             e = Scm_StringPosition(tmpstr, maxcol);
-            Scm_PutzUnsafe(s, e-s, out);
+            Scm_PutzUnsafe(s, (int)(e-s), out);
         }
     } else {
         format_pad(out, tmpstr, mincol, colinc, padchar, rightalign);
@@ -1097,7 +1097,7 @@ static void vprintf_proc(ScmPort *out, const char *fmt, ScmObj args,
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
                     snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf),
-                             (void*)Scm_GetUInteger(val));
+                             (void*)(intptr_t)Scm_GetUInteger(val));
                     Scm_PutzUnsafe(buf, -1, out);
                     break;
                 }
@@ -1222,7 +1222,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, int sharedp)
             case 'p':
                 {
                     void *val = va_arg(ap, void *);
-                    SCM_APPEND1(h, t, Scm_MakeIntegerU((unsigned long)val));
+                    SCM_APPEND1(h, t, Scm_MakeIntegerU((u_long)(intptr_t)val));
                     break;
                 }
             case 'S':; case 'A':
