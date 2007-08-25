@@ -40,7 +40,7 @@ prepaired on the Unix platform (or Cygwin) with pre-installed
 Gauche so that the machine-generated files are included.
 To prepare source tree, run 'DIST' command as the following:
 
-  % ./DIST winnt
+  % ./DIST winvc
 
 Once preparation is done, look for the VC solution file under
 winnt/ subdirectory.  
