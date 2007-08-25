@@ -2,7 +2,11 @@ This file is for those who wants to hack the cutting-edge
 Gauche sources from the CVS repository.  If you just want to
 compile from the distribution, you don't need to read any further.
 
+
 [TOOLS REQUIRED FOR BUILDING]
+
+On Unix platforms
+-----------------
 
 In order to build Gauche from the CVS sources, instead of from
 the distribution, you need to have autoconf 2.54 or higher.
@@ -24,6 +28,23 @@ etc.  Be careful not to clobber these files.  First, if your
 autotools version doesn't match mine, it tends to break.
 Second, those files are likely to be edited after generated,
 in order to fix some build problem on certain platform.
+
+
+On Windows/VisualC
+------------------
+
+Gauche build process largely relies on the code generation
+during building, and it is lots of pain to adapt it for VC.
+So we chose a hybrid approach; the source tree needs to be
+prepaired on the Unix platform (or Cygwin) with pre-installed
+Gauche so that the machine-generated files are included.
+To prepare source tree, run 'DIST' command as the following:
+
+  % ./DIST winnt
+
+Once preparation is done, look for the VC solution file under
+winnt/ subdirectory.  
+
 
 
 [CHANGING VM INSTRUCTIONS]
