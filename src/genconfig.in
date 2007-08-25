@@ -3,7 +3,7 @@
 #
 # Generates gauche-config.c and gauche/arch.h
 #
-# $Id: genconfig.in,v 1.13 2007-08-24 23:55:42 shirok Exp $
+# $Id: genconfig.in,v 1.14 2007-08-25 02:29:31 shirok Exp $
 #
 
 # TODO: we have almost exactly the same table in gauche-config.c part
@@ -92,16 +92,18 @@ cat > gauche-config.c <<EOF
    It used to be a shell script, but turned into a C program
    so that it works on the platform that lacks sh. */
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define _CRT_SECURE_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_WARNINGS  1
+#include <windows.h>
+#include <shlwapi.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
-
-#if defined(__MINGW32__) || defined(_WINDOWS)
-#include <windows.h>
-#include <shlwapi.h>
-#endif
 
 static void usage (void) {
    puts("Usage: gauche-config [option]\\n"
@@ -202,11 +204,28 @@ static struct cmd_rec {
     { NULL, NULL }
 };
 
+#if defined(_MSC_VER) && defined(UNICODE)
+/* mbs <-> wcs stuff */
+#include "win-compat.c"
+#define MBS2WCS(s)   mbs2wcs(s, errfn)
+#define WCS2MBS(s)   wcs2mbs(s, errfn)
+static void errfn(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+}
+#else  /* !(defined(_MSC_VER) && defined(UNICODE)) */
+#define MBS2WCS(s)  (s)
+#define WCS2MBS(s)  (s)
+#endif /* !(defined(_MSC_VER) && defined(UNICODE)) */
+
 static void print_output(struct cmd_rec *cmd) 
 {
-#if !defined(__MINGW32__) && !defined(_WINDOWS)
+#if !defined(__MINGW32__) && !defined(_MSC_VER)
     printf("%s\\n", cmd->value);
-#else   /* __MINGW32__ || _WINDOWS */
+#else   /* __MINGW32__ || _MSC_VER */
     const char *dir_mark;
 
     if ((dir_mark = strchr(cmd->value, '@')) == NULL) {
@@ -214,8 +233,7 @@ static void print_output(struct cmd_rec *cmd)
     } else {
 	HMODULE mod;
 	DWORD r;
-	char path[MAX_PATH];
-	char *p;
+	TCHAR path[MAX_PATH];
 
 	mod = GetModuleHandle(NULL);
 	if (mod == NULL) {
@@ -229,19 +247,19 @@ static void print_output(struct cmd_rec *cmd)
 	}
 	/* remove \\gauche-config.exe */
 	if (!PathRemoveFileSpec(path)) {
-	    fprintf(stderr, "PathRemoveFileSpec failed on %s", path);
+	    fprintf(stderr, "PathRemoveFileSpec failed on %s", WCS2MBS(path));
 	    exit(1);
 	}
 	/* remobe \\bin */
 	if (!PathRemoveFileSpec(path)) {
-	    fprintf(stderr, "PathRemoveFileSpec failed on %s", path);
+	    fprintf(stderr, "PathRemoveFileSpec failed on %s", WCS2MBS(path));
 	    exit(1);
 	}
 	
 	fwrite(cmd->value, dir_mark - cmd->value, 1, stdout);
-	fprintf(stdout, "%s%s\\n", path, dir_mark+1);
+	fprintf(stdout, "%s%s\\n", WCS2MBS(path), dir_mark+1);
     }
-#endif  /* __MINGW32__ || _WINDOWS */
+#endif  /* __MINGW32__ || _MSC_VER */
 }
 
 static void fixup_extension(int argc, char **argv)

@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test-arith", "test-arith.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test-vmstack", "test-vmstack.vcproj", "{19C560CD-0097-4925-847D-3A1D88119335}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gauche-config", "gauche-config.vcproj", "{9B3B92C7-21FB-416B-A124-5CCC3E1D33B4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -31,6 +33,10 @@ Global
 		{19C560CD-0097-4925-847D-3A1D88119335}.Debug|Win32.Build.0 = Debug|Win32
 		{19C560CD-0097-4925-847D-3A1D88119335}.Release|Win32.ActiveCfg = Release|Win32
 		{19C560CD-0097-4925-847D-3A1D88119335}.Release|Win32.Build.0 = Release|Win32
+		{9B3B92C7-21FB-416B-A124-5CCC3E1D33B4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9B3B92C7-21FB-416B-A124-5CCC3E1D33B4}.Debug|Win32.Build.0 = Debug|Win32
+		{9B3B92C7-21FB-416B-A124-5CCC3E1D33B4}.Release|Win32.ActiveCfg = Release|Win32
+		{9B3B92C7-21FB-416B-A124-5CCC3E1D33B4}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
