@@ -3631,16 +3631,16 @@ but adds the name @i{name} to the matched substring.
 You can refer to the matched substring by both index number
 and the name.
 
-The same name can appear multiple times in a regular
-expression.  See @code{\k<@i{name}>} below for the semantics
-of such a case.
+When the same name appears more than once in a regular
+expression, it is undefined which matched substring is
+returned as the submatch of the named capture.
 @c JP
-名前つきの補捉とクラスタリング。@code{(@i{re}@dots{})}と同様ですが、
+名前つきの捕捉とクラスタリング。@code{(@i{re}@dots{})}と同様ですが、
 マッチした文字列に名前@i{name}がつけられます。マッチした文字列には
 インデックスの数字と名前のどちらでも参照できます。
 
-同じ名前を複数回使ってもかまいません。その場合の動作は下記の
-@code{\k<@i{name}>}を参照して下さい。
+同じ名前が複数回正規表現内に出現した場合、どの名前付き捕捉にマッチした
+部分文字列が返されるかは不定です。
 @c COMMON
 
 @item (?i:@i{re}@dots{})
@@ -3685,6 +3685,7 @@ more than once, the last matched substring is used.
 マッチします。補足カッコがネストしている場合、開きカッコの順番で数えます。
 @i{n}番目のカッコが繰り返しの中にあり、複数回マッチ
 している場合は、最後にマッチした文字列との比較が行われます。
+@c COMMON
 
 @item \k<@i{name}>
 @c EN
