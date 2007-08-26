@@ -1,3 +1,10 @@
+2007-08-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (regmatch_ref): fixed a bug that the failed named
+	  submatch returns "" instead of #f.
+	* lib/gauche/cgen/cise.scm (render-rec): handles character constants
+	  outside of alphanumeric range.
+
 2007-08-24  Shiro Kawai  <shiro@acm.org>
 
 	* Start adding Windows/MSVC support.

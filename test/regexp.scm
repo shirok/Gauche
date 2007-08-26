@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.23 2006-05-28 02:29:16 shirok Exp $
+;; $Id: regexp.scm,v 1.24 2007-08-26 08:16:05 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -788,6 +788,9 @@
        (match&list #/(?<foo>a)/ "a"))
 (test* "(?<foo>a)" "a"
        (let1 m (#/(?<foo>a)/ "a")
+         (m 'foo)))
+(test* "(?<foo>a)" #f
+       (let1 m (#/(?<foo>a)?/ "b")
          (m 'foo)))
 (test* "(?<foo>a)(?<bar>.*)" '("a" "bcd")
        (let1 m (#/(?<foo>a)(?<bar>.*)/ "abcd")

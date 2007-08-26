@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cise.scm,v 1.4 2007-08-16 11:29:50 shirok Exp $
+;;;  $Id: cise.scm,v 1.5 2007-08-26 08:16:05 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.cise
@@ -234,7 +234,10 @@
     [#\newline   (wrap-expr "'\\n'"  env)]
     [#\return    (wrap-expr "'\\r'"  env)]
     [#\tab       (wrap-expr "'\\t'"  env)]
-    [(? char?)   (wrap-expr `("'" ,(string form) "'") env)]
+    [(? char?)   (wrap-expr `("'" ,(if (char-set-contains? #[[:alnum:]] form)
+                                     (string form)
+                                     (format "\\x~2'0x" (char->integer form)))
+                              "'") env)]
     [_           (error "Invalid CISE form: " form)]))
 
 ;;=============================================================

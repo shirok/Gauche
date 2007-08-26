@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.69 2007-08-24 23:55:43 shirok Exp $
+ *  $Id: regexp.c,v 1.70 2007-08-26 08:16:04 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -2723,7 +2723,10 @@ static struct ScmRegMatchSub *regmatch_ref(ScmRegMatch *rm, ScmObj obj)
             if (!sub->startp || !sub->endp) continue;
             return sub;
         }
-        if (sub != NULL) return sub;
+        if (sub != NULL) {
+            if (sub->startp && sub->endp) return sub;
+            else return NULL;
+        }
         Scm_Error("named submatch not found: %S", obj);
     }
     Scm_Error("integer or symbol expected, but got %S", obj);
