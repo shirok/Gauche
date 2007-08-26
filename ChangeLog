@@ -1,3 +1,9 @@
+2007-08-26  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netlib.stub (socket-input-port, socket-output-port): 
+	  Fixed a bug that (effectively) forces socket input mode to be
+	  :full, making many network applications behave incorrectly.
+
 2007-08-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c (regmatch_ref): fixed a bug that the failed named

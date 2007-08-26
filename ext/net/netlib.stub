@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.49 2007-08-10 01:19:36 shirok Exp $
+;;;  $Id: netlib.stub,v 1.50 2007-08-26 20:07:43 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -176,7 +176,7 @@
                                  &keyword (buffering #f) (buffered? #f))
   (body <top>
         (let* ((bufmode :: int))
-          (cond ((SCM_FALSEP buffered?) ;for backward compatibility
+          (cond ((not (SCM_FALSEP buffered?)) ;for backward compatibility
                  (set! bufmode SCM_PORT_BUFFER_FULL))
                 (else
                  (set! bufmode (Scm_BufferingMode buffering
@@ -188,7 +188,7 @@
                                   &keyword (buffering #f) (buffered? #f))
   (body <top>
         (let* ((bufmode :: int))
-          (cond ((SCM_FALSEP buffered?) ;for backward compatibility
+          (cond ((not (SCM_FALSEP buffered?)) ;for backward compatibility
                  (set! bufmode SCM_PORT_BUFFER_FULL))
                 (else
                  (set! bufmode (Scm_BufferingMode buffering
