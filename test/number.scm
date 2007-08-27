@@ -676,6 +676,52 @@
                (>= 3.13 zz) (>= zz 3.13)))
   )
 
+;; Go through number comparison routines.
+;; assumes a >= b, a > 0, b > 0
+;; we use apply to prevent inlining.
+(define (numcmp-test msg eq a b) 
+  (let ((pp (list a b))
+        (pm (list a (- b)))
+        (mp (list (- a) b))
+        (mm (list (- a) (- b))))
+    (define (test4 op opname rev results)
+      (for-each (lambda (result comb args)
+                  (test* #`",|msg| ,(if rev 'rev \"\") ,opname(,comb)" result
+                         (apply op (if rev (reverse args) args))))
+                results '(++ +- -+ --) (list pp pm mp mm)))
+    (test4 =  '=  #f (list eq #f #f eq))
+    (test4 =  '=  #t (list eq #f #f eq))
+    (test4 >= '>= #f (list #t #t #f eq))
+    (test4 >= '>= #t (list eq #f #t #t))
+    (test4 >  '>  #f (list (not eq) #t #f #f))
+    (test4 >  '>  #t (list #f #f #t (not eq)))
+    (test4 <= '<= #f (list eq #f #t #t))
+    (test4 <= '<= #t (list #t #t #f eq))
+    (test4 <  '<  #f (list #f #f #t (not eq)))
+    (test4 <  '<  #t (list (not eq) #t #f #f))
+    ))
+
+(numcmp-test "fixnum vs fixnum eq" #t 156 156)
+(numcmp-test "fixnum vs fixnum ne" #f 878252 73224)
+(numcmp-test "bignum vs fixnum ne" #f (expt 3 50) 9982425)
+(numcmp-test "bignum vs bignum eq" #t (expt 3 50) (expt 3 50))
+(numcmp-test "bignum vs bignum ne" #f (expt 3 50) (expt 3 49))
+(numcmp-test "flonum vs fixnum eq" #t 314.0 314)
+(numcmp-test "flonum vs fixnum ne" #f 3140.0 314)
+(numcmp-test "flonum vs bignum eq" #t (expt 2.0 64) (expt 2 64))
+(numcmp-test "flonum vs bignum ne" #f (expt 2.0 64) (expt 2 63))
+(numcmp-test "ratnum vs fixnum ne" #f 13/2 6)
+(numcmp-test "ratnum vs ratnum eq" #t 3/5 3/5)
+(numcmp-test "ratnum vs ratnum 1 ne" #f 3/5 4/7)
+(numcmp-test "ratnum vs ratnum 2 ne" #f 4/5 3/7)
+(numcmp-test "ratnum vs ratnum 3 ne" #f 4/7 2/5)
+(numcmp-test "ratnum vs ratnum 4 ne" #f 4/7 3/7)
+(numcmp-test "ratnum vs flonum eq" #t 3/5 0.6)
+(numcmp-test "ratnum vs flonum ne" #f 8/9 0.6)
+(numcmp-test "ratnum vs bignum ne" #f (/ (+ (expt 2 64) 1) 2) (expt 2 63))
+
+
+
 ;; This is from the bug report from Bill Schottsteadt.  Before 0.8.10
 ;; this yielded #t because of the precision loss in fixnum vs ratnum
 ;; comparison.

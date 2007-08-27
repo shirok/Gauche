@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.151 2007-08-24 23:55:43 shirok Exp $
+ *  $Id: number.c,v 1.152 2007-08-27 00:08:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -41,6 +41,7 @@
 
 #include <limits.h>
 #include <float.h>
+#include <math.h>
 
 /*================================================================
  * Some macros
@@ -2334,13 +2335,18 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
         if (SCM_RATNUMP(arg1)) {
             ScmObj n0 = SCM_RATNUM_NUMER(arg0), d0 = SCM_RATNUM_DENOM(arg0);
             ScmObj n1 = SCM_RATNUM_NUMER(arg1), d1 = SCM_RATNUM_DENOM(arg1);
+            int s0 = Scm_Sign(n0), s1 = Scm_Sign(n1), d, n;
 
-            int d = Scm_NumCmp(d0, d1), n;
-            /* screen the obvious cases */
+            /* screen the obvious cases without allocating new numbers */
+            if (s0 < s1) return -1;
+            if (s0 > s1) return 1;
+            d = Scm_NumCmp(d0, d1);
             if (d == 0) return Scm_NumCmp(n0, n1);
-            n = Scm_NumCmp(n0, n1);
-            if (d > 0 && n <= 0) return -1;
-            if (d < 0 && n >= 0) return 1;
+            if (s0 > 0 && s1 > 0) {
+                n = Scm_NumCmp(n0, n1);
+                if (d > 0 && n <= 0) return -1;
+                if (d < 0 && n >= 0) return 1;
+            }
             
             return Scm_NumCmp(Scm_Mul(n0, d1),
                               Scm_Mul(n1, d0));

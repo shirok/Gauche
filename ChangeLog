@@ -1,5 +1,8 @@
 2007-08-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (Scm_NumCmp): fixed a bug in the short cut path
+	  of ratnum vs ratnum comparison.
+
 	* ext/net/netlib.stub (socket-input-port, socket-output-port): 
 	  Fixed a bug that (effectively) forces socket input mode to be
 	  :full, making many network applications behave incorrectly.
