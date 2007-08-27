@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.7 2007-08-06 08:46:14 shirok Exp $
+;;;  $Id: util.scm,v 1.8 2007-08-27 08:19:17 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -44,6 +44,7 @@
   (use srfi-11)
   (use srfi-13)
   (use util.list)
+  (use util.match)
   (export current-directory directory-list directory-list2 directory-fold
           home-directory temporary-directory
           make-directory* create-directory* remove-directory* delete-directory*
@@ -73,14 +74,12 @@
 ;;; Directory entries
 
 ;; "current-directory" is found in ChezScheme, MzScheme, etc.
-(define (current-directory . maybe-newdir)
-  (cond ((null? maybe-newdir) (sys-getcwd))
-        ((null? (cdr maybe-newdir))
-         (if (string? (car maybe-newdir))
-             (sys-chdir (car maybe-newdir))
-             (error "directory name should be a string" (car maybe-newdir))))
-        (else
-         (error "too many arguments for current-directory" maybe-newdir))))
+(define (current-directory . opts)
+  (let-optionals* opts ((newdir #f))
+    (match newdir
+      (#f (sys-getcwd))
+      ((? string?) (sys-chdir newdir))
+      (_ (error "directory name should be a string" newdir)))))
 
 (define (home-directory . maybe-user)
   (let-optionals* maybe-user ((user (sys-getuid)))
@@ -90,7 +89,8 @@
       (slot-ref ent 'dir))))
 
 (define (temporary-directory)
-  "/tmp")  ;; would be more smarter
+  (or (sys-getenv "TMPDIR")
+      "/tmp"))
 
 ;; utility for directory-list and directory-list2
 (define (%directory-filter dir pred filter-add-path?)
@@ -574,17 +574,22 @@
 
 ;; file->string, file->list, file->string-list, file->sexp-list
 ;; shortcuts of port->string etc.
+;; NB: call-with-input-file may pass #f to the proc if :if-does-not-exist #f
+;; is given.  We return #f in such case.
+
+(define (%maybe proc)
+  (lambda (maybe-port) (and maybe-port (proc maybe-port))))
 
 (define (file->string file . opts)
-  (apply call-with-input-file file port->string opts))
+  (apply call-with-input-file file (%maybe port->string) opts))
 
 (define (file->list reader file . opts)
-  (apply call-with-input-file file (cut port->list reader <>) opts))
+  (apply call-with-input-file file (%maybe (cut port->list reader <>)) opts))
 
 (define (file->string-list file . opts)
-  (apply call-with-input-file file (cut port->list read-line <>) opts))
+  (apply call-with-input-file file (%maybe (cut port->list read-line <>)) opts))
 
 (define (file->sexp-list file . opts)
-  (apply call-with-input-file file (cut port->list read <>) opts))
+  (apply call-with-input-file file (%maybe (cut port->list read <>)) opts))
 
 (provide "file/util")

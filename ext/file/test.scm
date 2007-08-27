@@ -445,4 +445,22 @@
          (remove-directory* "test.out")
          (file-exists? "test.out")))
 
+
+;;
+;; file->*
+;;
+
+(test* "file->string, if-does-not-exist #f" #f
+       (file->string "test.out" :if-does-not-exist #f))
+(test* "file->string, if-does-not-exist :error" *test-error*
+       (file->string "test.out" :if-does-not-exist :error))
+
+(with-output-to-file "test.out"
+  (cut display "humuhumu\nnukunuku\napua`a\n\n"))
+
+(test* "file->string" "humuhumu\nnukunuku\napua`a\n\n"
+       (file->string "test.out"))
+(test* "file->string-list" '("humuhumu" "nukunuku" "apua`a" "")
+       (file->string-list "test.out"))
+
 (test-end)

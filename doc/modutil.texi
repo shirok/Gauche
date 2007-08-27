@@ -3215,14 +3215,13 @@ of the user cannot be determined, @code{#f} is returned.
 @defun temporary-directory
 @c EN
 Returns the name of the directory that can be used
-to create a temporary files.   Currently it always returns
-@file{/tmp}, but in future it will take platform or system specific
-settings into account.
+to create a temporary files.   It returns the value of 
+the environment variable @code{TMPDIR} if it is defined,
+or @file{/tmp} otherwise.
 @c JP
 一時ファイルを作るのに適したディレクトリ名を返します。
-現在のところ、この手続きは常に@file{/tmp}を返しますが、
-将来はプラットフォームやシステム特有の設定を反映しするように
-なるかもしれません。
+環境変数@code{TMPDIR}が定義されていればその値を、
+そうでなければ@file{/tmp}を返すようになっています。
 @c COMMON
 @end defun
 
@@ -4025,11 +4024,18 @@ signalled during reading.
 @c COMMON
 
 @c EN
-All the optional arguments @var{options} @dots{} are passed
-to @code{call-with-input-file} as they are.
+Those procedures take the same keyword arguments as
+@code{call-with-input-file}.
+When the named file doesn't exist, the behavior depends on 
+@var{:if-does-not-exist} keyword argument---an error is signalled
+if it is @code{:error}, and @code{#f} is returned if the argument is
+@code{#f}.
 @c JP
-すべてのオプション引数 @var{options} @dots{} はそのまま
-@code{call-with-input-file} に渡されます。
+これらの手続きは@code{call-with-input-file}と同じキーワード引数を取ります。
+ファイルが見つからなかった場合の振舞いは
+キーワード引数@code{:if-does-not-exist}によって指定できます。
+それが@code{:error}ならエラーが報告され、
+@code{#f}なら@code{#f}が返されます。
 @c COMMON
 @end defun
 

@@ -1,5 +1,11 @@
 2007-08-26  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/file/util.scm (file->string etc.): made them gracefully
+	  return #f if the file doesn't exist and :if-does-not-exist #f
+	  is given.
+	  (temporary-directory): look at TMPDIR environment variable.
+	  (current-directory): clean up.
+
 	* src/number.c (Scm_NumCmp): fixed a bug in the short cut path
 	  of ratnum vs ratnum comparison.
 
