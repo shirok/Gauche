@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.91 2007-08-28 10:15:43 shirok Exp $
+ *  $Id: system.c,v 1.92 2007-08-28 10:41:57 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -205,9 +205,19 @@ ScmObj Scm_ReadDirectory(ScmString *pathname)
     WIN32_FIND_DATA fdata;
     DWORD winerrno;
     const char *path, *tpath;
+    int pathlen;
     ScmObj pattern;
-    
-    pattern = Scm_StringAppendC(pathname, "\\*", -1, -1);
+    ScmChar lastchar;
+
+    if ((pathlen = SCM_STRING_LENGTH(pathname)) == 0) {
+        Scm_Error("Couldn't open directory \"\"");
+    }
+    lastchar = Scm_StringRef(pathname, pathlen-1, FALSE);
+    if (lastchar == SCM_CHAR('/') || lastchar == SCM_CHAR('\\')) {
+        pattern = Scm_StringAppendC(pathname, "*", 1, 1);
+    } else {
+        pattern = Scm_StringAppendC(pathname, "\\*", 2, 2);
+    }
     path = Scm_GetStringConst(SCM_STRING(pattern));
 
     dirp = FindFirstFile(SCM_MBS2WCS(path), &fdata);
