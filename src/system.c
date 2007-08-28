@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.90 2007-08-24 23:55:44 shirok Exp $
+ *  $Id: system.c,v 1.91 2007-08-28 10:15:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -230,62 +230,6 @@ ScmObj Scm_ReadDirectory(ScmString *pathname)
 	      winerrno);
     return SCM_UNDEFINED;	/* dummy */
 #endif
-}
-
-/* Glob()function. */
-/* NB: This will soon go away.  sys-glob will be implemented in Scheme
-   on top of sys-readdir and some text manipulation, so that we'll be
-   free from system-dependent gotchas. */
-ScmObj Scm_GlobDirectory(ScmString *pattern)
-{
-#if defined(HAVE_GLOB_H)
-    glob_t globbed;
-    ScmObj head = SCM_NIL, tail = SCM_NIL;
-    int i, r;
-    r = glob(Scm_GetStringConst(pattern), 0, NULL, &globbed);
-    if (r) {
-        globfree(&globbed);
-#if defined(GLOB_NOMATCH)
-        if (r == GLOB_NOMATCH) return SCM_NIL;
-#endif /*!GLOB_NOMATCH*/
-        Scm_Error("Couldn't glob %S", pattern);
-    }
-    for (i = 0; i < globbed.gl_pathc; i++) {
-        ScmObj path = SCM_MAKE_STR_COPYING(globbed.gl_pathv[i]);
-        SCM_APPEND1(head, tail, path);
-    }
-    globfree(&globbed);
-    return head;
-#elif defined(GAUCHE_WINDOWS)
-    /* We provide alternative using Windows API */
-    HANDLE dirp;
-    WIN32_FIND_DATA fdata;
-    DWORD winerrno;
-    const char *path = Scm_GetStringConst(pattern), *tpath;
-    ScmObj head = SCM_NIL, tail = SCM_NIL;
-
-    dirp = FindFirstFile(SCM_MBS2WCS(path), &fdata);
-    if (dirp == INVALID_HANDLE_VALUE) {
-	if ((winerrno = GetLastError()) != ERROR_FILE_NOT_FOUND) goto err;
-	return head;
-    }
-    tpath = SCM_WCS2MBS(fdata.cFileName);
-    while (FindNextFile(dirp, &fdata) != 0) {
-        tpath = SCM_WCS2MBS(fdata.cFileName);
-	SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(tpath));
-    }
-    winerrno = GetLastError();
-    FindClose(dirp);
-    if (winerrno != ERROR_NO_MORE_FILES) goto err;
-    return head;
- err:
-    Scm_Error("Searching directory failed by windows error %d",
-	      winerrno);
-    return SCM_UNDEFINED;	/* dummy */
-#else  /*!HAVE_GLOB_H && !GAUCHE_WINDOWS */
-    Scm_Error("glob-directory is not supported on this architecture.");
-    return SCM_UNDEFINED;
-#endif /*!HAVE_GLOB_H && !GAUCHE_WINDOWS */
 }
 
 /*===============================================================

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.301 2007-08-24 23:55:42 shirok Exp $
+;;; $Id: extlib.stub,v 1.302 2007-08-28 10:15:43 shirok Exp $
 ;;;
 
 "
@@ -446,6 +446,11 @@
 (define-cproc char-set-copy (cs::<char-set>)
   (call "Scm_CharSetCopy"))
 
+(define-cproc read-char-set (port::<input-port>
+                             &keyword (error::<boolean> #t)
+                                      (posix-bracket::<boolean> #t))
+  (expr <top> (Scm_CharSetRead port NULL error posix-bracket)))
+
 (define-cproc %char-set-add-chars! (cs::<char-set> chars::<list>)
   (body <char-set>
         (char_set_add cs chars)
@@ -469,17 +474,6 @@
           (result (Scm_CharSetAddRange cs (cast ScmChar f) (cast ScmChar t)))))
   )
           
-;   "  long fromc = -1, toc = -1;
-;   if (SCM_EXACTP(from)) fromc = Scm_GetInteger(from);
-;   else if (SCM_CHARP(from)) fromc = SCM_CHAR_VALUE(from);
-;   if (fromc < 0) Scm_Error(\"character or positive integer required, but got %S\", from);
-;   if (fromc > SCM_CHAR_MAX) Scm_Error(\"argument out of range: %S\", from);
-;   if (SCM_EXACTP(to)) toc = Scm_GetInteger(to);
-;   else if (SCM_CHARP(to)) toc = SCM_CHAR_VALUE(to);
-;   if (toc < 0) Scm_Error(\"character or positive integer required, but got %S\", to);
-;   if (toc > SCM_CHAR_MAX) Scm_Error(\"argument out of range: %S\", to);
-;   SCM_RETURN(Scm_CharSetAddRange(cs, (ScmChar)fromc, (ScmChar)toc));")
-
 (define-cproc %char-set-add! (dst::<char-set> src::<char-set>)
   (call "Scm_CharSetAdd"))
 

@@ -175,42 +175,6 @@
        (map (lambda (flag) (sys-access "test.dir" flag))
             (list |F_OK| |R_OK| |W_OK| |X_OK|)))
 
-(cmd-mkdir "test.dir")
-(cmd-mkdir "test.dir/999")
-(cmd-touch "test.dir/777")
-(cmd-touch "test.dir/500")
-(cmd-touch "test.dir/400")
-(cmd-touch "test.dir/000")
-
-;; NB: access(2) causes problems on some platforms.
-;; Since its use is discouraged because of security concern
-;; (except F_OK), we do not test these any more.
-
-;(test* "access" '(#t #t #t #t)
-;       (map (lambda (flag) (sys-access "test.dir/777" flag))
-;            (list |F_OK| |R_OK| |W_OK| |X_OK|)))
-;(test* "access" '(#t #t #f #t)
-;       (map (lambda (flag) (sys-access "test.dir/500" flag))
-;            (list |F_OK| |R_OK| |W_OK| |X_OK|)))
-;(test* "access" '(#t #t #f #f)
-;       (map (lambda (flag) (sys-access "test.dir/400" flag))
-;            (list |F_OK| |R_OK| |W_OK| |X_OK|)))
-;(test* "access" '(#t #f #f #f)
-;       (map (lambda (flag) (sys-access "test.dir/000" flag))
-;            (list |F_OK| |R_OK| |W_OK| |X_OK|)))
-
-(test* "sys-glob" '("test.dir/000" "test.dir/400" 
-      "test.dir/500" "test.dir/777" "test.dir/999")
-       (sys-glob "test.dir/*"))
-
-(test* "sys-glob" '("test.dir/." "test.dir/..")
-       (sys-glob "test.dir/.*"))
-
-(test* "sys-glob" ()
-       (sys-glob "test.dir/999/*"))
-
-(cmd-rmrf "test.dir")
-
 (cmd-touch "test.dir")
 
 (test* "unlink" #f

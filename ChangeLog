@@ -1,3 +1,14 @@
+2007-08-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/fileutil.scm (glob, glob-fold, sys-glob): Implemented
+	  glob functionality in Scheme.
+	* src/autoload.scm (glob, glob-fold, sys-glob): sets these autoloads.
+	* src/syslib.stub (sys-glob), src/system.c (Scm_GlobDirectory):
+	  removed C-function for the glob() interface.
+
+	* src/extlib.stub (read-char-set): Expose char-set parser to
+	  the Scheme level.
+
 2007-08-26  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm (file->string etc.): made them gracefully

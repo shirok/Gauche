@@ -30,11 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fileutil.scm,v 1.2 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: fileutil.scm,v 1.3 2007-08-28 10:15:42 shirok Exp $
 ;;;
 
 (define-module gauche.fileutil
   (export file-exists? file-is-regular? file-is-directory?
+          glob glob-fold
           sys-stat->file-type sys-stat->mode sys-stat->ino
           sys-stat->dev sys-stat->rdev sys-stat->nlink
           sys-stat->size sys-stat->uid sys-stat->gid
@@ -51,6 +52,7 @@
 (define (file-is-directory? path)
   (and (sys-access path |F_OK|)
        (eq? (slot-ref (sys-stat path) 'type) 'directory)))
+
 
 ;; system object accessors (for backward compatibility)
 (define (sys-stat->file-type s)  (slot-ref s 'type))
@@ -71,5 +73,133 @@
   (map (lambda (n s) (cons n (slot-ref tm s)))
        '(tm_sec tm_min tm_hour tm_mday tm_mon tm_year tm_wday tm_yday tm_isdst)
        '(sec min hour mday mon year wday yday isdst)))
+
+;;;
+;;; globbing.
+;;;
+
+;; glob-fold provides the fundamental logic of glob.  It does not
+;; depend on filesystems---any tree structure that has "pathname"
+;; will do (though some unix-fs specific knowledge is inherently embedded
+;; in 
+;;
+;; <glob-pattern> : [<separator>] (<selector> <separator>)* [<separator>]
+;; <selector>     : '**' | <outer>*
+;; <outer>        : <inner> | ','
+;; <inner>        : <ordinary> | '*' | '?' | <char-range> | <choice>
+;; <choice>       : '{' <inner> (',' <inner>)* '}'
+;; <char-range>   : '[' <char-set-spec> ']'
+;; <ordinary>     : characters except #[,*?\{\}\[\]\\] and <selector>
+;;                  | '\\' <character>
+;;
+;; <separator> splits the components in the path.
+;;
+;;
+;; glob-fold begins matching from either root of the tree or the "current"
+;; node.  For every component in the pattern, it calls LISTER to query
+;; the matching component.
+;; LISTER is called with the following argument.
+;;   node - An object representing the node to search.  As special cases,
+;;          this can be #t for the root node and #f for the current node.
+;;          Otherwise, the type of object depends on what the lister returns.
+;;   regexp - Lister should pick the elements within the node whose name
+;;          matches this regexp.   As a special case, if this is a symbol dir?,
+;;          LISTER should return NODE itself, but it may indicate NODE
+;;          "as a directory"---e.g. if NODE is represented as a pathname,
+;;          LISTER returns a pathname with trailing directory mark.
+;;   non-leaf? - If true, lister should omit leaf nodes from the results.
+;; LISTER should return a list of the nodes matching regexp.
+
+(define (glob patterns . opts)
+  (apply glob-fold patterns cons '() opts))
+
+(define sys-glob glob) ;; backward compatibility
+
+(define (glob-fold patterns proc seed . opts)
+  (if (list? patterns)
+    (fold (lambda (pat seed) (glob-fold-1 pat proc seed opts))
+          seed patterns)
+    (glob-fold-1 patterns proc seed opts)))
+
+(define (glob-fold-1 pattern proc seed opts)
+  (let-keywords opts ((separator #[/])
+                      (lister glob-fs-lister))
+    (define (rec node matcher seed)
+      (cond ((null? matcher) (proc seed))
+            ((null? (cdr matcher))
+             (fold proc seed (lister node (car matcher) #f)))
+            (else
+             (fold (lambda (node seed) (rec node (cdr matcher) seed))
+                   seed (lister node (car matcher) #t)))))
+    (let1 p (glob-prepare-pattern pattern separator)
+      (rec (car p) (cdr p) seed))))
+
+(define (glob-prepare-pattern pattern separator)
+  (define (f comp)
+    (cond ((equal? comp "") 'dir?)    ; pattern ends with '/'
+          ;((equal? comp "**") '**)
+          (else (glob-component->regexp comp))))
+  (let1 comps (string-split pattern separator)
+    (if (equal? (car comps) "")
+      (cons #t (map f (cdr comps)))
+      (cons #f (map f comps)))))
+
+(define (glob-component->regexp pattern) ; "**" is already excluded
+  (regexp-compile
+   (regexp-optimize
+    (with-input-from-string pattern
+      (lambda ()
+        (define next read-char)
+        (define (outer0 ch)
+          (case ch
+            [(#\*) (outer0* (next))]
+            [(#\?) `((comp . #[.]) ,@(outer1 (next)))]
+            [else (outer1 ch)]))
+        (define (outer0* ch)
+          (case ch
+            [(#\*) (outer0* (read-char))]
+            [(#\?) `((comp . #[.]) (rep 0 #f any) ,@(outer1 (next)))]
+            [(#\.) `((comp . #[.]) (rep 0 #f any) #\. ,@(outer1 (next)))]
+            [else `((rep 0 1 (seq (comp . #[.]) (rep 0 #f any)))
+                    ,@(outer1 ch))]))
+        (define (outer1 ch)
+          (cond [(eof-object? ch) '(eol)]
+                [(eqv? ch #\*) `((rep 0 #f any) ,@(outer1* (next)))]
+                [(eqv? ch #\?) `(any ,@(outer1 (next)))]
+                [(eqv? ch #\[)
+                 (case (peek-char)
+                   ;; we have to treat [!...] as [^...]
+                   [(#\!) (next)
+                    (let1 cs (read-char-set (current-input-port))
+                      (cons (%char-set-complement! cs) (outer1 (next))))]
+                   [else
+                    (let1 cs (read-char-set (current-input-port))
+                      (cons cs (outer1 (next))))])]
+                [else (cons ch (outer1 (next)))]))
+        (define (outer1* ch)
+          (case ch
+            [(#\*) (outer1* (next))]
+            [else  (outer1 ch)]))
+        `(seq bol ,@(outer0 (next))))))))
+
+(define (glob-fs-lister node regexp non-leaf?)
+  (let* ((separ (cond-expand
+                 (gauche.os.windows "\\")
+                 (else "/")))
+         (prefix
+          (case node ((#t) separ) ((#f) "") (else (string-append node separ))))
+         )
+    ;; NB: we can't use filter, for it is not built-in.
+    ;; also we can't use build-path, from the same reason.
+    (if (eq? regexp 'dir?)
+      (list prefix)
+      (fold (lambda (child seed)
+              (or (and-let* ([ (regexp child) ]
+                             [full (string-append prefix child)]
+                             [ (or (not non-leaf?)
+                                   (file-is-directory? full)) ])
+                    (cons full seed))
+                  seed))
+            '() (sys-readdir (case node ((#t) "/") ((#f) ".") (else node)))))))
 
 (provide "gauche/fileutil")

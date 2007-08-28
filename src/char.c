@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.56 2007-08-24 23:55:42 shirok Exp $
+ *  $Id: char.c,v 1.57 2007-08-28 10:15:43 shirok Exp $
  */
 
 #include <ctype.h>
@@ -590,7 +590,7 @@ static ScmChar read_charset_xdigits(ScmPort *port, int ndigs, int key)
    whether complement character (caret in the beginning) appeared or not.
    In that case, the returned charset is not complemented. */
 
-static ScmObj read_predef_charset(ScmPort*, ScmObj*);
+static ScmObj read_predef_charset(ScmPort*, ScmObj*, int);
 
 ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                        int error_p, int bracket_syntax)
@@ -690,7 +690,7 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
             Scm_CharSetAdd(set, SCM_CHAR_SET(moreset));
             continue;
         case '[':
-            moreset = read_predef_charset(input, &chars);
+            moreset = read_predef_charset(input, &chars, error_p);
             if (!SCM_CHAR_SET_P(moreset)) goto err;
             Scm_CharSetAdd(set, SCM_CHAR_SET(moreset));
             continue;
@@ -722,16 +722,18 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
         return SCM_OBJ(set);
     }
   err:
-    if (error_p)
-        Scm_Error("Unclosed bracket in charset syntax [%A",
+    if (error_p) {
+        Scm_Error("Invalid charset syntax [%A",
                   Scm_ListToString(Scm_ReverseX(chars)));
+    }
     return SCM_FALSE;
 }
 
 /* Read posix [:alpha:] etc.  The first '[' is already read.
-   Return #f on error.  Set reverse list of read chars in *chars */
+   Return #f on error if errorp is FALSE.
+   Set reverse list of read chars in *chars */
 #define MAX_CHARSET_NAME_LEN  10
-ScmObj read_predef_charset(ScmPort *input, ScmObj *chars)
+ScmObj read_predef_charset(ScmPort *input, ScmObj *chars, int error_p)
 {
     int i;
     char name[MAX_CHARSET_NAME_LEN];
@@ -772,8 +774,10 @@ ScmObj read_predef_charset(ScmPort *input, ScmObj *chars)
         } else break;
     }
     /* here we got invalid charset name */
-    name[i] = '\0';
-    Scm_Error("invalid or unsupported POSIX charset '[%s]'", name);
+    if (error_p) {
+        name[i] = '\0';
+        Scm_Error("invalid or unsupported POSIX charset '[%s]'", name);
+    }
     return SCM_FALSE;
 }
 

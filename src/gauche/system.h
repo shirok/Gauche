@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.h,v 1.2 2007-03-22 11:20:36 shirok Exp $
+ *  $Id: system.h,v 1.3 2007-08-28 10:15:43 shirok Exp $
  */
 
 #ifndef GAUCHE_SYSTEM_H
@@ -78,7 +78,6 @@ SCM_EXTERN ScmObj Scm_OffsetToInteger(off_t o);
  */
 
 SCM_EXTERN ScmObj Scm_ReadDirectory(ScmString *pathname);
-SCM_EXTERN ScmObj Scm_GlobDirectory(ScmString *pattern);
 
 #define SCM_PATH_ABSOLUTE       (1L<<0)
 #define SCM_PATH_EXPAND         (1L<<1)
