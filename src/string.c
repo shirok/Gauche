@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.87 2007-08-24 23:55:43 shirok Exp $
+ *  $Id: string.c,v 1.88 2007-08-29 09:38:54 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -153,7 +153,7 @@ static inline int count_length(const char *str, int size)
    If the string is incomplete, returns -1. */
 int Scm_MBLen(const char *str, const char *stop)
 {
-    int size = (int)((stop == NULL)? strlen(str) : (stop - str));
+    int size = (stop == NULL)? (int)strlen(str) : (stop - str);
     return count_length(str, size);
 }
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.66 2007-08-24 23:55:42 shirok Exp $
+ *  $Id: bignum.c,v 1.67 2007-08-29 09:38:53 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -111,7 +111,7 @@ static ScmBignum *make_bignum(int size)
 {
     ScmBignum *b;
     if (size < 0) Scm_Error("invalid bignum size (internal error): %d", size);
-    if (size > SCM_BIGNUM_MAX_DIGITS) Scm_Error("too large bignum");
+    if (size > (int)SCM_BIGNUM_MAX_DIGITS) Scm_Error("too large bignum");
     b = SCM_NEW_ATOMIC2(ScmBignum*, BIGNUM_SIZE(size));
     SCM_SET_CLASS(b, SCM_CLASS_INTEGER);
     b->size = size;
@@ -502,7 +502,7 @@ int Scm_BignumCmp(ScmBignum *bx, ScmBignum *by)
     if (bx->size < by->size) return (bx->sign > 0) ? -1 : 1;
     if (bx->size > by->size) return (bx->sign > 0) ? 1 : -1;
 
-    for (i=bx->size-1; i>=0; i--) {
+    for (i=(int)bx->size-1; i>=0; i--) {
         if (bx->values[i] < by->values[i]) return (bx->sign > 0) ? -1 : 1;
         if (bx->values[i] > by->values[i]) return (bx->sign > 0) ? 1 : -1;
     }
@@ -516,7 +516,7 @@ int Scm_BignumAbsCmp(ScmBignum *bx, ScmBignum *by)
     
     if (bx->size < by->size) return -1;
     if (bx->size > by->size) return 1;
-    for (i=bx->size-1; i>=0; i--) {
+    for (i=(int)bx->size-1; i>=0; i--) {
         if (bx->values[i] < by->values[i]) return -1;
         if (bx->values[i] > by->values[i]) return 1;
     }
@@ -534,8 +534,10 @@ int Scm_BignumCmp3U(ScmBignum *bx, ScmBignum *off, ScmBignum *by)
 {
     u_int xsize = SCM_BIGNUM_SIZE(bx), ysize = SCM_BIGNUM_SIZE(by);
     u_int osize = SCM_BIGNUM_SIZE(off);
-    u_int tsize, i;
+    u_int tsize;
+    int i;
     ScmBignum *br;
+
     if (xsize > ysize) return 1;
     if (xsize < ysize) {
         if (osize < ysize && by->values[ysize-1] > 1) {
@@ -567,8 +569,8 @@ int Scm_BignumCmp3U(ScmBignum *bx, ScmBignum *off, ScmBignum *by)
     bignum_add_int(br, bx, off);
     
     if (br->size < by->size) return -1;
-    for (i=br->size-1; i>=0; i--) {
-        if (i >= by->size) {
+    for (i=(int)br->size-1; i>=0; i--) {
+        if (i >= (int)by->size) {
             if (br->values[i]) return 1;
             continue;
         }
@@ -768,7 +770,7 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
 {
     u_int nwords = amount / WORD_BITS;
     u_int nbits = amount % WORD_BITS;
-    u_int i;
+    int i;
     
     if (bx->size <= nwords) {
         br->size = 0; br->values[0] = 0;
@@ -780,7 +782,7 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
         br->sign = bx->sign;
     } else {
         u_long x;
-        for (i = nwords; i < bx->size-1; i++) {
+        for (i = (int)nwords; i < (int)bx->size-1; i++) {
             x = (bx->values[i+1]<<(WORD_BITS-nbits))|(bx->values[i]>>nbits);
             br->values[i-nwords] = x;
         }
@@ -1065,7 +1067,9 @@ ScmObj Scm_BignumDivSI(ScmBignum *dividend, long divisor, long *remainder)
         br = bignum_gdiv(dividend, bv, q);
         rr = br->values[0];
     }
-    if (remainder) *remainder = (dividend->sign < 0)? -(signed long)rr : rr;
+    if (remainder) {
+        *remainder = ((dividend->sign < 0)? -(signed long)rr : (signed long)rr);
+    }
     q->sign = dividend->sign * d_sign;
     return Scm_NormalizeBignum(q);
 }
@@ -1284,7 +1288,7 @@ int Scm_DumpBignum(ScmBignum *b, ScmPort *out)
     int i;
     Scm_Printf(out, "#<bignum ");
     if (b->sign < 0) SCM_PUTC('-', out);
-    for (i=b->size-1; i>=0; i--) {
+    for (i=(int)b->size-1; i>=0; i--) {
         Scm_Printf(out, "%08x ", b->values[i]);
     }
     SCM_PUTC('>', out);

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.156 2007-08-24 23:55:42 shirok Exp $
+ *  $Id: class.c,v 1.157 2007-08-29 09:38:53 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1087,7 +1087,7 @@ void Scm_TransplantInstance(ScmObj src, ScmObj dst)
         Scm_Error("%%transplant-instance: classes are incompatible between %S and %S",
                   src, dst);
     }
-    if (base->coreSize < sizeof(ScmInstance)) {
+    if (base->coreSize < (int)sizeof(ScmInstance)) {
         Scm_Error("%%transplant-instance: baseclass is too small (implementation error?)");
     }
     memcpy(dst, src, base->coreSize);

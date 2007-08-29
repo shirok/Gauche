@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.152 2007-08-27 00:08:37 shirok Exp $
+ *  $Id: number.c,v 1.153 2007-08-29 09:38:53 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -42,6 +42,7 @@
 #include <limits.h>
 #include <float.h>
 #include <math.h>
+#include <ctype.h>
 
 /*================================================================
  * Some macros

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.496 2007-08-24 23:55:42 shirok Exp $
+ *  $Id: gauche.h,v 1.497 2007-08-29 09:38:53 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -95,7 +95,7 @@ SCM_DECL_BEGIN
 
 /* For Windows platforms, we need some compatibility tricks. */
 #if defined(__MINGW32__) || defined(MSVC)
-#include <gauche/WIN-compat.h>
+#include <gauche/win-compat.h>
 #endif /* MINGW32 || WINDOWS */
 
 /* Ugly cliche for Win32. */

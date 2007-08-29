@@ -1,5 +1,8 @@
 2007-08-28  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c, src/string.c, src/class.c, src/bignum.c: various
+	  small fixes.
+
 	* lib/gauche/fileutil.scm (glob, glob-fold, sys-glob): Implemented
 	  glob functionality in Scheme.
 	* src/autoload.scm (glob, glob-fold, sys-glob): sets these autoloads.
