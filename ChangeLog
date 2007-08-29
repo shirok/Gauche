@@ -1,3 +1,8 @@
+2007-08-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (numcmp3): optimization in case when all args are
+	  fixnums (can happen on 64bit machines).
+
 2007-08-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c, src/string.c, src/class.c, src/bignum.c: various

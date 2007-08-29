@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.153 2007-08-29 09:38:53 shirok Exp $
+ *  $Id: number.c,v 1.154 2007-08-29 11:15:24 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2696,13 +2696,21 @@ static double raise_pow10(double x, int n)
  * Accurately", PLDI '96, pp.108--116, 1996).
  */
 
-/* compare x+d and y */
+/* compare x+d and y.  x, d, y are exact positive integers.
+   this is called in inner loops so we need to be fast. */
 static inline int numcmp3(ScmObj x, ScmObj d, ScmObj y)
 {
-    ScmObj bx = SCM_BIGNUMP(x)? x : Scm_MakeBignumFromSI(SCM_INT_VALUE(x));
-    ScmObj bd = SCM_BIGNUMP(d)? d : Scm_MakeBignumFromSI(SCM_INT_VALUE(d));
-    ScmObj by = SCM_BIGNUMP(y)? y : Scm_MakeBignumFromSI(SCM_INT_VALUE(y));
-    return Scm_BignumCmp3U(SCM_BIGNUM(bx), SCM_BIGNUM(bd), SCM_BIGNUM(by));
+    if (SCM_INTP(x) && SCM_INTP(d) && SCM_INTP(y)) {
+        long xd = SCM_INT_VALUE(x)+SCM_INT_VALUE(d);
+        if (xd < SCM_INT_VALUE(y)) return -1;
+        if (xd > SCM_INT_VALUE(y)) return 1;
+        else return 0;
+    } else {
+        ScmObj bx = SCM_BIGNUMP(x)? x : Scm_MakeBignumFromSI(SCM_INT_VALUE(x));
+        ScmObj bd = SCM_BIGNUMP(d)? d : Scm_MakeBignumFromSI(SCM_INT_VALUE(d));
+        ScmObj by = SCM_BIGNUMP(y)? y : Scm_MakeBignumFromSI(SCM_INT_VALUE(y));
+        return Scm_BignumCmp3U(SCM_BIGNUM(bx), SCM_BIGNUM(bd), SCM_BIGNUM(by));
+    }
 }
 
 static void double_print(char *buf, int buflen, double val, int plus_sign)
