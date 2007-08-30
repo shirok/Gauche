@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.40 2007-03-16 02:21:37 shirok Exp $
+;;;  $Id: net.scm,v 1.41 2007-08-30 02:17:59 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -75,7 +75,7 @@
  |MSG_CTRUNC| |MSG_DONTROUTE| |MSG_EOR| |MSG_OOB| |MSG_PEEK|
  |MSG_TRUNC| |MSG_WAITALL|)
 
-;; if ipv6 is supported, these symbols are defiend in the C routine.
+;; if ipv6 is supported, these symbols are defined in the C routine.
 
 (export-if-defined
  |PF_INET6| |AF_INET6|

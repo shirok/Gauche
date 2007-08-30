@@ -1,5 +1,8 @@
 2007-08-29  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/net.scm, ext/net/gauche/net.h, lib/gauche/cgen/cise.scm:
+	  typo fix.
+
 	* src/number.c (numcmp3): optimization in case when all args are
 	  fixnums (can happen on 64bit machines).
 

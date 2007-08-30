@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cise.scm,v 1.5 2007-08-26 08:16:05 shirok Exp $
+;;;  $Id: cise.scm,v 1.6 2007-08-30 02:18:00 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.cise
@@ -457,7 +457,7 @@
 
 (define-binary logior= "|=")
 (define-binary logxor= "^=")
-(define-binary logaor= "&=")
+(define-binary logand= "&=")
 
 (define-macro (define-referencer op sop)
   `(define-cise-macro (,op form env)

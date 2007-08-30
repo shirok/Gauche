@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.h,v 1.8 2007-03-22 11:20:22 shirok Exp $
+ *  $Id: net.h,v 1.9 2007-08-30 02:17:59 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -77,7 +77,7 @@ SCM_DECL_BEGIN
  */
 
 #if !defined(HAVE_STRUCT_SOCKADDR_STORAGE)
-/* Alternative implemenation in case the system doesn't provide
+/* Alternative implementation in case the system doesn't provide
    sockaddr_storage.  The code is based on the reference implementation
    provided in RFC3493.
    We don't consider ss_len, for we don't care the internal structure
