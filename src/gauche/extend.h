@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: extend.h,v 1.7 2007-03-22 11:20:31 shirok Exp $
+ *  $Id: extend.h,v 1.8 2007-09-06 23:29:00 shirok Exp $
  */
 
 #ifndef GAUCHE_EXTEND_H
@@ -44,19 +44,7 @@
 extern "C" {
 #endif
 
-#ifndef __CYGWIN__
-#define SCM_INIT_EXTENSION(name)                                        \
-   do {                                                                 \
-       extern void *SCM_CPP_CAT(Scm__datastart_, name);                 \
-       extern void *SCM_CPP_CAT(Scm__dataend_, name);                   \
-       extern void *SCM_CPP_CAT(Scm__bssstart_, name);                  \
-       extern void *SCM_CPP_CAT(Scm__bssend_, name);                    \
-       Scm_RegisterDL((void*)&SCM_CPP_CAT(Scm__datastart_, name),       \
-                      (void*)&SCM_CPP_CAT(Scm__dataend_, name),         \
-                      (void*)&SCM_CPP_CAT(Scm__bssstart_, name),        \
-                      (void*)&SCM_CPP_CAT(Scm__bssend_, name));         \
-   } while (0)
-#else  /* __CYGWIN__ */
+#if defined(__CYGWIN__)
 /* Cygwin's loader rearranges placement of bss, so Scm__bssstart_ and
    Scm__bssend_ are no longer useful to find bss area.  It defines
    _bss_start__ and _bss_end__ for each DLLs so we can use it.
@@ -70,7 +58,22 @@ extern "C" {
                       (void*)&_bss_start__,                             \
                       (void*)&_bss_end__);                              \
     } while (0)
-#endif /* __CYGWIN__ */
+#elif defined(GAUCHE_WINDOWS)
+/* Um... we count on Boehm GC windows port to find dll data area properly. */
+#define SCM_INIT_EXTENSION(name)  /*nothing*/
+#else
+#define SCM_INIT_EXTENSION(name)                                        \
+   do {                                                                 \
+       extern void *SCM_CPP_CAT(Scm__datastart_, name);                 \
+       extern void *SCM_CPP_CAT(Scm__dataend_, name);                   \
+       extern void *SCM_CPP_CAT(Scm__bssstart_, name);                  \
+       extern void *SCM_CPP_CAT(Scm__bssend_, name);                    \
+       Scm_RegisterDL((void*)&SCM_CPP_CAT(Scm__datastart_, name),       \
+                      (void*)&SCM_CPP_CAT(Scm__dataend_, name),         \
+                      (void*)&SCM_CPP_CAT(Scm__bssstart_, name),        \
+                      (void*)&SCM_CPP_CAT(Scm__bssend_, name));         \
+   } while (0)
+#endif /* !__CYGWIN__ && !GAUCHE_WINDOWS*/
 
 #ifdef __cplusplus
 }

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.57 2007-08-28 10:15:43 shirok Exp $
+ *  $Id: char.c,v 1.58 2007-09-06 23:29:00 shirok Exp $
  */
 
 #include <ctype.h>
@@ -110,9 +110,10 @@ ScmChar Scm_IntToDigit(int n, int radix)
 /*
  * Convert UCS4 code <-> character
  * If the native encoding is not utf-8, gauche.charconv module is loaded.
+ * and these pointers are filled.
  */
-ScmChar (*Scm_UcsToCharHook)(int ucs4) = NULL;  /* filled by ext/charconv */
-int (*Scm_CharToUcsHook)(ScmChar ch) = NULL;    /* filled by ext/charconv */
+SCM_EXTERN ScmChar (*Scm_UcsToCharHook)(int ucs4) = NULL;
+SCM_EXTERN int (*Scm_CharToUcsHook)(ScmChar ch) = NULL;
 
 ScmChar Scm_UcsToChar(int n)
 {

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.92 2007-04-12 03:26:55 shirok Exp $
+ *  $Id: read.c,v 1.93 2007-09-06 23:29:00 shirok Exp $
  */
 
 #include <stdio.h>
@@ -71,8 +71,8 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
 static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
 
 /* Special hook for SRFI-4 syntax */
-ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag,
-                              ScmReadContext *ctx) = NULL;
+SCM_EXTERN ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag,
+                                         ScmReadContext *ctx) = NULL;
 
 /* Table of 'read-time constructor' in SRFI-10 */
 static struct {
