@@ -1,3 +1,10 @@
+2007-09-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c, src/read.c, src/port.c, ext/charconv/charconv.c,
+	  ext/uvector/uvinit.c: Instead of letting extensions set the hook
+	  function pointer, added an explicit API to set the hook (for
+	  easier handling in windows dll).
+
 2007-08-29  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/net.scm, ext/net/gauche/net.h, lib/gauche/cgen/cise.scm:

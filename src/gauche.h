@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.497 2007-08-29 09:38:53 shirok Exp $
+ *  $Id: gauche.h,v 1.498 2007-09-07 09:51:12 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -291,6 +291,9 @@ SCM_EXTERN ScmChar Scm_UcsToChar(int ucs);
 SCM_EXTERN ScmObj Scm_CharEncodingName(void);
 SCM_EXTERN const char **Scm_SupportedCharacterEncodings(void);
 SCM_EXTERN int Scm_SupportedCharacterEncodingP(const char *encoding);
+
+SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
+                                          int (*c2u)(ScmChar));
 
 #if   defined(GAUCHE_CHAR_ENCODING_EUC_JP)
 #include "gauche/char_euc_jp.h"
@@ -1067,6 +1070,8 @@ SCM_EXTERN void   Scm_ReadError(ScmPort *port, const char *fmt, ...);
 
 SCM_EXTERN ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc,
                                        ScmObj finisher);
+
+SCM_EXTERN void   Scm__InstallReadUvectorHook(ScmObj (*)(ScmPort*, const char*, ScmReadContext*));
     
 /*--------------------------------------------------------
  * HASHTABLE

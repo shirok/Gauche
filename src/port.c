@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.145 2007-09-07 03:35:35 shirok Exp $
+ *  $Id: port.c,v 1.146 2007-09-07 09:51:12 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1190,10 +1190,14 @@ ScmObj Scm_MakeVirtualPort(ScmClass *klass, int direction,
    'coding' magic comment.   It is primarily used when loading source
    code, but can be used separately. */
 
+static ScmPort *(*coding_aware_port_hook)(ScmPort *src,
+                                          const char *srcencoding) = NULL;
+
 /* gauche.charconv sets the pointer */
-ScmPort *(*Scm_CodingAwarePortHook)(ScmPort *src,
-                                    const char *srcencoding)
-    = NULL;
+void Scm__InstallCodingAwarePortHook(ScmPort *(*f)(ScmPort*, const char*))
+{
+    coding_aware_port_hook = f;
+}
 
 #define CODING_MAGIC_COMMENT_LINES 2 /* maximum number of lines to be
                                         looked at for the 'encoding' magic
@@ -1315,18 +1319,18 @@ static void coding_port_recognize_encoding(ScmPort *port,
         return;
     }
 
-    if (Scm_CodingAwarePortHook == NULL) {
+    if (coding_aware_port_hook == NULL) {
         /* Require gauche.charconv.
            NB: we don't need mutex here, for loading the module is
            serialized in Scm_Require. */
         Scm_Require(SCM_MAKE_STR("gauche/charconv"),
                     SCM_LOAD_PROPAGATE_ERROR, NULL);
-        if (Scm_CodingAwarePortHook == NULL) {
+        if (coding_aware_port_hook == NULL) {
             Scm_PortError(port, SCM_PORT_ERROR_OTHER,
                           "couldn't load gauche.charconv module");
         }
     }
-    data->source = Scm_CodingAwarePortHook(data->source, encoding);
+    data->source = coding_aware_port_hook(data->source, encoding);
 }
 
 static int coding_filler(ScmPort *p, int cnt)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.94 2007-09-07 03:35:35 shirok Exp $
+ *  $Id: read.c,v 1.95 2007-09-07 09:51:13 shirok Exp $
  */
 
 #include <stdio.h>
@@ -71,8 +71,7 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
 static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
 
 /* Special hook for SRFI-4 syntax */
-ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag,
-                              ScmReadContext *ctx) = NULL;
+static ScmObj (*read_uvector_hook)(ScmPort *, const char*, ScmReadContext *) = NULL;
 
 /* Table of 'read-time constructor' in SRFI-10 */
 static struct {
@@ -1105,8 +1104,8 @@ static ScmObj reader_ctor(ScmObj *args, int nargs, void *data)
  * Uvector
  */
 
-/* Uvector support is implemented by extention.  When the extention
-   is loaded, it sets up the pointer Scm_ReadUvectorHook. */
+/* Uvector support is implemented by gauche.uvector.  When it
+   is loaded, it sets up the pointer read_uvector_hook. */
 
 static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
 {
@@ -1150,17 +1149,23 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
         *bufp = '\0';
         Scm_ReadError(port, "invalid uniform vector tag: %s", buf);
     }
-    if (Scm_ReadUvectorHook == NULL) {
+    if (read_uvector_hook == NULL) {
         /* Require srfi-4 (gauche/uvector)
            NB: we don't need mutex here, for the loading of srfi-4 is
            serialized in Scm_Require. */
         Scm_Require(SCM_MAKE_STR("gauche/uvector"),
                     SCM_LOAD_PROPAGATE_ERROR, NULL);
-        if (Scm_ReadUvectorHook == NULL)
+        if (read_uvector_hook == NULL)
             Scm_ReadError(port, "couldn't load srfi-4 module");
     }
-    return Scm_ReadUvectorHook(port, tag, ctx);
+    return read_uvector_hook(port, tag, ctx);
 }
+
+void Scm__InstallReadUvectorHook(ScmObj (*f)(ScmPort*, const char*, ScmReadContext *))
+{
+    read_uvector_hook = f;
+}
+
 
 /*----------------------------------------------------------------
  * Initialization

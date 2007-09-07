@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.59 2007-09-07 03:35:35 shirok Exp $
+ *  $Id: char.c,v 1.60 2007-09-07 09:51:12 shirok Exp $
  */
 
 #include <ctype.h>
@@ -112,6 +112,16 @@ ScmChar Scm_IntToDigit(int n, int radix)
  * If the native encoding is not utf-8, gauche.charconv module is loaded.
  * and these pointers are filled.
  */
+static ScmChar (*ucs2char_hook)(int ucs4) = NULL;
+static int     (*char2ucs_hook)(ScmChar ch) = NULL;
+
+/* called by gauche.charconv */
+void Scm__InstallCharconvHooks(ScmChar (*u2c)(int), int (*c2u)(ScmChar))
+{
+    ucs2char_hook = u2c;
+    char2ucs_hook = c2u;
+}
+
 ScmChar (*Scm_UcsToCharHook)(int ucs4) = NULL;
 int (*Scm_CharToUcsHook)(ScmChar ch) = NULL;
 
@@ -122,16 +132,16 @@ ScmChar Scm_UcsToChar(int n)
     return (ScmChar)n;
 #elif defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
     if (n < 0x80) return (ScmChar)n; /*ASCII range*/
-    if (Scm_UcsToCharHook == NULL) {
+    if (ucs2char_hook == NULL) {
         /* NB: we don't need mutex here, for the loading of gauche.charconv
            is serialized in Scm_Require. */
         Scm_Require(SCM_MAKE_STR("gauche/charconv"),
                     SCM_LOAD_PROPAGATE_ERROR, NULL);
-        if (Scm_UcsToCharHook == NULL) {
+        if (ucs2char_hook == NULL) {
             Scm_Error("couldn't autoload gauche.charconv");
         }
     }
-    return Scm_UcsToCharHook(n);
+    return ucs2char_hook(n);
 #else
     if (n < 0x100) return (ScmChar)n; /* ISO8859-1 */
     else return SCM_CHAR_INVALID;
@@ -145,16 +155,16 @@ int Scm_CharToUcs(ScmChar ch)
     return (int)ch;
 #elif defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
     if (ch < 0x80) return (int)ch; /*ASCII range*/
-    if (Scm_CharToUcsHook == NULL) {
+    if (char2ucs_hook == NULL) {
         /* NB: we don't need mutex here, for the loading of gauche.charconv
            is serialized in Scm_Require. */
         Scm_Require(SCM_MAKE_STR("gauche/charconv"),
                     SCM_LOAD_PROPAGATE_ERROR, NULL);
-        if (Scm_CharToUcsHook == NULL) {
+        if (char2ucs_hook == NULL) {
             Scm_Error("couldn't autoload gauche.charconv");
         }
     }
-    return Scm_CharToUcsHook(ch);
+    return char2ucs_hook(ch);
 #else
     return (int)ch;             /* ISO8859-1 */
 #endif /*!GAUCHE_CHAR_ENCODING_UTF_8*/
