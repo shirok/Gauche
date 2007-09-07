@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.144 2007-09-06 23:29:00 shirok Exp $
+ *  $Id: port.c,v 1.145 2007-09-07 03:35:35 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1191,8 +1191,8 @@ ScmObj Scm_MakeVirtualPort(ScmClass *klass, int direction,
    code, but can be used separately. */
 
 /* gauche.charconv sets the pointer */
-SCM_EXTERN ScmPort *(*Scm_CodingAwarePortHook)(ScmPort *src,
-                                               const char *srcencoding)
+ScmPort *(*Scm_CodingAwarePortHook)(ScmPort *src,
+                                    const char *srcencoding)
     = NULL;
 
 #define CODING_MAGIC_COMMENT_LINES 2 /* maximum number of lines to be
