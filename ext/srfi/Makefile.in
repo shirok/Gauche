@@ -36,8 +36,8 @@ srfi-1-lib.$(SOEXT) : $(srfi_1_OBJECTS)
 srfi-1_head.c srfi-1_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension srfi-1
 
-srfi-1-lib.c : $(top_srcdir)/libsrc/srfi-1.scm
-	$(GOSH) gencomp --ext-module srfi-1.scm -o srfi-1-lib $(top_srcdir)/libsrc/srfi-1.scm
+srfi-1-lib.c srfi-1.scm : $(top_srcdir)/libsrc/srfi-1.scm
+	$(GENCOMP) --ext-module srfi-1.scm -o srfi-1-lib $(top_srcdir)/libsrc/srfi-1.scm
 
 #
 # srfi-13
@@ -53,8 +53,8 @@ srfi-13-lib.$(SOEXT) : $(srfi_13_OBJECTS)
 srfi-13_head.c srfi-13_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension srfi-13
 
-srfi-13-lib.c : $(top_srcdir)/libsrc/srfi-13.scm
-	$(GOSH) gencomp --ext-module srfi-13.scm -o srfi-13-lib $(top_srcdir)/libsrc/srfi-13.scm
+srfi-13-lib.c srfi-13.scm : $(top_srcdir)/libsrc/srfi-13.scm
+	$(GENCOMP) --ext-module srfi-13.scm -o srfi-13-lib $(top_srcdir)/libsrc/srfi-13.scm
 
 #
 # srfi-19
@@ -70,8 +70,8 @@ srfi-19-lib.$(SOEXT) : $(srfi_19_OBJECTS)
 srfi-19_head.c srfi-19_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension srfi-19
 
-srfi-19-lib.c : srfi-19-lib.scm
-	$(GOSH) gencomp --ext-module srfi-19.scm $(srcdir)/srfi-19-lib.scm
+srfi-19-lib.c srfi-19.scm : srfi-19-lib.scm
+	$(GENCOMP) --ext-module srfi-19.scm $(srcdir)/srfi-19-lib.scm
 
 #
 # srfi-43
@@ -87,6 +87,6 @@ srfi-43-lib.$(SOEXT) : $(srfi_43_OBJECTS)
 srfi-43_head.c srfi-43_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension srfi-43
 
-srfi-43-lib.c : srfi-43-lib.scm
-	$(GOSH) gencomp --ext-module srfi-43.scm $(srcdir)/srfi-43-lib.scm
+srfi-43-lib.c srfi-43.scm : srfi-43-lib.scm
+	$(GENCOMP) --ext-module srfi-43.scm $(srcdir)/srfi-43-lib.scm
 

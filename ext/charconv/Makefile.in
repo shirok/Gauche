@@ -36,7 +36,7 @@ charconv_head.c charconv_tail.c :
 convlib.c : convlib.stub
 
 convaux.c : convaux.scm
-	$(GOSH) gencomp convaux.scm
+	$(GENCOMP) convaux.scm
 
 jconv.$(OBJEXT) : eucj2ucs.c ucs2eucj.c jconv.c
 

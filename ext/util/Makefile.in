@@ -24,8 +24,8 @@ util-match-lib.$(SOEXT) : $(util_match_OBJECTS)
 util-match_head.c util-match_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension util-match
 
-util-match-lib.c : $(top_srcdir)/libsrc/util/match.scm
-	$(GOSH) gencomp --ext-module util/match.scm -o util-match-lib $(top_srcdir)/libsrc/util/match.scm
+util-match-lib.c util/match.scm : $(top_srcdir)/libsrc/util/match.scm
+	$(GENCOMP) --ext-module util/match.scm -o util-match-lib $(top_srcdir)/libsrc/util/match.scm
 
 install : install-std
 

@@ -47,7 +47,7 @@ uvlib.stub : uvlib.stub.tmpl
 	$(GOSH) ./uvgen.scm uvlib.stub.tmpl
 
 uvseq.c : uvseq.scm
-	$(GOSH) gencomp uvseq.scm
+	$(GENCOMP) uvseq.scm
 
 install : install-std
 

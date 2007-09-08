@@ -31,7 +31,7 @@ libnet.$(SOEXT) : $(OBJECTS)
 netlib.c : netlib.stub
 
 netaux.c : netaux.scm
-	$(GOSH) gencomp netaux.scm
+	$(GENCOMP) netaux.scm
 
 net_head.c net_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension net

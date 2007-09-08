@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions  -*-mode: Makefile-*-
-## $Id: Makefile.ext.in,v 1.29 2007-08-22 01:17:32 shirok Exp $
+## $Id: Makefile.ext.in,v 1.30 2007-09-08 04:30:37 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -39,6 +39,7 @@ MODLINK   = $(CCLD) $(CFLAGS) $(LDFLAGS)
 GOSH           = $(top_builddir)/src/gosh -ftest
 GAUCHE_CONFIG  = $(top_builddir)/src/gauche-config
 GAUCHE_INSTALL = $(GOSH) $(top_srcdir)/src/gauche-install.in
+GENCOMP        = $(GOSH) $(top_srcdir)/src/gencomp
 INSTALL_TYPE   = sys
 
 EXT_LIBGAUCHE  = -L$(top_builddir)/src @EXT_LIBGAUCHE@
@@ -60,7 +61,7 @@ TESTRECORD = $(top_builddir)/test.record
 
 .PHONY: default all check install install-check clean distclean \
         maintainer-clean install-std uninstall link unlink \
-	pre-package
+	pre-package pre-package-ext
 
 .c.obj:
 	$(COMPILE) -c `cygpath -w $<`
@@ -96,6 +97,13 @@ maintainer-clean : clean
 	rm -rf $(GENERATED)
 
 pre-package : $(PRE_PACKAGE_FILES)
+
+pre-package-ext :
+	for f in $(XCLEANFILES); do \
+	  if test X`echo $$f | sed s/\*//g` = X$$f; then \
+	    $(MAKE) GOSH=$(GOSH) GAUCHE_CONFIG=$(GAUCHE_CONFIG) $$f; \
+	  fi; \
+	done
 
 install-std : all
 	$(GAUCHE_INSTALL) -m 444 -T $(GAUCHE_INCDIR) $(HDRFILES)

@@ -11,6 +11,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test-vmstack", "test-vmstac
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gauche-config", "gauche-config.vcproj", "{9B3B92C7-21FB-416B-A124-5CCC3E1D33B4}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext-charconv", "ext-charconv.vcproj", "{B9709366-816A-4DCC-807B-F56DF265F281}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext-uvector", "ext-uvector.vcproj", "{C4EDEAE3-3E92-4940-84A6-FA441B933C2F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -37,6 +41,14 @@ Global
 		{9B3B92C7-21FB-416B-A124-5CCC3E1D33B4}.Debug|Win32.Build.0 = Debug|Win32
 		{9B3B92C7-21FB-416B-A124-5CCC3E1D33B4}.Release|Win32.ActiveCfg = Release|Win32
 		{9B3B92C7-21FB-416B-A124-5CCC3E1D33B4}.Release|Win32.Build.0 = Release|Win32
+		{B9709366-816A-4DCC-807B-F56DF265F281}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B9709366-816A-4DCC-807B-F56DF265F281}.Debug|Win32.Build.0 = Debug|Win32
+		{B9709366-816A-4DCC-807B-F56DF265F281}.Release|Win32.ActiveCfg = Release|Win32
+		{B9709366-816A-4DCC-807B-F56DF265F281}.Release|Win32.Build.0 = Release|Win32
+		{C4EDEAE3-3E92-4940-84A6-FA441B933C2F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C4EDEAE3-3E92-4940-84A6-FA441B933C2F}.Debug|Win32.Build.0 = Debug|Win32
+		{C4EDEAE3-3E92-4940-84A6-FA441B933C2F}.Release|Win32.ActiveCfg = Release|Win32
+		{C4EDEAE3-3E92-4940-84A6-FA441B933C2F}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

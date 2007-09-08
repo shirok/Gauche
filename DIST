@@ -221,7 +221,7 @@ if [ "$winvc" = "yes" ]; then
   autoconf-2.61
   (cd gc; autoconf-2.61)
   ./configure --build=i686-pc-winnt
-  make GOSH=gosh pre-package
+  make GOSH=gosh pre-package-ext
   (cd src; make GOSH=gosh gauche-config.c)
 fi
 

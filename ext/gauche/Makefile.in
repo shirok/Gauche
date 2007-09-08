@@ -31,8 +31,8 @@ gauche-collection-lib.$(SOEXT) : $(gauche-collection_OBJECTS)
 gauche-collection_head.c gauche-collection_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension gauche-collection
 
-gauche-collection-lib.c : $(top_srcdir)/libsrc/gauche/collection.scm
-	$(GOSH) gencomp --ext-module gauche/collection.scm -o gauche-collection-lib $(top_srcdir)/libsrc/gauche/collection.scm
+gauche-collection-lib.c gauche/collection.scm : $(top_srcdir)/libsrc/gauche/collection.scm
+	$(GENCOMP) --ext-module gauche/collection.scm -o gauche-collection-lib $(top_srcdir)/libsrc/gauche/collection.scm
 
 
 # gauche.sequence
@@ -46,8 +46,8 @@ gauche-sequence-lib.$(SOEXT) : $(gauche-sequence_OBJECTS)
 gauche-sequence_head.c gauche-sequence_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension gauche-sequence
 
-gauche-sequence-lib.c : $(top_srcdir)/libsrc/gauche/sequence.scm
-	$(GOSH) gencomp --ext-module gauche/sequence.scm -o gauche-sequence-lib $(top_srcdir)/libsrc/gauche/sequence.scm
+gauche-sequence-lib.c gauche/sequence.scm : $(top_srcdir)/libsrc/gauche/sequence.scm
+	$(GENCOMP) --ext-module gauche/sequence.scm -o gauche-sequence-lib $(top_srcdir)/libsrc/gauche/sequence.scm
 
 
 # gauche.parameter
@@ -61,8 +61,8 @@ gauche-parameter-lib.$(SOEXT) : $(gauche-parameter_OBJECTS)
 gauche-parameter_head.c gauche-parameter_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension gauche-parameter
 
-gauche-parameter-lib.c : $(top_srcdir)/libsrc/gauche/parameter.scm
-	$(GOSH) gencomp --keep-private-macro=%parameterize --ext-module gauche/parameter.scm -o gauche-parameter-lib $(top_srcdir)/libsrc/gauche/parameter.scm
+gauche-parameter-lib.c gauche/parameter.scm : $(top_srcdir)/libsrc/gauche/parameter.scm
+	$(GENCOMP) --keep-private-macro=%parameterize --ext-module gauche/parameter.scm -o gauche-parameter-lib $(top_srcdir)/libsrc/gauche/parameter.scm
 
 # gauche.hook
 gauche-hook_OBJECTS = gauche-hook_head.$(OBJEXT) \
@@ -75,8 +75,8 @@ gauche-hook-lib.$(SOEXT) : $(gauche-hook_OBJECTS)
 gauche-hook_head.c gauche-hook_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension gauche-hook
 
-gauche-hook-lib.c : $(top_srcdir)/libsrc/gauche/hook.scm
-	$(GOSH) gencomp --ext-module gauche/hook.scm -o gauche-hook-lib $(top_srcdir)/libsrc/gauche/hook.scm
+gauche-hook-lib.c gauche/hook.scm : $(top_srcdir)/libsrc/gauche/hook.scm
+	$(GENCOMP) --ext-module gauche/hook.scm -o gauche-hook-lib $(top_srcdir)/libsrc/gauche/hook.scm
 
 
 install : install-std
