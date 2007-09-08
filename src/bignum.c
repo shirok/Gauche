@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.67 2007-08-29 09:38:53 shirok Exp $
+ *  $Id: bignum.c,v 1.68 2007-09-08 19:52:28 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -775,7 +775,7 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
     if (bx->size <= nwords) {
         br->size = 0; br->values[0] = 0;
     } else if (nbits == 0) {
-        for (i = nwords; i < bx->size; i++) {
+        for (i = (int)nwords; i < (int)bx->size; i++) {
             br->values[i-nwords] = bx->values[i];
         }
         br->size = bx->size - nwords;
