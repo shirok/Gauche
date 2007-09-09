@@ -34,11 +34,12 @@
 
 (file-pred-tests "tmp1.o" '(#t #f #t))
 
-(rmrf "tmp1.o")
+(sys-rmdir "tmp1.o")
 
 ;;
 ;; glob test.
-;;
+;; Note: on Windows the file/directory name can't end with a period.
+;; 
 (let ()
   (md "tmp1.o")
   (md "tmp1.o/a")
@@ -47,9 +48,9 @@
   (mf "tmp1.o/a/.d")
   (md "tmp1.o/.a")
   (md "tmp1.o/.a/.d")
-  (md "tmp1.o/a.")
-  (mf "tmp1.o/a./b")
-  (mf "tmp1.o/a./.d")
+  (md "tmp1.o/aa")
+  (mf "tmp1.o/aa/b")
+  (mf "tmp1.o/aa/.d")
   (mf "tmp1.o/a.a")
   (mf "tmp1.o/a.b")
   (mf "tmp1.o/a.a.a")
@@ -65,12 +66,12 @@
          (pa$ lset= equal?))
 
   ;; wildcard
-  (test* "glob *" '("tmp1.o/a" "tmp1.o/a." "tmp1.o/a.a"
+  (test* "glob *" '("tmp1.o/a" "tmp1.o/aa" "tmp1.o/a.a"
                     "tmp1.o/a.b" "tmp1.o/a.a.a")
          (glob "tmp1.o/*")
          (pa$ lset= equal?))
 
-  (test* "glob a.*" '("tmp1.o/a." "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
+  (test* "glob a.*" '("tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
          (glob "tmp1.o/a.*")
          (pa$ lset= equal?))
 
@@ -82,42 +83,38 @@
          (glob "tmp1.o/?")
          (pa$ lset= equal?))
 
-  (test* "glob *?" '("tmp1.o/a" "tmp1.o/a." "tmp1.o/a.a"
+  (test* "glob *?" '("tmp1.o/a" "tmp1.o/aa" "tmp1.o/a.a"
                      "tmp1.o/a.b" "tmp1.o/a.a.a")
          (glob "tmp1.o/*?")
          (pa$ lset= equal?))
 
-  (test* "glob *." '("tmp1.o/a.")
-         (glob "tmp1.o/*.")
-         (pa$ lset= equal?))
-
-  (test* "glob ??" '("tmp1.o/a.")
+  (test* "glob ??" '("tmp1.o/aa")
          (glob "tmp1.o/??")
          (pa$ lset= equal?))
 
-  (test* "glob *.*" '("tmp1.o/a." "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
+  (test* "glob *.*" '("tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
          (glob "tmp1.o/*.*")
          (pa$ lset= equal?))
 
-  (test* "glob */*" '("tmp1.o/a/b" "tmp1.o/a/cc" "tmp1.o/a./b")
+  (test* "glob */*" '("tmp1.o/a/b" "tmp1.o/a/cc" "tmp1.o/aa/b")
          (glob "tmp1.o/*/*")
          (pa$ lset= equal?))
 
-  (test* "glob */?" '("tmp1.o/a/b" "tmp1.o/a./b")
+  (test* "glob */?" '("tmp1.o/a/b" "tmp1.o/aa/b")
          (glob "tmp1.o/*/?")
          (pa$ lset= equal?))
 
-  (test* "glob *  (chdir)" '("a" "a." "a.a" "a.b" "a.a.a")
+  (test* "glob *  (chdir)" '("a" "aa" "a.a" "a.b" "a.a.a")
          (begin (sys-chdir "tmp1.o") (begin0 (glob "*") (sys-chdir "..")))
          (pa$ lset= equal?))
 
-  (test* "glob */" '("tmp1.o/a/" "tmp1.o/a./")
+  (test* "glob */" '("tmp1.o/a/" "tmp1.o/aa/")
          (glob "tmp1.o/*/")
          (pa$ lset= equal?))
 
   ;; multi
   (test* "glob * .* (multi)" '("tmp1.o/." "tmp1.o/.." "tmp1.o/.a" "tmp1.o/a"
-                               "tmp1.o/a." "tmp1.o/a.a" "tmp1.o/a.b"
+                               "tmp1.o/aa" "tmp1.o/a.a" "tmp1.o/a.b"
                                "tmp1.o/a.a.a")
          (glob '("tmp1.o/*" "tmp1.o/.*"))
          (pa$ lset= equal?))
@@ -150,8 +147,8 @@
 (use file.filter)
 (test-module 'file.filter)
 
-(sys-unlink "tmp1.o")
-(sys-unlink "tmp2.o")
+(rmrf "tmp1.o")
+(rmrf "tmp2.o")
 (with-output-to-file "tmp1.o"
   (lambda () (display "aaa bbb ccc ddd\neee fff ggg hhh\n")))
 
