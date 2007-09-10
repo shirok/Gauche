@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.26 2007-09-07 09:51:15 shirok Exp $
+ *  $Id: port.h,v 1.27 2007-09-10 22:07:50 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_H
@@ -385,7 +385,7 @@ SCM_EXTERN ScmObj Scm_MakePortWithFd(ScmObj name,
 
 SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
 
-SCM_EXTERN void Scm__InstallCondingAwarePortHook(ScmPort *(*)(ScmPort*, const char*));
+SCM_EXTERN void Scm__InstallCodingAwarePortHook(ScmPort *(*)(ScmPort*, const char*));
 
 /*================================================================
  * Locking the ports

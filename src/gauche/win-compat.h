@@ -135,10 +135,11 @@ struct sigaction {
 int sigaction(int signum, const struct sigaction *act, struct sigaction *oact);
 
 /*====================================================================
- * sprintf stuff
+ * string stuff
  */
 #if defined(MSVC)
 #define snprintf _snprintf
+#define strcasecmp _stricmp
 #endif /* MSVC */
 
 /*====================================================================

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.500 2007-09-10 12:10:19 shirok Exp $
+ *  $Id: gauche.h,v 1.501 2007-09-10 22:07:46 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -307,7 +307,12 @@ SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
 #define SCM_CPP_CAT(a, b)   a ## b
 #define SCM_CPP_CAT3(a, b, c)  a ## b ## c
 
+#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
+#define SCM_CLASS_DECL(klass) SCM_EXTERN ScmClass klass
+#else  /*!GAUCHE_BROKEN_LINKER_WORKAROUND*/
 #define SCM_CLASS_DECL(klass) extern ScmClass klass
+#endif /*!GAUCHE_BROKEN_LINKER_WORKAROUND*/
+
 #define SCM_CLASS_STATIC_PTR(klass)  (&klass)
 #define SCM_CLASS2TAG(klass)  ((ScmByte*)(klass) + 3)
 
