@@ -2465,61 +2465,110 @@ without any argument from the shell, to find out the valid options.
 @c ----------------------------------------------------------------------
 @node Dictionary framework, Low-level file operations, Configuration parameters, Library modules - Gauche extensions
 @section @code{gauche.dictionary} - Dictionary framework
-
+@c NODE @code{gauche.dictionary} - ディクショナリフレームワーク
 
 @deftp {Module} gauche.dictionary
 @mdindex gauche.dictionary
+@c EN
 A dictionary is an abstract class for objects that can
 map a key to a value.  This module provides some useful generic
 functions for dictionaries.
+@c JP
+ディクショナリはキーから値への写像ができるオブジェクトを表わす抽象クラ
+スです。このモジュールではディクショナリに対してよく使うジェネリック関
+数を提供しています。
+@c COMMON
 @end deftp
 
 @deffn {Generic function} dict-fold (dict @code{<dictionary>}) proc seed
+@c EN
 Calls a procedure @var{proc} over each entry in a dictionary @var{dict},
 passing a seed value.  Three arguments are given to @var{proc}; 
 an entry's key, an entry's value, and a seed value.  Initial
 seed value is @var{seed}.  The value returned from @var{proc} is used
 for the seed value of the next call of @var{proc}.  The result of the
 last call of @var{proc} is returned from @var{dict-fold}.
+@c JP
+@var{dict}の各要素に対して@var{proc}を呼びシード値を次に渡します。
+@var{proc}は引数を3つとります。エントリーのキー、エントリーの値、それ
+にシード値です。最初のシード値は@var{seed}です。@var{proc}からの返り値
+は次の@var{proc}の呼び出しでシード値として使われます。最後の@var{proc}
+の呼び出しの結果が@var{dict-fold}の返り値として返されます。
+@c COMMON
 
+@c EN
 If @var{dict} is @code{<ordered-dictionary>}, @var{proc} is called
 in the way to keep the following associative order, where
 the key is ordered from @var{K0} (minimum) to @var{Kn} (maximum), and
 the corresponding values is from @var{V0} to @var{Vn}:
+@c JP
+@var{dict}が@code{<ordered-dictionary>}であれば、@var{proc}は以下のよ
+うな結合で呼ばれます。ここで、キーは@var{K0}(最小)から@var{Kn}(最大)ま
+でで、それに対応する値が@var{V0}から@var{Vn}までであるとします。
+@c COMMON
 @example
 (proc Kn Vn (proc Kn-1 Vn-1 ... (proc K0 V0 seed)))
 @end example
 @end deffn
 
 @deffn {Generic function} dict-fold-right (dict @code{<ordered-dictionary>}) proc seed
+@c EN
 Like @code{dict-fold}, but the associative order of applying @var{proc}
 is reversed as follows:
+@c JP
+@code{dict-fold}と同じですが、@var{proc}を適用する結合の順が以下のよう
+に逆になります。
+@c COMMON
 @example
 (proc K0 V0 (proc K1 V1 ... (proc Kn Vn seed)))
 @end example
 
+@c EN
 This generic function is only defined on @code{<ordered-dictionary>}.
+@c JP
+このジェネリック関数は@code{<ordered-dictionary>}上にのみ定義されてい
+ます。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} dict-for-each (dict @code{<dictionary>}) proc
+@c EN
 Calls @var{proc} with a key and a value of every entry in
 the dictionary @var{dict}.  For ordered dictionaries, @var{proc}
 is guaranteed to be called in the increasing order of keys.
+@c JP
+ディクショナリ@var{dict}の各エントリーのキーと値に対して@var{proc}を呼
+びます。順序付きディクショナリに対しては@var{proc}がキーの昇順に呼ばれ
+ることが保証されています。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} dict-map (dict @code{<dictionary>}) proc
+@c EN
 Calls @var{proc} with a key and a value of every entry in
 the dictionary @var{dict}, and gathers the result into a list 
 and returns it.  For ordered dictionaries, the result is in
 the increasing order of keys (it doesn't necessarily mean @var{proc}
 is called in that order).
+@c JP
+ディクショナリ@var{dict}の各エントリーのキーと値に対して@var{proc}を呼
+び、結果をリストにまとめて返します。順序付きディクショナリに対しては結
+果が最初のキーの順にならびます(が、@var{proc}がキーの昇順に呼ばれるこ
+とを保証するものではありません)。 
+@c COMMON
 @end deffn
 
 @deffn {Generic function} dict-keys (dict @code{<dictionary>})
 @deffnx {Generic function} dict-values (dict @code{<dictionary>})
+@c EN
 Returns a list of all keys or values of a dictionary @var{dict}, 
 respectively.  For ordered dictionaries, the returned list is
 in the increasing order of keys.
+@c JP
+それぞれ@var{dict}内にあるすべてのキーのリスト、すべての値のリストを返
+します。順序付きディクショナリについてはリストの要素はキーの昇順になら
+んでいます。
+@c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
