@@ -5079,19 +5079,38 @@ and @code{alist->hash-table} are defined.
 @c ----------------------------------------------------------------------
 @node Treemaps, Weak pointers, Hashtables, Core library
 @section Treemaps
+@c NODE ツリーマップ
 
 @deftp {Builtin Class} <tree-map>
 @clindex tree-map
+@c EN
 Tree map class.   Tree maps are a data structure that maps key objects
 to value objects.  It's like hash tables except tree maps uses
-balanced tree internally.  Insertion and lookup is O(n).
+balanced tree internally.  Insertion and lookup is O(log n).
+@c JP
+ツリーマップクラス。ツリーマップはキーオブジェクトから値オブジェクトへ
+の写像をあらわすデータ構造です。ツリーマップでは平衡木を使うということ
+以外はハッシュテーブルと同じです。ツリーマップでは挿入と検索の手間は
+O(log n)です。
+@c COMMON
 
+@c EN
 Unlike hashtables, a tree map keeps the order of the keys, so
 it is easy to traverse entries in the order of keys, to find 
 minimum/maximum keys, or to find a key closest to the given value.
+@c JP
+ハッシュテーブルとはちがい、キーの順序は保存されます。したがってキーの
+順序どおりにトラバースするのは簡単で、キーの最小値/最大値を見つけたり、
+指定したキーにもっとも近いキーを探すのも簡単です。
+@c COMMON
 
+@c EN
 The @code{<tree-map>} class inherits @code{<sequence>} and
 @code{<ordered-dictionary>}.
+@c JP
+@code{<tree-map>}クラスは@code{<sequence>}および
+@code{<ordered-dictionary>}を継承しています。
+@c COMMON
 @end deftp
 
 @defun make-tree-map key=? key<?
