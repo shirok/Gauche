@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.498 2007-09-07 09:51:12 shirok Exp $
+ *  $Id: gauche.h,v 1.499 2007-09-10 01:19:50 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -93,25 +93,14 @@ SCM_DECL_BEGIN
 #include <unistd.h>
 #endif /*HAVE_UNISTD_H*/
 
-/* For Windows platforms, we need some compatibility tricks. */
+/* For Windows platforms, we need some compatibility tricks.
+   This defines GAUCHE_WINDOWS preprocessor symbol. */
 #if defined(__MINGW32__) || defined(MSVC)
 #include <gauche/win-compat.h>
 #endif /* MINGW32 || WINDOWS */
 
-/* Ugly cliche for Win32. */
-#if defined(__CYGWIN__) || defined(GAUCHE_WINDOWS)
-# if defined(LIBGAUCHE_BODY)
-#  if defined(MSVC)
-#    define SCM_EXTERN extern __declspec(dllexport)
-#  else
-#    define SCM_EXTERN extern
-#  endif
-# else
-#  define SCM_EXTERN extern __declspec(dllimport)
-# endif
-#else  /*!(__CYGWIN__ || GAUCHE_WINDOWS)*/
-# define SCM_EXTERN extern
-#endif /*!(__CYGWIN__ || GAUCHE_WINDOWS)*/
+/* Defines SCM_EXTERN magic. */
+#include <gauche/extern.h>
 
 /* Some useful macros */
 #ifndef FALSE

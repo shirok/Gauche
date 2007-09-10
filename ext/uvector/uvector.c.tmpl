@@ -35,7 +35,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvector.c.tmpl,v 1.12 2007-06-23 07:01:58 shirok Exp $
+ *  $Id: uvector.c.tmpl,v 1.13 2007-09-10 01:19:50 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -45,6 +45,8 @@
 #include <gauche.h>
 #include <gauche/extend.h>
 #include <gauche/builtin-syms.h>
+
+#define LIBGAUCHE_UVECTOR_BODY 1
 #include "gauche/uvector.h"
 #include "gauche/arith.h"
 #include "gauche/scmconst.h"

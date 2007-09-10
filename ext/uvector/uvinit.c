@@ -30,11 +30,13 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvinit.c,v 1.14 2007-09-07 09:51:11 shirok Exp $
+ *  $Id: uvinit.c,v 1.15 2007-09-10 01:19:50 shirok Exp $
  */
 
 #include <gauche.h>
 #include <gauche/extend.h>
+
+#define LIBGAUCHE_UVECTOR_BODY
 #include "gauche/uvector.h"
 #include "uvectorP.h"
 
