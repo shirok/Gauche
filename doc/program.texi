@@ -689,12 +689,20 @@ You can also use trace/untrace macros in Gauche, written by Shigenobu Kimura:
 @section Using platform-dependent features
 @c NODE プラットフォーム依存の機能
 
+@c EN
 Gauche tries to provide low-level APIs close to what the underlying
 system provides, but sometimes they vary among systems.  For example,
 POSIX does not require @code{symlink}, so some systems may lack
 @code{sys-symlink} (@xref{Directory manipulation}).  Quite a few
 unix-specific system functions are not available on Windows platform.
+@c JP
+GaucheではOSが提供するAPIに近い低レベルAPIを提供するようにしています。
+しかし、システムごとに扱いの違うものがあります。たとえば、POSIXでは
+@code{symlink}は必須ではありませんので、システムによっては
+@code{sys-symlink} (@ref{Directory manipulation}参照)がありません。
+UNIX系のシステム関数は少なからずWindowsでは使えません。
 
+@c EN
 To allow writing a portable program across those platforms, Gauche
 uses @code{cond-expand} (@xref{Feature conditional}) extensively.
 A set of extended @emph{feature-identifier}s is provided to check
@@ -702,6 +710,15 @@ availability of specific features.  For example, on systems that
 has @code{symlink}, a feature identifier @code{gauche.sys.symlink}
 is defined.   So you can write a code that can switch based on
 the availability of @code{sys-symlink} as follows:
+@c JP
+プラットフォーム間でポータブルなプログラムを書くために、Gaucheでは
+頻繁に@code{cond-expand} を使います(@ref{Feature conditional}参照)。
+拡張された@emph{機能識別子(feature-identifier)}が提供されており、これ
+を使って特定の機能が利用可能かどうかチェックできます。たとえば、
+@code{symlink}があるシステムでは機能識別子@code{gauche.sys.symlink}が
+定義されます。したがって、以下のように@code{sys-symlink}が利用できるか
+どうかによって、コードをスイッチするようなプログラムを書けます。
+@c COMMON
 
 @example
 (cond-expand
@@ -712,8 +729,13 @@ the availability of @code{sys-symlink} as follows:
  )
 @end example
 
+@c EN
 If you're familiar with system programming in C, you can think
 it equivalent to the following C idiom:
+@c JP
+Cのシステムプログラミングに詳しいなら、上のコードは以下のCのイディオム
+と同じだとみなせます。
+@c COMMON
 
 @example
 #if defined(HAVE_SYMLINK)
@@ -723,26 +745,57 @@ it equivalent to the following C idiom:
 #endif
 @end example
 
+@c EN
 There are quite a few such feature identifiers; each identifier is
 explained in the maunal entry of the procedures that depend on the feature.
 Here we list a few important ones:
+@c JP
+このような機能識別子はたくさんあり、それぞれの識別子についてはこのマニュ
+アル中のその機能に依存した手続きの項目で説明しています。特に重要なもの
+を以下にリストアップしておきます。
+@c COMMON
 
 @table @code
 @item gauche
+@c EN
 This feature identifier is always defined.  It is useful when you
 write Scheme code portable across multiple implementations.
+@c JP
+この機能識別子は常に定義されています。Gauche以外のSchemeの実装とも互換
+性のあるコードを書くときに使えます。
+@c COMMON
 @item gauche.os.windows
+@c EN
 Defined on Windows native platform (currently using MinGW, but we'll
 have VC++ version in future).  Note that cygwin is considered unix.
+@c JP
+Windowsネイティブプラットフォームで定義されます。(現時点では、MinGWを
+使っていますが、将来VC++版をサポートする予定です。) cygwinはUNIXとみな
+すことに注意してください。
+@c COMMON
 @item gauche.sys.pthreads
+@c EN
 Defined if Gauche is compiled with pthread support.
+@c JP
+Gaucheがpthreadをサポートするようにコンパイルされている場合に定義されます。
+@c COMMON
 @item gauche.net.ipv6
+@c EN
 Defined if Gauche is compiled with IPv6 support.
+@c JP
+GaucheがIPv6をサポートするようにコンパイルされている場合に定義されます。
+@c COMMON
 @end table
 
+@c EN
 Because @code{cond-expand} is a macro, the body of clauses
 are expanded into toplevel if @code{cond-expand} itself is in
 toplevel.  That means you can switch toplevel definitions:
+@c JP
+@code{cond-expand}はマクロなので、@code{cond-expand}自身がトップレベル
+にあれば、節の本体はトップレベルで展開されます。これはトップレベルの定
+義をスイッチできるということです。
+@c COMMON
 
 @example
 (cond-expand
@@ -754,7 +807,11 @@ toplevel.  That means you can switch toplevel definitions:
     (sys-uid->user-name (sys-getuid)))))
 @end example
 
-Or even conditinally "use" the modules:
+@c EN
+Or even conditionally "use" the modules:
+@c JP
+あるいは条件によってモジュールを使いわけられます。
+@c COMMON
 
 @example
 (cond-expand
@@ -763,30 +820,63 @@ Or even conditinally "use" the modules:
  (else))
 @end example
 
+@c EN
 The traditional technique of testing a toplevel binding at runtime
 (using @code{global-variable-bound?}, @xref{Module introspection})
 does not work well, since the test is done in runtime, while
 the @code{use} form takes effect at compile time.  It is strongly
 recommended to use @code{cond-expand} whenever possible.
+@c JP
+実行時にトップレベルの束縛をチェックするような旧いテクニック
+(@code{global-variable-bound?}を使う, @ref{Module introspection}参照)
+は正しく働きません。これはプログラム実行時に実行されますが、@code{use}
+形式はコンパイル時に意味をもちます。可能なかぎり、@code{cond-expand}を
+使うことを推奨します。
+@c COMMON
 
+@c EN
 Currently the set of feature identifiers are fixed at the build
 time of Gauche, so it's less flexible than C preprocessor conditionals.
 We have a plan to extend this feature to enable adding new feature
 identifiers; but such feature can complicate semantics when compilation
-and exection is interleaved, so we're carefully assessing the effects now.
+and execution is interleaved, so we're carefully assessing the effects now.
+@c JP
+現時点では機能識別子集合はGaucheのコンパイル時に固定されます。つまり、
+Cのプリプロセッサを使った条件分岐よりも柔軟性に劣ります。この機能を拡
+張してあとから機能識別子を追加できるようにする計画ですが、この機能拡張
+はコンパイルと実行交互におこるときのセマンティクスを複雑にしてしまう可
+能性があり、現在その影響を慎重にみきわめている最中です。
+@c COMMON
 
+@c EN
 A couple of notes:
+@c JP
+いくつか注意事項があります。
+@c COMMON
 
+@c EN
 Feature identifiers are not variables.  They can only be used
 within the @var{feature-requirement} part of @code{cond-expand}
 (see @ref{Feature conditional} for the complete definition of
 feature requirements).
+@c JP
+機能識別子は変数ではありません。@code{cond-expand}の
+@var{feature-requirement}部の内部でのみ利用可能です(機能要求の定義全般
+については@ref{Feature conditional}を見てください)。
+@c COMMON
 
+@c EN
 By definition of @code{srfi-0}, @code{cond-expand} raises an error
 if no feature requirements are satisfied and there's no @code{else}
 clause.  A rule of thumb is to provide @code{else} clause always,
 even it does nothing (like the above example that has empty @code{else}
 clause).
+@c JP
+@code{srfi-0}の定義により、機能要求が満されず、かつ@code{else}節がない
+場合には@code{cond-expand}はエラーをあげます。常に@code{else}を書いて
+おくのがよいでしょう。 上の例のように、@code{else}節でなにもしないとき
+でも、空の@code{else}節を書くのがよいでしょう。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Profiling and tuning, Writing Gauche modules, Platform-dependent features, Programming in Gauche
