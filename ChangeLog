@@ -1,5 +1,8 @@
 2007-09-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/gencomp: make it accept -D option to specify preprocessor
+	  symbols.
+
 	* src/gauche/extern.h: added to hide windows dll insanity.
 	* src/gauche.h, src/gauche/class.h, src/gauche/string.h,
 	  src/gauche/code.h, src/genstub, src/gencomp,

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.30 2007-09-10 12:10:19 shirok Exp $
+;;;  $Id: gencomp,v 1.31 2007-09-10 21:18:38 shirok Exp $
 ;;;
 
 ;;;
@@ -101,27 +101,30 @@
 ;; Entry
 ;;
 (define (main args)
-  (let-args (cdr args)
-      ((keep-private-macro "keep-private-macro=s" #f)
-       (ext-module "ext-module=s" #f)
-       (output-base "o|output=s" #f)
-       . args)
-    (when keep-private-macro
-      (private-macros-to-keep
-       (map string->symbol (string-split keep-private-macro #\,))))
-    (match args
-      ((scmfile)
-       (when ext-module
-         (ext-module-file (ensure-ext-module-file ext-module)))
-       (do-it scmfile (or output-base
-                          (sys-basename (path-sans-extension scmfile))))
-       (when ext-module (close-output-port (ext-module-file))))
-      (else (print "Usage: gosh gencomp [--keep-macro] <file.scm>")
-            (exit 0)))
-    0))
+  (let1 predef-syms '()
+    (let-args (cdr args)
+        ((keep-private-macro "keep-private-macro=s" #f)
+         (ext-module "ext-module=s" #f)
+         (output-base "o|output=s" #f)
+         (#f "D=s" => (lambda (sym) (push! predef-syms sym)))
+         . args)
+      (when keep-private-macro
+        (private-macros-to-keep
+         (map string->symbol (string-split keep-private-macro #\,))))
+      (match args
+        ((scmfile)
+         (when ext-module
+           (ext-module-file (ensure-ext-module-file ext-module)))
+         (do-it scmfile
+                (or output-base (sys-basename (path-sans-extension scmfile)))
+                predef-syms)
+         (when ext-module (close-output-port (ext-module-file))))
+        (else (print "Usage: gosh gencomp [--keep-macro] <file.scm>")
+              (exit 0)))
+      0)))
 
-(define (do-it src base)
-  (parameterize ((cgen-current-unit (get-unit src base))
+(define (do-it src base predef-syms)
+  (parameterize ((cgen-current-unit (get-unit src base predef-syms))
                  (compile-module    (make-module #f))
                  (compile-file-basename base)
                  (vm-eval-situation SCM_VM_COMPILING))
@@ -522,12 +525,12 @@
 ;; Utilities
 ;;
 
-(define (get-unit src base)
+(define (get-unit src base predef-syms)
   (make <cgen-unit>
     :name base
     :preamble `(,(format "/* Generated automatically from ~a.  DO NOT EDIT */"
                          src))
-    :pre-decl '("#define LIBGAUCHE_BODY")
+    :pre-decl (map (lambda (s) #`"#define ,s") predef-syms)
     :init-prologue (format "void Scm_Init_~a() { ScmModule *mod;"
                            (string-tr (sys-basename base) "-+" "__"))
     ))

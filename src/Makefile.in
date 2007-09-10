@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.173 2007-09-10 01:19:50 shirok Exp $
+#  $Id: Makefile.in,v 1.174 2007-09-10 21:18:38 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -71,6 +71,8 @@ RELINK    = TARGETLIB=$(TARGETLIB) $(CCLD) $(CFLAGS) $(RPATH_REAL) -L. $(LDFLAGS
 INSTALL   = @INSTALL@
 POSTBUILD = TARGETLIB=`pwd` $(MAKEVERSLINK) libgauche.$(SOEXT)
 POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) libgauche.$(SOEXT)
+
+GENCOMP   = $(srcdir)/gencomp -D LIBGAUCHE_BODY
 
 # HOSTGOSH is the gosh command used to generate some of the source files.
 # We need to 'preload' some libraries from the host's environment, for
@@ -196,13 +198,13 @@ vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
 	$(HOSTGOSH) ./geninsn
 
 compile.c : compile.scm gencomp vminsn.scm
-	$(HOSTGOSH) ./gencomp compile.scm
+	$(HOSTGOSH) $(GENCOMP) compile.scm
 
 scmlib.c : scmlib.scm gencomp vminsn.scm
-	$(HOSTGOSH) ./gencomp scmlib.scm
+	$(HOSTGOSH) $(GENCOMP) scmlib.scm
 
 objlib.c : objlib.scm gencomp vminsn.scm
-	$(HOSTGOSH) ./gencomp objlib.scm
+	$(HOSTGOSH) $(GENCOMP) objlib.scm
 
 symbol.$(OBJEXT) : builtin-syms.c
 
@@ -244,13 +246,13 @@ gauche-cesconv : gauche-cesconv.in
 
 # a special build sequence when VM instruction set has been changed
 newinsn : 
-	$(HOSTGOSH) -fno-inline-globals ./gencomp compile.scm
-	$(HOSTGOSH) -fno-inline-globals ./gencomp scmlib.scm
-	$(HOSTGOSH) -fno-inline-globals ./gencomp objlib.scm
+	$(HOSTGOSH) -fno-inline-globals $(GENCOMP) compile.scm
+	$(HOSTGOSH) -fno-inline-globals $(GENCOMP) scmlib.scm
+	$(HOSTGOSH) -fno-inline-globals $(GENCOMP) objlib.scm
 	$(MAKE) all
-	./gosh -ftest ./gencomp compile.scm
-	./gosh -ftest ./gencomp scmlib.scm
-	./gosh -ftest ./gencomp objlib.scm
+	./gosh -ftest $(GENCOMP) compile.scm
+	./gosh -ftest $(GENCOMP) scmlib.scm
+	./gosh -ftest $(GENCOMP) objlib.scm
 	$(MAKE) all
 
 # tests -----------------------------------------------
