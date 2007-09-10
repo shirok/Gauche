@@ -1,3 +1,16 @@
+2007-09-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/extern.h: added to hide windows dll insanity.
+	* src/gauche.h, src/gauche/class.h, src/gauche/string.h,
+	  src/gauche/code.h, src/genstub, src/gencomp,
+	  lib/gauche/cgen/literal.scm: Experimentally added a workaround
+	  to the MSVC linker limitation that the address of external variables
+	  in a separate DLL can't be used in a constant expression to
+	  initialize static variables.  It defeats the Gauche's tag
+	  architecture.  This fix makes the static Scheme objects to be
+	  initialized with dummy tags (see SCM_CLASS_STATIC_TAG in gauche.h),
+	  and "patches" the correct tag in the initializatin code.
+
 2007-09-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c, src/read.c, src/port.c, ext/charconv/charconv.c,

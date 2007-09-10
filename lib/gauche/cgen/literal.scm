@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: literal.scm,v 1.4 2007-05-05 04:45:19 shirok Exp $
+;;;  $Id: literal.scm,v 1.5 2007-09-10 12:10:18 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.literal
@@ -488,6 +488,10 @@
                (format "  SCM_STRING_CONST_INITIALIZER(~s, ~a, ~a)"
                        value (string-size value) (string-length value)))
       :value value))
+  (init (self)
+    (print "#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND) && !defined(LIBGAUCHE_BODY)")
+    (print "  SCM_SET_CLASS("(cgen-c-name self)", SCM_CLASS_STRING);")
+    (print "#endif"))
   )
 
 ;; symbol ------------------------------------------------------
@@ -676,7 +680,7 @@
           :source-string (cgen-literal (regexp->string value))
           :case-fold? (regexp-case-fold? value)))
   (init (self)
-    (format #t "  ~a = Scm_RegComp(SCM_STRING(~a), ~a);"
+    (format #t "  ~a = Scm_RegComp(SCM_STRING(~a), ~a);\n"
             (cgen-c-name self)
             (cgen-c-name [@ self'source-string])
             (if [@ self'case-fold?]

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.157 2007-08-29 09:38:53 shirok Exp $
+ *  $Id: class.c,v 1.158 2007-09-10 12:10:18 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2790,6 +2790,14 @@ static void init_class(ScmClass *klass,
     ScmObj acc = SCM_NIL, sp;
     ScmClass **super;
 
+#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
+    /* Patch the type tag of statically defined classes on the platform
+       with the broken linker */
+    if (SCM_CLASS_OF(klass) == NULL) {
+        SCM_SET_CLASS(SCM_CLASS_CLASS);
+    }
+#endif
+
     /* set class name first, for it may be used by error messages. */
     klass->name = SCM_INTERN(name);
 
@@ -2806,6 +2814,9 @@ static void init_class(ScmClass *klass,
     if (specs) {
         for (;specs->name; specs++) {
             ScmObj snam = SCM_INTERN(specs->name);
+#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
+            SCM_SET_CLASS(specs->accessor, SCM_CLASS_SLOT_ACCESSOR);
+#endif
             specs->accessor.klass = klass;
             specs->accessor.name = snam;
             acc = Scm_Acons(snam, SCM_OBJ(&specs->accessor), acc);
@@ -2919,6 +2930,9 @@ void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
 void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
 {
     ScmObj s = SCM_INTERN(name);
+#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
+    SCM_SET_CLASS(gf, SCM_CLASS_GENERIC);
+#endif
     gf->common.info = s;
     if (gf->fallback == NULL) {
 	gf->fallback = Scm_NoNextMethod;
@@ -2929,6 +2943,9 @@ void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
 
 void Scm_InitBuiltinMethod(ScmMethod *m)
 {
+#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
+    SCM_SET_CLASS(gf, SCM_CLASS_METHOD);
+#endif
     m->common.info = Scm_Cons(m->generic->common.info,
                               class_array_to_names(m->specializers,
                                                    m->common.required));

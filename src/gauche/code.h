@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.h,v 1.8 2007-08-24 23:55:45 shirok Exp $
+ *  $Id: code.h,v 1.9 2007-09-10 12:10:20 shirok Exp $
  */
 
 #ifndef GAUCHE_CODE_H
@@ -100,7 +100,7 @@ SCM_CLASS_DECL(Scm_CompiledCodeClass);
     (SCM_COMPILED_CODE(obj)->optionalArgs)
 
 #define SCM_COMPILED_CODE_CONST_INITIALIZER(code, codesize, maxstack, reqargs, optargs, name, info, arginfo, parent, iform) \
-    { { SCM_CLASS2TAG(SCM_CLASS_COMPILED_CODE) },        \
+    { { SCM_CLASS_STATIC_TAG(SCM_CLASS_COMPILED_CODE) }, \
       (code), NULL, (codesize), 0, (maxstack),           \
       (reqargs), (optargs), (name), (info), (arginfo),   \
       (parent), (iform) }

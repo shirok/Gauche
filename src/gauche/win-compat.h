@@ -34,6 +34,12 @@ typedef unsigned long u_long;
 #endif /* _BSDTYPES_DEFINED */
 #endif /* __MINGW32__ */
 
+/* MSVC linker is broken; it cannot handle address of variables in
+   external dlls in constant expression. */
+#if defined(_MSC_VER)
+#define GAUCHE_BROKEN_LINKER_WORKAROUND 1
+#endif
+
 /*======================================================================
  * Time calculation
  * Win32API's FILETIME is 64bit time count since 1601/1/1 UTC, measured

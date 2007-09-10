@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.499 2007-09-10 01:19:50 shirok Exp $
+ *  $Id: gauche.h,v 1.500 2007-09-10 12:10:19 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -310,6 +310,17 @@ SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
 #define SCM_CLASS_DECL(klass) extern ScmClass klass
 #define SCM_CLASS_STATIC_PTR(klass)  (&klass)
 #define SCM_CLASS2TAG(klass)  ((ScmByte*)(klass) + 3)
+
+/* SCM_CLASS_STATIC_TAG should be used to initialize tag field of
+   statically defined Scm objects.  It is basically a pointer to the
+   class plus low tag bits.  Unfortunately there exists a broken linker
+   that doesn't allow to use this technique, and we need to "patch"
+   the tag field at initialization time. */
+#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND) && !defined(LIBGAUCHE_BODY)
+#define SCM_CLASS_STATIC_TAG(klass)    SCM_CLASS2TAG(NULL)
+#else  /*!GAUCHE_BROKEN_LINKER_WORKAROUND*/
+#define SCM_CLASS_STATIC_TAG(klass)    SCM_CLASS2TAG(klass)
+#endif /*!GAUCHE_BROKEN_LINKER_WORKAROUND*/
 
 /* A common header for heap-allocated objects */
 typedef struct ScmHeaderRec {
@@ -667,7 +678,7 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
 
 #define SCM__DEFINE_CLASS_COMMON(cname, coreSize, flag, printer, compare, serialize, allocate, cpa) \
     ScmClass cname = {                           \
-        { SCM_CLASS2TAG(SCM_CLASS_CLASS), NULL },\
+        { SCM_CLASS_STATIC_TAG(SCM_CLASS_CLASS), NULL },\
         printer,                                 \
         compare,                                 \
         serialize,                               \
@@ -1286,7 +1297,7 @@ struct ScmSubrRec {
 
 #define SCM_DEFINE_SUBR(cvar, req, opt, inf, func, inliner, data)           \
     ScmSubr cvar = {                                                        \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS2TAG(SCM_CLASS_PROCEDURE),      \
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(SCM_CLASS_PROCEDURE),\
                                    req, opt, SCM_PROC_SUBR, inf, inliner),  \
         (func), (data)                                                      \
     }
@@ -1319,7 +1330,7 @@ SCM_CLASS_DECL(Scm_GenericClass);
 
 #define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
     ScmGeneric cvar = {                                                 \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS2TAG(SCM_CLASS_GENERIC),    \
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(SCM_CLASS_GENERIC),\
                                    0, 0, SCM_PROC_GENERIC, SCM_FALSE,   \
                                    NULL),                               \
         SCM_NIL, cfunc, data                                            \
@@ -1354,7 +1365,7 @@ SCM_CLASS_DECL(Scm_MethodClass);
 
 #define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
     ScmMethod cvar = {                                                  \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS2TAG(SCM_CLASS_METHOD),     \
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(SCM_CLASS_METHOD),\
                                    req, opt, SCM_PROC_METHOD,           \
                                    SCM_FALSE, NULL),                    \
         gf, specs, func, data, NULL                                     \
