@@ -5583,36 +5583,69 @@ without allocating (potentially very big) string buffer.
 @c ----------------------------------------------------------------------
 @node IP packets, ICMP packets, HTTP, Library modules - Utilities
 @section @code{rfc.ip} - IP packets
+@c NODE IPパケット, @code{rfc.ip} - IPパケット
 
 @deftp {Module} rfc.ip
 @mdindex rfc.ip
+@c EN
 This module provides some basic utilities to parse raw IP packets.
+@c JP
+このモジュールは生のIPパケットを解析する基本的なユーティリティを提供し
+ます。
+@c COMMON
 @end deftp
 
+@c EN
 The @var{packet} argument in the following functions must be
 any type of uniform vector (@xref{Uniform vectors}), containing
 a raw IP packet including its IP header.
 Those functions work for both IPv4 and IPv6 packets; however,
 reading from a raw IPv6 socket returns a packet without IPv6 header,
 so you usually don't need to use these functions.
+@c JP
+次からの関数における@var{packet}引数はユニフォームベクタ
+(@ref{Uniform vectors}参照)型でなければなりません。これにはIPヘッダを
+含む生のIPパケットが入ります。以下の関数はIPv4およびIPv6パケットの両方
+で動きます。しかしながら、生のIPv6ソケットから読むときは、IPv6ヘッダを
+含まないパケットが返ります。とうわけで、通常これらの関数が必要になるこ
+とはないでしょう。
+@c COMMON
 
 @defun ip-version packet
+@c EN
 Returns the IP version number (either 4 or 6) of the given IP packet.
+@c JP
+与えられたIPパケットのIPバージョン番号(4または6)が返ります。
+@c COMMON
 @end defun
 
 @defun ip-header-length packet
+@c EN
 Returns the size of IP header of the given packet in octets,
 including any IP header options.
+@c JP
+与えられたパケットのIPヘッダ(IPヘッダオプションもすべて含む)のオクテッ
+トで数えたサイズを返します。
+@c COMMON
 @end defun
 
 @defun ip-protocol packet
+@c EN
 Returns the IP protocol number of the given packet.
+@c JP
+与えられたパケットのIPプロトコル番号を返します。
+@c COMMON
 @end defun
 
 @defun ip-source-address packet
 @defunx ip-destination-address packet
+@c EN
 Returns the source and destination address in the given packet
 in an integer, respectively.
+@c JP
+与えられたパケットの送信元アドレスと送信先アドレスをそれぞれ整数で返し
+ます。
+@c COMMON
 @end defun
 
 
