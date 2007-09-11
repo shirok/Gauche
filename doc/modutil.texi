@@ -5652,51 +5652,99 @@ in an integer, respectively.
 @c ----------------------------------------------------------------------
 @node ICMP packets, MD5 message digest, IP packets, Library modules - Utilities
 @section @code{rfc.icmp} - ICMP packets
+@c NODE ICMPパケット, @code{rfc.icmp} - ICMPパケット
 
 @deftp {Module} rfc.icmp
 @mdindex rfc.icmp
-This module provides some basic utilities to construct and parse ICMP packets.
+@c EN
+This module provides some basic utilities to construct and parse ICMP
+packets.
+@c JP
+このモジュールではICMPパケットの構築および解析用の基本的ユーティリティ
+を提供しています。
+@c COMMON
 @end deftp
 
+@c EN
 For the functions below, @var{buffer} should be a writable 
 u8vector of the enough size.
+@c JP
+以下の関数の@var{buffer}は十分なサイズの書き込み可能なu8vectorでなけれ
+ばなりません。
+@c COMMON
 
+@c EN
 Parsing functions takes @var{offset} as well as @var{buffer},
 which specifies the beginning of the ICMP packet.  Using the offset
 you can carry the whole IP packet in @var{buffer}, without
 creating a new buffer to extract ICMP portion.
+@c JP
+解析用の関数は@var{buffer}のほかに@var{offset}を引数としてとります。こ
+れはICMPパケットの開始位置を示すものです。このオフセットを用いて、ICMP
+部分を取り出して新しいバッファを作るということなしに、IPパケット全体を
+@var{buffer}内に格納できます。
+@c COMMON
 
 @defun icmp4-fill-echo! buffer ident sequence data
+@c EN
 Fills @var{buffer} with the ICMPv4 Echo Request packet.
 @var{Data} must be a u8vector.  The checksum field is
 left to be zero, which can be filled by @code{icmp4-fill-checksum!}.
+@c JP
+@var{buffer}にICMPv4のエコーリクエストパケットを詰め込みます。
+@var{Data}はu8vectorでなければなりません。チェックサムフィールドはゼロ
+のままです。チェックサムは@code{icmp4-fill-checksum!}を使って埋め込み
+ます。
+@c COMMON
 @end defun
 
 @defun icmp4-fill-checksum! buffer size
+@c EN
 Calculates the ICMPv4 checksum of the packet in the @var{buffer},
 of @var{size} length (the size of the packet, not the buffer),
 and fills the checksum field of the packet.
+@c JP
+@var{buffer}中の@var{size}(バッファではなくパケットの長さ)分のパケット
+のICMPv4チェックサムを計算し、そのパケットのチェックサムフィールドをう
+めます。
+@c COMMON
 @end defun
 
 @defun icmp6-fill-echo! buffer ident sequence data
+@c EN
 Fills @var{buffer} with the ICMPv6 Echo Request packet.
 @var{Data} must be a u8vector.  The checksum field is
 left to be zero, which is to be filled by the kernel
 (so you don't need to fill by yourself).
+@c JP
+@var{buffer}にICMPv6のエコーリクエストパケットを詰め込みます。
+@var{Data}はu8vectorでなければなりません。チェックサムフィールドは
+ゼロのままで、ここはカーネルが埋めることになっています。したがって、
+ユーザーが自分で埋める必要はありません。
+@c COMMON
 @end defun
 
 @defun icmp-packet-type buffer offset
 @defunx icmp-packet-code buffer offset
 @defunx icmp-packet-ident buffer offset
 @defunx icmp-packet-sequence buffer offsetj
+@c EN
 Extracts type, code, ident and sequence fields of ICMP packet.
 These functions are common to both ICMPv4/v6.
+@c JP
+それぞれICMPパケットのタイプ、コード、識別子、シーケンスフィールドを抜
+き出します。これらの関数はICMPv4/v6で共通です。
+@c COMMON
 @end defun
 
 @defun icmp4-describe-packet buffer offset
 @defunx icmp6-describe-packet buffer offset
+@c EN
 Prints out a simple text description of the given ICMPv4 and v6 packet,
 respectively.
+@c JP
+それぞれ与えられたICMPv4およびICMPv6パケットの簡単な説明を印字します。
+@c COMMON
 @end defun
 
 @defun icmp4-message-type->string type
@@ -5710,7 +5758,11 @@ respectively.
 @defunx icmp6-unreach-code->string code
 @defunx icmp6-exceeded-code->string code
 @defunx icmp6-parameter-code->string code
+@c EN
 Returns a text description of ICMPv4 and ICMPv6 types and codes.
+@c JP
+ICMPv4およびICMPv6のタイプとコードの説明テキストを返します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
