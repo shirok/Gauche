@@ -11497,12 +11497,19 @@ as many characters available.
 @c ----------------------------------------------------------------------
 @node Showing progress on text terminals, SQL parsing and construction, Parsing input stream, Library modules - Utilities
 @section @code{text.progress} - Showing progress on text terminals
+@c NODE @code{text.progress} - テキスト端末上でプログレスを表示する
 
 @deftp {Module} text.progress
 @mdindex text.progress
+@c EN
 This module provides a utility to report a progress of processing
 on a text terminal, using characters to display bar chart.
+@c JP
+このモジュールはバーチャートを文字を用いて表示し、テキスト端末上に処理
+の進行状況を出すためのユーティリティです。
+@c COMMENT
 
+@c EN
 The generic format of a progress bar consists of a single line
 of text, which is splitted into several parts; a header, which
 displays the title; followed by a bar, a numeric part, and a time part,
@@ -11515,16 +11522,41 @@ foo       |#############        |123/211   01:21 ETA
           ^
           separator
 @end example
+@c JP
+プログレスバーの汎用的なフォーマット1行のテキストで構成されます。この1
+行はいくつかの部分に分解できます。タイトルを表示するヘッダ部、その後に
+プログレスバーがあって、数値部、時間部と続きます。以下がその例です(foo
+からはじまる1行だけが実際に表示されます。
+@example
+<-ヘッダ-> <-------バー--------> <-数--><-時間->
+foo       |#############        |123/211   01:21 ETA
+          ^
+          セパレータ
+@end example
+@c COMMON
 
+@c EN
 Various things like the character used in the bar chart or
 the format of the numeric progress can be configured.
+@c JP
+バーチャートに使う文字などのいろいろなバリエーションや、数値で表わす
+進捗のフォーマットなども設定可能です。
+@c COMMON
 
+@c EN
 Internally a progress bar maintains two numbers, the maximum (goal)
 value and the current value.  The bar shows the proportion of
 the current value relative to the maximum value.  The numeric progress
 shows the current value over the maximum value by default, but you
 can configure it to show only the current value or percentage, for example.
+@c JP
+内部的にはプログレスバーは2つの数値、最大値(ゴール)と現在の値を保持し
+ています。バーは最大値に対する現在の値の比を示すものです。数値で表わす
+進捗はデフォルトでは最大値の上に現在の値を表示します。しかし、たとえば、
+現在の値だけを表示するとか、100分率で表示するなどの設定が可能です。
+@c COMMON
 
+@c EN
 A progress bar also has two states, ``in progress'' and ``finished''.
 When it is in progress, every time the text is displayed it is
 followed by @code{#\return}, so that the next display overwrites
@@ -11532,17 +11564,37 @@ the bar, and the time part shows ETA (estimated time of arrival).
 Once it becomes finished, the last line of text is displayed
 with @code{#\newline}, and the time part shows the actual time
 it took to finish.
+@c JP
+プログレスバーは2つの状態「進捗中」および「終了」のどちらかの状態を保
+持しています。「進捗中」なら、どの時点でも表示されるテキストには
+@code{#\return}が続きます。これにより次の表示が前の表示を上書きするこ
+とになります。時間部はETA(残り時間)を表示します。終了してしまえば、最
+後の行の後に@code{#\newline}が続きます。時間部には終了までにかかった時
+間が表示されます。
+@c COMMON
 @end deftp
 
+@c EN
 This module provides only one procedure, @code{make-text-progress-bar},
 which packages the progress bar feature in a closure and returns it.
+@c JP
+このモジュールは@code{make-text-progress-bar}という手続きを1つだけ提供
+します。この手続きはプログレスバーの機能をクロージャに包んでそれを返し
+ます。
+@c COMMON
 
 @defun make-text-progress-bar &keyword header header-width bar-char bar-width num-width num-format time-width separator-char max-value port
 
+@c EN
 Returns a procedure that packages operations on the progress bar.
 The procedure can be called with a symbol indicating an operation,
-and an optinal numeric argument.
+and an optional numeric argument.
+@c JP
+プログレスバー上の操作を包んだ手続きを返します。返された手続きに操作を
+示すシンボルとオプションで数値を引数として渡して使います。
+@c COMMON
 
+@c EN
 @table @code
 @item @var{proc} 'show
 Redisplays the progress bar.  All other operations implies redisplay,
@@ -11610,9 +11662,80 @@ The maximum value of the progress bar.  Default is 100.
 An output port to which the progress bar is displayed.  The default value
 is the current output port when @code{make-text-progress-bar} is called.
 @end table
+@c JP
+@table @code
+@item @var{proc} 'show
+プログレスバーを再表示する。他のどの操作も状態の再表示を行います。
+したがって、現在のステータスを再表示しなければない特別な理由がないかぎ
+りこれを使う必要はありません。
+
+@item @var{proc} 'set @var{value}
+現在の値を@var{value}にセットし、プログレスバーを再表示します。
+@var{value}が最大値を超えていたら、超過分を切り捨て最大値にします。
+
+@item @var{proc} 'inc @var{value}
+@var{value}分だけ現在の値を増し、プログレスバーを再表示します。現在の
+値が最大値を超えたら、超過分を切り捨て最大値にします。
+
+@item @var{proc} 'finish
+プログレスバーを「終了」状態にし、再表示します。時間部はトータルの経過
+時間を表示します。また、表示行末は@code{#\newline}とし、上書きされない
+ようにします。プログレスバーはいったん「終了」状態になれば、「進捗中」
+状態に戻す方法はありません。
+@end table
+
+キーワード引数を使って表示をカスタマイズします。
+@table @var
+@item header
+ヘッダ部に表示するテキスト。
+
+@item header-width
+ヘッダ部の幅、文字数で指定します。ヘッダ部のテキストは左詰めです。ヘッ
+ダ部に置くテキストが幅よりも長い場合には超過分の文字は切り捨てられます。
+デフォルトは14文字です。
+
+@item bar-char
+バーチャートを描くのに使う文字。デフォルトは@code{#\#}です。
+
+@item bar-width
+バーチャート部の幅で、文字数で指定します。デフォルトでは40文字です。
+
+@item num-width
+数値部の幅で、文字数で指定します。デフォルトでは9で、これを0に設定する
+と数値部を隠せます。
+
+@item num-format
+数値部を整形する手続き。引数が2つ渡されます。ひとつは現在の値、もうひ
+とつは最大値です。この手続きは文字列を返さなければなりません。デフォル
+トでは以下の手続きです。
+@example
+(lambda (cur max)
+  (format "~d/~d" cur max))
+@end example
+
+@item time-width
+時間部の幅で、文字数で指定します。デフォルトでは7文字で、これを0に設定
+すると時間部を隠せます。
+
+@item separator-char
+バー部分の前後に置く文字です。デフォルトでは@code{#\|}です。
+セパレータを表示したくなければ、@code{#f}を渡します。
+
+@item max-value
+プログレスバーの最大値です。デフォルトでは100です。
+
+@item port
+プログレスバーを表示する出力ポートです。デフォルト値は
+@code{make-text-progress-bar}が呼ばれた時点での現在の出力ポートです。
+@end table
+@c COMMON
 @end defun
 
+@c EN
 Here's a simple example, using customized numeric part:
+@c JP
+以下は簡単なカスタマイズをした例です。
+@c COMMON
 
 @example
 (use text.progress)
