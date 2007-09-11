@@ -4784,48 +4784,91 @@ Some examples:
 
 @deftp {Module} rfc.ftp
 @mdindex rfc.ftp
+@c EN
 This module provides a set of convenient functions to access ftp
 servers.
+@c JP
+このモジュールはFTPサーバーにアクセスするための便利関数群を提供します。
+@c COMMON
 @end deftp
 
 @deftp {Class} <ftp-connection>
 @clindex ftp-connection
+@c EN
 An object to keep FTP connection to a server.  It has the following
 public slots.
+@c JP
+ひとつのサーバーへのFTPコネクションを保持するオブジェクト。以下の公開
+スロットがあります。
+@c COMMON
 
 @defivar {<ftp-connection>} transfer-type
+@c EN
 FTP transfer type.  Must be one of the following symbols:
 @code{ascii}, @code{binary} (default), and @code{image}.
+FTPの転送タイプ。以下のシンボルのどれかひとつでなければなりません。
+@code{ascii}、@code{binary} (デフォルト)、および@code{image}。
+@c COMMON
 @end defivar
 
 @defivar {<ftp-connection>} passive
+@c EN
 True if the client uses passive connection.c
+@c JP
+パッシブコネクションを使うとき真。
+@c COMMON
 @end defivar
 
 @defivar {<ftp-connection>} log-drain
+@c EN
 This slot must hold a @code{<log-drain>} instance (@xref{User-level logging})
 or @code{#f}.  If it has a @code{<log-drain>} instance, ftp communication
 logs are put to it.
+@c JP
+このスロットは@code{<log-drain>}のインスタンス(@ref{User-level logging}参照)
+を保持しているかあるいは@code{#f}でなければなりません。@code{<log-drain>}
+のインスタンスを保持している場合、FTP通信のログがそこに記録されます。
+@c COMMON
+
 @end defivar
 @end deftp
 
 @deftp {Condition} <ftp-error>
 @clindex ftp-error
+@c EN
 This type of exception is thrown when the ftp server returns an error code.
 Inherits @code{<error>}.  The message field contains the server reply,
 including the status code.
+@c JP
+このタイプの例外はFTPサーバーがエラーコードを返したときに投げられます。
+@code{<error>}を継承しています。メッセージフィールドにはステータスコー
+ドを含むサーバーからの返答が含まれます。
+@c COMMON
 @end deftp
 
 @defun call-with-ftp-connection host proc &keyword passive port username password account log-drain
+@c EN
 A high-level convenience routine to open an ftp connection to
 an ftp server and calls the given procedure.
+@c JP
+高水準の便利関数で、ひとつのFTPサーバーへのFTPコネクションをオープンし、
+与えられた手続きを呼びます。
+@c COMMON
 
+@c EN
 The server is specified by @var{host}.  Optionally, you can add user
 name and/or port number by the form 
 @code{@var{user}@@@var{servername}:@var{port}}.
 If present, user and port portion in @var{host} supersedes the
 keyword arguments.
+@c JP
+接続するサーバーは@var{host}で指定します。オプションでユーザー名、ポー
+ト番号を@code{@var{user}@@@var{servername}:@var{port}}という形式で指定
+できます。もしあれば、@var{host}の部分をキーワード引数にすることもでき
+ます。
+@c COMMON
 
+@c EN
 If ftp connection to @var{host} is established successfully, 
 @var{proc} is called with one argument, which is an instance
 of @code{<ftp-connection>}.  When @var{proc} returns, 
@@ -4833,96 +4876,203 @@ the connection is closed and the return value(s) of @var{proc}
 is/are returned from @code{call-with-ftp-connection}.
 When an exception is thrown, the ftp connection is closed
 before the exception escapes from @code{call-with-ftp-connection}.
+@c JP
+@var{host}へのFTPコネクション確立が成功したら、@var{proc}が引数を1つとっ
+て呼ばれます。この引数は@code{<ftp-connection>}のインスタンスです。
+@var{proc}から返ったときにこのコネクションはクローズされ、@var{proc}の
+返り値が@code{call-with-ftp-connection}から返されます。例外がなげられ
+たら、その例外が@code{call-with-ftp-connection}から外へでる前にFTPコネ
+クションはクローズされます。
+@c COMMON
 
+@c EN
 When a true value is given to the keyword argument @var{passive},
 created ftp connection will use passive mode to send/receive
 data.  The default is the active mode.
+@c JP
+キーワード引数@var{passive}に真値を与えると、FTPコネクションはパッシブ
+モードになります。デフォルトではアクティブモードです。
+@c COMMON
 
+@c EN
 The keyword argument @var{port}, @var{username}, and @var{password}
 specify the port number, username, and password, respectively.
 When omitted, the port number defaults to 21, @var{username} to
 @code{"anonymous"}, and @var{password} to @code{"anonymous@@"}.
 Note that the port number and/or username are ignored when
 those information is given in the @var{host} argument.
+@c JP
+キーワード引数@var{port}、@var{username}および@var{password}は
+それぞれ、ポート番号、ユーザー名、パスワードを指定するのに使います。
+省略された場合のデフォルトは、ポート番号が21,@var{username}が
+@code{"anonymous"}、@var{password}が@code{"anonymous@@"}にセットされま
+す。ポート番号とユーザー名は@var{host}引数で指定されたものが優先されま
+す。
+@c COMMON
 
+@c EN
 If the keyword arugment @var{account} is given, its value
 is passed to ftp @code{ACCT} command when requested by
 the server at login time.  The defalut value is a null string @code{""}.
+@c JP
+キーワード引数@var{account}が与えられた場合には、その値が、ログイン時
+にサーバーからの要求でFTPの@code{ACCT}コマンドに渡されます。デフォルト
+では空文字列@code{""}です。
+@c COMMON
 
+@c EN
 The keyword argument @var{log-draion} is set to the created
 ftp connection's @code{log-drain} slot.
+@c JP
+キーワード引数@var{log-draion}が生成したFTPコネクションの
+@code{log-drain}スロットに設定されます。
+@c COMMON
 @end defun
 
 @defun ftp-transfer-type conn
+@c EN
 Returns the transfer type of the ftp connection @code{conn}.
 Can be used with setter, e.g. @code{(set! (ftp-transfer-type conn) 'ascii)}.
+@c JP
+指定したFTPコネクション@code{conn}の転送タイプを返します。セッターを適
+用することもできます。たとえば、@code{(set! (ftp-transfer-type conn) 'ascii)}
+とします。
+@c COMMON
 @end defun
 
 @defun ftp-passive? conn
+@c EN
 Returns true iff ftp connection uses passive data retrieval.
+@c JP
+指定したFTPコネクションがパッシブモードである場合でその場合に限り真を
+返します。
+@c COMMON
 @end defun
 
 @defun ftp-login host &keyword passive port username password account log-drain
+@c EN
 Connects to the ftp server specified by @var{host}, authenticate the user,
 and returns a newly created @code{<ftp-connection>} instance.
 This procedure is called implicitly when you use
 @code{call-with-ftp-connection}.  The semantics of
 the @var{host} argument and the keyword arguments are
 the same as @code{call-with-ftp-connection}.
+@c JP
+@var{host}で指定されたFTPサーバーに接続し、ユーザー認証をすませ、新し
+く生成した@code{<ftp-connection>}のインスタンスを返します。この手続き
+は@code{call-with-ftp-connection}を使ったときに暗黙の内に呼ばれます。
+@var{host}引数およびキーワード引数のセマンティクスは
+@code{call-with-ftp-connection}と同じです。
+@c COMMON
 @end defun
 
 @defun ftp-quit conn
+@c EN
 Sends ftp @code{QUIT} command to the connection @var{conn} and
 shutdown the connection.
 This procedure is called implicitly when you use
 @code{call-with-ftp-connection}.
+@c JP
+FTPの@code{QUIT}コマンドをコネクション@var{conn}に送り、コネクションを
+シャットダウンします。この手続きは@code{call-with-ftp-connection}を使っ
+たときに暗黙の内に呼ばれます。
+@c COMMON
 
+@c EN
 Once a connection is shut down, you cannot communicate through
 this connection.
+@c JP
+いったんシャットダウンしたコネクションをつかっての通信はできません。
+@c COMMON
 @end defun
 
 @defun ftp-chdir conn dirname
+@c EN
 Changes the remote directory to @var{dirname}.
+@c JP
+リモートディレクトリを@var{dirname}に変更します。
+@c COMMON
 @end defun
 
 @defun ftp-remove conn path
+@c EN
 Removes the remote file named by @var{path}.
+@c JP
+@var{path}で指定したリモートファイルを削除します。
+@c COMMON
 @end defun
 
 @defun ftp-help conn &optional option @dots{}
+@c EN
 Sends ftp @code{HELP} commands.  @var{Option}s must be strings,
 and will be passed to the @code{HELP} command arguments.
+@c JP
+FTPコマンド@code{HELP}を送ります。@var{Option}は文字列でなければなりま
+せん。これは@code{HELP}コマンドの引数にわたされます。
+@c COMMON
 @end defun
 
 @defun ftp-mkdir conn dirname
-Creates a directory @var{dirname}.  Returns the created directory name.
+@c EN
+Creates a directory @var{dirname}.  Returns the created directory
+name.
+@c JP
+ディレクトリ@var{dirname}を作成します。作成されたディレクトリ名が返り
+ます。
+@c COMMON
 @end defun
 
 @defun ftp-current-directory conn
+@c EN
 Returns the current remote directory.
+@c JP
+現在のリモートディレクトリを返します。
+@c COMMON
 @end defun
 
 @defun ftp-site conn arg
+@c EN
 Sends ftp @code{SITE} command with the argument @var{arg}.
 The @code{SITE} command's semantics depends on the server.
 Returns the server reply.
+@c JP
+FTPコマンド@code{SITE}を引数@var{arg}とともに送ります。@code{SITE}コマ
+ンドのセマンティクスはサーバーに依存します。返り値はサーバーのリプライ
+です。
+@c COMMON
 @end defun
 
 @defun ftp-rmdir conn dirname
+@c EN
 Removes remote directory specified by @var{dirname}.
 Returns the server reply.
+@c JP
+@var{dirname}で指定したリモートディレクトリを削除します。返り値はサー
+バーのリプライです。
+@c COMMON
 @end defun
 
 @defun ftp-stat conn &optional pathname
+@c EN
 Sends ftp @code{STAT} command to the server.
 RFC959 defines several different semantics of this command.
 See RFC959 for the details.
 Returns the server reply.
+@c JP
+FTPコマンド@code{STAT}をサーバーに送信します。
+RFC959ではこのコマンドのセマンティクスをいくつか定義しています。詳細は
+RFC959を見てください。返り値はサーバーのリプライです。
+@c COMMON
 @end defun
 
 @defun ftp-system conn
+@c EN
 Queries the server's operating system by ftp @code{SYST} command.
 Returns the server reply without status code.
+@c JP
+FTPコマンド@code{SYST}をつかってサーバーのオペレーティングシステムを問
+合せます。返り値はステータスコードを含まないサーバーのリプライです。
+@c COMMON
 
 @example
 (call-with-ftp-connection "localhost" ftp-system)
@@ -4931,78 +5081,154 @@ Returns the server reply without status code.
 @end defun
 
 @defun ftp-size conn path
+@c EN
 Queries the size of the remote file specified by @var{path}.
 Returns the integer value.
+@c JP
+@var{path}で指定したリモートファイルのサイズを問合せます。
+整数値が返ります。
+@c COMMON
 @end defun
 
 @defun ftp-mdtm conn path
+@c EN
 Queries the modification time of the remote file specified by @var{path}.
 This function returns the server's reply as is, including the status
 code.  Use @code{ftp-mtime} below to obtain a parsed result.
+@c JP
+@var{path}で指定したリモートファイルの更新時刻を問合せます。この関数は
+サーバーからのリプライをステータスコードも含めそのまま返します。解析済
+みの結果が欲しいときは後述の@code{ftp-mtime}を使ってください。
+@c COMMON
 @end defun
 
 @defun ftp-mtime conn path &optional local-time?
+@c EN
 Queries the modification time of the remote file specified by @var{path},
 and returns the result in a @code{<date>} object 
 (@xref{Time data types and procedures}).
 If a true value is given to @code{local-time?}, the returned date is
 in local time.  Otherwise, the returned date is in UTC.
+@c JP
+@var{path}で指定したリモートファイルの更新日時を問合せます。結果は
+@code{<date>}オブジェクト(@ref{Time data types and procedures}参照)で
+返ります。@code{local-time?}が真値に設定されている場合、日付はローカル
+時刻で返ります。そうでない場合は日付はUTCです。
+@c COMMON
 @end defun
 
 @defun ftp-noop conn
+@c EN
 Sends ftp @code{NOOP} command and returns the server's reply.
+@c JP
+FTPコマンド@code{NOOP}を送り、サーバーからのリプライを返します。
+@c COMMON
 @end defun
 
 @defun ftp-list conn &optional path
+@c EN
 Returns the information about the files within the remote file 
 or directory specified by @var{path}, or the current remote directory,
 much like @code{ls(1)} format.  Returns a list of strings, where
 each string is for each line of the server's reply.  The exact
 format depends on the server.
+@c JP
+@var{path}で指定されたリモートディレクトリあるいはリモートファイル内の
+ファイルに関する情報を返します。@var{path}指定がない場合は現在のリモー
+トディレクトリで、結果のフォーマットは@code{ls(1)}のフォーマットと非常
+によく似ています。文字列のリストが返り、それぞれの文字列はサーバーのリ
+プライの行に対応します。正確なフォーマットについてはサーバーに依存しま
+す。
+@c CoMMON
 @end defun
 
 @defun ftp-name-list conn &optional path
 @defunx ftp-ls conn &optional path
+@c EN
 Return the list of names in the specfied @var{path}, or the current
 remote directory, without any other information.  @code{ftp-ls}
 is just an alias of @code{ftp-name-list} for the convenience.
+@c JP
+@var{path}で指定したパスもしくは現在のリモートディレクトリにあるファイ
+ル名リストを返します。ただし、他の情報は含みません。@code{ftp-ls}は
+@code{ftp-name-list}の別名です。便利なので定義してあります。
+@c COMMON
 
+@c EN
 Note that the server may return an error if there's no files
 in the remote directory.
+@c JP
+リモートディレクトリにファイルが含まれていないときにはサーバーはエラー
+を返すことがあることに注意してください。
+@c COMMON
 @end defun
 
 @defun ftp-get conn path &keyword sink flusher
+@c EN
 Retrieves a remote file @var{path}.  The retrieved data is
 sent to an output port given to @var{sink}.  Once all the data
 is retrieved, a procedure given to @var{flusher} is called
 with the port @var{sink} as an argument, and its return value(s)
 is/are returned from @code{ftp-get}.  
+@c JP
+リモートファイル@var{path}を検索します。検索データは@var{sink}で与えら
+れた出力ポートに送られます。すべてのデータが検索されたあと、
+@var{flusher}で与えられた手続きをポート@var{sink}を引数として呼びます。
+返り値は@code{ftp-get}から返されたものです。
+@c COMMON
 
+@c EN
 The default values of @var{sink} and @var{flusher} are
 a newly created string port and @code{get-output-string}, respectively.
 That is, @code{ftp-get} returns the retrieved data as a string
 by default.
 You don't want this behavior if the retrieved file is huge.
+@c JP
+@var{sink}および@var{flusher}のデフォルト値はそれぞれ、新しく作成され
+た文字列ポートと@code{get-output-string}です。すなわち、@code{ftp-get}
+はデフォルトでは検索データを文字列として返します。巨大なファイルの場合
+このデフォルトの挙動ではありがたくありません。
+@c COMMON
 @end defun
 
 @defun ftp-put conn from-file &optional to-file
+@c EN
 Sends the local file specified by @var{from-file} to the remote
 server as the name specified by @var{to-file}.  If @var{to-file}
 is omitted, the basename of @var{from-file} is used.
 Returns the server response.
+@c JP
+@var{from-file}で指定したローカルファイルを@var{to-file}で指定した名前
+でリモートサーバーに送信します。@var{to-file}が省略された場合にはベー
+ス名として@var{from-file}が使われます。返り値はサーバーのレスポンスで
+す。
+@c COMMON
 @end defun
 
 @defun ftp-put-unique conn from-file
+@c EN
 Sends the local file specified by @var{from-file} to the 
 remote server.  The remote side filename is guaranteed to 
 be unique.  Returns two values---the final server response,
 and the remote file name.  The second value can be @code{#f}
 if the remote host doesn't support RFC1123 (which must be rare).
+@c JP
+@var{from-file}で指定したローカルファイルをリモートサーバーへ送信しま
+す。リモート側のファイル名重複しないことを保証します。返り値は2つで、
+最終的なリモートサーバーからのレスポンスとリモートファイル名です。2つ
+めの値は、リモートサーバーがRFC1123をサポートしていない(ほとんどない)
+場合に@code{#f}になります。
+@c COMMON
 @end defun
 
 @defun ftp-rename conn from-name to-name
+@c EN
 Renames the remote file specified by @var{from-name} to the
 name @var{to-name}.  Returns the final response of the server.
+@c JP
+@var{from-name}で指定したリモートファイル名を@var{to-name}に変更する。
+返り値は最終的なサーバーのレスポンスです。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
