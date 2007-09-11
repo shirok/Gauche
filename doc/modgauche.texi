@@ -4233,7 +4233,11 @@ BSDソケットインタフェースに近いインタフェースを提供し、高レベルの手続きは
 @subsection Socket address
 @c NODE ソケットアドレス
 
+@c EN
 @subsubheading Socket address objects
+@c JP
+@subsubheading ソケットアドレスオブジェクト
+@c COMMON
 
 @deftp {Builtin Class} <sockaddr>
 @clindex sockaddr
@@ -4448,16 +4452,29 @@ IP アドレスをもつ場合、ソケットアドレスはそれぞれのIPアドレス毎に生成
 @c COMMON
 @end defun
 
+@c EN
 @subsubheading Address and string conversion
+@c JP
+@subsubheading アドレスと文字列との変換
+@c COMMON
 
 @defun inet-string->address address
-Converts string representatin of the internet address @var{address}
+@c EN
+Converts string representating of the internet address @var{address}
 to an integer address.  If @var{address} is parsed successfully,
 returns two values: the integer address value and the recognized
 protocol (the constant value @code{2} (= @code{AF_INET})
 for IPv4 addresses, and @code{10} (= @code{AF_INET6}) 
 for IPv6 addresses).  If @var{address} can't be
 parsed, @code{#f} and @code{#f} are returned.
+@c JP
+文字列で表現されたインターネットアドレス@var{address}を整数のアドレス
+に変換します。@var{address}のパーズが成功した場合には値を2つ返します。
+ひとつは整数で表現されたアドレスの値、もうひとつは認識されたプロトコル
+(定数値で、@code{2} (= @code{AF_INET})ならIPv4アドレス、@code{10} (=
+@code{AF_INET6})ならIPv6アドレス)です。@var{address}のパーズに失敗した
+ら、@code{#f}と@code{#f}との2つが返ります。
+@c COMMON
 
 @example
 (inet-string->address "192.168.1.1")
@@ -4474,16 +4491,31 @@ parsed, @code{#f} and @code{#f} are returned.
 @end defun
 
 @defun inet-string->address! address buf
+@c EN
 Like @code{inet-string->address}, but fills the given u8vector
 @var{buf} by the parsed address instead of returning it as
 an integer value.  The integer representation of inet addresses 
 is likely to be a bignum, and you can avoid creating bignums
 with this function.  The given u8vector @var{buf} must be mutable.
 Returns the protocol on success, or @code{#f} on failure.
+@c JP
+@code{inet-string->address}と同じですが、整数値を返すかわりに、与えら
+れたu8vectorである@var{buf}をパーズしたアドレスで埋めるところが違いま
+す。inetアドレスの整数表現はbignumと同じやりかたです。この関数を使えば
+bignumを生成しなくてすみます。与えられたu8vector@var{buf}は変更可能で
+なければなりません。変換に成功した場合はプロトコルが、失敗した場合は
+@code{#f}が返ります。
+@c COMMON
 
+@c EN
 The caller must provide big enough buffer.  If @var{buf}
 is larger than required, the result is filled from the top
 of the u8vector and the rest of the vector remains intact.
+@c JP
+呼び出し側は格納に十分なバッファを用意しなければなりません。@var{buf}
+が必要な分より大きい場合には結果は先頭から詰められ、ベクタの他の部分は
+そのままになります。
+@c COMMON
 
 @example
 (let* ((buf (make-u8vector 16 0))
@@ -4495,6 +4527,7 @@ of the u8vector and the rest of the vector remains intact.
 
 
 @defun inet-address->string address protocol
+@c EN
 Converts the given @var{address} to its string representation
 of the protocol @var{protocol}, which can be either
 @code{2} (the constant @code{AF_INET}) or @code{10}
@@ -4502,6 +4535,13 @@ of the protocol @var{protocol}, which can be either
 An integer or a u8vector can be used as @var{address}.  If it is
 a u8vector, only the necessary portion of the vector is read; i.e.
 the vector can be longer than the required length.
+@c JP
+与えれれた@var{address}をプロトコル@var{protocol}の文字列表現に変換し
+ます。プロトコルとしては@code{2} (定数@code{AF_INET})または@code{10}
+(定数@code{AF_INET6})が指定可能です。@var{address}としては整数または
+u8vectorが使えます。u8vectorをつかった場合には必要な部分だけが読み込ま
+れます。したがって、必要な長さ以上あるベクタでもかまいません。
+@c COMMON
 
 @example
 (inet-address->string 3232235777 AF_INET)
