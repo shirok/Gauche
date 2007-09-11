@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.58 2007-09-07 09:51:11 shirok Exp $
+ *  $Id: charconv.c,v 1.59 2007-09-11 12:29:37 shirok Exp $
  */
 
 #include <string.h>
@@ -161,7 +161,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
        inbuf from the last conversion (insize), so we try to fill the
        rest. */
     insize = info->ptr - info->buf;
-    nread = Scm_Getz(info->ptr, info->bufsiz - insize, info->remote);
+    nread = Scm_Getz(info->ptr, info->bufsiz - (int)insize, info->remote);
     if (nread <= 0) {
         /* input reached EOF.  finish the output state */
         if (insize == 0) {
@@ -184,7 +184,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
             fprintf(stderr, "<= r=%d (reset), out(%p)%d\n",
                     result, outbuf, outroom);
 #endif
-            return result;
+            return (int)result;
         }
     } else {
         insize += nread;
@@ -210,10 +210,10 @@ static int conv_input_filler(ScmPort *port, int mincnt)
            buffer. */
         memmove(info->buf, info->buf+insize-inroom, inroom);
         info->ptr = info->buf + inroom;
-        return info->bufsiz - outroom;
+        return info->bufsiz - (int)outroom;
     } else if (result == ILLEGAL_SEQUENCE) {
         /* it's likely that the input contains invalid sequence. */
-        int cnt = inroom >= 6 ? 6 : inroom;
+        int cnt = inroom >= 6 ? 6 : (int)inroom;
         ScmObj s = Scm_MakeString(info->buf+insize-inroom, cnt, cnt,
                                   SCM_STRING_COPYING|SCM_STRING_INCOMPLETE);
         Scm_Error("invalid character sequence in the input stream: %S ...", s);
@@ -225,10 +225,10 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     if (inroom > 0) {
         memmove(info->buf, info->buf+insize-inroom, inroom);
         info->ptr = info->buf + inroom;
-        return info->bufsiz - outroom;
+        return info->bufsiz - (int)outroom;
     } else {
         info->ptr = info->buf;
-        return info->bufsiz - outroom;
+        return info->bufsiz - (int)outroom;
     }
 }
 
@@ -354,11 +354,11 @@ static void conv_output_closer(ScmPort *port)
 
     /* if there's remaining bytes in buf, send them to the remote port. */
     if (info->ptr > info->buf) {
-        Scm_Putz(info->buf, info->ptr - info->buf, info->remote);
+        Scm_Putz(info->buf, (int)(info->ptr - info->buf), info->remote);
         info->ptr = info->buf;
     }
     /* sends out the closing sequence, if any */
-    r = jconv_reset(info, info->buf, info->bufsiz);
+    r = (int)jconv_reset(info, info->buf, info->bufsiz);
 #ifdef JCONV_DEBUG
     fprintf(stderr, "<= r=%d(reset), buf(%p)\n",
             r, info->buf);
@@ -413,14 +413,14 @@ static int conv_output_flusher(ScmPort *port, int cnt, int forcep)
 #else
             /* See the above notes.  We always flush the output buffer
                here, so that we can avoid output buffer overrun. */
-            Scm_Putz(info->buf, outbuf - info->buf, info->remote);
+            Scm_Putz(info->buf, (int)(outbuf - info->buf), info->remote);
             info->ptr = info->buf;
 #endif
-            return len - inroom;
+            return (int)(len - inroom);
         } else if (result == OUTPUT_NOT_ENOUGH) {
             /* Output buffer got full.  Flush it, and continue
                conversion. */
-            Scm_Putz(info->buf, outbuf - info->buf, info->remote);
+            Scm_Putz(info->buf, (int)(outbuf - info->buf), info->remote);
             info->ptr = info->buf;
             continue;
         } else if (result == ILLEGAL_SEQUENCE) {
@@ -435,11 +435,11 @@ static int conv_output_flusher(ScmPort *port, int cnt, int forcep)
 #else
             /* See the above notes.  We always flush the output buffer here,
                so that we can avoid output buffer overrun. */
-            Scm_Putz(info->buf, outbuf - info->buf, info->remote);
+            Scm_Putz(info->buf, (int)(outbuf - info->buf), info->remote);
             info->ptr = info->buf;
 #endif
             if (forcep && len - inroom != cnt) continue;
-            return len - inroom;
+            return (int)(len - inroom);
         }
     }
 }

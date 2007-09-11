@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: jconv.c,v 1.21 2007-04-16 12:52:32 shirok Exp $
+ *  $Id: jconv.c,v 1.22 2007-09-11 12:29:37 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -49,8 +49,8 @@
 #include <ctype.h>
 #include "charconv.h"
 
-#define INCHK(n)   do{if (inroom < (n)) return INPUT_NOT_ENOUGH;}while(0)
-#define OUTCHK(n)  do{if (outroom < (n)) return OUTPUT_NOT_ENOUGH;}while(0)
+#define INCHK(n)   do{if ((int)inroom < (n)) return INPUT_NOT_ENOUGH;}while(0)
+#define OUTCHK(n)  do{if ((int)outroom < (n)) return OUTPUT_NOT_ENOUGH;}while(0)
 
 #define ERRP(n)    ((n)==INPUT_NOT_ENOUGH||(n)==OUTPUT_NOT_ENOUGH||(n)==ILLEGAL_SEQUENCE)
 
@@ -1235,7 +1235,7 @@ static size_t jconv_1tier(ScmConvInfo *info, const char **iptr,
     ScmConvProc cvt = info->convproc[0];
     const char *inp = *iptr;
     char *outp = *optr;
-    int inr = *iroom, outr = *oroom; 
+    int inr = (int)*iroom, outr = (int)*oroom; 
     size_t outchars, inchars, converted = 0;
 
 #ifdef JCONV_DEBUG
@@ -1250,9 +1250,9 @@ static size_t jconv_1tier(ScmConvInfo *info, const char **iptr,
         } else {
             converted += inchars;
             inp += inchars;
-            inr -= inchars;
+            inr -= (int)inchars;
             outp += outchars;
-            outr -= outchars;
+            outr -= (int)outchars;
         }
     }
     *iptr = inp;
@@ -1272,7 +1272,7 @@ static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
     ScmConvProc ocvt = info->convproc[1];
     const char *inp = *iptr;
     char *outp = *optr;
-    int inr = *iroom, outr = *oroom;
+    int inr = (int)*iroom, outr = (int)*oroom;
     size_t outchars, inchars, bufchars, converted = 0;
 
 #ifdef JCONV_DEBUG
@@ -1295,9 +1295,9 @@ static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
         }
         converted += inchars;
         inp += inchars;
-        inr -= inchars;
+        inr -= (int)inchars;
         outp += outchars;
-        outr -= outchars;
+        outr -= (int)outchars;
     }
     *iptr = inp;
     *iroom = inr;
