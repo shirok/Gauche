@@ -6581,7 +6581,7 @@ with non-zero status code.
 @c JP
 主にプロセスポートユーティリティ関数で使われるコンディション型。
 @code{<error>}を継承。このコンディション型は高レベルプロセスポートユーティ
-リティが子プロセスが非ゼロのexitステータスでexitしたことを検知したとき
+リティが子プロセスが非ゼロのexitステータスで終了したことを検知したとき
 に投げられます。
 @c COMMON
 
@@ -6599,9 +6599,9 @@ indicate that they couldn't carry out the required operation,
 so we treat them as exceptional situations.
 @c JP
 注: Unix用語では，exitステータスにかかわらず，プロセスがcalling
-@code{exit(2)}を呼ぶか，@code{main()}から帰える場合を通常のexitと言い
-ます。コマンドによっては非ゼロのexitステータスで実行結果が通常のであっ
-たことを示すものがあります(@code{grep(1)}など)。しかし，ほとんどのコマ
+@code{exit(2)}を呼ぶか，@code{main()}から帰った場合を「正常な終了」と
+しています。コマンドによっては非ゼロのexitステータスで何らかの正常な実行結果を
+示すものもあります(@code{grep(1)}など)。しかし，ほとんどのコマ
 ンドでは，非ゼロの exit ステータスは要求された操作が実行できなかったこ
 とを表わします。それゆえ上のような場合を例外的な場合として扱います。
 @c COMMON
@@ -6744,6 +6744,20 @@ The following example runs @code{ls -al} synchronously.
 @c COMMON
 @example
 (run-process '(ls -al) :wait #t)
+@end example
+
+@c EN
+Note that @code{-i} is read as an imaginary number,
+so be careful to pass @code{-i} as a command-line
+argument; you should use a string, or write @code{|-i|} to make it
+a symbol.
+@c JP
+ところで、@code{-i}は虚数として読まれることに注意してください。
+@code{-i}を引数として渡したい場合は文字列にするか、@code{|-i|}のように
+エスケープしてシンボルにする必要があります。
+@c COMMON
+@example
+(run-process '(ls "-i") :wait #t)
 @end example
 
 @c EN
