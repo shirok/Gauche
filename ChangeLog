@@ -1,3 +1,17 @@
+2007-09-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/class.c: Resurrected windows DLL data import hack
+	  we used to had for cygwin support (back in 2002).   We have dropped
+	  the hack since the newer gcc supports auto data importing (by
+	  runtime pseudo reloc), but we found that the same technique can
+	  be used for Windows/VC++.  This supersedes the kludge in 2007-09-10
+	  changes.  
+	* src/gauche/extend.h: SCM_EXTENSION_ENTRY macro to indicate
+	  the initialization function entry of extension modules; needed
+	  for Win/VC.
+	* src/* : various additions for MSVC support.  shouldn't affect
+	  unix build.
+
 2007-09-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/gencomp: make it accept -D option to specify preprocessor
