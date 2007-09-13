@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.501 2007-09-10 22:07:46 shirok Exp $
+ *  $Id: gauche.h,v 1.502 2007-09-13 12:30:27 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -304,45 +304,59 @@ SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
 
 #define SCM_HOBJP(obj)  (SCM_PTRP(obj)&&SCM_TAG(SCM_OBJ(obj)->tag)==3)
 
-#define SCM_CPP_CAT(a, b)   a ## b
+#define SCM_CPP_CAT(a, b)   a##b
 #define SCM_CPP_CAT3(a, b, c)  a ## b ## c
 
-#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
-#define SCM_CLASS_DECL(klass) SCM_EXTERN ScmClass klass
-#else  /*!GAUCHE_BROKEN_LINKER_WORKAROUND*/
-#define SCM_CLASS_DECL(klass) extern ScmClass klass
-#endif /*!GAUCHE_BROKEN_LINKER_WORKAROUND*/
-
-#define SCM_CLASS_STATIC_PTR(klass)  (&klass)
+/* We use a pointer to the class structure (with low-bit tag) as
+   the generic type tag. */
 #define SCM_CLASS2TAG(klass)  ((ScmByte*)(klass) + 3)
-
-/* SCM_CLASS_STATIC_TAG should be used to initialize tag field of
-   statically defined Scm objects.  It is basically a pointer to the
-   class plus low tag bits.  Unfortunately there exists a broken linker
-   that doesn't allow to use this technique, and we need to "patch"
-   the tag field at initialization time. */
-#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND) && !defined(LIBGAUCHE_BODY)
-#define SCM_CLASS_STATIC_TAG(klass)    SCM_CLASS2TAG(NULL)
-#else  /*!GAUCHE_BROKEN_LINKER_WORKAROUND*/
-#define SCM_CLASS_STATIC_TAG(klass)    SCM_CLASS2TAG(klass)
-#endif /*!GAUCHE_BROKEN_LINKER_WORKAROUND*/
 
 /* A common header for heap-allocated objects */
 typedef struct ScmHeaderRec {
     ScmByte *tag;                /* private.  should be accessed
-                                    only via macros. */
+                                    only via SCM_CLASS_OF and SCM_SET_CLASS
+                                    macros. */
 } ScmHeader;
 
 #define SCM_HEADER       ScmHeader hdr /* for declaration */
 
+/* Here comes the ugly part.  To understand the general idea, just ignore
+   GAUCHE_BROKEN_LINKER_WORKAROUND part; it's pretty simple.  Every heap
+   allocated object contains (pointer to its class + 3) in its tag field.  */
+#if !defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
+
+# define SCM_CLASS_DECL(klass) extern ScmClass klass
+# define SCM_CLASS_STATIC_PTR(klass) (&klass)
+# define SCM_CLASS_STATIC_TAG(klass) SCM_CLASS2TAG(&klass)
+
 /* Extract the class pointer from the tag.
    You can use these only if SCM_HOBJP(obj) != FALSE */
-#define SCM_CLASS_OF(obj)      SCM_CLASS((SCM_OBJ(obj)->tag - 3))
-#define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->tag = (ScmByte*)(k) + 3)
+# define SCM_CLASS_OF(obj)      SCM_CLASS((SCM_OBJ(obj)->tag - 3))
+# define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->tag = (ScmByte*)(k) + 3)
 
-/* Check if classof(OBJ) equals to an extended class KLASS */
-#define SCM_XTYPEP(obj, klass) \
+/* Check if classof(OBJ) equals to an extended class KLASS.
+   We can check SCM_PTRP instead of SCM_HOBJP here, since a pair never
+   satisfies the second test. */
+# define SCM_XTYPEP(obj, klass) \
     (SCM_PTRP(obj)&&(SCM_OBJ(obj)->tag == SCM_CLASS2TAG(klass)))
+
+#else  /*GAUCHE_BROKEN_LINKER_WORKAROUND*/
+
+/* You don't want to understand these. */
+# define SCM_CLASS_DECL(klass) \
+    SCM_EXTERN ScmClass klass;                  \
+    extern ScmClass *SCM_CPP_CAT(_imp__, klass) 
+# define SCM_CLASS_STATIC_PTR(klass) ((ScmClass*)(&SCM_CPP_CAT(_imp__,klass)))
+# define SCM_CLASS_STATIC_TAG(klass) SCM_CLASS2TAG(SCM_CLASS_STATIC_PTR(klass))
+
+# define SCM_CLASS_OF(obj)      (*(ScmClass**)((SCM_OBJ(obj)->tag - 3)))
+# define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->tag = (ScmByte*)((k)->classPtr) + 3)
+
+# define SCM_XTYPEP(obj, klass) \
+    (SCM_HOBJP(obj)&&(SCM_CLASS_OF(obj) == klass))
+#endif /*GAUCHE_BROKEN_LINKER_WORKAROUND*/
+
+
 
 /* Check if classof(OBJ) is a subtype of an extended class KLASS */
 #define SCM_ISA(obj, klass) (SCM_XTYPEP(obj,klass)||Scm_TypeP(SCM_OBJ(obj),klass))
@@ -528,6 +542,9 @@ typedef ScmObj (*ScmClassAllocateProc)(ScmClass *klass, ScmObj initargs);
    reflected to the class definition macros below */
 struct ScmClassRec {
     SCM_INSTANCE_HEADER;
+#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
+    ScmClass **classPtr;
+#endif
     ScmClassPrintProc     print;
     ScmClassCompareProc   compare;
     ScmClassSerializeProc serialize;
@@ -681,9 +698,20 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
  *   SCM_DEFINE_BASE_CLASS
  */
 
+/* internal macro.  do not use directly */
+#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
+#define SCM__CLASS_PTR_SLOT(cname)  (&SCM_CPP_CAT(_imp__, cname)),
+#define SCM__CLASS_PTR_BODY(cname) \
+    ; ScmClass *SCM_CPP_CAT(_imp__, cname) = &cname
+#else  /*!GAUCHE_BROKEN_LINKER_WORKAROUND*/
+#define SCM__CLASS_PTR_SLOT(cname)  /* none */
+#define SCM__CLASS_PTR_BODY(cname)  /* none */
+#endif /*!GAUCHE_BROKEN_LINKER_WORKAROUND*/
+
 #define SCM__DEFINE_CLASS_COMMON(cname, coreSize, flag, printer, compare, serialize, allocate, cpa) \
     ScmClass cname = {                           \
-        { SCM_CLASS_STATIC_TAG(SCM_CLASS_CLASS), NULL },\
+        { SCM_CLASS_STATIC_TAG(Scm_ClassClass), NULL },\
+        SCM__CLASS_PTR_SLOT(cname)               \
         printer,                                 \
         compare,                                 \
         serialize,                               \
@@ -705,7 +733,7 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
         SCM_FALSE, /*redefined*/                 \
         SCM_INTERNAL_MUTEX_INITIALIZER,          \
         SCM_INTERNAL_COND_INITIALIZER,           \
-    }
+    } SCM__CLASS_PTR_BODY(cname)
     
 /* Define built-in class statically -- full-featured version */
 #define SCM_DEFINE_BUILTIN_CLASS(cname, printer, compare, serialize, allocate, cpa) \
@@ -1302,7 +1330,7 @@ struct ScmSubrRec {
 
 #define SCM_DEFINE_SUBR(cvar, req, opt, inf, func, inliner, data)           \
     ScmSubr cvar = {                                                        \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(SCM_CLASS_PROCEDURE),\
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_ProcedureClass),\
                                    req, opt, SCM_PROC_SUBR, inf, inliner),  \
         (func), (data)                                                      \
     }
@@ -1335,7 +1363,7 @@ SCM_CLASS_DECL(Scm_GenericClass);
 
 #define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
     ScmGeneric cvar = {                                                 \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(SCM_CLASS_GENERIC),\
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_GenericClass),\
                                    0, 0, SCM_PROC_GENERIC, SCM_FALSE,   \
                                    NULL),                               \
         SCM_NIL, cfunc, data                                            \
@@ -1370,7 +1398,7 @@ SCM_CLASS_DECL(Scm_MethodClass);
 
 #define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
     ScmMethod cvar = {                                                  \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(SCM_CLASS_METHOD),\
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_MethodClass),\
                                    req, opt, SCM_PROC_METHOD,           \
                                    SCM_FALSE, NULL),                    \
         gf, specs, func, data, NULL                                     \

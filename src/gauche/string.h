@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.h,v 1.3 2007-09-10 12:10:20 shirok Exp $
+ *  $Id: string.h,v 1.4 2007-09-13 12:30:28 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -265,7 +265,7 @@ SCM_EXTERN ScmObj  Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end);
    of strings. */
 
 #define SCM_STRING_CONST_INITIALIZER(str, len, siz)             \
-    { { SCM_CLASS_STATIC_TAG(SCM_CLASS_STRING) }, NULL,         \
+    { { SCM_CLASS_STATIC_TAG(Scm_StringClass) }, NULL,          \
       { SCM_STRING_IMMUTABLE|SCM_STRING_TERMINATED, (len), (siz), (str) } }
 
 #define SCM_DEFINE_STRING_CONST(name, str, len, siz)            \

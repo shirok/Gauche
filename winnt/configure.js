@@ -27,7 +27,9 @@ var output = fs.OpenTextFile("gauche\\config.h", 2, true);
   // Include the mighty windows.h.  We want to shut it up about
   // "deprecated" warnings.
   "#define _CRT_SECURE_NO_DEPRECATE 1",
+  "#define _WINSOCKAPI_",
   "#include <windows.h>",
+  "#include <winsock2.h>",
   "#include <shlwapi.h>",
   "#include <math.h>",
   "#include <float.h>",

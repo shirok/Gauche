@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: arith.h,v 1.7 2007-03-22 11:20:29 shirok Exp $
+ *  $Id: arith.h,v 1.8 2007-09-13 12:30:28 shirok Exp $
  */
 
 #ifndef GAUCHE_ARITH_H
@@ -241,13 +241,13 @@
             } else {                                            \
                 UMULOV(t6_, v, x, -y);                          \
                 if ((v) || t6_ > LONG_MAX+1UL) (v) = -1;        \
-                else (r) = -t6_;                                \
+                else (r) = -(long)t6_;                          \
             }                                                   \
         } else {                                                \
             if ((y) >= 0) {                                     \
                 UMULOV(t6_, v, -x, y);                          \
                 if ((v) || t6_ > LONG_MAX+1UL) (v) = -1;        \
-                else (r) = -t6_;                                \
+                else (r) = -(long)t6_;                          \
             } else {                                            \
                 UMULOV(t6_, v, -x, -y);                         \
                 if ((v) || t6_ > LONG_MAX) (v) = 1;             \

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: literal.scm,v 1.5 2007-09-10 12:10:18 shirok Exp $
+;;;  $Id: literal.scm,v 1.6 2007-09-13 12:30:27 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.literal
@@ -488,10 +488,6 @@
                (format "  SCM_STRING_CONST_INITIALIZER(~s, ~a, ~a)"
                        value (string-size value) (string-length value)))
       :value value))
-  (init (self)
-    (print "#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND) && !defined(LIBGAUCHE_BODY)")
-    (print "  SCM_SET_CLASS("(cgen-c-name self)", SCM_CLASS_STRING);")
-    (print "#endif"))
   )
 
 ;; symbol ------------------------------------------------------
@@ -633,7 +629,7 @@
            (sobj (cgen-allocate-static-array
                   'runtime 'ScmObj
                   (list*
-                   "SCM_OBJ(SCM_CLASS2TAG(SCM_CLASS_VECTOR)) /* <vector> */"
+                   "SCM_OBJ(SCM_CLASS_STATIC_TAG(Scm_VectorClass)) /* <vector> */"
                    (format "SCM_OBJ(~a)" (length literals))
                    (map (lambda (lit)
                           (if (cgen-literal-static? lit)

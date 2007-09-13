@@ -30,11 +30,12 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: symbol.c,v 1.39 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: symbol.c,v 1.40 2007-09-13 12:30:28 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/builtin-syms.h"
 
 /*-----------------------------------------------------------
  * Symbols

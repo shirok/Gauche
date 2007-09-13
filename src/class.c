@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.159 2007-09-10 13:10:09 shirok Exp $
+ *  $Id: class.c,v 1.160 2007-09-13 12:30:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -357,6 +357,10 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmClass *instance = SCM_ALLOCATE(ScmClass, klass);
     SCM_SET_CLASS(instance, klass);
+#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
+    instance->classPtr = SCM_NEW(ScmClass*);
+    *instance->classPtr = instance;
+#endif
     instance->allocate = NULL;  /* will be set when CPL is set */
     instance->print = NULL;
     instance->compare = object_compare;
@@ -2790,21 +2794,25 @@ static void init_class(ScmClass *klass,
     ScmObj acc = SCM_NIL, sp;
     ScmClass **super;
 
-#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
-    /* Patch the type tag of statically defined classes on the platform
-       with the broken linker */
-    if (SCM_CLASS_OF(klass) == NULL) {
-        SCM_SET_CLASS(klass, SCM_CLASS_CLASS);
-    }
-#endif
-
-    /* set class name first, for it may be used by error messages. */
-    klass->name = SCM_INTERN(name);
-
     /* initialize CPL and directSupers */
     if (klass->cpa == NULL) {
-	klass->cpa = SCM_CLASS_DEFAULT_CPL;
+        klass->cpa = SCM_CLASS_DEFAULT_CPL;
     }
+#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
+    /* Patch up CPA extra indirection */
+    {
+        ScmClass **c, **d, **cpa; int depth = 0;
+        for (c = klass->cpa; *c; c++) depth++;
+        cpa = SCM_NEW2(ScmClass**, (depth+1) * sizeof(ScmClass*));
+        for (c = klass->cpa, d = cpa; *c; c++, d++) {
+            *d = **(ScmClass***)c;
+        }
+        *d = NULL;
+        klass->cpa = cpa;
+    }
+#endif /*GAUCHE_BROKEN_LINKER_WORKAROUND*/    
+
+    klass->name = SCM_INTERN(name);
     initialize_builtin_cpl(klass, supers);
 
     /* insert binding */
@@ -2814,9 +2822,6 @@ static void init_class(ScmClass *klass,
     if (specs) {
         for (;specs->name; specs++) {
             ScmObj snam = SCM_INTERN(specs->name);
-#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
-            SCM_SET_CLASS(&specs->accessor, SCM_CLASS_SLOT_ACCESSOR);
-#endif
             specs->accessor.klass = klass;
             specs->accessor.name = snam;
             acc = Scm_Acons(snam, SCM_OBJ(&specs->accessor), acc);
@@ -2930,9 +2935,6 @@ void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
 void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
 {
     ScmObj s = SCM_INTERN(name);
-#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
-    SCM_SET_CLASS(gf, SCM_CLASS_GENERIC);
-#endif
     gf->common.info = s;
     if (gf->fallback == NULL) {
 	gf->fallback = Scm_NoNextMethod;
@@ -2944,8 +2946,17 @@ void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
 void Scm_InitBuiltinMethod(ScmMethod *m)
 {
 #if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
-    SCM_SET_CLASS(m, SCM_CLASS_METHOD);
-#endif
+    /* fix up specializer array */
+    ScmClass **c, **d, **spa;
+    int i;
+    spa = SCM_NEW2(ScmClass**, SCM_PROCEDURE_REQUIRED(m) * sizeof(ScmClass*));
+    for (i = 0, c = m->specializers, d = spa;
+         i < SCM_PROCEDURE_REQUIRED(m);
+         c++, d++, i++) {
+        *d = **(ScmClass***)c;
+    }
+    m->specializers = spa;
+#endif /*GAUCHE_BROKEN_LINKER_WORKAROUND*/
     m->common.info = Scm_Cons(m->generic->common.info,
                               class_array_to_names(m->specializers,
                                                    m->common.required));

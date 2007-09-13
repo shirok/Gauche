@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.54 2007-04-20 17:38:24 shirok Exp $
+ *  $Id: net.c,v 1.55 2007-09-13 12:30:26 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -510,7 +510,7 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
 /*==================================================================
  * Windows/MinGW compatibility layer
  */
-#ifdef __MINGW32__
+#if defined(GAUCHE_WINDOWS)
 
 /* 
  * I should use WSAStringToAddress, but just for the time being...
@@ -526,32 +526,7 @@ int inet_aton(const char *cp, struct in_addr *inp)
     }
 }
 
-/* winsock requires some obscure initialization */
-static WSADATA wsaData;
-
-static void init_winsock(void)
-{
-    int opt;
-    int r = WSAStartup(MAKEWORD(2,2), &wsaData);
-    if (r != 0) {
-        SetLastError(r);
-        Scm_SysError("WSAStartup failed");
-    }
-    /* windows voodoo to make _open_osfhandle magic work */
-    opt = SO_SYNCHRONOUS_NONALERT;
-    r = setsockopt(INVALID_SOCKET, SOL_SOCKET,
-                   SO_OPENTYPE, (char*)&opt, sizeof(opt));
-    if (r == SOCKET_ERROR) {
-        Scm_SysError("winsock initialization failed");
-    }
-}
-
-static void fini_winsock(void *data)
-{
-    (void)WSACleanup();
-}
-
-#endif /*__MINGW32__*/
+#endif /*GAUCHE_WINDOWS*/
                           
 /*==================================================================
  * Initialization
@@ -565,16 +540,12 @@ extern void Scm_Init_netaux(void);
 
 
 
-void Scm_Init_libnet(void)
+SCM_EXTENSION_ENTRY void Scm_Init_libnet(void)
 {
     ScmModule *mod;
 
     SCM_INIT_EXTENSION(net);
     mod = SCM_FIND_MODULE("gauche.net", SCM_FIND_MODULE_CREATE);
-#ifdef __MINGW32__
-    init_winsock();
-    Scm_AddCleanupHandler(fini_winsock, NULL);
-#endif /*__MINGW32__*/
 #ifdef HAVE_IPV6
     Scm_AddFeature("gauche.net.ipv6", NULL);
 #endif

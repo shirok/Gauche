@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: extend.h,v 1.8 2007-09-06 23:29:00 shirok Exp $
+ *  $Id: extend.h,v 1.9 2007-09-13 12:30:28 shirok Exp $
  */
 
 #ifndef GAUCHE_EXTEND_H
@@ -74,6 +74,13 @@ extern "C" {
                       (void*)&SCM_CPP_CAT(Scm__bssend_, name));         \
    } while (0)
 #endif /* !__CYGWIN__ && !GAUCHE_WINDOWS*/
+
+/* MSVC needs dllexport magic */
+#if defined(GAUCHE_WINDOWS)
+#define SCM_EXTENSION_ENTRY __declspec(dllexport)
+#else
+#define SCM_EXTENSION_ENTRY /*none*/
+#endif
 
 #ifdef __cplusplus
 }

@@ -40,6 +40,8 @@ typedef unsigned long u_long;
 #define GAUCHE_BROKEN_LINKER_WORKAROUND 1
 #endif
 
+#include <mswsock.h>
+
 /*======================================================================
  * Time calculation
  * Win32API's FILETIME is 64bit time count since 1601/1/1 UTC, measured
@@ -149,6 +151,7 @@ int sigaction(int signum, const struct sigaction *act, struct sigaction *oact);
 #include <io.h>
 #include <process.h>
 #include <direct.h>
+#include <sys/utime.h>
 
 #define read   _read
 #define write  _write
@@ -166,6 +169,9 @@ int sigaction(int signum, const struct sigaction *act, struct sigaction *oact);
 #define mkdir  _mkdir
 #define rmdir  _rmdir
 #define execvp _execvp
+#define utime  _utime
+#define utimbuf _utimbuf
+#define putenv _putenv
 
 #define O_APPEND    _O_APPEND
 #define O_BINARY    _O_BINARY
@@ -194,8 +200,13 @@ int sigaction(int signum, const struct sigaction *act, struct sigaction *oact);
 #endif /* MSVC */
 
 /* wchar <-> mbchar stuff.  implementation in win-compat.c */
-WCHAR *Scm_MBS2WCS(const char *s);
-const char *Scm_WCS2MBS(const WCHAR *s);
+#if defined(LIBGAUCHE_BODY)
+extern __declspec(dllexport) WCHAR *Scm_MBS2WCS(const char *s);
+extern __declspec(dllexport) const char *Scm_WCS2MBS(const WCHAR *s);
+#else  /*!LIBGAUCHE_BODY*/
+extern __declspec(dllimport) WCHAR *Scm_MBS2WCS(const char *s);
+extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
+#endif /*!LIBGAUCHE_BODY*/
 
 #if defined(UNICODE)
 #define SCM_MBS2WCS(s)  Scm_MBS2WCS(s)

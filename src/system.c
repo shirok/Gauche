@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.92 2007-08-28 10:41:57 shirok Exp $
+ *  $Id: system.c,v 1.93 2007-09-13 12:30:28 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1726,6 +1726,33 @@ int link(const char *existing, const char *newpath)
 #endif
 }
 
+/* Winsock requires some obscure initialization.
+   We perform initialization here, since winsock module is used
+   in both gauche.net and gauche.auxsys. */
+static WSADATA wsaData;
+
+static void init_winsock(void)
+{
+    int opt;
+    int r = WSAStartup(MAKEWORD(2,2), &wsaData);
+    if (r != 0) {
+        SetLastError(r);
+        Scm_SysError("WSAStartup failed");
+    }
+    /* windows voodoo to make _open_osfhandle magic work */
+    opt = SO_SYNCHRONOUS_NONALERT;
+    r = setsockopt(INVALID_SOCKET, SOL_SOCKET,
+                   SO_OPENTYPE, (char*)&opt, sizeof(opt));
+    if (r == SOCKET_ERROR) {
+        Scm_SysError("winsock initialization failed");
+    }
+}
+
+static void fini_winsock(void *data)
+{
+    (void)WSACleanup();
+}
+
 #endif /* GAUCHE_WINDOWS */
 
 
@@ -1742,5 +1769,10 @@ void Scm__InitSystem(void)
     Scm_InitStaticClass(&Scm_SysPasswdClass, "<sys-passwd>", mod, pwd_slots, 0);
 #ifdef HAVE_SELECT
     Scm_InitStaticClass(&Scm_SysFdsetClass, "<sys-fdset>", mod, NULL, 0);
+#endif
+
+#ifdef GAUCHE_WINDOWS
+    init_winsock();
+    Scm_AddCleanupHandler(fini_winsock, NULL);
 #endif
 }

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.32 2007-03-28 09:32:34 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.33 2007-09-13 12:30:23 shirok Exp $
 ;;;
 
 "
@@ -59,14 +59,20 @@
 #include <locale.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-#include <utime.h>
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
+#  include <utime.h>
 #  include <sys/times.h>
 #  include <sys/utsname.h>
-#else  /*__MINGW32__ */
+#else  /*GAUCHE_WINDOWS*/
 #undef _SC_CLK_TCK  /* avoid undefined reference to sysconf */
-#endif /*__MINGW32__ */
+#endif /*GAUCHE_WINDOWS*/
+
+#if defined(_MSC_VER)
+/* This is a kludge to patch the defect of auxsysconf.h misconfiguration. */
+#undef HAVE_GETDOMAINNAME
+#undef HAVE_UNSETENV
+#undef HAVE_GETPGID
+#endif /*_MSC_VER*/
 
 extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
 "
@@ -123,12 +129,12 @@ extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
   )
 
 ;; sys/stat.h
-(if "!defined(__MINGW32__)"
+(if "!defined(GAUCHE_WINDOWS)"
 (define-cproc sys-mkfifo (path::<const-cstring> mode::<int>)
   (body <int>
         "SCM_SYSCALL(SCM_RESULT, mkfifo(path, mode));"
         "if (SCM_RESULT < 0) Scm_SysError(\"mkfifo failed on %s\", path);"))
-) ;; !defined(__MINGW32__)
+) ;; !defined(GAUCHE_WINDOWS)
 
 ;; utime.h
 
@@ -147,7 +153,7 @@ extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
 
 ;; set*
 
-(if "!defined(__MINGW32__)" (begin
+(if "!defined(GAUCHE_WINDOWS)" (begin
 
 (define-cproc sys-setgid (gid::<int>)
   (body <int>
@@ -215,7 +221,7 @@ extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
   }
   /* NOTREACHED */")
 
-)) ;; !defined(__MINGW32__)
+)) ;; !defined(GAUCHE_WINDOWS)
 
 (define-cproc sys-getlogin ()
   (call <const-cstring>? "getlogin"))
@@ -245,7 +251,7 @@ extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
 
 ;; sys/utsname.h
 ;; returns list of (sysname nodename release version machine)
-(if "!defined(__MINGW32__)"
+(if "!defined(GAUCHE_WINDOWS)"
 (define-cproc sys-uname ()
   "  struct utsname info;
   ScmObj head = SCM_NIL, tail = SCM_NIL;
@@ -256,7 +262,7 @@ extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
   SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.version));
   SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.machine));
   return head;")
-) ;; !defined(__MINGW32__)
+) ;; !defined(GAUCHE_WINDOWS)
 
 "#ifndef HOSTNAMELEN
 #define HOSTNAMELEN 1024
@@ -295,19 +301,19 @@ extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
   )
 
 ;; ctermid
-(if "!defined(__MINGW32__)"
+(if "!defined(GAUCHE_WINDOWS)"
 (define-cproc sys-ctermid ()
   (body <const-cstring>
         "char buf[L_ctermid+1]; SCM_RESULT = ctermid(buf);"))
-) ;; !defined(__MINGW32__)
+) ;; !defined(GAUCHE_WINDOWS)
 
 ;; chown
-(if "!defined(__MINGW32__)"
+(if "!defined(GAUCHE_WINDOWS)"
 (define-cproc sys-chown (path::<const-cstring> owner::<int> group::<int>)
   (body <int>
         "SCM_SYSCALL(SCM_RESULT, chown(path, owner, group));"
         "if (SCM_RESULT < 0) Scm_SysError(\"chown failed on %s\", path);"))
-) ;; !defined(__MINGW32__)
+) ;; !defined(GAUCHE_WINDOWS)
 
 ;; lchown
 (when "defined HAVE_LCHOWN"

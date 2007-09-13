@@ -30,16 +30,23 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: auxsys.c,v 1.8 2007-03-28 09:32:33 shirok Exp $
+ *  $Id: auxsys.c,v 1.9 2007-09-13 12:30:23 shirok Exp $
  */
 
 #include <gauche.h>
 #include <gauche/extend.h>
 #include "auxsysconf.h"
 
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
 #  include <sys/times.h>
 #endif
+
+#if defined(_MSC_VER)
+/* This is a kludge to patch the defect of auxsysconf.h misconfiguration. */
+#undef HAVE_SETENV
+#undef HAVE_UNSETENV
+#undef HAVE_GETPGID
+#endif /*_MSC_VER*/
 
 /*===============================================================
  * Environment
@@ -74,8 +81,8 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
         /* check the existence of NAME first. */
         if (getenv(name) != NULL) return;
     }
-    nlen = strlen(name);
-    vlen = strlen(value);
+    nlen = (int)strlen(name);
+    vlen = (int)strlen(value);
     /* we need malloc, since the pointer will be owned by the system */
     nameval = (char*)malloc(nlen+vlen+2);
     if (nameval == NULL) {
@@ -96,19 +103,19 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
 
 
 /*==============================================================
- * Emulation stuff for Windows/MinGW
+ * Emulation stuff for Windows
  */
-#ifdef __MINGW32__
+#if defined(GAUCHE_WINDOWS)
 
 const char *getlogin(void)
 {
-    static char buf[256]; /* this isn't thread-safe, but getlogin() is
-			     inherently thread-unsafe call anyway */
-    DWORD size = sizeof(buf);
+    static TCHAR buf[256]; /* this isn't thread-safe, but getlogin() is
+                              inherently thread-unsafe call anyway */
+    DWORD size = sizeof(buf)/sizeof(TCHAR);
     BOOL r;
     r = GetUserName(buf, &size);
     if (r) {
-	return buf;
+	return SCM_WCS2MBS(buf);
     } else {
 	return NULL;
     }
@@ -134,7 +141,7 @@ clock_t times(struct tms *info)
     info->tms_cutime = 0;
     return 0;
 }
-#endif /*__MINGW32__*/
+#endif /*GAUCHE_WINDOWS*/
 
 
 /*
@@ -143,7 +150,7 @@ clock_t times(struct tms *info)
 
 extern void Scm_Init_auxsyslib(ScmModule *mod);
 
-void Scm_Init_auxsys(void)
+SCM_EXTENSION_ENTRY void Scm_Init_auxsys(void)
 {
     ScmModule *mod;
 

@@ -63,10 +63,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="netapi32.lib shlwapi.lib"
+				AdditionalDependencies="netapi32.lib shlwapi.lib ws2_32.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
+				GenerateMapFile="true"
+				MapExports="true"
 				SubSystem="1"
 				TargetMachine="1"
 			/>

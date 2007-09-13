@@ -35,7 +35,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvector.c.tmpl,v 1.13 2007-09-10 01:19:50 shirok Exp $
+ *  $Id: uvector.c.tmpl,v 1.14 2007-09-13 12:30:26 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -45,6 +45,8 @@
 #include <gauche.h>
 #include <gauche/extend.h>
 #include <gauche/builtin-syms.h>
+#include <gauche/arith.h>
+#include <gauche/scmconst.h>
 
 #define LIBGAUCHE_UVECTOR_BODY 1
 #include "gauche/uvector.h"
@@ -248,6 +250,14 @@ static inline void uint64print(ScmPort *out, ScmUInt64 v)
 ///;;     -> C stmt that unboxes src and set it to dst.
 ///;;  ${BOX dst src} where dst::ScmObj, src::${etype}
 ///;;     -> C stmt that boxes src and set it to dst.
+///;;  ${NBOX dst src} where dst::ScmObj, src::${ntype}
+///;;     -> Like BOX, but the source value is given in ntype.
+///;;        Can be implemented with CAST_N2E and BOX, but some types may
+///;;        have a shortcut.
+///;;  ${REF_NTYPE array i}
+///;;     -> C expr to extract i-th element of etype array *as ntype*.
+///;;  ${CAST_N2E expr}
+///;;     -> convert ntype expr into etype.
 ///;;  ${PRINT out elt} where out::ScmPort*, elt::${etype}
 ///;;     -> C stmt to print elt
 ///;;  ${EQ x y} where x, y ::${etype}
@@ -835,9 +845,9 @@ static void ${t}vector_${opname}(const char *name,
             if (!oor) {
                 r = ${t}g_${opname}(v0, v1, clamp);
             } else {
-                ${BOX rr v0};
+                ${NBOX rr v0};
                 rr = Scm_${Sopname}(rr, vv1);
-                ${UNBOX r rr clamp};
+                ${NUNBOX r rr clamp};
             }
             SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
         }
@@ -850,9 +860,9 @@ static void ${t}vector_${opname}(const char *name,
             if (!oor) {
                 r = ${t}g_${opname}(v0, v1, clamp);
             } else {
-                ${BOX rr v0};
+                ${NBOX rr v0};
                 rr = Scm_${Sopname}(rr, vv1);
-                ${UNBOX r rr clamp};
+                ${NUNBOX r rr clamp};
             }
             SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
         }
@@ -864,9 +874,9 @@ static void ${t}vector_${opname}(const char *name,
             if (!oor) {
                 r = ${t}g_${opname}(v0, v1, clamp);
             } else {
-                ${BOX rr v0};
+                ${NBOX rr v0};
                 rr = Scm_${Sopname}(rr, s1);
-                ${UNBOX r rr clamp};
+                ${NUNBOX r rr clamp};
             }
             SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
         }
@@ -1130,7 +1140,7 @@ ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
             if (!oor) {
                 r = ${t}muladd(vx, vy, r, &rr);
             } else {
-                ${BOX vvx vx};
+                ${NBOX vvx vx};
                 rr = Scm_Add(rr, Scm_Mul(vvx, vvy));
             }
         }
@@ -1143,7 +1153,7 @@ ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
             if (!oor) {
                 r = ${t}muladd(vx, vy, r, &rr);
             } else {
-                ${BOX vvx vx};
+                ${NBOX vvx vx};
                 rr = Scm_Add(rr, Scm_Mul(vvx, vvy));
             }
         }

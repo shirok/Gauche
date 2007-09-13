@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.81 2007-08-24 23:55:42 shirok Exp $
+ *  $Id: core.c,v 1.82 2007-09-13 12:30:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -150,7 +150,6 @@ void Scm_Init(const char *signature)
     Scm__InitSignal();
     Scm__InitSystem();
     Scm__InitRepl();
-    Scm__InitCollection();
     
     Scm_Init_stdlib(Scm_SchemeModule());
     Scm_Init_extlib(Scm_GaucheModule());

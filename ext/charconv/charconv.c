@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.59 2007-09-11 12:29:37 shirok Exp $
+ *  $Id: charconv.c,v 1.60 2007-09-13 12:30:25 shirok Exp $
  */
 
 #include <string.h>
@@ -608,7 +608,7 @@ extern void Scm_Init_convlib(ScmModule *module);
 extern void Scm_Init_convaux(void);
 extern void Scm_Init_convguess(void);
 
-void Scm_Init_libcharconv(void)
+SCM_EXTENSION_ENTRY void Scm_Init_libcharconv(void)
 {
     ScmModule *mod;
     SCM_INIT_EXTENSION(charconv);
