@@ -17,9 +17,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="ext-charconv\$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets=".\ext.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -40,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;..\src;..\gc\include"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXTCHARCONV_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -97,6 +96,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets=".\ext.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>

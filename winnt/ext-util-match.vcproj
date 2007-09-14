@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="ext-uvector"
-	ProjectGUID="{C4EDEAE3-3E92-4940-84A6-FA441B933C2F}"
-	RootNamespace="extuvector"
+	Name="ext-util-match"
+	ProjectGUID="{23BCE566-E0D9-42F8-A03C-273B8A740C46}"
+	RootNamespace="extutil"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -39,8 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXTUVECTOR_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXTUTIL_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -60,7 +59,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\libgauche-uvector.dll"
+				OutputFile="$(OutDir)\util-match-lib.dll"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -117,7 +116,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EXTUVECTOR_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EXTUTIL_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -176,35 +175,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\ext\uvector\uvector.c"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=".;..\src;..\gc\include"
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="..\ext\uvector\gauche\uvector.h"
-			>
-		</File>
-		<File
-			RelativePath="..\ext\uvector\uvectorP.h"
-			>
-		</File>
-		<File
-			RelativePath="..\ext\uvector\uvinit.c"
-			>
-		</File>
-		<File
-			RelativePath="..\ext\uvector\uvlib.c"
-			>
-		</File>
-		<File
-			RelativePath="..\ext\uvector\uvseq.c"
+			RelativePath="..\ext\util\util-match-lib.c"
 			>
 		</File>
 	</Files>
