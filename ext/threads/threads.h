@@ -30,11 +30,16 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: threads.h,v 1.5 2007-03-22 11:20:24 shirok Exp $
+ *  $Id: threads.h,v 1.6 2007-09-14 11:17:41 shirok Exp $
  */
 
 #ifndef GAUCHE_THREADS_H
 #define GAUCHE_THREADS_H
+
+#if defined(EXTTHREADS_EXPORTS)
+#define LIBGAUCHE_EXT_BODY
+#endif
+#include <gauche/extern.h>      /* redefine SCM_EXTERN */
 
 /*---------------------------------------------------------
  * Scheme-level thread API
@@ -45,6 +50,33 @@ extern ScmObj Scm_ThreadStart(ScmVM *vm);
 extern ScmObj Scm_ThreadJoin(ScmVM *vm, ScmObj timeout, ScmObj timeoutval);
 extern ScmObj Scm_ThreadSleep(ScmObj timeout);
 extern ScmObj Scm_ThreadTerminate(ScmVM *vm);
+
+/*---------------------------------------------------------
+ * Thread exception classes.
+ * NB: The actual structure, ScmThreadException, is defined in
+ * src/gauche/exception.h.
+ */
+
+SCM_CLASS_DECL(Scm_ThreadExceptionClass);
+#define SCM_CLASS_THREAD_EXCEPTION  (&Scm_ThreadExceptionClass)
+#define SCM_THREAD_EXCEPTION_P(obj) SCM_ISA(obj, SCM_CLASS_THREAD_EXCEPTION)
+#define SCM_THREAD_EXCEPTION(obj)   ((ScmThreadException*)(obj))
+
+SCM_CLASS_DECL(Scm_JoinTimeoutExceptionClass);
+#define SCM_CLASS_JOIN_TIMEOUT_EXCEPTION (&Scm_JoinTimeoutExceptionClass)
+#define SCM_JOIN_TIMEOUT_EXCEPTION_P     SCM_ISA(obj, SCM_CLASS_JOIN_TIMEOUT_EXCEPTION)
+
+SCM_CLASS_DECL(Scm_AbandonedMutexExceptionClass);
+#define SCM_CLASS_ABANDONED_MUTEX_EXCEPTION (&Scm_AbandonedMutexExceptionClass)
+#define SCM_ABANDONED_MUTEX_EXCEPTION_P     SCM_ISA(obj, SCM_CLASS_ABANDONED_MUTEX_EXCEPTION)
+
+SCM_CLASS_DECL(Scm_TerminatedThreadExceptionClass);
+#define SCM_CLASS_TERMINATED_THREAD_EXCEPTION (&Scm_TerminatedThreadExceptionClass)
+#define SCM_TERMINATED_THREAD_EXCEPTION_P     SCM_ISA(obj, SCM_CLASS_TERMINATED_THREAD_EXCEPTION)
+
+SCM_CLASS_DECL(Scm_UncaughtExceptionClass);
+#define SCM_CLASS_UNCAUGHT_EXCEPTION (&Scm_UncaughtExceptionClass)
+#define SCM_UNCAUGHT_EXCEPTION_P     SCM_ISA(obj, SCM_CLASS_UNCAUGHT_EXCEPTION)
 
 /*---------------------------------------------------------
  * SYNCHRONIZATION DEVICES

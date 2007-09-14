@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.55 2007-09-13 12:30:26 shirok Exp $
+ *  $Id: net.c,v 1.56 2007-09-14 11:17:40 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -165,11 +165,11 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
             sock->status < SCM_SOCKET_STATUS_CONNECTED) {
             sockport_err(sock, "input");
         }
-#ifndef __MINGW32__
+#ifndef GAUCHE_WINDOWS
 	infd = sock->fd;
-#else  /*__MINGW32__*/
+#else  /*GAUCHE_WINDOWS*/
 	infd = _open_osfhandle(sock->fd, O_RDONLY);
-#endif /*__MINGW32__*/
+#endif /*GAUCHE_WINDOWS*/
         if (infd == INVALID_SOCKET) sockport_err(sock, "input");
         
         /* NB: I keep the socket itself in the port name, in order to avoid
@@ -192,11 +192,11 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
             sock->status < SCM_SOCKET_STATUS_CONNECTED) {
             sockport_err(sock, "output");
         }
-#ifndef __MINGW32__
+#ifndef GAUCHE_WINDOWS
 	outfd = sock->fd;
-#else  /*__MINGW32__*/
+#else  /*GAUCHE_WINDOWS*/
 	outfd = _open_osfhandle(sock->fd, 0);
-#endif /*__MINGW32__*/
+#endif /*GAUCHE_WINDOWS*/
         if (outfd == INVALID_SOCKET) sockport_err(sock, "output");
 
         /* NB: I keep the socket itself in the port name, in order to avoid

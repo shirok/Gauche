@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: parameter.h,v 1.2 2007-03-22 11:20:36 shirok Exp $
+ *  $Id: parameter.h,v 1.3 2007-09-14 11:17:42 shirok Exp $
  */
 
 /*
@@ -51,17 +51,17 @@ typedef struct ScmParameterLocRec {
     int  id;
 } ScmParameterLoc;
 
-void   Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location /*out*/);
-ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *location);
-ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *location,
-                        ScmObj value);
+SCM_EXTERN void   Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location /*out*/);
+SCM_EXTERN ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *location);
+SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *location,
+                                   ScmObj value);
 
 /* A "primitive parameter" is a mere SUBR that acts like parameter
    (except it doesn't have a filter, and hooks). */
-void Scm_DefinePrimitiveParameter(ScmModule *mod,
-                                  const char *name,
-                                  ScmObj initval,
-                                  ScmParameterLoc *location /*out*/);
+SCM_EXTERN void Scm_DefinePrimitiveParameter(ScmModule *mod,
+                                             const char *name,
+                                             ScmObj initval,
+                                             ScmParameterLoc *location /*out*/);
 
 /* PRIVATE STUFF */
 

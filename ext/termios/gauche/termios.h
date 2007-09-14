@@ -30,16 +30,16 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.h,v 1.9 2007-03-22 11:20:24 shirok Exp $
+ *  $Id: termios.h,v 1.10 2007-09-14 11:17:41 shirok Exp $
  */
 
 #ifndef GAUCHE_TERMIOS_H
 #define GAUCHE_TERMIOS_H
 
 #include <gauche.h>
-#include "gauche/uvector.h"
+#include <gauche/uvector.h>
 
-#if !defined(__MINGW32__)
+#if !defined(GAUCHE_WINDOWS)
 
 #include <termios.h>
 #ifdef HAVE_PTY_H
@@ -51,7 +51,14 @@
 #ifdef HAVE_LIBUTIL_H
 #include <libutil.h>
 #endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#if defined(EXTTERMIOS_EXPORTS)
+#define LIBGAUCHE_EXT_BODY
+#endif
+#include <gauche/extern.h>
 
 typedef struct ScmSysTermiosRec {
     SCM_HEADER;
@@ -74,6 +81,6 @@ ScmObj Scm_ForkptyAndExec(ScmString *file, ScmObj args, ScmObj iomap,
                           ScmObj slaveterm, ScmSysSigset *mask);
 #endif
 
-#endif /* !defined(__MINGW32__) */
+#endif /* !defined(GAUCHE_WINDOWS) */
 
 #endif /* GAUCHE_TERMIOS_H */

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.32 2007-09-13 12:30:27 shirok Exp $
+;;;  $Id: gencomp,v 1.33 2007-09-14 11:17:42 shirok Exp $
 ;;;
 
 ;;;
@@ -134,7 +134,8 @@
           (compile-module))
     ;; Static stuff
     (cgen-decl "#include <gauche/code.h>")
-    (cgen-decl "#include <gauche/macro.h>") ;;for MakeMacroTransformerOld. temporary.
+    (cgen-decl "#include <gauche/macro.h>") ; for MakeMacroTransformerOld. temporary.
+    (cgen-decl "#define INIT_ENTRY") ; may be overrided by insert-ext-initializer.
     (and-let* ((extm (ext-module-file)))
       (insert-ext-initializer (port-name extm)))
     ;; Main processing
@@ -160,6 +161,8 @@
 ;; code.
 (define (insert-ext-initializer ext-module-file-name)
   (cgen-decl "#include <gauche/extend.h>")
+  (cgen-decl "#undef INIT_ENTRY")
+  (cgen-decl "#define INIT_ENTRY SCM_EXTENSION_ENTRY")
   (let* ((extname (path-sans-extension ext-module-file-name))
          (safe-extname (regexp-replace-all #/\W/ extname "_")))
     (cgen-init #`"SCM_INIT_EXTENSION(,safe-extname);")))
@@ -528,7 +531,7 @@
     :preamble `(,(format "/* Generated automatically from ~a.  DO NOT EDIT */"
                          src))
     :pre-decl (map (lambda (s) #`"#define ,s") predef-syms)
-    :init-prologue (format "void Scm_Init_~a() { ScmModule *mod;"
+    :init-prologue (format "INIT_ENTRY void Scm_Init_~a() { ScmModule *mod;"
                            (string-tr (sys-basename base) "-+" "__"))
     ))
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: termiolib.stub,v 1.17 2007-03-22 11:20:23 shirok Exp $
+;;; $Id: termiolib.stub,v 1.18 2007-09-14 11:17:41 shirok Exp $
 ;;;
 
 "#include \"gauche/termios.h\""
@@ -41,7 +41,7 @@
 (define-type <sys-termios> "ScmSysTermios*")
 (define-type <sys-sigset>  "ScmSysSigset*")
 
-(if "!defined(__MINGW32__)" (begin
+(when "!defined(GAUCHE_WINDOWS)"
 
 (define-enum TCSANOW)
 (define-enum TCSADRAIN)
@@ -150,7 +150,11 @@
 (initcode "Scm_AddFeature(\"gauche.sys.forkpty\", NULL);")
 )
 
-)) ;; !defined(__MINGW32__)
+) ;; !defined(GAUCHE_WINDOWS)
+
+;; a kludge to make sure the genstub-generated static table has at least
+;; one entry, otherwise C compiler will complain.
+(define-symbol dummy "sym_dummy") 
 
 ;; Local variables:
 ;; mode: scheme

@@ -35,12 +35,11 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; \$Id: uvlib.stub.tmpl,v 1.14 2007-09-13 12:30:26 shirok Exp $
+;;; \$Id: uvlib.stub.tmpl,v 1.15 2007-09-14 11:17:41 shirok Exp $
 ;;;
 
 "
 #include <math.h>
-#define LIBGAUCHE_UVECTOR_BODY
 #include \"gauche/uvector.h\"
 #include \"uvectorP.h\"
 "
@@ -236,14 +235,14 @@
  {
   u_int size, len; const char *ss, *sp, *ep; char *buf;
   ss = Scm_GetStringContent(s, &size, &len, NULL);
-  SCM_CHECK_START_END(start, end, len);
+  SCM_CHECK_START_END(start, end, (int)len);
   if (start == 0) sp = ss;
   else sp = Scm_StringPosition(s, start);
   if (end == len) ep = ss + size;
   else ep = Scm_StringPosition(s, end);
   buf = SCM_NEW_ATOMIC2(char *, ep-sp);
   memcpy(buf, sp, ep-sp);
-  return Scm_MakeUVectorFull(klass, ep-sp, buf, FALSE, NULL);
+  return Scm_MakeUVectorFull(klass, (int)(ep-sp), buf, FALSE, NULL);
  }"
 
 (define-cproc string->s8vector (s::<string>
@@ -264,7 +263,7 @@
    if (tstart >= tlen || tstart < 0) return SCM_OBJ(v);
    SCM_UVECTOR_CHECK_MUTABLE(v);
    ss = Scm_GetStringContent(s, &size, &len, NULL);
-   SCM_CHECK_START_END(start, end, len);
+   SCM_CHECK_START_END(start, end, (int)len);
    if (start == 0) sp = ss;
    else sp = Scm_StringPosition(s, start);
    if (end == len) ep = ss+size;
@@ -317,7 +316,7 @@
   u_int size, len, i; const char *ss, *sp, *ep;
   ScmObj v; ScmInt32 *eltp;
   ss = Scm_GetStringContent(s, &size, &len, NULL);
-  SCM_CHECK_START_END(start, end, len);
+  SCM_CHECK_START_END(start, end, (int)len);
   if (start == 0) sp = ss;
   else sp = Scm_StringPosition(s, start);
   if (end == len) ep = ss+size;

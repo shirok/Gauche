@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: syslog.stub,v 1.9 2007-03-22 11:20:23 shirok Exp $
+;;;  $Id: syslog.stub,v 1.10 2007-09-14 11:17:41 shirok Exp $
 ;;;
 
 "
@@ -42,7 +42,7 @@
 /* Hack for initialization stub */
 static void internal_init(ScmModule*);
 
-void Scm_Init_syslog(void)
+SCM_EXTENSION_ENTRY void Scm_Init_syslog(void)
  {
    SCM_INIT_EXTENSION(syslog);
    internal_init(SCM_FIND_MODULE(\"gauche.syslog\", SCM_FIND_MODULE_CREATE));
@@ -107,6 +107,10 @@ void Scm_Init_syslog(void)
 (define-enum-conditionally LOG_NOTICE)
 (define-enum-conditionally LOG_INFO)
 (define-enum-conditionally LOG_DEBUG)
+
+;; a kludge to make sure the genstub-generated static table has at least
+;; one entry, otherwise C compiler will complain.
+(define-symbol dummy "sym_dummy") 
 
 ;; Local variables:
 ;; mode: scheme

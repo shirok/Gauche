@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.c,v 1.13 2007-08-10 01:19:36 shirok Exp $
+ *  $Id: binary.c,v 1.14 2007-09-14 11:17:40 shirok Exp $
  */
 
 #include <gauche.h>
@@ -656,7 +656,7 @@ void Scm_PutBinaryF64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
  */
 extern void Scm_Init_binarylib(ScmModule *mod);
 
-void Scm_Init_binary(void)
+SCM_EXTENSION_ENTRY void Scm_Init_binary(void)
 {
     ScmModule *mod_io = SCM_FIND_MODULE("binary.io", SCM_FIND_MODULE_CREATE);
     SCM_INIT_EXTENSION(binary);

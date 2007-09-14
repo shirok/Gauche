@@ -30,13 +30,16 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.h,v 1.4 2007-03-22 11:20:26 shirok Exp $
+ *  $Id: vport.h,v 1.5 2007-09-14 11:17:42 shirok Exp $
  */
 
 #ifndef GAUCHE_VPORT_H
 #define GAUCHE_VPORT_H
 
-#include <gauche.h>
+#if defined(EXTVPORT_EXPORTS)
+#define LIBGAUCHE_EXT_BODY
+#endif
+#include <gauche/extern.h>      /* redefine SCM_EXTERN */
 
 SCM_CLASS_DECL(Scm_VirtualInputPortClass);
 #define SCM_CLASS_VIRTUAL_INPUT_PORT    (&Scm_VirtualInputPortClass)

@@ -30,15 +30,17 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.c,v 1.20 2007-05-16 03:27:08 shirok Exp $
+ *  $Id: termios.c,v 1.21 2007-09-14 11:17:41 shirok Exp $
  */
 
 #include <string.h>
-#include "gauche/termios.h"
+#include <gauche.h>
 #include <gauche/class.h>
 #include <gauche/extend.h>
 
-#if !defined(__MINGW32__)
+#include "gauche/termios.h"
+
+#if !defined(GAUCHE_WINDOWS)
 
 /*
  * Termios interface
@@ -179,7 +181,7 @@ ScmObj Scm_ForkptyAndExec(ScmString *file, ScmObj args, ScmObj iomap,
 }
 #endif /*HAVE_FORKPTY*/
 
-#endif /*!defined(__MINGW32) */
+#endif /*!defined(GAUCHE_WINDOWS) */
 
 /*
  * Initializaion
@@ -187,14 +189,14 @@ ScmObj Scm_ForkptyAndExec(ScmString *file, ScmObj args, ScmObj iomap,
 
 extern void Scm_Init_termiolib(ScmModule *mod);
 
-void Scm_Init_termios(void)
+SCM_EXTENSION_ENTRY void Scm_Init_termios(void)
 {
     ScmModule *mod;
     SCM_INIT_EXTENSION(termios);
     mod = SCM_FIND_MODULE("gauche.termios", SCM_FIND_MODULE_CREATE);
     Scm_Init_termiolib(mod);
 
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
     Scm_InitStaticClass(&Scm_SysTermiosClass, "<sys-termios>", mod,
                         termios_slots, 0);
 
@@ -404,5 +406,5 @@ void Scm_Init_termios(void)
     DEFSYM(B230400);
 #endif
 
-#endif /*!__MINGW32__*/
+#endif /*!GAUCHE_WINDOWS*/
 }

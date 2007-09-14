@@ -30,13 +30,17 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.17 2007-03-02 07:39:07 shirok Exp $
+ *  $Id: vport.c,v 1.18 2007-09-14 11:17:42 shirok Exp $
  */
 
-#include "gauche/vport.h"
-#include "gauche/uvector.h"
+#include <gauche.h>
 #include <gauche/class.h>
 #include <gauche/extend.h>
+#include <gauche/uvector.h>
+
+#include "gauche/vport.h"
+
+#undef close    /* windows black magic */
 
 /*================================================================
  * <virtual-port>
@@ -134,7 +138,7 @@ static int vport_getc(ScmPort *p)
         if (SCM_FALSEP(data->getb_proc)) return EOF;
         b = Scm_ApplyRec(data->getb_proc, SCM_NIL);
         if (!SCM_INTP(b)) return EOF;
-        buf[0] = SCM_INT_VALUE(b);
+        buf[0] = (char)SCM_INT_VALUE(b);
         n = SCM_CHAR_NFOLLOWS(p->scratch[0]);
         for (i=0; i<n; i++) {
             b = Scm_ApplyRec(data->getb_proc, SCM_NIL);
@@ -142,7 +146,7 @@ static int vport_getc(ScmPort *p)
                 /* TODO: should raise an exception? */
                 return EOF;
             }
-            buf[i+1] = SCM_INT_VALUE(b);
+            buf[i+1] = (char)SCM_INT_VALUE(b);
         }
         SCM_CHAR_GET(buf, ch);
         return ch;
@@ -168,7 +172,7 @@ static int vport_getz(char *buf, int buflen, ScmPort *p)
                                 SCM_LIST1(SCM_MAKE_INT(buflen)));
         if (!SCM_STRINGP(s)) return EOF;
         start = Scm_GetStringContent(SCM_STRING(s), &size, NULL, NULL);
-        if (size > buflen) {
+        if ((int)size > buflen) {
             /* NB: should raise an exception? */
             memcpy(buf, start, buflen);
             return buflen;
@@ -299,7 +303,7 @@ static void vport_puts(ScmString *s, ScmPort *p)
         ScmChar c;
         int i;
         const char *cp = SCM_STRING_BODY_START(b);
-        for (i=0; i < SCM_STRING_BODY_LENGTH(b); i++) {
+        for (i=0; i < (int)SCM_STRING_BODY_LENGTH(b); i++) {
             SCM_CHAR_GET(cp, c);
             cp += SCM_CHAR_NFOLLOWS(*cp)+1;
             Scm_ApplyRec(data->putc_proc, SCM_LIST1(SCM_MAKE_CHAR(c)));

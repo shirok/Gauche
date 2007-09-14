@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: threads.c,v 1.17 2007-03-02 07:39:06 shirok Exp $
+ *  $Id: threads.c,v 1.18 2007-09-14 11:17:41 shirok Exp $
  */
 
 #include <gauche.h>
@@ -39,7 +39,9 @@
 #include <gauche/exception.h>
 #include "threads.h"
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #ifdef HAVE_SCHED_H
 #include <sched.h>
 #endif

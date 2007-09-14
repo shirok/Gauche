@@ -10,7 +10,7 @@
  *     the allocated memory for random number generator object.
  *   - changed the names of the functions
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.17 2007-03-22 21:30:54 shirok Exp $
+ * $Id: mt-random.c,v 1.18 2007-09-14 11:17:40 shirok Exp $
  *
  * The original copyright notice follows.
  */
@@ -57,8 +57,8 @@
    email: matumoto@math.keio.ac.jp
 */
 
-#include "mt-random.h"
 #include <math.h>
+#include "mt-random.h"
 
 /* Period parameters */  
 #define M 397
@@ -90,7 +90,7 @@ void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed)
         Scm_MTInitByUI(mt, Scm_GetUInteger(seed));
     } else if (SCM_BIGNUMP(seed)) {
         int i; unsigned long s = 0;
-        for (i=0; i<SCM_BIGNUM_SIZE(seed); i++) {
+        for (i=0; i<(int)SCM_BIGNUM_SIZE(seed); i++) {
             s ^= SCM_BIGNUM(seed)->values[i];
         }
         Scm_MTInitByUI(mt, s);
@@ -120,7 +120,7 @@ void Scm_MTInitByArray(ScmMersenneTwister *mt,
         mt->mt[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
         i++; j++;
         if (i>=N) { mt->mt[0] = mt->mt[N-1]; i=1; }
-        if (j>=key_length) j=0;
+        if (j>=(int)key_length) j=0;
     }
     for (k=N-1; k; k--) {
         mt->mt[i] = (mt->mt[i] ^ ((mt->mt[i-1] ^ (mt->mt[i-1] >> 30)) * 1566083941UL))

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.h,v 1.9 2007-08-30 02:17:59 shirok Exp $
+ *  $Id: net.h,v 1.10 2007-09-14 11:17:41 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -41,7 +41,7 @@
 #include <gauche/uvector.h>
 #include <errno.h>
 
-#ifndef __MINGW32__
+#if !defined(GAUCHE_WINDOWS)
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -51,12 +51,13 @@
 typedef int Socket;
 #define closeSocket close
 #define INVALID_SOCKET  ((Socket)-1)
-#else  /*__MINGW32__*/
+#else  /*GAUCHE_WINDOWS*/
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #include <mswsock.h>
 typedef SOCKET Socket;
 #define closeSocket closesocket
-#endif /*__MINGW32__*/
+#endif /*GAUCHE_WINDOWS*/
 
 #ifdef HAVE_RPC_TYPES_H
 #include <rpc/types.h>
@@ -65,6 +66,11 @@ typedef SOCKET Socket;
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
+
+#if defined(EXTNET_EXPORTS)
+#define LIBGAUCHE_EXT_BODY
+#endif
+#include <gauche/extern.h>
 
 SCM_DECL_BEGIN
 
@@ -76,7 +82,7 @@ SCM_DECL_BEGIN
  * Sockaddr_storage
  */
 
-#if !defined(HAVE_STRUCT_SOCKADDR_STORAGE)
+#if !defined(HAVE_STRUCT_SOCKADDR_STORAGE) && !defined(_MSC_VER)
 /* Alternative implementation in case the system doesn't provide
    sockaddr_storage.  The code is based on the reference implementation
    provided in RFC3493.

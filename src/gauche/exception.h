@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: exception.h,v 1.15 2007-03-22 11:20:31 shirok Exp $
+ *  $Id: exception.h,v 1.16 2007-09-14 11:17:42 shirok Exp $
  */
 
 #ifndef GAUCHE_EXCEPTION_H
@@ -230,26 +230,13 @@ typedef struct ScmThreadExceptionRec {
                                 */
 } ScmThreadException;
 
-SCM_CLASS_DECL(Scm_ThreadExceptionClass);
-#define SCM_CLASS_THREAD_EXCEPTION  (&Scm_ThreadExceptionClass)
-#define SCM_THREAD_EXCEPTION_P(obj) SCM_ISA(obj, SCM_CLASS_THREAD_EXCEPTION)
-#define SCM_THREAD_EXCEPTION(obj)   ((ScmThreadException*)(obj))
-
-SCM_CLASS_DECL(Scm_JoinTimeoutExceptionClass);
-#define SCM_CLASS_JOIN_TIMEOUT_EXCEPTION (&Scm_JoinTimeoutExceptionClass)
-#define SCM_JOIN_TIMEOUT_EXCEPTION_P     SCM_ISA(obj, SCM_CLASS_JOIN_TIMEOUT_EXCEPTION)
-
-SCM_CLASS_DECL(Scm_AbandonedMutexExceptionClass);
-#define SCM_CLASS_ABANDONED_MUTEX_EXCEPTION (&Scm_AbandonedMutexExceptionClass)
-#define SCM_ABANDONED_MUTEX_EXCEPTION_P     SCM_ISA(obj, SCM_CLASS_ABANDONED_MUTEX_EXCEPTION)
-
-SCM_CLASS_DECL(Scm_TerminatedThreadExceptionClass);
-#define SCM_CLASS_TERMINATED_THREAD_EXCEPTION (&Scm_TerminatedThreadExceptionClass)
-#define SCM_TERMINATED_THREAD_EXCEPTION_P     SCM_ISA(obj, SCM_CLASS_TERMINATED_THREAD_EXCEPTION)
-
-SCM_CLASS_DECL(Scm_UncaughtExceptionClass);
-#define SCM_CLASS_UNCAUGHT_EXCEPTION (&Scm_UncaughtExceptionClass)
-#define SCM_UNCAUGHT_EXCEPTION_P     SCM_ISA(obj, SCM_CLASS_UNCAUGHT_EXCEPTION)
+/* NB: Actual exception classes are defined in ext/threads.
+   Scm_ThreadExceptionClass
+   Scm_JoinTimeoutExceptionClass
+   Scm_AbandonedMutexExceptionClass
+   Scm_TerminatedThreadExceptionClass
+   Scm_UncaughtExceptionClass
+*/
 
 SCM_EXTERN ScmObj Scm_MakeThreadException(ScmClass*, ScmVM*);
 
