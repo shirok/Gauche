@@ -30,11 +30,12 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvinit.c,v 1.17 2007-09-14 11:17:41 shirok Exp $
+ *  $Id: uvinit.c,v 1.18 2007-09-15 07:23:39 shirok Exp $
  */
 
 #include <gauche.h>
 #include <gauche/extend.h>
+#define EXTUVECTOR_EXPORTS
 #include "gauche/uvector.h"
 #include "uvectorP.h"
 
