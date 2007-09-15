@@ -3,12 +3,20 @@
 
 var fs = WScript.CreateObject("Scripting.FileSystemObject");
 
+// Extract version number from configure.ac
 var configure_ac = fs.OpenTextFile("..\\configure.ac");
+var version = 0, ver_major, ver_minor, ver_micro;
 
-var version = "0.8.11";
-var ver_major = 0;
-var ver_minor = 8;
-var ver_micro = 11;
+while (!configure_ac.AtEndOfStream) {
+    var s = configure_ac.ReadLine();
+    if (s.search(/AC_INIT\(Gauche,\s*((\d+)\.(\d+)\.(\d+)([-\w]*))/) >= 0) {
+        version = RegExp.$1;
+        ver_major = RegExp.$2;
+        ver_minor = RegExp.$3;
+        ver_micro = RegExp.$4;
+        break;
+    }
+}
 
 if (!fs.FolderExists("gauche")) {
     fs.CreateFolder("gauche");

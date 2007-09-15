@@ -4,12 +4,20 @@
 ;; Such links are only of developers' interest; they must be cleaned out
 ;; to create a distribution tarball.
 ;;
-;; $Id: xlink,v 1.10 2007-03-17 00:38:02 shirok Exp $
+;; $Id: xlink,v 1.11 2007-09-15 04:00:17 shirok Exp $
 ;;
 
 ;; NB: this script is called before all the necessary 'wiring' is
 ;; done during the build, so most useful extension modules are not
-;; available.  We have to do things in primitive way...
+;; available.  We have to do things in primitive way.
+
+;; When an environemnt variable GAUCHE_PRE_GENERATE_FOR_WINVC is defined,
+;; xlink behaves in peculiar way:
+;;   - it ignores files except *.scm.
+;;   - it copies the files instead of symlinks.
+;; The feature is to pre-generate and place files that are cumbersome
+;; to do during Windows/VC++ build.  Pre-generation itself should be
+;; done on windows.
 
 (define (usage)
   (print "Usage: gosh xlink [-l|-u][-g group][-b top_builddir][-s top_srcdir] <scm-or-so-file> ...\n"
@@ -31,6 +39,9 @@
 (define *builddir* #f)
 (define *srcdir*   #f)
 
+(define *pre-gen-winvc*
+  (sys-getenv "GAUCHE_PRE_GENERATE_FOR_WINVC"))
+
 (define (main args)
   (let1 files (parse-args (cdr args))
     (unless (or *link* *unlink*) (usage))
@@ -47,10 +58,11 @@
 
 (define (make-link file target)
   (make-directory* (sys-dirname target))
-  (unless (link-exists? file target)
+  (unless (or (link-exists? file target)
+              (and *pre-gen-winvc* (not (string-suffix? ".scm" file))))
     (sys-unlink target)
     (print "link "file" <- "target)
-    (if (symbol-bound? 'sys-symlink)
+    (if (and (symbol-bound? 'sys-symlink) (not *pre-gen-winvc*))
       (sys-symlink file target)
       (sys-system #`"cp ,file ,target"))))
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.18 2007-09-14 11:17:42 shirok Exp $
+ *  $Id: vport.c,v 1.19 2007-09-15 04:00:24 shirok Exp $
  */
 
 #include <gauche.h>
@@ -709,7 +709,7 @@ static ScmClassStaticSlotSpec boport_slots[] = {
 
 void Scm_Init_vportlib(ScmModule*);
 
-void Scm_Init_vport(void)
+SCM_EXTENSION_ENTRY void Scm_Init_vport(void)
 {
     ScmModule *mod;
     SCM_INIT_EXTENSION(vport);

@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions  -*-mode: Makefile-*-
-## $Id: Makefile.ext.in,v 1.30 2007-09-08 04:30:37 shirok Exp $
+## $Id: Makefile.ext.in,v 1.31 2007-09-15 04:00:17 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -98,7 +98,9 @@ maintainer-clean : clean
 
 pre-package : $(PRE_PACKAGE_FILES)
 
-pre-package-ext :
+pre-package-ext : pre-package-generate link
+
+pre-package-generate :
 	for f in $(XCLEANFILES); do \
 	  if test X`echo $$f | sed s/\*//g` = X$$f; then \
 	    $(MAKE) GOSH=$(GOSH) GAUCHE_CONFIG=$(GAUCHE_CONFIG) $$f; \

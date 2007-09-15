@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: fcntl.h,v 1.3 2007-03-22 11:20:21 shirok Exp $
+ *  $Id: fcntl.h,v 1.4 2007-09-15 04:00:18 shirok Exp $
  */
 
 #ifndef GAUCHE_FCNTL_H
@@ -38,6 +38,11 @@
 
 #include <gauche.h>
 #include <fcntl.h>
+
+#if defined(EXTFCNTL_EXPORTS)
+#define LIBGAUCHE_EXT_BODY
+#endif
+#include <gauche/extern.h>      /* redefine SCM_EXTERN */
 
 typedef struct ScmSysFlockRec {
     SCM_HEADER;

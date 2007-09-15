@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: fcntl.c,v 1.20 2007-05-16 03:27:07 shirok Exp $
+ *  $Id: fcntl.c,v 1.21 2007-09-15 04:00:17 shirok Exp $
  */
 
 #define _GNU_SOURCE  /* for Linux, this enables additional features */
@@ -41,8 +41,6 @@
 #include <gauche/class.h>
 #include <gauche/extend.h>
 
-#undef SCM_EXTERN
-#define SCM_EXTERN  extern
 #include "gauche/fcntl.h"
 
 /* struct flock */
@@ -134,7 +132,7 @@ static const char *flag_name(int flag)
 
 ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
 {
-#ifndef __MINGW32__
+#ifndef GAUCHE_WINDOWS
     int fd = Scm_GetPortFd(port_or_fd, TRUE), r;
     ScmSysFlock *fl;
     
@@ -193,10 +191,10 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
         Scm_Error("unknown operation code (%d) for fcntl", op);
         return SCM_UNDEFINED;   /* dummy */
     }
-#else  /*__MINGW32__*/
+#else  /*GAUCHE_WINDOWS*/
     Scm_Error("fcntl not supported on MinGW port");
     return SCM_UNDEFINED; /*dummy*/
-#endif /*__MINGW32__*/
+#endif /*GAUCHE_WINDOWS*/
 }
 
 /*
@@ -205,7 +203,7 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
 
 extern void Scm_Init_fcntlib(ScmModule *mod);
 
-void Scm_Init_fcntl(void)
+SCM_EXTENSION_ENTRY void Scm_Init_fcntl(void)
 {
     ScmModule *mod;
 
@@ -215,7 +213,7 @@ void Scm_Init_fcntl(void)
                         mod, flock_slots, 0);
     Scm_Init_fcntlib(mod);
 
-#ifndef __MINGW32__
+#ifndef GAUCHE_WINDOWS
     Scm_AddFeature("gauche.sys.fcntl", NULL);
 #endif
 }

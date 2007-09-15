@@ -66,6 +66,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext-gauche-hook", "ext-gauc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext-gauche-parameter", "ext-gauche-parameter.vcproj", "{E2E37C38-77A6-439F-8991-EF9F94EB943E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext-fcntl", "ext-fcntl.vcproj", "{3A71402B-0993-4C1C-AA9D-B47369A6C4F2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -196,6 +198,10 @@ Global
 		{E2E37C38-77A6-439F-8991-EF9F94EB943E}.Debug|Win32.Build.0 = Debug|Win32
 		{E2E37C38-77A6-439F-8991-EF9F94EB943E}.Release|Win32.ActiveCfg = Release|Win32
 		{E2E37C38-77A6-439F-8991-EF9F94EB943E}.Release|Win32.Build.0 = Release|Win32
+		{3A71402B-0993-4C1C-AA9D-B47369A6C4F2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3A71402B-0993-4C1C-AA9D-B47369A6C4F2}.Debug|Win32.Build.0 = Debug|Win32
+		{3A71402B-0993-4C1C-AA9D-B47369A6C4F2}.Release|Win32.ActiveCfg = Release|Win32
+		{3A71402B-0993-4C1C-AA9D-B47369A6C4F2}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
