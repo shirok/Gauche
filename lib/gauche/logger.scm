@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: logger.scm,v 1.10 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: logger.scm,v 1.11 2007-09-15 12:30:50 shirok Exp $
 ;;;
 
 (define-module gauche.logger
@@ -45,7 +45,6 @@
   )
 (select-module gauche.logger)
 
-;; delay loading some modules until needed
 (autoload gauche.syslog sys-openlog sys-syslog LOG_PID LOG_INFO LOG_USER)
 (autoload file.util file-mtime<?)
 
@@ -153,12 +152,16 @@
 ;; file.lock.)
 (define (determine-lock-policy drain port)
   (set! (slot-ref drain 'lock-policy)
-        (guard (e ((<system-error> e) 'file))
-          (let ((lk (make <sys-flock> :type |F_WRLCK| :whence 0))
-                (un (make <sys-flock> :type |F_UNLCK| :whence 0)))
-            (and (sys-fcntl port |F_SETLK| lk)
-                 (sys-fcntl port |F_SETLK| un))
-            'fcntl)))
+        (cond-expand
+         (gauche.sys.fcntl
+          (guard (e ((<system-error> e) 'file))
+            (let ((lk (make <sys-flock> :type |F_WRLCK| :whence 0))
+                  (un (make <sys-flock> :type |F_UNLCK| :whence 0)))
+              (and (sys-fcntl port |F_SETLK| lk)
+                   (sys-fcntl port |F_SETLK| un))
+              'fcntl)))
+         (else
+          'file)))
   drain)
 
 (define (lock-data drain port)

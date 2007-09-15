@@ -24,8 +24,8 @@
 (define (cmd-rmrf dir)
   (cond-expand
    (gauche.os.windows
-    (sys-system #`"rmdir /q /s ,(n dir) > NUL")
-    (sys-system #`"del /q ,(n dir) > NUL"))
+    (sys-system #`"rmdir /q /s ,(n dir) > NUL 2>&1")
+    (sys-system #`"del /q ,(n dir) > NUL 2>&1"))
    (else
     (sys-system #`"rm -rf ,dir > /dev/null"))))
 
@@ -131,7 +131,7 @@
 (test* "normalize" (n (string-append (get-pwd-via-pwd) "/"))
        (sys-normalize-pathname "" :absolute #t))
 (cond-expand
- (gauche.os-windows #t)
+ (gauche.os.windows #t)
  (else
   (test* "normalize"
          (n (string-append (get-command-output "echo $HOME") "/abc"))
@@ -260,38 +260,50 @@
 ;;-------------------------------------------------------------------
 (test-section "stat")
 
-(cmd-rmrf "test.dir")
-(with-output-to-file "test.dir" (lambda () (display "01234")))
-(sys-chmod "test.dir" #o654)
+(let ()
+  (define (mask unix win)
+    (cond-expand
+     (gauche.os.windows win)
+     (else unix)))
 
-(test* "stat" '(#o654 regular 5)
-       (let ((s (sys-stat "test.dir")))
-         (list (logand #o777 (sys-stat->mode s))
-               (sys-stat->file-type s)
-               (sys-stat->size s))))
+  (cmd-rmrf "test.dir")
+  (with-output-to-file "test.dir" (lambda () (display "01234")))
+  (sys-chmod "test.dir" #o654)
 
-(test* "fstat" '(#o654 regular 5)
-       (call-with-input-file "test.dir"
-         (lambda (p)
-           (let ((s (sys-fstat p)))
-             (list (logand #o777 (sys-stat->mode s))
-                   (sys-stat->file-type s)
-                   (sys-stat->size s))))))
 
-(sys-unlink "test.dir")
-(sys-mkdir "test.dir" #o700)
+  (test* "stat" `(,(mask #o654 #o666) regular 5)
+         (let ((s (sys-stat "test.dir")))
+           (list (logand #o777 (sys-stat->mode s))
+                 (sys-stat->file-type s)
+                 (sys-stat->size s))))
 
-(test* "stat" '(#o700 directory)
-       (let ((s (sys-stat "test.dir")))
-         (list (logand #o777 (sys-stat->mode s))
-               (sys-stat->file-type s))))
+  (test* "fstat" `(,(mask #o654 #o666) regular 5)
+         (call-with-input-file "test.dir"
+           (lambda (p)
+             (let ((s (sys-fstat p)))
+               (list (logand #o777 (sys-stat->mode s))
+                     (sys-stat->file-type s)
+                     (sys-stat->size s))))))
 
-(test* "fstat" '(#o700 directory)
-       (call-with-input-file "test.dir"
-         (lambda (p)
-           (let ((s (sys-fstat p)))
-             (list (logand #o777 (sys-stat->mode s))
-                   (sys-stat->file-type s))))))
+  (sys-unlink "test.dir")
+  (sys-mkdir "test.dir" #o700)
+
+  (test* "stat" `(,(mask #o700 #o777) directory)
+         (let ((s (sys-stat "test.dir")))
+           (list (logand #o777 (sys-stat->mode s))
+                 (sys-stat->file-type s))))
+
+  ;; on windows you cannot use open-input-file on a directory.
+  (cond-expand
+   (gauche.os.windows)
+   (else
+    (test* "fstat" `(,(mask #o700 #o777) directory)
+           (call-with-input-file "test.dir"
+             (lambda (p)
+               (let ((s (sys-fstat p)))
+                 (list (logand #o777 (sys-stat->mode s))
+                       (sys-stat->file-type s))))))))
+  )
 
 (sys-rmdir "test.dir")
 

@@ -7,6 +7,10 @@
 (use srfi-1)
 (use srfi-13)
 
+;; shorthand of normalizing pathname.  this doesn't do anything on
+;; unix, but on Windows the separator in PATHNAME is replaced.
+(define (n . pathnames) (map sys-normalize-pathname pathnames))
+
 ;;------------------------------------------------------------------
 (test-section "built-in gauche.fileutil")
 
@@ -56,7 +60,7 @@
   (mf "tmp1.o/a.a.a")
 
   ;; literal
-  (test* "glob a.a" '("tmp1.o/a.a")
+  (test* "glob a.a" (n "tmp1.o/a.a")
          (glob "tmp1.o/a.a")
          (pa$ lset= equal?))
 
@@ -66,67 +70,67 @@
          (pa$ lset= equal?))
 
   ;; wildcard
-  (test* "glob *" '("tmp1.o/a" "tmp1.o/aa" "tmp1.o/a.a"
-                    "tmp1.o/a.b" "tmp1.o/a.a.a")
+  (test* "glob *" (n "tmp1.o/a" "tmp1.o/aa" "tmp1.o/a.a"
+                     "tmp1.o/a.b" "tmp1.o/a.a.a")
          (glob "tmp1.o/*")
          (pa$ lset= equal?))
 
-  (test* "glob a.*" '("tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
+  (test* "glob a.*" (n "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
          (glob "tmp1.o/a.*")
          (pa$ lset= equal?))
 
-  (test* "glob .*" '("tmp1.o/.a" "tmp1.o/." "tmp1.o/..")
+  (test* "glob .*" (n "tmp1.o/.a" "tmp1.o/." "tmp1.o/..")
          (glob "tmp1.o/.*")
          (pa$ lset= equal?))
 
-  (test* "glob ?" '("tmp1.o/a")
+  (test* "glob ?" (n "tmp1.o/a")
          (glob "tmp1.o/?")
          (pa$ lset= equal?))
 
-  (test* "glob *?" '("tmp1.o/a" "tmp1.o/aa" "tmp1.o/a.a"
-                     "tmp1.o/a.b" "tmp1.o/a.a.a")
+  (test* "glob *?" (n "tmp1.o/a" "tmp1.o/aa" "tmp1.o/a.a"
+                      "tmp1.o/a.b" "tmp1.o/a.a.a")
          (glob "tmp1.o/*?")
          (pa$ lset= equal?))
 
-  (test* "glob ??" '("tmp1.o/aa")
+  (test* "glob ??" (n "tmp1.o/aa")
          (glob "tmp1.o/??")
          (pa$ lset= equal?))
 
-  (test* "glob *.*" '("tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
+  (test* "glob *.*" (n "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
          (glob "tmp1.o/*.*")
          (pa$ lset= equal?))
 
-  (test* "glob */*" '("tmp1.o/a/b" "tmp1.o/a/cc" "tmp1.o/aa/b")
+  (test* "glob */*" (n "tmp1.o/a/b" "tmp1.o/a/cc" "tmp1.o/aa/b")
          (glob "tmp1.o/*/*")
          (pa$ lset= equal?))
 
-  (test* "glob */?" '("tmp1.o/a/b" "tmp1.o/aa/b")
+  (test* "glob */?" (n "tmp1.o/a/b" "tmp1.o/aa/b")
          (glob "tmp1.o/*/?")
          (pa$ lset= equal?))
 
-  (test* "glob *  (chdir)" '("a" "aa" "a.a" "a.b" "a.a.a")
+  (test* "glob *  (chdir)" (n "a" "aa" "a.a" "a.b" "a.a.a")
          (begin (sys-chdir "tmp1.o") (begin0 (glob "*") (sys-chdir "..")))
          (pa$ lset= equal?))
 
-  (test* "glob */" '("tmp1.o/a/" "tmp1.o/aa/")
+  (test* "glob */" (n "tmp1.o/a/" "tmp1.o/aa/")
          (glob "tmp1.o/*/")
          (pa$ lset= equal?))
 
   ;; multi
-  (test* "glob * .* (multi)" '("tmp1.o/." "tmp1.o/.." "tmp1.o/.a" "tmp1.o/a"
-                               "tmp1.o/aa" "tmp1.o/a.a" "tmp1.o/a.b"
-                               "tmp1.o/a.a.a")
+  (test* "glob * .* (multi)" (n "tmp1.o/." "tmp1.o/.." "tmp1.o/.a" "tmp1.o/a"
+                                "tmp1.o/aa" "tmp1.o/a.a" "tmp1.o/a.b"
+                                "tmp1.o/a.a.a")
          (glob '("tmp1.o/*" "tmp1.o/.*"))
          (pa$ lset= equal?))
 
   ;; charset
-  (test* "glob a.[ab]" '("tmp1.o/a.a" "tmp1.o/a.b")
+  (test* "glob a.[ab]" (n "tmp1.o/a.a" "tmp1.o/a.b")
          (glob "tmp1.o/a.[ab]")
          (pa$ lset= equal?))
-  (test* "glob a.[[:alpha:]]" '("tmp1.o/a.a" "tmp1.o/a.b")
+  (test* "glob a.[[:alpha:]]" (n "tmp1.o/a.a" "tmp1.o/a.b")
          (glob "tmp1.o/a.[[:alpha:]]")
          (pa$ lset= equal?))
-  (test* "glob *.[[:alpha:]]" '("tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
+  (test* "glob *.[[:alpha:]]" (n "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
          (glob "tmp1.o/*.[[:alpha:]]")
          (pa$ lset= equal?))
   (test* "glob *.[![:alpha:]]" '()
@@ -135,7 +139,7 @@
   (test* "glob *.[^[:alpha:]]" '()
          (glob "tmp1.o/*.[^[:alpha:]]")
          (pa$ lset= equal?))
-  (test* "glob *.[^A-Z]" '("tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
+  (test* "glob *.[^A-Z]" (n "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
          (glob "tmp1.o/*.[^A-Z]")
          (pa$ lset= equal?))
 

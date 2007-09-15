@@ -2,11 +2,9 @@
  * getdir_win.c - get the library directory at runtime (fow windows)
  *  included from paths.c
  *
- * $Id: getdir_win.c,v 1.4 2007-08-25 02:29:31 shirok Exp $
+ * $Id: getdir_win.c,v 1.5 2007-09-15 12:30:50 shirok Exp $
  */
 
-#include <windows.h>
-#include <shlwapi.h>
 #include <string.h>
 
 static int get_install_dir(char *buf, int buflen,
@@ -16,13 +14,8 @@ static int get_install_dir(char *buf, int buflen,
     DWORD r;
     int len;
     const char *mbpath;
-#if defined(UNICODE)
-    WCHAR path[MAX_PATH];
-    const WCHAR *libname = L"libgauche.dll";
-#else
-    char path[MAX_PATH];
-    const char *libname = "libgauche.dll";
-#endif
+    TCHAR path[MAX_PATH];
+    const TCHAR *libname = _T("libgauche.dll");
 
     if ((mod = GetModuleHandle(libname)) == NULL) {
         errfn("GetModuleHandle failed");

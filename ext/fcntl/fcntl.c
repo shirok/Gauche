@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: fcntl.c,v 1.21 2007-09-15 04:00:17 shirok Exp $
+ *  $Id: fcntl.c,v 1.22 2007-09-15 12:30:47 shirok Exp $
  */
 
 #define _GNU_SOURCE  /* for Linux, this enables additional features */
@@ -132,7 +132,7 @@ static const char *flag_name(int flag)
 
 ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
 {
-#ifndef GAUCHE_WINDOWS
+#if !defined(GAUCHE_WINDOWS)
     int fd = Scm_GetPortFd(port_or_fd, TRUE), r;
     ScmSysFlock *fl;
     

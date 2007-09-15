@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.115 2007-08-24 23:55:43 shirok Exp $
+ *  $Id: load.c,v 1.116 2007-09-15 12:30:50 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1103,6 +1103,9 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
             }
             f = Scm_FindBinding(SCM_MODULE(m), adata->name, 0);
             g = Scm_FindBinding(adata->module, adata->name, 0);
+            if (f == NULL) {
+                Scm_Error("ZIMBER: %S %S\n", m, adata->name);
+            }
             SCM_ASSERT(f != NULL);
             SCM_ASSERT(g != NULL);
             adata->value = SCM_GLOC_GET(f);

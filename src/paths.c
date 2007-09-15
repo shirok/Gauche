@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: paths.c,v 1.3 2007-08-24 23:55:43 shirok Exp $
+ *  $Id: paths.c,v 1.4 2007-09-15 12:30:50 shirok Exp $
  *
  */
 
@@ -38,6 +38,7 @@
  * doesn't use ScmObj, so the function works on bare C strings.
  */
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/arch.h"
 

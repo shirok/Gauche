@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-27.scm,v 1.4 2007-03-02 07:39:07 shirok Exp $
+;;;  $Id: srfi-27.scm,v 1.5 2007-09-15 12:30:49 shirok Exp $
 ;;;
 
 ;; Implements SRFI-27 interface on top of math.mt-random module.
@@ -66,7 +66,7 @@
   (unless (random-source? source)
     (error "random source required, but got" source))
   (mt-random-set-seed! source
-                       (let1 s (* (sys-time) (sys-getpid))
+                       (let1 s (* (inexact->exact (sys-time)) (sys-getpid))
                          (logior s (ash s -16)))))
 
 (define (random-source-pseudo-randomize! source i j)

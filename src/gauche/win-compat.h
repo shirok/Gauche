@@ -139,15 +139,15 @@ int sigaction(int signum, const struct sigaction *act, struct sigaction *oact);
 /*====================================================================
  * string stuff
  */
-#if defined(MSVC)
+#if defined(_MSC_VER)
 #define snprintf _snprintf
 #define strcasecmp _stricmp
-#endif /* MSVC */
+#endif /* _MSC_VER */
 
 /*====================================================================
  * POSIX I/O and process functions
  */
-#if defined(MSVC)
+#if defined(_MSC_VER)
 #include <io.h>
 #include <process.h>
 #include <direct.h>
@@ -197,7 +197,7 @@ int sigaction(int signum, const struct sigaction *act, struct sigaction *oact);
 #define S_ISBLK(modebits)  FALSE
 #define S_ISFIFO(modebits) FALSE
 
-#endif /* MSVC */
+#endif /* _MSC_VER */
 
 /* wchar <-> mbchar stuff.  implementation in win-compat.c */
 #if defined(LIBGAUCHE_BODY)
@@ -219,7 +219,7 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
 /*===================================================================
  * Miscellaneous POSIX stuff
  */
-#if defined(MSVC)
+#if defined(_MSC_VER)
 typedef u_int  pid_t;
 #endif
 

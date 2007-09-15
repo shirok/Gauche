@@ -30,15 +30,42 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: syslog.scm,v 1.5 2007-03-02 07:39:06 shirok Exp $
+;;;  $Id: syslog.scm,v 1.6 2007-09-15 12:30:49 shirok Exp $
 ;;;
 
 (define-module gauche.syslog
-  (export sys-openlog sys-syslog sys-closelog sys-setlogmask))
+  (export sys-openlog sys-syslog sys-closelog sys-logmask sys-setlogmask))
 
 (select-module gauche.syslog)
 
 (dynamic-load "syslog")
+
+;; Provides dummy functions.  It is debatable whether we should raise
+;; a "not implemented" error, or simply discards the requests.  For now,
+;; we jsut discards the requests, i.e. log messages will go to void.
+(cond-expand
+ (gauche.sys.syslog)
+ (else
+  (define (sys-openlog ident option facility) (undefined))
+  (define (sys-syslog prio message) (undefined))
+  (define (sys-closelog) (undefined))))
+
+(cond-expand
+ (gauche.sys.setlogmask)
+ (else
+  (define (sys-logmask prio) 0)
+  (define (sys-setlogmask mask) 0)))
+
+;; We need to define at least these three, for they are referenced in
+;; gauche.logger.
+(define-macro (define-dummy sym val)
+  (if (global-variable-bound? (find-module 'gauche.syslog) sym)
+    #f
+    `(define ,sym ,val)))
+
+(define-dummy |LOG_PID| 0)
+(define-dummy |LOG_INFO| 1)
+(define-dummy |LOG_USER| 2)
 
 (export-if-defined |LOG_CONS|
                    |LOG_NDELAY|

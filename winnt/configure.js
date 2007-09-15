@@ -41,6 +41,7 @@ var output = fs.OpenTextFile("gauche\\config.h", 2, true);
   "#include <shlwapi.h>",
   "#include <math.h>",
   "#include <float.h>",
+  "#include <tchar.h>",
   // versions
   "#define GAUCHE_MAJOR_VERSION "+ver_major,
   "#define GAUCHE_MINOR_VERSION "+ver_minor,
@@ -80,5 +81,5 @@ var output = fs.OpenTextFile("gauche\\config.h", 2, true);
   "#define SHLIB_SO_SUFFIX \"dll\"",
   ""
     ])
-
+    
 output.Close();

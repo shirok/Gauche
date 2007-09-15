@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.93 2007-09-13 12:30:28 shirok Exp $
+ *  $Id: system.c,v 1.94 2007-09-15 12:30:50 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1549,6 +1549,34 @@ ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
  */
 #if defined(GAUCHE_WINDOWS)
 
+/* Dynamically obtain an entry point that may not be available on
+   all Windows versions.  If throw_error is TRUE, throws an error
+   if DLL mapping failed, or entry cannot be found.  Otherwise,
+   returns NULL on error. */
+static void *get_api_entry(const TCHAR *module, const char *proc,
+                           int throw_error)
+{
+    void *entry;
+    HMODULE m = LoadLibrary(module);
+    if (m == NULL) {
+        if (throw_error)
+            Scm_SysError("LoadLibrary(%s) failed", SCM_WCS2MBS(module));
+        else
+            return NULL;
+    }
+    entry = (void*)GetProcAddress(m, proc);
+    if (entry == NULL) {
+        DWORD errcode = GetLastError();
+        FreeLibrary(m);
+        SetLastError(errcode);
+        if (throw_error)
+            Scm_SysError("GetProcAddress(%s) failed", proc);
+        else
+            return NULL;
+    }
+    return entry;
+}
+
 /*
  * Users and groups
  * Kinda Kluge, since we don't have "user id" associated with each
@@ -1697,14 +1725,66 @@ char *ttyname(int desc)
     return NULL;
 }
 
+static int win_truncate(HANDLE file, off_t len)
+{
+    typedef BOOL (WINAPI *pSetEndOfFile_t)(HANDLE);
+    typedef BOOL (WINAPI *pSetFilePointer_t)(HANDLE, LONG, PLONG, DWORD);
+
+    static pSetEndOfFile_t pSetEndOfFile = NULL;
+    static pSetFilePointer_t pSetFilePointer = NULL;
+
+    BOOL r;
+
+    if (pSetEndOfFile == NULL) {
+        pSetEndOfFile = (pSetEndOfFile_t)get_api_entry(_T("kernel32.dll"),
+                                                       "SetEndOfFile",
+                                                       FALSE);
+        if (pSetEndOfFile == NULL) return -1;
+    }
+    if (pSetFilePointer == NULL) {
+        pSetFilePointer = (pSetFilePointer_t)get_api_entry(_T("kernel32.dll"),
+                                                           "SetFilePointer",
+                                                           FALSE);
+        if (pSetFilePointer == NULL) return -1;
+    }
+
+    /* TODO: 64bit size support! */
+    r = pSetFilePointer(file, (LONG)len, NULL, FILE_BEGIN);
+    if (r == INVALID_SET_FILE_POINTER) return -1;
+    r = pSetEndOfFile(file);
+    if (r == 0) return -1;
+    return 0;
+}
+
+
 int truncate(const char *path, off_t len)
 {
-    return -1;
+    HANDLE file;
+    int r;
+    
+    file = CreateFile(SCM_MBS2WCS(path), GENERIC_WRITE,
+                      FILE_SHARE_READ|FILE_SHARE_WRITE,
+                      NULL, OPEN_EXISTING, 0, NULL);
+    if (file == INVALID_HANDLE_VALUE) return -1;
+    r = win_truncate(file, len);
+    if (r < 0) {
+        DWORD errcode = GetLastError();
+        CloseHandle(file);
+        SetLastError(errcode);
+        return -1;
+    }
+    CloseHandle(file);
+    return 0;
 }
 
 int ftruncate(int fd, off_t len)
 {
-    return -1;
+    HANDLE h = (HANDLE)_get_osfhandle(fd);
+    int r;
+    if (h == INVALID_HANDLE_VALUE) return -1;
+    r = win_truncate(h, len);
+    if (r < 0) return -1;
+    return 0;
 }
 
 unsigned int alarm(unsigned int seconds)
@@ -1717,13 +1797,26 @@ unsigned int alarm(unsigned int seconds)
 /* file links */
 int link(const char *existing, const char *newpath)
 {
-    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-    Scm_Error("link");
-    return -1;
-#if 0 /* only on NTFS */
-    BOOL r = CreateHardLink((LPCTSTR)newpath, (LPCTSTR)existing, NULL);
-    return r? -1 : 0;
+    /* CreateHardLink only exists in WinNT or later.  Officially we don't
+       support anything before, but let's try to be kind for the legacy
+       system ...*/
+    typedef BOOL (WINAPI *pCreateHardLink_t)(LPTSTR, LPTSTR,
+                                             LPSECURITY_ATTRIBUTES);
+    static pCreateHardLink_t pCreateHardLink = NULL;
+    BOOL r;
+#if defined(_UNICODE)
+#define CREATEHARDLINK  "CreateHardLinkW"
+#else
+#define CREATEHARDLINK  "CreateHardLinkA"
 #endif
+
+    if (pCreateHardLink == NULL) {
+        pCreateHardLink = (pCreateHardLink_t)get_api_entry(_T("kernel32.dll"),
+                                                           CREATEHARDLINK,
+                                                           TRUE);
+    }
+    r = pCreateHardLink(SCM_MBS2WCS(newpath), SCM_MBS2WCS(existing), NULL);
+    return r? 0 : -1;
 }
 
 /* Winsock requires some obscure initialization.
