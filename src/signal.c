@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.53 2007-08-24 23:55:43 shirok Exp $
+ *  $Id: signal.c,v 1.54 2007-09-16 04:15:59 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -59,19 +59,20 @@
  *  the system to handle the signal unless the Scheme program installs
  *  the handler.   Such signals are the ones that can't be caught, or
  *  are ignored by default.  SIGPWR and SIGXCPU are also left to the system
- *  since GC uses it in the Linux/pthread environment.
+ *  since GC uses it in the Linux/pthread environment.  
+ *
+ *  About the signal behavior on windows, see "Note on windows port" below.
  */
-
 #if !defined(GAUCHE_WINDOWS)
-  #ifdef GAUCHE_USE_PTHREADS
-  #define SIGPROCMASK pthread_sigmask
-  #else
-  #define SIGPROCMASK sigprocmask
-  #endif
+# ifdef GAUCHE_USE_PTHREADS
+#  define SIGPROCMASK pthread_sigmask
+# else
+#  define SIGPROCMASK sigprocmask
+# endif
 #else  /* GAUCHE_WINDOWS */
-  /* emulation routine is defined below */
-  #define SIGPROCMASK sigprocmask_win
-  static int sigprocmask_win(int how, const sigset_t *set, sigset_t *oldset);
+/* emulation routine is defined below */
+# define SIGPROCMASK sigprocmask_win
+static int sigprocmask_win(int how, const sigset_t *set, sigset_t *oldset);
 #endif /* GAUCHE_WINDOWS */
 
 /* Master signal handler vector. */
@@ -542,6 +543,15 @@ static SCM_DEFINE_SUBR(through_sighandler_stub, 1, 0,
 
 /*
  * An emulation stub for Windows
+ *
+ * Note on windows port:
+ *  Windows does provide signal() function to conform C standard, but
+ *  its use is so limited that it's effectively useless.  You can only
+ *  trap SIGABRT, SIGFPE, SIGILL, SIGSEGV and SIGTERM, and you cannot
+ *  send signal to other processes.  Emulating POSIX signal behavior is
+ *  not an easy task (see http://cygwin.com/cgi-bin/cvsweb.cgi/src/winsup/cygwin/how-signals-work.txt?cvsroot=src ).
+ *  So, although we provide a signal interface, DO NOT USE IT.  It's better
+ *  to expose Windows native IPC and build an abstraction on top if it.
  */
 #if defined(GAUCHE_WINDOWS)
 int sigaction(int signum, const struct sigaction *act,
@@ -559,8 +569,6 @@ int sigaction(int signum, const struct sigaction *act,
 
 int sigprocmask_win(int how, const sigset_t *set, sigset_t *oldset)
 {
-   /* This isn't correct (we need some mechanism to block the signal),
-      but just for the time being ... */
     return 0;
 }
 #endif /* GAUCHE_WINDOWS */

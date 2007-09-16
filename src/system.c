@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.94 2007-09-15 12:30:50 shirok Exp $
+ *  $Id: system.c,v 1.95 2007-09-16 04:15:59 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1709,8 +1709,58 @@ int fork(void)
 
 int kill(pid_t pid, int signal)
 {
+    /* You cannot really "send" singals to other processes on Windows.
+       We try to emulate SIGKILL and SIGINT by Windows API.
+       To send a signal to the current process we can use raise(). */
+    HANDLE p;
+    BOOL r;
+    
+    if (signal == SIGKILL) {
+        p = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+        if (p == NULL) return -1;
+        r = TerminateProcess(p, SIGKILL);
+        if (r == 0) {           /* r==0 is failure */
+            DWORD errcode = GetLastError();
+            CloseHandle(p);
+            SetLastError(errcode);
+            return -1;
+        }
+        CloseHandle(p);
+        return 0;
+    } else if (signal == 0) {
+        /* We're supposed to do the error check without actually sending
+           the signal.   For now we just pretend nothing's wrong. */
+        return 0;
+    } else if (pid == getpid()) {
+        /* we're sending signal to the current process. */
+        int r = raise(signal); /* r==0 is success */
+        return (r == 0)? 0 : -1;
+    } else if (signal == SIGINT || signal == SIGABRT) {
+        /* we can emulate these signals by console event, although the
+           semantics of process group differ from unix significantly.
+           Process group id is the same as the pid of the process
+           that started the group.  So you cannot send SIGABRT only
+           to the process group leader.  OTOH, for SIGINT, the windows
+           manual says it always directed to the specified process,
+           not the process group, unless pid == 0 */
+        r = GenerateConsoleCtrlEvent(abs(pid),
+                                     (signal == SIGINT)? CTRL_C_EVENT : CTRL_BREAK_EVENT);
+        return (r == 0)? -1 : 0; /* r==0 is failure */
+    } else {
+        SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+        return -1;
+    }
+}
+
+pid_t wait(int *pstatus)
+{
+    return waitpid(-1, pstatus, 0);
+}
+
+pid_t waitpid(pid_t pid, int *pstatus, int options)
+{
     SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-    return -1; /*TODO: is there any alternative? */
+    return -1;
 }
 
 int pipe(int fd[])

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.27 2007-03-05 09:21:35 shirok Exp $
+;;;  $Id: process.scm,v 1.28 2007-09-16 04:15:59 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -253,8 +253,14 @@
   (when (process-alive? process)
     (sys-kill (process-pid process) signal)))
 (define (process-kill process) (process-send-signal process |SIGKILL|))
-(define (process-stop process) (process-send-signal process |SIGSTOP|))
-(define (process-continue process) (process-send-signal process |SIGCONT|))
+(define (process-stop process)
+  (cond-expand
+   (gauche.os.windows (undefined))
+   (else (process-send-signal process |SIGSTOP|))))
+(define (process-continue process)
+  (cond-expand
+   (gauche.os.windows (undefined))
+   (else (process-send-signal process |SIGCONT|))))
 
 ;;===================================================================
 ;; Process ports

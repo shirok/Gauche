@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.131 2007-08-28 10:15:43 shirok Exp $
+;;; $Id: syslib.stub,v 1.132 2007-09-16 04:15:59 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -474,8 +474,6 @@
 ;;---------------------------------------------------------------------
 ;; sys/wait.h
 
-(when "!defined(GAUCHE_WINDOWS)"
-
 ;; returns pid and status 
 (define-cproc sys-wait ()
   (body (<int> <int>)
@@ -511,8 +509,6 @@
 
 (define-cproc sys-wait-stopsig (status::<int>)
   (call <int> "WSTOPSIG"))
-
-) ;; !defined(GAUCHE_WINDOWS)
 
 ;;---------------------------------------------------------------------
 ;; time.h

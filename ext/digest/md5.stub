@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: md5.stub,v 1.12 2007-09-14 11:17:40 shirok Exp $
+;;;  $Id: md5.stub,v 1.13 2007-09-16 04:15:58 shirok Exp $
 ;;;
 
 "
@@ -67,7 +67,7 @@
 
  /* Hack for initialization stub */
  static void Scm_md5_internal_init(ScmModule*);
- void Scm_Init_md5(void)
+ SCM_EXTENSION_ENTRY void Scm_Init_md5(void)
  {
    ScmModule *mod = SCM_FIND_MODULE(\"rfc.md5\", SCM_FIND_MODULE_CREATE);
    SCM_INIT_EXTENSION(md5);

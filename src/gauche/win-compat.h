@@ -106,6 +106,12 @@ typedef jmp_buf  sigjmp_buf;
  * NB: this may need to be changed if MinGW starts supporting
  * sigemptyset etc.
  */
+
+/* Windows doesn't support SIGKILL explicitly, but we want to emulate
+   (sys-kill SIGKILL) by TerminateProcess.
+   The signal number 9 is unused in Windows at this moment.  Chekc signal.h.*/
+#define SIGKILL 9
+
 #ifndef _SIGSET_T_
 #define _SIGSET_T_
 typedef unsigned long sigset_t;
@@ -220,7 +226,7 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
  * Miscellaneous POSIX stuff
  */
 #if defined(_MSC_VER)
-typedef u_int  pid_t;
+typedef int  pid_t;
 #endif
 
 uid_t getuid(void);
@@ -237,6 +243,22 @@ char *ttyname(int desc);
 int truncate(const char *path, off_t len);
 int ftruncate(int fd, off_t len);
 unsigned int alarm(unsigned int seconds);
+pid_t wait(int*);
+pid_t waitpid(pid_t, int*, int);
+
+#define WNOHANG   (1L<<0)
+#define WUNTRACED (1L<<1)
+
+/* Windows doesn't really distinguish how the process is ended.  The
+   exit status passed to exit() is obtained by GetExitCodeProcess "as is".
+   Since signals are not much of use on Windows, we regard the process
+   always "exited". */
+#define WIFEXITED(status)   TRUE
+#define WEXITSTATUS(stauts) (status)
+#define WIFSIGNALED(status) FALSE
+#define WTERMSIG(stauts)    (status)
+#define WIFSTOPPED(status)  FALSE
+#define WSTOPSIG(status)    (status)
 
 /* followings are in auxsys.c */
 const char *getlogin(void);

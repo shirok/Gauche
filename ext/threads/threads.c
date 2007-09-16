@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: threads.c,v 1.18 2007-09-14 11:17:41 shirok Exp $
+ *  $Id: threads.c,v 1.19 2007-09-16 04:15:59 shirok Exp $
  */
 
 #include <gauche.h>
@@ -283,7 +283,7 @@ ScmObj Scm_ThreadTerminate(ScmVM *target)
 extern void Scm_Init_mutex(ScmModule*);
 extern void Scm_Init_thrlib(ScmModule*);
 
-void Scm_Init_threads(void)
+SCM_EXTENSION_ENTRY void Scm_Init_threads(void)
 {
     ScmModule *mod = SCM_FIND_MODULE("gauche.threads", SCM_FIND_MODULE_CREATE);
     SCM_INIT_EXTENSION(threads);
