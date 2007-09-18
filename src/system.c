@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.96 2007-09-18 08:48:12 shirok Exp $
+ *  $Id: system.c,v 1.97 2007-09-18 10:13:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1400,8 +1400,10 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     return Scm_MakeInteger(pid);
 #else  /* GAUCHE_WINDOWS */
     if (forkp) {
+        static HANDLE *win_prepare_handles(int *fds);
+        
         TCHAR  program_path[MAX_PATH+1], *filepart;
-        HANDLE *hs = Scm_SysSwapFds(fds);
+        HANDLE *hs = win_prepare_handles(fds);
         BOOL r, pathlen;
         STARTUPINFO si;
         PROCESS_INFORMATION pi;
@@ -1434,6 +1436,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         CloseHandle(pi.hThread); /* we don't need it. */
         return win_process_register(Scm_MakeWinProcess(pi.hProcess));
     } else {
+        Scm_SysSwapFds(fds);
 	execvp(program, (const char *const*)argv);
 	Scm_Panic("exec failed: %s: %s", program, strerror(errno));	
     }
@@ -1510,7 +1513,6 @@ int *Scm_SysPrepareFdMap(ScmObj iomap)
     return fds;
 }
 
-#if !defined(GAUCHE_WINDOWS)
 void Scm_SysSwapFds(int *fds)
 {
     int *tofd, *fromfd, nfds, maxfd, i, j, fd;
@@ -1522,9 +1524,13 @@ void Scm_SysSwapFds(int *fds)
     fromfd = fds + 1 + nfds;
 
     /* TODO: use getdtablehi if available */
+#if !defined(GAUCHE_WINDOWS)
     if ((maxfd = sysconf(_SC_OPEN_MAX)) < 0) {
         Scm_Panic("failed to get OPEN_MAX value from sysconf");
     }
+#else  /*GAUCHE_WINDOWS*/
+    maxfd = 256;        /* guess it and cross your finger */
+#endif /*GAUCHE_WINDOWS*/
 
     /* Dup fromfd to the corresponding tofd.  We need to be careful
        not to override the destination fd if it will be used. */
@@ -1547,13 +1553,8 @@ void Scm_SysSwapFds(int *fds)
         if (j == nfds) close(fd);
     }
 }
-#else  /* GAUCHE_WINDOWS */
-/* On Windows Scm_SysSwapFds works very differently.  It does not change
-   the current process' fd mapping.  Instead, it allocates a new handle
-   array and fill it.
-   NB: Maybe this needs a different name, since pre/post condition of
-   the function is very different from the Unix version. */
-HANDLE *Scm_SysSwapFds(int *fds)
+
+static HANDLE *win_prepare_handles(int *fds)
 {
     int count, i;
     HANDLE *hs;
@@ -1577,7 +1578,6 @@ HANDLE *Scm_SysSwapFds(int *fds)
     }
     return hs;
 }
-#endif /* GAUCHE_WINDOWS */
 
 /*===============================================================
  * Kill

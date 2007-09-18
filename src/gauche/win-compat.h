@@ -178,6 +178,8 @@ int sigaction(int signum, const struct sigaction *act, struct sigaction *oact);
 #define utime  _utime
 #define utimbuf _utimbuf
 #define putenv _putenv
+#define dup    _dup
+#define dup2   _dup2
 
 #define O_APPEND    _O_APPEND
 #define O_BINARY    _O_BINARY

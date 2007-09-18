@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.h,v 1.4 2007-09-18 08:48:12 shirok Exp $
+ *  $Id: system.h,v 1.5 2007-09-18 10:13:09 shirok Exp $
  */
 
 #ifndef GAUCHE_SYSTEM_H
@@ -212,11 +212,7 @@ enum {
 SCM_EXTERN ScmObj Scm_SysExec(ScmString *file, ScmObj args,
                               ScmObj iomap, ScmSysSigset *mask, int flags);
 SCM_EXTERN int   *Scm_SysPrepareFdMap(ScmObj iomap);
-#if !defined(GAUCHE_WINDOWS)
 SCM_EXTERN void   Scm_SysSwapFds(int *fds);
-#else
-SCM_EXTERN HANDLE *Scm_SysSwapFds(int *fds);
-#endif
 
 SCM_EXTERN void   Scm_SysKill(ScmObj process, int signal);
 SCM_EXTERN ScmObj Scm_SysWait(ScmObj process, int options);
