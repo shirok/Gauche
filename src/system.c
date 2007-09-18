@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.97 2007-09-18 10:13:09 shirok Exp $
+ *  $Id: system.c,v 1.98 2007-09-18 20:35:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1554,6 +1554,7 @@ void Scm_SysSwapFds(int *fds)
     }
 }
 
+#if defined(GAUCHE_WINDOWS)
 static HANDLE *win_prepare_handles(int *fds)
 {
     int count, i;
@@ -1578,6 +1579,7 @@ static HANDLE *win_prepare_handles(int *fds)
     }
     return hs;
 }
+#endif /*GAUCHE_WINDOWS*/
 
 /*===============================================================
  * Kill
