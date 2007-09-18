@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.133 2007-09-18 08:48:12 shirok Exp $
+;;; $Id: syslib.stub,v 1.134 2007-09-18 08:57:22 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -41,6 +41,7 @@
 #if !defined(GAUCHE_WINDOWS)
 #include <grp.h>
 #include <pwd.h>
+#include <sys/wait.h>
 #endif /* !GAUCHE_WINDOWS */
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
