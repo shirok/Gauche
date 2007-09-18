@@ -1,3 +1,15 @@
+2007-09-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c, src/syslib.stub, src/auxsyslib.stub, src/process.scm:
+	  Implemented an abstraction layer for kill and waitpid (Scm_SysKill,
+	  Scm_SysWait) to support windows process smoothly.  For Windows 
+	  processes we keep its process handle instead of an integer pid.
+
+2007-09-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_NumCmp): apply short cut path for the case when
+	  both args are negative.
+
 2007-09-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/class.c: Resurrected windows DLL data import hack
