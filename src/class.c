@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.160 2007-09-13 12:30:27 shirok Exp $
+ *  $Id: class.c,v 1.161 2007-09-18 08:48:12 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2566,7 +2566,13 @@ ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
     ScmClass *fp = (ScmClass*)class_allocate(SCM_CLASS_CLASS, SCM_NIL);
     ScmObj s = SCM_INTERN(name);
     struct foreign_data_rec *data = SCM_NEW(struct foreign_data_rec);
-    static ScmClass *fpcpa[] = { SCM_CLASS_FOREIGN_POINTER, SCM_CLASS_TOP, NULL };
+    /* NB: here we don't need to use SCM_CLASS_STATIC_PTR, since we only
+       refer intra-dll classes, and we don't go through init_class.
+       If we ever find the need to go through init_class, do not forget
+       to change fpcpa initializers as well, to make it work on windows. */
+    static ScmClass *fpcpa[] = { SCM_CLASS_FOREIGN_POINTER,
+                                 SCM_CLASS_TOP,
+                                 NULL };
     fp->name = s;
     fp->allocate = NULL;
     fp->print = print_proc;

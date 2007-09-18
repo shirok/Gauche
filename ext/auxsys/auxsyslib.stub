@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.33 2007-09-13 12:30:23 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.34 2007-09-18 08:48:11 shirok Exp $
 ;;;
 
 "
@@ -134,10 +134,9 @@ extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
   (body <int>
         "SCM_SYSCALL(SCM_RESULT, mkfifo(path, mode));"
         "if (SCM_RESULT < 0) Scm_SysError(\"mkfifo failed on %s\", path);"))
-) ;; !defined(GAUCHE_WINDOWS)
+)
 
 ;; utime.h
-
 (define-cproc sys-utime (path::<const-cstring>
                          &optional (atime #f) (mtime #f))
   (body <void>
@@ -153,7 +152,7 @@ extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
 
 ;; set*
 
-(if "!defined(GAUCHE_WINDOWS)" (begin
+(when "!defined(GAUCHE_WINDOWS)" 
 
 (define-cproc sys-setgid (gid::<int>)
   (body <int>
@@ -221,7 +220,7 @@ extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
   }
   /* NOTREACHED */")
 
-)) ;; !defined(GAUCHE_WINDOWS)
+) ;; !defined(GAUCHE_WINDOWS)
 
 (define-cproc sys-getlogin ()
   (call <const-cstring>? "getlogin"))
@@ -301,11 +300,13 @@ extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
   )
 
 ;; ctermid
-(if "!defined(GAUCHE_WINDOWS)"
 (define-cproc sys-ctermid ()
   (body <const-cstring>
-        "char buf[L_ctermid+1]; SCM_RESULT = ctermid(buf);"))
-) ;; !defined(GAUCHE_WINDOWS)
+        "#if defined(GAUCHE_WINDOWS)"
+        "SCM_RESULT = \"CON\";"
+        "#else"
+        "char buf[L_ctermid+1]; SCM_RESULT = ctermid(buf);"
+        "#endif"))
 
 ;; chown
 (if "!defined(GAUCHE_WINDOWS)"

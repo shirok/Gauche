@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.132 2007-09-16 04:15:59 shirok Exp $
+;;; $Id: syslib.stub,v 1.133 2007-09-18 08:48:12 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -39,7 +39,6 @@
 " #include <locale.h>
 #include <math.h>
 #if !defined(GAUCHE_WINDOWS)
-#include <sys/wait.h>
 #include <grp.h>
 #include <pwd.h>
 #endif /* !GAUCHE_WINDOWS */
@@ -300,10 +299,8 @@
 (define-cproc sys-signal-name (sig::<fixnum>)
   (call "Scm_SignalName"))
 
-(define-cproc sys-kill (pid::<int> sig::<fixnum>)
-  (body <void>
-        "int r; SCM_SYSCALL(r, kill(pid, sig));"
-        "if (r < 0) Scm_SysError(\"kill failed\");"))
+(define-cproc sys-kill (process sig::<fixnum>)
+  (call <void> "Scm_SysKill"))
 
 (define-cproc set-signal-handler! (sig proc &optional (mask::<sys-sigset>? #f))
   (call "Scm_SetSignalHandler"))
@@ -476,20 +473,13 @@
 
 ;; returns pid and status 
 (define-cproc sys-wait ()
-  (body (<int> <int>)
-        "int status;  pid_t r;"
-        "SCM_SYSCALL(r, wait(&status));"
-        "if (r < 0) Scm_SysError(\"wait() failed\");"
-        "SCM_RESULT0 = r; SCM_RESULT1 = status;"))
+  (body "SCM_RESULT = Scm_SysWait(SCM_MAKE_INT(-1), 0);"))
 
-(define-cproc sys-waitpid (pid::<int> &keyword (nohang #f) (untraced #f))
-  (body (<int> <int>)
-        "  int status, options = 0;  pid_t r;"
+(define-cproc sys-waitpid (process &keyword (nohang #f) (untraced #f))
+  (body "int options = 0;"
         "if (!SCM_FALSEP(nohang))   options |= WNOHANG;"
         "if (!SCM_FALSEP(untraced)) options |= WUNTRACED;"
-        "SCM_SYSCALL(r, waitpid(pid, &status, options));"
-        "if (r < 0) Scm_SysError(\"waitpid() failed\");"
-        "SCM_RESULT0 = r; SCM_RESULT1 = status;"))
+        "SCM_RESULT = Scm_SysWait(process, options);"))
 
 ;; status interpretation
 (define-cproc sys-wait-exited? (status::<int>)
@@ -882,6 +872,17 @@
 
 (initcode "Scm_AddFeature(\"gauche.sys.select\", NULL);")
 ) ;; when defined(HAVE_SELECT)
+
+;;;
+;;; Windows-specific utility
+;;;
+
+(when "defined(GAUCHE_WINDOWS)"
+  (define-cproc sys-win-process? (obj)
+    (call <boolean> "Scm_WinProcessP"))
+  (define-cproc sys-win-process-pid (obj)
+    (call <int> "Scm_WinProcessPID"))
+  ) ;; GAUCHE_WINDOWS
 
 ;; Local variables:
 ;; mode: scheme

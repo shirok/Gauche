@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.20 2007-04-23 08:32:53 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.21 2007-09-18 08:48:11 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
@@ -54,6 +54,21 @@
 (cond-expand
  ((not gauche.sys.realpath)
   (define sys-realpath #f))             ; make autoload happy
+ (else))
+
+(cond-expand
+ (gauche.os.windows
+  (define sys-mkfifo #f)
+  (define sys-setgid #f)
+  (define sys-setpgid #f)
+  (define sys-getpgid #f)
+  (define sys-getpgrp #f)
+  (define sys-setsid #f)
+  (define sys-setuid #f)
+  (define sys-getgroups #f)
+  (define sys-uname #f)
+  (define sys-chown #f)
+  )
  (else))
 
 (define sys-gethostname

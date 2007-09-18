@@ -243,8 +243,6 @@ char *ttyname(int desc);
 int truncate(const char *path, off_t len);
 int ftruncate(int fd, off_t len);
 unsigned int alarm(unsigned int seconds);
-pid_t wait(int*);
-pid_t waitpid(pid_t, int*, int);
 
 #define WNOHANG   (1L<<0)
 #define WUNTRACED (1L<<1)

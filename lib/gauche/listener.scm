@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: listener.scm,v 1.9 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: listener.scm,v 1.10 2007-09-18 08:48:12 shirok Exp $
 ;;;
 
 ;; provides functions useful to implement a repl listener
@@ -271,7 +271,9 @@
       (cut f e))))
 
 (define (sigpipe? e)
-  (and (<unhandled-signal-error> e)
-       (eqv? (ref e 'signal) SIGPIPE)))
+  (cond-expand
+   (gauche.os.windows #f)
+   (else (and (<unhandled-signal-error> e)
+              (eqv? (ref e 'signal) SIGPIPE)))))
 
 (provide "gauche/listener")

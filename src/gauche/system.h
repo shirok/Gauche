@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.h,v 1.3 2007-08-28 10:15:43 shirok Exp $
+ *  $Id: system.h,v 1.4 2007-09-18 08:48:12 shirok Exp $
  */
 
 #ifndef GAUCHE_SYSTEM_H
@@ -212,7 +212,14 @@ enum {
 SCM_EXTERN ScmObj Scm_SysExec(ScmString *file, ScmObj args,
                               ScmObj iomap, ScmSysSigset *mask, int flags);
 SCM_EXTERN int   *Scm_SysPrepareFdMap(ScmObj iomap);
+#if !defined(GAUCHE_WINDOWS)
 SCM_EXTERN void   Scm_SysSwapFds(int *fds);
+#else
+SCM_EXTERN HANDLE *Scm_SysSwapFds(int *fds);
+#endif
+
+SCM_EXTERN void   Scm_SysKill(ScmObj process, int signal);
+SCM_EXTERN ScmObj Scm_SysWait(ScmObj process, int options);
 
 /*==============================================================
  * Select
@@ -248,6 +255,18 @@ typedef struct ScmHeaderRec ScmSysFdset;
 
 SCM_EXTERN int    Scm_Mkstemp(char *tmpl);
 SCM_EXTERN ScmObj Scm_SysMkstemp(ScmString *tmpl);
+
+/*==============================================================
+ * Windows-specific utility functions
+ */
+
+#if defined(GAUCHE_WINDOWS)
+/* special object to wrap windows process handle */
+SCM_EXTERN ScmObj Scm_MakeWinProcess(HANDLE h);
+SCM_EXTERN int    Scm_WinProcessP(ScmObj p);
+SCM_EXTERN pid_t  Scm_WinProcessPID(ScmObj p);
+SCM_EXTERN HANDLE Scm_WinProcessHandle(ScmObj p);
+#endif /* GAUCHE_WINDOWS */
 
 #endif /* GAUCHE_SYSTEM_H */
 

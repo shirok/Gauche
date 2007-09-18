@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.95 2007-09-16 04:15:59 shirok Exp $
+ *  $Id: system.c,v 1.96 2007-09-18 08:48:12 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -46,12 +46,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <math.h>
-#if !defined(MSVC)
+#if !defined(_MSC_VER)
 #include <dirent.h>
-#endif /* !MSVC */
+#endif /* !_MSC_VER */
 #if !defined(GAUCHE_WINDOWS)
 #include <grp.h>
 #include <pwd.h>
+#include <sys/wait.h>
 #else   /* GAUCHE_WINDOWS */
 #include <lm.h>
 #include <tlhelp32.h>
@@ -110,7 +111,7 @@ ScmObj Scm_OffsetToInteger(off_t off)
 /*===============================================================
  * Windows specific - conversion between mbs and wcs.
  */
-#if defined(MSVC) && defined(UNICODE)
+#if defined(_MSC_VER) && defined(_UNICODE)
 #include "win-compat.c"
 
 WCHAR *Scm_MBS2WCS(const char *s)
@@ -1240,7 +1241,97 @@ int Scm_IsSugid(void)
 }
 
 /*===============================================================
- * Exec
+ * Process management
+ */
+
+/* Child process management (windows only)
+ *   On windows, parent-child relationship is very weak.  The system
+ *   records parent's pid (and we can query it in twisted way), but
+ *   the child's process record is discarded upon child's termination
+ *   unless the parent keeps its process handle.   To emulate exec-wait
+ *   semantics, we keep the list of child processes whose status is
+ *   unclaimed.
+ */
+#if defined(GAUCHE_WINDOWS)
+static struct process_mgr_rec {
+    ScmObj children;
+    ScmInternalMutex mutex;
+} process_mgr = { SCM_NIL, SCM_INTERNAL_MUTEX_INITIALIZER };
+
+ScmObj win_process_register(ScmObj process)
+{
+    ScmObj pair;
+    SCM_ASSERT(Scm_WinProcessP(process));
+    pair = Scm_Cons(process, SCM_NIL);
+    SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
+    SCM_SET_CDR(pair, process_mgr.children);
+    process_mgr.children = pair;
+    SCM_INTERNAL_MUTEX_UNLOCK(process_mgr.mutex);
+    return process;
+}
+
+ScmObj win_process_unregister(ScmObj process)
+{
+    SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
+    process_mgr.children = Scm_DeleteX(process, process_mgr.children,
+                                       SCM_CMP_EQ);
+    SCM_INTERNAL_MUTEX_UNLOCK(process_mgr.mutex);
+    return process;
+}
+
+int win_process_active_child_p(ScmObj process)
+{
+    ScmObj r;
+    SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
+    r = Scm_Member(process, process_mgr.children, SCM_CMP_EQ);
+    SCM_INTERNAL_MUTEX_UNLOCK(process_mgr.mutex);
+    return !SCM_FALSEP(r);
+}
+
+ScmObj *win_process_get_array(int *size /*out*/)
+{
+    ScmObj *r;
+    SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
+    r = Scm_ListToArray(process_mgr.children, size, NULL, TRUE);
+    SCM_INTERNAL_MUTEX_UNLOCK(process_mgr.mutex);
+    return r;
+}
+
+void win_process_cleanup(void *data)
+{
+    ScmObj cp;
+    SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
+    SCM_FOR_EACH(cp, process_mgr.children) {
+        CloseHandle(Scm_WinProcessHandle(SCM_CAR(cp)));
+    }
+    process_mgr.children = SCM_NIL;
+    SCM_INTERNAL_MUTEX_UNLOCK(process_mgr.mutex);
+}
+#endif /*GAUCHE_WINDOWS*/
+
+/* Command line construction (Windows only)
+ *   In order to use CreateProcess we have to concatenate all arguments
+ *   into one command line string.  Proper escaping should be considered
+ *   when the arguments include whitespaces or double-quotes.
+ *   It's pretty silly that we have to do this, since the child process
+ *   crt will re-parse the command line again.  Besides, since the parsing
+ *   of the command line is up to each application, THERE IS NO WAY TO
+ *   GUARANTEE TO QUOTE THE ARGUMENTS PROPERLY.   This is intolerably
+ *   broken specification.
+ */
+#if defined(GAUCHE_WINDOWS)
+char *win_create_command_line(ScmObj args)
+{
+    ScmObj ap, out;
+    ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
+    SCM_FOR_EACH(ap, args) Scm_Printf(SCM_PORT(ostr), "%S ", SCM_CAR(ap));
+    out = Scm_GetOutputStringUnsafe(SCM_PORT(ostr), 0);
+    return Scm_GetString(SCM_STRING(out));
+}
+#endif /*GAUCHE_WINDOWS*/
+
+
+/* Scm_SysExec
  *   execvp(), with optionally setting stdios correctly.
  *
  *   iomap argument, when provided, specifies how the open file descriptors
@@ -1254,8 +1345,12 @@ int Scm_IsSugid(void)
  *   If forkp arg is TRUE, this function forks before swapping file
  *   descriptors.  It is more reliable way to fork&exec in multi-threaded
  *   program.  In such a case, this function returns Scheme integer to
- *   show the children's pid.   If for arg is FALSE, this procedure
+ *   show the children's pid.   If fork arg is FALSE, this procedure
  *   of course never returns.
+ *
+ *   On Windows port, this returns a process handle obejct instead of   
+ *   pid of the child process in fork mode.  We need to keep handle, or
+ *   the process exit status will be lost when the child process terminates.
  *
  *   On Windows/MinGW port, I'm not sure we can do I/O swapping in
  *   reasonable way.  For now, iomap is ignored.
@@ -1269,9 +1364,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     const char *program;
     pid_t pid = 0;
     int forkp = flags & SCM_EXEC_WITH_FORK;
-#if !defined(GAUCHE_WINDOWS)
     int *fds;
-#endif
 
     if (argc < 1) {
         Scm_Error("argument list must have at least one element: %S", args);
@@ -1281,10 +1374,10 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     argv = Scm_ListToCStringArray(args, TRUE, NULL);
     program = Scm_GetStringConst(file);
 
-#if !defined(GAUCHE_WINDOWS)
     /* setting up iomap table */
     fds = Scm_SysPrepareFdMap(iomap);
     
+#if !defined(GAUCHE_WINDOWS)
     /* When requested, call fork() here. */
     if (forkp) {
         SCM_SYSCALL(pid, fork());
@@ -1307,7 +1400,39 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     return Scm_MakeInteger(pid);
 #else  /* GAUCHE_WINDOWS */
     if (forkp) {
-	Scm_Error("fork() not supported on Windows port");
+        TCHAR  program_path[MAX_PATH+1], *filepart;
+        HANDLE *hs = Scm_SysSwapFds(fds);
+        BOOL r, pathlen;
+        STARTUPINFO si;
+        PROCESS_INFORMATION pi;
+
+        pathlen = SearchPath(NULL, SCM_MBS2WCS(program),
+                             _T(".exe"), MAX_PATH, program_path,
+                             &filepart);
+        if (pathlen == 0) Scm_SysError("cannot find program '%s'", program);
+        program_path[pathlen] = 0;
+
+        GetStartupInfo(&si);
+        if (hs != NULL) {
+            si.dwFlags |= STARTF_USESTDHANDLES;
+            si.hStdInput  = hs[0];
+            si.hStdOutput = hs[1];
+            si.hStdError  = hs[2];
+        }
+
+        r = CreateProcess(program_path,
+                          SCM_MBS2WCS(win_create_command_line(args)),
+                          NULL, /* process attr */
+                          NULL, /* thread addr */
+                          TRUE, /* inherit handles */
+                          0,    /* creation flags */
+                          NULL, /* nenvironment */
+                          NULL, /* current dir */
+                          &si,  /* startup info */
+                          &pi); /* process info */
+        if (r == 0) Scm_SysError("spawning %s failed", program);
+        CloseHandle(pi.hThread); /* we don't need it. */
+        return win_process_register(Scm_MakeWinProcess(pi.hProcess));
     } else {
 	execvp(program, (const char *const*)argv);
 	Scm_Panic("exec failed: %s: %s", program, strerror(errno));	
@@ -1339,7 +1464,6 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
 int *Scm_SysPrepareFdMap(ScmObj iomap)
 {
     int *fds = NULL;
-#if !defined(GAUCHE_WINDOWS)
     if (SCM_PAIRP(iomap)) {
         ScmObj iop;
         int iollen = Scm_Length(iomap), i = 0;
@@ -1383,13 +1507,12 @@ int *Scm_SysPrepareFdMap(ScmObj iomap)
             i++;
         }
     }
-#endif /* GAUCHE_WINDOWS */
     return fds;
 }
 
+#if !defined(GAUCHE_WINDOWS)
 void Scm_SysSwapFds(int *fds)
 {
-#if !defined(GAUCHE_WINDOWS)
     int *tofd, *fromfd, nfds, maxfd, i, j, fd;
     
     if (fds == NULL) return;
@@ -1423,9 +1546,235 @@ void Scm_SysSwapFds(int *fds)
         for (j=0; j<nfds; j++) if (fd == tofd[j]) break;
         if (j == nfds) close(fd);
     }
+}
+#else  /* GAUCHE_WINDOWS */
+/* On Windows Scm_SysSwapFds works very differently.  It does not change
+   the current process' fd mapping.  Instead, it allocates a new handle
+   array and fill it.
+   NB: Maybe this needs a different name, since pre/post condition of
+   the function is very different from the Unix version. */
+HANDLE *Scm_SysSwapFds(int *fds)
+{
+    int count, i;
+    HANDLE *hs;
+
+    if (fds == NULL) return NULL;
+
+    /* For the time being, we only consider stdin, stdout, and stderr. */
+    hs = SCM_NEW_ATOMIC_ARRAY(HANDLE, 3);
+    count = fds[0];
+
+    for (i=0; i<count; i++) {
+        int to = fds[i+1], from = fds[i+1+count];
+        if (to >= 0 && to < 3) {
+            hs[to] = (HANDLE)_get_osfhandle(from);
+        }
+    }
+    for (i=0; i<3; i++) {
+        if (hs[i] == NULL) {
+            hs[i] = (HANDLE)_get_osfhandle(i);
+        }
+    }
+    return hs;
+}
+#endif /* GAUCHE_WINDOWS */
+
+/*===============================================================
+ * Kill
+ *
+ *  It is simple on Unix, but on windows it is a lot more involved,
+ *  mainly due to the lack of signals as the means of IPC.
+ */
+void Scm_SysKill(ScmObj process, int signal)
+{
+#if !defined(GAUCHE_WINDOWS)
+    pid_t pid;
+    int r;
+    if (!SCM_INTEGERP(process)) SCM_TYPE_ERROR(process, "integer process id");
+    pid = Scm_GetInteger(process);
+    SCM_SYSCALL(r, kill(pid, signal));
+    if (r < 0) Scm_SysError("kill failed");
+#else  /*GAUCHE_WINDOWS*/
+    /* You cannot really "send" singals to other processes on Windows.
+       We try to emulate SIGKILL and SIGINT by Windows API.
+       To send a signal to the current process we can use raise(). */
+    HANDLE p;
+    BOOL r;
+    DWORD errcode;
+    int pid_given = FALSE;
+    pid_t pid;
+
+    if (SCM_INTEGERP(process)) {
+        pid_given = TRUE; pid = Scm_GetInteger(process);
+    } else if (Scm_WinProcessP(process)) {
+        pid = Scm_WinProcessPID(process);
+    } else {
+        SCM_TYPE_ERROR(process, "process handle or integer process id");
+    }
+    
+    if (signal == SIGKILL) {
+        if (pid_given) {
+            p = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+            if (p == NULL) Scm_SysError("OpenProcess failed for pid %d", pid);
+        } else {
+            p = Scm_WinProcessHandle(process);
+        }
+        r = TerminateProcess(p, SIGKILL);
+        errcode = GetLastError();
+        if (pid_given) CloseHandle(p);
+        SetLastError(errcode);
+        if (r == 0) Scm_SysError("TerminateProcess failed");
+        return;
+    }
+    /* another idea; we may map SIGTERM to WM_CLOSE message. */
+    
+    if (signal == 0) {
+        /* We're supposed to do the error check without actually sending
+           the signal.   For now we just pretend nothing's wrong. */
+        return;
+    }
+    if (pid == getpid()) {
+        /* we're sending signal to the current process. */
+        int r = raise(signal); /* r==0 is success */
+        if (r < 0) Scm_SysError("raise failed");
+        return;
+    }
+    if (signal == SIGINT || signal == SIGABRT) {
+        /* we can emulate these signals by console event, although the
+           semantics of process group differ from unix significantly.
+           Process group id is the same as the pid of the process
+           that started the group.  So you cannot send SIGABRT only
+           to the process group leader.  OTOH, for SIGINT, the windows
+           manual says it always directed to the specified process,
+           not the process group, unless pid == 0 */
+        r = GenerateConsoleCtrlEvent(abs(pid),
+                                     (signal == SIGINT)?
+                                     CTRL_C_EVENT : CTRL_BREAK_EVENT);
+        if (r == 0) {
+            Scm_SysError("GenerateConsoleCtrlEvent failed for process %d", pid);
+        }
+        return;
+    }
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+#endif /*GAUCHE_WINDOWS*/
+}
+
+/*===============================================================
+ * Wait
+ *
+ *  A wrapper of waitpid.  Returns two values---the process object or pid that
+ *  whose status has been taken, and the exit status.
+ *  Again, it is simple on Unix, but on windows it is a lot more involved.
+ */
+
+ScmObj Scm_SysWait(ScmObj process, int options)
+{
+#if !defined(GAUCHE_WINDOWS)
+    pid_t r;
+    int status = 0;
+    if (!SCM_INTEGERP(process)) SCM_TYPE_ERROR(process, "integer process id");
+    SCM_SYSCALL(r, waitpid(Scm_GetInteger(process), &status, options));
+    if (r < 0) Scm_SysError("waitpid() failed");
+    return Scm_Values2(Scm_MakeInteger(r), Scm_MakeInteger(status));
+#else  /* GAUCHE_WINDOWS */
+    /* We have four cases
+       process is integer and < -1   -> not supported.
+       process is -1 or 0 -> wait for all children (we ignore process group)
+       process is integer and > 0  -> wait for specific pid
+       process is #<win:process-handle> -> wait for specified process
+       The common op is factored out in win_wait_for_handles. */
+    static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
+                                    int *status /*out*/);
+    int r, status = 0;
+
+    if (SCM_INTEGERP(process)) {
+        pid_t pid = Scm_GetInteger(process);
+        if (pid < -1) {
+            /* Windows doesn't have the concept of "process group id" */
+            SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+            Scm_SysError("waitpid cannot wait for process group on Windows.");
+        }
+        if (pid > 0) {
+            /* wait for specific pid */
+            HANDLE handle = OpenProcess(SYNCHRONIZE|PROCESS_QUERY_INFORMATION,
+                                        FALSE, pid);
+            DWORD errcode;
+            if (handle == NULL) {
+                Scm_SysError("OpenProcess failed for pid %d", pid);
+            }
+            r = win_wait_for_handles(&handle, 1, options, &status);
+            errcode = GetLastError();
+            CloseHandle(handle);
+            SetLastError(errcode);
+            if (r == -2) goto timeout;
+            if (r == -1) goto error;
+            return Scm_Values2(Scm_MakeInteger(pid), Scm_MakeInteger(status));
+        }
+        else {
+            /* wait for any children. */
+            ScmObj *children;
+            int num_children, i;
+            HANDLE *handles;
+            children = win_process_get_array(&num_children);
+            if (num_children == 0) {
+                SetLastError(ERROR_WAIT_NO_CHILDREN);
+                Scm_SysError("waitpid failed");
+            }
+            handles = SCM_NEW_ATOMIC_ARRAY(HANDLE, num_children);
+            for (i=0; i<num_children; i++) {
+                handles[i] = Scm_WinProcessHandle(children[i]);
+            }
+            r = win_wait_for_handles(handles, num_children, options, &status);
+            if (r == -2) goto timeout;
+            if (r == -1) goto error;
+            win_process_unregister(children[r]);
+            return Scm_Values2(children[r], Scm_MakeInteger(status));
+        }
+    } else if (Scm_WinProcessP(process)) {
+        /* wait for the specified process */
+        HANDLE handle;
+        if (!win_process_active_child_p(process)) {
+            SetLastError(ERROR_WAIT_NO_CHILDREN);
+            Scm_SysError("waitpid failed");
+        }
+        handle = Scm_WinProcessHandle(process);
+        r = win_wait_for_handles(&handle, 1, options, &status);
+        if (r == -2) goto timeout;
+        if (r == -1) goto error;
+        win_process_unregister(process);
+        return Scm_Values2(process, Scm_MakeInteger(status));
+    }
+  timeout:
+    return Scm_Values2(SCM_MAKE_INT(0), SCM_MAKE_INT(0));
+  error:
+    Scm_SysError("waitpid failed");
+    return SCM_UNDEFINED;  /* dummy */
 #endif /* GAUCHE_WINDOWS */
 }
 
+#if defined(GAUCHE_WINDOWS)
+/* aux fn. */
+static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
+                                int *status /*out*/)
+{
+    DWORD r = MsgWaitForMultipleObjects(nhandles,
+                                        handles,
+                                        FALSE,
+                                        (options&WNOHANG)? 0 : INFINITE,
+                                        0);
+    if (r == WAIT_FAILED) return -1;
+    if (r == WAIT_TIMEOUT) return -2;
+    if (r >= WAIT_OBJECT_0 && r < WAIT_OBJECT_0 + nhandles) {
+        DWORD exitcode;
+        int index = r - WAIT_OBJECT_0;
+        r = GetExitCodeProcess(handles[index], &exitcode);
+        if (r == 0) return -1;
+        *status = exitcode;
+        return index;
+    }
+    return -1;
+}
+#endif /*GAUCHE_WINDOWS*/
 
 /*===============================================================
  * select
@@ -1577,6 +1926,93 @@ static void *get_api_entry(const TCHAR *module, const char *proc,
     return entry;
 }
 
+/* Scan the processes to find out either the parent process, or the
+   child processes of the current process.  I cannot imagine why we
+   need such a hassle to perform this kind of simple task, but this
+   is the way the MS document suggests.
+   Returns a single Scheme integer of the parent process id if childrenp
+   is FALSE; returns a list of Scheme integers of child process ids if
+   childrenp is TRUE. */
+static ScmObj get_relative_processes(int childrenp)
+{
+    HANDLE snapshot;
+    PROCESSENTRY32 entry;
+    DWORD myid = GetCurrentProcessId(), parentid;
+    int found = FALSE;
+    ScmObj h = SCM_NIL, t = SCM_NIL; /* children pids */
+    
+    snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE) {
+	Scm_Error("couldn't take process snapshot in getppid()");
+    }
+    entry.dwSize = sizeof(PROCESSENTRY32);
+    if (!Process32First(snapshot, &entry)) {
+	CloseHandle(snapshot);
+	Scm_Error("Process32First failed in getppid()");
+    }
+    do {
+        if (childrenp) {
+            if (entry.th32ParentProcessID == myid) {
+                SCM_APPEND1(h, t, Scm_MakeInteger(entry.th32ProcessID));
+            }
+        } else {
+            if (entry.th32ProcessID == myid) {
+                parentid = entry.th32ParentProcessID;
+                found = TRUE;
+                break;
+            }
+        }
+    } while (Process32Next(snapshot, &entry));
+    CloseHandle(snapshot);
+
+    if (childrenp) {
+        return h;
+    } else {
+        if (!found) {
+            Scm_Error("couldn't find the current process entry in getppid()");
+        }
+        return Scm_MakeInteger(parentid);
+    }
+}
+
+/* Windows "HANDLE" wrapper.  */
+
+void handle_cleanup(ScmObj handle)
+{
+    CloseHandle(SCM_FOREIGN_POINTER_REF(HANDLE, handle));
+}
+
+void handle_print(ScmObj handle, ScmPort *sink, ScmWriteContext *mode)
+{
+    Scm_Printf(sink, "#<win:process-handle %d @%p>",
+               Scm_WinProcessPID(handle), handle);
+}
+
+static ScmClass *WinProcessHandleClass = NULL;
+
+ScmObj Scm_MakeWinProcess(HANDLE h)
+{
+    return Scm_MakeForeignPointer(WinProcessHandleClass, (void*)h);
+}
+
+int Scm_WinProcessP(ScmObj p)
+{
+    return SCM_XTYPEP(p, WinProcessHandleClass);
+}
+
+HANDLE Scm_WinProcessHandle(ScmObj handle)
+{
+    if (!SCM_XTYPEP(handle, WinProcessHandleClass)) {
+        SCM_TYPE_ERROR(handle, "<win:process-handle>");
+    }
+    return SCM_FOREIGN_POINTER_REF(HANDLE, handle);
+}
+
+pid_t Scm_WinProcessPID(ScmObj handle)
+{
+    return GetProcessId(Scm_WinProcessHandle(handle));
+}
+
 /*
  * Users and groups
  * Kinda Kluge, since we don't have "user id" associated with each
@@ -1662,102 +2098,17 @@ gid_t getegid(void)
     return 0;
 }
 
-/*
- * Getting parent process ID.  I wonder why it is such a hassle, but
- * the use of Process32First is indeed suggested in the MS document.
- */
 pid_t getppid(void)
 {
-    HANDLE snapshot;
-    PROCESSENTRY32 entry;
-    DWORD myid = GetCurrentProcessId(), parentid;
-    int found = FALSE;
-    
-    snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (snapshot == INVALID_HANDLE_VALUE) {
-	Scm_Error("couldn't take process snapshot in getppid()");
-    }
-    entry.dwSize = sizeof(PROCESSENTRY32);
-    if (!Process32First(snapshot, &entry)) {
-	CloseHandle(snapshot);
-	Scm_Error("Process32First failed in getppid()");
-    }
-    do {
-	if (entry.th32ProcessID == myid) {
-	    parentid = entry.th32ParentProcessID;
-	    found = TRUE;
-	    break;
-	}
-    } while (Process32Next(snapshot, &entry));
-    CloseHandle(snapshot);
-    if (!found) {
-	Scm_Error("couldn't find the current process entry in getppid()");
-    }
-    return parentid;
+    ScmObj ppid = get_relative_processes(FALSE);
+    return Scm_GetInteger(ppid);
 }
-
 
 /*
  * Other obscure stuff
  */
 
 int fork(void)
-{
-    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-    return -1;
-}
-
-int kill(pid_t pid, int signal)
-{
-    /* You cannot really "send" singals to other processes on Windows.
-       We try to emulate SIGKILL and SIGINT by Windows API.
-       To send a signal to the current process we can use raise(). */
-    HANDLE p;
-    BOOL r;
-    
-    if (signal == SIGKILL) {
-        p = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
-        if (p == NULL) return -1;
-        r = TerminateProcess(p, SIGKILL);
-        if (r == 0) {           /* r==0 is failure */
-            DWORD errcode = GetLastError();
-            CloseHandle(p);
-            SetLastError(errcode);
-            return -1;
-        }
-        CloseHandle(p);
-        return 0;
-    } else if (signal == 0) {
-        /* We're supposed to do the error check without actually sending
-           the signal.   For now we just pretend nothing's wrong. */
-        return 0;
-    } else if (pid == getpid()) {
-        /* we're sending signal to the current process. */
-        int r = raise(signal); /* r==0 is success */
-        return (r == 0)? 0 : -1;
-    } else if (signal == SIGINT || signal == SIGABRT) {
-        /* we can emulate these signals by console event, although the
-           semantics of process group differ from unix significantly.
-           Process group id is the same as the pid of the process
-           that started the group.  So you cannot send SIGABRT only
-           to the process group leader.  OTOH, for SIGINT, the windows
-           manual says it always directed to the specified process,
-           not the process group, unless pid == 0 */
-        r = GenerateConsoleCtrlEvent(abs(pid),
-                                     (signal == SIGINT)? CTRL_C_EVENT : CTRL_BREAK_EVENT);
-        return (r == 0)? -1 : 0; /* r==0 is failure */
-    } else {
-        SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-        return -1;
-    }
-}
-
-pid_t wait(int *pstatus)
-{
-    return waitpid(-1, pstatus, 0);
-}
-
-pid_t waitpid(pid_t pid, int *pstatus, int options)
 {
     SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
     return -1;
@@ -1805,7 +2156,6 @@ static int win_truncate(HANDLE file, off_t len)
     if (r == 0) return -1;
     return 0;
 }
-
 
 int truncate(const char *path, off_t len)
 {
@@ -1917,5 +2267,10 @@ void Scm__InitSystem(void)
 #ifdef GAUCHE_WINDOWS
     init_winsock();
     Scm_AddCleanupHandler(fini_winsock, NULL);
+    WinProcessHandleClass =
+        Scm_MakeForeignPointerClass(mod, "<win:process-handle>",
+                                    handle_print, handle_cleanup,
+                                    SCM_FOREIGN_POINTER_KEEP_IDENTITY);
+    Scm_AddCleanupHandler(win_process_cleanup, NULL);
 #endif
 }

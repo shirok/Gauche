@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.28 2007-09-16 04:15:59 shirok Exp $
+;;;  $Id: process.scm,v 1.29 2007-09-18 08:48:12 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -79,6 +79,10 @@
           (if (process-alive? p)
               "active"
               "inactive")))
+
+;; null device
+(define *nulldev*
+  (cond-expand (gauche.os.windows "NUL") (else "/dev/null")))
 
 ;; create process and run.
 (define (run-process command . args)
@@ -215,7 +219,7 @@
 (define (process? obj) (is-a? obj <process>))
 (define (process-alive? process)
   (and (not (process-exit-status process))
-       (>= (process-pid process) 0)))
+       (process-pid process)))
 (define (process-list) (class-slot-ref <process> 'processes))
 
 ;;-----------------------------------------------------------------
@@ -226,7 +230,7 @@
     (let-optionals* args ((nohang? #f)
                           (raise-error? #f))
       (receive (p code) (sys-waitpid (process-pid process) :nohang nohang?)
-        (and (not (zero? p))
+        (and (not (eqv? p 0))
              (begin
                (slot-set! process 'status code)
                (slot-set! process 'processes
@@ -240,11 +244,12 @@
                         (raise-error? #f))
     (and (not (null? (process-list)))
          (receive (pid status) (sys-waitpid -1 :nohang nohang?)
-           (and pid
-                (and-let* ((p (find (lambda (pp) (= (process-pid pp) pid))
+           (and (not (eqv? pid 0))
+                (and-let* ((p (find (lambda (pp) (eqv? (process-pid pp) pid))
                                     (process-list))))
-                  (slot-set! p 'status status)
                   (update! (ref p 'processes) (cut delete p <>))
+                  (set! (ref p 'status) status)
+                  (set! (ref p 'pid) #f)
                   (when raise-error? (%check-normal-exit p))
                   p))))))
 
@@ -274,7 +279,7 @@
 ;;   :on-abmormal-exit - :error, :ignore, or a handler (called w/ process)
 
 (define (open-input-process-port command . opts)
-   (let-keywords opts ((input "/dev/null")
+   (let-keywords opts ((input *nulldev*)
                        (err :error #f)
                        (host #f)
                        . rest)
@@ -282,7 +287,7 @@
        (values (wrap-input-process-port p rest) p))))
 
 (define (call-with-input-process command proc . opts)
-  (let-keywords opts ((input "/dev/null")
+  (let-keywords opts ((input *nulldev*)
                       (err :error #f)
                       (host #f)
                       (on-abnormal-exit :error)
@@ -301,7 +306,7 @@
          opts))
 
 (define (open-output-process-port command . opts)
-  (let-keywords opts ((output "/dev/null")
+  (let-keywords opts ((output *nulldev*)
                       (err :error #f)
                       (host #f)
                       . rest)
@@ -309,7 +314,7 @@
       (values (wrap-output-process-port p rest) p))))
 
 (define (call-with-output-process command proc . opts)
-  (let-keywords opts ((output "/dev/null")
+  (let-keywords opts ((output *nulldev*)
                       (err :error #f)
                       (host #f)
                       (on-abnormal-exit :error)
@@ -362,9 +367,18 @@
 ;;
 
 ;; If the given command is a string, return an argv to use /bin/sh.
+;; NB: on Windows we need to use cmd.exe.  But its command-line parsing
+;; rule is too broken to use reliably.  Another possibility is to implement
+;; much of high-level /bin/sh functionalities in Scheme, so that we can
+;; provide consistent behavior.  Something to think about.
 (define (%apply-run-process command stdin stdout stderr host)
   (apply run-process
-         (cond ((string? command) `("/bin/sh" "-c" ,command))
+         (cond ((string? command)
+                (cond-expand
+                 (gauche.os.windows
+                  `("cmd" "/c" ,command))
+                 (else
+                  `("/bin/sh" "-c" ,command))))
                ((list? command) command)
                (else (error "Bad command spec" command)))
          :input stdin :output stdout :host host
