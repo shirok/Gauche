@@ -1,3 +1,7 @@
+2007-09-18  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/sequence.scm: added permute and shuffle.
+
 2007-09-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c, src/syslib.stub, src/auxsyslib.stub, src/process.scm:

@@ -584,4 +584,52 @@
                        :test (lambda (x y)
                                (= (modulo x 2) (modulo y 2)))))
 
+(define (permute-tester msg expected source order . fallback)
+  (define (unit type elt-coercer order-type)
+    (test* #`"permute,msg ,type by ,order-type"
+           (map-to type elt-coercer expected)
+           (apply permute
+                  (map-to type elt-coercer source)
+                  (coerce-to order-type order)
+                  (map elt-coercer fallback)))
+    (test* #`"permute!,msg ,type by ,order-type"
+           (if (= (size-of source) (size-of expected))
+             (map-to type elt-coercer expected)
+             *test-error*)
+           (let1 imp (map-to type elt-coercer source)
+             (apply permute!
+                    imp
+                    (coerce-to order-type order)
+                    (map elt-coercer fallback))
+             imp)))
+  (dolist (order-type `(,<list> ,<vector>))
+    (dolist (t `((,<list> ,values)
+                 (,<vector> ,values)
+                 (,<string> ,(lambda (elt) (string-ref (x->string elt) 0)))))
+      (unit (car t) (cadr t) order-type)))
+  )
+
+(permute-tester "" '(d a c b) '(a b c d) '(3 0 2 1))
+(permute-tester " (short)" '(d a) '(a b c d) '(3 0))
+(permute-tester " (long)"  '(d a z c b) '(a b c d) '(3 0 4 2 1) 'z)
+
+(define (shuffle-tester source)
+  (define (cmp a b)
+    (lset= eqv? (coerce-to <list> a) (coerce-to <list> b)))
+  (define (unit type)
+    (test* #`"shuffle ,type"
+           (coerce-to type source)
+           (shuffle (coerce-to type source))
+           cmp)
+    (test* #`"shuffle! ,type"
+           (coerce-to type source)
+           (let1 imp (coerce-to type source)
+             (shuffle! imp)
+             imp)
+           cmp))
+  (unit <list>) (unit <vector>) (unit <string>))
+
+(shuffle-tester '(#\a #\b #\c #\d #\e #\f #\g))
+(shuffle-tester '())
+
 (test-end)

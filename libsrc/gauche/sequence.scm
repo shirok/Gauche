@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sequence.scm,v 1.7 2007-03-02 07:39:12 shirok Exp $
+;;;  $Id: sequence.scm,v 1.8 2007-09-19 11:18:27 shirok Exp $
 ;;;
 
 ;; This module defines an unified way to treat sequence-like objects
@@ -43,9 +43,14 @@
   (export referencer modifier subseq
           fold-right
           fold-with-index map-with-index map-to-with-index for-each-with-index
-          find-index find-with-index group-sequence)
+          find-index find-with-index group-sequence
+          permute-to permute permute!
+          shuffle-to shuffle shuffle!)
   )
 (select-module gauche.sequence)
+
+;; used by shuffle
+(autoload srfi-27 default-random-source random-source-make-integers)
 
 (define-method referencer ((obj <list>))   list-ref)
 (define-method referencer ((obj <vector>)) vector-ref)
@@ -303,5 +308,86 @@
         (reverse! results)
         (reverse! (cons (reverse! (cdr bucket)) results)))
       )))
+
+;; permute -------------------------------------------------------
+
+(define-method permute-to ((class <class>) (src <sequence>) (ord <sequence>)
+                           . maybe-fallback)
+  (let1 *ref (referencer src)
+    (with-builder (class add! get :size (lazy-size-of ord))
+      (with-iterator (ord end? next)
+        (let loop ()
+          (cond [(end?) (get)]
+                [else (let1 k (next)
+                        (add! (apply *ref src k maybe-fallback)))
+                      (loop)]))))))
+
+(define-method permute ((src <sequence>) (ord <sequence>) . maybe-fallback)
+  (apply permute-to (class-of src) src ord maybe-fallback))
+
+(define-method permute! ((seq <sequence>) (ord <sequence>))
+  ;; This implementation is really dumb.  If we assume ORD requests proper
+  ;; permutation (i.e. no "multicast" of elements) we need just a single
+  ;; variable to keep the element being swapped.   I'm not sure, at this
+  ;; moment, that we should force the proper permutation, or we should
+  ;; allow looser ORD and we choose optimal method on the fly.
+  ;; Let's see.  Just don't forget to replace this for better one > me.
+  (%permute!-arg-check seq ord)
+  (let ((permuted (permute seq ord))
+        (*set     (modifier seq)))
+    (with-iterator (permuted end? next)
+      (let loop ((i 0))
+        (cond [(end?) seq]
+              [else (*set seq i (next))
+                    (loop (+ i 1))])))))
+
+(define-method permute! ((seq <string>) (ord <sequence>))
+  ;; for string, this one is faster.
+  (%permute!-arg-check seq ord)
+  (%string-replace-body! seq (permute seq ord)))
+
+(define (%permute!-arg-check seq ord)
+  (unless (= (size-of seq) (size-of ord))
+    (error "permute! needs the length of sequence and length of permuter the same: sequence is ~,,,,30:s, permuter is ~,,,,30:s" seq ord)))
+
+;; shuffle, shuffle! ---------------------------------------------
+
+(define-method shuffle-to ((class <class>) (seq <sequence>) . args)
+  (coerce-to class (apply shuffle! (coerce-to <vector> seq) args)))
+
+(define-method shuffle-to ((class <vector-meta>) (seq <sequence>) . args)
+  (apply shuffle! (coerce-to <vector> seq) args))
+
+(define-method shuffle ((seq <sequence>) . args)
+  (apply shuffle-to (class-of seq) seq args))
+
+(define-method shuffle ((seq <vector>) . args)
+  (apply shuffle! (vector-copy seq) args))
+
+(define-method shuffle! ((seq <sequence>) . args)
+  (let* ((size (size-of seq))
+         (shuffler (make-vector size)))
+    (dotimes (i size) (vector-set! shuffler i i))
+    (shuffle! shuffler)
+    (permute! seq shuffler)))
+
+(define-method shuffle! ((seq <vector>) . maybe-random-source)
+  (define random-integer
+    (random-source-make-integers (get-optional maybe-random-source
+                                               default-random-source)))
+  (define (pick&swap i)
+    (when (> i 1)
+      (let1 k (random-integer i)
+        (unless (= k (- i 1))
+          (let1 t (vector-ref seq k)
+            (vector-set! seq k (vector-ref seq (- i 1)))
+            (vector-set! seq (- i 1) t)))
+        (pick&swap (- i 1)))))
+  (pick&swap (vector-length seq))
+  seq)
+
+(define-method shuffle! ((seq <string>) . args)
+  ;; string-set! is super-slow, so we provide the alternative.
+  (%string-replace-body! seq (apply shuffle seq args)))
 
 (provide "gauche/sequence")
