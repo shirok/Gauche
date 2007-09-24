@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: progress.scm,v 1.3 2007-04-06 18:36:59 shirok Exp $
+;;;  $Id: progress.scm,v 1.4 2007-09-24 21:53:45 shirok Exp $
 ;;;
 
 (define-module text.progress
@@ -41,8 +41,8 @@
 
 ;; Progress bar sample:
 ;;
-;; <-- header---> <-------------- bar --------------> <- num -><-time->
-;; foo           |###################                |  123/211   01:21 ETA
+;; <-- header---> <------- bar -------> <- num -><-time->     <-- info -->
+;; foo           |##############       |  123/211   01:21 ETA   sending...
 ;;               ^
 ;;             separator
 
@@ -58,6 +58,8 @@
                       (num-format (lambda (cur max)
                                     (format "~d/~d" cur max)))
                       (time-width 7)
+                      (info-width 0)
+                      (info  "")
                       (separator-char #\|)
                       (max-value 100)
                       (port (current-output-port)))
@@ -65,7 +67,7 @@
           (start-time (current-time))
           (finish-time  #f))
       (define (show)
-        (format port "~v,,,,va~a~v,,,,va~a~v,,,,v@a~v,,,,v@a~a"
+        (format port "~v,,,,va~a~v,,,,va~a~v,,,,v@a~v,,,,v@a~a~v,,,,va~a"
                 header-width header-width header
                 (or separator-char "")
                 bar-width bar-width (make-bar)
@@ -74,7 +76,10 @@
                 (if (> num-width 0) (num-format current-value max-value) "")
                 time-width time-width
                 (if (> time-width 0) (make-time) "")
-                (if finish-time "    \n" (if (> time-width 0) " ETA\r" "\r")))
+                (if (> time-width 0) " ETA" "    ")
+                info-width info-width
+                (if (> info-width 0) info "")
+                (if finish-time "\n" "\r"))
         (flush port))
       (define (make-bar)
         (make-string (floor->exact (* (/. current-value max-value) bar-width))
@@ -119,6 +124,16 @@
            (show))
           ((finish)
            (set! finish-time (current-time))
+           (show))
+          ((set-header)
+           (when (null? args)
+             (error "text-progress-bar: message 'set-header requires an argument"))
+           (set! header (car args))
+           (show))
+          ((set-info)
+           (when (null? args)
+             (error "text-progress-bar: message 'set-info requires an argument"))
+           (set! info (car args))
            (show))
           (else
            (error "text-progress-bar: unrecognized message:" msg))))

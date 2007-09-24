@@ -51,7 +51,7 @@ sxpath_OBJECTS = sxml-sxpath_head.$(OBJEXT) \
 sxml-sxpath.$(SOEXT) : $(sxpath_OBJECTS)
 	$(MODLINK) sxml-sxpath.$(SOEXT) $(sxpath_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-sxml-sxpath.c sxml/sxpath.scm : sxml-sxpath.scm.in src/sxpath.scm src/sxpathlib.scm src/sxpath-ext.scm sxml/tools.scm
+sxml-sxpath.c sxml/sxpath.scm : sxml-sxpath.scm.in src/sxpath.scm src/sxpathlib.scm src/sxpath-ext.scm sxml/tools.scm sxml-tools.$(SOEXT)
 	$(SCMTRANS) sxml-sxpath.scm.in
 	$(SCMCOMPILE) --ext-module sxml/sxpath.scm sxml-sxpath.scm
 
