@@ -11644,31 +11644,151 @@ if @var{path} doesn't exists or is not a directory.
 @c COMMON
 @end defun
 
-@defun sys-glob pattern
-@c EN
-An interface to @code{glob(3)} function.  @var{pattern} is a file pattern
-like sh(1): a character `@code{?}' matches any single character, 
-`@code{*}' matches zero or more characters, `@code{[abc]}' matches
-either `@code{a}', `@code{b}' or `@code{c}'.  If no pathname matches
-@var{pattern}, an empty list is returned.
+@defun glob pattern &keyword separator folder
+@defunx sys-glob pattern &keyword separator folder
+Provides a traditional Unix glob(3) functionality;
+returns a list of pathnames that matches the given @var{pattern}.
 
-If the undelying platform doesn't have @code{glob()}, this function
-signals an error of "feature not supported".
+This feature used to be a wrapper of system-provided @code{glob} function,
+hence it was named @code{sys-glob}.  However, as of Gauche version 0.8.12,
+it was reimplemented in Scheme on top of other system calls, to overcome
+incompatibilies between platforms and for the opportunity to put
+more functionalities.  So we renamed it @code{glob}.
+The old name @code{sys-glob} is kept for compatibility, but new
+programs should use @code{glob}.
 
-Note: it is known that on some systems glob() implementation has
-a security issue.  Gauche will eventually implement glob() functionality
-in itself.
-@c JP
-glob(3)関数へのインタフェースです。@var{pattern}はsh(1)で使われるパターンです:
-`@code{?}'は任意の一文字にマッチし、`@code{*}'は0以上の任意の文字にマッチし、
-`@code{[abc]}'は文字`@code{a}', `@code{b}', `@code{c}' のいずれにも
-マッチします。マッチするパス名が無ければ空のリストが返されます。
+The @var{pattern} argument may be a single @emph{glob pattern}, or
+a list of glob patterns.  If a list is given, pathnames that matches
+any one of the pattern are returned.  If you're a unix user,
+you already know how it works.
 
-glob()をサポートしていないシステムでは、エラーが通知されます。
+@example
+gosh> (glob "*.scm")
+("test.scm" "ext.scm")
+gosh> (glob "src/*.[ch]")
+("src/ext.c" "src/ext.h")
+gosh> (glob '("*.scm" "src/*.c"))
+("src/ext.c" "test.scm" "ext.scm")
+@end example
 
-註：glob()の実装にセキュリティ上の問題のあるシステムがあることが知られています。
-Gaucheではいずれ、自前のglob()実装を持つ予定です。
-@c COMMON
+Unlike shell's glob, if there's no matching pathnames, @code{()} is returned.
+
+In fact, globbing is a very useful tool to search hierarchical
+data structure in general, not limited to the filesystems.
+So the @code{glob} function is implemented separately from
+the filesystem.  By giving @var{separator} and @var{lister}
+arguments you can glob from any kind of tree data structure.
+It is just that their default values are set to look at
+the filesystems.
+
+The @var{separator} argument should be a char-set, and used
+to split the @var{pattern} into components.  It's default is
+@code{#[/]}.  It is not used to the actual pathnames to match.
+
+The @var{folder} is a procedure that walks through the data
+structure.  It is called with five arguments:
+
+@example
+(folder @var{proc} @var{seed} @var{parent} @var{regexp} @var{non-leaf?})
+@end example
+
+@var{proc} is a procedure that takes two arguments.  The @var{folder}
+should call @var{proc} with every node in the @var{parent} whose
+component name matches @var{regexp}, passing around the seed value
+just like @code{fold}.  It should return the final value returned
+by @var{proc}.  For example, if @code{cons} is given to @var{proc}
+and @code{()} is given to @var{seed}, the return value of the folder
+is a list of nodes that matches the @var{regexp}.
+
+The representation of a node is up to the folder.  It can be a
+pathname, or some sort of objects, or anything.  The @code{glob}
+procedure does not care what it is; the @code{glob} procedure
+merely passes the node to subsequent call to @code{folder} as
+@var{parent} argument, or returns a list of nodes as the result.
+
+The @var{parent} argument is either a boolean value or a node.
+If it is a node, @code{folder} looks for its children.  
+If it is @code{#t}, it means a @emph{root node}---e.g. if the
+folder is looking at the filesystem, the root node is the root
+directory.  If it is @code{#f}, it means a @emph{current node}---
+e.g. the current directory if the folder is for the filesystem.
+What exactly the root and current node means is up to the folder
+implementation.
+
+The @var{regexp} argument is used to filter the child nodes.
+It should be matched against the component name of the child,
+not including its directory names.  As a special case, it can
+be a symbol @code{dir}; if that's the case, the folder should
+return @var{node} itself, but it may indicate @var{node}
+@emph{as a directory}; e.g. if @var{node} is represented as a pathname,
+the folder returns a pathname with trailing directory separator.
+If @var{node} is a boolean value and @var{regexp} is @code{dir},
+the folder should return the node representing root node or
+current node, respectively; e.g. if @var{node} is represented
+as a pathname, the folder may return @code{"/"} and @code{"./"}
+for those cases.
+
+The @var{non-leaf} argument is a boolean flag.  If it is true,
+the filter should omit the leaf nodes from the result (e.g. only
+include the directories).
+
+Now, here's the precise spec of glob pattern matching.
+
+Each glob pattern is a string to match pathname-like strings.
+
+A pathname-like string is a string consists of one or more
+@emph{components}, separated by @emph{separator}s.
+The default separator is @code{#[/]}; you can change it
+with @var{separator} keyword argument.
+A component cannot contain separators, and cannot
+be a null string.  Consecutive separators are
+regarded as a single separator.  A pathname-like
+string optionally begins with, and/or ends with a separator character.
+
+A glob pattern is also consists of components and separator
+characters.  In a component, following characters/syntax have special
+meanings.
+
+@table @code
+@item *
+When it appears at the beginning of a component, it matches
+zero or more characters except a period (@code{.}).  And it
+won't match if the component of the input string begins with 
+a period.
+
+Otherwise, it matches zero or more sequence of any characters.
+
+@item ?
+When it appears at the beginning of a component, it matches
+a character except a period (@code{.}).  Othewrise, it matches
+any single character.
+
+@item [@i{chars}]
+Specifies a character set.  Matches any one of the set.
+The syntax of @i{chars} is the same as Gauche's character set
+syntax (@xref{Character set}).  For the compatibility of the
+traditional glob, the @code{!} character can be used to complement
+the character set, e.g. @code{[!abc]} is the same as @code{[^abc]}.
+@end table
+@end defun
+
+@defun glob-fold pattern proc seed &keyword separator folder
+This is actually a low-level construct of the glob function.
+Actually, @var{glob} is simply written like this:
+@example
+(define (glob patterns . opts)
+  (apply glob-fold patterns cons '() opts))
+@end example
+
+The meaning of @var{pattern}, @var{separator} and @var{lister}
+is the same as explained above.  
+
+For each pathname that matches @var{pattern}, @code{glob-fold}
+calls @var{proc} with the pathname and a seed value.  The initial
+seed value is @var{seed}, and the value @var{proc} returns becomes
+the next seed value.  The result of the last call to @var{proc} 
+becomes the result of @code{glob-fold}.  If there's no matching
+pathnames, @var{proc} is never called and @var{seed} is returned.
 @end defun
 
 @c EN

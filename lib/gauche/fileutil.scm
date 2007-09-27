@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fileutil.scm,v 1.3 2007-08-28 10:15:42 shirok Exp $
+;;;  $Id: fileutil.scm,v 1.4 2007-09-27 22:32:25 shirok Exp $
 ;;;
 
 (define-module gauche.fileutil
@@ -123,22 +123,22 @@
 
 (define (glob-fold-1 pattern proc seed opts)
   (let-keywords opts ((separator #[/])
-                      (lister glob-fs-lister))
+                      (folder glob-fs-folder))
     (define (rec node matcher seed)
-      (cond ((null? matcher) (proc seed))
-            ((null? (cdr matcher))
-             (fold proc seed (lister node (car matcher) #f)))
-            (else
-             (fold (lambda (node seed) (rec node (cdr matcher) seed))
-                   seed (lister node (car matcher) #t)))))
+      (cond [(null? matcher) (proc seed)]
+            [(null? (cdr matcher))
+             (folder proc seed node (car matcher) #f)]
+            [else
+             (folder (lambda (node seed) (rec node (cdr matcher) seed))
+                     seed node (car matcher) #t)]))
     (let1 p (glob-prepare-pattern pattern separator)
       (rec (car p) (cdr p) seed))))
 
 (define (glob-prepare-pattern pattern separator)
   (define (f comp)
-    (cond ((equal? comp "") 'dir?)    ; pattern ends with '/'
+    (cond [(equal? comp "") 'dir?]    ; pattern ends with '/'
           ;((equal? comp "**") '**)
-          (else (glob-component->regexp comp))))
+          [else (glob-component->regexp comp)]))
   (let1 comps (string-split pattern separator)
     (if (equal? (car comps) "")
       (cons #t (map f (cdr comps)))
@@ -182,7 +182,7 @@
             [else  (outer1 ch)]))
         `(seq bol ,@(outer0 (next))))))))
 
-(define (glob-fs-lister node regexp non-leaf?)
+(define (glob-fs-folder proc seed node regexp non-leaf?)
   (let* ((separ (cond-expand
                  (gauche.os.windows "\\")
                  (else "/")))
@@ -192,14 +192,15 @@
     ;; NB: we can't use filter, for it is not built-in.
     ;; also we can't use build-path, from the same reason.
     (if (eq? regexp 'dir?)
-      (list prefix)
+      (proc prefix seed)
       (fold (lambda (child seed)
               (or (and-let* ([ (regexp child) ]
                              [full (string-append prefix child)]
                              [ (or (not non-leaf?)
                                    (file-is-directory? full)) ])
-                    (cons full seed))
+                    (proc full seed))
                   seed))
-            '() (sys-readdir (case node ((#t) "/") ((#f) ".") (else node)))))))
+            seed
+            (sys-readdir (case node ((#t) "/") ((#f) ".") (else node)))))))
 
 (provide "gauche/fileutil")

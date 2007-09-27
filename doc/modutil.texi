@@ -11515,25 +11515,18 @@ of text, which is splitted into several parts; a header, which
 displays the title; followed by a bar, a numeric part, and a time part,
 as shown in the followig example (only the line beginning with ``foo''
 is actually displayed).
-
-@example
-<-header-> <-------bar---------> <-num-><-time->
-foo       |#############        |123/211   01:21 ETA
-          ^
-          separator
-@end example
 @c JP
 プログレスバーの汎用的なフォーマット1行のテキストで構成されます。この1
 行はいくつかの部分に分解できます。タイトルを表示するヘッダ部、その後に
 プログレスバーがあって、数値部、時間部と続きます。以下がその例です(foo
 からはじまる1行だけが実際に表示されます。
-@example
-<-ヘッダ-> <-------バー--------> <-数--><-時間->
-foo       |#############        |123/211   01:21 ETA
-          ^
-          セパレータ
-@end example
 @c COMMON
+@example
+<-header-> <-------bar---------> <-num-><-time->      <---info---->
+foo       |#############        |123/211   01:21 ETA  compiling...
+          ^
+          separator
+@end example
 
 @c EN
 Various things like the character used in the bar chart or
@@ -11583,7 +11576,7 @@ which packages the progress bar feature in a closure and returns it.
 ます。
 @c COMMON
 
-@defun make-text-progress-bar &keyword header header-width bar-char bar-width num-width num-format time-width separator-char max-value port
+@defun make-text-progress-bar &keyword header header-width bar-char bar-width num-width num-format time-width info info-width separator-char max-value port
 
 @c EN
 Returns a procedure that packages operations on the progress bar.
@@ -11594,141 +11587,191 @@ and an optional numeric argument.
 示すシンボルとオプションで数値を引数として渡して使います。
 @c COMMON
 
-@c EN
 @table @code
 @item @var{proc} 'show
+@c EN
 Redisplays the progress bar.  All other operations implies redisplay,
 so you don't need to use this unless you have a specific reason to 
 redisplay the current state.
+@c JP
+プログレスバーを再表示する。他のどの操作も状態の再表示を行います。
+したがって、現在のステータスを再表示しなければない特別な理由がないかぎ
+りこれを使う必要はありません。
+@c COMMON
 
 @item @var{proc} 'set @var{value}
+@c EN
 Sets the current value to @var{value}, then redisplays the progress bar.
 If @var{value} exceeds the max value, it is clipped by the max value.
+@c JP
+現在の値を@var{value}にセットし、プログレスバーを再表示します。
+@var{value}が最大値を超えていたら、超過分を切り捨て最大値にします。
+@c COMMON
 
 @item @var{proc} 'inc @var{value}
+@c EN
 Increments the current value by @var{value}, then redisplays the progress bar.
 If the current value exceeds the max value, it is clipped by the max value.
+@c JP
+@var{value}分だけ現在の値を増し、プログレスバーを再表示します。現在の
+値が最大値を超えたら、超過分を切り捨て最大値にします。
+@c COMMON
 
 @item @var{proc} 'finish
+@c EN
 Puts the progress bar to the ``finished'' state, then redisplays it.
 The time part shows the total elapsed time, and the line is terminated
 by @code{#\newline} so that it won't be clobbered.   Once a progress
 bar becomes ``finished'', there's no way to put it back ``in progress''.
-@end table
-
-The keyword arguments are used to customize the display:
-@table @var
-@item header
-The text to be displayed in the header part.
-
-@item header-width
-The width of the header part, in number of characters.
-The header text is displayed left-aligned in the part.
-If the header text is longer than the width, the excess characters
-are omitted.  The default is 14.
-
-@item bar-char
-A character used to draw a bar chart.  The default is @code{#\#}.
-
-@item bar-width
-The width of the bar chart part, in number of characters.
-The default is 40.
-
-@item num-width
-The width of the numeric part, in number of characters.
-The default is 9.  Setting this to 0 hides the numeric part.
-
-@item num-format
-A procedure to format the numeric part.  Two arguments are
-passed; the current value and the maximum value.  It must return
-a string.  The default is the following procedure.
-@example
-(lambda (cur max)
-  (format "~d/~d" cur max))
-@end example
-
-@item time-width
-The width of the time part, in number of characters.
-The default is 7.  Settings this to 0 hides the time part.
-
-@item separator-char
-A character put around the bar part.  Default is @code{#\|}.
-You can pass @code{#f} not to display the separators.
-
-@item max-value
-The maximum value of the progress bar.  Default is 100.
-
-@item port
-An output port to which the progress bar is displayed.  The default value
-is the current output port when @code{make-text-progress-bar} is called.
-@end table
 @c JP
-@table @code
-@item @var{proc} 'show
-プログレスバーを再表示する。他のどの操作も状態の再表示を行います。
-したがって、現在のステータスを再表示しなければない特別な理由がないかぎ
-りこれを使う必要はありません。
-
-@item @var{proc} 'set @var{value}
-現在の値を@var{value}にセットし、プログレスバーを再表示します。
-@var{value}が最大値を超えていたら、超過分を切り捨て最大値にします。
-
-@item @var{proc} 'inc @var{value}
-@var{value}分だけ現在の値を増し、プログレスバーを再表示します。現在の
-値が最大値を超えたら、超過分を切り捨て最大値にします。
-
-@item @var{proc} 'finish
 プログレスバーを「終了」状態にし、再表示します。時間部はトータルの経過
 時間を表示します。また、表示行末は@code{#\newline}とし、上書きされない
 ようにします。プログレスバーはいったん「終了」状態になれば、「進捗中」
 状態に戻す方法はありません。
+@c COMMON
+
+@item @var{proc} 'set-info @var{text}
+@c EN
+Changes the text displayed in the ``info'' part.  To use the info part,
+you have to give a positive value to @var{info-width} keyword argument
+of @code{make-text-progress-bar}.
+@c JP
+``info''部に表示されるテキストを変更します。
+info部を使うには、@code{make-text-progress-bar}の@var{info-width}キーワード
+引数に正の値が指定されている必要があります。
+@c COMMON
+
+
+@item @var{proc} 'set-header @var{text}
+@c EN
+Changes the text displayed in the ``header' area.
+@c JP
+``header''部に表示されるテキストを変更します。
+@c COMMON
 @end table
 
-キーワード引数を使って表示をカスタマイズします。
+@c EN
+The keyword arguments are used to customize the display:
+@c JP
+キーワード引数を使って表示をカスタマイズできます。
+@c COMMON
 @table @var
 @item header
-ヘッダ部に表示するテキスト。
+@c EN
+The text to be displayed in the header part.
+This can be changed later, by sending @code{set-header} message
+to the created progress bar.
+@c JP
+ヘッダ部に表示するテキスト。このテキストは、作られたプログレスバーに
+@code{set-header}メッセージを送ることで後で変更可能です。
+@c COMMON
 
 @item header-width
+@c EN
+The width of the header part, in number of characters.
+The header text is displayed left-aligned in the part.
+If the header text is longer than the width, the excess characters
+are omitted.  The default is 14.
+@c JP
 ヘッダ部の幅、文字数で指定します。ヘッダ部のテキストは左詰めです。ヘッ
 ダ部に置くテキストが幅よりも長い場合には超過分の文字は切り捨てられます。
 デフォルトは14文字です。
+@c COMMON
 
 @item bar-char
+@c EN
+A character used to draw a bar chart.  The default is @code{#\#}.
+@c JP
 バーチャートを描くのに使う文字。デフォルトは@code{#\#}です。
+@c COMMON
 
 @item bar-width
+@c EN
+The width of the bar chart part, in number of characters.
+The default is 40.
+@c JP
 バーチャート部の幅で、文字数で指定します。デフォルトでは40文字です。
+@c COMMON
 
 @item num-width
+@c EN
+The width of the numeric part, in number of characters.
+The default is 9.  Setting this to 0 hides the numeric part.
+@c JP
 数値部の幅で、文字数で指定します。デフォルトでは9で、これを0に設定する
 と数値部を隠せます。
+@c COMMON
 
 @item num-format
+@c EN
+A procedure to format the numeric part.  Two arguments are
+passed; the current value and the maximum value.  It must return
+a string.  The default is the following procedure.
+@c JP
 数値部を整形する手続き。引数が2つ渡されます。ひとつは現在の値、もうひ
 とつは最大値です。この手続きは文字列を返さなければなりません。デフォル
 トでは以下の手続きです。
+@c COMMON
 @example
 (lambda (cur max)
   (format "~d/~d" cur max))
 @end example
 
 @item time-width
+@c EN
+The width of the time part, in number of characters.
+The default is 7.  Settings this to 0 hides the time part.
+@c JP
 時間部の幅で、文字数で指定します。デフォルトでは7文字で、これを0に設定
 すると時間部を隠せます。
+@c COMMON
+
+@item info
+@c EN
+The text to be displayed in the info part.  This text can be
+changed later by sending @code{set-info} message to the created
+progress bar.  Note that you have to give a positive number
+to @var{info-width} keyword argument to enable the info part.
+@c JP
+info部に表示されるテキストです。このテキストは、作られたプログレスバーに
+@code{set-info}メッセージを送ることで後から変更できます。
+info部を表示するには、@var{info-width}キーワード引数に正の値を
+与えておく必要があります。
+@c COMMON
+
+@item info-width
+@c EN
+The width of the info part.  The default value is zero,
+which means the info part is not displayed.
+@c JP
+info部の表示幅です。デフォルトは0で、info部は表示されません。
+@c COMMON
 
 @item separator-char
+@c EN
+A character put around the bar part.  Default is @code{#\|}.
+You can pass @code{#f} not to display the separators.
+@c JP
 バー部分の前後に置く文字です。デフォルトでは@code{#\|}です。
 セパレータを表示したくなければ、@code{#f}を渡します。
+@c COMMON
 
 @item max-value
+@c EN
+The maximum value of the progress bar.  Default is 100.
+@c JP
 プログレスバーの最大値です。デフォルトでは100です。
+@c COMMON
 
 @item port
+@c EN
+An output port to which the progress bar is displayed.  The default value
+is the current output port when @code{make-text-progress-bar} is called.
+@c JP
 プログレスバーを表示する出力ポートです。デフォルト値は
 @code{make-text-progress-bar}が呼ばれた時点での現在の出力ポートです。
-@end table
 @c COMMON
+@end table
 @end defun
 
 @c EN

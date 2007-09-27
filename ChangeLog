@@ -1,3 +1,9 @@
+2007-09-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/fileutil.scm (glob-fold-1): Changed the traversal
+	  procedure from 'lister' (returns a list) to 'folder' (works like
+	  fold), for better flexibility.
+
 2007-09-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/progress.scm (make-text-progress-bar): added a feature to
