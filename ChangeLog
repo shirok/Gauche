@@ -1,3 +1,13 @@
+2007-09-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/progress.scm (make-text-progress-bar): added a feature to
+	  show information text on right, and allow to alter header and info
+	  text on the fly.
+	* ext/sxml/Makefile.in: temporarily reverted to make sxml-sxpath.c
+	  to depend on sxml-tools.so, because of the build problem.  This
+	  doesn't work on windows port, though, so we might need to find
+	  some trick.
+
 2007-09-18  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/sequence.scm: added permute and shuffle.

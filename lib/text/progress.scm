@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: progress.scm,v 1.4 2007-09-24 21:53:45 shirok Exp $
+;;;  $Id: progress.scm,v 1.5 2007-09-27 08:23:44 shirok Exp $
 ;;;
 
 (define-module text.progress
@@ -76,7 +76,7 @@
                 (if (> num-width 0) (num-format current-value max-value) "")
                 time-width time-width
                 (if (> time-width 0) (make-time) "")
-                (if (> time-width 0) " ETA" "    ")
+                (if (and (not finish-time) (> time-width 0)) " ETA" "    ")
                 info-width info-width
                 (if (> info-width 0) info "")
                 (if finish-time "\n" "\r"))
