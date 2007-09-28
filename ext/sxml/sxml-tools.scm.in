@@ -5,7 +5,7 @@
 ;;;   Kirill Lisovsky's sxml-tools.scm CVS revision 3.13
 ;;;   Public domain.
 ;;;
-;;; $Id: sxml-tools.scm.in,v 1.3 2006-11-09 05:14:05 shirok Exp $
+;;; $Id: sxml-tools.scm.in,v 1.4 2007-09-28 03:17:23 shirok Exp $
 ;;;
 
 (define-module sxml.tools
@@ -14,7 +14,6 @@
   (use srfi-13)
   (use text.parse)
   (use sxml.adaptor)
-;  (use sxml.sxpath)
   (export sxml:attr-list-node
           sxml:attr-as-list
           sxml:aux-list-node

@@ -10,7 +10,7 @@
 ;;;      sxpath-ext.scm,v 1.911
 ;;;   Public domain.
 ;;;
-;;; $Id: sxml-sxpath.scm.in,v 1.2 2006-11-08 21:14:50 shirok Exp $
+;;; $Id: sxml-sxpath.scm.in,v 1.3 2007-09-28 03:17:23 shirok Exp $
 ;;;
 
 (define-module sxml.sxpath
@@ -20,7 +20,6 @@
   (use srfi-13)
   (use text.parse)
   (use sxml.adaptor)
-  (use sxml.tools)
   (export sxpath nodeset? as-nodeset sxml:element? ntype-names??
           ntype?? ntype-namespace-id?? sxml:invert node-eq? node-equal?
           node-pos sxml:filter take-until take-after map-union
@@ -38,6 +37,9 @@
           sxml:child-nodes sxml:child-elements
           ))
 (select-module sxml.sxpath)
+
+;; using autoload to aviod interdependency that gets in way of cross-build.
+(autoload sxml.tools sxml:lookup sxml:attr sxml:ns-list)
 
 ;#include-body "src/sxpathlib.scm"
 ;#include-body "src/sxpath.scm"

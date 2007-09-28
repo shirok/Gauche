@@ -1,5 +1,9 @@
 2007-09-27  Shiro Kawai  <shiro@acm.org>
 
+	* ext/sxml/Makefile.in, ext/sxml/sxml-sxpath.scm.in: avoid dependency
+	  on sxml-tools at generation time, by turning the references to
+	  it into autoloads.
+
 	* lib/gauche/fileutil.scm (glob-fold-1): Changed the traversal
 	  procedure from 'lister' (returns a list) to 'folder' (works like
 	  fold), for better flexibility.
