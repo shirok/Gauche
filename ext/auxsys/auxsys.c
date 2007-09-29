@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: auxsys.c,v 1.10 2007-09-29 07:41:34 shirok Exp $
+ *  $Id: auxsys.c,v 1.11 2007-09-29 09:43:12 shirok Exp $
  */
 
 #include <gauche.h>
@@ -117,18 +117,19 @@ ScmObj Scm_Environ(void)
     LPVOID ss = GetEnvironmentStrings();
     ScmObj h = SCM_NIL, t = SCM_NIL;
     TCHAR *cp = (TCHAR*)ss, *pp;
-    TCHAR sbuf[64], *buf=sbuf;
+    TCHAR sbuf[ENV_BUFSIZ], *buf=sbuf;
     int bsize = ENV_BUFSIZ, size;
     
     do {
         for (pp=cp; *pp; pp++) /*proceed ptr*/;
-        size = (int)(cp - pp) + 1;
+        size = (int)(pp - cp) + 1;
         if (size >= bsize) {
             buf = SCM_NEW_ATOMIC_ARRAY(TCHAR, size);
             bsize = size;
         }
         memcpy(buf, cp, size*sizeof(TCHAR));
         SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(SCM_WCS2MBS(buf)));
+        cp = pp+1;
     } while (pp[1] != 0);
     FreeEnvironmentStrings(ss);
     return h;

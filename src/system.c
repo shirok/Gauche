@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.98 2007-09-18 20:35:31 shirok Exp $
+ *  $Id: system.c,v 1.99 2007-09-29 09:43:12 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1246,11 +1246,15 @@ int Scm_IsSugid(void)
 
 /* Child process management (windows only)
  *   On windows, parent-child relationship is very weak.  The system
- *   records parent's pid (and we can query it in twisted way), but
+ *   records parent's pid (and we can query it in a very twisted way), but
  *   the child's process record is discarded upon child's termination
  *   unless the parent keeps its process handle.   To emulate exec-wait
- *   semantics, we keep the list of child processes whose status is
+ *   semantics, we keep the list of child process handles whose status is
  *   unclaimed.
+ *   One issue is that we cannot wait() for child processes that
+ *   are created by Gauche extension code and not using Scm_SysExec API.
+ *   I don't think it's a big problem, for such extensions must take
+ 
  */
 #if defined(GAUCHE_WINDOWS)
 static struct process_mgr_rec {
