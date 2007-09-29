@@ -30,11 +30,10 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.56 2007-09-14 11:17:40 shirok Exp $
+ *  $Id: net.c,v 1.57 2007-09-29 12:10:11 shirok Exp $
  */
 
 #include "gauche/net.h"
-#include <unistd.h>
 #include <fcntl.h>
 #include <gauche/extend.h>
 #include <gauche/uvector.h>

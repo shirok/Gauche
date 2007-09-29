@@ -30,12 +30,17 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: addr.c,v 1.30 2007-03-24 09:02:55 shirok Exp $
+ *  $Id: addr.c,v 1.31 2007-09-29 12:10:11 shirok Exp $
  */
 
 #include "gauche/net.h"
 #include "gauche/uvector.h"
 #include <string.h>
+
+#if defined(GAUCHE_WINDOWS)
+static int inet_pton(int af, const char *src, void *dst);
+static const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+#endif /*GAUCHE_WINDOWS*/
 
 static ScmObj key_path = SCM_FALSE;
 static ScmObj key_host = SCM_FALSE;
@@ -187,7 +192,7 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
     addr->addr.sin_len = sizeof(struct sockaddr_in);
 #endif
     addr->addr.sin_family = AF_INET;
-    addr->addr.sin_port = htons(SCM_INT_VALUE(port));
+    addr->addr.sin_port = htons((short)SCM_INT_VALUE(port));
     if (SCM_STRINGP(host)) {
         const char *hname = Scm_GetStringConst(SCM_STRING(host));
         /* First, see if host is dotted number notation. */
@@ -416,6 +421,55 @@ ScmObj Scm_InetAddressToString(ScmObj addr,  /* integer or uvector */
     return SCM_UNDEFINED;       /* dummy */
 #undef BUFLEN
 }
+
+/*==================================================================
+ * Windows compatibility
+ */
+#if defined(GAUCHE_WINDOWS)
+static int inet_pton(int af, const char *src, void *dst)
+{
+    TCHAR *str = SCM_MBS2WCS(src);
+    int r;
+    INT addrsize;
+    
+    switch (af) {
+    case AF_INET:  addrsize = (INT)sizeof(struct sockaddr_in); break;
+    case AF_INET6: addrsize = (INT)sizeof(struct sockaddr_in6); break;
+    default: return -1;
+    }
+    
+    r = WSAStringToAddress(str, af, NULL, dst, &addrsize);
+    if (r != 0) return -1;
+    else return 1;
+}
+
+static const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
+{
+#define ADDR_MAXLEN 64
+    TCHAR buf[ADDR_MAXLEN];
+    int r;
+    size_t addrsize, ressize;
+    DWORD tressize = ADDR_MAXLEN;
+    const char *res;
+    
+    switch (af) {
+    case AF_INET:  addrsize = sizeof(struct sockaddr_in); break;
+    case AF_INET6: addrsize = sizeof(struct sockaddr_in6); break;
+    default: return NULL;
+    }
+
+    r = WSAAddressToString((LPSOCKADDR)src, (DWORD)addrsize, NULL,
+                           buf, &tressize);
+    if (r != 0) return NULL;
+    res = SCM_WCS2MBS(buf);
+    ressize = strlen(res);
+    if (size <= (int)ressize) return NULL;
+    memcpy(dst, res, ressize+1);
+    return dst;
+#undef ADDR_MAXLEN
+}
+#endif /*GAUCHE_WINDOWS*/
+
 
 /*==================================================================
  * initialization stuff
