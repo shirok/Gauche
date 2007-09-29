@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.34 2007-09-18 08:48:11 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.35 2007-09-29 07:41:34 shirok Exp $
 ;;;
 
 "
@@ -75,6 +75,7 @@
 #endif /*_MSC_VER*/
 
 extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
+extern ScmObj Scm_Environ(void);
 "
 
 ;; stdlib.h
@@ -284,6 +285,9 @@ extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
           "if (r < 0) Scm_SysError(\"getdomainname failed\");"
           "SCM_RESULT = buf;"))
 )
+
+(define-cproc sys-environ ()
+  (call "Scm_Environ"))
 
 (when "defined(HAVE_PUTENV) || defined(HAVE_SETENV)"
   (define-cproc sys-setenv (name::<const-cstring>

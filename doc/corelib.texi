@@ -11613,6 +11613,31 @@ or @code{#f} if the environment variable is not defined.
 @c COMMON
 @end defun
 
+@defun sys-environ
+Returns the current environment as a list of strings.  Each string
+is a form of @code{NAME=VALUE}, where @code{NAME} is the name of
+the environment variable and @code{VALUE} is its value.  @code{NAME}
+never contains a character @code{#\=}.  This is useful when you want
+to obtail the all enviroment variables of the current process.
+Use @code{sys-getenv} if you want to query a specific environment variable.
+@end defun
+
+@defun sys-environ->alist &optional envlist
+A convenience procedure for @code{sys-environ}.  When the list of
+environment strings (like what @code{sys-environ} returns) is given
+to @var{envlist}, this procedure splits name and value of
+each environment variable and returns an assoc list.
+
+When @var{envlist} is omitted, this procedure calls @code{sys-environ}
+to get the current environment variables.
+
+@example
+(sys-environ->alist '("A=B" "C=D=E"))
+  => (("A" . "B") ("C" . "D=E"))
+@end example
+@end defun
+
+
 @defun sys-putenv name value
 @c EN
 Add environment variable @var{name} with @var{value} to the current

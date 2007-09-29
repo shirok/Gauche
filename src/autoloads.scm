@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.46 2007-08-28 10:15:43 shirok Exp $
+;;; $Id: autoloads.scm,v 1.47 2007-09-29 07:41:34 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.46 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.47 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -155,7 +155,7 @@
           sys-setgid sys-setpgid sys-getpgid sys-getpgrp
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname
-          sys-putenv sys-setenv sys-unsetenv
+          sys-putenv sys-setenv sys-unsetenv sys-environ sys-environ->alist
           sys-chown sys-lchown sys-utime
           sys-getgroups sys-getlogin sys-localeconv
           sys-getloadavg)

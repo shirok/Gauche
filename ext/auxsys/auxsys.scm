@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.21 2007-09-18 08:48:11 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.22 2007-09-29 07:41:34 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
@@ -40,7 +40,7 @@
           sys-setgid sys-setpgid sys-getpgid sys-getpgrp
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname
-          sys-putenv sys-setenv sys-unsetenv
+          sys-putenv sys-setenv sys-unsetenv sys-environ sys-environ->alist
           sys-chown sys-lchown sys-utime
           sys-getgroups sys-getlogin sys-localeconv
           sys-getloadavg)
@@ -143,6 +143,12 @@
  ((not gauche.sys.unsetenv) 
   (define sys-unsetenv #f))             ; make autoload happy
  (else))
+
+(define (sys-environ->alist . envlist)
+  (map (lambda (envstr)
+         (receive (pre post) (string-scan envstr #\= 'both)
+           (if pre (cons pre post) (cons envstr ""))))
+       (get-optional envlist (sys-environ))))
 
 (define sys-setpgrp
   (if (global-variable-bound? 'gauche.auxsys '%sys-setpgrp)

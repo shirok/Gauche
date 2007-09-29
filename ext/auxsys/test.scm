@@ -3,6 +3,7 @@
 ;;
 
 (use gauche.test)
+(use gauche.process)
 
 (test-start "auxsys")
 (use gauche.auxsys)
@@ -87,5 +88,23 @@
           (sys-unsetenv "ZZGGGBBB")
           (sys-getenv "ZZGGGBBB"))))
  (else))
+
+;; environ
+(test* "sys-environ->alist" '(("A" . "B") ("A" . "") ("" . "B") ("A" . "B=C"))
+       (sys-environ->alist '("A=B" "A=" "=B" "A=B=C")))
+
+(let ((envs (sys-environ)))
+  (define (env-test var)
+    (test* #`"sys-environ (,var)" #t
+           (cond [(sys-getenv var)
+                  => (lambda (val)
+                       (not (not (member #`",|var|=,|val|" envs))))]
+                 [else #t])))
+  (env-test "HOME")
+  (env-test "USER")
+  (env-test "LANG")
+  (env-test "PWD")
+  (env-test "TERM")
+  (env-test "SHELL"))
 
 (test-end)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: auxsys.c,v 1.9 2007-09-13 12:30:23 shirok Exp $
+ *  $Id: auxsys.c,v 1.10 2007-09-29 07:41:34 shirok Exp $
  */
 
 #include <gauche.h>
@@ -39,6 +39,9 @@
 
 #if !defined(GAUCHE_WINDOWS)
 #  include <sys/times.h>
+/* POSIX defines environ, and ISO C defines __environ.
+   Modern C seems to have the latter declared in unistd.h */
+extern char **environ;
 #endif
 
 #if defined(_MSC_VER)
@@ -101,6 +104,36 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
 #endif
 }
 
+/* Returns the system's environment table as a list of strings.
+   Each string is in the format of "key=value". */
+ScmObj Scm_Environ(void)
+{
+#if !defined(GAUCHE_WINDOWS)
+    if (environ == NULL) return SCM_NIL;
+    else return Scm_CStringArrayToList((const char**)environ, -1,
+                                       SCM_STRING_COPYING);
+#else  /*GAUCHE_WINDOWS*/
+#define ENV_BUFSIZ 64
+    LPVOID ss = GetEnvironmentStrings();
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    TCHAR *cp = (TCHAR*)ss, *pp;
+    TCHAR sbuf[64], *buf=sbuf;
+    int bsize = ENV_BUFSIZ, size;
+    
+    do {
+        for (pp=cp; *pp; pp++) /*proceed ptr*/;
+        size = (int)(cp - pp) + 1;
+        if (size >= bsize) {
+            buf = SCM_NEW_ATOMIC_ARRAY(TCHAR, size);
+            bsize = size;
+        }
+        memcpy(buf, cp, size*sizeof(TCHAR));
+        SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(SCM_WCS2MBS(buf)));
+    } while (pp[1] != 0);
+    FreeEnvironmentStrings(ss);
+    return h;
+#endif /*GAUCHE_WINDOWS*/
+}
 
 /*==============================================================
  * Emulation stuff for Windows

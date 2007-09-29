@@ -1,3 +1,11 @@
+2007-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* ext/auxsys/auxsys.c (Scm_Environ),
+	  ext/auxsys/auxsyslib.stub (sys-environ),
+	  ext/auxsys/auxsys.scm (sys-environ->alist): Added sys-environ
+	  and sys-environ->alist to obtain all environment variable bindings
+	  of the current process.
+
 2007-09-27  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml/Makefile.in, ext/sxml/sxml-sxpath.scm.in: avoid dependency
