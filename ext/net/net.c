@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.58 2007-09-30 06:29:40 shirok Exp $
+ *  $Id: net.c,v 1.59 2007-09-30 08:44:21 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -511,20 +511,70 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
  */
 #if defined(GAUCHE_WINDOWS)
 
-/* 
- * I should use WSAStringToAddress, but just for the time being...
- */
-int inet_aton(const char *cp, struct in_addr *inp)
+int inet_pton(int af, const char *src, void *dst)
 {
-    unsigned long r = inet_addr(cp);
-    if (r == (unsigned long)-1) {
-	return 0;
-    } else {
-	inp->s_addr = r;
-	return 1;
+    TCHAR *str = SCM_MBS2WCS(src);
+    int r;
+    INT addrsize;
+    struct sockaddr_in sa;
+    struct sockaddr_in6 sa6;
+    
+    switch (af) {
+    case AF_INET:
+        addrsize = (INT)sizeof(sa);
+        r = WSAStringToAddress(str, af, NULL, (LPSOCKADDR)&sa, &addrsize);
+        if (r != 0) return -1;
+        memcpy(dst, &sa.sin_addr, sizeof(struct in_addr));
+        return 1;
+    case AF_INET6:
+        addrsize = (INT)sizeof(sa6);
+        r = WSAStringToAddress(str, af, NULL, (LPSOCKADDR)&sa6, &addrsize);
+        if (r != 0) return -1;
+        memcpy(dst, &sa6.sin6_addr, sizeof(struct in6_addr));
+        return 1;
     }
+    return -1;
 }
 
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
+{
+#define ADDR_MAXLEN 64
+    struct sockaddr_in sa;
+    struct sockaddr_in6 sa6;
+    TCHAR buf[ADDR_MAXLEN];
+    int r;
+    size_t ressize;
+    DWORD tressize = ADDR_MAXLEN-1;
+    const char *res;
+    
+    switch (af) {
+    case AF_INET:
+        memset(&sa, 0, sizeof(sa));
+        sa.sin_family = AF_INET;
+        memcpy(&sa.sin_addr, src, sizeof(struct in_addr));
+        r = WSAAddressToString((LPSOCKADDR)&sa, (DWORD)sizeof(sa), NULL,
+                               buf, &tressize);
+        break;
+    case AF_INET6:
+        memset(&sa6, 0, sizeof(sa6));
+        sa6.sin6_family = AF_INET6;
+        memcpy(&sa6.sin6_addr, src, sizeof(struct in6_addr));
+        r = WSAAddressToString((LPSOCKADDR)&sa6, (DWORD)sizeof(sa6), NULL,
+                               buf, &tressize);
+        break;
+    default:
+        return NULL;
+    }
+
+    if (r != 0) return NULL;
+    buf[tressize] = 0;
+    res = SCM_WCS2MBS(buf);
+    ressize = strlen(res);
+    if (size <= (int)ressize) return NULL;
+    memcpy(dst, res, ressize+1);
+    return dst;
+#undef ADDR_MAXLEN
+}
 #endif /*GAUCHE_WINDOWS*/
                           
 /*==================================================================

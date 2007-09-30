@@ -30,17 +30,12 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: addr.c,v 1.32 2007-09-30 06:29:40 shirok Exp $
+ *  $Id: addr.c,v 1.33 2007-09-30 08:44:18 shirok Exp $
  */
 
 #include "gauche/net.h"
 #include "gauche/uvector.h"
 #include <string.h>
-
-#if defined(GAUCHE_WINDOWS)
-static int inet_pton(int af, const char *src, void *dst);
-static const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
-#endif /*GAUCHE_WINDOWS*/
 
 static ScmObj key_path = SCM_FALSE;
 static ScmObj key_host = SCM_FALSE;
@@ -196,7 +191,7 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
     if (SCM_STRINGP(host)) {
         const char *hname = Scm_GetStringConst(SCM_STRING(host));
         /* First, see if host is dotted number notation. */
-        if (inet_aton(hname, &addr->addr.sin_addr) == 0) {
+        if (inet_pton(AF_INET, hname, &addr->addr.sin_addr) <= 0) {
             /* Now, we need to look up the host name.
                Call MT-safe Scm_GetHostByName */
             ScmObj ap, hent = Scm_GetHostByName(hname);
@@ -208,7 +203,7 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
                 Scm_Error("host have unknown address type: %S", host);
             }
             hname = Scm_GetStringConst(SCM_STRING(SCM_CAR(ap)));
-            if (inet_aton(hname, &addr->addr.sin_addr) == 0) {
+            if (inet_pton(AF_INET, hname, &addr->addr.sin_addr) == 0) {
                 Scm_Error("host name lookup failure: %S", host);
             }
         }
@@ -421,77 +416,6 @@ ScmObj Scm_InetAddressToString(ScmObj addr,  /* integer or uvector */
     return SCM_UNDEFINED;       /* dummy */
 #undef BUFLEN
 }
-
-/*==================================================================
- * Windows compatibility
- */
-#if defined(GAUCHE_WINDOWS)
-static int inet_pton(int af, const char *src, void *dst)
-{
-    TCHAR *str = SCM_MBS2WCS(src);
-    int r;
-    INT addrsize;
-    struct sockaddr_in sa;
-    struct sockaddr_in6 sa6;
-    
-    switch (af) {
-    case AF_INET:
-        addrsize = (INT)sizeof(sa);
-        r = WSAStringToAddress(str, af, NULL, (LPSOCKADDR)&sa, &addrsize);
-        if (r != 0) return -1;
-        memcpy(dst, &sa.sin_addr, sizeof(struct in_addr));
-        return 1;
-    case AF_INET6:
-        addrsize = (INT)sizeof(sa6);
-        r = WSAStringToAddress(str, af, NULL, (LPSOCKADDR)&sa6, &addrsize);
-        if (r != 0) return -1;
-        memcpy(dst, &sa6.sin6_addr, sizeof(struct in6_addr));
-        return 1;
-    }
-    return -1;
-}
-
-static const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
-{
-#define ADDR_MAXLEN 64
-    struct sockaddr_in sa;
-    struct sockaddr_in6 sa6;
-    TCHAR buf[ADDR_MAXLEN];
-    int r;
-    size_t ressize;
-    DWORD tressize = ADDR_MAXLEN-1;
-    const char *res;
-    
-    switch (af) {
-    case AF_INET:
-        memset(&sa, 0, sizeof(sa));
-        sa.sin_family = AF_INET;
-        memcpy(&sa.sin_addr, src, sizeof(struct in_addr));
-        r = WSAAddressToString((LPSOCKADDR)&sa, (DWORD)sizeof(sa), NULL,
-                               buf, &tressize);
-        break;
-    case AF_INET6:
-        memset(&sa6, 0, sizeof(sa6));
-        sa6.sin6_family = AF_INET6;
-        memcpy(&sa6.sin6_addr, src, sizeof(struct in6_addr));
-        r = WSAAddressToString((LPSOCKADDR)&sa6, (DWORD)sizeof(sa6), NULL,
-                               buf, &tressize);
-        break;
-    default:
-        return NULL;
-    }
-
-    if (r != 0) return NULL;
-    buf[tressize] = 0;
-    res = SCM_WCS2MBS(buf);
-    ressize = strlen(res);
-    if (size <= (int)ressize) return NULL;
-    memcpy(dst, res, ressize+1);
-    return dst;
-#undef ADDR_MAXLEN
-}
-#endif /*GAUCHE_WINDOWS*/
-
 
 /*==================================================================
  * initialization stuff

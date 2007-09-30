@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: netdb.c,v 1.17 2007-05-16 03:27:07 shirok Exp $
+ *  $Id: netdb.c,v 1.18 2007-09-30 08:44:21 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -139,7 +139,7 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
     if (type != AF_INET) {
         Scm_Error("unsupported address type: %d", type);
     }
-    if (!inet_aton(addr, &iaddr)) {
+    if (inet_pton(AF_INET, addr, &iaddr) <= 0) {
         Scm_Error("bad inet address format: %s", addr);
     }
     

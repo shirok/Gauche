@@ -273,17 +273,6 @@ struct tms {
 clock_t times(struct tms *buf);
 
 /*
- * Fakes for networking (ext/net)
- */
-struct sockaddr_un {
-    unsigned short sun_family;
-    char sun_path[108];
-};
-
-/* winsock2 appears to have only inet_addr(), the obsolete interaface */
-int inet_aton(const char *cp, struct in_addr *inp);
-
-/*
  * Fakes for ext/fcntl
  */
 struct flock {

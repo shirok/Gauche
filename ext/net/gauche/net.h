@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.h,v 1.10 2007-09-14 11:17:41 shirok Exp $
+ *  $Id: net.h,v 1.11 2007-09-30 08:44:26 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -73,6 +73,16 @@ typedef SOCKET Socket;
 #include <gauche/extern.h>
 
 SCM_DECL_BEGIN
+
+/* windows stuff */
+#if defined(GAUCHE_WINDOWS)
+struct sockaddr_un {
+    unsigned short sun_family;
+    char sun_path[108];
+};
+int inet_pton(int af, const char *src, void *dst);
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+#endif /*GAUCHE_WINDOWS*/
 
 /*==================================================================
  * Socket
