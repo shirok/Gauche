@@ -58,6 +58,8 @@ var output = fs.OpenTextFile("gauche\\config.h", 2, true);
   "typedef unsigned long u_long;",
   "#define _BSDTYPES_DEFINED",
   "#endif /*!_BSDTYPES_DEFINED*/",
+  "typedef short            int16_t;",
+  "typedef unsigned short   uint16_t;",
   "typedef __int32          int32_t;",
   "typedef unsigned __int32 uint32_t;",
   "typedef __int64          int64_t;",

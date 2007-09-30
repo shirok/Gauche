@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: addr.c,v 1.31 2007-09-29 12:10:11 shirok Exp $
+ *  $Id: addr.c,v 1.32 2007-09-30 06:29:40 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -431,36 +431,58 @@ static int inet_pton(int af, const char *src, void *dst)
     TCHAR *str = SCM_MBS2WCS(src);
     int r;
     INT addrsize;
+    struct sockaddr_in sa;
+    struct sockaddr_in6 sa6;
     
     switch (af) {
-    case AF_INET:  addrsize = (INT)sizeof(struct sockaddr_in); break;
-    case AF_INET6: addrsize = (INT)sizeof(struct sockaddr_in6); break;
-    default: return -1;
+    case AF_INET:
+        addrsize = (INT)sizeof(sa);
+        r = WSAStringToAddress(str, af, NULL, (LPSOCKADDR)&sa, &addrsize);
+        if (r != 0) return -1;
+        memcpy(dst, &sa.sin_addr, sizeof(struct in_addr));
+        return 1;
+    case AF_INET6:
+        addrsize = (INT)sizeof(sa6);
+        r = WSAStringToAddress(str, af, NULL, (LPSOCKADDR)&sa6, &addrsize);
+        if (r != 0) return -1;
+        memcpy(dst, &sa6.sin6_addr, sizeof(struct in6_addr));
+        return 1;
     }
-    
-    r = WSAStringToAddress(str, af, NULL, dst, &addrsize);
-    if (r != 0) return -1;
-    else return 1;
+    return -1;
 }
 
 static const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
 {
 #define ADDR_MAXLEN 64
+    struct sockaddr_in sa;
+    struct sockaddr_in6 sa6;
     TCHAR buf[ADDR_MAXLEN];
     int r;
-    size_t addrsize, ressize;
-    DWORD tressize = ADDR_MAXLEN;
+    size_t ressize;
+    DWORD tressize = ADDR_MAXLEN-1;
     const char *res;
     
     switch (af) {
-    case AF_INET:  addrsize = sizeof(struct sockaddr_in); break;
-    case AF_INET6: addrsize = sizeof(struct sockaddr_in6); break;
-    default: return NULL;
+    case AF_INET:
+        memset(&sa, 0, sizeof(sa));
+        sa.sin_family = AF_INET;
+        memcpy(&sa.sin_addr, src, sizeof(struct in_addr));
+        r = WSAAddressToString((LPSOCKADDR)&sa, (DWORD)sizeof(sa), NULL,
+                               buf, &tressize);
+        break;
+    case AF_INET6:
+        memset(&sa6, 0, sizeof(sa6));
+        sa6.sin6_family = AF_INET6;
+        memcpy(&sa6.sin6_addr, src, sizeof(struct in6_addr));
+        r = WSAAddressToString((LPSOCKADDR)&sa6, (DWORD)sizeof(sa6), NULL,
+                               buf, &tressize);
+        break;
+    default:
+        return NULL;
     }
 
-    r = WSAAddressToString((LPSOCKADDR)src, (DWORD)addrsize, NULL,
-                           buf, &tressize);
     if (r != 0) return NULL;
+    buf[tressize] = 0;
     res = SCM_WCS2MBS(buf);
     ressize = strlen(res);
     if (size <= (int)ressize) return NULL;

@@ -59,6 +59,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib"
 				OutputFile="$(OutDir)\libnet.dll"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.51 2007-09-14 11:17:40 shirok Exp $
+;;;  $Id: netlib.stub,v 1.52 2007-09-30 06:29:40 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -168,7 +168,7 @@
                 (result SCM_UNDEFINED)))))
 
 (define-cproc socket-fd (sock::<socket>)
-  (expr <long> (-> sock fd)))
+  (expr <long> (cast long (-> sock fd))))
 
 ;; NB: buffered? keyword args in the following two procedures are
 ;; deprecated; use buffering arg.
@@ -409,7 +409,7 @@
         "}"
         "sum = (sum >> 16) + (sum & 0xffff);"
         "sum += sum >> 16;"
-        "result = ~sum;"                ;truncate to 16bit
+        "result = (uint16_t)~sum;"                ;truncate to 16bit
         "#if !WORDS_BIGENDIAN"
         "result = (result>>8)|(result<<8);"
         "#endif"

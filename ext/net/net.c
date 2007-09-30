@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.57 2007-09-29 12:10:11 shirok Exp $
+ *  $Id: net.c,v 1.58 2007-09-30 06:29:40 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -106,10 +106,10 @@ ScmSocket *make_socket(Socket fd, int type)
 
 ScmObj Scm_MakeSocket(int domain, int type, int protocol)
 {
-    int sock; 
+    intptr_t sock; 
     SCM_SYSCALL(sock, socket(domain, type, protocol));
     if (SOCKET_INVALID(sock)) Scm_SysError("couldn't create socket");
-    return SCM_OBJ(make_socket(sock, type));
+    return SCM_OBJ(make_socket((Socket)sock, type));
 }
 
 ScmObj Scm_SocketShutdown(ScmSocket *s, int how)
@@ -256,7 +256,7 @@ ScmObj Scm_SocketListen(ScmSocket *sock, int backlog)
 
 ScmObj Scm_SocketAccept(ScmSocket *sock)
 {
-    int newfd;
+    Socket newfd;
     struct sockaddr_storage addrbuf;
     socklen_t addrlen = sizeof(addrbuf);
     ScmSocket *newsock;
