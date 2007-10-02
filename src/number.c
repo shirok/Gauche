@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.156 2007-10-02 09:35:43 shirok Exp $
+ *  $Id: number.c,v 1.157 2007-10-02 09:56:30 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3215,6 +3215,7 @@ static ScmObj read_real(const char **strp, int *lenp,
                         struct numread_packet *ctx)
 {
     int minusp = FALSE, exp_minusp = FALSE, exp_overflow = FALSE;
+    int sign_seen = FALSE;
     int fracdigs = 0;
     long exponent = 0;
     ScmObj intpart, fraction;
@@ -3223,9 +3224,21 @@ static ScmObj read_real(const char **strp, int *lenp,
     case '-': minusp = TRUE;
         /* FALLTHROUGH */
     case '+':
-        (*strp)++; (*lenp)--;
+        (*strp)++; (*lenp)--; sign_seen = TRUE;
     }
     if ((*lenp) <= 0) return SCM_FALSE;
+
+    /* Recognize specials */
+    if (sign_seen && (*lenp) >= 5) {
+        if (strncmp(*strp, "inf.0", 5) == 0) {
+            (*strp) += 5; (*lenp) -= 5;
+            return minusp?SCM_NEGATIVE_INFINITY:SCM_POSITIVE_INFINITY;
+        }
+        if (strncmp(*strp, "nan.0", 5) == 0) {
+            (*strp) += 5; (*lenp) -= 5;
+            return SCM_NAN;
+        }
+    }
 
     /* Read integral part */
     if (**strp != '.') {
@@ -3432,15 +3445,6 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
             CHK_EXACT_COMPLEX();
             return Scm_MakeComplex(0.0, (*str == '+')? 1.0 : -1.0);
         }
-        if (len == 6) {
-            if (strncmp(str+1, "inf.0", 5) == 0) {
-                return ((*str == '+') ?
-                        SCM_POSITIVE_INFINITY : SCM_NEGATIVE_INFINITY);
-            }
-            if (strncmp(str+1, "nan.0", 5) == 0) {
-                return SCM_NAN;
-            }
-        }
         sign_seen = TRUE;
     }
 
@@ -3463,12 +3467,12 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
             dangle = Scm_GetDouble(angle);
             return Scm_MakeComplexPolar(dmag, dangle);
         }
-    case '+':;
+    case '+':
     case '-':
         /* rectangular representation of complex */
         if (len <= 1) {
             return SCM_FALSE;
-        } else if (len == 2 && str[1] == 'i') {
+        } else if (len == 2 && (str[1] == 'i' || str[1] == 'I')) {
             return Scm_MakeComplex(Scm_GetDouble(realpart),
                                    (*str == '+' ? 1.0 : -1.0));
         } else {
@@ -3482,6 +3486,7 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
                                    Scm_GetDouble(imagpart));
         }
     case 'i':
+    case 'I':
         /* '+' <ureal> 'i'  or '-' <ureal> 'i' */
         if (!sign_seen || len != 1) return SCM_FALSE;
         CHK_EXACT_COMPLEX();
