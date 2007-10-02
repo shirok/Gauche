@@ -6157,9 +6157,9 @@ Number.
 @c COMMON
 @item f
 @c EN
-Real number (flonum).
+Real number (coerced to flonum).
 @c JP
-実数 (flonum)。
+実数 (flonumに変換されます)。
 @c COMMON
 @item i
 @c EN

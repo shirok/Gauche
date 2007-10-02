@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: parseopt.scm,v 1.11 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: parseopt.scm,v 1.12 2007-10-02 09:07:36 shirok Exp $
 ;;;
 
 (define-module gauche.parseopt
@@ -99,21 +99,21 @@
         (errorf "a number is required for option ~a, but got ~a"
                 (ref optspec 'name) arg)))
   (define (get-real arg)
-    (or (and-let* ((num (string->number arg))
-                   ((real? num)))
-          num)
+    (or (and-let* ([num (string->number arg)]
+                   [ (real? num) ])
+          (exact->inexact num))
         (errorf "a real number is required for option ~a, but got ~a"
                 (ref optspec 'name) arg)))
   (define (get-integer arg)
-    (or (and-let* ((num (string->number arg))
-                   ((exact? num)))
+    (or (and-let* ([num (string->number arg)]
+                   [ (exact? num) ])
           num)
         (errorf "an integer is required for option ~a, but got ~a"
                 (ref optspec 'name) arg)))
   (define (get-sexp arg)
-    (guard (e ((<read-error> e)
+    (guard (e [(<read-error> e)
                (errorf "the argument for option ~a is not valid sexp: ~s"
-                       (ref optspec 'name) arg)))
+                       (ref optspec 'name) arg)])
       (read-from-string arg)))
   (define (process-args)
     (let loop ((spec (ref optspec 'args))

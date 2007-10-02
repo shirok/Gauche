@@ -1,3 +1,12 @@
+2007-10-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/net.ac, ext/net/net.c: Removed dependency on inet_aton
+	  (always using inet_pton).
+
+	* lib/gauche/parseopt.scm: When "f" is specified as the option's
+	  argument type, it allows rational number to be given but coerces
+	  it to flonum.
+
 2007-09-28  Shiro Kawai  <shiro@acm.org>
 
 	* ext/auxsys/auxsys.c (Scm_Environ),
