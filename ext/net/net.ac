@@ -2,7 +2,7 @@ dnl
 dnl Configure ext/net
 dnl This file is included by the toplevel configure.in
 dnl
-dnl $Id: net.ac,v 1.9 2007-09-30 06:29:40 shirok Exp $
+dnl $Id: net.ac,v 1.10 2007-10-02 09:07:01 shirok Exp $
 
 # ext/net -------------------------------------------------
 
@@ -57,7 +57,6 @@ dnl
 dnl Check for some extra libraries
 dnl
 AC_SEARCH_LIBS(shutdown, socket)
-AC_SEARCH_LIBS(inet_aton, resolv)
 AC_SEARCH_LIBS(gethostbyname_r, nsl)
 
 dnl Check for reentrant version synopsis of netdb functions.
