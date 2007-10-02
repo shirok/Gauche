@@ -1,5 +1,10 @@
 2007-10-01  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (read_number, double_print): Changed infinities and
+	  NaN notation to +inf.0, -inf.0 and +nan.0, according to R6RS.
+	  The old syntax #i1/0, #i-1/0 and #i0/0 are recognized for
+	  the compatibility.
+
 	* ext/net/net.ac, ext/net/net.c: Removed dependency on inet_aton
 	  (always using inet_pton).
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.155 2007-09-18 09:34:05 shirok Exp $
+ *  $Id: number.c,v 1.156 2007-10-02 09:35:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2722,12 +2722,11 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         else strcpy(buf, "0.0");
         return;
     } else if (SCM_IS_INF(val)) {
-        if (val < 0.0) strcpy(buf, "#i-1/0");
-        else if (plus_sign) strcpy(buf, "#i+1/0");
-        else strcpy(buf, "#i1/0");
+        if (val < 0.0) strcpy(buf, "-inf.0");
+        else strcpy(buf, "+inf.0");
         return;
     } else if (SCM_IS_NAN(val)) {
-        strcpy(buf, "#<nan>");
+        strcpy(buf, "+nan.0");
         return;
     }
     
@@ -3425,12 +3424,22 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
     }
     if (len <= 0) return SCM_FALSE;
 
-    /* number body.  need to check the special case of pure imaginary */
+    /* number body.  need to check the special case of pure imaginary
+       and special flonums. */
     if (*str == '+' || *str == '-') {
         if (len == 1) return SCM_FALSE;
         if (len == 2 && (str[1] == 'i' || str[1] == 'I')) {
             CHK_EXACT_COMPLEX();
             return Scm_MakeComplex(0.0, (*str == '+')? 1.0 : -1.0);
+        }
+        if (len == 6) {
+            if (strncmp(str+1, "inf.0", 5) == 0) {
+                return ((*str == '+') ?
+                        SCM_POSITIVE_INFINITY : SCM_NEGATIVE_INFINITY);
+            }
+            if (strncmp(str+1, "nan.0", 5) == 0) {
+                return SCM_NAN;
+            }
         }
         sign_seen = TRUE;
     }

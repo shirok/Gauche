@@ -46,6 +46,10 @@ real numbers.
 The number reader recognizes '@code{#}' as insignificant digits.
 Complex numbers can be written both in the rectangular format
 (e.g. @code{1+0.3i}) and in the polar format (e.g. 3.0@@1.57).
+Inexact real numbers include
+the positive infinity, the negative infinity, and NaN,
+which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
+respectively.  (@code{-nan.0} is also read as NaN.)
 @c JP
 @item 数値リテラル
 不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
@@ -53,6 +57,9 @@ Complex numbers can be written both in the rectangular format
 数値のリーダは、パディングの'@code{#}'を認識します。
 複素数表記は直交座標形 (例：@code{1+0.3i}) でも極座標形 (例：3.0@@1.57) でも
 認識されます。
+非正確な実数は、正の無限大、負の無限大、非数(NaN)を含み、
+それらはそれぞれ@code{+inf.0}、@code{-inf.0}、および@code{+nan.0}と
+表記されます。(@code{-nan.0}も非数(NaN)として読まれます)。
 @c COMMON
 
 @c EN

@@ -172,9 +172,9 @@
 
 (test* "rational reader" '(1 #t)
        (rational-test (string->number "3/03")))
-(test* "rational reader" '(#i1/0 #f)
+(test* "rational reader" '(+inf.0 #f)
        (rational-test (string->number "3/0")))
-(test* "rational reader" '(#i-1/0 #f)
+(test* "rational reader" '(-inf.0 #f)
        (rational-test (string->number "-3/0")))
 (test* "rational reader" #f
        (rational-test (string->number "3/3/4")))
@@ -295,12 +295,12 @@
 (test* "padding (exactness)" '(120.0 #t) (flonum-test '#i12#))
 (test* "padding (exactness)" '(120.0 #t) (flonum-test '#i12#.#))
 
-(test* "exponent out-of-range 1" '(#i1/0 #t) (flonum-test '1e309))
-(test* "exponent out-of-range 2" '(#i1/0 #t) (flonum-test '1e10000))
-(test* "exponent out-of-range 3" '(#i1/0 #t) (flonum-test '1e1000000000000000000000000000000000000000000000000000000000000000))
-(test* "exponent out-of-range 4" '(#i-1/0 #t) (flonum-test '-1e309))
-(test* "exponent out-of-range 5" '(#i-1/0 #t) (flonum-test '-1e10000))
-(test* "exponent out-of-range 6" '(#i-1/0 #t) (flonum-test '-1e1000000000000000000000000000000000000000000000000000000000000000))
+(test* "exponent out-of-range 1" '(+inf.0 #t) (flonum-test '1e309))
+(test* "exponent out-of-range 2" '(+inf.0 #t) (flonum-test '1e10000))
+(test* "exponent out-of-range 3" '(+inf.0 #t) (flonum-test '1e1000000000000000000000000000000000000000000000000000000000000000))
+(test* "exponent out-of-range 4" '(-inf.0 #t) (flonum-test '-1e309))
+(test* "exponent out-of-range 5" '(-inf.0 #t) (flonum-test '-1e10000))
+(test* "exponent out-of-range 6" '(-inf.0 #t) (flonum-test '-1e1000000000000000000000000000000000000000000000000000000000000000))
 (test* "exponent out-of-range 7" '(0.0 #t) (flonum-test '1e-324))
 (test* "exponent out-of-range 8" '(0.0 #t) (flonum-test '1e-1000))
 (test* "exponent out-of-range 9" '(0.0 #t) (flonum-test '1e-1000000000000000000000000000000000000000000000000000000000000000000))
@@ -381,7 +381,7 @@
 (test* "complex reader" '(0.0 0.5) (decompose-complex 0+1/2i))
 (test* "complex reader" '(0.0 -0.5) (decompose-complex -1/2i))
 (test* "complex reader" 1/2 (decompose-complex 1/2-0/2i))
-(test* "complex reader" '(0.5 -1/0) (decompose-complex (string->number "1/2-1/0i")))
+(test* "complex reader" '(0.5 -inf.0) (decompose-complex (string->number "1/2-1/0i")))
 
 (test* "complex reader (polar)" (make-polar 1.0 1.0) 1.0@1.0)
 (test* "complex reader (polar)" (make-polar 1.0 -1.0) 1.0@-1.0)
@@ -541,9 +541,9 @@
 (test* "expt (ratnum with large denom and numer) with inexact conversion 5"
        1.0e308 (exact->inexact (/ (expt 10 328) (expt 10 20))))
 (test* "expt (ratnum with large denom and numer) with inexact conversion 6"
-       #i1/0 (exact->inexact (/ (expt 10 329) (expt 10 20))))
+       +inf.0 (exact->inexact (/ (expt 10 329) (expt 10 20))))
 (test* "expt (ratnum with large denom and numer) with inexact conversion 7"
-       #i-1/0 (exact->inexact (/ (expt -10 329) (expt 10 20))))
+       -inf.0 (exact->inexact (/ (expt -10 329) (expt 10 20))))
 
 ;;==================================================================
 ;; Predicates
@@ -1396,7 +1396,7 @@
 (test* "clamp (1 0.0 3/4)" 0.75 (clamp 1 0.0 3/4) eqv?)
 (test* "clamp (1 0 0.75)" 0.75 (clamp 1 0 0.75) eqv?)
 
-(test* "clamp (1 #i-1/0 #i1/0)" 1.0 (clamp 1 #i-1/0 #i1/0) eqv?)
+(test* "clamp (1 -inf.0 +inf.0)" 1.0 (clamp 1 -inf.0 +inf.0) eqv?)
 
 ;;------------------------------------------------------------------
 (test-section "logical operations")
