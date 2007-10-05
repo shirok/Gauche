@@ -2,7 +2,7 @@
  * getdir_win.c - get the library directory at runtime (fow windows)
  *  included from paths.c
  *
- * $Id: getdir_win.c,v 1.5 2007-09-15 12:30:50 shirok Exp $
+ * $Id: getdir_win.c,v 1.6 2007-10-05 20:35:13 shirok Exp $
  */
 
 #include <string.h>
@@ -27,7 +27,7 @@ static int get_install_dir(char *buf, int buflen,
     if (!PathRemoveFileSpec(path)) {
         errfn("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
     }
-    /* remobe \bin */
+    /* remove \bin */
     if (!PathRemoveFileSpec(path)) {
         errfn("PathRemoveFileSpec failed on %s", SCM_WCS2MBS(path));
     }
