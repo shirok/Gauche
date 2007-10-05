@@ -11677,22 +11677,43 @@ or @code{#f} if the environment variable is not defined.
 @end defun
 
 @defun sys-environ
+@c EN
 Returns the current environment as a list of strings.  Each string
 is a form of @code{NAME=VALUE}, where @code{NAME} is the name of
 the environment variable and @code{VALUE} is its value.  @code{NAME}
 never contains a character @code{#\=}.  This is useful when you want
 to obtail the all enviroment variables of the current process.
-Use @code{sys-getenv} if you want to query a specific environment variable.
+Use @code{sys-getenv} if you want to query a specific environment
+variable.
+@c JP
+現在の環境を文字列のリストとして返します。それぞれの文字列は
+@code{NAME=VALUE}というフォーマットになっています。ここで@code{NAME}は
+環境変数名、@code{VALUE}はその値です。@code{NAME}が文字@code{#\=}を含
+むことはありません。この手続きは現在のプロセスの環境変数をすべて取得し
+たい場合に便利です。特定の環境変数の値が欲しい場合には
+@code{sys-getenv}を使ってください。
+@c COMMON
 @end defun
 
 @defun sys-environ->alist &optional envlist
+@c EN
 A convenience procedure for @code{sys-environ}.  When the list of
 environment strings (like what @code{sys-environ} returns) is given
 to @var{envlist}, this procedure splits name and value of
 each environment variable and returns an assoc list.
+@c JP
+@code{sys-environ}の便利版。環境リスト(@code{sys-environ}が返すような
+形式のもの)を@var{envlist}として与えると、この手続きは各環境変数を名前
+と値に分けて連想リストにして返します。
+@c COMMON
 
+@c EN
 When @var{envlist} is omitted, this procedure calls @code{sys-environ}
 to get the current environment variables.
+@c JP
+@var{envlist}を省略すると、この手続きは@code{sys-environ}を呼んで現在
+の環境変数を取得します。
+@c COMMON
 
 @example
 (sys-environ->alist '("A=B" "C=D=E"))
