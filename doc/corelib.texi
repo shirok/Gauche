@@ -11795,9 +11795,15 @@ if @var{path} doesn't exists or is not a directory.
 
 @defun glob pattern &keyword separator folder
 @defunx sys-glob pattern &keyword separator folder
+@c EN
 Provides a traditional Unix glob(3) functionality;
 returns a list of pathnames that matches the given @var{pattern}.
+@c JP
+伝統的なUnixのglob(3)の機能を提供します。この手続きは@var{pattern}とマッ
+チするパス名のリストを返します。
+@c COMMON
 
+@c EN
 This feature used to be a wrapper of system-provided @code{glob} function,
 hence it was named @code{sys-glob}.  However, as of Gauche version 0.8.12,
 it was reimplemented in Scheme on top of other system calls, to overcome
@@ -11805,11 +11811,26 @@ incompatibilies between platforms and for the opportunity to put
 more functionalities.  So we renamed it @code{glob}.
 The old name @code{sys-glob} is kept for compatibility, but new
 programs should use @code{glob}.
+@c JP
+この機能は、プラットフォームが提供する@code{glob}関数をラップしますの
+で、@code{sys-glob}という名前でした。しかし、プラットフォーム間の非互
+換性を解消し、機能追加するために、Gauche 0.8.12以降、別のシステムコー
+ルの上にSchemeで再実装されています。そのため、@code{glob}と改名してあ
+ります。古い方の名前@code{sys-glob}は互換性のために残してありますが、
+新たにプログラムを書くときは@code{glob}を使ってください。
+@c COMMON
 
+@c EN
 The @var{pattern} argument may be a single @emph{glob pattern}, or
 a list of glob patterns.  If a list is given, pathnames that matches
 any one of the pattern are returned.  If you're a unix user,
 you already know how it works.
+@c JP
+引数@var{pattern}は単一の@emph{グロブパターン}とにする場合もあれば、グ
+ロブパターンのリストにする場合もあります。リストが渡されたときにはどれ
+か1つのパターンでもマッチするなら、そのパス名がすべて返されます。
+Unixのユーザなら、その動きは同じだと分るでしょう。
+@c COMMON
 
 @example
 gosh> (glob "*.scm")
@@ -11820,8 +11841,14 @@ gosh> (glob '("*.scm" "src/*.c"))
 ("src/ext.c" "test.scm" "ext.scm")
 @end example
 
+@c EN
 Unlike shell's glob, if there's no matching pathnames, @code{()} is returned.
+@c JP
+シェルのグロブとはちがって、マッチするパス名がないときは、@code{()}が
+返ります。
+@c COMMON
 
+@c EN
 In fact, globbing is a very useful tool to search hierarchical
 data structure in general, not limited to the filesystems.
 So the @code{glob} function is implemented separately from
@@ -11829,18 +11856,38 @@ the filesystem.  By giving @var{separator} and @var{lister}
 arguments you can glob from any kind of tree data structure.
 It is just that their default values are set to look at
 the filesystems.
+@c JP
+グロブは一般的に階層構造をしたデータ構造を検索するのに非常に便利なツー
+ルです。これはなにもファイルシステムに限ったことではありません。したがっ
+て、@code{glob}関数はファイルシステムからは切り離して実装されています。
+引数@var{separator}および引数@var{lister}を渡すことで、どのようなツリー
+状のデータ構造からでもグロブできます。デフォルト値がファイルシステム用
+に設定されているにすぎません。
+@c COMMON
 
+@c EN
 The @var{separator} argument should be a char-set, and used
 to split the @var{pattern} into components.  It's default is
 @code{#[/]}.  It is not used to the actual pathnames to match.
+@c JP
+引数@var{separator}は文字の集合を与えます。これを使って@var{pattern}を
+コンポーネントに分割します。デフォルトは@code{#[/]}です。実際のパス名
+をマッチさせるのには使われません。
+@c COMMON
 
+@c EN
 The @var{folder} is a procedure that walks through the data
 structure.  It is called with five arguments:
+@c JP
+@var{folder}はデータ構造をトラバースするための手続きです。この手続きは
+引数を5つとります。
+@c COMMON
 
 @example
 (folder @var{proc} @var{seed} @var{parent} @var{regexp} @var{non-leaf?})
 @end example
 
+@c EN
 @var{proc} is a procedure that takes two arguments.  The @var{folder}
 should call @var{proc} with every node in the @var{parent} whose
 component name matches @var{regexp}, passing around the seed value
@@ -11848,13 +11895,30 @@ just like @code{fold}.  It should return the final value returned
 by @var{proc}.  For example, if @code{cons} is given to @var{proc}
 and @code{()} is given to @var{seed}, the return value of the folder
 is a list of nodes that matches the @var{regexp}.
+@c JP
+@var{proc}は引数を2つ取る手続きです。@var{folder}は、@var{parent}内で
+コンポーネントとなる名前が@var{regexp}とマッチする各ノードと、
+@code{fold}と同様に順に渡されるシード値とで、@var{proc}を呼びます。
+@var{folder}は@var{proc}が最後に返した値を返します。たとえば、
+@code{cons}が@var{proc}として、@code{()}が@var{seed}として渡されれば、
+folder手続きが返す値は@var{regexp}とマッチするノードのリストになります。
+@c COMMON
 
+@c EN
 The representation of a node is up to the folder.  It can be a
 pathname, or some sort of objects, or anything.  The @code{glob}
 procedure does not care what it is; the @code{glob} procedure
 merely passes the node to subsequent call to @code{folder} as
 @var{parent} argument, or returns a list of nodes as the result.
+@c JP
+ノードの表現がどうなるかはfolderしだいです。パス名であったり、オブジェ
+クトであったり、いろいろです。@code{glob}手続きはノードの表現について
+は感知しません。@code{glob}手続きがやることはノードを次に呼ぶ
+@code{folder}に@var{parent}引数として渡して、その結果のノードリストを
+返すだけです。
+@c COMMON
 
+@c EN
 The @var{parent} argument is either a boolean value or a node.
 If it is a node, @code{folder} looks for its children.  
 If it is @code{#t}, it means a @emph{root node}---e.g. if the
@@ -11863,7 +11927,16 @@ directory.  If it is @code{#f}, it means a @emph{current node}---
 e.g. the current directory if the folder is for the filesystem.
 What exactly the root and current node means is up to the folder
 implementation.
+@c JP
+@var{parent}引数はブール値またはノードです。これがノードの場合は、
+@code{folder}はその子ノードを探します。@code{#t}なら@emph{ルートノード}、
+すなわち、folderがファイルシステムを見ている時は、ルートノードはルート
+ディレクトリということになります。@code{#f}なら@emph{現在のノード}、す
+なわち、ファイルシステムを見ているときは現在のディレクトリということで
+す。ルートノードや現在のノードの意味はfolderの実装しだいです。
+@c COMMON
 
+@c EN
 The @var{regexp} argument is used to filter the child nodes.
 It should be matched against the component name of the child,
 not including its directory names.  As a special case, it can
@@ -11876,15 +11949,41 @@ the folder should return the node representing root node or
 current node, respectively; e.g. if @var{node} is represented
 as a pathname, the folder may return @code{"/"} and @code{"./"}
 for those cases.
+@c JP
+@var{regexp}引数は子ノードをフィルターするのに使い、ディレクトリ名を含
+まない、子のコンポーネントである名前に対して照合されるものです。特別な
+場合として、シンボル@code{dir}にすることができます。この場合は、folder
+は@var{node}そのものを返し、@var{node}は@emph{ディレクトリ}と見なされ
+ます。すなわち、@var{node}がパス名を表わす場合には、folderはディレクト
+リ区切り子が最後に付いたパス名を返します。@var{node}がブール値でかつ、
+@var{regexp}が@code{dir}である場合、folderはルートノードをあらわすノー
+ドあるいはカレントノードを返すことになっています。すなわち、@var{node}
+はパス名を表す場合、folderは@code{"/"}または@code{"./"}を返します。
+@c COMMON
 
+@c EN
 The @var{non-leaf} argument is a boolean flag.  If it is true,
 the filter should omit the leaf nodes from the result (e.g. only
 include the directories).
+@c JP
+@var{non-leaf}引数はブール値フラッグです。真なら、フィルタは結果からリー
+フノードをのぞきます(すなわち、ディレクトリだけが含まれるようになり
+ます)。
+@c COMMON
 
+@c EN
 Now, here's the precise spec of glob pattern matching.
+@c JP
+ここからはグロブパターンマッチングの細かい仕様をみていきます。
+@c COMMON
 
+@c EN
 Each glob pattern is a string to match pathname-like strings.
+@c JP
+各グロブパターンはパス名様式文字列にマッチする文字列です。
+@c COMMON
 
+@c EN
 A pathname-like string is a string consists of one or more
 @emph{components}, separated by @emph{separator}s.
 The default separator is @code{#[/]}; you can change it
@@ -11893,11 +11992,26 @@ A component cannot contain separators, and cannot
 be a null string.  Consecutive separators are
 regarded as a single separator.  A pathname-like
 string optionally begins with, and/or ends with a separator character.
+@c JP
+パス名様式文字列は1つ以上の@emph{セパレータ}で区切られた
+@emph{コンポーネント}から構成される文字列です。
+デフォルトのセパレータは@code{#[/]}です。キーワード引数@var{separator}
+を使うとこれを変更できます。コンポーネントにはセパレータを含められませ
+ん。また空文字列にすることもできません。連続したセパレータは単一のセパ
+レータとみなされます。パス名様式の文字列は状況に応じてセパレータから始
+めたり、セパレータで終端したりできます(両方をやるのも可)。
+@c COMMON
 
+@c EN
 A glob pattern is also consists of components and separator
 characters.  In a component, following characters/syntax have special
 meanings.
+@c JP
+グロブパターンもコンポーネントとセパレータ文字から構成されます。コンポー
+ネントにおいては、以下の文字、構文は特別な意味を持ちます。
+@c COMMON
 
+@c EN
 @table @code
 @item *
 When it appears at the beginning of a component, it matches
@@ -11919,25 +12033,64 @@ syntax (@xref{Character set}).  For the compatibility of the
 traditional glob, the @code{!} character can be used to complement
 the character set, e.g. @code{[!abc]} is the same as @code{[^abc]}.
 @end table
+@c JP
+@table @code
+@item *
+これがコンポーネントの先頭に表われた場合、0個以上のピリオド(@code{.})
+を除く文字にマッチします。入力文字列のコンポーネントがピリオドではじま
+るような文字列の場合にはマッチしません。
+
+先頭以外の場所では、0個以上の文字の列にマッチします。
+
+@item ?
+コンポーネントの先頭にあらわれた場合、ピリオド(@code{.})以外の一文字に
+マッチします。先頭以外の場所では任意の一文字にマッチします。
+
+@item [@i{chars}]
+文字の集合を指定します。その集合に含まれる文字のどれかにマッチします。
+@i{chars}の構文はGaucheの文字集合を表す構文と同じです
+(@ref{Character set}参照)。伝統的なグロブとの互換性のために、@code{!}
+文字をつかって、補集合で文字集合を表わすこともできるようになっています。
+すなわち、@code{[!abc]}は@code{[^abc]}と同じです。
+@end table
+@c COMMON
 @end defun
 
 @defun glob-fold pattern proc seed &keyword separator folder
+@c EN
 This is actually a low-level construct of the glob function.
 Actually, @var{glob} is simply written like this:
+@c JP
+これはグロブ関数の低レベル版です。実際@var{glob}は以下のように書いたの
+と同じです。
+@c COMMON
 @example
 (define (glob patterns . opts)
   (apply glob-fold patterns cons '() opts))
 @end example
 
+@c EN
 The meaning of @var{pattern}, @var{separator} and @var{lister}
 is the same as explained above.  
+@c JP
+@var{pattern}、@var{separator}および@var{lister}の意味を前述のものと同
+じです。
+@c COMMON
 
+@c EN
 For each pathname that matches @var{pattern}, @code{glob-fold}
 calls @var{proc} with the pathname and a seed value.  The initial
 seed value is @var{seed}, and the value @var{proc} returns becomes
 the next seed value.  The result of the last call to @var{proc} 
 becomes the result of @code{glob-fold}.  If there's no matching
 pathnames, @var{proc} is never called and @var{seed} is returned.
+@c JP
+@var{pattern}にパス名ごとに@code{glob-fold}は@var{proc}をパス名とシー
+ド値で呼びます。最初のシード値は@var{seed}で、@var{proc}が返す値は次の
+シード値になります。最後の@var{proc}の呼び出し結果は@code{glob-fold}の
+結果となります。マッチするパス名が存在しないときは、@var{proc}は呼ばれ
+ずに、@var{seed}が返ります。
+@c COMMON
 @end defun
 
 @c EN
