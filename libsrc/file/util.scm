@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.8 2007-08-27 08:19:17 shirok Exp $
+;;;  $Id: util.scm,v 1.9 2007-10-06 09:59:24 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -264,7 +264,7 @@
 
 (define (relative-path? path)
   (cond-expand
-   (gauche-windows
+   (gauche.os.windows
     (not (#/^[\/\\]|^[A-Za-z]:/ path)))
    (else
     (not (#/^\// path)))))
@@ -274,7 +274,7 @@
 
 (define (path-separator)
   (cond-expand
-   (gauche-windows #\\)
+   (gauche.os.windows #\\)
    (else #\/)))
 
 (define (path-extension path)
@@ -297,7 +297,7 @@
       ((paths (cond ((sys-getenv "PATH")
                      => (cut string-split <> 
                              (cond-expand
-                              (gauche-windows #\;)
+                              (gauche.os.windows #\;)
                               (else #\:))))
                     (else '())))
        (pred file-is-executable?))
@@ -360,7 +360,7 @@
 ;; an alias.  We should call Windows API to check for sure in future).
 
 (cond-expand
- (gauche-windows
+ (gauche.os.windows
   (define (%stat-compare s1 s2 f1 f2)
     (let ((p1 (sys-normalize-pathname f1 :absolute #t :canonicalize #t))
 	  (p2 (sys-normalize-pathname f2 :absolute #t :canonicalize #t)))
