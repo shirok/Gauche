@@ -74,6 +74,16 @@ are not supported.
 @end itemize
 
 @c EN
+(Note: A new Scheme standard R6RS has been ratified on September 2007.
+Although we don't have a plan to change Gauche to conform R6RS in near future,
+we'll gradually add modules that are compatible to R6RS).
+@c JP
+(註：2007年9月に、新たなSchemeの標準であるR6RSが制定されました。
+GaucheをR6RS準拠にする予定は近い将来にはありませんが、
+R6RSと互換なモジュールを徐々に追加してゆく予定です。)
+@c COMMON
+
+@c EN
 Gauche also supports the following SRFIs (Scheme Request for Implementation).
 @c JP
 Gaucheはまた、以下のSRFIをサポートしています。
