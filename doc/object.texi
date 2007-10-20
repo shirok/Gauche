@@ -2666,7 +2666,7 @@ machine into an umbrella, if you like.
 @c JP
 @subsubheading クラス変更プロトコル
 
-CLOS-系のオブジェクトシステムのユニークな機能は既存のインスタンスの
+CLOS系のオブジェクトシステムのユニークな機能は既存のインスタンスの
 クラスを変更できるということです。新旧二つのクラスに関連性がある必要は
 ありません。おのぞみなら、ミシンを雨がさに変更することもできます。
 @c COMMON
@@ -2712,7 +2712,8 @@ the @var{obj}---that is, @var{obj} becomes the instance of @var{new-class}
 without changing its identity.
 @end enumerate
 
-Note that @code{initialize} method isn't called on @var{obj}.
+Note that @code{initialize} method of @var{new-class} 
+isn't called on @var{obj}.
 If you desire, you can call it by your own @code{change-class} method.
 
 @code{Change-object-class} returns @var{obj}.
@@ -2737,8 +2738,8 @@ If you desire, you can call it by your own @code{change-class} method.
 その値は @var{obj} から取り出され、新しいインスタンスにセットされる。
 (そのスロットは@emph{持ち越され}ます。)
 @item
-そうでなければ、新しいインスタンスのスロットは、@ref{Creating instance} に
-あるように、標準のスロット初期化プロトコルによって初期化されます。
+そうでなければ、新しいインスタンスのスロットは、@ref{Creating instance} で
+説明された手順で、標準のスロット初期化プロトコルによって初期化されます。
 @end enumerate
 
 @item
@@ -2747,8 +2748,8 @@ If you desire, you can call it by your own @code{change-class} method.
 となります。
 @end enumerate
 
-@code{initilize} メソッドは @var{obj} に対して呼ばれているわけではないことに
-注意してください。おのぞみなら、独自の @code{change-class} メソッドを
+@var{obj}に対して@var{new-class}の@code{initilize} メソッドは呼ばれないことに
+注意してください。必要なら、独自の @code{change-class} メソッドを
 定義して@code{intialize}を呼ぶようにすることができます。
 
 @code{change-object-class} は @var{obj} を返します。
@@ -2803,7 +2804,7 @@ redefining the class, and use the old class to specialize
 再定義されたクラスのインスタンスが更新される場合は、それもクラス変更として
 扱われます。オブジェクトは通常のスロットアクセサ/モディファイア
 経由でアクセスされるときに、そのクラスが再定義されたかどうかを
-チェックされます。そいて再定義が行われていれば、
+チェックされます。もし再定義が行われていれば、
 再定義されたクラスを@var{new-class}として
 @code{change-class}が呼ばれます。
 すなわち、インスタンスの更新はオブジェクトの
@@ -2858,7 +2859,7 @@ as if the old slot were unbound.
 
 Customizing instance update is highly tricky business,
 although very powerful.   You can find some nontrivial
-cases in the test program of Gauche source tarball;
+cases in the test program of Gauche source code;
 take a look at @code{test/object.scm}.
 @c JP
 次に、上の @code{change-class} メソッドは、@code{slot-ref}、@code{slot-set!}、
@@ -2880,7 +2881,7 @@ take a look at @code{test/object.scm}.
 初期化します。
 
 インスタンス更新をカスタマイズするのは非常に強力ですがたいへん
-トリッキーな仕事です。Gauche のソース tar ball 中のテストプログラム
+トリッキーな仕事です。Gauche のソース中のテストプログラム
 には自明ではないいくつかのケースが含まれています。@code{test/object.scm}
 見てみてください。
 @c COMMON
