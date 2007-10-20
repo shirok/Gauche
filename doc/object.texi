@@ -2434,9 +2434,9 @@ some circumstances (e.g. using pre-allocated instances).
 
 @code{allocate-instance} メソッドを特定化するというのは一般的な方法では
 ありません。しかしながら、@code{make} がどのように働くかを知っているなら、
-@code{make} そのものを特定化して、なんらかの状況(たとえば、アロケート
-前のインスタンスを使うというような状況)でインスタンスのアロケーションを
-回避できます。
+@code{make} そのものを特定化して、なんらかの状況(たとえば、あらかじめ
+アロケートしてあるインスタンスを使うというような状況)でインスタンスの
+アロケーションを回避できます。
 @c COMMON
 
 @node Accessing instance, Changing classes, Creating instance, Instance
@@ -2547,7 +2547,7 @@ and @code{slot-set!}, but more compact in the program code.
 @c JP
 これらのメソッドはそれぞれ、単に @code{slot-ref} および @code{slot-set!}
 を呼ぶだけです。直接 @code{slot-ref} や @code{slot-set!} を呼ぶよりも
-効率はすこしよくないですが、プログラムコードはコンパクトになります。
+効率はすこし悪いですが、プログラムコードはコンパクトになります。
 @c COMMON
 @end deffn
 
