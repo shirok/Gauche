@@ -15897,10 +15897,11 @@ See the following example:
 @c EN
 A convenient function to obtain a value of the parameter @var{name} from
 parsed query string @var{params}, which is the value
-@code{cgi-parse-parameters} returns.
+@code{cgi-parse-parameters} returns.  @var{Name} should be a string.
 @c JP
 @code{cgi-parse-parameters}が返す、パーズされたQuery文字列@var{params}から、
 名前@var{name}を持つパラメータの値を簡単に取り出すための手続きです。
+@var{name}は文字列です。
 @c COMMON
 
 @c EN
