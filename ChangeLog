@@ -1,3 +1,8 @@
+2007-10-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/dbm/gdbm.scm (dbm.gdbm): added missing exports (gdbm-errno,
+	  GDBM_SYNCMODE.
+
 2007-10-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (read_number, double_print): Changed infinities and

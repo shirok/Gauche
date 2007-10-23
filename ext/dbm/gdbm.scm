@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gdbm.scm,v 1.12 2007-03-02 07:39:05 shirok Exp $
+;;;  $Id: gdbm.scm,v 1.13 2007-10-23 20:23:29 shirok Exp $
 ;;;
 
 (define-module dbm.gdbm
@@ -42,11 +42,12 @@
           gdbm-firstkey      gdbm-nextkey        gdbm-reorganize
           gdbm-sync          gdbm-exists?        gdbm-strerror
           gdbm-setopt        gdbm-version        gdbm-file-of
+          gdbm-errno
           |GDBM_READER|      |GDBM_WRITER|       |GDBM_WRCREAT|
           |GDBM_NEWDB|       |GDBM_FAST|         |GDBM_SYNC|
           |GDBM_NOLOCK|      |GDBM_INSERT|       |GDBM_REPLACE|
-          |GDBM_CACHESIZE|   |GDBM_FASTMODE|     |GDBM_CENTFREE|
-          |GDBM_COALESCEBLKS|)
+          |GDBM_CACHESIZE|   |GDBM_FASTMODE|     |GDBM_SYNCMODE|
+          |GDBM_CENTFREE|    |GDBM_COALESCEBLKS|)
   )
 (select-module dbm.gdbm)
 (dynamic-load "gdbm")

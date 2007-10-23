@@ -2815,7 +2815,7 @@ APIs.
 @end defun
 
 
-@defun gdbm-exists gdbm-object key
+@defun gdbm-exists? gdbm-object key
 @end defun
 
 
