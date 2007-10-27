@@ -1,3 +1,7 @@
+2007-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/objlib.scm (x->integer, x->string): a bit of simplification.
+
 2007-10-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/dbm/gdbm.scm (dbm.gdbm): added missing exports (gdbm-errno,

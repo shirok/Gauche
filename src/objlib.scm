@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: objlib.scm,v 1.7 2007-03-16 12:14:32 shirok Exp $
+;;;  $Id: objlib.scm,v 1.8 2007-10-27 10:07:33 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -518,23 +518,19 @@
 (define-method x->string ((obj <string>)) obj)
 (define-method x->string ((obj <number>)) (number->string obj))
 (define-method x->string ((obj <symbol>)) (symbol->string obj))
-(define-method x->string ((obj <char>)) (string obj))
-(define-method x->string ((obj <top>))
-  (with-output-to-string (lambda () (display obj))))
+(define-method x->string ((obj <char>))   (string obj))
+(define-method x->string ((obj <top>))    (write-to-string obj display))
 
 (define-method x->integer ((obj <integer>)) obj)
-(define-method x->integer ((obj <real>))
-  (inexact->exact (round obj)))
-(define-method x->integer ((obj <number>)) 0) ;complex numbers to 0
-(define-method x->integer ((obj <char>)) (char->integer obj))
-(define-method x->integer ((obj <top>))
-  (x->integer (x->number obj)))
+(define-method x->integer ((obj <real>))    (round->exact obj))
+(define-method x->integer ((obj <number>))  0) ;complex numbers to 0
+(define-method x->integer ((obj <char>))    (char->integer obj))
+(define-method x->integer ((obj <top>))     (x->integer (x->number obj)))
 
 (define-method x->number  ((obj <number>)) obj)
-(define-method x->number  ((obj <string>))
-  (or (string->number obj) 0))
-(define-method x->number  ((obj <char>)) (char->integer obj))
-(define-method x->number  ((obj <top>)) 0)
+(define-method x->number  ((obj <string>)) (or (string->number obj) 0))
+(define-method x->number  ((obj <char>))   (char->integer obj))
+(define-method x->number  ((obj <top>))    0)
 
 ;;----------------------------------------------------------------
 ;; Generic accessor
