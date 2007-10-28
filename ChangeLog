@@ -1,5 +1,7 @@
 2007-10-27  Shiro Kawai  <shiro@acm.org>
 
+	* gc/configure.in: Added CFLAGS to compile on Leopard.
+
 	* src/objlib.scm (x->integer, x->string): a bit of simplification.
 
 2007-10-23  Shiro Kawai  <shiro@acm.org>

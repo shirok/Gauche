@@ -22,7 +22,7 @@ AC_INIT(gc,6.8,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.19 $)
+AC_REVISION($Revision: 1.20 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE
 
@@ -152,6 +152,8 @@ dnl	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	if test "${enable_parallel_mark}" = yes; then
 	  AC_DEFINE(PARALLEL_MARK)
 	fi
+dnl [SK] For Leopard.  Won't be necessary if we switch to gc7.0
+	CFLAGS="$CFLAGS -D__DARWIN_UNIX03=0" 
 	;;
      *-*-osf*)
 	AC_DEFINE(GC_OSF1_THREADS)
