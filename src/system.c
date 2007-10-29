@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.100 2007-10-29 21:30:43 shirok Exp $
+ *  $Id: system.c,v 1.101 2007-10-29 22:30:38 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2021,12 +2021,12 @@ pid_t Scm_WinProcessPID(ScmObj handle)
        reverse (except you enumerate all process ids, calling OpenProcess
        on each and look for one whose handle matches the given handle.
        Sounds expensive. */
-    static DWORD WINAPI (*pGetProcessId)(HANDLE) = NULL;
+    static DWORD (WINAPI *pGetProcessId)(HANDLE) = NULL;
     static int queried = FALSE;
 
     if (pGetProcessId == NULL) {
         if (queried) return (pid_t)-1;
-        pGetProcessId = get_api_entry(_T("kernel32.dll"), _T("GetProcessId"),
+        pGetProcessId = get_api_entry(_T("kernel32.dll"), "GetProcessId",
                                       FALSE);
         if (pGetProcessId == NULL) {
             queried = TRUE;
