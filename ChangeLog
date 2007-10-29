@@ -1,5 +1,7 @@
 2007-10-29  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.8.12
+
 	* winnt/winvc-prep.sh, DIST: enable preparation for winvc from
 	  the distribution tarball.
 	* src/system.c: Some fixes for MinGW.
