@@ -24,6 +24,7 @@
 #if defined(__MINGW32__)
 #include <windows.h>
 #include <shlwapi.h>
+#include <utime.h>
 #undef small  /* windows.h defines 'small' as 'char'; what's the hell? */
 #ifndef _BSDTYPES_DEFINED
 typedef unsigned char u_char;
