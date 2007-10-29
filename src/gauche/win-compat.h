@@ -32,6 +32,9 @@ typedef unsigned int u_int;
 typedef unsigned long u_long;
 #define _BSDTYPES_DEFINED
 #endif /* _BSDTYPES_DEFINED */
+#ifndef _T
+#define _T(x) (x)   /* MSVC unicode macro */
+#endif /* _T */
 #endif /* __MINGW32__ */
 
 /* MSVC linker is broken; it cannot handle address of variables in

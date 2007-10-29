@@ -1,3 +1,7 @@
+2007-10-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c: Some fixes for MinGW
+
 2007-10-27  Shiro Kawai  <shiro@acm.org>
 
 	* gc/configure.in: Added CFLAGS to compile on Leopard.

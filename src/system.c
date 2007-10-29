@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.99 2007-09-29 09:43:12 shirok Exp $
+ *  $Id: system.c,v 1.100 2007-10-29 21:30:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -56,6 +56,7 @@
 #else   /* GAUCHE_WINDOWS */
 #include <lm.h>
 #include <tlhelp32.h>
+static HANDLE *win_prepare_handles(int *fds);
 #endif  /* GAUCHE_WINDOWS */
 
 #ifdef HAVE_GLOB_H
@@ -1404,8 +1405,6 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     return Scm_MakeInteger(pid);
 #else  /* GAUCHE_WINDOWS */
     if (forkp) {
-        static HANDLE *win_prepare_handles(int *fds);
-        
         TCHAR  program_path[MAX_PATH+1], *filepart;
         HANDLE *hs = win_prepare_handles(fds);
         BOOL r, pathlen;
@@ -2016,7 +2015,25 @@ HANDLE Scm_WinProcessHandle(ScmObj handle)
 
 pid_t Scm_WinProcessPID(ScmObj handle)
 {
-    return GetProcessId(Scm_WinProcessHandle(handle));
+    /* GetProcessId seems very primitive procedure, but somehow Windows
+       only provides it in XP SP1 or after.  Before that it seems you
+       can only map pid -> handle by OpenProcess but you can't do the
+       reverse (except you enumerate all process ids, calling OpenProcess
+       on each and look for one whose handle matches the given handle.
+       Sounds expensive. */
+    static DWORD WINAPI (*pGetProcessId)(HANDLE) = NULL;
+    static int queried = FALSE;
+
+    if (pGetProcessId == NULL) {
+        if (queried) return (pid_t)-1;
+        pGetProcessId = get_api_entry(_T("kernel32.dll"), _T("GetProcessId"),
+                                      FALSE);
+        if (pGetProcessId == NULL) {
+            queried = TRUE;
+            return (pid_t)-1;
+        }
+    }
+    return pGetProcessId(Scm_WinProcessHandle(handle));
 }
 
 /*
@@ -2029,13 +2046,13 @@ pid_t Scm_WinProcessPID(ScmObj handle)
 
 static void convert_user(const USER_INFO_2 *wuser, struct passwd *res)
 {
-    res->pw_name    = Scm_WCS2MBS(wuser->usri2_name);
+    res->pw_name    = SCM_WCS2MBS(wuser->usri2_name);
     res->pw_passwd  = "*";
     res->pw_uid     = 0;
     res->pw_gid     = 0;
-    res->pw_comment = Scm_WCS2MBS(wuser->usri2_comment);
-    res->pw_gecos   = Scm_WCS2MBS(wuser->usri2_full_name);
-    res->pw_dir     = Scm_WCS2MBS(wuser->usri2_home_dir);
+    res->pw_comment = SCM_WCS2MBS(wuser->usri2_comment);
+    res->pw_gecos   = SCM_WCS2MBS(wuser->usri2_full_name);
+    res->pw_dir     = SCM_WCS2MBS(wuser->usri2_home_dir);
     res->pw_shell   = "";
 }
 
@@ -2045,7 +2062,7 @@ static struct passwd pwbuf = { "dummy" };
 struct passwd *getpwnam(const char *name)
 {
     USER_INFO_2 *res;
-    if (NetUserGetInfo(NULL, Scm_MBS2WCS(name), 2, (LPBYTE*)&res) != NERR_Success) {
+    if (NetUserGetInfo(NULL, SCM_MBS2WCS(name), 2, (LPBYTE*)&res) != NERR_Success) {
 	return NULL;
     }
     convert_user(res, &pwbuf);
