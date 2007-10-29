@@ -1,16 +1,23 @@
 This directory contains files to compile Gauche with VisualC++ on Windows.
-
-If you get the source tree from the preprocessed Windows source zip
-(Gauche-x.x.x-winsrc.zip), just open Gauche.sln and build the solution.
+As of 0.8.12, the core and several modules work, though we still need to
+tweak a few major modules (notably, gauche.net).
 
 If you get the source tree from the standard tarball (Gauche-x.x.x.tgz)
 or from CVS, you have to preprocess the source tree.  You need a unix-
-compatible environment (such as cygwin) to do that.  Go up to the source
-top directory and run "./DIST winvc".
+compatible environment (such as cygwin) to do that.
+
+If you build from CVS, run this command at the toplevel dir:
+
+$ ./DIST winvc
+
+If you build from tarball, run this command at the toplevel dir:
+
+$ sh winnt/winvc-prep.sh
 
 
 [HOW TO BUILD]
 
+Open Gauche.sln and run "build solution".
 
 [HOW TO TEST]
 
