@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19-lib.scm,v 1.11 2007-03-21 21:28:55 shirok Exp $
+;;; $Id: srfi-19-lib.scm,v 1.12 2007-11-06 22:43:25 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -83,11 +83,29 @@
 ;;-- only the tm:tai-epoch-in-jd might need changing if
 ;;   a different epoch is used.
 
+;; NB: If the constant TM_EXACT_CALC is true, the calculation of julian-day
+;; and modified-julian-day is done in exact calculation.  It would have some
+;; penalty.  Here's some small benchmark results of round-trip conversion from
+;; time-utc -> julian-day -> time-utc, repeating 100000 times on 0.8.12.
+;;
+;;            current-time     day-boundary     half-day-boundary
+;; exact          4.67             3.17                2.76
+;; inexact        1.67             1.95                1.94
+;;
+;;   'day-boundary' uses (make-time time-utc 0 86400)
+;;   'half-day-boundary' uses (make-time time-utc 0 43200)
+;;
+;; It does slow down the calculation, but I'd say it's not so bad.  I'll
+;; go for exact calculation for now.
+(define-constant TM_EXACT_CALC #t)
+
 (define-constant tm:nano 1000000000)
-(define-constant tm:nano/i #i1000000000)
+(define-constant tm:nano/i (if TM_EXACT_CALC tm:nano (exact->inexact tm:nano)))
 (define-constant tm:sid  86400)    ; seconds in a day
 (define-constant tm:sihd 43200)    ; seconds in a half day
-(define-constant tm:tai-epoch-in-jd #i4881175/2) ; julian day number for 'the epoch'
+(define-constant tm:tai-epoch-in-jd  ; julian day number for 'the epoch'
+  (let1 off 4881175/2
+    (if TM_EXACT_CALC off (exact->inexact off))))
 
 ;; each entry is ( tai seconds since epoch . # seconds to subtract for utc )
 ;; note they go higher to lower, and end in 1972.
@@ -176,7 +194,7 @@
          (cpu   (+ (car times) (cadr times)))
          (tick  (list-ref times 4))
          (sec   (quotient cpu tick))
-         (nsec  (* (/ tm:nano/i tick) (remainder cpu tick))))
+         (nsec  (* (/. tm:nano tick) (remainder cpu tick))))
     (make-time type nsec sec)))
 
 (define (tm:current-time-tai type)
@@ -417,7 +435,7 @@
 
 ;; Gives the seconds/date/month/year
 (define (tm:decode-julian-day-number jdn)
-  (let* ((days (inexact->exact (truncate jdn)))
+  (let* ((days (truncate->exact jdn))
 	 (a (+ days 32044))
 	 (b (quotient (+ (* 4 a) 3) 146097))
 	 (c (- a (quotient (* 146097 b) 4)))
@@ -426,7 +444,7 @@
 	 (m (quotient (+ (* 5 e) 2) 153))
 	 (y (+ (* 100 b) d -4800 (quotient m 10))))
     (values ; seconds date month year
-     (inexact->exact (round (* (- jdn days) tm:sid)))
+     (round->exact (* (- jdn days) tm:sid))
      (+ e (- (quotient (+ (* 153 m) 2) 5)) 1)
      (+ m 3 (* -12 (quotient m 10)))
      (if (>= 0 y) (- y 1) y))
@@ -471,7 +489,9 @@
 
 ;; special thing -- ignores nanos
 (define (tm:time->julian-day-number seconds tz-offset)
-  (+ (/ (+ seconds tz-offset tm:sihd) tm:sid) tm:tai-epoch-in-jd))
+  (/ (+ (* tm:tai-epoch-in-jd tm:sid)
+        seconds tz-offset tm:sihd)
+     tm:sid))
 
 (define (tm:leap-second? second)
   (and (assoc second tm:leap-second-table) #t))
@@ -553,14 +573,14 @@
 	 (month (date-month date))
 	 (year (date-year date))
          (offset (date-zone-offset date)) )
-    (let ( (jdays (- (tm:encode-julian-day-number day month year)
-		     tm:tai-epoch-in-jd)) )
+    (let ( (jdays-1/2 (- (tm:encode-julian-day-number day month year)
+                         (+ tm:tai-epoch-in-jd 1/2))) )
       (make-time 
        time-utc
        nanosecond
-       (+ (* (- jdays 1/2) 24 60 60)
-	  (* hour 60 60)
-	  (* minute 60)
+       (+ (* 24 60 60 jdays-1/2)
+	  (* 60 60 hour)
+	  (* 60 minute)
 	  second
           (- offset))))))
 
@@ -636,71 +656,65 @@
       (+ (- current-century 100) n)))))
 
 (define (date->julian-day date)
-  (let ( (nanosecond (date-nanosecond date))
-	 (second (date-second date))
-	 (minute (date-minute date))
-	 (hour (date-hour date))
-	 (day (date-day date))
-	 (month (date-month date))
-	 (year (date-year date))
-         (offset (date-zone-offset date))
-         )
-    (+ (tm:encode-julian-day-number day month year)
-       -1/2
-       (/ (+ (* hour 60 60)
-             (* minute 60)
-             second
-             (/ nanosecond tm:nano/i)
-             (- offset))
-          tm:sid))))
+  ;; NB: we scale everything execpt nanoseconds first, so that we can
+  ;; avoid having intermediate results in ratnum.
+  (/ (+ (* tm:sid tm:nano/i
+           (tm:encode-julian-day-number (date-day date)
+                                        (date-month date)
+                                        (date-year date)))
+        (+ (* tm:nano/i
+              (+ (* 60 60 (date-hour date))
+                 (* (date-minute date) 60)
+                 (date-second date)
+                 (- (date-zone-offset date))
+                 (- tm:sihd)))
+           (date-nanosecond date)))
+     (* tm:sid tm:nano/i)))
 
 (define (date->modified-julian-day date)
-  (- (date->julian-day date)
-     4800001/2))
-
+  (- (date->julian-day date) 4800001/2))
 
 (define (time-utc->julian-day time)
   (tm:check-time-type time 'time-utc 'time-utc->julian-day)
-  (+ (/ (+ (time-second time) (/ (time-nanosecond time) tm:nano/i))
-	tm:sid)
-     tm:tai-epoch-in-jd))
+  ;; NB: we scale first to avoid intermediate ratnum calculation.
+  (/ (+ (time-nanosecond time)
+        (* (time-second time) tm:nano/i)
+        (* tm:tai-epoch-in-jd tm:sid tm:nano/i))
+     (* tm:sid tm:nano/i)))
 
 (define (time-utc->modified-julian-day time)
-  (- (time-utc->julian-day time)
-       4800001/2))
+  (- (time-utc->julian-day time) 4800001/2))
 
 (define (time-tai->julian-day time)
   (tm:check-time-type time 'time-tai 'time-tai->julian-day)
-  (+ (/ (+ (- (time-second time) 
-	      (tm:leap-second-delta (time-second time)))
-	   (/ (time-nanosecond time) tm:nano/i))
-	tm:sid)
-     tm:tai-epoch-in-jd))
+  ;; NB: we scale first to avoid intermediate ratnum calculation.
+  (/ (+ (time-nanosecond time)
+        (* (- (time-second time) (tm:leap-second-delta (time-second time)))
+           tm:nano/i)
+        (* tm:tai-epoch-in-jd tm:sid tm:nano/i))
+     (* tm:sid tm:nano/i)))
 
 (define (time-tai->modified-julian-day time)
-  (- (time-tai->julian-day time)
-     4800001/2))
+  (- (time-tai->julian-day time) 4800001/2))
 
 ;; this is the same as time-tai->julian-day
 (define (time-monotonic->julian-day time)
   (tm:check-time-type time 'time-monotonic 'time-monotonic->julian-day)
-  (+ (/ (+ (- (time-second time) 
-	      (tm:leap-second-delta (time-second time)))
-	   (/ (time-nanosecond time) tm:nano/i))
-	tm:sid)
-     tm:tai-epoch-in-jd))
-
+  ;; NB: we scale first to avoid intermediate ratnum calculation.
+  (/ (+ (time-nanosecond time)
+        (* (- (time-second time) (tm:leap-second-delta (time-second time)))
+           tm:nano/i)
+        (* tm:tai-epoch-in-jd tm:sid tm:nano/i))
+     (* tm:sid tm:nano/i)))
 
 (define (time-monotonic->modified-julian-day time)
-  (- (time-monotonic->julian-day time)
-     4800001/2))
-
+  (- (time-monotonic->julian-day time) 4800001/2))
 
 (define (julian-day->time-utc jdn)
-  (let ((nanosecs (* tm:nano/i tm:sid (- jdn tm:tai-epoch-in-jd))))
-    (make-time time-utc
-               (remainder nanosecs tm:nano)
-               (floor (/ nanosecs tm:nano/i)))))
+  (let ((nanosecs (- (* tm:nano/i tm:sid jdn)
+                     (* tm:nano/i tm:sid tm:tai-epoch-in-jd))))
+    (receive (q r) (quotient&remainder nanosecs tm:nano)
+      (make-time time-utc r q))))
 
 (define (julian-day->time-tai jdn)
   (time-utc->time-tai! (julian-day->time-utc jdn)))
@@ -839,7 +853,7 @@
     (#\f . ,(lambda (date pad-with)
               (display (tm:padding (date-second date) pad-with 2))
               (display tm:locale-number-separator)
-              (let1 nanostr (number->string (/ (date-nanosecond date) tm:nano/i))
+              (let1 nanostr (number->string (/. (date-nanosecond date) tm:nano/i))
                 (cond ((string-index nanostr #\.)
                        => (lambda (i) (display (string-drop nanostr (+ i 1)))))
                       ))))

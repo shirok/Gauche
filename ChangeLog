@@ -1,5 +1,16 @@
 2007-11-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/gencomp (compile-toplevel-form): Modified to recognize
+	  define-constant form so that constant-folding works in
+	  pre-compilation.
+
+	* ext/srfi/srfi-19-lib.scm: switched back julian-day calculation
+	  to use exact numbers (Cf. ChangeLog at 2007-01-16 below).  By
+	  scaling everything except nanoseconds first, we can avoid
+	  ratnums in intermediate calculations.  With working constant folding
+	  in pre-compilation, the overhead isn't as bad as before.  See
+	  the comment near TM_EXACT_CALC for the details.
+
 	* src/gauche/system.h (ScmTime): use ScmInt64 to represent seconds
 	  to avoid year 2038 problem.
 	* src/system.c: Changed accordingly.  Added Scm_MakeTime64() and
