@@ -255,7 +255,21 @@
          (sys-rmdir "test.dir")
          (sys-access "test.dir" |F_OK|)))
 
+;;-------------------------------------------------------------------
+(test-section "time")
 
+(test* "srfi time" #t (time? (current-time)))
+(test* "srfi time time->seconds" #t
+       (let1 t (current-time)
+         (= (ref t'second) (floor->exact (time->seconds t)))))
+(test* "srfi time seconds->time" '(98765432109876 500000000)
+       (let1 t (seconds->time 98765432109876.5)
+         (list (ref t'second) (ref t'nanosecond))))
+(test* "srfi time setter" (make <time> :second -98765432109876 :nanosecond 4)
+       (let1 t (make <time>)
+         (set! (ref t'second) -98765432109876)
+         (set! (ref t'nanosecond) 4)
+         t))
 
 ;;-------------------------------------------------------------------
 (test-section "stat")

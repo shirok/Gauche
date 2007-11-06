@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.157 2007-10-02 09:56:30 shirok Exp $
+ *  $Id: number.c,v 1.158 2007-11-06 12:23:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -864,6 +864,10 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
     if (SCM_BIGNUMP(obj)) {
         return Scm_BignumToSI64(SCM_BIGNUM(obj), clamp, oor);
     }
+    if (SCM_RATNUMP(obj)) {
+        obj = Scm_ExactToInexact(obj);
+        /* FALLTHROUGH */
+    }
     if (SCM_FLONUMP(obj)) {
         if (Scm_NumCmp(obj, SCM_2_63) >= 0) {
             if (!(clamp&SCM_CLAMP_HI)) goto err;
@@ -885,6 +889,10 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
     if (SCM_BIGNUMP(obj)) {
         return Scm_BignumToSI64(SCM_BIGNUM(obj), clamp, oor);
     }
+    if (SCM_RATNUMP(obj)) {
+        obj = Scm_ExactToInexact(obj);
+        /* FALLTHROUGH */
+    }
     if (SCM_FLONUMP(obj)) {
         int64_t maxval, minval;
         double v;
@@ -899,7 +907,7 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
             if (!(clamp&SCM_CLAMP_LO)) goto err;
             return minval;
         } else {
-            return (long)v;
+            return (ScmInt64)v;
         }
     }
 #endif /*!SCM_EMULATE_INT64*/
@@ -925,6 +933,10 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
     if (SCM_BIGNUMP(obj)) {
         return Scm_BignumToUI64(SCM_BIGNUM(obj), clamp, oor);
     }
+    if (SCM_RATNUMP(obj)) {
+        obj = Scm_ExactToInexact(obj);
+        /* FALLTHROUGH */
+    }
     if (SCM_FLONUMP(obj)) {
         if (Scm_NumCmp(obj, SCM_2_64) >= 0) {
             if (!(clamp&SCM_CLAMP_HI)) goto err;
@@ -939,7 +951,7 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
         }
     }
 #else /*!SCM_EMULATE_INT64*/
-    ScmInt64 r = 0;
+    ScmUInt64 r = 0;
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) {
         long v = SCM_INT_VALUE(obj);
@@ -953,9 +965,13 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
     if (SCM_BIGNUMP(obj)) {
         return Scm_BignumToUI64(SCM_BIGNUM(obj), clamp, oor);
     }
+    if (SCM_RATNUMP(obj)) {
+        obj = Scm_ExactToInexact(obj);
+        /* FALLTHROUGH */
+    }
     if (SCM_FLONUMP(obj)) {
         double v = SCM_FLONUM_VALUE(obj);
-        uint64_t maxval;
+        ScmUInt64 maxval;
 
         if (v < 0) {
             if (!(clamp&SCM_CLAMP_LO)) goto err;
@@ -966,7 +982,7 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
             if (!(clamp&SCM_CLAMP_HI)) goto err;
             return maxval;
         } else {
-            return (uint32_t)v;
+            return (ScmUInt64)v;
         }
     }
 #endif
@@ -976,6 +992,64 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
 }
                                
 #endif /* SIZEOF_LONG == 4 */
+
+ScmInt64 Scm_DoubleToInt64(double v)
+{
+#if SIZEOF_LONG == 4
+# if SCM_EMULATE_INT64
+    ScmInt64 i;
+    double hi, lo;
+    lo = modf(v/4294967296.0, &hi);
+    i.hi = (long)hi;
+    i.lo = (long)(lo * 4294967296.0);
+    return i;
+# else  /*!SCM_EMULATE_INT64*/
+    return (int64_t)v;
+# endif /*!SCM_EMULATE_INT64*/
+#else  /*SIZEOF_LONG == 8*/
+    return (long)v;
+#endif /*SIZEOF_LONG == 8*/
+}
+
+ScmUInt64 Scm_DoubleToUInt64(double v)
+{
+#if SIZEOF_LONG == 4
+# if SCM_EMULATE_INT64
+    ScmUInt64 i;
+    double hi, lo;
+    if (v < 0) {
+        SCM_SET_INT64_ZERO(i);
+    } else {
+        lo = modf(v/4294967296.0, &hi);
+        i.hi = (u_long)hi;
+        i.lo = (u_long)(lo * 4294967296.0);
+    }
+    return i;
+# else  /*!SCM_EMULATE_INT64*/
+    return (uint64_t)v;
+# endif /*!SCM_EMULATE_INT64*/
+#else  /*SIZEOF_LONG == 8*/
+    return (u_long)v;
+#endif /*SIZEOF_LONG == 8*/
+}
+
+double Scm_Int64ToDouble(ScmInt64 v)
+{
+#if SCM_EMULATE_INT64
+    return ((v64.hi)*4294967296.0 + (double)(v64.lo));
+#else
+    return (double)v;
+#endif
+}
+
+double Scm_UInt64ToDouble(ScmUInt64 v)
+{
+#if SCM_EMULATE_INT64
+    return ((v64.hi)*4294967296.0 + (double)(v64.lo));
+#else
+    return (double)v;
+#endif
+}
 
 double Scm_GetDouble(ScmObj obj)
 {

@@ -986,6 +986,11 @@
                (time=? t3 (date->time-tai (time-tai->date t3)))
                )))
 
+(test* "date past 2038/1/19" (date->time-utc (make-date 0 0 0 0 1 1 3000 0))
+       (julian-day->time-utc
+        (+ (date->julian-day (make-date 0 0 0 0 1 1 2000 0))
+           (+ (* 365 1000) 243))))
+
 ;; NB: in Gauche, the round-trip conversion from time -> julian-day -> time
 ;; can't be guaranteed because of the limited precision of julian-day
 ;; calcularion.   We round the nanosecond range.
@@ -1021,6 +1026,13 @@
        "2002/05/15 01:23:34.001234567 -1000 3"
        (date->string (make-date 1234567 34 23 1 15 5 2002 -36000)
                      "~Y/~m/~d ~H:~M:~S.~N ~z ~w"))
+(test* "date->string (past 2038)"
+       "2100/05/15 01:23:34.001234567 -1000 6"
+       (date->string
+        (time-utc->date
+         (date->time-utc
+          (make-date 1234567 34 23 1 15 5 2100 -36000)))
+        "~Y/~m/~d ~H:~M:~S.~N ~z ~w"))
 
 (test* "date->string"
        "02/05/ 1| 2|14"

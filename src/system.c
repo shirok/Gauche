@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.101 2007-10-29 22:30:38 shirok Exp $
+ *  $Id: system.c,v 1.102 2007-11-06 12:23:28 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -752,14 +752,15 @@ static ScmObj time_allocate(ScmClass *klass, ScmObj initargs)
     ScmTime *t = SCM_ALLOCATE(ScmTime, klass);
     SCM_SET_CLASS(t, SCM_CLASS_TIME);
     t->type = SCM_SYM_TIME_UTC;
-    t->sec = t->nsec = 0;
+    SCM_SET_INT64_ZERO(t->sec);
+    t->nsec = 0;
     return SCM_OBJ(t);
 }
 
 static void time_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmTime *t = SCM_TIME(obj);
-    Scm_Printf(port, "#<%S %lu.%09lu>", t->type, t->sec, t->nsec);
+    Scm_Printf(port, "#<%S %S.%09lu>", t->type, Scm_MakeInteger64(t->sec), t->nsec);
 }
 
 static int time_compare(ScmObj x, ScmObj y, int equalp)
@@ -769,7 +770,7 @@ static int time_compare(ScmObj x, ScmObj y, int equalp)
     
     if (equalp) {
         if (SCM_EQ(tx->type, ty->type)
-            && tx->sec == ty->sec
+            && SCM_INT64_EQV(tx->sec, ty->sec)
             && tx->nsec == ty->nsec) {
             return 0;
         } else {
@@ -779,8 +780,8 @@ static int time_compare(ScmObj x, ScmObj y, int equalp)
         if (!SCM_EQ(tx->type, ty->type)) {
             Scm_Error("cannot compare different types of time objects: %S vs %S", x, y);
         }
-        if (tx->sec < ty->sec) return -1;
-        if (tx->sec == ty->sec) {
+        if (SCM_INT64_CMP(<, tx->sec, ty->sec)) return -1;
+        if (SCM_INT64_EQV(tx->sec, ty->sec)) {
             if (tx->nsec < ty->nsec) return -1;
             if (tx->nsec == ty->nsec) return 0;
             else return 1;
@@ -793,10 +794,25 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_TimeClass,
                          time_print, time_compare, NULL,
                          time_allocate, SCM_CLASS_DEFAULT_CPL);
 
-ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec)
+static ScmTime *make_time_int(ScmObj type)
 {
     ScmTime *t = SCM_TIME(time_allocate(SCM_CLASS_TIME, SCM_NIL));
     t->type = SCM_FALSEP(type)? SCM_SYM_TIME_UTC : type;
+    return t;
+}
+
+
+ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec)
+{
+    ScmTime *t = make_time_int(type);
+    SCM_SET_INT64_BY_LONG(t->sec, sec);
+    t->nsec = nsec;
+    return SCM_OBJ(t);
+}
+
+ScmObj Scm_MakeTime64(ScmObj type, ScmInt64 sec, long nsec)
+{
+    ScmTime *t = make_time_int(type);
     t->sec = sec;
     t->nsec = nsec;
     return SCM_OBJ(t);
@@ -836,14 +852,18 @@ ScmObj Scm_IntSecondsToTime(long sec)
     return Scm_MakeTime(SCM_SYM_TIME_UTC, sec, 0);
 }
 
+ScmObj Scm_Int64SecondsToTime(ScmInt64 sec)
+{
+    return Scm_MakeTime64(SCM_SYM_TIME_UTC, sec, 0);
+}
+
 ScmObj Scm_RealSecondsToTime(double sec)
 {
     double s, frac;
-    if (sec > (double)ULONG_MAX || sec < 0) {
-        Scm_Error("seconds out of range: %f", sec);
-    }
+    ScmInt64 secs;
     frac = modf(sec, &s);
-    return Scm_MakeTime(SCM_SYM_TIME_UTC, (long)s, (long)(frac * 1.0e9));
+    secs = Scm_DoubleToInt64(s);
+    return Scm_MakeTime64(SCM_SYM_TIME_UTC, secs, (long)(frac * 1.0e9));
 }
 
 static ScmObj time_type_get(ScmTime *t)
@@ -861,7 +881,7 @@ static void time_type_set(ScmTime *t, ScmObj val)
 
 static ScmObj time_sec_get(ScmTime *t)
 {
-    return Scm_MakeInteger(t->sec);
+    return Scm_MakeInteger64(t->sec);
 }
 
 static void time_sec_set(ScmTime *t, ScmObj val)
@@ -869,7 +889,7 @@ static void time_sec_set(ScmTime *t, ScmObj val)
     if (!SCM_REALP(val)) {
         Scm_Error("real number required, but got %S", val);
     }
-    t->sec = Scm_GetInteger(val);
+    t->sec = Scm_GetInteger64(val);
 }
 
 static ScmObj time_nsec_get(ScmTime *t)
@@ -917,9 +937,18 @@ time_t Scm_GetSysTime(ScmObj val)
 {
     if (SCM_TIMEP(val)) {
 #ifdef INTEGRAL_TIME_T
+        /* NB: If time_t is 64bit, we assume ScmUInt64 is int64_t.
+           So if we're emulating int64 then we reject conversion over 32bits*/
+#  if SCM_EMULATE_INT64
+        if (SCM_TIME(val)->sec.hi > 0) {
+            Scm_Error("time object is out of range for Unix time: %S", val);
+        }
+        return (time_t)(SCM_TIME(val)->sec.lo);
+#  else
         return (time_t)SCM_TIME(val)->sec;
+#  endif
 #else
-        return (time_t)((double)SCM_TIME(val)->sec +
+        return (time_t)(Scm_Int64ToDouble(SCM_TIME(val)->sec) +
                         (double)SCM_TIME(val)->nsec/1.0e9);
 #endif
     } else if (SCM_NUMBERP(val)) {
@@ -937,9 +966,9 @@ time_t Scm_GetSysTime(ScmObj val)
 ScmObj Scm_TimeToSeconds(ScmTime *t)
 {
     if (t->nsec) {
-        return Scm_MakeFlonum((double)t->sec + (double)t->nsec/1.0e9);
+        return Scm_MakeFlonum(Scm_Int64ToDouble(t->sec) + (double)t->nsec/1.0e9);
     } else {
-        return Scm_MakeIntegerFromUI(t->sec);
+        return Scm_MakeInteger64(t->sec);
     }
 }
 
@@ -949,13 +978,28 @@ struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec)
 {
     if (SCM_FALSEP(t)) return NULL;
     if (SCM_TIMEP(t)) {
+#if SCM_EMULATE_INT64
+        /* if we don't have int64_t, it's very likely that timespec can't
+           handle 64bit time. */
+        if (SCM_TIME(t)->sec.hi > 0) {
+            Scm_Error("cannot convert Scheme time to struct timespec: out of range: %S", t);
+        }
+        spec->tv_sec = SCM_TIME(t)->sec.lo;
+        
+#else  /*!SCM_EMULATE_INT64*/
+        /* TODO: we might want to check if tv_sec can handle 64bit integer */
         spec->tv_sec = SCM_TIME(t)->sec;
+#endif /*!SCM_EMULATE_INT64*/
         spec->tv_nsec = SCM_TIME(t)->nsec;
     } else if (!SCM_REALP(t)) {
         Scm_Error("bad timeout spec: <time> object or real number is required, but got %S", t);
     } else {
         ScmTime *ct = SCM_TIME(Scm_CurrentTime());
+#if SCM_EMULATE_INT64
+        spec->tv_sec = ct->sec.lo;  /* TODO: 2038 */
+#else  /*!SCM_EMULATE_INT64*/
         spec->tv_sec = ct->sec;
+#endif /*!SCM_EMULATE_INT64*/
         spec->tv_nsec = ct->nsec;
         if (SCM_EXACTP(t)) {
             spec->tv_sec += Scm_GetUInteger(t);

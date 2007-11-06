@@ -1,3 +1,14 @@
+2007-11-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/system.h (ScmTime): use ScmInt64 to represent seconds
+	  to avoid year 2038 problem.
+	* src/system.c: Changed accordingly.  Added Scm_MakeTime64() and
+	  Scm_Int64SecondsToTime().
+	* src/gauche/int64.h, src/number.c: Added macros (SCM_INT64_EQV,
+	  SCM_INT64_CMP, SCM_SET_INT64_BY_LONG, SCM_SET_INT64_BY_DOUBLE)
+	  and APIs (Scm_Int64ToDouble, Scm_UInt64ToDouble, Scm_DoubleToInt64,
+	  Scm_UInt64ToDouble).
+
 2007-10-29  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.8.12

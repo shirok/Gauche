@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.h,v 1.5 2007-09-18 10:13:09 shirok Exp $
+ *  $Id: system.h,v 1.6 2007-11-06 12:23:29 shirok Exp $
  */
 
 #ifndef GAUCHE_SYSTEM_H
@@ -121,7 +121,7 @@ SCM_EXTERN void Scm_GetTimeOfDay(u_long *sec, u_long *usec);
 typedef struct ScmTimeRec {
     SCM_HEADER;
     ScmObj type;       /* 'time-utc by default.  see SRFI-19 */
-    long sec;          /* seconds */
+    ScmInt64 sec;      /* seconds */
     long nsec;         /* nanoseconds */
 } ScmTime;
 
@@ -132,7 +132,9 @@ SCM_CLASS_DECL(Scm_TimeClass);
 
 SCM_EXTERN ScmObj Scm_CurrentTime(void);
 SCM_EXTERN ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec);
+SCM_EXTERN ScmObj Scm_MakeTime64(ScmObj type, ScmInt64 sec, long nsec);
 SCM_EXTERN ScmObj Scm_IntSecondsToTime(long sec);
+SCM_EXTERN ScmObj Scm_Int64SecondsToTime(ScmInt64 sec);
 SCM_EXTERN ScmObj Scm_RealSecondsToTime(double sec);
 SCM_EXTERN ScmObj Scm_TimeToSeconds(ScmTime *t);
 #if defined(HAVE_STRUCT_TIMESPEC) || defined(GAUCHE_USE_PTHREADS)
