@@ -1031,7 +1031,7 @@
        (date->string
         (time-utc->date
          (date->time-utc
-          (make-date 1234567 34 23 1 15 5 2100 -36000)))
+          (make-date 1234567 34 23 1 15 5 2100 -36000)) -36000)
         "~Y/~m/~d ~H:~M:~S.~N ~z ~w"))
 
 (test* "date->string"
