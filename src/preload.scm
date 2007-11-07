@@ -9,7 +9,7 @@
 ;;  gosh -l./preload -I./src -I./lib ....
 ;;
 ;;
-;; $Id: preload.scm,v 1.2 2006-08-27 07:32:11 shirok Exp $
+;; $Id: preload.scm,v 1.3 2007-11-07 04:43:01 shirok Exp $
 ;;
 
 (use gauche.collection)
@@ -20,6 +20,7 @@
 (use srfi-1)
 (use srfi-13)
 (use file.util)
+(use text.tr)
 (use util.match)
 
 

@@ -1,5 +1,9 @@
 2007-11-06  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/gettext.scm, lib/text/tr.scm: Moved to ext/text.
+	* libsrc/text/tr.scm, ext/text/*: Made text.gettext and text.tr
+	  compiled modules.
+
 	* src/gencomp (compile-toplevel-form): Modified to recognize
 	  define-constant form so that constant-folding works in
 	  pre-compilation.

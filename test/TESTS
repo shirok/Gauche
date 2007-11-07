@@ -22,7 +22,6 @@ rfc.scm
 parseopt.scm
 logger.scm
 text.scm
-gettext.scm
 util.scm
 io2.scm
 process.scm

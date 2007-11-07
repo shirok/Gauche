@@ -1,0 +1,52 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = 
+
+include ../Makefile.ext
+
+LIBFILES = text-gettext-lib.$(SOEXT) text-tr-lib.$(SOEXT)
+SCMFILES = text/gettext.scm text/tr.scm
+
+GENERATED = Makefile 
+XCLEANFILES = *.c text/gettext.scm text/tr.scm
+
+all : $(LIBFILES)
+
+install : install-std
+
+#
+# text.gettext
+#
+
+text-gettext_OBJECTS = text-gettext_head.$(OBJEXT) \
+                       text-gettext-lib.$(OBJEXT)  \
+                       text-gettext_tail.$(OBJEXT)
+
+text-gettext-lib.$(SOEXT) : $(text-gettext_OBJECTS) 
+	$(MODLINK) text-gettext-lib.$(SOEXT) $(text-gettext_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+text-gettext_head.c text-gettext_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension text-gettext
+
+text-gettext-lib.c text/gettext.scm : $(srcdir)/text-gettext-lib.scm
+	$(GENCOMP) --ext-module text/gettext.scm $(srcdir)/text-gettext-lib.scm
+
+#
+# text.tr
+#
+
+text-tr_OBJECTS = text-tr_head.$(OBJEXT) \
+                  text-tr-lib.$(OBJEXT)  \
+                  text-tr_tail.$(OBJEXT)
+
+text-tr-lib.$(SOEXT) : $(text-tr_OBJECTS) 
+	$(MODLINK) text-tr-lib.$(SOEXT) $(text-tr_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+text-tr_head.c text-tr_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension text-tr
+
+text-tr-lib.c text/tr.scm : $(top_srcdir)/libsrc/text/tr.scm
+	$(GENCOMP) --ext-module text/tr.scm -o text-tr-lib $(top_srcdir)/libsrc/text/tr.scm
+

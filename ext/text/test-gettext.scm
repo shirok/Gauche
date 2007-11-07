@@ -1,12 +1,10 @@
-#! /usr/bin/env gosh
-
 (use gauche.test)
 (use gauche.charconv)
 (use util.list)
 (use srfi-1)
 
-(add-load-path "../test")
-(define *test-locale-dirs* '("../test/data/locale"))
+(add-load-path "../../test")
+(define *test-locale-dirs* '("../../test/data/locale"))
 
 ;; This hack is to avoid conversion errors due to supported encodings.
 ;; If you compile Gauche with utf8, most encodings should be OK.

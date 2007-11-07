@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: tr.scm,v 1.12 2007-03-02 07:39:11 shirok Exp $
+;;;  $Id: tr.scm,v 1.1 2007-11-07 04:43:01 shirok Exp $
 ;;;
 
 ;;; tr(1) equivalent.
