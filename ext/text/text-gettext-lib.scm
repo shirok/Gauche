@@ -73,7 +73,6 @@
 (define-module text.gettext
   (use srfi-1)    ;; list library
   (use util.list) ;; list library++ (assoc-ref)
-  (use srfi-2)    ;; and-let*
   (use srfi-13)   ;; string library
   (use rfc.822)   ;; message headers parsing (same syntax for .po meta-data)
   (use file.util) ;; file-is-readable?
