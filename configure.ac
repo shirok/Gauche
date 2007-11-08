@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.106 2007-11-07 04:43:00 shirok Exp $
+dnl $Id: configure.ac,v 1.107 2007-11-08 20:01:32 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.12, shiro@acm.org)
-AC_REVISION($Revision: 1.106 $)
+AC_REVISION($Revision: 1.107 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -262,7 +262,7 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/time.h sys/types.h glob.h dlfcn.h getopt.h sched.h unistd.h)
 AC_CHECK_HEADERS(stdint.h inttypes.h rpc/types.h)
 AC_CHECK_HEADERS(syslog.h crypt.h)
-AC_CHECK_HEADERS(pty.h util.h libutil.h sys/loadavg.h)
+AC_CHECK_HEADERS(pty.h util.h libutil.h sys/loadavg.h sys/resource.h)
 
 dnl solaris specific
 AC_CHECK_HEADERS(sunmath.h)
@@ -293,6 +293,15 @@ AC_CHECK_TYPES([struct timespec])
 if test "$GAUCHE_THREAD_TYPE" = pthreads; then
   AC_CHECK_TYPES(pthread_spinlock_t,,,[#include <pthread.h>])
 fi
+
+AC_CHECK_SIZEOF(rlim_t,,[
+#if HAVE_SYS_TIME_H
+# include <sys/time.h>
+#endif
+#if HAVE_SYS_RESOURCE_H
+# include <sys/resource.h>
+#endif
+])
 
 dnl Checks non-POSIX members of system structure
 AC_CHECK_MEMBERS([struct group.gr_passwd],,,[#include <grp.h>])

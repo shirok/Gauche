@@ -1,5 +1,9 @@
 2007-11-07  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, src/gauche/config.h.in (HAVE_SYS_RESOURCE_H,
+	  SIZEOF_RLIM_T): configuration for getrlimit/setrlimit
+	* src/syslib.stub (sys-getrlimit, sys-setrlimit): Added.
+
 	* src/extlib.stub (tree-map-floor etc.): Added Scheme-level interface
 	  to find the closest entry in the treemap.  Also added tree-map-clear!
 

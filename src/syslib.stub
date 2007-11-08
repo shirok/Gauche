@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.134 2007-09-18 08:57:22 shirok Exp $
+;;; $Id: syslib.stub,v 1.135 2007-11-08 20:01:54 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -55,6 +55,9 @@
 #endif
 #if HAVE_CRYPT_H
 #include <crypt.h>
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
 #endif
 "
 
@@ -439,6 +442,71 @@
 ;; various systems.
 (define-cproc sys-strerror (errno::<int>)
   (call <const-cstring> "strerror"))
+
+;;---------------------------------------------------------------------
+;; sys/resource.h
+
+(when "defined(HAVE_SYS_RESOURCE_H)"
+  "
+#if SIZEOF_RLIM_T == 4
+#  define MAKERLIMIT(val)  Scm_MakeIntegerU(val)
+#  define GETRLIMIT(obj)   Scm_GetIntegerU(obj)
+#elif SIZEOF_RLIM_T == 8
+#  define MAKERLIMIT(val)  Scm_MakeIntegerU64(val)
+#  define GETRLIMIT(obj)   Scm_GetIntegerU64(obj)
+#else
+#  error \"rlim_t must be 32bit or 64bit\"
+#endif
+"
+  (define-cproc sys-getrlimit (rsrc::<int>)
+    (body (<integer> <integer>)
+          (let* ((limit :: |struct rlimit|)
+                 (ret   :: int))
+            (SCM_SYSCALL ret (getrlimit rsrc (& limit)))
+            (when (< ret 0) (Scm_SysError "getrlimit failed"))
+            (result (MAKERLIMIT (ref limit rlim_cur))
+                    (MAKERLIMIT (ref limit rlim_max))))))
+
+  (define-cproc sys-setrlimit (rsrc::<int> cur &optional (max #f))
+    (body <void>
+          (let* ((limit :: |struct rlimit|)
+                 (ret   :: int))
+            (when (or (SCM_FALSEP cur) (SCM_FALSEP max))
+              (SCM_SYSCALL ret (getrlimit rsrc (& limit)))
+              (when (< ret 0)
+                (Scm_SysError "getrlimit in sys-setrlimit failed")))
+            (cond
+             [(SCM_INTEGERP cur) (set! (ref limit rlim_cur) (GETRLIMIT cur))]
+             [(not (SCM_FALSEP cur))
+              (SCM_TYPE_ERROR cur "non-negative integer or #f")])
+            (cond
+             [(SCM_INTEGERP max) (set! (ref limit rlim_max) (GETRLIMIT max))]
+             [(not (SCM_FALSEP max))
+              (SCM_TYPE_ERROR max "non-negative integer or #f")])
+            (SCM_SYSCALL ret (setrlimit rsrc (& limit)))
+            (when (< ret 0) (Scm_SysError "setrlimit failed")))))
+
+  (initcode "Scm_AddFeature(\"gauche.sys.getrlimit\", NULL);")
+
+  (define-constant RLIM_INFINITY (c "MAKERLIMIT(RLIM_INFINITY)"))
+  (define-enum-conditionally RLIMIT_AS)
+  (define-enum-conditionally RLIMIT_CORE)
+  (define-enum-conditionally RLIMIT_CPU)
+  (define-enum-conditionally RLIMIT_DATA)
+  (define-enum-conditionally RLIMIT_FSIZE)
+  (define-enum-conditionally RLIMIT_LOCKS)
+  (define-enum-conditionally RLIMIT_MEMLOCK)
+  (define-enum-conditionally RLIMIT_MSGQUEUE)
+  (define-enum-conditionally RLIMIT_NICE)
+  (define-enum-conditionally RLIMIT_NOFILE)
+  (define-enum-conditionally RLIMIT_NPROC)
+  (define-enum-conditionally RLIMIT_RSS)
+  (define-enum-conditionally RLIMIT_RTPRIO)
+  (define-enum-conditionally RLIMIT_SIGPENDING)
+  (define-enum-conditionally RLIMIT_SBSIZE)
+  (define-enum-conditionally RLIMIT_STACK)
+  (define-enum-conditionally RLIMIT_OFILE)
+  ) ;; HAVE_SYS_RESOURCE_H
 
 ;;---------------------------------------------------------------------
 ;; sys/stat.h

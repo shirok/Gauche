@@ -14181,6 +14181,30 @@ This may be just a @code{"/dev/tty"}.   See also @code{sys-ttyname}.
 @c COMMON
 @end defun
 
+@defun sys-getrlimit resource
+@defunx sys-setrlimit resource current &optional maximum
+[POSIX] Get and set resource limits respectively.
+@var{Resource} is an integer constant to specify the resource
+of concern.  The following constants are defined.
+(The constants marked as bsd and/or linux indicates that they
+are not defined in POSIX but defined in BSD and/or Linux.
+Other systems may or may not have them.  Consult @code{getrlimit}
+manpage of your system for the details.)
+
+@example
+RLIMIT_AS                      RLIMIT_CORE
+RLIMIT_CPU                     RLIMIT_DATA
+RLIMIT_FSIZE                   RLIMIT_LOCKS
+RLIMIT_MEMLOCK (bsd/linux)     RLIMIT_MSGQUEUE (linux)
+RLIMIT_NICE (linux)            RLIMIT_NOFILE
+RLIMIT_NPROC (bsd/linux)       RLIMIT_RSS (bsd/linux)
+RLIMIT_RTPRIO (linux)          RLIMIT_SIGPENDING (linux)
+RLIMIT_SBSIZE                  RLIMIT_STACK
+RLIMIT_OFILE
+@end example
+@end defun
+
+
 @defun sys-strerror errno
 @c EN
 @var{Errno} must be an exact nonnegative integer representing
