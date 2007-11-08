@@ -4170,14 +4170,17 @@ repeats the replacing throughout entire @var{string}.
 
 @c EN
 @var{substitution} may be a string or a procedure.  If it is a string,
-it can contain a digit sequence preceded by a backslash
-(e.g. @code{\2}) that refers the submatch.  @code{\0} refers to the
+it can contain references to the submatches by
+digits preceded by a backslash (e.g. @code{\2})
+or the named submatch reference (e.g. @code{\k<@var{name}>}.
+@code{\0} refers to the
 entire match.  Note that you need two backslashes to include
 backslash character in the literal string; if you want to include a backslash
 character itself in the @var{substitution}, you need four backslashes.
 @c JP
 @var{substitution}は文字列か手続きです。
-文字列の場合、バックスラッシュに続く数値を使ってサブマッチ文字列を参照できます。
+文字列の場合、バックスラッシュに続く数値、もしくは
+@code{\k<@var{name}>}という形式でサブマッチ文字列を参照できます
 @code{\0}はマッチ文字列全体を参照します。文字列リテラルにバックスラッシュを
 埋め込む場合は二つのバックスラッシュが必要であることに注意して下さい。
 バックスラッシュそのものを@var{substitution}中で使いたい場合は
@@ -4193,6 +4196,8 @@ character itself in the @var{substitution}, you need four backslashes.
 (regexp-replace #/def|DEF/ "abcdefghi" "|\\\\0|")
   @result{} "abc|\\0|ghi"
 (regexp-replace #/c(.*)g/ "abcdefghi" "|\\1|")
+  @result{} "ab|def|hi"
+(regexp-replace #/c(?<match>.*)g/ "abcdefghi" "|\\k<match>|")
   @result{} "ab|def|hi"
 @end example
 

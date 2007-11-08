@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.14 2007-07-01 08:03:09 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.15 2007-11-08 21:03:01 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -216,6 +216,8 @@
 
 (define-reader-ctor 'string-interpolate
   (lambda (s) (string-interpolate s))) ;;lambda is required to delay loading
+
+
 
 ;;;=======================================================
 ;;; call/cc alias

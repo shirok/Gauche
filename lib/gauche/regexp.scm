@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: regexp.scm,v 1.15 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: regexp.scm,v 1.16 2007-11-08 21:03:00 shirok Exp $
 ;;;
 
 (define-module gauche.regexp
@@ -118,18 +118,17 @@
   (cond
    ((string? sub)
     (let loop ((sub sub) (r '()))
-      (cond ((rxmatch #/\\((\d+)|(.))/ sub)
+      (cond ((rxmatch #/\\(?:(\d+)|k<([^>]+)>|(.))/ sub)
              => (lambda (m)
-                  (cond ((rxmatch-substring m 2)
-                         => (lambda (d)
-                              (loop (rxmatch-after m)
-                                    (list* (string->number d)
-                                           (rxmatch-before m)
-                                           r))))
-                        ((rxmatch-substring m 3)
-                         => (lambda (c)
-                              (loop (rxmatch-after m)
-                                    (list* c (rxmatch-before m) r)))))))
+                  (define (loop2 elem)
+                    (loop (rxmatch-after m)
+                          (list* elem (rxmatch-before m) r)))
+                  (cond ((rxmatch-substring m 1)
+                         => (lambda (d) (loop2 (string->number d))))
+                        ((rxmatch-substring m 2)
+                         => (lambda (s) (loop2 (string->symbol s))))
+                        (else
+                         (loop2 (rxmatch-substring m 3))))))
             (else (reverse (cons sub r))))))
    ((procedure? sub) sub)
    (else (error "string or procedure required, but got" sub))))
@@ -140,7 +139,7 @@
   (if (procedure? subpat)
     (display (subpat match) out)
     (for-each (lambda (pat)
-                (display (if (number? pat)
+                (display (if (or (number? pat) (symbol? pat))
                            (rxmatch-substring match pat)
                            pat)
                          out))

@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.24 2007-08-26 08:16:05 shirok Exp $
+;; $Id: regexp.scm,v 1.25 2007-11-08 21:03:02 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -934,6 +934,12 @@
 (test* "regexp-replace" "abc|\\0|ghi"
        (regexp-replace #/def|DEF/ "abcdefghi" "|\\\\0|"))
 
+(test* "regexp-replace" "abc|def|ghi"
+       (regexp-replace #/(?<match>def|DEF)/ "abcdefghi" "|\\k<match>|"))
+
+(test* "regexp-replace" *test-error*
+       (regexp-replace #/(?<match>def|DEF)/ "abcdefghi" "|\\k<matchee>|"))
+
 (test* "regexp-replace" "abraabra**brabra**brabrabracadabrabrabra"
        (regexp-replace #/a((bra)+)cadabra/
                        "abraabraabrabracadabrabrabrabracadabrabrabra"
@@ -943,6 +949,11 @@
        (regexp-replace-all #/a((bra)+)cadabra/
                            "abraabraabrabracadabrabrabrabracadabrabrabra"
                            "**\\1**"))
+
+(test* "regexp-replace-all" "abraabra**brabra**br**brabra**brabra"
+       (regexp-replace-all #/a(?<match>(bra)+)cadabra/
+                           "abraabraabrabracadabrabrabrabracadabrabrabra"
+                           "**\\k<match>**"))
 
 (test* "regexp-replace" "abfedhi"
        (regexp-replace #/c(.*)g/ "abcdefghi" 

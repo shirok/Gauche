@@ -1,3 +1,9 @@
+2007-11-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/regexp.scm (regexp-parse-subpattern): allow named
+	  reference in the replace string in regexp-replace etc.
+	  Patch from Rui Ueyama.
+
 2007-11-07  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, src/gauche/config.h.in (HAVE_SYS_RESOURCE_H,
