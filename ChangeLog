@@ -1,7 +1,7 @@
 2007-11-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (tree-map-floor etc.): Added Scheme-level interface
-	  to find the closest entry in the treemap.
+	  to find the closest entry in the treemap.  Also added tree-map-clear!
 
 2007-11-06  Shiro Kawai  <shiro@acm.org>
 

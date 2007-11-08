@@ -366,7 +366,59 @@
   ;;          R:3 => 3
   (test* "insertion case4b" #t (begin (i -0.4) (c)))
   )
-  
+
+;;
+;; tree-map-{floor|ceiling|predecessor|successor}
+;;
+
+(let* ((alist '(("ai" . "to eat")
+                ("aka" . "but")
+                ("aka`aka" . "to laugh")
+                ("alani" . "orange")
+                ("aloha" . "love")
+                ("aoao" . "page")
+                ("aumoe" . "midnight")))
+       (tree (alist->tree-map alist string=? string<?)))
+
+  (define (get-val key) (if (string? key) (cdr (assoc key alist)) key))
+
+  (define (test-key-val name key expected-key both-proc key-proc val-proc)
+    (test* #`",name (,key)" (list expected-key (get-val expected-key))
+           (receive (k v) (both-proc tree key) (list k v)))
+    (test* #`",|name|-key (,key)" expected-key
+           (key-proc tree key))
+    (test* #`",|name|-value (,key)" (get-val expected-key)
+           (val-proc tree key))
+    (unless expected-key
+      (test* #`",name (,key) / fallback" (list 0 1)
+             (receive (k v) (both-proc tree key 0 1) (list k v)))
+      (test* #`",|name|-key (,key) / fallback" 0
+             (key-proc tree key 0))
+      (test* #`",|name|-value (,key) / fallback" 0
+             (val-proc tree key 0))))
+
+  (define (tester key floor ceil pred succ)
+    (test-key-val "tree-map-floor" key floor
+                  tree-map-floor tree-map-floor-key tree-map-floor-value)
+    (test-key-val "tree-map-ceiling" key ceil
+                  tree-map-ceiling tree-map-ceiling-key tree-map-ceiling-value)
+    (test-key-val "tree-map-predecessor" key pred
+                  tree-map-predecessor tree-map-predecessor-key tree-map-predecessor-value)
+    (test-key-val "tree-map-successor" key succ
+                  tree-map-successor tree-map-successor-key tree-map-successor-value))
+
+  (tester "am" "aloha" "aoao" "aloha" "aoao")
+  (tester "aoao" "aoao" "aoao" "aloha" "aumoe")
+  (tester "av" "aumoe" #f "aumoe" #f)
+  (tester "aumoe" "aumoe" "aumoe" "aoao" #f)
+  (tester "aii" "ai" "aka" "ai" "aka")
+  (tester "ai"  "ai" "ai" #f "aka")
+  (tester "aa"  #f "ai" #f "ai")
+
+  (tree-map-clear! tree)
+
+  (tester "xx"  #f #f #f #f)
+  )
 
 (test-end)
 

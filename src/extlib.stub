@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.302 2007-08-28 10:15:43 shirok Exp $
+;;; $Id: extlib.stub,v 1.303 2007-11-08 02:40:43 shirok Exp $
 ;;;
 
 "
@@ -1453,6 +1453,86 @@
 
 (define-cproc %tree-map-dump (tm::<tree-map>)
   (body <void> (Scm_TreeMapDump tm SCM_CUROUT)))
+
+(define-cproc tree-map-clear! (tm::<tree-map>)
+  (body <void> (Scm_TreeCoreClear (SCM_TREE_MAP_CORE tm))))
+
+;;
+;; Finds the entry closest to the given key
+;;
+(define-cise-stmt tree-map-closest-entry
+  [(_ inclusive? lh make-result)
+   `(let* ([lo :: ScmDictEntry* NULL]
+           [hi :: ScmDictEntry* NULL]
+           [eq :: ScmDictEntry*
+               (Scm_TreeCoreClosestEntries (SCM_TREE_MAP_CORE tm)
+                                           (cast intptr_t key)
+                                           (& lo) (& hi))])
+      (cond
+       ,@(if inclusive?
+           `([(!= eq NULL)  (,make-result (SCM_DICT_KEY eq) (SCM_DICT_VALUE eq))])
+           '())
+       [(!= ,lh NULL) (,make-result (SCM_DICT_KEY ,lh) (SCM_DICT_VALUE ,lh))]
+       [else          (,make-result key-fb val-fb)]))])
+
+(define-cise-stmt tree-map-closest-key-result
+  [(_ k v) `(result ,k)])
+(define-cise-stmt tree-map-closest-val-result
+  [(_ k v) `(result ,v)])
+(define-cise-stmt tree-map-closest-kv-result
+  [(_ k v) `(result ,k ,v)])
+
+(define-cproc tree-map-floor
+  (tm::<tree-map> key &optional (key-fb #f) (val-fb #f))
+  (body (<top> <top>)
+        (tree-map-closest-entry #t lo tree-map-closest-kv-result)))
+(define-cproc tree-map-floor-key
+  (tm::<tree-map> key &optional (key-fb #f))
+  (body <top>
+        (tree-map-closest-entry #t lo tree-map-closest-key-result)))
+(define-cproc tree-map-floor-value
+  (tm::<tree-map> key &optional (val-fb #f))
+  (body <top>
+        (tree-map-closest-entry #t lo tree-map-closest-val-result)))
+
+(define-cproc tree-map-ceiling
+  (tm::<tree-map> key &optional (key-fb #f) (val-fb #f))
+  (body (<top> <top>)
+        (tree-map-closest-entry #t hi tree-map-closest-kv-result)))
+(define-cproc tree-map-ceiling-key
+  (tm::<tree-map> key &optional (key-fb #f))
+  (body <top>
+        (tree-map-closest-entry #t hi tree-map-closest-key-result)))
+(define-cproc tree-map-ceiling-value
+  (tm::<tree-map> key &optional (val-fb #f))
+  (body <top>
+        (tree-map-closest-entry #t hi tree-map-closest-val-result)))
+
+(define-cproc tree-map-predecessor
+  (tm::<tree-map> key &optional (key-fb #f) (val-fb #f))
+  (body (<top> <top>)
+        (tree-map-closest-entry #f lo tree-map-closest-kv-result)))
+(define-cproc tree-map-predecessor-key
+  (tm::<tree-map> key &optional (key-fb #f))
+  (body <top>
+        (tree-map-closest-entry #f lo tree-map-closest-key-result)))
+(define-cproc tree-map-predecessor-value
+  (tm::<tree-map> key &optional (val-fb #f))
+  (body <top>
+        (tree-map-closest-entry #f lo tree-map-closest-val-result)))
+
+(define-cproc tree-map-successor
+  (tm::<tree-map> key &optional (key-fb #f) (val-fb #f))
+  (body (<top> <top>)
+        (tree-map-closest-entry #f hi tree-map-closest-kv-result)))
+(define-cproc tree-map-successor-key
+  (tm::<tree-map> key &optional (key-fb #f))
+  (body <top>
+        (tree-map-closest-entry #f hi tree-map-closest-key-result)))
+(define-cproc tree-map-successor-value
+  (tm::<tree-map> key &optional (val-fb #f))
+  (body <top>
+        (tree-map-closest-entry #f hi tree-map-closest-val-result)))
 
 ;;
 ;; Modules
