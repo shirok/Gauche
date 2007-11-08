@@ -5301,13 +5301,21 @@ to have @var{value}.
 
 @defun tree-map-delete! tree-map key
 @c EN
-Delets an entry with @var{key} from @var{tree-map} if such an entry
+Deletes an entry with @var{key} from @var{tree-map} if such an entry
 exists, and returns @code{#t}.
 If @var{tree-map} doesn't have such an entry, @code{#f} is returned.
 @c JP
 @var{tree-map}からキー@var{key}を持つエントリを削除します。@var{key}を持つエン
 トリが実際に存在して削除された場合は@code{#t}を、エントリが存在しなかっ
 た場合は@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun tree-map-clear! tree-map
+@c EN
+Removes all entries in @var{tree-map}.
+@c JP
+@var{tree-map}内の全てのエントリを削除します。
 @c COMMON
 @end defun
 
@@ -5422,6 +5430,42 @@ Some examples:
 (tree-map-fold-right tree list* '()) 
    @result{} (3 a 5 c 7 b)
 @end example
+@end defun
+
+@defun tree-map-floor tree-map probe &optional fallback-key fallback-value
+@defunx tree-map-ceiling tree-map probe &optional fallback-key fallback-value
+@defunx tree-map-predecessor tree-map probe &optional fallback-key fallback-value
+@defunx tree-map-successor tree-map probe &optional fallback-key fallback-value
+These procedures search the entry which has the closest key
+to the given @var{probe}.  If such an entry is found, returns
+two values, its key and its value.  Otherwise, returns two values,
+@var{fallback-key} and @var{fallback-value}, both defaulted to @code{#f}.
+
+The criteria of ``closest'' differ slightly among these procedures;
+@code{tree-map-floor} finds the maximum key which is no greater than
+@var{probe}; @code{tree-map-ceiling} finds the minimum key which is 
+no less than @var{probe}; @code{tree-map-predecessor} finds the
+maximum key which is strictly less than @var{probe};
+and @code{tree-map-successor} finds the minimum key which 
+is strictly greater than @var{probe}.
+@end defun
+
+@defun tree-map-floor-key tree-map probe @var{optional} fallback-key
+@defunx tree-map-ceiling-key tree-map probe @var{optional} fallback-key
+@defunx tree-map-predecessor-key tree-map probe @var{optional} fallback-key
+@defunx tree-map-successor-key tree-map probe @var{optional} fallback-key
+Like @code{tree-map-floor} etc., but only returns the key of
+the found entry (or @var{fallback-key} if there's no entry which satisfies
+the criteria).
+@end defun
+
+@defun tree-map-floor-value tree-map probe @var{optional} fallback-value
+@defunx tree-map-ceiling-value tree-map probe @var{optional} fallback-value
+@defunx tree-map-predecessor-value tree-map probe @var{optional} fallback-value
+@defunx tree-map-successor-value tree-map probe @var{optional} fallback-value
+Like @code{tree-map-floor} etc., but only returns the value of
+the found entry (or @var{fallback-value} if there's no entry which satisfies
+the criteria).
 @end defun
 
 @defun tree-map-keys tree-map

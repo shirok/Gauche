@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cise.scm,v 1.6 2007-08-30 02:18:00 shirok Exp $
+;;;  $Id: cise.scm,v 1.7 2007-11-08 02:40:43 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.cise
@@ -520,7 +520,9 @@
   [(_ stuff) (list (x->string stuff))])
 
 (define-cise-expr result
-  [(_ expr) `(set! SCM_RESULT ,expr)])
+  [(_ e) `(set! SCM_RESULT ,e)]
+  [(_ e0 e1) `(begin (set! SCM_RESULT0 ,e0) (set! SCM_RESULT1 ,e1))]
+  )
 
 (define-cise-expr list
   [(_)           '("SCM_NIL")]
