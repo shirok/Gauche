@@ -61,13 +61,19 @@ of the default C compiler.
 
 Now, let's take a look at the 'glue' code.
 
-The header file mqueue_glue.h begins with including both the library
-interface (mqueue.h) and Gauche interface.
-
-    #include "mqueue.h"
+The header file mqueue_glue.h begins with including both the Gauche
+interface and the library inetrface.
 
     #include <gauche.h>
     #include <gauche/extend.h>
+    #include "mqueue.h"
+
+It is important to include <gauche.h> *before any other system
+header files*.  Since gauche.h includes some configuration
+information (from gauche/config.h) which may affect the definitions
+of the standard header files; one example is _FILE_OFFSET_BITS,
+which is 32 on most 32bit Linux by default, but Gauche sets it to 64,
+that causes the system library calls to call 64bit versions.
 
 We need a Gauche class that represents MQueue object in C++ world.
 We're going to use Gauche's foreign pointer feature to implement it.

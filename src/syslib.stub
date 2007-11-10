@@ -30,13 +30,14 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.135 2007-11-08 20:01:54 shirok Exp $
+;;; $Id: syslib.stub,v 1.136 2007-11-10 02:52:04 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
 ;; some non-posix functions which are important for programming on Unix.
 
-" #include <locale.h>
+"
+#include <locale.h>
 #include <math.h>
 #if !defined(GAUCHE_WINDOWS)
 #include <grp.h>

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.102 2007-11-06 12:23:28 shirok Exp $
+ *  $Id: system.c,v 1.103 2007-11-10 02:52:04 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -73,23 +73,21 @@ static HANDLE *win_prepare_handles(int *fds);
 
 /*===============================================================
  * Conversion between off_t and Scheme integer.
- * off_t might be either 32bit or 64bit.  However, as far as I know,
- * on ILP32 machines off_t is kept 32bits for compabitility and
- * a separate off64_t is defined for 64bit offset access.
- * To aim completeness I have to support the case that
- * sizeof(off_t) > sizeof(long).  For the time being, I just signal
- * an error outside the long value.
+ * off_t can be either 32bit or 64bit.  
  */
 off_t Scm_IntegerToOffset(ScmObj i)
 {
     if (SCM_INTP(i)) {
         return (off_t)SCM_INT_VALUE(i);
     } else if (SCM_BIGNUMP(i)) {
-        if (SCM_BIGNUM_SIZE(i) > 1
-            || SCM_BIGNUM(i)->values[0] > LONG_MAX) {
-            Scm_Error("offset value too large: %S", i);
-        }
-        return (off_t)Scm_GetInteger(i);
+#if SIZEOF_OFF_T == SIZEOF_LONG
+        return (off_t)Scm_GetIntegerClamp(i, SCM_CLAMP_ERROR, NULL);
+#elif SIZEOF_OFF_T == 8 && !SCM_EMULATE_INT64
+        return (off_t)Scm_GetInteger64Clamp(i, SCM_CLAMP_ERROR, NULL);
+#else
+        /* I don't think there's such an architecture. */
+# error "off_t size on this platform is not suported."
+#endif
     }
     Scm_Error("bad value as offset: %S", i);
     return (off_t)-1;       /* dummy */
@@ -99,13 +97,10 @@ ScmObj Scm_OffsetToInteger(off_t off)
 {
 #if SIZEOF_OFF_T == SIZEOF_LONG
     return Scm_MakeInteger(off);
+#elif SIZEOF_OFF_T == 8 && !SCM_EMULATE_INT64
+    return Scm_MakeInteger64((ScmInt64)off);
 #else
-    if (off <= LONG_MAX && off >= LONG_MIN) {
-        return Scm_MakeInteger(off);
-    } else {
-        Scm_Error("offset value too large to support");
-        return Scm_MakeInteger(-1); /* dummy */
-    }
+# error "off_t size on this platform is not suported."
 #endif
 }
 
@@ -700,6 +695,12 @@ static ScmObj stat_perm_get(ScmSysStat *stat)
     return Scm_MakeIntegerFromUI(stat->statrec.st_mode & 0777);
 }
 
+static ScmObj stat_size_get(ScmSysStat *stat)
+{
+    return Scm_OffsetToInteger(stat->statrec.st_size);
+}
+
+
 #define STAT_GETTER_UI(name) \
   static ScmObj SCM_CPP_CAT3(stat_, name, _get)(ScmSysStat *s) \
   { return Scm_MakeIntegerFromUI((u_long)s->statrec.SCM_CPP_CAT(st_, name)); }
@@ -714,7 +715,6 @@ STAT_GETTER_UI(rdev)
 STAT_GETTER_UI(nlink)
 STAT_GETTER_UI(uid)
 STAT_GETTER_UI(gid)
-STAT_GETTER_UI(size) /*TODO: check portability of off_t (maybe 64bits)*/
 STAT_GETTER_TIME(atime)
 STAT_GETTER_TIME(mtime)
 STAT_GETTER_TIME(ctime)

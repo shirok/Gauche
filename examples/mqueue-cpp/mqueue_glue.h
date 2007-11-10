@@ -9,10 +9,10 @@
 //   file is the stuff you're supposed to write.
 //
 
-#include "mqueue.h"
-
 #include <gauche.h>
 #include <gauche/extend.h>
+
+#include "mqueue.h"
 
 SCM_DECL_BEGIN   // start "C" linkage
 

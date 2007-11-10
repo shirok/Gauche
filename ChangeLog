@@ -1,3 +1,17 @@
+2007-11-09  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac, src/gauche/config.h.in: Enabled large file support
+	  (AC_SYS_LARGEFILE).  On Linux this defines _FILE_OFFSET_BITS as 64.
+	  COMPATIBILITY NOTE: The definition may affect the behavior of the
+	  standard libraries.  It is crucial to include <gauche.h> *before*
+	  any other standard headers.
+	* src/system.c (Scm_IntegerToOffset, Scm_OffsetToInteger, ScmSysStat):
+	  properly handles 64bit offsets.
+	* ext/fcntl/fcntl.c: properly handles 64bit offsets.
+
+	* examples/mqueue-cpp/README: added explanation to include
+	  gauche.h first.
+
 2007-11-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/regexp.scm (regexp-parse-subpattern): allow named

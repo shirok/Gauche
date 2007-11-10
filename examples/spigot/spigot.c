@@ -4,12 +4,12 @@
  *  Written by Shiro Kawai (shiro@acm.org)
  *  I put this program in public domain.  Use it as you like.
  *
- *  $Id: spigot.c,v 1.3 2003-06-29 08:21:07 shirok Exp $
+ *  $Id: spigot.c,v 1.4 2007-11-10 02:52:04 shirok Exp $
  */
 
-#include <math.h>
 #include <gauche.h>
 #include <gauche/extend.h>
+#include <math.h>
 #include "spigot.h"
 
 /* The spigot algorithm for pi:

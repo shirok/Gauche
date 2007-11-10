@@ -30,14 +30,14 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: fcntl.c,v 1.22 2007-09-15 12:30:47 shirok Exp $
+ *  $Id: fcntl.c,v 1.23 2007-11-10 02:52:04 shirok Exp $
  */
 
 #define _GNU_SOURCE  /* for Linux, this enables additional features */
 
+#include <gauche.h>
 #include <string.h>
 #include <errno.h>
-#include <gauche.h>
 #include <gauche/class.h>
 #include <gauche/extend.h>
 
@@ -60,20 +60,20 @@ static ScmObj flock_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(f);
 }
 
-#define FLOCK_GET_N_SET(name, type)                                       \
+#define FLOCK_GET_N_SET(name, type, make, get)                            \
   static ScmObj SCM_CPP_CAT3(flock_, name, _get)(ScmSysFlock* t)          \
-  { return Scm_MakeInteger(t->lock.name); }                               \
+  { return make(t->lock.name); }                                          \
   static void SCM_CPP_CAT3(flock_, name, _set)(ScmSysFlock* t, ScmObj v)  \
   {                                                                       \
       if (!SCM_INTEGERP(v)) Scm_Error("integer required, but got %S", v); \
-      t->lock.name = (type)Scm_GetInteger(v);                             \
+      t->lock.name = (type)get(v);                                        \
   }
 
-FLOCK_GET_N_SET(l_type, short)
-FLOCK_GET_N_SET(l_whence, short)
-FLOCK_GET_N_SET(l_start, off_t)
-FLOCK_GET_N_SET(l_len, off_t)
-FLOCK_GET_N_SET(l_pid, pid_t)
+FLOCK_GET_N_SET(l_type, short, Scm_MakeInteger, Scm_GetInteger)
+FLOCK_GET_N_SET(l_whence, short, Scm_MakeInteger, Scm_GetInteger)
+FLOCK_GET_N_SET(l_start, off_t, Scm_OffsetToInteger, Scm_IntegerToOffset)
+FLOCK_GET_N_SET(l_len, off_t, Scm_OffsetToInteger, Scm_IntegerToOffset)
+FLOCK_GET_N_SET(l_pid, pid_t, Scm_MakeInteger, Scm_GetInteger)
 
 static ScmClassStaticSlotSpec flock_slots[] = {
     SCM_CLASS_SLOT_SPEC("type",   flock_l_type_get, flock_l_type_set),

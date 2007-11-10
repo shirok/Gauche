@@ -329,6 +329,20 @@
    but the lower 32bit word comes after the upper 32bit word. ) */
 #undef DOUBLE_ARMENDIAN
 
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define as `__inline' if that's what the C compiler calls it, or to nothing
+   if it is not supported. */
+#undef inline
+
+/*=========================================================================
+ * NOTE: The definition of the following preprocessor variables may affect
+ * the behavior of the systems libraries.  If you link your code to libgauche,
+ * generally your code needs to be configured as the same flags as defined
+ * here.
+ */
+
 /* Define POSIX C version */
 #undef _POSIX_C_SOURCE
 
@@ -338,9 +352,14 @@
 /* Define to use reentrant libc */
 #undef _REENTRANT
 
-/* Define to empty if `const' does not conform to ANSI C. */
-#undef const
+/* Define the number of bits in off_t */
+#undef _FILE_OFFSET_BITS
 
-/* Define as `__inline' if that's what the C compiler calls it, or to nothing
-   if it is not supported. */
-#undef inline
+/* Define if this flag is needed for large file support */
+#undef _LARGE_FILES
+
+/*
+ * Local variables:
+ * mode: C
+ * end:
+ */
