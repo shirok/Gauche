@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.136 2007-11-10 02:52:04 shirok Exp $
+;;; $Id: syslib.stub,v 1.137 2007-11-10 03:13:31 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -515,28 +515,32 @@
 (define-type <sys-stat> "ScmSysStat*")
 
 (define-cproc sys-stat (path::<const-cstring>)
-  "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
-  int r;
-  SCM_SYSCALL(r, stat(path, &s->statrec));
-  if (r < 0) Scm_SysError(\"stat failed for %s\", path);
-  SCM_RETURN(SCM_OBJ(s));")
+  (body <sys-stat>
+        (let* ((s :: ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat)))
+               (r :: int))
+          (SCM_SYSCALL r (stat path (& (-> s statrec))))
+          (when (< r 0) (Scm_SysError "stat failed for %s" path))
+          (result s))))
 
 (when "!defined(GAUCHE_WINDOWS)"
   (define-cproc sys-lstat (path::<const-cstring>)
-    "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
-  int r;
-  SCM_SYSCALL(r, lstat(path, &s->statrec));
-  if (r < 0) Scm_SysError(\"lstat failed for %s\", path);
-  SCM_RETURN(SCM_OBJ(s));")
-  )
+    (body <sys-stat>
+          (let* ((s :: ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat)))
+                 (r :: int))
+            (SCM_SYSCALL r (lstat path (& (-> s statrec))))
+            (when (< r 0) (Scm_SysError "lstat failed for %s" path))
+            (result s)))))
 
 (define-cproc sys-fstat (port-or-fd)
-  "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
-  int fd = Scm_GetPortFd(port_or_fd, FALSE), r;
-  if (fd < 0) SCM_RETURN(SCM_FALSE);
-  SCM_SYSCALL(r, fstat(fd, &s->statrec));
-  if (r < 0) Scm_SysError(\"fstat failed for %d\", fd);
-  SCM_RETURN(SCM_OBJ(s));")
+  (body <top>
+        (let* ((s  :: ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat)))
+               (fd :: int (Scm_GetPortFd port-or-fd FALSE))
+               (r  :: int))
+          (cond
+           [(< fd 0) (result SCM_FALSE)]
+           [else (SCM_SYSCALL r (fstat fd (& (-> s statrec))))
+                 (when (< r 0) (Scm_SysError "fstat failed for %d" fd))
+                 (result (SCM_OBJ s))]))))
 
 ;;---------------------------------------------------------------------
 ;; sys/wait.h
