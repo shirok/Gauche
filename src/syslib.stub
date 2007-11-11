@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.137 2007-11-10 03:13:31 shirok Exp $
+;;; $Id: syslib.stub,v 1.138 2007-11-11 02:43:54 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -550,10 +550,11 @@
   (body "SCM_RESULT = Scm_SysWait(SCM_MAKE_INT(-1), 0);"))
 
 (define-cproc sys-waitpid (process &keyword (nohang #f) (untraced #f))
-  (body "int options = 0;"
-        "if (!SCM_FALSEP(nohang))   options |= WNOHANG;"
-        "if (!SCM_FALSEP(untraced)) options |= WUNTRACED;"
-        "SCM_RESULT = Scm_SysWait(process, options);"))
+  (body <top>
+        (let* ((options :: int 0))
+          (unless (SCM_FALSEP nohang)   (logior= options WNOHANG))
+          (unless (SCM_FALSEP untraced) (logior= options WUNTRACED))
+          (result (Scm_SysWait process options)))))
 
 ;; status interpretation
 (define-cproc sys-wait-exited? (status::<int>)
@@ -638,30 +639,34 @@
 
 (define-cproc sys-access (pathname::<const-cstring> amode::<int>)
   (body <boolean>
-        "int r;"
-        "if (Scm_IsSugid()) {
-           Scm_Error(\"cannot use sys-access in suid/sgid program.\");"
-        "}"
-        "SCM_SYSCALL(r, access(pathname, amode));"
-        "SCM_RESULT = (r == 0);"))
+        (let* ((r :: int))
+          (when (Scm_IsSugid)
+            (Scm_Error "cannot use sys-access in suid/sgid program."))
+          (SCM_SYSCALL r (access pathname amode))
+          (result (== r 0)))))
 
 (define-cproc sys-chdir (pathname::<const-cstring>)
-  (body "int r; SCM_SYSCALL(r, chdir(pathname));"
-        "if (r < 0) Scm_SysError(\"chdir failed\");"
-        "SCM_RESULT = SCM_TRUE;"))
+  (body <top>
+        (let* ((r :: int))
+          (SCM_SYSCALL r (chdir pathname))
+          (when (< r 0) (Scm_SysError "chdir failed"))
+          (result SCM_TRUE))))
 
 (define-cproc sys-chmod (pathname::<const-cstring> mode::<int>)
-  (body "int r; SCM_SYSCALL(r, chmod(pathname, mode));"
-        "if (r < 0) Scm_SysError(\"chmod failed\");"
-        "SCM_RESULT = SCM_TRUE;"))
+  (body <top>
+        (let* ((r :: int))
+          (SCM_SYSCALL r (chmod pathname mode))
+          (when (< r 0) (Scm_SysError "chmod failed"))
+          (result SCM_TRUE))))
 
-(if "!defined(GAUCHE_WINDOWS)"
+(when "!defined(GAUCHE_WINDOWS)"
   (define-cproc sys-fchmod (port-or-fd mode::<int>)
-    (body "int fd = Scm_GetPortFd(port_or_fd, TRUE), r;"
-          "SCM_SYSCALL(r, fchmod(fd, mode));"
-          "if (r < 0) Scm_SysError(\"fchmod failed\");"
-          "SCM_RESULT = SCM_TRUE;"))
-) ;; !defined(GAUCHE_WINDOWS)
+    (body <top>
+          (let* ((r :: int) (fd :: int (Scm_GetPortFd port-or-fd TRUE)))
+            (SCM_SYSCALL r (fchmod fd mode))
+            (when (< r 0) (Scm_SysError "fchmod failed"))
+            (result SCM_TRUE))))
+  ) ;; !defined(GAUCHE_WINDOWS)
 
 ;; NB: we force GC just befor fork().  It appeares necessary on some
 ;; platform to synchronize page dirty bit information, so that incremental

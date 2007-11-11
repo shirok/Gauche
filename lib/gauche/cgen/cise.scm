@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cise.scm,v 1.7 2007-11-08 02:40:43 shirok Exp $
+;;;  $Id: cise.scm,v 1.8 2007-11-11 02:43:53 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.cise
@@ -506,7 +506,7 @@
         [()  (wrap-expr (intersperse "," (reverse r)) env)]
         [(var val . more)
          (loop (cddr args)
-               `((,(render-rec var eenv)"=",(render-rec val eenv)) ,@r))]
+               `((,(render-rec var eenv)"=(",(render-rec val eenv)")") ,@r))]
         [_   (error "uneven args for set!:" form)]))))
 
 ;;------------------------------------------------------------
