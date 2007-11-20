@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.95 2007-09-07 09:51:13 shirok Exp $
+ *  $Id: read.c,v 1.96 2007-11-20 12:46:35 shirok Exp $
  */
 
 #include <stdio.h>
@@ -946,7 +946,7 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim)
 /* gauche extension :  #/regexp/ */
 static ScmObj read_regexp(ScmPort *port)
 {
-    ScmChar c = 0;
+    ScmChar c = 0, c1 = 0;
     ScmDString ds;
     Scm_DStringInit(&ds);
     for (;;) {
@@ -955,12 +955,14 @@ static ScmObj read_regexp(ScmPort *port)
             Scm_ReadError(port, "unterminated literal regexp");
         }
         if (c == '\\') {
-            SCM_DSTRING_PUTC(&ds, c);
-            c = Scm_GetcUnsafe(port);
-            if (c == SCM_CHAR_INVALID) {
+            /* NB: We "eat" a backslash before '/', since it is only dealt
+               with the reader and nothing to do with regexp parser itself. */
+            c1 = Scm_GetcUnsafe(port);
+            if (c1 == SCM_CHAR_INVALID) {
                 Scm_ReadError(port, "unterminated literal regexp");
             }
-            SCM_DSTRING_PUTC(&ds, c);
+            if (c1 != '/') SCM_DSTRING_PUTC(&ds, c);
+            SCM_DSTRING_PUTC(&ds, c1);
         } else if (c == '/') {
             /* Read one more char to see if we have a flag */
             int flags = 0;

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: objlib.scm,v 1.8 2007-10-27 10:07:33 shirok Exp $
+;;;  $Id: objlib.scm,v 1.9 2007-11-20 12:46:35 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -609,6 +609,19 @@
 ;; A trick to let a condition type behave its own predicate
 (define-method object-apply ((type <condition-meta>) obj)
   (condition-has-type? obj type))
+
+;; Regexp printer.  It doesn't need speed, and it's easier to write in Scheme.
+;; This is defined here since we can only use it after define-method support.
+;; TODO: eventually we need a converter from internal AST to string regexp
+;; so that we can print the regexp which is created procedurally (via
+;; regexp-compile), hence we have complete read/write invariance.
+(define-method write-object ((obj <regexp>) out)
+  (cond [(regexp->string obj)
+         => (lambda (s)
+              (format out "#/~a/~a"
+                      (regexp-replace-all #/\// s "\\\\/")
+                      (if (regexp-case-fold? obj) "i" "")))]
+        [else (format out "#<regexp>")]))
 
 ;;;
 ;;; Make exported symbol visible from outside

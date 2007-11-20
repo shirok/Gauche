@@ -9,7 +9,7 @@
 ;;  gosh -l./preload -I./src -I./lib ....
 ;;
 ;;
-;; $Id: preload.scm,v 1.3 2007-11-07 04:43:01 shirok Exp $
+;; $Id: preload.scm,v 1.4 2007-11-20 12:46:35 shirok Exp $
 ;;
 
 (use gauche.collection)
@@ -17,6 +17,7 @@
 (use gauche.hook)
 (use gauche.parameter)
 (use gauche.uvector)
+(use gauche.regexp)  ; need to compile 0.8.13_pre with 0.8.12
 (use srfi-1)
 (use srfi-13)
 (use file.util)

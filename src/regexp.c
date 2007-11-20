@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.70 2007-08-26 08:16:04 shirok Exp $
+ *  $Id: regexp.c,v 1.71 2007-11-20 12:46:35 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -211,11 +211,11 @@ enum {
  * case-folded.
  */
 
-static void regexp_print(ScmObj obj, ScmPort *port, ScmWriteContext *c);
+/* NB: regexp printer is defined in objlib.scm */
 static int  regexp_compare(ScmObj x, ScmObj y, int equalp);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_RegexpClass,
-                         regexp_print, regexp_compare, NULL, NULL,
+                         NULL, regexp_compare, NULL, NULL,
                          SCM_CLASS_DEFAULT_CPL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegMatchClass, NULL);
 
@@ -233,16 +233,6 @@ static ScmRegexp *make_regexp(void)
     rx->flags = 0;
     rx->pattern = NULL;
     return rx;
-}
-
-static void regexp_print(ScmObj rx, ScmPort *out, ScmWriteContext *ctx)
-{
-    if (SCM_REGEXP(rx)->pattern) {
-        Scm_Printf(out, "#/%A/", SCM_REGEXP(rx)->pattern);
-    } else {
-        /* fail safe */
-        Scm_Printf(out, "#<regexp %p>", rx);
-    }
 }
 
 static int regexp_compare(ScmObj x, ScmObj y, int equalp)

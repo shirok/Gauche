@@ -1,5 +1,5 @@
 ;;;
-;;; regexp.scm - regexp-related utilities
+;;; regexp.scm - regexp-related macros
 ;;;  
 ;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
@@ -30,14 +30,11 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: regexp.scm,v 1.16 2007-11-08 21:03:00 shirok Exp $
+;;;  $Id: regexp.scm,v 1.17 2007-11-20 12:46:36 shirok Exp $
 ;;;
 
 (define-module gauche.regexp
-  (export rxmatch-let rxmatch-if rxmatch-cond rxmatch-case
-          regexp-replace regexp-replace-all
-          regexp-replace* regexp-replace-all*
-          regexp-quote))
+  (export rxmatch-let rxmatch-if rxmatch-cond rxmatch-case))
 (select-module gauche.regexp)
 
 (define-syntax rxmatch-bind*
@@ -108,120 +105,5 @@
             (strp (string? temp)))
        (rxmatch-case #t temp strp ?clause ...)))
     ))
-
-;;---------------------------------------------------------
-;; regexp replace
-
-;; aux routine for regexp-replace[-all]
-;; "abc\\1de\\3" => '("abc" 1 "de" 3)
-(define (regexp-parse-subpattern sub)
-  (cond
-   ((string? sub)
-    (let loop ((sub sub) (r '()))
-      (cond ((rxmatch #/\\(?:(\d+)|k<([^>]+)>|(.))/ sub)
-             => (lambda (m)
-                  (define (loop2 elem)
-                    (loop (rxmatch-after m)
-                          (list* elem (rxmatch-before m) r)))
-                  (cond ((rxmatch-substring m 1)
-                         => (lambda (d) (loop2 (string->number d))))
-                        ((rxmatch-substring m 2)
-                         => (lambda (s) (loop2 (string->symbol s))))
-                        (else
-                         (loop2 (rxmatch-substring m 3))))))
-            (else (reverse (cons sub r))))))
-   ((procedure? sub) sub)
-   (else (error "string or procedure required, but got" sub))))
-
-;; internal loop
-(define (regexp-replace-rec match subpat out rec)
-  (display (rxmatch-before match) out)
-  (if (procedure? subpat)
-    (display (subpat match) out)
-    (for-each (lambda (pat)
-                (display (if (or (number? pat) (symbol? pat))
-                           (rxmatch-substring match pat)
-                           pat)
-                         out))
-              subpat))
-  (rec (rxmatch-after match)))
-
-(define (regexp-replace rx string sub)
-  (let ((subpat (regexp-parse-subpattern sub))
-        (match  (rxmatch rx string)))
-    (if match
-      (call-with-output-string
-        (lambda (out)
-          (regexp-replace-rec match subpat out
-                              (lambda (str) (display str out)))))
-      string)))
-
-;; The inner call is awkward to avoid creation of output string
-;; when no match at all.
-(define (regexp-replace-all rx string sub)
-  (let ((subpat (regexp-parse-subpattern sub))
-        (match  (rxmatch rx string)))
-    (if match
-      (call-with-output-string
-        (lambda (out)
-          (define (loop str)
-            (unless (equal? str "")
-              (cond ((rxmatch rx str)
-                     => (lambda (match)
-                          (when (= (rxmatch-start match) (rxmatch-end match))
-                            (error "regexp-replace-all: matching zero-length string causes infinite loop:" rx))
-                          (regexp-replace-rec match subpat out loop)))
-                    (else (display str out)))))
-          (regexp-replace-rec match subpat out loop)))
-      string)))
-
-;; Multiple replacement 
-(define (regexp-replace-driver name func-1)
-  (lambda (string rx sub . more)
-    (cond ((null? more)
-           (func-1 rx string sub))
-          (else
-           (unless (zero? (modulo (length more) 2))
-             (errorf "~a: regexp and subsitution don't pair up" name))
-           (let loop ((s (func-1 rx string sub))
-                      (args more))
-             (if (null? args)
-               s
-               (loop (func-1 (car args) s (cadr args))
-                     (cddr args))))))))
-
-(define regexp-replace*
-  (regexp-replace-driver 'regexp-replace* regexp-replace))
-(define regexp-replace-all*
-  (regexp-replace-driver 'regexp-replace-all* regexp-replace-all))
-
-;; Contributed from Alex Shinn; modified a bit by shiro
-(define (regexp-quote str)
-  (with-string-io str
-    (lambda ()
-      (let loop ((c (read-char)))
-        (unless (eof-object? c)
-          (when (char-set-contains? #[\\|\[\](){}.*+?^$] c) (write-char #\\))
-          (write-char c)
-          (loop (read-char)))))))
-
-;;; scsh compatibility
-
-;(define regexp-search rxmatch)
-;(define match:start rxmatch-start)
-;(define match:end   rxmatch-end)
-;(define match:substring rxmatch-substring)
-;
-;(define-syntax let-match
-;  (syntax-rules ()
-;    ((let-match . ?body) (rxmatch-let . ?body))))
-;
-;(define-syntax if-match
-;  (syntax-rules ()
-;    ((if-match . ?body) (rxmatch-if . ?body))))
-;
-;(define-syntax match-cond
-;  (syntax-rules ()
-;    ((match-cond . ?body) (rxmatch-cond . ?body))))
 
 (provide "gauche/regexp")

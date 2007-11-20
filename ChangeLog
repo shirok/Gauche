@@ -1,3 +1,21 @@
+2007-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/regexp.scm, src/scmlib.scm, src/autoloads.scm:
+	  Moved regexp-replace, regexp-replace-all, regexp-replace*,
+	  regexp-replace-all* and regexp-quote from the autoloaded regexp.scm
+	  to the compiled scmlib.scm.
+	* src/regexp.c, src/objlib.scm: Implemented regexp printer in
+	  Scheme write-object instead of C's class print function.  Properly
+	  escapes slashes in the regexp and adds 'i' suffix for case-folded
+	  regexp, so that read/write invariance is sufficed for trivial
+	  cases.  (See the comment before write-object (<regexp> <top>) for
+	  the work to do to realize full read/write invariance).
+	* src/read.c (read_regexp): let the reader consume a backslash before
+	  a slash, for it has nothing to do with regexp parser (and it will
+	  be consistent from the regexp created via string->regexp).
+	* src/preload.scm: use gauche.regexp explicitly, for it is needed
+	  to compile HEAD with 0.8.12.  Can be removed after 0.8.13 release.
+
 2007-11-09  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, src/gauche/config.h.in: Enabled large file support
