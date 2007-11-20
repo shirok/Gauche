@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.25 2007-11-08 21:03:02 shirok Exp $
+;; $Id: regexp.scm,v 1.26 2007-11-20 22:15:10 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -65,6 +65,25 @@
 (test-regexp-parse "(?<name>)\\k<name>" '(0 #f (1 name) (backref . 1)))
 (test-regexp-parse "(?<name>)(?<name>)\\k<name>"
                    '(0 #f (1 name) (2 name) (alt (backref . 2) (backref . 1))))
+
+;;-------------------------------------------------------------------------
+(test-section "regexp-writer")
+
+(define-syntax test-regexp-writer
+  (syntax-rules ()
+    ((_ exp pat)
+     (test* exp exp (write-to-string (string->regexp pat))))))
+
+(test-regexp-writer "#/abc/" "abc")
+(test-regexp-writer "#/a[\\d]/" "a[\\d]")
+(test-regexp-writer "#/a[a-z]/" "a[a-z]")
+(test-regexp-writer "#/a\\/b/"  "a/b")
+(test-regexp-writer "#/\\\\/"  "\\\\")
+(test-regexp-writer "#/ /"  "\x20")
+(test-regexp-writer "#/\\x20/"  "\\x20")
+
+(test* "#/abc/i" "#/abc/i"
+       (write-to-string (string->regexp "abc" :case-fold #t)))
 
 ;;-------------------------------------------------------------------------
 (test-section "compile")
