@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: objlib.scm,v 1.9 2007-11-20 12:46:35 shirok Exp $
+;;;  $Id: objlib.scm,v 1.10 2007-11-20 19:40:29 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -619,7 +619,10 @@
   (cond [(regexp->string obj)
          => (lambda (s)
               (format out "#/~a/~a"
-                      (regexp-replace-all #/\// s "\\\\/")
+                      (regexp-replace-all*
+                       s #/\// "\\\\/" #/[\x00-\x1f\x7f]/
+                       (lambda (m)
+                         (format "\\x~2,'0x" (char->integer (string-ref (m 0) 0)))))
                       (if (regexp-case-fold? obj) "i" "")))]
         [else (format out "#<regexp>")]))
 
