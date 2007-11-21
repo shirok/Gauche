@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fileutil.scm,v 1.4 2007-09-27 22:32:25 shirok Exp $
+;;;  $Id: fileutil.scm,v 1.5 2007-11-21 04:31:51 shirok Exp $
 ;;;
 
 (define-module gauche.fileutil
@@ -117,13 +117,14 @@
 
 (define (glob-fold patterns proc seed . opts)
   (if (list? patterns)
-    (fold (lambda (pat seed) (glob-fold-1 pat proc seed opts))
-          seed patterns)
+    (fold (cut glob-fold-1 <> proc <> opts) seed patterns)
     (glob-fold-1 patterns proc seed opts)))
 
 (define (glob-fold-1 pattern proc seed opts)
   (let-keywords opts ((separator #[/])
-                      (folder glob-fs-folder))
+                      (folder glob-fs-folder)
+                      (root #t)
+                      (current #f))
     (define (rec node matcher seed)
       (cond [(null? matcher) (proc seed)]
             [(null? (cdr matcher))
@@ -131,18 +132,18 @@
             [else
              (folder (lambda (node seed) (rec node (cdr matcher) seed))
                      seed node (car matcher) #t)]))
-    (let1 p (glob-prepare-pattern pattern separator)
+    (let1 p (glob-prepare-pattern pattern separator root current)
       (rec (car p) (cdr p) seed))))
 
-(define (glob-prepare-pattern pattern separator)
+(define (glob-prepare-pattern pattern separator root current)
   (define (f comp)
     (cond [(equal? comp "") 'dir?]    ; pattern ends with '/'
           ;((equal? comp "**") '**)
           [else (glob-component->regexp comp)]))
   (let1 comps (string-split pattern separator)
     (if (equal? (car comps) "")
-      (cons #t (map f (cdr comps)))
-      (cons #f (map f comps)))))
+      (cons root (map f (cdr comps)))
+      (cons current (map f comps)))))
 
 (define (glob-component->regexp pattern) ; "**" is already excluded
   (regexp-compile

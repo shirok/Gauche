@@ -1,5 +1,8 @@
 2007-11-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/fileutil.scm (glob-fold): Added :root and :current
+	  keyword arguments for the flexibility.
+
 	* lib/gauche/regexp.scm, src/scmlib.scm, src/autoloads.scm:
 	  Moved regexp-replace, regexp-replace-all, regexp-replace*,
 	  regexp-replace-all* and regexp-quote from the autoloaded regexp.scm
