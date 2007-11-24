@@ -11318,6 +11318,11 @@ the last @var{proc} becomes the return value of @code{library-fold}.
 @c COMMON
 
 @c EN
+
+@c JP
+@c COMMON
+
+@c EN
 If @var{pattern} is a symbol and the keyword argument @var{strict?}
 is @code{#t} (which is the default), this procedure calls
 @code{library-has-module?} on the files whose name seems to
@@ -11861,9 +11866,9 @@ more functionalities.  So we renamed it @code{glob}.
 The old name @code{sys-glob} is kept for compatibility, but new
 programs should use @code{glob}.
 @c JP
-この機能は、プラットフォームが提供する@code{glob}関数をラップしますの
-で、@code{sys-glob}という名前でした。しかし、プラットフォーム間の非互
-換性を解消し、機能追加するために、Gauche 0.8.12以降、別のシステムコー
+この機能は、かつてはプラットフォームが提供する@code{glob}関数をラップする
+もので、@code{sys-glob}という名前でした。しかし、プラットフォーム間の非互
+換性を解消し機能の追加を容易にするために、Gauche 0.8.12以降、システムコー
 ルの上にSchemeで再実装されています。そのため、@code{glob}と改名してあ
 ります。古い方の名前@code{sys-glob}は互換性のために残してありますが、
 新たにプログラムを書くときは@code{glob}を使ってください。
@@ -11875,10 +11880,10 @@ a list of glob patterns.  If a list is given, pathnames that matches
 any one of the pattern are returned.  If you're a unix user,
 you already know how it works.
 @c JP
-引数@var{pattern}は単一の@emph{グロブパターン}とにする場合もあれば、グ
-ロブパターンのリストにする場合もあります。リストが渡されたときにはどれ
-か1つのパターンでもマッチするなら、そのパス名がすべて返されます。
-Unixのユーザなら、その動きは同じだと分るでしょう。
+引数@var{pattern}は単一の@emph{グロブパターン}もしくは、グ
+ロブパターンのリストです。リストが渡されたときには、
+最低1つのパターンにマッチするパス名がすべて返されます。
+Unixのユーザならglobの動作は馴染み深いものでしょう。
 @c COMMON
 
 @example
@@ -11893,30 +11898,27 @@ gosh> (glob '("*.scm" "src/*.c"))
 @c EN
 Unlike shell's glob, if there's no matching pathnames, @code{()} is returned.
 @c JP
-シェルのグロブとはちがって、マッチするパス名がないときは、@code{()}が
-返ります。
+シェルのグロブとはちがって、マッチするパス名がないときは、@code{()}が返ります。
 @c COMMON
 
 @c EN
 In fact, globbing is a very useful tool to search hierarchical
 data structure in general, not limited to the filesystems.
 So the @code{glob} function is implemented separately from
-the filesystem.  By giving @var{separator} and @var{lister}
-arguments you can glob from any kind of tree data structure.
+the filesystem.  Using keyword arguments,
+you can glob from any kind of tree data structure.
 It is just that their default values are set to look at
 the filesystems.
 @c JP
-グロブは一般的に階層構造をしたデータ構造を検索するのに非常に便利なツー
-ルです。これはなにもファイルシステムに限ったことではありません。したがっ
-て、@code{glob}関数はファイルシステムからは切り離して実装されています。
-引数@var{separator}および引数@var{lister}を渡すことで、どのようなツリー
-状のデータ構造からでもグロブできます。デフォルト値がファイルシステム用
-に設定されているにすぎません。
+グロブはファイルシステムに限らず階層的なデータ構造を検索するのに非常に便利なツールです。
+したがって、@code{glob}関数はファイルシステムからは切り離して実装されています。
+キーワード引数を使うことで、どのようなツリー状のデータ構造からでもグロブできます。
+デフォルト値がファイルシステム用に設定されているにすぎません。
 @c COMMON
 
 @c EN
 The @var{separator} argument should be a char-set, and used
-to split the @var{pattern} into components.  It's default is
+to split the @var{pattern} into components.  Its default is
 @code{#[/]}.  It is not used to the actual pathnames to match.
 @c JP
 引数@var{separator}は文字の集合を与えます。これを使って@var{pattern}を
@@ -11954,35 +11956,36 @@ folder手続きが返す値は@var{regexp}とマッチするノードのリストになります。
 @c COMMON
 
 @c EN
-The representation of a node is up to the folder.  It can be a
+The representation of a node is up to the implementation of
+@var{folder}.  It can be a
 pathname, or some sort of objects, or anything.  The @code{glob}
 procedure does not care what it is; the @code{glob} procedure
 merely passes the node to subsequent call to @code{folder} as
 @var{parent} argument, or returns a list of nodes as the result.
 @c JP
-ノードの表現がどうなるかはfolderしだいです。パス名であったり、オブジェ
-クトであったり、いろいろです。@code{glob}手続きはノードの表現について
-は感知しません。@code{glob}手続きがやることはノードを次に呼ぶ
-@code{folder}に@var{parent}引数として渡して、その結果のノードリストを
-返すだけです。
+ノードの表現がどうなるかは@var{folder}の実装によります。
+パス名であったり、オブジェクトであったりするかもしれません。
+@code{glob}手続きはノードの表現については感知しません。
+@code{glob}手続きがやることはノードを次に呼ぶ
+@code{folder}に@var{parent}引数として渡して、
+その結果のノードリストを返すだけです。
 @c COMMON
 
 @c EN
-The @var{parent} argument is either a boolean value or a node.
-If it is a node, @code{folder} looks for its children.  
-If it is @code{#t}, it means a @emph{root node}---e.g. if the
-folder is looking at the filesystem, the root node is the root
-directory.  If it is @code{#f}, it means a @emph{current node}---
-e.g. the current directory if the folder is for the filesystem.
-What exactly the root and current node means is up to the folder
-implementation.
+The @var{parent} argument is basically a node, and
+@var{folder} traverses its children to find the match.
+The exception is the initial call of @var{folder}---
+at the beginning @code{glob} knows nothing about each node.
+When @code{glob} needs to match an absolute path, it
+passes @code{#t}, and when @code{glob} needs to match a relative path,
+it passes @code{#f}, as the initial @var{parent} value.
 @c JP
-@var{parent}引数はブール値またはノードです。これがノードの場合は、
-@code{folder}はその子ノードを探します。@code{#t}なら@emph{ルートノード}、
-すなわち、folderがファイルシステムを見ている時は、ルートノードはルート
-ディレクトリということになります。@code{#f}なら@emph{現在のノード}、す
-なわち、ファイルシステムを見ているときは現在のディレクトリということで
-す。ルートノードや現在のノードの意味はfolderの実装しだいです。
+@var{parent}引数は基本的にはノードで、@var{folder}はその子ノードを
+対象にマッチするものを探索します。
+例外は最初に@var{folder}が呼ばれる時です。その時点では@code{glob}は
+ノードについて何も知らないので、
+絶対パスでマッチをかける場合は@code{#t}を、
+相対パスでマッチをかける場合は@code{#f}を最初の@var{parent}の値として渡します。
 @c COMMON
 
 @c EN
@@ -11993,7 +11996,8 @@ be a symbol @code{dir}; if that's the case, the folder should
 return @var{node} itself, but it may indicate @var{node}
 @emph{as a directory}; e.g. if @var{node} is represented as a pathname,
 the folder returns a pathname with trailing directory separator.
-If @var{node} is a boolean value and @var{regexp} is @code{dir},
+As special cases,
+if @var{node} is a boolean value and @var{regexp} is @code{dir},
 the folder should return the node representing root node or
 current node, respectively; e.g. if @var{node} is represented
 as a pathname, the folder may return @code{"/"} and @code{"./"}
@@ -12004,7 +12008,8 @@ for those cases.
 場合として、シンボル@code{dir}にすることができます。この場合は、folder
 は@var{node}そのものを返し、@var{node}は@emph{ディレクトリ}と見なされ
 ます。すなわち、@var{node}がパス名を表わす場合には、folderはディレクト
-リ区切り子が最後に付いたパス名を返します。@var{node}がブール値でかつ、
+リ区切り子が最後に付いたパス名を返します。
+特別な場合として、@var{node}がブール値でかつ
 @var{regexp}が@code{dir}である場合、folderはルートノードをあらわすノー
 ドあるいはカレントノードを返すことになっています。すなわち、@var{node}
 はパス名を表す場合、folderは@code{"/"}または@code{"./"}を返します。
@@ -12140,6 +12145,39 @@ pathnames, @var{proc} is never called and @var{seed} is returned.
 結果となります。マッチするパス名が存在しないときは、@var{proc}は呼ばれ
 ずに、@var{seed}が返ります。
 @c COMMON
+@end defun
+
+@defun make-glob-fs-fold &keyword root-path current-path
+@c EN
+This is a utility function to generate a procedure suitable to
+pass the @var{folder} keyword argument of @code{glob-fold} and @code{glob}.
+Without arguments, this returns the same procedure which is used
+in @code{glob-fold} and @code{glob} by default.
+@c JP
+これは@code{glob-fold}や@code{glob}の@var{folder}キーワード引数に
+渡せる形の手続きを作るユーティリティ手続きです。
+引数を渡さなければ、@code{glob-fold}や@code{glob}がデフォルトで使うのと
+同じ手続きが返ります。
+@c COMMON
+
+@c EN
+The keyword arguments @var{root-path} and @var{current-path} specify
+the paths where @code{glob-fold} starts to search.
+@c JP
+キーワード引数@var{root-path}および@var{current-path}はそれぞれ、
+@code{glob-fold}が探索を開始するディレクトリを指定します。
+@c COMMON
+
+@example
+gosh> (glob "/tmp/*.scm")
+("/tmp/x.scm" "/tmp/y.scm")
+gosh> (glob "/*.scm" 
+            :folder (make-glob-fs-fold :root-path "/tmp"))
+("/tmp/x.scm" "/tmp/y.scm")
+gosh> (glob "*.scm" 
+            :folder (make-glob-fs-fold :current-path "/tmp"))
+("/tmp/x.scm" "/tmp/y.scm")
+@end example
 @end defun
 
 @c EN

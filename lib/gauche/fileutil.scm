@@ -30,12 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fileutil.scm,v 1.5 2007-11-21 04:31:51 shirok Exp $
+;;;  $Id: fileutil.scm,v 1.6 2007-11-24 05:39:24 shirok Exp $
 ;;;
 
 (define-module gauche.fileutil
   (export file-exists? file-is-regular? file-is-directory?
-          glob glob-fold
+          glob glob-fold make-glob-fs-fold
           sys-stat->file-type sys-stat->mode sys-stat->ino
           sys-stat->dev sys-stat->rdev sys-stat->nlink
           sys-stat->size sys-stat->uid sys-stat->gid
@@ -122,9 +122,7 @@
 
 (define (glob-fold-1 pattern proc seed opts)
   (let-keywords opts ((separator #[/])
-                      (folder glob-fs-folder)
-                      (root #t)
-                      (current #f))
+                      (folder glob-fs-folder))
     (define (rec node matcher seed)
       (cond [(null? matcher) (proc seed)]
             [(null? (cdr matcher))
@@ -132,18 +130,18 @@
             [else
              (folder (lambda (node seed) (rec node (cdr matcher) seed))
                      seed node (car matcher) #t)]))
-    (let1 p (glob-prepare-pattern pattern separator root current)
+    (let1 p (glob-prepare-pattern pattern separator)
       (rec (car p) (cdr p) seed))))
 
-(define (glob-prepare-pattern pattern separator root current)
+(define (glob-prepare-pattern pattern separator)
   (define (f comp)
     (cond [(equal? comp "") 'dir?]    ; pattern ends with '/'
           ;((equal? comp "**") '**)
           [else (glob-component->regexp comp)]))
   (let1 comps (string-split pattern separator)
     (if (equal? (car comps) "")
-      (cons root (map f (cdr comps)))
-      (cons current (map f comps)))))
+      (cons #t (map f (cdr comps)))
+      (cons #f (map f comps)))))
 
 (define (glob-component->regexp pattern) ; "**" is already excluded
   (regexp-compile
@@ -183,25 +181,45 @@
             [else  (outer1 ch)]))
         `(seq bol ,@(outer0 (next))))))))
 
-(define (glob-fs-folder proc seed node regexp non-leaf?)
-  (let* ((separ (cond-expand
-                 (gauche.os.windows "\\")
-                 (else "/")))
-         (prefix
-          (case node ((#t) separ) ((#f) "") (else (string-append node separ))))
-         )
-    ;; NB: we can't use filter, for it is not built-in.
-    ;; also we can't use build-path, from the same reason.
-    (if (eq? regexp 'dir?)
-      (proc prefix seed)
-      (fold (lambda (child seed)
-              (or (and-let* ([ (regexp child) ]
-                             [full (string-append prefix child)]
-                             [ (or (not non-leaf?)
-                                   (file-is-directory? full)) ])
-                    (proc full seed))
-                  seed))
-            seed
-            (sys-readdir (case node ((#t) "/") ((#f) ".") (else node)))))))
+(define (make-glob-fs-fold . args)
+  (let-keywords* args ((root-path #f)
+                       (current-path #f))
+    (let ((separ (cond-expand
+                  (gauche.os.windows "\\")
+                  (else "/"))))
+      (define (ensure-dirname s)
+        (and s
+             (or (and-let* ([len (string-length s)]
+                            [ (> len 0) ]
+                            [ (not (eqv? (string-ref s (- len 1))
+                                         (string-ref separ 0))) ])
+                   (string-append s separ))
+                 s)))
+      (define root-path/    (ensure-dirname root-path))
+      (define current-path/ (ensure-dirname current-path))
+      (lambda (proc seed node regexp non-leaf?)
+        (let1 prefix (case node
+                       [(#t) (or root-path/ separ)]
+                       [(#f) (or current-path/ "")]
+                       [else (string-append node separ)])
+          ;; NB: we can't use filter, for it is not built-in.
+          ;; also we can't use build-path, from the same reason.
+          (if (eq? regexp 'dir?)
+            (proc prefix seed)
+            (fold (lambda (child seed)
+                    (or (and-let* ([ (regexp child) ]
+                                   [full (string-append prefix child)]
+                                   [ (or (not non-leaf?)
+                                         (file-is-directory? full)) ])
+                          (proc full seed))
+                        seed))
+                  seed
+                  (sys-readdir (case node
+                                 [(#t) (or root-path/ "/")]
+                                 [(#f) (or current-path/ ".")]
+                                 [else node]))))))
+      )))
+
+(define glob-fs-folder (make-glob-fs-fold))
 
 (provide "gauche/fileutil")

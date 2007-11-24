@@ -13406,7 +13406,7 @@ pat : patvar                       ;; anything, and binds pattern var
     | `qp                          ;; a quasi-pattern
 
 patvar : a symbol except _, quote, $, struct, @@, object, =, and, or,
-         not, ?, set!, get!, backquote, ..., ___, ..k, __k.
+         not, ?, set!, get!, quasiquote, ..., ___, ..k, __k.
 
 ooo : ...                          ;; zero or more
     | ___                          ;; zero or more
@@ -13447,7 +13447,7 @@ pat : patvar                       ;; すべて、かつ、パターン変数を束縛
     | `qp                          ;; 擬似パターン
 
 patvar : a symbol except _, quote, $, struct, @@, object, =, and, or,
-         not, ?, set!, get!, backquote, ..., ___, ..k, __k.
+         not, ?, set!, get!, quasiquote, ..., ___, ..k, __k.
 
 ooo : ...                          ;; ゼロまたはそれ以上
     | ___                          ;; ゼロまたはそれ以上
@@ -13464,7 +13464,7 @@ the matched part of the expression is bound to the symbol.
 The following symbols have special meanings and cannot be used
 as a pattern variable: @code{_}, @code{quote}, @code{$}, @code{struct},
 @code{@@}, @code{object}, @code{=}, @code{and}, @code{or},
-@code{not}, @code{?}, @code{set!}, @code{get!}, @code{backquote},
+@code{not}, @code{?}, @code{set!}, @code{get!}, @code{quasiquote},
 @code{...}, @code{___}, and @code{..k} and @code{__k} where @emph{k} is
 an integer.
 @c JP
@@ -13473,7 +13473,7 @@ an integer.
 以下のシンボルは特別な意味をもち、パターン変数としては使えません。
 @code{_}、@code{quote}、@code{$}、@code{struct}、@code{@@}、@code{object}、
 @code{=}、@code{and}、@code{or}、@code{not}、@code{?}、@code{set!}、
-@code{get!}、@code{backquote}、@code{...}、@code{___} および
+@code{get!}、@code{quasiquote}、@code{...}、@code{___} および
 @code{..k} と @code{__k} (ここで、@emph{k} は整数)。
 @c COMMON
 

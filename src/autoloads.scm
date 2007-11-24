@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.48 2007-11-20 12:46:34 shirok Exp $
+;;; $Id: autoloads.scm,v 1.49 2007-11-24 05:39:24 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.48 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.49 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -163,7 +163,7 @@
 (autoload gauche.stringutil string-split)
 
 (autoload gauche.fileutil file-exists? file-is-regular? file-is-directory?
-                          glob glob-fold sys-glob
+                          glob glob-fold sys-glob make-glob-fs-fold
                           sys-stat->file-type sys-stat->mode sys-stat->ino
                           sys-stat->dev sys-stat->rdev sys-stat->nlink
                           sys-stat->size sys-stat->uid sys-stat->gid

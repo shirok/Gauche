@@ -144,12 +144,12 @@
          (pa$ lset= equal?))
 
   ;; specifying current/root dir
-  (test* "glob w/alt root dir"  (n "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
-         (glob "/*.*" :root "tmp1.o")
-         (pa$ lset= equal?))
-  (test* "glob w/alt current dir"  (n "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
-         (glob "*.*" :current "tmp1.o")
-         (pa$ lset= equal?))
+   (test* "glob w/alt root dir"  (n "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
+          (glob "/*.*" :folder (make-glob-fs-fold :root-path "tmp1.o"))
+          (pa$ lset= equal?))
+   (test* "glob w/alt current dir"  (n "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
+          (glob "*.*" :folder (make-glob-fs-fold :current-path "tmp1.o"))
+          (pa$ lset= equal?))
 
   (rmrf "tmp1.o")
   )
