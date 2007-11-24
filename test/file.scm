@@ -48,9 +48,11 @@
   (md "tmp1.o")
   (md "tmp1.o/a")
   (mf "tmp1.o/a/b")
-  (mf "tmp1.o/a/cc")
+  (md "tmp1.o/a/cc")
+  (mf "tmp1.o/a/cc/a")
   (mf "tmp1.o/a/.d")
   (md "tmp1.o/.a")
+  (mf "tmp1.o/.a/b")
   (md "tmp1.o/.a/.d")
   (md "tmp1.o/aa")
   (mf "tmp1.o/aa/b")
@@ -114,6 +116,12 @@
 
   (test* "glob */" (n "tmp1.o/a/" "tmp1.o/aa/")
          (glob "tmp1.o/*/")
+         (pa$ lset= equal?))
+
+  ;; **
+  (test* "glob tmp1.o/**/?" (n "tmp1.o/a" "tmp1.o/a/b" "tmp1.o/a/cc/a"
+                               "tmp1.o/aa/b")
+         (glob "tmp1.o/**/?")
          (pa$ lset= equal?))
 
   ;; multi

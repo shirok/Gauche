@@ -5,6 +5,7 @@
 	  the 'folder' function rather than the glob-fold function itself.
 	  Instead, we added a utility function make-glob-fs-fold to generate
 	  a customized 'folder' function with root/current dirs.
+	  (glob-fold-1): Added support of '**' wildcard.
 
 2007-11-20  Shiro Kawai  <shiro@acm.org>
 

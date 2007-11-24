@@ -12065,49 +12065,66 @@ meanings.
 ネントにおいては、以下の文字、構文は特別な意味を持ちます。
 @c COMMON
 
-@c EN
 @table @code
 @item *
+@c EN
 When it appears at the beginning of a component, it matches
 zero or more characters except a period (@code{.}).  And it
 won't match if the component of the input string begins with 
 a period.
 
 Otherwise, it matches zero or more sequence of any characters.
-
-@item ?
-When it appears at the beginning of a component, it matches
-a character except a period (@code{.}).  Othewrise, it matches
-any single character.
-
-@item [@i{chars}]
-Specifies a character set.  Matches any one of the set.
-The syntax of @i{chars} is the same as Gauche's character set
-syntax (@xref{Character set}).  For the compatibility of the
-traditional glob, the @code{!} character can be used to complement
-the character set, e.g. @code{[!abc]} is the same as @code{[^abc]}.
-@end table
 @c JP
-@table @code
-@item *
 これがコンポーネントの先頭に表われた場合、0個以上のピリオド(@code{.})
 を除く文字にマッチします。入力文字列のコンポーネントがピリオドではじま
 るような文字列の場合にはマッチしません。
 
 先頭以外の場所では、0個以上の文字の列にマッチします。
+@c COMMON
+
+@item **
+@c EN
+If a component is just @code{**}, it matches zero or more
+number of components that match @code{*}.  For example, @code{src/**/*.h}
+matches all of the following patterns.
+@c JP
+コンポーネントが@code{**}だけの場合、これは@code{*}にマッチする0個以上の
+コンポーネントにマッチします。例えば@code{src/**/*.h}は
+次のようなパターン全てにマッチします。
+@c COMMON
+@example
+src/*.h
+src/*/*.h
+src/*/*/*.h
+src/*/*/*/*.h
+...
+@end example
 
 @item ?
+@c EN
+When it appears at the beginning of a component, it matches
+a character except a period (@code{.}).  Othewrise, it matches
+any single character.
+@c JP
 コンポーネントの先頭にあらわれた場合、ピリオド(@code{.})以外の一文字に
 マッチします。先頭以外の場所では任意の一文字にマッチします。
+@c COMMON
 
 @item [@i{chars}]
+@c EN
+Specifies a character set.  Matches any one of the set.
+The syntax of @i{chars} is the same as Gauche's character set
+syntax (@xref{Character set}).  For the compatibility of the
+traditional glob, the @code{!} character can be used to complement
+the character set, e.g. @code{[!abc]} is the same as @code{[^abc]}.
+@c JP
 文字の集合を指定します。その集合に含まれる文字のどれかにマッチします。
 @i{chars}の構文はGaucheの文字集合を表す構文と同じです
 (@ref{Character set}参照)。伝統的なグロブとの互換性のために、@code{!}
 文字をつかって、補集合で文字集合を表わすこともできるようになっています。
 すなわち、@code{[!abc]}は@code{[^abc]}と同じです。
-@end table
 @c COMMON
+@end table
 @end defun
 
 @defun glob-fold pattern proc seed &keyword separator folder

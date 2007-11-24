@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fileutil.scm,v 1.6 2007-11-24 05:39:24 shirok Exp $
+;;;  $Id: fileutil.scm,v 1.7 2007-11-24 10:32:28 shirok Exp $
 ;;;
 
 (define-module gauche.fileutil
@@ -120,23 +120,32 @@
     (fold (cut glob-fold-1 <> proc <> opts) seed patterns)
     (glob-fold-1 patterns proc seed opts)))
 
+;; NB: we avoid util.match due to the hairy dependency problem.
 (define (glob-fold-1 pattern proc seed opts)
   (let-keywords opts ((separator #[/])
                       (folder glob-fs-folder))
     (define (rec node matcher seed)
       (cond [(null? matcher) (proc seed)]
+            [(eq? (car matcher) '**)
+             (rec* node (cdr matcher) seed)]
             [(null? (cdr matcher))
              (folder proc seed node (car matcher) #f)]
             [else
              (folder (lambda (node seed) (rec node (cdr matcher) seed))
                      seed node (car matcher) #t)]))
+
+    (define (rec* node matcher seed)
+      (fold (cut rec* <> matcher <>)
+            (rec node matcher seed)
+            (folder cons '() node #/^[^.].*$/ #t)))
+            
     (let1 p (glob-prepare-pattern pattern separator)
       (rec (car p) (cdr p) seed))))
 
 (define (glob-prepare-pattern pattern separator)
   (define (f comp)
     (cond [(equal? comp "") 'dir?]    ; pattern ends with '/'
-          ;((equal? comp "**") '**)
+          [(equal? comp "**") '**]
           [else (glob-component->regexp comp)]))
   (let1 comps (string-split pattern separator)
     (if (equal? (car comps) "")
