@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.146 2007-09-07 09:51:12 shirok Exp $
+ *  $Id: port.c,v 1.147 2007-11-30 11:16:04 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1615,7 +1615,10 @@ void Scm__InitPort(void)
                                     SCM_PORT_BUFFER_FULL, TRUE);
     scm_stdout = Scm_MakePortWithFd(SCM_MAKE_STR("(stdout)"),
                                     SCM_PORT_OUTPUT, 1,
-                                    SCM_PORT_BUFFER_LINE, TRUE);
+                                    isatty(1)
+                                    ? SCM_PORT_BUFFER_LINE
+                                    : SCM_PORT_BUFFER_FULL,
+                                    TRUE);
     scm_stderr = Scm_MakePortWithFd(SCM_MAKE_STR("(stderr)"),
                                     SCM_PORT_OUTPUT, 2,
                                     SCM_PORT_BUFFER_NONE, TRUE);

@@ -1,3 +1,10 @@
+2007-11-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (Scm__InitPort): Set stdout buffering mode to FULL if
+	  the file descriptor 1 is not connected to a terminal.  This greatly
+	  improves performance when large number of lines of output are
+	  redirected to a file.
+
 2007-11-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/fileutil.scm (glob-fold, make-glob-fs-fold): Removed
