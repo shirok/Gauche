@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: http.scm,v 1.12 2007-06-23 07:13:23 shirok Exp $
+;;;  $Id: http.scm,v 1.13 2007-12-07 01:40:27 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
@@ -106,9 +106,6 @@
          => (lambda (m) (make-client-socket (m 1) (x->integer (m 2)))))
         (else (make-client-socket server 80))))
 
-(define (server->host server)
-  (car (string-split server #\:)))
-
 (define (with-server server proc)
   (let1 s (server->socket server)
     (unwind-protect
@@ -132,7 +129,7 @@
                         (receive-body in headers sink flusher))))))))
 
   (let-keywords options
-      ((host    (server->host server))
+      ((host server)
        (no-redirect #f)
        . restopts)
     (let1 has-content? (not (eq? request 'HEAD))
@@ -152,10 +149,7 @@
                           (when (or (member uri history)
                                     (> (length history) 20))
                             (errorf <http-error> "redirection is looping via ~a" uri))
-                          (loop (cons uri history)
-                                server
-                                (server->host server)
-                                path*))))
+                          (loop (cons uri history) server server path*))))
                   (else
                    (values code headers body)))))))))
 
