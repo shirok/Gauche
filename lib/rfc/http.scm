@@ -30,13 +30,13 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: http.scm,v 1.14 2007-12-08 03:24:30 shirok Exp $
+;;;  $Id: http.scm,v 1.15 2007-12-08 05:50:37 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
 
 ;; RFC2616 Hypertext Transfer Protocol -- HTTP/1.1
-;;  http://www.ietf.org/rfc/rfc2616txt
+;;  http://www.ietf.org/rfc/rfc2616.txt
 ;; RFC2617 HTTP Authentication: Basic and Digest Access Authentication
 ;;  http://www.ietf.org/rfc/rfc2617.txt
 
@@ -55,6 +55,7 @@
   (export <http-error>
           http-user-agent make-http-connection
           http-get http-head http-post
+          http-default-auth-handler
           )
   )
 (select-module rfc.http)
@@ -124,12 +125,7 @@
 ;; use make-http-connection.
 (define-class <http-connection> ()
   ;; All the slots are private.
-  ((server :init-keyword :server)       ; Original server[:port], given to
-                                        ; make-http-connection.
-   (effective-server :init-value #f)    ; The actual server[:port] we are
-                                        ; talking.  This may different from
-                                        ; the server slot if the request has
-                                        ; been redirected by 3xx response.
+  ((server :init-keyword :server)       ; server[:port]
    (socket :init-value #f)              ; A <socket> for persistent connection.
                                         ; If it is shutdown by the server,
                                         ; the APIs attempt to reconnect.
@@ -140,7 +136,7 @@
    ))
 
 (define (make-http-connection server . opts)
-  (let-keywords opts ((auth-handler  #f)
+  (let-keywords opts ((auth-handler  http-default-auth-handler)
                       (auth-user     #f)
                       (auth-password #f)
                       (extra-headers '()))
@@ -148,46 +144,78 @@
       :server server :auth-handler auth-handler :auth-user auth-user
       :auth-password auth-password :extra-headers extra-headers)))
 
+(define (redirect conn new-server)
+  (let1 orig-server (ref conn'server)
+    (unless (string=? orig-server new-server)
+      (and-let* ((s (ref conn'socket)))
+        (socket-shutdown s)
+        (socket-close s)
+        (set! (ref conn'socket) #f))
+      (set! (ref conn'server) new-server)))
+  conn)
+
 ;;==============================================================
 ;; internal utilities
 ;;
 
 (define (http-generic request server request-uri request-body options)
-  (let-keywords options ((host server)
+  (let-keywords options ((host #f)
                          (no-redirect #f)
+                         (auth-handler  (undefined))
+                         (auth-user     (undefined))
+                         (auth-password (undefined))
+                         (extra-headers (undefined))
                          . opts)
-    (let loop ((history '())
-               (server server)
-               (host host)
-               (request-uri request-uri))
-      (receive (code headers body)
-          (request-response request server host request-uri request-body opts)
-        (or (and-let* ([ (not no-redirect) ]
-                       [ (string-prefix? "3" code) ]
-                       [loc (assoc "location" headers)])
-              (receive (uri server path*) (canonical-uri (cadr loc) server)
-                (when (or (member uri history)
-                          (> (length history) 20))
-                  (errorf <http-error> "redirection is looping via ~a" uri))
-                (loop (cons uri history) server server path*)))
-            (values code headers body))))))
+    (let1 conn (ensure-connection server auth-handler auth-user auth-password
+                                  extra-headers)
+      (let loop ((history '())
+                 (host host)
+                 (request-uri request-uri))
+        (receive (code headers body)
+            (request-response request conn host request-uri request-body opts)
+          (or (and-let* ([ (not no-redirect) ]
+                         [ (string-prefix? "3" code) ]
+                         [loc (assoc "location" headers)])
+                (receive (uri new-server path*)
+                    (canonical-uri (cadr loc) (ref conn'server))
+                  (when (or (member uri history)
+                            (> (length history) 20))
+                    (errorf <http-error> "redirection is looping via ~a" uri))
+                  (loop (cons uri history) (redirect conn new-server) path*)))
+              (values code headers body)))))))
+
+;; Always returns a connection object.
+(define (ensure-connection server auth-handler auth-user auth-password extra-headers)
+  (let1 conn (cond [(is-a? server <http-connection>) server]
+                   [(string? server) (make-http-connection server)]
+                   [else (error "bad type of argument for server: must be an <http-connection> object or a string of the server's name, but got:" server)])
+    (let-syntax ([check-override
+                  (syntax-rules ()
+                    [(_ id)
+                     (unless (undefined? id) (set! (ref server'id) id))])])
+      (check-override auth-handler)
+      (check-override auth-user)
+      (check-override auth-password)
+      (check-override extra-headers))
+    conn))
 
 (define (server->socket server)
   (cond ((#/([^:]+):(\d+)/ server)
          => (lambda (m) (make-client-socket (m 1) (x->integer (m 2)))))
         (else (make-client-socket server 80))))
 
-(define (with-server server proc)
-  (let1 s (server->socket server)
+(define (with-connection conn proc)
+  (let1 s (server->socket (ref conn'server))
     (unwind-protect
       (proc (socket-input-port s) (socket-output-port s))
       (socket-close s))))
 
-(define (request-response request server host request-uri request-body options)
-  (with-server
-   server
+(define (request-response request conn host request-uri request-body options)
+  (with-connection
+   conn
    (lambda (in out)
-     (send-request out request host request-uri request-body options)
+     (send-request out request (or host (ref conn'server))
+                   request-uri request-body options)
      (receive (code headers) (receive-header in)
        (values code
                headers
@@ -287,5 +315,12 @@
       (error <http-error> "bad line in chunked data:" line))
     )
   )
+
+;;==============================================================
+;; authentication handling
+;;
+
+;; dummy - to be written
+(define (http-default-auth-handler . _) #f)
 
 (provide "rfc/http")
