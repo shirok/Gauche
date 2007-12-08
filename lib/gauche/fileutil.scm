@@ -30,12 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fileutil.scm,v 1.7 2007-11-24 10:32:28 shirok Exp $
+;;;  $Id: fileutil.scm,v 1.8 2007-12-08 03:24:30 shirok Exp $
 ;;;
 
 (define-module gauche.fileutil
   (export file-exists? file-is-regular? file-is-directory?
-          glob glob-fold make-glob-fs-fold
+          glob glob-fold glob-component->regexp make-glob-fs-fold
           sys-stat->file-type sys-stat->mode sys-stat->ino
           sys-stat->dev sys-stat->rdev sys-stat->nlink
           sys-stat->size sys-stat->uid sys-stat->gid
@@ -80,35 +80,16 @@
 
 ;; glob-fold provides the fundamental logic of glob.  It does not
 ;; depend on filesystems---any tree structure that has "pathname"
-;; will do (though some unix-fs specific knowledge is inherently embedded
-;; in 
+;; will do.
 ;;
 ;; <glob-pattern> : [<separator>] (<selector> <separator>)* [<separator>]
-;; <selector>     : '**' | <outer>*
-;; <outer>        : <inner> | ','
-;; <inner>        : <ordinary> | '*' | '?' | <char-range> | <choice>
-;; <choice>       : '{' <inner> (',' <inner>)* '}'
+;; <selector>     : '**' | <element>*
+;; <element>      : <ordinary> | '*' | '?' | <char-range>
 ;; <char-range>   : '[' <char-set-spec> ']'
-;; <ordinary>     : characters except #[,*?\{\}\[\]\\] and <selector>
+;; <ordinary>     : characters except #[,*?\{\}\[\]\\] and <separator>
 ;;                  | '\\' <character>
 ;;
 ;; <separator> splits the components in the path.
-;;
-;;
-;; glob-fold begins matching from either root of the tree or the "current"
-;; node.  For every component in the pattern, it calls LISTER to query
-;; the matching component.
-;; LISTER is called with the following argument.
-;;   node - An object representing the node to search.  As special cases,
-;;          this can be #t for the root node and #f for the current node.
-;;          Otherwise, the type of object depends on what the lister returns.
-;;   regexp - Lister should pick the elements within the node whose name
-;;          matches this regexp.   As a special case, if this is a symbol dir?,
-;;          LISTER should return NODE itself, but it may indicate NODE
-;;          "as a directory"---e.g. if NODE is represented as a pathname,
-;;          LISTER returns a pathname with trailing directory mark.
-;;   non-leaf? - If true, lister should omit leaf nodes from the results.
-;; LISTER should return a list of the nodes matching regexp.
 
 (define (glob patterns . opts)
   (apply glob-fold patterns cons '() opts))
@@ -116,9 +97,9 @@
 (define sys-glob glob) ;; backward compatibility
 
 (define (glob-fold patterns proc seed . opts)
-  (if (list? patterns)
-    (fold (cut glob-fold-1 <> proc <> opts) seed patterns)
-    (glob-fold-1 patterns proc seed opts)))
+  (fold (cut glob-fold-1 <> proc <> opts) seed
+        (fold glob-expand-braces '()
+              (if (list? patterns) patterns (list patterns)))))
 
 ;; NB: we avoid util.match due to the hairy dependency problem.
 (define (glob-fold-1 pattern proc seed opts)
@@ -133,12 +114,10 @@
             [else
              (folder (lambda (node seed) (rec node (cdr matcher) seed))
                      seed node (car matcher) #t)]))
-
     (define (rec* node matcher seed)
       (fold (cut rec* <> matcher <>)
             (rec node matcher seed)
             (folder cons '() node #/^[^.].*$/ #t)))
-            
     (let1 p (glob-prepare-pattern pattern separator)
       (rec (car p) (cdr p) seed))))
 
@@ -152,43 +131,86 @@
       (cons #t (map f (cdr comps)))
       (cons #f (map f comps)))))
 
+;; */*.{c,scm} -> '(*/*.c */*.scm)
+;;
+;; NB: we first expand the braces to separate patterns.  This is how
+;; zsh and tcsh handles {...}.  However, it is not good in terms of
+;; performance, since the common prefix are searched mulitple times.
+;; Hopefully we'll put some optimization here, making single traversal
+;; for the common prefix.
+;;
+;; The treatment of backslashes is tricky. 
+;;
+(define (glob-expand-braces pattern seed)
+  (define (parse str pres level)
+    (let loop ((str str)
+               (segs pres))
+      (cond
+       [(rxmatch #/[{}]/ str) =>
+        (lambda (m)
+          (cond [(equal? (m 0) "{")
+                 (receive (ins post) (parse (m'after) '("") (+ level 1))
+                   (loop post
+                         (fold (lambda (seg seed)
+                                 (fold (lambda (in seed)
+                                         (cons (string-append seg in) seed))
+                                       seed ins))
+                               '()
+                               (map (cute string-append <> (m'before)) segs))))]
+                [(= level 0)
+                 (error "extra closing curly-brace in glob pattern:" pattern)]
+                [else         ; closing curly-brace
+                 (values (fold expand '()
+                               (map (cute string-append <> (m'before)) segs))
+                         (m'after))]))]
+       [(= level 0) (values (map (cute string-append <> str) segs) #f)]
+       [else (error "unclosed curly-brace in glob pattern:" pattern)])))
+  (define (expand pat seed)
+    (let1 segs (string-split pat #\,)
+      (if (null? seed) segs (append segs seed))))
+  (if (string-scan pattern #\{)
+    (append (values-ref (parse pattern '("") 0) 0) seed)
+    (cons pattern seed)))
+
 (define (glob-component->regexp pattern) ; "**" is already excluded
+  (define n read-char)
+  (define nd '(comp . #[.]))
+  (define ra '(rep 0 #f any))
   (regexp-compile
    (regexp-optimize
     (with-input-from-string pattern
       (lambda ()
-        (define next read-char)
-        (define (outer0 ch)
+        (define (element0 ch ct)
           (case ch
-            [(#\*) (outer0* (next))]
-            [(#\?) `((comp . #[.]) ,@(outer1 (next)))]
-            [else (outer1 ch)]))
-        (define (outer0* ch)
+            [(#\*) (element0* (n) ct)]
+            [(#\?) `(,nd ,@(element1 (n) ct))]
+            [else (element1 ch ct)]))
+        (define (element0* ch ct)
           (case ch
-            [(#\*) (outer0* (read-char))]
-            [(#\?) `((comp . #[.]) (rep 0 #f any) ,@(outer1 (next)))]
-            [(#\.) `((comp . #[.]) (rep 0 #f any) #\. ,@(outer1 (next)))]
-            [else `((rep 0 1 (seq (comp . #[.]) (rep 0 #f any)))
-                    ,@(outer1 ch))]))
-        (define (outer1 ch)
+            [(#\*) (element0* (n) ct)]
+            [(#\?) `(,nd ,ra ,@(element1 (n) ct))]
+            [(#\.) `(,nd ,ra #\. ,@(element1 (n) ct))]
+            [else `((rep 0 1 (seq ,nd ,ra))
+                    ,@(element1 ch ct))]))
+        (define (element1 ch ct)
           (cond [(eof-object? ch) '(eol)]
-                [(eqv? ch #\*) `((rep 0 #f any) ,@(outer1* (next)))]
-                [(eqv? ch #\?) `(any ,@(outer1 (next)))]
+                [(eqv? ch #\*) `(,ra ,@(element1* (n) ct))]
+                [(eqv? ch #\?) `(any ,@(element1 (n) ct))]
                 [(eqv? ch #\[)
                  (case (peek-char)
                    ;; we have to treat [!...] as [^...]
-                   [(#\!) (next)
+                   [(#\!) (n)
                     (let1 cs (read-char-set (current-input-port))
-                      (cons (%char-set-complement! cs) (outer1 (next))))]
+                      (cons (%char-set-complement! cs) (element1 (n) ct)))]
                    [else
                     (let1 cs (read-char-set (current-input-port))
-                      (cons cs (outer1 (next))))])]
-                [else (cons ch (outer1 (next)))]))
-        (define (outer1* ch)
+                      (cons cs (element1 (n) ct)))])]
+                [else (cons ch (element1 (n) ct))]))
+        (define (element1* ch ct)
           (case ch
-            [(#\*) (outer1* (next))]
-            [else  (outer1 ch)]))
-        `(seq bol ,@(outer0 (next))))))))
+            [(#\*) (element1* (n) ct)]
+            [else  (element1 ch ct)]))
+        `(seq bol ,@(element0 (n) '())))))))
 
 (define (make-glob-fs-fold . args)
   (let-keywords* args ((root-path #f)

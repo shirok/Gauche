@@ -4554,9 +4554,11 @@ RFC822形式の日付フォーマットをパーズし、SRFI-19 の @code{<date>} オブジェクト
 @mdindex rfc.base64
 @c EN
 This module defines a few functions to encode/decode Base64 format,
-defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.3.
+defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.3
+and RFC3548 (@ref{rfc3548, [RFC3548], RFC3548})
 @c JP
-このモジュールでは、RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}) で
+このモジュールでは、RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045})の6.3節
+およびRFC 3548 (@ref{rfc3548, [RFC3548], RFC3548})で
 定義されている Base64 フォーマットへエンコード/デコードするいくつかの
 手続きを定義しています。
 @c COMMON

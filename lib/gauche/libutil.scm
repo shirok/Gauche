@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: libutil.scm,v 1.5 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: libutil.scm,v 1.6 2007-12-08 03:24:30 shirok Exp $
 ;;;
 
 (define-module gauche.libutil
@@ -52,11 +52,9 @@
                       (strict? #t))
 
     (define search-module?
-      (cond ((string? pattern) #f)
-            ((symbol? pattern) #t)
-            (else
-             (error "string or symbol required for pattern, but got"
-                    pattern))))
+      (cond [(string? pattern) #f]
+            [(symbol? pattern) #t]
+            [else (error "string or symbol required, but got" pattern)]))
 
     (define seen '())
 
@@ -90,7 +88,6 @@
       (let1 rx (module-glob-pattern->regexp pat)
         (cond ((rx component) => (lambda (m) (m 0)))
               (else #f))))
-
     (define (ensure path file)
       (if search-module?
         (let1 modname (path->module-name (string-drop-right file 4))
@@ -108,6 +105,28 @@
                       (search pats prefix file file seed))
                     seed (readdir prefix)))
             seed paths))
+
+#|
+    (define (get-relative prefix path separ)
+      (string-trim (string-drop path (string-length prefix)) #[/\\]))
+    
+    (define (picker prefix separ path seed)
+      (cond [(not (string-suffix? ".scm" path)) seed]
+            [(and-let* ([file #?=(get-relative prefix path separ)]
+                        [ (or allow-duplicates? (not (member file seen))) ]
+                        [mod (ensure path file)])
+               (push! seen file)
+               (proc mod path seed))]
+            [else seed]))
+
+    (receive (pat sep) (if search-module?
+                         (values (x->string pattern) #[.])
+                         (values pattern #[/]))
+      (fold (lambda (prefix seed)
+              (glob-fold pat (cut picker prefix sep <> <>) seed
+                         :separator sep :current prefix))
+            seed paths))
+|#
     ))
 
 ;; Just check existence of library.

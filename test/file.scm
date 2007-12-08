@@ -131,6 +131,26 @@
          (glob '("tmp1.o/*" "tmp1.o/.*"))
          (pa$ lset= equal?))
 
+  ;; braces
+  (test* "glob {a,aa}/{b,cc}" (n "tmp1.o/a/b" "tmp1.o/a/cc" "tmp1.o/aa/b")
+         (glob '("tmp1.o/{a,aa}/{b,cc}"))
+         (pa$ lset= equal?))
+  (test* "glob {a{,a,.{a,b}}}" (n "tmp1.o/a" "tmp1.o/aa"
+                                 "tmp1.o/a.a" "tmp1.o/a.b")
+         (glob '("tmp1.o/{a{,a,.{a,b}}}"))
+         (pa$ lset= equal?))
+  (test* "glob {a/*,aa/*}" (n "tmp1.o/a/b" "tmp1.o/a/cc" "tmp1.o/aa/b")
+         (glob '("tmp1.o/{a/*,aa/*}"))
+         (pa$ lset= equal?))
+  (test* "glob {,?/}*" (n "tmp1.o/a/b" "tmp1.o/a/cc" "tmp1.o/a" "tmp1.o/aa"
+                          "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
+         (glob '("tmp1.o/{,?/}*"))
+         (pa$ lset= equal?))
+  (test* "glob {,.}*" (n "tmp1.o/a" "tmp1.o/aa" "tmp1.o/.a" "tmp1.o/."
+                         "tmp1.o/.." "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
+         (glob '("tmp1.o/{,.}*"))
+         (pa$ lset= equal?))
+
   ;; charset
   (test* "glob a.[ab]" (n "tmp1.o/a.a" "tmp1.o/a.b")
          (glob "tmp1.o/a.[ab]")
@@ -152,10 +172,10 @@
          (pa$ lset= equal?))
 
   ;; specifying current/root dir
-   (test* "glob w/alt root dir"  (n "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
+  (test* "glob w/alt root dir"  (n "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
           (glob "/*.*" :folder (make-glob-fs-fold :root-path "tmp1.o"))
           (pa$ lset= equal?))
-   (test* "glob w/alt current dir"  (n "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
+  (test* "glob w/alt current dir"  (n "tmp1.o/a.a" "tmp1.o/a.b" "tmp1.o/a.a.a")
           (glob "*.*" :folder (make-glob-fs-fold :current-path "tmp1.o"))
           (pa$ lset= equal?))
 

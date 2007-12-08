@@ -30,13 +30,15 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: http.scm,v 1.13 2007-12-07 01:40:27 shirok Exp $
+;;;  $Id: http.scm,v 1.14 2007-12-08 03:24:30 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
 
 ;; RFC2616 Hypertext Transfer Protocol -- HTTP/1.1
-;;  http://www.w3.org/Protocols/rfc2616/rfc2616.txt
+;;  http://www.ietf.org/rfc/rfc2616txt
+;; RFC2617 HTTP Authentication: Basic and Digest Access Authentication
+;;  http://www.ietf.org/rfc/rfc2617.txt
 
 ;; HTTP 1.1 has lots of features.  This module doesn't yet cover all of them.
 ;; The features required for typical client usage are implemented first.
@@ -51,7 +53,7 @@
   (use gauche.net)
   (use gauche.parameter)
   (export <http-error>
-          http-user-agent
+          http-user-agent make-http-connection
           http-get http-head http-post
           )
   )
@@ -77,29 +79,98 @@
 
 ;; Higher-level API is for conventional call-return API.
 ;; The client program call for request, and gets the response.
-;;
 ;; This family of APIs takes mandatory server and request-uri
 ;; arguments, and optional keyword arguments.
 ;;
-;; The server argument specifies the server name (and optionally
-;; port number by the format of "server:port").  The future extention
-;; allow some sort of connection object for the persistent connection.
+;; The "server" argument maybe a string naming the server (and
+;; optionally a port number by the format of "server:port"), or
+;; an <http-connection> object.  Using a server name is suitable
+;; for easy one-shot http access; the connection and related states
+;; are discarded once the procedure returns.
+;; On the other hand, a connection object can keep the states such
+;; as persistent connection and authentication tokens, suitable for
+;; a series of communications to a server.
 ;;
 ;; The request-uri argument is as specified in RFC2616.
+;;
+;; The options are handled by various low-level routines, and here's
+;; the summary:
+;;
+;;   sink    - a port where the response body is written to.
+;;   flusher - a procedure called once a response body is fully retrieved
+;;             and written to the sink.  The value returned by flusher
+;;             becomes the return value of http-get and http-post.
+;;   host    - the host name passed to the 'host' header field.
+;;   no-redirect - if true, the procedures won't attempt to issue
+;;             the request specified by 3xx response headers.
+;;   auth-user, auth-password, auth-handler - authentication parameters.
+;;
+;; Other unrecognized options are passed as request headers.
 
 (define (http-get server request-uri . options)
-  (request-response 'GET server request-uri options))
+  (http-generic 'GET server request-uri #f options))
 
 (define (http-head server request-uri . options)
-  (request-response 'HEAD server request-uri options))
+  (http-generic 'HEAD server request-uri #f options))
 
 (define (http-post server request-uri body . options)
-  (request-response 'POST server request-uri
-                    (list* :request-body body options)))
+  (http-generic 'POST server request-uri body options))
+
+;;==============================================================
+;; HTTP connection context
+;;
+
+;; The connection object.  This class isn't exported; the users should
+;; use make-http-connection.
+(define-class <http-connection> ()
+  ;; All the slots are private.
+  ((server :init-keyword :server)       ; Original server[:port], given to
+                                        ; make-http-connection.
+   (effective-server :init-value #f)    ; The actual server[:port] we are
+                                        ; talking.  This may different from
+                                        ; the server slot if the request has
+                                        ; been redirected by 3xx response.
+   (socket :init-value #f)              ; A <socket> for persistent connection.
+                                        ; If it is shutdown by the server,
+                                        ; the APIs attempt to reconnect.
+   (auth-handler  :init-keyword :auth-handler)
+   (auth-user     :init-keyword :auth-user)
+   (auth-password :init-keyword :auth-password)
+   (extra-headers :init-keyword :extra-headers)
+   ))
+
+(define (make-http-connection server . opts)
+  (let-keywords opts ((auth-handler  #f)
+                      (auth-user     #f)
+                      (auth-password #f)
+                      (extra-headers '()))
+    (make <http-connection>
+      :server server :auth-handler auth-handler :auth-user auth-user
+      :auth-password auth-password :extra-headers extra-headers)))
 
 ;;==============================================================
 ;; internal utilities
 ;;
+
+(define (http-generic request server request-uri request-body options)
+  (let-keywords options ((host server)
+                         (no-redirect #f)
+                         . opts)
+    (let loop ((history '())
+               (server server)
+               (host host)
+               (request-uri request-uri))
+      (receive (code headers body)
+          (request-response request server host request-uri request-body opts)
+        (or (and-let* ([ (not no-redirect) ]
+                       [ (string-prefix? "3" code) ]
+                       [loc (assoc "location" headers)])
+              (receive (uri server path*) (canonical-uri (cadr loc) server)
+                (when (or (member uri history)
+                          (> (length history) 20))
+                  (errorf <http-error> "redirection is looping via ~a" uri))
+                (loop (cons uri history) server server path*)))
+            (values code headers body))))))
 
 (define (server->socket server)
   (cond ((#/([^:]+):(\d+)/ server)
@@ -112,52 +183,32 @@
       (proc (socket-input-port s) (socket-output-port s))
       (socket-close s))))
 
-(define (request-response request server request-uri options)
-  (define (%send-request request server host request-uri has-content? options)
-    (with-server
-     server
-     (lambda (in out)
-       (send-request out request host request-uri options)
-       (receive (code headers) (receive-header in)
-         (values code
-                 headers
-                 (and has-content?
-                      (let-keywords options
-                          ((sink    (open-output-string))
-                           (flusher (lambda (sink _) (get-output-string sink)))
-                           . #f)
-                        (receive-body in headers sink flusher))))))))
+(define (request-response request server host request-uri request-body options)
+  (with-server
+   server
+   (lambda (in out)
+     (send-request out request host request-uri request-body options)
+     (receive (code headers) (receive-header in)
+       (values code
+               headers
+               (and (not (eq? request 'HEAD))
+                    (let-keywords options
+                        ((sink    (open-output-string))
+                         (flusher (lambda (sink _) (get-output-string sink)))
+                         . #f)
+                      (receive-body in headers sink flusher))))))))
 
-  (let-keywords options
-      ((host server)
-       (no-redirect #f)
-       . restopts)
-    (let1 has-content? (not (eq? request 'HEAD))
-      (if no-redirect
-        (%send-request request server host request-uri has-content? restopts)
-        (let loop ((history (list (values-ref (canonical-uri request-uri host) 0)))
-                   (server server)
-                   (host host)
-                   (request-uri request-uri))
-          (receive (code headers body)
-              (%send-request request server host request-uri has-content? restopts)
-            (cond ((and (string-prefix? "3" code)
-                        (assoc "location" headers))
-                   => (lambda (loc)
-                        (receive (uri server path*)
-                            (canonical-uri (cadr loc) server)
-                          (when (or (member uri history)
-                                    (> (length history) 20))
-                            (errorf <http-error> "redirection is looping via ~a" uri))
-                          (loop (cons uri history) server server path*))))
-                  (else
-                   (values code headers body)))))))))
-
-;; canonicalize uri
+;; canonicalize uri for the sake of redirection.
+;; URI is a request-uri given to the API, or the redirect location specified
+;; in 3xx response.  It can be a full URI or just a path w.r.t. the current
+;; accessing server, so we pass the current server name as HOST in order to
+;; fill the URI if necessary.
+;; Returns three values; the full URI to access (it is used to detect a loop
+;; in redirections), the server name, and the new request uri.
 (define (canonical-uri uri host)
   (let*-values (((scheme specific) (uri-scheme&specific uri))
                 ((h p q f) (uri-decompose-hierarchical specific)))
-    (let ((scheme (or scheme "http"))
+    (let ((scheme (or scheme "http")) ;; NB: consider https
           (host (or h host)))
       (values (uri-compose :scheme scheme :host host
                            :path p :query q :fragment f)
@@ -166,23 +217,20 @@
               (string-drop (uri-compose :path p :query q :fragment f) 2)))))
 
 ;; send
-(define (send-request out request host uri options)
+(define (send-request out request host uri body options)
   (display #`",request ,uri HTTP/1.1\r\n" out)
   (display #`"Host: ,|host|\r\n" out)
-  (if (memq request '(POST PUT))
-    ;; for now, we don't support chunked encoding in POST method.
-    (let-keywords options ((body :request-body "") . restopts)
-      (send-request-headers (if (get-keyword :content-length restopts #f)
-                              restopts
-                              (list* :content-length (string-size body)
-                                     restopts))
-                            out)
-      (display "\r\n" out)
-      (display body out))
-    ;; requests w/o body
-    (begin
-      (send-request-headers options out)
-      (display "\r\n" out)))
+  (case request
+    ((POST PUT)
+     ;; for now, we don't support chunked encoding in POST method.
+     (send-request-headers (list* :content-length (string-size body) options)
+                           out)
+     (display "\r\n" out)
+     (display body out))
+    (else
+     ;; requests w/o body
+     (send-request-headers options out)
+     (display "\r\n" out)))
   (flush out))
 
 (define (send-request-headers options out)

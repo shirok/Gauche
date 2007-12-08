@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.49 2007-11-24 05:39:24 shirok Exp $
+;;; $Id: autoloads.scm,v 1.50 2007-12-08 03:24:30 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.49 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.50 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -162,13 +162,14 @@
 
 (autoload gauche.stringutil string-split)
 
-(autoload gauche.fileutil file-exists? file-is-regular? file-is-directory?
-                          glob glob-fold sys-glob make-glob-fs-fold
-                          sys-stat->file-type sys-stat->mode sys-stat->ino
-                          sys-stat->dev sys-stat->rdev sys-stat->nlink
-                          sys-stat->size sys-stat->uid sys-stat->gid
-                          sys-stat->atime sys-stat->mtime sys-stat->ctime
-                          sys-stat->type sys-tm->alist)
+(autoload gauche.fileutil
+          file-exists? file-is-regular? file-is-directory?
+          glob glob-fold sys-glob glob-component->regexp make-glob-fs-fold
+          sys-stat->file-type sys-stat->mode sys-stat->ino
+          sys-stat->dev sys-stat->rdev sys-stat->nlink
+          sys-stat->size sys-stat->uid sys-stat->gid
+          sys-stat->atime sys-stat->mtime sys-stat->ctime
+          sys-stat->type sys-tm->alist)
 
 (autoload gauche.hashutil hash-table hash-table-fold
                           hash-table-for-each hash-table-map)
