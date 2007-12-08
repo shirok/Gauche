@@ -30,11 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: base64.scm,v 1.9 2007-03-02 07:39:10 shirok Exp $
+;;;  $Id: base64.scm,v 1.10 2007-12-08 03:15:15 shirok Exp $
 ;;;
 
 ;; Implements Base64 encoding/decoding routine
 ;; Ref: RFC2045 section 6.8  <http://www.rfc-editor.org/rfc/rfc2045.txt>
+;; and RFC3548 <http://www.rfc-editor.org/rfc/rfc3548.txt>
 
 (define-module rfc.base64
   (use srfi-2)
@@ -66,6 +67,8 @@
     #\g #\h #\i #\j #\k #\l #\m #\n #\o #\p #\q #\r #\s #\t #\u #\v
   ;;48  49  50  51  52  53  54  55  56  57  58  59  60  61  62  63
     #\w #\x #\y #\z #\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\+ #\/
+  ;;pad
+    #\=
   ))
 
 (define (base64-decode)
@@ -113,41 +116,43 @@
       (with-input-from-string string base64-decode))))
 
 
-(define (base64-encode)
-  (let-syntax ((emit (syntax-rules ()
-                       ((_ idx)
-                        (write-char (vector-ref *encode-table* idx))))))
-    (define (e0 c cnt)
-      (if (eof-object? c)
-          #t
-          (begin (emit (quotient c 4))
-                 (e1 (read-byte) (modulo c 4) cnt))))
+(define (base64-encode . opts)
+  (let-keywords opts ((line-width 76))
+    (define maxcol (and line-width (> line-width 0) (- line-width 1)))
 
-    (define (e1 c hi cnt)
-      (if (eof-object? c)
-          (begin (emit (* hi 16))
-                 (write-char #\=)
-                 (write-char #\=))
-          (begin (emit (+ (* hi 16) (quotient c 16)))
-                 (e2 (read-byte) (modulo c 16) cnt))))
+    (letrec-syntax ([emit*
+                     (syntax-rules ()
+                       [(_ col) col]
+                       [(_ col idx idx2 ...)
+                        (begin
+                          (write-char (vector-ref *encode-table* idx))
+                          (let1 col2 (cond [(eqv? col maxcol) (newline) 0]
+                                           [else (+ col 1)])
+                            (emit* col2 idx2 ...)))])])
 
-    (define (e2 c hi cnt)
-      (if (eof-object? c)
-          (begin (emit (* hi 4))
-                 (write-char #\=))
-          (begin (emit (+ (* hi 4) (quotient c 64)))
-                 (emit (modulo c 64))
-                 (if (= cnt 17)
-                     (begin (newline)
-                            (e0 (read-byte) 0))
-                     (e0 (read-byte) (+ cnt 1))))))
+      (define (e0 c col)
+        (cond [(eof-object? c)]
+              [else
+               (e1 (read-byte) (modulo c 4) (emit* col (quotient c 4)))]))
 
-    (e0 (read-byte) 0)))
+      (define (e1 c hi col)
+        (cond [(eof-object? c)
+               (emit* col (* hi 16) 64 64)]
+              [else
+               (e2 (read-byte) (modulo c 16)
+                   (emit* col (+ (* hi 16) (quotient c 16))))]))
 
-(define (base64-encode-string string)
-  (with-output-to-string
-    (lambda ()
-      (with-input-from-string string base64-encode))))
+      (define (e2 c hi col)
+        (cond [(eof-object? c)
+               (emit* col (* hi 4) 64)]
+              [else
+               (e0 (read-byte) 
+                   (emit* col (+ (* hi 4) (quotient c 64)) (modulo c 64)))]))
+
+      (e0 (read-byte) 0))))
+
+(define (base64-encode-string string . opts)
+  (with-string-io string (cut apply base64-encode opts)))
 
 (provide "rfc/base64")
 

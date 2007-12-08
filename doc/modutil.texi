@@ -4562,19 +4562,29 @@ defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.3.
 @c COMMON
 @end deftp
 
-@defun base64-encode
+@defun base64-encode &keyword line-width
 @c EN
 Reads byte stream from the current input port, encodes it in Base64
 format and writes the result character stream to the current output port.
 The conversion ends when it reads EOF from the current input port.
+
+Newline characters can be inserted to keep the maximum line width to
+the value given to the @var{line-width} keyword argument.  The default
+value of @var{line-width} is 76, as specified in RFC2045.  You can give
+@code{#f} or zero to @var{line-width} to suppress line splitting.
 @c JP
 現在の入力ポートからバイト・ストリームを読み込み、それを Base64 フォーマットに
 エンコードし、現在の出力ポートに文字ストリームとして書き出します。
 現在の入力ポートから EOF を読み込むと変換を終了します。
+
+一行あたりの文字数が@var{line-width}に与えられた文字数を越えないように、
+改行文字が適切に出力に挿入されます。@var{line-width}のデフォルト値は
+RFC2045に従い76となっています。@var{line-width}に@code{#f}または@code{0}
+を与えることで改行を抑制することができます。
 @c COMMON
 @end defun
 
-@defun base64-encode-string string
+@defun base64-encode-string string &keyword line-width
 @c EN
 Converts contents of @var{string} to Base64 encoded format.
 Input string can be either complete or incomplete string;
