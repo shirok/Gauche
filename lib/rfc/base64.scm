@@ -30,15 +30,16 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: base64.scm,v 1.10 2007-12-08 03:15:15 shirok Exp $
+;;;  $Id: base64.scm,v 1.11 2007-12-08 03:29:56 shirok Exp $
 ;;;
 
 ;; Implements Base64 encoding/decoding routine
 ;; Ref: RFC2045 section 6.8  <http://www.rfc-editor.org/rfc/rfc2045.txt>
 ;; and RFC3548 <http://www.rfc-editor.org/rfc/rfc3548.txt>
 
+;; TODO: using uvector for binary source/sink
+
 (define-module rfc.base64
-  (use srfi-2)
   (export base64-encode base64-encode-string
           base64-decode base64-decode-string))
 (select-module rfc.base64)
