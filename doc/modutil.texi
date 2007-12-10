@@ -6286,7 +6286,7 @@ defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.7.
 @c COMMON
 @end deftp
 
-@defun quoted-printable-encode
+@defun quoted-printable-encode &keyword line-width binary
 @c EN
 Reads byte stream from the current input port, encodes it in Quoted-printable
 format and writes the result character stream to the current output port.
@@ -6296,17 +6296,56 @@ The conversion ends when it reads EOF from the current input port.
 フォーマットにエンコードし、現在の出力ポートへ結果の文字ストリームを
 書き出します。この変換は、現在の入力ポートからEOFを読み出すと終了します。
 @c COMMON
+@c EN
+The keyword argument @var{line-width} specifies the maximum 
+line width of the generated output in characters.  If the encoded
+output creates a long line, the procedure inserts a ``soft line break''
+so that the each line is equal to or shorter than this number.
+Soft line breaks are removed when quoted-printable text is
+decoded.
+The default line width is 76.  (The minimum meaningful number of
+line-width is 4).  You can suppress soft line breaks by
+giving @code{#f} or @code{0} to @var{line-width}.
+@c JP
+キーワード引数@var{line-width}は、出力に現れる行の最大長を指定します。
+エンコードされた行の長さがこの値を越えそうな場合は、「ソフトラインブレーク」が
+適宜挿入され、各行の長さがこの値を越えないように調整されます。
+ソフトラインブレークはquoted-printableフォーマットのデコード時に
+取り除かれます。
+@var{line-width}のデフォルト値は76です。(最小の意味のある値は4です。)
+@var{line-width}に@code{#f}または@code{0}を渡せば、
+ソフトラインブレークは挿入されません。
+@c COMMON
+@c EN
+By default, @code{quoted-printable-encode} generates @code{CR-LF} sequence
+for each line break in the input (``hard line break'').
+When a true value is given to the keyword argument @var{binary},
+however, octets @code{#x0a} and @code{#x0d} in the input are encoded
+as @code{=0A} and @code{=0D}, respectively.  See RFC2045 section 6.7
+for the details.
+@c JP
+デフォルトでは、@code{quoted-printable-encode}は入力中の改行に対して
+@code{CR-LF}シーケンスを出力します(「ハードラインブレーク」)。
+しかし、@var{binary}キーワード引数に真の値が与えられた場合、
+入力中のオクテット@code{#x0a}および@code{#x0d}はそれぞれ
+@code{=0A}、@code{=0D}のようにエンコードされます。
+詳しくはRFC2045の6.7節を参照してください。
+@c COMMON
 @end defun
 
-@defun quoted-printable-encode-string string
+@defun quoted-printable-encode-string string &keyword line-width binary
 @c EN
 Converts contents of @var{string} to Quoted-printable encoded format.
 Input string can be either complete or incomplete string;
 it is always interpreted as a byte sequence.
+
+The keyword arguments are the same as @code{quoted-printable-encode}.
 @c JP
 @var{string}の内容をQuoted-printableエンコードされたフォーマットに
 変換します。入力の文字列は、完全文字列でも不完全文字列でも構いません。
 常にバイトシーケンスとして処理されます。
+
+キーワード引数は@code{quoted-printable-encode}と同じです。
 @c COMMON
 @end defun
 

@@ -1,3 +1,9 @@
+2007-12-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/quoted-printable.scm (quoted-printable-encode): Added line-
+	  width and binary keyword arguments.  Encode '?' to avoid interference
+	  with RFC2047 encoded header body.
+
 2007-12-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/base64.scm (base64-encode): Added line-width keyword argument
