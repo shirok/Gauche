@@ -1,3 +1,9 @@
+2007-12-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/mime.scm (mime-decode-text, mime-encode-word,
+	  mime-encode-text): Added utilities to encode/decode header fields
+	  according to RFC2047.
+
 2007-12-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/quoted-printable.scm (quoted-printable-encode): Added line-

@@ -199,6 +199,29 @@ Content-Length: 4349
 (test* "encode (soft line break)"
        "0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abc=\r\ndefghij0123456789abcdefghij"
        (quoted-printable-encode-string "0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij"))
+(test* "encode (soft line break w/line-width)"
+       "0123456789abcdefg=\r\nhij0123456789abcd=\r\nefghij"
+       (quoted-printable-encode-string
+        "0123456789abcdefghij0123456789abcdefghij"
+        :line-width 20))
+(test* "encode (soft line break w/line-width)"
+       "0123456789abcdef=3D=\r\nghij0123456789a=3D=\r\n=3Dbcdefghij"
+       (quoted-printable-encode-string
+        "0123456789abcdef=ghij0123456789a==bcdefghij"
+        :line-width 20))
+(test* "encode (soft line break w/line-width lower bound)"
+       "a=\r\n=3F=\r\nb"
+       (quoted-printable-encode-string "a?b" :line-width 4))
+(test* "encode (no line break)"
+       "0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij"
+       (quoted-printable-encode-string "0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij"
+                                       :line-width #f))
+(test* "encode (hard line break)"
+       "a\r\nb\r\nc\r\n"
+       (quoted-printable-encode-string "a\rb\nc\r\n"))
+(test* "encode (binary)"
+       "a=0Db=0Ac=0D=0A"
+       (quoted-printable-encode-string "a\rb\nc\r\n" :binary #t))
 
 (test* "decode" "\x01\x08abcde=\r\n"
        (quoted-printable-decode-string "=01=08abc=64=65=3D\r\n"))
@@ -348,22 +371,79 @@ Content-Length: 4349
         "multipart/alternative; boundary=\"=_alternative 006EBAA488256DF0_=\"")
        )
 
+(test* "mime-encode-text (pass-through)" "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod\r\n tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim\r\n veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea\r\n commodo consequat. Duis aute irure dolor in reprehenderit in voluptate\r\n velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat\r\n cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id\r\n est laborum."
+       (mime-encode-text "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."))
+(test* "mime-encode-text (pass-through, nonbreak)" "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+       (mime-encode-text "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+                         :line-width #f))
+(test* "mime-encode-text (pass-through, forced line break)" "Loremipsumdolorsitamet,consecteturadipisicingelit,seddoeiusmodtemporincididu\r\n ntutlaboreetdoloremagnaaliqua."
+       (mime-encode-text "Loremipsumdolorsitamet,consecteturadipisicingelit,seddoeiusmodtemporincididuntutlaboreetdoloremagnaaliqua."))
+
+(test* "mime-encode-text" "=?utf-8?B?zrvjga7lroflrpnjgbjjgojjgYbjgZPjgZ0=?=\r\n =?utf-8?B?44CCV2VsY29tZSB0byDOuy1zcGFjZQ==?="
+       (mime-encode-text "\u03bb\u306e\u5b87\u5b99\u3078\u3088\u3046\u3053\u305d\u3002\u0057\u0065\u006c\u0063\u006f\u006d\u0065\u0020\u0074\u006f\u0020\u03bb\u002d\u0073\u0070\u0061\u0063\u0065" :line-width 50))
+(test* "mime-encode-text (nobreak)" "=?utf-8?B?zrvjga7lroflrpnjgbjjgojjgYbjgZPjgZ3jgIJXZWxjb21lIHRvIM67LXNwYWNl?="
+       (mime-encode-text "\u03bb\u306e\u5b87\u5b99\u3078\u3088\u3046\u3053\u305d\u3002\u0057\u0065\u006c\u0063\u006f\u006d\u0065\u0020\u0074\u006f\u0020\u03bb\u002d\u0073\u0070\u0061\u0063\u0065" :line-width #f))
+
 (use gauche.charconv)
+
 (when (ces-conversion-supported? "iso-8859-1" #f)
   (test* "mime-decode-word" "this is some text"
-         (mime-decode-word "=?iso-8859-1?q?this=20is=20some=20text?=")))
+         (mime-decode-word "=?iso-8859-1?q?this=20is=20some=20text?="))
+  (test* "mime-decode-text" "this is some text"
+         (mime-decode-text
+          "=?iso-8859-1?q?this=20is?= =?iso-8859-1?q?some=20text?="))
+  (test* "mime-decode-text" "this is some text"
+         (mime-decode-text
+          "=?iso-8859-1?q?this=20is?= some=?iso-8859-1?q?=20text?="))
+
+  (test* "mime-encode-word" "=?iso-8859-1?Q?this=20is=20some=20text?="
+         (mime-encode-word "this is some text" :charset 'iso-8859-1
+                           :transfer-encoding 'quoted-printable))
+  (test* "mime-encode-text" "=?iso-8859-1?B?VGhlIHF1aWNr?=\r\n =?iso-8859-1?B?IGJyb3duIGZv?=\r\n =?iso-8859-1?B?eCBqdW1wcyBv?=\r\n =?iso-8859-1?B?dmVyIHRoZSBs?=\r\n =?iso-8859-1?B?YXp5IGRvZw==?="
+         (mime-encode-text "The quick brown fox jumps over the lazy dog"
+                           :charset 'iso-8859-1 :force #t
+                           :line-width 30))
+  (test* "mime-encode-text" "\r\n =?iso-8859-1?B?VGhlIHF1aWNrIGJyb3du?=\r\n =?iso-8859-1?B?IGZveCBqdW1wcyBvdmVy?=\r\n =?iso-8859-1?B?IHRoZSBsYXp5IGRvZw==?="
+         (mime-encode-text "The quick brown fox jumps over the lazy dog"
+                           :charset 'iso-8859-1 :force #t
+                           :line-width 40
+                           :start-column 20))
+  )
+  
 (when (ces-conversion-supported? "us-ascii" #f)
   (test* "mime-decode-word" "Keith_Moore"
-         (mime-decode-word "=?US-ASCII?Q?Keith_Moore?=")))
-(when (and (memq (gauche-character-encoding) '(euc-jp sjis utf8))
+         (mime-decode-word "=?US-ASCII?Q?Keith_Moore?="))
+  (test* "mime-decode-word" "Keith_Moore"
+         (mime-decode-word "=?US-ASCII?B?S2VpdGhfTW9vcmU=?="))
+  (test* "mime-decode-text" "Keith/Moore"
+         (mime-decode-text "=?US-ASCII?B?S2VpdGg=?=/=?US-ASCII?Q?Moore?="))
+
+  (test* "mime-encode-text" "=?us-ascii?B?VGhlIHF1aWNr?=\r\n =?us-ascii?B?IGJyb3duIGZv?=\r\n =?us-ascii?B?eCBqdW1wcyBv?=\r\n =?us-ascii?B?dmVyIHRoZSBs?=\r\n =?us-ascii?B?YXp5IGRvZw==?="
+         (mime-encode-text "The quick brown fox jumps over the lazy dog"
+                           :charset 'us-ascii :force #t
+                           :line-width 30))
+  )
+                           
+(when (and (memq (gauche-character-encoding) '(euc-jp sjis utf-8))
            (ces-conversion-supported? "iso-2022-jp" #f))
   (test* "mime-decode-word" "\u5ddd\u5408 \u53f2\u6717"
          (mime-decode-word "=?ISO-2022-JP?B?GyRCQG45ZxsoQiAbJEI7S08vGyhC?="))
+  (test* "mime-decode-text" "(\u5ddd\u5408 \u53f2\u6717)"
+         (mime-decode-text "(=?iso-2022-jp?b?GyRCQG45ZxsoQg==?= =?iso-2022-jp?b?GyRCO0tPLxsoQg==?=)"))
+  (test* "mime-encode-word" "=?iso-2022-jp?B?GyRCQG45ZxsoQiAbJEI7S08vGyhC?="
+         (mime-encode-word "\u5ddd\u5408 \u53f2\u6717"
+                           :charset 'iso-2022-jp))
   )
+
 ;; this tests whether illegal input sequence is handled gracefully
-(when (memq (gauche-character-encoding) '(euc-jp sjis utf8))
+(when (memq (gauche-character-encoding) '(euc-jp sjis utf-8))
   (test* "mime-decode-word" "=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?="
-         (mime-decode-word "=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?=")))
+         (mime-decode-word "=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?="))
+  (test* "mime-decode-text" "(=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?=)"
+         (mime-decode-text "(=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?=)"))
+  )
+
+
 
 ;; NB: this assumes the test is run either under src/ or test/
 (define (mime-message-tester num headers)

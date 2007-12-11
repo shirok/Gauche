@@ -30,15 +30,15 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.13 2007-03-02 07:39:10 shirok Exp $
+;;;  $Id: mime.scm,v 1.14 2007-12-11 13:10:47 shirok Exp $
 ;;;
 
-;; RFC2045 Multipurpose Internet Mail Extensions (MIME)
-;;  Part One: Format of Internet Message Bodies
-;; RFC2046 Multipurpose Internet Mail Extensions (MIME)
-;;  Part Two: Media Types
-;; RFC2047 Multipurpose Internet Mail Extensions (MIME)
-;;  Part Three: Message Header Extensions for Non-ASCII Text
+;; RFC2045 Multipurpose Internet Mail Extensions (MIME) Part One:
+;;            Format of Internet Message Bodies
+;; RFC2046 Multipurpose Internet Mail Extensions (MIME) Part Two:
+;;            Media Types
+;; RFC2047 Multipurpose Internet Mail Extensions (MIME) Part Three:
+;;            Message Header Extensions for Non-ASCII Text
 ;; RFC2048 
 ;; RFC2049 
 
@@ -46,14 +46,14 @@
   (use gauche.vport)
   (use gauche.uvector)
   (use srfi-1)
-  (use srfi-2)
   (use srfi-13)
   (use srfi-14)
   (use rfc.822)
   (use util.queue)
   (use util.list)
   (export mime-parse-version mime-parse-content-type
-          mime-decode-word
+          mime-encode-word mime-encode-text
+          mime-decode-word mime-decode-text
           <mime-part>
           mime-parse-message mime-retrieve-body
           mime-body->string mime-body->file
@@ -61,9 +61,12 @@
   )
 (select-module rfc.mime)
 
-(autoload rfc.quoted-printable quoted-printable-decode-string)
-(autoload rfc.base64 base64-decode-string base64-decode)
-(autoload gauche.charconv ces-conversion-supported? ces-convert)
+(autoload rfc.quoted-printable quoted-printable-decode-string
+          quoted-printable-encode-string)
+(autoload rfc.base64 base64-decode-string base64-decode
+          base64-encode-string)
+(autoload gauche.charconv
+          ces-upper-compatible? ces-conversion-supported? ces-convert)
 
 ;;===============================================================
 ;; Basic utility
@@ -110,23 +113,155 @@
                          (get-attributes input '()))))
            ))))
 
+;;===============================================================
+;; RFC2047 header field encoding
+;;
+
+;; Decoding
+
+;; the end is not anchored, to be used in mime-decode-text.
+(define *mime-encoded-header-rx* 
+  #/^=\?([-!#-'*+\w\^-~]+)\?([-!#-'*+\w\^-~]+)\?([!->@-~]+)\?=/)
+
+(define (%mime-decode-word word charset encoding body)
+  (if (ces-conversion-supported? charset #f)
+    (guard (e (else word))  ;; capture illegal encoding
+      (cond [(string-ci=? encoding "q")
+             (ces-convert (quoted-printable-decode-string body) charset #f)]
+            [(string-ci=? encoding "b")
+             (ces-convert (base64-decode-string body) charset #f)]
+            [else word])) ;; unsupported encoding
+    word))
+
 ;; decode rfc2047-encoded word, i.e. "=?...?="
 ;; if word isn't legal encoded word, it is returned as is.
 (define (mime-decode-word word)
-  (rxmatch-case word
-    (test string-incomplete? word) ;; safety net
-    (#/^=\?([-!#-'*+\w\^-~]+)\?([-!#-'*+\w\^-~]+)\?([!->@-~]+)\?=$/
-     (#f charset encoding body)
-     (if (ces-conversion-supported? charset #f)
-       (guard (e (else word))  ;; capture illegal encoding
-         (cond ((string-ci=? encoding "q")
-                (ces-convert (quoted-printable-decode-string body)
-                             charset #f))
-               ((string-ci=? encoding "b")
-                (ces-convert (base64-decode-string body) charset #f))
-               (else word))) ;; unsupported encoding
-       word))
-    (else word)))
+  (cond [(string-incomplete? word) word] ;; safety net
+        [(rxmatch *mime-encoded-header-rx* word)
+         => (lambda (m)
+              (if (equal? (m'after) "")
+                (%mime-decode-word word (m 1) (m 2) (m 3))
+                word))]
+        [else word]))
+
+;; Decode the entire header field body, possibly a mixture of
+;; encoded-words and orginary words.  NOTE: If you apply this to
+;; a structured field body, the decoded words may contain special
+;; characters meaningful to the structured body and thus confuse
+;; the parser.  The correct order is to parse first, then apply
+;; mime-decode-word for each token.
+(define (mime-decode-text body)
+  (let loop ((s body))
+    (receive (pre rest) (string-scan s "=?" 'before*)
+      (cond [(not pre) s]
+            [(rxmatch *mime-encoded-header-rx* rest)
+             => (lambda (m)
+                  (string-append pre
+                                 (%mime-decode-word (m 0) (m 1) (m 2) (m 3))
+                                 (loop (m'after))))]
+            [else s]))))
+
+;; Encode a single word.  This one always encode, even WORD contains
+;; US-ASCII characters only.
+(define (mime-encode-word word . keys)
+  (let-keywords keys ((charset "utf-8")
+                      (transfer-encoding 'base64))
+    (let ((converted
+           (cond [(ces-upper-compatible? charset (gauche-character-encoding))
+                  word]
+                 [else
+                  (ces-convert word (gauche-character-encoding) charset)]))
+          (enc (%canonical-encoding transfer-encoding)))
+      (format "=?~a?~a?~a?=" charset enc
+              ((if (eq? enc 'B)
+                 base64-encode-string
+                 quoted-printable-encode-string)
+               converted :line-width #f)))))
+
+;; Encode entire body if necessary, considering line folding.
+;; At this moment, this function just treat the body as unstructured
+;; text.  It's not safe to pass structured text.  In future we may have
+;; a keyword option to make body parsed as structured text.
+(define (mime-encode-text body . keys)
+  (let-keywords keys ((charset "utf-8")
+                      (transfer-encoding 'base64)
+                      (line-width 76)
+                      (start-column 0)
+                      (force #f))
+    (let ((enc (%canonical-encoding transfer-encoding))
+          (cslen (string-length (x->string charset)))
+          (pass-through? (and (not force)
+                              (ces-upper-compatible? charset 'ascii)
+                              (string-every #[\x00-\x7f] body))))
+      ;; estimates the length of an encoded word.  it is not trivial since
+      ;; we have to ces-convert each segment separately, and there's no
+      ;; general way to estimate the size of ces-converted string.
+      ;; we throw in some heuristics here.
+      (define (estimate-width s i)
+        (let1 na (string-count s #[\x00-\x7f] 0 i)
+          (+ 6 cslen
+             (if (eq? enc 'B)
+               (ceiling (* (+ na (* (- i na) 3)) 4/3))
+               (let1 ng (string-count s #[!-<>-~] 0 i)
+                 (+ (- na ng) (* 3 (+ ng (* (- i na) 3)))))))))
+      (define (encode-word w)
+        (mime-encode-word w :charset charset :transfer-encoding enc))
+      ;; we don't need to pack optimally, so we use some heuristics.
+      (define (encode str width adj)
+        (or (and-let* ([estim (estimate-width str (string-length str))]
+                       [ (< (* adj estim) width) ]
+                       [ew (encode-word str)])
+              (if (<= (string-length ew) width)
+                `(,ew)
+                (encode str width (* adj (/. (string-length ew) width)))))
+            (let loop ((k (min (string-length str) (quotient width 2))))
+              (let1 estim (* adj (estimate-width str k))
+                (if (<= estim width)
+                  (let1 ew (encode-word (string-take str k))
+                    (if (<= (string-length ew) width)
+                      (list* ew "\r\n "
+                             (encode (string-drop str k) (- line-width 1) adj))
+                      (loop (floor->exact
+                             (* k (/ width (string-length ew)))))))
+                  (loop (floor->exact (* k (/ width estim)))))))
+            ))
+      ;; fill pass-through text.  we try our best to look for an appropriate
+      ;; place to insert FWS.  we know STR is all ASCII.
+      (define (fill str width)
+        (if (<= (string-length str) width)
+          `(,str)
+          (or (and-let* ([pos (string-index-right str #\space 0 width)])
+                (list* (string-take str pos) "\r\n "
+                       (fill (string-drop str (+ pos 1)) (- line-width 1))))
+              ;; if we can't find a whitespace, we break in the middle of
+              ;; word for the last resort.
+              (list* (string-take str width) "\r\n "
+                     (fill (string-drop str width) (- line-width 1))))))
+      
+      (cond [(or (not line-width) (zero? line-width))
+             (if pass-through? body (encode-word body))]
+            [(< line-width 30)
+             (errorf "line width (~a) is too short to encode header field body: ~s" line-width body)]
+            [(< (- line-width start-column) 30)
+             ;; just in case if header name is very long.  we insert line break
+             ;; first.
+             (string-concatenate
+              (cons "\r\n " (if pass-through?
+                              (fill body (- line-width 1))
+                              (encode body (- line-width 1) 1.0))))]
+            [else
+             (string-concatenate
+              (if pass-through?
+                (fill body (- line-width start-column))
+                (encode body (- line-width start-column) 1.0)))]))))
+
+(define (%canonical-encoding transfer-encoding)
+  (case transfer-encoding
+    [(B b base64) 'B]
+    [(Q q quoted-printable) 'Q]
+    [else (error "unsupported MIME header encoding specifier:"
+                 transfer-encoding)]))
+  
 
 ;;===============================================================
 ;; Virtual port to recognize mime boundary

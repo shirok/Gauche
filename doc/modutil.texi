@@ -5875,9 +5875,9 @@ This module is supposed to be used with @code{rfc.822} module
 @subheading Utilities for header fields
 
 @c EN
-A few utility procedures to parse MIME-specific header fields.
+A few utility procedures to parse and generate MIME-specific header fields.
 @c JP
-MIME特有のヘッダフィールドをパーズする便利な手続き。
+MIME特有のヘッダフィールドをパーズしたり生成したりする便利な手続き。
 @c COMMON
 
 @defun mime-parse-version field
@@ -5907,7 +5907,7 @@ Note: simple regexp such as @code{#/\d+\.\d+/} doesn't do this job,
 for @var{field} may contain comments between tokens.
 @c JP
 注意: @var{field}はトークンの間にコメントを含むかもしれないので、
-@code{#/\d+\.\d+/}のような単純な正規表現では実現できません。
+@code{#/\d+\.\d+/}のような単純な正規表現では不十分です。
 @c COMMON
 @end defun
 
@@ -5947,16 +5947,219 @@ returned.
 @c EN
 Decodes RFC2047-encoded word.  If @var{word} isn't an encoded word,
 it is returned as is.
+
+Note that this procedure decodes only if the entire @var{word} is
+an ``encoded word'' defined in RFC2047.  If you are dealing with
+a field that may contain multiple encoded word and/or unencoded parts,
+use @code{mime-decode-text} below.
 @c JP
 RFC2047でエンコードされた@var{word}をデコードします。
 @var{word}がRFC2047でエンコードされたものでない場合は、そのまま
 返されます。
+
+この手続きは@var{word}全体がRFC2047の規定する``encoded-word''である場合にのみ
+デコードを行うことに注意してください。複数のエンコードされた部分や
+エンコードされていない部分が混ざっているフィールドを扱う場合は、
+下に示す@code{mime-decode-text}を使います。
 @c COMMON
 
 @example
 (mime-decode-word "=?iso-8859-1?q?this=20is=20some=20text?=")
  @result{} "this is some text"
 @end example
+
+@end defun
+@defun mime-decode-text text
+@c EN
+Returns a string in which 
+all encoded words contained within @var{text} are decoded.
+This procedure can deal with a header field body that may contain
+mixture of non-encoded and encoded parts, and/or multiple encoded
+parts.  One of such header field is the Subject field of email.
+
+@example
+(mime-decode-text "This is =?US-ASCII?q?some=20text?=")
+ @result{} "This is some text"
+@end example
+@c JP
+@var{text}中に含まれるすべてのencoded wordをデコードした文字列を返します。
+この手続きは、エンコードされていない部分とエンコードされている部分が混ざっていたり、
+複数のエンコードされている部分を持つヘッダフィールドボディを処理することが
+できます。そのようなフィールドの例はemailのSubjectフィールドです。
+
+@example
+(mime-decode-text "Yamada Taro (=?utf-8?B?5bGx55SwIOWkqumDjg==?=)")
+ @result{} "Yamada Taro (山田 太郎)"
+@end example
+@c COMMON
+
+@c EN
+Care should be taken if you apply this procedure to a ``structured''
+header field body (see RFC2822 section 2.2.2).  
+The proper way of parsing a structured header field body is
+to tokenize it first, then to decode each word using @code{mime-decode-word}.
+since the decoded text may contain characters that affects the tokenization.
+(However, if you can just show the header field in human readable way
+for informational purposes, you may just use @code{mime-decode-text}
+on entire header field for the convenience).
+@c JP
+この手続きを「構造化された」ヘッダフィールドボディ (RFC2822 2.2.2節参照)
+に適用する際には注意が必要です。
+構造化されたヘッダフィールドボディをパーズする正式な方法は、
+最初にトークンに分割して、それから各wordを
+@code{mime-decode-word}を使ってデコードするというものです。
+なぜならデコード後のテキスト中に、パージングに影響を与える文字が含まれている
+かもしれないからです。
+(ただし、単に参考情報を人間にわかりやすいように表示するだけの目的の場合は、
+簡便のためにヘッダフィールド全体をこの手続きで一度にデコードしてしまっても
+良いでしょう)。
+@c COMMON
+@end defun
+
+@defun mime-encode-word word &keyword charset transfer-encoding
+@c EN
+Encodes @var{word} in the RFC2047 format.  The keyword
+argument @var{charset} specifies the character encoding scheme
+in string or symbol.
+whose default is @code{utf-8}.  If @var{charset} differs from
+Gauche's internal encoding and @var{word} is a complete string,
+the procedure convers the character encoding to @var{charset},
+then performs transfer encoding.
+@c JP
+@var{word}をRFC2047フォーマットにエンコードします。キーワード引数
+@var{charset}は文字列かシンボルで文字エンコーディングスキームを指定します。
+デフォルトは@code{utf-8}です。@var{charset}の指定がGaucheの
+内部文字エンコーディングと異なっており、@var{word}が完全な文字列である場合は、
+まず@var{word}が@var{charset}のエンコーディングへと変換され、
+その上でトランスファーエンコーディングがかけられます。
+@c COMMON
+
+@example
+(mime-encode-word "this is some text")
+ @result{} "=?utf-8?B?dGhpcyBpcyBzb21lIHRleHQ=?="
+@end example
+
+@c EN
+The keyword argument @var{transfer-encoding} specifies how
+the octets are encoded to transfer-safe characters.  You can
+give a symbol @code{b}, @code{B} or @code{base64} for Base64,
+and @code{Q}, @code{q}, @code{quoted-printable} for Quoted-printable
+transfer encodings.  An error is raised if you pass values other
+than those.  The default is Base64 encoding.
+@c JP
+キーワード引数@var{transfer-encoding}は各オクテットを伝達上安全な
+文字列へどエンコードする方法を指定します。サポートされている値は、
+Base64を指定するシンボル@code{b}、@code{B}、@code{base64}、
+およびQuoted printableを指定する
+@code{Q}、@code{q}、@code{quoted-printable}です。
+これ以外の値を渡した場合はエラーが通知されます。デフォルトはBase64です。
+@c COMMON
+
+@c EN
+This procedure does not consider the length of the resulting
+encoded word, which RFC2047 recommends to be less than 75 octets.
+Use @code{mime-encode-text} below to conform the line length limit.
+@c JP
+この手続きは結果のencoded wordの長さを気にしませんが、
+RFC2047によればencoded wordは75オクテットまでに収めることが
+要請されています。この要請に対応するには下に示す
+@code{mime-encode-text}を使って下さい。
+@c COMMON
+
+@c EN
+(Note: In most Gauche procedures, a keyword argument @code{encoding}
+is used to specify character encodings.  In this context we have
+two encodings, however, and to avoid the confusion we chose to use
+the terms ``charset'' and ``transfer-encoding'' that appear in
+RFC documents.)
+@c JP
+(註：ほとんどのGaucheの手続きでは、キーワード引数@code{encoding}により
+文字エンコーディングを指定します。しかしこの手続きの文脈では
+2つの「エンコーディング」が存在しているので、混乱を避けるために
+RFC文書で使われている``charset''および``transfer-encoding''の用語を
+使うこととしました。)
+@c COMMON
+@end defun
+
+@defun mime-encode-text text &keyword charset transfer-encoding line-width start-column force
+@c EN
+Encode @var{text} in RFC2047 format if necessary, and considering
+line foling if the result gets too long.
+
+The keyword arguments @var{charset} and @var{transfer-encoding} are the same
+as @code{mime-encode-word}.
+@c JP
+@var{text}を、必要ならばRFC2047フォーマットに従いエンコードします。
+また、結果が長すぎる場合の行の折り返しも考慮します。
+
+キーワード引数@var{charset}と@var{transfer-encoding}の意味は
+@code{mime-encode-word}と同じです。
+@c COMMON
+
+@c EN
+If the @var{text} only consists of printable ASCII characters,
+no encoding is done, and only line folding is considered.
+However, if a true value is given to the @var{force} argument,
+even ASCII-only @var{text} is encoded.
+@c JP
+もし@var{word}が印字可能なASCII文字のみで構成されていた場合は
+エンコーディングは行われず、行の折り返しのみが処理されます。
+但し、@var{force}引数に真の値が与えられた場合はASCIIのみの@var{text}も
+エンコードされます。
+@c COMMON
+
+@c EN
+The @var{line-width} specifies the maximum line width of the result.
+Its default is 76.
+If the encoded word gets too long, it is splitted to multiple encoded
+words and CR LF SPC sequence (``folding white space'' defined in RFC2822)
+are inserted inbetween.
+You can suppress this behavior by passing @code{#f} or @code{0} to
+@var{line-width}.
+Since encoded word needs some overhead characters, it doesn't make much sense
+to specify small value to @code{line-width}.  Current implementation
+rejects @code{line-width} smaller than 30.
+@c JP
+@var{line-width}は結果に現れる行の最大値を指定します。デフォルトは76です。
+encoded wordがこれを越える場合は、複数のencoded wordへと結果は分割され、
+間にCR LF SPCシーケンス(RFC2822で定義される``folding white space'')が挿入されます。
+@var{line-width}に@code{#f}か@code{0}を渡すことで
+行の折り返しを抑制することができます。
+encoded wordには文字数でいくらかのオーバヘッドがあるため、
+あまり小さい@code{line-width}には意味がありません。現在の実装では
+30以下の値は拒否されます。
+@c COMMON
+
+@c EN
+The @var{start-column} keyword argument can be used to 
+shorten the first of folded
+lines to make room for header field name.  For example, if
+you want to encode the body of a Subject header field,
+you can pass the value of @code{(string-length "Subject: ")} so that
+the encoded result can directly concatenated after the header
+field name.  The default value is 0.
+@c JP
+@var{start-column}キーワード引数は、ヘッダフィールド名を入れるために
+エンコード結果の最初の行だけを短くするのに使えます。
+例えばSubjectヘッダフィールドのボディをエンコードする際に、
+@code{(string-length "Subject: ")}の値を渡してやれば、
+結果を直接"Subject: "の後に連結することができるわけです。
+デフォルトの値は0です。
+@c COMMON
+
+@c EN
+This procedure is not designed to encode parts of structured
+header fields, which have further restrictions such as which parts
+can be encoded and where the folding white spaces can be inserted.
+The robust way is to encode some parts first, then construct
+a structured header fields, considering line folding.
+@c JP
+この手続きはstructured header fieldをエンコードするようには設計
+されていません。structured header fieldには、どの部分がエンコード
+可能でどの部分にfolding white spaceが挿入可能かについてさらなる
+制約があるためです。安全な方法は、まず必要な部分をエンコードし、
+それから折り返しを考慮しつつstructured header fieldを組み立てることです。
+@c COMMON
 @end defun
 
 @subheading Streaming parser
