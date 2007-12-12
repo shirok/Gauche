@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.96 2007-11-20 12:46:35 shirok Exp $
+ *  $Id: read.c,v 1.97 2007-12-12 09:00:40 shirok Exp $
  */
 
 #include <stdio.h>
@@ -721,47 +721,87 @@ static ScmObj read_string(ScmPort *port, int incompletep,
     for (;;) {
         FETCH(c);
         switch (c) {
-          case EOF: goto eof_exit;
-          case '"': {
-              int flags = ((incompletep? SCM_STRING_INCOMPLETE : 0)
-                           | SCM_STRING_IMMUTABLE);
-              return Scm_DStringGet(&ds, flags);
-          }
-          case '\\': {
-            int c1 = Scm_GetcUnsafe(port);
-            switch (c1) {
-              case EOF: goto eof_exit;
-              case 'n': ACCUMULATE('\n'); break;
-              case 'r': ACCUMULATE('\r'); break;
-              case 'f': ACCUMULATE('\f'); break;
-              case 't': ACCUMULATE('\t'); break;
-              case '\\': ACCUMULATE('\\'); break;
-              case '0': ACCUMULATE(0); break;
-              case 'x': {
-                  int cc = read_string_xdigits(port, 2, 'x', incompletep);
-                  ACCUMULATE(cc);
-                  break;
-              }
-              case 'u': {
-                  int cc = read_string_xdigits(port, 4, 'u', incompletep);
-                  ACCUMULATE(Scm_UcsToChar(cc));
-                  break;
-              }
-              case 'U': {
-                  int cc = read_string_xdigits(port, 8, 'U', incompletep);
-                  ACCUMULATE(Scm_UcsToChar(cc));
-                  break;
-              }
-              default:
-                ACCUMULATE(c1); break;
+        case EOF: goto eof_exit;
+        case '"': {
+            int flags = ((incompletep? SCM_STRING_INCOMPLETE : 0)
+                         | SCM_STRING_IMMUTABLE);
+            return Scm_DStringGet(&ds, flags);
+        }
+        backslash:
+        case '\\': {
+            FETCH(c);
+            switch (c) {
+            case EOF: goto eof_exit;
+            case 'n': ACCUMULATE('\n'); break;
+            case 'r': ACCUMULATE('\r'); break;
+            case 'f': ACCUMULATE('\f'); break;
+            case 't': ACCUMULATE('\t'); break;
+            case '\\': ACCUMULATE('\\'); break;
+            case '0': ACCUMULATE(0); break;
+            case 'x': {
+                int cc = read_string_xdigits(port, 2, 'x', incompletep);
+                ACCUMULATE(cc);
+                break;
+            }
+            case 'u': {
+                int cc = read_string_xdigits(port, 4, 'u', incompletep);
+                ACCUMULATE(Scm_UcsToChar(cc));
+                break;
+            }
+            case 'U': {
+                int cc = read_string_xdigits(port, 8, 'U', incompletep);
+                ACCUMULATE(Scm_UcsToChar(cc));
+                break;
+            }
+                /* R6RS-style line continuation handling*/
+            case ' ':
+            case '\t': {
+                for (;;) {
+                    FETCH(c);
+                    if (c == EOF) goto eof_exit;
+                    if (c == '\r') goto cont_cr;
+                    if (c == '\n') goto cont_lf;
+                    if (c != ' ' && c != '\t') goto cont_err;
+                }
+            }
+                /*FALLTHROUGH*/
+            cont_cr:
+            case '\r': {
+                FETCH(c);
+                if (c == EOF)  goto eof_exit;
+                if (c == '\\') goto backslash;
+                if (c != '\n' && c != ' ' && c != '\t') {
+                    ACCUMULATE(c);
+                    break;
+                }
+                /*FALLTHROUGH*/
+            }
+            cont_lf:
+            case '\n': {
+                for (;;) {
+                    FETCH(c);
+                    if (c == EOF) goto eof_exit;
+                    if (c == '\\') goto backslash;
+                    if (c != ' ' && c != '\t') {
+                        ACCUMULATE(c);
+                        break;
+                    }
+                }
+                break;
+            }
+            default:
+                ACCUMULATE(c); break;
             }
             break;
-          }
-          default: ACCUMULATE(c); break;
+        }       
+        default: ACCUMULATE(c); break;
         }
     }
  eof_exit:
     Scm_ReadError(port, "EOF encountered in a string literal: %S",
+                  Scm_DStringGet(&ds, 0));
+ cont_err:
+    Scm_ReadError(port, "Invalid line continuation sequence in a string literal: %S...",
                   Scm_DStringGet(&ds, 0));
     /* NOTREACHED */
     return SCM_FALSE; 

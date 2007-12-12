@@ -295,7 +295,8 @@
 ;;-------------------------------------------------------------------
 (test-section "input string port")
 
-;; These also tests port's ungetc buffer and scratch buffer.
+;; These also tests port's ungetc and scratch buffer, and
+;; some special string syntax.
 
 (define istr (open-input-string "abcdefg"))
 
@@ -337,6 +338,34 @@
          (read-char istr)
          (peek-byte istr)
          (get-remaining-input-string istr)))
+
+(test* "line continuation" "abcdefgh"
+       (read (open-input-string "\"abcd\\\n   efgh\"")))
+(test* "line continuation" "abcdefgh2"
+       (read (open-input-string "\"abcd\\\nefgh2\"")))
+(test* "line continuation" "abcdefgh3"
+       (read (open-input-string "\"abcd\\\n\t \tefgh3\"")))
+(test* "line continuation" "ABCDEFGH"
+       (read (open-input-string "\"ABCD\\\r\n   EFGH\"")))
+(test* "line continuation" "ABCDEFGH2"
+       (read (open-input-string "\"ABCD\\\r\nEFGH2\"")))
+(test* "line continuation" "ABCDEFGH3"
+       (read (open-input-string "\"ABCD\\\r\n \t EFGH3\"")))
+(test* "line continuation" "ABCDefgh"
+       (read (open-input-string "\"ABCD\\\r   efgh\"")))
+(test* "line continuation" "ABCDefgh2"
+       (read (open-input-string "\"ABCD\\\refgh2\"")))
+(test* "line continuation" "ABCDefgh3"
+       (read (open-input-string "\"ABCD\\ \t \refgh3\"")))
+(test* "line continuation" "0123 4567"
+       (read (open-input-string "\"0123 \\\n   4567\"")))
+(test* "line continuation" "0123 4567"
+       (read (open-input-string "\"0123 \\   \n   4567\"")))
+(test* "line continuation" "0123-4567"
+       (read (open-input-string "\"0123\\\n \\  \n -4567\"")))
+(test* "line continuation (invalid)" *test-error*
+       (read (open-input-string "\"1234\\ x\"")))
+
 
 (define (read-line-tester str)
   (let1 s (open-input-string str)

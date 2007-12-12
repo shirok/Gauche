@@ -1,5 +1,10 @@
 2007-12-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/read.c (read_string): Supports R6RS-style line folding in
+	  string literal.  This should be reworked once we support all
+	  kind of whitespaces and line endings, but for the time being
+	  we just hardcode treatment of SPC and TABs.
+
 	* lib/rfc/mime.scm (mime-decode-text, mime-encode-word,
 	  mime-encode-text): Added utilities to encode/decode header fields
 	  according to RFC2047.
