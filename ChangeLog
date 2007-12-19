@@ -1,3 +1,11 @@
+2007-12-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/822.scm (rfc822-write-headers): Added generic message
+	  header generation routine.
+	  (rfc822-read-headers): Renamed rfx822-header->list for the
+	  symmetry with rfc822-write-headers.  We keep the old name
+	  for the backward compatibility.
+
 2007-12-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_string): Supports R6RS-style line folding in

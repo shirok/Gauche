@@ -4219,27 +4219,27 @@ RFC2822 (@ref{rfc2822,[RFC2822],RFC2822}).
 The format was originally defined in RFC 822, and people still 
 call it ``RFC822 format'', hence I named this module.
 In the following document, I also refer to the format as ``RFC822 format''.
-
-Say @code{(use rfc.822)} to use this module.
 @c JP
-電子メールを交換する際に使用されるテキストのフォーマット、"インターネット・
-メッセージ・フォーマット" をパーズ/生成する手続きを定義しています。
+電子メールを交換する際に使用されるテキストのフォーマットである、``インターネット・
+メッセージ・フォーマット''をパーズ/生成する手続きを定義しています。
 最新の仕様は、RFC2822 (@ref{rfc2822,[RFC2822],RFC2822}) にあります。
-このフォーマットは最初 RFC 822 で定義されたため、未だに"RFC822形式"と
+このフォーマットは最初 RFC 822 で定義されたため、未だに``RFC822形式''と
 呼ばれています。それがこのモジュール名の由来です。
-以下では、このフォーマットを"RFC822形式"と呼んでいます。
-
-このモジュールを使うためには、@code{(use rfc.822)} として下さい。
+以下では、このフォーマットを``RFC822形式''と呼びます。
 @c COMMON
 @end deftp
 
-@subheading Parsing a message header
+@c EN
+@subheading Parsing message headers
+@c JP
+@subheading メッセージヘッダのパーズ
+@c COMMON
 
-@defun rfc822-header->list iport &keyword strict? reader
+@defun rfc822-read-headers iport &keyword strict? reader
 @c EN
 Reads RFC822 format message from an input port @var{iport},
 until it reaches the end of the message header.
-The header fields are unfolded, and broken into a list of the following
+The header fields are broken into a list of the following
 format:
 @c JP
 入力ポート @var{iport} から、メッセージ・ヘッダの終わりに達するまで、
@@ -4253,14 +4253,13 @@ RFC822 形式のメッセージを読み込みます。
 @var{Name} @dots{} are the field names, and @var{body} @dots{} are
 the corresponding field body, both as strings.
 Field names are converted to lower-case characters.
-Field bodies are not modified, except the folded line is concatenated,
-CRLFs removed.
+Field bodies are not modified, except the folded line is unfolded.
 The order of fields are preserved.
 @c JP
 @var{Name} @dots{} はフィールド名で、@var{body} @dots{} は対応するフィールドの
 ボディ、ともに文字列です。
-フィールド名は小文字に変換されます。フィールドのボディは、たたまれている
-行が連結され CRLF が削除される以外は変更されません。
+フィールド名は小文字に変換されます。フィールドのボディは、行折り返しが
+取り除かれる以外は変更されません。
 フィールドの順番は保存されます。
 @c COMMON
 
@@ -4278,7 +4277,7 @@ a line from @var{iport}.  Its default is @code{read-line}, which
 should be enough for most cases.
 @c JP
 デフォルトでは、パーザの動作は寛容です。ヘッダをパーズ中に EOF に
-出会うとそれをメッセージの終端とみなします。継続(畳み込み)行でもなく、
+出会うとそれをメッセージの終端とみなします。継続(折り返し)行でもなく、
 新しいヘッダフィールドの始端でもない行は無視します。このふるまいは
 キーワード引数 @var{strict?} に真の値を渡すことで変更することができます。
 真を渡すと、このような不正な形式のヘッダに対してエラーを発生させるように
@@ -4290,17 +4289,30 @@ should be enough for most cases.
 @c COMMON
 @end defun
 
+@defun rfc822-header->list iport &keyword strict? reader
+@c EN
+This is an old name of @code{rfc822-read-headers}.  This is kept
+for the backward compatibility.  The new code should use
+@code{rfc822-read-headers} instead.
+@c JP
+これは@code{rfc822-read-headers}の古い名前です。
+互換性のために残してありますが、新しいコードは
+@code{rfc822-read-headers}を使って下さい。
+@c COMMON
+@end defun
+
+
 @defun rfc822-header-ref header-list field-name &optional default
 @c EN
 An utility procedure to get a specific field from the parsed
-header list, which is returned by @code{rfc822-header->list}.
+header list, which is returned by @code{rfc822-read-headers}.
 
 @var{Field-name} specifies the field name in a lowercase string.
 If the field with given name is in @var{header-list}, the procedure
 returns its value in a string.  Otherwise, if @var{default} is given,
 it is returned, and if not, @code{#f} is returned.
 @c JP
-@code{rfc822-header->list} が返すパーズ済みのヘッダリストから
+@code{rfc822-read-headers} が返すパーズ済みのヘッダリストから
 特定のフィールドを得るためのユーティリティ手続きです。
 
 @var{Field-name} は小文字の文字列でフィールド名を指定します。
@@ -4324,7 +4336,7 @@ a header field, i.e. if the header field is
 they parse "@code{Wandering Schemer <schemer@@example.com>}".
 
 Most of procedures take an input port.  Usually you first parse
-the entire header fields by @code{rfc822-header->list},
+the entire header fields by @code{rfc822-read-headers},
 obtain the body of the header by @code{rfc822-header-ref},
 then open an input string port for the body and use those
 procedures to parse them.
@@ -4346,7 +4358,7 @@ RFC2822メッセージの「構造化」されたヘッダフィールドをパーズするために、
 手続きは "@code{Wandering Schemer <schemer@@example.com>}" をパーズします。
 
 ほとんどの手続きは入力ポートを引数にとります。通常は最初に、ヘッダフィールド
-全部を @code{rfc822-header->list} でパーズし、ヘッダの本体を
+全部を @code{rfc822-read-headers} でパーズし、ヘッダの本体を
 @code{rfc822-header-ref} で取得してから、その本体用に入力文字列ポートを
 オープンして、それをこれらの手続きを用いてパーズします。
 
@@ -4544,6 +4556,87 @@ RFC822形式の日付フォーマットをパーズし、SRFI-19 の @code{<date>} オブジェクト
 かわりに @code{#f} を返します。
 @c COMMON
 @end defun
+
+@c EN
+@subheading Message constructors
+@c JP
+@subheading メッセージの構築
+@c COMMON
+
+@defun rfc822-write-headers headers &keyword output continue check
+This is a sort of inverse function of @code{rfc822-read-headers}.
+It receives a list of header data, in which each header data
+consists of @code{(<name> <body>)}, and writes them out in RFC822 header
+field format to the output port specified by the @var{output} keyword
+argument.  The default output is the current output port.
+
+By default, the procedure assumes @var{headers} contains all the
+header fields, and adds an empty line in the end of output
+to indicate the end of the header.  You can pass a true value to
+the @var{continue} keyword argument to prevent this, enabling
+more headers can be added later.
+
+I said ``a sort of'' above.  That's because this function doesn't
+(and can't) do the exact inverse.
+Specifically, the caller is responsible for line folding and
+make sure each header line doesn't exceed the ``hard limit'' defined
+by RFC2822 (998 octets).  This procedure cannot do the line 
+folding on behalf of the caller, because the places where 
+line folding is possible depend on the semantics of each
+header field.
+
+It is also the caller's responsibility to make sure header
+field bodies don't have any characters except non-NUL US-ASCII
+characters.  If you want to include characters outside of that
+range, you should convert them in the way allowed by the
+protocol, e.g. MIME.  The @code{rfc.mime} module 
+(@xref{MIME message handling}) provides a convenience procedure
+@code{mime-encode-text} for such purpose.
+Again, this procedure cannot do the encoding automatically,
+since the way the field
+should be encoded depends on header fields.
+
+What this procedure can do is to check and report such violations.
+By default, it runs several checks and signals an error if it finds any
+violations of RFC2822.  You can control this checking behavior
+by the @var{check} keyword argument.  It can take one of the
+following values:
+
+@table @code
+@item :error
+Default.  Signals an error if a violation is found.
+@item #f, :ignore
+Doesn't perform any check.  Trust the caller.
+@item @var{procedure}
+When @code{rfc822-write-headers} finds a violation, the procedure
+is called with three arguments; the header field name,
+the header field body, and the type of violation explained below.
+The procedure may correct the problem and return two values,
+the corrected header field name and body.  The returned values
+are checked again.  If the procedure returns the
+header field name and body unchanged, an error is signalled
+in the same way as @code{:error} is specified.
+@end table
+
+The third argument passed to the procedure given to the @var{check}
+argument is one of the following symbols.  New symbols may be
+added in future versions for more checks.
+
+@table @code
+@item incomplete-string
+Incomplete string is passed.
+@item bad-character
+Header field contains characters outside of US-ASCII or NUL.
+@item line-too-long
+Line length exceeds 998 octet limit.
+@item stray-crlf
+The string contains CR and/or LF character that doesn't consist of 
+proper line folding.
+@end table
+
+@end defun
+
+
 
 @c ----------------------------------------------------------------------
 @node Base64 encoding/decoding, HTTP cookie handling, RFC822 message parsing, Library modules - Utilities
@@ -5886,7 +5979,7 @@ If @var{field} is a valid header field for MIME-Version, returns
 its major and minor versions in a list.  Otherwise, returns @code{#f}.
 It is allowed to pass @code{#f} to @var{field}, so that 
 you can directly pass the result of @code{rfc822-header-ref} to it.
-Given parsed header list by @code{rfc822-header->list}, you can
+Given parsed header list by @code{rfc822-read-headers}, you can
 get mime version (currently, it should be @code{(1 0)}) by the
 following code.
 @c JP
@@ -5894,7 +5987,7 @@ following code.
 そのメジャーバージョン番号とマイナーバージョン番号をリストにして
 返します。そうでなければ、@code{#f}を返します。
 @var{field}には@code{#f}を渡せるので、@code{rfc822-header-ref}の
-戻り値を直接渡すこともできます。@code{rfc822-header->list}により
+戻り値を直接渡すこともできます。@code{rfc822-read-headers}により
 返されるパーズ済みヘッダのリストを渡すことで、以下のように
 MIMEのバージョンを得ることができます。(現在は、@code{(1 0)}です。)
 @c COMMON
@@ -6177,18 +6270,18 @@ to do with the message body before the entire message is read.
 @c EN
 The fundamental streaming parser.  @var{Port} is an input port
 from where the message is read.  @var{Headers} is a list of headers
-parsed by @code{rfc822-header->list}; that is, this procedure
+parsed by @code{rfc822-read-headers}; that is, this procedure
 is supposed to be called after the header part of the message
 is parsed from @var{port}:
 @c JP
 基本的なストリームパーザです。@var{port}は、メッセージを読み込む
-入力ポートです。@var{headers}は@code{rfc822-header->list}により
+入力ポートです。@var{headers}は@code{rfc822-read-headers}により
 パーズされたヘッダのリストです。つまり、この手続きは、
 @var{port}から読み込まれたメッセージのヘッダ部分がパーズされた
 後に使われることを想定しています。
 @c COMMON
 @example
-(let* ((headers (rfc822-header->list port)))
+(let* ((headers (rfc822-read-headers port)))
   (if (mime-parse-version (rfc822-header-ref headers "mime-version"))
      ;; parse MIME message
      (mime-parse-message port headers handler)
@@ -6330,9 +6423,9 @@ If the header field is omitted, an appropriate default value is set.
 
 @defivar {<mime-part>} headers
 @c EN
-The list of header fields, as parsed by @code{rfc822-header->list}.
+The list of header fields, as parsed by @code{rfc822-read-headers}.
 @c JP
-@code{rfc822-header->list}によりパーズされた、ヘッダフィールドのリスト。
+@code{rfc822-read-headers}によりパーズされた、ヘッダフィールドのリスト。
 @c COMMON
 @end defivar
 
@@ -6440,7 +6533,7 @@ MIMEメッセージパーザの最もシンプルな使い方は次のように
 @c COMMON
 
 @example
-(let ((headers (rfc822-header->list port)))
+(let ((headers (rfc822-read-headers port)))
   (mime-parse-message port headers
                       (cut mime-body->string <> <>)))
 @end example
@@ -16830,7 +16923,7 @@ to @code{call-with-cgi-script} as they are.
 The output of the script is parsed by 
 @code{run-cgi-script->header&body}.  
 First, the RFC2822 header fields are parsed by 
-@code{rfc822-header->list} (@xref{RFC822 message parsing}).
+@code{rfc822-read-headers} (@xref{RFC822 message parsing}).
 Then, the @var{reader} is called with an input port which
 is piped to the script's output.
 @c JP
@@ -16839,18 +16932,18 @@ is piped to the script's output.
 そのまま @code{call-with-cgi-script}に渡されます。
 スクリプトの出力は、@code{run-cgi-script->header&body}により
 パーズされます。
-最初に、RFC2822ヘッダフィールドが @code{rfc822-header->list}
+最初に、RFC2822ヘッダフィールドが @code{rfc822-read-headers}
 (@ref{RFC822 message parsing}参照)によりパーズされます。
 次に、@var{reader}が、スクリプトの出力にパイプされた入力ポートと
 ともに呼ばれます。
 
 @c EN
 @code{Run-cgi-script->header&body} returns two values,
-the list of headers (as parsed by @code{rfc822-header->list}),
+the list of headers (as parsed by @code{rfc822-read-headers}),
 and the return value of @var{reader}.
 @c JP
 @code{run-cgi-script->header&body}は、ヘッダのリスト
-(@code{rfc822-header->list}によりパーズされたもの)と
+(@code{rfc822-read-headers}によりパーズされたもの)と
 @var{reader}の戻り値の2つの値を返します。
 @c COMMON
 @end defun

@@ -49,9 +49,9 @@ Content-Length: 4349
     ("content-length" "4349")
     ))
 
-(test* "rfc822-header->list" #t
+(test* "rfc822-read-headers" #t
        (equal? rfc822-header1-list
-               (rfc822-header->list (open-input-string rfc822-header1))))
+               (rfc822-read-headers (open-input-string rfc822-header1))))
 
 ;; token parsers
 (test* "rfc822-field->tokens (basic)"
@@ -118,6 +118,82 @@ Content-Length: 4349
 
 (test* "rfc822-parse-date (invalid)" '(#f #f #f #f #f #f #f #f)
        (receive r (rfc822-parse-date "Sun 2 Mar 2002") r))
+
+(test* "rfc822-invalid-header-field" #f
+       (rfc822-invalid-header-field "abcde"))
+(test* "rfc822-invalid-header-field" 'incomplete-string
+       (rfc822-invalid-header-field #*"abcde"))
+(test* "rfc822-invalid-header-field" 'bad-character
+       (rfc822-invalid-header-field "abc\u3030 def"))
+(test* "rfc822-invalid-header-field" 'bad-character
+       (rfc822-invalid-header-field "abc\x00 def"))
+(test* "rfc822-invalid-header-field" 'line-too-long
+       (rfc822-invalid-header-field (make-string 1000 #\a)))
+(test* "rfc822-invalid-header-field" 'line-too-long
+       (rfc822-invalid-header-field
+        (string-append (string-join (make-list 5 (make-string 78 #\a))
+                                    "\r\n ")
+                       (make-string 1000 #\a))))
+(test* "rfc822-invalid-header-field" 'stray-crlf
+       (rfc822-invalid-header-field
+        (string-join (make-list 5 (make-string 78 #\a)) "\r\n")))
+(test* "rfc822-invalid-header-field" 'stray-crlf
+       (rfc822-invalid-header-field "abc\ndef"))
+(test* "rfc822-invalid-header-field" 'stray-crlf
+       (rfc822-invalid-header-field "abc\rdef"))
+
+(test* "rfc822-write-headers"
+       "name: Shiro Kawai\r\n\
+        address: 1234 Lambda St.\r\n \
+        Higher Order Functions, HI, 99899\r\n\
+        registration-date: 2007-12-10\r\n\r\n"
+       (with-output-to-string
+         (cut rfc822-write-headers
+              '(("name" "Shiro Kawai")
+                ("address" "1234 Lambda St.\r\n Higher Order Functions, HI, 99899")
+                ("registration-date" "2007-12-10")))))
+
+(test* "rfc822-write-headers (ignore error)"
+       (make-list 2 "name: Shiro\x00Kawai\r\n\r\n")
+       (map (lambda (x)
+              (with-output-to-string
+                (cut rfc822-write-headers '(("name" "Shiro\x00Kawai"))
+                     :check x)))
+            '(#f :ignore)))
+
+(test* "rfc822-write-headers (continue)"
+       "x: A\r\nx: B\r\nx: C\r\n\r\n"
+       (call-with-output-string
+         (lambda (p)
+           (rfc822-write-headers '(("x" "A") ("x" "B")) :output p :continue #t)
+           (rfc822-write-headers '(("x" "C")) :output p))))
+
+(let-syntax ([test-reason
+              (syntax-rules ()
+                [(_ expect hdrs)
+                 (begin
+                   (test* (format "rfc822-write-headers error (~a)" expect)
+                          expect
+                          (guard (e (else (rxmatch-case (ref e'message)
+                                            [#/\(([\w-]+)\)/ (_ m) m]
+                                            [else e])))
+                            (with-output-to-string
+                              (cut rfc822-write-headers hdrs))))
+                   (test* (format "rfc822-write-headers handle (~a)" expect)
+                          (format "x-name: ~a\r\n\r\n" expect)
+                          (with-output-to-string
+                            (cut rfc822-write-headers hdrs
+                                 :check (lambda (name body reason)
+                                          (values #`"x-,name"
+                                                  (x->string reason))))))
+                   )])])
+
+  (test-reason "bad-character" '(("name" "Shiro\x00Kawai")))
+  (test-reason "incomplete-string" '(("name" #*"Shiro Kawai")))
+  (test-reason "stray-crlf" '(("name" "Shiro\nKawai")))
+  (test-reason "line-too-long" `(("name" ,(make-string 1000 #\a))))
+  )
+        
 
 ;;--------------------------------------------------------------------
 (test-section "rfc.base64")
@@ -443,8 +519,6 @@ Content-Length: 4349
          (mime-decode-text "(=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?=)"))
   )
 
-
-
 ;; NB: this assumes the test is run either under src/ or test/
 (define (mime-message-tester num headers)
   (let ((src #`"../test/data/rfc-mime-,|num|.txt")
@@ -454,7 +528,7 @@ Content-Length: 4349
       (lambda (inp)
         (let* ((title (read-line inp)) ;; test title
                (expl  (read-line inp)) ;; explanation (ignored)
-               (headers (or headers (rfc822-header->list inp))))
+               (headers (or headers (rfc822-read-headers inp))))
           (test* #`"mime-parse-message (,|num| - ,|title|)"
                  res
                  (and (equal? (mime-parse-version
@@ -610,7 +684,7 @@ Content-Length: 4349
            (request-line (read-line in)))
       (rxmatch-if (#/^(\S+) (\S+) HTTP\/1\.1$/ request-line)
           (#f method request-uri)
-        (let* ((headers (rfc822-header->list in))
+        (let* ((headers (rfc822-read-headers in))
                (bodylen
                 (cond ((assoc-ref headers "content-length")
                        => (lambda (e) (string->number (car e))))

@@ -1009,7 +1009,7 @@ may be an ``else clause,'' which has the form
 @end example
 
 First, @var{key} is evaluated and its result is compared against each
-@var{datum}.  If the result of evaluating @var{datum} is equivalent
+@var{datum}.  If the result of evaluating @var{key} is equivalent
 (using @code{eqv?}, @xref{Equivalence}), to a @var{datum},
 then the expressions in the corresponding clause are evaluated
 sequentially, and the result(s) of the last expression in the

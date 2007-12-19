@@ -30,28 +30,30 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: 822.scm,v 1.20 2007-03-02 07:39:10 shirok Exp $
+;;;  $Id: 822.scm,v 1.21 2007-12-19 07:43:36 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
-;; RFC2822 Internet Message Format <ftp://ftp.isi.edu/in-notes/rfc2822.txt>
+;; RFC2822 Internet Message Format
+;;         http://www.ietf.org/rfc/rfc2822.txt
 
 (define-module rfc.822
   (use srfi-1)
-  (use srfi-2)
   (use srfi-13)
   (use srfi-19)
   (use text.parse)
   (use gauche.regexp)
-  (export rfc822-header->list rfc822-header-ref
+  (use util.match)
+  (export rfc822-read-headers rfc822-header->list rfc822-header-ref
           rfc822-skip-cfws
           *rfc822-atext-chars* *rfc822-standard-tokenizers*
           rfc822-atom rfc822-dot-atom rfc822-quoted-string
           rfc822-next-token rfc822-field->tokens
           rfc822-parse-date rfc822-date->date
+
+          rfc822-invalid-header-field rfc822-write-headers
           )
   )
-
 (select-module rfc.822)
 
 ;;=================================================================
@@ -59,9 +61,9 @@
 ;;
 
 ;;-----------------------------------------------------------------
-;; Generic header parser, recognizes folded line and field names
-;;
-(define (rfc822-header->list iport . args)
+;; Generic header parser.  Returns ((name body) ...)
+;; Does process unfolding.
+(define (rfc822-read-headers iport . args)
   (let-keywords args ((strict? #f)
                       (reader (cut read-line <> #t)))
 
@@ -110,6 +112,9 @@
 (define (rfc822-header-ref header field-name . maybe-default)
   (cond ((assoc field-name header) => cadr)
         (else (get-optional maybe-default #f))))
+
+;; backward compatibility
+(define rfc822-header->list rfc822-read-headers)
 
 ;;------------------------------------------------------------------
 ;; Comments, quoted pairs, atoms and quoted string.  Section 3.2
@@ -246,5 +251,55 @@
 
 ;; to be written
 
+;;=================================================================
+;; Constructors
+;;
 
+;; Writes out the header fields specified by HEADERS, which is
+;; ((name body) ...).
+(define (rfc822-write-headers headers . keys)
+  (let-keywords keys ((output (current-output-port))
+                      (check :error) ; #f, :ignore, :error or <procedure>
+                      (continue #f))
+    (define (process headers)
+      (dolist (field headers)
+        (display (car field) output)
+        (display ": " output)
+        (display (cadr field) output)
+        (unless (string-suffix? "\r\n" (cadr field))
+          (display "\r\n" output)))
+      (unless continue (display "\r\n" output)))
+    (define (bad name body reason)
+      (errorf "Illegal RFC2822 header field data (~a): ~a: ~,,,,80:a" reason name body))
+    (if (memv check '(#f :ignore))
+      (process headers)
+      (let loop ((hs headers)
+                 (hs2 '()))
+        (match hs
+          [() (process (reverse hs2))]
+          [((name body) . rest)
+           (cond [(rfc822-invalid-header-field (string-append name ": " body))
+                  => (lambda (reason)
+                       (if (eq? check :error)
+                         (bad name body reason)
+                         (receive (name2 body2) (check name body reason)
+                           (if (and (equal? name name2) (equal? body body2))
+                             (bad name body reason)
+                             (loop `((,name2 ,body2) . ,rest) hs2)))))]
+                 [else (loop rest `((,name ,body) . ,hs2))])]
+          [else
+           (error "Invalid header data:" headers)])))
+    ))
+
+(define (rfc822-invalid-header-field body)
+  (cond [(string-incomplete? body) 'incomplete-string]
+        [(string-index body #[^\x01-\x7f]) 'bad-character]
+        [else
+         (let1 lines (string-split body "\r\n ")
+           (cond [(any (lambda (s) (> (string-size s) 998)) lines)
+                  'line-too-long]
+                 [(any (lambda (s) (string-index s #[\x0d\x0a])) lines)
+                  'stray-crlf]
+                 [else #f]))]))
+           
 (provide "rfc/822")
