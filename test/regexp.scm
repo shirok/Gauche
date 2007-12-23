@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.26 2007-11-20 22:15:10 shirok Exp $
+;; $Id: regexp.scm,v 1.27 2007-12-23 06:58:48 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -131,6 +131,14 @@
 (test-regexp-compile "()\\1")
 (test-regexp-compile "(?<name>)\\k<name>")
 (test-regexp-compile "(?<name>)(?<name>)\\k<name>")
+
+;;-------------------------------------------------------------------------
+(test-section "boundary")
+
+(test* "submatch #f" #f (rxmatch-start #f))
+(test* "submatch #f" #f (rxmatch-end #f))
+(test* "submatch #f" #f (rxmatch-substring #f))
+(test* "num-match #f" 0 (rxmatch-num-matches #f))
 
 ;;-------------------------------------------------------------------------
 (test-section "basics")

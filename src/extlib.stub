@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.303 2007-11-08 02:40:43 shirok Exp $
+;;; $Id: extlib.stub,v 1.304 2007-12-23 06:58:48 shirok Exp $
 ;;;
 
 "
@@ -698,7 +698,10 @@
 (define-cproc rxmatch-after (match &optional (obj 0))
   (body <top> (rxmatchop Scm_RegMatchAfter)))
 (define-cproc rxmatch-num-matches (match)
-  (body <top> (rxmatchop (SCM_MAKE_INT (-> (SCM_REGMATCH match) numMatches)))))
+  (body <top>
+        (if (SCM_FALSEP match)
+          (result (SCM_MAKE_INT 0))
+          (rxmatchop (SCM_MAKE_INT (-> (SCM_REGMATCH match) numMatches))))))
 
 ;; for debug
 (when "SCM_DEBUG_HELPER"
