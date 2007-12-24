@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cookie.scm,v 1.11 2007-03-02 07:39:10 shirok Exp $
+;;;  $Id: cookie.scm,v 1.12 2007-12-24 03:44:40 shirok Exp $
 ;;;
 
 ;; Parser and constructor of http "Cookies" defined in
@@ -44,13 +44,19 @@
 
 (define-module rfc.cookie
   (use srfi-1)
-  (use srfi-2)
   (use srfi-13)
   (use srfi-19)
+  (use util.trie)
   (export parse-cookie-string
-          construct-cookie-string)
+          construct-cookie-string
+          )
   )
 (select-module rfc.cookie)
+
+;;==============================================================
+;; Cookie header parser and constructor
+;; These are mainly used by the server side.
+;;
 
 ;; utility fn.  breaks  ``attr=value;attr=value ... '' into alist.
 ;; version is a cookie version.  if version>0, we allow comma as the
@@ -248,5 +254,26 @@
      (else time)))    
     
     (format #f "Expires=~a" (ensure-time-string time)))
+
+;;==============================================================
+;; Cookie-bin, a client-side storage of cookies used by <http-connection>
+;;
+
+
+;; Client-side cookie representation.
+;; Max-Age is converted to the absolute time when the cookie shall be
+;; discarded.
+; (define-class <http-cookie> ()
+;   ((name    :init-keyword :name)
+;    (value   :init-keyword :value)
+;    (domain  :init-keyword :domain)
+;    (path    :init-keyword :path)
+;    (lifetime :init-keyword :lifetime :init-value #f) ; #f or <time>
+;    (port    :init-keyword :port :init-value '())  ; list of port numbers
+;    (secure  :init-keyword :secure :init-value #f)
+;    (version :init-keyword :version :init-value 1)
+;    (comment :init-keyword :comment :init-value #f)
+;    (comment-url :init-keyword :comment-url :init-value #f)
+;    ))
 
 (provide "rfc/cookie")
