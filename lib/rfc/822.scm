@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: 822.scm,v 1.21 2007-12-19 07:43:36 shirok Exp $
+;;;  $Id: 822.scm,v 1.22 2007-12-24 05:31:32 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -44,7 +44,8 @@
   (use text.parse)
   (use gauche.regexp)
   (use util.match)
-  (export rfc822-read-headers rfc822-header->list rfc822-header-ref
+  (export <rfc822-parse-error> rfc822-parse-errorf
+          rfc822-read-headers rfc822-header->list rfc822-header-ref
           rfc822-skip-cfws
           *rfc822-atext-chars* *rfc822-standard-tokenizers*
           rfc822-atom rfc822-dot-atom rfc822-quoted-string
@@ -61,8 +62,34 @@
 ;;
 
 ;;-----------------------------------------------------------------
+;; A condition reported when rfc822 parser finds an error.
+;;
+;; For most practical applications, it is useful to handle
+;; rfc822 syntax errors gracefully.  So the rfc822 and mime procedures
+;; tries to return a reasonable value even if the input is not strictly
+;; conforming the RFCs.  Some routines have an option to be more strict,
+;; and they raise <rfc822-parse-error> when the option is given and
+;; they find a violation.
+;;
+;; TODO: We need some consistent way to switch these 'graceful' and
+;; 'strict' modes throughout the libraries; otherwise the API would be
+;; pretty confusing.  Something to consider as we add more high-level
+;; parsers.
+
+(define-condition-type <rfc822-parse-error> <error> #f
+  (header-field-name)
+  (header-field-body))
+
+(define (rfc822-parse-errorf name body fmt . args)
+  (apply errorf <rfc822-parse-error>
+         :header-field-name name
+         :header-field-body body
+         fmt args))
+
+;;-----------------------------------------------------------------
 ;; Generic header parser.  Returns ((name body) ...)
 ;; Does process unfolding.
+;; May throw <rfc822-parse-error> if :strict? is true.
 (define (rfc822-read-headers iport . args)
   (let-keywords args ((strict? #f)
                       (reader (cut read-line <> #t)))
@@ -78,35 +105,35 @@
     (let loop ((r '())
                (line (reader iport)))
       (cond
-       ((eof-object? line) (reverse! r))
-       ((string-null? line) (reverse! r))
-       (else
+       [(eof-object? line) (reverse! r)]
+       [(string-null? line) (reverse! r)]
+       [else
         (receive (n body) (string-scan line #\: 'both)
           (let1 name (and-let* (((string? n))
                                  (name (string-incomplete->complete n))
                                  (name (string-trim-both name))
                                  ((string-every #[\x21-\x39\x3b-\x7e] name)))
                         (string-downcase name))
-            (if name
+            (cond
+             [name
               (let loop2 ((nline (reader iport))
                           (bodies (list (drop-leading-fws body))))
-                (cond ((eof-object? nline)
+                (cond [(eof-object? nline)
                        ;; maybe premature end of the message
                        (if strict?
-                         (error "premature end of message header")
-                         (reverse! (accum name bodies r))))
-                      ((string-null? nline)     ;; end of the header
-                       (reverse! (accum name bodies r)))
-                      ((memv (string-byte-ref nline 0) '(9 32))
+                         (rfc822-parse-errorf
+                          #f #f "premature end of message header")
+                         (reverse! (accum name bodies r)))]
+                      [(string-null? nline)     ;; end of the header
+                       (reverse! (accum name bodies r))]
+                      [(memv (string-byte-ref nline 0) '(9 32))
                        ;; careful for byte strings
-                       (loop2 (reader iport) (cons nline bodies)))
-                      (else
-                       (loop (accum name bodies r) nline)))
-                )
-              (if strict?
-                (error "bad header line:" line)
-                (loop r (reader iport)))))))
-       ))
+                       (loop2 (reader iport) (cons nline bodies))]
+                      [else
+                       (loop (accum name bodies r) nline)]))]
+             [strict? (rfc822-parse-errorf #f #f "bad header line: ~s" line)]
+             [else (loop r (reader iport))])))])
+      )
     ))
 
 (define (rfc822-header-ref header field-name . maybe-default)

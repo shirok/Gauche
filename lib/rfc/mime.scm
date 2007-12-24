@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.14 2007-12-11 13:10:47 shirok Exp $
+;;;  $Id: mime.scm,v 1.15 2007-12-24 05:31:32 shirok Exp $
 ;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME) Part One:
@@ -39,8 +39,10 @@
 ;;            Media Types
 ;; RFC2047 Multipurpose Internet Mail Extensions (MIME) Part Three:
 ;;            Message Header Extensions for Non-ASCII Text
-;; RFC2048 
-;; RFC2049 
+;; RFC2183 Communicating Presentation Information in Internet Messages:
+;;            The Content-Disposition Header Field
+;; RFC2231 MIME Parameter Value and Encoded Word Extensions:
+;;            Character Sets, Languages, and Continuations
 
 (define-module rfc.mime
   (use gauche.vport)
@@ -51,7 +53,9 @@
   (use rfc.822)
   (use util.queue)
   (use util.list)
-  (export mime-parse-version mime-parse-content-type
+  (export mime-parse-version
+          mime-parse-content-type mime-parse-content-disposition
+          mime-parse-parameter-value
           mime-encode-word mime-encode-text
           mime-decode-word mime-decode-text
           <mime-part>
@@ -81,37 +85,54 @@
                 (lambda (m) (map (lambda (d) (x->integer (m d))) '(1 2))))
                (else #f)))))
 
+(define-constant *ct-token-chars*
+  (char-set-difference #[\x21-\x7e] #[()<>@,\;:\\\"/\[\]?=]))
+
+;; RFC2045 Content-Type header field
 ;; returns (<type> <subtype> (<attribute> . <value>) ...)
 (define (mime-parse-content-type field)
-  (define token-chars
-    (char-set-difference #[\x21-\x7e] #[()<>@,\;:\\\"/\[\]?=]))
-  (define (get-attributes input r)
-    (cond ((and-let* (((eqv? #\; (rfc822-next-token input '())))
-                      (attr (rfc822-next-token input `(,token-chars)))
-                      ((string? attr))
-                      ((eqv? #\= (rfc822-next-token input '())))
-                      (val  (rfc822-next-token
-                             input
-                             `(,token-chars
-                               (#[\"] . ,rfc822-quoted-string))))
-                      ((string? val)))
-             (cons attr val))
-           => (lambda (p) (get-attributes input (cons p r))))
-          (else (reverse! r))))
-
   (and field
        (call-with-input-string field
          (lambda (input)
-           (let* ((type    (rfc822-next-token input `(,token-chars)))
-                  (slash   (rfc822-next-token input '()))
-                  (subtype (rfc822-next-token input `(,token-chars))))
-             (and (string? type)
-                  (eqv? #\/ slash)
-                  (string? subtype)
-                  (list* (string-downcase type)
-                         (string-downcase subtype)
-                         (get-attributes input '()))))
-           ))))
+           (and-let* ([type (rfc822-next-token input `(,*ct-token-chars*))]
+                      [ (string? type) ]
+                      [ (eqv? #\/ (rfc822-next-token input '())) ]
+                      [subtype (rfc822-next-token input `(,*ct-token-chars*))]
+                      [ (string? subtype) ])
+             (list* (string-downcase type)
+                    (string-downcase subtype)
+                    (mime-parse-parameter-value input)))))))
+
+;; RFC2183 Content-Disposition header field
+;; returns (<token> (<attribute> . <value>) ...)
+(define (mime-parse-content-disposition field)
+  (and field
+       (call-with-input-string field
+         (lambda (input)
+           (and-let* ([token (rfc822-next-token input `(,*ct-token-chars*))]
+                      [ (string? token) ])
+             (cons (string-downcase token)
+                   (mime-parse-parameter-value input)))))))
+           
+
+;; parse a parameter-values type header field
+;;   ;parameter=value;parameter=value
+;; => ((parameter . value) ...)
+;; NB: This will support RFC2231, but not yet.
+(define (mime-parse-parameter-value input)
+  (let loop ((r '()))
+    (cond [(and-let* ([ (eqv? #\; (rfc822-next-token input '())) ]
+                      [attr (rfc822-next-token input `(,*ct-token-chars*))]
+                      [ (string? attr) ]
+                      [ (eqv? #\= (rfc822-next-token input '())) ]
+                      [val  (rfc822-next-token
+                             input
+                             `(,*ct-token-chars*
+                               (#[\"] . ,rfc822-quoted-string)))]
+                      [ (string? val) ])
+             (cons attr val))
+           => (lambda (p) (loop (cons p r)))]
+          [else (reverse! r)])))
 
 ;;===============================================================
 ;; RFC2047 header field encoding
@@ -120,7 +141,7 @@
 ;; Decoding
 
 ;; the end is not anchored, to be used in mime-decode-text.
-(define *mime-encoded-header-rx* 
+(define-constant *mime-encoded-header-rx* 
   #/^=\?([-!#-'*+\w\^-~]+)\?([-!#-'*+\w\^-~]+)\?([!->@-~]+)\?=/)
 
 (define (%mime-decode-word word charset encoding body)

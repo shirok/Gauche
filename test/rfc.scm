@@ -439,13 +439,42 @@ Content-Length: 4349
 (test* "mime-parse-content-type"
        '("text" "plain" ("zzz" . "yyy") ("xxx" . "www"))
        (mime-parse-content-type " text/plain ;zzz=\"yyy\"; xxx = www (AAA)"))
-
 (test* "mime-parse-content-type"
        '("multipart" "alternative"
          ("boundary" . "=_alternative 006EBAA488256DF0_="))
        (mime-parse-content-type
         "multipart/alternative; boundary=\"=_alternative 006EBAA488256DF0_=\"")
        )
+
+#| ; TODO: enable these after rfc2231 support
+(test* "mime-parse-content-type (rfc2231 encode)"
+       '("application" "x-stuff"
+         ("x" . "y")
+         ("title" . "This is ***fun***")
+         ("url" . "http://www.example.com/"))
+       (mime-parse-content-type
+        "application/x-stuff; x=y; title*=us-ascii'en-us'This%20is%20%2A%2A%2Afun%2A%2A%2A; url=\"http://www.example.com/\""))
+
+(test* "mime-parse-content-type (rfc2231 concatenation)"
+       '("message" "external-body"
+         ("access-type" . "URL")
+         ("url" . "ftp://cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar"))
+       (mime-parse-content-type
+       "Content-Type: message/external-body; access-type=URL; \
+         URL*0=\"ftp://\"; \
+         URL*1=\"cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar\""))
+
+(test* "mime-parse-content-type (rfc2231 concatenation and encode)"
+       '("application" "x-stuff"
+         ("title" . "This is even more ***fun*** isn't it!")
+         ("a" . "b"))
+       (mime-parse-content-type
+        "Content-Type: application/x-stuff; \
+           title*0*=us-ascii'en'This%20is%20even%20more%20 \
+           title*1*=%2A%2A%2Afun%2A%2A%2A%20 \
+           title*2=\"isn't it!\"; \
+           a=b"))
+|#
 
 (test* "mime-encode-text (pass-through)" "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod\r\n tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim\r\n veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea\r\n commodo consequat. Duis aute irure dolor in reprehenderit in voluptate\r\n velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat\r\n cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id\r\n est laborum."
        (mime-encode-text "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."))
