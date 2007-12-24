@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: http.scm,v 1.15 2007-12-08 05:50:37 shirok Exp $
+;;;  $Id: http.scm,v 1.16 2007-12-24 04:43:53 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
@@ -121,17 +121,21 @@
 ;; HTTP connection context
 ;;
 
-;; The connection object.  This class isn't exported; the users should
-;; use make-http-connection.
+;; <http-connection> object can be used to have conversations with
+;; (usually) a specific server.  A typical usage is to emulate a
+;; browser to perform a certain transaction spanning to several
+;; webpages.  (For the simple "one-shot" request-response access,
+;; the rfc.http APIs create a temporary connection under the hood.)
+
 (define-class <http-connection> ()
   ;; All the slots are private.
   ((server :init-keyword :server)       ; server[:port]
    (socket :init-value #f)              ; A <socket> for persistent connection.
                                         ; If it is shutdown by the server,
                                         ; the APIs attempt to reconnect.
-   (auth-handler  :init-keyword :auth-handler)
-   (auth-user     :init-keyword :auth-user)
-   (auth-password :init-keyword :auth-password)
+   (auth-handler  :init-keyword :auth-handler) ; unused yet
+   (auth-user     :init-keyword :auth-user)    ; unused yet
+   (auth-password :init-keyword :auth-password); unused yet
    (extra-headers :init-keyword :extra-headers)
    ))
 
