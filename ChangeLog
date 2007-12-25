@@ -1,3 +1,10 @@
+2007-12-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/numerical.scm (asin, asinh): fixed a problem of avoiding
+	  numerical instability.
+	  (exp, expt, cos, cosh, sin, sinh): use real-part/imag-part instead
+	  of %complex->real/imag, for the former is slightly faster.
+
 2007-12-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (rxmatch-num-matches): returns 0 if #f is passed,
