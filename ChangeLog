@@ -1,3 +1,9 @@
+2007-12-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (Scm_ComputeApplicableMethods): Optimized inner loop
+	  a little bit.  General code cleanup.
+	* src/moplib.stub: Rewrote some procs using cise.
+
 2007-12-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numerical.scm (asin, asinh): fixed a problem of avoiding

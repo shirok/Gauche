@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: moplib.stub,v 1.34 2007-08-12 03:16:55 shirok Exp $
+;;; $Id: moplib.stub,v 1.35 2007-12-29 09:59:11 shirok Exp $
 ;;;
 
 "
@@ -64,38 +64,35 @@
 ;; After the call to this procedure, a binding of NAME is inserted in
 ;; the current module.
 
-
 (define-cproc %ensure-generic-function (name::<symbol> module::<module>)
-  (body
-   "ScmObj val = Scm_GlobalVariableRef(module, name, 0);"
-   "if (!Scm_TypeP(val, SCM_CLASS_GENERIC)) {"
-   "  if (SCM_SUBRP(val) || SCM_CLOSUREP(val)) {"
-   "    val = Scm_MakeBaseGeneric(SCM_OBJ(name), call_fallback_proc, val);"
-   "  } else {"
-   "    val = Scm_MakeBaseGeneric(SCM_OBJ(name), NULL, NULL);"
-   "  }"
-   "}"
-   "Scm_Define(module, name, val);"
-   "SCM_RESULT = val;"))
+  (body <top>
+        (let* ((val (Scm_GlobalVariableRef module name 0)))
+          (when (not (Scm_TypeP val SCM_CLASS_GENERIC))
+            (if (or (SCM_SUBRP val) (SCM_CLOSUREP val))
+              (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) call_fallback_proc val))
+              (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) NULL NULL))))
+          (Scm_Define module name val)
+          (result val))))
 
 (define-cproc %make-next-method (gf methods::<list> args::<list>)
-  "  ScmObj mp, *argv; int nargs = Scm_Length(args);
-  if (!Scm_TypeP(gf, SCM_CLASS_GENERIC)) 
-    Scm_Error(\"generic function requied, but got %S\", gf);
-  SCM_FOR_EACH(mp, methods) {
-    if (!Scm_TypeP(SCM_CAR(mp), SCM_CLASS_METHOD))
-      Scm_Error(\"method required, but got %S\", SCM_CAR(mp));
-  }
-  argv = Scm_ListToArray(args, &nargs, NULL, TRUE);
-  SCM_RETURN(Scm_MakeNextMethod(SCM_GENERIC(gf), methods, argv, nargs, FALSE));")
+  (body <top>
+        (let* ((argv :: ScmObj*)
+               (argc :: int (Scm_Length args)))
+          (unless (Scm_TypeP gf SCM_CLASS_GENERIC)
+            (Scm_Error "generic function requied, but got %S" gf))
+          (for-each (lambda (mp)
+                      (unless (Scm_TypeP mp SCM_CLASS_METHOD)
+                        (Scm_Error "method required, but got %S" mp)))
+                    methods)
+          (set! argv (Scm_ListToArray args (& argc) NULL TRUE))
+          (result (Scm_MakeNextMethod (SCM_GENERIC gf) methods argv argc
+                                      FALSE FALSE)))))
 
-(define-cproc %method-code (method)
-  "  ScmMethod *m;
-  if (!Scm_TypeP(method, SCM_CLASS_METHOD))
-    Scm_Error(\"method required, but got %S\", method);
-  m = SCM_METHOD(method);
-  if (m->func) SCM_RETURN(SCM_FALSE);
-  else SCM_RETURN(SCM_OBJ(m->data));")
+(define-cproc %method-code (method::<method>)
+  (body <top>
+        (if (-> method func)
+          (result SCM_FALSE)
+          (result (-> method data)))))
 
 (define-cproc %start-class-redefinition! (k::<class>)
   (call <void> "Scm_StartClassRedefinition"))

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.502 2007-09-13 12:30:27 shirok Exp $
+ *  $Id: gauche.h,v 1.503 2007-12-29 09:59:10 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1349,9 +1349,11 @@ SCM_EXTERN int    Scm_HasSetter(ScmObj proc);
 /* Generic - Generic function */
 struct ScmGenericRec {
     ScmProcedure common;
-    ScmObj methods;
-    ScmObj (*fallback)(ScmObj *args, int nargs, ScmGeneric *gf);
+    ScmObj methods;             /* list of methods */
+    ScmObj (*fallback)(ScmObj *argv, int argc, ScmGeneric *gf);
     void *data;
+    int   maxReqargs;           /* maximum # of args required to select
+                                   applicable methods */
     ScmInternalMutex lock;
 };
 
@@ -1366,7 +1368,7 @@ SCM_CLASS_DECL(Scm_GenericClass);
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_GenericClass),\
                                    0, 0, SCM_PROC_GENERIC, SCM_FALSE,   \
                                    NULL),                               \
-        SCM_NIL, cfunc, data                                            \
+        SCM_NIL, cfunc, data, 0                                         \
     }
 
 SCM_EXTERN void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name,
@@ -1374,9 +1376,9 @@ SCM_EXTERN void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name,
 SCM_EXTERN ScmObj Scm_MakeBaseGeneric(ScmObj name,
 				      ScmObj (*fallback)(ScmObj *, int, ScmGeneric*),
 				      void *data);
-SCM_EXTERN ScmObj Scm_NoNextMethod(ScmObj *args, int nargs, ScmGeneric *gf);
-SCM_EXTERN ScmObj Scm_NoOperation(ScmObj *args, int nargs, ScmGeneric *gf);
-SCM_EXTERN ScmObj Scm_InvalidApply(ScmObj *args, int nargs, ScmGeneric *gf);
+SCM_EXTERN ScmObj Scm_NoNextMethod(ScmObj *argv, int argc, ScmGeneric *gf);
+SCM_EXTERN ScmObj Scm_NoOperation(ScmObj *argv, int argc, ScmGeneric *gf);
+SCM_EXTERN ScmObj Scm_InvalidApply(ScmObj *argv, int argc, ScmGeneric *gf);
 
 /* Method - method
    A method can be defined either by C or by Scheme.  C-defined method
@@ -1386,7 +1388,7 @@ struct ScmMethodRec {
     ScmProcedure common;
     ScmGeneric *generic;
     ScmClass **specializers;    /* array of specializers, size==required */
-    ScmObj (*func)(ScmNextMethod *nm, ScmObj *args, int nargs, void * data);
+    ScmObj (*func)(ScmNextMethod *nm, ScmObj *argv, int argc, void * data);
     void *data;                 /* closure, or code */
     ScmEnvFrame *env;           /* environment (for Scheme created method) */
 };
@@ -1412,9 +1414,10 @@ SCM_EXTERN void Scm_InitBuiltinMethod(ScmMethod *m);
 struct ScmNextMethodRec {
     ScmProcedure common;
     ScmGeneric *generic;
-    ScmObj methods;             /* list of applicable methods */
-    ScmObj *args;               /* original arguments */
-    int nargs;                  /* # of original arguments */
+    ScmObj methods;          /* list of applicable methods */
+    ScmObj *argv;            /* original arguments */
+    int argc;                /* # of original arguments */
+    int applyargs;           /* if TRUE, argv[argc-1] has a list of rest args */
 };
 
 SCM_CLASS_DECL(Scm_NextMethodClass);

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.49 2007-09-13 12:30:28 shirok Exp $
+ *  $Id: class.h,v 1.50 2007-12-29 09:59:11 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -111,11 +111,13 @@ SCM_EXTERN ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs);
 SCM_EXTERN ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize);
 SCM_EXTERN ScmObj Scm_ComputeCPL(ScmClass *klass);
 SCM_EXTERN ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf,
-					       ScmObj *args,
-					       int nargs);
-SCM_EXTERN ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs);
+                                               ScmObj *argv,
+                                               int argc,
+                                               int applyargs);
+SCM_EXTERN ScmObj Scm_SortMethods(ScmObj methods, ScmObj *argv, int argc);
 SCM_EXTERN ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
-				     ScmObj *args, int nargs, int copyArgs);
+                                     ScmObj *argv, int argc,
+                                     int copyargs, int applyargs);
 SCM_EXTERN ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method);
 SCM_EXTERN ScmObj Scm_DeleteMethod(ScmGeneric *gf, ScmMethod *method);
 
@@ -123,11 +125,11 @@ SCM_EXTERN ScmObj Scm_VMSlotInitializeUsingAccessor(ScmObj obj,
                                                     ScmSlotAccessor *ca,
                                                     ScmObj initargs);
 SCM_EXTERN ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj,
-					     ScmSlotAccessor *acc,
-					     int boundp);
+                                             ScmSlotAccessor *acc,
+                                             int boundp);
 SCM_EXTERN ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj,
-					     ScmSlotAccessor *acc,
-					     ScmObj val);
+                                             ScmSlotAccessor *acc,
+                                             ScmObj val);
 
 SCM_EXTERN ScmObj Scm_VMClassOf(ScmObj obj);
 SCM_EXTERN ScmObj Scm_VMIsA(ScmObj obj, ScmClass *klass);

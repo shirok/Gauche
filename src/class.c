@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.161 2007-09-18 08:48:12 shirok Exp $
+ *  $Id: class.c,v 1.162 2007-12-29 09:59:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -39,6 +39,11 @@
 #include "gauche/class.h"
 #include "gauche/code.h"
 #include "gauche/builtin-syms.h"
+
+/* Some routines uses small array on stack to keep data about
+   arguments to dispatch.  If the # of args used for dispach is bigger
+   than this, the routine allocates an array in heap. */
+#define PREALLOC_SIZE  32
 
 /*===================================================================
  * Built-in classes
@@ -402,14 +407,14 @@ static void class_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 /*
  * (allocate-instance <class> initargs)
  */
-static ScmObj allocate(ScmNextMethod *nm, ScmObj *args, int nargs, void *d)
+static ScmObj allocate(ScmNextMethod *nm, ScmObj *argv, int argc, void *d)
 {
-    ScmClass *c = SCM_CLASS(args[0]);
+    ScmClass *c = SCM_CLASS(argv[0]);
     if (c->allocate == NULL) {
         Scm_Error("built-in class can't be allocated via allocate-instance: %S",
                   SCM_OBJ(c));
     }
-    return c->allocate(c, args[1]);
+    return c->allocate(c, argv[1]);
 }
 
 static ScmClass *class_allocate_SPEC[] = {
@@ -421,10 +426,10 @@ static SCM_DEFINE_METHOD(class_allocate_rec, &Scm_GenericAllocate,
 /*
  * (compute-cpl <class>)
  */
-static ScmObj class_compute_cpl(ScmNextMethod *nm, ScmObj *args, int nargs,
+static ScmObj class_compute_cpl(ScmNextMethod *nm, ScmObj *argv, int argc,
                                 void *d)
 {
-    ScmClass *c = SCM_CLASS(args[0]);
+    ScmClass *c = SCM_CLASS(argv[0]);
     return Scm_ComputeCPL(c);
 }
 
@@ -1411,12 +1416,12 @@ ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj, ScmSlotAccessor *sa, int boundp)
  *   and class is an old class, then it can access to the old instance's
  *   slot value.
  */
-static ScmObj slot_ref_using_class(ScmNextMethod *nm, ScmObj *args,
-                                   int nargs, void *d)
+static ScmObj slot_ref_using_class(ScmNextMethod *nm, ScmObj *argv,
+                                   int argc, void *d)
 {
-    ScmClass *klass = SCM_CLASS(args[0]);
-    ScmObj obj = args[1];
-    ScmObj slot = args[2];
+    ScmClass *klass = SCM_CLASS(argv[0]);
+    ScmObj obj = argv[1];
+    ScmObj slot = argv[2];
     ScmSlotAccessor *sa;
     
     if (!SCM_EQ(SCM_OBJ(klass), SCM_OBJ(Scm_ClassOf(obj)))) {
@@ -1523,13 +1528,13 @@ ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj, ScmSlotAccessor *sa, ScmObj val)
  *   and class is an old class, then it can access to the old instance's
  *   slot value.
  */
-static ScmObj slot_set_using_class(ScmNextMethod *nm, ScmObj *args,
-                                   int nargs, void *d)
+static ScmObj slot_set_using_class(ScmNextMethod *nm, ScmObj *argv,
+                                   int argc, void *d)
 {
-    ScmClass *klass = SCM_CLASS(args[0]);
-    ScmObj obj = args[1];
-    ScmObj slot = args[2];
-    ScmObj val = args[3];
+    ScmClass *klass = SCM_CLASS(argv[0]);
+    ScmObj obj = argv[1];
+    ScmObj slot = argv[2];
+    ScmObj val = argv[3];
     ScmSlotAccessor *sa;
     
     if (!SCM_EQ(SCM_OBJ(klass), SCM_OBJ(Scm_ClassOf(obj)))) {
@@ -1592,12 +1597,12 @@ ScmObj Scm_VMSlotBoundP(ScmObj obj, ScmObj slot)
  *
  * - no redefinition check!
  */
-static ScmObj slot_bound_using_class_p(ScmNextMethod *nm, ScmObj *args,
-                                       int nargs, void *data)
+static ScmObj slot_bound_using_class_p(ScmNextMethod *nm, ScmObj *argv,
+                                       int argc, void *data)
 {
-    ScmClass *klass = SCM_CLASS(args[0]);
-    ScmObj obj = args[1];
-    ScmObj slot = args[2];
+    ScmClass *klass = SCM_CLASS(argv[0]);
+    ScmObj obj = argv[1];
+    ScmObj slot = argv[2];
     ScmSlotAccessor *sa;
 
     if (!SCM_EQ(SCM_OBJ(klass), SCM_OBJ(Scm_ClassOf(obj)))) {
@@ -1625,13 +1630,13 @@ static SCM_DEFINE_METHOD(slot_bound_using_class_p_rec,
  * Scheme-defined objects will be initialized by object_initialize,
  * this method is called only for built-in classes.
  */
-static ScmObj builtin_initialize(ScmObj *args, int nargs, ScmGeneric *gf)
+static ScmObj builtin_initialize(ScmObj *argv, int argc, ScmGeneric *gf)
 {
     ScmObj instance, initargs, ap;
     ScmClass *klass;
-    SCM_ASSERT(nargs == 2);
-    instance = args[0];
-    initargs = args[1];
+    SCM_ASSERT(argc == 2);
+    instance = argv[0];
+    initargs = argv[1];
     if (Scm_Length(initargs) % 2) {
         Scm_Error("initializer list is not even: %S", initargs);
     }
@@ -1835,11 +1840,11 @@ static ScmObj object_initialize_cc(ScmObj result, void **data)
     return object_initialize1(obj, accs, initargs);
 }
 
-static ScmObj object_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
+static ScmObj object_initialize(ScmNextMethod *nm, ScmObj *argv, int argc,
                                 void *data)
 {
-    ScmObj obj = args[0];
-    ScmObj initargs = args[1];
+    ScmObj obj = argv[0];
+    ScmObj initargs = argv[1];
     ScmObj accs = Scm_ClassOf(obj)->accessors;
     if (SCM_NULLP(accs)) return obj;
     return object_initialize1(obj, accs, initargs);
@@ -1876,8 +1881,8 @@ static int object_compare(ScmObj x, ScmObj y, int equalp)
 }
 
 /* Fallback methods */
-static ScmObj object_compare_default(ScmNextMethod *nm, ScmObj *args,
-                                     int nargs, void *data)
+static ScmObj object_compare_default(ScmNextMethod *nm, ScmObj *argv,
+                                     int argc, void *data)
 {
     return SCM_FALSE;
 }
@@ -1902,21 +1907,23 @@ static SCM_DEFINE_METHOD(object_equalp_rec,
 
 static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmGeneric *instance = SCM_ALLOCATE(ScmGeneric, klass);
-    SCM_SET_CLASS(instance, klass);
-    SCM_PROCEDURE_INIT(instance, 0, 0, SCM_PROC_GENERIC, SCM_FALSE);
-    instance->methods = SCM_NIL;
-    instance->fallback = Scm_NoNextMethod;
-    instance->data = NULL;
-    (void)SCM_INTERNAL_MUTEX_INIT(instance->lock);
-    return SCM_OBJ(instance);
+    ScmGeneric *gf = SCM_ALLOCATE(ScmGeneric, klass);
+    SCM_SET_CLASS(gf, klass);
+    SCM_PROCEDURE_INIT(gf, 0, 0, SCM_PROC_GENERIC, SCM_FALSE);
+    gf->methods = SCM_NIL;
+    gf->fallback = Scm_NoNextMethod;
+    gf->data = NULL;
+    gf->maxReqargs = 0;
+    (void)SCM_INTERNAL_MUTEX_INIT(gf->lock);
+    return SCM_OBJ(gf);
 }
 
 static void generic_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    Scm_Printf(port, "#<generic %S (%d)>",
+    Scm_Printf(port, "#<generic %S (%d:%d)>",
                SCM_GENERIC(obj)->common.info,
-               Scm_Length(SCM_GENERIC(obj)->methods));
+               Scm_Length(SCM_GENERIC(obj)->methods),
+               SCM_GENERIC(obj)->maxReqargs);
 }
 
 /*
@@ -1939,7 +1946,23 @@ static ScmObj generic_methods(ScmGeneric *gf)
 
 static void generic_methods_set(ScmGeneric *gf, ScmObj val)
 {
+    int reqs = 0;
+    ScmObj cp;
+    SCM_FOR_EACH(cp, val) {
+        if (!SCM_METHODP(SCM_CAR(cp))) {
+            Scm_Error("The methods slot of <generic> must be a list of method, but given: %S", val);
+        }
+        if (SCM_PROCEDURE_REQUIRED(SCM_CAR(cp)) > reqs) {
+            reqs = SCM_PROCEDURE_REQUIRED(SCM_CAR(cp));
+        }
+    }
+    if (!SCM_NULLP(cp)) {
+        Scm_Error("The methods slot of <generic> cannot contain an improper list: %S", val);
+    }
+    (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
     gf->methods = val;
+    gf->maxReqargs = reqs;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
 }
 
 /* Make base generic function from C */
@@ -1957,44 +1980,63 @@ ScmObj Scm_MakeBaseGeneric(ScmObj name,
 }
 
 /* default "default method" */
-ScmObj Scm_NoNextMethod(ScmObj *args, int nargs, ScmGeneric *gf)
+ScmObj Scm_NoNextMethod(ScmObj *argv, int argc, ScmGeneric *gf)
 {
     Scm_Error("no applicable method for %S with arguments %S",
-              SCM_OBJ(gf), Scm_ArrayToList(args, nargs));
+              SCM_OBJ(gf), Scm_ArrayToList(argv, argc));
     return SCM_UNDEFINED;       /* dummy */
 }
 
 /* another handy "default method", which does nothing. */
-ScmObj Scm_NoOperation(ScmObj *arg, int nargs, ScmGeneric *gf)
+ScmObj Scm_NoOperation(ScmObj *argv, int argc, ScmGeneric *gf)
 {
     return SCM_UNDEFINED;
 }
 
 /* fallback of object-apply */
-ScmObj Scm_InvalidApply(ScmObj *args, int nargs, ScmGeneric *gf)
+ScmObj Scm_InvalidApply(ScmObj *argv, int argc, ScmGeneric *gf)
 {
-    Scm_Error("invalid application: %S", Scm_ArrayToList(args, nargs));
+    Scm_Error("invalid application: %S", Scm_ArrayToList(argv, argc));
     return SCM_UNDEFINED;
 }
 
 /* compute-applicable-methods */
-ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
+ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *argv, int argc,
+                                    int applyargs)
 {
-    ScmObj methods = gf->methods, mp;
+    ScmObj methods = gf->methods, mp, ap;
     ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmClass *typev_s[PREALLOC_SIZE], **typev = typev_s;
+    int i, nsel;
+
+    if (SCM_NULLP(methods)) return SCM_NIL;
+
+    if (gf->maxReqargs > PREALLOC_SIZE) {
+        typev = SCM_NEW_ATOMIC_ARRAY(ScmClass*, gf->maxReqargs);
+    }
+    nsel = gf->maxReqargs;
+    if (applyargs) argc--;
+    for (i = 0; i < argc && nsel >= 0; i++, nsel--) {
+        typev[i] = Scm_ClassOf(argv[i]);
+    }
+    if (applyargs && nsel) {
+        SCM_FOR_EACH(ap, argv[argc]) {
+            if (--nsel >= 0) typev[i++] = Scm_ClassOf(SCM_CAR(ap));
+            argc++;
+        }
+    }
 
     SCM_FOR_EACH(mp, methods) {
         ScmMethod *m = SCM_METHOD(SCM_CAR(mp));
-        ScmObj *ap;
-        ScmClass **sp;
+        ScmClass **tp, **sp;
         int n;
         
-        if (nargs < m->common.required) continue;
-        if (!m->common.optional && nargs > m->common.required) continue;
-        for (ap = args, sp = m->specializers, n = 0;
+        if (argc < m->common.required) continue;
+        if (!m->common.optional && argc > m->common.required) continue;
+        for (tp = typev, sp = m->specializers, n = 0;
              n < m->common.required;
-             ap++, sp++, n++) {
-            if (!Scm_SubtypeP(Scm_ClassOf(*ap), *sp)) break;
+             tp++, sp++, n++) {
+            if (!Scm_SubtypeP(*tp, *sp)) break;
         }
         if (n == m->common.required) SCM_APPEND1(h, t, SCM_OBJ(m));
     }
@@ -2002,20 +2044,16 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
 }
 
 static ScmObj compute_applicable_methods(ScmNextMethod *nm,
-                                         ScmObj *args,
-                                         int nargs,
+                                         ScmObj *argv,
+                                         int argc,
                                          void *data)
 {
-    ScmGeneric *gf = SCM_GENERIC(args[0]);
-    ScmObj arglist = args[1], ap;
-    ScmObj *argv;
+    ScmGeneric *gf = SCM_GENERIC(argv[0]);
+    ScmObj arglist = argv[1];
     int n = Scm_Length(arglist), i;
     if (n < 0) Scm_Error("bad argument list: %S", arglist);
 
-    argv = SCM_NEW_ARRAY(ScmObj, n);
-    i = 0;
-    SCM_FOR_EACH(ap, arglist) argv[i++] = SCM_CAR(ap);
-    return Scm_ComputeApplicableMethods(gf, argv, n);
+    return Scm_ComputeApplicableMethods(gf, &arglist, 1, TRUE);
 }
 
 static ScmClass *compute_applicable_methods_SPEC[] = {
@@ -2029,7 +2067,7 @@ static SCM_DEFINE_METHOD(compute_applicable_methods_rec,
 
 /* method-more-specific? */
 static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
-                                       ScmClass **targs, int nargs)
+                                       ScmClass **targv, int argc)
 {
     ScmClass **xs = x->specializers;
     ScmClass **ys = y->specializers;
@@ -2038,7 +2076,7 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
     
     for (i=0; i<xreq && i<yreq; i++) {
         if (xs[i] != ys[i]) {
-            ac = targs[i];
+            ac = targv[i];
             if (xs[i] == ac) return TRUE;
             if (ys[i] == ac) return FALSE;
             for (acpl = ac->cpa; *acpl; acpl++) {
@@ -2056,23 +2094,25 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
     else return FALSE;
 }
 
-static ScmObj method_more_specific_p(ScmNextMethod *nm, ScmObj *args,
-                                     int nargs, void *data)
+static ScmObj method_more_specific_p(ScmNextMethod *nm, ScmObj *argv,
+                                     int argc, void *data)
 {
-    ScmMethod *x = SCM_METHOD(args[0]);
-    ScmMethod *y = SCM_METHOD(args[1]);
-    ScmObj targlist = args[2], tp;
-    ScmClass **targs;
-    int ntargs = Scm_Length(targlist), i;
-    if (ntargs < 0) Scm_Error("bad targ list: %S", targlist);
-    targs = SCM_NEW_ARRAY(ScmClass*, ntargs);
+    ScmMethod *x = SCM_METHOD(argv[0]);
+    ScmMethod *y = SCM_METHOD(argv[1]);
+    ScmObj targlist = argv[2], tp;
+    ScmClass *targv_s[PREALLOC_SIZE], **targv = targv_s;
+    int targc = Scm_Length(targlist), i;
+    if (targc < 0) Scm_Error("bad targ list: %S", targlist);
+    if (targc > PREALLOC_SIZE) {
+        targv = SCM_NEW_ARRAY(ScmClass*, targc);
+    }
     i = 0;
     SCM_FOR_EACH(tp, targlist) {
         if (!Scm_TypeP(SCM_CAR(tp), SCM_CLASS_CLASS))
             Scm_Error("bad class object in type list: %S", SCM_CAR(tp));
-        targs[i++] = SCM_CLASS(SCM_CAR(tp));
+        targv[i++] = SCM_CLASS(SCM_CAR(tp));
     }
-    return SCM_MAKE_BOOL(method_more_specific(x, y, targs, ntargs));
+    return SCM_MAKE_BOOL(method_more_specific(x, y, targv, targc));
 }
 static ScmClass *method_more_specific_p_SPEC[] = {
     SCM_CLASS_STATIC_PTR(Scm_MethodClass),
@@ -2090,19 +2130,15 @@ static SCM_DEFINE_METHOD(method_more_specific_p_rec,
  * TODO: can't we carry around the method list in array
  * instead of list, at least internally?
  */
-#define STATIC_SORT_ARRAY_SIZE  32
-
-ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs)
+ScmObj Scm_SortMethods(ScmObj methods, ScmObj *argv, int argc)
 {
-    ScmObj starray[STATIC_SORT_ARRAY_SIZE], *array = starray;
-    ScmClass *sttargs[STATIC_SORT_ARRAY_SIZE], **targs = sttargs;
+    ScmObj array_s[PREALLOC_SIZE], *array = array_s;
+    ScmClass *targv_s[PREALLOC_SIZE], **targv = targv_s;
     int cnt = 0, len = Scm_Length(methods), step, i, j;
     ScmObj mp;
 
-    if (len >= STATIC_SORT_ARRAY_SIZE)
-        array = SCM_NEW_ARRAY(ScmObj, len);
-    if (nargs >= STATIC_SORT_ARRAY_SIZE)
-        targs = SCM_NEW_ARRAY(ScmClass*, nargs);
+    if (len >= PREALLOC_SIZE)  array = SCM_NEW_ARRAY(ScmObj, len);
+    if (argc >= PREALLOC_SIZE) targv = SCM_NEW_ARRAY(ScmClass*, argc);
 
     SCM_FOR_EACH(mp, methods) {
         if (!Scm_TypeP(SCM_CAR(mp), SCM_CLASS_METHOD))
@@ -2110,14 +2146,14 @@ ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs)
         array[cnt] = SCM_CAR(mp);
         cnt++;
     }
-    for (i=0; i<nargs; i++) targs[i] = Scm_ClassOf(args[i]);
+    for (i=0; i<argc; i++) targv[i] = Scm_ClassOf(argv[i]);
 
     for (step = len/2; step > 0; step /= 2) {
         for (i=step; i<len; i++) {
             for (j=i-step; j >= 0; j -= step) {
                 if (method_more_specific(SCM_METHOD(array[j]),
                                          SCM_METHOD(array[j+step]),
-                                         targs, nargs)) {
+                                         targv, argc)) {
                     break;
                 } else {
                     ScmObj tmp = array[j+step];
@@ -2156,12 +2192,12 @@ static void method_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
  *    we can't call Scheme verison of initialize to initialize the
  *    "initialize" method (chicken-and-egg circularity).
  */
-static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
+static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *argv, int argc,
                                 void *data)
 {
-    ScmMethod *m = SCM_METHOD(args[0]);
+    ScmMethod *m = SCM_METHOD(argv[0]);
     ScmGeneric *g;
-    ScmObj initargs = args[1];
+    ScmObj initargs = argv[1];
     ScmObj llist = Scm_GetKeyword(key_lambda_list, initargs, SCM_FALSE);
     ScmObj generic = Scm_GetKeyword(key_generic, initargs, SCM_FALSE);
     ScmObj specs = Scm_GetKeyword(key_specializers, initargs, SCM_FALSE);
@@ -2302,12 +2338,12 @@ ScmObj Scm_UpdateDirectMethod(ScmMethod *m, ScmClass *old, ScmClass *newc)
     return SCM_OBJ(m);
 }
 
-static ScmObj generic_updatedirectmethod(ScmNextMethod *nm, ScmObj *args,
-                                         int nargs, void *data)
+static ScmObj generic_updatedirectmethod(ScmNextMethod *nm, ScmObj *argv,
+                                         int argc, void *data)
 {
-    return Scm_UpdateDirectMethod(SCM_METHOD(args[0]),
-                                  SCM_CLASS(args[1]),
-                                  SCM_CLASS(args[2]));
+    return Scm_UpdateDirectMethod(SCM_METHOD(argv[0]),
+                                  SCM_CLASS(argv[1]),
+                                  SCM_CLASS(argv[2]));
 }
 
 static ScmClass *generic_updatedirectmethod_SPEC[] = {
@@ -2326,7 +2362,7 @@ static SCM_DEFINE_METHOD(generic_updatedirectmethod_rec,
 ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
 {
     ScmObj mp, pair;
-    int replaced = FALSE;
+    int replaced = FALSE, reqs = gf->maxReqargs;
         
     if (method->generic && method->generic != gf)
         Scm_Error("method %S already added to a generic function %S",
@@ -2338,6 +2374,9 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
     method->generic = gf;
     /* pre-allocate cons pair to avoid triggering GC in the critical region */
     pair = Scm_Cons(SCM_OBJ(method), gf->methods);
+    if (SCM_PROCEDURE_REQUIRED(method) > reqs) {
+        reqs = SCM_PROCEDURE_REQUIRED(method);
+    }
 
     /* Check if a method with the same signature exists */
     (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
@@ -2358,15 +2397,18 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
             }
         }
     }
-    if (!replaced) gf->methods = pair;
+    if (!replaced) {
+        gf->methods = pair;
+        gf->maxReqargs = reqs;
+    }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
     return SCM_UNDEFINED;
 }
 
-static ScmObj generic_addmethod(ScmNextMethod *nm, ScmObj *args, int nargs,
+static ScmObj generic_addmethod(ScmNextMethod *nm, ScmObj *argv, int argc,
                                 void *data)
 {
-    return Scm_AddMethod(SCM_GENERIC(args[0]), SCM_METHOD(args[1]));
+    return Scm_AddMethod(SCM_GENERIC(argv[0]), SCM_METHOD(argv[1]));
 }
 
 static ScmClass *generic_addmethod_SPEC[] = {
@@ -2404,14 +2446,20 @@ ScmObj Scm_DeleteMethod(ScmGeneric *gf, ScmMethod *method)
             }
         }
     }
+    SCM_FOR_EACH(mp, gf->methods) {
+        /* sync # of required selector */
+        if (SCM_PROCEDURE_REQUIRED(SCM_CAR(mp)) > gf->maxReqargs) {
+            gf->maxReqargs = SCM_PROCEDURE_REQUIRED(SCM_CAR(mp));
+        }
+    }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
     return SCM_UNDEFINED;
 }
 
-static ScmObj generic_deletemethod(ScmNextMethod *nm, ScmObj *args, int nargs,
+static ScmObj generic_deletemethod(ScmNextMethod *nm, ScmObj *argv, int argc,
                                    void *data)
 {
-    return Scm_DeleteMethod(SCM_GENERIC(args[0]), SCM_METHOD(args[1]));
+    return Scm_DeleteMethod(SCM_GENERIC(argv[0]), SCM_METHOD(argv[1]));
 }
 
 static ScmClass *generic_deletemethod_SPEC[] = {
@@ -2428,27 +2476,28 @@ static SCM_DEFINE_METHOD(generic_deletemethod_rec,
  */
 
 ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
-                          ScmObj *args, int nargs, int copyArgs)
+                          ScmObj *argv, int argc, int copyargs, int applyargs)
 {
     ScmNextMethod *nm = SCM_NEW(ScmNextMethod);
     SCM_SET_CLASS(nm, SCM_CLASS_NEXT_METHOD);
     SCM_PROCEDURE_INIT(nm, 0, 0, SCM_PROC_NEXT_METHOD, SCM_FALSE);
     nm->generic = gf;
     nm->methods = methods;
-    if (copyArgs) {
-        nm->args = SCM_NEW_ARRAY(ScmObj, nargs);
-        memcpy(nm->args, args, sizeof(ScmObj)*nargs);
+    if (copyargs) {
+        nm->argv = SCM_NEW_ARRAY(ScmObj, argc);
+        memcpy(nm->argv, argv, sizeof(ScmObj)*argc);
     } else {
-        nm->args = args;
+        nm->argv = argv;
     }
-    nm->nargs = nargs;
+    nm->argc = argc;
+    nm->applyargs = applyargs;
     return SCM_OBJ(nm);
 }
 
 static void next_method_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
     ScmNextMethod *nm = SCM_NEXT_METHOD(obj);
-    ScmObj args = Scm_ArrayToList(nm->args, nm->nargs);
+    ScmObj args = Scm_ArrayToList(nm->argv, nm->argc);
     Scm_Printf(out, "#<next-method %S %S>", nm->methods, args);
 }
 
@@ -2462,10 +2511,10 @@ static void accessor_method_print(ScmObj obj, ScmPort *port,
     Scm_Printf(port, "#<accessor-method %S>", SCM_METHOD(obj)->common.info);
 }
 
-static ScmObj accessor_get_proc(ScmNextMethod *nm, ScmObj *args, int nargs,
+static ScmObj accessor_get_proc(ScmNextMethod *nm, ScmObj *argv, int argc,
                                 void *data)
 {
-    ScmObj obj = args[0];
+    ScmObj obj = argv[0];
     ScmSlotAccessor *ca = (ScmSlotAccessor*)data;
     /* NB: we need this extra check, in case if the getter method of parent
        class and the one of subclass don't share the generic function, and
@@ -2480,11 +2529,11 @@ static ScmObj accessor_get_proc(ScmNextMethod *nm, ScmObj *args, int nargs,
     return slot_ref_using_accessor(obj, ca, FALSE);
 }
 
-static ScmObj accessor_set_proc(ScmNextMethod *nm, ScmObj *args, int nargs,
+static ScmObj accessor_set_proc(ScmNextMethod *nm, ScmObj *argv, int argc,
                                 void *data)
 {
-    ScmObj obj = args[0];
-    ScmObj val = args[1];
+    ScmObj obj = argv[0];
+    ScmObj val = argv[1];
     ScmSlotAccessor *ca = (ScmSlotAccessor*)data;
     /* See the comment in accessor_get_proc above about this check. */
     if (!SCM_EQ(Scm_ClassOf(obj), ca->klass)) {
@@ -2497,11 +2546,11 @@ static ScmObj accessor_set_proc(ScmNextMethod *nm, ScmObj *args, int nargs,
    sequence.  But it requires :slot-accessor initarg.  The method body
    is overridden by C function, and the closure given to :body doesn't
    have an effect.  */
-static ScmObj accessor_method_initialize(ScmNextMethod *nm, ScmObj *args,
-                                         int nargs, void *data)
+static ScmObj accessor_method_initialize(ScmNextMethod *nm, ScmObj *argv,
+                                         int argc, void *data)
 {
-    ScmMethod *m = SCM_METHOD(method_initialize(nm, args, nargs, data));
-    ScmObj initargs = args[1];
+    ScmMethod *m = SCM_METHOD(method_initialize(nm, argv, argc, data));
+    ScmObj initargs = argv[1];
     ScmObj sa = Scm_GetKeyword(key_slot_accessor, initargs, SCM_FALSE);
 
     if (!SCM_SLOT_ACCESSOR_P(sa)) {

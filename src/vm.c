@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.274 2007-08-24 23:55:44 shirok Exp $
+ *  $Id: vm.c,v 1.275 2007-12-29 09:59:11 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -784,22 +784,22 @@ static void run_loop()
                   generic:
                     /* pure generic application */
                     mm = Scm_ComputeApplicableMethods(SCM_GENERIC(VAL0),
-                                                      ARGP, argc);
+                                                      ARGP, argc, 0);
                     if (!SCM_NULLP(mm)) {   
                         mm = Scm_SortMethods(mm, ARGP, argc);
                         nm = Scm_MakeNextMethod(SCM_GENERIC(VAL0),
                                                 SCM_CDR(mm),
-                                                ARGP, argc, TRUE);
+                                                ARGP, argc, TRUE, FALSE);
                         VAL0 = SCM_CAR(mm);
                         proctype = SCM_PROC_METHOD;
                     }
                 } else if (proctype == SCM_PROC_NEXT_METHOD) {
                     ScmNextMethod *n = SCM_NEXT_METHOD(VAL0);
                     if (argc == 0) {
-                        CHECK_STACK(n->nargs+1);
-                        memcpy(SP, n->args, sizeof(ScmObj)*n->nargs);
-                        SP += n->nargs;
-                        argc = n->nargs;
+                        CHECK_STACK(n->argc+1);
+                        memcpy(SP, n->argv, sizeof(ScmObj)*n->argc);
+                        SP += n->argc;
+                        argc = n->argc;
                     }
                     if (SCM_NULLP(n->methods)) {
                         VAL0 = SCM_OBJ(n->generic);
@@ -807,7 +807,7 @@ static void run_loop()
                     } else {
                         nm = Scm_MakeNextMethod(n->generic,
                                                 SCM_CDR(n->methods),
-                                                ARGP, argc, TRUE);
+                                                ARGP, argc, TRUE, FALSE);
                         VAL0 = SCM_CAR(n->methods);
                         proctype = SCM_PROC_METHOD;
                     }
