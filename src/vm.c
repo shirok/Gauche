@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.276 2008-01-01 08:09:51 shirok Exp $
+ *  $Id: vm.c,v 1.277 2008-01-01 08:52:16 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1666,7 +1666,6 @@ static void run_loop()
                    pretend this is a normal TAIL-CALL. */
                 if (rargc == 0) {
                     SP--;
-                    code = SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargc+1);
                     VAL0 = proc;
                     goto tail_call_entry;
                 } 
