@@ -1,3 +1,21 @@
+2007-12-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (run_loop): Implemented an optimization on TAIL-APPLY
+	  instruction.  Since arguments are already on the stack except 
+	  the last one, we can share large part of processing with TAIL-CALL
+	  instruction, with a modification of the special treatment of
+	  the last argument.  This eliminates the need to call Scm_VMApply,
+	  and also allows large argument list to be applied, such as
+	  (apply + (iota 10000)).
+	  (Scm_VMApply): changed to use TAIL-APPLY instruction.  This also
+	  eliminates need of unfoling the passed args.
+	* src/vmcall.c: Added to refactor the similar code between CALL
+	  and TAIL-APPLY instruction handling.
+	  
+	* src/compile.scm (pass3/$ASM), src/stdlib.stub (apply):
+	  A little hack to make *every* 'apply' call a tail-call, so that
+	  it is compiled as TAIL-APPLY instruction.
+
 2007-12-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (Scm_ComputeApplicableMethods): Optimized inner loop

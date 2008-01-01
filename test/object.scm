@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.39 2007-01-14 09:22:59 shirok Exp $
+;; $Id: object.scm,v 1.40 2008-01-01 08:09:55 shirok Exp $
 
 (use gauche.test)
 
@@ -1321,6 +1321,31 @@
 
 (test* "<coercer-generic>" 3
        (add 1 "2"))
+
+;;----------------------------------------------------------------
+(test-section "apply special path")
+
+;; These tests are composed so that they go through the paths
+;; "goto do_method_call" or "goto do_method_call_app".
+
+(define-class <app-sp-path1> () ())
+(define-class <app-sp-path2> (<app-sp-path1>) ())
+
+(define-method app-sp-path-test1 ((x <app-sp-path1>) a b c)
+  (list c b a))
+(define-method app-sp-path-test1 ((x <app-sp-path2>) a b c)
+  (cons 'z (next-method)))
+
+(define-method app-sp-path-test2 ((x <app-sp-path1>) a b c)
+  (list c b a))
+(define-method app-sp-path-test2 ((x <app-sp-path2>) a b c)
+  (cons 'z (apply next-method '())))
+
+(test* "apply special path (normal->apply)" '(z c b a)
+       (apply app-sp-path-test1 (make <app-sp-path2>) '(a b c)))
+(test* "apply special path (apply->normal)" '(z c b a)
+       (app-sp-path-test2 (make <app-sp-path2>) 'a 'b 'c))
+
 
 (test-end)
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.58 2007-06-23 07:28:17 shirok Exp $
+;;;  $Id: compile.scm,v 1.59 2008-01-01 08:09:50 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -3747,55 +3747,66 @@
         (args ($asm-args iform)))
     (case/unquote
      (car insn)
-     ((EQ)
-      (pass3/asm-eq  info (car args) (cadr args) ccb renv ctx))
-     ((EQV)
-      (pass3/asm-eqv info (car args) (cadr args) ccb renv ctx))
-     ((NUMEQ2)
-      (pass3/asm-numeq2 info (car args) (cadr args) ccb renv ctx))
-     ((NUMLT2 NUMLE2 NUMGT2 NUMGE2)
-      (pass3/asm-numcmp info (car insn) (car args) (cadr args) ccb renv ctx))
-     ((NUMADD2)
-      (pass3/asm-numadd2 info (car args) (cadr args) ccb renv ctx))
-     ((NUMSUB2)
-      (pass3/asm-numsub2 info (car args) (cadr args) ccb renv ctx))
-     ((NUMMUL2)
-      (pass3/asm-nummul2 info (car args) (cadr args) ccb renv ctx))
-     ((NUMDIV2)
-      (pass3/asm-numdiv2 info (car args) (cadr args) ccb renv ctx))
-     ((VEC-REF)
-      (pass3/asm-vec-ref info (car args) (cadr args) ccb renv ctx))
-     ((VEC-SET)
-      (pass3/asm-vec-set info (car args) (cadr args) (caddr args) ccb renv ctx))
-     ((SLOT-REF)
-      (pass3/asm-slot-ref info (car args) (cadr args) ccb renv ctx))
-     ((SLOT-SET)
-      (pass3/asm-slot-set info (car args) (cadr args) (caddr args) ccb renv ctx))
-     (else
-      ;; general case
-      (case (length args)
-        ((0) (pass3/emit-asm! ccb insn info) 0)
-        ((1)
-         (let1 d (pass3/rec (car args) ccb renv 'normal/top)
-           (pass3/emit-asm! ccb insn info)
-           d))
-        ((2)
-         (let1 d0 (pass3/rec (car args) ccb renv 'normal/top)
-           (compiled-code-emit0! ccb PUSH)
-           (let1 d1 (pass3/rec (cadr args) ccb renv 'normal/top)
-             (pass3/emit-asm! ccb insn info)
-             (imax d0 (+ d1 1)))))
-        (else
-         (let loop ((args args) (depth 0) (cnt 0))
-           (cond ((null? (cdr args))
-                  (let1 d (pass3/rec (car args) ccb renv 'normal/top)
-                    (pass3/emit-asm! ccb insn info)
-                    (imax depth (+ cnt d))))
-                 (else
-                  (let1 d (pass3/rec (car args) ccb renv 'normal/top)
-                    (compiled-code-emit0! ccb PUSH)
-                    (loop (cdr args) (imax depth (+ d cnt)) (+ cnt 1)))))))
-        )))))
+     [(EQ)
+      (pass3/asm-eq  info (car args) (cadr args) ccb renv ctx)]
+     [(EQV)
+      (pass3/asm-eqv info (car args) (cadr args) ccb renv ctx)]
+     [(NUMEQ2)
+      (pass3/asm-numeq2 info (car args) (cadr args) ccb renv ctx)]
+     [(NUMLT2 NUMLE2 NUMGT2 NUMGE2)
+      (pass3/asm-numcmp info (car insn) (car args) (cadr args) ccb renv ctx)]
+     [(NUMADD2)
+      (pass3/asm-numadd2 info (car args) (cadr args) ccb renv ctx)]
+     [(NUMSUB2)
+      (pass3/asm-numsub2 info (car args) (cadr args) ccb renv ctx)]
+     [(NUMMUL2)
+      (pass3/asm-nummul2 info (car args) (cadr args) ccb renv ctx)]
+     [(NUMDIV2)
+      (pass3/asm-numdiv2 info (car args) (cadr args) ccb renv ctx)]
+     [(VEC-REF)
+      (pass3/asm-vec-ref info (car args) (cadr args) ccb renv ctx)]
+     [(VEC-SET)
+      (pass3/asm-vec-set info (car args) (cadr args) (caddr args) ccb renv ctx)]
+     [(SLOT-REF)
+      (pass3/asm-slot-ref info (car args) (cadr args) ccb renv ctx)]
+     [(SLOT-SET)
+      (pass3/asm-slot-set info (car args) (cadr args) (caddr args) ccb renv ctx)]
+     [(TAIL-APPLY)
+      (if (tail-context? ctx)
+        (pass3/asm-generic ccb insn args info renv)
+        (let1 merge-label (compiled-code-new-label ccb)
+          (compiled-code-emit1o! ccb PRE-CALL 0 merge-label)
+          (let1 d (pass3/asm-generic ccb insn args info renv)
+            (compiled-code-set-label! ccb merge-label)
+            (+ CONT_FRAME_SIZE d))))]
+     [else
+      (pass3/asm-generic ccb insn args info renv)])))
+
+(define (pass3/asm-generic ccb insn args info renv)
+  ;; general case
+  (case (length args)
+    [(0) (pass3/emit-asm! ccb insn info) 0]
+    [(1)
+     (let1 d (pass3/rec (car args) ccb renv 'normal/top)
+       (pass3/emit-asm! ccb insn info)
+       d)]
+    [(2)
+     (let1 d0 (pass3/rec (car args) ccb renv 'normal/top)
+       (compiled-code-emit0! ccb PUSH)
+       (let1 d1 (pass3/rec (cadr args) ccb renv 'normal/top)
+         (pass3/emit-asm! ccb insn info)
+         (imax d0 (+ d1 1))))]
+    [else
+     (let loop ((args args) (depth 0) (cnt 0))
+       (cond ((null? (cdr args))
+              (let1 d (pass3/rec (car args) ccb renv 'normal/top)
+                (pass3/emit-asm! ccb insn info)
+                (imax depth (+ cnt d))))
+             (else
+              (let1 d (pass3/rec (car args) ccb renv 'normal/top)
+                (compiled-code-emit0! ccb PUSH)
+                (loop (cdr args) (imax depth (+ d cnt)) (+ cnt 1))))))]
+    ))
 
 (define (pass3/emit-asm! ccb insn info)
   (match insn

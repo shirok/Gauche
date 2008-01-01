@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.132 2007-08-16 11:29:50 shirok Exp $
+;;; $Id: stdlib.stub,v 1.133 2008-01-01 08:09:51 shirok Exp $
 ;;;
 
 "
@@ -576,7 +576,7 @@
 (define-cproc procedure? (obj) (call <boolean> "SCM_PROCEDUREP"))
 
 (define-cproc apply (proc arg1 &rest args)
-  (inliner APPLY)
+  (inliner TAIL-APPLY)
   (body <top>
         (let* ((head :: ScmObj)
                (tail :: ScmObj))

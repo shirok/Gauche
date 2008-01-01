@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.503 2007-12-29 09:59:10 shirok Exp $
+ *  $Id: gauche.h,v 1.504 2008-01-01 08:09:50 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1350,10 +1350,10 @@ SCM_EXTERN int    Scm_HasSetter(ScmObj proc);
 struct ScmGenericRec {
     ScmProcedure common;
     ScmObj methods;             /* list of methods */
-    ScmObj (*fallback)(ScmObj *argv, int argc, ScmGeneric *gf);
-    void *data;
     int   maxReqargs;           /* maximum # of args required to select
                                    applicable methods */
+    ScmObj (*fallback)(ScmObj *argv, int argc, ScmGeneric *gf);
+    void *data;
     ScmInternalMutex lock;
 };
 
@@ -1368,7 +1368,7 @@ SCM_CLASS_DECL(Scm_GenericClass);
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_GenericClass),\
                                    0, 0, SCM_PROC_GENERIC, SCM_FALSE,   \
                                    NULL),                               \
-        SCM_NIL, cfunc, data, 0                                         \
+        SCM_NIL, 0, cfunc, data                                         \
     }
 
 SCM_EXTERN void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name,

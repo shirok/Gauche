@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.275 2007-12-29 09:59:11 shirok Exp $
+ *  $Id: vm.c,v 1.276 2008-01-01 08:09:51 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -515,30 +515,54 @@ pthread_key_t Scm_VMKey(void)
       Scm_Error errargs;                        \
    } while (0)
 
-/* check the argument count is OK for call to PROC.  if PROC takes &rest
- * args, fold those arguments to the list.  Returns adjusted size of
- * the argument frame.
- */
-#define ADJUST_ARGUMENT_FRAME(proc, argc)       \
-    do {                                        \
-        int reqargs, restarg;                   \
-        reqargs = SCM_PROCEDURE_REQUIRED(proc); \
-        restarg = SCM_PROCEDURE_OPTIONAL(proc); \
-        if (restarg) {                          \
-            ScmObj p = SCM_NIL, a;              \
-            if (argc < reqargs) goto wna;       \
-            /* fold &rest args */               \
-            while (argc > reqargs) {            \
-                POP_ARG(a);                     \
-                p = Scm_Cons(a, p);             \
-                argc--;                         \
-            }                                   \
-            PUSH_ARG(p);                        \
-            argc++;                             \
-        } else {                                \
-            if (argc != reqargs) goto wna;      \
-        }                                       \
+/* Discard the current procedure's local frame before performing a tail call.
+   Just before the tail call, the typical stack position is like this:
+   
+   SP  >|      |
+        | argN |
+        |   :  |
+   ARGP>| arg0 |
+        | env  |
+   ENV >| env  |
+        |localM|
+        |   :  |
+        |local0|
+   CONT>| cont |
+
+  Arg0...argN is the arguments for the call, and local0...localM is the
+  environment of the current procedure, which is no longer needed.
+  We shift arg0...argN to just above the continuation frame.
+
+  If the continuation frame has been saved (i.e. CONT is not pointing
+  the stack area), then we know for sure that there's no valid data
+  from the stack bottom to ARGP.  So we shift arg0...argN to the
+  beginning of the stack.  We set ENV = NULL afterwards to prevent
+  the debugging process from being confused---at the end of the procedure
+  calling sequence, ENV is set to point to the newly formed environment
+  frame out of arg0...argN.
+
+  MEMO: this shifting used to be done after folding &rest arguments.
+  Benchmark showed shifting first is slightly faster.
+*/
+#define DISCARD_ENV()                                                   \
+    do {                                                                \
+        ScmObj *to;                                                     \
+        int argc = (int)(SP - ARGP);                                    \
+        if (IN_STACK_P((ScmObj*)CONT)) {                                \
+            to = CONT_FRAME_END(CONT);                                  \
+        } else {                                                        \
+            to = vm->stackBase;                                         \
+        }                                                               \
+        if (argc) {                                                     \
+            ScmObj *t = to, *a = ARGP;                                  \
+            int c;                                                      \
+            for (c=0; c<argc; c++) *t++ = *a++;                         \
+        }                                                               \
+        ARGP = to;                                                      \
+        SP = to + argc;                                                 \
+        ENV = NULL;                                                     \
     } while (0)
+
 
 /* inline expansion of number comparison. */
 #define NUM_CMP(op, r)                                          \
@@ -592,6 +616,13 @@ pthread_key_t Scm_VMKey(void)
         vm->numVals = 1;                        \
         NEXT;                                   \
     } while (0)
+
+
+static void wna(ScmObj proc, int argc)
+{
+    Scm_Error("wrong number of arguments for %S (required %d, got %d)",
+              proc, SCM_PROCEDURE_REQUIRED(proc), argc);
+}
 
 /*===================================================================
  * Main loop of VM
@@ -669,205 +700,20 @@ static void run_loop()
                 NEXT;
             }
             CASE(SCM_VM_TAIL_CALL) {
-                /* discard the caller's argument frame, and shift
-                   the callee's argument frame there.
-                   NB: this shifting used to be done after folding
-                   &rest arguments.  Benchmark showed this one is better.
-                */
-                ScmObj *to;
-                int argc;
+                /* Preprocessing tail call. */
               tail_call_entry:
-                argc = (int)(SP - ARGP);
-
-                if (IN_STACK_P((ScmObj*)CONT)) {
-                    to = CONT_FRAME_END(CONT);
-                } else {
-                    /* continuation has been saved, which means the
-                       stack has no longer useful information. */
-                    to = vm->stackBase;
-                }
-                if (argc) {
-                    ScmObj *t = to, *a = ARGP;
-                    int c;
-                    /* The destintation and the source may overlap, but
-                       in such case the destination is always lower than
-                       the source, so we can safely use incremental copy. */
-                    for (c=0; c<argc; c++) *t++ = *a++;
-                }
-                ARGP = to;
-                SP = to + argc;
-                /* We discarded the current env, so make sure we don't have
-                   a dangling env pointer. */
-                ENV = NULL;
+                DISCARD_ENV();
             }
             /* FALLTHROUGH */
             CASE(SCM_VM_CALL) {
-                int argc;
-                int proctype;
-                ScmObj nm, mm, *fp;
+                ScmObj nm;      /* next methods */
+                int argc, proctype;
               call_entry:
-                argc = (int)(SP - ARGP);
-                vm->numVals = 1; /* default */
-
-                /* object-apply hook.  shift args, and insert val0 into
-                   the fist arg slot, then call GenericObjectApply. */
-                if (MOSTLY_FALSE(!SCM_PROCEDUREP(VAL0))) {
-                    int i;
-                    CHECK_STACK_PARANOIA(1);
-                    for (i=0; i<argc; i++) {
-                        *(SP-i) = *(SP-i-1);
-                    }
-                    *(SP-argc) = VAL0;
-                    SP++; argc++;
-                    VAL0 = SCM_OBJ(&Scm_GenericObjectApply);
-                    proctype = SCM_PROC_GENERIC;
-                    nm = SCM_FALSE;
-                    goto generic;
-                }
-                /*
-                 * We process the common cases first
-                 */
-                proctype = SCM_PROCEDURE_TYPE(VAL0);
-                if (proctype == SCM_PROC_SUBR) {
-                    /* We don't need to complete environment frame.
-                       Just need to adjust sp, so that stack-operating
-                       procs called from subr won't be confused. */
-                    ADJUST_ARGUMENT_FRAME(VAL0, argc);
-                    SP = ARGP;
-                    PC = PC_TO_RETURN;
-
-                    SCM_PROF_COUNT_CALL(vm, VAL0);
-                    VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc,
-                                                SCM_SUBR(VAL0)->data);
-                    /* the subr may substituted pc, so we need to check
-                       if we can pop the continuation immediately. */
-                    if (TAIL_POS()) RETURN_OP();
-                    NEXT;
-                }
-                if (proctype == SCM_PROC_CLOSURE) {
-                    ADJUST_ARGUMENT_FRAME(VAL0, argc);
-                    if (argc) {
-                        FINISH_ENV(SCM_PROCEDURE_INFO(VAL0),
-                                   SCM_CLOSURE(VAL0)->env);
-                    } else {
-                        ENV = SCM_CLOSURE(VAL0)->env;
-                        ARGP = SP;
-                    }
-                    vm->base = SCM_COMPILED_CODE(SCM_CLOSURE(VAL0)->code);
-                    PC = vm->base->code;
-                    CHECK_STACK(vm->base->maxstack);
-                    SCM_PROF_COUNT_CALL(vm, SCM_OBJ(vm->base));
-                    NEXT;
-                }
-                /*
-                 * Generic function application
-                 */
-                /* First, compute methods */
-                nm = SCM_FALSE;
-                if (proctype == SCM_PROC_GENERIC) {
-                    if (!SCM_GENERICP(VAL0)) {
-                        /* use scheme-defined MOP.  we modify the stack frame
-                           so that it is converted to an application of
-                           pure generic fn apply-generic. */
-                        ScmObj args = SCM_NIL, arg;
-                        int i;
-                        for (i=0; i<argc; i++) {
-                            POP_ARG(arg);
-                            args = Scm_Cons(arg, args);
-                        }
-                        ARGP = SP;
-                        argc = 2;
-                        PUSH_ARG(VAL0);
-                        PUSH_ARG(args);
-                        VAL0 = SCM_OBJ(&Scm_GenericApplyGeneric);
-                    }
-                  generic:
-                    /* pure generic application */
-                    mm = Scm_ComputeApplicableMethods(SCM_GENERIC(VAL0),
-                                                      ARGP, argc, 0);
-                    if (!SCM_NULLP(mm)) {   
-                        mm = Scm_SortMethods(mm, ARGP, argc);
-                        nm = Scm_MakeNextMethod(SCM_GENERIC(VAL0),
-                                                SCM_CDR(mm),
-                                                ARGP, argc, TRUE, FALSE);
-                        VAL0 = SCM_CAR(mm);
-                        proctype = SCM_PROC_METHOD;
-                    }
-                } else if (proctype == SCM_PROC_NEXT_METHOD) {
-                    ScmNextMethod *n = SCM_NEXT_METHOD(VAL0);
-                    if (argc == 0) {
-                        CHECK_STACK(n->argc+1);
-                        memcpy(SP, n->argv, sizeof(ScmObj)*n->argc);
-                        SP += n->argc;
-                        argc = n->argc;
-                    }
-                    if (SCM_NULLP(n->methods)) {
-                        VAL0 = SCM_OBJ(n->generic);
-                        proctype = SCM_PROC_GENERIC;
-                    } else {
-                        nm = Scm_MakeNextMethod(n->generic,
-                                                SCM_CDR(n->methods),
-                                                ARGP, argc, TRUE, FALSE);
-                        VAL0 = SCM_CAR(n->methods);
-                        proctype = SCM_PROC_METHOD;
-                    }
-                } else {
-                    Scm_Panic("something wrong.");
-                }
-
-                fp = ARGP;
-                if (proctype == SCM_PROC_GENERIC) {
-                    /* we have no applicable methods.  call fallback fn. */
-                    FINISH_ENV(SCM_PROCEDURE_INFO(VAL0), NULL);
-                    PC = PC_TO_RETURN;
-                    SCM_PROF_COUNT_CALL(vm, VAL0);
-                    VAL0 = SCM_GENERIC(VAL0)->fallback(fp,
-                                                       argc,
-                                                       SCM_GENERIC(VAL0));
-                    /* the fallback may substituted pc, so we need to check
-                       if we can pop the continuation immediately. */
-                    if (TAIL_POS()) RETURN_OP();
-                    NEXT;
-                }
-
-                /*
-                 * Now, apply method
-                 */
-                ADJUST_ARGUMENT_FRAME(VAL0, argc);
-                VM_ASSERT(proctype == SCM_PROC_METHOD);
-                VM_ASSERT(!SCM_FALSEP(nm));
-                if (SCM_METHOD(VAL0)->func) {
-                    /* C-defined method */
-                    FINISH_ENV(SCM_PROCEDURE_INFO(VAL0), NULL);
-                    PC = PC_TO_RETURN;
-                    SCM_PROF_COUNT_CALL(vm, VAL0);
-                    VAL0 = SCM_METHOD(VAL0)->func(SCM_NEXT_METHOD(nm),
-                                                  fp,
-                                                  argc,
-                                                  SCM_METHOD(VAL0)->data);
-                    /* the func may substituted pc, so we need to check
-                       if we can pop the continuation immediately. */
-                    if (TAIL_POS()) RETURN_OP();
-                } else {
-                    /* Scheme-defined method.  next-method arg is passed
-                       as the last arg (note that rest arg is already
-                       folded). */
-                    PUSH_ARG(SCM_OBJ(nm));
-                    FINISH_ENV(SCM_PROCEDURE_INFO(VAL0),
-                               SCM_METHOD(VAL0)->env);
-                    VM_ASSERT(SCM_COMPILED_CODE_P(SCM_METHOD(VAL0)->data));
-                    vm->base = SCM_COMPILED_CODE(SCM_METHOD(VAL0)->data);
-                    PC = vm->base->code;
-                    CHECK_STACK(vm->base->maxstack);
-                    SCM_PROF_COUNT_CALL(vm, SCM_OBJ(vm->base));
-                }
-                NEXT;
-                /*
-                 * Error case (jumped from ADJUST_ARGUMENT_FRAME)
-                 */
-              wna:
-                VM_ERR(("wrong number of arguments for %S (required %d, got %d)",
-                        VAL0, SCM_PROCEDURE_REQUIRED(VAL0), argc));
+#               undef APPLY_CALL
+#               include "./vmcall.c"
+              tail_apply_entry:
+#               define APPLY_CALL
+#               include "./vmcall.c"
             }
             CASE(SCM_VM_JUMP) {
                 FETCH_LOCATION(PC);
@@ -1783,9 +1629,59 @@ static void run_loop()
                 NEXT1;
             }
             CASE(SCM_VM_TAIL_APPLY) {
-                /*FALLTHROUGH*/
+                /*
+                  Inlined apply at the tail position.
+
+                  Here, the stack should have the following layout.
+
+                     SP  >|      |
+                          | argN |
+                          |   :  |
+                          | arg0 |
+                     ARGP>| proc |        VAL0=rest
+
+                  where N = SCMVM_INSN_ARG(code)-2.
+                  rest contains a list of "all the rest arguments".
+                  We "rotate" the stack and VAL0 and jump to the
+                  TAIL-CALL processing.  (The unfolding of rest
+                  argument will be done in ADJUST_ARGUMENT_FRAME later,
+                  if necessary.)
+
+                     SP  >|      |
+                          | rest |
+                          | argN |
+                          |   :  |
+                     ARGP>| arg0 |        VAL0=proc
+
+                 */
+                int rargc = Scm_Length(VAL0), nargc = SCM_VM_INSN_ARG(code)-2;
+                ScmObj proc = *(SP-nargc-1);
+                if (rargc < 0) VM_ERR(("improper list not allowed: %S", VAL0));
+                while (nargc > 0) {
+                    *(SP-nargc-1) = *(SP-nargc);
+                    nargc--;
+                }
+
+                /* a micro-optimization: if VAL0 is (), we just omit it and
+                   pretend this is a normal TAIL-CALL. */
+                if (rargc == 0) {
+                    SP--;
+                    code = SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargc+1);
+                    VAL0 = proc;
+                    goto tail_call_entry;
+                } 
+
+                *(SP-1) = VAL0;
+                VAL0 = proc;
+                DISCARD_ENV();
+                goto tail_apply_entry;
             }
             CASE(SCM_VM_APPLY) {
+                /* NB: The new compiler (post-0.8.12) always convert
+                   inlined apply to tail call and use TAIL-APPLY, so
+                   this path is rarely executed.  Eventually we want
+                   to drop this path.
+                 */
                 int nargs = SCM_VM_INSN_ARG(code);
                 ScmObj cp;
                 while (--nargs > 1) {
@@ -2586,6 +2482,11 @@ static ScmWord apply_calls[][2] = {
       SCM_VM_INSN(SCM_VM_RET) },
 };
 
+static ScmWord apply_callN[2] = {
+    SCM_VM_INSN1(SCM_VM_TAIL_APPLY, 2),
+    SCM_VM_INSN(SCM_VM_RET)
+};
+
 ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 {
     int numargs = Scm_Length(args);
@@ -2594,6 +2495,9 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
     ScmVM *vm = theVM;
 
     if (numargs < 0) Scm_Error("improper list not allowed: %S", args);
+    SCM_ASSERT(TAIL_POS());
+    SCM_ASSERT(ARGP == SP);
+#if 0
     reqstack = ENV_SIZE(numargs) + 1;
     if (reqstack >= SCM_VM_STACK_SIZE) {
         /* there's no way we can accept that many arguments */
@@ -2612,6 +2516,13 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
         PC[1] = SCM_VM_INSN(SCM_VM_RET);
     }
     return proc;
+#else
+    reqstack = ENV_SIZE(1) + 1;
+    CHECK_STACK(reqstack);
+    PUSH_ARG(proc);
+    PC = apply_callN;
+    return Scm_CopyList(args);
+#endif
 }
 
 /* shortcuts for common cases */

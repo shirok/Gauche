@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.162 2007-12-29 09:59:09 shirok Exp $
+ *  $Id: class.c,v 1.163 2008-01-01 08:09:50 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2127,8 +2127,14 @@ static SCM_DEFINE_METHOD(method_more_specific_p_rec,
 
 /* sort-methods
  *  This is a naive implementation just to make things work.
- * TODO: can't we carry around the method list in array
- * instead of list, at least internally?
+ *
+ *  Argv/argc is used to create an array of classes used to order methods.
+ *  We never need the arguments more than the maximum number of required
+ *  arguments among the given methods; when VM calls Scm_SortMethods, it
+ *  only puts as many args as gf->maxReqargs.
+ * 
+ *  TODO: can't we carry around the method list in array
+ *  instead of list, at least internally?
  */
 ScmObj Scm_SortMethods(ScmObj methods, ScmObj *argv, int argc)
 {
@@ -2498,7 +2504,7 @@ static void next_method_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
     ScmNextMethod *nm = SCM_NEXT_METHOD(obj);
     ScmObj args = Scm_ArrayToList(nm->argv, nm->argc);
-    Scm_Printf(out, "#<next-method %S %S>", nm->methods, args);
+    Scm_Printf(out, "#<next-method %S%d %S>", nm->methods, nm->applyargs, args);
 }
 
 /*=====================================================================
