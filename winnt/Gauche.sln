@@ -68,6 +68,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext-gauche-parameter", "ext
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext-fcntl", "ext-fcntl.vcproj", "{3A71402B-0993-4C1C-AA9D-B47369A6C4F2}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext-text-gettext", "ext-text-gettext.vcproj", "{7574F27E-65E9-411A-BC70-0D60BDDCDCF4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext-text-tr", "ext-text-tr.vcproj", "{9066B5AF-C795-4CB6-92FD-801885B9A6C4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -202,6 +206,14 @@ Global
 		{3A71402B-0993-4C1C-AA9D-B47369A6C4F2}.Debug|Win32.Build.0 = Debug|Win32
 		{3A71402B-0993-4C1C-AA9D-B47369A6C4F2}.Release|Win32.ActiveCfg = Release|Win32
 		{3A71402B-0993-4C1C-AA9D-B47369A6C4F2}.Release|Win32.Build.0 = Release|Win32
+		{7574F27E-65E9-411A-BC70-0D60BDDCDCF4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7574F27E-65E9-411A-BC70-0D60BDDCDCF4}.Debug|Win32.Build.0 = Debug|Win32
+		{7574F27E-65E9-411A-BC70-0D60BDDCDCF4}.Release|Win32.ActiveCfg = Release|Win32
+		{7574F27E-65E9-411A-BC70-0D60BDDCDCF4}.Release|Win32.Build.0 = Release|Win32
+		{9066B5AF-C795-4CB6-92FD-801885B9A6C4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9066B5AF-C795-4CB6-92FD-801885B9A6C4}.Debug|Win32.Build.0 = Debug|Win32
+		{9066B5AF-C795-4CB6-92FD-801885B9A6C4}.Release|Win32.ActiveCfg = Release|Win32
+		{9066B5AF-C795-4CB6-92FD-801885B9A6C4}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
