@@ -435,17 +435,17 @@
 
 (define-macro (require feature)         ;redefine
   (if (string? feature)
-      `',(%require feature)            ;gauche version
-      `(require:require ,feature)))    ;slib version
+    `',(%require feature)            ;gauche version
+    `(slib:require ,feature)))    ;slib version
 
 (define (provide feature)
   (if (string? feature)
-      (with-module gauche (provide feature)) ;gauche version
-      (require:provide feature)))       ;slib version
+    (with-module gauche (provide feature)) ;gauche version
+    (slib:provide feature)))       ;slib version
 
 (define (provided? feature)
   (if (string? feature)
-      (with-module gauche (provided? feature)) ;gauche version
-      (require:provided? feature)))     ;slib version
+    (with-module gauche (provided? feature)) ;gauche version
+    (slib:provided? feature)))     ;slib version
 
 (provide "slib")
