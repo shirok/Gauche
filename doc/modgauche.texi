@@ -4219,6 +4219,45 @@ BSDソケットインタフェースに近いインタフェースを提供し、高レベルの手続きは
 
 また、ホストネームやプロトコルに関する情報にアクセスするAPIも定義されます。
 @c COMMON
+
+@c EN
+Gauche can handle IPv6 if it is compiled 
+with the @code{--enable-ipv6} configuration option.
+To check whether IPv6 is enabled or not, 
+you can use @code{cond-expand} with
+@code{gauche.net.ipv6} feature identifier
+after loading @code{gauche.net}, as shown below.
+
+@example
+(use gauche.net)
+(cond-expand
+  (gauche.net.ipv6
+    ... code to use ipv6 ...)
+  (else
+    ... ipv4 only code ...))
+@end example
+
+See @ref{Feature conditional} for the details of @code{cond-expand}.
+@c JP
+Gaucheは、@code{--enable-ipv6}コンフィギュアオプションつきで
+コンパイルされていれば、IPv6を扱うことができます。
+IPv6が使えるかどうかを調べるには、
+@code{cond-expand}中で@code{gauche.net.ipv6} feature identifierを
+使うことができます。次の例を見てください。
+
+@example
+(use gauche.net)
+(cond-expand
+  (gauche.net.ipv6
+    ... ipv6を使うコード ...)
+  (else
+    ... ipv4のみのコード ...))
+@end example
+
+@code{cond-expand}の詳細については@ref{Feature conditional}を
+参照してください。
+@c COMMON
+
 @end deftp
 
 
@@ -4343,18 +4382,11 @@ the IP address and @var{port} is the port number.
 @end deffn
 
 @deffn {Method} sockaddr-addr (addr <sockaddr-in>)
+@deffnx {Method} sockaddr-port (addr <sockaddr-in>)
 @c EN
-Returns the IP address as an integer.
+Returns the IP address and the port number as an integer, respectively.
 @c JP
-IPアドレスを整数で返します。
-@c COMMON
-@end deffn
-
-@deffn {Method} sockaddr-port (addr <sockaddr-in>)
-@c EN
-Returns the port number as an integer.
-@c JP
-ポート番号を整数で返します。
+それぞれ、IPアドレスとポート番号を整数で返します。
 @c COMMON
 @end deffn
 
@@ -4923,37 +4955,57 @@ Returns a socket with specified parameters.
 @c COMMON
 @end defun
 
-@defvar PF_UNIX
-@defvarx PF_INET
+@defvr {Constant} PF_UNIX
+@defvrx {Constant} PF_INET
+@defvrx {Constant} PF_INET6
 @c EN
-These variables are bound to @code{PF_UNIX} and @code{PF_INET}.
-@c JP
-これらの変数はそれぞれ、@code{PF_UNIX}、@code{PF_INET}
-に束縛されています。
-@c COMMON
-@end defvar
+These constants are bound to the system's constants
+@code{PF_UNIX}, @code{PF_INET} and @code{PF_INET6}.
+You can use those values for @var{domain} argument of @code{make-socket}.
 
-@defvar AF_UNIX
-@defvarx AF_INET
-@c EN
-These variables are bound to @code{AF_UNIX} and @code{AF_INET}.
+(@code{PF_INET6} is defined only if the underlying operating
+system supports IPv6.)
 @c JP
-これらの変数はそれぞれ、@code{AF_UNIX}、@code{AF_INET}
-に束縛されています。
-@c COMMON
-@end defvar
+これらの定数はそれぞれシステムが提供する@code{PF_UNIX}、@code{PF_INET}、
+@code{PF_INET6}に束縛されています。
+これらの値を@var{make-socket}の@var{domain}引数に使うことができます。
 
-@defvar SOCK_STREAM
-@defvarx SOCK_DGRAM
-@defvarx SOCK_RAW
-@c EN
-These variables are bound to @code{SOCK_STREAM}, @code{SOCK_DGRAM}
-and @code{SOCK_RAW}.
-@c JP
-これらの変数はそれぞれ、@code{SOCK_STREAM}、@code{SOCK_DGRAM}、
-@code{SOCK_RAW} に束縛されています。
+(@code{PF_INET6}はオペレーティングシステムがIPv6をサポートしている場合にのみ
+定義されます。)
 @c COMMON
-@end defvar
+@end defvr
+
+@defvr {Constant} AF_UNIX
+@defvrx {Constant} AF_INET
+@defvrx {Constant} AF_INET6
+@c EN
+These constants are bound to @code{AF_UNIX}, 
+@code{AF_INET} and @code{AF_INET6}.
+
+(@code{AF_INET6} is defined only if the underlying operating
+system supports IPv6.)
+@c JP
+これらの定数はそれぞれ、@code{AF_UNIX}、@code{AF_INET}、@code{AF_INET6}
+に束縛されています。
+
+(@code{AF_INET6}はオペレーティングシステムがIPv6をサポートしている場合にのみ
+定義されます。)
+@c COMMON
+@end defvr
+
+@defvr {Constant} SOCK_STREAM
+@defvrx {Constant} SOCK_DGRAM
+@defvrx {Constant} SOCK_RAW
+@c EN
+These constants are bound to @code{SOCK_STREAM}, @code{SOCK_DGRAM}
+and @code{SOCK_RAW}, and suitable to pass to the @var{type} argument
+of @code{make-socket}.
+@c JP
+これらの定数はそれぞれ、@code{SOCK_STREAM}、@code{SOCK_DGRAM}、
+@code{SOCK_RAW} に束縛されており、
+@var{make-socket}の@var{type}引数に使うことができます。
+@c COMMON
+@end defvr
 
 @defun socket-fd socket
 @c EN
@@ -5511,6 +5563,9 @@ Note: The used algorithm assumes @var{packet} is not too big (< 64K).
 @node Netdb interface,  , Low-level socket interface, Networking
 @subsection  Netdb interface
 @c NODE Netdbインタフェース
+
+
+
 
 @deftp {Builtin Class} <sys-hostent>
 @clindex sys-hostent
