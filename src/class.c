@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.163 2008-01-01 08:09:50 shirok Exp $
+ *  $Id: class.c,v 1.164 2008-01-23 13:23:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1920,10 +1920,16 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
 
 static void generic_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
+#if 0  /* enable this to show maxReqargs */
     Scm_Printf(port, "#<generic %S (%d:%d)>",
                SCM_GENERIC(obj)->common.info,
                Scm_Length(SCM_GENERIC(obj)->methods),
                SCM_GENERIC(obj)->maxReqargs);
+#else
+    Scm_Printf(port, "#<generic %S (%d)>",
+               SCM_GENERIC(obj)->common.info,
+               Scm_Length(SCM_GENERIC(obj)->methods));
+#endif
 }
 
 /*

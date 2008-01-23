@@ -1,3 +1,9 @@
+2008-01-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (generic_print): Reverted the display format of
+	  generic functions; maxReqargs is not relevant for most users,
+	  so it's just confusing.
+
 2008-01-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/slib.scm.in (require, provide, provided?): adapted to
