@@ -6641,15 +6641,19 @@ with non-zero status code.
 @c COMMON
 
 @defivar {<process-abnormal-exit>} process
+@c EN
+A process object.
+@c JP
 プロセスオブジェクト。
+@c COMMON
 @end defivar
 
 @c EN
 Note: In Unix terms, exitting a process by calling @code{exit(2)} or 
 returning from @code{main()} is a normal exit, regardless of the
 exit status.  Some commands do use non-zero exit status
-to tell the normal result of execution (such as @code{grep(1)}).  However,
-large number of commands uses non-zero exit status to
+to tell one of the normal results of execution (such as @code{grep(1)}).  
+However, large number of commands uses non-zero exit status to
 indicate that they couldn't carry out the required operation,
 so we treat them as exceptional situations.
 @c JP
