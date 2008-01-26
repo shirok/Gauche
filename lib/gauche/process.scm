@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.29 2007-09-18 08:48:12 shirok Exp $
+;;;  $Id: process.scm,v 1.30 2008-01-26 17:53:34 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -406,6 +406,7 @@
   (case on-abnormal-exit
     ((:error) (%check-normal-exit process))
     ((:ignore))
-    (else (on-abnormal-exit process))))
+    (else (unless (zero? (process-exit-status process))
+            (on-abnormal-exit process)))))
 
 (provide "gauche/process")
