@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.103 2007-11-10 02:52:04 shirok Exp $
+ *  $Id: system.c,v 1.104 2008-02-01 11:53:30 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -839,6 +839,20 @@ void Scm_GetTimeOfDay(u_long *sec, u_long *usec)
 #endif /* !HAVE_GETTIMEOFDAY && !GAUCHE_WINDOWS */
 }
 
+/* Experimental.  This returns the microsecond-resolution time, wrapped
+   around the fixnum resolution.  In 32-bit architecture it's a bit more
+   than 1000seconds.  Good for micro-profiling, since this guarantees
+   no allocation.  Returned value can be negative. */
+long Scm_CurrentMicroseconds()
+{
+    u_long sec, usec;
+    Scm_GetTimeOfDay(&sec, &usec);
+    /* we ignore overflow */
+    usec += sec * 1000000;
+    usec &= (1<<(SCM_SMALL_INT_SIZE+1)) - 1;
+    if (usec > SCM_SMALL_INT_MAX) usec -= (1<<(SCM_SMALL_INT_SIZE+1));
+    return (long)usec;
+}
 
 ScmObj Scm_CurrentTime(void)
 {

@@ -1,3 +1,10 @@
+2008-02-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub (current-microseconds): Experimentally
+	  added.  Returns # of microseconds since system-dependent epoch,
+	  wrapped around fixnum resolution (possibly negative).  Useful
+	  for micro benchmarking since it doesnt' allocate.
+
 2008-01-31  Shiro Kawai  <shiro@acm.org>
 
 	* 0.8.13_pre1
