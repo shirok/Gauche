@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.50 2007-12-08 03:24:30 shirok Exp $
+;;; $Id: autoloads.scm,v 1.51 2008-02-01 09:39:44 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.50 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.51 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -121,7 +121,7 @@
           (:macro rxmatch-cond) (:macro rxmatch-case))
 
 (autoload gauche.procedure
-          compose complement pa$ map$ for-each$ apply$
+          compose complement (:macro $) (:macro $*) pa$ map$ for-each$ apply$
           count$ fold$ fold-right$ reduce$ reduce-right$
           filter$ partition$ remove$ find$ find-tail$
           any$ every$ delete$ member$ assoc$

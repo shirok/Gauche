@@ -30,12 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.18 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: procedure.scm,v 1.19 2008-02-01 09:39:43 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
   (use srfi-1)
-  (export compose complement pa$ map$ for-each$ apply$
+  (export compose complement $ $* pa$ map$ for-each$ apply$
           count$ fold$ fold-right$ reduce$ reduce-right$
           filter$ partition$ remove$ find$ find-tail$
           any$ every$ delete$ member$ assoc$
@@ -46,6 +46,40 @@
           ))
 
 (select-module gauche.procedure)
+
+;; *EXPERIMENTAL*
+;; Haskell-ish application
+;;
+;;  ($ f a b c)         => (f a b c)
+;;  ($ f a b c $)       => (pa$ f a b c)
+;;  ($ f $ g a b c)     => (f (g a b c))
+;;  ($ f $ g $ h a b c) => (f (g (h a b c)))
+;;  ($ f a $ g b $ h c) => (f a (g b (h c)))
+;;
+;;  ($* f a b c)         => (apply f a b c)
+;;  ($* f a $ g b c)     => (apply f a (g b c))
+;;  ($* f $* g $ h a b)  => (apply f (apply g (h a b)))
+;;  ($* f $* g $* h a b) => (apply f (apply g (apply h a b)))
+
+
+(define-syntax $
+  (syntax-rules ()
+    [(_ f . rest) (%$-rec () () f . rest)]
+    [(_)          (syntax-error "Invalid $-form: ($)")]))
+
+(define-syntax $*
+  (syntax-rules ()
+    [(_ f . rest) (%$-rec (apply) () f . rest)]
+    [(_)          (syntax-error "Invalid $*-form: ($*)")]))
+
+(define-syntax %$-rec
+  (syntax-rules ($ $*)
+    [(_ (app ...) es $)              (app ... pa$ . es)]
+    [(_ (app ...) es $*)             (app ... pa$ apply . es)]
+    [(_ (app ...) (e ...) $ . rest)  (app ... e ... ($ . rest))]
+    [(_ (app ...) (e ...) $* . rest) (app ... e ... ($* . rest))]
+    [(_ apps      (e ...) x . rest)  (%$-rec apps (e ... x) . rest)]
+    [(_ (app ...) es)                (app ... . es)]))
 
 ;; Combinator utilities -----------------------------------------
 
