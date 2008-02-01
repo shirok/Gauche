@@ -797,6 +797,23 @@ where @var{z1} and @var{z2} are complex numbers.
 @c COMMON
 @end defun
 
+@c NB: These should be moved to a separate subsection once we got
+@c more fixnum-specific operation support.
+
+@defun fixnum-width
+@defunx greatest-fixnum
+@defunx least-fixnum
+[R6RS]
+These procedures return the width of fixnum (@var{w}),
+the greatest integer representable by fixnum (@var{2^w - 1}),
+and the least integer representable by fixnum (@var{- 2^w}),
+respectively.  You might want to care the fixnum range when
+you are writing a performance-critical section.
+
+These names are defined in R6RS.  Common Lisp and ChezScheme have
+@code{most-positive-fixnum} and @code{most-negative-fixnum}.
+@end defun
+
 @node Numerical conversions, Bitwise operations, Arithmetics, Numbers
 @subsection Numerical conversions
 @c NODE 数値の変換

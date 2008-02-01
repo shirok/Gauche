@@ -1,5 +1,8 @@
 2008-02-01  Shiro Kawai  <shiro@acm.org>
 
+	* src/extlib.stub (fixnum-width, greatest-fixnum, least-fixnum):
+	  Added.
+
 	* src/syslib.stub (current-microseconds): Experimentally
 	  added.  Returns # of microseconds since system-dependent epoch,
 	  wrapped around fixnum resolution (possibly negative).  Useful
