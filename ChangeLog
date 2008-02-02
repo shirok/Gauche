@@ -1,5 +1,9 @@
 2008-02-01  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/file/util.scm (copy-file): Fixed a bug that didn't
+	  preserve the mode of dst when dst already exists, safe is #f
+	  and keep-mode is #f.
+
 	* src/read.c (read_char): allow 5, 6, or 7 hex digits in unicode char
 	  literal (#\uxxxxx etc.)  The old code only allows 4 or 8 digits,
 	  which is too restrictive (and not much point since Unicode is now

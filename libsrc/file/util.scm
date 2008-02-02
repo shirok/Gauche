@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.9 2007-10-06 09:59:24 shirok Exp $
+;;;  $Id: util.scm,v 1.10 2008-02-02 09:55:13 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -475,39 +475,40 @@
           (tmpfile   #f)
           (inport    #f)
           (outport   #f)
+          (dst-exists #f)
           (default-perm (logand #o666 (lognot (sys-umask)))))
       (define (rollback)
-        (cond (inport  => close-input-port))
-        (cond (outport => close-output-port))
-        (cond (tmpfile => sys-unlink)))
+        (cond [inport  => close-input-port])
+        (cond [outport => close-output-port])
+        (cond [tmpfile => sys-unlink]))
       (define (commit)
-        (cond (inport  => close-input-port))
-        (cond (outport => close-output-port))
-        (cond (tmpfile
+        (cond [inport  => close-input-port])
+        (cond [outport => close-output-port])
+        (cond [tmpfile
                (sys-chmod tmpfile (if keepmode (file-perm src) default-perm))
                (when (eq? if-exists :backup) (sys-rename dst backfile))
-               (sys-rename tmpfile dst))
-              (else
-               (sys-chmod dst (if keepmode (file-perm src) default-perm))))
+               (sys-rename tmpfile dst)]
+              [keepmode         (sys-chmod dst (file-perm src))]
+              [(not dst-exists) (sys-chmod dst default-perm)])
         (unless (null? times) (apply sys-utime dst times)))
       (define (open-destination)
         (if safe
           (cond
-           ((and (eq? if-exists :error) (file-exists? dst))
-            (error "destination file exists" dst))
-           ((and (not if-exists) (file-exists? dst)) #f)
-           (else
-            (set!-values (outport tmpfile) (sys-mkstemp dst)) #t))
+           [(and (eq? if-exists :error) (file-exists? dst))
+            (error "destination file exists" dst)]
+           [(and (not if-exists) (file-exists? dst)) #f]
+           [else
+            (set!-values (outport tmpfile) (sys-mkstemp dst)) #t])
           (cond
-           ((eq? if-exists :error)
-            (set! outport (open-output-file dst :if-exists :error)) #t)
-           ((not if-exists)
-            (set! outport (open-output-file dst :if-exists #f)) outport)
-           ((eq? if-exists :backup)
+           [(eq? if-exists :error)
+            (set! outport (open-output-file dst :if-exists :error)) #t]
+           [(not if-exists)
+            (set! outport (open-output-file dst :if-exists #f)) outport]
+           [(eq? if-exists :backup)
             (when (file-exists? dst) (sys-rename dst backfile))
-            (set! outport (open-output-file dst)) #t)
-           (else
-            (set! outport (open-output-file dst :if-exists :supersede)) #t))
+            (set! outport (open-output-file dst)) #t]
+           [else
+            (set! outport (open-output-file dst :if-exists :supersede)) #t])
           ))
       (define (do-copy)
         (guard (e (else (rollback) (raise e)))
@@ -515,6 +516,7 @@
           (when keeptime
             (set! times (let1 stat (sys-fstat inport)
                           (map (cut slot-ref stat <>) '(atime mtime)))))
+          (set! dst-exists (file-exists? dst))
           (begin0
            (and (open-destination)
                 (copy-port inport outport :unit 65536)
