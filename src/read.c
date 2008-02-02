@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.97 2007-12-12 09:00:40 shirok Exp $
+ *  $Id: read.c,v 1.98 2008-02-02 05:14:42 shirok Exp $
  */
 
 #include <stdio.h>
@@ -868,7 +868,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         /* handle #\uxxxx or #\uxxxxxxxx*/
         if ((cname[0] == 'u') && isxdigit(cname[1])) {
             int code;
-            if (namesize == 5 || namesize == 9) {
+            if (namesize >= 5 && namesize <= 9) {
                 code = Scm_ReadXdigitsFromString(cname+1, namesize-1, NULL);
                 if (code >= 0) return SCM_MAKE_CHAR(Scm_UcsToChar(code));
             }

@@ -1,5 +1,10 @@
 2008-02-01  Shiro Kawai  <shiro@acm.org>
 
+	* src/read.c (read_char): allow 5, 6, or 7 hex digits in unicode char
+	  literal (#\uxxxxx etc.)  The old code only allows 4 or 8 digits,
+	  which is too restrictive (and not much point since Unicode is now
+	  only up to #\u10ffff.)
+
 	* src/extlib.stub (fixnum-width, greatest-fixnum, least-fixnum):
 	  Added.
 
