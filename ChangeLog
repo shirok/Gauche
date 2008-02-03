@@ -1,3 +1,8 @@
+2008-02-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/parseopt.scm (next-option): fixed a problem that regexp
+	  might run out the stack when very long option arg is given.
+
 2008-02-01  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm (copy-file): Fixed a bug that didn't

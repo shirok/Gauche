@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: parseopt.scm,v 1.12 2007-10-02 09:07:36 shirok Exp $
+;;;  $Id: parseopt.scm,v 1.13 2008-02-03 08:25:49 shirok Exp $
 ;;;
 
 (define-module gauche.parseopt
@@ -80,16 +80,13 @@
 ;; From the args given at the command line, get a next option.
 ;; Returns option string and rest args.
 (define (next-option args)
-  (if (null? args)
-      (values #f '())
-      (rxmatch-case (car args)
-        (test (lambda (opt) (string=? opt "--"))
-              (values #f (cdr args)))
-        (#/^--?(\w[-+\w]*)(=(.*))?$/
-          (#f opt #f maybe-arg)
-          (values opt (if maybe-arg (cons maybe-arg (cdr args)) (cdr args))))
-        (else
-         (values #f args)))))
+  (cond
+   [(null? args) (values #f '())]
+   [(string=? (car args) "--") (values #f (cdr args))]
+   [(#/^--?(\w[-+\w]*)(=)?/ (car args))
+    => (lambda (m)
+         (values (m 1) (if (m 2) (cons (m'after) (cdr args)) (cdr args))))]
+   [else (values #f args)]))
 
 ;; From the list of optarg spec and given command line arguments,
 ;; get a list of optargs.  Returns optargs and unconsumed args.
