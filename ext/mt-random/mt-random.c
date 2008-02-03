@@ -10,7 +10,7 @@
  *     the allocated memory for random number generator object.
  *   - changed the names of the functions
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.19 2007-09-15 04:00:23 shirok Exp $
+ * $Id: mt-random.c,v 1.20 2008-02-03 13:07:43 shirok Exp $
  *
  * The original copyright notice follows.
  */
@@ -134,7 +134,7 @@ void Scm_MTInitByArray(ScmMersenneTwister *mt,
 }
 
 /* generates a random number on [0,0xffffffff]-interval */
-inline unsigned long Scm_MTGenrandU32(ScmMersenneTwister *mt)
+unsigned long Scm_MTGenrandU32(ScmMersenneTwister *mt)
 {
     unsigned long y;
     int mti = mt->mti;

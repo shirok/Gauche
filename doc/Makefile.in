@@ -2,12 +2,15 @@ srcdir      = @srcdir@
 VPATH       = $(srcdir)
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
+build        = @build@
+host         = @host@
 
 MANPAGES = gosh.1 gauche-config.1
 EXTRACTED = gauche-refe.texi gauche-refj.texi \
 	    gauche-deve.texi gauche-devj.texi
 GENERATED = Makefile $(MANPAGES)
-GOSH = ../src/gosh -q -I../src -I../lib -lgauche-init
+@CROSS_COMPILING_no@GOSH = ../src/gosh -q -I../src -I../lib -lgauche-init
+@CROSS_COMPILING_yes@GOSH = gosh -q -lgauche-init
 INSTALL = @INSTALL@
 MKINSTDIR = $(top_srcdir)/mkinstalldirs
 MAKEINFO = @MAKEINFO@

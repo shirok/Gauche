@@ -1,5 +1,16 @@
 2008-02-03  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, */Makefile.in, src/genconfig.in: Adapted for
+	  cross compilation. (Parch from YOKOTA Hiroshi).
+
+	* src/bignum.c, src/gauche/config.h.in: checks malloc.h to use
+	  alloca on mingw. (Parch from YOKOTA Hiroshi).
+
+	* src/string.c, src/system.c, src/number.c, src/dl_win.c,
+	  src/class.c, ext/mt-random/mt-random.c: removing inline from
+	  externed procs, and some other fixes for better portability.
+	  (Parch from YOKOTA Hiroshi).
+
 	* Makefile.in (uninstall): avoid going into gc/, since we don't
 	  install a separate libgc.a so we shouldn't uninstall it.
 

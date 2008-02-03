@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.88 2007-08-29 09:38:54 shirok Exp $
+ *  $Id: string.c,v 1.89 2008-02-03 13:07:48 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1385,7 +1385,7 @@ void Scm_DStringInit(ScmDString *dstr)
     dstr->length = 0;
 }
 
-inline int Scm_DStringSize(ScmDString *dstr)
+int Scm_DStringSize(ScmDString *dstr)
 {
     ScmDStringChain *chain;
     int size;

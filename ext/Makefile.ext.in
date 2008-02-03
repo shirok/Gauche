@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions  -*-mode: Makefile-*-
-## $Id: Makefile.ext.in,v 1.31 2007-09-15 04:00:17 shirok Exp $
+## $Id: Makefile.ext.in,v 1.32 2008-02-03 13:07:42 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -11,6 +11,7 @@ datadir     = @datadir@
 datarootdir = @datarootdir@
 VPATH       = $(srcdir)
 GAUCHE_VERSION = @GAUCHE_VERSION@
+BUILD       = @build@
 HOST        = @host@
 
 # These may be overridden by make invocators
@@ -36,8 +37,10 @@ CCLD      = $(CC)
 LINK      = $(CCLD) $(CFLAGS) $(LDFLAGS)
 MODLINK   = $(CCLD) $(CFLAGS) $(LDFLAGS)
 
-GOSH           = $(top_builddir)/src/gosh -ftest
-GAUCHE_CONFIG  = $(top_builddir)/src/gauche-config
+@CROSS_COMPILING_no@GOSH           = $(top_builddir)/src/gosh -ftest
+@CROSS_COMPILING_no@GAUCHE_CONFIG  = $(top_builddir)/src/gauche-config
+@CROSS_COMPILING_yes@GOSH           = gosh
+@CROSS_COMPILING_yes@GAUCHE_CONFIG  = $(top_builddir)/src/$(HOST)-gauche-config
 GAUCHE_INSTALL = $(GOSH) $(top_srcdir)/src/gauche-install.in
 GENCOMP        = $(GOSH) $(top_srcdir)/src/gencomp
 INSTALL_TYPE   = sys

@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.175 2008-01-01 08:09:50 shirok Exp $
+#  $Id: Makefile.in,v 1.176 2008-02-03 13:07:46 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -24,7 +24,7 @@
 	$(COMPILE) -c $<
 
 .stub.c:
-	$(HOSTGOSH) ./genstub -D LIBGAUCHE_BODY $<
+	$(BUILD_GOSH) ./genstub -D LIBGAUCHE_BODY $<
 
 SHELL       = @SHELL@
 prefix      = @prefix@
@@ -37,6 +37,10 @@ datarootdir = @datarootdir@
 VPATH       = $(srcdir)
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
+
+# for cross build
+build = @build@
+host  = @host@
 
 # These may be overridden by make invocators
 DESTDIR  =
@@ -74,14 +78,18 @@ POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) libg
 
 GENCOMP   = $(srcdir)/gencomp -D LIBGAUCHE_BODY
 
-# HOSTGOSH is the gosh command used to generate some of the source files.
+# for cross build
+BUILD_CC     = @BUILD_CC@
+BUILD_CFLAGS = -O2
+
+# BUILD_GOSH is the gosh command used to generate some of the source files.
 # We need to 'preload' some libraries from the host's environment, for
 # they are compiled DSO as of 0.8.6 and the ones in the build tree can
 # be incompatible with the host gosh.
-# (NB: HOSTGOSH is only invoked building from CVS; it won't be called
+# (NB: BUILD_GOSH is only invoked building from CVS; it won't be called
 # when building from tarball.)
 # We clear GAUCHE_LOAD_PATH to make sure we won't read nonstandard stuff.
-HOSTGOSH  = GAUCHE_LOAD_PATH="" GAUCHE_DYNLOAD_PATH="" \
+BUILD_GOSH  = GAUCHE_LOAD_PATH="" GAUCHE_DYNLOAD_PATH="" \
 	    gosh -l./preload -I$(top_srcdir)/src -I$(top_srcdir)/lib
 
 LIB_INSTALL_DIR  = @libdir@
@@ -93,10 +101,10 @@ GAUCHE_ARCH_DIR = @libdir@/gauche
 
 HEADER_INSTALL_DIR    = $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@/include
 SCM_INSTALL_DIR       = $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@/lib
-ARCH_INSTALL_DIR      = $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@/@target@
+ARCH_INSTALL_DIR      = $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@/@host@
 SITE_SCM_DIR          = $(GAUCHE_DATA_DIR)/site/lib
-SITE_ARCH_DIR         = $(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@/@target@
-ARCH = @target@
+SITE_ARCH_DIR         = $(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@/@host@
+ARCH = @host@
 
 # targetlib is given when we relink the final version of gosh to embed
 # the path to libgauche.  Usually it is LIB_INSTALL_DIR, but under
@@ -169,7 +177,8 @@ HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
 OBJECTS = $(libgauche_OBJECTS) $(gosh_OBJECTS)
 
-all : libgauche.$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS)
+@CROSS_COMPILING_no@all : libgauche.$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS)
+@CROSS_COMPILING_yes@all : libgauche.$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS) $(host)-gauche-config
 
 gosh$(EXEEXT) : libgauche.$(SOEXT) $(gosh_OBJECTS) 
 	@rm -f gosh$(EXEEXT)
@@ -189,22 +198,22 @@ moplib.c : moplib.stub genstub
 intlib.c : intlib.stub genstub
 
 autoloads.c : autoloads.scm
-	$(HOSTGOSH) ./autoloads.scm
+	$(BUILD_GOSH) ./autoloads.scm
 
 builtin-syms.c gauche/builtin-syms.h : builtin-syms.scm
-	$(HOSTGOSH) ./builtin-syms.scm
+	$(BUILD_GOSH) ./builtin-syms.scm
 
 vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
-	$(HOSTGOSH) ./geninsn
+	$(BUILD_GOSH) ./geninsn
 
 compile.c : compile.scm gencomp vminsn.scm
-	$(HOSTGOSH) $(GENCOMP) compile.scm
+	$(BUILD_GOSH) $(GENCOMP) compile.scm
 
 scmlib.c : scmlib.scm gencomp vminsn.scm
-	$(HOSTGOSH) $(GENCOMP) scmlib.scm
+	$(BUILD_GOSH) $(GENCOMP) scmlib.scm
 
 objlib.c : objlib.scm gencomp vminsn.scm
-	$(HOSTGOSH) $(GENCOMP) objlib.scm
+	$(BUILD_GOSH) $(GENCOMP) objlib.scm
 
 symbol.$(OBJEXT) : builtin-syms.c
 
@@ -222,6 +231,10 @@ libgauche.$(SOEXT) : $(libgauche_OBJECTS) $(GCLIB)
 
 gauche-config$(EXEEXT) : gauche-config.$(OBJEXT)
 	$(LINK) -o gauche-config$(EXEEXT) gauche-config.$(OBJEXT) $(LIBS)
+
+# for cross build
+$(host)-gauche-config: gauche-config.c
+	$(BUILD_CC) $(BUILD_CFLAGS) $(DEFS) -o $@ gauche-config.c
 
 gauche-config.c gauche/arch.h ../lib/gauche/config.scm : genconfig
 	$(SHELL) ./genconfig
@@ -246,9 +259,9 @@ gauche-cesconv : gauche-cesconv.in
 
 # a special build sequence when VM instruction set has been changed
 newinsn : 
-	$(HOSTGOSH) -fno-inline-globals $(GENCOMP) compile.scm
-	$(HOSTGOSH) -fno-inline-globals $(GENCOMP) scmlib.scm
-	$(HOSTGOSH) -fno-inline-globals $(GENCOMP) objlib.scm
+	$(BUILD_GOSH) -fno-inline-globals $(GENCOMP) compile.scm
+	$(BUILD_GOSH) -fno-inline-globals $(GENCOMP) scmlib.scm
+	$(BUILD_GOSH) -fno-inline-globals $(GENCOMP) objlib.scm
 	$(MAKE) all
 	./gosh -ftest $(GENCOMP) compile.scm
 	./gosh -ftest $(GENCOMP) scmlib.scm
@@ -302,7 +315,10 @@ clean :
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT)   \
 	       $(GENERATED_SCRIPTS) gauche-config.c \
 	       libgauche.$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe \
-	       test.log test.dir so_locations gauche/*~ gauche/arch.h
+	       test.log test.dir so_locations gauche/*~ gauche/arch.h \
+	       gauche-config.in.c \
+	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \
+	       $(host)-gauche-config.c $(host)-gauche-config
 
 distclean : clean
 	rm -f $(CONFIG_GENERATED)
@@ -319,6 +335,8 @@ INSTALL_DIRS = $(DESTDIR)$(HEADER_INSTALL_DIR) \
 	       $(DESTDIR)$(BIN_INSTALL_DIR) \
 	       $(DESTDIR)$(SITE_SCM_DIR) \
 	       $(DESTDIR)$(SITE_ARCH_DIR)
+@CROSS_COMPILING_no@GAUCHE_CONFIG = ./gauche-config
+@CROSS_COMPILING_yes@GAUCHE_CONFIG = ./$(host)-gauche-config
 
 install : all relink
 	$(MKINSTDIR) $(INSTALL_DIRS)
@@ -329,7 +347,7 @@ install : all relink
 	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(BIN_INSTALL_DIR)
 	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(ARCH_INSTALL_DIR)
 	$(INSTALL) -m 444 $(INSTALL_SCMS) $(DESTDIR)$(SCM_INSTALL_DIR)
-	@case `./gauche-config --arch` in *-cygwin*|*-mingw*) \
+	@case `$(GAUCHE_CONFIG) --arch` in *-cygwin*|*-mingw*) \
 	  $(INSTALL) $(INSTALL_LIBS) $(DESTDIR)$(BIN_INSTALL_DIR);;\
 	esac
 	$(POSTINSTALL)

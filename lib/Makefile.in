@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.154 2007-11-07 04:43:00 shirok Exp $
+#  $Id: Makefile.in,v 1.155 2008-02-03 13:07:45 shirok Exp $
 
 .PHONY: all check install uninstall slibcat slibcat-in-place \
 	clean distclean maintainer-clean
@@ -17,6 +17,8 @@ top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 datadir     = @datadir@
 datarootdir = @datarootdir@
+build       = @build@
+host        = @host@
 
 GAUCHE_DATA_DIR = $(datadir)/gauche
 SCM_INSTALL_DIR = $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@/lib
@@ -101,7 +103,7 @@ uninstall:
 # For RPM, this has to be called in the postinstall script instead of
 # installation script.
 slibcat : 
-	if test -f $(SLIB_DIR)/require.scm; then \
+	if test -f $(SLIB_DIR)/require.scm && test $(build) = $(host) ; then \
 	  $(exec_prefix)/bin/gosh -ftest -uslib -E"require 'new-catalog" -Eexit;\
 	fi
 

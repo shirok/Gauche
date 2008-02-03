@@ -2,7 +2,7 @@ dnl
 dnl Configure ext/net
 dnl This file is included by the toplevel configure.in
 dnl
-dnl $Id: net.ac,v 1.10 2007-10-02 09:07:01 shirok Exp $
+dnl $Id: net.ac,v 1.11 2008-02-03 13:07:44 shirok Exp $
 
 # ext/net -------------------------------------------------
 
@@ -219,7 +219,6 @@ dnl Windows/MinGW is special and we know the answer, so we just don't
 dnl bother checking it.
 case "$target" in
   *mingw32*)
-    AC_DEFINE(socklen_t, int)
     LIBS="$LIBS -lws2_32" ;;
   *)
     TYPE_SOCKLEN_T;;

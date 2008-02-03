@@ -3,18 +3,18 @@
 #
 # Generates gauche-config.c and gauche/arch.h
 #
-# $Id: genconfig.in,v 1.14 2007-08-25 02:29:31 shirok Exp $
+# $Id: genconfig.in,v 1.15 2008-02-03 13:07:47 shirok Exp $
 #
 
 # TODO: we have almost exactly the same table in gauche-config.c part
 # (cmds[]) and config.scm part (*configurations*).  They should be
 # generated from a single source.
 
-target=@target@
-xtarget=@xtarget@
+host=@host@
+xhost=@xhost@
 gauche_version=@GAUCHE_VERSION@
 
-case "$xtarget" in
+case "$xhost" in
   *mingw*|*winnt*)
      # On Windows we can't rely on the paths set by configure.
      # We find the location of the binary and calculate the prefix path
@@ -50,17 +50,17 @@ infodir=`echo @infodir@ | $pathfix`
 gauche_incdir=`echo "$garchdir/$gauche_version/include" | $pathfix`
 gauche_libdir=`echo "$gdatadir/$gauche_version/lib" | $pathfix`
 gauche_aclocaldir=`echo "$gdatadir/$gauche_version/" | $pathfix`
-gauche_archdir=`echo "$garchdir/$gauche_version/$target" | $pathfix`
+gauche_archdir=`echo "$garchdir/$gauche_version/$host" | $pathfix`
 gauche_siteincdir=`echo "$garchdir/site/include" | $pathfix`
 gauche_sitelibdir=`echo "$gdatadir/site/lib" | $pathfix`
-gauche_sitearchdir=`echo "$garchdir/site/$gauche_version/$target" | $pathfix`
+gauche_sitearchdir=`echo "$garchdir/site/$gauche_version/$host" | $pathfix`
 gauche_pkgincdir=`echo '${libdir}'"/gauche/site/include" | $pathfix`
 gauche_pkglibdir=`echo '${datadir}'"/gauche/site/lib" | $pathfix`
-gauche_pkgarchdir=`echo '${libdir}'"/gauche/site/$gauche_version/$target" | $pathfix`
+gauche_pkgarchdir=`echo '${libdir}'"/gauche/site/$gauche_version/$host" | $pathfix`
 
 gauche_libs="@LIBS@"
 gauche_configure_args="@GAUCHE_CONFIGURE_ARGS@"
-arch="$target"
+arch="$host"
 
 local_incdir="@LOCAL_INC@"
 local_libdir="@LOCAL_LIB@"

@@ -1,4 +1,4 @@
-/*-
+/*
  * dl_win.c - windows LoadLibrary interface
  *
  *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: dl_win.c,v 1.6 2007-08-24 23:55:42 shirok Exp $
+ *  $Id: dl_win.c,v 1.7 2008-02-03 13:07:47 shirok Exp $
  */
 
 /* This file is included in load.c */
@@ -52,7 +52,7 @@ static const char *dl_error(void)
 {
     char buf[80], *p;
     DWORD code = GetLastError();
-    sprintf(buf, "error code %d", code);
+    snprintf(buf, sizeof(buf), "error code %ld", code);
     p = SCM_NEW_ATOMIC2(char *, strlen(buf)+1);
     strcpy(p, buf);
     return p;

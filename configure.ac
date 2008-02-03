@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.109 2008-02-01 09:40:52 shirok Exp $
+dnl $Id: configure.ac,v 1.110 2008-02-03 13:07:38 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.13_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.109 $)
+AC_REVISION($Revision: 1.110 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -142,7 +142,7 @@ dnl Platform-dependent thread configuration.  This must be in sync
 dnl with gc's configure.in.
 case $GAUCHE_THREAD_TYPE in
  pthreads|default)
-  case "$target" in
+  case "$host" in
     *-*-linux*)
       AC_DEFINE(GC_LINUX_THREADS,1,[Define to use Linux threads])
       AC_DEFINE(_REENTRANT,1,[Define to use reentrant libc])
@@ -198,7 +198,7 @@ case $GAUCHE_THREAD_TYPE in
       ;;
     *)
       if test $GAUCHE_THREAD_TYPE = "pthreads"; then
-        AC_MSG_ERROR([pthread is not supported on $target])
+        AC_MSG_ERROR([pthread is not supported on $host])
       else
         GAUCHE_THREAD_TYPE=none
       fi
@@ -247,6 +247,9 @@ AC_CHECK_PROGS(AS, as gas)
 AC_CHECK_PROGS(MAKEINFO, makeinfo)
 AC_CHECK_PROGS(GZIP_PROGRAM, gzip)
 
+dnl for cross build
+AC_CHECK_PROGS(BUILD_CC, ${build}-gcc ${build_alias}-gcc gcc cc)
+
 dnl Safe default CFLAGS (usually -g -O2 if you're using gcc, empty otherwise).
 dnl If the user overrides CFLAGS during configure, which is recorded.
 dnl This information is used when configuring extensions.
@@ -260,7 +263,7 @@ dnl   for some tests needs it.
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/time.h sys/types.h glob.h dlfcn.h getopt.h sched.h unistd.h)
-AC_CHECK_HEADERS(stdint.h inttypes.h rpc/types.h)
+AC_CHECK_HEADERS(stdint.h inttypes.h rpc/types.h malloc.h)
 AC_CHECK_HEADERS(syslog.h crypt.h)
 AC_CHECK_HEADERS(pty.h util.h libutil.h sys/loadavg.h sys/resource.h)
 
@@ -269,7 +272,7 @@ AC_CHECK_HEADERS(sunmath.h)
 
 dnl ===========================================================
 dnl Checks processor type, for processor-specific stuff
-case $target in
+case $host in
   i?86-*)
     AC_DEFINE(SCM_TARGET_I386,1,[Define if uses i386 optimizations]) ;;
   alpha*)
@@ -336,7 +339,7 @@ dnl x86-solaris 9 requires this to use isinf
 AC_CHECK_LIB(sunmath, isinf)
 
 dnl For Windows/MinGW, manually adds several libraries
-case "$target" in
+case "$host" in
   *mingw*) LIBS="$LIBS -lnetapi32 -lshlwapi";;
   *) ;;
 esac
@@ -353,7 +356,7 @@ AC_CHECK_FUNCS(sigwait)
 
 dnl Check for select().  HP-UX doesn't like the way configure tests
 dnl select() existence, so we skip the test on it.
-case "$target" in
+case "$host" in
   *-hpux*)
     AC_DEFINE(HAVE_SELECT, 1, [Define if you have select]) ;;
   *)
@@ -363,7 +366,7 @@ esac
 dnl Checks for pty-related fns.  It appears that recent Cygwin has them,
 dnl but only in a static library.  That prevents us from creating DLL
 dnl version of gauche.  Thus we explictly exclude them on cygwin.
-case "$target" in
+case "$host" in
   *cygwin*)
     : ;;
   *)
@@ -376,7 +379,7 @@ dnl Checks if crypt() exists and whether it's in libc or libcrypt.
 dnl Note: on cygwin, libcrypt is only available as a static library,
 dnl and prevents libgauche.dll from building.   We explicitly excludes it.
 dnl
-case "$target" in
+case "$host" in
   *cygwin*)
      : ;;
   *)
@@ -438,9 +441,9 @@ ext_use_uvector=no
 
 # We put additional information, such as whether we use Framework for
 # darwin, in this variable.
-xtarget=$target
+xhost=$host
 
-case $target in
+case $host in
   *freebsd2*)
     SHLIB_SO_CFLAGS="-fpic -fPIC"
     SHLIB_SO_LDFLAGS="-v;ld -Bshareable -o"
@@ -466,7 +469,7 @@ case $target in
     # -no-cpp-precomp is not related to shared library, but needed to
     # get src/{vm.c,char.c} compiled -skimu
     # [Shiro] Darwin 1.3 and later needs different flags 
-    case $target_os in
+    case $host_os in
       darwin1.[[012]]) FLAT_NAMESPACE="" ;;
       *)               FLAT_NAMESPACE="-flat_namespace" ;;
     esac
@@ -477,7 +480,7 @@ case $target in
     if test "$ac_gauche_framework" = yes; then 
       SHLIB_DYLIB_LDFLAGS='-framework CoreFoundation -dynamiclib -o'
       AC_DEFINE(GAUCHE_MACOSX_FRAMEWORK, 1, [Define 1 if building framework on MacOSX])
-      xtarget="${target}-framework"
+      xhost="${host}-framework"
     else
       SHLIB_DYLIB_LDFLAGS="-dynamiclib -o"
     fi
@@ -584,7 +587,7 @@ else
   MAKEVERSLINK=:
 fi
 
-AC_SUBST(xtarget)
+AC_SUBST(xhost)
 AC_SUBST(SHLIB_SO_CFLAGS)
 AC_SUBST(SHLIB_SO_LDFLAGS)
 AC_SUBST(SHLIB_SO_SUFFIX)
@@ -678,6 +681,20 @@ dnl Tests for extensions
 m4_include([ext/charconv/charconv.ac])
 m4_include([ext/dbm/dbm.ac])
 m4_include([ext/net/net.ac])
+
+dnl ===========================================================
+dnl Cross compiling
+if test ${cross_compiling} = no ; then
+   # self compile
+   CROSS_COMPILING_yes="#"
+   CROSS_COMPILING_no=
+else
+   # cross compile
+   CROSS_COMPILING_yes=
+   CROSS_COMPILING_no="#"
+fi
+AC_SUBST(CROSS_COMPILING_yes)
+AC_SUBST(CROSS_COMPILING_no)
 
 dnl ===========================================================
 dnl Configure gc and extensions

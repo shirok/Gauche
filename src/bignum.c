@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.68 2007-09-08 19:52:28 shirok Exp $
+ *  $Id: bignum.c,v 1.69 2008-02-03 13:07:46 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -70,6 +70,10 @@ char *alloca ();
 #else
 # if HAVE_ALLOCA_H
 #  include <alloca.h>
+# endif
+# if HAVE_MALLOC_H
+/* MinGW helds alloca() in "malloc.h" instead of "alloca.h" */
+#  include <malloc.h>
 # endif
 #endif
 

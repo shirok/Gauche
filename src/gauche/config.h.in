@@ -167,6 +167,9 @@
 /* Define to 1 if you have the <rpc/types.h> header file. */
 #undef HAVE_RPC_TYPES_H
 
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
+
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H
 

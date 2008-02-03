@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.104 2008-02-01 11:53:30 shirok Exp $
+ *  $Id: system.c,v 1.105 2008-02-03 13:07:48 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -44,6 +44,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <ctype.h>
 #include <fcntl.h>
 #include <math.h>
 #if !defined(_MSC_VER)
@@ -57,6 +58,8 @@
 #include <lm.h>
 #include <tlhelp32.h>
 static HANDLE *win_prepare_handles(int *fds);
+static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
+				int *status /*out*/);
 #endif  /* GAUCHE_WINDOWS */
 
 #ifdef HAVE_GLOB_H
@@ -608,24 +611,24 @@ int Scm_Mkstemp(char *templat)
     }
 #define MKSTEMP_MAX_TRIALS 65535   /* avoid infinite loop */
     {
-	u_long seed = (u_long)time(NULL);
-	int numtry, flags;
-	char suffix[7];
+        u_long seed = (u_long)time(NULL);
+        int numtry, flags;
+        char suffix[7];
 #if defined(GAUCHE_WINDOWS)
-	flags = O_CREAT|O_EXCL|O_WRONLY|O_BINARY;
+        flags = O_CREAT|O_EXCL|O_WRONLY|O_BINARY;
 #else  /* !GAUCHE_WINDOWS */
-	flags = O_CREAT|O_EXCL|O_WRONLY;
+        flags = O_CREAT|O_EXCL|O_WRONLY;
 #endif /* !GAUCHE_WINDOWS */
-	for (numtry=0; numtry<MKSTEMP_MAX_TRIALS; numtry++) {
-	    snprintf(suffix, 7, "%06x", seed&0xffffff);
-	    memcpy(templat+siz-6, suffix, 7);
-	    SCM_SYSCALL(fd, open(templat, flags, 0600));
-	    if (fd >= 0) break;
-	    seed *= 2654435761UL;
-	}
-	if (numtry == MKSTEMP_MAX_TRIALS) {
-	    Scm_Error("mkstemp failed");
-	}
+        for (numtry=0; numtry<MKSTEMP_MAX_TRIALS; numtry++) {
+            snprintf(suffix, 7, "%06lx", seed&0xffffff);
+            memcpy(templat+siz-6, suffix, 7);
+            SCM_SYSCALL(fd, open(templat, flags, 0600));
+            if (fd >= 0) break;
+            seed *= 2654435761UL;
+        }
+        if (numtry == MKSTEMP_MAX_TRIALS) {
+            Scm_Error("mkstemp failed");
+        }
     }
     return fd;
 #endif /*!defined(HAVE_MKSTEMP)*/
@@ -1746,8 +1749,6 @@ ScmObj Scm_SysWait(ScmObj process, int options)
        process is integer and > 0  -> wait for specific pid
        process is #<win:process-handle> -> wait for specified process
        The common op is factored out in win_wait_for_handles. */
-    static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
-                                    int *status /*out*/);
     int r, status = 0;
 
     if (SCM_INTEGERP(process)) {

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.164 2008-01-23 13:23:27 shirok Exp $
+ *  $Id: class.c,v 1.165 2008-02-03 13:07:46 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1274,7 +1274,7 @@ ScmObj Scm_VMSlotInitializeUsingAccessor(ScmObj obj,
  *   (cond ((assq slot (ref class 'accessors)) => cdr)
  *         (else (error !!!))))
  */
-inline ScmSlotAccessor *Scm_GetSlotAccessor(ScmClass *klass, ScmObj slot)
+ScmSlotAccessor *Scm_GetSlotAccessor(ScmClass *klass, ScmObj slot)
 {
     ScmObj p = Scm_Assq(slot, klass->accessors);
     if (!SCM_PAIRP(p)) return NULL;

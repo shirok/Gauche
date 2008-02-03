@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.158 2007-11-06 12:23:27 shirok Exp $
+ *  $Id: number.c,v 1.159 2008-02-03 13:07:47 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2417,7 +2417,7 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
             if (s0 > s1) return 1;
             d = Scm_NumCmp(d0, d1);
             if (d == 0) return Scm_NumCmp(n0, n1);
-            if (s0 > 0 && s1 > 0 || s0 < 0 && s1 < 0) {
+            if ((s0 > 0 && s1 > 0) || (s0 < 0 && s1 < 0)) {
                 n = Scm_NumCmp(n0, n1) * s0;
                 if (d > 0 && n <= 0) return -s0;
                 if (d < 0 && n >= 0) return s0;
