@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.19 2008-02-01 09:39:43 shirok Exp $
+;;;  $Id: procedure.scm,v 1.20 2008-02-03 23:12:49 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
@@ -53,6 +53,7 @@
 ;;  ($ f a b c)         => (f a b c)
 ;;  ($ f a b c $)       => (pa$ f a b c)
 ;;  ($ f $ g a b c)     => (f (g a b c))
+;;  ($ f $ g a b c $)   => (pa$ f (g a b c))
 ;;  ($ f $ g $ h a b c) => (f (g (h a b c)))
 ;;  ($ f a $ g b $ h c) => (f a (g b (h c)))
 ;;
