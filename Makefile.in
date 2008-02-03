@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.63 2007-10-29 22:32:18 shirok Exp $
+# $Id: Makefile.in,v 1.64 2008-02-03 11:56:00 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check pre-package install uninstall \
@@ -87,7 +87,10 @@ slibcat-in-place:
 	cd lib; $(MAKE) slibcat-in-place
 
 uninstall:
-	for d in $(SUBDIRS); do (cd $$d; $(MAKE) uninstall); done
+	cd src; $(MAKE) uninstall
+	cd ext; $(MAKE) uninstall
+	cd lib; $(MAKE) uninstall
+	rm -f $(GAUCHE_ACLOCAL_DIR)/aclocal.m4
 	rm -f $(datadir)/aclocal/gauche.m4
 
 # Cleaning ---------------------------------------------

@@ -1,3 +1,8 @@
+2008-02-03  Shiro Kawai  <shiro@acm.org>
+
+	* Makefile.in (uninstall): avoid going into gc/, since we don't
+	  install a separate libgc.a so we shouldn't uninstall it.
+
 2008-02-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/parseopt.scm (next-option): fixed a problem that regexp
