@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.21 2008-02-04 00:26:20 shirok Exp $
+;;;  $Id: procedure.scm,v 1.22 2008-02-04 09:17:47 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
@@ -47,15 +47,16 @@
 
 (select-module gauche.procedure)
 
-;; *EXPERIMENTAL*
-;; Haskell-ish application
+;; *HIGHLY EXPERIMENTAL*
+;; Haskell-ish application.  May change later.
 ;;
 ;;  ($ f a b c)         => (f a b c)
-;;  ($ f a b c $)       => (pa$ f a b c)
+;;  ($ f a b c $)       => (lambda args (apply f a b c args))
 ;;  ($ f $ g a b c)     => (f (g a b c))
-;;  ($ f $ g a b c $)   => (lambda args f (apply g a b c args))
+;;  ($ f $ g a b c $)   => (lambda args (f (apply g a b c args)))
 ;;  ($ f $ g $ h a b c) => (f (g (h a b c)))
 ;;  ($ f a $ g b $ h c) => (f a (g b (h c)))
+;;  ($ f a $ g b $ h $) => (lambda args (f a (g b (apply h args))))
 ;;
 ;;  ($* f a b c)         => (apply f a b c)
 ;;  ($* f a $ g b c)     => (apply f a (g b c))
@@ -75,8 +76,8 @@
 
 (define-syntax %$-rec
   (syntax-rules ($ $*)
-    [(_ (app ...) es $)              (app ... pa$ . es)]
-    [(_ (app ...) es $*)             (app ... pa$ apply . es)]
+    ;[(_ (app ...) es $)              (app ... pa$ . es)]
+    ;[(_ (app ...) es $*)             (app ... pa$ apply . es)]
     [(_ (app ...) (e ...) $ . rest)  (app ... e ... ($ . rest))]
     [(_ (app ...) (e ...) $* . rest) (app ... e ... ($* . rest))]
     [(_ apps      (e ...) x . rest)  (%$-rec apps (e ... x) . rest)]
