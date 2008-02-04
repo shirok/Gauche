@@ -1,5 +1,8 @@
 2008-02-03  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/test.scm (closure-grefs): We've been missing checking
+	  the closures in the operand of LOCAL-ENV-CLOSURES.  Check added.
+
 	* configure.ac, */Makefile.in, src/genconfig.in: Adapted for
 	  cross compilation. (Parch from YOKOTA Hiroshi).
 

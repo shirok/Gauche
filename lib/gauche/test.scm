@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.26 2007-08-11 01:15:44 shirok Exp $
+;;;  $Id: test.scm,v 1.27 2008-02-04 05:04:48 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -284,12 +284,14 @@
   (define code->list (with-module gauche.internal vm-code->list))
   (let loop ((r '())
              (code (code->list (closure-code closure))))
-    (cond ((null? code) r)
-          ((identifier? (car code))
-           (loop (cons (car code) r) (cdr code)))
-          ((is-a? (car code) <compiled-code>)
-           (loop (loop r (code->list (car code))) (cdr code)))
-          (else (loop r (cdr code))))))
+    (cond [(null? code) r]
+          [(identifier? (car code))
+           (loop (cons (car code) r) (cdr code))]
+          [(is-a? (car code) <compiled-code>)
+           (loop (loop r (code->list (car code))) (cdr code))]
+          [(list? (car code)) ; for operand of LOCAL-ENV-CLOSURES
+           (loop (loop r (car code)) (cdr code))]
+          [else (loop r (cdr code))])))
 
 (define (dangling-gref? ident closure)
   (and (not ((with-module gauche.internal find-binding)
