@@ -1,5 +1,8 @@
 2008-02-04  Shiro Kawai  <shiro@acm.org>
 
+	* test/system.scm, ext/termios/test.scm: excluded some tests from
+	  cygwin, for they are not supported well on it.
+
 	* src/vmcall.c: fixed a bug that takes calling context
 	  (normal or applyargs) incorrectly when a next-method object is
 	  created in applyargs context, is invoked in normal calling

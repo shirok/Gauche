@@ -8,6 +8,7 @@
 (test-start "termios")
 (use gauche.termios)
 (use srfi-1)
+(use srfi-13)
 (test-module 'gauche.termios)
 
 (cond-expand
@@ -69,22 +70,25 @@
           (set! oterm (sys-tcgetattr oport))
           #t))
 
-  (test "termios-tcdrain" #t
-        (lambda ()
-          (sys-tcdrain oport)
-          #t))
-
   (test "termios-tcflush" #t
         (lambda ()
           (sys-tcflush iport TCIFLUSH)
           (sys-tcflush oport TCOFLUSH)
           #t))
 
-  (test "termios-tcflow" (make-list 4 (if #f #f))
-        (lambda ()
-          (map
-           (cut sys-tcflow oport <>)
-           (list TCOOFF TCOON TCIOFF TCION))))
+  ;; NB: on cygwin (as of 1.5.25) tcdrain and tcflow does not seem to work.
+  (unless (string-contains (gauche-architecture) "-cygwin")
+    (test "termios-tcdrain" #t
+          (lambda ()
+            (sys-tcdrain oport)
+            #t))
+
+    (test "termios-tcflow" (make-list 4 (if #f #f))
+          (lambda ()
+            (map
+             (cut sys-tcflow oport <>)
+             (list TCOOFF TCOON TCIOFF TCION))))
+    ) ;!cygwin
 
   (test "termios-tcsetattr" (make-list 3 (if #f #f))
         (lambda ()

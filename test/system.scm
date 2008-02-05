@@ -657,74 +657,78 @@
                    (sys-exit 0)
                    (sys-pause))))))))
 
-  (test* "sigmask" 'hup
-         (let ((sig #f)
-               (chld #f)
-               (mask1 (sys-sigset SIGINT)))
-           (call/cc
-            (lambda (k)
-              (set-signal-handler! SIGINT  k)
-              (set-signal-handler! SIGCHLD (lambda (k) (sys-wait) (set! chld #t)))
-              (set-signal-handler! SIGHUP  (lambda (k) (set! sig 'hup)))
-              (sys-sigmask SIG_BLOCK mask1)
-              (let ((pid (sys-fork)))
-                (if (= pid 0)
-                  (begin
-                    (sys-kill (sys-getppid) SIGINT)
-                    (nap) ;; solaris seems to lose SIGHUP without this
-                    (sys-kill (sys-getppid) SIGHUP)
-                    (sys-exit 0))
-                  (begin
-                    (let loop ()
-                      (nap)
-                      (unless sig (loop)))
-                    (set-signal-handler! SIGINT #f)
-                    (sys-sigmask SIG_UNBLOCK mask1)
-                    ;;Some systems appear to lose this SIGCHLD (esp. cygwin)
-                    ;;(let loop ()
-                    ;;  (unless chld (loop)))
-                    sig)))))))
+  ;; NB: on cygwin (as of 1.5.25), sigmask doesn't work reliably so
+  ;; we skip test for now.
+  (unless (string-contains (gauche-architecture) "-cygwin")
+    (test* "sigmask" 'hup
+           (let ((sig #f)
+                 (chld #f)
+                 (mask1 (sys-sigset SIGINT)))
+             (call/cc
+              (lambda (k)
+                (set-signal-handler! SIGINT  k)
+                (set-signal-handler! SIGCHLD (lambda (k) (sys-wait) (set! chld #t)))
+                (set-signal-handler! SIGHUP  (lambda (k) (set! sig 'hup)))
+                (sys-sigmask SIG_BLOCK mask1)
+                (let ((pid (sys-fork)))
+                  (if (= pid 0)
+                    (begin
+                      (sys-kill (sys-getppid) SIGINT)
+                      (nap) ;; solaris seems to lose SIGHUP without this
+                      (sys-kill (sys-getppid) SIGHUP)
+                      (sys-exit 0))
+                    (begin
+                      (let loop ()
+                        (nap)
+                        (unless sig (loop)))
+                      (set-signal-handler! SIGINT #f)
+                      (sys-sigmask SIG_UNBLOCK mask1)
+                      ;;Some systems appear to lose this SIGCHLD (esp. cygwin)
+                      ;;(let loop ()
+                      ;;  (unless chld (loop)))
+                      sig)))))))
 
-  (let ()
-    (define (test-double-signal signals mask fire-sig)
-      (let ((flag #f)
-            (count 0))
-        (let/cc break
-          (set-signal-handler!
-           signals
-           (lambda (n)
-             (unless flag
-               (inc! count)
-               (when (> count 1) (break 'boo)) ;; avoid infinite reentrance
-               (sys-kill (sys-getpid) fire-sig)
-               (set! flag #t)))
-           mask)
-          (sys-kill (sys-getpid) SIGHUP)
-          flag)))
+    (let ()
+      (define (test-double-signal signals mask fire-sig)
+        (let ((flag #f)
+              (count 0))
+          (let/cc break
+            (set-signal-handler!
+             signals
+             (lambda (n)
+               (unless flag
+                 (inc! count)
+                 (when (> count 1) (break 'boo)) ;; avoid infinite reentrance
+                 (sys-kill (sys-getpid) fire-sig)
+                 (set! flag #t)))
+             mask)
+            (sys-kill (sys-getpid) SIGHUP)
+            flag)))
 
-    (test* "sigmask during interrupt handler (default)" #t
-           (test-double-signal SIGHUP #f SIGHUP))
+      (test* "sigmask during interrupt handler (default)" #t
+             (test-double-signal SIGHUP #f SIGHUP))
 
-    (test* "sigmask during interrupt handler (explicit)" #t
-           (test-double-signal SIGHUP (sys-sigset SIGHUP) SIGHUP))
+      (test* "sigmask during interrupt handler (explicit)" #t
+             (test-double-signal SIGHUP (sys-sigset SIGHUP) SIGHUP))
 
-    (test* "sigmask during interrupt handler (multi/default)" #t
-           (test-double-signal (sys-sigset SIGHUP SIGINT)
-                               #f SIGINT))
+      (test* "sigmask during interrupt handler (multi/default)" #t
+             (test-double-signal (sys-sigset SIGHUP SIGINT)
+                                 #f SIGINT))
 
-    (test* "sigmask during interrupt handler (multi/explicit)" #t
-           (test-double-signal (sys-sigset SIGHUP SIGINT)
-                               (sys-sigset SIGINT) SIGINT))
+      (test* "sigmask during interrupt handler (multi/explicit)" #t
+             (test-double-signal (sys-sigset SIGHUP SIGINT)
+                                 (sys-sigset SIGINT) SIGINT))
 
-    (test* "sigmask during interrupt handler (reentrance)" 'boo
-           (test-double-signal SIGHUP (sys-sigset) SIGHUP))
+      (test* "sigmask during interrupt handler (reentrance)" 'boo
+             (test-double-signal SIGHUP (sys-sigset) SIGHUP))
 
-    (test* "sigmask during interrupt handler (multi/reentrance)" 'boo
-           (test-double-signal (sys-sigset SIGHUP SIGINT)
-                               (sys-sigset) SIGHUP))
+      (test* "sigmask during interrupt handler (multi/reentrance)" 'boo
+             (test-double-signal (sys-sigset SIGHUP SIGINT)
+                                 (sys-sigset) SIGHUP))
 
-    (set-signal-handler! SIGINT #f)
-    )
+      (set-signal-handler! SIGINT #f)
+      )
+    ) ;; !cygwin
 
   ;; sys-sigwait
   (cond-expand
