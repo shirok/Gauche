@@ -3,7 +3,7 @@
  * calling sequence in Gauche VM.  It is included by vm.c twice, with slight
  * difference switched by preprocessor macros.
  *
- * $Id: vmcall.c,v 1.1 2008-01-01 08:09:54 shirok Exp $
+ * $Id: vmcall.c,v 1.2 2008-02-05 03:00:16 shirok Exp $
  */
 
 /* ADJUST_ARGUMENT_FRAME
@@ -219,12 +219,9 @@
     } else if (proctype == SCM_PROC_NEXT_METHOD) {
         ScmNextMethod *n = SCM_NEXT_METHOD(VAL0);
         int use_saved_args = FALSE;
+        int apply_call_p = APP;
         /* If no arguments are given to next-method, we use the args
-           saved in the next-method.  NB: Actually, use_saved_args will 
-           never be true since in vm.c TAIL-APPLY code checks the case
-           and jumps to TAIL-CALL as a micro optimization.  We leave the
-           code here just in case when that micro optimization is turned
-           off. */
+           saved in the next-method.  */
 #if !defined(APPLY_CALL)
         use_saved_args = (argc == 0);
 #else  /*APPLY_CALL*/
@@ -235,21 +232,22 @@
             memcpy(SP, n->argv, sizeof(ScmObj)*n->argc);
             SP += n->argc;
             argc = n->argc;
+            apply_call_p = n->applyargs;
         }
         if (SCM_NULLP(n->methods)) {
             VAL0 = SCM_OBJ(n->generic);
             proctype = SCM_PROC_GENERIC;        
         } else {
             nm = Scm_MakeNextMethod(n->generic, SCM_CDR(n->methods),
-                                    ARGP, argc, TRUE, APP);
+                                    ARGP, argc, TRUE, apply_call_p);
             VAL0 = SCM_CAR(n->methods);
             proctype = SCM_PROC_METHOD;
         }
         if (use_saved_args) {
 #if !defined(APPLY_CALL)
-            if (n->applyargs)  goto do_method_call_app;
+            if (apply_call_p)  goto do_method_call_app;
 #else  /*APPLY_CALL*/
-            if (!n->applyargs) goto do_method_call;
+            if (!apply_call_p) goto do_method_call;
 #endif /*APPLY_CALL*/
         }
     } else {
@@ -265,6 +263,7 @@
            generic, so that it can accept large number of arguments
            without unfolding all of them on the VM stack. */
         ScmObj args;
+        
         POP_ARG(args);
         argc--;
         while (SCM_PAIRP(args)) {

@@ -1,3 +1,11 @@
+2008-02-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/vmcall.c: fixed a bug that takes calling context
+	  (normal or applyargs) incorrectly when a next-method object is
+	  created in applyargs context, is invoked in normal calling
+	  context, a new next-method is created during it, and the new
+	  next-method is invoked in the normal calling context.
+
 2008-02-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm (closure-grefs): We've been missing checking
