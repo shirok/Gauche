@@ -1,3 +1,8 @@
+2008-02-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_CurrentMicroseconds), src/extlib.stub
+	  (greatest-fixnum, least-fixnum): fixes for 64bit architecture.
+
 2008-02-04  Shiro Kawai  <shiro@acm.org>
 
 	* test/system.scm, ext/termios/test.scm: excluded some tests from

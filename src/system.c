@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.105 2008-02-03 13:07:48 shirok Exp $
+ *  $Id: system.c,v 1.106 2008-02-05 10:53:50 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -852,8 +852,8 @@ long Scm_CurrentMicroseconds()
     Scm_GetTimeOfDay(&sec, &usec);
     /* we ignore overflow */
     usec += sec * 1000000;
-    usec &= (1<<(SCM_SMALL_INT_SIZE+1)) - 1;
-    if (usec > SCM_SMALL_INT_MAX) usec -= (1<<(SCM_SMALL_INT_SIZE+1));
+    usec &= (1UL<<(SCM_SMALL_INT_SIZE+1)) - 1;
+    if (usec > SCM_SMALL_INT_MAX) usec -= (1UL<<(SCM_SMALL_INT_SIZE+1));
     return (long)usec;
 }
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.305 2008-02-01 15:09:33 shirok Exp $
+;;; $Id: extlib.stub,v 1.306 2008-02-05 10:53:50 shirok Exp $
 ;;;
 
 "
@@ -108,8 +108,8 @@
 
 ;; Names are from R6RS.
 (define-cproc fixnum-width ()    (expr <int> "SCM_SMALL_INT_SIZE"))
-(define-cproc least-fixnum ()    (expr <int> "SCM_SMALL_INT_MIN"))
-(define-cproc greatest-fixnum () (expr <int> "SCM_SMALL_INT_MAX"))
+(define-cproc least-fixnum ()    (expr <long> "SCM_SMALL_INT_MIN"))
+(define-cproc greatest-fixnum () (expr <long> "SCM_SMALL_INT_MAX"))
 
 ;; As of 0.8.8 we started to support exact rational numbers.  Some existing
 ;; code may count on exact integer division to be coerced to flonum
