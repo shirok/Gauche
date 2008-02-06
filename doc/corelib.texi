@@ -2647,6 +2647,14 @@ ASCII NUL character (ASCII 0x00).
 @c JP
 NUL文字 (ASCII 0x00)
 @c COMMON
+@item \<whitespace>*<newline><whitespace>*
+@c EN
+Ignored.  This can be used to break a long string literal for readability.
+This escape sequence is introduced in R6RS.
+@c JP
+無視されます。長い文字列リテラルを読みやすさのために折り返す時に便利です。
+このエスケープシーケンスはR6RSで導入されました。
+@c COMMON
 @item \x@var{NN}
 @c EN
 A byte represented by two-digit hexadecimal number @var{NN}.
@@ -2680,6 +2688,39 @@ GaucheがUTF-8以外の内部エンコーディングでコンパイルされていた場合、
 リーダーは@code{gauche.charconv}モジュールを使って
 エスケープシーケンス@code{\uNNNN}と@code{\UNNNNNNNN}の解釈を行います。
 @c COMMON
+
+@c EN
+The following code is an example of backslash-newline escape sequence:
+@c JP
+下はバックスラッシュ-改行エスケープシーケンスの使用例です。
+@c COMMON
+@example
+(define *message* "\
+  This is a long message \
+  in a literal string.")
+
+*message*  
+  @result{} "This is a long message in a literal string."
+@end example
+
+@c EN
+Note the whitespace just after `message'.   Since any whitespaces
+before `in' is eaten by the reader, you have to put a whitespace
+between `message' and the following backslash.  If you want to include
+an actual newline character in a string, and any indentation after it,
+you can put '\n' in the next line like this:
+@c JP
+`message' の後の空白に注意してください。`in'の前の空白は読み込みルーチンによって
+無視されてしまうので、空白を入れたければ`message'と続くバックスラッシュの間に
+入れる必要があります。もし文字列中に実際に改行文字を入れ、さらにその後の
+文字列をインデントさせたい場合は次のようにすると良いでしょう:
+@c COMMON
+
+@example
+(define *message/newline* "\
+  This is a long message, \
+  \n   with a line break.")
+@end example
 @end deftp
 
 @deftp {Reader syntax} @code{#*"}@dots{}@code{"}
