@@ -1,3 +1,7 @@
+2008-02-06  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netlib.stub: Added some more socket option constants.
+
 2008-02-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/scmlib.scm (rxmatch->string): added.
