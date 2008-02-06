@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.16 2007-11-20 12:46:35 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.17 2008-02-06 06:44:07 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -442,6 +442,14 @@
           (when (char-set-contains? #[\\|\[\](){}.*+?^$] c) (write-char #\\))
           (write-char c)
           (loop (read-char)))))))
+
+(define (rxmatch->string rx str . sel)
+  (cond [(null? sel) (rxmatch-substring (rxmatch rx str))]
+        [(eq? (car sel) 'after)
+         (apply rxmatch-after (rxmatch rx str) (cdr sel))]
+        [(eq? (car sel) 'before)
+         (apply rxmatch-before (rxmatch rx str) (cdr sel))]
+        [else (rxmatch-substring (rxmatch rx str) (car sel))]))
 
 ;;;=======================================================
 ;;; with-something

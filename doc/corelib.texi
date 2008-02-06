@@ -4123,6 +4123,33 @@ If optional argument is given, the @var{i}-th submatch is used
 @end example
 @end defun
 
+@defun rxmatch->string regexp string &optional selector @dots{}
+A convenience procedure to match a string to the given regexp,
+then returns the matched substring, or @code{#f} if it doesn't match.
+
+If no @var{selector} is given, it is the same as this:
+@example
+(rxmatch-substring (rxmatch @var{regexp} @var{string}))
+@end example
+
+If an integer is given as a selector, it returns the subtring
+of the numbered submatch.
+
+If a symbol @code{after} or @code{before} is given, it returns
+the substring after or before the match.  You can give these symbols
+and an integer to extract a substring before or after the numbered
+submatch.
+
+@example
+gosh> (rxmatch->string #/\d+/ "foo314bar")
+"314"
+gosh> (rxmatch->string #/(\w+)@@([\w.]+)/ "foo@@example.com" 2)
+"example.com"
+gosh> (rxmatch->string #/(\w+)@@([\w.]+)/ "foo@@example.com" 'before 2)
+"foo@@"
+@end example
+@end defun
+
 @deftp {Generic application} @var{regmatch} &optional @var{index}
 @deftpx {Generic application} @var{regmatch} @code{'before} &optional @var{index}
 @deftpx {Generic application} @var{regmatch} @code{'after} &optional @var{index}

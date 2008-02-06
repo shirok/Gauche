@@ -1,5 +1,7 @@
 2008-02-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/scmlib.scm (rxmatch->string): added.
+
 	* src/system.c (Scm_CurrentMicroseconds), src/extlib.stub
 	  (greatest-fixnum, least-fixnum): fixes for 64bit architecture.
 
