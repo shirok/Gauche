@@ -32,7 +32,7 @@ loaded and imported.  See @ref{Autoload}, for the details of autoloading.
 As the number of bundled libraries grows, it becomes harder
 to find the one you need.  If you feel lost, check
 out the section @ref{Finding libraries you need}, in which
-we categorized libraries by their purposes.
+we categorize libraries by their purposes.
 @c JP
 付属ライブラリの数が増えるにつれ、必要なライブラリを探すのが難しく
 なりつつあります。迷ったら、@ref{Finding libraries you need}を
@@ -110,8 +110,8 @@ it is difficult to name the modules in problem-oriented
 
 @c EN
 Because of this, it may not be straightforward for a newcomer
-to Gauche to find an appropriate Gauche module to solve your problem.
-Since there may be multiple algorithms to do the job,
+to Gauche to find an appropriate Gauche module to solve her problem,
+since there may be multiple algorithms to do the job,
 and each algorithm can be implemented in different modules.
 @c JP
 というわけで、Gaucheにはじめてふれるプログラマにとって問題を解くのに適
@@ -272,7 +272,7 @@ for they are more portable and potentially more efficient.
 See @ref{Stream library}.
 @item
 @emph{Balanced tree} - Red-black tree implementation is available.
-See @ref{Red black tree}.
+See @ref{Treemaps}.
 @item
 @emph{Trie} - Another tree structure for efficient common-prefix
 search.  See @ref{Trie}.

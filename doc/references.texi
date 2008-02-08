@@ -17,8 +17,8 @@ Carl Bruggeman, Oscar Waddell and R. Kent Dybvig,
 Representing control in the presence of one-shot continuations,
 in @i{Proceedings of SIGPLAN '96}, pp. 99--107, 1996.
 
-@anchor{meyers86}
-@item [Meyers86]
+@anchor{myers86}
+@item [Myers86]
 Eugene Myers, 
 An O(ND) Difference Algorithm and Its Variations,
 @i{Algorithmica} Vol. 1 No. 2, pp. 251-266, 1986.

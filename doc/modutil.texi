@@ -12934,15 +12934,15 @@ equal (in the sense of @code{equal?}).
 @c EN
 This module implements the algorithm to find the longest common subsequence
 of two given sequences.  The implemented algorithm is based on
-Eugene Meyers' O(ND) algorithm (@ref{meyers86,[Meyers86],Meyers86}).
+Eugene Myers' O(ND) algorithm (@ref{myers86,[Myers86],Myers86}).
 
 One of the applications of this algorithm is to calculate
 the difference of two text streams;
 see @ref{Calculate difference of text streams}.
 @c JP
 このモジュールは、与えられた2つのシーケンスの最長共通サブシーケンスを見つける
-アルゴリズムを実装しています。アルゴリズムは、Eugene Meyersの
-O(ND)アルゴリズムに基づいています(@ref{meyers86,[Meyers86],Meyers86})。
+アルゴリズムを実装しています。アルゴリズムは、Eugene Myersの
+O(ND)アルゴリズムに基づいています(@ref{myers86,[Myers86],Myers86})。
 
 このアルゴリズムを使うアプリケーションの1つは、2つのテキストストリームの
 相違点を計算する@ref{Calculate difference of text streams}です。

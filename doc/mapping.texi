@@ -312,7 +312,12 @@ You can use @code{string->number}.  @xref{Numerical conversions}.
 @code{string->number} が使えます。@ref{Numerical conversions}参照。
 @c COMMON
 @item bsearch
-Gauche には同等の関数はありません。
+@c EN
+You can use SRFI-43's @code{vector-binary-search}.
+@xref{Vector library}.
+@c JP
+SRFI-43の@code{vector-binary-search}が使えます。
+@ref{Vector library}参照。
 @c COMMON
 @item calloc
 @c EN
@@ -331,7 +336,7 @@ R5RS の @code{ceiling}。@ref{Arithmetics}参照。
 @itemx cfsetispeed
 @itemx cfsetospeed
 @c EN
-Gauche @code{sys-cfgetispeed}, @code{sys-cfgetospeed},
+Gauche's @code{sys-cfgetispeed}, @code{sys-cfgetospeed},
 @code{sys-cfsetispeed}, @code{sys-cfsetospeed}.  @xref{Termios}.
 @c JP
 Gauche の @code{sys-cfgetispeed}、@code{sys-cfgetospeed}、
@@ -339,19 +344,19 @@ Gauche の @code{sys-cfgetispeed}、@code{sys-cfgetospeed}、
 @c COMMON
 @item chdir
 @c EN
-Gauche @code{sys-chdir}.   @xref{Other file operations}.
+Gauche's @code{sys-chdir}.   @xref{Other file operations}.
 @c JP
 Gauche の @code{sys-chdir}。@ref{Other file operations}参照。
 @c COMMON
 @item chmod
 @c EN
-Gauche @code{sys-chmod}.   @xref{File stats}.
+Gauche's @code{sys-chmod}.   @xref{File stats}.
 @c JP
 Gauche の @code{sys-chmod}。@ref{File stats}参照。
 @c COMMON
 @item chown
 @c EN
-Gauche @code{sys-chown}.   @xref{File stats}.
+Gauche's @code{sys-chown}.   @xref{File stats}.
 @c JP
 Gauche の @code{sys-chown}。@ref{File stats}参照。
 @c COMMON
