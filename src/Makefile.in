@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.176 2008-02-03 13:07:46 shirok Exp $
+#  $Id: Makefile.in,v 1.177 2008-02-08 08:06:32 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -206,7 +206,7 @@ builtin-syms.c gauche/builtin-syms.h : builtin-syms.scm
 vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
 	$(BUILD_GOSH) ./geninsn
 
-compile.c : compile.scm gencomp vminsn.scm
+compile.c : compile.scm gencomp vminsn.scm ../lib/gauche/vm/insn.scm
 	$(BUILD_GOSH) $(GENCOMP) compile.scm
 
 scmlib.c : scmlib.scm gencomp vminsn.scm

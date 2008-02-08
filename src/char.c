@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.60 2007-09-07 09:51:12 shirok Exp $
+ *  $Id: char.c,v 1.61 2008-02-08 08:06:32 shirok Exp $
  */
 
 #include <ctype.h>
@@ -191,11 +191,18 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_CharSetClass,
 /*----------------------------------------------------------------------
  * Printer
  */
+
 static void charset_print_ch(ScmPort *out, ScmChar ch)
 {
-    if (ch < 0x20 || ch == 0x7f) {
+    if (ch == '[' || ch == ']' || ch == '-') {
+        Scm_Printf(out, "\\%c", ch);
+    } else if (ch < 0x20 || ch == 0x7f) {
         Scm_Printf(out, "\\x%02x", ch);
     } else {
+        /* This is a bit tricky.  For maximum portability and read/write
+           invariance, unicode escape would be the best.  However, we also
+           want readability.  At least raw byte sequence here should work
+           as far as the external encoding of reader and writer match. */
         Scm_Putc(ch, out);
     }
 }

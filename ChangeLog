@@ -1,3 +1,8 @@
+2008-02-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c (charset_print_ch): Safer print method for charset
+	  literal.
+
 2008-02-06  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/netlib.stub: Added some more socket option constants.
