@@ -1,3 +1,9 @@
+2008-02-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (ScmDefaultCPL): make SCM_EXTERN to extern, for cygwin
+	  to treat them as compile-time constants.  (Needs more work for
+	  Win/VC platform).
+
 2008-02-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c (charset_print_ch): Safer print method for charset

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.504 2008-01-01 08:09:50 shirok Exp $
+ *  $Id: gauche.h,v 1.505 2008-02-08 11:53:33 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -685,8 +685,10 @@ SCM_CLASS_DECL(Scm_ForeignPointerClass);
 #define SCM_CLASS_OBJECT           (&Scm_ObjectClass)
 #define SCM_CLASS_FOREIGN_POINTER  (&Scm_ForeignPointerClass)
 
-SCM_EXTERN ScmClass *Scm_DefaultCPL[];
-SCM_EXTERN ScmClass *Scm_ObjectCPL[];
+/* NB: we can't use SCM_EXTERN because Windows DLL can't use the address of
+   dllimport-ed variables as constants. */
+extern ScmClass *Scm_DefaultCPL[];
+extern ScmClass *Scm_ObjectCPL[];
 
 #define SCM_CLASS_DEFAULT_CPL     (Scm_DefaultCPL)
 #define SCM_CLASS_OBJECT_CPL      (Scm_ObjectCPL)
