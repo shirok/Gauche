@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.116 2007-09-15 12:30:50 shirok Exp $
+ *  $Id: load.c,v 1.117 2008-02-09 13:38:14 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1046,8 +1046,21 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
     /* shortcut in case if somebody else already did the job. */
     if (adata->loaded) return adata->value;
 
-    /* check to see if this autoload is recursive. */
-    if (!SCM_FALSEP(Scm_Assoc(SCM_OBJ(adata->path), ldinfo.providing, SCM_CMP_EQUAL))) {
+    /* check to see if this autoload is recursive.  if so, we just return
+       SCM_UNBOUND and let the caller handle the issue (NB: it isn't
+       necessarily an error.  For example, define-method searches if
+       a generic function of the same name is already defined; if the
+       name is set autoload and define-method is in the file that's being
+       autoloaded, define-method finds the name is an autoload that points
+       the currently autoloaded file.)
+       we have to be careful to exclude the case that when one thread is
+       resolving autoload another thread enters here and sees this autoload
+       is already being resolved.
+     */
+    if ((adata->locker == NULL || adata->locker == vm)
+        && !SCM_FALSEP(Scm_Assoc(SCM_OBJ(adata->path),
+                                 ldinfo.providing,
+                                 SCM_CMP_EQUAL))) {
         return SCM_UNBOUND;
     }
 

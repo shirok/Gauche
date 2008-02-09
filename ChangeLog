@@ -1,3 +1,8 @@
+2008-02-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_ResolveAutoload): fix a bug that caused malfunction
+	  of autoload resolving in multithreaded environment.
+
 2008-02-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (ScmDefaultCPL): make SCM_EXTERN to extern, for cygwin
