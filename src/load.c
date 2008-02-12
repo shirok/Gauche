@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.117 2008-02-09 13:38:14 shirok Exp $
+ *  $Id: load.c,v 1.118 2008-02-12 14:24:10 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1093,7 +1093,7 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
            if we reach here.  Right now I have no idea how this happens, but
            just in case we raise an error. */
         adata->locker = NULL;
-        SCM_INTERNAL_COND_SIGNAL(adata->cv);
+        SCM_INTERNAL_COND_BROADCAST(adata->cv);
         Scm_Error("Attempted to trigger the same autoload %S#%S recursively.  Maybe circular autoload dependency?\n",
                   adata->module, adata->name);
     }
@@ -1141,13 +1141,13 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
     } SCM_WHEN_ERROR {
         adata->locker = NULL;
         vm->module = prev_module;
-        SCM_INTERNAL_COND_SIGNAL(adata->cv);
+        SCM_INTERNAL_COND_BROADCAST(adata->cv);
         SCM_NEXT_HANDLER;
     } SCM_END_PROTECT;
 
     adata->loaded = TRUE;
     adata->locker = NULL;
-    SCM_INTERNAL_COND_SIGNAL(adata->cv);
+    SCM_INTERNAL_COND_BROADCAST(adata->cv);
     return adata->value;
 }
 

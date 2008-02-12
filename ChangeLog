@@ -1,3 +1,9 @@
+2008-02-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_ResolveAutoload): fixed another bug that, when N
+	  threads (N >= 3) tried to resolve the same autoload and N-1 threads
+	  goes to wait, only one of them is ever waked up.
+
 2008-02-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_ResolveAutoload): fix a bug that caused malfunction
