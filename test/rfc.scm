@@ -123,8 +123,11 @@ Content-Length: 4349
        (rfc822-invalid-header-field "abcde"))
 (test* "rfc822-invalid-header-field" 'incomplete-string
        (rfc822-invalid-header-field #*"abcde"))
-(test* "rfc822-invalid-header-field" 'bad-character
-       (rfc822-invalid-header-field "abc\u3030 def"))
+;; unicode literal doesn't work with none encoding
+(unless (eq? (gauche-character-encoding) 'none)
+  (test* "rfc822-invalid-header-field" 'bad-character
+         (rfc822-invalid-header-field "abc\u3030 def"))
+  )
 (test* "rfc822-invalid-header-field" 'bad-character
        (rfc822-invalid-header-field "abc\x00 def"))
 (test* "rfc822-invalid-header-field" 'line-too-long
@@ -484,10 +487,13 @@ Content-Length: 4349
 (test* "mime-encode-text (pass-through, forced line break)" "Loremipsumdolorsitamet,consecteturadipisicingelit,seddoeiusmodtemporincididu\r\n ntutlaboreetdoloremagnaaliqua."
        (mime-encode-text "Loremipsumdolorsitamet,consecteturadipisicingelit,seddoeiusmodtemporincididuntutlaboreetdoloremagnaaliqua."))
 
-(test* "mime-encode-text" "=?utf-8?B?zrvjga7lroflrpnjgbjjgojjgYbjgZPjgZ0=?=\r\n =?utf-8?B?44CCV2VsY29tZSB0byDOuy1zcGFjZQ==?="
-       (mime-encode-text "\u03bb\u306e\u5b87\u5b99\u3078\u3088\u3046\u3053\u305d\u3002\u0057\u0065\u006c\u0063\u006f\u006d\u0065\u0020\u0074\u006f\u0020\u03bb\u002d\u0073\u0070\u0061\u0063\u0065" :line-width 50))
-(test* "mime-encode-text (nobreak)" "=?utf-8?B?zrvjga7lroflrpnjgbjjgojjgYbjgZPjgZ3jgIJXZWxjb21lIHRvIM67LXNwYWNl?="
-       (mime-encode-text "\u03bb\u306e\u5b87\u5b99\u3078\u3088\u3046\u3053\u305d\u3002\u0057\u0065\u006c\u0063\u006f\u006d\u0065\u0020\u0074\u006f\u0020\u03bb\u002d\u0073\u0070\u0061\u0063\u0065" :line-width #f))
+;; unicode literal doesn't work with none encoding
+(unless (eq? (gauche-character-encoding) 'none)
+  (test* "mime-encode-text" "=?utf-8?B?zrvjga7lroflrpnjgbjjgojjgYbjgZPjgZ0=?=\r\n =?utf-8?B?44CCV2VsY29tZSB0byDOuy1zcGFjZQ==?="
+         (mime-encode-text "\u03bb\u306e\u5b87\u5b99\u3078\u3088\u3046\u3053\u305d\u3002\u0057\u0065\u006c\u0063\u006f\u006d\u0065\u0020\u0074\u006f\u0020\u03bb\u002d\u0073\u0070\u0061\u0063\u0065" :line-width 50))
+  (test* "mime-encode-text (nobreak)" "=?utf-8?B?zrvjga7lroflrpnjgbjjgojjgYbjgZPjgZ3jgIJXZWxjb21lIHRvIM67LXNwYWNl?="
+         (mime-encode-text "\u03bb\u306e\u5b87\u5b99\u3078\u3088\u3046\u3053\u305d\u3002\u0057\u0065\u006c\u0063\u006f\u006d\u0065\u0020\u0074\u006f\u0020\u03bb\u002d\u0073\u0070\u0061\u0063\u0065" :line-width #f))
+  )
 
 (use gauche.charconv)
 
