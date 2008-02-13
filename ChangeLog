@@ -1,3 +1,7 @@
+2008-02-13  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.8.13
+
 2008-02-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_ResolveAutoload): fixed another bug that, when N

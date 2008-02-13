@@ -114,7 +114,7 @@ if [ "$testcode" = "yes" ]; then
   mkdir -p ../test
   rm -rf ../test/Gauche-$VERSION
   cd ../test
-  tar xzvf ../Gauche-$VERSION.tgz >& /dev/null
+  tar xzvf ../Gauche-$VERSION.tgz > /dev/null 2>&1
   cd Gauche-$VERSION
   rm -f testcode.log
   echo "UTF-8 -----------------------------------------------------"
