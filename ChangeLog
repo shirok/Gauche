@@ -1,3 +1,9 @@
+2008-02-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/vmcall.c (ADJUST_ARGUMENT_FRAME): Fixed a bug that apply didn't
+	  copy the argument list when it needed to 'unfold' the passed
+	  argument list.
+
 2008-02-13  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.8.13
