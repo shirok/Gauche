@@ -3,7 +3,7 @@
  * calling sequence in Gauche VM.  It is included by vm.c twice, with slight
  * difference switched by preprocessor macros.
  *
- * $Id: vmcall.c,v 1.2 2008-02-05 03:00:16 shirok Exp $
+ * $Id: vmcall.c,v 1.3 2008-02-14 12:17:56 shirok Exp $
  */
 
 /* ADJUST_ARGUMENT_FRAME
@@ -65,7 +65,10 @@
                 PUSH_ARG(SCM_CAR(p));                                   \
                 p = SCM_CDR(p);                                         \
             }                                                           \
-            if (restarg) PUSH_ARG(p);                                   \
+            if (restarg) {                                              \
+                p = Scm_CopyList(p);                                    \
+                PUSH_ARG(p);                                            \
+            }                                                           \
         }                                                               \
         argc = SP-ARGP;                                                 \
     } while (0)

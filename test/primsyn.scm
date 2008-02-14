@@ -94,6 +94,22 @@
 (prim-test "apply" '(1 2 3) (lambda ()  (apply list 1 '(2 3))))
 (prim-test "apply" '(1 2 3) (lambda ()  (apply apply (list list 1 2 '(3)))))
 
+;; This tests 'unfolding' path in ADJUST_ARGUMENT_FRAME.
+(prim-test "apply, copying args" '(1 2 3)
+           (lambda ()
+             (let ((orig (list 1 2 3)))
+               (let ((new (apply list orig)))
+                 (set-car! (cdr new) '100)
+                 orig))))
+
+;; This tests 'folding' path in ADJUST_ARGUMENT_FRAME
+(prim-test "apply, copying args" '(2 3)
+           (lambda ()
+             (let ((orig (list 2 3)))
+               (let ((new (apply list 1 orig)))
+                 (set-car! (cdr new) '100)
+                 orig))))
+
 (prim-test "map" '()         (lambda ()  (map car '())))
 (prim-test "map" '(1 2 3)    (lambda ()  (map car '((1) (2) (3)))))
 (prim-test "map" '(() () ()) (lambda ()  (map cdr '((1) (2) (3)))))
