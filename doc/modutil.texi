@@ -16550,14 +16550,15 @@ and @code{cgi-main} by @var{part-handlers} argument.
 
 @c EN
 The @var{part-handlers} argument is, if given, a list of lists;
-each inner list is a form of @code{(@var{name-pattern} @var{action})}.
+each inner list is a form of 
+@code{(@var{name-pattern} @var{action} @var{kv-list} @dots{})}.
 Each uploaded file with a matching parameter name with @var{name-pattern} is
 handled according to @var{action}.  (Here, a parameter name
 is the 'name' attribute given to the @code{input} element in the
 submitted form, not the name of the uploaded file).
 @c JP
 @var{part-handlers}引数が与えられている場合、それはリストのリストで、
-内部のリストは@code{(@var{name-pattern} @var{action})} の形式で
+内部のリストは@code{(@var{name-pattern} @var{action} @var{kv-list} @dots{})} の形式で
 なければなりません。
 アップロードされたファイルは、そのパラメータ名が@var{name-pattern}に
 マッチした場合に@var{action}で指示されるように処理されます。
@@ -16677,6 +16678,39 @@ an error occurs during cgi processing.
 @c COMMON
 
 @c EN
+If @var{kv-list} is given after @var{action}, it must be a
+keyword-value list and further modifies action.  The following
+keywords are supported.
+@c JP
+@var{action}の後ろに@var{kv-list}が与えられた場合、それは
+キーワード-値リストでなければなりません。次のキーワードがサポートされています。
+@c COMMON
+
+@table @code
+@item :prefix
+@c EN
+Valid only if @var{action} is either @code{file} or @code{file+name}.
+Specifies the prefix of the temporary file.  If you give
+@code{:prefix "/tmp/foo"}, for example, the file is saved
+as something like @file{/tmp/fooxAgjeQ}.
+@c JP
+@var{action}が@code{file}か@code{file+name}の時のみ有効です。
+一時ファイルのプリフィクスを指定します。例えば@code{:prefix "/tmp/foo"}を
+与えると、ファイルは@file{/tmp/fooxAgjeQ}のような名前でセーブされます。
+@c COMMON
+@item :mode
+@c EN
+Valid only if @var{action} is either @code{file} or @code{file+name}.
+Specifies the mode of the temporary file in unix-style integer.  By default 
+it is @code{#o600}.
+@c JP
+@var{action}が@code{file}か@code{file+name}の時のみ有効です。
+一時ファイルのモードをunix式の整数で指定します。デフォルトは@code{#o600}です。
+@c COMMON
+@end table
+
+
+@c EN
 Note that the parameters that are not file uploads are not the subject
 of @var{part-handlers}; such parameter values are always turned into a string.
 @c JP
@@ -16718,12 +16752,14 @@ you'll get something like the following as the result.
 @end example
 
 @c EN
-If you pass @code{'(("imagefile" file "/tmp/mycgi"))} to @var{part-handlers} 
+If you pass @code{'(("imagefile" file :prefix "/tmp/mycgi"))}
+to @var{part-handlers} 
 instead,
 you might get something like the following, with the
 content of uploaded file saved in @file{/tmp/mycgi7gq0B}
 @c JP
-ここでもし、@code{'(("imagefile" file "/tmp/mycgi"))}を@var{part-handlers}に
+ここでもし、@code{'(("imagefile" file :prefix "/tmp/mycgi"))}を
+@var{part-handlers}に
 渡したなら、替わりに次のような結果が得られるでしょう。
 ここで、アップロードされたファイルは@file{/tmp/mycgi7gq0B}にセーブ
 されていることになります。

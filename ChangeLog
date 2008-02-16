@@ -1,3 +1,8 @@
+2008-02-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm (get-mime-parts): allow :mode option for mime
+	  part handler.
+
 2008-02-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/vmcall.c (ADJUST_ARGUMENT_FRAME): Fixed a bug that apply didn't

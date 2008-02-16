@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.34 2007-04-19 05:54:43 shirok Exp $
+;;;  $Id: cgi.scm,v 1.35 2008-02-16 16:46:47 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -232,6 +232,8 @@
 ;;  <options>   keyword-value list. 
 ;;               :prefix "prefix"  - use "prefix" for temporary file
 ;;                                   (file and file+name only)
+;;               :mode   <mode>    - set tmpfile's mode to <mode>
+;;                                   (file and file+name only)
 ;;               :max-length integer - limit the content-length of the
 ;;                                   part.  if it is exceeded,
 ;;                                   <cgi-request-size-error> is
@@ -240,12 +242,13 @@
   (define (part-ref info name)
     (rfc822-header-ref (ref info 'headers) name))
 
-  (define (make-file-handler prefix honor-origfile?)
+  (define (make-file-handler prefix honor-origfile? mode)
     (lambda (name filename part-info inp)
       (receive (outp tmpfile) (sys-mkstemp prefix)
         (cgi-add-temporary-file tmpfile)
         (mime-retrieve-body part-info inp outp)
         (close-output-port outp)
+        (when mode (sys-chmod tmpfile mode))
         (if honor-origfile?
           (list tmpfile filename)
           tmpfile))))
@@ -284,7 +287,8 @@
       (make-file-handler (get-keyword* :prefix opts
                                        (build-path (temporary-directory)
                                                    "gauche-cgi-"))
-                         (eq? action 'file+name)))
+                         (eq? action 'file+name)
+                         (get-keyword :mode opts #f)))
      ((eq? action 'ignore) ignore-handler)
      (else action)))
 
