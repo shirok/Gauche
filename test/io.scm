@@ -663,6 +663,11 @@
 (test* "format ~@*" "1 2 5"
        (format #f "~a ~a ~4@*~a" 1 2 3 4 5))
 
+(test* "format incomplete tilde sequence" *test-error*
+       (format #f "~"))
+(test* "format incomplete tilde sequence" *test-error*
+       (format #f "~123"))
+
 ;;-------------------------------------------------------------------
 (test-section "nested multi-line comments")
 

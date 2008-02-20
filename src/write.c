@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.69 2007-08-24 23:55:44 shirok Exp $
+ *  $Id: write.c,v 1.70 2008-02-20 16:30:01 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -772,6 +772,9 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
         for (;;) {
             ch = Scm_GetcUnsafe(fmtstr);
             switch (ch) {
+            case EOF:
+                Scm_Error("incomplete format string: %S", fmt);
+                break;
             case '%':
                 Scm_PutcUnsafe('\n', out);
                 break;
