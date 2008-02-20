@@ -30,11 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: time.scm,v 1.8 2007-08-09 21:19:01 shirok Exp $
+;;;  $Id: time.scm,v 1.9 2008-02-20 16:29:21 shirok Exp $
 ;;;
 
 (define-module gauche.time
   (use srfi-11)
+  (use gauche.parameter)
   (export time
           <time-counter> <real-time-counter> <user-time-counter>
           <system-time-counter> <process-time-counter>
@@ -130,12 +131,12 @@
 
 (define-syntax with-time-counter
   (syntax-rules ()
-    ((_ counter . exprs)
-     (dynamic-wind
-      (lambda () (time-counter-start! counter))
-      (lambda () . exprs)
-      (lambda () (time-counter-stop! counter))))
-    ))
+    [(_ counter . exprs)
+     (let1 c counter
+       (dynamic-wind
+           (lambda () (time-counter-start! c))
+           (lambda () . exprs)
+           (lambda () (time-counter-stop! c))))]))
 
 ;; 'real' time counter
 (define-class <real-time-counter> (<time-counter>)
