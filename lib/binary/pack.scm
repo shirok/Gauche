@@ -14,7 +14,7 @@
 ;;   an @ following a variable length template, without which all the
 ;;   "vlp" references would be gone.
 
-;; $Id: pack.scm,v 1.10 2007-02-20 07:02:13 shirok Exp $
+;; $Id: pack.scm,v 1.11 2008-02-23 16:22:13 shirok Exp $
 
 (define-module binary.pack
   (use srfi-1)
@@ -162,7 +162,7 @@
              (read-char)
              (let* ((packers (read-until-token (make-pack-token
                                                 (char-complement c))
-                                               '() 0 #f #f))
+                                               0 #f #f))
                     (p (fold pack-merge-folder #f packers)))
                (if (p 'variable-length?)
                  (error "can't use variable length pack format in []")

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-27.scm,v 1.5 2007-09-15 12:30:49 shirok Exp $
+;;;  $Id: srfi-27.scm,v 1.6 2008-02-23 16:22:13 shirok Exp $
 ;;;
 
 ;; Implements SRFI-27 interface on top of math.mt-random module.
@@ -78,15 +78,15 @@
   ;; is less than 2^32, consisted by interleaving each 32-bit chunk of i and j.
   (define (interleave-i i j lis)
     (if (zero? i)
-        (if (zero? j) lis (interleave-j 0 j (cons 0 lis)))
-        (receive (q r) (quotient&remainder i #x100000000)
-          (interleave-j q j (cons r lis)))))
+      (if (zero? j) lis (interleave-j 0 j (cons 0 lis)))
+      (receive (q r) (quotient&remainder i #x100000000)
+        (interleave-j q j (cons r lis)))))
 
   (define (interleave-j i j lis)
     (if (zero? j)
-        (if (zero? i) lis (interleave-i i 0 (cons 0 lis)))
-        (receive (q r) (quotient&remainder j #x100000000)
-          (interleave-i i q (cons r lis)))))
+      (if (zero? i) lis (interleave-i i 0 (cons 0 lis)))
+      (receive (q r) (quotient&remainder j #x100000000)
+        (interleave-i i q (cons r lis)))))
 
   ;; main body
   (unless (random-source? source)
@@ -108,14 +108,14 @@
   (unless (random-source? source)
     (error "random source required, but got" source))
   (if (null? maybe-unit)
-      (lambda () (mt-random-real source))
-      (let1 unit (car maybe-unit)
-        (unless (< 0 unit 1)
-          (error "unit must be between 0.0 and 1.0 (exclusive), but got" unit))
-        (let* ((1/unit (/ unit))
-               (range (inexact->exact (ceiling 1/unit))))
-          (lambda ()
-            (/ (make-random-integer range) 1/unit))))))
+    (lambda () (mt-random-real source))
+    (let1 unit (car maybe-unit)
+      (unless (< 0 unit 1)
+        (error "unit must be between 0.0 and 1.0 (exclusive), but got" unit))
+      (let* ((1/unit (/ unit))
+             (range (inexact->exact (ceiling 1/unit))))
+        (lambda ()
+          (/ (random-integer range) 1/unit))))))
 
 ;; Default random generators.
 (define-values (random-integer random-real)
