@@ -3841,13 +3841,16 @@ defined.
 @c NODE ファイル操作
 
 @defun touch-file path
+@defunx touch-files paths
 @c EN
-Updates timestamp of @var{path} to the current time.  If @var{path} 
+Updates timestamp of @var{path}, or each path in the list @var{paths},
+to the current time.  If the specified path
 doesn't exist, a new file with size zero is created.
 See also @code{sys-utime} (@xref{File stats}).
 @c JP
-@var{path}のタイムスタンプを現在の時刻に更新します。
-@var{path}が存在しなかった場合はそのファイルを作成します。
+@var{path}もしくはリスト@var{paths}中の各パスの
+タイムスタンプを現在の時刻に更新します。
+指定されたパスが存在しなかった場合はその名前で大きさゼロのファイルが作成されます。
 @ref{File stats}の@code{sys-utime}も参照して下さい。
 @c COMMON
 @end defun
@@ -3943,6 +3946,18 @@ otherwise it becomes @code{#o666} masked by umask settings.
 @c COMMON
 @end defun
 
+@defun copy-files files dstdir &keyword if-exists backup-suffix safe keep-timestamp keep-mode
+@c EN
+Copies each file in a list @var{files} to the destination @var{dstdir}, which
+must be an existing directory.  The keyword arguments are passed
+to @code{copy-file}.
+@c JP
+リスト@var{files}中の各ファイルをディレクトリに@var{dstdir}にコピーします。
+@var{dstdir}は既に存在しなければなりません。
+キーワード引数はそのまま@code{copy-file}に渡されます。
+@c COMMON
+@end defun
+
 @defun move-file src dst &keyword if-exists backup-suffix
 @c EN
 Moves file @var{src} to @var{dst}.   The source @var{src} must exist.
@@ -4002,6 +4017,37 @@ it to @var{dst}, then removes @var{src}.
 @var{src}を消去します。
 @c COMMON
 @end defun
+
+@defun move-files files dstdir &keyword if-exists backup-suffix
+@c EN
+Moves each file in a list @var{files} to @var{dstdir},
+which must be an existing directory.  Keyword arguments
+are passed to @code{move-file}.
+@c JP
+リスト@var{files}中の各ファイルをディレクトリ@var{dstdir}に移動します。
+@var{dstdir}は既に存在しなければなりません。
+キーワード引数はそのまま@code{move-file}に渡されます。
+@c COMMON
+@end defun
+
+@defun remove-files paths
+@defunx delete-files paths
+@c EN
+Removes each path in a list @var{paths}.  If the path is 
+a file, it is @code{unlink}ed.  If it is a directory,
+its contents are recursively removed by @code{remove-directory*}.
+If the path doesn't exist, it is simply ignored.
+
+@code{delete-files} is just an alias of @code{remove-files}.
+@c JP
+リスト@var{paths}中の各パスを削除します。パスがファイルの場合は
+@code{unlink}し、ディレクトリの場合は@code{remove-directory*}を
+使って再帰的にその内容を消去します。存在しないパスは単に無視されます。
+
+@code{delete-files}は@code{remove-files}の別名です。
+@c COMMON
+@end defun
+
 
 @defun file->string filename options @dots{}
 @defunx file->list reader filename options @dots{}

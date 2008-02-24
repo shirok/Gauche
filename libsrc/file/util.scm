@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.10 2008-02-02 09:55:13 shirok Exp $
+;;;  $Id: util.scm,v 1.11 2008-02-24 23:47:20 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -60,15 +60,14 @@
           file-mtime=? file-mtime<? file-mtime<=? file-mtime>? file-mtime>=?
           file-atime=? file-atime<? file-atime<=? file-atime>? file-atime>=?
           file-ctime=? file-ctime<? file-ctime<=? file-ctime>? file-ctime>=?
-          touch-file copy-file move-file
+          touch-file copy-file move-file copy-files move-files
           file->string file->string-list file->list file->sexp-list
           ))
 (select-module file.util)
 
 ;; common util
 (define (%stat path follow-link?)
-  (let1 stat (if follow-link? sys-stat sys-lstat)
-    (stat path)))
+  ((if follow-link? sys-stat sys-lstat) path))
 
 ;;;=============================================================
 ;;; Directory entries
@@ -77,34 +76,33 @@
 (define (current-directory . opts)
   (let-optionals* opts ((newdir #f))
     (match newdir
-      (#f (sys-getcwd))
-      ((? string?) (sys-chdir newdir))
-      (_ (error "directory name should be a string" newdir)))))
+      [#f (sys-getcwd)]
+      [(? string?) (sys-chdir newdir)]
+      [_ (error "directory name should be a string" newdir)])))
 
 (define (home-directory . maybe-user)
   (let-optionals* maybe-user ((user (sys-getuid)))
-    (and-let* ((ent (cond ((integer? user) (sys-getpwuid user))
+    (and-let* ([ent (cond ((integer? user) (sys-getpwuid user))
                           ((string? user)  (sys-getpwnam user))
-                          (else (error "bad user" user)))))
+                          (else (error "bad user" user)))])
       (slot-ref ent 'dir))))
 
 (define (temporary-directory)
-  (or (sys-getenv "TMPDIR")
-      "/tmp"))
+  (or (sys-getenv "TMPDIR") "/tmp"))
 
 ;; utility for directory-list and directory-list2
 (define (%directory-filter dir pred filter-add-path?)
   (if filter-add-path?
-      (filter (lambda (e) (pred (build-path dir e))) (sys-readdir dir))
-      (filter pred (sys-readdir dir))))
+    (filter (lambda (e) (pred (build-path dir e))) (sys-readdir dir))
+    (filter pred (sys-readdir dir))))
 
 (define (%directory-filter-compose opts)
   (let-keywords opts ((children? #f)
                       (filter #f))
-    (apply every-pred
-           (cond-list (children?
-                       (lambda (e) (not (member (sys-basename e) '("." "..")))))
-                      (filter)))))
+    ($* every-pred
+        (cond-list
+         [children? (lambda (e) (not (member (sys-basename e) '("." ".."))))]
+         [filter]))))
 
 ;; directory-list DIR &keyword ADD-PATH? FILTER-ADD-PATH? CHILDREN? FILTER
 (define (directory-list dir . opts)
@@ -115,8 +113,8 @@
         (sort (%directory-filter dir (%directory-filter-compose rest)
                                  filter-add-path?))
       (if add-path?
-          (map (cut build-path dir <>) entries)
-          entries))))
+        (map (cut build-path dir <>) entries)
+        entries))))
 
 ;; directory-list2 DIR &optional ADD-DIR? FILTER-ADD-PATH? CHILDREN? FILTER FOLLOW-LINK?
 (define (directory-list2 dir . opts)
@@ -131,19 +129,17 @@
                                  'directory))))
            (entries (sort (%directory-filter dir filters filter-add-path?))))
       (if add-path?
-          (partition selector
-                     (map (cut build-path dir <>) entries))
-          (partition (lambda (e) (selector (build-path dir e)))
-                     entries)))))
+        (partition selector (map (cut build-path dir <>) entries))
+        (partition (lambda (e) (selector (build-path dir e)))
+                   entries)))))
 
 ;; directory-fold DIR PROC KNIL &keyword LISTER FOLDER FOLLOW-LINK?
 (define (directory-fold dir proc knil . opts)
   (let-keywords opts ((lister (lambda (path knil)
-                                (values
-                                 (directory-list path
-                                                 :add-path? #t
-                                                 :children? #t)
-                                 knil)))
+                                (values (directory-list path
+                                                        :add-path? #t
+                                                        :children? #t)
+                                        knil)))
                       (folder fold)
                       (follow-link? #t))
     (define (selector e)
@@ -201,21 +197,20 @@
   (define path-separator-string (string (path-separator)))
   (define (rec base components)
     (if (null? components)
-        base
-        (let1 component
-            (let1 p (car components)
-              (cond ((eq? p 'up) "..")
-                    ((eq? p 'same) ".")
-                    ((absolute-path? p)
-                     (error "can't append absolute path after other path" p))
-                    (else (sys-normalize-pathname p))))
-          (rec (cond ((string-null? base) component)
-                     ((string-null? component) base)
-                     ((#/[\/\\]$/ base)
-                      (string-append base component))
-                     (else
-                      (string-append base path-separator-string component)))
-               (cdr components)))))
+      base
+      (let1 component
+          (match (car components)
+            ['up   ".."]
+            ['same "."]
+            [(? absolute-path? p)
+             (error "can't append absolute path after other path" p)]
+            [p (sys-normalize-pathname p)])
+        (rec (cond [(string-null? base) component]
+                   [(string-null? component) base]
+                   [(#/[\/\\]$/ base) (string-append base component)]
+                   [else
+                    (string-append base path-separator-string component)])
+          (cdr components)))))
   (rec (sys-normalize-pathname base-path) components))
 
 (define (expand-path path)
@@ -234,14 +229,13 @@
       (unless (sys-access p |F_OK|)
         (error "path doesn't exist" path))
       (let loop ((count 0) (p p))
-        (cond ((>= count 8) ;; arbitrary upper bound to avoid infinite loop
-               (error "possibly looping symlink" pat))
-              ((eq? (file-type p :follow-link? #f) 'symlink)
+        (cond [(>= count 8) ;; arbitrary upper bound to detect infinite loop
+               (error "possibly looping symlink" pat)]
+              [(eq? (file-type p :follow-link? #f) 'symlink)
                (loop (+ count 1)
                      (let1 np (sys-readlink p)
-                       (if (absolute-path? np) np (pathcat ndir np)))))
-              (else p)))
-      ))
+                       (if (absolute-path? np) np (pathcat ndir np))))]
+              [else p]))))
   (rec (expand-path path)))
 
 (define (simplify-path path)
@@ -250,42 +244,39 @@
 (define (decompose-path path)
   (if (#/[\/\\]$/ path)
     (values (string-trim-right path #[\\/]) #f #f)
-    (let* ((dir (sys-dirname path))
-           (base (sys-basename path)))
-      (cond ((string-index-right base #\.)
+    (let ((dir (sys-dirname path))
+          (base (sys-basename path)))
+      (cond [(string-index-right base #\.)
              => (lambda (pos)
                   (if (zero? pos)
                     (values dir base #f)  ; '.' at the beginning doesn't delimit extension
                     (values dir
                             (string-take base pos)
-                            (string-drop base (+ pos 1))))))
-            (else
-             (values dir base #f))))))
+                            (string-drop base (+ pos 1)))))]
+            [else (values dir base #f)]))))
 
 (define (relative-path? path)
   (cond-expand
-   (gauche.os.windows
-    (not (#/^[\/\\]|^[A-Za-z]:/ path)))
-   (else
-    (not (#/^\// path)))))
+   [gauche.os.windows (not (#/^[\/\\]|^[A-Za-z]:/ path))]
+   [else              (not (#/^\// path))]))
 
 (define (absolute-path? path)
   (not (relative-path? path)))
 
 (define (path-separator)
   (cond-expand
-   (gauche.os.windows #\\)
-   (else #\/)))
+   [gauche.os.windows #\\]
+   [else #\/]))
 
 (define (path-extension path)
   (receive (dir file ext) (decompose-path path) ext))
 
 (define (path-sans-extension path)
-  (cond ((path-extension path)
+  (cond [(path-extension path)
          => (lambda (ext)
               (substring path 0
-                         (- (string-length path) (string-length ext) 1))))
-        (else path)))
+                         (- (string-length path) (string-length ext) 1)))]
+        [else path]))
 
 (define (path-swap-extension path ext)
   (if ext
@@ -293,14 +284,13 @@
     (path-sans-extension path)))
 
 (define (find-file-in-paths name . opts)
-  (let-keywords opts
-      ((paths (cond ((sys-getenv "PATH")
-                     => (cut string-split <> 
-                             (cond-expand
-                              (gauche.os.windows #\;)
-                              (else #\:))))
-                    (else '())))
-       (pred file-is-executable?))
+  (let-keywords opts ((paths (cond [(sys-getenv "PATH")
+                                    => (cut string-split <> 
+                                            (cond-expand
+                                             [gauche.os.windows #\;]
+                                             [else #\:]))]
+                                   [else '()]))
+                      (pred file-is-executable?))
     (if (absolute-path? name)
       (and (pred name) name)
       (let loop ((paths paths))
@@ -319,11 +309,11 @@
 ;; accepts keyword argument FOLLOW-LINK? 
 (define-syntax define-stat-accessor
   (syntax-rules ()
-    ((_ name slot)
+    [(_ name slot)
      (define (name path . opts)
        (let-keywords opts ((follow-link? #t))
          (and (sys-access path |F_OK|)
-              (slot-ref (%stat path follow-link?) slot)))))))
+              (slot-ref (%stat path follow-link?) slot))))]))
 
 (define-stat-accessor file-type 'type)
 (define-stat-accessor file-perm 'perm)
@@ -360,7 +350,7 @@
 ;; an alias.  We should call Windows API to check for sure in future).
 
 (cond-expand
- (gauche.os.windows
+ [gauche.os.windows
   (define (%stat-compare s1 s2 f1 f2)
     (let ((p1 (sys-normalize-pathname f1 :absolute #t :canonicalize #t))
 	  (p2 (sys-normalize-pathname f2 :absolute #t :canonicalize #t)))
@@ -369,8 +359,8 @@
     (%stat-compare #f #f f1 f2))
   (define (file-eqv? f1 f2)
     (%stat-compare #f #f f1 f2))
-  )
- (else
+  ]
+ [else
   (define (%stat-compare s1 s2 f1 f2)
     (and (eqv? (slot-ref s1 'dev) (slot-ref s2 'dev))
          (eqv? (slot-ref s1 'ino) (slot-ref s2 'ino))))
@@ -378,29 +368,27 @@
     (%stat-compare (sys-lstat f1) (sys-lstat f2) f1 f2))
   (define (file-eqv? f1 f2)
     (%stat-compare (sys-stat f1) (sys-stat f2) f1 f2))
-  ))
+  ])
 
 (define (file-equal? f1 f2)
   (let ((s1 (sys-stat f1))
         (s2 (sys-stat f2)))
-    (cond ((%stat-compare s1 s2 f1 f2))
-          ((not (eq? (slot-ref s1 'type) (slot-ref s2 'type)))
-           #f)
-          ((not (= (slot-ref s1 'size) (slot-ref s2 'size)))
-           #f)
-          ((eq? (slot-ref s1 'type) 'directory)
-           (error "directory comparison is not supported yet" s1))
-          (else
+    (cond [(%stat-compare s1 s2 f1 f2)]
+          [(not (eq? (slot-ref s1 'type) (slot-ref s2 'type))) #f]
+          [(not (= (slot-ref s1 'size) (slot-ref s2 'size)))   #f]
+          [(eq? (slot-ref s1 'type) 'directory)
+           (error "directory comparison is not supported yet" s1)]
+          [else
            (call-with-input-file f1
              (lambda (p1)
                (call-with-input-file f2
                  (lambda (p2)
                    (let loop ((b1 (read-block 8192 p1))
                               (b2 (read-block 8192 p2)))
-                     (cond ((eof-object? b1) #t)
-                           ((string=? b1 b2)
-                            (loop (read-block 8192 p1) (read-block 8192 p2)))
-                           (else #f))))))))
+                     (cond [(eof-object? b1) #t]
+                           [(string=? b1 b2)
+                            (loop (read-block 8192 p1) (read-block 8192 p2))]
+                           [else #f]))))))]
           )))
 
 ;; see if two files or directories exist on the same device.
@@ -411,7 +399,7 @@
 ;; <time>, or number.
 (define-syntax define-time-comparer
   (syntax-rules ()
-    ((_ name slot cmp)
+    [(_ name slot cmp)
      (begin
        (define-method name ((a <sys-stat>) (b <sys-stat>))
          (cmp (slot-ref a slot) (slot-ref b slot)))
@@ -429,7 +417,7 @@
          (name (slot-ref a 'second) b))
        (define-method name (a  (b <time>))
          (name a (slot-ref b 'second)))
-       ))))
+       )]))
 
 (define-time-comparer file-mtime=?  'mtime =)
 (define-time-comparer file-mtime<?  'mtime <)
@@ -454,9 +442,12 @@
 
 (define (touch-file pathname)
   (if (sys-access pathname |F_OK|)
-      (sys-utime pathname)
-      (close-output-port (open-output-file pathname)))
+    (sys-utime pathname)
+    (close-output-port (open-output-file pathname)))
   (values))
+
+(define (touch-files pathnames)
+  (for-each touch-file pathnames))
 
 ;; copy-file
 ;;  if-exists     - :error :supersede :backup #f
@@ -567,10 +558,32 @@
       (unless (file-exists? dstdir)
         (errorf "can't move to ~s: path does not exist" dst))
       (if (file-device=? src dstdir)
-          (do-rename)
-          (do-copying)))
+        (do-rename)
+        (do-copying)))
     ))
 
+;; copy-files & move files
+(define (%multifile-cpmv op)
+  (lambda (files dst . opts)
+    (unless (file-exists? dst)
+      (error "destination does not exist" dst))
+    (unless (file-is-directory? dst)
+      (error "destination is not a directory" dst))
+    (dolist (f files)
+      (apply op f (build-path dst (sys-basename f)) opts))))
+
+(define copy-files (%multifile-cpmv copy-file))
+(define move-files (%multifile-cpmv move-file))
+
+;; remove files
+(define (remove-files paths)
+  (dolist (p paths)
+    (cond [(not (file-exists? p))]
+          [(file-is-directory? p) (remove-directory* p)]
+          [else (sys-unlink p)])))
+
+(define delete-files remove-files)
+  
 ;; copy-directory
 ;; move-directory
 
