@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: literal.scm,v 1.7 2008-02-25 08:42:57 shirok Exp $
+;;;  $Id: literal.scm,v 1.8 2008-02-25 09:55:15 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.literal
@@ -118,9 +118,9 @@
 
 (define (static-data-c-struct-name category)
   (case category
-    ((constant) "scm__sc")
-    ((runtime)  "scm__rc")
-    (else (error "[cgen internal] invalid category:" category))))
+    [(constant) "scm__sc"]
+    [(runtime)  "scm__rc"]
+    [else (error "[cgen internal] invalid category:" category)]))
 
 (define (cgen-allocate-static-datum . opts)
 
@@ -133,9 +133,11 @@
                                 (equal? [@ dl'cpp-condition] cppc)))
                          [@ unit'static-data-list])))
         (or dl
-            (rlet1 new (make <cgen-static-data-list>
+            ;; TODO: Replace this with rlet1 once 0.8.14 is released!
+            (let1 new (make <cgen-static-data-list>
                         :category category :c-type c-type)
-              (push! [@ unit'static-data-list] new))))))
+              (push! [@ unit'static-data-list] new)
+              new)))))
   
   (let-optionals* opts ((category 'runtime)
                         (c-type   'ScmObj)
@@ -407,8 +409,10 @@
 
 (define (ensure-literal-hash unit)
   (or [@ unit'literals]
-      (rlet1 hash (make-vector .literal-hash-size. '())
-        (set! [@ unit'literals] hash))))
+      ;; TODO: Replace this with rlet1 once 0.8.14 is released!
+      (let1 hash (make-vector .literal-hash-size. '())
+        (set! [@ unit'literals] hash)
+        hash)))
 
 (define (register-literal-value unit literal-obj)
   (let ((lh   (ensure-literal-hash unit))
