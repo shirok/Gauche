@@ -1202,6 +1202,32 @@ Expanded as follows.
 @end example
 @end defmac
 
+@defmac if-let1 var expr then
+@defmacx if-let1 var expr then else
+@c EN
+This macro simplifies the following idiom:
+@c JP
+このマクロは次のようなイディオムを簡素化します。
+@c COMMON
+@example
+(let1 @var{var} @var{expr}
+  (if @var{var} @var{then} @var{else}))
+@end example
+@end defmac
+
+@defmac rlet1 var expr body @dots{}
+@c EN
+This macro simplifies the following idiom:
+@c JP
+このマクロは次のようなイディオムを簡素化します。
+@c COMMON
+@example
+(let1 @var{var} @var{expr}
+  @var{body} @dots{}
+  @var{var})
+@end example
+@end defmac
+
 @defmac and-let* (binding @dots{}) body @dots{}
 [SRFI-2]
 @c EN

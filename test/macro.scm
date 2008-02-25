@@ -869,6 +869,18 @@
             (values-ref (values 'a 'b 'c 'd 'e) 4 3 2 1 0)
           r)))
 
+(test "let1" '(2 2 2)
+      (lambda () (let1 x (+ 1 1) (list x x x))))
+(test "let1" '(2 4)
+      (lambda () (let1 x (+ 1 1) (list x (let1 x (+ x x) x)))))
+
+(test "rlet1" 1 (lambda () (rlet1 x (/ 2 2) (+ x x))))
+
+(test "if-let1" 4
+      (lambda () (if-let1 it (+ 1 1) (* it 2))))
+(test "if-let1" 'bar
+      (lambda () (if-let1 it (memq 'a '(b c d)) 'boo 'bar)))
+
 ;;----------------------------------------------------------------------
 ;; macro-expand
 

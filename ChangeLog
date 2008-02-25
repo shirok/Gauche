@@ -1,5 +1,7 @@
 2008-02-24  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/common-macros.scm: added if-let1 and rlet1.
+
 	* libsrc/file/util.scm: added touch-files, copy-files, move-files,
 	  remove-files, and delete-files.
 
