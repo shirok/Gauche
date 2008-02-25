@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.30 2008-01-26 17:53:34 shirok Exp $
+;;;  $Id: process.scm,v 1.31 2008-02-25 08:42:57 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -202,18 +202,18 @@
   (let1 status (ref process 'status)
     (unless (and (sys-wait-exited? status)
                  (zero? (sys-wait-exit-status status)))
-      (cond ((sys-wait-exited? status)
+      (cond [(sys-wait-exited? status)
              (errorf <process-abnormal-exit> :process process
                      "~s exitted abnormally with exit code ~a"
-                     process (sys-wait-exit-status status)))
-            ((sys-wait-signaled? status)
+                     process (sys-wait-exit-status status))]
+            [(sys-wait-signaled? status)
              (errorf <process-abnormal-exit> :process process
                      "~s exitted by signal ~s"
-                     process (sys-signal-name (sys-wait-termsig status))))
-            (else ;; we shouldn't be here, but just in case...
+                     process (sys-signal-name (sys-wait-termsig status)))]
+            [else ;; we shouldn't be here, but just in case...
              (errorf <process-abnormal-exit> :process process
                      "~s exitted abnormally with status ~s"
-                     process status))))))
+                     process status)]))))
 
 ;; other basic interfaces
 (define (process? obj) (is-a? obj <process>))

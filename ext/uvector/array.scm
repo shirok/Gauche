@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.17 2007-02-21 04:56:41 shirok Exp $
+;;;  $Id: array.scm,v 1.18 2008-02-25 08:42:56 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -323,8 +323,7 @@
         :start-vector (s32vector 0 0)
         :end-vector (s32vector rank 2)
         :mapper (lambda (Vi) (s32vector-dot (s32vector 2 1) Vi))
-        :backing-storage (list->vector args))
-      )))
+        :backing-storage (list->vector args)))))
 
 (define (shape->start/end-vector shape)
   (let* ((rank (array-end shape 0))
@@ -741,9 +740,8 @@
   (apply array-map proc ar0 more))
 
 (define-method array-map ((proc <procedure>) ar0 . more)
-  (let1 target (make-array (array-shape ar0))
-    (apply array-map! target proc ar0 more)
-    target))
+  (rlet1 target (make-array (array-shape ar0))
+    (apply array-map! target proc ar0 more)))
 
 (define (array->vector ar)
   (with-builder (<vector> add! get :size (array-size ar))

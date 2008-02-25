@@ -120,14 +120,12 @@
             (tab-fold @ `(:tab-fold ,tab-fold))))))
 
 (define (trie params . keys&vals)
-  (let1 t (apply make-trie params)
-    (for-each (lambda (p) (trie-put! t (car p) (cdr p))) keys&vals)
-    t))
+  (rlet1 t (apply make-trie params)
+    (for-each (lambda (p) (trie-put! t (car p) (cdr p))) keys&vals)))
 
 (define (trie-with-keys params . seqs)
-  (let1 t (apply make-trie params)
-    (for-each (lambda (seq) (trie-put! t seq seq)) seqs)
-    t))
+  (rlet1 t (apply make-trie params)
+    (for-each (lambda (seq) (trie-put! t seq seq)) seqs)))
 
 (define (trie? x)
   (is-a? x <trie>))
@@ -145,9 +143,8 @@
 (define %node-terminals cdr)
 
 (define (%node-table-create trie node)
-  (let1 tab ((slot-ref trie 'tab-make))
-    (set! (%node-table node) tab)
-    tab))
+  (rlet1 tab ((slot-ref trie 'tab-make))
+    (set! (%node-table node) tab)))
 
 ;; We don't need to compare entire sequence, for we know all the elements
 ;; would match.  We only need to make sure the class of the sequence match.
@@ -161,18 +158,17 @@
 ;; internal:  Trie, [a] -> Maybe Node
 (define (%trie-get-node trie seq create?)
   (define (lookup parent tab elt)
-    (let1 node ((slot-ref trie 'tab-get) tab elt)
-      (or node
-          (and create?
-               (let1 node (%make-node)
-                 (set! (%node-table parent)
-                       ((slot-ref trie 'tab-put!) tab elt node))
-                 node)))))
+    (if-let1 node ((slot-ref trie 'tab-get) tab elt)
+      node
+      (and create?
+           (rlet1 node (%make-node)
+             (set! (%node-table parent)
+                   ((slot-ref trie 'tab-put!) tab elt node))))))
   (define (descent node elt)
     (let1 tab (%node-table node)
-      (cond (tab (lookup node tab elt))
-            (create? (lookup node (%node-table-create trie node) elt))
-            (else #f))))
+      (cond [tab (lookup node tab elt)]
+            [create? (lookup node (%node-table-create trie node) elt)]
+            [else #f])))
   ;; In creation mode, we don't need to break during traversal, so
   ;; we save creation of continuation.
   (if create?
@@ -279,9 +275,8 @@
   (trie-common-prefix trie '()))
 
 (define (trie->hash-table trie htype)
-  (let1 ht (make-hash-table htype)
-    (trie-for-each trie (lambda (k v) (hash-table-put! ht k v)))
-    ht))
+  (rlet1 ht (make-hash-table htype)
+    (trie-for-each trie (cut hash-table-put! ht <> <>))))
 
 (define (trie-keys trie)
   (trie-common-prefix-keys trie '()))
@@ -337,13 +332,12 @@
   (trie->list trie))
 
 (define-method coerce-to ((class <vector-meta>) (trie <trie>))
-  (let1 vec (make-vector (trie-num-entries trie))
+  (rlet1 vec (make-vector (trie-num-entries trie))
     (trie-fold trie
                (lambda (k v ind)
                  (vector-set! vec ind (cons k v))
                  (+ ind 1))
-               0)
-    vec))
+               0)))
 
 (define-method coerce-to ((class <hash-table-meta>) (trie <trie>))
   (trie->hash-table trie 'equal?))

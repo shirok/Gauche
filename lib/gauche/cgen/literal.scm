@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: literal.scm,v 1.6 2007-09-13 12:30:27 shirok Exp $
+;;;  $Id: literal.scm,v 1.7 2008-02-25 08:42:57 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.literal
@@ -133,10 +133,9 @@
                                 (equal? [@ dl'cpp-condition] cppc)))
                          [@ unit'static-data-list])))
         (or dl
-            (let1 new (make <cgen-static-data-list>
+            (rlet1 new (make <cgen-static-data-list>
                         :category category :c-type c-type)
-              (push! [@ unit'static-data-list] new)
-              new)))))
+              (push! [@ unit'static-data-list] new))))))
   
   (let-optionals* opts ((category 'runtime)
                         (c-type   'ScmObj)
@@ -408,9 +407,8 @@
 
 (define (ensure-literal-hash unit)
   (or [@ unit'literals]
-      (let1 hash (make-vector .literal-hash-size. '())
-        (set! [@ unit'literals] hash)
-        hash)))
+      (rlet1 hash (make-vector .literal-hash-size. '())
+        (set! [@ unit'literals] hash))))
 
 (define (register-literal-value unit literal-obj)
   (let ((lh   (ensure-literal-hash unit))

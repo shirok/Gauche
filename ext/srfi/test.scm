@@ -1043,7 +1043,7 @@
        '(2002 5 15 12 34 56 -36000)
        (let1 d (string->date "2002/5/15 12:34:56 (-1000)"
                              "~Y/~m/~d ~H:~M:~S (~z)")
-         (map (lambda (s) (slot-ref d s))
+         (map (cut slot-ref d <>)
               '(year month day hour minute second zone-offset))))
 
 ;; NB: this test will fail when locale-dependent date name is supported.
@@ -1051,7 +1051,7 @@
        '(2002 11 2 7 14 11 32400)
        (let1 d (string->date "02/Nov/2002:07:14:11 +0900"
                              "~d~b~Y~H~M~S~z")
-         (map (lambda (s) (slot-ref d s))
+         (map (cut slot-ref d <>)
               '(year month day hour minute second zone-offset))))
 
 ;;

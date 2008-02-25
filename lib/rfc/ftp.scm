@@ -30,7 +30,7 @@
 ;;;  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-;;; $Id: ftp.scm,v 1.7 2007-05-23 02:39:01 shirok Exp $
+;;; $Id: ftp.scm,v 1.8 2008-02-25 08:42:57 shirok Exp $
 
 ;; RFC  959 FILE TRANSFER PROTOCOL (FTP)
 ;; RFC 1123 Requirements for Internet Hosts -- Application and Support
@@ -149,13 +149,14 @@
 ;; MKD  <SP> <pathname> <CRLF>
 ;; PWD  <CRLF>
 (define-values (ftp-mkdir ftp-current-directory)
-  (let1 parse-257 (lambda (res)
-                    (rxmatch-if (#/^257 \"((?:[^\"]|\"\")+)\"/ res) (#f dirname)
-                      (regexp-replace-all #/""/ dirname "\"")
-                      (ftp-error res)))
+  (let1 parse-257
+      (lambda (res)
+        (rxmatch-if (#/^257 \"((?:[^\"]|\"\")+)\"/ res) (_ dirname)
+          (regexp-replace-all #/""/ dirname "\"")
+          (ftp-error res)))
     (values (lambda (conn dirname)
               (parse-257 (simple-command conn "MKD" dirname)))
-	    (lambda (conn)
+            (lambda (conn)
               (parse-257 (simple-command conn "PWD"))))))
 
 ;; *MODE <SP> <mode-code> <CRLF>
@@ -362,8 +363,8 @@
 (define (simple-command conn cmd . args)
   (let1 res (apply send-command conn cmd args)
     (if (string-prefix? "2" res)
-	res
-	(ftp-error res))))
+      res
+      (ftp-error res))))
 
 ;; receive response from server
 (define (get-response conn)

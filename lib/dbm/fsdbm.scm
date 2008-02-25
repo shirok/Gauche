@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fsdbm.scm,v 1.8 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: fsdbm.scm,v 1.9 2008-02-25 08:42:56 shirok Exp $
 ;;;
 
 (define-module dbm.fsdbm
@@ -99,14 +99,14 @@
         (rwmode  (ref self 'rw-mode))
         (fmode   (ref self 'file-mode)))
     (case rwmode
-      ((:read)
+      [(:read)
        (unless (fsdbm-directory? path)
-         (errorf "dbm-open: no fsdbm database ~a" path)))
-      ((:write)
+         (errorf "dbm-open: no fsdbm database ~a" path))]
+      [(:write)
        (unless (fsdbm-directory? path)
-         (fsdbm-create path fmode)))
-      ((:create)
-       (fsdbm-create path fmode))
+         (fsdbm-create path fmode))]
+      [(:create)
+       (fsdbm-create path fmode)]
       )
     self))
 
@@ -216,40 +216,39 @@
       (write-char #\_) ;; always emit one char, so we can deal with null key
       (let loop ((c (read-byte))
                  (count 0))
-        (cond ((eof-object? c))
-              ((>= count *file-name-limit*)
-               (write-char #\/) (loop c 0))
-              ((and (< c 127)
+        (cond [(eof-object? c)]
+              [(>= count *file-name-limit*)
+               (write-char #\/) (loop c 0)]
+              [(and (< c 127)
                     (char-set-contains? #[0-9a-zA-Z] (integer->char c)))
-               (write-byte c) (loop (read-byte) (+ count 1)))
-              (else
+               (write-byte c) (loop (read-byte) (+ count 1))]
+              [else
                (format #t "_~2,'0x" c)
-               (loop (read-byte) (+ count 1))))))))
+               (loop (read-byte) (+ count 1))])))))
 
 ;; reverse fn of key->path.  returns #f is path is invalid.
 (define (path->key path)
-  (call/cc
-   (lambda (return)
-     (string-incomplete->complete
-      (with-string-io path
-        (lambda ()
-          ;; skip the first char
-          (unless (eqv? (read-char) #\_) (return #f))
-          (let loop ((c (read-char)))
-            (cond ((eof-object? c))
-                  ((char=? c #\/) (loop (read-char)))
-                  ((char=? c #\_)
-                   (let* ((c1 (read-char))
-                          (c2 (read-char)))
-                     (when (or (eof-object? c1) (eof-object? c2)) (return #f))
-                     (unless (and (char-set-contains? #[[:xdigit:]] c1)
-                                  (char-set-contains? #[[:xdigit:]] c2))
-                       (return #f))
-                     (write-byte (+ (* (digit->integer c1 16) 16)
-                                    (digit->integer c2 16)))
-                     (loop (read-char))))
-                  (else
-                   (write-char c) (loop (read-char)))))))))))
+  (let/cc return
+    (string-incomplete->complete
+     (with-string-io path
+       (lambda ()
+         ;; skip the first char
+         (unless (eqv? (read-char) #\_) (return #f))
+         (let loop ((c (read-char)))
+           (cond [(eof-object? c)]
+                 [(char=? c #\/) (loop (read-char))]
+                 [(char=? c #\_)
+                  (let* ((c1 (read-char))
+                         (c2 (read-char)))
+                    (when (or (eof-object? c1) (eof-object? c2)) (return #f))
+                    (unless (and (char-set-contains? #[[:xdigit:]] c1)
+                                 (char-set-contains? #[[:xdigit:]] c2))
+                      (return #f))
+                    (write-byte (+ (* (digit->integer c1 16) 16)
+                                   (digit->integer c2 16)))
+                    (loop (read-char)))]
+                 [else
+                  (write-char c) (loop (read-char))])))))))
 
 (define (path->hash path)
   ;; NB: we use our own hash fn to keep backward compatibility.
@@ -265,9 +264,9 @@
 
 (define (value-file-path key . maybe-dir)
   (let1 p (key->path key)
-    (cond ((get-optional maybe-dir #f)
-           => (cut build-path <> (path->hash p) p))
-          (else (build-path (path->hash p) p)))))
+    (cond [(get-optional maybe-dir #f)
+           => (cut build-path <> (path->hash p) p)]
+          [else (build-path (path->hash p) p)])))
 
 (provide "dbm/fsdbm")
 

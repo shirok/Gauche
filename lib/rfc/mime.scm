@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.15 2007-12-24 05:31:32 shirok Exp $
+;;;  $Id: mime.scm,v 1.16 2008-02-25 08:42:57 shirok Exp $
 ;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME) Part One:
@@ -51,6 +51,7 @@
   (use srfi-13)
   (use srfi-14)
   (use rfc.822)
+  (use util.match)
   (use util.queue)
   (use util.list)
   (export mime-parse-version
@@ -78,12 +79,11 @@
 
 ;; returns list of major and minor versions in integers
 (define (mime-parse-version field)
-  (and field
-       (let1 s
-           (string-concatenate (map x->string (rfc822-field->tokens field)))
-         (cond ((#/^(\d+)\.(\d+)$/ s) =>
-                (lambda (m) (map (lambda (d) (x->integer (m d))) '(1 2))))
-               (else #f)))))
+  (and-let* ([ field ]
+             [s (string-concatenate
+                 (map x->string (rfc822-field->tokens field)))]
+             [m (#/^(\d+)\.(\d+)$/ s)])
+    (map (lambda (d) (x->integer (m d))) '(1 2))))
 
 (define-constant *ct-token-chars*
   (char-set-difference #[\x21-\x7e] #[()<>@,\;:\\\"/\[\]?=]))
@@ -312,63 +312,53 @@
   (define (getb)
     (if (queue-empty? q)
       (case (ref port 'state)
-        ((prologue) (skip-prologue))
-        ((boundary eof) eof)
-        (else (newb)))
+        [(prologue) (skip-prologue)]
+        [(boundary eof) eof]
+        [else (newb)])
       (dequeue! q)))
 
   (define (newb)
-    (let1 b (read-byte srcport)
-      (cond
-       ((eof-object? b)
-        (set! (ref port 'state) 'eof)
-        eof)
-       (else
-        (case b
-          ((#x0d) ;; CR, check to see LF
-           (let1 b2 (peek-byte srcport)
-             (if (eqv? b2 #x0a)
-               (begin
-                 (read-byte srcport)
-                 (enqueue! q b #x0a)
-                 (check-boundary))
-               b)))
-          ((#x0a) ;; LF, check boundary
-           (enqueue! q b) (check-boundary))
-          (else b))))))
+    (match (read-byte srcport)
+      [(and #x0d b) ;; CR, check to see LF
+       (let1 b2 (peek-byte srcport)
+         (if (eqv? b2 #x0a)
+           (begin
+             (read-byte srcport)
+             (enqueue! q b #x0a)
+             (check-boundary))
+           b))]
+      [(and #x0a b) ;; LF, check boundary
+       (enqueue! q b) (check-boundary)]
+      [(? eof-object?) (set! (ref port 'state) 'eof) eof]
+      [b b]))
 
   (define (check-boundary)
     (let loop ((b   (peek-byte srcport))
                (ind 0)
                (max (u8vector-length --boundary)))
-      (cond ((eof-object? b)
-             (deq! q))
-            ((= ind max)
-             (cond ((memv b '(#x0d #x0a)) ;;found boundary
+      (cond [(eof-object? b) (deq! q)]
+            [(= ind max)
+             (cond [(memv b '(#x0d #x0a)) ;;found boundary
                     (read-byte srcport)   ;;consume LF or CRLF
                     (when (and (eqv? #x0d b) 
                                (eqv? #x0a (peek-byte srcport)))
                       (read-byte srcport))
                     (dequeue-all! q)
                     (set! (ref port 'state) 'boundary)
-                    eof)
-                   ((eqv? b #x2d) ;; maybe end boundary
+                    eof]
+                   [(eqv? b #x2d) ;; maybe end boundary
                     (enqueue! q (read-byte srcport))
-                    (cond ((eqv? (peek-byte srcport) #x2d);; yes, end boundary
+                    (cond [(eqv? (peek-byte srcport) #x2d);; yes, end boundary
                            (read-byte srcport)
                            (dequeue-all! q)
-                           (skip-epilogue))
-                          (else
-                           (deq! q))))
-                   (else
-                    (deq! q))))
-            ((= b (u8vector-ref --boundary ind))
+                           (skip-epilogue)]
+                          [else (deq! q)])]
+                   [else (deq! q)])]
+            [(= b (u8vector-ref --boundary ind))
              (enqueue! q (read-byte srcport))
-             (loop (peek-byte srcport) (+ ind 1) max))
-            ((queue-empty? q)
-             (newb))
-            (else
-             (dequeue! q)))))
+             (loop (peek-byte srcport) (+ ind 1) max)]
+            [(queue-empty? q) (newb)]
+            [else (dequeue! q)])))
 
   ;; Reads past the first boundary.  The first boundary may appear
   ;; at the beginning of the message (instead of after CRLF), so
@@ -376,24 +366,18 @@
   (define (skip-prologue)
     (let loop ((b (check-boundary)))
       (cond
-       ((eof-object? b)
-        (cond ((eq? (ref port 'state) 'boundary) ; we've found the boundary
-               (set! (ref port 'state) 'body)
-               (getb))
-              (else                              ; no boundary found
-               (set! (ref port 'state) 'eof)
-               eof)))
-       ((queue-empty? q)
-        (loop (newb)))
-       (else
-        (dequeue-all! q)
-        (loop (newb))))))
+       [(eof-object? b)
+        (cond [(eq? (ref port 'state) 'boundary) ; we've found the boundary
+               (set! (ref port 'state) 'body) (getb)]
+              [else                              ; no boundary found
+               (set! (ref port 'state) 'eof) eof])]
+       [(queue-empty? q) (loop (newb))]
+       [else (dequeue-all! q) (loop (newb))])))
 
   (define (skip-epilogue)
     (let loop ((b (read-byte srcport)))
       (if (eof-object? b)
-        (begin (set! (ref port 'state) 'eof)
-               b)
+        (begin (set! (ref port 'state) 'eof) b)
         (loop (read-byte srcport)))))
   
   ;; fills vector, until it sees either
@@ -451,14 +435,14 @@
                    :headers headers))
          )
     (cond
-     ((equal? (car ctype) "multipart")
-      (multipart-parse port packet handler))
-     ((equal? (car ctype) "message")
-      (message-parse port packet handler))
-     (else
+     [(equal? (car ctype) "multipart")
+      (multipart-parse port packet handler)]
+     [(equal? (car ctype) "message")
+      (message-parse port packet handler)]
+     [else
       ;; normal body
       (slot-set! packet 'content (handler packet port))
-      packet)
+      packet]
      )))
 
 (define (multipart-parse port packet handler)
@@ -506,20 +490,17 @@
   (define (read-line/nl)
     (let loop ((c (read-char inp))
                (chars '()))
-      (cond ((eof-object? c)
-             (if (null? chars)
-               c
-               (list->string (reverse! chars))))
-            ((char=? c #\newline)
-             (list->string (reverse! (cons c chars))))
-            ((char=? c #\return)
+      (cond [(eof-object? c)
+             (if (null? chars) c  (list->string (reverse! chars)))]
+            [(char=? c #\newline) (list->string (reverse! (cons c chars)))]
+            [(char=? c #\return)
              (let1 c (peek-char inp)
                (if (char=? c #\newline)
                  (list->string (reverse! (list* (read-char inp)
                                                 #\return
                                                 chars)))
-                 (list->string (reverse! (cons #\return chars))))))
-            (else (loop (read-char inp) (cons c chars))))))
+                 (list->string (reverse! (cons #\return chars)))))]
+            [else (loop (read-char inp) (cons c chars))])))
   
   (define (read-text decoder)
     (let loop ((line (read-line/nl)))
@@ -532,7 +513,7 @@
       (with-input-from-string string
         (cut with-port-locking (current-input-port)
              (cut with-output-to-port out base64-decode))))
-    (let ((buf (open-output-string :private? #t)))
+    (let1 buf (open-output-string :private? #t)
       (let loop ((line (read-line inp)))
 	(unless (eof-object? line)
           (display line buf)
@@ -542,21 +523,21 @@
 
   (with-port-locking inp
     (lambda ()
-      (let ((enc (ref packet 'transfer-encoding)))
+      (let1 enc (ref packet 'transfer-encoding)
         (cond
-         ((string-ci=? enc "base64") (read-base64))
-         ((string-ci=? enc "quoted-printable")
-          (read-text quoted-printable-decode-string))
-         ((member enc '("7bit" "8bit" "binary"))
+         [(string-ci=? enc "base64") (read-base64)]
+         [(string-ci=? enc "quoted-printable")
+          (read-text quoted-printable-decode-string)]
+         [(member enc '("7bit" "8bit" "binary"))
           (let loop ((b (read-byte inp)))
             (unless (eof-object? b)
               (write-byte b outp)
-              (loop (read-byte inp)))))
+              (loop (read-byte inp))))]
          ))))
   )
 
 (define (mime-body->string packet inp)
-  (let ((s (open-output-string :private? #t)))
+  (let1 s (open-output-string :private? #t)
     (mime-retrieve-body packet inp s)
     (get-output-string s)))
 

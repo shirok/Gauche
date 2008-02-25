@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cvt.scm,v 1.7 2007-04-16 12:52:32 shirok Exp $
+;;;  $Id: cvt.scm,v 1.8 2008-02-25 08:42:56 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -111,8 +111,8 @@
   (define (ucsvalue-of cell)
     (let1 ucs (cdr cell)
       (if (pair? ucs)
-          (+ (ash (car ucs) 16) (cdr ucs))
-          ucs)))
+        (+ (ash (car ucs) 16) (cdr ucs))
+        ucs)))
 
   ;; JISX 0201 kana region
   (define (jisx0201 data)
@@ -216,9 +216,8 @@
 
   (define (ensure-node container ref set key)
     (or (ref container key #f)
-        (let1 v (make-vector 64 #f)
-          (set container key v)
-          v)))
+        (rlet1 v (make-vector 64 #f)
+          (set container key v))))
 
   (define (intern utf8 euc container)
     (cond ((null? (cdr utf8))

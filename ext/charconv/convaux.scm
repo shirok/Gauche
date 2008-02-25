@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: convaux.scm,v 1.5 2007-03-02 07:39:04 shirok Exp $
+;;;  $Id: convaux.scm,v 1.6 2008-02-25 08:42:56 shirok Exp $
 ;;;
 
 (select-module gauche.charconv)
@@ -152,8 +152,8 @@
       (let1 cvp (open-input-conversion-port port from-code
                                             :owner? #f :buffer-size bufsiz)
         (unwind-protect
-         (proc cvp)
-         (close-input-port cvp))))))
+            (proc cvp)
+          (close-input-port cvp))))))
 
 (define (call-with-output-conversion port proc . opts)
   (let-keywords opts ((to-code :encoding (gauche-character-encoding))
@@ -163,8 +163,8 @@
       (let1 cvp (open-output-conversion-port port to-code
                                              :owner? #f :buffer-size bufsiz)
         (unwind-protect
-         (proc cvp)
-         (close-output-port cvp))))))
+            (proc cvp)
+          (close-output-port cvp))))))
 
 (define (with-input-conversion port thunk . opts)
   (apply call-with-input-conversion port

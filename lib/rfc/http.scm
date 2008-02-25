@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: http.scm,v 1.16 2007-12-24 04:43:53 shirok Exp $
+;;;  $Id: http.scm,v 1.17 2008-02-25 08:42:57 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
@@ -190,9 +190,9 @@
 
 ;; Always returns a connection object.
 (define (ensure-connection server auth-handler auth-user auth-password extra-headers)
-  (let1 conn (cond [(is-a? server <http-connection>) server]
-                   [(string? server) (make-http-connection server)]
-                   [else (error "bad type of argument for server: must be an <http-connection> object or a string of the server's name, but got:" server)])
+  (rlet1 conn (cond [(is-a? server <http-connection>) server]
+                    [(string? server) (make-http-connection server)]
+                    [else (error "bad type of argument for server: must be an <http-connection> object or a string of the server's name, but got:" server)])
     (let-syntax ([check-override
                   (syntax-rules ()
                     [(_ id)
@@ -200,8 +200,7 @@
       (check-override auth-handler)
       (check-override auth-user)
       (check-override auth-password)
-      (check-override extra-headers))
-    conn))
+      (check-override extra-headers))))
 
 (define (server->socket server)
   (cond ((#/([^:]+):(\d+)/ server)
@@ -211,7 +210,7 @@
 (define (with-connection conn proc)
   (let1 s (server->socket (ref conn'server))
     (unwind-protect
-      (proc (socket-input-port s) (socket-output-port s))
+        (proc (socket-input-port s) (socket-output-port s))
       (socket-close s))))
 
 (define (request-response request conn host request-uri request-body options)
@@ -307,18 +306,17 @@
     (rxmatch-if (#/^([[:xdigit:]]+)/ line) (#f digits)
       (let1 chunk-size (string->number digits 16)
         (if (zero? chunk-size)
-            ;; finish reading trailer
-            (do ((line (read-line remote) (read-line remote)))
-                ((or (eof-object? line) (string-null? line)))
-              #f)
-            (begin
-              (copy-port remote sink :size chunk-size)
-              (read-line remote) ;skip the following CRLF
-              (loop (read-line remote)))))
+          ;; finish reading trailer
+          (do ((line (read-line remote) (read-line remote)))
+              ((or (eof-object? line) (string-null? line)))
+            #f)
+          (begin
+            (copy-port remote sink :size chunk-size)
+            (read-line remote) ;skip the following CRLF
+            (loop (read-line remote)))))
       ;; something wrong
       (error <http-error> "bad line in chunked data:" line))
-    )
-  )
+    ))
 
 ;;==============================================================
 ;; authentication handling

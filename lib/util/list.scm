@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: list.scm,v 1.12 2006-10-16 19:24:56 shirok Exp $
+;;;  $Id: list.scm,v 1.13 2008-02-25 08:42:57 shirok Exp $
 ;;;
 
 ;; This module adds useful list utility procedures that are not in SRFI-1.
@@ -42,13 +42,13 @@
     (let loop ((i 0)
                (lis lis)
                (r '()))
-      (cond ((= i k) (values (reverse! r) lis))
-            ((null? lis)
+      (cond [(= i k) (values (reverse! r) lis)]
+            [(null? lis)
              (values (if fill?
                          (append! (reverse! r) (make-list (- k i) filler))
                          (reverse! r))
-                     lis))
-            (else (loop (+ i 1) (cdr lis) (cons (car lis) r)))))))
+                     lis)]
+            [else (loop (+ i 1) (cdr lis) (cons (car lis) r))]))))
 
 (define (take* lis k . args)
   (receive (h t) (apply split-at* lis k args) h))
@@ -58,9 +58,9 @@
     (error "index must be non-negative integer" k))
   (let loop ((i 0)
              (lis lis))
-    (cond ((= i k) lis)
-          ((null? lis) '())
-          (else (loop (+ i 1) (cdr lis))))))
+    (cond [(= i k) lis]
+          [(null? lis) '()]
+          [else (loop (+ i 1) (cdr lis))])))
 
 (define (take-right* lis k . args)
   (when (or (not (integer? k)) (negative? k))
@@ -68,15 +68,13 @@
   (let-optionals* args ((fill? #f)
                         (filler #f))
     (let1 len (length lis)
-      (cond ((<= k len) (drop lis (- len k)))
-            (fill? (append! (make-list (- k len) filler) lis))
-            (else lis)))))
+      (cond [(<= k len) (drop lis (- len k))]
+            [fill? (append! (make-list (- k len) filler) lis)]
+            [else lis]))))
 
 (define (drop-right* lis k)
   (let1 len (length lis)
-    (if (<= k len)
-        (take lis (- len k))
-        '())))
+    (if (<= k len) (take lis (- len k)) '())))
 
 ;;-----------------------------------------------------------------
 ;; slices - split a list to a bunch of sublists of length k

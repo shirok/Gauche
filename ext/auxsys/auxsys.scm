@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.22 2007-09-29 07:41:34 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.23 2008-02-25 08:42:56 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
@@ -88,7 +88,7 @@
 ;; a nice way to make cond-expand work (when compiling src/scmlib.scm
 ;; cond-expand uses the host gosh's feature set, not the target gosh's.)
 (cond-expand
- (gauche.sys.select
+ [gauche.sys.select
   (define (sys-fdset . pfs)
     (list->sys-fdset pfs))
   (define (sys-fdset->list fdset)
@@ -98,23 +98,23 @@
         ((< i 0) fds)
       #f))
   (define (list->sys-fdset pfs)
-    (let1 fdset (make <sys-fdset>)
+    (rlet1 fdset (make <sys-fdset>)
       (dolist (pf pfs)
-        (cond ((or (integer? pf) (port? pf))
-               (sys-fdset-set! fdset pf #t))
-              ((is-a? pf <sys-fdset>)
+        (cond [(or (integer? pf) (port? pf))
+               (sys-fdset-set! fdset pf #t)]
+              [(is-a? pf <sys-fdset>)
                (dotimes (i (+ (sys-fdset-max-fd pf) 1))
                  (when (sys-fdset-ref pf i)
-                   (sys-fdset-set! fdset i #t))))
-              (else (error "sys-fdset requires a port, an integer, or a <sys-fdset> object, but got:" pf))))
-      fdset))    
-  )
- (else
+                   (sys-fdset-set! fdset i #t)))]
+              [else (error "sys-fdset requires a port, an integer, \
+                           or a <sys-fdset> object, but got:" pf)]))))
+  ]
+ [else
   ;; make autoload happy
   (define sys-fdset #f)
   (define sys-fdset->list #f)
   (define list->sys-fdset #f)
-  ))
+  ])
 
 ;; We support sys-setenv natively if the system has either
 ;; setenv(3) or putenv(3).  The feature symbol is gauche.sys.setenv.

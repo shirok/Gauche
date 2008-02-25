@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.38 2007-01-21 14:21:50 rui314159 Exp $
+;;;  $Id: dbi.scm,v 1.39 2008-02-25 08:42:56 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -139,9 +139,7 @@
                                 sql))
                        sql)
                      (dbi-prepare-sql c sql))
-      (make <dbi-query>
-        :connection c
-        :prepared prepared))))
+      (make <dbi-query> :connection c :prepared prepared))))
 
 (define-method dbi-execute ((q <dbi-query>) . params)
   (dbi-execute-using-connection (ref q 'connection) q params))

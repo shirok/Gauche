@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19-lib.scm,v 1.12 2007-11-06 22:43:25 shirok Exp $
+;;; $Id: srfi-19-lib.scm,v 1.13 2008-02-25 08:42:56 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -935,49 +935,49 @@
 (define (date->string date . maybe-fmtstr)
   (let1 format-string (get-optional maybe-fmtstr "~c")
     (with-input-from-string format-string
-        (lambda ()
-          (define (bad i)
-            (errorf "date->string: bad date format string: \"~a >>>~a<<< ~a\""
-                    (string-take format-string i)
-                    (substring format-string i (+ i 1))
-                    (string-drop format-string (+ i 1))))
+      (lambda ()
+        (define (bad i)
+          (errorf "date->string: bad date format string: \"~a >>>~a<<< ~a\""
+                  (string-take format-string i)
+                  (substring format-string i (+ i 1))
+                  (string-drop format-string (+ i 1))))
 
-          (define (call-formatter ch pad ind)
-            (cond ((assv ch tm:directives) =>
-                   (lambda (fn) ((cdr fn) date pad) (rec (read-char) (+ ind 1))))
-                  (else (bad ind))))
-          
-          (define (rec ch ind)
-            (cond
-             ((eof-object? ch))
-             ((not (char=? ch #\~))
-              (write-char ch) (rec (read-char) (+ ind 1)))
-             (else
-              (let1 ch2 (read-char)
-                (cond
-                 ((eof-object? ch2) (write-char ch))
-                 ;; Gauche extension: ~@x calls the directive 'x' with locale
-                 ;; set to C, so the caller can guarantee the output.  Currently
-                 ;; the library only supports the default locale, so we can simply
-                 ;; ignore '@'.  In future we'll add locale-sensitive stuff.
-                 ((char=? ch2 #\@)
-                  (call-formatter (read-char) #f (+ ind 2)))
-                 ;; The following two optional characters are not specified in
-                 ;; srfi-19 document, and to me it doesn't seem useful.  I disable
-                 ;; it for now. --[SK]
-                 #;
-                 ((char=? ch2 #\-)
-                  (call-formatter (read-char) #f (+ ind 2)))
-                 #;
-                 ((char=? ch2 #\_)
-                  (call-formatter (read-char) #\space (+ ind 2)))
-                 (else
-                  (call-formatter ch2 #\0 (+ ind 1))))))
-             ))
+        (define (call-formatter ch pad ind)
+          (cond ((assv ch tm:directives) =>
+                 (lambda (fn) ((cdr fn) date pad) (rec (read-char) (+ ind 1))))
+                (else (bad ind))))
+        
+        (define (rec ch ind)
+          (cond
+           ((eof-object? ch))
+           ((not (char=? ch #\~))
+            (write-char ch) (rec (read-char) (+ ind 1)))
+           (else
+            (let1 ch2 (read-char)
+              (cond
+               ((eof-object? ch2) (write-char ch))
+               ;; Gauche extension: ~@x calls the directive 'x' with locale
+               ;; set to C, so the caller can guarantee the output.  Currently
+               ;; the library only supports the default locale, so we can simply
+               ;; ignore '@'.  In future we'll add locale-sensitive stuff.
+               ((char=? ch2 #\@)
+                (call-formatter (read-char) #f (+ ind 2)))
+               ;; The following two optional characters are not specified in
+               ;; srfi-19 document, and to me it doesn't seem useful.  I disable
+               ;; it for now. --[SK]
+               #;
+               ((char=? ch2 #\-)
+                (call-formatter (read-char) #f (+ ind 2)))
+               #;
+               ((char=? ch2 #\_)
+                (call-formatter (read-char) #\space (+ ind 2)))
+               (else
+                (call-formatter ch2 #\0 (+ ind 1))))))
+           ))
 
-          ;; body
-          (with-output-to-string
-           (cut rec (read-char) 0))))))
+        ;; body
+        (with-output-to-string
+          (cut rec (read-char) 0))))))
 
 (define (tm:char->int ch)
   (or (digit->integer ch) 

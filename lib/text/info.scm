@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: info.scm,v 1.4 2007-03-02 07:39:11 shirok Exp $
+;;;  $Id: info.scm,v 1.5 2008-02-25 08:42:57 shirok Exp $
 ;;;
 
 (define-module text.info
@@ -80,22 +80,21 @@
      (let loop ((c (skip-while (char-set-complement #[\x1f])))
                 (r '()))
        (if (eof-object? c)
-           (reverse! r)
-           (let* ((head (next-token #[\x1f\n] '(#[\x1f\n] *eof*)))
-                  (body (next-token #[\n] '(#[\x1f] *eof*))))
-             (loop (read-char) (acons head body r)))))))
+         (reverse! r)
+         (let* ((head (next-token #[\x1f\n] '(#[\x1f\n] *eof*)))
+                (body (next-token #[\n] '(#[\x1f] *eof*))))
+           (loop (read-char) (acons head body r)))))))
   )
 
 (define (read-master-info-file file opts)
   (let1 parts (read-info-file-split file opts)
     (when (null? parts)
       (error "file is not an info file" file))
-    (let1 info (make <info-file> :path file :directory (sys-dirname file))
+    (rlet1 info (make <info-file> :path file :directory (sys-dirname file))
       (if (string=? (caar parts) "Indirect:")
-          (let1 indirect-table (parse-indirect-table (cdar parts))
-            (parse-tag-table info indirect-table (cdr (cadr parts))))
-          (parse-nodes info parts))
-      info)))
+        (let1 indirect-table (parse-indirect-table (cdar parts))
+          (parse-tag-table info indirect-table (cdr (cadr parts))))
+        (parse-nodes info parts)))))
 
 (define (parse-indirect-table indirects)
   (with-input-from-string indirects
@@ -140,15 +139,13 @@
 
 (define (parse-node info part)
   (rxmatch-case (car part)
-    (#/File: [^,]+,  Node: ([^,]+)(,  Next: ([^,]+))?,  Prev: ([^,]+),  Up: ([^,]+)/
+    [#/File: [^,]+,  Node: ([^,]+)(,  Next: ([^,]+))?,  Prev: ([^,]+),  Up: ([^,]+)/
      (#f node #f next prev up)
-     (let1 info-node (make <info-node>
+     (rlet1 info-node (make <info-node>
                        :node node :next next :prev prev :up up :file info
                        :content (cdr part))
-       (hash-table-put! (ref info 'node-table) node info-node)
-       info-node))
-    (else #f)
-    ))
+       (hash-table-put! (ref info 'node-table) node info-node))]
+    [else #f]))
 
 ;;; External API
 
@@ -156,31 +153,30 @@
   (read-master-info-file file '()))
 
 (define-method info-get-node ((info <info-file>) nodename)
-  (let1 node (hash-table-get (ref info 'node-table) nodename #f)
-    (and node
-         (if (is-a? node <info-node>)
-             node
-             (begin
-               (read-sub-info-file info
-                                   (build-path (ref info 'directory) node)
-                                   '())
-               (hash-table-get (ref info 'node-table) nodename #f))))))
+  (if-let1 node (hash-table-get (ref info 'node-table) nodename #f)
+    (cond [(is-a? node <info-node>) node]
+          [else
+           (read-sub-info-file info
+                               (build-path (ref info 'directory) node)
+                               '())
+           (hash-table-get (ref info 'node-table) nodename #f)])
+    #f))
 
 (define-method info-parse-menu ((info <info-node>))
   (with-input-from-string (ref info 'content)
     (lambda ()
       (define (skip line)
-        (cond ((eof-object? line) '())
-              ((string=? line "* Menu:") (menu (read-line) '()))
-              (else (skip (read-line)))))
+        (cond [(eof-object? line) '()]
+              [(string=? line "* Menu:") (menu (read-line) '())]
+              [else (skip (read-line))]))
       (define (menu line r)
         (rxmatch-case line
-          (test eof-object? (reverse! r))
-          (#/^\* (.+)::/ (#f node)
-           (menu (read-line) (acons node node r)))
-          (#/^\* (.+):\s+(.+)\./ (#f index node)
-           (menu (read-line) (acons index node r)))
-          (else (menu (read-line) r))))
+          [test eof-object? (reverse! r)]
+          [#/^\* (.+)::/ (#f node)
+                 (menu (read-line) (acons node node r))]
+          [#/^\* (.+):\s+(.+)\./ (#f index node)
+                 (menu (read-line) (acons index node r))]
+          [else (menu (read-line) r)]))
       (skip (read-line)))))
 
 (provide "text/info")
