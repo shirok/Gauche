@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: common-macros.scm,v 1.28 2008-02-25 05:26:31 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.29 2008-02-26 16:32:21 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is to be autoloaded.
@@ -251,114 +251,6 @@
     [(_ . other)
      (syntax-error "badly formed get-optional" (get-optional . other))]
     ))
-
-(define-syntax let-optionals*
-  (syntax-rules ()
-    [(_ "binds" arg binds () body) (let* binds . body)]
-    [(_ "binds" arg (binds ...) ((var default) . more) body)
-     (let-optionals* "binds"
-         (if (null? tmp) tmp (cdr tmp))
-       (binds ...
-              (tmp arg)
-              (var (if (null? tmp) default (car tmp))))
-       more
-       body)]
-    [(_ "binds" arg (binds ...) (var . more) body)
-     (let-optionals* "binds"
-         (if (null? tmp) tmp (cdr tmp))
-       (binds ...
-              (tmp arg)
-              (var (if (null? tmp) (undefined) (car tmp))))
-       more
-       body)]
-    [(_ "binds" arg (binds ...) var body)
-     (let-optionals* "binds"
-         arg
-       (binds ... (var arg))
-       ()
-       body)]
-    [(_ arg vars . body)
-     (let-optionals* "binds" arg () vars body)]
-    [(_ . other)
-     (syntax-error "badly formed let-optionals*" (let-optionals* . other))]
-    ))
-
-;; We want to generate corresponding keyword for each variable
-;; beforehand, so I use a traditional macro.
-
-(define (%let-keywords-rec arg specs body %let %error/warn)
-  (define (triplet var&default)
-    (or (and-let* (((list? var&default))
-                   (var (unwrap-syntax (car var&default)))
-                   ((symbol? var)))
-          (case (length var&default)
-            ((2) (values (car var&default)
-                         (make-keyword var)
-                         (cadr var&default)))
-            ((3) (values (car var&default)
-                         (unwrap-syntax (cadr var&default))
-                         (caddr var&default)))
-            (else #f)))
-        (error "bad binding form in let-keywords" var&default)))
-  (define (process-specs specs)
-    (let loop ((specs specs)
-               (vars '()) (keys '()) (defaults '()) (tmps '()))
-      (define (finish restvar)
-        (values (reverse! vars)
-                (reverse! keys)
-                (reverse! defaults)
-                (reverse! tmps)
-                restvar))
-      (cond ((null? specs) (finish #f))
-            ((pair? specs)
-             (receive (var key default) (triplet (car specs))
-               (loop (cdr specs)
-                     (cons var vars)
-                     (cons key keys)
-                     (cons default defaults)
-                     (cons (gensym) tmps))))
-            (else (finish (or specs #t))))))
-
-  (let ((argvar (gensym "args")) (loop (gensym "loop")))
-    (receive (vars keys defaults tmps restvar)
-        (process-specs specs)
-      `(let ,loop ((,argvar ,arg)
-                   ,@(if (boolean? restvar) '() `((,restvar '())))
-                   ,@(map (cut list <> (undefined)) tmps))
-            (cond
-             ((null? ,argvar)
-              (,%let ,(map (lambda (var tmp default)
-                             `(,var (if (undefined? ,tmp) ,default ,tmp)))
-                           vars tmps defaults)
-                     ,@body))
-             ((null? (cdr ,argvar))
-              (error "keyword list not even" ,argvar))
-             (else
-              (case (car ,argvar)
-                ,@(map (lambda (key)
-                         `((,key)
-                           (,loop (cddr ,argvar)
-                                  ,@(if (boolean? restvar) '() `(,restvar))
-                                  ,@(map (lambda (k t)
-                                           (if (eq? key k) `(cadr ,argvar) t))
-                                         keys tmps))))
-                       keys)
-                (else
-                 ,(cond ((eq? restvar #t)
-                         `(,loop (cddr ,argvar) ,@tmps))
-                        ((eq? restvar #f)
-                         `(begin (,%error/warn "unknown keyword ~S" (car ,argvar))
-                                 (,loop (cddr ,argvar) ,@tmps)))
-                        (else
-                         `(,loop (cddr ,argvar)
-                                 (cons (car ,argvar) (cons (cadr ,argvar) ,restvar))
-                                 ,@tmps)))))))))))
-
-(define-macro (let-keywords arg specs . body)
-  (%let-keywords-rec arg specs body 'let 'errorf))
-
-(define-macro (let-keywords* arg specs . body)
-  (%let-keywords-rec arg specs body 'let* 'warn))
 
 ;;;-------------------------------------------------------------
 ;;; repeat construct

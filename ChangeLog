@@ -1,5 +1,12 @@
 2008-02-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/common-macros.scm, src/autoloads.scm, src/scmlib.scm
+	  (let-optionals*, let-keywords, let-keywords*): moved from
+	  common-macros to scmlib.  This is a step toward supporting
+	  keyword and optional args in VM core.
+
+	* 
+
 	* lib/gauche/test.scm (read-summary): avoid using file-exists?, for
 	  it triggers autoload which may not be tested in the early stage
 	  of testing.

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.17 2008-02-06 06:44:07 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.18 2008-02-26 16:32:21 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -38,6 +38,129 @@
 ;;
 
 (select-module gauche)
+
+;;;=======================================================
+;;; Optional and keyword arguments
+;;;
+
+;; Extended lambda formals (:optional, :key, :rest etc) are
+;; expanded into the call of let-optionals* and let-keywords*
+;; macros within the compiler.  Eventually the handling of the
+;; optional and keyword arguments will be built in the VM.
+
+;; NB: As of 0.8.13, Gauche cannot pre-compile R5RS macro, so
+;; we use legacy macros here.
+
+;; KLUDGE: We need these to include the compiled macro transformer
+;; in the binary.  Will be gone in future.
+(export let-keywords let-keywords* let-optionals*)
+
+(define-macro (let-optionals* arg specs . body)
+  (define (rec arg vars&inits rest)
+    (if (null? vars&inits)
+      (if (null? rest) body `((let ((,rest ,arg)) ,@body)))
+      (let ((g (gensym))
+            (v (caar vars&inits))
+            (i (cdar vars&inits)))
+        ;; NB: if the compiler were more clever, we could use receive
+        ;; or apply to make (null? ,arg) test once.  For now, testing it
+        ;; twice is faster.
+        `((let ((,v (if (null? ,arg) ,i (car ,arg)))
+                (,g (if (null? ,arg) '() (cdr ,arg))))
+            ,@(rec g (cdr vars&inits) rest))))))
+  (let1 g (gensym)
+    `(let ((,g ,arg))
+       ,@(rec g (map (lambda (s)
+                       (cond [(and (pair? s) (pair? (cdr s)) (null? (cddr s)))
+                              (cons (car s) (cadr s))]
+                             [(or (symbol? s) (identifier? s))
+                              (cons s '(undefined))]
+                             [else (error "malformed let-optionals* bindings:"
+                                          specs)]))
+                     specs)
+              (cdr (last-pair specs))))))
+              
+
+(define-macro (let-keywords arg specs . body)
+  (%let-keywords-rec arg specs body 'let 'errorf))
+
+(define-macro (let-keywords* arg specs . body)
+  (%let-keywords-rec arg specs body 'let* 'warn))
+
+(define (%let-keywords-rec arg specs body %let %error/warn)
+  (define (triplet var&default)
+    (or (and-let* ([ (list? var&default) ]
+                   [var (unwrap-syntax (car var&default))]
+                   [ (symbol? var) ])
+          (case (length var&default)
+            [(2) (values (car var&default)
+                         (make-keyword var)
+                         (cadr var&default))]
+            [(3) (values (car var&default)
+                         (unwrap-syntax (cadr var&default))
+                         (caddr var&default))]
+            [else #f]))
+        (error "bad binding form in let-keywords" var&default)))
+  (define (process-specs specs)
+    (let loop ((specs specs)
+               (vars '()) (keys '()) (defaults '()) (tmps '()))
+      (define (finish restvar)
+        (values (reverse! vars)
+                (reverse! keys)
+                (reverse! defaults)
+                (reverse! tmps)
+                restvar))
+      (cond [(null? specs) (finish #f)]
+            [(pair? specs)
+             (receive (var key default) (triplet (car specs))
+               (loop (cdr specs)
+                     (cons var vars)
+                     (cons key keys)
+                     (cons default defaults)
+                     (cons (gensym) tmps)))]
+            [else (finish (or specs #t))])))
+
+  (let ((argvar (gensym "args")) (loop (gensym "loop")))
+    (receive (vars keys defaults tmps restvar) (process-specs specs)
+      `(let ,loop ((,argvar ,arg)
+                   ,@(if (boolean? restvar) '() `((,restvar '())))
+                   ,@(map (cut list <> (undefined)) tmps))
+            (cond
+             [(null? ,argvar)
+              (,%let ,(map (lambda (var tmp default)
+                             `(,var (if (undefined? ,tmp) ,default ,tmp)))
+                           vars tmps defaults)
+                     ,@body)]
+             [(null? (cdr ,argvar))
+              (error "keyword list not even" ,argvar)]
+             [else
+              (case (car ,argvar)
+                ,@(map (lambda (key)
+                         `((,key)
+                           (,loop (cddr ,argvar)
+                                  ,@(if (boolean? restvar)
+                                      '()
+                                      `(,restvar))
+                                  ,@(map (lambda (k t)
+                                           (if (eq? key k)
+                                             `(cadr ,argvar)
+                                             t))
+                                         keys tmps))))
+                       keys)
+                (else
+                 ,(cond [(eq? restvar #t)
+                         `(,loop (cddr ,argvar) ,@tmps)]
+                        [(eq? restvar #f)
+                         `(begin
+                            (,%error/warn "unknown keyword ~S" (car ,argvar))
+                            (,loop (cddr ,argvar) ,@tmps))]
+                        [else
+                         `(,loop
+                           (cddr ,argvar)
+                           (list* (car ,argvar) (cadr ,argvar) ,restvar)
+                           ,@tmps)])))
+              ]))))
+  )
 
 ;;;=======================================================
 ;;; List utilities

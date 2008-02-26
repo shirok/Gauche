@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.52 2008-02-25 05:26:31 shirok Exp $
+;;; $Id: autoloads.scm,v 1.53 2008-02-26 16:32:20 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.52 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.53 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -108,9 +108,7 @@
           (:macro syntax-error) (:macro syntax-errorf)
           (:macro push!) (:macro pop!) (:macro inc!) (:macro dec!)
           (:macro update!)
-          (:macro check-arg)
-          (:macro get-optional) (:macro let-optionals*)
-          (:macro get-keyword*) (:macro let-keywords*) (:macro let-keywords) 
+          (:macro check-arg) (:macro get-optional) (:macro get-keyword*)
           (:macro let1) (:macro if-let1) (:macro rlet1)
           (:macro let/cc) (:macro begin0) (:macro fluid-let)
           (:macro values-ref)
