@@ -1,3 +1,9 @@
+2008-02-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (read-summary): avoid using file-exists?, for
+	  it triggers autoload which may not be tested in the early stage
+	  of testing.
+
 2008-02-24  Shiro Kawai  <shiro@acm.org>
 
 	* various scm files: cosmetic changes and adoption of rlet1.

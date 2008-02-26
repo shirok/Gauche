@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.27 2008-02-04 05:04:48 shirok Exp $
+;;;  $Id: test.scm,v 1.28 2008-02-26 15:37:17 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -126,7 +126,7 @@
           (vector-ref *test-counts* 3)))
 (define (read-summary)
   (when (and (string? *test-record-file*)
-             (file-exists? *test-record-file*))
+             (sys-access *test-record-file* |F_OK|)) ; avoid file-exists? to trigger autoload
     (with-input-from-file *test-record-file*
       (lambda ()
         (let ((m (rxmatch #/Total:\s+(\d+)\s+tests,\s+(\d+)\s+passed,\s+(\d+)\s+failed,\s+(\d+)\s+aborted/ (read-line))))
