@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: dictionary.scm,v 1.1 2007-03-16 12:14:53 shirok Exp $
+;;;  $Id: dictionary.scm,v 1.2 2008-02-27 04:00:11 shirok Exp $
 ;;;
 
 ;; EXPERIMENTAL
@@ -38,7 +38,7 @@
 (define-module gauche.dictionary
   (use gauche.collection)
   (export dict-fold dict-fold-right
-          dict-for-each dict-map dict-map-to
+          dict-for-each dict-map
           dict-keys dict-values)
   )
 (select-module gauche.dictionary)

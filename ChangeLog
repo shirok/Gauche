@@ -1,5 +1,8 @@
 2008-02-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/dictionary.scm: removed undefined dict-map-to from
+	  export list.
+
 	* lib/gauche/common-macros.scm, src/autoloads.scm, src/scmlib.scm
 	  (let-optionals*, let-keywords, let-keywords*): moved from
 	  common-macros to scmlib.  This is a step toward supporting
