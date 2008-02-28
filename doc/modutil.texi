@@ -12215,6 +12215,14 @@ to translate one form to the other.
 チンしかありません。SQLのS式構文を定義して、SQLとその構文との間の変換
 ルーチンを提供する計画です。
 @c COMMON
+
+@c EN
+Note: If you're looking for a routine to escape strings to be
+safe in SQL, see @code{dbi-escape-sql} in @ref{DBI user API}.
+@c JP
+註: SQLに安全に渡せるように文字列をエスケープするルーチンをお探しなら、
+@ref{DBI user API}の@code{dbi-escape-sql}を見てください。
+@c COMMON
 @end deftp
 
 @defun sql-tokenize sql-string
