@@ -312,7 +312,7 @@
         (lambda () (next))))
 
 (define-method call-with-builder ((class <trie-meta>) proc . opts)
-  (let1 trie (apply make-trie (get-keyword opts :trie-options '()))
+  (let1 trie (apply make-trie (get-keyword :trie-options opts '()))
     (proc (lambda (val)
             (unless (pair? val)
               (error "pair required to build a trie, but got" val))

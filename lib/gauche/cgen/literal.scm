@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: literal.scm,v 1.8 2008-02-25 09:55:15 shirok Exp $
+;;;  $Id: literal.scm,v 1.9 2008-03-04 00:57:32 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.literal
@@ -281,7 +281,7 @@
 
 (define-method cgen-literal-static? (self) #t)
 
-(define-method cgen-emit-xtrn ((self <cgen-literal>))
+(define-method cgen-emit-xtrn ((node <cgen-literal>))
   (when (and [@ self'extern?] (cgen-c-name node))
     (print "extern ScmObj " (cgen-c-name node) ";")))
 

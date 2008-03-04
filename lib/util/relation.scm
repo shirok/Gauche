@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: relation.scm,v 1.8 2005-11-24 08:40:00 shirok Exp $
+;;;  $Id: relation.scm,v 1.9 2008-03-04 00:57:32 shirok Exp $
 ;;;
 
 ;;; Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
@@ -147,7 +147,7 @@
 ;; the list of getters, for example.
 (define-method relation-column-getters ((r <relation>))
   (let1 accessor (relation-accessor r)
-    (map (lambda (c) (lambda (row) (acessor row c)))
+    (map (lambda (c) (lambda (row) (accessor row c)))
          (relation-column-names r))))
 
 (define-method relation-column-setters ((r <relation>))

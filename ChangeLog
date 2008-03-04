@@ -1,3 +1,11 @@
+2008-03-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/trie.scm (call-with-builder): incorrect argument order
+	* lib/util/relation.scm (relation-column-getters): typo fix
+	* lib/gauche/cgen/literal.scm (cgen-emit-xtrn): fixed incorrect
+	  variable name.
+	  (Thanks to koguro for the above three fixes.)
+	
 2008-02-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/dictionary.scm: removed undefined dict-map-to from
