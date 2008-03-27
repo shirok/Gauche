@@ -69,7 +69,7 @@ R5RSの健全なマクロは特別なパターン言語に基づいていて、
 @c NODE 伝統的なマクロ
 
 @defspec define-macro name procedure
-@defspecx define-macro (name formals) body @dots{}
+@defspecx define-macro (name . formals) body @dots{}
 @c EN
 Defines @var{name} to be a global macro whose transformer is @var{procedure}.
 The second form is a shorthand notation of the following form:
