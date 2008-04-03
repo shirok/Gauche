@@ -15278,7 +15278,7 @@ Returns a stream which is a delayed form of @var{expr}.
 As a rule of thumb, any stream-producing functions should
 wrap the resulting expression by @code{stream-delay}.
 @c JP
-経験からいうと、ストリームを生成する関数はすべからく結果を
+原則として、ストリームを生成する関数はすべからく結果を
 @code{stream-delay}でラップすべきです。
 @c COMMON
 @end defmac
@@ -15470,28 +15470,94 @@ to @code{(format fmt arg @dots{})}.
 @c COMMON
 @end defun
 
-@defun stream-lines string
-@end defun
-
 @defun stream->list stream
+@defunx stream->string stream
+Converts a stream to a list or a string.  All of @var{stream}'s
+elements are @code{force}d; if @var{stream} is infinite, these
+procedures won't terminate.  For @code{stream->string},
+all @var{stream} must be characters, or an error is signalled.
 @end defun
 
 @defun list->stream list
+Converts a list to a stream of its elements.
 @end defun
 
 @defun string->stream string &optional stream
-@end defun
+Convers a string to a stream of characters.  If an optional
+@var{stream} is given, it becomes the tail of the resulting
+stream.
 
-@defun stream->string stream
+@example
+@end example
+(stream->list (string->stream "abc" (list->stream '(1 2 3))))
+ @result{} (#\a #\b #\c 1 2 3)
 @end defun
 
 @defun port->stream &optional iport reader closer
+Creates a stream, whose elements consist of the items
+read from the input port @var{iport}.
+The default @var{iport} is the current input port.
+The default @var{reader} is @code{read-char}.
+
+The result stream terminates at the point where @var{reader}
+returns EOF (EOF itself is not included in the stream).
+If @var{closer} is given, it is called with @var{iport} as
+an argument just after @var{reader} reads EOF.
 @end defun
 
-@defun iterator->stream proc
+@defun iterator->stream iter
+A generic procedure to turn an internal iterator @var{iter}
+into a stream of iterated results.
+
+The @var{iter} argument is a procedure that takes two arguments,
+@var{next} and @var{end}, where @var{next} is a procedure that takes
+one argument and @var{end} is a thunk.
+@var{Iter} is supposed to iterate over some set and call @var{next}
+for each argument, then call @var{end} to indicate the end of
+the iteration.  Here's a contrived example:
+
+@example
+(stream->list
+ (iterator->stream 
+  (lambda (next end) (for-each next '(1 2 3 4 5)) (end))))
+ @result{} (1 2 3 4 5)
+@end example
+
+Internally @code{iterator->stream} uses the ``inversion of iterator''
+technique, so that @var{iter} only iterates to the element that
+are needed by the stream.  Thus @var{iter} can iterate over 
+an infinite set.  In the following example, @var{iter} is
+an infinite loop calling @var{next} with increasing integers,
+but only the first 10 elements are calculated because of
+@code{stream-take}:
+
+@example
+(stream->list 
+ (stream-take
+  (iterator->stream
+   (lambda (next end)
+     (let loop ((n 0)) (next n) (loop (+ n 1))))) 
+  10))
+ @result{} (0 1 2 3 4 5 6 7 8 9)
+@end example
+@end defun
+
+@defun stream-lines stream
+Splits @var{stream} where its element equals to @code{#\n}, and 
+returns a stream of splitted streams.
+
+@example
+(stream->list 
+ (stream-map stream->string 
+             (stream-lines (string->stream "abc\ndef\nghi"))))
+ @result{} ("abc" "def" "ghi")
+@end example
 @end defun
 
 @defun stream= elt= stream @dots{}
+Returns true iff each corresponding element of @var{stream} @dots{}
+are the same in terms of @var{elt=}.  This procedure won't terminate
+if any of @var{stream}s is infinite.
 @end defun
 
 @defun stream-prefix= stream prefix &optional elt=
