@@ -15561,6 +15561,9 @@ if any of @var{stream}s is infinite.
 @end defun
 
 @defun stream-prefix= stream prefix &optional elt=
+Compares initial elements of @var{stream} against
+a list @var{prefix} by @var{elt=}.  Only as many elements of @var{stream}
+as @var{prefix} has are checked.
 @end defun
 
 @defun stream-caar s
@@ -15593,9 +15596,12 @@ if any of @var{stream}s is infinite.
 @end defun
 @defun stream-cdddar s
 @defunx stream-cddddr s
+@code{(stream-caar s)} = @code{(stream-car (stream-car s))} etc.
 @end defun
 
 @defun stream-ref stream pos
+Returns the @var{pos}-th element in the stream.  @var{Pos}
+must be a nonnegative exact integer.
 @end defun
 
 @defun stream-first s
@@ -15608,17 +15614,48 @@ if any of @var{stream}s is infinite.
 @defunx stream-eighth s
 @defunx stream-ninth s
 @defunx stream-tenth s
+@code{(stream-first s)} = @code{(stream-ref s 0)} etc.
 @end defun
 
 @defun stream-take stream count
 @defunx stream-take-safe stream count
+Returns a new stream that consists of the first @var{count} elements 
+of the given stream.   If the given stream has less than
+@var{count} elements, the stream returned by @code{stream-take} 
+would raise an error when the elements beyond the original stream
+is accessed.  On the other hand, the stream returned by 
+@code{stream-take-safe} will return a shortened stream when
+the given steram has less than @var{count} elements.
+
+@example
+(stream->list (stream-take (stream-iota -1) 10))
+ @result{} (0 1 2 3 4 5 6 7 8 9)
+
+(stream-take (stream 1 2) 5)
+ @result{} @r{stream}
+
+(stream->list (stream-take (stream 1 2) 5))
+ @result{} @r{error}
+
+(stream->list (stream-take-safe (stream 1 2) 5))
+ @result{} (1 2)
+@end example
+
 @end defun
 
 @defun stream-drop stream count
 @defunx stream-drop-safe stream count
+Returns a new stream that consists of the elements in the given 
+stream except the first @var{count} elements.
+If the given stream has less than @var{count} elements,
+@code{stream-drop} returns a stream that raises an error
+if its element is accessed, and @code{stream-drop-safe}
+returns an empty stream.
 @end defun
 
 @defun stream-intersperse stream element
+Returns a new stream in which @var{element} is
+inserted between elements of @var{stream}.
 @end defun
 
 @defun stream-split stream pred
