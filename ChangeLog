@@ -1,3 +1,7 @@
+2008-04-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (main, getopt): fixed argument processing on Windows.
+
 2008-03-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/trie.scm (call-with-builder): incorrect argument order

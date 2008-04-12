@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.102 2007-08-24 23:55:43 shirok Exp $
+ *  $Id: main.c,v 1.103 2008-04-12 01:02:30 shirok Exp $
  */
 
 #define GAUCHE_API_0_9        /* temporary compatibility stuff */
@@ -367,11 +367,11 @@ int main(int argc, char **argv)
         if (argv[optind][0] == '\0') Scm_Error("bad script name");
         if (argv[optind][0] == '/') {
             scriptfile = argv[optind];
-#if defined(__CYGWIN__) || defined(__MINGW32__)
+#if defined(__CYGWIN__) || defined(GAUCHE_WINDOWS)
 	} else if (isalpha(argv[optind][0]) && argv[optind][1] == ':') {
 	    /* support of wicked legacy DOS drive letter */
 	    scriptfile = argv[optind];
-#endif /* __CYGWIN__ || __MINGW32__ */
+#endif /* __CYGWIN__ || GAUCHE_WINDOWS */
         } else {
             if (stat(argv[optind], &statbuf) == 0) {
                 ScmDString ds;
@@ -538,6 +538,7 @@ int getopt(int argc, char **argv, const char *spec)
             if (argv[optind][0] != '-') return -1;
             if (argv[optind][1] == '\0'
                 || (argv[optind][1] == '-' && argv[optind][2] == '\0')) {
+                optind++;
                 return -1;
             }
             /* found an option. */
@@ -557,7 +558,7 @@ int getopt(int argc, char **argv, const char *spec)
                 optarg = NULL;
                 return '?';
             } else {
-                optarg = argv[optind];
+                optarg = argv[++optind];
                 optind++;
                 clusterind = 0;
                 return optchar;
