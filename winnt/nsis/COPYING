@@ -1,0 +1,175 @@
+In short, Gauche is distributed under so called "BSD license",
+that is, as far as you retain the copyrignt notice and disclaimer below,
+you can use, copy, modify and redistribute your modification freely.
+The formal term is specified in each copyright notices.
+
+A few files associated to autoconf and libtool in the distribution are
+covered by GPL, but they have an exception so that I (and you) can
+distribute them under BSD license.  See each file for the detailed term.
+
+
+Copyright and condition of use of main portion of the source:
+-----------------------------------------------------------------------------
+
+  Copyright (c) 2000-2007 Shiro Kawai  <shiro@acm.org>
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
+
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+   3. Neither the name of the authors nor the names of its contributors
+      may be used to endorse or promote products derived from this
+      software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+-----------------------------------------------------------------------------
+
+
+
+Copyright of gc/* -----------------------------------------------------------
+
+    Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
+    Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
+    Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
+    Copyright (c) 1999 by Hewlett-Packard Company. All rights reserved.
+
+    THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
+    OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+
+    Permission is hereby granted to use or copy this program
+    for any purpose,  provided the above notices are retained on all copies.
+    Permission to modify the code and to distribute modified code is granted,
+    provided the above notices are retained, and a notice that the code was
+    modified is included with the above copyright notice.
+
+
+Copyright of lib/srfi-1.scm -------------------------------------------------
+
+;;; Copyright (c) 1998, 1999 by Olin Shivers. You may do as you please with
+;;; this code as long as you do not remove this copyright notice or
+;;; hold me liable for its use. Please send bug reports to shivers@ai.mit.edu.
+
+
+Copyright of lib/srfi-11.scm ------------------------------------------------
+
+;;  Copyright (C) Lars T Hansen (1999). All Rights Reserved. 
+;;
+;;  This document and translations of it may be copied and furnished to
+;;  others, and derivative works that comment on or otherwise explain it
+;;  or assist in its implementation may be prepared, copied, published and
+;;  distributed, in whole or in part, without restriction of any kind,
+;;  provided that the above copyright notice and this paragraph are
+;;  included on all such copies and derivative works. However, this
+;;  document itself may not be modified in any way, such as by removing
+;;  the copyright notice or references to the Scheme Request For
+;;  Implementation process or editors, except as needed for the purpose of
+;;  developing SRFIs in which case the procedures for copyrights defined
+;;  in the SRFI process must be followed, or as required to translate it
+;;  into languages other than English.
+;;
+;;  The limited permissions granted above are perpetual and will not be
+;;  revoked by the authors or their successors or assigns.
+;;
+;;  This document and the information contained herein is provided on an
+;;  "AS IS" basis and THE AUTHOR AND THE SRFI EDITORS DISCLAIM ALL
+;;  WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY
+;;  WARRANTY THAT THE USE OF THE INFORMATION HEREIN WILL NOT INFRINGE ANY
+;;  RIGHTS OR ANY IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A
+;;  PARTICULAR PURPOSE.
+
+
+Copyright of ext/mt-random/mt-random.c ------------------------------------
+
+   Copyright (C) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura,
+   All rights reserved.                          
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions
+   are met:
+
+     1. Redistributions of source code must retain the above copyright
+        notice, this list of conditions and the following disclaimer.
+
+     2. Redistributions in binary form must reproduce the above copyright
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution.
+
+     3. The names of its contributors may not be used to endorse or promote 
+        products derived from this software without specific prior written 
+        permission.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+   EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+Copyright of lib/gauche/reload.scm -------------------------------------
+
+;;;  Copyright(C) 2002 by Alex Shinn <foof@synthcode.com>
+;;;
+;;;  Permission to use, copy, modify, distribute this software and
+;;;  accompanying documentation for any purpose is hereby granted,
+;;;  provided that existing copyright notices are retained in all
+;;;  copies and that this notice is included verbatim in all
+;;;  distributions.
+;;;  This software is provided as is, without express or implied
+;;;  warranty.  In no circumstances the author(s) shall be liable
+;;;  for any damages arising out of the use of this software.
+
+
+Copyright of ext/digest/*, lib/rfc/hmac.scm, lib/util/digest.scm -------
+
+  Copyright (c) 2002-2003 Kimura Fuyuki, All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
+
+  1. Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+
+  3. Neither the name of the authors nor the names of its contributors
+     may be used to endorse or promote products derived from this
+     software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
