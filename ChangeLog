@@ -1,3 +1,15 @@
+2008-04-15  ENDO Yasuyuki  <yasuyuki@kahua.org>
+
+	* winnt/nsis/Makefile (setup.nsi): generate setup.nsi from setup.nsi.in.
+
+	* winnt/nsis/file-list.scm: list Gauche-mingw files and generate NSIS script.
+
+	* winnt/nsis/setup.nsi.in: add. (template for NSIS script)
+
+	* winnt/nsis/README: add.
+
+	* winnt/nsis/gauche-logo.ico: Windows icon file for Gauche.
+
 2008-04-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c (main, getopt): fixed argument processing on Windows.
