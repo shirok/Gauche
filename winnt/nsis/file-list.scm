@@ -10,7 +10,6 @@
 (use gauche.parseopt)
 (use text.tree)
 
-(define *dist-path* "../../../Gauche-mingw-dist/Gauche")
 (define *instdir* "$INSTDIR")
 (define *ignore-path* "CVS")
 (define *target-prefix* "    SetOutPath ")
@@ -20,6 +19,7 @@
 (define *path-separater* "\\")
 (define *root-path* (make-parameter #f))
 (define *file-list* (make-parameter #f))
+(define *current-version* (make-parameter #f))
 
 (define (replace-inst prefix path)
   (regexp-replace (string->regexp prefix)
@@ -34,9 +34,10 @@
 		      (values d
 			      (cons (cons path f) seed))))))
 
-(define (initialize path)
+(define (initialize path version)
   (begin0
    (*root-path* path)
+   (*current-version* version)
    (*file-list*
     (reverse
      (filter
@@ -65,9 +66,12 @@
 
 (define (include line)
   (or
-   (and-let* ((match (#/^##\(include (.*)\)\r\n$/ line))
-	      (exp (call-with-input-string (match 1) (cut read <>))))
-	     (eval exp (current-module)))
+   (and-let* ((match (#/^(.*)##\(include (.*)\)(.*\r\n)$/ line))
+	      (exp (call-with-input-string match2 (cut read <>))))
+	     (print "match1=" match1)
+	     (print "match2=" match2)
+	     (print "match3=" match3)
+	     (list match1 (eval exp (current-module)) match3))
    line))
 
 (define (include-all lis)
@@ -82,11 +86,15 @@
 	    #`",|line|,|*cr-lf*|")))
 
 (define (main args)
-  (let* ((in (cadr args))
-	 (out (path-sans-extension in))
-	 (lines (file->list read-line-crlf in)))
-    (begin
-      (initialize *dist-path*)
-      (call-with-output-file out
-	(cut write-tree (include-all lines) <>))
-      0)))
+  (if (> (length args) 3)
+      (let* ((path (cadr args))
+	     (in (caddr args))
+	     (version (cadddr args))
+	     (out (path-sans-extension in))
+	     (lines (file->list read-line-crlf in)))
+	(begin
+	  (initialize path version)
+	  (call-with-output-file out
+	    (cut write-tree (include-all lines) <>))
+	  0))
+      (print "Usage: gosh " (car args) " <dist-path> <template-file> <gauche-version>")))
