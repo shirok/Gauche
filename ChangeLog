@@ -1,3 +1,16 @@
+2008-04-17  ENDO Yasuyuki  <yasuyuki@kahua.org>
+
+	* winnt/nsis/file-list.scm (include): fix match bug.
+
+	* winnt/nsis/setup.nsi.in: include version from "##(include (*current-version*))".
+
+	* winnt/nsis/Makefile (setup.nsi): add argument <dist-path>, <gauche-version> for file-list.scm.
+	version from `cat ../../VERSION`.
+
+	* winnt/nsis/file-list.scm (*current-version*): add.
+	(main): required args: <dist-path> <template-file> <gauche-version>
+	(include): match inline "##(include exp)" template.
+
 2008-04-15  ENDO Yasuyuki  <yasuyuki@kahua.org>
 
 	* winnt/nsis/Makefile (setup.nsi): generate setup.nsi from setup.nsi.in.
