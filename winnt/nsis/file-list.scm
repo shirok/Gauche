@@ -67,11 +67,8 @@
 (define (include line)
   (or
    (and-let* ((match (#/^(.*)##\(include (.*)\)(.*\r\n)$/ line))
-	      (exp (call-with-input-string match2 (cut read <>))))
-	     (print "match1=" match1)
-	     (print "match2=" match2)
-	     (print "match3=" match3)
-	     (list match1 (eval exp (current-module)) match3))
+	      (exp (call-with-input-string (match 2) (cut read <>))))
+	     (list (match 1) (eval exp (current-module)) (match 3)))
    line))
 
 (define (include-all lis)
