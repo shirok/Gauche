@@ -1,5 +1,11 @@
 2008-04-17  ENDO Yasuyuki  <yasuyuki@kahua.org>
 
+	* winnt/nsis/Makefile (all): add target all.
+	(gen): add target gen.
+	(build): add target build.
+	(clean): add target clean.
+	(MAKENSIS): check makensis.exe.
+
 	* winnt/nsis/file-list.scm (include): fix match bug.
 
 	* winnt/nsis/setup.nsi.in: include version from "##(include (*current-version*))".
