@@ -5,7 +5,7 @@ Name Gauche
 
 # Defines
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 0.8.13
+!define VERSION ##(include (*current-version*))
 !define COMPANY "Kahua Project"
 !define URL http://practical-scheme.net/gauche/
 
@@ -46,7 +46,7 @@ InstallDir $PROGRAMFILES\Gauche
 CRCCheck on
 XPStyle on
 ShowInstDetails show
-VIProductVersion 0.8.13.0
+VIProductVersion ${VERSION}.0
 VIAddVersionKey ProductName Gauche
 VIAddVersionKey ProductVersion "${VERSION}"
 VIAddVersionKey CompanyName "${COMPANY}"
