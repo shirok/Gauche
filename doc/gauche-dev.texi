@@ -9,7 +9,7 @@
 @end direntry
 @c JP
 @setfilename gauche-devj.info
-@settitle Gauche -A-A-A³«È¯¼Ô¥ê¥Õ¥¡¥ì¥ó¥¹$)B$)B$)B
+@settitle Gauche Developers' Reference
 @dircategory The Algorithmic Language Scheme
 @direntry
 * Gauche Developers' Reference (ja): (gauche-devj.info).	Internals of Gauche
@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.30 2007-04-13 11:15:36 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.31 2008-04-18 11:09:23 shirok Exp $
 
 @iftex
 @finalout
@@ -28,7 +28,7 @@
 @c EN
 @title Gauche Developers' Reference
 @c JP
-@title Gauche -A-A-A³«È¯¼Ô¥ê¥Õ¥¡¥ì¥ó¥¹$)B$)B$)B
+@title Gauche Developers' Reference
 @c COMMON
 @subtitle version @VERSION@
 @author Shiro Kawai (shiro@@acm.org)
@@ -42,17 +42,10 @@ Copyright @copyright{} 2005 Shiro Kawai (shiro@@acm.org)
 @node Top, Introduction, (dir), (dir)
 
 @ifnottex
-@c EN
 This document explains the internal guts of Gauche
 for developers who want to extend Gauche functionality in C, 
 or to embed Gauche to other applications.
 This manual is for version @VERSION@.
-@c JP
--A-A-AËÜ½ñ¤Ï¡¢Gauche¤Îµ¡Ç½¤òC¤Ç³ÈÄ¥¤·¤¿¤ê¡¢Gauche¤òÂ¾¤Î¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¤Ë$)B$)B$)B
--A-A-AËä¤á¹þ¤à¤È¤¤¤Ã¤¿¤³¤È¤ò¹Ô¤¦³«È¯¼Ô¤Î¤¿¤á¤Ë¡¢$)B$)B$)B
-Gauche-A-A-A¤ÎÆâÉô¹½Â¤¤òÀâÌÀ¤¹¤ë¤â¤Î¤Ç¤¹¡£$)B$)B$)B
-Gauche-A-A-A¤Î¥Ð¡¼¥¸¥ç¥ó@VERSION@¤ËÂÐ±þ¤·¤Þ¤¹¡£$)B$)B$)B
-@c COMMON
 @end ifnottex
 
 @menu
@@ -779,7 +772,7 @@ Scheme complex numbers are represented as compnum, by
 a @code{ScmCompnum} structure.
 @end table
 
-It is important not to confuse these @emph{representations} and
+It is important to not confuse these @emph{representations} and
 Scheme numeric hierarchy: A Scheme real number can be represented
 in either flonum, ratnum, bignum or fixnum, for example.
 For each possible Scheme numeric type and exactness, the possible
@@ -3388,7 +3381,7 @@ file
 @c ======================================================================
 @node Indices,  , Helper program reference, Top
 @appendix Indices
-@c NODE -A-A-Aº÷°ú$)B$)B$)B
+@c NODE -Aº÷°ú$)B
 
 @menu
 * Function and Macro Index::    
