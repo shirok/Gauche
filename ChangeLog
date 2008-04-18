@@ -1,5 +1,12 @@
 2008-04-18  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-package.in ("compile"): added --local option to
+	  the 'compile' command to add local include paths and local library
+	  search paths conveniently.
+	* ext/template.configure.ac, ext/template.Makefile.in:
+	  added --with-local configure option that propagates to --local
+	  option of gauche-package.
+
 	* lib/gauche/process.scm (shell-escape-string): Added a utility
 	  function.
 	

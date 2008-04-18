@@ -1,5 +1,5 @@
 #
-# $Id: template.Makefile.in,v 1.7 2007-08-10 06:16:44 shirok Exp $
+# $Id: template.Makefile.in,v 1.8 2008-04-18 12:36:26 shirok Exp $
 #
 
 # General info
@@ -24,6 +24,7 @@ INSTALL        = @GAUCHE_INSTALL@
 SOEXT  = @SOEXT@
 OBJEXT = @OBJEXT@
 EXEEXT = @EXEEXT@
+LOCAL_PATHS = @LOCAL_PATHS@
 
 # Module-specific stuff
 PACKAGE   = @@package@@
@@ -46,7 +47,8 @@ GAUCHE_PKGARCHDIR = $(DESTDIR)@GAUCHE_PKGARCHDIR@
 all : $(TARGET)
 
 @@extname@@.$(SOEXT): $(@@extname@@_SRCS)
-	$(GAUCHE_PACKAGE) compile --verbose @@extname@@ $(@@extname@@_SRCS)
+	$(GAUCHE_PACKAGE) compile \
+	  --local=$(LOCAL_PATHS) --verbose @@extname@@ $(@@extname@@_SRCS)
 
 check : all
 	@rm -f test.log
