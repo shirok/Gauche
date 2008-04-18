@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.31 2008-02-25 08:42:57 shirok Exp $
+;;;  $Id: process.scm,v 1.32 2008-04-18 11:06:01 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -40,6 +40,7 @@
   (use srfi-1)
   (use srfi-2)
   (use srfi-13)
+  (use srfi-14)
   (export <process> <process-abnormal-exit>
           run-process process? process-alive? process-pid
           process-command process-input process-output process-error
@@ -52,6 +53,8 @@
           with-input-from-process   with-output-to-process
           call-with-process-io
           process-output->string    process-output->string-list
+          ;; shell utilities
+          shell-escape-string
           ))
 (select-module gauche.process)
 
@@ -361,6 +364,32 @@
 
 (define (process-output->string-list command . opts)
   (apply call-with-input-process command port->string-list opts))
+
+;;---------------------------------------------------------------------
+;; Shell utility
+;;
+
+(define (shell-escape-string str)
+  (cond-expand
+   [gauche.os.windows
+    ;; There seems no reliable way to escape command line arguments on
+    ;; windows, since the parsing is up to every application.  However,
+    ;; the standard C runtime seems to obey that (a) whitespaces can be
+    ;; embedded if the argument is surrounded by double quotes, and (b)
+    ;; within double-quotes, consecutive two double-quotes are replaced
+    ;; for one double-quote.
+    (cond [(string-null? str) "\"\""]
+          [(string-index str #[\s\"])
+           (string-append "\"" (regexp-replace-all #/\"/ str "\"\"") "\"")]
+          [else str])]
+   [else
+    ;; We follow standard unix shell convention: if STR contains special
+    ;; chars, we quote the entire STR by single-quotes.  If STR contains
+    ;; a single quote, we replace it with '"'"'.
+    (cond [(string-null? str) "''"]
+          [(string-index str #[\s\\\"\'*?$<>!\[\](){}])
+           (string-append "'" (regexp-replace-all #/'/ str "'\"'\"'") "'")]
+          [else str])]))
 
 ;;----------------------------------------------------------------------
 ;; Internal utilities for process ports

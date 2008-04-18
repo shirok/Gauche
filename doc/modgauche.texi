@@ -7018,14 +7018,25 @@ running subprocess, and a process object.
 
 @c EN
 @var{Command} can be a string or a list.
+
 If it is a string, it is passed to @code{/bin/sh}.
 You can use shell metacharacters in this form, such as
 environment variable interpolation, globbing, and redirections.
+If you create the command line by concatenating strings,
+it's your responsibility to ensure escaping special characters
+if you don't want the shell to interpret them.  
+The @code{shell-escape-string} function described below might
+be a help.
 @c JP
 @var{command}は文字列かリストです。
+
 文字列の場合、それは@code{/bin/sh}に渡されます。
 環境変数の置換やグロブパターン、リダイレクトなどのシェルの機能が
 文字列中で使えます。
+文字列をつなぎ合わせてコマンドラインを作成する場合、
+特殊文字をシェルに解釈してほしくなければ、それを正しくエスケープするのは
+呼び出し元の責任です。下で説明する@code{shell-escape-string}は
+助けになるかもしれません。
 @c COMMON
 
 @c EN
@@ -7033,12 +7044,14 @@ If @var{command} is a list, each element is converted to a
 string by @code{x->string} and then passed directly to @code{sys-exec}
 (the @code{car} of the list is used as both the command path
 and the first element of argv, i.e. @code{argv[0]}).
-Use this form if you want to avoid the shell from interfering.
+Use this form if you want to avoid the shell from interfering;
+i.e. you don't need to escape special characters.
 @c JP
 @var{command}がリストの場合は、各要素が@code{x->string}で文字列に
 変換された後に、@code{sys-exec}を使って直接コマンドを起動します
 (リストの@code{car}がコマンドのパス名と@code{argv[0]}の両方に使われます)。
 シェルの介入を避けたい場合はこの形式を使うと良いでしょう。
+特殊文字をエスケープする必要はありません。
 @c COMMON
 
 @c EN
@@ -7309,6 +7322,34 @@ to which keyword arguments are passed.
   @result{} ("a.out" "foo.c" "foo.c~" "foo.o")
 @end example
 
+@end defun
+
+@defun shell-escape-string arg
+@c EN
+If @var{arg} contains characters that affects shell's command-line
+argument parsing, escape @var{arg} to avoid shell's interpretation.
+Otherwise, returns @var{arg} itself.
+
+Use this procedure when you need to build a command-line string by yourself.
+(If you pass a command-line argument list, instead of a single
+command-line string, you don't need to escape them since we
+bypass the shell.)
+
+On Windows native build, this procedure is compatible to
+the argument parsing convention of Windows standard C runtime.
+@c JP
+@var{arg}がシェルのコマンドライン引数解析に影響を与える文字を含んでいる場合、
+それらがシェルによって解釈されないようにエスケープされた文字列を返します。
+そうでなければ@var{arg}自体を返します。
+
+自分でコマンドライン文字列を組み立てる必要がある場合に使ってください。
+(単一のコマンドライン文字列でなく、コマンドライン引数のリストを渡す場合は
+エスケープの必要はありません。引数はシェルを通さずに子プロセスに渡される
+からです。)
+
+Windowsネイティブビルドの場合、この手続きはWindowsの標準Cランタイムの
+引数解析に合わせてあります。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------

@@ -354,4 +354,27 @@
              (s (call-with-input-file "test.o" port->string-list)))
          (equal? r s)))
 
+(cond-expand
+ [gauche.os.windows
+  (test* "shell-escape-string" "\"\"" (shell-escape-string ""))
+  (test* "shell-escape-string" "abc" (shell-escape-string "abc"))
+  (test* "shell-escape-string" "\"a b c\"" (shell-escape-string "a b c"))
+  (test* "shell-escape-string" "\"a \"\"b\"\" c\""
+         (shell-escape-string "a \"b\" c"))
+  ]
+ [else
+  (test* "shell-escape-string" "''" (shell-escape-string ""))
+  (test* "shell-escape-string" "abc" (shell-escape-string "abc"))
+  (test* "shell-escape-string" "'a b c'" (shell-escape-string "a b c"))
+  (test* "shell-escape-string" "'$abc'" (shell-escape-string "$abc"))
+  (test* "shell-escape-string" "'[abc]'" (shell-escape-string "[abc]"))
+  (test* "shell-escape-string" "'\\abc'" (shell-escape-string "\\abc"))
+  (test* "shell-escape-string" "'>abc'" (shell-escape-string ">abc"))
+  (test* "shell-escape-string" "'<abc'" (shell-escape-string "<abc"))
+  (test* "shell-escape-string" "'a\"b\"c'" (shell-escape-string "a\"b\"c"))
+  (test* "shell-escape-string" "'a(b)c'" (shell-escape-string "a(b)c"))
+  (test* "shell-escape-string" "'a{b}c'" (shell-escape-string "a{b}c"))
+  (test* "shell-escape-string" "'a'\"'\"'c'" (shell-escape-string "a'c"))
+  ])
+
 (test-end)

@@ -1,10 +1,17 @@
+2008-04-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (shell-escape-string): Added a utility
+	  function.
+	
 2008-04-18  ENDO Yasuyuki  <yasuyuki@kahua.org>
 
-	* winnt/nsis/setup.nsi (VIProductVersion): get version from ##(incdude (*current-version*)) macro.
+	* winnt/nsis/setup.nsi (VIProductVersion): get version from
+	##(incdude (*current-version*)) macro.
 
 	* winnt/nsis/file-list.scm (main): check path exists.
 
-	* winnt/nsis/Makefile (GAUCHE_VERSION): hide error message if ../../VVERSION not exists.
+	* winnt/nsis/Makefile (GAUCHE_VERSION): hide error message if
+	../../VVERSION not exists.
 
 2008-04-17  ENDO Yasuyuki  <yasuyuki@kahua.org>
 
@@ -16,9 +23,11 @@
 
 	* winnt/nsis/file-list.scm (include): fix match bug.
 
-	* winnt/nsis/setup.nsi.in: include version from "##(include (*current-version*))".
+	* winnt/nsis/setup.nsi.in: include version from
+	  "##(include (*current-version*))".
 
-	* winnt/nsis/Makefile (setup.nsi): add argument <dist-path>, <gauche-version> for file-list.scm.
+	* winnt/nsis/Makefile (setup.nsi): add argument <dist-path>,
+	<gauche-version> for file-list.scm.
 	version from `cat ../../VERSION`.
 
 	* winnt/nsis/file-list.scm (*current-version*): add.
@@ -27,9 +36,11 @@
 
 2008-04-15  ENDO Yasuyuki  <yasuyuki@kahua.org>
 
-	* winnt/nsis/Makefile (setup.nsi): generate setup.nsi from setup.nsi.in.
+	* winnt/nsis/Makefile (setup.nsi): generate setup.nsi from
+	setup.nsi.in.
 
-	* winnt/nsis/file-list.scm: list Gauche-mingw files and generate NSIS script.
+	* winnt/nsis/file-list.scm: list Gauche-mingw files and generate
+	NSIS script.
 
 	* winnt/nsis/setup.nsi.in: add. (template for NSIS script)
 
