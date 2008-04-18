@@ -89,9 +89,11 @@
 	     (version (cadddr args))
 	     (out (path-sans-extension in))
 	     (lines (file->list read-line-crlf in)))
-	(begin
-	  (initialize path version)
-	  (call-with-output-file out
-	    (cut write-tree (include-all lines) <>))
-	  0))
+	(if (file-exists? path)
+	    (begin
+	      (initialize path version)
+	      (call-with-output-file out
+		(cut write-tree (include-all lines) <>)))
+	    (print "Path not exists: " path))
+	0)
       (print "Usage: gosh " (car args) " <dist-path> <template-file> <gauche-version>")))

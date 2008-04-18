@@ -46,7 +46,7 @@ InstallDir $PROGRAMFILES\Gauche
 CRCCheck on
 XPStyle on
 ShowInstDetails show
-VIProductVersion ${VERSION}.0
+VIProductVersion ##(include (*current-version*)).0
 VIAddVersionKey ProductName Gauche
 VIAddVersionKey ProductVersion "${VERSION}"
 VIAddVersionKey CompanyName "${COMPANY}"
