@@ -1,5 +1,10 @@
 2008-04-18  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac (RPATH_FLAG): substitutes RPATH_FLAG for
+	  system-dependent compiler flags to embed library paths in the
+	  DSO.  "-Wl,--rpath -Wl," for Linux, for example.
+	* src/genconfig (--rpath-flag): A new flag to return RPATH_FLAG info.
+	
 	* src/gauche-package.in ("compile"): added --local option to
 	  the 'compile' command to add local include paths and local library
 	  search paths conveniently.

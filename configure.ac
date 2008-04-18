@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.111 2008-02-13 15:32:09 shirok Exp $
+dnl $Id: configure.ac,v 1.112 2008-04-18 15:19:45 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.13, shiro@acm.org)
-AC_REVISION($Revision: 1.111 $)
+AC_REVISION($Revision: 1.112 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -605,6 +605,7 @@ AC_SUBST(MAKEVERSLINK)
 AC_MSG_RESULT($SHLIB_OK)
 
 dnl Check to see if the linker takes --rpath flag via -Wl.
+RPATH_FLAG=
 if test "$try_rpath" = "yes"; then
   cflags_save="$CFLAGS"
   CFLAGS="$CFLAGS -Wl,--rpath -Wl,/"
@@ -614,8 +615,7 @@ if test "$try_rpath" = "yes"; then
                    ac_cv_linker_rpath_flag=no)])
   CFLAGS="$cflags_save"
   if test "$ac_cv_linker_rpath_flag" = "yes"; then
-    RPATH_TMP='-Wl,--rpath "-Wl,`pwd`"'
-    RPATH_REAL='-Wl,--rpath "-Wl,$(LIB_INSTALL_DIR)"'
+    RPATH_FLAG='-Wl,--rpath -Wl,'
   else
     # solaris' ld uses -R instead of --rpath
     CFLAGS="$CFLAGS -Wl,-R -Wl,/"
@@ -624,11 +624,15 @@ if test "$try_rpath" = "yes"; then
                    ac_cv_linker_rpath_flag=no)
     CFLAGS="$cflags_save"
     if test "$ac_cv_linker_rpath_flag" = "yes"; then
-      RPATH_TMP='-Wl,-R "-Wl,`pwd`"'
-      RPATH_REAL='-Wl,-R "-Wl,$(LIB_INSTALL_DIR)"'
+      RPATH_FLAG='-Wl,-R -Wl,'
     fi
   fi
+  if test "$RPATH_FLAG" != ""; then
+    RPATH_TMP=$RPATH_FLAG'`pwd`'
+    RPATH_REAL=$RPATH_FLAG'$(LIB_INSTALL_DIR)'
+  fi
 fi
+AC_SUBST(RPATH_FLAG)
 AC_SUBST(RPATH_TMP)
 AC_SUBST(RPATH_REAL)
 

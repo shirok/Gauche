@@ -30,20 +30,21 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-package.in,v 1.14 2008-04-18 12:36:26 shirok Exp $
+;;;  $Id: gauche-package.in,v 1.15 2008-04-18 15:19:49 shirok Exp $
 ;;;
 
+(use gauche.collection)
+(use gauche.config)
+(use gauche.package)
+(use gauche.parseopt)
+(use gauche.process)
+(use gauche.version)
 (use srfi-1)
 (use srfi-13)
-(use gauche.parseopt)
-(use gauche.version)
-(use gauche.package)
-(use gauche.collection)
-(use gauche.process)
-(use file.util)
 (use file.filter)
-(use util.list)
+(use file.util)
 (use text.tr)
+(use util.list)
 
 (autoload gauche.package.build
           gauche-package-build)
@@ -306,20 +307,21 @@ Options:
            (string-join (map (lambda (path)
                                (shell-escape-string (build-path path subdir)))
                              (string-split local #\:))
-                        #`" ,prefix " 'prefix)))
+                        #`" ,prefix" 'prefix)))
     ;; preprocess parameters.
     ;; if parameter is not given, look at the named environment variable.
-    (define (param given envname additional)
-      (let1 v (or given (sys-getenv envname))
-        (cond [(and v additional) (string-join (list v additional))]
-              [v v]
-              [else additional])))
+    (define (param given envname . additionals)
+      (let1 v
+          (filter values (cons (or given (sys-getenv envname)) additionals))
+        (and (not (null? v)) (string-join v))))
     
-    (let ((cc       (param cc "CC" #f))
+    (let ((cc       (param cc "CC"))
           (cppflags (param cppflags "CPPFLAGS" (local-paths "-I" "include")))
-          (cflags   (param cflags   "CFLAGS" #f))
-          (ldflags  (param ldflags  "LDFLAGS"  (local-paths "-L" "lib")))
-          (libs     (param libs     "LIBS" #f)))
+          (cflags   (param cflags   "CFLAGS"))
+          (ldflags  (param ldflags  "LDFLAGS"
+                           (local-paths "-L" "lib")
+                           (local-paths (gauche-config "--rpath-flag") "lib")))
+          (libs     (param libs     "LIBS")))
       (cond
        [clean
         (unless (null? args)

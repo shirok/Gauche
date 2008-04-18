@@ -3,7 +3,7 @@
 #
 # Generates gauche-config.c and gauche/arch.h
 #
-# $Id: genconfig.in,v 1.15 2008-02-03 13:07:47 shirok Exp $
+# $Id: genconfig.in,v 1.16 2008-04-18 15:19:49 shirok Exp $
 #
 
 # TODO: we have almost exactly the same table in gauche-config.c part
@@ -70,6 +70,7 @@ default_cflags="@DEFAULT_CFLAGS@"
 
 object_suffix="@OBJEXT@"
 executable_suffix="@EXEEXT@"
+rpath_flag="@RPATH_FLAG@"
 shlib_so_suffix="@SHLIB_SO_SUFFIX@"
 shlib_so_cflags="@SHLIB_SO_CFLAGS@"
 shlib_so_ldflags="@SHLIB_SO_LDFLAGS@"
@@ -150,6 +151,8 @@ static void usage (void) {
         "       Suffix for dynamically linked libraries\\n"
         "  --dylib-ldflags\\n"
         "       LDFLAGS to create dynamically linked libraries\\n"
+        "  --rpath-flag\\n"
+        "       Compiler flag(s) to embed RPATH\\n"
         "  --fixup-extension FILE [MODULE]\\n"
         "       creates FILE_head.c and FILE_tail.c.  They are required for GC\\n"
         "       to work properly on some platforms.  MODULE must be the extension\\n"
@@ -193,6 +196,7 @@ static struct cmd_rec {
 
     { "--object-suffix",  "$object_suffix" },
     { "--executable-suffix", "$executable_suffix" },
+    { "--rpath-flag",     "$rpath_flag" },
     { "--so-suffix",      "$shlib_so_suffix" },
     { "--so-cflags",      "$shlib_so_cflags" },
     { "--so-ldflags",     "$shlib_so_ldflags" },
@@ -396,6 +400,7 @@ cat > ../lib/gauche/config.scm <<EOF
 
     ("--object-suffix"   "$object_suffix")
     ("--executable-suffix"  "$executable_suffix")
+    ("--rpath-flag"      "$rpath_flag")
     ("--so-suffix"       "$shlib_so_suffix")
     ("--so-cflags"       "$shlib_so_cflags")
     ("--so-ldflags"      "$shlib_so_ldflags")
