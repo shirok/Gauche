@@ -193,6 +193,13 @@ if [ "$mingw" = "yes" ]; then
   maintainer_clean
   distdir=`pwd`/../Gauche-mingw-dist
   rm -rf $distdir
+  makensis_path=`which makensis.exe 2> /dev/null`
+  if test -e "$makensis_path"; then
+      echo "NSIS compiler exists: $makensis_path"
+      cd winnt/nsis
+      make clean
+      cd ../../
+  fi
   ./DIST gen
   ./configure --build=i686-pc-mingw32 --prefix=$distdir/Gauche
   check_version
@@ -210,6 +217,11 @@ if [ "$mingw" = "yes" ]; then
   cp COPYING $distdir/Gauche
   cp $mingwdir/bin/mingwm10.dll $distdir/Gauche/bin
   (cd $distdir; zip -r Gauche-mingw-$VERSION.zip Gauche)
+  if test -e "$makensis_path"; then
+      echo "NSIS compiler exists: $makensis_path"
+      cd winnt/nsis
+      make
+  fi
 fi
 
 # Windows/VC preparation
