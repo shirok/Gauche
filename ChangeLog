@@ -1,3 +1,11 @@
+2008-04-18  ENDO Yasuyuki  <yasuyuki@kahua.org>
+
+	* winnt/nsis/setup.nsi (VIProductVersion): get version from ##(incdude (*current-version*)) macro.
+
+	* winnt/nsis/file-list.scm (main): check path exists.
+
+	* winnt/nsis/Makefile (GAUCHE_VERSION): hide error message if ../../VVERSION not exists.
+
 2008-04-17  ENDO Yasuyuki  <yasuyuki@kahua.org>
 
 	* winnt/nsis/Makefile (all): add target all.
