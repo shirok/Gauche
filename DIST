@@ -191,15 +191,13 @@ if [ "$mingw" = "yes" ]; then
        exit 1;;
   esac
   maintainer_clean
-  distdir=`pwd`/../Gauche-mingw-dist
-  rm -rf $distdir
   makensis_path=`which makensis.exe 2> /dev/null`
   if test -e "$makensis_path"; then
       echo "NSIS compiler exists: $makensis_path"
-      cd winnt/nsis
-      make clean
-      cd ../../
+      (cd winnt/nsis; make clean)
   fi
+  distdir=`pwd`/../Gauche-mingw-dist
+  rm -rf $distdir
   ./DIST gen
   ./configure --build=i686-pc-mingw32 --prefix=$distdir/Gauche
   check_version

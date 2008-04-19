@@ -1,3 +1,7 @@
+2008-04-19  ENDO Yasuyuki <yasuyuki@kahua.org>
+
+	* DIST: fix winnt/nsis make clean bug.
+
 2008-04-18  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac (RPATH_FLAG): substitutes RPATH_FLAG for
