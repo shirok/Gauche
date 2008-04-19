@@ -6,7 +6,7 @@ NSIS installer-script generator for Gauche-mingw.
 - gauche-logo.ico (Windows icon)
 - setup.nsi.in (script template for NSIS)
 - file-list.scm (listing Gauche-mingw files and generate a Install-script)
-- Makefile (make setup.nsi script-file)
+- Makefile (make setup.nsi script-file, build Gauche-win32-<version>.exe)
 
 * requirements
 
@@ -17,11 +17,20 @@ NSIS installer-script generator for Gauche-mingw.
 
 * how to build
 
+** add NSIS path in PATH
+
+ex.
+ export PATH=/cygdrive/c/Program\ Files/NSIS:$PATH
+
 ** build Gauche-mingw
 
  ./DIST mingw
 
+if PATH contains makensis.exe, build Gauche-win32-<version>.exe.
+
 ** generate setup.nsi
+
+if PATH not contains makensis.exe, you should generate setup.nsi manualy.
 
  cd winnt/nsis
  make
