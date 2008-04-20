@@ -2,8 +2,12 @@
 
 	* src/hash.c (Scm_HashTableAdd): Typo fix in the error message.
 
-	* ext/charconv/jconv.c (jconv): Une Scm_Panic instead of Scm_Error
+	* ext/charconv/jconv.c (jconv): Use Scm_Panic instead of Scm_Error
 	  in the logically unreachable code within the critical section.
+
+	* src/gauche/mingw-compat.h: Removed, for this is replaced by
+	  win-compat.h
+	* src/Makefile.in: install win-compat.h instead of mingw-compat.h.
 
 2008-04-19  ENDO Yasuyuki <yasuyuki@kahua.org>
 
