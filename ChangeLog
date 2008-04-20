@@ -1,5 +1,8 @@
 2008-04-19  Shiro Kawai  <shiro@acm.org>
 
+	* src/parameter.c (Scm__VMParameterTableInit): Potentially allocating
+	  too few elements.
+
 	* src/hash.c (Scm_HashTableAdd): Typo fix in the error message.
 
 	* ext/charconv/jconv.c (jconv): Use Scm_Panic instead of Scm_Error

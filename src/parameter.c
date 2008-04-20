@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: parameter.c,v 1.9 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: parameter.c,v 1.10 2008-04-20 01:32:07 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -78,7 +78,7 @@ void Scm__VMParameterTableInit(ScmVMParameterTable *table,
 
     if (base) {
         table->vector = SCM_NEW_ARRAY(ScmObj, base->parameters.numAllocated);
-        table->ids = SCM_NEW_ATOMIC2(int*, PARAMETER_INIT_SIZE*sizeof(int));
+        table->ids = SCM_NEW_ATOMIC2(int*, base->parameters.numAllocated*sizeof(int));
         table->numAllocated = base->parameters.numAllocated;
         table->numParameters = base->parameters.numParameters;
         for (i=0; i<table->numParameters; i++) {
