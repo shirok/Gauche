@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: jconv.c,v 1.22 2007-09-11 12:29:37 shirok Exp $
+ *  $Id: jconv.c,v 1.23 2008-04-20 01:18:43 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -975,7 +975,8 @@ static size_t jis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
             *outchars = 1;
             return 1+inoffset;
         default:
-            Scm_Error("internal state of ISO2022-JP -> EUC_JP got messed up (%d).  Implementation error?", cinfo->istate);
+            /* Can't be here */
+            Scm_Panic("internal state of ISO2022-JP -> EUC_JP got messed up (%d).  Implementation error?", cinfo->istate);
         }
     }
     return ILLEGAL_SEQUENCE;
@@ -1010,7 +1011,8 @@ static size_t jis_ensure_state(ScmConvInfo *cinfo, int newstate, size_t outbytes
     case JIS_0212:
         escseq = "\033$(D"; esclen = 4; break;
     default:
-        Scm_Error("something wrong in jis_ensure_state: implementation error?");
+        /* Can't be here */
+        Scm_Panic("something wrong in jis_ensure_state: implementation error?");
         return 0;               /* dummy */
     }
     OUTCHK(esclen + outbytes);

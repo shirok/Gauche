@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.58 2007-08-24 23:55:42 shirok Exp $
+ *  $Id: hash.c,v 1.59 2008-04-20 01:18:44 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -873,7 +873,7 @@ ScmHashEntry *Scm_HashTableAdd(ScmHashTable *ht, ScmObj key, ScmObj value)
     ScmDictEntry *e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(ht),
                                          (intptr_t)key, SCM_DICT_CREATE);
     if (sizeof(intptr_t) != sizeof(void*)) {
-        Scm_Error("[internal] Scm_HashTableGet is obsoleted on this platform.  You should use the new hashtable API.");
+        Scm_Error("[internal] Scm_HashTableAdd is obsoleted on this platform.  You should use the new hashtable API.");
     }
     if (!e->value) (void)SCM_DICT_SET_VALUE(e, value);
     return (ScmHashEntry*)e;
@@ -884,7 +884,7 @@ ScmHashEntry *Scm_HashTablePut(ScmHashTable *ht, ScmObj key, ScmObj value)
     ScmDictEntry *e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(ht),
                                          (intptr_t)key, SCM_DICT_CREATE);
     if (sizeof(intptr_t) != sizeof(void*)) {
-        Scm_Error("[internal] Scm_HashTableGet is obsoleted on this platform.  You should use the new hashtable API.");
+        Scm_Error("[internal] Scm_HashTablePut is obsoleted on this platform.  You should use the new hashtable API.");
     }
     (void)SCM_DICT_SET_VALUE(e, value);
     return (ScmHashEntry*)e;

@@ -1,3 +1,10 @@
+2008-04-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_HashTableAdd): Typo fix in the error message.
+
+	* ext/charconv/jconv.c (jconv): Une Scm_Panic instead of Scm_Error
+	  in the logically unreachable code within the critical section.
+
 2008-04-19  ENDO Yasuyuki <yasuyuki@kahua.org>
 
 	* DIST: fix winnt/nsis make clean bug.

@@ -12226,10 +12226,10 @@ Actually, @var{glob} is simply written like this:
 @end example
 
 @c EN
-The meaning of @var{pattern}, @var{separator} and @var{lister}
+The meaning of @var{pattern}, @var{separator} and @var{folder}
 is the same as explained above.  
 @c JP
-@var{pattern}、@var{separator}および@var{lister}の意味を前述のものと同
+@var{pattern}、@var{separator}および@var{folder}の意味を前述のものと同
 じです。
 @c COMMON
 
