@@ -1,3 +1,7 @@
+2008-04-21  ENDO Yasuyuki  <yasuyuki@kahua.org>
+
+	* winnt/nsis/setup.nsi.in: add language English.
+
 2008-04-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/parameter.c (Scm__VMParameterTableInit): Potentially allocating
