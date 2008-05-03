@@ -738,17 +738,26 @@ Returns an exact integer only if all the given numbers are exact integers.
 
 @defun exp z
 @defunx log z
+@defunx log z1 z2
 @defunx sin z
 @defunx cos z
 @defunx tan z
 @defunx asin z
 @defunx acos z
 @defunx atan z
-[R5RS]
+[R5RS][R6RS]
 @c EN
 Transcendental functions.  Work for complex numbers as well.
 @c JP
 超越関数です。複素数も扱えます。
+@c COMMON
+
+@c EN
+The two-argument version of @code{log} is added in R6RS, and returns
+base-@var{z2} logarithm of @var{z1}.
+@c JP
+2引数の@code{log}はR6RSで追加されたもので、@var{z2}を底とした@var{z1}の対数を
+返します。
 @c COMMON
 @end defun
 

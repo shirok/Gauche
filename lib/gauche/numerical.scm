@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: numerical.scm,v 1.22 2007-12-25 12:00:42 shirok Exp $
+;;;  $Id: numerical.scm,v 1.23 2008-05-03 18:04:45 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -101,10 +101,12 @@
         [(complex? z) (make-polar (%exp (real-part z)) (imag-part z))]
         [else (error "number required, but got" z)]))
 
-(define-in-module scheme (log z)
-  (cond [(real? z) (%log z)]
-        [(complex? z) (make-rectangular (%log (magnitude z)) (angle z))]
-        [else (error "number required, but got" z)]))
+(define-in-module scheme (log z . base)
+  (if (null? base)
+    (cond [(real? z) (%log z)]
+          [(complex? z) (make-rectangular (%log (magnitude z)) (angle z))]
+          [else (error "number required, but got" z)])
+    (/ (log z) (log (car base)))))  ; R6RS addition
 
 (define-in-module scheme (sqrt z)
   (cond [(real? z) (%sqrt z)]

@@ -1,3 +1,9 @@
+2008-05-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/numerical.scm (scheme): added two-argument log support.
+	  (log z b) is base-b logarithm of z, i.e. (/ (log z) (log b)).  This
+	  is an R6RS addition.
+
 2008-04-28  ENDO Yasuyuki  <yasuyuki@kahua.org>
 
 	* winnt/nsis/setup.nsi.in: delete gauche-logo.ico
