@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.64 2008-02-03 11:56:00 shirok Exp $
+# $Id: Makefile.in,v 1.65 2008-05-04 18:38:11 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check pre-package install uninstall \
@@ -17,6 +17,7 @@ datarootdir = @datarootdir@
 
 SUBDIRS = gc src lib ext doc
 SRIDBUS = doc ext lib src gc
+LIBATOMICDIR = gc/libatomic_ops-1.2
 MKINSTDIR = @top_srcdir@/mkinstalldirs
 INSTALL = @INSTALL@
 GAUCHE_VERSION  = @GAUCHE_VERSION@
@@ -94,18 +95,22 @@ uninstall:
 	rm -f $(datadir)/aclocal/gauche.m4
 
 # Cleaning ---------------------------------------------
-
+#  NB: we don't run maintainer-clean in $(LIBATOMICDIR) to avoid
+#      dealing with automake.
 clean:
 	rm -rf test.log test.record core Gauche.framework *~
 	for d in $(SRIDBUS); do (cd $$d; $(MAKE) clean); done
+	if test -f $(LIBATOMICDIR)/Makefile; then (cd $(LIBATOMICDIR); $(MAKE) clean); fi
 
 distclean: clean
 	for d in $(SRIDBUS); do (cd $$d; $(MAKE) distclean); done
+	if test -f $(LIBATOMICDIR)/Makefile; then (cd $(LIBATOMICDIR); $(MAKE) distclean); fi
 	(cd winnt; $(MAKE) clean)
 	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean: clean
 	for d in $(SRIDBUS); do (cd $$d; $(MAKE) maintainer-clean); done
+	if test -f $(LIBATOMICDIR)/Makefile; then (cd $(LIBATOMICDIR); $(MAKE) distclean); fi
 	(cd winnt; $(MAKE) clean)
 	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL INSTALL.eucjp DIST_EXCLUDE_X gc/configure
 

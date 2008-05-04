@@ -1,3 +1,7 @@
+2008-05-04  Shiro Kawai  <shiro@acm.org>
+
+	* gc/*, Makefile.in, src/Makefile.in: Bumped up to Boehm GC 7.1.
+
 2008-05-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numerical.scm (scheme): added two-argument log support.

@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.179 2008-04-20 01:25:13 shirok Exp $
+#  $Id: Makefile.in,v 1.180 2008-05-04 18:41:44 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -185,7 +185,7 @@ gosh$(EXEEXT) : libgauche.$(SOEXT) $(gosh_OBJECTS)
 	$(LINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT) $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 
 relink :
-	$(RELINK) $(libgauche_LDFLAGS) libgauche.$(SOEXT) $(libgauche_OBJECTS) ../gc/*.lo $(LIBS)
+	$(RELINK) $(libgauche_LDFLAGS) libgauche.$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
 	$(RELINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT)  $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 
 $(OBJECTS) : $(HEADERS)
@@ -226,7 +226,7 @@ load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
 paths.$(OBJEXT) : getdir_win.c getdir_dummy.c getdir_darwin.c
 
 libgauche.$(SOEXT) : $(libgauche_OBJECTS) $(GCLIB)
-	$(LINK) $(libgauche_LDFLAGS) libgauche.$(SOEXT) $(libgauche_OBJECTS) ../gc/*.lo $(LIBS)
+	$(LINK) $(libgauche_LDFLAGS) libgauche.$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
 	$(POSTBUILD)
 
 gauche-config$(EXEEXT) : gauche-config.$(OBJEXT)

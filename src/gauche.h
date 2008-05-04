@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.505 2008-02-08 11:53:33 shirok Exp $
+ *  $Id: gauche.h,v 1.506 2008-05-04 18:41:44 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -115,7 +115,7 @@ SCM_DECL_BEGIN
 #define SCM_DEBUG_HELPER      TRUE
 #endif
 
-#define SCM_INLINE_MALLOC_PRIMITIVES 1
+#define SCM_INLINE_MALLOC_PRIMITIVES 0
 
 #ifdef GAUCHE_USE_PTHREADS
 # include <gauche/pthread.h>
@@ -1652,6 +1652,7 @@ SCM_EXTERN void Scm_Abort(const char *msg);
 SCM_EXTERN void Scm_Panic(const char *msg, ...);
 
 SCM_EXTERN void Scm_GC(void);
+SCM_EXTERN void Scm_PrintStaticRoots(void);
 SCM_EXTERN void Scm_RegisterDL(void *data_start, void *data_end,
                                void *bss_start, void *bss_end);
 SCM_EXTERN void Scm_GCSentinel(void *obj, const char *name);

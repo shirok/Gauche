@@ -1,4 +1,3 @@
- # $Id: alpha_mach_dep.S,v 1.6 2006-03-04 09:17:31 shirok Exp $
 	.arch ev6
 
         .text

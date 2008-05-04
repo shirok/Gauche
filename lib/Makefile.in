@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.155 2008-02-03 13:07:45 shirok Exp $
+#  $Id: Makefile.in,v 1.156 2008-05-04 18:41:38 shirok Exp $
 
 .PHONY: all check install uninstall slibcat slibcat-in-place \
 	clean distclean maintainer-clean
@@ -26,7 +26,7 @@ INSTALL         = @INSTALL@
 MKINSTDIR       = $(top_srcdir)/mkinstalldirs
 SLIB_DIR        = @SLIB_DIR@
 
-GENERATED       = gauche/vm/insn.scm
+GENERATED       = gauche/vm/insn.scm gauche/config.scm
 CONFIG_GENERATED = Makefile slib.scm
 
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \

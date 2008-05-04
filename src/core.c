@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.82 2007-09-13 12:30:27 shirok Exp $
+ *  $Id: core.c,v 1.83 2008-05-04 18:41:44 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -39,11 +39,16 @@
 #include "gauche/paths.h"
 #include "gauche/builtin-syms.h"
 
+/* GC_print_static_roots() is declared in private/gc_priv.h.  It is too much
+   hassle to include it with other GC internal baggages, so we just declare
+   it.  It's a private funciton of GC, so watch out the changes in GC. */
+extern void GC_print_static_roots(void);
+
 /*
  * out-of-memory handler.  this will be called by GC.
  */
 
-static GC_PTR oom_handler(size_t bytes)
+static void *oom_handler(size_t bytes)
 {
     Scm_Panic("out of memory (%d).  aborting...", bytes);
     return NULL;                /* dummy */
@@ -186,6 +191,11 @@ void Scm_GC()
     GC_gcollect();
 }
 
+void Scm_PrintStaticRoots()
+{
+    GC_print_static_roots();
+}
+
 /*
  * External API to register root set in dynamically loaded library.
  * Boehm GC doesn't do this automatically on some platforms.
@@ -199,10 +209,10 @@ void Scm_RegisterDL(void *data_start, void *data_end,
                     void *bss_start, void *bss_end)
 {
     if (data_start < data_end) {
-        GC_add_roots((GC_PTR)data_start, (GC_PTR)data_end);
+        GC_add_roots(data_start, data_end);
     }
     if (bss_start < bss_end) {
-        GC_add_roots((GC_PTR)bss_start, (GC_PTR)bss_end);
+        GC_add_roots(bss_start, bss_end);
     }
 }
 
@@ -226,14 +236,14 @@ void Scm_GCSentinel(void *obj, const char *name)
  */
 void Scm_RegisterFinalizer(ScmObj z, ScmFinalizerProc finalizer, void *data)
 {
-    GC_finalization_proc ofn; GC_PTR ocd;
+    GC_finalization_proc ofn; void *ocd;
     GC_REGISTER_FINALIZER_NO_ORDER(z, (GC_finalization_proc)finalizer,
                                    data, &ofn, &ocd);
 }
 
 void Scm_UnregisterFinalizer(ScmObj z)
 {
-    GC_finalization_proc ofn; GC_PTR ocd;
+    GC_finalization_proc ofn; void *ocd;
     GC_REGISTER_FINALIZER_NO_ORDER(z, (GC_finalization_proc)NULL, NULL,
                                    &ofn, &ocd);
 }

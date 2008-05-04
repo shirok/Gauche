@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.29 2007-08-24 23:55:43 shirok Exp $
+;;; $Id: intlib.stub,v 1.30 2008-05-04 18:41:45 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -45,7 +45,6 @@
 #include <gauche/macro.h>
 #include <gauche/prof.h>
 #include <gauche/builtin-syms.h>
-#include <gauche/memory.h> /* for GC_print_static_roots */
 "
 
 (define-type <gloc> "ScmGloc*" "GLOC"
@@ -389,7 +388,7 @@
         "Scm_VM()->module = mod;"))
 
 (define-cproc gc-print-static-roots ()
-  (call <void> "GC_print_static_roots"))
+  (call <void> "Scm_PrintStaticRoots"))
 
 ;;
 ;; Profiler internal API

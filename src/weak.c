@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: weak.c,v 1.16 2007-08-10 01:19:36 shirok Exp $
+ *  $Id: weak.c,v 1.17 2008-05-04 18:41:46 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -70,7 +70,7 @@ static void weakvector_finalize(ScmObj obj, void *data)
     ScmObj *p = (ScmObj*)v->pointers;
     for (i=0; i<v->size; i++) {
         if (p[i]==NULL || SCM_PTRP(p[i])) {
-            GC_unregister_disappearing_link((GC_PTR*)&p[i]);
+            GC_unregister_disappearing_link((void **)&p[i]);
         }
         p[i] = SCM_FALSE;       /* safety */
     }
@@ -126,13 +126,13 @@ ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj value)
 
     /* unregister the location if it was registered before */
     if (p[index] == NULL || SCM_PTRP(p[index])) {
-        GC_unregister_disappearing_link((GC_PTR*)&p[index]);
+        GC_unregister_disappearing_link((void **)&p[index]);
     }
 
     p[index] = value;
     /* register the location if the value is a heap object */
     if (SCM_PTRP(value)) {
-        GC_general_register_disappearing_link((GC_PTR*)&p[index], (GC_PTR)value);
+        GC_general_register_disappearing_link((void **)&p[index], (void *)value);
     }
     return SCM_UNDEFINED;
 }
@@ -157,10 +157,10 @@ struct ScmWeakBoxRec {
 
 static void wbox_setvalue(ScmWeakBox *wbox, void *value)
 {
-    GC_PTR base = GC_base((GC_PTR)value);
+    void * base = GC_base((void *)value);
     wbox->ptr = value;
     if (base != NULL) {
-        GC_general_register_disappearing_link((GC_PTR)&wbox->ptr, base);
+        GC_general_register_disappearing_link((void *)&wbox->ptr, base);
         wbox->registered = TRUE;
     } else {
         wbox->registered = FALSE;
@@ -183,7 +183,7 @@ int Scm_WeakBoxEmptyP(ScmWeakBox *wbox)
 void Scm_WeakBoxSet(ScmWeakBox *wbox, void *newvalue)
 {
     if (wbox->registered) {
-        GC_unregister_disappearing_link((GC_PTR)&wbox->ptr);
+        GC_unregister_disappearing_link((void *)&wbox->ptr);
         wbox->registered = FALSE;
     }
     wbox_setvalue(wbox, newvalue);

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.277 2008-01-01 08:52:16 shirok Exp $
+ *  $Id: vm.c,v 1.278 2008-05-04 18:41:45 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -42,6 +42,7 @@
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
 #include "gauche/prof.h"
+
 
 /* Experimental code to use custom mark procedure for stack gc.
    Currently it doens't show any improvement, so we disable it
@@ -3853,16 +3854,16 @@ struct GC_ms_entry *vm_stack_mark(GC_word *addr,
     ScmObj *vmsb = ((ScmObj*)addr)+1;
     ScmVM *vm = (ScmVM*)*addr;
     int i, limit = vm->sp - vm->stackBase + 5;
-    GC_PTR spb = (GC_PTR)vm->stackBase;
-    GC_PTR sbe = (GC_PTR)(vm->stackBase + SCM_VM_STACK_SIZE);
-    GC_PTR hb = GC_least_plausible_heap_addr;
-    GC_PTR he = GC_greatest_plausible_heap_addr;
+    void * spb = (void *)vm->stackBase;
+    void * sbe = (void *)(vm->stackBase + SCM_VM_STACK_SIZE);
+    void * hb = GC_least_plausible_heap_addr;
+    void * he = GC_greatest_plausible_heap_addr;
 
     for (i=0; i<limit; i++, vmsb++) {
         ScmObj z = *vmsb;
-        if ((hb < (GC_PTR)z && (GC_PTR)z < spb)
-            || ((GC_PTR)z > sbe && (GC_PTR)z < he)) {
-            e = GC_mark_and_push((GC_PTR)z, e, mark_sp_limit, (GC_PTR)addr);
+        if ((hb < (void *)z && (void *)z < spb)
+            || ((void *)z > sbe && (void *)z < he)) {
+            e = GC_mark_and_push((void *)z, e, mark_sp_limit, (void *)addr);
         }
     }
     return e;

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: memory.h,v 1.9 2007-08-24 23:55:45 shirok Exp $
+ *  $Id: memory.h,v 1.10 2008-05-04 18:41:47 shirok Exp $
  */
 
 #ifndef GAUCHE_MEM_H
@@ -47,7 +47,7 @@
  * replaced for "safer" function calls.
  */
 
-#ifdef SCM_INLINE_MALLOC_PRIMITIVES
+#if SCM_INLINE_MALLOC_PRIMITIVES
 
 /* These #define's must match the ones libgc.a was compiled with. */
 /* NB: when cross-compiling, SMALL_CONFIG is defined in GC. */
@@ -58,10 +58,6 @@
 #define ALL_INTERIOR_POINTERS
 #endif
 
-/* gc_priv.h included by gc_inline.h redefines FALSE and TRUE without
-   checking prior definition.  This is a workaround. */
-#undef TRUE
-#undef FALSE
 #include "gc_inline.h"
 
 /* Basic macros.  Allocate N words obj.  N must be smaller than MAXOBJSZ. */

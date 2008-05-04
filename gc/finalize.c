@@ -2,6 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
+ * Copyright (C) 2007 Free Software Foundation, Inc
 
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -85,7 +86,7 @@ static signed_word log_fo_table_size = -1;
 
 word GC_fo_entries = 0;
 
-void GC_push_finalizer_structures GC_PROTO((void))
+void GC_push_finalizer_structures(void)
 {
     GC_push_all((ptr_t)(&dl_head), (ptr_t)(&dl_head) + sizeof(word));
     GC_push_all((ptr_t)(&fo_head), (ptr_t)(&fo_head) + sizeof(word));
@@ -98,22 +99,22 @@ void GC_push_finalizer_structures GC_PROTO((void))
 /* *table is a pointer to an array of hash headers.  If we succeed, we	*/
 /* update both *table and *log_size_ptr.				*/
 /* Lock is held.  Signals are disabled.					*/
-void GC_grow_table(table, log_size_ptr)
-struct hash_chain_entry ***table;
-signed_word * log_size_ptr;
+void GC_grow_table(struct hash_chain_entry ***table,
+		   signed_word *log_size_ptr)
 {
     register word i;
     register struct hash_chain_entry *p;
-    int log_old_size = *log_size_ptr;
-    register int log_new_size = log_old_size + 1;
+    signed_word log_old_size = *log_size_ptr;
+    signed_word log_new_size = log_old_size + 1;
     word old_size = ((log_old_size == -1)? 0: (1 << log_old_size));
-    register word new_size = 1 << log_new_size;
+    word new_size = (word)1 << log_new_size;
+    /* FIXME: Power of 2 size often gets rounded up to one more page. */
     struct hash_chain_entry **new_table = (struct hash_chain_entry **)
     	GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
     		(size_t)new_size * sizeof(struct hash_chain_entry *), NORMAL);
     
     if (new_table == 0) {
-    	if (table == 0) {
+    	if (*table == 0) {
     	    ABORT("Insufficient space for initial table allocation");
     	} else {
     	    return;
@@ -122,9 +123,9 @@ signed_word * log_size_ptr;
     for (i = 0; i < old_size; i++) {
       p = (*table)[i];
       while (p != 0) {
-        register ptr_t real_key = (ptr_t)REVEAL_POINTER(p -> hidden_key);
-        register struct hash_chain_entry *next = p -> next;
-        register int new_hash = HASH3(real_key, new_size, log_new_size);
+        ptr_t real_key = (ptr_t)REVEAL_POINTER(p -> hidden_key);
+        struct hash_chain_entry *next = p -> next;
+        size_t new_hash = HASH3(real_key, new_size, log_new_size);
         
         p -> next = new_table[new_hash];
         new_table[new_hash] = p;
@@ -135,58 +136,36 @@ signed_word * log_size_ptr;
     *table = new_table;
 }
 
-# if defined(__STDC__) || defined(__cplusplus)
-    int GC_register_disappearing_link(GC_PTR * link)
-# else
-    int GC_register_disappearing_link(link)
-    GC_PTR * link;
-# endif
+int GC_register_disappearing_link(void * * link)
 {
     ptr_t base;
     
-    base = (ptr_t)GC_base((GC_PTR)link);
+    base = (ptr_t)GC_base((void *)link);
     if (base == 0)
     	ABORT("Bad arg to GC_register_disappearing_link");
     return(GC_general_register_disappearing_link(link, base));
 }
 
-# if defined(__STDC__) || defined(__cplusplus)
-    int GC_general_register_disappearing_link(GC_PTR * link,
-    					      GC_PTR obj)
-# else
-    int GC_general_register_disappearing_link(link, obj)
-    GC_PTR * link;
-    GC_PTR obj;
-# endif
-
+int GC_general_register_disappearing_link(void * * link, void * obj)
 {
     struct disappearing_link *curr_dl;
-    int index;
+    size_t index;
     struct disappearing_link * new_dl;
     DCL_LOCK_STATE;
     
     if ((word)link & (ALIGNMENT-1))
     	ABORT("Bad arg to GC_general_register_disappearing_link");
 #   ifdef THREADS
-    	DISABLE_SIGNALS();
     	LOCK();
 #   endif
     if (log_dl_table_size == -1
         || GC_dl_entries > ((word)1 << log_dl_table_size)) {
-#	ifndef THREADS
-	    DISABLE_SIGNALS();
-#	endif
     	GC_grow_table((struct hash_chain_entry ***)(&dl_head),
     		      &log_dl_table_size);
-#	ifdef CONDPRINT
-	  if (GC_print_stats) {
-	    GC_printf1("Grew dl table to %lu entries\n",
-	    		(unsigned long)(1 << log_dl_table_size));
-	  }
-#	endif
-#	ifndef THREADS
-	    ENABLE_SIGNALS();
-#	endif
+	if (GC_print_stats) {
+	    GC_log_printf("Grew dl table to %u entries\n",
+	    	      (1 << log_dl_table_size));
+	}
     }
     index = HASH2(link, log_dl_table_size);
     curr_dl = dl_head[index];
@@ -195,7 +174,6 @@ signed_word * log_size_ptr;
             curr_dl -> dl_hidden_obj = HIDE_POINTER(obj);
 #	    ifdef THREADS
                 UNLOCK();
-    	        ENABLE_SIGNALS();
 #	    endif
             return(1);
         }
@@ -205,17 +183,15 @@ signed_word * log_size_ptr;
     if (0 == new_dl) {
 #     ifdef THREADS
 	UNLOCK();
-    	ENABLE_SIGNALS();
 #     endif
       new_dl = (struct disappearing_link *)
 	      GC_oom_fn(sizeof(struct disappearing_link));
       if (0 == new_dl) {
 	GC_finalization_failures++;
-	return(0);
+	return(2);
       }
       /* It's not likely we'll make it here, but ... */
 #     ifdef THREADS
-        DISABLE_SIGNALS();
 	LOCK();
 #     endif
     }
@@ -226,26 +202,19 @@ signed_word * log_size_ptr;
     GC_dl_entries++;
 #   ifdef THREADS
         UNLOCK();
-        ENABLE_SIGNALS();
 #   endif
     return(0);
 }
 
-# if defined(__STDC__) || defined(__cplusplus)
-    int GC_unregister_disappearing_link(GC_PTR * link)
-# else
-    int GC_unregister_disappearing_link(link)
-    GC_PTR * link;
-# endif
+int GC_unregister_disappearing_link(void * * link)
 {
     struct disappearing_link *curr_dl, *prev_dl;
-    int index;
+    size_t index;
     DCL_LOCK_STATE;
     
-    DISABLE_SIGNALS();
     LOCK();
     index = HASH2(link, log_dl_table_size);
-    if (((unsigned long)link & (ALIGNMENT-1))) goto out;
+    if (((word)link & (ALIGNMENT-1))) goto out;
     prev_dl = 0; curr_dl = dl_head[index];
     while (curr_dl != 0) {
         if (curr_dl -> dl_hidden_link == HIDE_POINTER(link)) {
@@ -256,11 +225,10 @@ signed_word * log_size_ptr;
             }
             GC_dl_entries--;
             UNLOCK();
-    	    ENABLE_SIGNALS();
 #	    ifdef DBG_HDRS_ALL
 	      dl_set_next(curr_dl, 0);
 #	    else
-              GC_free((GC_PTR)curr_dl);
+              GC_free((void *)curr_dl);
 #	    endif
             return(1);
         }
@@ -269,32 +237,29 @@ signed_word * log_size_ptr;
     }
 out:
     UNLOCK();
-    ENABLE_SIGNALS();
     return(0);
 }
 
 /* Possible finalization_marker procedures.  Note that mark stack	*/
 /* overflow is handled by the caller, and is not a disaster.		*/
-GC_API void GC_normal_finalize_mark_proc(p)
-ptr_t p;
+GC_API void GC_normal_finalize_mark_proc(ptr_t p)
 {
     hdr * hhdr = HDR(p);
     
-    PUSH_OBJ((word *)p, hhdr, GC_mark_stack_top,
+    PUSH_OBJ(p, hhdr, GC_mark_stack_top,
 	     &(GC_mark_stack[GC_mark_stack_size]));
 }
 
 /* This only pays very partial attention to the mark descriptor.	*/
 /* It does the right thing for normal and atomic objects, and treats	*/
 /* most others as normal.						*/
-GC_API void GC_ignore_self_finalize_mark_proc(p)
-ptr_t p;
+GC_API void GC_ignore_self_finalize_mark_proc(ptr_t p)
 {
     hdr * hhdr = HDR(p);
     word descr = hhdr -> hb_descr;
     ptr_t q, r;
     ptr_t scan_limit;
-    ptr_t target_limit = p + WORDS_TO_BYTES(hhdr -> hb_sz) - 1;
+    ptr_t target_limit = p + hhdr -> hb_sz - 1;
     
     if ((descr & GC_DS_TAGS) == GC_DS_LENGTH) {
        scan_limit = p + descr - sizeof(word);
@@ -304,15 +269,27 @@ ptr_t p;
     for (q = p; q <= scan_limit; q += ALIGNMENT) {
     	r = *(ptr_t *)q;
     	if (r < p || r > target_limit) {
-    	    GC_PUSH_ONE_HEAP((word)r, q);
+    	    GC_PUSH_ONE_HEAP(r, q);
     	}
     }
 }
 
 /*ARGSUSED*/
-GC_API void GC_null_finalize_mark_proc(p)
-ptr_t p;
+GC_API void GC_null_finalize_mark_proc(ptr_t p)
 {
+}
+
+/* Possible finalization_marker procedures.  Note that mark stack	*/
+/* overflow is handled by the caller, and is not a disaster.		*/
+
+/* GC_unreachable_finalize_mark_proc is an alias for normal marking,	*/
+/* but it is explicitly tested for, and triggers different		*/
+/* behavior.  Objects registered in this way are not finalized		*/
+/* if they are reachable by other finalizable objects, eve if those	*/
+/* other objects specify no ordering.					*/
+GC_API void GC_unreachable_finalize_mark_proc(ptr_t p)
+{
+    GC_normal_finalize_mark_proc(p);
 }
 
 
@@ -325,41 +302,29 @@ ptr_t p;
 /* marking for finalization ordering.  Any objects marked	*/
 /* by that procedure will be guaranteed to not have been	*/
 /* finalized when this finalizer is invoked.			*/
-GC_API void GC_register_finalizer_inner(obj, fn, cd, ofn, ocd, mp)
-GC_PTR obj;
-GC_finalization_proc fn;
-GC_PTR cd;
-GC_finalization_proc * ofn;
-GC_PTR * ocd;
-finalization_mark_proc * mp;
+GC_API void GC_register_finalizer_inner(void * obj,
+					GC_finalization_proc fn, void *cd,
+					GC_finalization_proc *ofn, void **ocd,
+					finalization_mark_proc mp)
 {
     ptr_t base;
     struct finalizable_object * curr_fo, * prev_fo;
-    int index;
+    size_t index;
     struct finalizable_object *new_fo;
     hdr *hhdr;
     DCL_LOCK_STATE;
 
 #   ifdef THREADS
-	DISABLE_SIGNALS();
 	LOCK();
 #   endif
     if (log_fo_table_size == -1
         || GC_fo_entries > ((word)1 << log_fo_table_size)) {
-#	ifndef THREADS
-    	    DISABLE_SIGNALS();
-#	endif
     	GC_grow_table((struct hash_chain_entry ***)(&fo_head),
     		      &log_fo_table_size);
-#	ifdef CONDPRINT
-	  if (GC_print_stats) {
-	    GC_printf1("Grew fo table to %lu entries\n",
-	    		(unsigned long)(1 << log_fo_table_size));
-	  }
-#	endif
-#	ifndef THREADS
-	    ENABLE_SIGNALS();
-#	endif
+	if (GC_print_stats) {
+	    GC_log_printf("Grew fo table to %u entries\n",
+	    	          (1 << log_fo_table_size));
+	}
     }
     /* in the THREADS case signals are disabled and we hold allocation	*/
     /* lock; otherwise neither is true.  Proceed carefully.		*/
@@ -367,12 +332,13 @@ finalization_mark_proc * mp;
     index = HASH2(base, log_fo_table_size);
     prev_fo = 0; curr_fo = fo_head[index];
     while (curr_fo != 0) {
+        GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
         if (curr_fo -> fo_hidden_base == HIDE_POINTER(base)) {
             /* Interruption by a signal in the middle of this	*/
             /* should be safe.  The client may see only *ocd	*/
             /* updated, but we'll declare that to be his	*/
             /* problem.						*/
-            if (ocd) *ocd = (GC_PTR) curr_fo -> fo_client_data;
+            if (ocd) *ocd = (void *) (curr_fo -> fo_client_data);
             if (ofn) *ofn = curr_fo -> fo_fn;
             /* Delete the structure for base. */
                 if (prev_fo == 0) {
@@ -386,7 +352,7 @@ finalization_mark_proc * mp;
                   /* estimate will only make the table larger than	*/
                   /* necessary.						*/
 #		if !defined(THREADS) && !defined(DBG_HDRS_ALL)
-                  GC_free((GC_PTR)curr_fo);
+                  GC_free((void *)curr_fo);
 #		endif
             } else {
                 curr_fo -> fo_fn = fn;
@@ -402,7 +368,6 @@ finalization_mark_proc * mp;
             }
 #	    ifdef THREADS
                 UNLOCK();
-    	    	ENABLE_SIGNALS();
 #	    endif
             return;
         }
@@ -414,7 +379,6 @@ finalization_mark_proc * mp;
     if (fn == 0) {
 #	ifdef THREADS
             UNLOCK();
-    	    ENABLE_SIGNALS();
 #	endif
         return;
     }
@@ -423,16 +387,14 @@ finalization_mark_proc * mp;
       /* We won't collect it, hence finalizer wouldn't be run. */
 #     ifdef THREADS
           UNLOCK();
-    	  ENABLE_SIGNALS();
 #     endif
       return;
     }
     new_fo = (struct finalizable_object *)
     	GC_INTERNAL_MALLOC(sizeof(struct finalizable_object),NORMAL);
-    if (0 == new_fo) {
+    if (EXPECT(0 == new_fo, FALSE)) {
 #     ifdef THREADS
 	UNLOCK();
-    	ENABLE_SIGNALS();
 #     endif
       new_fo = (struct finalizable_object *)
 	      GC_oom_fn(sizeof(struct finalizable_object));
@@ -442,10 +404,10 @@ finalization_mark_proc * mp;
       }
       /* It's not likely we'll make it here, but ... */
 #     ifdef THREADS
-        DISABLE_SIGNALS();
 	LOCK();
 #     endif
     }
+    GC_ASSERT(GC_size(new_fo) >= sizeof(struct finalizable_object));
     new_fo -> fo_hidden_base = (word)HIDE_POINTER(base);
     new_fo -> fo_fn = fn;
     new_fo -> fo_client_data = (ptr_t)cd;
@@ -456,63 +418,48 @@ finalization_mark_proc * mp;
     fo_head[index] = new_fo;
 #   ifdef THREADS
         UNLOCK();
-    	ENABLE_SIGNALS();
 #   endif
 }
 
-# if defined(__STDC__)
-    void GC_register_finalizer(void * obj,
+void GC_register_finalizer(void * obj,
 			       GC_finalization_proc fn, void * cd,
 			       GC_finalization_proc *ofn, void ** ocd)
-# else
-    void GC_register_finalizer(obj, fn, cd, ofn, ocd)
-    GC_PTR obj;
-    GC_finalization_proc fn;
-    GC_PTR cd;
-    GC_finalization_proc * ofn;
-    GC_PTR * ocd;
-# endif
 {
     GC_register_finalizer_inner(obj, fn, cd, ofn,
     				ocd, GC_normal_finalize_mark_proc);
 }
 
-# if defined(__STDC__)
-    void GC_register_finalizer_ignore_self(void * obj,
+void GC_register_finalizer_ignore_self(void * obj,
 			       GC_finalization_proc fn, void * cd,
 			       GC_finalization_proc *ofn, void ** ocd)
-# else
-    void GC_register_finalizer_ignore_self(obj, fn, cd, ofn, ocd)
-    GC_PTR obj;
-    GC_finalization_proc fn;
-    GC_PTR cd;
-    GC_finalization_proc * ofn;
-    GC_PTR * ocd;
-# endif
 {
     GC_register_finalizer_inner(obj, fn, cd, ofn,
     				ocd, GC_ignore_self_finalize_mark_proc);
 }
 
-# if defined(__STDC__)
-    void GC_register_finalizer_no_order(void * obj,
+void GC_register_finalizer_no_order(void * obj,
 			       GC_finalization_proc fn, void * cd,
 			       GC_finalization_proc *ofn, void ** ocd)
-# else
-    void GC_register_finalizer_no_order(obj, fn, cd, ofn, ocd)
-    GC_PTR obj;
-    GC_finalization_proc fn;
-    GC_PTR cd;
-    GC_finalization_proc * ofn;
-    GC_PTR * ocd;
-# endif
 {
     GC_register_finalizer_inner(obj, fn, cd, ofn,
     				ocd, GC_null_finalize_mark_proc);
 }
 
+static GC_bool need_unreachable_finalization = FALSE;
+	/* Avoid the work if this isn't used.	*/
+
+void GC_register_finalizer_unreachable(void * obj,
+			       GC_finalization_proc fn, void * cd,
+			       GC_finalization_proc *ofn, void ** ocd)
+{
+    need_unreachable_finalization = TRUE;
+    GC_ASSERT(GC_java_finalization);
+    GC_register_finalizer_inner(obj, fn, cd, ofn,
+    				ocd, GC_unreachable_finalize_mark_proc);
+}
+
 #ifndef NO_DEBUGGING
-void GC_dump_finalization()
+void GC_dump_finalization(void)
 {
     struct disappearing_link * curr_dl;
     struct finalizable_object * curr_fo;
@@ -521,19 +468,19 @@ void GC_dump_finalization()
     int fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
     int i;
 
-    GC_printf0("Disappearing links:\n");
+    GC_printf("Disappearing links:\n");
     for (i = 0; i < dl_size; i++) {
       for (curr_dl = dl_head[i]; curr_dl != 0; curr_dl = dl_next(curr_dl)) {
         real_ptr = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_obj);
         real_link = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_link);
-        GC_printf2("Object: 0x%lx, Link:0x%lx\n", real_ptr, real_link);
+        GC_printf("Object: %p, Link:%p\n", real_ptr, real_link);
       }
     }
-    GC_printf0("Finalizers:\n");
+    GC_printf("Finalizers:\n");
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
         real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
-        GC_printf1("Finalizable object: 0x%lx\n", real_ptr);
+        GC_printf("Finalizable object: %p\n", real_ptr);
       }
     }
 }
@@ -541,14 +488,14 @@ void GC_dump_finalization()
 
 /* Called with world stopped.  Cause disappearing links to disappear,	*/
 /* and invoke finalizers.						*/
-void GC_finalize()
+void GC_finalize(void)
 {
     struct disappearing_link * curr_dl, * prev_dl, * next_dl;
     struct finalizable_object * curr_fo, * prev_fo, * next_fo;
     ptr_t real_ptr, real_link;
-    register int i;
-    int dl_size = (log_dl_table_size == -1 ) ? 0 : (1 << log_dl_table_size);
-    int fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
+    size_t i;
+    size_t dl_size = (log_dl_table_size == -1 ) ? 0 : (1 << log_dl_table_size);
+    size_t fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
     
   /* Make disappearing links disappear */
     for (i = 0; i < dl_size; i++) {
@@ -579,6 +526,7 @@ void GC_finalize()
     GC_ASSERT(GC_mark_state == MS_NONE);
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
+        GC_ASSERT(GC_size(curr_fo) >= sizeof(struct finalizable_object));
         real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
         if (!GC_is_marked(real_ptr)) {
 	    GC_MARKED_FOR_FINALIZATION(real_ptr);
@@ -591,7 +539,7 @@ void GC_finalize()
     }
   /* Enqueue for finalization all objects that are still		*/
   /* unreachable.							*/
-    GC_words_finalized = 0;
+    GC_bytes_finalized = 0;
     for (i = 0; i < fo_size; i++) {
       curr_fo = fo_head[i];
       prev_fo = 0;
@@ -616,9 +564,9 @@ void GC_finalize()
               /* see it.						*/
               curr_fo -> fo_hidden_base = 
               		(word) REVEAL_POINTER(curr_fo -> fo_hidden_base);
-              GC_words_finalized +=
-                 	ALIGNED_WORDS(curr_fo -> fo_object_size)
-              		+ ALIGNED_WORDS(sizeof(struct finalizable_object));
+              GC_bytes_finalized +=
+                 	curr_fo -> fo_object_size
+              		+ sizeof(struct finalizable_object);
 	    GC_ASSERT(GC_is_marked(GC_base((ptr_t)curr_fo)));
             curr_fo = next_fo;
         } else {
@@ -638,8 +586,44 @@ void GC_finalize()
   	    if (curr_fo -> fo_mark_proc == GC_null_finalize_mark_proc) {
   	        GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
   	    }
-  	    GC_set_mark_bit(real_ptr);
+	    if (curr_fo -> fo_mark_proc != GC_unreachable_finalize_mark_proc) {
+		GC_set_mark_bit(real_ptr);
+	    }
   	}
+      }
+
+    /* now revive finalize-when-unreachable objects reachable from
+       other finalizable objects */
+      if (need_unreachable_finalization) {
+        curr_fo = GC_finalize_now;
+        prev_fo = 0;
+        while (curr_fo != 0) {
+	  next_fo = fo_next(curr_fo);
+	  if (curr_fo -> fo_mark_proc == GC_unreachable_finalize_mark_proc) {
+	    real_ptr = (ptr_t)curr_fo -> fo_hidden_base;
+	    if (!GC_is_marked(real_ptr)) {
+	      GC_set_mark_bit(real_ptr);
+	    } else {
+	      if (prev_fo == 0)
+		GC_finalize_now = next_fo;
+	      else
+		fo_set_next(prev_fo, next_fo);
+
+              curr_fo -> fo_hidden_base =
+              		(word) HIDE_POINTER(curr_fo -> fo_hidden_base);
+              GC_bytes_finalized -=
+                 	curr_fo -> fo_object_size + sizeof(struct finalizable_object);
+
+	      i = HASH2(real_ptr, log_fo_table_size);
+	      fo_set_next (curr_fo, fo_head[i]);
+	      GC_fo_entries++;
+	      fo_head[i] = curr_fo;
+	      curr_fo = prev_fo;
+	    }
+	  }
+	  prev_fo = curr_fo;
+	  curr_fo = next_fo;
+        }
       }
   }
 
@@ -671,7 +655,7 @@ void GC_finalize()
 
 /* Enqueue all remaining finalizers to be run - Assumes lock is
  * held, and signals are disabled */
-void GC_enqueue_all_finalizers()
+void GC_enqueue_all_finalizers(void)
 {
     struct finalizable_object * curr_fo, * prev_fo, * next_fo;
     ptr_t real_ptr;
@@ -679,7 +663,7 @@ void GC_enqueue_all_finalizers()
     int fo_size;
     
     fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
-    GC_words_finalized = 0;
+    GC_bytes_finalized = 0;
     for (i = 0; i < fo_size; i++) {
         curr_fo = fo_head[i];
         prev_fo = 0;
@@ -706,9 +690,8 @@ void GC_enqueue_all_finalizers()
           curr_fo -> fo_hidden_base = 
         		(word) REVEAL_POINTER(curr_fo -> fo_hidden_base);
 
-          GC_words_finalized +=
-           	ALIGNED_WORDS(curr_fo -> fo_object_size)
-        		+ ALIGNED_WORDS(sizeof(struct finalizable_object));
+          GC_bytes_finalized +=
+           	curr_fo -> fo_object_size + sizeof(struct finalizable_object);
           curr_fo = next_fo;
         }
     }
@@ -730,55 +713,50 @@ void GC_enqueue_all_finalizers()
  * This routine is externally callable, so is called without 
  * the allocation lock. 
  */
-GC_API void GC_finalize_all()
+GC_API void GC_finalize_all(void)
 {
     DCL_LOCK_STATE;
 
-    DISABLE_SIGNALS();
     LOCK();
     while (GC_fo_entries > 0) {
       GC_enqueue_all_finalizers();
       UNLOCK();
-      ENABLE_SIGNALS();
       GC_INVOKE_FINALIZERS();
-      DISABLE_SIGNALS();
       LOCK();
     }
     UNLOCK();
-    ENABLE_SIGNALS();
 }
 #endif
 
 /* Returns true if it is worth calling GC_invoke_finalizers. (Useful if	*/
 /* finalizers can only be called from some kind of `safe state' and	*/
 /* getting into that safe state is expensive.)				*/
-int GC_should_invoke_finalizers GC_PROTO((void))
+int GC_should_invoke_finalizers(void)
 {
     return GC_finalize_now != 0;
 }
 
 /* Invoke finalizers for all objects that are ready to be finalized.	*/
 /* Should be called without allocation lock.				*/
-int GC_invoke_finalizers()
+int GC_invoke_finalizers(void)
 {
     struct finalizable_object * curr_fo;
     int count = 0;
-    word mem_freed_before;
+    word bytes_freed_before;
     DCL_LOCK_STATE;
     
     while (GC_finalize_now != 0) {
 #	ifdef THREADS
-	    DISABLE_SIGNALS();
 	    LOCK();
 #	endif
 	if (count == 0) {
-	    mem_freed_before = GC_mem_freed;
+	    bytes_freed_before = GC_bytes_freed;
+	    /* Don't do this outside, since we need the lock. */
 	}
     	curr_fo = GC_finalize_now;
 #	ifdef THREADS
  	    if (curr_fo != 0) GC_finalize_now = fo_next(curr_fo);
 	    UNLOCK();
-	    ENABLE_SIGNALS();
 	    if (curr_fo == 0) break;
 #	else
 	    GC_finalize_now = fo_next(curr_fo);
@@ -792,22 +770,23 @@ int GC_invoke_finalizers()
 	    /* This is probably a bad idea.  It throws off accounting if */
 	    /* nearly all objects are finalizable.  O.w. it shouldn't	 */
 	    /* matter.							 */
-    	    GC_free((GC_PTR)curr_fo);
+    	    GC_free((void *)curr_fo);
 #	endif
     }
-    if (count != 0 && mem_freed_before != GC_mem_freed) {
+    /* bytes_freed_before is initialized whenever count != 0 */
+    if (count != 0 && bytes_freed_before != GC_bytes_freed) {
         LOCK();
-	GC_finalizer_mem_freed += (GC_mem_freed - mem_freed_before);
+	GC_finalizer_bytes_freed += (GC_bytes_freed - bytes_freed_before);
 	UNLOCK();
     }
     return count;
 }
 
-void (* GC_finalizer_notifier)() = (void (*) GC_PROTO((void)))0;
+void (* GC_finalizer_notifier)() = (void (*) (void))0;
 
 static GC_word last_finalizer_notification = 0;
 
-void GC_notify_or_invoke_finalizers GC_PROTO((void))
+void GC_notify_or_invoke_finalizers(void)
 {
     /* This is a convenient place to generate backtraces if appropriate, */
     /* since that code is not callable with the allocation lock.	 */
@@ -816,10 +795,10 @@ void GC_notify_or_invoke_finalizers GC_PROTO((void))
 
       if (GC_gc_no > last_back_trace_gc_no) {
 	word i;
-
+  
 #	ifdef KEEP_BACK_PTRS
 	  LOCK();
-	  /* Stops when GC_gc_no wraps; that's OK.	*/
+  	  /* Stops when GC_gc_no wraps; that's OK.	*/
 	  last_back_trace_gc_no = (word)(-1);  /* disable others. */
 	  for (i = 0; i < GC_backtraces; ++i) {
 	      /* FIXME: This tolerates concurrent heap mutation,	*/
@@ -847,28 +826,21 @@ void GC_notify_or_invoke_finalizers GC_PROTO((void))
 #	endif	/* Otherwise GC can run concurrently and add more */
 	return;
     }
-    if (GC_finalizer_notifier != (void (*) GC_PROTO((void)))0
+    if (GC_finalizer_notifier != (void (*) (void))0
 	&& last_finalizer_notification != GC_gc_no) {
 	last_finalizer_notification = GC_gc_no;
 	GC_finalizer_notifier();
     }
 }
 
-# ifdef __STDC__
-    GC_PTR GC_call_with_alloc_lock(GC_fn_type fn,
-    					 GC_PTR client_data)
-# else
-    GC_PTR GC_call_with_alloc_lock(fn, client_data)
-    GC_fn_type fn;
-    GC_PTR client_data;
-# endif
+void * GC_call_with_alloc_lock(GC_fn_type fn, void * client_data)
 {
-    GC_PTR result;
+    void * result;
     DCL_LOCK_STATE;
     
 #   ifdef THREADS
-      DISABLE_SIGNALS();
       LOCK();
+      /* FIXME - This looks wrong!! */
       SET_LOCK_HOLDER();
 #   endif
     result = (*fn)(client_data);
@@ -877,22 +849,21 @@ void GC_notify_or_invoke_finalizers GC_PROTO((void))
         UNSET_LOCK_HOLDER();
 #     endif /* o.w. UNLOCK() does it implicitly */
       UNLOCK();
-      ENABLE_SIGNALS();
 #   endif
     return(result);
 }
 
 #if !defined(NO_DEBUGGING)
 
-void GC_print_finalization_stats()
+void GC_print_finalization_stats(void)
 {
     struct finalizable_object *fo = GC_finalize_now;
     size_t ready = 0;
 
-    GC_printf2("%lu finalization table entries; %lu disappearing links\n",
+    GC_printf("%u finalization table entries; %u disappearing links\n",
 	       GC_fo_entries, GC_dl_entries);
     for (; 0 != fo; fo = fo_next(fo)) ++ready;
-    GC_printf1("%lu objects are eligible for immediate finalization\n", ready);
+    GC_printf("%u objects are eligible for immediate finalization\n", ready);
 }
 
 #endif /* NO_DEBUGGING */
