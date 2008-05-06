@@ -1,3 +1,8 @@
+2008-05-06  Shiro Kawai  <shiro@acm.org>
+
+	* gc/tests/test.c: excluded GC_FREE(GC_MALLOC(0))-type tests for
+	  they cause problems with DONT_ADD_BYTE_AT_END.
+
 2008-05-04  Shiro Kawai  <shiro@acm.org>
 
 	* gc/*, Makefile.in, src/Makefile.in: Bumped up to Boehm GC 7.1.
