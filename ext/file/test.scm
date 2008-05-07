@@ -23,35 +23,35 @@
           (list root root* (string=? cur cur*) (string=? cur* cur**)))))
 
 ;; prepare test data set
-(sys-system "rm -rf test.out")
+(sys-system "rm -rf test.out test2.out")
 (sys-system "mkdir test.out")
-(with-output-to-file "test.out/test1.o"
-  (lambda () (display (make-string 100 #\o))))
-(with-output-to-file "test.out/test2.o"
-  (lambda () (display (make-string 100 #\o))))
-(with-output-to-file "test.out/test3.o"
-  (lambda () (display (make-string 100 #\i))))
-(with-output-to-file "test.out/test4.o"
-  (lambda () (display (make-string 20000 #\i))))
-(with-output-to-file "test.out/test5.o"
-  (lambda () (display (make-string 20000 #\i))))
+(with-output-to-file "test.out/test1.o" (cut display (make-string 100 #\o)))
+(with-output-to-file "test.out/test2.o" (cut display (make-string 100 #\o)))
+(with-output-to-file "test.out/test3.o" (cut display (make-string 100 #\i)))
+(with-output-to-file "test.out/test4.o" (cut display (make-string 20000 #\i)))
+(with-output-to-file "test.out/test5.o" (cut display (make-string 20000 #\i)))
 
-(if (global-variable-bound? 'gauche 'sys-symlink)
-    (begin
-      (sys-symlink "test1.o" "test.out/test6.o")
-      (sys-symlink "test6.o" "test.out/test7.o")
-      (sys-symlink "test.d" "test.out/test2.d"))
-    (begin
-      (with-output-to-file "test.out/test6.o" (lambda () (newline)))
-      (with-output-to-file "test.out/test7.o" (lambda () (newline)))
-      (sys-mkdir "test.out/test2.d" #o777)))
+(cond-expand
+ [gauche.sys.symlink
+  (sys-symlink "test1.o" "test.out/test6.o")
+  (sys-symlink "test6.o" "test.out/test7.o")
+  (sys-symlink "test.d" "test.out/test2.d")]
+ [else
+  (with-output-to-file "test.out/test6.o" (cut newline))
+  (with-output-to-file "test.out/test7.o" (cut newline))
+  (sys-mkdir "test.out/test2.d" #o777)])
 
 (sys-system "mkdir test.out/test.d")
 (with-output-to-file "test.out/test.d/test10.o"
-  (lambda () (display (make-string 100 #\o))))
-(if (global-variable-bound? 'gauche 'sys-symlink)
-    (sys-symlink "../test1.o" "test.out/test.d/test11.o")
-    (with-output-to-file "test.out/test.d/test11.o" (lambda () (newline))))
+  (cut display (make-string 100 #\o)))
+
+(cond-expand
+ [gauche.sys.symlink
+  (sys-symlink "../test1.o" "test.out/test.d/test11.o")
+  (test* "file-is-symlink?" #t
+         (file-is-symlink? "test.out/test.d/test11.o"))]
+ [else
+  (with-output-to-file "test.out/test.d/test11.o" (cut newline))])
 
 (test* "directory-list"
        '("." ".." "test.d" "test1.o" "test2.d" "test2.o"
@@ -113,26 +113,30 @@
                             :filter (lambda (p) (string-contains p "test")))
          x))
 
-(when (global-variable-bound? 'gauche 'sys-symlink)
+(cond-expand
+ [gauche.sys.symlink
   (test* "directory-list2 :follow-link? #f"
          '(("test.d")
            ("test1.o" "test2.d" "test2.o" "test3.o" "test4.o"
             "test5.o" "test6.o" "test7.o" ))
          (receive x (directory-list2 "test.out" :follow-link? #f :children? #t)
            x)
-         ))
+         )]
+ [else])
 
 (test* "directory-fold"
-       (if (global-variable-bound? 'gauche 'sys-symlink)
-           '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
-             "test.out/test1.o"
-             "test.out/test2.d/test10.o" "test.out/test2.d/test11.o"
-             "test.out/test2.o" "test.out/test3.o"
-             "test.out/test6.o" "test.out/test7.o")
-           '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
-             "test.out/test1.o"
-             "test.out/test2.o" "test.out/test3.o"
-             "test.out/test6.o" "test.out/test7.o"))
+       (cond-expand
+        [gauche.sys.symlink
+         '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
+           "test.out/test1.o"
+           "test.out/test2.d/test10.o" "test.out/test2.d/test11.o"
+           "test.out/test2.o" "test.out/test3.o"
+           "test.out/test6.o" "test.out/test7.o")]
+        [else
+         '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
+           "test.out/test1.o"
+           "test.out/test2.o" "test.out/test3.o"
+           "test.out/test6.o" "test.out/test7.o")])
        (reverse
         (directory-fold "test.out"
                         (lambda (path result)
@@ -163,7 +167,8 @@
                                    (cons path seed)))))
        )
 
-(when (global-variable-bound? 'gauche 'sys-symlink)
+(cond-expand
+ [gauche.sys.symlink
   (test* "directory-fold :follow-link? #f"
          '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
            "test.out/test1.o"
@@ -186,10 +191,8 @@
            "test.out/test2.o" "test.out/test3.o" "test.out/test4.o"
            "test.out/test5.o" "test.out/test6.o" "test.out/test7.o")
          (sort (directory-fold "test.out" cons '())))
-  (sys-unlink "test.out/test.dangling")
-  )
-
-
+  (sys-unlink "test.out/test.dangling")]
+ [else])
 
 (test* "directory-fold :lister"
        '("test.out/test.d/test10.o" "test.out/test.d/test11.o" "test.out/test1.o")
@@ -219,7 +222,8 @@
 (test* "resolve-path" "/" (resolve-path "/"))
 (test* "resolve-path" "." (resolve-path "."))
 (test* "resolve-path" "test.out" (resolve-path "test.out"))
-(when (global-variable-bound? 'gauche 'sys-symlink)
+(cond-expand
+ [gauche.sys.symlink
   (test* "resolve-path" "test.out/test1.o"
          (resolve-path "test.out/test6.o"))
   (test* "resolve-path" "test.out/test1.o"
@@ -230,7 +234,8 @@
          (resolve-path "test.out/test2.d/../test.d/test11.o"))
   (test* "resolve-path" "test.out/test1.o"
          (resolve-path "test.out/test.d/../test2.d/test11.o"))
-  )
+  ]
+ [else])
 
 (test* "decompose-path" '("/a/b/c" "d" "e")
        (receive r (decompose-path "/a/b/c/d.e") r))
@@ -290,26 +295,31 @@
 (test* "file-type" '(directory directory regular)
        (map file-type
             '("test.out/test.d" "test.out/test2.d" "test.out/test1.o")))
-(when (global-variable-bound? 'gauche 'sys-symlink)
+(cond-expand
+ [gauche.sys.symlink
   (test* "file-type :follow-link? #f" '(directory symlink regular)
          (map (cut file-type <> :follow-link? #f)
-              '("test.out/test.d" "test.out/test2.d" "test.out/test1.o")))
-  )
+              '("test.out/test.d" "test.out/test2.d" "test.out/test1.o")))]
+ [else])
 
 (test* "file-eq?" #t
        (file-eq? "test.out/test1.o" "test.out/test1.o"))
-(when (global-variable-bound? 'gauche 'sys-symlink)
+(cond-expand
+ [gauche.sys.symlink
   (test* "file-eq? (symlink)" #f
-         (file-eq? "test.out/test1.o" "test.out/test7.o")))
+         (file-eq? "test.out/test1.o" "test.out/test7.o"))]
+ [else])
 (test* "file-eq?" #f
        (file-eq? "test.out/test1.o" "test.out/test2.o"))
 (test* "file-eqv?" #t
        (file-eqv? "test.out/test1.o" "test.out/test1.o"))
-(when (global-variable-bound? 'gauche 'sys-symlink)
+(cond-expand
+ [gauche.sys.symlink
   (test* "file-eqv? (symlink)" #t
          (file-eqv? "test.out/test1.o" "test.out/test7.o"))
   (test* "file-eqv? (symlink)" #t
-         (file-eqv? "test.out/test1.o" "test.out/test.d/test11.o")))
+         (file-eqv? "test.out/test1.o" "test.out/test.d/test11.o"))]
+ [else])
 (test* "file-eqv?" #f
        (file-eqv? "test.out/test1.o" "test.out/test2.o"))
 (test* "file-equal?" #t      
@@ -362,6 +372,24 @@
 (sys-unlink "test.out/test.copy")
 (sys-unlink "test.out/test.copy~")
 (sys-unlink "test.out/test.copy.orig")
+
+(cond-expand
+ [gauche.sys.symlink
+  (test* "copy-file (:follow-link? #f)" 'symlink
+         (begin
+           (copy-file "test.out/test6.o" "test.out/test.copy" :follow-link? #f)
+           (sys-system "ls -l test.out")
+           (file-type "test.out/test.copy" :follow-link? #f)))
+  (test* "copy-file (:follow-link? #f :if-exists :backup)"
+         '(symlink symlink)
+         (begin
+           (copy-file "test.out/test6.o" "test.out/test.copy"
+                      :follow-link? #f :if-exists :backup :backup-suffix "~")
+           (list (file-type "test.out/test.copy" :follow-link? #f)
+                 (file-type "test.out/test.copy~" :follow-link? #f))))
+  (sys-unlink "test.out/test.copy")
+  (sys-unlink "test.out/test.copy~")]
+ [else])
 
 (test* "copy-file (normal, safe)" #t
        (and (copy-file "test.out/test5.o" "test.out/test.copy" :safe #t)
@@ -440,11 +468,44 @@
        (move-file "test.out/test.move" "test.out/test.move"
                   :if-exists :supersede))
 
-(test* "remove-directory*" #f
-       (begin
-         (remove-directory* "test.out")
-         (file-exists? "test.out")))
+(let ()
+  (define (listdir d)
+    (map (cut regexp-replace #/^test2?\.out\// <> "")
+         (directory-fold d cons '())))
+    
+  (test* "copy-directory*" (listdir "test.out")
+         (begin
+           (copy-directory* "test.out" "test2.out")
+           (listdir "test2.out"))
+         (cut lset= string=? <> <>))
 
+  (test* "remove-directory*" '(#f #f)
+         (begin
+           (remove-directory* "test.out")
+           (remove-directory* "test2.out")
+           (list (file-exists? "test.out") (file-exists? "test2.out"))))
+
+  ;; check dangling link behavior
+  (cond-expand
+   [gauche.sys.symlink
+    (let ()
+      (define (tester desc fn expect . opts)
+        (test* #`"dangling symlink - ,desc" expect
+               (begin
+                 (sys-symlink "no such file" "test.out")
+                 (apply fn "test.out" "test2.out" opts)
+                 (and (file-is-symlink? "test2.out")
+                      (string=? (sys-readlink "test.out")
+                                (sys-readlink "test2.out")))))
+        (remove-files "test.out" "test2.out"))
+
+      (tester "copy-file" copy-file *test-error*)
+      (tester "copy-file" copy-file #t :follow-link? #f)
+      (tester "copy-directory*" copy-directory* #t)
+      (tester "copy-directory*" copy-directory* *test-error* :follow-link? #t)
+      )]
+   [else])
+  )
 
 ;;
 ;; file->*
@@ -462,5 +523,7 @@
        (file->string "test.out"))
 (test* "file->string-list" '("humuhumu" "nukunuku" "apua`a" "")
        (file->string-list "test.out"))
+
+(remove-files "test.out" "test2.out")
 
 (test-end)

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.11 2008-02-24 23:47:20 shirok Exp $
+;;;  $Id: util.scm,v 1.12 2008-05-07 02:19:37 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -48,6 +48,7 @@
   (export current-directory directory-list directory-list2 directory-fold
           home-directory temporary-directory
           make-directory* create-directory* remove-directory* delete-directory*
+          copy-directory*
           build-path resolve-path expand-path simplify-path decompose-path
           absolute-path? relative-path? find-file-in-paths
 	  path-separator
@@ -60,12 +61,23 @@
           file-mtime=? file-mtime<? file-mtime<=? file-mtime>? file-mtime>=?
           file-atime=? file-atime<? file-atime<=? file-atime>? file-atime>=?
           file-ctime=? file-ctime<? file-ctime<=? file-ctime>? file-ctime>=?
-          touch-file copy-file move-file copy-files move-files
+          touch-file copy-file move-file 
+          ;copy-files move-files
+          remove-files delete-files
           file->string file->string-list file->list file->sexp-list
           ))
 (select-module file.util)
 
-;; common util
+;; Common util.  Returns #f if PATH does not exist.
+
+(define (safe-stat path follow-link?)
+  (if follow-link?
+    (and (sys-access path F_OK) (sys-stat path))
+    ;; When we don't follow symlink, we can't use sys-access since it returns
+    ;; #f if PATH is a dangling symlink.
+    (guard (e [(and (<system-error> e) (eq? (ref e 'errno) ENOENT)) #f])
+      (sys-lstat path))))
+
 (define (%stat path follow-link?)
   ((if follow-link? sys-stat sys-lstat) path))
 
@@ -124,9 +136,8 @@
                       . rest)
     (let* ((filters (%directory-filter-compose rest))
            (selector (lambda (e)
-                       (and (file-exists? e)
-                            (eq? (slot-ref (%stat e follow-link?) 'type)
-                                 'directory))))
+                       (and-let* ([s (safe-stat e follow-link?)])
+                         (eq? (slot-ref s 'type) 'directory))))
            (entries (sort (%directory-filter dir filters filter-add-path?))))
       (if add-path?
         (partition selector (map (cut build-path dir <>) entries))
@@ -189,6 +200,70 @@
   (sys-rmdir dir))
 
 (define delete-directory* remove-directory*)
+
+;; cp -r
+;;   if-exists  - :error :supersede :backup :overwrite #f
+;;   backup-suffix
+;;   safe
+;;   follow-link? - follow symlink.  the default is #f
+;;   keep-timestamp
+;;   keep-mode
+(define (copy-directory* src dst . opts)
+  (let-keywords opts ((if-exists :error)
+                      (backsfx :backup-suffix ".orig")
+                      (safe #f)
+                      (follow-link? #f)
+                      (keeptime :keep-timestamp #f)
+                      (keepmode :keep-mode #f))
+
+    (define (postprocess src dst)
+      (let1 stat (sys-stat src)
+        (when keeptime (sys-utime dst (ref stat'atime) (ref stat'mtime)))
+        (when keepmode (sys-chmod dst (ref stat'perm)))))
+
+    (define (do-copy src dst)
+      (copy-file src dst :if-exists if-exists :backup-suffix backsfx
+                 :follow-link? follow-link?
+                 :keep-timestamp keeptime :keep-mode keepmode))
+    
+    (define (rec src dst)
+      (cond [(file-is-directory? src)
+             (let1 exists? (file-exists? dst)
+               (if (not exists?)
+                 (sys-mkdir dst #o777)
+                 (case if-exists
+                   [(:error) (error "destination file exists" dst)]
+                   [(:supersede)
+                    (remove-files dst)
+                    (sys-mkdir dst #o777)]
+                   [(:overwrite)
+                    (unless (file-is-directory? dst)
+                      (remove-files dst))
+                    ;; TODO: if dst directory exists, check the permission
+                    ]
+                   ;; NB: :backup is handled by toplevel
+                   [else (error "unknown if-exists value:" if-exists)]))
+               (for-each (lambda (s)
+                           (rec s (build-path dst (sys-basename s))))
+                         (directory-list src :add-path? #t :children? #t))
+               (unless exists? (postprocess src dst))
+               )]
+            [else (do-copy src dst)]))
+
+    (cond [(file-is-symlink? src) ; we check this first, for src may be a dangling symlink.
+           (do-copy src dst)]
+          [(not (file-exists? src))
+           (error "source file does not exist:" src)]
+          [(file-exists? dst)
+           (case if-exists
+             [(:backup)
+              (sys-rename dst (string-append dst backsfx))
+              (rec src dst)]
+             [(#f) #f]
+             [else  ; other if-exists options are handled later
+              (rec src dst)])]
+          [else (rec src dst)])
+    ))
 
 ;;;=============================================================
 ;;; Pathnames
@@ -312,8 +387,8 @@
     [(_ name slot)
      (define (name path . opts)
        (let-keywords opts ((follow-link? #t))
-         (and (sys-access path |F_OK|)
-              (slot-ref (%stat path follow-link?) slot))))]))
+         (and-let* ([s (safe-stat path follow-link?)])
+           (slot-ref s slot))))]))
 
 (define-stat-accessor file-type 'type)
 (define-stat-accessor file-perm 'perm)
@@ -335,8 +410,8 @@
 (define (file-is-executable? path) (sys-access path |X_OK|))
 
 (define (file-is-symlink? path)
-  (and (file-exists? path)
-       (eq? (slot-ref (sys-lstat path) 'type) 'symlink)))
+  (and-let* ([s (safe-stat path #f)])
+    (eq? (slot-ref s 'type) 'symlink)))
 
 ;; compares two files are identical, in the sense that:
 ;;  file-eq?  - two files (or directories) are the same entity. symbolic
@@ -451,6 +526,7 @@
 
 ;; copy-file
 ;;  if-exists     - :error :supersede :backup #f
+;;  follow-link?  - follow symlinks (default #t)
 ;;  backup-suffix
 ;;  safe
 ;;  keep-timestamp
@@ -458,6 +534,7 @@
 (define (copy-file src dst . opts)
   (let-keywords opts ((if-exists :error)
                       (backsfx :backup-suffix ".orig")
+                      (follow-link? #t)
                       (safe #f)
                       (keeptime :keep-timestamp #f)
                       (keepmode :keep-mode #f))
@@ -476,12 +553,14 @@
         (cond [inport  => close-input-port])
         (cond [outport => close-output-port])
         (cond [tmpfile
-               (sys-chmod tmpfile (if keepmode (file-perm src) default-perm))
+               (safe-chmod tmpfile (if keepmode (file-perm src) default-perm))
                (when (eq? if-exists :backup) (sys-rename dst backfile))
                (sys-rename tmpfile dst)]
-              [keepmode         (sys-chmod dst (file-perm src))]
-              [(not dst-exists) (sys-chmod dst default-perm)])
+              [keepmode         (safe-chmod dst (file-perm src))]
+              [(not dst-exists) (safe-chmod dst default-perm)])
         (unless (null? times) (apply sys-utime dst times)))
+      (define (safe-chmod path mode)
+        (and (not (file-is-symlink? path)) (sys-chmod path mode)))
       (define (open-destination)
         (if safe
           (cond
@@ -501,12 +580,27 @@
            [else
             (set! outport (open-output-file dst :if-exists :supersede)) #t])
           ))
+      (define (get-times stat)
+        (map (cut slot-ref stat <>) '(atime mtime)))
+      (define (do-symlink)
+        (define (doit)
+          (cond-expand
+           [gauche.sys.symlink (sys-symlink (sys-readlink src) dst)]
+           [else #f]));NB: if system doesn't support symlink, we can't be here.
+        (when keeptime (set! times (get-times (sys-lstat src))))
+        (if (file-exists? dst)
+          (case if-exists
+            [(:error) (error <system-error> :errno EEXIST
+                             "destination file exists" dst)]
+            [(#f) #f]
+            [(:backup) (sys-rename dst backfile) (doit)]
+            [else      (sys-unlink dst) (doit)])
+          (doit))
+        (commit))
       (define (do-copy)
         (guard (e (else (rollback) (raise e)))
           (set! inport (open-input-file src))
-          (when keeptime
-            (set! times (let1 stat (sys-fstat inport)
-                          (map (cut slot-ref stat <>) '(atime mtime)))))
+          (when keeptime (set! times (get-times (sys-fstat inport))))
           (set! dst-exists (file-exists? dst))
           (begin0
            (and (open-destination)
@@ -517,9 +611,12 @@
       ;; body of copy-file
       (unless (memq if-exists '(#f :error :supersede :backup))
         (error "argument for :if-exists must be either :error, :supersede, :backup or #f, but got" if-exists))
-      (when (and (file-exists? src) (file-exists? dst) (file-eqv? src dst))
+      (when (and (file-exists? src) (file-exists? dst)
+                 ((if follow-link? file-eqv? file-eq?) src dst))
         (errorf "source ~s and destination ~s are the same file" src dst))
-      (do-copy)
+      (if (and (not follow-link?) (file-is-symlink? src))
+        (do-symlink)
+        (do-copy))
       )))
   
 ;; move-file
@@ -563,30 +660,33 @@
     ))
 
 ;; copy-files & move files
-(define (%multifile-cpmv op)
-  (lambda (files dst . opts)
-    (unless (file-exists? dst)
-      (error "destination does not exist" dst))
-    (unless (file-is-directory? dst)
-      (error "destination is not a directory" dst))
-    (dolist (f files)
-      (apply op f (build-path dst (sys-basename f)) opts))))
+;; NB: need to think more about argument order.  Should it be
+;;     (copy-files file1 file2 ... destdir)  ;; cp(1) style
+;;   or
+;;     (copy-files destdir file1 file2 ...)
+;; And how shall we specify keyword args to pass to copy-file?
 
-(define copy-files (%multifile-cpmv copy-file))
-(define move-files (%multifile-cpmv move-file))
+; (define (%multifile-cpmv op)
+;   (lambda (files dst . opts)
+;     (unless (file-exists? dst)
+;       (error "destination does not exist" dst))
+;     (unless (file-is-directory? dst)
+;       (error "destination is not a directory" dst))
+;     (dolist (f files)
+;       (apply op f (build-path dst (sys-basename f)) opts))))
+
+; (define copy-files (%multifile-cpmv copy-file))
+; (define move-files (%multifile-cpmv move-file))
 
 ;; remove files
-(define (remove-files paths)
+(define (remove-files . paths)
   (dolist (p paths)
-    (cond [(not (file-exists? p))]
+    (cond [(list? p) (apply remove-files p)] ; for the convenience
           [(file-is-directory? p) (remove-directory* p)]
           [else (sys-unlink p)])))
 
 (define delete-files remove-files)
   
-;; copy-directory
-;; move-directory
-
 ;; file->string, file->list, file->string-list, file->sexp-list
 ;; shortcuts of port->string etc.
 ;; NB: call-with-input-file may pass #f to the proc if :if-does-not-exist #f
