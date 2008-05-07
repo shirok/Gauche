@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.65 2008-05-04 18:38:11 shirok Exp $
+# $Id: Makefile.in,v 1.66 2008-05-07 08:20:59 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check pre-package install uninstall \
@@ -110,7 +110,9 @@ distclean: clean
 
 maintainer-clean: clean
 	for d in $(SRIDBUS); do (cd $$d; $(MAKE) maintainer-clean); done
-	if test -f $(LIBATOMICDIR)/Makefile; then (cd $(LIBATOMICDIR); $(MAKE) distclean); fi
+	if test -f $(LIBATOMICDIR)/Makefile; then \
+	   (cd $(LIBATOMICDIR); $(MAKE) distclean; rm -f configure);\
+	fi
 	(cd winnt; $(MAKE) clean)
 	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL INSTALL.eucjp DIST_EXCLUDE_X gc/configure
 
