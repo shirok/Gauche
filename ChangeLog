@@ -1,5 +1,10 @@
 2008-05-06  Shiro Kawai  <shiro@acm.org>
 
+	* lib/dbm.scm, lib/dbm/fsdbm.scm, ext/dbm/*: Renamed dbm-rename to
+	  dbm-move, for the consistency of copy-file/move-file.  The old
+	  name dbm-rename is kept as an alias of dbm-move.  Added dbm-copy
+	  and dbm-move support to dbm.fsdbm.
+
 	* libsrc/file/util.scm, ext/file/test.scm: Added copy-directory*.
 	  Fixed the behavior on dangling symlinks in copy-file.
 	  Dropped copy-files and move-files, for its API need to be
