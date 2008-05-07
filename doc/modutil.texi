@@ -3450,6 +3450,43 @@ followed.
 @c COMMON
 @end defun
 
+@defun copy-directory* src dst &keyword if-exists backup-suffix safe keep-timestamp keep-mode follow-link?
+@c EN
+If @var{src} is a regular file, copies its content to @var{dst}, just like
+@code{copy-file} does.  If @var{src} is a directory, recursively
+desends it and copy the file tree to @var{dst}.  Basically
+it mimics the behavior of @code{cp -r} command.
+
+If there's any symbolic links under @var{src}, the link itself
+is copied instead of the file pointed to by it, unless a true value
+is given to the @var{follow-link?} keyword argument,
+i.e. the default value of @var{follow-link?} is @code{#f}.
+(Note that this is opposite to the @code{copy-file}, in which
+@var{follow-link?} is true by default.)
+@c JP
+@var{src}が通常のファイルであれば、@code{copy-file}と同じように
+その内容を@var{dst}にコピーします。しかし@var{src}がディレクトリの場合は、
+再帰的にディレクトリを辿り、その全てを@var{dst}へとコピーします。
+@code{cp -r}コマンドに相当するものだと考えて良いでしょう。
+
+@var{src}がディレクトリの場合、デフォルトではその下にあるシンボリックリンクは
+辿られず、リンクそのものがコピーされます。リンク先の内容をもコピーしたい
+場合は@var{follow-link?}キーワード引数に真の値を与えてください。
+つまり、@var{follow-link?}キーワード引数のデフォルト値は@code{#f}です。
+(このデフォルト値は@code{copy-file}と逆であることに注意してください。
+@code{copy-file}では@var{follow-link?}はデフォルトで真であり、
+リンクそのものをコピーしたい場合に明示的に@code{#f}を与える必要があります。)
+@c COMMON
+
+@c EN
+The meanings of the other keyword arguments are the same as
+@code{copy-file}.  See the entry of @code{copy-file} for the details.
+@c JP
+他のキーワード引数の意味は@code{copy-file}と同じです。
+詳細は@code{copy-file}を参照してください。
+@c COMMON
+@end defun
+
 
 @node Pathname utilities, File attribute utilities, Directory utilities, Filesystem utilities
 @subsection Pathname utilities
@@ -3855,7 +3892,7 @@ See also @code{sys-utime} (@xref{File stats}).
 @c COMMON
 @end defun
 
-@defun copy-file src dst &keyword if-exists backup-suffix safe keep-timestamp keep-mode
+@defun copy-file src dst &keyword if-exists backup-suffix safe keep-timestamp keep-mode follow-link?
 @c EN
 Copies file from @var{src} to @var{dst}.  The source file @var{src} must exist.
 The behavior when the destination @var{dst} exists varies by the keyword
@@ -3892,6 +3929,27 @@ Doesn't copy and returns @code{#f} when @var{dst} exists.
 @code{Copy-file} returns @code{#t} after completion.
 @c JP
 @code{copy-file}はコピーが完了したら@code{#t}を返します。
+@c COMMON
+
+@c EN
+If @var{src} is a symbolic link, @code{copy-file} follows the
+symlink and copies the actual content by default.  An error
+is raised if @var{src} is a dangling symlink.
+
+Giving @code{#f} to the keyword argument @var{follow-link?} 
+makes @code{copy-file} to copy the link itself.
+It is possible that @var{src} is a dangling 
+symlink in this case.
+@c JP
+@var{src}がシンボリックリンクであった場合、@code{copy-file}は
+デフォルトでリンクを辿ります。つまり、ファイルの実体がコピーされます。
+@var{src}が存在しないパスを指すシンボリックリンクであった場合は
+エラーが通知されます。
+
+キーワード引数@var{follow-link?}に@code{#f}を与えることで、
+@code{copy-link}にシンボリックリンクそのものをコピーさせることも
+できます。この場合、@var{src}が存在しないパスを指すシンボリックリンクで
+あっても構いません。
 @c COMMON
 
 @c EN
@@ -3946,17 +4004,17 @@ otherwise it becomes @code{#o666} masked by umask settings.
 @c COMMON
 @end defun
 
-@defun copy-files files dstdir &keyword if-exists backup-suffix safe keep-timestamp keep-mode
-@c EN
-Copies each file in a list @var{files} to the destination @var{dstdir}, which
-must be an existing directory.  The keyword arguments are passed
-to @code{copy-file}.
-@c JP
-リスト@var{files}中の各ファイルをディレクトリに@var{dstdir}にコピーします。
-@var{dstdir}は既に存在しなければなりません。
-キーワード引数はそのまま@code{copy-file}に渡されます。
-@c COMMON
-@end defun
+@c @defun copy-files files dstdir &keyword if-exists backup-suffix safe keep-timestamp keep-mode follow-link?
+@c @c EN
+@c Copies each file in a list @var{files} to the destination @var{dstdir}, which
+@c must be an existing directory.  The keyword arguments are passed
+@c to @code{copy-file}.
+@c @c JP
+@c リスト@var{files}中の各ファイルをディレクトリに@var{dstdir}にコピーします。
+@c @var{dstdir}は既に存在しなければなりません。
+@c キーワード引数はそのまま@code{copy-file}に渡されます。
+@c @c COMMON
+@c @end defun
 
 @defun move-file src dst &keyword if-exists backup-suffix
 @c EN
@@ -4018,17 +4076,17 @@ it to @var{dst}, then removes @var{src}.
 @c COMMON
 @end defun
 
-@defun move-files files dstdir &keyword if-exists backup-suffix
-@c EN
-Moves each file in a list @var{files} to @var{dstdir},
-which must be an existing directory.  Keyword arguments
-are passed to @code{move-file}.
-@c JP
-リスト@var{files}中の各ファイルをディレクトリ@var{dstdir}に移動します。
-@var{dstdir}は既に存在しなければなりません。
-キーワード引数はそのまま@code{move-file}に渡されます。
-@c COMMON
-@end defun
+@c @defun move-files files dstdir &keyword if-exists backup-suffix
+@c @c EN
+@c Moves each file in a list @var{files} to @var{dstdir},
+@c which must be an existing directory.  Keyword arguments
+@c are passed to @code{move-file}.
+@c @c JP
+@c リスト@var{files}中の各ファイルをディレクトリ@var{dstdir}に移動します。
+@c @var{dstdir}は既に存在しなければなりません。
+@c キーワード引数はそのまま@code{move-file}に渡されます。
+@c @c COMMON
+@c @end defun
 
 @defun remove-files paths
 @defunx delete-files paths
