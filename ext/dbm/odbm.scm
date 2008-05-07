@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: odbm.scm,v 1.8 2007-03-02 07:39:05 shirok Exp $
+;;;  $Id: odbm.scm,v 1.9 2008-05-07 02:27:09 shirok Exp $
 ;;;
 
 (define-module dbm.odbm
@@ -145,7 +145,7 @@
 
 
 (define (odbm-files name)
-  (map (cut string-append name <>) ".pag" ".dir"))
+  (map (cut string-append name <>) '(".pag" ".dir")))
 
 (define-method dbm-db-exists? ((class <odbm-meta>) name)
   (every file-exists? (odbm-files name)))
@@ -155,10 +155,9 @@
 
 (define-method dbm-db-copy ((class <odbm-meta>) from to . keys)
   (apply %dbm-copy2
-         (append (append-map list (odbm-files from) (odbm-files to))
-                 keys)))
+         (append (append-map list (odbm-files from) (odbm-files to)) keys)))
 
-(define-method dbm-db-rename ((class <odbm-meta>) from to . keys)
+(define-method dbm-db-move ((class <odbm-meta>) from to . keys)
   (apply %dbm-rename2
          (append (append-map list (odbm-files from) (odbm-files to))
                  keys)))

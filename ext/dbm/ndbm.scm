@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: ndbm.scm,v 1.7 2007-03-02 07:39:05 shirok Exp $
+;;;  $Id: ndbm.scm,v 1.8 2008-05-07 02:27:04 shirok Exp $
 ;;;
 
 (define-module dbm.ndbm
@@ -131,7 +131,7 @@
     ))
 
 (define (ndbm-files name)
-  (map (cut string-append name <>) ".pag" ".dir"))
+  (map (cut string-append name <>) '(".pag" ".dir")))
 
 (define-method dbm-db-exists? ((class <ndbm-meta>) name)
   (every file-exists? (ndbm-files name)))
@@ -141,10 +141,9 @@
 
 (define-method dbm-db-copy ((class <ndbm-meta>) from to . keys)
   (apply %dbm-copy2
-         (append (append-map list (ndbm-files from) (ndbm-files to))
-                 keys)))
+         (append (append-map list (ndbm-files from) (ndbm-files to)) keys)))
 
-(define-method dbm-db-rename ((class <ndbm-meta>) from to . keys)
+(define-method dbm-db-move ((class <ndbm-meta>) from to . keys)
   (apply %dbm-rename2
          (append (append-map list (ndbm-files from) (ndbm-files to))
                  keys)))

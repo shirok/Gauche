@@ -4,7 +4,9 @@
 
 (use gauche.test)
 (use srfi-1)
+(use file.util)
 (use gauche.collection)
+(use gauche.dictionary)
 
 (test-start "dbm")
 
@@ -17,15 +19,15 @@
 
 (define-syntax catch
   (syntax-rules ()
-    ((_ body ...)
-     (with-error-handler
-      (lambda (e) #t)
-      (lambda () body ... #f)))))
+    [(_ body ...)
+     (guard (e [else #t])
+       body ... #f)]))
 
-(define *test-dbm* "test.dbm")
+(define *test-dbm*  "test.dbm")
+(define *test2-dbm* "test2.dbm")
 (define *current-dbm* #f)
 
-;; prepair dataset
+;; prepare dataset
 (define *test1-dataset* (make-hash-table 'equal?)) ;string only
 (define *test2-dataset* (make-hash-table 'equal?)) ;other objects
 
@@ -49,6 +51,9 @@
                   :key-convert serializer
                   :value-convert serializer))
   #t)
+
+(define (test:db-exists? class)
+  (dbm-db-exists? class *test-dbm*))
 
 ;; put everything to the database
 (define (test:put! dataset)
@@ -81,28 +86,45 @@
 
 ;; does for-each and map do a right thing?
 (define (test:for-each dataset)
-  (call/cc
-   (lambda (return)
-     (let ((r '()))
-       (dbm-for-each *current-dbm*
-                     (lambda (k v)
-                       (unless (equal? v (hash-table-get dataset k #f))
-                         (return #f))
-                       (set! r (cons v r))))
-       (equal? (reverse r)
-               (dbm-map *current-dbm*
-                        (lambda (k v) v)))))))
+  (let/cc break
+    (let1 r '()
+      (dbm-for-each *current-dbm*
+                    (lambda (k v)
+                      (unless (equal? v (hash-table-get dataset k #f))
+                        (break #f))
+                      (set! r (cons v r))))
+      (equal? (reverse r) (dbm-map *current-dbm* (lambda (k v) v))))))
 
-;; does collection framework works?
+;; does collection framework work?
 (define (test:collection-read dataset)
-  (call/cc
-   (lambda (return)
-     (for-each (lambda (entry)
-                 (unless (equal? (hash-table-get dataset (car entry))
-                                 (cdr entry))
-                   (return #f)))
-               *current-dbm*)
-     #t)))
+  (let/cc break
+    (for-each (lambda (entry)
+                (unless (equal? (hash-table-get dataset (car entry))
+                                (cdr entry))
+                  (break #f)))
+              *current-dbm*)
+    #t))
+
+;; does dictionary framework work?
+(define (test:dict-for-each dataset)
+  (let/cc break
+    (dict-for-each *current-dbm*
+                   (lambda (k v)
+                     (unless (equal? (hash-table-get dataset k) v)
+                       (break #f))))
+    #t))
+
+(define (test:dict-map dataset)
+  (every (lambda (p) (equal? (hash-table-get dataset (car p)) (cdr p)))
+         (dict-map *current-dbm* cons)))
+
+(define (test:dict-keys dataset)
+  (every (cut hash-table-exists? dataset <>) (dict-keys *current-dbm*)))
+
+(define (test:dict-values dataset)
+  (and (every (cute member <> (hash-table-values dataset))
+              (dict-values *current-dbm*))
+       #t))
 
 ;; does delete work?
 (define (test:delete dataset)
@@ -123,6 +145,19 @@
   (and (catch (dbm-put! *current-dbm* "" ""))
        (catch (dbm-delete! *current-dbm* ""))))
 
+;; does copy work?
+(define (test:copy class from to)
+  (dbm-db-copy class from to)
+  (let ((f (dbm-open class :path from :rw-mode :read))
+        (tab (make-hash-table 'equal?)))
+    (dbm-for-each f (cut hash-table-put! tab <> <>))
+    (dbm-close f)
+    (let1 t (dbm-open class :path to :rw-mode :read)
+      (begin0
+       (every (lambda (k) (equal? (dbm-get tab k) (dbm-get t k)))
+              (dict-keys tab))
+       (dbm-close t)))))
+
 ;; does close work?
 (define (test:close)
   (dbm-close *current-dbm*)
@@ -135,15 +170,19 @@
        (catch (dbm-for-each *current-dbm* (lambda _ #f)))
        (catch (dbm-map *current-dbm* (lambda _ #f)))))
 
+;; does db-remove work?
+(define (test:db-remove class name)
+  (and (dbm-db-exists? class name)
+       (begin (dbm-db-remove class name)
+              (not (dbm-db-exists? class name)))))
+
 ;; clean up files
 (define (clean-up)
-  (when (file-exists? *test-dbm*) (sys-system #`"rm -rf ,*test-dbm*"))
-  (when (file-exists? (string-append *test-dbm* ".dir"))
-    (sys-unlink (string-append *test-dbm* ".dir")))
-  (when (file-exists? (string-append *test-dbm* ".pag"))
-    (sys-unlink (string-append *test-dbm* ".pag")))
-  (when (file-exists? (string-append *test-dbm* ".db"))
-    (sys-unlink (string-append *test-dbm* ".db"))))
+  (define (remover f)
+    (remove-files (list f (string-append f ".dir") (string-append f ".pag")
+                        (string-append f ".db"))))
+  (remover *test-dbm*)
+  (remover *test2-dbm*))
 
 ;; a series of test per dataset and class
 (define (run-through-test class dataset serializer)
@@ -152,33 +191,44 @@
    clean-up
    (lambda ()
      ;; create read/write db
-     (test (tag "make") #t (lambda () (test:make class :create serializer)))
+     (test* (tag "db-exists? (pre)") #f (test:db-exists? class))
+     (test* (tag "make") #t (test:make class :create serializer))
+     (test* (tag "db-exists? (post)") #t (test:db-exists? class))
      ;; put stuffs
-     (test (tag "put!") #t (lambda () (test:put! dataset)))
+     (test* (tag "put!") #t (test:put! dataset))
      ;; get stuffs
-     (test (tag "get") #t (lambda () (test:get dataset)))
-     (test (tag "get-exceptional") #t (lambda () (test:get-exceptional)))
+     (test* (tag "get") #t (test:get dataset))
+     (test* (tag "get-exceptional") #t (test:get-exceptional))
      ;; traverse
-     (test (tag "for-each") #t (lambda () (test:for-each dataset)))
+     (test* (tag "for-each") #t (test:for-each dataset))
      ;(test (tag "collection-read") #t
      ;      (lambda () (test:collection-read dataset)))
+     (test* (tag "dict-for-each") #t (test:dict-for-each dataset))
+     (test* (tag "dict-map") #t (test:dict-map dataset))
+     (test* (tag "dict-keys") #t (test:dict-keys dataset))
+     (test* (tag "dict-values") #t (test:dict-values dataset))
      ;; close
-     (test (tag "close") #t (lambda () (test:close)))
+     (test* (tag "close") #t (test:close))
      ;; open again with read only
-     (test (tag "read-only open") #t (lambda () (test:make class :read serializer)))
+     (test* (tag "read-only open") #t (test:make class :read serializer))
      ;; does it still have stuffs?
-     (test (tag "get again") #t (lambda () (test:get dataset)))
+     (test* (tag "get again") #t (test:get dataset))
      ;; does it work as read-only?
-     (test (tag "read-only") #t (lambda () (test:read-only)))
+     (test* (tag "read-only") #t (test:read-only))
      ;; close and open it again
-     (test (tag "close again") #t
-           (lambda ()
-             (dbm-close *current-dbm*)
-             (test:make class :write serializer)))
+     (test* (tag "close again") #t
+            (begin
+              (dbm-close *current-dbm*)
+              (test:make class :write serializer)))
      ;; delete stuffs
-     (test (tag "delete") #t (lambda () (test:delete dataset)))
+     (test* (tag "delete") #t (test:delete dataset))
      ;; close again
-     (test (tag "close again") #t (lambda () (test:close))))
+     (test* (tag "close again") #t (test:close))
+     ;; copy
+     (test* (tag "db-copy") #t (test:copy class *test-dbm* *test2-dbm*))
+     ;; remove
+     (test* (tag "db-remove") #t (test:db-remove class *test2-dbm*))
+     )
    clean-up))
 
 

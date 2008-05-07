@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gdbm.scm,v 1.13 2007-10-23 20:23:29 shirok Exp $
+;;;  $Id: gdbm.scm,v 1.14 2008-05-07 02:26:58 shirok Exp $
 ;;;
 
 (define-module dbm.gdbm
@@ -167,7 +167,7 @@
   (%with-gdbm-locking from
    (lambda () (apply copy-file from to :safe #t keys))))
 
-(define-method dbm-db-rename ((class <gdbm-meta>) from to . keys)
+(define-method dbm-db-move ((class <gdbm-meta>) from to . keys)
   (%with-gdbm-locking from
    (lambda () (apply move-file from to :safe #t keys))))
 

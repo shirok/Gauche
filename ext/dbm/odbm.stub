@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: odbm.stub,v 1.18 2007-03-22 11:20:18 shirok Exp $
+;;;  $Id: odbm.stub,v 1.19 2008-05-07 02:27:10 shirok Exp $
 ;;;
 
 "
@@ -80,57 +80,45 @@
 
 (define-cproc odbm-init (name::<string>)
   (body <int>
-        "if (odbm_opened) Scm_Error(\"dbm file is already opened.\");"
-        "SCM_RESULT = dbminit(Scm_GetString(name));"
-        "if (SCM_RESULT < 0) {"
-        "  Scm_SysError(\"couldn't open dbm database %S\", name);"
-        "}"
-        "odbm_opened = TRUE;"))
+        (when odbm_opened (Scm_Error "dbm file is already opened."))
+        (let* ((r :: int (dbminit (Scm_GetString name))))
+          (when (< r 0) (Scm_SysError "couldn't open dbm database %S" name))
+          (set! odbm_opened TRUE)
+          (result r))))
 
 (define-cproc odbm-close ()
-  (body <void>
-        "if (odbm_opened) {"
-        "  dbmclose();"
-        "  odbm_opened = FALSE;"
-        "}"))
+  (body <void> (when odbm_opened (dbmclose) (set! odbm_opened FALSE))))
 
 (define-cproc odbm-closed? ()
-  (expr <boolean> "!odbm_opened"))
+  (expr <boolean> (not odbm_opened)))
 
 (define-cproc odbm-store (key::<string> val::<string>)
   (body <int>
-        "datum dkey, dval;"
-        "CHECK_ODBM();"
-        "TO_DATUM(dkey, key);"
-        "TO_DATUM(dval, val);"
-        "SCM_RESULT = store(dkey, dval);"))
+        (let* ((dkey :: datum) (dval :: datum))
+          (CHECK_ODBM) (TO_DATUM dkey key) (TO_DATUM dval val)
+          (result (store dkey dval)))))
 
 (define-cproc odbm-fetch (key::<string>)
-  (body "datum dkey, dval;"
-        "CHECK_ODBM();"
-        "TO_DATUM(dkey, key);"
-        "dval = fetch(dkey);"
-        "FROM_DATUM(SCM_RESULT, dval);"))
+  (body <top>
+        (let* ((dkey :: datum) (dval :: datum))
+          (CHECK_ODBM) (TO_DATUM dkey key) (set! dval (fetch dkey))
+          (FROM_DATUM SCM_RESULT dval))))
 
 (define-cproc odbm-delete (key::<string>)
   (body <int>
-        "datum dkey;"
-        "CHECK_ODBM();"
-        "TO_DATUM(dkey, key);"
-        "SCM_RESULT = delete(dkey);"))
+        (let* ((dkey :: datum))
+          (CHECK_ODBM) (TO_DATUM dkey key) (result (delete dkey)))))
 
 (define-cproc odbm-firstkey ()
-  (body "datum dkey;"
-        "CHECK_ODBM();"
-        "dkey = firstkey();"
-        "FROM_DATUM(SCM_RESULT, dkey);"))
+  (body <top>
+        (let* ((dkey :: datum))
+          (CHECK_ODBM) (set! dkey (firstkey)) (FROM_DATUM SCM_RESULT dkey))))
 
 (define-cproc odbm-nextkey (key::<string>)
-  (body "datum dkey, dnkey;"
-        "CHECK_ODBM();"
-        "TO_DATUM(dkey, key);"
-        "dnkey = nextkey(dkey);"
-        "FROM_DATUM(SCM_RESULT, dnkey);"))
+  (body <top>
+        (let* ((dkey :: datum) (dnkey :: datum))
+          (CHECK_ODBM) (TO_DATUM dkey key) (set! dnkey (nextkey dkey))
+          (FROM_DATUM SCM_RESULT dnkey))))
 
 ;; Local variables:
 ;; mode: scheme

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fsdbm.scm,v 1.9 2008-02-25 08:42:56 shirok Exp $
+;;;  $Id: fsdbm.scm,v 1.10 2008-05-07 02:26:56 shirok Exp $
 ;;;
 
 (define-module dbm.fsdbm
@@ -178,8 +178,20 @@
 
 (define-method dbm-db-remove ((class <fsdbm-meta>) name)
   (unless (fsdbm-directory? name)
-    (errorf "given path is not an fsdbm database: ~a" name))
+    (error "given path is not an fsdbm database:" name))
   (remove-directory* name))
+
+(define-method dbm-db-copy ((class <fsdbm-meta>) from to)
+  (unless (fsdbm-directory? from)
+    (error "source path is not an fsdbm database:" from))
+  (copy-directory* from to))
+
+(define-method dbm-db-move ((class <fsdbm-meta>) from to)
+  (unless (fsdbm-directory? from)
+    (error "source path is not an fsdbm database:" from))
+  ;; NB: move-directory*
+  (copy-directory* from to)
+  (remove-directory* from))
 
 ;;
 ;; Internal utilities

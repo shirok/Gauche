@@ -30,23 +30,24 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: dbm.scm,v 1.9 2007-03-02 07:39:07 shirok Exp $
+;;;  $Id: dbm.scm,v 1.10 2008-05-07 02:26:54 shirok Exp $
 ;;;
 
 (define-module dbm
   (use gauche.collection)
+  (use gauche.dictionary)
   (export <dbm> <dbm-meta>
           dbm-open    dbm-close   dbm-closed? dbm-get
           dbm-put!    dbm-delete! dbm-exists?
           dbm-fold    dbm-for-each  dbm-map
-          dbm-db-exists? dbm-db-remove dbm-db-copy dbm-db-rename)
+          dbm-db-exists? dbm-db-remove dbm-db-copy dbm-db-move dbm-db-rename)
   )
 (select-module dbm)
 
 (define-class <dbm-meta> (<class>)
   ())
 
-(define-class <dbm> (<collection>)
+(define-class <dbm> (<dictionary>)
   ((path       :init-keyword :path)
    (rw-mode    :init-keyword :rw-mode    :initform :write)
    (file-mode  :init-keyword :file-mode  :initform #o664)
@@ -153,18 +154,18 @@
 (define-method dbm-closed? ((dbm <dbm>)) #f)
 
 ;;
-;; These work if dbm-fold is defined.
+;; These work if dbm-fold is defined, but may be more efficient
+;; if specialized.
 ;;
 
 (define-method dbm-for-each ((dbm <dbm>) proc)
   (when (dbm-closed? dbm) (errorf "dbm-for-each: dbm already closed: ~s" dbm))
-  (unless (procedure? proc) (errorf "dbm-for-each: bad procedure: ~s" proc))
   (dbm-fold dbm (lambda (key value r) (proc key value)) #f))
 
 (define-method dbm-map ((dbm <dbm>) proc)
   (when (dbm-closed? dbm) (errorf "dbm-map: dbm already closed: ~s" dbm))
-  (unless (procedure? proc) (errorf "dbm-map: bad procedure: ~s" proc))
-  (reverse (dbm-fold dbm (lambda (key value r) (cons (proc key value) r)) '())))
+  (reverse
+   (dbm-fold dbm (lambda (key value r) (cons (proc key value) r)) '())))
 
 ;; Collection framework
 ;;   This is a fallback, using "iterator inversion" technique to obtain
@@ -192,6 +193,16 @@
 ;  (proc (lambda () (eq? buf 'end))
 ;        (lambda () (begin0 buf (set! buf (fetch))))))
 
+;; Dictionary framework
+(define-method dict-fold ((dbm <dbm>) proc seed)
+  (dbm-fold dbm proc seed))
+
+(define-method dict-for-each ((dbm <dbm>) proc)
+  (dbm-for-each dbm proc))
+
+(define-method dict-map ((dbm <dbm>) proc)
+  (dbm-map dbm proc))
+
 ;;
 ;; Meta-operations
 ;;  Subclass has to implement these.
@@ -202,10 +213,12 @@
 (define-method dbm-db-remove ((class <dbm-meta>) name)
   (errorf "dbm-db-remove: not supported in ~a" class))
 
-(define-method dbm-db-copy   ((class <dbm-meta>) from to)
+(define-method dbm-db-copy ((class <dbm-meta>) from to)
   (errorf "dbm-db-copy: not supported in ~a" class))
 
-(define-method dbm-db-rename ((class <dbm-meta>) from to)
-  (errorf "dbm-db-rename: not supported in ~a" class))
+(define-method dbm-db-move ((class <dbm-meta>) from to)
+  (errorf "dbm-db-move: not supported in ~a" class))
+
+(define dbm-db-rename dbm-db-move) ; backward compatibility
 
 (provide "dbm")
