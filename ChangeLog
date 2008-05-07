@@ -1,5 +1,8 @@
 2008-05-06  Shiro Kawai  <shiro@acm.org>
 
+	* gc/libatomic_ops-1.2/Makefile.in etc.  Ran automake again to make
+	  Makefile.in etc. keep up to the newest autoconf.
+
 	* lib/dbm.scm, lib/dbm/fsdbm.scm, ext/dbm/*: Renamed dbm-rename to
 	  dbm-move, for the consistency of copy-file/move-file.  The old
 	  name dbm-rename is kept as an alias of dbm-move.  Added dbm-copy
