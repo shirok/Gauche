@@ -42,7 +42,7 @@ Var StartMenuGroup
 !insertmacro MUI_LANGUAGE Japanese
 
 # Installer attributes
-OutFile Gauche-win32-${VERSION}.exe
+OutFile Gauche-mingw-${VERSION}.exe
 InstallDir $PROGRAMFILES\Gauche
 CRCCheck on
 XPStyle on

@@ -1,7 +1,7 @@
 MAKENSIS = "$(shell which makensis.exe 2> /dev/null)"
 GEN_TARGET = setup.nsi
 GAUCHE_VERSION = $(shell cat ../../VERSION 2> /dev/null)
-TARGET = Gauche-win32-$(GAUCHE_VERSION).exe
+TARGET = Gauche-mingw-$(GAUCHE_VERSION).exe
 
 all: gen build
 

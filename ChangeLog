@@ -1,3 +1,11 @@
+2008-05-08  ENDO Yasuyuki  <yasuyuki@kahua.org>
+
+	* winnt/nsis/setup.nsi.in (OutFile): use "mingw" instead of "win32".
+
+	* winnt/nsis/Makefile (TARGET): use "mingw" instead of "win32".
+
+	* winnt/nsis/README: use "mingw" instead of "win32".
+
 2008-05-06  Shiro Kawai  <shiro@acm.org>
 
 	* gc/libatomic_ops-1.2/Makefile.in etc.  Ran automake again to make
