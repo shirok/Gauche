@@ -1,3 +1,8 @@
+2008-05-07  Shiro Kawai  <shiro@acm.org>
+
+	* test/system.scm (get-pwd-via-pwd): adapted to OSX's /bin/pwd
+	  different behavior.
+
 2008-05-08  ENDO Yasuyuki  <yasuyuki@kahua.org>
 
 	* winnt/nsis/setup.nsi.in (OutFile): use "mingw" instead of "win32".

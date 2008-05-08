@@ -3,6 +3,7 @@
 ;;
 
 (use gauche.test)
+(use gauche.config)
 (use srfi-1)
 (use srfi-11)                           ;let-values
 (use srfi-13)
@@ -61,11 +62,16 @@
    (gauche.os.windows (get-command-output "cd"))
    (else
     (cond
-     ((sys-access "/bin/pwd" |X_OK|) (get-command-output "/bin/pwd"))
-     ((sys-access "/usr/bin/pwd" |X_OK|) (get-command-output "/usr/bin/pwd"))
-     ((sys-access "/sbin/pwd" |X_OK|) (get-command-output "/sbin/pwd"))
-     (else (get-command-output "pwd"))))))
-
+     [(sys-access "/bin/pwd" |X_OK|)
+      ;; On MacOSX, /bin/pwd returns _logical_ pathname by default,
+      ;; which is IMHO a bad decision (the behavior is /bin/pwd -L in
+      ;; other BSDs).  Anyway we have to cope with it.
+      (if (string-contains (gauche-config "--arch") "darwin")
+        (get-command-output "/bin/pwd -P")
+        (get-command-output "/bin/pwd"))]
+     [(sys-access "/usr/bin/pwd" |X_OK|) (get-command-output "/usr/bin/pwd")]
+     [(sys-access "/sbin/pwd" |X_OK|) (get-command-output "/sbin/pwd")]
+     [else (get-command-output "pwd")]))))
 
 ;;-------------------------------------------------------------------
 (test-section "environment")
