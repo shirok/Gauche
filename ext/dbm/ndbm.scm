@@ -30,12 +30,13 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: ndbm.scm,v 1.9 2008-05-08 06:43:23 shirok Exp $
+;;;  $Id: ndbm.scm,v 1.10 2008-05-08 22:03:58 shirok Exp $
 ;;;
 
 (define-module dbm.ndbm
   (extend dbm)
   (use srfi-1)
+  (use util.match)
   (export <ndbm>
           ;; low level funcions
           ndbm-open           ndbm-close            ndbm-closed?
@@ -141,12 +142,29 @@
   (for-each sys-unlink (ndbm-files name)))
 
 (define-method dbm-db-copy ((class <ndbm-meta>) from to . keys)
-  (apply %dbm-copy2
-         (append (append-map list (ndbm-files from) (ndbm-files to)) keys)))
+  (match (ndbm-files from)
+    [(f1 f2)
+     (match-let1 (t1 t2) (ndbm-files to)
+       (apply %dbm-copy2 f1 t1 f2 t2 keys))]
+    [(f)
+     (match-let1 (t) (ndbm-files to)
+       (apply copy-file f t :safe #t keys))]
+    [()
+     (apply copy-file from to :safe #t keys)]
+    [else
+     (error "dbm-db-copy: ndbm using more than three files isn't supported")]))
 
 (define-method dbm-db-move ((class <ndbm-meta>) from to . keys)
-  (apply %dbm-rename2
-         (append (append-map list (ndbm-files from) (ndbm-files to))
-                 keys)))
-
+  (match (ndbm-files from)
+    [(f1 f2)
+     (match-let1 (t1 t2) (ndbm-files to)
+       (apply %dbm-rename2 f1 t1 f2 t2 keys))]
+    [(f)
+     (match-let1 (t) (ndbm-files to)
+       (apply move-file f t :safe #t keys))]
+    [()
+     (apply move-file from to :safe #t keys)]
+    [else
+     (error "dbm-db-move: ndbm using more than three files isn't supported")]))
+  
 (provide "dbm/ndbm")
