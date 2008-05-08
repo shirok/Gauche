@@ -1,5 +1,13 @@
 2008-05-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass1/lambda): Merged EXPERIMENTAL extended-lambda
+	  support (CL-style :optional, :key, :rest and :allow-other-keys args).
+	  Not sure if it fits in Scheme style, but let's see how it goes.
+	  Currently an extended lambda is expanded into a normal lambda and
+	  let-keywords/let-optionals forms within the compiler.  Eventually
+	  I prefer them being supported natively, so that the compiler can
+	  do some optimizations.
+
 	* test/system.scm (get-pwd-via-pwd): adapted to OSX's /bin/pwd
 	  different behavior.
 

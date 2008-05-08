@@ -221,6 +221,38 @@
 (test* "macro + let-keywords*" '(1 2 3 0 1)
        ((lambda++ (a b c :key (d 0) (e 1)) (list a b c d e))
         1 2 3))
-                  
+
+;; extended lambda formals are supported within compile.scm, but
+;; it expands to let-optionals*/let-keywords*, so we test it here.
+(test-section "extended lambda formals")
+
+(define (test-optkey proc arg res)
+  (let loop ((res  res)
+             (rarg (reverse arg)))
+    (test* "let :optional" (car res) (apply proc (reverse rarg)))
+    (unless (null? rarg)
+      (loop (cdr res) (cdr rarg)))))
+
+(test-optkey (lambda (a b :optional c d) (list a b c d))
+             '(1 2 3 4)
+             `((1 2 3 4) (1 2 3 ,(undefined))
+               (1 2 ,(undefined) ,(undefined))
+               ,*test-error* ,*test-error*))
+
+(test-optkey (lambda (a b :optional (c 99) (d 100)) (list a b c d))
+             '(1 2 3 4)
+             `((1 2 3 4) (1 2 3 100) (1 2 99 100)
+               ,*test-error* ,*test-error*))
+
+(test-optkey (lambda (:optional a (b 99) (c 100) d) (list a b c d))
+             '(1 2 3 4)
+             `((1 2 3 4) (1 2 3 ,(undefined)) (1 2 100 ,(undefined))
+               (1 99 100 ,(undefined)) (,(undefined) 99 100 ,(undefined))))
+
+(test-optkey (lambda (a b :key (c 99) (d 100)) (list a b c d))
+             '(1 2 :c 3 :d 4)
+             `((1 2 3 4) ,*test-error* (1 2 3 100) ,*test-error*
+               (1 2 99 100)
+               ,*test-error* ,*test-error*))
 
 (test-end)

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.59 2008-01-01 08:09:50 shirok Exp $
+;;;  $Id: compile.scm,v 1.60 2008-05-08 10:08:14 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1579,13 +1579,6 @@
     sym-or-id
     (make-identifier sym-or-id (cenv-module cenv) '())))
 
-;; Returns <list of args>, <# of reqargs>, <has optarg?>
-(define (parse-lambda-args formals)
-  (let loop ((formals formals) (args '()))
-    (cond ((null? formals) (values (reverse args) (length args) 0))
-          ((pair? formals) (loop (cdr formals) (cons (car formals) args)))
-          (else (values (reverse (cons formals args)) (length args) 1)))))
-
 ;; Does the given argument list satisfy procedure's reqargs/optarg?
 (define (argcount-ok? args reqargs optarg?)
   (let1 nargs (length args)
@@ -2166,25 +2159,108 @@
      (error "syntax-error: malformed lambda:" form))))
 
 (define (pass1/lambda form formals body cenv flag)
-  (receive (args reqargs optarg) (parse-lambda-args formals)
-    (let* ((lvars (imap make-lvar+ args))
-           (intform ($lambda form (cenv-exp-name cenv)
-                             reqargs optarg lvars #f flag))
-           (newenv (cenv-extend/proc cenv (%map-cons args lvars)
-                                     LEXICAL intform)))
-      (vector-set! intform 6 (pass1/body body '() newenv))
-      intform)))
+  (receive (args reqargs optarg kargs) (parse-lambda-args formals)
+    (if (null? kargs)
+      (let* ((lvars (imap make-lvar+ args))
+             (intform ($lambda form (cenv-exp-name cenv)
+                               reqargs optarg lvars #f flag))
+             (newenv (cenv-extend/proc cenv (%map-cons args lvars)
+                                       LEXICAL intform)))
+        (vector-set! intform 6 (pass1/body body '() newenv))
+        intform)
+      (let1 g (gensym)
+        (pass1/lambda form (append args g)
+                      (pass1/extended-lambda g kargs body)
+                      cenv flag)))))
 
 (define-pass1-syntax (receive form cenv) :gauche
   (match form
-    ((_ formals expr body ...)
-     (receive (args reqargs optarg) (parse-lambda-args formals)
+    [(_ formals expr body ...)
+     (receive (args reqargs optarg kargs) (parse-lambda-args formals)
+       (unless (null? kargs)
+         (error "syntax-error: extended lambda list isn't allowed in receive:"
+                form))
        (let* ((lvars (imap make-lvar+ args))
               (newenv (cenv-extend cenv (%map-cons args lvars) LEXICAL)))
          ($receive form reqargs optarg lvars (pass1 expr cenv)
-                   (pass1/body body '() newenv)))))
-    (else
-     (error "syntax-error: malformed receive:" form))))
+                   (pass1/body body '() newenv))))]
+    [else (error "syntax-error: malformed receive:" form)]))
+
+;; Returns <list of args>, <# of reqargs>, <has optarg?>, <kargs>
+;; <kargs> is like (:optional (x #f) (y #f) :rest k) etc.
+(define (parse-lambda-args formals)
+  (let loop ((formals formals) (args '()) (n 0))
+    (match formals
+      [()      (values (reverse args) n 0 '())]
+      [((? keyword?) . _) (values (reverse args) n 1 formals)]
+      [(x . y) (loop (cdr formals) (cons (car formals) args) (+ n 1))]
+      [x       (values (reverse (cons x args)) n 1 '())])))
+
+;; Handles extended lambda list.  garg is a gensymed var that receives
+;; restarg.
+(define (pass1/extended-lambda garg kargs body)
+  (define (collect-args xs r)
+    (match xs
+      [() (values (reverse r) '())]
+      [((? keyword?) . _) (values (reverse r) xs)]
+      [(var . rest) (collect-args rest (cons var r))]))
+  (define (parse-kargs xs os ks r a)
+    (match xs
+      [() (expand-rest os ks r a)]
+      [(:optional . xs)
+       (unless (null? os) (too-many :optional))
+       (receive (os xs) (collect-args xs '()) (parse-kargs xs os ks r a))]
+      [(:key . xs)
+       (unless (null? ks) (too-many :key))
+       (receive (ks xs) (collect-args xs '()) (parse-kargs xs os ks r a))]
+      [(:rest . xs)
+       (when r (too-many :rest))
+       (receive (rs xs) (collect-args xs '())
+         (match rs
+           [(r) (parse-kargs xs os ks r a)]
+           [_ (error ":rest keyword in the extended lambda list must be \
+                      followed by exactly one argument:" kargs)]))]
+      [(:allow-other-keys . xs)
+       (when a (too-many :allow-other-keys))
+       (receive (a xs) (collect-args xs '())
+         (match a
+           [() (parse-kargs xs os ks r #t)]
+           [_ (error ":allow-other-keys keyword in the extended lambda list \
+                      must not be followed by arguments:" kargs)]))]
+      [_ (error "invalid extended lambda list:" kargs)]))
+  (define (too-many key)
+    (errorf "too many ~s keywords in the extended lambda list: ~s" key kargs))
+  (define (expand-rest os ks r a)
+    (if r
+      `(((with-module gauche let) ((,r ,garg)) ,@(expand-opt os ks a)))
+      (expand-opt os ks a)))
+  (define (expand-opt os ks a)
+    (if (null? os)
+      (expand-key ks a)
+      `(((with-module gauche let-optionals*) ,garg
+         ,(map (match-lambda 
+                 [(? symbol? o) o]
+                 [(? identifier? o) o]
+                 [(o init) `(,o ,init)]
+                 [_ (error "illegal optional argument spec in " kargs)])
+               os)
+         ,@(expand-key ks a)))))
+  (define (expand-key ks a)
+    (if (null? ks)
+      body
+      (let1 args (map (match-lambda
+                        [(? symbol? o) o]
+                        [(? identifier? o) o]
+                        [(o init) `(,o ,init)]
+                        [(o key init) `(,o ,key ,init)]
+                        [_ (error "illegal keyword argument spec in " kargs)])
+                      ks)
+        `(((with-module gauche let-keywords*) ,garg
+           ,(if a (append args a) args)
+           ,@body)))))
+
+  (parse-kargs kargs '() '() #f #f))
+
 
 (define-pass1-syntax (let form cenv) :null
   (match form
