@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;  $Id: ndbm.stub,v 1.27 2008-05-07 02:27:08 shirok Exp $
+;;  $Id: ndbm.stub,v 1.28 2008-05-08 06:43:25 shirok Exp $
 ;;
 
 "
@@ -45,6 +45,8 @@
  #elif HAVE_GDBM_MINUS_NDBM_H
  #include <gdbm-ndbm.h>
  #endif
+
+ #include \"ndbm-suffixes.h\"
 
  SCM_CLASS_DECL(Scm_NdbmClass); 
  static void ndbm_print(ScmObj, ScmPort *, ScmWriteContext*);
@@ -87,10 +89,13 @@
  void Scm_Init_ndbm(void)
  {
     ScmModule *mod;
+
     SCM_INIT_EXTENSION(ndbm);
     mod = SCM_FIND_MODULE(\"dbm.ndbm\", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClass(&Scm_NdbmClass, \"<ndbm-file>\", mod, NULL, 0);
     Scm_ndbm_internal_init(mod);
+    SCM_DEFINE(mod, \"*ndbm-suffixes*\",
+               Scm_CStringArrayToList(ndbm_suffixes, -1, SCM_STRING_IMMUTABLE));
  }
  #define Scm_Init_ndbm  Scm_ndbm_internal_init
 "

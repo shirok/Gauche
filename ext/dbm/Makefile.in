@@ -10,7 +10,7 @@ LIBFILES = @DBM_ARCHFILES@
 SCMFILES = @DBM_SCMFILES@
 
 GENERATED = Makefile dbmconf.h
-XCLEANFILES = gdbm.c ndbm.c odbm.c *_head.c *_tail.c
+XCLEANFILES = gdbm.c ndbm.c odbm.c ndbm-makedb ndbm-suffixes.h *_head.c *_tail.c
 
 all : $(LIBFILES)
 
@@ -27,6 +27,7 @@ ndbm.$(SOEXT) : $(ndbm_OBJECTS)
 	$(MODLINK) ndbm.$(SOEXT) $(ndbm_OBJECTS) $(EXT_LIBGAUCHE) @NDBMLIB@ $(LIBS)
 
 ndbm.c : ndbm.stub
+ndbm.$(OBJEXT): ndbm.c ndbm-suffixes.h
 
 odbm_OBJECTS   = odbm_head.$(OBJEXT) odbm.$(OBJEXT) odbm_tail.$(OBJEXT)
 
@@ -43,6 +44,15 @@ ndbm_head.c ndbm_tail.c :
 
 odbm_head.c odbm_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension odbm
+
+# auxiliary stuff.
+# a bit tricky,
+ndbm-makedb : ndbm-makedb.c
+	$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) -o ndbm-makedb \
+	  ndbm-makedb.c $(LOCAL_LFLAGS) $(XLDFLAGS) @NDBMLIB@ $(LIBS)
+
+ndbm-suffixes.h : ndbm-makedb ndbm-suffixes.scm
+	$(GOSH) ./ndbm-suffixes.scm ndbm-suffixes.h
 
 install : install-std
 

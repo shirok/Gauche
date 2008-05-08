@@ -6,6 +6,22 @@
 
 	* winnt/nsis/README: use "mingw" instead of "win32".
 
+2008-05-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/dbm/ndbm.stub, ext/dbm/ndbm.scm, ext/dbm/ndbm-makedb.c,
+	  ext/dbm/ndbm-suffixes.scm, ext/dbm/Makefile.in: Since different
+	  ndbm implementations attach different suffixes for the database 
+	  files, we determine the suffixes at the build time by actually
+	  creating the ndbm database.  The extra files (ndbm-makedb.c and
+	  ndbm-suffixes.scm) are used in the build time to create
+	  ndbm-suffixes.h, which is included from ndbm.c (generated from
+	  ndbm.stub).  Probably some adjustment will be required for cross-
+	  compilation.
+
+	* ext/Makefile.ext.in: For the convenience, defined LOCAL_LFLAGS
+	  make variable that exports library flags generated
+	  from --with-local configure option.
+
 2008-05-06  Shiro Kawai  <shiro@acm.org>
 
 	* gc/libatomic_ops-1.2/Makefile.in etc.  Ran automake again to make

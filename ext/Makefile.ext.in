@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions  -*-mode: Makefile-*-
-## $Id: Makefile.ext.in,v 1.32 2008-02-03 13:07:42 shirok Exp $
+## $Id: Makefile.ext.in,v 1.33 2008-05-08 06:43:17 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -15,13 +15,14 @@ BUILD       = @build@
 HOST        = @host@
 
 # These may be overridden by make invocators
-DESTDIR  =
-CC       = @CC@
-AR       = @AR@
-LIBS     = $(XLIBS) @LIBS@ 
-CFLAGS   = @CFLAGS@ @SHLIB_SO_CFLAGS@ $(XCFLAGS)
-CPPFLAGS = @CPPFLAGS@ $(XCPPFLAGS)
-LDFLAGS  = @LOCAL_LIB@ $(XLDFLAGS) @SHLIB_SO_LDFLAGS@
+DESTDIR      =
+CC           = @CC@
+AR           = @AR@
+LOCAL_LFLAGS = @LOCAL_LIB@
+LIBS         = $(XLIBS) @LIBS@ 
+CFLAGS       = @CFLAGS@ @SHLIB_SO_CFLAGS@ $(XCFLAGS)
+CPPFLAGS     = @CPPFLAGS@ $(XCPPFLAGS)
+LDFLAGS      = $(LOCAL_LFLAGS) $(XLDFLAGS) @SHLIB_SO_LDFLAGS@
 
 # These are set by configure
 DEFS     = @DEFS@

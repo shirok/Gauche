@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: ndbm.scm,v 1.8 2008-05-07 02:27:04 shirok Exp $
+;;;  $Id: ndbm.scm,v 1.9 2008-05-08 06:43:23 shirok Exp $
 ;;;
 
 (define-module dbm.ndbm
@@ -130,8 +130,9 @@
           r))
     ))
 
+;; *ndbm-suffixes* is defined in the stub file.
 (define (ndbm-files name)
-  (map (cut string-append name <>) '(".pag" ".dir")))
+  (map (cut string-append name <>) *ndbm-suffixes*))
 
 (define-method dbm-db-exists? ((class <ndbm-meta>) name)
   (every file-exists? (ndbm-files name)))
