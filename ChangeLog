@@ -1,5 +1,8 @@
 2008-05-08  Shiro Kawai  <shiro@acm.org>
 
+	* ext/dbm/ndbm-makedb.c (main): fix.  some versions of ndbm don't
+	  like O_WRONLY.
+
 	* ext/dbm/ndbm.scm (dbm-db-copy, dbm-db-move): fixed for the case
 	  when ndbm uses single database file.
 

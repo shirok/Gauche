@@ -36,7 +36,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    if ((dbf = dbm_open(argv[1], O_CREAT|O_WRONLY, 0777)) == NULL) {
+    if ((dbf = dbm_open(argv[1], O_CREAT|O_RDWR, 0777)) == NULL) {
         printf("dbm_open failed for %s: %s\n", argv[1], strerror(errno));
         exit(1);
     }
