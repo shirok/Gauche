@@ -1,3 +1,8 @@
+2008-05-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub, lib/gauche/cgen/type.scm: Moved stub type handling
+	  code to gauche.cgen.type module.
+
 2008-05-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/macro.c (Scm_VMMacroExpand): properly handles the case when

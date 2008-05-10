@@ -30,13 +30,15 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: type.scm,v 1.2 2008-05-10 13:35:58 shirok Exp $
+;;;  $Id: type.scm,v 1.3 2008-05-10 16:43:29 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.type
+  (use srfi-13)
+  (use text.tr)
   (use gauche.mop.instance-pool)
-  (export <cgen-type>
-          cgen-type-from-name)
+  (export <cgen-type> cgen-type-from-name make-cgen-type
+          cgen-box-expr cgen-unbox-expr cgen-pred-expr cgen-return-stmt)
   )
 (select-module gauche.cgen.type)
 
@@ -164,11 +166,128 @@
       ;; create it from the base type.
       (and-let* ((m (#/\?$/ (symbol->string name)))
                  (basename (string->symbol (m 'before)))
-                 (basetype (find-type-by-name basename)))
-        (make <type> :name name :c-type [@ basetype'c-type]
+                 (basetype (cgen-type-from-name basename)))
+        (make <cgen-type> :name name :c-type [@ basetype'c-type]
               :description #`",(@ basetype'description) or #f"
               :c-predicate [@ basetype'c-predicate]
               :unboxer     [@ basetype'unboxer]
               :boxer       [@ basetype'boxer]
               :maybe       basetype))))
+
+;; Create a new cgen-type.
+;; Many cgen-types follows a specific convention to name boxer/unboxer etc,
+;; and make-cgen-type assumes the convention if they are not provided.
+
+(define (make-cgen-type name c-type . args)
+  (define (strip<> name) (string-trim-both name #[<>]))
+  (define (default-cpred name)
+    (if (#/-/ name)
+      (string-append "SCM_"
+                     (string-tr (strip<> name) "a-z-" "A-Z_")
+                     "_P")
+      #`"SCM_,(string-upcase (strip<> name))P"))
+  (define (default-unbox name)
+    #`"SCM_,(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
+  (define (default-box name)
+    #`"SCM_MAKE_,(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
+  (let-optionals* args ((desc   #f)
+                        (c-pred #f)
+                        (unbox  #f)
+                        (box    #f))
+    (make <cgen-type>
+      :name name :c-type c-type
+      :description (or desc (x->string name))
+      :c-predicate (or c-pred (default-cpred (x->string name)))
+      :unboxer     (or unbox (default-unbox (x->string name)))
+      :boxer       (or box "SCM_OBJ_SAFE"))))
+
+;; Builtin types
+(for-each
+ (cut apply make-cgen-type <>)
+ '(;; Numeric types
+   (<fixnum>  "int" "small integer" "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
+   (<integer> "ScmObj" "exact integer" "SCM_EXACTP" "")
+   (<real>    "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
+   (<number>  "ScmObj" "number" "SCM_NUMBERP" "")
+   (<int>     "int" "C integer" "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
+   (<long>    "long" "C long integer" "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
+   (<short>   "short" "C short integer" "SCM_INTP" "(short)SCM_INT_VALUE" "SCM_MAKE_INT")
+   (<int8>    "int" "C integer" "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
+   (<int16>   "int" "C integer" "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
+   (<int32>   "int" "C integer" "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
+   (<uint>    "u_int" "C integer" "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
+   (<ulong>   "u_long" "C integer" "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
+   (<ushort>  "u_short" "C short integer" "SCM_EXACTP" "(unsigned short)Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
+   (<uint8>   "u_int" "C integer" "SCM_UINTP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
+   (<uint16>  "u_int" "C integer" "SCM_UINTP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
+   (<uint32>  "u_int" "C integer" "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
+   (<float>   "float" "real number" "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
+   (<double>  "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
+   
+   ;; Basic immediate types
+   (<boolean> "int" "boolean" "SCM_BOOLP"   "SCM_BOOL_VALUE" "SCM_MAKE_BOOL")
+   (<char>    "ScmChar" "character" "SCM_CHARP" "SCM_CHAR_VALUE" "SCM_MAKE_CHAR")
+   (<void>    "void" "void" "" "" "SCM_VOID_RETURN_VALUE")
+   (<top>     "ScmObj" "scheme object" "" "") 
+   ;; C string
+   (<const-cstring> "const char *" "const C string"
+                    "SCM_STRINGP" "SCM_STRING_CONST_CSTRING" "SCM_MAKE_STR_COPYING")
+
+   ;; Aggregate types
+   (<pair> "ScmPair*" "pair" "SCM_PAIRP" "SCM_PAIR" "SCM_OBJ")
+   (<list> "ScmObj" "list" "SCM_LISTP" "")
+   (<vector> "ScmVector*" "vector" "SCM_VECTORP" "SCM_VECTOR")
+   (<string> "ScmString*" "string" "SCM_STRINGP" "SCM_STRING")
+   (<symbol> "ScmSymbol*" "symbol" "SCM_SYMBOLP" "SCM_SYMBOL")
+   (<keyword> "ScmKeyword*" "keyword" "SCM_KEYWORDP" "SCM_KEYWORD")
+   (<identifier> "ScmIdentifier*" "identifier" "SCM_IDENTIFIERP" "SCM_IDENTIFIER")
+   (<char-set> "ScmCharSet*" "char-set" "SCM_CHARSETP" "SCM_CHARSET")
+   (<regexp> "ScmRegexp*" "regexp" "SCM_REGEXPP" "SCM_REGEXP")
+   (<regmatch> "ScmRegMatch*" "regmatch" "SCM_REGMATCHP" "SCM_REGMATCH")
+   (<port> "ScmPort*" "port" "SCM_PORTP" "SCM_PORT")
+   (<input-port> "ScmPort*" "input port" "SCM_IPORTP" "SCM_PORT")
+   (<output-port> "ScmPort*" "output port" "SCM_OPORTP" "SCM_PORT")
+   (<procedure> "ScmProcedure*" "procedure" "SCM_PROCEDUREP" "SCM_PROCEDURE")
+   (<closure> "ScmClosure*" "closure" "SCM_CLOSUREP" "SCM_CLOSURE")
+   (<promise> "ScmPromise*" "promise" "SCM_PROMISEP" "SCM_PROMISE")
+   (<hash-table> "ScmHashTable*" "hash table" "SCM_HASH_TABLE_P" "SCM_HASH_TABLE")
+   (<tree-map> "ScmTreeMap*" "tree map" "SCM_TREE_MAP_P" "SCM_TREE_MAP")
+   (<class> "ScmClass*" "class" "SCM_CLASSP" "SCM_CLASS")
+   (<method> "ScmMethod*" "method" "SCM_METHODP" "SCM_METHOD")
+   (<module> "ScmModule*" "module" "SCM_MODULEP" "SCM_MODULE")
+   (<thread> "ScmVM*" "thread" "SCM_VMP" "SCM_VM")
+   (<mutex> "ScmMutex*" "mutex" "SCM_MUTEXP" "SCM_MUTEX")
+   (<condition-variable> "ScmConditionVariable*" "condition variable"
+                         "SCM_CONDITION_VARIABLE_P" "SCM_CONDITION_VARIABLE")
+   (<weak-vector> "ScmWeakVector*" "weak vector"
+                  "SCM_WEAK_VECTOR_P" "SCM_WEAK_VECTOR")
+   (<weak-hash-table> "ScmWeakHashTable*" "weak hash table"
+                      "SCM_WEAK_HASH_TABLE_P" "SCM_WEAK_HASH_TABLE")
+   (<compiled-code> "ScmCompiledCode*" "compiled code"
+                    "SCM_COMPILED_CODE_P" "SCM_COMPILED_CODE")
+   (<foreign-pointer> "ScmForeignPointer*" "foreign pointer"
+                      "SCM_FOREIGN_POINTER_P" "SCM_FOREIGN_POINTER")
+   ))
+
+;;
+;; Generating C expressions from type info
+;;
+
+(define (cgen-box-expr type c-expr)
+  (if [@ type'maybe]
+    #`"SCM_MAKE_MAYBE(,[@ type'boxer],, ,c-expr)"
+    #`",[@ type'boxer](,c-expr)"))
+
+(define (cgen-unbox-expr type c-expr)
+  (if [@ type'maybe]
+    #`"SCM_MAYBE(,[@ type'unboxer],, ,c-expr)"
+    #`",[@ type'unboxer](,c-expr)"))
+
+(define (cgen-pred-expr type c-expr)
+  (if [@ type'maybe]
+    #`"SCM_MAYBE_P(,[@ type'c-predicate],, ,c-expr)"
+    #`",[@ type'c-predicate](,c-expr)"))
+
+(define (cgen-return-stmt expr)
+  #`"SCM_RETURN(,expr);")
 

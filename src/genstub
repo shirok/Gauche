@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.145 2007-09-13 12:30:27 shirok Exp $
+;;;  $Id: genstub,v 1.146 2008-05-10 16:43:30 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -221,283 +221,17 @@
 ;; Type handling
 ;;
 
-;; Stub's type system doesn't exactly match Scheme's, since stub has
-;; to handle internal guts of Scheme implementations as well as
-;; C type systems.  We call the types used in the stub generator
-;; "stub type", apart from "C type" and "Scheme type".
-;;
-;; For each existing conversion between C type and Scheme type, a stub
-;; type is defined.  For types that has one-to-one mapping between
-;; C and Scheme (such as most aggregate types, for example, Scheme's
-;; <u32vector> and C's ScmU32Vector*), there is only one stub type,
-;; which uses the same name as the Scheme's.  There are some stub types
-;; that reflects C type variations: <int>, <int8>, <int16>, <int32>,
-;; <uint>, <uint8>, <uint16>, <uint32> --- these are mapped to Scheme's
-;; integer, but the range limit is taken into account.   <fixnum>
-;; refers to the integers that can be represented in an immediate integer.
-;; Note that a stub type <integer> corresponds to Scheme's exact integers,
-;; but it is mapped to C's ScmObj, since C's integer isn't enough to
-;; represent all of Scheme integers.   A stub type <void> is
-;; used to denote a procedure return type.
-;;
-;; Each stub type has a "boxer" and an "unboxer".  A boxer is a C name
-;; of a function or a macro that takes an object of C type of the stub
-;; type and returns a Scheme object.  An unboxer is a C name of a function
-;; or a macro that takes Scheme object and checks its vailidy, then
-;; returns a C object of the C type or throws an error.
-;;
-;; Here's a summary of primitive stub types and the mapping each one
-;; represents.
-;;
-;;   stub type    Scheme       C           Notes
-;;  -----------------------------------------------------------------
-;;   <fixnum>     <integer>    int         Integers within fixnum range
-;;   <integer>    <integer>    ScmObj      Any exact integers
-;;   <real>       <real>       double
-;;   <number>     <number>     ScmObj      Any numbers
-;;
-;;   <int>        <integer>    int         Integers representable in C
-;;   <int8>       <integer>    int
-;;   <int16>      <integer>    int
-;;   <int32>      <integer>    int
-;;   <short>      <integer>    short
-;;   <long>       <integer>    long
-;;   <uint>       <integer>    uint        Integers representable in C
-;;   <uint8>      <integer>    uint
-;;   <uint16>     <integer>    uint
-;;   <uint32>     <integer>    uint
-;;   <ushort>     <integer>    ushort
-;;   <ulong>      <integer>    ulong
-;;   <float>      <real>       float       Unboxed value casted to float
-;;   <double>     <real>       double      Alias of <real>
-;;
-;;   <boolean>    <boolean>    int         Boolean value
-;;   <char>       <char>       ScmChar     NB: not a C char
-;;
-;;   <void>       -            void        (Used only as a return type.
-;;                                          Scheme function returns #<undef>)
-;;
-;;   <const-cstring> <string>  const char* For arguments, string is unboxed
-;;                                         by Scm_GetStringConst.
-;;                                         For return values, C string is boxed
-;;                                         by SCM_MAKE_STR_COPYING.
-;;
-;;   <pair>       <pair>       ScmPair*
-;;   <list>       <list>       ScmObj
-;;   <string>     <string>     ScmString*
-;;   <symbol>     <symbol>     ScmSymbol*
-;;   <vector>     <vector>     ScmVector*
-;;    :
-;;
-;; Pointer types can be qualified as 'maybe', by adding '?' at the
-;; end of type name, e.g. '<string>?'.
-;; If 'maybe' type appears as an argument type, the argument accepts #f
-;; as well as the specified type, and translates #f to NULL.  If 'maybe'
-;; type appears as the return type, the result of C expression can be NULL
-;; and the stub translates it to #f.
-
-;; Stub type definition
-(define-class <type> (<instance-pool-mixin>)
-  ((name        :init-keyword :name)
-   ;; ::<symbol> - name of this stub type.
-   (c-type      :init-keyword :c-type)
-   ;; ::<string> - C type name this stub type represents
-   (description :init-keyword :description)
-   ;; ::<string> - used in the type error message
-   (c-predicate :init-keyword :c-predicate)
-   ;; ::<string> - name of a C function (macro) to find out the given
-   ;;              ScmObj has a valid type for this stub type.
-   (unboxer     :init-keyword :unboxer)
-   ;; ::<string> - name of a C function (macro) that takes Scheme object
-   ;;              and returns a C object.
-   (boxer       :init-keyword :boxer :init-value "SCM_OBJ_SAFE")
-   ;; ::<string> - name of a C function (macro) that takes C object
-   ;;              and returns a Scheme Object.
-   (maybe       :init-keyword :maybe       :init-value #f)
-   ;; ::<type>? - base type, if this is 'maybe' qualified type.
-   ))
-
-(define (find-type-by-name name)
-  (or (find (lambda (type) (eq? [@ type'name] name))
-            (instance-pool->list <type>))
-      ;; when 'maybe' qualified type is used for the first time, we
-      ;; create it from the base type.
-      (and-let* ((m (#/\?$/ (symbol->string name)))
-                 (basename (string->symbol (m 'before)))
-                 (basetype (find-type-by-name basename)))
-        (make <type> :name name :c-type [@ basetype'c-type]
-              :description #`",(@ basetype'description) or #f"
-              :c-predicate [@ basetype'c-predicate]
-              :unboxer     [@ basetype'unboxer]
-              :boxer       [@ basetype'boxer]
-              :maybe       basetype))))
-
 (define (name->type name)
-  (or (find-type-by-name name) (error "unknown type" name)))
+  (or (cgen-type-from-name name) (error "unknown type" name)))
 
 ;; define-type name c-type [desc c-predicate unboxer boxer]
 ;;
 ;;   Creates a new stub type for existing scheme type.
 
 (define-form-parser define-type args
-  (define (strip<> name) (string-trim-both name #[<>]))
-  (define (default-cpred name)
-    (if (string-index name #\-)
-      (string-append "SCM_"
-                     (string-tr (strip<> name) "a-z-" "A-Z_")
-                     "_P")
-      #`"SCM_,(string-upcase (strip<> name))P"))
-  (define (default-unbox name)
-    #`"SCM_,(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
-  (define (default-box name)
-    #`"SCM_MAKE_,(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
-
   (unless (<= 2 (length args) 6)
     (error "malformed define-type:" args))
-  (let-optionals* args ((name #f)
-                        (c-type #f)
-                        (desc   #f)
-                        (c-pred #f)
-                        (unbox  #f)
-                        (box    #f))
-    (make <type>
-      :name name :c-type c-type
-      :description (or desc (x->string name))
-      :c-predicate (or c-pred (default-cpred (x->string name)))
-      :unboxer     (or unbox (default-unbox (x->string name)))
-      :boxer       (or box "SCM_OBJ_SAFE"))))
-
-;; Returns C expr
-(define (box-expr type c-expr)
-  (if [@ type'maybe]
-    #`"SCM_MAKE_MAYBE(,(@ type'boxer),, ,c-expr)"
-    #`",(@ type'boxer)(,c-expr)"))
-
-(define (unbox-expr type c-expr)
-  (if [@ type'maybe]
-    #`"SCM_MAYBE(,(@ type'unboxer),, ,c-expr)"
-    #`",(@ type'unboxer)(,c-expr)"))
-
-(define (pred-expr type c-expr)
-  (if [@ type'maybe]
-    #`"SCM_MAYBE_P(,(@ type'c-predicate),, ,c-expr)"
-    #`",(@ type'c-predicate)(,c-expr)"))
-
-(define (return-stmt expr)
-  #`"SCM_RETURN(,expr);")
-
-;; Builtin types
-(for-each
- parse-form
- '(;; Numeric types
-   (define-type <fixnum>  "int" "small integer"
-     "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
-   (define-type <integer> "ScmObj" "exact integer"
-     "SCM_EXACTP" "")
-   (define-type <real>    "double" "real number"
-     "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
-   (define-type <number>  "ScmObj" "number"
-     "SCM_NUMBERP" "")
-   (define-type <int>     "int" "C integer"
-     "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
-   (define-type <long>    "long" "C long integer"
-     "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
-   (define-type <short>   "short" "C short integer"
-     "SCM_INTP" "(short)SCM_INT_VALUE" "SCM_MAKE_INT")
-   (define-type <int8>    "int" "C integer"
-     "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
-   (define-type <int16>   "int" "C integer"
-     "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
-   (define-type <int32>   "int" "C integer"
-     "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
-   (define-type <uint>    "u_int" "C integer"
-     "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
-   (define-type <ulong>   "u_long" "C integer"
-     "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
-   (define-type <ushort>  "u_short" "C short integer"
-     "SCM_EXACTP" "(unsigned short)Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
-   (define-type <uint8>   "u_int" "C integer"
-     "SCM_UINTP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
-   (define-type <uint16>  "u_int" "C integer"
-     "SCM_UINTP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
-   (define-type <uint32>  "u_int" "C integer"
-     "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
-   (define-type <float>   "float" "real number"
-     "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
-   (define-type <double>  "double" "real number"
-     "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
-   
-   ;; Basic immediate types
-   (define-type <boolean> "int" "boolean"
-     "SCM_BOOLP"   "SCM_BOOL_VALUE" "SCM_MAKE_BOOL")
-   (define-type <char>    "ScmChar" "character"
-     "SCM_CHARP" "SCM_CHAR_VALUE" "SCM_MAKE_CHAR")
-   (define-type <void>    "void" "void"
-     ""      ""  "SCM_VOID_RETURN_VALUE")
-   (define-type <top>     "ScmObj" "scheme object" "" "")
-
-   ;; C string
-   (define-type <const-cstring> "const char *" "const C string"
-     "SCM_STRINGP" "SCM_STRING_CONST_CSTRING" "SCM_MAKE_STR_COPYING")
-
-   ;; Aggregate types
-   (define-type <pair> "ScmPair*" "pair"
-     "SCM_PAIRP" "SCM_PAIR" "SCM_OBJ")
-   (define-type <list> "ScmObj" "list"
-     "SCM_LISTP" "")
-   (define-type <vector> "ScmVector*" "vector"
-     "SCM_VECTORP" "SCM_VECTOR")
-   (define-type <string> "ScmString*" "string"
-     "SCM_STRINGP" "SCM_STRING")
-   (define-type <symbol> "ScmSymbol*" "symbol"
-     "SCM_SYMBOLP" "SCM_SYMBOL")
-   (define-type <keyword> "ScmKeyword*" "keyword"
-     "SCM_KEYWORDP" "SCM_KEYWORD")
-   (define-type <identifier> "ScmIdentifier*" "identifier"
-     "SCM_IDENTIFIERP" "SCM_IDENTIFIER")
-   (define-type <char-set> "ScmCharSet*" "char-set"
-     "SCM_CHARSETP" "SCM_CHARSET")
-   (define-type <regexp> "ScmRegexp*" "regexp"
-     "SCM_REGEXPP" "SCM_REGEXP")
-   (define-type <regmatch> "ScmRegMatch*" "regmatch"
-     "SCM_REGMATCHP" "SCM_REGMATCH")
-   (define-type <port> "ScmPort*" "port"
-     "SCM_PORTP" "SCM_PORT")
-   (define-type <input-port> "ScmPort*" "input port"
-     "SCM_IPORTP" "SCM_PORT")
-   (define-type <output-port> "ScmPort*" "output port"
-     "SCM_OPORTP" "SCM_PORT")
-   (define-type <procedure> "ScmProcedure*" "procedure"
-     "SCM_PROCEDUREP" "SCM_PROCEDURE")
-   (define-type <closure> "ScmClosure*" "closure"
-     "SCM_CLOSUREP" "SCM_CLOSURE")
-   (define-type <promise> "ScmPromise*" "promise"
-     "SCM_PROMISEP" "SCM_PROMISE")
-   (define-type <hash-table> "ScmHashTable*" "hash table"
-     "SCM_HASH_TABLE_P" "SCM_HASH_TABLE")
-   (define-type <tree-map> "ScmTreeMap*" "tree map"
-     "SCM_TREE_MAP_P" "SCM_TREE_MAP")
-   (define-type <class> "ScmClass*" "class"
-     "SCM_CLASSP" "SCM_CLASS")
-   (define-type <method> "ScmMethod*" "method"
-     "SCM_METHODP" "SCM_METHOD")
-   (define-type <module> "ScmModule*" "module"
-     "SCM_MODULEP" "SCM_MODULE")
-   (define-type <thread> "ScmVM*" "thread"
-     "SCM_VMP" "SCM_VM")
-   (define-type <mutex> "ScmMutex*" "mutex"
-     "SCM_MUTEXP" "SCM_MUTEX")
-   (define-type <condition-variable> "ScmConditionVariable*"
-     "condition variable" "SCM_CONDITION_VARIABLE_P" "SCM_CONDITION_VARIABLE")
-   (define-type <weak-vector> "ScmWeakVector*" "weak vector"
-     "SCM_WEAK_VECTOR_P" "SCM_WEAK_VECTOR")
-   (define-type <weak-hash-table> "ScmWeakHashTable*" "weak hash table"
-     "SCM_WEAK_HASH_TABLE_P" "SCM_WEAK_HASH_TABLE")
-   (define-type <compiled-code> "ScmCompiledCode*" "compiled code"
-     "SCM_COMPILED_CODE_P" "SCM_COMPILED_CODE")
-   (define-type <foreign-pointer> "ScmForeignPointer*" "foreign pointer"
-     "SCM_FOREIGN_POINTER_P" "SCM_FOREIGN_POINTER")
-   ))
+  (apply make-cgen-type args))
 
 ;; default
 (define *scm-type* (name->type '<top>))
@@ -557,7 +291,7 @@
    (count    :init-keyword :count)
    ;; - <integer>: This arg is count-th in the procedure
    (type     :init-keyword :type)
-   ;; - <type>: Stub type of this arg
+   ;; - <cgen-type>: Stub type of this arg
    (default  :init-keyword :default :init-value #f)
    ;; - #f or <cgen-literal> : default value for optiona/keyword arg
    ))
@@ -847,7 +581,7 @@
     (push-stmt! cproc "{")
     (push-stmt! cproc #`",(@ rettype'c-type) SCM_RESULT;")
     (push-stmt! cproc #`"SCM_RESULT = ,c-func-name(,(args));")
-    (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT")))
+    (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
   (match form
     ((_ (? string? expr))
@@ -872,7 +606,7 @@
     (push-stmt! cproc "{")
     (push-stmt! cproc #`",(@ rettype'c-type) SCM_RESULT;")
     (for-each expand-stmt stmts)
-    (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT")))
+    (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
   (define (typed-results rettypes stmts)
     (let1 nrets (length rettypes)
@@ -886,18 +620,18 @@
       (let1 results
           (string-join
            (map-with-index (lambda (i rettype)
-                             (box-expr rettype #`"SCM_RESULT,i"))
+                             (cgen-box-expr rettype #`"SCM_RESULT,i"))
                            rettypes)
            ",")
         (push-stmt! cproc
                     (case nrets
-                      ((0) (return-stmt "Scm_Values(SCM_NIL)"))
-                      ((1) (return-stmt results))
-                      ((2) (return-stmt #`"Scm_Values2(,results)"))
-                      ((3) (return-stmt #`"Scm_Values3(,results)"))
-                      ((4) (return-stmt #`"Scm_Values4(,results)"))
-                      ((5) (return-stmt #`"Scm_Values5(,results)"))
-                      (else (return-stmt #`"Scm_Values(Scm_List(,results,, NULL))"))))
+                      ((0) (cgen-return-stmt "Scm_Values(SCM_NIL)"))
+                      ((1) (cgen-return-stmt results))
+                      ((2) (cgen-return-stmt #`"Scm_Values2(,results)"))
+                      ((3) (cgen-return-stmt #`"Scm_Values3(,results)"))
+                      ((4) (cgen-return-stmt #`"Scm_Values4(,results)"))
+                      ((5) (cgen-return-stmt #`"Scm_Values5(,results)"))
+                      (else (cgen-return-stmt #`"Scm_Values(Scm_List(,results,, NULL))"))))
         )))
   (define (err) (error "malformed 'body' spec:" form))
   (match form
@@ -921,7 +655,7 @@
       (push-stmt! cproc "{")
       (push-stmt! cproc #`",(@ rettype'c-type) SCM_RESULT;")
       (push-stmt! cproc #`" SCM_RESULT = (,expr);")
-      (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT")))
+      (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
       (push-stmt! cproc "}")))
   (match form
     ((_ '<void> . stmts)
@@ -1039,10 +773,10 @@
   (let1 pred [@ arg'type'c-predicate]
     (when (and pred (not (string-null? pred)))
       (f "  if (!~a) Scm_Error(\"~a required, but got %S\", ~a);"
-         (pred-expr [@ arg'type] [@ arg'scm-name])
+         (cgen-pred-expr [@ arg'type] [@ arg'scm-name])
          [@ arg'type'description] [@ arg'scm-name]))
     (if [@ arg'type'unboxer]
-      (p "  "[@ arg'c-name]" = "(unbox-expr [@ arg'type] [@ arg'scm-name])";")
+      (p "  "[@ arg'c-name]" = "(cgen-unbox-expr [@ arg'type] [@ arg'scm-name])";")
       (p "  "[@ arg'c-name]" = "[@ arg'scm-name]";"))))
 
 (define-method emit-arg-unbox ((arg <required-arg>))
@@ -1252,7 +986,7 @@
 ;;  - Generates C stub for static class definition, slot accessors and
 ;;    initialization.   Corresponding C struct has to be defined elsewhere.
 ;;
-;;  - <cclass> should be a <type> as well, but currently not.
+;;  - <cclass> should be a <cgen-type> as well, but currently not.
 ;;    If not corresponding type is defined at the time define-cclass is
 ;;    parsed, the type is created with the default parameters.
 
@@ -1265,7 +999,7 @@
 ;;
 ;; <slot-spec> := slot-name
 ;;             |  (slot-name
-;;                  [:type <type>]
+;;                  [:type <cgen-type>]
 ;;                  [:c-name <c-name>]
 ;;                  [:c-spec <c-spec>]
 ;;                  [:getter <proc-spec>]
@@ -1301,7 +1035,7 @@
 
 (define-method initialize ((self <cclass>) initargs)
   (next-method)
-  (unless (find-type-by-name [@ self'scheme-name])
+  (unless (cgen-type-from-name [@ self'scheme-name])
     (parse-form
      `(define-type ,[@ self'scheme-name] ,[@ self'c-type])))
   )
@@ -1456,12 +1190,12 @@
          (class-type (name->type [@ class'scheme-name])))
     (p "static ScmObj "(slot-getter-name slot)"(ScmObj OBJARG)")
     (p "{")
-    (p "  "[@ class-type'c-type]" obj = "(unbox-expr class-type "OBJARG")";")
+    (p "  "[@ class-type'c-type]" obj = "(cgen-unbox-expr class-type "OBJARG")";")
     (cond ((string? [@ slot'getter]) (p [@ slot'getter]))
           ((string? [@ slot'c-spec])
-           (f "  return ~a;" (box-expr type [@ slot'c-spec])))
+           (f "  return ~a;" (cgen-box-expr type [@ slot'c-spec])))
           (else
-           (f "  return ~a;" (box-expr type #`"obj->,(@ slot'c-name)"))))
+           (f "  return ~a;" (cgen-box-expr type #`"obj->,(@ slot'c-name)"))))
     (p "}")
     (p "")))
 
@@ -1471,7 +1205,7 @@
          (class-type (name->type [@ class'scheme-name])))
     (p "static void "(slot-setter-name slot)"(ScmObj OBJARG, ScmObj value)")
     (p "{")
-    (p "  "[@ class-type'c-type]" obj = "(unbox-expr class-type "OBJARG")";")
+    (p "  "[@ class-type'c-type]" obj = "(cgen-unbox-expr class-type "OBJARG")";")
     (if (string? [@ slot'setter])
       (p [@ slot'setter])
       (begin
@@ -1479,8 +1213,8 @@
           (f "  if (!~a(value)) Scm_Error(\"~a required, but got %S\", value);"
              [@ type'c-predicate] [@ type'c-type]))
         (if [@ slot'c-spec]
-          (f "  ~a = ~a;" [@ slot'c-spec] (unbox-expr type "value"))
-          (f "  obj->~a = ~a;" [@ slot'c-name] (unbox-expr type "value")))))
+          (f "  ~a = ~a;" [@ slot'c-spec] (cgen-unbox-expr type "value"))
+          (f "  obj->~a = ~a;" [@ slot'c-name] (cgen-unbox-expr type "value")))))
     (p "}")
     (p "")))
 

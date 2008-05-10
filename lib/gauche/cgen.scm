@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgen.scm,v 1.21 2008-05-10 13:35:54 shirok Exp $
+;;;  $Id: cgen.scm,v 1.22 2008-05-10 16:43:29 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -43,7 +43,7 @@
 ;; any extension modules.  Keep this in mind if you make modifications here.
 
 (define-module gauche.cgen
-  (extend gauche.cgen.unit gauche.cgen.literal)
+  (extend gauche.cgen.unit gauche.cgen.literal gauche.cgen.type)
   )
 (select-module gauche.cgen)
 
