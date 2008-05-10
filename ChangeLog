@@ -1,3 +1,12 @@
+2008-05-09  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match.scm: Added support to a certain degree
+	  for the case when match macros are used with hygienic macros.
+	  Specifically it gracefully handles the case that match macros
+	  are inserted as the result of hygienic macro expansion.  It's not
+	  complete, but we'll patch the holes as it goes, until we replace
+	  the current version with completely hygienic match macro.
+
 2008-05-08  Shiro Kawai  <shiro@acm.org>
 
 	* ext/dbm/ndbm-makedb.c (main): fix.  some versions of ndbm don't

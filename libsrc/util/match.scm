@@ -5,7 +5,7 @@
 ;;   Modified to work with Gauche's object system instead of the original
 ;;   structure model.
 ;;
-;; $Id: match.scm,v 1.3 2006-11-08 21:14:51 shirok Exp $
+;; $Id: match.scm,v 1.4 2008-05-10 00:37:11 shirok Exp $
 
 (define-module util.match
   (use srfi-1)
@@ -141,6 +141,33 @@
 ;; End of user visible/modifiable stuff.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;; [SK] NOTE NOTE NOTE
+;;; match macro is unhygienic, and it is possible that it has undesired
+;;; interference with hygienic maros.  I put certain ad-hoc hack in it
+;;; to avoid some unexpected behavior.  It is still a hack, and ultimately
+;;; this should be rewritten in hygienic macro.  Here's some points:
+;;;
+;;; - In patterns, treat symbols and identifiers the same as pattern vars.
+;;; - When inserting references to global variables defined in this module,
+;;;   use identifiers instead of symbols.
+;;;
+;;; For the latter I needed to use make-identifier which is a private
+;;; procedure in gauche.internal.  If you're reading this code out of
+;;; curiousity, DO NOT USE IT in your code.  The identifier stuff may be
+;;; changed greatly when I implement proper low-level hygienic stuff.
+
+(define (%match-id sym)
+  ((with-module gauche.internal make-identifier) sym (current-module) '()))
+
+(define match.         (%match-id 'match))
+(define match:error.   (%match-id 'match:error))
+(define match-lambda*. (%match-id 'match-lambda*))
+(define match-letrec.  (%match-id 'match-letrec))
+(define match-define.  (%match-id 'match-define))
+
+;;; [SK] End of black magic
+
+
 (define match:error
   (lambda (val . args)
     (errorf "~a: no matching clause for ~a"
@@ -157,10 +184,12 @@
 (define match:set-error-control
   (lambda (v) (set! match:error-control v)))
 
+(define-inline (symid? x) (or (symbol? x) (identifier? x)))
+
 (define match:disjoint-predicates
   (cons 'null
         '(pair?
-          symbol?
+          symid?
           boolean?
           number?
           string?
@@ -191,8 +220,8 @@
                               (code (gensym))
                               (fail (and (pair? (cdr c))
                                          (pair? (cadr c))
-                                         (eq? (caadr c) '=>)
-                                         (symbol? (cadadr c))
+                                         (equal? (caadr c) '=>)
+                                         (symid? (cadadr c))
                                          (pair? (cdadr c))
                                          (null? (cddadr c))
                                          (pair? (cddr c))
@@ -265,16 +294,19 @@
                  ,m)))))
 
 (define (pattern-var? x)
-  (and (symbol? x)
-       (not (dot-dot-k? x))
-       (not (memq x '(quasiquote quote unquote unquote-splicing
-                      ? _ $ struct @ object = and or not set! get! ... ___)))))
+  (and-let* ([x (cond [(symbol? x) x]
+                      [(identifier? x) (unwrap-syntax x)]
+                      [else #f])]
+             [ (not (dot-dot-k? x)) ])
+    (not (memq x '(quasiquote quote unquote unquote-splicing
+                   ? _ $ struct @ object = and or not set! get! ... ___)))))
 
 (define (dot-dot-k? s)
-  (and (symbol? s)
-       (if (memq s '(... ___))
+  (and (symid? s)
+       (if (member s '(... ___))
          0
-         (and-let* ((m (#/^(?:\.\.|__)(\d+)$/ (symbol->string s))))
+         (and-let* ([s (if (symbol? s) s (unwrap-syntax s))]
+                    [m (#/^(?:\.\.|__)(\d+)$/ (symbol->string s))])
            (string->number (m 1))))))
 
 (define (error-maker match-expr)
@@ -282,12 +314,12 @@
    ((eq? match:error-control 'unspecified)
     (cons '() (lambda (x) `(cond (#f #f)))))
    ((memq match:error-control '(error fail))
-    (cons '() (lambda (x) `(match:error ,x))))
+    (cons '() (lambda (x) `(,match:error. ,x))))
    ((eq? match:error-control 'match)
     (let ((errf (gensym))
           (arg (gensym)))
       (cons `((,errf (lambda (,arg)
-                       (match:error ,arg ',match-expr))))
+                       (,match:error. ,arg ',match-expr))))
             (lambda (x) `(,errf ,x)))))
    (else (match:syntax-err
           '(unspecified error fail match)
@@ -340,11 +372,11 @@
              `(not ,@(map ordinary (cdr p)))
              (cons-ordinary (car p) (cdr p))))
           (($ struct)
-           (if (and (pair? (cdr p)) (symbol? (cadr p)) (list? (cddr p)))
+           (if (and (pair? (cdr p)) (symid? (cadr p)) (list? (cddr p)))
              `($ ,(cadr p) ,@(map ordinary (cddr p)))
              (cons-ordinary (car p) (cdr p))))
           ((@ object)
-           (if (and (pair? (cdr p)) (symbol? (cadr p)) (list? (cddr p))
+           (if (and (pair? (cdr p)) (symid? (cadr p)) (list? (cddr p))
                     (every (lambda (p) (and (list? p) (= (length p) 2)))
                            (cddr p)))
              `(object ,(cadr p) ,@(map (lambda (p)
@@ -381,7 +413,7 @@
     (let ((cons-quasi (lambda (x y) (cons (quasi x) (quasi y)))))
       (cond
        ((simple? p) p)
-       ((symbol? p) `',p)
+       ((symid? p) `',p)
        ((pair? p)
         (cond 
          ((eq? (car p) 'unquote)
@@ -423,7 +455,7 @@
   (define (bound p a k)
     (cond
      ((eq? '_ p) (k p a))
-     ((symbol? p)
+     ((symid? p)
       (when (memq p a)
         (match:syntax-err pattern "duplicate variable in pattern"))
       (k p (cons p a)))
@@ -433,7 +465,7 @@
       (cond
        ((not (null? (cddr p)))
         (bound `(and (? ,(cadr p)) ,@(cddr p)) a k))
-       ((or (not (symbol? (cadr p)))
+       ((or (not (symid? (cadr p)))
             (memq (cadr p) a))
         (let ((g (gensym)))
           (push! pred-bodies `(,g ,(cadr p)))
@@ -441,7 +473,7 @@
        (else (k p a))))
      ((and (pair? p) (eq? '= (car p)))
       (cond
-       ((or (not (symbol? (cadr p)))
+       ((or (not (symid? (cadr p)))
             (memq (cadr p) a))
         (let ((g (gensym)))
           (push! pred-bodies `(,g ,(cadr p)))
@@ -590,7 +622,7 @@
                        ((eq? old e) new)
                        (else e)))))
            (const? (lambda (sexp)
-                     (or (symbol? sexp)
+                     (or (symid? sexp)
                          (boolean? sexp)
                          (string? sexp)
                          (char? sexp)
@@ -599,7 +631,7 @@
                          (and (pair? sexp)
                               (eq? (car sexp) 'quote)
                               (pair? (cdr sexp))
-                              (symbol? (cadr sexp))
+                              (symid? (cadr sexp))
                               (null? (cddr sexp))))))
            (isval? (lambda (sexp)
                      (or (const? sexp)
@@ -667,7 +699,7 @@
                  (ks success))
         (cond
          ((eq? '_ p) (ks sf))
-         ((symbol? p) (set! v (cons (cons p e) v))
+         ((symid? p) (set! v (cons (cons p e) v))
           (ks sf))
          ((null? p) (emit `(null? ,e) sf kf ks))
          ((equal? p ''()) (emit `(null? ,e) sf kf ks))
@@ -750,7 +782,7 @@
                                                       (lambda (sf) #f)
                                                       (lambda (sf) #t)))
                                           (tst (if (and (pair? ptst)
-                                                        (symbol? (car ptst))
+                                                        (symid? (car ptst))
                                                         (pair? (cdr ptst))
                                                         (eq? eta (cadr ptst))
                                                         (null? (cddr ptst)))
@@ -759,7 +791,7 @@
                                      (assm `(match:every ,tst ,e)
                                            (kf sf)
                                            (ks sf))))
-                                  ((and (symbol? (car p))
+                                  ((and (symid? (car p))
                                         (equal? (list (car p)) bound))
                                    (next (car p) e sf kf ks))
                                   (else
@@ -1013,15 +1045,15 @@
     (let loop ((code code))
       (cond
        ((not (pair? code)) #f)
-       ((memq (car code) '(cond match:error)) #t)
+       ((member (car code) '(cond match:error)) #t)
        ((or (equal? code a) (equal? code d)) #t)
        ((eq? (car code) 'if)
         (or (loop (cadr code))
             (and (loop (caddr code))
                  (loop (cadddr code)))))
-       ((eq? (car code) 'lambda) #f)
+       ((equal? (car code) 'lambda) #f)
        ((and (eq? (car code) 'let)
-             (symbol? (cadr code)))
+             (symid? (cadr code)))
         #f)
        (else (or (loop (car code))
                  (loop (cdr code))))))))
@@ -1080,7 +1112,7 @@
                 (pair? (cdr p))
                 (null? (cddr p))
                 (eq? 'quote (car p))
-                (symbol? (cadr p)))
+                (symid? (cadr p)))
            'symbol?)
           (else #f)))))
 
@@ -1132,17 +1164,17 @@
             (lambda (y) (and (list? y) (<= 2 (length y))))
             (cdr args))) (let* ((exp (car args))
                                 (clauses (cdr args))
-                                (e (if (symbol? exp) exp (gensym))))
-                           (if (symbol? exp)
+                                (e (if (symid? exp) exp (gensym))))
+                           (if (symid? exp)
                                ((car match:expanders)
                                 e
                                 clauses
-                                `(match ,@args))
+                                `(,match. ,@args))
                                `(let ((,e ,exp))
                                   ,((car match:expanders)
                                     e
                                     clauses
-                                    `(match ,@args))))))
+                                    `(,match. ,@args))))))
     (else (match:syntax-err `(match ,@args) "syntax error in"))))
 
 (define-macro (match-lambda . args)
@@ -1154,7 +1186,7 @@
                    #f))
              args))
       ((lambda ()
-         (let ((e (gensym))) `(lambda (,e) (match ,e ,@args)))))
+         (let ((e (gensym))) `(lambda (,e) (,match. ,e ,@args)))))
       ((lambda ()
          (match:syntax-err
            `(match-lambda ,@args)
@@ -1169,7 +1201,7 @@
                    #f))
              args))
       ((lambda ()
-         (let ((e (gensym))) `(lambda ,e (match ,e ,@args)))))
+         (let ((e (gensym))) `(lambda ,e (,match. ,e ,@args)))))
       ((lambda ()
          (match:syntax-err
            `(match-lambda* ,@args)
@@ -1177,21 +1209,21 @@
 
 (define-macro (match-let . args)
   (let ((g158 (lambda (pat exp body)
-                `(match ,exp (,pat ,@body))))
+                `(,match. ,exp (,pat ,@body))))
         (g154 (lambda (pat exp body)
                 (let ((g (map (lambda (x) (gensym)) pat))
                       (vpattern (list->vector pat)))
                   `(let ,(map list g exp)
-                     (match (vector ,@g) (,vpattern ,@body))))))
+                     (,match. (vector ,@g) (,vpattern ,@body))))))
         (g146 (lambda ()
                 (match:syntax-err `(match-let ,@args) "syntax error in")))
         (g145 (lambda (p1 e1 p2 e2 body)
                 (let ((g1 (gensym)) (g2 (gensym)))
                   `(let ((,g1 ,e1) (,g2 ,e2))
-                     (match (cons ,g1 ,g2) ((,p1 . ,p2) ,@body))))))
+                     (,match. (cons ,g1 ,g2) ((,p1 . ,p2) ,@body))))))
         (g136 (cadddr match:expanders)))
     (if (pair? args)
-        (if (symbol? (car args))
+        (if (symid? (car args))
             (if (and (pair? (cdr args)) (list? (cadr args)))
                 (let g161 ((g162 (cadr args)) (g160 '()) (g159 '()))
                   (if (null? g162)
@@ -1201,7 +1233,7 @@
                                    (cadddr match:expanders)
                                    pat)
                                  `(let ,@args)
-                                 `(letrec ((,name (match-lambda*
+                                 `(letrec ((,name (,match-lambda*.
                                                     (,pat ,@body))))
                                     (,name ,@exp))))
                            (car args)
@@ -1400,7 +1432,7 @@
         (g146))))
 
 (define-macro (match-let1 pat exp . body) ;; Gauche extension
-  `(match ,exp (,pat ,@body)))
+  `(,match. ,exp (,pat ,@body)))
 
 (define-macro (match-let* . args)
   (let ((g176 (lambda ()
@@ -1419,8 +1451,8 @@
                      (pair? (cdr args)))
                 ((lambda (pat exp rest body)
                    (if ((cadddr match:expanders) pat)
-                       `(let ((,pat ,exp)) (match-let* ,rest ,@body))
-                       `(match ,exp (,pat (match-let* ,rest ,@body)))))
+                       `(let ((,pat ,exp)) (,match-let*. ,rest ,@body))
+                       `(,match. ,exp (,pat (,match-let*. ,rest ,@body)))))
                  (caaar args)
                  (cadaar args)
                  (cdar args)
@@ -1431,13 +1463,13 @@
 (define-macro (match-letrec . args)
   (let ((g200 (cadddr match:expanders))
         (g199 (lambda (p1 e1 p2 e2 body)
-                `(match-letrec (((,p1 . ,p2) (cons ,e1 ,e2))) ,@body)))
+                `(,match-letrec. (((,p1 . ,p2) (cons ,e1 ,e2))) ,@body)))
         (g195 (lambda ()
                 (match:syntax-err
                   `(match-letrec ,@args)
                   "syntax error in")))
         (g194 (lambda (pat exp body)
-                `(match-letrec
+                `(,match-letrec.
                    ((,(list->vector pat) (vector ,@exp)))
                    ,@body)))
         (g186 (lambda (pat exp body)
@@ -1445,7 +1477,7 @@
                  pat
                  exp
                  body
-                 `(match-letrec ((,pat ,exp)) ,@body)))))
+                 `(,match-letrec. ((,pat ,exp)) ,@body)))))
     (if (pair? args)
         (if (list? (car args))
             (if (match:every
@@ -1633,7 +1665,7 @@
                    ((caddr match:expanders)
                     pat
                     exp
-                    `(match-define ,@args)))
+                    `(,match-define. ,@args)))
                  (car args)
                  (cadr args))
                 (g209)))
