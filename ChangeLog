@@ -1,5 +1,8 @@
 2008-05-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/macro.c (Scm_VMMacroExpand): properly handles the case when
+	  the operator is an indentifier.
+
 	* libsrc/util/match.scm: Added support to a certain degree
 	  for the case when match macros are used with hygienic macros.
 	  Specifically it gracefully handles the case that match macros
