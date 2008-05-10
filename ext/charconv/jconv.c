@@ -1,7 +1,7 @@
 /*
  * jconv.c - alternative japanese code conversion routines
  *
- *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: jconv.c,v 1.23 2008-04-20 01:18:43 shirok Exp $
+ *  $Id: jconv.c,v 1.24 2008-05-10 13:35:37 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,

@@ -1,7 +1,7 @@
 ;;;
 ;;; srfi-13.scm - string library
 ;;;  
-;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-13.scm,v 1.7 2007-08-01 08:03:31 shirok Exp $
+;;;  $Id: srfi-13.scm,v 1.8 2008-05-10 13:36:12 shirok Exp $
 ;;;
 
 ;; Natively implemented functions:

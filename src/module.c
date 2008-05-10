@@ -1,7 +1,7 @@
 /*
  * module.c - module implementation
  *
- *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.70 2007-08-12 03:16:55 shirok Exp $
+ *  $Id: module.c,v 1.71 2008-05-10 13:36:19 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY

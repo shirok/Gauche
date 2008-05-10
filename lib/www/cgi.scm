@@ -1,7 +1,7 @@
 ;;;
 ;;; cgi.scm - CGI utility
 ;;;  
-;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.35 2008-02-16 16:46:47 shirok Exp $
+;;;  $Id: cgi.scm,v 1.36 2008-05-10 13:36:12 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.

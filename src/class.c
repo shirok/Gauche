@@ -1,7 +1,7 @@
 /*
  * class.c - class metaobject implementation
  *
- *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.165 2008-02-03 13:07:46 shirok Exp $
+ *  $Id: class.c,v 1.166 2008-05-10 13:36:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY

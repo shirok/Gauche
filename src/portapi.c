@@ -1,7 +1,7 @@
 /*
  * portapi.c - port common API
  *
- *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.32 2007-08-24 23:55:43 shirok Exp $
+ *  $Id: portapi.c,v 1.33 2008-05-10 13:36:20 shirok Exp $
  */
 
 /* This file is included _twice_ by port.c to define safe- and unsafe-

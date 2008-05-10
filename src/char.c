@@ -1,7 +1,7 @@
 /*
  * char.c - character and character set operations
  *
- *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.61 2008-02-08 08:06:32 shirok Exp $
+ *  $Id: char.c,v 1.62 2008-05-10 13:36:17 shirok Exp $
  */
 
 #include <ctype.h>

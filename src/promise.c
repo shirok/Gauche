@@ -1,7 +1,7 @@
 /*
  * promise.c - promise object
  *
- *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: promise.c,v 1.19 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: promise.c,v 1.20 2008-05-10 13:36:20 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY

@@ -1,7 +1,7 @@
 /*
  * prof.c - profiler
  *
- *   Copyright (c) 2005-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2005-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: prof.c,v 1.10 2007-08-24 23:55:43 shirok Exp $
+ *  $Id: prof.c,v 1.11 2008-05-10 13:36:20 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY

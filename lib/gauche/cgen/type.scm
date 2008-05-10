@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.cgen.type - type management
 ;;;  
-;;;   Copyright (c) 2004-2007  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2004-2008  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: type.scm,v 1.1 2007-08-17 04:19:48 shirok Exp $
+;;;  $Id: type.scm,v 1.2 2008-05-10 13:35:58 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.type

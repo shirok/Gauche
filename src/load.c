@@ -1,7 +1,7 @@
 /*
  * load.c - load a program
  *
- *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.118 2008-02-12 14:24:10 shirok Exp $
+ *  $Id: load.c,v 1.119 2008-05-10 13:36:19 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY

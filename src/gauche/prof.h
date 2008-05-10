@@ -1,7 +1,7 @@
 /*
  * prof.h - Profiler
  *
- *   Copyright (c) 2005-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2005-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: prof.h,v 1.4 2007-03-22 11:20:36 shirok Exp $
+ *  $Id: prof.h,v 1.5 2008-05-10 13:36:25 shirok Exp $
  */
 
 #ifndef GAUCHE_PROF_H

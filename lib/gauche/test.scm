@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.test - test framework
 ;;;  
-;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.28 2008-02-26 15:37:17 shirok Exp $
+;;;  $Id: test.scm,v 1.29 2008-05-10 13:35:56 shirok Exp $
 
 ;; Writing your own test
 ;;

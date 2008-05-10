@@ -1,7 +1,7 @@
 ;;;
 ;;; charconv - character code conversion module
 ;;;  
-;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: charconv.scm,v 1.23 2007-03-02 07:39:04 shirok Exp $
+;;;  $Id: charconv.scm,v 1.24 2008-05-10 13:35:37 shirok Exp $
 ;;;
 
 (define-module gauche.charconv

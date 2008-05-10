@@ -1,7 +1,7 @@
 ;;;
 ;;; procedure.scm - auxiliary procedure utilities.  to be autoloaded.
 ;;;  
-;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.22 2008-02-04 09:17:47 shirok Exp $
+;;;  $Id: procedure.scm,v 1.23 2008-05-10 13:35:56 shirok Exp $
 ;;;
 
 (define-module gauche.procedure

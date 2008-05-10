@@ -1,7 +1,7 @@
 /*
  * vm.h - Virtual machine
  *
- *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.114 2007-03-22 11:20:36 shirok Exp $
+ *  $Id: vm.h,v 1.115 2008-05-10 13:36:25 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H

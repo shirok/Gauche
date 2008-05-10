@@ -1,7 +1,7 @@
 /*
  * int64.h - auxilirary definition for 64bit integers
  *
- *   Copyright (c) 2004-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2004-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: int64.h,v 1.7 2007-11-06 12:23:29 shirok Exp $
+ *  $Id: int64.h,v 1.8 2008-05-10 13:36:25 shirok Exp $
  */
 
 /* Some Scheme API needs to deal with 64bit signed/unsigned integer

@@ -1,7 +1,7 @@
 /*
  * weak.c - weak vectors and tables
  *
- *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: weak.c,v 1.17 2008-05-04 18:41:46 shirok Exp $
+ *  $Id: weak.c,v 1.18 2008-05-10 13:36:24 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY

@@ -1,7 +1,7 @@
 /*
  * paths.c - get 'known' pathnames, such as the system's library directory.
  *
- *   Copyright (c) 2005-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2005-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: paths.c,v 1.4 2007-09-15 12:30:50 shirok Exp $
+ *  $Id: paths.c,v 1.5 2008-05-10 13:36:20 shirok Exp $
  *
  */
 

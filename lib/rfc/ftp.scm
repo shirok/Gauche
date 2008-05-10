@@ -1,7 +1,7 @@
 ;;; ftp.scm - FTP library
 ;;;
 ;;;  Copyright (c) 2005 OOHASHI Daichi, All rights reserved.
-;;;  Copyright (c) 2007  Shiro Kawai  <shiro@acm.org>
+;;;  Copyright (c) 2007-2008  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;  Redistribution and use in source and binary forms, with or without
 ;;;  modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-;;; $Id: ftp.scm,v 1.8 2008-02-25 08:42:57 shirok Exp $
+;;; $Id: ftp.scm,v 1.9 2008-05-10 13:36:08 shirok Exp $
 
 ;; RFC  959 FILE TRANSFER PROTOCOL (FTP)
 ;; RFC 1123 Requirements for Internet Hosts -- Application and Support

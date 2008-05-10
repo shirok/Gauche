@@ -1,7 +1,7 @@
 ;;;
 ;;; convaux - auxiliary charconv routines
 ;;;  
-;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: convaux.scm,v 1.6 2008-02-25 08:42:56 shirok Exp $
+;;;  $Id: convaux.scm,v 1.7 2008-05-10 13:35:37 shirok Exp $
 ;;;
 
 (select-module gauche.charconv)

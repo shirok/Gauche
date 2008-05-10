@@ -1,7 +1,7 @@
 ;;;
 ;;; srfi-14.scm - character set
 ;;;  
-;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-14.scm,v 1.14 2007-03-02 07:39:07 shirok Exp $
+;;;  $Id: srfi-14.scm,v 1.15 2008-05-10 13:35:48 shirok Exp $
 ;;;
 
 ;; Basic operators are built in the Gauche kernel.  This module

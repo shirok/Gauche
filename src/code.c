@@ -1,7 +1,7 @@
 /*
  * code.c - compiled code builder/handler
  *
- *   Copyright (c) 2005-2007  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2005-2008  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.18 2007-08-24 23:55:42 shirok Exp $
+ *  $Id: code.c,v 1.19 2008-05-10 13:36:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
