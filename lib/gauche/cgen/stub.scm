@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: stub.scm,v 1.1 2008-05-11 00:08:04 shirok Exp $
+;;;  $Id: stub.scm,v 1.2 2008-05-11 02:12:39 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.stub
@@ -220,7 +220,7 @@
 (define (cgen-stub-parse-form form)
   (match form
     [(? string?) (cgen-body form)]
-    [((= cgen-stub-parser p) . _) (p form)]
+    [((= cgen-stub-parser (? values p)) . _) (p form)]
     [_ (error <cgen-stub-error> "invalid stub form:" form)]))
 
 ;; meta stuff
