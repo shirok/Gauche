@@ -1,7 +1,9 @@
 2008-05-10  Shiro Kawai  <shiro@acm.org>
 
-	* src/genstub, lib/gauche/cgen/type.scm: Moved stub type handling
-	  code to gauche.cgen.type module.
+	* src/genstub, lib/gauche/cgen/type.scm, lib/gauche/cgen/stub.scm:
+	  Moved most of the stub handling stuff into gauche.cgen.type and
+	  gauche.cgen.stub modules.  Now genstub is a thin frontend for
+	  those modules.
 
 2008-05-09  Shiro Kawai  <shiro@acm.org>
 
