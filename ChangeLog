@@ -1,5 +1,8 @@
 2008-05-10  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/file/util.scm (safe-stat): fix for platforms that don't
+	  have sys-lstat.
+
 	* src/genstub, lib/gauche/cgen/type.scm, lib/gauche/cgen/stub.scm:
 	  Moved most of the stub handling stuff into gauche.cgen.type and
 	  gauche.cgen.stub modules.  Now genstub is a thin frontend for

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.13 2008-05-10 13:36:13 shirok Exp $
+;;;  $Id: util.scm,v 1.14 2008-05-11 08:30:53 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -71,7 +71,8 @@
 ;; Common util.  Returns #f if PATH does not exist.
 
 (define (safe-stat path follow-link?)
-  (if follow-link?
+  (if (cond-expand [gauche.os.windows #t]
+                   [else follow-link?])
     (and (sys-access path F_OK) (sys-stat path))
     ;; When we don't follow symlink, we can't use sys-access since it returns
     ;; #f if PATH is a dangling symlink.
