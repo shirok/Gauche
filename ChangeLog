@@ -1,3 +1,8 @@
+2008-05-12  Shiro Kawai  <shiro@acm.org>
+
+	* gc/thread_local_alloc.c (GC_mark_thread_local_fls_for): Fixed
+	  size-zero allocation problem.
+
 2008-05-10  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm (safe-stat): fix for platforms that don't
