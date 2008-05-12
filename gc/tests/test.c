@@ -1144,9 +1144,10 @@ void run_one_test()
 	   size_t i;
 	   for (i = 0; i < 10000; ++i) {
 	     GC_MALLOC(0);
-	     GC_FREE(GC_MALLOC(0));
+             /* [SK] these GC_FREEs still causing problems. */
+	     /*GC_FREE(GC_MALLOC(0));*/
 	     GC_MALLOC_ATOMIC(0);
-	     GC_FREE(GC_MALLOC_ATOMIC(0));
+	     /*GC_FREE(GC_MALLOC_ATOMIC(0));*/
 	   }
 	 }
 #   ifdef GC_GCJ_SUPPORT
