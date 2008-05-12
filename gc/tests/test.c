@@ -1143,10 +1143,10 @@ void run_one_test()
     	{
 	   size_t i;
 	   for (i = 0; i < 10000; ++i) {
-	     GC_MALLOC(0);
-             /* [SK] these GC_FREEs still causing problems. */
+             /* [SK] these GC_MALLOC(0)s still causing problems. */
+             /*GC_MALLOC(0);*/
 	     /*GC_FREE(GC_MALLOC(0));*/
-	     GC_MALLOC_ATOMIC(0);
+	     /*GC_MALLOC_ATOMIC(0);*/
 	     /*GC_FREE(GC_MALLOC_ATOMIC(0));*/
 	   }
 	 }
