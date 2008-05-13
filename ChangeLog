@@ -1,5 +1,19 @@
 2008-05-12  Shiro Kawai  <shiro@acm.org>
 
+	* src/gencomp, src/genstub, lib/gauche/cgen/stub.scm: Allow stub
+	  definitions to be embedded in an ordinary *.scm file for pre-
+	  compilation.  When gencomp sees a toplevel
+	  (inline-stub stub-form ...) form, the stub-form ... part is
+	  passed to gauche.cgen.stub to generate C code into the pre-compiled
+	  output.
+	* src/gencomp, src/compile.scm (global-eq??): Now gencomp takes
+	  into account the module visibility when it checks the special
+	  identifiers in the toplevel, so that it won't accidentally step
+	  on the source where those identifiers are redefined.
+	* src/scmlib.scm (inline-stub): A macro inline-stub is defined
+	  to detect when the form is evaluated at runtime (it's only valid
+	  for precompilation, so at runtime the form throws an error.)
+
 	* gc/thread_local_alloc.c (GC_mark_thread_local_fls_for): Fixed
 	  size-zero allocation problem.
 

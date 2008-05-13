@@ -1,7 +1,7 @@
 ;;;
 ;;; gencomp - convert compiled code into static C data
 ;;;
-;;;   Copyright (c) 2004-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2008 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.34 2007-11-06 22:41:38 shirok Exp $
+;;;  $Id: gencomp,v 1.35 2008-05-13 05:44:15 shirok Exp $
 ;;;
 
 ;;;
@@ -46,6 +46,7 @@
 (use srfi-1)
 (use srfi-13)
 (use gauche.cgen)
+(use gauche.cgen.stub)
 (use gauche.vm.insn)
 (use gauche.parameter)
 (use gauche.sequence)
@@ -97,6 +98,14 @@
 
 (define-constant SCM_VM_COMPILING 2) ;; must match with vm.h
 
+;; global-eq?? is defined in compile.scm, but it wasn't in 0.8.13.
+;; We duplicate it here so that we can compile compile.scm with 0.8.13.
+(define (global-eq?? sym srcmod modgen)
+  (let* ((find-binding (with-module gauche.internal find-binding))
+         (id-gloc (find-binding (find-module srcmod) sym #f)))
+    (lambda (var)
+      (eq? id-gloc (find-binding (modgen) var #f)))))
+
 ;;================================================================
 ;; Entry
 ;;
@@ -119,7 +128,7 @@
                 (or output-base (sys-basename (path-sans-extension scmfile)))
                 predef-syms)
          (when ext-module (close-output-port (ext-module-file))))
-        (else (print "Usage: gosh gencomp [--keep-macro] <file.scm>")
+        (else (print "Usage: gosh gencomp [--keep-private-macro] <file.scm>")
               (exit 0)))
       0)))
 
@@ -204,46 +213,62 @@
 ;;    (3) remove the old instruction.
 ;;
 
+;; predicates to match the global identifiers that are not redefined
+(define-syntax define-global-pred
+  (syntax-rules ()
+    [(_ name sym)
+     (define name (global-eq?? 'sym 'gauche compile-module))]))
+(define-global-pred =define-module?   define-module)
+(define-global-pred =select-module?   select-module)
+(define-global-pred =use?             use)
+(define-global-pred =export?          export)
+(define-global-pred =export-all?      export-all)
+(define-global-pred =provide?         provide)
+(define-global-pred =define-macro?    define-macro)
+(define-global-pred =define-syntax?   define-syntax)
+(define-global-pred =define?          define)
+(define-global-pred =lambda?          lambda)
+(define-global-pred =define-constant? define-constant)
+(define-global-pred =inline-stub?     inline-stub)
+
 ;; compile FORM, and conses the toplevel code (something to be
 ;; executed at toplevel).
 (define (compile-toplevel-form form seed)
   (guard (e
-          ((<error> e)
+          [(<error> e)
            (format (current-error-port) "Error in compiling ~s\n" form)
-           (raise e)))
+           (raise e)])
     (match form
       ;; Module related stuff
-      (('define-module mod . body)
+      [((? =define-module?) mod . body)
        (write-ext-module form)
        (parameterize ((compile-module-name mod))
-         (fold compile-toplevel-form seed body)))
-      (('select-module mod)
+         (fold compile-toplevel-form seed body))]
+      [((? =select-module?) mod)
        (write-ext-module form)
        (write-ext-module
         `(dynamic-load ,(compile-file-basename)))
        (let ((sym (cgen-literal mod)))
          (cgen-init
-          (format "  mod = Scm_FindModule(SCM_SYMBOL(~a), SCM_FIND_MODULE_CREATE);"
+          (format "  mod = Scm_FindModule(SCM_SYMBOL(~a),\
+                                          SCM_FIND_MODULE_CREATE);"
                   (cgen-cexpr sym))
           ;; force the current module to be mod
           "  Scm_SelectModule(mod);"))
        (compile-module-name mod)
-       seed)
-      (('use mod)
-       (eval `(use ,mod) (compile-module)) seed)
-      (('export . syms)
+       seed]
+      [((? =use?) mod)
+       (eval `(use ,mod) (compile-module)) seed]
+      [((? =export?) . syms)
        (when (list? (compile-module-exports))
          (compile-module-exports
           (lset-union eq? syms (compile-module-exports))))
-       (eval `(export ,@syms) (compile-module)) seed)
-      (('export-all)
-       (compile-module-exports #t))
-      (('provide arg)
-       (write-ext-module form)
-       seed)
+       (eval `(export ,@syms) (compile-module)) seed]
+      [((? =export-all?)) (compile-module-exports #t)]
+      [((? =provide?) arg) (write-ext-module form) seed]
       ;; For the time being, we only compile the legacy macros into C file.
       ;; R5RS macros are put in ext-module file as is.
-      (('define-macro (name . formals) . body)
+      [((? =define-macro?) (name . formals) . body)
        (eval form (compile-module))
        (when (or (symbol-exported? name)
                  (memq name (private-macros-to-keep)))
@@ -252,23 +277,25 @@
                 (code (cgen-literal (closure-code body-closure)))
                 (var  (cgen-literal name)))
            (cgen-init
-            (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeMacroTransformerOld(SCM_SYMBOL(~a), SCM_PROCEDURE(Scm_MakeClosure(~a, NULL))));"
+            (format "  Scm_Define(mod, SCM_SYMBOL(~a), \
+                             Scm_MakeMacroTransformerOld(SCM_SYMBOL(~a),\
+                                 SCM_PROCEDURE(Scm_MakeClosure(~a, NULL))));"
                     (cgen-cexpr var) (cgen-cexpr var)
                     (cgen-cexpr code)))))
-       seed)
-      (('define-macro name . _)
+       seed]
+      [((? =define-macro?) name . _)
        (when (symbol-exported? name)
          (write-ext-module form))
-       (eval form (compile-module)) seed)
-      (('define-syntax name . _)
+       (eval form (compile-module)) seed]
+      [((? =define-syntax?) name . _)
        (when (or (symbol-exported? name)
                  (memq name (private-macros-to-keep)))
          (write-ext-module form))
-       (eval form (compile-module)) seed)
+       (eval form (compile-module)) seed]
       ;; Finally, ordinary expressions.
-      (('define (name . args) . body)
-       (compile-toplevel-form `(define ,name (lambda ,args ,@body)) seed))
-      (('define (? symbol? name) ('lambda args . body))
+      [((? =define?) (name . args) . body)
+       (compile-toplevel-form `(define ,name (lambda ,args ,@body)) seed)]
+      [((? =define?) (? symbol? name) ((? =lambda?) args . body))
        (let* ((closure
                (compile-toplevel-lambda form name args body (compile-module)))
               (code (cgen-literal (closure-code closure)))
@@ -276,17 +303,21 @@
          (cgen-init
           (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeClosure(~a, NULL));"
                   (cgen-cexpr var) (cgen-cexpr code))))
-       seed)
-      (('define-constant (? symbol?) expr)
+       seed]
+      [((? =define-constant?) (? symbol?) expr)
        (eval form (compile-module))
-       (cons (cgen-literal (compile form (compile-module))) seed))
-      (else
+       (cons (cgen-literal (compile form (compile-module))) seed)]
+      ;; genstub stuff
+      [((? =inline-stub?) . stubs)
+       (for-each (compose cgen-stub-parse-form unwrap-syntax) stubs)
+       seed]
+      [else
        (let1 compiled-code (compile form (compile-module))
          ;; We exclude a compiled code with only CONSTU-RET, which appears
          ;; as the result of macro expansion sometimes.
          (if (toplevel-constu-ret-code? compiled-code)
            seed
-           (cons (cgen-literal compiled-code) seed))))
+           (cons (cgen-literal compiled-code) seed)))]
       )))
 
 ;; check to see the compiled code only contains CONSTU-RET insn.
@@ -529,13 +560,14 @@
 ;;
 
 (define (get-unit src base predef-syms)
-  (make <cgen-unit>
-    :name base
+  (define safe-name (string-tr (sys-basename base) "-+" "__"))
+  (make <cgen-stub-unit>
+    :name base :c-name-prefix safe-name
     :preamble `(,(format "/* Generated automatically from ~a.  DO NOT EDIT */"
                          src))
     :pre-decl (map (lambda (s) #`"#define ,s") predef-syms)
     :init-prologue (format "INIT_ENTRY void Scm_Init_~a() { ScmModule *mod;"
-                           (string-tr (sys-basename base) "-+" "__"))
+                           safe-name)
     ))
 
 ;; Local variables:

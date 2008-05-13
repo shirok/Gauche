@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.61 2008-05-10 13:36:17 shirok Exp $
+;;;  $Id: compile.scm,v 1.62 2008-05-13 05:44:15 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -4371,6 +4371,16 @@
          (and (identifier? v)
               (eq? (slot-ref v 'name) sym)
               (null? (slot-ref v 'env))))))
+
+;; To compare identifiers w/ hygiene.  Returns a predicate that takes
+;; a single argument VAR, which must be a symbol or identifier that
+;; appears in the toplevel environment with a module that are returned by
+;; calling a thunk MODGEN.  The predicate returns #t iff VAR represents
+;; the same global binding of SYM within the module SRCMOD.
+(define (global-eq?? sym srcmod modgen)
+  (let1 id-gloc (find-binding (find-module srcmod) sym #f)
+    (lambda (var)
+      (eq? id-gloc (find-binding (modgen) var #f)))))
 
 ;;============================================================
 ;; Initialization

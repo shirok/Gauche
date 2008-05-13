@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.19 2008-05-10 13:36:21 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.20 2008-05-13 05:44:15 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -161,6 +161,21 @@
                            ,@tmps)])))
               ]))))
   )
+
+;;;=======================================================
+;;; Inline stub
+;;;
+
+;; The form (inline-stub ...) allows genstub directives embedded
+;; within a Scheme source.  It is only valid when the source is
+;; pre-compiled into C.  Tehcnically we can kick C compiler at
+;; runtime, but it'll need some more work, so we signal an error
+;; when inline-stub form is evaluated at runtime.  The precompiler
+;; (gencomp) handles this form specially.
+
+(define-macro (inline-stub . _)
+  (error "The inline-stub form can only be used for Scheme source \
+          to be pre-compiled."))
 
 ;;;=======================================================
 ;;; List utilities

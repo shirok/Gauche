@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.147 2008-05-11 00:08:05 shirok Exp $
+;;;  $Id: genstub,v 1.148 2008-05-13 05:44:15 shirok Exp $
 ;;;
 
 
@@ -70,7 +70,7 @@
                       :pre-decl
                       (map (cut format "#define ~a" <>) predef-syms)
                       :init-prologue
-                      (format "void Scm_Init_~a(ScmModule *module)\n{\n" prefix)
+                      (format "void Scm_Init_~a(ScmModule *mod)\n{\n" prefix)
                       )]
                    )
       (guard (e [(<cgen-stub-error> e) (write (ref e'message)) (exit 1)])

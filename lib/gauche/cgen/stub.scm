@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: stub.scm,v 1.2 2008-05-11 02:12:39 shirok Exp $
+;;;  $Id: stub.scm,v 1.3 2008-05-13 05:44:15 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.stub
@@ -169,6 +169,14 @@
 (define (p . args)     (apply print args))
 (define (get-c-name prefix scheme-name)
   (cgen-safe-name-friendly (string-append prefix (x->string scheme-name))))
+
+;; global-eq?? is defined in compile.scm, but it wasn't in 0.8.13.
+;; We duplicate it here so that we can run genstub with 0.8.13.
+(define (global-eq?? sym srcmod modgen)
+  (let* ((find-binding (with-module gauche.internal find-binding))
+         (id-gloc (find-binding (find-module srcmod) sym #f)))
+    (lambda (var)
+      (eq? id-gloc (find-binding (modgen) var #f)))))
 
 ;; <cgen-stub-unit> is a specialized class to handle stub forms.
 (define-class <cgen-stub-unit> (<cgen-unit>)
@@ -352,7 +360,7 @@
         (initval (make-literal init)))
     (when c-name
       (cgen-decl #`"#define ,c-name (,(cgen-cexpr symbol))"))
-    (cgen-init (format "  ~a(module, SCM_SYMBOL(~a), ~a);\n"
+    (cgen-init (format "  ~a(mod, SCM_SYMBOL(~a), ~a);\n"
                        (if const? "Scm_DefineConst" "Scm_Define")
                        (cgen-cexpr symbol)
                        (cgen-cexpr initval)))
@@ -764,7 +772,7 @@
 
 (define-method cgen-emit-init ((cproc <cproc>))
   (when (symbol? [@ cproc'scheme-name])
-    (f "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a));"
+    (f "  SCM_DEFINE(mod, ~s, SCM_OBJ(&~a));"
        (symbol->string [@ cproc'scheme-name])
        (c-stub-name cproc)))
   (next-method)
@@ -869,7 +877,7 @@
   (p))
 
 (define-method cgen-emit-init ((self <cgeneric>))
-  (f "  Scm_InitBuiltinGeneric(&~a, ~s, module);"
+  (f "  Scm_InitBuiltinGeneric(&~a, ~s, mod);"
      [@ self'c-name] (symbol->string [@ self'scheme-name]))
   (next-method))
 
@@ -1149,7 +1157,7 @@
   )
 
 (define-method cgen-emit-init ((self <cclass>))
-  (p "  Scm_InitBuiltinClass(&"[@ self'c-name]", \""[@ self'scheme-name]"\", "(c-slot-spec-name self)", TRUE, module);")
+  (p "  Scm_InitBuiltinClass(&"[@ self'c-name]", \""[@ self'scheme-name]"\", "(c-slot-spec-name self)", TRUE, mod);")
   ;; adjust direct-supers if necessary
   (let1 ds [@ self'direct-supers]
     (when (not (null? ds))
