@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: scmconst.h,v 1.5 2008-05-10 13:36:25 shirok Exp $
+ *  $Id: scmconst.h,v 1.6 2008-05-16 18:58:48 shirok Exp $
  */
 
 #ifndef GAUCHE_SCMCONST_H
@@ -42,7 +42,7 @@ SCM_EXTERN ScmObj Scm__ConstObjs[];   /* initialized in number.c */
 #define SCM_2_64_MINUS_1       (Scm__ConstObjs[1])    /*  2^64-1 */
 #define SCM_2_63               (Scm__ConstObjs[2])    /*  2^63 */
 #define SCM_MINUS_2_63         (Scm__ConstObjs[3])    /* -2^63 */
-#define SCM_2_53               (Scm__ConstObjs[4])    /*  2^52 */
+#define SCM_2_53               (Scm__ConstObjs[4])    /*  2^53 */
 #define SCM_2_52               (Scm__ConstObjs[5])    /*  2^52 */
 #define SCM_2_32               (Scm__ConstObjs[6])    /*  2^32 */
 #define SCM_2_31               (Scm__ConstObjs[7])    /*  2^31 */
