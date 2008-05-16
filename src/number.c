@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.161 2008-05-16 18:56:53 shirok Exp $
+ *  $Id: number.c,v 1.162 2008-05-16 18:57:52 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2970,18 +2970,18 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
     char buf[FLT_BUF];
     
     if (SCM_INTP(obj)) {
-        char buf[50], *pbuf = buf;
+        char *pbuf = buf;
         long value = SCM_INT_VALUE(obj);
         if (value < 0) {
             *pbuf++ = '-';
             value = -value;     /* this won't overflow */
         }
         if (radix == 10) {
-            snprintf(pbuf, 49, "%ld", value);
+            snprintf(pbuf, FLT_BUF-1, "%ld", value);
         } else if (radix == 16) {
-            snprintf(pbuf, 49, (use_upper? "%lX" : "%lx"), value);
+            snprintf(pbuf, FLT_BUF-1, (use_upper? "%lX" : "%lx"), value);
         } else if (radix == 8) {
-            snprintf(pbuf, 49, "%lo", value);
+            snprintf(pbuf, FLT_BUF-1, "%lo", value);
         } else {
             /* sloppy way ... */
             r = Scm_BignumToString(SCM_BIGNUM(Scm_MakeBignumFromSI(SCM_INT_VALUE(obj))),
