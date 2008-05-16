@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.160 2008-05-10 13:36:19 shirok Exp $
+ *  $Id: number.c,v 1.161 2008-05-16 18:56:53 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2620,7 +2620,7 @@ ScmObj Scm_Ash(ScmObj x, int cnt)
                 ix >>= -cnt;
             }
             return Scm_MakeInteger(ix);
-        } else if (cnt < (SIZEOF_LONG*8-3)) {
+        } else if (cnt < SCM_SMALL_INT_SIZE) {
             if (ix < 0) {
                 if (-ix < (SCM_SMALL_INT_MAX >> cnt)) {
                     ix <<= cnt;

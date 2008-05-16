@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: boolean.c,v 1.24 2008-05-10 13:36:17 shirok Exp $
+ *  $Id: boolean.c,v 1.25 2008-05-16 18:54:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -69,7 +69,7 @@ int Scm_EqualP(ScmObj x, ScmObj y)
             y = SCM_CDR(y);
         } while (SCM_PAIRP(x)&&SCM_PAIRP(y));
         return Scm_EqualP(x, y);
-   }
+    }
     if (SCM_STRINGP(x)) {
         if (SCM_STRINGP(y)) {
             return Scm_StringEqual(SCM_STRING(x), SCM_STRING(y));
