@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.119 2008-05-10 13:36:19 shirok Exp $
+ *  $Id: load.c,v 1.120 2008-05-16 19:27:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -890,7 +890,7 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
         }
         
         for (;;) {
-            q = Scm_Assoc(SCM_CDR(p), ldinfo.waiting, SCM_CMP_EQ);
+            q = Scm_Assq(SCM_CDR(p), ldinfo.waiting);
             if (SCM_FALSEP(q)) break;
             SCM_ASSERT(SCM_PAIRP(q));
             p = Scm_Assoc(SCM_CDR(q), ldinfo.providing, SCM_CMP_EQUAL);
