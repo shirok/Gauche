@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.h,v 1.4 2008-05-10 13:36:25 shirok Exp $
+ *  $Id: load.h,v 1.5 2008-05-16 18:58:16 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -42,7 +42,7 @@
  * Loading Scheme files
  */
 
-/* Flags for Scm_VMLoad, Scm_Load, amd Scm_Requre. (not for Scm_VMLoadPort) */
+/* Flags for Scm_VMLoad, Scm_Load, amd Scm_Require. (not for Scm_VMLoadPort) */
 typedef enum {
     SCM_LOAD_QUIET_NOFILE = (1L<<0),  /* do not signal an error if the file
                                          does not exist; just return #f. */
