@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.120 2008-05-16 19:27:21 shirok Exp $
+ *  $Id: load.c,v 1.121 2008-05-18 11:31:15 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -647,7 +647,7 @@ static const char *get_dynload_initfn(const char *filename)
     return name;
 }
 
-#if 0
+#if 0  /* Turned off libtool *.la support.  Not sure if we need this. */
 /* Aux fn to get a parameter value from *.la file line */
 static const char *get_la_val(const char *start)
 {
@@ -738,7 +738,7 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export_)
     reqname = truename;         /* save requested name */
     cpath = Scm_GetStringConst(SCM_STRING(truename));
 
-#if 0
+#if 0  /* Turned off libtool *.la support.  Not sure if we need this. */
     if ((suff = strrchr(cpath, '.')) && strcmp(suff, ".la") == 0) {
         truename = find_so_from_la(SCM_STRING(truename));
         if (SCM_FALSEP(truename)) {
