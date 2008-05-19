@@ -1,3 +1,13 @@
+2008-05-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_DynLoad): Fixed a bug that caused a dead-lock
+	  when the initialization function of DSO executes some Scheme
+	  function (it happens if the DSO is pre-compiled from Scheme source),
+	  and the execution triggers an autoload, which in turn tries to
+	  dynamic-load some other module.  Before, we had a global lock for
+	  dynamic-load, so the recursive call to it caused a dead lock.
+	  Now the lock is per-DSO.
+
 2008-05-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/gencomp, src/genstub, lib/gauche/cgen/stub.scm: Allow stub
