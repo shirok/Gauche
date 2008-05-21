@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.122 2008-05-19 13:51:36 shirok Exp $
+ *  $Id: load.c,v 1.123 2008-05-21 10:46:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -612,16 +612,18 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 typedef void (*ScmDynLoadInitFn)(void);
 
 enum dlobj_state {
-    DLOBJ_NONE,
-    DLOBJ_LOADED,
-    DLOBJ_INITIALIZED
+    DLOBJ_NONE,             /* dlopen and dlsym haven't completed. */
+    DLOBJ_LOADED,           /* dlopened and initfn found, but not init'ed */
+    DLOBJ_INITIALIZED       /* initialized and ready to use */
 };
 
 struct dlobj_rec {
-    dlobj *next;
-    const char *path;
-    enum dlobj_state state;
-    ScmVM *loader;
+    dlobj *next;                /* chain */
+    const char *path;           /* pathname for DSO, including suffix */
+    enum dlobj_state state;     /* state of loading */
+    void *handle;               /* whatever dl_open returned */
+    ScmVM *loader;              /* VM who's loading this.  NULL once done. */
+    ScmDynLoadInitFn initfn;    /* initialization fn */
     ScmInternalMutex mutex;
     ScmInternalCond  cv;
 };
@@ -672,6 +674,7 @@ static dlobj *make_dlobj(const char *path)
     z->path = path;
     z->loader = Scm_VM();
     z->state = DLOBJ_NONE;
+    z->initfn = NULL;
     (void)SCM_INTERNAL_MUTEX_INIT(z->mutex);
     (void)SCM_INTERNAL_COND_INIT(z->cv);
     return z;
@@ -767,8 +770,6 @@ static ScmObj find_so_from_la(ScmString *lafile)
 ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export_)
 {
     ScmObj reqname, truename, load_paths = Scm_GetDynLoadPath();
-    void *handle;
-    ScmDynLoadInitFn func;
     const char *cpath, *initname;
     dlobj *newdlo, *dlo;
 
@@ -842,8 +843,8 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export_)
                 while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
                 Scm_Printf(SCM_CURERR, "Dynamically Loading %s...\n", cpath);
             }
-            handle = dl_open(cpath);
-            if (handle == NULL) {
+            dlo->handle = dl_open(cpath);
+            if (dlo->handle == NULL) {
                 const char *err = dl_error();
                 if (err == NULL) {
                     Scm_Error("failed to link %S dynamically", filename);
@@ -852,28 +853,32 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export_)
                 }
                 /*NOTREACHED*/
             }
-            dlo->state = DLOBJ_LOADED;
-            /*FALLTHROUGH*/
-        case DLOBJ_LOADED:
-            /* initname always has '_'.  We first try without '_' */
-            func = dl_sym(handle, initname+1);
-            if (func == NULL) {
-                func = (void(*)(void))dl_sym(handle, initname);
-                if (func == NULL) {
-                    dl_close(handle);
+            /* locate initfn.  initname always has '_'.  Whether the actual
+               symbol dl_sym returns has '_' or not depends on the platform,
+               so we first try without '_', then '_'. */
+            dlo->initfn = dl_sym(dlo->handle, initname+1);
+            if (dlo->initfn == NULL) {
+                dlo->initfn = (void(*)(void))dl_sym(dlo->handle, initname);
+                if (dlo->initfn == NULL) {
+                    dl_close(dlo->handle);
+                    dlo->handle = NULL;
                     Scm_Error("dynamic linking of %S failed: couldn't find initialization function %s", filename, initname);
                     /*NOTREACHED*/
                 }
             }
+            dlo->state = DLOBJ_LOADED;
+            /*FALLTHROUGH*/
+        case DLOBJ_LOADED:
+            SCM_ASSERT(dlo->initfn != NULL);
             /* Call initialization function.  note that there can be arbitrary
-               complex stuff is done within func(), including evaluation of
+               complex stuff done within func(), including evaluation of
                Scheme procedures and/or calling dynamic-load for other
                object.  There's a chance that, with some contrived example,
                func() can trigger the dynamic loading of the same file we're
                loading right now.  However, if the code follows the Gauche's
                standard module structure, such circular dependency is detected
                by Scm_Load, so we don't worry about it here. */
-            func();
+            dlo->initfn();
             /* Alright.  Everything seems fine. */
             dlo->state = DLOBJ_INITIALIZED;
             /*FALLTHROUGH*/

@@ -1,3 +1,8 @@
+2008-05-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_DynLoad): Fixed a bug that leaves dlobj inconsisntent
+	  state when dl_sym couldn't find initfn.
+
 2008-05-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_DynLoad): Fixed a bug that caused a dead-lock
