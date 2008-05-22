@@ -1,6 +1,6 @@
 ;;
 ;; SRFI-26
-;;  $Id: srfi-26.scm,v 1.1 2002-06-27 03:17:08 shirok Exp $
+;;  $Id: srfi-26.scm,v 1.2 2008-05-22 03:22:23 shirok Exp $
 
 ;; This implementation is taken from http://srfi.schemers.org/srfi-26/
 ;; As shown below, originally written by Al Petrofsky and modified by
@@ -51,9 +51,13 @@
   (syntax-rules (<> <...>)
 
     ;; construct fixed- or variable-arity procedure:
-    ;;   (begin proc) throws an error if proc is not an <expression>
+    ;;  Original code wraps proc in the first clause by (begin proc), hoping
+    ;;  the implementation to detect an error in case proc is a macro or a
+    ;;  syntax; but in Gauche such error detection is delayed until runtime
+    ;;  anyway, and using (begin proc) suppresses inlining proc, so we 
+    ;;  modified it.
     ((srfi-26-internal-cut (slot-name ...) (proc arg ...))
-     (lambda (slot-name ...) ((begin proc) arg ...)))
+     (lambda (slot-name ...) (proc arg ...)))
     ((srfi-26-internal-cut (slot-name ...) (proc arg ...) <...>)
      (lambda (slot-name ... . rest-slot) (apply proc arg ... rest-slot)))
 

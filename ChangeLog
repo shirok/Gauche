@@ -1,5 +1,8 @@
 2008-05-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-26.scm (srfi-26-internal-cut): performance fix (see the
+	  comment).
+
 	* src/load.c (Scm_DynLoad): Fixed a bug that leaves dlobj inconsisntent
 	  state when dl_sym couldn't find initfn.
 
