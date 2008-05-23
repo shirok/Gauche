@@ -643,6 +643,17 @@
 (test* "negative?" #f (negative? 134539485343498539458394))
 (test* "negative?" #t (negative? -134539485343498539458394))
 
+(let1 tester
+    (lambda (name proc result)
+      (test* name *test-error* (proc #t))
+      (test* name result
+             (list (proc 1) (proc +inf.0) (proc -inf.0) (proc +nan.0))))
+  (tester "finite?"   finite?   `(#t #f #f #f))
+  (tester "infinite?" infinite? `(#f #t #t #f))
+  (tester "nan?"      nan?      `(#f #f #f #t))
+  )
+
+
 (test* "eqv?" #t (eqv? 20 20))
 (test* "eqv?" #t (eqv? 20.0 20.00000))
 (test* "eqv?" #f (eqv? 4/5 0.8))

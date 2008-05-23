@@ -1,3 +1,8 @@
+2008-05-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_FiniteP, Scm_InfiniteP, Scm_NanP),
+	  src/extlib.stub (finite?, infinite?, nan?): Added from R6RS.
+
 2008-05-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-26.scm (srfi-26-internal-cut): performance fix (see the

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.162 2008-05-16 18:57:52 shirok Exp $
+ *  $Id: number.c,v 1.163 2008-05-23 07:14:57 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1126,6 +1126,41 @@ int Scm_OddP(ScmObj obj)
     Scm_Error("integer required, but got %S", obj);
     return FALSE;       /* dummy */
     
+}
+
+int Scm_FiniteP(ScmObj obj)
+{
+    return !Scm_InfiniteP(obj) && !Scm_NanP(obj);
+}
+
+int Scm_InfiniteP(ScmObj obj)
+{
+    if (SCM_FLONUMP(obj)) {
+        double v = SCM_FLONUM_VALUE(obj);
+        return SCM_IS_INF(v);
+    } else if (SCM_COMPNUMP(obj)) {
+        double r = SCM_COMPNUM_REAL(obj);
+        double i = SCM_COMPNUM_IMAG(obj);
+        return SCM_IS_INF(r) || SCM_IS_INF(i);
+    } else if (!SCM_NUMBERP(obj)) {
+        SCM_TYPE_ERROR(obj, "number");
+    }
+    return FALSE;
+}
+
+int Scm_NanP(ScmObj obj)
+{
+    if (SCM_FLONUMP(obj)) {
+        double v = SCM_FLONUM_VALUE(obj);
+        return SCM_IS_NAN(v);
+    } else if (SCM_COMPNUMP(obj)) {
+        double r = SCM_COMPNUM_REAL(obj);
+        double i = SCM_COMPNUM_IMAG(obj);
+        return SCM_IS_NAN(r) || SCM_IS_NAN(i);
+    } else if (!SCM_NUMBERP(obj)) {
+        SCM_TYPE_ERROR(obj, "number");
+    }
+    return FALSE;
 }
 
 /* Unary Operator */

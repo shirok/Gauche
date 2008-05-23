@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.h,v 1.9 2008-05-10 13:36:25 shirok Exp $
+ *  $Id: number.h,v 1.10 2008-05-23 07:14:58 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -210,6 +210,9 @@ SCM_EXTERN ScmObj Scm_MakeComplexPolar(double magnitude, double angle);
 
 SCM_EXTERN int    Scm_IntegerP(ScmObj obj);
 SCM_EXTERN int    Scm_OddP(ScmObj obj);
+SCM_EXTERN int    Scm_FiniteP(ScmObj obj);
+SCM_EXTERN int    Scm_InfiniteP(ScmObj obj);
+SCM_EXTERN int    Scm_NanP(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Abs(ScmObj obj);
 SCM_EXTERN int    Scm_Sign(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Negate(ScmObj obj);
