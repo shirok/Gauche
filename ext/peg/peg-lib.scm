@@ -38,6 +38,9 @@
   (use srfi-14)
   (use util.match)
   (export make-peg-stream
+          string->peg-stream
+          port->peg-stream
+          list->peg-stream
           peg-stream-peek!
           peg-stream-position
           <parse-error>
@@ -127,7 +130,7 @@
       [(fail-unexpect) (format #f "unexpected: ~a" objs)]
       [(fail-compound) (format #f "compound: ~a" objs)]
       [else "???"]))
-  (receive (r v s) (parse (make-string-stream str))
+  (receive (r v s) (parse (string->peg-stream str))
     (if (parse-success? r)
       (semantic-value-finalize! v)
       (raise (make-condition <parse-error>
@@ -247,9 +250,19 @@
 (define (make-peg-stream generator :optional (fini #f))
   `((,generator . ,fini) . 0))
 
-(define (make-string-stream str)
+(define (string->peg-stream str)
   (let1 p (open-input-string str :private? #t)
     (make-peg-stream (cut read-char p) (cut close-input-port p))))
+
+;; NB: should we have an option to leave the port open?
+(define (port->peg-stream iport :key (reader read-char))
+  (make-peg-stream (cut reader iport) (cut close-input-port iport)))
+
+(define (list->peg-stream lis)
+  (make-peg-stream (lambda ()
+                     (if (pair? lis)
+                       (rlet1 v (car lis) (set! lis (cdr lis)))
+                       (eof-object)))))
 
 (define (peg-stream-position s)
   (let loop ((s s) (n 0))
