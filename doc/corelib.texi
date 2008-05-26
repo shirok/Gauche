@@ -10103,6 +10103,16 @@ if the data is in uniform vector.
 @c COMMON
 @end defun
 
+@defun eof-object
+[R6RS]
+@c EN
+Returns an EOF object.
+@c JP
+EOFオブジェクトを返します。
+@c COMMON
+@end defun
+
+
 @defun eof-object? obj
 [R5RS]
 @c EN

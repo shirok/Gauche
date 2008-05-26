@@ -1,3 +1,7 @@
+2008-05-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (eof-object): added from R6RS.
+
 2008-05-25  Shiro Kawai  <shiro@acm.org>
 
 	* rfc/json.scm : Added (written by Rui Ueyama.  Using parser.peg).
