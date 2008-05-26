@@ -418,6 +418,110 @@ Content-Length: 4349
                          17 0 0 0 0 0 0 0)))
 
 ;;--------------------------------------------------------------------
+(test-section "rfc.json")
+(use rfc.json)
+(test-module 'rfc.json)
+
+(test* "parsing an object"
+       '(("Image"
+          ("Width"  . 800)
+          ("Height" . 600)
+          ("Title"  . "View from 15th Floor")
+          ("Thumbnail"
+           ("Url"    . "http://www.example.com/image/481989943")
+           ("Height" . 125)
+           ("Width"  . "100"))
+          ("IDs" . #(116 943 234 38793))))
+       (parse-json "{
+   \"Image\": {
+       \"Width\":  800,
+       \"Height\": 600,
+       \"Title\":  \"View from 15th Floor\",
+       \"Thumbnail\": {
+           \"Url\":    \"http://www.example.com/image/481989943\",
+           \"Height\": 125,
+           \"Width\":  \"100\"
+       },
+       \"IDs\": [116, 943, 234, 38793]
+     }
+}"))
+
+(test* "parsing an array containing two objects"
+       '#((("precision" . "zip")
+           ("Latitude"  . 37.7668)
+           ("Longitude" . -122.3959)
+           ("Address"   . "")
+           ("City"      . "SAN FRANCISCO")
+           ("State"     . "CA")
+           ("Zip"       . "94107")
+           ("Country"   . "US"))
+          (("precision" . "zip")
+           ("Latitude"  . 37.371991)
+           ("Longitude" . -122.026020)
+           ("Address"   . "")
+           ("City"      . "SUNNYVALE")
+           ("State"     . "CA")
+           ("Zip"       . "94085")
+           ("Country"   . "US")))
+       (parse-json "[
+   {
+      \"precision\": \"zip\",
+      \"Latitude\":  37.7668,
+      \"Longitude\": -122.3959,
+      \"Address\":   \"\",
+      \"City\":      \"SAN FRANCISCO\",
+      \"State\":     \"CA\",
+      \"Zip\":       \"94107\",
+      \"Country\":   \"US\"
+   },
+   {
+      \"precision\": \"zip\",
+      \"Latitude\":  37.371991,
+      \"Longitude\": -122.026020,
+      \"Address\":   \"\",
+      \"City\":      \"SUNNYVALE\",
+      \"State\":     \"CA\",
+      \"Zip\":       \"94085\",
+      \"Country\":   \"US\"
+   }
+]"))
+
+(let ()
+  (define (test-writer name obj)
+    (test* name obj
+           (parse-json (->json obj))))
+
+  (test-writer "writing an object"
+               '(("Image"
+                  ("Width"  . 800)
+                  ("Height" . 600)
+                  ("Title"  . "View from 15th Floor")
+                  ("Thumbnail"
+                   ("Url"    . "http://www.example.com/image/481989943")
+                   ("Height" . 125)
+                   ("Width"  . "100"))
+                  ("IDs" . #(116 943 234 38793)))))
+
+  (test-writer "writing an array containing two objects"
+               '#((("precision" . "zip")
+                   ("Latitude"  . 37.7668)
+                   ("Longitude" . -122.3959)
+                   ("Address"   . "")
+                   ("City"      . "SAN FRANCISCO")
+                   ("State"     . "CA")
+                   ("Zip"       . "94107")
+                   ("Country"   . "US"))
+                  (("precision" . "zip")
+                   ("Latitude"  . 37.371991)
+                   ("Longitude" . -122.026020)
+                   ("Address"   . "")
+                   ("City"      . "SUNNYVALE")
+                   ("State"     . "CA")
+                   ("Zip"       . "94085")
+                   ("Country"   . "US"))))
+  )
+
+;;--------------------------------------------------------------------
 (test-section "rfc.mime")
 (use rfc.mime)
 (test-module 'rfc.mime)
