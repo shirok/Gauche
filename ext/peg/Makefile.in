@@ -1,0 +1,35 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+SCM_CATEGORY = parser
+
+LIBFILES = peg-lib.$(SOEXT)
+SCMFILES = peg.scm
+
+OBJECTS = peg_head.$(OBJEXT) \
+          peg-lib.$(OBJEXT) \
+          peg_tail.$(OBJEXT)
+
+GENERATED = Makefile 
+XCLEANFILES = peg.scm peg-lib.c peg_head.c peg_tail.c
+
+XCFLAGS = -DGAUCHE_API_0_9
+
+all : $(LIBFILES)
+
+peg-lib.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) peg-lib.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+peg.scm peg-lib.c : peg-lib.scm
+	$(GENCOMP) --ext-module=peg.scm \
+	           --keep-private-macro=return-failure/compound,return-failure/expect,return-result \
+	           peg-lib.scm
+
+peg_head.c peg_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension peg
+
+install : install-std
+

@@ -1,0 +1,9 @@
+Originally written by Rui Ueyama.  The original (pure Scheme) version
+is kept as peg-orig.scm for a reference; it is cleaner than the final
+optimized version so it'd be easier to understand.
+
+benchmark.scm and prof.scm are for tuning.  They use a sample data file
+data/13tokyo.cvs, which is a public domain data provided by Japanese
+Postal Service.
+
+

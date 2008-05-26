@@ -1,3 +1,8 @@
+2008-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/*, configure.ac, ext/Makefile.in: Added parser.peg module,
+	  PEG parser combinator library originally written by Rui Ueyama.
+
 2008-05-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_FiniteP, Scm_InfiniteP, Scm_NanP),
