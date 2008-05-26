@@ -1,5 +1,7 @@
 2008-05-25  Shiro Kawai  <shiro@acm.org>
 
+	* rfc/json.scm : Added (written by Rui Ueyama.  Using parser.peg).
+
 	* ext/peg/*, configure.ac, ext/Makefile.in: Added parser.peg module,
 	  PEG parser combinator library originally written by Rui Ueyama.
 
