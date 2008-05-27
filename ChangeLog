@@ -1,3 +1,7 @@
+2008-05-27  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg-lib.scm (make-peg-parse-error): better error message.
+
 2008-05-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (eof-object): added from R6RS.

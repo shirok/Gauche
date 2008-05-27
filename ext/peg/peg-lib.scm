@@ -36,6 +36,8 @@
   (use srfi-1)
   (use srfi-13)
   (use srfi-14)
+  (use gauche.collection)
+  (use util.list)
   (use util.match)
   (export make-peg-stream
           string->peg-stream
@@ -44,6 +46,7 @@
           peg-stream-peek!
           peg-stream-position
           <parse-error>
+          make-peg-parse-error
 
           parse-string
           $return $fail $expect 
@@ -100,12 +103,11 @@
 ;;;
 
 (define-condition-type <parse-error> <error> #f
-  (position))
+  (position)                            ;stream position
+  (objects))                            ;offending object(s) or messages
 
 (define-method write-object ((o <parse-error>) out)
-  (format out "#<<parse-error> ~a ~S>"
-          (ref o 'position)
-          (ref o 'message)))
+  (format out "#<<parse-error> ~S>" (ref o 'message)))
 
 (define-inline (parse-success? x) (not x))
 
@@ -121,21 +123,56 @@
 (define-macro (return-failure/compound m s)
   `(values 'fail-compound ,m ,s))
 
+(define (make-peg-parse-error type objs stream)
+  (define (analyze-compound-error objs pos)
+    (let1 grps (map (lambda (g) (cons (caar g) (map cdr g)))
+                    (group-collection objs :key car))
+      (let ((msgs (assoc-ref grps 'fail-message))
+            (exps (assoc-ref grps 'fail-expect))
+            (unexps (assoc-ref grps 'fail-unexpect)))
+        (string-concatenate
+         (or-concat (cond-list
+                     [exps (compound-exps exps)]
+                     [unexps (compound-unexps unexps)]
+                     [msgs @ msgs]))))))
+  (define (or-concat lis)
+    (match lis
+      [() '()]
+      [(x) `(,x)]
+      [(x y) `(,x "or" ,y)]
+      [(x . more) `(,x ", " ,@(or-concat more))]))
+  (define (compound-exps exps)
+    (match exps
+      [(x) (format "expecting ~s" x)]
+      [(xs ...) (format "expecting one of ~s" xs)]))
+  (define (compound-unexps unexps)
+    (match unexps
+      [(x) (format "not expecting ~s" x)]
+      [(xs ...) (format "not expecting any of ~s" xs)]))
+  (define (message pos)
+    (case type
+      [(fail-message)  (format "~a at ~s" objs pos)] ;objs is a string message
+      [(fail-expect)
+       (if (char? objs)
+         (format "expecting ~s at ~a" objs pos)
+         (format "expecting ~a at ~a" objs pos))]
+      [(fail-unexpect)
+       (if (char? objs)
+         (format "not expecting ~s at ~a" objs pos)
+         (format "not expecting ~a at ~a" objs pos))]
+      [(fail-compound) (analyze-compound-error objs pos)]
+      [else (format "unknown parser error at ~a: ~a" pos objs)]  ;for safety
+      ))
+  (let1 pos (peg-stream-position stream)
+    (make-condition <parse-error>
+                    'position pos 'objects objs 'message (message pos))))
+
 ;; entry point
 (define (parse-string parse str)
-  (define (error->string type objs)
-    (case type
-      [(fail-message)  objs]
-      [(fail-expect)   objs]
-      [(fail-unexpect) (format #f "unexpected: ~a" objs)]
-      [(fail-compound) (format #f "compound: ~a" objs)]
-      [else "???"]))
   (receive (r v s) (parse (string->peg-stream str))
     (if (parse-success? r)
       (semantic-value-finalize! v)
-      (raise (make-condition <parse-error>
-               'position (peg-stream-position s)
-               'message (error->string r v))))))
+      (raise (make-peg-parse-error r v s)))))
 
 ;;;============================================================
 ;;; Lazily-constructed string

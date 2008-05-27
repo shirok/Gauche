@@ -61,7 +61,7 @@
     ((_ label expect parse input)
      (test* #`",label (failure)" expect
             (guard (e ((<parse-error> e)
-                       (list (ref e 'position) (ref e 'message)))
+                       (list (ref e 'position) (ref e 'objects)))
                       (else e))
               (parse-string parse input)
               (error "test-fail failed"))))))
@@ -175,7 +175,7 @@
            ($or ($string "foo") ($string "bar"))
            "bar...")
 
-(test-fail "$or" '(0 "compound: ((fail-expect . foo) (fail-expect . bar))")
+(test-fail "$or" '(0 ((fail-expect . "foo") (fail-expect . "bar")))
            ($or ($string "foo") ($string "bar"))
            "012345")
 
@@ -344,7 +344,7 @@
 (test-succ "$not" #f
            ($not ($one-of #[a-z]))
            "ABC")
-(test-fail "$not" '(0 "unexpected: a")
+(test-fail "$not" '(0 #\a)
            ($not ($one-of #[a-z]))
            "abc")
 
