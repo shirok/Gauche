@@ -422,6 +422,25 @@ Content-Length: 4349
 (use rfc.json)
 (test-module 'rfc.json)
 
+(test* "primitives"
+       (map (lambda (v) `(("x" . ,v)))
+            '(100 -100 100 12.5 -12.5 12.5 12.5 12.5 12.5 false true null
+                  "abc\"\\/\u0008\u000c\u000a\u000d\u0009@abc"))
+       (map parse-json
+            '("{\"x\": 100 }"
+              "{\"x\" : -100}"
+              "{\"x\":  +100 }"
+              "{\"x\": 12.5} "
+              "{\"x\":-12.5}"
+              "{\"x\":+12.5}"
+              "{\"x\": 1.25e1 }"
+              "{\"x\":125e-1}"
+              "{\"x\":1250.0e-2}"
+              "{\"x\":  false  }"
+              "{\"x\":true}"
+              "{\"x\":null}"
+              "{\"x\": \"abc\\\"\\\\\\/\\b\\f\\n\\r\\t\\u0040abc\"}")))
+
 (test* "parsing an object"
        '(("Image"
           ("Width"  . 800)

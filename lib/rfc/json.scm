@@ -54,9 +54,9 @@
 (define %name-separator ($seq %ws ($char #\:) %ws))
 (define %value-separator ($seq %ws ($char #\,) %ws))
 
-(define %false ($do (($string "false")) ($return 'false)))
-(define %null  ($do (($string "null"))  ($return 'null)))
-(define %true  ($do (($string "true"))  ($return 'true)))
+(define %false ($do [($string "false")] ($return 'false)))
+(define %null  ($do [($string "null")]  ($return 'null)))
+(define %true  ($do [($string "true")]  ($return 'true)))
 
 (define %value ($lazy ($or %false %null %true %object %array %number %string)))
 
@@ -67,39 +67,41 @@
        ($return (list->vector (semantic-value-finalize! lis)))))
 
 (define %number
-  (let* ((%sign ($or ($do (($char #\-)) ($return -1))
-                     ($do (($char #\+)) ($return 1))
+  (let* ((%sign ($or ($do [($char #\-)] ($return -1))
+                     ($do [($char #\+)] ($return 1))
                      ($return 1)))
-         (%digits ($do (d ($many digit 1))
-                       ($return (string->number (apply string d)))))
+         (%digits ($do [d ($many digit 1)]
+                       ($return (string->number (list->string d)))))
          (%int %digits)
-         (%frac ($do (($char #\.))
-                     (d ($many digit 1))
+         (%frac ($do [($char #\.)]
+                     [d ($many digit 1)]
                      ($return (string->number (apply string #\0 #\. d)))))
-         (%exp ($do (($one-of #[eE])) (s %sign) (d %digits)
+         (%exp ($do [($one-of #[eE])] [s %sign] [d %digits]
                     ($return (* s d)))))
     ($do (sign %sign)
          (int %int)
          (frac ($or %frac ($return 0)))
-         (exp ($or %exp ($return 0)))
-         ($return (* sign (+ int frac) (expt 10 exp))))))
+         (exp ($or %exp ($return #f)))
+         ($return (let ((mantissa (+ int frac)))
+                    (* sign (if exp (exact->inexact mantissa) mantissa)
+                       (if exp (expt 10 exp) 1)))))))
 
 (define %string
   (let* ((%dquote ($char #\"))
          (%escape ($char #\\))
-         (%hex4 ($do (s ($many hexdigit 4 4))
-                     ($return (string->number (apply string s) 16))))
+         (%hex4 ($do [s ($many hexdigit 4 4)]
+                     ($return (string->number (list->string s) 16))))
          (%special-char
           ($do %escape
-               ($or ($do ($char #\") ($return #\"))
-                    ($do ($char #\\) ($return #\\))
-                    ($do ($char #\/) ($return #\/))
-                    ($do ($char #\b) ($return #\b))
-                    ($do ($char #\f) ($return #\f))
-                    ($do ($char #\n) ($return #\n))
-                    ($do ($char #\r) ($return #\r))
-                    ($do ($char #\t) ($return #\t))
-                    ($do ($char #\u) (c %hex4) ($return (ucs->char c))))))
+               ($or ($char #\")
+                    ($char #\\)
+                    ($char #\/)
+                    ($do [($char #\b)] ($return #\x08))
+                    ($do [($char #\f)] ($return #\page))
+                    ($do [($char #\n)] ($return #\newline))
+                    ($do [($char #\r)] ($return #\return))
+                    ($do [($char #\t)] ($return #\tab))
+                    ($do [($char #\u)] (c %hex4) ($return (ucs->char c))))))
          (%unescaped ($none-of #[\"]))
          (%body-char ($or %special-char %unescaped))
          (%string-body ($->rope ($many %body-char))))
@@ -154,9 +156,11 @@
   (display "]"))
 
 (define (print-number num)
-  (unless (and (real? num) (finite? num))
-    (error "real number expected, but got" num))
-  (write num))
+  (cond [(or (not (real? num)) (not (finite? num)))
+         (error "real number expected, but got" num)]
+        [(and (rational? num) (not (integer? num)))
+         (write (exact->inexact num))]
+        [else (write num)]))
 
 (define (print-string str)
   (define (print-char c)
