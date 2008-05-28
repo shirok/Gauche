@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: stub.scm,v 1.3 2008-05-13 05:44:15 shirok Exp $
+;;;  $Id: stub.scm,v 1.4 2008-05-28 22:12:26 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.stub
@@ -181,7 +181,7 @@
 ;; <cgen-stub-unit> is a specialized class to handle stub forms.
 (define-class <cgen-stub-unit> (<cgen-unit>)
   ((c-name-prefix :init-keyword :c-name-prefix) ; prefix used for C identifiers
-   (c++-exeption-used? :init-value #f) ; #t if C++ exception has ever been used
+   (c++-exception-used? :init-value #f) ; #t if C++ exception has ever been used
    (temporary-module :init-form (make-module #f)) ; module used by eval*
    ))
 
