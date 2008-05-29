@@ -8079,7 +8079,7 @@ in @var{permuter}.
 
 @example
 (permute '(a b c d) '(3 2 0 1))     @result{} (d c a b)
-(permute '(a b c d) '(0 2))         @result{} (a b)
+(permute '(a b c d) '(0 2))         @result{} (a c)
 (permute '(a b c d) '(0 0 1 1 2 2)) @result{} (a a b b c c)
 @end example
 
