@@ -1,3 +1,7 @@
+2008-05-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in (INSTALL_HEADERS): install some more gc headers.
+
 2008-05-27  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg-lib.scm (make-peg-parse-error): better error message.

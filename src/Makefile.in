@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.180 2008-05-04 18:41:44 shirok Exp $
+#  $Id: Makefile.in,v 1.181 2008-05-30 19:37:50 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -112,9 +112,11 @@ ARCH = @host@
 TARGETLIB=$(LIB_INSTALL_DIR)
 
 INSTALL_HEADERS = gauche.h \
-	../gc/include/gc.h \
-	../gc/include/gc_config_macros.h \
-	../gc/include/gc_pthread_redirects.h
+	../gc/include/gc.h ../gc/include/gc_allocator.h \
+	../gc/include/gc_config_macros.h ../gc/include/gc_cpp.h \
+	../gc/include/gc_inline.h ../gc/include/gc_mark.h \
+	../gc/include/gc_pthread_redirects.h ../gc/include/gc_tiny_fl.h \
+	../gc/include/gc_typed.h ../gc/include/gc_version.h 
 INSTALL_SUBHEADERS = gauche/config.h                                  \
 	 	     gauche/vm.h gauche/code.h gauche/vminsn.h        \
 		     gauche/bits.h gauche/collection.h                \
