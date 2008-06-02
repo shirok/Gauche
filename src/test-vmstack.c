@@ -1,6 +1,6 @@
 /* 
  * Test VM stack sanity
- * $Id: test-vmstack.c,v 1.7 2007-08-24 23:55:44 shirok Exp $
+ * $Id: test-vmstack.c,v 1.8 2008-06-02 01:13:13 shirok Exp $
  */
 
 #include <stdio.h>
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
               "(with-error-handler (lambda (e) #f) (lambda () 1)))");
     test_eval("with-error-handler (2)",
               "(with-error-handler (lambda (e) #f) (lambda () (car 1))))");
-    test_eval("with-error-handler (2)",
+    test_eval("with-error-handler (3)",
               "(car 3)");
 
     if (errcount) {

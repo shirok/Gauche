@@ -1,3 +1,12 @@
+2008-06-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (user_eval_inner), src/gauche/vm.h (ScmCStrackRec):
+	  save/restore signal mask by ourselves, since sigsetjmp's behavior
+	  is platform-dependent w.r.t. threads.
+	* src/signal.c (Scm_GetSigmask, Scm_SetSigmask) :added convenience
+	  functions to hide sigprocmask/pthread_sigmask difference among
+	  platforms.
+
 2008-05-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/Makefile.in (INSTALL_HEADERS): install some more gc headers.

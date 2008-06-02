@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.279 2008-05-10 13:36:22 shirok Exp $
+ *  $Id: vm.c,v 1.280 2008-06-02 01:13:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2688,10 +2688,11 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
     cstack.prev = vm->cstack;
     cstack.cont = vm->cont;
     vm->cstack = &cstack;
+    Scm_GetSigmask(&cstack.mask);
     
   restart:
     vm->escapeReason = SCM_VM_ESCAPE_NONE;
-    if (sigsetjmp(cstack.jbuf, TRUE) == 0) {
+    if (sigsetjmp(cstack.jbuf, FALSE) == 0) {
         run_loop();
         VAL0 = vm->val0;
         if (vm->cont == cstack.cont) {
@@ -2699,6 +2700,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
             PC = prev_pc;
         }
     } else {
+        Scm_SetSigmask(&cstack.mask);
         /* An escape situation happened. */
         if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
              ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.115 2008-05-10 13:36:25 shirok Exp $
+ *  $Id: vm.h,v 1.116 2008-06-02 01:13:14 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -168,11 +168,15 @@ SCM_EXTERN int    Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);
 
 /*
  * C stack record
+ *
+ *  A chain of C stack to rewind.  C stack is captured by Scm_Sigsetjmp
+ *  and rewound by Scm_Siglongjmp; see signal.c.
  */
 typedef struct ScmCStackRec {
     struct ScmCStackRec *prev;
     ScmContFrame *cont;
     sigjmp_buf jbuf;
+    sigset_t mask;
 } ScmCStack;
 
 /*
@@ -489,13 +493,15 @@ enum {
  *  part is called while the C stack is rewind.
  *  If you want to handle error as well, you should install error handler
  *  by yourself (and deinstall it in the cleanup code).
- *  
- *  If you don't call SCM_NEXT_HANDLER in the SCM_WHEN_ERROR clause,
- *  the control is transferred after SCM_END_PROTECT.  It is not recommended
- *  unless you know what you're doing.   The C stack is rewind not only
- *  at the error situation, but also a continuation is thrown in the main
- *  operation.  Except certain special occasions, stopping C-stack rewinding
- *  may cause semantic inconsistency.
+ * 
+ *  In general, you MUST call SCM_NEXT_HANDLER in the SCM_WHEN_ERROR clause.
+ *  In other words, you shouldn't use SCM_UNWIND_PROTECT as "ignore-errors"
+ *  construct.  The C stack is rewind not only at the error situation, but
+ *  also when acontinuation is thrown in the main operation.  Except certain
+ *  special occasions, stopping C-stack rewinding may cause semantic
+ *  inconsistency.   Besides, we don't save signal mask in SCM_UNWIND_PROTECT
+ *  for the performance reason; assuming the mask is eventually recovered
+ *  by the core exception handling mechanism (see vm.c).
  */
 
 #define SCM_UNWIND_PROTECT                      \

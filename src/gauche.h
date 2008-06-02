@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.507 2008-05-10 13:36:19 shirok Exp $
+ *  $Id: gauche.h,v 1.508 2008-06-02 01:13:13 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1618,6 +1618,9 @@ SCM_EXTERN sigset_t Scm_GetMasterSigmask(void);
 SCM_EXTERN void   Scm_SetMasterSigmask(sigset_t *set);
 SCM_EXTERN ScmObj Scm_SignalName(int signum);
 SCM_EXTERN void   Scm_ResetSignalHandlers(sigset_t *mask);
+
+SCM_EXTERN void   Scm_GetSigmask(sigset_t *mask);
+SCM_EXTERN void   Scm_SetSigmask(sigset_t *mask);
 
 /*---------------------------------------------------
  * SYSTEM

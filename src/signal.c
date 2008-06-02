@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.55 2008-05-10 13:36:21 shirok Exp $
+ *  $Id: signal.c,v 1.56 2008-06-02 01:13:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -748,6 +748,24 @@ void Scm_SetMasterSigmask(sigset_t *set)
  */
 
 /*
+ * Convenience routines hiding platform-dependent stuff
+ */
+void Scm_GetSigmask(sigset_t *mask)
+{
+    if (SIGPROCMASK(SIG_SETMASK, NULL, mask) != 0) {
+        Scm_SysError("sigprocmask failed");
+    }
+}
+
+void Scm_SetSigmask(sigset_t *mask)
+{
+    if (SIGPROCMASK(SIG_SETMASK, mask, NULL) != 0) {
+        Scm_SysError("sigprocmask failed");
+    }
+}
+
+
+/*
  * set signal mask
  */
 
@@ -763,7 +781,7 @@ ScmObj Scm_SysSigmask(int how, ScmSysSigset *newmask)
         }
     }
     if (SIGPROCMASK(how, newset, &(oldmask->set)) != 0) {
-        Scm_Error("sigprocmask failed");
+        Scm_SysError("sigprocmask failed");
     }
     return SCM_OBJ(oldmask);
 }
