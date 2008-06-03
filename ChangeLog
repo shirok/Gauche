@@ -1,3 +1,8 @@
+2008-06-03  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg-lib.scm (space): recognized 'v' as a space incorrectly.
+	  (patch from Masayuki Muto).
+
 2008-06-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (user_eval_inner), src/gauche/vm.h (ScmCStrackRec):

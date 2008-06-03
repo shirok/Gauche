@@ -713,7 +713,7 @@
 (define-char-parser hexdigit #[0-9A-Fa-f]   "hexadecimal digit")
 (define-char-parser newline  #[\n]          "newline")
 (define-char-parser tab      #[\t]          "tab")
-(define-char-parser space    #[ \v\f\t\r\n] "space")
+(define-char-parser space    #[\s]          "space")
 
 (define spaces ($->rope ($many space)))
 
