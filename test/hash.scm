@@ -2,7 +2,7 @@
 ;; Test hash table
 ;;
 
-;; $Id: hash.scm,v 1.12 2007-04-20 20:49:09 shirok Exp $
+;; $Id: hash.scm,v 1.13 2008-06-09 08:23:28 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -150,10 +150,15 @@
 (test* "hash-table-values(2)" #t
        (lset= equal? (hash-table-values h-eqv) '(8 "b" #\c -1 4 5 PI)))
 
+(define h-eqv-copied (hash-table-copy h-eqv))
+
 (test* "delete!" #f
        (begin
          (hash-table-delete! h-eqv 87592876592374659237845692374523694756)
          (hash-table-get h-eqv 87592876592374659237845692374523694756 #f)))
+
+(test* "copy" #t
+       (lset= equal? (hash-table-values h-eqv-copied) '(8 "b" #\c -1 4 5 PI)))
 
 ;;------------------------------------------------------------------
 (test-section "equal?-hash")

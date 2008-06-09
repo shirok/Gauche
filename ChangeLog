@@ -1,3 +1,8 @@
+2008-06-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (hash-table-copy): added.  Why this hasn't been
+	  implemented until now?  It must be an overlook.
+
 2008-06-03  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg-lib.scm (space): recognized 'v' as a space incorrectly.
