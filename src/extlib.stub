@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.309 2008-05-26 11:16:50 shirok Exp $
+;;; $Id: extlib.stub,v 1.310 2008-06-09 17:51:16 shirok Exp $
 ;;;
 
 "
@@ -1298,6 +1298,9 @@
           (Scm_HashIterInit iter (SCM_HASH_TABLE_CORE hash))
           (result (Scm_MakeSubr hash_table_iter iter 1 0
                                 '"hash-table-iterator")))))
+
+(define-cproc hash-table-copy (hash::<hash-table>)
+  (call "Scm_HashTableCopy"))
 
 (define-cproc hash-table-keys (hash::<hash-table>)
   (call "Scm_HashTableKeys"))
