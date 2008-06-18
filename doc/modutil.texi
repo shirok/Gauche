@@ -18,6 +18,7 @@
 * Filesystem utilities::        
 * Mathematic constants::        
 * Mersenne-Twister random number generator::  
+* Parser combinators for PEG::  
 * RFC822 message parsing::      
 * Base64 encoding/decoding::    
 * HTTP cookie handling::        
@@ -4176,7 +4177,7 @@ e.
 @end defvr
 
 @c ----------------------------------------------------------------------
-@node Mersenne-Twister random number generator, RFC822 message parsing, Mathematic constants, Library modules - Utilities
+@node Mersenne-Twister random number generator, Parser combinators for PEG, Mathematic constants, Library modules - Utilities
 @section @code{math.mt-random} - Mersenne Twister Random number generator
 @c NODE Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
 
@@ -4309,7 +4310,65 @@ faster than getting one by one.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node RFC822 message parsing, Base64 encoding/decoding, Mersenne-Twister random number generator, Library modules - Utilities
+@node Parser combinators for PEG, RFC822 message parsing, Mersenne-Twister random number generator, Library modules - Utilities
+@section @code{parser.peg} - Parser combinators for PEG
+@c NODE PEGパーザコンビネータ, @code{parser.peg} - PEGパーザコンビネータ
+
+@deftp {Module} parser.peg
+@mdindex parser.peg
+This module implements a parser combinator library
+to build parsers based on Parsing Expression Grammer, or PEG.
+
+PEG is a @emph{formal grammer} to define a language, like regular 
+expressions or context-free grammers, although PEG is more powerful
+than those.  An interesting characteristic of PEG is that it can
+be directly mapped on a recursive decent 
+
+
+@end deftp
+
+@subheading A parser
+
+In @code{parser.peg}, a parser is merely a Scheme procedure
+that takes an input (peg stream) as an argument and returns
+three values: A result code, a semantic value, and a next stream.
+
+The result code is @code{#f} when the parser could successfully
+parse the input, or a symbol that indicates the reason of the failure.
+
+If the parser succeeds, the semantic value is the result of
+parsing; its exact meaning depends on the parser.  
+
+
+
+
+@table @code
+@item fail-expect
+
+@end table
+
+
+
+@subheading High-level API
+
+
+
+@subheading Input (peg stream)
+
+
+@subheading Semantic value
+
+
+
+@subheading Combinators
+
+
+
+
+
+
+@c ----------------------------------------------------------------------
+@node RFC822 message parsing, Base64 encoding/decoding, Parser combinators for PEG, Library modules - Utilities
 @section @code{rfc.822} - RFC822 message parsing
 @c NODE RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
 
