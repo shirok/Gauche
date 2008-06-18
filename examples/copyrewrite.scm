@@ -24,7 +24,7 @@
 
 (define (check-file path author email)
   (define check-rx
-    (string->regexp #`"[cC]opyright\\s*\\([cC]\\)\\s*(\\d+)(-\\d+)?\\s+(by\\s+)?,|author|"))
+    (string->regexp #`"[cC]opyright\\s*\\([cC]\\)\\s*(\\d+)(-\\d+)?\\s+,|author|"))
   (define current-year (date-year (current-date)))
   (define (file->string-list+ path)
     (call-with-input-file path
