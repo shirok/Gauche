@@ -342,13 +342,13 @@
 ;;
 (define-insn PROMISE     0 none)
 
-;; CONST_APPLY(nargs) <form>
-;;  This instruction should only appear in the code generated dynamically
-;;  by Scm_Apply.  This is used to pass the application information across
-;;  the boundary frame (see user_eval_inner() in vm.c).
-;;  <form> is a constant list (<proc> <arg> ...).  <proc> is called with
-;;  <arg>s.
-(define-insn CONST-APPLY 1 obj)
+;; CONST_APPLY(nargs) <args>
+;;  This instruction only appears in the code generated dynamically
+;;  by Scm_Apply(Rec).  This is used to pass the application information
+;;  across the boundary frame (see user_eval_inner() in vm.c).
+;;  When the VM sees this instruciton, VAL0 contains the procedure to
+;;  call, and VAL1... contains the arguments.
+(define-insn CONST-APPLY 0 none)
 
 ;; Inlined operators
 ;;  They work the same as corresponding Scheme primitives, but they are
@@ -385,7 +385,7 @@
 (define-insn APPEND      1 none)
 (define-insn NOT         0 none)
 (define-insn REVERSE     0 none)
-(define-insn APPLY       1 none)
+(define-insn APPLY       1 none)        ; NB: will be obsoleted soon
 (define-insn TAIL-APPLY  1 none)        ; apply at the tail position
 (define-insn IS-A        0 none)        ; is-a?
 

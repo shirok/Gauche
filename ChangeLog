@@ -1,3 +1,10 @@
+2008-06-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_ApplyRec): Avoid allocation by using valN registers
+	  to pass the arguments.
+	* src/vminsn.scm (CONST-APPLY): Changed the definition since we
+	  no longer need an operand.
+
 2008-06-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (hash-table-copy): added.  Why this hasn't been

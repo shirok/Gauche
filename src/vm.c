@@ -1696,16 +1696,21 @@ static void run_loop()
                 NEXT1;
             }
             CASE(SCM_VM_CONST_APPLY) {
-                int nargs = SCM_VM_INSN_ARG(code);
-                ScmObj form, cp;
+                /* VAL0 : proc to call
+                   VAL1... : arguments */
+                int nargs = SCM_VM_INSN_ARG(code), i;
+                ScmObj args, cp;
                 CHECK_STACK(ENV_SIZE(nargs));
-                FETCH_OPERAND(form);
+                FETCH_OPERAND(args);
                 INCR_PC;
 
-                SCM_FOR_EACH(cp, SCM_CDR(form)) {
-                    PUSH_ARG(SCM_CAR(cp));
+                for (i=0; i<nargs; i++) {
+                    if (i >= SCM_VM_MAX_VALUES-1) {
+                        PUSH_ARG(vm->vals[SCM_VM_MAX_VALUES-1]);
+                        break;
+                    }
+                    PUSH_ARG(vm->vals[i]);
                 }
-                VAL0 = SCM_CAR(form); /* proc */
                 goto tail_call_entry;
             }
             CASE(SCM_VM_PROMISE) {
@@ -2766,18 +2771,32 @@ ScmObj Scm_EvalRec(ScmObj expr, ScmObj e)
 
 ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
 {
+    /* NB: This procedure can be called in an inner loop (e.g. the display
+       callback from GLUT.)  So we don't want to allocate at all.  We put
+       a temporary code vector on C stack.  It is OK, since once
+       user_eval_inner returns it would never be reused.   However, tools
+       that want to keep a pointer to a code vector would need to be aware
+       of this case. */
     ScmObj program;
-    int nargs = Scm_Length(args);
+    int nargs = Scm_Length(args), i;
     ScmVM *vm = theVM;
-    ScmWord *code = SCM_NEW_ARRAY(ScmWord, 3);
+    ScmWord code[2];
 
     if (nargs < 0) {
         Scm_Error("improper list not allowed: %S", args);        
     }
 
     code[0] = SCM_WORD(SCM_VM_INSN1(SCM_VM_CONST_APPLY, nargs));
-    code[1] = SCM_WORD(Scm_Cons(proc, args));
-    code[2] = SCM_WORD(SCM_VM_INSN(SCM_VM_RET));
+    code[1] = SCM_WORD(SCM_VM_INSN(SCM_VM_RET));
+
+    vm->val0 = proc;
+    for (i=0; i<nargs; i++) {
+        if (i == SCM_VM_MAX_VALUES-1) {
+            vm->vals[i] = args;
+        }
+        vm->vals[i] = SCM_CAR(args);
+        args = SCM_CDR(args);
+    }
 
     program = vm->base? SCM_OBJ(vm->base) : SCM_OBJ(&internal_apply_compiled_code);
 
