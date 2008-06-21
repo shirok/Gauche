@@ -342,13 +342,13 @@
 ;;
 (define-insn PROMISE     0 none)
 
-;; CONST_APPLY(nargs) <args>
+;; VALUES_APPLY(nargs) <args>
 ;;  This instruction only appears in the code generated dynamically
 ;;  by Scm_Apply(Rec).  This is used to pass the application information
 ;;  across the boundary frame (see user_eval_inner() in vm.c).
 ;;  When the VM sees this instruciton, VAL0 contains the procedure to
 ;;  call, and VAL1... contains the arguments.
-(define-insn CONST-APPLY 0 none)
+(define-insn VALUES-APPLY 0 none)
 
 ;; Inlined operators
 ;;  They work the same as corresponding Scheme primitives, but they are

@@ -1695,7 +1695,7 @@ static void run_loop()
                 VAL0 = Scm_VMApply(VAL0, cp);
                 NEXT1;
             }
-            CASE(SCM_VM_CONST_APPLY) {
+            CASE(SCM_VM_VALUES_APPLY) {
                 /* VAL0 : proc to call
                    VAL1... : arguments */
                 int nargs = SCM_VM_INSN_ARG(code), i;
@@ -2769,27 +2769,33 @@ ScmObj Scm_EvalRec(ScmObj expr, ScmObj e)
     return user_eval_inner(v, NULL);
 }
 
+/* NB: The ApplyRec family can be called in an inner loop (e.g. the display
+   callback from GLUT.)  So we don't want to allocate at all.  We put
+   a temporary code vector on C stack.  It is OK, since once
+   user_eval_inner returns it would never be reused.   However, tools
+   that want to keep a pointer to a code vector would need to be aware
+   of this case. */
+static ScmObj apply_rec(ScmVM *vm, ScmObj proc, int nargs)
+{
+    ScmObj program;
+    ScmWord code[2];
+    code[0] = SCM_WORD(SCM_VM_INSN1(SCM_VM_VALUES_APPLY, nargs));
+    code[1] = SCM_WORD(SCM_VM_INSN(SCM_VM_RET));
+
+    vm->val0 = proc;
+    program = vm->base? SCM_OBJ(vm->base) : SCM_OBJ(&internal_apply_compiled_code);
+    return user_eval_inner(program, code);
+}
+
 ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
 {
-    /* NB: This procedure can be called in an inner loop (e.g. the display
-       callback from GLUT.)  So we don't want to allocate at all.  We put
-       a temporary code vector on C stack.  It is OK, since once
-       user_eval_inner returns it would never be reused.   However, tools
-       that want to keep a pointer to a code vector would need to be aware
-       of this case. */
-    ScmObj program;
     int nargs = Scm_Length(args), i;
     ScmVM *vm = theVM;
-    ScmWord code[2];
 
     if (nargs < 0) {
         Scm_Error("improper list not allowed: %S", args);        
     }
 
-    code[0] = SCM_WORD(SCM_VM_INSN1(SCM_VM_CONST_APPLY, nargs));
-    code[1] = SCM_WORD(SCM_VM_INSN(SCM_VM_RET));
-
-    vm->val0 = proc;
     for (i=0; i<nargs; i++) {
         if (i == SCM_VM_MAX_VALUES-1) {
             vm->vals[i] = args;
@@ -2797,11 +2803,61 @@ ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
         vm->vals[i] = SCM_CAR(args);
         args = SCM_CDR(args);
     }
-
-    program = vm->base? SCM_OBJ(vm->base) : SCM_OBJ(&internal_apply_compiled_code);
-
-    return user_eval_inner(program, code);
+    return apply_rec(vm, proc, nargs);
 }
+
+ScmObj Scm_ApplyRec0(ScmObj proc)
+{
+    return apply_rec(theVM, proc, 0);
+}
+
+ScmObj Scm_ApplyRec1(ScmObj proc, ScmObj arg0)
+{
+    ScmVM *vm = theVM;
+    vm->vals[0] = arg0;
+    return apply_rec(vm, proc, 1);
+}
+
+ScmObj Scm_ApplyRec2(ScmObj proc, ScmObj arg0, ScmObj arg1)
+{
+    ScmVM *vm = theVM;
+    vm->vals[0] = arg0;
+    vm->vals[1] = arg1;
+    return apply_rec(vm, proc, 2);
+}
+
+ScmObj Scm_ApplyRec3(ScmObj proc, ScmObj arg0, ScmObj arg1, ScmObj arg2)
+{
+    ScmVM *vm = theVM;
+    vm->vals[0] = arg0;
+    vm->vals[1] = arg1;
+    vm->vals[2] = arg2;
+    return apply_rec(vm, proc, 3);
+}
+
+ScmObj Scm_ApplyRec4(ScmObj proc, ScmObj arg0, ScmObj arg1, ScmObj arg2,
+                     ScmObj arg3)
+{
+    ScmVM *vm = theVM;
+    vm->vals[0] = arg0;
+    vm->vals[1] = arg1;
+    vm->vals[2] = arg2;
+    vm->vals[3] = arg3;
+    return apply_rec(vm, proc, 4);
+}
+
+ScmObj Scm_ApplyRec5(ScmObj proc, ScmObj arg0, ScmObj arg1, ScmObj arg2,
+                     ScmObj arg3, ScmObj arg4)
+{
+    ScmVM *vm = theVM;
+    vm->vals[0] = arg0;
+    vm->vals[1] = arg1;
+    vm->vals[2] = arg2;
+    vm->vals[3] = arg3;
+    vm->vals[4] = arg4;
+    return apply_rec(vm, proc, 5);
+}
+
 
 /*
  * Safe version of user-level Eval, Apply and Load.

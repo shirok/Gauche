@@ -1,3 +1,9 @@
+2008-06-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/gauche.h (Scm_ApplyRec[01234]): Added these to avoid
+	  consing in callback from C to Scheme.
+	* src/vminsn.scm (VALUES-APPLY): Changed the name from CONST-APPLY.
+
 2008-06-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm_ApplyRec): Avoid allocation by using valN registers

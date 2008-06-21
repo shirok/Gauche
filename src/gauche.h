@@ -473,6 +473,15 @@ SCM_EXTERN int Scm_Apply(ScmObj proc, ScmObj args,
    ones does not capture exceptions. */
 SCM_EXTERN ScmObj Scm_EvalRec(ScmObj form, ScmObj env);
 SCM_EXTERN ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args);
+SCM_EXTERN ScmObj Scm_ApplyRec0(ScmObj proc);
+SCM_EXTERN ScmObj Scm_ApplyRec1(ScmObj proc, ScmObj arg0);
+SCM_EXTERN ScmObj Scm_ApplyRec2(ScmObj proc, ScmObj arg0, ScmObj arg1);
+SCM_EXTERN ScmObj Scm_ApplyRec3(ScmObj proc, ScmObj arg0, ScmObj arg1,
+                                ScmObj arg2);
+SCM_EXTERN ScmObj Scm_ApplyRec4(ScmObj proc, ScmObj arg0, ScmObj arg1,
+                                ScmObj arg2, ScmObj arg3);
+SCM_EXTERN ScmObj Scm_ApplyRec5(ScmObj proc, ScmObj arg0, ScmObj arg1,
+                                ScmObj arg2, ScmObj arg3, ScmObj arg4);
 
 /* for compatibility */
 #define Scm_EvalCStringRec(f, e)  Scm_EvalRec(Scm_ReadFromCString(f), e)
