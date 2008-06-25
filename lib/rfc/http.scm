@@ -185,7 +185,9 @@
                   (when (or (member uri history)
                             (> (length history) 20))
                     (errorf <http-error> "redirection is looping via ~a" uri))
-                  (loop (cons uri history) (redirect conn new-server) path*)))
+                  (loop (cons uri history)
+                        (ref (redirect conn new-server)'server)
+                        path*)))
               (values code headers body)))))))
 
 ;; Always returns a connection object.
