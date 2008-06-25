@@ -261,6 +261,7 @@
        `(begin ,@(map (lambda (var spec)
                         (receive (type has-init? init)
                             (match spec
+                              [()         (values 'ScmObj #f #f)]
                               [(init)     (values 'ScmObj #t init)]
                               [(':: type) (values type #f #f)]
                               [(':: type init) (values type #t init)])
@@ -307,6 +308,15 @@
 (define-cise-stmt loop
   [form `(for () ,@(cdr form))])
 
+(define-cise-macro (while form env)
+  (ensure-stmt-ctx form env)
+  (let1 eenv (expr-env env)
+    (match form
+      [(_ test . body)
+       `("while"
+         ,(render-rec test eenv)
+         ,(render-rec `(begin ,@body) env))])))
+
 (define-cise-macro (for-each form env)
   (ensure-stmt-ctx form env)
   (let ((eenv (expr-env env))
@@ -341,6 +351,12 @@
 
 (define-cise-stmt continue
   [(_) '("continue;")])
+
+(define-cise-stmt label
+  [(_ name) `(,(cise-render-identifier name) " : ")])
+
+(define-cise-stmt goto
+  [(_ name) `("goto " ,(cise-render-identifier name) ";")])
 
 (define-cise-macro (cond form env)
   (ensure-stmt-ctx form env)
@@ -424,6 +440,16 @@
 
 (define-unary pre++  "++")
 (define-unary pre--  "--")
+
+(define-macro (define-post-unary op sop)
+  `(define-cise-macro (,op form env)
+     (wrap-expr
+      (match form
+        [(_ a)   (list "("(render-rec a (expr-env env))")" ,sop)])
+      env)))
+
+(define-post-unary post++ "++")
+(define-post-unary post-- "--")
 
 (define-macro (define-binary op sop)
   `(define-cise-macro (,op form env)
