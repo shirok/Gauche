@@ -457,11 +457,11 @@
        (unquoted ($many-till anychar ($or comma newline)))
        (field ($or quoted unquoted))
        (record ($sep-by ($->rope field) comma)))
-  (test-succ "CVS" '("a" "b" "c")
+  (test-succ "CSV" '("a" "b" "c")
              record "a,b,c")
-  (test-succ "CVS" '("a" "b" "c")
+  (test-succ "CSV" '("a" "b" "c")
              record "\"a\" , b  , c")
-  (test-succ "CVS" '("a  \" \n" "b" "c")
+  (test-succ "CSV" '("a  \" \n" "b" "c")
              record "\"a  \"\" \n\" , b  , c"))
 
 ;; hand-tuned version
@@ -476,11 +476,11 @@
        (field ($or quoted unquoted))
        (record ($sep-by ($->rope field) comma 1))
        (records ($sep-by record ($string "\r\n"))))
-  (test-succ "CVS 2" '(("a" "b" "c") ("x" "y" "z"))
+  (test-succ "CSV 2" '(("a" "b" "c") ("x" "y" "z"))
              records "a,b,c\r\nx,y,z\r\n")
-  (test-succ "CVS 2" '(("a " "b" "c") ("zzz\nyyy " " w \" "))
+  (test-succ "CSV 2" '(("a " "b" "c") ("zzz\nyyy " " w \" "))
              records "\"a \" , b  , c\r\n\"zzz\nyyy \", \" w \"\" \"\r\n")
-  (test-succ "CVS 2" '(("a  \" \n" "b" "c"))
+  (test-succ "CSV 2" '(("a  \" \n" "b" "c"))
              records "\"a  \"\" \n\" , b  , c"))
 
 ;; Poor-man's XML parser

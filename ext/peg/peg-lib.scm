@@ -139,7 +139,7 @@
     (match lis
       [() '()]
       [(x) `(,x)]
-      [(x y) `(,x "or" ,y)]
+      [(x y) `(,x " or " ,y)]
       [(x . more) `(,x ", " ,@(or-concat more))]))
   (define (compound-exps exps)
     (match exps
@@ -399,7 +399,7 @@
   (%gen-do-common)
 
   (when (null? clauses)
-    (error "Malformed $do: at least one clause is required."))
+    (error "Malformed $do*: at least one clause is required."))
   (let1 s (gensym)
     `(lambda (,s)
        ,(let loop ((s s) (clauses clauses))
