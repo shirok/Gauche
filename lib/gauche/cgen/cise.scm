@@ -117,16 +117,9 @@
 ;; Check source-info attribute of the input S-expr, and returns Stree
 ;; of "#line" line if necessary.
 (define (source-info form env)
-  ;; NB: source-info-ref would be included in future versions of Gauche,
-  ;; but we need it locally here to make stub generation work with 0.8.10.
-  ;; Remove this after 0.8.11 (or 0.9) release.
-  (define (source-info-ref obj)
-    (and (pair? obj)
-         ((with-module gauche.internal pair-attribute-get)
-          obj 'source-info #f)))
   (if (not (cise-emit-source-line))
     '()
-    (match (source-info-ref form)
+    (match (debug-source-info form)
       (((? string? file) line)
        `((source-info ,file ,line)))
       (_ '()))))
