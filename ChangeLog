@@ -1,3 +1,8 @@
+2008-06-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/autoload.scm, lib/gauche/miscutil.scm (object-source-info):
+	  Removed.  Use debug-source-info.
+
 2008-06-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-generic): fixed 'host' field being messed

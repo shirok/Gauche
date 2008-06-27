@@ -37,14 +37,16 @@
 ;; to elsewhere.
 
 (define-module gauche.miscutil
-  (export object-source-info)
+;  (export object-source-info)
   )
 (select-module gauche.miscutil)
 
+;;; NB: object-source-info is redundant.  Use debug-source-info.
+
 ;; Get source info ("file" line-number) of OBJ, if exists.
 ;; Returns #f otherwise.
-(define (object-source-info obj)
-  (and (pair? obj)
-       ((with-module gauche.internal pair-attribute-get) obj 'source-info #f)))
+;(define (object-source-info obj)
+;  (and (pair? obj)
+;       ((with-module gauche.internal pair-attribute-get) obj 'source-info #f)))
 
 (provide "gauche/miscutil")
