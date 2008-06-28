@@ -1,3 +1,7 @@
+2008-06-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (VALUES_APPLY): Removed unnecessary code.
+
 2008-06-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (source-info): Replaced makeshift source

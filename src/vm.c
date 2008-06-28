@@ -1699,11 +1699,7 @@ static void run_loop()
                 /* VAL0 : proc to call
                    VAL1... : arguments */
                 int nargs = SCM_VM_INSN_ARG(code), i;
-                ScmObj args, cp;
                 CHECK_STACK(ENV_SIZE(nargs));
-                FETCH_OPERAND(args);
-                INCR_PC;
-
                 for (i=0; i<nargs; i++) {
                     if (i >= SCM_VM_MAX_VALUES-1) {
                         PUSH_ARG(vm->vals[SCM_VM_MAX_VALUES-1]);
