@@ -41,7 +41,8 @@
   (use gauche.cgen.literal)
   (use util.match)
   (use util.list)
-  (export cise-render
+  (export cise-render cise-render-rec
+          cise-context cise-context-copy cise-register-macro! cise-lookup-macro
           cise-emit-source-line
           define-cise-macro
           define-cise-stmt
@@ -73,6 +74,9 @@
 
 ;; If true, include #line directive in the output.
 (define cise-emit-source-line (make-parameter #t))
+
+;; Keeps the cise macro bindings.
+(define cise-context (make-parameter (make-hash-table 'eq?)))
 
 ;;=============================================================
 ;; Environment
@@ -130,51 +134,91 @@
 ;;  Cgen expander knows little about C.  It handles literals
 ;;  (strings, numbers, booleans, and characters) and function calls.
 ;;  All other stuff is handled by "cise macros"
+
 ;;
-;;  TBD: Currently some cise macros need to call render-rec recursively
-;;  to finish expansion.  We don't export render-rec, though, which
-;;  limits the ability of 
+;; cise-register-macro! NAME EXPANDER &optional CONTEXT
+;;
+;;   Register cise macro expander EXPANDER with the name NAME.
+;;   EXPANDER takes twi arguments, the form to expand and a
+;;   opaque cise environmen.
+;;
+(define (cise-register-macro! name expander . opts)
+  (let-optionals* opts ((context (cise-context)))
+    (hash-table-put! context name expander)))
 
-(define *cgen-macro* (make-hash-table 'eq?))
+;;
+;; cise-lookup-macro NAME &optional CONTEXT
+;;
+;;   Lookup cise macro.
+;;
+(define (cise-lookup-macro name . opts)
+  (let-optionals* opts ((context (cise-context)))
+    (hash-table-get context name #f)))
 
+;;
+;; copy the current cise context
+;;
+(define (cise-context-copy . opts)
+  (let-optionals* opts ((context (cise-context)))
+    (hash-table-copy context)))
+
+;;
+;; define-cise-macro (OP FORM ENV) . BODY
+;;
+;;   Default syntax to add new cise macro to the current context.
+;;
 (define-syntax define-cise-macro
   (syntax-rules ()
     [(_ (op form env) . body)
-     (hash-table-put! *cgen-macro* 'op (lambda (form env) . body))]))
+     (cise-register-macro! 'op (lambda (form env) . body))]))
 
+;;
+;; define-cise-stmt OP [ENV] CLAUSE ... [:where DEFINITION ...]
+;; define-cise-expr OP [ENV] CLAUSE ... [:where DEFINITION ...]
+;;
 (define-syntax define-cise-stmt
   (syntax-rules ()
-    [(_ "clauses" op clauses (:where defs ...))
+    ;; recursion
+    [(_ "clauses" op env clauses (:where defs ...))
      (define-cise-macro (op form env)
        defs ...
        (ensure-stmt-ctx form env)
        (match form . clauses))]
-    [(_ "clauses" op clauses ())
-     (define-cise-macro (op form env)
-       (ensure-stmt-ctx form env)
-       (match form . clauses))]
-    [(_ "clauses" op (clause ...) (x . y))
-     (define-cise-stmt "clauses" op (clause ... x) y)]
-    [(_ op . clauses)
-     (define-cise-stmt "clauses" op () clauses)]))
+    [(_ "clauses" op env clauses ())
+     (define-cise-stmt "clauses" op env clauses (:where))]
+    [(_ "clauses" op env (clause ...) (x . y))
+     (define-cise-stmt "clauses" op env (clause ... x) y)]
+    ;; entry
+    [(_ op (pat . body) .  clauses) ; (pat . body) rules out a single symbol
+     (define-cise-stmt "clauses" op env ((pat . body)) clauses)]
+    [(_ op env . clauses)
+     (define-cise-stmt "clauses" op env () clauses)]))
 
 (define-syntax define-cise-expr
   (syntax-rules ()
-    [(_ "clauses" op clauses (:where defs ...))
+    ;; recursion
+    [(_ "clauses" op env clauses (:where defs ...))
      (define-cise-macro (op form env)
        defs ...
        (let1 expanded (match form . clauses)
          (if (and (pair? expanded) (symbol? (car expanded)))
            (render-rec expanded env)
            (wrap-expr expanded env))))]
-    [(_ "clauses" op clauses ())
-     (define-cise-expr "clauses" op clauses (:where))]
-    [(_ "clauses" op (clause ...) (x . y))
-     (define-cise-expr "clauses" op (clause ... x) y)]
-    [(_ op . clauses)
-     (define-cise-expr "clauses" op () clauses)]))
+    [(_ "clauses" op env clauses ())
+     (define-cise-expr "clauses" op env clauses (:where))]
+    [(_ "clauses" op env (clause ...) (x . y))
+     (define-cise-expr "clauses" op env (clause ... x) y)]
+    ;; entry
+    [(_ op (pat . body) .  clauses)
+     (define-cise-expr "clauses" op env ((pat . body)) clauses)]
+    [(_ op env . clauses)
+     (define-cise-expr "clauses" op env () clauses)]))
 
+;;
 ;; cise-render cise &optional port as-expr?
+;;
+;;   External entry of renderer
+;;
 (define (cise-render form . opts)
   (let-optionals* opts ((port (current-output-port))
                         (expr #f))
@@ -199,11 +243,26 @@
            (stree (render-rec form env)))
       (render-finish `(,@(render-env-decls env) ,stree)))))
 
+;;
+;; cise-render-rec cise stmt/expr env
+;;
+;;   External interface to call back to cise expander recursively.
+;;   stmt/expr should be either a symbol stmt or expr.
+;;   env must be treated as opaque object.
+;;
+(define (cise-render-rec form stmt/expr env)
+  (case stmt/expr
+    [(stmt) (render-rec form (stmt-env env))]
+    [(expr) (render-rec form (expr-env env))]
+    [else (error "cise-render-rec: second argument must be either \
+                  stmt or expr, but got:" stmt/expr)]))
+
 ;; render-rec :: Cise, Env -> Stree
+;;   Recursively expands 
 (define (render-rec form env)
   (match form
     [((? symbol? key) . args)
-     (cond ((hash-table-get *cgen-macro* key #f)
+     (cond ((cise-lookup-macro key)
             => (lambda (expander)
                  `(,@(source-info form env)
                    ,@(render-rec (expander form env) env))))
@@ -496,8 +555,8 @@
     (wrap-expr
      (match form
        [(_ a b ...)
-        (list "("(render-rec a eenv)")"
-              (append-map (lambda (ind) `("[",(render-rec ind eenv)"]")) b))])
+        `("(",(render-rec a eenv)")"
+          ,(append-map (lambda (ind) `("[",(render-rec ind eenv)"]")) b))])
      env)))
 
 (define-cise-macro (cast form env)
@@ -525,7 +584,8 @@
         [()  (wrap-expr (intersperse "," (reverse r)) env)]
         [(var val . more)
          (loop (cddr args)
-               `((,(render-rec var eenv)"=(",(render-rec val eenv)")") ,@r))]
+               `((,(render-rec var eenv)
+                  "=(",(render-rec val eenv)")") ,@r))]
         [_   (error "uneven args for set!:" form)]))))
 
 ;;------------------------------------------------------------

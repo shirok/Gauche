@@ -2,6 +2,13 @@
 
 	* lib/gauche/cgen/cise.scm (source-info): Replaced makeshift source
 	  info extractor for debug-source-info.
+	  (cise-render-rec): Expose an API to call back to cise expander
+	  recursievly.  Needed to write certain type of cise macros.
+	  (cise-context, cise-context-copy, cise-register-macro!,
+	   cise-lookup-macro): Allow to have multiple cise macro namespaces.
+	  (define-cise-stmt, define-cise-expr): allow to specify a variable
+	  to receive the cise environment, which is required to call
+	  cise-render-rec within the expander.
 
 2008-06-26  Shiro Kawai  <shiro@acm.org>
 
