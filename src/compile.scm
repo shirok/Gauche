@@ -136,6 +136,7 @@
       (inc! *insn-counter*)
       (push! *insn-alist* (cons name num))
       `(define-constant ,name ,num)))
+  (define-macro (define-cise-stmt . _) #f)
   (load "vminsn.scm")
   (define-constant .insn-alist. (reverse *insn-alist*))
   )
@@ -1381,12 +1382,12 @@
     (receive (gval type) (global-call-type id cenv)
       (if gval
         (case type
-          ((macro)
-           (pass1 (call-macro-expander gval program (cenv-frames cenv)) cenv))
-          ((syntax)
-           (call-syntax-handler gval program cenv))
-          ((inline)
-           (pass1/expand-inliner id gval))
+          [(macro)
+           (pass1 (call-macro-expander gval program (cenv-frames cenv)) cenv)]
+          [(syntax)
+           (call-syntax-handler gval program cenv)]
+          [(inline)
+           (pass1/expand-inliner id gval)]
           )
         (pass1/call program ($gref id) (cdr program) cenv))))
 
@@ -2014,8 +2015,8 @@
 
 (define-pass1-syntax (quote form cenv) :null
   (match form
-    ((_ obj) (pass1/quote obj))
-    (else (error "syntax-error: malformed quote:" form))))
+    [(_ obj) (pass1/quote obj)]
+    [else (error "syntax-error: malformed quote:" form)]))
 
 (define-pass1-syntax (quasiquote form cenv) :null
   ;; We want to avoid unnecessary allocation as much as possible.

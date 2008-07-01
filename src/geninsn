@@ -39,6 +39,7 @@
 ;;   ../lib/gauche/vm/insn.scm
 
 (use gauche.cgen)
+(use gauche.cgen.cise)
 (use gauche.parameter)
 (use gauche.sequence)
 (use gauche.mop.instance-pool)
@@ -72,10 +73,14 @@
    (num-params :init-keyword :num-params) ; # of parameters
    (operand-type :init-keyword :operand-type) ; operand type
    (combined :init-keyword :combined)     ; combined insns
+   (body   :init-keyword :body)           ; body of the insn
    ))
 
 (define-method write-object ((s <vm-insn-info>) out)
   (format out "#<insn ~a>" (ref s 'name)))
+
+(define (find-insn name insns)
+  (find (lambda (o) (eq? name (ref o 'name))) insns))
 
 ;;=============================================================
 ;; Generate gauche.vm.insn
@@ -92,8 +97,9 @@
             (ref insn 'name) (ref insn 'code))
     (format out "  :num-params ~a :operand-type '~a\n"
             (ref insn 'num-params) (ref insn 'operand-type))
-    (format out "  :combined '~a)\n\n"
-            (ref insn 'combined)))
+    (format out "  :combined '~s\n" (ref insn 'combined))
+    (format out "  :body '~s)\n\n"
+            (ref insn 'body)))
   (call-with-output-file "../lib/gauche/vm/insn.scm"
     (lambda (out)
       (write-header out)
@@ -101,6 +107,68 @@
       (display "(provide \"gauche/vm/insn\")\n" out))
     :if-exists :supersede)
   )
+
+;;=============================================================
+;; Generate VM inner loop (unfinished)
+;;
+
+;; These parameters are used by the cise expander defined in
+;; vminsn.scm.
+(define result-type (make-parameter 'reg)) ;reg, push, call or ret
+(define arg-source (make-parameter #f)) ; #f, pop, reg, or (lref DEPTH OFFSET)
+
+(define (construct-vmbody insns)
+  (define (case-label insn)
+    (cgen-body (format "\nlabel_~a~:*:\nCASE(SCM_VM_~a) "
+                       (cgen-safe-name-friendly (x->string (ref insn'name))))))
+  (define (base-cise base)
+    (and-let* [(base-insn (find-insn base insns))]
+      (ref base-insn 'body)))
+  (define (symbol-join syms)
+    ($ string->symbol $ string-join (map x->string syms) "-"))
+  (define (cise->string cise)
+    (call-with-output-string (cut cise-render cise <>)))
+  (define (render cise)
+    (cgen-body #`"{,(cise->string cise)}"))
+  (define (do-combined insn comb)
+    (match comb
+      [(base 'PUSH)
+       (and-let* [(cise (base-cise base))]
+         (case-label insn)
+         (parameterize ([result-type 'push]) (render cise))
+         #t)]
+      [(base 'RET)
+       (and-let* [(cise (base-cise base))]
+         (case-label insn)
+         (parameterize ([result-type 'ret]) (render cise))
+         #t)]
+      [(base (and (or 'CALL 'TAIL-CALL) next))
+       (and-let* [(cise (base-cise base))]
+         (case-label insn)
+         (parameterize ([result-type 'call]) (render cise))
+         (render `($goto-insn ,next))
+         #t)]
+      [('PUSH . next)
+       (case-label insn)
+       (render `(PUSH-ARG VAL0))
+       (render `($goto-insn ,(symbol-join next)))
+       #t]
+      [('LREF0 'PUSH . next)
+       (case-label insn)
+       (render `(let* ((v (ENV-DATA ENV 0))) (PUSH-ARG v)))
+       (render `($goto-insn ,(symbol-join next)))
+       #t]
+      [_ #f]))
+  (define (render1 insn)
+    (or (and-let* [(cise (ref insn 'body))]
+          (case-label insn)
+          (render cise)
+          #t)
+        (and-let* [(comb (ref insn 'combined))]
+          (do-combined insn comb))
+        (warn "Don't know how to generate ~a" (ref insn 'name))))
+  ;; main body of construct-vmbody
+  (for-each render1 insns))
 
 ;;==============================================================
 ;; Emit state-transition table for instruction combiner
@@ -177,7 +245,7 @@
           newstate)))
 
   (state-set-insn! root-state (ref insn 'name) insn)
-  (unless (null? (ref insn 'combined))
+  (when (pair? (ref insn 'combined))
     (let loop ((combined (ref insn 'combined))
                (state    root-state))
       (if (null? (cdr combined))
@@ -232,7 +300,7 @@
               ((keep)
                (if (null? (cdr args))
                  (values 'KEEP (c-insn-name (car args)))
-                 (error "zntata"))))
+                 (error "huh?"))))
           (cgen-body
            (format "  /*~3d*/ { ~a, ~a, ~a },"
                    entry-count
@@ -250,6 +318,18 @@
     (emit-states (instance-pool->list <state>))))
 
 ;;
+;; Parse vminsn.scm and returns the define-insn form in order.
+;; CISE definitions are evaluated within the current context.
+;;
+(define (parse-vminsn file)
+  (filter (lambda (form)
+            (match form
+              [('define-insn . _) form]
+              [('define-cise-stmt . _) (eval form (current-module)) #f]
+              [else (error "Invalid form in vm instruction definition:"form)]))
+          (file->sexp-list file)))
+
+;;
 ;; Main
 ;;
 (define (main args)
@@ -261,21 +341,21 @@
         (map-with-index
          (lambda (count insn)
            (match insn
-             ((_ name num-params operand-type . maybe-combined)
-              (cgen-extern #`"  ,(c-insn-name name),,")
-              (cgen-body (format "DEFINSN(~a, \"~a\", ~a, ~a)"
-                                 (c-insn-name name) name
-                                 num-params
-                                 (string-tr (x->string operand-type)
-                                            "a-z+-" "A-Z__")))
-              (make <vm-insn-info>
-                :name name :code count :num-params num-params
-                :operand-type operand-type
-                :combined (get-optional maybe-combined '()))
-              )
-             (else
-              (errorf "unrecognized form: ~s" insn))))
-         (file->sexp-list (get-optional (cdr args) "vminsn.scm")))
+             [(_ name num-params operand-type . opts)
+              (let-optionals* opts ((combined #f)
+                                    (body #f))
+                (cgen-extern #`"  ,(c-insn-name name),,")
+                (cgen-body (format "DEFINSN(~a, \"~a\", ~a, ~a)"
+                                   (c-insn-name name) name
+                                   num-params
+                                   (string-tr (x->string operand-type)
+                                              "a-z+-" "A-Z__")))
+                (make <vm-insn-info>
+                  :name name :code count :num-params num-params
+                  :operand-type operand-type :combined combined
+                  :body body))]
+             [else (errorf "unrecognized form: ~s" insn)]))
+         (parse-vminsn (get-optional (cdr args) "vminsn.scm")))
       
       (cgen-extern "  SCM_VM_NUM_INSNS" "};")
       (cgen-body "#endif /*DEFINSN*/")
@@ -283,6 +363,10 @@
       (cgen-body "#ifdef STATE_TABLE")
       (construct-state-table insns)
       (cgen-body "#endif /*STATE_TABLE*/")
+
+      (cgen-body "#ifdef VMLOOP")
+      (construct-vmbody insns)
+      (cgen-body "#endif /*VMLOOP*/")
 
       ;; Generating files
       (cgen-emit-h (cgen-current-unit))

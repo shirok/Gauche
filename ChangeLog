@@ -1,5 +1,10 @@
 2008-07-01  Shiro Kawai  <shiro@acm.org>
 
+	* src/vminsn.scm, src/geninsn, src/vm.c (run_loop): Having VM loop
+	  code fragment within the VM instruction definition in vminsn.scm,
+	  and use geninsn to generate the "meat" of the VM loop into
+	  vminsn.c.  This is a big step towards VM generation.
+
 	* lib/gauche/cgen/literal.scm (cgen-emit-static-data),
 	  lib/gauche/cgen/unit.scm (cgen-emit-c): Moved SCM_CGEN_CONST	
 	  kludge emission from unit to literal, since it is only required
