@@ -141,13 +141,6 @@
       (cond ([@ unit'preamble] => emit-raw))
       (cond ([@ unit'pre-decl] => emit-raw))
       (print "#include <gauche.h>")
-      ;; This piece of code is required, for Win32 DLL doesn't like
-      ;; structures to be const if it contains SCM_CLASS_PTR.  Doh!
-      (print "#if defined(__CYGWIN__) || defined(GAUCHE_WINDOWS)")
-      (print "#define SCM_CGEN_CONST /*empty*/")
-      (print "#else")
-      (print "#define SCM_CGEN_CONST const")
-      (print "#endif")
       (cgen-emit-part unit 'decl)
       (cgen-emit-static-data unit)
       (cgen-emit-part unit 'body)

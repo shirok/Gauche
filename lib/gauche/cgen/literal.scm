@@ -198,6 +198,14 @@
     (cond ([@ dl'cpp-condition] => (cut print "#endif /*"<>"*/"))))
 
   (and-let* ((dls [@ unit'static-data-list]))
+    (unless (null? dls)
+      ;; This piece of code is required, for Win32 DLL doesn't like
+      ;; structures to be const if it contains SCM_CLASS_PTR.  Doh!
+      (print "#if defined(__CYGWIN__) || defined(GAUCHE_WINDOWS)")
+      (print "#define SCM_CGEN_CONST /*empty*/")
+      (print "#else")
+      (print "#define SCM_CGEN_CONST const")
+      (print "#endif"))
     (emit-one-category 'constant dls)
     (emit-one-category 'runtime dls)
     ))

@@ -366,7 +366,7 @@
     (match form
       [(_ test . body)
        `("while"
-         ,(render-rec test eenv)
+         "(",(render-rec test eenv)")"
          ,(render-rec `(begin ,@body) env))])))
 
 (define-cise-macro (for-each form env)
