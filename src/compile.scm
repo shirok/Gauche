@@ -127,18 +127,17 @@
   )
 
 ;; Define constants for VM instructions.
-;; This is a BLACK MAGIC.  Not recommended as a general trick.
 (eval-when (:compile-toplevel)
-  (define *insn-counter* 0)
-  (define *insn-alist* '())
-  (define-macro (define-insn name . _)
-    (let1 num *insn-counter*
-      (inc! *insn-counter*)
-      (push! *insn-alist* (cons name num))
-      `(define-constant ,name ,num)))
-  (define-macro (define-cise-stmt . _) #f)
-  (load "vminsn.scm")
-  (define-constant .insn-alist. (reverse *insn-alist*))
+  (use gauche.vm.insn)
+  (define-macro (define-insn-constants)
+    (let1 name&codes
+        (map (lambda (insn) (cons (car insn) (ref (cdr insn)'code)))
+             (class-slot-ref <vm-insn-info> 'all-insns))
+      `(begin
+         ,@(map (lambda (n&c) `(define-constant ,(car n&c) ,(cdr n&c)))
+                name&codes)
+         (define-constant .insn-alist. ',name&codes))))
+  (define-insn-constants)
   )
 
 ;; Maximum size of $LAMBDA node we allow to duplicate and inline.

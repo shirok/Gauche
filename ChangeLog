@@ -1,5 +1,11 @@
 2008-07-02  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm: Instead of reading vminsn.scm to define vm
+	  instruction constants, using gauche.vm.insn to do so.
+	* src/geninsn: allow define-insn-lref* and define-insn-lref+,
+	  that automatically defines LERFn-XXX and LREFmn-XXX combined
+	  instructions from the base LREF-XXX instruction definition.
+
 	* lib/gauche/procedure.scm (disasm): removed kludge for old versions.
 
 	* src/code.c (Scm_CompiledCodeEmit): Adopted STN created from

@@ -82,6 +82,10 @@
 (define (find-insn name insns)
   (find (lambda (o) (eq? name (ref o 'name))) insns))
 
+;; LREF shortcuts.
+(define-constant .lrefx.
+  '(LREF0 LREF1 LREF2 LREF3 LREF10 LREF11 LREF12 LREF20 LREF21 LREF30))
+
 ;;=============================================================
 ;; Generate gauche.vm.insn
 ;;   We have a header in ../lib/gauche/vm/insn.scm.src.
@@ -128,6 +132,10 @@
     ($ string->symbol $ string-join (map x->string syms) "-"))
   (define (cise->string cise)
     (call-with-output-string (cut cise-render cise <>)))
+  (define (lrefx->lref lrefx)
+    (rxmatch-let (#/LREF(\d)?(\d)/ (x->string lrefx))
+      (#f dep off)
+      `(lref ,(x->integer dep) ,(x->integer off))))
   (define (render cise)
     (cgen-body #`"{,(cise->string cise)}"))
   (define (do-combined insn comb)
@@ -153,16 +161,9 @@
        (render `(let* ((v (ENV-DATA ENV 0))) (PUSH-ARG v)))
        (render `($goto-insn ,(symbol-join next)))
        #t]
-      [('LREF0 . next)
-       (parameterize ([arg-source '(lref 0 0)]) (do-combined-rec next))]
-      [('LREF1 . next)
-       (parameterize ([arg-source '(lref 0 1)]) (do-combined-rec next))]
-      [('LREF2 . next)
-       (parameterize ([arg-source '(lref 0 2)]) (do-combined-rec next))]
-      [('LREF3 . next)
-       (parameterize ([arg-source '(lref 0 3)]) (do-combined-rec next))]
-      [('LREF4 . next)
-       (parameterize ([arg-source '(lref 0 4)]) (do-combined-rec next))]
+      [((and (? (cut memq <> .lrefx.)) lrefx) . next)
+       (parameterize ([arg-source (lrefx->lref lrefx)])
+         (do-combined-rec next))]
       [('LREF . next)
        (parameterize ([arg-source 'lref]) (do-combined-rec next))]
       [_ #f]))
@@ -333,12 +334,38 @@
 ;; CISE definitions are evaluated within the current context.
 ;;
 (define (parse-vminsn file)
-  (filter (lambda (form)
-            (match form
-              [('define-insn . _) form]
-              [('define-cise-stmt . _) (eval form (current-module)) #f]
-              [else (error "Invalid form in vm instruction definition:"form)]))
-          (file->sexp-list file)))
+  (define (lref-replace form lrefx)
+    (match form
+      [(syms ...) (map (cut lref-replace <> lrefx) syms)]
+      [symbol ($ string->symbol
+                 $ regexp-replace #/\bLREF\b/ (x->string symbol)
+                 $ x->string lrefx)]))
+  (define (generate-lrefx insn nparams operand comb seed)
+    (fold (lambda (lrefx seed)
+            `((define-insn ,(lref-replace insn lrefx) ,nparams ,operand
+                ,(lref-replace comb lrefx))
+              ,@seed))
+          seed .lrefx.))
+  (fold (lambda (form seed)
+          (match form
+            [('define-insn . _) (cons form seed)]
+            ;; Special expansion for LREF shortcuts.
+            ;; define-insn-lref* generates all variations of LREFn
+            ;; from the insn, plus the generic LREF version.
+            ;; define-insn-lref+ generates all variations of LREFn
+            ;; but not the generic LREF version (if the combined insn
+            ;; uses insn parameters, we can't use generic LREF that also
+            ;; uses insn parameters.)
+            [('define-insn-lref* insn nparams operand comb)
+             (generate-lrefx insn 0 operand comb
+                             `((define-insn ,insn ,nparams ,operand ,comb)
+                               ,@seed))]
+            [('define-insn-lref+ insn nparams operand comb)
+             (generate-lrefx insn nparams operand comb seed)]
+            [('define-cise-stmt . _) (eval form (current-module)) seed]
+            [else (error "Invalid form in vm instruction definition:"form)]))
+        '()
+        (file->sexp-list file)))
 
 ;;
 ;; Main
@@ -366,8 +393,8 @@
                   :operand-type operand-type :combined combined
                   :body body))]
              [else (errorf "unrecognized form: ~s" insn)]))
-         (parse-vminsn (get-optional (cdr args) "vminsn.scm")))
-      
+         (reverse (parse-vminsn (get-optional (cdr args) "vminsn.scm"))))
+
       (cgen-extern "  SCM_VM_NUM_INSNS" "};")
       (cgen-body "#endif /*DEFINSN*/")
 
