@@ -1,3 +1,11 @@
+2008-07-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/code.c (Scm_CompiledCodeEmit): Adopted STN created from
+	  vminsn.scm to handle instruction combination.  With this change,
+	  the VM instruction set architecture is solely defined by vminsn.scm.
+	* src/geninsn: some extension to handle more combined insns.
+	* src/vminsn.scm: some fixes
+
 2008-07-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm, src/geninsn, src/vm.c (run_loop): Having VM loop

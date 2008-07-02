@@ -115,7 +115,7 @@
 ;; These parameters are used by the cise expander defined in
 ;; vminsn.scm.
 (define result-type (make-parameter 'reg)) ;reg, push, call or ret
-(define arg-source (make-parameter #f)) ; #f, pop, reg, or (lref DEPTH OFFSET)
+(define arg-source (make-parameter #f)) ; #f, pop, reg, lref or (lref DEPTH OFFSET)
 
 (define (construct-vmbody insns)
   (define (case-label insn)
@@ -134,41 +134,52 @@
     (match comb
       [(base 'PUSH)
        (and-let* [(cise (base-cise base))]
-         (case-label insn)
          (parameterize ([result-type 'push]) (render cise))
          #t)]
       [(base 'RET)
        (and-let* [(cise (base-cise base))]
-         (case-label insn)
          (parameterize ([result-type 'ret]) (render cise))
          #t)]
       [(base (and (or 'CALL 'TAIL-CALL) next))
        (and-let* [(cise (base-cise base))]
-         (case-label insn)
          (parameterize ([result-type 'call]) (render cise))
          (render `($goto-insn ,next))
          #t)]
       [('PUSH . next)
-       (case-label insn)
        (render `(PUSH-ARG VAL0))
        (render `($goto-insn ,(symbol-join next)))
        #t]
       [('LREF0 'PUSH . next)
-       (case-label insn)
        (render `(let* ((v (ENV-DATA ENV 0))) (PUSH-ARG v)))
        (render `($goto-insn ,(symbol-join next)))
        #t]
+      [('LREF0 . next)
+       (parameterize ([arg-source '(lref 0 0)]) (do-combined-rec next))]
+      [('LREF1 . next)
+       (parameterize ([arg-source '(lref 0 1)]) (do-combined-rec next))]
+      [('LREF2 . next)
+       (parameterize ([arg-source '(lref 0 2)]) (do-combined-rec next))]
+      [('LREF3 . next)
+       (parameterize ([arg-source '(lref 0 3)]) (do-combined-rec next))]
+      [('LREF4 . next)
+       (parameterize ([arg-source '(lref 0 4)]) (do-combined-rec next))]
+      [('LREF . next)
+       (parameterize ([arg-source 'lref]) (do-combined-rec next))]
       [_ #f]))
+  (define (do-combined-rec comb)
+    (and-let* [(insn (find-insn (symbol-join comb) insns))]
+      (render1 insn)))
   (define (render1 insn)
     (or (and-let* [(cise (ref insn 'body))]
-          (case-label insn)
           (render cise)
           #t)
         (and-let* [(comb (ref insn 'combined))]
           (do-combined insn comb))
         (warn "Don't know how to generate ~a" (ref insn 'name))))
   ;; main body of construct-vmbody
-  (for-each render1 insns))
+  (dolist (insn insns)
+    (case-label insn)
+    (render1 insn)))
 
 ;;==============================================================
 ;; Emit state-transition table for instruction combiner
@@ -184,7 +195,7 @@
 ;; Actions:
 ;;   NEXT    - output nothing, merely replaces the current state to the
 ;;             next state.
-;;   RESET   - emit the specified insn(s), consuming the input, return
+;;   EMIT    - emit the specified insn(s), consuming the input, return
 ;;             to the state 0.
 ;;   KEEP    - emit the specified insn, keep other pending insns and
 ;;             input, then run DFA on the pending input.

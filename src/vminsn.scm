@@ -99,10 +99,25 @@
    (match (or (arg-source) default)
      ['pop        `(let* ((,val)) (POP-ARG ,val) ,@body)]
      ['reg        `(let* ((,val VAL0)) ,@body)]
-     [('lref d o) `(let* ((,val (ENV-DATA ,(let loop ((d depth))
+     ['lref     (let ((dep (gensym)) (off (gensym)) (e (gensym)))
+                  `(let* ((,dep :: int (SCM_VM_INSN_ARG0 code))
+                          (,off :: int (SCM_VM_INSN_ARG1 code))
+                          (,e :: ScmEnvFrame* ENV)
+                          (,val))
+                     (case/fallthrough ,dep
+                       [(4) (set! ,e (-> ,e up))]
+                       [(3) (set! ,e (-> ,e up))]
+                       [(2) (set! ,e (-> ,e up))]
+                       [(1) (set! ,e (-> ,e up))]
+                       [(0) (set! ,val (ENV-DATA ,e ,off)) (break)]
+                       [else (while (> (pre-- ,dep) 0) (set! ,e (-> ,e up)))
+                             (set! ,val (ENV-DATA ,e ,off)) (break)])
+                     ,@body))]
+     [('lref d o) `(let* ((,val (ENV-DATA ,(let loop ((d d))
                                              (if (zero? d)
                                                'ENV
-                                               `(-> ,(loop (- d 1)) up))))))
+                                               `(-> ,(loop (- d 1)) up)))
+                                          ,o)))
                      ,@body)])])
 
 (define-cise-stmt $w/argr               ; use VAL0 default
@@ -180,12 +195,14 @@
 ;;
 ;; ($w/numcmp r op . body)
 ;;   Compare stack top (popped) and VAL0 with OP, and places the result in r.
-;;
+;;   If arg-source is modified, it affects to the second argument; the first
+;;   arg is always popped.
 (define-cise-stmt $w/numcmp
   [(_ r op . body)
    (let ((x (gensym)) (y (gensym)))
-     `($w/argp ,x
-        (let* ((,y VAL0) (,r :: int))
+     `($w/argr ,y
+        (let* ((,x) (,r :: int))
+          (POP-ARG ,x)
           (cond [(and (SCM_INTP ,x) (SCM_INTP ,y))
                  (set! ,r (,op (cast |signed long| (cast intptr_t ,x))
                                (cast |signed long| (cast intptr_t ,y))))]
@@ -517,12 +534,13 @@
 ;;       notably BNEQVI, BNUMNEF, BNLTF etc, but they did't show any
 ;;       improvement.
 (define-insn BNUMNEI     1 addr #f
-  (let* ((imm :: long (SCM_VM_INSN_ARG code))
-         (v0 VAL0))
-    ($type-check v0 SCM_NUMBERP "number")
-    ($branch* (not
-               (or (and (SCM_INTP v0)    (== (SCM_INT_VALUE v0) imm))
-                   (and (SCM_FLONUMP v0) (== (SCM_FLONUM_VALUE v0) imm)))))))
+  (let* ((imm :: long (SCM_VM_INSN_ARG code)))
+    ($w/argr v0
+      ($type-check v0 SCM_NUMBERP "number")
+      ($branch*
+       (not
+        (or (and (SCM_INTP v0)    (== (SCM_INT_VALUE v0) imm))
+            (and (SCM_FLONUMP v0) (== (SCM_FLONUM_VALUE v0) imm))))))))
 (define-insn BNEQC       0 obj+addr #f
   (let* ((z)) (FETCH-OPERAND z) INCR-PC ($branch* (not (SCM_EQ VAL0 z)))))
 (define-insn BNEQVC      0 obj+addr #f
@@ -1273,5 +1291,4 @@
     (set! (-> vm handlers) (SCM_CDR (-> vm handlers)))
     NEXT))
 
-;; experiment
-;(define-insn LREF-NUMADD2 2 none)
+
