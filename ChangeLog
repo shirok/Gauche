@@ -1,5 +1,7 @@
 2008-07-02  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/procedure.scm (disasm): removed kludge for old versions.
+
 	* src/code.c (Scm_CompiledCodeEmit): Adopted STN created from
 	  vminsn.scm to handle instruction combination.  With this change,
 	  the VM instruction set architecture is solely defined by vminsn.scm.

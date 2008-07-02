@@ -210,11 +210,6 @@
 ;; I'm not sure whether this should be here or not, but fot the time being...
 
 (define (disasm proc)
-  ;; kludge
-  (let ((dumper (if (find-module 'gauche.internal)
-                  (eval '(with-module gauche.internal vm-dump-code)
-                        (find-module 'gauche))
-                  vm-dump-code)))
-    (dumper (closure-code proc))))
+  ((with-module gauche.internal vm-dump-code) (closure-code proc)))
 
 (provide "gauche/procedure")
