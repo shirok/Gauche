@@ -578,7 +578,8 @@ static struct stn_arc stn[] = {
 
 /* Save the args/operand if necessary */
 static inline void save_params(cc_builder *b, int code,
-                               int arg0, int arg1, ScmObj operand)
+                               int arg0, int arg1, ScmObj operand,
+                               ScmObj info)
 {
     switch (Scm_VMInsnNumParams(code)) {
     case 2: b->currentArg1 = arg1;
@@ -589,6 +590,9 @@ static inline void save_params(cc_builder *b, int code,
     }
     if (Scm_VMInsnOperandType(code) != SCM_VM_OPERAND_NONE) {
         b->currentOperand = operand;
+    }
+    if (SCM_FALSEP(b->currentInfo)) {
+        b->currentInfo = info;
     }
 }
 
@@ -617,8 +621,8 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
     CC_BUILDER_GET(b, cc);
 
     if (SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_COMPILE_NOCOMBINE)) {
-        save_params(b, code, arg0, arg1, operand);
-        b->currentInsn = code;
+        save_params(b, code, arg0, arg1, operand, info);
+        fill_current_insn(b, code);
         cc_builder_flush(b);
         return;
     }
@@ -667,7 +671,7 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
 
     switch (arc->action) {
     case EMIT:
-        save_params(b, code, arg0, arg1, operand);
+        save_params(b, code, arg0, arg1, operand, info);
         fill_current_insn(b, arc->next);
         cc_builder_flush(b);
         b->currentState = -1;
@@ -678,7 +682,7 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
         b->currentState = -1;
         goto restart;
     case NEXT:
-        save_params(b, code, arg0, arg1, operand);
+        save_params(b, code, arg0, arg1, operand, info);
         fill_current_insn(b, code);
         b->currentState = arc->next;
         break;
