@@ -591,7 +591,7 @@ static inline void save_params(cc_builder *b, int code,
     if (Scm_VMInsnOperandType(code) != SCM_VM_OPERAND_NONE) {
         b->currentOperand = operand;
     }
-    if (SCM_FALSEP(b->currentInfo)) {
+    if (!SCM_FALSEP(info)) {
         b->currentInfo = info;
     }
 }
