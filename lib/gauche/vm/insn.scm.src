@@ -2,7 +2,7 @@
 ;;; gauche.vm.insn - VM instruction introspection
 ;;; (This file is generated automatically; DO NOT EDIT)
 ;;;  
-;;;   Copyright (c) 2004-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2008 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -65,7 +65,7 @@
 
 ;; INSN is a list of opcode and parameters, e.g. (PUSH) or (LREF 3 2)
 ;; Returns an exact integer of encoded VM instruction code.
-;; NB: This must match the macro definitions in src/gauche/vm.h !!!
+;; NB: This must match the macro definitions in src/gauche/code.h !!!
 (define (vm-build-insn insn)
   (match insn
     (((? symbol? opcode) . params)
@@ -80,16 +80,19 @@
           (unless (= (ref info 'num-params) 1)
             (errorf "VM instruction ~a takes one parameter, but got ~s"
                     opcode insn))
-          (logior (ash (logand arg0 #xffffff) 8)
+          (logior (ash (logand arg0 #xfffff) 12)
                   (ref info 'code)))
          ((arg0 arg1)
           (unless (= (ref info 'num-params) 2)
             (errorf "VM instruction ~a takes two parameters, but got ~s"
                     opcode insn))
-          (logior (ash (logand arg1 #x3ff) 18)
-                  (ash (logand arg0 #x3ff) 8)
+          (logior (ash (logand arg1 #x3ff) 22)
+                  (ash (logand arg0 #x3ff) 12)
                   (ref info 'code)))
          (else (error "vm-build-insn: bad insn:" insn)))))
     (else
      (error "vm-build-insn: bad insn:" insn))))
 
+;; Local variables:
+;; mode: scheme
+;; end:

@@ -1,5 +1,8 @@
 2008-07-02  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/vm/insn.scm.src, src/gauche/code.h: Extended the
+	  opcode width in the instruction word from 8 bits to 12 bits.
+
 	* src/compile.scm: Instead of reading vminsn.scm to define vm
 	  instruction constants, using gauche.vm.insn to do so.
 	* src/geninsn: allow define-insn-lref* and define-insn-lref+,
