@@ -267,8 +267,16 @@ typedef struct cc_builder_rec {
     ScmObj info;                /* alist of (offset (source-info obj)) */
 } cc_builder;
 
+/* Indicates that there's no pending instruction. */
 #define CC_BUILDER_BUFFER_EMPTY       SCM_WORD(-1)
-#define CC_BUILDER_BUFFER_EMPTY_P(b)  ((b)->currentInsn == CC_BUILDER_BUFFER_EMPTY)
+
+/* Indicates that the instruction combiner is in the transitional
+   state.  In ordinary circumstances this state will be resolved
+   as the code generation goes.  However, if the instruction combination
+   is "cut off", for example by emitting a jump destination label, we
+   have to complete the instruction.  It is done by seeking for
+   the default arc of the current state.  */
+#define CC_BUILDER_BUFFER_TRANS       SCM_WORD(-2)
 
 /* Some internal stuff */
 
@@ -339,12 +347,17 @@ static int cc_builder_label_def(cc_builder *b, ScmObj label)
     }
 }
 
+static void finish_transition(cc_builder *b);
+
 /* Flush the currentInsn buffer. */
 static void cc_builder_flush(cc_builder *b)
 {
     u_int code;
     
-    if (CC_BUILDER_BUFFER_EMPTY_P(b)) return;
+    if ((b)->currentInsn == CC_BUILDER_BUFFER_EMPTY) return;
+    if ((b)->currentInsn == CC_BUILDER_BUFFER_TRANS) {
+        finish_transition(b);
+    }
     cc_builder_add_info(b);
     cc_builder_add_word(b, b->currentInsn);
 
@@ -608,6 +621,22 @@ static inline void fill_current_insn(cc_builder *b, int code)
     }
 }
 
+/* Called by cc_builder_flush to finish the current transition forcibly.
+   We look for the default arc (-1) of the current state and use that
+   insn to represent the current state.  We can assume parameters and
+   operands are set properly in the cc_builder. */
+static void finish_transition(cc_builder *b)
+{
+    int i = b->currentState;
+    SCM_ASSERT(i >= 0 && i < sizeof(stn)/sizeof(struct stn_arc[1]));
+    for (;; i++) {
+        if (stn[i].input < 0) {
+            fill_current_insn(b, stn[i].next);
+            break;
+        }
+        SCM_ASSERT(i < sizeof(stn)/sizeof(struct stn_arc[1]));
+    }
+}
 
 void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
                           int code, /* instruction code number */
@@ -683,8 +712,8 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
         goto restart;
     case NEXT:
         save_params(b, code, arg0, arg1, operand, info);
-        fill_current_insn(b, code);
         b->currentState = arc->next;
+        b->currentInsn = CC_BUILDER_BUFFER_TRANS;
         break;
     }
 }
