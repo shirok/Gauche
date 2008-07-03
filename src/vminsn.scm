@@ -110,7 +110,7 @@
                        [(2) (set! ,e (-> ,e up))]
                        [(1) (set! ,e (-> ,e up))]
                        [(0) (set! ,val (ENV-DATA ,e ,off)) (break)]
-                       [else (while (> (pre-- ,dep) 0) (set! ,e (-> ,e up)))
+                       [else (while (> (post-- ,dep) 0) (set! ,e (-> ,e up)))
                              (set! ,val (ENV-DATA ,e ,off)) (break)])
                      ,@body))]
      [('lref d o) `(let* ((,val (ENV-DATA ,(let loop ((d d))
