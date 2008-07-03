@@ -358,7 +358,7 @@
             ;; uses insn parameters.)
             [('define-insn-lref* insn nparams operand comb)
              (generate-lrefx insn 0 operand comb
-                             `((define-insn ,insn ,nparams ,operand ,comb)
+                             `((define-insn ,insn 2 ,operand ,comb)
                                ,@seed))]
             [('define-insn-lref+ insn nparams operand comb)
              (generate-lrefx insn nparams operand comb seed)]
