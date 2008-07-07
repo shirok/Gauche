@@ -85,7 +85,7 @@ struct ScmCompiledCodeRec {
  *       is NULL.
  *   *3) This info isn't set for the time being.
  *   *4) This IForm is a direct result of Pass1, i.e. non-optimized form.
- *       Pass2 scans it When IForm is inlined into the caller site.
+ *       Pass2 scans it when IForm is inlined into the caller site.
  */
 
 SCM_CLASS_DECL(Scm_CompiledCodeClass);
