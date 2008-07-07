@@ -367,7 +367,8 @@
            (inliner (and (vector? il) (cgen-literal il)))
            )
       (define (init-thunk)
-        (print "    SCM_COMPILED_CODE_CONST_INITIALIZER(")
+        (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
+                (ref value 'name))
         (format #t "            (ScmWord*)(~a), ~a,\n"
                 cvn (length cv))
         (format #t "            ~a, ~a, ~a, ~a, SCM_NIL, ~a,\n"
