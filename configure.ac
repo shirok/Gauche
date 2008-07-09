@@ -493,7 +493,7 @@ case $host in
     libgauche_version_link=no
     ;;
   mips-sgi-irix*)
-    if test "$CC" = gcc; then
+    if test "$GCC" = yes; then
       SHLIB_SO_CFLAGS="-fPIC"
     else
       SHLIB_SO_CFLAGS="-KPIC"
@@ -504,7 +504,7 @@ case $host in
     SHLIB_OK=ok
     ;;
   *solaris*)
-    if test "$CC" = gcc; then
+    if test "$GCC" = yes; then
       SHLIB_SO_CFLAGS="-fPIC"
       SHLIB_SO_LDFLAGS="-shared -o"
     else
@@ -516,7 +516,7 @@ case $host in
     SHLIB_OK=ok
     ;;
   *hp*)
-    if test "$CC" = gcc; then
+    if test "$GCC" = yes; then
       SHLIB_SO_CFLAGS="-fPIC"
       SHLIB_SO_LDFLAGS="-shared -o"
     else
