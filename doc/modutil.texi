@@ -11036,7 +11036,7 @@ Same as @code{srl:parameterizable} returning a string and without the
 overhead of parsing parameters.  This function interface may change in
 future versions of the library.
 @c JP
-@code{srl:parameterizable}と同様文字列を返し、パラメータ解析のオーバヘッ
+@code{srl:parameterizable}と同様ですが、文字列を返し、パラメータ解析のオーバヘッ
 ドはありません。この関数のインタフェースはこのライブラリの将来のバージョ
 ンでは変更されるかもしれません。
 @c COMMON
@@ -11044,9 +11044,17 @@ future versions of the library.
 
 @defun srl:display-sxml sxml->obj port-or-filename cdata-section-elements indent method ns-prefix-assig omit-xml-declaration? standalone version
 
-@code{srl:parameterizable}と同様@var{port-or-filename}に書きこみ、パラ
-メータ解析のオーバーヘッドはありません。この関数のインタフェースはこの
+@c EN
+Same as @code{srl:parameterizable} writing output to
+@var{port-or-filename} and without the overhead of parsing parameters. 
+This function interface may change in
+future versions of the library.
+@c JP
+@code{srl:parameterizable}と同様ですが、結果を
+@var{port-or-filename}に書き出します。パラメータ解析のオーバーヘッドはありません。
+この関数のインタフェースはこの
 ライブラリの将来のバージョンでは変更されるかもしれません。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
