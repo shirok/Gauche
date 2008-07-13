@@ -338,7 +338,10 @@
   (call "Scm_CompiledCodeToList"))
 (define-cproc vm-insn-build (insn)
   (expr <ulong> (cast u_long (Scm_VMInsnBuild insn))))
-
+(define-cproc vm-insn-code->name (opcode::<uint>)
+  (expr <top> (SCM_INTERN (Scm_VMInsnName opcode))))
+(define-cproc vm-insn-name->code (insn-name)
+  (call <int> "Scm_VMInsnNameToCode"))
 
 ;; Eval situation flag (for eval-when constrcut)
 (define-cproc vm-eval-situation (&optional val)

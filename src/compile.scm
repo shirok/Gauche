@@ -127,6 +127,8 @@
   )
 
 ;; Define constants for VM instructions.
+;; The 'eval-when' trick is to let the host compiler (that is compiling this
+;; compiler) know those constants.
 (eval-when (:compile-toplevel)
   (use gauche.vm.insn)
   (define-macro (define-insn-constants)
@@ -136,7 +138,8 @@
       `(begin
          ,@(map (lambda (n&c) `(define-constant ,(car n&c) ,(cdr n&c)))
                 name&codes)
-         (define-constant .insn-alist. ',name&codes))))
+         (define-constant .insn-alist. ',name&codes)
+         )))
   (define-insn-constants)
   )
 
@@ -573,8 +576,11 @@
    optarg           ; 0 or 1, # of optional arg
    lvars            ; list of lvars
    body             ; IForm for the body
-   flag             ; Currently only the following flag is supported:
-                    ;   'inlinded: bound to inlinable procedure
+   flag             ; Marks some special state of this node.
+                    ;   'dissolved: indicates that this lambda has been
+                    ;               inline expanded.
+                    ;   <vector>  : indicates that this lambda is the one
+                    ;               declared as inlinable (by define-inline).
    ;; The following slot(s) is/are used temporarily during pass2, and
    ;; need not be saved when packed.
    (calls '())      ; list of call sites
@@ -1175,6 +1181,83 @@
   (cond ((assq lvar lv-alist) => (lambda (p) (cdr p)))
         (else lvar)))
 
+;; Translate instruction code embedded in $ASM node.  This isn't directly
+;; used within the compiler, but called from the pre-compiler (gencomp).
+;; This is necessary to compile gauche core (compile.scm, scmlib.scm, ...)
+;; after the instruction set has been changed.
+;; SRC is a packed iform, TARGET-INSN-ALIST is a list of (insn-name . insn)
+;; of the _target_ VM.  Returns translated packed iform.  We don't need
+;; speed here, so we keep it simple.
+(define (translate-packed-iform src target-insn-alist)
+  (define (rec iform)
+    (case/unquote
+     (iform-tag iform)
+     [($DEFINE)
+      ($define ($*-src iform) ($define-flags iform) ($define-id iform)
+               (rec ($define-expr iform)))]
+     [($LREF) iform]
+     [($LSET) ($lset ($lset-lvar iform) (rec ($lset-expr iform)))]
+     [($GREF) iform]
+     [($GSET) ($gset ($gset-id iform) (rec ($gset-expr iform)))]
+     [($CONST) iform]
+     [($IF)   ($if ($*-src iform)
+                   (rec ($if-test iform))
+                   (rec ($if-then iform))
+                   (rec ($if-else iform)))]
+     [($LET)  ($let ($*-src iform) ($let-type iform) ($let-lvars iform)
+                    (imap rec ($let-inits iform))
+                    (rec ($let-body iform)))]
+     [($RECEIVE) ($receive ($*-src iform)
+                           ($receive-reqargs iform) ($receive-optarg iform)
+                           ($receive-lvars iform) (rec ($receive-expr iform))
+                           (rec ($receive-body iform)))]
+     [($LAMBDA) ($lambda ($*-src iform) ($lambda-name iform)
+                         ($lambda-reqargs iform) ($lambda-optarg iform)
+                         ($lambda-lvars iform)
+                         (rec ($lambda-body iform))
+                         ($lambda-flag iform))]
+     [($LABEL)  (error "[compiler internal] $LABEL node shouldn't appear \
+                        in the packed IForm")]
+     [($SEQ)    ($seq (imap rec ($seq-body iform)))]
+     [($CALL)   ($call ($*-src iform)
+                       (rec ($call-proc iform))
+                       (imap rec ($call-args iform))
+                       #f)]
+     [($ASM)    (let* ((host-insn ($asm-insn iform))
+                       (target-insn-info (assq (insn-name (car host-insn))
+                                               target-insn-alist)))
+                  (unless target-insn-info
+                    (errorf "[compiler internal] insn ~s doesn't exist \
+                             in the target VM" (insn-name (car host-insn))))
+                  ($asm ($*-src iform)
+                        (cons (ref (cdr target-insn-info)'code)
+                              (cdr host-insn))
+                        (imap rec ($asm-args iform))))]
+     [($PROMISE) ($promise ($*-src iform) (rec ($promise-expr iform)))]
+     [($CONS)    ($cons ($*-src iform)
+                        (rec ($*-arg0 iform))
+                        (rec ($*-arg1 iform)))]
+     [($APPEND)  ($append ($*-src iform)
+                          (rec ($*-arg0 iform))
+                          (rec ($*-arg1 iform)))]
+     [($VECTOR)  ($vector ($*-src iform) (imap rec ($*-args iform)))]
+     [($LIST->VECTOR) ($list->vector ($*-src iform) (rec ($*-arg0 iform)))]
+     [($LIST)   ($list ($*-src iform) (imap rec ($*-args iform)))]
+     [($LIST*)  ($list* ($*-src iform) (imap rec ($*-args iform)))]
+     [($MEMV)   ($memv ($*-src iform)
+                       (rec ($*-arg0 iform))
+                       (rec ($*-arg1 iform)))]
+     [($EQ?)    ($eq? ($*-src iform)
+                      (rec ($*-arg0 iform))
+                      (rec ($*-arg1 iform)))]
+     [($EQV?)   ($eqv? ($*-src iform)
+                       (rec ($*-arg0 iform))
+                       (rec ($*-arg1 iform)))]
+     [($IT) ($it)]
+     [else iform]))
+  
+  (pack-iform (rec (unpack-iform src))))
+
 ;; An aux proc called during pass 2 to determine free variables of
 ;; a closure.   Bounds is a list of lvars that are bound in this scope
 ;; (thus can't be free).
@@ -1738,34 +1821,33 @@
      (error "syntax-error: malformed define-inline:" form))))
 
 (define (pass1/define-inline form name formals body cenv)
+  ;; We need to put packed form of $lambda node into the $lambda node
+  ;; itself, which seems to lead to a circular reference, something
+  ;; the current literal dumper can't handle well.  In fact, we don't
+  ;; really need a complete circle---in $lambda's flag slot, we want
+  ;; to find a packed IForm that yields the same $lambda node when unpacked,
+  ;; but the latter $lambda node doesn't need to have a packed IForm
+  ;; in it's flag slot, since that $lambda node is to be inline expanded
+  ;; and dissapear.  So, we first build a $lambda node, pack it,
+  ;; then build another $lambda node which include the packed form of
+  ;; the first $lambda node.
   (let* ((p1 (pass1/lambda form formals body
-                           (cenv-add-name cenv (variable-name name)) 'inlined))
-         (module  (cenv-module cenv))
-         (dummy-proc (lambda _ (undefined)))
+                           (cenv-add-name cenv (variable-name name))
+                           #f))
          (packed (pack-iform p1))
-         (lv (make-lvar name)))
-    ;; record inliner function for compiler
+         (module  (cenv-module cenv))
+         (p2 (pass1/lambda form formals body
+                           (cenv-add-name cenv (variable-name name))
+                           packed))
+         (dummy-proc (lambda _ (undefined))))
+    ;; record inliner function for compiler.  this is used only when
+    ;; the procedure needs to be inlined in the same compiler unit.
     (%insert-binding module name dummy-proc)
     (set! (%procedure-inliner dummy-proc) (pass1/inliner-procedure packed))
-    ;; for execution time, the required information is recorded in
-    ;; the compiled-code.  This should be clean up later, but it serves
-    ;; its purpose for the time being.
-    ($define form '()
-             (make-identifier (unwrap-syntax name) module '())
-             ($let form 'let (list lv) (list p1)
-                   ($seq
-                    (list
-                     ($call form
-                            ($call form
-                                   ($gref setter.)
-                                   (list
-                                    ($gref (make-identifier '%procedure-inliner
-                                                            (find-module 'gauche.internal)
-                                                            '()))))
-                            (list
-                             ($lref lv)
-                             ($const packed)))
-                     ($lref lv)))))))
+    ;; define the procedure normally.  the packed form of p1 is included
+    ;; in p2, which will eventually be a part of ScmCompiledCode, and
+    ;; when executed, it'll be passed to ScmProcedure's inliner field.
+    ($define form '() (make-identifier (unwrap-syntax name) module '()) p2)))
 
 (define (pass1/inliner-procedure ivec)
   (lambda (form cenv)
@@ -3301,8 +3383,16 @@
           (pass3/if-numcmp iform (car args) (cadr args)
                            BNLE ($*-src test) ccb renv ctx))
          ((eqv? code NUMLT2)
-          (pass3/if-numcmp iform (car args) (cadr args)
-                           BNLT ($*-src test) ccb renv ctx))
+          (cond
+           [(and (has-tag? (car args) $LREF)
+                 (receive (depth offset)
+                     (renv-lookup renv ($lref-lvar (car args)))
+                   (and (zero? depth) (zero? offset))))
+            (let1 depth (pass3/rec (cadr args) ccb renv (normal-context ctx))
+              (pass3/if-final iform #f LREF0-BNLT 0 depth ($*-src test)
+                              ccb renv ctx))]
+           [else (pass3/if-numcmp iform (car args) (cadr args)
+                                  BNLT ($*-src test) ccb renv ctx)]))
          ((eqv? code NUMGE2)
           (pass3/if-numcmp iform (car args) (cadr args)
                            BNGE ($*-src test) ccb renv ctx))
@@ -3569,7 +3659,9 @@
          (make-compiled-code-builder ($lambda-reqargs iform)
                                      ($lambda-optarg iform)
                                      ($lambda-name iform)
-                                     ccb #f)
+                                     ccb  ; parent
+                                     (and (vector? ($lambda-flag iform))
+                                          ($lambda-flag iform)))
          (if (null? ($lambda-lvars iform))
            renv
            (cons ($lambda-lvars iform) renv))
