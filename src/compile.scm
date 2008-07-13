@@ -3383,16 +3383,8 @@
           (pass3/if-numcmp iform (car args) (cadr args)
                            BNLE ($*-src test) ccb renv ctx))
          ((eqv? code NUMLT2)
-          (cond
-           [(and (has-tag? (car args) $LREF)
-                 (receive (depth offset)
-                     (renv-lookup renv ($lref-lvar (car args)))
-                   (and (zero? depth) (zero? offset))))
-            (let1 depth (pass3/rec (cadr args) ccb renv (normal-context ctx))
-              (pass3/if-final iform #f LREF0-BNLT 0 depth ($*-src test)
-                              ccb renv ctx))]
-           [else (pass3/if-numcmp iform (car args) (cadr args)
-                                  BNLT ($*-src test) ccb renv ctx)]))
+          (pass3/if-numcmp iform (car args) (cadr args)
+                           BNLT ($*-src test) ccb renv ctx))
          ((eqv? code NUMGE2)
           (pass3/if-numcmp iform (car args) (cadr args)
                            BNGE ($*-src test) ccb renv ctx))
