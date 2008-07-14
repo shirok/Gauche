@@ -1,3 +1,9 @@
+2008-07-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm ($vm-err): Avoid expanding CISE into VM_ERR macro,
+	  for some C compilers choke on #line directives between macro
+	  arguments.
+
 2008-07-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1/define-inline),

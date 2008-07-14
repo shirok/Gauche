@@ -128,13 +128,12 @@
 
 ;;
 ;; ($vm-err fmt args ...)
-;;   Report error.
+;;   Report error.  This used to be a call to VM_ERR macro, but some
+;;   compilers choke when #line directive is inserted between the macro
+;;   arguments.
 ;;
-(define-cise-stmt $vm-err env
-  [(_ . args)
-   `("VM_ERR(("
-     ,@(intersperse ", " (map (cut cise-render-rec <> 'expr env) args))
-     "));")])
+(define-cise-stmt $vm-err
+  [(_ . args) `(Scm_Error ,@args)])
 
 ;;
 ;; ($obsoleted name)
@@ -1290,5 +1289,4 @@
     (VM-ASSERT (SCM_PAIRP (-> vm handlers)))
     (set! (-> vm handlers) (SCM_CDR (-> vm handlers)))
     NEXT))
-
 
