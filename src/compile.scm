@@ -3457,13 +3457,34 @@
                         info ccb renv ctx))))
 
 (define (pass3/if-numcmp iform x y insn info ccb renv ctx)
-  (let1 depth (imax (pass3/rec x ccb renv (normal-context ctx)) 1)
-    (compiled-code-emit0! ccb PUSH)
-    (pass3/if-final iform #f insn 0
-                    (imax (pass3/rec y ccb renv 'normal/top) depth)
-                    info ccb renv ctx)))
+  (define .fwd. `((,BNLT . ,LREF-VAL0-BNLT) (,BNLE . ,LREF-VAL0-BNLE)
+                  (,BNGT . ,LREF-VAL0-BNGT) (,BNGE . ,LREF-VAL0-BNGE)))
+  (define .rev. `((,BNLT . ,LREF-VAL0-BNGT) (,BNLE . ,LREF-VAL0-BNGE)
+                  (,BNGT . ,LREF-VAL0-BNLT) (,BNGE . ,LREF-VAL0-BNLE)))
+  (or (and (has-tag? x $LREF)
+           (pass3/if-final iform #f (cdr (assv insn .fwd.))
+                           (pass3/if-numcmp-lrefarg x renv)
+                           (pass3/rec y ccb renv (normal-context ctx))
+                           info ccb renv ctx))
+      (and (has-tag? y $LREF)
+           (pass3/if-final iform #f (cdr (assv insn .rev.))
+                           (pass3/if-numcmp-lrefarg y renv)
+                           (pass3/rec x ccb renv (normal-context ctx))
+                           info ccb renv ctx))
+      (let1 depth (imax (pass3/rec x ccb renv (normal-context ctx)) 1)
+        (compiled-code-emit0! ccb PUSH)
+        (pass3/if-final iform #f insn 0
+                        (imax (pass3/rec y ccb renv 'normal/top) depth)
+                        info ccb renv ctx))))
 
-;; Final stage of emitting branch instruction.
+;; helper fn
+(define (pass3/if-numcmp-lrefarg lref renv)
+  (receive (dep off) (renv-lookup renv ($lref-lvar lref))
+    (+ (ash off 10) dep)))
+
+           
+;; pass3/if-final: Final stage of emitting branch instruction.
+;;
 ;; Optimization
 ;;   - tail context
 ;;      - if insn is (BF)
@@ -3473,6 +3494,23 @@
 ;;   - otherwise
 ;;      - else part is ($IT)  => we can omit a jump after then clause
 ;;      - otherwise, merge the control after this node.
+;;
+;; We have many variations of branch instrucitons, and the combination
+;; of arguments reflects them.
+;;
+;;   iform - original IForm of this if expression.
+;;   test - the iform for the test expression.  the result of this expression
+;;          would trigger the conditional branch.  This can be #f when we use
+;;          operate-and-branch instructions such as BNLT.
+;;   code - an instruciton code.
+;;   arg0/opr - If the instruction is one of those that take an extra operand
+;;          (like BNEQC), this is the operand.  Otherwise, this is the ARG0
+;;          of the instruction.
+;;   depth - calculated maximum stack depth at this point.
+;;   info  - source info
+;;   ccb   - code buffer
+;;   renv  - runtime env
+;;   ctx   - compile context
 
 (define-constant .branch-insn-extra-operand.
   `(,BNEQC ,BNEQVC))

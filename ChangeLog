@@ -1,3 +1,13 @@
+2008-07-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.svm ($insn-body), src/geninsn (insn-alist):
+	  Allow insn definition to retrieve other insn body.
+	
+	* src/vminsn.scm ($arg-source,  LREF-VAL0-BNxx),
+	  src/compile.scm (pass3/if-numcmp): Emit special instructions for
+	  BNxx when one of the arguments are LREF.  This saves one stack
+	  push/pop pair.
+
 2008-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm ($vm-err): Avoid expanding CISE into VM_ERR macro,

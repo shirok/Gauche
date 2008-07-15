@@ -127,6 +127,26 @@
   [(_ var . body) `($w/arg_ ,var pop ,body)])
 
 ;;
+;; ($arg-source src body ...)
+;;   Switch arg-source to SRC in the BODY
+;;
+(define-cise-stmt $arg-source           ; override arg-source
+  env
+  [(_ src . body)
+   (parameterize ((arg-source src))
+     (cise-render-rec `(begin ,@body) 'stmt env))])
+
+;;
+;; ($insn-body insn)
+;;   Returns the body of INSN.
+;;
+(define-cise-stmt $insn-body
+  [(_ insn-name)
+   (or (and-let* ([insn (assq-ref (insn-alist) insn-name)])
+         (ref insn'body))
+       (error "cannot take the body of the instruction:" insn-name))])
+
+;;
 ;; ($vm-err fmt args ...)
 ;;   Report error.  This used to be a call to VM_ERR macro, but some
 ;;   compilers choke when #line directive is inserted between the macro
@@ -193,15 +213,13 @@
 
 ;;
 ;; ($w/numcmp r op . body)
-;;   Compare stack top (popped) and VAL0 with OP, and places the result in r.
-;;   If arg-source is modified, it affects to the second argument; the first
-;;   arg is always popped.
+;;   Compare arg (default stack top) and VAL0 with OP, and places the result
+;;   in r.
 (define-cise-stmt $w/numcmp
   [(_ r op . body)
    (let ((x (gensym)) (y (gensym)))
-     `($w/argr ,y
-        (let* ((,x) (,r :: int))
-          (POP-ARG ,x)
+     `($w/argp ,x
+        (let* ((,y VAL0) (,r :: int))
           (cond [(and (SCM_INTP ,x) (SCM_INTP ,y))
                  (set! ,r (,op (cast |signed long| (cast intptr_t ,x))
                                (cast |signed long| (cast intptr_t ,y))))]
@@ -1289,4 +1307,19 @@
     (VM-ASSERT (SCM_PAIRP (-> vm handlers)))
     (set! (-> vm handlers) (SCM_CDR (-> vm handlers)))
     NEXT))
+
+
+;;
+;; Experimental
+;;
+
+;; Compare LREF(n,m) and VAL0 and branch.  This is not a simple combination
+;; of LREF + BNLT etc. (which would compare stack top and LREF).  These insns
+;; save one stack operation.  The compiler recognizes the pattern and
+;; emits these.  See pass3/if-numcmp.
+(define-insn LREF-VAL0-BNLT 2 addr #f ($arg-source lref ($insn-body BNLT)))
+(define-insn LREF-VAL0-BNLE 2 addr #f ($arg-source lref ($insn-body BNLE)))
+(define-insn LREF-VAL0-BNGT 2 addr #f ($arg-source lref ($insn-body BNGT)))
+(define-insn LREF-VAL0-BNGE 2 addr #f ($arg-source lref ($insn-body BNGE)))
+
 

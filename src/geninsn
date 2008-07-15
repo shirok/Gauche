@@ -119,7 +119,10 @@
 ;; These parameters are used by the cise expander defined in
 ;; vminsn.scm.
 (define result-type (make-parameter 'reg)) ;reg, push, call or ret
-(define arg-source (make-parameter #f)) ; #f, pop, reg, lref or (lref DEPTH OFFSET)
+(define arg-source (make-parameter #f))    ;#f, pop, reg, lref,
+                                           ;  or (lref DEPTH OFFSET)
+(define insn-alist (make-parameter '()))   ;target insn alist, used to
+                                           ;  communicate to cise expander.
 
 (define (construct-vmbody insns)
   (define (case-label insn)
@@ -177,10 +180,12 @@
         (and-let* [(comb (ref insn 'combined))]
           (do-combined insn comb))
         (warn "Don't know how to generate ~a" (ref insn 'name))))
+
   ;; main body of construct-vmbody
-  (dolist (insn insns)
-    (case-label insn)
-    (render1 insn)))
+  (parameterize ((insn-alist (map (lambda (i) (cons (ref i'name) i)) insns)))
+    (dolist (insn insns)
+      (case-label insn)
+      (render1 insn))))
 
 ;;==============================================================
 ;; Emit state-transition table for instruction combiner
