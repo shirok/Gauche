@@ -49,7 +49,8 @@ SCMFILES = srfi-0.scm \
        gauche/fileutil.scm gauche/miscutil.scm \
        gauche/regexp.scm gauche/process.scm gauche/signal.scm \
        gauche/numerical.scm gauche/let-opt.scm gauche/logical.scm \
-       gauche/vm/debugger.scm gauche/vm/insn.scm gauche/vm/profiler.scm \
+       gauche/vm/debugger.scm gauche/vm/insn-core.scm gauche/vm/insn.scm \
+       gauche/vm/profiler.scm \
        gauche/procedure.scm gauche/dictionary.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        gauche/parseopt.scm gauche/interactive.scm gauche/interactive/info.scm \

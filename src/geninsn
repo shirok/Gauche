@@ -42,6 +42,7 @@
 (use gauche.cgen.cise)
 (use gauche.parameter)
 (use gauche.sequence)
+(use gauche.vm.insn-core)
 (use gauche.mop.instance-pool)
 (use srfi-13)
 (use text.tr)
@@ -67,18 +68,6 @@
     ))
 
 ;; Instructon information
-(define-class <vm-insn-info> ()
-  ((name   :init-keyword :name)           ; name of insn (symbol)
-   (code   :init-keyword :code)           ; code of insn (integer)
-   (num-params :init-keyword :num-params) ; # of parameters
-   (operand-type :init-keyword :operand-type) ; operand type
-   (combined :init-keyword :combined)     ; combined insns
-   (body   :init-keyword :body)           ; body of the insn
-   ))
-
-(define-method write-object ((s <vm-insn-info>) out)
-  (format out "#<insn ~a>" (ref s 'name)))
-
 (define (find-insn name insns)
   (find (lambda (o) (eq? name (ref o 'name))) insns))
 
@@ -93,8 +82,12 @@
 
 (define (gen-gauche.vm.insn insns)
   (define (write-header out)
-    (call-with-input-file "../lib/gauche/vm/insn.scm.src"
-      (cut copy-port <> out)))
+    (format out ";; Generated from vminsn.scm.  DO NOT EDIT\n")
+    (write '(define-module gauche.vm.insn
+              (extend gauche.vm.insn-core)) out)
+    (newline out)
+    (write '(select-module gauche.vm.insn) out)
+    (newline out))
   (define (write-insn insn out)
     (format out ";; #x~3,'0x  ~a\n" (ref insn 'code) (ref insn 'name))
     (format out "(make <vm-insn-info> :name '~a :code ~a\n"
@@ -108,7 +101,8 @@
     (lambda (out)
       (write-header out)
       (for-each (cut write-insn <> out) insns)
-      (display "(provide \"gauche/vm/insn\")\n" out))
+      (write '(provide "gauche/vm/insn") out)
+      (newline out))
     :if-exists :supersede)
   )
 
@@ -373,45 +367,72 @@
         (file->sexp-list file)))
 
 ;;
+;; From S-expr of define-insns, create <vm-insn-info> instances
+;; and make necessary wiring.
+;;
+(define (populate-insn-info definsns)
+  (let1 insns (map-with-index
+               (lambda (count insn)
+                 (match insn
+                   [(_ name num-params operand-type . opts)
+                    (let-optionals* opts ((combined #f)
+                                          (body #f))
+                      (make <vm-insn-info>
+                        :name name :code count :num-params num-params
+                        :operand-type operand-type :combined combined
+                        :body body))]
+                   [else (errorf "unrecognized define-insn form: ~s" insn)]))
+               definsns)
+    ;; Set up insn relationships
+    (dolist (insn insns)
+      (and-let* ([comb (ref insn'combined)])
+        (define (wire suffix slot)
+          (let* ((basename (string->symbol
+                            (rxmatch->string (string->regexp #`"^(.*)-,suffix")
+                                             (x->string (ref insn'name)))))
+                 (baseinsn (find (lambda (i) (eq? (ref i 'name) basename))
+                                 insns)))
+            (set! (ref baseinsn slot) insn)
+            (set! (ref insn 'base-variant) baseinsn)))
+        
+        (case (car (last-pair comb))
+          [(PUSH) (wire "PUSH" 'push-variant)]
+          [(RET)  (wire "RET"  'ret-variant)])))
+    
+    insns))
+
+;;
 ;; Main
 ;;
 (define (main args)
   (parameterize ((cgen-current-unit *unit*))
-    
-    (cgen-extern "enum {")
-    (cgen-body "#ifdef DEFINSN")
-    (let1 insns
-        (map-with-index
-         (lambda (count insn)
-           (match insn
-             [(_ name num-params operand-type . opts)
-              (let-optionals* opts ((combined #f)
-                                    (body #f))
-                (cgen-extern #`"  ,(c-insn-name name),,")
-                (cgen-body (format "DEFINSN(~a, \"~a\", ~a, ~a)"
-                                   (c-insn-name name) name
-                                   num-params
-                                   (string-tr (x->string operand-type)
-                                              "a-z+-" "A-Z__")))
-                (make <vm-insn-info>
-                  :name name :code count :num-params num-params
-                  :operand-type operand-type :combined combined
-                  :body body))]
-             [else (errorf "unrecognized form: ~s" insn)]))
-         (reverse (parse-vminsn (get-optional (cdr args) "vminsn.scm"))))
+    (let1 insns ($ populate-insn-info $ reverse $ parse-vminsn
+                   $ get-optional (cdr args) "vminsn.scm")
 
+      ;; Generate insn names and DEFINSN macros
+      (cgen-extern "enum {")
+      (cgen-body "#ifdef DEFINSN")
+      (dolist (insn insns)
+        (cgen-extern #`"  ,(c-insn-name (ref insn 'name)),,")
+        (cgen-body (format "DEFINSN(~a, \"~a\", ~a, ~a)"
+                           (c-insn-name (ref insn 'name)) (ref insn 'name)
+                           (ref insn 'num-params)
+                           (string-tr (x->string (ref insn 'operand-type))
+                                      "a-z+-" "A-Z__"))))
       (cgen-extern "  SCM_VM_NUM_INSNS" "};")
       (cgen-body "#endif /*DEFINSN*/")
 
+      ;; Generate insn combination state table
       (cgen-body "#ifdef STATE_TABLE")
       (construct-state-table insns)
       (cgen-body "#endif /*STATE_TABLE*/")
 
+      ;; Generate vmloop body
       (cgen-body "#ifdef VMLOOP")
       (construct-vmbody insns)
       (cgen-body "#endif /*VMLOOP*/")
 
-      ;; Generating files
+      ;; Write files
       (cgen-emit-h (cgen-current-unit))
       (cgen-emit-c (cgen-current-unit))
       (gen-gauche.vm.insn insns)

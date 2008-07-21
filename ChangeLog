@@ -1,3 +1,12 @@
+2008-07-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/insn.scm.src, lib/gauche/vm/insn-core.scm: Removed
+	  the template file insn.scm.src and added a separate module
+	  insn-core.scm.  The generated insn.scm extends insn-core.  This
+	  is required since geninsn needs to refer to <vm-insn-info>, but
+	  gauche.vm.insn doesn't exist yet when geninsn is generating it.
+	* src/geninsn: changed accordingly.  
+
 2008-07-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.svm ($insn-body), src/geninsn (insn-alist):
