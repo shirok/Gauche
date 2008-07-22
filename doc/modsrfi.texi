@@ -16,22 +16,22 @@ of supported SRFIs.
 
 @c ----------------------------------------------------------------------
 @menu
-* Feature conditional::         
-* List library::                
-* Homogeneous vectors::         
-* A compatible let form with signatures and rest arguments::  
-* Feature-based program configuration language::  
-* Record types::                
-* Let-values::                  
-* String library::              
-* Character-set library::       
-* Time data types and procedures::  
-* Sources of random bits::      
-* Localization::                
-* A program argument processor::  
-* Eager comprehensions::        
-* Vector library::              
-* Requiring extensions::        
+* Feature conditional::         srfi-0
+* List library::                srfi-1
+* Homogeneous vectors::         srfi-4
+* A compatible let form with signatures and rest arguments::  srfi-5
+* Feature-based program configuration language::  srfi-7
+* Record types::                srfi-9
+* Let-values::                  srfi-11
+* String library::              srfi-13
+* Character-set library::       srfi-14
+* Time data types and procedures::  srfi-19
+* Sources of random bits::      srfi-27
+* Localization::                srfi-29
+* A program argument processor::  srfi-37
+* Eager comprehensions::        srfi-42
+* Vector library::              srfi-43
+* Requiring extensions::        srfi-55
 @end menu
 
 @node Feature conditional, List library, Library modules - SRFIs, Library modules - SRFIs

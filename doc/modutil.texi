@@ -5,62 +5,62 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* Binary I/O::                  
-* Packing Binary Data::         
-* Rational-less arithmetic::    
-* Database independent access layer::  
-* Generic DBM interface::       
-* File-system dbm::             
-* GDBM interface::              
-* NDBM interface::              
-* Original DBM interface::      
-* Filtering file content::      
-* Filesystem utilities::        
-* Mathematic constants::        
-* Mersenne-Twister random number generator::  
-* Parser combinators for PEG::  
-* RFC822 message parsing::      
-* Base64 encoding/decoding::    
-* HTTP cookie handling::        
-* FTP::                         
-* HMAC keyed-hashing::          
-* HTTP::                        
-* IP packets::                  
-* ICMP packets::                
-* MD5 message digest::          
-* MIME message handling::       
-* Quoted-printable encoding/decoding::  
-* SHA1 message digest::         
-* URI parsing and construction::  
-* SLIB::                        
-* Functional XML parser::       
-* SXML Query Language::         
-* Manipulating SXML structure::  
-* Serializing XML and HTML from SXML::  
-* CSV tables::                  
-* Calculate difference of text streams::  
-* Localized messages::          
-* Simple HTML document construction::  
-* Parsing input stream::        
-* Showing progress on text terminals::  
-* SQL parsing and construction::  
-* Transliterate characters::    
-* Lazy text construction::      
-* Combination library::         
-* Message digester framework::  
-* Determine isomorphism::       
-* The longest common subsequence::  
-* Additional list library::     
-* Pattern matching::            
-* Queue::                       
-* Red black tree::              
-* SLIB-compatible record type::  
-* Relation framework::          
-* Stream library::              
-* Trie::                        
-* Topological sort::            
-* CGI Utility::                 
-* CGI testing::                 
+* Binary I/O::                  binary.io
+* Packing Binary Data::         binary.pack
+* Rational-less arithmetic::    compat.norational
+* Database independent access layer::  dbi
+* Generic DBM interface::       dbm
+* File-system dbm::             dbm.fsdbm
+* GDBM interface::              dbm.gdbm
+* NDBM interface::              dbm.ndbm
+* Original DBM interface::      dbm.odbm
+* Filtering file content::      file.filter
+* Filesystem utilities::        file.util
+* Mathematic constants::        math.const
+* Mersenne-Twister random number generator::  math.mt-random
+* Parser combinators for PEG::  parser.peg
+* RFC822 message parsing::      rfc.822
+* Base64 encoding/decoding::    rfc.base64
+* HTTP cookie handling::        rfc.cookie
+* FTP::                         rfc.ftp
+* HMAC keyed-hashing::          rfc.hmac
+* HTTP::                        rfc.http
+* IP packets::                  rfc.ip
+* ICMP packets::                rfc.icmp
+* MD5 message digest::          rfc.md5
+* MIME message handling::       rfc.mime
+* Quoted-printable encoding/decoding::  rfc.quoted-printable
+* SHA1 message digest::         rfc.sha1
+* URI parsing and construction::  rfc.uri
+* SLIB::                        slib
+* Functional XML parser::       sxml.ssax
+* SXML Query Language::         sxml.sxpath
+* Manipulating SXML structure::  sxml.tools
+* Serializing XML and HTML from SXML::  sxml.serializer
+* CSV tables::                  text.csv
+* Calculate difference of text streams::  text.diff
+* Localized messages::          text.gettext
+* Simple HTML document construction::  text.html-lite
+* Parsing input stream::        text.parse
+* Showing progress on text terminals::  text.progress
+* SQL parsing and construction::  text.sql
+* Transliterate characters::    text.tr
+* Lazy text construction::      text.tree
+* Combination library::         util.combinations
+* Message digester framework::  util.digest
+* Determine isomorphism::       util.isomorph
+* The longest common subsequence::  util.lcs
+* Additional list library::     util.list
+* Pattern matching::            util.match
+* Queue::                       util.queue
+* Red black tree::              util.rbtree
+* SLIB-compatible record type::  util.record
+* Relation framework::          util.relation
+* Stream library::              util.stream
+* Trie::                        util.trie
+* Topological sort::            util.toposort
+* CGI Utility::                 www.cgi
+* CGI testing::                 www.cgi.test
 @end menu
 
 @c ----------------------------------------------------------------------

@@ -4,33 +4,33 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* Arrays::                      
-* Character code conversion::   
-* Collection framework::        
-* Configuration parameters::    
-* Dictionary framework::        
-* Low-level file operations::   
-* Hooks::                       
-* Interactive session::         
-* Listener::                    
-* User-level logging::          
-* Singleton::                   
-* Slot with validator::         
-* Networking::                  
-* Parameters::                  
-* Parsing command-line options::  
-* High Level Process Interface::  
-* Reloading modules::           
-* Simple dispatcher::           
-* Sequence framework::          
-* Syslog::                      
-* Termios::                     
-* Unit testing::                
-* Threads::                     
-* Measure timings::             
-* Uniform vectors::             
-* Comparing version numbers::   
-* Virtual ports::               
+* Arrays::                      gauche.array
+* Character code conversion::   gauche.charconv
+* Collection framework::        gauche.collection
+* Configuration parameters::    gauche.config
+* Dictionary framework::        gauche.dictionary
+* Low-level file operations::   gauche.fcntl
+* Hooks::                       gauche.hook
+* Interactive session::         gauche.interactive
+* Listener::                    gauche.listener
+* User-level logging::          gauche.logger
+* Singleton::                   gauche.mop.singleton
+* Slot with validator::         gauche.mop.validator
+* Networking::                  gauche.net
+* Parameters::                  gauche.parameter
+* Parsing command-line options::  gauche.parseopt
+* High Level Process Interface::  gauche.process
+* Reloading modules::           gauche.reload
+* Simple dispatcher::           gauche.selector
+* Sequence framework::          gauche.sequence
+* Syslog::                      gauche.syslog
+* Termios::                     gauche.termios
+* Unit testing::                gauche.test
+* Threads::                     gauche.threads
+* Measure timings::             gauche.time
+* Uniform vectors::             gauche.uvector
+* Comparing version numbers::   gauche.version
+* Virtual ports::               gauche.vport
 @end menu
 
 @node Arrays, Character code conversion, Library modules - Gauche extensions, Library modules - Gauche extensions
@@ -6132,26 +6132,192 @@ SLIB は、@code{getopt} 互換のユーティリティを持っています。
 @c COMMON
 @end deftp
 
-@defmac parse-options args (option-clause @dots{})
+@subheading High-level API
+
+@defmac let-args args (bind-spec @dots{} [. rest]) body @dots{}
 @c EN
-@var{args} is an expression that contains a list of command-line arguments.
-This macro scans the command-line options (an argument that begins with
-`@code{-}') and processes it as specified in @var{option-clause}s, then
-returns the remaining arguments.
+This macro captures the most common pattern of argument processing.
+It takes a list of arguments, @var{args}, and scans it to find
+Unix-style command-line options and binds their values to local
+variables according to @var{bind-spec}, then executes @var{body} @dots{}.
 @c JP
-@var{args} は、コマンドライン引数のリストを含む式です。
-このマクロは、コマンドラインオプション(`@code{-}' で始まる引数)をスキャンし、
-@var{option-clause} の指定に従って処理し、残りの引数を返します。
+このマクロはコマンドライン引数処理の最も典型的なパターンを扱います。
+引数のリスト@var{args}を取り、@var{bind-spec}で示される仕様をもとに
+コマンドラインオプションを探してその値を変数に束縛し、それから
+@var{body} @dots{}を実行します。
+@c COMMON
+
+@c EN
+Let's look at a simple example first, which gives you a good idea of
+what this form does.
+@c JP
+まず簡単な例を見てみましょう。このフォームが何をするか、だいたい想像できるのでは
+ないかと思います。
+@c COMMON
+
+@example
+(define (main args)
+  (let-args (cdr args)
+      ((verbose     "v|verbose")
+       (outfile     "o|outfile=s")
+       (debug-level "d|debug-level=i" 0)
+       (help        "h|help" => (cut show-help (car args)))
+       . restargs
+      )
+    ....))
+
+(define (show-help progname)
+  ...)
+@end example
+
+@c EN
+The local variable @var{verbose} will be bound to @code{#t} if
+a command-line argument @code{-v} or @code{--verbose} is given, 
+and to @code{#f} otherwise.
+The variable @var{output} is specified to take one option argument;
+if the command-line arguments are given like @code{-o out.txt}, 
+@var{outfile} receives
+@code{"out.txt"}.  The @var{debug-level} one is similar, but the
+option argument is coerced to an integer, and also it has default
+value 0 when the option isn't given.  The @var{help} clause
+invokes an action rather than merely binding the value.
+@c JP
+ローカル変数@var{verbose}は、コマンドラインオプション@code{-v}や@code{--verbose}
+が与えられれば@code{#t}に、そうでなければ@code{#f}に束縛されます。
+変数@var{output}はオプション引数を取ると指定されており、例えば
+@code{-o out.txt}のようにコマンドラインに指定されれば値@code{"out.txt"}が
+束縛されます。@var{debug-level}も似ていますが、オプション引数は
+整数へと変換され、またデフォルト値0が指定されています。
+@var{help}節では、単に値を束縛するだけでなくアクションを起動しています。
+@c COMMON
+
+@c EN
+(Note: Currently @code{let-args} does not distinguish so-called 
+short and long options, e.g. @code{-v} and @code{--v} have the same
+effect, so as @code{-verbose} and @code{--verbose}.  In future we
+may add an option to make it compatible with @code{getopt_long(3)}.)
+@c JP
+(註: 今のところ@code{let-args}は@code{-v}と@code{--v}を区別しません。
+@code{-verbose}と@code{--verbose}も同様です。将来、@code{getopt_long(3)}と
+互換になるオプションを追加するかもしれません。)
+@c COMMON
+
+@c EN
+The final @var{restargs} variable after the dot receives a list of
+non-optional command-line arguments.
+@c JP
+最後のドットの後の@var{restargs}は、オプションでないコマンドライン引数のリストを
+受け取ります。
+@c COMMON
+
+@c EN
+Let's look at @var{bind-spec} in detail.  
+It must be one of the following forms.
+@c JP
+@var{bind-spec}について詳しく見てみましょう。
+@var{bind-spec}は次のいずれかの形式でなければなりません。
+@c COMMON
+
+@example
+1. (@var{var} @var{option-spec})
+2. (@var{var} @var{option-spec} @var{default})
+3. (@var{var} @var{option-spec} => @var{callback})
+4. (@var{var} @var{option-spec} @var{default} => @var{callback})
+
+5. (else @var{formals} @var{form} ...)
+@end example
+
+@c EN
+A list of command-line arguments passed to @var{args} are parsed
+according to @var{option-spec}s.  If the corresponding option
+is given, a variable @var{var} is bound to a value as follows:
+
+@example
+(a) If the @var{bind-spec} is 1. or 2., then
+  (a1) If @var{option-spec} doesn't require an argument, then @code{#t}:
+  (a2) If @var{option-spec} requires one argument, then the value of
+       the argument:
+  (a3) If @var{option-spec} requires more than one argument,
+       the list of the values of the arguments.
+(b) If the @var{bind-spec} is 3. or 4., then @var{callback} is called with
+  the value(s) of arguments, and its return value.
+@end example
+@c JP
+コマンドライン引数のリストが@var{args}に渡されると、それが
+@var{option-spec}に基づいてパーズされます。該当するオプションが見付かれば、
+変数@var{var}が次に述べる値に束縛されます：
+
+@example
+(a) @var{bind-spec}の形式が上の1. または2. の場合：
+  (a1) @var{option-spec}が引数を要求しない場合は、@code{#t}。
+  (a2) @var{option-spec}がひとつの引数を要求する場合は、その引数の値。
+  (a3) @var{option-spec}がそれ以上の引数を要求する場合は、引数の値のリスト。
+(b) @var{bind-spec}の形式が上の3. または4. の場合、@var{callback}を
+  引数の値を伴って呼び出し、その戻り値。
+@end example
+@c COMMON
+
+@c EN
+We'll explain the details of @var{option-spec} later.
+@c JP
+@var{option-spec}の詳細については後で説明します。
+@c COMMON
+
+@c EN
+As a special case, @var{var} can be @code{#f}, in which case
+the value is ignored.  It is only useful for side effects in
+@var{callback}.
+@c JP
+特別な場合として、@var{var}を@code{#f}とすることもできます。
+その場合、値は無視されます。
+@var{callback}での副作用だけに関心がある場合に使えるでしょう。
+@c COMMON
+
+@c EN
+If the corresponding option is not given in @var{args},
+@var{var} is bound to @var{default} if it is given, or
+@code{#f} otherwise.
+@c JP
+対応するオプションが@var{args}に与えられなかった場合、
+@var{var}は@var{default}が与えられていればその値に、
+そうでなければ@code{#f}に束縛されます。
+@c COMMON
+
+@c EN
+The last @var{bind-spec} may be the form 5. in which case
+it is treated in the same way as @code{else} clause
+of @code{parse-options}.
+@c JP
+最後の@var{bind-spec}は5.の形式であっても良く、
+その場合は@code{parse-options}の@code{else}節と同様に処理されます。
+@c COMMON
+
+@c EN
+The @var{bind-spec} list can be an improper list, whose last cdr is
+a symbol.  In which case, a list of the rest of the command-line arguments
+is bound to the variable named by the symbol.
+@c JP
+束縛リストは、最後のcdrにシンボルを持つ不完全なリストであっても良く、
+その場合はコマンドライン引数の残りのリストがその変数にと束縛されます。
+@c COMMON
+
+@c EN
+Note that the @var{default}, @var{callback}, and forms in @code{else}
+clause is evaluated outside of the scope of binding of @var{var}s
+(as the name @code{let-args} implies).
+@c JP
+@var{default}、@var{callback}、@code{else}節のフォーム等は
+@var{var}の束縛の外側のスコープで評価されることに注意して下さい。
 @c COMMON
 
 @c EN
 Unlike typical @code{getopt} or @code{getopt_long} implementation in C,
-@code{parse-options} does not permute the given command-line arguments.
+@code{let-args} does not permute the given command-line arguments.
 It stops parsing when it encounters a non-option argument (argument without
 starting with a minus sign).
 @c JP
 C における典型的な @code{getopt} や @code{getopt_long} の実装とは異なり、
-@code{parse-options} は与えられたコマンドライン引数の順番を変えません。
+@code{let-args} は与えられたコマンドライン引数の順番を変えません。
 オプションでない引数(ハイフンで始まらない引数)に遭遇した時点でパースを
 中止します。
 @c COMMON
@@ -6159,16 +6325,22 @@ C における典型的な @code{getopt} や @code{getopt_long} の実装とは異なり、
 @c EN
 If the parser encounters an argument with only two minus signs `@code{--}',
 it stops argument parsing and returns a list of arguments after `@code{--}'.
-
-Each @var{option-clause} is consisted by a pair of @var{option-spec}
-and its action.
 @c JP
 パーサは、ハイフン2つのみの引数 `@code{--}' に遭遇すると、引数パーシングを
 中止して`@code{--}' の後の引数のリストを返します。
-
-それぞれの @var{option-clause} は、@var{option-spec} とそのアクションのペアで
-構成されます。
 @c COMMON
+
+
+@c EN
+After all the bindings is done, @var{body} @dots{} are evaluated.
+@var{Body} may began with internal define forms.
+@c JP
+全ての束縛が終了した後、@var{body} @dots{} が評価されます。
+@var{body}は内部defineで始まっていても構いません。
+@c COMMON
+@end defmac
+
+@subheading Option spec
 
 @c EN
 @var{option-spec} is a string that specifies the name of the option and
@@ -6316,11 +6488,36 @@ command line arguments match an option spec @code{"prefix=s"}.
 --prefix=/home/shiro
 @end example
 
+
+@subheading Low-level API
+
+The followings are lower-level API used to build @code{let-args}
+macro.  
+
+
+@defmac parse-options args (option-clause @dots{})
 @c EN
+@var{args} is an expression that contains a list of command-line arguments.
+This macro scans the command-line options (an argument that begins with
+`@code{-}') and processes it as specified in @var{option-clause}s, then
+returns the remaining arguments.
+@c JP
+@var{args} は、コマンドライン引数のリストを含む式です。
+このマクロは、コマンドラインオプション(`@code{-}' で始まる引数)をスキャンし、
+@var{option-clause} の指定に従って処理し、残りの引数を返します。
+@c COMMON
+
+@c EN
+Each @var{option-clause} is consisted by a pair of @var{option-spec}
+and its action.
+
 If a given command-line option matches one of @var{option-spec}, then
 the associated action is evaluated.  An action can be one of the
 following forms.
 @c JP
+それぞれの @var{option-clause} は、@var{option-spec} とそのアクションのペアで
+構成されます。
+
 与えられたコマンドラインオプションが @var{option-spec} の一つにマッチすると、
 関連付けられたアクションが評価されます。アクションは以下のフォームの一つです。
 @c COMMON
@@ -6416,130 +6613,6 @@ and continues parsing:
      (continue args))))
 @end example
 
-@end defmac
-
-@defmac let-args args (bind-spec @dots{} [. rest]) body @dots{}
-@c EN
-This macro wraps @code{parse-options} to make it look more
-like ordinary Scheme construct.
-For example, a simple script can be written as follows:
-@c JP
-このマクロは@code{parse-options}のラッパーで、
-より通常のScheme構文に近い形式を提供します。
-例えば、簡単なスクリプトが次のように書けるでしょう。
-@c COMMON
-
-@example
-(define (main args)
-  (let-args (cdr args)
-      ((quiet   "q|quiet" #t)
-       (verbose "v|verbose" #f)
-       (outfile "o|outfile=s")
-       (help    "h|help" => (cut show-help (car args)))
-      )
-    ....))
-
-(define (show-help progname)
-  ...)
-@end example
-
-@c EN
-@var{Bind-spec} must be one of the following forms.
-@c JP
-@var{Bind-spec}は次のいずれかの形式でなければなりません。
-@c COMMON
-
-@example
-1. (@var{var} @var{option-spec})
-2. (@var{var} @var{option-spec} @var{default})
-3. (@var{var} @var{option-spec} => @var{callback})
-4. (@var{var} @var{option-spec} @var{default} => @var{callback})
-
-5. (else @var{formals} @var{form} ...)
-@end example
-
-@c EN
-A list of command-line arguments passed to @var{args} are parsed
-according to @var{option-spec}s.  If the corresponding option
-is given, a variable @var{var} is bound to a value as follows:
-@example
-(a) If the @var{bind-spec} is 1. or 2., then
-  (a1) If @var{option-spec} doesn't require an argument, then @code{#t}:
-  (a2) If @var{option-spec} requires one argument, then the value of
-       the argument:
-  (a3) If @var{option-spec} requires more than one argument,
-       the list of the values of the arguments.
-(b) If the @var{bind-spec} is 3. or 4., then @var{callback} is called with
-  the value(s) of arguments, and its return value.
-@end example
-@c JP
-コマンドライン引数のリストが@var{args}に渡されると、それが
-@var{option-spec}に基づいてパーズされます。該当するオプションが見付かれば、
-変数@var{var}が次に述べる値に束縛されます：
-@example
-(a) @var{bind-spec}の形式が上の1. または2. の場合：
-  (a1) @var{option-spec}が引数を要求しない場合は、@code{#t}。
-  (a2) @var{option-spec}がひとつの引数を要求する場合は、その引数の値。
-  (a3) @var{option-spec}がそれ以上の引数を要求する場合は、引数の値のリスト。
-(b) @var{bind-spec}の形式が上の3. または4. の場合、@var{callback}を
-  引数の値を伴って呼び出し、その戻り値。
-@end example
-@c COMMON
-
-@c EN
-As a special case, @var{var} can be @code{#f}, in which case
-the value is ignored.  It is only useful for side effects in
-@var{callback}.
-@c JP
-特別な場合として、@var{var}を@code{#f}とすることもできます。
-その場合、値は無視されます。
-@var{callback}での副作用だけに関心がある場合に使えるでしょう。
-@c COMMON
-
-@c EN
-If the corresponding option is not given in @var{args},
-@var{var} is bound to @var{default} if it is given, or
-@code{#f} otherwise.
-@c JP
-対応するオプションが@var{args}に与えられなかった場合、
-@var{var}は@var{default}が与えられていればその値に、
-そうでなければ@code{#f}に束縛されます。
-@c COMMON
-
-@c EN
-The last @var{bind-spec} may be the form 5. in which case
-it is treated in the same way as @code{else} clause
-of @code{parse-options}.
-@c JP
-最後の@var{bind-spec}は5.の形式であっても良く、
-その場合は@code{parse-options}の@code{else}節と同様に処理されます。
-@c COMMON
-
-@c EN
-The @var{bind-spec} list can be an improper list, whose last @code{cdr} is
-a symbol.  In which case, a list of the rest of the command-line arguments
-is bound to the variable named by the symbol.
-@c JP
-束縛リストは、最後の@code{cdr}にシンボルを持つ不完全なリストであっても良く、
-その場合はコマンドライン引数の残りのリストがその変数にと束縛されます。
-@c COMMON
-
-@c EN
-Note that the @var{default}, @var{callback}, and forms in @code{else}
-clause is evaluated outside of the scope of binding of @var{var}s
-(as the name @code{let-args} implies).
-@c JP
-@var{default}、@var{callback}、@code{else}節のフォーム等は
-@var{var}の束縛の外側のスコープで評価されることに注意して下さい。
-@c COMMON
-
-@c EN
-After all the bindings is done, @var{body} @dots{} are evaluated.
-@var{Body} may began with internal define forms.
-@c JP
-全ての束縛が終了した後、@var{body} @dots{} が評価されます。
-@var{body}は内部defineで始まっていても構いません。
-@c COMMON
 @end defmac
 
 @defmac make-option-parser (option-clause @dots{})
