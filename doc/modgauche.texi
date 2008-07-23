@@ -6149,10 +6149,12 @@ variables according to @var{bind-spec}, then executes @var{body} @dots{}.
 
 @c EN
 Let's look at a simple example first, which gives you a good idea of
-what this form does.
+what this form does. (See the ``Examples'' section below for more
+examples).
 @c JP
 まず簡単な例を見てみましょう。このフォームが何をするか、だいたい想像できるのでは
-ないかと思います。
+ないかと思います。(より多くの例については下の``Examples''の項を参照して
+ください)。
 @c COMMON
 
 @example
@@ -6224,7 +6226,8 @@ It must be one of the following forms.
 3. (@var{var} @var{option-spec} => @var{callback})
 4. (@var{var} @var{option-spec} @var{default} => @var{callback})
 
-5. (else @var{formals} @var{form} ...)
+5. (else => @var{handler})
+6. (else @var{formals} @var{body} ...)
 @end example
 
 @c EN
@@ -6284,12 +6287,29 @@ If the corresponding option is not given in @var{args},
 @c COMMON
 
 @c EN
-The last @var{bind-spec} may be the form 5. in which case
-it is treated in the same way as @code{else} clause
-of @code{parse-options}.
+The last @var{bind-spec} may be the form 5 or 6. in which case
+the clause is selected when no other @var{option-spec} matches
+a given command-line option.  
+In the form 5, @var{handler} will be called with three arguments;
+the given option, a list of remaining command-line arguments,
+and a continuation procedure.  The @var{handler}
+is supposed to handle the given option, and it may call the
+continuation procedure with the remaining arguments to continue
+processing, or it may return a list of arguments which will
+be treated as non-optional command-line arguments.
+The form 6 is a shorthand notion of 
+@code{(else => (lambda @var{formals} @var{body} ...))}.
 @c JP
-最後の@var{bind-spec}は5.の形式であっても良く、
-その場合は@code{parse-options}の@code{else}節と同様に処理されます。
+最後の@var{bind-spec}には5か6の形式も許されます。
+この節は、どの@var{option-spec}にもマッチしないコマンドラインオプションが
+与えられた場合に選択されます。
+5番目の形式では、@var{handler}が3つの引数を伴って呼び出されます。
+引数は、マッチしなかったコマンドラインオプション、
+残りのコマンドライン引数、そして引数処理に戻るための継続手続きです。
+@var{handler}は与えられたコマンドラインオプションを処理した後、
+オプション処理を続けたければ継続手続きに残りのコマンドライン引数を渡し、
+オプション処理を打ちきりたければ残りのコマンドライン引数を戻り値として
+返します。返された値は通常の(オプションでない)コマンドライン引数として扱われます。
 @c COMMON
 
 @c EN
@@ -6488,6 +6508,82 @@ command line arguments match an option spec @code{"prefix=s"}.
 --prefix=/home/shiro
 @end example
 
+@subheading Examples
+
+@c EN
+This example is taken from @code{gauche-install} script.  
+The @var{mode} option takes numbers in octal, so it 
+uses the callback procedure to convert it.
+See also the @code{else} clause how to handle unrecognized option.
+@c JP
+これは@code{gauche-install}スクリプトから取った例です。
+@var{mode}オプションは8進数のオプション引数を取るので、コールバック
+手続きを使って変換しています。また、認識できないオプションをelse節で
+処理しています。
+@c COMMON
+
+@example
+  (let-args (cdr args)
+      ((#f      "c")        ;; ignore for historical reason
+       (mkdir   "d|directory")
+       (mode    "m|mode=s" #o755 => (cut string->number <> 8))
+       (owner   "o|owner=s")
+       (group   "g|group=s")
+       (srcdir  "S|srcdir=s")
+       (target  "T|target=s")
+       (utarget "U|uninstall=s")
+       (shebang "shebang=s")
+       (verb    "v")
+       (dry     "n|dry-run")
+       (#f      "h|help" => usage)
+       (else (opt . _) (print "Unknown option : " opt) (usage))
+       . args)
+    ...)
+@end example
+
+@c EN
+The next example is a small test program to show the usage of
+@code{else} clause.  It gathers all options into the variable @var{r},
+except that when it sees @code{-c} it stops argument processing and
+binds the rest of the arguments to @var{restargs}.
+@c JP
+次の例は@code{else}節の使い方を示す小さなプログラムです。
+コマンドラインオプションを変数@var{r}に集めてゆきますが、
+オプション @code{-c} に出会うとオプション処理を中止して残りを
+@var{restargs}へと渡します。
+@c COMMON
+
+@example
+(use gauche.parseopt)
+
+(define (main args)
+  (let1 r '()
+    (let-args (cdr args)
+      ((else (opt rest cont) 
+         (cond [(equal? opt "c") rest]
+               [else (push! r opt) (cont rest)]))
+       . restargs)
+     (print "options: " (reverse r))
+     (print "restargs: " restargs)
+     0)))
+@end example
+
+@c EN
+Sample session of the above script (suppose it is saved as @file{example}).
+@c JP
+上のスクリプトの実行例です (@file{example}というファイル名で保存されていると
+します)。
+@c COMMON
+
+@example
+$ ./example -a -b -c -d -e foo
+options: (a b)
+restargs: (-d -e foo)
+$ ./example -a -b -d -e foo
+options: (a b d e)
+restargs: (foo)
+@end example
+
 
 @subheading Low-level API
 
@@ -6543,31 +6639,6 @@ If a command-line option matches @var{option-spec}, calls a procedure
 @c COMMON
 @end table
 
-Examples:
-@example
-(parse-options '("-file" "foo")
-  (("file=s" (file)
-     (format #t "file is ~s\n" file))))
- @result{} ;@r{``@code{file is "foo"}'' is printed}
-
-(parse-options '("-scale" "1.5" "2.2")
-  (("scale=ff" (xscale yscale)
-     (format #t "scale is ~sx~s\n" xscale yscale))))
- @result{} ;@r{``@code{scale is 1.5x2.2}'' is printed}
-
-(parse-options '("-scale" "1.5" "2.2")
-  (("scale=ff" scales
-     (format #t "scale is ~s\n" scales))))
- @result{} ;@r{``@code{scale is (1.5 2.2)}'' is printed}
-
-(define (scales x y)
-  (format #t "scale is ~sx~s\n" x y))
-
-(parse-options '("-scale" "1.5" "2.2")
-  (("scale=ff" => scales)))
- @result{} ;@r{``@code{scale is 1.5x2.2}'' is printed}
-@end example
-
 @c EN
 If a symbol @code{else} is at the position of @var{option-spec},
 the clause is selected when no other option clause matches a given
@@ -6581,37 +6652,6 @@ a procedure that represents the option parser.
 それらは、マッチしなかったオプション、引数の残り、オプションパーサを
 表す手続きです。
 @c COMMON
-
-@example
-(parse-options args
-  (("file=s" => process-file)
-   (else (option . _)  (error "unrecognized option:" option))))
-@end example
-
-@c EN
-Unlike other clause, the else clause returns to the caller of
-@code{parse-options}, without looping further.  In order to
-continue looping, you have to call the third argument of the else
-clause with the remaining arguments.  This can be used
-to implement your own sub-parser.  The following example
-just skips unrecognized option, with printing a warning,
-and continues parsing:
-@c JP
-他の節とは異なり、else 節はそれ以上繰り返しをせずに
-@code{parse-options} の呼び出し元へ戻ります。
-繰り返しを続けるためには、else 節の三つ目の引数を残りの引数を
-伴って呼び出さなければなりません。これは、あなた独自のサブパーサを
-実装するのに使うことができるでしょう。以下の例では、認識されない
-オプションを単にスキップし、警告を表示し、パーシングを続けます。
-@c COMMON
-
-@example
-(parse-options args
-  (("file=s" => process-file)
-   (else (option args continue)
-     (format #t "warning: ignoring unrecognized option: ~a" option)
-     (continue args))))
-@end example
 
 @end defmac
 
