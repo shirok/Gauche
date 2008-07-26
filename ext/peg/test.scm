@@ -265,6 +265,20 @@
 (test-succ "$many" '("a" "a")
            ($many ($string "a") 1 2) "aaaaa")
 
+;; $maybe
+(test-succ "$maybe" "a"
+           ($maybe ($string "a"))
+           "abc")
+(test-succ "$maybe" #f
+           ($maybe ($string "a"))
+           "zbc")
+;(test-succ "$maybe" "ok"
+;           ($maybe ($string "a") "ok")
+;           "zbc")
+(test-fail "$maybe" '(1 #\b)
+           ($maybe ($seq ($char #\a) ($char #\b)))
+           "ac")
+
 ;; $skip-many
 (test-succ "$skip-many" '("a" "a")
            ($skip-many ($string "a") 1 2) "aaaaa")
@@ -353,6 +367,23 @@
            ($many-till alphanum digit)
            "ab78")
 
+;; $many-chars
+(test-succ "$many-chars" '(#\c #\b #\a)
+           ($many-chars #[a-c])
+           "cbad")
+(test-succ "$many-chars" '()
+           ($many-chars #[a-c])
+           "ABCD")
+(test-succ "$many-chars" '(#\c #\b #\a)
+           ($many-chars #[a-c] 2 5)
+           "cbad")
+(test-fail "$many-chars" '(3 #[a-c])
+           ($many-chars #[a-c] 4 5)
+           "cbad")
+(test-succ "$many-chars" '(#\c #\b)
+           ($many-chars #[a-c] 0 2)
+           "cbad")
+
 ;; $chain-left
 (let ((integer
        ($do (v ($many digit 1))
@@ -439,13 +470,36 @@
                            [m nesting]
                            ($return (max (+ n 1) m)))
                       ($return 0)))))
-  (define (%test depth str)
-    (test* "nesting parenthesis" depth
-           (parse-string nesting str)))
   (test-succ "nesting parenthesis" 3 nesting "((()))")
   (test-succ "nesting parenthesis" 3 nesting "((()))()")
   (test-succ "nesting parenthesis" 3 nesting "(()(()))")
   (test-fail "nesting parenthesis" '(1 #\) ) nesting "((("))
+
+;; number parser (1) - simple
+(let* ((sign?    ($maybe ($one-of #[-+])))
+       (digits   ($seq sign? ($many-chars #[\d] 1)))
+       (point    ($seq ($char #\.) ($many ($one-of #[\d]) 1)))
+       (exponent ($seq ($one-of #[eE]) digits))
+       (number?  ($seq digits ($maybe point) ($maybe exponent)))
+       (p        ($do [number?] [eof] ($return #t))))
+  (define (%test str . fails?)
+    (if (null? fails?)
+      (test-succ #`"number(1) \",str\"" #t p str)
+      (test-fail #`"number(1) \",str\"" (car fails?) p str)))
+  (%test "27652") (%test "-27652") (%test "+27652")
+  (%test "" '(0 #[0-9])) (%test "-" '(1 #[0-9])) (%test "+" '(1 #[0-9]))
+  (%test "+27.46") (%test "0.46")
+  (%test ".46" '(0 #[0-9]))
+  (%test "0..3" '(2 #[0-9]))
+  (%test "0.4.2" '(3 "end of input"))
+  (%test "3e5")
+  (%test "3.0e5")
+  (%test "3.e5" '(2 #[0-9]))
+  (%test "3e-53")
+  (%test "3e+53")
+  (%test "-3.0e+53")
+  (%test "-3.0e+" '(6 #[0-9]))
+  )
 
 ;; CSV parser
 (let* ((spaces ($many ($one-of #[ \t])))

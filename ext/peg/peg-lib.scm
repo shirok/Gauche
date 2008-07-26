@@ -50,7 +50,7 @@
 
           parse-string
           $return $fail $expect 
-          $do $do* $try $seq $or $many $many_ $skip-many
+          $do $do* $try $seq $or $many $many_ $maybe $skip-many
           $repeat $optional
 
           $alternate
@@ -59,8 +59,9 @@
           $count $between
           $not $many-till $chain-left $chain-right
           $lazy
-          $string $string-ci
-          $char $one-of $none-of
+          
+          $string $string-ci 
+          $char $one-of $none-of $many-chars
           $satisfy
 
           anychar upper lower letter alphanum digit
@@ -539,6 +540,15 @@
                     (return-result #t s)]
                    [else (values r1 v1 s1)])))))]))
 
+(define ($maybe parse)
+  ;; Idea: allow ($maybe p1 p2 ...) => ($maybe ($seq p1 p2 ...))
+  ;;       but is $seq appropriate?
+  (lambda (s)
+    (receive (r1 v1 s1) (parse s)
+      (cond [(parse-success? r1) (return-result v1 s1)]
+            [(eq? s s1) (return-result #f s)]
+            [else (values r1 v1 s1)]))))
+
 (define ($skip-many . args)
   (apply $many args))
 
@@ -690,6 +700,14 @@
 (define ($one-of charset)
   ($satisfy (cut char-set-contains? charset <>)
             charset))
+
+;; ($many-chars charset [min [max]]) == ($many ($one-of charset) [min [max]])
+;;   with possible optimization.
+(define-syntax $many-chars
+  (syntax-rules ()
+    [(_ parser) ($many ($one-of parser))]
+    [(_ parser min) ($many ($one-of parser) min)]
+    [(_ parser min max) ($many ($one-of parser) min max)]))
 
 (define ($none-of charset)
   ($one-of (char-set-complement charset)))
