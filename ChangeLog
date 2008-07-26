@@ -1,6 +1,6 @@
 2008-07-26  Shiro Kawai  <shiro@scherzo.hawaiiantel.net>
 
-	* ext/peg/peg-lib.scm ($maybe, $many-chars): New combinators added.
+	* ext/peg/peg-lib.scm ($many-chars): Added.
 
 2008-07-25  Shiro Kawai  <shiro@scherzo.hawaiiantel.net>
 

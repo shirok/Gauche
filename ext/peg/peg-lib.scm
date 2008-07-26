@@ -50,7 +50,7 @@
 
           parse-string
           $return $fail $expect 
-          $do $do* $try $seq $or $many $many_ $maybe $skip-many
+          $do $do* $try $seq $or $many $many_ $skip-many
           $repeat $optional
 
           $alternate
@@ -540,23 +540,16 @@
                     (return-result #t s)]
                    [else (values r1 v1 s1)])))))]))
 
-(define ($maybe parse)
+(define ($optional parse)
   ;; Idea: allow ($maybe p1 p2 ...) => ($maybe ($seq p1 p2 ...))
   ;;       but is $seq appropriate?
-  (lambda (s)
-    (receive (r1 v1 s1) (parse s)
-      (cond [(parse-success? r1) (return-result v1 s1)]
-            [(eq? s s1) (return-result #f s)]
-            [else (values r1 v1 s1)]))))
+  ($or parse ($return #f)))
 
 (define ($skip-many . args)
   (apply $many args))
 
 (define ($repeat parse n)
   ($many parse n n))
-
-(define ($optional parse)
-  ($or parse ($return #f)))
 
 (define ($sep-by parse sep . args)
   (let-optionals* args ((min 0) (max #f))

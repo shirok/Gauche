@@ -265,20 +265,6 @@
 (test-succ "$many" '("a" "a")
            ($many ($string "a") 1 2) "aaaaa")
 
-;; $maybe
-(test-succ "$maybe" "a"
-           ($maybe ($string "a"))
-           "abc")
-(test-succ "$maybe" #f
-           ($maybe ($string "a"))
-           "zbc")
-;(test-succ "$maybe" "ok"
-;           ($maybe ($string "a") "ok")
-;           "zbc")
-(test-fail "$maybe" '(1 #\b)
-           ($maybe ($seq ($char #\a) ($char #\b)))
-           "ac")
-
 ;; $skip-many
 (test-succ "$skip-many" '("a" "a")
            ($skip-many ($string "a") 1 2) "aaaaa")
@@ -294,6 +280,9 @@
            ($optional ($char #\a)) "abab")
 (test-succ "$optional" #f
            ($optional ($char #\a)) "ABAB")
+(test-fail "$optional" '(1 #\b)
+           ($optional ($seq ($char #\a) ($char #\b)))
+           "ac")
 
 ;; $sep-by
 (test-succ "$sep-by" '(#\a #\b)
@@ -476,11 +465,11 @@
   (test-fail "nesting parenthesis" '(1 #\) ) nesting "((("))
 
 ;; number parser (1) - simple
-(let* ((sign?    ($maybe ($one-of #[-+])))
+(let* ((sign?    ($optional ($one-of #[-+])))
        (digits   ($seq sign? ($many-chars #[\d] 1)))
        (point    ($seq ($char #\.) ($many ($one-of #[\d]) 1)))
        (exponent ($seq ($one-of #[eE]) digits))
-       (number?  ($seq digits ($maybe point) ($maybe exponent)))
+       (number?  ($seq digits ($optional point) ($optional exponent)))
        (p        ($do [number?] [eof] ($return #t))))
   (define (%test str . fails?)
     (if (null? fails?)
