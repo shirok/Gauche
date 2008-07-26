@@ -43,18 +43,19 @@
 
 ;; Represents each option info
 (define-class <option-spec> ()
-  ((name :init-keyword :name) ;; option name
-   (args :init-keyword :args) ;; option agrspecs (list of chars)
-   (arg-optional? :init-keyword :arg-optional?) ;; option's arg optional?
-   (handler :init-keyword :handler) ;; handler closure
-   (optspec :init-keyword :optspec) ;; original <optspec> string
-   (help :init-keyword :help) ;; help string
+  ((name :init-keyword :name)        ; option name
+   (args :init-keyword :args)        ; option agrspecs (list of chars)
+   (arg-optional? :init-keyword :arg-optional?) ; option's arg optional?
+   (handler :init-keyword :handler)  ; handler closure
+   (plural? :init-keyword :plural?)  ; accept multiple options?
+   (optspec :init-keyword :optspec)  ; original <optspec> string
+   (help    :init-keyword :help)     ; help string
    ))
 
 ;; Helper functions
 
 ;; Parse optspec clause, and returns
-;;  ((option-string argument-specs optional? handler) ...)
+;;  (<option-spec> ...)
 ;; <a-spec> is (<optspec> <handler>) or
 ;; ((<optspec> <help-string>) <handler)
 (define (compose-entry a-spec)
@@ -65,13 +66,14 @@
         (handler (cadr a-spec)))
     (unless (string? optspec)
       (error "option spec must be a string, but got" optspec))
-    (rxmatch-if (rxmatch #/^-*([-+\w|]+)(?:([=:])(.+))?$/ optspec)
-        (#f optnames optional?  argspec)
+    (rxmatch-if (rxmatch #/^-*([-+\w|]+)(\*)?(?:([=:])(.+))?$/ optspec)
+        (#f optnames plural? optional?  argspec)
       (map (cute make <option-spec>
                  :name <>
                  :args (if argspec (string->list argspec) '())
                  :arg-optional? (equal? optional? ":")
                  :handler handler
+                 :plural? plural?
                  :optspec optspec
                  :help helpstr)
            (string-split optnames #\|))
@@ -116,23 +118,23 @@
     (let loop ((spec (ref optspec 'args))
                (args args)
                (optargs '()))
-      (cond ((null? spec) (values (reverse! optargs) args))
-            ((null? args) (error "running out the arguments for option"
-                                 (ref optspec 'name)))
-            (else
+      (cond [(null? spec) (values (reverse! optargs) args)]
+            [(null? args) (error "running out the arguments for option"
+                                 (ref optspec 'name))]
+            [else
              (case (car spec)
-               ((#\s) (loop (cdr spec) (cdr args) (cons (car args) optargs)))
-               ((#\n) (loop (cdr spec) (cdr args)
-                            (cons (get-number (car args)) optargs)))
-               ((#\f) (loop (cdr spec) (cdr args)
-                            (cons (get-real (car args)) optargs)))
-               ((#\i) (loop (cdr spec) (cdr args)
-                            (cons (get-integer (car args)) optargs)))
-               ((#\e) (loop (cdr spec) (cdr args)
-                            (cons (get-sexp (car args)) optargs)))
-               ((#\y) (loop (cdr spec) (cdr args)
-                            (cons (string->symbol (car args)) optargs)))
-               (else (error "unknown option argument spec:" (car spec))))))
+               [(#\s) (loop (cdr spec) (cdr args) (cons (car args) optargs))]
+               [(#\n) (loop (cdr spec) (cdr args)
+                            (cons (get-number (car args)) optargs))]
+               [(#\f) (loop (cdr spec) (cdr args)
+                            (cons (get-real (car args)) optargs))]
+               [(#\i) (loop (cdr spec) (cdr args)
+                            (cons (get-integer (car args)) optargs))]
+               [(#\e) (loop (cdr spec) (cdr args)
+                            (cons (get-sexp (car args)) optargs))]
+               [(#\y) (loop (cdr spec) (cdr args)
+                            (cons (string->symbol (car args)) optargs))]
+               [else (error "unknown option argument spec:" (car spec))])])
       ))
 
   (if (ref optspec 'arg-optional?)
@@ -148,14 +150,14 @@
   (let loop ((args args))
     (receive (option nextargs) (next-option args)
       (if option
-          (cond ((find (lambda (e) (equal? option (ref e 'name))) speclist)
-                 => (lambda (entry)
-                      (receive (optargs nextargs)
-                          (get-optargs entry nextargs)
-                        (apply (ref entry 'handler) optargs)
-                        (loop nextargs))))
-                (else (fallback option nextargs loop)))
-          nextargs))))
+        (cond [(find (lambda (e) (equal? option (ref e 'name))) speclist)
+               => (lambda (entry)
+                    (receive (optargs nextargs)
+                        (get-optargs entry nextargs)
+                      (apply (ref entry 'handler) optargs)
+                      (loop nextargs)))]
+              [else (fallback option nextargs loop)])
+        nextargs))))
 
 ;; Build 
 (define (build-option-parser spec fallback)

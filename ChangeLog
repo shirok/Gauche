@@ -1,3 +1,10 @@
+2008-07-25  Shiro Kawai  <shiro@scherzo.hawaiiantel.net>
+
+	* lib/gauche/parseopt.scm (compose-entry): Allow '*' modifier in
+	  option-spec, for options that can be specified multiple times.
+	  This is just a preparation; the actual code to support multiple
+	  appearance of an option hasn't been done yet.
+
 2008-07-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/insn.scm.src, lib/gauche/vm/insn-core.scm: Removed
@@ -5,13 +12,13 @@
 	  insn-core.scm.  The generated insn.scm extends insn-core.  This
 	  is required since geninsn needs to refer to <vm-insn-info>, but
 	  gauche.vm.insn doesn't exist yet when geninsn is generating it.
-	* src/geninsn: changed accordingly.  
+	* src/geninsn: changed accordingly.
 
 2008-07-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.svm ($insn-body), src/geninsn (insn-alist):
 	  Allow insn definition to retrieve other insn body.
-	
+
 	* src/vminsn.scm ($arg-source,  LREF-VAL0-BNxx),
 	  src/compile.scm (pass3/if-numcmp): Emit special instructions for
 	  BNxx when one of the arguments are LREF.  This saves one stack
@@ -29,7 +36,7 @@
 	  src/gencomp (check-packed-inliner): Properly emit inliner
 	  information of the procedures defined by define-inline, even
 	  if the target VM's instruction codes differ from host VM's.
-	
+
 2008-07-08  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: Checking for gcc by $GCC instead of $CC, to cope
@@ -318,7 +325,7 @@
 	  system-dependent compiler flags to embed library paths in the
 	  DSO.  "-Wl,--rpath -Wl," for Linux, for example.
 	* src/genconfig (--rpath-flag): A new flag to return RPATH_FLAG info.
-	
+
 	* src/gauche-package.in ("compile"): added --local option to
 	  the 'compile' command to add local include paths and local library
 	  search paths conveniently.
@@ -328,7 +335,7 @@
 
 	* lib/gauche/process.scm (shell-escape-string): Added a utility
 	  function.
-	
+
 2008-04-18  ENDO Yasuyuki  <yasuyuki@kahua.org>
 
 	* winnt/nsis/setup.nsi (VIProductVersion): get version from
@@ -385,7 +392,7 @@
 	* lib/gauche/cgen/literal.scm (cgen-emit-xtrn): fixed incorrect
 	  variable name.
 	  (Thanks to koguro for the above three fixes.)
-	
+
 2008-02-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/dictionary.scm: removed undefined dict-map-to from
@@ -395,8 +402,6 @@
 	  (let-optionals*, let-keywords, let-keywords*): moved from
 	  common-macros to scmlib.  This is a step toward supporting
 	  keyword and optional args in VM core.
-
-	* 
 
 	* lib/gauche/test.scm (read-summary): avoid using file-exists?, for
 	  it triggers autoload which may not be tested in the early stage
@@ -568,7 +573,7 @@
 	  eliminates need of unfoling the passed args.
 	* src/vmcall.c: Added to refactor the similar code between CALL
 	  and TAIL-APPLY instruction handling.
-	  
+
 	* src/compile.scm (pass3/$ASM), src/stdlib.stub (apply):
 	  A little hack to make *every* 'apply' call a tail-call, so that
 	  it is compiled as TAIL-APPLY instruction.
