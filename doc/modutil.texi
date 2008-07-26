@@ -4322,26 +4322,59 @@ to build parsers based on Parsing Expression Grammer, or PEG.
 PEG is a @emph{formal grammer} to define a language, like regular 
 expressions or context-free grammers, although PEG is more powerful
 than those.  An interesting characteristic of PEG is that it can
-be directly mapped on a recursive decent 
-
-
+be directly mapped to a recursive decent parser, which is exactly
+what this library does---each production rule is a Scheme expression
+that takes parsers and returns a combined parser.  One advantage of
+this approach is that you can freely mix ordinary Scheme code
+within the parser, that is, there's no special ``parser description
+language'' distinct from the base Scheme langauge, nor you need to
+run separate tools like parser generators to obtain runnable parser.
 @end deftp
 
-@subheading A parser
+@menu
+* A PEG parser::                
+* PEG high-level API::          
+* PEG combinators::             
+* PEG stream::                  
+@end menu
+
+@node A PEG parser, PEG high-level API, Parser combinators for PEG, Parser combinators for PEG
+@subsection A parser
 
 In @code{parser.peg}, a parser is merely a Scheme procedure
 that takes an input (peg stream) as an argument and returns
 three values: A result code, a semantic value, and a next stream.
 
-The result code is @code{#f} when the parser could successfully
-parse the input, or a symbol that indicates the reason of the failure.
+A parser can be as simple as the one that accepts a single character.
+From them, complex parsers can be constructed by combining simpler
+parsers using @emph{parser combinators}, such as @code{$many},
+@code{$or}, or @code{$seq}.
+Finally, a convenient parser driver, such as @code{parse-string},
+wraps the created parser to provide easier high-level interface.
 
-If the parser succeeds, the semantic value is the result of
-parsing; its exact meaning depends on the parser.  
+For simpler parsers, you 
+
+@example
+@end example
 
 
+Typically the input stream is a text stream, producing
+characters as it unfolds, but it isn't restricted to be so.
+You can use a separate lexical analyzer to generate a stream
+of tokens and use it as an input of a peg parser.
+The @code{parser.peg} module provides generic framework to
+compose parsers, agnostic to the actual data that run through
+the parser (that's one of the reason why this module is not
+named @code{text.parser.peg}.)
+See the ``Input (peg stream)'' section below for
+the details of the input.
 
+If the parser successfully accept the input, the result code
+is @code{#f}, and the semantic value is the result of
+parsing; its exact meaning depends on the parser. 
+(@code{#f} is chosen so that we can quickly 
 
+If the parser fails, 
 @table @code
 @item fail-expect
 
@@ -4349,21 +4382,142 @@ parsing; its exact meaning depends on the parser.
 
 
 
-@subheading High-level API
+@node PEG high-level API, PEG combinators, A PEG parser, Parser combinators for PEG
+@subsection High-level API
+
+@defun parse-string parser input-string
+@end defun
+
+@deftp {Condition type} <parse-error>
+@end deftp
+
+@defun make-peg-parse-error type objs stream
+@end defun
 
 
+@node PEG combinators, PEG stream, PEG high-level API, Parser combinators for PEG
+@subsection Combinators
 
-@subheading Input (peg stream)
+@subsubheading Generic combinators
+
+@defun $seq p1 p2 @dots{}
+@end defun
+
+@defmac $or p1 p2 @dots{}
+@end defmac
+
+@defun $try p1 p2 @dots{}
+@end defun
+
+@defun $many p &optional min max
+@end defun
+
+@defun $many_ p &optional min max
+@end defun
+
+@defun $optional p
+@end defun
+
+@defun $repeat p count
+@end defun
+
+@defun $count p count
+@end defun
+
+@defun $sep-by p psep &optional min max
+@end defun
+
+@defun $alternate p psep
+@end defun
+
+@defun $end-by p psep &rest p2 @dots{}
+@end defun
+
+@defun $sep-end-by p psep &rest p2 @dots{}
+@end defun
+
+@defun $not p
+@end defun
+
+@defun $many-till p pend &rest p2 @dots{}
+@end defun
+
+@defun $chain-left p p-op
+@end defun
+
+@defun $chain-right p p-op
+@end defun
+
+@defmac $lazy p
+@end defmac
+
+@defun $->rope p
+@end defun
+
+@defmac $do clause @dots{} expr
+@end defmac
+
+@defmac $do* clause @dots{} expr
+@end defmac
 
 
-@subheading Semantic value
+@subsubheading String parsers
+
+@defmac $satisfy p expect
+@end defmac
+
+@defun $string str
+@defunx $string-ci str
+@end defun
+
+@defun $char c
+@defunx $char-ci c
+@end defun
+
+@defun $one-of cset
+@end defun
+
+@defun $none-of cset
+@end defun
+
+@defmac $many-chars cset
+@end defmac
+
+@defvar anychar
+@defvarx upper
+@defvarx lower
+@defvarx letter
+@defvarx alphanum
+@defvarx digit
+@defvarx hexdigit
+@defvarx newline
+@defvarx tab
+@defvarx space
+@defvarx spaces
+@defvarx eof
+@end defvar
 
 
+@node PEG stream,  , PEG combinators, Parser combinators for PEG
+@subsection PEG stream
 
-@subheading Combinators
+@defun make-peg-steram generator &optional fini
+@end defun
 
+@defun string->peg-stream string
+@end defun
 
+@defun port->peg-stream port &key (reader read-char)
+@end defun
 
+@defun list->peg-stream lis
+@end defun
+
+@defun peg-stream-position s
+@end defun
+
+@defun peg-stream-peek! s
+@end defun
 
 
 
