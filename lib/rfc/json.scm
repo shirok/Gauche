@@ -45,13 +45,13 @@
 ;;;============================================================
 ;;; Parser
 ;;;
-(define %ws ($many ($one-of #[ \t\r\n])))
+(define %ws ($skip-many ($one-of #[ \t\r\n])))
 
-(define %begin-array ($seq %ws ($char #\[) %ws))
-(define %begin-object ($seq %ws ($char #\{) %ws))
-(define %end-array ($seq %ws ($char #\]) %ws))
-(define %end-object ($seq %ws ($char #\}) %ws))
-(define %name-separator ($seq %ws ($char #\:) %ws))
+(define %begin-array     ($seq %ws ($char #\[) %ws))
+(define %begin-object    ($seq %ws ($char #\{) %ws))
+(define %end-array       ($seq %ws ($char #\]) %ws))
+(define %end-object      ($seq %ws ($char #\}) %ws))
+(define %name-separator  ($seq %ws ($char #\:) %ws))
 (define %value-separator ($seq %ws ($char #\,) %ws))
 
 (define %false ($do [($string "false")] ($return 'false)))
@@ -62,7 +62,7 @@
 
 (define %array
   ($do %begin-array
-       (lis ($sep-by %value %value-separator))
+       [lis ($sep-by %value %value-separator)]
        %end-array
        ($return (list->vector (semantic-value-finalize! lis)))))
 
@@ -120,7 +120,7 @@
 
 ;; entry point
 (define (parse-json str)
-  (parse-string %json-text str))
+  (peg-parse-string %json-text str))
 
 ;;;============================================================
 ;;; Writer
