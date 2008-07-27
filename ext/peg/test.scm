@@ -54,7 +54,7 @@
   (syntax-rules ()
     ((_ label expect parse input)
      (test* #`",label (success)" expect
-            (parse-string parse input)))))
+            (peg-parse-string parse input)))))
 
 (define-syntax test-fail
   (syntax-rules ()
@@ -63,7 +63,7 @@
             (guard (e ((<parse-error> e)
                        (list (ref e 'position) (ref e 'objects)))
                       (else e))
-              (parse-string parse input)
+              (peg-parse-string parse input)
               (error "test-fail failed"))))))
 
 ;;;============================================================

@@ -2,7 +2,9 @@
 
 	* ext/peg/peg-lib.scm
 	  ($many_): Removed, for it is same as $skip-many.
-	  ($fold, $fold-right, $many-chars): Added.
+	  ($fold, $fold-right, $many-chars, $many1): Added.
+	  (peg-parse-string): Renamed from parse-string.
+	  (peg-run-parser, peg-parse-port): Added.
 
 2008-07-25  Shiro Kawai  <shiro@scherzo.hawaiiantel.net>
 

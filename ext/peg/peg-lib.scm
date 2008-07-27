@@ -48,10 +48,10 @@
           <parse-error>
           make-peg-parse-error
 
-          parse-string
+          peg-run-parser peg-parse-string peg-parse-port
           $return $fail $expect 
           $do $do* $try $seq $or $fold $fold-right
-          $many $skip-many
+          $many $many1 $skip-many
           $repeat $optional
           $alternate
           $sep-by $end-by $sep-end-by
@@ -167,12 +167,17 @@
     (make-condition <parse-error>
                     'position pos 'objects objs 'message (message pos))))
 
-;; entry point
-(define (parse-string parse str)
-  (receive (r v s) (parse (string->peg-stream str))
+(define (peg-run-parser parser stream)
+  (receive (r v s) (parser stream)
     (if (parse-success? r)
       (semantic-value-finalize! v)
       (raise (make-peg-parse-error r v s)))))
+
+;; entry points
+(define (peg-parse-string parser str)
+  (peg-run-parser parser (string->peg-stream str)))
+(define (peg-parse-port parser port)
+  (peg-run-parser parser (port->peg-stream port)))
 
 ;;;============================================================
 ;;; Lazily-constructed string
@@ -515,7 +520,7 @@
     (error "invalid argument:" min max)))
 
 ;; $many p &optional min max
-;;   
+;; $many1 p &optional max
 (define ($many parse . args)
   (match args
     [() 
@@ -538,6 +543,9 @@
                    [(<= min count)
                     (return-result (reverse! vs) s)]
                    [else (values r1 v1 s1)])))))]))
+
+(define ($many1 parse . args)
+  (apply $many parse 1 args))
 
 ;; $skip-many p &optional min max
 ;;   Like $many, but does not keep the results; returns the last result
@@ -566,7 +574,7 @@
                    [else (values r1 v1 s1)])))))]))
 
 (define ($optional parse)
-  ;; Idea: allow ($maybe p1 p2 ...) => ($maybe ($seq p1 p2 ...))
+  ;; Idea: allow ($optional p1 p2 ...) => ($optional ($seq p1 p2 ...))
   ;;       but is $seq appropriate?
   ($or parse ($return #f)))
 
@@ -617,12 +625,6 @@
       (if r
         (return-result #f s)
         (return-failure/unexpect v s0)))))
-    
-  '(lambda (s)
-    (($or 'grp
-          ($do (v parse) :: grp ($unexpect v s))
-          ($return #f))
-     s))
 
 (define ($many-till parse end . args)
   (apply $many ($do (($not end)) parse) args))
