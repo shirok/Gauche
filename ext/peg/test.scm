@@ -515,15 +515,16 @@
 
 ;; Count the maximal nesting level
 (letrec ((nesting
-          ($lazy ($or ($do [n ($try ($do [($char #\()] nesting))]
-                           [($char #\))]
+          ($lazy ($or ($do [ ($char #\() ]
+                           [n nesting]
+                           [ ($char #\)) ]
                            [m nesting]
                            ($return (max (+ n 1) m)))
                       ($return 0)))))
   (test-succ "nesting parenthesis" 3 nesting "((()))")
   (test-succ "nesting parenthesis" 3 nesting "((()))()")
   (test-succ "nesting parenthesis" 3 nesting "(()(()))")
-  (test-fail "nesting parenthesis" '(1 #\) ) nesting "((("))
+  (test-fail "nesting parenthesis" '(3 #\) ) nesting "((("))
 
 ;; number parser (1) - simple
 (let* ((sign?    ($optional ($one-of #[-+])))
