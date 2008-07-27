@@ -475,6 +475,44 @@
 ;;;
 (test-section "examples")
 
+;; In the manual
+
+(let ()
+  (define integer   ($many1 ($one-of #[\d])))
+  (define ws        ($skip-many ($one-of #[\s])))
+  (define int-list0 ($seq ($char #\[ )
+                          ($many ($seq ws integer))
+                          ws
+                          ($char #\] )))
+  (define int-list
+    ($do [ ($char #\[ )]
+         [digs ($many ($seq ws integer))]
+         [ ws ]
+         [ ($char #\] ) ]
+         ($return (map (compose x->integer list->string) digs))))
+
+  (test-succ "integer" '(#\1 #\2 #\3) integer "123")
+  (test-succ "ws"      #\tab ws "  \t")
+  (test-succ "int-list0" #\] int-list0 "[123 456 789]")
+  (test-succ "int-list" '(123 456 789) int-list "[123 456 789]")
+  )
+
+(let ()
+  (define ortest0 ($or ($string "abc") ($string "xyz")))
+  (define ortest1 ($or ($string "(a)") ($string "(b)")))
+  (define ortest2 ($between ($char #\()
+                            ($or ($string "a") ($string "b"))
+                            ($char #\))))
+  (define ortest3 ($or ($try ($string "(a)")) ($string "(b)")))
+  (test-succ "$or" "abc" ortest0 "abc")
+  (test-succ "$or" "xyz" ortest0 "xyz")
+  (test-fail "$or" '(0 ((fail-expect . "abc") (fail-expect . "xyz")))
+             ortest0 "ghi")
+  (test-fail "$or" '(1 "(a)") ortest1 "(b)")
+  (test-succ "$or" "b" ortest2 "(b)")
+  (test-succ "$or" "(b)" ortest3 "(b)")
+  )
+
 ;; Count the maximal nesting level
 (letrec ((nesting
           ($lazy ($or ($do [n ($try ($do [($char #\()] nesting))]
