@@ -1,5 +1,10 @@
 2008-07-26  Shiro Kawai  <shiro@scherzo.hawaiiantel.net>
 
+	* src/compile.scm (pass1/body-wrap-intdefs): Ensure the evaluation
+	  order of internal define the same as corresponding letrec.  Before
+	  it was reversed and a source of confusion.  It is also consistent
+	  to letrec* behavior.
+
 	* ext/peg/peg-lib.scm
 	  ($many_): Removed, for it is same as $skip-many.
 	  ($fold, $fold-right, $many-chars, $many1): Added.

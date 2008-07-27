@@ -1575,82 +1575,79 @@
 (define (pass1/body exprs intdefs cenv)
 
   (match exprs
-    (()  ($const-undef))
-    (((op . args) . rest)
+    [()  ($const-undef)]
+    [((op . args) . rest)
      (cond
-      ((and (not (assq op intdefs))
+      [(and (not (assq op intdefs))
             (pass1/lookup-head op cenv))
        => (lambda (head)
             (unless (list? args)
               (error "proper list required for function application or macro use:" (car exprs)))
             (cond
-             ((lvar? head) (pass1/body-wrap-intdefs intdefs exprs cenv))
-             ((macro? head)
+             [(lvar? head) (pass1/body-wrap-intdefs intdefs exprs cenv)]
+             [(macro? head)
               (pass1/body
                (cons (call-macro-expander head (car exprs) (cenv-frames cenv))
                      rest)
-               intdefs cenv))
-             ((identifier? head)
+               intdefs cenv)]
+             [(identifier? head)
               (cond
-               ((global-eq? head 'define cenv)
+               [(global-eq? head 'define cenv)
                 (when (null? args)
                   (error "malformed internal define:" (car exprs)))
-                (pass1/body-handle-intdef args rest intdefs cenv))
-               ((global-eq? head 'begin cenv)
+                (pass1/body-handle-intdef args rest intdefs cenv)]
+               [(global-eq? head 'begin cenv)
                 ;; intersperse the body of begin
-                (pass1/body (append args rest) intdefs cenv))
-               (else
-                (or (and-let* ((gloc (find-binding (slot-ref head 'module)
+                (pass1/body (append args rest) intdefs cenv)]
+               [else
+                (or (and-let* ([gloc (find-binding (slot-ref head 'module)
                                                    (slot-ref head 'name)
-                                                   #f))
-                               (gval (gloc-ref gloc))
-                               ( (macro? gval) ))
+                                                   #f)]
+                               [gval (gloc-ref gloc)]
+                               [ (macro? gval) ])
                       (pass1/body
                        (cons (call-macro-expander gval (car exprs) (cenv-frames cenv))
                              rest)
                        intdefs cenv))
-                    (pass1/body-wrap-intdefs intdefs exprs cenv)))))
-             (else
-              (error "[internal] pass1/body" head)))))
-      (else
-       (pass1/body-wrap-intdefs intdefs exprs cenv))))
-    (else
-     (pass1/body-wrap-intdefs intdefs exprs cenv))))
+                    (pass1/body-wrap-intdefs intdefs exprs cenv))])]
+             [else
+              (error "[internal] pass1/body" head)]))]
+      [else
+       (pass1/body-wrap-intdefs intdefs exprs cenv)])]
+    [_
+     (pass1/body-wrap-intdefs intdefs exprs cenv)]))
 
 ;; an internal define is found.  def is cdr of internal define.
 ;; we know def isn't null.
 (define (pass1/body-handle-intdef def exprs intdefs cenv)
-  (cond
-   ((pair? (car def))
-    (let ((name (caar def))
-          (args (cdar def))
-          (body (cdr def)))
-      (pass1/body exprs
-                  (cons (list name `(,lambda. ,args ,@body)) intdefs)
-                  cenv)))
-   ((and (pair? (cdr def)) (null? (cddr def)))
-    (pass1/body exprs (cons def intdefs) cenv))
-   (else
-    (error "malformed internal define:" `(define . ,def)))))
+  (match def
+    [((name . args) . body)
+     (pass1/body exprs
+                 (cons (list name `(,lambda. ,args ,@body)) intdefs)
+                 cenv)]
+    [(_ _)
+     (pass1/body exprs (cons def intdefs) cenv)]
+    [else
+     (error "malformed internal define:" `(define . ,def))]))
 
 ;; Finishing internal definitions.  If we have internal defs, we wrap
 ;; the rest by letrec.
 (define (pass1/body-wrap-intdefs intdefs exprs cenv)
   (cond
-   ((not (null? intdefs))
-    (pass1 `(,(global-id 'letrec) ,intdefs ,@exprs) cenv))
-   ((null? exprs)
-    ($seq '()))
-   ((null? (cdr exprs))
-    (pass1 (car exprs) cenv))
-   (else
+   [(not (null? intdefs))
+    (pass1 `(,(global-id 'letrec) ,(reverse intdefs) ,@exprs) cenv)]
+   [(null? exprs)
+    ($seq '())]
+   [(null? (cdr exprs))
+    (pass1 (car exprs) cenv)]
+   [else
     (let1 stmtenv (cenv-sans-name cenv)
       ($seq (let loop ((exprs exprs)
                        (r '()))
               (if (null? (cdr exprs))
                 (reverse (cons (pass1 (car exprs) cenv) r))
                 (loop (cdr exprs)
-                      (cons (pass1 (car exprs) stmtenv) r)))))))))
+                      (cons (pass1 (car exprs) stmtenv) r))))))]))
 
 ;;--------------------------------------------------------------
 ;; Pass1 utilities
