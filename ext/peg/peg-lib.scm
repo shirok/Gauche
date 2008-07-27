@@ -50,11 +50,10 @@
 
           parse-string
           $return $fail $expect 
-          $do $do* $try $seq $or $many $many_ $skip-many
+          $do $do* $try $seq $or
+          $many $skip-many
           $repeat $optional
-
           $alternate
-
           $sep-by $end-by $sep-end-by
           $count $between
           $not $many-till $chain-left $chain-right
@@ -333,8 +332,13 @@
 ;;; Combinators
 ;;;
 
-;; $do and $do*
-
+;; $do  clause ... body
+;; $do* clause ... body
+;;   where
+;;     clause := (var parser)
+;;            |  (parser)
+;;            |  parser
+;;
 (define-macro (%gen-do-common)
   '(begin
      ;; an ad-hoc optimization to eliminate a closure in typical cases.
@@ -422,6 +426,8 @@
                        ,(loop s1 rest))))])]))))
   )
 
+;; $or p1 p2 ...
+;;   Ordered choice.
 (define-macro ($or . parsers)
 
   (define (parse-or parsers ps binds)
@@ -455,23 +461,9 @@
     `(cut values #f #t <>)
     (parse-or parsers '() '())))
 
-(define ($try . parsers)
-  (match parsers
-    [()  ($return #t)]
-    [(p) (lambda (s0)
-           (receive (r v s) (p s0)
-             (if (not r)
-               (return-result v s)
-               (return-failure/expect v s0))))]
-    [ps
-     (lambda (s0)
-       (let loop ((s s0) (ps ps))
-         (receive (r1 v1 s1) ((car ps) s)
-           (cond [r1     (values r1 v1 s0)] ; failure/backtrack
-                 [(null? (cdr ps)) (values #f v1 s1)] ; success
-                 [else (loop s1 (cdr ps))]))))]
-    ))
-
+;; $seq p1 p2 ...
+;;   Match p1, p2 ... sequentially.  On success, returns the semantic
+;;   value of the last parser.
 (define ($seq . parsers)
   (match parsers
     [() ($return #t)]
@@ -489,11 +481,38 @@
                (values r1 v1 s1))))))]
     ))
 
+;; $try p1 p2 ...
+;;   Try to match the sequence of parsers.  If it fails, backtrack to
+;;   the starting position of the stream.  So,
+;;    ($or ($try a b c ...)
+;;         ($try A B C ...)
+;;         ...)
+;;   would try a b c ... and A B C ..., even some of them consumes
+;;   the input.
+(define ($try . parsers)
+  (match parsers
+    [()  ($return #t)]
+    [(p) (lambda (s0)
+           (receive (r v s) (p s0)
+             (if (not r)
+               (return-result v s)
+               (return-failure/expect v s0))))]
+    [ps
+     (lambda (s0)
+       (let loop ((s s0) (ps ps))
+         (receive (r1 v1 s1) ((car ps) s)
+           (cond [r1     (values r1 v1 s0)] ; failure/backtrack
+                 [(null? (cdr ps)) (values #f v1 s1)] ; success
+                 [else (loop s1 (cdr ps))]))))]
+    ))
+
 (define (%check-min-max min max)
   (when (or (negative? min)
             (and max (> min max)))
     (error "invalid argument:" min max)))
 
+;; $many p &optional min max
+;;   
 (define ($many parse . args)
   (match args
     [() 
@@ -517,36 +536,36 @@
                     (return-result (reverse! vs) s)]
                    [else (values r1 v1 s1)])))))]))
 
-(define ($many_ parse . args)
+;; $skip-many p &optional min max
+;;   Like $many, but does not keep the results; returns the last result
+;;   of successful parse, or #f.
+(define ($skip-many parse . args)
   (match args
     [()
      (lambda (s)
-       (let loop ((s s))
+       (let loop ((s s) (v0 #f))
          (receive (r1 v1 s1) (parse s)
            (if (parse-success? r1)
-             (loop s1)
-             (return-result #t s)))))]
+             (loop s1 v1)
+             (return-result v0 s)))))]
     [(min) ($many parse min #f)]
     [(min max)
      (%check-min-max min max)
      (lambda (s)
-       (let loop ((s s) (count 0))
+       (let loop ((s s) (count 0) (v0 #f))
          (if (and max (>= count max))
-           (return-result #t s)
+           (return-result v0 s)
            (receive (r1 v1 s1) (parse s)
              (cond [(parse-success? r1)
-                    (loop s1 (+ count 1))]
+                    (loop s1 (+ count 1) v1)]
                    [(<= min count)
-                    (return-result #t s)]
+                    (return-result r1 s)]
                    [else (values r1 v1 s1)])))))]))
 
 (define ($optional parse)
   ;; Idea: allow ($maybe p1 p2 ...) => ($maybe ($seq p1 p2 ...))
   ;;       but is $seq appropriate?
   ($or parse ($return #f)))
-
-(define ($skip-many . args)
-  (apply $many args))
 
 (define ($repeat parse n)
   ($many parse n n))

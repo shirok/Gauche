@@ -266,8 +266,10 @@
            ($many ($string "a") 1 2) "aaaaa")
 
 ;; $skip-many
-(test-succ "$skip-many" '("a" "a")
+(test-succ "$skip-many" "a"
            ($skip-many ($string "a") 1 2) "aaaaa")
+(test-succ "$skip-many" #f
+           ($skip-many ($string "a")) "baaaaa")
 
 ;; $repeat
 (test-succ "$repeat" '(#\a #\b #\a)
@@ -508,7 +510,7 @@
              record "\"a  \"\" \n\" , b  , c"))
 
 ;; hand-tuned version
-(let* ((spaces_ ($many_ ($one-of #[ \t])))
+(let* ((spaces_ ($skip-many ($one-of #[ \t])))
        (spaces ($many ($one-of #[ \t])))
        (comma  ($seq spaces_ ($char #\,) spaces_))
        (dquote ($char #\"))
