@@ -581,43 +581,36 @@
 (define ($repeat parse n)
   ($many parse n n))
 
-(define ($sep-by parse sep . args)
-  (let-optionals* args ((min 0) (max #f))
-    (%check-min-max min max)
-    (if (and max (zero? max))
-      ($return #t)
-      (lambda (s)
-        (receive (r v s) (parse s)
-          (cond [(parse-success? r)
-                 (receive (r2 v2 s2) (($many ($do sep parse)
-                                             (clamp (- min 1) 0)
-                                             (and max (- max 1)))
-                                      s)
-                   (if (parse-success? r2)
-                     (return-result (cons v v2) s2)
-                     (values r2 v2 s2)))]
-                [(zero? min) (return-result #t s)]
-                [else (values r v s)]))))))
-
+(define ($sep-by parse sep :optional (min 0) (max #f))
+  (define rep
+    ($do [x parse]
+         [xs ($many ($seq sep parse)
+                    (clamp (- min 1) 0)
+                    (and max (- max 1)))]
+         ($return (cons x xs))))
+  (cond
+   [(and max (zero? max)) ($return '())]
+   [(> min 0) rep]
+   [else ($or rep ($return '()))]))
+  
 (define ($alternate parse sep)
-  (let ((ts ($many ($do (v1 sep) (v2 parse) ($return (list v1 v2))))))
-    ($do (h parse)
-         (t ts)
-         ($return (cons h (apply append! t))))))
+  ($do [h parse]
+       [t ($many ($do [v1 sep] [v2 parse] ($return (list v1 v2))))]
+       ($return (cons h (apply append! t)))))
 
 (define ($end-by parse sep . args)
-  (apply $many ($do (v parse) sep ($return v)) args))
+  (apply $many ($do [v parse] sep ($return v)) args))
 
 (define ($sep-end-by parse sep . args)
-  ($do (v (apply $sep-by parse sep args))
-       (($optional sep))
+  ($do [v (apply $sep-by parse sep args)]
+       [($optional sep)]
        ($return v)))
 
 (define ($count parse n)
   ($many parse n n))
 
 (define ($between open parse close)
-  ($do open (v parse) close ($return v)))
+  ($do open [v parse] close ($return v)))
 
 (define ($not parse)
   (lambda (s0)
@@ -627,7 +620,7 @@
         (return-failure/unexpect v s0)))))
 
 (define ($many-till parse end . args)
-  (apply $many ($do (($not end)) parse) args))
+  (apply $many ($do [($not end)] parse) args))
 
 (define ($chain-left parse op)
   (lambda (st)
