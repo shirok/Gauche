@@ -184,13 +184,13 @@
            ($try ($string "foo"))
            "foo...")
 (test-succ "$try" "bar"
-           ($try ($string "foo") ($string "bar"))
+           ($try ($seq ($string "foo") ($string "bar")))
            "foobar...")
 (test-fail "$try" '(0 "foo")
            ($try ($string "foo"))
            "bar...")
 (test-fail "$try" '(0 "bar")
-           ($try ($string "foo") ($string "bar"))
+           ($try ($seq ($string "foo") ($string "bar")))
            "foobaz...")
 
 ;; $do
@@ -241,6 +241,27 @@
            ($do (v ($or ($string "foo") ($string "bar")))
                 ($string (semantic-value-finalize! v)))
            "foobar")
+
+;; $fold and $fold-right
+(test-succ "$fold" '()                  ; base case
+           ($fold cons '() '())
+           "abc")
+(test-succ "$fold" '(#\c #\b #\a)
+           ($fold cons '() (list ($char #\a) ($char #\b) ($char #\c)))
+           "abc")
+(test-fail "$fold" '(2 #\c)
+           ($fold cons '() (list ($char #\a) ($char #\b) ($char #\c)))
+           "abd")
+
+(test-succ "$fold-right" '()            ; base case
+           ($fold-right cons '() '())
+           "abc")
+(test-succ "$fold-right" '(#\a #\b #\c)
+           ($fold-right cons '() (list ($char #\a) ($char #\b) ($char #\c)))
+           "abc")
+(test-fail "$fold-right" '(2 #\c)
+           ($fold-right cons '() (list ($char #\a) ($char #\b) ($char #\c)))
+           "abd")
 
 ;; $seq
 (test-succ "$seq" "b"

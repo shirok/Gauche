@@ -1,7 +1,8 @@
 2008-07-26  Shiro Kawai  <shiro@scherzo.hawaiiantel.net>
 
-	* ext/peg/peg-lib.scm ($many-chars): Added.
+	* ext/peg/peg-lib.scm
 	  ($many_): Removed, for it is same as $skip-many.
+	  ($fold, $fold-right, $many-chars): Added.
 
 2008-07-25  Shiro Kawai  <shiro@scherzo.hawaiiantel.net>
 

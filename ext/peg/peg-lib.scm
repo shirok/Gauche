@@ -50,7 +50,7 @@
 
           parse-string
           $return $fail $expect 
-          $do $do* $try $seq $or
+          $do $do* $try $seq $or $fold $fold-right
           $many $skip-many
           $repeat $optional
           $alternate
@@ -461,50 +461,53 @@
     `(cut values #f #t <>)
     (parse-or parsers '() '())))
 
+;; $fold proc seed parsers
+;; $fold-right proc seed parsers
+;;   Apply parsers sequentially, passing around seed value.
+;;   Note: $fold can be written much simpler (only shown in recursion branch):
+;;     ($do [v (car ps)] ($fold proc (proc v seed) (cdr ps)))
+;;   but it needs to create closures at parsing time, rather than construction
+;;   time.  Interestingly, $fold-right can be written simply without this
+;;   disadvantage.
+
+(define ($fold proc seed ps)
+  (if (null? ps)
+    ($return seed)
+    (lambda (s)
+      (let loop ((s s) (ps ps) (seed seed))
+        (if (null? ps)
+          (return-result seed s)
+          (receive (r1 v1 s1) ((car ps) s)
+            (if (parse-success? r1)
+              (loop s1 (cdr ps) (proc v1 seed))
+              (values r1 v1 s1))))))))
+
+(define ($fold-right proc seed ps)
+  (match ps
+    [()       ($return seed)]
+    [(p . ps) ($do [v    p]
+                   [seed ($fold-right proc seed ps)]
+                   ($return (proc v seed)))]))
+
 ;; $seq p1 p2 ...
 ;;   Match p1, p2 ... sequentially.  On success, returns the semantic
 ;;   value of the last parser.
 (define ($seq . parsers)
-  (match parsers
-    [() ($return #t)]
-    [(parse) parse]
-    [ps
-     ;; simple, but inefficient def: ($do ((parse)) (apply $seq rest))
-     ;; we expand the loop to avoid extra closure creation.
-     (lambda (s)
-       (let loop ((s s) (ps ps))
-         (if (null? (cdr ps))
-           ((car ps) s)
-           (receive (r1 v1 s1) ((car ps) s)
-             (if (parse-success? r1)
-               (loop s1 (cdr ps))
-               (values r1 v1 s1))))))]
-    ))
+  ($fold (lambda (v s) v) #f parsers))
 
-;; $try p1 p2 ...
-;;   Try to match the sequence of parsers.  If it fails, backtrack to
+;; $try parser
+;;   Try to match parsers.  If it fails, backtrack to
 ;;   the starting position of the stream.  So,
-;;    ($or ($try a b c ...)
-;;         ($try A B C ...)
+;;    ($or ($try a)
+;;         ($try b)
 ;;         ...)
-;;   would try a b c ... and A B C ..., even some of them consumes
-;;   the input.
-(define ($try . parsers)
-  (match parsers
-    [()  ($return #t)]
-    [(p) (lambda (s0)
-           (receive (r v s) (p s0)
-             (if (not r)
-               (return-result v s)
-               (return-failure/expect v s0))))]
-    [ps
-     (lambda (s0)
-       (let loop ((s s0) (ps ps))
-         (receive (r1 v1 s1) ((car ps) s)
-           (cond [r1     (values r1 v1 s0)] ; failure/backtrack
-                 [(null? (cdr ps)) (values #f v1 s1)] ; success
-                 [else (loop s1 (cdr ps))]))))]
-    ))
+;;   would try a, b, ... even some of them consumes the input.
+(define ($try p)
+  (lambda (s0)
+    (receive (r v s) (p s0)
+      (if (not r)
+        (return-result v s)
+        (return-failure/expect v s0)))))
 
 (define (%check-min-max min max)
   (when (or (negative? min)
