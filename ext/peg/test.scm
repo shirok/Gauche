@@ -580,7 +580,7 @@
        (unquoted ($alternate ($one-of #[^ \t\r\n,]) spaces))
        (field ($or quoted unquoted))
        (record ($sep-by ($->rope field) comma 1))
-       (records ($sep-by record ($string "\r\n"))))
+       (records ($sep-end-by record ($string "\r\n"))))
   (test-succ "CSV 2" '(("a" "b" "c") ("x" "y" "z"))
              records "a,b,c\r\nx,y,z\r\n")
   (test-succ "CSV 2" '(("a " "b" "c") ("zzz\nyyy " " w \" "))
