@@ -853,75 +853,75 @@
   (define (pack-iform-rec iform)
     (case/unquote
      (iform-tag iform)
-     (($DEFINE)
+     [($DEFINE)
       (put! iform $DEFINE ($*-src iform)
             ($define-flags iform) ($define-id iform)
-            (get-ref ($define-expr iform))))
-     (($LREF)
-      (put! iform $LREF (get-ref ($lref-lvar iform))))
-     (($LSET)
+            (get-ref ($define-expr iform)))]
+     [($LREF)
+      (put! iform $LREF (get-ref ($lref-lvar iform)))]
+     [($LSET)
       (put! iform $LSET
-            (get-ref ($lset-lvar iform)) (get-ref ($lset-expr iform))))
-     (($GREF)
-      (put! iform $GREF ($gref-id iform)))
-     (($GSET)
-      (put! iform $GSET ($gset-id iform) (get-ref ($gset-expr iform))))
-     (($CONST)
-      (put! iform $CONST ($const-value iform)))
-     (($IF)
+            (get-ref ($lset-lvar iform)) (get-ref ($lset-expr iform)))]
+     [($GREF)
+      (put! iform $GREF ($gref-id iform))]
+     [($GSET)
+      (put! iform $GSET ($gset-id iform) (get-ref ($gset-expr iform)))]
+     [($CONST)
+      (put! iform $CONST ($const-value iform))]
+     [($IF)
       (put! iform $IF ($*-src iform)
             (get-ref ($if-test iform))
             (get-ref ($if-then iform))
-            (get-ref ($if-else iform))))
-     (($LET)
+            (get-ref ($if-else iform)))]
+     [($LET)
       (put! iform (iform-tag iform) ($*-src iform) ($let-type iform)
             (map get-ref ($let-lvars iform))
             (map get-ref ($let-inits iform))
-            (get-ref ($let-body iform))))
-     (($RECEIVE)
+            (get-ref ($let-body iform)))]
+     [($RECEIVE)
       (put! iform $RECEIVE ($*-src iform)
             ($receive-reqargs iform) ($receive-optarg iform)
             (map get-ref ($receive-lvars iform))
-            ($receive-expr iform)
-            ($receive-body iform)))
-     (($LAMBDA)
+            (get-ref ($receive-expr iform))
+            (get-ref ($receive-body iform)))]
+     [($LAMBDA)
       (put! iform $LAMBDA ($*-src iform)
             ($lambda-name iform) ($lambda-reqargs iform) ($lambda-optarg iform)
             (map get-ref ($lambda-lvars iform))
             (get-ref ($lambda-body iform))
-            ($lambda-flag iform)))
-     (($LABEL)
-      (put! iform $LABEL ($*-src iform) #f (get-ref ($label-body iform))))
-     (($SEQ)
-      (put! iform $SEQ (map get-ref ($seq-body iform))))
-     (($CALL)
+            ($lambda-flag iform))]
+     [($LABEL)
+      (put! iform $LABEL ($*-src iform) #f (get-ref ($label-body iform)))]
+     [($SEQ)
+      (put! iform $SEQ (map get-ref ($seq-body iform)))]
+     [($CALL)
       (put! iform $CALL ($*-src iform)
             (get-ref ($call-proc iform))
             (map get-ref ($call-args iform))
-            ($call-flag iform)))
-     (($ASM)
+            ($call-flag iform))]
+     [($ASM)
       (put! iform $ASM ($*-src iform)
             ($asm-insn iform)
-            (map get-ref ($asm-args iform))))
-     (($IT)
-      (put! iform $IT))
-     (($PROMISE)
+            (map get-ref ($asm-args iform)))]
+     [($IT)
+      (put! iform $IT)]
+     [($PROMISE)
       (put! iform $PROMISE ($*-src iform)
-            (get-ref ($promise-expr iform))))
-     (($CONS $APPEND $MEMV $EQ? $EQV?)
+            (get-ref ($promise-expr iform)))]
+     [($CONS $APPEND $MEMV $EQ? $EQV?)
       (put! iform (iform-tag iform) ($*-src iform)
             (get-ref ($*-arg0 iform))
-            (get-ref ($*-arg1 iform))))
-     (($VECTOR $LIST $LIST*)
+            (get-ref ($*-arg1 iform)))]
+     [($VECTOR $LIST $LIST*)
       (put! iform (iform-tag iform) ($*-src iform)
-            (map get-ref ($*-args iform))))
-     (($LIST->VECTOR)
+            (map get-ref ($*-args iform)))]
+     [($LIST->VECTOR)
       (put! iform (iform-tag iform) ($*-src iform)
-            (get-ref ($*-arg0 iform))))
-     (('lvar)
-      (put! iform 'lvar (lvar-name iform)))
-     (else
-      (errorf "[internal-error] unknown IForm in pack-iform: ~S" iform))
+            (get-ref ($*-arg0 iform)))]
+     [('lvar)
+      (put! iform 'lvar (lvar-name iform))]
+     [else
+      (errorf "[internal-error] unknown IForm in pack-iform: ~S" iform)]
      ))
 
   ;; main body of pack-iform
@@ -952,54 +952,54 @@
     (define (unpack-body i)
       (case/unquote
        (V i)
-       (($DEFINE)
-        ($define (V i 1) (V i 2) (V i 3) (unpack-rec (V i 4))))
-       (($LREF)
-        ($lref (unpack-rec (V i 1))))
-       (($LSET)
-        ($lset (unpack-rec (V i 1)) (unpack-rec (V i 2))))
-       (($GREF)
-        ($gref (V i 1)))
-       (($GSET)
-        ($gset (V i 1) (unpack-rec (V i 2))))
-       (($CONST)
-        ($const (V i 1)))
-       (($IF)
+       [($DEFINE)
+        ($define (V i 1) (V i 2) (V i 3) (unpack-rec (V i 4)))]
+       [($LREF)
+        ($lref (unpack-rec (V i 1)))]
+       [($LSET)
+        ($lset (unpack-rec (V i 1)) (unpack-rec (V i 2)))]
+       [($GREF)
+        ($gref (V i 1))]
+       [($GSET)
+        ($gset (V i 1) (unpack-rec (V i 2)))]
+       [($CONST)
+        ($const (V i 1))]
+       [($IF)
         ($if (V i 1)
-             (unpack-rec (V i 2)) (unpack-rec (V i 3)) (unpack-rec (V i 4))))
-       (($LET)
+             (unpack-rec (V i 2)) (unpack-rec (V i 3)) (unpack-rec (V i 4)))]
+       [($LET)
         ($let (V i 1) (V i 2)
               (map unpack-rec (V i 3)) (map unpack-rec (V i 4))
-              (unpack-rec (V i 5))))
-       (($RECEIVE)
+              (unpack-rec (V i 5)))]
+       [($RECEIVE)
         ($receive (V i 1) (V i 2) (V i 3)
                   (map unpack-rec (V i 4)) (unpack-rec (V i 5))
-                  (unpack-rec (V i 6))))
-       (($LAMBDA)
+                  (unpack-rec (V i 6)))]
+       [($LAMBDA)
         ($lambda (V i 1) (V i 2) (V i 3) (V i 4)
-                 (map unpack-rec (V i 5)) (unpack-rec (V i 6)) (V i 7)))
-       (($LABEL)
-        ($label (V i 1) (V i 2) (unpack-rec (V i 3))))
-       (($SEQ)
-        ($seq (map unpack-rec (V i 1))))
-       (($CALL)
-        ($call (V i 1) (unpack-rec (V i 2)) (map unpack-rec (V i 3)) (V i 4)))
-       (($ASM)
-        ($asm (V i 1) (V i 2) (map unpack-rec (V i 3))))
-       (($PROMISE)
-        ($promise (V i 1) (unpack-rec (V i 2))))
-       (($IT) ($it))
-       (($CONS $APPEND $MEMV $EQ? $EQV?)
-        (vector (V i) (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3))))
-       (($VECTOR $LIST $LIST*)
-        (vector (V i) (V i 1) (map unpack-rec (V i 2))))
-       (($LIST->VECTOR)
-        (vector (V i) (V i 1) (unpack-rec (V i 2))))
-       (('lvar)
-        (make-lvar (V i 1)))
-       (else
+                 (map unpack-rec (V i 5)) (unpack-rec (V i 6)) (V i 7))]
+       [($LABEL)
+        ($label (V i 1) (V i 2) (unpack-rec (V i 3)))]
+       [($SEQ)
+        ($seq (map unpack-rec (V i 1)))]
+       [($CALL)
+        ($call (V i 1) (unpack-rec (V i 2)) (map unpack-rec (V i 3)) (V i 4))]
+       [($ASM)
+        ($asm (V i 1) (V i 2) (map unpack-rec (V i 3)))]
+       [($PROMISE)
+        ($promise (V i 1) (unpack-rec (V i 2)))]
+       [($IT) ($it)]
+       [($CONS $APPEND $MEMV $EQ? $EQV?)
+        (vector (V i) (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
+       [($VECTOR $LIST $LIST*)
+        (vector (V i) (V i 1) (map unpack-rec (V i 2)))]
+       [($LIST->VECTOR)
+        (vector (V i) (V i 1) (unpack-rec (V i 2)))]
+       [('lvar)
+        (make-lvar (V i 1))]
+       [else
         (errorf "[internal error] unpack-iform: ivec broken at ~a: ~S"
-                i ivec))
+                i ivec)]
        ))
 
     (unpack-rec (V 0))))
@@ -1255,7 +1255,7 @@
                        (rec ($*-arg1 iform)))]
      [($IT) ($it)]
      [else iform]))
-  
+
   (pack-iform (rec (unpack-iform src))))
 
 ;; An aux proc called during pass 2 to determine free variables of

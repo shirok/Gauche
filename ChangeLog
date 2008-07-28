@@ -1,3 +1,7 @@
+2008-07-28  Shiro Kawai  <shiro@scherzo.hawaiiantel.net>
+
+	* src/compile.scm (pack-iform): Fixed a bug handling $RECEIVE node.
+
 2008-07-26  Shiro Kawai  <shiro@scherzo.hawaiiantel.net>
 
 	* src/compile.scm (pass1/body-wrap-intdefs): Ensure the evaluation
