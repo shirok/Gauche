@@ -4385,8 +4385,6 @@ If the parser can't accept the input, the driver throws an error
 @example
 gosh> (peg-parse-string ($char #\a) "xyz")
 *** PARSE-ERROR: expecting #\a at 0
-Stack Trace:
-_______________________________________
 @end example
 
 A parser can also be constructed by combining simpler parsers,
@@ -4411,74 +4409,114 @@ gosh> (peg-parse-string ($many ($char #\a)) "xxxxxyz")
 @end example
 
 A parser is just an ordinary Scheme procedure, so it can be bound
-to a variable.
+to a variable, then can be used to construct more complex parsers.
 
 @example
-(define integer   ($many1 ($one-of #[\d])))
+(define digits    ($many1 ($one-of #[\d])))
 (define ws        ($skip-many ($one-of #[\s])))
+(define separator ($seq ws ($char #\,) ws))
 @end example
 
-I leave explanation of @code{$many1}, @code{$one-of}
-and @code{$skip-many} in the later section, but I guess
-you can imagine what those parsers do; 
-@code{integer} accepts a sequence of digits, and
-@code{ws} accepts whitespaces.
+I leave explanation of @code{$many1}, @code{$one-of}, and
+@code{$skip-many} for the later section, 
+but I guess you can imagine what those parsers do; 
+@code{digits} accepts a sequence of digits, and
+@code{ws} accepts whitespaces.   The @code{separator}
+parser accepts a comma, optionally surrounded by whitespaces.
+
+The @code{digits} parser returns a list of accepted
+characters:
+
+@example
+gosh> (peg-parse-string digits "12345")
+(#\1 #\2 #\3 #\4 #\5)
+@end example
+
+Can we create a parser that returns an integer as
+a parsed result?    Yes, we can use the @code{$do} form
+and the @code{$return} combinator.
+
+@example
+(define integer
+  ($do [ds digits]
+       ($return (x->integer (list->string ds)))))
+@end example
+
+The @code{$do} form works somewhat like @code{ant-let*}; it takes
+a form of @code{($do [@var{var} @var{parser}] @dots{} @var{expr})},
+applying the @var{parser}s in order, binding the result of each
+parser to @var{var}.  The @code{$return} combinator is create a
+parser that doesn't consume input and returns the given value; 
+you can think that @code{$do} is to pull out a value from,
+and @code{$return} to put back a value to, the chain of parsers.
+(Note: If you know Monads, you can recognize the pattern.
+It is also no coincidence that @code{$do} is similar to @code{and-let*},
+since @code{and-let*} is just a Maybe monad in disguise.)
+
+@example
+gosh> (peg-parse-string integer "12345")
+12345
+@end example
+
 Now you can combine those parsers to build more complex one, such
 as a list of integers:
 
 @example
-(define int-list ($seq ($char #\[ )
-                       ($many ($seq ws integer))
-                       ws
-                       ($char #\] )))
+(define integers1 ($seq integer
+                        ($many ($seq separator integer))))
 
-gosh> (peg-parse-string int-list "[123 456 789]")
-#\]
+gosh> (peg-parse-string integers1 "123, 456, 789")
+(456 789)
 @end example
 
-Well, it does accepts the input, but it only returns
-the last parsed value @code{#\]}, which is not very useful.
-To pull out the intermediate result of parsing, you can use
-@code{$do} form:
+Oops, where's 123?  Well, remember that 
+@code{$seq} discards the results but the last one.
+We can use @code{$do} again to keep all the results.
 
 @example
-(define int-list
-  ($do [ ($char #\[ ) ]
-       [digs ($many ($seq ws integer))]
-       [ ws ]
-       [ ($char #\] ) ]
-       ($return (map (compose x->integer list->string) digs))))
+(define integers2 ($do [n  integer]
+                       [ns ($many ($seq separator integer))]
+                       ($return (cons n ns))))
+
+gosh> (peg-parse-string integers2 "123, 456, 789")
+(123 456 789)
 @end example
 
-The @code{$do} form is somewhat similar to @code{and-let*}---it
-takes number of @emph{clauses}, each of which contains an optional
-variable name and a parser.   A parser is applied and
-its result is bound to the variable when the variable name is present.
-In the above example, the result of the parser 
-@code{($many ($seq ws integer))} is bound to a variable @code{digs}.
-It is a list of the result of @code{integer} (note that @code{$seq}
-returns the last result), each of which is a list of characters.
-
-If the @code{$do} form is to pull out the result value from the
-parser, the @code{$return} procedure is to put the value back
-into the parser chain.  The result of @code{$return} procedure
-is a parser which doesn't consume input and always succeeds,
-returning the given argument as the result.
-
-The @code{$or} form can be used to represent a choice.
+This parser doesn't handle the case when the list contains no
+integers.   Using the @code{$or} form, which represents a choice,
+we can modify it to handle zero-element case.
 
 @example
-gosh> (peg-parse-string ($or ($string "abc") ($string "xyz")) "abc")
-"abc"
-gosh> (peg-parse-string ($or ($string "abc") ($string "xyz")) "xyz")
-"xyz"
-gosh> (peg-parse-string ($or ($string "abc") ($string "xyz")) "ghi")
-*** PARSE-ERROR: expecting one of ("abc" "xyz")
-Stack Trace:
-_______________________________________
+(define integers3 ($or ($do [n  integer]
+                            [ns ($many ($seq separator integer))]
+                            ($return (cons n ns)))
+                       ($return '())))
 @end example
 
-Note that @code{$or} tries the next alternative only if the
+By the way, ``list of stuff separated by something'' is a very common
+pattern, so we can extract the pattern to name it:
+
+@example
+(define (sep-by stuff separator)
+  ($or ($do [n  stuff]
+            [ns ($many ($seq separator stuff))]
+            ($return (cons n ns)))
+       ($return '()))
+@end example
+
+Then the list of integers can be written this simple:
+
+@example
+(define integers4 (sep-by integer separator))
+@end example
+
+In fact, @code{parser.peg} provides @code{$sep-by} to do the above,
+but we've just shown the definition to demonstrate
+the power of the combinatorial approach; 
+you can use ordinary procedural abstraction to factor out common patterns.
+
+There's one catch in the @code{$or} form.
+It tries the next alternative only when the
 parser fails without consuming the input.  Once the input is
 consumed, @code{$or} commits to that choice.   For example,
 the following fails even if the input seems to match the
@@ -4487,8 +4525,6 @@ second alternative:
 @example
 gosh> (peg-parse-string ($or ($string "(a)") ($string "(b)")) "(b)")
 *** PARSE-ERROR: expecting (a) at 1
-Stack Trace:
-_______________________________________
 @end example
 
 It's because when @code{$or} tries the first branch, it reads the initial
@@ -4496,7 +4532,7 @@ open paren from the input, so @code{$or} commits to the first branch.
 When the branch fails, @code{$or} doesn't bother to try the second branch.
 (In other words, @code{$or} does not backtrack.)
 
-You can either factor out the common prefix:
+You may factor out the common prefix:
 
 @example
 ($seq ($char #\()
@@ -4504,15 +4540,84 @@ You can either factor out the common prefix:
       ($char #\)))
 @end example
 
-Or use the @code{$try} combinator, which explicitly backtracks
-when the given parser fails.
+But it complicates the syntax, and it is not always trivial to
+factor out like above.  The better way is to use the @code{$try}
+combinator: @code{($try @var{p})} runs a parser @var{p}, and if
+it fails, @code{$try} rolls back the input as if it didn't
+consume input at all.  Using with @code{$or}, you can do arbitrary
+lookahead.
 
 @example
 ($or ($try ($string "(a)"))
      ($string "(b)"))
 @end example
 
-Writing recursive rules also needs a special consideration.
+Now, let's get back to the integer list example and make
+it more intersting.
+Suppose the list of integers are surrounded by brackets.  
+We can just put open and close bracket around the
+comma-separated integers (you can omit the parentheses around
+the clauses in @code{$do} form, if the parser expression consists
+of single symbol and you don't need the result):
+
+@example
+(define begin-list  ($seq ($char #\[ ) ws))
+(define end-list    ($seq ws ($char #\] )))
+
+(define int-list1 ($do begin-list
+                       [ns ($sep-by integer separator)]
+                       end-list
+                       ($return ns)))
+
+gosh> (peg-parse-string int-list1 "[123, 456, 789]")
+(123 456 789)
+@end example
+
+The above pattern is also common, so there's a pre-defined combinator:
+@code{$between}:
+
+@example
+(define int-list2 ($between begin-list
+                            ($sep-by integer separator)
+                            end-list))
+@end example
+
+What if we want a nested list?  In BNF, we could write
+something like this:
+
+@example
+list : '[' (elem (separator elem)* )? ']'
+elem : integer | list
+@end example
+
+Unfortunately, the straightforward translation won't work:
+
+@example
+;; Does not work
+(define list1 ($between begin-list
+                        ($sep-by elem separator)
+                        end-list))
+(define elem  ($or integer list1))
+@end example
+
+We need the parser @code{elem} to construct @code{list1}, but
+we need the parser @code{list1} to construct @code{elem}.
+In lazy languages like Haskell this doesn't matter, but we Schemers
+are @emph{eager}!
+
+The solution is to delay the parser construciton until it is
+actually used.  The @code{$lazy} combinator does the job:
+
+@example
+(define list2 ($lazy
+               ($between begin-list
+                         ($sep-by elem separator)
+                         end-list)))
+(define elem  ($or integer list2))
+
+gosh> (peg-parse-string list2 "[123, [456, [], 789], 987]")
+(123 (456 () 789) 987)
+@end example
 
 
 @node PEG high-level API, PEG combinators, A PEG parser, Parser combinators for PEG
