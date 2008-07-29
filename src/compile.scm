@@ -530,6 +530,8 @@
   (let1 x ($const (undefined)) (lambda () x)))
 (define $const-nil
   (let1 x ($const '()) (lambda () x)))
+(define $const-f
+  (let1 x ($const #f) (lambda () x)))
 
 ;; $if <src> <test> <then> <else>
 ;;   Conditional.
@@ -1925,7 +1927,7 @@
 (define-pass1-syntax (or form cenv) :null
   (define (rec exprs)
     (match exprs
-      (() `#(,$CONST #f))
+      (() ($const-f))
       ((expr) (pass1 expr cenv))
       ((expr . more)
        ($if #f (pass1 expr (cenv-sans-name cenv)) ($it) (rec more)))
@@ -2797,7 +2799,7 @@
                        (pass2/rec ($if-else iform) penv tail?))
                     (pass2/update-if iform ($if-test test)
                                      (if (has-tag? l0 $IT)
-                                       ($const #f)
+                                       ($const-f)
                                        l0)
                                      (pass2/rec ($if #f
                                                      test-else
@@ -3360,45 +3362,50 @@
   (let1 test ($if-test iform)
     ;; Select an appropriate branch instruction
     (cond
-     ((has-tag? test $ASM)
+     [(has-tag? test $ASM)
       (let ((code (car ($asm-insn test))); ASM code
             (args ($asm-args test)))
         (cond
-         ((eqv? code NULLP)
+         [(eqv? code NULLP)
           (pass3/if-final iform (car args) BNNULL 0 0 
-                          ($*-src test) ccb renv ctx))
-         ((eqv? code EQ)
+                          ($*-src test) ccb renv ctx)]
+         [(eqv? code EQ)
           (pass3/if-eq iform (car args) (cadr args)
-                       ($*-src test) ccb renv ctx))
-         ((eqv? code EQV)
+                       ($*-src test) ccb renv ctx)]
+         [(eqv? code EQV)
           (pass3/if-eqv iform (car args) (cadr args)
-                        ($*-src test) ccb renv ctx))
-         ((eqv? code NUMEQ2)
+                        ($*-src test) ccb renv ctx)]
+         [(eqv? code NUMEQ2)
           (pass3/if-numeq iform (car args) (cadr args)
-                          ($*-src test) ccb renv ctx))
-         ((eqv? code NUMLE2)
+                          ($*-src test) ccb renv ctx)]
+         [(eqv? code NUMLE2)
           (pass3/if-numcmp iform (car args) (cadr args)
-                           BNLE ($*-src test) ccb renv ctx))
-         ((eqv? code NUMLT2)
+                           BNLE ($*-src test) ccb renv ctx)]
+         [(eqv? code NUMLT2)
           (pass3/if-numcmp iform (car args) (cadr args)
-                           BNLT ($*-src test) ccb renv ctx))
-         ((eqv? code NUMGE2)
+                           BNLT ($*-src test) ccb renv ctx)]
+         [(eqv? code NUMGE2)
           (pass3/if-numcmp iform (car args) (cadr args)
-                           BNGE ($*-src test) ccb renv ctx))
-         ((eqv? code NUMGT2)
+                           BNGE ($*-src test) ccb renv ctx)]
+         [(eqv? code NUMGT2)
           (pass3/if-numcmp iform (car args) (cadr args)
-                           BNGT ($*-src test) ccb renv ctx))
-         (else
-          (pass3/if-final iform test BF 0 0 ($*-src iform) ccb renv ctx))
-         )))
-     ((has-tag? test $EQ?)
+                           BNGT ($*-src test) ccb renv ctx)]
+         [else
+          (pass3/if-final iform test BF 0 0 ($*-src iform) ccb renv ctx)]
+         ))]
+     [(has-tag? test $EQ?)
       (pass3/if-eq iform ($*-arg0 test) ($*-arg1 test)
-                   ($*-src iform) ccb renv ctx))
-     ((has-tag? test $EQV?)
+                   ($*-src iform) ccb renv ctx)]
+     [(has-tag? test $EQV?)
       (pass3/if-eqv iform ($*-arg0 test) ($*-arg1 test)
-                    ($*-src iform) ccb renv ctx))
-     (else
-      (pass3/if-final iform test BF 0 0 ($*-src iform) ccb renv ctx))
+                    ($*-src iform) ccb renv ctx)]
+     [(has-tag? test $CONST) ; this may occur as a result of macro expansion
+      (pass3/rec (if ($const-value test)
+                   (if (has-tag? ($if-then iform) $IT) test ($if-then iform))
+                   (if (has-tag? ($if-else iform) $IT) test ($if-else iform)))
+                 ccb renv ctx)]
+     [else
+      (pass3/if-final iform test BF 0 0 ($*-src iform) ccb renv ctx)]
      )))
 
 ;; 

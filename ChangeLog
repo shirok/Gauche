@@ -1,8 +1,10 @@
-2008-07-28  Shiro Kawai  <shiro@scherzo.hawaiiantel.net>
+2008-07-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pack-iform): Fixed a bug handling $RECEIVE node.
+	  (pass3/branch-core): Added an optimization to cut the unreachable
+	  branch of $if.  Such $if may occur as a result of macro expansion.
 
-2008-07-26  Shiro Kawai  <shiro@scherzo.hawaiiantel.net>
+2008-07-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1/body-wrap-intdefs): Ensure the evaluation
 	  order of internal define the same as corresponding letrec.  Before
@@ -15,7 +17,7 @@
 	  (peg-parse-string): Renamed from parse-string.
 	  (peg-run-parser, peg-parse-port): Added.
 
-2008-07-25  Shiro Kawai  <shiro@scherzo.hawaiiantel.net>
+2008-07-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/parseopt.scm (compose-entry): Allow '*' modifier in
 	  option-spec, for options that can be specified multiple times.
