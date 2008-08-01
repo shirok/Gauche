@@ -286,6 +286,22 @@
 
 (define-enum-conditionally SOL_IP)
 (define-enum-conditionally IP_OPTIONS)
+(define-enum-conditionally IP_PKTINFO)
+(define-enum-conditionally IP_RECVTOS)
+(define-enum-conditionally IP_RECVTTL)
+(define-enum-conditionally IP_RECVOPTS)
+(define-enum-conditionally IP_TOS)
+(define-enum-conditionally IP_TTL)
+(define-enum-conditionally IP_HDRINCL)
+(define-enum-conditionally IP_RECVERR)
+(define-enum-conditionally IP_MTU_DISCOVER)
+(define-enum-conditionally IP_MTU)
+(define-enum-conditionally IP_ROUTER_ALERT)
+(define-enum-conditionally IP_MULTICAST_TTL)
+(define-enum-conditionally IP_MULTICAST_LOOP)
+(define-enum-conditionally IP_ADD_MEMBERSHIP)
+(define-enum-conditionally IP_DROP_MEMBERSHIP)
+(define-enum-conditionally IP_MULTICAST_IF)
 
 ;;----------------------------------------------------------
 ;; netdb routines

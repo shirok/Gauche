@@ -1,3 +1,7 @@
+2008-07-31  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netlib.stub: Added several IP socket option constants.
+
 2008-07-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pack-iform): Fixed a bug handling $RECEIVE node.
