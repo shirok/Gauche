@@ -71,11 +71,11 @@ static ScmWord fetch_insn_counting(ScmVM *vm, ScmWord code)
         lref_freq[dep][off]++;
         break;
     }
-    case SCM_VM_LSET0: lset_freq[0][0]++;
-    case SCM_VM_LSET1: lset_freq[0][1]++;
-    case SCM_VM_LSET2: lset_freq[0][2]++;
-    case SCM_VM_LSET3: lset_freq[0][3]++;
-    case SCM_VM_LSET4: lset_freq[0][4]++;
+    case SCM_VM_LSET0: lset_freq[0][0]++; break;
+    case SCM_VM_LSET1: lset_freq[0][1]++; break;
+    case SCM_VM_LSET2: lset_freq[0][2]++; break;
+    case SCM_VM_LSET3: lset_freq[0][3]++; break;
+    case SCM_VM_LSET4: lset_freq[0][4]++; break;
     case SCM_VM_LSET:
     {
         int dep = SCM_VM_INSN_ARG0(code);
