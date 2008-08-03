@@ -1,3 +1,13 @@
+2008-08-02  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg-lib.scm
+	  ($fold-parsers, $fold-parsers-right): change $fold and $fold-right
+	  to these names to avoid confusion.
+	  ($count, $sep-end-by): rewrote to use $loop macro for speed and
+	  correct behavior.
+	* ext/peg/test.scm, tests/rfc.scm: moved rfc.json test under ext/peg,
+	  for it depends on parser.peg.
+
 2008-07-31  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/netlib.stub: Added several IP socket option constants.
