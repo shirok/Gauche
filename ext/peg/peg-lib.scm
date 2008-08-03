@@ -562,8 +562,14 @@
 ;;
 (define-syntax $loop
   (syntax-rules ()
-    [(_ "gather" () (v parser) ((var init) ...)
-        ?update ?while ?until ?finish)
+    [(_ (v parser) ((var init) ...) . xs)
+     ($loop%gather xs ($loop $loop%body (v parser) ((var init) ...)))]
+    [(_ . other)
+     (syntax-error "Malformed $loop: " ($loop . other))]))
+
+(define-syntax $loop%body
+  (syntax-rules ()
+    [(_ [(v parser) ((var init) ...)] ?update ?while ?until ?finish)
      (lambda (s0)
        (let loop ((s0 s0) (var init) ...)
          (if ?while
@@ -573,25 +579,53 @@
                    [($loop%until s0 s ?until)
                     (return-result ?finish s)]
                    [else (values r v s)]))
-           (return-result ?finish s0))))]
-    [(_ "gather" (:update u . xs) parser vars _ w t f)
-     ($loop "gather" xs parser vars (#t . u) w t f)]
-    [(_ "gather" (:updates (u ...) . xs) parser vars _ w t f)
-     ($loop "gather" xs parser vars (#f u ...) w t f)]
-    [(_ "gather" (:while w . xs) parser vars u _ t f)
-     ($loop "gather" xs parser vars u w t f)]
-    [(_ "gather" (:until t . xs) parser vars u w _ f)
-     ($loop "gather" xs parser vars u w t f)]
-    [(_ "gather" (:finish f . xs) parser vars u w t _)
-     ($loop "gather" xs parser vars u w t f)]
-    [(_ "gather" (other . _) parser vars u w t f)
-     (syntax-error "Invalid keyword in $loop:" other)]
-    [(_ (v parser) ((var init) ...) . xs)
-     ($loop "gather" xs (v parser) ((var init) ...) #t #t #t #t)]
-    [(_ . other)
-     (syntax-error "Malformed $loop: " ($loop . other))]))
+           (return-result ?finish s0))))]))
+
+;; (define-syntax $loop/pred
+;;   (syntax-rules ()
+;;     [(_ ((var init) ...) pred . xs)
+;;      ($loop%gather xs ($loop-pred $loop-pred%body ((var init) ...) pred))]
+;;     [(_ . other)
+;;      (syntax-error "Malformed $loop-pred: " ($loop-pred . other))]))
+
+;; (define-syntax $loop/pred%body
+;;   (syntax-rules ()
+;;     [(_ ((var init) ...) tok pred expect ?update ?while ?until ?finish)
+;;      (lambda (s0)
+;;        (let loop ((s s0) (var init) ...)
+;;          (if ?while
+;;            (if (peg-stream-peek! s0)
+;;              (let1 tok (car s0)
+;;                (if pred
+;;                  ($loop%update ?update loop s var ...)
+;;                    [($loop%until s0 s ?until)
+;;                     (return-result ?finish s)]
+;;                    [else (values r v s)]))
+;;            (return-result ?finish s0))))]))
 
 ;; aux macro
+
+;; ($loop%gather restargs (name body parser vars)) 
+(define-syntax $loop%gather
+  (syntax-rules ()
+    [(_ () (name body . fixpart) ?update ?while ?until ?finish)
+     (body fixpart ?update ?while ?until ?finish)]
+    [(_ (:update u . xs) fix _ w t f)
+     ($loop%gather xs fix (#t . u) w t f)]
+    [(_ (:updates (u ...) . xs) fix _ w t f)
+     ($loop%gather xs fix (#f u ...) w t f)]
+    [(_ (:while w . xs) fix u _ t f)
+     ($loop%gather xs fix u w t f)]
+    [(_ (:until t . xs) fix u w _ f)
+     ($loop%gather xs fix u w t f)]
+    [(_ (:finish f . xs) fix u w t _)
+     ($loop%gather xs fix u w t f)]
+    [(_ (other . _) (name . x) u w t f)
+     (syntax-errorf "Invalid keyword in ~a: ~s" name other)]
+    [(_ xs fix)
+     ($loop%gather xs fix #t #t #t #t)]
+    ))
+
 (define-syntax $loop%update
   (syntax-rules ()
     [(_ #t loop s . vs)            (loop s . vs)]
