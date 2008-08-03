@@ -1,5 +1,9 @@
 2008-08-02  Shiro Kawai  <shiro@acm.org>
 
+	* src/vminsn.scm: added LREF-CAR and LREF-CDR combined insns.  We could
+	  wait for the new instruction scheme ('push' bit), but this is simple
+	  and effective, so why not?  
+
 	* ext/peg/peg-lib.scm
 	  ($fold-parsers, $fold-parsers-right): change $fold and $fold-right
 	  to these names to avoid confusion.

@@ -804,13 +804,15 @@
 (define-insn CONS-PUSH   0 none   (CONS PUSH))
 
 (define-insn CAR         0 none #f
-  (begin ($type-check VAL0 SCM_PAIRP "pair")
-         ($result (SCM_CAR VAL0))))
+  ($w/argr v
+    ($type-check v SCM_PAIRP "pair")
+    ($result (SCM_CAR v))))
 (define-insn CAR-PUSH    0 none   (CAR PUSH))
 
 (define-insn CDR         0 none #f
-  (begin ($type-check VAL0 SCM_PAIRP "pair")
-         ($result (SCM_CDR VAL0))))
+  ($w/argr v
+           ($type-check v SCM_PAIRP "pair")
+           ($result (SCM_CDR v))))
 (define-insn CDR-PUSH    0 none   (CDR PUSH))
 
 (define-cise-stmt $cxxr
@@ -1322,4 +1324,5 @@
 (define-insn LREF-VAL0-BNGT 2 addr #f ($arg-source lref ($insn-body BNGT)))
 (define-insn LREF-VAL0-BNGE 2 addr #f ($arg-source lref ($insn-body BNGE)))
 
-
+(define-insn-lref+ LREF-CAR 0 none (LREF CAR))
+(define-insn-lref+ LREF-CDR 0 none (LREF CDR))
