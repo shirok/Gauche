@@ -538,7 +538,6 @@
 
 ;; $loop [var parser] ([v0 init0] ...)
 ;;       :while expr
-;;       :unless expr
 ;;       :until expr
 ;;       :update expr
 ;;       :updates [expr ...]
@@ -549,9 +548,6 @@
 ;;   One or more of the keyword args may be omitted.  If provided:
 ;;     WHILE is evaluated every iteration before applying the parser.
 ;;        If it returns #f, $loop returns success.
-;;     UNLESS is evaluated after the parser succeeds.  If it yields
-;;        false, $loop uses UPDATE to update the states and iterate.
-;;        If it yields true, returns 
 ;;     UNTIL is evaluated when the parser fails without consuming
 ;;        input.  If it returns #t, $loop returns success.
 ;;        Othewise $loop fails (passing the last failure situation
@@ -567,33 +563,31 @@
 (define-syntax $loop
   (syntax-rules ()
     [(_ "gather" () (v parser) ((var init) ...)
-        ?update ?while ?unless ?until ?finish)
+        ?update ?while ?until ?finish)
      (lambda (s0)
        (let loop ((s0 s0) (var init) ...)
          (if ?while
            (receive (r v s) (parser s0)
-             (cond [(and (parse-success? r) ?unless)
+             (cond [(parse-success? r)
                     ($loop%update ?update loop s var ...)]
-                   [(and (eq? s0 s) ?until)
+                   [($loop%until s0 s ?until)
                     (return-result ?finish s)]
                    [else (values r v s)]))
            (return-result ?finish s0))))]
-    [(_ "gather" (:update u . xs) parser vars _ w l t f)
-     ($loop "gather" xs parser vars (#t . u) w l t f)]
-    [(_ "gather" (:updates (u ...) . xs) parser vars _ w l t f)
-     ($loop "gather" xs parser vars (#f u ...) w l t f)]
-    [(_ "gather" (:while w . xs) parser vars u _ l t f)
-     ($loop "gather" xs parser vars u w l t f)]
-    [(_ "gather" (:unless l . xs) parser vars u w _ t f)
-     ($loop "gather" xs parser vars u w l t f)]
-    [(_ "gather" (:until t . xs) parser vars u w l _ f)
-     ($loop "gather" xs parser vars u w l t f)]
-    [(_ "gather" (:finish f . xs) parser vars u w l t _)
-     ($loop "gather" xs parser vars u w l t f)]
-    [(_ "gather" (other . _) parser vars u w l t f)
+    [(_ "gather" (:update u . xs) parser vars _ w t f)
+     ($loop "gather" xs parser vars (#t . u) w t f)]
+    [(_ "gather" (:updates (u ...) . xs) parser vars _ w t f)
+     ($loop "gather" xs parser vars (#f u ...) w t f)]
+    [(_ "gather" (:while w . xs) parser vars u _ t f)
+     ($loop "gather" xs parser vars u w t f)]
+    [(_ "gather" (:until t . xs) parser vars u w _ f)
+     ($loop "gather" xs parser vars u w t f)]
+    [(_ "gather" (:finish f . xs) parser vars u w t _)
+     ($loop "gather" xs parser vars u w t f)]
+    [(_ "gather" (other . _) parser vars u w t f)
      (syntax-error "Invalid keyword in $loop:" other)]
     [(_ (v parser) ((var init) ...) . xs)
-     ($loop "gather" xs (v parser) ((var init) ...) #t #t #t #t #t)]
+     ($loop "gather" xs (v parser) ((var init) ...) #t #t #t #t)]
     [(_ . other)
      (syntax-error "Malformed $loop: " ($loop . other))]))
 
@@ -607,6 +601,12 @@
     [(_ (#t . update) loop s v1)   (loop s update)]
     [(_ (#t . update) loop s . vs) (receive vs update (loop s . vs))]
     ))
+
+(define-syntax $loop%until
+  (syntax-rules ()
+    [(_ s0 s #t)     (eq? s0 s)]
+    [(_ s0 s #f)     #f]
+    [(_ s0 s expr)   (and (eq? s0 s) expr)]))
 
 ;; $count p n
 ;;   Exactly n times of p.  Returns the list.
