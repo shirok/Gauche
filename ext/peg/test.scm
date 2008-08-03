@@ -287,10 +287,10 @@
            ($many ($string "a") 1 2) "aaaaa")
 
 ;; $skip-many
-(test-succ "$skip-many" "a"
-           ($skip-many ($string "a") 1 2) "aaaaa")
-(test-succ "$skip-many" #f
-           ($skip-many ($string "a")) "baaaaa")
+(test-succ "$skip-many" #\a
+           ($seq ($skip-many ($string "a") 1 2) ($one-of #[a-z])) "aaaaa")
+(test-succ "$skip-many" #\b
+           ($seq ($skip-many ($string "a")) ($one-of #[a-z])) "baaaaa")
 
 ;; $repeat
 (test-succ "$repeat" '(#\a #\b #\a)
@@ -511,7 +511,6 @@
          ($return (map (compose x->integer list->string) digs))))
 
   (test-succ "integer" '(#\1 #\2 #\3) integer "123")
-  (test-succ "ws"      #\tab ws "  \t")
   (test-succ "int-list0" #\] int-list0 "[123 456 789]")
   (test-succ "int-list" '(123 456 789) int-list "[123 456 789]")
   )

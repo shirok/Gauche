@@ -593,13 +593,14 @@
     [(_ "gather" (other . _) parser vars u w l t f)
      (syntax-error "Invalid keyword in $loop:" other)]
     [(_ (v parser) ((var init) ...) . xs)
-     ($loop "gather" xs (v parser) ((var init) ...) #f #t #t #t #t)]
+     ($loop "gather" xs (v parser) ((var init) ...) #t #t #t #t #t)]
     [(_ . other)
      (syntax-error "Malformed $loop: " ($loop . other))]))
 
 ;; aux macro
 (define-syntax $loop%update
   (syntax-rules ()
+    [(_ #t loop s . vs)            (loop s . vs)]
     [(_ (#f . us) loop s . vs)     (loop s . us)]
     [(_ (#t . #f) loop s . vs)     (loop s . vs)]
     [(_ (#t . update) loop s)      (begin update (loop s))]
@@ -610,41 +611,32 @@
 ;; $count p n
 ;;   Exactly n times of p.  Returns the list.
 (define ($count parse n)
-  ($loop [v parse]
-         ([vs '()] [cnt 0])
+  ($loop [v parse] ([vs '()] [cnt 0])
          :while  (< cnt n)
          :updates [(cons v vs) (+ cnt 1)]
          :until  #f
          :finish (reverse! vs)))
 
+(define ($skip-count parse n)
+  ($loop [v parse] ([cnt 0])
+         :while (< cnt n)
+         :update (+ cnt 1)
+         :until #f))
+
 ;; $many p &optional min max
 ;; $many1 p &optional max
-(define ($many parse . args)
-  (match args
-    [() 
-     ;($lazy ($or ($do [x parse] [xs ($many parse)] ($return (cons x xs)))
-     ;            ($return '())))
-     (lambda (s)
-       (let loop ((vs '()) (s s))
-         (receive (r1 v1 s1) (parse s)
-           (cond [(parse-success? r1) (loop (cons v1 vs) s1)]
-                 [(eq? s s1) (return-result (reverse! vs) s)]
-                 [else (values r1 v1 s1)]))))
-     ;($loop parse ([vs '()]) cons reverse!)
-     ]
-    [(min) ($many parse min #f)]
-    [(min max)
-     (%check-min-max min max)
-     (lambda (s)
-       (let loop ((vs '()) (s s) (count 0))
-         (if (and max (>= count max))
-           (return-result (reverse! vs) s)
-           (receive (r1 v1 s1) (parse s)
-             (cond [(parse-success? r1)
-                    (loop (cons v1 vs) s1 (+ count 1))]
-                   [(and (eq? s s1) (<= min count))
-                    (return-result (reverse! vs) s)]
-                   [else (values r1 v1 s1)])))))]))
+(define ($many parse :optional (min 0) (max #f))
+  (%check-min-max min max)
+  (if (= min 0)
+    (if (not max)
+      ($loop [v parse] ([vs '()]) :update (cons v vs) :finish (reverse! vs))
+      ($loop [v parse] ([vs '()] [cnt 0])
+             :while (< cnt max)
+             :updates [(cons v vs) (+ cnt 1)]
+             :finish (reverse! vs)))
+    ($do [xs ($count parse min)]
+         [ys ($many parse 0 (and max (- max min)))]
+         ($return (append xs ys)))))
 
 (define ($many1 parse :optional (max #f))
   (if max
@@ -652,30 +644,21 @@
     ($do [v parse] [vs ($many parse)] ($return (cons v vs)))))
 
 ;; $skip-many p &optional min max
-;;   Like $many, but does not keep the results; returns the last result
-;;   of successful parse, or #f.
-(define ($skip-many parse . args)
-  (match args
-    [()
-     (lambda (s)
-       (let loop ((s s) (v0 #f))
-          (receive (r1 v1 s1) (parse s)
-           (if (parse-success? r1)
-             (loop s1 v1)
-             (return-result v0 s)))))]
-    [(min) ($many parse min #f)]
-    [(min max)
-     (%check-min-max min max)
-     (lambda (s)
-       (let loop ((s s) (count 0) (v0 #f))
-         (if (and max (>= count max))
-           (return-result v0 s)
-           (receive (r1 v1 s1) (parse s)
-             (cond [(parse-success? r1)
-                    (loop s1 (+ count 1) v1)]
-                   [(<= min count)
-                    (return-result r1 s)]
-                   [else (values r1 v1 s1)])))))]))
+;;   Like $many, but does not keep the results.
+(define ($skip-many parse :optional (min 0) (max #f))
+  (%check-min-max min max)
+  (if (= min 0)
+    (if (not max)
+      ($loop [v parse] ())
+      ($loop [v parse] ([cnt 0]) :while (< cnt max) :update (+ cnt 1)))
+    ($do [($skip-count parse min)]
+         [($skip-many parse 0 (and max (- max min)))]
+         ($return #f))))
+
+(define ($skip-many1 parse :optional (max #f))
+  (if max
+    ($do parse [($skip-many1 parse)] ($return #f))
+    ($do parse [($skip-many1 parse 0 (- max 1))] ($return #f))))
 
 (define ($optional parse :optional (fallback #f))
   ($or parse ($return fallback)))
