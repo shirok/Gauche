@@ -251,6 +251,25 @@
                             [else `(-> ,(loop (- d 1)) up)]))
                        ,offset))])
 
+;;
+;; ($values)
+;;    Generate common code for VALUES and VALUES-RET.
+;;
+(define-cise-stmt $values
+  [(_)
+   '(let* ((nargs :: int (SCM_VM_INSN_ARG code))
+           (i     :: int (- nargs 1))
+           (v VAL0))
+      (when (>= nargs SCM_VM_MAX_VALUES)
+        ($vm-err "values got too many args"))
+      (VM-ASSERT (<= (- nargs 1) (- SP (-> vm stackBase))))
+      (when (> nargs 0)
+        (for (() (> i 0) (post-- i))
+             (set! (aref (-> vm vals) (- i 1)) v)
+             (POP-ARG v)))
+      (set! VAL0 v)
+      (set! (-> vm numVals) nargs))])
+
 ;;;==============================================================
 ;;; Instruction definitions
 ;;;
@@ -963,18 +982,7 @@
 
 (define-insn SETTER      0 none #f ($w/argr v ($result (Scm_Setter v))))
 
-(define-insn VALUES      1 none #f
-  (let* ((nargs :: int (SCM_VM_INSN_ARG code))
-         (i :: int (- nargs 1)))
-    (when (>= nargs SCM_VM_MAX_VALUES)
-      ($vm-err "values got too many args"))
-    (VM-ASSERT (<= (- nargs 1) (- SP (-> vm stackBase))))
-    (when (> nargs 0)
-      (for (() (> i 0) (post-- i))
-           (set! (aref (-> vm vals) (- i 1)) VAL0)
-           (POP-ARG VAL0)))
-    (set! (-> vm numVals) nargs)
-    NEXT))
+(define-insn VALUES      1 none #f (begin ($values) NEXT))
 
 (define-insn VEC         1 none #f      ; vector
   (let* ((nargs :: int (SCM_VM_INSN_ARG code))
@@ -1326,3 +1334,6 @@
 
 (define-insn-lref+ LREF-CAR 0 none (LREF CAR))
 (define-insn-lref+ LREF-CDR 0 none (LREF CDR))
+
+(define-insn VALUES-RET 1 none (VALUES RET)
+  (begin ($values) (RETURN-OP) NEXT))

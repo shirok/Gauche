@@ -2,7 +2,8 @@
 
 	* src/vminsn.scm: added LREF-CAR and LREF-CDR combined insns.  We could
 	  wait for the new instruction scheme ('push' bit), but this is simple
-	  and effective, so why not?  
+	  and effective, so why not?
+	  Also added VALUES-RET.
 
 	* ext/peg/peg-lib.scm
 	  ($fold-parsers, $fold-parsers-right): change $fold and $fold-right
