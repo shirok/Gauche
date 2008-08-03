@@ -4345,15 +4345,15 @@ even faster.  However, you have to watch out some traps; see
 @end deftp
 
 @menu
-* A PEG parser::                Introduction and tutorial
+* PEG Walkthrough::             
 * PEG high-level API::          
 * PEG combinators::             
 * PEG stream::                  
 * PEG performance tips::        
 @end menu
 
-@node A PEG parser, PEG high-level API, Parser combinators for PEG, Parser combinators for PEG
-@subsection A parser
+@node PEG Walkthrough, PEG high-level API, Parser combinators for PEG, Parser combinators for PEG
+@subsection Walkthrough
 
 In @code{parser.peg}, a parser is merely a Scheme procedure
 that takes an input (peg stream) as an argument and returns
@@ -4620,7 +4620,7 @@ gosh> (peg-parse-string list2 "[123, [456, [], 789], 987]")
 @end example
 
 
-@node PEG high-level API, PEG combinators, A PEG parser, Parser combinators for PEG
+@node PEG high-level API, PEG combinators, PEG Walkthrough, Parser combinators for PEG
 @subsection High-level API
 
 @defun peg-parse-string parser input-string
@@ -4642,6 +4642,9 @@ gosh> (peg-parse-string list2 "[123, [456, [], 789], 987]")
 @node PEG combinators, PEG stream, PEG high-level API, Parser combinators for PEG
 @subsection Combinators
 
+In the following entries, @var{p}, @var{p1}, @var{p2}, @dots{} in
+the arguments must be parsers, and @var{ps} must be a list of parsers.
+
 @subsubheading Generic combinators
 
 @defmac $do clause @dots{} expr
@@ -4650,20 +4653,23 @@ gosh> (peg-parse-string list2 "[123, [456, [], 789], 987]")
 @defmac $do* clause @dots{} expr
 @end defmac
 
-@defun $fold proc seed parsers
+@defun $fold proc seed ps
 @end defun
 
-@defun $fold-right proc seed parsers
+@defun $fold-right proc seed ps
 @end defun
 
 @defun $seq p1 p2 @dots{}
 @end defun
 
-
 @defmac $or p1 p2 @dots{}
 @end defmac
 
-@defun $try p1 p2 @dots{}
+@defun $try p
+Returns a parser that accepts the same input
+the parser @var{p} accepts, but when @var{p} fails
+the returned parser doesn't consume input.  Used with @code{$or},
+you can explicitly implement a backtrack behavior.
 @end defun
 
 @defun $many p &optional min max
@@ -4718,15 +4724,29 @@ gosh> (peg-parse-string list2 "[123, [456, [], 789], 987]")
 
 @subsubheading String parsers
 
-@defun $string str
-@defunx $string-ci str
-@end defun
-
 @defun $char c
 @defunx $char-ci c
+Returns a parser that accepts a single character, @var{c}.
+@code{$char-ci} ignores case.
+On success, the semantic value is the input character.
+@end defun
+
+@defun $string str
+@defunx $string-ci str
+Returns a parser that accepts an input that matches 
+a string @var{str}.  @code{$string-ci} ignores case.
+On success, the semantic value is the input string.
+
+The parsing of string is atomic: When the parser fails,
+it doesn't consume the input.  That is,
+@code{($string "ab")} is not the same as
+@code{($do [a ($char #\a)] [b ($char #\b)] ($return (string a b)))};
+you may think it is surrouned by implicit @code{$try}.
+(If you've used Parsec, 
 @end defun
 
 @defun $one-of cset
+Returns a parser that accepts any character in the character set @var{cset}.
 @end defun
 
 @defun $none-of cset

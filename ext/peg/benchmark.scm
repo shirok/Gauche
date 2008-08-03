@@ -10,19 +10,24 @@
     (string-concatenate (make-list 10 s))))
 
 (define csv-parser
-  (let* ((spaces_ ($skip-many ($one-of #[ \t])))
-         (spaces ($many ($one-of #[ \t])))
-         (comma  ($seq spaces_ ($char #\,) spaces_))
-         (dquote ($char #\"))
-         (double-dquote ($do [($string "\"\"")] ($return #\")))
-         (quoted-body ($many ($or ($one-of #[^\"]) double-dquote)))
-         (quoted ($between dquote quoted-body dquote))
-         (unquoted ($alternate ($one-of #[^ \t\n,]) spaces))
-         (field ($or quoted unquoted))
-         (record ($sep-by ($->rope field) comma 1)))
+  (let ()
+    (define ws     ($skip-many ($one-of #[ \t])))
+    (define comma  ($seq ws ($char #\,) ws))
+    (define dquote ($char #\"))
+    (define double-dquote ($do [($string "\"\"")] ($return #\")))
+    (define quoted-body ($many ($or ($one-of #[^\"]) double-dquote)))
+    (define quoted ($between dquote quoted-body dquote))
+    (define unquoted ($alternate ($many1 ($one-of #[^ \t\r\n,]))
+                                 ($many  ($one-of #[ \t]))))
+    (define field  ($or quoted unquoted))
+    (define record ($sep-by ($->rope field) comma 1))
     ($sep-by record newline)))
 
+;(profiler-start)
 (time (peg-parse-string csv-parser data))
+;(profiler-stop)
+
+;(profiler-show)
 
 #|
 (add-load-path ".")

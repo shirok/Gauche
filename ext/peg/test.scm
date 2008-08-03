@@ -242,25 +242,25 @@
                 ($string (semantic-value-finalize! v)))
            "foobar")
 
-;; $fold and $fold-right
-(test-succ "$fold" '()                  ; base case
-           ($fold cons '() '())
+;; $fold-parsers and $fold-parsers-right
+(test-succ "$fold-parsers" '()                  ; base case
+           ($fold-parsers cons '() '())
            "abc")
-(test-succ "$fold" '(#\c #\b #\a)
-           ($fold cons '() (list ($char #\a) ($char #\b) ($char #\c)))
+(test-succ "$fold-parsers" '(#\c #\b #\a)
+           ($fold-parsers cons '() (list ($char #\a) ($char #\b) ($char #\c)))
            "abc")
-(test-fail "$fold" '(2 #\c)
-           ($fold cons '() (list ($char #\a) ($char #\b) ($char #\c)))
+(test-fail "$fold-parsers" '(2 #\c)
+           ($fold-parsers cons '() (list ($char #\a) ($char #\b) ($char #\c)))
            "abd")
 
-(test-succ "$fold-right" '()            ; base case
-           ($fold-right cons '() '())
+(test-succ "$fold-parsers-right" '()            ; base case
+           ($fold-parsers-right cons '() '())
            "abc")
-(test-succ "$fold-right" '(#\a #\b #\c)
-           ($fold-right cons '() (list ($char #\a) ($char #\b) ($char #\c)))
+(test-succ "$fold-parsers-right" '(#\a #\b #\c)
+           ($fold-parsers-right cons '() (list ($char #\a) ($char #\b) ($char #\c)))
            "abc")
-(test-fail "$fold-right" '(2 #\c)
-           ($fold-right cons '() (list ($char #\a) ($char #\b) ($char #\c)))
+(test-fail "$fold-parsers-right" '(2 #\c)
+           ($fold-parsers-right cons '() (list ($char #\a) ($char #\b) ($char #\c)))
            "abd")
 
 ;; $seq
@@ -310,11 +310,11 @@
 ;; $sep-by
 (test-succ "$sep-by" '(#\a #\b)
            ($sep-by ($one-of #[ab]) ($string ","))
-           "a,b,c,d")
+           "a,b")
 
-(test-succ "$sep-by" '(#\a #\b #\c)
-           ($sep-by ($one-of #[abc]) ($string ","))
-           "a,b,c,d")
+(test-fail "$sep-by" '(2 #[ab])
+           ($sep-by ($one-of #[ab]) ($string ","))
+           "a,c")
 
 (test-succ "$sep-by" '(#\a #\b)
            ($sep-by ($one-of #[abc]) ($string ",") 0 2)
@@ -330,21 +330,40 @@
            "a,b,")
 
 ;; $sep-end-by
-(test-succ "$sep-end-by" '(#\a #\b)
-           ($sep-end-by ($one-of #[ab]) ($string ","))
-           "a,b,c,d")
+(let ((p ($sep-end-by ($seq ($one-of #[a-z]) ($one-of #[a-z])) ($string ","))))
+  (define (succ in exp) (test-succ "$sep-end-by" exp p in))
+  (define (fail in exp) (test-fail "$sep-end-by" exp p in))
 
-(test-succ "$sep-end-by" '(#\a #\b #\c #\d)
-           ($sep-end-by ($one-of #[a-z]) ($string ","))
-           "a,b,c,d")
+  (succ "ZZ" '())
+  (succ ""   '())
+  (fail "aZ" '(1 #[a-z]))
+  (succ "aa"  '(#\a))
+  (succ "bb," '(#\b))
+  (succ "cc,Z" '(#\c))
+  (fail "cc,dZ" '(4 #[a-z]))
+  (succ "ee,ff," '(#\e #\f))
+  (succ "ggZ"  '(#\g))
+  (succ "hh,," '(#\h))
+  (succ "ii,jjZ"  '(#\i #\j))
+  (fail "kk,ll,mZ" '(7 #[a-z]))
 
-(test-succ "$sep-end-by" '(#\a #\b)
-           ($sep-end-by ($one-of #[abc]) ($string ",") 0 2)
-           "a,b,c,d")
-
-(test-fail "$sep-end-by" '(2 #[abc])
-           ($sep-end-by ($one-of #[abc]) ($string ",") 2 3)
-           "a,2,3")
+  (test-succ "$sep-end-by (min)" '(#\a #\b)
+             ($sep-end-by ($seq ($one-of #[a-z]) ($one-of #[a-z]))
+                          ($string ",") 2)
+             "aa,bb")
+  (test-succ "$sep-end-by (min)" '(#\a #\b)
+             ($sep-end-by ($seq ($one-of #[a-z]) ($one-of #[a-z]))
+                          ($string ",") 2)
+             "aa,bb,")
+  (test-fail "$sep-end-by (min)" '(5 ",")
+             ($sep-end-by ($seq ($one-of #[a-z]) ($one-of #[a-z]))
+                          ($string ",") 3)
+             "aa,bb")
+  (test-fail "$sep-end-by (min)" '(6 #[a-z])
+             ($sep-end-by ($seq ($one-of #[a-z]) ($one-of #[a-z]))
+                          ($string ",") 3)
+             "aa,bb,")
+  )
 
 ;; $count
 (test-succ "$count" '(#\a #\b)
@@ -497,22 +516,6 @@
   (test-succ "int-list" '(123 456 789) int-list "[123 456 789]")
   )
 
-(let ()
-  (define ortest0 ($or ($string "abc") ($string "xyz")))
-  (define ortest1 ($or ($string "(a)") ($string "(b)")))
-  (define ortest2 ($between ($char #\()
-                            ($or ($string "a") ($string "b"))
-                            ($char #\))))
-  (define ortest3 ($or ($try ($string "(a)")) ($string "(b)")))
-  (test-succ "$or" "abc" ortest0 "abc")
-  (test-succ "$or" "xyz" ortest0 "xyz")
-  (test-fail "$or" '(0 ((fail-expect . "abc") (fail-expect . "xyz")))
-             ortest0 "ghi")
-  (test-fail "$or" '(1 "(a)") ortest1 "(b)")
-  (test-succ "$or" "b" ortest2 "(b)")
-  (test-succ "$or" "(b)" ortest3 "(b)")
-  )
-
 ;; Count the maximal nesting level
 (letrec ((nesting
           ($lazy ($or ($do [ ($char #\() ]
@@ -553,15 +556,16 @@
   )
 
 ;; CSV parser
-(let* ((spaces ($many ($one-of #[ \t])))
-       (comma ($seq spaces ($char #\,) spaces))
-       (dquote ($char #\"))
-       (double-dquote ($do (($string "\"\"")) ($return #\")))
-       (quoted-body ($many ($or double-dquote ($one-of #[^\"]))))
-       (quoted ($between dquote quoted-body dquote))
-       (unquoted ($many-till anychar ($or comma newline)))
-       (field ($or quoted unquoted))
-       (record ($sep-by ($->rope field) comma)))
+(let ()
+  (define ws     ($many ($one-of #[ \t])))
+  (define comma  ($seq ws ($char #\,) ws))
+  (define dquote ($char #\"))
+  (define double-dquote ($do [($string "\"\"")] ($return #\")))
+  (define quoted-body ($many ($or double-dquote ($one-of #[^\"]))))
+  (define quoted ($between dquote quoted-body dquote))
+  (define unquoted ($many-till anychar ($or comma newline)))
+  (define field ($or quoted unquoted))
+  (define record ($sep-by ($->rope field) comma))
   (test-succ "CSV" '("a" "b" "c")
              record "a,b,c")
   (test-succ "CSV" '("a" "b" "c")
@@ -570,20 +574,28 @@
              record "\"a  \"\" \n\" , b  , c"))
 
 ;; hand-tuned version
-(let* ((spaces_ ($skip-many ($one-of #[ \t])))
-       (spaces ($many ($one-of #[ \t])))
-       (comma  ($seq spaces_ ($char #\,) spaces_))
-       (dquote ($char #\"))
-       (double-dquote ($do (($string "\"\"")) ($return #\")))
-       (quoted-body ($many ($or ($one-of #[^\"]) double-dquote)))
-       (quoted ($between dquote quoted-body dquote))
-       (unquoted ($alternate ($one-of #[^ \t\r\n,]) spaces))
-       (field ($or quoted unquoted))
-       (record ($sep-by ($->rope field) comma 1))
-       (records ($sep-end-by record ($string "\r\n"))))
-  (test-succ "CSV 2" '(("a" "b" "c") ("x" "y" "z"))
+(let ()
+  (define ws     ($skip-many ($one-of #[ \t])))
+  (define comma  ($seq ws ($char #\,) ws))
+  (define dquote ($char #\"))
+  (define double-dquote ($do [($string "\"\"")] ($return #\")))
+  (define quoted-body ($many ($or ($one-of #[^\"]) double-dquote)))
+  (define quoted ($between dquote quoted-body dquote))
+  (define unquoted ($alternate ($many1 ($one-of #[^ \t\r\n,]))
+                               ($many  ($one-of #[ \t]))))
+  (define field   ($or quoted unquoted))
+  (define record  ($sep-by ($->rope field) comma 1))
+  (define records ($sep-end-by record ($string "\r\n")))
+  ;; NB: In CSV spec there's an ambiguity of treatment of the ending CRLF.
+  ;; The CRLF after the last record can be omitted; so if the file ends with
+  ;; CRLF, it may be the end of whole records, or there may be one record
+  ;; with an empty field.  Customary it is resolved to take the first
+  ;; interpretation.  Since PEG is eager the straightforward implementation
+  ;; takes the second interpretation.   For the sake of testing here, it
+  ;; doesn't matter either way.
+  (test-succ "CSV 2" '(("a" "b" "c") ("x" "y" "z") (""))
              records "a,b,c\r\nx,y,z\r\n")
-  (test-succ "CSV 2" '(("a " "b" "c") ("zzz\nyyy " " w \" "))
+  (test-succ "CSV 2" '(("a " "b" "c") ("zzz\nyyy " " w \" ") (""))
              records "\"a \" , b  , c\r\n\"zzz\nyyy \", \" w \"\" \"\r\n")
   (test-succ "CSV 2" '(("a  \" \n" "b" "c"))
              records "\"a  \"\" \n\" , b  , c"))
@@ -593,14 +605,14 @@
          (close-tag (lambda (tagname)
                       ($seq ($string "</") ($string tagname) ($char #\>))))
          (text ($->rope ($many ($none-of #[<]))))
-         (body ($do (t text)
-                    (r ($many ($do (e element)
-                                   (t text)
-                                   ($return (list e t)))))
+         (body ($do [t text]
+                    [r ($many ($do [e element]
+                                   [t text]
+                                   ($return (list e t))))]
                     ($return `(,t ,@(apply append r)))))
-         (element ($do* [tagname open-tag]
+         (element ($do* [tagname ($try open-tag)]
                         [body body]
-                        [(close-tag (semantic-value-finalize! tagname))]
+                        [ (close-tag (semantic-value-finalize! tagname)) ]
                         ($return (cons tagname body)))))
   (test-succ "tag element" '("a" "")
              element "<a></a>")
@@ -621,5 +633,133 @@
   (test-succ "calculator" 11 expr "1+2*3+4")
   (test-succ "calculator" 36 expr "2/2+5*(3+4)")
   (test-succ "calculator" -1 expr "1-2"))
+
+
+;;;============================================================
+;;; rfc.json
+;;;   Test is here since the module uses parser.peg.
+
+(test-section "rfc.json")
+(use rfc.json)
+(test-module 'rfc.json)
+
+(let ()
+  (define (t str val) (test* "primitive" `(("x" . ,val)) (parse-json str)))
+  (t "{\"x\": 100 }" 100)
+  (t "{\"x\" : -100}" -100)
+  (t "{\"x\":  +100 }" 100)
+  (t "{\"x\": 12.5} " 12.5)
+  (t "{\"x\":-12.5}" -12.5)
+  (t "{\"x\":+12.5}"  12.5)
+  (t "{\"x\": 1.25e1 }" 12.5)
+  (t "{\"x\":125e-1}" 12.5)
+  (t "{\"x\":1250.0e-2}" 12.5)
+  (t "{\"x\":  false  }" 'false)
+  (t "{\"x\":true}" 'true)
+  (t "{\"x\":null}" 'null)
+  (t "{\"x\": \"abc\\\"\\\\\\/\\b\\f\\n\\r\\t\\u0040abc\"}"
+     "abc\"\\/\u0008\u000c\u000a\u000d\u0009@abc")
+  )
+
+(test* "parsing an object"
+       '(("Image"
+          ("Width"  . 800)
+          ("Height" . 600)
+          ("Title"  . "View from 15th Floor")
+          ("Thumbnail"
+           ("Url"    . "http://www.example.com/image/481989943")
+           ("Height" . 125)
+           ("Width"  . "100"))
+          ("IDs" . #(116 943 234 38793))))
+       (parse-json "{
+   \"Image\": {
+       \"Width\":  800,
+       \"Height\": 600,
+       \"Title\":  \"View from 15th Floor\",
+       \"Thumbnail\": {
+           \"Url\":    \"http://www.example.com/image/481989943\",
+           \"Height\": 125,
+           \"Width\":  \"100\"
+       },
+       \"IDs\": [116, 943, 234, 38793]
+     }
+}"))
+
+(test* "parsing an array containing two objects"
+       '#((("precision" . "zip")
+           ("Latitude"  . 37.7668)
+           ("Longitude" . -122.3959)
+           ("Address"   . "")
+           ("City"      . "SAN FRANCISCO")
+           ("State"     . "CA")
+           ("Zip"       . "94107")
+           ("Country"   . "US"))
+          (("precision" . "zip")
+           ("Latitude"  . 37.371991)
+           ("Longitude" . -122.026020)
+           ("Address"   . "")
+           ("City"      . "SUNNYVALE")
+           ("State"     . "CA")
+           ("Zip"       . "94085")
+           ("Country"   . "US")))
+       (parse-json "[
+   {
+      \"precision\": \"zip\",
+      \"Latitude\":  37.7668,
+      \"Longitude\": -122.3959,
+      \"Address\":   \"\",
+      \"City\":      \"SAN FRANCISCO\",
+      \"State\":     \"CA\",
+      \"Zip\":       \"94107\",
+      \"Country\":   \"US\"
+   },
+   {
+      \"precision\": \"zip\",
+      \"Latitude\":  37.371991,
+      \"Longitude\": -122.026020,
+      \"Address\":   \"\",
+      \"City\":      \"SUNNYVALE\",
+      \"State\":     \"CA\",
+      \"Zip\":       \"94085\",
+      \"Country\":   \"US\"
+   }
+]"))
+
+(let ()
+  (define (test-writer name obj)
+    (test* name obj
+           (parse-json (->json obj))))
+
+  (test-writer "writing an object"
+               '(("Image"
+                  ("Width"  . 800)
+                  ("Height" . 600)
+                  ("Title"  . "View from 15th Floor")
+                  ("Thumbnail"
+                   ("Url"    . "http://www.example.com/image/481989943")
+                   ("Height" . 125)
+                   ("Width"  . "100"))
+                  ("IDs" . #(116 943 234 38793)))))
+
+  (test-writer "writing an array containing two objects"
+               '#((("precision" . "zip")
+                   ("Latitude"  . 37.7668)
+                   ("Longitude" . -122.3959)
+                   ("Address"   . "")
+                   ("City"      . "SAN FRANCISCO")
+                   ("State"     . "CA")
+                   ("Zip"       . "94107")
+                   ("Country"   . "US"))
+                  (("precision" . "zip")
+                   ("Latitude"  . 37.371991)
+                   ("Longitude" . -122.026020)
+                   ("Address"   . "")
+                   ("City"      . "SUNNYVALE")
+                   ("State"     . "CA")
+                   ("Zip"       . "94085")
+                   ("Country"   . "US"))))
+  )
+
+
 
 (test-end)

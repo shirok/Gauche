@@ -47,18 +47,21 @@
 ;;;
 (define %ws ($skip-many ($one-of #[ \t\r\n])))
 
-(define %begin-array     ($seq %ws ($char #\[) %ws))
-(define %begin-object    ($seq %ws ($char #\{) %ws))
-(define %end-array       ($seq %ws ($char #\]) %ws))
-(define %end-object      ($seq %ws ($char #\}) %ws))
-(define %name-separator  ($seq %ws ($char #\:) %ws))
-(define %value-separator ($seq %ws ($char #\,) %ws))
+(define %begin-array     ($seq ($char #\[) %ws))
+(define %begin-object    ($seq ($char #\{) %ws))
+(define %end-array       ($seq ($char #\]) %ws))
+(define %end-object      ($seq ($char #\}) %ws))
+(define %name-separator  ($seq ($char #\:) %ws))
+(define %value-separator ($seq ($char #\,) %ws))
 
 (define %false ($do [($string "false")] ($return 'false)))
 (define %null  ($do [($string "null")]  ($return 'null)))
 (define %true  ($do [($string "true")]  ($return 'true)))
 
-(define %value ($lazy ($or %false %null %true %object %array %number %string)))
+(define %value
+  ($lazy ($do [v ($or %false %null %true %object %array %number %string)]
+              %ws
+              ($return v))))
 
 (define %array
   ($do %begin-array
@@ -108,9 +111,9 @@
     ($between %dquote %string-body %dquote)))
 
 (define %object
-  (let1 %member ($do (k %string)
+  (let1 %member ($do [k %string] %ws
                      %name-separator
-                     (v %value)
+                     [v %value]
                      ($return (cons k v)))
     ($between %begin-object
               ($sep-by %member %value-separator)
