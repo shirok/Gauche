@@ -9876,6 +9876,14 @@ condition, as in the following example (it is taken from SRFI-18 document):
         (mutex-unlock! m cv)
         (loop))))
 @end example
+
+@c EN
+The return value of @code{mutex-unlock!} is @code{#f} when it returns
+because of timeout, and @code{#t} otherwise.
+@c JP
+@code{mutex-unlock!}の戻り値は、タイムアウトした場合に@code{#f}、
+それ以外の場合は@code{#t}となります。
+@c COMMON
 @end defun
 
 @defun with-locking-mutex mutex thunk

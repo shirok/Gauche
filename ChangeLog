@@ -1,3 +1,8 @@
+2008-08-04  Shiro Kawai  <shiro@acm.org>
+
+	* doc/modgauche.texi: added missing description of the return
+	  value of mutex-unlock!.
+
 2008-08-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm: added LREF-CAR and LREF-CDR combined insns.  We could
