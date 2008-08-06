@@ -2848,6 +2848,8 @@ Returns a character set that adds @var{char1} @dots{} to
 @section @code{srfi-19} - Time data types and procedures
 @c NODE 時間のデータ型と手続き, @code{srfi-19} - 時間のデータ型と手続き
 
+@deftp {Module} srfi-19
+@mdindex srfi-19
 @c EN
 This SRFI defines various representations of time and date, and
 conversion methods among them.
@@ -2864,6 +2866,7 @@ Gaucheでは、timeオブジェクトは@code{<time>}クラスとして組み込みで
 サポートされています(@ref{Time}参照)。dateオブジェクトは以下で説明する
 @code{<date>}クラスとしてサポートされます。
 @c COMMON
+@end deftp
 
 @menu
 * SRFI-19 Time types::          
