@@ -1,3 +1,9 @@
+2008-08-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dbm.scm (dbm-db-copy, dbm-db-move): Provides fallback methods.
+	* doc/modutil.texi (dbm): Added explanation on the protocol a new
+	  dbm implementation should conform.
+
 2008-08-04  Shiro Kawai  <shiro@acm.org>
 
 	* doc/modgauche.texi: added missing description of the return

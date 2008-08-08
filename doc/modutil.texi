@@ -2245,6 +2245,7 @@ The following code shows a typical usage of the database.
 * Accessing a dbm database::    
 * Iterating on a database::     
 * Managing dbm database instance::  
+* Writing a dbm implementation::  
 @end menu
 
 @node Opening and closing a dbm database, Accessing a dbm database, Generic DBM interface, Generic DBM interface
@@ -2545,7 +2546,7 @@ which is returned as a result of @code{dbm-map}.
 @c COMMON
 @end deffn
 
-@node Managing dbm database instance,  , Iterating on a database, Generic DBM interface
+@node Managing dbm database instance, Writing a dbm implementation, Iterating on a database, Generic DBM interface
 @subsection Managing dbm database instance
 @c NODE DBMデータベースインスタンスの管理
 
@@ -2606,10 +2607,31 @@ Removes an entire database of class @var{class} specified by
 @deffn {Generic Function} dbm-db-copy class from to
 @c EN
 Copy a database of class @var{class} specified by
-@var{from} to @var{to}.
+@var{from} to @var{to}.  The integrity of @var{from}
+is guaranteed if the @var{class}'s dbm implementation supports
+locking (i.e. you won't get a corrupted database even if
+some other process is trying to write to @var{from}
+during copy).   If the destination database @var{to} exists,
+its content is destroyed.  If this function is interrupted,
+whether @var{to} is left in incomplete state or not depends
+on the dbm implementation.   The implementation usually tries
+its best to provide transactional behavior, that is,
+to recover original @var{to} when the copy fails.  However,
+for the robust operations the caller have to check the state 
+of @var{to} if @code{dbm-db-copy} fails.
 @c JP
 @var{from}で指定された@var{class}クラスのデータベースを
 @var{to}へコピーします。
+@var{class}のdbm実装がロックをサポートしている限り、@var{from}の一貫性は
+保たれます (つまり、コピー中に他のプロセスが@var{from}を
+変更しようとした場合であっても、@var{to}が壊れたデータベースになることは
+ありません)。  もしコピー先の@var{to}が既に存在するデータベースで
+あった場合、@var{to}の元の内容は失われます。
+コピーが中断された場合に@var{to}が不完全な状態のままになるかどうかは
+dbm実装に依存します。dbm実装の多くはトランザクショナルな振る舞い、
+すなわち、コピーが失敗した場合に元の@var{to}を復元することを試みます。
+しかし確実な操作のためには、コピーが失敗した場合には呼び出し側で@var{to}の
+状態を確認することが必要です。
 @c COMMON
 
 @example
@@ -2620,12 +2642,78 @@ Copy a database of class @var{class} specified by
 @deffn {Generic Function} dbm-db-move class from to
 @c EN
 Moves or renames a database of class @var{class} specified by
-@var{from} to @var{to}.
+@var{from} to @var{to}.  Like @code{dbm-db-copy}, the database
+integrity is guaranteed as far as @var{class}'s dbm implementation
+supports locking.  If the destination database @var{to} exists,
+its content is destroyed.
 @c JP
 @var{from}で指定された@var{class}クラスのデータベースを
-@var{to}へ移動、あるいはリネームします。
+@var{to}へ移動、あるいはリネームします。@code{dbm-db-copy}と同じく、
+@var{class}のdbm実装がロックをサポートしていれば
+データベースの一貫性は保証されます。移動先の@var{to}が既に
+存在していた場合、その元の内容は失われます。
+存在
 @c COMMON
 @end deffn
+
+@node Writing a dbm implementation,  , Managing dbm database instance, Generic DBM interface
+@subsection Writing a dbm implementation
+@c NODE DBM実装を書く
+
+When you write an extension module that behaves like
+a persistent hashtable, it is a good idea to adapt it
+to the dbm interface, so that the application can use
+the module in a generic way.
+
+The minimum procedures to conform the dbm interface
+are as follow:
+
+@itemize @bullet
+@item
+Define a metaclass @code{<@var{foo}-meta>}.   It doesn't
+need to inherit anything except @code{<class>}.
+@item
+Define a dbm class @code{<@var{foo}>} that inherits @code{<dbm>}
+and whose metaclass is @code{<@var{foo}-meta>}.
+@item
+Define methods for @code{dbm-open}, @code{dbm-close},
+@code{dbm-put!}, @code{dbm-get}, @code{dbm-exists},
+@code{dbm-delete!}, @code{dbm-fold}, @code{dbm-closed?},
+specialized for @code{<@var{foo}>}.
+(The case of @code{dbm-open} for @code{<@var{foo}-meta>} is
+handled automatically, so you don't need to define it unless
+you want something special).
+Also note that the specialized @code{dbm-open} must call
+@code{next-method} in it to set up dbm base class internals.
+@item
+Define methods for @code{dbm-db-exists?} and
+@code{dbm-db-remove} on @code{<@var{foo}-meta>}.
+@end itemize
+
+Besides above, you may define the following methods.
+
+@itemize @bullet
+@item
+Methods for @code{dbm-for-each} and @code{dbm-map}.
+If you don't define them, a generic implementation
+by @code{dbm-fold} is used.  There may be an implementation
+specific way which is more efficient.
+@item
+Methods for @code{dbm-db-copy} and @code{dbm-db-move}.
+If you don't define them, a fallback method
+opens the specified databases and copies elements one by
+one, and removes the original if the method is  @code{dbm-db-move}.
+Note that the fallback method is not only inefficient,
+but also it may not copy any implementation-specific 
+meta information.  It is highly recommended for the
+dbm implementation to provide these methods as well.
+@end itemize
+
+It is generally recommended to name the implementation module 
+as @code{dbm.@var{foo}}, and the class of the implementation
+as @code{<@var{foo}>}.  With this convention it is easier to
+write an application that dynamically loads and uses
+dbm implementation specified at runtime.
 
 @c ----------------------------------------------------------------------
 @node File-system dbm, GDBM interface, Generic DBM interface, Library modules - Utilities

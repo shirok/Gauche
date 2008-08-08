@@ -205,7 +205,8 @@
 
 ;;
 ;; Meta-operations
-;;  Subclass has to implement these.
+;;  Subclass has to implement at least dbm-db-exists? and dbm-db-remove.
+;;
 
 (define-method dbm-db-exists? ((class <dbm-meta>) name)
   (errorf "dbm-db-exists?: not supported in ~a" class))
@@ -214,10 +215,26 @@
   (errorf "dbm-db-remove: not supported in ~a" class))
 
 (define-method dbm-db-copy ((class <dbm-meta>) from to)
-  (errorf "dbm-db-copy: not supported in ~a" class))
+  ;; generic one - might be slow, and it may not copy meta info.
+  ;; it also doesn't check if from and to is the same databases;
+  ;; but it opens from-db first with read mode, so if the implementation
+  ;; has sane locking, the to-db opening with create option would fail.
+  ;; (That's why we're using let* here.)
+  (let* ((from-db (dbm-open class from :rw-mode :read))
+         (to-db   (dbm-open class from :rw-mode :create)))
+    (dbm-for-each from-db (lambda (k v) (dbm-put! to-db k v)))
+    (dbm-close to-db)
+    (dbm-close from-db)))
 
 (define-method dbm-db-move ((class <dbm-meta>) from to)
-  (errorf "dbm-db-move: not supported in ~a" class))
+  ;; generic one - see above.
+  (let* ((from-db (dbm-open class from :rw-mode :read))
+         (to-db   (dbm-open class from :rw-mode :create)))
+    (dbm-for-each from-db
+                  (lambda (k v) (dbm-put! to-db k v)))
+    (dbm-close to-db)
+    (dbm-close from-db)
+    (dbm-db-remove class from)))
 
 (define dbm-db-rename dbm-db-move) ; backward compatibility
 
