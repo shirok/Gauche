@@ -221,7 +221,7 @@
   ;; has sane locking, the to-db opening with create option would fail.
   ;; (That's why we're using let* here.)
   (let* ((from-db (dbm-open class :path from :rw-mode :read))
-         (to-db   (dbm-open class :path from :rw-mode :create)))
+         (to-db   (dbm-open class :path to   :rw-mode :create)))
     (dbm-for-each from-db (lambda (k v) (dbm-put! to-db k v)))
     (dbm-close to-db)
     (dbm-close from-db)))
@@ -229,9 +229,8 @@
 (define-method dbm-db-move ((class <dbm-meta>) from to)
   ;; generic one - see above.
   (let* ((from-db (dbm-open class :path from :rw-mode :read))
-         (to-db   (dbm-open class :path from :rw-mode :create)))
-    (dbm-for-each from-db
-                  (lambda (k v) (dbm-put! to-db k v)))
+         (to-db   (dbm-open class :path to   :rw-mode :create)))
+    (dbm-for-each from-db (lambda (k v) (dbm-put! to-db k v)))
     (dbm-close to-db)
     (dbm-close from-db)
     (dbm-db-remove class from)))
