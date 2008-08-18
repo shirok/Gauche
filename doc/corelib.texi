@@ -11644,6 +11644,20 @@ if the first argument strictly precedes the second.
 @code{#t}を返す手続きです。
 @c COMMON
 
+@c EN
+Note that it is not guaranteed that, after @code{sort!},
+@var{seq} points to a sorted sequence.
+if @var{seq} is a list, the first pair of the original
+@var{seq} may no longer be the first in the sorted sequence.
+Always use the returned value of @code{sort!}.
+@c JP
+@code{sort!}の後で@var{seq}が必ずしもソート済みのシーケンスを
+指すとは限らないことに注意してください。
+@var{seq}がリストの場合、オリジナルのリストの最初のペアが
+ソート済みリストでも最初に来るとは限りません。
+常に@code{sort!}の戻り値を使うようにしてください。
+@c COMMON
+
 @example
 (sort '(("Chopin" "Frederic") 
         ("Liszt" "Franz")
@@ -11675,24 +11689,71 @@ This might be changed later.
 @c COMMON
 @end defun
 
-@defun stable-sort seq cmpfn
-@defunx stable-sort! seq cmpfn
+@defun stable-sort seq &optional cmpfn
+@defunx stable-sort! seq &optional cmpfn
 @c EN
 Sort a sequence @var{seq} (a list or a vector), using stable sort algorithm
 (currently they are using merge sort).  
 The sorting order is specified by @code{cmpfn}, which is
 a procedure takes two elements of @var{list}, and returns @code{#t}
 if the first argument strictly precedes the second.
-Unlike @code{sort}/@code{sort!}, @var{cmpfn} cannot be omitted.
 @c JP
 安定ソートアルゴリズム(現時点ではマージソート)を使って、並び @var{seq}
 (リストまたはベクタ)をソートします。ソート順は @code{cmpfn} で指定します。
 @code{cmpfn} は @var{list} のふたつの要素を引数として取る関数で、
 厳密に、最初の引数が第二の引数の前にくるものである場合に @code{#t}
-を返します。@code{sort}/@code{sort!} と違い、@var{cmpfn} を省略することは
-できません。
+を返します。
 @c COMMON
 @end defun
+
+@defun sort-by seq key &optional cmpfn
+@defunx sort-by! seq key &optional cmpfn
+@defunx stable-sort-by seq key &optional cmpfn
+@defunx stable-sort-by! seq key &optional cmpfn
+@c EN
+Sorts @var{seq}, by comparing the key values obtained by
+applying the @var{key} procedure to each element of @var{seq}.
+The code @code{(stable-sort-by seq key cmp)} returns the same result
+as the following code:
+
+@example
+(stable-sort seq (lambda (a b) (cmp (key a) (key b))))
+@end example
+
+Besides more compact notation, @code{sort-by} family procedures
+guarantee that @var{key} procedure is called at most the number
+of elements in @var{seq}.  In the above example using @code{stable-sort},
+@var{key} may be called @var{n}log@var{n} or even more times
+where @var{n} is the number of elements in @var{seq}.
+So @code{sort-by} etc. are good if the @var{key} procedure is
+a relatively heavy operation.
+
+The trade-off is the space; @code{sort-by} family consumes
+extra space to save all the key values, which is proportional
+to the number of elements.
+@c JP
+@var{key}をシーケンス@var{seq}の各要素に適用して得られる値の比較をもとに
+@var{seq}をソートします。@code{(stable-sort-by seq key cmp)}は次のコードと
+同じ結果を返します:
+
+@example
+(stable-sort seq (lambda (a b) (cmp (key a) (key b))))
+@end example
+
+よりコンパクトに書けるという以外に、
+@code{sort-by}族の手続きは@var{key}手続きをたかだか@var{seq}の要素数
+しか呼び出さないという性質があります。上記の@code{stable-sort}を
+使った例では、@var{key}は@var{seq}の要素数を@var{n}とする時
+@var{n}log@var{n} 回以上呼び出される可能性があります。
+したがって、@code{sort-by}族は@var{key}手続きが比較的高価な場合に
+威力を発揮します。
+
+トレードオフは空間です。@code{sort-by}族はあらかじめ比較対象となる
+値を計算しておくために、@var{seq}の要素数に比例した余分なメモリを
+必要とします。
+@c COMMON
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node System interface, Development helper API, Comparison and sorting, Core library
