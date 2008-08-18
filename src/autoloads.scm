@@ -184,7 +184,8 @@
                           library-exists? library-has-module?)
 
 (autoload gauche.sortutil sort sort! merge merge! sorted?
-                          stable-sort stable-sort!)
+                          stable-sort stable-sort!
+                          sort-by sort-by! stable-sort-by stable-sort-by!)
 
 (autoload gauche.condutil make-condition-type condition-type?
                           make-condition condition-ref extract-condition

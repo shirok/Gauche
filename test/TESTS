@@ -15,6 +15,7 @@ srfi.scm
 object.scm
 exception.scm
 regexp.scm
+sort.scm
 mb-chars
 system.scm
 load2.scm

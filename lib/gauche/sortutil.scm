@@ -1,19 +1,24 @@
-;;; File   : sort.scm
-;;; Author : Richard A. O'Keefe (based on Prolog code by D.H.D.Warren)
-;;; Updated: 11 June 1991
-;;; Defines: sorted?, merge, merge!, sort, sort!
-
-;; Public Domain.
-;; [SK]: I just added module mechanics to fit Gauche,
-;; and stripped the long explanatory comment.  See sort.orig.scm contained
-;; in tarball for the original form of this file.
-;; $Id: sortutil.scm,v 1.4 2004-12-18 10:41:05 shirok Exp $
+;;;
+;;; Public Domain.
+;;;
+;;; sorted?, merge, merge!, sort, sort!, stable-sort and stable-sort!
+;;; are written by Richard A. O'Keefe (based on Prolog code by D.H.D.Warren).
+;;; See sort.orig.scm for the original public domain code, with long
+;;; explanatory comments.
+;;;
+;;; sort-by family is addition by SK.
+;;;
 
 ;; To be autoloaded
 (define-module gauche.sortutil
   (export sorted? merge merge! sort sort!
-          stable-sort stable-sort!))
+          stable-sort stable-sort!
+          sort-by sort-by! stable-sort-by stable-sort-by!
+          ))
 (select-module gauche.sortutil)
+
+(define (default-less? x y)
+  (< (compare x y) 0))
 
 ;;; (sorted? sequence less?)
 ;;; is true when sequence is a list (x0 x1 ... xm) or a vector #(x0 ... xm)
@@ -104,32 +109,28 @@
     (%sort! seq) ;; use internal version
     (stable-sort! seq (car maybe-less?))))
 
-(define (stable-sort! seq less?)
+(define (stable-sort! seq :optional (less? default-less?))
   (define (step n)
     (cond
-     ((> n 2)
-      (let* ((j (ash n -1))
-             (a (step j))
-             (k (- n j))
-             (b (step k)))
-        (merge! a b less?)))
-     ((= n 2)
-      (let ((x (car seq))
-            (y (cadr seq))
-            (p seq))
-        (set! seq (cddr seq))
-        (if (less? y x) (begin
-                          (set-car! p y)
-                          (set-car! (cdr p) x)))
-        (set-cdr! (cdr p) '())
-        p))
-     ((= n 1)
-      (let ((p seq))
-        (set! seq (cdr seq))
-        (set-cdr! p '())
-        p))
-     (else
-      '()) ))
+     [(> n 2) (let* ((j (ash n -1))
+                     (a (step j))
+                     (k (- n j))
+                     (b (step k)))
+                (merge! a b less?))]
+     [(= n 2) (let ((x (car seq))
+                    (y (cadr seq))
+                    (p seq))
+                (set! seq (cddr seq))
+                (when (less? y x)
+                  (set-car! p y)
+                  (set-car! (cdr p) x))
+                (set-cdr! (cdr p) '())
+                p)]
+     [(= n 1) (let ((p seq))
+                (set! seq (cdr seq))
+                (set-cdr! p '())
+                p)]
+     [else '()]))
   (if (vector? seq)
     (let ((n (vector-length seq))
           (vector seq))
@@ -150,10 +151,51 @@
     (%sort seq)  ;; use internal version
     (stable-sort seq (car maybe-less?))))
 
-(define (stable-sort seq less?)
+(define (stable-sort seq :optional (less? default-less?))
   (if (vector? seq)
     (list->vector (sort! (vector->list seq) less?))
     (sort! (list-copy seq) less?)))
+
+;;;
+;;; (sort-by seq key :optional less?)
+;;;
+
+(define (%make-cmp less?)
+  (if less?
+    (lambda (a b) (less? (cdr a) (cdr b)))
+    (lambda (a b) (< (compare (cdr a) (cdr b)) 0))))
+
+(define (sort-by seq key :optional (less? #f))
+  (if (vector? seq)
+    (list->vector (sort-by (vector->list seq) key less?))
+    (map car (stable-sort (map (lambda (e) (cons e (key e))) seq)
+                          (%make-cmp less?)))))
+
+(define stable-sort-by sort-by)
+
+(define (sort-by! seq key :optional (less? #f))
+  (cond [(vector? seq)
+         (let1 len (vector-length seq)
+           (do ([i 0 (+ i 1)])
+               [(= i len)]
+             (vector-set! seq i (cons (vector-ref seq i)
+                                      (key (vector-ref seq i)))))
+           (do ([seq (stable-sort! seq (%make-cmp less?))]
+                [i 0 (+ i 1)])
+               [(= i len)]
+             (vector-set! seq i (car (vector-ref seq i))))
+           seq)]
+        [else
+         (do ([spine seq (cdr spine)])
+             [(null? spine)]
+           (set-car! spine (cons (car spine) (key (car spine)))))
+         (let1 spine (stable-sort! seq (%make-cmp less?))
+           (do ([lis spine (cdr lis)])
+               [(null? lis)]
+             (set-car! lis (caar lis)))
+           spine)]))
+
+(define stable-sort-by! sort-by!)
 
 (provide "gauche/sortutil")
 
