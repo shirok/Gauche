@@ -1,5 +1,14 @@
 2008-08-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/vminsn.scm (VALUES-APPLY), src/vm.c (Scm_ApplyRec): fixed
+	  a bug that caused SEGV when more than SCM_VM_MAX_VALUES args
+	  are given to Scm_ApplyRec.  This hasn't been noticed since Scheme
+	  version of APPLY doesn't go through this path.  (Note: This
+	  is a temporary fix.  VALUES-APPLY can keep the rest list until
+	  argumet adjustment, in the same way as TAIL-APPLY.)
+	* src/intlib.stub: Added some procedures that uses Scm_ApplyRec
+	  family for the testing purpose.
+
 	* lib/gauche/sortutil.scm, src/autoloads.scm, test/sort.scm:
 	  Added sort-by, sort-by!, stable-sort-by, stable-sort-by!.
 

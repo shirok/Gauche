@@ -1227,6 +1227,7 @@ ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
     for (i=0; i<nargs; i++) {
         if (i == SCM_VM_MAX_VALUES-1) {
             vm->vals[i] = args;
+            break;
         }
         vm->vals[i] = SCM_CAR(args);
         args = SCM_CDR(args);

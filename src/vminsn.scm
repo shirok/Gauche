@@ -73,8 +73,18 @@
                        [(ret)  `((set! VAL0 ,expr)
                                  (set! (-> vm numVals) 1)
                                  (RETURN-OP)
-                                 NEXT)]))])
-
+                                 NEXT)]
+;                        [(w/push) `((if (SCM_VM_INSN_WITH_PUSH code)
+;                                      (PUSH-ARG ,expr)
+;                                      (set! VAL0 ,expr))
+;                                    NEXT1)]
+;                        [(w/ret)  `((set! VAL0 ,expr)
+;                                    (when (SCM_VM_INSN_WITH_RET code)
+;                                      (set! (-> vm numVals) 1)
+;                                      (RETURN-OP))
+;                                    NEXT1)]
+                       ))])
+  
 ;; variations of $result with type coercion
 (define-cise-stmt $result:b 
   [(_ expr) `($result (SCM_MAKE_BOOL ,expr))])
@@ -799,13 +809,16 @@
 ;;  across the boundary frame (see user_eval_inner() in vm.c).
 ;;  When the VM sees this instruciton, VAL0 contains the procedure to
 ;;  call, and VAL1... contains the arguments.
+;;  If nargs >= SCM_VM_MAX_VALUES-1, args[SCM_VM_MAX_VALUES-1] through
+;;  args[nargs-1] are made into a list and stored in VALS[SCM_VM_MAX_VALUES-1]
 (define-insn VALUES-APPLY 0 none #f
   (let* ((nargs :: int (SCM_VM_INSN_ARG code))
          (i :: int 0))
     (CHECK-STACK (ENV-SIZE nargs))
     (for (() (< i nargs) (post++ i))
          (when (>= i (- SCM_VM_MAX_VALUES 1))
-           (PUSH-ARG (aref (-> vm vals) (- SCM_VM_MAX_VALUES 1)))
+           (for-each (lambda (vv) (PUSH-ARG vv))
+                     (aref (-> vm vals) (- SCM_VM_MAX_VALUES 1)))
            (break))
          (PUSH-ARG (aref (-> vm vals) i)))
     ($goto-insn TAIL-CALL)))
