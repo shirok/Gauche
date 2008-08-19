@@ -11621,9 +11621,36 @@ it reads the first form of the code and see if it is a
 @c NODE 比較とソート
 
 @defun compare obj1 obj2
+@c EN
+A general comparison procedure.  Returns -1 if @var{obj1} is less than
+@var{obj2}, 0 if @var{obj1} is equal to @var{obj2}, and 1 if @var{obj1}
+is greater than @var{obj2}.  Signals an error if @var{obj1} and @var{obj2}
+are incomparable.
+
+Some built-in types are handled by this procedure reflecting ``natural''
+order of comparison.  Other built-in types are generally
+uncomparable.  For Scheme-defined classes, this procedure calls
+a generic function @code{object-compare}.
+@c JP
+一般的な比較手続きです。@var{obj1}が@var{obj2}より小さければ-1を、
+等しければ0を、大きければ1を返します。@var{obj1}と@var{obj2}が
+比較できない場合はエラーとなります。
+
+いくつかの組み込み型は「自然な」比較順を用いて比較されます。
+他の組み込み型は通常比較不可能です。Schemeで定義されたクラスについては、
+この手続きはジェネリックファンクション@code{object-compare}を
+呼び出します。
+@c COMMON
 @end defun
 
 @deffn {Generic Function} object-compare obj1 obj2
+@c EN
+Specializing this generic function extends @code{compare} procedure
+for user-defined classes.
+@c JP
+このジェネリックファンクションを特殊化することで
+@code{compare}手続きをユーザ定義クラスに対して動作するように拡張できます。
+@c COMMON
 @end deffn
 
 @defun sort seq &optional cmpfn
@@ -11664,16 +11691,16 @@ Always use the returned value of @code{sort!}.
         ("Alkan" "Charles-Valentin"))
       (lambda (x y) (string<? (car x) (car y))))
   @result{} (("Alkan" "Charles-Valentin")
-             ("Chopin" "Frederic")
-             ("Liszt" "Franz"))
+      ("Chopin" "Frederic")
+      ("Liszt" "Franz"))
 @end example
 
 @c EN
-Some builtin objects have natural comparison order, and it is used
-if @var{cmpfn} is omitted.
+When @var{cmpfn} is omitted, the @code{compare} procedure
+is used to determine which element is @emph{less}.
 @c JP
-いくつかのビルトインオブジェクトは自然な比較順を持っており、
-@var{cmpfn}が省略された場合にはそれが使われます。
+@var{cmpfn}が省略された場合は@code{compare}手続きが
+どちらの要素がより「小さい」かを判定するのに使われます。
 @c COMMON
 
 @c EN
@@ -11686,6 +11713,15 @@ This might be changed later.
 クィックソートとヒープソートを使い、
 @var{cmpfn}が与えられた場合はマージソートを使っています。
 これは将来変更されるかもしれません。
+@c COMMON
+
+@c EN
+If you want to keep a sorted set of objects to which you
+add objects one at at time, you can also use treemaps
+(@xref{Treemaps}).
+@c JP
+なお、オブジェクトをひとつづつ集合に追加しつつ、常にソートされた
+状態に保ちたい場合は、treemapの使用を考えても良いでしょう (@ref{Treemaps}参照)。
 @c COMMON
 @end defun
 
