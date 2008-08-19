@@ -238,6 +238,10 @@
 (define-form-parser define-cise-expr args
   (eval `(define-cise-expr ,@args) (current-module)))
 
+(define-form-parser define-cfn args
+  (cgen-body (call-with-output-string
+               (cut cise-render `(define-cfn ,@args) <>))))
+
 ;;===================================================================
 ;; Type handling
 ;;

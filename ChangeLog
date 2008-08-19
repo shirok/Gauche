@@ -1,3 +1,13 @@
+2008-08-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm (define-cfn): Introduced define-cfn cise
+	  form to enable to write pure C function (not cproc, which is a
+	  Scheme subr with C body) in cise.
+	* lib/gauche/cgen/stub.scm: Recognizes define-cfn within stub code.
+
+	* ext/peg/peg-lib.scm: Rewrote a couple of C static functions within
+	  inline-stub by define-cfn.
+
 2008-08-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm (VALUES-APPLY), src/vm.c (Scm_ApplyRec): fixed

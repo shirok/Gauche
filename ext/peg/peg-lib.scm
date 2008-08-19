@@ -192,27 +192,21 @@
   (and (pair? obj) (eq? (car obj) 'rope)))
 
 (inline-stub
- (define-symbol rope "sym_rope")
- 
- "static void rope2string_int(ScmObj obj, ScmObj p)
- {
- restart:
-   if (SCM_STRINGP(obj)) SCM_PUTS(obj, p);
-   else if (SCM_CHARP(obj)) SCM_PUTC(SCM_CHAR_VALUE(obj), p);
-   else if (SCM_PAIRP(obj)) {
-     if (SCM_EQ(SCM_CAR(obj), sym_rope)) {
-       obj = SCM_CDR(obj); goto restart;
-     }
-     SCM_FOR_EACH(obj, obj) {
-       if (SCM_STRINGP(SCM_CAR(obj))) SCM_PUTS(SCM_CAR(obj), p);
-       else if (SCM_CHARP(SCM_CAR(obj))) SCM_PUTC(SCM_CHAR_VALUE(SCM_CAR(obj)), p);
-       else rope2string_int(SCM_CAR(obj), p);
-     }
-   } else if (!SCM_NULLP(obj)) {
-     Scm_Error(\"rope->string: unknown object to write: %S\", obj);
-   }
- }"
- 
+ (define-cfn rope2string_int (obj p) :: void :static
+   (label restart)
+   (cond [(SCM_STRINGP obj) (SCM_PUTS obj p)]
+         [(SCM_CHARP obj) (SCM_PUTC (SCM_CHAR_VALUE obj) p)]
+         [(SCM_PAIRP obj)
+          (when (SCM_EQ (SCM_CAR obj) 'rope)
+            (set! obj (SCM_CDR obj)) (goto restart))
+          (for-each (lambda (elt)
+                      (cond [(SCM_STRINGP elt) (SCM_PUTS elt p)]
+                            [(SCM_CHARP elt) (SCM_PUTC (SCM_CHAR_VALUE elt) p)]
+                            [else (rope2string_int elt p)]))
+                    obj)]
+         [(not (SCM_NULLP obj))
+          (Scm_Error "rope->string: unknown object to write: %S" obj)]))
+
  (define-cproc rope->string (obj)
    (body <top>
          (let* ((p (Scm_MakeOutputStringPort TRUE)))
@@ -250,29 +244,20 @@
 ;;
 
 (inline-stub
- "static ScmObj peg_stream_fini_cc(ScmObj result, void **data)
- {
-   ScmObj s = SCM_OBJ(data[0]);
-   SCM_RETURN(SCM_FALSE);
- }"
+ (define-cfn peg_stream_fini_cc (result (data :: void**)) :static
+   (return SCM_FALSE))
 
- "static ScmObj peg_stream_cc(ScmObj result, void **data)
- {
-   ScmObj s = SCM_OBJ(data[0]);
-   ScmObj p = SCM_CAR(s);
-   int tokcnt = SCM_INT_VALUE(SCM_CDR(s));
-   SCM_SET_CAR(s, result);
-   SCM_SET_CDR(s, Scm_Cons(p, SCM_MAKE_INT(1+tokcnt)));
-   if (SCM_EOFP(result) && !SCM_FALSEP(SCM_CDR(p))) {
-     /* needs to call fini proc. */
-     void *data[1];
-     data[0] = s;
-     Scm_VMPushCC(peg_stream_fini_cc, data, 1);
-     SCM_RETURN(Scm_VMApply0(SCM_CDR(p)));
-   } else {
-     SCM_RETURN(SCM_MAKE_BOOL(!SCM_EOFP(result)));
-   }
- }"
+ (define-cfn peg_stream_cc (result (data :: void**)) :static
+   (let* ([s (SCM_OBJ (aref data 0))]
+          [p (SCM_CAR s)]
+          [tokcnt :: int (SCM_INT_VALUE (SCM_CDR s))])
+     (SCM_SET_CAR s result)
+     (SCM_SET_CDR s (Scm_Cons p (SCM_MAKE_INT (+ 1 tokcnt))))
+     (cond [(and (SCM_EOFP result) (not (SCM_FALSEP (SCM_CDR p))))
+            (Scm_VMPushCC peg_stream_fini_cc NULL 0)
+            (return (Scm_VMApply0 (SCM_CDR p)))]
+           [else
+            (return (SCM_MAKE_BOOL (not (SCM_EOFP result))))])))
 
  (define-cproc peg-stream-peek! (s)
    (body <top>

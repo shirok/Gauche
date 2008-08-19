@@ -297,8 +297,46 @@
 ;;
 
 ;;------------------------------------------------------------
+;; C function definition
+;;
+(define-cise-macro (define-cfn form env)
+  (define (argchk args)
+    (match args
+      [() '()]
+      [((var ':: type) . rest) `((,var . ,type) ,@(argchk rest))]
+      [(var . rest) `((,var . ScmObj) ,@(argchk rest))]))
+  ;; NB: we need to confine temporary decls within the function body,
+  ;; hence the ugly nested cise-render, since the extra decls handling
+  ;; is done at that level.  Hopefully this is an exception.
+  (define (gen-cfn cls name args rettype body)
+    `(,(cise-render-identifier cls) " "
+      ,(cise-render-type rettype)
+      " " ,(cise-render-identifier name) "("
+      ,@(intersperse "," (map (lambda (a)
+                                `(,(cise-render-type (cdr a)) " "
+                                  ,(cise-render-identifier (car a))))
+                              args))
+      ")" "{"
+      ,(call-with-output-string (cut cise-render `(begin ,@body) <>))
+      "}"))
+  ;; NB: this only works at toplevel.  The stmt check doesn't exclude
+  ;; non-toplevel use, and will give an error at C compilation time.
+  ;; Eventually we need to check better one.
+  (ensure-stmt-ctx form env)
+  (match form
+    [(_ name (args ...) ':: ret-type ':static . body)
+     (gen-cfn "static" name (argchk args) ret-type body)]
+    [(_ name (args ...) ':: ret-type . body)
+     (gen-cfn "" name (argchk args) ret-type body)]
+    [(_ name (args ...) ':static . body)
+     (gen-cfn "static" name (argchk args) 'ScmObj body)]
+    [(_ name (args ...) . body)
+     (gen-cfn "" name (argchk args) 'ScmObj body)]))
+
+;;------------------------------------------------------------
 ;; Syntax
 ;;
+
 (define-cise-macro (begin form env)
   (ensure-stmt-ctx form env)
   (match form
