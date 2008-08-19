@@ -4,9 +4,18 @@
 	  form to enable to write pure C function (not cproc, which is a
 	  Scheme subr with C body) in cise.
 	* lib/gauche/cgen/stub.scm: Recognizes define-cfn within stub code.
+	  (initcode): Allow cise in the code portion.
+	  (make-literal): Allow cise expression in the 'init' section of
+	  raw c literal (e.g. (c init)).
 
 	* ext/peg/peg-lib.scm: Rewrote a couple of C static functions within
 	  inline-stub by define-cfn.
+
+	* ext/dbm/gdbm-lib.scm, ext/dbm/ndbm-lib.scm, ext/dbm/odbm-lib.scm:
+	  Include stub code in the Scheme code using init-stub.
+	  *.stub are no longer needed.  {gdbm,ndbm,odbm}.scm are auto-
+	  generated.
+	* ext/dbm/dbm.ac: changed accordingly.
 
 2008-08-17  Shiro Kawai  <shiro@acm.org>
 

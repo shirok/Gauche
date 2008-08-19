@@ -10,31 +10,38 @@ LIBFILES = @DBM_ARCHFILES@
 SCMFILES = @DBM_SCMFILES@
 
 GENERATED = Makefile dbmconf.h
-XCLEANFILES = gdbm.c ndbm.c odbm.c ndbm-makedb ndbm-suffixes.h *_head.c *_tail.c
+XCLEANFILES = gdbm-lib.c gdbm.scm \
+              ndbm-lib.c ndbm.scm \
+              odbm-lib.c odbm.scm \
+              ndbm-makedb ndbm-suffixes.h *_head.c *_tail.c
 
 all : $(LIBFILES)
 
-gdbm_OBJECTS   = gdbm_head.$(OBJEXT) gdbm.$(OBJEXT) gdbm_tail.$(OBJEXT)
+gdbm_OBJECTS   = gdbm_head.$(OBJEXT) gdbm-lib.$(OBJEXT) gdbm_tail.$(OBJEXT)
 
-gdbm.$(SOEXT) : $(gdbm_OBJECTS)
-	$(MODLINK) gdbm.$(SOEXT) $(gdbm_OBJECTS) $(EXT_LIBGAUCHE) @GDBMLIB@ $(LIBS)
+gdbm-lib.$(SOEXT) : $(gdbm_OBJECTS)
+	$(MODLINK) gdbm-lib.$(SOEXT) $(gdbm_OBJECTS) $(EXT_LIBGAUCHE) @GDBMLIB@ $(LIBS)
 
-gdbm.c : gdbm.stub
+gdbm.scm gdbm-lib.c : gdbm-lib.scm
+	$(GENCOMP) --ext-module=gdbm.scm gdbm-lib.scm
 
-ndbm_OBJECTS   = ndbm_head.$(OBJEXT) ndbm.$(OBJEXT) ndbm_tail.$(OBJEXT)
+ndbm_OBJECTS   = ndbm_head.$(OBJEXT) ndbm-lib.$(OBJEXT) ndbm_tail.$(OBJEXT)
 
-ndbm.$(SOEXT) : $(ndbm_OBJECTS)
-	$(MODLINK) ndbm.$(SOEXT) $(ndbm_OBJECTS) $(EXT_LIBGAUCHE) @NDBMLIB@ $(LIBS)
+ndbm-lib.$(SOEXT) : $(ndbm_OBJECTS)
+	$(MODLINK) ndbm-lib.$(SOEXT) $(ndbm_OBJECTS) $(EXT_LIBGAUCHE) @NDBMLIB@ $(LIBS)
 
-ndbm.c : ndbm.stub
-ndbm.$(OBJEXT): ndbm.c ndbm-suffixes.h
+ndbm.scm ndbm-lib.c : ndbm-lib.scm
+	$(GENCOMP) --ext-module=ndbm.scm ndbm-lib.scm
 
-odbm_OBJECTS   = odbm_head.$(OBJEXT) odbm.$(OBJEXT) odbm_tail.$(OBJEXT)
+ndbm-lib.$(OBJEXT): ndbm-lib.c ndbm-suffixes.h
 
-odbm.$(SOEXT) : $(odbm_OBJECTS)
-	$(MODLINK) odbm.$(SOEXT) $(odbm_OBJECTS) $(EXT_LIBGAUCHE) @ODBMLIB@ $(LIBS)
+odbm_OBJECTS   = odbm_head.$(OBJEXT) odbm-lib.$(OBJEXT) odbm_tail.$(OBJEXT)
 
-odbm.c : odbm.stub
+odbm-lib.$(SOEXT) : $(odbm_OBJECTS)
+	$(MODLINK) odbm-lib.$(SOEXT) $(odbm_OBJECTS) $(EXT_LIBGAUCHE) @ODBMLIB@ $(LIBS)
+
+odbm.scm odbm-lib.c : odbm-lib.scm
+	$(GENCOMP) --ext-module=odbm.scm odbm-lib.scm
 
 gdbm_head.c gdbm_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension gdbm

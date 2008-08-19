@@ -43,7 +43,6 @@
           odbm-firstkey  odbm-nextkey)
   )
 (select-module dbm.odbm)
-(dynamic-load "odbm")
 
 ;; Legacy DBM has some limitations.
 ;;  * only one dbm file can be opened at a time.
@@ -55,9 +54,9 @@
 ;;    back the permission.  We reset the permission after
 ;;    opening the file.
 
-;;
-;; Initialize
-;;
+;;;
+;;; High-level dbm interface
+;;;
 
 (define-class <odbm-meta> (<dbm-meta>)
   ())
@@ -161,5 +160,88 @@
   (apply %dbm-rename2
          (append (append-map list (odbm-files from) (odbm-files to))
                  keys)))
+
+;;;
+;;; Low-level binginds
+;;;
+
+(inline-stub
+ "#include \"dbmconf.h\""
+ "#if HAVE_DBM_H"
+ "#include <dbm.h>"
+ "#elif HAVE_GDBM_SLASH_DBM_H"
+ "#include <gdbm/dbm.h>"
+ "#elif HAVE_GDBM_MINUS_DBM_H"
+ "#include <gdbm-dbm.h>"
+ "#endif"
+
+ ;; data conversion macros
+ (define-cise-stmt TO_DATUM
+   [(_ datum scm)
+    (let ((tmp (gensym)))
+      `(let* ((,tmp :: |const ScmStringBody*| (SCM_STRING_BODY ,scm)))
+         (set! (ref ,datum dptr)  (cast char* (SCM_STRING_BODY_START ,tmp)))
+         (set! (ref ,datum dsize) (SCM_STRING_BODY_SIZE ,tmp))))])
+
+ (define-cise-stmt FROM_DATUM
+   [(_ scm datum)
+    `(cond [(ref ,datum dptr)
+            (set! ,scm (Scm_MakeString (ref ,datum dptr) (ref ,datum dsize)
+                                       -1 SCM_STRING_COPYING))]
+           [else
+            (set! ,scm SCM_FALSE)])])
+
+ (define-cise-stmt CHECK_ODBM
+   [(_)
+    `(unless odbm_opened (Scm_Error "odbm file already closed"))])
+
+ ;; Original dbm allows to open only one file at a time.
+ ;; The static variable odbm_opened tracks the status.
+ ;; TODO: MT SAFENESS
+ "static int odbm_opened = FALSE;"
+
+ ;; bindings
+ (define-cproc odbm-init (name::<string>)
+   (body <int>
+         (when odbm_opened (Scm_Error "dbm file is already opened."))
+         (let* ((r :: int (dbminit (Scm_GetString name))))
+           (when (< r 0) (Scm_SysError "couldn't open dbm database %S" name))
+           (set! odbm_opened TRUE)
+           (result r))))
+
+ (define-cproc odbm-close ()
+   (body <void> (when odbm_opened (dbmclose) (set! odbm_opened FALSE))))
+
+ (define-cproc odbm-closed? ()
+   (expr <boolean> (not odbm_opened)))
+
+ (define-cproc odbm-store (key::<string> val::<string>)
+   (body <int>
+         (let* ((dkey :: datum) (dval :: datum))
+           (CHECK_ODBM) (TO_DATUM dkey key) (TO_DATUM dval val)
+           (result (store dkey dval)))))
+
+ (define-cproc odbm-fetch (key::<string>)
+   (body <top>
+         (let* ((dkey :: datum) (dval :: datum))
+           (CHECK_ODBM) (TO_DATUM dkey key) (set! dval (fetch dkey))
+           (FROM_DATUM SCM_RESULT dval))))
+
+ (define-cproc odbm-delete (key::<string>)
+   (body <int>
+         (let* ((dkey :: datum))
+           (CHECK_ODBM) (TO_DATUM dkey key) (result (delete dkey)))))
+
+ (define-cproc odbm-firstkey ()
+   (body <top>
+         (let* ((dkey :: datum))
+           (CHECK_ODBM) (set! dkey (firstkey)) (FROM_DATUM SCM_RESULT dkey))))
+
+ (define-cproc odbm-nextkey (key::<string>)
+   (body <top>
+         (let* ((dkey :: datum) (dnkey :: datum))
+           (CHECK_ODBM) (TO_DATUM dkey key) (set! dnkey (nextkey dkey))
+           (FROM_DATUM SCM_RESULT dnkey))))
+ )
   
 (provide "dbm/odbm")

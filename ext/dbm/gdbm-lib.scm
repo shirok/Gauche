@@ -50,11 +50,10 @@
           |GDBM_CENTFREE|    |GDBM_COALESCEBLKS|)
   )
 (select-module dbm.gdbm)
-(dynamic-load "gdbm")
 
-;;
-;; Initialize
-;;
+;;;
+;;; High-level dbm interface
+;;;
 
 (define-class <gdbm-meta> (<dbm-meta>)
   ())
@@ -170,5 +169,192 @@
 (define-method dbm-db-move ((class <gdbm-meta>) from to . keys)
   (%with-gdbm-locking from
    (lambda () (apply move-file from to :safe #t keys))))
+
+;;;
+;;; Low-level bindings
+;;;
+
+(inline-stub
+ "#include <gdbm.h>"
+ "#include <stdlib.h>"
+
+ "SCM_CLASS_DECL(Scm_GdbmClass);"
+ "static void gdbm_print(ScmObj, ScmPort *, ScmWriteContext*);"
+ "SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_GdbmClass, gdbm_print);"
+
+ "#define SCM_CLASS_GDBM       (&Scm_GdbmClass)"
+ "#define SCM_GDBM(obj)        ((ScmGdbm*)obj)"
+ "#define SCM_GDBMP(obj)       SCM_XTYPEP(obj, SCM_CLASS_GDBM)"
+
+ "typedef struct ScmGdbmRec {
+    SCM_HEADER;
+    ScmObj name;
+    GDBM_FILE dbf;              /* NULL if closed */
+  } ScmGdbm;"
+
+ (define-type <gdbm> "ScmGdbm*")
+ (initcode (Scm_InitStaticClass (& Scm_GdbmClass) "<gdbm-file>" mod NULL 0))
+
+ (define-cfn gdbm_print (obj (out :: ScmPort*) (ctx :: ScmWriteContext*))
+   :: void :static
+   (Scm_Printf out "#<gdbm-file %S>" (-> (SCM_GDBM obj) name)))
+
+ (define-cfn gdbm_finalize (obj (data :: void*)) :: void :static
+   (let* ((g :: ScmGdbm* (SCM_GDBM obj)))
+     (when (-> g dbf)
+       (gdbm_close (-> g dbf))
+       (set! (-> g dbf) NULL))))
+
+ ;; data conversion macros
+ (define-cise-stmt TO_DATUM
+   [(_ datum scm)
+    (let ((tmp (gensym)))
+      `(let* ((,tmp :: |const ScmStringBody*| (SCM_STRING_BODY ,scm)))
+         (set! (ref ,datum dptr)  (cast char* (SCM_STRING_BODY_START ,tmp)))
+         (set! (ref ,datum dsize) (SCM_STRING_BODY_SIZE ,tmp))))])
+
+ (define-cise-stmt FROM_DATUM
+   [(_ scm datum)
+    `(cond [(ref ,datum dptr)
+            (set! ,scm (Scm_MakeString (ref ,datum dptr) (ref ,datum dsize)
+                                       -1 SCM_STRING_COPYING))
+            (free (ref ,datum dptr))]
+           [else
+            (set! ,scm SCM_FALSE)])])
+
+ (define-cise-stmt CHECK_GDBM
+   [(_ g)
+    `(unless (-> ,g dbf) (Scm_Error "gdbm file already closed: %S" ,g))])
+
+ ;; Those symbols may not be defined in the older gdbm
+ "#ifndef GDBM_SYNC"
+ "#define GDBM_SYNC 0"
+ "#endif"
+ "#ifndef GDBM_NOLOCK"
+ "#define GDBM_NOLOCK 0"
+ "#endif"
+ "#ifndef GDBM_SYNCMODE"
+ "#define GDBM_SYNCMODE 0"
+ "#endif"
+ "#ifndef GDBM_CENTFREE"
+ "#define GDBM_CENTFREE 0"
+ "#endif"
+ "#ifndef GDBM_COALESCEBLKS"
+ "#define GDBM_COALESCEBLKS 0"
+ "#endif"
+
+ (define-cproc gdbm-open
+   (name::<string> &optional (size::<fixnum> 0)
+                   (rwmode::<fixnum> (c "SCM_MAKE_INT(GDBM_READER)"))
+                   (fmode::<fixnum> (c "SCM_MAKE_INT(0666)")))
+   (body
+    <top>
+    (let* ((z :: ScmGdbm* (SCM_NEW ScmGdbm)))
+      (SCM_SET_CLASS z SCM_CLASS_GDBM)
+      (Scm_RegisterFinalizer (SCM_OBJ z) gdbm_finalize NULL)
+      (set! (-> z name) (SCM_OBJ name))
+      (set! (-> z dbf) (gdbm_open (Scm_GetString name) size rwmode fmode NULL))
+      (when (== (-> z dbf) NULL)
+        (Scm_Error "couldn't open gdbm file %S (gdbm_errno=%d)" name gdbm_errno))
+      (result (SCM_OBJ z)))))
+
+ (define-cproc gdbm-close (gdbm::<gdbm>)
+   (body <void>
+         (when (-> gdbm dbf)
+           (gdbm_close (-> gdbm dbf))
+           (set! (-> gdbm dbf) NULL))))
+
+ (define-cproc gdbm-closed? (gdbm::<gdbm>)
+   (expr <boolean> (== (-> gdbm dbf) NULL)))
+
+ (define-cproc gdbm-store (gdbm::<gdbm> key::<string> val::<string>
+                                        &optional (flags::<fixnum> 0))
+   (body <int>
+         (let* ((dkey :: datum) (dval :: datum))
+           (CHECK_GDBM gdbm)
+           (TO_DATUM dkey key)
+           (TO_DATUM dval val)
+           (result (gdbm_store (-> gdbm dbf) dkey dval flags)))))
+
+ (define-cproc gdbm-fetch (gdbm::<gdbm> key::<string>)
+   (body <top>
+         (let* ((dkey :: datum) (dval :: datum))
+           (CHECK_GDBM gdbm)
+           (TO_DATUM dkey key)
+           (set! dval (gdbm_fetch (-> gdbm dbf) dkey))
+           (FROM_DATUM SCM_RESULT dval))))
+
+ (define-cproc gdbm-delete (gdbm::<gdbm> key::<string>)
+   (body <int>
+         (let* ((dkey :: datum))
+           (CHECK_GDBM gdbm)
+           (TO_DATUM dkey key)
+           (result (gdbm_delete (-> gdbm dbf) dkey)))))
+
+ (define-cproc gdbm-firstkey (gdbm::<gdbm>)
+   (body <top>
+         (let* ((dkey :: datum (gdbm_firstkey (-> gdbm dbf))))
+           (FROM_DATUM SCM_RESULT dkey))))
+
+ (define-cproc gdbm-nextkey (gdbm::<gdbm> key::<string>)
+   (body <top>
+         (let* ((dkey :: datum) (dnkey :: datum))
+           (CHECK_GDBM gdbm)
+           (TO_DATUM dkey key)
+           (set! dnkey (gdbm_nextkey (-> gdbm dbf) dkey))
+           (FROM_DATUM SCM_RESULT dnkey))))
+
+ (define-cproc gdbm-reorganize (gdbm::<gdbm>)
+   (body <int>
+         (CHECK_GDBM gdbm)
+         (result (gdbm_reorganize (-> gdbm dbf)))))
+
+ (define-cproc gdbm-sync (gdbm::<gdbm>)
+   (body <void>
+         (CHECK_GDBM gdbm)
+         (gdbm_sync (-> gdbm dbf))))
+
+ (define-cproc gdbm-exists? (gdbm::<gdbm> key::<string>)
+   (body <boolean>
+         (let* ((dkey :: datum))
+           (CHECK_GDBM gdbm)
+           (TO_DATUM dkey key)
+           (result (gdbm_exists (-> gdbm dbf) dkey)))))
+
+ (define-cproc gdbm-strerror (errno::<fixnum>)
+   (expr <top> (SCM_MAKE_STR_IMMUTABLE (gdbm_strerror errno))))
+
+ (define-cproc gdbm-setopt (gdbm::<gdbm> option::<fixnum> val)
+   (body <int>
+         (let* ((ival :: int))
+           (CHECK_GDBM gdbm)
+           (if (SCM_EXACTP val)
+             (set! ival (Scm_GetUInteger val))
+             (set! ival (not (SCM_FALSEP val))))
+           (result (gdbm_setopt (-> gdbm dbf) option (& ival) (sizeof int))))))
+
+ (define-cproc gdbm-version ()
+   (expr <top> (SCM_MAKE_STR_IMMUTABLE gdbm_version)))
+
+ (define-cproc gdbm-errno ()
+   (body <int>
+         (result gdbm_errno)
+         (set! gdbm_errno 0)))
+
+ (define-enum GDBM_READER)
+ (define-enum GDBM_WRITER)
+ (define-enum GDBM_WRCREAT)
+ (define-enum GDBM_NEWDB)
+ (define-enum GDBM_FAST)
+ (define-enum GDBM_SYNC)
+ (define-enum GDBM_NOLOCK)
+ (define-enum GDBM_INSERT)
+ (define-enum GDBM_REPLACE)
+ (define-enum GDBM_CACHESIZE)
+ (define-enum GDBM_FASTMODE)
+ (define-enum GDBM_SYNCMODE)
+ (define-enum GDBM_CENTFREE)
+ (define-enum GDBM_COALESCEBLKS)
+ )
 
 (provide "dbm/gdbm")

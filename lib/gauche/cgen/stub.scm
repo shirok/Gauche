@@ -291,6 +291,9 @@
   (match obj
     (('c (? string? c-expr))
      (make <raw-c-literal> :value (make <special-literal>) :c-name c-expr))
+    (('c cise)
+     (make <raw-c-literal> :value (make <special-literal>)
+           :c-name (call-with-output-string (cut cise-render cise <> #t))))
     (('current-input-port)
      (make <raw-c-literal>
        :value (make <special-literal>) :c-name "SCM_OBJ(SCM_CURIN)"))
@@ -1293,7 +1296,10 @@
   )
 
 (define-form-parser initcode codes
-  (apply cgen-init codes))
+  (dolist (c codes)
+    (if (string? c)
+      (cgen-init c)
+      (cgen-init (call-with-output-string (cut cise-render c <>))))))
 
 (define-form-parser begin forms
   (for-each cgen-stub-parse-form forms))
