@@ -118,7 +118,7 @@
  "#define SCM_CLASS_SHA1      (&Scm_Sha1Class)"
  "#define SCM_SHA1(obj)       ((ScmSha1*)obj)"
  "#define SCM_SHA1P(obj)      SCM_XTYPEP(obj, SCM_CLASS_SHA1)"
- 
+
  (define-cfn sha1_allocate ((klass :: ScmClass*) initargs) :static
    (let* ((sha1 :: ScmSha1* (SCM_ALLOCATE ScmSha1 klass)))
      (SCM_SET_CLASS sha1 klass)

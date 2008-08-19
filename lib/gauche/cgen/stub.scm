@@ -289,21 +289,19 @@
 ;; NB: (make <special-literal>) is just to fake the literal hash.
 (define (make-literal obj . args)
   (match obj
-    (('c (? string? c-expr))
-     (make <raw-c-literal> :value (make <special-literal>) :c-name c-expr))
-    (('c cise)
+    [('c _)
      (make <raw-c-literal> :value (make <special-literal>)
-           :c-name (call-with-output-string (cut cise-render cise <> #t))))
-    (('current-input-port)
+           :c-name (c-literal-expr obj))]
+    [('current-input-port)
      (make <raw-c-literal>
-       :value (make <special-literal>) :c-name "SCM_OBJ(SCM_CURIN)"))
-    (('current-output-port)
+       :value (make <special-literal>) :c-name "SCM_OBJ(SCM_CURIN)")]
+    [('current-output-port)
      (make <raw-c-literal>
-       :value (make <special-literal>) :c-name "SCM_OBJ(SCM_CUROUT)"))
-    (('current-error-port)
+       :value (make <special-literal>) :c-name "SCM_OBJ(SCM_CUROUT)")]
+    [('current-error-port)
      (make <raw-c-literal>
-       :value (make <special-literal>) :c-name "SCM_OBJ(SCM_CURERR)"))
-    (_ (cgen-literal obj))))
+       :value (make <special-literal>) :c-name "SCM_OBJ(SCM_CURERR)")]
+    [_ (cgen-literal obj)]))
 
 ;;===================================================================
 ;; Arg
@@ -1115,17 +1113,17 @@
 
 (define-method c-printer-name ((self <cclass>))
   (let1 printer [@ self'printer]
-    (cond ((string? printer) #`",(@ self'c-name)_PRINT")
-          ((c-literal? printer) (cadr printer))
-          ((not printer) "NULL")
-          (else (errorf <cgen-stub-error> "bad printer specification ~s in class ~s" printer self)))))
+    (cond [(string? printer) #`",(@ self'c-name)_PRINT"]
+          [(c-literal-expr printer)]
+          [(not printer) "NULL"]
+          [else (errorf <cgen-stub-error> "bad printer specification ~s in class ~s" printer self)])))
 
 (define-method c-allocator-name ((self <cclass>))
   (let1 allocator [@ self'allocator]
-    (cond ((string? allocator) #`",(@ self'c-name)_ALLOCATE")
-          ((c-literal? allocator) (cadr allocator))
-          ((not allocator) "NULL")
-          (else (errorf <cgen-stub-error> "bad allocator specification ~s in class ~s" allocator self)))))
+    (cond [(string? allocator) #`",(@ self'c-name)_ALLOCATE"]
+          [(c-literal-expr allocator)]
+          [(not allocator) "NULL"]
+          [else (errorf <cgen-stub-error> "bad allocator specification ~s in class ~s" allocator self)])))
 
 (define-method c-slot-spec-name ((self <cclass>))
   (if (null? [@ self'slot-spec])
@@ -1177,9 +1175,9 @@
 ;;  For now, cpa should be a list of C class names, or c literal
 
 (define-method cpa-name ((self <cclass>))
-  (cond ((null? [@ self'cpa]) "SCM_CLASS_DEFAULT_CPL")
-        ((c-literal? [@ self'cpa]) (cadr [@ self'cpa]))
-        (else #`",(@ self'c-name)_CPL")))
+  (cond [(null? [@ self'cpa]) "SCM_CLASS_DEFAULT_CPL"]
+        [(c-literal-expr [@ self'cpa])]
+        [else #`",(@ self'c-name)_CPL"]))
 
 (define-method emit-cpa ((self <cclass>))
   (let1 cpa [@ self'cpa]
@@ -1210,15 +1208,15 @@
 
 (define-method slot-getter-name ((slot <cslot>))
   (let1 getter [@ slot'getter]
-    (if (c-literal? getter)
-      (cadr getter)
-      #`",(@ slot'cclass'c-name)_,(get-c-name \"\" [@ slot'scheme-name])_GET")))
+    (or
+     (c-literal-expr getter)
+     #`",(@ slot'cclass'c-name)_,(get-c-name \"\" [@ slot'scheme-name])_GET")))
 
 (define-method slot-setter-name ((slot <cslot>))
   (let1 setter [@ slot'setter]
-    (cond ((c-literal? setter) (cadr setter))
-          ((not setter) "NULL")
-          (else #`",(@ slot'cclass'c-name)_,(get-c-name \"\" [@ slot'scheme-name])_SET"))))
+    (cond [(c-literal-expr setter)]
+          [(not setter) "NULL"]
+          [else #`",(@ slot'cclass'c-name)_,(get-c-name \"\" [@ slot'scheme-name])_SET"])))
 
 (define-method emit-getter-n-setter ((slot <cslot>))
   (unless (c-literal? [@ slot'getter]) (emit-getter slot))
@@ -1266,11 +1264,18 @@
 ;; Miscellaneous utilities
 ;;
 
-;; Check if item is in the form (c <string>)
+;; Check if item is in the form (c <c-expr>)
 (define (c-literal? item)
   (match item
-    (('c (? string?)) #t)
-    (else #f)))
+    [('c _) #t]
+    [else #f]))
+
+;; Exteract <c-expr> from (c <c-expr>) form as a string.
+(define (c-literal-expr item)
+  (match item
+    [('c (? string? e)) e]
+    [('c cise) (call-with-output-string (cut cise-render cise <> #t))]
+    [else #f]))
 
 ;;===================================================================
 ;; Main parsers

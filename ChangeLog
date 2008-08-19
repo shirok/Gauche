@@ -5,8 +5,8 @@
 	  Scheme subr with C body) in cise.
 	* lib/gauche/cgen/stub.scm: Recognizes define-cfn within stub code.
 	  (initcode): Allow cise in the code portion.
-	  (make-literal): Allow cise expression in the 'init' section of
-	  raw c literal (e.g. (c init)).
+	  (make-literal, c-literal-expr): Allow cise expression in the
+	  expr section of raw c literal (e.g. (c expr)).
 
 	* ext/peg/peg-lib.scm: Rewrote a couple of C static functions within
 	  inline-stub by define-cfn.
