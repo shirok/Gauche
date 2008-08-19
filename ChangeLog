@@ -17,6 +17,11 @@
 	  generated.
 	* ext/dbm/dbm.ac: changed accordingly.
 
+	* ext/dbm/bdbm.c, ext/dbm/bsddb.h, ext/dbm/bsddb.stub: Removed.
+	  Berkeley DB licensing terms are like GPL, so it's better to be
+	  supported in a separate extension to avoid complication of
+	  Gauche-embedded application development.
+
 2008-08-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm (VALUES-APPLY), src/vm.c (Scm_ApplyRec): fixed
