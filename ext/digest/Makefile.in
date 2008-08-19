@@ -6,29 +6,31 @@ include ../Makefile.ext
 
 SCM_CATEGORY = rfc
 
-LIBFILES = md5.$(SOEXT) sha1.$(SOEXT)
+LIBFILES = md5-lib.$(SOEXT) sha1-lib.$(SOEXT)
 SCMFILES = md5.scm sha1.scm
 
 GENERATED = Makefile
-XCLEANFILES = md5.c sha1.c *_head.c *_tail.c
+XCLEANFILES = md5.scm md5-lib.c sha1.scm sha1-lib.c *_head.c *_tail.c
 
 EXTRA_INCLUDES = -I$(srcdir)/../uvector
 
 all : $(LIBFILES)
 
-md5_OBJECTS = md5_head.$(OBJEXT) md5.$(OBJEXT) md5c.$(OBJEXT) md5_tail.$(OBJEXT)
+md5_OBJECTS = md5_head.$(OBJEXT) md5-lib.$(OBJEXT) md5c.$(OBJEXT) md5_tail.$(OBJEXT)
 
-md5.$(SOEXT) : $(md5_OBJECTS) 
-	$(MODLINK) md5.$(SOEXT) $(md5_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+md5-lib.$(SOEXT) : $(md5_OBJECTS) 
+	$(MODLINK) md5-lib.$(SOEXT) $(md5_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
-md5.c : md5.stub
+md5.scm md5-lib.c : md5-lib.scm
+	$(GENCOMP) --ext-module=md5.scm md5-lib.scm
 
-sha1_OBJECTS = sha1_head.$(OBJEXT) sha1.$(OBJEXT) sha.$(OBJEXT) sha1_tail.$(OBJEXT)
+sha1_OBJECTS = sha1_head.$(OBJEXT) sha1-lib.$(OBJEXT) sha.$(OBJEXT) sha1_tail.$(OBJEXT)
 
-sha1.$(SOEXT) : $(sha1_OBJECTS) 
-	$(MODLINK) sha1.$(SOEXT) $(sha1_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+sha1-lib.$(SOEXT) : $(sha1_OBJECTS) 
+	$(MODLINK) sha1-lib.$(SOEXT) $(sha1_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
-sha1.c : sha1.stub
+sha1.scm sha1-lib.c : sha1-lib.scm
+	$(GENCOMP) --ext-module=sha1.scm sha1-lib.scm
 
 md5_head.c md5_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension md5

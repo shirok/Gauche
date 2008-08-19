@@ -41,7 +41,10 @@
   (export <sha1> sha1-digest sha1-digest-string)
   )
 (select-module rfc.sha1)
-(dynamic-load "sha1")
+
+;;;
+;;;  High-level API
+;;;
 
 (define-class <sha1-meta> (<message-digest-algorithm-meta>)
   ())
@@ -80,12 +83,75 @@
 (define (sha1-digest-string string)
   (with-input-from-string string sha1-digest))
 
-;; digest framework
+;;;
+;;; Digest framework
+;;;
 (define-method digest-update! ((self <sha1>) data)
   (%sha1-update (context-of self) data))
 (define-method digest-final! ((self <sha1>))
   (%sha1-final (context-of self)))
 (define-method digest ((class <sha1-meta>))
   (sha1-digest))
+
+;;;
+;;; Low-level bindings
+;;;
+
+(inline-stub
+ "#include <gauche/uvector.h>"
+ "#include <gauche/class.h>"
+ "#include \"sha.h\""
+
+ "#define LIBGAUCHE_EXT_BODY"
+ "#include <gauche/extern.h>  /* fix SCM_EXTERN in SCM_CLASS_DECL */"
+ 
+ "typedef struct ScmSha1Rec {"
+ " SCM_HEADER;"
+ " SHA_CTX ctx;"
+ "} ScmSha1;"
+
+ "SCM_CLASS_DECL(Scm_Sha1Class);"
+ "static ScmObj sha1_allocate(ScmClass *, ScmObj);"
+ "SCM_DEFINE_BUILTIN_CLASS(Scm_Sha1Class,"
+ "                         NULL, NULL, NULL, sha1_allocate, NULL);"
+
+ "#define SCM_CLASS_SHA1      (&Scm_Sha1Class)"
+ "#define SCM_SHA1(obj)       ((ScmSha1*)obj)"
+ "#define SCM_SHA1P(obj)      SCM_XTYPEP(obj, SCM_CLASS_SHA1)"
+ 
+ (define-cfn sha1_allocate ((klass :: ScmClass*) initargs) :static
+   (let* ((sha1 :: ScmSha1* (SCM_ALLOCATE ScmSha1 klass)))
+     (SCM_SET_CLASS sha1 klass)
+     (SHAInit (& (-> sha1 ctx)))
+     (return (SCM_OBJ sha1))))
+
+ (initcode (Scm_InitStaticClass (& Scm_Sha1Class) "<sha1-context>" mod NULL 0))
+ (define-type <sha1> "ScmSha1*")
+
+ (define-cproc %sha1-update (sha1::<sha1> data)
+   (body <void>
+         (cond
+          [(SCM_U8VECTORP data)
+           (SHAUpdate (& (-> sha1 ctx))
+                      (cast |const unsigned char*|
+                            (SCM_UVECTOR_ELEMENTS (SCM_U8VECTOR data)))
+                      (SCM_U8VECTOR_SIZE (SCM_U8VECTOR data)))]
+          [(SCM_STRINGP data)
+           (let* ((b :: |const ScmStringBody*| (SCM_STRING_BODY data)))
+             (SHAUpdate (& (-> sha1 ctx))
+                        (cast |const unsigned char*| (SCM_STRING_BODY_START b))
+                        (SCM_STRING_BODY_SIZE b)))]
+          [else
+           (Scm_Error "u8vector or string required, but got: %S" data)])))
+
+ (define-cproc %sha1-final (sha1::<sha1>)
+   (body <top>
+         (let* ((|digest[20]| :: |unsigned char|))
+           (SHAFinal digest (& (-> sha1 ctx)))
+           (result (Scm_MakeString (cast |const char*| digest)
+                                   20 20
+                                   (logior SCM_STRING_INCOMPLETE
+                                           SCM_STRING_COPYING))))))
+ )
 
 (provide "rfc/sha1")

@@ -40,9 +40,11 @@
   (use gauche.uvector)
   (export <md5> md5-digest md5-digest-string)
   )
-
 (select-module rfc.md5)
-(dynamic-load "md5")
+
+;;;
+;;; High-level stuff
+;;;
 
 (define-class <md5-meta> (<message-digest-algorithm-meta>)
   ())
@@ -81,12 +83,73 @@
 (define (md5-digest-string string)
   (with-input-from-string string md5-digest))
 
-;; digest framework
+;;;
+;;; Digest framework
+;;;
 (define-method digest-update! ((self <md5>) data)
   (%md5-update (context-of self) data))
 (define-method digest-final! ((self <md5>))
   (%md5-final (context-of self)))
 (define-method digest ((class <md5-meta>))
   (md5-digest))
+
+;;;
+;;; Low-level bindings
+;;;
+
+(inline-stub
+ "#include <gauche/class.h>"
+ "#include <gauche/uvector.h>"
+ "#include \"md5.h\""
+
+ "#define LIBGAUCHE_EXT_BODY"
+ "#include <gauche/extern.h>  /* fix SCM_EXTERN in SCM_CLASS_DECL */"
+
+ "typedef struct ScmMd5Rec {"
+ "  SCM_HEADER;"
+ "  MD5_CTX ctx;"
+ "} ScmMd5;"
+
+ "SCM_CLASS_DECL(Scm_Md5Class);"
+ "static ScmObj md5_allocate(ScmClass *, ScmObj);"
+ "SCM_DEFINE_BUILTIN_CLASS(Scm_Md5Class,"
+ "                         NULL, NULL, NULL, md5_allocate, NULL);"
+ "#define SCM_CLASS_MD5      (&Scm_Md5Class)"
+ "#define SCM_MD5(obj)       ((ScmMd5*)obj)"
+ "#define SCM_MD5P(obj)      SCM_XTYPEP(obj, SCM_CLASS_MD5)"
+
+ (define-cfn md5_allocate ((klass :: ScmClass*) initargs) :static
+   (let* ((md5 :: ScmMd5* (SCM_ALLOCATE ScmMd5 klass)))
+     (SCM_SET_CLASS md5 klass)
+     (MD5Init (& (-> md5 ctx)))
+     (return (SCM_OBJ md5))))
+
+ (initcode (Scm_InitStaticClass (& Scm_Md5Class) "<md5-context>" mod NULL 0))
+ (define-type <md5> "ScmMd5*")
+
+ (define-cproc %md5-update (md5::<md5> data)
+   (body <void>
+         (cond
+          [(SCM_U8VECTORP data)
+           (MD5Update (& (-> md5 ctx))
+                      (SCM_UVECTOR_ELEMENTS (SCM_U8VECTOR data))
+                      (SCM_U8VECTOR_SIZE (SCM_U8VECTOR data)))]
+          [(SCM_STRINGP data)
+           (let* ((b :: |const ScmStringBody *| (SCM_STRING_BODY data)))
+             (MD5Update (& (-> md5 ctx))
+                        (cast |const unsigned char*| (SCM_STRING_BODY_START b))
+                        (SCM_STRING_BODY_SIZE b)))]
+          [else
+           (Scm_Error "u8vector or string required, but got: %S" data)])))
+
+ (define-cproc %md5-final (md5::<md5>)
+   (body <top>
+         (let* ((|digest[16]| :: |unsigned char|))
+           (MD5Final digest (& (-> md5 ctx)))
+           (result (Scm_MakeString (cast |char *| digest)
+                                   16 16
+                                   (logior SCM_STRING_INCOMPLETE
+                                           SCM_STRING_COPYING))))))
+ )
 
 (provide "rfc/md5")
