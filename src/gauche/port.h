@@ -103,18 +103,18 @@ typedef struct ScmPortBufferRec {
 /* The funtion table of procedural port. */
 
 typedef struct ScmPortVTableRec {
-    int       (*Getb)(ScmPort *p);
-    int       (*Getc)(ScmPort *p);
-    int       (*Getz)(char *buf, int buflen, ScmPort *p);
-    int       (*Ready)(ScmPort *p, int charp);
-    void      (*Putb)(ScmByte b, ScmPort *p);
-    void      (*Putc)(ScmChar c, ScmPort *p);
-    void      (*Putz)(const char *buf, int size, ScmPort *p);
-    void      (*Puts)(ScmString *s, ScmPort *p);
-    void      (*Flush)(ScmPort *p);
-    void      (*Close)(ScmPort *p);
-    off_t     (*Seek)(ScmPort *p, off_t off, int whence);
-    void      *data;
+    int    (*Getb)(ScmPort *p);
+    int    (*Getc)(ScmPort *p);
+    int    (*Getz)(char *buf, int buflen, ScmPort *p);
+    int    (*Ready)(ScmPort *p, int charp);
+    void   (*Putb)(ScmByte b, ScmPort *p);
+    void   (*Putc)(ScmChar c, ScmPort *p);
+    void   (*Putz)(const char *buf, int size, ScmPort *p);
+    void   (*Puts)(ScmString *s, ScmPort *p);
+    void   (*Flush)(ScmPort *p);
+    void   (*Close)(ScmPort *p);
+    off_t  (*Seek)(ScmPort *p, off_t off, int whence);
+    void    *data;
 } ScmPortVTable;
 
 /* The main port structure.
@@ -127,17 +127,17 @@ typedef struct ScmPortVTableRec {
 
 struct ScmPortRec {
     SCM_INSTANCE_HEADER;
-    unsigned int direction : 2; /* SCM_PORT_INPUT or SCM_PORT_OUTPUT.
+    u_int direction : 2;        /* SCM_PORT_INPUT or SCM_PORT_OUTPUT.
                                    There may be I/O port in future. */
-    unsigned int type      : 2; /* SCM_PORT_{FILE|ISTR|OSTR|PROC} */
-    unsigned int scrcnt    : 3; /* # of bytes in the scratch buffer */
+    u_int type      : 2;        /* SCM_PORT_{FILE|ISTR|OSTR|PROC} */
+    u_int scrcnt    : 3;        /* # of bytes in the scratch buffer */
 
-    unsigned int ownerp    : 1; /* TRUE if this port owns underlying
+    u_int ownerp    : 1;        /* TRUE if this port owns underlying
                                    file pointer */
-    unsigned int closed    : 1; /* TRUE if this port is closed */
-    unsigned int error     : 1; /* Error has been occurred */
+    u_int closed    : 1;        /* TRUE if this port is closed */
+    u_int error     : 1;        /* Error has been occurred */
 
-    unsigned int flags     : 5; /* see ScmPortFlags below */
+    u_int flags     : 5;        /* see ScmPortFlags below */
     
     char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
 
@@ -151,8 +151,18 @@ struct ScmPortRec {
 
     ScmObj data;                /* used internally */
 
-    unsigned int line;          /* line counter */
+    /* Input counters.  these doesn't take account of ungetting and
+       seeking: Ungetting doesn't affect those counters (you can think
+       that ungetting are handled above the counting layer).
+       Seeking invalidates counters; if you seek, the values of the counters
+       become bogus.
+       We don't have character counter, since it is difficult to track
+       (read-line uses byte read; see Scm_ReadLine in portapi.c).
+     */
+    u_long line;                /* line counter */
+    u_long bytes;               /* byte counter */
 
+    /* The source or the sink of the port. */
     union {
         ScmPortBuffer buf;      /* buffered port */
         struct {

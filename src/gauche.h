@@ -527,6 +527,7 @@ SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
 
 SCM_EXTERN ScmObj Scm_UnwrapSyntax(ScmObj form);
 
+SCM_EXTERN int    Scm_VMGetNumResults(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetResult(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetStackLite(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetStack(ScmVM *vm);
@@ -1068,55 +1069,8 @@ SCM_EXTERN ScmObj Scm_Vsprintf(const char *fmt, va_list args, int sharedp);
  * READ
  */
 
-typedef struct ScmReadContextRec {
-    int flags;                  /* see below */
-    ScmHashTable *table;        /* used internally. */
-    ScmObj pending;             /* used internally. */
-} ScmReadContext;
+#include <gauche/reader.h>
 
-enum {
-    SCM_READ_SOURCE_INFO = (1L<<0),  /* preserving souce file information */
-    SCM_READ_CASE_FOLD   = (1L<<1),  /* case-fold read */
-    SCM_READ_LITERAL_IMMUTABLE = (1L<<2), /* literal should be read as immutable */
-    SCM_READ_DISABLE_CTOR = (1L<<3), /* disable #,() */
-    SCM_READ_RECURSIVELY = (1L<<4)   /* used internally. */
-};
-
-#define SCM_READ_CONTEXT_INIT(ctx) \
-   do { (ctx)->flags = 0; } while (0)
-
-/* An object to keep unrealized circular reference (e.g. #N=) during
- * 'read'.  It is replaced by the reference value before exitting 'read',
- * and it shouldn't leak out to the normal Scheme program, except the
- * code that handles it explicitly (like read-time constructor).
- */
-typedef struct ScmReadReferenceRec {
-    SCM_HEADER;
-    ScmObj value;               /* realized reference.  initially UNBOUND */
-} ScmReadReference;
-
-SCM_CLASS_DECL(Scm_ReadReferenceClass);
-#define SCM_CLASS_READ_REFERENCE  (&Scm_ReadReferenceClass)
-#define SCM_READ_REFERENCE(obj)   ((ScmReadReference*)(obj))
-#define SCM_READ_REFERENCE_P(obj) SCM_XTYPEP(obj, SCM_CLASS_READ_REFERENCE)
-#define SCM_READ_REFERENCE_REALIZED(obj) \
-   (!SCM_EQ(SCM_READ_REFERENCE(obj)->value, SCM_UNBOUND))
-
-SCM_EXTERN ScmObj Scm_Read(ScmObj port);
-SCM_EXTERN ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext *ctx);
-SCM_EXTERN ScmObj Scm_ReadList(ScmObj port, ScmChar closer);
-SCM_EXTERN ScmObj Scm_ReadListWithContext(ScmObj port, ScmChar closer,
-                                          ScmReadContext *ctx);
-SCM_EXTERN ScmObj Scm_ReadFromString(ScmString *string);
-SCM_EXTERN ScmObj Scm_ReadFromCString(const char *string);
-
-SCM_EXTERN void   Scm_ReadError(ScmPort *port, const char *fmt, ...);
-
-SCM_EXTERN ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc,
-                                       ScmObj finisher);
-
-SCM_EXTERN void   Scm__InstallReadUvectorHook(ScmObj (*)(ScmPort*, const char*, ScmReadContext*));
-    
 /*--------------------------------------------------------
  * HASHTABLE
  */

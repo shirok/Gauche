@@ -483,6 +483,7 @@ int Scm_GetbUnsafe(ScmPort *p)
             Scm_PortError(p, SCM_PORT_ERROR_INPUT,
                           "bad port type for input: %S", p);
         }
+        p->bytes++;
     }
     UNLOCK(p);
     return b;
@@ -555,6 +556,7 @@ int Scm_GetcUnsafe(ScmPort *p)
         }
         first = (unsigned char)*p->src.buf.current++;
         nb = SCM_CHAR_NFOLLOWS(first);
+        p->bytes++;
         if (nb > 0) {
             if (p->src.buf.current + nb > p->src.buf.end) {
                 /* The buffer doesn't have enough bytes to consist a char.
@@ -591,6 +593,7 @@ int Scm_GetcUnsafe(ScmPort *p)
                 SCM_CHAR_GET(p->src.buf.current-1, c);
                 p->src.buf.current += nb;
             }
+            p->bytes += nb;
         } else {
             c = first;
             if (c == '\n') p->line++;
@@ -604,6 +607,7 @@ int Scm_GetcUnsafe(ScmPort *p)
         }
         first = (unsigned char)*p->src.istr.current++;
         nb = SCM_CHAR_NFOLLOWS(first);
+        p->bytes++;
         if (nb > 0) {
             if (p->src.istr.current + nb > p->src.istr.end) {
                 /* TODO: make this behavior customizable */
@@ -613,6 +617,7 @@ int Scm_GetcUnsafe(ScmPort *p)
             }
             SCM_CHAR_GET(p->src.istr.current-1, c);
             p->src.istr.current += nb;
+            p->bytes += nb;
         } else {
             c = first;
             if (c == '\n') p->line++;
@@ -626,8 +631,7 @@ int Scm_GetcUnsafe(ScmPort *p)
         return c;
     default:
         UNLOCK(p);
-        Scm_PortError(p, SCM_PORT_ERROR_INPUT,
-                      "bad port type for input: %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_INPUT, "bad port type for input: %S", p);
     }
     return 0;/*dummy*/
 }
@@ -712,21 +716,23 @@ int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         SAFE_CALL(p, siz = bufport_read(p, buf, buflen));
+        p->bytes += siz;
         UNLOCK(p);
         if (siz == 0) return EOF;
         else return siz;
     case SCM_PORT_ISTR:
         r = GETZ_ISTR(p, buf, buflen);
+        p->bytes += r;
         UNLOCK(p);
         return r;
     case SCM_PORT_PROC:
         SAFE_CALL(p, r = p->src.vt.Getz(buf, buflen, p));
+        p->bytes += r;
         UNLOCK(p);
         return r;
     default:
         UNLOCK(p);
-        Scm_PortError(p, SCM_PORT_ERROR_INPUT,
-                      "bad port type for input: %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_INPUT, "bad port type for input: %S", p);
     }
     return -1;                  /* dummy */
 }

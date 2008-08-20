@@ -83,7 +83,7 @@ SCM_DEFINE_BASE_CLASS(Scm_LimitedLengthPortClass,
 
 /* Cleaning up:
  *   The underlying file descriptor/stream may be closed when the port
- *   is explicitly closed by close-port, or implicitly destroyed by
+ *   is explicitly closed by close-port, or implicitly destroyed by the
  *   garbage collector.  To keep consistency, Scheme ports should never
  *   share the same file descriptor.  However, C code and Scheme port
  *   may share the same file descriptor for efficiency (e.g. stdios).

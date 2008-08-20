@@ -132,6 +132,7 @@ INSTALL_SUBHEADERS = gauche/config.h                                  \
                      gauche/extend.h gauche/int64.h gauche/float.h    \
 	             gauche/scmconst.h                                \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h  \
+	             gauche/reader.h                                  \
 	             gauche/win-compat.h
 INSTALL_LIBS = libgauche.$(SOEXT)
 INSTALL_BINS = gosh$(EXEEXT)           \
@@ -212,7 +213,7 @@ compile.c : compile.scm gencomp vminsn.scm ../lib/gauche/vm/insn.scm
 	$(BUILD_GOSH) $(GENCOMP) compile.scm
 
 scmlib.c : scmlib.scm gencomp vminsn.scm
-	$(BUILD_GOSH) $(GENCOMP) scmlib.scm
+	$(BUILD_GOSH) $(GENCOMP) --keep-private-macro=inline-stub scmlib.scm
 
 objlib.c : objlib.scm gencomp vminsn.scm
 	$(BUILD_GOSH) $(GENCOMP) objlib.scm

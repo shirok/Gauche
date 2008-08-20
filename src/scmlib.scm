@@ -168,7 +168,7 @@
 
 ;; The form (inline-stub ...) allows genstub directives embedded
 ;; within a Scheme source.  It is only valid when the source is
-;; pre-compiled into C.  Tehcnically we can kick C compiler at
+;; pre-compiled into C.  Technically we can kick C compiler at
 ;; runtime, but it'll need some more work, so we signal an error
 ;; when inline-stub form is evaluated at runtime.  The precompiler
 ;; (gencomp) handles this form specially.
@@ -355,8 +355,6 @@
 (define-reader-ctor 'string-interpolate
   (lambda (s) (string-interpolate s))) ;;lambda is required to delay loading
 
-
-
 ;;;=======================================================
 ;;; call/cc alias
 ;;;
@@ -432,6 +430,27 @@
   (if (null? signals)
     (make <sys-sigset>)
     (apply sys-sigset-add! (make <sys-sigset>) signals)))
+
+;;;=======================================================
+;;; standard hash-bang tokens
+;;;
+
+(define-reader-directive 'r6rs
+  (lambda (sym port ctx)
+    (warn "Reading R6RS source file.  Note that Gauche is not R6RS compliant.")
+    ;; TODO: we could do some adjustments, such as switching the semantics of
+    ;; '#,' from srfi-10 to r6rs 'unsyntax'.
+    (values)))
+
+(define-reader-directive 'fold-case
+  (lambda (sym port ctx)
+    (read-context-case-fold-set! ctx #t)
+    (values)))
+
+(define-reader-directive 'no-fold-case
+  (lambda (sym port ctx)
+    (read-context-case-fold-set! ctx #f)
+    (values)))
 
 ;;;=======================================================
 ;;; srfi-17

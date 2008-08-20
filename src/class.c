@@ -3125,6 +3125,7 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_PROMISE,          "<promise>");
 
     /* read.c */
+    BINIT(SCM_CLASS_READ_CONTEXT,     "<read-rcontext>", NULL);
     BINIT(SCM_CLASS_READ_REFERENCE,   "<read-reference>", NULL);
     
     /* regexp.c */

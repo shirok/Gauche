@@ -100,11 +100,17 @@
 
 ;; global-eq?? is defined in compile.scm, but it wasn't in 0.8.13.
 ;; We duplicate it here so that we can compile compile.scm with 0.8.13.
+;; There's another catch: the symbol (that gencomp must recognize) may
+;; not have binding yet in the host gosh, when we're compiling the
+;; gauche core.  For example, 0.8.13 doesn't have inline-stub binding yet
+;; so we can't really compare inline-stub identifier by global-eq??.
+;; The extra check if id-gloc makes global-eq?? for such identifiers
+;; always fail.
 (define (global-eq?? sym srcmod modgen)
   (let* ((find-binding (with-module gauche.internal find-binding))
          (id-gloc (find-binding (find-module srcmod) sym #f)))
     (lambda (var)
-      (eq? id-gloc (find-binding (modgen) var #f)))))
+      (and id-gloc (eq? id-gloc (find-binding (modgen) var #f))))))
 
 ;;================================================================
 ;; Entry

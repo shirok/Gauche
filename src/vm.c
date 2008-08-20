@@ -242,6 +242,10 @@ int Scm_AttachVM(ScmVM *vm)
 #endif /*!GAUCHE_USE_PTHREADS*/
 }
 
+int Scm_VMGetNumResults(ScmVM *vm)
+{
+    return vm->numVals;
+}
 
 ScmObj Scm_VMGetResult(ScmVM *vm)
 {

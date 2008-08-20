@@ -115,7 +115,7 @@ static void load_packet_init(ScmLoadPacket *packet)
 struct load_packet {
     ScmPort *port;
     ScmModule *prev_module;
-    ScmReadContext ctx;
+    ScmReadContext *ctx;
     ScmObj prev_port;
     ScmObj prev_history;
     ScmObj prev_next;
@@ -152,7 +152,7 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
 static ScmObj load_cc(ScmObj result, void **data)
 {
     struct load_packet *p = (struct load_packet*)(data[0]);
-    ScmObj expr = Scm_ReadWithContext(SCM_OBJ(p->port), &(p->ctx));
+    ScmObj expr = Scm_ReadWithContext(SCM_OBJ(p->port), p->ctx);
 
     if (!SCM_EOFP(expr)) {
         Scm_VMPushCC(load_cc, data, 1);
@@ -196,10 +196,10 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     p->prev_next = vm->load_next;
     p->prev_situation = vm->evalSituation;
 
-    SCM_READ_CONTEXT_INIT(&(p->ctx));
-    p->ctx.flags = SCM_READ_LITERAL_IMMUTABLE | SCM_READ_SOURCE_INFO;
+    p->ctx = Scm_MakeReadContext(NULL);
+    p->ctx->flags = SCM_READ_LITERAL_IMMUTABLE | SCM_READ_SOURCE_INFO;
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_CASE_FOLD)) {
-        p->ctx.flags |= SCM_READ_CASE_FOLD;
+        p->ctx->flags |= SCM_READ_CASE_FOLD;
     }
     
     vm->load_next = next_paths;

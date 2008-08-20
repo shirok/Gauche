@@ -9,7 +9,63 @@
 (use srfi-1)
 (use util.isomorph)
 
-(test-start "write/ss and read/ss")
+(test-start "advanced read/write features")
+
+;;===============================================================
+;; Hash-bang handling (#!)
+;;
+
+(test-section "hash-bang")
+
+(test* "script hash-bang" 3
+       (read-from-string "#!/usr/bin/gosh -i\n3"))
+(test* "script hash-bang" 5
+       (read-from-string "#! /usr/bin/gosh -i\n5"))
+(test* "script hash-bang" (eof-object)
+       (read-from-string "#! /usr/bin/gosh -i"))
+
+(test* "#!fold-case" '(hello world)
+       (read-from-string "#!fold-case (Hello World)"))
+(test* "#!fold-case" '(Hello world)
+       (read-from-string "(Hello #!fold-case World)"))
+(test* "#!no-fold-case" '(hello World)
+       (read-from-string "(#!fold-case Hello #!no-fold-case World)"))
+
+(test* "customized hash-bang" -i
+       (let ()
+         (define-reader-directive 'usr/bin/gosh (lambda _ (values)))
+         (read-from-string "#!usr/bin/gosh -i\n8")))
+
+(test* "customized hash-bang" '(#t #f)
+       (let ()
+         (define-reader-directive 'true  (lambda _ #t))
+         (define-reader-directive 'false (lambda _ #f))
+         (read-from-string "#!/usr/bin/gosh -i\n(#!true #!false)")))
+
+;;===============================================================
+;; SRFI-10 Reader constructor (#,)
+;;
+
+(test-section "srfi-10 reader constructor")
+
+(test "read ctor 1a" '(1 2 #f "4 5")
+      (lambda ()
+        (define-reader-ctor 'list list)
+        (with-input-from-string "#,(list 1 2 #f \"4 5\")" read)))
+(test "read ctor 1b" 3
+      (lambda ()
+        (define-reader-ctor '+ +)
+        (with-input-from-string "#,(+ 1 2)" read)))
+(define-reader-ctor 'my-vector
+  (lambda x (apply vector (cons 'my-vector x))))
+(test* "read ctor 2a" '#(my-vector (my-vector 1 2))
+       (with-input-from-string "#,(my-vector (my-vector 1 2))" read))
+(test* "read ctor 2b" '#(my-vector #(my-vector 1 2))
+       (with-input-from-string "#,(my-vector #,(my-vector 1 2))" read))
+
+;;===============================================================
+;; Shared structures (#n= and #n#)
+;;
 
 ;;---------------------------------------------------------------
 (test-section "write/ss basic")
@@ -193,6 +249,12 @@
                   (list r s r s))
        (read-from-string "(#0=\"aa\" #1=\"aa\" #0# #1#)")
        isomorphic?)
+
+;;===============================================================
+;; Interference between srfi-10 and shared structure
+;;
+
+(test-section "combine srfi-10 and srfi-38")
 
 ;; NB: this is an experimental feature.  Do not count on this API!
 (define-reader-ctor 'foo

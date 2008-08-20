@@ -1,3 +1,34 @@
+2008-08-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/reader.h, src/gauche.h: splitted reader API from gauche.h
+	  to reader.h
+
+	* src/read.c (ScmReadContext, Scm_MakeReadContext): made read context
+	  a Scheme object of class <read-context>.
+	* src/class.c, src/load.c: changed accordingly.
+
+	* src/portapi.c, src/gauche/port.h: Added 'bytes' field in ScmPort
+	  that counts the cumulative bytes read from the port.  It is used
+	  by the reader to distinguish the script's shebang line and
+	  #!<identifier> directive.
+
+	* src/read.c (Scm_DefineReaderDirective, read_shebang):
+	  src/extlib.stub (define-reader-directive):
+	  Modified the reader to recognize R6RS-style #!<identifier>
+	  directive.  Now, only the '#!' of the beginning of the port,
+	  followed by '/' or ' ', are recognized as the script shebang
+	  line.  All other '#!'s are treated as #!<identifier> directive
+	  (before, '#!'s unconditionally worked as a
+	  comment-to-end-of-line).  The behavior of #!<identifier> is
+	  customizable by define-reader-directive.
+	* src/scmlib.scm: Added standard #!<identifier> directives:
+	  #!r6rs, #!fold-case and #!no-fold-case.
+
+	* src/gencomp (global-eq??): fixed a bug when the comparing identifier
+	  is not yet defined in the host gosh.
+	* src/Makefile.in (scmlib.c): use --keep-private-macro=inline-stub
+	  to keep inline-stub macro definition in the core.
+
 2008-08-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (define-cfn): Introduced define-cfn cise

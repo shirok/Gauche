@@ -67,6 +67,7 @@ static ScmObj read_charset(ScmPort *port);
 static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx);
 static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
                                   ScmReadContext *ctx, int has_ref);
+static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
 static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
 
@@ -78,6 +79,12 @@ static struct {
     ScmHashTable *table;
     ScmInternalMutex mutex;
 } readCtorData = { NULL };
+
+/* Table of hash-bang directive */
+static struct {
+    ScmHashTable *table;
+    ScmInternalMutex mutex;
+} hashBangData = { NULL };
 
 /*----------------------------------------------------------------
  * Entry points
@@ -112,19 +119,16 @@ ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext *ctx)
 
 ScmObj Scm_Read(ScmObj port)
 {
-    ScmReadContext ctx;
-    read_context_init(Scm_VM(), &ctx);
-    return Scm_ReadWithContext(port, &ctx);
+    return Scm_ReadWithContext(port, Scm_MakeReadContext(NULL));
 }
 
 /* Convenience functions */
 ScmObj Scm_ReadFromString(ScmString *str)
 {
     ScmObj inp = Scm_MakeInputStringPort(str, TRUE), r;
-    ScmReadContext ctx;
-    read_context_init(Scm_VM(), &ctx);
-    r = read_item(SCM_PORT(inp), &ctx);
-    read_context_flush(&ctx);
+    ScmReadContext *ctx = Scm_MakeReadContext(NULL);
+    r = read_item(SCM_PORT(inp), ctx);
+    read_context_flush(ctx);
     return r;
 }
 
@@ -133,10 +137,9 @@ ScmObj Scm_ReadFromCString(const char *cstr)
     ScmObj s = SCM_MAKE_STR_IMMUTABLE(cstr);
     ScmObj inp = Scm_MakeInputStringPort(SCM_STRING(s), TRUE);
     ScmObj r;
-    ScmReadContext ctx;
-    read_context_init(Scm_VM(), &ctx);
-    r = read_item(SCM_PORT(inp), &ctx);
-    read_context_flush(&ctx);
+    ScmReadContext *ctx = Scm_MakeReadContext(NULL);
+    r = read_item(SCM_PORT(inp), ctx);
+    read_context_flush(ctx);
     return r;
 }
 
@@ -166,20 +169,44 @@ ScmObj Scm_ReadListWithContext(ScmObj port, ScmChar closer, ScmReadContext *ctx)
 
 ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
 {
-    ScmReadContext ctx;
-    read_context_init(Scm_VM(), &ctx);
-    return Scm_ReadListWithContext(port, closer, &ctx);
+    ScmReadContext *ctx = Scm_MakeReadContext(NULL);
+    return Scm_ReadListWithContext(port, closer, ctx);
 }
 
-static void read_context_init(ScmVM *vm, ScmReadContext *ctx)
+/*----------------------------------------------------------------
+ * Read context
+ */
+
+ScmReadContext *Scm_MakeReadContext(ScmReadContext *proto)
 {
-    ctx->flags = SCM_READ_SOURCE_INFO;
-    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_CASE_FOLD)) {
-        ctx->flags |= SCM_READ_CASE_FOLD;
+    ScmVM *vm = Scm_VM();
+    ScmReadContext *ctx = SCM_NEW(ScmReadContext);
+    SCM_SET_CLASS(ctx, SCM_CLASS_READ_CONTEXT);
+    if (proto == NULL) {
+        ctx->flags = SCM_READ_SOURCE_INFO;
+        if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_CASE_FOLD)) {
+            ctx->flags |= SCM_READ_CASE_FOLD;
+        }
+        ctx->table = NULL;
+        ctx->pending = SCM_NIL;
+    } else {
+        /* TODO: we haven't thought well of the case when prototype
+           is given.  Should we copy the #n= table as well?  How should
+           we handle pending read references? */
+        ctx->flags = proto->flags;
+        ctx->table = NULL;
+        ctx->pending = SCM_NIL;
     }
-    ctx->table = NULL;
-    ctx->pending = SCM_NIL;
+    return ctx;
 }
+
+static void read_context_print(ScmObj obj, ScmPort *port,
+                               ScmWriteContext *ctx)
+{
+    Scm_Printf(port, "#<read-context %p>", obj);
+}
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ReadContextClass, read_context_print);
 
 /*----------------------------------------------------------------
  * Error
@@ -249,7 +276,7 @@ static ScmObj ref_val(ScmObj ref)
 static ScmObj ref_register(ScmReadContext *ctx, ScmObj obj, int refnum)
 {
     SCM_ASSERT(ctx->table);
-    Scm_HashTablePut(ctx->table, SCM_MAKE_INT(refnum), obj);
+    Scm_HashTableSet(ctx->table, SCM_MAKE_INT(refnum), obj, 0);
     return obj;
 }
 
@@ -423,12 +450,8 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 Scm_UngetcUnsafe(c1, port);
                 return read_number(port, c, ctx);
             case '!':
-                /* allow `#!' magic of executable */
-                for (;;) {
-                    c = Scm_GetcUnsafe(port);
-                    if (c == '\n') return SCM_UNDEFINED;
-                    if (c == EOF) return SCM_EOF;
-                }
+                /* #! is either a script shebang or a reader directive */
+                return read_shebang(port, ctx);
             case '/':
                 /* #/.../ literal regexp */
                 return read_regexp(port);
@@ -1028,7 +1051,7 @@ static ScmObj read_charset(ScmPort *port)
 
 static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
 {
-    ScmHashEntry *e = NULL;
+    ScmObj e = SCM_UNBOUND;
     int refnum = Scm_DigitToInt(ch, 10);
 
     for (;;) {
@@ -1049,14 +1072,15 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
     if (ch == '#') {
         /* #digit# - back reference */
         if (ctx->table == NULL
-            || (e = Scm_HashTableGet(ctx->table, Scm_MakeInteger(refnum))) == NULL) {
+            || SCM_UNBOUNDP(e = Scm_HashTableRef(ctx->table,
+                                                 Scm_MakeInteger(refnum),
+                                                 SCM_UNBOUND))) {
             Scm_ReadError(port, "invalid reference number in #%d#", refnum);
         }
-        if (SCM_READ_REFERENCE_P(e->value)
-            && SCM_READ_REFERENCE_REALIZED(e->value)) {
-            return SCM_READ_REFERENCE(e->value)->value;
+        if (SCM_READ_REFERENCE_P(e) && SCM_READ_REFERENCE_REALIZED(e)) {
+            return SCM_READ_REFERENCE(e)->value;
         } else {
-            return e->value;
+            return e;
         }
     } else {
         /* #digit= - register */
@@ -1067,8 +1091,11 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
             ctx->table =
                 SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQV, 0));
         }
-        if (Scm_HashTableGet(ctx->table, Scm_MakeInteger(refnum)) != NULL) {
-            Scm_ReadError(port, "duplicate back-reference number in #%d=", refnum);
+        if (!SCM_UNBOUNDP(Scm_HashTableRef(ctx->table,
+                                           Scm_MakeInteger(refnum),
+                                           SCM_UNBOUND))) {
+            Scm_ReadError(port, "duplicate back-reference number in #%d=",
+                          refnum);
         }
         ref_register(ctx, ref, refnum);
         val = read_item(port, ctx);
@@ -1089,7 +1116,7 @@ ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc, ScmObj finisher)
     }
     pair = Scm_Cons(proc, finisher);
     (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
-    Scm_HashTablePut(readCtorData.table, symbol, pair);
+    Scm_HashTableSet(readCtorData.table, symbol, pair, 0);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(readCtorData.mutex);
     return SCM_UNDEFINED;
 }
@@ -1120,19 +1147,17 @@ static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx)
 static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
                                   ScmReadContext *ctx, int has_ref)
 {
-    ScmHashEntry *e;
-    ScmObj r;
+    ScmObj r, e;
 
     if (ctx->flags & SCM_READ_DISABLE_CTOR) return SCM_FALSE;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
-    e = Scm_HashTableGet(readCtorData.table, key);
+    e = Scm_HashTableRef(readCtorData.table, key, SCM_FALSE);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(readCtorData.mutex);
 
-    if (e == NULL) Scm_ReadError(port, "unknown #,-key: %S", key);
-    SCM_ASSERT(SCM_PAIRP(e->value));
-    r = Scm_ApplyRec(SCM_CAR(e->value), args);
-    if (has_ref) ref_push(ctx, r, SCM_CDR(e->value));
+    if (!SCM_PAIRP(e)) Scm_ReadError(port, "unknown #,-key: %S", key);
+    r = Scm_ApplyRec(SCM_CAR(e), args);
+    if (has_ref) ref_push(ctx, r, SCM_CDR(e));
     return r;
 }
 
@@ -1141,6 +1166,62 @@ static ScmObj reader_ctor(ScmObj *args, int nargs, void *data)
     ScmObj optarg = (nargs > 2? args[2] : SCM_FALSE);
     return Scm_DefineReaderCtor(args[0], args[1], optarg);
 }
+
+/*----------------------------------------------------------------
+ * #!-support
+ */
+
+ScmObj Scm_DefineReaderDirective(ScmObj symbol, ScmObj proc)
+{
+    (void)SCM_INTERNAL_MUTEX_LOCK(hashBangData.mutex);
+    Scm_HashTableSet(hashBangData.table, symbol, proc, 0);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(hashBangData.mutex);
+    return SCM_UNDEFINED;
+}
+
+static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
+{
+    /* If '#!' appears in the beginning of the input port, and it is
+       followed by '/' or a space, then we consider it as the
+       beginning of shebang and discards entire line.  Otherwise, we
+       take this as #!<identifier> directive as specified in R6RS, and
+       calls appropriate handler.
+
+       R6RS is actually not very clean at this corner.  It requires
+       distinct modes to parse a script (which always begins with
+       shebang) and to parse R6RS program (in which '#!'  always
+       introduces #!<identifier> token).  There's no way for just one
+       parser that strictly covers both situation.
+    */
+    int c2 = Scm_GetcUnsafe(port);
+    if (port->bytes == 3 && (c2 == '/' || c2 == ' ')) {
+        /* shebang */
+        for (;;) {
+            c2 = Scm_GetcUnsafe(port);
+            if (c2 == '\n') return SCM_UNDEFINED;
+            if (c2 == EOF) return SCM_EOF;
+        }
+        /*NOTREACHED*/
+    } else {
+        ScmObj id = read_symbol(port, c2, ctx), e, r;
+        if (SCM_EOFP(id)) return SCM_EOF; /* we may want warn? */
+        
+        (void)SCM_INTERNAL_MUTEX_LOCK(hashBangData.mutex);
+        e = Scm_HashTableRef(hashBangData.table, id, SCM_FALSE);
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(hashBangData.mutex);
+        if (SCM_FALSEP(e)) {
+            Scm_Warn("Ignoring unrecognized hash-bang directive: #!%S", id);
+            return SCM_UNDEFINED;
+        }
+        /* Reader directive may return zero or one value. */
+        r = Scm_ApplyRec3(e, id, SCM_OBJ(port), SCM_OBJ(ctx));
+        if (Scm_VMGetNumResults(Scm_VM()) == 0) return SCM_UNDEFINED;
+        else                                    return r;
+    }
+}
+
+
+
 
 /*----------------------------------------------------------------
  * Uvector
@@ -1222,5 +1303,9 @@ void Scm__InitRead(void)
                          Scm_MakeSubr(reader_ctor, NULL, 2, 1,
                                       SCM_SYM_DEFINE_READER_CTOR),
                          SCM_FALSE);
+
+    hashBangData.table =
+        SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
+    (void)SCM_INTERNAL_MUTEX_INIT(hashBangData.mutex);
 }
 
