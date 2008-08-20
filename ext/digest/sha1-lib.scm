@@ -105,30 +105,21 @@
  "#define LIBGAUCHE_EXT_BODY"
  "#include <gauche/extern.h>  /* fix SCM_EXTERN in SCM_CLASS_DECL */"
  
- "typedef struct ScmSha1Rec {"
+ "typedef struct ScmSha1ContextRec {"
  " SCM_HEADER;"
  " SHA_CTX ctx;"
- "} ScmSha1;"
+ "} ScmSha1Context;"
 
- "SCM_CLASS_DECL(Scm_Sha1Class);"
- "static ScmObj sha1_allocate(ScmClass *, ScmObj);"
- "SCM_DEFINE_BUILTIN_CLASS(Scm_Sha1Class,"
- "                         NULL, NULL, NULL, sha1_allocate, NULL);"
+ (define-cclass <sha1-context> :private
+   ScmSha1Context* "Scm_Sha1ContextClass" ()
+   ()
+   [allocator 
+    (let* ((sha1 :: ScmSha1Context* (SCM_ALLOCATE ScmSha1Context klass)))
+      (SCM_SET_CLASS sha1 klass)
+      (SHAInit (& (-> sha1 ctx)))
+      (return (SCM_OBJ sha1)))])
 
- "#define SCM_CLASS_SHA1      (&Scm_Sha1Class)"
- "#define SCM_SHA1(obj)       ((ScmSha1*)obj)"
- "#define SCM_SHA1P(obj)      SCM_XTYPEP(obj, SCM_CLASS_SHA1)"
-
- (define-cfn sha1_allocate ((klass :: ScmClass*) initargs) :static
-   (let* ((sha1 :: ScmSha1* (SCM_ALLOCATE ScmSha1 klass)))
-     (SCM_SET_CLASS sha1 klass)
-     (SHAInit (& (-> sha1 ctx)))
-     (return (SCM_OBJ sha1))))
-
- (initcode (Scm_InitStaticClass (& Scm_Sha1Class) "<sha1-context>" mod NULL 0))
- (define-type <sha1> "ScmSha1*")
-
- (define-cproc %sha1-update (sha1::<sha1> data)
+ (define-cproc %sha1-update (sha1::<sha1-context> data)
    (body <void>
          (cond
           [(SCM_U8VECTORP data)
@@ -144,7 +135,7 @@
           [else
            (Scm_Error "u8vector or string required, but got: %S" data)])))
 
- (define-cproc %sha1-final (sha1::<sha1>)
+ (define-cproc %sha1-final (sha1::<sha1-context>)
    (body <top>
          (let* ((|digest[20]| :: |unsigned char|))
            (SHAFinal digest (& (-> sha1 ctx)))

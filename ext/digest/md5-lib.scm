@@ -105,29 +105,21 @@
  "#define LIBGAUCHE_EXT_BODY"
  "#include <gauche/extern.h>  /* fix SCM_EXTERN in SCM_CLASS_DECL */"
 
- "typedef struct ScmMd5Rec {"
+ "typedef struct ScmMd5ContextRec {"
  "  SCM_HEADER;"
  "  MD5_CTX ctx;"
- "} ScmMd5;"
+ "} ScmMd5Context;"
 
- "SCM_CLASS_DECL(Scm_Md5Class);"
- "static ScmObj md5_allocate(ScmClass *, ScmObj);"
- "SCM_DEFINE_BUILTIN_CLASS(Scm_Md5Class,"
- "                         NULL, NULL, NULL, md5_allocate, NULL);"
- "#define SCM_CLASS_MD5      (&Scm_Md5Class)"
- "#define SCM_MD5(obj)       ((ScmMd5*)obj)"
- "#define SCM_MD5P(obj)      SCM_XTYPEP(obj, SCM_CLASS_MD5)"
+ (define-cclass <md5-context> :private
+   ScmMd5Context* "Scm_Md5ContextClass" ()
+   ()
+   [allocator
+    (let* ((md5 :: ScmMd5Context* (SCM_ALLOCATE ScmMd5Context klass)))
+      (SCM_SET_CLASS md5 klass)
+      (MD5Init (& (-> md5 ctx)))
+      (return (SCM_OBJ md5)))])
 
- (define-cfn md5_allocate ((klass :: ScmClass*) initargs) :static
-   (let* ((md5 :: ScmMd5* (SCM_ALLOCATE ScmMd5 klass)))
-     (SCM_SET_CLASS md5 klass)
-     (MD5Init (& (-> md5 ctx)))
-     (return (SCM_OBJ md5))))
-
- (initcode (Scm_InitStaticClass (& Scm_Md5Class) "<md5-context>" mod NULL 0))
- (define-type <md5> "ScmMd5*")
-
- (define-cproc %md5-update (md5::<md5> data)
+ (define-cproc %md5-update (md5::<md5-context> data)
    (body <void>
          (cond
           [(SCM_U8VECTORP data)
@@ -142,7 +134,7 @@
           [else
            (Scm_Error "u8vector or string required, but got: %S" data)])))
 
- (define-cproc %md5-final (md5::<md5>)
+ (define-cproc %md5-final (md5::<md5-context>)
    (body <top>
          (let* ((|digest[16]| :: |unsigned char|))
            (MD5Final digest (& (-> md5 ctx)))

@@ -7,6 +7,11 @@
 	  (initcode): Allow cise in the code portion.
 	  (make-literal, c-literal-expr): Allow cise expression in the
 	  expr section of raw c literal (e.g. (c expr)).
+	  (define-cclass): Allow :private qualifier to emit the CLASS_DECL and
+	  standard macros into the c file.
+	  (cclass-emit-standard-decls): is the body to generate standard macros
+	  mentioned above.  Eventually there should be an option to emit
+	  these into a separate header file.
 
 	* ext/peg/peg-lib.scm: Rewrote a couple of C static functions within
 	  inline-stub by define-cfn.
