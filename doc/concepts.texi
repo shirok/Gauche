@@ -36,12 +36,13 @@ Gaucheは、以下に挙げる点を除き、オプショナルな構文や手続きも含め
 @item
 @c EN
 By default, Gauche reads symbols in case-sensitive way.
-A command-line option is provided to make the reader case-insensitive.
+You can switch the reader's case sensitivity by a command-line
+option or special reader directive
 (@xref{Case-sensitivity}, for details).
 @c JP
 デフォルトで、Gaucheはシンボルの名前の大文字小文字を区別します。
-コマンドラインオプションによって、大文字小文字を区別しないモードに
-切替えることができます(@ref{Case-sensitivity}参照)。
+コマンドラインオプションや特別なリーダ指示子によって、
+大文字小文字を区別するかどうかを切替えることができます(@ref{Case-sensitivity}参照)。
 @c COMMON
 @item
 @c EN
@@ -772,12 +773,21 @@ out using |-escape (@xref{Symbols}).
 @end example
 
 @c EN
-Right now, there's no way to switch these two modes back and forth
-inside the interpreter.
+Alternatively, if the reader sees a token @code{#!fold-case},
+the reader switches to case-insensitive mode.  A token
+@code{#!no-fold-case} has an opposite effect---to make the
+reader case-sensitive.  These tokens affect the port
+from which they are read, and are in effect until EOF
+or another instance of these tokens are read.
+See @ref{Lexical structure} for more details on @code{#!} syntax.
 @c JP
-今のところ、インタプリタの中から両方のモードを切り替えることはできません。
+また、リーダはトークン@code{#!fold-case}を読むと大文字小文字を
+区別しないモードに切り替わります。トークン@code{#!no-fold-case}は
+その逆の効果、すなわち大文字小文字を区別するモードへと切り替えます。
+これらのトークンは、それが読まれたポートからの以降の読み込みに影響を
+与えます。切り替えるトークンが再び読まれるか、EOFに出会うまで影響は継続します。
+@code{#!}構文についてより詳しくは@ref{Lexical structure}を参照してください。
 @c COMMON
-
 
 @node Integrated Object System, Module system, Case-sensitivity, Concepts
 @section Integrated Object System

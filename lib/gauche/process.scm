@@ -33,6 +33,8 @@
 ;;;  $Id: process.scm,v 1.33 2008-05-10 13:35:56 shirok Exp $
 ;;;
 
+#!no-fold-case
+
 ;; process interface, mostly compatible with STk's, but implemented
 ;; as an object on top of basic system interface.
 
@@ -260,15 +262,15 @@
 (define (process-send-signal process signal)
   (when (process-alive? process)
     (sys-kill (process-pid process) signal)))
-(define (process-kill process) (process-send-signal process |SIGKILL|))
+(define (process-kill process) (process-send-signal process SIGKILL))
 (define (process-stop process)
   (cond-expand
    (gauche.os.windows (undefined))
-   (else (process-send-signal process |SIGSTOP|))))
+   (else (process-send-signal process SIGSTOP))))
 (define (process-continue process)
   (cond-expand
    (gauche.os.windows (undefined))
-   (else (process-send-signal process |SIGCONT|))))
+   (else (process-send-signal process SIGCONT))))
 
 ;;===================================================================
 ;; Process ports

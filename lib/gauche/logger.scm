@@ -33,6 +33,8 @@
 ;;;  $Id: logger.scm,v 1.12 2008-05-10 13:35:56 shirok Exp $
 ;;;
 
+#!no-fold-case
+
 (define-module gauche.logger
   (use srfi-1)
   (use srfi-13)
@@ -155,10 +157,10 @@
         (cond-expand
          (gauche.sys.fcntl
           (guard (e ((<system-error> e) 'file))
-            (let ((lk (make <sys-flock> :type |F_WRLCK| :whence 0))
-                  (un (make <sys-flock> :type |F_UNLCK| :whence 0)))
-              (and (sys-fcntl port |F_SETLK| lk)
-                   (sys-fcntl port |F_SETLK| un))
+            (let ((lk (make <sys-flock> :type F_WRLCK :whence 0))
+                  (un (make <sys-flock> :type F_UNLCK :whence 0)))
+              (and (sys-fcntl port F_SETLK lk)
+                   (sys-fcntl port F_SETLK un))
               'fcntl)))
          (else
           'file)))
@@ -166,14 +168,14 @@
 
 (define (lock-data drain port)
   (case (slot-ref drain 'lock-policy)
-    ((fcntl) (make <sys-flock> :type |F_WRLCK| :whence 0))
+    ((fcntl) (make <sys-flock> :type F_WRLCK :whence 0))
     ((file)  (string-append (slot-ref drain 'path) ".lock"))
     ((tbd)   (lock-data (determine-lock-policy drain port) port))
     (else    #t)))
 
 (define (lock-file drain port data)
   (case (slot-ref drain 'lock-policy)
-    ((fcntl) (sys-fcntl port |F_SETLKW| data))
+    ((fcntl) (sys-fcntl port F_SETLKW data))
     ((file)
      (let loop ((retry 0)
                 (o (open-output-file data :if-exists #f)))
@@ -195,8 +197,8 @@
 (define (unlock-file drain port data)
   (case (slot-ref drain 'lock-policy)
     ((fcntl)
-     (slot-set! data 'type |F_UNLCK|)
-     (sys-fcntl port |F_SETLK| data))
+     (slot-set! data 'type F_UNLCK)
+     (sys-fcntl port F_SETLK data))
     ((file)
      (sys-unlink data))
     ((tdb)

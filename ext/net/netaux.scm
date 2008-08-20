@@ -50,7 +50,7 @@
 (define (make-sys-addrinfo . args)
   (if ipv6-capable
     (let-keywords args ((flags    0)
-                        (family   |AF_UNSPEC|)
+                        (family   AF_UNSPEC)
                         (socktype 0)
                         (protocol 0))
       (make <sys-addrinfo>
@@ -61,9 +61,9 @@
 ;; Utility
 (define (address->protocol-family addr)
   (case (sockaddr-family addr)
-    [(unix)  |PF_UNIX|]
-    [(inet)  |PF_INET|]
-    [(inet6) |PF_INET6|] ;;this can't happen if !ipv6-capable
+    [(unix)  PF_UNIX]
+    [(inet)  PF_INET]
+    [(inet6) PF_INET6] ;;this can't happen if !ipv6-capable
     [else (error "unknown family of socket address" addr)]))
 
 ;; High-level interface.  We need some hardcoded heuristics here.
@@ -92,12 +92,12 @@
          (error "unsupported protocol:" proto)]))
 
 (define (make-client-socket-from-addr addr)
-  (rlet1 socket (make-socket (address->protocol-family addr) |SOCK_STREAM|)
+  (rlet1 socket (make-socket (address->protocol-family addr) SOCK_STREAM)
     (socket-connect socket addr)))
 
 
 (define (make-client-socket-unix path)
-  (rlet1 socket (make-socket |PF_UNIX| |SOCK_STREAM|)
+  (rlet1 socket (make-socket PF_UNIX SOCK_STREAM)
     (socket-connect socket (make <sockaddr-un> :path path))))
 
 (define (make-client-socket-inet host port)
@@ -105,7 +105,7 @@
     (define (try-connect address)
       (guard (e (else (set! err e) #f))
         (rlet1 socket (make-socket (address->protocol-family address)
-                                  |SOCK_STREAM|)
+                                  SOCK_STREAM)
           (socket-connect socket address))))
     (rlet1 socket (any try-connect (make-sockaddrs host port))
       (unless socket (raise err)))))
@@ -134,18 +134,18 @@
   (let-keywords args ((reuse-addr? #f)
                       (sock-init #f)
                       (backlog DEFAULT_BACKLOG))
-    (rlet1 socket (make-socket (address->protocol-family addr) |SOCK_STREAM|)
+    (rlet1 socket (make-socket (address->protocol-family addr) SOCK_STREAM)
       (when (procedure? sock-init)
 	(sock-init socket addr))
       (when reuse-addr?
-	(socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
+	(socket-setsockopt socket SOL_SOCKET SO_REUSEADDR 1))
       (socket-bind socket addr)
       (socket-listen socket backlog))))
 
 
 (define (make-server-socket-unix path . args)
   (let-keywords args ((backlog DEFAULT_BACKLOG))
-    (rlet1 socket (make-socket |PF_UNIX| |SOCK_STREAM|)
+    (rlet1 socket (make-socket PF_UNIX SOCK_STREAM)
       (socket-bind socket (make <sockaddr-un> :path path))
       (socket-listen socket backlog))))
 
@@ -160,11 +160,11 @@
   (let1 proto (get-optional maybe-proto 'tcp)
     (if ipv6-capable
       (let* ((socktype (case proto
-                         [(tcp) |SOCK_STREAM|]
-                         [(udp) |SOCK_DGRAM|]
+                         [(tcp) SOCK_STREAM]
+                         [(udp) SOCK_DGRAM]
                          [else (error "unsupported protocol:" proto)]))
              (port (x->string port))
-             (hints (make-sys-addrinfo :flags |AI_PASSIVE| :socktype socktype))
+             (hints (make-sys-addrinfo :flags AI_PASSIVE :socktype socktype))
              )
         (map (cut slot-ref <> 'addr) (sys-getaddrinfo host port hints)))
       (let1 port (cond [(number? port) port]

@@ -33,16 +33,17 @@
 ;;;  $Id: fcntl.scm,v 1.7 2008-05-10 13:35:40 shirok Exp $
 ;;;
 
+#!no-fold-case
 
 (define-module gauche.fcntl
   (export <sys-flock>
           sys-fcntl
 
-          |F_DUPFD|  |F_GETFD|  |F_SETFD|  |F_GETFL|  |F_SETFL|
-          |F_GETLK|  |F_SETLK|  |F_SETLKW|
-          |F_RDLCK|  |F_WRLCK|  |F_UNLCK|  |FD_CLOEXEC|
-          |O_RDONLY| |O_WRONLY| |O_RDWR|   |O_APPEND| |O_CREAT|
-          |O_EXCL|   |O_NOCTTY| |O_NONBLOCK| |O_TRUNC| |O_ACCMODE|
+          F_DUPFD  F_GETFD  F_SETFD  F_GETFL  F_SETFL
+          F_GETLK  F_SETLK  F_SETLKW
+          F_RDLCK  F_WRLCK  F_UNLCK  FD_CLOEXEC
+          O_RDONLY O_WRONLY O_RDWR   O_APPEND O_CREAT
+          O_EXCL   O_NOCTTY O_NONBLOCK O_TRUNC O_ACCMODE
           )
   )
 
@@ -51,11 +52,11 @@
 (dynamic-load "fcntl" :export-symbols #t)
 
 (export-if-defined
- |F_GETOWN| |F_SETOWN| |F_GETSIG| |F_SETSIG|
- |F_GETLEASE| |F_SETLEASE| |F_NOTIFY|
- |DN_ACCESS| |DN_MODIFY| |DN_CREATE| |DN_DELETE|
- |DN_RENAME| |DN_ATTRIB| |DN_MULTISHOT|
- |O_ASYNC|
-  )
+ F_GETOWN F_SETOWN F_GETSIG F_SETSIG
+ F_GETLEASE F_SETLEASE F_NOTIFY
+ DN_ACCESS DN_MODIFY DN_CREATE DN_DELETE
+ DN_RENAME DN_ATTRIB DN_MULTISHOT
+ O_ASYNC
+ )
 
 (provide "gauche/fcntl")

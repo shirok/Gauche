@@ -1,6 +1,8 @@
 ;; Example of gauche.termios
 ;;  $Id: noecho.scm,v 1.1 2003-01-08 02:06:27 shirok Exp $
 
+#!no-fold-case
+
 (use gauche.termios)
 
 (define (get-password prompt)
@@ -13,13 +15,13 @@
     ;; Turn off echo during reading.
     (dynamic-wind
      (lambda ()
-       (slot-set! attr 'lflag (logand lflag (lognot |ECHO|)))
-       (sys-tcsetattr port |TCSAFLUSH| attr))
+       (slot-set! attr 'lflag (logand lflag (lognot ECHO)))
+       (sys-tcsetattr port TCSAFLUSH attr))
      (lambda ()
        (read-line port))
      (lambda ()
        (slot-set! attr 'lflag lflag)
-       (sys-tcsetattr port |TCSANOW| attr)))))
+       (sys-tcsetattr port TCSANOW attr)))))
 
 
 

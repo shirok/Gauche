@@ -33,6 +33,8 @@
 ;;;  $Id: syslog.scm,v 1.7 2008-05-10 13:35:43 shirok Exp $
 ;;;
 
+#!no-fold-case
+
 (define-module gauche.syslog
   (export sys-openlog sys-syslog sys-closelog sys-logmask sys-setlogmask))
 
@@ -63,44 +65,44 @@
     #f
     `(define ,sym ,val)))
 
-(define-dummy |LOG_PID| 0)
-(define-dummy |LOG_INFO| 1)
-(define-dummy |LOG_USER| 2)
+(define-dummy LOG_PID 0)
+(define-dummy LOG_INFO 1)
+(define-dummy LOG_USER 2)
 
-(export-if-defined |LOG_CONS|
-                   |LOG_NDELAY|
-                   |LOG_NOWAIT|
-                   |LOG_ODELAY|
-                   |LOG_PERROR|
-                   |LOG_PID|
-                   |LOG_AUTH|
-                   |LOG_AUTHPRIV|
-                   |LOG_CRON|
-                   |LOG_DAEMON|
-                   |LOG_FTP|
-                   |LOG_KERN|
-                   |LOG_LOCAL0|
-                   |LOG_LOCAL1|
-                   |LOG_LOCAL2|
-                   |LOG_LOCAL3|
-                   |LOG_LOCAL4|
-                   |LOG_LOCAL5|
-                   |LOG_LOCAL6|
-                   |LOG_LOCAL7|
-                   |LOG_LPR|
-                   |LOG_MAIL|
-                   |LOG_NEWS|
-                   |LOG_SYSLOG|
-                   |LOG_USER|
-                   |LOG_UUCP|
-                   |LOG_EMERG|
-                   |LOG_ALERT|
-                   |LOG_CRIT|
-                   |LOG_ERR|
-                   |LOG_WARNING|
-                   |LOG_NOTICE|
-                   |LOG_INFO|
-                   |LOG_DEBUG|
+(export-if-defined LOG_CONS
+                   LOG_NDELAY
+                   LOG_NOWAIT
+                   LOG_ODELAY
+                   LOG_PERROR
+                   LOG_PID
+                   LOG_AUTH
+                   LOG_AUTHPRIV
+                   LOG_CRON
+                   LOG_DAEMON
+                   LOG_FTP
+                   LOG_KERN
+                   LOG_LOCAL0
+                   LOG_LOCAL1
+                   LOG_LOCAL2
+                   LOG_LOCAL3
+                   LOG_LOCAL4
+                   LOG_LOCAL5
+                   LOG_LOCAL6
+                   LOG_LOCAL7
+                   LOG_LPR
+                   LOG_MAIL
+                   LOG_NEWS
+                   LOG_SYSLOG
+                   LOG_USER
+                   LOG_UUCP
+                   LOG_EMERG
+                   LOG_ALERT
+                   LOG_CRIT
+                   LOG_ERR
+                   LOG_WARNING
+                   LOG_NOTICE
+                   LOG_INFO
+                   LOG_DEBUG
                    )
 
 (provide "gauche/syslog")

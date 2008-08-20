@@ -43,11 +43,11 @@
           gdbm-sync          gdbm-exists?        gdbm-strerror
           gdbm-setopt        gdbm-version        gdbm-file-of
           gdbm-errno
-          |GDBM_READER|      |GDBM_WRITER|       |GDBM_WRCREAT|
-          |GDBM_NEWDB|       |GDBM_FAST|         |GDBM_SYNC|
-          |GDBM_NOLOCK|      |GDBM_INSERT|       |GDBM_REPLACE|
-          |GDBM_CACHESIZE|   |GDBM_FASTMODE|     |GDBM_SYNCMODE|
-          |GDBM_CENTFREE|    |GDBM_COALESCEBLKS|)
+          GDBM_READER        GDBM_WRITER         GDBM_WRCREAT
+          GDBM_NEWDB         GDBM_FAST           GDBM_SYNC
+          GDBM_NOLOCK        GDBM_INSERT         GDBM_REPLACE
+          GDBM_CACHESIZE     GDBM_FASTMODE       GDBM_SYNCMODE
+          GDBM_CENTFREE      GDBM_COALESCEBLKS)
   )
 (select-module dbm.gdbm)
 
@@ -77,13 +77,13 @@
          (sync   (slot-ref self 'sync))
          (nolock (slot-ref self 'nolock))
          (rwopt  (case rwmode
-                   ((:read) |GDBM_READER|)
-                   ((:write) (+ |GDBM_WRCREAT|
-                                 (if sync |GDBM_SYNC| 0)
-                                 (if nolock |GDBM_NOLOCK| 0)))
-                   ((:create) (+ |GDBM_NEWDB|
-                                 (if sync |GDBM_SYNC| 0)
-                                 (if nolock |GDBM_NOLOCK| 0)))))
+                   ((:read) GDBM_READER)
+                   ((:write) (+ GDBM_WRCREAT
+                                 (if sync GDBM_SYNC 0)
+                                 (if nolock GDBM_NOLOCK 0)))
+                   ((:create) (+ GDBM_NEWDB
+                                 (if sync GDBM_SYNC 0)
+                                 (if nolock GDBM_NOLOCK 0)))))
          (fp     (gdbm-open path
                             (slot-ref self 'bsize)
                             rwopt
@@ -112,7 +112,7 @@
   (when (positive? (gdbm-store (gdbm-file-of self)
                                (%dbm-k2s self key)
                                (%dbm-v2s self value)
-                               |GDBM_REPLACE|))
+                               GDBM_REPLACE))
     (error "dbm-put! failed" self)))
 
 (define-method dbm-get ((self <gdbm>) key . args)
@@ -153,7 +153,7 @@
 (autoload file.util copy-file move-file)
 
 (define (%with-gdbm-locking path thunk)
-  (let1 db (gdbm-open path 0 |GDBM_READER| #o664) ;; put read-lock
+  (let1 db (gdbm-open path 0 GDBM_READER #o664) ;; put read-lock
     (unwind-protect (thunk) (gdbm-close db))))
         
 (define-method dbm-db-exists? ((class <gdbm-meta>) name)

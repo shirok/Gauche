@@ -113,11 +113,13 @@ The table below lists sharp-syntaxes.
 @multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @item @code{#!}
 @c EN
- @tab [SRFI-22] Specifies interpreter at the beginning of file.
-      Scheme loader ignores the line.
+ @tab [R6RS][SRFI-22] It is either a beginning of an interpreter line
+      (shebang) of a script, or a special token that affects the mode
+      of the reader.  See `hash-bang token' section below.
 @c JP
- @tab [SRFI-22] ファイルの先頭でインタプリタを指定します。
-      Scheme のローダはこの行を無視します。
+ @tab [R6RS][SRFI-22] これは、スクリプトのインタプリタ指定行(shebang)の
+      開始を示すか、リーダのモードに影響を与える特別なトークンとして読まれます。
+      下の`hash-bang token'の節を参照してください。
 @c COMMON
 @item @code{#"}, @code{##}, @code{#$}, @code{#%}, @code{#&}, @code{#'}
 @c EN
@@ -357,6 +359,57 @@ The table below lists sharp-syntaxes.
  @tab 未使用。
 @c COMMON
 @end multitable
+
+@subheading Hash-bang token
+
+@c EN
+A character sequence @code{#!} has two completely different
+semantics, depending on how and where it occurs.
+
+If a file begins with @code{#!/} or @code{#! } (hash, bang, and a
+space), then the reader assumes it is an interpreter line (shebang) of
+a script and ignores the rest of characters until the end of line.
+(Actually the source doesn't need to be a file.  The reader checks
+whether it is the beginning of a port.)
+      
+Other than the above case, @code{#!@var{identifier}} is read as
+a token with special meanings.  This kind token can be a special
+directive for the reader, instead of read as a datum.
+
+By default, three of such tokens are recognized.  @code{#!fold-case}
+and @code{#!no-fold-case} switches the reader's case sensitivity;
+@code{#!fold-case} makes the reader case insensitive, and
+@code{#!no-fold-case} makes it case sensitive.  (Also see
+@ref{Case-sensitivity}).
+
+The token @code{#!r6rs} is introduced in R6RS and used to indicate the
+program is strictly conforms R6RS.  Gauche doesn't support R6RS, and
+currently it issues warning when it sees @code{#!r6rs} token, though
+it keeps reading on.
+@c JP
+文字シーケンス@code{#!}は、どこでどのように現れるかによって2つの全く異なる
+意味を持ちます。
+
+ファイルが@code{#!/}もしくは@code{#! } (ハッシュ、バング、空白) から始
+まっている場合、読み込みルーチンはそれをスクリプトのインタプリタ指定行
+(shebang) とみなし、最初の行末までを無視します。
+(実際は、ソースはファイルでなくても構いません。リーダはポートの先頭かどうかで
+判断します。)
+
+その場合以外では、@code{#!@var{identifier}}がひとつのトークンとして読ま
+れ、特別な意味を持ちます。この種のトークンはデータとして読まれるのでは
+なく、リーダに対して特別な指定を与えることもあります。
+
+デフォルトでは、このような3つのトークンが認識されます。
+@code{#!fold-case}と@code{#!no-fold-case}はリーダが大文字小文字を区別す
+るかどうかを切り替えます。@code{#!fold-case}に出会うとリーダは大文字小
+文字を区別しないモードになり、@code{#!no-fold-case}に出会うとその逆にな
+ります。(@ref{Case-sensitivity}も参照してください。)
+
+トークン@code{#!r6rs}はR6RSで導入され、プログラムがR6RSに準拠しているこ
+とを示します。GaucheはR6RSをサポートしていませんが、今のところこのトー
+クンに出会っても警告を出すだけで読み込みは継続します。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Literals, Making Procedures, Lexical structure, Core syntax
@@ -3023,3 +3076,4 @@ all the bindings of @code{gauche} module is imported.
 @code{gauche}モジュール内の全ての束縛がインポートされています。
 @c COMMON
 @end deftp
+

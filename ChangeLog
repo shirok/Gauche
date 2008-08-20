@@ -1,5 +1,9 @@
 2008-08-20  Shiro Kawai  <shiro@acm.org>
 
+	* **/*.scm: Cleaned up use of |-escapes meant to work for both case-
+	  sensitive and case-insensitive mode.  Now we have #!no-case-fold,
+	  so we can ensure the file is read in case-sensitive mode.
+
 	* src/gauche/reader.h, src/gauche.h: splitted reader API from gauche.h
 	  to reader.h
 

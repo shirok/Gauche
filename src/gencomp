@@ -129,7 +129,7 @@
       (match args
         ((scmfile)
          (when ext-module
-           (ext-module-file (ensure-ext-module-file ext-module)))
+           (ext-module-file (ensure-ext-module-file ext-module scmfile)))
          (do-it scmfile
                 (or output-base (sys-basename (path-sans-extension scmfile)))
                 predef-syms)
@@ -161,11 +161,13 @@
     ;; Emitting
     (cgen-emit-c (cgen-current-unit))))
 
-(define (ensure-ext-module-file filename)
+(define (ensure-ext-module-file filename srcfile)
   (let1 dir (sys-dirname filename)
-    (unless (file-exists? dir)
-      (make-directory* dir))
-    (open-output-file filename)))
+    (unless (file-exists? dir) (make-directory* dir))
+    (let1 p (open-output-file filename)
+      (format p ";; generated automatically from ~s.  DO NOT EDIT\n" srcfile)
+      (format p "#!no-fold-case\n")
+      p)))
 
 (define (write-ext-module form)
   (cond ((ext-module-file)

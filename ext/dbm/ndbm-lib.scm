@@ -44,7 +44,7 @@
           ndbm-delete
           ndbm-firstkey       ndbm-nextkey          ndbm-error
           ndbm-clearerror
-          |DBM_INSERT|        |DBM_REPLACE|)
+          DBM_INSERT          DBM_REPLACE)
   )
 (select-module dbm.ndbm)
 
@@ -69,9 +69,9 @@
   (let* ((path   (slot-ref self 'path))
          (rwmode (slot-ref self 'rw-mode))
          (rwopt  (case rwmode
-                   ((:read)   |O_RDONLY|)
-                   ((:write)  (+ |O_RDWR| |O_CREAT|))
-                   ((:create) (+ |O_RDWR| |O_CREAT| |O_TRUNC|))))
+                   ((:read)   O_RDONLY)
+                   ((:write)  (+ O_RDWR O_CREAT))
+                   ((:create) (+ O_RDWR O_CREAT O_TRUNC))))
          (fp     (ndbm-open path
                             rwopt
                             (slot-ref self 'file-mode))))
@@ -99,7 +99,7 @@
   (when (positive? (ndbm-store (ndbm-file-of self)
                                (%dbm-k2s self key)
                                (%dbm-v2s self value)
-                               |DBM_REPLACE|))
+                               DBM_REPLACE))
     (error "dbm-put! failed" self)))
 
 (define-method dbm-get ((self <ndbm>) key . args)
