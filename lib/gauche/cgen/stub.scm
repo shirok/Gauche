@@ -53,7 +53,7 @@
 ;; NB: a small experiment to see how I feel this...
 ;;  [~ a b c d] => (ref (ref (ref a b) c) d)
 ;; Ideally this should be a compiler-macro (we can't make it a macro,
-;; for we want to say (set! [@ x'y] val).
+;; for we want to say (set! [~ x'y] val).
 (define ~
   (getter-with-setter
    (case-lambda
@@ -929,7 +929,7 @@
       (parse-specialized-args argspec)
     (let ((method (make <cmethod>
                     :scheme-name scheme-name
-                    :c-name (get-c-name [@(cgen-current-unit)'c-name-prefix]
+                    :c-name (get-c-name [~(cgen-current-unit)'c-name-prefix]
                                         (gensym (symbol->string scheme-name)))
                     :specializers specializers
                     :num-reqargs numargs
