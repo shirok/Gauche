@@ -1122,10 +1122,9 @@
 
 (define-method c-printer-name ((self <cclass>))
   (let1 printer [~ self'printer]
-    (cond [(string? printer) #`",[~ self'c-name]_PRINT"]
-          [(c-literal-expr printer)]
+    (cond [(c-literal-expr printer)]
           [(not printer) "NULL"]
-          [else (errorf <cgen-stub-error> "bad printer specification ~s in class ~s" printer self)])))
+          [else #`",[~ self'c-name]_PRINT"])))
 
 (define-method c-allocator-name ((self <cclass>))
   (let1 allocator [~ self'allocator]
@@ -1154,7 +1153,7 @@
     (p (c-code [~ self'allocator]))
     (p "}")
     (p ""))
-  (unless ((any-pred not c-literal?) (string? [~ self'printer]))
+  (unless ((any-pred not c-literal?) [~ self'printer])
     (p "static void "(c-printer-name self)"(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)")
     (p "{")
     (p (c-code [~ self'printer]))
