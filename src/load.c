@@ -1192,9 +1192,6 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
             }
             f = Scm_FindBinding(SCM_MODULE(m), adata->name, 0);
             g = Scm_FindBinding(adata->module, adata->name, 0);
-            if (f == NULL) {
-                Scm_Error("ZIMBER: %S %S\n", m, adata->name);
-            }
             SCM_ASSERT(f != NULL);
             SCM_ASSERT(g != NULL);
             adata->value = SCM_GLOC_GET(f);
