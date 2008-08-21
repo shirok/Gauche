@@ -2,6 +2,8 @@
 ;; test for system related procedures
 ;;
 
+#!no-fold-case
+
 (use gauche.test)
 (use gauche.config)
 (use srfi-1)
@@ -62,15 +64,15 @@
    (gauche.os.windows (get-command-output "cd"))
    (else
     (cond
-     [(sys-access "/bin/pwd" |X_OK|)
+     [(sys-access "/bin/pwd" X_OK)
       ;; On MacOSX, /bin/pwd returns _logical_ pathname by default,
       ;; which is IMHO a bad decision (the behavior is /bin/pwd -L in
       ;; other BSDs).  Anyway we have to cope with it.
       (if (string-contains (gauche-config "--arch") "darwin")
         (get-command-output "/bin/pwd -P")
         (get-command-output "/bin/pwd"))]
-     [(sys-access "/usr/bin/pwd" |X_OK|) (get-command-output "/usr/bin/pwd")]
-     [(sys-access "/sbin/pwd" |X_OK|) (get-command-output "/sbin/pwd")]
+     [(sys-access "/usr/bin/pwd" X_OK) (get-command-output "/usr/bin/pwd")]
+     [(sys-access "/sbin/pwd" X_OK) (get-command-output "/sbin/pwd")]
      [else (get-command-output "pwd")]))))
 
 ;;-------------------------------------------------------------------
@@ -179,13 +181,13 @@
 
 (test* "access" '(#f #f #f #f)
        (map (lambda (flag) (sys-access "test.dir" flag))
-            (list |F_OK| |R_OK| |W_OK| |X_OK|)))
+            (list F_OK R_OK W_OK X_OK)))
 
 (cmd-touch "test.dir")
 
 (test* "unlink" #f
        (begin
-         (sys-unlink "test.dir") (sys-access "test.dir" |F_OK|)))
+         (sys-unlink "test.dir") (sys-access "test.dir" F_OK)))
 
 (cond-expand
  (gauche.os.windows
@@ -222,8 +224,8 @@
 (test* "rename" '(#f #t)
        (begin
          (sys-rename "test.dir/xyzzy" "test.dir/zzZzz")
-         (list (sys-access "test.dir/xyzzy" |F_OK|)
-               (sys-access "test.dir/zzZzz" |F_OK|))))
+         (list (sys-access "test.dir/xyzzy" F_OK)
+               (sys-access "test.dir/zzZzz" F_OK))))
 
 (test* "readdir" '("." ".." "zzZzz")
        (sort (sys-readdir "test.dir")))
@@ -259,7 +261,7 @@
        (begin
          (sys-unlink "test.dir/zzZzz")
          (sys-rmdir "test.dir")
-         (sys-access "test.dir" |F_OK|)))
+         (sys-access "test.dir" F_OK)))
 
 ;;-------------------------------------------------------------------
 (test-section "time")
@@ -427,23 +429,23 @@
            (if (= pid 0)
              (begin (sys-pause) (sys-exit 0))
              (begin 
-               (sys-kill pid |SIGKILL|)
+               (sys-kill pid SIGKILL)
                (receive (rpid code) (sys-wait)
                  (and (= rpid pid)
                       (sys-wait-signaled? code)
-                      (= (sys-wait-termsig code) |SIGKILL|)))))))
+                      (= (sys-wait-termsig code) SIGKILL)))))))
 
   (test* "fork, wait, kill & sleep" #t
          (let1 pid (sys-fork)
            (if (= pid 0)
              (begin (nap) (sys-exit 0))
              (begin 
-               (sys-kill pid |SIGSTOP|) 
+               (sys-kill pid SIGSTOP) 
                (receive (rpid code) (sys-waitpid pid :untraced #t)
                  (and (= rpid pid)
                       (sys-wait-stopped? code)
-                      (= (sys-wait-stopsig code) |SIGSTOP|)
-                      (begin (sys-kill pid |SIGCONT|)
+                      (= (sys-wait-stopsig code) SIGSTOP)
+                      (begin (sys-kill pid SIGCONT)
                              (receive (rpid code) (sys-wait)
                                (and (= rpid pid)
                                     (sys-wait-exited? code)

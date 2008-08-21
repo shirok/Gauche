@@ -33,6 +33,8 @@
 ;;;  $Id: interactive.scm,v 1.16 2008-05-10 13:35:55 shirok Exp $
 ;;;
 
+#!no-fold-case
+
 (define-module gauche.interactive
   (export apropos describe d
           ;; autoloaded symbols follow
@@ -144,7 +146,7 @@
 
 ;; For convenience
 (let ((dotfile (sys-normalize-pathname "~/.gaucherc" :expand #t)))
-  (when (sys-access dotfile |F_OK|)
+  (when (sys-access dotfile F_OK)
     (load dotfile :environment (find-module 'user))))
 
 (provide "gauche/interactive")

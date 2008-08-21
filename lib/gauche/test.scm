@@ -32,6 +32,8 @@
 ;;;  
 ;;;  $Id: test.scm,v 1.29 2008-05-10 13:35:56 shirok Exp $
 
+#!no-fold-case
+
 ;; Writing your own test
 ;;
 ;;  (use gauche.test)
@@ -126,7 +128,7 @@
           (vector-ref *test-counts* 3)))
 (define (read-summary)
   (when (and (string? *test-record-file*)
-             (sys-access *test-record-file* |F_OK|)) ; avoid file-exists? to trigger autoload
+             (sys-access *test-record-file* F_OK)) ; avoid file-exists? to trigger autoload
     (with-input-from-file *test-record-file*
       (lambda ()
         (let ((m (rxmatch #/Total:\s+(\d+)\s+tests,\s+(\d+)\s+passed,\s+(\d+)\s+failed,\s+(\d+)\s+aborted/ (read-line))))

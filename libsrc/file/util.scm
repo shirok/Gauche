@@ -38,6 +38,8 @@
 ;;; different names for compatibility with existing Scheme
 ;;; implementations.
 
+#!no-fold-case
+
 (define-module file.util
   (use srfi-1)
   (use srfi-2)
@@ -302,7 +304,7 @@
                        (values dir pat)
                        (let1 nd (rec dir)
                          (values nd (pathcat nd base))))))
-      (unless (sys-access p |F_OK|)
+      (unless (sys-access p F_OK)
         (error "path doesn't exist" path))
       (let loop ((count 0) (p p))
         (cond [(>= count 8) ;; arbitrary upper bound to detect infinite loop
@@ -406,9 +408,9 @@
 (define-stat-accessor file-ctime 'ctime)
 
 ;; file permissions
-(define (file-is-readable? path) (sys-access path |R_OK|))
-(define (file-is-writable? path) (sys-access path |W_OK|))
-(define (file-is-executable? path) (sys-access path |X_OK|))
+(define (file-is-readable? path) (sys-access path R_OK))
+(define (file-is-writable? path) (sys-access path W_OK))
+(define (file-is-executable? path) (sys-access path X_OK))
 
 (define (file-is-symlink? path)
   (and-let* ([s (safe-stat path #f)])
@@ -517,7 +519,7 @@
 ;;; File operation
 
 (define (touch-file pathname)
-  (if (sys-access pathname |F_OK|)
+  (if (sys-access pathname F_OK)
     (sys-utime pathname)
     (close-output-port (open-output-file pathname)))
   (values))

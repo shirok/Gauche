@@ -431,6 +431,15 @@
          ,(render-rec `(begin ,@body) env)
          )])))
 
+(define-cise-macro (dotimes form env)
+  (ensure-stmt-ctx form env)
+  (let ((eenv (expr-env env))
+        (n    (gensym "cise__")))
+    (match form
+      [(_ (var expr) . body)
+       `(let* ((,var :: int 0) (,n :: int ,expr))
+          (for [() (< ,var ,n) (post++ ,var)] ,@body))])))
+               
 (define-cise-macro (return form env)
   (ensure-stmt-ctx form env)
   (match form
@@ -602,7 +611,7 @@
     (wrap-expr
      (match form
        [(_ type expr)
-        `("((",type")(",(render-rec expr eenv)"))")])
+        `("((",(cise-render-type type)")(",(render-rec expr eenv)"))")])
      env)))
 
 (define-cise-macro (?: form env)
@@ -662,8 +671,10 @@
 ;; Other utilities
 ;;
 
-(define (cise-render-type typespec)
-  (x->string typespec))                 ;for the time being
+(define (cise-render-type typespec)  ; for the time being
+  (if (list? typespec)
+    (intersperse " " (map x->string typespec))
+    (x->string typespec)))
 
 (define (cise-render-identifier sym)
   (cgen-safe-name-friendly (x->string sym)))

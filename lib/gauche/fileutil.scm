@@ -33,6 +33,8 @@
 ;;;  $Id: fileutil.scm,v 1.9 2008-05-10 13:35:54 shirok Exp $
 ;;;
 
+#!no-fold-case
+
 (define-module gauche.fileutil
   (export file-exists? file-is-regular? file-is-directory?
           glob glob-fold glob-component->regexp make-glob-fs-fold
@@ -45,12 +47,12 @@
 (select-module gauche.fileutil)
 
 (define (file-exists? path)
-  (sys-access path |F_OK|))
+  (sys-access path F_OK))
 (define (file-is-regular? path)
-  (and (sys-access path |F_OK|)
+  (and (sys-access path F_OK)
        (eq? (slot-ref (sys-stat path) 'type) 'regular)))
 (define (file-is-directory? path)
-  (and (sys-access path |F_OK|)
+  (and (sys-access path F_OK)
        (eq? (slot-ref (sys-stat path) 'type) 'directory)))
 
 

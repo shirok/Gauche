@@ -101,43 +101,53 @@
 (define-symbol abandoned "sym_abandoned")
 (define-symbol not-abandoned "sym_not_abandoned")
 
+(define-cise-stmt with-mutex
+  [(_ mutex . form)
+   `(begin
+      (cast void (SCM_INTERNAL_MUTEX_LOCK ,mutex))
+      ,@form
+      (cast void (SCM_INTERNAL_MUTEX_UNLOCK ,mutex)))])
+
 (define-cproc mutex-state (mutex::<mutex>)
-  "ScmObj r;
-  (void)SCM_INTERNAL_MUTEX_LOCK(mutex->mutex);
-  if (mutex->locked) {
-    if (mutex->owner) {
-      if (mutex->owner->state == SCM_VM_TERMINATED) r = sym_abandoned;
-      else r = SCM_OBJ(mutex->owner);
-    } else {
-      r = sym_not_owned;
-    }
-  } else {
-    r = sym_not_abandoned;
-  }
-  (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
-  SCM_RETURN(r);")
+  (body <top>
+        (let* ((r))
+          (with-mutex
+           (-> mutex mutex)
+           (if (-> mutex locked)
+             (if (-> mutex owner)
+               (if (== (-> mutex owner state) SCM_VM_TERMINATED)
+                 (set! r 'abandoned)
+                 (set! r (SCM_OBJ (-> mutex owner))))
+               (set! r 'not-owned))
+             (set! r 'not-abandoned)))
+          (result r))))
 
 (define-cproc mutex-lock! (mutex::<mutex> &optional (timeout #f) thread)
-  "ScmVM *owner = NULL;
-  if (SCM_VMP(thread)) owner = SCM_VM(thread);
-  else if (SCM_UNBOUNDP(thread)) owner = Scm_VM();
-  else if (!SCM_FALSEP(thread)) Scm_Error(\"thread or #f required, but got %S\", thread);
-  SCM_RETURN(Scm_MutexLock(mutex, timeout, owner));")
+  (body <top>
+        (let* ((owner :: ScmVM* NULL))
+          (cond [(SCM_VMP thread) (set! owner (SCM_VM thread))]
+                [(SCM_UNBOUNDP thread) (set! owner (Scm_VM))]
+                [(not (SCM_FALSEP thread))
+                 (SCM_TYPE_ERROR thread "thread or #f")])
+          (result (Scm_MutexLock mutex timeout owner)))))
   
 (define-cproc mutex-unlock! (mutex::<mutex> &optional (cv #f) (timeout #f))
-  "ScmConditionVariable *cond = NULL;
-  if (SCM_CONDITION_VARIABLE_P(cv)) cond = SCM_CONDITION_VARIABLE(cv);
-  else if (!SCM_FALSEP(cv)) Scm_Error(\"condition variable or #f required, but got %S\", cv);
-  SCM_RETURN(Scm_MutexUnlock(mutex, cond, timeout));")
+  (body <top>
+        (let* ((cond :: ScmConditionVariable* NULL))
+          (cond [(SCM_CONDITION_VARIABLE_P cv)
+                 (set! cond (SCM_CONDITION_VARIABLE cv))]
+                [(not (SCM_FALSEP cv))
+                 (SCM_TYPE_ERROR cv "condition variale or #f")])
+          (result (Scm_MutexUnlock mutex cond timeout)))))
 
 (define-cproc mutex-specific (mutex::<mutex>)
-  (expr "mutex->specific"))
+  (expr (-> mutex specific)))
 
 (define-cproc mutex-specific-set! (mutex::<mutex> obj)
-  (body <void> "mutex->specific = obj;"))
+  (body <void> (set! (-> mutex specific) obj)))
 
 (define-cproc mutex-name (mutex::<mutex>)
-  (expr "mutex->name"))
+  (expr (-> mutex name)))
 
 ;;===============================================================
 ;; Condition variable
@@ -168,37 +178,37 @@
 ;; Thread exceptions
 ;;
 
-"static ScmObj thread_exception_allocate(ScmClass *klass, ScmObj initargs)
- {
-    ScmThreadException *e = SCM_ALLOCATE(ScmThreadException, klass);
-    SCM_SET_CLASS(e, klass);
-    e->thread = NULL;
-    e->data = SCM_UNDEFINED;
-    return SCM_OBJ(e);
- }"
+(define-cfn thread_exception_allocate ((klass :: ScmClass*) initargs) :static
+  (let* ((e :: ScmThreadException* (SCM_ALLOCATE ScmThreadException klass)))
+    (SCM_SET_CLASS e klass)
+    (set! (-> e thread) NULL)
+    (set! (-> e data) SCM_UNDEFINED)
+    (return (SCM_OBJ e))))
 
-"static void thread_exception_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
- {
-   ScmClass *k = SCM_CLASS_OF(obj);
-   ScmThreadException *exc = SCM_THREAD_EXCEPTION(obj);
-   if (SCM_UNDEFINEDP(exc->data)) {
-     Scm_Printf(port, \"#<%A %S>\", Scm__InternalClassName(k), SCM_OBJ_SAFE(exc->thread));
-   } else {
-     Scm_Printf(port, \"#<%A %S %S>\", Scm__InternalClassName(k), SCM_OBJ_SAFE(exc->thread), exc->data);
-   }
- }"
+(define-cfn thread_exception_print (obj (port :: ScmPort*)
+                                        (ctx :: ScmWriteContext*))
+  :: void :static
+  (let* ((k :: ScmClass* (SCM_CLASS_OF obj))
+         (exc :: ScmThreadException* (SCM_THREAD_EXCEPTION obj))
+         (cname (Scm__InternalClassName k)))
+    (if (SCM_UNDEFINEDP (-> exc data))
+      (Scm_Printf port "#<%A %S>" cname (SCM_OBJ_SAFE (-> exc thread)))
+      (Scm_Printf port "#<%A %S %S>" cname (SCM_OBJ_SAFE (-> exc thread))
+                  (-> exc data)))))
 
-"static void uncaught_exception_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
- {
-   ScmThreadException *exc = SCM_THREAD_EXCEPTION(obj);
-   Scm_Printf(port, \"#<uncaught-exception in thread %S: %S>\", SCM_OBJ_SAFE(exc->thread), exc->data);
- }"
+(define-cfn uncaught_exception_print (obj (port :: ScmPort*)
+                                          (ctx :: ScmWriteContext*))
+  :: void :static
+  (let* ((exc :: ScmThreadException* (SCM_THREAD_EXCEPTION obj)))
+    (Scm_Printf port "#<uncaught-exception in thread %S: %S>"
+                (SCM_OBJ_SAFE (-> exc thread)) (-> exc data))))
 
-"static void terminated_thread_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
- {
-   ScmThreadException *exc = SCM_THREAD_EXCEPTION(obj);
-   Scm_Printf(port, \"#<terminated-thread-exception: %S terminated by %S>\", SCM_OBJ_SAFE(exc->thread), exc->data);
- }"
+(define-cfn terminated_thread_print (obj (port :: ScmPort*)
+                                         (ctx :: ScmWriteContext*))
+  :: void :static
+  (let* ((exc :: ScmThreadException* (SCM_THREAD_EXCEPTION obj)))
+    (Scm_Printf port "#<terminated-thread-exception: %S terminated by %S>"
+                (SCM_OBJ_SAFE (-> exc thread)) (-> exc data))))
 
 "static ScmClass *thread_exception_cpa[] = {
    SCM_CLASS_STATIC_PTR(Scm_ThreadExceptionClass),

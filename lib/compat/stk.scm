@@ -33,6 +33,8 @@
 ;;;  $Id: stk.scm,v 1.4 2008-05-10 13:35:48 shirok Exp $
 ;;;
 
+#!no-fold-case
+
 (define-module compat.stk
   (use srfi-1)
   (use srfi-13)
@@ -172,9 +174,9 @@
 (define getenv sys-getenv)
 (define setenv! sys-putenv)
 
-(define (file-is-readable? file)   (sys-access file |R_OK|))
-(define (file-is-writable? file)   (sys-access file |W_OK|))
-(define (file-is-executable? file) (sys-access file |X_OK|))
+(define (file-is-readable? file)   (sys-access file R_OK))
+(define (file-is-writable? file)   (sys-access file W_OK))
+(define (file-is-executable? file) (sys-access file X_OK))
 
 (define glob sys-glob)
 (define remove-file sys-unlink)
