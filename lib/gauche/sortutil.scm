@@ -109,38 +109,39 @@
     (%sort! seq) ;; use internal version
     (stable-sort! seq (car maybe-less?))))
 
-(define (stable-sort! seq :optional (less? default-less?))
-  (define (step n)
-    (cond
-     [(> n 2) (let* ((j (ash n -1))
-                     (a (step j))
-                     (k (- n j))
-                     (b (step k)))
-                (merge! a b less?))]
-     [(= n 2) (let ((x (car seq))
-                    (y (cadr seq))
-                    (p seq))
-                (set! seq (cddr seq))
-                (when (less? y x)
-                  (set-car! p y)
-                  (set-car! (cdr p) x))
-                (set-cdr! (cdr p) '())
-                p)]
-     [(= n 1) (let ((p seq))
-                (set! seq (cdr seq))
-                (set-cdr! p '())
-                p)]
-     [else '()]))
-  (if (vector? seq)
-    (let ((n (vector-length seq))
-          (vector seq))
-      (set! seq (vector->list seq))
-      (do ((p (step n) (cdr p))
-           (i 0 (+ i 1)))
-          ((null? p) vector)
-        (vector-set! vector i (car p)) ))
-    ;; otherwise, assume it is a list
-    (step (length seq)) ))
+(define (stable-sort! seq . args)
+  (let-optionals* args ((less? default-less?))
+    (define (step n)
+      (cond
+       [(> n 2) (let* ((j (ash n -1))
+                       (a (step j))
+                       (k (- n j))
+                       (b (step k)))
+                  (merge! a b less?))]
+       [(= n 2) (let ((x (car seq))
+                      (y (cadr seq))
+                      (p seq))
+                  (set! seq (cddr seq))
+                  (when (less? y x)
+                    (set-car! p y)
+                    (set-car! (cdr p) x))
+                  (set-cdr! (cdr p) '())
+                  p)]
+       [(= n 1) (let ((p seq))
+                  (set! seq (cdr seq))
+                  (set-cdr! p '())
+                  p)]
+       [else '()]))
+    (if (vector? seq)
+      (let ((n (vector-length seq))
+            (vector seq))
+        (set! seq (vector->list seq))
+        (do ((p (step n) (cdr p))
+             (i 0 (+ i 1)))
+            ((null? p) vector)
+          (vector-set! vector i (car p)) ))
+      ;; otherwise, assume it is a list
+      (step (length seq)) )))
 
 ;;; (sort sequence less?)
 ;;; sorts a vector or list non-destructively.  It does this by sorting a
@@ -151,10 +152,11 @@
     (%sort seq)  ;; use internal version
     (stable-sort seq (car maybe-less?))))
 
-(define (stable-sort seq :optional (less? default-less?))
-  (if (vector? seq)
-    (list->vector (sort! (vector->list seq) less?))
-    (sort! (list-copy seq) less?)))
+(define (stable-sort seq . args)
+  (let-optionals* args ((less? default-less?))
+    (if (vector? seq)
+      (list->vector (sort! (vector->list seq) less?))
+      (sort! (list-copy seq) less?))))
 
 ;;;
 ;;; (sort-by seq key :optional less?)
