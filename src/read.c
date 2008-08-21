@@ -184,9 +184,6 @@ ScmReadContext *Scm_MakeReadContext(ScmReadContext *proto)
     SCM_SET_CLASS(ctx, SCM_CLASS_READ_CONTEXT);
     if (proto == NULL) {
         ctx->flags = SCM_READ_SOURCE_INFO;
-        if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_CASE_FOLD)) {
-            ctx->flags |= SCM_READ_CASE_FOLD;
-        }
         ctx->table = NULL;
         ctx->pending = SCM_NIL;
     } else {
@@ -922,7 +919,7 @@ static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
                         int temp_case_fold)
 {
     int c = 0;
-    int case_fold = temp_case_fold || (ctx->flags & SCM_READ_CASE_FOLD);
+    int case_fold = temp_case_fold || SCM_PORT_CASE_FOLD(port);
     ScmDString ds;
     Scm_DStringInit(&ds);
     if (initial != SCM_CHAR_INVALID) {

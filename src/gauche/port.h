@@ -210,8 +210,10 @@ enum ScmPortFlags {
     SCM_PORT_WRITESS = (1L<<0), /* write/ss on by default? */
     SCM_PORT_WALKING = (1L<<1), /* this port is a special port only used in
                                    the 'walk' phase of write/ss. */
-    SCM_PORT_PRIVATE = (1L<<2)  /* this port is for 'private' use within
+    SCM_PORT_PRIVATE = (1L<<2), /* this port is for 'private' use within
                                    a thread, so never need to be locked. */
+    SCM_PORT_CASE_FOLD = (1L<<3) /* read from or write to this port should
+                                    be case folding. */
 };
 
 #if 0 /* not implemented */
@@ -240,6 +242,8 @@ enum ScmPortICPolicy {
 #define SCM_PORT_DIR(obj)       (SCM_PORT(obj)->direction)
 #define SCM_PORT_FLAGS(obj)     (SCM_PORT(obj)->flags)
 #define SCM_PORT_ICPOLICY(obj)  (SCM_PORT(obj)->icpolicy)
+
+#define SCM_PORT_CASE_FOLD(obj) (SCM_PORT_FLAGS(obj)&SCM_PORT_CASE_FOLD)
 
 #define SCM_PORT_CLOSED_P(obj)  (SCM_PORT(obj)->closed)
 #define SCM_PORT_OWNER_P(obj)   (SCM_PORT(obj)->ownerp)

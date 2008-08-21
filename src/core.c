@@ -134,6 +134,7 @@ void Scm_Init(const char *signature)
 
     /* Initialize components.  The order is important, for some components
        rely on the other components to be initialized. */
+    Scm__InitVM();
     Scm__InitSymbol();
     Scm__InitModule();
     Scm__InitKeyword();
@@ -146,7 +147,6 @@ void Scm_Init(const char *signature)
     Scm__InitPort();
     Scm__InitWrite();
     Scm__InitCode();
-    Scm__InitVM();
     Scm__InitParameter();
     Scm__InitMacro();
     Scm__InitLoad();

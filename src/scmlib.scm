@@ -444,12 +444,12 @@
 
 (define-reader-directive 'fold-case
   (lambda (sym port ctx)
-    (read-context-case-fold-set! ctx #t)
+    (port-case-fold-set! port #t)
     (values)))
 
 (define-reader-directive 'no-fold-case
   (lambda (sym port ctx)
-    (read-context-case-fold-set! ctx #f)
+    (port-case-fold-set! port #f)
     (values)))
 
 ;;;=======================================================

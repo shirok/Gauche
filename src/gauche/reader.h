@@ -50,10 +50,9 @@ typedef struct ScmReadContextRec {
 
 enum ScmReadContextFlags {
     SCM_READ_SOURCE_INFO = (1L<<0),  /* preserving souce file information */
-    SCM_READ_CASE_FOLD   = (1L<<1),  /* case-fold read */
-    SCM_READ_LITERAL_IMMUTABLE = (1L<<2), /* literal should be read as immutable */
-    SCM_READ_DISABLE_CTOR = (1L<<3), /* disable #,() */
-    SCM_READ_RECURSIVELY = (1L<<4)   /* used internally. */
+    SCM_READ_LITERAL_IMMUTABLE = (1L<<1), /* literal should be read as immutable */
+    SCM_READ_DISABLE_CTOR = (1L<<2), /* disable #,() */
+    SCM_READ_RECURSIVELY = (1L<<3)   /* used internally. */
 };
 
 SCM_CLASS_DECL(Scm_ReadContextClass);

@@ -137,7 +137,10 @@ static ScmPort *make_port(ScmClass *klass, int dir, int type)
     port->closed = FALSE;
     port->error = FALSE;
     port->ownerp = FALSE;
-    port->flags = 0;
+    port->flags =
+        SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_CASE_FOLD)
+        ? SCM_PORT_CASE_FOLD
+        : 0;
     port->name = SCM_FALSE;
     (void)SCM_INTERNAL_FASTLOCK_INIT(port->lock);
     port->lockOwner = NULL;
@@ -1622,6 +1625,13 @@ void Scm__InitPort(void)
     scm_stderr = Scm_MakePortWithFd(SCM_MAKE_STR("(stderr)"),
                                     SCM_PORT_OUTPUT, 2,
                                     SCM_PORT_BUFFER_NONE, TRUE);
+
+    /* The root VM is initialized with bogus standard ports; we need to
+       reset them. */
+    Scm_VM()->curin  = SCM_PORT(scm_stdin);
+    Scm_VM()->curout = SCM_PORT(scm_stdout);
+    Scm_VM()->curerr = SCM_PORT(scm_stderr);
+    
     key_full   = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("full")));
     key_modest = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("modest")));
     key_line   = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("line")));

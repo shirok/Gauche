@@ -198,9 +198,6 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
 
     p->ctx = Scm_MakeReadContext(NULL);
     p->ctx->flags = SCM_READ_LITERAL_IMMUTABLE | SCM_READ_SOURCE_INFO;
-    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_CASE_FOLD)) {
-        p->ctx->flags |= SCM_READ_CASE_FOLD;
-    }
     
     vm->load_next = next_paths;
     vm->load_port = SCM_OBJ(port);
