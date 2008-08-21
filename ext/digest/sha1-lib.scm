@@ -124,22 +124,22 @@
          (cond
           [(SCM_U8VECTORP data)
            (SHAUpdate (& (-> sha1 ctx))
-                      (cast |const unsigned char*|
+                      (cast (const unsigned char*)
                             (SCM_UVECTOR_ELEMENTS (SCM_U8VECTOR data)))
                       (SCM_U8VECTOR_SIZE (SCM_U8VECTOR data)))]
           [(SCM_STRINGP data)
-           (let* ((b :: |const ScmStringBody*| (SCM_STRING_BODY data)))
+           (let* ((b :: (const ScmStringBody*) (SCM_STRING_BODY data)))
              (SHAUpdate (& (-> sha1 ctx))
-                        (cast |const unsigned char*| (SCM_STRING_BODY_START b))
+                        (cast (const unsigned char*) (SCM_STRING_BODY_START b))
                         (SCM_STRING_BODY_SIZE b)))]
           [else
            (Scm_Error "u8vector or string required, but got: %S" data)])))
 
  (define-cproc %sha1-final (sha1::<sha1-context>)
    (body <top>
-         (let* ((|digest[20]| :: |unsigned char|))
+         (let* ((|digest[20]| :: (unsigned char)))
            (SHAFinal digest (& (-> sha1 ctx)))
-           (result (Scm_MakeString (cast |const char*| digest)
+           (result (Scm_MakeString (cast (const char*) digest)
                                    20 20
                                    (logior SCM_STRING_INCOMPLETE
                                            SCM_STRING_COPYING))))))

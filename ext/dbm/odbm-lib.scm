@@ -179,7 +179,7 @@
  (define-cise-stmt TO_DATUM
    [(_ datum scm)
     (let ((tmp (gensym)))
-      `(let* ((,tmp :: |const ScmStringBody*| (SCM_STRING_BODY ,scm)))
+      `(let* ((,tmp :: (const ScmStringBody*) (SCM_STRING_BODY ,scm)))
          (set! (ref ,datum dptr)  (cast char* (SCM_STRING_BODY_START ,tmp)))
          (set! (ref ,datum dsize) (SCM_STRING_BODY_SIZE ,tmp))))])
 

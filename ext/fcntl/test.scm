@@ -2,6 +2,8 @@
 ;; testing fcntl
 ;;
 
+#!no-fold-case
+
 (use gauche.test)
 (test-start "fcntl")
 
@@ -17,26 +19,26 @@
 
   (sys-unlink "test.o")
 
-  (test "F_GETFL" |O_WRONLY|
+  (test "F_GETFL" O_WRONLY
         (lambda ()
           (call-with-output-file "test.o"
-            (lambda (p) (logand (sys-fcntl p |F_GETFL|) |O_ACCMODE|)))))
+            (lambda (p) (logand (sys-fcntl p F_GETFL) O_ACCMODE)))))
 
-  (test "F_GETFL" |O_RDONLY|
+  (test "F_GETFL" O_RDONLY
         (lambda ()
           (call-with-input-file "test.o"
-            (lambda (p) (logand (sys-fcntl p |F_GETFL|) |O_ACCMODE|)))))
+            (lambda (p) (logand (sys-fcntl p F_GETFL) O_ACCMODE)))))
 
   (test "F_GETFL" #t
         (lambda ()
           (call-with-input-file "test.o"
             (lambda (p)
-              (zero? (logand (sys-fcntl p |F_GETFL|) |O_APPEND|))))))
+              (zero? (logand (sys-fcntl p F_GETFL) O_APPEND))))))
 
   (test "F_GETFL" #f
         (lambda ()
           (call-with-output-file "test.o"
-            (lambda (p) (zero? (logand (sys-fcntl p |F_GETFL|) |O_APPEND|)))
+            (lambda (p) (zero? (logand (sys-fcntl p F_GETFL) O_APPEND)))
             :if-exists :append)))
 
   (sys-unlink "test.o")

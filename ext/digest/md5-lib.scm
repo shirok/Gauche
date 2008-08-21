@@ -127,18 +127,18 @@
                       (SCM_UVECTOR_ELEMENTS (SCM_U8VECTOR data))
                       (SCM_U8VECTOR_SIZE (SCM_U8VECTOR data)))]
           [(SCM_STRINGP data)
-           (let* ((b :: |const ScmStringBody *| (SCM_STRING_BODY data)))
+           (let* ((b :: (const ScmStringBody*) (SCM_STRING_BODY data)))
              (MD5Update (& (-> md5 ctx))
-                        (cast |const unsigned char*| (SCM_STRING_BODY_START b))
+                        (cast (const unsigned char*) (SCM_STRING_BODY_START b))
                         (SCM_STRING_BODY_SIZE b)))]
           [else
            (Scm_Error "u8vector or string required, but got: %S" data)])))
 
  (define-cproc %md5-final (md5::<md5-context>)
    (body <top>
-         (let* ((|digest[16]| :: |unsigned char|))
+         (let* ((|digest[16]| :: (unsigned char)))
            (MD5Final digest (& (-> md5 ctx)))
-           (result (Scm_MakeString (cast |char *| digest)
+           (result (Scm_MakeString (cast (char *) digest)
                                    16 16
                                    (logior SCM_STRING_INCOMPLETE
                                            SCM_STRING_COPYING))))))

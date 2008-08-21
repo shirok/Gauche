@@ -2,6 +2,8 @@
 ;; testing net
 ;;
 
+#!no-fold-case
+
 (use gauche.test)
 (use gauche.uvector)
 (use srfi-1)
@@ -188,7 +190,7 @@
               #t)))
 
 (test* "gethostbyaddr" #t
-       (let ((host (sys-gethostbyaddr "127.0.0.1" |AF_INET|)))
+       (let ((host (sys-gethostbyaddr "127.0.0.1" AF_INET)))
          (and host
               (or (equal? (slot-ref host 'name) "localhost")
                   (member "localhost" (slot-ref host 'aliases))
@@ -392,9 +394,9 @@
 (test* "udp server socket" #t
        (let ((pid (sys-fork)))
          (if (= pid 0)
-           (let ((sock (make-socket |PF_INET| |SOCK_DGRAM|))
+           (let ((sock (make-socket PF_INET SOCK_DGRAM))
                  (addr (make <sockaddr-in> :host :any :port *inet-port*)))
-             (socket-setsockopt sock |SOL_SOCKET| |SO_REUSEADDR| 1)
+             (socket-setsockopt sock SOL_SOCKET SO_REUSEADDR 1)
              (socket-bind sock addr)
              (receive (msg from) (socket-recvfrom sock 1024)
                (socket-sendto sock (string-upcase msg) from))
@@ -405,9 +407,9 @@
              #t))))
 
 (test* "udp client socket" "ABC"
-       (let ((sock (make-socket |PF_INET| |SOCK_DGRAM|))
+       (let ((sock (make-socket PF_INET SOCK_DGRAM))
              (addr (make <sockaddr-in> :host :loopback :port *inet-port*)))
-         (socket-setsockopt sock |SOL_SOCKET| |SO_REUSEADDR| 1)
+         (socket-setsockopt sock SOL_SOCKET SO_REUSEADDR 1)
          (socket-connect sock addr)
          (socket-send sock "abc")
          (begin0 (string-incomplete->complete (socket-recv sock 1024))
@@ -415,14 +417,14 @@
                  (sys-wait))))
 
 (test* "udp uvector API" '(#t #t)
-       (let ((s-sock (make-socket |PF_INET| |SOCK_DGRAM|))
-             (r-sock (make-socket |PF_INET| |SOCK_DGRAM|))
+       (let ((s-sock (make-socket PF_INET SOCK_DGRAM))
+             (r-sock (make-socket PF_INET SOCK_DGRAM))
              (s-addr (make <sockaddr-in> :host :loopback :port *inet-port*))
              (r-addr (make <sockaddr-in> :host :any :port *inet-port*))
              (from   (make <sockaddr-in>))
              (data   (make-u8vector 1024 #x3c))
              (buf    (make-u8vector 1024 #xa5)))
-         (socket-setsockopt r-sock |SOL_SOCKET| |SO_REUSEADDR| 1)
+         (socket-setsockopt r-sock SOL_SOCKET SO_REUSEADDR 1)
          (socket-bind r-sock r-addr)
          (socket-sendto s-sock data s-addr)
          (unwind-protect
