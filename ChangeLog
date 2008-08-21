@@ -1,3 +1,7 @@
+2008-08-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in (INSTALL_SUBHEADERS): added some missing headers.
+
 2008-08-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c (SCM_PORT_CASE_FOLD), src/gauche/port.h,
