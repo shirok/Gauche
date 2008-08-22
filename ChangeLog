@@ -1,5 +1,8 @@
 2008-08-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/getdir_darwin.c (get_install_dir): fixed a bug that releases
+	  unretained resource.  Based on a patch by Naoya Tozuka.
+
 	* lib/gauche/experimental/*: Moved some weird syntactic experiment
 	  into separate modules, so that it will be easy to track their users
 	  in case if we want to change or drop the support.  NOTE: the '$'
