@@ -1,5 +1,10 @@
 2008-08-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/experimental/*: Moved some weird syntactic experiment
+	  into separate modules, so that it will be easy to track their users
+	  in case if we want to change or drop the support.  NOTE: the '$'
+	  experiment is now in gauche.experimental.app. (used to be built-in).
+
 	* src/Makefile.in (INSTALL_SUBHEADERS): added some missing headers.
 
 2008-08-20  Shiro Kawai  <shiro@acm.org>
