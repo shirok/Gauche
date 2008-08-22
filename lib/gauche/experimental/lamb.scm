@@ -8,6 +8,6 @@
 
 (define-syntax ^
   (syntax-rules ()
-    [(^ formals . body) (lambda formals body)]))
+    [(^ formals . body) (lambda formals . body)]))
 
 (provide "gauche/experimental/lamb")
