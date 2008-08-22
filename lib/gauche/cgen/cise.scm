@@ -39,6 +39,7 @@
   (use gauche.parameter)
   (use gauche.cgen.unit)
   (use gauche.cgen.literal)
+  (use gauche.experimental.ref)
   (use util.match)
   (use util.list)
   (export cise-render cise-render-rec
@@ -50,23 +51,6 @@
           )
   )
 (select-module gauche.cgen.cise)
-
-;; NB: a small experiment to see how I feel this...
-;;  [@ a b c d] => (ref (ref (ref a b) c) d)
-;; In string interpolations I have to use ,(@ ...) instead of ,[@ ...], for
-;; the previous versions of interpolation code doesn't like #`",[...]".
-;; Ideally this should be a compiler-macro (we can't make it a macro,
-;; for we want to say (set! [@ x'y] val).
-(define @
-  (getter-with-setter
-   (case-lambda
-     ((obj selector) (ref obj selector))
-     ((obj selector . more) (apply @ (ref obj selector) more)))
-   (case-lambda
-     ((obj selector val) ((setter ref) obj selector val))
-     ((obj selector selector2 . rest)
-      (apply (setter ref) (ref obj selector) selector2 rest)))))
-;; end experiment
 
 ;;=============================================================
 ;; Parameters
@@ -91,8 +75,8 @@
 
 (define (make-env context decls)
   (make <cise-env> :context context :decls decls))
-(define (env-ctx env)   [@ env'context])
-(define (env-decls env) [@ env'decls])
+(define (env-ctx env)   [~ env'context])
+(define (env-decls env) [~ env'decls])
 (define (expr-ctx? env) (eq? (env-ctx env) 'expr))
 (define (stmt-ctx? env) (eq? (env-ctx env) 'stmt))
 
@@ -108,7 +92,7 @@
     (error "cise: statment appears in an expression context:" form)))
 
 (define (env-decl-add! env decl)
-  (push! [@ env'decls] decl))
+  (push! [~ env'decls] decl))
 
 (define (wrap-expr form env)
   (if (stmt-ctx? env) `(,form ";") form))
@@ -124,9 +108,9 @@
   (if (not (cise-emit-source-line))
     '()
     (match (debug-source-info form)
-      (((? string? file) line)
-       `((source-info ,file ,line)))
-      (_ '()))))
+      [((? string? file) line)
+       `((source-info ,file ,line))]
+      [_ '()])))
    
 ;;=============================================================
 ;; Expander

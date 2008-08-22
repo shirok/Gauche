@@ -42,7 +42,6 @@
 
 (define-module file.util
   (use srfi-1)
-  (use srfi-2)
   (use srfi-11)
   (use srfi-13)
   (use util.list)
@@ -114,10 +113,10 @@
 (define (%directory-filter-compose opts)
   (let-keywords opts ((children? #f)
                       (filter #f))
-    ($* every-pred
-        (cond-list
-         [children? (lambda (e) (not (member (sys-basename e) '("." ".."))))]
-         [filter]))))
+    (apply every-pred
+           (cond-list
+            [children? (lambda (e) (not (member (sys-basename e) '("." ".."))))]
+            [filter]))))
 
 ;; directory-list DIR &keyword ADD-PATH? FILTER-ADD-PATH? CHILDREN? FILTER
 (define (directory-list dir . opts)

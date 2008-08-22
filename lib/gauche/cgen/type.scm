@@ -37,27 +37,11 @@
   (use srfi-13)
   (use text.tr)
   (use gauche.mop.instance-pool)
+  (use gauche.experimental.ref)
   (export <cgen-type> cgen-type-from-name make-cgen-type
           cgen-box-expr cgen-unbox-expr cgen-pred-expr cgen-return-stmt)
   )
 (select-module gauche.cgen.type)
-
-;; NB: a small experiment to see how I feel this...
-;;  [@ a b c d] => (ref (ref (ref a b) c) d)
-;; In string interpolations I have to use ,(@ ...) instead of ,[@ ...], for
-;; the previous versions of interpolation code doesn't like #`",[...]".
-;; Ideally this should be a compiler-macro (we can't make it a macro,
-;; for we want to say (set! [@ x'y] val).
-(define @
-  (getter-with-setter
-   (case-lambda
-     ((obj selector) (ref obj selector))
-     ((obj selector . more) (apply @ (ref obj selector) more)))
-   (case-lambda
-     ((obj selector val) ((setter ref) obj selector val))
-     ((obj selector selector2 . rest)
-      (apply (setter ref) (ref obj selector) selector2 rest)))))
-;; end experiment
 
 ;;===================================================================
 ;; Type handling
@@ -160,18 +144,18 @@
    ))
 
 (define (cgen-type-from-name name)
-  (or (find (lambda (type) (eq? [@ type'name] name))
+  (or (find (lambda (type) (eq? [~ type'name] name))
             (instance-pool->list <cgen-type>))
       ;; when 'maybe' qualified type is used for the first time, we
       ;; create it from the base type.
       (and-let* ((m (#/\?$/ (symbol->string name)))
                  (basename (string->symbol (m 'before)))
                  (basetype (cgen-type-from-name basename)))
-        (make <cgen-type> :name name :c-type [@ basetype'c-type]
-              :description #`",(@ basetype'description) or #f"
-              :c-predicate [@ basetype'c-predicate]
-              :unboxer     [@ basetype'unboxer]
-              :boxer       [@ basetype'boxer]
+        (make <cgen-type> :name name :c-type [~ basetype'c-type]
+              :description #`",[~ basetype'description] or #f"
+              :c-predicate [~ basetype'c-predicate]
+              :unboxer     [~ basetype'unboxer]
+              :boxer       [~ basetype'boxer]
               :maybe       basetype))))
 
 ;; Create a new cgen-type.
@@ -274,19 +258,19 @@
 ;;
 
 (define (cgen-box-expr type c-expr)
-  (if [@ type'maybe]
-    #`"SCM_MAKE_MAYBE(,[@ type'boxer],, ,c-expr)"
-    #`",[@ type'boxer](,c-expr)"))
+  (if [~ type'maybe]
+    #`"SCM_MAKE_MAYBE(,[~ type'boxer],, ,c-expr)"
+    #`",[~ type'boxer](,c-expr)"))
 
 (define (cgen-unbox-expr type c-expr)
-  (if [@ type'maybe]
-    #`"SCM_MAYBE(,[@ type'unboxer],, ,c-expr)"
-    #`",[@ type'unboxer](,c-expr)"))
+  (if [~ type'maybe]
+    #`"SCM_MAYBE(,[~ type'unboxer],, ,c-expr)"
+    #`",[~ type'unboxer](,c-expr)"))
 
 (define (cgen-pred-expr type c-expr)
-  (if [@ type'maybe]
-    #`"SCM_MAYBE_P(,[@ type'c-predicate],, ,c-expr)"
-    #`",[@ type'c-predicate](,c-expr)"))
+  (if [~ type'maybe]
+    #`"SCM_MAYBE_P(,[~ type'c-predicate],, ,c-expr)"
+    #`",[~ type'c-predicate](,c-expr)"))
 
 (define (cgen-return-stmt expr)
   #`"SCM_RETURN(,expr);")

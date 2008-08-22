@@ -45,25 +45,11 @@
   (use gauche.cgen.unit)
   (use gauche.cgen.literal)
   (use gauche.cgen.cise)
+  (use gauche.experimental.ref)
   (export <cgen-stub-unit> <cgen-stub-error>
           cgen-stub-parser cgen-stub-parse-form)
   )
 (select-module gauche.cgen.stub)
-
-;; NB: a small experiment to see how I feel this...
-;;  [~ a b c d] => (ref (ref (ref a b) c) d)
-;; Ideally this should be a compiler-macro (we can't make it a macro,
-;; for we want to say (set! [~ x'y] val).
-(define ~
-  (getter-with-setter
-   (case-lambda
-     ((obj selector) (ref obj selector))
-     ((obj selector . more) (apply ~ (ref obj selector) more)))
-   (case-lambda
-     ((obj selector val) ((setter ref) obj selector val))
-     ((obj selector selector2 . rest)
-      (apply (setter ref) (ref obj selector) selector2 rest)))))
-;; end experiment
 
 ;; Summary of forms
 ;;

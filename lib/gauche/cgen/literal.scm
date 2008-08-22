@@ -40,6 +40,7 @@
   (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.cgen.unit)
+  (use gauche.experimental.ref)
   (export <cgen-literal> cgen-c-name cgen-cexpr cgen-make-literal
           cgen-literal-static?
 
@@ -51,23 +52,6 @@
           )
   )
 (select-module gauche.cgen.literal)
-
-;; NB: a small experiment to see how I feel this...
-;;  [@ a b c d] => (ref (ref (ref a b) c) d)
-;; In string interpolations I have to use ,(@ ...) instead of ,[@ ...], for
-;; the previous versions of interpolation code doesn't like #`",[...]".
-;; Ideally this should be a compiler-macro (we can't make it a macro,
-;; for we want to say (set! [@ x'y] val).
-(define @
-  (getter-with-setter
-   (case-lambda
-     ((obj selector) (ref obj selector))
-     ((obj selector . more) (apply @ (ref obj selector) more)))
-   (case-lambda
-     ((obj selector val) ((setter ref) obj selector val))
-     ((obj selector selector2 . rest)
-      (apply (setter ref) (ref obj selector) selector2 rest)))))
-;; end experiment
 
 ;;=============================================================
 ;; Static objects
@@ -128,15 +112,15 @@
     (and-let* ((unit (cgen-current-unit)))
       (let* ((cppc (cgen-cpp-condition))
              (dl   (find (lambda (dl)
-                           (and (eq? [@ dl'c-type] c-type)
-                                (eq? [@ dl'category] category)
-                                (equal? [@ dl'cpp-condition] cppc)))
-                         [@ unit'static-data-list])))
+                           (and (eq? [~ dl'c-type] c-type)
+                                (eq? [~ dl'category] category)
+                                (equal? [~ dl'cpp-condition] cppc)))
+                         [~ unit'static-data-list])))
         (or dl
             ;; TODO: Replace this with rlet1 once 0.8.14 is released!
             (let1 new (make <cgen-static-data-list>
                         :category category :c-type c-type)
-              (push! [@ unit'static-data-list] new)
+              (push! [~ unit'static-data-list] new)
               new)))))
   
   (let-optionals* opts ((category 'runtime)
@@ -146,17 +130,17 @@
           (value-type? (not init-thunk))
           (ithunk (or init-thunk
                       (if (eq? c-type 'ScmObj) "SCM_UNBOUND" "NULL"))))
-      (let1 count [@ dl'count]
+      (let1 count [~ dl'count]
         (slot-push! dl'init-thunks ithunk)
-        (inc! [@ dl'count])
+        (inc! [~ dl'count])
         (if value-type?
           (format "~a.~a[~a]" ; no cast, for this'll be also used as lvalue.
                   (static-data-c-struct-name category)
-                  [@ dl'c-member-name]
+                  [~ dl'c-member-name]
                   count)
           (format "SCM_OBJ(&~a.~a[~a])"
                   (static-data-c-struct-name category)
-                  [@ dl'c-member-name]
+                  [~ dl'c-member-name]
                   count))))))
 
 (define (cgen-allocate-static-array category c-type init-thunks)
@@ -168,7 +152,7 @@
 (define-method cgen-emit-static-data ((unit <cgen-unit>))
 
   (define (emit-one-category category dls)
-    (let1 dls (filter (lambda (dl) (eq? [@ dl'category] category)) dls)
+    (let1 dls (filter (lambda (dl) (eq? [~ dl'category] category)) dls)
       (unless (null? dls)
         (emit-struct-def category dls)
         (print "{")
@@ -181,23 +165,23 @@
               (if (eq? category 'constant) "SCM_CGEN_CONST " "")
               name)
       (dolist (dl dls)
-        (cond ([@ dl'cpp-condition] => (cut print "#if "<>)))
-        (format #t "  ~a ~a[~a];\n" [@ dl'c-type] [@ dl'c-member-name]
-                [@ dl'count])
-        (cond ([@ dl'cpp-condition] => (cut print "#endif /*"<>"*/"))))
+        (cond ([~ dl'cpp-condition] => (cut print "#if "<>)))
+        (format #t "  ~a ~a[~a];\n" [~ dl'c-type] [~ dl'c-member-name]
+                [~ dl'count])
+        (cond ([~ dl'cpp-condition] => (cut print "#endif /*"<>"*/"))))
       (format #t "} ~a = " name)))
 
   (define (emit-initializers dl)
-    (cond ([@ dl'cpp-condition] => (cut print "#if "<>)))
-    (print "  {   /* "[@ dl'c-type]" "[@ dl'c-member-name]" */")
-    (dolist (thunk (reverse [@ dl'init-thunks]))
+    (cond ([~ dl'cpp-condition] => (cut print "#if "<>)))
+    (print "  {   /* "[~ dl'c-type]" "[~ dl'c-member-name]" */")
+    (dolist (thunk (reverse [~ dl'init-thunks]))
       (if (string? thunk)
         (format #t "    ~a,\n" thunk)
         (begin (format #t "    ") (thunk) (print ","))))
     (print "  },")
-    (cond ([@ dl'cpp-condition] => (cut print "#endif /*"<>"*/"))))
+    (cond ([~ dl'cpp-condition] => (cut print "#endif /*"<>"*/"))))
 
-  (and-let* ((dls [@ unit'static-data-list]))
+  (and-let* ((dls [~ unit'static-data-list]))
     (unless (null? dls)
       ;; This piece of code is required, for Win32 DLL doesn't like
       ;; structures to be const if it contains SCM_CLASS_PTR.  Doh!
@@ -270,7 +254,7 @@
 
 (define-method initialize ((node <cgen-literal>) initargs)
   (next-method)
-  (when [@ node'c-name]
+  (when [~ node'c-name]
     (and-let* ((unit (cgen-current-unit)))
       (register-literal-value unit node)
       (slot-push! unit 'toplevels node))))
@@ -278,7 +262,7 @@
 ;; Fallback methods
 ;;
 (define-method cgen-c-name ((node <cgen-literal>))
-  (and-let* ((n [@ node'c-name]))
+  (and-let* ((n [~ node'c-name]))
     (if (string? n) n (n))))
 
 (define-method cgen-cexpr ((node <cgen-literal>))
@@ -290,7 +274,7 @@
 (define-method cgen-literal-static? (self) #t)
 
 (define-method cgen-emit-xtrn ((node <cgen-literal>))
-  (when (and [@ node'extern?] (cgen-c-name node))
+  (when (and [~ node'extern?] (cgen-c-name node))
     (print "extern ScmObj " (cgen-c-name node) ";")))
 
 ;; define-cgen-literal macro
@@ -393,7 +377,7 @@
      ((string? val)
       (logand (string-hash val) mask))
      ((identifier? val)
-      (logand (+ (rec [@ val'name]) (rec [@ val'module])) mask))
+      (logand (+ (rec [~ val'name]) (rec [~ val'module])) mask))
      (else (eqv-hash val))))
   (modulo (rec literal) .literal-hash-size.))
 
@@ -410,28 +394,28 @@
      ((string? x) (and (string? y) (string=? x y)))
      ((identifier? x)
       (and (identifier? y)
-           (eq? [@ x'name] [@ y'name])
-           (eq? [@ x'module] [@ y'module])))
+           (eq? [~ x'name] [~ y'name])
+           (eq? [~ x'module] [~ y'module])))
      (else (and (eq? (class-of x) (class-of y)) (eqv? x y)))))
   (rec x y))
 
 (define (ensure-literal-hash unit)
-  (or [@ unit'literals]
+  (or [~ unit'literals]
       ;; TODO: Replace this with rlet1 once 0.8.14 is released!
       (let1 hash (make-vector .literal-hash-size. '())
-        (set! [@ unit'literals] hash)
+        (set! [~ unit'literals] hash)
         hash)))
 
 (define (register-literal-value unit literal-obj)
   (let ((lh   (ensure-literal-hash unit))
-        (cppc [@ literal-obj'cpp-condition])
-        (h    (literal-value-hash [@ literal-obj'value])))
+        (cppc [~ literal-obj'cpp-condition])
+        (h    (literal-value-hash [~ literal-obj'value])))
     (or (and-let* ((entry (find (lambda (e)
                                   (and (equal? (caar e) cppc)
-                                       (literal-value=? [@ literal-obj'value]  (cdar e))))
+                                       (literal-value=? [~ literal-obj'value]  (cdar e))))
                                 (vector-ref lh h))))
           (set-cdr! entry literal-obj))
-        (push! (vector-ref lh h) (acons cppc [@ literal-obj'value] literal-obj)))))
+        (push! (vector-ref lh h) (acons cppc [~ literal-obj'value] literal-obj)))))
 
 (define (lookup-literal-value unit val)
   (let ((lh (ensure-literal-hash unit))
@@ -450,7 +434,7 @@
   (make (value)
     (if value *cgen-scheme-true* *cgen-scheme-false*))
   (cexpr (self)
-    (if [@ self'value] "SCM_TRUE" "SCM_FALSE")))
+    (if [~ self'value] "SCM_TRUE" "SCM_FALSE")))
 
 (define *cgen-scheme-true*
   (make <cgen-scheme-boolean> :c-name #f :value #t))
@@ -463,7 +447,7 @@
   (make (value)
     (make <cgen-scheme-char> :c-name #f :value value))
   (cexpr (self)
-    (format "SCM_MAKE_CHAR(~a)" (char->integer [@ self'value]))))
+    (format "SCM_MAKE_CHAR(~a)" (char->integer [~ self'value]))))
 
 ;; ()
 (define-cgen-literal <cgen-scheme-null> <null>
@@ -511,7 +495,7 @@
   (init (self)
     (print "  " (cgen-c-name self)
            " = Scm_Intern(SCM_STRING("
-           (cgen-cexpr [@ self'symbol-name])
+           (cgen-cexpr [~ self'symbol-name])
            "));"))
   (static (self) #f)
   )
@@ -527,7 +511,7 @@
   (init (self)
     (print "  " (cgen-c-name self)
            " = Scm_MakeKeyword(SCM_STRING("
-           (cgen-cexpr [@ self'keyword-name])
+           (cgen-cexpr [~ self'keyword-name])
            "));"))
   (static (self) #f)
   )
@@ -552,15 +536,15 @@
             :string-rep (cgen-literal (number->string value 16))))))
   (cexpr (self)
     (or (cgen-c-name self)
-        (if (positive? [@ self'value])
-          (format "SCM_MAKE_INT(~aU)" [@ self'value])
-          (format "SCM_MAKE_INT(~a)" [@ self'value]))))
+        (if (positive? [~ self'value])
+          (format "SCM_MAKE_INT(~aU)" [~ self'value])
+          (format "SCM_MAKE_INT(~a)" [~ self'value]))))
   (init (self)
     (when (cgen-c-name self)
       ;; Kludge: we just assume the machine's 'long' can hold at least
       ;; 32 bits.  The right thing may be to insert #ifdefs to check if
       ;; we can use 64bit literal, but we'll leave it for later revision.
-      (let ((val   [@ self'value])
+      (let ((val   [~ self'value])
             (cname (cgen-c-name self)))
         (cond ((< (- (expt 2 31)) val 0)
                (print "  " cname " = Scm_MakeInteger("val");"))
@@ -568,7 +552,7 @@
                (print "  " cname " = Scm_MakeIntegerU("val"U);"))
               (else
                (print "  " cname " = Scm_StringToNumber(SCM_STRING("
-                      (cgen-cexpr [@ self'string-rep])"), 16, TRUE);"))))))
+                      (cgen-cexpr [~ self'string-rep])"), 16, TRUE);"))))))
   (static (self)
     (if (cgen-c-name self) #f #t))
   )
@@ -583,9 +567,9 @@
           :denom (and (exact? value) (cgen-make-literal (denominator value)))))
   (cexpr (self) (cgen-c-name self))
   (init (self)
-    (let ((v [@ self'value]))
+    (let ((v [~ self'value]))
       (if (exact? v)
-        (print "  "(cgen-c-name self)" = Scm_MakeRational("(cgen-cexpr [@ self'numer])","(cgen-cexpr [@ self'denom])");")
+        (print "  "(cgen-c-name self)" = Scm_MakeRational("(cgen-cexpr [~ self'numer])","(cgen-cexpr [~ self'denom])");")
         (print "  "(cgen-c-name self)" = Scm_MakeFlonum("v");"))))
   (static (self) #f))
 
@@ -596,8 +580,8 @@
           :c-name (cgen-allocate-static-datum)))
   (cexpr (self) (cgen-c-name self))
   (init (self)
-    (let ((real (real-part [@ self'value]))
-          (imag (imag-part [@ self'value])))
+    (let ((real (real-part [~ self'value]))
+          (imag (imag-part [~ self'value])))
       (print "  "(cgen-c-name self)" = Scm_MakeComplex("real", "imag");")))
   (static (self) #f))
 
@@ -617,12 +601,12 @@
             :c-name sobj)))
   (init (self)
     (let ((cname (cgen-cexpr self)))
-      (unless (cgen-literal-static? [@ self'car])
+      (unless (cgen-literal-static? [~ self'car])
         (format #t "  SCM_SET_CAR(~a, ~a);\n" cname
-                (cgen-cexpr [@ self'car])))
-      (unless (cgen-literal-static? [@ self'cdr])
+                (cgen-cexpr [~ self'car])))
+      (unless (cgen-literal-static? [~ self'cdr])
         (format #t "  SCM_SET_CDR(~a, ~a);\n"
-                cname (cgen-cexpr [@ self'cdr])))
+                cname (cgen-cexpr [~ self'cdr])))
       ))
   )
 
@@ -655,7 +639,7 @@
      (lambda (ind elt)
        (unless (cgen-literal-static? elt)
          (print "  ((ScmObj*)"(cgen-c-name self)")["(+ ind 2)"] = "(cgen-cexpr elt)";")))
-     [@ self'literals]))
+     [~ self'literals]))
   )
 
 ;; char-set -----------------------------------------------------
@@ -668,7 +652,7 @@
   (init (self)
     (print "  {")
     (print "     ScmCharSet *cs = SCM_CHARSET(Scm_MakeEmptyCharSet());")
-    (dolist (range (%char-set-ranges [@ self'value]))
+    (dolist (range (%char-set-ranges [~ self'value]))
       (format #t "     Scm_CharSetAddRange(cs, SCM_CHAR(~a), SCM_CHAR(~a));\n"
               (car range) (cdr range)))
     (print "     "(cgen-c-name self)" = SCM_OBJ(cs);")
@@ -688,8 +672,8 @@
   (init (self)
     (format #t "  ~a = Scm_RegComp(SCM_STRING(~a), ~a);\n"
             (cgen-c-name self)
-            (cgen-c-name [@ self'source-string])
-            (if [@ self'case-fold?]
+            (cgen-c-name [~ self'source-string])
+            (if [~ self'case-fold?]
               "SCM_REGEXP_CASE_FOLD"
               "0")))
   (static (self) #f))

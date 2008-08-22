@@ -65,6 +65,8 @@ SCMFILES = srfi-0.scm \
        gauche/cgen/cise.scm gauche/cgen/type.scm gauche/cgen/stub.scm \
        gauche/package.scm gauche/package/build.scm gauche/package/fetch.scm \
        gauche/package/util.scm gauche/package/compile.scm \
+       gauche/experimental/ref.scm gauche/experimental/lamb.scm \
+       gauche/experimental/app.scm \
        binary/pack.scm \
        dbi.scm dbd/null.scm dbm.scm dbm/fsdbm.scm \
        math/const.scm \
