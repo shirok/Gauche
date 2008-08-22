@@ -120,7 +120,7 @@
           (:macro rxmatch-cond) (:macro rxmatch-case))
 
 (autoload gauche.procedure
-          compose complement pa$ map$ for-each$ apply$
+          compose .$ complement ~$ pa$ map$ for-each$ apply$
           count$ fold$ fold-right$ reduce$ reduce-right$
           filter$ partition$ remove$ find$ find-tail$
           any$ every$ delete$ member$ assoc$

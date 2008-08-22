@@ -4,6 +4,9 @@
 	  into separate modules, so that it will be easy to track their users
 	  in case if we want to change or drop the support.  NOTE: the '$'
 	  experiment is now in gauche.experimental.app. (used to be built-in).
+	* src/autoloads.scm, lib/gauche/procedure.scm: Moved $ and $* to
+	  gauche.experimental.app.  Experimentally added .$ as an alias of
+	  compose.
 
 	* src/Makefile.in (INSTALL_SUBHEADERS): added some missing headers.
 
