@@ -30,7 +30,7 @@ GENERATED       = gauche/vm/insn.scm gauche/config.scm
 CONFIG_GENERATED = Makefile slib.scm
 
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
-           gauche/package gauche/cgen \
+           gauche/package gauche/cgen gauche/experimental \
 	   srfi-14 srfi-29 \
            binary dbd dbm math util compat file rfc text www www/cgi
 
