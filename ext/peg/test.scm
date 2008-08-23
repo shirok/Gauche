@@ -239,7 +239,7 @@
 
 (test-fail "$do and $or" '(3 "foo")
            ($do (v ($or ($string "foo") ($string "bar")))
-                ($string (semantic-value-finalize! v)))
+                ($string (rope-finalize v)))
            "foobar")
 
 ;; $fold-parsers and $fold-parsers-right
@@ -611,7 +611,7 @@
                     ($return `(,t ,@(apply append r)))))
          (element ($do* [tagname ($try open-tag)]
                         [body body]
-                        [ (close-tag (semantic-value-finalize! tagname)) ]
+                        [ (close-tag (rope-finalize tagname)) ]
                         ($return (cons tagname body)))))
   (test-succ "tag element" '("a" "")
              element "<a></a>")

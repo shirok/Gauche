@@ -67,7 +67,7 @@
   ($do %begin-array
        [lis ($sep-by %value %value-separator)]
        %end-array
-       ($return (list->vector (semantic-value-finalize! lis)))))
+       ($return (list->vector (rope-finalize lis)))))
 
 (define %number
   (let* ((%sign ($or ($do [($char #\-)] ($return -1))

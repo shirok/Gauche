@@ -1,3 +1,12 @@
+2008-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg-lib.scm: Renamed semantic-value-finalize! to
+	  rope-finalize, in order to reflect its function more clearly,
+	  and also avoid unecessary consing.  Added $<<.
+	  (This is still a temporary snapshot; large restructuring is
+	  planned.)
+	* lib/rfc/json.scm: Changed accordingly.
+
 2008-08-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/getdir_darwin.c (get_install_dir): fixed a bug that releases

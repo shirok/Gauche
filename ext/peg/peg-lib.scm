@@ -50,7 +50,7 @@
 
           peg-run-parser peg-parse-string peg-parse-port
           $return $fail $expect 
-          $do $do* $try $seq $or $fold-parsers $fold-parsers-right
+          $do $do* $<< $try $seq $or $fold-parsers $fold-parsers-right
           $many $many1 $skip-many
           $repeat $optional
           $alternate
@@ -58,7 +58,8 @@
           $count $between
           $not $many-till $chain-left $chain-right
           $lazy
-          
+
+          $s $c $y
           $string $string-ci 
           $char $one-of $none-of $many-chars
           $satisfy
@@ -66,7 +67,7 @@
           anychar upper lower letter alphanum digit
           hexdigit newline tab space spaces eof
 
-          $->rope semantic-value-finalize!
+          $->rope rope->string rope-finalize
           )
   )
 
@@ -172,7 +173,7 @@
 (define (peg-run-parser parser stream)
   (receive (r v s) (parser stream)
     (if (parse-success? r)
-      (semantic-value-finalize! v)
+      (rope-finalize v)
       (raise (make-peg-parse-error r v s)))))
 
 ;; entry points
@@ -324,8 +325,8 @@
 ;;; Combinators
 ;;;
 
-;; $do  clause ... body
-;; $do* clause ... body
+;; $do  [: args] clause ... body
+;; $do* [: args] clause ... body
 ;;   where
 ;;     clause := (var parser)
 ;;            |  (parser)
@@ -417,6 +418,12 @@
                        (values ,r1 ,v1 ,s1)
                        ,(loop s1 rest))))])]))))
   )
+
+;; $<< proc parser ...
+;;   == ($do [tmp parser] ... ($return (proc tmp ...)))
+(define-macro ($<< proc . parsers)
+  (let ((temps (map (lambda (_) (gensym)) parsers)))
+    `($do ,@(map list temps parsers) ($return (,proc ,@temps)))))
 
 ;; $or p1 p2 ...
 ;;   Ordered choice.
@@ -777,23 +784,6 @@
                ($return h)))
      s)))
 
-;;;============================================================
-;;; Intermediate structure constructor
-;;;
-(define ($->rope parse)
-  ($do (v parse) ($return (make-rope v))))
-
-(define (semantic-value-finalize! obj)
-  (cond ((rope? obj) (rope->string obj))
-        ((pair? obj)
-         (cons (semantic-value-finalize! (car obj))
-               (semantic-value-finalize! (cdr obj))))
-        (else obj)))
-
-;;;============================================================
-;;; String parsers
-;;;
-
 (define-syntax $satisfy
   (syntax-rules (cut <>)
     [(_ (cut p x <>) expect)            ;TODO: hygiene!
@@ -808,6 +798,28 @@
            (return-result (car s) (cdr s))
            (return-failure/expect expect s))
          (return-failure/expect expect s)))]))
+
+;;;============================================================
+;;; Intermediate structure constructor
+;;;
+
+;;;============================================================
+;;; String parsers
+;;;
+
+(define ($->rope parser)   ($<< make-rope parser))
+(define ($->string parser) ($<< (.$ rope->string make-rope) parser))
+(define ($->symbol parser) ($<< (.$ string->symbol rope->string make-rope) parser))
+
+(define (rope-finalize obj)
+  (cond [(rope? obj) (rope->string obj)]
+        [(pair? obj)
+         (let ((ca (rope-finalize (car obj)))
+               (cd (rope-finalize (cdr obj))))
+           (if (and (eq? ca (car obj)) (eq? cd (cdr obj)))
+             obj
+             (cons ca cd)))]
+        [else obj]))
 
 (define-values ($string $string-ci)
   (let-syntax
@@ -837,6 +849,13 @@
 (define ($one-of charset)
   ($satisfy (cut char-set-contains? charset <>)
             charset))
+
+(define ($s x) ($string x))
+
+(define ($c x) ($char x))
+
+(define ($y x)
+  ($<< (compose string->symbol rope->string) ($s x)))
 
 ;; ($many-chars charset [min [max]]) == ($many ($one-of charset) [min [max]])
 ;;   with possible optimization.
@@ -870,7 +889,7 @@
 (define-char-parser tab      #[\t]          "tab")
 (define-char-parser space    #[\s]          "space")
 
-(define spaces ($->rope ($many space)))
+(define spaces ($<< make-rope ($many space)))
 
 (define (eof s)
   (if (peg-stream-peek! s)
