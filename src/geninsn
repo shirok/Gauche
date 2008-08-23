@@ -44,6 +44,7 @@
 (use gauche.sequence)
 (use gauche.vm.insn-core)
 (use gauche.mop.instance-pool)
+(use gauche.experimental.app)
 (use srfi-13)
 (use text.tr)
 (use file.util)
