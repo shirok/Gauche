@@ -1,5 +1,10 @@
 2008-08-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/syslib.stub (sys-lstat): On windows, make it behave just like
+	  sys-stat.  Windows doesn't have lstat(), but since it works the
+	  same as stat() when path is not a symlink, it is reasonable to
+	  make it so (and it reduces one headache of cross-platform dev.)
+
 	* ext/peg/peg-lib.scm: Renamed semantic-value-finalize! to
 	  rope-finalize, in order to reflect its function more clearly,
 	  and also avoid unecessary consing.  Added $<<.

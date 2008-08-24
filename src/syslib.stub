@@ -514,22 +514,29 @@
 
 (define-type <sys-stat> "ScmSysStat*")
 
+;; commn code for stat and lstat
+(define-cise-stmt stat-common
+  [(_ statfn)
+   `(let* ((s :: ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat)))
+           (r :: int))
+      (SCM_SYSCALL r (,statfn path (& (-> s statrec))))
+      (when (< r 0) (Scm_SysError "%s failed for %s" ,(x->string statfn) path))
+      (result s))])
+   
 (define-cproc sys-stat (path::<const-cstring>)
-  (body <sys-stat>
-        (let* ((s :: ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat)))
-               (r :: int))
-          (SCM_SYSCALL r (stat path (& (-> s statrec))))
-          (when (< r 0) (Scm_SysError "stat failed for %s" path))
-          (result s))))
+  (body <sys-stat> (stat-common stat)))
 
+;; On Windows we don't have lstat.  Omitting sys-lstat from Windows is
+;; a bit inconvenient, however, to write a portable code if we do so.
+;; Since lstat() works identical to stat() if the path is a symlink, and
+;; on Windows path can never be a symlink, so we can just make sys-lstat
+;; work the same as sys-stat.
 (when "!defined(GAUCHE_WINDOWS)"
   (define-cproc sys-lstat (path::<const-cstring>)
-    (body <sys-stat>
-          (let* ((s :: ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat)))
-                 (r :: int))
-            (SCM_SYSCALL r (lstat path (& (-> s statrec))))
-            (when (< r 0) (Scm_SysError "lstat failed for %s" path))
-            (result s)))))
+    (body <sys-stat> (stat-common lstat))))
+(when "defined(GAUCHE_WINDOWS)"
+  (define-cproc sys-lstat (path::<const-cstring>)
+    (body <sys-stat> (stat-common stat))))
 
 (define-cproc sys-fstat (port-or-fd)
   (body <top>
