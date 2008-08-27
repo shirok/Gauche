@@ -163,7 +163,7 @@
   )
 
 ;;;=======================================================
-;;; Inline stub
+;;; Inline stub and declarations
 ;;;
 
 ;; The form (inline-stub ...) allows genstub directives embedded
@@ -176,6 +176,11 @@
 (define-macro (inline-stub . _)
   (error "The inline-stub form can only be used for Scheme source \
           to be pre-compiled."))
+
+;; The form (declare ...) may be used in wider purpose.  For the time
+;; being we use it in limited purposes for compilers.  In interpreter
+;; we just ignore it.
+(define-macro (declare . _) #f)
 
 ;;;=======================================================
 ;;; List utilities

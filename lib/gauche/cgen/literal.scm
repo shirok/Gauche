@@ -496,7 +496,7 @@
     (print "  " (cgen-c-name self)
            " = Scm_Intern(SCM_STRING("
            (cgen-cexpr [~ self'symbol-name])
-           "));"))
+           ")); /* "(cgen-safe-comment [~ self'value])" */"))
   (static (self) #f)
   )
 
@@ -512,7 +512,7 @@
     (print "  " (cgen-c-name self)
            " = Scm_MakeKeyword(SCM_STRING("
            (cgen-cexpr [~ self'keyword-name])
-           "));"))
+           ")); /* "(cgen-safe-comment [~ self'value])" */"))
   (static (self) #f)
   )
 

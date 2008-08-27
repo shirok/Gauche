@@ -1,3 +1,16 @@
+2008-08-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/unit.scm (cgen-safe-comment): Added.
+	* lib/gauche/cgen/literal.scm, src/gencomp: Emit more comments into
+	  generated C file for ease of debugging.
+
+	* src/gencomp, src/scmlib.scm (declare): Added ad-hoc 'declare' syntax
+	  to support keep-private-macro in source instead of command-line args
+	  for gencomp.  This is a purely temporary solution, since it won't
+	  be needed once we can byte-compile hygienic macros.  It is
+	  convenient for the time being to produce some extensions, but it
+	  will disappear soon.
+
 2008-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub (sys-lstat): On windows, make it behave just like

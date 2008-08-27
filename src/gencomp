@@ -51,6 +51,7 @@
 (use gauche.parameter)
 (use gauche.sequence)
 (use gauche.parseopt)
+(use gauche.experimental.ref)
 (use file.util)
 (use util.match)
 (use util.list)
@@ -238,6 +239,7 @@
 (define-global-pred =lambda?          lambda)
 (define-global-pred =define-constant? define-constant)
 (define-global-pred =inline-stub?     inline-stub)
+(define-global-pred =declare?         declare)
 
 ;; compile FORM, and conses the toplevel code (something to be
 ;; executed at toplevel).
@@ -287,9 +289,9 @@
            (cgen-init
             (format "  Scm_Define(mod, SCM_SYMBOL(~a), \
                              Scm_MakeMacroTransformerOld(SCM_SYMBOL(~a),\
-                                 SCM_PROCEDURE(Scm_MakeClosure(~a, NULL))));"
+                                 SCM_PROCEDURE(Scm_MakeClosure(~a, NULL)))); /* ~s */"
                     (cgen-cexpr var) (cgen-cexpr var)
-                    (cgen-cexpr code)))))
+                    (cgen-cexpr code) name))))
        seed]
       [((? =define-macro?) name . _)
        (when (symbol-exported? name)
@@ -300,6 +302,16 @@
                  (memq name (private-macros-to-keep)))
          (write-ext-module form))
        (eval form (compile-module)) seed]
+      ;; TODO - we need more general framework supporting various declarations.
+      ;; for the time being, this ad-hoc solution suffice our needs.
+      [((? =declare?) decls ...)
+       (for-each (match-lambda
+                   [('keep-private-macro . macros)
+                    (private-macros-to-keep (append (private-macros-to-keep)
+                                                       macros))]
+                   [other (error "Unknown declaration:" other)])
+                 decls)
+       seed]
       ;; Finally, ordinary expressions.
       [((? =define?) (name . args) . body)
        (compile-toplevel-form `(define ,name (lambda ,args ,@body)) seed)]
@@ -309,8 +321,8 @@
               (code (cgen-literal (closure-code closure)))
               (var  (cgen-literal name)))
          (cgen-init
-          (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeClosure(~a, NULL));"
-                  (cgen-cexpr var) (cgen-cexpr code))))
+          (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeClosure(~a, NULL)); /* ~s */"
+                  (cgen-cexpr var) (cgen-cexpr code) name)))
        seed]
       [((? =define-constant?) (? symbol?) expr)
        (eval form (compile-module))
@@ -329,13 +341,9 @@
       )))
 
 ;; check to see the compiled code only contains CONSTU-RET insn.
-;; the 'size slot test is a temporary one to make this work with 0.8.4
-;; preview version.  once 0.8.4 is out, it should be removed.
 (define (toplevel-constu-ret-code? compiled-code)
   (and (eq? (ref compiled-code 'name) '%toplevel)
-       (if (assq 'size (class-slots <compiled-code>))
-         (= (ref compiled-code 'size) 1)
-         #t)
+       (= (ref compiled-code 'size) 1)
        (let1 code (vm-code->list compiled-code)
          (null? (cdr code))
          (eq? (caar code) 'CONSTU-RET))))
@@ -375,7 +383,7 @@
            )
       (define (init-thunk)
         (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
-                (ref value 'name))
+                (cgen-safe-comment (ref value 'name)))
         (format #t "            (ScmWord*)(~a), ~a,\n"
                 cvn (length cv))
         (format #t "            ~a, ~a, ~a, ~a, SCM_NIL, ~a,\n"
@@ -398,9 +406,10 @@
             :code-name code-name
             :literals lv)))
   (init (self)
-    (unless (cgen-literal-static? (ref self 'code-name))
-      (print "  SCM_COMPILED_CODE("(ref self 'c-name)")->name = "
-             (cgen-cexpr (ref self 'code-name))";"))
+    (unless (cgen-literal-static? [~ self'code-name])
+      (print "  SCM_COMPILED_CODE("[~ self'c-name]")->name = "
+             (cgen-cexpr [~ self'code-name])";"
+             "/* "(cgen-safe-comment [~ self'value'full-name])" */"))
     (fill-code self))
   (static (self) #t)
   )
@@ -432,9 +441,6 @@
   (define (alloc-word initval)
     (cgen-allocate-static-datum 'runtime 'ScmWord initval))
 
-  (define (safe-comment str)
-    (regexp-replace-all* (x->string str) #/\/\*/ "/ *" #/\*\// "* /"))
-
   (define (loop cv lv count first-cexpr)
     (if (null? cv)
       first-cexpr
@@ -443,7 +449,7 @@
              (insnval (vm-build-insn insn))
              (name-info (if first-cexpr
                           ""
-                          (format "/* ~a */\n    " (safe-comment full-name))))
+                          (format "/* ~a */\n    " (cgen-safe-comment full-name))))
              (insn-cexpr
               (alloc-word
                ;; We emit it as signed integer so that 64bit machine
@@ -451,10 +457,10 @@
                (if (> insnval #x80000000)
                  (format "~a-0x~8,'0x   /* ~3d ~a */"
                          name-info (- #x100000000 insnval) count
-                         (safe-comment insn))
+                         (cgen-safe-comment insn))
                  (format "~a0x~8,'0x    /* ~3d ~a */"
                          name-info insnval count
-                         (safe-comment insn)))))
+                         (cgen-safe-comment insn)))))
              (first-cexpr (or first-cexpr insn-cexpr)))
         (case (ref info 'operand-type)
           ((none)
@@ -469,18 +475,18 @@
             (if (cgen-literal-static? (cadr lv))
               (format "SCM_WORD(~a) /* ~a */"
                       (cgen-cexpr (cadr lv))
-                      (safe-comment (write-to-string (cadr cv))))
+                      (cgen-safe-comment (write-to-string (cadr cv))))
               (format "SCM_WORD(SCM_UNDEFINED) /* ~a */"
-                      (safe-comment (write-to-string (cadr cv))))))
+                      (cgen-safe-comment (write-to-string (cadr cv))))))
            (loop (cddr cv) (cddr lv) (+ count 2) first-cexpr))
           ((obj+addr)
            (alloc-word
             (if (cgen-literal-static? (cadr lv))
               (format "SCM_WORD(~a) /* ~a */"
                       (cgen-cexpr (cadr lv))
-                      (safe-comment (write-to-string (cadr cv))))
+                      (cgen-safe-comment (write-to-string (cadr cv))))
               (format "SCM_WORD(SCM_UNDEFINED) /* ~a */"
-                      (safe-comment (write-to-string (cadr cv))))))
+                      (cgen-safe-comment (write-to-string (cadr cv))))))
            (alloc-word
             (format "SCM_WORD((ScmWord*)~a + ~d)  /*    ~3d */"
                     first-cexpr (caddr cv) (caddr cv)))

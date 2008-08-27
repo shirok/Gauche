@@ -51,7 +51,7 @@
           cgen-extern cgen-decl cgen-body cgen-init
           cgen-include cgen-define
           
-          cgen-safe-name cgen-safe-name-friendly
+          cgen-safe-name cgen-safe-name-friendly cgen-safe-comment
 
           ;; semi-private routines
           cgen-emit-static-data)
@@ -329,6 +329,10 @@
              (loop (read-char)))
             (else (display c) (loop (read-char)))
             ))))))
+
+;; Escape  '*/' so that str can be inserted safely within a comment.
+(define (cgen-safe-comment str)
+  (regexp-replace-all* (x->string str) #/\/\*/ "/ *" #/\*\// "* /"))
 
 (provide "gauche/cgen/unit")
 
