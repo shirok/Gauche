@@ -115,7 +115,7 @@ since there may be multiple algorithms to do the job,
 and each algorithm can be implemented in different modules.
 @c JP
 というわけで、Gaucheにはじめてふれるプログラマにとって問題を解くのに適
-切なGaucheモジュールを見つけるのは直截ではありません。やるべきことに対
+切なGaucheモジュールを見つけるのは簡単ではないかもしれません。やるべきことに対
 応するアルゴリズムは複数ありえますから、それぞれのアルゴリズムは別々の
 モジュールで実装されています。
 @c COMMON
@@ -131,13 +131,13 @@ interface.  However there are times that you have to break
 the abstraction and to go down to tweak the machinery in
 the basement; then you need to use low-level modules directly.
 @c JP
-モジュールは階層化されています。システムコールへの直接のインタフェース
+モジュールはまた、いくつもの層で実装されています。システムコールへの直接のインタフェース
 を提供する低レベルモジュールもあれば、複数の低レベルモジュールを使って
 構築された、より抽象化され使いやすい高レベルモジュールもあります。さて
 どれを使えばよいでしょう。通常もっとも高レベルのものを使うのがよいでしょ
 う。やさしく使える抽象度の高いインタフェースを提供するというのがまさに
 ライブラリの目的だからです。とはいうものの、場合によっては抽象の壁をや
-ぶってその下にある機械レベルまで降りなければできないこともあります。そ
+ぶってその下にあるメカニズムに触らなければ出来ないこともあります。そ
 ういうときには低レベルのモジュールを直接使う必要があります。
 @c COMMON
 
