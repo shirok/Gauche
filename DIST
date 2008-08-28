@@ -21,7 +21,7 @@ maintainer_clean () {
   
   rm -f DIST_EXCLUDE_X
   cat DIST_EXCLUDE > DIST_EXCLUDE_X
-  find . -name CVS -print -prune >> DIST_EXCLUDE_X
+  find . -name .svn -print -prune >> DIST_EXCLUDE_X
 }
 
 check_version () {
