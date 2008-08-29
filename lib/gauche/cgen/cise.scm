@@ -321,12 +321,18 @@
 ;; Syntax
 ;;
 
+;; [cise stmt]  begin STMT ...
+;;    Grouping.
 (define-cise-macro (begin form env)
   (ensure-stmt-ctx form env)
   (match form
     [(_ . forms)
      `("{" ,@(map (cut render-rec <> env) forms) "}")]))
 
+;; [cise stmt]  let* ((VAR [:: TYPE] [INIT-EXPR]) ...) STMT ...
+;;    Local variables.   Because of C semantics, we only support
+;;    let*-style scoping.
+;;    :: TYPE can be omitted if the type of VAR is ScmObj.
 (define-cise-macro (let* form env)
   (ensure-stmt-ctx form env)
   (match form
@@ -348,6 +354,8 @@
                ,@(map (cut render-rec <> env) body)))]
     ))
 
+;; [cise stmt] if TEST-EXPR THEN-STMT [ELSE-STMT]
+;;    Conditional.
 (define-cise-macro (if form env)
   (ensure-stmt-ctx form env)
   (let1 eenv (expr-env env)
@@ -360,87 +368,16 @@
          ,(render-rec then env)" else " ,(render-rec else env))]
       )))
 
+;; [cise stmt] when TEST-EXPR STMT ...
+;; [cise stmt] unless TEST-EXPR STMT ...
 (define-cise-stmt when
   [(_ test . forms) `(if ,test (begin ,@forms))])
 
 (define-cise-stmt unless
   [(_ test . forms) `(if (not ,test) (begin ,@forms))])
 
-(define-cise-macro (for form env)
-  (ensure-stmt-ctx form env)
-  (let1 eenv (expr-env env)
-    (match form
-      [(_ (start test update) . body)
-       `("for (",(render-rec start eenv)"; "
-         ,(render-rec test eenv)"; "
-         ,(render-rec update eenv)")"
-         ,(render-rec `(begin ,@body) env))]
-      [(_ () . body)
-       `("for (;;)" ,(render-rec `(begin ,@body) env))]
-      )))
-
-(define-cise-stmt loop
-  [form `(for () ,@(cdr form))])
-
-(define-cise-macro (while form env)
-  (ensure-stmt-ctx form env)
-  (let1 eenv (expr-env env)
-    (match form
-      [(_ test . body)
-       `("while"
-         "(",(render-rec test eenv)")"
-         ,(render-rec `(begin ,@body) env))])))
-
-(define-cise-macro (for-each form env)
-  (ensure-stmt-ctx form env)
-  (let ((eenv (expr-env env))
-        (tmp  (gensym "cise__")))
-    (match form
-      [(_ ('lambda (var) . body) list-expr)
-       (env-decl-add! env `(,tmp ScmObj))
-       `("SCM_FOR_EACH(" ,(cise-render-identifier tmp) ","
-         ,(render-rec list-expr eenv) ") {"
-         ,(render-rec `(let* ((,var :: ScmObj (SCM_CAR ,tmp)))
-                         ,@body) env)
-         "}")])))
-
-(define-cise-macro (pair-for-each form env)
-  (ensure-stmt-ctx form env)
-  (let ((eenv (expr-env env)))
-    (match form
-      [(_ ('lambda (var) . body) list-expr)
-       (env-decl-add! env `(,var ScmObj))
-       `("SCM_FOR_EACH(" ,(cise-render-identifier var) ","
-         ,(render-rec list-expr eenv) ")"
-         ,(render-rec `(begin ,@body) env)
-         )])))
-
-(define-cise-macro (dotimes form env)
-  (ensure-stmt-ctx form env)
-  (let ((eenv (expr-env env))
-        (n    (gensym "cise__")))
-    (match form
-      [(_ (var expr) . body)
-       `(let* ((,var :: int 0) (,n :: int ,expr))
-          (for [() (< ,var ,n) (post++ ,var)] ,@body))])))
-               
-(define-cise-macro (return form env)
-  (ensure-stmt-ctx form env)
-  (match form
-    [(_ expr) `("return (" ,(render-rec expr (expr-env env)) ");")]))
-
-(define-cise-stmt break
-  [(_) '("break;")])
-
-(define-cise-stmt continue
-  [(_) '("continue;")])
-
-(define-cise-stmt label
-  [(_ name) `(,(cise-render-identifier name) " : ")])
-
-(define-cise-stmt goto
-  [(_ name) `("goto " ,(cise-render-identifier name) ";")])
-
+;; [cise stmt] cond (TEST STMT ...) ... [ (else STMT ...) ]
+;;   Nested if.
 (define-cise-macro (cond form env)
   (ensure-stmt-ctx form env)
   (let1 eenv (expr-env env)
@@ -459,6 +396,10 @@
                    '() test rest)]
       )))
 
+;; [cise stmt] case EXPR ((VAL ...) STMT ...) ... [ (else STMT ...) ]
+;; [cise stmt] case/fallthrough EXPR ((VAL ...) STMT ...) ... [ (else STMT ...) ]
+;;    Expands to switch-case statement.   The 'case' form does not
+;;    fallthrough, while 'case/fallthrough' does.
 (define (case-generator form env fallthrough?)
   (let1 eenv (expr-env env)
     (match form
@@ -485,9 +426,186 @@
   (ensure-stmt-ctx form env)
   (case-generator form env #t))
 
+;; [cise stmt] for (START-EXPR TEST-EXPR UPDATE-EXPR) STMT ...
+;; [cise stmt] for () STMT ...
+;;   Loop.
+(define-cise-macro (for form env)
+  (ensure-stmt-ctx form env)
+  (let1 eenv (expr-env env)
+    (match form
+      [(_ (start test update) . body)
+       `("for (",(render-rec start eenv)"; "
+         ,(render-rec test eenv)"; "
+         ,(render-rec update eenv)")"
+         ,(render-rec `(begin ,@body) env))]
+      [(_ () . body)
+       `("for (;;)" ,(render-rec `(begin ,@body) env))]
+      )))
+
+;; [cise stmt] loop STMT ...
+;;   Alias of (for () STMT ...)
+(define-cise-stmt loop
+  [form `(for () ,@(cdr form))])
+
+;; [cise stmt] while TEST-EXPR STMT ...
+;;   Loop.
+(define-cise-macro (while form env)
+  (ensure-stmt-ctx form env)
+  (let1 eenv (expr-env env)
+    (match form
+      [(_ test . body)
+       `("while"
+         "(",(render-rec test eenv)")"
+         ,(render-rec `(begin ,@body) env))])))
+
+;; [cise stmt] for-each (lambda (VAR) STMT ...) EXPR
+;;   EXPR must yield a list.  Traverse the list, binding each element
+;;   to VAR and executing STMT ....
+;;   The lambda form is a fake; you don't really create a closure.
+(define-cise-macro (for-each form env)
+  (ensure-stmt-ctx form env)
+  (let ((eenv (expr-env env))
+        (tmp  (gensym "cise__")))
+    (match form
+      [(_ ('lambda (var) . body) list-expr)
+       (env-decl-add! env `(,tmp ScmObj))
+       `("SCM_FOR_EACH(" ,(cise-render-identifier tmp) ","
+         ,(render-rec list-expr eenv) ") {"
+         ,(render-rec `(let* ((,var :: ScmObj (SCM_CAR ,tmp)))
+                         ,@body) env)
+         "}")])))
+
+;; [cise stmt] pair-for-each (lambda (VAR) STMT ...) EXPR
+;;   Like for-each, but VAR is bound to each 'spine' cell instead of
+;;   each element of the list.
+(define-cise-macro (pair-for-each form env)
+  (ensure-stmt-ctx form env)
+  (let ((eenv (expr-env env)))
+    (match form
+      [(_ ('lambda (var) . body) list-expr)
+       (env-decl-add! env `(,var ScmObj))
+       `("SCM_FOR_EACH(" ,(cise-render-identifier var) ","
+         ,(render-rec list-expr eenv) ")"
+         ,(render-rec `(begin ,@body) env)
+         )])))
+
+;; [cise stmt] dotimes (VAR EXPR) STMT ...
+;;   EXPR must yield an integer, N.  Repeat STMT ... by binding VAR from 0
+;;   to (N-1).
+(define-cise-macro (dotimes form env)
+  (ensure-stmt-ctx form env)
+  (let ((eenv (expr-env env))
+        (n    (gensym "cise__")))
+    (match form
+      [(_ (var expr) . body)
+       `(let* ((,var :: int 0) (,n :: int ,expr))
+          (for [() (< ,var ,n) (post++ ,var)] ,@body))])))
+
+;; [cise stmt] return EXPR
+;;   Return statement.
+(define-cise-macro (return form env)
+  (ensure-stmt-ctx form env)
+  (match form
+    [(_ expr) `("return (" ,(render-rec expr (expr-env env)) ");")]))
+
+;; [cise stmt] break
+;; [cise stmt] continue
+;;   Break and continue.
+(define-cise-stmt break
+  [(_) '("break;")])
+
+(define-cise-stmt continue
+  [(_) '("continue;")])
+
+;; [cise stmt] label NAME
+;; [cise stmt] goto NAME
+;;   Label and goto.
+(define-cise-stmt label
+  [(_ name) `(,(cise-render-identifier name) " : ")])
+
+(define-cise-stmt goto
+  [(_ name) `("goto " ,(cise-render-identifier name) ";")])
+
 ;;------------------------------------------------------------
 ;; Operators
 ;;
+
+;; [cise expr] + EXPR ...
+;; [cise expr] - EXPR ...
+;; [cise expr] * EXPR ...
+;; [cise expr] / EXPR ...
+;; [cise expr] % EXPR EXPR
+;;   Same as C.
+;;
+;; [cise expr] and EXPR ...
+;; [cise expr] or  EXPR ...
+;; [cise expr] not EXPR
+;;
+;;   Boolean ops.  C's &&, ||, and !.
+;;
+;; [cise expr] logand EXPR EXPR
+;; [cise expr] logior EXPR EXPR
+;; [cise expr] logxor EXPR EXPR
+;; [cise expr] lognot EXPR EXPR
+;;
+;;   Bitwise ops.
+;;
+;; [cise expr] * EXPR
+;; [cise expr] & EXPR
+;;
+;;   Address ops.
+;;
+;; [cise expr] pre++ EXPR
+;; [cise expr] post++ EXPR
+;; [cise expr] pre-- EXPR
+;; [cise expr] post-- EXPR
+;;
+;;   pre/post increment/decrement.
+;;
+;; [cise expr] <  EXPR EXPR
+;; [cise expr] <= EXPR EXPR
+;; [cise expr] >  EXPR EXPR
+;; [cise expr] >= EXPR EXPR
+;; [cise expr] == EXPR EXPR
+;; [cise expr] != EXPR EXPR
+;;
+;;   comparison.
+;;
+;; [cise expr] << EXPR EXPR
+;; [cise expr] >> EXPR EXPR
+;;
+;;   shift.
+;;
+;; [cise expr] set! LVALUE EXPR LVALUE EXPR ...
+;; [cise expr] +=   LVALUE EXPR
+;; [cise expr] -=   LVALUE EXPR
+;; [cise expr] *=   LVALUE EXPR
+;; [cise expr] /=   LVALUE EXPR
+;; [cise expr] %=   LVALUE EXPR
+;; [cise expr] <<=  LVALUE EXPR
+;; [cise expr] >>=  LVALUE EXPR
+;; [cise expr] logand= LVALUE EXPR
+;; [cise expr] logior= LVALUE EXPR
+;; [cise expr] logxor= LVALUE EXPR
+;;
+;;   assignment.
+;;
+;; [cise expr] ->  EXPR EXPR ...
+;; [cise expr] ref EXPR EXPR ...
+;;
+;;   reference.  (ref is C's '.')
+;;
+;; [cise expr] aref EXPR EXPR ...
+;;
+;;   array reference.
+;;
+;; [cise expr] cast TYPE EXPR
+;;
+;;   cast.
+;;
+;; [cise expr] ?: TEST-EXPR THEN-EXPR ELSE-EXPR
+;;
+;;   conditional.
 
 (define-macro (define-nary op sop)
   `(define-cise-macro (,op form env)
