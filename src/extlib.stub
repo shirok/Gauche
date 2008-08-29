@@ -55,17 +55,14 @@
 ;; 6.1  Equivalence predicates
 ;;
 
-;; to pass the cmpmode argument
-(define-symbol eq?    "sym_eq")
-(define-symbol eqv?   "sym_eqv")
-(define-symbol equal? "sym_equal")
-
-"static int getcmpmode(ScmObj opt)
- { if (SCM_UNBOUNDP(opt) || opt == sym_equal) return SCM_CMP_EQUAL;
-   if (opt == sym_eq) return SCM_CMP_EQ;
-   if (opt == sym_eqv) return SCM_CMP_EQV;
-   Scm_Error(\"unrecognized compare mode: %S\", opt);
-   return 0; /* dummy */ }"
+;; translate cmpmode argument
+(define-cfn getcmpmode (opt) :: int :static
+  (cond
+   [(or (SCM_UNBOUNDP opt) (SCM_EQ opt 'equal?)) (return SCM_CMP_EQUAL)]
+   [(SCM_EQ opt 'eq?) (return SCM_CMP_EQ)]
+   [(SCM_EQ opt 'eqv?) (return SCM_CMP_EQV)]
+   [else (Scm_Error "unrecognized compare mode: %S" opt)
+         (return 0)]))                  ;dummy
 
 (define-cproc compare (x y) (call <fixnum> "Scm_Compare"))
 
@@ -430,16 +427,13 @@
 
 (define-cproc char-set? (obj) (call <boolean> "SCM_CHARSETP"))
 
-"static void char_set_add(ScmCharSet *cs, ScmObj chars)
- {  ScmObj cp; ScmChar ch;
-  SCM_FOR_EACH(cp, chars) {
-    if (!SCM_CHARP(SCM_CAR(cp)))
-      Scm_Error(\"character required, but got %S\", SCM_CAR(cp));
-    ch = SCM_CHAR_VALUE(SCM_CAR(cp));
-    Scm_CharSetAddRange(cs, ch, ch);
-  }
- }"
-
+(define-cfn char_set_add ((cs :: ScmCharSet*) chars) :: void :static
+  (for-each (lambda (ch)
+              (unless (SCM_CHARP ch)
+                (Scm_Error "character required, but got %S" ch))
+              (Scm_CharSetAddRange cs (SCM_CHAR_VALUE ch) (SCM_CHAR_VALUE ch)))
+            chars))
+                
 (define-cproc %char-set-equal? (x::<char-set> y::<char-set>)
   (call <boolean> "Scm_CharSetEq"))
 
@@ -523,9 +517,6 @@
                                                   (SCM_CHAR 0))))
           (unless (SCM_FALSEP s) (set! (-> str body) (SCM_STRING_BODY s)))
           (result s))))
-;         "ScmObj s = Scm_StringIncompleteToComplete(str, SCM_ILLEGAL_CHAR_REJECT, SCM_CHAR(0));"
-;         "if (!SCM_FALSEP(s)) str->body = SCM_STRING_BODY(s);"
-;         "SCM_RESULT = s;"))
 
 (define-cproc string-complete->incomplete (str::<string>)
   (call "Scm_StringCompleteToIncomplete"))
@@ -865,73 +856,67 @@
 
 ;; Buffered port
 ;; NB: the interface may be changed soon!!
-"static void bufport_closer(ScmPort *p)
- {
-    if (SCM_PORT_DIR(p) == SCM_PORT_OUTPUT) {
-       ScmObj scmflusher = SCM_OBJ(p->src.buf.data);
-       int siz = (int)(p->src.buf.current - p->src.buf.buffer);
-       if (siz > 0) Scm_ApplyRec(scmflusher, SCM_LIST1(Scm_MakeString(p->src.buf.buffer, siz, siz, SCM_STRING_INCOMPLETE|SCM_STRING_COPYING)));
-       Scm_ApplyRec(scmflusher, SCM_LIST1(SCM_FALSE));
-    }
- }"
+(define-cfn bufport-closer ((p :: ScmPort*)) :: void :static
+  (when (== (SCM_PORT_DIR p) SCM_PORT_OUTPUT)
+    (let* ((scmflusher (SCM_OBJ (ref (-> p src) buf data)))
+           (siz :: int (cast int (- (ref (-> p src) buf current)
+                                    (ref (-> p src) buf buffer)))))
+      (when (> siz 0)
+        (Scm_ApplyRec1 scmflusher
+                       (Scm_MakeString (ref (-> p src) buf buffer) siz siz
+                                       (logior SCM_STRING_INCOMPLETE
+                                               SCM_STRING_COPYING))))
+      (Scm_ApplyRec1 scmflusher SCM_FALSE))))
 
-"static int bufport_filler(ScmPort *p, int cnt)
- {
-    ScmObj scmfiller, r;  int siz;
-    const ScmStringBody *b;
-    scmfiller = SCM_OBJ(p->src.buf.data);
-    /* no need to use VMApply; we're in the C callback */
-    r = Scm_ApplyRec(scmfiller, SCM_LIST1(Scm_MakeInteger(cnt)));
-    if (SCM_EOFP(r) || SCM_FALSEP(r)) {
-       return 0;
-    } else if (!SCM_STRINGP(r)) {
-       Scm_Error(\"buffered port callback procedure returned non-string: %S\", r);
-    }
-    b = SCM_STRING_BODY(r);
-    siz = SCM_STRING_BODY_SIZE(b);
-    if (siz > cnt) siz = cnt; /* for safety */
-    memcpy(p->src.buf.end, SCM_STRING_BODY_START(b), siz);
-    return SCM_STRING_BODY_SIZE(b);
- }"
-
+(define-cfn bufport-filler ((p :: ScmPort*) (cnt :: int)) :: int :static
+  (let* ((scmfiller (SCM_OBJ (ref (-> p src) buf data)))
+         (r (Scm_ApplyRec1 scmfiller (Scm_MakeInteger cnt))))
+    (cond [(or (SCM_EOFP r) (SCM_FALSEP r)) (return 0)]
+          [(not (SCM_STRINGP r))
+           (Scm_Error "buffered port callback procedure returned non-string: %S" r)])
+    (let* ((b :: (const ScmStringBody*) (SCM_STRING_BODY r))
+           (siz :: int (SCM_STRING_BODY_SIZE b)))
+      (when (> siz cnt) (set! siz cnt)) ; for safety
+      (memcpy (ref (-> p src) buf end) (SCM_STRING_BODY_START b) siz)
+      (return (SCM_STRING_BODY_SIZE b)))))
+           
 (define-cproc open-input-buffered-port (filler::<procedure>
                                         buffer-size::<fixnum>)
-  "  ScmPortBuffer bufrec;
-  bufrec.size = buffer_size;
-  bufrec.buffer = NULL;
-  bufrec.mode = SCM_PORT_BUFFER_FULL;
-  bufrec.filler = bufport_filler;
-  bufrec.flusher = NULL;
-  bufrec.closer = bufport_closer;
-  bufrec.ready = NULL;
-  bufrec.filenum = NULL;
-  bufrec.data = (void*)filler;
-  SCM_RETURN(Scm_MakeBufferedPort(SCM_CLASS_PORT, SCM_FALSE, SCM_PORT_INPUT, TRUE, &bufrec));
-  ")
-
-"static int bufport_flusher(ScmPort *p, int cnt, int forcep)
- {
-     ScmObj scmflusher, s;
-     scmflusher = SCM_OBJ(p->src.buf.data);
-     s = Scm_MakeString(p->src.buf.buffer, cnt, cnt, SCM_STRING_INCOMPLETE|SCM_STRING_COPYING);
-     Scm_ApplyRec(scmflusher, SCM_LIST1(s));
-     return cnt;
- }"
+  (body <top>
+        (let* ((bufrec :: ScmPortBuffer))
+          (set! (ref bufrec size)    buffer-size
+                (ref bufrec buffer)  NULL
+                (ref bufrec mode)    SCM_PORT_BUFFER_FULL
+                (ref bufrec filler)  bufport-filler
+                (ref bufrec flusher) NULL
+                (ref bufrec closer)  bufport-closer
+                (ref bufrec ready)   NULL
+                (ref bufrec filenum) NULL
+                (ref bufrec data)    (cast void* filler))
+          (result (Scm_MakeBufferedPort SCM_CLASS_PORT SCM_FALSE SCM_PORT_INPUT TRUE (& bufrec))))))
+                                        
+(define-cfn bufport-flusher ((p :: ScmPort*) (cnt :: int) (forcep :: int))
+  :: int :static
+  (let* ((scmflusher (SCM_OBJ (ref (-> p src) buf data)))
+         (s (Scm_MakeString (ref (-> p src) buf buffer) cnt cnt
+                            (logior SCM_STRING_INCOMPLETE SCM_STRING_COPYING))))
+    (Scm_ApplyRec1 scmflusher s)
+    (return cnt)))
 
 (define-cproc open-output-buffered-port (flusher::<procedure>
                                          buffer-size::<fixnum>)
-  "  ScmPortBuffer bufrec;
-  bufrec.size = buffer_size;
-  bufrec.buffer = NULL;
-  bufrec.mode = SCM_PORT_BUFFER_FULL;
-  bufrec.filler = NULL;
-  bufrec.flusher = bufport_flusher;
-  bufrec.closer = bufport_closer;
-  bufrec.ready = NULL;
-  bufrec.filenum = NULL;
-  bufrec.data = (void*)flusher;
-  SCM_RETURN(Scm_MakeBufferedPort(SCM_CLASS_PORT, SCM_FALSE, SCM_PORT_OUTPUT, TRUE, &bufrec));
-  ")
+  (body <top>
+        (let* ((bufrec :: ScmPortBuffer))
+          (set! (ref bufrec size)    buffer-size
+                (ref bufrec buffer)  NULL
+                (ref bufrec mode)    SCM_PORT_BUFFER_FULL
+                (ref bufrec filler)  NULL
+                (ref bufrec flusher) bufport-flusher
+                (ref bufrec closer)  bufport-closer
+                (ref bufrec ready)   NULL
+                (ref bufrec filenum) NULL
+                (ref bufrec data)    (cast void* flusher))
+          (result (Scm_MakeBufferedPort SCM_CLASS_PORT SCM_FALSE SCM_PORT_OUTPUT TRUE (& bufrec))))))
 
 (define-cproc flush (&optional (oport::<output-port> (current-output-port)))
   (call <void> "Scm_Flush"))
@@ -949,14 +934,15 @@
           (logand= (SCM_PORT_FLAGS port) (lognot SCM_PORT_CASE_FOLD)))))
 
 (define-cproc current-error-port (&optional newport)
-  (body "if (SCM_OPORTP(newport)) {"
-        "  SCM_RESULT = Scm_SetCurrentErrorPort(SCM_PORT(newport));"
-        "} else if (!SCM_UNBOUNDP(newport)) {"
-        "  Scm_TypeError(\"current-error-port\", \"output port\", newport);"
-        "  SCM_RESULT = SCM_UNDEFINED;"
-        "} else {"
-        "  SCM_RESULT = SCM_OBJ(SCM_CURERR);"
-        "}"))
+  (body <top>
+        (cond
+         [(SCM_OPORTP newport)
+          (result (Scm_SetCurrentErrorPort (SCM_PORT newport)))]
+         [(not (SCM_UNBOUNDP newport))
+          (Scm_TypeError "current-error-port" "output port" newport)
+          (result SCM_UNDEFINED)]
+         [else
+          (result (SCM_OBJ SCM_CURERR))])))
 
 (define-cproc standard-input-port ()
   (call "Scm_Stdin"))
@@ -974,8 +960,11 @@
   (call <fixnum> "Scm_PortLine"))
 
 (define-cproc port-file-number (port::<port>)
-  "  int i = Scm_PortFileNo(port);
-  SCM_RETURN((i < 0)? SCM_FALSE : Scm_MakeInteger(i));")
+  (body <top>
+        (let* ((i :: int (Scm_PortFileNo port)))
+          (result (?: (< i 0) SCM_FALSE (Scm_MakeInteger i))))))
+;  "  int i = Scm_PortFileNo(port);
+;  SCM_RETURN((i < 0)? SCM_FALSE : Scm_MakeInteger(i));")
 
 (when "!defined(GAUCHE_WINDOWS)"
   (define-cproc port-fd-dup! (dst::<port> src::<port>)
@@ -1277,17 +1266,15 @@
 (define-cproc hash-table-exists? (hash::<hash-table> key)
   (expr <boolean> (dict-exists? hash Scm_HashTableRef)))
 
-"static ScmObj hash_table_update_cc(ScmObj result, void **data)
- {
-   ScmDictEntry *e = (ScmDictEntry*)data[0];
-   (void)SCM_DICT_SET_VALUE(e, result);
-   SCM_RETURN(result);
- }"
+(define-cfn hash-table-update-cc (result (data :: void**)) :static
+  (let* ((e :: ScmDictEntry* (cast ScmDictEntry* (aref data 0))))
+    (cast void (SCM_DICT_SET_VALUE e result))
+    (return result)))
 
 (define-cproc hash-table-update! (hash::<hash-table> key proc
                                                      &optional fallback)
   (body <top>  (dict-update! hash Scm_HashCoreSearch SCM_HASH_TABLE_CORE
-                             hash_table_update_cc)))
+                             hash-table-update-cc)))
 
 (define-cproc hash-table-push! (hash::<hash-table> key value)
   (body <void> (dict-push! hash Scm_HashCoreSearch SCM_HASH_TABLE_CORE)))
@@ -1295,14 +1282,14 @@
 (define-cproc hash-table-pop! (hash::<hash-table> key &optional fallback)
   (body <top>  (dict-pop! hash Scm_HashCoreSearch SCM_HASH_TABLE_CORE)))
 
-"static ScmObj hash_table_iter(ScmObj *args, int nargs, void *data)
- {
-   ScmHashIter *iter = (ScmHashIter*)data;
-   ScmDictEntry *e = Scm_HashIterNext(iter);
-   ScmObj eofval = args[0];
-   if (e == NULL) SCM_RETURN(Scm_Values2(eofval, eofval));
-   else SCM_RETURN(Scm_Values2(SCM_DICT_KEY(e), SCM_DICT_VALUE(e)));
- }"
+(define-cfn hash-table-iter ((args :: ScmObj*) (nargs :: int) (data :: void*))
+  :static
+  (let* ((iter :: ScmHashIter* (cast ScmHashIter* data))
+         (e :: ScmDictEntry* (Scm_HashIterNext iter))
+         (eofval (aref args 0)))
+    (if (== e NULL)
+      (return (Scm_Values2 eofval eofval))
+      (return (Scm_Values2 (SCM_DICT_KEY e) (SCM_DICT_VALUE e))))))
 
 (define-cproc %hash-table-iter (hash::<hash-table>)
   (body <top>
