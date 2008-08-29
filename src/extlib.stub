@@ -798,7 +798,7 @@
                  (o       (Scm_OpenFilePort (Scm_GetStringConst path)
                                             O_RDONLY bufmode 0)))
             (when (and (SCM_FALSEP o) (not ignerr))
-              (Scm_Error "couldn't open input file: %S" path))
+              (Scm_SysError "couldn't open input file: %S" path))
             (result o)))))
 
 (define-cproc %open-output-file (path::<string>

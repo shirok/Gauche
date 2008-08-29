@@ -1,3 +1,9 @@
+2008-08-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (%open-input-file): Use Scm_SysError when
+	  Scm_OpenFilePort returns #f, since if it returns #f the reason
+	  is the failure of open(2).
+
 2008-08-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/unit.scm (cgen-safe-comment): Added.
