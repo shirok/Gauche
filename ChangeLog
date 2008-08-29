@@ -1,3 +1,8 @@
+2008-08-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/experimental/lamb.scm (^., ^*): added shorthand notation
+	  of match-lambda and match-lambda* experimentally.
+
 2008-08-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (%open-input-file): Use Scm_SysError when
