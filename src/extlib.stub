@@ -843,13 +843,13 @@
   (call "Scm_MakeOutputStringPort"))
 
 (define-cproc get-output-string (oport::<output-port>) ;SRFI-6
-  (expr "Scm_GetOutputString(oport, 0)"))
+  (expr (Scm_GetOutputString oport 0)))
 
 (define-cproc get-output-byte-string (oport::<output-port>)
-  (expr "Scm_GetOutputString(oport, SCM_STRING_INCOMPLETE)"))
+  (expr (Scm_GetOutputString oport SCM_STRING_INCOMPLETE)))
 
 (define-cproc get-remaining-input-string (iport::<input-port>)
-  (expr "Scm_GetRemainingInputString(iport, 0)"))
+  (expr (Scm_GetRemainingInputString iport 0)))
 
 (define-cproc open-coding-aware-port (iport::<input-port>)
   (call "Scm_MakeCodingAwarePort"))
@@ -922,7 +922,7 @@
   (call <void> "Scm_Flush"))
 
 (define-cproc flush-all-ports ()
-  (body <void> "Scm_FlushAllPorts(FALSE);"))
+  (body <void> (Scm_FlushAllPorts FALSE)))
 
 (define-cproc port-closed? (obj::<port>)
   (call <boolean> "SCM_PORT_CLOSED_P"))
@@ -963,8 +963,6 @@
   (body <top>
         (let* ((i :: int (Scm_PortFileNo port)))
           (result (?: (< i 0) SCM_FALSE (Scm_MakeInteger i))))))
-;  "  int i = Scm_PortFileNo(port);
-;  SCM_RETURN((i < 0)? SCM_FALSE : Scm_MakeInteger(i));")
 
 (when "!defined(GAUCHE_WINDOWS)"
   (define-cproc port-fd-dup! (dst::<port> src::<port>)
@@ -1002,9 +1000,11 @@
                                   &keyword (buffering #f)
                                            (owner?::<boolean> #f)
                                            (name #f))
-  "int bufmode = Scm_BufferingMode(buffering, SCM_PORT_INPUT, SCM_PORT_BUFFER_FULL);
-   if (fd < 0) Scm_Error(\"bad file descriptor: %d\", fd);
-   return Scm_MakePortWithFd(name, SCM_PORT_INPUT, fd, bufmode, ownerP);")
+  (body <top>
+        (let* ((bufmode :: int (Scm_BufferingMode buffering SCM_PORT_INPUT
+                                                  SCM_PORT_BUFFER_FULL)))
+          (when (< fd 0) (Scm_Error "bad file descriptor: %d" fd))
+          (result (Scm_MakePortWithFd name SCM_PORT_INPUT fd bufmode ownerP)))))
 
 (define-cproc open-output-fd-port (fd::<fixnum>
                                    &keyword (buffering #f)
@@ -1059,22 +1059,24 @@
 
 (define-cproc read-block (bytes::<fixnum>
                           &optional (port::<input-port> (current-input-port)))
-  "  char *buf; int nread;
-  if (bytes < 0) Scm_Error(\"bytes must be non-negative integer: %d\", bytes);
-  if (bytes == 0) SCM_RETURN(Scm_MakeString(\"\", 0, 0, 0));
-  buf = SCM_NEW_ATOMIC2(char*, bytes+1);
-  nread = Scm_Getz(buf, bytes, port);
-  if (nread <= 0) {
-    SCM_RETURN(SCM_EOF);
-  } else {
-    SCM_ASSERT(nread <= bytes);
-    buf[nread] = '\\0';
-    SCM_RETURN(Scm_MakeString(buf, nread, nread, SCM_STRING_INCOMPLETE));
-  }")
+  (body <top>
+        (when (< bytes 0)
+          (Scm_Error "bytes must be non-negative integer: %d" bytes))
+        (if (== bytes 0)
+          (result (Scm_MakeString "" 0 0 0))
+          (let* ((buf :: char* (SCM_NEW_ATOMIC2 (C: char*) (+ bytes 1)))
+                 (nread :: int (Scm_Getz buf bytes port)))
+            (cond [(<= nread 0) (result SCM_EOF)]
+                  [else
+                   (SCM_ASSERT (<= nread bytes))
+                   (set! (aref buf nread) #\x00)
+                   (result
+                    (Scm_MakeString buf nread nread SCM_STRING_INCOMPLETE))])))
+        ))
 
 (define-cproc read-list (closer::<char>
                          &optional (port (current-input-port)))
-  "SCM_RETURN(Scm_ReadList(port, closer));")
+  (expr (Scm_ReadList port closer)))
 
 (define-cproc define-reader-ctor (symbol proc &optional (finisher #f))
   (call "Scm_DefineReaderCtor"))
@@ -1092,12 +1094,13 @@
   (call <boolean> "SCM_READ_REFERENCE_P"))
 
 (define-cproc read-reference-has-value? (ref::<read-reference>)
-  (expr <boolean> "!SCM_UNBOUNDP(ref->value)"))
+  (expr <boolean> (not (SCM_UNBOUNDP (-> ref value)))))
 
 (define-cproc read-reference-value (ref::<read-reference>)
-  "if (SCM_UNBOUNDP(ref->value))
-    Scm_Error(\"read reference hasn't been resolved\");
-  SCM_RETURN(ref->value);")
+  (body <top>
+        (when (SCM_UNBOUNDP (-> ref value))
+          (Scm_Error "read reference hasn't been resolved"))
+        (result (-> ref value))))
 
 ;;
 ;; 6.6.3  Output
@@ -1105,34 +1108,33 @@
 
 (define-cproc write-byte (byte::<fixnum>
                           &optional (port::<output-port> (current-output-port)))
-  "  if (byte < 0 || byte > 255) Scm_Error(\"argument out of range: %d\", byte);
-  SCM_PUTB(byte, port);
-  SCM_RETURN(SCM_MAKE_INT(1));")
+  (body <int>
+        (when (or (< byte 0) (> byte 255))
+          (Scm_Error "argument out of range: %d" byte))
+        (SCM_PUTB byte port)
+        (result 1)))
 
 (define-cproc write-limited (obj limit::<fixnum>
                              &optional (port (current-output-port)))
-  "  int n = Scm_WriteLimited(obj, port, SCM_WRITE_WRITE, limit);
-  SCM_RETURN(SCM_MAKE_INT(n));")
+  (expr <int> (Scm_WriteLimited obj port SCM_WRITE_WRITE limit)))
 
 (define-cproc write* (obj &optional (port (current-output-port)))
-  "  int n = Scm_WriteCircular(obj, port, SCM_WRITE_WRITE, 0);
-  SCM_RETURN(SCM_MAKE_INT(n));")
-
+  (expr <int> (Scm_WriteCircular obj port SCM_WRITE_WRITE 0)))
+  
 ;;
 ;; 6.6.4  System Interface
 ;;
 
-(define-cproc %add-load-path (path::<string> &optional (afterp #f))
-  "  const char *cpath = Scm_GetStringConst(path);
-  SCM_RETURN(Scm_AddLoadPath(cpath, !SCM_FALSEP(afterp)));")
-
+(define-cproc %add-load-path (path::<const-cstring> &optional (afterp #f))
+  (expr (Scm_AddLoadPath path (not (SCM_FALSEP afterp)))))
+        
 (define-cproc dynamic-load (file::<string>
                             &keyword (init-function #f)
                                      (export-symbols #f))
-  (expr "Scm_DynLoad(file, init_function, !SCM_FALSEP(export_symbols))"))
+  (expr (Scm_DynLoad file init_function (not (SCM_FALSEP export_symbols)))))
 
 (define-cproc %require (feature)
-  (expr <boolean> "!Scm_Require(feature, SCM_LOAD_PROPAGATE_ERROR, NULL)"))
+  (expr <boolean> (not (Scm_Require feature SCM_LOAD_PROPAGATE_ERROR NULL))))
 (define-cproc provide (feature)   (call "Scm_Provide"))
 (define-cproc provided? (feature) (call <boolean> "Scm_ProvidedP"))
 
@@ -1141,7 +1143,7 @@
 
 (define-cproc undefined ()
   (inliner CONSTU)
-  "SCM_RETURN(SCM_UNDEFINED);")
+  (expr SCM_UNDEFINED))
 
 (define-cproc undefined? (obj)    (call <boolean> "SCM_UNDEFINEDP"))
 
@@ -1387,13 +1389,12 @@
 ;; TreeMap
 ;;
 
-"static int tree_map_cmp(ScmTreeCore *core, intptr_t x, intptr_t y) 
- {
-    ScmObj cmp_proc = SCM_OBJ(core->data);
-    ScmObj r = Scm_ApplyRec(cmp_proc, SCM_LIST2(SCM_OBJ(x), SCM_OBJ(y)));
-    SCM_RETURN(SCM_INT_VALUE(r));
- }"
-
+(define-cfn tree-map-cmp ((core :: ScmTreeCore*) (x :: intptr_t) (y :: intptr_t))
+  :: int :static
+  (let* ((cmp-proc (SCM_OBJ (-> core data)))
+         (r (Scm_ApplyRec2 cmp-proc (SCM_OBJ x) (SCM_OBJ y))))
+    (return (SCM_INT_VALUE r))))
+                          
 (define-cproc %make-tree-map (cmp-proc)
   (expr <top> (Scm_MakeTreeMap tree_map_cmp cmp_proc)))
 
@@ -1412,12 +1413,10 @@
 (define-cproc tree-map-delete! (tm::<tree-map> key)
   (expr <boolean> (not (SCM_UNBOUNDP (Scm_TreeMapDelete tm key)))))
 
-"static ScmObj tree_map_update_cc(ScmObj result, void **data)
- {
-   ScmDictEntry *e = (ScmDictEntry*)data[0];
-   (void)SCM_DICT_SET_VALUE(e, result);
-   SCM_RETURN(result);
- }"
+(define-cfn tree-map-update-cc (result (data :: void**)) :static
+  (let* ((e :: ScmDictEntry* (cast ScmDictEntry* (aref data 0))))
+    (cast void (SCM_DICT_SET_VALUE e result))
+    (return result)))
 
 (define-cproc tree-map-update! (tm::<tree-map> key proc &optional fallback)
   (body <top>  (dict-update! tm Scm_TreeCoreSearch SCM_TREE_MAP_CORE
@@ -1447,15 +1446,15 @@
             (result (Scm_Cons (SCM_DICT_KEY e) (SCM_DICT_VALUE e)))
             (result '#f)))))
 
-"static ScmObj tree_map_iter(ScmObj *args, int nargs, void *data)
- {
-   ScmTreeIter *iter = (ScmTreeIter*)data;
-   ScmDictEntry *e;
-   if (SCM_FALSEP(args[1])) e = Scm_TreeIterNext(iter);
-   else                     e = Scm_TreeIterPrev(iter);
-   if (!e) SCM_RETURN(Scm_Values2(args[0], args[0]));
-   else    SCM_RETURN(Scm_Values2(SCM_DICT_KEY(e), SCM_DICT_VALUE(e)));
- }"
+(define-cfn tree-map-iter ((args :: ScmObj*) (nargs :: int) (data :: void*))
+  :static
+  (let* ((iter :: ScmTreeIter* (cast ScmTreeIter* data))
+         (e :: ScmDictEntry* (?: (SCM_FALSEP (aref args 1))
+                                 (Scm_TreeIterNext iter)
+                                 (Scm_TreeIterPrev iter))))
+    (if (not e)
+      (return (Scm_Values2 (aref args 0) (aref args 0)))
+      (return (Scm_Values2 (SCM_DICT_KEY e) (SCM_DICT_VALUE e))))))
 
 (define-cproc %tree-map-iter (tm::<tree-map>)
   (body <top>
@@ -1607,24 +1606,18 @@
 (define-cproc %extend-module (module::<module> supers::<list>)
   (call "Scm_ExtendModule"))
 
-"static ScmModule *get_module_from_mod_or_name(ScmObj mod_or_name)
- {
-   if (SCM_MODULEP(mod_or_name)) return SCM_MODULE(mod_or_name);
-   else if (SCM_SYMBOLP(mod_or_name)) {
-     return Scm_FindModule(SCM_SYMBOL(mod_or_name), 0);
-   } else if (SCM_FALSEP(mod_or_name)) {
-     return SCM_CURRENT_MODULE();
-   } else {
-     Scm_Error(\"module or symbol required, but got: %S\", mod_or_name);
-     return NULL;
-   }
- }
-"
+(define-cfn get-module-from-mod-or-name (id) :: ScmModule* :static
+  (cond
+   [(SCM_MODULEP id) (return (SCM_MODULE id))]
+   [(SCM_SYMBOLP id) (return (Scm_FindModule (SCM_SYMBOL id) 0))]
+   [(SCM_FALSEP id)  (return (SCM_CURRENT_MODULE))]
+   [else (Scm_Error "module or symbol required, but got: %S" id)
+         (return NULL)]))
 
 (define-cproc global-variable-bound? (mod-or-name name::<symbol>)
   (expr <boolean>
         (not (SCM_UNBOUNDP
-              (Scm_GlobalVariableRef (get_module_from_mod_or_name mod_or_name)
+              (Scm_GlobalVariableRef (get-module-from-mod-or-name mod-or-name)
                                      name 0)))))
 
 (define-cproc global-variable-ref (mod_or_name name::<symbol>
@@ -1664,16 +1657,15 @@
    (specific)
    )
   (printer
-   "ScmVM *vm = SCM_VM(obj);
-    const char *state;
-    switch (vm->state) {
-    case SCM_VM_NEW:        state = \"new\"; break;
-    case SCM_VM_RUNNABLE:   state = \"runnable\"; break;
-    case SCM_VM_BLOCKED:    state = \"blocked\"; break;
-    case SCM_VM_TERMINATED: state = \"terminated\"; break;
-    default: state = \"(unknown state)\";
-    }
-    Scm_Printf(port, \"#<thread %S %s %p>\", vm->name, state, vm);")
+   (let* ((vm :: ScmVM* (SCM_VM obj))
+          (state :: (const char *)))
+     (case (-> vm state)
+       [(SCM_VM_NEW)        (set! state "new")]
+       [(SCM_VM_RUNNABLE)   (set! state "runnable")]
+       [(SCM_VM_BLOCKED)    (set! state "blocked")]
+       [(SCM_VM_TERMINATED) (set! state "terminated")]
+       [else                (set! state "(unknown state")])
+     (Scm_Printf port "#<thread %S %s %p>" (-> vm name) state vm)))
   )
 
 (define-cproc vm-dump
