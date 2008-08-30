@@ -749,7 +749,8 @@
 
 (define-cise-expr result
   [(_ e) `(set! SCM_RESULT ,e)]
-  [(_ e0 e1) `(begin (set! SCM_RESULT0 ,e0) (set! SCM_RESULT1 ,e1))]
+  [(_ e0 e1) `(set! SCM_RESULT0 ,e0 SCM_RESULT1 ,e1)]
+  [(_ e0 e1 e2) `(set! SCM_RESULT0 ,e0 SCM_RESULT1 ,e1 SCM_RESULT2 ,e2)]
   )
 
 (define-cise-expr list
@@ -761,6 +762,15 @@
   [(_ a b c d e) `(SCM_LIST5 ,a ,b ,c ,d ,e)]
   [(_ x ...)     (fold (lambda (elt r) `(Scm_Cons ,elt ,r)) '() x)])
 
+(define-cise-expr values
+  [(_)           '("Scm_Values(SCM_NIL)")]
+  [(_ a)         a]
+  [(_ a b)       `(Scm_Values2 ,a ,b)]
+  [(_ a b c)     `(Scm_Values2 ,a ,b ,c)]
+  [(_ a b c d)   `(Scm_Values2 ,a ,b ,c ,d)]
+  [(_ a b c d e) `(Scm_Values2 ,a ,b ,c ,d ,e)]
+  [(_ x ...)   `(Scm_Values ,(fold (lambda (elt r) `(Scm_cons ,elt ,r)) '() x))]
+  )
 ;; Using quote is a convenient way to embed Scheme constant in C code.
 (define-cise-expr quote
   [(_ cst)

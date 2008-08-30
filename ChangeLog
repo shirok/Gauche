@@ -1,5 +1,8 @@
 2008-08-29  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/cise.scm (values): Expands 'values' cise macro
+	  into appropiate Scm_Values* call.
+
 	* src/gauche/experimental/lamb.scm (^., ^*): added shorthand notation
 	  of match-lambda and match-lambda* experimentally.
 

@@ -1290,8 +1290,8 @@
          (e :: ScmDictEntry* (Scm_HashIterNext iter))
          (eofval (aref args 0)))
     (if (== e NULL)
-      (return (Scm_Values2 eofval eofval))
-      (return (Scm_Values2 (SCM_DICT_KEY e) (SCM_DICT_VALUE e))))))
+      (return (values eofval eofval))
+      (return (values (SCM_DICT_KEY e) (SCM_DICT_VALUE e))))))
 
 (define-cproc %hash-table-iter (hash::<hash-table>)
   (body <top>
@@ -1453,8 +1453,8 @@
                                  (Scm_TreeIterNext iter)
                                  (Scm_TreeIterPrev iter))))
     (if (not e)
-      (return (Scm_Values2 (aref args 0) (aref args 0)))
-      (return (Scm_Values2 (SCM_DICT_KEY e) (SCM_DICT_VALUE e))))))
+      (return (values (aref args 0) (aref args 0)))
+      (return (values (SCM_DICT_KEY e) (SCM_DICT_VALUE e))))))
 
 (define-cproc %tree-map-iter (tm::<tree-map>)
   (body <top>
