@@ -766,9 +766,9 @@
   [(_)           '("Scm_Values(SCM_NIL)")]
   [(_ a)         a]
   [(_ a b)       `(Scm_Values2 ,a ,b)]
-  [(_ a b c)     `(Scm_Values2 ,a ,b ,c)]
-  [(_ a b c d)   `(Scm_Values2 ,a ,b ,c ,d)]
-  [(_ a b c d e) `(Scm_Values2 ,a ,b ,c ,d ,e)]
+  [(_ a b c)     `(Scm_Values3 ,a ,b ,c)]
+  [(_ a b c d)   `(Scm_Values4 ,a ,b ,c ,d)]
+  [(_ a b c d e) `(Scm_Values5 ,a ,b ,c ,d ,e)]
   [(_ x ...)   `(Scm_Values ,(fold (lambda (elt r) `(Scm_cons ,elt ,r)) '() x))]
   )
 ;; Using quote is a convenient way to embed Scheme constant in C code.
