@@ -78,14 +78,14 @@
 ;; Test for continuation thrown over C stack boundary
 ;;
 
-;; NB: these test doesn't really test the continuation and
-;; C stack boundary anymore, since 'sort' function with compare
-;; function is now implemented in Scheme.
+;; We use internal proceduer %apply-rec to cross C stack boundary
+;; intentionally.
+
+(define %apply-rec (with-module gauche.internal %apply-rec))
 
 (define (callcc-over-cstack)
   (call-with-current-continuation
-   (lambda (c)
-     (sort '(1 2 3 4 5 6) (lambda (a b) (c 10))))))
+   (lambda (c) (%apply-rec (lambda () (c 10))))))
 
 (test "call/cc (cstack)" 10 callcc-over-cstack)
 
@@ -97,31 +97,28 @@
         (receive x
             (call-with-current-continuation
              (lambda (c)
-               (sort '(1 2 3 4 5 6)
-                     (lambda (a b) (c 10 11)))))
+               (%apply-rec (lambda () (c 10 11)))))
           x)))
 
 (test "call/cc (cstack, two level)" '(10 . 11)
       (lambda ()
         (cons (call-with-current-continuation
                (lambda (c)
-                 (sort '(1 2 3 4 5 6)
-                       (lambda (a b)
-                         (sort '(1 2 3 4 5 6)
-                               (lambda (a b) (c 10)))))))
+                 (%apply-rec
+                  (lambda ()
+                    (%apply-rec (lambda () (c 10)))))))
               11)))
 
 (test "call/cc (cstack, two level, two hop)" '(11 . 11)
       (lambda ()
         (cons (call-with-current-continuation
                (lambda (c)
-                 (sort '(1 2 3 4 5 6)
-                       (lambda (a b)
-                         (c (+ (call-with-current-continuation
-                                (lambda (d)
-                                  (sort '(1 2 3 4 5 6)
-                                        (lambda (a b) (d 10)))))
-                               1))))))
+                 (%apply-rec 
+                  (lambda ()
+                    (c (+ (call-with-current-continuation
+                           (lambda (d)
+                             (%apply-rec (lambda () (d 10)))))
+                          1))))))
               11)))
 
 ;; Paranoia
@@ -134,10 +131,9 @@
              (dynamic-wind
               (lambda () (set! x (cons 'c x)))
               (lambda ()
-                (sort '(1 2 3 4 5 6)
-                      (lambda (a b)
-                        (set! x (cons 'b x))
-                        (c 0)))
+                (%apply-rec (lambda () 
+                              (set! x (cons 'b x))
+                              (c 0)))
                 (set! x (cons 'z x))
                 )
               (lambda () (set! x (cons 'a x))))))
