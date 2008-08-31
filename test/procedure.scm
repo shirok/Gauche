@@ -6,6 +6,26 @@
 (test-start "procedures")
 
 ;;-------------------------------------------------------------------
+(test-section "C-stack boundary crossing")
+
+(test* "apply-rec0" 'a
+       ((with-module gauche.internal %apply-rec0) (lambda () 'a)))
+(test* "apply-rec1" '(a . b)
+       ((with-module gauche.internal %apply-rec1) (lambda (x) (cons 'a x)) 'b))
+(test* "apply-rec2" '(x y c)
+       ((with-module gauche.internal %apply-rec2)
+        (lambda (a b) (list a b 'c)) 'x 'y))
+(test* "apply-rec3" '(x y z c)
+       ((with-module gauche.internal %apply-rec3)
+        (lambda (a b c) (list a b c 'c)) 'x 'y 'z))
+(test* "apply-rec4" '(x y z w c)
+       ((with-module gauche.internal %apply-rec4)
+        (lambda (a b c d) (list a b c d 'c)) 'x 'y 'z 'w))
+(test* "apply-rec" '(x y z w u v c)
+       ((with-module gauche.internal %apply-rec)
+        (lambda (a b c d e f) (list a b c d e f 'c)) 'x 'y 'z 'w 'u 'v))
+
+;;-------------------------------------------------------------------
 (test-section "combinatorial programming utilities")
 
 (test* "pa$" 10 ((pa$ + 3) 7))
