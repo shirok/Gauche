@@ -622,11 +622,35 @@ pthread_key_t Scm_VMKey(void)
         NEXT;                                   \
     } while (0)
 
+/* WNA - "Wrong Number of Arguments" handler.  The actual call is in vmcall.c.
+   We handle the autocurrying magic here.
 
-static void wna(ScmObj proc, int argc)
+   PROC is the procedure object (guaranteed).
+   NGIVEN is # of actual args on the VM stack.  The last several args may
+   be folded in a list in APPLY_CALL context.  FOLDLEN holds the number of
+   folded args.  In normal call context, FOLDLEN is -1.
+
+   If the proc is curried, the VM stack state is ready to execute next op.
+   Otherwise thie procedure won't return.
+*/
+
+static void wna(ScmVM *vm, ScmObj proc, int ngiven, int foldlen)
 {
+    int reqargs = SCM_PROCEDURE_REQUIRED(proc);
+#if 0
+    /* Disabled for now.  See proc.c (Scm_CurryProcedure) for the details. */
+    if (SCM_PROCEDURE_CURRYING(proc) && ngiven < reqargs && ngiven > 0) {
+        VAL0 = Scm_CurryProcedure(proc, ARGP, ngiven, foldlen);
+        /*TODO: how should we count this path for profiling? */
+    } else {
+        Scm_Error("wrong number of arguments for %S (required %d, got %d)",
+                  proc, reqargs, ngiven);
+        /*NOTREACHED*/
+    }
+#else
     Scm_Error("wrong number of arguments for %S (required %d, got %d)",
-              proc, SCM_PROCEDURE_REQUIRED(proc), argc);
+              proc, reqargs, ngiven);
+#endif
 }
 
 /*===================================================================

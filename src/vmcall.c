@@ -15,25 +15,29 @@
 
 #undef ADJUST_ARGUMENT_FRAME
 #if !defined(APPLY_CALL)
-#define ADJUST_ARGUMENT_FRAME(proc, argc)               \
-    do {                                                \
-        int reqargs, restarg;                           \
-        reqargs = SCM_PROCEDURE_REQUIRED(proc);         \
-        restarg = SCM_PROCEDURE_OPTIONAL(proc);         \
-        if (restarg) {                                  \
-            ScmObj p = SCM_NIL, a;                      \
-            if (argc < reqargs) wna(VAL0, argc);        \
-            /* fold &rest args */                       \
-            while (argc > reqargs) {                    \
-                POP_ARG(a);                             \
-                p = Scm_Cons(a, p);                     \
-                argc--;                                 \
-            }                                           \
-            PUSH_ARG(p);                                \
-            argc++;                                     \
-        } else {                                        \
-            if (argc != reqargs) wna(VAL0, argc);       \
-        }                                               \
+#define ADJUST_ARGUMENT_FRAME(proc, argc)                               \
+    do {                                                                \
+        int reqargs, restarg;                                           \
+        reqargs = SCM_PROCEDURE_REQUIRED(proc);                         \
+        restarg = SCM_PROCEDURE_OPTIONAL(proc);                         \
+        if (restarg) {                                                  \
+            ScmObj p = SCM_NIL, a;                                      \
+            if (argc < reqargs) {                                       \
+                wna(vm, VAL0, argc, -1); RETURN_OP(); NEXT;             \
+            }                                                           \
+            /* fold &rest args */                                       \
+            while (argc > reqargs) {                                    \
+                POP_ARG(a);                                             \
+                p = Scm_Cons(a, p);                                     \
+                argc--;                                                 \
+            }                                                           \
+            PUSH_ARG(p);                                                \
+            argc++;                                                     \
+        } else {                                                        \
+            if (argc != reqargs) {                                      \
+                wna(vm, VAL0, argc, -1); RETURN_OP(); NEXT;             \
+            }                                                           \
+        }                                                               \
     } while (0)
 #else /*APPLY_CALL*/
 #define ADJUST_ARGUMENT_FRAME(proc, argc)                               \
@@ -45,7 +49,7 @@
         restarg = SCM_PROCEDURE_OPTIONAL(proc);                         \
         if ((!restarg && ((rargc+argc-1) != reqargs))                   \
             || (restarg && ((rargc+argc-1) < reqargs))) {               \
-            wna(VAL0, rargc+argc-1);                                    \
+            wna(vm, VAL0, rargc+argc-1, rargc); RETURN_OP(); NEXT;      \
         }                                                               \
         if (argc+rargc < reqargs+(restarg?1:0)) {                       \
             CHECK_STACK(reqargs+(restarg?1:0) - (argc+rargc));          \

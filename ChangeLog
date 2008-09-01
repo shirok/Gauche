@@ -1,3 +1,12 @@
+2008-08-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (wna), src/vmcall.c, src/proc.c (Scm_CurryProcedure),
+	  src/gauche.h, src/builtin-syms.scm, src/intlib.stub,
+	  lib/gauche/procedure.scm:
+	  Experimentally added some code to support automatic currying.
+	  This version still has an issue (see the comment in src/proc.c),
+	  so the feature is commented out.
+
 2008-08-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (values): Expands 'values' cise macro

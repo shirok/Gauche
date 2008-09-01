@@ -116,6 +116,26 @@
                  (loop (cdr preds)))
                 (else #f))))))
 
+;; Curryable procedures ------------------------------------
+
+#|  disabled for now; see proc.c for the details.
+
+(define %procedure-currying-set!        ;hidden
+  (with-module gauche.internal %procedure-currying-set!))
+
+(define-syntax curry-lambda
+  (syntax-rules ()
+    [(_ formals . body)
+     (let1 var (lambda formals . body)
+       (%procedure-currying-set! var #t)
+       var)]))
+
+(define-syntax define-curry
+  (syntax-rules ()
+    [(_ (name . formals) . body)
+     (define name (curry-lambda formals . body))]))
+|#
+
 ;; Procedure arity -----------------------------------------
 
 (define-class <arity-at-least> ()

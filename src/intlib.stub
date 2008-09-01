@@ -619,7 +619,9 @@
 (define-cproc %apply-rec4 (p a b c d)    (call "Scm_ApplyRec4"))
 (define-cproc %apply-rec  (p &rest args) (call "Scm_ApplyRec"))
 
-
+;; To add autocurrying flag
+(define-cproc %procedure-currying-set! (p::<procedure> f::<boolean>)
+  (body <void> (set! (SCM_PROCEDURE_CURRYING p) f)))
 
 ;; Local variables:
 ;; mode: scheme

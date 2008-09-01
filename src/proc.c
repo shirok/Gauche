@@ -37,6 +37,7 @@
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/code.h"
+#include "gauche/builtin-syms.h"
 
 /*=================================================================
  * Classes
@@ -120,6 +121,133 @@ ScmObj Scm_NullProc(void)
     }
     return SCM_OBJ(theNullProc);
 }
+
+/*=================================================================
+ * Currying
+ */
+
+/* NB: This code doesn't work yet if the original procedure takes
+   variable length arguments.  We disable this feature for now. */
+
+#if 0
+
+/* When a procedure is marked autocurrying and it is given with args less
+ * than reqargs, Scm_CurryProcedure is called.  It saves the given args
+ * into the curried_packet and creates a subr of curried procedure.
+ *
+ * The argument GIVEN points the beginning of argument array.  It actually
+ * points into the VM stack, so we should copy the information before
+ * calling anything that might change the VM state.
+ * The # of given argument is indicated by NGIVEN.
+ *
+ * Note that some of the given arguments are already folded into a list
+ * (in case we are called via APPLY).   
+ *  
+ *   when FOLDLEN < 0            when FOLDLEN >= 0
+ *    N = NGIVEN-1                 N = NGIVEN-1
+ *                                 K = NGIVEN-1-FOLDLEN
+ *
+ *          | argN |                 |   ----> (argK argK+1 ... argN)
+ *          :      :                 :      :
+ *          | arg1 |                 | arg1 |
+ *   given >| arg0 |          given >| arg0 |
+ *
+ *  We assume at least one arg should be given in order to curry, and
+ *  ngiven should always be smaller than the # of required args (otherwise
+ *  we don't need to curry at all!).  Thus 0 < NGIVEN < REQUIRED.
+ */
+typedef struct curried_packet_rec {
+    ScmObj proc;
+    int ngiven;
+    ScmObj argv[4];          /* keep first 4 args unfolded */
+    ScmObj more;             /* the rest of args */
+} curried_packet;
+
+static ScmObj kick_curried(ScmObj *args, int nargs, void *data)
+{
+    curried_packet *p = (curried_packet*)data;
+    ScmObj proc = p->proc;
+    ScmObj *av = p->argv;
+    SCM_ASSERT(p->ngiven + nargs >= 2);
+
+    /* TODO: if p->proc takes variable length arguments, we shouldn't use
+       Scm_VMApply* family below, since the last word of args already
+       contains folded arguments, and Scm_VMApply causes to fold the
+       arguments again.
+    */
+    
+    switch (p->ngiven + nargs) {
+    case 2:
+        return Scm_VMApply2(proc, p->argv[0], args[0]);
+    case 3:
+        switch (nargs) {
+        case 1: return Scm_VMApply3(proc, av[0], av[1], args[0]);
+        case 2: return Scm_VMApply3(proc, av[0], args[0], args[1]);
+        default: break;         /*NOTREACHED*/
+        }
+    case 4:
+        switch (nargs) {
+        case 1: return Scm_VMApply4(proc, av[0], av[1], av[2], args[0]);
+        case 2: return Scm_VMApply4(proc, av[0], av[1], args[0], args[1]);
+        case 3: return Scm_VMApply4(proc, av[0], args[0], args[1], args[2]);
+        default: break;         /*NOTREACHED*/
+        }
+    default:
+        {
+            ScmObj h = SCM_NIL, t = SCM_NIL;
+            int i;
+            for (i = 0; i < p->ngiven; i++) SCM_APPEND1(h, t, av[i]);
+            if (SCM_PAIRP(p->more)) SCM_APPEND(h, t, Scm_CopyList(p->more));
+            for (i = 0; i < nargs; i++) SCM_APPEND1(h, t, args[i]);
+            return Scm_VMApply(proc, h);
+        }
+    }
+    return SCM_UNDEFINED;       /* dummy */
+}
+
+ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given, int ngiven, int foldlen)
+{
+    int required = SCM_PROCEDURE_REQUIRED(proc);
+    int n = ngiven - foldlen;
+    int i;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmObj restarg = (foldlen > 0)? given[n] : SCM_NIL;
+    ScmObj subr;
+
+    SCM_ASSERT(SCM_PROCEDUREP(proc));
+    SCM_ASSERT(ngiven < required && ngiven > 0);
+    curried_packet *packet = SCM_NEW(curried_packet);
+    packet->proc = proc;
+    packet->ngiven = ngiven;
+
+    /* pack the given args into the packet */
+    switch (n) {
+    default: packet->argv[3] = given[3]; /*FALLTHROUGH*/
+    case 3: packet->argv[2] = given[2]; /*FALLTHROUGH*/
+    case 2: packet->argv[1] = given[1]; /*FALLTHROUGH*/
+    case 1: packet->argv[0] = given[0]; /*FALLTHROUGH*/
+    }
+    if (foldlen > 0) {
+        for (i=n; i<4 && SCM_PAIRP(restarg); i++, restarg = SCM_CDR(restarg)) {
+            packet->argv[i] = SCM_CAR(restarg);
+        }
+    }
+    for (i=4; i<n; i++) {
+        SCM_APPEND1(h, t, given[i]);
+    }
+    if (SCM_PAIRP(restarg)) {
+        SCM_APPEND(h, t, Scm_CopyList(restarg));
+    }
+    packet->more = h;
+
+    subr = Scm_MakeSubr(kick_curried, (void*)packet,
+                        required - ngiven, SCM_PROCEDURE_OPTIONAL(proc),
+                        Scm_Cons(SCM_SYM_CURRIED, SCM_PROCEDURE_INFO(proc)));
+    SCM_PROCEDURE_CURRYING(subr) = TRUE;
+    return subr;
+}
+
+#endif /* 0 : disabling currying feature for now */
 
 /*=================================================================
  * Mapper family
@@ -362,6 +490,11 @@ static ScmObj proc_locked(ScmProcedure *p)
     return SCM_MAKE_BOOL(p->locked);
 }
 
+static ScmObj proc_currying(ScmProcedure *p)
+{
+    return SCM_MAKE_BOOL(p->currying);
+}
+
 static ScmObj proc_info(ScmProcedure *p)
 {
     return p->info;
@@ -376,6 +509,7 @@ static ScmClassStaticSlotSpec proc_slots[] = {
     SCM_CLASS_SLOT_SPEC("required", proc_required, NULL),
     SCM_CLASS_SLOT_SPEC("optional", proc_optional, NULL),
     SCM_CLASS_SLOT_SPEC("locked", proc_locked, NULL),
+    SCM_CLASS_SLOT_SPEC("currying", proc_currying, NULL),
     SCM_CLASS_SLOT_SPEC("info", proc_info, NULL),
     SCM_CLASS_SLOT_SPEC("setter", proc_setter, NULL),
     SCM_CLASS_SLOT_SPEC_END()

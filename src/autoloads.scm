@@ -125,6 +125,7 @@
           filter$ partition$ remove$ find$ find-tail$
           any$ every$ delete$ member$ assoc$
           any-pred every-pred
+          ;;(:macro curry-lambda) (:macro define-curry)
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value disasm
           (:macro case-lambda))

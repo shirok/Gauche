@@ -102,6 +102,9 @@
     (abstract                  SCM_SYM_ABSTRACT)
     (base                      SCM_SYM_BASE)
 
+    ;; proc
+    (curried                   SCM_SYM_CURRIED)
+
     ;; core
     (*cond-features*           SCM_SYM_COND_FEATURES)
 

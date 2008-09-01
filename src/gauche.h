@@ -1217,18 +1217,19 @@ typedef ScmObj (*ScmTransformerProc)(ScmObj self, ScmObj form, ScmObj env,
 /* Base structure */
 struct ScmProcedureRec {
     SCM_INSTANCE_HEADER;
-    unsigned char required;     /* # of required args */
-    unsigned char optional;     /* 1 if it takes rest args */
-    unsigned char type;         /* procedure type  */
-    unsigned char locked;       /* setter locked? */
-    ScmObj info;                /* source code info */
-    ScmObj setter;              /* setter, if exists. */
-    ScmObj inliner;             /* inliner.  NB: for backward compatibility,
-                                   this may be initialized by NULL. */
+    unsigned int required : 10;    /* # of required args */
+    unsigned int optional : 1;     /* 1 if it takes rest args */
+    unsigned int type     : 3;     /* ScmProcedureType */
+    unsigned int locked   : 1;     /* setter locked? */
+    unsigned int currying : 1;     /* autocurrying */
+    ScmObj info;                   /* source code info */
+    ScmObj setter;                 /* setter, if exists. */
+    ScmObj inliner;                /* inliner.  NB: for backward compatibility,
+                                      this may be initialized by NULL. */
 };
 
 /* procedure type */
-enum {
+enum ScmProcedureType {
     SCM_PROC_SUBR,
     SCM_PROC_CLOSURE,
     SCM_PROC_GENERIC,
@@ -1240,6 +1241,7 @@ enum {
 #define SCM_PROCEDURE_REQUIRED(obj) SCM_PROCEDURE(obj)->required
 #define SCM_PROCEDURE_OPTIONAL(obj) SCM_PROCEDURE(obj)->optional
 #define SCM_PROCEDURE_TYPE(obj)     SCM_PROCEDURE(obj)->type
+#define SCM_PROCEDURE_CURRYING(obj) SCM_PROCEDURE(obj)->currying
 #define SCM_PROCEDURE_INFO(obj)     SCM_PROCEDURE(obj)->info
 #define SCM_PROCEDURE_SETTER(obj)   SCM_PROCEDURE(obj)->setter
 #define SCM_PROCEDURE_INLINER(obj)  SCM_PROCEDURE(obj)->inliner
@@ -1260,12 +1262,17 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
     SCM_PROCEDURE(obj)->required = req,                 \
     SCM_PROCEDURE(obj)->optional = opt,                 \
     SCM_PROCEDURE(obj)->type = typ,                     \
+    SCM_PROCEDURE(obj)->locked = FALSE,                 \
+    SCM_PROCEDURE(obj)->currying = FALSE,               \
     SCM_PROCEDURE(obj)->info = inf,                     \
     SCM_PROCEDURE(obj)->setter = SCM_FALSE,             \
     SCM_PROCEDURE(obj)->inliner = SCM_FALSE
 
 #define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, inf, inl)  \
-    { { klass }, (req), (opt), (typ), FALSE, (inf), SCM_FALSE, (inl) }
+    { { klass }, (req), (opt), (typ), FALSE, FALSE, (inf), SCM_FALSE, (inl) }
+
+SCM_EXTERN ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given,
+                                     int ngiven, int foldlen);
 
 /* Closure - Scheme defined procedure */
 struct ScmClosureRec {
