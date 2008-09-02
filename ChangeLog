@@ -1,3 +1,8 @@
+2008-09-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm (define-referencer): Allow C++-style
+	  method invocation: (-> A (B C) (D E)) expands to "A->B(C)->D(E)".
+
 2008-08-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (wna), src/vmcall.c, src/proc.c (Scm_CurryProcedure),

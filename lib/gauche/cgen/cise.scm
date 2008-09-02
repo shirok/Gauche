@@ -693,7 +693,7 @@
         (match form
           [(_ a b ...)
            (list "("(render-rec a eenv)")",sop
-                 (intersperse ,sop (map cise-render-identifier b)))])
+                 (intersperse ,sop (map (cut render-rec <> eenv) b)))])
         env))))
 
 (define-referencer ->  "->")
