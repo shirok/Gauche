@@ -2950,7 +2950,7 @@ void Scm_InitStaticClassWithSupers(ScmClass *klass,
 /* A special initialization for some of builtin classes.
    Sets klass's metaclass to META.  If META is NULL, a new metaclass
    (whose name has "-meta" after the original class name except brackets)
-   is created automatically.  This procedure should be only if
+   is created automatically.  This procedure should be used only if
    metaclass is absolutely required (e.g. all condition classes should
    be an instance of <condition-meta>).   The older version of Gauche
    has metaclasses for many builtin classes, which is a compensation of
