@@ -163,7 +163,7 @@
     (*+                        SCM_SYM_STARP)
     (+                         SCM_SYM_PLUS)
     (+?                        SCM_SYM_PLUSQ)
-    (+?                        SCM_SYM_PLUSP)
+    (++                        SCM_SYM_PLUSP)
     (?                         SCM_SYM_QUESTION)
     (??                        SCM_SYM_QUESTIONQ)
     (?+                        SCM_SYM_QUESTIONP)

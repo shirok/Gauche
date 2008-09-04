@@ -1,3 +1,8 @@
+2008-09-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/builtin-syms.scm (SCM_SYM_PLUSP): defined to an wrong symbol
+	  '+?'; should be '++'.
+
 2008-09-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (define-referencer): Allow C++-style
