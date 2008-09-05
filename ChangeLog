@@ -1,5 +1,9 @@
 2008-09-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/scmlib.scm (exit, exit-handler): Implemented exit-handler
+	  feature to hook application's exit operation.  See the manual
+	  for detailed explanation and design rationale.
+
 	* src/builtin-syms.scm (SCM_SYM_PLUSP): defined to an wrong symbol
 	  '+?'; should be '++'.
 
@@ -1625,8 +1629,8 @@
 2007-03-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/icmp.scm: added ICMPv6 support.
-	
-	* ext/net/net.c, ext/net/netlib.stub (inet-checksum+): added 
+
+	* ext/net/net.c, ext/net/netlib.stub (inet-checksum+): added
 	  inet-checksum+, which can be used to combine checksums; handy
 	  for IPv6 packet checksum calculation, for it requires including
 	  pseudo-IPv6 header.  See RFC2460 sectin 8.1.

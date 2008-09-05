@@ -11871,22 +11871,223 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してあります。
 @subsection Program termination
 @c NODE プログラムの終了
 
-@defun exit &optional (code 0)
+@c EN
+Gauche has a few ways to terminate itself (other than returning
+from @code{main}).  The @code{exit} procedure is a graceful way
+with all proper cleanups.  @code{sys-exit} and @code{sys-abort}
+may be used in emergency where proper cleanup is impossible.
+@c JP
+Gaucheは(@code{main}から返る以外に)自分自身を終了させる方法をいくつか
+提供しています。@code{exit}手続きが、正しいクリーンアップを行って
+優雅に終了する方法です。一方、正しいクリーンアップが不可能な非常事態には
+@code{sys-exit}か@code{sys-abort}を使います。
+@c COMMON
+
+
+@defun exit &optional (code 0) (fmtstr #f) args @dots{}
 [POSIX]
 @c EN
 Terminates the current process with the exit code @var{code}.
 @var{Code} must be zero or positive exact integer.
-This procedure first invokes the @var{after} thunks of the current dynamic
-handlers (@xref{Continuation}), then flushes opened file buffers,
-finally calls @code{exit(2)}.
+When a string is given to @var{fmtstr}, it is passed to
+@code{format} (@xref{Output}), with the rest arguments @var{args},
+to produce a message to the standard error port
+(@emph{not} the current error port; see @ref{Common port operations}).
 @c JP
 現在のプロセスを終了し、@var{code}を終了コードにします。
 @var{code}はゼロもしくは正の正確な整数でなければなりません。
-この手続きはまずアクティブなダイナミックハンドラの@var{after}手続きを全て呼び出し
-(@xref{Continuation})、続いてオープンされている出力ポートのバッファを
-フラッシュし、最後に@code{exit(2)}を呼び出します。
+@var{fmtstr}文字列が与えられた場合、それは残りの引数@var{args}と
+ともに@code{format}に渡され、standard error portにメッセージとして
+印字されます (@code{current-error-port}ではありません。
+@ref{Common port operations}参照。また、@code{format}については
+@ref{Output}参照。)
+@c COMMON
+
+@c EN
+In fact, the exitting procedure is a bit more complicated.
+The precise steps of exitting is as follow.
+@c JP
+実のところ、プロセス終了の手続きはもう少し複雑です。
+正確な段階を次に説明します。
+@c COMMON
+
+@enumerate 
+@item
+@c EN
+The value of parameter @code{exit-handler} is checked.  
+If it is not @code{#f}, the value is called as a procedure
+with three arguments: @var{code}, @var{fmtstr}, and a list of rest
+arguments.  It is the default procedure of @code{exit-handler}
+that prints out the message to the standard error port.
+If an error occurs within exit handler, it is captured and
+discarded.  Other exceptions are not caught.
+@c JP
+パラメータ@code{exit-handler}の値がチェックされます。
+もしそれが@code{#f}でなければ、それは3引数の手続きとみなされ、
+@var{code}、@var{fmtstr}、そして残りの引数のリストを引数として
+呼び出されます。実はメッセージを標準エラー出力に出しているのは
+デフォルトの@code{exit-handler}です。
+終了ハンドラの中でエラーが起きた場合、そのエラーは捕捉され捨てられます。
+エラー以外の例外は捕捉されません。
+@c COMMON
+
+@item
+@c EN
+The @var{after} thunks of the active dynamic winds are invoked.
+Any exceptions raised in @var{after} thunks are captured and discarded.
+@c JP
+アクティブな@code{dynamic-wind}の@var{after}サンクが順に呼び出されます。
+@var{after}サンク中で発生した例外は捕捉され捨てられます。
+@c COMMON
+
+@item
+@c EN
+The clean-up handlers registered via C API @code{Scm_AddCleanupHandler}
+are invoked.  These are usually responsible for under-the-hood cleanup
+jobs for each application that embeds Gauche.  From the Scheme world 
+there's not much to care.
+@c JP
+C APIの@code{Scm_AddCleanupHandler}で登録されたクリーンアップハンドラが
+呼ばれます。このハンドラは通常、Gaucheを内蔵しているアプリケーション特有の
+クリーンアップをするために使われます。Schemeの世界からはあまり気にする必要は
+ないでしょう。
+@c COMMON
+
+@item
+@c EN
+The unclosed output buffered ports are flushed.
+@c JP
+まだ閉じられていない出力ポートのバッファが掃き出されます。
+@c COMMON
+
+@item
+@c EN
+The process exits with @var{code} as an exit code, via @code{exit(3)}.
+@c JP
+@code{exit(3)}を呼び、プロセスは@var{code}を終了コードとして終了します。
+@c COMMON
+@end enumerate
+
+@c EN
+The @code{exit-handler} mechanism allows the application to hook its
+exit operation.   Note that it is not for simple cleanup jobs; 
+@code{dynamic-wind}, @code{guard} or @code{unwind-protect} are more appropriate.   
+@code{exit-handler} is for more specific use just upon application exit.
+For example, GUI applications may want to post a dialog
+instead of printing to stderr.
+
+For this reason, the library code shouldn't change @code{exit-handler};
+only the application knows what to do when it exits.
+
+Another useful case is when you
+want to call a third-party code which calls @code{exit} inside.  In
+that case you may swap the @code{exit-handler} for the one
+that raises a non-error exception while calling the third-party code.
+Non-error exception isn't caught in @code{exit}, effectivelly
+interrupts the steps explained above.   (Yet the @var{after} thunks
+of dynamic handlers are processed just like normal exception 
+handling case.)
+Your appication code can then capture the exception.
+You can use @code{parameterize}
+to swap @code{exit-handler} dynamically
+and thread-safely (@xref{Parameters}).
+@c JP
+@code{exit-handler}のメカニズムはアプリケーションが終了処理をフックすることを
+可能にします。ただし、単純なクリーンアップ処理のためのものではありません
+(クリーンアップ処理には
+@code{dynamic-wind}, @code{guard}あるいは@code{unwind-protect}を使う方が
+適切です。)
+@code{exit-handler}はもっと「アプリケーションの終了」という特定の事態に
+対して何か処理を行いたい場合に使います。
+例えばGUIアプリケーションはメッセージを標準エラー出力ではなく
+ダイアログとして表示する、というようなことです。
+
+従って、ライブラリコードは@code{exit-handler}に触るべきではありません。
+アプリケーションの終了時に何をすべきかを知っているのはアプリケーション自身なのですから。
+
+別の使いどころとしては、サードパーティ製のコードで中で@code{exit}が
+呼ばれる可能性のあるものを安全に呼び出したいという場合があります。
+そのコードを呼び出している間だけ、@code{exit-handler}を
+エラーではない例外を発生させる手続きへと差し替えます。
+エラーではない例外は@code{exit}では捕捉されないので、実質的に
+上で説明したような終了処理のステップは中断されることになります
+(但し、ダイナミックハンドラの@var{after}サンクは通常の例外発生時と
+同じように処理されます)。
+アプリケーションコードの方でその例外を捕捉してやればよいのです。
+@code{parameterize}を使えば@code{exit-handler}を動的に、
+かつスレッドセーフに差し替えることが容易になります
+(@ref{Parameters}参照)。
+@c COMMON
+
+@example
+(guard (e [(eq? e 'exit-called) (handle-exit-as-desired)])
+  (parameterize ((exit-handler (lambda (c f a) (raise 'exit-called))))
+    (call-third-party-library)))
+@end example
+
+@c EN
+Generally, calling @code{exit} while other threads are running
+should be avoided, since it only rewinds the dynamic handlers active
+in the calling threads, and other threads will be killed abruptly.
+If you have to do so for some reason,
+you may be able to use @code{exit-handler} to tell to other threads
+that the application is exitting.  (There's no general way, and
+Gauche doesn't even have a list of all running threads; it's application's
+responsibility).
+@c JP
+一般的に、他のスレッドが走っている時に@code{exit}を呼ぶことは推奨されません。
+@code{exit}手続きは該当スレッド上でアクティブなダイナミックハンドラしか巻き
+戻さないので、他のスレッドはいきなり終了させられてしまいます。
+しかし@code{exit}を呼ばざるを得ない場合には、
+@code{exit-handler}を使って他のスレッドにアプリケーションが終了しつつあることを
+伝えられるかもしれません (但しGauche自身は走っているスレッドのリストといった
+情報は持っていないので、アプリケーションごとに固有のロジックを実装する必要が
+あります。)
+@c COMMON
+
+@c EN
+Note on design: Some languages integrates exit handling
+into exception handling, treating exit as a kind of exception.
+It is a tempting idea, so much that we've tried it.  It didn't
+work out well in Gauche; a big annoyance was that when 
+an @var{after} thunk raised an exception during
+rewinding @code{dynamic-wind}s, it shadowed the original
+@emph{exit} exception.
+@c JP
+設計に関する覚書: 終了を一種の例外とすることで、
+終了処理を例外処理と統合している言語もあります。
+良いアイディアに思えたので我々もそのような実装を試してみましたが、
+Gaucheではうまくいきませんでした。大きな理由のひとつは、
+@code{dynamic-wind}の巻き戻し中に@var{after}で例外が
+発生すると、その例外がもともとの「終了」例外を隠してしまうことでした。
 @c COMMON
 @end defun
+
+@defun exit-handler &optional new-handler
+@c EN
+When called without argument, returns the value of the current exit
+handler.  When called with an argument, sets @var{new-handler} as the
+value of the exit handler, and returns the previous value of the
+exit handler.    @var{new-handler} must be a procedure that takes
+three arguments, or @code{#f}.
+
+The value of exit handler is thread-specific, and the default value
+is inherited from the value of the current exit handler of the parent
+thread.  @code{exit-handler} can be used as if it's a parameter
+in the @code{parameterize} macro (@xref{Parameters}).
+@c JP
+引数なしで呼ばれた場合、現在のexit handlerの値を返します。
+引数つきで呼ばれた場合は、@var{new-handler}を現在のexit handlerの
+値とし、以前の値を返します。@var{new-handler}は3つの引数をとる
+手続きか、@code{#f}でなければなりません。
+
+exit handlerの値はスレッドごとに固有で、デフォルト値はスレッドが作られた時点の
+親スレッドのexit handlerの値から引き継がれます。
+@code{exit-handler}はあたかもパラメータのように@code{parameterize}マクロで
+使うことができます (@ref{Parameters}参照)。
+@c COMMON
+@end defun
+
 
 
 @defun sys-exit code

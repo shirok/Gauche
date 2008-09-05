@@ -416,6 +416,29 @@
 
 (define <exception> <condition>) ;; backward compatibility
 
+;; exit handler.  we don't want to import the fluff with gauche.parameter,
+;; so we manually allocate parameter slot.
+
+(define exit-handler
+  (receive (index id) (%vm-make-parameter-slot)
+    ;; set default exit handler
+    (%vm-parameter-set! index id
+                        (lambda (code fmt args)
+                          (when fmt
+                            (apply format (standard-error-port) fmt args))))
+    (lambda maybe-arg                   ;todo: replace with :optional syntax
+      (let1 old (%vm-parameter-ref index id) ;todo: replace with rlet1
+        (when (pair? maybe-arg)
+          (%vm-parameter-set! index id (car maybe-arg)))
+        old))))
+
+(define (exit . args)
+  (let-optionals* args ([code 0] [fmt #f] . args)
+    (cond [(exit-handler)
+           => (lambda (h)
+                (guard (e [(<error> e) #f]) (h code fmt args)))])
+    (%exit code)))
+
 ;;;=======================================================
 ;;; symbol-bound? (deprecated)
 ;;;

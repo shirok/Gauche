@@ -1644,7 +1644,7 @@
                        args shared::<boolean>)
   (call <void> "Scm_Format"))
 
-(define-cproc exit (&optional (code::<fixnum> 0))
+(define-cproc %exit (&optional (code::<fixnum> 0))
   (call <void> "Scm_Exit"))
 
 ;;
