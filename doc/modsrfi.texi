@@ -4602,10 +4602,14 @@ SRFI-43のいくつかの関数は組み込みになっています。@ref{Vectors}を見てく
 
 @defun vector-append vec @dots{}
 [SRFI-43]
+Returns a newly allocated vector whose contents are concatenation
+of elements of @var{vec} in order.
 @end defun
 
 @defun vector-concatenate list-of-vectors
 [SRFI-43]
+Acts like @code{(apply vector-append list-of-vectors)}, though
+this may be more efficient.
 @end defun
 
 @c EN
@@ -4616,10 +4620,18 @@ SRFI-43のいくつかの関数は組み込みになっています。@ref{Vectors}を見てく
 
 @defun vector-empty? vec
 [SRFI-43]
+Returns @code{#t} if @var{vec}'s length is zero, and
+@code{#f} if @var{vec}'s length is more than zero.
+Signals an error if @var{vec} is not a vector.
 @end defun
 
 @defun vector= elt= vec @dots{}
 [SRFI-43]
+Compares @var{vec}s element-wise, using given predicate @var{elt=}.
+Returns @code{#t} iff lengths of all the vectors are the same,
+and every corresponding elements are equal by @var{elt=}.
+@var{Elt=} is always called with two arguments and must
+return @code{#t} iff two are the same. 
 @end defun
 
 @c EN
@@ -4630,6 +4642,9 @@ SRFI-43のいくつかの関数は組み込みになっています。@ref{Vectors}を見てく
 
 @defun vector-fold kons knil vec1 vec2 @dots{}
 [SRFI-43]
+@var{Kons} is iterated over each corresponding elements of
+the given vectors, with passing around the seed value, whose
+default is proided by @var{knil}.
 @end defun
 
 @defun vector-fold-right kons knil vec1 vec2 @dots{}
@@ -4661,23 +4676,62 @@ SRFI-43のいくつかの関数は組み込みになっています。@ref{Vectors}を見てく
 @defun vector-index pred vec1 vec2 @dots{}
 @defunx vector-index-right pred vec1 vec2 @dots{}
 [SRFI-43]
+Returns the index of the first or the last elements in @var{vec1}
+@var{vec2} @dots{} that satisfy @var{pred}, respectively.
+Returns @code{#f} if no elements satisfy @var{pred}.
+In @code{vector-index}, comparison ends at the end of the shortest vector.
+For @code{vector-index-right}, all the vectors must have the same length.
 @end defun
 
 @defun vector-skip pred vec1 vec2 @dots{}
 @defunx vector-skip-right pred vec1 vec2 @dots{}
 [SRFI-43]
+Like @code{vector-index} and @code{vector-index-right}, except that
+the result of @var{pred} is negated.  That is, returns the index
+of the first or the last elements that don't sastisfy @var{pred}.
 @end defun
 
 @defun vector-binary-search vec value cmp &optional start end
 [SRFI-43+]
+Look for @var{value} in a vector @var{vec}, and returns its
+index if it is found, or @code{#f} if it is not found.
+Comparison of @var{value} and an element in @var{vec} is
+done by a procedure @var{cmp}, which takes two arguments,
+and should return a negative integer if the first argument is less than the
+second, 0 if they are the same, and a positive integer if the first
+is greater than tne second.
+
+Elements in @var{vec} must be ordered from smaller to greater
+w.r.t. @var{cmp}.  Using that fact, this procedure performs
+binary search instead of linear search.
+
+The optional arguments @var{start} and @var{end} are an
+extention to SRFI-43, and can be used to limit the range of the
+search in @var{start}-th element (inclusive) to
+@var{end}-th element (exclusive).
 @end defun
 
-@defun vector-any pred  vec1 vec2 @dots{}
+@defun vector-any pred vec1 vec2 @dots{}
 [SRFI-43]
+Applies @var{pred} on each corresponding elements 
+of @var{vec1} @var{vec2} @dots{} left to right, and
+as soon as @var{pred} returns non-@code{#f} value, 
+the procedure stops iteration and returns the value.
+
+If no elements that satisfy @var{pred} are found, it returns @code{#f}.
+
+Vectors can have different lengths.  Iteration stops at the end
+of the shortest.
 @end defun
 
 @defun vector-every pred vec1 vec2 @dots{}
 [SRFI-43]
+Applies @var{pred} on each corresponding elements 
+of @var{vec1} @var{vec2} @dots{} left to right.
+If all the elements (when the lengths of vectors differ, the
+first N elements where N is the length of the shortest) satisfy
+@var{pred}, returns the last result of @var{pred}.   Otherwise
+returns @code{#t}.
 @end defun
 
 @c EN
@@ -4688,6 +4742,7 @@ SRFI-43のいくつかの関数は組み込みになっています。@ref{Vectors}を見てく
 
 @defun vector-swap! vec i j
 [SRFI-43]
+Swaps vector @var{vec}'s @code{i}-th and @code{j}-th elements.
 @end defun
 
 @defun vector-reverse! vec &optional start end
