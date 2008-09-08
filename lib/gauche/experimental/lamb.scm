@@ -4,7 +4,7 @@
 
 (define-module gauche.experimental.lamb
   (use util.match)
-  (export ^ ^. ^*))
+  (export ^ ^. ^* ^_))
 (select-module gauche.experimental.lamb)
 
 (define-syntax ^
@@ -18,5 +18,8 @@
 (define-syntax ^*
   (syntax-rules ()
     [(^* . clauses) (match-lambda* . clauses)]))
+
+(define-macro (^_ . body)
+  `(lambda (_) ,@body))
 
 (provide "gauche/experimental/lamb")
