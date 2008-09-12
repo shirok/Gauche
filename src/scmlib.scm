@@ -174,8 +174,10 @@
 ;; (gencomp) handles this form specially.
 
 (define-macro (inline-stub . _)
-  (error "The inline-stub form can only be used for Scheme source \
-          to be pre-compiled."))
+  (warn "The inline-stub form can only be used for Scheme source \
+         to be pre-compiled.  Since you're loading the file without \
+         pre-compilation, the definitions and expressions in the \
+         inline-stub form are ignored."))
 
 ;; The form (declare ...) may be used in wider purpose.  For the time
 ;; being we use it in limited purposes for compilers.  In interpreter

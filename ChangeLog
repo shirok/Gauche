@@ -1,3 +1,9 @@
+2008-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/scmlib.scm (inline-stub): just issue warning instead of
+	  error, for it is sometimes useful to 'load' the source with
+	  inline-stub during debugging.
+
 2008-09-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/scmlib.scm (exit, exit-handler): Implemented exit-handler
