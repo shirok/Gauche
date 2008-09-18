@@ -210,10 +210,10 @@ vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
 compile.c : compile.scm gencomp vminsn.scm ../lib/gauche/vm/insn.scm
 	$(BUILD_GOSH) $(GENCOMP) compile.scm
 
-scmlib.c : scmlib.scm gencomp vminsn.scm
+scmlib.c : scmlib.scm gencomp vminsn.scm ../lib/gauche/vm/insn.scm
 	$(BUILD_GOSH) $(GENCOMP) --keep-private-macro=inline-stub,declare scmlib.scm
 
-objlib.c : objlib.scm gencomp vminsn.scm
+objlib.c : objlib.scm gencomp vminsn.scm ../lib/gauche/vm/insn.scm
 	$(BUILD_GOSH) $(GENCOMP) objlib.scm
 
 symbol.$(OBJEXT) : builtin-syms.c
