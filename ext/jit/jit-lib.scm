@@ -562,9 +562,9 @@
                     '() abss)
       (concatenate (reverse bss)))))
 
-;; asm1 :: ParsedInsn -> (Int, (Int, [Symbol,Int]) -> [Byte])
-;;  First pass.  Returns two values : Number of bytes to be generated,
-;;  and a closure to generate the final byte sequence in the second pass.
+;; asm1 :: ParsedInsn -> (Int, [Symbol,Int]) -> [Byte]
+;;  First pass.  Returns a closure to generate the byte sequence of
+;;  machine instructions.
 ;;  The closure will take (1) The address of *next* instruction, and
 ;;  (2) an assoc list of labels to addresses.
 (define (asm1 pinsn)
