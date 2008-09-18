@@ -1,0 +1,32 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+SCM_CATEGORY = gauche/vm
+
+LIBFILES = jit-lib.$(SOEXT)
+SCMFILES = jit.scm
+
+OBJECTS = jit_head.$(OBJEXT) jit-lib.$(OBJEXT) jit_tail.$(OBJEXT)
+
+GENERATED = Makefile
+XCLEANFILES = jit-lib.c jit_head.c jit_tail.c
+
+EXTRA_INCLUDES = -I$(srcdir)/../uvector
+
+all : $(LIBFILES)
+
+jit-lib.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) jit-lib.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+
+jit-lib.c jit.scm : jit-lib.scm
+	$(GENCOMP) --ext-module=jit.scm jit-lib.scm
+
+jit_head.c jit_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension jit
+
+install : install-std
+
+

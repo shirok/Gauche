@@ -432,7 +432,7 @@ pthread_key_t Scm_VMKey(void)
             return; /* no more continuations */         \
         }                                               \
         POP_CONT();                                     \
-    } while (0)
+    } while (TAIL_POS())
 
 /* push environment header to finish the environment frame.
    env, sp, argp is updated. */
@@ -2405,6 +2405,68 @@ struct GC_ms_entry *vm_stack_mark(GC_word *addr,
 #endif /*USE_CUSTOM_STACK_MARKER*/
 
 /*===============================================================
+ * Experimental JIT
+ */
+
+#ifdef EXPERIMENTAL_JIT
+
+ScmObj Scm_MakeNative(void *code, int required, int optional, ScmObj info)
+{
+    ScmVM *vm = theVM;
+    
+    return Scm_MakeSubr((ScmSubrProc*)code, (void*)vm,
+                        required, optional, info);
+}
+
+/*
+ * on x86_64, CODE will be called with the following parameters:
+ *   ScmObj *args  : %rdi
+ *   int nargs     : %esi
+ *   void *data    : %rdx
+ *
+ * CODE should return ScmObj in %rax.
+ */
+
+#define VMFIELD(f) \
+    { #f, ((char*)&(((ScmVM*)NULL)->f) - (char*)(ScmVM*)NULL), \
+      sizeof(((ScmVM*)NULL)->f) }
+
+static struct vmfields_rec {
+    const char *name;
+    off_t off;
+    size_t size;
+} vmfields[] = {
+    VMFIELD(sp),
+    VMFIELD(stack),
+    VMFIELD(stackEnd),
+    VMFIELD(val0),
+    VMFIELD(vals),
+    VMFIELD(numVals),
+    VMFIELD(env),
+    VMFIELD(cont),
+    VMFIELD(argp),
+    VMFIELD(base),
+    { NULL }
+};
+
+ScmObj Scm_VMAccessInfo(const char *fieldName)
+{
+    struct vmfields_rec *f = vmfields;
+    for (;f->name; f++) {
+        if (strcmp(f->name, fieldName) == 0) {
+            return Scm_Values2(SCM_MAKE_INT(f->off), SCM_MAKE_INT(f->size));
+        }
+    }
+    return Scm_Values2(SCM_FALSE, SCM_FALSE);
+}
+
+intptr_t Scm_VMGetBoundaryFrameMark(void)
+{
+    return (intptr_t)&boundaryFrameMark;
+}
+#endif /*EXPERIMENTAL_JIT*/        
+
+/*===============================================================
  * Initialization
  */
 
@@ -2438,3 +2500,7 @@ void Scm__InitVM(void)
 #endif /*COUNT_INSN_FREQUENCY*/
 }
 
+int ZON(ScmSubr *z)
+{
+    return z->common.type;
+}

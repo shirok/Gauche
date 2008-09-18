@@ -115,6 +115,9 @@ SCM_DECL_BEGIN
 #define SCM_DEBUG_HELPER      TRUE
 #endif
 
+/* test test test */
+#define EXPERIMENTAL_JIT
+
 #define SCM_INLINE_MALLOC_PRIMITIVES 0
 
 #ifdef GAUCHE_USE_PTHREADS

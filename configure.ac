@@ -720,6 +720,7 @@ AC_OUTPUT(Makefile
           ext/fcntl/Makefile
           ext/file/Makefile
           ext/gauche/Makefile
+          ext/jit/Makefile
           ext/mt-random/Makefile
           ext/net/Makefile
           ext/peg/Makefile
