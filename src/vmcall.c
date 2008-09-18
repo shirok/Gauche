@@ -135,7 +135,7 @@
 
         SCM_PROF_COUNT_CALL(vm, VAL0);
         VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc, SCM_SUBR(VAL0)->data);
-        /* the subr may substituted pc, so we need to check
+        /* the subr may have substituted pc, so we need to check
            if we can pop the continuation immediately. */
         if (TAIL_POS()) RETURN_OP();
         NEXT;
