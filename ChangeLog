@@ -1,3 +1,8 @@
+2008-09-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in (scmlib.c, objlib.c): added dependency on
+	  ../lib/gauche/vm/insn.scm.
+
 2008-09-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/scmlib.scm (inline-stub): just issue warning instead of
