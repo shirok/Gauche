@@ -44,6 +44,7 @@
   (use srfi-13)
   (export ip-version ip-header-length ip-protocol
           ip-source-address ip-destination-address
+          ipv4-global-address?
           ))
 (select-module rfc.ip)
 
@@ -96,5 +97,28 @@
          (get-u32be packet 16)
          (+ (ash (get-u64be packet 24) 64)
             (get-u64be packet 32))))
+
+;;============================================================
+;; Adderss utility
+;;
+
+;; addr :: Integer
+;;  http://www.iana.org/assignments/ipv4-address-space/
+(define (ipv4-global-address? addr)
+  (let ((x/24 (ash addr -8))
+        (x/16 (ash addr -16))
+        (x/12 (ash addr -20))
+        (x/8  (ash addr -24)))
+    (not (or (memv x/8  '(0           ; 0.0.0.0/8 self-identification
+                          10          ; 10.0.0.0/8 private
+                          127))       ; 127.0.0.0/8 loopback
+             (eqv? x/12 #xac1)        ; 172.16.0.0/12 private
+             (memv x/16 '(#xa9fe      ; 169.254.0.0/16 link local
+                          #xc0a8      ; 192.168.0.0/16 private
+                          #xc612      ; 198.18.0.0/15 benchmark
+                          #xc613))    ; 198.18.0.0/15 benchmark
+             (memv x/24 '(#xc00002    ; 192.0.2.0/24 test-net
+                          #xc05863))) ; 192.88.99.0/24 6to4 anycast relay
+         )))
 
 (provide "rfc/ip")

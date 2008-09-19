@@ -1,5 +1,7 @@
 2008-09-18  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/ip.scm (ipv4-global-address?): added.
+
 	* src/Makefile.in (scmlib.c, objlib.c): added dependency on
 	  ../lib/gauche/vm/insn.scm.
 
