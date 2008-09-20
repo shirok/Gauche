@@ -13,6 +13,37 @@
   )
 (select-module gauche.vm.jit)
 
+;; Note:
+;;  This module implements a limited capability to convert Gauche closure
+;;  into native machine code.  Mainly for an experiment to see how much
+;;  JIT compilation can improve Gauche's performance.
+;;
+;;  - Only the VM instructions that are required to JIT-compile the following
+;;    Fibonacci function is supported.
+;;
+;;     (define (fib n) (if (< n 2) 1 (+ (fib (- n 2)) (fib (- n 1)))))
+;;
+;;  - Only supports x86_64.
+;;
+;;  - Dependent on the structure definitions of the Gauche VM at that time
+;;    experimental_jit branch is created.  Structure members are referenced
+;;    by hard-coded offsets, and if their definitions are changed, those
+;;    offsets should be adjusted.
+;;
+;;  - To JIT-compile the above fib function, call jit function.
+;;
+;;     (use gauche.vm.jit)
+;;     (define fib (jit fib))
+;;
+;;    JIT returns #<subr>, whose body is a native compiled function.
+;;
+;;    Do not forget to bind the result to fib again; otherwise, the recursive
+;;    call to fib will use the original version of fib and you don't see
+;;    any difference.
+;;
+;;  Benchmark showed that JIT compilation can make the fib function twice
+;;  as fast.
+
 (define vm-code->list
   (with-module gauche.internal vm-code->list))
 
@@ -216,7 +247,7 @@
   (case nargs
     [(0) (jit-call0)]
     [(1) (jit-call1)]
-    [else (error "call with more than two arguments are not supported yet")]))
+    [else (error "call with more than one argument is not supported yet")]))
 
 (define (jit-call1)
   (let ((FALLBACK (gensym)))
