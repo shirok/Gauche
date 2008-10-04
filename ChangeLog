@@ -1,5 +1,8 @@
 2008-10-03  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/netlib.stub (SHUT_RD, SHUT_WR, SHUT_RDWR): defines
+	  constants for 'how' argument of socket-shutdown.
+
 	* configure.ac, ext/Makefile.in, DIST_EXCLUDE: Exclude ext/peg and
 	  lib/rfc/json.scm; these are not ready for 0.8.14 release.
 

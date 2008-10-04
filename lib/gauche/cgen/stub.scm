@@ -1289,9 +1289,12 @@
 ;; Main parsers
 ;;
 
-(define-form-parser if (test then)
+(define-form-parser if (test then . maybe-else)
   (parameterize ((cgen-cpp-condition test))
-    (cgen-stub-parse-form then)))
+    (cgen-stub-parse-form then))
+  (unless (null? maybe-else)
+    (parameterize ((cgen-cpp-condition #`"!(,test)"))
+      (cgen-stub-parse-form (car maybe-else)))))
 
 (define-form-parser begin forms
   (for-each cgen-stub-parse-form forms))

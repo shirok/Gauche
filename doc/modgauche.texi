@@ -5120,19 +5120,20 @@ This is the way for a client socket to connect to the remote entity.
 
 @defun socket-shutdown socket how
 @c EN
-Shuts down connection of @var{socket}.  If @var{how} is 0, the receive
-channel of @var{socket} is disallowed.  If @var{how} is 1, the send
-channel of @var{socket} is disallowed.  If @var{how} is 2, both
-receive and send channels are disallowed.
-It is an error to call this function on a non-connected socket.
+Shuts down connection of @var{socket}.  If @var{how} is @code{SHUT_RD} (or 0),
+the receive channel of @var{socket} is disallowed.
+If @var{how} is @code{SHUT_WR} (or 1), the send channel of
+@var{socket} is disallowed.
+If @var{how} is @code{SHUT_RDWR} (or 2), both receive and send channels are
+disallowed.  It is an error to call this function on a non-connected socket.
 
 If you shut down the send channel of the socket, the remote peer
 sees EOF from its receive channel.  This is useful if the remote peer
 expects EOF before sending something back to you.
 @c JP
-@var{socket} の接続をシャットダウンします。@var{how} が0なら、
-@var{socket} の受信チャネルが不許可となります。@var{how} が1なら、
-@var{socket} の送信チャネルが不許可となります。@var{how} が2なら、
+@var{socket} の接続をシャットダウンします。@var{how} が@code{SHUT_RD} (0) なら、
+@var{socket} の受信チャネルが不許可となります。@var{how} が@code{SHUT_WR} (1)なら、
+@var{socket} の送信チャネルが不許可となります。@var{how} が@code{SHUT_RDWR} (2)なら、
 @var{socket} の送受信チャネルの両方が不許可となります。
 接続していないソケットに対して、この手続きを呼ぶとエラーになります。
 

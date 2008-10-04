@@ -42,6 +42,7 @@
   (export <socket> make-socket
           PF_UNSPEC PF_UNIX PF_INET AF_UNSPEC AF_UNIX AF_INET
           SOCK_STREAM SOCK_DGRAM SOCK_RAW
+          SHUT_RD SHUT_WR SHUT_RDWR
           socket-address socket-status socket-input-port socket-output-port
           socket-shutdown socket-close socket-bind socket-connect socket-fd
           socket-listen socket-accept socket-setsockopt socket-getsockopt

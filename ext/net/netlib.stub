@@ -147,12 +147,12 @@
           (result (SCM_OBJ (-> sock address)))
           (result '#f))))
 
-(define-symbol none      "sym_none")
-(define-symbol bound     "sym_bound")
-(define-symbol listening "sym_listening")
-(define-symbol connected "sym_connected")
-(define-symbol shutdown  "sym_shutdown")
-(define-symbol closed    "sym_closed")
+;(define-symbol none      "sym_none")
+;(define-symbol bound     "sym_bound")
+;(define-symbol listening "sym_listening")
+;(define-symbol connected "sym_connected")
+;(define-symbol shutdown  "sym_shutdown")
+;(define-symbol closed    "sym_closed")
 
 (define-cproc socket-status (sock::<socket>)
   (body <top>
@@ -163,9 +163,9 @@
           ((SCM_SOCKET_STATUS_CONNECTED) (result 'connected))
           ((SCM_SOCKET_STATUS_SHUTDOWN)  (result 'shutdonw))
           ((SCM_SOCKET_STATUS_CLOSED)    (result 'closed))
-          (else (Scm_Error "invalid state of socket %S: implementation bugs?"
-                           sock)
-                (result SCM_UNDEFINED)))))
+          (else
+           (Scm_Error "invalid state of socket %S: implementation bugs?" sock)
+           (result SCM_UNDEFINED)))))
 
 (define-cproc socket-fd (sock::<socket>)
   (expr <long> (cast long (-> sock fd))))
@@ -195,6 +195,16 @@
                                                   SCM_PORT_OUTPUT
                                                   SCM_PORT_BUFFER_LINE))))
           (result (Scm_SocketOutputPort sock bufmode)))))
+
+(if "defined(SHUT_RD) && defined(SHUD_WR) && defined(SHUT_RDWR)"
+  (begin
+    (define-enum SHUT_RD)
+    (define-enum SHUT_WR)
+    (define-enum SHUT_RDWR))
+  (begin
+    (define-constant SHUT_RD 0)
+    (define-constant SHUT_WR 1)
+    (define-constant SHUT_RDWR 2)))
 
 (define-cproc socket-shutdown (sock::<socket> &optional (how::<fixnum> 2))
   (call "Scm_SocketShutdown"))
