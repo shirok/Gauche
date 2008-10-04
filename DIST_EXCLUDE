@@ -6,3 +6,5 @@ TEST
 INSTALL.in
 autom4te.cache
 lib/net
+lib/rfc/json.scm
+ext/peg
