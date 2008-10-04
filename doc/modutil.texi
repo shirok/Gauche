@@ -772,14 +772,14 @@ An unsigned quad (64 bit) value.
 @c EN
 A single-precision float in the native format.
 @c JP
-負の単精度float。
+ネイティブ形式の単精度float。
 @c COMMON
 
 @item d
 @c EN
 A double-precision float in the native format.
 @c JP
-負の倍精度float。
+ネイティブ形式の倍精度float。
 @c COMMON
 
 @item w
