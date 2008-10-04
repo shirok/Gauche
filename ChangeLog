@@ -1,3 +1,9 @@
+2008-10-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (read_real): Fixed the bug that misunderstands the
+	  case when no integral part appears right after the initial sign
+	  (e.g. ++i or +/4).
+
 2008-09-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/ip.scm (ipv4-global-address?): added.

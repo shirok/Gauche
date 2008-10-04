@@ -3328,6 +3328,9 @@ static ScmObj read_real(const char **strp, int *lenp,
     int fracdigs = 0;
     long exponent = 0;
     ScmObj intpart, fraction;
+    const char *mark;           /* will point (*strp)[1] if there's a sign,
+                                   otherwise (*strp)[0], to check if the
+                                   given str has valid content. */
 
     switch (**strp) {
     case '-': minusp = TRUE;
@@ -3336,6 +3339,7 @@ static ScmObj read_real(const char **strp, int *lenp,
         (*strp)++; (*lenp)--; sign_seen = TRUE;
     }
     if ((*lenp) <= 0) return SCM_FALSE;
+    mark = *strp;
 
     /* Recognize specials */
     if (sign_seen && (*lenp) >= 5) {
@@ -3351,6 +3355,7 @@ static ScmObj read_real(const char **strp, int *lenp,
 
     /* Read integral part */
     if (**strp != '.') {
+        const char *ostrp = *strp;
         intpart = read_uint(strp, lenp, ctx, SCM_FALSE);
         if ((*lenp) <= 0) {
             if (minusp) intpart = Scm_Negate(intpart);
@@ -3365,7 +3370,7 @@ static ScmObj read_real(const char **strp, int *lenp,
             ScmObj denom;
             int lensave;
             
-            if ((*lenp) <= 1) return SCM_FALSE;
+            if ((*lenp) <= 1 || mark == *strp) return SCM_FALSE;
             (*strp)++; (*lenp)--;
             lensave = *lenp;
             denom = read_uint(strp, lenp, ctx, SCM_FALSE);
@@ -3412,6 +3417,7 @@ static ScmObj read_real(const char **strp, int *lenp,
     if (SCM_FALSEP(intpart)) {
         if (fracdigs == 0) return SCM_FALSE; /* input was "." */
     }
+    if (mark == *strp) return SCM_FALSE;
 
     /* Read exponent.  */
     if (*lenp > 0 && strchr("eEsSfFdDlL", (int)**strp)) {
@@ -3546,8 +3552,8 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
     }
     if (len <= 0) return SCM_FALSE;
 
-    /* number body.  need to check the special case of pure imaginary
-       and special flonums. */
+    /* number body.  need to check the special case of pure imaginary,
+       and also eliminates some confusing cases. */
     if (*str == '+' || *str == '-') {
         if (len == 1) return SCM_FALSE;
         if (len == 2 && (str[1] == 'i' || str[1] == 'I')) {

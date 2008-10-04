@@ -210,6 +210,9 @@
 (test* "rational reader w/radix" '(15.0 #f)
        (rational-test '#x#iff/11))
 
+(test* "rational reader edge case" #t (symbol? (read-from-string "/1")))
+(test* "rational reader edge case" #t (symbol? (read-from-string "-/1")))
+(test* "rational reader edge case" #t (symbol? (read-from-string "+/1")))
 
 ;;------------------------------------------------------------------
 (test-section "flonum reader")
@@ -305,6 +308,10 @@
 (test* "exponent out-of-range 8" '(0.0 #t) (flonum-test '1e-1000))
 (test* "exponent out-of-range 9" '(0.0 #t) (flonum-test '1e-1000000000000000000000000000000000000000000000000000000000000000000))
 
+(test* "no integral part" 0.5 (read-from-string ".5"))
+(test* "no integral part" -0.5 (read-from-string "-.5"))
+(test* "no integral part" 0.5 (read-from-string "+.5"))
+
 ;;------------------------------------------------------------------
 (test-section "exact fractional number")
 
@@ -376,6 +383,8 @@
 (test* "complex reader" #f (decompose-complex (string->number "-.i")))
 (test* "complex reader" '33i (decompose-complex '33i))
 (test* "complex reader" 'i+1 (decompose-complex 'i+1))
+(test* "complex reader" '|++i| (decompose-complex '++i))
+(test* "complex reader" '|--i| (decompose-complex '--i))
 
 (test* "complex reader" '(0.5 0.5) (decompose-complex 1/2+1/2i))
 (test* "complex reader" '(0.0 0.5) (decompose-complex 0+1/2i))
@@ -389,7 +398,6 @@
 (test* "complex reader (polar)" (make-polar -7.0 -3.0) -7@-3.0)
 (test* "complex reader (polar)" (make-polar 3.5 -3.0) 7/2@-3.0)
 (test* "complex reader (polar)" #f (string->number "7/2@-3.14i"))
-
 
 ;;------------------------------------------------------------------
 (test-section "integer writer syntax")
