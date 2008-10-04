@@ -1110,7 +1110,7 @@ ScmObj Scm__GetRemainingInputStringCompat(ScmPort *port)
  */
 
 /* To create a procedural port, fill in the ScmPortVTable function
-   pointers and pass it to Scm_MakeVirutalPort.  You don't need to
+   pointers and pass it to Scm_MakeVirtualPort.  You don't need to
    provide all the functions; put NULL if you think you don't
    provide the functionality.
 */
