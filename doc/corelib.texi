@@ -228,10 +228,10 @@ Gaucheは次のタイプの数値をサポートしています。
 @item 多倍長の正確な非整数の有理数
 分母と分子は正確な整数で表現されます。
 メモリの許す限りの精度が扱えます。
-@item 浮動少数点の不正確な実数
-実装に使われるC言語の@code{double}型で表現されます。通常IEEE 64bit浮動少数点数です。
-@item 浮動少数点の不正確な複素数
-実部と虚部はそれぞれ浮動少数点の不正確な実数で表現されます。
+@item 浮動小数点の不正確な実数
+実装に使われるC言語の@code{double}型で表現されます。通常IEEE 64bit浮動小数点数です。
+@item 浮動小数点の不正確な複素数
+実部と虚部はそれぞれ浮動小数点の不正確な実数で表現されます。
 @end table
 @c COMMON
 
@@ -310,7 +310,7 @@ rational numbers is the same as a set of real numbers
 @c JP
 @var{obj}がそれぞれ数、複素数、実数、有理数、整数ならば@code{#t}を返します。
 Gaucheでは、数の集合は複素数の集合と同一であり、有理数の集合は実数の集合と同一
-(浮動小数点数が有限精度のであるため)です。
+(浮動小数点数が有限精度であるため)です。
 @c COMMON
 
 @example
@@ -860,7 +860,7 @@ part, respectively.  @code{magnitude} and @code{angle} return
 
 @defun decode-float x
 @c EN
-Given floating-point number (inexact real number), returns
+For a given floating-point number, returns
 a vector of three exact integers, @code{#(@var{m}, @var{e}, @var{sign})},
 where
 @example
@@ -869,7 +869,7 @@ where
 @end example
 The API is taken from ChezScheme.
 @c JP
-与えられた浮動小数点数(不正確な実数)@var{x}に対して、
+与えられた浮動小数点数@var{x}に対して、
 3つの正確な整数からなるベクタ @code{#(@var{m}, @var{e}, @var{sign})}
 を返します。ここで、
 @example
@@ -903,7 +903,7 @@ where @var{x} = @var{fraction} * 2^@var{exponent}, and
 0 <= @var{fraction} <= 0.5.  @var{Ldexp} is a reverse operation of 
 @code{frexp}; it returns a real number @var{x} * 2^@var{n}.
 @c JP
-これらの手続きは、浮動少数点数を分解したり合成するのに使えます。
+これらの手続きは、浮動小数点数を分解したり合成するのに使えます。
 @code{fmod}は実数@var{x}を実数@var{y}で割った余りを返します。すなわち、
 @var{x}/@var{y}を0に近いほうの整数に丸めた値を@var{n}とするとき、
 @var{x}-@var{n}*@var{y}を返します。
