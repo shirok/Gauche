@@ -1,3 +1,8 @@
+2008-10-05  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netlib.stub (sockaddr-name): correctly identifies the
+	  length of pathname of the unix domain socket; it can be 0.
+
 2008-10-03  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/netlib.stub (SHUT_RD, SHUT_WR, SHUT_RDWR): defines

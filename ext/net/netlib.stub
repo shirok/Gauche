@@ -66,7 +66,10 @@
 
 (define-cmethod sockaddr-name ((addr "Scm_SockAddrUnClass"))
   (expr <top>
-        (SCM_MAKE_STR (ref (-> (cast ScmSockAddrUn* addr) addr) sun_path))))
+        (Scm_MakeString (ref (-> (cast ScmSockAddrUn* addr) addr) sun_path)
+                        (- (-> (cast ScmSockAddr* addr) addrlen)
+                           (sizeof |struct sockaddr|))
+                        -1 SCM_STRING_COPYING)))
 
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrUnClass"))
   (expr <top> 'unix))
