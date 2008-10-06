@@ -18,7 +18,6 @@
 * Filesystem utilities::        file.util
 * Mathematic constants::        math.const
 * Mersenne-Twister random number generator::  math.mt-random
-* Parser combinators for PEG::  parser.peg
 * RFC822 message parsing::      rfc.822
 * Base64 encoding/decoding::    rfc.base64
 * HTTP cookie handling::        rfc.cookie
@@ -4265,7 +4264,7 @@ e.
 @end defvr
 
 @c ----------------------------------------------------------------------
-@node Mersenne-Twister random number generator, Parser combinators for PEG, Mathematic constants, Library modules - Utilities
+@node Mersenne-Twister random number generator, RFC822 message parsing, Mathematic constants, Library modules - Utilities
 @section @code{math.mt-random} - Mersenne Twister Random number generator
 @c NODE Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
 
@@ -4398,494 +4397,494 @@ faster than getting one by one.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Parser combinators for PEG, RFC822 message parsing, Mersenne-Twister random number generator, Library modules - Utilities
-@section @code{parser.peg} - Parser combinators for PEG
-@c NODE PEGパーザコンビネータ, @code{parser.peg} - PEGパーザコンビネータ
-
-@deftp {Module} parser.peg
-@mdindex parser.peg
-This module implements a parser combinator library
-to build parsers based on Parsing Expression Grammer, or PEG.
-
-PEG is a @emph{formal grammer} to define a language, like regular 
-expressions or context-free grammers, although PEG is more powerful
-than those.  An interesting characteristic of PEG is that it can
-be directly mapped to a recursive decent parser, which is exactly
-what this library does---each production rule is a Scheme expression
-that takes parsers and returns a combined parser.  One advantage of
-this approach is that you can freely mix ordinary Scheme code
-within the parser, that is, there's no special ``parser description
-language'' distinct from the base Scheme langauge, nor you need to
-run separate tools like parser generators to obtain a runnable parser code.
-
-Although PEG can directly parse the character string, the parser
-combinators are not tied to it.  In fact, it can take any
-stream of tokens, where the exact meaning of token depends on
-the application; you can have separate lexer that generates
-token stream that PEG parser can parse.  See @ref{PEG stream}
-for the details of the stream abstraction layer
-
-This library is specifically written to get a good performance
-on Gauche.  The parser created by @code{parser.peg} is
-no slower than the parser written manually from scratch, or
-even faster.  However, you have to watch out some traps; see
-@ref{PEG performance tips}, for the details.
-@end deftp
-
-@menu
-* PEG Walkthrough::             
-* PEG high-level API::          
-* PEG combinators::             
-* PEG stream::                  
-* PEG performance tips::        
-@end menu
-
-@node PEG Walkthrough, PEG high-level API, Parser combinators for PEG, Parser combinators for PEG
-@subsection Walkthrough
-
-In @code{parser.peg}, a parser is merely a Scheme procedure
-that takes an input (peg stream) as an argument and returns
-a result (well, in fact, it returns three values, but we'll go
-into the details later.)
-
-Typically you don't need to write parsers directly in
-procedural style.  Instead, you can use procedures that
-generates parsers.   A parser can be as simple as the 
-following, which accepts a character @code{#\a}.
-
-@example
-($char #\a)   ; => a parser
-@end example
-
-A parser can be invoked by a @emph{parser driver}.  For example,
-you can use @code{peg-parse-string} to invoke the above parser
-on a string:
-
-@example
-gosh> (peg-parse-string ($char #\a) "abc")
-#\a
-@end example
-
-The parsing succeeds, and returns the matched value---@code{#\a} in this case.
-If the parser can't accept the input, the driver throws an error
-@code{<parse-error>}.
-
-@example
-gosh> (peg-parse-string ($char #\a) "xyz")
-*** PARSE-ERROR: expecting #\a at 0
-@end example
-
-A parser can also be constructed by combining simpler parsers,
-using @emph{parser combinators}.   For example, @code{$seq} takes
-zero or more parsers and apply them sequentially, returning
-the last result.
-
-@example
-gosh> (peg-parse-string ($seq ($char #\a) ($char #\b) ($char #\c)) "abc")
-#\c
-@end example
-
-The combinator @code{$many} takes a parser and returns a new parser
-that accepts zero or more occurrence of the string the original parser
-accepts.
-
-@example
-gosh> (peg-parse-string ($many ($char #\a)) "aaaaabc")
-(#\a #\a #\a #\a #\a)
-gosh> (peg-parse-string ($many ($char #\a)) "xxxxxyz")
-()
-@end example
-
-A parser is just an ordinary Scheme procedure, so it can be bound
-to a variable, then can be used to construct more complex parsers.
-
-@example
-(define digits    ($many1 ($one-of #[\d])))
-(define ws        ($skip-many ($one-of #[\s])))
-(define separator ($seq ws ($char #\,) ws))
-@end example
-
-I leave explanation of @code{$many1}, @code{$one-of}, and
-@code{$skip-many} for the later section, 
-but I guess you can imagine what those parsers do; 
-@code{digits} accepts a sequence of digits, and
-@code{ws} accepts whitespaces.   The @code{separator}
-parser accepts a comma, optionally surrounded by whitespaces.
-
-The @code{digits} parser returns a list of accepted
-characters:
-
-@example
-gosh> (peg-parse-string digits "12345")
-(#\1 #\2 #\3 #\4 #\5)
-@end example
-
-Can we create a parser that returns an integer as
-a parsed result?    Yes, we can use the @code{$do} form
-and the @code{$return} combinator.
-
-@example
-(define integer
-  ($do [ds digits]
-       ($return (x->integer (list->string ds)))))
-@end example
-
-The @code{$do} form works somewhat like @code{ant-let*}; it takes
-a form of @code{($do [@var{var} @var{parser}] @dots{} @var{expr})},
-applying the @var{parser}s in order, binding the result of each
-parser to @var{var}.  The @code{$return} combinator is create a
-parser that doesn't consume input and returns the given value; 
-you can think that @code{$do} is to pull out a value from,
-and @code{$return} to put back a value to, the chain of parsers.
-(Note: If you know Monads, you can recognize the pattern.
-It is also no coincidence that @code{$do} is similar to @code{and-let*},
-since @code{and-let*} is just a Maybe monad in disguise.)
-
-@example
-gosh> (peg-parse-string integer "12345")
-12345
-@end example
-
-Now you can combine those parsers to build more complex one, such
-as a list of integers:
-
-@example
-(define integers1 ($seq integer
-                        ($many ($seq separator integer))))
-
-gosh> (peg-parse-string integers1 "123, 456, 789")
-(456 789)
-@end example
-
-Oops, where's 123?  Well, remember that 
-@code{$seq} discards the results but the last one.
-We can use @code{$do} again to keep all the results.
-
-@example
-(define integers2 ($do [n  integer]
-                       [ns ($many ($seq separator integer))]
-                       ($return (cons n ns))))
-
-gosh> (peg-parse-string integers2 "123, 456, 789")
-(123 456 789)
-@end example
-
-This parser doesn't handle the case when the list contains no
-integers.   Using the @code{$or} form, which represents a choice,
-we can modify it to handle zero-element case.
-
-@example
-(define integers3 ($or ($do [n  integer]
-                            [ns ($many ($seq separator integer))]
-                            ($return (cons n ns)))
-                       ($return '())))
-@end example
-
-By the way, ``list of stuff separated by something'' is a very common
-pattern, so we can extract the pattern to name it:
-
-@example
-(define (sep-by stuff separator)
-  ($or ($do [n  stuff]
-            [ns ($many ($seq separator stuff))]
-            ($return (cons n ns)))
-       ($return '()))
-@end example
-
-Then the list of integers can be written this simple:
-
-@example
-(define integers4 (sep-by integer separator))
-@end example
-
-In fact, @code{parser.peg} provides @code{$sep-by} to do the above,
-but we've just shown the definition to demonstrate
-the power of the combinatorial approach; 
-you can use ordinary procedural abstraction to factor out common patterns.
-
-There's one catch in the @code{$or} form.
-It tries the next alternative only when the
-parser fails without consuming the input.  Once the input is
-consumed, @code{$or} commits to that choice.   For example,
-the following fails even if the input seems to match the
-second alternative:
-
-@example
-gosh> (peg-parse-string ($or ($string "(a)") ($string "(b)")) "(b)")
-*** PARSE-ERROR: expecting (a) at 1
-@end example
-
-It's because when @code{$or} tries the first branch, it reads the initial
-open paren from the input, so @code{$or} commits to the first branch.
-When the branch fails, @code{$or} doesn't bother to try the second branch.
-(In other words, @code{$or} does not backtrack.)
-
-You may factor out the common prefix:
-
-@example
-($seq ($char #\()
-      ($or ($string "a") ($string "b"))
-      ($char #\)))
-@end example
-
-But it complicates the syntax, and it is not always trivial to
-factor out like above.  The better way is to use the @code{$try}
-combinator: @code{($try @var{p})} runs a parser @var{p}, and if
-it fails, @code{$try} rolls back the input as if it didn't
-consume input at all.  Using with @code{$or}, you can do arbitrary
-lookahead.
-
-@example
-($or ($try ($string "(a)"))
-     ($string "(b)"))
-@end example
-
-Now, let's get back to the integer list example and make
-it more intersting.
-Suppose the list of integers are surrounded by brackets.  
-We can just put open and close bracket around the
-comma-separated integers (you can omit the parentheses around
-the clauses in @code{$do} form, if the parser expression consists
-of single symbol and you don't need the result):
-
-@example
-(define begin-list  ($seq ($char #\[ ) ws))
-(define end-list    ($seq ws ($char #\] )))
-
-(define int-list1 ($do begin-list
-                       [ns ($sep-by integer separator)]
-                       end-list
-                       ($return ns)))
-
-gosh> (peg-parse-string int-list1 "[123, 456, 789]")
-(123 456 789)
-@end example
-
-The above pattern is also common, so there's a pre-defined combinator:
-@code{$between}:
-
-@example
-(define int-list2 ($between begin-list
-                            ($sep-by integer separator)
-                            end-list))
-@end example
-
-What if we want a nested list?  In BNF, we could write
-something like this:
-
-@example
-list : '[' (elem (separator elem)* )? ']'
-elem : integer | list
-@end example
-
-Unfortunately, the straightforward translation won't work:
-
-@example
-;; Does not work
-(define list1 ($between begin-list
-                        ($sep-by elem separator)
-                        end-list))
-(define elem  ($or integer list1))
-@end example
-
-We need the parser @code{elem} to construct @code{list1}, but
-we need the parser @code{list1} to construct @code{elem}.
-In lazy languages like Haskell this doesn't matter, but we Schemers
-are @emph{eager}!
-
-The solution is to delay the parser construciton until it is
-actually used.  The @code{$lazy} combinator does the job:
-
-@example
-(define list2 ($lazy
-               ($between begin-list
-                         ($sep-by elem separator)
-                         end-list)))
-(define elem  ($or integer list2))
-
-gosh> (peg-parse-string list2 "[123, [456, [], 789], 987]")
-(123 (456 () 789) 987)
-@end example
-
-
-@node PEG high-level API, PEG combinators, PEG Walkthrough, Parser combinators for PEG
-@subsection High-level API
+@c @node Parser combinators for PEG, RFC822 message parsing, Mersenne-Twister random number generator, Library modules - Utilities
+@c @section @code{parser.peg} - Parser combinators for PEG
+@c @c NODE PEGパーザコンビネータ, @code{parser.peg} - PEGパーザコンビネータ
+
+@c @deftp {Module} parser.peg
+@c @mdindex parser.peg
+@c This module implements a parser combinator library
+@c to build parsers based on Parsing Expression Grammer, or PEG.
+
+@c PEG is a @emph{formal grammer} to define a language, like regular 
+@c expressions or context-free grammers, although PEG is more powerful
+@c than those.  An interesting characteristic of PEG is that it can
+@c be directly mapped to a recursive decent parser, which is exactly
+@c what this library does---each production rule is a Scheme expression
+@c that takes parsers and returns a combined parser.  One advantage of
+@c this approach is that you can freely mix ordinary Scheme code
+@c within the parser, that is, there's no special ``parser description
+@c language'' distinct from the base Scheme langauge, nor you need to
+@c run separate tools like parser generators to obtain a runnable parser code.
+
+@c Although PEG can directly parse the character string, the parser
+@c combinators are not tied to it.  In fact, it can take any
+@c stream of tokens, where the exact meaning of token depends on
+@c the application; you can have separate lexer that generates
+@c token stream that PEG parser can parse.  See @ref{PEG stream}
+@c for the details of the stream abstraction layer
+
+@c This library is specifically written to get a good performance
+@c on Gauche.  The parser created by @code{parser.peg} is
+@c no slower than the parser written manually from scratch, or
+@c even faster.  However, you have to watch out some traps; see
+@c @ref{PEG performance tips}, for the details.
+@c @end deftp
+
+@c @menu
+@c * PEG Walkthrough::             
+@c * PEG high-level API::          
+@c * PEG combinators::             
+@c * PEG stream::                  
+@c * PEG performance tips::        
+@c @end menu
+
+@c @node PEG Walkthrough, PEG high-level API, Parser combinators for PEG, Parser combinators for PEG
+@c @subsection Walkthrough
+
+@c In @code{parser.peg}, a parser is merely a Scheme procedure
+@c that takes an input (peg stream) as an argument and returns
+@c a result (well, in fact, it returns three values, but we'll go
+@c into the details later.)
+
+@c Typically you don't need to write parsers directly in
+@c procedural style.  Instead, you can use procedures that
+@c generates parsers.   A parser can be as simple as the 
+@c following, which accepts a character @code{#\a}.
+
+@c @example
+@c ($char #\a)   ; => a parser
+@c @end example
+
+@c A parser can be invoked by a @emph{parser driver}.  For example,
+@c you can use @code{peg-parse-string} to invoke the above parser
+@c on a string:
+
+@c @example
+@c gosh> (peg-parse-string ($char #\a) "abc")
+@c #\a
+@c @end example
+
+@c The parsing succeeds, and returns the matched value---@code{#\a} in this case.
+@c If the parser can't accept the input, the driver throws an error
+@c @code{<parse-error>}.
+
+@c @example
+@c gosh> (peg-parse-string ($char #\a) "xyz")
+@c *** PARSE-ERROR: expecting #\a at 0
+@c @end example
+
+@c A parser can also be constructed by combining simpler parsers,
+@c using @emph{parser combinators}.   For example, @code{$seq} takes
+@c zero or more parsers and apply them sequentially, returning
+@c the last result.
+
+@c @example
+@c gosh> (peg-parse-string ($seq ($char #\a) ($char #\b) ($char #\c)) "abc")
+@c #\c
+@c @end example
+
+@c The combinator @code{$many} takes a parser and returns a new parser
+@c that accepts zero or more occurrence of the string the original parser
+@c accepts.
+
+@c @example
+@c gosh> (peg-parse-string ($many ($char #\a)) "aaaaabc")
+@c (#\a #\a #\a #\a #\a)
+@c gosh> (peg-parse-string ($many ($char #\a)) "xxxxxyz")
+@c ()
+@c @end example
+
+@c A parser is just an ordinary Scheme procedure, so it can be bound
+@c to a variable, then can be used to construct more complex parsers.
+
+@c @example
+@c (define digits    ($many1 ($one-of #[\d])))
+@c (define ws        ($skip-many ($one-of #[\s])))
+@c (define separator ($seq ws ($char #\,) ws))
+@c @end example
+
+@c I leave explanation of @code{$many1}, @code{$one-of}, and
+@c @code{$skip-many} for the later section, 
+@c but I guess you can imagine what those parsers do; 
+@c @code{digits} accepts a sequence of digits, and
+@c @code{ws} accepts whitespaces.   The @code{separator}
+@c parser accepts a comma, optionally surrounded by whitespaces.
+
+@c The @code{digits} parser returns a list of accepted
+@c characters:
+
+@c @example
+@c gosh> (peg-parse-string digits "12345")
+@c (#\1 #\2 #\3 #\4 #\5)
+@c @end example
+
+@c Can we create a parser that returns an integer as
+@c a parsed result?    Yes, we can use the @code{$do} form
+@c and the @code{$return} combinator.
+
+@c @example
+@c (define integer
+@c   ($do [ds digits]
+@c        ($return (x->integer (list->string ds)))))
+@c @end example
+
+@c The @code{$do} form works somewhat like @code{ant-let*}; it takes
+@c a form of @code{($do [@var{var} @var{parser}] @dots{} @var{expr})},
+@c applying the @var{parser}s in order, binding the result of each
+@c parser to @var{var}.  The @code{$return} combinator is create a
+@c parser that doesn't consume input and returns the given value; 
+@c you can think that @code{$do} is to pull out a value from,
+@c and @code{$return} to put back a value to, the chain of parsers.
+@c (Note: If you know Monads, you can recognize the pattern.
+@c It is also no coincidence that @code{$do} is similar to @code{and-let*},
+@c since @code{and-let*} is just a Maybe monad in disguise.)
+
+@c @example
+@c gosh> (peg-parse-string integer "12345")
+@c 12345
+@c @end example
+
+@c Now you can combine those parsers to build more complex one, such
+@c as a list of integers:
+
+@c @example
+@c (define integers1 ($seq integer
+@c                         ($many ($seq separator integer))))
+
+@c gosh> (peg-parse-string integers1 "123, 456, 789")
+@c (456 789)
+@c @end example
+
+@c Oops, where's 123?  Well, remember that 
+@c @code{$seq} discards the results but the last one.
+@c We can use @code{$do} again to keep all the results.
+
+@c @example
+@c (define integers2 ($do [n  integer]
+@c                        [ns ($many ($seq separator integer))]
+@c                        ($return (cons n ns))))
+
+@c gosh> (peg-parse-string integers2 "123, 456, 789")
+@c (123 456 789)
+@c @end example
+
+@c This parser doesn't handle the case when the list contains no
+@c integers.   Using the @code{$or} form, which represents a choice,
+@c we can modify it to handle zero-element case.
+
+@c @example
+@c (define integers3 ($or ($do [n  integer]
+@c                             [ns ($many ($seq separator integer))]
+@c                             ($return (cons n ns)))
+@c                        ($return '())))
+@c @end example
+
+@c By the way, ``list of stuff separated by something'' is a very common
+@c pattern, so we can extract the pattern to name it:
+
+@c @example
+@c (define (sep-by stuff separator)
+@c   ($or ($do [n  stuff]
+@c             [ns ($many ($seq separator stuff))]
+@c             ($return (cons n ns)))
+@c        ($return '()))
+@c @end example
+
+@c Then the list of integers can be written this simple:
+
+@c @example
+@c (define integers4 (sep-by integer separator))
+@c @end example
+
+@c In fact, @code{parser.peg} provides @code{$sep-by} to do the above,
+@c but we've just shown the definition to demonstrate
+@c the power of the combinatorial approach; 
+@c you can use ordinary procedural abstraction to factor out common patterns.
+
+@c There's one catch in the @code{$or} form.
+@c It tries the next alternative only when the
+@c parser fails without consuming the input.  Once the input is
+@c consumed, @code{$or} commits to that choice.   For example,
+@c the following fails even if the input seems to match the
+@c second alternative:
+
+@c @example
+@c gosh> (peg-parse-string ($or ($string "(a)") ($string "(b)")) "(b)")
+@c *** PARSE-ERROR: expecting (a) at 1
+@c @end example
+
+@c It's because when @code{$or} tries the first branch, it reads the initial
+@c open paren from the input, so @code{$or} commits to the first branch.
+@c When the branch fails, @code{$or} doesn't bother to try the second branch.
+@c (In other words, @code{$or} does not backtrack.)
+
+@c You may factor out the common prefix:
+
+@c @example
+@c ($seq ($char #\()
+@c       ($or ($string "a") ($string "b"))
+@c       ($char #\)))
+@c @end example
+
+@c But it complicates the syntax, and it is not always trivial to
+@c factor out like above.  The better way is to use the @code{$try}
+@c combinator: @code{($try @var{p})} runs a parser @var{p}, and if
+@c it fails, @code{$try} rolls back the input as if it didn't
+@c consume input at all.  Using with @code{$or}, you can do arbitrary
+@c lookahead.
+
+@c @example
+@c ($or ($try ($string "(a)"))
+@c      ($string "(b)"))
+@c @end example
+
+@c Now, let's get back to the integer list example and make
+@c it more intersting.
+@c Suppose the list of integers are surrounded by brackets.  
+@c We can just put open and close bracket around the
+@c comma-separated integers (you can omit the parentheses around
+@c the clauses in @code{$do} form, if the parser expression consists
+@c of single symbol and you don't need the result):
+
+@c @example
+@c (define begin-list  ($seq ($char #\[ ) ws))
+@c (define end-list    ($seq ws ($char #\] )))
+
+@c (define int-list1 ($do begin-list
+@c                        [ns ($sep-by integer separator)]
+@c                        end-list
+@c                        ($return ns)))
+
+@c gosh> (peg-parse-string int-list1 "[123, 456, 789]")
+@c (123 456 789)
+@c @end example
+
+@c The above pattern is also common, so there's a pre-defined combinator:
+@c @code{$between}:
+
+@c @example
+@c (define int-list2 ($between begin-list
+@c                             ($sep-by integer separator)
+@c                             end-list))
+@c @end example
+
+@c What if we want a nested list?  In BNF, we could write
+@c something like this:
+
+@c @example
+@c list : '[' (elem (separator elem)* )? ']'
+@c elem : integer | list
+@c @end example
+
+@c Unfortunately, the straightforward translation won't work:
+
+@c @example
+@c ;; Does not work
+@c (define list1 ($between begin-list
+@c                         ($sep-by elem separator)
+@c                         end-list))
+@c (define elem  ($or integer list1))
+@c @end example
+
+@c We need the parser @code{elem} to construct @code{list1}, but
+@c we need the parser @code{list1} to construct @code{elem}.
+@c In lazy languages like Haskell this doesn't matter, but we Schemers
+@c are @emph{eager}!
+
+@c The solution is to delay the parser construciton until it is
+@c actually used.  The @code{$lazy} combinator does the job:
+
+@c @example
+@c (define list2 ($lazy
+@c                ($between begin-list
+@c                          ($sep-by elem separator)
+@c                          end-list)))
+@c (define elem  ($or integer list2))
+
+@c gosh> (peg-parse-string list2 "[123, [456, [], 789], 987]")
+@c (123 (456 () 789) 987)
+@c @end example
+
+
+@c @node PEG high-level API, PEG combinators, PEG Walkthrough, Parser combinators for PEG
+@c @subsection High-level API
 
-@defun peg-parse-string parser input-string
-@end defun
+@c @defun peg-parse-string parser input-string
+@c @end defun
 
-@defun peg-parse-port parser input-string
-@end defun
-
-@defun peg-run-parser parser peg-stream
-@end defun
-
-@deftp {Condition type} <parse-error>
-@end deftp
-
-@defun make-peg-parse-error type objs stream
-@end defun
-
-
-@node PEG combinators, PEG stream, PEG high-level API, Parser combinators for PEG
-@subsection Combinators
-
-In the following entries, @var{p}, @var{p1}, @var{p2}, @dots{} in
-the arguments must be parsers, and @var{ps} must be a list of parsers.
-
-@subsubheading Generic combinators
-
-@defmac $do clause @dots{} expr
-@end defmac
-
-@defmac $do* clause @dots{} expr
-@end defmac
-
-@defun $fold proc seed ps
-@end defun
-
-@defun $fold-right proc seed ps
-@end defun
-
-@defun $seq p1 p2 @dots{}
-@end defun
-
-@defmac $or p1 p2 @dots{}
-@end defmac
-
-@defun $try p
-Returns a parser that accepts the same input
-the parser @var{p} accepts, but when @var{p} fails
-the returned parser doesn't consume input.  Used with @code{$or},
-you can explicitly implement a backtrack behavior.
-@end defun
-
-@defun $many p &optional min max
-@end defun
-
-@defun $skip-many p &optional min max
-@end defun
-
-@defun $optional p
-@end defun
-
-@defun $repeat p count
-@end defun
-
-@defun $count p count
-@end defun
-
-@defun $sep-by p psep &optional min max
-@end defun
-
-@defun $alternate p psep
-@end defun
-
-@defun $end-by p psep &rest p2 @dots{}
-@end defun
-
-@defun $sep-end-by p psep &rest p2 @dots{}
-@end defun
-
-@defun $not p
-@end defun
-
-@defun $many-till p pend &rest p2 @dots{}
-@end defun
-
-@defun $chain-left p p-op
-@end defun
-
-@defun $chain-right p p-op
-@end defun
-
-@defmac $lazy p
-@end defmac
-
-@defun $->rope p
-@end defun
-
-@subsubheading Semantic predicate
-
-@defmac $satisfy p expect
-@end defmac
-
-@subsubheading String parsers
-
-@defun $char c
-@defunx $char-ci c
-Returns a parser that accepts a single character, @var{c}.
-@code{$char-ci} ignores case.
-On success, the semantic value is the input character.
-@end defun
-
-@defun $string str
-@defunx $string-ci str
-Returns a parser that accepts an input that matches 
-a string @var{str}.  @code{$string-ci} ignores case.
-On success, the semantic value is the input string.
-
-The parsing of string is atomic: When the parser fails,
-it doesn't consume the input.  That is,
-@code{($string "ab")} is not the same as
-@code{($do [a ($char #\a)] [b ($char #\b)] ($return (string a b)))};
-you may think it is surrouned by implicit @code{$try}.
-(If you've used Parsec, 
-@end defun
-
-@defun $one-of cset
-Returns a parser that accepts any character in the character set @var{cset}.
-@end defun
-
-@defun $none-of cset
-@end defun
-
-@defmac $many-chars cset
-@end defmac
-
-@defvar anychar
-@defvarx upper
-@defvarx lower
-@defvarx letter
-@defvarx alphanum
-@defvarx digit
-@defvarx hexdigit
-@defvarx newline
-@defvarx tab
-@defvarx space
-@defvarx spaces
-@defvarx eof
-@end defvar
-
-
-@node PEG stream, PEG performance tips, PEG combinators, Parser combinators for PEG
-@subsection PEG stream
-
-@defun make-peg-steram generator &optional fini
-@end defun
-
-@defun string->peg-stream string
-@end defun
-
-@defun port->peg-stream port &key (reader read-char)
-@end defun
-
-@defun list->peg-stream lis
-@end defun
-
-@defun peg-stream-position s
-@end defun
-
-@defun peg-stream-peek! s
-@end defun
-
-@node PEG performance tips,  , PEG stream, Parser combinators for PEG
-@subsection Performance
+@c @defun peg-parse-port parser input-string
+@c @end defun
+
+@c @defun peg-run-parser parser peg-stream
+@c @end defun
+
+@c @deftp {Condition type} <parse-error>
+@c @end deftp
+
+@c @defun make-peg-parse-error type objs stream
+@c @end defun
+
+
+@c @node PEG combinators, PEG stream, PEG high-level API, Parser combinators for PEG
+@c @subsection Combinators
+
+@c In the following entries, @var{p}, @var{p1}, @var{p2}, @dots{} in
+@c the arguments must be parsers, and @var{ps} must be a list of parsers.
+
+@c @subsubheading Generic combinators
+
+@c @defmac $do clause @dots{} expr
+@c @end defmac
+
+@c @defmac $do* clause @dots{} expr
+@c @end defmac
+
+@c @defun $fold proc seed ps
+@c @end defun
+
+@c @defun $fold-right proc seed ps
+@c @end defun
+
+@c @defun $seq p1 p2 @dots{}
+@c @end defun
+
+@c @defmac $or p1 p2 @dots{}
+@c @end defmac
+
+@c @defun $try p
+@c Returns a parser that accepts the same input
+@c the parser @var{p} accepts, but when @var{p} fails
+@c the returned parser doesn't consume input.  Used with @code{$or},
+@c you can explicitly implement a backtrack behavior.
+@c @end defun
+
+@c @defun $many p &optional min max
+@c @end defun
+
+@c @defun $skip-many p &optional min max
+@c @end defun
+
+@c @defun $optional p
+@c @end defun
+
+@c @defun $repeat p count
+@c @end defun
+
+@c @defun $count p count
+@c @end defun
+
+@c @defun $sep-by p psep &optional min max
+@c @end defun
+
+@c @defun $alternate p psep
+@c @end defun
+
+@c @defun $end-by p psep &rest p2 @dots{}
+@c @end defun
+
+@c @defun $sep-end-by p psep &rest p2 @dots{}
+@c @end defun
+
+@c @defun $not p
+@c @end defun
+
+@c @defun $many-till p pend &rest p2 @dots{}
+@c @end defun
+
+@c @defun $chain-left p p-op
+@c @end defun
+
+@c @defun $chain-right p p-op
+@c @end defun
+
+@c @defmac $lazy p
+@c @end defmac
+
+@c @defun $->rope p
+@c @end defun
+
+@c @subsubheading Semantic predicate
+
+@c @defmac $satisfy p expect
+@c @end defmac
+
+@c @subsubheading String parsers
+
+@c @defun $char c
+@c @defunx $char-ci c
+@c Returns a parser that accepts a single character, @var{c}.
+@c @code{$char-ci} ignores case.
+@c On success, the semantic value is the input character.
+@c @end defun
+
+@c @defun $string str
+@c @defunx $string-ci str
+@c Returns a parser that accepts an input that matches 
+@c a string @var{str}.  @code{$string-ci} ignores case.
+@c On success, the semantic value is the input string.
+
+@c The parsing of string is atomic: When the parser fails,
+@c it doesn't consume the input.  That is,
+@c @code{($string "ab")} is not the same as
+@c @code{($do [a ($char #\a)] [b ($char #\b)] ($return (string a b)))};
+@c you may think it is surrouned by implicit @code{$try}.
+@c (If you've used Parsec, 
+@c @end defun
+
+@c @defun $one-of cset
+@c Returns a parser that accepts any character in the character set @var{cset}.
+@c @end defun
+
+@c @defun $none-of cset
+@c @end defun
+
+@c @defmac $many-chars cset
+@c @end defmac
+
+@c @defvar anychar
+@c @defvarx upper
+@c @defvarx lower
+@c @defvarx letter
+@c @defvarx alphanum
+@c @defvarx digit
+@c @defvarx hexdigit
+@c @defvarx newline
+@c @defvarx tab
+@c @defvarx space
+@c @defvarx spaces
+@c @defvarx eof
+@c @end defvar
+
+
+@c @node PEG stream, PEG performance tips, PEG combinators, Parser combinators for PEG
+@c @subsection PEG stream
+
+@c @defun make-peg-steram generator &optional fini
+@c @end defun
+
+@c @defun string->peg-stream string
+@c @end defun
+
+@c @defun port->peg-stream port &key (reader read-char)
+@c @end defun
+
+@c @defun list->peg-stream lis
+@c @end defun
+
+@c @defun peg-stream-position s
+@c @end defun
+
+@c @defun peg-stream-peek! s
+@c @end defun
+
+@c @node PEG performance tips,  , PEG stream, Parser combinators for PEG
+@c @subsection Performance
 
 
 
 @c ----------------------------------------------------------------------
-@node RFC822 message parsing, Base64 encoding/decoding, Parser combinators for PEG, Library modules - Utilities
+@node RFC822 message parsing, Base64 encoding/decoding, Mersenne-Twister random number generator, Library modules - Utilities
 @section @code{rfc.822} - RFC822 message parsing
 @c NODE RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
 
