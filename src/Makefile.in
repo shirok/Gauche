@@ -138,7 +138,7 @@ INSTALL_BINS = gosh$(EXEEXT)           \
                gauche-install$(EXEEXT) \
 	       gauche-package$(EXEEXT) \
 	       gauche-cesconv$(EXEEXT)
-INSTALL_SCMS = gauche-init.scm genstub cesconv
+INSTALL_SCMS = gauche-init.scm genstub gencomp cesconv
 
 GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
 
