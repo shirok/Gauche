@@ -246,23 +246,45 @@
 ;;-----------------------------------------------------------------
 (test-section "socket")
 
-(define (simple-server socket)
-  (let loop ((clnt (socket-accept socket)))
-    (let ((in   (socket-input-port clnt))
-          (out  (socket-output-port clnt)))
-      (let loop2 ((line (read-line in)))
-        (cond ((eof-object? line)
-               (socket-close clnt)
-               (loop (socket-accept socket)))
-              ((string=? line "END")
-               (socket-close clnt)
-               (socket-close socket)
-               (sys-exit 33))
-              (else
-               (display (string-upcase line) out)
-               (newline out)
-               (flush out)
-               (loop2 (read-line in))))))))
+;; NB: we used to run the server loop with sys-fork.  However, some platforms
+;; (e.g. cygwin) doesn't go well with fork(), and Windows native platform
+;; doesn't even support fork() at all, we instead run a child process via
+;; gauche.process.  Note that we assume this script is run where ../../src/gosh
+;; is THE executable.
+
+(use gauche.process)
+
+(define (run-simple-server sockargs)
+  (with-output-to-file "testserv.o"
+    (lambda ()
+      (write '(use gauche.net))
+      (write '(use srfi-13))
+      (write '(define (simple-server socket)
+                (newline) (flush) ;; handshake
+                (let loop ((clnt (socket-accept socket)))
+                  (let ((in   (socket-input-port clnt))
+                        (out  (socket-output-port clnt)))
+                    (let loop2 ((line (read-line in)))
+                      (cond ((eof-object? line)
+                             (socket-close clnt)
+                             (loop (socket-accept socket)))
+                            ((string=? line "END")
+                             (socket-close clnt)
+                             (socket-close socket)
+                             (sys-exit 33))
+                            (else
+                             (display (string-upcase line) out)
+                             (newline out)
+                             (flush out)
+                             (loop2 (read-line in)))))))))
+      (write `(define (main args)
+                (simple-server ,sockargs)
+                0)))
+    :if-exists :supersede)
+  (let1 p (run-process `("../../src/gosh" "-ftest" "./testserv.o")
+                       :output :pipe)
+    (read-line (process-output p)) ;; handshake
+    #t))
 
 ;; max size of the packet.  increase this to test robustness for
 ;; buffer overrun attack.  right now, Gauche can bear fairly large
@@ -276,13 +298,10 @@
 (sys-unlink "sock.o")
 
 (test* "unix server socket" #f
-       (let ((pid (sys-fork)))
-         (if (= pid 0)
-           (simple-server (make-server-socket 'unix "sock.o"))
-           (begin
-             (sys-select #f #f #f 300000)
-             (let ((stat (sys-stat "sock.o")))
-               (not (memq (sys-stat->file-type stat) '(socket fifo))))))))
+       (begin
+         (run-simple-server '(make-server-socket 'unix "sock.o"))
+         (let1 stat (sys-stat "sock.o")
+           (not (memq (sys-stat->file-type stat) '(socket fifo))))))
 
 (test* "unix client socket" '("ABC" "XYZ")
        (call-with-client-socket (make-client-socket 'unix "sock.o")
@@ -319,12 +338,7 @@
 (sys-unlink "sock.o")
 
 (test* "inet server socket" #t
-       (let ((pid (sys-fork)))
-         (if (= pid 0)
-           (simple-server (make-server-socket 'inet *inet-port* :reuse-addr? #t))
-           (begin
-             (sys-select #f #f #f 300000)
-             #t))))
+       (run-simple-server `(make-server-socket 'inet ,*inet-port* :reuse-addr? #t)))
 
 (test* "inet client socket" '("ABC" "XYZ")
        (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
@@ -392,19 +406,26 @@
                  (socket-close serv))))
 
 (test* "udp server socket" #t
-       (let ((pid (sys-fork)))
-         (if (= pid 0)
-           (let ((sock (make-socket PF_INET SOCK_DGRAM))
-                 (addr (make <sockaddr-in> :host :any :port *inet-port*)))
-             (socket-setsockopt sock SOL_SOCKET SO_REUSEADDR 1)
-             (socket-bind sock addr)
-             (receive (msg from) (socket-recvfrom sock 1024)
-               (socket-sendto sock (string-upcase msg) from))
-             (socket-close sock)
-             (sys-exit 33))
-           (begin
-             (sys-select #f #f #f 300000)
-             #t))))
+       (begin
+         (with-output-to-file "testserv.o"
+           (lambda ()
+             (write '(use gauche.net))
+             (write '(use srfi-13))
+             (write
+              `(define (main args)
+                 (let ((sock (make-socket PF_INET SOCK_DGRAM))
+                       (addr (make <sockaddr-in> :host :any :port ,*inet-port*)))
+                   (socket-setsockopt sock SOL_SOCKET SO_REUSEADDR 1)
+                   (socket-bind sock addr)
+                   (newline) (flush) ;; handshake
+                   (receive (msg from) (socket-recvfrom sock 1024)
+                     (socket-sendto sock (string-upcase msg) from))
+                   (socket-close sock)
+                   (sys-exit 33))))))
+         (let1 p (run-process '("../../src/gosh" "-ftest" "./testserv.o")
+                              :output :pipe)
+           (read-line (process-output p)) ; handshake
+           #t)))
 
 (test* "udp client socket" "ABC"
        (let ((sock (make-socket PF_INET SOCK_DGRAM))
@@ -413,8 +434,8 @@
          (socket-connect sock addr)
          (socket-send sock "abc")
          (begin0 (string-incomplete->complete (socket-recv sock 1024))
-                 (socket-close sock)
-                 (sys-wait))))
+           (socket-close sock)
+           (sys-wait))))
 
 (test* "udp uvector API" '(#t #t)
        (let ((s-sock (make-socket PF_INET SOCK_DGRAM))

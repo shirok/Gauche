@@ -4,6 +4,8 @@
 
 (use gauche.test)
 (use gauche.sequence)
+(use gauche.process)
+(use util.list)
 (test-start "rfc")
 
 ;;--------------------------------------------------------------------
@@ -467,7 +469,7 @@ Content-Length: 4349
          ("access-type" . "URL")
          ("url" . "ftp://cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar"))
        (mime-parse-content-type
-       "Content-Type: message/external-body; access-type=URL; \
+        "Content-Type: message/external-body; access-type=URL; \
          URL*0=\"ftp://\"; \
          URL*1=\"cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar\""))
 
@@ -524,7 +526,7 @@ Content-Length: 4349
                            :line-width 40
                            :start-column 20))
   )
-  
+
 (when (ces-conversion-supported? "us-ascii" #f)
   (test* "mime-decode-word" "Keith_Moore"
          (mime-decode-word "=?US-ASCII?Q?Keith_Moore?="))
@@ -538,7 +540,7 @@ Content-Length: 4349
                            :charset 'us-ascii :force #t
                            :line-width 30))
   )
-                           
+
 (when (and (memq (gauche-character-encoding) '(euc-jp sjis utf-8))
            (ces-conversion-supported? "iso-2022-jp" #f))
   (test* "mime-decode-word" "\u5ddd\u5408 \u53f2\u6717"
@@ -687,8 +689,6 @@ Content-Length: 4349
        (and (is-a? http-user-agent <parameter>)
             (http-user-agent)))
 
-(use gauche.net)
-(use util.list)
 (define *http-port* 6726)
 
 (define (alist-equal? alis1 alis2)
@@ -696,69 +696,76 @@ Content-Length: 4349
     (sort alis (lambda (a b) (string<? (car a) (car b)))))
   (equal? (%sort alis1) (%sort alis2)))
 
-(define %predefined-contents
-  (let1 ht (make-hash-table 'string=?)
-    (hash-table-put! ht "/redirect01"
-                     `("HTTP/1.x 302 Moved Temporarily\n"
-                       ,#`"Location: http://localhost:,|*http-port*|/redirect02\n\n"))
-    (hash-table-put! ht "/redirect11"
-                     '("HTTP/1.x 302 Moved Temporarily\n"
-                       "Location: /redirect12\n\n"))
-    (hash-table-put! ht "/loop1"
-                     '("HTTP/1.x 302 Moved Temporarily\n"
-                       "Location: /loop2\n\n"))
-    (hash-table-put! ht "/loop2"
-                     '("HTTP/1.x 302 Moved Temporarily\n"
-                       "Location: /loop1\n\n"))
-    (hash-table-put! ht "/chunked"
-                     '("HTTP/1.x 200 OK\nTransfer-Encoding: chunked\n\n"
-                       "2\r\nOK\n0\r\n\r\n"))
-    ht))
+(define *simple-httpd*
+  '(
+    (use gauche.net)
+    (use util.list)
+    (use rfc.822)
+    (define *http-port* 6726)
 
-(define (run-http-server socket)
-  (let loop ()
-    (let* ((client (socket-accept socket))
-           (in  (socket-input-port client))
-           (out (socket-output-port client))
-           (request-line (read-line in)))
-      (rxmatch-if (#/^(\S+) (\S+) HTTP\/1\.1$/ request-line)
-          (#f method request-uri)
-        (let* ((headers (rfc822-read-headers in))
-               (bodylen
-                (cond ((assoc-ref headers "content-length")
-                       => (lambda (e) (string->number (car e))))
-                      (else 0)))
-               (body (read-block bodylen in)))
-          (cond
-           ((equal? request-uri "/exit")
-            (sys-exit 0))
-           ((hash-table-get %predefined-contents request-uri #f)
-            => (lambda (contents)
-                 (for-each (cut display <> out) contents)))
-           (else
-            (display "HTTP/1.x 200 OK\nContent-Type: text/plain\n\n" out)
-            (write `(("method" ,method)
-                     ("request-uri" ,request-uri)
-                     ("request-body" ,(string-incomplete->complete body))
-                     ,@headers)
-                   out)))
-          (socket-close client)
-          (loop))
-        (error "malformed request line:" request-line)))))
+    (define %predefined-contents
+      (let1 ht (make-hash-table 'string=?)
+        (hash-table-put! ht "/redirect01"
+                         `("HTTP/1.x 302 Moved Temporarily\n"
+                           ,#`"Location: http://localhost:,|*http-port*|/redirect02\n\n"))
+        (hash-table-put! ht "/redirect11"
+                         '("HTTP/1.x 302 Moved Temporarily\n"
+                           "Location: /redirect12\n\n"))
+        (hash-table-put! ht "/loop1"
+                         '("HTTP/1.x 302 Moved Temporarily\n"
+                           "Location: /loop2\n\n"))
+        (hash-table-put! ht "/loop2"
+                         '("HTTP/1.x 302 Moved Temporarily\n"
+                           "Location: /loop1\n\n"))
+        (hash-table-put! ht "/chunked"
+                         '("HTTP/1.x 200 OK\nTransfer-Encoding: chunked\n\n"
+                           "2\r\nOK\n0\r\n\r\n"))
+        ht))
 
-(receive (pipe-in pipe-out) (sys-pipe)
-  (cond ((zero? (sys-fork))
-         ;; start a HTTP server on localhost:*http-port*
-         (let1 socket (make-server-socket 'inet *http-port* :reuse-addr? #t)
-           (close-input-port pipe-in)
-           (display "ready\n" pipe-out)
-           (close-output-port pipe-out)
-           (run-http-server socket)))
-        (else
-         ;; wait for the server to be ready
-         (close-output-port pipe-out)
-         (read-line pipe-in)
-         (close-input-port pipe-in))))
+    (define (http-server socket)
+      (let loop ()
+        (let* ((client (socket-accept socket))
+               (in  (socket-input-port client))
+               (out (socket-output-port client))
+               (request-line (read-line in)))
+          (rxmatch-if (#/^(\S+) (\S+) HTTP\/1\.1$/ request-line)
+              (#f method request-uri)
+            (let* ((headers (rfc822-read-headers in))
+                   (bodylen
+                    (cond ((assoc-ref headers "content-length")
+                           => (lambda (e) (string->number (car e))))
+                          (else 0)))
+                   (body (read-block bodylen in)))
+              (cond
+               ((equal? request-uri "/exit")
+                (sys-exit 0))
+               ((hash-table-get %predefined-contents request-uri #f)
+                => (lambda (contents)
+                     (for-each (cut display <> out) contents)))
+               (else
+                (display "HTTP/1.x 200 OK\nContent-Type: text/plain\n\n" out)
+                (write `(("method" ,method)
+                         ("request-uri" ,request-uri)
+                         ("request-body" ,(string-incomplete->complete body))
+                         ,@headers)
+                       out)))
+              (socket-close client)
+              (loop))
+            (error "malformed request line:" request-line)))))
+
+    (define (main args)
+      (let1 socket (make-server-socket 'inet *http-port* :reuse-addr? #t)
+        (print "ready") (flush) ; handshake
+        (http-server socket)
+        0)))
+  )
+
+;; sys-fork causes problems on windows platform (both cygwin and mingw), so
+;; we go with run-process.  We assume ./gosh is THE gosh we want to run.
+(with-output-to-file "testsrv.o" (lambda () (for-each write *simple-httpd*)))
+(let1 p (run-process '("./gosh" "-ftest" "./testsrv.o") :output :pipe)
+  (read-line (process-output p)) ; handshake
+  )
 
 (test* "http-get" `(("method" "GET")
                     ("request-uri" "/get")

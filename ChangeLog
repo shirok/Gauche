@@ -1,5 +1,8 @@
 2008-10-05  Shiro Kawai  <shiro@acm.org>
 
+	* test/rfc.scm, ext/net/test.scm: Avoid using sys-fork to run the
+	  test server process; fork doesn't go well with windows.
+
 	* ext/net/netlib.stub (sockaddr-name): correctly identifies the
 	  length of pathname of the unix domain socket; it can be 0.
 
