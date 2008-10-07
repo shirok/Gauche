@@ -3,7 +3,7 @@
 # this as Gauche script!
 
 TGZ_DEST="$HOME/shiro.dreamhost.com/scheme/vault/"
-MAN_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/man/"
+MAN_DEST="$HOME/src/practical-scheme.net/gauche/man/"
 DOC_DEST="$HOME/src/test"
 RPMDIR="$HOME/rpm"
 CHANGELOG_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/ChangeLog.txt"
@@ -79,8 +79,7 @@ if [ "$doc" = "yes" ]; then
 fi
 
 if [ "$docs" = "yes" ]; then
-  rm -rf $MAN_DEST
-  mkdir $MAN_DEST
+  rm -f $MAN_DEST/gauche-ref*.html
   for lang in j e; do
 #    (cd doc; make gauche-ref$lang.html; gzip gauche-ref$lang.html; mv gauche-ref$lang.html.gz $TGZ_DEST)
     (cd $DOC_DEST; tar czf $TGZ_DEST/gauche-ref$lang.tgz gauche-ref$lang)
