@@ -63,13 +63,12 @@ static ScmInternalMutex compile_finish_mutex;
 
 ScmObj Scm_Compile(ScmObj program, ScmObj env)
 {
-    return Scm_ApplyRec(SCM_GLOC_GET(compile_gloc), SCM_LIST2(program, env));
+    return Scm_ApplyRec2(SCM_GLOC_GET(compile_gloc), program, env);
 }
 
 ScmObj Scm_CompilePartial(ScmObj program, ScmObj env)
 {
-    return Scm_ApplyRec(SCM_GLOC_GET(compile_partial_gloc),
-                        SCM_LIST2(program, env));
+    return Scm_ApplyRec2(SCM_GLOC_GET(compile_partial_gloc), program, env);
 }
 
 void Scm_CompileFinish(ScmCompiledCode *cc)
@@ -78,8 +77,7 @@ void Scm_CompileFinish(ScmCompiledCode *cc)
         SCM_INTERNAL_MUTEX_LOCK(compile_finish_mutex);
         SCM_UNWIND_PROTECT {
             if (cc->code == NULL) {
-                Scm_ApplyRec(SCM_GLOC_GET(compile_finish_gloc),
-                             SCM_LIST1(SCM_OBJ(cc)));
+                Scm_ApplyRec1(SCM_GLOC_GET(compile_finish_gloc), SCM_OBJ(cc));
             }
         }
         SCM_WHEN_ERROR {
@@ -328,6 +326,6 @@ void Scm__InitCompaux(void)
     INIT_GLOC(compile_partial_gloc, "compile-partial", gi);
     INIT_GLOC(compile_finish_gloc,  "compile-finish",  gi);
 
-    Scm_ApplyRec(SCM_GLOC_GET(init_compiler_gloc), SCM_NIL);
+    Scm_ApplyRec0(SCM_GLOC_GET(init_compiler_gloc));
 }
 
