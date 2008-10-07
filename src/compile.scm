@@ -327,13 +327,42 @@
 (define-inline (lvar? obj)
   (and (vector? obj) (eq? (vector-ref obj 0) 'lvar)))
 
-;; moved to C
-;(define (lvar-ref++! var)
-;  (lvar-ref-count-set! var (+ (lvar-ref-count var) 1)))
-;(define (lvar-ref--! var)
-;  (lvar-ref-count-set! var (- (lvar-ref-count var) 1)))
-;(define (lvar-set++! var)
-;  (lvar-set-count-set! var (+ (lvar-set-count var) 1)))
+;; implemented in C for better performance.
+(inline-stub
+ ;; offsets must be in sync with lvar definition above
+ "#define LVAR_OFFSET_TAG        0"
+ "#define LVAR_OFFSET_NAME       1"
+ "#define LVAR_OFFSET_INITVAL    2"
+ "#define LVAR_OFFSET_REF_COUNT  3"
+ "#define LVAR_OFFSET_SET_COUNT  4"
+ "#define LVAR_SIZE              5"
+
+ ;; Specialized routine for (map (lambda (name) (make-lvar name)) objs)
+ (define-cproc %map-make-lvar (names)
+   (body <top>
+         (let* ((h SCM_NIL) (t SCM_NIL))
+           (for-each (lambda (name)
+                       (let* ((v (Scm_MakeVector LVAR_SIZE '0)))
+                         (set!
+                          (SCM_VECTOR_ELEMENT v LVAR_OFFSET_TAG) 'lvar
+                          (SCM_VECTOR_ELEMENT v LVAR_OFFSET_NAME) name
+                          (SCM_VECTOR_ELEMENT v LVAR_OFFSET_INITVAL) SCM_UNDEFINED)
+                         (SCM_APPEND1 h t v)))
+                     names)
+           (result h))))
+
+ (define-cise-stmt update!
+   [(_ offset delta)
+    `(let* ((i :: int (SCM_INT_VALUE (SCM_VECTOR_ELEMENT lvar ,offset))))
+       (set! (SCM_VECTOR_ELEMENT lvar ,offset) (SCM_MAKE_INT (+ i ,delta))))])
+ 
+ (define-cproc lvar-ref++! (lvar)
+   (body <void> (update! LVAR_OFFSET_REF_COUNT +1)))
+ (define-cproc lvar-ref--! (lvar)
+   (body <void> (update! LVAR_OFFSET_REF_COUNT -1)))
+ (define-cproc lvar-set++! (lvar)
+   (body <void> (update! LVAR_OFFSET_SET_COUNT +1)))
+ )
 
 ;; Compile-time environment (cenv)
 ;;
@@ -362,11 +391,61 @@
 ;;                in later stages for the optimization.  This slot may
 ;;                be #f.
 ;;
-;; NB: this structure is assumed by cenv-lookup, defined in intlib.stub.
-;; If you change this structure here, adjust intlib.stub accordingly.
-
 (define-simple-struct cenv #f make-cenv
   (module frames exp-name current-proc))
+
+;; Some cenv-related proceduers are in C for better performance.
+(inline-stub
+ ;; cenv-lookup :: Cenv, Name, LookupAs -> Var
+ ;;         where Var = Lvar | Identifier | Macro
+ ;;
+ ;;  LookupAs ::
+ ;;      LEXICAL(0) - lookup only lexical bindings
+ ;;    | SYNTAX(1)  - lookup lexical and syntactic bindings
+ ;;    | PATTERN(2) - lookup lexical, syntactic and pattern bindings
+ ;;  PERFORMANCE KLUDGE:
+ ;;     - We assume the frame structure is well-formed, so skip some tests.
+ ;;     - We assume 'lookupAs' and the car of each frame are small non-negative
+ ;;       integers, so we directly compare them without unboxing them.
+ (define-cproc cenv-lookup (cenv name lookup-as)
+   (body <top>
+         (SCM_ASSERT (SCM_VECTORP cenv))
+         (let* ((name-ident? :: int (SCM_IDENTIFIERP name))
+                (frames (SCM_VECTOR_ELEMENT cenv 1)))
+           (pair-for-each
+            (lambda (fp)
+              (when (and name-ident? (== (-> (SCM_IDENTIFIER name) env) fp))
+                ;; strip identifier if we're in the same env (kludge)
+                (set! name (SCM_OBJ (-> (SCM_IDENTIFIER name) name))))
+              (when (> (SCM_CAAR fp) lookup-as) ; see PERFORMANCE KLUDGE above
+                (continue))
+              ;; inline assq here to squeeze performance.
+              (for-each (lambda (vp)
+                          (when (SCM_EQ name (SCM_CAR vp)) (return (SCM_CDR vp))))
+                        (SCM_CDAR fp)))
+            frames)
+           (if (SCM_SYMBOLP name)
+             (let* ((mod (SCM_VECTOR_ELEMENT cenv 0)))
+               (SCM_ASSERT (SCM_MODULEP mod))
+               (result (Scm_MakeIdentifier (SCM_SYMBOL name) (SCM_MODULE mod) SCM_NIL)))
+             (begin
+               (SCM_ASSERT (SCM_IDENTIFIERP name))
+               (result name))))))
+
+ ;; Check if Cenv is toplevel or not.
+ ;;
+ ;; (define (cenv-toplevel? cenv)
+ ;;   (not (any (lambda (frame) (eqv? (car frame) LEXICAL))
+ ;;             (cenv-frames cenv))))
+ ;;
+ (define-cproc cenv-toplevel? (cenv)
+   (body <top>
+         (SCM_ASSERT (SCM_VECTORP cenv))
+         (for-each (lambda (fp)
+                     (if (== (SCM_CAR fp) '0) (return '#f)))
+                   (SCM_VECTOR_ELEMENT cenv 1))
+         (return '#t)))
+ )
 
 (define-macro (make-bottom-cenv . maybe-module)
   (if (null? maybe-module)
@@ -4191,18 +4270,37 @@
 (define *pass3-dispatch-table* (pass3-generate-dispatch-table))
      
 ;; Returns depth and offset of local variable reference.
-;; NB: this is moved to compaux.c
-;(define (renv-lookup renv lvar)
-;  (let outer ((renv renv)
-;              (depth 0))
-;    (if (null? renv)
-;      (error "[internal error] stray local variable:" lvar)
-;      (let inner ((frame (car renv))
-;                  (count 1))
-;        (cond ((null? frame) (outer (cdr renv) (+ depth 1)))
-;              ((eq? (car frame) lvar)
-;               (values depth (- (length (car renv)) count)))
-;              (else (inner (cdr frame) (+ count 1))))))))
+;;   renv-lookup : [[Lvar]], Lvar -> Int, Int
+;;
+(inline-stub
+ ;;(define (renv-lookup renv lvar)
+ ;;  (let outer ((renv renv)
+ ;;              (depth 0))
+ ;;    (if (null? renv)
+ ;;      (error "[internal error] stray local variable:" lvar)
+ ;;      (let inner ((frame (car renv))
+ ;;                  (count 1))
+ ;;        (cond ((null? frame) (outer (cdr renv) (+ depth 1)))
+ ;;              ((eq? (car frame) lvar)
+ ;;               (values depth (- (length (car renv)) count)))
+ ;;              (else (inner (cdr frame) (+ count 1))))))))
+ (define-cproc renv-lookup (renv lvar)
+   (body <top>
+         (let* ((depth :: int 0))
+           (for-each (lambda (fp)
+                       (let* ((count :: int 1))
+                         (for-each (lambda (lp)
+                                     (when (SCM_EQ lp lvar)
+                                       (return
+                                        (values (SCM_MAKE_INT depth)
+                                                (SCM_MAKE_INT (- (Scm_Length fp) count)))))
+                                     (pre++ count))
+                                   fp))
+                       (pre++ depth))
+                     renv))
+         (Scm_Error "[internal error] stray local variable:" lvar)
+         (return SCM_UNDEFINED))) ; dummy
+ )
 
 (define (pass3/prepare-args args ccb renv ctx)
   (if (null? args)
