@@ -136,7 +136,7 @@
 
  (define-cproc %md5-final (md5::<md5-context>)
    (body <top>
-         (let* ((|digest[16]| :: (unsigned char)))
+         (let* ((digest :: (.array (unsigned char) (16))))
            (MD5Final digest (& (-> md5 ctx)))
            (result (Scm_MakeString (cast (char *) digest)
                                    16 16

@@ -137,7 +137,7 @@
 
  (define-cproc %sha1-final (sha1::<sha1-context>)
    (body <top>
-         (let* ((|digest[20]| :: (unsigned char)))
+         (let* ((digest :: (.array (unsigned char) (20))))
            (SHAFinal digest (& (-> sha1 ctx)))
            (result (Scm_MakeString (cast (const char*) digest)
                                    20 20
