@@ -40,6 +40,8 @@
   (use gauche.cgen.unit)
   (use gauche.cgen.literal)
   (use gauche.experimental.ref)
+  (use gauche.experimental.app)
+  (use gauche.experimental.lamb)
   (use util.match)
   (use util.list)
   (export cise-render cise-render-rec
@@ -98,8 +100,7 @@
   (if (stmt-ctx? env) `(,form ";") form))
 
 (define (render-env-decls env)
-  (map (match-lambda
-         ((var type) `(,(cise-render-type type)" ",var";")))
+  (map (^.[(var type) `(,(cise-render-typed-var type var env) ";")])
        (env-decls env)))
 
 ;; Check source-info attribute of the input S-expr, and returns Stree
@@ -294,12 +295,10 @@
   ;; is done at that level.  Hopefully this is an exception.
   (define (gen-cfn cls name args rettype body)
     `(,(cise-render-identifier cls) " "
-      ,(cise-render-type rettype)
-      " " ,(cise-render-identifier name) "("
-      ,@(intersperse "," (map (lambda (a)
-                                `(,(cise-render-type (cdr a)) " "
-                                  ,(cise-render-identifier (car a))))
-                              args))
+      ,(cise-render-typed-var rettype name env)
+      "("
+      ,@($ intersperse ","
+           $ map (^.[(var . type) (cise-render-typed-var type var env)]) args)
       ")" "{"
       ,(call-with-output-string (cut cise-render `(begin ,@body) <>))
       "}"))
@@ -338,20 +337,19 @@
   (match form
     [(_ ((var . spec) ...) . body)
      (let1 eenv (expr-env env)
-       `(begin ,@(map (lambda (var spec)
-                        (receive (type has-init? init)
-                            (match spec
-                              [()         (values 'ScmObj #f #f)]
-                              [(init)     (values 'ScmObj #t init)]
-                              [(':: type) (values type #f #f)]
-                              [(':: type init) (values type #t init)])
-                          `(,(cise-render-type type)" "
-                            ,(cise-render-identifier var)
-                            ,@(cond-list (has-init?
-                                          `("=",(render-rec init eenv))))
-                            ";")))
-                      var spec)
-               ,@(map (cut render-rec <> env) body)))]
+       `(begin
+          ,@(map (lambda (var spec)
+                   (receive (type has-init? init)
+                       (match spec
+                         [()         (values 'ScmObj #f #f)]
+                         [(init)     (values 'ScmObj #t init)]
+                         [(':: type) (values type #f #f)]
+                         [(':: type init) (values type #t init)])
+                     `(,(cise-render-typed-var type var env)
+                       ,@(cond-list [has-init? `("=",(render-rec init eenv))])
+                       ";")))
+                 var spec)
+          ,@(map (cut render-rec <> env) body)))]
     ))
 
 ;; [cise stmt] if TEST-EXPR THEN-STMT [ELSE-STMT]
@@ -713,7 +711,7 @@
     (wrap-expr
      (match form
        [(_ type expr)
-        `("((",(cise-render-type type)")(",(render-rec expr eenv)"))")])
+        `("((",(cise-render-typed-var type "" env)")(",(render-rec expr eenv)"))")])
      env)))
 
 (define-cise-macro (?: form env)
@@ -741,9 +739,9 @@
 ;; Convenience expression macros
 ;;
 
-;; Embed raw c code.  NB: I'm not sure yet about the name.  It is
-;; desirable to be consistent with genstub (currently it uses (c <expr>))
-;; I'll think it a bit more.
+;; Embed raw c code.  THIS IS A KLUDGE---SHOULDN'T BE USED.
+;; Allowing raw C code prevents higher-level analysis of cise code.
+;; This should be regarded as a compromise until cise support full C features.
 (define-cise-expr C:
   [(_ stuff) (list (x->string stuff))])
 
@@ -783,10 +781,18 @@
 ;; Other utilities
 ;;
 
-(define (cise-render-type typespec)  ; for the time being
-  (if (list? typespec)
-    (intersperse " " (map x->string typespec))
-    (x->string typespec)))
+(define (cise-render-typed-var typespec var env)
+  (match typespec
+    [('.array spec (dim ...))
+     `(,(cise-render-typed-var spec var env)
+       ,@(map (^.['* "[]"]
+                 [(? integer? n) `("[",n"]")]
+                 [(? symbol? x) `("[",(cise-render-identifier x)"]")]
+                 [x (error "bad dimension spec in array typespec:" typespec)])
+              dim))]
+    [(x ...) `(,(intersperse " " (map x->string x))
+               " " ,(cise-render-identifier var))]
+    [x       `(,(x->string x) " " ,(cise-render-identifier var))]))
 
 (define (cise-render-identifier sym)
   (cgen-safe-name-friendly (x->string sym)))

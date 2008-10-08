@@ -1,5 +1,8 @@
 2008-10-07  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/cise.scm (cise-render-typed-var): Allow array
+	  type declaration e.g. (.array (unsigned char) (10 10)).
+
 	* src/compile.scm, src/intlib.stub: Moved some C-implemented
 	  compiler-internal routines from intlib.stub to compile.scm
 	  using inline-stub.
