@@ -29,7 +29,7 @@
 * MD5 message digest::          rfc.md5
 * MIME message handling::       rfc.mime
 * Quoted-printable encoding/decoding::  rfc.quoted-printable
-* SHA1 message digest::         rfc.sha1
+* SHA message digest::          rfc.sha
 * URI parsing and construction::  rfc.uri
 * SLIB::                        slib
 * Functional XML parser::       sxml.ssax
@@ -6050,7 +6050,7 @@ time, using @code{:key} and @code{:hasher} keyword-arguments respectively.
 You can pass any class object that implements message digest 
 interface (@xref{Message digester framework}),
 such as @code{<md5>} (@xref{MD5 message digest})
-or @code{<sha1>} (@xref{SHA1 message digest}).
+or @code{<sha256>} (@xref{SHA message digest}).
 
 Example:
 @c JP
@@ -6058,7 +6058,7 @@ HMACアルゴリズムの状態情報を保持します。
 鍵とハッシングアルゴリズムは、キーワード引数@code{:key}と@code{:hasher}を
 それぞれ使って、生成時に与えます。
 @code{<md5>} (@ref{MD5 message digest}参照)や
-@code{<sha1>} (@ref{SHA1 message digest}参照)などのような
+@code{<sha256>} (@ref{SHA message digest}参照)などのような
 ダイジェストインタフェース(@ref{Message digester framework}参照)を
 実装するいかなるクラスオブジェクトを渡すこともできます。
 
@@ -7245,7 +7245,7 @@ blocks, instead of all-in-one procedure.
 
 
 @c ----------------------------------------------------------------------
-@node Quoted-printable encoding/decoding, SHA1 message digest, MIME message handling, Library modules - Utilities
+@node Quoted-printable encoding/decoding, SHA message digest, MIME message handling, Library modules - Utilities
 @section @code{rfc.quoted-printable} - Quoted-printable encoding/decoding
 @c NODE Quoted-printableエンコーディング, @code{rfc.quoted-printable} - Quoted-printableエンコーディング
 
@@ -7353,29 +7353,57 @@ Quoted-printableエンコードされた文字列@var{string}をデコードし、
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SHA1 message digest, URI parsing and construction, Quoted-printable encoding/decoding, Library modules - Utilities
-@section @code{rfc.sha1} - SHA1 message digest
-@c NODE SHA1メッセージダイジェスト, @code{rfc.sha1} - SHA1メッセージダイジェスト
+@node SHA message digest, URI parsing and construction, Quoted-printable encoding/decoding, Library modules - Utilities
+@section @code{rfc.sha} - SHA message digest
+@c NODE SHAメッセージダイジェスト, @code{rfc.sha} - SHAメッセージダイジェスト
 
-@deftp {Module} rfc.sha1
-@mdindex rfc.sha1
+@deftp {Module} rfc.sha
+@mdindex rfc.sha
 @c EN
-This module implements US Secure Hash Algorithm 1 (SHA1), 
-defined in RFC 3174 (@ref{rfc3174, [RFC3174], RFC3174}).
+This module implements US Secure Hash Algorithm 
+defined in RFC 4634.  It provides SHA-1, SHA-224, SHA-256, 
+SHA-384 and SHA-512 (the latter four are sometimes referred
+as SHA-2 collectively).
+
 The module extends util.digest 
 (@xref{Message digester framework}).
 @c JP
-このモジュールは、RFC 3174 (@ref{rfc3174, [RFC3174], RFC3174}参照)で
-定義されている、US Secure Hash Algorithm 1 (SHA1)を実装しています。
+このモジュールは、RFC 4634で定義されている
+US Secure Hash Algorithmを実装しています。
+提供されるアルゴリズムはSHA-1, SHA-224, SHA-256, SHA-384および
+SHA-512です (後の4つを総称してSHA-2と呼ぶこともあります)。
+
 このモジュールは、util.digest (@ref{Message digester framework}参照)
 を拡張しています。
 @c COMMON
 @end deftp
 
-@deftp {Class} <sha1>
-@clindex sha1
+@deftp {Module} rfc.sha1
+@mdindex rfc.sha1
 @c EN
-The instance of this class keeps internal state of SHA1 digest algorithm.
+This is the old module that provided only SHA-1.  It is kept as
+an alias of @code{rfc.sha} for the backward compatibility.  New code
+should use @code{rfc.sha}.
+@c JP
+これはSHA-1だけを提供していた古いモジュールです。互換性のため、
+この名前は@code{rfc.sha}の別名として残されています。
+新たに書くコードは@code{rfc.sha}を使ってください。
+@c COMMON
+@end deftp
+
+
+@deftp {Class} <sha1>
+@deftpx {Class} <sha224>
+@deftpx {Class} <sha256>
+@deftpx {Class} <sha384>
+@deftpx {Class} <sha512>
+@clindex sha1
+@clindex sha224
+@clindex sha256
+@clindex sha384
+@clindex sha512
+@c EN
+An instance of these class keeps internal state of SHA digest algorithm.
 
 This class implements @code{util.digest} framework interface,
 @code{digest-update!}, @code{digest-final!}, 
@@ -7383,7 +7411,7 @@ This class implements @code{util.digest} framework interface,
 @xref{Message digester framework}, for detailed explanation
 of these methods.
 @c JP
-このクラスのインスタンスは、SHA1ダイジェストアルゴリズムの内部状態を
+これらのクラスのインスタンスは、SHAダイジェストアルゴリズムの内部状態を
 保持しています。
 
 このクラスは、@code{util.digest}フレームワークのインターフェース、
@@ -7403,6 +7431,10 @@ short-cut procedures.
 @c COMMON
 
 @defun sha1-digest
+@defunx sha224-digest
+@defunx sha256-digest
+@defunx sha384-digest
+@defunx sha512-digest
 @c EN
 Reads data from the current input port until EOF, and returns
 its digest in an incomplete string.
@@ -7413,6 +7445,10 @@ its digest in an incomplete string.
 @end defun
 
 @defun sha1-digest-string string
+@defunx sha224-digest-string string
+@defunx sha256-digest-string string
+@defunx sha384-digest-string string
+@defunx sha512-digest-string string
 @c EN
 Digest the data in @var{string}, and returns the result 
 in an incomplete string.
@@ -7423,7 +7459,7 @@ in an incomplete string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node URI parsing and construction, SLIB, SHA1 message digest, Library modules - Utilities
+@node URI parsing and construction, SLIB, SHA message digest, Library modules - Utilities
 @section @code{rfc.uri} - URI parsing and construction
 @c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
 
@@ -13463,10 +13499,10 @@ Returns a cartesian product of sets in @var{list-of-sets}.
 @c EN
 This module provides a base class and common interface for 
 message digest algorithms, such as MD5 (@xref{MD5 message digest})
-and SHA1 (@xref{SHA1 message digest}).
+and SHA (@xref{SHA message digest}).
 @c JP
 このモジュールは、MD5 (@ref{MD5 message digest}参照)や
-SHA1 (@ref{SHA1 message digest}参照)などの、メッセージ
+SHA (@ref{SHA message digest}参照)などの、メッセージ
 ダイジェストアルゴリズムのためのベースクラスと一般的なインターフェースを
 提供します。
 @c COMMON
