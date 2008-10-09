@@ -36,6 +36,8 @@
 #ifndef GAUCHE_CODE_H
 #define GAUCHE_CODE_H
 
+SCM_DECL_BEGIN
+
 #include <gauche/vm.h>
 
 /*
@@ -172,6 +174,6 @@ SCM_EXTERN int Scm_VMInsnOperandType(u_int code);
 SCM_EXTERN int Scm_VMInsnNameToCode(ScmObj name);
 SCM_EXTERN ScmWord Scm_VMInsnBuild(ScmObj insn);
 
-
+SCM_DECL_END
 
 #endif /* GAUCHE_CODE_H */

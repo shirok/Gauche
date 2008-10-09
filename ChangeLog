@@ -1,5 +1,8 @@
 2008-10-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/macro.h, src/gauche/code.h, src/gauche/extend.h:
+	  Increase C++ friendliness.
+
 	* src/extlib.stub (%open-input-file, %open-output-file):
 	  When :if-does-not-exist is #f or :if-exists is #f, these procedures
 	  have ignored all errors, even if open(2) failed with other reasons

@@ -75,11 +75,17 @@ extern "C" {
    } while (0)
 #endif /* !__CYGWIN__ && !GAUCHE_WINDOWS*/
 
+#ifdef __cplusplus
+#define SCM_EXTENSION_ENTRY_QUAL extern "C"
+#else
+#define SCM_EXTENSION_ENTRY_QUAL
+#endif
+
 /* MSVC needs dllexport magic */
 #if defined(GAUCHE_WINDOWS)
-#define SCM_EXTENSION_ENTRY __declspec(dllexport)
+#define SCM_EXTENSION_ENTRY SCM_EXTENSION_ENTRY_QUAL __declspec(dllexport)
 #else
-#define SCM_EXTENSION_ENTRY /*none*/
+#define SCM_EXTENSION_ENTRY SCM_EXTENSION_ENTRY_QUAL
 #endif
 
 #ifdef __cplusplus

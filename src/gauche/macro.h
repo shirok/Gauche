@@ -36,6 +36,8 @@
 #ifndef GAUCHE_MACRO_H
 #define GAUCHE_MACRO_H
 
+SCM_DECL_BEGIN
+
 /*
  * SyntaxPattern object is an internal object used to expand r5rs macro.
  */
@@ -96,5 +98,7 @@ SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj lietrals,
 /* Temporary */
 SCM_EXTERN ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name,
                                               ScmProcedure *proc);
+
+SCM_DECL_END
 
 #endif /* GAUCHE_MACRO_H */
