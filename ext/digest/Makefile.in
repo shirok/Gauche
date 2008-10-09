@@ -6,11 +6,11 @@ include ../Makefile.ext
 
 SCM_CATEGORY = rfc
 
-LIBFILES = md5-lib.$(SOEXT) sha1-lib.$(SOEXT)
-SCMFILES = md5.scm sha1.scm
+LIBFILES = md5-lib.$(SOEXT) sha-lib.$(SOEXT)
+SCMFILES = md5.scm sha1.scm sha.scm
 
 GENERATED = Makefile
-XCLEANFILES = md5.scm md5-lib.c sha1.scm sha1-lib.c *_head.c *_tail.c
+XCLEANFILES = md5.scm md5-lib.c sha.scm sha-lib.c *_head.c *_tail.c
 
 EXTRA_INCLUDES = -I$(srcdir)/../uvector
 
@@ -24,19 +24,21 @@ md5-lib.$(SOEXT) : $(md5_OBJECTS)
 md5.scm md5-lib.c : md5-lib.scm
 	$(GENCOMP) --ext-module=md5.scm md5-lib.scm
 
-sha1_OBJECTS = sha1_head.$(OBJEXT) sha1-lib.$(OBJEXT) sha.$(OBJEXT) sha1_tail.$(OBJEXT)
+sha_OBJECTS = sha_head.$(OBJEXT) sha-lib.$(OBJEXT) sha2.$(OBJEXT) sha_tail.$(OBJEXT)
 
-sha1-lib.$(SOEXT) : $(sha1_OBJECTS) 
-	$(MODLINK) sha1-lib.$(SOEXT) $(sha1_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+$(sha_OBJECTS) : sha2.h
 
-sha1.scm sha1-lib.c : sha1-lib.scm
-	$(GENCOMP) --ext-module=sha1.scm sha1-lib.scm
+sha-lib.$(SOEXT) : $(sha_OBJECTS)
+	$(MODLINK) sha-lib.$(SOEXT) $(sha_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+
+sha.scm sha-lib.c : sha-lib.scm
+	$(GENCOMP) --ext-module=sha.scm sha-lib.scm
 
 md5_head.c md5_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension md5
 
-sha1_head.c sha1_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension sha1
+sha_head.c sha_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension sha
 
 install : install-std
 

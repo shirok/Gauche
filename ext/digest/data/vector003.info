@@ -1,0 +1,26 @@
+DESCRIPTION:
+    For this test data set, NIST's original PDF document contained
+    example output for SHA-384 and SHA-512 only.  The sample output
+    for the other hashes was provided by my own implementation.
+    NIST's FIPS 180-2 also contained the same example output from
+    SHA-384 and SHA-512, but none of the other hashes.
+    
+    (Total length of test vector data: 112)
+
+SHA224:
+    c97ca9a559850ce97a04a96def6d99a9e0e0e2ab14e6b8df265fc0b3
+
+SHA256:
+    cf5b16a778af8380036ce59e7b0492370b249b11e8f07a51afac45037afee9d1
+
+SHA384:
+    09330c33f71147e83d192fc782cd1b4753111b173b3b05d22fa08086e3b0f712
+    fcc7c71a557e2db966c3e9fa91746039
+
+SHA512:
+    8e959b75dae313da8cf4f72814fc143f8f7779c6eb9f7fa17299aeadb6889018
+    501d289e4900f7e4331b99dec4b5433ac7d329eeb6dd26545e96e55b874be909
+
+ASCII:
+    "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno"
+    "ijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"

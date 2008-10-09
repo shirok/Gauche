@@ -1,3 +1,8 @@
+2008-10-08  Shiro Kawai  <shiro@acm.org>
+
+	* ext/digest: Added support of SHA2 (SHA224, SHA256, SHA384 and
+	  SHA512), using Aaron Gifford's implementation.
+
 2008-10-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (cise-render-typed-var): Allow array

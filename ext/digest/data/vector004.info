@@ -1,0 +1,47 @@
+DESCRIPTION:
+    The output samples for this test vector come exclusively from my
+    own implementation and so may be completely incorrect.  Use with
+    a very large grain of salt.  The input sample comes from...well
+    most anyone in the U.S. will know and many outside the U.S. too.
+    
+    (Total length of test vector data: 1515)
+
+SHA224:
+    62a41ab0961bcdd22db70b896db3955c1d04096af6de47f5aaad1226
+
+SHA256:
+    4d25fccf8752ce470a58cd21d90939b7eb25f3fa418dd2da4c38288ea561e600
+
+SHA384:
+    69cc75b95280bdd9e154e743903e37b1205aa382e92e051b1f48a6db9d0203f8
+    a17c1762d46887037275606932d3381e
+
+SHA512:
+    23450737795d2f6a13aa61adcca0df5eef6df8d8db2b42cd2ca8f783734217a7
+    3e9cabc3c9b8a8602f8aeaeb34562b6b1286846060f9809b90286b3555751f09
+
+ASCII:
+    "Four score and seven years ago our fathers brought forth on this "
+    "continent, a new nation, conceived in Liberty, and dedicated to the "
+    "proposition that all men are created equal.  Now we are engaged in a "
+    "great civil war, testing whether that nation, or any nation so "
+    "conceived and so dedicated, can long endure. We are met on a great "
+    "battlefield of that war.  We have come to dedicate a portion of that "
+    "field, as a final resting place for those who here gave their lives "
+    "that that nation might live.  It is altogether fitting and proper "
+    "that we should do this.  But, in a larger sense, we can not "
+    "dedicate--we can not consecrate--we can not hallow--this ground.  "
+    "The brave men, living and dead, who struggled here, have consecrated "
+    "it, far above our poor power to add or detract.  The world will "
+    "little note, nor long remember what we say here, but it can never "
+    "forget what they did here.  It is for us the living, rather, to be "
+    "dedicated here to the unfinished work which they who fought here "
+    "have thus far so nobly advanced.  It is rather for us to be here "
+    "dedicated to the great task remaining before us--that from these "
+    "honored dead we take increased devotion to that cause for which they "
+    "gave the last full measure of devotion--that we here highly resolve "
+    "that these dead shall not have died in vain--that this nation, under "
+    "God, shall have a new birth of freedom--and that government of the "
+    "people, by the people, for the people, shall not perish from the "
+    "earth.  -- President Abraham Lincoln, November 19, 1863"
+

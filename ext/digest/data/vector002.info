@@ -1,0 +1,30 @@
+DESCRIPTION:
+    The original PDF document describing the SHA-256, SHA-384, and
+    SHA-512 hashes provided sample output only for SHA-256.  The
+    SHA-224 sample output comes from R. Housley's IEATF PKIX Working
+    Group draft document dated December 2003 titled "A 224-bit
+    One-way Hash Function: SHA-224".  NIST's FIPS 180-2 document
+    provided output for SHA-1.  The output for SHA-384 and SHA-512
+    came from my own implementation.
+    
+    (Total length of test vector data: 56)
+
+SHA1:
+    84983e441c3bd26ebaae4aa1f95129e5e54670f1
+
+SHA224:
+    75388b16512776cc5dba5da1fd890150b0c6455cb4f58b1952522525
+
+SHA256:
+    248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1
+
+SHA384:
+    3391fdddfc8dc7393707a65b1b4709397cf8b1d162af05abfe8f450de5f36bc6
+    b0455a8520bc4e6f5fe95b1fe3c8452b
+
+SHA512:
+    204a8fc6dda82f0a0ced7beb8e08a41657c16ef468b228a8279be331a703c335
+    96fd15c13b1b07f9aa1d3bea57789ca031ad85c7a71dd70354ec631238ca3445
+
+ASCII:
+    "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
