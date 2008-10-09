@@ -771,6 +771,19 @@
 ;; open-input-file and open-output-file are defined in Scheme.
 ;; these are core procedures
 
+(define-cise-expr %open/allow-noexist?
+  [(_ if-does-not-exist-is-false)
+   `(and ,if-does-not-exist-is-false
+         (or (== errno ENOENT)
+             (== errno ENODEV)
+             (== errno ENOTDIR)))])
+
+(define-cise-expr %open/allow-exist?
+  [(_ if-exists-is-false)
+   `(and ,if-exists-is-false
+         (or (== errno EEXIST)
+             (== errno ENOTDIR)))])
+
 (define-cproc %open-input-file (path::<string>
                                 &keyword
                                 (if-does-not-exist :error)
@@ -788,7 +801,8 @@
                                              SCM_PORT_BUFFER_FULL))
                  (o       (Scm_OpenFilePort (Scm_GetStringConst path)
                                             O_RDONLY bufmode 0)))
-            (when (and (SCM_FALSEP o) (not ignerr))
+            (when (and (SCM_FALSEP o)
+                       (not (%open/allow-noexist? ignerr)))
               (Scm_SysError "couldn't open input file: %S" path))
             (result o)))))
 
@@ -802,7 +816,8 @@
                                  )
   (body
    <top>
-   (let* ((ignerr :: int FALSE)
+   (let* ((ignerr-noexist :: int FALSE)
+          (ignerr-exist :: int FALSE)
           (flags  :: int O_WRONLY))
      ;; check if-exists flag
      (cond
@@ -814,13 +829,13 @@
       ((SCM_EQ if-exists ':supersede) (logior= flags O_TRUNC))
       ((SCM_EQ if-exists ':overwrite)) ; no need to add flags
       ((SCM_FALSEP if-exists)
-       (logior= flags O_EXCL) (set! ignerr TRUE))
+       (logior= flags O_EXCL) (set! ignerr-exist TRUE))
       (else
        (Scm_TypeError ":if-exists" ":supersede, :overwrite, :append, :error or #f" if-exists)))
      ;; check if-does-not-exist flag
      (cond
       ((SCM_EQ if-does-not-exist ':create) (logior= flags O_CREAT))
-      ((SCM_FALSEP if-does-not-exist) (set! ignerr TRUE))
+      ((SCM_FALSEP if-does-not-exist) (set! ignerr-noexist TRUE))
       ((SCM_EQ if-does-not-exist ':error)) ; no need to add flags
       (else
        (Scm_TypeError ":if-does-not-exist" ":error, :create or #f"
@@ -830,7 +845,9 @@
                                         SCM_PORT_BUFFER_FULL))
             (o       (Scm_OpenFilePort (Scm_GetStringConst path)
                                        flags bufmode mode)))
-       (when (and (not ignerr) (== o SCM_FALSE))
+       (when (and (SCM_FALSEP o)
+                  (not (%open/allow-noexist? ignerr-noexist))
+                  (not (%open/allow-exist? ignerr-exist)))
          (Scm_Error "couldn't open output file: %S" path))
        (result o)))))
 

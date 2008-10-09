@@ -1,3 +1,11 @@
+2008-10-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (%open-input-file, %open-output-file):
+	  When :if-does-not-exist is #f or :if-exists is #f, these procedures
+	  have ignored all errors, even if open(2) failed with other reasons
+	  such as EPERM.  Now we check errno for these cases and raise
+	  appropriate <system-error> if the error reason is not expected one.
+
 2008-10-08  Shiro Kawai  <shiro@acm.org>
 
 	* ext/digest: Added support of SHA2 (SHA224, SHA256, SHA384 and
