@@ -5,8 +5,8 @@
 	  override inline-stub macro in the compile-module.  It allows
 	  macros that generates inline-stub form.
 
-	* src/gauche/macro.h, src/gauche/code.h, src/gauche/extend.h:
-	  Increase C++ friendliness.
+	* src/gauche/macro.h, src/gauche/code.h, src/gauche/extend.h,
+	  ext/uvector/uvector.h.tmpl: Increase C++ friendliness.
 
 	* src/extlib.stub (%open-input-file, %open-output-file):
 	  When :if-does-not-exist is #f or :if-exists is #f, these procedures

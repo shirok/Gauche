@@ -44,6 +44,8 @@
 
 #include <gauche.h>
 
+SCM_DECL_BEGIN
+
 #if defined(EXTUVECTOR_EXPORTS)
 #define LIBGAUCHE_EXT_BODY
 #endif 
@@ -162,6 +164,8 @@ SCM_EXTERN ScmObj Scm_${T}VectorSwapBytesX(Scm${T}Vector *v0);
 ///(define *tmpl-epilogue* '(
 
 #undef LIBGAUCHE_EXT_BODY
+
+SCM_DECL_END
 
 #endif /* GAUCHE_UVECT_H */
 
