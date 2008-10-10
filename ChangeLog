@@ -1,5 +1,10 @@
 2008-10-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (compile-toplevel-form, do-it): Instead of
+	  recognizing inline-stub literally in compile-toplevel-form, we
+	  override inline-stub macro in the compile-module.  It allows
+	  macros that generates inline-stub form.
+
 	* src/gauche/macro.h, src/gauche/code.h, src/gauche/extend.h:
 	  Increase C++ friendliness.
 

@@ -148,6 +148,13 @@
     (eval '(define-macro (current-module)
              `(find-module ',(with-module user (compile-module-name))))
           (compile-module))
+    (eval '(define-macro (inline-stub . forms)
+             (for-each (lambda (s)
+                         ((with-module gauche.cgen.stub cgen-stub-parse-form)
+                          (unwrap-syntax s)))
+                       forms)
+             (undefined))
+          (compile-module))
     ;; Static stuff
     (cgen-decl "#include <gauche/code.h>")
     (cgen-decl "#include <gauche/macro.h>") ; for MakeMacroTransformerOld. temporary.
@@ -238,7 +245,6 @@
 (define-global-pred =define?          define)
 (define-global-pred =lambda?          lambda)
 (define-global-pred =define-constant? define-constant)
-(define-global-pred =inline-stub?     inline-stub)
 (define-global-pred =declare?         declare)
 
 ;; compile FORM, and conses the toplevel code (something to be
@@ -327,10 +333,6 @@
       [((? =define-constant?) (? symbol?) expr)
        (eval form (compile-module))
        (cons (cgen-literal (compile form (compile-module))) seed)]
-      ;; genstub stuff
-      [((? =inline-stub?) . stubs)
-       (for-each (compose cgen-stub-parse-form unwrap-syntax) stubs)
-       seed]
       [else
        (let1 compiled-code (compile form (compile-module))
          ;; We exclude a compiled code with only CONSTU-RET, which appears
