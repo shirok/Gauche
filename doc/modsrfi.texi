@@ -4301,18 +4301,19 @@ it is as powerful/evil as Common Lisp's @emph{loop} macro).
 @c COMMON
 
 @c EN
-It is also runs eagerly, that is, if it generates a list, it
+It also runs eagerly, that is, if it generates a list, it
 creates the entire list when evaluated, instead of generate the
 elements @emph{on demand}.  Thus it can't represent an infinite
-sequence, which Haskell's comprehension naturally can.  In Scheme,
+sequence, which Haskell's comprehension naturally does.  In Scheme,
 you can use streams built on top of delayed evaluation for
-such purpose.
+such purpose (@xref{Stream library}).
 @c JP
 この機構は先行評価的に走ります。すなわち、リストを生成する場合、評価時
 にすべてのリストを生成します。要素を@emph{要求駆動的}に生成するわけで
 はありません。それゆえ、無限列を表現することはできません。それが自然に
 できる Haskell とは違います。Schemeにおいては無限列を扱うのなら遅延評
-価をするように構築されたストリームが使えます。
+価をするように構築されたストリームが使えます
+(@ref{Stream library}参照)。
 @c COMMON
 @end deftp
 
@@ -4338,27 +4339,58 @@ Generate a list of squares for the first five integers:
 @end example
 
 @c EN
-Generate set of pair of numbers @code{(x y)}, where @code{x}
+@code{list-ec} is a comprehension macro that generates a list.
+The first form @code{(: i 5)} is called a @var{qualifier}, which 
+specifies a set of values to repeat over (here it is each integer
+from 0 below 5).
+The last form
+@code{(* i i)} is called a @var{body}, which is ordinary Scheme expression
+evaluated for each values specified by the @var{qualifier}.
+@c JP
+@code{list-ec}はリストを生成する内包表記マクロです。
+最初のフォーム@code{(: i 5)}は@var{qualifier}と呼ばれ、
+繰り返しを行う値の集合を指定します (この例では0以上5未満の整数)。
+最後のフォーム@code{(* i i)}は@var{body}と呼ばれ、
+@var{qualifier}が指定する値それぞれにつき評価される通常のScheme式です。
+@c COMMON
+
+@c EN
+A comprehension can have more than one qualifiers.
+Next example generate set of pair of numbers @code{(x y)}, where @code{x}
 is between 2 (inclusive) and 5 (exclusive),
 and @code{y} is between 1 (inclusive) and x (exclusive).
 @c JP
-数の対@code{(x y)}の集合を生成します。ここで@code{x}は
+内包表記は複数のqualifierを持つことができます。
+次の例は数の対@code{(x y)}の集合を生成します。ここで@code{x}は
 2以上 5未満、@code{y}は1以上 x 未満です。
 @c COMMON
+
 @example
 (list-ec (: x 2 5) (: y 1 x) (list x y))
   @result{} ((2 1) (3 1) (3 2) (4 1) (4 2) (4 3))
 @end example
 
 @c EN
+The qualifiers works as @emph{nested}; that is, @code{(: x 2 5)}
+specifies to repeat the rest of the clauses---@code{(: y 1 x)} and
+@code{(list x y)}.
+@c JP
+複数のqualifierはネストするように動作します。つまり、@code{(: x 2 5)}は
+残りの節---@code{(: y 1 x)} および @code{(list x y)} を繰り返すように
+指定しているということです。
+@c COMMON
+
+@c EN
 The above two examples can be written in Haskell as the followings:
 @c JP
 上の2つの例はHaskellで書くと以下のようになります。
 @c COMMON
+
 @example
 [ i*i   | i <- [0..4] ]
 [ (x,y) | x <- [2..4], y <- [1..x-1] ]
 @end example
+
 @c EN
 Note the differences: (1) In Haskell, the body expression to yield the
 elements comes first, followed by qualifiers (selectors).  In srfi-42, the body
@@ -4385,6 +4417,21 @@ List a set of numbers @code{(a b c d)}, where @code{a^3+b^3 = c^3+d^3}:
            (if (= (+ (expt a 3) (expt b 3))
                   (+ (expt c 3) (expt d 3))))
            (list a b c d)))
+@end example
+
+@c EN
+If you want to change values of more than one variable
+simultaneously, instead of nesting, you can bundle the qualifiers
+like this:
+@c JP
+複数の変数を(ネストするのではなく)同時に変化させたい場合は、
+複数のqualifierを次のようにまとめることができます。
+@c COMMON
+
+@example
+(list-ec (:parallel (: x '(a b c d)) (: y '(1 2 3 4)))
+         (list x y))
+  @result{} ((a 1) (b 2) (c 3) (d 4))
 @end example
 
 @c EN
@@ -4431,71 +4478,139 @@ Each comprehension takes the following form.
 @end example
 
 @c EN
-Evaluates @var{body} repeatedly as specified by @var{qualifier}s.
+It evaluates @var{body} repeatedly as specified by @var{qualifier} @dots{}.
 Depending on the type of comprehension,
 the results of @var{body} may be either collected to create an 
 aggregate (list, vector, string, ...), folded by some operator
 (sum, product, min, max, ...), or simply discarded.
 @c JP
-@var{qualifier}ごとに@var{body}をくりかえし評価します。内包表記の種類
+@var{qualifier} @dots{}の指定に従って@var{body}をくりかえし評価します。内包表記の種類
 によって、@var{body}の結果は(リスト、ベクタ、文字列などに)集約されるか、
 (sum、product、min、maxなどによって)畳み込まれるか、あるいは、単に捨て
 られます。
 @c COMMON
 
 @c EN
-A few comprehensions takes extra values before @var{qualifiers} or
-after @var{bodies}.
+Each @var{qualifier} specifies how to repeat the following
+@var{qualifiers} and @var{body}.  A @var{qualifier} can be a
+generational qualifier that yields a set of values to loop
+over, or a control qualifier that specify a condition
+to exclude some values.  See the Qualifiers heading below.
 @c JP
-いくつかの内包表記では、追加の値が@var{qualifiers}の前か、@var{bodies}
+それぞれの@var{qualifier}は、それ以降の@var{qualifier}と@var{body}
+をどのように繰り返すかを指定します。@var{qualifier}には、繰り返しに
+使う値を生成する生成的@var{qualifier}と、条件によって値を繰り返しから
+省く制御的@var{qualifier}があります。以下のQualifiersの節を参照してください。
+@c COMMON
+
+@c EN
+A few comprehensions takes extra values before @var{qualifiers} or
+after @var{body}.
+@c JP
+いくつかの内包表記では、追加の値が@var{qualifiers}の前か、@var{body}
 の後に置かれます。
 @c COMMON
 
 @defmac do-ec qualifier @dots{} body
 [SRFI-42]
+Repeats @var{body}.  The results of @var{body} is discarded.
+This is for side-effecting operations.
 @end defmac
 
 @defmac list-ec qualifier @dots{} body
 [SRFI-42]
+Repeats @code{body} and collects the results into a list.
 @end defmac
 
 @defmac append-ec qualifier @dots{} body
 [SRFI-42]
+Repeats @code{body}, which must yield a list.
+Returns a list which is the concatenation of all lists retured by @var{body}.
 @end defmac
 
 @defmac string-ec qualifier @dots{} body
 @defmacx string-append-ec qualifier @dots{} body
 [SRFI-42]
+Repeats @var{body}, which must yield a character (in @code{string-ec})
+or a string (in @code{string-append-ec}).  Returns a string that
+consists of the results of @var{body}.
 @end defmac
 
 @defmac vector-ec qualifier @dots{} body
 [SRFI-42]
+Repeats @var{body} and collects the results into a vector.
 @end defmac
 
-@defmac vector-of-length-ec qualifier @dots{} body
+@defmac vector-of-length-ec k qualifier @dots{} body
 [SRFI-42]
+This is like @code{vector-ec}, except that the length of the
+result vector is known to be @var{k}.  It can be more efficient
+than @code{vector-ec}.  Unless the comprehension repeats exactly
+@code{k} times, an error is signaled.
 @end defmac
 
 @defmac sum-ec qualifier @dots{} body
 @defmacx product-ec qualifier @dots{} body
-@defmacx min-ec qualifier @dots{} body
+[SRFI-42]
+@var{body} must yield a numeric value.  Returns sum of and product of
+the results, respectively.
+@end defmac
+
+@defmac min-ec qualifier @dots{} body
 @defmacx max-ec qualifier @dots{} body
 [SRFI-42]
+@var{body} must yield a numeric value.  Returns maximum and minimum value
+of the results, respectively.  @var{body} must be evaluated at least once,
+or an error is signalled.
 @end defmac
 
 @defmac any?-ec qualifier @dots{} test
 @defmacx every?-ec qualifier @dots{} test
 [SRFI-42]
+Evaluates @var{test} for each iteration, and returns
+@code{#t} as soon as it yields non-@code{#f} (for @code{any-ec?}),
+or returns @code{#f} as soon as it yields @code{#f} (for @code{every?-ec}).
+Unlink the comprehensions introduced above, these stop evaluating
+@var{test} as soon as the condition meets.  
+If the qualifiers makes no iteration, @code{#f} and @code{#t} are
+returned, respectively.
 @end defmac
 
 @defmac first-ec default qualifier @dots{} body
 @defmacx last-ec default qualifier @dots{} body
 [SRFI-42]
+First initializes the result by the value of the expression @var{default}, 
+then start iteration, and returns the value of the first and last 
+evaluation of @var{body}, respectively.  In fact, @code{first-ec}
+only evaluates @var{body} at most once.
 @end defmac
 
-@defmac fold-ec x0 qualifier @dots{} expr f2
-@defmacx fold3-ec x0 qualifier @dots{} expr f1 f2
+@defmac fold-ec seed qualifier @dots{} expr proc
+@defmacx fold3-ec seed qualifier @dots{} expr init proc
 [SRFI-42]
+Reduces the values produced by @var{expr}.
+
+Suppose @var{expr} produces a sequence of values
+@var{x0}, @var{x1}, @dots{}, @var{xN}.  @code{Fold-ec}
+calculates the following value:
+
+@example
+(@var{proc} @var{xN} (@dots{}(@var{proc} @var{x1} (@var{proc} @var{x0} @var{seed}))@dots{}))
+@end example
+
+It's similar to @code{fold}, except that @var{proc} is evaluated 
+within the scope of @var{qualifier} @dots{} so you can refer to the
+variables introduced by them.  On the other hand,
+@var{seed} is outside of the scope of @var{qualifier}s.
+
+@code{Fold-ec3} is almost the same but the initial value calculation.
+In @code{fold-ec3}, @var{seed} is only used when @var{qualifier}s
+makes no iteration.  Otherwise it calculates the following value:
+
+@example
+(@var{proc} @var{xN} (@dots{}(@var{proc} @var{x1} (@var{init} @var{x0}))@dots{}))
+@end example
+
 @end defmac
 
 @subheading Qualifiers
@@ -4506,14 +4621,14 @@ after @var{bodies}.
 @end deffn
 
 @deffn {EC Qualifier} not test
-@deffnx {EC Qualifier} and test
-@deffnx {EC Qualifier} or test
+@deffnx {EC Qualifier} and test @dots{}
+@deffnx {EC Qualifier} or test @dots{}
 @end deffn
 
-@deffn {EC Qualifier} begin test
+@deffn {EC Qualifier} begin command @dots{} expr
 @end deffn
 
-@deffn {EC Qualifier} nested test
+@deffn {EC Qualifier} nested qualifier @dots{}
 @end deffn
 
 @subsubheading Generational qualifiers
