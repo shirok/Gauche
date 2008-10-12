@@ -4583,6 +4583,22 @@ First initializes the result by the value of the expression @var{default},
 then start iteration, and returns the value of the first and last 
 evaluation of @var{body}, respectively.  In fact, @code{first-ec}
 only evaluates @var{body} at most once.
+
+These procedures are most useful when used with control qualifiers.
+For example, the following @code{first-ec} returns the @emph{first}
+set of distinct integers (@var{x}, @var{y}, @var{z}),
+where @var{x}*@var{x}+@var{y}*@var{y}+@var{z}*@var{z} becomes a square
+of another integer @var{w}.
+
+@example
+(first-ec #f (:integers w) (: z 1 w) (: y 1 z) (: x 1 y)
+          (if (= (* w w) (+ (* x x) (* y y) (* z z))))
+          (list x y z w))
+@end example
+
+Note that the first qualifier, @code{(:integers w)}, generates
+infinite number of integers; if you use @code{list-ec} instead of
+@code{first-ec} it won't stop.
 @end defmac
 
 @defmac fold-ec seed qualifier @dots{} expr proc
