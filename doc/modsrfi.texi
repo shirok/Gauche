@@ -4631,25 +4631,29 @@ makes no iteration.  Otherwise it calculates the following value:
 
 @subheading Qualifiers
 
-@subsubheading Control qualifiers
-
-@deffn {EC Qualifier} if test
-@end deffn
-
-@deffn {EC Qualifier} not test
-@deffnx {EC Qualifier} and test @dots{}
-@deffnx {EC Qualifier} or test @dots{}
-@end deffn
-
-@deffn {EC Qualifier} begin command @dots{} expr
-@end deffn
-
-@deffn {EC Qualifier} nested qualifier @dots{}
-@end deffn
-
 @subsubheading Generational qualifiers
 
+This type of qualifiers generates (possibly infinite) values
+over which the rest of clauses iterate.
+
+In the following descriptions, @var{vars} refers to either
+a single identifier, or a series of identifier and a form
+@code{(index @var{identifier2})}.  The single identifier
+in the former case and the first identifier in the latter case
+name the variable to which each generated value is bound.
+The @var{identifier2} in the latter case names a variable
+to which a series of integers, increasing with each generated
+element, is bound.   See the following example:
+
+@example
+(list-ec (: x '(a b c)) x)
+  @result{} (a b c)
+(list-ec (: x (index y) '(a b c)) (cons x y))
+  @result{} ((a . 0) (b . 1) (c . 2))
+@end example
+
 @deffn {EC Qualifier} : vars arg1 args @dots{}
+A generic dispatcher of generational qualifiers.
 @end deffn
 
 @deffn {EC Qualifier} :list vars arg1 args @dots{}
@@ -4695,6 +4699,23 @@ makes no iteration.  Otherwise it calculates the following value:
 
 @deffn {EC Qualifier} :until generator expr
 @end deffn
+
+@subsubheading Control qualifiers
+
+@deffn {EC Qualifier} if test
+@end deffn
+
+@deffn {EC Qualifier} not test
+@deffnx {EC Qualifier} and test @dots{}
+@deffnx {EC Qualifier} or test @dots{}
+@end deffn
+
+@deffn {EC Qualifier} begin command @dots{} expr
+@end deffn
+
+@deffn {EC Qualifier} nested qualifier @dots{}
+@end deffn
+
 
 @c ----------------------------------------------------------------------
 @node Vector library, Requiring extensions, Eager comprehensions, Library modules - SRFIs
