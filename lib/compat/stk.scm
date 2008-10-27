@@ -96,9 +96,8 @@
   (string-contains str sub))
 (define string-lower string-downcase)
 (define string-upper string-upcase)
-(define (split-string str . args)
-  (let-optionals* args ((delim #[\s]))
-    (string-tokenize str (char-set-complement delim))))
+(define (split-string str :optional (delim #[\s]))
+  (string-tokenize str (char-set-complement delim)))
 
 ; vector-copy
 ; vector-resize

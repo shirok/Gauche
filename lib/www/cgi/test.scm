@@ -70,36 +70,33 @@
 
 ;; Runs CGI script under specified environments.
 ;; Calls proc with a port connected to cgi process's stdout.
-(define (call-with-cgi-script script proc . args)
-  (let-keywords* args ((environment '())
-                       (parameters #f))
-    ;; set up enviornment
-    (let1 envtab (make-hash-table 'string=?)
-      (hash-table-for-each *cgi-test-env*
-                           (cut hash-table-put! envtab <> <>))
-      (dolist (p environment)
-        (hash-table-put! envtab (x->string (car p)) (x->string (cdr p))))
-      (let ((method (hash-table-get envtab "REQUEST_METHOD" "GET"))
-            (query  (and parameters (build-query-string parameters))))
-        (cond
-         ((and parameters (member method '("GET" "HEAD")))
-          (hash-table-put! envtab "QUERY_STRING" query))
-         ((and parameters (equal? method "POST"))
-          ;; TODO: support multipart/form-data
-          (hash-table-put! envtab "CONTENT_TYPE"
-                           "application/x-www-form-urlencoded")
-          (hash-table-put! envtab "CONTENT_LENGTH"
-                           (x->string (string-size query)))))
-        (call-with-process-io `("env" ,@(build-env envtab) ,script)
-          (lambda (inp outp)
-            (when (and query (equal? method "POST"))
-              (display query outp)
-              (newline outp)
-              (close-output-port outp))
-            (proc inp))
-          :on-abnormal-exit :ignore)
-        ))
-    ))
+(define (call-with-cgi-script script proc :key (environment '()) (parameters #f))
+  ;; set up enviornment
+  (let1 envtab (make-hash-table 'string=?)
+    (hash-table-for-each *cgi-test-env*
+                         (cut hash-table-put! envtab <> <>))
+    (dolist (p environment)
+      (hash-table-put! envtab (x->string (car p)) (x->string (cdr p))))
+    (let ((method (hash-table-get envtab "REQUEST_METHOD" "GET"))
+          (query  (and parameters (build-query-string parameters))))
+      (cond
+       ((and parameters (member method '("GET" "HEAD")))
+        (hash-table-put! envtab "QUERY_STRING" query))
+       ((and parameters (equal? method "POST"))
+        ;; TODO: support multipart/form-data
+        (hash-table-put! envtab "CONTENT_TYPE"
+                         "application/x-www-form-urlencoded")
+        (hash-table-put! envtab "CONTENT_LENGTH"
+                         (x->string (string-size query)))))
+      (call-with-process-io `("env" ,@(build-env envtab) ,script)
+        (lambda (inp outp)
+          (when (and query (equal? method "POST"))
+            (display query outp)
+            (newline outp)
+            (close-output-port outp))
+          (proc inp))
+        :on-abnormal-exit :ignore)
+      )))
 
 ;; Convenience procedurs
 (define (run-cgi-script->header&body script reader . args)

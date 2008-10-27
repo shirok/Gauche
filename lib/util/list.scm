@@ -34,21 +34,19 @@
 ;; permissive take and drop - if the length of given list is shorter
 ;; than index, returns shorter list or fills the rest.
 
-(define (split-at* lis k . args)
+(define (split-at* lis k :optional (fill? #f) (filler #f))
   (when (or (not (integer? k)) (negative? k))
     (error "index must be non-negative integer" k))
-  (let-optionals* args ((fill? #f)
-                        (filler #f))
-    (let loop ((i 0)
-               (lis lis)
-               (r '()))
-      (cond [(= i k) (values (reverse! r) lis)]
-            [(null? lis)
-             (values (if fill?
-                         (append! (reverse! r) (make-list (- k i) filler))
-                         (reverse! r))
-                     lis)]
-            [else (loop (+ i 1) (cdr lis) (cons (car lis) r))]))))
+  (let loop ((i 0)
+             (lis lis)
+             (r '()))
+    (cond [(= i k) (values (reverse! r) lis)]
+          [(null? lis)
+           (values (if fill?
+                     (append! (reverse! r) (make-list (- k i) filler))
+                     (reverse! r))
+                   lis)]
+          [else (loop (+ i 1) (cdr lis) (cons (car lis) r))])))
 
 (define (take* lis k . args)
   (receive (h t) (apply split-at* lis k args) h))
@@ -62,15 +60,13 @@
           [(null? lis) '()]
           [else (loop (+ i 1) (cdr lis))])))
 
-(define (take-right* lis k . args)
+(define (take-right* lis k :optional (fill? #f) (filler #f))
   (when (or (not (integer? k)) (negative? k))
     (error "index must be non-negative integer" k))
-  (let-optionals* args ((fill? #f)
-                        (filler #f))
-    (let1 len (length lis)
-      (cond [(<= k len) (drop lis (- len k))]
-            [fill? (append! (make-list (- k len) filler) lis)]
-            [else lis]))))
+  (let1 len (length lis)
+    (cond [(<= k len) (drop lis (- len k))]
+          [fill? (append! (make-list (- k len) filler) lis)]
+          [else lis])))
 
 (define (drop-right* lis k)
   (let1 len (length lis)
@@ -152,11 +148,8 @@
   (hash-table-map h cons))
 
 ;; `reverse' alist search fn
-(define (rassoc key alist . opt-eq)
-  (let-optionals* opt-eq ((eq equal?))
-    (find (lambda (elt)
-            (and (pair? elt) (eq (cdr elt) key)))
-          alist)))
+(define (rassoc key alist :optional (eq equal?))
+  (find (lambda (elt) (and (pair? elt) (eq (cdr elt) key))) alist))
 
 (define rassq (cut rassoc <> <> eq?))
 (define rassv (cut rassoc <> <> eqv?))
@@ -164,22 +157,18 @@
 ;; 'assoc-ref', a shortcut of value retrieval w/ default value
 ;; Default parameter comes first, following the convention of
 ;; other *-ref functions.
-(define (assoc-ref alist key . opts)
-  (let-optionals* opts ((default #f)
-                        (eq      equal?))
-    (cond ((assoc key alist eq) => cdr)
-          (else default))))
+(define (assoc-ref alist key :optional (default #f) (eq equal?))
+  (cond [(assoc key alist eq) => cdr]
+        [else default]))
 
 (define (assq-ref alist key . opts)
   (assoc-ref alist key (get-optional opts #f) eq?))
 (define (assv-ref alist key . opts)
   (assoc-ref alist key (get-optional opts #f) eqv?))
 
-(define (rassoc-ref alist key . opts)
-  (let-optionals* opts ((default #f)
-                        (eq      equal?))
-    (cond ((rassoc key alist eq) => car)
-          (else default))))
+(define (rassoc-ref alist key :optional (default #f) (eq equal?))
+  (cond [(rassoc key alist eq) => car]
+        [else default]))
 
 (define (rassq-ref alist key . opts)
   (rassoc-ref alist key (get-optional opts #f) eq?))
@@ -187,11 +176,10 @@
   (rassoc-ref alist key (get-optional opts #f) eqv?))
 
 ;; 'assoc-set!'
-(define (assoc-set! alist key val . opt-eq)
-  (let-optionals* opt-eq ((eq equal?))
-    (cond ((assoc key alist eq)
-           => (lambda (p) (set-cdr! p val) alist))
-          (else (acons key val alist)))))
+(define (assoc-set! alist key val :optional (eq equal?))
+  (cond [(assoc key alist eq)
+         => (lambda (p) (set-cdr! p val) alist)]
+        [else (acons key val alist)]))
 
 (define assq-set!  (cut assoc-set! <> <> <> eq?))
 (define assv-set!  (cut assoc-set! <> <> <> eqv?))

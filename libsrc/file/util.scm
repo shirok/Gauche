@@ -87,19 +87,17 @@
 ;;; Directory entries
 
 ;; "current-directory" is found in ChezScheme, MzScheme, etc.
-(define (current-directory . opts)
-  (let-optionals* opts ((newdir #f))
-    (match newdir
-      [#f (sys-getcwd)]
-      [(? string?) (sys-chdir newdir)]
-      [_ (error "directory name should be a string" newdir)])))
+(define (current-directory :optional (newdir #f))
+  (match newdir
+    [#f (sys-getcwd)]
+    [(? string?) (sys-chdir newdir)]
+    [_ (error "directory name should be a string" newdir)]))
 
-(define (home-directory . maybe-user)
-  (let-optionals* maybe-user ((user (sys-getuid)))
-    (and-let* ([ent (cond ((integer? user) (sys-getpwuid user))
-                          ((string? user)  (sys-getpwnam user))
-                          (else (error "bad user" user)))])
-      (slot-ref ent 'dir))))
+(define (home-directory :optional (user (sys-getuid)))
+  (and-let* ([ent (cond ((integer? user) (sys-getpwuid user))
+                        ((string? user)  (sys-getpwnam user))
+                        (else (error "bad user" user)))])
+    (slot-ref ent 'dir)))
 
 (define (temporary-directory)
   (or (sys-getenv "TMPDIR") "/tmp"))
@@ -169,23 +167,22 @@
     (rec dir knil)))
 
 ;; mkdir -p
-(define (make-directory* dir . opts)
-  (let-optionals* opts ((mode #o755))
-    (define (rec p)
-      (if (file-exists? p)
-        (unless (file-is-directory? p)
-          (errorf "non-directory ~s is found while creating a directory ~s"
-                  (sys-basename p) dir))
-        (let1 d (sys-dirname p)
-          (rec d)
-          (unless (file-is-writable? d)
-            (errorf "directory ~s unwritable during creating a directory ~s"
-                    d dir))
-          (unless (equal? (sys-basename p) ".") ; omit the last component in "/a/b/c/."
-            (sys-mkdir p mode))
-          )))
-    ;; some platform complains the last "/"
-    (rec (string-trim-right dir #[/]))))
+(define (make-directory* dir :optional (mode #o755))
+  (define (rec p)
+    (if (file-exists? p)
+      (unless (file-is-directory? p)
+        (errorf "non-directory ~s is found while creating a directory ~s"
+                (sys-basename p) dir))
+      (let1 d (sys-dirname p)
+        (rec d)
+        (unless (file-is-writable? d)
+          (errorf "directory ~s unwritable during creating a directory ~s"
+                  d dir))
+        (unless (equal? (sys-basename p) ".") ; omit the last component in "/a/b/c/."
+          (sys-mkdir p mode))
+        )))
+  ;; some platform complains the last "/"
+  (rec (string-trim-right dir #[/])))
 
 ;; synonym
 (define create-directory* make-directory*)
@@ -387,10 +384,9 @@
 (define-syntax define-stat-accessor
   (syntax-rules ()
     [(_ name slot)
-     (define (name path . opts)
-       (let-keywords opts ((follow-link? #t))
-         (and-let* ([s (safe-stat path follow-link?)])
-           (slot-ref s slot))))]))
+     (define (name path :key (follow-link? #t))
+       (and-let* ([s (safe-stat path follow-link?)])
+         (slot-ref s slot)))]))
 
 (define-stat-accessor file-type 'type)
 (define-stat-accessor file-perm 'perm)

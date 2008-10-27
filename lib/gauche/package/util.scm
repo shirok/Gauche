@@ -45,22 +45,21 @@
 (define dry-run     (make-parameter #f))
 (define verbose-run (make-parameter #f))
 
-(define (run cmdline . opts)
-  (let-keywords opts ((stdin-string #f))
-    (when (or (dry-run) (verbose-run))
-      (print cmdline))
-    (unless (dry-run)
-      (let1 p (run-process "/bin/sh" "-c" cmdline
-                           :input (if stdin-string :pipe "/dev/null")
-                           :wait #f)
-        (when stdin-string
-          (let1 pi (process-input p)
-            (display stdin-string pi)
-            (flush pi)
-            (close-output-port pi)))
-        (process-wait p)
-        (unless (zero? (process-exit-status p))
-          (errorf "command execution failed: ~a" cmdline))))))
+(define (run cmdline :key (stdin-string #f))
+  (when (or (dry-run) (verbose-run))
+    (print cmdline))
+  (unless (dry-run)
+    (let1 p (run-process "/bin/sh" "-c" cmdline
+                         :input (if stdin-string :pipe "/dev/null")
+                         :wait #f)
+      (when stdin-string
+        (let1 pi (process-input p)
+          (display stdin-string pi)
+          (flush pi)
+          (close-output-port pi)))
+      (process-wait p)
+      (unless (zero? (process-exit-status p))
+        (errorf "command execution failed: ~a" cmdline)))))
 
 ;; Read password from the terminal without echoing
 (define (get-password)

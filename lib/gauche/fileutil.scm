@@ -214,44 +214,42 @@
             [else  (element1 ch ct)]))
         `(seq bol ,@(element0 (n) '())))))))
 
-(define (make-glob-fs-fold . args)
-  (let-keywords* args ((root-path #f)
-                       (current-path #f))
-    (let ((separ (cond-expand
-                  (gauche.os.windows "\\")
-                  (else "/"))))
-      (define (ensure-dirname s)
-        (and s
-             (or (and-let* ([len (string-length s)]
-                            [ (> len 0) ]
-                            [ (not (eqv? (string-ref s (- len 1))
-                                         (string-ref separ 0))) ])
-                   (string-append s separ))
-                 s)))
-      (define root-path/    (ensure-dirname root-path))
-      (define current-path/ (ensure-dirname current-path))
-      (lambda (proc seed node regexp non-leaf?)
-        (let1 prefix (case node
-                       [(#t) (or root-path/ separ)]
-                       [(#f) (or current-path/ "")]
-                       [else (string-append node separ)])
-          ;; NB: we can't use filter, for it is not built-in.
-          ;; also we can't use build-path, from the same reason.
-          (if (eq? regexp 'dir?)
-            (proc prefix seed)
-            (fold (lambda (child seed)
-                    (or (and-let* ([ (regexp child) ]
-                                   [full (string-append prefix child)]
-                                   [ (or (not non-leaf?)
-                                         (file-is-directory? full)) ])
-                          (proc full seed))
-                        seed))
-                  seed
-                  (sys-readdir (case node
-                                 [(#t) (or root-path/ "/")]
-                                 [(#f) (or current-path/ ".")]
-                                 [else node]))))))
-      )))
+(define (make-glob-fs-fold :key (root-path #f) (current-path #f))
+  (let ((separ (cond-expand
+                (gauche.os.windows "\\")
+                (else "/"))))
+    (define (ensure-dirname s)
+      (and s
+           (or (and-let* ([len (string-length s)]
+                          [ (> len 0) ]
+                          [ (not (eqv? (string-ref s (- len 1))
+                                       (string-ref separ 0))) ])
+                 (string-append s separ))
+               s)))
+    (define root-path/    (ensure-dirname root-path))
+    (define current-path/ (ensure-dirname current-path))
+    (lambda (proc seed node regexp non-leaf?)
+      (let1 prefix (case node
+                     [(#t) (or root-path/ separ)]
+                     [(#f) (or current-path/ "")]
+                     [else (string-append node separ)])
+        ;; NB: we can't use filter, for it is not built-in.
+        ;; also we can't use build-path, from the same reason.
+        (if (eq? regexp 'dir?)
+          (proc prefix seed)
+          (fold (lambda (child seed)
+                  (or (and-let* ([ (regexp child) ]
+                                 [full (string-append prefix child)]
+                                 [ (or (not non-leaf?)
+                                       (file-is-directory? full)) ])
+                        (proc full seed))
+                      seed))
+                seed
+                (sys-readdir (case node
+                               [(#t) (or root-path/ "/")]
+                               [(#f) (or current-path/ ".")]
+                               [else node]))))))
+    ))
 
 (define glob-fs-folder (make-glob-fs-fold))
 

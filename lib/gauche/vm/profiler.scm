@@ -69,26 +69,23 @@
 ;;    :sort-by - either one of 'time, 'count, or 'time-per-call
 ;;    :max-rows - # of rows to be shown.  #f to show everything.
 ;;
-(define (profiler-show . opts)
-  (let-keywords opts ((results #f)
-                      (sort-by 'time)
-                      (max-rows 50))
-    (if (not results)
-      ;; use the current result
-      (cond
-       ((profiler-get-result) => (cut show-stats <> sort-by max-rows))
-       (else (print "No profiling data has been gathered.")))
-      ;; gather all the results
-      (let1 ht (make-hash-table 'equal?)
-        ;; gather stats
-        (dolist (r results)
-          (dolist (e r)
-            (let1 p (hash-table-get ht (car e) '(0 . 0))
-              (hash-table-put! ht (car e)
-                               (cons (+ (cadr e) (car p))
-                                     (+ (cddr e) (cdr p)))))))
-        ;; show 'em.
-        (show-stats (hash-table-map ht cons) sort-by max-rows)))))
+(define (profiler-show :key (results #f) (sort-by 'time) (max-rows 50))
+  (if (not results)
+    ;; use the current result
+    (cond
+     ((profiler-get-result) => (cut show-stats <> sort-by max-rows))
+     (else (print "No profiling data has been gathered.")))
+    ;; gather all the results
+    (let1 ht (make-hash-table 'equal?)
+      ;; gather stats
+      (dolist (r results)
+        (dolist (e r)
+          (let1 p (hash-table-get ht (car e) '(0 . 0))
+            (hash-table-put! ht (car e)
+                             (cons (+ (cadr e) (car p))
+                                   (+ (cddr e) (cdr p)))))))
+      ;; show 'em.
+      (show-stats (hash-table-map ht cons) sort-by max-rows))))
 
 ;; *EXPERIMENTAL*
 ;; Show the load statistics.

@@ -45,32 +45,30 @@
 ;; The minimum line width is 4, since one encoded octed and one soft
 ;; line break requires 4 characters.
 ;; If binary is #f, we encode CR and LF.  See RFC2045 for this consideration.
-(define (quoted-printable-encode . args)
-  (let-keywords args ((line-width 76)
-                      (binary #f))
-    (let1 limit (if (and line-width (>= line-width 4)) (- line-width 3) #f)
-      (let loop ((c (read-byte))
-                 (lcnt 0))
-        (cond [(eof-object? c)]
-              [(and limit (>= lcnt limit)) (display "=\r\n") (loop c 0)]
-              [(and limit (>= lcnt limit) (or (= c #x20) (= c #x09)))
-               ;; space or tab at the end of line
-               (write-byte c) (display "=\r\n") (loop (read-byte) 0)]
-              [(and binary (or (= c #x0a) (= c #x0d)))
-               (format #t "=0~X" c) (loop (read-byte) (+ lcnt 1))]
-              [(= c #x0d)
-               (let ((c1 (read-byte)))
-                 (cond ((= c1 #x0a) (display "\r\n") (loop (read-byte) 0))
-                       (else (display "\r\n") (loop c1 0))))]
-              [(= c #x0a)
-               (display "\r\n") (loop (read-byte) 0)]
-              ;; NB: we escape '?' as well, for it interferes the header
-              ;; field encoding defined in RFC2047.
-              [(or (< #x20 c #x3d) (= c #x3e) (< #x3f c #x7f))
-               (write-byte c) (loop (read-byte) (+ lcnt 1))]
-              [else
-               (format #t "=~2,'0X" c) (loop (read-byte) (+ lcnt 3))]))
-      )))
+(define (quoted-printable-encode :key (line-width 76) (binary #f))
+  (let1 limit (if (and line-width (>= line-width 4)) (- line-width 3) #f)
+    (let loop ((c (read-byte))
+               (lcnt 0))
+      (cond [(eof-object? c)]
+            [(and limit (>= lcnt limit)) (display "=\r\n") (loop c 0)]
+            [(and limit (>= lcnt limit) (or (= c #x20) (= c #x09)))
+             ;; space or tab at the end of line
+             (write-byte c) (display "=\r\n") (loop (read-byte) 0)]
+            [(and binary (or (= c #x0a) (= c #x0d)))
+             (format #t "=0~X" c) (loop (read-byte) (+ lcnt 1))]
+            [(= c #x0d)
+             (let ((c1 (read-byte)))
+               (cond ((= c1 #x0a) (display "\r\n") (loop (read-byte) 0))
+                     (else (display "\r\n") (loop c1 0))))]
+            [(= c #x0a)
+             (display "\r\n") (loop (read-byte) 0)]
+            ;; NB: we escape '?' as well, for it interferes the header
+            ;; field encoding defined in RFC2047.
+            [(or (< #x20 c #x3d) (= c #x3e) (< #x3f c #x7f))
+             (write-byte c) (loop (read-byte) (+ lcnt 1))]
+            [else
+             (format #t "=~2,'0X" c) (loop (read-byte) (+ lcnt 3))]))
+    ))
 
 (define (quoted-printable-encode-string string . args)
   (with-string-io string (cut apply quoted-printable-encode args)))

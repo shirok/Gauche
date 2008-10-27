@@ -140,11 +140,10 @@
   ((paths :init-form *load-path* :init-keyword :paths)))
 
 ;; Returns a singleton of <gauche-package-descriptions>.
-(define (gauche-package-description-paths . args)
-  (let-keywords args ((all-versions #f))
-    (if all-versions
-      (make <gauche-package-description-paths> :paths (get-all-version-paths))
-      (make <gauche-package-description-paths>))))
+(define (gauche-package-description-paths :key (all-versions #f))
+  (if all-versions
+    (make <gauche-package-description-paths> :paths (get-all-version-paths))
+    (make <gauche-package-description-paths>)))
 
 ;; scan the directory to find older verison of Gauche library directories.
 (define (get-all-version-paths)
@@ -197,11 +196,10 @@
       (proc end? next))))
 
 ;; utility
-(define (find-gauche-package-description name . args)
-  (let-keywords args ((all-versions #f))
-    (and-let* ((path (find (string->regexp #`"/,|name|\\.gpd$")
-                           (gauche-package-description-paths
-                            :all-versions all-versions))))
-      (path->gauche-package-description path))))
+(define (find-gauche-package-description name :key (all-versions #f))
+  (and-let* ((path (find (string->regexp #`"/,|name|\\.gpd$")
+                         (gauche-package-description-paths
+                          :all-versions all-versions))))
+    (path->gauche-package-description path)))
 
 (provide "gauche/package")

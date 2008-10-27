@@ -129,36 +129,34 @@
 ;;; Driver
 ;;;
 
-(define (gauche-package-build uri . opts)
-  (let-keywords opts ((config  '())
-                      (configure-options #f)
-                      (install-only? :install-only #f)
-                      (dry?          :dry-run #f)
-                      (reconfigure?  :reconfigure #f)
-                      (check?        :check #t)
-                      (install?      :install #f)
-                      (clean?        :clean #f)
-                      (sudo-user     :sudo-install #f)
-                      (sudo-pass     :sudo-password #f))
-    (parameterize ((dry-run dry?))
-      (let* ((tarball   (gauche-package-ensure uri :config config))
-             (build-dir (assq-ref config 'build-dir "."))
-             (basename  (tarball->package-directory tarball))
-             (dir       (build-path build-dir basename))
-             (packname  (package-name basename)))
-        (when (and sudo-user (not sudo-pass))
-          (set! sudo-pass (get-password)))
-        (unless install-only?
-          (clean config dir)
-          (untar config tarball)
-          (configure config dir packname
-                     (or configure-options
-                         (and reconfigure?
-                              (get-reconf-options packname))))
-          (make config dir)
-          (when check?   (make-check config dir)))
-        (when (or install? install-only?)
-          (make-install config dir sudo-user sudo-pass))
-        (when clean?   (clean config dir))))))
+(define (gauche-package-build uri :key (config  '()) (configure-options #f)
+                              ((:install-only install-only?) #f)
+                              ((:dry-run dry?) #f)
+                              ((:reconfigure reconfigure?) #f)
+                              ((:check check?) #t)
+                              ((:install install?) #f)
+                              ((:clean clean?) #f)
+                              ((:sudo-install sudo-user) #f)
+                              ((:sudo-password sudo-pass) #f))
+  (parameterize ((dry-run dry?))
+    (let* ((tarball   (gauche-package-ensure uri :config config))
+           (build-dir (assq-ref config 'build-dir "."))
+           (basename  (tarball->package-directory tarball))
+           (dir       (build-path build-dir basename))
+           (packname  (package-name basename)))
+      (when (and sudo-user (not sudo-pass))
+        (set! sudo-pass (get-password)))
+      (unless install-only?
+        (clean config dir)
+        (untar config tarball)
+        (configure config dir packname
+                   (or configure-options
+                       (and reconfigure?
+                            (get-reconf-options packname))))
+        (make config dir)
+        (when check?   (make-check config dir)))
+      (when (or install? install-only?)
+        (make-install config dir sudo-user sudo-pass))
+      (when clean?   (clean config dir)))))
 
 (provide "gauche/package/build")

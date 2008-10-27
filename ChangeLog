@@ -9,6 +9,10 @@
 
 	* test/package.scm: Added to test gauche.package.*.
 
+	* lib/*, libsrc/*: Rewrote most let-keywords*/let-optionals* with
+	  extended lambda experimentally to see how it looks like in the
+	  real code.
+
 2008-10-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (compile-toplevel-form, do-it): Instead of

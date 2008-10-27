@@ -90,50 +90,48 @@
 ;; Generic header parser.  Returns ((name body) ...)
 ;; Does process unfolding.
 ;; May throw <rfc822-parse-error> if :strict? is true.
-(define (rfc822-read-headers iport . args)
-  (let-keywords args ((strict? #f)
-                      (reader (cut read-line <> #t)))
+(define (rfc822-read-headers iport :key (strict? #f)
+                             (reader (cut read-line <> #t)))
 
-    (define (accum name bodies r)
-      (cons (list name (string-concatenate-reverse bodies)) r))
+  (define (accum name bodies r)
+    (cons (list name (string-concatenate-reverse bodies)) r))
 
-    (define (drop-leading-fws body)
-      (if (string-incomplete? body)
-        body  ;; this message is not RFC2822 compliant anyway
-        (string-trim body)))
-    
-    (let loop ((r '())
-               (line (reader iport)))
-      (cond
-       [(eof-object? line) (reverse! r)]
-       [(string-null? line) (reverse! r)]
-       [else
-        (receive (n body) (string-scan line #\: 'both)
-          (let1 name (and-let* (((string? n))
-                                 (name (string-incomplete->complete n))
-                                 (name (string-trim-both name))
-                                 ((string-every #[\x21-\x39\x3b-\x7e] name)))
-                        (string-downcase name))
-            (cond
-             [name
-              (let loop2 ((nline (reader iport))
-                          (bodies (list (drop-leading-fws body))))
-                (cond [(eof-object? nline)
-                       ;; maybe premature end of the message
-                       (if strict?
-                         (rfc822-parse-errorf
-                          #f #f "premature end of message header")
-                         (reverse! (accum name bodies r)))]
-                      [(string-null? nline)     ;; end of the header
-                       (reverse! (accum name bodies r))]
-                      [(memv (string-byte-ref nline 0) '(9 32))
-                       ;; careful for byte strings
-                       (loop2 (reader iport) (cons nline bodies))]
-                      [else
-                       (loop (accum name bodies r) nline)]))]
-             [strict? (rfc822-parse-errorf #f #f "bad header line: ~s" line)]
-             [else (loop r (reader iport))])))])
-      )
+  (define (drop-leading-fws body)
+    (if (string-incomplete? body)
+      body  ;; this message is not RFC2822 compliant anyway
+      (string-trim body)))
+  
+  (let loop ((r '())
+             (line (reader iport)))
+    (cond
+     [(eof-object? line) (reverse! r)]
+     [(string-null? line) (reverse! r)]
+     [else
+      (receive (n body) (string-scan line #\: 'both)
+        (let1 name (and-let* (((string? n))
+                              (name (string-incomplete->complete n))
+                              (name (string-trim-both name))
+                              ((string-every #[\x21-\x39\x3b-\x7e] name)))
+                     (string-downcase name))
+          (cond
+           [name
+            (let loop2 ((nline (reader iport))
+                        (bodies (list (drop-leading-fws body))))
+              (cond [(eof-object? nline)
+                     ;; maybe premature end of the message
+                     (if strict?
+                       (rfc822-parse-errorf
+                        #f #f "premature end of message header")
+                       (reverse! (accum name bodies r)))]
+                    [(string-null? nline)     ;; end of the header
+                     (reverse! (accum name bodies r))]
+                    [(memv (string-byte-ref nline 0) '(9 32))
+                     ;; careful for byte strings
+                     (loop2 (reader iport) (cons nline bodies))]
+                    [else
+                     (loop (accum name bodies r) nline)]))]
+           [strict? (rfc822-parse-errorf #f #f "bad header line: ~s" line)]
+           [else (loop r (reader iport))])))])
     ))
 
 (define (rfc822-header-ref header field-name . maybe-default)
@@ -284,39 +282,38 @@
 
 ;; Writes out the header fields specified by HEADERS, which is
 ;; ((name body) ...).
-(define (rfc822-write-headers headers . keys)
-  (let-keywords keys ((output (current-output-port))
-                      (check :error) ; #f, :ignore, :error or <procedure>
-                      (continue #f))
-    (define (process headers)
-      (dolist (field headers)
-        (display (car field) output)
-        (display ": " output)
-        (display (cadr field) output)
-        (unless (string-suffix? "\r\n" (cadr field))
-          (display "\r\n" output)))
-      (unless continue (display "\r\n" output)))
-    (define (bad name body reason)
-      (errorf "Illegal RFC2822 header field data (~a): ~a: ~,,,,80:a" reason name body))
-    (if (memv check '(#f :ignore))
-      (process headers)
-      (let loop ((hs headers)
-                 (hs2 '()))
-        (match hs
-          [() (process (reverse hs2))]
-          [((name body) . rest)
-           (cond [(rfc822-invalid-header-field (string-append name ": " body))
-                  => (lambda (reason)
-                       (if (eq? check :error)
-                         (bad name body reason)
-                         (receive (name2 body2) (check name body reason)
-                           (if (and (equal? name name2) (equal? body body2))
-                             (bad name body reason)
-                             (loop `((,name2 ,body2) . ,rest) hs2)))))]
-                 [else (loop rest `((,name ,body) . ,hs2))])]
-          [else
-           (error "Invalid header data:" headers)])))
-    ))
+(define (rfc822-write-headers headers :key
+                              (output (current-output-port))
+                              (check :error) ; #f, :ignore, :error or proc
+                              (continue #f))
+  (define (process headers)
+    (dolist (field headers)
+      (display (car field) output)
+      (display ": " output)
+      (display (cadr field) output)
+      (unless (string-suffix? "\r\n" (cadr field))
+        (display "\r\n" output)))
+    (unless continue (display "\r\n" output)))
+  (define (bad name body reason)
+    (errorf "Illegal RFC2822 header field data (~a): ~a: ~,,,,80:a" reason name body))
+  (if (memv check '(#f :ignore))
+    (process headers)
+    (let loop ((hs headers)
+               (hs2 '()))
+      (match hs
+        [() (process (reverse hs2))]
+        [((name body) . rest)
+         (cond [(rfc822-invalid-header-field (string-append name ": " body))
+                => (lambda (reason)
+                     (if (eq? check :error)
+                       (bad name body reason)
+                       (receive (name2 body2) (check name body reason)
+                         (if (and (equal? name name2) (equal? body body2))
+                           (bad name body reason)
+                           (loop `((,name2 ,body2) . ,rest) hs2)))))]
+               [else (loop rest `((,name ,body) . ,hs2))])]
+        [else
+         (error "Invalid header data:" headers)]))))
 
 (define (rfc822-invalid-header-field body)
   (cond [(string-incomplete? body) 'incomplete-string]

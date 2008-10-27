@@ -52,58 +52,56 @@
   )
 (select-module file.filter)
 
-(define (file-filter proc . options)
-  (let-keywords options
-      ((input  (current-input-port))
-       (output (current-output-port))
-       (temporary-file #f)
-       (keep-output?   #f))
+(define (file-filter proc :key
+                     (input (current-input-port))
+                     (output (current-output-port))
+                     (temporary-file #f)
+                     (keep-output? #f))
 
-    (define (process-with-output oport)
-      (cond
-       ((input-port? input) (proc input oport))
-       ((string? input)
-        (call-with-input-file input (lambda (iport) (proc iport oport))))
-       (else
-        (error "input must be either an input port or a file name, but got"
-               input))))
-
-    (define (process-with-tempfile ofile)
-      (let*-values (((tempfile) (cond ((string-prefix? "/" temporary-file)
-                                       temporary-file)
-                                      ((string-prefix? "./" temporary-file)
-                                       temporary-file)
-                                      ((string-prefix? "../" temporary-file)
-                                       temporary-file)
-                                      (else (string-append
-                                             (sys-dirname ofile)
-                                             "/"
-                                             temporary-file))))
-                    ((tport tfile) (sys-mkstemp tempfile)))
-        (guard (e
-                (else 
-                 (unless keep-output? (sys-unlink tfile))
-                 (raise e)))
-          (receive r (process-with-output tport)
-            (close-output-port tport)
-            (sys-rename tfile ofile)
-            (apply values r)))))
-
+  (define (process-with-output oport)
     (cond
-     ((output-port? output) (process-with-output output))
-     ((string? output)
-      (if temporary-file
-          (process-with-tempfile output)
-          (with-error-handler
-           (lambda (e)
-             (unless keep-output? (sys-unlink output))
-             (raise e))
-           (lambda ()
-             (call-with-output-file output process-with-output)))))
+     ((input-port? input) (proc input oport))
+     ((string? input)
+      (call-with-input-file input (lambda (iport) (proc iport oport))))
      (else
-      (error "output must be either an output port or a file name, but got"
-             output)))
-    )
+      (error "input must be either an input port or a file name, but got"
+             input))))
+
+  (define (process-with-tempfile ofile)
+    (let*-values (((tempfile) (cond ((string-prefix? "/" temporary-file)
+                                     temporary-file)
+                                    ((string-prefix? "./" temporary-file)
+                                     temporary-file)
+                                    ((string-prefix? "../" temporary-file)
+                                     temporary-file)
+                                    (else (string-append
+                                           (sys-dirname ofile)
+                                           "/"
+                                           temporary-file))))
+                  ((tport tfile) (sys-mkstemp tempfile)))
+      (guard (e
+              (else 
+               (unless keep-output? (sys-unlink tfile))
+               (raise e)))
+        (receive r (process-with-output tport)
+          (close-output-port tport)
+          (sys-rename tfile ofile)
+          (apply values r)))))
+
+  (cond
+   ((output-port? output) (process-with-output output))
+   ((string? output)
+    (if temporary-file
+      (process-with-tempfile output)
+      (with-error-handler
+          (lambda (e)
+            (unless keep-output? (sys-unlink output))
+            (raise e))
+        (lambda ()
+          (call-with-output-file output process-with-output)))))
+   (else
+    (error "output must be either an output port or a file name, but got"
+           output)))
   )
 
 (provide "file/filter")

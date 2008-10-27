@@ -70,65 +70,61 @@
     ((() #f) default)
     (else (error "unsupported encoding symbol:" sym))))
 
-(define (judge-file input . args)
-  (let-optionals* args ((prefetch 5000))
-
-    (define (judge-port port)
-      (let ((str (read-block prefetch port)))
-        (ces-name->symbol (ces-guess-from-string str "*JP"))))
-    
-    (cond ((string? input)
-           (call-with-input-file input judge-port))
-          ((input-port? input)
-           (judge-port input))
-          (else
-           (error "input must be a file name or an input port, but got" input)))
-    ))
+(define (judge-file input :optional (prefetch 5000))
+  (define (judge-port port)
+    (let ((str (read-block prefetch port)))
+      (ces-name->symbol (ces-guess-from-string str "*JP"))))
+  
+  (cond ((string? input)
+         (call-with-input-file input judge-port))
+        ((input-port? input)
+         (judge-port input))
+        (else
+         (error "input must be a file name or an input port, but got" input)))
+  )
 
 (define (cv-string str from-code to-code)
   (ces-convert str
                (ces-symbol->name from-code "*JP")
                (ces-symbol->name to-code   "EUCJP")))
 
-(define (cv-file input output from-code to-code . args)
-  (let-optionals* args ((remove-cr #f)
-                        (add-cr #f)
-                        (check-length 5000))
-    (let ((from (ces-symbol->name from-code "*JP"))
-          (to   (ces-symbol->name to-code "EUCJP")))
+(define (cv-file input output from-code to-code :optional
+                 (remove-cr #f) (add-cr #f) (check-length 5000))
+  (let ((from (ces-symbol->name from-code "*JP"))
+        (to   (ces-symbol->name to-code "EUCJP")))
 
-      (define (cv-block iport oport)
-        (copy-port (open-input-conversion-port iport from
-                                               :to-code to
-                                               :buffer-size check-length)
-                   oport))
+    (define (cv-block iport oport)
+      (copy-port (open-input-conversion-port iport from
+                                             :to-code to
+                                             :buffer-size check-length)
+                 oport))
 
-      (define (cv-line iport oport)
-        (let loop ((line (read-line iport)))
-          (if (eof-object? line)
-              (flush oport)
-              (begin
-                (display (ces-convert line from to) oport)
-                (when add-cr (display #\return oport))
-                (newline oport)
-                (loop (read-line))))))
+    (define (cv-line iport oport)
+      (let loop ((line (read-line iport)))
+        (if (eof-object? line)
+          (flush oport)
+          (begin
+            (display (ces-convert line from to) oport)
+            (when add-cr (display #\return oport))
+            (newline oport)
+            (loop (read-line))))))
 
-      (define (cv-out iport)
-        (cond ((string? output)
-               (call-with-output-file output
-                 (lambda (out)
-                   ((if add-cr cv-line cv-block) iport out))))
-              ((output-port? output)
-               ((if add-cr cv-line cv-block) iport output))
-              (else "output must be a file name or an output port: ~s"
-                    output)))
+    (define (cv-out iport)
+      (cond ((string? output)
+             (call-with-output-file output
+               (lambda (out)
+                 ((if add-cr cv-line cv-block) iport out))))
+            ((output-port? output)
+             ((if add-cr cv-line cv-block) iport output))
+            (else "output must be a file name or an output port: ~s"
+                  output)))
 
-      (cond ((string? input)
-             (call-with-input-file input cv-out))
-            ((input-port? input)
-             (cv-out input))
-            (else "input must be a file name or an input port: ~s"
-                  input))
-      )))
+    (cond ((string? input)
+           (call-with-input-file input cv-out))
+          ((input-port? input)
+           (cv-out input))
+          (else "input must be a file name or an input port: ~s"
+                input))
+    ))
 
 (provide "compat/jfilter")

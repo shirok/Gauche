@@ -198,69 +198,68 @@
 ;; Keyword argument :allow-undefined may take a list of symbols, which
 ;; is excluded from undefined variable check.
 
-(define (test-module module . opts)
+(define (test-module module :key (allow-undefined '()))
   (test-count++)
-  (let-keywords opts ((allow-undefined '()))
-    (let1 mod (cond ((module? module) module)
-                    ((symbol? module)
-                     (or (find-module module)
-                         (error "no such module" module)))
-                    (else
-                     (error "test-module requires module or symbol, but got"
-                            module)))
-      (format #t "testing bindings in ~a ... " mod) (flush)
-      (let ((bad-autoload '())
-            (bad-export '())
-            (bad-gref '())
-            (report '()))
-        ;; 1. Check if there's no dangling autoloads.
-        (hash-table-for-each (module-table mod)
-                             (lambda (sym val)
-                               (guard (_ (else (push! bad-autoload sym)))
-                                 (global-variable-ref mod sym))))
-        ;; 2. Check if all exported symbols are properly defined.
-        (when (pair? (module-exports mod))
-          (for-each (lambda (sym)
-                      (guard (_ (else (push! bad-export sym)))
-                        (global-variable-ref mod sym)))
-                    (module-exports mod)))
-        ;; 3. Check if all global references are resolvable.
-        (for-each
-         (lambda (closure)
-           (for-each (lambda (gref)
-                       (cond ((and (not (memq (slot-ref gref 'name)
-                                              allow-undefined))
-                                   (dangling-gref? gref closure))
-                              => (lambda (bad) (push! bad-gref bad)))))
-                     (closure-grefs closure)))
-         (toplevel-closures mod))
-        ;; report discrepancies
-        (unless (null? bad-autoload)
-          (push! report (format "found dangling autoloads: ~a" bad-autoload)))
-        (unless (null? bad-export)
-          (unless (null? report) (push! report " AND "))
-          (push! report
-                 (format "symbols exported but not defined: ~a" bad-export)))
-        (unless (null? bad-gref)
-          (unless (null? report) (push! report " AND "))
-          (push! report
-                 (format "symbols referenced but not defined: ~a"
-                         (string-join (map (lambda (z)
-                                             (format "~a(~a)" (car z) (cdr z)))
-                                           bad-gref)
-                                      ", "))))
-        (cond
-         ((null? report) (test-pass++) (format #t "ok\n"))
-         (else
-          (test-fail++)
-          (let ((s (apply string-append report)))
-            (format #t "ERROR: ~a\n" s)
-            (set! *discrepancy-list*
-                  (cons (list (format #f "bindings in module ~a" (module-name mod))
-                              '() s)
-                        *discrepancy-list*)))))
-        )
-      )))
+  (let1 mod (cond ((module? module) module)
+                  ((symbol? module)
+                   (or (find-module module)
+                       (error "no such module" module)))
+                  (else
+                   (error "test-module requires module or symbol, but got"
+                          module)))
+    (format #t "testing bindings in ~a ... " mod) (flush)
+    (let ((bad-autoload '())
+          (bad-export '())
+          (bad-gref '())
+          (report '()))
+      ;; 1. Check if there's no dangling autoloads.
+      (hash-table-for-each (module-table mod)
+                           (lambda (sym val)
+                             (guard (_ (else (push! bad-autoload sym)))
+                               (global-variable-ref mod sym))))
+      ;; 2. Check if all exported symbols are properly defined.
+      (when (pair? (module-exports mod))
+        (for-each (lambda (sym)
+                    (guard (_ (else (push! bad-export sym)))
+                      (global-variable-ref mod sym)))
+                  (module-exports mod)))
+      ;; 3. Check if all global references are resolvable.
+      (for-each
+       (lambda (closure)
+         (for-each (lambda (gref)
+                     (cond ((and (not (memq (slot-ref gref 'name)
+                                            allow-undefined))
+                                 (dangling-gref? gref closure))
+                            => (lambda (bad) (push! bad-gref bad)))))
+                   (closure-grefs closure)))
+       (toplevel-closures mod))
+      ;; report discrepancies
+      (unless (null? bad-autoload)
+        (push! report (format "found dangling autoloads: ~a" bad-autoload)))
+      (unless (null? bad-export)
+        (unless (null? report) (push! report " AND "))
+        (push! report
+               (format "symbols exported but not defined: ~a" bad-export)))
+      (unless (null? bad-gref)
+        (unless (null? report) (push! report " AND "))
+        (push! report
+               (format "symbols referenced but not defined: ~a"
+                       (string-join (map (lambda (z)
+                                           (format "~a(~a)" (car z) (cdr z)))
+                                         bad-gref)
+                                    ", "))))
+      (cond
+       ((null? report) (test-pass++) (format #t "ok\n"))
+       (else
+        (test-fail++)
+        (let ((s (apply string-append report)))
+          (format #t "ERROR: ~a\n" s)
+          (set! *discrepancy-list*
+                (cons (list (format #f "bindings in module ~a" (module-name mod))
+                            '() s)
+                      *discrepancy-list*)))))
+      )
+    ))
 
 ;; Auxiliary funcs to catch dangling grefs.  We use the fact that
 ;; an identifier embedded within the vm code is almost always an

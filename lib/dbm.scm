@@ -80,27 +80,25 @@
 
 (autoload file.util file-eq? copy-file move-file)
 
-(define (%dbm-copy2 from1 to1 from2 to2 . keys)
-  (let-keywords keys ((if-exists :error))
-    (if (file-eq? from1 from2)
-      (begin ;; dir and pag files are identical
-        (copy-file from1 to1 :safe #t :if-exists if-exists)
-        (sys-link to1 to2))
-      (begin
-        (copy-file from1 to1 :safe #t :if-exists if-exists)
-        (guard (e (else (sys-unlink to1) (sys-unlink to2) (raise e)))
-          (copy-file from2 to2 :safe #t :if-exists if-exists))))))
+(define (%dbm-copy2 from1 to1 from2 to2 :key (if-exists :error))
+  (if (file-eq? from1 from2)
+    (begin ;; dir and pag files are identical
+      (copy-file from1 to1 :safe #t :if-exists if-exists)
+      (sys-link to1 to2))
+    (begin
+      (copy-file from1 to1 :safe #t :if-exists if-exists)
+      (guard (e (else (sys-unlink to1) (sys-unlink to2) (raise e)))
+        (copy-file from2 to2 :safe #t :if-exists if-exists)))))
 
-(define (%dbm-rename2 from1 to1 from2 to2 . keys)
-  (let-keywords keys ((if-exists :error))
-    (if (file-eq? from1 from2)
-      (begin
-        (move-file from1 to1 :if-exists if-exists)
-        (sys-link to1 to2)
-        (sys-unlink from2))
-      (begin
-        (move-file from1 to1 :if-exists if-exists)
-        (move-file from2 to2 :if-exists if-exists)))))
+(define (%dbm-rename2 from1 to1 from2 to2 :key (if-exists :error))
+  (if (file-eq? from1 from2)
+    (begin
+      (move-file from1 to1 :if-exists if-exists)
+      (sys-link to1 to2)
+      (sys-unlink from2))
+    (begin
+      (move-file from1 to1 :if-exists if-exists)
+      (move-file from2 to2 :if-exists if-exists))))
 
 ;;
 ;; DBM-OPEN

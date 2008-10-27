@@ -177,30 +177,30 @@
 ;; API: cgi-parse-parameters &keyword query-string merge-cookies
 ;;                                    part-handlers content-type
 ;;                                    mime-input
-(define (cgi-parse-parameters . args)
-  (let-keywords args ((query-string #f)
-                      (merge-cookies #f)
-                      (part-handlers '())
-                      (content-type #f)
-                      (content-length #f)
-                      (mime-input #f))
-    (let* ((input (cond (query-string)
-                        ((or mime-input content-type) 'mime)
-                        (else
-                         (cgi-get-query content-length))))
-           (cookies (cond ((and merge-cookies (get-meta "HTTP_COOKIE"))
-                           => parse-cookie-string)
-                          (else '()))))
-      (append
-       (cond
-        ((eq? input 'mime)
-         (get-mime-parts part-handlers
-                         (or content-type (get-meta "CONTENT_TYPE"))
-                         (or content-length (get-meta "CONTENT_LENGTH"))
-                         (or mime-input (current-input-port))))
-        ((string-null? input) '())
-        (else (split-query-string input)))
-       (map (lambda (cookie) (list (car cookie) (cadr cookie))) cookies)))))
+(define (cgi-parse-parameters :key
+                              (query-string #f)
+                              (merge-cookies #f)
+                              (part-handlers '())
+                              (content-type #f)
+                              (content-length #f)
+                              (mime-input #f))
+  (let* ((input (cond (query-string)
+                      ((or mime-input content-type) 'mime)
+                      (else
+                       (cgi-get-query content-length))))
+         (cookies (cond ((and merge-cookies (get-meta "HTTP_COOKIE"))
+                         => parse-cookie-string)
+                        (else '()))))
+    (append
+     (cond
+      ((eq? input 'mime)
+       (get-mime-parts part-handlers
+                       (or content-type (get-meta "CONTENT_TYPE"))
+                       (or content-length (get-meta "CONTENT_LENGTH"))
+                       (or mime-input (current-input-port))))
+      ((string-null? input) '())
+      (else (split-query-string input)))
+     (map (lambda (cookie) (list (car cookie) (cadr cookie))) cookies))))
 
 (define (split-query-string input)
   (fold-right (lambda (elt params)
@@ -366,43 +366,43 @@
 ;;----------------------------------------------------------------
 ;; API: cgi-header &keyword content-type cookies location &allow-other-keys
 ;;
-(define (cgi-header . args)
-  (let-keywords args ((content-type #f)
-                      (location     #f)
-                      (status       #f)
-                      (cookies      '())
-                      . rest)
-    (let ((ct (or content-type
-                  (and (not location) "text/html")))
-          (r '()))
-      (when status   (push! r #`"Status: ,status\r\n"))
-      (when ct       (push! r #`"Content-type: ,ct\r\n"))
-      (when location (push! r #`"Location: ,location\r\n"))
-      (for-each (lambda (cookie)
-                  (push! r #`"Set-cookie: ,cookie\r\n"))
-                cookies)
-      (for-each (lambda (p)
-                  (when (pair? (cdr p))
-                    (push! r #`",(car p): ,(cadr p)\r\n")))
-                (slices rest 2))
-      (push! r "\r\n")
-      (reverse r))))
+(define (cgi-header :key
+                    (content-type #f)
+                    (location     #f)
+                    (status       #f)
+                    (cookies      '())
+                    :allow-other-keys rest)
+  (let ((ct (or content-type
+                (and (not location) "text/html")))
+        (r '()))
+    (when status   (push! r #`"Status: ,status\r\n"))
+    (when ct       (push! r #`"Content-type: ,ct\r\n"))
+    (when location (push! r #`"Location: ,location\r\n"))
+    (for-each (lambda (cookie)
+                (push! r #`"Set-cookie: ,cookie\r\n"))
+              cookies)
+    (for-each (lambda (p)
+                (when (pair? (cdr p))
+                  (push! r #`",(car p): ,(cadr p)\r\n")))
+              (slices rest 2))
+    (push! r "\r\n")
+    (reverse r)))
       
 ;;----------------------------------------------------------------
 ;; API: cgi-main proc &keyword on-error merge-cookies
 ;;                             output-proc part-handlers
-(define (cgi-main proc . args)
-  (let-keywords* args ((on-error cgi-default-error-proc)
-                       (output-proc cgi-default-output)
-                       (merge-cookies #f)
-                       (part-handlers '()))
-    (guard (e (else (output-proc (on-error e))))
-      (let1 params (cgi-parse-parameters :merge-cookies merge-cookies
-                                         :part-handlers part-handlers)
-        (output-proc (proc params))))
-    ;; remove any temporary files
-    (for-each sys-unlink (cgi-temporary-files))
-    0))
+(define (cgi-main proc :key
+                  (on-error cgi-default-error-proc)
+                  (output-proc cgi-default-output)
+                  (merge-cookies #f)
+                  (part-handlers '()))
+  (guard (e (else (output-proc (on-error e))))
+    (let1 params (cgi-parse-parameters :merge-cookies merge-cookies
+                                       :part-handlers part-handlers)
+      (output-proc (proc params))))
+  ;; remove any temporary files
+  (for-each sys-unlink (cgi-temporary-files))
+  0)
 
 ;; aux fns
 (define (cgi-default-error-proc e)

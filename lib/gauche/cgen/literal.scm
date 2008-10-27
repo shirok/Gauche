@@ -106,7 +106,8 @@
     [(runtime)  "scm__rc"]
     [else (error "[cgen internal] invalid category:" category)]))
 
-(define (cgen-allocate-static-datum . opts)
+(define (cgen-allocate-static-datum :optional (category 'runtime)
+                                    (c-type   'ScmObj) (init-thunk #f))
 
   (define (ensure-static-data-list category c-type)
     (and-let* ((unit (cgen-current-unit)))
@@ -123,25 +124,22 @@
               (push! [~ unit'static-data-list] new)
               new)))))
   
-  (let-optionals* opts ((category 'runtime)
-                        (c-type   'ScmObj)
-                        (init-thunk #f))
-    (let ((dl (ensure-static-data-list category c-type))
-          (value-type? (not init-thunk))
-          (ithunk (or init-thunk
-                      (if (eq? c-type 'ScmObj) "SCM_UNBOUND" "NULL"))))
-      (let1 count [~ dl'count]
-        (slot-push! dl'init-thunks ithunk)
-        (inc! [~ dl'count])
-        (if value-type?
-          (format "~a.~a[~a]" ; no cast, for this'll be also used as lvalue.
-                  (static-data-c-struct-name category)
-                  [~ dl'c-member-name]
-                  count)
-          (format "SCM_OBJ(&~a.~a[~a])"
-                  (static-data-c-struct-name category)
-                  [~ dl'c-member-name]
-                  count))))))
+  (let ((dl (ensure-static-data-list category c-type))
+        (value-type? (not init-thunk))
+        (ithunk (or init-thunk
+                    (if (eq? c-type 'ScmObj) "SCM_UNBOUND" "NULL"))))
+    (let1 count [~ dl'count]
+      (slot-push! dl'init-thunks ithunk)
+      (inc! [~ dl'count])
+      (if value-type?
+        (format "~a.~a[~a]" ; no cast, for this'll be also used as lvalue.
+                (static-data-c-struct-name category)
+                [~ dl'c-member-name]
+                count)
+        (format "SCM_OBJ(&~a.~a[~a])"
+                (static-data-c-struct-name category)
+                [~ dl'c-member-name]
+                count)))))
 
 (define (cgen-allocate-static-array category c-type init-thunks)
   (fold (lambda (init-thunk seed)

@@ -184,97 +184,95 @@
 
 ;; Encode a single word.  This one always encode, even WORD contains
 ;; US-ASCII characters only.
-(define (mime-encode-word word . keys)
-  (let-keywords keys ((charset "utf-8")
-                      (transfer-encoding 'base64))
-    (let ((converted
-           (cond [(ces-upper-compatible? charset (gauche-character-encoding))
-                  word]
-                 [else
-                  (ces-convert word (gauche-character-encoding) charset)]))
-          (enc (%canonical-encoding transfer-encoding)))
-      (format "=?~a?~a?~a?=" charset enc
-              ((if (eq? enc 'B)
-                 base64-encode-string
-                 quoted-printable-encode-string)
-               converted :line-width #f)))))
+(define (mime-encode-word word :key (charset "utf-8") (transfer-encoding 'base64))
+  (let ((converted
+         (cond [(ces-upper-compatible? charset (gauche-character-encoding))
+                word]
+               [else
+                (ces-convert word (gauche-character-encoding) charset)]))
+        (enc (%canonical-encoding transfer-encoding)))
+    (format "=?~a?~a?~a?=" charset enc
+            ((if (eq? enc 'B)
+               base64-encode-string
+               quoted-printable-encode-string)
+             converted :line-width #f))))
 
 ;; Encode entire body if necessary, considering line folding.
 ;; At this moment, this function just treat the body as unstructured
 ;; text.  It's not safe to pass structured text.  In future we may have
 ;; a keyword option to make body parsed as structured text.
-(define (mime-encode-text body . keys)
-  (let-keywords keys ((charset "utf-8")
-                      (transfer-encoding 'base64)
-                      (line-width 76)
-                      (start-column 0)
-                      (force #f))
-    (let ((enc (%canonical-encoding transfer-encoding))
-          (cslen (string-length (x->string charset)))
-          (pass-through? (and (not force)
-                              (ces-upper-compatible? charset 'ascii)
-                              (string-every #[\x00-\x7f] body))))
-      ;; estimates the length of an encoded word.  it is not trivial since
-      ;; we have to ces-convert each segment separately, and there's no
-      ;; general way to estimate the size of ces-converted string.
-      ;; we throw in some heuristics here.
-      (define (estimate-width s i)
-        (let1 na (string-count s #[\x00-\x7f] 0 i)
-          (+ 6 cslen
-             (if (eq? enc 'B)
-               (ceiling (* (+ na (* (- i na) 3)) 4/3))
-               (let1 ng (string-count s #[!-<>-~] 0 i)
-                 (+ (- na ng) (* 3 (+ ng (* (- i na) 3)))))))))
-      (define (encode-word w)
-        (mime-encode-word w :charset charset :transfer-encoding enc))
-      ;; we don't need to pack optimally, so we use some heuristics.
-      (define (encode str width adj)
-        (or (and-let* ([estim (estimate-width str (string-length str))]
-                       [ (< (* adj estim) width) ]
-                       [ew (encode-word str)])
-              (if (<= (string-length ew) width)
-                `(,ew)
-                (encode str width (* adj (/. (string-length ew) width)))))
-            (let loop ((k (min (string-length str) (quotient width 2))))
-              (let1 estim (* adj (estimate-width str k))
-                (if (<= estim width)
-                  (let1 ew (encode-word (string-take str k))
-                    (if (<= (string-length ew) width)
-                      (list* ew "\r\n "
-                             (encode (string-drop str k) (- line-width 1) adj))
-                      (loop (floor->exact
-                             (* k (/ width (string-length ew)))))))
-                  (loop (floor->exact (* k (/ width estim)))))))
-            ))
-      ;; fill pass-through text.  we try our best to look for an appropriate
-      ;; place to insert FWS.  we know STR is all ASCII.
-      (define (fill str width)
-        (if (<= (string-length str) width)
-          `(,str)
-          (or (and-let* ([pos (string-index-right str #\space 0 width)])
-                (list* (string-take str pos) "\r\n "
-                       (fill (string-drop str (+ pos 1)) (- line-width 1))))
-              ;; if we can't find a whitespace, we break in the middle of
-              ;; word for the last resort.
-              (list* (string-take str width) "\r\n "
-                     (fill (string-drop str width) (- line-width 1))))))
-      
-      (cond [(or (not line-width) (zero? line-width))
-             (if pass-through? body (encode-word body))]
-            [(< line-width 30)
-             (errorf "line width (~a) is too short to encode header field body: ~s" line-width body)]
-            [(< (- line-width start-column) 30)
-             ;; just in case if header name is very long.  we insert line break
-             ;; first.
-             (string-concatenate
-              (cons "\r\n " (if pass-through?
-                              (fill body (- line-width 1))
-                              (encode body (- line-width 1) 1.0))))]
-            [else
-             (string-concatenate
-              (if pass-through?
-                (fill body (- line-width start-column))
-                (encode body (- line-width start-column) 1.0)))]))))
+(define (mime-encode-text body :key
+                          (charset "utf-8")
+                          (transfer-encoding 'base64)
+                          (line-width 76)
+                          (start-column 0)
+                          (force #f))
+  (let ((enc (%canonical-encoding transfer-encoding))
+        (cslen (string-length (x->string charset)))
+        (pass-through? (and (not force)
+                            (ces-upper-compatible? charset 'ascii)
+                            (string-every #[\x00-\x7f] body))))
+    ;; estimates the length of an encoded word.  it is not trivial since
+    ;; we have to ces-convert each segment separately, and there's no
+    ;; general way to estimate the size of ces-converted string.
+    ;; we throw in some heuristics here.
+    (define (estimate-width s i)
+      (let1 na (string-count s #[\x00-\x7f] 0 i)
+        (+ 6 cslen
+           (if (eq? enc 'B)
+             (ceiling (* (+ na (* (- i na) 3)) 4/3))
+             (let1 ng (string-count s #[!-<>-~] 0 i)
+               (+ (- na ng) (* 3 (+ ng (* (- i na) 3)))))))))
+    (define (encode-word w)
+      (mime-encode-word w :charset charset :transfer-encoding enc))
+    ;; we don't need to pack optimally, so we use some heuristics.
+    (define (encode str width adj)
+      (or (and-let* ([estim (estimate-width str (string-length str))]
+                     [ (< (* adj estim) width) ]
+                     [ew (encode-word str)])
+            (if (<= (string-length ew) width)
+              `(,ew)
+              (encode str width (* adj (/. (string-length ew) width)))))
+          (let loop ((k (min (string-length str) (quotient width 2))))
+            (let1 estim (* adj (estimate-width str k))
+              (if (<= estim width)
+                (let1 ew (encode-word (string-take str k))
+                  (if (<= (string-length ew) width)
+                    (list* ew "\r\n "
+                           (encode (string-drop str k) (- line-width 1) adj))
+                    (loop (floor->exact
+                           (* k (/ width (string-length ew)))))))
+                (loop (floor->exact (* k (/ width estim)))))))
+          ))
+    ;; fill pass-through text.  we try our best to look for an appropriate
+    ;; place to insert FWS.  we know STR is all ASCII.
+    (define (fill str width)
+      (if (<= (string-length str) width)
+        `(,str)
+        (or (and-let* ([pos (string-index-right str #\space 0 width)])
+              (list* (string-take str pos) "\r\n "
+                     (fill (string-drop str (+ pos 1)) (- line-width 1))))
+            ;; if we can't find a whitespace, we break in the middle of
+            ;; word for the last resort.
+            (list* (string-take str width) "\r\n "
+                   (fill (string-drop str width) (- line-width 1))))))
+    
+    (cond [(or (not line-width) (zero? line-width))
+           (if pass-through? body (encode-word body))]
+          [(< line-width 30)
+           (errorf "line width (~a) is too short to encode header field body: ~s" line-width body)]
+          [(< (- line-width start-column) 30)
+           ;; just in case if header name is very long.  we insert line break
+           ;; first.
+           (string-concatenate
+            (cons "\r\n " (if pass-through?
+                            (fill body (- line-width 1))
+                            (encode body (- line-width 1) 1.0))))]
+          [else
+           (string-concatenate
+            (if pass-through?
+              (fill body (- line-width start-column))
+              (encode body (- line-width start-column) 1.0)))])))
 
 (define (%canonical-encoding transfer-encoding)
   (case transfer-encoding

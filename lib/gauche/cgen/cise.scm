@@ -127,25 +127,22 @@
 ;;   EXPANDER takes twi arguments, the form to expand and a
 ;;   opaque cise environmen.
 ;;
-(define (cise-register-macro! name expander . opts)
-  (let-optionals* opts ((context (cise-context)))
-    (hash-table-put! context name expander)))
+(define (cise-register-macro! name expander :optional (context (cise-context)))
+  (hash-table-put! context name expander))
 
 ;;
 ;; cise-lookup-macro NAME &optional CONTEXT
 ;;
 ;;   Lookup cise macro.
 ;;
-(define (cise-lookup-macro name . opts)
-  (let-optionals* opts ((context (cise-context)))
-    (hash-table-get context name #f)))
+(define (cise-lookup-macro name :optional (context (cise-context)))
+  (hash-table-get context name #f))
 
 ;;
 ;; copy the current cise context
 ;;
-(define (cise-context-copy . opts)
-  (let-optionals* opts ((context (cise-context)))
-    (hash-table-copy context)))
+(define (cise-context-copy :optional (context (cise-context)))
+  (hash-table-copy context))
 
 ;;
 ;; define-cise-macro (OP FORM ENV) . BODY
@@ -204,29 +201,27 @@
 ;;
 ;;   External entry of renderer
 ;;
-(define (cise-render form . opts)
-  (let-optionals* opts ((port (current-output-port))
-                        (expr #f))
-    (define current-file #f)
-    (define current-line 1)
-    (define (render-finish stree)
-      (match stree
-        [('source-info (? string? file) line)
-         (cond ((and (equal? file current-file) (eqv? line current-line)))
-               ((and (equal? file current-file) (eqv? line (+ 1 current-line)))
-                (inc! current-line)
-                (format port "\n"))
-               (else
-                (set! current-file file)
-                (set! current-line line)
-                (format port "\n#line ~a ~s\n" line file)))]
-        [(x . y) (render-finish x) (render-finish y)]
-        [(? (any-pred string? symbol? number?) x) (display x port)]
-        [_ #f]))
-    
-    (let* ((env ((if expr expr-env identity) (null-env)))
-           (stree (render-rec form env)))
-      (render-finish `(,@(render-env-decls env) ,stree)))))
+(define (cise-render form :optional (port (current-output-port)) (expr #f))
+  (define current-file #f)
+  (define current-line 1)
+  (define (render-finish stree)
+    (match stree
+      [('source-info (? string? file) line)
+       (cond ((and (equal? file current-file) (eqv? line current-line)))
+             ((and (equal? file current-file) (eqv? line (+ 1 current-line)))
+              (inc! current-line)
+              (format port "\n"))
+             (else
+              (set! current-file file)
+              (set! current-line line)
+              (format port "\n#line ~a ~s\n" line file)))]
+      [(x . y) (render-finish x) (render-finish y)]
+      [(? (any-pred string? symbol? number?) x) (display x port)]
+      [_ #f]))
+  
+  (let* ((env ((if expr expr-env identity) (null-env)))
+         (stree (render-rec form env)))
+    (render-finish `(,@(render-env-decls env) ,stree))))
 
 ;;
 ;; cise-render-rec cise stmt/expr env

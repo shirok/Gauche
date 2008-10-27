@@ -46,107 +46,103 @@
 ;;  This can be more involved once customized module mapping system
 ;;  is introduced; for now, we simply apply the default mapping rule.
 
-(define (library-fold pattern proc seed . opts)
-  (let-keywords opts ((paths *load-path*)
-                      (allow-duplicates? #f)
+(define (library-fold pattern proc seed
+                      :key (paths *load-path*) (allow-duplicates? #f)
                       (strict? #t))
 
-    (define search-module?
-      (cond [(string? pattern) #f]
-            [(symbol? pattern) #t]
-            [else (error "string or symbol required, but got" pattern)]))
+  (define search-module?
+    (cond [(string? pattern) #f]
+          [(symbol? pattern) #t]
+          [else (error "string or symbol required, but got" pattern)]))
 
-    (define seen '())
+  (define seen '())
 
-    ;; pats - list of pattern components splitted by '.' or '/'
-    ;; prefix - one of load paths, e.g. /usr/share/gauche/site/lib/
-    ;; file - path components after prefix, e.g. gauche/mop
-    ;; base - the last component of file, e.g. mop
-    (define (search pats prefix file base seed)
-      (let* ((path (topath prefix file)))
-        (cond ((and (not (null? (cdr pats)))
-                    (match? (car pats) base)
-                    (file-is-directory? path))
-               (fold (lambda (subfile seed)
-                       (search (cdr pats) prefix #`",|file|/,|subfile|"
-                               subfile seed))
-                     seed (readdir path)))
-              ((and (null? (cdr pats))
-                    (string-suffix? ".scm" base)
-                    (match? (car pats) (string-drop-right base 4))
-                    (file-exists? path))
-               (cond (allow-duplicates?  (proc (ensure path file) path seed))
-                     ((member file seen) seed)
-                     ((ensure path file)
-                      => (lambda (mod)
-                           (push! seen file)
-                           (proc mod path seed)))
-                     (else seed)))
-              (else seed))))
+  ;; pats - list of pattern components splitted by '.' or '/'
+  ;; prefix - one of load paths, e.g. /usr/share/gauche/site/lib/
+  ;; file - path components after prefix, e.g. gauche/mop
+  ;; base - the last component of file, e.g. mop
+  (define (search pats prefix file base seed)
+    (let* ((path (topath prefix file)))
+      (cond ((and (not (null? (cdr pats)))
+                  (match? (car pats) base)
+                  (file-is-directory? path))
+             (fold (lambda (subfile seed)
+                     (search (cdr pats) prefix #`",|file|/,|subfile|"
+                             subfile seed))
+                   seed (readdir path)))
+            ((and (null? (cdr pats))
+                  (string-suffix? ".scm" base)
+                  (match? (car pats) (string-drop-right base 4))
+                  (file-exists? path))
+             (cond (allow-duplicates?  (proc (ensure path file) path seed))
+                   ((member file seen) seed)
+                   ((ensure path file)
+                    => (lambda (mod)
+                         (push! seen file)
+                         (proc mod path seed)))
+                   (else seed)))
+            (else seed))))
 
-    (define (match? pat component)
-      (let1 rx (module-glob-pattern->regexp pat)
-        (cond ((rx component) => (lambda (m) (m 0)))
-              (else #f))))
-    (define (ensure path file)
-      (if search-module?
-        (let1 modname (path->module-name (string-drop-right file 4))
-          (and (or (not strict?)
-                   (library-has-module? path modname))
-               modname))
-        (string-drop-right file 4)))
+  (define (match? pat component)
+    (let1 rx (module-glob-pattern->regexp pat)
+      (cond ((rx component) => (lambda (m) (m 0)))
+            (else #f))))
+  (define (ensure path file)
+    (if search-module?
+      (let1 modname (path->module-name (string-drop-right file 4))
+        (and (or (not strict?)
+                 (library-has-module? path modname))
+             modname))
+      (string-drop-right file 4)))
 
-    ;; main body
-    (let ((pats (if search-module?
-                  (string-split (x->string pattern) #\.)
-                  (string-split pattern #\/))))
-      (fold (lambda (prefix seed)
-              (fold (lambda (file seed)
-                      (search pats prefix file file seed))
-                    seed (readdir prefix)))
-            seed paths))
+  ;; main body
+  (let ((pats (if search-module?
+                (string-split (x->string pattern) #\.)
+                (string-split pattern #\/))))
+    (fold (lambda (prefix seed)
+            (fold (lambda (file seed)
+                    (search pats prefix file file seed))
+                  seed (readdir prefix)))
+          seed paths))
 
-#|
-    (define (get-relative prefix path separ)
-      (string-trim (string-drop path (string-length prefix)) #[/\\]))
-    
-    (define (picker prefix separ path seed)
-      (cond [(not (string-suffix? ".scm" path)) seed]
-            [(and-let* ([file #?=(get-relative prefix path separ)]
-                        [ (or allow-duplicates? (not (member file seen))) ]
-                        [mod (ensure path file)])
-               (push! seen file)
-               (proc mod path seed))]
-            [else seed]))
+  #|
+  (define (get-relative prefix path separ)
+  (string-trim (string-drop path (string-length prefix)) #[/\\]))
+  
+  (define (picker prefix separ path seed)
+  (cond [(not (string-suffix? ".scm" path)) seed]
+  [(and-let* ([file #?=(get-relative prefix path separ)]
+  [ (or allow-duplicates? (not (member file seen))) ]
+  [mod (ensure path file)])
+  (push! seen file)
+  (proc mod path seed))]
+  [else seed]))
 
-    (receive (pat sep) (if search-module?
-                         (values (x->string pattern) #[.])
-                         (values pattern #[/]))
-      (fold (lambda (prefix seed)
-              (glob-fold pat (cut picker prefix sep <> <>) seed
-                         :separator sep :current prefix))
-            seed paths))
-|#
-    ))
+  (receive (pat sep) (if search-module?
+  (values (x->string pattern) #[.])
+  (values pattern #[/]))
+  (fold (lambda (prefix seed)
+  (glob-fold pat (cut picker prefix sep <> <>) seed
+  :separator sep :current prefix))
+  seed paths))
+  |#
+  )
 
 ;; Just check existence of library.
-(define (library-exists? mod/path . opts)
-  (let-keywords opts ((force-search? #f)
-                      (strict? #t)
-                      (paths *load-path*))
-    
-    (or (and (not force-search?)
-             ;; see if specified mod/path is already loaded
-             (or (and (string? mod/path) (provided? mod/path))
-                 (and (symbol? mod/path) (find-module mod/path))))
-        ;; scan the filesystem
-        (call/cc
-         (lambda (found)
-           (library-fold mod/path
-                         (lambda (mod path seed) (found #t))
-                         #f
-                         :strict? strict? :paths paths))))
-    ))
+(define (library-exists? mod/path :key (force-search? #f)
+                         (strict? #t) (paths *load-path*))
+  
+  (or (and (not force-search?)
+           ;; see if specified mod/path is already loaded
+           (or (and (string? mod/path) (provided? mod/path))
+               (and (symbol? mod/path) (find-module mod/path))))
+      ;; scan the filesystem
+      (call/cc
+       (lambda (found)
+         (library-fold mod/path
+                       (lambda (mod path seed) (found #t))
+                       #f
+                       :strict? strict? :paths paths)))))
 
 ;; Convenience wrappers
 (define (library-map mod/path proc . opts)

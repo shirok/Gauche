@@ -85,34 +85,29 @@
 ;; USER <SP> <username> <CRLF>
 ;; PASS <SP> <password> <CRLF>
 ;; ACCT <SP> <account-information> <CRLF>
-(define (ftp-login host . keys)
-  (let-keywords* keys ((account "")
-		       (passive #f)
-                       (port *default-ftp-port*)
-                       (username *anon-user*)
-		       (password
-                        (if (string=? username *anon-user*) *anon-pass* ""))
-                       (log-drain #f))
-    (define (do-login conn)
-      (let retry ()
-	(if (string-prefix? "120" (get-response conn))
-          (begin (sys-sleep 1) (retry))
-          (let1 r1 (send-command conn "USER" username)
-            (if (not (string-prefix? "3" r1))
-              r1
-              (let1 r2 (send-command conn "PASS" password)
-                (if (not (string-prefix? "3" r2))
-                  r2
-                  (send-command conn "ACCT" account))))))))
-    (let* ((conn (make <ftp-connection>
-                   :passive passive
-                   :socket (make-client-socket 'inet host port)
-                   :log-drain log-drain))
-           (res (do-login conn)))
-      (if (not (string-prefix? "2" res))
-        (ftp-error res)
-        conn))))
-
+(define (ftp-login host :key (account "") (passive #f)
+                   (port *default-ftp-port*) (username *anon-user*)
+                   (password (if (string=? username *anon-user*) *anon-pass* ""))
+                   (log-drain #f))
+  (define (do-login conn)
+    (let retry ()
+      (if (string-prefix? "120" (get-response conn))
+        (begin (sys-sleep 1) (retry))
+        (let1 r1 (send-command conn "USER" username)
+          (if (not (string-prefix? "3" r1))
+            r1
+            (let1 r2 (send-command conn "PASS" password)
+              (if (not (string-prefix? "3" r2))
+                r2
+                (send-command conn "ACCT" account))))))))
+  (let* ((conn (make <ftp-connection>
+                 :passive passive
+                 :socket (make-client-socket 'inet host port)
+                 :log-drain log-drain))
+         (res (do-login conn)))
+    (if (not (string-prefix? "2" res))
+      (ftp-error res)
+      conn)))
 
 ;; rfc 959 6(1) type commands
 
@@ -236,22 +231,20 @@
 ;; *REST <SP> <marker> <CRLF>
 
 ;; RETR <SP> <pathname> <CRLF>
-(define (ftp-get conn path . keys)
-  (let-keywords* keys ((sink (open-output-string))
-		       (flusher get-output-string))
-    (req&recv conn
-              (cut send-command conn "RETR" path)
-              (lambda (in)
-		(copy-port in sink)
-		(flusher sink)))))
+(define (ftp-get conn path :key (sink (open-output-string))
+                 (flusher get-output-string))
+  (req&recv conn
+            (cut send-command conn "RETR" path)
+            (lambda (in)
+              (copy-port in sink)
+              (flusher sink))))
 
 ;; STOR <SP> <pathname> <CRLF>
-(define (ftp-put conn from-file . opts)
-  (let-optionals* opts ((to-file (sys-basename from-file)))
-    (values-ref
-     (call-with-input-file from-file
-       (cute req&send conn (cut send-command conn "STOR" to-file) <>))
-     0)))
+(define (ftp-put conn from-file :optional (to-file (sys-basename from-file)))
+  (values-ref
+   (call-with-input-file from-file
+     (cute req&send conn (cut send-command conn "STOR" to-file) <>))
+   0))
 
 ;; STOU <CRLF>
 (define (ftp-put-unique conn from-file)

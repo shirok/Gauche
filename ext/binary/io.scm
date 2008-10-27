@@ -77,26 +77,25 @@
 
 ;; mind-numblingly slow, consider a uvector approach but it doesn't
 ;; handle endianess
-(define (read-uint size . args)
-  (let-optionals* args ((port (current-input-port))
-                        (endian (default-endian)))
-    (case size
-      ((1) (read-u8 port endian))
-      ((2) (read-u16 port endian))
-      ((4) (read-u32 port endian))
-      ((8) (read-u64 port endian))
-      (else
-       (let loop ((ls '())
-                  (cnt 0))
-         (if (= cnt size)
-           (fold (lambda (a b) (+ a (* b *byte-magnitude*)))
-                 0
-                 (if (eq? endian 'big-endian) (reverse ls) ls))
-           (let1 byte (read-byte port)
-             (if (eof-object? byte)
-               byte
-               (loop (cons byte ls) (+ cnt 1)))))))
-      )))
+(define (read-uint size :optional (port (current-input-port))
+                   (endian (default-endian)))
+  (case size
+    [(1) (read-u8 port endian)]
+    [(2) (read-u16 port endian)]
+    [(4) (read-u32 port endian)]
+    [(8) (read-u64 port endian)]
+    [else
+     (let loop ((ls '())
+                (cnt 0))
+       (if (= cnt size)
+         (fold (lambda (a b) (+ a (* b *byte-magnitude*)))
+               0
+               (if (eq? endian 'big-endian) (reverse ls) ls))
+         (let1 byte (read-byte port)
+           (if (eof-object? byte)
+             byte
+             (loop (cons byte ls) (+ cnt 1))))))]
+    ))
 
 (define (lognot-small int bytes)
   (logand (lognot int) (- (expt *bit-size* (* *byte-size* bytes)) 1)))
@@ -112,50 +111,48 @@
     (+ 1 (lognot-small (abs int) bytes))
     int))
 
-(define (read-sint size . args)
-  (let-optionals* args ((port (current-input-port))
-                        (endian (default-endian)))
-    (case size
-      ((1) (read-s8 port endian))
-      ((2) (read-s16 port endian))
-      ((4) (read-s32 port endian))
-      ((8) (read-s64 port endian))
-      (else
-       (uint->sint (read-uint size port endian) size)))))
+(define (read-sint size :optional
+                   (port (current-input-port))
+                   (endian (default-endian)))
+  (case size
+    [(1) (read-s8 port endian)]
+    [(2) (read-s16 port endian)]
+    [(4) (read-s32 port endian)]
+    [(8) (read-s64 port endian)]
+    [else (uint->sint (read-uint size port endian) size)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; basic writing
 
-(define (write-uint size int . args)
-  (let-optionals* args ((port (current-output-port))
-                        (endian (default-endian)))
-    (case size
-      ((1) (write-u8 int port endian))
-      ((2) (write-u16 int port endian))
-      ((4) (write-u32 int port endian))
-      ((8) (write-u64 int port endian))
-      (else
-       (let ((ls '()))
-         ;; build a list of bytes
-         (dotimes (i size)
-           (push! ls (logand int *byte-mask*))
-           (set! int (ash int *byte-right-shift*)))
-         ;; reverse if big-endian
-         (unless (eq? endian 'big-endian)
-           (set! ls (reverse ls)))
-         ;; write the list
-         (for-each (cut write-byte <> port) ls))))))
+(define (write-uint size int :optional
+                    (port (current-output-port))
+                    (endian (default-endian)))
+  (case size
+    [(1) (write-u8 int port endian)]
+    [(2) (write-u16 int port endian)]
+    [(4) (write-u32 int port endian)]
+    [(8) (write-u64 int port endian)]
+    [else
+     (let ((ls '()))
+       ;; build a list of bytes
+       (dotimes (i size)
+         (push! ls (logand int *byte-mask*))
+         (set! int (ash int *byte-right-shift*)))
+       ;; reverse if big-endian
+       (unless (eq? endian 'big-endian)
+         (set! ls (reverse ls)))
+       ;; write the list
+       (for-each (cut write-byte <> port) ls))]))
 
-(define (write-sint size int . args)
-  (let-optionals* args ((port (current-output-port))
-                        (endian (default-endian)))
-    (case size
-      ((1) (write-s8 int port endian))
-      ((2) (write-s16 int port endian))
-      ((4) (write-s32 int port endian))
-      ((8) (write-s64 int port endian))
-      (else
-       (write-uint size (sint->uint int size) port endian)))))
+(define (write-sint size int :optional
+                    (port (current-output-port))
+                    (endian (default-endian)))
+  (case size
+    [(1) (write-s8 int port endian)]
+    [(2) (write-s16 int port endian)]
+    [(4) (write-s32 int port endian)]
+    [(8) (write-s64 int port endian)]
+    [else (write-uint size (sint->uint int size) port endian)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; compatibility

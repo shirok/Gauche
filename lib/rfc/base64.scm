@@ -117,40 +117,40 @@
       (with-input-from-string string base64-decode))))
 
 
-(define (base64-encode . opts)
-  (let-keywords opts ((line-width 76))
-    (define maxcol (and line-width (> line-width 0) (- line-width 1)))
+(define (base64-encode :key (line-width 76))
 
-    (letrec-syntax ([emit*
-                     (syntax-rules ()
-                       [(_ col) col]
-                       [(_ col idx idx2 ...)
-                        (begin
-                          (write-char (vector-ref *encode-table* idx))
-                          (let1 col2 (cond [(eqv? col maxcol) (newline) 0]
-                                           [else (+ col 1)])
-                            (emit* col2 idx2 ...)))])])
+  (define maxcol (and line-width (> line-width 0) (- line-width 1)))
 
-      (define (e0 c col)
-        (cond [(eof-object? c)]
-              [else
-               (e1 (read-byte) (modulo c 4) (emit* col (quotient c 4)))]))
+  (letrec-syntax ([emit*
+                   (syntax-rules ()
+                     [(_ col) col]
+                     [(_ col idx idx2 ...)
+                      (begin
+                        (write-char (vector-ref *encode-table* idx))
+                        (let1 col2 (cond [(eqv? col maxcol) (newline) 0]
+                                         [else (+ col 1)])
+                          (emit* col2 idx2 ...)))])])
 
-      (define (e1 c hi col)
-        (cond [(eof-object? c)
-               (emit* col (* hi 16) 64 64)]
-              [else
-               (e2 (read-byte) (modulo c 16)
-                   (emit* col (+ (* hi 16) (quotient c 16))))]))
+    (define (e0 c col)
+      (cond [(eof-object? c)]
+            [else
+             (e1 (read-byte) (modulo c 4) (emit* col (quotient c 4)))]))
 
-      (define (e2 c hi col)
-        (cond [(eof-object? c)
-               (emit* col (* hi 4) 64)]
-              [else
-               (e0 (read-byte) 
-                   (emit* col (+ (* hi 4) (quotient c 64)) (modulo c 64)))]))
+    (define (e1 c hi col)
+      (cond [(eof-object? c)
+             (emit* col (* hi 16) 64 64)]
+            [else
+             (e2 (read-byte) (modulo c 16)
+                 (emit* col (+ (* hi 16) (quotient c 16))))]))
 
-      (e0 (read-byte) 0))))
+    (define (e2 c hi col)
+      (cond [(eof-object? c)
+             (emit* col (* hi 4) 64)]
+            [else
+             (e0 (read-byte) 
+                 (emit* col (+ (* hi 4) (quotient c 64)) (modulo c 64)))]))
+
+    (e0 (read-byte) 0)))
 
 (define (base64-encode-string string . opts)
   (with-string-io string (cut apply base64-encode opts)))

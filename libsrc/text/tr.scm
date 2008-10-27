@@ -54,37 +54,32 @@
 
 (define string-transliterate string-tr) ;alias
 
-(define (build-transliterator from to . options)
-  (let-keywords options
-      ((d? :delete #f)
-       (s? :squeeze #f)
-       (c? :complement #f)
-       (size :table-size 256)
-       (input #f)
-       (output #f))
-    (let ((!d? (not d?))
-          (tab  (build-tr-table from to size c?)))
-      (lambda ()
-        (let ((in (or input (current-input-port)))
-              (out (or output (current-output-port))))
-          (let loop ((char (read-char in))
-                     (prev #f))
-            (unless (eof-object? char)
-              (let ((c (tr-table-ref tab (char->integer char))))
-                (cond
-                 ((char? c)            ;transliterated
-                  (unless (and s? (eqv? prev c))
-                    (display c out))
-                  (loop (read-char in) c))
-                 (c                    ;char is not in from-set
-                  (display char out)
-                  (loop (read-char in) #f))
-                 (!d?                  ;char is in from but not to, and no :d
-                  (unless (and s? (eqv? prev char))
-                    (display char out))
-                  (loop (read-char in) char))
-                 (else
-                  (loop (read-char in) prev)))))))))))
+(define (build-transliterator from to :key ((:delete d?) #f) ((:squeeze s?) #f)
+                              ((:complement c?) #f) ((:table-size size) 256)
+                              (input #f) (output #f))
+  (let ((!d? (not d?))
+        (tab  (build-tr-table from to size c?)))
+    (lambda ()
+      (let ((in (or input (current-input-port)))
+            (out (or output (current-output-port))))
+        (let loop ((char (read-char in))
+                   (prev #f))
+          (unless (eof-object? char)
+            (let ((c (tr-table-ref tab (char->integer char))))
+              (cond
+               ((char? c)            ;transliterated
+                (unless (and s? (eqv? prev c))
+                  (display c out))
+                (loop (read-char in) c))
+               (c                    ;char is not in from-set
+                (display char out)
+                (loop (read-char in) #f))
+               (!d?                  ;char is in from but not to, and no :d
+                (unless (and s? (eqv? prev char))
+                  (display char out))
+                (loop (read-char in) char))
+               (else
+                (loop (read-char in) prev))))))))))
 
 ;;--------------------------------------------------------------------
 ;; Parse character array syntax

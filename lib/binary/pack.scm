@@ -71,46 +71,44 @@
    (else (error "CHAR-LIST must be a char-set or a list of characters, char-sets and/or symbol '*eof*" char-list))))
 
 ;; text.parse's next-token with a limit
-(define (next-token-n prefix-char-list/pred break-char-list/pred limit . args)
-  (let-optionals* args ((comment "unexpected EOF")
-                        (port (current-input-port)))
-    (define (bad) (errorf "~a~a" (port-position-prefix port) comment))
-    (let ((c (skip-while prefix-char-list/pred port)))
-      (cond
-       ((procedure? break-char-list/pred)
+(define (next-token-n prefix-char-list/pred break-char-list/pred limit
+                      :optional (comment "unexpected EOF") (port (current-input-port)))
+  (define (bad) (errorf "~a~a" (port-position-prefix port) comment))
+  (let ((c (skip-while prefix-char-list/pred port)))
+    (cond
+     ((procedure? break-char-list/pred)
+      (with-output-to-string
+        (lambda ()
+          (let loop ((c c)
+                     (i 0))
+            (cond ((break-char-list/pred c))
+                  ((eof-object? c) (bad))
+                  ((= i limit))
+                  (else                    
+                   (display (read-char port))
+                   (loop (peek-char port) (+ i 1)))))))
+      )
+     (else
+      (receive (cs eof-ok?) (fold-char-list break-char-list/pred)
         (with-output-to-string
           (lambda ()
             (let loop ((c c)
                        (i 0))
-              (cond ((break-char-list/pred c))
-                    ((eof-object? c) (bad))
+              (cond ((eof-object? c) (unless eof-ok? (bad)))
+                    ((char-set-contains? cs c))
                     ((= i limit))
-                    (else                    
-                     (display (read-char port))
-                     (loop (peek-char port) (+ i 1)))))))
-        )
-       (else
-        (receive (cs eof-ok?) (fold-char-list break-char-list/pred)
-          (with-output-to-string
-            (lambda ()
-              (let loop ((c c)
-                         (i 0))
-                (cond ((eof-object? c) (unless eof-ok? (bad)))
-                      ((char-set-contains? cs c))
-                      ((= i limit))
-                      (else (display (read-char port))
-                            (loop (peek-char port) (+ i 1))))))))
-        )))))
+                    (else (display (read-char port))
+                          (loop (peek-char port) (+ i 1))))))))
+      ))))
 
 ;; same as above but consumes the break-char
-(define (next-token-n* prefix-char-list/pred break-char-list/pred limit . args)
-  (let-optionals* args ((comment "unexpected EOF")
-                        (port (current-input-port)))
-    (let ((res (next-token-n prefix-char-list/pred
-                             break-char-list/pred limit comment port)))
-      (if (< (string-size res) limit)
-        (read-char port))
-      res)))
+(define (next-token-n* prefix-char-list/pred break-char-list/pred limit
+                       :optional (comment "unexpected EOF") (port (current-input-port)))
+  (let ((res (next-token-n prefix-char-list/pred
+                           break-char-list/pred limit comment port)))
+    (if (< (string-size res) limit)
+      (read-char port))
+    res))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; numeric utilities
@@ -970,40 +968,38 @@
     a
     (merge-pack-dispatch b a)))
 
-(define (read-packers-until-token token . args)
-  (let-optionals* args ((fixed-len 0)
-                        (var-len? #f)
-                        (vlp #f))
-    (let ((packers (read-until-token (make-pack-token token)
-                                     fixed-len var-len? vlp)))
-      ;; update var-len fields if we have an @
-      ;; with make-count-update-pack-dispatch
-      (let loop ((ls packers)
-                 (res '()))
-        (if (null? ls)
-          (fold pack-merge-folder #f (reverse res))
-          (let ((a (car ls))
-                (rest (cdr ls)))
-            (if (null? rest)
-              (loop rest (cons a res))
-              (let ((b (car rest)))
-                (if (and (not (a 'var-len-param))
-                         (b 'var-len-param))
-                  (let ((b-vlp (b 'var-len-param)))
-                    (loop rest
-                          (list
-                           (modify-pack-dispatch
-                            (fold pack-merge-folder #f
-                                  (reverse
-                                   (map (lambda (p)
-                                          (if (p 'variable-length?)
-                                            (make-count-update-pack-dispatch p (b 'var-len-param))
-                                            p))
-                                        (cons a res))))
-                            'packer (lambda (orig) (lambda (v) (b-vlp 0) (orig v)))
-                            'unpacker (lambda (orig) (lambda () (b-vlp 0) (orig)))
-                            ))))
-                  (loop rest (cons a res)))))))))))
+(define (read-packers-until-token token :optional (fixed-len 0) (var-len? #f)
+                                  (vlp #f))
+  (let ((packers (read-until-token (make-pack-token token)
+                                   fixed-len var-len? vlp)))
+    ;; update var-len fields if we have an @
+    ;; with make-count-update-pack-dispatch
+    (let loop ((ls packers)
+               (res '()))
+      (if (null? ls)
+        (fold pack-merge-folder #f (reverse res))
+        (let ((a (car ls))
+              (rest (cdr ls)))
+          (if (null? rest)
+            (loop rest (cons a res))
+            (let ((b (car rest)))
+              (if (and (not (a 'var-len-param))
+                       (b 'var-len-param))
+                (let ((b-vlp (b 'var-len-param)))
+                  (loop rest
+                        (list
+                         (modify-pack-dispatch
+                          (fold pack-merge-folder #f
+                                (reverse
+                                 (map (lambda (p)
+                                        (if (p 'variable-length?)
+                                          (make-count-update-pack-dispatch p (b 'var-len-param))
+                                          p))
+                                      (cons a res))))
+                          'packer (lambda (orig) (lambda (v) (b-vlp 0) (orig v)))
+                          'unpacker (lambda (orig) (lambda () (b-vlp 0) (orig)))
+                          ))))
+                (loop rest (cons a res))))))))))
 
 (define (read-all-packers template)
   (with-input-from-string template
@@ -1026,22 +1022,19 @@
           res)
         (read-all-packers template)))))
 
-(define (pack template values . keys)
-  (let-keywords keys ((output #f)
-                      (to-string? #f)
-                      (cached? #t))
-    (let ((packer (make-packer template cached?))
-          (out (or output
-                   (and to-string? (open-output-string))
-                   (current-output-port))))
-      (with-output-to-port out
-        (lambda ()
-          (let ((res (packer 'pack values)))
-            (if (pair? res)
-              (error "pack: extra values remaining: ~S" res)
-              (if to-string?
-                (get-output-string out)
-                #t))))))))
+(define (pack template values :key (output #f) (to-string? #f) (cached? #t))
+  (let ((packer (make-packer template cached?))
+        (out (or output
+                 (and to-string? (open-output-string))
+                 (current-output-port))))
+    (with-output-to-port out
+      (lambda ()
+        (let ((res (packer 'pack values)))
+          (if (pair? res)
+            (error "pack: extra values remaining: ~S" res)
+            (if to-string?
+              (get-output-string out)
+              #t)))))))
 
 (define (get-input-port keys)
   (let-keywords keys ((input #f)
@@ -1050,20 +1043,18 @@
         (and from-string (open-input-string from-string))
         (current-input-port))))
 
-(define (unpack template . keys)
-  (let-keywords keys ((cached? #t) . rest)
-    (let ((packer (make-packer template cached?))
-          (in (get-input-port rest)))
-      (with-input-from-port in
-        (cut packer 'unpack)))))
+(define (unpack template :key (cached? #t) :allow-other-keys rest)
+  (let ((packer (make-packer template cached?))
+        (in (get-input-port rest)))
+    (with-input-from-port in
+      (cut packer 'unpack))))
 
 ;; just "skip" is too vague
-(define (unpack-skip template . keys)
-  (let-keywords keys ((cached? #t) . rest)
-    (let ((packer (make-packer template cached?))
-          (in (get-input-port rest)))
-      (with-input-from-port in
-        (cut packer 'skip)))))
+(define (unpack-skip template :key (cached? #t) :allow-other-keys rest)
+  (let ((packer (make-packer template cached?))
+        (in (get-input-port rest)))
+    (with-input-from-port in
+      (cut packer 'skip))))
 
 (provide "binary/pack")
 

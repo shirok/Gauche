@@ -239,13 +239,12 @@
      stream-null
      (stream-cons (car list) (list->stream (cdr list))))))
 
-(define (string->stream str . rest)
-  (let-optionals* rest ((tail stream-null))
-    (let loop ((i 0))
-      (stream-delay
-       (if (equal? i (string-length str))
-         tail
-         (stream-cons (string-ref str i) (loop (+ i 1))))))))
+(define (string->stream str :optional (tail stream-null))
+  (let loop ((i 0))
+    (stream-delay
+     (if (equal? i (string-length str))
+       tail
+       (stream-cons (string-ref str i) (loop (+ i 1)))))))
 
 (define stream->string (compose list->string stream->list))
 (define number->stream (compose string->stream number->string))
@@ -253,19 +252,17 @@
 (define stream->symbol (compose string->symbol stream->string))
 (define symbol->stream (compose string->stream symbol->string))
 
-(define (port->stream . rest)
-  (let-optionals* rest ((in (current-input-port))
-                        (reader read-char)
-                        (close-at-eof close-input-port))
-    (define (next)
-      (stream-delay
-       (let ((element (reader in)))
-         (cond
-          ((eof-object? element)
-           (when close-at-eof (close-at-eof in)) stream-null)
-          (else
-           (stream-cons element (next)))))))
-    (next)))
+(define (port->stream :optional (in (current-input-port))
+                      (reader read-char) (close-at-eof close-input-port))
+  (define (next)
+    (stream-delay
+     (let ((element (reader in)))
+       (cond
+        ((eof-object? element)
+         (when close-at-eof (close-at-eof in)) stream-null)
+        (else
+         (stream-cons element (next)))))))
+  (next))
 
 ;(define (make-output-port-char write close)
 ;  (make-output-port
@@ -506,13 +503,12 @@
      (stream-append (stream-car strs)
                     (stream-concatenate (stream-cdr strs))))))
 
-(define (stream-reverse str . args)
+(define (stream-reverse str :optional (tail stream-null))
   (stream-delay
-   (let-optionals* args ((tail stream-null))
-     (let loop ((head str) (tail tail))
-       (if (stream-null? head) 
-         tail
-         (loop (stream-cdr head) (stream-cons (stream-car head) tail)))))))
+   (let loop ((head str) (tail tail))
+     (if (stream-null? head) 
+       tail
+       (loop (stream-cdr head) (stream-cons (stream-car head) tail))))))
 
 ;; zip?
 
@@ -634,19 +630,18 @@
 ; (equal? tail stream-null) rather than (stream-null? tail) to avoid an
 ; off-by-one error (evaluating tail before obj is fully consumed).
 
-(define (->stream-char obj . rest)
+(define (->stream-char obj :optional (tail stream-null))
   (stream-delay
-   (let-optionals* rest ((tail stream-null))
-     (cond
-      ((string? obj) (string->stream obj tail))
-      ((or (number? obj) (boolean? obj) (symbol? obj)) (->stream-char (x->string obj) tail))
-      ((char? obj) (stream-cons obj tail))
-      ((port? obj) (port->stream obj))
-      ((stream? obj)
-       (if (equal? tail stream-null)
-           obj
-           (stream-append obj tail)))
-      (else (error "Unable to convert object to stream-char" obj))))))
+   (cond
+    ((string? obj) (string->stream obj tail))
+    ((or (number? obj) (boolean? obj) (symbol? obj)) (->stream-char (x->string obj) tail))
+    ((char? obj) (stream-cons obj tail))
+    ((port? obj) (port->stream obj))
+    ((stream? obj)
+     (if (equal? tail stream-null)
+       obj
+       (stream-append obj tail)))
+    (else (error "Unable to convert object to stream-char" obj)))))
 
 (define (stream-replace in reps)
   (if (stream-null? in)
@@ -659,12 +654,12 @@
 (define (stream-translate str from to)
   (stream-map (lambda (c) (if (equal? c from) to c)) str))
 
-(define (write-stream stream . rest)
-  (let-optionals* rest ((port (current-output-port)) (writer write-char))
-    (let loop ((s stream))
-      (unless (stream-null? s)
-        (writer (stream-car s) port)
-        (loop (stream-cdr s))))))
+(define (write-stream stream :optional
+                      (port (current-output-port)) (writer write-char))
+  (let loop ((s stream))
+    (unless (stream-null? s)
+      (writer (stream-car s) port)
+      (loop (stream-cdr s)))))
 
 ;(define (stream-chomp stream . args)
 ;  (stream-delay

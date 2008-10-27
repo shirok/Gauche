@@ -107,17 +107,14 @@
 ;;; Constructors etc.
 ;;;
 
-(define (make-trie . args)
-  (let-optionals* args ((tab-make #f)
-                        (tab-get  #f)
-                        (tab-put! #f)
-                        (tab-fold #f))
+(define (make-trie :optional (tab-make #f) (tab-get  #f) (tab-put! #f)
+                   (tab-fold #f))
     (apply make <trie>
            (cond-list
             (tab-make @ `(:tab-make ,tab-make))
             (tab-get  @ `(:tab-get  ,tab-get))
             (tab-put! @ `(:tab-put! ,tab-put!))
-            (tab-fold @ `(:tab-fold ,tab-fold))))))
+            (tab-fold @ `(:tab-fold ,tab-fold)))))
 
 (define (trie params . keys&vals)
   (rlet1 t (apply make-trie params)

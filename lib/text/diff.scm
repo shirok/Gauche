@@ -18,11 +18,9 @@
                     (else (error "don't know how to diff from:" src)))))
 
 ;; lcs on text.  Returns edit-list (as defined in lcs-edit-list).
-(define (diff a b . options)
-  (let-keywords options ((reader read-line)
-                         (equal equal?))
-    (lcs-edit-list (source->list a reader)
-                   (source->list b reader))))
+(define (diff a b :key (reader read-line) (equal equal?))
+  (lcs-edit-list (source->list a reader)
+                 (source->list b reader)))
 
 (define (write-line-diff line type)
   (case type
@@ -33,16 +31,13 @@
     (else
      (format #t "  ~A\n" line))))
 
-(define (diff-report a b . options)
-  (let-keywords options ((writer write-line-diff)
-                         (reader read-line)
-                         (equal equal?))
-    (lcs-fold (lambda (line _) (writer line '-))
-              (lambda (line _) (writer line '+))
-              (lambda (line _) (writer line #f))
-              #f
-              (source->list a reader)
-              (source->list b reader)
-              equal)))
+(define (diff-report a b :key (writer write-line-diff) (reader read-line) (equal equal?))
+  (lcs-fold (lambda (line _) (writer line '-))
+            (lambda (line _) (writer line '+))
+            (lambda (line _) (writer line #f))
+            #f
+            (source->list a reader)
+            (source->list b reader)
+            equal))
 
 (provide "text/diff")

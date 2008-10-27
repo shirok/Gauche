@@ -139,14 +139,14 @@
    (extra-headers :init-keyword :extra-headers)
    ))
 
-(define (make-http-connection server . opts)
-  (let-keywords opts ((auth-handler  http-default-auth-handler)
-                      (auth-user     #f)
-                      (auth-password #f)
-                      (extra-headers '()))
-    (make <http-connection>
-      :server server :auth-handler auth-handler :auth-user auth-user
-      :auth-password auth-password :extra-headers extra-headers)))
+(define (make-http-connection server :key
+                              (auth-handler  http-default-auth-handler)
+                              (auth-user     #f)
+                              (auth-password #f)
+                              (extra-headers '()))
+  (make <http-connection>
+    :server server :auth-handler auth-handler :auth-user auth-user
+    :auth-password auth-password :extra-headers extra-headers))
 
 (define (redirect conn new-server)
   (let1 orig-server (ref conn'server)

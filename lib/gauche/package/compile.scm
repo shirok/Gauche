@@ -61,31 +61,31 @@
 (define SOEXT    (gauche-config "--so-suffix"))
 (define LDFLAGS  (gauche-config "--so-ldflags"))
 
-(define (gauche-package-compile file . args)
-  (let-keywords args ((output #f)
-                      (cppflags #f)
-                      (cflags   #f)
-                      (cc #f)
-                      (ld #f)           ;; dummy
-                      (ldflags #f)      ;; dummy
-                      (libs #f)         ;; dummy
-                      (dry? :dry-run #f)
-                      (verb? :verbose #f))
-    (parameterize ((dry-run dry?)
-                   (verbose-run verb?))
-      (let1 ofile (or output (sys-basename (path-swap-extension file OBJEXT)))
-        (unless (and (file-exists? ofile)
-                     (file-mtime>? ofile file))
-          (if (equal? (path-extension file) "stub")
-            (let1 cfile (path-swap-extension file "c")
-              (unwind-protect
-                  (begin
-                    (do-genstub file)
-                    (do-compile (or cc CC) cfile ofile
-                                (or cppflags "") (or cflags "")))
-                (sys-unlink cfile)))
-            (do-compile (or cc CC) file ofile
-                        (or cppflags "") (or cflags ""))))))))
+(define (gauche-package-compile file :key
+                                (output #f)
+                                (cppflags #f)
+                                (cflags   #f)
+                                (cc #f)
+                                (ld #f)           ;; dummy
+                                (ldflags #f)      ;; dummy
+                                (libs #f)         ;; dummy
+                                ((:dry-run dry?) #f)
+                                ((:verbose verb?) #f))
+  (parameterize ((dry-run dry?)
+                 (verbose-run verb?))
+    (let1 ofile (or output (sys-basename (path-swap-extension file OBJEXT)))
+      (unless (and (file-exists? ofile)
+                   (file-mtime>? ofile file))
+        (if (equal? (path-extension file) "stub")
+          (let1 cfile (path-swap-extension file "c")
+            (unwind-protect
+                (begin
+                  (do-genstub file)
+                  (do-compile (or cc CC) cfile ofile
+                              (or cppflags "") (or cflags "")))
+              (sys-unlink cfile)))
+          (do-compile (or cc CC) file ofile
+                      (or cppflags "") (or cflags "")))))))
 
 (define (do-genstub stubfile)
   (run #`"',GOSH' genstub ,stubfile"))
@@ -93,22 +93,22 @@
 (define (do-compile cc cfile ofile cppflags cflags)
   (run #`",cc -c ,cppflags ,INCDIR ,cflags ,CFLAGS -o ',ofile' ',cfile'"))
 
-(define (gauche-package-link sofile ofiles . args)
-  (let-keywords args ((ldflags #f)
-                      (libs #f)
-                      (ld #f)
-                      (output #f)       ;; dummy
-                      (cppflags #f)     ;; dummy
-                      (cflags #f)       ;; dummy
-                      (cc #f)           ;; dummy
-                      (dry? :dry-run #f)
-                      (verb? :verbose #f))
-    (parameterize ((dry-run dry?)
-                   (verbose-run verb?))
-      (unless (and (file-exists? sofile)
-                   (every (cut file-mtime>? sofile <>) ofiles))
-        (let1 all-ofiles (string-join (map (lambda (f) #`"',f'") ofiles) " ")
-          (run #`",(or ld CC) ,(or ldflags \"\") ,LIBDIR ,LDFLAGS ,sofile ,all-ofiles ,LIBS ,(or libs \"\")"))))))
+(define (gauche-package-link sofile ofiles :key
+                             (ldflags #f)
+                             (libs #f)
+                             (ld #f)
+                             (output #f)       ;; dummy
+                             (cppflags #f)     ;; dummy
+                             (cflags #f)       ;; dummy
+                             (cc #f)           ;; dummy
+                             ((:dry-run dry?) #f)
+                             ((:verbose verb?) #f))
+  (parameterize ((dry-run dry?)
+                 (verbose-run verb?))
+    (unless (and (file-exists? sofile)
+                 (every (cut file-mtime>? sofile <>) ofiles))
+      (let1 all-ofiles (string-join (map (lambda (f) #`"',f'") ofiles) " ")
+        (run #`",(or ld CC) ,(or ldflags \"\") ,LIBDIR ,LDFLAGS ,sofile ,all-ofiles ,LIBS ,(or libs \"\")")))))
 
 (define (gauche-package-compile-and-link module-name files . args)
   (let ((head.c #`",|module-name|_head.c")
@@ -131,18 +131,17 @@
           (apply gauche-package-link sofile objs args)
           sofile)))))
 
-(define (gauche-package-clean module-name files . args)
-  (let-keywords args ((output #f))
-    (when module-name
-      (sys-unlink #`",|module-name|_head.c")
-      (sys-unlink #`",|module-name|_tail.c")
-      (sys-unlink #`",|module-name|_head.,|OBJEXT|")
-      (sys-unlink #`",|module-name|_tail.,|OBJEXT|")
-      (sys-unlink #`",|module-name|.,|SOEXT|"))
-    (when output
-      (sys-unlink output))
-    (dolist (f files)
-      (unless (equal? (path-extension f) OBJEXT)
-        (sys-unlink (sys-basename (path-swap-extension f OBJEXT)))))))
+(define (gauche-package-clean module-name files :key (output #f))
+  (when module-name
+    (sys-unlink #`",|module-name|_head.c")
+    (sys-unlink #`",|module-name|_tail.c")
+    (sys-unlink #`",|module-name|_head.,|OBJEXT|")
+    (sys-unlink #`",|module-name|_tail.,|OBJEXT|")
+    (sys-unlink #`",|module-name|.,|SOEXT|"))
+  (when output
+    (sys-unlink output))
+  (dolist (f files)
+    (unless (equal? (path-extension f) OBJEXT)
+      (sys-unlink (sys-basename (path-swap-extension f OBJEXT))))))
 
 (provide "gauche/package/compile")

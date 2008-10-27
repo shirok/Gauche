@@ -129,8 +129,8 @@
 ;; The default method uses text.sql to parse the SQL statement, and calls
 ;; legacy dbd API.  This will go away once the drivers switched to the
 ;; new dbd API.
-(define-method dbi-prepare ((c <dbi-connection>) (sql <string>) . options)
-  (let-keywords options ((pass-through #f))
+(define-method dbi-prepare ((c <dbi-connection>) (sql <string>) . args)
+  (let-keywords args ((pass-through #f))
     (let1 prepared (if pass-through
                      (lambda args
                        (unless (null? args)
@@ -178,13 +178,11 @@
 ;; Subclass SHOULD implement this.
 (define-method dbi-make-connection ((d <dbi-driver>)
                                     (options <string>)
-                                    (option-alist <list>)
-                                    . args)
+                                    (option-alist <list>) . args)
   ;; The default method here is just a temporary one to use
   ;; older dbd drivers.  Will go away once the drivers catch up
   ;; the new interface.
-  (let-keywords args ((username "")
-                      (password ""))
+  (let-keywords args ((username "") (password ""))
     ;; call deprecated dbi-make-connection API.
     (dbi-make-connection d username password (or options ""))))
 

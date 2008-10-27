@@ -118,28 +118,25 @@
 ;; A port with limited-length input/output
 ;;
 
-(define (open-input-limited-length-port source limit . opts)
-  (let-keywords opts ((limit-reached #f)
-                      (eof-reached #f)
-                      (closed #f))
-    (let ((nrest limit)
-          (eof #f))
-      (define (filler buf)
-        (cond
-         ((or (<= nrest 0) eof)
-          (if limit-reached (limit-reached buf) 0))
-         (else
-          (let* ((len   (u8vector-length buf))
-                 (nread (read-block! buf source 0 (min nrest len))))
-            (cond ((eof-object? nread)
-                   (set! eof #t)
-                   (if eof-reached (eof-reached buf) 0))
-                  (else
-                   (dec! nrest nread)
-                   nread))))))
-      (define (closer)
-        (when closed (closed)))
-      (make <buffered-input-port>
-        :fill filler :close closer))))
+(define (open-input-limited-length-port source limit :key (limit-reached #f)
+                                        (eof-reached #f) (closed #f))
+  (let ((nrest limit)
+        (eof #f))
+    (define (filler buf)
+      (cond
+       ((or (<= nrest 0) eof)
+        (if limit-reached (limit-reached buf) 0))
+       (else
+        (let* ((len   (u8vector-length buf))
+               (nread (read-block! buf source 0 (min nrest len))))
+          (cond ((eof-object? nread)
+                 (set! eof #t)
+                 (if eof-reached (eof-reached buf) 0))
+                (else
+                 (dec! nrest nread)
+                 nread))))))
+    (define (closer)
+      (when closed (closed)))
+    (make <buffered-input-port> :fill filler :close closer)))
 
 (provide "gauche/vport")

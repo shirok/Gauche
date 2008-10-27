@@ -90,11 +90,10 @@
        \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n")
     ))
 
-(define (html-doctype . args)
-  (let-keywords args ((type :html-4.01-strict))
-    (cond ((find (lambda (e) (memq type (car e))) *doctype-alist*)
-           => caddr )
-          (else (error "Unknown doctype type spec" type)))))
+(define (html-doctype :key (type :html-4.01-strict))
+  (cond ((find (lambda (e) (memq type (car e))) *doctype-alist*)
+         => caddr )
+        (else (error "Unknown doctype type spec" type))))
 
 ;; Elements ------------------------------------------------
 

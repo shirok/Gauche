@@ -118,39 +118,25 @@
                       (begin (write-block buf dst 0 nr)
                              (loop (+ count nr))))))))))))
 
-(define (copy-port src dst . args)
+(define (copy-port src dst :key (unit 4096) (size 0))
   (check-arg input-port? src)
   (check-arg output-port? dst)
-  (let-keywords args ((unit 4096)
-                      (size 0))
-    (cond ((eq? unit 'byte)
+  (cond [(eq? unit 'byte)
+         (if (and (integer? size) (positive? size))
+           (%do-copy/limit1 (read-byte src) (write-byte data dst) size)
+           (%do-copy (read-byte src) (write-byte data dst) (+ count 1)))]
+        [(eq? unit 'char)
+         (if (and (integer? size) (positive? size))
+           (%do-copy/limit1 (read-char src) (write-char data dst) size)
+           (%do-copy (read-char src) (write-char data dst) (+ count 1)))]
+        [(integer? unit)
+         (let ((buf (make-u8vector (if (zero? unit) 4096 unit))))
            (if (and (integer? size) (positive? size))
-               (%do-copy/limit1 (read-byte src)
-                                (write-byte data dst)
-                                size)
-               (%do-copy (read-byte src)
-                         (write-byte data dst)
-                         (+ count 1))))
-          ((eq? unit 'char)
-           (if (and (integer? size) (positive? size))
-               (%do-copy/limit1 (read-char src)
-                                (write-char data dst)
-                                size)
-               (%do-copy (read-char src)
-                         (write-char data dst)
-                         (+ count 1))))
-          ((integer? unit)
-           (let ((buf (make-u8vector (if (zero? unit) 4096 unit))))
-             (if (and (integer? size) (positive? size))
-                 (%do-copy/limitN src dst buf unit size)
-                 (%do-copy (read-block! buf src)
-                           (write-block buf dst 0 data)
-                           (+ count data)))))
-          (else
-           (error "unit must be 'char, 'byte, or non-negative integer" unit))
-          )
-    )
-  )
+             (%do-copy/limitN src dst buf unit size)
+             (%do-copy (read-block! buf src) (write-block buf dst 0 data)
+                       (+ count data))))]
+        [else (error "unit must be 'char, 'byte, or non-negative integer" unit)]
+        ))
 
 ;;-----------------------------------------------------
 ;; Iterators on the input stream
@@ -162,15 +148,15 @@
   (let loop ((item (reader))
              (r    knil))
     (if (eof-object? item)
-        r
-        (loop (reader) (fn item r)))))
+      r
+      (loop (reader) (fn item r)))))
 
 ;; This will consume large stack if input file is large.
 (define (port-fold-right fn knil reader)
   (let loop ((item (reader)))
     (if (eof-object? item)
-        knil
-        (fn item (loop (reader))))))
+      knil
+      (fn item (loop (reader))))))
 
 (define (port-for-each fn reader)
   (let loop ((item (reader)))
@@ -182,18 +168,18 @@
   (let loop ((item (reader))
              (r    '()))
     (if (eof-object? item)
-        (reverse! r)
-        (loop (reader) (cons (fn item) r)))))
+      (reverse! r)
+      (loop (reader) (cons (fn item) r)))))
 
 ;; useful for error messages
 (define (port-position-prefix port)
   (let ((n (port-name port))
         (l (port-current-line port)))
     (if n
-        (if (positive? l)
-            (format #f "~s:line ~a: " n l)
-            (format #f "~s: " n))
-        "")))
+      (if (positive? l)
+        (format #f "~s:line ~a: " n l)
+        (format #f "~s: " n))
+      "")))
 
 ;;-----------------------------------------------------
 ;; useful alias

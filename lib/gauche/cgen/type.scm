@@ -162,7 +162,8 @@
 ;; Many cgen-types follows a specific convention to name boxer/unboxer etc,
 ;; and make-cgen-type assumes the convention if they are not provided.
 
-(define (make-cgen-type name c-type . args)
+(define (make-cgen-type name c-type :optional (desc #f) (c-pred #f)
+                        (unbox #f) (box #f))
   (define (strip<> name) (string-trim-both name #[<>]))
   (define (default-cpred name)
     (if (#/-/ name)
@@ -174,16 +175,12 @@
     #`"SCM_,(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
   (define (default-box name)
     #`"SCM_MAKE_,(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
-  (let-optionals* args ((desc   #f)
-                        (c-pred #f)
-                        (unbox  #f)
-                        (box    #f))
-    (make <cgen-type>
-      :name name :c-type c-type
-      :description (or desc (x->string name))
-      :c-predicate (or c-pred (default-cpred (x->string name)))
-      :unboxer     (or unbox (default-unbox (x->string name)))
-      :boxer       (or box "SCM_OBJ_SAFE"))))
+  (make <cgen-type>
+    :name name :c-type c-type
+    :description (or desc (x->string name))
+    :c-predicate (or c-pred (default-cpred (x->string name)))
+    :unboxer     (or unbox (default-unbox (x->string name)))
+    :boxer       (or box "SCM_OBJ_SAFE")))
 
 ;; Builtin types
 (for-each
