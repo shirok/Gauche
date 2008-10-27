@@ -32,3 +32,4 @@ selector.scm
 listener.scm
 dbidbd.scm
 www.scm
+package.scm

@@ -7,6 +7,8 @@
 	  Also extended :allow-other-keys to take optional argument that
 	  receives unrecognized keyword-value list.
 
+	* test/package.scm: Added to test gauche.package.*.
+
 2008-10-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (compile-toplevel-form, do-it): Instead of
