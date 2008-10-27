@@ -1,3 +1,12 @@
+2008-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass1/extended-lambda): Changed keyword argument
+	  spec with different variable name to match the CL-style, i.e.
+	  you write (define (foo x :key ((:bar baz) 'init)) ...) to let
+	  the baz receives the value supplied to the keyword :bar.
+	  Also extended :allow-other-keys to take optional argument that
+	  receives unrecognized keyword-value list.
+
 2008-10-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (compile-toplevel-form, do-it): Instead of

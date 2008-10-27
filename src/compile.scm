@@ -252,56 +252,55 @@
 ;; given to the constructor, the rest of slots are initialized by each
 ;; <init-value> (or #f if <init-value> is omitted).
 
-(define-macro (define-simple-struct name tag constructor . opts)
-  (let-optionals* opts ((slot-defs '()))
-    (define (take l n) ; we can't use srfi-1 take, so here it is.
-      (if (zero? n)
-        '()
-        (cons (car l) (take (cdr l) (- n 1)))))
-    (define (make-constructor)
-      (let ((args (gensym))
-            (num-slots  (length slot-defs))
-            (slot-names (map (lambda (s) (if (symbol? s) s (car s)))
-                             slot-defs))
-            (init-vals  (map (lambda (s) (if (symbol? s) #f (cadr s)))
-                             slot-defs)))
-        `(define-macro (,constructor . ,args)
-           (match ,args
-             ,@(let loop ((n 0)
-                          (r '()))
-                 (if (> n num-slots)
-                   r
-                   (let1 carg (take slot-names n)
-                     (loop (+ n 1)
-                           (cons
-                            `(,carg
-                              (list 'vector
-                                    ,@(if tag `(',tag) '())
-                                    ,@carg
-                                    ,@(map (cut list 'quote <>)
-                                           (list-tail init-vals n))))
-                            r)))
-                   ))))
-        ))
-    `(begin
-       ,@(if constructor
-           `(,(make-constructor))
-           '())
-       ,@(let loop ((s slot-defs) (i (if tag 1 0)) (r '()))
-           (if (null? s)
-             (reverse r)
-             (let* ((slot-name (if (pair? (car s)) (caar s) (car s)))
-                    (acc (string->symbol #`",|name|-,|slot-name|"))
-                    (mod (string->symbol #`",|name|-,|slot-name|-set!")))
-               (loop (cdr s)
-                     (+ i 1)
-                     (list*
-                      `(define-macro (,acc obj)
-                         `(vector-ref ,obj ,,i))
-                      `(define-macro (,mod obj val)
-                         `(vector-set! ,obj ,,i ,val))
-                      r))))))
-    ))
+(define-macro (define-simple-struct name tag constructor :optional (slot-defs '()))
+  (define (take l n) ; we can't use srfi-1 take, so here it is.
+    (if (zero? n)
+      '()
+      (cons (car l) (take (cdr l) (- n 1)))))
+  (define (make-constructor)
+    (let ((args (gensym))
+          (num-slots  (length slot-defs))
+          (slot-names (map (lambda (s) (if (symbol? s) s (car s)))
+                           slot-defs))
+          (init-vals  (map (lambda (s) (if (symbol? s) #f (cadr s)))
+                           slot-defs)))
+      `(define-macro (,constructor . ,args)
+         (match ,args
+           ,@(let loop ((n 0)
+                        (r '()))
+               (if (> n num-slots)
+                 r
+                 (let1 carg (take slot-names n)
+                   (loop (+ n 1)
+                         (cons
+                          `(,carg
+                            (list 'vector
+                                  ,@(if tag `(',tag) '())
+                                  ,@carg
+                                  ,@(map (cut list 'quote <>)
+                                         (list-tail init-vals n))))
+                          r)))
+                 ))))
+      ))
+  `(begin
+     ,@(if constructor
+         `(,(make-constructor))
+         '())
+     ,@(let loop ((s slot-defs) (i (if tag 1 0)) (r '()))
+         (if (null? s)
+           (reverse r)
+           (let* ((slot-name (if (pair? (car s)) (caar s) (car s)))
+                  (acc (string->symbol #`",|name|-,|slot-name|"))
+                  (mod (string->symbol #`",|name|-,|slot-name|-set!")))
+             (loop (cdr s)
+                   (+ i 1)
+                   (list*
+                    `(define-macro (,acc obj)
+                       `(vector-ref ,obj ,,i))
+                    `(define-macro (,mod obj val)
+                       `(vector-set! ,obj ,,i ,val))
+                    r))))))
+  )
 
 (define-inline (variable? arg)
   (or (symbol? arg) (identifier? arg)))
@@ -2384,9 +2383,10 @@
        (when a (too-many :allow-other-keys))
        (receive (a xs) (collect-args xs '())
          (match a
-           [() (parse-kargs xs os ks r #t)]
+           [()   (parse-kargs xs os ks r #t)]
+           [(av) (parse-kargs xs os ks r av)]
            [_ (error ":allow-other-keys keyword in the extended lambda list \
-                      must not be followed by arguments:" kargs)]))]
+                      can be followed by zero or one argument:" kargs)]))]
       [_ (error "invalid extended lambda list:" kargs)]))
   (define (too-many key)
     (errorf "too many ~s keywords in the extended lambda list: ~s" key kargs))
@@ -2411,8 +2411,8 @@
       (let1 args (map (match-lambda
                         [(? symbol? o) o]
                         [(? identifier? o) o]
+                        [(((? keyword? key) o) init) `(,o ,key ,init)]
                         [(o init) `(,o ,init)]
-                        [(o key init) `(,o ,key ,init)]
                         [_ (error "illegal keyword argument spec in " kargs)])
                       ks)
         `(((with-module gauche let-keywords*) ,garg
