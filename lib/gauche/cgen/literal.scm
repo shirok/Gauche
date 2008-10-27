@@ -45,8 +45,6 @@
           cgen-literal-static?
 
           define-cgen-literal cgen-literal
-          cgen-literal-emit-extern cgen-literal-emit-decl
-          cgen-literal-emit-body cgen-literal-emit-init
 
           cgen-allocate-static-datum
           )

@@ -8,6 +8,7 @@
 	  receives unrecognized keyword-value list.
 
 	* test/package.scm: Added to test gauche.package.*.
+	* test/cgen.scm: Added to test gauche.cgen.*.
 
 	* lib/*, libsrc/*: Rewrote most let-keywords*/let-optionals* with
 	  extended lambda experimentally to see how it looks like in the
