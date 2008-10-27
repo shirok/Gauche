@@ -5590,6 +5590,7 @@ public slots.
 @c EN
 FTP transfer type.  Must be one of the following symbols:
 @code{ascii}, @code{binary} (default), and @code{image}.
+@c JP
 FTPの転送タイプ。以下のシンボルのどれかひとつでなければなりません。
 @code{ascii}、@code{binary} (デフォルト)、および@code{image}。
 @c COMMON
