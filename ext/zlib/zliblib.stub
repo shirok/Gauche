@@ -1,0 +1,179 @@
+;;; -*- scheme-*-
+;;;
+;;; Gauche-zlib - Zlib module
+;;;
+;;;   Copyright (c) 2006 Rui Ueyama, All rights reserved.
+;;;
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;
+;;;  $Id: zliblib.stub,v 1.1.1.1 2006-01-17 07:52:02 rui Exp $
+;;;
+
+"
+#include \"gauche-zlib.h\"
+#include \"gauche/uvector.h\"
+"
+
+(define-type <deflate-port> "ScmPort*" "deflate port"
+  "SCM_DEFLATE_PORT_P" "SCM_PORT")
+(define-type <inflate-port> "ScmPort*" "inflate port"
+  "SCM_INFLATE_PORT_P" "SCM_PORT")
+
+"
+static void data_element(ScmObj data, const unsigned char **start, int *siz)
+{
+  if (SCM_U8VECTORP(data)) {
+    *start = SCM_UVECTOR_ELEMENTS(SCM_U8VECTOR(data));
+    *siz = SCM_U8VECTOR_SIZE(SCM_U8VECTOR(data));
+  } else if (SCM_STRINGP(data)) {
+    const ScmStringBody *b = SCM_STRING_BODY(data);
+    *start = (unsigned char*)SCM_STRING_BODY_START(b);
+    *siz = SCM_STRING_BODY_SIZE(b);
+  } else {
+    Scm_Error(\"u8vector or string required, but got: %S\", data);
+  }
+}
+"
+
+(define-constant zlib-version (c "SCM_MAKE_STR(zlibVersion())"))
+
+(define-enum |Z_NO_COMPRESSION|)
+(define-enum |Z_BEST_SPEED|)
+(define-enum |Z_BEST_COMPRESSION|)
+(define-enum |Z_DEFAULT_COMPRESSION|)
+(define-enum |Z_FILTERED|)
+(define-enum |Z_HUFFMAN_ONLY|)
+(define-enum |Z_RLE|)
+(define-enum |Z_FIXED|)
+(define-enum |Z_DEFAULT_STRATEGY|)
+(define-enum |Z_BINARY|)
+(define-enum |Z_TEXT|)
+(define-enum |Z_ASCII|)
+(define-enum |Z_UNKNOWN|)
+
+(define-cproc adler32 (data &optional (adler::<ulong> 1))
+  (body <ulong>
+        "const unsigned char *start;"
+        "int siz;"
+        "data_element(data, &start, &siz);"
+        "SCM_RESULT = adler32(adler, start, siz);"))
+
+(define-cproc crc32 (data &optional (crc::<ulong> 0))
+  (body <ulong>
+        "const unsigned char *start;"
+        "int siz;"
+        "data_element(data, &start, &siz);"
+        "SCM_RESULT = crc32(crc, start, siz);"))
+
+(define-cproc %open-deflate-port (source::<output-port>
+                                  compression-level::<fixnum>
+                                  window-bits::<fixnum>
+                                  memory-level::<fixnum>
+                                  strategy::<fixnum>
+                                  dictionary
+                                  buffer-size::<fixnum>
+                                  owner?)
+  (body "SCM_RESULT = Scm_MakeDeflatePort(source, compression_level,"
+        "                                 window_bits, memory_level,"
+        "                                 strategy, dictionary,"
+        "                                 buffer_size,"
+        "                                 !SCM_FALSEP(ownerP));"))
+
+(define-cproc open-inflate-port (sink::<input-port>
+                                 &keyword (buffer-size::<fixnum> 0)
+                                          (window-bits::<fixnum> 15)
+                                          (dictionary #f)
+                                          (owner? #f))
+  (body "SCM_RESULT = Scm_MakeInflatePort(sink, buffer_size,"
+        "                                 window_bits, dictionary,"
+        "                                 !SCM_FALSEP(ownerP));"))
+
+(define-cproc zstream-total-in (port::<port>)
+  (body <ulong>
+        "if (!(SCM_DEFLATE_PORT_P(port) || SCM_INFLATE_PORT_P(port))) {"
+        "  Scm_Error(\"deflate port or inflate port required, but got %S\", port);"
+        "}"
+        "SCM_RESULT = SCM_PORT_ZSTREAM(port)->total_in;"))
+
+(define-cproc zstream-total-out (port::<port>)
+  (body <ulong>
+        "if (!(SCM_DEFLATE_PORT_P(port) || SCM_INFLATE_PORT_P(port))) {"
+        "  Scm_Error(\"deflate port or inflate port required, but got %S\", port);"
+        "}"
+        "SCM_RESULT = SCM_PORT_ZSTREAM(port)->total_out;"))
+
+(define-cproc zstream-params-set! (port::<deflate-port>
+                                   &keyword (compression-level #f)
+                                            (strategy #f))
+  (body <void>
+        "ScmZlibInfo *info = SCM_PORT_ZLIB_INFO(port);"
+        "z_streamp strm = SCM_PORT_ZSTREAM(port);"
+        "int lv, st;"
+        "if (SCM_FALSEP(compression_level)) {"
+        "  lv = info->level;"
+        "} else if (SCM_INTP(compression_level)) {"
+        "  lv = SCM_INT_VALUE(compression_level);"
+        "} else {"
+        "  Scm_Error(\"integer required, but got %S\", compression_level);"
+        "}"
+        "if (SCM_FALSEP(strategy)) {"
+        "  st = info->strategy;"
+        "} else if (SCM_INTP(strategy)) {"
+        "  st = SCM_INT_VALUE(strategy);"
+        "} else {"
+        "  Scm_Error(\"integer required, but got %S\", strategy);"
+        "}"
+        "int r = deflateParams(strm, lv, st);"
+        "if (r != Z_OK) {"
+        "  Scm_ZlibError(r, \"deflateParams failed: %s\", strm->msg);"
+        "}"))
+
+(define-cproc deflate-port-full-flush (port::<deflate-port>)
+  (body <void>
+        "SCM_PORT_ZLIB_INFO(port)->flush = Z_FULL_FLUSH;"
+        "Scm_Flush(port);"))
+
+(define-cproc zstream-adler32 (port::<deflate-port>)
+  (body <ulong>
+        "SCM_RESULT = SCM_PORT_ZSTREAM(port)->adler;"))
+
+(define-cproc zstream-data-type (port::<deflate-port>)
+  (body <int>
+        "SCM_RESULT = SCM_PORT_ZSTREAM(port)->data_type;"))
+
+(define-cproc zstream-dictionary-adler32 (port::<port>)
+  (body "if (!(SCM_DEFLATE_PORT_P(port) || SCM_INFLATE_PORT_P(port))) {"
+        "  Scm_Error(\"deflate port or inflate port required, but got %S\", port);"
+        "}"
+        "SCM_RESULT = SCM_PORT_ZLIB_INFO(port)->dict_adler;"))
+
+(define-cproc inflate-sync (port::<inflate-port>)
+  (body "SCM_RESULT = Scm_InflateSync(port);"))
+
+;; mode: scheme
+;; end:

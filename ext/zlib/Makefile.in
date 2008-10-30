@@ -1,0 +1,30 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+SCM_CATEGORY = rfc
+
+LIBFILES = zlib.$(SOEXT)
+SCMFILES = rfc/zlib.scm
+
+OBJECTS = zlib_head.$(OBJEXT) gauche-zlib.$(OBJEXT) zliblib.$(OBJEXT) zlib_tail.$(OBJEXT)
+
+GENERATED = Makefile
+XCLEANFILES = zliblib.c zlib_head.c zlib_tail.c
+
+EXTRA_INCLUDES = -I$(srcdir)/../uvector
+
+all : $(LIBFILES)
+
+zlib.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) zlib.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) -lz $(LIBS)
+
+zliblib.c : zliblib.stub
+
+zlib_head.c zlib_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension zlib
+
+install : install-std
+

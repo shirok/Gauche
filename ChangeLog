@@ -1,3 +1,8 @@
+2008-10-30  Shiro Kawai  <shiro@acm.org>
+
+	* ext/zlib/*: Added rfc.zlib (written by Rui Ueyama).
+	  Probably we should add libz check in the main configure.ac later.
+
 2008-10-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1/extended-lambda): Changed keyword argument
