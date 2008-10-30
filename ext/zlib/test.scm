@@ -2,6 +2,8 @@
 ;;; Test zlib
 ;;;
 
+#!no-fold-case
+
 (use gauche.test)
 (use gauche.uvector)
 (use gauche.vport)
@@ -37,19 +39,19 @@
 ;;------------------------------------------------------------------
 (test-section "constant values")
 
-(test* "Z_NO_COMPRESSION"       0 |Z_NO_COMPRESSION|)
-(test* "Z_BEST_SPEED"           1 |Z_BEST_SPEED|)
-(test* "Z_BEST_COMPRESSION"     9 |Z_BEST_COMPRESSION|)
-(test* "Z_DEFAULT_COMPRESSION" -1 |Z_DEFAULT_COMPRESSION|)
-(test* "Z_FILTERED"             1 |Z_FILTERED|)
-(test* "Z_HUFFMAN_ONLY"         2 |Z_HUFFMAN_ONLY|)
-(test* "Z_RLE"                  3 |Z_RLE|)
-(test* "Z_FIXED"                4 |Z_FIXED|)
-(test* "Z_DEFAULT_STRATEGY"     0 |Z_DEFAULT_STRATEGY|)
-(test* "Z_BINARY"               0 |Z_BINARY|)
-(test* "Z_TEXT"                 1 |Z_TEXT|)
-(test* "Z_ASCII"                1 |Z_ASCII|)
-(test* "Z_UNKNOWN"              2 |Z_UNKNOWN|)
+(test* "Z_NO_COMPRESSION"       0 Z_NO_COMPRESSION)
+(test* "Z_BEST_SPEED"           1 Z_BEST_SPEED)
+(test* "Z_BEST_COMPRESSION"     9 Z_BEST_COMPRESSION)
+(test* "Z_DEFAULT_COMPRESSION" -1 Z_DEFAULT_COMPRESSION)
+(test* "Z_FILTERED"             1 Z_FILTERED)
+(test* "Z_HUFFMAN_ONLY"         2 Z_HUFFMAN_ONLY)
+(test* "Z_RLE"                  3 Z_RLE)
+(test* "Z_FIXED"                4 Z_FIXED)
+(test* "Z_DEFAULT_STRATEGY"     0 Z_DEFAULT_STRATEGY)
+(test* "Z_BINARY"               0 Z_BINARY)
+(test* "Z_TEXT"                 1 Z_TEXT)
+(test* "Z_ASCII"                1 Z_ASCII)
+(test* "Z_UNKNOWN"              2 Z_UNKNOWN)
 
 ;;------------------------------------------------------------------
 (test-section "zlib condition type")
@@ -177,7 +179,7 @@
          (lambda (out)
            (let1 out2 (open-deflate-port out)
              (zstream-params-set! out2
-               :compression-level 0 :strategy |Z_DEFAULT_STRATEGY|)
+               :compression-level 0 :strategy Z_DEFAULT_STRATEGY)
              (display "foobar" out2)
              (close-output-port out2)))))
 
@@ -193,18 +195,18 @@
 (test* "zstream-adler32" 1
        (zstream-adler32 (open-deflate-port (open-output-string))))
 
-(test* "zstream-data-type" |Z_UNKNOWN|
+(test* "zstream-data-type" #t
        (let1 p (open-deflate-port (open-output-string))
          (close-output-port p)
-         (zstream-data-type p)))
+         (not (not (memq (zstream-data-type p) `(,Z_BINARY ,Z_UNKNOWN))))))
 
-(test* "zstream-data-type" |Z_TEXT|
+(test* "zstream-data-type" Z_TEXT
        (let1 p (open-deflate-port (open-output-string))
          (display "foo" p)
          (close-output-port p)
          (zstream-data-type p)))
 
-(test* "zstream-data-type" |Z_BINARY|
+(test* "zstream-data-type" Z_BINARY
        (let1 p (open-deflate-port (open-output-string))
          (display #*"\0" p)
          (close-output-port p)

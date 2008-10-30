@@ -33,6 +33,8 @@
 ;;;  $Id: zlib.scm,v 1.2 2006-12-02 16:00:40 rui Exp $
 ;;;
 
+#!no-fold-case
+
 (define-module rfc.zlib
   (use gauche.uvector)
   (export zlib-version adler32 crc32
@@ -50,11 +52,11 @@
           zstream-dictionary-adler32
           gzip-encode-string gzip-decode-string
           inflate-sync
-          |Z_NO_COMPRESSION| |Z_BEST_SPEED|
-          |Z_BEST_COMPRESSION| |Z_DEFAULT_COMPRESSION|
-          |Z_FILTERED| |Z_HUFFMAN_ONLY|
-          |Z_RLE| |Z_FIXED| |Z_DEFAULT_STRATEGY|
-          |Z_BINARY| |Z_TEXT| |Z_ASCII| |Z_UNKNOWN|
+          Z_NO_COMPRESSION Z_BEST_SPEED
+          Z_BEST_COMPRESSION Z_DEFAULT_COMPRESSION
+          Z_FILTERED Z_HUFFMAN_ONLY
+          Z_RLE Z_FIXED Z_DEFAULT_STRATEGY
+          Z_BINARY Z_TEXT Z_ASCII Z_UNKNOWN
           ))
 (select-module rfc.zlib)
 
@@ -62,10 +64,10 @@
 
 ;; body
 (define (open-deflate-port source . args)
-  (let-keywords* args ((compression-level |Z_DEFAULT_COMPRESSION|)
+  (let-keywords* args ((compression-level Z_DEFAULT_COMPRESSION)
                        (window-bits 15)
                        (memory-level 8)
-                       (strategy |Z_DEFAULT_STRATEGY|)
+                       (strategy Z_DEFAULT_STRATEGY)
                        (dictionary #f)
                        (buffer-size 0)
                        (owner? #f))
