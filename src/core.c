@@ -50,7 +50,7 @@ extern void GC_print_static_roots(void);
 
 static void *oom_handler(size_t bytes)
 {
-    Scm_Panic("out of memory (%d).  aborting...", bytes);
+    Scm_Panic("out of memory (%lu).  aborting...", bytes);
     return NULL;                /* dummy */
 }
 
