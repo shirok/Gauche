@@ -1,3 +1,8 @@
+2008-10-31  Shiro Kawai  <shiro@acm.org>
+
+	* ext/zlib/zlib.scm, ext/zlib/Makefile.in: fixed for zlib.scm to be
+	  installed into proper location.
+
 2008-10-30  Shiro Kawai  <shiro@acm.org>
 
 	* ext/zlib/*: Added rfc.zlib (written by Rui Ueyama).

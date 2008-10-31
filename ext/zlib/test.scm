@@ -10,7 +10,8 @@
 (use gauche.process)
 
 (test-start "rfc.zlib")
-(use rfc.zlib)
+(load "./zlib")
+(import rfc.zlib)
 (test-module 'rfc.zlib)
 
 (test* "zlib-version" #t (string? zlib-version))
