@@ -18,8 +18,10 @@ EXTRA_INCLUDES = -I$(srcdir)/../uvector
 
 all : $(LIBFILES)
 
-zlib.$(SOEXT) : $(OBJECTS) 
+zlib.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) zlib.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) -lz $(LIBS)
+
+$(OBJECTS) : gauche-zlib.h
 
 zliblib.c : zliblib.stub
 

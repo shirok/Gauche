@@ -157,7 +157,8 @@ void Scm_ZlibError(int error_code, const char *msg, ...)
         va_start(args, msg);
         Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
         va_end(args);
-        e = Scm_MakeZlibError(Scm_GetOutputString(SCM_PORT(ostr)), error_code);
+        e = Scm_MakeZlibError(Scm_GetOutputString(SCM_PORT(ostr), 0),
+                              error_code);
     }
     SCM_WHEN_ERROR {
         /* TODO: should check continuation */
@@ -188,7 +189,7 @@ void Scm_ZlibPortError(ScmPort *port, int error_code, const char *msg, ...)
         va_start(args, msg);
         Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
         va_end(args);
-        smsg = Scm_GetOutputString(SCM_PORT(ostr));
+        smsg = Scm_GetOutputString(SCM_PORT(ostr), 0);
         pe = porterror_allocate(SCM_CLASS_IO_READ_ERROR, SCM_NIL);
         SCM_ERROR(pe)->message = smsg;
         SCM_PORT_ERROR(pe)->port = port;
@@ -220,7 +221,7 @@ static ScmObj port_name(const char *type, ScmPort *source)
     ScmObj out = Scm_MakeOutputStringPort(TRUE);
     Scm_Printf(SCM_PORT(out), "[%s %A]",
                type, Scm_PortName(source));
-    return Scm_GetOutputStringUnsafe(SCM_PORT(out));
+    return Scm_GetOutputStringUnsafe(SCM_PORT(out), 0);
 }
 
 /*================================================================

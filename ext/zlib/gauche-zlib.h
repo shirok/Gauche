@@ -37,6 +37,7 @@
 #ifndef GAUCHE_ZLIB_H
 #define GAUCHE_ZLIB_H
 
+#define GAUCHE_API_0_9
 #include <gauche.h>
 #include <gauche/extend.h>
 #include <zlib.h>
