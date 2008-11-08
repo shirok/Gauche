@@ -195,8 +195,8 @@
    [printer
     (Scm_Printf port "#<ndbm-file %S>" (-> (SCM_NDBM_FILE obj) name))])
 
- (define-cfn ndbm_finalize (obj (data :: void*)) :: void :static
-   (let* ((n :: ScmNdbmFile* (SCM_NDBM_FILE obj)))
+ (define-cfn ndbm_finalize (obj data::void*) :: void :static
+   (let* ((n::ScmNdbmFile* (SCM_NDBM_FILE obj)))
      (when (-> n dbf)
        (dbm_close (-> n dbf))
        (set! (-> n dbf) NULL))))
@@ -228,7 +228,7 @@
  ;; bindings
  (define-cproc ndbm-open (name::<string> flags::<fixnum> mode::<fixnum>)
    (body <top>
-         (let* ((z :: ScmNdbmFile* (SCM_NEW ScmNdbmFile)))
+         (let* ((z::ScmNdbmFile* (SCM_NEW ScmNdbmFile)))
            (SCM_SET_CLASS z (& Scm_NdbmFileClass))
            (Scm_RegisterFinalizer (SCM_OBJ z) ndbm_finalize NULL)
            (set! (-> z name) (SCM_OBJ name))
@@ -249,7 +249,7 @@
  (define-cproc ndbm-store (ndbm::<ndbm-file> key::<string> val::<string>
                                         &optional (flags::<fixnum> 0))
    (body <int>
-         (let* ((dkey :: datum) (dval :: datum))
+         (let* ((dkey::datum) (dval::datum))
            (CHECK_NDBM ndbm)
            (TO_DATUM dkey key)
            (TO_DATUM dval val)
@@ -257,7 +257,7 @@
 
  (define-cproc ndbm-fetch (ndbm::<ndbm-file> key::<string>)
    (body <top>
-         (let* ((dkey :: datum) (dval :: datum))
+         (let* ((dkey::datum) (dval::datum))
            (CHECK_NDBM ndbm)
            (TO_DATUM dkey key)
            (set! dval (dbm_fetch (-> ndbm dbf) dkey))
@@ -265,7 +265,7 @@
 
  (define-cproc ndbm-exists? (ndbm::<ndbm-file> key::<string>)
    (body <boolean>
-         (let* ((dkey :: datum) (dval :: datum))
+         (let* ((dkey::datum) (dval::datum))
            (CHECK_NDBM ndbm)
            (TO_DATUM dkey key)
            (set! dval (dbm_fetch (-> ndbm dbf) dkey))
@@ -273,21 +273,21 @@
 
  (define-cproc ndbm-delete (ndbm::<ndbm-file> key::<string>)
    (body <int>
-         (let* ((dkey :: datum))
+         (let* ((dkey::datum))
            (CHECK_NDBM ndbm)
            (TO_DATUM dkey key)
            (result (dbm_delete (-> ndbm dbf) dkey)))))
 
  (define-cproc ndbm-firstkey (ndbm::<ndbm-file>)
    (body <top>
-         (let* ((dkey :: datum))
+         (let* ((dkey::datum))
            (CHECK_NDBM ndbm)
            (set! dkey (dbm_firstkey (-> ndbm dbf)))
            (FROM_DATUM SCM_RESULT dkey))))
 
  (define-cproc ndbm-nextkey (ndbm::<ndbm-file>)
    (body <top>
-         (let* ((dkey :: datum))
+         (let* ((dkey::datum))
            (CHECK_NDBM ndbm)
            (set! dkey (dbm_nextkey (-> ndbm dbf)))
            (FROM_DATUM SCM_RESULT dkey))))

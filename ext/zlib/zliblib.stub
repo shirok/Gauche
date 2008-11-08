@@ -44,51 +44,49 @@
 (define-type <inflate-port> "ScmPort*" "inflate port"
   "SCM_INFLATE_PORT_P" "SCM_PORT")
 
-"
-static void data_element(ScmObj data, const unsigned char **start, int *siz)
-{
-  if (SCM_U8VECTORP(data)) {
-    *start = SCM_UVECTOR_ELEMENTS(SCM_U8VECTOR(data));
-    *siz = SCM_U8VECTOR_SIZE(SCM_U8VECTOR(data));
-  } else if (SCM_STRINGP(data)) {
-    const ScmStringBody *b = SCM_STRING_BODY(data);
-    *start = (unsigned char*)SCM_STRING_BODY_START(b);
-    *siz = SCM_STRING_BODY_SIZE(b);
-  } else {
-    Scm_Error(\"u8vector or string required, but got: %S\", data);
-  }
-}
-"
+(define-cfn data_element (data::ScmObj
+                          start::(const unsigned char**)
+                          siz::int*)
+  :: void :static
+  (cond [(SCM_U8VECTORP data)
+         (set! (* start) (SCM_UVECTOR-ELEMENTS (SCM_U8VECTOR data))
+               (* siz)   (SCM_U8VECTOR_SIZE (SCM_U8VECTOR data)))]
+        [(SCM_STRINGP data)
+         (let* ((b::(const ScmStringBody*) (SCM_STRING_BODY data)))
+           (set! (* start) (cast (unsigned char*) (SCM_STRING_BODY_START b))
+                 (* siz)   (SCM_STRING_BODY_SIZE b)))]
+        [else
+         (Scm_Error "u8vector or string required, but got: %S" data)]))
 
 (define-constant zlib-version (c "SCM_MAKE_STR(zlibVersion())"))
 
-(define-enum |Z_NO_COMPRESSION|)
-(define-enum |Z_BEST_SPEED|)
-(define-enum |Z_BEST_COMPRESSION|)
-(define-enum |Z_DEFAULT_COMPRESSION|)
-(define-enum |Z_FILTERED|)
-(define-enum |Z_HUFFMAN_ONLY|)
-(define-enum |Z_RLE|)
-(define-enum |Z_FIXED|)
-(define-enum |Z_DEFAULT_STRATEGY|)
-(define-enum |Z_BINARY|)
-(define-enum |Z_TEXT|)
-(define-enum |Z_ASCII|)
-(define-enum |Z_UNKNOWN|)
+(define-enum Z_NO_COMPRESSION)
+(define-enum Z_BEST_SPEED)
+(define-enum Z_BEST_COMPRESSION)
+(define-enum Z_DEFAULT_COMPRESSION)
+(define-enum Z_FILTERED)
+(define-enum Z_HUFFMAN_ONLY)
+(define-enum Z_RLE)
+(define-enum Z_FIXED)
+(define-enum Z_DEFAULT_STRATEGY)
+(define-enum Z_BINARY)
+(define-enum Z_TEXT)
+(define-enum Z_ASCII)
+(define-enum Z_UNKNOWN)
 
 (define-cproc adler32 (data &optional (adler::<ulong> 1))
   (body <ulong>
-        "const unsigned char *start;"
-        "int siz;"
-        "data_element(data, &start, &siz);"
-        "SCM_RESULT = adler32(adler, start, siz);"))
+        (let* ([start::(const unsigned char*)]
+               [siz::int])
+          (data_element data (& start) (& siz))
+          (result (adler32 adler start siz)))))
 
 (define-cproc crc32 (data &optional (crc::<ulong> 0))
   (body <ulong>
-        "const unsigned char *start;"
-        "int siz;"
-        "data_element(data, &start, &siz);"
-        "SCM_RESULT = crc32(crc, start, siz);"))
+        (let* ([start::(const unsigned char*)]
+               [siz::int])
+          (data_element data (& start) (& siz))
+          (result (crc32 crc start siz)))))
 
 (define-cproc %open-deflate-port (source::<output-port>
                                   compression-level::<fixnum>
@@ -98,34 +96,33 @@ static void data_element(ScmObj data, const unsigned char **start, int *siz)
                                   dictionary
                                   buffer-size::<fixnum>
                                   owner?)
-  (body "SCM_RESULT = Scm_MakeDeflatePort(source, compression_level,"
-        "                                 window_bits, memory_level,"
-        "                                 strategy, dictionary,"
-        "                                 buffer_size,"
-        "                                 !SCM_FALSEP(ownerP));"))
+  (body <top>
+        (result
+         (Scm_MakeDeflatePort source compression-level window-bits
+                              memory-level strategy dictionary
+                              buffer-size (not (SCM_FALSEP owner?))))))
 
 (define-cproc open-inflate-port (sink::<input-port>
                                  &keyword (buffer-size::<fixnum> 0)
                                           (window-bits::<fixnum> 15)
                                           (dictionary #f)
                                           (owner? #f))
-  (body "SCM_RESULT = Scm_MakeInflatePort(sink, buffer_size,"
-        "                                 window_bits, dictionary,"
-        "                                 !SCM_FALSEP(ownerP));"))
+  (body <top>
+        (result
+         (Scm_MakeInflatePort sink buffer-size window-bits dictionary
+                              (not (SCM_FALSEP owner?))))))
 
 (define-cproc zstream-total-in (port::<port>)
   (body <ulong>
-        "if (!(SCM_DEFLATE_PORT_P(port) || SCM_INFLATE_PORT_P(port))) {"
-        "  Scm_Error(\"deflate port or inflate port required, but got %S\", port);"
-        "}"
-        "SCM_RESULT = SCM_PORT_ZSTREAM(port)->total_in;"))
+        (unless (or (SCM_DEFLATE_PORT_P port) (SCM_INFLATE_PORT_P port))
+          (Scm_Error "deflate port or inflate port required, but got %S" port))
+        (result (-> (SCM_PORT_ZSTREAM port) total-in))))
 
 (define-cproc zstream-total-out (port::<port>)
   (body <ulong>
-        "if (!(SCM_DEFLATE_PORT_P(port) || SCM_INFLATE_PORT_P(port))) {"
-        "  Scm_Error(\"deflate port or inflate port required, but got %S\", port);"
-        "}"
-        "SCM_RESULT = SCM_PORT_ZSTREAM(port)->total_out;"))
+        (unless (or (SCM_DEFLATE_PORT_P port) (SCM_INFLATE_PORT_P port))
+          (Scm_Error "deflate port or inflate port required, but got %S" port))
+        (result (-> (SCM_PORT_ZSTREAM port) total-out))))
 
 (define-cproc zstream-params-set! (port::<deflate-port>
                                    &keyword (compression-level #f)
@@ -173,7 +170,7 @@ static void data_element(ScmObj data, const unsigned char **start, int *siz)
         "SCM_RESULT = SCM_PORT_ZLIB_INFO(port)->dict_adler;"))
 
 (define-cproc inflate-sync (port::<inflate-port>)
-  (body "SCM_RESULT = Scm_InflateSync(port);"))
+  (call "Scm_InflateSync"))
 
 ;; mode: scheme
 ;; end:

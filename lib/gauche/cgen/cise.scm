@@ -281,7 +281,7 @@
 ;;
 (define-cise-macro (define-cfn form env)
   (define (argchk args)
-    (match args
+    (match (canonicalize-vardecl args)
       [() '()]
       [((var ':: type) . rest) `((,var . ,type) ,@(argchk rest))]
       [(var . rest) `((,var . ScmObj) ,@(argchk rest))]))
@@ -330,21 +330,24 @@
 (define-cise-macro (let* form env)
   (ensure-stmt-ctx form env)
   (match form
-    [(_ ((var . spec) ...) . body)
-     (let1 eenv (expr-env env)
-       `(begin
-          ,@(map (lambda (var spec)
-                   (receive (type has-init? init)
-                       (match spec
-                         [()         (values 'ScmObj #f #f)]
-                         [(init)     (values 'ScmObj #t init)]
-                         [(':: type) (values type #f #f)]
-                         [(':: type init) (values type #t init)])
-                     `(,(cise-render-typed-var type var env)
-                       ,@(cond-list [has-init? `("=",(render-rec init eenv))])
-                       ";")))
-                 var spec)
-          ,@(map (cut render-rec <> env) body)))]
+    [(_ vars . body)
+     (match (canonicalize-vardecl vars)
+       [((var . spec) ...)
+        (let1 eenv (expr-env env)
+          `(begin
+             ,@(map (lambda (var spec)
+                      (receive (type has-init? init)
+                          (match spec
+                            [()         (values 'ScmObj #f #f)]
+                            [(init)     (values 'ScmObj #t init)]
+                            [(':: type) (values type #f #f)]
+                            [(':: type init) (values type #t init)])
+                        `(,(cise-render-typed-var type var env)
+                          ,@(cond-list [has-init? `("=",(render-rec init eenv))])
+                          ";")))
+                    var spec)
+             ,@(map (cut render-rec <> env) body)))]
+       [_ (error "invalid variable decls in let* form:" form)])]
     ))
 
 ;; [cise stmt] if TEST-EXPR THEN-STMT [ELSE-STMT]
@@ -791,6 +794,40 @@
 
 (define (cise-render-identifier sym)
   (cgen-safe-name-friendly (x->string sym)))
+
+;; Allow var::type as (var :: type)
+;; and (var::type init) as (var :: type init)
+(define (canonicalize-vardecl vardecls)
+  (define (expand-type elt seed)
+    (cond
+     [(symbol? elt)
+      (rxmatch-case (symbol->string elt)
+        [#/^(.+)::$/ (_ v) `(,(string->symbol v) :: ,@seed)]
+        [#/^(.+)::(.+)$/ (_ v t)
+            `(,(string->symbol v) :: ,(string->symbol t) ,@seed)]
+        [else (cons elt seed)])]
+     [(keyword? elt)  ;; The case of (var ::type)
+      (rxmatch-case (keyword->string elt)
+        [#/^:(.+)$/ (_ t) `(:: ,(string->symbol t) ,@seed)]
+        [else (cons elt seed)])]
+     [else (cons elt seed)]))
+
+  (define (err decl) (error "invlaid variable declaration:" decl))
+
+  (define (scan in r)
+    (match in
+      [() (reverse r)]
+      [([? symbol? var] :: type . rest)
+       (scan rest `((,var :: ,type) ,@r))]
+      [([? symbol? var] . rest)
+       (scan rest `((,var :: ScmObj) ,@r))]
+      [(([? symbol? v] [? symbol? t] . args) . rest)
+       (scan rest `(,(expand-type v (expand-type t args)) ,@r))]
+      [(([? symbol? vt] . args) . rest)
+       (scan rest `(,(expand-type vt args) ,@r))]
+      [(xx . rest) (err xx)]))
+
+  (scan (fold-right expand-type '() vardecls) '()))
 
 (provide "gauche/cgen/cise")
 

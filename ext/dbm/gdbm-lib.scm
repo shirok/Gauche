@@ -189,7 +189,7 @@
    [printer
     (Scm_Printf port "#<gdbm-file %S>" (-> (SCM_GDBM_FILE obj) name))])
 
- (define-cfn gdbm_finalize (obj (data :: void*)) :: void :static
+ (define-cfn gdbm_finalize (obj data::void*) :: void :static
    (let* ((g :: ScmGdbmFile* (SCM_GDBM_FILE obj)))
      (when (-> g dbf)
        (gdbm_close (-> g dbf))
@@ -239,7 +239,7 @@
                    (fmode::<fixnum> (c "SCM_MAKE_INT(0666)")))
    (body
     <top>
-    (let* ((z :: ScmGdbmFile* (SCM_NEW ScmGdbmFile)))
+    (let* ((z::ScmGdbmFile* (SCM_NEW ScmGdbmFile)))
       (SCM_SET_CLASS z (& Scm_GdbmFileClass))
       (Scm_RegisterFinalizer (SCM_OBJ z) gdbm_finalize NULL)
       (set! (-> z name) (SCM_OBJ name))
@@ -261,7 +261,7 @@
                            key::<string> val::<string>
                            &optional (flags::<fixnum> 0))
    (body <int>
-         (let* ((dkey :: datum) (dval :: datum))
+         (let* ((dkey::datum) (dval::datum))
            (CHECK_GDBM gdbm)
            (TO_DATUM dkey key)
            (TO_DATUM dval val)
@@ -269,7 +269,7 @@
 
  (define-cproc gdbm-fetch (gdbm::<gdbm-file> key::<string>)
    (body <top>
-         (let* ((dkey :: datum) (dval :: datum))
+         (let* ((dkey::datum) (dval::datum))
            (CHECK_GDBM gdbm)
            (TO_DATUM dkey key)
            (set! dval (gdbm_fetch (-> gdbm dbf) dkey))
@@ -277,19 +277,19 @@
 
  (define-cproc gdbm-delete (gdbm::<gdbm-file> key::<string>)
    (body <int>
-         (let* ((dkey :: datum))
+         (let* ((dkey::datum))
            (CHECK_GDBM gdbm)
            (TO_DATUM dkey key)
            (result (gdbm_delete (-> gdbm dbf) dkey)))))
 
  (define-cproc gdbm-firstkey (gdbm::<gdbm-file>)
    (body <top>
-         (let* ((dkey :: datum (gdbm_firstkey (-> gdbm dbf))))
+         (let* ((dkey::datum (gdbm_firstkey (-> gdbm dbf))))
            (FROM_DATUM SCM_RESULT dkey))))
 
  (define-cproc gdbm-nextkey (gdbm::<gdbm-file> key::<string>)
    (body <top>
-         (let* ((dkey :: datum) (dnkey :: datum))
+         (let* ((dkey::datum) (dnkey::datum))
            (CHECK_GDBM gdbm)
            (TO_DATUM dkey key)
            (set! dnkey (gdbm_nextkey (-> gdbm dbf) dkey))
@@ -307,7 +307,7 @@
 
  (define-cproc gdbm-exists? (gdbm::<gdbm-file> key::<string>)
    (body <boolean>
-         (let* ((dkey :: datum))
+         (let* ((dkey::datum))
            (CHECK_GDBM gdbm)
            (TO_DATUM dkey key)
            (result (gdbm_exists (-> gdbm dbf) dkey)))))
@@ -317,7 +317,7 @@
 
  (define-cproc gdbm-setopt (gdbm::<gdbm-file> option::<fixnum> val)
    (body <int>
-         (let* ((ival :: int))
+         (let* ((ival::int))
            (CHECK_GDBM gdbm)
            (if (SCM_EXACTP val)
              (set! ival (Scm_GetUInteger val))

@@ -204,7 +204,7 @@
  (define-cproc odbm-init (name::<string>)
    (body <int>
          (when odbm_opened (Scm_Error "dbm file is already opened."))
-         (let* ((r :: int (dbminit (Scm_GetString name))))
+         (let* ((r::int (dbminit (Scm_GetString name))))
            (when (< r 0) (Scm_SysError "couldn't open dbm database %S" name))
            (set! odbm_opened TRUE)
            (result r))))
@@ -217,29 +217,29 @@
 
  (define-cproc odbm-store (key::<string> val::<string>)
    (body <int>
-         (let* ((dkey :: datum) (dval :: datum))
+         (let* ((dkey::datum) (dval::datum))
            (CHECK_ODBM) (TO_DATUM dkey key) (TO_DATUM dval val)
            (result (store dkey dval)))))
 
  (define-cproc odbm-fetch (key::<string>)
    (body <top>
-         (let* ((dkey :: datum) (dval :: datum))
+         (let* ((dkey::datum) (dval::datum))
            (CHECK_ODBM) (TO_DATUM dkey key) (set! dval (fetch dkey))
            (FROM_DATUM SCM_RESULT dval))))
 
  (define-cproc odbm-delete (key::<string>)
    (body <int>
-         (let* ((dkey :: datum))
+         (let* ((dkey::datum))
            (CHECK_ODBM) (TO_DATUM dkey key) (result (delete dkey)))))
 
  (define-cproc odbm-firstkey ()
    (body <top>
-         (let* ((dkey :: datum))
+         (let* ((dkey::datum))
            (CHECK_ODBM) (set! dkey (firstkey)) (FROM_DATUM SCM_RESULT dkey))))
 
  (define-cproc odbm-nextkey (key::<string>)
    (body <top>
-         (let* ((dkey :: datum) (dnkey :: datum))
+         (let* ((dkey::datum) (dnkey::datum))
            (CHECK_ODBM) (TO_DATUM dkey key) (set! dnkey (nextkey dkey))
            (FROM_DATUM SCM_RESULT dnkey))))
  )
