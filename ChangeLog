@@ -1,5 +1,9 @@
 2008-11-07  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/stub.scm (process-call-spec): Allow symbol as the
+	  C function name in 'call' clause of define-cproc.  (I'm not sure
+	  why I didn't allow this.  Maybe just an overlook.)
+
 	* lib/gauche/cgen/cise.scm (canonicalize-vardecl): Allow more flexible
 	  notation of typed variables, e.g. var::type, var:: type, var ::type
 	  are all treated as (var :: type) in the define-cfn argument list,

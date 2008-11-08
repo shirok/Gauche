@@ -170,7 +170,7 @@
         "SCM_RESULT = SCM_PORT_ZLIB_INFO(port)->dict_adler;"))
 
 (define-cproc inflate-sync (port::<inflate-port>)
-  (call "Scm_InflateSync"))
+  (call Scm_InflateSync))
 
 ;; mode: scheme
 ;; end:

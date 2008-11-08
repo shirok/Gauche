@@ -605,18 +605,16 @@
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
   (match form
-    ((_ (? string? expr))
-     (typed-result *scm-type* expr))
-    ((_ typename expr)
+    [(_ [or [? string? expr] [? symbol? expr]])
+     (typed-result *scm-type* expr)]
+    [(_ typename expr)
      (unless (and (symbol? typename) (string? expr)) (err))
      (cond
-      (;(eq? typename '<void>)
-       (memq typename '(<void> void)) ;; tolerate old name for transition
+      [(memq typename '(<void> void)) ;; tolerate old name for transition
        (push-stmt! cproc #`",(caddr form)(,(args));")
-       (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);"))
-      (else
-       (typed-result (name->type typename) expr))))
-    (else (err))))
+       (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
+      [else (typed-result (name->type typename) expr)])]
+    [else (err)]))
 
 (define-method process-body-spec ((cproc <procstub>) form)
   (define (expand-stmt stmt)
