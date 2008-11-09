@@ -31,6 +31,7 @@
 * Quoted-printable encoding/decoding::  rfc.quoted-printable
 * SHA message digest::          rfc.sha
 * URI parsing and construction::  rfc.uri
+* Zlib compression library::    rfc.zlib
 * SLIB::                        slib
 * Functional XML parser::       sxml.ssax
 * SXML Query Language::         sxml.sxpath
@@ -1235,7 +1236,7 @@ See @ref{Exceptions} for the details of conditions.
 います。コンディションの詳細については@ref{Exceptions}を見てください。
 @c COMMON
 
-@deftp {Condition} <dbi-error>
+@deftp {Condition Type} <dbi-error>
 @c EN
 The base class of @code{dbi}-related conditions.  Inherits @code{<error>}.
 @c JP
@@ -1244,7 +1245,7 @@ The base class of @code{dbi}-related conditions.  Inherits @code{<error>}.
 @c COMMON
 @end deftp
 
-@deftp {Condition} <dbi-nonexistent-driver-error>
+@deftp {Condition Type} <dbi-nonexistent-driver-error>
 @c EN
 This condition is thrown by @code{dbi-connect} when it cannot
 find the specified driver.  Inherits @code{<dbi-error>}.
@@ -1262,7 +1263,7 @@ Holds the requested driver name as a string.
 @end defivar
 @end deftp
 
-@deftp {Condition} <dbi-unsupported-error>
+@deftp {Condition Type} <dbi-unsupported-error>
 @c EN
 This condition is thrown when the called method isn't supported 
 by the underlying driver.  Inherits @code{<dbi-error>}.
@@ -1272,7 +1273,7 @@ by the underlying driver.  Inherits @code{<dbi-error>}.
 @c COMMON
 @end deftp
 
-@deftp {Condition} <dbi-parameter-error>
+@deftp {Condition Type} <dbi-parameter-error>
 @c EN
 This condition is thrown when the number of parameters given to
 the prepared query doesn't match the ones in the prepared statement.
@@ -5618,7 +5619,7 @@ logs are put to it.
 @end defivar
 @end deftp
 
-@deftp {Condition} <ftp-error>
+@deftp {Condition Type} <ftp-error>
 @clindex ftp-error
 @c EN
 This type of exception is thrown when the ftp server returns an error code.
@@ -6153,7 +6154,7 @@ HTTP/1.0のサーバーとはうまく通信できません。
 @c COMMON
 @end deftp
 
-@deftp {Condition} <http-error>
+@deftp {Condition Type} <http-error>
 @clindex http-error
 @c EN
 This type of condition is raised when the server terminates
@@ -7460,7 +7461,7 @@ in an incomplete string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node URI parsing and construction, SLIB, SHA message digest, Library modules - Utilities
+@node URI parsing and construction, Zlib compression library, SHA message digest, Library modules - Utilities
 @section @code{rfc.uri} - URI parsing and construction
 @c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
 
@@ -7764,9 +7765,581 @@ operations on character sets).
 @c COMMON
 @end defvr
 
+@c ----------------------------------------------------------------------
+@node Zlib compression library, SLIB, URI parsing and construction, Library modules - Utilities
+@section @code{rfc.zlib} - zlib compression library
+@c NODE zlib圧縮ライブラリ, @code{rfc.zlib} - zlib圧縮ライブラリ
+
+@deftp {Module} rfc.zlib
+@mdindex rfc.zlib
+@c EN
+This module provides bindings to zlib compression library.
+Most features of zlib can be used through this module.
+
+Zlib supports reading and writing of
+Zlib compressed data format (RFC1950),
+DEFLATE compressed data format (RFC1951),
+and GZIP file format (RFC1052).  It also provides
+procedures to calculate CRC32 and Adler32 checksums.
+
+Compression and decompression are done through specialized ports.
+There are number of parameters to fine-tune compression; refer
+to zlib documentation for the details.
+@c JP
+このモジュールは、Zlib圧縮ライブラリに対するバインディングを提供します。
+Zlibのほとんどの機能がこのモジュールを通して利用可能です。
+
+Zlibは、ZLIB圧縮データフォーマット(RFC1950)、DEFLATE圧縮データフォー
+マット(RFC1951)、GZIPファイルフォーマット(RFC1952)の読み書きをサポー
+トするライブラリです。また、CRC32とAdler32チェックサムの計算のための
+関数も提供します。
+
+圧縮・展開機能はポートを通して提供されます。圧縮をチューンするパラ
+メータの詳細については、Zlibのドキュメントも合わせて参照してください。
+@c COMMON
+@end deftp
+
+@subheading Condition types
+
+@c EN
+The following condition types are defined to represent errors
+during processing by zlib.
+@c JP
+Zlib処理中のエラーを示すために、以下のコンディションタイプが定義されています。
+@c COMMON
+
+@deftp {Condition Type} <zlib-error>
+@c EN
+Subclass of @code{<error>} and superclass of the following
+condition types.  This class is an abstract class to catch any of the
+zlib-specific errors.  Zlib-specific errors raised by
+procedures in @code{rfc.zlib} are always an instance (or a compound
+condition including) one of the following specific classes.
+@c JP
+@code{<error>}のサブクラスで、以下のコンディションタイプのスーパークラスです。
+このクラスはzlib特有のエラーをまとめて捕捉するための抽象クラスとして設けられています。
+@code{rfc.zlib}が投げるZlib固有のエラーは常に以下の特定のクラスのインスタンス、
+もしくはそのインスタンスを含む複合コンディションです。
+@c COMMON
+@end deftp
+
+@deftp {Condition Type} <zlib-need-dict-error>
+@deftpx {Condition Type} <zlib-stream-error>
+@deftpx {Condition Type} <zlib-data-error>
+@deftpx {Condition Type} <zlib-memory-error>
+@deftpx {Condition Type} <zlib-version-error>
+@c EN
+Subclasses of @code{<zlib-error>}.  Those condition type correspond
+to zlib's 
+@code{Z_NEED_DICT_ERROR},
+@code{Z_STREAM_ERROR},
+@code{Z_DATA_ERROR},
+@code{Z_MEMORY_ERROR}, and
+@code{Z_VERSION_ERROR} errors.
+@c JP
+@code{<zlib-error>}のサブクラスです。それぞれ、Zlibの
+@code{Z_NEED_DICT_ERROR}、
+@code{Z_STREAM_ERROR}、
+@code{Z_DATA_ERROR}、
+@code{Z_MEMORY_ERROR}、
+@code{Z_VERSION_ERROR}
+に対応します。
+@c COMMON
+
+@c EN
+When an error occurs during reading data, a compound 
+condition of a subclass of @code{<zlib-error>} and
+@code{<io-read-error>} is raised.
+When an error occurs without I/O, a simple condition
+of a subclass of @code{<zlib-error>} is raised.
+Errors unrelated to zlib, such as invalid argument error,
+would be a simple @code{<error>} condition.
+@c JP
+データの読み出し時にエラーが発生した場合、
+@code{<zlib-error>}のサブクラスと
+@code{<io-read-error>}の合成コンディションが投げられます。入力が伴わ
+ない場合、例えば圧縮ストリームの初期化エラーのときには、合成され
+ていない@code{<zlib-error>}のサブクラスが投げられます。ただの引数の型の
+エラーのように、Zlibの関数が呼び出されない場合は、ただの@code{<error>}が
+投げられるかもしれません。
+@c COMMON
+@end deftp
+
+@subheading Compression/decompression ports
+
+@deftp {Class} <deflating-port>
+@deftpx {Class} <inflating-port>
+@c EN
+Compression and decompression functions are provided
+via ports.  A @emph{deflating port} is an output port
+that compresses the output data.  An @emph{inflating port}
+is an input that reads compressed data and decompress it.
+
+When an inflating port encounters a corrupted compressed
+data, a compound condition of @code{<io-read-error>}
+and @code{<zlib-data-error>} is raised during read operation.
+@c JP
+圧縮と展開の機能はポートを通じて提供されます。
+@emph{deflating port}は出力されたデータを圧縮する出力ポートです。
+@emph{inflating port}は圧縮されたデータソースからデータを展開しつつ
+読み込む入力ポートです。
+
+inflating portが読み出す圧縮データが壊れていた場合、読み出し時に
+@code{<io-read-error>}と@code{<zlib-data-error>}の
+合成コンディションが投げられます。
+@c COMMON
+@end deftp
+
+
+@defun open-deflating-port drain &keyword compression-level buffer-size window-bits memory-level strategy dictionary owner?
+@c EN
+Creates and returns an instance of @code{<deflating-port>},
+an output port that compresses the output data and sends 
+the compressed data to another output port @var{drain}.
+This combines the functionality of zlib's @code{deflateInit2()}
+and @code{deflateSetDictionary()}.
+@c JP
+新たな@code{<deflating-port>}のインスタンス、
+すなわち書き込まれたデータを圧縮し出力ポート@var{drain}に書き出す出力ポートを作成して、
+そのポートを返します。Zlibの関数@code{deflateInit2()}と
+@code{deflateSetDictionary()}とを合わせた手続きです。
+@c COMMON
+
+@c EN
+You can specify an exact integer between 1 and 9 (inclusive) to
+@var{compression-level}.  Larger integer means larger compression ratio.
+When omitted, a default compression level is used, which is usually 6.
+@c JP
+@var{compression-level}には1から9の整数を指定することができ、
+大きい数が高い圧縮率を意味します。引数が省略された場合は、
+デフォルトの圧縮レベルと見なされます。これは通常6です。
+@c COMMON
+
+@c EN
+The following constants are defined to specify @var{compression-level}
+conveniently:
+@c JP
+@var{compression-level}をわかりやすく指定するために以下の定数が定義されています。
+@c COMMON
+
+@defvr {Constant} Z_NO_COMPRESSION
+@defvrx {Constant} Z_BEST_SPEED
+@defvrx {Constant} Z_BEST_COMPRESSION
+@defvrx {Constant} Z_DEFAULT_COMPRESSION
+@end defvr
+
+@c EN
+The @var{buffer-size} argument specifies the buffer size of the port in bytes.
+The default is 4096.
+@c JP
+@var{buffer-size}は、ポートのバッファサイズを指定します。デフォルトは4096バイトです。
+@c COMMON
+
+@c EN
+The @var{window-bits} argument specifies the size of the window in
+exact integer.   Typically the value should be 
+between 8 and 15, inclusive, and it specifies the base two logarithm
+of the window size used in compression.
+Larger number yields better compression ratio, but more memory usage.
+The default value is 15.
+@c JP
+@var{window-bits}はウィンドウサイズを指定します。
+通常この値は8から15までの整数で、圧縮に使われるウィンドウサイズの
+2を底とするlogをとった値です。
+大きい数であるだけ圧縮率が高くなりますが、
+そのぶんメモリの使用量が増加します。デフォルトは15です。
+@c COMMON
+
+@c EN
+There are a couple of special modes specifiable by @var{window-bits}.
+When an integer between -8 and -15 is given to
+@var{window-bits}, the port produces a raw deflated data,
+that lacks zlib header and trailer.  In this case, Adler32 checksum isn't
+calculated.  The actual window size is determiend by the absolute value of 
+@var{window-bits}.
+@c JP
+@var{window-bits}よって、2つばかり特別なモードを指定することができます。
+@var{window-bits}に-8から-15の整数を指定された場合は、
+ZLIBヘッダとトレイラのない生のdeflateデータを作成します。
+この場合Adler32チェックサムも計算されません。
+実際のウィンドウサイズは@var{window-bits}の絶対値によって計算されます。
+@c COMMON
+
+@c EN
+When @var{window-bits} is between 24 and 31, the port uses GZIP encoding; 
+that is, instead of zlib wrapper,
+the compressed data is enveloped by simple gzip header and trailer.
+The gzip header added by this case doesn't have filenames, comments,
+header CRC and other data, and have zero modified time, and 255 (unknown)
+in the OS field.  The @code{zstream-adler32} procedure will return
+CRC32 checksum instead of Adler32.
+The actual window size is determined by @var{window-bits}-16.
+@c JP
+@var{window-bits}が24から31の間である場合、
+ポートはgzipエンコーディングを使うようになります。すなわち、
+zlibラッパの代わりに、シンプルなgzipヘッダとトレイラが圧縮データの前後に書き出されます。
+gzipヘッダはファイル名やその他のデータ、コメントを持たず、変更時刻は0、
+ヘッダCRCはなし、OS名は不明を意味する255になります。gzipストリームが書き出
+されるときは、@code{zstream-adler32}で取得できるチェックサムはAdler32
+ではなくCRC32になります。
+実際のウィンドウサイズは @var{window-bits}-16 で決定されます。
+@c COMMON
+
+@c EN
+The @var{memory-level} argument specifies how much memory
+should be allocated to keep the internal state during compression.
+1 means smallest memory, which causes slow and less compression.
+9 means fastest and best compression with largest amount of memory.
+The default value is 8.
+@c JP
+@var{memory-level}は、圧縮の内部状態のためにどれだけのメモリを割り当て
+るかを指定するパラメータです。1ではメモリの使用量は最小ですが、遅
+くなり圧縮率が低下します。9では高速な処理のためにメモリが最も多く
+使われます。デフォルトは8です。
+@c COMMON
+
+@c EN
+To fine tune compression algorithm, you can use the @var{strategy}
+argument.  The following constants are defined as the valid
+value as @var{strategy}:
+@c JP
+@var{strategy}で圧縮アルゴリズムをチューンできます。
+以下の定数が@var{strategy}に有効な値として定義されています。
+@c COMMON
+
+@defvr {Constant} Z_DEFAULT_STRATEGY
+@c EN
+The default strategy, suitable for most ordinary data.
+@c JP
+通常のデータに適する、デフォルトのアルゴリズムを使います。
+@c COMMON
+@end defvr
+
+@defvr {Constant} Z_FILTERED
+@c EN
+Suitable for data genereated by filters.
+Filtered data consists mostly of small values with a
+random distribution, and this makes the compression algorithm
+to use more huffman encoding and less string match.
+@c JP
+フィルタにより生成されたデータに適したアルゴリズムを使います。
+このようなデータは小さな値とランダムな分散を持つことが多いため、
+このアルゴリズムではハフマンエンコーディングをより優先し、
+文字列一致の使用をやや抑えます。
+@c COMMON
+@end defvr
+
+@defvr {Constant} Z_HUFFMAN_ONLY
+@c EN
+Force huffman encoding only (no string match).
+@c JP
+ハフマンエンコーディングのみを使います (文字列一致を使いません)。
+@c COMMON
+@end defvr
+
+@defvr {Constant} Z_RLE
+@c EN
+Limit match distance to 1 (that is, to force run-length encoding).
+It is as fast as @code{Z_HUFFMAN_ONLY} and gives better compression
+for png image data.
+@c JP
+マッチ距離を1に制限します (ランレングスエンコーディングを強制することになります)。
+@code{Z_HUFFMAN_ONLY}と同じくらい高速で、かつpngイメージデータに対して
+良い圧縮率が得られます。
+@c COMMON
+@end defvr
+
+@defvr {Constant} Z_FIXED
+@c EN
+Prohibits dynamic huffman encoding.  It allows a simple decoder
+for special applications.
+@c JP
+動的ハフマンエンコーディングを禁止します。特殊なアプリケーションで、
+単純なデコーダを使いたい場合に便利です。
+@c COMMON
+@end defvr
+
+@c EN
+The choice of @var{strategy} only affects compression ratio and
+speed.  Any choice produces correct and decompressable data.
+@c JP
+@var{strategy}の選択は圧縮率と速度にのみ影響を与えます。
+どの値を選んでも圧縮されたデータは正しく展開できます。
+@c COMMON
+
+@c EN
+You can give an initial dictionary to the @var{dictionary}
+argument to be used in compression.  
+The compressor and decompressor must use exactly the same dictionary.
+See the zlib documentation for the details.
+@c JP
+@var{dictionary}には圧縮に使う辞書を文字列で与えます。辞書を与える場合、
+圧縮と展開で全く同じものを使う必要があります。
+辞書の詳細についてはzlibのドキュメントを参照してください。
+@c COMMON
+
+@c EN
+By default, a deflating port leaves @var{drain} open
+after all conversion is done, i.e. the deflating port itself is
+closed.  If you don't want to bother closing @var{drain},
+give a true value to the @var{owner?} argument; then @var{drain}
+is closed after the deflating port is closed and all data
+is written out.
+@c JP
+デフォルトでは、deflating portはそれ自身がクローズされても
+@var{drain}をクローズしません。@var{drain}の後始末を気にしたくない
+場合は@var{owner?}引数に真の値を与えてください。
+その場合、deflating portがクローズされすべてのデータが書き出されたのちに
+@var{drain}は自動的にクローズされます。
+@c COMMON
+
+@c EN
+Note: You @emph{must} close a deflating port explicitly,
+or the compressed data can be chopped prematurely. 
+When you leave a deflating port open to be GCed, the
+finalizer will close it; however, the order in which
+finalizers are called is undeterministic, and it is
+possible that the @var{drain} port is closed before
+the deflating port is closed.  In such cases, 
+the deflating port's attempt to flush the buffered data
+and trailer will fail.
+@c JP
+注意: deflating portは必ず明示的にクローズしてください。
+そうしなければ圧縮データの終わりの部分(バッファされているデータおよびトレイラ)が
+@var{drain}に書き出されないかもしれません。
+ポートを明示的にクローズせずにガベージ・コレクタに任せた場合、
+出力ポートのクローズ手続きはファイナラザから呼び出されることになります。
+複数のごみに対してファイナライザの呼ばれる順番は不定なので、
+deflating portより先に@var{drain}のファイナライザが呼ばれて
+そのポートがクローズされてしまうことがあります。
+こうなると、圧縮データの終わりの部分の出力がエラーになってしまいます。
+@c COMMON
+@end defun
+
+@defun open-inflating-port source &keyword buffer-size window-bits dictionary owner?
+@c EN
+Takes an input port @var{source} from which a compressed data
+can be read, and creates and returns a new instance of
+@code{<inflating-port>}, that is, a port that allows
+decompressed data from it.
+This procedure covers zlib's functionarity of
+@code{inflateInit2()} and @code{inflateSetDictionary()}.
+@c JP
+圧縮データを読み出せる入力ポート@var{source}を取り、
+新たな@code{<inflating-port>}のインスタンス、すなわち
+展開されたデータを読み出すことのできる入力ポートを作成し、そのポートを返します。
+これはZlibの関数@code{inflateInit2()}、@code{inflateSetDictionary()}
+を合わせた手続きです。
+@c COMMON
+
+@c EN
+The meaning of @var{buffer-size} and @var{owner} are
+the same as @code{open-deflating-port}.
+@c JP
+@var{buffer-size}、@var{owner?}の意味は
+@code{open-deflating-port}と同じです。
+@c COMMON
+
+@c EN
+The meaning of @var{window-bits} is almost the same,
+except that if a value incresed by 32 is given, the inflating port
+automatically detects whether the source stream is
+zlib or gzip by its header.
+@c JP
+@var{window-bits}の意味もほぼ同じですが、
+32が足された値が与えられた場合にはZLIBとGZIPのヘッダ自動判定が有効になります。
+@c COMMON
+
+@c EN
+If the input data is compressed with specified dictionary,
+the same dictionary must be given to the @var{dictionary} argument.
+Otherwise, a compound condition of
+@code{<io-read-error>} and @code{<zlib-need-dict-error>} will be raised.
+@c JP
+@var{dictionary}は圧縮時の辞書と同じものを指定しなければなりません。
+辞書を使って圧縮されたデータを展開する際に、@var{dictionary}引数
+を指定しなかったり、異なる辞書を与えた場合は
+@code{<io-read-error>}と@code{<zlib-need-dict-error>}の
+合成コンディションが投げられます。
+@c COMMON
+@end defun
+
+@subheading Operations on inflating/deflating ports
+
+@defun zstream-total-in xflating-port
+@defunx zstream-total-out xflating-port
+@defunx zstream-adler32 xflating-port
+@defunx zstream-data-type xflating-port
+@c EN
+The @var{xflating-port} argument must be either 
+inflating and deflating port, or an error is raised.
+
+Returns the value of @code{total_in}, @code{total_out},
+@var{adler32}, and @code{data_type} fields of the @code{z_stream} 
+structure associated to the given inflating or deflating port,
+respectively.
+@c JP
+@var{xflating-port}はinflating portかdeflating portでなければ
+なりません。さもなくばエラーが通知されます。
+
+@code{z_stream}構造体の@code{total_in}、@code{total_out}、
+@code{adlre32}および@code{data_type}フィールドの値を返します。
+@c COMMON
+
+@c EN
+The value of @code{data_type} can be one of the following
+constants:
+@c JP
+@code{data_type}フィールドの値は以下の定数のうちのいずれかです。
+@c COMMON
+
+@defvr {Constant} Z_BINARY
+@defvrx {Constant} Z_TEXT
+@defvrx {Constant} Z_ASCII
+@defvrx {Constant} Z_UNKNOWN
+@end defvr
+
+@end defun
+
+@defun zstream-params-set! deflating-port &keyword compression-level strategy
+@c EN
+Changes compression level and/or strategy during compressing.
+@c JP
+圧縮率とストラテジを動的に変更するための手続きです。
+@c COMMON
+@end defun
+
+@defun zstream-dictionary-adler32 deflating-port
+@c EN
+When a dictionary is given to @code{open-deflating-port}, the
+dictionary's adler32 checksum is calculated.  This
+procedure returns the checksum.  If no dictionary has been given,
+this procedure returns @code{#f}.
+@c JP
+deflating portの作成時に辞書を指定すると、辞書のAdler32チェックサム
+が計算されます。この手続きはそのチェックサムを返します。
+@code{open-deflating-port}に辞書を与えなかったなら、@code{#f}が返ります。
+@c COMMON
+@end defun
+
+@defun deflating-port-full-flush deflating-port
+@c EN
+Flush the data buffered in the @var{deflating-port}, and
+resets compression state.  The decompression routine can
+skip the data to the full-flush point by @code{inflate-sync}.
+@c JP
+ポートのデータをフルフラッシュし、圧縮状態をリセットします。
+展開ルーチンは@code{inflate-sync}手続きを使って
+入力をこの地点までスキップすることができます。
+@c COMMON
+@end defun
+
+@defun inflate-sync inflating-port
+@c EN
+Skip the (possibly corrupted) compressed data up to the 
+next full-flush point marked by @code{deflating-port-full-flush}.
+You may want to use this procedure when you get 
+@code{<zlib-data-error>}.  Returns the number of bytes
+skipped when the next full-flush point is found, or
+@code{#f} when the input reaches EOF before finding the next point.
+@c JP
+圧縮データを、@code{deflating-port-full-flush}によって
+フルフラッシュしたポイントまで読み飛ばします。
+@code{<zlib-data-error>}が投げられたときに使用するとよいでしょう。
+フルフラッシュポイントに達したときは読み飛ばしたバイトの数を、EOFまで達
+したときは@code{#f}を返します。
+@c COMMON
+@end defun
+
+@subheading Miscellaneous API
+
+@defun zlib-version
+@c EN
+Returns Zlib's version in string.
+@c JP
+Zlibのバージョンを文字列で返します。
+@c COMMON
+@end defun
+
+@defun deflate-string string options @dots{}
+@c EN
+Compresses the given string and returns zlib-compressed data
+in a string.  All optional arguments are passed to
+@code{open-deflating-port} as they are.
+@c JP
+与えられた文字列を圧縮し、zlib圧縮されたデータを文字列で返します。
+すべてのオプション引数はそのまま@code{open-deflating-port}に渡されます。
+@c COMMON
+@end defun
+
+@defun inflate-string string options @dots{}
+@c EN
+Takes zlib-compressed data in string, and returns decompressed data
+in a string.  All optional arguments are passed to
+@code{open-inflating-port} as they are.
+@c JP
+Zlib圧縮されたデータを文字列で受け取り、展開されたデータを文字列で
+返します。
+すべてのオプション引数はそのまま@code{open-deflating-port}に渡されます。
+@c COMMON
+@end defun
+
+@defun gzip-encode-string string options @dots{}
+@defunx gzip-decode-string string options @dots{}
+@c EN
+Like @code{deflate-string} and @code{inflate-string}, but 
+uses the gzip format instead.  It is same as giving
+more than 15 to the @var{window-bits} argument of @code{deflate-string}
+and @code{inflate-string}.
+@c JP
+@code{deflate-string}および@code{inflate-string}と似ていますが、
+GZIPフォーマットを使います。これは
+@code{deflate-string}および@code{inflate-string}の
+@var{window-bits}に15以上の値指定するのと同じです。
+@c COMMON
+@end defun
+
+@defun crc32 string &optional checksum
+@c EN
+Returns CRC32 checksum of @var{string}.  If optional @var{checksum}
+is given, the returned checksum is an update of @var{checksum} by
+@var{string}.
+@c JP
+文字列@var{string}のCRC32チェックサムを計算して返します。@var{checksum}
+引数が与えられた場合は、それを@var{string}によるチェックサムで更新した
+値が返されます。
+@c COMMON
+@end defun
+
+@defun alder32 string &optional checksum
+@c EN
+Returns Adler32 checksum of @var{string}.  If optional @var{checksum}
+is given, the returned checksum is an update of @var{checksum} by
+@var{string}.
+
+Calculating Adler32 is faster than CRC32, but it is known to produce
+uneven distribution of hash values for small input.
+See RFC3309 for the detailed description.  If it matters,
+use CRC32 instead.
+@c JP
+文字列@var{string}のAdler32チェックサムを計算して返します。@var{checksum}
+引数が与えられた場合は、それを@var{string}によるチェックサムで更新した
+値が返されます。
+
+Adler32はCRC32と比較して高速に計算することが可能なアルゴリズムです
+が、小さなデータのチェックサムの信頼性にいくらか問題があることがわ
+かっています。詳しくはRFC3309を見てください。これが問題になる場合
+はCRC32を使用してください。
+@c COMMON
+@end defun
+
+
+
+
+
 
 @c ----------------------------------------------------------------------
-@node SLIB, Functional XML parser, URI parsing and construction, Library modules - Utilities
+@node SLIB, Functional XML parser, Zlib compression library, Library modules - Utilities
 @section @code{slib} - SLIB interface
 @c NODE SLIBインタフェース, @code{slib} - SLIBインタフェース
 
@@ -12954,7 +13527,7 @@ If it encounters an untokenizable string, it raises an
 @c COMMON
 @end defun
 
-@deffn {Condition} <sql-parse-error>
+@deffn {Condition Type} <sql-parse-error>
 @c EN
 A condition to indicate an SQL parse error.  Inherits @code{<error>}.
 @c JP
