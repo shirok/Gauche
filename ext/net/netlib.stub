@@ -159,15 +159,15 @@
 (define-cproc socket-status (sock::<socket>)
   (body <top>
         (case (-> sock status)
-          ((SCM_SOCKET_STATUS_NONE)      (result 'none))
-          ((SCM_SOCKET_STATUS_BOUND)     (result 'bound))
-          ((SCM_SOCKET_STATUS_LISTENING) (result 'listening))
-          ((SCM_SOCKET_STATUS_CONNECTED) (result 'connected))
-          ((SCM_SOCKET_STATUS_SHUTDOWN)  (result 'shutdonw))
-          ((SCM_SOCKET_STATUS_CLOSED)    (result 'closed))
-          (else
+          [(SCM_SOCKET_STATUS_NONE)      (result 'none)]
+          [(SCM_SOCKET_STATUS_BOUND)     (result 'bound)]
+          [(SCM_SOCKET_STATUS_LISTENING) (result 'listening)]
+          [(SCM_SOCKET_STATUS_CONNECTED) (result 'connected)]
+          [(SCM_SOCKET_STATUS_SHUTDOWN)  (result 'shutdonw)]
+          [(SCM_SOCKET_STATUS_CLOSED)    (result 'closed)]
+          [else
            (Scm_Error "invalid state of socket %S: implementation bugs?" sock)
-           (result SCM_UNDEFINED)))))
+           (result SCM_UNDEFINED)])))
 
 (define-cproc socket-fd (sock::<socket>)
   (expr <long> (cast long (-> sock fd))))
@@ -177,25 +177,25 @@
 (define-cproc socket-input-port (sock::<socket>
                                  &keyword (buffering #f) (buffered? #f))
   (body <top>
-        (let* ((bufmode :: int))
-          (cond ((not (SCM_FALSEP buffered?)) ;for backward compatibility
-                 (set! bufmode SCM_PORT_BUFFER_FULL))
-                (else
+        (let* ((bufmode::int))
+          (cond [(not (SCM_FALSEP buffered?)) ;for backward compatibility
+                 (set! bufmode SCM_PORT_BUFFER_FULL)]
+                [else
                  (set! bufmode (Scm_BufferingMode buffering
                                                   SCM_PORT_INPUT
-                                                  SCM_PORT_BUFFER_LINE))))
+                                                  SCM_PORT_BUFFER_LINE))])
           (result (Scm_SocketInputPort sock bufmode)))))
 
 (define-cproc socket-output-port (sock::<socket>
                                   &keyword (buffering #f) (buffered? #f))
   (body <top>
-        (let* ((bufmode :: int))
-          (cond ((not (SCM_FALSEP buffered?)) ;for backward compatibility
-                 (set! bufmode SCM_PORT_BUFFER_FULL))
-                (else
+        (let* ((bufmode::int))
+          (cond [(not (SCM_FALSEP buffered?)) ;for backward compatibility
+                 (set! bufmode SCM_PORT_BUFFER_FULL)]
+                [else
                  (set! bufmode (Scm_BufferingMode buffering
                                                   SCM_PORT_OUTPUT
-                                                  SCM_PORT_BUFFER_LINE))))
+                                                  SCM_PORT_BUFFER_LINE))])
           (result (Scm_SocketOutputPort sock bufmode)))))
 
 (if "defined(SHUT_RD) && defined(SHUD_WR) && defined(SHUT_RDWR)"
@@ -451,22 +451,20 @@
 ;; socket addresses
 (define-cproc inet-string->address (s::<const-cstring>)
   (body (<top> <top>)
-        "int proto;"
-        "ScmObj r = Scm_InetStringToAddress(s, &proto, NULL);"
-        "if (SCM_FALSEP(r)) {"
-        "  SCM_RESULT0 = SCM_RESULT1 = SCM_FALSE;"
-        "} else {"
-        "  SCM_RESULT0 = r; SCM_RESULT1 = SCM_MAKE_INT(proto);"
-        "}"))
+        (let* ((proto::int)
+               (r (Scm_InetStringToAddress s (& proto) NULL)))
+          (if (SCM_FALSEP r)
+            (result SCM_FALSE SCM_FALSE)
+            (result r (SCM_MAKE_INT proto))))))
 
 (define-cproc inet-string->address! (s::<const-cstring> buf::<uvector>)
-  (body "int proto;"
-        "ScmObj r = Scm_InetStringToAddress(s, &proto, buf);"
-        "if (SCM_FALSEP(r)) SCM_RESULT = SCM_FALSE;"
-        "else SCM_RESULT = SCM_MAKE_INT(proto);"))
+  (body <top>
+        (let* ((proto::int)
+               (r (Scm_InetStringToAddress s (& proto) buf)))
+          (if (SCM_FALSEP) (result SCM_FALSE) (result (SCM_MAKE_INT proto))))))
 
 (define-cproc inet-address->string (addr proto::<int>)
-  (call "Scm_InetAddressToString"))
+  (call Scm_InetAddressToString))
 
 ;; Local variables:
 ;; mode: scheme

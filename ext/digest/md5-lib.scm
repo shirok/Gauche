@@ -57,13 +57,6 @@
   (next-method)
   (slot-set! self 'context (make <md5-context>)))
 
-;(define (md5-digest)
-;  (let ((md5 (make <md5-context>)))
-;    (port-for-each
-;     (lambda (b) (%md5-update md5 b))
-;     (lambda () (read-block 4096)))
-;    (%md5-final md5)))
-
 (define-constant *md5-unit-len* 4096)
 
 (define (md5-digest)
@@ -114,7 +107,7 @@
    ScmMd5Context* "Scm_Md5ContextClass" ()
    ()
    [allocator
-    (let* ((md5 :: ScmMd5Context* (SCM_ALLOCATE ScmMd5Context klass)))
+    (let* ((md5::ScmMd5Context* (SCM_ALLOCATE ScmMd5Context klass)))
       (SCM_SET_CLASS md5 klass)
       (MD5Init (& (-> md5 ctx)))
       (return (SCM_OBJ md5)))])
@@ -127,7 +120,7 @@
                       (SCM_UVECTOR_ELEMENTS (SCM_U8VECTOR data))
                       (SCM_U8VECTOR_SIZE (SCM_U8VECTOR data)))]
           [(SCM_STRINGP data)
-           (let* ((b :: (const ScmStringBody*) (SCM_STRING_BODY data)))
+           (let* ((b::(const ScmStringBody*) (SCM_STRING_BODY data)))
              (MD5Update (& (-> md5 ctx))
                         (cast (const unsigned char*) (SCM_STRING_BODY_START b))
                         (SCM_STRING_BODY_SIZE b)))]
@@ -136,7 +129,7 @@
 
  (define-cproc %md5-final (md5::<md5-context>)
    (body <top>
-         (let* ((digest :: (.array (unsigned char) (16))))
+         (let* ((digest::(.array (unsigned char) (16))))
            (MD5Final digest (& (-> md5 ctx)))
            (result (Scm_MakeString (cast (char *) digest)
                                    16 16
