@@ -685,6 +685,7 @@ dnl Tests for extensions
 m4_include([ext/charconv/charconv.ac])
 m4_include([ext/dbm/dbm.ac])
 m4_include([ext/net/net.ac])
+m4_include([ext/zlib/zlib.ac])
 
 dnl ===========================================================
 dnl Cross compiling
@@ -739,11 +740,15 @@ dnl ===========================================================
 dnl Show some of the configuration results, for developer's
 dnl convenience.
 
+OPTDBMS=`echo "$DBM_SCMFILES" | sed s/\.scm//g`
+if test "$ac_cv_use_zlib" = yes; then OPTZLIB=" zlib"; else OPTZLIB=" "; fi
+
 AC_MSG_RESULT(
 [
 This Gauche has been configured with the following parameters:
-         version: $GAUCHE_VERSION
-       multibyte: $GAUCHE_CHAR_ENCODING
-            slib: $SLIB_DIR
-          thread: $GAUCHE_THREAD_TYPE
+           version: $GAUCHE_VERSION
+         multibyte: $GAUCHE_CHAR_ENCODING
+              slib: $SLIB_DIR
+            thread: $GAUCHE_THREAD_TYPE
+  optional modules: $OPTDBMS$OPTZLIB
 ])

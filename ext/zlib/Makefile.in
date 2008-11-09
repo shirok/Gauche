@@ -4,10 +4,14 @@ top_srcdir   = @top_srcdir@
 
 include ../Makefile.ext
 
+XCPPFLAGS = @ZLIB_CPPFLAGS@
+XLDFLAGS  = @ZLIB_LDFLAGS@
+XLIBS     = -lz
+
 SCM_CATEGORY = rfc
 
-LIBFILES = zlib.$(SOEXT)
-SCMFILES = zlib.scm
+LIBFILES = @ZLIB_ARCHFILES@
+SCMFILES = @ZLIB_SCMFILES@
 
 OBJECTS = zlib_head.$(OBJEXT) gauche-zlib.$(OBJEXT) zliblib.$(OBJEXT) zlib_tail.$(OBJEXT)
 
@@ -19,7 +23,7 @@ EXTRA_INCLUDES = -I$(srcdir)/../uvector
 all : $(LIBFILES)
 
 zlib.$(SOEXT) : $(OBJECTS)
-	$(MODLINK) zlib.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) -lz $(LIBS)
+	$(MODLINK) zlib.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 $(OBJECTS) : gauche-zlib.h
 

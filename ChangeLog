@@ -1,3 +1,9 @@
+2008-11-08  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac, ext/zlib/zlib.ac, ext/zlib/Makefile.in: Check zlib
+	  availability, and allow --with-zlib configure option to specify
+	  zlib location.
+
 2008-11-07  Shiro Kawai  <shiro@acm.org>
 
 	* ext/zlib/*: Renamed deflate-port/inflate-port for deflating-port/

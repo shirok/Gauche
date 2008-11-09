@@ -10,6 +10,12 @@
 (use gauche.process)
 
 (test-start "rfc.zlib")
+
+;; bail out if we aren't configured to build zlib
+(unless (file-exists? (string-append "zlib." (gauche-dso-suffix)))
+  (test-end)
+  (exit 0))
+
 (load "./zlib")
 (import rfc.zlib)
 (test-module 'rfc.zlib)
