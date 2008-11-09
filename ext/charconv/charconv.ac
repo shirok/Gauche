@@ -1,8 +1,7 @@
 dnl
 dnl Configure ext/charconv
-dnl This file is included by the toplevel configure.in
+dnl This file is included by the toplevel configure.ac
 dnl
-dnl $Id: charconv.ac,v 1.1 2003-07-09 11:37:25 shirok Exp $
 
 # ext/charconv --------------------------------------------
 
@@ -10,7 +9,7 @@ dnl
 dnl process with-iconv, with-iconv-lib
 dnl
 
-dnl Use iconv unless explicitly 
+dnl Use iconv unless explicitly specified otherwise
 ac_cv_use_iconv=yes
 ICONV_NAME=iconv
 ICONV_LIB=
@@ -19,10 +18,11 @@ ICONV_LDFLAGS=
 
 AC_ARG_WITH(iconv,
   AC_HELP_STRING([--with-iconv=PATH],
-                 [Use iconv function installed under PATH. 
+                 [Use iconv library installed under PATH. 
 Gauche's charconv module uses iconv if it is available.
-If your system has iconv function in non-trivial location, 
-specify this option.
+If your system has iconv library in non-trivial location, 
+specify this option.  The include file is looked for in PATH/include,
+and the library file is looked for in PATH/lib.
 If you don't want to use iconv for some reason, say --without-iconv. ]),
  [
   case $with_iconv in
@@ -36,7 +36,7 @@ If you don't want to use iconv for some reason, say --without-iconv. ]),
 AC_ARG_WITH(iconv-lib,
   AC_HELP_STRING([--with-iconv-lib=LIB],
                  [If your system needs to use external library for iconv
-and which is not libiconv, specify it.
+and whose name is not libiconv, specify it.
 For example, if you need -lconv to use iconv, say --with-iconv-lib=conv]),
  [
   ICONV_NAME="$with_iconv_lib"; ICONV_LIB="-l$with_iconv_lib" 
