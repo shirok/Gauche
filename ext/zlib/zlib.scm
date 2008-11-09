@@ -38,13 +38,13 @@
 (define-module rfc.zlib
   (use gauche.uvector)
   (export zlib-version adler32 crc32
-          open-deflate-port open-inflate-port
+          open-deflating-port open-inflating-port
           deflate-string inflate-string
           <zlib-error> <zlib-need-dict-error>
           <zlib-stream-error> <zlib-data-error>
           <zlib-memory-error> <zlib-version-error>
-          <deflate-port> <inflate-port>
-          deflate-port-full-flush
+          <deflating-port> <inflating-port>
+          deflating-port-full-flush
           zstream-total-in zstream-total-out
           zstream-params-set!
           zstream-adler32
@@ -63,37 +63,37 @@
 (dynamic-load "zlib")
 
 ;; body
-(define (open-deflate-port source . args)
-  (let-keywords* args ((compression-level Z_DEFAULT_COMPRESSION)
-                       (window-bits 15)
-                       (memory-level 8)
-                       (strategy Z_DEFAULT_STRATEGY)
-                       (dictionary #f)
-                       (buffer-size 0)
-                       (owner? #f))
-    (%open-deflate-port source compression-level
+(define (open-deflating-port source :key
+                             (compression-level Z_DEFAULT_COMPRESSION)
+                             (window-bits 15)
+                             (memory-level 8)
+                             (strategy Z_DEFAULT_STRATEGY)
+                             (dictionary #f)
+                             (buffer-size 0)
+                             (owner? #f))
+  (%open-deflating-port source compression-level
                         window-bits memory-level
                         strategy dictionary
-                        buffer-size owner?)))
+                        buffer-size owner?))
 
 ;; utility procedures
 (define (deflate-string str . args)
   (call-with-output-string
     (lambda (p)
-      (let1 p2 (apply open-deflate-port p args)
+      (let1 p2 (apply open-deflating-port p args)
         (display str p2)
         (close-output-port p2)))))
 
 (define (inflate-string str . args)
   (port->string
-   (apply open-inflate-port
+   (apply open-inflating-port
           (open-input-string str)
           args)))
 
 (define (gzip-encode-string str . args)
   (call-with-output-string
     (lambda (p)
-      (let1 p2 (apply open-deflate-port p
+      (let1 p2 (apply open-deflating-port p
                       :window-bits (+ 15 16)
                       args)
         (display str p2)
@@ -101,7 +101,7 @@
 
 (define (gzip-decode-string str . args)
   (port->string
-   (apply open-inflate-port
+   (apply open-inflating-port
           (open-input-string str)
           :window-bits (+ 15 16)
           args)))

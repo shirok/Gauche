@@ -1,5 +1,9 @@
 2008-11-07  Shiro Kawai  <shiro@acm.org>
 
+	* ext/zlib/*: Renamed deflate-port/inflate-port for deflating-port/
+	  inflating-port, since deflate/inflate are verbs.
+	  (zlib-version): made it a function instead of a constant.
+
 	* lib/gauche/cgen/stub.scm (process-call-spec): Allow symbol as the
 	  C function name in 'call' clause of define-cproc.  (I'm not sure
 	  why I didn't allow this.  Maybe just an overlook.)

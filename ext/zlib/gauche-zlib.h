@@ -63,20 +63,20 @@ typedef struct ScmZlibInfoRec {
 #define SCM_PORT_ZLIB_INFO(p) ((ScmZlibInfo*)(p)->src.buf.data)
 #define SCM_PORT_ZSTREAM(p)   (SCM_PORT_ZLIB_INFO(p)->strm)
 
-SCM_CLASS_DECL(Scm_DeflatePortClass);
-#define SCM_CLASS_DEFLATE_PORT  (&Scm_DeflatePortClass)
-#define SCM_DEFLATE_PORT_P(obj) SCM_ISA(obj, SCM_CLASS_DEFLATE_PORT)
-SCM_CLASS_DECL(Scm_InflatePortClass);
-#define SCM_CLASS_INFLATE_PORT  (&Scm_InflatePortClass)
-#define SCM_INFLATE_PORT_P(obj) SCM_ISA(obj, SCM_CLASS_INFLATE_PORT)
+SCM_CLASS_DECL(Scm_DeflatingPortClass);
+#define SCM_CLASS_DEFLATING_PORT  (&Scm_DeflatingPortClass)
+#define SCM_DEFLATING_PORT_P(obj) SCM_ISA(obj, SCM_CLASS_DEFLATING_PORT)
+SCM_CLASS_DECL(Scm_InflatingPortClass);
+#define SCM_CLASS_INFLATING_PORT  (&Scm_InflatingPortClass)
+#define SCM_INFLATING_PORT_P(obj) SCM_ISA(obj, SCM_CLASS_INFLATING_PORT)
 
-SCM_EXTERN ScmObj Scm_MakeDeflatePort(ScmPort *source, int level,
-                                  int window_bits, int memlevel,
-                                  int strategy, ScmObj dict,
-                                  int bufsiz, int ownerp);
-SCM_EXTERN ScmObj Scm_MakeInflatePort(ScmPort *sink, int bufsiz,
-                                      int window_bits, ScmObj dict,
-                                      int ownerp);
+SCM_EXTERN ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
+                                        int window_bits, int memlevel,
+                                        int strategy, ScmObj dict,
+                                        int bufsiz, int ownerp);
+SCM_EXTERN ScmObj Scm_MakeInflatingPort(ScmPort *sink, int bufsiz,
+                                        int window_bits, ScmObj dict,
+                                        int ownerp);
 
 /*================================================================
  * Conditions

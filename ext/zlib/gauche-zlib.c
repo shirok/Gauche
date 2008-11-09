@@ -51,11 +51,11 @@ static ScmClass *port_cpl[] = {
     NULL
 };
 
-SCM_DEFINE_BASE_CLASS(Scm_DeflatePortClass,
+SCM_DEFINE_BASE_CLASS(Scm_DeflatingPortClass,
                       ScmPort, /* instance type */
                       NULL, NULL, NULL, NULL, port_cpl);
 
-SCM_DEFINE_BASE_CLASS(Scm_InflatePortClass,
+SCM_DEFINE_BASE_CLASS(Scm_InflatingPortClass,
                       ScmPort, /* instance type */
                       NULL, NULL, NULL, NULL, port_cpl);
 
@@ -225,7 +225,7 @@ static ScmObj port_name(const char *type, ScmPort *source)
 }
 
 /*================================================================
- * Deflate port
+ * Deflating port
  */
 static int deflate_flusher(ScmPort *port, int cnt, int forcep)
 {
@@ -301,13 +301,13 @@ static int zlib_fileno(ScmPort *port)
     return Scm_PortFileNo(SCM_PORT_ZLIB_INFO(port)->remote);
 }
 
-ScmObj Scm_MakeDeflatePort(ScmPort *source, int level,
-                           int window_bits, int memlevel,
-                           int strategy, ScmObj dict,
-                           int bufsiz, int ownerp)
+ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
+                             int window_bits, int memlevel,
+                             int strategy, ScmObj dict,
+                             int bufsiz, int ownerp)
 {
     ScmPortBuffer bufrec;
-    ScmObj name = port_name("deflate", source);
+    ScmObj name = port_name("deflating", source);
     ScmZlibInfo *info = SCM_NEW(ScmZlibInfo);
     z_streamp strm = SCM_NEW_ATOMIC2(z_streamp, sizeof(z_stream));
     int r;
@@ -361,11 +361,12 @@ ScmObj Scm_MakeDeflatePort(ScmPort *source, int level,
     bufrec.filenum = zlib_fileno;
     bufrec.data = (void*)info;
 
-    return Scm_MakeBufferedPort(SCM_CLASS_DEFLATE_PORT, name, SCM_PORT_OUTPUT, TRUE, &bufrec);
+    return Scm_MakeBufferedPort(SCM_CLASS_DEFLATING_PORT, name,
+                                SCM_PORT_OUTPUT, TRUE, &bufrec);
 }
 
 /*================================================================
- * Inflate port
+ * Inflating port
  */
 
 static int inflate_filler(ScmPort *port, int mincnt)
@@ -456,12 +457,12 @@ static int inflate_ready(ScmPort *port)
     return 0;
 }
 
-ScmObj Scm_MakeInflatePort(ScmPort *sink, int bufsiz,
-                           int window_bits, ScmObj dict,
-                           int ownerp)
+ScmObj Scm_MakeInflatingPort(ScmPort *sink, int bufsiz,
+                             int window_bits, ScmObj dict,
+                             int ownerp)
 {
     ScmPortBuffer bufrec;
-    ScmObj name = port_name("inflate", sink);
+    ScmObj name = port_name("inflating", sink);
     ScmZlibInfo *info = SCM_NEW(ScmZlibInfo);
     z_streamp strm = SCM_NEW_ATOMIC2(z_streamp, sizeof(z_stream));
     int r;
@@ -510,7 +511,8 @@ ScmObj Scm_MakeInflatePort(ScmPort *sink, int bufsiz,
     bufrec.filenum = zlib_fileno;
     bufrec.data = (void*)info;
 
-    return Scm_MakeBufferedPort(SCM_CLASS_INFLATE_PORT, name, SCM_PORT_INPUT, TRUE, &bufrec);
+    return Scm_MakeBufferedPort(SCM_CLASS_INFLATING_PORT, name,
+                                SCM_PORT_INPUT, TRUE, &bufrec);
 }
 
 ScmObj Scm_InflateSync(ScmPort *port)
@@ -571,9 +573,9 @@ ScmObj Scm_Init_zlib(void)
     /* Create the module if it doesn't exist yet. */
     mod = SCM_MODULE(SCM_FIND_MODULE("rfc.zlib", TRUE));
 
-    Scm_InitStaticClass(&Scm_DeflatePortClass, "<deflate-port>",
+    Scm_InitStaticClass(&Scm_DeflatingPortClass, "<deflating-port>",
                         mod, NULL, 0);
-    Scm_InitStaticClass(&Scm_InflatePortClass, "<inflate-port>",
+    Scm_InitStaticClass(&Scm_InflatingPortClass, "<inflating-port>",
                         mod, NULL, 0);
 
     cond_meta = Scm_ClassOf(SCM_OBJ(SCM_CLASS_CONDITION));

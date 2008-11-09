@@ -39,10 +39,15 @@
 #include \"gauche/uvector.h\"
 "
 
-(define-type <deflate-port> "ScmPort*" "deflate port"
-  "SCM_DEFLATE_PORT_P" "SCM_PORT")
-(define-type <inflate-port> "ScmPort*" "inflate port"
-  "SCM_INFLATE_PORT_P" "SCM_PORT")
+(define-type <deflating-port> "ScmPort*" "deflating port"
+  "SCM_DEFLATING_PORT_P" "SCM_PORT")
+(define-type <inflating-port> "ScmPort*" "inflating port"
+  "SCM_INFLATING_PORT_P" "SCM_PORT")
+
+"#define SCM_XFLATING_PORT_P(x) (SCM_INFLATING_PORT_P(x)||SCM_DEFLATING_PORT_P(x))"
+;; proxy type for shorter code.  <xflating-port> isn't really a Scheme class.
+(define-type <xflating-port> "ScmPort*" "inflating or deflating port"
+  "SCM_XFLATING_PORT_P" "SCM_PORT")
 
 (define-cfn data_element (data::ScmObj
                           start::(const unsigned char**)
@@ -58,7 +63,8 @@
         [else
          (Scm_Error "u8vector or string required, but got: %S" data)]))
 
-(define-constant zlib-version (c "SCM_MAKE_STR(zlibVersion())"))
+(define-cproc zlib-version ()
+  (expr <top> (SCM_MAKE_STR (zlibVersion))))
 
 (define-enum Z_NO_COMPRESSION)
 (define-enum Z_BEST_SPEED)
@@ -88,88 +94,71 @@
           (data_element data (& start) (& siz))
           (result (crc32 crc start siz)))))
 
-(define-cproc %open-deflate-port (source::<output-port>
-                                  compression-level::<fixnum>
-                                  window-bits::<fixnum>
-                                  memory-level::<fixnum>
-                                  strategy::<fixnum>
-                                  dictionary
-                                  buffer-size::<fixnum>
-                                  owner?)
+(define-cproc %open-deflating-port (source::<output-port>
+                                    compression-level::<fixnum>
+                                    window-bits::<fixnum>
+                                    memory-level::<fixnum>
+                                    strategy::<fixnum>
+                                    dictionary
+                                    buffer-size::<fixnum>
+                                    owner?)
   (body <top>
         (result
-         (Scm_MakeDeflatePort source compression-level window-bits
-                              memory-level strategy dictionary
-                              buffer-size (not (SCM_FALSEP owner?))))))
+         (Scm_MakeDeflatingPort source compression-level window-bits
+                                memory-level strategy dictionary
+                                buffer-size (not (SCM_FALSEP owner?))))))
 
-(define-cproc open-inflate-port (sink::<input-port>
-                                 &keyword (buffer-size::<fixnum> 0)
-                                          (window-bits::<fixnum> 15)
-                                          (dictionary #f)
-                                          (owner? #f))
+(define-cproc open-inflating-port (sink::<input-port>
+                                   &keyword (buffer-size::<fixnum> 0)
+                                   (window-bits::<fixnum> 15)
+                                   (dictionary #f)
+                                   (owner? #f))
   (body <top>
         (result
-         (Scm_MakeInflatePort sink buffer-size window-bits dictionary
-                              (not (SCM_FALSEP owner?))))))
+         (Scm_MakeInflatingPort sink buffer-size window-bits dictionary
+                                (not (SCM_FALSEP owner?))))))
 
-(define-cproc zstream-total-in (port::<port>)
-  (body <ulong>
-        (unless (or (SCM_DEFLATE_PORT_P port) (SCM_INFLATE_PORT_P port))
-          (Scm_Error "deflate port or inflate port required, but got %S" port))
-        (result (-> (SCM_PORT_ZSTREAM port) total-in))))
+(define-cproc zstream-total-in (port::<xflating-port>)
+  (expr <ulong> (-> (SCM_PORT_ZSTREAM port) total-in)))
 
-(define-cproc zstream-total-out (port::<port>)
-  (body <ulong>
-        (unless (or (SCM_DEFLATE_PORT_P port) (SCM_INFLATE_PORT_P port))
-          (Scm_Error "deflate port or inflate port required, but got %S" port))
-        (result (-> (SCM_PORT_ZSTREAM port) total-out))))
+(define-cproc zstream-total-out (port::<xflating-port>)
+  (expr <ulong> (-> (SCM_PORT_ZSTREAM port) total-out)))
 
-(define-cproc zstream-params-set! (port::<deflate-port>
+(define-cproc zstream-params-set! (port::<deflating-port>
                                    &keyword (compression-level #f)
                                             (strategy #f))
   (body <void>
-        "ScmZlibInfo *info = SCM_PORT_ZLIB_INFO(port);"
-        "z_streamp strm = SCM_PORT_ZSTREAM(port);"
-        "int lv, st;"
-        "if (SCM_FALSEP(compression_level)) {"
-        "  lv = info->level;"
-        "} else if (SCM_INTP(compression_level)) {"
-        "  lv = SCM_INT_VALUE(compression_level);"
-        "} else {"
-        "  Scm_Error(\"integer required, but got %S\", compression_level);"
-        "}"
-        "if (SCM_FALSEP(strategy)) {"
-        "  st = info->strategy;"
-        "} else if (SCM_INTP(strategy)) {"
-        "  st = SCM_INT_VALUE(strategy);"
-        "} else {"
-        "  Scm_Error(\"integer required, but got %S\", strategy);"
-        "}"
-        "int r = deflateParams(strm, lv, st);"
-        "if (r != Z_OK) {"
-        "  Scm_ZlibError(r, \"deflateParams failed: %s\", strm->msg);"
-        "}"))
+        (let* ([info::ScmZlibInfo* (SCM_PORT_ZLIB_INFO port)]
+               [strm::z_streamp (SCM_PORT_ZSTREAM port)]
+               [lv::int]
+               [st::int])
+          (cond
+           [(SCM_FALSEP compression-level) (set! lv (-> info level))]
+           [(SCM_INTP compression-level) (set! lv (SCM_INT_VALUE compression-level))]
+           [else (SCM_TYPE_ERROR compression-level "fixnum or #f")])
+          (cond
+           [(SCM_FALSEP strategy) (set! st (-> info strategy))]
+           [(SCM_INTP strategy) (set! st (SCM_INT_VALUE strategy))]
+           [else (SCM_TYPE_ERROR strategy "fixnum or #f")])
+          (let* ([r::int (deflateParams strm lv st)])
+            (unless (== r Z_OK)
+              (Scm_ZlibError r "deflateParams failed: %s" (-> strm msg)))))))
 
-(define-cproc deflate-port-full-flush (port::<deflate-port>)
+(define-cproc deflating-port-full-flush (port::<deflating-port>)
   (body <void>
-        "SCM_PORT_ZLIB_INFO(port)->flush = Z_FULL_FLUSH;"
-        "Scm_Flush(port);"))
+        (set! (-> (SCM_PORT_ZLIB_INFO port) flush) Z_FULL_FLUSH)
+        (Scm_Flush port)))
 
-(define-cproc zstream-adler32 (port::<deflate-port>)
-  (body <ulong>
-        "SCM_RESULT = SCM_PORT_ZSTREAM(port)->adler;"))
+(define-cproc zstream-adler32 (port::<deflating-port>)
+  (expr <ulong> (-> (SCM_PORT_ZSTREAM port) adler)))
 
-(define-cproc zstream-data-type (port::<deflate-port>)
-  (body <int>
-        "SCM_RESULT = SCM_PORT_ZSTREAM(port)->data_type;"))
+(define-cproc zstream-data-type (port::<deflating-port>)
+  (expr <int> (-> (SCM_PORT_ZSTREAM port) data_type)))
 
-(define-cproc zstream-dictionary-adler32 (port::<port>)
-  (body "if (!(SCM_DEFLATE_PORT_P(port) || SCM_INFLATE_PORT_P(port))) {"
-        "  Scm_Error(\"deflate port or inflate port required, but got %S\", port);"
-        "}"
-        "SCM_RESULT = SCM_PORT_ZLIB_INFO(port)->dict_adler;"))
+(define-cproc zstream-dictionary-adler32 (port::<xflating-port>)
+  (expr <top> (-> (SCM_PORT_ZLIB_INFO port) dict_adler)))
 
-(define-cproc inflate-sync (port::<inflate-port>)
+(define-cproc inflate-sync (port::<inflating-port>)
   (call Scm_InflateSync))
 
 ;; mode: scheme
