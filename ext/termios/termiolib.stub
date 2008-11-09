@@ -72,67 +72,70 @@
 (define-enum B38400)
 
 (define-cproc sys-tcgetattr (port-or-fd)
-  "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
-  ScmSysTermios *term = SCM_SYS_TERMIOS(Scm_MakeSysTermios());
-  if (tcgetattr(fd, &term->term) < 0) {
-    Scm_SysError(\"tcgetattr failed\");
-  }
-  SCM_RETURN(SCM_OBJ(term));")
+  (body <top>
+        (let* ((fd::int (Scm_GetPortFd port-or-fd TRUE))
+               (term::ScmSysTermios* (SCM_SYS_TERMIOS (Scm_MakeSysTermios))))
+          (when (< (tcgetattr fd (& (-> term term))) 0)
+            (Scm_SysError "tcgetattr failed"))
+          (result (SCM_OBJ term)))))
 
 (define-cproc sys-tcsetattr (port-or-fd option::<fixnum> term::<sys-termios>)
   (body <void>
-        "int fd = Scm_GetPortFd(port_or_fd, TRUE);"
-        "if (tcsetattr(fd, option, &term->term) < 0) {"
-        "  Scm_SysError(\"tcsetattr failed\");"
-        "}"))
+        (let* ((fd::int (Scm_GetPortFd port-or-fd TRUE)))
+          (when (< (tcsetattr fd option (& (-> term term))) 0)
+            (Scm_SysError "tcsetattr failed")))))
 
 (define-cproc sys-tcsendbreak (port-or-fd duration::<fixnum>)
-  "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
-  SCM_RETURN(tcsendbreak(fd, duration) < 0 ? SCM_FALSE : SCM_TRUE);")
+  (body <boolean>
+        (let* ((fd::int (Scm_GetPortFd port-or-fd TRUE)))
+          (result (>= (tcsendbreak fd duration) 0)))))
 
 (define-cproc sys-tcdrain (port-or-fd)
   (body <void>
-        "int fd = Scm_GetPortFd(port_or_fd, TRUE);"
-        "if (tcdrain(fd) < 0) Scm_SysError(\"tcdrain failed\");"))
+        (let* ((fd::int (Scm_GetPortFd port-or-fd TRUE)))
+          (when (< (tcdrain fd) 0) (Scm_SysError "tcdrain failed")))))
 
 (define-cproc sys-tcflush (port-or-fd queue::<int>)
   (body <void>
-        "int fd = Scm_GetPortFd(port_or_fd, TRUE);"
-        "if (tcflush(fd, queue) < 0) Scm_SysError(\"tcflush failed\");"))
+        (let* ((fd::int (Scm_GetPortFd port-or-fd TRUE)))
+          (when (< (tcflush fd queue) 0) (Scm_SysError "tcflush failed")))))
 
 (define-cproc sys-tcflow (port-or-fd action::<int>)
   (body <void>
-        "int fd = Scm_GetPortFd(port_or_fd, TRUE);"
-        "if (tcflow(fd, action) < 0) Scm_SysError(\"tcflow failed\");"))
+        (let* ((fd::int (Scm_GetPortFd port-or-fd TRUE)))
+          (when (< (tcflow fd action) 0) (Scm_SysError "tcflow failed")))))
 
 (define-cproc sys-tcgetpgrp (port-or-fd)
-  "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
-  pid_t r = tcgetpgrp(fd);
-  if (r < 0) { Scm_SysError(\"tcgetpgrp failed\"); }
-  SCM_RETURN(Scm_MakeInteger(r));")
+  (body <int>
+        (let* ((fd::int (Scm_GetPortFd port-or-fd TRUE))
+               (r::pid_t (tcgetpgrp fd)))
+          (when (< r 0) (Scm_SysError "tcgetpgrp failed"))
+          (result r))))
 
 (define-cproc sys-tcsetpgrp (port-or-fd pgrp::<int>)
   (body <void>
-        "int fd = Scm_GetPortFd(port_or_fd, TRUE);"
-        "if (tcsetpgrp(fd, pgrp) < 0) Scm_SysError(\"tcsetpgrp failed\");"))
+        (let* ((fd::int (Scm_GetPortFd port-or-fd TRUE)))
+          (when (< (tcsetpgrp fd pgrp) 0) (Scm_SysError "tcsetpgrp failed")))))
 
 (define-cproc sys-cfgetispeed (term::<sys-termios>)
-  "  speed_t s;
-  s = cfgetispeed(&term->term);
-  SCM_RETURN(Scm_MakeInteger(s));")
+  (body <int>
+        (let* ((s::speed_t (cfgetispeed (& (-> term term)))))
+          (result s))))
 
 (define-cproc sys-cfsetispeed (term::<sys-termios> speed::<int>)
   (body <void>
-        "if (cfsetispeed(&term->term, speed) < 0) Scm_SysError(\"cfsetispeed\");"))
+        (when (< (cfsetispeed (& (-> term term)) speed) 0)
+          (Scm_SysError "cfsetispeed failed"))))
 
 (define-cproc sys-cfgetospeed (term::<sys-termios>)
-  "  speed_t s;
-  s = cfgetospeed(&term->term);
-  SCM_RETURN(Scm_MakeInteger(s));")
+  (body <int>
+        (let* ((s::speed_t (cfgetospeed (& (-> term term)))))
+          (result s))))
 
 (define-cproc sys-cfsetospeed (term::<sys-termios> speed::<int>)
   (body <void>
-        "if (cfsetospeed(&term->term, speed) < 0) Scm_SysError(\"cfsetispeed\");"))
+        (when (< (cfsetospeed (& (-> term term)) speed) 0)
+          (Scm_SysError "cfsetospeed failed"))))
 
 ;; pty interface
 (when "defined(HAVE_OPENPTY)"

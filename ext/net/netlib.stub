@@ -461,7 +461,7 @@
   (body <top>
         (let* ((proto::int)
                (r (Scm_InetStringToAddress s (& proto) buf)))
-          (if (SCM_FALSEP) (result SCM_FALSE) (result (SCM_MAKE_INT proto))))))
+          (if (SCM_FALSEP r) (result SCM_FALSE) (result (SCM_MAKE_INT proto))))))
 
 (define-cproc inet-address->string (addr proto::<int>)
   (call Scm_InetAddressToString))
