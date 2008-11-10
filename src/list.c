@@ -35,7 +35,6 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/memory.h"
 
 /*
  * Classes
@@ -59,8 +58,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_NullClass, NULL, NULL, NULL, NULL, list_cpl);
 
 ScmObj Scm_Cons(ScmObj car, ScmObj cdr)
 {
-    ScmPair *z;
-    SCM_MALLOC_WORDS(z, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
+    ScmPair *z = SCM_NEW(ScmPair);
     SCM_SET_CAR(z, car);
     SCM_SET_CDR(z, cdr);
     return SCM_OBJ(z);
@@ -68,9 +66,8 @@ ScmObj Scm_Cons(ScmObj car, ScmObj cdr)
 
 ScmObj Scm_Acons(ScmObj caar, ScmObj cdar, ScmObj cdr)
 {
-    ScmPair *y, *z;
-    SCM_MALLOC_WORDS(y, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
-    SCM_MALLOC_WORDS(z, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
+    ScmPair *y = SCM_NEW(ScmPair);
+    ScmPair *z = SCM_NEW(ScmPair);
     SCM_SET_CAR(y, caar);
     SCM_SET_CDR(y, cdar);
     SCM_SET_CAR(z, SCM_OBJ(y));
@@ -117,14 +114,12 @@ ScmObj Scm_VaList(va_list pvar)
     {
 	if (SCM_NULLP(start)) {
             start = SCM_OBJ(SCM_NEW(ScmPair));
-            /*SCM_SET_CLASS(start, SCM_CLASS_PAIR);*/
             SCM_SET_CAR(start, obj);
             SCM_SET_CDR(start, SCM_NIL);
             cp = start;
         } else {
             ScmObj item;
             item = SCM_OBJ(SCM_NEW(ScmPair));
-            /*SCM_SET_CLASS(item, SCM_CLASS_PAIR);*/
             SCM_SET_CDR(cp, item);
             SCM_SET_CAR(item, obj);
             SCM_SET_CDR(item, SCM_NIL);
@@ -335,11 +330,15 @@ ScmObj Scm_Reverse(ScmObj list)
 
     if (!SCM_PAIRP(list)) return list;
 
-    SCM_NEW_PAIR(p, SCM_NIL, SCM_NIL);
+    p = SCM_NEW(ScmPair);
+    SCM_SET_CAR(p, SCM_NIL);
+    SCM_SET_CDR(p, SCM_NIL);
     result = SCM_OBJ(p);
     SCM_FOR_EACH(cp, list) {
 	SCM_SET_CAR(result, SCM_CAR(cp));
-        SCM_NEW_PAIR(p, SCM_NIL, result);
+        p = SCM_NEW(ScmPair);
+        SCM_SET_CAR(p, SCM_NIL);
+        SCM_SET_CDR(p, result);
         result = SCM_OBJ(p);
     }
     return SCM_CDR(result);

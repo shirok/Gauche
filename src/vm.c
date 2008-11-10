@@ -35,7 +35,6 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/memory.h"
 #include "gauche/class.h"
 #include "gauche/exception.h"
 #include "gauche/builtin-syms.h"

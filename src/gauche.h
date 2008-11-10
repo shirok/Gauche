@@ -115,8 +115,6 @@ SCM_DECL_BEGIN
 #define SCM_DEBUG_HELPER      TRUE
 #endif
 
-#define SCM_INLINE_MALLOC_PRIMITIVES 0
-
 #ifdef GAUCHE_USE_PTHREADS
 # include <gauche/pthread.h>
 #else  /* !GAUCHE_USE_PTHREADS */
