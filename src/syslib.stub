@@ -519,7 +519,7 @@
   [(_ statfn)
    `(let* ((s :: ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat)))
            (r :: int))
-      (SCM_SYSCALL r (,statfn path (& (-> s statrec))))
+      (SCM_SYSCALL r (,statfn path (SCM_SYS_STAT_STAT s)))
       (when (< r 0) (Scm_SysError "%s failed for %s" ,(x->string statfn) path))
       (result s))])
    
@@ -545,7 +545,7 @@
                (r  :: int))
           (cond
            [(< fd 0) (result SCM_FALSE)]
-           [else (SCM_SYSCALL r (fstat fd (& (-> s statrec))))
+           [else (SCM_SYSCALL r (fstat fd (SCM_SYS_STAT_STAT s)))
                  (when (< r 0) (Scm_SysError "fstat failed for %d" fd))
                  (result (SCM_OBJ s))]))))
 

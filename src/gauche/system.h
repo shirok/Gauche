@@ -97,6 +97,7 @@ SCM_CLASS_DECL(Scm_SysStatClass);
 #define SCM_CLASS_SYS_STAT    (&Scm_SysStatClass)
 #define SCM_SYS_STAT(obj)     ((ScmSysStat*)(obj))
 #define SCM_SYS_STAT_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_STAT))
+#define SCM_SYS_STAT_STAT(obj) (&SCM_SYS_STAT(obj)->statrec)
 
 SCM_EXTERN ScmObj Scm_MakeSysStat(void); /* returns empty SysStat */
 

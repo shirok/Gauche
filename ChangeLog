@@ -1,3 +1,9 @@
+2008-11-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/system.h (SCM_SYS_STAT_STAT): wrap access to the statrec
+	  field by a macro.
+	* src/system.c, src/syslib.stub: changed accordingly.
+
 2008-11-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/memory.h: Removed, since Boehm GC's inline macros has been

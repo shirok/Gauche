@@ -679,37 +679,37 @@ ScmObj Scm_MakeSysStat(void)
 
 static ScmObj stat_type_get(ScmSysStat *stat)
 {
-  if (S_ISDIR(stat->statrec.st_mode)) return (SCM_SYM_DIRECTORY);
-  if (S_ISREG(stat->statrec.st_mode)) return (SCM_SYM_REGULAR);
-  if (S_ISCHR(stat->statrec.st_mode)) return (SCM_SYM_CHARACTER);
-  if (S_ISBLK(stat->statrec.st_mode)) return (SCM_SYM_BLOCK);
-  if (S_ISFIFO(stat->statrec.st_mode)) return (SCM_SYM_FIFO);
+    if (S_ISDIR(SCM_SYS_STAT_STAT(stat)->st_mode)) return (SCM_SYM_DIRECTORY);
+    if (S_ISREG(SCM_SYS_STAT_STAT(stat)->st_mode)) return (SCM_SYM_REGULAR);
+    if (S_ISCHR(SCM_SYS_STAT_STAT(stat)->st_mode)) return (SCM_SYM_CHARACTER);
+    if (S_ISBLK(SCM_SYS_STAT_STAT(stat)->st_mode)) return (SCM_SYM_BLOCK);
+    if (S_ISFIFO(SCM_SYS_STAT_STAT(stat)->st_mode)) return (SCM_SYM_FIFO);
 #ifdef S_ISLNK
-  if (S_ISLNK(stat->statrec.st_mode)) return (SCM_SYM_SYMLINK);
+    if (S_ISLNK(SCM_SYS_STAT_STAT(stat)->st_mode)) return (SCM_SYM_SYMLINK);
 #endif
 #ifdef S_ISSOCK
-  if (S_ISSOCK(stat->statrec.st_mode)) return (SCM_SYM_SOCKET);
+    if (S_ISSOCK(SCM_SYS_STAT_STAT(stat)->st_mode)) return (SCM_SYM_SOCKET);
 #endif
-  return (SCM_FALSE);
+    return (SCM_FALSE);
 }
 
 static ScmObj stat_perm_get(ScmSysStat *stat)
 {
-    return Scm_MakeIntegerFromUI(stat->statrec.st_mode & 0777);
+    return Scm_MakeIntegerFromUI(SCM_SYS_STAT_STAT(stat)->st_mode & 0777);
 }
 
 static ScmObj stat_size_get(ScmSysStat *stat)
 {
-    return Scm_OffsetToInteger(stat->statrec.st_size);
+    return Scm_OffsetToInteger(SCM_SYS_STAT_STAT(stat)->st_size);
 }
 
 
 #define STAT_GETTER_UI(name) \
   static ScmObj SCM_CPP_CAT3(stat_, name, _get)(ScmSysStat *s) \
-  { return Scm_MakeIntegerFromUI((u_long)s->statrec.SCM_CPP_CAT(st_, name)); }
+  { return Scm_MakeIntegerFromUI((u_long)(SCM_SYS_STAT_STAT(s)->SCM_CPP_CAT(st_, name))); }
 #define STAT_GETTER_TIME(name) \
   static ScmObj SCM_CPP_CAT3(stat_, name, _get)(ScmSysStat *s) \
-  { return Scm_MakeSysTime(s->statrec.SCM_CPP_CAT(st_, name)); }
+  { return Scm_MakeSysTime(SCM_SYS_STAT_STAT(s)->SCM_CPP_CAT(st_, name)); }
 
 STAT_GETTER_UI(mode)
 STAT_GETTER_UI(ino)
