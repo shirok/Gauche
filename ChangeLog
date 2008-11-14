@@ -1,3 +1,9 @@
+2008-11-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/package/compile.scm (gauche-package-compile-and-link):
+	  Fix the :output keyword arg for the filnal DSO file affecting
+	  individual C-file compilation inadvertently.
+
 2008-11-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/system.h (SCM_SYS_STAT_STAT): wrap access to the statrec

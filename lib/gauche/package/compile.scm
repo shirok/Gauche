@@ -124,9 +124,10 @@
         (run #`"',CONFIG' --fixup-extension ',module-name'")
         (let1 objs (map (lambda (src)
                           (cond
-                           ((equal? (path-extension src) OBJEXT) src)
-                           (else (apply gauche-package-compile src args)
-                                 (sys-basename (path-swap-extension src OBJEXT)))))
+                           [(equal? (path-extension src) OBJEXT) src]
+                           [else (apply gauche-package-compile src
+                                        (delete-keyword :output args))
+                                 (sys-basename (path-swap-extension src OBJEXT))]))
                         `(,head.c ,@files ,tail.c))
           (apply gauche-package-link sofile objs args)
           sofile)))))
