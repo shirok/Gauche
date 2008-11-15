@@ -580,6 +580,15 @@
 (define-insn BNGT    0 addr #f ($w/numcmp r >  ($branch* (not r))))
 (define-insn BNGE    0 addr #f ($w/numcmp r >= ($branch* (not r))))
 
+;; Compare LREF(n,m) and VAL0 and branch.  This is not a simple combination
+;; of LREF + BNLT etc. (which would compare stack top and LREF).  These insns
+;; save one stack operation.  The compiler recognizes the pattern and
+;; emits these.  See pass3/if-numcmp.
+(define-insn LREF-VAL0-BNLT 2 addr #f ($arg-source lref ($insn-body BNLT)))
+(define-insn LREF-VAL0-BNLE 2 addr #f ($arg-source lref ($insn-body BNLE)))
+(define-insn LREF-VAL0-BNGT 2 addr #f ($arg-source lref ($insn-body BNGT)))
+(define-insn LREF-VAL0-BNGE 2 addr #f ($arg-source lref ($insn-body BNGE)))
+
 ;; BNUMNEI(i) <else-offset> ; combined CONSTI(i) + BNUMNE
 ;; BNEQC <else-offset>     ; branch if immediate constant is not eq? to VAL0
 ;; BNEQVC <else-offset>    ; branch if immediate constant is not eqv? to VAL0
@@ -595,9 +604,9 @@
         (or (and (SCM_INTP v0)    (== (SCM_INT_VALUE v0) imm))
             (and (SCM_FLONUMP v0) (== (SCM_FLONUM_VALUE v0) imm))))))))
 (define-insn BNEQC       0 obj+addr #f
-  (let* ((z)) (FETCH-OPERAND z) INCR-PC ($branch* (not (SCM_EQ VAL0 z)))))
+  (let* ([z]) (FETCH-OPERAND z) INCR-PC ($branch* (not (SCM_EQ VAL0 z)))))
 (define-insn BNEQVC      0 obj+addr #f
-  (let* ((z)) (FETCH-OPERAND z) INCR-PC ($branch* (not (Scm_EqvP VAL0 z)))))
+  (let* ([z]) (FETCH-OPERAND z) INCR-PC ($branch* (not (Scm_EqvP VAL0 z)))))
 
 ;; RF
 ;; RT
@@ -677,14 +686,6 @@
     (set! (ENV-DATA e off) VAL0)
     NEXT1))
 
-;; shortcut for the first frame, small offset
-;; NB: this doesn't help much. will go away.
-(define-insn LSET0       0 none #f ($obsoleted LSET0))
-(define-insn LSET1       0 none #f ($obsoleted LSET1))
-(define-insn LSET2       0 none #f ($obsoleted LSET2))
-(define-insn LSET3       0 none #f ($obsoleted LSET3))
-(define-insn LSET4       0 none #f ($obsoleted LSET4))
-
 ;; GSET <location>
 ;;  LOCATION may be a symbol or gloc
 ;;
@@ -742,8 +743,6 @@
 ;;  (1,0) (1,1) (1,2)
 ;;  (2,0) (2,1)
 ;;  (3,0)
-;; 
-
 (define-insn LREF0  0 none #f ($lrefNN 0 0))
 (define-insn LREF1  0 none #f ($lrefNN 0 1))
 (define-insn LREF2  0 none #f ($lrefNN 0 2))
@@ -754,11 +753,6 @@
 (define-insn LREF20 0 none #f ($lrefNN 2 0))
 (define-insn LREF21 0 none #f ($lrefNN 2 1))
 (define-insn LREF30 0 none #f ($lrefNN 3 0))
-
-;; these will go away:
-(define-insn LREF4  0 none #f ($obsoleted LREF4))
-(define-insn LREF13 0 none #f ($obsoleted LREF13))
-(define-insn LREF14 0 none #f ($obsoleted LREF14))
 
 ;; combined instrction
 (define-insn LREF-PUSH   2 none  (LREF PUSH))
@@ -772,11 +766,6 @@
 (define-insn LREF20-PUSH 0 none  (LREF20 PUSH))
 (define-insn LREF21-PUSH 0 none  (LREF21 PUSH))
 (define-insn LREF30-PUSH 0 none  (LREF30 PUSH))
-
-;; these will go away:
-(define-insn LREF4-PUSH  0 none #f ($obsoleted LREF4-PUSH))
-(define-insn LREF13-PUSH 0 none #f ($obsoleted LREF13-PUSH))
-(define-insn LREF14-PUSH 0 none #f ($obsoleted LREF14-PUSH))
 
 ;; GREF <location>
 ;;  LOCATION may be a symbol or GLOC object.
@@ -838,7 +827,7 @@
 ;;  as well.
 ;;
 (define-insn CONS        0 none #f
-  (let* ((ca)) (POP-ARG ca) ($result (Scm_Cons ca VAL0))))
+  (let* ([ca]) (POP-ARG ca) ($result (Scm_Cons ca VAL0))))
 (define-insn CONS-PUSH   0 none   (CONS PUSH))
 
 (define-insn CAR         0 none #f
@@ -846,12 +835,14 @@
     ($type-check v SCM_PAIRP "pair")
     ($result (SCM_CAR v))))
 (define-insn CAR-PUSH    0 none   (CAR PUSH))
+(define-insn-lref+ LREF-CAR 0 none (LREF CAR))
 
 (define-insn CDR         0 none #f
   ($w/argr v
            ($type-check v SCM_PAIRP "pair")
            ($result (SCM_CDR v))))
 (define-insn CDR-PUSH    0 none   (CDR PUSH))
+(define-insn-lref+ LREF-CDR 0 none (LREF CDR))
 
 (define-cise-stmt $cxxr
   [(_ a b)
@@ -999,6 +990,7 @@
 (define-insn SETTER      0 none #f ($w/argr v ($result (Scm_Setter v))))
 
 (define-insn VALUES      1 none #f (begin ($values) NEXT))
+(define-insn VALUES-RET  1 none (VALUES RET) (begin ($values) (RETURN-OP) NEXT))
 
 (define-insn VEC         1 none #f      ; vector
   (let* ([nargs::int (SCM_VM_INSN_ARG code)]
@@ -1341,17 +1333,3 @@
 ;; Experimental
 ;;
 
-;; Compare LREF(n,m) and VAL0 and branch.  This is not a simple combination
-;; of LREF + BNLT etc. (which would compare stack top and LREF).  These insns
-;; save one stack operation.  The compiler recognizes the pattern and
-;; emits these.  See pass3/if-numcmp.
-(define-insn LREF-VAL0-BNLT 2 addr #f ($arg-source lref ($insn-body BNLT)))
-(define-insn LREF-VAL0-BNLE 2 addr #f ($arg-source lref ($insn-body BNLE)))
-(define-insn LREF-VAL0-BNGT 2 addr #f ($arg-source lref ($insn-body BNGT)))
-(define-insn LREF-VAL0-BNGE 2 addr #f ($arg-source lref ($insn-body BNGE)))
-
-(define-insn-lref+ LREF-CAR 0 none (LREF CAR))
-(define-insn-lref+ LREF-CDR 0 none (LREF CDR))
-
-(define-insn VALUES-RET 1 none (VALUES RET)
-  (begin ($values) (RETURN-OP) NEXT))

@@ -1,5 +1,9 @@
 2008-11-14  Shiro Kawai  <shiro@acm.org>
 
+	* src/vminsn.scm: Removed obsoleted VM instructions, and rearranged
+	  the order of some instructions.  Developers should rebuild from
+	  maintainer-clean to make sure precompiled files are in sync.
+
 	* src/stdlib.stub (%complex->real/imag): Removed; this API is
 	  superfluous, since calling real-part and imag-part separately
 	  doesn't hurt performance at all.
