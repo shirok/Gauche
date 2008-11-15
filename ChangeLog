@@ -1,5 +1,9 @@
 2008-11-14  Shiro Kawai  <shiro@acm.org>
 
+	* src/stdlib.stub (%complex->real/imag): Removed; this API is
+	  superfluous, since calling real-part and imag-part separately
+	  doesn't hurt performance at all.
+
 	* src/gauche.h etc: Integrated fast flonum extension (FFX)
 	  (cf. http://portal.acm.org/citation.cfm?id=1408687 ).   This
 	  boosts up speed of programs involving heavy floating-point number

@@ -264,14 +264,6 @@
 (define-cproc make-polar (r::<real> t::<real>)
   (call Scm_MakeComplexPolar))
 
-(define-cproc %complex->real/imag (z)
-  "if (SCM_EXACTP(z)) { SCM_RETURN(Scm_Values2(z, SCM_MAKE_INT(0))); }
-  else if (SCM_FLONUMP(z)) { SCM_RETURN(Scm_Values2(z, Scm_MakeFlonum(0.0))); }
-  else if (!SCM_COMPNUMP(z)) {
-    Scm_Error(\"number required, but got %S\", z);
-    SCM_RETURN(SCM_UNDEFINED);
-  } else { SCM_RETURN(Scm_Values2(Scm_MakeFlonum(SCM_COMPNUM_REAL(z)), Scm_MakeFlonum(SCM_COMPNUM_IMAG(z))));}")
-
 ;; we don't use Scm_RealPart and Scm_ImagPart, for preserving exactness
 ;; and avoiding extra allocation.
 (define-cproc real-part (z::<number>)
