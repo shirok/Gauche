@@ -97,7 +97,7 @@
 ;;   and identifier->symbol in extlib.stub.
 
 (define-cproc make-identifier (name::<symbol> mod::<module> env::<list>)
-  (call "Scm_MakeIdentifier"))
+  (call Scm_MakeIdentifier))
 
 ;;
 ;; Symbol table
@@ -115,31 +115,22 @@
 ;; or not.
 (define-cproc find-const-binding (id::<identifier>)
   (body <top>
-        (let* ((g :: ScmGloc* (Scm_FindBinding (-> id module) (-> id name) 0)))
-          (cond ((or (not g)
+        (let* ([g::ScmGloc* (Scm_FindBinding (-> id module) (-> id name) 0)])
+          (cond [(or (not g)
                      (not (SCM_GLOC_CONST_P g))
                      (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NOINLINE_CONSTS))
-                 (result SCM_FALSE))
-                (else
-                 (result (SCM_GLOC_GET g)))))))
+                 (result SCM_FALSE)]
+                [else
+                 (result (SCM_GLOC_GET g))]))))
 
 (define-cproc %insert-binding (mod::<module> name::<symbol> value)
-  (call "Scm_Define"))
+  (call Scm_Define))
+(define-cproc %export-symbols (mod::<module> names) (call Scm_ExportSymbols))
+(define-cproc %import-modules (mod::<module> mods) (call Scm_ImportModules))
 
-(define-cproc %export-symbols (mod::<module> names)
-  (call "Scm_ExportSymbols"))
-
-(define-cproc %import-modules (mod::<module> mods)
-  (call "Scm_ImportModules"))
-
-(define-cproc gloc-ref (gloc::<gloc>)
-  (call "SCM_GLOC_GET"))
-
-(define-cproc gloc-set! (gloc::<gloc> value)
-  (call "SCM_GLOC_SET"))
-
-(define-cproc gloc-const? (gloc::<gloc>)
-  (call <boolean> "SCM_GLOC_CONST_P"))
+(define-cproc gloc-ref (gloc::<gloc>) (call SCM_GLOC_GET))
+(define-cproc gloc-set! (gloc::<gloc> value) (call SCM_GLOC_SET))
+(define-cproc gloc-const? (gloc::<gloc>) (call <boolean> SCM_GLOC_CONST_P))
 
 ;;
 ;; Compiler interface
@@ -410,48 +401,41 @@
 
 ;; %imax - max for unsigned integer only, unsafe.
 (define-cproc %imax (x y)
-  "if (SCM_WORD(x) > SCM_WORD(y)) SCM_RETURN(x);
-   else SCM_RETURN(y);")
+  (body <top> (if (> (SCM_WORD x) (SCM_WORD y)) (result x) (result y))))
 
 ;; (%map1c proc lis c) = (map (cut proc <> c) lis)
-"static ScmObj map1c_cc(ScmObj result, void *data[])
- {
-   ScmObj proc = SCM_OBJ(data[0]);
-   ScmObj r = SCM_OBJ(data[1]);
-   ScmObj lis = SCM_OBJ(data[2]);
-   ScmObj c = SCM_OBJ(data[3]);
-   if (SCM_NULLP(lis)) {
-     SCM_RETURN(Scm_ReverseX(Scm_Cons(result, r)));
-   } else {
-     data[1] = Scm_Cons(result, r);
-     data[2] = SCM_CDR(lis);
-     Scm_VMPushCC(map1c_cc, data, 4);
-     SCM_RETURN(Scm_VMApply2(proc, SCM_CAR(lis), c));
-   }
- }"
+(define-cfn map1c_cc (result data::void**) :static
+  (let* ([proc (SCM_OBJ (aref data 0))]
+         [r    (SCM_OBJ (aref data 1))]
+         [lis  (SCM_OBJ (aref data 2))]
+         [c    (SCM_OBJ (aref data 3))])
+    (cond [(SCM_NULLP lis) (return (Scm_ReverseX (Scm_Cons result r)))]
+          [else
+           (set! (aref data 1) (Scm_Cons result r)
+                 (aref data 2) (SCM_CDR lis))
+           (Scm_VMPushCC map1c_cc data 4)
+           (return (Scm_VMApply2 proc (SCM_CAR lis) c))])))
 
 (define-cproc %map1c (proc lis c)
-  (body
-   "void *data[4];"
-   "if (SCM_NULLP(lis)) { SCM_RESULT = SCM_NIL; }"
-   "else { "
-   "  data[0] = proc;"
-   "  data[1] = SCM_NIL;"
-   "  data[2] = SCM_CDR(lis);"
-   "  data[3] = c;"
-   "  Scm_VMPushCC(map1c_cc, data, 4);"
-   "  SCM_RETURN(Scm_VMApply2(proc, SCM_CAR(lis), c));"
-   "}"))
+  (body <top>
+        (let* ([data::(.array void* [4])])
+          (cond [(SCM_NULLP lis) (result SCM_NIL)]
+                [else
+                 (set! (aref data 0) proc
+                       (aref data 1) SCM_NIL
+                       (aref data 2) (SCM_CDR lis)
+                       (aref data 3) c)
+                 (Scm_VMPushCC map1c_cc data 4)
+                 (result (Scm_VMApply2 proc (SCM_CAR lis) c))]))))
 
 ;; (%map1cc proc lis c1 c2) = (map (cut proc <> c1 c2) lis)
 (define-cfn map1cc-cc (result (data :: void**)) :static
-  (let* ((proc (SCM_OBJ (aref data 0)))
-         (r    (SCM_OBJ (aref data 1)))
-         (lis  (SCM_OBJ (aref data 2)))
-         (c1   (SCM_OBJ (aref data 3)))
-         (c2   (SCM_OBJ (aref data 4))))
-    (cond [(SCM_NULLP lis)
-           (return (Scm_ReverseX (Scm_Cons result r)))]
+  (let* ([proc (SCM_OBJ (aref data 0))]
+         [r    (SCM_OBJ (aref data 1))]
+         [lis  (SCM_OBJ (aref data 2))]
+         [c1   (SCM_OBJ (aref data 3))]
+         [c2   (SCM_OBJ (aref data 4))])
+    (cond [(SCM_NULLP lis) (return (Scm_ReverseX (Scm_Cons result r)))]
           [else
            (set! (aref data 1) (Scm_Cons result r)
                  (aref data 2) (SCM_CDR lis))
@@ -462,7 +446,7 @@
   (body <top>
         (if (SCM_NULLP lis)
           (result SCM_NIL)
-          (let* ((|data[5]| :: void*))
+          (let* ([data::(.array void* [5])])
             (set! (aref data 0) proc
                   (aref data 1) SCM_NIL
                   (aref data 2) (SCM_CDR lis)
@@ -474,7 +458,7 @@
 ;; (%map-cons lis1 lis2) = (map cons lis1 lis2)
 (define-cproc %map-cons (lis1 lis2)
   (body <top>
-        (let* ((h SCM_NIL) (t SCM_NIL))
+        (let* ([h SCM_NIL] [t SCM_NIL])
           (while (and (SCM_PAIRP lis1) (SCM_PAIRP lis2))
             (SCM_APPEND1 h t (Scm_Cons (SCM_CAR lis1) (SCM_CAR lis2)))
             (set! lis1 (SCM_CDR lis1) lis2 (SCM_CDR lis2)))
@@ -486,12 +470,12 @@
 ;;   here to test particular C APIs which wouldn't be called from normal
 ;;   Scheme programs.
 
-(define-cproc %apply-rec0 (p)            (call "Scm_ApplyRec0"))
-(define-cproc %apply-rec1 (p a)          (call "Scm_ApplyRec1"))
-(define-cproc %apply-rec2 (p a b)        (call "Scm_ApplyRec2"))
-(define-cproc %apply-rec3 (p a b c)      (call "Scm_ApplyRec3"))
-(define-cproc %apply-rec4 (p a b c d)    (call "Scm_ApplyRec4"))
-(define-cproc %apply-rec  (p &rest args) (call "Scm_ApplyRec"))
+(define-cproc %apply-rec0 (p)            (call Scm_ApplyRec0))
+(define-cproc %apply-rec1 (p a)          (call Scm_ApplyRec1))
+(define-cproc %apply-rec2 (p a b)        (call Scm_ApplyRec2))
+(define-cproc %apply-rec3 (p a b c)      (call Scm_ApplyRec3))
+(define-cproc %apply-rec4 (p a b c d)    (call Scm_ApplyRec4))
+(define-cproc %apply-rec  (p &rest args) (call Scm_ApplyRec))
 
 ;; To add autocurrying flag
 (define-cproc %procedure-currying-set! (p::<procedure> f::<boolean>)

@@ -45,13 +45,9 @@
 ;; Internal routines
 ;;
 
-"static ScmObj call_fallback_proc(ScmObj *args, int nargs, ScmGeneric *gf)
- {
-  ScmObj proc = SCM_OBJ(gf->data);
-  ScmObj arglist = Scm_ArrayToList(args, nargs);
-  SCM_RETURN(Scm_VMApply(proc, arglist));
- }
-"
+(define-cfn call-fallback-proc (args::ScmObj* nargs::int gf::ScmGeneric*)
+  :static
+  (return (Scm_VMApply (SCM_OBJ (-> gf data)) (Scm_ArrayToList args nargs))))
 
 ;; Ensure a named generic function is defined within the given module.
 ;; This is called from method definition (either explicit definition by
@@ -66,7 +62,7 @@
 
 (define-cproc %ensure-generic-function (name::<symbol> module::<module>)
   (body <top>
-        (let* ((val (Scm_GlobalVariableRef module name 0)))
+        (let* ([val (Scm_GlobalVariableRef module name 0)])
           (when (not (Scm_TypeP val SCM_CLASS_GENERIC))
             (if (or (SCM_SUBRP val) (SCM_CLOSUREP val))
               (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) call_fallback_proc val))
@@ -76,8 +72,7 @@
 
 (define-cproc %make-next-method (gf methods::<list> args::<list>)
   (body <top>
-        (let* ((argv :: ScmObj*)
-               (argc :: int))
+        (let* ([argv::ScmObj*] [argc::int])
           (unless (Scm_TypeP gf SCM_CLASS_GENERIC)
             (Scm_Error "generic function requied, but got %S" gf))
           (for-each (lambda (mp)
@@ -95,75 +90,71 @@
           (result (-> method data)))))
 
 (define-cproc %start-class-redefinition! (k::<class>)
-  (call <void> "Scm_StartClassRedefinition"))
+  (call <void> Scm_StartClassRedefinition))
 (define-cproc %commit-class-redefinition! (k::<class> newk)
-  (call <void> "Scm_CommitClassRedefinition"))
+  (call <void> Scm_CommitClassRedefinition))
 (define-cproc %check-class-binding (name module::<module>)
-  (call "Scm_CheckClassBinding"))
+  (call Scm_CheckClassBinding))
 (define-cproc %replace-class-binding! (k::<class> newk::<class>)
-  (call <void> "Scm_ReplaceClassBinding"))
+  (call <void> Scm_ReplaceClassBinding))
 (define-cproc %add-direct-subclass! (super::<class> sub::<class>)
-  (call <void> "Scm_AddDirectSubclass"))
+  (call <void> Scm_AddDirectSubclass))
 (define-cproc %delete-direct-subclass! (super::<class> sub::<class>)
-  (call <void> "Scm_DeleteDirectSubclass"))
+  (call <void> Scm_DeleteDirectSubclass))
 (define-cproc %add-direct-method! (super::<class> m::<method>)
-  (call <void> "Scm_AddDirectMethod"))
+  (call <void> Scm_AddDirectMethod))
 (define-cproc %delete-direct-method! (super::<class> m::<method>)
-  (call <void> "Scm_DeleteDirectMethod"))
+  (call <void> Scm_DeleteDirectMethod))
 
 (define-cproc %transplant-instance! (src dst)
-  (call <void> "Scm_TransplantInstance"))
+  (call <void> Scm_TransplantInstance))
 
 ;;
 ;; Public interface
 ;;
 
-(define-cproc class-of (obj)
-  (call "Scm_VMClassOf"))
+(define-cproc class-of (obj) (call Scm_VMClassOf))
 
 ;; current-class-of doesn't updates OBJ, and returns possibly the old class
 ;; which has been redefined.  Should only be used in class redefinition
 ;; routines.
-(define-cproc current-class-of (obj)
-  (expr "SCM_OBJ(Scm_ClassOf(obj))"))
+(define-cproc current-class-of (obj) (expr (SCM_OBJ (Scm_ClassOf obj))))
 
-(define-cproc is-a? (obj klass::<class>)
-  (inliner IS-A)
-  (call "Scm_VMIsA"))
+(define-cproc is-a? (obj klass::<class>) (call Scm_VMIsA) (inliner IS-A))
 
 (define-cproc slot-ref (obj slot)
   (inliner SLOT-REF)
   (setter slot-set!)
-  (expr "Scm_VMSlotRef(obj, slot, FALSE)"))
+  (expr (Scm_VMSlotRef obj slot FALSE)))
 
 (define-cproc slot-set! (obj slot value)
   (inliner SLOT-SET)
-  (call "Scm_VMSlotSet"))
+  (call Scm_VMSlotSet))
 
 (define-cproc slot-bound? (obj slot)
-  (call "Scm_VMSlotBoundP"))
+  (call Scm_VMSlotBoundP))
 
 (define-cproc slot-ref-using-accessor (obj accessor::<slot-accessor>)
-  (expr "Scm_VMSlotRefUsingAccessor(obj, accessor, FALSE)"))
+  (expr (Scm_VMSlotRefUsingAccessor obj accessor FALSE)))
 
 (define-cproc slot-bound-using-accessor? (obj accessor::<slot-accessor>)
-  (expr "Scm_VMSlotRefUsingAccessor(obj, accessor, TRUE)"))
+  (expr (Scm_VMSlotRefUsingAccessor obj accessor TRUE)))
 
 (define-cproc slot-set-using-accessor! (obj accessor::<slot-accessor> value)
-  (call "Scm_VMSlotSetUsingAccessor"))
+  (call Scm_VMSlotSetUsingAccessor))
 
 (define-cproc slot-initialize-using-accessor! (obj accessor::<slot-accessor>
-                                                  initargs)
-  (call "Scm_VMSlotInitializeUsingAccessor"))
+                                                   initargs)
+  (call Scm_VMSlotInitializeUsingAccessor))
 
 (define-cproc instance-slot-ref (obj num::<fixnum>)
-  (call "Scm_InstanceSlotRef"))
+  (call Scm_InstanceSlotRef))
 
 (define-cproc instance-slot-set (obj num::<fixnum> value)
-  (call <void> "Scm_InstanceSlotSet"))
+  (call <void> Scm_InstanceSlotSet))
 
 (define-cproc touch-instance! (obj)
-  (call "Scm_VMTouchInstance"))
+  (call Scm_VMTouchInstance))
 
 ;; Local variables:
 ;; mode: scheme

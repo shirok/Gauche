@@ -81,20 +81,20 @@
 (define-cproc = (arg0 arg1 &rest args)
   (body <boolean>
         (loop (cond 
-               ((not (Scm_NumEq arg0 arg1)) (result FALSE) (break))
-               ((SCM_NULLP args) (result TRUE) (break))
-               (else (set! arg1 (SCM_CAR args)
-                           args (SCM_CDR args))))))
+               [(not (Scm_NumEq arg0 arg1)) (result FALSE) (break)]
+               [(SCM_NULLP args) (result TRUE) (break)]
+               [else (set! arg1 (SCM_CAR args)
+                           args (SCM_CDR args))])))
   (flags immediate-arg))
 
 (define-cise-stmt numcmp
   [(_ op)
    `(loop (cond
-           ((not (,op (Scm_NumCmp arg0 arg1) 0)) (result FALSE) (break))
-           ((SCM_NULLP args) (result TRUE) (break))
-           (else (set! arg0 arg1
+           [(not (,op (Scm_NumCmp arg0 arg1) 0)) (result FALSE) (break)]
+           [(SCM_NULLP args) (result TRUE) (break)]
+           [else (set! arg0 arg1
                        arg1 (SCM_CAR args)
-                       args (SCM_CDR args)))))])
+                       args (SCM_CDR args))]))])
 
 (define-cproc < (arg0 arg1 &rest args)
   (body <boolean> (numcmp <)) (flags immediate-arg))
