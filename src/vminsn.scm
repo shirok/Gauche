@@ -278,11 +278,10 @@
    '(let* ([nargs::int (SCM_VM_INSN_ARG code)]
            [i::int (- nargs 1)]
            [v VAL0])
-      (when (>= nargs SCM_VM_MAX_VALUES)
-        ($vm-err "values got too many args"))
+      (when (>= nargs SCM_VM_MAX_VALUES) ($vm-err "values got too many args"))
       (VM-ASSERT (<= (- nargs 1) (- SP (-> vm stackBase))))
       (when (> nargs 0)
-        (for (() (> i 0) (post-- i))
+        (for [() (> i 0) (post-- i)]
              (SCM_FLONUM_ENSURE_MEM v)
              (set! (aref (-> vm vals) (- i 1)) v)
              (POP-ARG v)))
@@ -303,20 +302,16 @@
 ;;  Set <obj> to val0.
 ;;
 (define-insn CONST 0 obj #f
-  (let* ((val))
+  (let* ([val])
     (FETCH-OPERAND val)
     INCR-PC
     ($result val)))
 
 ;; Some immediate constants
-(define-insn CONSTI 1 none #f           ; constant small integer
-  ($result:i (SCM_VM_INSN_ARG code)))
-(define-insn CONSTN 0 none #f           ; constant ()
-  ($result SCM_NIL))
-(define-insn CONSTF 0 none #f           ; constant #f
-  ($result SCM_FALSE))
-(define-insn CONSTU 0 none #f           ; constant #<undef>
-  ($result SCM_UNDEFINED))
+(define-insn CONSTI 1 none #f ($result:i (SCM_VM_INSN_ARG code))) ; small int
+(define-insn CONSTN 0 none #f ($result SCM_NIL))                  ; ()
+(define-insn CONSTF 0 none #f ($result SCM_FALSE))                ; #f
+(define-insn CONSTU 0 none #f ($result SCM_UNDEFINED))            ; #<undef>
 
 ;; Combined insn
 (define-insn CONST-PUSH  0 obj   (CONST PUSH))
@@ -502,9 +497,9 @@
              (set! to (CONT-FRAME-END CONT))
              (set! to (-> vm stackBase)))]) ; continuation has been saved
     (when (and (> nargs 0) (!= to ARGP))
-      (let* ([t::ScmObj* to] [a::ScmObj* ARGP] [c::int 0])
-        (for (() (< c nargs) (post++ c))
-             (set! (* (post++ t)) (* (post++ a))))))
+      (let* ([t::ScmObj* to] [a::ScmObj* ARGP])
+        (dotimes [c nargs]
+          (set! (* (post++ t)) (* (post++ a))))))
     (set! ARGP to)
     (set! SP (+ to nargs))
     (if (> nargs 0)
@@ -546,9 +541,9 @@
       (set! to (CONT-FRAME-END CONT))
       (set! to (-> vm stackBase)))
     (when (and (> nargs 0) (!= to ARGP))
-      (let* ([t::ScmObj* to] [a::ScmObj* ARGP] [c::int 0])
-        (for (() (< c nargs) (post++ c))
-             (set! (* (post++ t)) (* (post++ a))))))
+      (let* ([t::ScmObj* to] [a::ScmObj* ARGP])
+        (dotimes [c nargs]
+          (set! (* (post++ t)) (* (post++ a))))))
     (set! ARGP to)
     (set! SP (+ to nargs))
     ($goto-insn LOCAL-ENV-CALL)))
@@ -573,8 +568,7 @@
 (define-insn BNNULL  0 addr #f ($branch* (not (SCM_NULLP VAL0))))
 
 (define-insn BNUMNE  0 addr #f (let* ((x) (y VAL0))
-                                 (POP-ARG x)
-                                 ($branch* (not (Scm_NumEq x y)))))
+                                 (POP-ARG x) ($branch* (not (Scm_NumEq x y)))))
 (define-insn BNLT    0 addr #f ($w/numcmp r <  ($branch* (not r))))
 (define-insn BNLE    0 addr #f ($w/numcmp r <= ($branch* (not r))))
 (define-insn BNGT    0 addr #f ($w/numcmp r >  ($branch* (not r))))
@@ -600,9 +594,8 @@
     ($w/argr v0
       ($type-check v0 SCM_NUMBERP "number")
       ($branch*
-       (not
-        (or (and (SCM_INTP v0)    (== (SCM_INT_VALUE v0) imm))
-            (and (SCM_FLONUMP v0) (== (SCM_FLONUM_VALUE v0) imm))))))))
+       (not (or (and (SCM_INTP v0)    (== (SCM_INT_VALUE v0) imm))
+                (and (SCM_FLONUMP v0) (== (SCM_FLONUM_VALUE v0) imm))))))))
 (define-insn BNEQC       0 obj+addr #f
   (let* ([z]) (FETCH-OPERAND z) INCR-PC ($branch* (not (SCM_EQ VAL0 z)))))
 (define-insn BNEQVC      0 obj+addr #f
@@ -641,10 +634,10 @@
             [(and restarg (> (-> vm numVals) 0))
              (SCM_APPEND1 rest tail VAL0)
              (post++ i)])
-      (for (() (< i reqargs) (post++ i))
+      (for [() (< i reqargs) (post++ i)]
            (PUSH-ARG (aref (-> vm vals) (- i 1))))
       (when restarg
-        (for (() (< i (-> vm numVals)) (post++ i))
+        (for [() (< i (-> vm numVals)) (post++ i)]
              (SCM_APPEND1 rest tail (aref (-> vm vals) (- i 1))))
         (PUSH-ARG rest))
       (FINISH-ENV SCM_FALSE ENV)
@@ -678,7 +671,7 @@
   (let* ([dep::int (SCM_VM_INSN_ARG0 code)]
          [off::int (SCM_VM_INSN_ARG1 code)]
          [e::ScmEnvFrame* ENV])
-    (for (() (> dep 0) (post-- dep))
+    (for [() (> dep 0) (post-- dep)]
          (VM-ASSERT (!= e NULL))
          (set! e (-> e up)))
     (VM-ASSERT (!= e NULL))
@@ -729,7 +722,7 @@
   (let* ([dep::int (SCM_VM_INSN_ARG0 code)]
          [off::int (SCM_VM_INSN_ARG1 code)]
          [e::ScmEnvFrame* ENV])
-    (for (() (> dep 0) (post-- dep))
+    (for [() (> dep 0) (post-- dep)]
          (VM-ASSERT (!= e NULL))
          (set! e (-> e up)))
     (VM-ASSERT (!= e NULL))
@@ -807,15 +800,14 @@
 ;;  If nargs >= SCM_VM_MAX_VALUES-1, args[SCM_VM_MAX_VALUES-1] through
 ;;  args[nargs-1] are made into a list and stored in VALS[SCM_VM_MAX_VALUES-1]
 (define-insn VALUES-APPLY 0 none #f
-  (let* ([nargs::int (SCM_VM_INSN_ARG code)]
-         [i::int 0])
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)])
     (CHECK-STACK (ENV-SIZE nargs))
-    (for (() (< i nargs) (post++ i))
-         (when (>= i (- SCM_VM_MAX_VALUES 1))
-           (for-each (lambda (vv) (PUSH-ARG vv))
-                     (aref (-> vm vals) (- SCM_VM_MAX_VALUES 1)))
-           (break))
-         (PUSH-ARG (aref (-> vm vals) i)))
+    (dotimes [i nargs]
+      (when (>= i (- SCM_VM_MAX_VALUES 1))
+        (for-each (lambda (vv) (PUSH-ARG vv))
+                  (aref (-> vm vals) (- SCM_VM_MAX_VALUES 1)))
+        (break))
+      (PUSH-ARG (aref (-> vm vals) i)))
     ($goto-insn TAIL-CALL)))
 
 ;; Inlined operators
@@ -831,16 +823,12 @@
 (define-insn CONS-PUSH   0 none   (CONS PUSH))
 
 (define-insn CAR         0 none #f
-  ($w/argr v
-    ($type-check v SCM_PAIRP "pair")
-    ($result (SCM_CAR v))))
+  ($w/argr v ($type-check v SCM_PAIRP "pair") ($result (SCM_CAR v))))
 (define-insn CAR-PUSH    0 none   (CAR PUSH))
 (define-insn-lref+ LREF-CAR 0 none (LREF CAR))
 
 (define-insn CDR         0 none #f
-  ($w/argr v
-           ($type-check v SCM_PAIRP "pair")
-           ($result (SCM_CDR v))))
+  ($w/argr v ($type-check v SCM_PAIRP "pair") ($result (SCM_CDR v))))
 (define-insn CDR-PUSH    0 none   (CDR PUSH))
 (define-insn-lref+ LREF-CDR 0 none (LREF CDR))
 
@@ -848,19 +836,16 @@
   [(_ a b)
    `($w/argr obj
       ($type-check obj SCM_PAIRP "pair")
-      (let* ((obj2 (,b obj)))
+      (let* ([obj2 (,b obj)])
         ($type-check obj2 SCM_PAIRP "pair")
         ($result (,a obj2))))])
 
 (define-insn CAAR        0 none #f ($cxxr SCM_CAR SCM_CAR))
 (define-insn CAAR-PUSH   0 none (CAAR PUSH))
-
 (define-insn CADR        0 none #f ($cxxr SCM_CAR SCM_CDR))
 (define-insn CADR-PUSH   0 none (CADR PUSH))
-
 (define-insn CDAR        0 none #f ($cxxr SCM_CDR SCM_CAR))
 (define-insn CDAR-PUSH   0 none (CDAR PUSH))
-
 (define-insn CDDR        0 none #f ($cxxr SCM_CDR SCM_CDR))
 (define-insn CDDR-PUSH   0 none (CDDR PUSH))
 
@@ -900,8 +885,7 @@
       (set! cp VAL0)
       (while (> (pre-- nargs) 0)
         (POP-ARG arg)
-        (when (< (Scm_Length arg) 0)
-          ($vm-err "list required, but got %S\n" arg))
+        (when (< (Scm_Length arg) 0) ($vm-err "list required, but got %S" arg))
         (set! cp (Scm_Append2 arg cp))))
     ($result cp)))
 
@@ -969,14 +953,12 @@
     ($type-check VAL0 SCM_CLASSP "class")
     (let* ([c::ScmClass* (SCM_CLASS VAL0)])
       ;; be careful to handle class redifinition case
-      (cond
-       [(not (SCM_FALSEP (-> (Scm_ClassOf obj) redefined)))
-        (CHECK-STACK CONT_FRAME_SIZE)
-        (PUSH_CONT PC)
-        (set! PC PC_TO_RETURN)
-        ($result (Scm_VMIsA obj c))]
-       [else
-        ($result:b (SCM_ISA obj c))]))))
+      (cond [(not (SCM_FALSEP (-> (Scm_ClassOf obj) redefined)))
+             (CHECK-STACK CONT_FRAME_SIZE)
+             (PUSH_CONT PC)
+             (set! PC PC_TO_RETURN)
+             ($result (Scm_VMIsA obj c))]
+            [else ($result:b (SCM_ISA obj c))]))))
 
 (define-insn NULLP       0 none #f ($w/argr v ($result:b (SCM_NULLP v))))
 (define-insn PAIRP       0 none #f ($w/argr v ($result:b (SCM_PAIRP v))))
@@ -997,8 +979,8 @@
          [i::int (- nargs 1)]
          [vec (Scm_MakeVector nargs SCM_UNDEFINED)])
     (when (> nargs 0)
-      (let* ((arg VAL0))
-        (for (() (> i 0) (post-- i))
+      (let* ([arg VAL0])
+        (for [() (> i 0) (post-- i)]
              (SCM_FLONUM_ENSURE_MEM arg)
              (set! (SCM_VECTOR_ELEMENT vec i) arg)
              (POP-ARG arg))
@@ -1073,8 +1055,7 @@
      [(and (SCM_INTP VAL0) (SCM_INTP arg)) ($result:b (== VAL0 arg))]
      [(and (SCM_FLONUMP VAL0) (SCM_FLONUMP arg))
       ($result:b (== (SCM_FLONUM_VALUE VAL0) (SCM_FLONUM_VALUE arg)))]
-     [else
-      ($result:b (Scm_NumEq arg VAL0))])))
+     [else ($result:b (Scm_NumEq arg VAL0))])))
   
 (define-insn NUMLT2  0 none #f ($w/numcmp r <  ($result:b r)))
 (define-insn NUMLE2  0 none #f ($w/numcmp r <= ($result:b r)))
@@ -1134,22 +1115,19 @@
   ($w/argp arg
     (if (and (SCM_REALP arg) (SCM_REALP VAL0))
       ($result:f (- (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
-      ($result (Scm_Sub (Scm_ExactToInexact arg)
-                        (Scm_ExactToInexact VAL0))))))
+      ($result (Scm_Sub (Scm_ExactToInexact arg) (Scm_ExactToInexact VAL0))))))
   
 (define-insn NUMIMUL2    0 none #f      ; *.
   ($w/argp arg
     (if (and (SCM_REALP arg) (SCM_REALP VAL0))
       ($result:f (* (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
-      ($result (Scm_Mul (Scm_ExactToInexact arg)
-                        (Scm_ExactToInexact VAL0))))))
+      ($result (Scm_Mul (Scm_ExactToInexact arg) (Scm_ExactToInexact VAL0))))))
   
 (define-insn NUMIDIV2    0 none #f      ; /. (binary)
   ($w/argp arg
     (if (and (SCM_REALP arg) (SCM_REALP VAL0))
       ($result:f (/ (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
-      ($result (Scm_Div (Scm_ExactToInexact arg)
-                        (Scm_ExactToInexact VAL0))))))
+      ($result (Scm_Div (Scm_ExactToInexact arg) (Scm_ExactToInexact VAL0))))))
 
 (define-insn NUMADDI     1 none #f      ; +, if one of op is small int
   (let* ([imm::long (SCM_VM_INSN_ARG code)])
@@ -1206,9 +1184,8 @@
            ($type-check VAL0 SCM_OPORTP "output port")
            (set! port (SCM_PORT VAL0))
            (POP-ARG ch)]
-          [else
-           (set! port SCM_CUROUT)
-           (set! ch VAL0)])
+          [else (set! port SCM_CUROUT
+                      ch VAL0)])
     ($type-check ch SCM_CHARP "character")
     (SCM_PUTC (SCM_CHAR_VALUE ch) port)
     ($result SCM_UNDEFINED)))
@@ -1287,13 +1264,12 @@
 ;; TAIL-RECEIVE-ALL 
 ;;  Tail version of RECEIVE-ALL.  
 (define-insn TAIL-RECEIVE-ALL 0 none #f
-  (let* ([i::int 0])
-    (CHECK-STACK-PARANOIA (ENV-SIZE (+ (-> vm numVals) 1)))
-    (PUSH-ARG VAL0)
-    (for (() (< i (- (-> vm numVals) 1)) (post++ i))
-         (PUSH-ARG (aref (-> vm vals) i)))
-    (FINISH-ENV SCM_FALSE ENV)
-    NEXT))
+  (begin (CHECK-STACK-PARANOIA (ENV-SIZE (+ (-> vm numVals) 1)))
+         (PUSH-ARG VAL0)
+         (dotimes [i (- (-> vm numVals) 1)]
+           (PUSH-ARG (aref (-> vm vals) i)))
+         (FINISH-ENV SCM_FALSE ENV)
+         NEXT))
 
 ;; VALUES-N
 ;;  Inverse of RECEIVE-ALL.  Transfer the current environment content
@@ -1304,7 +1280,7 @@
     (VM-ASSERT ENV)
     (let* ([nvals::int (cast int (-> ENV size))] [v])
       (set! (-> vm numVals) nvals)
-      (for (() (> nvals 1) (post-- nvals))
+      (for [() (> nvals 1) (post-- nvals)]
            (POP-ARG (aref (-> vm vals) (- nvals 1))))
       (POP-ARG VAL0)
       NEXT)))
