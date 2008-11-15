@@ -1,3 +1,14 @@
+2008-11-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h etc: Integrated fast flonum extension (FFX)
+	  (cf. http://portal.acm.org/citation.cfm?id=1408687 ).   This
+	  boosts up speed of programs involving heavy floating-point number
+	  calculation.
+	  It can be turned off by changing #define GAUCHE_FFX 1 to
+	  #define GAUCHE_FFX 0 in gauche.h; if you find suspicious behaviors
+	  (like incorrect result of flonum calculation), recompile without FFX
+	  to see if it is the reason.
+
 2008-11-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package/compile.scm (gauche-package-compile-and-link):

@@ -412,6 +412,7 @@
       ;; If not null, the entire procedure body is wrapped by 'try' and
       ;; an appropriate handlers are emitted.  Necessary to write a stub
       ;; for C++ functions that may throw an exception.
+   (flags           :initform '() :accessor flags-of)
    ))
 
 (define (get-arg cproc arg)
@@ -448,6 +449,16 @@
                    :have-rest-arg? rest?
                    :allow-other-keys? other-keys?)))
       (process-body cproc body)
+      ;; if every arg has a type other than <top> or <number>,
+      ;; we know that we can safely pass FLONUM_REGs, since the args
+      ;; are immediately type-checked and/or unboxed.
+      (let1 unsafe-types (list *scm-type* (name->type '<number>))
+        (when (and (not (memq 'immediate-arg [~ cproc'flags]))
+                   (every (lambda (arg)
+                            (or (is-a? arg <rest-arg>)
+                                (not (memq [~ arg'type] unsafe-types))))
+                          args))
+          (push! [~ cproc'flags] 'immediate-arg)))
       (cgen-add! cproc))))
 
 (define-method c-stub-name ((cproc <cproc>))
@@ -566,6 +577,7 @@
       (('expr . spec) (process-expr-spec cproc form))
       (('catch . spec) (process-catch-spec cproc form))
       (('code . stmts) (for-each (cut push-stmt! cproc <>) stmts))
+      (('flags . flags) (process-flags-spec cproc form))
       (else (error <cgen-stub-error> "unknown body form:" form)))))
 
 (define-method process-setter ((cproc <cproc>) decl)
@@ -594,6 +606,7 @@
 
 (define-method process-call-spec ((cproc <procstub>) form)
   (define (err) (error <cgen-stub-error> "malformed 'call' spec:" form))
+  (define check-expr (any-pred string? symbol?))
   (define (args)
     (string-join (map (cut ref <> 'c-name)
                       (append [~ cproc'args] [~ cproc'keyword-args]))
@@ -605,10 +618,10 @@
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
   (match form
-    [(_ [or [? string? expr] [? symbol? expr]])
+    [(_ [? check-expr expr])
      (typed-result *scm-type* expr)]
     [(_ typename expr)
-     (unless (and (symbol? typename) (string? expr)) (err))
+     (unless (and (symbol? typename) (check-expr expr)) (err))
      (cond
       [(memq typename '(<void> void)) ;; tolerate old name for transition
        (push-stmt! cproc #`",(caddr form)(,(args));")
@@ -706,6 +719,13 @@
      )
     (else (error <cgen-stub-error> "malformed 'catch' spec:" form))))
 
+(define-method process-flags-spec ((cproc <procstub>) form)
+  (dolist (flag (cdr form))
+    (unless (memq flag '(immediate-arg))
+      (errorf "unknown flag '~s' for procedure '~s'"
+              flag [~ cproc'scheme-name]))
+    (push! [~ cproc'flags] flag)))
+
 ;;; emit code
 
 (define-method cgen-emit-body ((cproc <cproc>))
@@ -745,7 +765,8 @@
   (p "}")
   (p)
   ;; emit stub record
-  (f "static SCM_DEFINE_SUBR(~a, ~a, ~a, ~a, ~a, ~a, NULL);"
+  (f "static SCM_DEFINE_SUBR~a(~a, ~a, ~a, ~a, ~a, ~a, NULL);"
+     (if (memq 'immediate-arg [~ cproc'flags]) "I" "")
      (c-stub-name cproc)
      [~ cproc'num-reqargs]
      (if (or (have-rest-arg? cproc) (> [~ cproc'num-optargs] 0)) 1 0)

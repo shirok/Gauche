@@ -249,6 +249,9 @@ static inline void uint64print(ScmPort *out, ScmUInt64 v)
 ///;;     -> C stmt that unboxes src and set it to dst.
 ///;;  ${BOX dst src} where dst::ScmObj, src::${etype}
 ///;;     -> C stmt that boxes src and set it to dst.
+///;;  ${VMBOX dst src} where dst::ScmObj, src::${etype}
+///;;     -> C stmt that boxes src and set it to dst.
+///;;        (used in Scm_VM* API)
 ///;;  ${NBOX dst src} where dst::ScmObj, src::${ntype}
 ///;;     -> Like BOX, but the source value is given in ntype.
 ///;;        Can be implemented with CAST_N2E and BOX, but some types may
@@ -394,6 +397,20 @@ ScmObj Scm_${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback)
     }
     elt = vec->elements[index];
     ${BOX r elt};
+    return r;
+}
+
+ScmObj Scm_VM${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback)
+{
+    ScmObj r;
+    ${etype} elt;
+    if (index < 0 || index >= SCM_${T}VECTOR_SIZE(vec)) {
+        if (SCM_UNBOUNDP(fallback)) 
+            Scm_Error("index out of range: %d", index);
+        return fallback;
+    }
+    elt = vec->elements[index];
+    ${VMBOX r elt};
     return r;
 }
 

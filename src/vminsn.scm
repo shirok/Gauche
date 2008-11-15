@@ -91,9 +91,15 @@
 (define-cise-stmt $result:i
   [(_ expr) `($result (SCM_MAKE_INT ,expr))])
 (define-cise-stmt $result:n
-  [(_ var) `(if (SCM_SMALL_INT_FITS ,var)
-              ($result (SCM_MAKE_INT ,var))
-              ($result (Scm_MakeInteger ,var)))])
+  [(_ expr) (let1 r (gensym "cise__")
+              `(let* ([,r :: long ,expr])
+                 (if (SCM_SMALL_INT_FITS ,r)
+                   ($result (SCM_MAKE_INT ,r))
+                   ($result (Scm_MakeInteger ,r)))))])
+(define-cise-stmt $result:f
+  [(_ expr) (let1 r (gensym "cise__")
+              `(let* ([,r :: double ,expr])
+                 ($result (Scm_VMReturnFlonum ,r))))])
 
 ;;
 ;; ($w/argr <val> <expr> ...)
@@ -275,6 +281,7 @@
       (VM-ASSERT (<= (- nargs 1) (- SP (-> vm stackBase))))
       (when (> nargs 0)
         (for (() (> i 0) (post-- i))
+             (SCM_FLONUM_ENSURE_MEM v)
              (set! (aref (-> vm vals) (- i 1)) v)
              (POP-ARG v)))
       (set! VAL0 v)
@@ -389,15 +396,16 @@
 ;;  If flag == 1, the definition becomes 'constant'.
 ;;
 (define-insn DEFINE     1 obj #f
-  (let* ((var) (name :: ScmSymbol*)
+  (let* ((var) (name :: ScmSymbol*) (v VAL0)
          (flags :: int (SCM_VM_INSN_ARG code)))
     (FETCH-OPERAND var)
     (VM_ASSERT (SCM_IDENTIFIERP var))
+    (SCM_FLONUM_ENSURE_MEM v)
     INCR-PC
     (set! name (-> (SCM_IDENTIFIER var) name))
     (if (== flags 0)
-      (Scm_Define (-> (SCM_IDENTIFIER var) module) name VAL0)
-      (Scm_DefineConst (-> (SCM_IDENTIFIER var) module) name VAL0))
+      (Scm_Define (-> (SCM_IDENTIFIER var) module) name v)
+      (Scm_DefineConst (-> (SCM_IDENTIFIER var) module) name v))
     ($result (SCM_OBJ name))))
 
 ;; CLOSURE <code>
@@ -442,7 +450,9 @@
     (FETCH-OPERAND cp)
     INCR-PC
     (CHECK-STACK-PARANOIA (ENV-SIZE nlocals))
-    (+= SP nlocals)
+    (dotimes (i nlocals)
+      (set! (* (post++ SP)) SCM_UNDEFINED))
+    ;(+= SP nlocals)
     (FINISH-ENV SCM_FALSE ENV)
     (set! e (get_env vm))
     (set! z (- (cast ScmObj* e) nlocals))
@@ -1004,8 +1014,10 @@
     (when (> nargs 0)
       (let* ((arg VAL0))
         (for (() (> i 0) (post-- i))
+             (SCM_FLONUM_ENSURE_MEM arg)
              (set! (SCM_VECTOR_ELEMENT vec i) arg)
              (POP-ARG arg))
+        (SCM_FLONUM_ENSURE_MEM arg)
         (set! (SCM_VECTOR_ELEMENT vec 0) arg)))
     ($result vec)))
     
@@ -1046,10 +1058,12 @@
     (POP-ARG vec)
     ($type-check vec SCM_VECTORP "vector")
     ($type-check ind SCM_INTP "fixnum")
-    (let* ((k :: int (SCM_INT_VALUE ind)))
+    (let* ([k :: int (SCM_INT_VALUE ind)]
+           [v VAL0])
       (when (or (< k 0) (>= k (SCM_VECTOR_SIZE vec)))
         ($vm-err "vector-set! index out of range: %d" k))
-      (set! (SCM_VECTOR_ELEMENT vec k) VAL0)
+      (SCM_FLONUM_ENSURE_MEM v)
+      (set! (SCM_VECTOR_ELEMENT vec k) v)
       ($result SCM_UNDEFINED))))
   
 ;; VEC-REF and VEC-SET with immediate index.  VAL0 must be a vector.
@@ -1064,10 +1078,12 @@
 (define-insn VEC-SETI    1 none #f
   ($w/argp vec
     ($type-check vec SCM_VECTORP "vector")
-    (let* ((k :: int (SCM_VM_INSN_ARG code)))
+    (let* ([k :: int (SCM_VM_INSN_ARG code)]
+           [v VAL0])
       (when (or (< k 0) (>= k (SCM_VECTOR_SIZE vec)))
         ($vm-err "vector-set! index out of range: %d" k))
-      (set! (SCM_VECTOR_ELEMENT vec k) VAL0)
+      (SCM_FLONUM_ENSURE_MEM v)
+      (set! (SCM_VECTOR_ELEMENT vec k) v)
       ($result SCM_UNDEFINED))))
 
 (define-insn NUMEQ2      0 none #f      ; =
@@ -1086,17 +1102,21 @@
 
 (define-insn NUMADD2 0 none #f          ; +
   ($w/argp arg
-    (if (and (SCM_INTP arg) (SCM_INTP VAL0))
-      (let* ((r :: long (+ (SCM_INT_VALUE arg) (SCM_INT_VALUE VAL0))))
-        ($result:n r))
-      ($result (Scm_Add arg VAL0)))))
+    (cond
+     [(and (SCM_INTP arg) (SCM_INTP VAL0))
+      ($result:n (+ (SCM_INT_VALUE arg) (SCM_INT_VALUE VAL0)))]
+     [(and (SCM_FLONUMP arg) (SCM_FLONUMP VAL0))
+      ($result:f (+ (SCM_FLONUM_VALUE arg) (SCM_FLONUM_VALUE VAL0)))]
+     [else ($result (Scm_Add arg VAL0))])))
 
 (define-insn NUMSUB2 0 none #f          ; -  (binary)
   ($w/argp arg
-    (if (and (SCM_INTP arg) (SCM_INTP VAL0))
-      (let* ((r :: long (- (SCM_INT_VALUE arg) (SCM_INT_VALUE VAL0))))
-        ($result:n r))
-      ($result (Scm_Sub arg VAL0)))))
+    (cond
+     [(and (SCM_INTP arg) (SCM_INTP VAL0))
+      ($result:n (- (SCM_INT_VALUE arg) (SCM_INT_VALUE VAL0)))]
+     [(and (SCM_FLONUMP arg) (SCM_FLONUMP VAL0))
+      ($result:f (- (SCM_FLONUM_VALUE arg) (SCM_FLONUM_VALUE VAL0)))]
+     [else ($result (Scm_Sub arg VAL0))])))
 
 (define-insn NUMMUL2 0 none #f          ; *
   ($w/argp arg
@@ -1105,72 +1125,66 @@
     ;; would be cumbersome so we just call Scm_Mul).
     (if (or (and (SCM_FLONUMP arg) (SCM_REALP VAL0))
             (and (SCM_FLONUMP VAL0) (SCM_REALP arg)))
-      ($result (Scm_MakeFlonum (* (Scm_GetDouble arg) (Scm_GetDouble VAL0))))
+      ($result:f (* (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
       ($result (Scm_Mul arg VAL0)))))
   
 (define-insn NUMDIV2 0 none #f          ; / (binary)
   ($w/argp arg
     (if (or (and (SCM_FLONUMP arg) (SCM_REALP VAL0))
             (and (SCM_FLONUMP VAL0) (SCM_REALP arg)))
-      ($result (Scm_MakeFlonum (/ (Scm_GetDouble arg) (Scm_GetDouble VAL0))))
+      ($result:f (/ (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
       ($result (Scm_Div arg VAL0)))))
   
 (define-insn NEGATE  0 none #f          ; -  (unary)
   ($w/argr v
     (cond
-     [(SCM_INTP v)
-      (let* ((r :: long (- (SCM_INT_VALUE v))))
-        ($result:n r))]
-     [(SCM_FLONUMP v)
-      ($result (Scm_MakeFlonum (- (Scm_GetDouble v))))]
-     [else
-      ($result (Scm_Negate v))])))
+     [(SCM_INTP v)    ($result:n (- (SCM_INT_VALUE v)))]
+     [(SCM_FLONUMP v) ($result:f (- (Scm_GetDouble v)))]
+     [else            ($result (Scm_Negate v))])))
 
 (define-insn NUMIADD2    0 none #f      ; +.
   ($w/argp arg
     (if (and (SCM_REALP arg) (SCM_REALP VAL0))
-      ($result (Scm_MakeFlonum (+ (Scm_GetDouble arg) (Scm_GetDouble VAL0))))
+      ($result:f (+ (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
       ($result (Scm_Add (Scm_ExactToInexact arg)
                         (Scm_ExactToInexact VAL0))))))
       
 (define-insn NUMISUB2    0 none #f      ; -. (binary)
   ($w/argp arg
     (if (and (SCM_REALP arg) (SCM_REALP VAL0))
-      ($result (Scm_MakeFlonum (- (Scm_GetDouble arg) (Scm_GetDouble VAL0))))
+      ($result:f (- (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
       ($result (Scm_Sub (Scm_ExactToInexact arg)
                         (Scm_ExactToInexact VAL0))))))
   
 (define-insn NUMIMUL2    0 none #f      ; *.
   ($w/argp arg
     (if (and (SCM_REALP arg) (SCM_REALP VAL0))
-      ($result (Scm_MakeFlonum (* (Scm_GetDouble arg) (Scm_GetDouble VAL0))))
+      ($result:f (* (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
       ($result (Scm_Mul (Scm_ExactToInexact arg)
                         (Scm_ExactToInexact VAL0))))))
   
 (define-insn NUMIDIV2    0 none #f      ; /. (binary)
   ($w/argp arg
     (if (and (SCM_REALP arg) (SCM_REALP VAL0))
-      ($result (Scm_MakeFlonum (/ (Scm_GetDouble arg) (Scm_GetDouble VAL0))))
+      ($result:f (/ (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
       ($result (Scm_Div (Scm_ExactToInexact arg)
                         (Scm_ExactToInexact VAL0))))))
 
 (define-insn NUMADDI     1 none #f      ; +, if one of op is small int
   (let* ((imm :: long (SCM_VM_INSN_ARG code)))
     ($w/argr arg
-      (cond [(SCM_INTP arg)
-             (+= imm (SCM_INT_VALUE arg))
-             ($result:n imm)]
-            [else
-             ($result (Scm_Add (SCM_MAKE_INT imm) arg))]))))
+      (cond [(SCM_INTP arg) ($result:n (+ imm (SCM_INT_VALUE arg)))]
+            [(SCM_FLONUMP arg)
+             ($result:f (+ (SCM_FLONUM_VALUE arg) (cast double imm)))]
+            [else           ($result (Scm_Add (SCM_MAKE_INT imm) arg))]))))
   
 (define-insn NUMSUBI     1 none #f      ; -, if one of op is small int
   (let* ((imm :: long (SCM_VM_INSN_ARG code)))
     ($w/argr arg
-      (cond [(SCM_INTP arg)
-             (-= imm (SCM_INT_VALUE arg))
-             ($result:n imm)]
-            [else
-             ($result (Scm_Sub (SCM_MAKE_INT imm) arg))]))))
+      (cond [(SCM_INTP arg) ($result:n (- imm (SCM_INT_VALUE arg)))]
+            [(SCM_FLONUMP arg)
+             ($result:f (- (cast double imm) (SCM_FLONUM_VALUE arg)))]
+            [else           ($result (Scm_Sub (SCM_MAKE_INT imm) arg))]))))
   
 
 ;(define-insn NUMQUOT     0 none)        ; quotient
@@ -1233,6 +1247,7 @@
 (define-insn SLOT-REF    0 none #f      ; slot-ref
   ($w/argp obj
     (TAIL-CALL-INSTRUCTION)
+    (SCM_FLONUM_ENSURE_MEM VAL0)
     ($result (Scm_VMSlotRef obj VAL0 FALSE))))
 
 (define-insn SLOT-SET    0 none #f      ; slot-set!
@@ -1240,6 +1255,8 @@
     (POP-ARG slot)
     ($w/argp obj
       (TAIL-CALL-INSTRUCTION)
+      (SCM_FLONUM_ENSURE_MEM slot)
+      (SCM_FLONUM_ENSURE_MEM VAL0)
       ($result (Scm_VMSlotSet obj slot VAL0)))))
   
 (define-insn SLOT-REFC   0 obj #f       ; slot-ref with constant slot name
@@ -1247,6 +1264,7 @@
     (FETCH-OPERAND slot)
     INCR-PC
     (TAIL-CALL-INSTRUCTION)
+    (SCM_FLONUM_ENSURE_MEM VAL0)
     ($result (Scm_VMSlotRef VAL0 slot FALSE))))
     
 (define-insn SLOT-SETC   0 obj #f       ; slot-set! with constant slot name
@@ -1255,6 +1273,7 @@
     INCR-PC
     ($w/argp obj
       (TAIL-CALL-INSTRUCTION)
+      (SCM_FLONUM_ENSURE_MEM VAL0)
       ($result (Scm_VMSlotSet obj slot VAL0)))))
 
 ;; combined
@@ -1307,7 +1326,8 @@
 (define-insn VALUES-N 0 none #f
   (begin
     (VM-ASSERT ENV)
-    (let* ((nvals :: int (cast int (-> ENV size))))
+    (let* ((nvals :: int (cast int (-> ENV size)))
+           (v))
       (set! (-> vm numVals) nvals)
       (for (() (> nvals 1) (post-- nvals))
            (POP-ARG (aref (-> vm vals) (- nvals 1))))
@@ -1322,6 +1342,8 @@
   (let* ((before VAL0) (after))
     (VM-ASSERT (>= (- SP (-> vm stackBase)) 1))
     (POP-ARG after)
+    (SCM_FLONUM_ENSURE_MEM before)
+    (SCM_FLONUM_ENSURE_MEM after)
     (set! (-> vm handlers) (Scm_Acons before after (-> vm handlers)))
     NEXT))
   

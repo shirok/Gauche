@@ -90,11 +90,13 @@
 (define-cproc ${t}vector-ref (v::<${t}vector>
                               i::<fixnum> &optional fallback)
   (setter ${t}vector-set!)
-  "SCM_RETURN(Scm_${T}VectorRef(v, i, fallback));")
+  "SCM_RETURN(Scm_VM${T}VectorRef(v, i, fallback));"
+  (flags immediate-arg))
 
 (define-cproc ${t}vector-set! (v::<${t}vector>
                                      i::<fixnum> val &optional clamp)
-  "SCM_RETURN(Scm_${T}VectorSet(v, i, val, clamp_arg(clamp)));")
+  "SCM_RETURN(Scm_${T}VectorSet(v, i, val, clamp_arg(clamp)));"
+  (flags immediate-arg))
 
 (define-cproc ${t}vector-copy (v::<${t}vector>
                                &optional (start::<fixnum> 0)

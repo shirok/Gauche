@@ -29,8 +29,6 @@
  *   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *  $Id: macro.h,v 1.12 2008-05-10 13:36:25 shirok Exp $
  */
 
 #ifndef GAUCHE_MACRO_H
@@ -87,8 +85,8 @@ SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj lietrals,
 /*
  * Pattern variable reference object 
  */
-#define SCM_PVREF_TAG              0x0e
-#define SCM_PVREF_P(obj)           ((SCM_WORD(obj)&0x0f) == SCM_PVREF_TAG)
+#define SCM_PVREF_TAG              0x13
+#define SCM_PVREF_P(obj)           ((SCM_WORD(obj)&0xff) == SCM_PVREF_TAG)
 #define SCM_PVREF_LEVEL(obj)       ((SCM_WORD(obj)>>24) & 0xff)
 #define SCM_PVREF_COUNT(obj)       ((SCM_WORD(obj)>>16) & 0xff)
 

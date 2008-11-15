@@ -2,8 +2,6 @@
  * This code fragment implements the core of procedure and generic function
  * calling sequence in Gauche VM.  It is included by vm.c twice, with slight
  * difference switched by preprocessor macros.
- *
- * $Id: vmcall.c,v 1.3 2008-02-14 12:17:56 shirok Exp $
  */
 
 /* ADJUST_ARGUMENT_FRAME
@@ -132,6 +130,15 @@
         ADJUST_ARGUMENT_FRAME(VAL0, argc);
         SP = ARGP;
         PC = PC_TO_RETURN;
+#if GAUCHE_FFX
+        /* We can't pass FLONUM_REGs unless the subr is flagged as
+           IMMEDIATE_ARG. */
+        if (!(SCM_SUBR_FLAGS(VAL0)&SCM_SUBR_IMMEDIATE_ARG)) {
+            ScmObj *ap = SP;
+            int i = 0;
+            for (; i<argc; i++, ap++) SCM_FLONUM_ENSURE_MEM(*ap);
+        }
+#endif
 
         SCM_PROF_COUNT_CALL(vm, VAL0);
         VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc, SCM_SUBR(VAL0)->data);
@@ -217,6 +224,13 @@
                 PUSH_ARG(args);
             }
 #endif /*APPLY_CALL*/
+#if GAUCHE_FFX
+            {
+                ScmObj *ap = ARGP;
+                int i = 0;
+                for (;i<argc; i++, ap++) SCM_FLONUM_ENSURE_MEM(*ap);
+            }
+#endif /*GAUCHE_FFX*/
             mm = Scm_SortMethods(mm, ARGP, argc);
             nm = Scm_MakeNextMethod(SCM_GENERIC(VAL0), SCM_CDR(mm),
                                     ARGP, argc, TRUE, APP);

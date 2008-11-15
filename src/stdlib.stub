@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.134 2008-05-10 13:36:21 shirok Exp $
-;;;
 
 "
 #include <gauche/vminsn.h>
@@ -63,15 +61,22 @@
 ;; 6.2  Numbers
 ;;
 
-(define-cproc number? (obj)   (call <boolean> "SCM_NUMBERP"))
-(define-cproc complex? (obj)  (call <boolean> "SCM_NUMBERP"))
-(define-cproc real? (obj)     (call <boolean> "SCM_REALP"))
-(define-cproc rational? (obj) (call <boolean> "SCM_REALP"))
+(define-cproc number? (obj)  (call <boolean> SCM_NUMBERP)(flags immediate-arg))
+(define-cproc complex? (obj) (call <boolean> SCM_NUMBERP)(flags immediate-arg))
+(define-cproc real? (obj)    (call <boolean> SCM_REALP)(flags immediate-arg))
+(define-cproc rational? (obj)(call <boolean> SCM_REALP)(flags immediate-arg))
 (define-cproc integer? (obj)
-  (expr <boolean> (and (SCM_NUMBERP obj) (Scm_IntegerP obj))))
+  (expr <boolean> (and (SCM_NUMBERP obj) (Scm_IntegerP obj)))
+  (flags immediate-arg))
 
-(define-cproc exact? (obj)    (call <boolean> "SCM_EXACTP"))
-(define-cproc inexact? (obj)  (call <boolean> "SCM_INEXACTP"))
+(define-cproc exact? (obj)  (call <boolean> SCM_EXACTP)(flags immediate-arg))
+(define-cproc inexact? (obj)(call <boolean> SCM_INEXACTP)(flags immediate-arg))
+
+;; NB: numeric procedures =, <, <=, >, >=, +, -, * and / have inliners
+;; defined in compile.scm.  When one of these operators appears at the
+;; operator position of an expression, it is inlined so that the following
+;; SUBRs won't be called.  They are used only when called with 'apply',
+;; or called like ((if test + *) a b).
 
 (define-cproc = (arg0 arg1 &rest args)
   (body <boolean>
@@ -79,7 +84,8 @@
                ((not (Scm_NumEq arg0 arg1)) (result FALSE) (break))
                ((SCM_NULLP args) (result TRUE) (break))
                (else (set! arg1 (SCM_CAR args)
-                           args (SCM_CDR args)))))))
+                           args (SCM_CDR args))))))
+  (flags immediate-arg))
 
 (define-cise-stmt numcmp
   [(_ op)
@@ -90,18 +96,27 @@
                        arg1 (SCM_CAR args)
                        args (SCM_CDR args)))))])
 
-(define-cproc < (arg0 arg1 &rest args)  (body <boolean> (numcmp <)))
-(define-cproc <= (arg0 arg1 &rest args) (body <boolean> (numcmp <=)))
-(define-cproc > (arg0 arg1 &rest args)  (body <boolean> (numcmp >)))
-(define-cproc >= (arg0 arg1 &rest args) (body <boolean> (numcmp >=)))
+(define-cproc < (arg0 arg1 &rest args)
+  (body <boolean> (numcmp <)) (flags immediate-arg))
+(define-cproc <= (arg0 arg1 &rest args)
+  (body <boolean> (numcmp <=)) (flags immediate-arg))
+(define-cproc > (arg0 arg1 &rest args)
+  (body <boolean> (numcmp >)) (flags immediate-arg))
+(define-cproc >= (arg0 arg1 &rest args)
+  (body <boolean> (numcmp >=)) (flags immediate-arg))
 
 (define-cproc zero? (obj::<number>)
-  (expr <boolean> (and (SCM_REALP obj) (== (Scm_Sign obj) 0))))
+  (expr <boolean> (and (SCM_REALP obj) (== (Scm_Sign obj) 0)))
+  (flags immediate-arg))
 
-(define-cproc positive? (obj) (expr <boolean> (> (Scm_Sign obj) 0)))
-(define-cproc negative? (obj) (expr <boolean> (< (Scm_Sign obj) 0)))
-(define-cproc odd? (obj)      (call <boolean> "Scm_OddP"))
-(define-cproc even? (obj)     (call <boolean> "!Scm_OddP"))
+(define-cproc positive? (obj)
+  (expr <boolean> (> (Scm_Sign obj) 0)) (flags immediate-arg))
+(define-cproc negative? (obj)
+  (expr <boolean> (< (Scm_Sign obj) 0)) (flags immediate-arg))
+(define-cproc odd? (obj)
+  (call <boolean> "Scm_OddP") (flags immediate-arg))
+(define-cproc even? (obj)
+  (call <boolean> "!Scm_OddP") (flags immediate-arg))
 
 (define-cproc max (arg0 &rest args)
   (body <number> (Scm_MinMax arg0 args NULL (& SCM_RESULT))))
@@ -118,7 +133,8 @@
          (else
           (let* ((r :: ScmObj (SCM_CAR args)))
             (for-each (lambda (v) (set! r (Scm_Add r v))) (SCM_CDR args))
-            (result r))))))
+            (result r)))))
+  (flags immediate-arg))
 
 (define-cproc * (&rest args)
   (body <number>
@@ -130,46 +146,56 @@
          (else
           (let* ((r :: ScmObj (SCM_CAR args)))
             (for-each (lambda (v) (set! r (Scm_Mul r v))) (SCM_CDR args))
-            (result r))))))
+            (result r)))))
+  (flags immediate-arg))
 
 (define-cproc - (arg1 &rest args)
   (body <number>
         (if (SCM_NULLP args)
-          (result (Scm_Negate arg1))
+          (result (Scm_VMNegate arg1))
           (begin
             (for-each (lambda (v) (set! arg1 (Scm_Sub arg1 v))) args)
-            (result arg1)))))
+            (result arg1))))
+  (flags immediate-arg))
 
 (define-cproc / (arg1 &rest args)
   (body <number>
         (if (SCM_NULLP args)
-          (result (Scm_Reciprocal arg1))
+          (result (Scm_VMReciprocal arg1))
           (begin
             (for-each (lambda (v) (set! arg1 (Scm_Div arg1 v))) args)
-            (result arg1)))))
+            (result arg1))))
+  (flags immediate-arg))
 
-(define-cproc abs (obj) (call "Scm_Abs"))
+(define-cproc abs (obj) (call Scm_VMAbs) (flags immediate-arg))
 
-(define-cproc quotient (n1 n2)  (expr "Scm_Quotient(n1, n2, NULL)"))
-(define-cproc remainder (n1 n2) (expr "Scm_Modulo(n1, n2, TRUE)"))
-(define-cproc modulo (n1 n2)    (expr "Scm_Modulo(n1, n2, FALSE)"))
+(define-cproc quotient (n1 n2)
+  (expr <top> (Scm_Quotient n1 n2 NULL)) (flags immediate-arg))
+(define-cproc remainder (n1 n2)
+  (expr <top> (Scm_Modulo n1 n2 TRUE)) (flags immediate-arg))
+(define-cproc modulo (n1 n2)
+  (expr <top> (Scm_Modulo n1 n2 FALSE)) (flags immediate-arg))
 
-(define-cproc %gcd (n1 n2)    (call "Scm_Gcd"))
-(define-cproc numerator (n)   (call "Scm_Numerator"))
-(define-cproc denominator (n) (call "Scm_Denominator"))
+(define-cproc %gcd (n1 n2)    (call Scm_Gcd) (flags immediate-arg))
+(define-cproc numerator (n)   (call Scm_Numerator) (flags immediate-arg))
+(define-cproc denominator (n) (call Scm_Denominator) (flags immediate-arg))
 ;; gcd, lcd - in gauche/numerical.scm
 
-(define-cproc floor (v)    (expr <number> (Scm_Round v SCM_ROUND_FLOOR)))
-(define-cproc ceiling (v)  (expr <number> (Scm_Round v SCM_ROUND_CEIL)))
-(define-cproc truncate (v) (expr <number> (Scm_Round v SCM_ROUND_TRUNC)))
-(define-cproc round (v)    (expr <number> (Scm_Round v SCM_ROUND_ROUND)))
+(define-cproc floor (v)
+  (expr <number> (Scm_Round v SCM_ROUND_FLOOR)) (flags immediate-arg))
+(define-cproc ceiling (v)
+  (expr <number> (Scm_Round v SCM_ROUND_CEIL)) (flags immediate-arg))
+(define-cproc truncate (v)
+  (expr <number> (Scm_Round v SCM_ROUND_TRUNC)) (flags immediate-arg))
+(define-cproc round (v)
+  (expr <number> (Scm_Round v SCM_ROUND_ROUND)) (flags immediate-arg))
 
 ;; rationalize - not implemented
 
 
 ;; Transcedental functions.  Complex numbers are handled in Scheme.
 
-(define-cproc %exp (x::<real>) (call <real> "exp"))
+(define-cproc %exp (x::<real>) (call <real> "exp") (flags immediate-arg))
 
 (define-cproc %log (x)
   (body <number>
@@ -179,31 +205,34 @@
           (result (Scm_MakeComplex (log (- (Scm_GetDouble x))) M_PI))
           ;; NB: I intentionally delegate handling of the case x==0.0 to the
           ;; system log() function.  Most systems should yield NaN or Inf.
-          (result (Scm_MakeFlonum (log (Scm_GetDouble x)))))))
+          (result (Scm_VMReturnFlonum (log (Scm_GetDouble x))))))
+  (flags immediate-arg))
 
-(define-cproc %sin (x::<real>) (call <real> "sin"))
-(define-cproc %cos (x::<real>) (call <real> "cos"))
-(define-cproc %tan (x::<real>) (call <real> "tan"))
+(define-cproc %sin (x::<real>) (call <real> sin) (flags immediate-arg))
+(define-cproc %cos (x::<real>) (call <real> cos) (flags immediate-arg))
+(define-cproc %tan (x::<real>) (call <real> tan) (flags immediate-arg))
 (define-cproc %asin (x::<real>)
   (body <number>
         (cond
-         ((> x 1.0)
+         [(> x 1.0)
           (result (Scm_MakeComplex (/ M_PI 2.0)
-                                   (- (log (+ x (sqrt (- (* x x) 1.0))))))))
-         ((< x -1.0)
+                                   (- (log (+ x (sqrt (- (* x x) 1.0)))))))]
+         [(< x -1.0)
           (result (Scm_MakeComplex (/ (- M_PI) 2.0)
-                                   (- (log (- (- x) (sqrt (- (* x x) 1.0))))))))
-         (else
-          (result (Scm_MakeFlonum (asin x)))))))
+                                   (- (log (- (- x) (sqrt (- (* x x) 1.0)))))))]
+         [else
+          (result (Scm_VMReturnFlonum (asin x)))]))
+  (flags immediate-arg))
 (define-cproc %acos (x::<real>)
   (body <number>
         (cond
-         ((> x 1.0)
-          (result (Scm_MakeComplex 0 (log (+ x (sqrt (- (* x x) 1.0)))))))
-         ((< x -1.0)
-          (result (Scm_MakeComplex 0 (log (+ x (sqrt (- (* x x) 1.0)))))))
-         (else
-          (result (Scm_MakeFlonum (acos x)))))))
+         [(> x 1.0)
+          (result (Scm_MakeComplex 0 (log (+ x (sqrt (- (* x x) 1.0))))))]
+         [(< x -1.0)
+          (result (Scm_MakeComplex 0 (log (+ x (sqrt (- (* x x) 1.0))))))]
+         [else
+          (result (Scm_VMReturnFlonum (acos x)))]))
+  (flags immediate-arg))
 
 (define-cproc %atan (z::<real> &optional x)
   (body <double>
@@ -212,26 +241,28 @@
           (begin
             (unless (SCM_REALP x)
               (Scm_Error "real number required for x, but got %S" x))
-            (result (atan2 z (Scm_GetDouble x)))))))
+            (result (atan2 z (Scm_GetDouble x))))))
+  (flags immediate-arg))
 
-(define-cproc %sinh (x::<real>) (call <real> "sinh"))
-(define-cproc %cosh (x::<real>) (call <real> "cosh"))
-(define-cproc %tanh (x::<real>) (call <real> "tanh"))
+(define-cproc %sinh (x::<real>) (call <real> sinh) (flags immediate-arg))
+(define-cproc %cosh (x::<real>) (call <real> cosh) (flags immediate-arg))
+(define-cproc %tanh (x::<real>) (call <real> tanh) (flags immediate-arg))
 ;; NB: asinh and acosh are not in POSIX.
 
 (define-cproc %sqrt (x::<real>)
   (body <top>
         (if (< x 0)
           (result (Scm_MakeComplex 0.0 (sqrt (- x))))
-          (result (Scm_MakeFlonum (sqrt x))))))
+          (result (Scm_VMReturnFlonum (sqrt x)))))
+  (flags immediate-arg))
 
-(define-cproc %expt (x y) (call "Scm_Expt"))
+(define-cproc %expt (x y) (call Scm_Expt) (flags immediate-arg))
 
 (define-cproc make-rectangular (a::<real> b::<real>)
-  (call "Scm_MakeComplex"))
+  (call Scm_MakeComplex))
 
 (define-cproc make-polar (r::<real> t::<real>)
-  (call "Scm_MakeComplexPolar"))
+  (call Scm_MakeComplexPolar))
 
 (define-cproc %complex->real/imag (z)
   "if (SCM_EXACTP(z)) { SCM_RETURN(Scm_Values2(z, SCM_MAKE_INT(0))); }
@@ -247,24 +278,27 @@
   (body <top>
         (if (SCM_REALP z)
           (result z)
-          (result (Scm_MakeFlonum (SCM_COMPNUM_REAL z))))))
+          (result (Scm_VMReturnFlonum (SCM_COMPNUM_REAL z)))))
+  (flags immediate-arg))
 
 (define-cproc imag-part (z::<number>)
   (body <top>
         (cond
-         ((SCM_EXACTP z) (result (SCM_MAKE_INT 0)))
-         ((SCM_REALP z)  (result (Scm_MakeFlonum 0.0)))
-         (else (result (Scm_MakeFlonum (SCM_COMPNUM_IMAG z)))))))
+         [(SCM_EXACTP z) (result (SCM_MAKE_INT 0))]
+         [(SCM_REALP z)  (result (Scm_VMReturnFlonum 0.0))]
+         [else (result (Scm_VMReturnFlonum (SCM_COMPNUM_IMAG z)))]))
+  (flags immediate-arg))
 
-(define-cproc magnitude (z)  (call <double> "Scm_Magnitude"))
-(define-cproc angle (z)      (call <double> "Scm_Angle"))
+(define-cproc magnitude (z) (call <double> Scm_Magnitude) (flags immediate-arg))
+(define-cproc angle (z)     (call <double> Scm_Angle) (flags immediate-arg))
 
-(define-cproc exact->inexact (obj) (call "Scm_ExactToInexact"))
-(define-cproc inexact->exact (obj) (call "Scm_InexactToExact"))
+(define-cproc exact->inexact (obj) (call Scm_ExactToInexact) (flags immediate-arg))
+(define-cproc inexact->exact (obj) (call Scm_InexactToExact) (flags immediate-arg))
 
 (define-cproc number->string (obj
                               &optional (radix::<fixnum> 10) (use-upper? #f))
-  (expr <top> (Scm_NumberToString obj radix (not (SCM_FALSEP use_upperP)))))
+  (expr <top> (Scm_NumberToString obj radix (not (SCM_FALSEP use_upperP))))
+  (flags immediate-arg))
 
 (define-cproc string->number (obj::<string> &optional (radix::<fixnum> 10))
   (expr <top> (Scm_StringToNumber obj radix FALSE)))
@@ -275,10 +309,12 @@
 
 (define-cproc not (obj)
   (inliner NOT)
-  (call <boolean> "SCM_FALSEP"))
+  (call <boolean> SCM_FALSEP)
+  (flags immediate-arg))
 
 (define-cproc boolean? (obj)
-  (call <boolean> "SCM_BOOLP"))
+  (call <boolean> SCM_BOOLP)
+  (flags immediate-arg))
 
 ;;
 ;; 6.3.2  Pairs and lists
@@ -286,7 +322,8 @@
 
 (define-cproc pair? (obj)
   (inliner PAIRP)
-  (call <boolean> "SCM_PAIRP"))
+  (call <boolean> SCM_PAIRP)
+  (flags immediate-arg))
 
 (define-cproc cons (obj1 obj2)
   (inliner CONS)
@@ -316,28 +353,32 @@
 
 (define-cproc caar (obj)
   (inliner CAAR)
-  (call "Scm_Caar")
+  (call Scm_Caar)
+  (flags immediate-arg)
   (setter (obj value) "CXR_SETTER(A, a, a);"))
 (define-cproc cadr (obj)
   (inliner CADR)
-  (call "Scm_Cadr")
+  (call Scm_Cadr)
+  (flags immediate-arg)
   (setter (obj value) "CXR_SETTER(A, a, d);"))
 (define-cproc cdar (obj)
   (inliner CDAR)
-  (call "Scm_Cdar")
+  (call Scm_Cdar)
+  (flags immediate-arg)
   (setter (obj value) "CXR_SETTER(D, d, a);"))
 (define-cproc cddr (obj)
   (inliner CDDR)
-  (call "Scm_Cddr")
+  (call Scm_Cddr)
+  (flags immediate-arg)
   (setter (obj value) "CXR_SETTER(D, d, d);"))
 ;; NB: caaar ... cddddr are in autoloaded Scheme file now.
 
 (define-cproc null? (obj)
   (inliner NULLP)
-  (call <boolean> "SCM_NULLP"))
+  (call <boolean> SCM_NULLP))
 
 (define-cproc list? (obj)
-  (call <boolean> "SCM_PROPER_LIST_P"))
+  (call <boolean> SCM_PROPER_LIST_P) (flags immediate-arg))
 
 (define-cproc list (&rest args)
   (inliner LIST)
@@ -348,7 +389,8 @@
   (body <long>
         (let* ((len :: long (Scm_Length list)))
           (if (< len 0) (Scm_Error "bad list: %S" list))
-          (result len))))
+          (result len)))
+  (flags immediate-arg))
 
 (define-cproc length+ (list) ;; srfi-1
   (body <top>
@@ -397,7 +439,8 @@
 
 (define-cproc symbol? (obj)
   (inliner SYMBOLP)
-  (call <boolean> "SCM_SYMBOLP"))
+  (call <boolean> SCM_SYMBOLP)
+  (flags immediate-arg))
 
 (define-cproc symbol->string (obj::<symbol>)
   (expr <top> (SCM_OBJ (SCM_SYMBOL_NAME obj))))
@@ -411,7 +454,8 @@
 
 (define-cproc char? (obj)
   (inliner CHARP)
-  (call <boolean> "SCM_CHARP"))
+  (call <boolean> SCM_CHARP)
+  (flags immediate-arg))
 
 (define-cproc char=? (c1::<char> c2::<char>)  (expr <boolean> "c1 == c2"))
 (define-cproc char<? (c1::<char> c2::<char>)  (expr <boolean> "c1 < c2"))
@@ -456,7 +500,8 @@
 
 (define-cproc string? (obj)
   (inliner STRINGP)
-  (call <boolean> "SCM_STRINGP"))
+  (call <boolean> "SCM_STRINGP")
+  (flags immediate-arg))
 
 (define-cproc make-string (len::<fixnum> &optional (c::<char> #\ ))
   (call "Scm_MakeFillString"))
@@ -524,7 +569,8 @@
 
 (define-cproc vector? (obj)
   (inliner VECTORP)
-  (call <boolean> "SCM_VECTORP"))
+  (call <boolean> "SCM_VECTORP")
+  (flags immediate-arg))
 
 (define-cproc make-vector (k::<fixnum> &optional fill)
   (call "Scm_MakeVector"))
@@ -573,7 +619,9 @@
 ;; 6.4  Control Features
 ;;
 
-(define-cproc procedure? (obj) (call <boolean> "SCM_PROCEDUREP"))
+(define-cproc procedure? (obj)
+  (call <boolean> SCM_PROCEDUREP)
+  (flags immediate-arg))
 
 (define-cproc apply (proc arg1 &rest args)
   (inliner TAIL-APPLY)
@@ -696,7 +744,8 @@
 
 (define-cproc eof-object? (obj)
   (inliner EOFP)
-  (call <boolean> "SCM_EOFP"))
+  (call <boolean> "SCM_EOFP")
+  (flags immediate-arg))
 
 (define-cproc char-ready? (&optional (port::<input-port> (current-input-port)))
   (call <boolean> "Scm_CharReady"))

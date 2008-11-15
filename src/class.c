@@ -454,6 +454,8 @@ ScmClass *Scm_ClassOf(ScmObj obj)
         if (SCM_EOFP(obj))  return SCM_CLASS_EOF_OBJECT;
         if (SCM_UNDEFINEDP(obj)) return SCM_CLASS_UNDEFINED_OBJECT;
         else return SCM_CLASS_UNKNOWN;
+    } else if (SCM_FLONUMP(obj)) {
+        return SCM_CLASS_REAL;
     } else if (SCM_PAIRP(obj)) {
         return SCM_CLASS_PAIR;
     } else {

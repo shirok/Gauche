@@ -59,6 +59,12 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_NullClass, NULL, NULL, NULL, NULL, list_cpl);
 ScmObj Scm_Cons(ScmObj car, ScmObj cdr)
 {
     ScmPair *z = SCM_NEW(ScmPair);
+    /* NB: these ENSURE_MEMs are moved here from vm loop to reduce
+       the register pressure there.  In most cases these increases
+       just a couple of mask-and-test instructions on the data on
+       the register. */
+    SCM_FLONUM_ENSURE_MEM(car);
+    SCM_FLONUM_ENSURE_MEM(cdr);
     SCM_SET_CAR(z, car);
     SCM_SET_CDR(z, cdr);
     return SCM_OBJ(z);

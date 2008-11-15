@@ -181,6 +181,11 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->sp = v->stack;
     v->stackBase = v->stack;
     v->stackEnd = v->stack + SCM_VM_STACK_SIZE;
+#if GAUCHE_FFX
+    v->fpstack = SCM_NEW_ATOMIC_ARRAY(ScmFlonum, SCM_VM_STACK_SIZE);
+    v->fpstackEnd = v->fpstack + SCM_VM_STACK_SIZE;
+    v->fpsp = v->fpstack;
+#endif /* GAUCHE_FFX */
 
     v->env = NULL;
     v->argp = v->stack;
@@ -273,6 +278,10 @@ ScmVM *Scm_VM(void)
     return theVM;
 }
 
+/* Some macros inserts Scm_VM() in its output.  If such macros are expanded
+   below, we can safely replace Scm_VM() to theVM. */
+#define Scm_VM() theVM
+
 /*
  * Get VM key
  */
@@ -337,6 +346,13 @@ pthread_key_t Scm_VMKey(void)
 /* pop the top object of the stack and store it to VAR */
 #define POP_ARG(var)       ((var) = *--SP)
 
+#define SHIFT_FRAME(from, to, size)                     \
+    do {                                                \
+        ScmObj *f = (from), *t = (to);                  \
+        int c;                                          \
+        for (c=0; c<(size); c++, f++, t++) *t = *f;     \
+    } while (0)
+
 /* VM registers.  We've benchmarked if keeping some of those registers
    local variables makes VM loop run faster; however, it turned out
    that more local variables tended to make them spill from machine
@@ -385,6 +401,7 @@ pthread_key_t Scm_VMKey(void)
     do {                                                                \
         if (CONT->argp == NULL) {                                       \
             void *data__[SCM_CCONT_DATA_SIZE];                          \
+            ScmObj v__ = VAL0;                                          \
             ScmCContinuationProc *after__;                              \
             void **d__ = data__;                                        \
             void **s__ = (void**)((ScmObj*)CONT + CONT_FRAME_SIZE);     \
@@ -399,7 +416,8 @@ pthread_key_t Scm_VMKey(void)
             PC = PC_TO_RETURN;                                          \
             CONT = CONT->prev;                                          \
             BASE = CONT->base;                                          \
-            VAL0 = CALL_CCONT(after__, VAL0, data__);                   \
+            SCM_FLONUM_ENSURE_MEM(v__);                                 \
+            VAL0 = CALL_CCONT(after__, v__, data__);                    \
         } else if (IN_STACK_P((ScmObj*)CONT)) {                         \
             SP   = CONT->argp + CONT->size;                             \
             ENV  = CONT->env;                                           \
@@ -758,17 +776,21 @@ static inline ScmEnvFrame *save_env(ScmVM *vm, ScmEnvFrame *env_begin)
     if (!IN_STACK_P((ScmObj*)e)) return e;
 
     do {
-        int esize = (int)e->size, i;
+        long esize = (long)e->size, i;
         ScmObj *d, *s;
 
-        if (e->size < 0) {
+        if (esize < 0) {
             /* forwaded frame */
             if (prev) prev->up = FORWARDED_ENV(e);
             return head;
         }
 
         d = SCM_NEW2(ScmObj*, ENV_SIZE(esize) * sizeof(ScmObj));
-        for (i=ENV_SIZE(esize), s = (ScmObj*)e - esize; i>0; i--) {
+        for (i=esize, s = (ScmObj*)e - esize; i>0; i--) {
+            SCM_FLONUM_ENSURE_MEM(*s);
+            *d++ = *s++;
+        }
+        for (i=ENV_SIZE(0); i>0; i--) {
             *d++ = *s++;
         }
         saved = (ScmEnvFrame*)(d - ENV_HDR_SIZE);
@@ -822,6 +844,7 @@ static void save_cont(ScmVM *vm)
                 s = c->argp;
                 d = (ScmObj*)csave + CONT_FRAME_SIZE;
                 for (i=c->size; i>0; i--) {
+                    SCM_FLONUM_ENSURE_MEM(*s);
                     *d++ = *s++;
                 }
             }
@@ -831,6 +854,8 @@ static void save_cont(ScmVM *vm)
             s = (ScmObj*)c;
             d = (ScmObj*)csave;
             for (i=CONT_FRAME_SIZE + c->size; i>0; i--) {
+                /* NB: C continuation frame contains opaque pointer,
+                   so we shouldn't ENSURE_MEM. */
                 *d++ = *s++;
             }
         }
@@ -912,6 +937,98 @@ static ScmEnvFrame *get_env(ScmVM *vm)
     }
     return e;
 }
+
+#if GAUCHE_FFX
+/* Move all the FLONUM_REGs to heap and clear the fpstack.
+   We cache small number of visited env frames to avoid duplicate scanning
+   (if there are more env frames, linear search in the cache gets even
+   more costly than duplicate scanning).
+ */
+
+#define ENV_CACHE_SIZE 32
+
+#undef COUNT_FLUSH_FPSTACK
+
+#ifdef COUNT_FLUSH_FPSTACK
+static int flush_fpstack_count = 0;
+static u_long flush_fpstack_time = 0;
+static void print_flush_fpstack_count(void*z)
+{
+    fprintf(stderr, "fpstack count = %d  time = %ldus (avg %fus)\n",
+            flush_fpstack_count, flush_fpstack_time,
+            flush_fpstack_time/(double)flush_fpstack_count);
+}
+#endif
+
+void Scm_VMFlushFPStack(ScmVM *vm)
+{
+    ScmEnvFrame *visited[ENV_CACHE_SIZE], *e;
+    ScmContFrame *c;
+    int visited_index = 0, i;
+    ScmObj *p;
+#ifdef COUNT_FLUSH_FPSTACK
+    struct timeval t0, t1;
+    gettimeofday(&t0, NULL);
+#endif
+
+    /* first, scan VAL0 and incomplete frames */
+    SCM_FLONUM_ENSURE_MEM(VAL0);
+    if (IN_STACK_P(ARGP)) {
+        for (p = ARGP; p < SP; p++) SCM_FLONUM_ENSURE_MEM(*p);
+    }
+
+    /* scan the main environment chain */
+    e = ENV;
+    while (IN_STACK_P((ScmObj*)e)) {
+        for (i = 0; i < visited_index; i++) {
+            if (visited[i] == e) goto next;
+        }
+        if (visited_index < ENV_CACHE_SIZE) {
+            visited[visited_index++] = e;
+        }
+        
+        for (i = 0; i < e->size; i++) {
+            p = &ENV_DATA(e, i);
+            SCM_FLONUM_ENSURE_MEM(*p);
+        }
+      next:
+        e = e->up;
+    }
+
+    /* scan the env chains grabbed by cont chain */
+    c = CONT;
+    while (IN_STACK_P((ScmObj*)c)) {
+        e = c->env;
+        while (IN_STACK_P((ScmObj*)e)) {
+            for (i = 0; i < visited_index; i++) {
+                if (visited[i] == e) goto next2;
+            }
+            if (visited_index < ENV_CACHE_SIZE) {
+                visited[visited_index++] = e;
+            }
+            for (i = 0; i < e->size; i++) {
+                p = &ENV_DATA(e, i);
+                SCM_FLONUM_ENSURE_MEM(*p);
+            }
+          next2:
+            e = e->up;
+        }
+        c = c->prev;
+    }
+
+    vm->fpsp = vm->fpstack;
+
+#ifdef COUNT_FLUSH_FPSTACK
+    flush_fpstack_count++;
+    gettimeofday(&t1, NULL);
+    flush_fpstack_time +=
+        (t1.tv_sec - t0.tv_sec)*1000000+(t1.tv_usec - t0.tv_usec);
+#endif
+}
+#undef ENV_CACHE_SIZE
+
+#endif /*GAUCHE_FFX*/
+
 
 /*==================================================================
  * Function application from C
@@ -1438,7 +1555,7 @@ ScmObj Scm_VMDynamicWind(ScmObj before, ScmObj body, ScmObj after)
 {
     void *data[3];
 
-    /* NB: we don't check types of arguments, since we allo object-apply
+    /* NB: we don't check types of arguments, since we allow object-apply
        hooks can be used for them. */
     data[0] = (void*)before;
     data[1] = (void*)body;
@@ -2435,5 +2552,8 @@ void Scm__InitVM(void)
 #ifdef COUNT_INSN_FREQUENCY
     Scm_AddCleanupHandler(dump_insn_frequency, NULL);
 #endif /*COUNT_INSN_FREQUENCY*/
-}
 
+#ifdef COUNT_FLUSH_FPSTACK
+    Scm_AddCleanupHandler(print_flush_fpstack_count, NULL);
+#endif
+}

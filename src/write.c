@@ -438,6 +438,10 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             snprintf(buf, SPBUFSIZ, "%ld", SCM_INT_VALUE(obj));
             Scm_PutzUnsafe(buf, -1, port);
         }
+        else if (SCM_FLONUMP(obj)) {
+            write_general(obj, port, ctx);
+            return;
+        }
         else if (SCM_CHARP(obj)) {
             ScmChar ch = SCM_CHAR_VALUE(obj);
             if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {

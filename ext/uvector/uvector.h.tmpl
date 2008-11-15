@@ -126,11 +126,12 @@ SCM_EXTERN ScmObj Scm_Make${T}VectorFromArrayShared(int size, ${etype} array[]);
 SCM_EXTERN ScmObj Scm_${T}VectorFill(Scm${T}Vector *vec, ${etype} fill, int, int);
 SCM_EXTERN ScmObj Scm_${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_${T}VectorSet(Scm${T}Vector *vec, int index, ScmObj val, int clamp);
+SCM_EXTERN ScmObj Scm_VM${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_${T}VectorToList(Scm${T}Vector *vec, int start, int end);
 SCM_EXTERN ScmObj Scm_ListTo${T}Vector(ScmObj list, int clamp);
 SCM_EXTERN ScmObj Scm_${T}VectorCopy(Scm${T}Vector *vec, int start, int end);
 SCM_EXTERN ScmObj Scm_${T}VectorCopyX(Scm${T}Vector *dst, int dstart,
-                                  Scm${T}Vector *src, int sstart, int send);
+                                      Scm${T}Vector *src, int sstart, int send);
 SCM_EXTERN ScmObj Scm_${T}VectorToVector(Scm${T}Vector *vec, int start, int end);
 SCM_EXTERN ScmObj Scm_VectorTo${T}Vector(ScmVector *vec, int start, int end, int clamp);
 

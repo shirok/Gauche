@@ -43,9 +43,25 @@ int Scm_EqP(ScmObj x, ScmObj y)
 
 int Scm_EqvP(ScmObj x, ScmObj y)
 {
-    /* for our implementation, only the number matters. */
+    /* For our implementation, only numbers need different treatment
+       than SCM_EQ.  We first check flonums, or we'd have to FLONUM_ENSURE_MEM
+       before we pass them to Scm_NumEq.
+    */
     if (SCM_NUMBERP(x)) {
         if (SCM_NUMBERP(y)) {
+            /* Since flonums are the only "inexact real" type in Gauche,
+               we can safely reject the cases where either one is flonum and
+               another is not. */
+            if (SCM_FLONUMP(x)) {
+                if (SCM_FLONUMP(y)) {
+                    return (SCM_FLONUM_VALUE(x) == SCM_FLONUM_VALUE(y));
+                } else {
+                    return FALSE;
+                }
+            } else if (SCM_FLONUMP(y)) {
+                return FALSE;
+            }
+            /* More generic case. */
             if ((SCM_EXACTP(x) && SCM_EXACTP(y))
                 || (SCM_INEXACTP(x) && SCM_INEXACTP(y))) {
                 return Scm_NumEq(x, y);
@@ -119,7 +135,7 @@ int Scm_EqualP(ScmObj x, ScmObj y)
     }
     /* End of EXPERIMENTAL code */
 
-    if (!SCM_PTRP(x)) return (x == y);
+    if (!SCM_HPTRP(x)) return (x == y);
     cx = Scm_ClassOf(x);
     cy = Scm_ClassOf(y);
     if (cx == cy && cx->compare) {

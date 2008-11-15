@@ -29,8 +29,6 @@
  *   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *  $Id: vm.h,v 1.116 2008-06-02 01:13:14 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -55,6 +53,26 @@
 /* define if you want to use profiler */
 #define GAUCHE_PROFILE
 #endif /* defined(ITIMER_PROF) && defined(SIGPROF) */
+
+
+#ifdef __GNUC__
+/* in GNUC, we inline Scm_VMReturnFlonum using statement expressions. */
+# if GAUCHE_FFX
+SCM_EXTERN void Scm_VMFlushFPStack(ScmVM *vm);
+#   define Scm_VMReturnFlonum(val)                                      \
+        ({ ScmVM *vm__ = Scm_VM(); ScmFlonum *fp;                       \
+           if (vm__->fpsp == vm__->fpstackEnd) Scm_VMFlushFPStack(vm__);\
+           fp = vm__->fpsp++;                                           \
+           *fp = (val);                                                 \
+           SCM_MAKE_FLONUM_REG(fp);                                     \
+        })
+# else  /* !GAUCHE_FFX */
+#   define Scm_VMReturnFlonum(val)  Scm_MakeFlonum(val)
+# endif /* !GAUCHE_FFX */
+#else  /* !__GNUC__ */
+#   define Scm_VMReturnFlonum(val)  Scm_MakeFlonum(val)
+#endif /* !__GNUC__ */
+
 
 /* Actual structure is defined in code.h */
 typedef struct ScmCompiledCodeRec ScmCompiledCode;
@@ -395,6 +413,14 @@ struct ScmVMRec {
     ScmObj *stack;              /* bottom of allocated stack area */
     ScmObj *stackBase;          /* base of current stack area  */
     ScmObj *stackEnd;           /* end of current stack area */
+
+#if GAUCHE_FFX
+    ScmFlonum *fpsp;            /* flonum stack pointer.  we call it 'stack'
+                                   for historical reasons, but it's more like
+                                   a nursery. */
+    ScmFlonum *fpstack;         /* flonum stack */
+    ScmFlonum *fpstackEnd;      /* flonum stack limit */
+#endif
 
     /* Escape handling */
     ScmObj exceptionHandler;    /* the current exception handler installed by

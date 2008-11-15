@@ -115,6 +115,8 @@ SCM_DECL_BEGIN
 #define SCM_DEBUG_HELPER      TRUE
 #endif
 
+#define GAUCHE_FFX 1
+
 #ifdef GAUCHE_USE_PTHREADS
 # include <gauche/pthread.h>
 #else  /* !GAUCHE_USE_PTHREADS */
@@ -158,28 +160,38 @@ typedef struct ScmClassRec ScmClass;
  * [Pointer]
  *      -------- -------- -------- ------00
  *      Points to a pair or other heap-allocated objects.
+ *      If the lower 3 bits of the pointed word are '111',
+ *      it's a heap object (see below).  Otherwise, it's
+ *      a pair.
  *
  * [Fixnum]
  *      -------- -------- -------- ------01
- *      30-bit signed integer
+ *      30 or 62-bit signed integer
+ *
+ * [Flonum]
+ *      -------- -------- -------- -----M10
+ *      Points to C double.  M=0 if the double is in the VM
+ *      register, M=1 if it is on the heap.  See the comment on
+ *      "Fast Flonum Extension" below for the details.
  *
  * [Character]
- *      -------- -------- -------- -----010
- *      29-bit
+ *      -------- -------- -------- 00000011
+ *      24-bit.  20bits are enough to cover all UCS, but we
+ *      reserve a few extra bits for possible future extension.
  *
  * [Miscellaneous]
- *      -------- -------- -------- ----0110
+ *      -------- -------- -------- 00001011
  *      #f, #t, '(), eof-object, undefined
  *
  * [Pattern variable]
- *      -------- -------- -------- ----1110
+ *      -------- -------- -------- 00010011
  *      Used in macro expander.
  *
  * [Heap object]
- *      -------- -------- -------- ------11
+ *      -------- -------- -------- -----111
  *      Only appears at the first word of heap-allocated
- *      objects except pairs.   Masking lower 2bits gives
- *      a pointer to ScmClass.  
+ *      objects except pairs and flonums.   Masking lower
+ *      3bits gives a pointer to ScmClass.  
  */
 
 /* Type coercer */
@@ -191,17 +203,31 @@ typedef struct ScmClassRec ScmClass;
  * PRIMARY TAG IDENTIFICATION
  */
 
-#define	SCM_TAG(obj)     (SCM_WORD(obj) & 0x03)
-#define SCM_PTRP(obj)    (SCM_TAG(obj) == 0)
+#define SCM_TAG1(obj)    (SCM_WORD(obj) & 0x01)
+#define SCM_TAG2(obj)    (SCM_WORD(obj) & 0x03)
+#define SCM_TAG3(obj)    (SCM_WORD(obj) & 0x07)
+#define SCM_TAG8(obj)    (SCM_WORD(obj) & 0xff)
+
+/* Check if the ScmObj is a 'pointer'---either to a pair,
+   a heap object, or a ScmFlonum. */
+#define SCM_PTRP(obj)    (SCM_TAG1(obj) == 0)
+
+/* Check if the ScmObj is a pointer to either a pair or a heap
+   (That is, we can safely take SCM_OBJ(obj)->tag) */
+#define SCM_HPTRP(obj)   (SCM_TAG2(obj) == 0)
+
+/* This macro further takes the lower three bits of the word pointed
+   by OBJ, to distinguish whether it's a pair or a heap object. */
+#define SCM_HTAG(obj)    (SCM_WORD(SCM_OBJ(obj)->tag)&7)
 
 /*
  * IMMEDIATE OBJECTS
  */
 
-#define SCM_IMMEDIATEP(obj) ((SCM_WORD(obj)&0x0f) == 6)
-#define SCM_ITAG(obj)       (SCM_WORD(obj)>>4)
+#define SCM_IMMEDIATEP(obj) (SCM_TAG8(obj) == 0x0b)
+#define SCM_ITAG(obj)       (SCM_WORD(obj)>>8)
 
-#define SCM__MAKE_ITAG(num)  (((num)<<4) + 6)
+#define SCM__MAKE_ITAG(num)  (((num)<<8) + 0x0b)
 #define SCM_FALSE           SCM_OBJ(SCM__MAKE_ITAG(0)) /* #f */
 #define SCM_TRUE            SCM_OBJ(SCM__MAKE_ITAG(1)) /* #t  */
 #define SCM_NIL             SCM_OBJ(SCM__MAKE_ITAG(2)) /* '() */
@@ -242,11 +268,21 @@ SCM_EXTERN int Scm_EqualM(ScmObj x, ScmObj y, int mode);
  * FIXNUM
  */
 
-#define SCM_INTP(obj)        (SCM_TAG(obj) == 1)
+#define SCM_INTP(obj)        (SCM_TAG2(obj) == 1)
 #define SCM_INT_VALUE(obj)   (((signed long int)SCM_WORD(obj)) >> 2)
 #define SCM_MAKE_INT(obj)    SCM_OBJ(((intptr_t)(obj) << 2) + 1)
 
 #define SCM_UINTP(obj)       (SCM_INTP(obj)&&((signed long int)SCM_WORD(obj)>=0))
+
+/*
+ * FLONUM
+ */
+
+typedef double ScmFlonum;
+
+#define SCM_FLONUM(obj)            ((ScmFlonum*)(SCM_WORD(obj)&~0x07))
+#define SCM_FLONUMP(obj)           (SCM_TAG2(obj) == 2)
+#define SCM_FLONUM_VALUE(obj)      (*SCM_FLONUM(obj))
 
 /*
  * CHARACTERS
@@ -258,12 +294,12 @@ SCM_EXTERN int Scm_EqualM(ScmObj x, ScmObj y, int mode);
  */
 
 #define	SCM_CHAR(obj)           ((ScmChar)(obj))
-#define	SCM_CHARP(obj)          ((SCM_WORD(obj)&0x07L) == 2)
-#define	SCM_CHAR_VALUE(obj)     SCM_CHAR(SCM_WORD(obj) >> 3)
-#define	SCM_MAKE_CHAR(ch)       SCM_OBJ(SCM_WORD((ch) << 3) + 2)
+#define	SCM_CHARP(obj)          ((SCM_WORD(obj)&0xff) == 3)
+#define	SCM_CHAR_VALUE(obj)     SCM_CHAR(SCM_WORD(obj) >> 8)
+#define	SCM_MAKE_CHAR(ch)       SCM_OBJ((long)((ch) << 8) + 3)
 
 #define SCM_CHAR_INVALID        ((ScmChar)(-1)) /* indicate invalid char */
-#define SCM_CHAR_MAX            (0x1fffffff)
+#define SCM_CHAR_MAX            (0xffffff)
 
 #define SCM_CHAR_ASCII_P(ch)    ((ch) < 0x80)
 #define SCM_CHAR_UPPER_P(ch)    (('A' <= (ch)) && ((ch) <= 'Z'))
@@ -296,18 +332,18 @@ SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
  * HEAP ALLOCATED OBJECTS
  *
  *  A heap allocated object has its class tag in the first word
- *  (except pairs).  Masking the lower two bits of class tag
+ *  (except pairs).  Masking the lower three bits of class tag
  *  gives a pointer to the class object.
  */
 
-#define SCM_HOBJP(obj)  (SCM_PTRP(obj)&&SCM_TAG(SCM_OBJ(obj)->tag)==3)
+#define SCM_HOBJP(obj)  (SCM_HPTRP(obj)&&(SCM_HTAG(obj)==7))
 
 #define SCM_CPP_CAT(a, b)   a##b
 #define SCM_CPP_CAT3(a, b, c)  a ## b ## c
 
 /* We use a pointer to the class structure (with low-bit tag) as
    the generic type tag. */
-#define SCM_CLASS2TAG(klass)  ((ScmByte*)(klass) + 3)
+#define SCM_CLASS2TAG(klass)  ((ScmByte*)(klass) + 7)
 
 /* A common header for heap-allocated objects */
 typedef struct ScmHeaderRec {
@@ -329,14 +365,14 @@ typedef struct ScmHeaderRec {
 
 /* Extract the class pointer from the tag.
    You can use these only if SCM_HOBJP(obj) != FALSE */
-# define SCM_CLASS_OF(obj)      SCM_CLASS((SCM_OBJ(obj)->tag - 3))
-# define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->tag = (ScmByte*)(k) + 3)
+# define SCM_CLASS_OF(obj)      SCM_CLASS((SCM_OBJ(obj)->tag - 7))
+# define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->tag = (ScmByte*)(k) + 7)
 
 /* Check if classof(OBJ) equals to an extended class KLASS.
-   We can check SCM_PTRP instead of SCM_HOBJP here, since a pair never
+   We can check SCM_HPTRP instead of SCM_HOBJP here, since a pair never
    satisfies the second test. */
 # define SCM_XTYPEP(obj, klass) \
-    (SCM_PTRP(obj)&&(SCM_OBJ(obj)->tag == SCM_CLASS2TAG(klass)))
+    (SCM_HPTRP(obj)&&(SCM_OBJ(obj)->tag == SCM_CLASS2TAG(klass)))
 
 #else  /*GAUCHE_BROKEN_LINKER_WORKAROUND*/
 
@@ -347,8 +383,8 @@ typedef struct ScmHeaderRec {
 # define SCM_CLASS_STATIC_PTR(klass) ((ScmClass*)(&SCM_CPP_CAT(_imp__,klass)))
 # define SCM_CLASS_STATIC_TAG(klass) SCM_CLASS2TAG(SCM_CLASS_STATIC_PTR(klass))
 
-# define SCM_CLASS_OF(obj)      (*(ScmClass**)((SCM_OBJ(obj)->tag - 3)))
-# define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->tag = (ScmByte*)((k)->classPtr) + 3)
+# define SCM_CLASS_OF(obj)      (*(ScmClass**)((SCM_OBJ(obj)->tag - 7)))
+# define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->tag = (ScmByte*)((k)->classPtr) + 7)
 
 # define SCM_XTYPEP(obj, klass) \
     (SCM_HOBJP(obj)&&(SCM_CLASS_OF(obj) == klass))
@@ -398,7 +434,6 @@ typedef struct ScmDStringRec   ScmDString;
 typedef struct ScmVectorRec    ScmVector;
 typedef struct ScmBignumRec    ScmBignum;
 typedef struct ScmRatnumRec    ScmRatnum;
-typedef struct ScmFlonumRec    ScmFlonum;
 typedef struct ScmCompnumRec   ScmCompnum;
 typedef struct ScmPortRec      ScmPort;
 typedef struct ScmHashTableRec ScmHashTable;
@@ -854,7 +889,7 @@ struct ScmExtendedPairRec {
     ScmObj attributes;          /* should be accessed via API func. */
 };
 
-#define SCM_PAIRP(obj)  (SCM_PTRP(obj)&&SCM_TAG(SCM_OBJ(obj)->tag)!=0x03)
+#define SCM_PAIRP(obj)          (SCM_HPTRP(obj)&&SCM_HTAG(obj)!=7)
 
 #define SCM_PAIR(obj)           ((ScmPair*)(obj))
 #define SCM_CAR(obj)            (SCM_PAIR(obj)->car)
@@ -1288,6 +1323,7 @@ SCM_EXTERN ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env);
 /* Subr - C defined procedure */
 struct ScmSubrRec {
     ScmProcedure common;
+    int flags;
     ScmSubrProc *func;
     void *data;
 };
@@ -1295,15 +1331,25 @@ struct ScmSubrRec {
 #define SCM_SUBRP(obj) \
     (SCM_PROCEDUREP(obj)&&(SCM_PROCEDURE_TYPE(obj)==SCM_PROC_SUBR))
 #define SCM_SUBR(obj)              ((ScmSubr*)(obj))
+#define SCM_SUBR_FLAGS(obj)        SCM_SUBR(obj)->flags
 #define SCM_SUBR_FUNC(obj)         SCM_SUBR(obj)->func
 #define SCM_SUBR_DATA(obj)         SCM_SUBR(obj)->data
 
-#define SCM_DEFINE_SUBR(cvar, req, opt, inf, func, inliner, data)           \
+#define SCM_SUBR_IMMEDIATE_ARG     (1L<<0)
+
+#define SCM__DEFINE_SUBR_INT(cvar, req, opt, inf, flags, func, inliner, data) \
     ScmSubr cvar = {                                                        \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_ProcedureClass),\
                                    req, opt, SCM_PROC_SUBR, inf, inliner),  \
-        (func), (data)                                                      \
+        flags, (func), (data)                                               \
     }
+
+#define SCM_DEFINE_SUBR(cvar, req, opt, inf, func, inliner, data) \
+    SCM__DEFINE_SUBR_INT(cvar, req, opt, inf, 0, func, inliner, data)
+
+#define SCM_DEFINE_SUBRI(cvar, req, opt, inf, func, inliner, data) \
+    SCM__DEFINE_SUBR_INT(cvar, req, opt, inf, SCM_SUBR_IMMEDIATE_ARG, \
+                         func, inliner, data)
 
 SCM_EXTERN ScmObj Scm_MakeSubr(ScmSubrProc *func,
 			       void *data,

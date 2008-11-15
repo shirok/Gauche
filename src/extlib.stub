@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.310 2008-06-09 17:51:16 shirok Exp $
-;;;
 
 "
 #include <fcntl.h>
@@ -99,13 +97,13 @@
           (SCM_TYPE_ERROR n "exact integer")
           (result 0)])))
 
-(define-cproc fixnum? (x) (call <boolean> "SCM_INTP"))
-(define-cproc bignum? (x) (call <boolean> "SCM_BIGNUMP"))
-(define-cproc flonum? (x) (call <boolean> "SCM_FLONUMP"))
+(define-cproc fixnum? (x) (call <boolean> SCM_INTP)   (flags immediate-arg))
+(define-cproc bignum? (x) (call <boolean> SCM_BIGNUMP)(flags immediate-arg))
+(define-cproc flonum? (x) (call <boolean> SCM_FLONUMP)(flags immediate-arg))
 
-(define-cproc finite?   (x::<number>) (call <boolean> "Scm_FiniteP"))
-(define-cproc infinite? (x::<number>) (call <boolean> "Scm_InfiniteP"))
-(define-cproc nan?      (x::<number>) (call <boolean> "Scm_NanP"))
+(define-cproc finite?   (x::<number>) (call <boolean> Scm_FiniteP)(flags immediate-arg))
+(define-cproc infinite? (x::<number>) (call <boolean> Scm_InfiniteP)(flags immediate-arg))
+(define-cproc nan?      (x::<number>) (call <boolean> Scm_NanP)(flags immediate-arg))
 
 ;; Names are from R6RS.
 (define-cproc fixnum-width ()    (expr <int> "SCM_SMALL_INT_SIZE"))
@@ -165,36 +163,41 @@
   (body <top>
         (let* ((r x) (maybe_exact :: int (SCM_EXACTP x)))
           (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
-          (cond ((SCM_EXACTP min)
-                 (when (< (Scm_NumCmp x min) 0) (set! r min)))
-                ((SCM_FLONUMP min)
+          (cond [(SCM_EXACTP min)
+                 (when (< (Scm_NumCmp x min) 0) (set! r min))]
+                [(SCM_FLONUMP min)
                  (set! maybe_exact FALSE)
-                 (when (< (Scm_NumCmp x min) 0) (set! r min)))
-                ((not (SCM_FALSEP min))
-                 (SCM_TYPE_ERROR min "real number or #f")))
-          (cond ((SCM_EXACTP max)
-                 (when (> (Scm_NumCmp x max) 0) (set! r max)))
-                ((SCM_FLONUMP max)
+                 (when (< (Scm_NumCmp x min) 0) (set! r min))]
+                [(not (SCM_FALSEP min))
+                 (SCM_TYPE_ERROR min "real number or #f")])
+          (cond [(SCM_EXACTP max)
+                 (when (> (Scm_NumCmp x max) 0) (set! r max))]
+                [(SCM_FLONUMP max)
                  (set! maybe_exact FALSE)
-                 (when (> (Scm_NumCmp x max) 0) (set! r max)))
-                ((not (SCM_FALSEP max))
-                 (SCM_TYPE_ERROR max "real number or #f")))
+                 (when (> (Scm_NumCmp x max) 0) (set! r max))]
+                [(not (SCM_FALSEP max))
+                 (SCM_TYPE_ERROR max "real number or #f")])
           (if (and (not maybe_exact) (SCM_EXACTP r))
             (return (Scm_ExactToInexact r))
-            (return r)))))
+            (return r))))
+  (flags immediate-arg))
 
 (define-cproc floor->exact (num)
-  (expr <top> (Scm_RoundToExact num SCM_ROUND_FLOOR)))
+  (expr <top> (Scm_RoundToExact num SCM_ROUND_FLOOR))
+  (flags immediate-arg))
 (define-cproc ceiling->exact (num)
-  (expr <top> (Scm_RoundToExact num SCM_ROUND_CEIL)))
+  (expr <top> (Scm_RoundToExact num SCM_ROUND_CEIL))
+  (flags immediate-arg))
 (define-cproc truncate->exact (num)
-  (expr <top> (Scm_RoundToExact num SCM_ROUND_TRUNC)))
+  (expr <top> (Scm_RoundToExact num SCM_ROUND_TRUNC))
+  (flags immediate-arg))
 (define-cproc round->exact (num)
-  (expr <top> (Scm_RoundToExact num SCM_ROUND_ROUND)))
+  (expr <top> (Scm_RoundToExact num SCM_ROUND_ROUND))
+  (flags immediate-arg))
 
 (define-cproc decode-float (num)        ;from ChezScheme
   (body <top>
-        (cond ((SCM_FLONUMP num)
+        (cond [(SCM_FLONUMP num)
                (let* ((exp :: int) (sign :: int)
                       (f (Scm_DecodeFlonum (SCM_FLONUM_VALUE num)
                                            (& exp) (& sign)))
@@ -202,16 +205,16 @@
                  (set! (SCM_VECTOR_ELEMENT v 0) f
                        (SCM_VECTOR_ELEMENT v 1) (Scm_MakeInteger exp)
                        (SCM_VECTOR_ELEMENT v 2) (Scm_MakeInteger sign))
-                 (result v)))
-              ((SCM_INTP num)
+                 (result v))]
+              [(SCM_INTP num)
                (let* ((v (Scm_MakeVector 3 '#f)))
                  (set! (SCM_VECTOR_ELEMENT v 0) (Scm_Abs num)
                        (SCM_VECTOR_ELEMENT v 1) (Scm_MakeInteger 0)
                        (SCM_VECTOR_ELEMENT v 2) (Scm_MakeInteger (Scm_Sign num)))
-                 (result v)))
-              (else
+                 (result v))]
+              [else
                (SCM_TYPE_ERROR num "real number")
-               (result SCM_UNDEFINED)))))
+               (result SCM_UNDEFINED)])))
 
 ;; just for debug...
 (when "SCM_DEBUG_HELPER"
@@ -1251,10 +1254,10 @@
       (else (result '#f))           ; TODO: need to think over
       )])
 
-(define-cproc eq-hash (obj)  (call <ulong> "Scm_EqHash"))
-(define-cproc eqv-hash (obj) (call <ulong> "Scm_EqvHash"))
-(define-cproc hash (obj)     (call <ulong> "Scm_Hash"))
-(define-cproc hash-table? (obj) (call <boolean> "SCM_HASH_TABLE_P"))
+(define-cproc eq-hash (obj)  (call <ulong> Scm_EqHash) (flags immediate-arg))
+(define-cproc eqv-hash (obj) (call <ulong> Scm_EqvHash)(flags immediate-arg))
+(define-cproc hash (obj)     (call <ulong> Scm_Hash))
+(define-cproc hash-table? (obj) (call <boolean> SCM_HASH_TABLE_P))
 
 (define-cproc make-hash-table (&optional (type eq?))
   (body <top>

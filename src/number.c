@@ -29,8 +29,6 @@
  *   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *  $Id: number.c,v 1.163 2008-05-23 07:14:57 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -97,6 +95,33 @@ extern double rint(double);
 static double roundeven(double);
 #endif
 
+/* Many built-in arithmetic routines come with VM* variants, which
+   are used when the resulting flonum is directly returned to the VM.
+   Such routines share the body with their variants, with an extra
+   flag 'vmp' that indicates whether the call is 'VM' variant or not.
+   RETURN_FLONUM and RETURN_FLOBJ macros are used to hide the different
+   flonum generation in such routines.
+   RETURN_FLONUM takes double arg and returns ScmObj.
+   RETURN_FLOBJ takes ScmObj (ScmFlonum*) and returns ScmObj.
+*/
+#if GAUCHE_FFX
+#define RETURN_FLONUM(z)                        \
+    do {                                        \
+        if (vmp) return Scm_VMReturnFlonum(z);  \
+        else     return Scm_MakeFlonum(z);      \
+    } while (0)
+#else  /*!GAUCHE_FFX*/
+#define RETURN_FLONUM(z) return Scm_MakeFlonum(z)
+#endif /*!GAUCHE_FFX*/
+
+#define DEFINE_DUAL_API1(a, b, kernel) \
+    ScmObj a(ScmObj obj) { return kernel(obj, FALSE); } \
+    ScmObj b(ScmObj obj) { return kernel(obj, TRUE); }
+
+#define DEFINE_DUAL_API2(a, b, kernel) \
+    ScmObj a(ScmObj obj1, ScmObj obj2) { return kernel(obj1, obj2, FALSE); } \
+    ScmObj b(ScmObj obj1, ScmObj obj2) { return kernel(obj1, obj2, TRUE); }
+
 /*================================================================
  * Classes of Numeric Tower
  */
@@ -155,12 +180,25 @@ static SCM_DEFINE_GENERIC(generic_div, bad_number_method, "/");
  *  Flonums
  */
 
+#undef COUNT_FLONUM_ALLOC
+
+#ifdef COUNT_FLONUM_ALLOC
+static u_long flonum_count = 0;
+
+static void report_flonum_count(void *data)
+{
+    fprintf(stderr, "allocated flonums = %8d\n", flonum_count);
+}
+#endif /*COUNT_FLONUM_ALLOC*/
+
 ScmObj Scm_MakeFlonum(double d)
 {
     ScmFlonum *f = SCM_NEW(ScmFlonum);
-    SCM_SET_CLASS(f, SCM_CLASS_REAL);
-    f->value = d;
-    return SCM_OBJ(f);
+    *f = d;
+#ifdef COUNT_FLONUM_ALLOC
+    flonum_count++;
+#endif
+    return SCM_MAKE_FLONUM_MEM(f);
 }
 
 ScmObj Scm_MakeFlonumToNumber(double d, int exact)
@@ -378,27 +416,17 @@ ScmObj Scm_MakeRational(ScmObj numer, ScmObj denom)
 
 ScmObj Scm_Numerator(ScmObj n)
 {
-    if (SCM_RATNUMP(n)) {
-        return SCM_RATNUM_NUMER(n);
-    }
-    if (SCM_NUMBERP(n)) {
-        return n;
-    }
+    if (SCM_RATNUMP(n)) return SCM_RATNUM_NUMER(n);
+    if (SCM_NUMBERP(n)) return n;
     Scm_Error("number required, but got %S", n);
     return SCM_UNDEFINED;       /* dummy */
 }
 
 ScmObj Scm_Denominator(ScmObj n)
 {
-    if (SCM_RATNUMP(n)) {
-        return SCM_RATNUM_DENOM(n);
-    }
-    if (SCM_INTEGERP(n)) {
-        return SCM_MAKE_INT(1);
-    }
-    if (SCM_NUMBERP(n)) {
-        return Scm_MakeFlonum(1.0);
-    }
+    if (SCM_RATNUMP(n))  return SCM_RATNUM_DENOM(n);
+    if (SCM_INTEGERP(n)) return SCM_MAKE_INT(1);
+    if (SCM_NUMBERP(n))  return Scm_MakeFlonum(1.0);
     Scm_Error("number required, but got %S", n);
     return SCM_UNDEFINED;       /* dummy */
 }
@@ -538,6 +566,7 @@ ScmObj Scm_MakeComplexPolar(double mag, double angle)
     else             return Scm_MakeCompnum(real, imag);
 }
 
+/* NB: This isn't called by Scheme's real-part; see stdlib.stub */
 double Scm_RealPart(ScmObj z)
 {
     double m;
@@ -552,6 +581,7 @@ double Scm_RealPart(ScmObj z)
     return m;
 }
 
+/* NB: This isn't called by Scheme's imag-part; see stdlib.stub */
 double Scm_ImagPart(ScmObj z)
 {
     double m = 0.0;
@@ -1165,7 +1195,7 @@ int Scm_NanP(ScmObj obj)
 
 /* Unary Operator */
 
-ScmObj Scm_Abs(ScmObj obj)
+static ScmObj scm_abs(ScmObj obj, int vmp)
 {
     if (SCM_INTP(obj)) {
         long v = SCM_INT_VALUE(obj);
@@ -1177,7 +1207,7 @@ ScmObj Scm_Abs(ScmObj obj)
         }
     } else if (SCM_FLONUMP(obj)) {
         double v = SCM_FLONUM_VALUE(obj);
-        if (v < 0) obj = Scm_MakeFlonum(-v);
+        if (v < 0) RETURN_FLONUM(-v);
     } else if (SCM_RATNUMP(obj)) {
         if (Scm_Sign(SCM_RATNUM_NUMER(obj)) < 0) {
             obj = Scm_MakeRational(Scm_Negate(SCM_RATNUM_NUMER(obj)),
@@ -1187,12 +1217,13 @@ ScmObj Scm_Abs(ScmObj obj)
         double r = SCM_COMPNUM_REAL(obj);
         double i = SCM_COMPNUM_IMAG(obj);
         double a = sqrt(r*r+i*i);
-        return Scm_MakeFlonum(a);
+        RETURN_FLONUM(a);
     } else {
         Scm_Error("number required: %S", obj);
     }
     return obj;
 }
+DEFINE_DUAL_API1(Scm_Abs, Scm_VMAbs, scm_abs)
 
 /* Return -1, 0 or 1 when arg is minus, zero or plus, respectively.
    used to implement zero?, positive? and negative? */
@@ -1221,41 +1252,43 @@ int Scm_Sign(ScmObj obj)
     return r;
 }
 
-ScmObj Scm_Negate(ScmObj obj)
+static ScmObj negate(ScmObj obj, int vmp)
 {
     if (SCM_INTP(obj)) {
         long v = SCM_INT_VALUE(obj);
         if (v == SCM_SMALL_INT_MIN) {
-            obj = Scm_MakeBignumFromSI(-v);
+            return Scm_MakeBignumFromSI(-v);
         } else {
-            obj = SCM_MAKE_INT(-v);
+            return SCM_MAKE_INT(-v);
         }
     } else if (SCM_BIGNUMP(obj)) {
-        obj = Scm_BignumNegate(SCM_BIGNUM(obj));
+        return Scm_BignumNegate(SCM_BIGNUM(obj));
     } else if (SCM_FLONUMP(obj)) {
-        obj = Scm_MakeFlonum(-SCM_FLONUM_VALUE(obj));
+        double r = -SCM_FLONUM_VALUE(obj);
+        RETURN_FLONUM(r);
     } else if (SCM_RATNUMP(obj)) {
-        obj = Scm_MakeRational(Scm_Negate(SCM_RATNUM_NUMER(obj)),
-                               SCM_RATNUM_DENOM(obj));
+        return Scm_MakeRational(Scm_Negate(SCM_RATNUM_NUMER(obj)),
+                                SCM_RATNUM_DENOM(obj));
     } else if (SCM_COMPNUMP(obj)) {
-        obj = Scm_MakeCompnum(-SCM_COMPNUM_REAL(obj),
-                              -SCM_COMPNUM_IMAG(obj));
+        return Scm_MakeCompnum(-SCM_COMPNUM_REAL(obj),
+                               -SCM_COMPNUM_IMAG(obj));
     } else {
-        obj = Scm_ApplyRec(SCM_OBJ(&generic_sub), SCM_LIST1(obj));
+        return Scm_ApplyRec(SCM_OBJ(&generic_sub), SCM_LIST1(obj));
     }
-    return obj;
 }
+DEFINE_DUAL_API1(Scm_Negate, Scm_VMNegate, negate)
 
-ScmObj Scm_Reciprocal(ScmObj obj)
+
+static ScmObj reciprocal(ScmObj obj, int vmp)
 {
     if (SCM_INTP(obj) || SCM_BIGNUMP(obj)) {
-        obj = Scm_MakeRational(SCM_MAKE_INT(1), obj);
+        return Scm_MakeRational(SCM_MAKE_INT(1), obj);
     } else if (SCM_FLONUMP(obj)) {
-        double val = SCM_FLONUM_VALUE(obj);
-        obj = Scm_MakeFlonum(1.0/val);
+        double val = 1.0/SCM_FLONUM_VALUE(obj);
+        RETURN_FLONUM(val);
     } else if (SCM_RATNUMP(obj)) {
-        obj = Scm_MakeRational(SCM_RATNUM_DENOM(obj),
-                               SCM_RATNUM_NUMER(obj));
+        return Scm_MakeRational(SCM_RATNUM_DENOM(obj),
+                                SCM_RATNUM_NUMER(obj));
     } else if (SCM_COMPNUMP(obj)) {
         double r = SCM_COMPNUM_REAL(obj), r1;
         double i = SCM_COMPNUM_IMAG(obj), i1;
@@ -1263,42 +1296,49 @@ ScmObj Scm_Reciprocal(ScmObj obj)
         d = r*r + i*i;
         r1 = r/d;
         i1 = -i/d;
-        obj = Scm_MakeComplex(r1, i1);
+        return Scm_MakeComplex(r1, i1);
     } else {
-        obj = Scm_ApplyRec(SCM_OBJ(&generic_div), SCM_LIST1(obj));
+        return Scm_ApplyRec(SCM_OBJ(&generic_div), SCM_LIST1(obj));
     }
-    return obj;
 }
+DEFINE_DUAL_API1(Scm_Reciprocal, Scm_VMReciprocal, reciprocal)
 
-ScmObj Scm_ReciprocalInexact(ScmObj obj)
+
+static ScmObj ireciprocal(ScmObj obj, int vmp)
 {
     if (SCM_EXACT_ZERO_P(obj)) return SCM_POSITIVE_INFINITY;
     if (SCM_EXACT_ONE_P(obj))  return obj;
     if (SCM_REALP(obj)) {
-        return Scm_MakeFlonum(1.0/Scm_GetDouble(obj));
+        double z = 1.0/Scm_GetDouble(obj);
+        RETURN_FLONUM(z);
     }
     // delegate the rest to exact reciprocal
-    return Scm_Reciprocal(obj);
+    return reciprocal(obj, vmp);
 }
+DEFINE_DUAL_API1(Scm_ReciprocalInexact, Scm_VMReciprocalInexact, ireciprocal)
 
 
 /*
  * Conversion operators
  */
 
-ScmObj Scm_ExactToInexact(ScmObj obj)
+static ScmObj exactToInexact(ScmObj obj, int vmp)
 {
     if (SCM_INTP(obj)) {
-        obj = Scm_MakeFlonum((double)SCM_INT_VALUE(obj));
+        double z = (double)SCM_INT_VALUE(obj);
+        RETURN_FLONUM(z);
     } else if (SCM_BIGNUMP(obj)) {
-        obj = Scm_MakeFlonum(Scm_BignumToDouble(SCM_BIGNUM(obj)));
+        double z = Scm_BignumToDouble(SCM_BIGNUM(obj));
+        RETURN_FLONUM(z);
     } else if (SCM_RATNUMP(obj)) {
-        obj = Scm_MakeFlonum(Scm_GetDouble(obj));
+        RETURN_FLONUM(Scm_GetDouble(obj));
     } else if (!SCM_FLONUMP(obj) && !SCM_COMPNUMP(obj)) {
         Scm_Error("number required: %S", obj);
     }
     return obj;
 }
+DEFINE_DUAL_API1(Scm_ExactToInexact, Scm_VMExactToInexact, exactToInexact)
+
 
 ScmObj Scm_InexactToExact(ScmObj obj)
 {
@@ -1346,7 +1386,7 @@ ScmObj Scm_InexactToExact(ScmObj obj)
  * Addition and subtraction
  */
 
-ScmObj Scm_Add(ScmObj arg0, ScmObj arg1)
+static ScmObj scm_add(ScmObj arg0, ScmObj arg1, int vmp)
 {
     if (SCM_INTP(arg0)) {
         if (SCM_INTP(arg1)) {
@@ -1362,9 +1402,10 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1)
             return Scm_RatnumAdd(arg0, arg1);
         }
         if (SCM_FLONUMP(arg1)) {
+            double z;
             if (SCM_EXACT_ZERO_P(arg0)) return arg1;
-            return Scm_MakeFlonum((double)SCM_INT_VALUE(arg0)
-                                  + SCM_FLONUM_VALUE(arg1));
+            z = (double)SCM_INT_VALUE(arg0) + SCM_FLONUM_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_COMPNUMP(arg1)) {
             if (SCM_EXACT_ZERO_P(arg0)) return arg1;
@@ -1386,8 +1427,8 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1)
             return Scm_RatnumAdd(arg0, arg1);
         }
         if (SCM_FLONUMP(arg1)) {
-            return Scm_MakeFlonum(Scm_GetDouble(arg0)
-                                  + SCM_FLONUM_VALUE(arg1));
+            double z = Scm_GetDouble(arg0) + SCM_FLONUM_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_COMPNUMP(arg1)) {
             return Scm_MakeComplex(Scm_GetDouble(arg0)
@@ -1405,8 +1446,8 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1)
             return Scm_RatnumAdd(arg0, arg1);
         }
         if (SCM_FLONUMP(arg1)) {
-            return Scm_MakeFlonum(Scm_GetDouble(arg0)
-                                  + SCM_FLONUM_VALUE(arg1));
+            double z = Scm_GetDouble(arg0) + SCM_FLONUM_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_COMPNUMP(arg1)) {
             return Scm_MakeComplex(Scm_GetDouble(arg0)
@@ -1417,19 +1458,21 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1)
     }
     else if (SCM_FLONUMP(arg0)) {
         if (SCM_INTP(arg1)) {
+            double z;
             if (SCM_EXACT_ZERO_P(arg1)) return arg0;
-            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
-                                  + (double)SCM_INT_VALUE(arg1));
+            z = SCM_FLONUM_VALUE(arg0) + (double)SCM_INT_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
-            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
-                                  + Scm_GetDouble(arg1));
+            double z = SCM_FLONUM_VALUE(arg0) + Scm_GetDouble(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_FLONUMP(arg1)) {
+            double z;
             if (SCM_FLONUM_VALUE(arg0) == 0.0) return arg1;
             if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg0;
-            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
-                                  + SCM_FLONUM_VALUE(arg1));
+            z = SCM_FLONUM_VALUE(arg0) + SCM_FLONUM_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_COMPNUMP(arg1)) {
             if (SCM_FLONUM_VALUE(arg0) == 0.0) return arg1;
@@ -1466,10 +1509,14 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1)
         /* fallback to generic */
     }
     /* object-+ handling */
+    SCM_FLONUM_ENSURE_MEM(arg0);
+    SCM_FLONUM_ENSURE_MEM(arg1);
     return Scm_ApplyRec(SCM_OBJ(&generic_add), SCM_LIST2(arg0, arg1));
 }
+DEFINE_DUAL_API2(Scm_Add, Scm_VMAdd, scm_add)
 
-ScmObj Scm_Sub(ScmObj arg0, ScmObj arg1)
+
+static ScmObj scm_sub(ScmObj arg0, ScmObj arg1, int vmp)
 {
     if (SCM_INTP(arg0)) {
         if (SCM_INTP(arg1)) {
@@ -1484,8 +1531,8 @@ ScmObj Scm_Sub(ScmObj arg0, ScmObj arg1)
             return Scm_RatnumSub(arg0, arg1);
         }
         if (SCM_FLONUMP(arg1)) {
-            return Scm_MakeFlonum((double)SCM_INT_VALUE(arg0)
-                                  - SCM_FLONUM_VALUE(arg1));
+            double z = (double)SCM_INT_VALUE(arg0) - SCM_FLONUM_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_COMPNUMP(arg1)) {
             return Scm_MakeComplex((double)SCM_INT_VALUE(arg0)
@@ -1506,8 +1553,8 @@ ScmObj Scm_Sub(ScmObj arg0, ScmObj arg1)
             return Scm_RatnumSub(arg0, arg1);
         }
         if (SCM_FLONUMP(arg1)) {
-            return Scm_MakeFlonum(Scm_GetDouble(arg0)
-                                  - SCM_FLONUM_VALUE(arg1));
+            double z = Scm_GetDouble(arg0) - SCM_FLONUM_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_COMPNUMP(arg1)) {
             return Scm_MakeComplex(Scm_GetDouble(arg0)
@@ -1525,9 +1572,10 @@ ScmObj Scm_Sub(ScmObj arg0, ScmObj arg1)
             return Scm_RatnumSub(arg0, arg1);
         }
         if (SCM_FLONUMP(arg1)) {
+            double z;
             if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg0;
-            return Scm_MakeFlonum(Scm_GetDouble(arg0)
-                                  - SCM_FLONUM_VALUE(arg1));
+            z = Scm_GetDouble(arg0) - SCM_FLONUM_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_COMPNUMP(arg1)) {
             return Scm_MakeComplex(Scm_GetDouble(arg0)
@@ -1538,18 +1586,20 @@ ScmObj Scm_Sub(ScmObj arg0, ScmObj arg1)
     }
     if (SCM_FLONUMP(arg0)) {
         if (SCM_INTP(arg1)) {
+            double z;
             if (SCM_EXACT_ZERO_P(arg1)) return arg0;
-            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
-                                  - (double)SCM_INT_VALUE(arg1));
+            z = SCM_FLONUM_VALUE(arg0) - (double)SCM_INT_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
-            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
-                                  - Scm_GetDouble(arg1));
+            double z = SCM_FLONUM_VALUE(arg0) - Scm_GetDouble(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_FLONUMP(arg1)) {
+            double z;
             if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg0;
-            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
-                                  - SCM_FLONUM_VALUE(arg1));
+            z = SCM_FLONUM_VALUE(arg0) - SCM_FLONUM_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_COMPNUMP(arg1)) {
             return Scm_MakeComplex(SCM_FLONUM_VALUE(arg0)
@@ -1587,12 +1637,13 @@ ScmObj Scm_Sub(ScmObj arg0, ScmObj arg1)
     /* object-- handling */
     return Scm_ApplyRec(SCM_OBJ(&generic_sub), SCM_LIST2(arg0, arg1));
 }
+DEFINE_DUAL_API2(Scm_Sub, Scm_VMSub, scm_sub)
 
 /*
  * Multiplication
  */
 
-ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
+static ScmObj scm_mul(ScmObj arg0, ScmObj arg1, int vmp)
 {
     if (SCM_INTP(arg0)) {
         if (SCM_INTP(arg1)) {
@@ -1618,10 +1669,11 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
             return Scm_RatnumMul(arg0, arg1);
         }
         if (SCM_FLONUMP(arg1)) {
+            double z;
             if (SCM_EXACT_ZERO_P(arg0)) return arg0;
             if (SCM_EQ(arg0, SCM_MAKE_INT(1))) return arg1;
-            return Scm_MakeFlonum((double)SCM_INT_VALUE(arg0)
-                                  * SCM_FLONUM_VALUE(arg1));
+            z = (double)SCM_INT_VALUE(arg0) * SCM_FLONUM_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_COMPNUMP(arg1)) {
             if (SCM_EXACT_ZERO_P(arg0)) return arg0;
@@ -1646,8 +1698,8 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
             return Scm_RatnumMul(arg0, arg1);
         }
         if (SCM_FLONUMP(arg1)) {
-            return Scm_MakeFlonum(Scm_GetDouble(arg0)
-                                  * SCM_FLONUM_VALUE(arg1));
+            double z = Scm_GetDouble(arg0) * SCM_FLONUM_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_COMPNUMP(arg1)) {
             double z = Scm_GetDouble(arg0);
@@ -1666,9 +1718,10 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
             return Scm_RatnumMul(arg0, arg1);
         }
         if (SCM_FLONUMP(arg1)) {
+            double z;
             if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg1;
-            return Scm_MakeFlonum(Scm_GetDouble(arg0)
-                                  * SCM_FLONUM_VALUE(arg1));
+            z = Scm_GetDouble(arg0) * SCM_FLONUM_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_COMPNUMP(arg1)) {
             return Scm_MakeComplex(Scm_GetDouble(arg0)
@@ -1680,20 +1733,19 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
     }
     if (SCM_FLONUMP(arg0)) {
         if (SCM_INTP(arg1)) {
+            double z;
             /* inexact number * exact zero makes exact zero */
             if (SCM_EXACT_ZERO_P(arg1)) return arg1;
             if (SCM_EXACT_ONE_P(arg1)) return arg0;
-            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
-                                  * (double)SCM_INT_VALUE(arg1));
+            z = SCM_FLONUM_VALUE(arg0) * (double)SCM_INT_VALUE(arg1);
+            RETURN_FLONUM(z);
         }
         if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
-            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
-                                  * Scm_GetDouble(arg1));
+            RETURN_FLONUM(SCM_FLONUM_VALUE(arg0) * Scm_GetDouble(arg1));
         }
         if (SCM_FLONUMP(arg1)) {
             if (SCM_FLONUM_VALUE(arg1) == 1.0) return arg0;
-            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
-                                  * SCM_FLONUM_VALUE(arg1));
+            RETURN_FLONUM(SCM_FLONUM_VALUE(arg0) * SCM_FLONUM_VALUE(arg1));
         }
         if (SCM_COMPNUMP(arg1)) {
             return Scm_MakeComplex(SCM_FLONUM_VALUE(arg0)
@@ -1735,8 +1787,11 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
         }
         /* fallback to generic */
     }
+    SCM_FLONUM_ENSURE_MEM(arg0);
+    SCM_FLONUM_ENSURE_MEM(arg1);
     return Scm_ApplyRec(SCM_OBJ(&generic_mul), SCM_LIST2(arg0, arg1));
 }
+DEFINE_DUAL_API2(Scm_Mul, Scm_VMMul, scm_mul)
 
 /*
  * Division
@@ -1755,8 +1810,10 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
  * arguments is ratnum.
  */
 
-static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
+static ScmObj scm_div(ScmObj arg0, ScmObj arg1, int autocoerce, int vmp)
 {
+    double z;
+    
     if (SCM_INTP(arg0)) {
         if (SCM_INTP(arg1)) { 
             if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
@@ -1767,8 +1824,8 @@ static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
                     long q = SCM_INT_VALUE(arg0)/SCM_INT_VALUE(arg1);
                     return Scm_MakeInteger(q);
                 } else {
-                    return Scm_MakeFlonum((double)SCM_INT_VALUE(arg0)
-                                          /(double)SCM_INT_VALUE(arg1));
+                    z = (double)SCM_INT_VALUE(arg0)/(double)SCM_INT_VALUE(arg1);
+                    RETURN_FLONUM(z);
                 }
             } else {
                 return Scm_MakeRational(arg0, arg1);
@@ -1776,20 +1833,16 @@ static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
         }
         if (SCM_BIGNUMP(arg1)) {
             if (SCM_EXACT_ZERO_P(arg0)) return arg0;
-            if (autocoerce) {
-                goto COERCE_INEXACT;
-            } else {
-                return Scm_MakeRational(arg0, arg1);
-            }
+            if (autocoerce) goto COERCE_INEXACT;
+            return Scm_MakeRational(arg0, arg1);
         }
         if (SCM_RATNUMP(arg1)) {
-            return Scm_MakeRational(Scm_Mul(arg0,
-                                                  SCM_RATNUM_DENOM(arg1)),
+            return Scm_MakeRational(Scm_Mul(arg0, SCM_RATNUM_DENOM(arg1)),
                                     SCM_RATNUM_NUMER(arg1));
         }
         if (SCM_FLONUMP(arg1)) {
             if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
-            return Scm_MakeFlonum(SCM_INT_VALUE(arg0)/SCM_FLONUM_VALUE(arg1));
+            RETURN_FLONUM(SCM_INT_VALUE(arg0)/SCM_FLONUM_VALUE(arg1));
         }
         if (SCM_COMPNUMP(arg1)) {
             goto DO_COMPLEX1;
@@ -1800,18 +1853,12 @@ static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
         if (SCM_INTP(arg1)) {
             if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
             if (SCM_EXACT_ONE_P(arg1)) return arg0;
-            if (autocoerce) {
-                goto COERCE_INEXACT;
-            } else {
-                return Scm_MakeRational(arg0, arg1);
-            }
+            if (autocoerce) goto COERCE_INEXACT;
+            return Scm_MakeRational(arg0, arg1);
         }
         if (SCM_BIGNUMP(arg1)) {
-            if (autocoerce) {
-                goto COERCE_INEXACT;
-            } else {
-                return Scm_MakeRational(arg0, arg1);
-            }
+            if (autocoerce) goto COERCE_INEXACT;
+            return Scm_MakeRational(arg0, arg1);
         }
         if (SCM_RATNUMP(arg1)) {
             return Scm_MakeRational(Scm_Mul(arg0, SCM_RATNUM_DENOM(arg1)),
@@ -1819,7 +1866,7 @@ static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
         }
         if (SCM_FLONUMP(arg1)) {
             if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
-            return Scm_MakeFlonum(Scm_GetDouble(arg0)/SCM_FLONUM_VALUE(arg1));
+            RETURN_FLONUM(Scm_GetDouble(arg0)/SCM_FLONUM_VALUE(arg1));
         }
         if (SCM_COMPNUMP(arg1)) {
             goto DO_COMPLEX1;
@@ -1831,20 +1878,18 @@ static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
             if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
             if (SCM_EXACT_ONE_P(arg1)) return arg0;
             return Scm_MakeRational(SCM_RATNUM_NUMER(arg0),
-                                    Scm_Mul(SCM_RATNUM_DENOM(arg0),
-                                                  arg1));
+                                    Scm_Mul(SCM_RATNUM_DENOM(arg0), arg1));
         }
         if (SCM_BIGNUMP(arg1)) {
             return Scm_MakeRational(SCM_RATNUM_NUMER(arg0),
-                                    Scm_Mul(SCM_RATNUM_DENOM(arg0),
-                                                  arg1));
+                                    Scm_Mul(SCM_RATNUM_DENOM(arg0), arg1));
         }
         if (SCM_RATNUMP(arg1)) {
             return Scm_RatnumDiv(arg0, arg1);
         }
         if (SCM_FLONUMP(arg1)) {
             if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
-            return Scm_MakeFlonum(Scm_GetDouble(arg0)/SCM_FLONUM_VALUE(arg1));
+            RETURN_FLONUM(Scm_GetDouble(arg0)/SCM_FLONUM_VALUE(arg1));
         }
         if (SCM_COMPNUMP(arg1)) {
             goto DO_COMPLEX1;
@@ -1855,14 +1900,14 @@ static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
         if (SCM_INTP(arg1)) {
             if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
             if (SCM_EXACT_ONE_P(arg1)) return arg0;
-            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)/SCM_INT_VALUE(arg1));
+            RETURN_FLONUM(SCM_FLONUM_VALUE(arg0)/SCM_INT_VALUE(arg1));
         }
         if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
-            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)/Scm_GetDouble(arg1));
+            RETURN_FLONUM(SCM_FLONUM_VALUE(arg0)/Scm_GetDouble(arg1));
         }
         if (SCM_FLONUMP(arg1)) {
             if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
-            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)/SCM_FLONUM_VALUE(arg1));
+            RETURN_FLONUM(SCM_FLONUM_VALUE(arg0)/SCM_FLONUM_VALUE(arg1));
         }
         if (SCM_COMPNUMP(arg1)) {
             goto DO_COMPLEX1;
@@ -1897,6 +1942,8 @@ static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
         }
         /* fallback to generic */
     }
+    SCM_FLONUM_ENSURE_MEM(arg0);
+    SCM_FLONUM_ENSURE_MEM(arg1);
     return Scm_ApplyRec(SCM_OBJ(&generic_div), SCM_LIST2(arg0, arg1));
 
   COERCE_INEXACT:
@@ -1909,7 +1956,7 @@ static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
         if (SCM_EXACT_ZERO_P(rem)) {
             return q;
         } else {
-            return Scm_MakeFlonum(Scm_GetDouble(arg0)/Scm_GetDouble(arg1));
+            RETURN_FLONUM(Scm_GetDouble(arg0)/Scm_GetDouble(arg1));
         }
     }
   ANORMAL:
@@ -1931,12 +1978,22 @@ static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
 
 ScmObj Scm_Div(ScmObj x, ScmObj y)
 {
-    return div_internal(x, y, FALSE);
+    return scm_div(x, y, FALSE, FALSE);
 }
 
 ScmObj Scm_DivInexact(ScmObj x, ScmObj y)
 {
-    return div_internal(x, y, TRUE);
+    return scm_div(x, y, TRUE, FALSE);
+}
+
+ScmObj Scm_VMDiv(ScmObj x, ScmObj y)
+{
+    return scm_div(x, y, FALSE, TRUE);
+}
+
+ScmObj Scm_VMDivInexact(ScmObj x, ScmObj y)
+{
+    return scm_div(x, y, TRUE, TRUE);
 }
 
 
@@ -1944,6 +2001,8 @@ ScmObj Scm_DivInexact(ScmObj x, ScmObj y)
  * Integer division
  *   Returns (quotient x y)
  *   If rem != NULL, sets *rem to be (remainder x y) as well.
+ *   We don't provide Scm_VMQuotient, assuming passing flonums to
+ *   quotient is rare.
  */
 ScmObj Scm_Quotient(ScmObj x, ScmObj y, ScmObj *rem)
 {
@@ -1956,7 +2015,6 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y, ScmObj *rem)
         if (rem) *rem = SCM_MAKE_INT(0);
         return x;
     }
-    
     
     if (SCM_INTP(x)) {
         if (SCM_INTP(y)) {
@@ -2029,11 +2087,14 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y, ScmObj *rem)
   BADARGY:
     x = y;
   BADARG:
+    SCM_FLONUM_ENSURE_MEM(x);
     Scm_Error("integer required, but got %S", x);
     return SCM_UNDEFINED;       /* dummy */
 }
 
 /* Modulo and Reminder.
+   We don't provide Scm_VMModulo, assuming passing flonums to modulo and
+   remainder is rare.
    TODO: on gcc, % works like reminder.  I'm not sure the exact behavior
    of % is defined in ANSI C.  Need to check it later. */
 ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
@@ -2135,6 +2196,7 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
   BADARGY:
     x = y;
   BADARG:
+    SCM_FLONUM_ENSURE_MEM(x);
     Scm_Error("integer required, but got %S", x);
     return SCM_UNDEFINED;       /* dummy */
 }
@@ -2178,6 +2240,7 @@ static u_long gcd_bigfix(ScmBignum *x, u_long y)
     return gcd_fixfix(y, (u_long)rem);
 }
 
+/* We don't provide Scm_VMGcd, assuming passing flonums to gcd is rare. */
 ScmObj Scm_Gcd(ScmObj x, ScmObj y)
 {
     int ox = FALSE, oy = FALSE;
@@ -2191,8 +2254,7 @@ ScmObj Scm_Gcd(ScmObj x, ScmObj y)
         Scm_Error("integer required, but got %S", y);
     }
     if (SCM_FLONUMP(x) || SCM_FLONUMP(y)) {
-        return Scm_MakeFlonum(gcd_floflo(Scm_GetDouble(x),
-                                         Scm_GetDouble(y)));
+        return Scm_MakeFlonum(gcd_floflo(Scm_GetDouble(x), Scm_GetDouble(y)));
     }
 
     if (SCM_EXACT_ZERO_P(x)) return y;
@@ -2214,7 +2276,7 @@ ScmObj Scm_Gcd(ScmObj x, ScmObj y)
 
     if (!oy && iy != LONG_MIN) {
         /* x overflows long.  y doesn't.  so we know abs(x) > abs(y)
-           (abs(x) == abs(y) iff LONG_MAX+1 and y == LONG_MIN, but we
+           (abs(x) == abs(y) iff LONG_MAX+1 and y == LONG_MIN, but we've
            excluded it above). */
         SCM_ASSERT(SCM_BIGNUMP(x));
         uy = (iy < 0)? -iy : iy;
@@ -2314,7 +2376,7 @@ static ScmObj exact_expt(ScmObj x, ScmObj y)
     return (sign < 0)? Scm_Reciprocal(r) : r;
 }
 
-ScmObj Scm_Expt(ScmObj x, ScmObj y)
+static ScmObj scm_expt(ScmObj x, ScmObj y, int vmp)
 {
     double dx, dy;
     if (SCM_EXACTP(x) && SCM_INTEGERP(y)) return exact_expt(x, y);
@@ -2324,7 +2386,7 @@ ScmObj Scm_Expt(ScmObj x, ScmObj y)
     dx = Scm_GetDouble(x);
     dy = Scm_GetDouble(y);
     if (dy == 0.0) {
-        return Scm_MakeFlonum(1.0);
+        RETURN_FLONUM(1.0);
     } else if (dx < 0 && !Scm_IntegerP(y)) {
         /* x^y == exp(y * log(x)) = exp(y*log(|x|))*exp(y*arg(x)*i)
            if x is a negative real number, arg(x) == pi
@@ -2333,9 +2395,10 @@ ScmObj Scm_Expt(ScmObj x, ScmObj y)
         double theta = dy * M_PI;
         return Scm_MakeComplex(mag * cos(theta), mag * sin(theta));
     } else {
-        return Scm_MakeFlonum(pow(dx, dy));
+        RETURN_FLONUM(pow(dx, dy));
     }
 }
+DEFINE_DUAL_API2(Scm_Expt, Scm_VMExpt, scm_expt)
 
 /*===============================================================
  * Comparison
@@ -2359,6 +2422,13 @@ int Scm_NumEq(ScmObj arg0, ScmObj arg1)
 int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
 {
     ScmObj badnum;
+
+    /* NB: these ENSURE_MEMs are moved here from vm loop to reduce
+       the register pressure there.  In most cases these increases
+       just a couple of mask-and-test instructions on the data on
+       the register. */
+    SCM_FLONUM_ENSURE_MEM(arg0);
+    SCM_FLONUM_ENSURE_MEM(arg1);
     
     if (SCM_INTP(arg0)) {
         if (SCM_INTP(arg1)) {
@@ -2509,7 +2579,7 @@ void Scm_MinMax(ScmObj arg0, ScmObj args, ScmObj *min, ScmObj *max)
  * ROUNDING
  */
 
-/* NB: rint() is not in POSIX, so the alternative is provided here.
+/* NB: rint() is not in POSIX, so an alternative is provided here.
    We don't use round(), for it behaves differently when the
    argument is exactly the halfway of two whole numbers. */
 #ifdef HAVE_RINT
@@ -2534,7 +2604,7 @@ static double roundeven(double v)
 }
 #endif /* !HAVE_RINT */
 
-ScmObj Scm_Round(ScmObj num, int mode)
+static ScmObj scm_round(ScmObj num, int mode, int vmp)
 {
     
     if (SCM_INTEGERP(num)) return num;
@@ -2582,7 +2652,7 @@ ScmObj Scm_Round(ScmObj num, int mode)
         }
 
         if (offset == 0) return quot;
-        else return Scm_Add(quot, SCM_MAKE_INT(offset));
+        else return scm_add(quot, SCM_MAKE_INT(offset), vmp);
     }
     if (SCM_FLONUMP(num)) {
         double r = 0.0, v;
@@ -2599,11 +2669,22 @@ ScmObj Scm_Round(ScmObj num, int mode)
         case SCM_ROUND_ROUND: r = roundeven(v); break;
         default: Scm_Panic("something screwed up");
         }
-        return Scm_MakeFlonum(r);
+        RETURN_FLONUM(r);
     }
     Scm_Error("real number required, but got %S", num);
     return SCM_UNDEFINED;       /* dummy */
 }
+
+ScmObj Scm_Round(ScmObj num, int mode)
+{
+    return scm_round(num, mode, FALSE);
+}
+
+ScmObj Scm_VMRound(ScmObj num, int mode)
+{
+    return scm_round(num, mode, TRUE);
+}
+
 
 ScmObj Scm_RoundToExact(ScmObj num, int mode)
 {
@@ -3681,4 +3762,8 @@ void Scm__InitNumber(void)
     Scm_InitBuiltinGeneric(&generic_sub, "object--", mod);
     Scm_InitBuiltinGeneric(&generic_mul, "object-*", mod);
     Scm_InitBuiltinGeneric(&generic_div, "object-/", mod);
+
+#ifdef COUNT_FLONUM_ALLOC
+    Scm_AddCleanupHandler(report_flonum_count, NULL);
+#endif
 }
