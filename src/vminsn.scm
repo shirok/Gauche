@@ -89,7 +89,9 @@
 (define-cise-stmt $result:b 
   [(_ expr) `($result (SCM_MAKE_BOOL ,expr))])
 (define-cise-stmt $result:i
-  [(_ expr) `($result (SCM_MAKE_INT ,expr))])
+  [(_ expr) (let1 r (gensym "cise__")
+              `(let* ([,r :: long ,expr])
+                 ($result (SCM_MAKE_INT ,r))))])
 (define-cise-stmt $result:n
   [(_ expr) (let1 r (gensym "cise__")
               `(let* ([,r :: long ,expr])
@@ -237,8 +239,8 @@
      `($w/argp ,x
         (let* ((,y VAL0) (,r :: int))
           (cond [(and (SCM_INTP ,x) (SCM_INTP ,y))
-                 (set! ,r (,op (cast |signed long| (cast intptr_t ,x))
-                               (cast |signed long| (cast intptr_t ,y))))]
+                 (set! ,r (,op (cast (signed long) (cast intptr_t ,x))
+                               (cast (signed long) (cast intptr_t ,y))))]
                 [(and (SCM_FLONUMP ,x) (SCM_FLONUMP ,y))
                  (set! ,r (,op (SCM_FLONUM_VALUE ,x) (SCM_FLONUM_VALUE ,y)))]
                 [else
@@ -273,9 +275,9 @@
 ;;
 (define-cise-stmt $values
   [(_)
-   '(let* ((nargs :: int (SCM_VM_INSN_ARG code))
-           (i     :: int (- nargs 1))
-           (v VAL0))
+   '(let* ([nargs::int (SCM_VM_INSN_ARG code)]
+           [i::int (- nargs 1)]
+           [v VAL0])
       (when (>= nargs SCM_VM_MAX_VALUES)
         ($vm-err "values got too many args"))
       (VM-ASSERT (<= (- nargs 1) (- SP (-> vm stackBase))))
@@ -308,8 +310,7 @@
 
 ;; Some immediate constants
 (define-insn CONSTI 1 none #f           ; constant small integer
-  (let* ((imm :: long (SCM_VM_INSN_ARG code)))
-    ($result:i imm)))
+  ($result:i (SCM_VM_INSN_ARG code)))
 (define-insn CONSTN 0 none #f           ; constant ()
   ($result SCM_NIL))
 (define-insn CONSTF 0 none #f           ; constant #f
@@ -338,7 +339,7 @@
 ;;  execution from <cont>.
 ;;
 (define-insn PRE-CALL 1 addr #f
-  (let* ((next :: ScmWord*))
+  (let* ([next::ScmWord*])
     (CHECK-STACK-PARANOIA CONT_FRAME_SIZE)
     (FETCH-LOCATION next)
     (PUSH-CONT next)
@@ -352,7 +353,7 @@
 ;;  Check for stack overflow
 ;;
 (define-insn CHECK-STACK 1 none #f
-  (let* ((reqstack :: int (SCM_VM_INSN_ARG code)))
+  (let* ([reqstack::int (SCM_VM_INSN_ARG code)])
     (CHECK-STACK reqstack)
     NEXT))
 
@@ -361,7 +362,7 @@
 ;;  pushed by PRE-CALL, so this instruction is always the end of a graph.
 ;;
 (define-insn CALL     1 none #f
-  (let* ((nm) (argc :: int) (proctype :: int))
+  (let* ([nm] [argc::int] [proctype::int])
     (label call_entry)
     ($undef APPLY_CALL)
     ($include "./vmcall.c")
@@ -396,8 +397,7 @@
 ;;  If flag == 1, the definition becomes 'constant'.
 ;;
 (define-insn DEFINE     1 obj #f
-  (let* ((var) (name :: ScmSymbol*) (v VAL0)
-         (flags :: int (SCM_VM_INSN_ARG code)))
+  (let* ([var] [name::ScmSymbol*] [v VAL0] [flags::int (SCM_VM_INSN_ARG code)])
     (FETCH-OPERAND var)
     (VM_ASSERT (SCM_IDENTIFIERP var))
     (SCM_FLONUM_ENSURE_MEM v)
@@ -444,9 +444,8 @@
 ;;  is left undefined.
 ;;  This instruction also leaves the last closure in VAL0.
 (define-insn LOCAL-ENV-CLOSURES 1 codes #f
-  (let* ((nlocals :: int (SCM_VM_INSN_ARG code))
-         (z :: ScmObj*) (cp) (clo SCM_UNDEFINED)
-         (e :: ScmEnvFrame*))
+  (let* ([nlocals::int (SCM_VM_INSN_ARG code)]
+         [z::ScmObj*] [cp] [clo SCM_UNDEFINED] [e::ScmEnvFrame*])
     (FETCH-OPERAND cp)
     INCR-PC
     (CHECK-STACK-PARANOIA (ENV-SIZE nlocals))
@@ -477,10 +476,9 @@
 ;;  env frame with them (just like LOCAL-ENV), then jump to <addr>.
 ;;  (# of arguments can be known by SP - ARGP).
 (define-insn LOCAL-ENV-JUMP 1 addr #f
-  (let* ((nargs :: int (cast int (- SP ARGP)))
-         (env_depth :: int (SCM_VM_INSN_ARG code))
-         (to :: ScmObj*)
-         (tenv :: ScmEnvFrame* ENV))
+  (let* ([nargs::int (cast int (- SP ARGP))]
+         [env_depth::int (SCM_VM_INSN_ARG code)]
+         [to::ScmObj*] [tenv::ScmEnvFrame* ENV])
     ;; We can discard env_depth environment frames.
     ;; There are several cases:
     ;;  - if the target env frame (TENV) is in stack:
@@ -504,7 +502,7 @@
              (set! to (CONT-FRAME-END CONT))
              (set! to (-> vm stackBase)))]) ; continuation has been saved
     (when (and (> nargs 0) (!= to ARGP))
-      (let* ((t :: ScmObj* to) (a :: ScmObj* ARGP) (c :: int 0))
+      (let* ([t::ScmObj* to] [a::ScmObj* ARGP] [c::int 0])
         (for (() (< c nargs) (post++ c))
              (set! (* (post++ t)) (* (post++ a))))))
     (set! ARGP to)
@@ -527,7 +525,7 @@
 ;;  know the called closure is not a generic function.
 ;;  (# of arguments can be known by SP - ARGP).
 (define-insn LOCAL-ENV-CALL  1 none #f
-  (let* ((nargs :: int (cast int (- SP ARGP))))
+  (let* ([nargs::int (cast int (- SP ARGP))])
     (VM-ASSERT (SCM_CLOSUREP VAL0))
     (cond [(> nargs 0)
            (CHECK-STACK-PARANOIA (ENV-SIZE 0))
@@ -542,14 +540,13 @@
     NEXT))
          
 (define-insn LOCAL-ENV-TAIL-CALL 1 none #f
-  (let* ((nargs :: int (cast int (- SP ARGP)))
-         (to :: ScmObj*))
+  (let* ([nargs::int (cast int (- SP ARGP))] [to::ScmObj*])
     (VM-ASSERT (SCM_CLOSUREP VAL0))
     (if (IN-STACK-P (cast ScmObj* CONT))
       (set! to (CONT-FRAME-END CONT))
       (set! to (-> vm stackBase)))
     (when (and (> nargs 0) (!= to ARGP))
-      (let* ((t :: ScmObj* to) (a :: ScmObj* ARGP) (c :: int 0))
+      (let* ([t::ScmObj* to] [a::ScmObj* ARGP] [c::int 0])
         (for (() (< c nargs) (post++ c))
              (set! (* (post++ t)) (* (post++ a))))))
     (set! ARGP to)
@@ -590,7 +587,7 @@
 ;;       notably BNEQVI, BNUMNEF, BNLTF etc, but they did't show any
 ;;       improvement.
 (define-insn BNUMNEI     1 addr #f
-  (let* ((imm :: long (SCM_VM_INSN_ARG code)))
+  (let* ([imm::long (SCM_VM_INSN_ARG code)])
     ($w/argr v0
       ($type-check v0 SCM_NUMBERP "number")
       ($branch*
@@ -621,11 +618,10 @@
 ;;
 (define-cise-stmt $receive
   [(_ . stmts)
-   `(let* ((reqargs :: int (SCM_VM_INSN_ARG0 code))
-           (restarg :: int (SCM_VM_INSN_ARG1 code))
-           (size :: int) (i :: int 0) (argsize :: int)
-           (rest SCM_NIL) (tail SCM_NIL)
-           (nextpc :: ScmWord*))
+   `(let* ([reqargs::int (SCM_VM_INSN_ARG0 code)]
+           [restarg::int (SCM_VM_INSN_ARG1 code)]
+           [size::int] [i::int 0] [argsize::int] [rest SCM_NIL] [tail SCM_NIL]
+           [nextpc::ScmWord*])
       (when (< (-> vm numVals) reqargs)
         ($vm-err "received fewer values than expected"))
       (when (and (not restarg) (> (-> vm numVals) reqargs))
@@ -670,9 +666,9 @@
 ;;  Local set
 ;;
 (define-insn LSET        2 none #f
-  (let* ((dep :: int (SCM_VM_INSN_ARG0 code))
-         (off :: int (SCM_VM_INSN_ARG1 code))
-         (e :: ScmEnvFrame* ENV))
+  (let* ([dep::int (SCM_VM_INSN_ARG0 code)]
+         [off::int (SCM_VM_INSN_ARG1 code)]
+         [e::ScmEnvFrame* ENV])
     (for (() (> dep 0) (post-- dep))
          (VM-ASSERT (!= e NULL))
          (set! e (-> e up)))
@@ -701,12 +697,12 @@
       ;; If runtime flag LIMIT_MODULE_MUTATION is set,
       ;; we search only for the id's module, so that set! won't
       ;; mutate bindings in the other module.
-      (let* ((id    :: ScmIdentifier* (SCM_IDENTIFIER loc))
-             (limit :: int
-                    (SCM_VM_RUNTIME_FLAG_IS_SET vm SCM_LIMIT_MODULE_MUTATION))
-             (gloc  :: ScmGloc*
-                    (Scm_FindBinding (-> id module) (-> id name)
-                                     (?: limit SCM_BINDING_STAY_IN_MODULE 0))))
+      (let* ([id::ScmIdentifier* (SCM_IDENTIFIER loc)]
+             [limit::int
+              (SCM_VM_RUNTIME_FLAG_IS_SET vm SCM_LIMIT_MODULE_MUTATION)]
+             [gloc::ScmGloc*
+              (Scm_FindBinding (-> id module) (-> id name)
+                               (?: limit SCM_BINDING_STAY_IN_MODULE 0))])
         (when (== gloc NULL)
           ;; Do search again for meaningful error message
           (when limit
@@ -729,9 +725,9 @@
 ;;  Retrieve local value.
 ;;
 (define-insn LREF        2 none #f
-  (let* ((dep :: int (SCM_VM_INSN_ARG0 code))
-         (off :: int (SCM_VM_INSN_ARG1 code))
-         (e   :: ScmEnvFrame* ENV))
+  (let* ([dep::int (SCM_VM_INSN_ARG0 code)]
+         [off::int (SCM_VM_INSN_ARG1 code)]
+         [e::ScmEnvFrame* ENV])
     (for (() (> dep 0) (post-- dep))
          (VM-ASSERT (!= e NULL))
          (set! e (-> e up)))
@@ -822,8 +818,8 @@
 ;;  If nargs >= SCM_VM_MAX_VALUES-1, args[SCM_VM_MAX_VALUES-1] through
 ;;  args[nargs-1] are made into a list and stored in VALS[SCM_VM_MAX_VALUES-1]
 (define-insn VALUES-APPLY 0 none #f
-  (let* ((nargs :: int (SCM_VM_INSN_ARG code))
-         (i :: int 0))
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)]
+         [i::int 0])
     (CHECK-STACK (ENV-SIZE nargs))
     (for (() (< i nargs) (post++ i))
          (when (>= i (- SCM_VM_MAX_VALUES 1))
@@ -878,8 +874,7 @@
 (define-insn CDDR-PUSH   0 none (CDDR PUSH))
 
 (define-insn LIST        1 none #f
-  (let* ((nargs :: int (SCM_VM_INSN_ARG code))
-         (cp SCM_NIL) (arg))
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [arg])
     (when (> nargs 0)
       (set! cp (Scm_Cons VAL0 cp))
       (while (> (pre-- nargs) 0)
@@ -888,8 +883,7 @@
     ($result cp)))
 
 (define-insn LIST-STAR   1 none #f      ; list*
-  (let* ((nargs :: int (SCM_VM_INSN_ARG code))
-         (cp SCM_NIL) (arg))
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [arg])
     (when (> nargs 0)
       (set! cp VAL0)
       (while (> (pre-- nargs) 0)
@@ -898,7 +892,7 @@
     ($result cp)))
           
 (define-insn LENGTH      0 none #f      ; length
-  (let* ((len :: int (Scm_Length VAL0)))
+  (let* ([len::int (Scm_Length VAL0)])
     (when (< len 0) ($vm-err "proper list required, but got %S" VAL0))
     ($result:i len)))
     
@@ -910,8 +904,7 @@
 (define-insn EQV  0 none #f ($w/argp v ($result:b (Scm_EqvP v VAL0))))
 
 (define-insn APPEND      1 none #f
-  (let* ((nargs :: int (SCM_VM_INSN_ARG code))
-         (cp SCM_NIL) (arg))
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [arg])
     (when (> nargs 0)
       (set! cp VAL0)
       (while (> (pre-- nargs) 0)
@@ -927,7 +920,7 @@
 (define-insn APPLY       1 none #f
   ;; this instruction will go away soon.  for now it only appears
   ;; as the result of 'cond' with srfi-61 extension.
-  (let* ((nargs :: int (SCM_VM_INSN_ARG code)) (cp))
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp])
     (while (> (pre-- nargs) 1)
       (POP-ARG cp)
       (set! VAL0 (Scm_Cons cp VAL0)))
@@ -961,9 +954,9 @@
   ;;        |   :  |
   ;;   ARGP>| arg0 |        VAL0=proc
   ;;
-  (let* ((rargc :: int (Scm_Length VAL0))
-         (nargc :: int (- (SCM_VM_INSN_ARG code) 2))
-         (proc (* (- SP nargc 1))))
+  (let* ([rargc::int (Scm_Length VAL0)]
+         [nargc::int (- (SCM_VM_INSN_ARG code) 2)]
+         [proc (* (- SP nargc 1))])
     (when (< rargc 0) ($vm-err "improper list not allowed: %S" VAL0))
     (while (> nargc 0)
       (set! (* (- SP nargc 1)) (* (- SP nargc)))
@@ -983,7 +976,7 @@
 (define-insn IS-A        0 none #f      ; is-a?
   ($w/argp obj
     ($type-check VAL0 SCM_CLASSP "class")
-    (let* ((c :: ScmClass* (SCM_CLASS VAL0)))
+    (let* ([c::ScmClass* (SCM_CLASS VAL0)])
       ;; be careful to handle class redifinition case
       (cond
        [(not (SCM_FALSEP (-> (Scm_ClassOf obj) redefined)))
@@ -1008,9 +1001,9 @@
 (define-insn VALUES      1 none #f (begin ($values) NEXT))
 
 (define-insn VEC         1 none #f      ; vector
-  (let* ((nargs :: int (SCM_VM_INSN_ARG code))
-         (i :: int (- nargs 1))
-         (vec (Scm_MakeVector nargs SCM_UNDEFINED)))
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)]
+         [i::int (- nargs 1)]
+         [vec (Scm_MakeVector nargs SCM_UNDEFINED)])
     (when (> nargs 0)
       (let* ((arg VAL0))
         (for (() (> i 0) (post-- i))
@@ -1025,8 +1018,7 @@
   ($w/argr v ($result (Scm_ListToVector v 0 -1))))
 
 (define-insn APP-VEC     1 none #f      ; (compose list->vector append)
-  (let* ((nargs :: int (SCM_VM_INSN_ARG code))
-         (cp SCM_NIL) (arg))
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [arg])
     (when (> nargs 0)
       (set! cp VAL0)
       (while (> (pre-- nargs) 0)
@@ -1039,11 +1031,10 @@
 (define-insn VEC-LEN     0 none #f      ; vector-length
   ($w/argr v
     ($type-check v SCM_VECTORP "vector")
-    (let* ((siz :: int (SCM_VECTOR_SIZE v)))
-      ($result:i siz))))
+    ($result:i (SCM_VECTOR_SIZE v))))
 
 (define-insn VEC-REF     0 none #f      ; vector-ref
-  (let* ((k VAL0))
+  (let* ([k VAL0])
     ($w/argp vec
       ($type-check vec SCM_VECTORP "vector")
       ($type-check k SCM_INTP "fixnum")
@@ -1053,13 +1044,12 @@
       ($result (SCM_VECTOR_ELEMENT vec (SCM_INT_VALUE k))))))
 
 (define-insn VEC-SET     0 none #f      ; vector-set
-  (let* ((vec) (ind))
+  (let* ([vec] [ind])
     (POP-ARG ind)
     (POP-ARG vec)
     ($type-check vec SCM_VECTORP "vector")
     ($type-check ind SCM_INTP "fixnum")
-    (let* ([k :: int (SCM_INT_VALUE ind)]
-           [v VAL0])
+    (let* ([k::int (SCM_INT_VALUE ind)] [v VAL0])
       (when (or (< k 0) (>= k (SCM_VECTOR_SIZE vec)))
         ($vm-err "vector-set! index out of range: %d" k))
       (SCM_FLONUM_ENSURE_MEM v)
@@ -1070,7 +1060,7 @@
 (define-insn VEC-REFI    1 none #f
   ($w/argr vec
     ($type-check vec SCM_VECTORP "vector")
-    (let* ((k :: int (SCM_VM_INSN_ARG code)))
+    (let* ([k::int (SCM_VM_INSN_ARG code)])
       (when (or (< k 0) (>= k (SCM_VECTOR_SIZE vec)))
         ($vm-err "vector-ref index out of range: %d" k))
       ($result (SCM_VECTOR_ELEMENT vec k)))))
@@ -1078,8 +1068,7 @@
 (define-insn VEC-SETI    1 none #f
   ($w/argp vec
     ($type-check vec SCM_VECTORP "vector")
-    (let* ([k :: int (SCM_VM_INSN_ARG code)]
-           [v VAL0])
+    (let* ([k::int (SCM_VM_INSN_ARG code)] [v VAL0])
       (when (or (< k 0) (>= k (SCM_VECTOR_SIZE vec)))
         ($vm-err "vector-set! index out of range: %d" k))
       (SCM_FLONUM_ENSURE_MEM v)
@@ -1171,7 +1160,7 @@
                         (Scm_ExactToInexact VAL0))))))
 
 (define-insn NUMADDI     1 none #f      ; +, if one of op is small int
-  (let* ((imm :: long (SCM_VM_INSN_ARG code)))
+  (let* ([imm::long (SCM_VM_INSN_ARG code)])
     ($w/argr arg
       (cond [(SCM_INTP arg) ($result:n (+ imm (SCM_INT_VALUE arg)))]
             [(SCM_FLONUMP arg)
@@ -1179,7 +1168,7 @@
             [else           ($result (Scm_Add (SCM_MAKE_INT imm) arg))]))))
   
 (define-insn NUMSUBI     1 none #f      ; -, if one of op is small int
-  (let* ((imm :: long (SCM_VM_INSN_ARG code)))
+  (let* ([imm::long (SCM_VM_INSN_ARG code)])
     ($w/argr arg
       (cond [(SCM_INTP arg) ($result:n (- imm (SCM_INT_VALUE arg)))]
             [(SCM_FLONUMP arg)
@@ -1200,9 +1189,7 @@
 ;(define-insn LOGXORI     1 none)        ; logxor w/ immediate small int
 
 (define-insn READ-CHAR   1 none #f      ; read-char
-  (let* ((nargs :: int (SCM_VM_INSN_ARG code))
-         (ch :: int 0)
-         (port :: ScmPort*))
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)] [ch::int 0] [port::ScmPort*])
     (cond [(== nargs 1)
            ($type-check VAL0 SCM_IPORTP "input port")
            (set! port (SCM_PORT VAL0))]
@@ -1212,9 +1199,7 @@
     ($result (?: (< ch 0) SCM_EOF (SCM_MAKE_CHAR ch)))))
   
 (define-insn PEEK-CHAR   1 none #f      ; peek-char
-  (let* ((nargs :: int (SCM_VM_INSN_ARG code))
-         (ch :: int 0)
-         (port :: ScmPort*))
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)] [ch::int 0] [port::ScmPort*])
     (cond [(== nargs 1)
            ($type-check VAL0 SCM_IPORTP "input port")
            (set! port (SCM_PORT VAL0))]
@@ -1224,8 +1209,7 @@
     ($result (?: (< ch 0) SCM_EOF (SCM_MAKE_CHAR ch)))))
 
 (define-insn WRITE-CHAR  1 none #f      ; write-char
-  (let* ((nargs :: int (SCM_VM_INSN_ARG code))
-         (ch) (port :: ScmPort*))
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)] [ch] [port::ScmPort*])
     (cond [(== nargs 2)
            ($type-check VAL0 SCM_OPORTP "output port")
            (set! port (SCM_PORT VAL0))
@@ -1301,7 +1285,7 @@
 ;;  This must be twined with VALUES-N, which reverses the effects, i.e.
 ;;  turn the values in the env frame into values.
 (define-insn RECEIVE-ALL 0 addr #f
-  (let* ((nextpc :: ScmWord*))
+  (let* ([nextpc::ScmWord*])
     (CHECK-STACK-PARANOIA CONT_FRAME_SIZE)
     (FETCH-LOCATION nextpc)
     INCR_PC
@@ -1311,7 +1295,7 @@
 ;; TAIL-RECEIVE-ALL 
 ;;  Tail version of RECEIVE-ALL.  
 (define-insn TAIL-RECEIVE-ALL 0 none #f
-  (let* ((i :: int 0))
+  (let* ([i::int 0])
     (CHECK-STACK-PARANOIA (ENV-SIZE (+ (-> vm numVals) 1)))
     (PUSH-ARG VAL0)
     (for (() (< i (- (-> vm numVals) 1)) (post++ i))
@@ -1326,8 +1310,7 @@
 (define-insn VALUES-N 0 none #f
   (begin
     (VM-ASSERT ENV)
-    (let* ((nvals :: int (cast int (-> ENV size)))
-           (v))
+    (let* ([nvals::int (cast int (-> ENV size))] [v])
       (set! (-> vm numVals) nvals)
       (for (() (> nvals 1) (post-- nvals))
            (POP-ARG (aref (-> vm vals) (- nvals 1))))
