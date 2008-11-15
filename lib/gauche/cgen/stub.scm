@@ -46,6 +46,7 @@
   (use gauche.cgen.literal)
   (use gauche.cgen.cise)
   (use gauche.experimental.ref)
+  (use gauche.experimental.lamb)
   (export <cgen-stub-unit> <cgen-stub-error>
           cgen-stub-parser cgen-stub-parse-form)
   )
@@ -154,14 +155,6 @@
 (define (get-c-name prefix scheme-name)
   (cgen-safe-name-friendly (string-append prefix (x->string scheme-name))))
 
-;; global-eq?? is defined in compile.scm, but it wasn't in 0.8.13.
-;; We duplicate it here so that we can run genstub with 0.8.13.
-(define (global-eq?? sym srcmod modgen)
-  (let* ((find-binding (with-module gauche.internal find-binding))
-         (id-gloc (find-binding (find-module srcmod) sym #f)))
-    (lambda (var)
-      (eq? id-gloc (find-binding (modgen) var #f)))))
-
 ;; <cgen-stub-unit> is a specialized class to handle stub forms.
 (define-class <cgen-stub-unit> (<cgen-unit>)
   ((c-name-prefix :init-keyword :c-name-prefix) ; prefix used for C identifiers
@@ -182,30 +175,24 @@
    (handler :init-keyword :handler)))
 
 (define-macro (define-form-parser name args . body)
-  `(make <form-parser>
-     :name ',name
-     :args ',args
-     :handler (lambda ,args ,@body)))
+  `(make <form-parser> :name ',name :args ',args :handler (lambda ,args ,@body)))
 
 (define-method invoke ((self <form-parser>) form)
   (define (badform)
     (errorf <cgen-stub-error> "malformed ~a: ~s" [~ self'name] form))
-  (let1 args
-      ;; need to check if given form matches args
-      (let loop ((llist [~ self'args])
-                 (form  (cdr form)))
-        (cond ((null? llist)
-               (if (null? form) '() (badform)))
-              ((pair? llist)
-               (if (null? form)
-                 (badform)
-                 (cons (car form) (loop (cdr llist) (cdr form)))))
-              (else form)))
-    (apply [~ self'handler] args)))
+  (apply [~ self'handler]
+         ;; need to check if given form matches args
+         (let loop ((llist [~ self'args])
+                    (form  (cdr form)))
+           (cond [(null? llist) (if (null? form) '() (badform))]
+                 [(pair? llist)
+                  (if (null? form)
+                    (badform)
+                    (cons (car form) (loop (cdr llist) (cdr form))))]
+                 [else form]))))
 
 (define (cgen-stub-parser key)
-  (cond [(find (lambda (p) (eq? key [~ p'name]))
-               (instance-pool->list <form-parser>))
+  (cond [(find (^(p) (eq? key [~ p'name])) (instance-pool->list <form-parser>))
          => (lambda (parser) (cut invoke parser <>))]
         [else #f]))
 
@@ -412,14 +399,11 @@
       ;; If not null, the entire procedure body is wrapped by 'try' and
       ;; an appropriate handlers are emitted.  Necessary to write a stub
       ;; for C++ functions that may throw an exception.
-   (flags           :initform '() :accessor flags-of)
+   (flags             :initform '() :accessor flags-of)
    ))
 
-(define (get-arg cproc arg)
-  (find (lambda (x) (eq? arg [~ x'name])) [~ cproc'args]))
-
-(define (push-stmt! cproc stmt)
-  (push! [~ cproc'stmts] stmt))
+(define (get-arg cproc arg) (find (^(x) (eq? arg [~ x'name])) [~ cproc'args]))
+(define (push-stmt! cproc stmt) (push! [~ cproc'stmts] stmt))
 
 (define-generic c-stub-name )
 
@@ -454,15 +438,13 @@
       ;; are immediately type-checked and/or unboxed.
       (let1 unsafe-types (list *scm-type* (name->type '<number>))
         (when (and (not (memq 'immediate-arg [~ cproc'flags]))
-                   (every (lambda (arg)
-                            (or (is-a? arg <rest-arg>)
-                                (not (memq [~ arg'type] unsafe-types))))
+                   (every (^(arg) (or (is-a? arg <rest-arg>)
+                                      (not (memq [~ arg'type] unsafe-types))))
                           args))
           (push! [~ cproc'flags] 'immediate-arg)))
       (cgen-add! cproc))))
 
-(define-method c-stub-name ((cproc <cproc>))
-  #`",[~ cproc'c-name]__STUB")
+(define-method c-stub-name ((cproc <cproc>)) #`",[~ cproc'c-name]__STUB")
 
 ;; create arg object.  used in cproc and cmethod
 (define (make-arg class argname count . rest)
@@ -484,83 +466,80 @@
 
   (define (required specs args nreqs)
     (match specs
-      (()                   (values (reverse args) '() nreqs 0 #f #f))
-      (('&optional . specs) (optional specs args nreqs 0))
-      (('&rest . specs)     (rest specs args '() nreqs 0 #f))
-      (('&keyword . specs)  (keyword specs args '() nreqs 0))
-      (('&allow-other-keys . specs)
+      [()                   (values (reverse args) '() nreqs 0 #f #f)]
+      [('&optional . specs) (optional specs args nreqs 0)]
+      [('&rest . specs)     (rest specs args '() nreqs 0 #f)]
+      [('&keyword . specs)  (keyword specs args '() nreqs 0)]
+      [('&allow-other-keys . specs)
        (error <cgen-stub-error>
-              "misplaced &allow-other-key parameter:"argspecs" in "name))
-      (((? symbol? sym) . specs)
+              "misplaced &allow-other-key parameter:"argspecs" in "name)]
+      [([? symbol? sym] . specs)
        (required specs
                  (cons (make-arg <required-arg> sym nreqs) args)
-                 (+ nreqs 1)))
-      (_ (badarg (car specs)))))
+                 (+ nreqs 1))]
+      [_ (badarg (car specs))]))
 
   (define (optional specs args nreqs nopts)
     (match specs
-      (() (values (reverse args) '() nreqs nopts #f #f))
-      (('&optional . specs)
-       (error <cgen-stub-error> "extra &optional parameter in "name))
-      (('&keyword . specs)
+      [() (values (reverse args) '() nreqs nopts #f #f)]
+      [('&optional . specs)
+       (error <cgen-stub-error> "extra &optional parameter in "name)]
+      [('&keyword . specs)
        (error <cgen-stub-error>
-              "&keyword and &optional can't be used together in "name))
-      (('&rest . specs)     (rest specs args '() nreqs nopts #f))
-      (('&allow-other-keys . specs)
-       (error <cgen-stub-error> "misplaced &allow-other-key parameter in "name))
-      (((? symbol? sym) . specs)
+              "&keyword and &optional can't be used together in "name)]
+      [('&rest . specs)     (rest specs args '() nreqs nopts #f)]
+      [('&allow-other-keys . specs)
+       (error <cgen-stub-error> "misplaced &allow-other-key parameter in "name)]
+      [([? symbol? sym] . specs)
        (optional specs
-                 (cons (make-arg <optional-arg> sym (+ nreqs nopts))
-                       args)
+                 (cons (make-arg <optional-arg> sym (+ nreqs nopts)) args)
                  nreqs
-                 (+ nopts 1)))
-      ((((? symbol? sym) default) . specs)
+                 (+ nopts 1))]
+      [(([? symbol? sym] default) . specs)
        (optional specs
                  (cons (make-arg <optional-arg> sym (+ nreqs nopts)
                                  :default (make-literal default))
                        args)
                  nreqs
-                 (+ nopts 1)))
-      (_ (badarg (car specs)))))
+                 (+ nopts 1))]
+      [_ (badarg (car specs))]))
 
   (define (keyword specs args keyargs nreqs nopts)
     (match specs
-      (() (values (reverse args) (reverse keyargs) nreqs nopts #f #f))
-      (('&allow-other-keys)
-       (values (reverse args) (reverse keyargs) nreqs nopts #f #t))
-      (('&allow-other-keys &rest . specs)
-       (rest specs args keyargs nreqs nopts #t))
-      (('&allow-other-keys . specs)
-       (error <cgen-stub-error> "misplaced &allow-other-keys parameter in "name))
-      (('&keyword . specs)
-       (error <cgen-stub-error> "extra &keyword parameter in "name))
-      (('&optional . specs)
+      [() (values (reverse args) (reverse keyargs) nreqs nopts #f #f)]
+      [('&allow-other-keys)
+       (values (reverse args) (reverse keyargs) nreqs nopts #f #t)]
+      [('&allow-other-keys &rest . specs)
+       (rest specs args keyargs nreqs nopts #t)]
+      [('&allow-other-keys . specs)
+       (error <cgen-stub-error> "misplaced &allow-other-keys parameter in "name)]
+      [('&keyword . specs)
+       (error <cgen-stub-error> "extra &keyword parameter in "name)]
+      [('&optional . specs)
        (error <cgen-stub-error>
-              "&keyword and &optional can't be used together in "name))
-      (('&rest . specs)     (rest specs args keyargs nreqs nopts #f))
-      (((? symbol? sym) . specs)
+              "&keyword and &optional can't be used together in "name)]
+      [('&rest . specs)     (rest specs args keyargs nreqs nopts #f)]
+      [([? symbol? sym] . specs)
        (keyword specs args
                 (cons (make-arg <keyword-arg> sym (+ nreqs nopts))
                       keyargs)
-                nreqs (+ nopts 1)))
-      ((((? symbol? sym) default) . specs)
+                nreqs (+ nopts 1))]
+      [(([? symbol? sym] default) . specs)
        (keyword specs args
                 (cons (make-arg <keyword-arg> sym (+ nreqs nopts)
                                 :default (make-literal default))
                       keyargs)
-                nreqs (+ nopts 1)))
-      (_ (badarg (car specs)))))
+                nreqs (+ nopts 1))]
+      [_ (badarg (car specs))]))
 
   (define (rest specs args keyargs nreqs nopts other-keys?)
     (match specs
-      (() (values (reverse args) (reverse keyargs) nreqs nopts #t other-keys?))
-      (((? symbol? sym))
-       (values (reverse
-                (cons (make-arg <rest-arg> sym (+ nreqs nopts))
-                      args))
+      [() (values (reverse args) (reverse keyargs) nreqs nopts #t other-keys?)]
+      [((? symbol? sym))
+       (values (reverse (cons (make-arg <rest-arg> sym (+ nreqs nopts)) args))
                (reverse keyargs)
-               nreqs (+ nopts 1) #t other-keys?))
-      (_ (badarg (car specs)))))
+               nreqs (+ nopts 1) #t other-keys?)]
+      [_ (badarg (car specs))]))
 
   (required argspecs '() 0)
   )
@@ -568,25 +547,24 @@
 (define-method process-body ((cproc <cproc>) body)
   (dolist (form body)
     (match form
-      ((? string?) (push-stmt! cproc form))
-      (('inliner opcode) (set! [~ cproc'inline-insn] opcode))
-      (('setter . spec) (process-setter cproc spec))
-      (('return . spec) (process-call-spec cproc form))
-      (('call . spec) (process-call-spec cproc form))
-      (('body . spec) (process-body-spec cproc form))
-      (('expr . spec) (process-expr-spec cproc form))
-      (('catch . spec) (process-catch-spec cproc form))
-      (('code . stmts) (for-each (cut push-stmt! cproc <>) stmts))
-      (('flags . flags) (process-flags-spec cproc form))
-      (else (error <cgen-stub-error> "unknown body form:" form)))))
+      [(? string?) (push-stmt! cproc form)]
+      [('inliner opcode) (set! [~ cproc'inline-insn] opcode)]
+      [('setter . spec) (process-setter cproc spec)]
+      [('return . spec) (process-call-spec cproc form)]
+      [('call . spec) (process-call-spec cproc form)]
+      [('body . spec) (process-body-spec cproc form)]
+      [('expr . spec) (process-expr-spec cproc form)]
+      [('catch . spec) (process-catch-spec cproc form)]
+      [('code . stmts) (for-each (cut push-stmt! cproc <>) stmts)]
+      [('flags . flags) (process-flags-spec cproc form)]
+      [else (error <cgen-stub-error> "unknown body form:" form)])))
 
 (define-method process-setter ((cproc <cproc>) decl)
   (cond
-   ((symbol? (car decl))
-    (set! [~ cproc'setter] (car decl)))
-   ((< (length decl) 2)
-    (error <cgen-stub-error> "bad form of anonymous setter:" `(setter ,decl)))
-   (else
+   [(symbol? (car decl)) (set! [~ cproc'setter] (car decl))]
+   [(< (length decl) 2)
+    (error <cgen-stub-error> "bad form of anonymous setter:" `(setter ,decl))]
+   [else
     (receive (args keyargs nreqs nopts rest? other-keys?)
         (process-cproc-args (ref cproc'proc-name) (car decl))
       (let ((setter (make <cproc>
@@ -601,8 +579,7 @@
                       :allow-other-keys? other-keys?)))
         (set! [~ cproc'setter] #`",[~ setter'c-name]__STUB")
         (process-body setter (cdr decl))
-        (cgen-add! setter)))
-    )))
+        (cgen-add! setter)))]))
 
 (define-method process-call-spec ((cproc <procstub>) form)
   (define (err) (error <cgen-stub-error> "malformed 'call' spec:" form))
@@ -618,15 +595,13 @@
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
   (match form
-    [(_ [? check-expr expr])
-     (typed-result *scm-type* expr)]
+    [(_ [? check-expr expr]) (typed-result *scm-type* expr)]
+    [(_ '<void> expr)
+     (push-stmt! cproc #`",(caddr form)(,(args));")
+     (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
     [(_ typename expr)
      (unless (and (symbol? typename) (check-expr expr)) (err))
-     (cond
-      [(memq typename '(<void> void)) ;; tolerate old name for transition
-       (push-stmt! cproc #`",(caddr form)(,(args));")
-       (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
-      [else (typed-result (name->type typename) expr)])]
+     (typed-result (name->type typename) expr)]
     [else (err)]))
 
 (define-method process-body-spec ((cproc <procstub>) form)
@@ -657,27 +632,28 @@
            ",")
         (push-stmt! cproc
                     (case nrets
-                      ((0) (cgen-return-stmt "Scm_Values(SCM_NIL)"))
-                      ((1) (cgen-return-stmt results))
-                      ((2) (cgen-return-stmt #`"Scm_Values2(,results)"))
-                      ((3) (cgen-return-stmt #`"Scm_Values3(,results)"))
-                      ((4) (cgen-return-stmt #`"Scm_Values4(,results)"))
-                      ((5) (cgen-return-stmt #`"Scm_Values5(,results)"))
-                      (else (cgen-return-stmt #`"Scm_Values(Scm_List(,results,, NULL))"))))
+                      [(0) (cgen-return-stmt "Scm_Values(SCM_NIL)")]
+                      [(1) (cgen-return-stmt results)]
+                      [(2) (cgen-return-stmt #`"Scm_Values2(,results)")]
+                      [(3) (cgen-return-stmt #`"Scm_Values3(,results)")]
+                      [(4) (cgen-return-stmt #`"Scm_Values4(,results)")]
+                      [(5) (cgen-return-stmt #`"Scm_Values5(,results)")]
+                      [else (cgen-return-stmt
+                             #`"Scm_Values(Scm_List(,results,, NULL))")]))
         )))
   (define (err) (error <cgen-stub-error> "malformed 'body' spec:" form))
   (match form
-    ((_ '<void> . stmts)
+    [(_ '<void> . stmts)
      (for-each expand-stmt stmts)
-     (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);"))
-    ((_ (? symbol? rettype) . stmts)
-     (typed-result (name->type rettype) stmts))
-    ((_ (? list? rettypes) . stmts)
+     (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
+    [(_ (? symbol? rettype) . stmts)
+     (typed-result (name->type rettype) stmts)]
+    [(_ (? list? rettypes) . stmts)
      (unless (every symbol? rettypes) (err))
-     (typed-results (map name->type rettypes) stmts))
-    ((_ . stmts)
-     (typed-result *scm-type* stmts))
-    (else (err))))
+     (typed-results (map name->type rettypes) stmts)]
+    [(_ . stmts)
+     (typed-result *scm-type* stmts)]
+    [else (err)]))
 
 (define-method process-expr-spec ((cproc <procstub>) form)
   (define (typed-result rettype expr)
@@ -690,17 +666,17 @@
       (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
       (push-stmt! cproc "}")))
   (match form
-    ((_ '<void> . stmts)
-     (error <cgen-stub-error> "<void> type isn't allowed in 'expr' directive:" form))
-    ((_ (? symbol? rettype) expr)
-     (typed-result (name->type rettype) expr))
-    ((_ expr)
-     (typed-result *scm-type* expr))
-    (else (error <cgen-stub-error> "malformed 'expr' spec:" form))))
+    [(_ '<void> . stmts)
+     (error <cgen-stub-error> "<void> type isn't allowed in 'expr' directive:" form)]
+    [(_ [? symbol? rettype] expr)
+     (typed-result (name->type rettype) expr)]
+    [(_ expr)
+     (typed-result *scm-type* expr)]
+    [else (error <cgen-stub-error> "malformed 'expr' spec:" form)]))
 
 (define-method process-catch-spec ((cproc <procstub>) form)
   (match form
-    ((_ (decl . handler-stmts) ...)
+    [(_ (decl . handler-stmts) ...)
      ;; push default handlers
      (push! [~ cproc'c++-handlers]
             (list "..."
@@ -710,20 +686,19 @@
             (list "std::exception& e"
                   (format "Scm_Error(\"~a: %s\", e.what());"
                           [~ cproc'scheme-name])))
-     (for-each (lambda (d s) (push! [~ cproc'c++-handlers] (cons d s)))
+     (for-each (^(d s) (push! [~ cproc'c++-handlers] (cons d s)))
                decl handler-stmts)
      ;; if this is the first time, make sure we include <stdexcept>.
      (unless [~ (cgen-current-unit)'c++-exception-used?]
        (cgen-decl "#include <stdexcept>")
        (set! [~ (cgen-current-unit)'c++-exception-used?] #t))
-     )
-    (else (error <cgen-stub-error> "malformed 'catch' spec:" form))))
+     ]
+    [else (error <cgen-stub-error> "malformed 'catch' spec:" form)]))
 
 (define-method process-flags-spec ((cproc <procstub>) form)
   (dolist (flag (cdr form))
     (unless (memq flag '(immediate-arg))
-      (errorf "unknown flag '~s' for procedure '~s'"
-              flag [~ cproc'scheme-name]))
+      (errorf "unknown flag '~s' for procedure ~s" flag [~ cproc'scheme-name]))
     (push! [~ cproc'flags] flag)))
 
 ;;; emit code
@@ -894,12 +869,11 @@
   (check-arg symbol? scheme-name)
   (check-arg string? c-name)
   (let ((gf (make <cgeneric> :scheme-name scheme-name :c-name c-name)))
-    (for-each (match-lambda
-                (('extern) (set! [~ gf'extern?] #t))
-                (('fallback (? string? fallback))
-                 (set! [~ gf'fallback] (cadr form)))
-                (('setter . spec) (process-setter gf spec))
-                (form (error <cgen-stub-error> "bad gf form:" form)))
+    (for-each (^.[('extern) (set! [~ gf'extern?] #t)]
+                 [('fallback (? string? fallback))
+                  (set! [~ gf'fallback] (cadr form))]
+                 [('setter . spec) (process-setter gf spec)]
+                 [form (error <cgen-stub-error> "bad gf form:" form)])
               body)
     (cgen-add! gf)))
 
@@ -909,10 +883,9 @@
     (error <cgen-stub-error> "bad form of anonymous setter:" `(setter ,@decl))))
 
 (define (get-c-generic-name name)
-  (cond ((find (lambda (x) (eq? [~ x'scheme-name] name))
-               (get-stubs <cgeneric>))
-         => (cut ref <> 'c-name))
-        (else #f)))
+  (cond [(find (^(x) (eq? [~ x'scheme-name] name)) (get-stubs <cgeneric>))
+         => (cut ref <> 'c-name)]
+        [else #f]))
 
 ;;-----------------------------------------------------------------
 ;; Methods
