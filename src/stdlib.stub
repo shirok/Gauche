@@ -517,15 +517,11 @@
   [(_ op) `(,op (Scm_StringCiCmp s1 s2) 0)])
         
 (define-cproc string=? (s1::<string> s2::<string>)
-  (call <boolean> "Scm_StringEqual"))
-(define-cproc string<? (s1::<string> s2::<string>)
-  (expr <boolean> (strcmp <)))
-(define-cproc string<=? (s1::<string> s2::<string>)
-  (expr <boolean> (strcmp <=)))
-(define-cproc string>? (s1::<string> s2::<string>)
-  (expr <boolean> (strcmp >)))
-(define-cproc string>=? (s1::<string> s2::<string>)
-  (expr <boolean> (strcmp >=)))
+  (call <boolean> Scm_StringEqual))
+(define-cproc string<? (s1::<string> s2::<string>) (expr <boolean> (strcmp <)))
+(define-cproc string<=? (s1::<string> s2::<string>)(expr <boolean> (strcmp <=)))
+(define-cproc string>? (s1::<string> s2::<string>) (expr <boolean> (strcmp >)))
+(define-cproc string>=? (s1::<string> s2::<string>)(expr <boolean> (strcmp >=)))
 
 (define-cproc string-ci=? (s1::<string> s2::<string>)
   (expr <boolean> (strcmp-ci ==)))
@@ -541,19 +537,15 @@
 (define-cproc substring (str::<string> start::<fixnum> end::<fixnum>)
   (expr <top> (Scm_Substring str start end FALSE)))
 
-(define-cproc string-append (&rest args)
-  (call "Scm_StringAppend"))
+(define-cproc string-append (&rest args) (call Scm_StringAppend))
 
 (define-cproc string->list (str::<string> &optional start end)
-  (expr <top>
-        (Scm_StringToList (SCM_STRING (Scm_MaybeSubstring str start end)))))
+  (expr <top> (Scm_StringToList (SCM_STRING (Scm_MaybeSubstring str start end)))))
 
-(define-cproc list->string (list::<list>)
-  (call "Scm_ListToString"))
+(define-cproc list->string (list::<list>) (call Scm_ListToString))
 
 (define-cproc string-copy (str::<string> &optional start end)
-  (expr <top>
-        (Scm_CopyString (SCM_STRING (Scm_MaybeSubstring str start end)))))
+  (expr <top> (Scm_CopyString (SCM_STRING (Scm_MaybeSubstring str start end)))))
 
 ;;
 ;; 6.3.6  Vectors
@@ -564,8 +556,7 @@
   (call <boolean> "SCM_VECTORP")
   (flags immediate-arg))
 
-(define-cproc make-vector (k::<fixnum> &optional fill)
-  (call "Scm_MakeVector"))
+(define-cproc make-vector (k::<fixnum> &optional fill) (call Scm_MakeVector))
 
 (define-cproc vector (&rest args)
   (inliner VEC)
@@ -578,14 +569,14 @@
 (define-cproc vector-ref (vec::<vector> k::<integer> &optional fallback)
   (setter vector-set!)
   (body <top>
-        (cond ((or (SCM_BIGNUMP k)
+        (cond [(or (SCM_BIGNUMP k)
                    (< (SCM_INT_VALUE k) 0)
                    (>= (SCM_INT_VALUE k) (SCM_VECTOR_SIZE vec)))
                (when (SCM_UNBOUNDP fallback)
                  (Scm_Error "vector-ref index out of range: %S" k))
-               (result fallback))
-              (else
-               (result (SCM_VECTOR_ELEMENT vec (SCM_INT_VALUE k)))))))
+               (result fallback)]
+              [else
+               (result (SCM_VECTOR_ELEMENT vec (SCM_INT_VALUE k)))])))
 
 (define-cproc vector-set! (vec::<vector> k::<integer> obj)
   (body <void>

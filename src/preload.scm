@@ -17,7 +17,7 @@
 (use gauche.hook)
 (use gauche.parameter)
 (use gauche.uvector)
-(use gauche.regexp)  ; need to compile 0.8.13_pre with 0.8.12
+(use gauche.regexp)
 (use srfi-1)
 (use srfi-13)
 (use file.util)
