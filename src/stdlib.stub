@@ -126,27 +126,27 @@
 (define-cproc + (&rest args)
   (body <number>
         (cond
-         ((not (SCM_PAIRP args)) (result (SCM_MAKE_INT 0)))
-         ((not (SCM_NUMBERP (SCM_CAR args)))
+         [(not (SCM_PAIRP args)) (result (SCM_MAKE_INT 0))]
+         [(not (SCM_NUMBERP (SCM_CAR args)))
           (Scm_Error "number required, but got %S" (SCM_CAR args))
-          (result SCM_UNDEFINED))       ;dummy
-         (else
-          (let* ((r :: ScmObj (SCM_CAR args)))
+          (result SCM_UNDEFINED)]       ;dummy
+         [else
+          (let* ([r::ScmObj (SCM_CAR args)])
             (for-each (lambda (v) (set! r (Scm_Add r v))) (SCM_CDR args))
-            (result r)))))
+            (result r))]))
   (flags immediate-arg))
 
 (define-cproc * (&rest args)
   (body <number>
         (cond
-         ((not (SCM_PAIRP args)) (result (SCM_MAKE_INT 1)))
-         ((not (SCM_NUMBERP (SCM_CAR args)))
+         [(not (SCM_PAIRP args)) (result (SCM_MAKE_INT 1))]
+         [(not (SCM_NUMBERP (SCM_CAR args)))
           (Scm_Error "number required, but got %S" (SCM_CAR args))
-          (result SCM_UNDEFINED))       ;dummy
-         (else
-          (let* ((r :: ScmObj (SCM_CAR args)))
+          (result SCM_UNDEFINED)]       ;dummy
+         [else
+          (let* ([r::ScmObj (SCM_CAR args)])
             (for-each (lambda (v) (set! r (Scm_Mul r v))) (SCM_CDR args))
-            (result r)))))
+            (result r))]))
   (flags immediate-arg))
 
 (define-cproc - (arg1 &rest args)
@@ -379,49 +379,32 @@
 (define-cproc length (list)
   (inliner LENGTH)
   (body <long>
-        (let* ((len :: long (Scm_Length list)))
+        (let* ([len::long (Scm_Length list)])
           (if (< len 0) (Scm_Error "bad list: %S" list))
           (result len)))
   (flags immediate-arg))
 
 (define-cproc length+ (list) ;; srfi-1
   (body <top>
-        (let* ((i :: int (Scm_Length list)))
+        (let* ([i::int (Scm_Length list)])
           (if (< i 0) (result SCM_FALSE) (result (Scm_MakeInteger i))))))
 
-(define-cproc append (&rest lists)
-  (inliner APPEND)
-  (call "Scm_Append"))
-
-(define-cproc reverse (list::<list>)
-  (inliner REVERSE)
-  (call "Scm_Reverse"))
+(define-cproc append (&rest lists) (call Scm_Append) (inliner APPEND))
+(define-cproc reverse (list::<list>) (call Scm_Reverse) (inliner REVERSE))
 
 (define-cproc list-tail (list k::<fixnum> &optional fallback)
-  (call "Scm_ListTail"))
+  (call Scm_ListTail))
 
 (define-cproc list-ref (list k::<fixnum> &optional fallback)
-  (call "Scm_ListRef"))
+  (call Scm_ListRef))
 
-(define-cproc memq (obj list::<list>)
-  (inliner MEMQ)
-  (call "Scm_Memq"))
-
-(define-cproc memv (obj list::<list>)
-  (inliner MEMV)
-  (call "Scm_Memv"))
-
+(define-cproc memq (obj list::<list>) (call Scm_Memq) (inliner MEMQ))
+(define-cproc memv (obj list::<list>) (call Scm_Memv) (inliner MEMV))
 (define-cproc member (obj list::<list>)
   (expr <top> (Scm_Member obj list SCM_CMP_EQUAL)))
 
-(define-cproc assq (obj alist::<list>)
-  (inliner ASSQ)
-  (call "Scm_Assq"))
-
-(define-cproc assv (obj alist::<list>)
-  (inliner ASSV)
-  (call "Scm_Assv"))
-
+(define-cproc assq (obj alist::<list>) (call Scm_Assq) (inliner ASSQ))
+(define-cproc assv (obj alist::<list>) (call Scm_Assv) (inliner ASSV))
 (define-cproc assoc (obj alist::<list>)
   (expr <top> (Scm_Assoc obj alist SCM_CMP_EQUAL)))
 
@@ -437,8 +420,7 @@
 (define-cproc symbol->string (obj::<symbol>)
   (expr <top> (SCM_OBJ (SCM_SYMBOL_NAME obj))))
 
-(define-cproc string->symbol (obj::<string>)
-  (call "Scm_Intern"))
+(define-cproc string->symbol (obj::<string>) (call Scm_Intern))
 
 ;;
 ;; 6.3.4  Characters
@@ -476,9 +458,9 @@
 (define-cproc char-whitespace? (c::<char>)
   (expr <boolean> (and (SCM_CHAR_ASCII_P c) (isspace c))))
 (define-cproc char-upper-case? (c::<char>)
-  (call <boolean> "SCM_CHAR_UPPER_P"))
+  (call <boolean> SCM_CHAR_UPPER_P))
 (define-cproc char-lower-case? (c::<char>)
-  (call <boolean> "SCM_CHAR_LOWER_P"))
+  (call <boolean> SCM_CHAR_LOWER_P))
 
 (define-cproc char->integer (c::<char>) (expr <long> "(signed long)c"))
 (define-cproc integer->char (c::<int>)  (expr <char> "(ScmChar)c"))
@@ -495,11 +477,11 @@
   (call <boolean> "SCM_STRINGP")
   (flags immediate-arg))
 
-(define-cproc make-string (len::<fixnum> &optional (c::<char> #\ ))
-  (call "Scm_MakeFillString"))
+(define-cproc make-string (len::<fixnum> &optional (c::<char> #\space))
+  (call Scm_MakeFillString))
 
 (define-cproc string (&rest chars)
-  (call "Scm_ListToString"))
+  (call Scm_ListToString))
 
 (define-cproc string-length (str::<string>)
   (expr <fixnum> (SCM_STRING_BODY_LENGTH (SCM_STRING_BODY str))))
@@ -508,7 +490,7 @@
 ;; It is set in scmlib.scm.
 (define-cproc string-ref (str::<string> k::<fixnum> &optional fallback)
   (body <top>
-        (let* ((r :: ScmChar (Scm_StringRef str k (SCM_UNBOUNDP fallback))))
+        (let* ([r::ScmChar (Scm_StringRef str k (SCM_UNBOUNDP fallback))])
           (result (?: (== r SCM_CHAR_INVALID) fallback (SCM_MAKE_CHAR r))))))
 
 (define-cise-expr strcmp
@@ -609,10 +591,9 @@
 (define-cproc apply (proc arg1 &rest args)
   (inliner TAIL-APPLY)
   (body <top>
-        (let* ((head :: ScmObj)
-               (tail :: ScmObj))
-          (cond ((SCM_NULLP args) (result (Scm_VMApply proc arg1)))
-                (else
+        (let* ([head::ScmObj] [tail::ScmObj])
+          (cond [(SCM_NULLP args) (result (Scm_VMApply proc arg1))]
+                [else
                  (set! head (Scm_Cons arg1 SCM_NIL)
                        tail head)
                  (pair-for-each (lambda (cp)
@@ -624,32 +605,16 @@
                                                (SCM_CDR cp)))
                                   (SCM_APPEND1 head tail (SCM_CAR cp)))
                                 args)
-                 (result (Scm_VMApply proc head))))
-          )))
+                 (result (Scm_VMApply proc head))]))
+        ))
 
-(define-cproc map (proc args::<list> &rest moreargs)
-  (call "Scm_Map"))
-
-(define-cproc for-each (proc args::<list> &rest moreargs)
-  (call "Scm_ForEach"))
-          
-(define-cproc force (p)
-  (call "Scm_Force"))
-
-(define-cproc call-with-current-continuation (proc)
-  (call "Scm_VMCallCC"))
-
-(define-cproc values (&rest args)
-  (inliner VALUES)
-  (call "Scm_Values"))
-
-;; call-with-values - defined in scmlib.scm
-
-(define-cproc dynamic-wind (pre body post)
-  (call "Scm_VMDynamicWind"))
-
-(define-cproc eval (expr env)
-  (call "Scm_VMEval"))
+(define-cproc map (proc args::<list> &rest moreargs) (call Scm_Map))
+(define-cproc for-each (proc args::<list> &rest moreargs) (call Scm_ForEach))
+(define-cproc force (p) (call Scm_Force))
+(define-cproc call-with-current-continuation (proc) (call Scm_VMCallCC))
+(define-cproc values (&rest args) (call Scm_Values) (inliner VALUES))
+(define-cproc dynamic-wind (pre body post) (call Scm_VMDynamicWind))
+(define-cproc eval (expr env) (call Scm_VMEval))
 
 ;; for now, just return a module.
 (define-cproc null-environment (version::<fixnum>)
@@ -672,38 +637,32 @@
 ;; open-input-file, open-output-file, and various call-with-* and
 ;; with-* are defined in scmlib.scm.
 
-(define-cproc input-port? (obj)  (call <boolean> "SCM_IPORTP"))
-(define-cproc output-port? (obj) (call <boolean> "SCM_OPORTP"))
-(define-cproc port? (obj)        (call <boolean> "SCM_PORTP"))
+(define-cproc input-port? (obj)  (call <boolean> SCM_IPORTP))
+(define-cproc output-port? (obj) (call <boolean> SCM_OPORTP))
+(define-cproc port? (obj)        (call <boolean> SCM_PORTP))
 
 (define-cproc current-input-port (&optional newport)
   (body <top>
         (cond
-         ((SCM_IPORTP newport)
-          (result (Scm_SetCurrentInputPort (SCM_PORT newport))))
-         ((not (SCM_UNBOUNDP newport))
+         [(SCM_IPORTP newport)
+          (result (Scm_SetCurrentInputPort (SCM_PORT newport)))]
+         [(not (SCM_UNBOUNDP newport))
           (Scm_TypeError "current-input-port" "input port" newport)
-          (result SCM_UNDEFINED))
-         (else
-          (result (SCM_OBJ SCM_CURIN))))
-       ))
+          (result SCM_UNDEFINED)]
+         [else (result (SCM_OBJ SCM_CURIN))])))
 
 (define-cproc current-output-port (&optional newport)
   (body <top>
         (cond
-         ((SCM_OPORTP newport)
-          (result (Scm_SetCurrentOutputPort (SCM_PORT newport))))
-         ((not (SCM_UNBOUNDP newport))
+         [(SCM_OPORTP newport)
+          (result (Scm_SetCurrentOutputPort (SCM_PORT newport)))]
+         [(not (SCM_UNBOUNDP newport))
           (Scm_TypeError "current-output-port" "output port" newport)
-          (result SCM_UNDEFINED))
-         (else
-          (result (SCM_OBJ SCM_CUROUT))))))
+          (result SCM_UNDEFINED)]
+         [else (result (SCM_OBJ SCM_CUROUT))])))
 
-(define-cproc close-input-port (port::<port>)
-  (call <void> "Scm_ClosePort"))
-
-(define-cproc close-output-port (port::<port>)
-  (call <void> "Scm_ClosePort"))
+(define-cproc close-input-port (port::<port>)  (call <void> Scm_ClosePort))
+(define-cproc close-output-port (port::<port>) (call <void> Scm_ClosePort))
 
 ;;
 ;; 6.6.2  Input
@@ -715,14 +674,14 @@
 (define-cproc read-char (&optional (port::<input-port> (current-input-port)))
   (inliner READ-CHAR)
   (body <top>
-         (let* ((ch :: int))
+         (let* ([ch::int])
            (SCM_GETC ch port)
            (result (?: (== ch EOF) SCM_EOF (SCM_MAKE_CHAR ch))))))
 
 (define-cproc peek-char (&optional (port::<input-port> (current-input-port)))
   (inliner PEEK-CHAR)
   (body <top>
-        (let* ((ch :: ScmChar (Scm_Peekc port)))
+        (let* ([ch::ScmChar (Scm_Peekc port)])
           (result (?: (== ch SCM_CHAR_INVALID) SCM_EOF (SCM_MAKE_CHAR ch))))))
 
 (define-cproc eof-object? (obj)
@@ -731,7 +690,7 @@
   (flags immediate-arg))
 
 (define-cproc char-ready? (&optional (port::<input-port> (current-input-port)))
-  (call <boolean> "Scm_CharReady"))
+  (call <boolean> Scm_CharReady))
 
 ;;
 ;; 6.6.3  Output
