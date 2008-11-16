@@ -66,8 +66,7 @@
 ;; dirent.h - read directory
 ;;   we don't have correspoinding functions, but provide these:
 
-(define-cproc sys-readdir (pathname::<string>)
-  (call "Scm_ReadDirectory"))
+(define-cproc sys-readdir (pathname::<string>) (call Scm_ReadDirectory))
 
 ;; Bonus
 
@@ -75,17 +74,15 @@
                                       &keyword (absolute #f)
                                                (expand #f)
                                                (canonicalize #f))
-  "  int flags = 0;
-  if (!SCM_FALSEP(absolute)) flags |= SCM_PATH_ABSOLUTE;
-  if (!SCM_FALSEP(expand))   flags |= SCM_PATH_EXPAND;
-  if (!SCM_FALSEP(canonicalize)) flags |= SCM_PATH_CANONICALIZE;
-  SCM_RETURN(Scm_NormalizePathname(pathname, flags));")
+  (let* ([flags::int 0])
+    (unless (SCM_FALSEP absolute) (logior= flags SCM_PATH_ABSOLUTE))
+    (unless (SCM_FALSEP expand)   (logior= flags SCM_PATH_EXPAND))
+    (unless (SCM_FALSEP canonicalize) (logior= flags SCM_PATH_CANONICALIZE))
+    (result (Scm_NormalizePathname pathname flags))))
 
-(define-cproc sys-basename (pathname::<string>)
-  (call "Scm_BaseName"))
+(define-cproc sys-basename (pathname::<string>) (call Scm_BaseName))
 
-(define-cproc sys-dirname (pathname::<string>)
-  (call "Scm_DirName"))
+(define-cproc sys-dirname (pathname::<string>) (call Scm_DirName))
 
 ;;---------------------------------------------------------------------
 ;; errno.h - error numbers
@@ -228,20 +225,18 @@
 
 (define-type <sys-group> "ScmSysGroup*")
 
-(define-cproc sys-getgrgid (gid::<int>)
-  (call "Scm_GetGroupById"))
-(define-cproc sys-getgrnam (name::<string>)
-  (call "Scm_GetGroupByName"))
+(define-cproc sys-getgrgid (gid::<int>) (call Scm_GetGroupById))
+(define-cproc sys-getgrnam (name::<string>) (call Scm_GetGroupByName))
 
 ;; faster functions; bypassing creation of group object
 (define-cproc sys-gid->group-name (gid::<int>)
-  "  struct group *g = getgrgid(gid);
-  if (g == NULL) { Scm_SigCheck(Scm_VM()); SCM_RETURN(SCM_FALSE); }
-  else SCM_RETURN(SCM_MAKE_STR_COPYING(g->gr_name));")
-(define-cproc sys-group-name->gid (name::<string>)
-  "  struct group *g = getgrnam(Scm_GetStringConst(name));
-  if (g == NULL) { Scm_SigCheck(Scm_VM()); SCM_RETURN(SCM_FALSE); }
-  else SCM_RETURN(Scm_MakeInteger(g->gr_gid));")
+  (let* ([g::(struct group*) (getgrgid gid)])
+    (cond [(== g NULL) (Scm_SigCheck (Scm_VM)) (result '#f)]
+          [else (result (SCM_MAKE_STR_COPYING (-> g gr_name)))])))
+(define-cproc sys-group-name->gid (name::<const-cstring>)
+  (let* ([g::(struct group*) (getgrnam name)])
+    (cond [(== g NULL) (Scm_SigCheck (Scm_VM)) (result '#f)]
+          [else (result (Scm_MakeInteger (-> g gr_gid)))])))
 
 ;;---------------------------------------------------------------------
 ;; locale.h
@@ -254,7 +249,7 @@
 (define-enum LC_TIME)
 
 (define-cproc sys-setlocale (category::<fixnum> locale::<const-cstring>)
-  (call <const-cstring>? "setlocale"))
+  (call <const-cstring>? setlocale))
 
 ;;---------------------------------------------------------------------
 ;; math.h
@@ -264,20 +259,18 @@
 
 (define-type <sys-passwd> "ScmSysPasswd*")
 
-(define-cproc sys-getpwuid (uid::<int>)
-  (call "Scm_GetPasswdById"))
-(define-cproc sys-getpwnam (name::<string>)
-  (call "Scm_GetPasswdByName"))
+(define-cproc sys-getpwuid (uid::<int>) (call Scm_GetPasswdById))
+(define-cproc sys-getpwnam (name::<string>) (call Scm_GetPasswdByName))
 
 ;; faster functions; bypassing creation of passwd object
 (define-cproc sys-uid->user-name (uid::<int>)
-  "  struct passwd *p = getpwuid(uid);
-  if (p == NULL) { Scm_SigCheck(Scm_VM()); SCM_RETURN(SCM_FALSE); }
-  else SCM_RETURN(SCM_MAKE_STR_COPYING(p->pw_name));")
-(define-cproc sys-user-name->uid (name::<string>)
-  "  struct passwd *p = getpwnam(Scm_GetStringConst(name));
-  if (p == NULL) { Scm_SigCheck(Scm_VM()); SCM_RETURN(SCM_FALSE); }
-  else SCM_RETURN(Scm_MakeInteger(p->pw_uid));")
+  (let* ([p::(struct passwd*) (getpwuid uid)])
+    (cond [(== p NULL) (Scm_SigCheck (Scm_VM)) (result '#f)]
+          [else (result (SCM_MAKE_STR_COPYING (-> p pw_name)))])))
+(define-cproc sys-user-name->uid (name::<const-cstring>)
+  (let* ([p::(struct passwd*) (getpwnam name)])
+    (cond [(== p NULL) (Scm_SigCheck (Scm_VM)) (result '#f)]
+          [else (result (Scm_MakeInteger (-> p pw_uid)))])))
 
 ;;---------------------------------------------------------------------
 ;; setjmp.h
@@ -350,45 +343,37 @@
 ;;---------------------------------------------------------------------
 ;; stdio.h
 
-(define-cproc sys-remove (filename::<const-cstring>)
-  "  int r;
-  SCM_SYSCALL(r, remove(filename));
-  if (r < 0) Scm_SysError(\"removing %s failed\", filename);
-  SCM_RETURN(SCM_TRUE);")
+(define-cproc sys-remove (filename::<const-cstring>) ::<void>
+  (let* ([r::int])
+    (SCM_SYSCALL r (remove filename))
+    (when (< r 0) (Scm_SysError "remove failed on %s" filename))))
 
 (define-cproc sys-rename (oldname::<const-cstring> newname::<const-cstring>)
-  "  int r;
-#if defined(GAUCHE_WINDOWS)
-  /* Windows doesn't allow renaming to the existing file, so we unlink
-     it first.  This breaks the atomicity of rename operation.
-     We don't check and raise an error here, since the error will be
-     caught by rename() call. */
-  chmod(newname, 0666);
-  unlink(newname);
-#endif /* GAUCHE_WINDOWS */
-  SCM_SYSCALL(r, rename(oldname, newname));
-  if (r < 0) Scm_SysError(\"renaming %s to %s failed\", oldname, newname);
-  SCM_RETURN(SCM_TRUE);")
+  ::<void>
+  (let* ([r::int])
+    (|#if| "defined(GAUCHE_WINDOWS)"
+           ;; Windows doesn't allow renaming to the existing file, so we unlink
+           ;; it first.  This breaks the atomicity of rename operation.
+           ;; We don't check and raise an error here, since the error will be
+           ;; caught by rename() call.
+           (begin (chmod newname #o666) (unlink newname)))
+    (SCM_SYSCALL r (rename oldname newname))
+    (when (< r 0) (Scm_SysError "renaming %s to %s failed" oldname newname))))
 
 ;; NB: Alghough tmpnam() is in POSIX, its use is discouraged because of
 ;; potential security risk.  We mimic it's behavior by mkstemp() if possible.
 (define-cproc sys-tmpnam ()
-  "
-#ifdef HAVE_MKSTEMP
-  char nam[] = \"/tmp/fileXXXXXX\";
-  int fd;
-  SCM_SYSCALL(fd, mkstemp(nam));
-  if (fd < 0) Scm_SysError(\"mkstemp failed\");
-  close(fd);
-  unlink(nam);
-  SCM_RETURN(SCM_MAKE_STR_COPYING(nam));
-#else
-  char *s = tmpnam(NULL);
-  SCM_RETURN(SCM_MAKE_STR_COPYING(s));
-#endif")
+  (|#if| "HAVE_MKSTEMP"
+         (let* ([nam::(.array char [*]) "/tmp/fileXXXXXX"] [fd::int])
+           (SCM_SYSCALL fd (mkstemp nam))
+           (when (< fd 0) (Scm_SysError "mkstemp failed"))
+           (close fd)
+           (unlink nam)
+           (result (SCM_MAKE_STR_COPYING nam)))
+         (let* ([s::char* (tmpnam NULL)])
+           (result (SCM_MAKE_STR_COPYING s)))))
 
-(define-cproc sys-mkstemp (template::<string>)
-  (call "Scm_SysMkstemp"))
+(define-cproc sys-mkstemp (template::<string>) (call Scm_SysMkstemp))
 
 ;; tmpfile
 
@@ -403,35 +388,29 @@
 
 ;; Note: the return value of system() is not portable.
 ;; NB: on WinNT, system("") aborts, so we filter it.
-(define-cproc sys-system (command::<const-cstring>)
-  (body <int>
-        (if (== (aref command 0) 0)
-          (result 0)
-          (SCM_SYSCALL SCM_RESULT (system command)))))
+(define-cproc sys-system (command::<const-cstring>) ::<int>
+  (if (== (aref command 0) 0)
+    (result 0)
+    (SCM_SYSCALL SCM_RESULT (system command))))
 
-(define-cproc sys-random ()
-  "#if defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)
-  SCM_RETURN(Scm_MakeInteger(random()));
-#elif defined(LRAND48) && defined(SRAND48)
-  SCM_RETURN(Scm_MakeInteger(lrand48()));
-#else
-  /* fallback - we don't want to use rand(), for it is not very good RNG.
-     replace it when we have time. */
-  SCM_RETURN(Scm_MakeInteger(rand()));
-#endif")
+(define-cproc sys-random () ::<long>
+  (|#if| "defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)"
+         (result (random))
+         (|#if| "defined(LRAND48) && defined(SRAND48)"
+                (result (lrand48))
+                ;; fallback - we don't want to use rand(), for it is not
+                ;; a very good RNG.
+                (result (rand)))))
 
-(define-cproc sys-srandom (seed)
-  "  if (!SCM_EXACTP(seed)) Scm_Error(\"exact integer required: %S\", seed);
-#if defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)
-  srandom(Scm_GetUInteger(seed));
-#elif defined(LRAND48) && defined(SRAND48)
-  srand48(Scm_GetUInteger(seed));
-#else
-  /* fallback - we don't want to use rand(), for it is not very good RNG.
-     replace it when we have time. */
-  srand(Scm_GetUInteger(seed));
-#endif
-  SCM_RETURN(SCM_UNDEFINED);")
+(define-cproc sys-srandom (seed) ::<void>
+  (unless (SCM_EXACTP seed) (Scm_Error "exact integer required: %S" seed))
+  (|#if| "defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)"
+         (srandom (Scm_GetUInteger seed))
+         (|#if| "defined(LRAND48) && defined(SRAND48)"
+                (srand48 (Scm_GetUInteger seed))
+                ;; fallback - we don't want to use rand(), for it is not
+                ;; a very good RNG.
+                (srand (Scm_GetUInteger seed)))))
 
 (define-constant RAND_MAX (c "Scm_MakeIntegerFromUI(RAND_MAX)"))
 
@@ -441,8 +420,7 @@
 ;; TODO: for thread safety, we should use strerror_r when available.
 ;; unfortunately there are conflicting versions of strerror_r among
 ;; various systems.
-(define-cproc sys-strerror (errno::<int>)
-  (call <const-cstring> "strerror"))
+(define-cproc sys-strerror (errno::<int>) (call <const-cstring> strerror))
 
 ;;---------------------------------------------------------------------
 ;; sys/resource.h
@@ -459,33 +437,26 @@
 #  error \"rlim_t must be 32bit or 64bit\"
 #endif
 "
-  (define-cproc sys-getrlimit (rsrc::<int>)
-    (body (<integer> <integer>)
-          (let* ((limit :: |struct rlimit|)
-                 (ret   :: int))
-            (SCM_SYSCALL ret (getrlimit rsrc (& limit)))
-            (when (< ret 0) (Scm_SysError "getrlimit failed"))
-            (result (MAKERLIMIT (ref limit rlim_cur))
-                    (MAKERLIMIT (ref limit rlim_max))))))
+  (define-cproc sys-getrlimit (rsrc::<int>) ::(<integer> <integer>)
+    (let* ([limit::(struct rlimit)] [ret::int])
+      (SCM_SYSCALL ret (getrlimit rsrc (& limit)))
+      (when (< ret 0) (Scm_SysError "getrlimit failed"))
+      (result (MAKERLIMIT (ref limit rlim_cur))
+              (MAKERLIMIT (ref limit rlim_max)))))
 
-  (define-cproc sys-setrlimit (rsrc::<int> cur &optional (max #f))
-    (body <void>
-          (let* ((limit :: |struct rlimit|)
-                 (ret   :: int))
-            (when (or (SCM_FALSEP cur) (SCM_FALSEP max))
-              (SCM_SYSCALL ret (getrlimit rsrc (& limit)))
-              (when (< ret 0)
-                (Scm_SysError "getrlimit in sys-setrlimit failed")))
-            (cond
-             [(SCM_INTEGERP cur) (set! (ref limit rlim_cur) (GETRLIMIT cur))]
-             [(not (SCM_FALSEP cur))
-              (SCM_TYPE_ERROR cur "non-negative integer or #f")])
-            (cond
-             [(SCM_INTEGERP max) (set! (ref limit rlim_max) (GETRLIMIT max))]
-             [(not (SCM_FALSEP max))
-              (SCM_TYPE_ERROR max "non-negative integer or #f")])
-            (SCM_SYSCALL ret (setrlimit rsrc (& limit)))
-            (when (< ret 0) (Scm_SysError "setrlimit failed")))))
+  (define-cproc sys-setrlimit (rsrc::<int> cur &optional (max #f)) ::<void>
+    (let* ([limit::(struct rlimit)] [ret::int])
+      (when (or (SCM_FALSEP cur) (SCM_FALSEP max))
+        (SCM_SYSCALL ret (getrlimit rsrc (& limit)))
+        (when (< ret 0) (Scm_SysError "getrlimit in sys-setrlimit failed")))
+      (cond [(SCM_INTEGERP cur) (set! (ref limit rlim_cur) (GETRLIMIT cur))]
+            [(not (SCM_FALSEP cur))
+             (SCM_TYPE_ERROR cur "non-negative integer or #f")])
+      (cond [(SCM_INTEGERP max) (set! (ref limit rlim_max) (GETRLIMIT max))]
+            [(not (SCM_FALSEP max))
+             (SCM_TYPE_ERROR max "non-negative integer or #f")])
+      (SCM_SYSCALL ret (setrlimit rsrc (& limit)))
+      (when (< ret 0) (Scm_SysError "setrlimit failed"))))
 
   (initcode "Scm_AddFeature(\"gauche.sys.getrlimit\", NULL);")
 
@@ -517,14 +488,12 @@
 ;; commn code for stat and lstat
 (define-cise-stmt stat-common
   [(_ statfn)
-   `(let* ((s :: ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat)))
-           (r :: int))
+   `(let* ([s::ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat))] [r::int])
       (SCM_SYSCALL r (,statfn path (SCM_SYS_STAT_STAT s)))
       (when (< r 0) (Scm_SysError "%s failed for %s" ,(x->string statfn) path))
       (result s))])
    
-(define-cproc sys-stat (path::<const-cstring>)
-  (body <sys-stat> (stat-common stat)))
+(define-cproc sys-stat (path::<const-cstring>) ::<sys-stat> (stat-common stat))
 
 ;; On Windows we don't have lstat.  Omitting sys-lstat from Windows is
 ;; a bit inconvenient, however, to write a portable code if we do so.
@@ -532,55 +501,40 @@
 ;; on Windows path can never be a symlink, so we can just make sys-lstat
 ;; work the same as sys-stat.
 (when "!defined(GAUCHE_WINDOWS)"
-  (define-cproc sys-lstat (path::<const-cstring>)
-    (body <sys-stat> (stat-common lstat))))
+  (define-cproc sys-lstat (path::<const-cstring>) ::<sys-stat>
+    (stat-common lstat)))
 (when "defined(GAUCHE_WINDOWS)"
-  (define-cproc sys-lstat (path::<const-cstring>)
-    (body <sys-stat> (stat-common stat))))
+  (define-cproc sys-lstat (path::<const-cstring>) ::<sys-stat>
+    (stat-common stat)))
 
 (define-cproc sys-fstat (port-or-fd)
-  (body <top>
-        (let* ((s  :: ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat)))
-               (fd :: int (Scm_GetPortFd port-or-fd FALSE))
-               (r  :: int))
-          (cond
-           [(< fd 0) (result SCM_FALSE)]
-           [else (SCM_SYSCALL r (fstat fd (SCM_SYS_STAT_STAT s)))
-                 (when (< r 0) (Scm_SysError "fstat failed for %d" fd))
-                 (result (SCM_OBJ s))]))))
+  (let* ([s::ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat))]
+         [fd::int (Scm_GetPortFd port-or-fd FALSE)]
+         [r::int])
+    (cond [(< fd 0) (result SCM_FALSE)]
+          [else (SCM_SYSCALL r (fstat fd (SCM_SYS_STAT_STAT s)))
+                (when (< r 0) (Scm_SysError "fstat failed for %d" fd))
+                (result (SCM_OBJ s))])))
 
 ;;---------------------------------------------------------------------
 ;; sys/wait.h
 
 ;; returns pid and status 
-(define-cproc sys-wait ()
-  (body "SCM_RESULT = Scm_SysWait(SCM_MAKE_INT(-1), 0);"))
+(define-cproc sys-wait () (result (Scm_SysWait (SCM_MAKE_INT -1) 0)))
 
 (define-cproc sys-waitpid (process &keyword (nohang #f) (untraced #f))
-  (body <top>
-        (let* ((options :: int 0))
-          (unless (SCM_FALSEP nohang)   (logior= options WNOHANG))
-          (unless (SCM_FALSEP untraced) (logior= options WUNTRACED))
-          (result (Scm_SysWait process options)))))
+  (let* ([options::int 0])
+    (unless (SCM_FALSEP nohang)   (logior= options WNOHANG))
+    (unless (SCM_FALSEP untraced) (logior= options WUNTRACED))
+    (result (Scm_SysWait process options))))
 
 ;; status interpretation
-(define-cproc sys-wait-exited? (status::<int>)
-  (call <boolean> "WIFEXITED"))
-
-(define-cproc sys-wait-exit-status (status::<int>)
-  (call <int> "WEXITSTATUS"))
-
-(define-cproc sys-wait-signaled? (status::<int>)
-  (call <boolean> "WIFSIGNALED"))
-
-(define-cproc sys-wait-termsig (status::<int>)
-  (call <int> "WTERMSIG"))
-
-(define-cproc sys-wait-stopped? (status::<int>)
-  (call <boolean> "WIFSTOPPED"))
-
-(define-cproc sys-wait-stopsig (status::<int>)
-  (call <int> "WSTOPSIG"))
+(define-cproc sys-wait-exited? (status::<int>) (call <boolean> WIFEXITED))
+(define-cproc sys-wait-exit-status (status::<int>) (call <int> WEXITSTATUS))
+(define-cproc sys-wait-signaled? (status::<int>) (call <boolean> WIFSIGNALED))
+(define-cproc sys-wait-termsig (status::<int>) (call <int> WTERMSIG))
+(define-cproc sys-wait-stopped? (status::<int>) (call <boolean> WIFSTOPPED))
+(define-cproc sys-wait-stopsig (status::<int>) (call <int> WSTOPSIG))
 
 ;;---------------------------------------------------------------------
 ;; time.h
@@ -592,9 +546,8 @@
 (define-cproc sys-time ()
   (expr "Scm_MakeSysTime(time(NULL))"))
 
-(define-cproc sys-gettimeofday ()
-  (body (<ulong> <ulong>)
-        "Scm_GetTimeOfDay(&SCM_RESULT0, &SCM_RESULT1);"))
+(define-cproc sys-gettimeofday () ::(<ulong> <ulong>)
+  (Scm_GetTimeOfDay (& SCM_RESULT0) (& SCM_RESULT1)))
 
 (define-cproc current-microseconds ()   ;EXPERIMENTAL
   (call <long> "Scm_CurrentMicroseconds"))
@@ -614,30 +567,28 @@
 (define-cproc sys-asctime (tm::<sys-tm>)
   (expr "SCM_MAKE_STR_COPYING(asctime(&SCM_SYS_TM_TM(tm)))"))
 
-(define-cproc sys-ctime (time)
-  (body <const-cstring>
-        "time_t tim = Scm_GetSysTime(time);"
-        "SCM_RESULT = ctime(&tim);"))
+(define-cproc sys-ctime (time) ::<const-cstring>
+  (let* ([tim::time_t (Scm_GetSysTime time)]) (result (ctime (& tim)))))
 
-(define-cproc sys-difftime (time1 time0)
-  (expr <double> "difftime(Scm_GetSysTime(time1), Scm_GetSysTime(time0))"))
+(define-cproc sys-difftime (time1 time0) ::<double>
+  (result (difftime (Scm_GetSysTime time1) (Scm_GetSysTime time0))))
 
 (define-cproc sys-strftime (format::<const-cstring> tm::<sys-tm>)
-  (body <const-cstring>
-        "char tmpbuf[256];"
-        "strftime(tmpbuf, sizeof(tmpbuf), format, &SCM_SYS_TM_TM(tm));"
-        "SCM_RESULT = tmpbuf;"))
+  ::<const-cstring>
+  (let* ([tmpbuf::(.array char [256])])
+    (strftime tmpbuf (sizeof tmpbuf) format (& (SCM_SYS_TM_TM tm)))
+    (result tmpbuf)))
 
 (define-cproc sys-gmtime (time)
-  (body "time_t tim = Scm_GetSysTime(time);"
-        "SCM_RESULT = Scm_MakeSysTm(gmtime(&tim));"))
+  (let* ([tim::time_t (Scm_GetSysTime time)])
+    (result (Scm_MakeSysTm (gmtime (& tim))))))
 
 (define-cproc sys-localtime (time)
-  (body "time_t tim = Scm_GetSysTime(time);"
-        "SCM_RESULT = Scm_MakeSysTm(localtime(&tim));"))
+  (let* ([tim::time_t (Scm_GetSysTime time)])
+    (result (Scm_MakeSysTm (localtime (& tim))))))
 
 (define-cproc sys-mktime (tm::<sys-tm>)
-  (expr "Scm_MakeSysTime(mktime(&SCM_SYS_TM_TM(tm)))"))
+  (result (Scm_MakeSysTime (mktime (& (SCM_SYS_TM_TM tm))))))
 
 ;;---------------------------------------------------------------------
 ;; unistd.h - miscellaneous functions
@@ -647,47 +598,39 @@
 (define-enum X_OK)
 (define-enum F_OK)
 
-(define-cproc sys-access (pathname::<const-cstring> amode::<int>)
-  (body <boolean>
-        (let* ((r :: int))
-          (when (Scm_IsSugid)
-            (Scm_Error "cannot use sys-access in suid/sgid program."))
-          (SCM_SYSCALL r (access pathname amode))
-          (result (== r 0)))))
+(define-cproc sys-access (pathname::<const-cstring> amode::<int>) ::<boolean>
+  (let* ([r::int])
+    (when (Scm_IsSugid)
+      (Scm_Error "cannot use sys-access in suid/sgid program."))
+    (SCM_SYSCALL r (access pathname amode))
+    (result (== r 0))))
 
-(define-cproc sys-chdir (pathname::<const-cstring>)
-  (body <top>
-        (let* ((r :: int))
-          (SCM_SYSCALL r (chdir pathname))
-          (when (< r 0) (Scm_SysError "chdir failed"))
-          (result SCM_TRUE))))
+(define-cproc sys-chdir (pathname::<const-cstring>) ::<void>
+  (let* ([r::int])
+    (SCM_SYSCALL r (chdir pathname))
+    (when (< r 0) (Scm_SysError "chdir failed"))))
 
-(define-cproc sys-chmod (pathname::<const-cstring> mode::<int>)
-  (body <top>
-        (let* ((r :: int))
-          (SCM_SYSCALL r (chmod pathname mode))
-          (when (< r 0) (Scm_SysError "chmod failed"))
-          (result SCM_TRUE))))
+(define-cproc sys-chmod (pathname::<const-cstring> mode::<int>) ::<void>
+  (let* ([r::int])
+    (SCM_SYSCALL r (chmod pathname mode))
+    (when (< r 0) (Scm_SysError "chmod failed"))))
 
 (when "!defined(GAUCHE_WINDOWS)"
-  (define-cproc sys-fchmod (port-or-fd mode::<int>)
-    (body <top>
-          (let* ((r :: int) (fd :: int (Scm_GetPortFd port-or-fd TRUE)))
-            (SCM_SYSCALL r (fchmod fd mode))
-            (when (< r 0) (Scm_SysError "fchmod failed"))
-            (result SCM_TRUE))))
+  (define-cproc sys-fchmod (port-or-fd mode::<int>) ::<void>
+    (let* ([r::int] [fd::int (Scm_GetPortFd port-or-fd TRUE)])
+      (SCM_SYSCALL r (fchmod fd mode))
+      (when (< r 0) (Scm_SysError "fchmod failed"))))
   ) ;; !defined(GAUCHE_WINDOWS)
 
 ;; NB: we force GC just befor fork().  It appeares necessary on some
 ;; platform to synchronize page dirty bit information, so that incremental
 ;; GC works properly.
-(define-cproc sys-fork ()
-  (body <int>
-        "pid_t pid;"
-        "GC_gcollect();"
-        "SCM_SYSCALL(pid, fork());"
-        "if (pid < 0) Scm_SysError(\"fork failed\");"
-        "SCM_RESULT = pid;"))
+(define-cproc sys-fork () ::<int>
+  (let* ([pid::pid_t])
+    (GC_gcollect)
+    (SCM_SYSCALL pid (fork))
+    (when (< pid 0) (Scm_SysError "fork failed"))
+    (result pid)))
 
 ;; NB: the signature of old version was (command args &optional iomap).
 ;; The new version is (command args &keyword iomap sigmask).
@@ -695,182 +638,161 @@
 (define-keyword iomap "key_iomap")
 (define-keyword sigmask "key_sigmask")
 
-"static void get_exec_args(ScmObj rest, ScmObj *iomap, ScmSysSigset **sigmask)"
-"{"
-"  ScmObj s_sigmask = SCM_NIL;"
-"  *iomap = SCM_NIL; *sigmask = NULL;"
-"  if (SCM_PAIRP(rest) && SCM_NULLP(SCM_CDR(rest))) {"
-"    /* OLD SIGNATURE */"
-"    *iomap = SCM_CAR(rest);"
-"  } else {"
-"    *iomap = Scm_GetKeyword(key_iomap, rest, SCM_NIL);"
-"    s_sigmask = Scm_GetKeyword(key_sigmask, rest, SCM_FALSE);"
-"    if (SCM_SYS_SIGSET_P(s_sigmask)) {"
-"      *sigmask = SCM_SYS_SIGSET(s_sigmask);"
-"    } else if (!SCM_FALSEP(s_sigmask)) {"
-"      Scm_Error(\"<sys-sigset> or #f required, but got %S\", s_sigmask);"
-"    }"
-"  }"
-"}"
+(define-cfn get-exec-args (rest iomap::ScmObj* sigmask::ScmSysSigset**)
+  :: void :static
+  (let* ([s_sigmask SCM_NIL])
+    (set! (* iomap) SCM_NIL
+          (* sigmask) NULL)
+    (cond
+     [(and (SCM_PAIRP rest) (SCM_NULLP (SCM_CDR rest))) ; old signature
+      (set! (* iomap) (SCM_CAR rest))]
+     [else
+      (set! (* iomap) (Scm_GetKeyword key_iomap rest SCM_NIL)
+            s_sigmask (Scm_GetKeyword key_sigmask rest SCM_FALSE))
+      (cond [(SCM_SYS_SIGSET_P s_sigmask)
+             (set! (* sigmask) (SCM_SYS_SIGSET s_sigmask))]
+            [(not (SCM_FALSEP s_sigmask))
+             (Scm_Error "<sys-sigset> or #f required, but got %S" s_sigmask)])
+      ])))
 
-(define-cproc sys-exec (command::<string>
-                        args::<list>
-                        &rest rest)
-  (body <void>
-        "ScmObj iomap = SCM_NIL;"
-        "ScmSysSigset *sigmask = NULL;"
-        "get_exec_args(rest, &iomap, &sigmask);"
-        "Scm_SysExec(command, args, iomap, sigmask, 0);"))
+(define-cproc sys-exec (command::<string> args::<list> &rest rest) ::<void>
+  (let* ([iomap SCM_NIL] [sigmask::ScmSysSigset* NULL])
+    (get-exec-args rest (& iomap) (& sigmask))
+    (Scm_SysExec command args iomap sigmask 0)))
 
-(define-cproc sys-fork-and-exec (command::<string>
-                                 args::<list>
-                                 &rest rest)
-  (body "ScmObj iomap = SCM_NIL;"
-        "ScmSysSigset *sigmask = NULL;"
-        "get_exec_args(rest, &iomap, &sigmask);"
-        "SCM_RESULT = Scm_SysExec(command, args, iomap, sigmask, SCM_EXEC_WITH_FORK);"))
+(define-cproc sys-fork-and-exec (command::<string> args::<list> &rest rest)
+  (let* ([iomap SCM_NIL] [sigmask::ScmSysSigset* NULL])
+    (get-exec-args rest (& iomap) (& sigmask))
+    (result (Scm_SysExec command args iomap sigmask SCM_EXEC_WITH_FORK))))
 
-(define-cproc sys-getcwd ()
-  (body <const-cstring>
-        "#define GETCWD_PATH_MAX 1024  /* TODO: needs to be configured */"
-        "char p[GETCWD_PATH_MAX];"
-        "if (getcwd(p, GETCWD_PATH_MAX-1) == NULL) {"
-        "  Scm_SysError(\"getcwd failed\");"
-        "}"
-        "SCM_RESULT = p;"))
+(define-cproc sys-getcwd () ::<const-cstring>
+  (let* ([p::(.array char [1024])]) ; TODO: size needs to be configured
+    (when (== (getcwd p 1023) NULL) (Scm_SysError "getcwd failed"))
+    (result p)))
 
-(define-cproc sys-getegid () (call <int> "getegid"))
-(define-cproc sys-getgid ()  (call <int> "getgid"))
-(define-cproc sys-geteuid () (call <int> "geteuid"))
-(define-cproc sys-getuid ()  (call <int> "getuid"))
+(define-cproc sys-getegid () (call <int> getegid))
+(define-cproc sys-getgid ()  (call <int> getgid))
+(define-cproc sys-geteuid () (call <int> geteuid))
+(define-cproc sys-getuid ()  (call <int> getuid))
 
-(define-cproc sys-getpid ()  (call <int> "getpid"))
-(define-cproc sys-getppid () (call <int> "getppid"))
+(define-cproc sys-getpid ()  (call <int> getpid))
+(define-cproc sys-getppid () (call <int> getppid))
 
 (define-cproc sys-link (existing::<const-cstring> newpath::<const-cstring>)
-  (body "int r; SCM_SYSCALL(r, link(existing, newpath));"
-        "if (r < 0) Scm_SysError(\"link failed\");"
-        "SCM_RESULT = SCM_TRUE;"))
+  ::<void>
+  (let* ([r::int])
+    (SCM_SYSCALL r (link existing newpath))
+    (when (< r 0) (Scm_SysError "link failed"))))
 
 (define-cproc sys-pause ()
   ;; We can't simply use pause().  If a signal is delivered after the last
   ;; Scm_SigCheck and before the call of pause(), the signal will just sit
   ;; in a queue and pause() may not return.
-  (call "Scm_Pause"))
+  (call Scm_Pause))
 
-(define-cproc sys-alarm (seconds::<fixnum>)
-  (body <int> "SCM_SYSCALL(SCM_RESULT, alarm(seconds));"))
+(define-cproc sys-alarm (seconds::<fixnum>) ::<int>
+  (SCM_SYSCALL SCM_RESULT (alarm seconds)))
 
 ;; returns a list of two ports
 (define-cproc sys-pipe (&keyword (name "(pipe)") (buffering #f) (buffered? #f))
-  (body (<top> <top>)
-        "int fds[2], r, bufmode;"
-        "SCM_SYSCALL(r, pipe(fds));"
-        "if (r < 0) Scm_SysError(\"pipe failed\");"
-        "if (SCM_TRUEP(bufferedP)) {"
-        "  bufmode = SCM_PORT_BUFFER_FULL; /* for backward compatibility */"
-        "} else {"
-        "  bufmode = Scm_BufferingMode(buffering, -1, SCM_PORT_BUFFER_LINE);"
-        "}"
-        "SCM_RESULT0 = Scm_MakePortWithFd(name, SCM_PORT_INPUT, fds[0], bufmode, TRUE);"
-        "SCM_RESULT1 = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1], bufmode, TRUE);"))
+  ::(<top> <top>)
+  (let* ([fds::(.array int [2])] [mode::int] [r::int])
+    (SCM_SYSCALL r (pipe fds))
+    (when (< r 0) (Scm_SysError "pipe failed"))
+    (if (SCM_TRUEP buffered?)
+      (set! mode SCM_PORT_BUFFER_FULL) ; for backward compatibility
+      (set! mode (Scm_BufferingMode buffering -1 SCM_PORT_BUFFER_LINE)))
+    (result (Scm_MakePortWithFd name SCM_PORT_INPUT (aref fds 0) mode TRUE)
+            (Scm_MakePortWithFd name SCM_PORT_OUTPUT (aref fds 1)mode TRUE))))
 
 ;; close integer file descriptor.  should only be used for
 ;; low-level file descriptor handling, and you know what you're doing.
 ;; closing a file descriptor that is still used by Scheme port would
 ;; result a disaster.
-(define-cproc sys-close (fd::<int>)
-  (body "int r;"
-        "SCM_SYSCALL(r, close(fd));"
-        "if (r < 0) Scm_SysError(\"close failed\");"
-        "SCM_RESULT = SCM_TRUE;"))
+(define-cproc sys-close (fd::<int>) ::<void>
+  (let* ([r::int])
+    (SCM_SYSCALL r (close fd))
+    (when (< r 0) (Scm_SysError "close failed on file descriptor %d" fd))))
 
-(define-cproc sys-mkdir (pathname::<const-cstring> mode::<int>)
-  (body "int r;"
-        "#if !defined(GAUCHE_WINDOWS)"
-        "SCM_SYSCALL(r, mkdir(pathname, mode));"
-        "#else"
-        "SCM_SYSCALL(r, mkdir(pathname));"
-        "#endif /*GAUCHE_WINDOWS*/"
-        "if (r < 0) Scm_SysError(\"mkdir failed\");"
-        "SCM_RESULT = SCM_TRUE;"))
+(define-cproc sys-mkdir (pathname::<const-cstring> mode::<int>) ::<void>
+  (let* ([r::int])
+    (|#if| "!defined(GAUCHE_WINDOWS)"
+           (SCM_SYSCALL r (mkdir pathname mode))
+           (SCM_SYSCALL r (mkdir pathname)))
+    (when (< r 0) (Scm_SysError "mkdir failed on %s" pathname))))
 
-(define-cproc sys-rmdir (pathname::<const-cstring>)
-  (body "int r; SCM_SYSCALL(r, rmdir(pathname));"
-        "if (r < 0) Scm_SysError(\"rmdir failed\");"
-        "SCM_RESULT = SCM_TRUE;"))
+(define-cproc sys-rmdir (pathname::<const-cstring>) ::<void>
+  (let* ([r::int])
+    (SCM_SYSCALL r (rmdir pathname))
+    (when (< r 0) (Scm_SysError "rmdir failed for %s" pathname))))
 
-(define-cproc sys-umask (&optional mode)
-  (body <int>
-        (cond [(or (SCM_UNBOUNDP mode) (SCM_FALSEP mode))
-               (let* ((prev :: int (umask 0)))
-                 (umask prev)
-                 (result prev))]
-              [(SCM_INTP mode) (result (umask (SCM_INT_VALUE mode)))]
-              [else (SCM_TYPE_ERROR mode "fixnum or #f") (result 0)])))
+(define-cproc sys-umask (&optional mode) ::<int>
+  (cond [(or (SCM_UNBOUNDP mode) (SCM_FALSEP mode))
+         (let* ([prev::int (umask 0)])
+           (umask prev)
+           (result prev))]
+        [(SCM_INTP mode) (result (umask (SCM_INT_VALUE mode)))]
+        [else (SCM_TYPE_ERROR mode "fixnum or #f") (result 0)]))
 
-(define-cproc sys-sleep (seconds::<fixnum>)
-  (body <int>
-        "#if defined(GAUCHE_WINDOWS)"
-        "  Sleep(seconds*1000); SCM_RESULT=0;"
-        "#else"
-        "  SCM_RESULT = sleep(seconds);"
-        "#endif"))
+(define-cproc sys-sleep (seconds::<fixnum>) ::<int>
+  (|#if| "defined(GAUCHE_WINDOWS)"
+         (begin (Sleep (* seconds 1000)) (result 0))
+         (result (sleep seconds))))
 
 (when "defined(HAVE_NANOSLEEP)"
   (define-cproc sys-nanosleep (nanoseconds)
-    "struct timespec spec, rem;
-       if (SCM_TIMEP(nanoseconds)) {
-           spec.tv_sec = SCM_TIME(nanoseconds)->sec;
-           spec.tv_nsec = SCM_TIME(nanoseconds)->nsec;
-       } else if (!SCM_REALP(nanoseconds)) {
-           Scm_Error(\"bad timeout spec: <time> object or real number is required, but got %S\", nanoseconds);
-       } else {
-           double v = Scm_GetDouble(nanoseconds);
-           if (v < 0) Scm_Error(\"bad timeout spec: positive number required, but got %S\", nanoseconds);
-           spec.tv_sec = (unsigned long)floor(v/1.0e9);
-           spec.tv_nsec = (unsigned long)fmod(v, 1.0e9);
-           while (spec.tv_nsec >= 1000000000) {
-               spec.tv_nsec -= 1000000000;
-               spec.tv_sec += 1;
-           }
-       }
-       rem.tv_sec = rem.tv_nsec = 0;
-       nanosleep(&spec, &rem);
-       if (rem.tv_sec == 0 && rem.tv_nsec == 0) SCM_RETURN(SCM_FALSE);
-       else SCM_RETURN(Scm_MakeTime(SCM_FALSE, rem.tv_sec, rem.tv_nsec));")
+    (let* ([spec::(struct timespec)] [rem::(struct timespec)])
+      (cond
+       [(SCM_TIMEP nanoseconds)
+        (set! (ref spec tv_sec)  (-> (SCM_TIME nanoseconds) sec)
+              (ref spec tv_nsec) (-> (SCM_TIME nanoseconds) nsec))]
+       [(not (SCM_REALP nanoseconds))
+        (Scm_Error "bad timeout spec: <time> object or real number is \
+                    required, but got %S" nanoseconds)]
+       [else
+        (let* ([v::double (Scm_GetDouble nanoseconds)])
+          (when (< v 0)
+            (Scm_Error "bad timeout spec: positive number required, but got %S"
+                       nanoseconds))
+          (set! (ref spec tv_sec) (cast (unsigned long) (floor (/ v 1.0e9)))
+                (ref spec tv_nsec) (cast (unsigned long) (fmod v 1.0e9)))
+          (while (>= (ref spec tv_nsec) 1000000000)
+            (-= (ref spec tv_nsec) 1000000000)
+            (+= (ref spec tv_sec) 1)))])
+      (set! (ref rem tv_sec) 0 (ref rem tv_nsec) 0)
+      (nanosleep (& spec) (& rem))
+      (if (and (== (ref rem tv_sec) 0) (== (ref rem tv_nsec) 0))
+        (result '#f)
+        (result (Scm_MakeTime '#f (ref rem tv_sec) (ref rem tv_nsec))))))
   (initcode "Scm_AddFeature(\"gauche.sys.nanosleep\", NULL);")
   ) ; defined(HAVE_NANOSLEEP)
 
 (define-cproc sys-unlink (pathname::<const-cstring>)
-  (body "int r; SCM_SYSCALL(r, unlink(pathname));"
-        "if (r < 0) {"
-        "  if (errno == ENOENT) { SCM_RETURN(SCM_FALSE); }"
-        "  else Scm_SysError(\"unlink failed\");"
-        "}"
-        "SCM_RESULT = SCM_TRUE;"))
+  (let* ([r::int])
+    (SCM_SYSCALL r (unlink pathname))
+    (if (< r 0)
+      (if (== errno ENOENT)
+        (result '#f)
+        (Scm_SysError "unlink failed on %s" pathname))
+      (result '#t))))
 
-(define-cproc sys-isatty (port_or_fd)
-  (body <boolean>
-        "int fd = Scm_GetPortFd(port_or_fd, FALSE);"
-        "SCM_RESULT = (fd >= 0 && isatty(fd));"))
+(define-cproc sys-isatty (port_or_fd) ::<boolean>
+  (let* ([fd::int (Scm_GetPortFd port_or_fd FALSE)])
+    (result (and (>= fd 0) (isatty fd)))))
   
-(define-cproc sys-ttyname (port_or_fd)
-  (body <const-cstring>?
-        "int fd = Scm_GetPortFd(port_or_fd, FALSE);"
-        "if (fd < 0) SCM_RESULT = NULL;"
-        "else SCM_RESULT = ttyname(fd);"))
+(define-cproc sys-ttyname (port_or_fd) ::<const-cstring>?
+  (let* ([fd::int (Scm_GetPortFd port_or_fd FALSE)])
+    (result (?: (< fd 0) NULL (ttyname fd)))))
 
-(define-cproc sys-truncate (path::<const-cstring> length::<integer>)
-  (body "int r; SCM_SYSCALL(r, truncate(path, Scm_IntegerToOffset(length)));"
-        "if (r < 0) Scm_SysError(\"truncate failed\");"
-        "SCM_RESULT = SCM_TRUE;"))
+(define-cproc sys-truncate (path::<const-cstring> length::<integer>) ::<void>
+  (let* ([r::int])
+    (SCM_SYSCALL r (truncate path (Scm_IntegerToOffset length)))
+    (when (< r 0) (Scm_SysError "truncate failed on %s" path))))
 
-(define-cproc sys-ftruncate (port_or_fd length::<integer>)
-  (body "int r; int fd = Scm_GetPortFd(port_or_fd, TRUE);"
-        "SCM_SYSCALL(r, ftruncate(fd, Scm_IntegerToOffset(length)));"
-        "if (r < 0) Scm_SysError(\"ftruncate failed\");"
-        "SCM_RESULT = SCM_TRUE;"))
+(define-cproc sys-ftruncate (port_or_fd length::<integer>) ::<void>
+  (let* ([r::int] [fd::int (Scm_GetPortFd port_or_fd TRUE)])
+    (SCM_SYSCALL r (ftruncate fd (Scm_IntegerToOffset length)))
+    (when (< r 0) (Scm_SysError "ftruncate failed on %S" port_or_fd))))
 
 ;; NB. Linux needs _XOPEN_SOURCE defined before unistd.h to get crypt()
 ;; prototype.  However, it screws up something else.  Just for now I
@@ -888,23 +810,22 @@
 ;; symbolic link
 
 (when "defined(HAVE_SYMLINK)"
-  (define-cproc sys-symlink (existing::<const-cstring> newpath::<const-cstring>)
-    (body "int r;"
-          "SCM_SYSCALL(r, symlink(existing, newpath));"
-          "if (r < 0) Scm_SysError(\"link failed\");"
-          "SCM_RETURN(SCM_TRUE);"))
+  (define-cproc sys-symlink (existing::<const-cstring> newpath::<const-cstring>) ::<void>
+    (let* ([r::int])
+      (SCM_SYSCALL r (symlink existing newpath))
+      (when (< r 0)
+        (Scm_SysError "symlink from %s to %s failed" newpath existing))))
   (initcode "Scm_AddFeature(\"gauche.sys.symlink\", NULL);")
   )
 
 (when "defined(HAVE_READLINK)"
 (define-cproc sys-readlink (path::<const-cstring>)
-  "#define READLINK_PATH_MAX 1024  /* TODO: needs to be configured */
-  char buf[READLINK_PATH_MAX];
-  int n;
-  SCM_SYSCALL(n, readlink(path, buf, READLINK_PATH_MAX));
-  if (n < 0) Scm_SysError(\"readlink failed\");
-  if (n == READLINK_PATH_MAX) Scm_Error(\"readlink result too long\");
-  return Scm_MakeString(buf, n, -1, SCM_STRING_COPYING);")
+  (let* ([buf::(.array char [1024])] ; TODO: needs to be configured
+         [n::int])
+    (SCM_SYSCALL n (readlink path buf 1024))
+    (when (< n 0) (Scm_SysError "readlink failed on %s" path))
+    (when (== n 1024) (Scm_Error "readlink result too long on %s" path))
+    (result (Scm_MakeString buf n -1 SCM_STRING_COPYING))))
 (initcode "Scm_AddFeature(\"gauche.sys.readlink\", NULL);")
 )
 
@@ -914,50 +835,41 @@
 (define-type <sys-fdset> "ScmSysFdset*")
 
 (when "defined(HAVE_SELECT)"
-(define-cproc sys-fdset-ref (fdset::<sys-fdset> pf)
-  (body <boolean>
-        "int fd = Scm_GetPortFd(pf, FALSE);"
-        "if (fd < 0) SCM_RESULT = TRUE;"
-        "else SCM_RESULT = FD_ISSET(fd, &fdset->fdset);")
-  (setter sys-fdset-set!))
+(define-cproc sys-fdset-ref (fdset::<sys-fdset> pf) ::<boolean>
+  (setter sys-fdset-set!)
+  (let* ([fd::int (Scm_GetPortFd pf FALSE)])
+    (result (?: (< fd 0) TRUE (FD_ISSET fd (& (-> fdset fdset)))))))
   
-(define-cproc sys-fdset-set! (fdset::<sys-fdset> pf flag::<boolean>)
-  "int fd = Scm_GetPortFd(pf, FALSE);
-  if (fd >= 0) {
-    if (flag) {
-      FD_SET(fd, &fdset->fdset);
-      if (fdset->maxfd < fd) fdset->maxfd = fd;
-    } else {
-      FD_CLR(fd, &fdset->fdset);
-      if (fdset->maxfd == fd) {
-        int i;
-        for (i=fdset->maxfd-1; i>=0; i--) {
-          if (FD_ISSET(i, &fdset->fdset)) break;
-        }
-        fdset->maxfd = i;
-      }
-    }
-  }
-  SCM_RETURN(SCM_UNDEFINED);")
+(define-cproc sys-fdset-set! (fdset::<sys-fdset> pf flag::<boolean>) ::<void>
+  (let* ([fd::int (Scm_GetPortFd pf FALSE)])
+    (when (>= fd 0)
+      (cond [flag (FD_SET fd (& (-> fdset fdset)))
+                  (when (< (-> fdset maxfd) fd) (set! (-> fdset maxfd) fd))]
+            [else (FD_CLR fd (& (-> fdset fdset)))
+                  (when (== (-> fdset maxfd) fd)
+                    (let* ([i::int (- (-> fdset maxfd) 1)])
+                      (for [() (>= i 0) (post-- i)]
+                           (when (FD_ISSET i (& (-> fdset fdset))) (break)))
+                      (set! (-> fdset maxfd) i)))]))))
 
-(define-cproc sys-fdset-max-fd (fdset::<sys-fdset>)
-  (expr <int> "fdset->maxfd"))
+(define-cproc sys-fdset-max-fd (fdset::<sys-fdset>) ::<int>
+  (result (-> fdset maxfd)))
 
 (define-cproc sys-fdset-clear! (fdset::<sys-fdset>)
-  (body "FD_ZERO(&fdset->fdset);"
-        "fdset->maxfd = -1;"
-        "SCM_RESULT = SCM_OBJ(fdset);"))
+  (FD_ZERO (& (-> fdset fdset)))
+  (set! (-> fdset maxfd) -1)
+  (result (SCM_OBJ fdset)))
 
 (define-cproc sys-fdset-copy! (dst::<sys-fdset> src::<sys-fdset>)
-  (body "dst->fdset = src->fdset;"
-        "dst->maxfd = src->maxfd;"
-        "SCM_RESULT = SCM_OBJ(dst);"))
+  (set! (-> dst fdset) (-> src fdset)
+        (-> dst maxfd) (-> src maxfd))
+  (result (SCM_OBJ dst)))
 
 (define-cproc sys-select (rfds wfds efds &optional (timeout #f))
-  (call "Scm_SysSelect"))
+  (call Scm_SysSelect))
 
 (define-cproc sys-select! (rfds wfds efds &optional (timeout #f))
-  (call "Scm_SysSelectX"))
+  (call Scm_SysSelectX))
 
 (initcode "Scm_AddFeature(\"gauche.sys.select\", NULL);")
 ) ;; when defined(HAVE_SELECT)

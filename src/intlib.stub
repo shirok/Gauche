@@ -57,35 +57,29 @@
 ;;  information to s-exprs.
 
 (define-cproc pair-attributes (pair::<pair>)
-  (call "Scm_PairAttr"))
+  (call Scm_PairAttr))
 
 (define-cproc pair-attribute-get (pair::<pair> key &optional fallback)
-  (expr (Scm_PairAttrGet (SCM_PAIR pair) key fallback)))
+  (result (Scm_PairAttrGet (SCM_PAIR pair) key fallback)))
 
 (define-cproc pair-attribute-set! (pair::<pair> key value)
-  (expr (Scm_PairAttrSet (SCM_PAIR pair) key value)))
+  (result (Scm_PairAttrSet (SCM_PAIR pair) key value)))
 
-(define-cproc extended-pair? (obj)
-  (call <boolean> "SCM_EXTENDED_PAIR_P"))
-
-(define-cproc extended-cons (car cdr)
-  (call "Scm_ExtendedCons"))
-
-(define-cproc extended-list (elt &rest more)
-  (call "Scm_ExtendedCons"))
+(define-cproc extended-pair? (obj) (call <boolean> SCM_EXTENDED_PAIR_P))
+(define-cproc extended-cons (car cdr) (call Scm_ExtendedCons))
+(define-cproc extended-list (elt &rest more) (call Scm_ExtendedCons))
 
 ;;
 ;; Static configuration
 ;;
-(define-cproc cond-features ()
-  (call "Scm_GetFeatures"))
+(define-cproc cond-features () (call Scm_GetFeatures))
 
 ;;
 ;; Syntactic closure
 ;;
 
 (define-cproc make-syntactic-closure (env literals expr)
-  (call "Scm_MakeSyntacticClosure"))
+  (call Scm_MakeSyntacticClosure))
 
 ;;
 ;; Identifiers
@@ -106,22 +100,22 @@
 ;; Returns GLOC object or #f
 (define-cproc find-binding (mod::<module> name::<symbol>
                             stay-in-module::<boolean>)
-  (expr <gloc>?
-        (Scm_FindBinding mod name
-                         (?: stay_in_module SCM_BINDING_STAY_IN_MODULE 0))))
+  ::<gloc>?
+  (result (Scm_FindBinding mod name
+                           (?: stay_in_module SCM_BINDING_STAY_IN_MODULE 0))))
 
 ;; This small piece of code encapsulates the common procedure in
 ;; pass1/variable to find whether the variable reference is a constant
 ;; or not.
 (define-cproc find-const-binding (id::<identifier>)
-  (body <top>
-        (let* ([g::ScmGloc* (Scm_FindBinding (-> id module) (-> id name) 0)])
-          (cond [(or (not g)
-                     (not (SCM_GLOC_CONST_P g))
-                     (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NOINLINE_CONSTS))
-                 (result SCM_FALSE)]
-                [else
-                 (result (SCM_GLOC_GET g))]))))
+  (let* ([g::ScmGloc* (Scm_FindBinding (-> id module) (-> id name) 0)])
+    (cond [(or (not g)
+               (not (SCM_GLOC_CONST_P g))
+               (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM)
+                                            SCM_COMPILE_NOINLINE_CONSTS))
+           (result SCM_FALSE)]
+          [else
+           (result (SCM_GLOC_GET g))])))
 
 (define-cproc %insert-binding (mod::<module> name::<symbol> value)
   (call Scm_Define))
@@ -227,21 +221,20 @@
   (call "Scm_MakeSyntax"))
 
 (define-cproc call-syntax-handler (syn program cenv)
-  (code "SCM_ASSERT(SCM_SYNTAXP(syn));")
-  (expr "Scm_VMApply2(SCM_SYNTAX(syn)->handler, program, cenv)"))
+  (SCM_ASSERT (SCM_SYNTAXP syn))
+  (result (Scm_VMApply2 (-> (SCM_SYNTAX syn) handler) program cenv)))
 
 (define-cproc syntax-handler (syn)
-  (body "SCM_ASSERT(SCM_SYNTAXP(syn));"
-        "SCM_RESULT = SCM_SYNTAX(syn)->handler;"))
+  (SCM_ASSERT (SCM_SYNTAXP syn))
+  (result (-> (SCM_SYNTAX syn) handler)))
 
 (define-cproc %internal-macro-expand (form env once::<boolean>)
-  (call "Scm_VMMacroExpand"))
+  (call Scm_VMMacroExpand))
 
 (define-cproc %procedure-inliner (proc::<procedure>)
   (setter (proc::<procedure> inliner)
           (body <void> "proc->inliner = inliner;"))
-  (body "if (proc->inliner) SCM_RESULT = proc->inliner;"
-        "else               SCM_RESULT = SCM_FALSE;"))
+  (result (?: (-> proc inliner) (-> proc inliner) '#f)))
 
 ;;
 ;; Compiled code builder interface
@@ -249,7 +242,7 @@
 
 (define-cproc make-compiled-code-builder (reqargs::<uint16> optargs::<uint16>
                                           name parent intform)
-  (call "Scm_MakeCompiledCodeBuilder"))
+  (call Scm_MakeCompiledCodeBuilder))
 
 ;; CompiledCodeEmit is performance critical.  To reduce the overhead of
 ;;  argument passing, we prepare variations for specific code patterns.

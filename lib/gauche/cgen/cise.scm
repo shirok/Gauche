@@ -44,7 +44,7 @@
   (use gauche.experimental.lamb)
   (use util.match)
   (use util.list)
-  (export cise-render cise-render-rec
+  (export cise-render cise-render-to-string cise-render-rec
           cise-context cise-context-copy cise-register-macro! cise-lookup-macro
           cise-emit-source-line
           define-cise-macro
@@ -207,14 +207,16 @@
   (define (render-finish stree)
     (match stree
       [('source-info (? string? file) line)
-       (cond ((and (equal? file current-file) (eqv? line current-line)))
-             ((and (equal? file current-file) (eqv? line (+ 1 current-line)))
+       (cond [(and (equal? file current-file) (eqv? line current-line))]
+             [(and (equal? file current-file) (eqv? line (+ 1 current-line)))
               (inc! current-line)
-              (format port "\n"))
-             (else
+              (format port "\n")]
+             [else
               (set! current-file file)
               (set! current-line line)
-              (format port "\n#line ~a ~s\n" line file)))]
+              (format port "\n#line ~a ~s\n" line file)])]
+      ['|#reset-line| ; reset source info
+       (set! current-file #f) (set! current-line 0)]
       [(x . y) (render-finish x) (render-finish y)]
       [(? (any-pred string? symbol? number?) x) (display x port)]
       [_ #f]))
@@ -222,6 +224,9 @@
   (let* ((env ((if expr expr-env identity) (null-env)))
          (stree (render-rec form env)))
     (render-finish `(,@(render-env-decls env) ,stree))))
+
+(define (cise-render-to-string form :optional (expr #f))
+  (call-with-output-string (cut cise-render form <> expr)))
 
 ;;
 ;; cise-render-rec cise stmt/expr env
@@ -238,35 +243,36 @@
                   stmt or expr, but got:" stmt/expr)]))
 
 ;; render-rec :: Cise, Env -> Stree
-;;   Recursively expands 
+;;   Recursively expands Cise and generates Stree
 (define (render-rec form env)
   (match form
-    [((? symbol? key) . args)
-     (cond ((cise-lookup-macro key)
+    [([? symbol? key] . args)
+     (cond [(cise-lookup-macro key)
             => (lambda (expander)
                  `(,@(source-info form env)
-                   ,@(render-rec (expander form env) env))))
-           (else
+                   ,@(render-rec (expander form env) env)))]
+           [else
             (let1 eenv (expr-env env)
               (wrap-expr
                `(,@(source-info form env)
                  ,(cise-render-identifier key) "("
                  ,@(intersperse "," (map (cut render-rec <> eenv) args))
                  ")")
-               env))))]
+               env))])]
     [(x . y)     form]   ; already stree
-    [(? symbol?) (wrap-expr (cise-render-identifier form) env)]
-    [(? identifier?) (wrap-expr (cise-render-identifier (unwrap-syntax form))
+    ['|#reset-line| '|#reset-line|] ; special directive to reset line info
+    [[? symbol?] (wrap-expr (cise-render-identifier form) env)]
+    [[? identifier?] (wrap-expr (cise-render-identifier (unwrap-syntax form))
                                 env)]
-    [(? string?) (wrap-expr (write-to-string form) env)]
-    [(? real?)   (wrap-expr form env)]
+    [[? string?] (wrap-expr (write-to-string form) env)]
+    [[? real?]   (wrap-expr form env)]
     [()          '()]
     [#\'         (wrap-expr "'\\''"  env)]
     [#\\         (wrap-expr "'\\\\'" env)]
     [#\newline   (wrap-expr "'\\n'"  env)]
     [#\return    (wrap-expr "'\\r'"  env)]
     [#\tab       (wrap-expr "'\\t'"  env)]
-    [(? char?)   (wrap-expr `("'" ,(if (char-set-contains? #[[:alnum:]] form)
+    [[? char?]   (wrap-expr `("'" ,(if (char-set-contains? #[[:alnum:]] form)
                                      (string form)
                                      (format "\\x~2'0x" (char->integer form)))
                               "'") env)]
@@ -295,7 +301,7 @@
       ,@($ intersperse ","
            $ map (^.[(var . type) (cise-render-typed-var type var env)]) args)
       ")" "{"
-      ,(call-with-output-string (cut cise-render `(begin ,@body) <>))
+      ,(cise-render-to-string `(begin ,@body))
       "}"))
   ;; NB: this only works at toplevel.  The stmt check doesn't exclude
   ;; non-toplevel use, and will give an error at C compilation time.
@@ -471,6 +477,15 @@
                          ,@body) env)
          "}")])))
 
+;; [cise stmt[ dolist [VAR EXPR] STMT ...
+(define-cise-macro (dolist form env)
+  (ensure-stmt-ctx form env)
+  (let ((eenv (expr-env env))
+        (tmp  (gensym "cise__")))
+    (match form
+      [(_ (var expr) . body)
+       `(for-each (lambda (,var) ,@body) ,expr)])))
+
 ;; [cise stmt] pair-for-each (lambda (VAR) STMT ...) EXPR
 ;;   Like for-each, but VAR is bound to each 'spine' cell instead of
 ;;   each element of the list.
@@ -521,6 +536,22 @@
 
 (define-cise-stmt goto
   [(_ name) `("goto " ,(cise-render-identifier name) ";")])
+
+;; [cise stmt] |#if| STRING STMT [STMT]
+;;   c preprocessor directive
+(define-cise-macro (|#if| form env)
+  (ensure-stmt-ctx form env)
+  (match form
+    [(_ condition stmt1)
+     `("#if " ,(x->string condition) "\n" |#reset-line|
+       ,(render-rec stmt1 env) "\n"
+       "#endif /* " ,(x->string condition) " */\n" |#reset-line|)]
+    [(_ condition stmt1 stmt2)
+     `("#if " ,(x->string condition) "\n" |#reset-line|
+       ,(render-rec stmt1 env) "\n"
+       "#else  /* !",(x->string condition) " */\n" |#reset-line|
+       ,(render-rec stmt2 env) "\n"
+       "#endif /* " ,(x->string condition) " */\n" |#reset-line|)]))
 
 ;;------------------------------------------------------------
 ;; Operators

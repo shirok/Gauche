@@ -158,7 +158,7 @@
 ;; <cgen-stub-unit> is a specialized class to handle stub forms.
 (define-class <cgen-stub-unit> (<cgen-unit>)
   ((c-name-prefix :init-keyword :c-name-prefix) ; prefix used for C identifiers
-   (c++-exception-used? :init-value #f) ; #t if C++ exception has ever been used
+   (c++-exception-used? :init-value #f) ;#t if C++ exception has ever been used
    (temporary-module :init-form (make-module #f)) ; module used by eval*
    ))
 
@@ -210,8 +210,7 @@
   (eval `(define-cise-expr ,@args) (current-module)))
 
 (define-form-parser define-cfn args
-  (cgen-body (call-with-output-string
-               (cut cise-render `(define-cfn ,@args) <>))))
+  (cgen-body (cise-render-to-string `(define-cfn ,@args))))
 
 ;;===================================================================
 ;; Type handling
@@ -391,6 +390,8 @@
    (have-rest-arg?    :initform #f  :accessor have-rest-arg? :init-keyword :have-rest-arg?)
    (allow-other-keys? :initform '() :accessor allow-other-keys?
                       :init-keyword :allow-other-keys?)
+   (return-type       :initform #f :init-keyword :return-type)
+      ;; return type given by ::<type>.
    (decls             :initform '())
    (stmts             :initform '())
       ;; reverse list of C stmt lines.
@@ -417,32 +418,46 @@
    ))
 
 (define-form-parser define-cproc (scheme-name argspec . body)
+  (define (check-immediate-arg cproc args)
+    ;; if every arg has a type other than <top> or <number>,
+    ;; we know that we can safely pass FLONUM_REGs, since the args
+    ;; are immediately type-checked and/or unboxed.
+    (let1 unsafe-types (list *scm-type* (name->type '<number>))
+      (when (and (not (memq 'immediate-arg [~ cproc'flags]))
+                 (every (^(arg) (or (is-a? arg <rest-arg>)
+                                    (not (memq [~ arg'type] unsafe-types))))
+                        args))
+        (push! [~ cproc'flags] 'immediate-arg))))
+  (define (extract-rettype body)
+    (match body
+      [(:: type . body) (values body type)]
+      [([? type-symbol? ts] . body) (values body (type-symbol-type ts))]
+      [_ (values body #f)]))
+  (define (type-symbol? s)
+    (and (keyword? s) (#/^:[^:]/ (keyword->string s))))
+  (define (type-symbol-type s)
+    (string->symbol (string-drop (keyword->string s) 1)))
+
   (check-arg symbol? scheme-name)
   (check-arg list? argspec)
   (receive (args keyargs nreqs nopts rest? other-keys?)
       (process-cproc-args scheme-name argspec)
-    (let ((cproc (make <cproc>
-                   :scheme-name scheme-name
-                   :c-name (get-c-name [~(cgen-current-unit)'c-name-prefix]
-                                       scheme-name)
-                   :proc-name (make-literal (x->string scheme-name))
-                   :args args
-                   :keyword-args keyargs
-                   :num-reqargs nreqs
-                   :num-optargs nopts
-                   :have-rest-arg? rest?
-                   :allow-other-keys? other-keys?)))
-      (process-body cproc body)
-      ;; if every arg has a type other than <top> or <number>,
-      ;; we know that we can safely pass FLONUM_REGs, since the args
-      ;; are immediately type-checked and/or unboxed.
-      (let1 unsafe-types (list *scm-type* (name->type '<number>))
-        (when (and (not (memq 'immediate-arg [~ cproc'flags]))
-                   (every (^(arg) (or (is-a? arg <rest-arg>)
-                                      (not (memq [~ arg'type] unsafe-types))))
-                          args))
-          (push! [~ cproc'flags] 'immediate-arg)))
-      (cgen-add! cproc))))
+    (receive (body rettype) (extract-rettype body)
+      (let1 cproc (make <cproc>
+                    :scheme-name scheme-name
+                    :c-name (get-c-name [~(cgen-current-unit)'c-name-prefix]
+                                        scheme-name)
+                    :proc-name (make-literal (x->string scheme-name))
+                    :return-type rettype
+                    :args args
+                    :keyword-args keyargs
+                    :num-reqargs nreqs
+                    :num-optargs nopts
+                    :have-rest-arg? rest?
+                    :allow-other-keys? other-keys?)
+        (process-body cproc body)
+        (check-immediate-arg cproc args)
+        (cgen-add! cproc)))))
 
 (define-method c-stub-name ((cproc <cproc>)) #`",[~ cproc'c-name]__STUB")
 
@@ -545,19 +560,20 @@
   )
 
 (define-method process-body ((cproc <cproc>) body)
-  (dolist (form body)
-    (match form
-      [(? string?) (push-stmt! cproc form)]
-      [('inliner opcode) (set! [~ cproc'inline-insn] opcode)]
-      [('setter . spec) (process-setter cproc spec)]
-      [('return . spec) (process-call-spec cproc form)]
-      [('call . spec) (process-call-spec cproc form)]
-      [('body . spec) (process-body-spec cproc form)]
-      [('expr . spec) (process-expr-spec cproc form)]
-      [('catch . spec) (process-catch-spec cproc form)]
-      [('code . stmts) (for-each (cut push-stmt! cproc <>) stmts)]
-      [('flags . flags) (process-flags-spec cproc form)]
-      [else (error <cgen-stub-error> "unknown body form:" form)])))
+  (let loop ((body body))
+    (match body
+      [() #f]
+      [([? string? s] . r) (push-stmt! cproc s) (loop r)]
+      [(('inliner opcode) . r) (set! [~ cproc'inline-insn] opcode) (loop r)]
+      [(('setter . spec) . r) (process-setter cproc spec) (loop r)]
+      [(('return . spec) . r) (process-call-spec cproc spec) (loop r)]
+      [(('call . spec) . r) (process-call-spec cproc spec) (loop r)]
+      [(('body . spec) . r) (process-body-spec cproc spec) (loop r)]
+      [(('expr . spec) . r) (process-expr-spec cproc spec) (loop r)]
+      [(('catch . spec) . r) (process-catch-spec cproc spec) (loop r)]
+      [(('code . stmts) . r) (dolist (s stmts) (push-stmt! cproc s)) (loop r)]
+      [(('flags . flags) . r) (process-flags-spec cproc flags) (loop r)]
+      [_ (process-body-inner cproc [~ cproc'return-type] body)])))
 
 (define-method process-setter ((cproc <cproc>) decl)
   (cond
@@ -595,20 +611,75 @@
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
   (match form
-    [(_ [? check-expr expr]) (typed-result *scm-type* expr)]
-    [(_ '<void> expr)
-     (push-stmt! cproc #`",(caddr form)(,(args));")
+    [([? check-expr expr]) (typed-result *scm-type* expr)]
+    [('<void> [? check-expr expr])
+     (push-stmt! cproc #`",expr(,(args));")
      (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
-    [(_ typename expr)
+    [(typename [? check-expr expr])
      (unless (and (symbol? typename) (check-expr expr)) (err))
      (typed-result (name->type typename) expr)]
     [else (err)]))
 
 (define-method process-body-spec ((cproc <procstub>) form)
+  (match form
+    [((? symbol? rettype) . stmts)
+     (process-body-inner cproc rettype stmts)]
+    [((? list? rettypes) . stmts)
+     (unless (every symbol? rettypes) (err))
+     (process-body-inner cproc rettypes stmts)]
+    [stmts (process-body-inner cproc #f stmts)]))
+
+(define-method process-expr-spec ((cproc <procstub>) form)
+  (define (typed-result rettype expr)
+    (let1 expr
+        (if (string? expr) expr
+            (call-with-output-string (cut cise-render expr <> #t)))
+      (push-stmt! cproc "{")
+      (push-stmt! cproc #`",[~ rettype'c-type] SCM_RESULT;")
+      (push-stmt! cproc #`" SCM_RESULT = (,expr);")
+      (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
+      (push-stmt! cproc "}")))
+  (match form
+    [('<void> . stmts)
+     (error <cgen-stub-error> "<void> type isn't allowed in 'expr' directive:" form)]
+    [([? symbol? rettype] expr)
+     (typed-result (name->type rettype) expr)]
+    [(expr)
+     (typed-result *scm-type* expr)]
+    [else (error <cgen-stub-error> "malformed 'expr' spec:" form)]))
+
+(define-method process-catch-spec ((cproc <procstub>) form)
+  (match form
+    [((decl . handler-stmts) ...)
+     ;; push default handlers
+     (push! [~ cproc'c++-handlers]
+            (list "..."
+                  (format "Scm_Error(\"C++ exception is thrown in ~s\");"
+                          [~ cproc'scheme-name])))
+     (push! [~ cproc'c++-handlers]
+            (list "std::exception& e"
+                  (format "Scm_Error(\"~a: %s\", e.what());"
+                          [~ cproc'scheme-name])))
+     (for-each (^(d s) (push! [~ cproc'c++-handlers] (cons d s)))
+               decl handler-stmts)
+     ;; if this is the first time, make sure we include <stdexcept>.
+     (unless [~ (cgen-current-unit)'c++-exception-used?]
+       (cgen-decl "#include <stdexcept>")
+       (set! [~ (cgen-current-unit)'c++-exception-used?] #t))
+     ]
+    [else (error <cgen-stub-error> "malformed 'catch' spec:" form)]))
+
+(define-method process-flags-spec ((cproc <procstub>) form)
+  (dolist (flag form)
+    (unless (memq flag '(immediate-arg))
+      (errorf "unknown flag '~s' for procedure ~s" flag [~ cproc'scheme-name]))
+    (push! [~ cproc'flags] flag)))
+
+(define-method process-body-inner ((cproc <procstub>) rettype body)
   (define (expand-stmt stmt)
     (push-stmt! cproc (if (string? stmt)
                         stmt
-                        (call-with-output-string (cut cise-render stmt <>)))))
+                        (cise-render-to-string stmt))))
   (define (typed-result rettype stmts)
     (push-stmt! cproc "{")
     (push-stmt! cproc #`",[~ rettype'c-type] SCM_RESULT;")
@@ -641,67 +712,21 @@
                       [else (cgen-return-stmt
                              #`"Scm_Values(Scm_List(,results,, NULL))")]))
         )))
-  (define (err) (error <cgen-stub-error> "malformed 'body' spec:" form))
-  (match form
-    [(_ '<void> . stmts)
-     (for-each expand-stmt stmts)
+  (match rettype
+    [#f             ; the default case; we assume it is <top>.
+     (typed-result *scm-type* body)]
+    ['<void>        ; no results
+     (for-each expand-stmt body)
      (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
-    [(_ (? symbol? rettype) . stmts)
-     (typed-result (name->type rettype) stmts)]
-    [(_ (? list? rettypes) . stmts)
-     (unless (every symbol? rettypes) (err))
-     (typed-results (map name->type rettypes) stmts)]
-    [(_ . stmts)
-     (typed-result *scm-type* stmts)]
-    [else (err)]))
+    [[? symbol? t]  ; single result
+     (typed-result (name->type t) body)]
+    [[? list? ts]   ; multiple values
+     (typed-results (map name->type ts) body)]
+    [_ (error <cgen-stub-error> "invalid cproc return type:" rettype)]))
 
-(define-method process-expr-spec ((cproc <procstub>) form)
-  (define (typed-result rettype expr)
-    (let1 expr
-        (if (string? expr) expr
-            (call-with-output-string (cut cise-render expr <> #t)))
-      (push-stmt! cproc "{")
-      (push-stmt! cproc #`",[~ rettype'c-type] SCM_RESULT;")
-      (push-stmt! cproc #`" SCM_RESULT = (,expr);")
-      (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
-      (push-stmt! cproc "}")))
-  (match form
-    [(_ '<void> . stmts)
-     (error <cgen-stub-error> "<void> type isn't allowed in 'expr' directive:" form)]
-    [(_ [? symbol? rettype] expr)
-     (typed-result (name->type rettype) expr)]
-    [(_ expr)
-     (typed-result *scm-type* expr)]
-    [else (error <cgen-stub-error> "malformed 'expr' spec:" form)]))
-
-(define-method process-catch-spec ((cproc <procstub>) form)
-  (match form
-    [(_ (decl . handler-stmts) ...)
-     ;; push default handlers
-     (push! [~ cproc'c++-handlers]
-            (list "..."
-                  (format "Scm_Error(\"C++ exception is thrown in ~s\");"
-                          [~ cproc'scheme-name])))
-     (push! [~ cproc'c++-handlers]
-            (list "std::exception& e"
-                  (format "Scm_Error(\"~a: %s\", e.what());"
-                          [~ cproc'scheme-name])))
-     (for-each (^(d s) (push! [~ cproc'c++-handlers] (cons d s)))
-               decl handler-stmts)
-     ;; if this is the first time, make sure we include <stdexcept>.
-     (unless [~ (cgen-current-unit)'c++-exception-used?]
-       (cgen-decl "#include <stdexcept>")
-       (set! [~ (cgen-current-unit)'c++-exception-used?] #t))
-     ]
-    [else (error <cgen-stub-error> "malformed 'catch' spec:" form)]))
-
-(define-method process-flags-spec ((cproc <procstub>) form)
-  (dolist (flag (cdr form))
-    (unless (memq flag '(immediate-arg))
-      (errorf "unknown flag '~s' for procedure ~s" flag [~ cproc'scheme-name]))
-    (push! [~ cproc'flags] flag)))
-
-;;; emit code
+;;;
+;;; Emitting code
+;;;
 
 (define-method cgen-emit-body ((cproc <cproc>))
 
@@ -922,9 +947,9 @@
              (error <cgen-stub-error>
                     "c-generic-name requires a string:" gen-name))
            (set! [~ method'c-generic] gen-name))
-          (('body . spec) (process-body-spec method stmt))
-          (('call . spec) (process-call-spec method stmt))
-          (('expr . spec) (process-expr-spec method stmt))
+          (('body . spec) (process-body-spec method spec))
+          (('call . spec) (process-call-spec method spec))
+          (('expr . spec) (process-expr-spec method spec))
           (('code . stmts) (for-each (cut push-stmt! method <>) stmts))
           (else
            (error <cgen-stub-error> "unrecognized form in body:" stmt))))

@@ -93,7 +93,7 @@ extern void Scm__InitCollection(void);
 extern void Scm_Init_stdlib(ScmModule *);
 extern void Scm_Init_extlib(ScmModule *);
 extern void Scm_Init_syslib(ScmModule *);
-extern void Scm_Init_moplib(ScmModule *);
+//extern void Scm_Init_moplib(ScmModule *);
 extern void Scm_Init_intlib(ScmModule *);
 
 extern void Scm_Init_scmlib(void);
@@ -159,7 +159,7 @@ void Scm_Init(const char *signature)
     Scm_Init_stdlib(Scm_SchemeModule());
     Scm_Init_extlib(Scm_GaucheModule());
     Scm_Init_syslib(Scm_GaucheModule());
-    Scm_Init_moplib(Scm_GaucheModule());
+    //Scm_Init_moplib(Scm_GaucheModule());
     Scm_Init_intlib(Scm_GaucheInternalModule());
 
     Scm_Init_scmlib();

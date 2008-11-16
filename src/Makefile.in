@@ -169,7 +169,7 @@ libgauche_OBJECTS = \
 	number.$(OBJEXT) bignum.$(OBJEXT) load.$(OBJEXT) paths.$(OBJEXT) \
 	promise.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) \
 	system.$(OBJEXT) stdlib.$(OBJEXT) extlib.$(OBJEXT) exclib.$(OBJEXT) \
-	syslib.$(OBJEXT) moplib.$(OBJEXT) intlib.$(OBJEXT) compile.$(OBJEXT) \
+	syslib.$(OBJEXT) intlib.$(OBJEXT) compile.$(OBJEXT) \
 	scmlib.$(OBJEXT) objlib.$(OBJEXT)
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
@@ -194,7 +194,6 @@ stdlib.c : stdlib.stub genstub
 extlib.c : extlib.stub genstub
 exclib.c : exclib.stub genstub
 syslib.c : syslib.stub genstub
-moplib.c : moplib.stub genstub
 intlib.c : intlib.stub genstub
 
 autoloads.c : autoloads.scm
@@ -304,7 +303,7 @@ install-check :
 	done
 
 # clean ------------------------------------------------
-GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c intlib.c scmlib.c \
+GENERATED = stdlib.c extlib.c exclib.c syslib.c intlib.c scmlib.c \
 	    objlib.c compile.c autoloads.c builtin-syms.c \
 	    gauche/builtin-syms.h vminsn.c gauche/vminsn.h \
             ../lib/gauche/vm/insn.scm

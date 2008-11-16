@@ -44,40 +44,39 @@
 
 ;; NB: rewind-before keyword arg is EXPERIMENTAL.
 (define-cproc with-error-handler (handler thunk
-                                  &keyword (rewind-before::<boolean> #f))
-  (body <top>
-        (unless (SCM_PROCEDURE_TAKE_NARG_P handler 1)
-          (Scm_Error "error handler must take at least 1 argument, but got %S"
-                     handler))
-        (unless (SCM_PROCEDURE_THUNK_P thunk)
-          (Scm_Error "thunk required, but got %S" thunk))
-        (if rewind-before
-          (result (Scm_VMWithGuardHandler handler thunk))
-          (result (Scm_VMWithErrorHandler handler thunk)))))
+                                          &keyword (rewind-before::<boolean> #f))
+  (unless (SCM_PROCEDURE_TAKE_NARG_P handler 1)
+    (Scm_Error "error handler must take at least 1 argument, but got %S"
+               handler))
+  (unless (SCM_PROCEDURE_THUNK_P thunk)
+    (Scm_Error "thunk required, but got %S" thunk))
+  (if rewind-before
+    (result (Scm_VMWithGuardHandler handler thunk))
+    (result (Scm_VMWithErrorHandler handler thunk))))
 
 ;; srfi-18 primitive exception mechanism
 (define-cproc current-exception-handler ()
-  (expr <top> (-> (Scm_VM) exceptionHandler)))
+  (result (-> (Scm_VM) exceptionHandler)))
 
 (define-cproc with-exception-handler (handler thunk)
-  (call "Scm_VMWithExceptionHandler"))
+  (call Scm_VMWithExceptionHandler))
 
-(define-cproc raise (exception) (call "Scm_Raise"))
+(define-cproc raise (exception) (call Scm_Raise))
 
-(define-cproc report-error (exception) (call <void> "Scm_ReportError"))
+(define-cproc report-error (exception) (call <void> Scm_ReportError))
 
 ;;
 ;; Condition procedures (srfi-35)
 ;;
 
 (define-cproc condition? (obj)
-  (call <boolean> "SCM_CONDITIONP"))
+  (call <boolean> SCM_CONDITIONP))
 
 (define-cproc condition-has-type? (c k)
-  (call <boolean> "Scm_ConditionHasType"))
+  (call <boolean> Scm_ConditionHasType))
 
 (define-cproc make-compound-condition (&rest conditions)
-  (call "Scm_MakeCompoundCondition"))
+  (call Scm_MakeCompoundCondition))
 
 
 ;; Local variables:

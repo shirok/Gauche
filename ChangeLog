@@ -1,3 +1,24 @@
+2008-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub: (sys-rename, sys-remove, sys-chdir, sys-mkdir,
+	  sys-chmod, sys-fchmod, sys-link, sys-close, sys-rmdir, sys-truncate,
+	  sys-ftruncate, sys-symlink): Now returns #<undef>
+
+	* lib/gauche/cgen/stub.scm (define-cproc): Introduced a new syntax
+	  of define-cproc to specify return-type, eliminating the necessity
+	  of body form, allowing more concise definition, and being more
+	  consistent with define-cfn.
+	* src/*.stub: Changed using the new define-cproc syntax whenever
+	  possible.
+	
+	* lib/gauche/cgen/cise.scm (dolist, |#if|): Added new cise macros.
+	  (cise-render-to-string): Added an utility api.
+
+	* src/objlib.scm: Integrated moplib.stub into objlib.scm using
+	  inline-stub.
+	* src/moplib.stub: Removed.
+	* src/core.c, src/Makefile.in: Changed accordingly.
+
 2008-11-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm: Removed obsoleted VM instructions, and rearranged

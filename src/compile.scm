@@ -338,29 +338,23 @@
 
  ;; Specialized routine for (map (lambda (name) (make-lvar name)) objs)
  (define-cproc %map-make-lvar (names)
-   (body <top>
-         (let* ((h SCM_NIL) (t SCM_NIL))
-           (for-each (lambda (name)
-                       (let* ((v (Scm_MakeVector LVAR_SIZE '0)))
-                         (set!
-                          (SCM_VECTOR_ELEMENT v LVAR_OFFSET_TAG) 'lvar
-                          (SCM_VECTOR_ELEMENT v LVAR_OFFSET_NAME) name
-                          (SCM_VECTOR_ELEMENT v LVAR_OFFSET_INITVAL) SCM_UNDEFINED)
-                         (SCM_APPEND1 h t v)))
-                     names)
-           (result h))))
+   (let* ((h SCM_NIL) (t SCM_NIL))
+     (dolist [name names]
+       (let* ((v (Scm_MakeVector LVAR_SIZE '0)))
+         (set! (SCM_VECTOR_ELEMENT v LVAR_OFFSET_TAG) 'lvar
+               (SCM_VECTOR_ELEMENT v LVAR_OFFSET_NAME) name
+               (SCM_VECTOR_ELEMENT v LVAR_OFFSET_INITVAL) SCM_UNDEFINED)
+         (SCM_APPEND1 h t v)))
+     (result h)))
 
  (define-cise-stmt update!
    [(_ offset delta)
     `(let* ((i :: int (SCM_INT_VALUE (SCM_VECTOR_ELEMENT lvar ,offset))))
        (set! (SCM_VECTOR_ELEMENT lvar ,offset) (SCM_MAKE_INT (+ i ,delta))))])
  
- (define-cproc lvar-ref++! (lvar)
-   (body <void> (update! LVAR_OFFSET_REF_COUNT +1)))
- (define-cproc lvar-ref--! (lvar)
-   (body <void> (update! LVAR_OFFSET_REF_COUNT -1)))
- (define-cproc lvar-set++! (lvar)
-   (body <void> (update! LVAR_OFFSET_SET_COUNT +1)))
+ (define-cproc lvar-ref++! (lvar) ::<void> (update! LVAR_OFFSET_REF_COUNT +1))
+ (define-cproc lvar-ref--! (lvar) ::<void> (update! LVAR_OFFSET_REF_COUNT -1))
+ (define-cproc lvar-set++! (lvar) ::<void> (update! LVAR_OFFSET_SET_COUNT +1))
  )
 
 ;; Compile-time environment (cenv)
@@ -407,29 +401,27 @@
  ;;     - We assume 'lookupAs' and the car of each frame are small non-negative
  ;;       integers, so we directly compare them without unboxing them.
  (define-cproc cenv-lookup (cenv name lookup-as)
-   (body <top>
-         (SCM_ASSERT (SCM_VECTORP cenv))
-         (let* ((name-ident? :: int (SCM_IDENTIFIERP name))
-                (frames (SCM_VECTOR_ELEMENT cenv 1)))
-           (pair-for-each
-            (lambda (fp)
-              (when (and name-ident? (== (-> (SCM_IDENTIFIER name) env) fp))
-                ;; strip identifier if we're in the same env (kludge)
-                (set! name (SCM_OBJ (-> (SCM_IDENTIFIER name) name))))
-              (when (> (SCM_CAAR fp) lookup-as) ; see PERFORMANCE KLUDGE above
-                (continue))
-              ;; inline assq here to squeeze performance.
-              (for-each (lambda (vp)
-                          (when (SCM_EQ name (SCM_CAR vp)) (return (SCM_CDR vp))))
-                        (SCM_CDAR fp)))
-            frames)
-           (if (SCM_SYMBOLP name)
-             (let* ((mod (SCM_VECTOR_ELEMENT cenv 0)))
-               (SCM_ASSERT (SCM_MODULEP mod))
-               (result (Scm_MakeIdentifier (SCM_SYMBOL name) (SCM_MODULE mod) SCM_NIL)))
-             (begin
-               (SCM_ASSERT (SCM_IDENTIFIERP name))
-               (result name))))))
+   (SCM_ASSERT (SCM_VECTORP cenv))
+   (let* ([name-ident?::int (SCM_IDENTIFIERP name)]
+          [frames (SCM_VECTOR_ELEMENT cenv 1)])
+     (pair-for-each
+      (lambda (fp)
+        (when (and name-ident? (== (-> (SCM_IDENTIFIER name) env) fp))
+          ;; strip identifier if we're in the same env (kludge)
+          (set! name (SCM_OBJ (-> (SCM_IDENTIFIER name) name))))
+        (when (> (SCM_CAAR fp) lookup-as) ; see PERFORMANCE KLUDGE above
+          (continue))
+        ;; inline assq here to squeeze performance.
+        (dolist [vp (SCM_CDAR fp)]
+          (when (SCM_EQ name (SCM_CAR vp)) (return (SCM_CDR vp)))))
+      frames)
+     (if (SCM_SYMBOLP name)
+       (let* ([mod (SCM_VECTOR_ELEMENT cenv 0)])
+         (SCM_ASSERT (SCM_MODULEP mod))
+         (result (Scm_MakeIdentifier (SCM_SYMBOL name) (SCM_MODULE mod) '())))
+       (begin
+         (SCM_ASSERT (SCM_IDENTIFIERP name))
+         (result name)))))
 
  ;; Check if Cenv is toplevel or not.
  ;;
@@ -438,12 +430,10 @@
  ;;             (cenv-frames cenv))))
  ;;
  (define-cproc cenv-toplevel? (cenv)
-   (body <top>
-         (SCM_ASSERT (SCM_VECTORP cenv))
-         (for-each (lambda (fp)
-                     (if (== (SCM_CAR fp) '0) (return '#f)))
-                   (SCM_VECTOR_ELEMENT cenv 1))
-         (return '#t)))
+   (SCM_ASSERT (SCM_VECTORP cenv))
+   (dolist [fp (SCM_VECTOR_ELEMENT cenv 1)]
+     (if (== (SCM_CAR fp) '0) (return '#f)))
+   (return '#t))
  )
 
 (define-macro (make-bottom-cenv . maybe-module)
@@ -4273,33 +4263,18 @@
 ;;   renv-lookup : [[Lvar]], Lvar -> Int, Int
 ;;
 (inline-stub
- ;;(define (renv-lookup renv lvar)
- ;;  (let outer ((renv renv)
- ;;              (depth 0))
- ;;    (if (null? renv)
- ;;      (error "[internal error] stray local variable:" lvar)
- ;;      (let inner ((frame (car renv))
- ;;                  (count 1))
- ;;        (cond ((null? frame) (outer (cdr renv) (+ depth 1)))
- ;;              ((eq? (car frame) lvar)
- ;;               (values depth (- (length (car renv)) count)))
- ;;              (else (inner (cdr frame) (+ count 1))))))))
  (define-cproc renv-lookup (renv lvar)
-   (body <top>
-         (let* ((depth :: int 0))
-           (for-each (lambda (fp)
-                       (let* ((count :: int 1))
-                         (for-each (lambda (lp)
-                                     (when (SCM_EQ lp lvar)
-                                       (return
-                                        (values (SCM_MAKE_INT depth)
-                                                (SCM_MAKE_INT (- (Scm_Length fp) count)))))
-                                     (pre++ count))
-                                   fp))
-                       (pre++ depth))
-                     renv))
-         (Scm_Error "[internal error] stray local variable:" lvar)
-         (return SCM_UNDEFINED))) ; dummy
+   (let* ([depth::int 0])
+     (dolist [fp renv]
+       (let* ([count::int 1])
+         (dolist [lp fp]
+           (when (SCM_EQ lp lvar)
+             (return (values (SCM_MAKE_INT depth)
+                             (SCM_MAKE_INT (- (Scm_Length fp) count)))))
+           (pre++ count)))
+       (pre++ depth)))
+   (Scm_Error "[internal error] stray local variable:" lvar)
+   (return SCM_UNDEFINED)) ; dummy
  )
 
 (define (pass3/prepare-args args ccb renv ctx)
