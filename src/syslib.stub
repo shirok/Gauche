@@ -66,7 +66,7 @@
 ;; dirent.h - read directory
 ;;   we don't have correspoinding functions, but provide these:
 
-(define-cproc sys-readdir (pathname::<string>) (call Scm_ReadDirectory))
+(define-cproc sys-readdir (pathname::<string>) Scm_ReadDirectory)
 
 ;; Bonus
 
@@ -80,9 +80,9 @@
     (unless (SCM_FALSEP canonicalize) (logior= flags SCM_PATH_CANONICALIZE))
     (result (Scm_NormalizePathname pathname flags))))
 
-(define-cproc sys-basename (pathname::<string>) (call Scm_BaseName))
+(define-cproc sys-basename (pathname::<string>) Scm_BaseName)
 
-(define-cproc sys-dirname (pathname::<string>) (call Scm_DirName))
+(define-cproc sys-dirname (pathname::<string>) Scm_DirName)
 
 ;;---------------------------------------------------------------------
 ;; errno.h - error numbers
@@ -225,8 +225,8 @@
 
 (define-type <sys-group> "ScmSysGroup*")
 
-(define-cproc sys-getgrgid (gid::<int>) (call Scm_GetGroupById))
-(define-cproc sys-getgrnam (name::<string>) (call Scm_GetGroupByName))
+(define-cproc sys-getgrgid (gid::<int>) Scm_GetGroupById)
+(define-cproc sys-getgrnam (name::<string>) Scm_GetGroupByName)
 
 ;; faster functions; bypassing creation of group object
 (define-cproc sys-gid->group-name (gid::<int>)
@@ -249,7 +249,7 @@
 (define-enum LC_TIME)
 
 (define-cproc sys-setlocale (category::<fixnum> locale::<const-cstring>)
-  (call <const-cstring>? setlocale))
+  ::<const-cstring>? setlocale)
 
 ;;---------------------------------------------------------------------
 ;; math.h
@@ -283,54 +283,42 @@
 (define-type <sys-sigset> "ScmSysSigset*")
 
 (define-cproc sys-sigset-add! (set::<sys-sigset> &rest sigs)
-  (expr "Scm_SysSigsetOp(set, sigs, FALSE)"))
+  (result (Scm_SysSigsetOp set sigs FALSE)))
 
 (define-cproc sys-sigset-delete! (set::<sys-sigset> &rest sigs)
-  (expr "Scm_SysSigsetOp(set, sigs, TRUE)"))
+  (result (Scm_SysSigsetOp set sigs TRUE)))
 
 (define-cproc sys-sigset-fill! (set::<sys-sigset>)
-  (expr "Scm_SysSigsetFill(set, FALSE)"))
+  (result (Scm_SysSigsetFill set FALSE)))
 
 (define-cproc sys-sigset-empty! (set::<sys-sigset>)
-  (expr "Scm_SysSigsetFill(set, TRUE)"))
+  (result (Scm_SysSigsetFill set TRUE)))
 
-(define-cproc sys-signal-name (sig::<fixnum>)
-  (call "Scm_SignalName"))
+(define-cproc sys-signal-name (sig::<fixnum>) Scm_SignalName)
 
-(define-cproc sys-kill (process sig::<fixnum>)
-  (call <void> "Scm_SysKill"))
+(define-cproc sys-kill (process sig::<fixnum>) ::<void> Scm_SysKill)
 
 (define-cproc set-signal-handler! (sig proc &optional (mask::<sys-sigset>? #f))
-  (call "Scm_SetSignalHandler"))
+  Scm_SetSignalHandler)
+(define-cproc get-signal-handler (sig::<fixnum>) Scm_GetSignalHandler)
+(define-cproc get-signal-handler-mask (sig::<fixnum>) Scm_GetSignalHandlerMask)
+(define-cproc get-signal-handlers () Scm_GetSignalHandlers)
 
-(define-cproc get-signal-handler (sig::<fixnum>)
-  (call "Scm_GetSignalHandler"))
-
-(define-cproc get-signal-handler-mask (sig::<fixnum>)
-  (call "Scm_GetSignalHandlerMask"))
-
-(define-cproc get-signal-handlers ()
-  (call "Scm_GetSignalHandlers"))
-
-(define-cproc set-signal-pending-limit (limit::<fixnum>)
-  (call <void> "Scm_SetSignalPendingLimit"))
-
-(define-cproc get-signal-pending-limit ()
-  (call <int> "Scm_GetSignalPendingLimit"))
+(define-cproc set-signal-pending-limit (limit::<fixnum>) ::<void>
+  Scm_SetSignalPendingLimit)
+(define-cproc get-signal-pending-limit () ::<int>
+  Scm_GetSignalPendingLimit)
 
 (define-enum SIG_SETMASK)
 (define-enum SIG_BLOCK)
 (define-enum SIG_UNBLOCK)
 
-(define-cproc sys-sigmask (how::<fixnum> mask::<sys-sigset>?)
-  (call "Scm_SysSigmask"))
+(define-cproc sys-sigmask (how::<fixnum> mask::<sys-sigset>?) Scm_SysSigmask)
 
-(define-cproc sys-sigsuspend (mask::<sys-sigset>)
-  (call "Scm_SigSuspend"))
+(define-cproc sys-sigsuspend (mask::<sys-sigset>) Scm_SigSuspend)
 
 (when "defined HAVE_SIGWAIT"
-(define-cproc sys-sigwait (mask::<sys-sigset>)
-  (call <int> "Scm_SigWait"))
+(define-cproc sys-sigwait (mask::<sys-sigset>) ::<int> Scm_SigWait)
 (initcode "Scm_AddFeature(\"gauche.sys.sigwait\", NULL);")
 )
 
@@ -380,11 +368,9 @@
 ;;---------------------------------------------------------------------
 ;; stdlib.h
 
-(define-cproc sys-exit (code::<fixnum>)
-  (call <void> "_exit"))
+(define-cproc sys-exit (code::<fixnum>) ::<void> _exit)
 
-(define-cproc sys-getenv (name::<const-cstring>)
-  (call <const-cstring>? "getenv"))
+(define-cproc sys-getenv (name::<const-cstring>) ::<const-cstring>? getenv)
 
 ;; Note: the return value of system() is not portable.
 ;; NB: on WinNT, system("") aborts, so we filter it.
@@ -529,12 +515,12 @@
     (result (Scm_SysWait process options))))
 
 ;; status interpretation
-(define-cproc sys-wait-exited? (status::<int>) (call <boolean> WIFEXITED))
-(define-cproc sys-wait-exit-status (status::<int>) (call <int> WEXITSTATUS))
-(define-cproc sys-wait-signaled? (status::<int>) (call <boolean> WIFSIGNALED))
-(define-cproc sys-wait-termsig (status::<int>) (call <int> WTERMSIG))
-(define-cproc sys-wait-stopped? (status::<int>) (call <boolean> WIFSTOPPED))
-(define-cproc sys-wait-stopsig (status::<int>) (call <int> WSTOPSIG))
+(define-cproc sys-wait-exited? (status::<int>) ::<boolean> WIFEXITED)
+(define-cproc sys-wait-exit-status (status::<int>) ::<int> WEXITSTATUS)
+(define-cproc sys-wait-signaled? (status::<int>) ::<boolean> WIFSIGNALED)
+(define-cproc sys-wait-termsig (status::<int>) ::<int> WTERMSIG)
+(define-cproc sys-wait-stopped? (status::<int>) ::<boolean> WIFSTOPPED)
+(define-cproc sys-wait-stopsig (status::<int>) ::<int> WSTOPSIG)
 
 ;;---------------------------------------------------------------------
 ;; time.h
@@ -543,29 +529,28 @@
 
 (define-type <sys-tm> "ScmSysTm*")
 
-(define-cproc sys-time ()
-  (expr "Scm_MakeSysTime(time(NULL))"))
+(define-cproc sys-time () (result (Scm_MakeSysTime (time NULL))))
 
 (define-cproc sys-gettimeofday () ::(<ulong> <ulong>)
   (Scm_GetTimeOfDay (& SCM_RESULT0) (& SCM_RESULT1)))
 
 (define-cproc current-microseconds ()   ;EXPERIMENTAL
-  (call <long> "Scm_CurrentMicroseconds"))
+  ::<long> Scm_CurrentMicroseconds)
 
 (define-cproc current-time ()           ;SRFI-18, SRFI-19, SRFI-21
-  (call "Scm_CurrentTime"))
+  Scm_CurrentTime)
 
 (define-cproc time? (obj)               ;SRFI-18, SRFI-19, SRFI-21
-  (call <boolean> "SCM_TIMEP"))
+  ::<boolean> SCM_TIMEP)
 
 (define-cproc time->seconds (t::<time>) ;SRFI-18
-  (call "Scm_TimeToSeconds"))
+  Scm_TimeToSeconds)
 
 (define-cproc seconds->time (t::<real>) ;SRFI-18
-  (call "Scm_RealSecondsToTime"))
+  Scm_RealSecondsToTime)
 
 (define-cproc sys-asctime (tm::<sys-tm>)
-  (expr "SCM_MAKE_STR_COPYING(asctime(&SCM_SYS_TM_TM(tm)))"))
+  (result (SCM_MAKE_STR_COPYING (asctime (& (SCM_SYS_TM_TM tm))))))
 
 (define-cproc sys-ctime (time) ::<const-cstring>
   (let* ([tim::time_t (Scm_GetSysTime time)]) (result (ctime (& tim)))))
@@ -639,7 +624,7 @@
 (define-keyword sigmask "key_sigmask")
 
 (define-cfn get-exec-args (rest iomap::ScmObj* sigmask::ScmSysSigset**)
-  :: void :static
+  ::void :static
   (let* ([s_sigmask SCM_NIL])
     (set! (* iomap) SCM_NIL
           (* sigmask) NULL)
@@ -670,13 +655,13 @@
     (when (== (getcwd p 1023) NULL) (Scm_SysError "getcwd failed"))
     (result p)))
 
-(define-cproc sys-getegid () (call <int> getegid))
-(define-cproc sys-getgid ()  (call <int> getgid))
-(define-cproc sys-geteuid () (call <int> geteuid))
-(define-cproc sys-getuid ()  (call <int> getuid))
+(define-cproc sys-getegid () ::<int> getegid)
+(define-cproc sys-getgid ()  ::<int> getgid)
+(define-cproc sys-geteuid () ::<int> geteuid)
+(define-cproc sys-getuid ()  ::<int> getuid)
 
-(define-cproc sys-getpid ()  (call <int> getpid))
-(define-cproc sys-getppid () (call <int> getppid))
+(define-cproc sys-getpid ()  ::<int> getpid)
+(define-cproc sys-getppid () ::<int> getppid)
 
 (define-cproc sys-link (existing::<const-cstring> newpath::<const-cstring>)
   ::<void>
@@ -688,7 +673,7 @@
   ;; We can't simply use pause().  If a signal is delivered after the last
   ;; Scm_SigCheck and before the call of pause(), the signal will just sit
   ;; in a queue and pause() may not return.
-  (call Scm_Pause))
+  Scm_Pause)
 
 (define-cproc sys-alarm (seconds::<fixnum>) ::<int>
   (SCM_SYSCALL SCM_RESULT (alarm seconds)))
@@ -799,7 +784,7 @@
 ;; cast the return value of crypt() to avoid it...such a kludge...
 (when "defined(HAVE_CRYPT)"
 (define-cproc sys-crypt (key::<const-cstring> salt::<const-cstring>)
-  (expr <const-cstring> "(const char *)crypt(key, salt)"))
+  ::<const-cstring> (result (cast (const char *) (crypt key salt))))
 (initcode "Scm_AddFeature(\"gauche.sys.crypt\", NULL);")
 )
 
@@ -866,10 +851,10 @@
   (result (SCM_OBJ dst)))
 
 (define-cproc sys-select (rfds wfds efds &optional (timeout #f))
-  (call Scm_SysSelect))
+  Scm_SysSelect)
 
 (define-cproc sys-select! (rfds wfds efds &optional (timeout #f))
-  (call Scm_SysSelectX))
+  Scm_SysSelectX)
 
 (initcode "Scm_AddFeature(\"gauche.sys.select\", NULL);")
 ) ;; when defined(HAVE_SELECT)
@@ -879,10 +864,8 @@
 ;;;
 
 (when "defined(GAUCHE_WINDOWS)"
-  (define-cproc sys-win-process? (obj)
-    (call <boolean> "Scm_WinProcessP"))
-  (define-cproc sys-win-process-pid (obj)
-    (call <int> "Scm_WinProcessPID"))
+  (define-cproc sys-win-process? (obj) ::<boolean> Scm_WinProcessP)
+  (define-cproc sys-win-process-pid (obj) ::<int> Scm_WinProcessPID)
   ) ;; GAUCHE_WINDOWS
 
 ;; Local variables:

@@ -35,6 +35,7 @@
 
 (define-module gauche.cgen.cise
   (use srfi-1)
+  (use srfi-13)
   (use gauche.sequence)
   (use gauche.parameter)
   (use gauche.cgen.unit)
@@ -303,19 +304,29 @@
       ")" "{"
       ,(cise-render-to-string `(begin ,@body))
       "}"))
+  ;; Another ugly hack to allow both :: rettype and ::rettype as
+  ;; return type specification.   Duplication in stub.scm.
+  (define (type-symbol? s)
+    (and (keyword? s) (#/^:[^:]/ (keyword->string s))))
+  (define (type-symbol-type s)
+    (string->symbol (string-drop (keyword->string s) 1)))
+
+  (define (check-static name args ret-type body)
+    (match body
+      [(':static . body) (gen-cfn "static" name args ret-type body)]
+      [_                 (gen-cfn "" name args ret-type body)]))
+  
   ;; NB: this only works at toplevel.  The stmt check doesn't exclude
   ;; non-toplevel use, and will give an error at C compilation time.
   ;; Eventually we need to check better one.
   (ensure-stmt-ctx form env)
   (match form
-    [(_ name (args ...) ':: ret-type ':static . body)
-     (gen-cfn "static" name (argchk args) ret-type body)]
     [(_ name (args ...) ':: ret-type . body)
-     (gen-cfn "" name (argchk args) ret-type body)]
-    [(_ name (args ...) ':static . body)
-     (gen-cfn "static" name (argchk args) 'ScmObj body)]
+     (check-static name (argchk args) ret-type body)]
+    [(_ name (args ...) [? type-symbol? ts] . body)
+     (check-static name (argchk args) (type-symbol-type ts) body)]
     [(_ name (args ...) . body)
-     (gen-cfn "" name (argchk args) 'ScmObj body)]))
+     (check-static name (argchk args) 'ScmObj body)]))
 
 ;;------------------------------------------------------------
 ;; Syntax

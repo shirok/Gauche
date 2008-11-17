@@ -43,8 +43,8 @@
 ;;
 
 ;; NB: rewind-before keyword arg is EXPERIMENTAL.
-(define-cproc with-error-handler (handler thunk
-                                          &keyword (rewind-before::<boolean> #f))
+(define-cproc with-error-handler
+  (handler thunk &keyword (rewind-before::<boolean> #f))
   (unless (SCM_PROCEDURE_TAKE_NARG_P handler 1)
     (Scm_Error "error handler must take at least 1 argument, but got %S"
                handler))
@@ -59,24 +59,22 @@
   (result (-> (Scm_VM) exceptionHandler)))
 
 (define-cproc with-exception-handler (handler thunk)
-  (call Scm_VMWithExceptionHandler))
+  Scm_VMWithExceptionHandler)
 
-(define-cproc raise (exception) (call Scm_Raise))
+(define-cproc raise (exception)  Scm_Raise)
 
-(define-cproc report-error (exception) (call <void> Scm_ReportError))
+(define-cproc report-error (exception) ::<void> Scm_ReportError)
 
 ;;
 ;; Condition procedures (srfi-35)
 ;;
 
-(define-cproc condition? (obj)
-  (call <boolean> SCM_CONDITIONP))
+(define-cproc condition? (obj) ::<boolean> SCM_CONDITIONP)
 
-(define-cproc condition-has-type? (c k)
-  (call <boolean> Scm_ConditionHasType))
+(define-cproc condition-has-type? (c k) ::<boolean> Scm_ConditionHasType)
 
 (define-cproc make-compound-condition (&rest conditions)
-  (call Scm_MakeCompoundCondition))
+  Scm_MakeCompoundCondition)
 
 
 ;; Local variables:

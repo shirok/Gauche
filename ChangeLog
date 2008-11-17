@@ -1,3 +1,12 @@
+2008-11-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm: Changed define-cproc flag syntax, and
+	  supports a more concise way for the case when C function takes
+	  the same arguments as Scheme one (the old 'call' clause).
+	  'code', 'call', 'expr', and 'body' clauses are deprecated.
+	  Old 'return' clause support is finally omitted.
+	* src/*.stub, ext/uvector/uvlib.stub.tmpl: Changed accordingly.
+
 2008-11-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub: (sys-rename, sys-remove, sys-chdir, sys-mkdir,

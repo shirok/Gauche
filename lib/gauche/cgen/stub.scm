@@ -59,9 +59,50 @@
 ;;      Register a new type to be recognized.  This is rather a declaration
 ;;      than definition; no C code will be generated directly by this form.
 ;;
-;;   define-cproc name (args ...) body ...
+;;   define-cproc name (args ...) [rettype] [flag ...] [qual ...] body ...
 ;;
-;;      Create a subr function.  Body can be:
+;;      Create a subr function.
+;;
+;;      <Rettype> specifies the return type of SUBR.
+;;
+;;      <rettype>  = :: <typespec> | ::<typespec>
+;;      <typespec> = <symbol>
+;;                 | (<symbol> ...)     ; in case SUBR returns multiple values
+;;          where <symbol> must name a valid stub type.
+;;
+;;      When omitted, SUBR is assumed to return <top>.
+;;
+;;      <Flag> is a keyword to modify some aspects of SUBR.  Currently,
+;;      the only supported <flag> is :fast-flonum, which indicates that
+;;      the SUBR accepts flonum arguments yet it won't retain the reference
+;;      to them (This improves floating-point number handling, but it's
+;;      behavior is highly VM-specific; ordinary stub writers shouldn't need
+;;      to care about this flag at all.)
+;;
+;;      <Qual> (qualifier) is a list to adds auxiliary information to the
+;;      SUBR.  Currently the following <quals> are officially supported.
+;;
+;;        (setter <setter-name>) : specfy setter.  <setter-name> should
+;;             be a cproc name defined in the same stub file
+;;        (setter (args ...) body ...) : specify setter anonymously.
+;;
+;;        (catch (<decl> <C-stmt> ...) ...) : when writing a stub
+;;             for C++ function that may throw an exception, use this spec
+;;             to ensure the exception will be caught and converted to
+;;             Gauche error condition.
+;;
+;;        (inliner <insn-name>) : only used in Gauche core procedures
+;;             that can be inlined into an VM insturuction.
+;;
+;;      <Body> is a cise expression.  Inside the expression, a cise macro
+;;      (result expr ...) can be used to assign the value(s) to return
+;;      from the cproc.   As a special case, if <body> is a single symbol,
+;;      it names a C function to be called with the same argument (mod
+;;      unboxing) as the cproc.
+;;
+;;      The following forms in <body> are DEPRECATED, retained for the
+;;      backward compatibility.  The new code MUST NOT use them.
+;;
 ;;        (code <C-code> ...)
 ;;             <C-code> is inserted at this position.  Useful to insert
 ;;             extra code before 'call' or 'expr' spec.
@@ -85,16 +126,7 @@
 ;;             Procedure yields more than one value.  C variables
 ;;             SCM_RESULT0, SCM_RESULT1, ... are defined to receive the
 ;;             results.
-;;        (setter <setter-name>) : specfy setter.  <setter-name> should
-;;             be a cproc name defined in the same stub file
-;;        (setter (args ...) body ...) : specify setter anonymously.
-;;        (catch (<decl> <C-stmt> ...) ...) : when writing a stub
-;;             for C++ function that may throw an exception, use this spec
-;;             to ensure the exception will be caught and converted to
-;;             Gauche error condition.
-;;
-;;        a string : becomes the body of C code.  DEPRECATED.
-;;        (return [<rettype>] <C-function-name>)  same as 'call'.  DEPRECATED.
+;;        a string : becomes the body of C code.
 ;;
 ;;   define-cgeneric name c-name property-clause ...)
 ;;
@@ -400,7 +432,7 @@
       ;; If not null, the entire procedure body is wrapped by 'try' and
       ;; an appropriate handlers are emitted.  Necessary to write a stub
       ;; for C++ functions that may throw an exception.
-   (flags             :initform '() :accessor flags-of)
+   (flags             :initform '() :init-keyword :flags :accessor flags-of)
    ))
 
 (define (get-arg cproc arg) (find (^(x) (eq? arg [~ x'name])) [~ cproc'args]))
@@ -418,16 +450,16 @@
    ))
 
 (define-form-parser define-cproc (scheme-name argspec . body)
-  (define (check-immediate-arg cproc args)
+  (define (check-fast-flonum cproc args)
     ;; if every arg has a type other than <top> or <number>,
     ;; we know that we can safely pass FLONUM_REGs, since the args
     ;; are immediately type-checked and/or unboxed.
     (let1 unsafe-types (list *scm-type* (name->type '<number>))
-      (when (and (not (memq 'immediate-arg [~ cproc'flags]))
+      (when (and (not (memq 'fast-flonum [~ cproc'flags]))
                  (every (^(arg) (or (is-a? arg <rest-arg>)
                                     (not (memq [~ arg'type] unsafe-types))))
                         args))
-        (push! [~ cproc'flags] 'immediate-arg))))
+        (push! [~ cproc'flags] 'fast-flonum))))
   (define (extract-rettype body)
     (match body
       [(:: type . body) (values body type)]
@@ -437,27 +469,32 @@
     (and (keyword? s) (#/^:[^:]/ (keyword->string s))))
   (define (type-symbol-type s)
     (string->symbol (string-drop (keyword->string s) 1)))
+  (define (extract-flags body)
+    (match body
+      [(:fast-flonum . body) (values '(fast-flonum) body)]
+      [_                     (values '() body)]))
 
   (check-arg symbol? scheme-name)
   (check-arg list? argspec)
   (receive (args keyargs nreqs nopts rest? other-keys?)
       (process-cproc-args scheme-name argspec)
     (receive (body rettype) (extract-rettype body)
-      (let1 cproc (make <cproc>
-                    :scheme-name scheme-name
-                    :c-name (get-c-name [~(cgen-current-unit)'c-name-prefix]
-                                        scheme-name)
-                    :proc-name (make-literal (x->string scheme-name))
-                    :return-type rettype
-                    :args args
-                    :keyword-args keyargs
-                    :num-reqargs nreqs
-                    :num-optargs nopts
-                    :have-rest-arg? rest?
-                    :allow-other-keys? other-keys?)
-        (process-body cproc body)
-        (check-immediate-arg cproc args)
-        (cgen-add! cproc)))))
+      (receive (flags body) (extract-flags body)
+        (let1 cproc (make <cproc>
+                      :scheme-name scheme-name
+                      :c-name (get-c-name [~(cgen-current-unit)'c-name-prefix]
+                                          scheme-name)
+                      :proc-name (make-literal (x->string scheme-name))
+                      :return-type rettype :flags flags
+                      :args args
+                      :keyword-args keyargs
+                      :num-reqargs nreqs
+                      :num-optargs nopts
+                      :have-rest-arg? rest?
+                      :allow-other-keys? other-keys?)
+          (process-body cproc body)
+          (check-fast-flonum cproc args)
+          (cgen-add! cproc))))))
 
 (define-method c-stub-name ((cproc <cproc>)) #`",[~ cproc'c-name]__STUB")
 
@@ -566,13 +603,18 @@
       [([? string? s] . r) (push-stmt! cproc s) (loop r)]
       [(('inliner opcode) . r) (set! [~ cproc'inline-insn] opcode) (loop r)]
       [(('setter . spec) . r) (process-setter cproc spec) (loop r)]
-      [(('return . spec) . r) (process-call-spec cproc spec) (loop r)]
       [(('call . spec) . r) (process-call-spec cproc spec) (loop r)]
       [(('body . spec) . r) (process-body-spec cproc spec) (loop r)]
       [(('expr . spec) . r) (process-expr-spec cproc spec) (loop r)]
       [(('catch . spec) . r) (process-catch-spec cproc spec) (loop r)]
       [(('code . stmts) . r) (dolist (s stmts) (push-stmt! cproc s)) (loop r)]
-      [(('flags . flags) . r) (process-flags-spec cproc flags) (loop r)]
+      [([? symbol? s]) ; 'call' convention
+       (let* ([args (map (cut ref <> 'name)
+                         (append [~ cproc'args] [~ cproc'keyword-args]))]
+              [form (if (eq? [~ cproc'return-type] '<void>)
+                      `((,s ,@args))
+                      `((result (,s ,@args))))])
+         (process-body-inner cproc [~ cproc'return-type] form))]
       [_ (process-body-inner cproc [~ cproc'return-type] body)])))
 
 (define-method process-setter ((cproc <cproc>) decl)
@@ -669,12 +711,6 @@
      ]
     [else (error <cgen-stub-error> "malformed 'catch' spec:" form)]))
 
-(define-method process-flags-spec ((cproc <procstub>) form)
-  (dolist (flag form)
-    (unless (memq flag '(immediate-arg))
-      (errorf "unknown flag '~s' for procedure ~s" flag [~ cproc'scheme-name]))
-    (push! [~ cproc'flags] flag)))
-
 (define-method process-body-inner ((cproc <procstub>) rettype body)
   (define (expand-stmt stmt)
     (push-stmt! cproc (if (string? stmt)
@@ -729,7 +765,6 @@
 ;;;
 
 (define-method cgen-emit-body ((cproc <cproc>))
-
   (p "static ScmObj "[~ cproc'c-name]"(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)")
   (p "{")
   ;; argument decl
@@ -766,7 +801,7 @@
   (p)
   ;; emit stub record
   (f "static SCM_DEFINE_SUBR~a(~a, ~a, ~a, ~a, ~a, ~a, NULL);"
-     (if (memq 'immediate-arg [~ cproc'flags]) "I" "")
+     (if (memq 'fast-flonum [~ cproc'flags]) "I" "")
      (c-stub-name cproc)
      [~ cproc'num-reqargs]
      (if (or (have-rest-arg? cproc) (> [~ cproc'num-optargs] 0)) 1 0)
