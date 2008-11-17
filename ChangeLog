@@ -11,7 +11,8 @@
 	* src/*.stub: Changed using the new define-cproc syntax whenever
 	  possible.
 	
-	* lib/gauche/cgen/cise.scm (dolist, |#if|): Added new cise macros.
+	* lib/gauche/cgen/cise.scm
+	  (dolist, dotimes, |#if|): Added new cise macros.
 	  (cise-render-to-string): Added an utility api.
 
 	* src/objlib.scm: Integrated moplib.stub into objlib.scm using

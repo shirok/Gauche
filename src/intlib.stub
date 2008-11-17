@@ -164,61 +164,58 @@
      "stdmods[1] = Scm_SchemeModule();"
      "stdmods[2] = Scm_GaucheModule();")))
 
-(define-cproc global-call-type (id cenv)
-  (body
-   (<top> <top>)
-   "ScmModule *mod = SCM_IDENTIFIER(id)->module;"
-   "ScmGloc *gloc = Scm_FindBinding(mod, SCM_IDENTIFIER(id)->name, 0);"
-   "ScmObj gval;"
-   "SCM_RESULT0 = SCM_RESULT1 = SCM_FALSE;"
-   "if (gloc) {"
-   "  gval = SCM_GLOC_GET(gloc);"
-   "  if (SCM_MACROP(gval)) {"
-   "    SCM_RESULT0 = gval; SCM_RESULT1 = SCM_SYM_MACRO;"
-   "  } else if (SCM_SYNTAXP(gval)) {"
-   "    SCM_RESULT0 = gval; SCM_RESULT1 = SCM_SYM_SYNTAX;"
-   "  } else if (SCM_PROCEDUREP(gval)"
-   "             && SCM_PROCEDURE_INLINER(gval)"
-   "             && !SCM_FALSEP(SCM_PROCEDURE_INLINER(gval))"
-   "             && !SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), "
-   "                                             SCM_COMPILE_NOINLINE_GLOBALS)) {"
-   "    SCM_RESULT0 = gval; SCM_RESULT1 = SCM_SYM_INLINE;"
-   "  } else {"
-   "    goto normal;"
-   "  }"
-   "#if defined(RECORD_DEPENDED_MODULES)"
-   "  for (i=0; i<3; i++) {"
-   "    if (SCM_EQ(mod, stdmods[i])) goto normal;"
-   "  }"
-   "  curmod = SCM_VECTOR_ELEMENT(cenv, 0);"
-   "  SCM_ASSERT(SCM_MODULEP(curmod));"
-   "  if (SCM_FALSEP(Scm_Memq(SCM_OBJ(mod), SCM_MODULE(curmod)->depended))) {"
-   "     SCM_MODULE(curmod)->depended = Scm_Cons(SCM_OBJ(mod), SCM_MODULE(curmod)->depended);"
-   "  }"
-   "#endif /*RECORD_DEPENDED_MODULES*/"
-   "}"
-   "normal:;"))
+(define-cproc global-call-type (id cenv) ::(<top> <top>)
+  (let* ([mod::ScmModule* (-> (SCM_IDENTIFIER id) module)]
+         [gloc::ScmGloc* (Scm_FindBinding mod (-> (SCM_IDENTIFIER id) name) 0)]
+         )
+    (set! SCM_RESULT0 '#f SCM_RESULT1 '#f)
+    (when gloc
+      (let* ([gval (SCM_GLOC_GET gloc)])
+        (cond [(SCM_MACROP gval)
+               (set! SCM_RESULT0 gval SCM_RESULT1 'macro)]
+              [(SCM_SYNTAXP gval)
+               (set! SCM_RESULT0 gval SCM_RESULT1 'syntax)]
+              [(and (SCM_PROCEDUREP gval)
+                    (SCM_PROCEDURE_INLINER gval)
+                    (not (SCM_FALSEP (SCM_PROCEDURE_INLINER gval)))
+                    (not (SCM_VM_COMPILER_FLAG_IS_SET
+                          (Scm_VM) SCM_COMPILE_NOINLINE_GLOBALS)))
+               (set! SCM_RESULT0 gval SCM_RESULT1 'inline)]
+              [else (goto normal)])
+        (|#if| "defined(RECORD_DEPENDED_MODULES)"
+               (dotimes [i 3]
+                 (when (SCM_EQ mod (aref stdmods i)) (goto normal)))
+               (let* ([curmod (SCM_VECTOR_ELEMENT cenv 0)])
+                 (SCM_ASSERT (SCM_MODULEP curmod))
+                 (when (SCM_FALSEP
+                        (Scm_Memq (SCM_OBJ mod)
+                                  (-> (SCM_MODULE curmod) depended)))
+                   (set! (-> (SCM_MODULE curmod) depended)
+                         (Scm_Cons (SCM_OBJ mod)
+                                   (-> (SCM_MODULE curmod) depended))))))
+        ))
+    (label normal)
+    ))
 
-(define-cproc macro? (obj)
-  (call <boolean> "SCM_MACROP"))
+(define-cproc macro? (obj) (call <boolean> SCM_MACROP))
 
 (define-cproc make-toplevel-closure (code::<compiled-code>)
-  (expr "Scm_MakeClosure(SCM_OBJ(code), NULL)"))
+  (result (Scm_MakeClosure (SCM_OBJ code) NULL)))
 
 (define-cproc make-macro-transformer (name::<symbol> proc::<procedure>)
-  (call "Scm_MakeMacroTransformerOld"))
+  (call Scm_MakeMacroTransformerOld))
 
 (define-cproc compile-syntax-rules (name literals rules mod env)
-  (call "Scm_CompileSyntaxRules"))
+  (call Scm_CompileSyntaxRules))
 
 (define-type <macro> "ScmMacro*" "macro"
   "SCM_MACROP" "SCM_MACRO" "SCM_OBJ")
 
 (define-cproc call-macro-expander (mac::<macro> expr env)
-  (call "Scm_CallMacroExpander"))
+  (call Scm_CallMacroExpander))
 
 (define-cproc make-syntax (name::<symbol> proc)
-  (call "Scm_MakeSyntax"))
+  (call Scm_MakeSyntax))
 
 (define-cproc call-syntax-handler (syn program cenv)
   (SCM_ASSERT (SCM_SYNTAXP syn))
@@ -246,67 +243,63 @@
 
 ;; CompiledCodeEmit is performance critical.  To reduce the overhead of
 ;;  argument passing, we prepare variations for specific code patterns.
-(define-cproc compiled-code-emit0! (cc::<compiled-code>
-                                    code::<int>)
-  (body <void> "Scm_CompiledCodeEmit(cc, code, 0, 0, SCM_FALSE, SCM_FALSE);"))
+(define-cproc compiled-code-emit0!
+  (cc::<compiled-code> code::<int>) ::<void>
+  (Scm_CompiledCodeEmit cc code 0 0 '#f '#f))
 
-(define-cproc compiled-code-emit0o! (cc::<compiled-code>
-                                     code::<int> operand)
-  (body <void> "Scm_CompiledCodeEmit(cc, code, 0, 0, operand, SCM_FALSE);"))
+(define-cproc compiled-code-emit0o!
+  (cc::<compiled-code> code::<int> operand) ::<void>
+  (Scm_CompiledCodeEmit cc code 0 0 operand '#f))
 
-(define-cproc compiled-code-emit0i! (cc::<compiled-code>
-                                     code::<int> info)
-  (body <void> "Scm_CompiledCodeEmit(cc, code, 0, 0, SCM_FALSE, info);"))
+(define-cproc compiled-code-emit0i!
+  (cc::<compiled-code> code::<int> info) ::<void>
+  (Scm_CompiledCodeEmit cc code 0 0 '#f info))
 
-(define-cproc compiled-code-emit0oi! (cc::<compiled-code>
-                                      code::<int> operand info)
-  (body <void> "Scm_CompiledCodeEmit(cc, code, 0, 0, operand, info);"))
+(define-cproc compiled-code-emit0oi!
+  (cc::<compiled-code> code::<int> operand info) ::<void>
+  (Scm_CompiledCodeEmit cc code 0 0 operand info))
 
-(define-cproc compiled-code-emit1! (cc::<compiled-code>
-                                    code::<int> arg0::<int>)
-  (body <void> "Scm_CompiledCodeEmit(cc, code, arg0, 0, SCM_FALSE, SCM_FALSE);"))
+(define-cproc compiled-code-emit1!
+  (cc::<compiled-code> code::<int> arg0::<int>) ::<void>
+  (Scm_CompiledCodeEmit cc code arg0 0 '#f '#f))
 
-(define-cproc compiled-code-emit1o! (cc::<compiled-code>
-                                     code::<int> arg0::<int> operand)
-  (body <void> "Scm_CompiledCodeEmit(cc, code, arg0, 0, operand, SCM_FALSE);"))
+(define-cproc compiled-code-emit1o!
+  (cc::<compiled-code> code::<int> arg0::<int> operand) ::<void>
+  (Scm_CompiledCodeEmit cc code arg0 0 operand '#f))
 
-(define-cproc compiled-code-emit1i! (cc::<compiled-code>
-                                     code::<int> arg0::<int> info)
-  (body <void> "Scm_CompiledCodeEmit(cc, code, arg0, 0, SCM_FALSE, info);"))
+(define-cproc compiled-code-emit1i!
+  (cc::<compiled-code> code::<int> arg0::<int> info) ::<void>
+  (Scm_CompiledCodeEmit cc code arg0 0 '#f info))
 
-(define-cproc compiled-code-emit1oi! (cc::<compiled-code>
-                                      code::<int> arg0::<int> operand info)
-  (body <void> "Scm_CompiledCodeEmit(cc, code, arg0, 0, operand, info);"))
+(define-cproc compiled-code-emit1oi!
+  (cc::<compiled-code> code::<int> arg0::<int> operand info) ::<void>
+  (Scm_CompiledCodeEmit cc code arg0 0 operand info))
 
-(define-cproc compiled-code-emit2! (cc::<compiled-code>
-                                    code::<int> arg0::<int> arg1::<int>)
-  (body <void> "Scm_CompiledCodeEmit(cc, code, arg0, arg1, SCM_FALSE, SCM_FALSE);"))
+(define-cproc compiled-code-emit2!
+  (cc::<compiled-code> code::<int> arg0::<int> arg1::<int>) ::<void>
+  (Scm_CompiledCodeEmit cc code arg0 arg1 '#f '#f))
 
-(define-cproc compiled-code-emit2o! (cc::<compiled-code>
-                                     code::<int> arg0::<int> arg1::<int>
-                                     operand)
-  (body <void> "Scm_CompiledCodeEmit(cc, code, arg0, arg1, operand, SCM_FALSE);"))
+(define-cproc compiled-code-emit2o!
+  (cc::<compiled-code> code::<int> arg0::<int> arg1::<int> operand) ::<void>
+  (Scm_CompiledCodeEmit cc code arg0 arg1 operand '#f))
 
-(define-cproc compiled-code-emit2i! (cc::<compiled-code>
-                                     code::<int> arg0::<int> arg1::<int>
-                                     info)
-  (body <void> "Scm_CompiledCodeEmit(cc, code, arg0, arg1, SCM_FALSE, info);"))
+(define-cproc compiled-code-emit2i!
+  (cc::<compiled-code> code::<int> arg0::<int> arg1::<int> info) ::<void>
+  (Scm_CompiledCodeEmit cc code arg0 arg1 '#f info))
 
-(define-cproc compiled-code-emit2oi! (cc::<compiled-code>
-                                      code::<int> arg0::<int> arg1::<int>
-                                      operand info)
-  (body <void> "Scm_CompiledCodeEmit(cc, code, arg0, arg1, operand, info);"))
-
+(define-cproc compiled-code-emit2oi!
+  (cc::<compiled-code> code::<int> arg0::<int> arg1::<int> operand info)::<void>
+  (Scm_CompiledCodeEmit cc code arg0 arg1 operand info))
 
 (define-cproc compiled-code-new-label (cc::<compiled-code>)
-  (call "Scm_CompiledCodeNewLabel"))
+  (call Scm_CompiledCodeNewLabel))
 
 (define-cproc compiled-code-set-label! (cc::<compiled-code> label)
-  (call <void> "Scm_CompiledCodeSetLabel"))
+  (call <void> Scm_CompiledCodeSetLabel))
 
 (define-cproc compiled-code-finish-builder (cc::<compiled-code>
                                             maxstack::<int>)
-  (call <void> "Scm_CompiledCodeFinishBuilder"))
+  (call <void> Scm_CompiledCodeFinishBuilder))
 
 ;; standard
 (define-constant ENV_HEADER_SIZE  (c "SCM_MAKE_INT(ENV_SIZE(0))"))
@@ -317,48 +310,40 @@
 ;;
 
 (define-cproc vm-dump-code (code::<compiled-code>)
-  (call <void> "Scm_CompiledCodeDump"))
+  (call <void> Scm_CompiledCodeDump))
 (define-cproc vm-code->list (code::<compiled-code>)
-  (call "Scm_CompiledCodeToList"))
-(define-cproc vm-insn-build (insn)
-  (expr <ulong> (cast u_long (Scm_VMInsnBuild insn))))
+  (call Scm_CompiledCodeToList))
+(define-cproc vm-insn-build (insn) ::<ulong>
+  (result (cast u_long (Scm_VMInsnBuild insn))))
 (define-cproc vm-insn-code->name (opcode::<uint>)
-  (expr <top> (SCM_INTERN (Scm_VMInsnName opcode))))
+  (result (SCM_INTERN (Scm_VMInsnName opcode))))
 (define-cproc vm-insn-name->code (insn-name)
-  (call <int> "Scm_VMInsnNameToCode"))
+  (call <int> Scm_VMInsnNameToCode))
 
 ;; Eval situation flag (for eval-when constrcut)
-(define-cproc vm-eval-situation (&optional val)
-  (body <int>
-        "int prev;"
-        "ScmVM *vm = Scm_VM();"
-        "if (SCM_UNBOUNDP(val)) {"
-        "  SCM_RESULT = vm->evalSituation;"
-        "} else {"
-        "  if (!SCM_INTP(val)) Scm_Error(\"integer required, but got %S\", val);"
-        "  prev = vm->evalSituation;"
-        "  vm->evalSituation = SCM_INT_VALUE(val);"
-        "  SCM_RESULT = prev;"
-        "}"))
+(define-cproc vm-eval-situation (&optional val) ::<int>
+  (let* ([vm::ScmVM* (Scm_VM)])
+    (cond [(SCM_UNBOUNDP val) (result (-> vm evalSituation))]
+          [else
+           (unless (SCM_INTP val) (SCM_TYPE_ERROR val "integer"))
+           (let* ([prev::int (-> vm evalSituation)])
+             (set! (-> vm evalSituation) (SCM_INT_VALUE val))
+             (result prev))])))
 
 (define-enum SCM_VM_EXECUTING)
 (define-enum SCM_VM_LOADING)
 (define-enum SCM_VM_COMPILING)
 
 ;; Compiler flags
-(define-cproc vm-compiler-flag-is-set? (flag::<uint>)
-  (expr <boolean>
-        "SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), flag)"))
-(define-cproc vm-compiler-flag-set! (flag::<uint>)
-  (body <void>
-        "SCM_VM_COMPILER_FLAG_SET(Scm_VM(), flag);"))
-(define-cproc vm-compiler-flag-clear! (flag::<uint>)
-  (body <void>
-        "SCM_VM_COMPILER_FLAG_CLEAR(Scm_VM(), flag);"))
+(define-cproc vm-compiler-flag-is-set? (flag::<uint>) ::<boolean>
+  (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) flag)))
+(define-cproc vm-compiler-flag-set! (flag::<uint>) ::<void>
+  (SCM_VM_COMPILER_FLAG_SET (Scm_VM) flag))
+(define-cproc vm-compiler-flag-clear! (flag::<uint>) ::<void>
+  (SCM_VM_COMPILER_FLAG_CLEAR (Scm_VM) flag))
 
-(define-cproc vm-compiler-flag-noinline-locals? ()
-  (expr <boolean>
-        "SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_COMPILE_NOINLINE_LOCALS)"))
+(define-cproc vm-compiler-flag-noinline-locals? () ::<boolean>
+  (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NOINLINE_LOCALS))
 
 (define-enum SCM_COMPILE_NOINLINE_GLOBALS)
 (define-enum SCM_COMPILE_NOINLINE_LOCALS)
@@ -368,19 +353,16 @@
 (define-enum SCM_COMPILE_NOCOMBINE)
 
 ;; Set/get VM's current module info. (temporary)
-(define-cproc vm-current-module ()
-  (expr "SCM_OBJ(Scm_VM()->module)"))
-(define-cproc vm-set-current-module (mod::<module>)
-  (body <void>
-        "Scm_VM()->module = mod;"))
+(define-cproc vm-current-module () (result (SCM_OBJ (-> (Scm_VM) module))))
+(define-cproc vm-set-current-module (mod::<module>) ::<void>
+  (set! (-> (Scm_VM) module) mod))
 
-(define-cproc gc-print-static-roots ()
-  (call <void> "Scm_PrintStaticRoots"))
+(define-cproc gc-print-static-roots () (call <void> Scm_PrintStaticRoots))
 
 ;;
 ;; Profiler internal API
 ;;
-(define-cproc profiler-raw-result () (call "Scm_ProfilerRawResult"))
+(define-cproc profiler-raw-result () (call Scm_ProfilerRawResult))
 
 ;;
 ;; Compiler internal procedures
@@ -394,7 +376,7 @@
 
 ;; %imax - max for unsigned integer only, unsafe.
 (define-cproc %imax (x y)
-  (body <top> (if (> (SCM_WORD x) (SCM_WORD y)) (result x) (result y))))
+  (if (> (SCM_WORD x) (SCM_WORD y)) (result x) (result y)))
 
 ;; (%map1c proc lis c) = (map (cut proc <> c) lis)
 (define-cfn map1c_cc (result data::void**) :static
@@ -410,16 +392,15 @@
            (return (Scm_VMApply2 proc (SCM_CAR lis) c))])))
 
 (define-cproc %map1c (proc lis c)
-  (body <top>
-        (let* ([data::(.array void* [4])])
-          (cond [(SCM_NULLP lis) (result SCM_NIL)]
-                [else
-                 (set! (aref data 0) proc
-                       (aref data 1) SCM_NIL
-                       (aref data 2) (SCM_CDR lis)
-                       (aref data 3) c)
-                 (Scm_VMPushCC map1c_cc data 4)
-                 (result (Scm_VMApply2 proc (SCM_CAR lis) c))]))))
+  (let* ([data::(.array void* [4])])
+    (cond [(SCM_NULLP lis) (result SCM_NIL)]
+          [else
+           (set! (aref data 0) proc
+                 (aref data 1) SCM_NIL
+                 (aref data 2) (SCM_CDR lis)
+                 (aref data 3) c)
+           (Scm_VMPushCC map1c_cc data 4)
+           (result (Scm_VMApply2 proc (SCM_CAR lis) c))])))
 
 ;; (%map1cc proc lis c1 c2) = (map (cut proc <> c1 c2) lis)
 (define-cfn map1cc-cc (result (data :: void**)) :static
@@ -436,26 +417,24 @@
            (return (Scm_VMApply3 proc (SCM_CAR lis) c1 c2))])))
 
 (define-cproc %map1cc (proc lis c1 c2)
-  (body <top>
-        (if (SCM_NULLP lis)
-          (result SCM_NIL)
-          (let* ([data::(.array void* [5])])
-            (set! (aref data 0) proc
-                  (aref data 1) SCM_NIL
-                  (aref data 2) (SCM_CDR lis)
-                  (aref data 3) c1
-                  (aref data 4) c2)
-            (Scm_VMPushCC map1cc-cc data 5)
-            (result (Scm_VMApply3 proc (SCM_CAR lis) c1 c2))))))
+  (if (SCM_NULLP lis)
+    (result SCM_NIL)
+    (let* ([data::(.array void* [5])])
+      (set! (aref data 0) proc
+            (aref data 1) SCM_NIL
+            (aref data 2) (SCM_CDR lis)
+            (aref data 3) c1
+            (aref data 4) c2)
+      (Scm_VMPushCC map1cc-cc data 5)
+      (result (Scm_VMApply3 proc (SCM_CAR lis) c1 c2)))))
 
 ;; (%map-cons lis1 lis2) = (map cons lis1 lis2)
 (define-cproc %map-cons (lis1 lis2)
-  (body <top>
-        (let* ([h SCM_NIL] [t SCM_NIL])
-          (while (and (SCM_PAIRP lis1) (SCM_PAIRP lis2))
-            (SCM_APPEND1 h t (Scm_Cons (SCM_CAR lis1) (SCM_CAR lis2)))
-            (set! lis1 (SCM_CDR lis1) lis2 (SCM_CDR lis2)))
-          (result h))))
+  (let* ([h SCM_NIL] [t SCM_NIL])
+    (while (and (SCM_PAIRP lis1) (SCM_PAIRP lis2))
+      (SCM_APPEND1 h t (Scm_Cons (SCM_CAR lis1) (SCM_CAR lis2)))
+      (set! lis1 (SCM_CDR lis1) lis2 (SCM_CDR lis2)))
+    (result h)))
 
 ;;
 ;; Tester procedures
@@ -471,8 +450,8 @@
 (define-cproc %apply-rec  (p &rest args) (call Scm_ApplyRec))
 
 ;; To add autocurrying flag
-(define-cproc %procedure-currying-set! (p::<procedure> f::<boolean>)
-  (body <void> (set! (SCM_PROCEDURE_CURRYING p) f)))
+(define-cproc %procedure-currying-set! (p::<procedure> f::<boolean>) ::<void>
+  (set! (SCM_PROCEDURE_CURRYING p) f))
 
 ;; Local variables:
 ;; mode: scheme

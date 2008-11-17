@@ -477,14 +477,23 @@
                          ,@body) env)
          "}")])))
 
-;; [cise stmt[ dolist [VAR EXPR] STMT ...
+;; [cise stmt] dolist [VAR EXPR] STMT ...
 (define-cise-macro (dolist form env)
+  (ensure-stmt-ctx form env)
+  (let ((eenv (expr-env env)))
+    (match form
+      [(_ (var expr) . body)
+       `(for-each (lambda (,var) ,@body) ,expr)])))
+
+;; [cise stmt] dotimes [VAR EXPR] STMT ...
+(define-cise-macro (dotimes form env)
   (ensure-stmt-ctx form env)
   (let ((eenv (expr-env env))
         (tmp  (gensym "cise__")))
     (match form
       [(_ (var expr) . body)
-       `(for-each (lambda (,var) ,@body) ,expr)])))
+       `(let* ([,tmp :: int ,expr] [,var :: int])
+          (for [(set! ,var 0) (< ,var ,tmp) (post++ ,var)] ,@body))])))
 
 ;; [cise stmt] pair-for-each (lambda (VAR) STMT ...) EXPR
 ;;   Like for-each, but VAR is bound to each 'spine' cell instead of
@@ -531,8 +540,10 @@
 ;; [cise stmt] label NAME
 ;; [cise stmt] goto NAME
 ;;   Label and goto.
+;;   We always add null statement after the label, so that we can place
+;;   (label NAME) at the end of compound statement.
 (define-cise-stmt label
-  [(_ name) `(,(cise-render-identifier name) " : ")])
+  [(_ name) `(,(cise-render-identifier name) " :; ")])
 
 (define-cise-stmt goto
   [(_ name) `("goto " ,(cise-render-identifier name) ";")])
