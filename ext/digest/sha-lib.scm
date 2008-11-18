@@ -136,20 +136,20 @@
    ScmShaContext* "Scm_ShaContextClass" ()
    ()
    [allocator
-    (let* ((ctx :: ScmShaContext* (SCM_ALLOCATE ScmShaContext klass)))
+    (let* ([ctx :: ScmShaContext* (SCM_ALLOCATE ScmShaContext klass)])
       (SCM_SET_CLASS ctx klass)
       (return (SCM_OBJ ctx)))])
 
- (define-cproc %sha1-init (ctx::<sha-context>)
-   (body <void> (SHA1_Init (& (-> ctx ctx)))))
- (define-cproc %sha224-init (ctx::<sha-context>)
-   (body <void> (SHA224_Init (& (-> ctx ctx)))))
- (define-cproc %sha256-init (ctx::<sha-context>)
-   (body <void> (SHA256_Init (& (-> ctx ctx)))))
- (define-cproc %sha384-init (ctx::<sha-context>)
-   (body <void> (SHA384_Init (& (-> ctx ctx)))))
- (define-cproc %sha512-init (ctx::<sha-context>)
-   (body <void> (SHA512_Init (& (-> ctx ctx)))))
+ (define-cproc %sha1-init (ctx::<sha-context>) ::<void>
+   (SHA1_Init (& (-> ctx ctx))))
+ (define-cproc %sha224-init (ctx::<sha-context>) ::<void>
+   (SHA224_Init (& (-> ctx ctx))))
+ (define-cproc %sha256-init (ctx::<sha-context>) ::<void>
+   (SHA256_Init (& (-> ctx ctx))))
+ (define-cproc %sha384-init (ctx::<sha-context>) ::<void>
+   (SHA384_Init (& (-> ctx ctx))))
+ (define-cproc %sha512-init (ctx::<sha-context>) ::<void>
+   (SHA512_Init (& (-> ctx ctx))))
 
  (define-cise-stmt common-update
    [(_ update ctx data)
@@ -160,27 +160,26 @@
                       (SCM_UVECTOR_ELEMENTS (SCM_U8VECTOR ,data)))
                 (SCM_U8VECTOR_SIZE (SCM_U8VECTOR data)))]
       [(SCM_STRINGP data)
-       (let* ((b :: (const ScmStringBody*) (SCM_STRING_BODY ,data)))
+       (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY ,data)])
          (,update (& (-> ,ctx ctx))
                   (cast (const unsigned char*) (SCM_STRING_BODY_START b))
                   (SCM_STRING_BODY_SIZE b)))]
-      [else
-       (Scm_Error "u8vector or string required, but got: %S" ,data)])])
+      [else (SCM_TYPE_ERROR ,data "u8vector or string")])])
 
- (define-cproc %sha1-update (ctx::<sha-context> data)
-   (body <void> (common-update SHA1_Update ctx data)))
- (define-cproc %sha224-update (ctx::<sha-context> data)
-   (body <void> (common-update SHA224_Update ctx data)))
- (define-cproc %sha256-update (ctx::<sha-context> data)
-   (body <void> (common-update SHA256_Update ctx data)))
- (define-cproc %sha384-update (ctx::<sha-context> data)
-   (body <void> (common-update SHA384_Update ctx data)))
- (define-cproc %sha512-update (ctx::<sha-context> data)
-   (body <void> (common-update SHA512_Update ctx data)))
+ (define-cproc %sha1-update (ctx::<sha-context> data) ::<void>
+   (common-update SHA1_Update ctx data))
+ (define-cproc %sha224-update (ctx::<sha-context> data) ::<void>
+   (common-update SHA224_Update ctx data))
+ (define-cproc %sha256-update (ctx::<sha-context> data) ::<void>
+   (common-update SHA256_Update ctx data))
+ (define-cproc %sha384-update (ctx::<sha-context> data) ::<void>
+   (common-update SHA384_Update ctx data))
+ (define-cproc %sha512-update (ctx::<sha-context> data) ::<void>
+   (common-update SHA512_Update ctx data))
 
  (define-cise-stmt common-final
    [(_ final ctx size)
-    `(let* ((digest :: (.array (unsigned char) (,size))))
+    `(let* ([digest::(.array (unsigned char) (,size))])
        (,final digest (& (-> ,ctx ctx)))
        (result (Scm_MakeString (cast (const char*) digest)
                                ,size ,size
@@ -188,15 +187,15 @@
                                        SCM_STRING_COPYING))))])
 
  (define-cproc %sha1-final (ctx::<sha-context>)
-   (body <top> (common-final SHA1_Final ctx SHA1_DIGEST_LENGTH)))
+   (common-final SHA1_Final ctx SHA1_DIGEST_LENGTH))
  (define-cproc %sha224-final (ctx::<sha-context>)
-   (body <top> (common-final SHA224_Final ctx SHA224_DIGEST_LENGTH)))
+   (common-final SHA224_Final ctx SHA224_DIGEST_LENGTH))
  (define-cproc %sha256-final (ctx::<sha-context>)
-   (body <top> (common-final SHA256_Final ctx SHA256_DIGEST_LENGTH)))
+   (common-final SHA256_Final ctx SHA256_DIGEST_LENGTH))
  (define-cproc %sha384-final (ctx::<sha-context>)
-   (body <top> (common-final SHA384_Final ctx SHA384_DIGEST_LENGTH)))
+   (common-final SHA384_Final ctx SHA384_DIGEST_LENGTH))
  (define-cproc %sha512-final (ctx::<sha-context>)
-   (body <top> (common-final SHA512_Final ctx SHA512_DIGEST_LENGTH)))
+   (common-final SHA512_Final ctx SHA512_DIGEST_LENGTH))
  )
 
 (provide "rfc/sha")

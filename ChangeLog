@@ -4,7 +4,7 @@
 	  in size part of array declaration.
 	  (list): fixed a bug when many elements are given.
 	* ext/auxsyslib/auxsyslib.stub, ext/binary/binarylib.stub,
-	  ext/dbm/{gdbm,ndbm,odbm}-lib.scm:
+	  ext/dbm/{gdbm,ndbm,odbm}-lib.scm, ext/digest/{md5,sha}-lib.scm:
 	  Rewrote using new stub syntax.
 
 	* ext/charconv/convaux.scm, ext/charconv/convlib.stub:
