@@ -604,7 +604,6 @@ static int chartoucs(ScmChar ch)
 /*====================================================================
  * Initialization
  */
-extern void Scm_Init_convlib(ScmModule *module);
 extern void Scm_Init_convaux(void);
 extern void Scm_Init_convguess(void);
 
@@ -628,7 +627,6 @@ SCM_EXTENSION_ENTRY void Scm_Init_libcharconv(void)
 #endif
     (void)SCM_INTERNAL_MUTEX_INIT(ucsconv.mutex);
     Scm_Init_convguess();
-    Scm_Init_convlib(mod);
     Scm_Init_convaux();
     Scm__InstallCharconvHooks(ucstochar, chartoucs);
     Scm__InstallCodingAwarePortHook(coding_aware_conv);

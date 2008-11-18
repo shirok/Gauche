@@ -196,4 +196,50 @@
        :buffer-size bufsiz
        :owner? #t))))
 
+;;
+;; Low-level API
+;;
+
+(inline-stub
+ "#include \"charconv.h\""
+ 
+ (define-cproc ces-conversion-supported? (from to) ::<boolean>
+   (let* ([cfrom::(const char*) (Scm_GetCESName from "from-code")]
+          [cto  ::(const char*) (Scm_GetCESName to "to-code")])
+     (result (Scm_ConversionSupportedP cfrom cto))))
+
+ ;; NB: :handler interface is experimental.  Do not use it.
+ (define-cproc open-input-conversion-port (source::<input-port>
+                                           from-code
+                                           &keyword (to-code #f)
+                                           (buffer-size::<fixnum> 0)
+                                           (owner? #f)
+                                           (handler #f))
+   (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
+          [tc::(const char*) (Scm_GetCESName to_code "to-code")])
+     (result
+      (Scm_MakeInputConversionPort source fc tc handler buffer_size
+                                   (not (SCM_FALSEP ownerP))))))
+
+ (define-cproc open-output-conversion-port (sink::<output-port>
+                                            to-code
+                                            &keyword (from-code #f)
+                                            (buffer-size::<fixnum> 0)
+                                            (owner? #f))
+   (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
+          [tc::(const char*) (Scm_GetCESName to_code "to-code")])
+     (result
+      (Scm_MakeOutputConversionPort sink tc fc buffer_size
+                                    (not (SCM_FALSEP ownerP))))))
+
+ (define-cproc ces-guess-from-string (string::<string> scheme::<string>)
+   (let* ([size::u_int]
+          [s::(const char*) (Scm_GetStringContent string (& size) NULL NULL)]
+          [guessed::(const char*)
+                    (Scm_GuessCES (Scm_GetStringConst scheme) s size)])
+     (if guessed
+       (result (SCM_MAKE_STR guessed))
+       (result '#f))))
+ )
+
 

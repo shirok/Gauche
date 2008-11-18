@@ -3,7 +3,7 @@ top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
 GENERATED = Makefile charconv.h eucj2ucs.c ucs2eucj.c guess_tab.c
-XCLEANFILES = convlib.c convaux.c charconv_head.c charconv_tail.c 
+XCLEANFILES = convaux.c charconv_head.c charconv_tail.c 
 PRE_PACKAGE_FILES = eucj2ucs.c guess_tab.c pre-package-data
 
 include ../Makefile.ext
@@ -19,7 +19,6 @@ SCMFILES = charconv.scm
 
 OBJECTS = charconv_head.$(OBJEXT) \
           charconv.$(OBJEXT)      \
-          convlib.$(OBJEXT)       \
           convaux.$(OBJEXT)       \
           jconv.$(OBJEXT)         \
           guess.$(OBJEXT)         \
@@ -32,8 +31,6 @@ libcharconv.$(SOEXT) : $(OBJECTS)
 
 charconv_head.c charconv_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension charconv
-
-convlib.c : convlib.stub
 
 convaux.c : convaux.scm
 	$(GENCOMP) convaux.scm
