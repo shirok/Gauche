@@ -189,7 +189,7 @@
    [printer
     (Scm_Printf port "#<gdbm-file %S>" (-> (SCM_GDBM_FILE obj) name))])
 
- (define-cfn gdbm_finalize (obj data::void*) :: void :static
+ (define-cfn gdbm_finalize (obj data::void*) ::void :static
    (let* ((g :: ScmGdbmFile* (SCM_GDBM_FILE obj)))
      (when (-> g dbf)
        (gdbm_close (-> g dbf))
@@ -237,100 +237,88 @@
    (name::<string> &optional (size::<fixnum> 0)
                    (rwmode::<fixnum> (c "SCM_MAKE_INT(GDBM_READER)"))
                    (fmode::<fixnum> (c "SCM_MAKE_INT(0666)")))
-   (body
-    <top>
-    (let* ((z::ScmGdbmFile* (SCM_NEW ScmGdbmFile)))
-      (SCM_SET_CLASS z (& Scm_GdbmFileClass))
-      (Scm_RegisterFinalizer (SCM_OBJ z) gdbm_finalize NULL)
-      (set! (-> z name) (SCM_OBJ name))
-      (set! (-> z dbf) (gdbm_open (Scm_GetString name) size rwmode fmode NULL))
-      (when (== (-> z dbf) NULL)
-        (Scm_Error "couldn't open gdbm file %S (gdbm_errno=%d)" name gdbm_errno))
-      (result (SCM_OBJ z)))))
+   (let* ([z::ScmGdbmFile* (SCM_NEW ScmGdbmFile)])
+     (SCM_SET_CLASS z (& Scm_GdbmFileClass))
+     (Scm_RegisterFinalizer (SCM_OBJ z) gdbm_finalize NULL)
+     (set! (-> z name) (SCM_OBJ name))
+     (set! (-> z dbf) (gdbm_open (Scm_GetString name) size rwmode fmode NULL))
+     (when (== (-> z dbf) NULL)
+       (Scm_Error "couldn't open gdbm file %S (gdbm_errno=%d)" name gdbm_errno))
+     (result (SCM_OBJ z))))
 
- (define-cproc gdbm-close (gdbm::<gdbm-file>)
-   (body <void>
-         (when (-> gdbm dbf)
-           (gdbm_close (-> gdbm dbf))
-           (set! (-> gdbm dbf) NULL))))
+ (define-cproc gdbm-close (gdbm::<gdbm-file>) ::<void>
+   (when (-> gdbm dbf)
+     (gdbm_close (-> gdbm dbf))
+     (set! (-> gdbm dbf) NULL)))
 
- (define-cproc gdbm-closed? (gdbm::<gdbm-file>)
-   (expr <boolean> (== (-> gdbm dbf) NULL)))
+ (define-cproc gdbm-closed? (gdbm::<gdbm-file>) ::<boolean>
+   (result (== (-> gdbm dbf) NULL)))
 
  (define-cproc gdbm-store (gdbm::<gdbm-file>
                            key::<string> val::<string>
                            &optional (flags::<fixnum> 0))
-   (body <int>
-         (let* ((dkey::datum) (dval::datum))
-           (CHECK_GDBM gdbm)
-           (TO_DATUM dkey key)
-           (TO_DATUM dval val)
-           (result (gdbm_store (-> gdbm dbf) dkey dval flags)))))
+   ::<int>
+   (let* ([dkey::datum] [dval::datum])
+     (CHECK_GDBM gdbm)
+     (TO_DATUM dkey key)
+     (TO_DATUM dval val)
+     (result (gdbm_store (-> gdbm dbf) dkey dval flags))))
 
- (define-cproc gdbm-fetch (gdbm::<gdbm-file> key::<string>)
-   (body <top>
-         (let* ((dkey::datum) (dval::datum))
-           (CHECK_GDBM gdbm)
-           (TO_DATUM dkey key)
-           (set! dval (gdbm_fetch (-> gdbm dbf) dkey))
-           (FROM_DATUM SCM_RESULT dval))))
+  (define-cproc gdbm-fetch (gdbm::<gdbm-file> key::<string>)
+    (let* ([dkey::datum] [dval::datum])
+      (CHECK_GDBM gdbm)
+      (TO_DATUM dkey key)
+      (set! dval (gdbm_fetch (-> gdbm dbf) dkey))
+      (FROM_DATUM SCM_RESULT dval)))
 
- (define-cproc gdbm-delete (gdbm::<gdbm-file> key::<string>)
-   (body <int>
-         (let* ((dkey::datum))
-           (CHECK_GDBM gdbm)
-           (TO_DATUM dkey key)
-           (result (gdbm_delete (-> gdbm dbf) dkey)))))
+  (define-cproc gdbm-delete (gdbm::<gdbm-file> key::<string>) ::<int>
+    (let* ([dkey::datum])
+      (CHECK_GDBM gdbm)
+      (TO_DATUM dkey key)
+      (result (gdbm_delete (-> gdbm dbf) dkey))))
 
- (define-cproc gdbm-firstkey (gdbm::<gdbm-file>)
-   (body <top>
-         (let* ((dkey::datum (gdbm_firstkey (-> gdbm dbf))))
-           (FROM_DATUM SCM_RESULT dkey))))
+  (define-cproc gdbm-firstkey (gdbm::<gdbm-file>)
+    (let* ([dkey::datum (gdbm_firstkey (-> gdbm dbf))])
+      (FROM_DATUM SCM_RESULT dkey)))
 
  (define-cproc gdbm-nextkey (gdbm::<gdbm-file> key::<string>)
-   (body <top>
-         (let* ((dkey::datum) (dnkey::datum))
-           (CHECK_GDBM gdbm)
-           (TO_DATUM dkey key)
-           (set! dnkey (gdbm_nextkey (-> gdbm dbf) dkey))
-           (FROM_DATUM SCM_RESULT dnkey))))
+   (let* ([dkey::datum] [dnkey::datum])
+     (CHECK_GDBM gdbm)
+     (TO_DATUM dkey key)
+     (set! dnkey (gdbm_nextkey (-> gdbm dbf) dkey))
+     (FROM_DATUM SCM_RESULT dnkey)))
 
- (define-cproc gdbm-reorganize (gdbm::<gdbm-file>)
-   (body <int>
-         (CHECK_GDBM gdbm)
-         (result (gdbm_reorganize (-> gdbm dbf)))))
+ (define-cproc gdbm-reorganize (gdbm::<gdbm-file>) ::<int>
+   (CHECK_GDBM gdbm)
+   (result (gdbm_reorganize (-> gdbm dbf))))
 
- (define-cproc gdbm-sync (gdbm::<gdbm-file>)
-   (body <void>
-         (CHECK_GDBM gdbm)
-         (gdbm_sync (-> gdbm dbf))))
+ (define-cproc gdbm-sync (gdbm::<gdbm-file>) ::<void>
+   (CHECK_GDBM gdbm)
+   (gdbm_sync (-> gdbm dbf)))
 
- (define-cproc gdbm-exists? (gdbm::<gdbm-file> key::<string>)
-   (body <boolean>
-         (let* ((dkey::datum))
-           (CHECK_GDBM gdbm)
-           (TO_DATUM dkey key)
-           (result (gdbm_exists (-> gdbm dbf) dkey)))))
+ (define-cproc gdbm-exists? (gdbm::<gdbm-file> key::<string>) ::<boolean>
+   (let* ([dkey::datum])
+     (CHECK_GDBM gdbm)
+     (TO_DATUM dkey key)
+     (result (gdbm_exists (-> gdbm dbf) dkey))))
 
  (define-cproc gdbm-strerror (errno::<fixnum>)
-   (expr <top> (SCM_MAKE_STR_IMMUTABLE (gdbm_strerror errno))))
+   (result (SCM_MAKE_STR_IMMUTABLE (gdbm_strerror errno))))
 
- (define-cproc gdbm-setopt (gdbm::<gdbm-file> option::<fixnum> val)
-   (body <int>
-         (let* ((ival::int))
-           (CHECK_GDBM gdbm)
-           (if (SCM_EXACTP val)
-             (set! ival (Scm_GetUInteger val))
-             (set! ival (not (SCM_FALSEP val))))
-           (result (gdbm_setopt (-> gdbm dbf) option (& ival) (sizeof int))))))
+ (define-cproc gdbm-setopt (gdbm::<gdbm-file> option::<fixnum> val) ::<int>
+   (let* ([ival::int])
+     (CHECK_GDBM gdbm)
+     (if (SCM_EXACTP val)
+       (set! ival (Scm_GetUInteger val))
+       (set! ival (not (SCM_FALSEP val))))
+     (result (gdbm_setopt (-> gdbm dbf) option (& ival) (sizeof int)))))
 
  (define-cproc gdbm-version ()
-   (expr <top> (SCM_MAKE_STR_IMMUTABLE gdbm_version)))
+   (result (SCM_MAKE_STR_IMMUTABLE gdbm_version)))
 
- (define-cproc gdbm-errno ()
-   (body <int>
-         (result gdbm_errno)
-         (set! gdbm_errno 0)))
+ (define-cproc gdbm-errno () ::<int>
+   (result gdbm_errno)
+   (set! gdbm_errno 0))
 
  (define-enum GDBM_READER)
  (define-enum GDBM_WRITER)

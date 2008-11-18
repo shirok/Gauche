@@ -3,8 +3,9 @@
 	* lib/gauche/cgen/cise.scm (cise-render-typed-var): Allow expr
 	  in size part of array declaration.
 	  (list): fixed a bug when many elements are given.
-	* ext/auxsyslib/auxsyslib.stub, ext/binary/binarylib.stub:
-	  Rewrote using new syntax.
+	* ext/auxsyslib/auxsyslib.stub, ext/binary/binarylib.stub,
+	  ext/dbm/{gdbm,ndbm,odbm}-lib.scm:
+	  Rewrote using new stub syntax.
 
 	* ext/charconv/convaux.scm, ext/charconv/convlib.stub:
 	  Made convaux.scm absorb convlib.stub.
