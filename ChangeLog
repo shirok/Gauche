@@ -1,5 +1,10 @@
 2008-11-17  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/cise.scm (cise-render-typed-var): Allow expr
+	  in size part of array declaration.
+	  (list): fixed a bug when many elements are given.
+	* ext/auxsyslib/auxsyslib.stub: Rewrite using new syntax.
+
 	* lib/gauche/cgen/stub.scm: Changed define-cproc flag syntax, and
 	  supports a more concise way for the case when C function takes
 	  the same arguments as Scheme one (the old 'call' clause).

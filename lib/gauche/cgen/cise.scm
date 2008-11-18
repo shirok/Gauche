@@ -809,7 +809,7 @@
   [(_ a b c)     `(SCM_LIST3 ,a ,b ,c)]
   [(_ a b c d)   `(SCM_LIST4 ,a ,b ,c ,d)]
   [(_ a b c d e) `(SCM_LIST5 ,a ,b ,c ,d ,e)]
-  [(_ x ...)     (fold (lambda (elt r) `(Scm_Cons ,elt ,r)) '() x)])
+  [(_ xs ...)     (fold-right (cut list 'Scm_Cons <> <>) 'SCM_NIL xs)])
 
 (define-cise-expr values
   [(_)           '("Scm_Values(SCM_NIL)")]
@@ -837,9 +837,7 @@
     [('.array spec (dim ...))
      `(,(cise-render-typed-var spec var env)
        ,@(map (^.['* "[]"]
-                 [(? integer? n) `("[",n"]")]
-                 [(? symbol? x) `("[",(cise-render-identifier x)"]")]
-                 [x (error "bad dimension spec in array typespec:" typespec)])
+                 [x `("[" ,(render-rec x (expr-env env)) "]")])
               dim))]
     [(x ...) `(,(intersperse " " (map x->string x))
                " " ,(cise-render-identifier var))]

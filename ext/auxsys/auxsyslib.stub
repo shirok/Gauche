@@ -82,88 +82,77 @@ extern ScmObj Scm_Environ(void);
 (define-cproc sys-abort ()  (call <void> "abort"))
 
 (when "defined HAVE_REALPATH"
-  (define-cproc sys-realpath (path::<const-cstring>)
-    (body <const-cstring>
-          "#define REALPATH_PATH_MAX 1024  /* TODO: needs to be configured */"
-          "char buf[REALPATH_PATH_MAX];"
-          "if (realpath(path, buf) == NULL) {"
-          "  Scm_SysError(\"realpath failed\");"
-          "}"
-          "SCM_RESULT = buf;"))
+  (define-cproc sys-realpath (path::<const-cstring>) ::<const-cstring>
+    (let* ([buf::(.array char [1024])]) ; TODO: needs to be configured
+      (when (== (realpath path buf) NULL)
+        (Scm_SysError "realpath failed on %s" path))
+      (result buf)))
   (initcode "Scm_AddFeature(\"gauche.sys.realpath\", NULL);")
   )
 
 ;; math.h
-(define-cproc fmod (x::<real> y::<real>)
-  (call <double> "fmod"))
+(define-cproc fmod (x::<real> y::<real>) ::<double> fmod)
 
-(define-cproc frexp (d::<real>)
-  (body (<double> <int>) "SCM_RESULT0 = frexp(d, &SCM_RESULT1);"))
+(define-cproc frexp (d::<real>) ::(<double> <int>)
+  (set! SCM_RESULT0 (frexp d (& SCM_RESULT1))))
 
-(define-cproc modf (x::<real>)
-  (body (<double> <double>) "SCM_RESULT0 = modf(x, &SCM_RESULT1);"))
+(define-cproc modf (x::<real>) ::(<double> <double>)
+  (set! SCM_RESULT0 (modf x (& SCM_RESULT1))))
 
-(define-cproc ldexp (x::<real> exp::<int>)
-  (call <real> "ldexp"))
+(define-cproc ldexp (x::<real> exp::<int>) ::<real> ldexp)
 
-(define-cproc log10 (x::<real>)
-  (call <real> "log10"))
+(define-cproc log10 (x::<real>) ::<real> log10)
 
 ;; sys/loadavg.h
 (when "defined HAVE_GETLOADAVG"
   (define-cproc sys-getloadavg (&optional (nsamples::<int> 3))
-    "#define MAX_LOAD_SAMPLES  3
-     double samples[MAX_LOAD_SAMPLES];
-     int count, i;
-     ScmObj h = SCM_NIL, t = SCM_NIL;
-     if (nsamples <= 0 || nsamples > MAX_LOAD_SAMPLES) {
-       Scm_Error(\"sys-getloadavg: argument out of range: %d\", samples);
-     }
-     count = getloadavg(samples, nsamples);
-     if (count < 0) SCM_RETURN(SCM_FALSE);
-     for (i=0; i<count; i++) {
-       ScmObj n = Scm_MakeFlonum(samples[i]);
-       SCM_APPEND1(h, t, n);
-     }
-     SCM_RETURN(h);")
+    (let* ([samples::(.array double [3])])
+      (when (or (<= nsamples 0) (> nsamples 3))
+        (Scm_Error "sys-getloadavg: argument out of range: %d" samples))
+      (let* ([count::int (getloadavg samples nsamples)])
+        (if (< count 0)
+          (result '#f)
+          (let* ([h '()] [t '()])
+            (dotimes [i count]
+              (let* ([n (Scm_MakeFlonum (aref samples i))])
+                (SCM_APPEND1 h t n)))
+            (result h))))))
   (initcode "Scm_AddFeature(\"gauche.sys.getloadavg\", NULL);")
   )
 
 ;; sys/stat.h
 (if "!defined(GAUCHE_WINDOWS)"
-(define-cproc sys-mkfifo (path::<const-cstring> mode::<int>)
-  (body <int>
-        "SCM_SYSCALL(SCM_RESULT, mkfifo(path, mode));"
-        "if (SCM_RESULT < 0) Scm_SysError(\"mkfifo failed on %s\", path);"))
+(define-cproc sys-mkfifo (path::<const-cstring> mode::<int>) ::<int>
+  (SCM_SYSCALL SCM_RESULT (mkfifo path mode))
+  (when (< SCM_RESULT 0) (Scm_SysError "mkfifo failed on %s" path)))
 )
 
 ;; utime.h
-(define-cproc sys-utime (path::<const-cstring>
-                         &optional (atime #f) (mtime #f))
-  (body <void>
-        "struct utimbuf tim; int r;"
-        "if (SCM_FALSEP(atime)&&SCM_FALSEP(mtime)) {"
-        "  SCM_SYSCALL(r, utime(path, NULL));"
-        "} else {"
-        "  tim.actime  = SCM_FALSEP(atime)?time(NULL):Scm_GetUInteger(atime);"
-        "  tim.modtime = SCM_FALSEP(mtime)?time(NULL):Scm_GetUInteger(mtime);"
-        "  SCM_SYSCALL(r, utime(path, &tim));"
-        "}"
-        "if (r < 0) Scm_SysError(\"utime failed on %s\", path);"))
+(define-cproc sys-utime
+  (path::<const-cstring> &optional (atime #f) (mtime #f)) ::<void>
+  (let* ([tim::(struct utimbuf)] [r::int])
+    (cond [(and (SCM_FALSEP atime) (SCM_FALSEP mtime))
+           (SCM_SYSCALL r (utime path NULL))]
+          [else
+           (set! (ref tim actime)
+                 (?: (SCM_FALSEP atime) (time NULL) (Scm_GetUInteger atime)))
+           (set! (ref tim modtime)
+                 (?: (SCM_FALSEP mtime) (time NULL) (Scm_GetUInteger mtime)))
+           (SCM_SYSCALL r (utime path (& tim)))])
+    (when (< r 0) (Scm_SysError "utime failed on %s" path))))
 
 ;; set*
 
 (when "!defined(GAUCHE_WINDOWS)" 
 
-(define-cproc sys-setgid (gid::<int>)
-  (body <int>
-        "SCM_SYSCALL(SCM_RESULT, setgid(gid));"
-        "if (SCM_RESULT < 0) Scm_SysError(\"setgid failed\");"))
+(define-cproc sys-setgid (gid::<int>) ::<int>
+  (SCM_SYSCALL SCM_RESULT (setgid gid))
+  (when (< SCM_RESULT 0) (Scm_SysError "setgid failed on %d" gid)))
 
-(define-cproc sys-setpgid (pid::<int> pgid::<int>)
-  (body <int>
-        "SCM_SYSCALL(SCM_RESULT, setpgid(pid, pgid));"
-        "if (SCM_RESULT < 0) Scm_SysError(\"setpgid failed\");"))
+(define-cproc sys-setpgid (pid::<int> pgid::<int>) ::<int>
+  (SCM_SYSCALL SCM_RESULT (setpgid pid pgid))
+  (when (< SCM_RESULT 0)
+    (Scm_SysError "setpgid failed on process %d for pgid %d" pid pgid)))
 
 ;; The prototype of setpgrp() differs between platforms.   Since it is
 ;; redundant anyway, Gauche doesn't support it.
@@ -174,94 +163,73 @@ extern ScmObj Scm_Environ(void);
 ;      SCM_RETURN(Scm_MakeInteger(r));"))
 
 (when "defined HAVE_GETPGID"
-  (define-cproc sys-getpgid (pid::<int>)
-    (body <int>
-          "SCM_SYSCALL(SCM_RESULT, (int)getpgid(pid));"
-          "if (SCM_RESULT < 0) Scm_SysError(\"getpgid failed\");"))
+  (define-cproc sys-getpgid (pid::<int>) ::<int>
+    (SCM_SYSCALL SCM_RESULT (cast int (getpgid pid)))
+    (when (< SCM_RESULT 0) (Scm_SysError "getpgid failed")))
   (initcode "Scm_AddFeature(\"gauche.sys.getpgid\", NULL);")
   )
 
-(define-cproc sys-getpgrp ()
-  (body <int>
-        "SCM_SYSCALL(SCM_RESULT, (int)getpgrp());"
-        "if (SCM_RESULT < 0) Scm_SysError(\"getpgrp failed\");"))
+(define-cproc sys-getpgrp () ::<int>
+  (SCM_SYSCALL SCM_RESULT (cast int (getpgrp)))
+  (when (< SCM_RESULT 0) (Scm_SysError "getpgrp failed")))
 
-(define-cproc sys-setsid ()
-  (body <int>
-        "SCM_SYSCALL(SCM_RESULT, setsid());"
-        "if (SCM_RESULT < 0) Scm_SysError(\"setsid failed\");"))
+(define-cproc sys-setsid () ::<int>
+  (SCM_SYSCALL SCM_RESULT (setsid))
+  (when (< SCM_RESULT 0) (Scm_SysError "setsid failed")))
 
-(define-cproc sys-setuid (uid::<int>)
-  (body <int>
-        "SCM_SYSCALL(SCM_RESULT, setuid(uid));"
-        "if (SCM_RESULT < 0) Scm_SysError(\"setuid failed\");"))
+(define-cproc sys-setuid (uid::<int>) ::<int>
+  (SCM_SYSCALL SCM_RESULT (setuid uid))
+  (when (< SCM_RESULT 0) (Scm_SysError "setuid failed")))
 
 ;; some less-frequently used get-*
 
 (define-cproc sys-getgroups ()
-  "
-#ifndef NGROUPS
-#define NGROUPS 32
-#endif
-  gid_t glist[NGROUPS], *pglist = glist;
-  int size = NGROUPS;
-  for (;;) {
-    int i, n = getgroups(size, pglist);
-    if (n >= 0) {
-      ScmObj head = SCM_NIL, tail = SCM_NIL;
-      for (i=0; i<n; i++) SCM_APPEND1(head, tail, Scm_MakeInteger(pglist[i]));
-      SCM_RETURN(head);
-    }
-    if (errno == EINVAL) {
-      size += NGROUPS;
-      pglist = (gid_t *)SCM_MALLOC(size * sizeof(gid_t));
-    } else {
-      Scm_SysError(\"getgroups failed\");
-    }
-  }
-  /* NOTREACHED */")
-
+  (let* ([size::int 32]
+         [glist::(.array gid_t [32])]
+         [pglist::gid_t* glist])
+    (loop (let* ([n::int (getgroups size pglist)])
+            (when (>= n 0)
+              (let* ([h '()] [t '()])
+                (dotimes [i n]
+                  (SCM_APPEND1 h t (Scm_MakeInteger (aref pglist i))))
+                (result h)
+                (break)))
+            (cond [(== errno EINVAL)
+                   (+= size size)
+                   (set! pglist (SCM_NEW_ATOMIC_ARRAY gid_t size))]
+                  [else (Scm_SysError "getgroups failed")])))))
 ) ;; !defined(GAUCHE_WINDOWS)
 
-(define-cproc sys-getlogin ()
-  (call <const-cstring>? "getlogin"))
+(define-cproc sys-getlogin () ::<const-cstring>? getlogin)
 
 ;; sys/times.h
 ;; we have emulation of times() in auxsys.c for mingw.
 (define-cproc sys-times ()
-  (body
-   "  struct tms info;"
-   "  ScmObj h = SCM_NIL, t = SCM_NIL;"
-   "  clock_t r;"
-   "  SCM_SYSCALL(r, times(&info));"
-   "  if (r == (clock_t)-1) Scm_SysError(\"times failed\");"
-   "  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_utime));"
-   "  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_stime));"
-   "  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cutime));"
-   "  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cstime));"
-   "#if defined(_SC_CLK_TCK)"
-   "  SCM_APPEND1(h, t, Scm_MakeInteger(sysconf(_SC_CLK_TCK)));"
-   "#elif defined(CLK_TCK)"
-   "  SCM_APPEND1(h, t, Scm_MakeInteger(CLK_TCK)); /* older name */"
-   "#else"
-   "  SCM_APPEND1(h, t, Scm_MakeInteger(100));"
-   "#endif /* !_SC_CLK_TCK && !CLK_TCK */"
-   "  SCM_RESULT = h;"
-   ))
+  (let* ([info::(struct tms)] [r::clock_t] [tick::long])
+    (SCM_SYSCALL r (times (& info)))
+    (when (== r (cast clock_t -1)) (Scm_SysError "times failed"))
+    (|#if| "defined(_SC_CLK_TCK)"
+           (set! tick (sysconf _SC_CLK_TCK))
+           (|#if| "defined(CLK_TCK)"
+                  (set! tick (sysconf CLK_TCK)) ; older name
+                  (set! tick 100)))     ; fallback
+    (result (list (Scm_MakeInteger (ref info tms_utime))
+                  (Scm_MakeInteger (ref info tms_stime))
+                  (Scm_MakeInteger (ref info tms_cutime))
+                  (Scm_MakeInteger (ref info tms_cstime))
+                  (Scm_MakeInteger tick)))))
 
 ;; sys/utsname.h
 ;; returns list of (sysname nodename release version machine)
 (if "!defined(GAUCHE_WINDOWS)"
 (define-cproc sys-uname ()
-  "  struct utsname info;
-  ScmObj head = SCM_NIL, tail = SCM_NIL;
-  if (uname(&info) < 0) Scm_SysError(\"uname failed\");
-  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.sysname));
-  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.nodename));
-  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.release));
-  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.version));
-  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.machine));
-  return head;")
+  (let* ([info::(struct utsname)])
+    (when (< (uname (& info)) 0) (Scm_SysError "uname failed"))
+    (result (list (SCM_MAKE_STR_COPYING (ref info sysname))
+                  (SCM_MAKE_STR_COPYING (ref info nodename))
+                  (SCM_MAKE_STR_COPYING (ref info release))
+                  (SCM_MAKE_STR_COPYING (ref info version))
+                  (SCM_MAKE_STR_COPYING (ref info machine))))))
 ) ;; !defined(GAUCHE_WINDOWS)
 
 "#ifndef HOSTNAMELEN
@@ -269,114 +237,85 @@ extern ScmObj Scm_Environ(void);
 #endif"
 
 (if "defined HAVE_GETHOSTNAME"
-  (define-cproc %sys-gethostname ()
-    (body <const-cstring>
-          "char buf[HOSTNAMELEN]; int r;"
-          "SCM_SYSCALL(r, gethostname(buf, HOSTNAMELEN));"
-          "if (r < 0) Scm_SysError(\"gethostname failed\");"
-          "SCM_RESULT = buf;"))
-)    
-
-(if "defined HAVE_GETDOMAINNAME"
-  (define-cproc %sys-getdomainname ()
-    (body <const-cstring>
-          "char buf[HOSTNAMELEN]; int r;"
-          "SCM_SYSCALL(r, getdomainname(buf, HOSTNAMELEN));"
-          "if (r < 0) Scm_SysError(\"getdomainname failed\");"
-          "SCM_RESULT = buf;"))
+  (define-cproc %sys-gethostname () ::<const-cstring>
+    (let* ([buf::(.array char [HOSTNAMELEN])] [r::int])
+      (SCM_SYSCALL r (gethostname buf HOSTNAMELEN))
+      (when (< r 0) (Scm_SysError "gethostname failed"))
+      (result buf)))
 )
 
-(define-cproc sys-environ ()
-  (call "Scm_Environ"))
+(if "defined HAVE_GETDOMAINNAME"
+  (define-cproc %sys-getdomainname () ::<const-cstring>
+    (let* ([buf::(.array char [HOSTNAMELEN])] [r::int])
+      (SCM_SYSCALL r (getdomainname buf HOSTNAMELEN))
+      (when (< r 0) (Scm_SysError "getdomainame failed"))
+      (result buf)))
+)
+
+(define-cproc sys-environ () Scm_Environ)
 
 (when "defined(HAVE_PUTENV) || defined(HAVE_SETENV)"
   (define-cproc sys-setenv (name::<const-cstring>
                             value::<const-cstring>
                             &optional overwrite::<boolean>)
-    (call <void> "Scm_SetEnv"))
+    ::<void> Scm_SetEnv)
   (initcode "Scm_AddFeature(\"gauche.sys.setenv\", NULL);")
   )
 
 (when "defined HAVE_UNSETENV"
-  (define-cproc sys-unsetenv (name::<const-cstring>)
-    (call <void> "unsetenv"))
+  (define-cproc sys-unsetenv (name::<const-cstring>) ::<void> unsetenv)
   (initcode "Scm_AddFeature(\"gauche.sys.unsetenv\", NULL);")
   )
 
 ;; ctermid
-(define-cproc sys-ctermid ()
-  (body <const-cstring>
-        "#if defined(GAUCHE_WINDOWS)"
-        "SCM_RESULT = \"CON\";"
-        "#else"
-        "char buf[L_ctermid+1]; SCM_RESULT = ctermid(buf);"
-        "#endif"))
+(define-cproc sys-ctermid () ::<const-cstring>
+  (|#if| "defined(GAUCHE_WINDOWS)"
+         (result "CON")
+         (let* ([buf::(.array char [(+ L_ctermid 1)])])
+           (result (ctermid buf)))))
 
 ;; chown
 (if "!defined(GAUCHE_WINDOWS)"
 (define-cproc sys-chown (path::<const-cstring> owner::<int> group::<int>)
-  (body <int>
-        "SCM_SYSCALL(SCM_RESULT, chown(path, owner, group));"
-        "if (SCM_RESULT < 0) Scm_SysError(\"chown failed on %s\", path);"))
+  ::<int>
+  (SCM_SYSCALL SCM_RESULT (chown path owner group))
+  (when (< SCM_RESULT 0) (Scm_SysError "chown failed on %s" path)))
 ) ;; !defined(GAUCHE_WINDOWS)
 
 ;; lchown
 (when "defined HAVE_LCHOWN"
   (define-cproc sys-lchown (path::<const-cstring> owner::<int> group::<int>)
-    (body <int>
-          "SCM_SYSCALL(SCM_RESULT, lchown(path, owner, group));"
-          "if (SCM_RESULT < 0) Scm_SysError(\"lchown failed on %S\", path);"))
+    ::<int>
+    (SCM_SYSCALL SCM_RESULT (lchown path owner group))
+    (when (< SCM_RESULT 0) (Scm_SysError "lchown failed on %S" path)))
   (initcode "Scm_AddFeature(\"gauche.sys.lchown\", NULL);")
   )
 
 ;; localeconv
 
-; struct lconv
-(define-symbol decimal_point "sym_decimal_point")
-(define-symbol thousands_sep "sym_thousands_sep")
-(define-symbol grouping "sym_grouping")
-(define-symbol int_curr_symbol "sym_int_curr_symbol")
-(define-symbol currency_symbol "sym_currency_symbol")
-(define-symbol mon_decimal_point "sym_mon_decimal_point")
-(define-symbol mon_thousands_sep "sym_mon_thousands_sep")
-(define-symbol mon_grouping "sym_mon_grouping")
-(define-symbol positive_sign "sym_positive_sign")
-(define-symbol negative_sign "sym_negative_sign")
-(define-symbol int_frac_digits "sym_int_frac_digits")
-(define-symbol frac_digits "sym_frac_digits")
-(define-symbol p_cs_precedes "sym_p_cs_precedes")
-(define-symbol p_sep_by_space "sym_p_sep_by_space")
-(define-symbol n_cs_precedes "sym_n_cs_precedes")
-(define-symbol n_sep_by_space "sym_n_sep_by_space")
-(define-symbol p_sign_posn "sym_p_sign_posn")
-(define-symbol n_sign_posn "sym_n_sign_posn")
+(define-cise-expr lc-elt
+  [(_ conv sym) `(Scm_Cons ',sym (,conv (-> lc ,sym)))])
 
 (define-cproc sys-localeconv ()
-  "  struct lconv *lc = localeconv();
-  ScmObj h = SCM_NIL, t = SCM_NIL;
-
-#define APPCONS(a, b) SCM_APPEND1(h, t, Scm_Cons(a, b))
-
-  APPCONS(sym_decimal_point, SCM_MAKE_STR_COPYING(lc->decimal_point));
-  APPCONS(sym_thousands_sep, SCM_MAKE_STR_COPYING(lc->thousands_sep));
-  APPCONS(sym_grouping, SCM_MAKE_STR_COPYING(lc->grouping));
-  APPCONS(sym_int_curr_symbol, SCM_MAKE_STR_COPYING(lc->int_curr_symbol));
-  APPCONS(sym_currency_symbol, SCM_MAKE_STR_COPYING(lc->currency_symbol));
-  APPCONS(sym_mon_decimal_point, SCM_MAKE_STR_COPYING(lc->mon_decimal_point));
-  APPCONS(sym_mon_thousands_sep, SCM_MAKE_STR_COPYING(lc->mon_thousands_sep));
-  APPCONS(sym_mon_grouping, SCM_MAKE_STR_COPYING(lc->mon_grouping));
-  APPCONS(sym_positive_sign, SCM_MAKE_STR_COPYING(lc->positive_sign));
-  APPCONS(sym_negative_sign, SCM_MAKE_STR_COPYING(lc->negative_sign));
-  APPCONS(sym_int_frac_digits, SCM_MAKE_INT(lc->int_frac_digits));
-  APPCONS(sym_frac_digits, SCM_MAKE_INT(lc->frac_digits));
-  APPCONS(sym_p_cs_precedes, SCM_MAKE_BOOL(lc->p_cs_precedes));
-  APPCONS(sym_p_sep_by_space, SCM_MAKE_BOOL(lc->p_sep_by_space));
-  APPCONS(sym_n_cs_precedes, SCM_MAKE_BOOL(lc->n_cs_precedes));
-  APPCONS(sym_n_sep_by_space, SCM_MAKE_BOOL(lc->n_sep_by_space));
-  APPCONS(sym_p_sign_posn, SCM_MAKE_INT(lc->p_sign_posn));
-  APPCONS(sym_n_sign_posn, SCM_MAKE_INT(lc->n_sign_posn));
-#undef APPCONS
-  return h;")
+  (let* ([lc::(struct lconv*) (localeconv)])
+    (result (list (lc-elt SCM_MAKE_STR_COPYING decimal_point)
+                  (lc-elt SCM_MAKE_STR_COPYING thousands_sep)
+                  (lc-elt SCM_MAKE_STR_COPYING grouping)
+                  (lc-elt SCM_MAKE_STR_COPYING int_curr_symbol)
+                  (lc-elt SCM_MAKE_STR_COPYING currency_symbol)
+                  (lc-elt SCM_MAKE_STR_COPYING mon_decimal_point)
+                  (lc-elt SCM_MAKE_STR_COPYING mon_thousands_sep)
+                  (lc-elt SCM_MAKE_STR_COPYING mon_grouping)
+                  (lc-elt SCM_MAKE_STR_COPYING positive_sign)
+                  (lc-elt SCM_MAKE_STR_COPYING negative_sign)
+                  (lc-elt SCM_MAKE_INT int_frac_digits)
+                  (lc-elt SCM_MAKE_INT frac_digits)
+                  (lc-elt SCM_MAKE_BOOL p_cs_precedes)
+                  (lc-elt SCM_MAKE_BOOL p_sep_by_space)
+                  (lc-elt SCM_MAKE_BOOL n_cs_precedes)
+                  (lc-elt SCM_MAKE_BOOL n_sep_by_space)
+                  (lc-elt SCM_MAKE_INT p_sign_posn)
+                  (lc-elt SCM_MAKE_INT n_sign_posn)))))
 
 ;; Local variables:
 ;; mode: scheme
