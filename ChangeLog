@@ -3,7 +3,8 @@
 	* lib/gauche/cgen/cise.scm (cise-render-typed-var): Allow expr
 	  in size part of array declaration.
 	  (list): fixed a bug when many elements are given.
-	* ext/auxsyslib/auxsyslib.stub: Rewrite using new syntax.
+	* ext/auxsyslib/auxsyslib.stub, ext/binary/binarylib.stub:
+	  Rewrote using new syntax.
 
 	* lib/gauche/cgen/stub.scm: Changed define-cproc flag syntax, and
 	  supports a more concise way for the case when C function takes
