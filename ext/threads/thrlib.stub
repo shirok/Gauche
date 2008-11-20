@@ -44,62 +44,45 @@
 ;; System query
 ;;
 
-(define-symbol pthread "sym_pthread")
-(define-symbol none    "sym_none")
-
 (define-cproc gauche-thread-type ()
-  "#ifdef GAUCHE_USE_PTHREADS
-  SCM_RETURN(sym_pthread);
-#else
-  SCM_RETURN(sym_none);
-#endif")
+  (|#if| "defined(GAUCHE_USE_PTHREADS)"
+         (result 'pthread)
+         (result 'none)))
 
 ;;===============================================================
 ;; Basic thread interface
 ;;
 
-(define-cproc thread? (obj) (call <boolean> "SCM_VMP"))
+(define-cproc thread? (obj) ::<boolean> SCM_VMP)
 
-(define-cproc thread-name (vm::<thread>)
-  (expr "vm->name"))
+(define-cproc thread-name (vm::<thread>) (result (-> vm name)))
 
-(define-cproc thread-specific (vm::<thread>)
-  (expr "vm->specific"))
+(define-cproc thread-specific (vm::<thread>) (result (-> vm specific)))
 
-(define-cproc thread-specific-set! (vm::<thread> obj)
-  (body <void> "vm->specific = obj;"))
+(define-cproc thread-specific-set! (vm::<thread> obj) ::<void>
+  (set! (-> vm specific) obj))
 
 (define-cproc make-thread (thunk::<procedure> &optional (name #f))
-  (call "Scm_MakeThread"))
+  Scm_MakeThread)
 
-(define-cproc thread-start! (vm::<thread>)
-  (call "Scm_ThreadStart"))
+(define-cproc thread-start! (vm::<thread>) Scm_ThreadStart)
 
-(define-cproc thread-yield! ()
-  (call <void> "Scm_YieldCPU"))
+(define-cproc thread-yield! () ::<void> Scm_YieldCPU)
 
-(define-cproc thread-sleep! (timeout)
-  (call "Scm_ThreadSleep"))
+(define-cproc thread-sleep! (timeout) Scm_ThreadSleep)
 
 (define-cproc thread-join! (vm::<thread> &optional (timeout #f) timeout-val)
-  (call "Scm_ThreadJoin"))
+  Scm_ThreadJoin)
 
-(define-cproc thread-terminate! (vm::<thread>)
-  (call "Scm_ThreadTerminate"))
+(define-cproc thread-terminate! (vm::<thread>) Scm_ThreadTerminate)
 
 ;;===============================================================
 ;; Mutex
 ;;
 
-(define-cproc make-mutex (&optional (name #f))
-  (call "Scm_MakeMutex"))
+(define-cproc make-mutex (&optional (name #f)) Scm_MakeMutex)
 
-(define-cproc mutex? (obj)
-  (call <boolean> "SCM_MUTEXP"))
-
-(define-symbol not-owned "sym_not_owned")
-(define-symbol abandoned "sym_abandoned")
-(define-symbol not-abandoned "sym_not_abandoned")
+(define-cproc mutex? (obj) ::<boolean> SCM_MUTEXP)
 
 (define-cise-stmt with-mutex
   [(_ mutex . form)
@@ -109,77 +92,69 @@
       (cast void (SCM_INTERNAL_MUTEX_UNLOCK ,mutex)))])
 
 (define-cproc mutex-state (mutex::<mutex>)
-  (body <top>
-        (let* ((r))
-          (with-mutex
-           (-> mutex mutex)
-           (if (-> mutex locked)
-             (if (-> mutex owner)
-               (if (== (-> mutex owner state) SCM_VM_TERMINATED)
-                 (set! r 'abandoned)
-                 (set! r (SCM_OBJ (-> mutex owner))))
-               (set! r 'not-owned))
-             (set! r 'not-abandoned)))
-          (result r))))
+  (let* ([r])
+    (with-mutex
+     (-> mutex mutex)
+     (if (-> mutex locked)
+       (if (-> mutex owner)
+         (if (== (-> mutex owner state) SCM_VM_TERMINATED)
+           (set! r 'abandoned)
+           (set! r (SCM_OBJ (-> mutex owner))))
+         (set! r 'not-owned))
+       (set! r 'not-abandoned)))
+    (result r)))
 
 (define-cproc mutex-lock! (mutex::<mutex> &optional (timeout #f) thread)
-  (body <top>
-        (let* ((owner :: ScmVM* NULL))
-          (cond [(SCM_VMP thread) (set! owner (SCM_VM thread))]
-                [(SCM_UNBOUNDP thread) (set! owner (Scm_VM))]
-                [(not (SCM_FALSEP thread))
-                 (SCM_TYPE_ERROR thread "thread or #f")])
-          (result (Scm_MutexLock mutex timeout owner)))))
+  (let* ([owner::ScmVM* NULL])
+    (cond [(SCM_VMP thread) (set! owner (SCM_VM thread))]
+          [(SCM_UNBOUNDP thread) (set! owner (Scm_VM))]
+          [(not (SCM_FALSEP thread)) (SCM_TYPE_ERROR thread "thread or #f")])
+    (result (Scm_MutexLock mutex timeout owner))))
   
 (define-cproc mutex-unlock! (mutex::<mutex> &optional (cv #f) (timeout #f))
-  (body <top>
-        (let* ((cond :: ScmConditionVariable* NULL))
-          (cond [(SCM_CONDITION_VARIABLE_P cv)
-                 (set! cond (SCM_CONDITION_VARIABLE cv))]
-                [(not (SCM_FALSEP cv))
-                 (SCM_TYPE_ERROR cv "condition variale or #f")])
-          (result (Scm_MutexUnlock mutex cond timeout)))))
+  (let* ([cond::ScmConditionVariable* NULL])
+    (cond [(SCM_CONDITION_VARIABLE_P cv) (set! cond (SCM_CONDITION_VARIABLE cv))]
+          [(not (SCM_FALSEP cv)) (SCM_TYPE_ERROR cv "condition variale or #f")])
+    (result (Scm_MutexUnlock mutex cond timeout))))
 
-(define-cproc mutex-specific (mutex::<mutex>)
-  (expr (-> mutex specific)))
+(define-cproc mutex-specific (mutex::<mutex>) (result (-> mutex specific)))
 
-(define-cproc mutex-specific-set! (mutex::<mutex> obj)
-  (body <void> (set! (-> mutex specific) obj)))
+(define-cproc mutex-specific-set! (mutex::<mutex> obj) ::<void>
+  (set! (-> mutex specific) obj))
 
-(define-cproc mutex-name (mutex::<mutex>)
-  (expr (-> mutex name)))
+(define-cproc mutex-name (mutex::<mutex>) (result (-> mutex name)))
 
 ;;===============================================================
 ;; Condition variable
 ;;
 
 (define-cproc make-condition-variable (&optional (name #f))
-  (call "Scm_MakeConditionVariable"))
+  Scm_MakeConditionVariable)
 
-(define-cproc condition-variable? (obj)
-  (call <boolean> "SCM_CONDITION_VARIABLE_P"))
+(define-cproc condition-variable? (obj) ::<boolean>
+  SCM_CONDITION_VARIABLE_P)
 
 (define-cproc condition-variable-name (cv::<condition-variable>)
-  (expr "cv->name"))
+  (result (-> cv name)))
 
 (define-cproc condition-variable-specific (cv::<condition-variable>)
-  (expr "cv->specific"))
+  (result (-> cv specific)))
 
 (define-cproc condition-variable-specific-set! (cv::<condition-variable> obj)
-  (body <void> "cv->specific = obj;"))
+  ::<void> (set! (-> cv specific) obj))
 
 (define-cproc condition-variable-signal! (cv::<condition-variable>)
-  (call "Scm_ConditionVariableSignal"))
+  Scm_ConditionVariableSignal)
 
 (define-cproc condition-variable-broadcast! (cv::<condition-variable>)
-  (call "Scm_ConditionVariableBroadcast"))
+  Scm_ConditionVariableBroadcast)
 
 ;;===============================================================
 ;; Thread exceptions
 ;;
 
 (define-cfn thread_exception_allocate ((klass :: ScmClass*) initargs) :static
-  (let* ((e :: ScmThreadException* (SCM_ALLOCATE ScmThreadException klass)))
+  (let* ([e::ScmThreadException* (SCM_ALLOCATE ScmThreadException klass)])
     (SCM_SET_CLASS e klass)
     (set! (-> e thread) NULL)
     (set! (-> e data) SCM_UNDEFINED)
@@ -187,10 +162,10 @@
 
 (define-cfn thread_exception_print (obj (port :: ScmPort*)
                                         (ctx :: ScmWriteContext*))
-  :: void :static
-  (let* ((k :: ScmClass* (SCM_CLASS_OF obj))
-         (exc :: ScmThreadException* (SCM_THREAD_EXCEPTION obj))
-         (cname (Scm__InternalClassName k)))
+  ::void :static
+  (let* ([k::ScmClass* (SCM_CLASS_OF obj)]
+         [exc::ScmThreadException* (SCM_THREAD_EXCEPTION obj)]
+         [cname (Scm__InternalClassName k)])
     (if (SCM_UNDEFINEDP (-> exc data))
       (Scm_Printf port "#<%A %S>" cname (SCM_OBJ_SAFE (-> exc thread)))
       (Scm_Printf port "#<%A %S %S>" cname (SCM_OBJ_SAFE (-> exc thread))
@@ -198,15 +173,15 @@
 
 (define-cfn uncaught_exception_print (obj (port :: ScmPort*)
                                           (ctx :: ScmWriteContext*))
-  :: void :static
-  (let* ((exc :: ScmThreadException* (SCM_THREAD_EXCEPTION obj)))
+  ::void :static
+  (let* ([exc::ScmThreadException* (SCM_THREAD_EXCEPTION obj)])
     (Scm_Printf port "#<uncaught-exception in thread %S: %S>"
                 (SCM_OBJ_SAFE (-> exc thread)) (-> exc data))))
 
 (define-cfn terminated_thread_print (obj (port :: ScmPort*)
                                          (ctx :: ScmWriteContext*))
-  :: void :static
-  (let* ((exc :: ScmThreadException* (SCM_THREAD_EXCEPTION obj)))
+  ::void :static
+  (let* ([exc::ScmThreadException* (SCM_THREAD_EXCEPTION obj)])
     (Scm_Printf port "#<terminated-thread-exception: %S terminated by %S>"
                 (SCM_OBJ_SAFE (-> exc thread)) (-> exc data))))
 
