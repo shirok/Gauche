@@ -8,6 +8,8 @@
 	  treat ordinary symbols such as &optional specially.
 	  The old lambda keywords are supported for the backward compatibility,
 	  but will eventually fade out.
+	  (process-setter): Make static setter definitino handling consistent
+	  with define-cproc.
 	* *.stub: Changed accordingly.
 
 2008-11-19  Shiro Kawai  <shiro@acm.org>

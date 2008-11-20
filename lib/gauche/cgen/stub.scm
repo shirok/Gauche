@@ -659,19 +659,20 @@
    [else
     (receive (args keyargs nreqs nopts rest? other-keys?)
         (process-cproc-args (ref cproc'proc-name) (car decl))
-      (let ((setter (make <cproc>
-                      :scheme-name `(setter ,[~ cproc'scheme-name])
-                      :c-name #`",[~ cproc'c-name]_SETTER"
-                      :proc-name (make-literal (x->string `(setter ,[~ cproc'scheme-name])))
-                      :args args
-                      :keyword-args keyargs
-                      :num-reqargs nreqs
-                      :num-optargs nopts
-                      :have-rest-arg? rest?
-                      :allow-other-keys? other-keys?)))
-        (set! [~ cproc'setter] #`",[~ setter'c-name]__STUB")
-        (process-body setter (cdr decl))
-        (cgen-add! setter)))]))
+      (receive (body rettype) (extract-rettype (cdr decl))
+        (let ((setter (make <cproc>
+                        :scheme-name `(setter ,[~ cproc'scheme-name])
+                        :c-name #`",[~ cproc'c-name]_SETTER"
+                        :proc-name (make-literal (x->string `(setter ,[~ cproc'scheme-name])))
+                        :args args :return-type rettype
+                        :keyword-args keyargs
+                        :num-reqargs nreqs
+                        :num-optargs nopts
+                        :have-rest-arg? rest?
+                        :allow-other-keys? other-keys?)))
+          (set! [~ cproc'setter] #`",[~ setter'c-name]__STUB")
+          (process-body setter body)
+          (cgen-add! setter))))]))
 
 (define-method process-call-spec ((cproc <procstub>) form)
   (define (err) (error <cgen-stub-error> "malformed 'call' spec:" form))

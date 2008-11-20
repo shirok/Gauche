@@ -621,8 +621,8 @@
 
 (define-cproc setter (proc) ;SRFI-17
   (inliner SETTER)
-  (setter (proc::<procedure> setter::<procedure>)
-          (body <void> (Scm_SetterSet proc setter FALSE)))
+  (setter (proc::<procedure> setter::<procedure>) ::<void>
+          (Scm_SetterSet proc setter FALSE))
   Scm_Setter)
   
 (define-cproc has-setter? (proc) ::<boolean> Scm_HasSetter)
@@ -636,8 +636,7 @@
   (result (Scm_MakePromise TRUE obj)))
 
 (define-cproc promise-kind (p::<promise>)
-  (setter (p::<promise> obj)
-          (body <void> (set! (-> p kind) obj)))
+  (setter (p::<promise> obj) ::<void> (set! (-> p kind) obj))
   (result (-> p kind)))
 
 ;;
@@ -848,12 +847,11 @@
     [else (result '#f)]))
 
 (define-cproc port-buffering (port::<port>)
-  (setter (port::<port> mode)
-    "if (SCM_PORT_TYPE(port) != SCM_PORT_FILE) {
-       Scm_Error(\"can't set buffering mode to non-buffered port: %S\", port);
-     }
-     port->src.buf.mode = Scm_BufferingMode(mode, port->direction, -1);
-     SCM_RETURN(SCM_UNDEFINED);")
+  (setter (port::<port> mode) ::<void>
+          (unless (== (SCM_PORT_TYPE port) SCM_PORT_FILE)
+            (Scm_Error "can't set buffering mode to non-buffered port: %S"port))
+          (set! (ref (-> port src) buf mode)
+                (Scm_BufferingMode mode (-> port direction) -1)))
   Scm_GetBufferingMode)
 
 ;; Open port from fd

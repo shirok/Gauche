@@ -229,8 +229,8 @@
   Scm_VMMacroExpand)
 
 (define-cproc %procedure-inliner (proc::<procedure>)
-  (setter (proc::<procedure> inliner)
-          (body <void> "proc->inliner = inliner;"))
+  (setter (proc::<procedure> inliner) ::<void>
+          (set! (-> proc inliner) inliner))
   (result (?: (-> proc inliner) (-> proc inliner) '#f)))
 
 ;;

@@ -251,20 +251,21 @@
 (define-cproc set-car! (obj::<pair> value) ::<void> SCM_SET_CAR)
 (define-cproc set-cdr! (obj::<pair> value) ::<void> SCM_SET_CDR)
 
-"#define CXR_SETTER(PRE, pre, tail) \\
-  ScmObj cell = Scm_C##tail##r(obj); \\
-  if (!SCM_PAIRP(cell)) Scm_Error(\"can't set c\" #pre #tail \"r of %S\", obj); \\
-  SCM_SET_C##PRE##R(cell, value); SCM_RETURN(SCM_UNDEFINED);
+"#define CXR_SETTER(PRE, pre, tail) \
+  ScmObj cell = Scm_C##tail##r(obj); \
+  if (!SCM_PAIRP(cell)) \
+    Scm_Error(\"can't set c\" #pre #tail \"r of %S\", obj); \
+  SCM_SET_C##PRE##R(cell, value);
 "
 
 (define-cproc caar (obj) :fast-flonum
-  (inliner CAAR) (setter (obj value) "CXR_SETTER(A, a, a);") Scm_Caar)
+  (inliner CAAR) (setter (obj value) ::<void> (CXR_SETTER A a a)) Scm_Caar)
 (define-cproc cadr (obj) :fast-flonum
-  (inliner CADR) (setter (obj value) "CXR_SETTER(A, a, d);") Scm_Cadr)
+  (inliner CADR) (setter (obj value) ::<void> (CXR_SETTER A a d)) Scm_Cadr)
 (define-cproc cdar (obj) :fast-flonum
-  (inliner CDAR) (setter (obj value) "CXR_SETTER(D, d, a);") Scm_Cdar)
+  (inliner CDAR) (setter (obj value) ::<void> (CXR_SETTER D d a)) Scm_Cdar)
 (define-cproc cddr (obj) :fast-flonum
-  (inliner CDDR) (setter (obj value) "CXR_SETTER(D, d, d);") Scm_Cddr)
+  (inliner CDDR) (setter (obj value) ::<void> (CXR_SETTER D d d)) Scm_Cddr)
 ;; NB: caaar ... cddddr are in autoloaded Scheme file now.
 
 (define-cproc null? (obj) ::<boolean> :fast-flonum (inliner NULLP) SCM_NULLP)
