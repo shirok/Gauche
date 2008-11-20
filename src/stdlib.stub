@@ -244,7 +244,7 @@
 ;; 6.3.2  Pairs and lists
 ;;
 
-(define-cproc pair? (obj) ::<boolean> :fast-flonum SCM_PAIRP)
+(define-cproc pair? (obj) ::<boolean> :fast-flonum (inliner PAIRP) SCM_PAIRP)
 (define-cproc cons (obj1 obj2) (inliner CONS) Scm_Cons)
 (define-cproc car (obj::<pair>) (inliner CAR) (setter set-car!) SCM_CAR)
 (define-cproc cdr (obj::<pair>) (inliner CDR) (setter set-cdr!) SCM_CDR)
