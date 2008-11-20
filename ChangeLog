@@ -1,3 +1,7 @@
+2008-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (%open/allow-noexist?): Check errno==ENXIO as well.
+
 2008-11-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm (declcode): Added 'declcode' directive

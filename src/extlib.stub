@@ -657,6 +657,7 @@
    `(and ,if-does-not-exist-is-false
          (or (== errno ENOENT)
              (== errno ENODEV)
+             (== errno ENXIO)
              (== errno ENOTDIR)))])
 
 (define-cise-expr %open/allow-exist?
