@@ -496,16 +496,6 @@
       [(_ (var expr) . body)
        `(for-each (lambda (,var) ,@body) ,expr)])))
 
-;; [cise stmt] dotimes [VAR EXPR] STMT ...
-(define-cise-macro (dotimes form env)
-  (ensure-stmt-ctx form env)
-  (let ((eenv (expr-env env))
-        (tmp  (gensym "cise__")))
-    (match form
-      [(_ (var expr) . body)
-       `(let* ([,tmp :: int ,expr] [,var :: int])
-          (for [(set! ,var 0) (< ,var ,tmp) (post++ ,var)] ,@body))])))
-
 ;; [cise stmt] pair-for-each (lambda (VAR) STMT ...) EXPR
 ;;   Like for-each, but VAR is bound to each 'spine' cell instead of
 ;;   each element of the list.
@@ -519,6 +509,14 @@
          ,(render-rec list-expr eenv) ")"
          ,(render-rec `(begin ,@body) env)
          )])))
+
+;; [cise stmt] dopairs [VAR EXPR] STMT ...
+(define-cise-macro (dopairs form env)
+  (ensure-stmt-ctx form env)
+  (let ((eenv (expr-env env)))
+    (match form
+      [(_ (var expr) . body)
+       `(pair-for-each (lambda (,var) ,@body) ,expr)])))
 
 ;; [cise stmt] dotimes (VAR EXPR) STMT ...
 ;;   EXPR must yield an integer, N.  Repeat STMT ... by binding VAR from 0

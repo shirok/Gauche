@@ -218,14 +218,13 @@
   (inliner LIST-STAR)
   (let* ([head '()] [tail '()])
     (when (SCM_PAIRP args)
-      (pair-for-each (lambda (cp)
-                       (unless (SCM_PAIRP (SCM_CDR cp))
-                         (if (SCM_NULLP head)
-                           (set! head (SCM_CAR cp))
-                           (SCM_SET_CDR tail (SCM_CAR cp)))
-                         (break))
-                       (SCM_APPEND1 head tail (SCM_CAR cp)))
-                     args))
+      (dopairs [cp args]
+        (unless (SCM_PAIRP (SCM_CDR cp))
+          (if (SCM_NULLP head)
+            (set! head (SCM_CAR cp))
+            (SCM_SET_CDR tail (SCM_CAR cp)))
+          (break))
+        (SCM_APPEND1 head tail (SCM_CAR cp))))
     (result head)))
 
 (define-cproc %delete (obj list::<list> :optional cmpmode)
@@ -243,16 +242,15 @@
 
 (define-cproc append! (:rest list)
   (let* ([h '()] [t '()])
-    (pair-for-each (lambda (cp)
-                     ;; allow non-list argument at the last position
-                     (when (and (not (SCM_PAIRP (SCM_CAR cp)))
-                                (SCM_NULLP (SCM_CDR cp)))
-                       (if (SCM_NULLP h)
-                         (set! h (SCM_CAR cp))
-                         (SCM_SET_CDR t (SCM_CAR cp)))
-                       (break))
-                     (SCM_APPEND h t (SCM_CAR cp)))
-                   list)
+    (dopairs [cp list]
+      ;; allow non-list argument at the last position
+      (when (and (not (SCM_PAIRP (SCM_CAR cp)))
+                 (SCM_NULLP (SCM_CDR cp)))
+        (if (SCM_NULLP h)
+          (set! h (SCM_CAR cp))
+          (SCM_SET_CDR t (SCM_CAR cp)))
+        (break))
+      (SCM_APPEND h t (SCM_CAR cp)))
     (result h)))
 
 (define-cproc reverse! (list) Scm_ReverseX)
@@ -351,7 +349,7 @@
 
 (define-cproc char-set? (obj) ::<boolean> SCM_CHARSETP)
 
-(define-cfn char_set_add ((cs :: ScmCharSet*) chars) ::void :static
+(define-cfn char_set_add (cs::ScmCharSet* chars) ::void :static
   (dolist [ch chars]
     (unless (SCM_CHARP ch) (Scm_Error "character required, but got %S" ch))
     (Scm_CharSetAddRange cs (SCM_CHAR_VALUE ch) (SCM_CHAR_VALUE ch))))
@@ -793,7 +791,8 @@
           (ref bufrec ready)   NULL
           (ref bufrec filenum) NULL
           (ref bufrec data)    (cast void* flusher))
-    (result (Scm_MakeBufferedPort SCM_CLASS_PORT SCM_FALSE SCM_PORT_OUTPUT TRUE (& bufrec)))))
+    (result (Scm_MakeBufferedPort SCM_CLASS_PORT SCM_FALSE SCM_PORT_OUTPUT
+                                  TRUE (& bufrec)))))
 
 (define-cproc flush (:optional (oport::<output-port> (current-output-port)))
   ::<void> Scm_Flush)

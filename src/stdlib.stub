@@ -449,19 +449,16 @@
   (inliner TAIL-APPLY)
   (let* ([head::ScmObj] [tail::ScmObj])
     (cond [(SCM_NULLP args) (result (Scm_VMApply proc arg1))]
-          [else
-           (set! head (Scm_Cons arg1 SCM_NIL)
-                 tail head)
-           (pair-for-each (lambda (cp)
-                            (when (SCM_NULLP (SCM_CDR cp))
-                              (SCM_APPEND head tail (SCM_CAR cp))
-                              (break))
-                            (unless (SCM_PAIRP (SCM_CDR cp))
-                              (Scm_Error "improper list not allowed: %S"
-                                         (SCM_CDR cp)))
-                            (SCM_APPEND1 head tail (SCM_CAR cp)))
-                          args)
-           (result (Scm_VMApply proc head))])))
+          [else (set! head (Scm_Cons arg1 SCM_NIL)
+                      tail head)
+                (dopairs [cp args]
+                  (when (SCM_NULLP (SCM_CDR cp))
+                    (SCM_APPEND head tail (SCM_CAR cp))
+                    (break))
+                  (unless (SCM_PAIRP (SCM_CDR cp))
+                    (Scm_Error "improper list not allowed: %S" (SCM_CDR cp)))
+                  (SCM_APPEND1 head tail (SCM_CAR cp)))
+                (result (Scm_VMApply proc head))])))
 
 (define-cproc map (proc args::<list> :rest moreargs) Scm_Map)
 (define-cproc for-each (proc args::<list> :rest moreargs) Scm_ForEach)

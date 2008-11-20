@@ -1,5 +1,7 @@
 2008-11-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/cise.scm (dopairs): Added a new macro.
+
 	* lib/gauche/cgen/stub.scm (process-cproc-args): Switched the stub
 	  function's lambda keywords from
 	  {&optional,&keyword,&rest,&allow-other-keys} to
