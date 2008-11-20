@@ -1,3 +1,17 @@
+2008-11-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm (declcode): Added 'declcode' directive
+	  to insert raw code in the decl part.  Traditionally, the first
+	  raw string in the stub file has served for this purpose, but it
+	  won't work when the stub stuff is embedded by inline-stub, since
+	  this special handling of the first raw string is treated specially
+	  only by genstub.   It is better to be explicit.  (The special
+	  treatment by genstub remains only for the backward compatibility.)
+	  (define-cmethod): Allow the new cproc body syntax here as well.
+
+	* lib/gauche/cgen/sice.scm (sizeof): Made sizeof a cgen macro to
+	  allow e.g. (sizeof struct foo).
+
 2008-11-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (cise-render-typed-var): Allow expr

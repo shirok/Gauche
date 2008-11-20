@@ -765,6 +765,18 @@
         `("((",(cise-render-typed-var type "" env)")(",(render-rec expr eenv)"))")])
      env)))
 
+;; We need to distinguish (sizeof typename) and (sizeof expr), which would
+;; be difficult when the typename is not a simple symbol.
+;; So we let typename to be spliced, e.g. (sizeof struct foo *), instead of
+;; (sizeof (struct foo *)).
+(define-cise-macro (sizeof form env)
+  (wrap-expr
+   (match form
+     [(_ x) `("sizeof(",(render-rec x (expr-env env))")")]
+     [(_ x xs ...) `("sizeof(",(cise-render-typed-var (cons x xs) "" env)")")])
+   env))
+
+
 (define-cise-macro (?: form env)
   (let1 eenv (expr-env env)
     (wrap-expr

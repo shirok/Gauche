@@ -460,15 +460,6 @@
                                     (not (memq [~ arg'type] unsafe-types))))
                         args))
         (push! [~ cproc'flags] 'fast-flonum))))
-  (define (extract-rettype body)
-    (match body
-      [(:: type . body) (values body type)]
-      [([? type-symbol? ts] . body) (values body (type-symbol-type ts))]
-      [_ (values body #f)]))
-  (define (type-symbol? s)
-    (and (keyword? s) (#/^:[^:]/ (keyword->string s))))
-  (define (type-symbol-type s)
-    (string->symbol (string-drop (keyword->string s) 1)))
   (define (extract-flags body)
     (match body
       [(:fast-flonum . body) (values '(fast-flonum) body)]
@@ -595,6 +586,20 @@
 
   (required argspecs '() 0)
   )
+
+;; returns two values, body stmts and return-type.  return-type can be #f
+;; if unspecified.
+(define (extract-rettype forms)
+
+  (define (type-symbol? s)
+    (and (keyword? s) (#/^:[^:]/ (keyword->string s))))
+  (define (type-symbol-type s)
+    (string->symbol (string-drop (keyword->string s) 1)))
+
+  (match forms
+    [(:: type . body) (values body type)]
+    [([? type-symbol? ts] . body) (values body (type-symbol-type ts))]
+    [_ (values forms #f)]))
 
 (define-method process-body ((cproc <cproc>) body)
   (let loop ((body body))
@@ -965,37 +970,48 @@
   (check-arg list? argspec)
   (receive (args specializers numargs have-optarg?)
       (parse-specialized-args argspec)
-    (let ((method (make <cmethod>
-                    :scheme-name scheme-name
-                    :c-name (get-c-name [~(cgen-current-unit)'c-name-prefix]
-                                        (gensym (symbol->string scheme-name)))
-                    :specializers specializers
-                    :num-reqargs numargs
-                    :args args
-                    :have-rest-arg? have-optarg?
-                    )))
-      (dolist (stmt body)
-        (match stmt
-          ((? string?) (push-stmt! method stmt))
-          (('c-generic-name gen-name)
-           (unless (string? (cadr stmt))
-             (error <cgen-stub-error>
-                    "c-generic-name requires a string:" gen-name))
-           (set! [~ method'c-generic] gen-name))
-          (('body . spec) (process-body-spec method spec))
-          (('call . spec) (process-call-spec method spec))
-          (('expr . spec) (process-expr-spec method spec))
-          (('code . stmts) (for-each (cut push-stmt! method <>) stmts))
-          (else
-           (error <cgen-stub-error> "unrecognized form in body:" stmt))))
-      (unless [~ method'c-generic]
-        (set! [~ method'c-generic]
-              (or (get-c-generic-name scheme-name)
-                  (error <cgen-stub-error>
-                         "method can't find C name of the generic function:"
-                         scheme-name))))
-      (cgen-add! method)
-      )))
+    (receive (body rettype) (extract-rettype body)
+      (let ([method (make <cmethod>
+                      :scheme-name scheme-name
+                      :c-name (get-c-name [~(cgen-current-unit)'c-name-prefix]
+                                          (gensym (x->string scheme-name)))
+                      :return-type rettype
+                      :specializers specializers
+                      :num-reqargs numargs
+                      :args args
+                      :have-rest-arg? have-optarg?
+                      )])
+        (let loop ((body body))
+          (match body
+            [() #f]
+            [([? string?] . r) (push-stmt! method stmt) (loop r)]
+            [(('c-generic-name gen-name) . r)
+             (unless (string? gen-name)
+               (error <cgen-stub-error>
+                      "c-generic-name requires a string:" gen-name))
+             (set! [~ method'c-generic] gen-name)
+             (loop r)]
+            [(('body . spec) . r) (process-body-spec method spec) (loop r)]
+            [(('call . spec) . r) (process-call-spec method spec) (loop r)]
+            [(('expr . spec) . r) (process-expr-spec method spec) (loop r)]
+            [(('code . stmts) . r)
+             (for-each (cut push-stmt! method <>) stmts)
+             (loop r)]
+            [([? symbol? s]) ; 'call' convention
+             (let* ([args (map (cut ref <> 'name) [~ method'args])]
+                    [form (if (eq? [~ cproc'return-type] '<void>)
+                            `((,s ,@args))
+                            `((result (,s ,@args))))]))
+             (process-body-inner method [~ method'return-type] form)]
+            [_ (process-body-inner method [~ method'return-type] body)]))
+        (unless [~ method'c-generic]
+          (set! [~ method'c-generic]
+                (or (get-c-generic-name scheme-name)
+                    (error <cgen-stub-error>
+                           "method can't find C name of the generic function:"
+                           scheme-name))))
+        (cgen-add! method)
+        ))))
 
 (define-method cgen-emit-body ((method <cmethod>))
   (f "static ScmObj ~a(ScmNextMethod *nm_, ScmObj *SCM_FP, int SCM_ARGCNT, void *d_)"
@@ -1031,29 +1047,29 @@
   (let loop ((arglist arglist)
              (args    '())
              (specs   '()))
-    (cond ((null? arglist)
-           (values (reverse args) specs (length args) #f))
-          ((symbol? arglist)
+    (cond [(null? arglist)
+           (values (reverse args) specs (length args) #f)]
+          [(symbol? arglist)
            (values (cons (make-arg <rest-arg> arglist (length args))
                          args)
                    (cons "Scm_ListClass" specs)
-                   (length args) #t))
-          ((not (pair? arglist)) (badlist))
-          ((symbol? (car arglist))
+                   (length args) #t)]
+          [(not (pair? arglist)) (badlist)]
+          [(symbol? (car arglist))
            (loop (cdr arglist)
                  (cons (make-arg <required-arg> (car arglist) (length args))
                        args)
-                 (cons "Scm_TopClass" specs)))
-          ((not (and (pair? (car arglist))
+                 (cons "Scm_TopClass" specs))]
+          [(not (and (pair? (car arglist))
                      (= (length (car arglist)) 2)
                      (symbol? (caar arglist))
                      (string? (cadar arglist))))
-           (badlist))
-          (else
+           (badlist)]
+          [else
            (loop (cdr arglist)
                  (cons (make-arg <required-arg> (caar arglist) (length args))
                        args)
-                 (cons (cadar arglist) specs)))
+                 (cons (cadar arglist) specs))]
           )))
 
 ;;===================================================================
@@ -1368,6 +1384,12 @@
     (if (string? c)
       (cgen-init c)
       (cgen-init (call-with-output-string (cut cise-render c <>))))))
+
+(define-form-parser declcode codes
+  (dolist (c codes)
+    (if (string? c)
+      (cgen-decl c)
+      (cgen-decl (call-with-output-string (cut cise-render c <>))))))
 
 (define-form-parser begin forms
   (for-each cgen-stub-parse-form forms))

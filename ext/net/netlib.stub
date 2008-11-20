@@ -54,58 +54,48 @@
 (define-cgeneric sockaddr-addr "Scm_GenericSockAddrAddr" (extern))
 (define-cgeneric sockaddr-port "Scm_GenericSockAddrPort" (extern))
 
-(define-symbol unix "sym_unix")
-(define-symbol inet "sym_inet")
-(define-symbol unknown "sym_unknown")
-
 (define-cmethod sockaddr-name ((addr "Scm_SockAddrClass"))
-  (expr <top> '"unknown"))
+  (result '"unknown"))
 
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrClass"))
-  (expr <top> 'unknown))
+  (result 'unknown))
 
 (define-cmethod sockaddr-name ((addr "Scm_SockAddrUnClass"))
-  (expr <top>
-        (?: (> (-> (cast ScmSockAddr* addr) addrlen) (sizeof |struct sockaddr|))
-            (SCM_MAKE_STR (ref (-> (cast ScmSockAddrUn* addr) addr) sun_path))
-            (SCM_MAKE_STR ""))))
+  (result
+   (?: (> (-> (cast ScmSockAddr* addr) addrlen) (sizeof struct sockaddr))
+       (SCM_MAKE_STR (ref (-> (cast ScmSockAddrUn* addr) addr) sun_path))
+       (SCM_MAKE_STR ""))))
 
-(define-cmethod sockaddr-family ((addr "Scm_SockAddrUnClass"))
-  (expr <top> 'unix))
+(define-cmethod sockaddr-family ((addr "Scm_SockAddrUnClass")) (result 'unix))
 
-(define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass"))
-  (expr <top> 'inet))
+(define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass")) (result 'inet))
 
-(define-cmethod sockaddr-addr ((addr "Scm_SockAddrInClass"))
-  (body <ulong>
-        (let* ((a :: ScmSockAddrIn* (cast ScmSockAddrIn* addr)))
-          (result (ntohl (ref (-> a addr) sin_addr s_addr))))))
+(define-cmethod sockaddr-addr ((addr "Scm_SockAddrInClass")) ::<ulong>
+  (let* ([a::ScmSockAddrIn* (cast ScmSockAddrIn* addr)])
+    (result (ntohl (ref (-> a addr) sin_addr s_addr)))))
 
-(define-cmethod sockaddr-port ((addr "Scm_SockAddrInClass"))
-  (body <ushort>
-        (let* ((a :: ScmSockAddrIn* (cast ScmSockAddrIn* addr)))
-          (result (ntohs (ref (-> a addr) sin_port))))))
+(define-cmethod sockaddr-port ((addr "Scm_SockAddrInClass")) ::<ushort>
+  (let* ([a::ScmSockAddrIn* (cast ScmSockAddrIn* addr)])
+    (result (ntohs (ref (-> a addr) sin_port)))))
 
 (when "defined HAVE_IPV6"
   (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
-    (expr <top> 'inet6))
+    (result 'inet6))
 
   (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
-    (body <top>
-          (let* ((a :: ScmSockAddrIn6* (cast ScmSockAddrIn6* addr))
-                 (p :: ScmUInt32*
-                    (cast ScmUInt32* (ref (-> a addr) sin6_addr s6_addr)))
-                 (i :: int)
-                 (n :: ScmObj (C: "Scm_MakeIntegerFromUI(ntohl(*p++))")))
-            (for ((set! i 0) (< i 3) (pre++ i))
-                 (set! n (Scm_LogIor (Scm_Ash n 32)
-                                     (Scm_MakeIntegerFromUI (C:"ntohl(*p++)")))))
-            (result n))))
+    (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)]
+           [p::ScmUInt32*
+            (cast ScmUInt32* (ref (-> a addr) sin6_addr s6_addr))]
+           [i::int]
+           [n (Scm_MakeIntegerFromUI (ntohl (* (post++ p))))])
+      (dotimes [i 3]
+        (set! n (Scm_LogIor (Scm_Ash n 32)
+                            (Scm_MakeIntegerFromUI (ntohl (* (post++ p)))))))
+      (result n)))
 
-  (define-cmethod sockaddr-port ((addr "Scm_SockAddrIn6Class"))
-    (body <ushort>
-          (let* ((a :: ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)))
-            (result (ntohs (ref (-> a addr) sin6_port))))))
+  (define-cmethod sockaddr-port ((addr "Scm_SockAddrIn6Class")) ::<ushort>
+    (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)])
+      (result (ntohs (ref (-> a addr) sin6_port)))))
   )
 
 ;;----------------------------------------------------------
@@ -113,7 +103,7 @@
 
 (define-cproc make-socket (domain::<fixnum> type::<fixnum>
                                             &optional (protocol::<fixnum> 0))
-  (call "Scm_MakeSocket"))
+  Scm_MakeSocket)
 
 (define-enum PF_UNSPEC)
 (define-enum PF_UNIX)
@@ -144,59 +134,48 @@
 (define-enum-conditionally SOMAXCONN)
 
 (define-cproc socket-address (sock::<socket>)
-  (body <top>
-        (if (-> sock address)
-          (result (SCM_OBJ (-> sock address)))
-          (result '#f))))
-
-;(define-symbol none      "sym_none")
-;(define-symbol bound     "sym_bound")
-;(define-symbol listening "sym_listening")
-;(define-symbol connected "sym_connected")
-;(define-symbol shutdown  "sym_shutdown")
-;(define-symbol closed    "sym_closed")
+  (if (-> sock address)
+    (result (SCM_OBJ (-> sock address)))
+    (result '#f)))
 
 (define-cproc socket-status (sock::<socket>)
-  (body <top>
-        (case (-> sock status)
-          [(SCM_SOCKET_STATUS_NONE)      (result 'none)]
-          [(SCM_SOCKET_STATUS_BOUND)     (result 'bound)]
-          [(SCM_SOCKET_STATUS_LISTENING) (result 'listening)]
-          [(SCM_SOCKET_STATUS_CONNECTED) (result 'connected)]
-          [(SCM_SOCKET_STATUS_SHUTDOWN)  (result 'shutdonw)]
-          [(SCM_SOCKET_STATUS_CLOSED)    (result 'closed)]
-          [else
-           (Scm_Error "invalid state of socket %S: implementation bugs?" sock)
-           (result SCM_UNDEFINED)])))
+  (case (-> sock status)
+    [(SCM_SOCKET_STATUS_NONE)      (result 'none)]
+    [(SCM_SOCKET_STATUS_BOUND)     (result 'bound)]
+    [(SCM_SOCKET_STATUS_LISTENING) (result 'listening)]
+    [(SCM_SOCKET_STATUS_CONNECTED) (result 'connected)]
+    [(SCM_SOCKET_STATUS_SHUTDOWN)  (result 'shutdonw)]
+    [(SCM_SOCKET_STATUS_CLOSED)    (result 'closed)]
+    [else
+     (Scm_Error "invalid state of socket %S: implementation bugs?" sock)
+     (result SCM_UNDEFINED)]))
 
-(define-cproc socket-fd (sock::<socket>)
-  (expr <long> (cast long (-> sock fd))))
+(define-cproc socket-fd (sock::<socket>) ::<long>
+  (result (cast long (-> sock fd))))
 
 ;; NB: buffered? keyword args in the following two procedures are
 ;; deprecated; use buffering arg.
 (define-cproc socket-input-port (sock::<socket>
                                  &keyword (buffering #f) (buffered? #f))
-  (body <top>
-        (let* ((bufmode::int))
-          (cond [(not (SCM_FALSEP buffered?)) ;for backward compatibility
-                 (set! bufmode SCM_PORT_BUFFER_FULL)]
-                [else
-                 (set! bufmode (Scm_BufferingMode buffering
-                                                  SCM_PORT_INPUT
-                                                  SCM_PORT_BUFFER_LINE))])
-          (result (Scm_SocketInputPort sock bufmode)))))
+  (let* ([bufmode::int])
+    (cond [(not (SCM_FALSEP buffered?)) ;for backward compatibility
+           (set! bufmode SCM_PORT_BUFFER_FULL)]
+          [else
+           (set! bufmode (Scm_BufferingMode buffering
+                                            SCM_PORT_INPUT
+                                            SCM_PORT_BUFFER_LINE))])
+    (result (Scm_SocketInputPort sock bufmode))))
 
 (define-cproc socket-output-port (sock::<socket>
                                   &keyword (buffering #f) (buffered? #f))
-  (body <top>
-        (let* ((bufmode::int))
-          (cond [(not (SCM_FALSEP buffered?)) ;for backward compatibility
-                 (set! bufmode SCM_PORT_BUFFER_FULL)]
-                [else
-                 (set! bufmode (Scm_BufferingMode buffering
-                                                  SCM_PORT_OUTPUT
-                                                  SCM_PORT_BUFFER_LINE))])
-          (result (Scm_SocketOutputPort sock bufmode)))))
+  (let* ([bufmode::int])
+    (cond [(not (SCM_FALSEP buffered?)) ;for backward compatibility
+           (set! bufmode SCM_PORT_BUFFER_FULL)]
+          [else
+           (set! bufmode (Scm_BufferingMode buffering
+                                            SCM_PORT_OUTPUT
+                                            SCM_PORT_BUFFER_LINE))])
+    (result (Scm_SocketOutputPort sock bufmode))))
 
 (if "defined(SHUT_RD) && defined(SHUD_WR) && defined(SHUT_RDWR)"
   (begin
@@ -209,63 +188,63 @@
     (define-constant SHUT_RDWR 2)))
 
 (define-cproc socket-shutdown (sock::<socket> &optional (how::<fixnum> 2))
-  (call "Scm_SocketShutdown"))
+  Scm_SocketShutdown)
   
 (define-cproc socket-close (sock::<socket>)
-  (call "Scm_SocketClose"))
+  Scm_SocketClose)
 
 (define-cproc socket-bind (sock::<socket> addr::<socket-address>)
-  (call "Scm_SocketBind"))
+  Scm_SocketBind)
 
 (define-cproc socket-listen (sock::<socket> backlog::<fixnum>)
-  (call "Scm_SocketListen"))
+  Scm_SocketListen)
 
 (define-cproc socket-accept (sock::<socket>)
-  (call "Scm_SocketAccept"))
+  Scm_SocketAccept)
 
 (define-cproc socket-connect (sock::<socket> addr::<socket-address>)
-  (call "Scm_SocketConnect"))
+  Scm_SocketConnect)
 
 (define-cproc socket-getsockname (sock::<socket>)
-  (call "Scm_SocketGetSockName"))
+  Scm_SocketGetSockName)
 
 (define-cproc socket-getpeername (sock::<socket>)
-  (call "Scm_SocketGetPeerName"))
+  Scm_SocketGetPeerName)
 
 (define-cproc socket-send (sock::<socket> msg
                            &optional (flags::<fixnum> 0))
-  (call "Scm_SocketSend"))
+  Scm_SocketSend)
 
 (define-cproc socket-sendto (sock::<socket> msg to::<socket-address>
                              &optional (flags::<fixnum> 0))
-  (call "Scm_SocketSendTo"))
+  Scm_SocketSendTo)
 
 (define-cproc socket-recv (sock::<socket> bytes::<fixnum>
                            &optional (flags::<fixnum> 0))
-  (call "Scm_SocketRecv"))
+  Scm_SocketRecv)
 
 (define-cproc socket-recv! (sock::<socket> buf::<uvector>
                            &optional (flags::<fixnum> 0))
-  (call "Scm_SocketRecvX"))
+  Scm_SocketRecvX)
 
 (define-cproc socket-recvfrom (sock::<socket> bytes::<fixnum>
                                &optional (flags::<fixnum> 0))
-  (call "Scm_SocketRecvFrom"))
+  Scm_SocketRecvFrom)
 
 (define-cproc socket-recvfrom! (sock::<socket> buf::<uvector> addrs
                                 &optional (flags::<fixnum> 0))
-  (call "Scm_SocketRecvFromX"))
+  Scm_SocketRecvFromX)
 
 ;; socket option interface
 
 (define-cproc socket-setsockopt (sock::<socket>
                                  level::<fixnum> option::<fixnum> value)
-  (call "Scm_SocketSetOpt"))
+  Scm_SocketSetOpt)
 
 (define-cproc socket-getsockopt (sock::<socket>
                                  level::<fixnum> option::<fixnum>
                                  rsize::<fixnum>)
-  (call "Scm_SocketGetOpt"))
+  Scm_SocketGetOpt)
 
 (define-enum-conditionally SOL_SOCKET)
 (define-enum-conditionally SO_ACCEPTCONN)
@@ -319,27 +298,27 @@
 ;; netdb routines
 
 (define-cproc sys-gethostbyname (name::<const-cstring>)
-  (call "Scm_GetHostByName"))
+  Scm_GetHostByName)
 
 (define-cproc sys-gethostbyaddr (addr::<const-cstring> type::<fixnum>)
-  (call "Scm_GetHostByAddr"))
+  Scm_GetHostByAddr)
 
 (define-cproc sys-getprotobyname (name::<const-cstring>)
-  (call "Scm_GetProtoByName"))
+  Scm_GetProtoByName)
 
 (define-cproc sys-getprotobynumber (number::<fixnum>)
-  (call "Scm_GetProtoByNumber"))
+  Scm_GetProtoByNumber)
 
 (define-cproc sys-getservbyname (name::<const-cstring> proto::<const-cstring>)
-  (call "Scm_GetServByName"))
+  Scm_GetServByName)
 
 (define-cproc sys-getservbyport (port::<fixnum> proto::<const-cstring>)
-  (call "Scm_GetServByPort"))
+  Scm_GetServByPort)
 
-(define-cproc sys-ntohl (x::<uint32>) (call <uint32> "ntohl"))
-(define-cproc sys-ntohs (x::<uint16>) (call <uint16> "ntohs"))
-(define-cproc sys-htonl (x::<uint32>) (call <uint32> "htonl"))
-(define-cproc sys-htons (x::<uint16>) (call <uint16> "htons"))
+(define-cproc sys-ntohl (x::<uint32>) ::<uint32> ntohl)
+(define-cproc sys-ntohs (x::<uint16>) ::<uint16> ntohs)
+(define-cproc sys-htonl (x::<uint32>) ::<uint32> htonl)
+(define-cproc sys-htons (x::<uint16>) ::<uint16> htons)
 
 ;;----------------------------------------------------------
 ;; IPv6 routines
@@ -367,21 +346,21 @@
       (define-cproc sys-getaddrinfo (nodename::<const-cstring>?
                                      servname::<const-cstring>?
                                      hints)
-        "  struct addrinfo ai;
-  if (!SCM_SYS_ADDRINFO_P(hints) && !SCM_FALSEP(hints))
-    Scm_Error(\"<sys-addrinfo> or #f required, but got %S\", hints);
-  if (!SCM_FALSEP(hints)) {
-    memset(&ai, 0, sizeof(ai));
-    ai.ai_flags = SCM_SYS_ADDRINFO(hints)->flags;
-    ai.ai_family = SCM_SYS_ADDRINFO(hints)->family;
-    ai.ai_socktype = SCM_SYS_ADDRINFO(hints)->socktype;
-    ai.ai_protocol = SCM_SYS_ADDRINFO(hints)->protocol;
-  }
-  SCM_RETURN(Scm_GetAddrinfo(nodename, servname,
-                             SCM_FALSEP(hints) ? NULL : &ai));")
+        (let* ([ai::(struct addrinfo)])
+          (unless (or (SCM_SYS_ADDRINFO_P hints) (SCM_FALSEP hints))
+            (SCM_TYPE_ERROR hints "<sys-addrinfo> or #f"))
+          (unless (SCM_FALSEP hints)
+            (memset (& ai) 0 (sizeof ai))
+            (set! (ref ai ai_flags)  (-> (SCM_SYS_ADDRINFO hints) flags)
+                  (ref ai ai_family) (-> (SCM_SYS_ADDRINFO hints) family)
+                  (ref ai ai_socktype) (-> (SCM_SYS_ADDRINFO hints) socktype)
+                  (ref ai ai_protocol) (-> (SCM_SYS_ADDRINFO hints) protocol)))
+          (result (Scm_GetAddrinfo nodename servname
+                                   (?: (SCM_FALSEP hints) NULL (& ai))))))
 
-      (define-cproc sys-getnameinfo (addr::<socket-address> &optional flags::<fixnum>)
-        (call "Scm_GetNameinfo"))
+      (define-cproc sys-getnameinfo
+        (addr::<socket-address> &optional flags::<fixnum>)
+        Scm_GetNameinfo)
       ))
 
 (define-enum-conditionally AF_INET6)
@@ -421,50 +400,38 @@
 ;; the same as big-endian calculation.  In our case we take over
 ;; the result into Scheme world, so we adjust the result to the
 ;; network byte order (big-endian).
-(define-cproc inet-checksum (buf::<uvector> size::<int>)
-  (body <uint>
-        "uint16_t *wp = (uint16_t*)SCM_UVECTOR_ELEMENTS(buf);"
-        "u_long sum = 0;"
-        "uint16_t result;"
-        "if (size > Scm_UVectorSizeInBytes(buf)) {"
-        "  Scm_Error(\"uniform vector buffer too short: %S\", buf);"
-        "}"
-        "for (; size > 0; size -= 2) {"
-        "  if (size == 1) {"
-        "#if WORDS_BIGENDIAN"
-        "    sum += (*(u_char*)wp)<<8;"
-        "#else"
-        "    sum += *(u_char*)wp;"
-        "#endif"
-        "    break;"
-        "  }"
-        "  sum += *wp++;"
-        "}"
-        "sum = (sum >> 16) + (sum & 0xffff);"
-        "sum += sum >> 16;"
-        "result = (uint16_t)~sum;"                ;truncate to 16bit
-        "#if !WORDS_BIGENDIAN"
-        "result = (result>>8)|(result<<8);"
-        "#endif"
-        "SCM_RESULT = result;"))
+(define-cproc inet-checksum (buf::<uvector> size::<int>) ::<uint>
+  (let* ([wp::uint16_t* (cast uint16_t* (SCM_UVECTOR_ELEMENTS buf))]
+         [sum::u_long 0]
+         [result::uint16_t])
+    (when (> size (Scm_UVectorSizeInBytes buf))
+      (Scm_Error "uniform vector buffer too short: %S" buf))
+    (for [() (> size 0) (-= size 2)]
+         (when (== size 1)
+           (|#if| "WORDS_BIGENDIAN"
+                  (+= sum (<< (* (cast u_char* wp)) 8))
+                  (+= sum (* (cast u_char* wp))))
+           (break))
+         (+= sum (* (post++ wp))))
+    (set! sum (+ (>> sum 16) (logand sum #xffff)))
+    (+= sum (>> sum 16))
+    (set! result (cast uint16_t (lognot sum)))  ;truncate to 16bit
+    (|#if| "!WORDS_BIGENDIAN"
+           (set! result (logior (>> result 8) (<< result 8))))
+    (result result)))
 
 ;; socket addresses
-(define-cproc inet-string->address (s::<const-cstring>)
-  (body (<top> <top>)
-        (let* ((proto::int)
-               (r (Scm_InetStringToAddress s (& proto) NULL)))
-          (if (SCM_FALSEP r)
-            (result SCM_FALSE SCM_FALSE)
-            (result r (SCM_MAKE_INT proto))))))
+(define-cproc inet-string->address (s::<const-cstring>) ::(<top> <top>)
+  (let* ([proto::int] [r (Scm_InetStringToAddress s (& proto) NULL)])
+    (if (SCM_FALSEP r)
+      (result SCM_FALSE SCM_FALSE)
+      (result r (SCM_MAKE_INT proto)))))
 
 (define-cproc inet-string->address! (s::<const-cstring> buf::<uvector>)
-  (body <top>
-        (let* ((proto::int)
-               (r (Scm_InetStringToAddress s (& proto) buf)))
-          (if (SCM_FALSEP r) (result SCM_FALSE) (result (SCM_MAKE_INT proto))))))
+  (let* ([proto::int] [r (Scm_InetStringToAddress s (& proto) buf)])
+    (if (SCM_FALSEP r) (result SCM_FALSE) (result (SCM_MAKE_INT proto)))))
 
-(define-cproc inet-address->string (addr proto::<int>)
-  (call Scm_InetAddressToString))
+(define-cproc inet-address->string (addr proto::<int>) Scm_InetAddressToString)
 
 ;; Local variables:
 ;; mode: scheme
