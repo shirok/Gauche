@@ -119,8 +119,7 @@
   (result (-> (SCM_PORT_ZSTREAM port) total-out)))
 
 (define-cproc zstream-params-set! (port::<deflating-port>
-                                   &keyword (compression-level #f)
-                                            (strategy #f))
+                                   :key (compression-level #f) (strategy #f))
   ::<void>
   (let* ([info::ScmZlibInfo* (SCM_PORT_ZLIB_INFO port)]
          [strm::z_streamp (SCM_PORT_ZSTREAM port)]

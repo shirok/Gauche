@@ -211,26 +211,24 @@
  ;; NB: :handler interface is experimental.  Do not use it.
  (define-cproc open-input-conversion-port (source::<input-port>
                                            from-code
-                                           &keyword (to-code #f)
-                                           (buffer-size::<fixnum> 0)
-                                           (owner? #f)
-                                           (handler #f))
+                                           :key (to-code #f)
+                                                (buffer-size::<fixnum> 0)
+                                                (owner? #f)
+                                                (handler #f))
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
           [tc::(const char*) (Scm_GetCESName to_code "to-code")])
-     (result
-      (Scm_MakeInputConversionPort source fc tc handler buffer_size
-                                   (not (SCM_FALSEP ownerP))))))
+     (result (Scm_MakeInputConversionPort source fc tc handler buffer_size
+                                          (not (SCM_FALSEP ownerP))))))
 
  (define-cproc open-output-conversion-port (sink::<output-port>
                                             to-code
-                                            &keyword (from-code #f)
-                                            (buffer-size::<fixnum> 0)
-                                            (owner? #f))
+                                            :key (from-code #f)
+                                                 (buffer-size::<fixnum> 0)
+                                                 (owner? #f))
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
           [tc::(const char*) (Scm_GetCESName to_code "to-code")])
-     (result
-      (Scm_MakeOutputConversionPort sink tc fc buffer_size
-                                    (not (SCM_FALSEP ownerP))))))
+     (result (Scm_MakeOutputConversionPort sink tc fc buffer_size
+                                           (not (SCM_FALSEP ownerP))))))
 
  (define-cproc ces-guess-from-string (string::<string> scheme::<string>)
    (let* ([size::u_int]

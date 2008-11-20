@@ -84,7 +84,7 @@
     (define-enum DN_MULTISHOT)
     ))
 
-(define-cproc sys-fcntl (port-or-fd op::<fixnum> &optional arg) Scm_SysFcntl)
+(define-cproc sys-fcntl (port-or-fd op::<fixnum> :optional arg) Scm_SysFcntl)
 
 ;; Local variables:
 ;; mode: scheme

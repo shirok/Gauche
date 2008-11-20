@@ -102,7 +102,7 @@
 ;; low-level socket routines
 
 (define-cproc make-socket (domain::<fixnum> type::<fixnum>
-                                            &optional (protocol::<fixnum> 0))
+                                            :optional (protocol::<fixnum> 0))
   Scm_MakeSocket)
 
 (define-enum PF_UNSPEC)
@@ -156,7 +156,7 @@
 ;; NB: buffered? keyword args in the following two procedures are
 ;; deprecated; use buffering arg.
 (define-cproc socket-input-port (sock::<socket>
-                                 &keyword (buffering #f) (buffered? #f))
+                                 :key (buffering #f) (buffered? #f))
   (let* ([bufmode::int])
     (cond [(not (SCM_FALSEP buffered?)) ;for backward compatibility
            (set! bufmode SCM_PORT_BUFFER_FULL)]
@@ -167,7 +167,7 @@
     (result (Scm_SocketInputPort sock bufmode))))
 
 (define-cproc socket-output-port (sock::<socket>
-                                  &keyword (buffering #f) (buffered? #f))
+                                  :key (buffering #f) (buffered? #f))
   (let* ([bufmode::int])
     (cond [(not (SCM_FALSEP buffered?)) ;for backward compatibility
            (set! bufmode SCM_PORT_BUFFER_FULL)]
@@ -187,7 +187,7 @@
     (define-constant SHUT_WR 1)
     (define-constant SHUT_RDWR 2)))
 
-(define-cproc socket-shutdown (sock::<socket> &optional (how::<fixnum> 2))
+(define-cproc socket-shutdown (sock::<socket> :optional (how::<fixnum> 2))
   Scm_SocketShutdown)
   
 (define-cproc socket-close (sock::<socket>)
@@ -212,27 +212,27 @@
   Scm_SocketGetPeerName)
 
 (define-cproc socket-send (sock::<socket> msg
-                           &optional (flags::<fixnum> 0))
+                           :optional (flags::<fixnum> 0))
   Scm_SocketSend)
 
 (define-cproc socket-sendto (sock::<socket> msg to::<socket-address>
-                             &optional (flags::<fixnum> 0))
+                             :optional (flags::<fixnum> 0))
   Scm_SocketSendTo)
 
 (define-cproc socket-recv (sock::<socket> bytes::<fixnum>
-                           &optional (flags::<fixnum> 0))
+                           :optional (flags::<fixnum> 0))
   Scm_SocketRecv)
 
 (define-cproc socket-recv! (sock::<socket> buf::<uvector>
-                           &optional (flags::<fixnum> 0))
+                           :optional (flags::<fixnum> 0))
   Scm_SocketRecvX)
 
 (define-cproc socket-recvfrom (sock::<socket> bytes::<fixnum>
-                               &optional (flags::<fixnum> 0))
+                               :optional (flags::<fixnum> 0))
   Scm_SocketRecvFrom)
 
 (define-cproc socket-recvfrom! (sock::<socket> buf::<uvector> addrs
-                                &optional (flags::<fixnum> 0))
+                                :optional (flags::<fixnum> 0))
   Scm_SocketRecvFromX)
 
 ;; socket option interface
@@ -359,7 +359,7 @@
                                    (?: (SCM_FALSEP hints) NULL (& ai))))))
 
       (define-cproc sys-getnameinfo
-        (addr::<socket-address> &optional flags::<fixnum>)
+        (addr::<socket-address> :optional flags::<fixnum>)
         Scm_GetNameinfo)
       ))
 

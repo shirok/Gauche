@@ -44,7 +44,7 @@
 
 ;; NB: rewind-before keyword arg is EXPERIMENTAL.
 (define-cproc with-error-handler
-  (handler thunk &keyword (rewind-before::<boolean> #f))
+  (handler thunk :key (rewind-before::<boolean> #f))
   (unless (SCM_PROCEDURE_TAKE_NARG_P handler 1)
     (Scm_Error "error handler must take at least 1 argument, but got %S"
                handler))
@@ -73,7 +73,7 @@
 
 (define-cproc condition-has-type? (c k) ::<boolean> Scm_ConditionHasType)
 
-(define-cproc make-compound-condition (&rest conditions)
+(define-cproc make-compound-condition (:rest conditions)
   Scm_MakeCompoundCondition)
 
 

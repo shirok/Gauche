@@ -62,7 +62,7 @@
 (define-cproc thread-specific-set! (vm::<thread> obj) ::<void>
   (set! (-> vm specific) obj))
 
-(define-cproc make-thread (thunk::<procedure> &optional (name #f))
+(define-cproc make-thread (thunk::<procedure> :optional (name #f))
   Scm_MakeThread)
 
 (define-cproc thread-start! (vm::<thread>) Scm_ThreadStart)
@@ -71,7 +71,7 @@
 
 (define-cproc thread-sleep! (timeout) Scm_ThreadSleep)
 
-(define-cproc thread-join! (vm::<thread> &optional (timeout #f) timeout-val)
+(define-cproc thread-join! (vm::<thread> :optional (timeout #f) timeout-val)
   Scm_ThreadJoin)
 
 (define-cproc thread-terminate! (vm::<thread>) Scm_ThreadTerminate)
@@ -80,7 +80,7 @@
 ;; Mutex
 ;;
 
-(define-cproc make-mutex (&optional (name #f)) Scm_MakeMutex)
+(define-cproc make-mutex (:optional (name #f)) Scm_MakeMutex)
 
 (define-cproc mutex? (obj) ::<boolean> SCM_MUTEXP)
 
@@ -104,14 +104,14 @@
        (set! r 'not-abandoned)))
     (result r)))
 
-(define-cproc mutex-lock! (mutex::<mutex> &optional (timeout #f) thread)
+(define-cproc mutex-lock! (mutex::<mutex> :optional (timeout #f) thread)
   (let* ([owner::ScmVM* NULL])
     (cond [(SCM_VMP thread) (set! owner (SCM_VM thread))]
           [(SCM_UNBOUNDP thread) (set! owner (Scm_VM))]
           [(not (SCM_FALSEP thread)) (SCM_TYPE_ERROR thread "thread or #f")])
     (result (Scm_MutexLock mutex timeout owner))))
   
-(define-cproc mutex-unlock! (mutex::<mutex> &optional (cv #f) (timeout #f))
+(define-cproc mutex-unlock! (mutex::<mutex> :optional (cv #f) (timeout #f))
   (let* ([cond::ScmConditionVariable* NULL])
     (cond [(SCM_CONDITION_VARIABLE_P cv) (set! cond (SCM_CONDITION_VARIABLE cv))]
           [(not (SCM_FALSEP cv)) (SCM_TYPE_ERROR cv "condition variale or #f")])
@@ -128,7 +128,7 @@
 ;; Condition variable
 ;;
 
-(define-cproc make-condition-variable (&optional (name #f))
+(define-cproc make-condition-variable (:optional (name #f))
   Scm_MakeConditionVariable)
 
 (define-cproc condition-variable? (obj) ::<boolean>

@@ -1,3 +1,15 @@
+2008-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm (process-cproc-args): Switched the stub
+	  function's lambda keywords from
+	  {&optional,&keyword,&rest,&allow-other-keys} to
+	  {:optional,:key,:rest,:allow-other-keys}.  The latter set is
+	  consistent with the extended lambda syntax, and it doesn't need to
+	  treat ordinary symbols such as &optional specially.
+	  The old lambda keywords are supported for the backward compatibility,
+	  but will eventually fade out.
+	* *.stub: Changed accordingly.
+
 2008-11-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (%open/allow-noexist?): Check errno==ENXIO as well.

@@ -510,6 +510,13 @@
   (define (required specs args nreqs)
     (match specs
       [()                   (values (reverse args) '() nreqs 0 #f #f)]
+      [(:optional . specs) (optional specs args nreqs 0)]
+      [(:rest . specs)     (rest specs args '() nreqs 0 #f)]
+      [(:key . specs)  (keyword specs args '() nreqs 0)]
+      [(:allow-other-kyes . specs)
+       (error <cgen-stub-error>
+              "misplaced :allow-other-key parameter:"argspecs" in "name)]
+      ;; NB: &-keywords are deprecated.
       [('&optional . specs) (optional specs args nreqs 0)]
       [('&rest . specs)     (rest specs args '() nreqs 0 #f)]
       [('&keyword . specs)  (keyword specs args '() nreqs 0)]
@@ -525,6 +532,15 @@
   (define (optional specs args nreqs nopts)
     (match specs
       [() (values (reverse args) '() nreqs nopts #f #f)]
+      [(:optional . specs)
+       (error <cgen-stub-error> "extra :optional parameter in "name)]
+      [(:key . specs)
+       (error <cgen-stub-error>
+              ":key and :optional can't be used together in "name)]
+      [(:rest . specs)     (rest specs args '() nreqs nopts #f)]
+      [(:allow-other-keys . specs)
+       (error <cgen-stub-error> "misplaced :allow-other-key parameter in "name)]
+      ;; NB: &-keywords are deprecated.
       [('&optional . specs)
        (error <cgen-stub-error> "extra &optional parameter in "name)]
       [('&keyword . specs)
@@ -550,6 +566,19 @@
   (define (keyword specs args keyargs nreqs nopts)
     (match specs
       [() (values (reverse args) (reverse keyargs) nreqs nopts #f #f)]
+      [(:allow-other-keys)
+       (values (reverse args) (reverse keyargs) nreqs nopts #f #t)]
+      [(:allow-other-keys &rest . specs)
+       (rest specs args keyargs nreqs nopts #t)]
+      [(:allow-other-keys . specs)
+       (error <cgen-stub-error> "misplaced :allow-other-keys parameter in "name)]
+      [(:key . specs)
+       (error <cgen-stub-error> "extra :key parameter in "name)]
+      [(:optional . specs)
+       (error <cgen-stub-error>
+              ":key and :optional can't be used together in "name)]
+      [(:rest . specs)     (rest specs args keyargs nreqs nopts #f)]
+      ;; NB: &-keywords are deprecated.
       [('&allow-other-keys)
        (values (reverse args) (reverse keyargs) nreqs nopts #f #t)]
       [('&allow-other-keys &rest . specs)

@@ -79,7 +79,7 @@ extern ScmObj Scm_Environ(void);
 "
 
 ;; stdlib.h
-(define-cproc sys-abort ()  (call <void> "abort"))
+(define-cproc sys-abort () ::<void> abort)
 
 (when "defined HAVE_REALPATH"
   (define-cproc sys-realpath (path::<const-cstring>) ::<const-cstring>
@@ -105,7 +105,7 @@ extern ScmObj Scm_Environ(void);
 
 ;; sys/loadavg.h
 (when "defined HAVE_GETLOADAVG"
-  (define-cproc sys-getloadavg (&optional (nsamples::<int> 3))
+  (define-cproc sys-getloadavg (:optional (nsamples::<int> 3))
     (let* ([samples::(.array double [3])])
       (when (or (<= nsamples 0) (> nsamples 3))
         (Scm_Error "sys-getloadavg: argument out of range: %d" samples))
@@ -129,7 +129,7 @@ extern ScmObj Scm_Environ(void);
 
 ;; utime.h
 (define-cproc sys-utime
-  (path::<const-cstring> &optional (atime #f) (mtime #f)) ::<void>
+  (path::<const-cstring> :optional (atime #f) (mtime #f)) ::<void>
   (let* ([tim::(struct utimbuf)] [r::int])
     (cond [(and (SCM_FALSEP atime) (SCM_FALSEP mtime))
            (SCM_SYSCALL r (utime path NULL))]
@@ -257,7 +257,7 @@ extern ScmObj Scm_Environ(void);
 (when "defined(HAVE_PUTENV) || defined(HAVE_SETENV)"
   (define-cproc sys-setenv (name::<const-cstring>
                             value::<const-cstring>
-                            &optional overwrite::<boolean>)
+                            :optional overwrite::<boolean>)
     ::<void> Scm_SetEnv)
   (initcode "Scm_AddFeature(\"gauche.sys.setenv\", NULL);")
   )

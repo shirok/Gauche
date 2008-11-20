@@ -245,7 +245,7 @@
    (result (== (-> ndbm dbf) NULL)))
 
  (define-cproc ndbm-store (ndbm::<ndbm-file> key::<string> val::<string>
-                                             &optional (flags::<fixnum> 0))
+                                             :optional (flags::<fixnum> 0))
    ::<int>
    (let* ([dkey::datum] [dval::datum])
      (CHECK_NDBM ndbm)

@@ -77,9 +77,9 @@
       (for-each (lambda (v) (set! r (,fn r v))) args)
       (result r))])
 
-(define-cproc logand (x y &rest args) (logop Scm_LogAnd))
-(define-cproc logior (x y &rest args) (logop Scm_LogIor))
-(define-cproc logxor (x y &rest args) (logop Scm_LogXor))
+(define-cproc logand (x y :rest args) (logop Scm_LogAnd))
+(define-cproc logior (x y :rest args) (logop Scm_LogIor))
+(define-cproc logxor (x y :rest args) (logop Scm_LogXor))
 
 (define-cproc logcount (n) ::<int>
   (cond [(SCM_EQ n (SCM_MAKE_INT 0)) (result 0)]
@@ -113,7 +113,7 @@
 ;; For the smooth transition, we provide the original behavior as
 ;; inexact-/.  If the program uses compat.no-rational, '/' is overridden
 ;; by inexact-/ and the old code behaves the same.
-(define-cproc inexact-/ (arg1 &rest args)
+(define-cproc inexact-/ (arg1 :rest args)
   (cond [(SCM_NULLP args) (result (Scm_ReciprocalInexact arg1))]
         [else (dolist [x args] (set! arg1 (Scm_DivInexact arg1 x)))
               (result arg1)]))
@@ -121,26 +121,26 @@
 ;; Inexact arithmetics.  Useful for speed-sensitive code to avoid
 ;; accidental use of bignum or ratnum.   We might want to optimize
 ;; these more, even adding special VM insns for them.
-(define-cproc +. (&rest args)
+(define-cproc +. (:rest args)
   (let* ([a '0.0])
     (dolist [x args] (set! a (Scm_Add a (Scm_ExactToInexact x))))
     (result a)))
-(define-cproc *. (&rest args)
+(define-cproc *. (:rest args)
   (let* ([a '1.0])
     (dolist [x args] (set! a (Scm_Mul a (Scm_ExactToInexact x))))
     (result a)))
-(define-cproc -. (arg1 &rest args)
+(define-cproc -. (arg1 :rest args)
   (cond
    [(SCM_NULLP args) (result (Scm_Negate (Scm_ExactToInexact arg1)))]
    [else (dolist [x args] (set! arg1 (Scm_Sub arg1 (Scm_ExactToInexact x))))
          (result arg1)]))
-(define-cproc /. (arg1 &rest args)
+(define-cproc /. (arg1 :rest args)
   (cond
    [(SCM_NULLP args) (result (Scm_Reciprocal (Scm_ExactToInexact arg1)))]
    [else (dolist [x args] (set! arg1 (Scm_Div arg1 (Scm_ExactToInexact x))))
          (result arg1)]))
 
-(define-cproc clamp (x &optional (min #f) (max #f)) :fast-flonum
+(define-cproc clamp (x :optional (min #f) (max #f)) :fast-flonum
   (let* ([r x] [maybe_exact::int (SCM_EXACTP x)])
     (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
     (cond [(SCM_EXACTP min) (when (< (Scm_NumCmp x min) 0) (set! r min))]
@@ -189,7 +189,7 @@
     (when (SCM_BIGNUMP obj)
       (Scm_DumpBignum (SCM_BIGNUM obj) SCM_CUROUT))))
 
-(define-cproc min&max (arg0 &rest args) ::(<top> <top>)
+(define-cproc min&max (arg0 :rest args) ::(<top> <top>)
   (Scm_MinMax arg0 args (& SCM_RESULT0) (& SCM_RESULT1)))
 
 (define-cproc quotient&remainder (n1 n2) ::(<top> <top>)
@@ -209,12 +209,12 @@
 (define-cproc proper-list? (obj)   ::<boolean> SCM_PROPER_LIST_P)
 (define-cproc dotted-list? (obj)   ::<boolean> SCM_DOTTED_LIST_P)
 (define-cproc circular-list? (obj) ::<boolean> SCM_CIRCULAR_LIST_P)
-(define-cproc make-list (len::<fixnum> &optional (fill #f)) Scm_MakeList)
+(define-cproc make-list (len::<fixnum> :optional (fill #f)) Scm_MakeList)
 (define-cproc acons (caa cda cd) Scm_Acons)
 (define-cproc last-pair (list) Scm_LastPair)
 (define-cproc list-copy (list) Scm_CopyList)
 
-(define-cproc list* (&rest args)
+(define-cproc list* (:rest args)
   (inliner LIST-STAR)
   (let* ([head '()] [tail '()])
     (when (SCM_PAIRP args)
@@ -228,20 +228,20 @@
                      args))
     (result head)))
 
-(define-cproc %delete (obj list::<list> &optional cmpmode)
+(define-cproc %delete (obj list::<list> :optional cmpmode)
   (result (Scm_Delete obj list (getcmpmode cmpmode))))
-(define-cproc %delete! (obj list::<list> &optional cmpmode)
+(define-cproc %delete! (obj list::<list> :optional cmpmode)
   (result (Scm_DeleteX obj list (getcmpmode cmpmode))))
-(define-cproc %delete-duplicates (list::<list> &optional cmpmode)
+(define-cproc %delete-duplicates (list::<list> :optional cmpmode)
   (result (Scm_DeleteDuplicates list (getcmpmode cmpmode))))
-(define-cproc %delete-duplicates! (list::<list> &optional cmpmode)
+(define-cproc %delete-duplicates! (list::<list> :optional cmpmode)
   (result (Scm_DeleteDuplicatesX list (getcmpmode cmpmode))))
-(define-cproc %alist-delete (elt list::<list> &optional cmpmode)
+(define-cproc %alist-delete (elt list::<list> :optional cmpmode)
   (result (Scm_AssocDelete elt list (getcmpmode cmpmode))))
-(define-cproc %alist-delete! (elt list::<list> &optional cmpmode)
+(define-cproc %alist-delete! (elt list::<list> :optional cmpmode)
   (result (Scm_AssocDeleteX elt list (getcmpmode cmpmode))))
 
-(define-cproc append! (&rest list)
+(define-cproc append! (:rest list)
   (let* ([h '()] [t '()])
     (pair-for-each (lambda (cp)
                      ;; allow non-list argument at the last position
@@ -282,7 +282,7 @@
 ;; 6.3.3  Symbols
 ;;
 
-(define-cproc gensym (&optional (prefix::<string>? #f)) Scm_Gensym)
+(define-cproc gensym (:optional (prefix::<string>? #f)) Scm_Gensym)
 
 ;; keywords
 (define-cproc keyword? (obj) ::<boolean> :fast-flonum SCM_KEYWORDP)
@@ -294,7 +294,7 @@
           [else (SCM_TYPE_ERROR name "string or symbol")])
     (result (Scm_MakeKeyword sname))))
 
-(define-cproc get-keyword (key list &optional fallback) Scm_GetKeyword)
+(define-cproc get-keyword (key list :optional fallback) Scm_GetKeyword)
 
 (define-cproc delete-keyword (key list)  Scm_DeleteKeyword)
 (define-cproc delete-keyword! (key list) Scm_DeleteKeywordX)
@@ -313,14 +313,14 @@
 ;; 6.3.4  Characters
 ;;
 
-(define-cproc digit->integer (ch::<char> &optional (radix::<fixnum> 10))
+(define-cproc digit->integer (ch::<char> :optional (radix::<fixnum> 10))
   (let* ([r::int])
     (when (or (< radix 2) (> radix 36))
       (Scm_Error "radix must be between 2 and 36, but got %d" radix))
     (set! r (Scm_DigitToInt ch radix))
     (result (?: (>= r 0) (SCM_MAKE_INT r) '#f))))
 
-(define-cproc integer->digit (n::<fixnum> &optional (radix::<fixnum> 10))
+(define-cproc integer->digit (n::<fixnum> :optional (radix::<fixnum> 10))
   (let* ([r::ScmChar])
     (when (or (< radix 2) (> radix 36))
       (Scm_Error "radix must be between 2 and 36, but got %d" radix))
@@ -362,7 +362,7 @@
 (define-cproc %char-set<=? (x::<char-set> y::<char-set>)
   ::<boolean> Scm_CharSetLE)
 
-(define-cproc char-set (&rest chars) ::<char-set>
+(define-cproc char-set (:rest chars) ::<char-set>
   (let* ([cs::ScmCharSet* (SCM_CHARSET (Scm_MakeEmptyCharSet))])
     (char_set_add cs chars)
     (result cs)))
@@ -370,8 +370,7 @@
 (define-cproc char-set-copy (cs::<char-set>) Scm_CharSetCopy)
 
 (define-cproc read-char-set
-  (port::<input-port> &keyword (error::<boolean> #t)
-                      (posix-bracket::<boolean> #t))
+  (port::<input-port> :key (error::<boolean> #t) (posix-bracket::<boolean> #t))
   (result (Scm_CharSetRead port NULL error posix-bracket)))
 
 (define-cproc %char-set-add-chars! (cs::<char-set> chars::<list>) ::<char-set>
@@ -427,8 +426,7 @@
 (define-cproc string-complete->incomplete (str::<string>)
   Scm_StringCompleteToIncomplete)
 
-(define-cproc string-incomplete->complete (str::<string>
-                                           &optional (handling #f))
+(define-cproc string-incomplete->complete (str::<string> :optional (handling #f))
   (let* ([h::int 0] [sub::ScmChar (SCM_CHAR 0)])
     (cond [(SCM_EQ handling ':omit) (set! h SCM_ILLEGAL_CHAR_OMIT)]
           [(SCM_FALSEP handling)    (set! h SCM_ILLEGAL_CHAR_REJECT)]
@@ -440,14 +438,14 @@
 (define-cproc string-size (str::<string>) ::<fixnum>
   (result (SCM_STRING_BODY_SIZE (SCM_STRING_BODY str))))
 
-(define-cproc make-byte-string (size::<fixnum> &optional (byte::<fixnum> 0))
+(define-cproc make-byte-string (size::<fixnum> :optional (byte::<fixnum> 0))
   (let* ([s::char*])
     (when (< size 0) (Scm_Error "size out of bound: %d" size))
     (set! s (SCM_NEW_ATOMIC2 (C: char*) size))
     (memset s byte size)
     (result (Scm_MakeString s size size SCM_STRING_INCOMPLETE))))
 
-(define-cproc string-byte-ref (str::<string> k::<fixnum> &optional fallback)
+(define-cproc string-byte-ref (str::<string> k::<fixnum> :optional fallback)
   (let* ([r::int (Scm_StringByteRef str k (SCM_UNBOUNDP fallback))])
     (result (?: (< r 0) fallback (SCM_MAKE_INT r)))))
 
@@ -457,11 +455,11 @@
 (define-cproc %string-replace-body! (target::<string> source::<string>)
   (result (Scm_StringReplaceBody target (SCM_STRING_BODY source))))
 
-(define-cproc %maybe-substring (str::<string> &optional start end)
+(define-cproc %maybe-substring (str::<string> :optional start end)
   Scm_MaybeSubstring)
 
 (define-cproc string-join (strs::<list>
-                           &optional (delim::<string> " ") (grammar infix))
+                           :optional (delim::<string> " ") (grammar infix))
   (let* ([gm::int 0])
     (cond
      [(SCM_EQ grammar 'infix) (set! gm SCM_STRING_JOIN_INFIX)]
@@ -487,7 +485,7 @@
   Scm_StringSplitByChar)
 
 ;; primitive scanner
-(define-cproc string-scan (s1::<string> s2 &optional (mode index))
+(define-cproc string-scan (s1::<string> s2 :optional (mode index))
   (let* ([rmode::int 0])
     (cond
      [(SCM_EQ mode 'index)   (set! rmode SCM_STRING_SCAN_INDEX)]
@@ -511,7 +509,7 @@
   "SCM_STRING_POINTERP" "SCM_STRING_POINTER")
 
 (define-cproc make-string-pointer (str::<string>
-                                   &optional (index::<fixnum> 0)
+                                   :optional (index::<fixnum> 0)
                                              (start::<fixnum> 0)
                                              (end::<fixnum> -1))
   Scm_MakeStringPointer)
@@ -525,8 +523,7 @@
   Scm_StringPointerPrev)
 (define-cproc string-pointer-set! (sp::<string-pointer> index::<fixnum>)
   Scm_StringPointerSet)
-(define-cproc string-pointer-substring (sp::<string-pointer>
-                                        &keyword (after #f))
+(define-cproc string-pointer-substring (sp::<string-pointer> :key (after #f))
   (result (Scm_StringPointerSubstring sp (not (SCM_FALSEP after)))))
 (define-cproc string-pointer-index (sp::<string-pointer>) ::<int>
   (result (-> sp index)))
@@ -544,7 +541,7 @@
 (define-cproc regexp? (obj)   ::<boolean> SCM_REGEXPP)
 (define-cproc regmatch? (obj) ::<boolean> SCM_REGMATCHP)
 
-(define-cproc string->regexp (str::<string> &keyword (case-fold #f))
+(define-cproc string->regexp (str::<string> :key (case-fold #f))
   (let* ([flags::int (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)])
     (result (Scm_RegComp str flags))))
 (define-cproc regexp->string (regexp::<regexp>)
@@ -552,7 +549,7 @@
 (define-cproc regexp-case-fold? (regexp::<regexp>) ::<boolean>
   (result (logand (-> regexp flags) SCM_REGEXP_CASE_FOLD)))
 
-(define-cproc regexp-parse (str::<string> &keyword (case-fold #f))
+(define-cproc regexp-parse (str::<string> :key (case-fold #f))
   (let* ([flags::int (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)])
     (result (Scm_RegComp str (logior flags SCM_REGEXP_PARSE_ONLY)))))
 (define-cproc regexp-compile (ast)  Scm_RegCompFromAST)
@@ -576,15 +573,15 @@
            [else (SCM_TYPE_ERROR match "regmatch object or #f")
                  (result SCM_UNDEFINED)])))
 
-(define-cproc rxmatch-substring (match &optional (obj 0)) 
+(define-cproc rxmatch-substring (match :optional (obj 0)) 
   (rxmatchop Scm_RegMatchSubstr))
-(define-cproc rxmatch-start (match &optional (obj 0))
+(define-cproc rxmatch-start (match :optional (obj 0))
   (rxmatchop Scm_RegMatchStart))
-(define-cproc rxmatch-end (match &optional (obj 0))
+(define-cproc rxmatch-end (match :optional (obj 0))
   (rxmatchop Scm_RegMatchEnd))
-(define-cproc rxmatch-before (match &optional (obj 0))
+(define-cproc rxmatch-before (match :optional (obj 0))
   (rxmatchop Scm_RegMatchBefore))
-(define-cproc rxmatch-after (match &optional (obj 0))
+(define-cproc rxmatch-after (match :optional (obj 0))
   (rxmatchop Scm_RegMatchAfter))
 (define-cproc rxmatch-num-matches (match)
   (if (SCM_FALSEP match)
@@ -602,7 +599,7 @@
 ;;
 
 (define-cproc vector-copy
-  (v::<vector> &optional (start::<fixnum> 0) (end::<fixnum> -1) fill)
+  (v::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1) fill)
   Scm_VectorCopy)
 
 ;; weak vector
@@ -612,7 +609,7 @@
   (result (-> wv size)))
 
 (define-cproc weak-vector-ref
-  (wv::<weak-vector> index::<fixnum> &optional fallback)
+  (wv::<weak-vector> index::<fixnum> :optional fallback)
   Scm_WeakVectorRef)
   
 (define-cproc weak-vector-set! (wv::<weak-vector> index::<fixnum> val)
@@ -667,11 +664,9 @@
              (== errno ENOTDIR)))])
 
 (define-cproc %open-input-file (path::<string>
-                                &keyword
-                                (if-does-not-exist :error)
-                                (buffering #f)
-                                (element-type :character)
-                                )
+                                :key (if-does-not-exist :error)
+                                     (buffering #f)
+                                     (element-type :character))
   (let* ([ignerr::int FALSE])
     (cond [(SCM_FALSEP if-does-not-exist) (set! ignerr TRUE)]
           [(not (SCM_EQ if-does-not-exist ':error))
@@ -685,13 +680,11 @@
       (result o))))
 
 (define-cproc %open-output-file (path::<string>
-                                 &keyword
-                                 (if-exists :supersede)
-                                 (if-does-not-exist :create)
-                                 (mode::<fixnum> #o666)
-                                 (buffering #f)
-                                 (element-type :character)
-                                 )
+                                 :key (if-exists :supersede)
+                                      (if-does-not-exist :create)
+                                      (mode::<fixnum> #o666)
+                                      (buffering #f)
+                                      (element-type :character))
   (let* ([ignerr-noexist::int FALSE]
          [ignerr-exist::int FALSE]
          [flags::int O_WRONLY])
@@ -724,11 +717,10 @@
       (result o))))
 
 ;; String port (srfi-6)
-(define-cproc open-input-string
-  (string::<string> &keyword (private?::<boolean> #f))
+(define-cproc open-input-string (string::<string> :key (private?::<boolean> #f))
   Scm_MakeInputStringPort)
 
-(define-cproc open-output-string (&keyword (private?::<boolean> #f))
+(define-cproc open-output-string (:key (private?::<boolean> #f))
   Scm_MakeOutputStringPort)
 
 (define-cproc get-output-string (oport::<output-port>) ;SRFI-6
@@ -804,7 +796,7 @@
           (ref bufrec data)    (cast void* flusher))
     (result (Scm_MakeBufferedPort SCM_CLASS_PORT SCM_FALSE SCM_PORT_OUTPUT TRUE (& bufrec)))))
 
-(define-cproc flush (&optional (oport::<output-port> (current-output-port)))
+(define-cproc flush (:optional (oport::<output-port> (current-output-port)))
   ::<void> Scm_Flush)
 
 (define-cproc flush-all-ports () ::<void> (Scm_FlushAllPorts FALSE))
@@ -816,7 +808,7 @@
     (logior= (SCM_PORT_FLAGS port) SCM_PORT_CASE_FOLD)
     (logand= (SCM_PORT_FLAGS port) (lognot SCM_PORT_CASE_FOLD))))
 
-(define-cproc current-error-port (&optional newport)
+(define-cproc current-error-port (:optional newport)
   (cond
    [(SCM_OPORTP newport) (result (Scm_SetCurrentErrorPort (SCM_PORT newport)))]
    [(not (SCM_UNBOUNDP newport))
@@ -845,7 +837,7 @@
 
 (define-cproc port-seek
   (port::<port> offset::<integer>
-                &optional (whence::<fixnum> (c "SCM_MAKE_INT(SEEK_SET)")))
+                :optional (whence::<fixnum> (c "SCM_MAKE_INT(SEEK_SET)")))
   Scm_PortSeek)
 
 (define-cproc port-type (port::<port>)
@@ -866,18 +858,18 @@
 
 ;; Open port from fd
 (define-cproc open-input-fd-port (fd::<fixnum>
-                                  &keyword (buffering #f)
-                                  (owner?::<boolean> #f)
-                                  (name #f))
+                                  :key (buffering #f)
+                                       (owner?::<boolean> #f)
+                                       (name #f))
   (let* ([bufmode::int (Scm_BufferingMode buffering SCM_PORT_INPUT
                                           SCM_PORT_BUFFER_FULL)])
     (when (< fd 0) (Scm_Error "bad file descriptor: %d" fd))
     (result (Scm_MakePortWithFd name SCM_PORT_INPUT fd bufmode ownerP))))
 
 (define-cproc open-output-fd-port (fd::<fixnum>
-                                   &keyword (buffering #f)
-                                   (owner?::<boolean> #f)
-                                   (name #f))
+                                   :key (buffering #f)
+                                        (owner?::<boolean> #f)
+                                        (name #f))
   (let* ([bufmode::int (Scm_BufferingMode buffering SCM_PORT_OUTPUT
                                           SCM_PORT_BUFFER_FULL)])
     (when (< fd 0) (Scm_Error "bad file descriptor: %d" fd))
@@ -900,16 +892,16 @@
 
 (define-cproc byte-ready? (port::<input-port>) ::<boolean> Scm_ByteReady)
 
-(define-cproc read-byte (&optional (port::<input-port> (current-input-port)))
+(define-cproc read-byte (:optional (port::<input-port> (current-input-port)))
   (let* ([b::int])
     (SCM_GETB b port)
     (result (?: (< b 0) SCM_EOF (SCM_MAKE_INT b)))))
 
-(define-cproc peek-byte (&optional (port::<input-port> (current-input-port)))
+(define-cproc peek-byte (:optional (port::<input-port> (current-input-port)))
   (let* ([b::int (Scm_Peekb port)])
     (result (?: (< b 0) SCM_EOF (SCM_MAKE_INT b)))))
 
-(define-cproc read-line (&optional (port::<input-port> (current-input-port))
+(define-cproc read-line (:optional (port::<input-port> (current-input-port))
                                    (allowbytestr #f))
   (let* ([r (Scm_ReadLine port)])
     (when (and (SCM_FALSEP allowbytestr)
@@ -919,7 +911,7 @@
     (result r)))
 
 (define-cproc read-block (bytes::<fixnum>
-                          &optional (port::<input-port> (current-input-port)))
+                          :optional (port::<input-port> (current-input-port)))
   (when (< bytes 0)
     (Scm_Error "bytes must be non-negative integer: %d" bytes))
   (if (== bytes 0)
@@ -934,10 +926,10 @@
             ))))
 
 (define-cproc read-list (closer::<char>
-                         &optional (port (current-input-port)))
+                         :optional (port (current-input-port)))
   (result (Scm_ReadList port closer)))
 
-(define-cproc define-reader-ctor (symbol proc &optional (finisher #f))
+(define-cproc define-reader-ctor (symbol proc :optional (finisher #f))
   Scm_DefineReaderCtor)
 
 (define-cproc define-reader-directive (symbol proc)
@@ -964,8 +956,7 @@
 ;;
 
 (define-cproc write-byte (byte::<fixnum>
-                          &optional
-                          (port::<output-port> (current-output-port)))
+                          :optional (port::<output-port> (current-output-port)))
   ::<int>
   (when (or (< byte 0) (> byte 255))
     (Scm_Error "argument out of range: %d" byte))
@@ -973,22 +964,22 @@
   (result 1))
 
 (define-cproc write-limited (obj limit::<fixnum>
-                             &optional (port (current-output-port)))
+                             :optional (port (current-output-port)))
   ::<int> (result (Scm_WriteLimited obj port SCM_WRITE_WRITE limit)))
 
-(define-cproc write* (obj &optional (port (current-output-port)))
+(define-cproc write* (obj :optional (port (current-output-port)))
   ::<int> (result (Scm_WriteCircular obj port SCM_WRITE_WRITE 0)))
   
 ;;
 ;; 6.6.4  System Interface
 ;;
 
-(define-cproc %add-load-path (path::<const-cstring> &optional (afterp #f))
+(define-cproc %add-load-path (path::<const-cstring> :optional (afterp #f))
   (result (Scm_AddLoadPath path (not (SCM_FALSEP afterp)))))
         
 (define-cproc dynamic-load (file::<string>
-                            &keyword (init-function #f)
-                                     (export-symbols #f))
+                            :key (init-function #f)
+                                 (export-symbols #f))
   (result (Scm_DynLoad file init_function (not (SCM_FALSEP export_symbols)))))
 
 (define-cproc %require (feature) ::<boolean>
@@ -1002,7 +993,7 @@
 (define-cproc undefined () (inliner CONSTU) (result SCM_UNDEFINED))
 (define-cproc undefined? (obj) ::<boolean> SCM_UNDEFINEDP)
 
-(define-cproc warn (fmt::<string> &rest args) ::<void> Scm_FWarn)
+(define-cproc warn (fmt::<string> :rest args) ::<void> Scm_FWarn)
 
 ;;
 ;; Dictionary common macros
@@ -1092,7 +1083,7 @@
 (define-cproc hash (obj)     ::<ulong> :fast-flonum Scm_Hash)
 (define-cproc hash-table? (obj) ::<boolean> :fast-flonum SCM_HASH_TABLE_P)
 
-(define-cproc make-hash-table (&optional (type eq?))
+(define-cproc make-hash-table (:optional (type eq?))
   (let* ([ctype::int 0])
     (set-hash-type! ctype type)
     (result (Scm_MakeHashTableSimple ctype 0))))
@@ -1106,7 +1097,7 @@
 (define-cproc hash-table-clear! (hash::<hash-table>) ::<void>
   (Scm_HashCoreClear (SCM_HASH_TABLE_CORE hash)))
 
-(define-cproc hash-table-get (hash::<hash-table> key &optional fallback)
+(define-cproc hash-table-get (hash::<hash-table> key :optional fallback)
   (dict-get hash Scm_HashTableRef))
 
 (define-cproc hash-table-put! (hash::<hash-table> key value) ::<void>
@@ -1126,14 +1117,14 @@
     (return result)))
 
 (define-cproc hash-table-update!
-  (hash::<hash-table> key proc &optional fallback)
+  (hash::<hash-table> key proc :optional fallback)
   (dict-update! hash Scm_HashCoreSearch SCM_HASH_TABLE_CORE
                 hash-table-update-cc))
 
 (define-cproc hash-table-push! (hash::<hash-table> key value) ::<void>
   (dict-push! hash Scm_HashCoreSearch SCM_HASH_TABLE_CORE))
 
-(define-cproc hash-table-pop! (hash::<hash-table> key &optional fallback)
+(define-cproc hash-table-pop! (hash::<hash-table> key :optional fallback)
   (dict-pop! hash Scm_HashCoreSearch SCM_HASH_TABLE_CORE))
 
 (define-cfn hash-table-iter (args::ScmObj* nargs::int data::void*) :static
@@ -1163,7 +1154,7 @@
 ;; going to reimplement hash core.  I suspend weak hash table
 ;; development until then.
 
-; (define-cproc make-weak-hash-table (&optional (type eq?)
+; (define-cproc make-weak-hash-table (:optional (type eq?)
 ;                                               (weakness key)
 ;                                               (default-value #f))
 ;   (body <top>
@@ -1194,7 +1185,7 @@
 ;   (body <void> (Scm_HashCoreClear (SCM_WEAK_HASH_TABLE_CORE wh))))
 
 ; (define-cproc weak-hash-table-get (wh::<weak-hash-table> key
-;                                                          &optional fallback)
+;                                                          :optional fallback)
 ;   (body <top>  (dict-get wh Scm_WeakHashTableRef)))
 
 ; (define-cproc weak-hash-table-put! (wh::<weak-hash-table> key value)
@@ -1244,7 +1235,7 @@
 
 (define-cproc tree-map? (obj) ::<boolean> SCM_TREE_MAP_P)
 
-(define-cproc tree-map-get (tm::<tree-map> key &optional fallback)
+(define-cproc tree-map-get (tm::<tree-map> key :optional fallback)
   (dict-get tm Scm_TreeMapRef))
 
 (define-cproc tree-map-put! (tm::<tree-map> key val) ::<void>
@@ -1258,13 +1249,13 @@
     (cast void (SCM_DICT_SET_VALUE e result))
     (return result)))
 
-(define-cproc tree-map-update! (tm::<tree-map> key proc &optional fallback)
+(define-cproc tree-map-update! (tm::<tree-map> key proc :optional fallback)
   (dict-update! tm Scm_TreeCoreSearch SCM_TREE_MAP_CORE tree_map_update_cc))
 
 (define-cproc tree-map-push! (tm::<tree-map> key value) ::<void>
   (dict-push! tm Scm_TreeCoreSearch SCM_TREE_MAP_CORE))
 
-(define-cproc tree-map-pop! (tm::<tree-map> key &optional fallback)
+(define-cproc tree-map-pop! (tm::<tree-map> key :optional fallback)
   (dict-pop! tm Scm_TreeCoreSearch SCM_TREE_MAP_CORE))
             
 (define-cproc tree-map-exists? (tm::<tree-map> key) ::<boolean>
@@ -1330,39 +1321,39 @@
 (define-cise-stmt tree-map-closest-kv-result  [(_ k v) `(result ,k ,v)])
 
 (define-cproc tree-map-floor
-  (tm::<tree-map> key &optional (key-fb #f) (val-fb #f)) ::(<top> <top>)
+  (tm::<tree-map> key :optional (key-fb #f) (val-fb #f)) ::(<top> <top>)
   (tree-map-closest-entry #t lo tree-map-closest-kv-result))
-(define-cproc tree-map-floor-key (tm::<tree-map> key &optional (key-fb #f))
+(define-cproc tree-map-floor-key (tm::<tree-map> key :optional (key-fb #f))
   (tree-map-closest-entry #t lo tree-map-closest-key-result))
-(define-cproc tree-map-floor-value (tm::<tree-map> key &optional (val-fb #f))
+(define-cproc tree-map-floor-value (tm::<tree-map> key :optional (val-fb #f))
   (tree-map-closest-entry #t lo tree-map-closest-val-result))
 
 (define-cproc tree-map-ceiling
-  (tm::<tree-map> key &optional (key-fb #f) (val-fb #f)) ::(<top> <top>)
+  (tm::<tree-map> key :optional (key-fb #f) (val-fb #f)) ::(<top> <top>)
   (tree-map-closest-entry #t hi tree-map-closest-kv-result))
-(define-cproc tree-map-ceiling-key (tm::<tree-map> key &optional (key-fb #f))
+(define-cproc tree-map-ceiling-key (tm::<tree-map> key :optional (key-fb #f))
   (tree-map-closest-entry #t hi tree-map-closest-key-result))
-(define-cproc tree-map-ceiling-value (tm::<tree-map> key &optional (val-fb #f))
+(define-cproc tree-map-ceiling-value (tm::<tree-map> key :optional (val-fb #f))
   (tree-map-closest-entry #t hi tree-map-closest-val-result))
 
 (define-cproc tree-map-predecessor
-  (tm::<tree-map> key &optional (key-fb #f) (val-fb #f)) ::(<top> <top>)
+  (tm::<tree-map> key :optional (key-fb #f) (val-fb #f)) ::(<top> <top>)
   (tree-map-closest-entry #f lo tree-map-closest-kv-result))
 (define-cproc tree-map-predecessor-key
-  (tm::<tree-map> key &optional (key-fb #f))
+  (tm::<tree-map> key :optional (key-fb #f))
   (tree-map-closest-entry #f lo tree-map-closest-key-result))
 (define-cproc tree-map-predecessor-value
-  (tm::<tree-map> key &optional (val-fb #f))
+  (tm::<tree-map> key :optional (val-fb #f))
   (tree-map-closest-entry #f lo tree-map-closest-val-result))
 
 (define-cproc tree-map-successor
-  (tm::<tree-map> key &optional (key-fb #f) (val-fb #f)) ::(<top> <top>)
+  (tm::<tree-map> key :optional (key-fb #f) (val-fb #f)) ::(<top> <top>)
   (tree-map-closest-entry #f hi tree-map-closest-kv-result))
 (define-cproc tree-map-successor-key
-  (tm::<tree-map> key &optional (key-fb #f))
+  (tm::<tree-map> key :optional (key-fb #f))
   (tree-map-closest-entry #f hi tree-map-closest-key-result))
 (define-cproc tree-map-successor-value
-  (tm::<tree-map> key &optional (val-fb #f))
+  (tm::<tree-map> key :optional (val-fb #f))
   (tree-map-closest-entry #f hi tree-map-closest-val-result))
 
 ;;
@@ -1385,7 +1376,7 @@
 
 (define-cproc all-modules () Scm_AllModules)
 
-(define-cproc make-module (name::<symbol>? &keyword (if-exists :error))
+(define-cproc make-module (name::<symbol>? :key (if-exists :error))
   (let* ([error_if_exists::int TRUE])
     (cond [(SCM_EQ if-exists ':error) (set! error_if_exists TRUE)]
           [(SCM_FALSEP if-exists)     (set! error_if_exists FALSE)]
@@ -1419,7 +1410,7 @@
                                 name 0)))))
 
 (define-cproc global-variable-ref (mod_or_name name::<symbol>
-                                               &optional
+                                               :optional
                                                fallback
                                                (stay-in-module::<boolean> #f))
   (let* ([module::ScmModule* (get_module_from_mod_or_name mod_or_name)]
@@ -1441,7 +1432,7 @@
   (port::<output-port> fmt::<string> args shared::<boolean>) ::<void>
   Scm_Format)
 
-(define-cproc %exit (&optional (code::<fixnum> 0)) ::<void> Scm_Exit)
+(define-cproc %exit (:optional (code::<fixnum> 0)) ::<void> Scm_Exit)
 
 ;;
 ;; External view of VM.
@@ -1465,15 +1456,15 @@
   )
 
 (define-cproc vm-dump
-  (&optional (vm::<thread> (c "SCM_OBJ(Scm_VM())"))) ::<void>
+  (:optional (vm::<thread> (c "SCM_OBJ(Scm_VM())"))) ::<void>
   (Scm_VMDump vm))
 
 (define-cproc vm-get-stack-trace
-  (&optional (vm::<thread> (c "SCM_OBJ(Scm_VM())")))
+  (:optional (vm::<thread> (c "SCM_OBJ(Scm_VM())")))
   (result (Scm_VMGetStack vm)))
 
 (define-cproc vm-get-stack-trace-lite
-  (&optional (vm::<thread> (c "SCM_OBJ(Scm_VM())")))
+  (:optional (vm::<thread> (c "SCM_OBJ(Scm_VM())")))
   (result (Scm_VMGetStackLite vm)))
 
 (define-cproc vm-set-default-exception-handler (vm::<thread> handler) ::<void>
@@ -1527,11 +1518,10 @@
   Scm_ForeignPointerAttr)
 
 (define-cproc foreign-pointer-attribute-get (fp::<foreign-pointer>
-                                             key &optional fallback)
+                                             key :optional fallback)
   Scm_ForeignPointerAttrGet)
 
-(define-cproc foreign-pointer-attribute-set (fp::<foreign-pointer>
-                                             key value)
+(define-cproc foreign-pointer-attribute-set (fp::<foreign-pointer> key value)
   Scm_ForeignPointerAttrSet)
 
 ;;

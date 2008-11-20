@@ -234,7 +234,7 @@
  "#endif"
 
  (define-cproc gdbm-open
-   (name::<string> &optional (size::<fixnum> 0)
+   (name::<string> :optional (size::<fixnum> 0)
                    (rwmode::<fixnum> (c "SCM_MAKE_INT(GDBM_READER)"))
                    (fmode::<fixnum> (c "SCM_MAKE_INT(0666)")))
    (let* ([z::ScmGdbmFile* (SCM_NEW ScmGdbmFile)])
@@ -256,7 +256,7 @@
 
  (define-cproc gdbm-store (gdbm::<gdbm-file>
                            key::<string> val::<string>
-                           &optional (flags::<fixnum> 0))
+                           :optional (flags::<fixnum> 0))
    ::<int>
    (let* ([dkey::datum] [dval::datum])
      (CHECK_GDBM gdbm)
