@@ -51,23 +51,44 @@ SCM_EXTENSION_ENTRY void Scm_Init_syslog(void)
 #define Scm_Init_syslog internal_init
 "
 
+;; On the platforms which don't have syslog facility, should we raise
+;; a "not implemented" error, or simply discard the requests?  I tend to
+;; think, for a logging feature, it is more useful to discard them.
+
+(define-cproc sys-openlog
+  (ident::<const-cstring> option::<fixnum> facility::<fixnum>) ::<void>
+  (|#if| "defined(HAVE_SYSLOG)" (openlog ident option facility)))
+
+(define-cproc sys-syslog (prio::<fixnum> message::<const-cstring>) ::<void>
+  (|#if| "defined(HAVE_SYSLOG)" (syslog prio "%s" message)))
+
+(define-cproc sys-closelog () ::<void>
+  (|#if| "defined(HAVE_SYSLOG)" (closelog)))
+
 (when "defined(HAVE_SYSLOG)"
-  (define-cproc sys-openlog (ident::<const-cstring> option::<fixnum>
-                                                    facility::<fixnum>)
-    (call <void> "openlog"))
-  (define-cproc sys-syslog (prio::<fixnum> message::<const-cstring>)
-    (body <void> "syslog(prio, \"%s\", message);"))
-  (define-cproc sys-closelog ()
-    (call <void> "closelog"))
   (initcode "Scm_AddFeature(\"gauche.sys.syslog\", NULL);"))
 
+(define-cproc sys-logmask (prio::<fixnum>) ::<fixnum>
+  (|#if| "defined(HAVE_SETLOGMASK)" (result (LOG_MASK prio)) (result 0)))
+
+(define-cproc sys-setlogmask (mask::<fixnum>) ::<fixnum> setlogmask
+  (|#if| "defined(HAVE_SETLOGMASK)" (result (setlogmask mask)) (result 0)))
+
 (when "defined(HAVE_SETLOGMASK)"
-  (define-cproc sys-logmask (prio::<fixnum>)
-    (call <fixnum> "LOG_MASK"))
-  (define-cproc sys-setlogmask (mask::<fixnum>)
-    (call <fixnum> "setlogmask"))
   (initcode "Scm_AddFeature(\"gauche.sys.setlogmask\", NULL);"))
 
+;; We need to define at least these three logging option constants,
+;; for they are referenced in gauche.logger.  The actual value doesn't matter.
+"#ifndef LOG_PID
+#define LOG_PID 0
+#endif
+#ifndef LOG_INFO
+#define LOG_INFO 1
+#endif
+#ifndef LOG_USER
+#define LOG_USER 2
+#endif
+"
 ;; openlog options
 (define-enum-conditionally LOG_CONS)
 (define-enum-conditionally LOG_NDELAY)
@@ -107,10 +128,6 @@ SCM_EXTENSION_ENTRY void Scm_Init_syslog(void)
 (define-enum-conditionally LOG_NOTICE)
 (define-enum-conditionally LOG_INFO)
 (define-enum-conditionally LOG_DEBUG)
-
-;; a kludge to make sure the genstub-generated static table has at least
-;; one entry, otherwise C compiler will complain.
-(define-symbol dummy "sym_dummy") 
 
 ;; Local variables:
 ;; mode: scheme
