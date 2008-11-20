@@ -182,16 +182,17 @@
                (set! SCM_RESULT0 gval SCM_RESULT1 'inline)]
               [else (goto normal)])
         (|#if| "defined(RECORD_DEPENDED_MODULES)"
-               (dotimes [i 3]
-                 (when (SCM_EQ mod (aref stdmods i)) (goto normal)))
-               (let* ([curmod (SCM_VECTOR_ELEMENT cenv 0)])
-                 (SCM_ASSERT (SCM_MODULEP curmod))
-                 (when (SCM_FALSEP
-                        (Scm_Memq (SCM_OBJ mod)
-                                  (-> (SCM_MODULE curmod) depended)))
-                   (set! (-> (SCM_MODULE curmod) depended)
-                         (Scm_Cons (SCM_OBJ mod)
-                                   (-> (SCM_MODULE curmod) depended))))))
+               (begin
+                 (dotimes [i 3]
+                   (when (SCM_EQ mod (aref stdmods i)) (goto normal)))
+                 (let* ([curmod (SCM_VECTOR_ELEMENT cenv 0)])
+                   (SCM_ASSERT (SCM_MODULEP curmod))
+                   (when (SCM_FALSEP
+                          (Scm_Memq (SCM_OBJ mod)
+                                    (-> (SCM_MODULE curmod) depended)))
+                     (set! (-> (SCM_MODULE curmod) depended)
+                           (Scm_Cons (SCM_OBJ mod)
+                                     (-> (SCM_MODULE curmod) depended)))))))
         ))
     (label normal)
     ))
