@@ -1,3 +1,9 @@
+2008-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_LoadPacketInit), src/gauche/load.h (ScmLoadPacket):
+	  Cleadned up the structure.  Added Scm_LoadPacketInit to keep
+	  room of future extension.
+
 2008-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_Load, Scm_LoadFromPort),

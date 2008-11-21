@@ -79,13 +79,29 @@ static ScmObj key_error_if_not_found = SCM_UNBOUND;
 static ScmObj key_macro              = SCM_UNBOUND;
 static ScmObj key_ignore_coding      = SCM_UNBOUND;
 
-/* small utility */
-static void load_packet_init(ScmLoadPacket *packet)
+/*
+ * ScmLoadPacket is the way to communicate to Scm_Load facility.
+ */
+
+/* small utility.  initializes OUT fields of the load packet. */
+static void load_packet_prepare(ScmLoadPacket *packet)
 {
     if (packet) {
         packet->exception = SCM_FALSE;
         packet->loaded = FALSE;
     }
+}
+
+/* for applications to initialize ScmLoadPacket before passing it to
+   Scm_Load or Scm_LoadFromPort.   As of 0.9, ScmLoadPacket only has
+   fields to be filled by those APIs, so applications don't need to
+   initialize it explicitly.  However, it is possible in future that
+   we add some fields to pass info from applications to APIs, in which
+   case it is necessary for this function to set appropriate initial
+   values for such fields. */
+void Scm_LoadPacketInit(ScmLoadPacket *p)
+{
+    load_packet_prepare(p);
 }
 
 /*--------------------------------------------------------------------
@@ -110,9 +126,10 @@ static void load_packet_init(ScmLoadPacket *packet)
  *   locking into the wrapped (original) port?
  */
 
-struct load_packet {
+/* A structure to keep around the transient state of the current loading.
+   Created by Scm_VMLoadFromPort and discarded once the loading ends. */
+struct load_info {
     ScmPort *port;
-    ScmString *being_required;  /* this load is triggerd by 'requre' */
     ScmModule *prev_module;
     ScmReadContext *ctx;
     ScmObj prev_port;
@@ -124,7 +141,7 @@ struct load_packet {
 /* Clean up */
 static ScmObj load_after(ScmObj *args, int nargs, void *data)
 {
-    struct load_packet *p = (struct load_packet *)data;
+    struct load_info *p = (struct load_info *)data;
     ScmVM *vm = Scm_VM();
 
 #ifdef HAVE_GETTIMEOFDAY
@@ -150,7 +167,7 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
 /* C-continuation of the loading */
 static ScmObj load_cc(ScmObj result, void **data)
 {
-    struct load_packet *p = (struct load_packet*)(data[0]);
+    struct load_info *p = (struct load_info*)(data[0]);
     ScmObj expr = Scm_ReadWithContext(SCM_OBJ(p->port), p->ctx);
 
     if (!SCM_EOFP(expr)) {
@@ -169,7 +186,7 @@ static ScmObj load_body(ScmObj *args, int nargs, void *data)
 ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
                           ScmObj env, int flags)
 {
-    struct load_packet *p;
+    struct load_info *p;
     ScmObj port_info;
     ScmVM *vm = Scm_VM();
     ScmModule *module = vm->module;
@@ -187,9 +204,8 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
         Scm_Error("bad load environment (must be a module or #f): %S", env);
     }
 
-    p = SCM_NEW(struct load_packet);
+    p = SCM_NEW(struct load_info);
     p->port = port;
-    p->being_required = NULL;
     p->prev_module = vm->module;
     p->prev_port = vm->load_port;
     p->prev_history = vm->load_history;
@@ -215,7 +231,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
 }
 
-int Scm_LoadFromPort(ScmPort *port, int flags, ScmLoadPacket *packet)
+int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
 {
     static ScmObj load_from_port = SCM_UNDEFINED;
     ScmEvalPacket eresult;
@@ -230,7 +246,7 @@ int Scm_LoadFromPort(ScmPort *port, int flags, ScmLoadPacket *packet)
                                   0);
     }
 
-    load_packet_init(packet);
+    load_packet_prepare(packet);
     if (flags&SCM_LOAD_PROPAGATE_ERROR) {
         Scm_ApplyRec(load_from_port, SCM_LIST1(SCM_OBJ(port)));
         if (packet) packet->loaded = TRUE;
@@ -395,7 +411,7 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
     return Scm_VMLoadFromPort(SCM_PORT(port), load_paths, env, flags);
 }
 
-int Scm_Load(const char *cpath, int flags, ScmLoadPacket *packet)
+int Scm_Load(const char *cpath, u_long flags, ScmLoadPacket *packet)
 {
     static ScmObj load_stub = SCM_UNDEFINED;
     ScmObj f = SCM_MAKE_STR_COPYING(cpath);
@@ -419,7 +435,7 @@ int Scm_Load(const char *cpath, int flags, ScmLoadPacket *packet)
                            Scm_Cons(SCM_TRUE, options));
     }
 
-    load_packet_init(packet);
+    load_packet_prepare(packet);
     if (flags&SCM_LOAD_PROPAGATE_ERROR) {
         ScmObj r = Scm_ApplyRec(load_stub, Scm_Cons(f, options));
         if (packet) {
@@ -912,7 +928,7 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
     int loop = FALSE, r;
     ScmLoadPacket xresult;
 
-    load_packet_init(packet);
+    load_packet_prepare(packet);
     if (!SCM_STRINGP(feature)) {
         ScmObj e = Scm_MakeError(Scm_Sprintf("require: string expected, but got %S\n", feature));
         if (flags&SCM_LOAD_PROPAGATE_ERROR) Scm_Raise(e);
@@ -968,7 +984,7 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
         }
     }
         
-    if (!SCM_FALSEP(provided)) return 0;
+    if (!SCM_FALSEP(provided)) return 0; /* no work to do */
     filename = Scm_StringAppendC(SCM_STRING(feature), ".scm", 4, 4);
     r = Scm_Load(Scm_GetStringConst(SCM_STRING(filename)), 0, &xresult);
     if (packet) packet->exception = xresult.exception;

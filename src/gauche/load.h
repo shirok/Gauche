@@ -57,7 +57,6 @@ typedef enum {
 typedef struct ScmLoadPacketRec {
     ScmObj exception; /* OUT: exception object in case of LOAD_EVAL_ERROR */
     int    loaded;    /* OUT: TRUE iff file is successfully loaded.  */
-    ScmObj paths;     /* reserved */
 } ScmLoadPacket;
 
 SCM_EXTERN ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
@@ -66,8 +65,9 @@ SCM_EXTERN ScmObj Scm_VMLoad(ScmString *file, ScmObj paths, ScmObj env,
 			     int flags);
 
 #if defined(GAUCHE_API_0_8_10) || defined(GAUCHE_API_0_9) || defined(LIBGAUCHE_BODY)
-SCM_EXTERN int Scm_LoadFromPort(ScmPort *port, int flags, ScmLoadPacket *p);
-SCM_EXTERN int Scm_Load(const char *file, int flags, ScmLoadPacket *p);
+SCM_EXTERN void Scm_LoadPacketInit(ScmLoadPacket *p);
+SCM_EXTERN int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *p);
+SCM_EXTERN int Scm_Load(const char *file, u_long flags, ScmLoadPacket *p);
 #else  /*!GAUCHE_API_0_9*/
 #define Scm_LoadFromPort(port, flags)  Scm__LoadFromPortCompat(port, flags) 
 #define Scm_Load(port, flags)          Scm__LoadCompat(port, flags) 
