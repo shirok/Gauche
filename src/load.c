@@ -75,9 +75,7 @@ static struct {
 } ldinfo = { (ScmGloc*)&ldinfo, };  /* trick to put ldinfo in .data section */
 
 /* keywords used for load and load-from-port surbs */
-static ScmObj key_paths              = SCM_UNBOUND;
 static ScmObj key_error_if_not_found = SCM_UNBOUND;
-static ScmObj key_environment        = SCM_UNBOUND;
 static ScmObj key_macro              = SCM_UNBOUND;
 static ScmObj key_ignore_coding      = SCM_UNBOUND;
 
@@ -114,6 +112,7 @@ static void load_packet_init(ScmLoadPacket *packet)
 
 struct load_packet {
     ScmPort *port;
+    ScmString *being_required;  /* this load is triggerd by 'requre' */
     ScmModule *prev_module;
     ScmReadContext *ctx;
     ScmObj prev_port;
@@ -190,6 +189,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
 
     p = SCM_NEW(struct load_packet);
     p->port = port;
+    p->being_required = NULL;
     p->prev_module = vm->module;
     p->prev_port = vm->load_port;
     p->prev_history = vm->load_history;
@@ -215,40 +215,28 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
 }
 
-/* Scheme subr (load-from-port subr &keyword paths environment) */
-static ScmObj load_from_port(ScmObj *args, int argc, void *data)
-{
-    ScmPort *port;
-    ScmObj paths, env;
-    int flags = 0;
-    
-    if (!SCM_IPORTP(args[0])) {
-        Scm_Error("input port required, but got %S", args[0]);
-    }
-    port = SCM_PORT(args[0]);
-    paths = Scm_GetKeyword(key_paths, args[1], SCM_FALSE);
-    env   = Scm_GetKeyword(key_environment, args[1], SCM_FALSE);
-    return Scm_VMLoadFromPort(port, paths, env, flags);
-}
-
-static SCM_DEFINE_STRING_CONST(load_from_port_NAME, "load-from-port", 14, 14);
-static SCM_DEFINE_SUBR(load_from_port_STUB, 1, 1,
-                       SCM_OBJ(&load_from_port_NAME), load_from_port,
-                       NULL, NULL);
-
 int Scm_LoadFromPort(ScmPort *port, int flags, ScmLoadPacket *packet)
 {
+    static ScmObj load_from_port = SCM_UNDEFINED;
     ScmEvalPacket eresult;
     int r;
 
+    if (SCM_UNBOUNDP(load_from_port)) {
+        /* This should be an idempotent operation, so we don't need to
+           worry about MT-safety. */
+        load_from_port =
+            Scm_GlobalVariableRef(Scm_GaucheModule(),
+                                  SCM_SYMBOL(SCM_INTERN("load-from-port")),
+                                  0);
+    }
+
     load_packet_init(packet);
     if (flags&SCM_LOAD_PROPAGATE_ERROR) {
-        Scm_ApplyRec(SCM_OBJ(&load_from_port_STUB), SCM_LIST1(SCM_OBJ(port)));
+        Scm_ApplyRec(load_from_port, SCM_LIST1(SCM_OBJ(port)));
         if (packet) packet->loaded = TRUE;
         return 0;
     } else {
-        r = Scm_Apply(SCM_OBJ(&load_from_port_STUB), SCM_LIST1(SCM_OBJ(port)),
-                      &eresult);
+        r = Scm_Apply(load_from_port, SCM_LIST1(SCM_OBJ(port)), &eresult);
         if (packet) {
             packet->exception = eresult.exception;
             packet->loaded = (r >= 0);
@@ -407,36 +395,20 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
     return Scm_VMLoadFromPort(SCM_PORT(port), load_paths, env, flags);
 }
 
-/* Scheme subr (%load filename &keyword paths error-if-not-found
-                                        environment aware-coding) */
-static ScmObj load(ScmObj *args, int argc, void *data)
-{
-    ScmString *file;
-    ScmObj paths, env;
-    int flags = 0;
-
-    if (!SCM_STRINGP(args[0])) {
-        Scm_Error("string required, but got %S", args[0]);
-    }
-    file = SCM_STRING(args[0]);
-    paths = Scm_GetKeyword(key_paths, args[1], SCM_FALSE);
-    env   = Scm_GetKeyword(key_environment, args[1], SCM_FALSE);
-    if (SCM_FALSEP(Scm_GetKeyword(key_error_if_not_found, args[1], SCM_TRUE)))
-        flags |= SCM_LOAD_QUIET_NOFILE;
-    if (!SCM_FALSEP(Scm_GetKeyword(key_ignore_coding, args[1], SCM_FALSE)))
-        flags |= SCM_LOAD_IGNORE_CODING;
-    return Scm_VMLoad(file, paths, env, flags);
-}
-
-static SCM_DEFINE_STRING_CONST(load_NAME, "load", 4, 4);
-static SCM_DEFINE_SUBR(load_STUB, 1, 1, SCM_OBJ(&load_NAME), load, NULL, NULL);
-
-
 int Scm_Load(const char *cpath, int flags, ScmLoadPacket *packet)
 {
+    static ScmObj load_stub = SCM_UNDEFINED;
     ScmObj f = SCM_MAKE_STR_COPYING(cpath);
     ScmObj options = SCM_NIL;
     ScmEvalPacket eresult;
+
+    if (load_stub == SCM_UNDEFINED) {
+        /* This should be an idempotent operation, so we don't need to
+           worry about MT-safety. */
+        load_stub = Scm_GlobalVariableRef(Scm_SchemeModule(),
+                                          SCM_SYMBOL(SCM_INTERN("load")),
+                                          0);
+    }
     
     if (flags&SCM_LOAD_QUIET_NOFILE) {
         options = Scm_Cons(key_error_if_not_found,
@@ -449,13 +421,13 @@ int Scm_Load(const char *cpath, int flags, ScmLoadPacket *packet)
 
     load_packet_init(packet);
     if (flags&SCM_LOAD_PROPAGATE_ERROR) {
-        ScmObj r = Scm_ApplyRec(SCM_OBJ(&load_STUB), Scm_Cons(f, options));
+        ScmObj r = Scm_ApplyRec(load_stub, Scm_Cons(f, options));
         if (packet) {
             packet->loaded = !SCM_FALSEP(r);
         }
         return 0;
     } else {
-        int r = Scm_Apply(SCM_OBJ(&load_STUB), Scm_Cons(f, options), &eresult);
+        int r = Scm_Apply(load_stub, Scm_Cons(f, options), &eresult);
         if (packet) {
             packet->exception = eresult.exception;
             packet->loaded = (r > 0 && !SCM_FALSEP(eresult.results[0]));
@@ -1272,15 +1244,10 @@ void Scm__InitLoad(void)
     (void)SCM_INTERNAL_COND_INIT(ldinfo.prov_cv);
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.dso_mutex);
 
-    key_paths = SCM_MAKE_KEYWORD("paths");
     key_error_if_not_found = SCM_MAKE_KEYWORD("error-if-not-found");
-    key_environment = SCM_MAKE_KEYWORD("environment");
     key_macro = SCM_MAKE_KEYWORD("macro");
     key_ignore_coding = SCM_MAKE_KEYWORD("ignore-coding");
     
-    SCM_DEFINE(m, "load-from-port", SCM_OBJ(&load_from_port_STUB));
-    SCM_DEFINE(m, "load", SCM_OBJ(&load_STUB));
-
 #define DEF(rec, sym, val) \
     rec = SCM_GLOC(Scm_Define(m, SCM_SYMBOL(sym), val))
 

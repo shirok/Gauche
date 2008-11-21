@@ -553,7 +553,14 @@
 ;; 6.6.4  System Interface
 ;;
 
-; load : defined in load.c
+(define-cproc load (file::<string>
+                    :key (paths #f) (error-if-not-found #t)
+                         (environment #f) (ignore-coding #f))
+  (let* ([flags::int
+          (logior (?: (SCM_FALSEP error-if-not-found) SCM_LOAD_QUIET_NOFILE 0)
+                  (?: (SCM_FALSEP ignore-coding) 0 SCM_LOAD_IGNORE_CODING))])
+    (result (Scm_VMLoad file paths environment flags))))
+
 ; transcript-on
 ; transcript-off
 

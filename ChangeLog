@@ -1,5 +1,10 @@
 2008-11-20  Shiro Kawai  <shiro@acm.org>
 
+	* src/load.c (Scm_Load, Scm_LoadFromPort),
+	  src/stdlib.stub (load), src/extlib.stub (load-from-port):
+	  Moved definitions of Scheme's 'load' and 'load-from-port' into
+	  stub files for simplicity.
+
 	* lib/gauche/cgen/cise.scm (dopairs): Added a new macro.
 	  (render-rec): Added some heuristics to distinguish types and
 	  expressions; some operators (such as sizeof) and macros may take

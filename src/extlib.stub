@@ -973,7 +973,11 @@
 
 (define-cproc %add-load-path (path::<const-cstring> :optional (afterp #f))
   (result (Scm_AddLoadPath path (not (SCM_FALSEP afterp)))))
-        
+
+(define-cproc load-from-port (port::<input-port>
+                              :key (paths #f) (environment #f))
+  (result (Scm_VMLoadFromPort port paths environment 0)))
+
 (define-cproc dynamic-load (file::<string>
                             :key (init-function #f)
                                  (export-symbols #f))
