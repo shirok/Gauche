@@ -45,20 +45,14 @@
 #include \"uvectorP.h\"
 "
 
-(define-symbol both "sym_both")
-(define-symbol high "sym_high")
-(define-symbol low  "sym_low")
-
-"static int clamp_arg(ScmObj clamp)
- {
-   if (SCM_EQ(clamp, sym_both)) return SCM_CLAMP_BOTH;
-   else if (SCM_EQ(clamp, sym_low))  return SCM_CLAMP_LO;
-   else if (SCM_EQ(clamp, sym_high)) return SCM_CLAMP_HI;
-   if (!SCM_FALSEP(clamp) && !SCM_UNBOUNDP(clamp))
-     Scm_Error(\"clamp argument must be either 'both, 'high, 'low or #f, but got %S\", clamp);
-   return SCM_CLAMP_ERROR;
- }
-"
+(define-cfn clamp-arg (clamp) ::int :static
+  (cond [(SCM_EQ clamp 'both) (return SCM_CLAMP_BOTH)]
+        [(SCM_EQ clamp 'low)  (return SCM_CLAMP_LO)]
+        [(SCM_EQ clamp 'high) (return SCM_CLAMP_HI)]
+        [(not (or (SCM_FALSEP clamp) (SCM_UNBOUNDP clamp)))
+         (Scm_Error "clamp argument must be either 'both, 'high, 'low or #f, \
+                    but got %S" clamp)])
+  (return SCM_CLAMP_ERROR))
 
 (define-type <uvector> "ScmUVector*")
 
@@ -73,35 +67,34 @@
 ;;
 (define-type <${t}vector> "Scm${T}Vector*")
 
-(define-cproc ${t}vector? (obj)
-  (call <boolean> "SCM_${T}VECTORP"))
+(define-cproc ${t}vector? (obj) ::<boolean> SCM_${T}VECTORP)
 
-(define-cproc make-${t}vector (length::<fixnum> &optional (fill 0))
-  "${etype} filler;
-  ${UNBOX filler fill SCM_CLAMP_ERROR};
-  SCM_RETURN(Scm_Make${T}Vector(length, filler));")
+;; we need this in string, for the UNBOX macro is substituted to the
+;; literal C code instead of CISE code.
+"#define ${t}unboxer(filler, fill) ${UNBOX filler fill SCM_CLAMP_ERROR}"
 
-(define-cproc ${t}vector (&rest args)
-  "SCM_RETURN(Scm_ListTo${T}Vector(args, SCM_CLAMP_ERROR));")
+(define-cproc make-${t}vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler :: (${etype})])
+    (${t}unboxer filler fill)
+    (result (Scm_Make${T}Vector length filler))))
 
-(define-cproc ${t}vector-length (v::<${t}vector>)
-  "SCM_RETURN(SCM_MAKE_INT(SCM_${T}VECTOR_SIZE(v)));")
+(define-cproc ${t}vector (:rest args)
+  (result (Scm_ListTo${T}Vector args SCM_CLAMP_ERROR)))
 
-(define-cproc ${t}vector-ref (v::<${t}vector>
-                              i::<fixnum> &optional fallback)
-  :fast-flonum
+(define-cproc ${t}vector-length (v::<${t}vector>) ::<int> SCM_${T}VECTOR_SIZE)
+
+(define-cproc ${t}vector-ref
+  (v::<${t}vector> i::<fixnum> :optional fallback) :fast-flonum
   (setter ${t}vector-set!)
   Scm_VM${T}VectorRef)
 
-(define-cproc ${t}vector-set! (v::<${t}vector>
-                               i::<fixnum> val &optional clamp)
-  :fast-flonum
+(define-cproc ${t}vector-set!
+  (v::<${t}vector> i::<fixnum> val :optional clamp) :fast-flonum
   (result (Scm_${T}VectorSet v i val (clamp_arg clamp))))
 
-(define-cproc ${t}vector-copy (v::<${t}vector>
-                               &optional (start::<fixnum> 0)
-                                         (end::<fixnum> -1))
-  (call "Scm_${T}VectorCopy"))
+(define-cproc ${t}vector-copy
+  (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  Scm_${T}VectorCopy)
 
 ;; NB: this function accomodates to two APIs.
 ;; The 'modern' API, compatible to srfi-13 and srfi-43, takes arguments:
@@ -110,87 +103,69 @@
 ;;    (dst src)
 ;; We dispatch by the second argument.  The old API is deprecated, but
 ;; kept for the existing code.
-(define-cproc ${t}vector-copy! (dst::<${t}vector>
-                                dstart
-                                &optional 
-                                src
-                                (sstart::<int> 0)
-                                (send::<int> -1))
-  "if (SCM_INTEGERP(dstart)) {
-     /* new API */
-     if (!SCM_${T}VECTORP(src)) {
-       Scm_Error(\"${t}vector-copy!: argument is not a matching uvector: %S\",
-                 src);
-     }
-     SCM_RETURN(Scm_${T}VectorCopyX(dst, Scm_GetInteger(dstart), 
-                                    SCM_${T}VECTOR(src), sstart, send));
-  } else if (SCM_${T}VECTORP(dstart)) {
-    /* old API */
-    SCM_RETURN(Scm_${T}VectorCopyX(dst, 0, SCM_${T}VECTOR(dstart), 0, -1));
-  } else {
-    Scm_Error(\"integer required, but got %S\", dstart);
-    SCM_RETURN(SCM_UNDEFINED);
-  }")
+(define-cproc ${t}vector-copy!
+  (dst::<${t}vector> dstart :optional src (sstart::<int> 0) (send::<int> -1))
+  (cond
+   [(SCM_INTEGERP dstart) ; new API
+    (unless (SCM_${T}VECTORP src)
+      (Scm_Error "${t}vector-copy!: argument is not a matching uvector: %S"src))
+    (result (Scm_${T}VectorCopyX dst (Scm_GetInteger dstart)
+                  (SCM_${T}VECTOR src) sstart send))]
+   [(SCM_${T}VECTORP dstart) ; old API
+    (result (Scm_${T}VectorCopyX dst 0 (SCM_${T}VECTOR dstart) 0 -1))]
+   [else (SCM_TYPE_ERROR dstart "integer") (result SCM_UNDEFINED)]))
 
-(define-cproc ${t}vector->list (v::<${t}vector>
-                                &optional (start::<fixnum> 0)
-                                          (end::<fixnum> -1))
-  (call "Scm_${T}VectorToList"))
+(define-cproc ${t}vector->list
+  (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  Scm_${T}VectorToList)
 
-(define-cproc list->${t}vector (l::<list> &optional clamp)
-  "SCM_RETURN(Scm_ListTo${T}Vector(l, clamp_arg(clamp)));")
+(define-cproc list->${t}vector (l::<list> :optional clamp)
+  (result (Scm_ListTo${T}Vector l (clamp-arg clamp))))
 
-(define-cproc ${t}vector-fill! (v::<${t}vector> val
-                                &optional (start::<fixnum> 0)
-                                          (end::<fixnum> -1))
-  "${etype} filler;
-  ${UNBOX filler val SCM_CLAMP_ERROR};
-  SCM_RETURN(Scm_${T}VectorFill(v, filler, start, end));")
+(define-cproc ${t}vector-fill!
+  (v::<${t}vector> val :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (let* ([filler :: (${etype})])
+    (${t}unboxer filler val)
+    (result (Scm_${T}VectorFill v filler start end))))
 
-(define-cproc ${t}vector->vector (v::<${t}vector>
-                                  &optional (start::<fixnum> 0)
-                                            (end::<fixnum> -1))
-  (call "Scm_${T}VectorToVector"))
+(define-cproc ${t}vector->vector
+  (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  Scm_${T}VectorToVector)
 
-(define-cproc vector->${t}vector (v::<vector>
-                                  &optional (start::<fixnum> 0)
-                                            (end::<fixnum> -1)
-                                            clamp)
-  "SCM_RETURN(Scm_VectorTo${T}Vector(v, start, end, clamp_arg(clamp)));")
+(define-cproc vector->${t}vector
+  (v::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1) clamp)
+  (result (Scm_VectorTo${T}Vector v start end (clamp-arg clamp))))
 
 ///)) ;; end of tmpl-body
 
 ///(define *tmpl-numop* '(
 (define-cproc ${t}vector-${opname} (v0::<${t}vector> v1 &optional clamp)
-  "SCM_RETURN(Scm_${T}Vector${Opname}(v0, v1, clamp_arg(clamp)));")
+  (result (Scm_${T}Vector${Opname} v0 v1 (clamp-arg clamp))))
 
 (define-cproc ${t}vector-${opname}! (v0::<${t}vector> v1 &optional clamp)
-  "SCM_RETURN(Scm_${T}Vector${Opname}X(v0, v1, clamp_arg(clamp)));")
+  (result (Scm_${T}Vector${Opname}X v0 v1 (clamp-arg clamp))))
 ///)) ;; end of tmpl-numop
 
 ///(define *tmpl-bitop* '(
 (define-cproc ${t}vector-${opname} (v0::<${t}vector> v1)
-  "SCM_RETURN(Scm_${T}Vector${Opname}(v0, v1));")
+  (result (Scm_${T}Vector${Opname} v0 v1)))
 
 (define-cproc ${t}vector-${opname}! (v0::<${t}vector> v1)
-  "SCM_RETURN(Scm_${T}Vector${Opname}X(v0, v1));")
+  (result (Scm_${T}Vector${Opname}X v0 v1)))
 ///)) ;; end of tmpl-bitop
 
 ///(define *tmpl-dotop* '(
-(define-cproc ${t}vector-dot (v0::<${t}vector> v1)
-  (call "Scm_${T}VectorDotProd"))
+(define-cproc ${t}vector-dot (v0::<${t}vector> v1) Scm_${T}VectorDotProd)
 ///)) ;; end of tmpl-dotop
 
 ///(define *tmpl-rangeop* '(
 (define-cproc ${t}vector-${opname} (v0::<${t}vector> min max)
-  (call "Scm_${T}Vector${Opname}"))
+  Scm_${T}Vector${Opname})
 ///)) ;; end of tmpl-rangeop
 
 ///(define *tmpl-swapb* '(
-(define-cproc ${t}vector-swap-bytes (v0::<${t}vector>)
-  (call "Scm_${T}VectorSwapBytes"))
-(define-cproc ${t}vector-swap-bytes! (v0::<${t}vector>)
-  (call "Scm_${T}VectorSwapBytesX"))
+(define-cproc ${t}vector-swap-bytes (v0::<${t}vector>) Scm_${T}VectorSwapBytes)
+(define-cproc ${t}vector-swap-bytes!(v0::<${t}vector>) Scm_${T}VectorSwapBytesX)
 ///)) ;; end of tmpl-rangeop
 
 ///(define *extra-procedure*  ;; procedurally generates code
@@ -206,168 +181,147 @@
 
 ;;; generic procedures
 
-(define-cproc uvector-alias (klass::<class> v::<uvector>
-                             &optional (start::<int> 0) (end::<int> -1))
-  (call "Scm_UVectorAlias"))
+(define-cproc uvector-alias
+  (klass::<class> v::<uvector> :optional (start::<int> 0) (end::<int> -1))
+  Scm_UVectorAlias)
 
-(define-cproc uvector-swap-bytes (v::<uvector>)
-  (call "Scm_UVectorSwapBytes"))
+(define-cproc uvector-swap-bytes (v::<uvector>) Scm_UVectorSwapBytes)
 
-(define-cproc uvector-swap-bytes! (v::<uvector>)
-  (call "Scm_UVectorSwapBytesX"))
+(define-cproc uvector-swap-bytes! (v::<uvector>) Scm_UVectorSwapBytesX)
 
-(define-cproc uvector-size (v::<uvector>)
-  (call <int> "Scm_UVectorSizeInBytes"))
+(define-cproc uvector-size (v::<uvector>) ::<int> Scm_UVectorSizeInBytes)
 
 (define-cproc read-block! (v::<uvector>
-                           &optional (port::<input-port> (current-input-port))
+                           :optional (port::<input-port> (current-input-port))
                                      (start::<fixnum> 0)
                                      (end::<fixnum> -1)
                                      (endian #f))
-  (call "Scm_ReadBlockX"))
+  Scm_ReadBlockX)
 
 (define-cproc write-block (v::<uvector>
-                           &optional (port::<output-port> (current-output-port))
+                           :optional (port::<output-port> (current-output-port))
                                      (start::<fixnum> 0)
                                      (end::<fixnum> -1)
                                      (endian #f))
-  (call "Scm_WriteBlock"))
+  Scm_WriteBlock)
 
 ;;; String operations 
-"static ScmObj string_to_bytevector(ScmClass *klass, ScmString *s, int start, int end)
- {
-  u_int size, len; const char *ss, *sp, *ep; char *buf;
-  ss = Scm_GetStringContent(s, &size, &len, NULL);
-  SCM_CHECK_START_END(start, end, (int)len);
-  if (start == 0) sp = ss;
-  else sp = Scm_StringPosition(s, start);
-  if (end == len) ep = ss + size;
-  else ep = Scm_StringPosition(s, end);
-  buf = SCM_NEW_ATOMIC2(char *, ep-sp);
-  memcpy(buf, sp, ep-sp);
-  return Scm_MakeUVectorFull(klass, (int)(ep-sp), buf, FALSE, NULL);
- }"
 
-(define-cproc string->s8vector (s::<string>
-                                &optional (start::<fixnum> 0)
-                                          (end::<fixnum> -1))
-  "SCM_RETURN(string_to_bytevector(SCM_CLASS_S8VECTOR, s, start, end));")
+(define-cfn string->bytevector
+  (klass::ScmClass* s::ScmString* start::int end::int) :static
+  (let* ([size::u_int] [len::u_int]
+         [ss::(const char*) (Scm_GetStringContent s (& size) (& len) NULL)])
+    (SCM_CHECK_START_END start end (cast int len))
+    (let* ([sp::(const char*) (?: (== start 0) ss (Scm_StringPosition s start))]
+           [ep::(const char*) (?: (== end len) (+ ss size) (Scm_StringPosition s end))]
+           [buf::char* (SCM_NEW_ATOMIC2 (char*) (- ep sp))])
+      (memcpy buf sp (- ep sp))
+      (return (Scm_MakeUVectorFull klass (cast int (- ep sp)) buf FALSE NULL)))))
+  
+(define-cproc string->s8vector
+  (s::<string> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (result (string->bytevector SCM_CLASS_S8VECTOR s start end)))
 
-(define-cproc string->u8vector (s::<string>
-                                &optional (start::<fixnum> 0)
-                                          (end::<fixnum> -1))
-  "SCM_RETURN(string_to_bytevector(SCM_CLASS_U8VECTOR, s, start, end));")
+(define-cproc string->u8vector
+  (s::<string> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (result (string->bytevector SCM_CLASS_U8VECTOR s start end)))
 
-"static ScmObj string_to_bytevectorX(ScmUVector *v, int tstart, ScmString *s, int start, int end)
- {
-   u_int size, len; const char *ss, *sp, *ep; char *buf;
-   int tlen = SCM_UVECTOR_SIZE(v);
-
-   if (tstart >= tlen || tstart < 0) return SCM_OBJ(v);
-   SCM_UVECTOR_CHECK_MUTABLE(v);
-   ss = Scm_GetStringContent(s, &size, &len, NULL);
-   SCM_CHECK_START_END(start, end, (int)len);
-   if (start == 0) sp = ss;
-   else sp = Scm_StringPosition(s, start);
-   if (end == len) ep = ss+size;
-   else ep = Scm_StringPosition(s, end);
-
-   buf = (char *)SCM_UVECTOR_ELEMENTS(v) + tstart;
-   if (tlen - tstart > ep - sp) {
-     memcpy(buf, sp, ep - sp);
-   } else {
-     memcpy(buf, sp, tlen - tstart);
-   }
-   return SCM_OBJ(v);
- }"
-
+(define-cfn string->bytevector!
+  (v::ScmUVector* tstart::int s::ScmString* start::int end::int) :static
+  (let* ([tlen::int (SCM_UVECTOR_SIZE v)])
+    (when (and (>= tstart 0) (< tstart tlen))
+      (SCM_UVECTOR_CHECK_MUTABLE v)
+      (let* ([size::u_int] [len::u_int]
+             [ss::(const char*) (Scm_GetStringContent s (& size) (& len) NULL)])
+        (SCM_CHECK_START_END start end (cast int len))
+        (let* ([sp::(const char*)
+                    (?: (== start 0) ss (Scm_StringPosition s start))]
+               [ep::(const char*)
+                    (?: (== end len) (+ ss size) (Scm_StringPosition s end))]
+               [buf::(char*) (+ (cast char* (SCM_UVECTOR_ELEMENTS v)) tstart)])
+          (if (> (- tlen tstart) (- ep sp))
+            (memcpy buf sp (- ep sp))
+            (memcpy buf sp (- tlen tstart))))))
+    (return (SCM_OBJ v))))
+               
 (define-cproc string->s8vector! (v::<s8vector>
                                  tstart::<int>
                                  s::<string>
                                  &optional (start::<fixnum> 0)
                                            (end::<fixnum> -1))
-  "SCM_RETURN(string_to_bytevectorX(SCM_UVECTOR(v), tstart, s, start, end));")
+  (result (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
 
 (define-cproc string->u8vector! (v::<u8vector>
                                  tstart::<int>
                                  s::<string>
                                  &optional (start::<fixnum> 0)
                                            (end::<fixnum> -1))
-  "SCM_RETURN(string_to_bytevectorX(SCM_UVECTOR(v), tstart, s, start, end));")
+  (result (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
 
-"static ScmObj bytevector_to_string(ScmUVector *v, int start, int end)
- {
-   int len = SCM_UVECTOR_SIZE(v);
-   SCM_CHECK_START_END(start, end, len);
-   return Scm_MakeString((char *)SCM_UVECTOR_ELEMENTS(v) + start,
-                         end-start, -1, SCM_STRING_COPYING);
- }"
-
+(define-cfn bytevector->string (v::ScmUVector* start::int end::int) :static
+  (let* ([len::int (SCM_UVECTOR_SIZE v)])
+    (SCM_CHECK_START_END start end len)
+    (return (Scm_MakeString (+ (cast char* (SCM_UVECTOR_ELEMENTS v)) start)
+                            (- end start) -1 SCM_STRING_COPYING))))
 
 (define-cproc s8vector->string (v::<s8vector>
                                 &optional (start::<fixnum> 0)
                                           (end::<fixnum> -1))
-  "SCM_RETURN(bytevector_to_string(SCM_UVECTOR(v), start, end));")
+  (result (bytevector->string (SCM_UVECTOR v) start end)))
 
 (define-cproc u8vector->string (v::<u8vector>
                                 &optional (start::<fixnum> 0)
                                           (end::<fixnum> -1))
-  "SCM_RETURN(bytevector_to_string(SCM_UVECTOR(v), start, end));")
+  (result (bytevector->string (SCM_UVECTOR v) start end)))
 
-"static ScmObj string_to_wordvector(ScmClass *klass, ScmString *s, int start, int end)
- {
-  u_int size, len, i; const char *ss, *sp, *ep;
-  ScmObj v; ScmInt32 *eltp;
-  ss = Scm_GetStringContent(s, &size, &len, NULL);
-  SCM_CHECK_START_END(start, end, (int)len);
-  if (start == 0) sp = ss;
-  else sp = Scm_StringPosition(s, start);
-  if (end == len) ep = ss+size;
-  else ep = Scm_StringPosition(s, end);
-  v = Scm_MakeUVector(klass, end - start, NULL);
-  eltp = (ScmInt32*)SCM_UVECTOR_ELEMENTS(v);
-  for (i=0; sp<ep; i++) {
-    ScmChar ch;
-    SCM_CHAR_GET(sp, ch);
-    eltp[i] = ch;
-    sp += SCM_CHAR_NBYTES(ch);
-  }
-  SCM_RETURN(v);
- }"
+(define-cfn string->wordvector
+  (klass::ScmClass* s::ScmString* start::int end::int) :static
+  (let* ([size::u_int] [len::u_int]
+         [ss::(const char*) (Scm_GetStringContent s (& size) (& len) NULL)])
+    (SCM_CHECK_START_END start end (cast int len))
+    (let* ([sp::(const char*)
+                (?: (== start 0) ss (Scm_StringPosition s start))]
+           [ep::(const char*)
+                (?: (== end len) (+ ss size) (Scm_StringPosition s end))]
+           [v (Scm_MakeUVector klass (- end start) NULL)]
+           [eltp::ScmInt32* (cast ScmInt32* (SCM_UVECTOR_ELEMENTS v))]
+           [i::int 0])
+      (for [() (< sp ep) (post++ i)]
+           (let* ([ch::ScmChar])
+             (SCM_CHAR_GET sp ch)
+             (set! (aref eltp i) ch)
+             (+= sp (SCM_CHAR_NBYTES ch))))
+      (return v))))
 
 (define-cproc string->s32vector (s::<string>
                                  &optional (start::<fixnum> 0)
                                            (end::<fixnum> -1))
-  "SCM_RETURN(string_to_wordvector(SCM_CLASS_S32VECTOR, s, start, end));")
+  (result (string->wordvector SCM_CLASS_S32VECTOR s start end)))
 
 (define-cproc string->u32vector (s::<string>
                                  &optional (start::<fixnum> 0)
                                            (end::<fixnum> -1))
-  "SCM_RETURN(string_to_wordvector(SCM_CLASS_U32VECTOR, s, start, end));")
+  (result (string->wordvector SCM_CLASS_U32VECTOR s start end)))
 
-"static ScmObj wordvector_to_string(ScmUVector *v, int start, int end)
- {
-  int len = SCM_UVECTOR_SIZE(v);
-  ScmObj s = Scm_MakeOutputStringPort(FALSE);
-  ScmInt32 *eltp;
-  SCM_CHECK_START_END(start, end, len);
-  eltp = (ScmInt32*)SCM_UVECTOR_ELEMENTS(v);
-  for (; start < end; start++) {
-    ScmChar ch = (ScmChar)eltp[start];
-    Scm_PutcUnsafe(ch, SCM_PORT(s));
-  }
-  SCM_RETURN(Scm_GetOutputStringUnsafe(SCM_PORT(s), 0));
- }"
-
+(define-cfn wordvector->string (v::ScmUVector* start::int end::int) :static
+  (let* ([len::int (SCM_UVECTOR_SIZE v)]
+         [s (Scm_MakeOutputStringPort FALSE)])
+    (SCM_CHECK_START_END start end len)
+    (let* ([eltp::ScmInt32* (cast ScmInt32* (SCM_UVECTOR_ELEMENTS v))])
+      (while (< start end)
+        (let* ([ch::ScmChar (cast ScmChar (aref eltp (post++ start)))])
+          (Scm_PutcUnsafe ch (SCM_PORT s)))))
+    (return (Scm_GetOutputStringUnsafe (SCM_PORT s) 0))))
+    
 (define-cproc s32vector->string (v::<s32vector>
                                  &optional (start::<fixnum> 0)
                                            (end::<fixnum> -1))
-  "SCM_RETURN(wordvector_to_string(SCM_UVECTOR(v), start, end));")
+  (result (wordvector->string (SCM_UVECTOR v) start end)))
 
 (define-cproc u32vector->string (v::<u32vector>
                                  &optional (start::<fixnum> 0)
                                            (end::<fixnum> -1))
-  "SCM_RETURN(wordvector_to_string(SCM_UVECTOR(v), start, end));")
+  (result (wordvector->string (SCM_UVECTOR v) start end)))
 
 ///)) ;; end of tmpl-epilogue
 

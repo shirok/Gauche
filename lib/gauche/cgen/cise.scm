@@ -252,6 +252,9 @@
             => (lambda (expander)
                  `(,@(source-info form env)
                    ,@(render-rec (expander form env) env)))]
+           [(or (type-decl-initial? key)
+                (any type-decl-subsequent? args))
+            (cise-render-typed-var form "" env)]
            [else
             (let1 eenv (expr-env env)
               (wrap-expr
@@ -262,6 +265,7 @@
                env))])]
     [(x . y)     form]   ; already stree
     ['|#reset-line| '|#reset-line|] ; special directive to reset line info
+    [[? type-decl-initial?] (wrap-expr (cise-render-typed-var form "" env) env)]
     [[? symbol?] (wrap-expr (cise-render-identifier form) env)]
     [[? identifier?] (wrap-expr (cise-render-identifier (unwrap-syntax form))
                                 env)]
@@ -755,26 +759,6 @@
           ,(append-map (lambda (ind) `("[",(render-rec ind eenv)"]")) b))])
      env)))
 
-(define-cise-macro (cast form env)
-  (let1 eenv (expr-env env)
-    (wrap-expr
-     (match form
-       [(_ type expr)
-        `("((",(cise-render-typed-var type "" env)")(",(render-rec expr eenv)"))")])
-     env)))
-
-;; We need to distinguish (sizeof typename) and (sizeof expr), which would
-;; be difficult when the typename is not a simple symbol.
-;; So we let typename to be spliced, e.g. (sizeof struct foo *), instead of
-;; (sizeof (struct foo *)).
-(define-cise-macro (sizeof form env)
-  (wrap-expr
-   (match form
-     [(_ x) `("sizeof(",(render-rec x (expr-env env))")")]
-     [(_ x xs ...) `("sizeof(",(cise-render-typed-var (cons x xs) "" env)")")])
-   env))
-
-
 (define-cise-macro (?: form env)
   (let1 eenv (expr-env env)
     (wrap-expr
@@ -795,6 +779,18 @@
                `((,(render-rec var eenv)
                   "=(",(render-rec val eenv)")") ,@r))]
         [_   (error "uneven args for set!:" form)]))))
+
+;;------------------------------------------------------------
+;; Type-related expressions
+;;
+
+(define-cise-macro (cast form env)
+  (let1 eenv (expr-env env)
+    (wrap-expr
+     (match form
+       [(_ type expr)
+        `("((",(cise-render-typed-var type "" env)")(",(render-rec expr eenv)"))")])
+     env)))
 
 ;;------------------------------------------------------------
 ;; Convenience expression macros
@@ -842,6 +838,22 @@
 ;; Other utilities
 ;;
 
+;; type-decl-initial? and type-decl-subsequent? are used to determine if
+;; (sym sym2 ...) is a type spec or ordinary expression.  The way
+;; to render it differs depending on whether it is a type spec.
+;; The reason that we have two predicates are that '*' and '&' can
+;; appear in the operator position of a valid expression.
+(define (type-decl-initial? sym)
+  (or (memq sym '(const class enum struct volatile unsigned long
+                  char short int float double .array))
+      (and (symbol? sym)
+           (#/.[*&]$/ (symbol->string sym)))))
+
+(define (type-decl-subsequent? sym)
+  (or (memq sym '(* &))
+      (type-decl-initial? sym)))
+
+      
 (define (cise-render-typed-var typespec var env)
   (match typespec
     [('.array spec (dim ...))

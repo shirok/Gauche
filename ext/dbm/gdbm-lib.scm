@@ -311,7 +311,7 @@
      (if (SCM_EXACTP val)
        (set! ival (Scm_GetUInteger val))
        (set! ival (not (SCM_FALSEP val))))
-     (result (gdbm_setopt (-> gdbm dbf) option (& ival) (sizeof int)))))
+     (result (gdbm_setopt (-> gdbm dbf) option (& ival) (sizeof (int))))))
 
  (define-cproc gdbm-version ()
    (result (SCM_MAKE_STR_IMMUTABLE gdbm_version)))

@@ -1,6 +1,11 @@
 2008-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (dopairs): Added a new macro.
+	  (render-rec): Added some heuristics to distinguish types and
+	  expressions; some operators (such as sizeof) and macros may take
+	  types instead of expressions as arguments, and they need to be
+	  rendered differently.  This reverts the kludge of sizeof introduced
+	  on 11/18.
 
 	* lib/gauche/cgen/stub.scm (process-cproc-args): Switched the stub
 	  function's lambda keywords from
