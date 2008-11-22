@@ -1,3 +1,13 @@
+2008-11-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_Require, Scm_Provide): Implemented 'autoprovide'
+	  feature.  If (require "X") causes loading of X.scm, and there's no
+	  'provide' form in X.scm, the feature "X" is provided upon successful
+	  completion of loading X.scm as if there is (provide "X") form
+	  at the end of X.scm.  If X.scm contains 'provide' form,
+	  autoproviding is turned off.  (provide #f) can be used to disable
+	  autoproviding and not providing any feature.
+
 2008-11-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_LoadPacketInit), src/gauche/load.h (ScmLoadPacket):

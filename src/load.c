@@ -106,6 +106,7 @@ void Scm_LoadPacketInit(ScmLoadPacket *p)
 
 /*--------------------------------------------------------------------
  * Scm_LoadFromPort
+ * Scm_VMLoadFromPort
  * 
  *   The most basic function in the load()-family.  Read an expression
  *   from the given port and evaluates it repeatedly, until it reaches
@@ -121,6 +122,12 @@ void Scm_LoadPacketInit(ScmLoadPacket *p)
  *   FLAGS argument is ignored for now, but reserved for future
  *   extension.  SCM_LOAD_QUIET_NOFILE and SCM_LOAD_IGNORE_CODING
  *   won't have any effect for LoadFromPort; see Scm_Load below.
+ *
+ *   Scm_VMLoadFromPort returns a Scheme object that encodes result
+ *   load.  Right now it is used to propagete ScmLoadProvideStatus
+ *   to Scm_LoadFromPort, but its meaning may be changed in future;
+ *   the application must treat the returned value opaque, and usually
+ *   should discard it.
  *
  *   TODO: if we're using coding-aware port, how should we propagate
  *   locking into the wrapped (original) port?
@@ -357,6 +364,7 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
 
 /*---------------------------------------------------------------------
  * Scm_Load
+ * Scm_VMLoad
  *
  *  Scheme's load().
  * 
@@ -901,10 +909,12 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export_)
  *   Besides the list of provided features (ldinfo.provided), the
  *   system keeps two kind of global assoc list for transient information.
  *
- *   ldinfo.providing keeps a list of (<feature> . <thread>), where
- *   <thread> is currently loading a file for <feature>.
+ *   ldinfo.providing keeps a list of (<feature> <thread> <provided> ...),
+ *   where <thread> is currently loading a file for <feature>.
  *   ldinfo.waiting keeps a list of (<thread> . <feature>), where
  *   <thread> is waiting for <feature> to be provided.
+ *   (The <provided> list is pushed by 'provide' while loading <feature>.
+ *   It is used for autprovide feature.  See below).
  *
  *   Scm_Require first checks ldinfo.provided list; if the feature is
  *   already provided, no problem; just return.
@@ -913,11 +923,35 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export_)
  *   ldinfo.waiting list and waits for the feature to be provided.
  *
  *   There may be a case that the feature dependency forms a loop because
- *   of bug.  An error should be signaled in such a case, rather than going
+ *   of a bug.  An error should be signaled in such a case, rather than going
  *   to deadlock.   So, when the calling thread finds the required feature
  *   is in the ldinfo.providing alist, it checks the waiting chain of
  *   features, and no threads are waiting for a feature being provided by
  *   the calling thread.
+ *
+ *   When the above checks are all false, the calling thread is responsible
+ *   to load the required feature.  It pushes the feature and itself
+ *   onto the providing list and start loading the file.
+ *
+ * [Autoprovide Feature]
+ *
+ *   When a file is loaded via 'require', it almost always provides the
+ *   required feature.  Thus we allow the file to omit the 'provide' form.
+ *   That is, if a file X.scm is loaded because of (require "X"), and
+ *   there's no 'provide' form in X.scm, the feature "X" is automatically
+ *   provided upon a successful loading of X.scm.
+ *
+ *   If a 'provide' form appears in X.scm, the autoprovide feature is 
+ *   turned off.  It is allowed that X.scm provides features other than
+ *   "X".   As a special case, (provide #f) causes the autoprovide feature
+ *   to be turned of without providing any feature.
+ *
+ *   To track what is provided, the 'provide' form pushes its argument
+ *   to the entry of 'providing' list whose thread matches the calling
+ *   thread.  (It is possible that there's more than one entry in the
+ *   'providing' list, for a required file may call another require form.
+ *   The entry is always pushed at the beginning of the providing list,
+ *   we know that the first matching entry is the current one.)
  */
 
 int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
@@ -938,6 +972,7 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
         }
     }
 
+    /* Check provided, providing and waiting list.  See the comment above. */
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
     do {
         provided = Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL);
@@ -945,24 +980,18 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
         providing = Scm_Assoc(feature, ldinfo.providing, SCM_CMP_EQUAL);
         if (SCM_FALSEP(providing)) break;
 
-        /* Checks for dependency loop */
+        /* Checks for dependencies */
         p = providing;
-        SCM_ASSERT(SCM_PAIRP(p));
-        if (SCM_CDR(p) == SCM_OBJ(vm)) {
-            loop = TRUE;
-            break;
-        }
+        SCM_ASSERT(SCM_PAIRP(p) && SCM_PAIRP(SCM_CDR(p)));
+        if (SCM_CADR(p) == SCM_OBJ(vm)) { loop = TRUE; break; }
         
         for (;;) {
             q = Scm_Assq(SCM_CDR(p), ldinfo.waiting);
             if (SCM_FALSEP(q)) break;
             SCM_ASSERT(SCM_PAIRP(q));
             p = Scm_Assoc(SCM_CDR(q), ldinfo.providing, SCM_CMP_EQUAL);
-            SCM_ASSERT(SCM_PAIRP(p));
-            if (SCM_CDR(p) == SCM_OBJ(vm)) {
-                loop = TRUE;
-                break;
-            }
+            SCM_ASSERT(SCM_PAIRP(p) && SCM_PAIRP(SCM_CDR(p)));
+            if (SCM_CADR(p) == SCM_OBJ(vm)) { loop = TRUE; break; }
         }
         if (loop) break;
         ldinfo.waiting = Scm_Acons(SCM_OBJ(vm), feature, ldinfo.waiting);
@@ -971,7 +1000,8 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
         continue;
     } while (0);
     if (!loop && SCM_FALSEP(provided)) {
-        ldinfo.providing = Scm_Acons(feature, SCM_OBJ(vm), ldinfo.providing);
+        ldinfo.providing =
+            Scm_Acons(feature, SCM_LIST1(SCM_OBJ(vm)), ldinfo.providing);
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
 
@@ -990,17 +1020,25 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
     if (packet) packet->exception = xresult.exception;
 
     if (r < 0) {
+        /* Load failed */
         (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
         ldinfo.providing = Scm_AssocDeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
-        (void)SCM_INTERNAL_COND_SIGNAL(ldinfo.prov_cv);
+        (void)SCM_INTERNAL_COND_BROADCAST(ldinfo.prov_cv);
         (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
         if (flags&SCM_LOAD_PROPAGATE_ERROR) Scm_Raise(xresult.exception);
         else return -1;
     }
 
+    /* Success */
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
+    p = Scm_Assoc(feature, ldinfo.providing, SCM_CMP_EQUAL);
     ldinfo.providing = Scm_AssocDeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
-    (void)SCM_INTERNAL_COND_SIGNAL(ldinfo.prov_cv);
+    /* `Autoprovide' feature */
+    if (SCM_NULLP(SCM_CDDR(p)) 
+        && SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL))) {
+        ldinfo.provided = Scm_Cons(feature, ldinfo.provided);
+    }
+    (void)SCM_INTERNAL_COND_BROADCAST(ldinfo.prov_cv);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
     if (packet) packet->loaded = TRUE;
     return 0;
@@ -1008,14 +1046,22 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
 
 ScmObj Scm_Provide(ScmObj feature)
 {
-    if (!SCM_STRINGP(feature))
-        Scm_Error("provide: string expected, but got %S\n", feature);
+    ScmObj cp;
+    ScmVM *self = Scm_VM();
+    
+    if (!SCM_STRINGP(feature)&&!SCM_FALSEP(feature)) {
+        SCM_TYPE_ERROR(feature, "string");
+    }
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
-    if (SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL))) {
+    if (SCM_STRINGP(feature)
+        && SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL))) {
         ldinfo.provided = Scm_Cons(feature, ldinfo.provided);
     }
-    if (!SCM_FALSEP(Scm_Member(feature, ldinfo.providing, SCM_CMP_EQUAL))) {
-        ldinfo.providing = Scm_DeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
+    SCM_FOR_EACH(cp, ldinfo.providing) {
+        if (SCM_CADR(SCM_CAR(cp)) == SCM_OBJ(self)) {
+            SCM_SET_CDR(SCM_CDR(SCM_CAR(cp)), SCM_LIST1(feature));
+            break;
+        }
     }
     (void)SCM_INTERNAL_COND_SIGNAL(ldinfo.prov_cv);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
