@@ -211,7 +211,7 @@ extern ScmObj Scm_Environ(void);
     (|#if| "defined(_SC_CLK_TCK)"
            (set! tick (sysconf _SC_CLK_TCK))
            (|#if| "defined(CLK_TCK)"
-                  (set! tick (sysconf CLK_TCK)) ; older name
+                  (set! tick CLK_TCK)   ; older name
                   (set! tick 100)))     ; fallback
     (result (list (Scm_MakeInteger (ref info tms_utime))
                   (Scm_MakeInteger (ref info tms_stime))
