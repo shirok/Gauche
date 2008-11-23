@@ -435,7 +435,7 @@
 ;;  creates a frame of NLOCALS size, then creates closures
 ;;  with the new environment and the given compiled codes, and fills the
 ;;  new frame with the created closures.   CODELIST can have 'holes', i.e.
-;;  if it has #f instead of a compiled code, the corresponding frame entry
+;;  if it has #<undef> instead of a compiled code, the corresponding frame entry
 ;;  is left undefined.
 ;;  This instruction also leaves the last closure in VAL0.
 (define-insn LOCAL-ENV-CLOSURES 1 codes #f
@@ -444,17 +444,14 @@
     (FETCH-OPERAND cp)
     INCR-PC
     (CHECK-STACK-PARANOIA (ENV-SIZE nlocals))
-    (dotimes (i nlocals)
-      (set! (* (post++ SP)) SCM_UNDEFINED))
-    ;(+= SP nlocals)
+    (dotimes [i nlocals] (set! (* (post++ SP)) SCM_UNDEFINED))
     (FINISH-ENV SCM_FALSE ENV)
     (set! e (get_env vm))
     (set! z (- (cast ScmObj* e) nlocals))
-    (for-each (lambda (c)
-                (if (SCM_COMPILED_CODE_P c)
-                  (set! (* (post++ z)) (set! clo (Scm_MakeClosure c e)))
-                  (set! (* (post++ z)) c)))
-              cp)
+    (dolist [c cp]
+      (if (SCM_COMPILED_CODE_P c)
+        (set! (* (post++ z)) (set! clo (Scm_MakeClosure c e)))
+        (set! (* (post++ z)) c)))
     ($result clo)))
 
 ;; POP-LOCAL-ENV
