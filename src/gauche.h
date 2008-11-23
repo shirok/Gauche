@@ -115,6 +115,8 @@ SCM_DECL_BEGIN
 #define SCM_DEBUG_HELPER      TRUE
 #endif
 
+/* Define this to 0 to turn off fast flonum extension.  See the comment in
+   gauche/number.h for the details. */
 #define GAUCHE_FFX 1
 
 #ifdef GAUCHE_USE_PTHREADS
@@ -171,8 +173,8 @@ typedef struct ScmClassRec ScmClass;
  * [Flonum]
  *      -------- -------- -------- -----M10
  *      Points to C double.  M=0 if the double is in the VM
- *      register, M=1 if it is on the heap.  See the comment on
- *      "Fast Flonum Extension" below for the details.
+ *      register, M=1 if it is on the heap.  See the comment in
+ *      gauche/number.h for the details.
  *
  * [Character]
  *      -------- -------- -------- 00000011
