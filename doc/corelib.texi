@@ -11233,12 +11233,39 @@ There's no way to unload the loaded libraries.
 @subsection Require and provide
 @c NODE requireとprovide
 
+@c EN
+@code{Require} and @code{provide} are a traditional Lisp way to ensure
+loading a library file only once.  If you require a @emph{feature}
+for the first time, a library file that provides it is loaded
+and the fact that the @emph{feature} is provided is memorized.
+Subsequent request of the same feature doesn't need to load the file.
+@c JP
+@code{require}と@code{provide}は、Lispでライブラリファイルを一度だけ
+読み込むことを保証するための伝統的な方法です。
+ある@emph{feature}を最初に@code{require}すると、その機能を提供する
+ライブラリファイルがロードされ、その機能が提供されたということが記憶されます。
+2回め以降のその@emph{feature}のリクエストではファイルはロードされません。
+@c COMMON
+
+@c EN
+In Gauche, the @code{use} syntax (@xref{Using modules}) hides
+the require mechanism under the hood so you hardly need to see
+these forms.  These are provided just in case if you want to
+do some non-trivial management of libraries and thus want to
+bypass Gauche's standard mechanism.
+@c JP
+Gaucheでは@code{use}構文 (@ref{Using modules}参照) が
+requireのメカニズムをボンネットの下に隠してくれるので、
+これらの式を直接目にする必要はほとんどありません。
+もしあなたがちょっと変わった方式でライブラリを構成したくて、したがって
+Gaucheの標準的なメカニズムをバイパスしたい場合に限り、使うようにしてください。
+@c COMMON
+
 @defspec require feature
 @c EN
 If @var{feature} is not loaded, load it.  @var{Feature} must be a string,
 and it is taken as a file name (without suffix) to be loaded.
-This loading takes place at compile time.   The loaded file must provide
-@var{feature}; if not, a warning is issued.
+This loading takes place at compile time.
 
 If you load SLIB module, @code{require} is extended.  @xref{SLIB} for
 details.
@@ -11246,11 +11273,21 @@ details.
 @var{feature}がまだロードされていなければロードします。@var{feature}は文字列で
 なければなりません。それがそのまま(サフィックスを除く)ファイル名としてロードパスから
 探されます。@code{require}の解釈はコンパイル時に行われます。
-ロードされたファイルはその中で@var{feature}をprovideしなければなりません。
-そうでないと警告が出されます。
 
 SLIBモジュールをロードすると、@code{require}が拡張されます。詳しくは@ref{SLIB}を
 参照して下さい。
+@c COMMON
+
+@c EN
+If the loaded file does not contain @code{provide} form at all,
+the @var{feature} is automatically provided, as if
+@code{(provide @var{feature})} is called at the end of the loaded
+file.  We call this @emph{autoprovide} feature.
+@c JP
+もしロードされたファイルが@code{provide}フォームを含んでいなかった場合、
+あたかもファイルの最後に@code{(provide @var{feature})}があったかのように、
+@var{feature}が自動的にprovideされます。これを
+@emph{autoprovide}機能と呼んでいます。
 @c COMMON
 @end defspec
 
@@ -11258,17 +11295,89 @@ SLIBモジュールをロードすると、@code{require}が拡張されます。詳しくは@ref{SLIB}を
 @c EN
 Adds @var{feature} to the system's provided feature list, so that
 the subsequent @code{require} won't load the same file again.
-Usually this procedure should be called at the end of the Scheme file
-that is to be @code{require}d.   The reason that it should be at the end
-of file is that if an error is raised during loading, you may want to
-fix the error and @code{require} it again.
 @c JP
 @var{feature}をシステムのprovideされたフィーチャーリストに加えます。
 以降、@var{feature}が@code{require}されてもファイルはふたたびロードされません。
-通常この手続きは、requireされるファイルの末尾で呼ばれます。ファイルの末尾で呼ぶのが良いのは、
-もしファイルのロード中にエラーが発生した場合、そのエラーを修正した上でふたたび@code{require}
-でロードできるからです。
 @c COMMON
+
+@c EN
+Because of the autoproviding, i.e. @code{require}
+automatically provides the required feature, you hardly need to
+use a @code{provide} form explcitily.   There are a couple of scenarios that
+you may want to use a @code{provide} form:
+@c JP
+@code{require}が要求された機能を自動的に@code{provide}されたかのように
+扱うAutoprovide機能があるために、@code{provide}を明示的に呼ぶ必要は
+ほとんど無いでしょう。@var{provide}を使いたいシチュエーションとしては
+次のようなものが考えられます。
+
+@c COMMON
+
+@itemize
+@item
+@c EN
+To provide a feature (or features) that is/are different from
+the one that caused loading the file.  
+
+Suppose feature X supesedes feature Y and providing
+compatible APIs of Y but with different implementation.
+Once @file{X.scm} is loaded, you don't want @file{Y.scm} to be loaded;
+so you want to tell the user that @file{X.scm} also provides the feature Y.
+Adding @code{(provide "X")} and @code{(provide "Y")} at the end of
+@file{X.scm} accomplish that.  (Note: If you add a provide form,
+@code{require} no longer autoprovides the feature, so you need
+to specify @code{(provide "X")} in @file{X.scm} explicitly to
+provide X as well.)
+
+Of course, this doens't prevent users from loading @file{Y.scm} by
+specifing @code{(require "Y")} before @code{(require "X")}.
+It should be considered just as a workaround in a production
+where other solutions are costly, instead of a permanent solution.
+@c JP
+そのファイルをロードすることになったfeatureとは異なるfeature (複数可) を
+provideしたい場合。
+
+例えばfeature Xがfeature Yを置き換えるものだとします。
+XはYのAPIを全て提供しますが、実装は異なります。この場合、
+@file{X.scm}が一度ロードされたら、@file{Y.scm}をロードしてほしくないと思うでしょう。
+@file{X.scm}に @code{(provide "X")} と @code{(provide "Y")} の両方を
+書いておくことで、@file{X.scm}がfeature Yもprovideすると明示すれば、それが実現できます。
+(注：@code{provide}が呼ばれると、@code{require}のautoprovide機能は
+抑制されるため、@file{X.scm}中で@code{(provide "X")}も指定する必要があります。)
+
+もちろんの方法では、ユーザが @code{(require "Y")} を @code{(require "X")}
+より先に書いてしまったら@file{Y.scm}はロードされてしまいます。
+この方法は、現場において、永久的な解決が高コストになるような場合のとりあえずの
+回避処置と考えるべきでしょう。
+@c COMMON
+
+@item
+@c EN
+To provide no features at all.  Passing @code{#f} as @var{feature}
+prevents autoproviding by @code{require} without providing any
+feature.
+
+This should also be a temporary solution.  One possible scenario is
+that you are changing @file{X.scm} very frequently during 
+development and you want @code{(require "X")} always causes loading
+the file.  Don't forget to remove @code{(provide #f)} when you release
+the file, though.  Besides, for interactive reloading, consider
+using @code{gauche.reload} (@xref{Reloading modules}) instead.
+@c JP
+featureを全く@code{provide}しない。
+@var{feature}引数に@code{#f}を渡すことで、何のfeatureも@code{provide}することなく
+@code{require}によるautoprovidingを抑制できます。
+
+これもまた、何らかの一時的な解決と考えるべきです。たとえば開発中に、
+@file{X.scm}を頻繁に変更するために@code{(require "X")}が常に
+そのファイルをロードするようにさせたい、といった場合が考えられます。
+@file{X.scm}のリリースの前に @code{(provide #f)} を消しておくことを
+忘れないように。また、インタラクティブにリロードしたいならば
+@code{gauche.reload} (@ref{Reloading modules}参照) を使うことを
+おすすめします。
+@c COMMON
+@end itemize
+
 @end defun
 
 @defun provided? feature
