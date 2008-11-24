@@ -72,7 +72,7 @@ SCM_EXTENSION_ENTRY void Scm_Init_syslog(void)
 (define-cproc sys-logmask (prio::<fixnum>) ::<fixnum>
   (|#if| "defined(HAVE_SETLOGMASK)" (result (LOG_MASK prio)) (result 0)))
 
-(define-cproc sys-setlogmask (mask::<fixnum>) ::<fixnum> setlogmask
+(define-cproc sys-setlogmask (mask::<fixnum>) ::<fixnum>
   (|#if| "defined(HAVE_SETLOGMASK)" (result (setlogmask mask)) (result 0)))
 
 (when "defined(HAVE_SETLOGMASK)"
