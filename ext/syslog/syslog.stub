@@ -33,7 +33,8 @@
 ;;;  $Id: syslog.stub,v 1.11 2008-05-10 13:35:43 shirok Exp $
 ;;;
 
-"
+(declcode
+ "
 #include <gauche/extend.h>
 #ifdef HAVE_SYSLOG_H
 #include <syslog.h>
@@ -49,7 +50,7 @@ SCM_EXTENSION_ENTRY void Scm_Init_syslog(void)
  }
 
 #define Scm_Init_syslog internal_init
-"
+")
 
 ;; On the platforms which don't have syslog facility, should we raise
 ;; a "not implemented" error, or simply discard the requests?  I tend to
@@ -79,16 +80,17 @@ SCM_EXTENSION_ENTRY void Scm_Init_syslog(void)
 
 ;; We need to define at least these three logging option constants,
 ;; for they are referenced in gauche.logger.  The actual value doesn't matter.
-"#ifndef LOG_PID
-#define LOG_PID 0
-#endif
-#ifndef LOG_INFO
-#define LOG_INFO 1
-#endif
-#ifndef LOG_USER
-#define LOG_USER 2
-#endif
-"
+(declcode
+ "#ifndef LOG_PID"
+ "#define LOG_PID 0"
+ "#endif"
+ "#ifndef LOG_INFO"
+ "#define LOG_INFO 1"
+ "#endif"
+ "#ifndef LOG_USER"
+ "#define LOG_USER 2"
+ "#endif")
+
 ;; openlog options
 (define-enum-conditionally LOG_CONS)
 (define-enum-conditionally LOG_NDELAY)
