@@ -91,20 +91,6 @@
 #error Define BYTE_ORDER to be equal to either LITTLE_ENDIAN or BIG_ENDIAN
 #endif
 */
-/*[SK] use Gauche's config instead. */
-#include <gauche/config.h>
-#undef BYTE_ORDER
-#ifndef LITTLE_ENDIAN
-#define LITTLE_ENDIAN 1234
-#endif
-#ifndef BIG_ENDIAN
-#define BIG_ENDIAN 1234
-#endif
-#if WORDS_BIGENDIAN
-#define BYTE_ORDER BIG_ENDIAN
-#else
-#define BYTE_ORDER LITTLE_ENDIAN
-#endif
 
 /*
  * Define the following sha_* types to types of the correct length on

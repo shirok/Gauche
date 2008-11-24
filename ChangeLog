@@ -1,3 +1,8 @@
+2008-11-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/digest/sha2.h: Incorporate checks of endianness and uintXX_t
+	  from gauche/config.h.
+
 2008-11-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_Require, Scm_Provide): Implemented 'autoprovide'
@@ -36,7 +41,7 @@
 	  treat ordinary symbols such as &optional specially.
 	  The old lambda keywords are supported for the backward compatibility,
 	  but will eventually fade out.
-	  (process-setter): Make static setter definitino handling consistent
+	  (process-setter): Make static setter definition handling consistent
 	  with define-cproc.
 	* *.stub: Changed accordingly.
 
@@ -89,7 +94,7 @@
 	  consistent with define-cfn.
 	* src/*.stub: Changed using the new define-cproc syntax whenever
 	  possible.
-	
+
 	* lib/gauche/cgen/cise.scm
 	  (dolist, dotimes, |#if|): Added new cise macros.
 	  (cise-render-to-string): Added an utility api.

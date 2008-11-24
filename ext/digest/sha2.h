@@ -36,6 +36,34 @@
 #ifndef __SHA2_H__
 #define __SHA2_H__
 
+/*[SK] refer to the Gauche's config */
+#include <gauche/config.h>
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+#if defined(HAVE_UINT32_T) && defined(HAVE_UINT64_T)
+#define SHA2_USE_INTTYPES_H
+#endif
+
+/* gauche/config.h provides WORDS_BIGENDIAN. */
+#undef BYTE_ORDER
+#ifndef LITTLE_ENDIAN
+#define LITTLE_ENDIAN 1234
+#endif
+#ifndef BIG_ENDIAN
+#define BIG_ENDIAN 4321
+#endif
+#if WORDS_BIGENDIAN
+#define BYTE_ORDER BIG_ENDIAN
+#else
+#define BYTE_ORDER LITTLE_ENDIAN
+#endif
+/*[/SK]*/
+
 #ifdef __cplusplus
 extern "C" {
 #endif
