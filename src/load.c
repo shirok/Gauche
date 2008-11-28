@@ -244,7 +244,7 @@ int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
     ScmEvalPacket eresult;
     int r;
 
-    if (SCM_UNBOUNDP(load_from_port)) {
+    if (SCM_UNDEFINEDP(load_from_port)) {
         /* This should be an idempotent operation, so we don't need to
            worry about MT-safety. */
         load_from_port =
