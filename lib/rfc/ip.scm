@@ -52,13 +52,13 @@
 ;; Packet accessors
 ;;
 
-(define (ip-version packet)
-  (ash (get-u8 packet 0) -4))
+(define (ip-version packet offset)
+  (ash (get-u8 packet offset) -4))
 
 ;; returns the final protocol and offset
-(define (%ipv6-skip-header-extensions packet)
+(define (%ipv6-skip-header-extensions packet offset)
   (let loop ((nexthdr (get-u8 packet 6))
-             (off 40))
+             (off (+ 40 offset)))
     (if (memv nexthdr '(0        ; hop-by-hop options
                         43       ; routing options
                         60       ; destination options
@@ -67,36 +67,36 @@
             (+ off (* (+ (get-u8 packet (+ off 1)) 1) 8)))
       (values nexthdr off))))
 
-(define-macro (if-v4 packet v4 v6)
-  `(case (ip-version ,packet)
+(define-macro (if-v4 packet offset v4 v6)
+  `(case (ip-version ,packet ,offset)
      ((4) ,v4)
      ((6) ,v6)
      (else 
       (errorf "unknown IP protocol version ~a in packet ~s"
               (ip-version ,packet) ,packet))))
   
-(define (ip-header-length packet)
-  (if-v4 packet
-         (* (logand (get-u8 packet 0) #x0f) 4)
-         (values-ref (%ipv6-skip-header-extensions packet) 1)))
+(define (ip-header-length packet offset)
+  (if-v4 packet offset
+         (* (logand (get-u8 packet offset) #x0f) 4)
+         (values-ref (%ipv6-skip-header-extensions packet offset) 1)))
 
-(define (ip-protocol packet)
-  (if-v4 packet
-         (get-u8 packet 9)
-         (values-ref (%ipv6-skip-header-extensions packet) 0)))
+(define (ip-protocol packet offset)
+  (if-v4 packet offset
+         (get-u8 packet (+ 9 offset))
+         (values-ref (%ipv6-skip-header-extensions packet offset) 0)))
 
 ;; These may allocate.  Should we have non-allocation version?
-(define (ip-source-address packet)
-  (if-v4 packet
-         (get-u32be packet 12)
-         (+ (ash (get-u64be packet 8) 64)
-            (get-u64be packet 16))))
+(define (ip-source-address packet offset)
+  (if-v4 packet offset
+         (get-u32be packet (+ 12 offset))
+         (+ (ash (get-u64be packet (+ 8 offset)) 64)
+            (get-u64be packet (+ 16 offset)))))
 
-(define (ip-destination-address packet)
-  (if-v4 packet
-         (get-u32be packet 16)
-         (+ (ash (get-u64be packet 24) 64)
-            (get-u64be packet 32))))
+(define (ip-destination-address packet offset)
+  (if-v4 packet offset
+         (get-u32be packet (+ 16 offset))
+         (+ (ash (get-u64be packet (+ 24 offset)) 64)
+            (get-u64be packet (+ 32 offset)))))
 
 ;;============================================================
 ;; Adderss utility

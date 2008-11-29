@@ -6397,7 +6397,15 @@ so you usually don't need to use these functions.
 とはないでしょう。
 @c COMMON
 
-@defun ip-version packet
+@c EN
+The @var{offset} argument specifies the beginnig of the IP packet
+in @var{packet}.  If @var{packet} contains only one IP packet
+you can pass 0.  It is not an optional argument, since these routines
+may be used in speed-sensitive inner loop.
+@c JP
+@c COMMON
+
+@defun ip-version packet offset
 @c EN
 Returns the IP version number (either 4 or 6) of the given IP packet.
 @c JP
@@ -6405,7 +6413,7 @@ Returns the IP version number (either 4 or 6) of the given IP packet.
 @c COMMON
 @end defun
 
-@defun ip-header-length packet
+@defun ip-header-length packet offset
 @c EN
 Returns the size of IP header of the given packet in octets,
 including any IP header options.
@@ -6415,7 +6423,7 @@ including any IP header options.
 @c COMMON
 @end defun
 
-@defun ip-protocol packet
+@defun ip-protocol packet offset
 @c EN
 Returns the IP protocol number of the given packet.
 @c JP
@@ -6423,8 +6431,8 @@ Returns the IP protocol number of the given packet.
 @c COMMON
 @end defun
 
-@defun ip-source-address packet
-@defunx ip-destination-address packet
+@defun ip-source-address packet offset
+@defunx ip-destination-address packet offset
 @c EN
 Returns the source and destination address in the given packet
 in an integer, respectively.

@@ -1,3 +1,11 @@
+2008-11-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/ip.scm (ip-version, ip-header-length, ip-protocol,
+	  ip-source-address, ip-destination-address): Added 'offset' argument,
+	  since it is much needed in the practical situation.  THIS IS AN
+	  INCOMPATIBLE CHANGE.  Hope there are not many people who have
+	  used this obscure module.
+
 2008-11-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_LoadFromPort): Fixed a bug in initilalizing
