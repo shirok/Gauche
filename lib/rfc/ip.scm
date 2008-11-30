@@ -57,7 +57,7 @@
 
 ;; returns the final protocol and offset
 (define (%ipv6-skip-header-extensions packet offset)
-  (let loop ((nexthdr (get-u8 packet 6))
+  (let loop ((nexthdr (get-u8 packet (+ 6 offset)))
              (off (+ 40 offset)))
     (if (memv nexthdr '(0        ; hop-by-hop options
                         43       ; routing options
@@ -65,7 +65,7 @@
                         ))
       (loop (get-u8 packet off)
             (+ off (* (+ (get-u8 packet (+ off 1)) 1) 8)))
-      (values nexthdr off))))
+      (values nexthdr (- off offset)))))
 
 (define-macro (if-v4 packet offset v4 v6)
   `(case (ip-version ,packet ,offset)
