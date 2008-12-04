@@ -344,7 +344,10 @@ SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
 #define SCM_CPP_CAT3(a, b, c)  a ## b ## c
 
 /* We use a pointer to the class structure (with low-bit tag) as
-   the generic type tag. */
+   the generic type tag.   NB: The ScmClass structure is always
+   aligned on (at least) boundary, so +7 makes the tag's lower 3 bits
+   '111'.  Such pattern never appears in tagged pointer, so we can 
+   distinguish heap allocated objects from ScmPair.  */
 #define SCM_CLASS2TAG(klass)  ((ScmByte*)(klass) + 7)
 
 /* A common header for heap-allocated objects */
@@ -584,9 +587,19 @@ typedef ScmObj (*ScmClassAllocateProc)(ScmClass *klass, ScmObj initargs);
 /* See class.c for the description of function pointer members.
    There's a lot of voodoo magic in class structure, so don't touch
    those fields casually.  Also, the order of these fields must be
-   reflected to the class definition macros below */
+   reflected to the class definition macros below. */
 struct ScmClassRec {
-    SCM_INSTANCE_HEADER;
+    /* We need all class structures be aligned on (at least) 8-byte boundary
+       to make our tagging scheme work.  Dynamically allocated objects
+       are *always* 8-byte aligned due to Boehm GC's architecture.  However,
+       we found that statically allocated class structures can be placed
+       4-byte boundary on some 32bit systems if we started ScmClassRec
+       with SCM_INSTANCE_HEADER.  The following union is the trick
+       to ensure 8-byte alighment on such systems. */ 
+    union {
+        SCM_INSTANCE_HEADER;
+        double align_dummy;
+    } classHdr;
 #if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
     ScmClass **classPtr;
 #endif
@@ -757,7 +770,7 @@ extern ScmClass *Scm_ObjectCPL[];
 
 #define SCM__DEFINE_CLASS_COMMON(cname, coreSize, flag, printer, compare, serialize, allocate, cpa) \
     ScmClass cname = {                           \
-        { SCM_CLASS_STATIC_TAG(Scm_ClassClass), NULL },\
+        {{ SCM_CLASS_STATIC_TAG(Scm_ClassClass), NULL }},       \
         SCM__CLASS_PTR_SLOT(cname)               \
         printer,                                 \
         compare,                                 \

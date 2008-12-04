@@ -1,3 +1,9 @@
+2008-12-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (struct ScmClassRec, SCM__DEFINE_CLASS_COMMON):
+	  Changed the initial element of the ScmClass structure so that it is
+	  likely to be placed in 8-byte align boundary on ILP32 machines.
+
 2008-11-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/ip.scm (ip-version, ip-header-length, ip-protocol,
