@@ -1,3 +1,12 @@
+2008-12-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (ScmFlonum): Make ScmFlonum a structure containing
+	  double instead of just a bare double; some 32bit processors/compilers
+	  do not align bare double on 8-byte boundary, but they do a struct
+	  that containing a double.
+	* src/number.c (Scm_MakeFlonum), src/gauche/vm.h (Scm_VMReturnFlonum):
+	  Changed accordingly.
+
 2008-12-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (struct ScmClassRec, SCM__DEFINE_CLASS_COMMON):

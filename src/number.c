@@ -194,7 +194,7 @@ static void report_flonum_count(void *data)
 ScmObj Scm_MakeFlonum(double d)
 {
     ScmFlonum *f = SCM_NEW(ScmFlonum);
-    *f = d;
+    SCM_FLONUM_VALUE(f) = d;
 #ifdef COUNT_FLONUM_ALLOC
     flonum_count++;
 #endif

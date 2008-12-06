@@ -59,11 +59,11 @@
 /* in GNUC, we inline Scm_VMReturnFlonum using statement expressions. */
 # if GAUCHE_FFX
 SCM_EXTERN void Scm_VMFlushFPStack(ScmVM *vm);
-#   define Scm_VMReturnFlonum(val)                                      \
+#   define Scm_VMReturnFlonum(_val)                                     \
         ({ ScmVM *vm__ = Scm_VM(); ScmFlonum *fp;                       \
            if (vm__->fpsp == vm__->fpstackEnd) Scm_VMFlushFPStack(vm__);\
            fp = vm__->fpsp++;                                           \
-           *fp = (val);                                                 \
+           SCM_FLONUM_VALUE(fp) = (_val);                               \
            SCM_MAKE_FLONUM_REG(fp);                                     \
         })
 # else  /* !GAUCHE_FFX */

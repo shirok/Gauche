@@ -280,11 +280,13 @@ SCM_EXTERN int Scm_EqualM(ScmObj x, ScmObj y, int mode);
  * FLONUM
  */
 
-typedef double ScmFlonum;
+typedef struct ScmFlonumRec {
+    double val;
+} ScmFlonum;
 
 #define SCM_FLONUM(obj)            ((ScmFlonum*)(SCM_WORD(obj)&~0x07))
 #define SCM_FLONUMP(obj)           (SCM_TAG2(obj) == 2)
-#define SCM_FLONUM_VALUE(obj)      (*SCM_FLONUM(obj))
+#define SCM_FLONUM_VALUE(obj)      (SCM_FLONUM(obj)->val)
 
 /*
  * CHARACTERS
