@@ -17,11 +17,11 @@
 ;;;
 
 ;; Initially written by Alex Shinn.
-;; Modifided by Shiro Kawai; mainly adding support of duplicated
-;; entries.
+;; Modifided by Shiro Kawai
 
 (define-module util.combinations
   (use srfi-1)
+  (use util.match)
   (use gauche.sequence)
   (export permutations permutations*
           permutations-for-each permutations*-for-each
@@ -40,72 +40,103 @@
 
 ;; return a list of k-th element is removed
 (define (but-kth lis k)
-  (receive (head tail) (split-at lis k)
-    (append! head (cdr tail))))
+  (case k
+    [(0) (cdr lis)]
+    [(1) (cons (car lis) (cddr lis))]
+    [(2) (list* (car lis) (cadr lis) (cdddr lis))]
+    [(3) (list* (car lis) (cadr lis) (caddr lis) (cddddr lis))]
+    [else (receive (head tail) (split-at lis k)
+            (append! head (cdr tail)))]))
 
 ;; permute set.  all elements are considered distinct.
+;; the shortcut for 3 elements or less speeds up a bit.
 (define (permutations set)
-  (cond ((null? set) (list '()))
-        ((null? (cdr set)) (list set))
-        (else
-         (reverse!
-          (fold-with-index
-           (lambda (ind elt acc)
-             (fold (lambda (subperm acc) (acons elt subperm acc))
-                   acc
-                   (permutations (but-kth set ind))))
-           '()
-           set)))))
+  (match set
+    [() (list '())]
+    [(a) (list set)]
+    [(a b) `(,set (,b ,a))]
+    [(a b c)
+     `(,set (,a ,c ,b) (,b ,a ,c) (,b ,c ,a) (,c ,a ,b) (,c ,b ,a))]
+    [else
+     (reverse!
+      (fold-with-index
+       (lambda (ind elt acc)
+         (fold (lambda (subperm acc) (acons elt subperm acc))
+               acc
+               (permutations (but-kth set ind))))
+       '()
+       set))]))
 
 ;; permute set, considering equal elements, a.k.a multiset permutations
-(define (permutations* set . maybe-eq)
-  (cond ((null? set) (list '()))
-        ((null? (cdr set)) (list set))
-        (else
-         (let1 eq (get-optional maybe-eq eqv?)
-           (let loop ((i 0)
-                      (seen '())
-                      (p set)
-                      (r '()))
-             (cond ((null? p) (reverse! r))
-                   ((member (car p) seen eq) (loop (+ i 1) seen (cdr p) r))
-                   (else
-                    (loop (+ i 1)
-                          (cons (car p) seen)
-                          (cdr p)
-                          (fold (lambda (subperm r) (acons (car p) subperm r))
-                                r
-                                (permutations* (but-kth set i) eq))))
-                   ))))))
+(define (permutations* set :optional (eq eqv?))
+  (define (rec set)
+    (match set
+      [() (list '())]
+      [(a) (list set)]
+      [(a b) (if (eq a b) (list set) `(,set (,b ,a)))]
+      [else
+       (let loop ((i 0)
+                  (seen '())
+                  (p set)
+                  (r '()))
+         (cond [(null? p) (reverse! r)]
+               [(member (car p) seen eq) (loop (+ i 1) seen (cdr p) r)]
+               [else
+                (loop (+ i 1)
+                      (cons (car p) seen)
+                      (cdr p)
+                      (fold (lambda (subperm r) (acons (car p) subperm r))
+                            r
+                            (rec (but-kth set i))))]))]))
+  (rec set))
 
+;; permutations without generating entire list.
+;; We use shortcut for (<= length 4) case, which boosts performace.
+(define-inline (p/each3 proc x1 x2 x3)
+  (proc `(,x1 ,x2 ,x3)) (proc `(,x1 ,x3 ,x2))
+  (proc `(,x2 ,x1 ,x3)) (proc `(,x2 ,x3 ,x1))
+  (proc `(,x3 ,x1 ,x2)) (proc `(,x3 ,x2 ,x1)))
+(define (p/each4 proc x1 x2 x3 x4)
+  (p/each3 (lambda (xs) (proc (cons x1 xs))) x2 x3 x4)
+  (p/each3 (lambda (xs) (proc (cons x2 xs))) x1 x3 x4)
+  (p/each3 (lambda (xs) (proc (cons x3 xs))) x1 x2 x4)
+  (p/each3 (lambda (xs) (proc (cons x4 xs))) x1 x2 x3))
+(define (p/each* proc len xs)
+  (if (= len 4)
+    (apply p/each4 proc xs)
+    (let1 len1 (- len 1)
+    (for-each-with-index
+     (lambda (ind elt)
+       (p/each* (lambda (subperm) (proc (cons elt subperm)))
+                len1
+                (but-kth xs ind)))
+     xs))))
 (define (permutations-for-each proc set)
-  (cond ((null? set))
-        ((null? (cdr set)) (proc set))
-        (else
-         (for-each-with-index
-          (lambda (ind elt)
-            (permutations-for-each
-             (lambda (subperm) (proc (cons elt subperm)))
-             (but-kth set ind)))
-          set))))
+  (match set
+    [() (undefined)]
+    [(x) (proc set)]
+    [(x1 x2) (proc `(,x1 ,x2)) (proc `(,x2 ,x1))]
+    [(x1 x2 x3) (p/each3 proc x1 x2 x3)]
+    [(x1 x2 x3 x4) (p/each4 proc x1 x2 x3 x4)]
+    [else (p/each* proc (length set) set)]))
 
-(define (permutations*-for-each proc set . maybe-eq)
-  (cond ((null? set))
-        ((null? (cdr set)) (proc set))
-        (else
-         (let1 eq (get-optional maybe-eq eqv?)
-           (let loop ((i 0)
-                      (seen '())
-                      (p set))
-             (cond ((null? p))
-                   ((member (car p) seen eq) (loop (+ i 1) seen (cdr p)))
-                   (else
-                    (permutations*-for-each
-                     (lambda (subperm) (proc (cons (car p) subperm)))
-                     (but-kth set i)
-                     eq)
-                    (loop (+ i 1) (cons (car p) seen) (cdr p)))
-                   ))))))
+;; Like permutations-for-each, but considering duplications.
+(define (permutations*-for-each proc set :optional (eq eqv?))
+  (define (rec proc set)
+    (match set
+      [() (undefined)]
+      [(a) (proc set)]
+      [(a b) (cond [(eq a b) (proc set)] [else (proc set) (proc `(,b ,a))])]
+      [else
+       (let loop ((i 0)
+                  (seen '())
+                  (p set))
+         (cond [(null? p)]
+               [(member (car p) seen eq) (loop (+ i 1) seen (cdr p))]
+               [else (rec (lambda (subperm) (proc (cons (car p) subperm)))
+                       (but-kth set i))
+                     (loop (+ i 1) (cons (car p) seen) (cdr p))]))]))
+  (rec proc set))
                           
 ;;----------------------------------------------------------------
 ;; combinations
@@ -113,60 +144,58 @@
 
 (define (combinations set n)
   (if (not (positive? n))
-      (list '())
-      (pair-fold-right
-       (lambda (pr acc)
-         (fold-right (cut acons (car pr) <> <>)
-                     acc
-                     (combinations (cdr pr) (- n 1))))
-       '()
-       set)))
+    (list '())
+    (pair-fold-right
+     (lambda (pr acc)
+       (fold-right (cut acons (car pr) <> <>)
+                   acc
+                   (combinations (cdr pr) (- n 1))))
+     '()
+     set)))
 
-(define (combinations* set n . maybe-eq)
-  (if (not (positive? n))
+(define (combinations* set n :optional (eq eqv?))
+  (define (rec set n)
+    (if (not (positive? n))
       (list '())
-      (let1 eq (get-optional maybe-eq eqv?)
-        (let loop ((p set)
-                   (seen '())
-                   (r '()))
-          (cond ((null? p) (reverse! r))
-                ((member (car p) seen eq) (loop (cdr p) seen r))
-                (else
-                 (loop (cdr p)
-                       (cons (car p) seen)
-                       (fold (cut acons (car p) <> <>)
-                             r
-                             (combinations* (lset-difference eq (cdr p) seen)
-                                            (- n 1) eq))))
-                )))))
+      (let loop ((p set)
+                 (seen '())
+                 (r '()))
+        (cond [(null? p) (reverse! r)]
+              [(member (car p) seen eq) (loop (cdr p) seen r)]
+              [else
+               (loop (cdr p)
+                     (cons (car p) seen)
+                     (fold (cut acons (car p) <> <>)
+                           r
+                           (rec (lset-difference eq (cdr p) seen) (- n 1))))]
+              ))))
+  (rec set n))
 
 (define (combinations-for-each proc set n)
   (if (not (positive? n))
-      (proc '())
-      (pair-for-each
-       (lambda (pr)
-         (combinations-for-each
-          (lambda (sub-comb) (proc (cons (car pr) sub-comb)))
-          (cdr pr)
-          (- n 1)))
-       set)))
+    (proc '())
+    (pair-for-each
+     (lambda (pr)
+       (combinations-for-each
+        (lambda (sub-comb) (proc (cons (car pr) sub-comb)))
+        (cdr pr)
+        (- n 1)))
+     set)))
 
-(define (combinations*-for-each proc set n . maybe-eq)
-  (if (not (positive? n))
+(define (combinations*-for-each proc set n :optional (eq eqv?))
+  (define (rec proc set n)
+    (if (not (positive? n))
       (proc '())
-      (let1 eq (get-optional maybe-eq eqv?)
-        (let loop ((p set)
-                   (seen '()))
-          (cond ((null? p))
-                ((member (car p) seen eq) (loop (cdr p) seen))
-                (else
-                 (combinations*-for-each
-                  (lambda (sub-comb) (proc (cons (car p) sub-comb)))
-                  (lset-difference eq (cdr p) seen)
-                  (- n 1)
-                  eq)
-                 (loop (cdr p) (cons (car p) seen)))
-                )))))
+      (let loop ((p set)
+                 (seen '()))
+        (cond [(null? p)]
+              [(member (car p) seen eq) (loop (cdr p) seen)]
+              [else
+               (rec (lambda (sub-comb) (proc (cons (car p) sub-comb)))
+                 (lset-difference eq (cdr p) seen)
+                 (- n 1))
+               (loop (cdr p) (cons (car p) seen))]))))
+  (rec proc set n))
 
 ;;----------------------------------------------------------------
 ;; power sets (all subsets of any size of a given set)

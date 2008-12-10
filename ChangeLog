@@ -1,3 +1,10 @@
+2008-12-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/combinations (but-kth, permutations, permutations*,
+	  permutations-for-each, permutations*-for-each, combinations,
+	  combinations*, combinations-for-each, combinations*-for-each):
+	  Optimized a bit.
+
 2008-12-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (ScmFlonum): Make ScmFlonum a structure containing
