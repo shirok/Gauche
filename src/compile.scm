@@ -260,10 +260,8 @@
   (define (make-constructor)
     (let ((args (gensym))
           (num-slots  (length slot-defs))
-          (slot-names (map (lambda (s) (if (symbol? s) s (car s)))
-                           slot-defs))
-          (init-vals  (map (lambda (s) (if (symbol? s) #f (cadr s)))
-                           slot-defs)))
+          (slot-names (map (lambda (s) (if (symbol? s) s (car s))) slot-defs))
+          (init-vals  (map (lambda (s) (if (symbol? s) #f (cadr s))) slot-defs)))
       `(define-macro (,constructor . ,args)
          (match ,args
            ,@(let loop ((n 0)
@@ -340,7 +338,7 @@
  (define-cproc %map-make-lvar (names)
    (let* ((h SCM_NIL) (t SCM_NIL))
      (dolist [name names]
-       (let* ((v (Scm_MakeVector LVAR_SIZE '0)))
+       (let* ([v (Scm_MakeVector LVAR_SIZE '0)])
          (set! (SCM_VECTOR_ELEMENT v LVAR_OFFSET_TAG) 'lvar
                (SCM_VECTOR_ELEMENT v LVAR_OFFSET_NAME) name
                (SCM_VECTOR_ELEMENT v LVAR_OFFSET_INITVAL) SCM_UNDEFINED)
@@ -349,7 +347,7 @@
 
  (define-cise-stmt update!
    [(_ offset delta)
-    `(let* ((i :: int (SCM_INT_VALUE (SCM_VECTOR_ELEMENT lvar ,offset))))
+    `(let* ([i::int (SCM_INT_VALUE (SCM_VECTOR_ELEMENT lvar ,offset))])
        (set! (SCM_VECTOR_ELEMENT lvar ,offset) (SCM_MAKE_INT (+ i ,delta))))])
  
  (define-cproc lvar-ref++! (lvar) ::<void> (update! LVAR_OFFSET_REF_COUNT +1))
@@ -404,17 +402,15 @@
    (SCM_ASSERT (SCM_VECTORP cenv))
    (let* ([name-ident?::int (SCM_IDENTIFIERP name)]
           [frames (SCM_VECTOR_ELEMENT cenv 1)])
-     (pair-for-each
-      (lambda (fp)
-        (when (and name-ident? (== (-> (SCM_IDENTIFIER name) env) fp))
-          ;; strip identifier if we're in the same env (kludge)
-          (set! name (SCM_OBJ (-> (SCM_IDENTIFIER name) name))))
-        (when (> (SCM_CAAR fp) lookup-as) ; see PERFORMANCE KLUDGE above
-          (continue))
-        ;; inline assq here to squeeze performance.
-        (dolist [vp (SCM_CDAR fp)]
-          (when (SCM_EQ name (SCM_CAR vp)) (return (SCM_CDR vp)))))
-      frames)
+     (dopairs [fp frames]
+       (when (and name-ident? (== (-> (SCM_IDENTIFIER name) env) fp))
+         ;; strip identifier if we're in the same env (kludge)
+         (set! name (SCM_OBJ (-> (SCM_IDENTIFIER name) name))))
+       (when (> (SCM_CAAR fp) lookup-as) ; see PERFORMANCE KLUDGE above
+         (continue))
+       ;; inline assq here to squeeze performance.
+       (dolist [vp (SCM_CDAR fp)]
+         (when (SCM_EQ name (SCM_CAR vp)) (return (SCM_CDR vp)))))
      (if (SCM_SYMBOLP name)
        (let* ([mod (SCM_VECTOR_ELEMENT cenv 0)])
          (SCM_ASSERT (SCM_MODULEP mod))
@@ -1564,28 +1560,21 @@
      [(pass1/lookup-head (car program) cenv)
       => (lambda (head)
            (cond
-            [(identifier? head)
-             (pass1/global-call head)]
-            [(lvar? head)
-             (pass1/call program ($lref head) (cdr program) cenv)]
+            [(identifier? head) (pass1/global-call head)]
+            [(lvar? head) (pass1/call program ($lref head) (cdr program) cenv)]
             [(macro? head) ;; local macro
              (pass1 (call-macro-expander head program (cenv-frames cenv)) cenv)]
-            [else
-             (error "[internal] unknown resolution of head:" head)]))]
-     [else
-      (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
-                  (cdr program) cenv)])]
+            [else (error "[internal] unknown resolution of head:" head)]))]
+     [else (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
+                       (cdr program) cenv)])]
    [(variable? program)                 ; variable reference
     (let1 r (cenv-lookup cenv program LEXICAL)
       (cond [(lvar? r) ($lref r)]
             [(identifier? r)
-             (or (and-let* ((const (find-const-binding r)))
-                   ($const const))
+             (or (and-let* ([const (find-const-binding r)]) ($const const))
                  ($gref r))]
-            [else
-             (error "[internal] cenv-lookup returned weird obj:" r)]))]
-   [else
-    ($const program)]))
+            [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
+   [else ($const program)]))
 
 ;; Returns #t iff exp is the form (with-module module VARIABLE)
 ;; We need to check the global value of with-module, for it might
@@ -1599,12 +1588,12 @@
        (null? (cdddr expr))
        (variable? (caddr expr))
        ;; we check the heaviest one last.
-       (and-let* ((var (cenv-lookup cenv (car expr) SYNTAX))
-                  ( (identifier? var) )
-                  (gloc (find-binding (slot-ref var 'module)
+       (and-let* ([var (cenv-lookup cenv (car expr) SYNTAX)]
+                  [ (identifier? var) ]
+                  [gloc (find-binding (slot-ref var 'module)
                                       (slot-ref var 'name)
-                                      #f))
-                  (wm   (find-binding (find-module 'gauche) 'with-module #f)))
+                                      #f)]
+                  [wm   (find-binding (find-module 'gauche) 'with-module #f)])
          (eq? (gloc-ref gloc) (gloc-ref wm)))))
 
 ;; Compiling body with internal definitions.
@@ -2253,9 +2242,7 @@
             [else (loop (+ i 1))])))
   
   (match form
-    [(_ obj)
-     (receive (c? r) (quasi obj 0)
-       (wrap c? r))]
+    [(_ obj) (receive (c? r) (quasi obj 0) (wrap c? r))]
     [_ (error "syntax-error: malformed quasiquote:" form)]))
 
 (define-pass1-syntax (unquote form cenv) :null
@@ -2268,8 +2255,7 @@
 
 (define-pass1-syntax (lambda form cenv) :null
   (match form
-    [(_ formals . body)
-     (pass1/lambda form formals body cenv #f)]
+    [(_ formals . body) (pass1/lambda form formals body cenv #f)]
     [_ (error "syntax-error: malformed lambda:" form)]))
 
 (define (pass1/lambda form formals body cenv flag)
@@ -2392,8 +2378,7 @@
                   expr lvars)
              (pass1/body body '() newenv)))]
     [(_ name ((var expr) ...) body ...)
-     (unless (variable? name)
-       (error "bad name for named let:" name))
+     (unless (variable? name) (error "bad name for named let:" name))
      ;; Named let.  (let name ((var exp) ...) body ...)
      ;;
      ;;  We don't use the textbook expansion here
