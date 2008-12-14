@@ -231,39 +231,39 @@
 ;; (hence we need to define here)
 
 (define-inline (null-list? l)
-  (cond ((null? l))
-        ((pair? l) #f)
-        (else (error "argument must be a list, but got:" l))))
+  (cond [(null? l)]
+        [(pair? l) #f]
+        [else (error "argument must be a list, but got:" l)]))
 
 (with-module gauche.internal
   (define (%zip-nary-args arglists . seed)
     (let loop ((as arglists)
                (cars '())
                (cdrs '()))
-      (cond ((null? as)
+      (cond [(null? as)
              (values (reverse! (if (null? seed) cars (cons (car seed) cars)))
-                     (reverse! cdrs)))
-            ((null? (car as)) (values #f #f)) ;;exhausted
-            ((pair? (car as))
-             (loop (cdr as) (cons (caar as) cars) (cons (cdar as) cdrs)))
-            (else
+                     (reverse! cdrs))]
+            [(null? (car as)) (values #f #f)] ;;exhausted
+            [(pair? (car as))
+             (loop (cdr as) (cons (caar as) cars) (cons (cdar as) cdrs))]
+            [else
              (error "argument lists contained an improper list ending with:"
-                    (car as))))))
+                    (car as))])))
   )
 
 (define (any pred lis . more)
   (if (null? more)
     (and (not (null-list? lis))
          (let loop ((head (car lis)) (tail (cdr lis)))
-           (cond ((null-list? tail) (pred head)) ; tail call
-                 ((pred head))
-                 (else (loop (car tail) (cdr tail))))))
+           (cond [(null-list? tail) (pred head)] ; tail call
+                 [(pred head)]
+                 [else (loop (car tail) (cdr tail))])))
     (let loop ((liss (cons lis more)))
       (receive (cars cdrs)
           ((with-module gauche.internal %zip-nary-args) liss)
-        (cond ((not cars) #f)
-              ((apply pred cars))
-              (else (loop cdrs)))))))
+        (cond [(not cars) #f]
+              [(apply pred cars)]
+              [else (loop cdrs)])))))
 
 (define (fold kons knil lis . more)
   (if (null? more)
@@ -291,15 +291,15 @@
 
 (define (find pred lis)
   (let loop ((lis lis))
-    (cond ((not (pair? lis)) #f)
-          ((pred (car lis)) (car lis))
-          (else (loop (cdr lis))))))
+    (cond [(not (pair? lis)) #f]
+          [(pred (car lis)) (car lis)]
+          [else (loop (cdr lis))])))
 
 (define (split-at lis i)
   (let loop ((i i) (rest lis) (r '()))
-    (cond ((= i 0) (values (reverse! r) rest))
-          ((null? rest) (error "given list is too short:" lis))
-          (else (loop (- i 1) (cdr rest) (cons (car rest) r))))))
+    (cond [(= i 0) (values (reverse! r) rest)]
+          [(null? rest) (error "given list is too short:" lis)]
+          [else (loop (- i 1) (cdr rest) (cons (car rest) r))])))
 
 ;;;=======================================================
 ;;; string stuff
@@ -393,26 +393,26 @@
     (define (error msg . args)
       (raise
        (cond
-        ((is-a? msg <condition-meta>)
+        [(is-a? msg <condition-meta>)
          (receive (keys msgs) (scan-keys args)
            (if (null? msgs)
              (apply make msg keys)
              (apply make msg
                     :message (compose-error-message (car msgs) (cdr msgs))
-                    keys))))
-        (else (make <error> :message (compose-error-message msg args))))))
+                    keys)))]
+        [else (make <error> :message (compose-error-message msg args))])))
 
     (define (errorf fmt . args)
       (raise
        (cond
-        ((is-a? fmt <condition-meta>)
+        [(is-a? fmt <condition-meta>)
          (receive (keys msgs) (scan-keys args)
            (if (null? msgs)
              (apply make fmt keys)
              (apply make fmt
                     :message (apply format/ss #f msgs)
-                    keys))))
-        (else (make <error> :message (apply format/ss #f fmt args))))))
+                    keys)))]
+        [else (make <error> :message (apply format/ss #f fmt args))])))
 
     (values error errorf)))
 
@@ -429,16 +429,14 @@
                           (when fmt
                             (apply format (standard-error-port) fmt args))))
     (lambda maybe-arg                   ;todo: replace with :optional syntax
-      (let1 old (%vm-parameter-ref index id) ;todo: replace with rlet1
+      (rlet1 old (%vm-parameter-ref index id) ;todo: replace with rlet1
         (when (pair? maybe-arg)
-          (%vm-parameter-set! index id (car maybe-arg)))
-        old))))
+          (%vm-parameter-set! index id (car maybe-arg)))))))
 
 (define (exit . args)
   (let-optionals* args ([code 0] [fmt #f] . args)
     (cond [(exit-handler)
-           => (lambda (h)
-                (guard (e [(<error> e) #f]) (h code fmt args)))])
+           => (lambda (h) (guard (e [(<error> e) #f]) (h code fmt args)))])
     (%exit code)))
 
 ;;;=======================================================
@@ -510,13 +508,13 @@
 (define-values (format format/ss)
   (letrec ((format-int
             (lambda (port fmt args shared?)
-              (cond ((eqv? port #f)
+              (cond [(eqv? port #f)
                      (let ((out (open-output-string :private? #t)))
                        (%format out fmt args shared?)
-                       (get-output-string out)))
-                    ((eqv? port #t)
-                     (%format (current-output-port) fmt args shared?))
-                    (else (%format port fmt args shared?)))))
+                       (get-output-string out))]
+                    [(eqv? port #t)
+                     (%format (current-output-port) fmt args shared?)]
+                    [else (%format port fmt args shared?)])))
            (format
             (lambda (fmt . args)
               (if (string? fmt)
@@ -540,22 +538,22 @@
     ;; "abc\\1de\\3" => '("abc" 1 "de" 3)
     (define (regexp-parse-subpattern sub)
       (cond
-       ((string? sub)
+       [(string? sub)
         (let loop ((sub sub) (r '()))
-          (cond ((rxmatch #/\\(?:(\d+)|k<([^>]+)>|(.))/ sub)
+          (cond [(rxmatch #/\\(?:(\d+)|k<([^>]+)>|(.))/ sub)
                  => (lambda (m)
                       (define (loop2 elem)
                         (loop (rxmatch-after m)
                               (list* elem (rxmatch-before m) r)))
-                      (cond ((rxmatch-substring m 1)
-                             => (lambda (d) (loop2 (string->number d))))
-                            ((rxmatch-substring m 2)
-                             => (lambda (s) (loop2 (string->symbol s))))
-                            (else
-                             (loop2 (rxmatch-substring m 3))))))
-                (else (reverse (cons sub r))))))
-       ((procedure? sub) sub)
-       (else (error "string or procedure required, but got" sub))))
+                      (cond [(rxmatch-substring m 1)
+                             => (lambda (d) (loop2 (string->number d)))]
+                            [(rxmatch-substring m 2)
+                             => (lambda (s) (loop2 (string->symbol s)))]
+                            [else
+                             (loop2 (rxmatch-substring m 3))]))]
+                [else (reverse (cons sub r))]))]
+       [(procedure? sub) sub]
+       [else (error "string or procedure required, but got" sub)]))
 
     ;; internal loop
     (define (regexp-replace-rec match subpat out rec)
@@ -590,12 +588,12 @@
             (lambda (out)
               (define (loop str)
                 (unless (equal? str "")
-                  (cond ((rxmatch rx str)
+                  (cond [(rxmatch rx str)
                          => (lambda (match)
                               (when (= (rxmatch-start match) (rxmatch-end match))
                                 (error "regexp-replace-all: matching zero-length string causes infinite loop:" rx))
-                              (regexp-replace-rec match subpat out loop)))
-                        (else (display str out)))))
+                              (regexp-replace-rec match subpat out loop))]
+                        [else (display str out)])))
               (regexp-replace-rec match subpat out loop)))
           string)))
     (values regexp-replace regexp-replace-all)))
@@ -605,9 +603,8 @@
   (let ()
     (define (regexp-replace-driver name func-1)
       (lambda (string rx sub . more)
-        (cond ((null? more)
-               (func-1 rx string sub))
-              (else
+        (cond [(null? more) (func-1 rx string sub)]
+              [else
                (unless (zero? (modulo (length more) 2))
                  (errorf "~a: regexp and subsitution don't pair up" name))
                (let loop ((s (func-1 rx string sub))
@@ -615,7 +612,7 @@
                  (if (null? args)
                    s
                    (loop (func-1 (car args) s (cadr args))
-                         (cddr args))))))))
+                         (cddr args))))])))
     (values
      (regexp-replace-driver 'regexp-replace* regexp-replace)
      (regexp-replace-driver 'regexp-replace-all* regexp-replace-all))))

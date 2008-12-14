@@ -245,10 +245,9 @@
       (cond [(assoc metasupers generated-metas) => (lambda (got) (cdr got))]
             [else (make-metaclass metasupers)]))
     (define (make-metaclass metasupers)
-      (let1 meta (make <class>
+      (rlet1 meta (make <class>
                    :supers metasupers :name (gensym "metaclass") :slots '())
-        (set! generated-metas (acons metasupers meta generated-metas))
-        meta))
+        (set! generated-metas (acons metasupers meta generated-metas))))
 
     (lambda (supers)
       (if (null? supers)

@@ -729,11 +729,11 @@
 
 (define ($cons-pack elt)
   (cond
-   ((equal? elt ($const-nil)) (values $LIST '()))
-   ((has-tag? elt $CONS)
+   [(equal? elt ($const-nil)) (values $LIST '())]
+   [(has-tag? elt $CONS)
     (receive (type elts) ($cons-pack (vector-ref elt 3))
-      (values type (cons (vector-ref elt 2) elts))))
-   (else (values $LIST* (list elt)))))
+      (values type (cons (vector-ref elt 2) elts)))]
+   [else (values $LIST* (list elt))]))
 
 (define-simple-struct $append $APPEND $append (src arg0 arg1))
 (define-simple-struct $memv   $MEMV   $memv   (src arg0 arg1))
@@ -756,18 +756,18 @@
 ;; look up symbolic name of iform tag (for debugging)
 (define (iform-tag-name tag)
   (let loop ((p .intermediate-tags.))
-    (cond ((null? p) #f)
-          ((eqv? (cdar p) tag) (caar p))
-          (else (loop (cdr p))))))
+    (cond [(null? p) #f]
+          [(eqv? (cdar p) tag) (caar p)]
+          [else (loop (cdr p))])))
 
 ;; look up symbolic name of VM instruction (for debugging)
 ;; (The proper way to realize this is using gauche.vm.insn, but we can't
 ;;  use it from comp.scm)
 (define (insn-name code)
   (let loop ((p .insn-alist.))
-    (cond ((null? p) #f)
-          ((eqv? (cdar p) code) (caar p))
-          (else (loop (cdr p))))))
+    (cond [(null? p) #f]
+          [(eqv? (cdar p) code) (caar p)]
+          [else (loop (cdr p))])))
 
 ;; prettyprinter of intermediate form
 (define (pp-iform iform)
@@ -790,31 +790,31 @@
   (define (rec ind iform)
     (case/unquote
      (iform-tag iform)
-     (($DEFINE) 
+     [($DEFINE) 
       (format #t "($define ~a ~a" ($define-flags iform)
               (id->string ($define-id iform)))
       (nl (+ ind 2))
-      (rec (+ ind 2) ($define-expr iform)) (display ")"))
-     (($LREF)
-      (format #t "($lref ~a)" (lvar->string ($lref-lvar iform))))
-     (($LSET)
+      (rec (+ ind 2) ($define-expr iform)) (display ")")]
+     [($LREF)
+      (format #t "($lref ~a)" (lvar->string ($lref-lvar iform)))]
+     [($LSET)
       (format #t "($lset ~a"  (lvar->string ($lset-lvar iform)))
       (nl (+ ind 2))
-      (rec (+ ind 2) ($lset-expr iform)) (display ")"))
-     (($GREF)
-      (format #t "($gref ~a)" (id->string ($gref-id iform))))
-     (($GSET)
+      (rec (+ ind 2) ($lset-expr iform)) (display ")")]
+     [($GREF)
+      (format #t "($gref ~a)" (id->string ($gref-id iform)))]
+     [($GSET)
       (format #t "($gset ~a" (id->string ($gset-id iform)))
       (nl (+ ind 2))
-      (rec (+ ind 2) ($gset-expr iform)) (display ")"))
-     (($CONST)
-      (format #t "($const ~s)" ($const-value iform)))
-     (($IF)
+      (rec (+ ind 2) ($gset-expr iform)) (display ")")]
+     [($CONST)
+      (format #t "($const ~s)" ($const-value iform))]
+     [($IF)
       (display "($if ")
       (rec (+ ind 5) ($if-test iform)) (nl (+ ind 2))
       (rec (+ ind 2) ($if-then iform)) (nl (+ ind 2))
-      (rec (+ ind 2) ($if-else iform)) (display ")"))
-     (($LET)
+      (rec (+ ind 2) ($if-else iform)) (display ")")]
+     [($LET)
       (let* ((hdr  (format "($let~a (" (case ($let-type iform)
                                          ((let) "") ((rec) "rec"))))
              (xind (+ ind (string-length hdr))))
@@ -827,68 +827,66 @@
                       (nl xind)))
                   ($let-lvars iform) ($let-inits iform))
         (display ")") (nl (+ ind 2))
-        (rec (+ ind 2) ($let-body iform)) (display ")")))
-     (($RECEIVE)
+        (rec (+ ind 2) ($let-body iform)) (display ")"))]
+     [($RECEIVE)
       (format #t "($receive ~a" (map lvar->string ($receive-lvars iform)))
       (nl (+ ind 4))
       (rec (+ ind 4) ($receive-expr iform)) (nl (+ ind 2))
-      (rec (+ ind 2) ($receive-body iform)) (display ")"))
-     (($LAMBDA)
+      (rec (+ ind 2) ($receive-body iform)) (display ")")]
+     [($LAMBDA)
       (format #t "($lambda[~a;~a] ~a" ($lambda-name iform)
               (length ($lambda-calls iform))
               (map lvar->string ($lambda-lvars iform)))
       (nl (+ ind 2))
-      (rec (+ ind 2) ($lambda-body iform)) (display ")"))
-     (($LABEL)
-      (cond ((assq iform labels)
-             => (lambda (p) (format #t "label#~a" (cdr p))))
-            (else
+      (rec (+ ind 2) ($lambda-body iform)) (display ")")]
+     [($LABEL)
+      (cond [(assq iform labels) => (lambda (p) (format #t "label#~a" (cdr p)))]
+            [else
              (let1 num (length labels)
                (push! labels (cons iform num))
                (format #t "($label #~a" num)
                (nl (+ ind 2))
-               (rec (+ ind 2) ($label-body iform)) (display ")")))))
-     (($SEQ)
+               (rec (+ ind 2) ($label-body iform)) (display ")"))])]
+     [($SEQ)
       (format #t "($seq")
       (for-each (lambda (node) (nl (+ ind 2)) (rec (+ ind 2) node))
                 ($seq-body iform))
-      (display ")"))
-     (($CALL)
-      (let1 pre
-          (cond (($call-flag iform) => (cut format "($call[~a] " <>))
-                (else "($call "))
+      (display ")")]
+     [($CALL)
+      (let1 pre (cond [($call-flag iform) => (cut format "($call[~a] " <>)]
+                      [else "($call "])
         (format #t pre)
         (rec (+ ind (string-length pre)) ($call-proc iform))
         (for-each (lambda (node) (nl (+ ind 2)) (rec (+ ind 2) node))
                   ($call-args iform))
-        (display ")")))
-     (($ASM)
+        (display ")"))]
+     [($ASM)
       (let1 insn ($asm-insn iform)
         (format #t "($asm ~a" (cons (insn-name (car insn)) (cdr insn))))
       (for-each (lambda (node) (nl (+ ind 2)) (rec (+ ind 2) node))
                 ($asm-args iform))
-      (display ")"))
-     (($PROMISE)
+      (display ")")]
+     [($PROMISE)
       (display "($promise ")
       (rec (+ ind 10) ($promise-expr iform))
-      (display ")"))
-     (($IT) (display "($it)"))
-     (($CONS $APPEND $MEMV $EQ? $EQV?)
+      (display ")")]
+     [($IT) (display "($it)")]
+     [($CONS $APPEND $MEMV $EQ? $EQV?)
       (let* ((s (format "(~a " (iform-tag-name (iform-tag iform))))
              (ind (+ ind (string-length s))))
         (display s)
         (rec ind (vector-ref iform 2)) (nl ind)
-        (rec ind (vector-ref iform 3)) (display ")")))
-     (($LIST $LIST* $VECTOR)
+        (rec ind (vector-ref iform 3)) (display ")"))]
+     [($LIST $LIST* $VECTOR)
       (display (format "(~a " (iform-tag-name (iform-tag iform))))
       (for-each (lambda (elt) (nl (+ ind 2)) (rec (+ ind 2) elt))
-                (vector-ref iform 2)))
-     (($LIST->VECTOR)
+                (vector-ref iform 2))]
+     [($LIST->VECTOR)
       (display "($LIST->VECTOR ")
       (rec (+ ind 14) (vector-ref iform 2))
-      (display ")"))
-     (else
-      (error "pp-iform: unknown tag:" (iform-tag iform)))
+      (display ")")]
+     [else
+      (error "pp-iform: unknown tag:" (iform-tag iform))]
      ))
 
   (rec 0 iform)
@@ -996,9 +994,9 @@
   ;; main body of pack-iform
   (let* ((start (pack-iform-rec iform))
          (vec (make-vector c)))
-    (do ((i (- c 1) (- i 1))
-         (r r (cdr r)))
-        ((null? r))
+    (do ([i (- c 1) (- i 1)]
+         [r r (cdr r)])
+        [(null? r)]
       (vector-set! vec i (car r)))
     (vector-set! vec 0 start)
     vec))
@@ -1076,57 +1074,46 @@
   (define (rec iform cnt)
     (letrec-syntax ((sum-items
                      (syntax-rules (*)
-                       ((_ cnt) cnt)
-                       ((_ cnt (* item1) item2 ...)
+                       [(_ cnt) cnt]
+                       [(_ cnt (* item1) item2 ...)
                         (let1 s1 (rec-list item1 cnt)
                           (if (>= s1 limit) limit
-                              (sum-items s1 item2 ...))))
-                       ((_ cnt item1 item2 ...)
+                              (sum-items s1 item2 ...)))]
+                       [(_ cnt item1 item2 ...)
                         (let1 s1 (rec item1 cnt)
                           (if (>= s1 limit) limit
-                              (sum-items s1 item2 ...))))))
+                              (sum-items s1 item2 ...)))]))
                     )
       (case/unquote
        (iform-tag iform)
-       (($DEFINE) (sum-items (+ cnt 1) ($define-expr iform)))
-       (($LREF $GREF $CONST) (+ cnt 1))
-       (($LSET)   (sum-items (+ cnt 1) ($lset-expr iform)))
-       (($GSET)   (sum-items (+ cnt 1) ($gset-expr iform)))
-       (($IF)     (sum-items (+ cnt 1) ($if-test iform)
-                             ($if-then iform) ($if-else iform)))
-       (($LET)
-        (sum-items (+ cnt 1) (* ($let-inits iform)) ($let-body iform)))
-       (($RECEIVE)
-        (sum-items (+ cnt 1) ($receive-expr iform) ($receive-body iform)))
-       (($LAMBDA)
-        (sum-items (+ cnt 1) ($lambda-body iform)))
-       (($LABEL)
-        (sum-items cnt ($label-body iform)))
-       (($SEQ)
-        (sum-items cnt (* ($seq-body iform))))
-       (($CALL)
-        (sum-items (+ cnt 1) ($call-proc iform) (* ($call-args iform))))
-       (($ASM)
-        (sum-items (+ cnt 1) (* ($asm-args iform))))
-       (($PROMISE)
-        (sum-items (+ cnt 1) ($promise-expr iform)))
-       (($CONS $APPEND $MEMV $EQ? $EQV?)
-        (sum-items (+ cnt 1) ($*-arg0 iform) ($*-arg1 iform)))
-       (($VECTOR $LIST $LIST*)
-        (sum-items (+ cnt 1) (* ($*-args iform))))
-       (($LIST->VECTOR)
-        (sum-items (+ cnt 1) ($*-arg0 iform)))
-       (($IT) cnt)
-       (else
+       [($DEFINE) (sum-items (+ cnt 1) ($define-expr iform))]
+       [($LREF $GREF $CONST) (+ cnt 1)]
+       [($LSET)   (sum-items (+ cnt 1) ($lset-expr iform))]
+       [($GSET)   (sum-items (+ cnt 1) ($gset-expr iform))]
+       [($IF)     (sum-items (+ cnt 1) ($if-test iform)
+                             ($if-then iform) ($if-else iform))]
+       [($LET) (sum-items (+ cnt 1) (* ($let-inits iform)) ($let-body iform))]
+       [($RECEIVE)
+        (sum-items (+ cnt 1) ($receive-expr iform) ($receive-body iform))]
+       [($LAMBDA) (sum-items (+ cnt 1) ($lambda-body iform))]
+       [($LABEL)  (sum-items cnt ($label-body iform))]
+       [($SEQ)    (sum-items cnt (* ($seq-body iform)))]
+       [($CALL) (sum-items (+ cnt 1) ($call-proc iform) (* ($call-args iform)))]
+       [($ASM)    (sum-items (+ cnt 1) (* ($asm-args iform)))]
+       [($PROMISE)(sum-items (+ cnt 1) ($promise-expr iform))]
+       [($CONS $APPEND $MEMV $EQ? $EQV?)
+        (sum-items (+ cnt 1) ($*-arg0 iform) ($*-arg1 iform))]
+       [($VECTOR $LIST $LIST*) (sum-items (+ cnt 1) (* ($*-args iform)))]
+       [($LIST->VECTOR) (sum-items (+ cnt 1) ($*-arg0 iform))]
+       [($IT) cnt]
+       [else
         (error "[internal error] iform-count-size-upto: unknown iform tag:"
-               (iform-tag iform)))
+               (iform-tag iform))]
        )))
   (define (rec-list iform-list cnt)
-    (cond ((null? iform-list) cnt)
-          ((>= cnt limit) limit)
-          (else
-           (rec-list (cdr iform-list)
-                     (rec (car iform-list) cnt)))))
+    (cond [(null? iform-list) cnt]
+          [(>= cnt limit) limit]
+          [else (rec-list (cdr iform-list) (rec (car iform-list) cnt))]))
   (rec iform 0))
 
 ;; Copy iform.
@@ -1442,7 +1429,7 @@
                (make-bottom-cenv))
     (guard
         (e
-         (else
+         [else
           ;; TODO: check if e is an expected error (such as syntax error) or
           ;; an unexpected error (compiler bug).
           (let1 srcinfo (and (pair? program)
@@ -1451,7 +1438,7 @@
               (errorf "Compile Error: ~a\n~s:~d:~,,,,40:s\n"
                       (slot-ref e 'message) (car srcinfo)
                       (cadr srcinfo) program)
-              (errorf "Compile Error: ~a\n" (slot-ref e 'message))))))
+              (errorf "Compile Error: ~a\n" (slot-ref e 'message))))])
       (let1 p1 (pass1 program cenv)
         (pass3 (pass2 p1)
                (make-compiled-code-builder 0 0 '%toplevel #f #f)
@@ -3378,7 +3365,7 @@
 ;;   else clause is ($IT)), thus we treat such a case specially.
 (define (pass3/$IF iform ccb renv ctx)
   (cond
-   ((and (not (has-tag? ($if-then iform) $IT))
+   [(and (not (has-tag? ($if-then iform) $IT))
          (not (has-tag? ($if-else iform) $IT))
          (has-tag? ($if-test iform) $ASM)
          (eqv? (car ($asm-insn ($if-test iform))) NOT))
@@ -3386,9 +3373,9 @@
                     (car ($asm-args ($if-test iform)))
                     ($if-else iform)
                     ($if-then iform))
-               ccb renv ctx))
-   (else
-    (pass3/branch-core iform ccb renv ctx))))
+               ccb renv ctx)]
+   [else
+    (pass3/branch-core iform ccb renv ctx)]))
 
 (define (pass3/branch-core iform ccb renv ctx)
   (let1 test ($if-test iform)
@@ -3568,15 +3555,15 @@
     (cond
      [(tail-context? ctx)
       (cond
-       ((and (eqv? code BF)
+       [(and (eqv? code BF)
              (has-tag? ($if-then iform) $IT))
         (compiled-code-emit0i! ccb RT info)
-        (imax (pass3/rec ($if-else iform) ccb renv ctx) depth))
-       ((and (eqv? code BF)
+        (imax (pass3/rec ($if-else iform) ccb renv ctx) depth)]
+       [(and (eqv? code BF)
              (has-tag? ($if-else iform) $IT))
         (compiled-code-emit0i! ccb RF info)
-        (imax (pass3/rec ($if-then iform) ccb renv ctx) depth))
-       (else
+        (imax (pass3/rec ($if-then iform) ccb renv ctx) depth)]
+       [else
         (let ((elselabel (compiled-code-new-label ccb)))
           (if (memv code .branch-insn-extra-operand.)
             (compiled-code-emit0oi! ccb code (list arg0/opr elselabel) info)
@@ -3584,7 +3571,7 @@
           (set! depth (imax (pass3/rec ($if-then iform) ccb renv ctx) depth))
           (compiled-code-emit0! ccb RET)
           (compiled-code-set-label! ccb elselabel)
-          (imax (pass3/rec ($if-else iform) ccb renv ctx) depth))))]
+          (imax (pass3/rec ($if-else iform) ccb renv ctx) depth))])]
      [else
       (let ((elselabel  (compiled-code-new-label ccb))
             (mergelabel (compiled-code-new-label ccb)))
@@ -4509,10 +4496,10 @@
        (<= 0 obj #x7ffff)))
 
 (define (variable-name arg)
-  (cond ((symbol? arg) arg)
-        ((identifier? arg) (slot-ref arg 'name))
-        ((lvar? arg) (lvar-name arg))
-        (else (error "variable required, but got:" arg))))
+  (cond [(symbol? arg) arg]
+        [(identifier? arg) (slot-ref arg 'name)]
+        [(lvar? arg) (lvar-name arg)]
+        [else (error "variable required, but got:" arg)]))
 
 (define (global-eq? var sym cenv)
   (and (variable? var)
