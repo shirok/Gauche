@@ -1313,3 +1313,4 @@
 ;; Experimental
 ;;
 
+(define-insn-lref* LREF-RET 0 none (LREF RET))
