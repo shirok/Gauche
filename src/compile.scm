@@ -2053,13 +2053,11 @@
             ($seq (imap (cut pass1 <> cenv) exprs))
             (process-clauses rest))]
       [_ (error "syntax-error: bad clause in cond:" form)]))
+
   (match form
-    ((_)
-     (error "syntax-error: at least one clause is required for cond:" form))
-    ((_ clause ...)
-     (process-clauses clause))
-    (else
-     (error "syntax-error: malformed cond:" form))))
+    [(_) (error "syntax-error: at least one clause is required for cond:" form)]
+    [(_ clause ...) (process-clauses clause)]
+    [else (error "syntax-error: malformed cond:" form)]))
 
 (define-pass1-syntax (case form cenv) :null
   (define (process-clauses tmpvar cls)
@@ -2070,12 +2068,12 @@
          (error "syntax-error: 'else' clause followed by more clauses:" form))
        (match exprs
          ;; (else => proc) -- SRFI-87 case clause
-         (((? (cut global-eq? <> '=> cenv)) proc)
+         [((? (cut global-eq? <> '=> cenv)) proc)
           ($call (car cls)
                  (pass1 proc (cenv-sans-name cenv))
-                 (list ($lref tmpvar))))
+                 (list ($lref tmpvar)))]
          ;; (else . exprs)
-         (_ ($seq (imap (cut pass1 <> cenv) exprs))))]
+         [_ ($seq (imap (cut pass1 <> cenv) exprs))])]
       [((elts exprs ...) . rest)
        (let ((nelts (length elts))
              (elts  (map unwrap-syntax elts)))
@@ -2088,14 +2086,15 @@
                   ($eqv? #f ($lref tmpvar) ($const (car elts)))))
               (match exprs
                 ;; (elts => proc) -- SRFI-87 case clause
-                (((? (cut global-eq? <> '=> cenv)) proc)
+                [((? (cut global-eq? <> '=> cenv)) proc)
                  ($call (car cls)
                         (pass1 proc (cenv-sans-name cenv))
-                        (list ($lref tmpvar))))
+                        (list ($lref tmpvar)))]
                 ;; (elts . exprs)
-                (_ ($seq (imap (cut pass1 <> cenv) exprs))))
+                [_ ($seq (imap (cut pass1 <> cenv) exprs))])
               (process-clauses tmpvar (cdr cls))))]
       [_ (error "syntax-error: bad clause in case:" form)]))
+
   (match form
     [(_)
      (error "syntax-error: at least one clause is required for case:" form)]
@@ -2133,6 +2132,7 @@
                     (process-binds more body newenv)
                     ($it))))]
       [_ (error "syntax-error: malformed and-let*:" form)]))
+
   (match form
     [(_ binds . body) (process-binds binds body cenv)]
     [_ (error "syntax-error: malformed and-let*:" form)]))
@@ -2260,11 +2260,10 @@
 
   (define (vector-has-splicing? obj)
     (let loop ((i 0))
-      (cond ((= i (vector-length obj)) #f)
-            ((and (pair? (vector-ref obj i))
-                  (eq? (car (vector-ref obj i)) 'unquote-splicing))
-             #t)
-            (else (loop (+ i 1))))))
+      (cond [(= i (vector-length obj)) #f]
+            [(and (pair? (vector-ref obj i))
+                  (eq? (car (vector-ref obj i)) 'unquote-splicing))]
+            [else (loop (+ i 1))])))
   
   (match form
     [(_ obj)
@@ -2665,13 +2664,15 @@
      ;; check
      (let ((wlist
             (let loop ((w w) (r '()))
-              (cond ((null? w) r)
-                    ((memq (car w) '(:compile-toplevel :load-toplevel :execute))
+              (cond [(null? w) r]
+                    [(memq (car w) '(:compile-toplevel :load-toplevel :execute))
                      (if (memq (car w) r)
                        (loop (cdr w) r)
-                       (loop (cdr w) (cons (car w) r))))
-                    (else
-                     (error "eval-when: situation must be a list of :compile-toplevel, :load-toplevel or :execute, but got:" (car w))))))
+                       (loop (cdr w) (cons (car w) r)))]
+                    [else
+                     (error "eval-when: situation must be a list of \
+                             :compile-toplevel, :load-toplevel or :execute, \
+                             but got:" (car w))])))
            (situ (vm-eval-situation)))
        (when (and (eqv? situ SCM_VM_COMPILING)
                   (memq :compile-toplevel wlist)
@@ -2882,11 +2883,11 @@
     (for-each pass2/optimize-closure lvars inits)
     (receive (new-lvars new-inits removed-inits)
         (pass2/remove-unused-lvars lvars inits)
-      (cond ((null? new-lvars)
+      (cond [(null? new-lvars)
              (if (null? removed-inits)
                obody
-               ($seq (append! removed-inits (list obody)))))
-            (else
+               ($seq (append! removed-inits (list obody))))]
+            [else
              ($let-lvars-set! iform new-lvars)
              ($let-inits-set! iform new-inits)
              ($let-body-set! iform obody)
@@ -2898,14 +2899,13 @@
                  ($let-body-set! iform
                                  ($seq (append removed-inits
                                                (list obody))))))
-             iform)))
-    ))
+             iform]))))
 
 (define (pass2/remove-unused-lvars lvars inits)
   (let loop ((lvars lvars) (inits inits) (rl '()) (ri '()) (rr '()))
-    (cond ((null? lvars)
-           (values (reverse rl) (reverse ri) (reverse rr)))
-          ((and (zero? (lvar-ref-count (car lvars)))
+    (cond [(null? lvars)
+           (values (reverse rl) (reverse ri) (reverse rr))]
+          [(and (zero? (lvar-ref-count (car lvars)))
                 (zero? (lvar-set-count (car lvars))))
            ;; TODO: if we remove $LREF from inits, we have to decrement
            ;; refcount?
@@ -2913,10 +2913,10 @@
                  (if (memv (iform-tag (car inits))
                            `(,$CONST ,$LREF ,$LAMBDA))
                    rr
-                   (cons (car inits) rr))))
-          (else
+                   (cons (car inits) rr)))]
+          [else
            (loop (cdr lvars) (cdr inits)
-                 (cons (car lvars) rl) (cons (car inits) ri) rr)))))
+                 (cons (car lvars) rl) (cons (car inits) ri) rr)])))
 
 ;; Closure optimization (called from pass2/$LET)
 ;;
@@ -3002,26 +3002,26 @@
 (define (pass2/classify-calls call&envs lambda-node)
   (define (direct-call? env)
     (let loop ((env env))
-      (cond ((null? env) #t)
-            ((eq? (car env) lambda-node) #t)
-            ((eq? ($lambda-flag (car env)) 'dissolved)
-             (loop (cdr env))) ;; skip dissolved (inlined) lambdas
-            (else #f))))
+      (cond [(null? env) #t]
+            [(eq? (car env) lambda-node) #t]
+            [(eq? ($lambda-flag (car env)) 'dissolved)
+             (loop (cdr env))] ;; skip dissolved (inlined) lambdas
+            [else #f])))
   (let loop ((call&envs call&envs)
              (local '())
              (rec '())
              (trec '()))
     (match call&envs
-      (()
-       (values local rec trec))
-      (((call . env) . more)
+      [()
+       (values local rec trec)]
+      [((call . env) . more)
        (case ($call-flag call)
-         ((tail-rec)
+         [(tail-rec)
           (if (direct-call? env)
             (loop more local rec (cons call trec))
-            (loop more local (cons call rec) trec)))
-         ((rec) (loop more local (cons call rec) trec))
-         (else  (loop more (cons call local) rec trec)))))
+            (loop more local (cons call rec) trec))]
+         [(rec) (loop more local (cons call rec) trec)]
+         [else  (loop more (cons call local) rec trec)])])
     ))
 
 ;; Set up local calls to LAMBDA-NODE.  Marking $call node as 'local
@@ -3088,11 +3088,11 @@
   (lvar-ref-count-set! lvar 0)
   ($lambda-flag-set! lambda-node 'dissolved)
   (let loop ((calls calls))
-    (cond ((null? (cdr calls))
-           (inline-it (car calls) lambda-node))
-          (else
+    (cond [(null? (cdr calls))
+           (inline-it (car calls) lambda-node)]
+          [else
            (inline-it (car calls) (iform-copy lambda-node '()))
-           (loop (cdr calls))))))
+           (loop (cdr calls))])))
 
 (define (pass2/$RECEIVE iform penv tail?)
   ($receive-expr-set! iform (pass2/rec ($receive-expr iform) penv #f))
@@ -3118,14 +3118,14 @@
     iform
     (let loop ((body ($seq-body iform))
                (r '()))
-      (cond ((null? (cdr body))
+      (cond [(null? (cdr body))
              ($seq-body-set! iform
                              (reverse (cons (pass2/rec (car body) penv tail?)
                                              r)))
-             iform)
-            (else
+             iform]
+            [else
              (loop (cdr body)
-                   (cons (pass2/rec (car body) penv #f) r)))))))
+                   (cons (pass2/rec (car body) penv #f) r))]))))
 
 ;; Call optimization
 ;;   We try to inline the call whenever possible.
