@@ -564,8 +564,8 @@
 (define-insn BNEQV   0 addr #f ($w/argp z ($branch* (not (Scm_EqvP VAL0 z)))))
 (define-insn BNNULL  0 addr #f ($branch* (not (SCM_NULLP VAL0))))
 
-(define-insn BNUMNE  0 addr #f (let* ((x) (y VAL0))
-                                 (POP-ARG x) ($branch* (not (Scm_NumEq x y)))))
+(define-insn BNUMNE  0 addr #f (let* ((y VAL0))
+                                 ($w/argp x ($branch* (not (Scm_NumEq x y))))))
 (define-insn BNLT    0 addr #f ($w/numcmp r <  ($branch* (not r))))
 (define-insn BNLE    0 addr #f ($w/numcmp r <= ($branch* (not r))))
 (define-insn BNGT    0 addr #f ($w/numcmp r >  ($branch* (not r))))
@@ -574,7 +574,8 @@
 ;; Compare LREF(n,m) and VAL0 and branch.  This is not a simple combination
 ;; of LREF + BNLT etc. (which would compare stack top and LREF).  These insns
 ;; save one stack operation.  The compiler recognizes the pattern and
-;; emits these.  See pass3/if-numcmp.
+;; emits these.  See pass3/if-numcmp and pass3/if-numeq.
+(define-insn LREF-VAL0-BNUMNE 2 addr #f ($arg-source lref ($insn-body BNUMNE))) 
 (define-insn LREF-VAL0-BNLT 2 addr #f ($arg-source lref ($insn-body BNLT)))
 (define-insn LREF-VAL0-BNLE 2 addr #f ($arg-source lref ($insn-body BNLE)))
 (define-insn LREF-VAL0-BNGT 2 addr #f ($arg-source lref ($insn-body BNGT)))
@@ -1093,6 +1094,8 @@
             (and (SCM_FLONUMP VAL0) (SCM_REALP arg)))
       ($result:f (/ (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
       ($result (Scm_Div arg VAL0)))))
+
+(define-insn LREF-VAL0-NUMADD2 2 none #f ($arg-source lref ($insn-body NUMADD2)))
   
 (define-insn NEGATE  0 none #f          ; -  (unary)
   ($w/argr v
@@ -1133,7 +1136,11 @@
             [(SCM_FLONUMP arg)
              ($result:f (+ (SCM_FLONUM_VALUE arg) (cast double imm)))]
             [else           ($result (Scm_Add (SCM_MAKE_INT imm) arg))]))))
-  
+
+(define-insn NUMADDI-PUSH 1 none (NUMADDI PUSH))
+(define-insn-lref+ LREF-NUMADDI 1 none (LREF NUMADDI))
+(define-insn-lref+ LREF-NUMADDI-PUSH 1 none (LREF NUMADDI PUSH))
+
 (define-insn NUMSUBI     1 none #f      ; -, if one of op is small int
   (let* ([imm::long (SCM_VM_INSN_ARG code)])
     ($w/argr arg

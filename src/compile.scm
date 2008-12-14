@@ -3470,20 +3470,20 @@
 
 (define (pass3/if-eqv iform x y info ccb renv ctx)
   (cond
-   ((has-tag? x $CONST)
+   [(has-tag? x $CONST)
     (pass3/if-final iform y BNEQVC ($const-value x)
                     0
-                    info ccb renv ctx))
-   ((has-tag? y $CONST)
+                    info ccb renv ctx)]
+   [(has-tag? y $CONST)
     (pass3/if-final iform x BNEQVC ($const-value y)
                     0
-                    info ccb renv ctx))
-   (else
+                    info ccb renv ctx)]
+   [else
     (let1 depth (imax (pass3/rec x ccb renv (normal-context ctx)) 1)
       (compiled-code-emit0! ccb PUSH)
       (pass3/if-final iform #f BNEQV 0
                       (imax (pass3/rec y ccb renv 'normal/top) depth)
-                      info ccb renv ctx)))))
+                      info ccb renv ctx))]))
 
 (define (pass3/if-numeq iform x y info ccb renv ctx)
   (or (and (has-tag? x $CONST)
@@ -3495,6 +3495,16 @@
            (integer-fits-insn-arg? ($const-value y))
            (pass3/if-final iform x BNUMNEI ($const-value y)
                            0
+                           info ccb renv ctx))
+      (and (has-tag? x $LREF)
+           (pass3/if-final iform #f LREF-VAL0-BNUMNE
+                           (pass3/if-numcmp-lrefarg x renv)
+                           (pass3/rec y ccb renv (normal-context ctx))
+                           info ccb renv ctx))
+      (and (has-tag? y $LREF)
+           (pass3/if-final iform #f LREF-VAL0-BNUMNE
+                           (pass3/if-numcmp-lrefarg y renv)
+                           (pass3/rec x ccb renv (normal-context ctx))
                            info ccb renv ctx))
       (let1 depth (imax (pass3/rec x ccb renv (normal-context ctx)) 1)
         (compiled-code-emit0! ccb PUSH)
@@ -4151,17 +4161,14 @@
       (and (has-tag? y $CONST)
            (integer-fits-insn-arg? ($const-value y))
            (pass3/builtin-onearg info NUMADDI ($const-value y) x))
-#|
-      ;; Experiment of LREF-NUMADD2 combining insn.  It does have quite an
-      ;; effect, though I'd like to put it with other new insns in the
-      ;; next big update.
       (and (has-tag? y $LREF)
            (receive (depth offset) (renv-lookup renv ($lref-lvar y))
-             (pass3/builtin-onearg info LREF-NUMADD2 (+ (ash offset 10) depth) x)))
+             (pass3/builtin-onearg info LREF-VAL0-NUMADD2
+                                   (+ (ash offset 10) depth) x)))
       (and (has-tag? x $LREF)
            (receive (depth offset) (renv-lookup renv ($lref-lvar x))
-             (pass3/builtin-onearg info LREF-NUMADD2 (+ (ash offset 10) depth) y)))
-|#
+             (pass3/builtin-onearg info LREF-VAL0-NUMADD2
+                                   (+ (ash offset 10) depth) y)))
       (pass3/builtin-twoargs info NUMADD2 0 x y)))
 
 (define (pass3/asm-numsub2 info x y ccb renv ctx)

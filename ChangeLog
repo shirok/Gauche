@@ -1,3 +1,13 @@
+2008-12-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm, src/compile.scm: Experimentally added supports for
+	  combined instructions: LREF-VAL0-BNUMNE, LREF-VAL0-NUMADD2,
+	  NUMADDI-PUSH, LREF-NUMADDI, LREF-NUMADDI-PUSH.  These combinations
+	  frequently appear in typical loop constructs.  This change improves
+	  performance slightly (about 7-8% in tak).  The improvement is not
+	  so much as expected, though, so we might revert this if we find
+	  more fundamental improvements.
+
 2008-12-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/combinations (but-kth, permutations, permutations*,
