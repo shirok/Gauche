@@ -372,15 +372,11 @@
 ;;;
 (define-values (error errorf)
   (let ()
-    (define (compose-error-message msg args) ;; srfi-23 style message
+    (define (mkmsg msg args) ;; srfi-23 style message
       (let1 p (open-output-string)
         (display msg p)
-        (let loop ((args args))
-          (if (null? args)
-            (get-output-string p)
-            (begin (display " " p)
-                   (write/ss (car args) p)
-                   (loop (cdr args)))))))
+        (dolist [obj args] (display " " p) (write/ss obj p))
+        (get-output-string p)))
     (define (scan-keys args)
       (let loop ((args args)
                  (keys '()))
@@ -397,10 +393,8 @@
          (receive (keys msgs) (scan-keys args)
            (if (null? msgs)
              (apply make msg keys)
-             (apply make msg
-                    :message (compose-error-message (car msgs) (cdr msgs))
-                    keys)))]
-        [else (make <error> :message (compose-error-message msg args))])))
+             (apply make msg :message (mkmsg (car msgs) (cdr msgs)) keys)))]
+        [else (make <error> :message (mkmsg msg args))])))
 
     (define (errorf fmt . args)
       (raise
@@ -409,9 +403,7 @@
          (receive (keys msgs) (scan-keys args)
            (if (null? msgs)
              (apply make fmt keys)
-             (apply make fmt
-                    :message (apply format/ss #f msgs)
-                    keys)))]
+             (apply make fmt :message (apply format/ss #f msgs) keys)))]
         [else (make <error> :message (apply format/ss #f fmt args))])))
 
     (values error errorf)))
@@ -429,7 +421,7 @@
                           (when fmt
                             (apply format (standard-error-port) fmt args))))
     (lambda maybe-arg                   ;todo: replace with :optional syntax
-      (rlet1 old (%vm-parameter-ref index id) ;todo: replace with rlet1
+      (rlet1 old (%vm-parameter-ref index id)
         (when (pair? maybe-arg)
           (%vm-parameter-set! index id (car maybe-arg)))))))
 
@@ -495,8 +487,8 @@
 (define read-with-shared-structure read)
 (define read/ss read)
 
-(define (write-with-shared-structure obj . args)
-  (write* obj (if (pair? args) (car args) (current-output-port))))
+(define (write-with-shared-structure obj :optional (port (current-output-port)))
+  (write* obj port))
 (define write/ss write-with-shared-structure)
 
 ;;;=======================================================
@@ -556,26 +548,21 @@
        [else (error "string or procedure required, but got" sub)]))
 
     ;; internal loop
-    (define (regexp-replace-rec match subpat out rec)
-      (display (rxmatch-before match) out)
+    (define (regexp-replace-rec match subpat rec)
+      (display (rxmatch-before match))
       (if (procedure? subpat)
-        (display (subpat match) out)
-        (for-each (lambda (pat)
-                    (display (if (or (number? pat) (symbol? pat))
-                               (rxmatch-substring match pat)
-                               pat)
-                             out))
-                  subpat))
+        (display (subpat match))
+        (dolist [pat subpat]
+          (display (if (or (number? pat) (symbol? pat))
+                     (rxmatch-substring match pat)
+                     pat))))
       (rec (rxmatch-after match)))
 
     (define (regexp-replace rx string sub)
       (let ((subpat (regexp-parse-subpattern sub))
             (match  (rxmatch rx string)))
         (if match
-          (call-with-output-string
-            (lambda (out)
-              (regexp-replace-rec match subpat out
-                                  (lambda (str) (display str out)))))
+          (with-output-to-string (cut regexp-replace-rec match subpat display))
           string)))
 
     ;; The inner call is awkward to avoid creation of output string
@@ -584,17 +571,17 @@
       (let ((subpat (regexp-parse-subpattern sub))
             (match  (rxmatch rx string)))
         (if match
-          (call-with-output-string
-            (lambda (out)
+          (with-output-to-string
+            (lambda ()
               (define (loop str)
                 (unless (equal? str "")
                   (cond [(rxmatch rx str)
                          => (lambda (match)
                               (when (= (rxmatch-start match) (rxmatch-end match))
                                 (error "regexp-replace-all: matching zero-length string causes infinite loop:" rx))
-                              (regexp-replace-rec match subpat out loop))]
-                        [else (display str out)])))
-              (regexp-replace-rec match subpat out loop)))
+                              (regexp-replace-rec match subpat loop))]
+                        [else (display str)])))
+              (regexp-replace-rec match subpat loop)))
           string)))
     (values regexp-replace regexp-replace-all)))
 
@@ -655,52 +642,31 @@
 ;; File ports.
 
 (define-in-module scheme (call-with-input-file filename proc . flags)
-  (let ((port (apply open-input-file filename flags)))
-    (with-error-handler
-     (lambda (e)
-       (when port (close-input-port port))
-       (raise e))
-     (lambda ()
-       (receive r (proc port)
-         (when port (close-input-port port))
-         (apply values r))))))
+  (let1 port (apply open-input-file filename flags)
+    (unwind-protect (proc port)
+      (when port (close-input-port port)))))
 
 (define-in-module scheme (call-with-output-file filename proc . flags)
-  (let ((port (apply open-output-file filename flags)))
-    (with-error-handler
-     (lambda (e)
-       (when port (close-output-port port))
-       (raise e))
-     (lambda ()
-       (receive r (proc port)
-         (when port (close-output-port port))
-         (apply values r))))))
+  (let1 port (apply open-output-file filename flags)
+    (unwind-protect (proc port)
+      (when port (close-output-port port)))))
 
 (define-in-module scheme (with-input-from-file filename thunk . flags)
-  (let ((port (apply open-input-file filename flags)))
+  (let1 port (apply open-input-file filename flags)
     (and port
-         (with-error-handler
-          (lambda (e) (close-input-port port) (raise e))
-          (lambda ()
-            (receive r (with-input-from-port port thunk)
-              (close-input-port port)
-              (apply values r)))))))
-                  
+         (unwind-protect (with-input-from-port port thunk)
+           (close-input-port port)))))
 
 (define-in-module scheme (with-output-to-file filename thunk . flags)
-  (let ((port (apply open-output-file filename flags)))
+  (let1 port (apply open-output-file filename flags)
     (and port
-         (with-error-handler
-          (lambda (e) (close-output-port port) (raise e))
-          (lambda ()
-            (receive r (with-output-to-port port thunk)
-              (close-output-port port)
-              (apply values r)))))))
+         (unwind-protect (with-output-to-port port thunk)
+           (close-output-port port)))))
 
 ;; String ports
 
 (define (with-output-to-string thunk)
-  (let ((out (open-output-string)))
+  (let1 out (open-output-string)
     (with-output-to-port out thunk)
     (get-output-string out)))
 
@@ -708,13 +674,12 @@
   (with-input-from-port (open-input-string str) thunk))
 
 (define (call-with-output-string proc)
-  (let ((out (open-output-string)))
+  (let1 out (open-output-string)
     (proc out)
     (get-output-string out)))
 
 (define (call-with-input-string str proc)
-  (let ((in (open-input-string str)))
-    (proc in)))
+  (proc (open-input-string str)))
 
 (define (call-with-string-io str proc)
   (let ((out (open-output-string))
@@ -723,14 +688,10 @@
     (get-output-string out)))
 
 (define (with-string-io str thunk)
-  (with-output-to-string
-    (lambda ()
-      (with-input-from-string str
-        thunk))))
+  (with-output-to-string (cut with-input-from-string str thunk)))
 
-(define (write-to-string obj . args)
-  (with-output-to-string
-    (lambda () ((if (pair? args) (car args) write) obj))))
+(define (write-to-string obj :optional (writer write))
+  (with-output-to-string (cut writer obj)))
 
 (define (read-from-string string . args)
   (with-input-from-string
@@ -741,17 +702,16 @@
 
 (define-syntax %with-ports
   (syntax-rules ()
-    ((_ "tmp" (tmp ...) () (port ...) (param ...) thunk)
+    [(_ "tmp" (tmp ...) () (port ...) (param ...) thunk)
      (let ((tmp #f) ...)
        (dynamic-wind
            (lambda () (when port (set! tmp (param port))) ...)
            thunk
-           (lambda () (when tmp (param tmp)) ...))))
-    ((_ "tmp" tmps (port . more) ports params thunk)
-     (%with-ports "tmp" (tmp . tmps) more ports params thunk))
-    ((_ ((param port) ...) thunk)
-     (%with-ports "tmp" () (port ...) (port ...) (param ...) thunk))
-    ))
+           (lambda () (when tmp (param tmp)) ...)))]
+    [(_ "tmp" tmps (port . more) ports params thunk)
+     (%with-ports "tmp" (tmp . tmps) more ports params thunk)]
+    [(_ ((param port) ...) thunk)
+     (%with-ports "tmp" () (port ...) (port ...) (param ...) thunk)]))
 
 (define (with-input-from-port port thunk)
   (%with-ports ((current-input-port port)) thunk))
