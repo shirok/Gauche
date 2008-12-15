@@ -116,11 +116,9 @@
                                 (equal? [~ dl'cpp-condition] cppc)))
                          [~ unit'static-data-list])))
         (or dl
-            ;; TODO: Replace this with rlet1 once 0.8.14 is released!
-            (let1 new (make <cgen-static-data-list>
+            (rlet1 new (make <cgen-static-data-list>
                         :category category :c-type c-type)
-              (push! [~ unit'static-data-list] new)
-              new)))))
+              (push! [~ unit'static-data-list] new))))))
   
   (let ((dl (ensure-static-data-list category c-type))
         (value-type? (not init-thunk))
@@ -380,27 +378,25 @@
 (define (literal-value=? x y)
   (define (rec x y)
     (cond
-     ((pair? x) (and (pair? y) (rec (car x) (car y)) (rec (cdr x) (cdr y))))
-     ((vector? x)
+     [(pair? x) (and (pair? y) (rec (car x) (car y)) (rec (cdr x) (cdr y)))]
+     [(vector? x)
       (and (vector? y)
            (let1 len (vector-length x)
              (and (= len (vector-length y))
                   (every?-ec (: i len)
-                             (rec (vector-ref x i) (vector-ref y i)))))))
-     ((string? x) (and (string? y) (string=? x y)))
-     ((identifier? x)
+                             (rec (vector-ref x i) (vector-ref y i))))))]
+     [(string? x) (and (string? y) (string=? x y))]
+     [(identifier? x)
       (and (identifier? y)
            (eq? [~ x'name] [~ y'name])
-           (eq? [~ x'module] [~ y'module])))
-     (else (and (eq? (class-of x) (class-of y)) (eqv? x y)))))
+           (eq? [~ x'module] [~ y'module]))]
+     [else (and (eq? (class-of x) (class-of y)) (eqv? x y))]))
   (rec x y))
 
 (define (ensure-literal-hash unit)
   (or [~ unit'literals]
-      ;; TODO: Replace this with rlet1 once 0.8.14 is released!
-      (let1 hash (make-vector .literal-hash-size. '())
-        (set! [~ unit'literals] hash)
-        hash)))
+      (rlet1 hash (make-vector .literal-hash-size. '())
+        (set! [~ unit'literals] hash))))
 
 (define (register-literal-value unit literal-obj)
   (let ((lh   (ensure-literal-hash unit))
@@ -408,7 +404,8 @@
         (h    (literal-value-hash [~ literal-obj'value])))
     (or (and-let* ((entry (find (lambda (e)
                                   (and (equal? (caar e) cppc)
-                                       (literal-value=? [~ literal-obj'value]  (cdar e))))
+                                       (literal-value=? [~ literal-obj'value]
+                                                        (cdar e))))
                                 (vector-ref lh h))))
           (set-cdr! entry literal-obj))
         (push! (vector-ref lh h) (acons cppc [~ literal-obj'value] literal-obj)))))
@@ -521,15 +518,15 @@
    )
   (make (value)
     (cond
-     ((fixnum? value)
-      (make <cgen-scheme-integer> :value value :c-name #f))
-     ((< (- (expt 2 31)) value (- (expt 2 32)))
+     [(fixnum? value)
+      (make <cgen-scheme-integer> :value value :c-name #f)]
+     [(< (- (expt 2 31)) value (- (expt 2 32)))
       (make <cgen-scheme-integer> :value value
-            :c-name (cgen-allocate-static-datum)))
-     (else
+            :c-name (cgen-allocate-static-datum))]
+     [else
       (make <cgen-scheme-integer> :value value
             :c-name (cgen-allocate-static-datum)
-            :string-rep (cgen-literal (number->string value 16))))))
+            :string-rep (cgen-literal (number->string value 16)))]))
   (cexpr (self)
     (or (cgen-c-name self)
         (if (positive? [~ self'value])
@@ -542,13 +539,13 @@
       ;; we can use 64bit literal, but we'll leave it for later revision.
       (let ((val   [~ self'value])
             (cname (cgen-c-name self)))
-        (cond ((< (- (expt 2 31)) val 0)
-               (print "  " cname " = Scm_MakeInteger("val");"))
-              ((<= 0 val (- (expt 2 32) 1))
-               (print "  " cname " = Scm_MakeIntegerU("val"U);"))
-              (else
+        (cond [(< (- (expt 2 31)) val 0)
+               (print "  " cname " = Scm_MakeInteger("val");")]
+              [(<= 0 val (- (expt 2 32) 1))
+               (print "  " cname " = Scm_MakeIntegerU("val"U);")]
+              [else
                (print "  " cname " = Scm_StringToNumber(SCM_STRING("
-                      (cgen-cexpr [~ self'string-rep])"), 16, TRUE);"))))))
+                      (cgen-cexpr [~ self'string-rep])"), 16, TRUE);")]))))
   (static (self)
     (if (cgen-c-name self) #f #t))
   )
@@ -598,11 +595,9 @@
   (init (self)
     (let ((cname (cgen-cexpr self)))
       (unless (cgen-literal-static? [~ self'car])
-        (format #t "  SCM_SET_CAR(~a, ~a);\n" cname
-                (cgen-cexpr [~ self'car])))
+        (format #t "  SCM_SET_CAR(~a, ~a);\n" cname (cgen-cexpr [~ self'car])))
       (unless (cgen-literal-static? [~ self'cdr])
-        (format #t "  SCM_SET_CDR(~a, ~a);\n"
-                cname (cgen-cexpr [~ self'cdr])))
+        (format #t "  SCM_SET_CDR(~a, ~a);\n" cname (cgen-cexpr [~ self'cdr])))
       ))
   )
 

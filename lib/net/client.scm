@@ -47,9 +47,9 @@
 ;; force network crlf in a string
 (define (string-crlf str)
   (rxmatch-case str
-    (#/\r\n$/ (#f) str)
-    (#/(.*)(?:\r|\n)$/ (#f head) (string-append head "\r\n"))
-    (else (string-append str "\r\n"))))
+    [#/\r\n$/ (#f) str]
+    [#/(.*)(?:\r|\n)$/ (#f head) (string-append head "\r\n")]
+    [else (string-append str "\r\n")]))
 
 ;; convert a header to =?<charset>?b?<encoded>?= style 7-bit encoded
 ;; format (see scmail for the inverse operation)
@@ -57,12 +57,12 @@
                             (8bit #f)
                             ((:from-charset from) (gauche-character-encoding))
                             ((:charset to) (gauche-character-encoding)))
-  (cond (8bit str)
-        ((rxmatch #/[^\x01-\x7e]/ str)
+  (cond [8bit str]
+        [(rxmatch #/[^\x01-\x7e]/ str)
          (let1 buf (if (equal? from to) str (ces-convert str from to))
            ;; convert to base64 if not 7bit safe
-           (format #f "=?~A?b?~A?=" to (base64-encode-string buf)) ))
-        (else str)))
+           (format #f "=?~A?b?~A?=" to (base64-encode-string buf)) )]
+        [else str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; common net command format utilities

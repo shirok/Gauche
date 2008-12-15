@@ -108,10 +108,10 @@
      [(string-null? line) (reverse! r)]
      [else
       (receive (n body) (string-scan line #\: 'both)
-        (let1 name (and-let* (((string? n))
-                              (name (string-incomplete->complete n))
-                              (name (string-trim-both name))
-                              ((string-every #[\x21-\x39\x3b-\x7e] name)))
+        (let1 name (and-let* ([ (string? n) ]
+                              [name (string-incomplete->complete n)]
+                              [name (string-trim-both name)]
+                              [ (string-every #[\x21-\x39\x3b-\x7e] name) ])
                      (string-downcase name))
           (cond
            [name
@@ -135,8 +135,8 @@
     ))
 
 (define (rfc822-header-ref header field-name . maybe-default)
-  (cond ((assoc field-name header) => cadr)
-        (else (get-optional maybe-default #f))))
+  (cond [(assoc field-name header) => cadr]
+        [else (get-optional maybe-default #f)]))
 
 ;; backward compatibility
 (define rfc822-header->list rfc822-read-headers)
@@ -148,16 +148,16 @@
 ;; skip comments and white spaces, then returns the head char.
 (define (rfc822-skip-cfws input)
   (define (scan c)
-    (cond ((eof-object? c) c)
-          ((char=? c #\( ) (in-comment (peek-next-char input)))
-          ((char-whitespace? c) (scan (peek-next-char input)))
-          (else c)))
+    (cond [(eof-object? c) c]
+          [(char=? c #\( ) (in-comment (peek-next-char input))]
+          [(char-whitespace? c) (scan (peek-next-char input))]
+          [else c]))
   (define (in-comment c)
-    (cond ((eof-object? c) c)
-          ((char=? c #\) ) (scan (peek-next-char input)))
-          ((char=? c #\\ ) (read-char input) (in-comment (peek-next-char input)))
-          ((char=? c #\( ) (in-comment (in-comment (peek-next-char input))))
-          (else (in-comment (peek-next-char input)))))
+    (cond [(eof-object? c) c]
+          [(char=? c #\) ) (scan (peek-next-char input))]
+          [(char=? c #\\ ) (read-char input) (in-comment (peek-next-char input))]
+          [(char=? c #\( ) (in-comment (in-comment (peek-next-char input)))]
+          [else (in-comment (peek-next-char input))]))
   (scan (peek-char input)))
 
 ;; Basic tokenizers.  Supposed to be used for higher-level parsers.
@@ -176,13 +176,13 @@
   (let1 r (open-output-string :private? #t)
     (define (finish) (get-output-string r))
     (let loop ((c (peek-next-char input)))
-      (cond ((eof-object? c) (finish));; tolerate missing closing DQUOTE
-            ((char=? c #\") (read-char input) (finish)) ;; discard DQUOTE
-            ((char=? c #\\)
+      (cond [(eof-object? c) (finish)];; tolerate missing closing DQUOTE
+            [(char=? c #\") (read-char input) (finish)] ;; discard DQUOTE
+            [(char=? c #\\)
              (let1 c (peek-next-char input)
-               (cond ((eof-object? c) (finish)) ;; tolerate stray backslash
-                     (else (write-char c r) (loop (peek-next-char input))))))
-            (else (write-char c r) (loop (peek-next-char input)))))))
+               (cond [(eof-object? c) (finish)] ;; tolerate stray backslash
+                     [else (write-char c r) (loop (peek-next-char input))]))]
+            [else (write-char c r) (loop (peek-next-char input))]))))
 
 ;; Default tokenizer table
 (define-constant *rfc822-standard-tokenizers*
@@ -197,10 +197,10 @@
                         (else e)))
                      (get-optional opts *rfc822-standard-tokenizers*)))
         (c (rfc822-skip-cfws input)))
-    (cond ((eof-object? c) c)
-          ((find (lambda (e) (char-set-contains? (car e) c)) toktab)
-           => (lambda (e) ((cdr e) input)))
-          (else (read-char input)))))
+    (cond [(eof-object? c) c]
+          [(find (lambda (e) (char-set-contains? (car e) c)) toktab)
+           => (lambda (e) ((cdr e) input))]
+          [else (read-char input)])))
 
 ;; returns a list of tokens, for convenience
 (define (rfc822-field->tokens field . opts)
@@ -232,17 +232,17 @@
   (define (year->number year) ;; see obs-year definition of RFC2822
     (let ((y (string->number year)))
       (and y
-           (cond ((< y 50)  (+ y 2000))
-                 ((< y 100) (+ y 1900))
-                 (else y)))))
+           (cond [(< y 50)  (+ y 2000)]
+                 [(< y 100) (+ y 1900)]
+                 [else y]))))
   (define (tz->number tz)
-    (cond ((equal? tz "-0000") #f)  ;;no effective TZ info; see 3.3 of RFC2822
-          ((string->number tz))
-          ((assoc tz '(("UT" . 0) ("GMT" . 0) ("EDT" . -400) ("EST" . -500)
+    (cond [(equal? tz "-0000") #f]  ;;no effective TZ info; see 3.3 of RFC2822
+          [(string->number tz)]
+          [(assoc tz '(("UT" . 0) ("GMT" . 0) ("EDT" . -400) ("EST" . -500)
                        ("CDT" . -500) ("CST" . -600) ("MDT" . -600)
                        ("MST" . -700) ("PDT" . -700) ("PST" . -800)))
-           => cdr)
-          (else #f)))
+           => cdr]
+          [else #f]))
 
   (rxmatch-case string
     (#/((Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s*,)?\s*(\d+)\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d\d(\d\d)?)\s+(\d\d)\s*:\s*(\d\d)(\s*:\s*(\d\d))?(\s+([+-]\d\d\d\d|[A-Z][A-Z][A-Z]?))?/

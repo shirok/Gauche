@@ -74,9 +74,9 @@
   (receive (user host port) (uri-decompose-authority uri)
     (let1 conn (apply ftp-login host
                       (cond-list
-                       (user @ (list :username user))
-                       (port @ (list :port port))
-                       (#t   @ keys)))
+                       [user @ (list :username user)]
+                       [port @ (list :port port)]
+                       [#t   @ keys]))
       (unwind-protect (proc conn)
         (ftp-quit conn)))))
 
@@ -193,8 +193,8 @@
   (rxmatch-let (#/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)/ (ftp-mdtm conn path))
       (#f year month day hour min sec)
     (let1 zoffset (if (get-optional opt #f)
-                      (date-zone-offset (current-date))
-                      0)
+                    (date-zone-offset (current-date))
+                    0)
       (date->time-utc (make-date 0
                                  (string->number sec)
                                  (string->number min)
@@ -384,10 +384,9 @@
     (simple-command conn
                     "TYPE"
                     (case type
-                      ((ascii) "A")
-                      ((binary image) "I")
-                      (else
-                       (error "Invalid transfer type:" type))))))
+                      [(ascii) "A"]
+                      [(binary image) "I"]
+                      [else (error "Invalid transfer type:" type)]))))
 
 ;; requrest server to send data and receive it
 (define (req&recv conn cmdproc reader . opt)
@@ -415,19 +414,19 @@
       (lambda (get-data-socket)
         (let1 res (cmdproc)
           (rxmatch-case res
-            (#/^1\d\d FILE: (.+)$/ (#f dst-path)
+            [#/^1\d\d FILE: (.+)$/ (#f dst-path)
              ;; RFC 1123 - 4.1.2.9  STOU Command: RFC-959 Section 4.1.3
-             (copy-data get-data-socket) dst-path)
-            (#/^1/ ()
+             (copy-data get-data-socket) dst-path]
+            [#/^1/ ()
              ;; in case if the server doesn't conform RFC1123
-             (copy-data get-data-socket) #f)
-            (else (ftp-error res)))))))
+             (copy-data get-data-socket) #f]
+            [else (ftp-error res)])))))
   (define (retrieve-response res dst-path)
     (rxmatch-case res
-      (#/^2/ () (values res dst-path))
-      ;; vsftpd duplicates the 1XX reply for STOU.
-      (#/^1/ () (retrieve-response (get-response conn) dst-path))
-      (else (ftp-error res))))
+      [#/^2/ () (values res dst-path)]
+      ; vsftpd duplicates the 1XX reply for STOU.
+      [#/^1/ () (retrieve-response (get-response conn) dst-path)]
+      [else (ftp-error res)]))
 
   (ftp-set-type conn)
   (let1 dst-path (send-data)

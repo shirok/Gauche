@@ -139,39 +139,39 @@
         (reverse! r)
         (let1 c (string-ref s 0)
           (cond
-           ((char=? c #\') (scan-string s r))
-           ((char=? c #\") (scan-delimited s r))
-           ((char=? c #\?)
+           [(char=? c #\') (scan-string s r)]
+           [(char=? c #\") (scan-delimited s r)]
+           [(char=? c #\?)
             (entry (string-drop s 1)
                    (cons `(parameter ,(begin0 parameter-count
                                               (inc! parameter-count)))
-                         r)))
-           ((#/^[+-]?(?:\d+(?:\.\d*)?|(?:\.\d+))(?:[eE][+-]?\d+)?/ s)
+                         r))]
+           [(#/^[+-]?(?:\d+(?:\.\d*)?|(?:\.\d+))(?:[eE][+-]?\d+)?/ s)
             => (lambda (m)
-                 (entry (m 'after) (cons `(number ,(m)) r))))
-           ((#/^(<>|<=|>=|\|\|)/ s)
+                 (entry (m 'after) (cons `(number ,(m)) r)))]
+           [(#/^(<>|<=|>=|\|\|)/ s)
             (entry (string-drop s 2)
-                   (cons (string->symbol (string-take s 2)) r)))
-           ((#/^[bB]'/ s) (scan-bitstring s r))
-           ((#/^[xX]'/ s) (scan-hexstring s r))
-           ((char-set-contains? #[-+*/<=>] c)
-            (entry (string-drop s 1) (cons (string->symbol (string c)) r)))
-           ((char-set-contains? #[,.()\;] c)
-            (entry (string-drop s 1) (cons c r)))
-           ((#/^:(\w+)/ s)
+                   (cons (string->symbol (string-take s 2)) r))]
+           [(#/^[bB]'/ s) (scan-bitstring s r)]
+           [(#/^[xX]'/ s) (scan-hexstring s r)]
+           [(char-set-contains? #[-+*/<=>] c)
+            (entry (string-drop s 1) (cons (string->symbol (string c)) r))]
+           [(char-set-contains? #[,.()\;] c)
+            (entry (string-drop s 1) (cons c r))]
+           [(#/^:(\w+)/ s)
             => (lambda (m)
-                 (entry (m 'after) (cons `(parameter ,(m 1)) r))))
-           ((#/^\w+/ s)
+                 (entry (m 'after) (cons `(parameter ,(m 1)) r)))]
+           [(#/^\w+/ s)
             => (lambda (m)
-                 (entry (m 'after) (cons (m) r))))
-           (else (e "invalid SQL token beginning with ~s in: ~s"
-                    c sql-string)))))))
+                 (entry (m 'after) (cons (m) r)))]
+           [else (e "invalid SQL token beginning with ~s in: ~s"
+                    c sql-string)])))))
   ;;
   ;; subscanners
   ;;
   (define (scan-quote s r q succ efmt)
     (let loop ((pos 0))
-      (or (and-let* ((pos (string-index s q pos)))
+      (or (and-let* ([pos (string-index s q pos)])
             (if (eqv? (string-ref s (+ pos 1) #f) q)
               (loop (+ pos 2))
               (succ (string-take s pos) (string-drop s (+ pos 1)))))
@@ -194,19 +194,19 @@
                 "unterminated delimited identifier in SQL: ~s"))
 
   (define (scan-bitstring s r)
-    (cond ((#/^.'([01]+)'/ s)
+    (cond [(#/^.'([01]+)'/ s)
            => (lambda (m)
                 (entry (m 'after)
-                       (cons `(bitstring ,(m 1)) r))))
-          (else
-           (e "unterminated bitstring literal in SQL: ~s" sql-string))))
+                       (cons `(bitstring ,(m 1)) r)))]
+          [else
+           (e "unterminated bitstring literal in SQL: ~s" sql-string)]))
   (define (scan-hexstring s r)
-    (cond ((#/^.'([\da-fA-F]+)'/ s)
+    (cond [(#/^.'([\da-fA-F]+)'/ s)
            => (lambda (m)
                 (entry (m 'after)
-                       (cons `(hexstring ,(m 1)) r))))
-          (else
-           (e "unterminated bitstring literal in SQL: ~s" sql-string))))
+                       (cons `(hexstring ,(m 1)) r)))]
+          [else
+           (e "unterminated bitstring literal in SQL: ~s" sql-string)]))
   ;;
   ;; raising an error
   ;;

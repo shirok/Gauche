@@ -101,14 +101,14 @@
 (define-method time-counter-stop! ((self <time-counter>))
   (let1 nesting (slot-ref self 'nesting)
     (cond
-     ((= nesting 1)
+     [(= nesting 1)
       (inc! (slot-ref self 'value) (time-counter-get-delta self))
-      (set! (slot-ref self 'nesting) 0))
-     ((> nesting 1)
-      (set! (slot-ref self 'nesting) (- nesting 1)))
-     (else
+      (set! (slot-ref self 'nesting) 0)]
+     [(> nesting 1)
+      (set! (slot-ref self 'nesting) (- nesting 1))]
+     [else
       ;; sprious stop.  make sure the state is sane
-      (set! (slot-ref self 'nesting) 0)))))
+      (set! (slot-ref self 'nesting) 0)])))
 
 (define-method time-counter-get-delta ((self <time-counter>))
   ;; This default method assumes time-counter-get-current-time returns

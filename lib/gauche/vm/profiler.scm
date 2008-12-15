@@ -55,10 +55,9 @@
   (cond
    ;; NB: this part depends on the result object of profiler-raw-result,
    ;; which may be changed later.  Keep this in sync with src/prof.c.
-   ((profiler-raw-result)
-    => (cut hash-table-map <>
-            (lambda (k v) (cons (entry-name k) v))))
-   (else #f)))
+   [(profiler-raw-result)
+    => (cut hash-table-map <> (lambda (k v) (cons (entry-name k) v)))]
+   [else #f]))
 
 ;;
 ;; Show the profiler result.
@@ -73,8 +72,8 @@
   (if (not results)
     ;; use the current result
     (cond
-     ((profiler-get-result) => (cut show-stats <> sort-by max-rows))
-     (else (print "No profiling data has been gathered.")))
+     [(profiler-get-result) => (cut show-stats <> sort-by max-rows)]
+     [else (print "No profiling data has been gathered.")])
     ;; gather all the results
     (let1 ht (make-hash-table 'equal?)
       ;; gather stats
@@ -97,22 +96,22 @@
     (let/cc return
       (define (start stats)
         (match stats
-          (()  (show-results))
-          (((f . t) . more)
-           (receive (_ rest) (cumulate f t more) (start rest)))
-          ((_ . more) (start more)) ;; this can't happen, but tolerate
+          [()  (show-results)]
+          [((f . t) . more)
+           (receive (_ rest) (cumulate f t more) (start rest))]
+          [(_ . more) (start more)] ;; this can't happen, but tolerate
           ))
       ;; cumulate :: String, Integer, [Stat] -> Integer, [Stat]
       (define (cumulate filename start-time stats)
         (match stats
-          (() (show-results))  ;; premature stats data; we discard current fn.
-          (((f . t) . more)
+          [() (show-results)]  ;; premature stats data; we discard current fn.
+          [((f . t) . more)
            (receive (time-spent rest) (cumulate f t more)
-             (cumulate filename (+ start-time time-spent) rest)))
-          ((t . more)
+             (cumulate filename (+ start-time time-spent) rest))]
+          [(t . more)
            (set! results
                  (cons (cons filename (- t start-time)) results))
-           (values (- t start-time) more))))
+           (values (- t start-time) more)]))
       (define (show-results)
         (print "Load statistics:")
         (print "Time(us)    File")
@@ -132,21 +131,21 @@
   (let* ((num-samples (fold (lambda (entry cnt) (+ (cddr entry) cnt)) 0 stat))
          (sum-time (* num-samples 0.01))
          (sorter (case sort-by
-                   ((time)
+                   [(time)
                     (lambda (a b)
                       (or (> (cddr a) (cddr b))
                           (and (= (cddr a) (cddr b))
-                               (> (cadr a) (cadr b))))))
-                   ((count)
+                               (> (cadr a) (cadr b)))))]
+                   [(count)
                     (lambda (a b)
                       (or (> (cadr a) (cadr b))
                           (and (= (cadr a) (cadr b))
-                               (> (cddr a) (cddr b))))))
-                   ((time-per-call)
+                               (> (cddr a) (cddr b)))))]
+                   [(time-per-call)
                     (lambda (a b)
-                      (> (/ (cddr a) (cadr a)) (/ (cddr b) (cadr b)))))
-                   (else
-                    (error "profiler-show: sort-by argument must be either one of time, count, or time-per-call, but got:" sort-by))))
+                      (> (/ (cddr a) (cadr a)) (/ (cddr b) (cadr b))))]
+                   [else
+                    (error "profiler-show: sort-by argument must be either one of time, count, or time-per-call, but got:" sort-by)]))
          (sorted (sort stat sorter)))
 
     (print "Profiler statistics (total "num-samples" samples, "
@@ -184,15 +183,15 @@
 ;; Return a 'printable' notation of sampled code location
 (define (entry-name obj)
   (cond
-   ((and (procedure? obj) (subr? obj))
-    (ref obj 'info))
-   ((is-a? obj <compiled-code>)
-    (ref obj 'full-name))
-   ((is-a? obj <generic>)
-    `(GF ,(ref obj 'name)))
-   ((is-a? obj <method>)
+   [(and (procedure? obj) (subr? obj))
+    (ref obj 'info)]
+   [(is-a? obj <compiled-code>)
+    (ref obj 'full-name)]
+   [(is-a? obj <generic>)
+    `(GF ,(ref obj 'name))]
+   [(is-a? obj <method>)
     `(METHOD ,(ref (ref obj 'generic) 'name)
-             ,(map class-name (ref obj 'specializers))))
-   (else (write-to-string obj))))
+             ,(map class-name (ref obj 'specializers)))]
+   [else (write-to-string obj)]))
 
 (provide "gauche/vm/profiler")

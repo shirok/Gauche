@@ -108,15 +108,15 @@
         (lambda ()
           (let loop ((count 0))
             (if (>= count limit)
-                count
-                (let1 nr (read-block! buf src 0
-                                      (if (>= (+ count unit) limit)
-                                          (- limit count)
-                                          unit))
-                  (if (eof-object? nr)
-                      count
-                      (begin (write-block buf dst 0 nr)
-                             (loop (+ count nr))))))))))))
+              count
+              (let1 nr (read-block! buf src 0
+                                    (if (>= (+ count unit) limit)
+                                      (- limit count)
+                                      unit))
+                (if (eof-object? nr)
+                  count
+                  (begin (write-block buf dst 0 nr)
+                         (loop (+ count nr))))))))))))
 
 (define (copy-port src dst :key (unit 4096) (size 0))
   (check-arg input-port? src)

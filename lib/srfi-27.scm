@@ -112,8 +112,8 @@
     (let1 unit (car maybe-unit)
       (unless (< 0 unit 1)
         (error "unit must be between 0.0 and 1.0 (exclusive), but got" unit))
-      (let* ((1/unit (/ unit))
-             (range (inexact->exact (ceiling 1/unit))))
+      (let* ((1/unit (/. unit))
+             (range (ceiling->exact 1/unit)))
         (lambda ()
           (/ (random-integer range) 1/unit))))))
 

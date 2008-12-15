@@ -81,11 +81,8 @@
   (tree-map-fold-right tm acons '()))
 
 (define (alist->tree-map alist key=? key<?)
-  (let1 tm (make-tree-map key=? key<?)
+  (rlet1 tm (make-tree-map key=? key<?)
     (dolist (kv alist)
-      (tree-map-put! tm (car kv) (cdr kv)))
-    tm))
-
-
+      (tree-map-put! tm (car kv) (cdr kv)))))
 
 (provide "gauche/treeutil")

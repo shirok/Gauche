@@ -200,13 +200,13 @@
 
 (define (test-module module :key (allow-undefined '()))
   (test-count++)
-  (let1 mod (cond ((module? module) module)
-                  ((symbol? module)
+  (let1 mod (cond [(module? module) module]
+                  [(symbol? module)
                    (or (find-module module)
-                       (error "no such module" module)))
-                  (else
+                       (error "no such module" module))]
+                  [else
                    (error "test-module requires module or symbol, but got"
-                          module)))
+                          module)])
     (format #t "testing bindings in ~a ... " mod) (flush)
     (let ((bad-autoload '())
           (bad-export '())
@@ -249,15 +249,15 @@
                                          bad-gref)
                                     ", "))))
       (cond
-       ((null? report) (test-pass++) (format #t "ok\n"))
-       (else
+       [(null? report) (test-pass++) (format #t "ok\n")]
+       [else
         (test-fail++)
         (let ((s (apply string-append report)))
           (format #t "ERROR: ~a\n" s)
           (set! *discrepancy-list*
                 (cons (list (format #f "bindings in module ~a" (module-name mod))
                             '() s)
-                      *discrepancy-list*)))))
+                      *discrepancy-list*)))])
       )
     ))
 

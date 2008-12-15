@@ -86,11 +86,11 @@
 (define (configure config dir package-name configure-options)
   (let1 conf-cmd
       (cond
-       (configure-options #`"./configure ,configure-options")
-       ((and-let* ((package-name)
-                   (gpd (find-gauche-package-description package-name)))
-          (ref gpd 'configure)))
-       (else "./configure"))
+       [configure-options #`"./configure ,configure-options"]
+       [(and-let* ([ package-name ]
+                   [gpd (find-gauche-package-description package-name)])
+          (ref gpd 'configure))]
+       [else "./configure"])
     (run #`"cd \",dir\"; ,conf-cmd")))
 
 (define (make config dir)

@@ -151,7 +151,7 @@
 (define (redirect conn new-server)
   (let1 orig-server (ref conn'server)
     (unless (string=? orig-server new-server)
-      (and-let* ((s (ref conn'socket)))
+      (and-let* ([s (ref conn'socket)])
         (socket-shutdown s)
         (socket-close s)
         (set! (ref conn'socket) #f))

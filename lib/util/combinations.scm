@@ -105,12 +105,12 @@
   (if (= len 4)
     (apply p/each4 proc xs)
     (let1 len1 (- len 1)
-    (for-each-with-index
-     (lambda (ind elt)
-       (p/each* (lambda (subperm) (proc (cons elt subperm)))
-                len1
-                (but-kth xs ind)))
-     xs))))
+      (for-each-with-index
+       (lambda (ind elt)
+         (p/each* (lambda (subperm) (proc (cons elt subperm)))
+                  len1
+                  (but-kth xs ind)))
+       xs))))
 (define (permutations-for-each proc set)
   (match set
     [() (undefined)]

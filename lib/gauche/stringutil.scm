@@ -80,17 +80,17 @@
 (define (%string-split-scanner-each-char pred)
   (define (scan-in p)
     (let ((c (string-pointer-ref p)))
-      (cond ((eof-object? c) (values (string-pointer-substring p) #f))
-            ((pred c)
+      (cond [(eof-object? c) (values (string-pointer-substring p) #f)]
+            [(pred c)
              (let1 before (string-pointer-substring p)
                (string-pointer-next! p)
-               (scan-out p before)))
-            (else (string-pointer-next! p) (scan-in p)))))
+               (scan-out p before))]
+            [else (string-pointer-next! p) (scan-in p)])))
   (define (scan-out p before)
     (let ((c (string-pointer-ref p)))
-      (cond ((eof-object? c) (values before ""))
-            ((pred c) (string-pointer-next! p) (scan-out p before))
-            (else (values before (string-pointer-substring p :after #t))))))
+      (cond [(eof-object? c) (values before "")]
+            [(pred c) (string-pointer-next! p) (scan-out p before)]
+            [else (values before (string-pointer-substring p :after #t))])))
   (lambda (s) (scan-in (make-string-pointer s))))
 
 (define (%string-split string scanner)

@@ -151,25 +151,22 @@
   (ref x 'value))
 
 (define (arity proc)
-  (cond
-   ((or (is-a? proc <procedure>) (is-a? proc <method>))
-    (if (ref proc 'optional)
-        (make <arity-at-least> :value (ref proc 'required))
-        (ref proc 'required)))
-   ((is-a? proc <generic>)
-    (map arity (ref proc 'methods)))
-   (else
-    (errorf "cannot get arity of ~s" proc))))
+  (cond [(or (is-a? proc <procedure>) (is-a? proc <method>))
+         (if (ref proc 'optional)
+           (make <arity-at-least> :value (ref proc 'required))
+           (ref proc 'required))]
+        [(is-a? proc <generic>) (map arity (ref proc 'methods))]
+        [else (errorf "cannot get arity of ~s" proc)]))
 
 (define (procedure-arity-includes? proc k)
   (let1 a (arity proc)
     (define (check a)
-      (cond ((integer? a) (= a k))
-            ((arity-at-least? a) (>= k (arity-at-least-value a)))
-            (else (errorf "implementation error in (procedure-arity-includes? ~s ~s)" proc k))))
+      (cond [(integer? a) (= a k)]
+            [(arity-at-least? a) (>= k (arity-at-least-value a))]
+            [else (errorf "implementation error in (procedure-arity-includes? ~s ~s)" proc k)]))
     (if (list? a)
-        (any check a)
-        (check a))))
+      (any check a)
+      (check a))))
 
 ;; case-lambda (srfi-16) ---------------------------------------
 
@@ -178,19 +175,19 @@
 
 (define-syntax case-lambda
   (syntax-rules ()
-    ((case-lambda (arg . body) ...)
-     (make-dispatcher (list (lambda arg . body) ...)))
-    ((case-lambda . _)
-     (syntax-error "malformed case-lambda" (case-lambda . _)))))
+    [(case-lambda (arg . body) ...)
+     (make-dispatcher (list (lambda arg . body) ...))]
+    [(case-lambda . _)
+     (syntax-error "malformed case-lambda" (case-lambda . _))]))
 
 ;; support procedure
 (define (make-dispatcher closures)
   (lambda args
     (let ((len (length args)))
-      (cond ((find (lambda (p) (procedure-arity-includes? p len)) closures)
-             => (cut apply <> args))
-            (else
-             (error "wrong number of arguments to case-lambda:" args))))))
+      (cond [(find (lambda (p) (procedure-arity-includes? p len)) closures)
+             => (cut apply <> args)]
+            [else
+             (error "wrong number of arguments to case-lambda:" args)]))))
 
 ;; disassembler.
 ;; I'm not sure whether this should be here or not, but fot the time being...
