@@ -253,19 +253,8 @@ gauche-package : gauche-package.in
 gauche-cesconv : gauche-cesconv.in
 	@rm -f gauche-cesconv
 	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-cesconv && \
-	cat gauche-cesconv.in >> gauche-cesconv
+	cat gauche-cesconv.in >> gauche-cesconv 
 	@chmod -w gauche-cesconv
-
-# a special build sequence when VM instruction set has been changed
-newinsn : 
-	$(BUILD_GOSH) -fno-inline-globals $(GENCOMP) compile.scm
-	$(BUILD_GOSH) -fno-inline-globals $(GENCOMP) scmlib.scm
-	$(BUILD_GOSH) -fno-inline-globals $(GENCOMP) objlib.scm
-	$(MAKE) all
-	./gosh -ftest $(GENCOMP) compile.scm
-	./gosh -ftest $(GENCOMP) scmlib.scm
-	./gosh -ftest $(GENCOMP) objlib.scm
-	$(MAKE) all
 
 # tests -----------------------------------------------
 TESTFILES = `cat ../test/TESTS`
