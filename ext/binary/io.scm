@@ -208,32 +208,28 @@
 ;; encoded, but the encoding is efficient and small integers don't take
 ;; up any more space than they would in normal char/short/int encodings.
 
-(define (read-ber-integer . opt-port)
-  (let ((port (get-optional opt-port (current-input-port))))
-    (let ((first (read-byte port)))
-      (if (eof-object? first)
-        first ;; stop on eof
-        (if (< first 128)
-          first
-          (let loop ((res (ash (logand first #b01111111) 7))
-                     (byte (read-u8 port)))
-            (if (< byte 128)
-              (+ res byte) ;; final byte
-              (loop (ash (+ res (logand byte #b01111111)) 7)
-                    (read-u8 port)))))))))
+(define (read-ber-integer :optional (port (current-input-port)))
+  (let1 first (read-byte port)
+    (if (eof-object? first)
+      first ;; stop on eof
+      (if (< first 128)
+        first
+        (let loop ((res (ash (logand first #b01111111) 7))
+                   (byte (read-u8 port)))
+          (if (< byte 128)
+            (+ res byte) ;; final byte
+            (loop (ash (+ res (logand byte #b01111111)) 7)
+                  (read-u8 port))))))))
 
-(define (write-ber-integer number . opt-port)
-  (let ((port (get-optional opt-port (current-output-port))))
-    (let ((final (logand number #b01111111))
-          (start (ash number -7)))
-      (unless (zero? start)
-        (let loop ((n start))
-          (cond ((< n 128)
-                 (write-u8 (logior n #b10000000)))
-                (else
-                 (loop (ash n -7)) ;; write high bytes first
-                 (write-u8 (logior (logand n #b01111111) #b10000000))))))
-      (write-u8 final))))
+(define (write-ber-integer number :optional (port (current-output-port)))
+  (let ((final (logand number #b01111111))
+        (start (ash number -7)))
+    (unless (zero? start)
+      (let loop ((n start))
+        (cond [(< n 128) (write-u8 (logior n #b10000000))]
+              [else
+               (loop (ash n -7)) ;; write high bytes first
+               (write-u8 (logior (logand n #b01111111) #b10000000))])))
+    (write-u8 final)))
 
 (provide "binary/io")
-
