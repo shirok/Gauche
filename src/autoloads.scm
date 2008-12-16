@@ -94,9 +94,6 @@
           copy-port port-fold port-fold-right port-for-each port-map 
           port-position-prefix port-tell)
 
-;(autoload gauche.miscutil
-;          object-source-info)
-
 (autoload "gauche/numerical"
           sinh cosh tanh asinh acosh atanh)
 
