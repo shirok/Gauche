@@ -46,6 +46,7 @@
 (use gauche.mop.instance-pool)
 (use gauche.experimental.app)
 (use gauche.experimental.ref)
+(use gauche.experimental.lamb)
 (use srfi-13)
 (use text.tr)
 (use file.util)
@@ -71,7 +72,7 @@
 
 ;; Instructon information
 (define (find-insn name insns)
-  (find (lambda (o) (eq? name (ref o 'name))) insns))
+  (find (^_ (eq? name (~ _'name))) insns))
 
 ;; LREF shortcuts.
 (define-constant .lrefx.
@@ -83,28 +84,26 @@
 ;;
 
 (define (gen-gauche.vm.insn insns)
-  (define (write-header out)
-    (format out ";; Generated from vminsn.scm.  DO NOT EDIT\n")
-    (write '(define-module gauche.vm.insn
-              (extend gauche.vm.insn-core)) out)
-    (newline out)
-    (write '(select-module gauche.vm.insn) out)
-    (newline out))
-  (define (write-insn insn out)
-    (format out ";; #x~3,'0x  ~a\n" (ref insn 'code) (ref insn 'name))
-    (format out "(make <vm-insn-info> :name '~a :code ~a\n"
-            (ref insn 'name) (ref insn 'code))
-    (format out "  :num-params ~a :operand-type '~a\n"
-            (ref insn 'num-params) (ref insn 'operand-type))
-    (format out "  :combined '~s\n" (ref insn 'combined))
-    (format out "  :body '~s)\n\n"
-            (ref insn 'body)))
-  (call-with-output-file "../lib/gauche/vm/insn.scm"
-    (lambda (out)
-      (write-header out)
-      (for-each (cut write-insn <> out) insns)
-      (write '(provide "gauche/vm/insn") out)
-      (newline out))
+  (define (write-header)
+    (format #t ";; Generated from vminsn.scm.  DO NOT EDIT\n")
+    (write '(define-module gauche.vm.insn (extend gauche.vm.insn-core)))
+    (newline)
+    (write '(select-module gauche.vm.insn))
+    (newline))
+  (define (write-insn insn)
+    (format #t ";; #x~3,'0x  ~a\n" (~ insn'code) (~ insn'name))
+    (format #t "(make <vm-insn-info> :name '~a :code ~a\n"
+            (~ insn'name) (~ insn'code))
+    (format #t "  :num-params ~a :operand-type '~a\n"
+            (~ insn'num-params) (~ insn'operand-type))
+    (format #t "  :combined '~s\n" (~ insn'combined))
+    (format #t "  :body '~s)\n\n" (~ insn'body)))
+  (with-output-to-file "../lib/gauche/vm/insn.scm"
+    (lambda ()
+      (write-header)
+      (for-each write-insn insns)
+      (write '(provide "gauche/vm/insn"))
+      (newline))
     :if-exists :supersede)
   )
 
@@ -123,10 +122,10 @@
 (define (construct-vmbody insns)
   (define (case-label insn)
     (cgen-body (format "\nlabel_~a~:*:\nCASE(SCM_VM_~a) "
-                       (cgen-safe-name-friendly (x->string (ref insn'name))))))
+                       (cgen-safe-name-friendly (x->string (~ insn'name))))))
   (define (base-cise base)
     (and-let* [(base-insn (find-insn base insns))]
-      (ref base-insn 'body)))
+      (~ base-insn'body)))
   (define (symbol-join syms)
     ($ string->symbol $ string-join (map x->string syms) "-"))
   (define (cise->string cise)
@@ -140,15 +139,15 @@
   (define (do-combined orig comb)
     (match comb
       [(base 'PUSH)
-       (and-let* [(cise (base-cise base))]
+       (and-let* ([cise (base-cise base)])
          (parameterize ([result-type 'push]) (render cise))
          #t)]
       [(base 'RET)
-       (and-let* [(cise (base-cise base))]
+       (and-let* ([cise (base-cise base)])
          (parameterize ([result-type 'ret]) (render cise))
          #t)]
       [(base (and (or 'CALL 'TAIL-CALL) next))
-       (and-let* [(cise (base-cise base))]
+       (and-let* ([cise (base-cise base)])
          (parameterize ([result-type 'call]) (render cise))
          (render `($goto-insn ,next))
          #t)]
@@ -167,21 +166,17 @@
        (parameterize ([arg-source 'lref]) (do-combined-rec orig next))]
       [_ #f]))
   (define (do-combined-rec orig comb)
-    (or (and-let* [(insn (find-insn (symbol-join comb) insns))]
-          (render1 insn))
+    (or (and-let* ([insn (find-insn (symbol-join comb) insns)]) (render1 insn))
         (do-combined orig comb)
         (warn "Don't know how to generate combined insn ~a" (~ orig'name))))
   (define (render1 insn)
-    (or (and-let* [(cise (ref insn 'body))]
-          (render cise)
-          #t)
-        (and-let* [(comb (ref insn 'combined))]
-          (do-combined insn comb))
-        (warn "Don't know how to generate ~a" (ref insn 'name))))
+    (or (and-let* ([cise (~ insn'body)]) (render cise) #t)
+        (and-let* ([comb (~ insn'combined)]) (do-combined insn comb))
+        (warn "Don't know how to generate ~a" (~ insn'name))))
 
   ;; main body of construct-vmbody
-  (parameterize ((insn-alist (map (lambda (i) (cons (ref i'name) i)) insns)))
-    (dolist (insn insns)
+  (parameterize ([insn-alist (map (^_(cons (~ _'name) _)) insns)])
+    (dolist [insn insns]
       (case-label insn)
       (render1 insn))))
 
@@ -215,7 +210,7 @@
    ))
 
 (define-method write-object ((s <state>) out)
-  (format out "#<state ~a ~a>" (ref s 'index) (ref s 'name)))
+  (format out "#<state ~a ~a>" (~ s'index) (~ s'name)))
 
 ;; A transitional arc.  stop-insn is used to hold intermediate value
 ;; during STN creation.
@@ -227,25 +222,25 @@
 
 (define-method initialize ((s <state>) initargs)
   (next-method)
-  (set! (ref s 'index) (ref s 'index-count))
-  (inc! (ref s 'index-count)))
+  (set! (~ s'index) (~ s'index-count))
+  (inc! (~ s'index-count)))
 
 (define (make-state name) (make <state> :name name))
 
 (define (state-lookup state insn-name)
-  (assq-ref (ref state 'transitions) insn-name))
+  (assq-ref (~ state'transitions) insn-name))
 
 (define (state-set-insn! state insn-name stop-insn)
   (or (and-let* ((arc (state-lookup state insn-name)))
-        (set! (ref arc 'stop-insn) stop-insn))
-      (push! (ref state 'transitions)
+        (set! (~ arc'stop-insn) stop-insn))
+      (push! (~ state'transitions)
              (cons insn-name
                    (make <arc> :input insn-name :stop-insn stop-insn)))))
 
 (define (state-set-state! state insn-name next-state)
-  (or (and-let* ((arc (state-lookup state insn-name)))
-        (set! (ref arc 'next-state) next-state))
-      (push! (ref state 'transitions)
+  (or (and-let* ([arc (state-lookup state insn-name)])
+        (set! (~ arc'next-state) next-state))
+      (push! (~ state'transitions)
              (cons insn-name
                    (make <arc> :input insn-name :next-state next-state)))))
 
@@ -253,16 +248,15 @@
 (define (add-insn-to-state! root-state insn)
 
   (define (substate state name)
-    (or (and-let* ((arc (state-lookup state name)))
-          (ref arc 'next-state))
-        (let1 newstate (make-state `(,@(ref state 'name) ,name))
-          (state-set-state! state name newstate)
-          newstate)))
+    (or (and-let* ([arc (state-lookup state name)])
+          (~ arc'next-state))
+        (rlet1 newstate (make-state `(,@(~ state'name) ,name))
+          (state-set-state! state name newstate))))
 
-  (state-set-insn! root-state (ref insn 'name) insn)
-  (when (pair? (ref insn 'combined))
-    (let loop ((combined (ref insn 'combined))
-               (state    root-state))
+  (state-set-insn! root-state (~ insn'name) insn)
+  (when (pair? (~ insn'combined))
+    (let loop ([combined (~ insn'combined)]
+               [state    root-state])
       (if (null? (cdr combined))
         (state-set-insn! state (car combined) insn)
         (loop (cdr combined) (substate state (car combined)))))))
@@ -273,27 +267,27 @@
   
   (define (fixup1 state pending)
     (unless (eq? state root-state)
-      (push! (ref state 'transitions) (cons #f (make <arc> :input #f))))
-    (set! (ref state 'entry-index) state-entry-index)
-    (inc! state-entry-index (length (ref state 'transitions)))
-    (dolist (transition (ref state 'transitions))
-      (let* ((arc (cdr transition))
-             (si  (ref arc 'stop-insn))
-             (ns  (ref arc 'next-state)))
+      (push! (~ state'transitions) (cons #f (make <arc> :input #f))))
+    (set! (~ state'entry-index) state-entry-index)
+    (inc! state-entry-index (length (~ state'transitions)))
+    (dolist [transition (~ state'transitions)]
+      (let* ([arc (cdr transition)]
+             [si  (~ arc'stop-insn)]
+             [ns  (~ arc'next-state)])
         (cond
-         ((and si (not ns))
-          (set! (ref arc 'command) `(reset ,(ref si 'name)))
-          (set! (ref arc 'next-state) root-state))
-         ((and si ns)
-          (set! (ref arc 'command) `(next ,ns))
-          (fixup1 ns (list (ref si 'name))))
-         ((and (not si) ns)
-          (set! (ref arc 'command) `(next ,ns))
-          (fixup1 ns (cons (ref arc 'input) pending)))
-         (else
-          (set! (ref arc 'command) `(keep ,@(reverse pending)))
-          (set! (ref arc 'next-state) root-state)))))
-    (update! (ref state 'transitions) reverse!))
+         [(and si (not ns))
+          (set! (~ arc'command) `(reset ,(~ si'name)))
+          (set! (~ arc'next-state) root-state)]
+         [(and si ns)
+          (set! (~ arc'command) `(next ,ns))
+          (fixup1 ns (list (~ si'name)))]
+         [(and (not si) ns)
+          (set! (~ arc'command) `(next ,ns))
+          (fixup1 ns (cons (~ arc'input) pending))]
+         [else
+          (set! (~ arc'command) `(keep ,@(reverse pending)))
+          (set! (~ arc'next-state) root-state)])))
+    (update! (~ state'transitions) reverse!))
 
   (fixup1 root-state '()))
 
@@ -302,32 +296,29 @@
 
   (define entry-count 0)
   
-  (dolist (s (sort states (lambda (s1 s2)
-                            (< (ref s1 'entry-index)
-                               (ref s2 'entry-index)))))
-    (cgen-body #`"/* State #,(ref s 'index) ,(ref s 'name) [,(ref s 'entry-index)] */")
-    (dolist (t (ref s 'transitions))
-      (match-let1 (op . args) (ref (cdr t) 'command)
+  (dolist [s (sort-by states (cut ref <> 'entry-index) <)]
+    (cgen-body #`"/* State #,(~ s'index) ,(~ s'name) [,(~ s'entry-index)] */")
+    (dolist [t (~ s'transitions)]
+      (match-let1 (op . args) (~ (cdr t)'command)
         (receive (action operand)
             (case op
-              ((next)  (values 'NEXT (ref (car args) 'entry-index)))
-              ((reset) (values 'EMIT (c-insn-name (car args))))
-              ((keep)
-               (if (null? (cdr args))
-                 (values 'KEEP (c-insn-name (car args)))
-                 (error "huh?"))))
+              [(next)  (values 'NEXT (~ (car args)'entry-index))]
+              [(reset) (values 'EMIT (c-insn-name (car args)))]
+              [(keep)  (if (null? (cdr args))
+                         (values 'KEEP (c-insn-name (car args)))
+                         (error "huh?"))])
           (cgen-body
            (format "  /*~3d*/ { ~a, ~a, ~a },"
                    entry-count
-                   (cond ((ref (cdr t) 'input) => c-insn-name)
-                         (else -1))
+                   (cond [(~ (cdr t)'input) => c-insn-name]
+                         [else -1])
                    action
                    operand))))
       (inc! entry-count)))
   )
 
 (define (construct-state-table insns)
-  (let ((root (make-state '())))
+  (let ([root (make-state '())])
     (for-each (cut add-insn-to-state! root <>) insns)
     (fixup-states! root)
     (emit-states (instance-pool->list <state>))))
@@ -388,16 +379,15 @@
                    [else (errorf "unrecognized define-insn form: ~s" insn)]))
                definsns)
     ;; Set up insn relationships
-    (dolist (insn insns)
-      (and-let* ([comb (ref insn'combined)])
+    (dolist [insn insns]
+      (and-let* ([comb (~ insn'combined)])
         (define (wire suffix slot)
-          (let* ((basename (string->symbol
+          (let* ([basename (string->symbol
                             (rxmatch->string (string->regexp #`"^(.*)-,suffix")
-                                             (x->string (ref insn'name)))))
-                 (baseinsn (find (lambda (i) (eq? (ref i 'name) basename))
-                                 insns)))
-            (set! (ref baseinsn slot) insn)
-            (set! (ref insn 'base-variant) baseinsn)))
+                                             (x->string (~ insn'name))))]
+                 [baseinsn (find (^_ (eq? (~ _'name) basename)) insns)])
+            (set! (~ baseinsn slot) insn)
+            (set! (~ insn'base-variant) baseinsn)))
         
         (case (car (last-pair comb))
           [(PUSH) (wire "PUSH" 'push-variant)]
@@ -416,12 +406,12 @@
       ;; Generate insn names and DEFINSN macros
       (cgen-extern "enum {")
       (cgen-body "#ifdef DEFINSN")
-      (dolist (insn insns)
-        (cgen-extern #`"  ,(c-insn-name (ref insn 'name)),,")
+      (dolist [insn insns]
+        (cgen-extern #`"  ,(c-insn-name (~ insn'name)),,")
         (cgen-body (format "DEFINSN(~a, \"~a\", ~a, ~a)"
-                           (c-insn-name (ref insn 'name)) (ref insn 'name)
-                           (ref insn 'num-params)
-                           (string-tr (x->string (ref insn 'operand-type))
+                           (c-insn-name (~ insn'name)) (~ insn'name)
+                           (~ insn'num-params)
+                           (string-tr (x->string (~ insn'operand-type))
                                       "a-z+-" "A-Z__"))))
       (cgen-extern "  SCM_VM_NUM_INSNS" "};")
       (cgen-body "#endif /*DEFINSN*/")
