@@ -52,12 +52,11 @@
 ;; define alternatives if the platform doesn't support...
 
 (cond-expand
- ((not gauche.sys.realpath)
-  (define sys-realpath #f))             ; make autoload happy
- (else))
+ [(not gauche.sys.realpath) (define sys-realpath #f)] ; make autoload happy
+ [else])
 
 (cond-expand
- (gauche.os.windows
+ [gauche.os.windows
   (define sys-mkfifo #f)
   (define sys-setgid #f)
   (define sys-setpgid #f)
@@ -68,8 +67,8 @@
   (define sys-getgroups #f)
   (define sys-uname #f)
   (define sys-chown #f)
-  )
- (else))
+  ]
+ [else])
 
 (define sys-gethostname
   (if (global-variable-bound? 'gauche.auxsys '%sys-gethostname)
@@ -100,12 +99,10 @@
   (define (list->sys-fdset pfs)
     (rlet1 fdset (make <sys-fdset>)
       (dolist (pf pfs)
-        (cond [(or (integer? pf) (port? pf))
-               (sys-fdset-set! fdset pf #t)]
+        (cond [(or (integer? pf) (port? pf)) (sys-fdset-set! fdset pf #t)]
               [(is-a? pf <sys-fdset>)
                (dotimes (i (+ (sys-fdset-max-fd pf) 1))
-                 (when (sys-fdset-ref pf i)
-                   (sys-fdset-set! fdset i #t)))]
+                 (when (sys-fdset-ref pf i) (sys-fdset-set! fdset i #t)))]
               [else (error "sys-fdset requires a port, an integer, \
                            or a <sys-fdset> object, but got:" pf)]))))
   ]
@@ -120,29 +117,27 @@
 ;; setenv(3) or putenv(3).  The feature symbol is gauche.sys.setenv.
 
 (cond-expand
- (gauche.sys.setenv
+ [gauche.sys.setenv
   ;; We emulate putenv.  Somehow the old API was (sys-putenv name value),
   ;; which we support for backward compatibility.
   (define (sys-putenv name=value . other)
     (cond
-     ((null? other)
+     [(null? other)
       (check-arg string? name=value)
       (receive (name value) (string-scan name=value #\= 'both)
         (unless name
           (error "sys-putenv: argument doesn't contain '=':" name=value))
-        (sys-setenv name value #t)))
-     (else
-      (sys-setenv name=value (car other) #t))))
-  )
- (else
+        (sys-setenv name value #t))]
+     [else (sys-setenv name=value (car other) #t)]))
+  ]
+ [else
   ;; make autoload happy
   (define sys-putenv #t)
-  (define sys-setenv #t)))
+  (define sys-setenv #t)])
 
 (cond-expand
- ((not gauche.sys.unsetenv) 
-  (define sys-unsetenv #f))             ; make autoload happy
- (else))
+ [(not gauche.sys.unsetenv) (define sys-unsetenv #f)] ; make autoload happy
+ [else])
 
 (define (sys-environ->alist . envlist)
   (map (lambda (envstr)
@@ -156,18 +151,15 @@
     (lambda () (sys-setpgid 0 0))))
 
 (cond-expand
- ((not gauche.sys.getpgid)
-  (define sys-getpgid #f))              ;make autoload happy
- (else))
+ [(not gauche.sys.getpgid) (define sys-getpgid #f)] ;make autoload happy
+ [else])
 
 (cond-expand
- ((not gauche.sys.lchown)
-  (define sys-lchown #f))                ;make autoload happy
- (else))
+ [(not gauche.sys.lchown) (define sys-lchown #f)] ;make autoload happy
+ [else])
 
 (cond-expand
- ((not gauche.sys.getloadavg)
-  (define sys-getloadavg #f))           ;make autoload happy
- (else))
+ [(not gauche.sys.getloadavg) (define sys-getloadavg #f)] ;make autoload happy
+ [else])
 
 (provide "gauche/auxsys")
