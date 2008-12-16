@@ -75,8 +75,8 @@
     %sys-gethostname
     (lambda ()
       (cond-expand
-       ((not gauche.os.windows) (cadr (sys-uname))) ; nodename
-       (else "localhost")))))   ; need better fallback
+       [(not gauche.os.windows) (cadr (sys-uname))] ; nodename
+       [else "localhost"]))))   ; need better fallback
 
 (define sys-getdomainname
   (if (global-variable-bound? 'gauche.auxsys '%sys-getdomainname)
@@ -92,9 +92,9 @@
     (list->sys-fdset pfs))
   (define (sys-fdset->list fdset)
     (check-arg (cut is-a? <> <sys-fdset>) fdset)
-    (do ((i (sys-fdset-max-fd fdset) (- i 1))
-         (fds '() (if (sys-fdset-ref fdset i) (cons i fds) fds)))
-        ((< i 0) fds)
+    (do ([i (sys-fdset-max-fd fdset) (- i 1)]
+         [fds '() (if (sys-fdset-ref fdset i) (cons i fds) fds)])
+        [(< i 0) fds]
       #f))
   (define (list->sys-fdset pfs)
     (rlet1 fdset (make <sys-fdset>)
