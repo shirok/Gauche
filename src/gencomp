@@ -52,6 +52,7 @@
 (use gauche.sequence)
 (use gauche.parseopt)
 (use gauche.experimental.ref)
+(use gauche.experimental.lamb)
 (use file.util)
 (use util.match)
 (use util.list)
@@ -119,31 +120,30 @@
 (define (main args)
   (let1 predef-syms '()
     (let-args (cdr args)
-        ((keep-private-macro "keep-private-macro=s" #f)
-         (ext-module "ext-module=s" #f)
-         (output-base "o|output=s" #f)
-         (#f "D=s" => (lambda (sym) (push! predef-syms sym)))
+        ([keep-private-macro "keep-private-macro=s" #f]
+         [ext-module "ext-module=s" #f]
+         [output-base "o|output=s" #f]
+         [#f "D=s" => (lambda (sym) (push! predef-syms sym))]
          . args)
       (when keep-private-macro
         (private-macros-to-keep
          (map string->symbol (string-split keep-private-macro #\,))))
       (match args
-        ((scmfile)
+        [(scmfile)
          (when ext-module
            (ext-module-file (ensure-ext-module-file ext-module scmfile)))
          (do-it scmfile
                 (or output-base (sys-basename (path-sans-extension scmfile)))
                 predef-syms)
-         (when ext-module (close-output-port (ext-module-file))))
-        (else (print "Usage: gosh gencomp [--keep-private-macro] <file.scm>")
-              (exit 0)))
+         (when ext-module (close-output-port (ext-module-file)))]
+        [else (exit 0 "Usage: gosh gencomp [--keep-private-macro] <file.scm>")])
       0)))
 
 (define (do-it src base predef-syms)
-  (parameterize ((cgen-current-unit (get-unit src base predef-syms))
-                 (compile-module    (make-module #f))
-                 (compile-file-basename base)
-                 (vm-eval-situation SCM_VM_COMPILING))
+  (parameterize ([cgen-current-unit (get-unit src base predef-syms)]
+                 [compile-module    (make-module #f)]
+                 [compile-file-basename base]
+                 [vm-eval-situation SCM_VM_COMPILING])
     ;; Set up initial environment
     (eval '(define-macro (current-module)
              `(find-module ',(with-module user (compile-module-name))))
@@ -159,7 +159,7 @@
     (cgen-decl "#include <gauche/code.h>")
     (cgen-decl "#include <gauche/macro.h>") ; for MakeMacroTransformerOld. temporary.
     (cgen-decl "#define INIT_ENTRY") ; may be overrided by insert-ext-initializer.
-    (and-let* ((extm (ext-module-file)))
+    (and-let* ([extm (ext-module-file)])
       (insert-ext-initializer (port-name extm)))
     ;; Main processing
     (with-input-from-file src
@@ -172,14 +172,12 @@
 (define (ensure-ext-module-file filename srcfile)
   (let1 dir (sys-dirname filename)
     (unless (file-exists? dir) (make-directory* dir))
-    (let1 p (open-output-file filename)
+    (rlet1 p (open-output-file filename)
       (format p ";; generated automatically from ~s.  DO NOT EDIT\n" srcfile)
-      (format p "#!no-fold-case\n")
-      p)))
+      (format p "#!no-fold-case\n"))))
 
 (define (write-ext-module form)
-  (cond ((ext-module-file)
-         => (lambda (p) (write form p) (newline p)))))
+  (cond [(ext-module-file) => (^_ (write form _) (newline _))]))
 
 ;; If we're compiling stand-alone Scheme file (i.e. --ext-module is
 ;; given), we need to include SCM_INIT_EXTENSION in the initialization
@@ -188,8 +186,8 @@
   (cgen-decl "#include <gauche/extend.h>")
   (cgen-decl "#undef INIT_ENTRY")
   (cgen-decl "#define INIT_ENTRY SCM_EXTENSION_ENTRY")
-  (let* ((extname (path-sans-extension ext-module-file-name))
-         (safe-extname (regexp-replace-all #/\W/ extname "_")))
+  (let* ([extname (path-sans-extension ext-module-file-name)]
+         [safe-extname (regexp-replace-all #/\W/ extname "_")])
     (cgen-init #`"SCM_INIT_EXTENSION(,safe-extname);")))
 
 ;;================================================================
@@ -258,13 +256,13 @@
       ;; Module related stuff
       [((? =define-module?) mod . body)
        (write-ext-module form)
-       (parameterize ((compile-module-name mod))
+       (parameterize ([compile-module-name mod])
          (fold compile-toplevel-form seed body))]
       [((? =select-module?) mod)
        (write-ext-module form)
        (write-ext-module
         `(dynamic-load ,(compile-file-basename)))
-       (let ((sym (cgen-literal mod)))
+       (let1 sym (cgen-literal mod)
          (cgen-init
           (format "  mod = Scm_FindModule(SCM_SYMBOL(~a),\
                                           SCM_FIND_MODULE_CREATE);"
@@ -288,10 +286,10 @@
        (eval form (compile-module))
        (when (or (symbol-exported? name)
                  (memq name (private-macros-to-keep)))
-         (let* ((body-closure (compile-toplevel-lambda form name formals
-                                                       body (compile-module)))
-                (code (cgen-literal (closure-code body-closure)))
-                (var  (cgen-literal name)))
+         (let* ([body-closure (compile-toplevel-lambda form name formals
+                                                       body (compile-module))]
+                [code (cgen-literal (closure-code body-closure))]
+                [var  (cgen-literal name)])
            (cgen-init
             (format "  Scm_Define(mod, SCM_SYMBOL(~a), \
                              Scm_MakeMacroTransformerOld(SCM_SYMBOL(~a),\
@@ -311,21 +309,20 @@
       ;; TODO - we need more general framework supporting various declarations.
       ;; for the time being, this ad-hoc solution suffice our needs.
       [((? =declare?) decls ...)
-       (for-each (match-lambda
-                   [('keep-private-macro . macros)
-                    (private-macros-to-keep (append (private-macros-to-keep)
-                                                       macros))]
-                   [other (error "Unknown declaration:" other)])
+       (for-each (^.[('keep-private-macro . macros)
+                     (private-macros-to-keep (append (private-macros-to-keep)
+                                                     macros))]
+                    [other (error "Unknown declaration:" other)])
                  decls)
        seed]
       ;; Finally, ordinary expressions.
       [((? =define?) (name . args) . body)
        (compile-toplevel-form `(define ,name (lambda ,args ,@body)) seed)]
       [((? =define?) (? symbol? name) ((? =lambda?) args . body))
-       (let* ((closure
-               (compile-toplevel-lambda form name args body (compile-module)))
-              (code (cgen-literal (closure-code closure)))
-              (var  (cgen-literal name)))
+       (let* ([closure
+               (compile-toplevel-lambda form name args body (compile-module))]
+              [code (cgen-literal (closure-code closure))]
+              [var  (cgen-literal name)])
          (cgen-init
           (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeClosure(~a, NULL)); /* ~s */"
                   (cgen-cexpr var) (cgen-cexpr code) name)))
@@ -344,8 +341,8 @@
 
 ;; check to see the compiled code only contains CONSTU-RET insn.
 (define (toplevel-constu-ret-code? compiled-code)
-  (and (eq? (ref compiled-code 'name) '%toplevel)
-       (= (ref compiled-code 'size) 1)
+  (and (eq? (~ compiled-code'name) '%toplevel)
+       (= (~ compiled-code'size) 1)
        (let1 code (vm-code->list compiled-code)
          (null? (cdr code))
          (eq? (caar code) 'CONSTU-RET))))
@@ -378,26 +375,26 @@
   (make (value)
     (let* ((cv  (vm-code->list value))
            (lv  (extract-literals cv))
-           (cvn (allocate-code-vector cv lv (ref value 'full-name)))
-           (code-name (cgen-literal (ref value 'name)))
-           (arg-info (cgen-literal (ref value 'arg-info)))
+           (cvn (allocate-code-vector cv lv (~ value'full-name)))
+           (code-name (cgen-literal (~ value'name)))
+           (arg-info (cgen-literal (~ value'arg-info)))
            (inliner (check-packed-inliner value))
            )
       (define (init-thunk)
         (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
-                (cgen-safe-comment (ref value 'name)))
+                (cgen-safe-comment (~ value'name)))
         (format #t "            (ScmWord*)(~a), ~a,\n"
                 cvn (length cv))
         (format #t "            ~a, ~a, ~a, ~a, SCM_NIL, ~a,\n"
-                (ref value 'max-stack)
-                (ref value 'required-args)
-                (ref value 'optional-args)
+                (~ value'max-stack)
+                (~ value'required-args)
+                (~ value'optional-args)
                 (if (cgen-literal-static? code-name)
                   (cgen-cexpr code-name)
                   "SCM_FALSE")
                 (cgen-cexpr arg-info))
         (format #t "            ~a, ~a)"
-                (cgen-cexpr (cgen-literal (ref value 'parent)))
+                (cgen-cexpr (cgen-literal (~ value'parent)))
                 (if inliner
                   (cgen-cexpr inliner)
                   "SCM_FALSE")))
@@ -424,18 +421,18 @@
              (lits '()))
     (if (null? code)
       (reverse lits)
-      (let* ((insn (car code))
-             (info (vm-find-insn-info (car insn))))
-        (case (ref info 'operand-type)
-          ((none) (loop (cdr code)  (cons #f lits)))
-          ((addr) (loop (cddr code) (list* #f #f lits)))
-          ((code codes) (loop (cddr code)
-                              (list* (cgen-literal (cadr code)) #f lits)))
-          ((obj) (loop (cddr code)
-                        (list* (cgen-literal (cadr code)) #f lits)))
-          ((obj+addr)
+      (let* ([insn (car code)]
+             [info (vm-find-insn-info (car insn))])
+        (case (~ info'operand-type)
+          [(none) (loop (cdr code)  (cons #f lits))]
+          [(addr) (loop (cddr code) (list* #f #f lits))]
+          [(code codes) (loop (cddr code)
+                              (list* (cgen-literal (cadr code)) #f lits))]
+          [(obj) (loop (cddr code)
+                        (list* (cgen-literal (cadr code)) #f lits))]
+          [(obj+addr)
            (loop (cdddr code)
-                 (list* #f (cgen-literal (cadr code)) #f lits)))
+                 (list* #f (cgen-literal (cadr code)) #f lits))]
           )))))
 
 (define (allocate-code-vector cv lv full-name)
@@ -446,13 +443,13 @@
   (define (loop cv lv count first-cexpr)
     (if (null? cv)
       first-cexpr
-      (let* ((insn (car cv))
-             (info (vm-find-insn-info (car insn)))
-             (insnval (vm-build-insn insn))
-             (name-info (if first-cexpr
+      (let* ([insn (car cv)]
+             [info (vm-find-insn-info (car insn))]
+             [insnval (vm-build-insn insn)]
+             [name-info (if first-cexpr
                           ""
-                          (format "/* ~a */\n    " (cgen-safe-comment full-name))))
-             (insn-cexpr
+                          (format "/* ~a */\n    " (cgen-safe-comment full-name)))]
+             [insn-cexpr
               (alloc-word
                ;; We emit it as signed integer so that 64bit machine
                ;; correctly handles negative parameter value.
@@ -462,17 +459,17 @@
                          (cgen-safe-comment insn))
                  (format "~a0x~8,'0x    /* ~3d ~a */"
                          name-info insnval count
-                         (cgen-safe-comment insn)))))
-             (first-cexpr (or first-cexpr insn-cexpr)))
-        (case (ref info 'operand-type)
-          ((none)
-           (loop (cdr cv) (cdr lv) (+ count 1) first-cexpr))
-          ((addr)
+                         (cgen-safe-comment insn))))]
+             [first-cexpr (or first-cexpr insn-cexpr)])
+        (case (~ info'operand-type)
+          [(none)
+           (loop (cdr cv) (cdr lv) (+ count 1) first-cexpr)]
+          [(addr)
            (alloc-word
             (format "SCM_WORD((ScmWord*)~a + ~d)"
                     first-cexpr (cadr cv)))
-           (loop (cddr cv) (cddr lv) (+ count 2) first-cexpr))
-          ((obj code codes)
+           (loop (cddr cv) (cddr lv) (+ count 2) first-cexpr)]
+          [(obj code codes)
            (alloc-word
             (if (cgen-literal-static? (cadr lv))
               (format "SCM_WORD(~a) /* ~a */"
@@ -480,8 +477,8 @@
                       (cgen-safe-comment (write-to-string (cadr cv))))
               (format "SCM_WORD(SCM_UNDEFINED) /* ~a */"
                       (cgen-safe-comment (write-to-string (cadr cv))))))
-           (loop (cddr cv) (cddr lv) (+ count 2) first-cexpr))
-          ((obj+addr)
+           (loop (cddr cv) (cddr lv) (+ count 2) first-cexpr)]
+          [(obj+addr)
            (alloc-word
             (if (cgen-literal-static? (cadr lv))
               (format "SCM_WORD(~a) /* ~a */"
@@ -492,14 +489,14 @@
            (alloc-word
             (format "SCM_WORD((ScmWord*)~a + ~d)  /*    ~3d */"
                     first-cexpr (caddr cv) (caddr cv)))
-           (loop (cdddr cv) (cdddr lv) (+ count 3) first-cexpr))
+           (loop (cdddr cv) (cdddr lv) (+ count 3) first-cexpr)]
           ))))
 
   (loop cv lv 0 #f))
 
 (define (fill-code code)
-  (let ((cvn  (ref code 'code-vector-c-name))
-        (lv   (ref code 'literals)))
+  (let ([cvn  (~ code'code-vector-c-name)]
+        [lv   (~ code'literals)])
     (for-each-with-index
      (lambda (index lit)
        (when (and lit (not (cgen-literal-static? lit)))
@@ -511,11 +508,11 @@
 ;; If the compiled-code has packed IForm for inliner, translate it for
 ;; the target VM insns and returns the packed IForm.
 (define (check-packed-inliner compiled-code)
-  (let1 il (ref compiled-code 'intermediate-form)
+  (let1 il (~ compiled-code'intermediate-form)
     (and (vector? il)
-         (let* ((insns (class-slot-ref <vm-insn-info> 'all-insns))
-                (packed ((with-module gauche.internal translate-packed-iform)
-                         il insns)))
+         (let* ([insns (class-slot-ref <vm-insn-info> 'all-insns)]
+                [packed ((with-module gauche.internal translate-packed-iform)
+                         il insns)])
            (cgen-literal packed)))))
 
 ;; NB: this doesn't yet handle identifiers that are inserted by hygienic
