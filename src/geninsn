@@ -45,6 +45,7 @@
 (use gauche.vm.insn-core)
 (use gauche.mop.instance-pool)
 (use gauche.experimental.app)
+(use gauche.experimental.ref)
 (use srfi-13)
 (use text.tr)
 (use file.util)
@@ -136,7 +137,7 @@
       `(lref ,(x->integer dep) ,(x->integer off))))
   (define (render cise)
     (cgen-body #`"{,(cise->string cise)}"))
-  (define (do-combined insn comb)
+  (define (do-combined orig comb)
     (match comb
       [(base 'PUSH)
        (and-let* [(cise (base-cise base))]
@@ -161,13 +162,15 @@
        #t]
       [((and (? (cut memq <> .lrefx.)) lrefx) . next)
        (parameterize ([arg-source (lrefx->lref lrefx)])
-         (do-combined-rec next))]
+         (do-combined-rec orig next))]
       [('LREF . next)
-       (parameterize ([arg-source 'lref]) (do-combined-rec next))]
+       (parameterize ([arg-source 'lref]) (do-combined-rec orig next))]
       [_ #f]))
-  (define (do-combined-rec comb)
-    (and-let* [(insn (find-insn (symbol-join comb) insns))]
-      (render1 insn)))
+  (define (do-combined-rec orig comb)
+    (or (and-let* [(insn (find-insn (symbol-join comb) insns))]
+          (render1 insn))
+        (do-combined orig comb)
+        (warn "Don't know how to generate combined insn ~a" (~ orig'name))))
   (define (render1 insn)
     (or (and-let* [(cise (ref insn 'body))]
           (render cise)

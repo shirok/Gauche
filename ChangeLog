@@ -1,3 +1,14 @@
+2008-12-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/geninsn (construct-vmbody): Fixed handling of insns that combine
+	  more than two basic insns.  In the previous code, if you want an
+	  insn A-B-C, you have to have the insn B-C.  Now you don't need to.
+	  (You still need A-B, for the insn combine state machine can only
+	  keep one instruction in a queue; this limitation should be addressed
+	  sometime in future.)
+	* src/vminsn.scm: Removed NUMADDI-PUSH, for it is no longer needed
+	  by the above change.
+
 2008-12-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm, src/compile.scm: Experimentally added supports

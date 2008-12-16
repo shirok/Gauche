@@ -1137,7 +1137,6 @@
              ($result:f (+ (SCM_FLONUM_VALUE arg) (cast double imm)))]
             [else           ($result (Scm_Add (SCM_MAKE_INT imm) arg))]))))
 
-(define-insn NUMADDI-PUSH 1 none (NUMADDI PUSH))
 (define-insn-lref+ LREF-NUMADDI 1 none (LREF NUMADDI))
 (define-insn-lref+ LREF-NUMADDI-PUSH 1 none (LREF NUMADDI PUSH))
 
@@ -1232,13 +1231,6 @@
       (TAIL-CALL-INSTRUCTION)
       (SCM_FLONUM_ENSURE_MEM VAL0)
       ($result (Scm_VMSlotSet obj slot VAL0)))))
-
-;; combined
-;(define-insn LREF0-NUMADDI 1 none)
-;(define-insn LREF1-NUMADDI 1 none)
-;(define-insn LREF2-NUMADDI 1 none)
-;(define-insn LREF3-NUMADDI 1 none)
-;(define-insn LREF4-NUMADDI 1 none)
 
 ;;;
 ;;; Additional instructions
