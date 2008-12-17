@@ -49,14 +49,12 @@
 ;;   However, we can't say (make <method> ...) before we have a make method.
 ;;   So we have to "hard wire" the method creation.
 
-(let ((%make (lambda (class . initargs)
-               (let ((obj (allocate-instance class initargs)))
-                 (initialize obj initargs)
-                 obj)))
-      (body  (lambda (class initargs next-method)
-               (let ((obj (allocate-instance class initargs)))
-                 (initialize obj initargs)
-                 obj))))
+(let ([%make (lambda (class . initargs)
+               (rlet1 obj (allocate-instance class initargs)
+                 (initialize obj initargs)))]
+      [body  (lambda (class initargs next-method)
+               (rlet1 obj (allocate-instance class initargs)
+                 (initialize obj initargs)))])
   (add-method! make
                (%make <method>
                       :generic make
@@ -66,7 +64,7 @@
 
 ;; preparing inline stub code
 (inline-stub
- " #include <gauche/class.h>"
+ "#include <gauche/class.h>"
  "#include <gauche/vminsn.h>"
  (define-type <slot-accessor> "ScmSlotAccessor*")
  (define-type <method> "ScmMethod*")
@@ -81,8 +79,8 @@
 
 (define (%expand-define-generic name opts)
   (receive (true-name getter-name) (%check-setter-name name)
-    (let ((class (get-keyword :class opts <generic>))
-          (other (delete-keyword :class opts)))
+    (let ([class (get-keyword :class opts <generic>)]
+          [other (delete-keyword :class opts)])
       (if getter-name
         `(begin
            (define ,true-name (make ,class :name ',true-name ,@other))
@@ -112,7 +110,7 @@
 
 (define (%expand-define-method name specs body)
   (receive (specializers lambda-list body-args)
-      (let loop ((ss specs))
+      (let loop ([ss specs])
         (cond [(null? ss)       (values '() '() (list 'next-method))]
               [(not (pair? ss)) (values '() ss (list ss 'next-method))]
               [(pair? (car ss))
@@ -127,7 +125,7 @@
                                     result)))]
               ))
     (receive (true-name getter-name) (%check-setter-name name)
-      (let ((gf (gensym)))
+      (let1 gf (gensym)
         `(let ((,gf (%ensure-generic-function ',true-name (current-module))))
            (add-method! ,gf
                         (make <method>
@@ -136,9 +134,9 @@
                           :lambda-list ',lambda-list
                           :body (lambda ,body-args ,@body)))
            ,@(if getter-name
-                 `((unless (has-setter? ,getter-name)
-                     (set! (setter ,getter-name) ,gf)))
-                 '())
+               `((unless (has-setter? ,getter-name)
+                   (set! (setter ,getter-name) ,gf)))
+               '())
            ,gf)))
     ))
 
@@ -159,32 +157,29 @@
  ;; After the call to this procedure, a binding of NAME is inserted in
  ;; the current module.
  (define-cproc %ensure-generic-function (name::<symbol> module::<module>)
-   (body <top>
-         (let* ([val (Scm_GlobalVariableRef module name 0)])
-           (when (not (Scm_TypeP val SCM_CLASS_GENERIC))
-             (if (or (SCM_SUBRP val) (SCM_CLOSUREP val))
-               (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) call_fallback_proc val))
-               (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) NULL NULL))))
-           (Scm_Define module name val)
-           (result val))))
+   (let* ([val (Scm_GlobalVariableRef module name 0)])
+     (when (not (Scm_TypeP val SCM_CLASS_GENERIC))
+       (if (or (SCM_SUBRP val) (SCM_CLOSUREP val))
+         (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) call_fallback_proc val))
+         (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) NULL NULL))))
+     (Scm_Define module name val)
+     (result val)))
 
  (define-cproc %make-next-method (gf methods::<list> args::<list>)
-   (body <top>
-         (let* ([argv::ScmObj*] [argc::int])
-           (unless (Scm_TypeP gf SCM_CLASS_GENERIC)
-             (Scm_Error "generic function requied, but got %S" gf))
-           (dolist [mp methods]
-             (unless (Scm_TypeP mp SCM_CLASS_METHOD)
-               (Scm_Error "method required, but got %S" mp)))
-           (set! argv (Scm_ListToArray args (& argc) NULL TRUE))
-           (result (Scm_MakeNextMethod (SCM_GENERIC gf) methods argv argc
-                                       FALSE FALSE)))))
+   (let* ([argv::ScmObj*] [argc::int])
+     (unless (Scm_TypeP gf SCM_CLASS_GENERIC)
+       (Scm_Error "generic function requied, but got %S" gf))
+     (dolist [mp methods]
+       (unless (Scm_TypeP mp SCM_CLASS_METHOD)
+         (Scm_Error "method required, but got %S" mp)))
+     (set! argv (Scm_ListToArray args (& argc) NULL TRUE))
+     (result (Scm_MakeNextMethod (SCM_GENERIC gf) methods argv argc
+                                 FALSE FALSE))))
 
  (define-cproc %method-code (method::<method>)
-   (body <top>
-         (if (-> method func)
-           (result SCM_FALSE)
-           (result (-> method data)))))
+   (if (-> method func)
+     (result SCM_FALSE)
+     (result (-> method data))))
  )
 
 ;;----------------------------------------------------------------
@@ -197,13 +192,13 @@
 (define make-identifier (with-module gauche.internal make-identifier))
 
 (define (%expand-define-class name supers slots options)
-  (let* ((metaclass (or (get-keyword :metaclass options #f)
+  (let* ([metaclass (or (get-keyword :metaclass options #f)
                         `(,(make-identifier '%get-default-metaclass
                                             (current-module) '())
-                          (list ,@supers))))
-         (slot-defs (map %process-slot-definition slots))
-         (class     (gensym))
-         (slot      (gensym)))
+                          (list ,@supers)))]
+         [slot-defs (map %process-slot-definition slots)]
+         [class     (gensym)]
+         [slot      (gensym)])
     `(define ,name
        (let ((,class (make ,metaclass
                        :name ',name
@@ -222,7 +217,7 @@
 
 (define (%process-slot-definition sdef)
   (if (pair? sdef)
-    (let loop ((opts (cdr sdef)) (r '()))
+    (let loop ([opts (cdr sdef)] [r '()])
       (cond [(null? opts) `(list ',(car sdef) ,@(reverse! r))]
             [(not (and (pair? opts) (pair? (cdr opts))))
              (error "bad slot specification:" sdef)]
@@ -240,7 +235,7 @@
 ;; metaclass calculation is done at runtime in Gauche, while at compile-time
 ;; in STklos.
 (define %get-default-metaclass
-  (let ((generated-metas '()))
+  (let1 generated-metas '()
     (define (find-metaclass metasupers)
       (cond [(assoc metasupers generated-metas) => (lambda (got) (cdr got))]
             [else (make-metaclass metasupers)]))
@@ -272,9 +267,9 @@
 ;;;  base classes may not be inheriting from it.
 (define-method initialize ((class <class>) initargs)
   (next-method)
-  (let* ((slots  (get-keyword :slots  initargs '()))
-         (sup    (get-keyword :supers initargs '()))
-         (supers (append sup (list <object>)))
+  (let* ([slots  (get-keyword :slots  initargs '())]
+         [sup    (get-keyword :supers initargs '())]
+         [supers (append sup (list <object>))]
          )
     ;; The order of initialization is somewhat important, since calculation
     ;; of values of some slots depends on the other slots.
@@ -283,7 +278,7 @@
     (slot-set! class 'direct-slots
                (map (lambda (s) (if (pair? s) s (list s))) slots))
     ;; note: num-instance-slots is set up during compute-get-n-set.
-    (let* ((slots (compute-slots class)))
+    (let1 slots (compute-slots class)
       (slot-set! class 'slots slots)
       (slot-set! class 'accessors
                  (map (lambda (s)
@@ -300,11 +295,11 @@
     ))
 
 (define (%make-accessor class slot module)
-  (let* ((name      (slot-definition-name slot))
-         (sa        (class-slot-accessor class name))
-         (%getter   (slot-definition-getter slot))
-         (%setter   (slot-definition-setter slot))
-         (%accessor (slot-definition-accessor slot)))
+  (let* ([name      (slot-definition-name slot)]
+         [sa        (class-slot-accessor class name)]
+         [%getter   (slot-definition-getter slot)]
+         [%setter   (slot-definition-setter slot)]
+         [%accessor (slot-definition-accessor slot)])
 
     (define (make-getter gf)
       (add-method! gf
@@ -327,9 +322,9 @@
     (when %setter
       (make-setter (%ensure-generic-function %setter module)))
     (when %accessor
-      (let ((gf  (%ensure-generic-function %accessor module))
-            (gfs (%ensure-generic-function (%make-setter-name %accessor)
-                                           module)))
+      (let ([gf  (%ensure-generic-function %accessor module)]
+            [gfs (%ensure-generic-function (%make-setter-name %accessor)
+                                           module)])
         (make-getter gf)
         (make-setter gfs)
         (set! (setter gf) gfs)
@@ -338,8 +333,8 @@
  
 ;;; Method COMPUTE-SLOTS (class <class>)
 (define-method compute-slots ((class <class>))
-  (let ((cpl (slot-ref class 'cpl))
-        (slots '()))
+  (let ([cpl (slot-ref class 'cpl)]
+        [slots '()])
     (dolist [c cpl]
       (dolist [slot (slot-ref c 'direct-slots)]
         (unless (assq (car slot) slots)
@@ -356,19 +351,18 @@
   ;; NB: STklos ignores :initform slot option for class slots, but
   ;;     I think it's sometimes useful.
   (define (make-class-slot)
-    (let* ((init-value (slot-definition-option slot :init-value (undefined)))
-           (init-thunk (slot-definition-option slot :init-thunk #f)))
+    (let* ([init-value (slot-definition-option slot :init-value (undefined))]
+           [init-thunk (slot-definition-option slot :init-thunk #f)])
       (if init-thunk
         (%make-class-slot (init-thunk))
         (%make-class-slot init-value))))
   
-  (let ((slot-name (slot-definition-name slot))
-        (alloc (slot-definition-allocation slot)))
+  (let ([slot-name (slot-definition-name slot)]
+        [alloc (slot-definition-allocation slot)])
     (case alloc
       [(:instance)
-       (let ((num (slot-ref class 'num-instance-slots)))
-         (slot-set! class 'num-instance-slots (+ num 1))
-         num)]
+       (rlet1 num (slot-ref class 'num-instance-slots)
+         (slot-set! class 'num-instance-slots (+ num 1)))]
       [(:class)
        (if (assq slot-name (class-direct-slots class))
          (make-class-slot)
@@ -378,12 +372,11 @@
                  [(assq slot-name (class-direct-slots (car cpl)))
                   (class-slot-accessor (car cpl) slot-name)]
                  [else (loop (cdr cpl))])))]
-      [(:each-subclass)
-       (make-class-slot)]
+      [(:each-subclass) (make-class-slot)]
       [(:virtual)
-       (let ((getter (slot-definition-option slot :slot-ref #f))
-             (setter (slot-definition-option slot :slot-set! #f))
-             (bound? (slot-definition-option slot :slot-bound? #f)))
+       (let ([getter (slot-definition-option slot :slot-ref #f)]
+             [setter (slot-definition-option slot :slot-set! #f)]
+             [bound? (slot-definition-option slot :slot-bound? #f)])
          (unless (procedure? getter)
            (error "virtual slot requires at least :slot-ref:" slot))
          (list getter setter bound?))]
@@ -468,49 +461,41 @@
   (not (not (assq slot (class-slots class)))))
 
 (inline-stub
- (define-cproc %check-class-binding (name module::<module>)
-   (call Scm_CheckClassBinding))
-
- (define-cproc class-of (obj) (call Scm_VMClassOf))
+ (define-cproc %check-class-binding (name module::<module>) Scm_CheckClassBinding)
+ (define-cproc class-of (obj) Scm_VMClassOf)
 
  ;; current-class-of doesn't updates OBJ, and returns possibly the old class
  ;; which has been redefined.  Should only be used in class redefinition
  ;; routines.
- (define-cproc current-class-of (obj) (expr (SCM_OBJ (Scm_ClassOf obj))))
-
- (define-cproc is-a? (obj klass::<class>) (call Scm_VMIsA) (inliner IS-A))
+ (define-cproc current-class-of (obj) (result (SCM_OBJ (Scm_ClassOf obj))))
+ (define-cproc is-a? (obj klass::<class>) (inliner IS-A) Scm_VMIsA)
 
  (define-cproc slot-ref (obj slot)
-   (inliner SLOT-REF)
-   (setter slot-set!)
-   (expr (Scm_VMSlotRef obj slot FALSE)))
+   (inliner SLOT-REF) (setter slot-set!)
+   (result (Scm_VMSlotRef obj slot FALSE)))
 
- (define-cproc slot-set! (obj slot value)
-   (inliner SLOT-SET)
-   (call Scm_VMSlotSet))
+ (define-cproc slot-set! (obj slot value) (inliner SLOT-SET) Scm_VMSlotSet)
 
- (define-cproc slot-bound? (obj slot) (call Scm_VMSlotBoundP))
+ (define-cproc slot-bound? (obj slot) Scm_VMSlotBoundP)
 
  (define-cproc slot-ref-using-accessor (obj accessor::<slot-accessor>)
-   (expr (Scm_VMSlotRefUsingAccessor obj accessor FALSE)))
+   (result (Scm_VMSlotRefUsingAccessor obj accessor FALSE)))
 
  (define-cproc slot-bound-using-accessor? (obj accessor::<slot-accessor>)
-   (expr (Scm_VMSlotRefUsingAccessor obj accessor TRUE)))
+   (result (Scm_VMSlotRefUsingAccessor obj accessor TRUE)))
 
  (define-cproc slot-set-using-accessor! (obj accessor::<slot-accessor> value)
-   (call Scm_VMSlotSetUsingAccessor))
+   Scm_VMSlotSetUsingAccessor)
 
  (define-cproc slot-initialize-using-accessor! (obj accessor::<slot-accessor>
                                                     initargs)
-   (call Scm_VMSlotInitializeUsingAccessor))
+   Scm_VMSlotInitializeUsingAccessor)
 
- (define-cproc instance-slot-ref (obj num::<fixnum>)
-   (call Scm_InstanceSlotRef))
+ (define-cproc instance-slot-ref (obj num::<fixnum>) Scm_InstanceSlotRef)
+ (define-cproc instance-slot-set (obj num::<fixnum> value) ::<void>
+   Scm_InstanceSlotSet)
 
- (define-cproc instance-slot-set (obj num::<fixnum> value)
-   (call <void> Scm_InstanceSlotSet))
-
- (define-cproc touch-instance! (obj) (call Scm_VMTouchInstance))
+ (define-cproc touch-instance! (obj) Scm_VMTouchInstance)
  )
 
 ;;----------------------------------------------------------------
@@ -532,22 +517,22 @@
 
 (inline-stub
  ;; C bindings used by class redefinition routine.
- (define-cproc %start-class-redefinition! (k::<class>)
-   (call <void> Scm_StartClassRedefinition))
- (define-cproc %commit-class-redefinition! (k::<class> newk)
-   (call <void> Scm_CommitClassRedefinition))
- (define-cproc %replace-class-binding! (k::<class> newk::<class>)
-   (call <void> Scm_ReplaceClassBinding))
- (define-cproc %add-direct-subclass! (super::<class> sub::<class>)
-   (call <void> Scm_AddDirectSubclass))
- (define-cproc %delete-direct-subclass! (super::<class> sub::<class>)
-   (call <void> Scm_DeleteDirectSubclass))
- (define-cproc %add-direct-method! (super::<class> m::<method>)
-   (call <void> Scm_AddDirectMethod))
- (define-cproc %delete-direct-method! (super::<class> m::<method>)
-   (call <void> Scm_DeleteDirectMethod))
- (define-cproc %transplant-instance! (src dst)
-   (call <void> Scm_TransplantInstance))
+ (define-cproc %start-class-redefinition! (k::<class>) ::<void>
+   Scm_StartClassRedefinition)
+ (define-cproc %commit-class-redefinition! (k::<class> newk) ::<void>
+   Scm_CommitClassRedefinition)
+ (define-cproc %replace-class-binding! (k::<class> newk::<class>) ::<void>
+   Scm_ReplaceClassBinding)
+ (define-cproc %add-direct-subclass! (super::<class> sub::<class>) ::<void>
+   Scm_AddDirectSubclass)
+ (define-cproc %delete-direct-subclass! (super::<class> sub::<class>) ::<void>
+   Scm_DeleteDirectSubclass)
+ (define-cproc %add-direct-method! (super::<class> m::<method>) ::<void>
+   Scm_AddDirectMethod)
+ (define-cproc %delete-direct-method! (super::<class> m::<method>) ::<void>
+   Scm_DeleteDirectMethod)
+ (define-cproc %transplant-instance! (src dst) ::<void>
+   Scm_TransplantInstance)
  )
 
 ;;----------------------------------------------------------------
@@ -568,11 +553,11 @@
 ;; differs a bit.
 
 (define-method apply-generic ((gf <generic>) args)
-  (let ((methods (compute-applicable-methods gf args)))
+  (let1 methods (compute-applicable-methods gf args)
     (apply-methods gf (sort-applicable-methods gf methods args) args)))
 
 (define-method sort-applicable-methods ((gf <generic>) methods args)
-  (let ((types (map class-of args)))
+  (let1 types (map class-of args)
     (sort methods (lambda (x y) (method-more-specific? x y types)))))
 
 (define-method apply-methods ((gf <generic>) methods args)
@@ -677,6 +662,7 @@
 ;; as
 ;;   (ref* foo 'bar 'baz 'bang)
 ;; Credit to Issac Trotts.
+;; NB: In future we may drop this in favor of ~ (see gauche.experimental.ref)
 
 ;; Once we have a compiler-macro, or optimized case-lambda, we
 ;; can make them more efficient by expanding ref* to refs in
