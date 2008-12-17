@@ -281,10 +281,10 @@
 
 (define-type <sys-sigset> "ScmSysSigset*")
 
-(define-cproc sys-sigset-add! (set::<sys-sigset> &rest sigs)
+(define-cproc sys-sigset-add! (set::<sys-sigset> :rest sigs)
   (result (Scm_SysSigsetOp set sigs FALSE)))
 
-(define-cproc sys-sigset-delete! (set::<sys-sigset> &rest sigs)
+(define-cproc sys-sigset-delete! (set::<sys-sigset> :rest sigs)
   (result (Scm_SysSigsetOp set sigs TRUE)))
 
 (define-cproc sys-sigset-fill! (set::<sys-sigset>)
@@ -297,7 +297,7 @@
 
 (define-cproc sys-kill (process sig::<fixnum>) ::<void> Scm_SysKill)
 
-(define-cproc set-signal-handler! (sig proc &optional (mask::<sys-sigset>? #f))
+(define-cproc set-signal-handler! (sig proc :optional (mask::<sys-sigset>? #f))
   Scm_SetSignalHandler)
 (define-cproc get-signal-handler (sig::<fixnum>) Scm_GetSignalHandler)
 (define-cproc get-signal-handler-mask (sig::<fixnum>) Scm_GetSignalHandlerMask)
@@ -429,7 +429,7 @@
       (result (MAKERLIMIT (ref limit rlim_cur))
               (MAKERLIMIT (ref limit rlim_max)))))
 
-  (define-cproc sys-setrlimit (rsrc::<int> cur &optional (max #f)) ::<void>
+  (define-cproc sys-setrlimit (rsrc::<int> cur :optional (max #f)) ::<void>
     (let* ([limit::(struct rlimit)] [ret::int])
       (when (or (SCM_FALSEP cur) (SCM_FALSEP max))
         (SCM_SYSCALL ret (getrlimit rsrc (& limit)))
@@ -507,7 +507,7 @@
 ;; returns pid and status 
 (define-cproc sys-wait () (result (Scm_SysWait (SCM_MAKE_INT -1) 0)))
 
-(define-cproc sys-waitpid (process &keyword (nohang #f) (untraced #f))
+(define-cproc sys-waitpid (process :key (nohang #f) (untraced #f))
   (let* ([options::int 0])
     (unless (SCM_FALSEP nohang)   (logior= options WNOHANG))
     (unless (SCM_FALSEP untraced) (logior= options WUNTRACED))
@@ -616,11 +616,9 @@
     (when (< pid 0) (Scm_SysError "fork failed"))
     (result pid)))
 
-;; NB: the signature of old version was (command args &optional iomap).
-;; The new version is (command args &keyword iomap sigmask).
+;; NB: the signature of old version was (command args :optional iomap).
+;; The new version is (command args :key iomap sigmask).
 ;; For transitional stage, we accept both.
-(define-keyword iomap "key_iomap")
-(define-keyword sigmask "key_sigmask")
 
 (define-cfn get-exec-args (rest iomap::ScmObj* sigmask::ScmSysSigset**)
   ::void :static
@@ -631,20 +629,20 @@
      [(and (SCM_PAIRP rest) (SCM_NULLP (SCM_CDR rest))) ; old signature
       (set! (* iomap) (SCM_CAR rest))]
      [else
-      (set! (* iomap) (Scm_GetKeyword key_iomap rest SCM_NIL)
-            s_sigmask (Scm_GetKeyword key_sigmask rest SCM_FALSE))
+      (set! (* iomap) (Scm_GetKeyword ':iomap rest SCM_NIL)
+            s_sigmask (Scm_GetKeyword ':sigmask rest SCM_FALSE))
       (cond [(SCM_SYS_SIGSET_P s_sigmask)
              (set! (* sigmask) (SCM_SYS_SIGSET s_sigmask))]
             [(not (SCM_FALSEP s_sigmask))
              (Scm_Error "<sys-sigset> or #f required, but got %S" s_sigmask)])
       ])))
 
-(define-cproc sys-exec (command::<string> args::<list> &rest rest) ::<void>
+(define-cproc sys-exec (command::<string> args::<list> :rest rest) ::<void>
   (let* ([iomap SCM_NIL] [sigmask::ScmSysSigset* NULL])
     (get-exec-args rest (& iomap) (& sigmask))
     (Scm_SysExec command args iomap sigmask 0)))
 
-(define-cproc sys-fork-and-exec (command::<string> args::<list> &rest rest)
+(define-cproc sys-fork-and-exec (command::<string> args::<list> :rest rest)
   (let* ([iomap SCM_NIL] [sigmask::ScmSysSigset* NULL])
     (get-exec-args rest (& iomap) (& sigmask))
     (result (Scm_SysExec command args iomap sigmask SCM_EXEC_WITH_FORK))))
@@ -850,10 +848,10 @@
         (-> dst maxfd) (-> src maxfd))
   (result (SCM_OBJ dst)))
 
-(define-cproc sys-select (rfds wfds efds &optional (timeout #f))
+(define-cproc sys-select (rfds wfds efds :optional (timeout #f))
   Scm_SysSelect)
 
-(define-cproc sys-select! (rfds wfds efds &optional (timeout #f))
+(define-cproc sys-select! (rfds wfds efds :optional (timeout #f))
   Scm_SysSelectX)
 
 (initcode "Scm_AddFeature(\"gauche.sys.select\", NULL);")
