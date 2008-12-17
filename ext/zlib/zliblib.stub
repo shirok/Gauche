@@ -57,7 +57,7 @@
          (set! (* start) (SCM_UVECTOR-ELEMENTS (SCM_U8VECTOR data))
                (* siz)   (SCM_U8VECTOR_SIZE (SCM_U8VECTOR data)))]
         [(SCM_STRINGP data)
-         (let* ((b::(const ScmStringBody*) (SCM_STRING_BODY data)))
+         (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY data)])
            (set! (* start) (cast (unsigned char*) (SCM_STRING_BODY_START b))
                  (* siz)   (SCM_STRING_BODY_SIZE b)))]
         [else
@@ -80,13 +80,13 @@
 (define-enum Z_ASCII)
 (define-enum Z_UNKNOWN)
 
-(define-cproc adler32 (data &optional (adler::<ulong> 1)) ::<ulong>
+(define-cproc adler32 (data :optional (adler::<ulong> 1)) ::<ulong>
   (let* ([start::(const unsigned char*)]
          [siz::int])
     (data_element data (& start) (& siz))
     (result (adler32 adler start siz))))
 
-(define-cproc crc32 (data &optional (crc::<ulong> 0)) ::<ulong>
+(define-cproc crc32 (data :optional (crc::<ulong> 0)) ::<ulong>
   (let* ([start::(const unsigned char*)]
          [siz::int])
     (data_element data (& start) (& siz))
@@ -105,10 +105,10 @@
                                  buffer-size (not (SCM_FALSEP owner?)))))
 
 (define-cproc open-inflating-port (sink::<input-port>
-                                   &keyword (buffer-size::<fixnum> 0)
-                                   (window-bits::<fixnum> 15)
-                                   (dictionary #f)
-                                   (owner? #f))
+                                   :key (buffer-size::<fixnum> 0)
+                                        (window-bits::<fixnum> 15)
+                                        (dictionary #f)
+                                        (owner? #f))
   (result (Scm_MakeInflatingPort sink buffer-size window-bits dictionary
                                  (not (SCM_FALSEP owner?)))))
 
