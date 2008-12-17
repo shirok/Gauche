@@ -71,9 +71,9 @@
 ;; Bonus
 
 (define-cproc sys-normalize-pathname (pathname::<string>
-                                      &keyword (absolute #f)
-                                               (expand #f)
-                                               (canonicalize #f))
+                                      :key (absolute #f)
+                                           (expand #f)
+                                           (canonicalize #f))
   (let* ([flags::int 0])
     (unless (SCM_FALSEP absolute) (logior= flags SCM_PATH_ABSOLUTE))
     (unless (SCM_FALSEP expand)   (logior= flags SCM_PATH_EXPAND))
@@ -81,7 +81,6 @@
     (result (Scm_NormalizePathname pathname flags))))
 
 (define-cproc sys-basename (pathname::<string>) Scm_BaseName)
-
 (define-cproc sys-dirname (pathname::<string>) Scm_DirName)
 
 ;;---------------------------------------------------------------------
@@ -259,8 +258,8 @@
 
 (define-type <sys-passwd> "ScmSysPasswd*")
 
-(define-cproc sys-getpwuid (uid::<int>) (call Scm_GetPasswdById))
-(define-cproc sys-getpwnam (name::<string>) (call Scm_GetPasswdByName))
+(define-cproc sys-getpwuid (uid::<int>) Scm_GetPasswdById)
+(define-cproc sys-getpwnam (name::<string>) Scm_GetPasswdByName)
 
 ;; faster functions; bypassing creation of passwd object
 (define-cproc sys-uid->user-name (uid::<int>)
@@ -361,7 +360,7 @@
          (let* ([s::char* (tmpnam NULL)])
            (result (SCM_MAKE_STR_COPYING s)))))
 
-(define-cproc sys-mkstemp (template::<string>) (call Scm_SysMkstemp))
+(define-cproc sys-mkstemp (template::<string>) Scm_SysMkstemp)
 
 ;; tmpfile
 
@@ -406,7 +405,7 @@
 ;; TODO: for thread safety, we should use strerror_r when available.
 ;; unfortunately there are conflicting versions of strerror_r among
 ;; various systems.
-(define-cproc sys-strerror (errno::<int>) (call <const-cstring> strerror))
+(define-cproc sys-strerror (errno::<int>) ::<const-cstring> strerror)
 
 ;;---------------------------------------------------------------------
 ;; sys/resource.h
@@ -679,7 +678,7 @@
   (SCM_SYSCALL SCM_RESULT (alarm seconds)))
 
 ;; returns a list of two ports
-(define-cproc sys-pipe (&keyword (name "(pipe)") (buffering #f) (buffered? #f))
+(define-cproc sys-pipe (:key (name "(pipe)") (buffering #f) (buffered? #f))
   ::(<top> <top>)
   (let* ([fds::(.array int [2])] [mode::int] [r::int])
     (SCM_SYSCALL r (pipe fds))
@@ -711,7 +710,7 @@
     (SCM_SYSCALL r (rmdir pathname))
     (when (< r 0) (Scm_SysError "rmdir failed for %s" pathname))))
 
-(define-cproc sys-umask (&optional mode) ::<int>
+(define-cproc sys-umask (:optional mode) ::<int>
   (cond [(or (SCM_UNBOUNDP mode) (SCM_FALSEP mode))
          (let* ([prev::int (umask 0)])
            (umask prev)
@@ -795,7 +794,8 @@
 ;; symbolic link
 
 (when "defined(HAVE_SYMLINK)"
-  (define-cproc sys-symlink (existing::<const-cstring> newpath::<const-cstring>) ::<void>
+  (define-cproc sys-symlink (existing::<const-cstring> newpath::<const-cstring>)
+    ::<void>
     (let* ([r::int])
       (SCM_SYSCALL r (symlink existing newpath))
       (when (< r 0)
