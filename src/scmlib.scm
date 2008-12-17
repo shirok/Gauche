@@ -59,9 +59,9 @@
   (define (rec arg vars&inits rest)
     (if (null? vars&inits)
       (if (null? rest) body `((let ((,rest ,arg)) ,@body)))
-      (let ((g (gensym))
-            (v (caar vars&inits))
-            (i (cdar vars&inits)))
+      (let ([g (gensym)]
+            [v (caar vars&inits)]
+            [i (cdar vars&inits)])
         ;; NB: if the compiler were more clever, we could use receive
         ;; or apply to make (null? ,arg) test once.  For now, testing it
         ;; twice is faster.
@@ -237,9 +237,9 @@
 
 (with-module gauche.internal
   (define (%zip-nary-args arglists . seed)
-    (let loop ((as arglists)
-               (cars '())
-               (cdrs '()))
+    (let loop ([as arglists]
+               [cars '()]
+               [cdrs '()])
       (cond [(null? as)
              (values (reverse! (if (null? seed) cars (cons (car seed) cars)))
                      (reverse! cdrs))]
@@ -314,7 +314,7 @@
   (check-arg integer? k)
   (check-arg exact? k)
   (check-arg char? ch)
-  (let ((len (string-length str)))
+  (let1 len (string-length str)
     (when (or (< k 0) (<= len k))
       (error "string index out of range:" k))
     (%string-replace-body! str
@@ -329,8 +329,8 @@
   (check-arg integer? k)
   (check-arg exact? k)
   (check-arg integer? b)
-  (let ((siz (string-size str))
-        (out (open-output-string :private? #t)))
+  (let ([siz (string-size str)]
+        [out (open-output-string :private? #t)])
     (when (or (< k 0) (<= siz k))
       (error "string index out of range:" k))
     (display (byte-substring str 0 k) out)
@@ -340,24 +340,20 @@
 
 (set! (setter string-byte-ref) string-byte-set!)
 
-(define (string-fill! str c . opts)
-  (check-arg string? str)
-  (check-arg char? c)
+(define (string-fill! str c :optional (start 0) (end (string-length str)))
   (let1 len (string-length str)
-    (let-optionals* opts ((start 0)
-                          (end   len))
-      (when (or (< start 0) (< len start))
-        (error "start index out of range:" start))
-      (when (or (< end 0) (< len end))
-        (error "end index out of range:" end))
-      (when (< end start)
-        (errorf "end index ~s is smaller than start index ~s" end start))
-      (if (and (= start 0) (= end len))
-        (%string-replace-body! str (make-string len c))
-        (%string-replace-body! str
-                               (string-append (substring str 0 start)
-                                              (make-string (- end start) c)
-                                              (substring str end len)))))))
+    (when (or (< start 0) (< len start))
+      (error "start index out of range:" start))
+    (when (or (< end 0) (< len end))
+      (error "end index out of range:" end))
+    (when (< end start)
+      (errorf "end index ~s is smaller than start index ~s" end start))
+    (if (and (= start 0) (= end len))
+      (%string-replace-body! str (make-string len c))
+      (%string-replace-body! str
+                             (string-append (substring str 0 start)
+                                            (make-string (- end start) c)
+                                            (substring str end len))))))
 
 (define-reader-ctor 'string-interpolate
   (lambda (s) (string-interpolate s))) ;;lambda is required to delay loading
@@ -476,9 +472,8 @@
 ;;; srfi-17
 ;;;
 (define (getter-with-setter get set)
-  (let ((proc (lambda x (apply get x))))
-    (set! (setter proc) set)
-    proc))
+  (rlet1 proc (lambda x (apply get x))
+    (set! (setter proc) set)))
 
 ;;;=======================================================
 ;;; srfi-38
@@ -541,8 +536,7 @@
                              => (lambda (d) (loop2 (string->number d)))]
                             [(rxmatch-substring m 2)
                              => (lambda (s) (loop2 (string->symbol s)))]
-                            [else
-                             (loop2 (rxmatch-substring m 3))]))]
+                            [else (loop2 (rxmatch-substring m 3))]))]
                 [else (reverse (cons sub r))]))]
        [(procedure? sub) sub]
        [else (error "string or procedure required, but got" sub)]))
@@ -559,8 +553,8 @@
       (rec (rxmatch-after match)))
 
     (define (regexp-replace rx string sub)
-      (let ((subpat (regexp-parse-subpattern sub))
-            (match  (rxmatch rx string)))
+      (let ([subpat (regexp-parse-subpattern sub)]
+            [match  (rxmatch rx string)])
         (if match
           (with-output-to-string (cut regexp-replace-rec match subpat display))
           string)))
@@ -568,8 +562,8 @@
     ;; The inner call is awkward to avoid creation of output string
     ;; when no match at all.
     (define (regexp-replace-all rx string sub)
-      (let ((subpat (regexp-parse-subpattern sub))
-            (match  (rxmatch rx string)))
+      (let ([subpat (regexp-parse-subpattern sub)]
+            [match  (rxmatch rx string)])
         (if match
           (with-output-to-string
             (lambda ()
@@ -594,8 +588,8 @@
               [else
                (unless (zero? (modulo (length more) 2))
                  (errorf "~a: regexp and subsitution don't pair up" name))
-               (let loop ((s (func-1 rx string sub))
-                          (args more))
+               (let loop ([s (func-1 rx string sub)]
+                          [args more])
                  (if (null? args)
                    s
                    (loop (func-1 (car args) s (cadr args))
