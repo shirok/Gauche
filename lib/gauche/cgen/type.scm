@@ -144,18 +144,18 @@
    ))
 
 (define (cgen-type-from-name name)
-  (or (find (lambda (type) (eq? [~ type'name] name))
+  (or (find (lambda (type) (eq? (~ type'name) name))
             (instance-pool->list <cgen-type>))
       ;; when 'maybe' qualified type is used for the first time, we
       ;; create it from the base type.
       (and-let* ((m (#/\?$/ (symbol->string name)))
                  (basename (string->symbol (m 'before)))
                  (basetype (cgen-type-from-name basename)))
-        (make <cgen-type> :name name :c-type [~ basetype'c-type]
-              :description #`",[~ basetype'description] or #f"
-              :c-predicate [~ basetype'c-predicate]
-              :unboxer     [~ basetype'unboxer]
-              :boxer       [~ basetype'boxer]
+        (make <cgen-type> :name name :c-type (~ basetype'c-type)
+              :description #`",(~ basetype'description) or #f"
+              :c-predicate (~ basetype'c-predicate)
+              :unboxer     (~ basetype'unboxer)
+              :boxer       (~ basetype'boxer)
               :maybe       basetype))))
 
 ;; Create a new cgen-type.
@@ -255,19 +255,19 @@
 ;;
 
 (define (cgen-box-expr type c-expr)
-  (if [~ type'maybe]
-    #`"SCM_MAKE_MAYBE(,[~ type'boxer],, ,c-expr)"
-    #`",[~ type'boxer](,c-expr)"))
+  (if (~ type'maybe)
+    #`"SCM_MAKE_MAYBE(,(~ type'boxer),, ,c-expr)"
+    #`",(~ type'boxer)(,c-expr)"))
 
 (define (cgen-unbox-expr type c-expr)
-  (if [~ type'maybe]
-    #`"SCM_MAYBE(,[~ type'unboxer],, ,c-expr)"
-    #`",[~ type'unboxer](,c-expr)"))
+  (if (~ type'maybe)
+    #`"SCM_MAYBE(,(~ type'unboxer),, ,c-expr)"
+    #`",(~ type'unboxer)(,c-expr)"))
 
 (define (cgen-pred-expr type c-expr)
-  (if [~ type'maybe]
-    #`"SCM_MAYBE_P(,[~ type'c-predicate],, ,c-expr)"
-    #`",[~ type'c-predicate](,c-expr)"))
+  (if (~ type'maybe)
+    #`"SCM_MAYBE_P(,(~ type'c-predicate),, ,c-expr)"
+    #`",(~ type'c-predicate)(,c-expr)"))
 
 (define (cgen-return-stmt expr)
   #`"SCM_RETURN(,expr);")

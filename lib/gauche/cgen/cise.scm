@@ -78,8 +78,8 @@
 
 (define (make-env context decls)
   (make <cise-env> :context context :decls decls))
-(define (env-ctx env)   [~ env'context])
-(define (env-decls env) [~ env'decls])
+(define (env-ctx env)   (~ env'context))
+(define (env-decls env) (~ env'decls))
 (define (expr-ctx? env) (eq? (env-ctx env) 'expr))
 (define (stmt-ctx? env) (eq? (env-ctx env) 'stmt))
 
@@ -95,7 +95,7 @@
     (error "cise: statment appears in an expression context:" form)))
 
 (define (env-decl-add! env decl)
-  (push! [~ env'decls] decl))
+  (push! (~ env'decls) decl))
 
 (define (wrap-expr form env)
   (if (stmt-ctx? env) `(,form ";") form))

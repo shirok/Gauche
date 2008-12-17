@@ -211,11 +211,11 @@
 
 (define-method invoke ((self <form-parser>) form)
   (define (badform)
-    (errorf <cgen-stub-error> "malformed ~a: ~s" [~ self'name] form))
-  (apply [~ self'handler]
+    (errorf <cgen-stub-error> "malformed ~a: ~s" (~ self'name) form))
+  (apply (~ self'handler)
          ;; need to check if given form matches args
-         (let loop ((llist [~ self'args])
-                    (form  (cdr form)))
+         (let loop ([llist (~ self'args)]
+                    [form  (cdr form)])
            (cond [(null? llist) (if (null? form) '() (badform))]
                  [(pair? llist)
                   (if (null? form)
@@ -224,7 +224,7 @@
                  [else form]))))
 
 (define (cgen-stub-parser key)
-  (cond [(find (^(p) (eq? key [~ p'name])) (instance-pool->list <form-parser>))
+  (cond [(find (^(p) (eq? key (~ p'name))) (instance-pool->list <form-parser>))
          => (lambda (parser) (cut invoke parser <>))]
         [else #f]))
 
@@ -332,16 +332,16 @@
 (define-class <rest-arg>     (<arg>) ())
 
 (define-method write-object ((self <arg>) out)
-  (format out "#<~a ~a>" (class-of self) [~ self'name]))
+  (format out "#<~a ~a>" (class-of self) (~ self'name)))
 
 (define-method initialize ((self <arg>) initargs)
   (next-method)
-  (set! [~ self'c-name]   (get-c-name "" [~ self'name]))
-  (set! [~ self'scm-name] (string-append [~ self'c-name] "_scm")))
+  (set! (~ self'c-name)   (get-c-name "" (~ self'name)))
+  (set! (~ self'scm-name) (string-append (~ self'c-name) "_scm")))
 
 (define-method initialize ((self <keyword-arg>) initargs)
   (next-method)
-  (set! [~ self'keyword] (cgen-literal (make-keyword [~ self'name]))))
+  (set! (~ self'keyword) (cgen-literal (make-keyword (~ self'name)))))
 
 ;;===================================================================
 ;; Symbol and keyword definition
@@ -435,8 +435,8 @@
    (flags             :initform '() :init-keyword :flags :accessor flags-of)
    ))
 
-(define (get-arg cproc arg) (find (^(x) (eq? arg [~ x'name])) [~ cproc'args]))
-(define (push-stmt! cproc stmt) (push! [~ cproc'stmts] stmt))
+(define (get-arg cproc arg) (find (^(x) (eq? arg (~ x'name))) (~ cproc'args)))
+(define (push-stmt! cproc stmt) (push! (~ cproc'stmts) stmt))
 
 (define-generic c-stub-name )
 
@@ -455,11 +455,11 @@
     ;; we know that we can safely pass FLONUM_REGs, since the args
     ;; are immediately type-checked and/or unboxed.
     (let1 unsafe-types (list *scm-type* (name->type '<number>))
-      (when (and (not (memq 'fast-flonum [~ cproc'flags]))
+      (when (and (not (memq 'fast-flonum (~ cproc'flags)))
                  (every (^(arg) (or (is-a? arg <rest-arg>)
-                                    (not (memq [~ arg'type] unsafe-types))))
+                                    (not (memq (~ arg'type) unsafe-types))))
                         args))
-        (push! [~ cproc'flags] 'fast-flonum))))
+        (push! (~ cproc'flags) 'fast-flonum))))
   (define (extract-flags body)
     (match body
       [(:fast-flonum . body) (values '(fast-flonum) body)]
@@ -473,7 +473,7 @@
       (receive (flags body) (extract-flags body)
         (let1 cproc (make <cproc>
                       :scheme-name scheme-name
-                      :c-name (get-c-name [~(cgen-current-unit)'c-name-prefix]
+                      :c-name (get-c-name (~(cgen-current-unit)'c-name-prefix)
                                           scheme-name)
                       :proc-name (make-literal (x->string scheme-name))
                       :return-type rettype :flags flags
@@ -487,7 +487,7 @@
           (check-fast-flonum cproc args)
           (cgen-add! cproc))))))
 
-(define-method c-stub-name ((cproc <cproc>)) #`",[~ cproc'c-name]__STUB")
+(define-method c-stub-name ((cproc <cproc>)) #`",(~ cproc'c-name)__STUB")
 
 ;; create arg object.  used in cproc and cmethod
 (define (make-arg class argname count . rest)
@@ -635,7 +635,7 @@
     (match body
       [() #f]
       [([? string? s] . r) (push-stmt! cproc s) (loop r)]
-      [(('inliner opcode) . r) (set! [~ cproc'inline-insn] opcode) (loop r)]
+      [(('inliner opcode) . r) (set! (~ cproc'inline-insn) opcode) (loop r)]
       [(('setter . spec) . r) (process-setter cproc spec) (loop r)]
       [(('call . spec) . r) (process-call-spec cproc spec) (loop r)]
       [(('body . spec) . r) (process-body-spec cproc spec) (loop r)]
@@ -644,16 +644,16 @@
       [(('code . stmts) . r) (dolist (s stmts) (push-stmt! cproc s)) (loop r)]
       [([? symbol? s]) ; 'call' convention
        (let* ([args (map (cut ref <> 'name)
-                         (append [~ cproc'args] [~ cproc'keyword-args]))]
-              [form (if (eq? [~ cproc'return-type] '<void>)
+                         (append (~ cproc'args) (~ cproc'keyword-args)))]
+              [form (if (eq? (~ cproc'return-type) '<void>)
                       `((,s ,@args))
                       `((result (,s ,@args))))])
-         (process-body-inner cproc [~ cproc'return-type] form))]
-      [_ (process-body-inner cproc [~ cproc'return-type] body)])))
+         (process-body-inner cproc (~ cproc'return-type) form))]
+      [_ (process-body-inner cproc (~ cproc'return-type) body)])))
 
 (define-method process-setter ((cproc <cproc>) decl)
   (cond
-   [(symbol? (car decl)) (set! [~ cproc'setter] (car decl))]
+   [(symbol? (car decl)) (set! (~ cproc'setter) (car decl))]
    [(< (length decl) 2)
     (error <cgen-stub-error> "bad form of anonymous setter:" `(setter ,decl))]
    [else
@@ -661,16 +661,16 @@
         (process-cproc-args (ref cproc'proc-name) (car decl))
       (receive (body rettype) (extract-rettype (cdr decl))
         (let ((setter (make <cproc>
-                        :scheme-name `(setter ,[~ cproc'scheme-name])
-                        :c-name #`",[~ cproc'c-name]_SETTER"
-                        :proc-name (make-literal (x->string `(setter ,[~ cproc'scheme-name])))
+                        :scheme-name `(setter ,(~ cproc'scheme-name))
+                        :c-name #`",(~ cproc'c-name)_SETTER"
+                        :proc-name (make-literal (x->string `(setter ,(~ cproc'scheme-name))))
                         :args args :return-type rettype
                         :keyword-args keyargs
                         :num-reqargs nreqs
                         :num-optargs nopts
                         :have-rest-arg? rest?
                         :allow-other-keys? other-keys?)))
-          (set! [~ cproc'setter] #`",[~ setter'c-name]__STUB")
+          (set! (~ cproc'setter) #`",(~ setter'c-name)__STUB")
           (process-body setter body)
           (cgen-add! setter))))]))
 
@@ -679,11 +679,11 @@
   (define check-expr (any-pred string? symbol?))
   (define (args)
     (string-join (map (cut ref <> 'c-name)
-                      (append [~ cproc'args] [~ cproc'keyword-args]))
+                      (append (~ cproc'args) (~ cproc'keyword-args)))
                  ", "))
   (define (typed-result rettype c-func-name)
     (push-stmt! cproc "{")
-    (push-stmt! cproc #`",[~ rettype'c-type] SCM_RESULT;")
+    (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
     (push-stmt! cproc #`"SCM_RESULT = ,c-func-name(,(args));")
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
@@ -708,11 +708,10 @@
 
 (define-method process-expr-spec ((cproc <procstub>) form)
   (define (typed-result rettype expr)
-    (let1 expr
-        (if (string? expr) expr
-            (call-with-output-string (cut cise-render expr <> #t)))
+    (let1 expr (if (string? expr) expr
+                   (call-with-output-string (cut cise-render expr <> #t)))
       (push-stmt! cproc "{")
-      (push-stmt! cproc #`",[~ rettype'c-type] SCM_RESULT;")
+      (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
       (push-stmt! cproc #`" SCM_RESULT = (,expr);")
       (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
       (push-stmt! cproc "}")))
@@ -729,20 +728,20 @@
   (match form
     [((decl . handler-stmts) ...)
      ;; push default handlers
-     (push! [~ cproc'c++-handlers]
+     (push! (~ cproc'c++-handlers)
             (list "..."
                   (format "Scm_Error(\"C++ exception is thrown in ~s\");"
-                          [~ cproc'scheme-name])))
-     (push! [~ cproc'c++-handlers]
+                          (~ cproc'scheme-name))))
+     (push! (~ cproc'c++-handlers)
             (list "std::exception& e"
                   (format "Scm_Error(\"~a: %s\", e.what());"
-                          [~ cproc'scheme-name])))
-     (for-each (^(d s) (push! [~ cproc'c++-handlers] (cons d s)))
+                          (~ cproc'scheme-name))))
+     (for-each (^(d s) (push! (~ cproc'c++-handlers) (cons d s)))
                decl handler-stmts)
      ;; if this is the first time, make sure we include <stdexcept>.
-     (unless [~ (cgen-current-unit)'c++-exception-used?]
+     (unless (~ (cgen-current-unit)'c++-exception-used?)
        (cgen-decl "#include <stdexcept>")
-       (set! [~ (cgen-current-unit)'c++-exception-used?] #t))
+       (set! (~ (cgen-current-unit)'c++-exception-used?) #t))
      ]
     [else (error <cgen-stub-error> "malformed 'catch' spec:" form)]))
 
@@ -753,7 +752,7 @@
                         (cise-render-to-string stmt))))
   (define (typed-result rettype stmts)
     (push-stmt! cproc "{")
-    (push-stmt! cproc #`",[~ rettype'c-type] SCM_RESULT;")
+    (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
     (for-each expand-stmt stmts)
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
@@ -761,7 +760,7 @@
     (let1 nrets (length rettypes)
       (for-each-with-index
        (lambda (i rettype)
-         (push-stmt! cproc #`",[~ rettype'c-type] SCM_RESULT,i;"))
+         (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT,i;"))
        rettypes)
       (push-stmt! cproc "{")
       (for-each expand-stmt stmts)
@@ -800,34 +799,37 @@
 ;;;
 
 (define-method cgen-emit-body ((cproc <cproc>))
-  (p "static ScmObj "[~ cproc'c-name]"(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)")
+  (p "static ScmObj "(~ cproc'c-name)"(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)")
   (p "{")
   ;; argument decl
-  (for-each emit-arg-decl [~ cproc'args])
-  (for-each emit-arg-decl [~ cproc'keyword-args])
-  (when (or (> [~ cproc'num-optargs] 0)
-            (not (null? [~ cproc'keyword-args])))
+  (for-each emit-arg-decl (~ cproc'args))
+  (for-each emit-arg-decl (~ cproc'keyword-args))
+  (when (or (> (~ cproc'num-optargs) 0)
+            (not (null? (~ cproc'keyword-args))))
     (p "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
-  (p "  SCM_ENTER_SUBR(\""[~ cproc'scheme-name]"\");")
+  (p "  SCM_ENTER_SUBR(\""(~ cproc'scheme-name)"\");")
   ;; argument count check (for optargs)
-  (when (and (> [~ cproc'num-optargs] 0)
-             (null? [~ cproc'keyword-args])
+  (when (and (> (~ cproc'num-optargs) 0)
+             (null? (~ cproc'keyword-args))
              (not (have-rest-arg? cproc)))
-    (p "  if (Scm_Length(SCM_OPTARGS) > "[~ cproc'num-optargs]")")
-    (p "    Scm_Error(\"too many arguments: up to "(+ [~ cproc'num-reqargs] [~ cproc'num-optargs])" is expected, %d given.\", Scm_Length(SCM_OPTARGS)+"[~ cproc'num-reqargs]");"))
+    (p "  if (Scm_Length(SCM_OPTARGS) > "(~ cproc'num-optargs)")")
+    (p "    Scm_Error(\"too many arguments: up to "
+       (+ (~ cproc'num-reqargs) (~ cproc'num-optargs))
+       " is expected, %d given.\", Scm_Length(SCM_OPTARGS)+"
+       (~ cproc'num-reqargs)");"))
   ;; argument assertions & unbox op.
-  (for-each emit-arg-unbox [~ cproc'args])
-  (unless (null? [~ cproc'keyword-args])
+  (for-each emit-arg-unbox (~ cproc'args))
+  (unless (null? (~ cproc'keyword-args))
     (emit-keyword-args-unbox cproc))
   ;; body
-  (unless (null? [~ cproc'c++-handlers])
+  (unless (null? (~ cproc'c++-handlers))
     (p "try {"))
   (p "  {")
-  (for-each p (reverse [~ cproc'stmts]))
+  (for-each p (reverse (~ cproc'stmts)))
   (p "  }")
-  (unless (null? [~ cproc'c++-handlers])
+  (unless (null? (~ cproc'c++-handlers))
     (p "}")
-    (dolist (h [~ cproc'c++-handlers])
+    (dolist (h (~ cproc'c++-handlers))
       (f "catch (~a) {" (car h))
       (for-each p (cdr h))
       (p "}")))
@@ -836,23 +838,22 @@
   (p)
   ;; emit stub record
   (f "static SCM_DEFINE_SUBR~a(~a, ~a, ~a, ~a, ~a, ~a, NULL);"
-     (if (memq 'fast-flonum [~ cproc'flags]) "I" "")
+     (if (memq 'fast-flonum (~ cproc'flags)) "I" "")
      (c-stub-name cproc)
-     [~ cproc'num-reqargs]
-     (if (or (have-rest-arg? cproc) (> [~ cproc'num-optargs] 0)) 1 0)
-     (cgen-c-name [~ cproc'proc-name])
-     [~ cproc'c-name]
-     (cond ([~ cproc'inline-insn]
-            => (lambda (insn)
-                 (format "SCM_MAKE_INT(SCM_VM_~a)"
-                         (string-tr (x->string insn) "-" "_"))))
-           (else "NULL")))
+     (~ cproc'num-reqargs)
+     (if (or (have-rest-arg? cproc) (> (~ cproc'num-optargs) 0)) 1 0)
+     (cgen-c-name (~ cproc'proc-name))
+     (~ cproc'c-name)
+     (cond [(~ cproc'inline-insn)
+            => (^(insn) (format "SCM_MAKE_INT(SCM_VM_~a)"
+                                (string-tr (x->string insn) "-" "_")))]
+           [else "NULL"]))
   (p))
 
 (define-method cgen-emit-init ((cproc <cproc>))
-  (when (symbol? [~ cproc'scheme-name])
+  (when (symbol? (~ cproc'scheme-name))
     (f "  SCM_DEFINE(mod, ~s, SCM_OBJ(&~a));"
-       (symbol->string [~ cproc'scheme-name])
+       (symbol->string (~ cproc'scheme-name))
        (c-stub-name cproc)))
   (next-method)
   )
@@ -861,68 +862,68 @@
   (define (emit setter-name)
     (f "  Scm_SetterSet(SCM_PROCEDURE(&~a), SCM_PROCEDURE(&~a), TRUE);"
        (c-stub-name cproc) setter-name))
-  (match [~ cproc'setter]
-    ((? string? x) (emit x))
-    ((? symbol? x)
-     (or (and-let* ((setter (find (lambda (z) (eq? [~ z'scheme-name] x))
-                                  (get-stubs <stub>))))
+  (match (~ cproc'setter)
+    [(? string? x) (emit x)]
+    [(? symbol? x)
+     (or (and-let* ([setter (find (lambda (z) (eq? (~ z'scheme-name) x))
+                                  (get-stubs <stub>))])
            (emit (c-stub-name setter)))
          (errorf <cgen-stub-error>
                  "unknown setter name '~a' is used in the definition of '~a'"
-                 x [~ cproc'scheme-name])))
-    (_ #f)))
+                 x (~ cproc'scheme-name)))]
+    [_ #f]))
 
 (define-method emit-arg-decl ((arg <arg>))
-  (p "  ScmObj "[~ arg'scm-name]";")
-  (p "  "[~ arg'type'c-type]" "[~ arg'c-name]";"))
+  (p "  ScmObj "(~ arg'scm-name)";")
+  (p "  "(~ arg'type'c-type)" "(~ arg'c-name)";"))
 
 (define-method emit-arg-decl ((arg <keyword-arg>))
-  (p "  ScmObj "[~ arg'scm-name]" = "(get-arg-default arg)";")
-  (p "  "[~ arg'type'c-type]" "[~ arg'c-name]";"))
+  (p "  ScmObj "(~ arg'scm-name)" = "(get-arg-default arg)";")
+  (p "  "(~ arg'type'c-type)" "(~ arg'c-name)";"))
 
 (define (emit-arg-unbox-rec arg)
-  (let1 pred [~ arg'type'c-predicate]
+  (let1 pred (~ arg'type'c-predicate)
     (when (and pred (not (string-null? pred)))
       (f "  if (!~a) Scm_Error(\"~a required, but got %S\", ~a);"
-         (cgen-pred-expr [~ arg'type] [~ arg'scm-name])
-         [~ arg'type'description] [~ arg'scm-name]))
-    (if [~ arg'type'unboxer]
-      (p "  "[~ arg'c-name]" = "(cgen-unbox-expr [~ arg'type] [~ arg'scm-name])";")
-      (p "  "[~ arg'c-name]" = "[~ arg'scm-name]";"))))
+         (cgen-pred-expr (~ arg'type) (~ arg'scm-name))
+         (~ arg'type'description) (~ arg'scm-name)))
+    (if (~ arg'type'unboxer)
+      (p "  "(~ arg'c-name)" = "(cgen-unbox-expr (~ arg'type) (~ arg'scm-name))";")
+      (p "  "(~ arg'c-name)" = "(~ arg'scm-name)";"))))
 
 (define-method emit-arg-unbox ((arg <required-arg>))
-  (p "  "[~ arg'scm-name]" = SCM_ARGREF("[~ arg'count]");")
+  (p "  "(~ arg'scm-name)" = SCM_ARGREF("(~ arg'count)");")
   (emit-arg-unbox-rec arg))
 
 (define-method emit-arg-unbox ((arg <optional-arg>))
-  (p "  if (SCM_NULLP(SCM_OPTARGS)) "[~ arg'scm-name]" = "(get-arg-default arg)";")
+  (p "  if (SCM_NULLP(SCM_OPTARGS)) "(~ arg'scm-name)" = "(get-arg-default arg)";")
   (p "  else {")
-  (p "    "[~ arg'scm-name]" = SCM_CAR(SCM_OPTARGS);")
+  (p "    "(~ arg'scm-name)" = SCM_CAR(SCM_OPTARGS);")
   (p "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
   (p "  }")
   (emit-arg-unbox-rec arg))
  
 (define-method emit-arg-unbox ((arg <rest-arg>))
-  (f "  ~a = SCM_OPTARGS;" [~ arg'scm-name])
+  (f "  ~a = SCM_OPTARGS;" (~ arg'scm-name))
   (emit-arg-unbox-rec arg))
 
 (define (get-arg-default arg)
-  (cond ([~ arg'default] => cgen-cexpr)
-        (else "SCM_UNBOUND")))
+  (cond [(~ arg'default) => cgen-cexpr]
+        [else "SCM_UNBOUND"]))
  
 (define (emit-keyword-args-unbox cproc)
-  (let ((args [~ cproc'keyword-args])
-        (other-keys? (allow-other-keys? cproc)))
+  (let ([args (~ cproc'keyword-args)]
+        [other-keys? (allow-other-keys? cproc)])
     (p "  if (Scm_Length(SCM_OPTARGS) % 2)")
     (p "    Scm_Error(\"keyword list not even: %S\", SCM_OPTARGS);")
     (p "  while (!SCM_NULLP(SCM_OPTARGS)) {")
     (pair-for-each
      (lambda (args)
-       (let ((arg (car args))
-             (tail? (null? (cdr args))))
+       (let ([arg (car args)]
+             [tail? (null? (cdr args))])
          (f "    if (SCM_EQ(SCM_CAR(SCM_OPTARGS), ~a)) {"
-            (cgen-c-name [~ arg'keyword]))
-         (f "      ~a = SCM_CADR(SCM_OPTARGS);" [~ arg'scm-name])
+            (cgen-c-name (~ arg'keyword)))
+         (f "      ~a = SCM_CADR(SCM_OPTARGS);" (~ arg'scm-name))
          (if tail?
            (p "    }")
            (p "    } else "))))
@@ -948,16 +949,16 @@
    ))
 
 (define-method c-stub-name ((self <cgeneric>))
-  [~ self'c-name])
+  (~ self'c-name))
 
 (define-method cgen-emit-body ((self <cgeneric>))
   (unless (extern? self) (p "static "))
-  (p "SCM_DEFINE_GENERIC("[~ self'c-name]", "[~ self'fallback]", NULL);")
+  (p "SCM_DEFINE_GENERIC("(~ self'c-name)", "(~ self'fallback)", NULL);")
   (p))
 
 (define-method cgen-emit-init ((self <cgeneric>))
   (f "  Scm_InitBuiltinGeneric(&~a, ~s, mod);"
-     [~ self'c-name] (symbol->string [~ self'scheme-name]))
+     (~ self'c-name) (symbol->string (~ self'scheme-name)))
   (next-method))
 
 (define-form-parser define-cgeneric (scheme-name c-name . body)
@@ -966,7 +967,7 @@
   (let ((gf (make <cgeneric> :scheme-name scheme-name :c-name c-name)))
     (for-each (^.[('extern) (set! [~ gf'extern?] #t)]
                  [('fallback (? string? fallback))
-                  (set! [~ gf'fallback] (cadr form))]
+                  (set! (~ gf'fallback) (cadr form))]
                  [('setter . spec) (process-setter gf spec)]
                  [form (error <cgen-stub-error> "bad gf form:" form)])
               body)
@@ -974,11 +975,11 @@
 
 (define-method process-setter ((gf <cgeneric>) decl)
   (if (symbol? (car decl))
-    (set! [~ gf'setter] (car decl))
+    (set! (~ gf'setter) (car decl))
     (error <cgen-stub-error> "bad form of anonymous setter:" `(setter ,@decl))))
 
 (define (get-c-generic-name name)
-  (cond [(find (^(x) (eq? [~ x'scheme-name] name)) (get-stubs <cgeneric>))
+  (cond [(find (^(x) (eq? (~ x'scheme-name) name)) (get-stubs <cgeneric>))
          => (cut ref <> 'c-name)]
         [else #f]))
 
@@ -1003,7 +1004,7 @@
     (receive (body rettype) (extract-rettype body)
       (let ([method (make <cmethod>
                       :scheme-name scheme-name
-                      :c-name (get-c-name [~(cgen-current-unit)'c-name-prefix]
+                      :c-name (get-c-name (~(cgen-current-unit)'c-name-prefix)
                                           (gensym (x->string scheme-name)))
                       :return-type rettype
                       :specializers specializers
@@ -1019,7 +1020,7 @@
              (unless (string? gen-name)
                (error <cgen-stub-error>
                       "c-generic-name requires a string:" gen-name))
-             (set! [~ method'c-generic] gen-name)
+             (set! (~ method'c-generic) gen-name)
              (loop r)]
             [(('body . spec) . r) (process-body-spec method spec) (loop r)]
             [(('call . spec) . r) (process-call-spec method spec) (loop r)]
@@ -1028,14 +1029,14 @@
              (for-each (cut push-stmt! method <>) stmts)
              (loop r)]
             [([? symbol? s]) ; 'call' convention
-             (let* ([args (map (cut ref <> 'name) [~ method'args])]
-                    [form (if (eq? [~ cproc'return-type] '<void>)
+             (let* ([args (map (cut ref <> 'name) (~ method'args))]
+                    [form (if (eq? (~ cproc'return-type) '<void>)
                             `((,s ,@args))
                             `((result (,s ,@args))))]))
-             (process-body-inner method [~ method'return-type] form)]
-            [_ (process-body-inner method [~ method'return-type] body)]))
-        (unless [~ method'c-generic]
-          (set! [~ method'c-generic]
+             (process-body-inner method (~ method'return-type) form)]
+            [_ (process-body-inner method (~ method'return-type) body)]))
+        (unless (~ method'c-generic)
+          (set! (~ method'c-generic)
                 (or (get-c-generic-name scheme-name)
                     (error <cgen-stub-error>
                            "method can't find C name of the generic function:"
@@ -1045,31 +1046,31 @@
 
 (define-method cgen-emit-body ((method <cmethod>))
   (f "static ScmObj ~a(ScmNextMethod *nm_, ScmObj *SCM_FP, int SCM_ARGCNT, void *d_)"
-     [~ method'c-name])
+     (~ method'c-name))
   (p "{")
-  (for-each emit-arg-decl [~ method'args])
+  (for-each emit-arg-decl (~ method'args))
   (when (have-rest-arg? method)
     (p "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
-  (for-each emit-arg-unbox [~ method'args])
+  (for-each emit-arg-unbox (~ method'args))
   ;; body
   (p "  {")
-  (for-each p (reverse [~ method'stmts]))
+  (for-each p (reverse (~ method'stmts)))
   (p "  }")
   (p "}")
   (p "")
-  (p "static ScmClass *"[~ method'c-name]"__SPEC[] = { ")
+  (p "static ScmClass *"(~ method'c-name)"__SPEC[] = { ")
   (for-each (lambda (spec) (p "SCM_CLASS_STATIC_PTR("spec"), "))
-            (reverse [~ method'specializers]))
+            (reverse (~ method'specializers)))
   (p "};")
   (f "static SCM_DEFINE_METHOD(~a__STUB, &~a, ~a, ~a, ~a__SPEC, ~:*~a, NULL);"
-     [~ method'c-name] [~ method'c-generic]
-     [~ method'num-reqargs] (if (have-rest-arg? method) "1" "0")
-     [~ method'c-name])
+     (~ method'c-name) (~ method'c-generic)
+     (~ method'num-reqargs) (if (have-rest-arg? method) "1" "0")
+     (~ method'c-name))
   (p "")
   )
 
 (define-method cgen-emit-init ((method <cmethod>))
-  (f "  Scm_InitBuiltinMethod(&~a__STUB);" [~ method'c-name]))
+  (f "  Scm_InitBuiltinMethod(&~a__STUB);" (~ method'c-name)))
 
 ;; returns four values: args, specializers, numreqargs, have-optarg?
 (define (parse-specialized-args arglist)
@@ -1167,9 +1168,9 @@
 
 (define-method initialize ((self <cclass>) initargs)
   (next-method)
-  (unless (cgen-type-from-name [~ self'scheme-name])
+  (unless (cgen-type-from-name (~ self'scheme-name))
     (cgen-stub-parse-form
-     `(define-type ,[~ self'scheme-name] ,[~ self'c-type])))
+     `(define-type ,(~ self'scheme-name) ,(~ self'c-type))))
   )
 
 (define-class <cslot> ()
@@ -1201,72 +1202,72 @@
                         :qualifiers quals
                         :cpa cpa :direct-supers dsupers
                         :allocator allocator :printer printer)))
-         (set! [~ cclass'slot-spec] (process-cclass-slots cclass slot-spec))
+         (set! (~ cclass'slot-spec) (process-cclass-slots cclass slot-spec))
          (cgen-add! cclass))])))
 
 (define-method c-printer-name ((self <cclass>))
-  (let1 printer [~ self'printer]
+  (let1 printer (~ self'printer)
     (cond [(c-literal-expr printer)]
           [(not printer) "NULL"]
-          [else #`",[~ self'c-name]_PRINT"])))
+          [else #`",(~ self'c-name)_PRINT"])))
 
 (define-method c-allocator-name ((self <cclass>))
-  (let1 allocator [~ self'allocator]
+  (let1 allocator (~ self'allocator)
     (cond [(c-literal-expr allocator)]
           [(not allocator) "NULL"]
-          [else #`",[~ self'c-name]_ALLOCATE"])))
+          [else #`",(~ self'c-name)_ALLOCATE"])))
 
 (define-method c-slot-spec-name ((self <cclass>))
-  (if (null? [~ self'slot-spec])
+  (if (null? (~ self'slot-spec))
     "NULL"
-    #`",[~ self'c-name]__SLOTS"))
+    #`",(~ self'c-name)__SLOTS"))
 
 (define (cclass-emit-standard-decls self)
-  (let ((type (cgen-type-from-name [~ self'scheme-name])))
-    (p "SCM_CLASS_DECL("[~ self'c-name]");")
-    (p "#define "[~ type'unboxer]"(obj) (("[~ self'c-type]")obj)")
-    (p "#define "[~ type'c-predicate]"(obj) SCM_XTYPEP(obj, (&"[~ self'c-name]"))")
+  (let ((type (cgen-type-from-name (~ self'scheme-name))))
+    (p "SCM_CLASS_DECL("(~ self'c-name)");")
+    (p "#define "(~ type'unboxer)"(obj) (("(~ self'c-type)")obj)")
+    (p "#define "(~ type'c-predicate)"(obj) SCM_XTYPEP(obj, (&"(~ self'c-name)"))")
     ))
 
 (define-method cgen-emit-body ((self <cclass>))
-  (when (memv :private [~ self'qualifiers])
+  (when (memv :private (~ self'qualifiers))
     (cclass-emit-standard-decls self))
-  (unless ((any-pred not c-literal?) [~ self'allocator])
+  (unless ((any-pred not c-literal?) (~ self'allocator))
     (p "static ScmObj "(c-allocator-name self)"(ScmClass *klass, ScmObj initargs)")
     (p "{")
-    (p (c-code [~ self'allocator]))
+    (p (c-code (~ self'allocator)))
     (p "}")
     (p ""))
-  (unless ((any-pred not c-literal?) [~ self'printer])
+  (unless ((any-pred not c-literal?) (~ self'printer))
     (p "static void "(c-printer-name self)"(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)")
     (p "{")
-    (p (c-code [~ self'printer]))
+    (p (c-code (~ self'printer)))
     (p "}")
     (p ""))
   (emit-cpa self)
-  (if (memv :base [~ self'qualifiers])
-    (let1 c-type (string-trim-right [~ self'c-type])
+  (if (memv :base (~ self'qualifiers))
+    (let1 c-type (string-trim-right (~ self'c-type))
       (unless (string-suffix? "*" c-type)
         (errorf <cgen-stub-error> "can't use C-type ~s as a base class; C-type must be a pointer type" c-type))
       (let1 c-instance-type (string-drop-right c-type 1)
-        (p "SCM_DEFINE_BASE_CLASS("[~ self'c-name]", "c-instance-type", "(c-printer-name self)", NULL, NULL, "(c-allocator-name self)", "(cpa-name self)");")))
-    (p "SCM_DEFINE_BUILTIN_CLASS("[~ self'c-name]", "(c-printer-name self)", NULL, NULL, "(c-allocator-name self)", "(cpa-name self)");"))
+        (p "SCM_DEFINE_BASE_CLASS("(~ self'c-name)", "c-instance-type", "(c-printer-name self)", NULL, NULL, "(c-allocator-name self)", "(cpa-name self)");")))
+    (p "SCM_DEFINE_BUILTIN_CLASS("(~ self'c-name)", "(c-printer-name self)", NULL, NULL, "(c-allocator-name self)", "(cpa-name self)");"))
   (p "")
-  (when (pair? [~ self'slot-spec])
-    (for-each emit-getter-n-setter [~ self'slot-spec])
+  (when (pair? (~ self'slot-spec))
+    (for-each emit-getter-n-setter (~ self'slot-spec))
     (p "static ScmClassStaticSlotSpec "(c-slot-spec-name self)"[] = {")
-    (for-each emit-spec-definition [~ self'slot-spec])
+    (for-each emit-spec-definition (~ self'slot-spec))
     (p "  SCM_CLASS_SLOT_SPEC_END()")
     (p "};")
     (p))
   )
 
 (define-method cgen-emit-init ((self <cclass>))
-  (p "  Scm_InitBuiltinClass(&"[~ self'c-name]", \""[~ self'scheme-name]"\", "(c-slot-spec-name self)", TRUE, mod);")
+  (p "  Scm_InitBuiltinClass(&"(~ self'c-name)", \""(~ self'scheme-name)"\", "(c-slot-spec-name self)", TRUE, mod);")
   ;; adjust direct-supers if necessary
-  (let1 ds [~ self'direct-supers]
+  (let1 ds (~ self'direct-supers)
     (when (not (null? ds))
-      (p "  "[~ self'c-name]".directSupers = Scm_List(")
+      (p "  "(~ self'c-name)".directSupers = Scm_List(")
       (for-each (lambda (s) (p "SCM_OBJ(&"s"), ")) ds)
       (p " NULL);")
       (p))))
@@ -1275,14 +1276,14 @@
 ;;  For now, cpa should be a list of C class names, or c literal
 
 (define-method cpa-name ((self <cclass>))
-  (cond [(null? [~ self'cpa]) "SCM_CLASS_DEFAULT_CPL"]
-        [(c-literal-expr [~ self'cpa])]
-        [else #`",[~ self'c-name]_CPL"]))
+  (cond [(null? (~ self'cpa)) "SCM_CLASS_DEFAULT_CPL"]
+        [(c-literal-expr (~ self'cpa))]
+        [else #`",(~ self'c-name)_CPL"]))
 
 (define-method emit-cpa ((self <cclass>))
-  (let1 cpa [~ self'cpa]
+  (let1 cpa (~ self'cpa)
     (unless (or (null? cpa) (c-literal? cpa))
-      (p "static ScmClass *"[~ self'c-name]"_CPL[] = {")
+      (p "static ScmClass *"(~ self'c-name)"_CPL[] = {")
       (for-each (lambda (class) (p "  SCM_CLASS_STATIC_PTR("class"),")) cpa)
       (unless (equal? (car (last-pair cpa)) "Scm_TopClass")
         (p "  SCM_CLASS_STATIC_PTR(Scm_TopClass),"))
@@ -1307,58 +1308,58 @@
        slot-spec))
 
 (define-method slot-getter-name ((slot <cslot>))
-  (let1 getter [~ slot'getter]
+  (let1 getter (~ slot'getter)
     (or
      (c-literal-expr getter)
-     #`",[~ slot'cclass'c-name]_,(get-c-name \"\" [~ slot'scheme-name])_GET")))
+     #`",(~ slot'cclass'c-name)_,(get-c-name \"\" (~ slot'scheme-name))_GET")))
 
 (define-method slot-setter-name ((slot <cslot>))
-  (let1 setter [~ slot'setter]
+  (let1 setter (~ slot'setter)
     (cond [(c-literal-expr setter)]
           [(not setter) "NULL"]
-          [else #`",[~ slot'cclass'c-name]_,(get-c-name \"\" [~ slot'scheme-name])_SET"])))
+          [else #`",(~ slot'cclass'c-name)_,(get-c-name \"\" (~ slot'scheme-name))_SET"])))
 
 (define-method emit-getter-n-setter ((slot <cslot>))
-  (unless (c-literal? [~ slot'getter]) (emit-getter slot))
-  (when (and [~ slot'setter] (not (c-literal? [~ slot'setter])))
+  (unless (c-literal? (~ slot'getter)) (emit-getter slot))
+  (when (and (~ slot'setter) (not (c-literal? (~ slot'setter))))
     (emit-setter slot)))
 
 (define-method emit-getter ((slot <cslot>))
-  (let* ((type  [~ slot'type])
-         (class [~ slot'cclass])
-         (class-type (name->type [~ class'scheme-name])))
+  (let* ([type  (~ slot'type)]
+         [class (~ slot'cclass)]
+         [class-type (name->type (~ class'scheme-name))])
     (p "static ScmObj "(slot-getter-name slot)"(ScmObj OBJARG)")
     (p "{")
-    (p "  "[~ class-type'c-type]" obj = "(cgen-unbox-expr class-type "OBJARG")";")
-    (cond ((string? [~ slot'getter]) (p [~ slot'getter]))
-          ((string? [~ slot'c-spec])
-           (f "  return ~a;" (cgen-box-expr type [~ slot'c-spec])))
-          (else
-           (f "  return ~a;" (cgen-box-expr type #`"obj->,[~ slot'c-name]"))))
+    (p "  "(~ class-type'c-type)" obj = "(cgen-unbox-expr class-type "OBJARG")";")
+    (cond [(string? (~ slot'getter)) (p (~ slot'getter))]
+          [(string? (~ slot'c-spec))
+           (f "  return ~a;" (cgen-box-expr type (~ slot'c-spec)))]
+          [else
+           (f "  return ~a;" (cgen-box-expr type #`"obj->,(~ slot'c-name)"))])
     (p "}")
     (p "")))
 
 (define-method emit-setter ((slot <cslot>))
-  (let* ((type [~ slot'type])
-         (class [~ slot'cclass])
-         (class-type (name->type [~ class'scheme-name])))
+  (let* ([type (~ slot'type)]
+         [class (~ slot'cclass)]
+         [class-type (name->type (~ class'scheme-name))])
     (p "static void "(slot-setter-name slot)"(ScmObj OBJARG, ScmObj value)")
     (p "{")
-    (p "  "[~ class-type'c-type]" obj = "(cgen-unbox-expr class-type "OBJARG")";")
-    (if (string? [~ slot'setter])
-      (p [~ slot'setter])
+    (p "  "(~ class-type'c-type)" obj = "(cgen-unbox-expr class-type "OBJARG")";")
+    (if (string? (~ slot'setter))
+      (p (~ slot'setter))
       (begin
         (unless (eq? type *scm-type*)
           (f "  if (!~a(value)) Scm_Error(\"~a required, but got %S\", value);"
-             [~ type'c-predicate] [~ type'c-type]))
-        (if [~ slot'c-spec]
-          (f "  ~a = ~a;" [~ slot'c-spec] (cgen-unbox-expr type "value"))
-          (f "  obj->~a = ~a;" [~ slot'c-name] (cgen-unbox-expr type "value")))))
+             (~ type'c-predicate) (~ type'c-type)))
+        (if (~ slot'c-spec)
+          (f "  ~a = ~a;" (~ slot'c-spec) (cgen-unbox-expr type "value"))
+          (f "  obj->~a = ~a;" (~ slot'c-name) (cgen-unbox-expr type "value")))))
     (p "}")
     (p "")))
 
 (define-method emit-spec-definition ((slot <cslot>))
-  (p "  SCM_CLASS_SLOT_SPEC(\""[~ slot'scheme-name]"\", "(slot-getter-name slot)", "(slot-setter-name slot)"),"))
+  (p "  SCM_CLASS_SLOT_SPEC(\""(~ slot'scheme-name)"\", "(slot-getter-name slot)", "(slot-setter-name slot)"),"))
 
 ;;===================================================================
 ;; Miscellaneous utilities
@@ -1425,8 +1426,8 @@
   (for-each cgen-stub-parse-form forms))
 
 (define-form-parser eval* exprs
-  (let* ((m [~ (cgen-current-unit)'temporary-module])
-         (r (fold (lambda (f r) (eval f m)) #f exprs)))
+  (let* ([m (~ (cgen-current-unit)'temporary-module)]
+         [r (fold (lambda (f r) (eval f m)) #f exprs)])
     (when (or (pair? r) (string? r))
       (cgen-stub-parse-form r))))
 

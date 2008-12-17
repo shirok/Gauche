@@ -41,6 +41,7 @@
   (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.experimental.ref)
+  (use gauche.experimental.lamb)
   (export <cgen-unit> cgen-current-unit
           cgen-unit-c-file cgen-unit-init-name cgen-unit-h-file
           cgen-unit-toplevel-nodes cgen-add!
@@ -85,18 +86,18 @@
 (define cgen-current-unit (make-parameter #f))
 
 (define-method cgen-unit-c-file ((unit <cgen-unit>))
-  (or [~ unit'c-file]
-      #`",[~ unit 'name].c"))
+  (or (~ unit'c-file)
+      #`",(~ unit 'name).c"))
 
 (define-method cgen-unit-init-name ((unit <cgen-unit>))
   (format "Scm__Init_~a"
-          (or [~ unit'init-name] (cgen-safe-name [~ unit'name]))))
+          (or (~ unit'init-name) (cgen-safe-name (~ unit'name)))))
 
 (define-method cgen-unit-h-file ((unit <cgen-unit>))
-  [~ unit'h-file])
+  (~ unit'h-file))
 
 (define-method cgen-unit-toplevel-nodes ((unit <cgen-unit>))
-  [~ unit'toplevels])
+  (~ unit'toplevels))
 
 (define (cgen-add! node)
   (and-let* ((unit (cgen-current-unit)))
@@ -110,31 +111,31 @@
         (hash-table-put! context node #t)
         (cgen-node-traverse node walker)
         (cgen-emit node part)))
-    (for-each walker (reverse [~ unit'toplevels]))))
+    (for-each walker (reverse (~ unit'toplevels)))))
 
 (define-method cgen-emit-h ((unit <cgen-unit>))
-  (and-let* ((h-file (cgen-unit-h-file unit)))
+  (and-let* ([h-file (cgen-unit-h-file unit)])
     (cgen-with-output-file h-file
       (lambda ()
-        (cond ([~ unit'preamble] => emit-raw))
+        (cond [(~ unit'preamble) => emit-raw])
         (cgen-emit-part unit 'extern)))))
 
 (define-method cgen-emit-c ((unit <cgen-unit>))
   (cgen-with-output-file (cgen-unit-c-file unit)
     (lambda ()
-      (cond ([~ unit'preamble] => emit-raw))
-      (cond ([~ unit'pre-decl] => emit-raw))
+      (cond [(~ unit'preamble) => emit-raw])
+      (cond [(~ unit'pre-decl) => emit-raw])
       (print "#include <gauche.h>")
       (cgen-emit-part unit 'decl)
       (cgen-emit-static-data unit)
       (cgen-emit-part unit 'body)
-      (cond ([~ unit'init-prologue] => emit-raw)
-            (else
-             (print "Scm__Init_"(cgen-safe-name [~ unit'name])"(void)")
-             (print "{")))
+      (cond [(~ unit'init-prologue) => emit-raw]
+            [else
+             (print "Scm__Init_"(cgen-safe-name (~ unit'name))"(void)")
+             (print "{")])
       (cgen-emit-part unit 'init)
-      (cond ([~ unit'init-epilogue] => emit-raw)
-            (else (print "}")))
+      (cond [(~ unit'init-epilogue) => emit-raw]
+            [else (print "}")])
       )))
 
 ;; NB: temporary solution for inter-module dependency.
@@ -176,25 +177,24 @@
 (define-method cgen-emit ((node <cgen-node>) part)
   ;; A kludge for emitting cpp-condition only when necessary.
   (define (method-overridden? gf)
-    (and-let* ((meths (compute-applicable-methods gf (list node)))
-               ( (not (null? meths)) ))
-      (match [~ (car meths)'specializers]
-        (((? (cut eq? <> <cgen-node>))) #f)
-        (_ #t))))
+    (and-let* ([meths (compute-applicable-methods gf (list node))]
+               [ (not (null? meths)) ])
+      (match (~ (car meths)'specializers)
+        [((? (cut eq? <> <cgen-node>))) #f]
+        [_ #t])))
   (define (with-cpp-condition gf)
-    (cond ([~ node'cpp-condition]
-           => (lambda (cppc)
-                (cond ((method-overridden? gf)
-                       (print "#if "cppc)
-                       (gf node)
-                       (print "#endif /* "cppc" */"))
-                      (else (gf node)))))
-          (else (gf node))))
+    (cond [(~ node'cpp-condition)
+           => (^(cppc) (cond [(method-overridden? gf)
+                              (print "#if "cppc)
+                              (gf node)
+                              (print "#endif /* "cppc" */")]
+                             [else (gf node)]))]
+          [else (gf node)]))
   (case part
-    ((extern) (with-cpp-condition cgen-emit-xtrn))
-    ((decl)   (with-cpp-condition cgen-emit-decl))
-    ((body)   (with-cpp-condition cgen-emit-body))
-    ((init)   (with-cpp-condition cgen-emit-init))))
+    [(extern) (with-cpp-condition cgen-emit-xtrn)]
+    [(decl)   (with-cpp-condition cgen-emit-decl)]
+    [(body)   (with-cpp-condition cgen-emit-body)]
+    [(init)   (with-cpp-condition cgen-emit-init)]))
 
 ;;=============================================================
 ;; Raw nodes - can be used to insert a raw piece of code
@@ -203,22 +203,22 @@
 (define-class <cgen-raw-xtrn> (<cgen-node>)
   ((code  :init-keyword :code :init-value "")))
 (define-method cgen-emit-xtrn ((node <cgen-raw-xtrn>))
-  (emit-raw [~ node'code]))
+  (emit-raw (~ node'code)))
 
 (define-class <cgen-raw-decl> (<cgen-node>)
   ((code  :init-keyword :code :init-value "")))
 (define-method cgen-emit-decl ((node <cgen-raw-decl>))
-  (emit-raw [~ node'code]))
+  (emit-raw (~ node'code)))
 
 (define-class <cgen-raw-body> (<cgen-node>)
   ((code  :init-keyword :code :init-value "")))
 (define-method cgen-emit-body ((node <cgen-raw-body>))
-  (emit-raw [~ node'code]))
+  (emit-raw (~ node'code)))
 
 (define-class <cgen-raw-init> (<cgen-node>)
   ((code  :init-keyword :code :init-value "")))
 (define-method cgen-emit-init ((node <cgen-raw-init>))
-  (emit-raw [~ node'code]))
+  (emit-raw (~ node'code)))
 
 
 (define (cgen-extern . code)
@@ -243,9 +243,9 @@
 
 (define (include-common node)
   (print "#include "
-         (if (string-prefix? "<" [~ node'path])
-           [~ node'path]
-           #`"\",[~ node'path]\"")))
+         (if (string-prefix? "<" (~ node'path))
+           (~ node'path)
+           #`"\",(~ node'path)\"")))
 
 (define-method cgen-emit-xtrn ((node <cgen-include>))
   (include-common node))
@@ -262,7 +262,7 @@
    ))
 
 (define (cpp-define-common node)
-  (print "#define "[~ node'name]" "[~ node'value]))
+  (print "#define "(~ node'name)" "(~ node'value)))
 
 (define-method cgen-emit-xtrn ((node <cgen-cpp-define>))
   (cpp-define-common node))

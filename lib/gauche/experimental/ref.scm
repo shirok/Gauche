@@ -7,9 +7,9 @@
 (select-module gauche.experimental.ref)
 
 ;; A small experiment to see how I feel this...
-;;  [~ a b c d] => (ref (ref (ref a b) c) d)
+;;  (~ a b c d) => (ref (ref (ref a b) c) d)
 ;; Ideally this should be a compiler-macro (we can't make it a macro,
-;; for we want to say (set! [~ x'y] val).
+;; for we want to say (set! (~ x'y) val).
 (define ~
   (getter-with-setter
    (case-lambda
