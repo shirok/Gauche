@@ -22,21 +22,21 @@
     ))
 
 (define (main args)
-  (parameterize ((cgen-current-unit *unit*))
+  (parameterize ([cgen-current-unit *unit*])
 
     (cgen-extern "SCM_EXTERN ScmSymbol Scm_BuiltinSymbols[];")
     (cgen-body "ScmSymbol Scm_BuiltinSymbols[] = {")
-    (cgen-body "#define ENTRY(s) \\"
-               "  {{ SCM_CLASS_STATIC_TAG(Scm_SymbolClass) }, \\"
-               "     SCM_STRING(s) }")
-    (cgen-init "#define INTERN(s, i) \\"
-               "Scm_HashTablePut(obtable, s, SCM_OBJ(&Scm_BuiltinSymbols[i]))")
+    (cgen-body "#define ENTRY(s) \
+                  {{ SCM_CLASS_STATIC_TAG(Scm_SymbolClass) }, \
+                   SCM_STRING(s) }")
+    (cgen-init "#define INTERN(s, i) \
+                  Scm_HashTablePut(obtable, s, SCM_OBJ(&Scm_BuiltinSymbols[i]))")
     
     (for-each-with-index
      (lambda (index entry)
-       (let* ((str (cgen-literal (symbol->string (car entry))))
-              (strref (cgen-cexpr str))
-              (macro-name (cadr entry)))
+       (let* ([str (cgen-literal (symbol->string (car entry)))]
+              [strref (cgen-cexpr str)]
+              [macro-name (cadr entry)])
          (cgen-extern (format "#define ~a SCM_OBJ(&Scm_BuiltinSymbols[~a])"
                               macro-name index))
          (cgen-body (format "ENTRY(~a)," strref))
