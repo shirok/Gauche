@@ -4,7 +4,6 @@
                       Compiling and Installing Gauche
 @c COMMON
 
-$Id: INSTALL.in,v 1.3 2007-03-16 09:21:28 shirok Exp $
 @c JP
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:
@@ -22,8 +21,7 @@ Quick Start
 @c COMMON
 ---------------------------------------------------
 
-
-   % ./configure [--enable-threads=pthreads]
+   % ./configure
    % make
    % make test
    % make install
@@ -31,35 +29,69 @@ Quick Start
 @c JP
 これで、Gaucheシステムが /usr/local/bin, /usr/local/lib/gauche及び
 /usr/local/share/gauche以下にインストールされます。
-マルチスレッドサポートを使うためにはconfigureに--enable-threads=pthreadsを
-渡して下さい。このオプションはいくつかのプラットフォームでサポートされています。
 @c EN
 Things will be installed under /usr/local/bin, /usr/local/lib/gauche,
 and /usr/local/share/gauche.
-If you want to use multithread support, pass --enable-threads=pthreads
-option to configure.  It is supported on several platforms.
 @c COMMON
 
 @c JP
-既にGauche 0.5以降がインストールされているシステムで、
+既にGaucheがインストールされているシステムで、
 全く同じconfigurationオプションで新しいバージョンのGaucheをインストール
 する場合、'configure' の代わりに次のコマンドを使うこともできます。
 @c EN
-If you have installed Gauche 0.5 or later, and want to install
+If you have installed Gauche before, and want to install
 new version of Gauche with the same configuration option,
 you can use the following command instead of 'configure'.
 @c COMMON
+
     % gauche-config --reconfigure | sh
+
 @c JP
 '--reconfigure' オプションが与えられると、gauche-configは現在
 インストールされているGaucheがconfigureされた時のコマンドラインを
 標準出力に書き出します。それをシェルに評価させれば、同じオプションで
-configureすることができます。
+configureすることができます。Gaucheをアップデートする場合に便利です。
 @c EN
 When the option '--reconfigure' is given, Gauche-config prints out
 the command line when it is configured.   Pass the output to
-shell and you can reconfigure with the same options.
+shell and you can reconfigure with the same options.  It is a
+convenient way to update Gauche.
 @c COMMON
+
+
+@c JP
+スレッドサポート
+@c EN
+Thread Support
+@c COMMON
+---------------------------------------------------
+
+@c JP
+ポピュラーなUnix系OSの多くで、Gaucheはネイティブスレッドをサポートします。
+スレッドが使用可能かどうかはconfigure時に自動判定されます。
+スレッドサポートが有効かどうかはconfigureスクリプトの出力の最後に表示されます。
+@c EN
+On most of popular unix variants, Gauche supports native threads.
+The configure script tries to determine automatically whether thread support 
+can be enabled or not.  It shows at the end of the output whether
+the support is enabled.
+@c COMMON
+
+@c JP
+何らかの理由で、スレッドサポートが可能なプラットフォームでそれを無効にしたい場合、
+あるいは本来可能であるはずなのにconfigureスクリプトが判定を間違えて有効になっていない
+場合には、次のconfigureオプションで強制的にスレッドサポートの有効/無効を
+切り替えることができます。
+@c EN
+If you want to turn off the thread support even when the platform
+allows it for some reason, or if the configure script misrecognizes the platform
+and does not enable the support when it should be, you can use 
+the following configure options to turn off or turn on the support
+explicitly.
+@c COMMON
+
+  ./configure --enable-threads=none     ;; turn off the thread support
+  ./configure --enable-threads=pthreads ;; turn on the thread support
 
 
 @c JP
@@ -68,7 +100,6 @@ shell and you can reconfigure with the same options.
 Choosing Character Encoding
 @c COMMON
 ---------------------------------------------------
-
 
 @c JP
 デフォルトでは、Gaucheは内部文字エンコーディングとしてutf-8を使います。
@@ -132,7 +163,6 @@ Local library paths
 @c COMMON
 ---------------------------------------------------
 
-
 @c JP
 Gaucheのビルドに、標準でない場所にインストールされているライブラリを
 使用したい場合、次のオプションでその場所を指定することができます。
@@ -170,7 +200,6 @@ IPv6 support
 @c COMMON
 ---------------------------------------------------
 
-
 @c JP
 Gaucheは実験的にIPv6をサポートしています。デフォルトではこの機能はoffに
 なっていますが、次のconfigureオプションで有効にすることができます。
@@ -184,11 +213,11 @@ but you can include it by giving the following configure option.
 
 @c JP
 もちろん、OSでIPv6がサポートされていなければなりません。
-現在の実装はFreeBSD上でテストされています。
+現在の実装はFreeBSDおよびLinux上でテストされています。
 詳しい機能はリファレンスマニュアルのgauche.netの項を参照して下さい。
 @c EN
 Of course your OS has to have the support of IPv6.
-The current implementation is tested on FreeBSD.
+The current implementation is tested on FreeBSD and Linux.
 See the gauche.net section of the reference manual for details.
 @c COMMON
 
@@ -199,7 +228,6 @@ SLIBの場所
 Selecting SLIB location
 @c COMMON
 ---------------------------------------------------
-
 
 @c JP
 SLIBは、ポータブルなSchemeライブラリで、いろいろ便利な機能が
@@ -268,7 +296,6 @@ Run-time library path
 @c COMMON
 ---------------------------------------------------
 
-
 @c JP
 しばしば、環境のコントロールができない箇所でGaucheを走らせなければならない
 場合があります。例えばCGIスクリプトをISPのサーバーで走らせる場合などです。
@@ -319,7 +346,6 @@ are looked from DIR.   This works only on gcc, however.
 Customizing install location
 @c COMMON
 ---------------------------------------------------
-
 
 @c JP
 次のようにconfigureスクリプトを起動することにより、インストール先の
@@ -426,7 +452,6 @@ options, just run 'make' as follows:
 Uninstallation
 @c COMMON
 ---------------------------------------------------
-
 
 @c JP
 インストールされたGaucheソフトウェアを取り除くには、ソースツリーのトップ

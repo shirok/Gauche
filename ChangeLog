@@ -1,5 +1,7 @@
 2008-12-20  Shiro Kawai  <shiro@acm.org>
 
+	* INSTALL.in: Updated some instructions.
+
 	* src/geninsn, lib/gauche/vm/insn-core.scm: Allow :obsoleted flag
 	  in the insturction definition to suppress emission of the particular
 	  combined instructions.  It is a step before removing them
