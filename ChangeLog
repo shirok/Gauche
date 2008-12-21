@@ -1,3 +1,13 @@
+2008-12-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/geninsn, lib/gauche/vm/insn-core.scm: Allow :obsoleted flag
+	  in the insturction definition to suppress emission of the particular
+	  combined instructions.  It is a step before removing them
+	  (we can't just remove them from vminsn.scm, since the current
+	  release of Gauche would generate them when compiling the trunk
+	  code, and the trunk VM must be able to execute them).
+	* src/vminsn.scm: Add :obsoleted flag to LREF0-PUSH-GREF-* insns.
+
 2008-12-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/geninsn (construct-vmbody): Fixed handling of insns that combine
