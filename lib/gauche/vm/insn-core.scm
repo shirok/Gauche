@@ -55,6 +55,7 @@
    (operand-type :init-keyword :operand-type) ; operand type
    (combined :init-keyword :combined)     ; combined insns
    (body   :init-keyword :body)           ; body of the insn
+   (obsoleted :init-keyword :obsoleted)   ; is this insn fading out?
 
    (base-variant :init-form #f)           ; 'base' variant of this insn
    (push-variant :init-form #f)           ; 'push' variant of this insn

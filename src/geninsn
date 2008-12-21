@@ -96,6 +96,7 @@
             (~ insn'name) (~ insn'code))
     (format #t "  :num-params ~a :operand-type '~a\n"
             (~ insn'num-params) (~ insn'operand-type))
+    (format #t "  :obsoleted ~s\n" (~ insn'obsoleted))
     (format #t "  :combined '~s\n" (~ insn'combined))
     (format #t "  :body '~s)\n\n" (~ insn'body)))
   (with-output-to-file "../lib/gauche/vm/insn.scm"
@@ -108,7 +109,7 @@
   )
 
 ;;=============================================================
-;; Generate VM inner loop (unfinished)
+;; Generate VM inner loop
 ;;
 
 ;; These parameters are used by the cise expander defined in
@@ -134,31 +135,25 @@
     (rxmatch-let (#/LREF(\d)?(\d)/ (x->string lrefx))
       (#f dep off)
       `(lref ,(x->integer dep) ,(x->integer off))))
-  (define (render cise)
-    (cgen-body #`"{,(cise->string cise)}"))
+  (define (render cise) (cgen-body #`"{,(cise->string cise)}") #t)
   (define (do-combined orig comb)
     (match comb
       [(base 'PUSH)
        (and-let* ([cise (base-cise base)])
-         (parameterize ([result-type 'push]) (render cise))
-         #t)]
+         (parameterize ([result-type 'push]) (render cise)))]
       [(base 'RET)
        (and-let* ([cise (base-cise base)])
-         (parameterize ([result-type 'ret]) (render cise))
-         #t)]
+         (parameterize ([result-type 'ret]) (render cise)))]
       [(base (and (or 'CALL 'TAIL-CALL) next))
        (and-let* ([cise (base-cise base)])
          (parameterize ([result-type 'call]) (render cise))
-         (render `($goto-insn ,next))
-         #t)]
+         (render `($goto-insn ,next)))]
       [('PUSH . next)
        (render `(PUSH-ARG VAL0))
-       (render `($goto-insn ,(symbol-join next)))
-       #t]
+       (render `($goto-insn ,(symbol-join next)))]
       [('LREF0 'PUSH . next)
        (render `(let* ((v (ENV-DATA ENV 0))) (PUSH-ARG v)))
-       (render `($goto-insn ,(symbol-join next)))
-       #t]
+       (render `($goto-insn ,(symbol-join next)))]
       [((and (? (cut memq <> .lrefx.)) lrefx) . next)
        (parameterize ([arg-source (lrefx->lref lrefx)])
          (do-combined-rec orig next))]
@@ -170,7 +165,7 @@
         (do-combined orig comb)
         (warn "Don't know how to generate combined insn ~a" (~ orig'name))))
   (define (render1 insn)
-    (or (and-let* ([cise (~ insn'body)]) (render cise) #t)
+    (or (and-let* ([cise (~ insn'body)]) (render cise))
         (and-let* ([comb (~ insn'combined)]) (do-combined insn comb))
         (warn "Don't know how to generate ~a" (~ insn'name))))
 
@@ -231,7 +226,7 @@
   (assq-ref (~ state'transitions) insn-name))
 
 (define (state-set-insn! state insn-name stop-insn)
-  (or (and-let* ((arc (state-lookup state insn-name)))
+  (or (and-let* ([arc (state-lookup state insn-name)])
         (set! (~ arc'stop-insn) stop-insn))
       (push! (~ state'transitions)
              (cons insn-name
@@ -245,6 +240,12 @@
                    (make <arc> :input insn-name :next-state next-state)))))
 
 ;; Add one insn to a state network.
+;; If an insn is marked 'obsoleted', we add it to the root insn anyway but
+;; do not process combinations.  Addition for the root is ncessary since
+;; the initial lookup of the state transition table is done by insn code,
+;; so we need a placeholder for obsoleted insns.
+;; TODO: Would help if we have a mechanism to report an error if such
+;; placeholder insn is actually kicked.
 (define (add-insn-to-state! root-state insn)
 
   (define (substate state name)
@@ -254,7 +255,8 @@
           (state-set-state! state name newstate))))
 
   (state-set-insn! root-state (~ insn'name) insn)
-  (when (pair? (~ insn'combined))
+  (when (and (pair? (~ insn'combined))
+             (not (~ insn'obsoleted)))
     (let loop ([combined (~ insn'combined)]
                [state    root-state])
       (if (null? (cdr combined))
@@ -310,8 +312,7 @@
           (cgen-body
            (format "  /*~3d*/ { ~a, ~a, ~a },"
                    entry-count
-                   (cond [(~ (cdr t)'input) => c-insn-name]
-                         [else -1])
+                   (cond [(~ (cdr t)'input) => c-insn-name] [else -1])
                    action
                    operand))))
       (inc! entry-count)))
@@ -323,11 +324,11 @@
     (fixup-states! root)
     (emit-states (instance-pool->list <state>))))
 
-;;
+;;==============================================================
 ;; Parse vminsn.scm and returns the define-insn form in order.
 ;; CISE definitions are evaluated within the current context.
 ;;
-(define (parse-vminsn file)
+(define (expand-toplevels file)
   (define (lref-replace form lrefx)
     (match form
       [(syms ...) (map (cut lref-replace <> lrefx) syms)]
@@ -362,22 +363,26 @@
         (file->sexp-list file)))
 
 ;;
+;; Parse a single define-insn form
+;;
+(define (parse-define-insn insn-num definsn)
+  (match definsn
+    [(_ name num-params operand-type . opts)
+     (let-optionals* opts ([combined #f]
+                           [body #f]
+                           [flag #f])
+       (make <vm-insn-info>
+         :name name :code insn-num :num-params num-params
+         :operand-type operand-type :combined combined
+         :body body :obsoleted (eq? flag :obsoleted)))]
+    [else (errorf "unrecognized define-insn form: ~s" definsn)]))
+
+;;
 ;; From S-expr of define-insns, create <vm-insn-info> instances
 ;; and make necessary wiring.
 ;;
 (define (populate-insn-info definsns)
-  (let1 insns (map-with-index
-               (lambda (count insn)
-                 (match insn
-                   [(_ name num-params operand-type . opts)
-                    (let-optionals* opts ((combined #f)
-                                          (body #f))
-                      (make <vm-insn-info>
-                        :name name :code count :num-params num-params
-                        :operand-type operand-type :combined combined
-                        :body body))]
-                   [else (errorf "unrecognized define-insn form: ~s" insn)]))
-               definsns)
+  (rlet1 insns (map-with-index parse-define-insn definsns)
     ;; Set up insn relationships
     (dolist [insn insns]
       (and-let* ([comb (~ insn'combined)])
@@ -391,16 +396,14 @@
         
         (case (car (last-pair comb))
           [(PUSH) (wire "PUSH" 'push-variant)]
-          [(RET)  (wire "RET"  'ret-variant)])))
-    
-    insns))
+          [(RET)  (wire "RET"  'ret-variant)])))))
 
 ;;
 ;; Main
 ;;
 (define (main args)
-  (parameterize ((cgen-current-unit *unit*))
-    (let1 insns ($ populate-insn-info $ reverse $ parse-vminsn
+  (parameterize ([cgen-current-unit *unit*])
+    (let1 insns ($ populate-insn-info $ reverse $ expand-toplevels
                    $ get-optional (cdr args) "vminsn.scm")
 
       ;; Generate insn names and DEFINSN macros

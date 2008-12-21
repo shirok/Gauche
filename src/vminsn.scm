@@ -778,9 +778,9 @@
 (define-insn PUSH-GREF-CALL 1 obj   (PUSH GREF CALL))
 (define-insn PUSH-GREF-TAIL-CALL 1 obj (PUSH GREF TAIL-CALL))
 
-(define-insn LREF0-PUSH-GREF 0 obj  (LREF0 PUSH GREF))
-(define-insn LREF0-PUSH-GREF-CALL 1 obj (LREF0 PUSH GREF CALL))
-(define-insn LREF0-PUSH-GREF-TAIL-CALL 1 obj (LREF0 PUSH GREF TAIL-CALL))
+(define-insn LREF0-PUSH-GREF 0 obj  (LREF0 PUSH GREF) #f :obsoleted)
+(define-insn LREF0-PUSH-GREF-CALL 1 obj (LREF0 PUSH GREF CALL) #f :obsoleted)
+(define-insn LREF0-PUSH-GREF-TAIL-CALL 1 obj (LREF0 PUSH GREF TAIL-CALL) #f :obsoleted)
 
 ;; PROMISE
 ;;  Delay syntax emits this instruction.  Wrap a procedure into a promise
