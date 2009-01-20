@@ -1,3 +1,7 @@
+2009-01-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sxml/sxml/tree-trans.scm.in: Added missing 'use srfi-11'.
+
 2008-12-20  Shiro Kawai  <shiro@acm.org>
 
 	* INSTALL.in: Updated some instructions.
