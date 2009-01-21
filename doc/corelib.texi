@@ -2578,6 +2578,71 @@ a sequence of characters, or a sequence of bytes.
 @end deftp
 
 @c EN
+It should be emphasized that Gauche's @emph{internal} string object,
+@emph{string body}, is immutable.  
+To comply R5RS in which strings are mutable, a Scheme-level
+string object is an indirect pointer to a string body.
+Mutating a string means that Gauche creates a new immutable
+string body that reflects the changes, then swap the pointer
+in the Scheme-level string object.
+
+This may affect some assumptions on the cost of string operations.
+
+@itemize
+@item
+Copying string is O(1), no matter how long the string is, since
+the same string body is shared.
+@item
+Taking substring usually is also O(1), for the resulting string
+shares the substring of the original string body.  Gauche may copy
+a part of the string for better memory management, but the visible
+cost should stay pretty close to O(1).  (However, note that accessing
+to a specific point by index within the original string may cost
+O(N) because of multibyte string; which is a different story).
+@item
+On the other hand, mutating a string cost O(N) where N is the length
+of string, even for replacing a character.  
+@end itemize
+
+Gauche does not attempt to make string mutation faster; 
+@code{(string-set! s k c)} is exactly as slow as to take
+two substrings, before and after of k-th character, and
+concatenate them with a single-character string inbetween.
+So, just avoid string mutations; we believe it's a better practice.
+See also @ref{String Constructors}.
+@c JP
+GaucheではSchemeの文字列は、内部的には、変更不可能なオブジェクト(文字列実体)を
+用いて表現されている、ということを強調しておきます。
+文字列が変更可能であるR5RSの仕様を満たすために、Schemeレベルの文字列は
+文字列実体への間接ポインタとなっています。文字列を変更すると、
+変更を反映した新しいstring bodyが作成され、Schemeレベルの文字列が
+新しい文字列実体を指すように変更されます。
+
+このことから、文字列操作の性能を見積る場合に注意が必要です。
+
+@itemize
+@item
+文字列のコピーは、それがどんなに長い文字列であっても常にO(1)です。
+文字列実体は共有されるからです。
+@item
+部分文字列を取る操作も通常はO(1)です。文字列実体を部分的に共有するからです。
+メモリ管理上の都合から文字列実体の一部がコピーされる可能性はありますが、
+ほとんどの場合はO(1)とみなして構いません。(ただし、マルチバイト文字処理の都合上、
+文字インデックスで文字列の途中を指定する操作は別途O(N)を要する場合があります)
+@item
+一方で、文字列の変更はたとえ1文字の変更であっても、文字列実体の長さNに
+比例したO(N)のコストを必要とします。
+@end itemize
+
+Gaucheはそもそも文字列の変更に関して全く最適化を行っていません。
+@code{(string-set! s k c)}は、k番目の文字の前後の部分文字列を取って、
+c一文字の文字列を間に挟んで継ぎ足すことで新たな文字列を作るのと
+全く同じコストがかかります。
+文字列を変更不可として扱う方が良いプログラミングスタイルだと考えるからです。
+@ref{String Constructors}も参照してください。
+@c COMMON
+
+@c EN
 R5RS string operations are very minimal.  Gauche supports some
 extra built-in operations, and also a rich string library
 defined in SRFI-13.   @xref{String library}, for details about SRFI-13.
