@@ -124,7 +124,7 @@ INSTALL_SUBHEADERS = \
 	gauche/config.h gauche/exception.h gauche/extend.h \
 	gauche/extern.h gauche/float.h gauche/gloc.h gauche/hash.h \
 	gauche/int64.h gauche/keyword.h gauche/load.h gauche/macro.h \
-	gauche/number.h gauche/parameter.h \
+	gauche/module.h gauche/number.h gauche/parameter.h \
 	gauche/paths.h gauche/port.h gauche/prof.h gauche/pthread.h \
 	gauche/reader.h gauche/regexp.h gauche/scmconst.h \
 	gauche/string.h gauche/symbol.h gauche/system.h \
