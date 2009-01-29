@@ -13049,7 +13049,7 @@ Some boundary cases:
 @end example
 @c EN
 Note: The above behavior is the same as Perl's @code{basename} and
-@code{dirname}.   On some implementations, the command @code{basename}
+@code{dirname}.   On some systems, the command @code{basename}
 may return @code{"/"} for the argument @code{"/"}, and
 @code{"."} for the argument @code{"."}.
 @c JP
