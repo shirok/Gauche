@@ -347,9 +347,9 @@ SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
 
 /* We use a pointer to the class structure (with low-bit tag) as
    the generic type tag.   NB: The ScmClass structure is always
-   aligned on (at least) boundary, so +7 makes the tag's lower 3 bits
-   '111'.  Such pattern never appears in tagged pointer, so we can 
-   distinguish heap allocated objects from ScmPair.  */
+   aligned on 8-byte boundary, so +7 makes the tag's lower
+   3 bits '111'.  Such pattern never appears in tagged pointer,
+   so we can distinguish heap allocated objects from ScmPair.  */
 #define SCM_CLASS2TAG(klass)  ((ScmByte*)(klass) + 7)
 
 /* A common header for heap-allocated objects */
@@ -362,8 +362,9 @@ typedef struct ScmHeaderRec {
 #define SCM_HEADER       ScmHeader hdr /* for declaration */
 
 /* Here comes the ugly part.  To understand the general idea, just ignore
-   GAUCHE_BROKEN_LINKER_WORKAROUND part; it's pretty simple.  Every heap
-   allocated object contains (pointer to its class + 3) in its tag field.  */
+   GAUCHE_BROKEN_LINKER_WORKAROUND part; except that, it's pretty simple.
+   Every heap allocated object contains (pointer to its class + 3) in its
+   tag field.  */
 #if !defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
 
 # define SCM_CLASS_DECL(klass) extern ScmClass klass
@@ -385,7 +386,7 @@ typedef struct ScmHeaderRec {
 
 /* You don't want to understand these. */
 # define SCM_CLASS_DECL(klass) \
-    SCM_EXTERN ScmClass klass;                  \
+    SCM_EXTERN ScmClass klass; \
     extern ScmClass *SCM_CPP_CAT(_imp__, klass) 
 # define SCM_CLASS_STATIC_PTR(klass) ((ScmClass*)(&SCM_CPP_CAT(_imp__,klass)))
 # define SCM_CLASS_STATIC_TAG(klass) SCM_CLASS2TAG(SCM_CLASS_STATIC_PTR(klass))
