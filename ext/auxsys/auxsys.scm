@@ -52,10 +52,6 @@
 ;; define alternatives if the platform doesn't support...
 
 (cond-expand
- [(not gauche.sys.realpath) (define sys-realpath #f)] ; make autoload happy
- [else])
-
-(cond-expand
  [gauche.os.windows
   (define sys-mkfifo #f)
   (define sys-setgid #f)
@@ -161,5 +157,41 @@
 (cond-expand
  [(not gauche.sys.getloadavg) (define sys-getloadavg #f)] ;make autoload happy
  [else])
+
+;; Realpath implementation.
+;; POSIX realpath(3) is flawed in a sense that there's no way to get
+;; the reasonable and safe buffer size (PATH_MAX can return very large
+;; number; see the manpage for the details).  So we implement it in
+;; Scheme, making it portable and safe.
+;; NB: we can't use utilities in file.util to avoid dependency hell.
+(cond-expand
+ [gauche.os.windows
+  (define (sys-realpath path)
+    (rlet1 p (sys-normalize-pathname path :absolute #t :canonicalize #t)
+      (sys-stat p)))] ; check if the path exists
+ [else
+  (define (sys-realpath path)
+    (define count 0)
+    (define (loop-check!)
+      (inc! count)
+      (when (> count 100)
+        (error "possible cycle in resolving symlinks for path:" path)))
+    (define (resolve path comps)
+      (loop-check!)
+      (let loop ((p #`",|path|/,(car comps)"))
+        (let1 s (sys-lstat p)             ; may raise ENOENT
+          (cond [(eq? (slot-ref s'type) 'symlink)
+                 (let1 p1 (sys-readlink p)
+                   (if (and (>= (string-length p1) 1)
+                            (eqv? (string-ref p1 0) #\/))
+                     (loop p1)
+                     (loop (sys-normalize-pathname #`",|path|/,p1"
+                                                   :canonicalize #t))))]
+                [(null? (cdr comps)) (and (sys-stat p) p)] ; ensure path exists
+                [else (resolve p (cdr comps))]))))
+    (resolve ""
+             (cdr (string-split
+                   (sys-normalize-pathname path :absolute #t :canonicalize #t)
+                   "/"))))])
 
 (provide "gauche/auxsys")

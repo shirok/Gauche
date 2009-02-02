@@ -13063,12 +13063,23 @@ may return @code{"/"} for the argument @code{"/"}, and
 @c EN
 @code{sys-realpath} returns an absolute pathname of @var{pathname}
 that does not include ``@code{.}'', ``@code{..}'' or symbolic links.
-If the system does not support realpath(3), this function signals an
-error.
+If @var{pathname} does not exist, it includes a dangling symbolic
+link, or the caller doesn't have enough permission to access to
+the path, an error is signalled.
 @c JP
 @code{sys-realpath}は``@code{.}'', ``@code{..}''およびシンボリックリン
-クを含まない@var{pathname}の絶対パスを返します。システムがrealpath(3)
-をサポートしていない場合はエラーが通知されます。
+クを含まない@var{pathname}の絶対パスを返します。@var{pathname}自体が存在しなかったり、
+存在しないパスを指すシンボリックリンクが含まれていたり、関連するパスへのアクセス権限が
+不足している場合はエラーが通知されます。
+@c COMMON
+
+@c EN
+Note: the POSIX @code{realpath(3)} function is known to be unsafe, so
+Gauche avoids using it and implements @code{sys-realpath} in its own.
+@c JP
+注：POSIXの@code{realpath(3)}は安全でない場合があるので、
+Gaucheは内部でCランタイムの@code{realpath}を呼ばずに、
+独自に@code{sys-realpath}の機能を実装しています。
 @c COMMON
 @end defun
 

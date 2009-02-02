@@ -1,3 +1,9 @@
+2009-02-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/auxsys/auxsys.scm (sys-realpath): realpath(3) can be not safe
+	  (Linux manpage recommends not to use it), so we reimplemented it
+	  in Scheme.
+
 2009-01-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/gauche/module.h, src/Makefile.in: Splitted

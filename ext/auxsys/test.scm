@@ -107,4 +107,57 @@
   (env-test "TERM")
   (env-test "SHELL"))
 
+;; sys-realpath
+
+; I suppose '/' is never symlinked
+(test* "sys-realpath (/)" "/" (sys-realpath "/"))
+(test* "sys-realpath (.)"
+       (sys-normalize-pathname "." :absolute #t :canonicalize #t)
+       (sys-realpath "."))
+
+(cond-expand
+ [gauche.sys.symlink
+  (sys-unlink "test1.o")
+  (sys-unlink "test2.o")
+  (with-output-to-file "test1.o" (cut print))
+
+  (sys-symlink "test1.o" "test2.o")
+  (test* "sys-realpath (symlink)"
+         (sys-normalize-pathname "./test1.o" :absolute #t :canonicalize #t)
+         (sys-realpath "./test2.o"))
+  (sys-unlink "test2.o")
+
+  (sys-symlink "./test1.o" "test2.o")
+  (test* "sys-realpath (symlink)"
+         (sys-normalize-pathname "./test1.o" :absolute #t :canonicalize #t)
+         (sys-realpath "./test2.o"))
+  (sys-unlink "test2.o")
+
+  (sys-symlink "../auxsys/test1.o" "test2.o")
+  (test* "sys-realpath (symlink)"
+         (sys-normalize-pathname "./test1.o" :absolute #t :canonicalize #t)
+         (sys-realpath "./test2.o"))
+
+  (sys-unlink "test1.o")
+  (test* "sys-realpath (dangling)"
+         *test-error*
+         (sys-realpath "./test2.o"))
+
+  (sys-mkdir "test1.o" #o777)
+  (with-output-to-file "test1.o/test.o" (cut print))
+  (test* "sys-realpath (symlink to dir)"
+         (sys-normalize-pathname "./test1.o/test.o"
+                                 :absolute #t :canonicalize #t)
+         (sys-realpath "./test2.o/test.o"))
+
+  (sys-unlink "test1.o/test.o")
+  (sys-rmdir "test1.o")
+  (sys-unlink "test2.o")
+
+  (test* "sys-realpath (NOENT)"
+         *test-error*
+         (sys-realpath "./test2.o/test.o"))
+  ]
+ [else])
+
 (test-end)

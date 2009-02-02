@@ -81,14 +81,7 @@ extern ScmObj Scm_Environ(void);
 ;; stdlib.h
 (define-cproc sys-abort () ::<void> abort)
 
-(when "defined HAVE_REALPATH"
-  (define-cproc sys-realpath (path::<const-cstring>) ::<const-cstring>
-    (let* ([buf::(.array char [1024])]) ; TODO: needs to be configured
-      (when (== (realpath path buf) NULL)
-        (Scm_SysError "realpath failed on %s" path))
-      (result buf)))
-  (initcode "Scm_AddFeature(\"gauche.sys.realpath\", NULL);")
-  )
+;; NB: sys-realpath is moved to auxsys.scm
 
 ;; math.h
 (define-cproc fmod (x::<real> y::<real>) ::<double> fmod)
