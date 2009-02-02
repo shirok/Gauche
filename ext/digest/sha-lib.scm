@@ -158,8 +158,8 @@
        (,update (& (-> ,ctx ctx))
                 (cast (const unsigned char*)
                       (SCM_UVECTOR_ELEMENTS (SCM_U8VECTOR ,data)))
-                (SCM_U8VECTOR_SIZE (SCM_U8VECTOR data)))]
-      [(SCM_STRINGP data)
+                (SCM_U8VECTOR_SIZE (SCM_U8VECTOR ,data)))]
+      [(SCM_STRINGP ,data)
        (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY ,data)])
          (,update (& (-> ,ctx ctx))
                   (cast (const unsigned char*) (SCM_STRING_BODY_START b))
