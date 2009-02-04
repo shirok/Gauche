@@ -109,11 +109,14 @@
 
 ;; sys-realpath
 
-; I suppose '/' is never symlinked
+(define (expected-path p)
+  (let1 pp (sys-normalize-pathname p :absolute #t :canonicalize #t)
+    (if (eqv? (string-ref pp (- (string-length pp) 1)) #\/)
+      (substring pp 0 (- (string-length pp) 1))
+      pp)))
+
 (test* "sys-realpath (/)" "/" (sys-realpath "/"))
-(test* "sys-realpath (.)"
-       (sys-normalize-pathname "." :absolute #t :canonicalize #t)
-       (sys-realpath "."))
+(test* "sys-realpath (.)" (expected-path ".") (sys-realpath "."))
 
 (cond-expand
  [gauche.sys.symlink
@@ -123,19 +126,19 @@
 
   (sys-symlink "test1.o" "test2.o")
   (test* "sys-realpath (symlink)"
-         (sys-normalize-pathname "./test1.o" :absolute #t :canonicalize #t)
+         (expected-path "./test1.o")
          (sys-realpath "./test2.o"))
   (sys-unlink "test2.o")
 
   (sys-symlink "./test1.o" "test2.o")
   (test* "sys-realpath (symlink)"
-         (sys-normalize-pathname "./test1.o" :absolute #t :canonicalize #t)
+         (expected-path "./test1.o")
          (sys-realpath "./test2.o"))
   (sys-unlink "test2.o")
 
   (sys-symlink "../auxsys/test1.o" "test2.o")
   (test* "sys-realpath (symlink)"
-         (sys-normalize-pathname "./test1.o" :absolute #t :canonicalize #t)
+         (expected-path "./test1.o")
          (sys-realpath "./test2.o"))
 
   (sys-unlink "test1.o")
@@ -146,8 +149,7 @@
   (sys-mkdir "test1.o" #o777)
   (with-output-to-file "test1.o/test.o" (cut print))
   (test* "sys-realpath (symlink to dir)"
-         (sys-normalize-pathname "./test1.o/test.o"
-                                 :absolute #t :canonicalize #t)
+         (expected-path "./test1.o/test.o")
          (sys-realpath "./test2.o/test.o"))
 
   (sys-unlink "test1.o/test.o")

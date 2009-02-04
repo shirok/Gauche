@@ -176,22 +176,31 @@
       (inc! count)
       (when (> count 100)
         (error "possible cycle in resolving symlinks for path:" path)))
+    (define (decompose path) (string-split path "/"))
+    (define (absolute? path)
+      (and (>= (string-length path) 1) (eqv? (string-ref path 0) #\/)))
+    (define (path-concat path)
+      (string-append "/" (string-join (reverse path) "/")))
     (define (resolve path comps)
-      (loop-check!)
-      (let loop ((p #`",|path|/,(car comps)"))
-        (let1 s (sys-lstat p)             ; may raise ENOENT
-          (cond [(eq? (slot-ref s'type) 'symlink)
-                 (let1 p1 (sys-readlink p)
-                   (if (and (>= (string-length p1) 1)
-                            (eqv? (string-ref p1 0) #\/))
-                     (loop p1)
-                     (loop (sys-normalize-pathname #`",|path|/,p1"
-                                                   :canonicalize #t))))]
-                [(null? (cdr comps)) (and (sys-stat p) p)] ; ensure path exists
-                [else (resolve p (cdr comps))]))))
-    (resolve ""
-             (cdr (string-split
-                   (sys-normalize-pathname path :absolute #t :canonicalize #t)
-                   "/"))))])
+      (cond [(null? comps) (path-concat path)] ; we know path exists
+            [(member (car comps) '("" "."))(resolve path (cdr comps))]
+            [(string=? (car comps) "..")
+             (resolve (if (pair? path) (cdr path) path) (cdr comps))]
+            [else
+             (let* ((q (cons (car comps) path))
+                    (p (path-concat q))
+                    (s (sys-lstat p)))    ; may raise ENOENT
+               (cond [(eq? (slot-ref s'type) 'symlink)
+                      (loop-check!)
+                      (let1 p1 (sys-readlink p)
+                        (resolve (if (absolute? p1) '() path)
+                                 (append! (decompose p1) (cdr comps))))]
+                     [(or (null? (cdr comps))
+                          (eq? (slot-ref s'type) 'directory))
+                      (resolve q (cdr comps))]
+                     [else (error "not a directory" p)]))]))
+                     
+    (resolve '() (append! (if (absolute? path) '() (decompose (sys-getcwd)))
+                          (decompose path))))])
 
 (provide "gauche/auxsys")
