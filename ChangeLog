@@ -1,7 +1,7 @@
 2009-02-03  Shiro Kawai  <shiro@acm.org>
 
 	* ext/auxsys/auxsys.scm (sys-realpath): Fixed to follow '..'
-	  correctly and other corner cases, thanks to enami.
+	  correctly and other corner cases, thanks to Tsugutomo Enami.
 
 2009-02-01  Shiro Kawai  <shiro@acm.org>
 
