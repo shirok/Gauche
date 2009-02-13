@@ -1194,9 +1194,26 @@ struct ScmProcedureRec {
     unsigned int currying : 1;     /* autocurrying */
     ScmObj info;                   /* source code info */
     ScmObj setter;                 /* setter, if exists. */
-    ScmObj inliner;                /* inliner.  NB: for backward compatibility,
-                                      this may be initialized by NULL. */
+    ScmObj inliner;                /* inliner information.  see below. */
 };
+
+/* About procedure inliner:
+   This slot holds information to inline procedures.  The value of this slot
+   can be one of the following kinds:
+   
+   #f: No inliner associated to this procedure.  (For historical
+      reasons, the code that access to this slot expects this slot can be
+      NULL and treats it as SCM_FALSE)
+
+   <integer>: Only appears in some built-in procedures, and specifies
+      the VM instruction number.  This should be considered as a special
+      hack.   The set of procedures that can have this type of inliner
+      is tied to the VM definition.
+
+   <vector>: Procedures defined with define-inline have this.  The vector
+      encodes intermediate form (IForm) of the procedure code, which will be
+      expanded into the caller.
+ */
 
 /* procedure type */
 enum ScmProcedureType {
