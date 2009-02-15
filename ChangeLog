@@ -7,6 +7,10 @@
 	  to treat binary data in the Scheme world.  It is awkward to require
 	  extensions to link ext.uvector only to use ScmUVector structure.
 	  The utility procedures for uvectors remain in ext.uvector.
+	  NOTE: This changes definition of type-specific uniform vectors
+	  such as Scm_S8Vector; the difference is the type of 'elements' field.
+	  As long as you access uvector elements using SCM_*VECTOR_ELEMENTS
+	  macro, this change shouldn't affect your code.
 
 2009-02-03  Shiro Kawai  <shiro@acm.org>
 
