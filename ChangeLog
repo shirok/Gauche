@@ -1,3 +1,13 @@
+2009-02-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/vector.h, src/vector.c, ext/uvector/uvector.c.tmpl,
+	  ext/uvector/uvector.h.tmpl: Moved definition of ScmUVector structure,
+	  constructors, and <uvector> classes from ext/uvector to the core.
+	  The role of uniform vector has gotten bigger, for it is used
+	  to treat binary data in the Scheme world.  It is awkward to require
+	  extensions to link ext.uvector only to use ScmUVector structure.
+	  The utility procedures for uvectors remain in ext.uvector.
+
 2009-02-03  Shiro Kawai  <shiro@acm.org>
 
 	* ext/auxsys/auxsys.scm (sys-realpath): Fixed to follow '..'

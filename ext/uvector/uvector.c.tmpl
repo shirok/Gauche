@@ -54,73 +54,6 @@
 #include "gauche/uvector.h"
 #include "uvectorP.h"
 
-static ScmClass *uvector_cpl[] = {
-    SCM_CLASS_STATIC_PTR(Scm_UVectorClass),
-    SCM_CLASS_STATIC_PTR(Scm_SequenceClass),
-    SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
-    SCM_CLASS_STATIC_PTR(Scm_TopClass),
-    NULL
-};
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_UVectorClass, NULL, NULL, NULL, NULL,
-                         uvector_cpl+1);
-
-static int uvector_index(ScmClass *klass)
-{
-    if (SCM_EQ(klass, SCM_CLASS_S8VECTOR))  return 0;
-    if (SCM_EQ(klass, SCM_CLASS_U8VECTOR))  return 1;
-    if (SCM_EQ(klass, SCM_CLASS_S16VECTOR)) return 2;
-    if (SCM_EQ(klass, SCM_CLASS_U16VECTOR)) return 3;
-    if (SCM_EQ(klass, SCM_CLASS_S32VECTOR)) return 4;
-    if (SCM_EQ(klass, SCM_CLASS_U32VECTOR)) return 5;
-    if (SCM_EQ(klass, SCM_CLASS_S64VECTOR)) return 6;
-    if (SCM_EQ(klass, SCM_CLASS_U64VECTOR)) return 7;
-    if (SCM_EQ(klass, SCM_CLASS_F16VECTOR)) return 8;
-    if (SCM_EQ(klass, SCM_CLASS_F32VECTOR)) return 9;
-    if (SCM_EQ(klass, SCM_CLASS_F64VECTOR)) return 10;
-    else return -1;
-}
-
-/* Returns the size of element of the uvector of given class */
-int Scm_UVectorElementSize(ScmClass *klass)
-{
-    static int sizes[] = { 1, 1, 2, 2, 4, 4, 8, 8,
-                           2, sizeof(float), sizeof(double) };
-    int ind = uvector_index(klass);
-    if (ind >= 0) return sizes[ind];
-    return -1;
-}
-
-/* Returns the size of the vector body in bytes */
-int Scm_UVectorSizeInBytes(ScmUVector *uv)
-{
-    return SCM_UVECTOR_SIZE(uv) * Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(uv)));
-}
-
-/* Generic constructor */
-ScmObj Scm_MakeUVectorFull(ScmClass *klass, int size, void *init, int immutable, void *owner)
-{
-    ScmUVector *vec;
-    int eltsize = Scm_UVectorElementSize(klass);
-    SCM_ASSERT(eltsize >= 1);
-    vec = SCM_NEW(ScmUVector);
-    SCM_SET_CLASS(vec, klass);
-    if (init) {
-        vec->elements = init;   /* trust the caller */
-    } else {
-        vec->elements = SCM_NEW_ATOMIC2(void*, size*eltsize);
-    }
-    vec->size = size;
-    vec->immutable = immutable;
-    vec->owner = owner;
-    return SCM_OBJ(vec);
-}
-
-ScmObj Scm_MakeUVector(ScmClass *klass, int size, void *init)
-{
-    return Scm_MakeUVectorFull(klass, size, init, FALSE, NULL);
-}
-
 /*
  * Generic aliasing
  */
@@ -276,84 +209,23 @@ static inline void uint64print(ScmPort *out, ScmUInt64 v)
  * Class stuff
  */
 
-static void print_${t}vector(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
-{
-    int i;
-    Scm_Printf(out, "#${t}(");
-    for (i=0; i<SCM_${T}VECTOR_SIZE(obj); i++) {
-        ${etype} elt = SCM_${T}VECTOR_ELEMENTS(obj)[i];
-        if (i != 0) Scm_Printf(out, " ");
-        ${PRINT out elt};
-    }
-    Scm_Printf(out, ")");
-}
-
-static int compare_${t}vector(ScmObj x, ScmObj y, int equalp)
-{
-    int len = SCM_${T}VECTOR_SIZE(x), i;
-    ${etype} xx, yy;
-    if (SCM_${T}VECTOR_SIZE(y) != len) return -1;
-    for (i=0; i<len; i++) {
-        xx = SCM_${T}VECTOR_ELEMENTS(x)[i];
-        yy = SCM_${T}VECTOR_ELEMENTS(y)[i];
-        if (!${EQ xx yy}) {
-            return -1;
-        }
-    }
-    return 0;
-}
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_${T}VectorClass,
-                         print_${t}vector, compare_${t}vector, NULL, NULL,
-                         uvector_cpl);
-
 /*
- * Constructor
+ * Converters
  */
-static Scm${T}Vector *make_${t}vector(int size, ${etype} *eltp)
-{
-    return (Scm${T}Vector*)Scm_MakeUVector(SCM_CLASS_${T}VECTOR, size, eltp);
-}
-
-ScmObj Scm_Make${T}Vector(int size, ${etype} fill)
-{
-    Scm${T}Vector *vec = make_${t}vector(size, NULL);
-    int i;
-    for (i=0; i<size; i++) {
-        vec->elements[i] = fill;
-    }
-    return SCM_OBJ(vec);
-}
-
-ScmObj Scm_Make${T}VectorFromArray(int size, const ${etype} array[])
-{
-    Scm${T}Vector *vec = make_${t}vector(size, NULL);
-    int i;
-    for (i=0; i<size; i++) {
-        vec->elements[i] = array[i];
-    }
-    return SCM_OBJ(vec);
-}
-
-ScmObj Scm_Make${T}VectorFromArrayShared(int size, ${etype} array[])
-{
-    Scm${T}Vector *vec = make_${t}vector(size, array);
-    return SCM_OBJ(vec);
-}
 
 ScmObj Scm_ListTo${T}Vector(ScmObj list, int clamp)
 {
     int length = Scm_Length(list), i;
-    Scm${T}Vector *vec;
+    ScmUVector *vec;
     ScmObj cp;
 
     if (length < 0) Scm_Error("improper list not allowed: %S", list);
-    vec = make_${t}vector(length, NULL);
+    vec = (ScmUVector*)Scm_Make${T}Vector(length, 0);
     for (i=0, cp=list; i<length; i++, cp = SCM_CDR(cp)) {
         ${etype} elt;
         ScmObj obj = SCM_CAR(cp);
         ${UNBOX elt obj clamp};
-        vec->elements[i] = elt;
+        SCM_${T}VECTOR_ELEMENTS(vec)[i] = elt;
     }
     return SCM_OBJ(vec);
 }
@@ -361,14 +233,14 @@ ScmObj Scm_ListTo${T}Vector(ScmObj list, int clamp)
 ScmObj Scm_VectorTo${T}Vector(ScmVector *ivec, int start, int end, int clamp)
 {
     int length = SCM_VECTOR_SIZE(ivec), i;
-    Scm${T}Vector *vec;
+    ScmUVector *vec;
     SCM_CHECK_START_END(start, end, length);
-    vec = make_${t}vector(end-start, NULL);
+    vec = (ScmUVector*)Scm_Make${T}Vector(end-start, 0);
     for (i=start; i<end; i++) {
         ${etype} elt;
         ScmObj obj = SCM_VECTOR_ELEMENT(ivec, i);
         ${UNBOX elt obj clamp};
-        vec->elements[i-start] = elt;
+        SCM_${T}VECTOR_ELEMENTS(vec)[i-start] = elt;
     }
     return SCM_OBJ(vec);
 }
@@ -382,7 +254,7 @@ ScmObj Scm_${T}VectorFill(Scm${T}Vector *vec, ${etype} fill, int start, int end)
     int i, size = SCM_${T}VECTOR_SIZE(vec);
     SCM_CHECK_START_END(start, end, size);
     SCM_UVECTOR_CHECK_MUTABLE(vec);
-    for (i=start; i<end; i++) vec->elements[i] = fill;
+    for (i=start; i<end; i++) SCM_${T}VECTOR_ELEMENTS(vec)[i] = fill;
     return SCM_OBJ(vec);
 }
 
@@ -395,7 +267,7 @@ ScmObj Scm_${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback)
             Scm_Error("index out of range: %d", index);
         return fallback;
     }
-    elt = vec->elements[index];
+    elt = SCM_${T}VECTOR_ELEMENTS(vec)[index];
     ${BOX r elt};
     return r;
 }
@@ -409,7 +281,7 @@ ScmObj Scm_VM${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback)
             Scm_Error("index out of range: %d", index);
         return fallback;
     }
-    elt = vec->elements[index];
+    elt = SCM_${T}VECTOR_ELEMENTS(vec)[index];
     ${VMBOX r elt};
     return r;
 }
@@ -421,7 +293,7 @@ ScmObj Scm_${T}VectorSet(Scm${T}Vector *vec, int index, ScmObj val, int clamp)
         Scm_Error("index out of range: %d", index);
     SCM_UVECTOR_CHECK_MUTABLE(vec);
     ${UNBOX elt val clamp};
-    vec->elements[index] = elt;
+    SCM_${T}VECTOR_ELEMENTS(vec)[index] = elt;
     return SCM_OBJ(vec);
 }
 
@@ -432,7 +304,7 @@ ScmObj Scm_${T}VectorToList(Scm${T}Vector *vec, int start, int end)
     SCM_CHECK_START_END(start, end, size);
     for (i=start; i<end; i++) {
         ScmObj obj;
-        ${etype} elt = vec->elements[i];
+        ${etype} elt = SCM_${T}VECTOR_ELEMENTS(vec)[i];
         ${BOX obj elt};
         SCM_APPEND1(head, tail, obj);
     }
@@ -447,7 +319,7 @@ ScmObj Scm_${T}VectorToVector(Scm${T}Vector *vec, int start, int end)
     ovec = Scm_MakeVector(end-start, SCM_UNDEFINED);
     for (i=start; i<end; i++) {
         ScmObj obj;
-        ${etype} elt = vec->elements[i];
+        ${etype} elt = SCM_${T}VECTOR_ELEMENTS(vec)[i];
         ${BOX obj elt};
         SCM_VECTOR_ELEMENT(ovec, i-start) = obj;
     }
@@ -1373,18 +1245,18 @@ ScmObj Scm_${T}VectorSwapBytesX(Scm${T}Vector *v)
  */
 ScmObj Scm_UVectorCopy(ScmUVector *v, int start, int end)
 {
-    switch (uvector_index(Scm_ClassOf(SCM_OBJ(v)))) {
-    case 0: return Scm_S8VectorCopy(SCM_S8VECTOR(v), start, end);
-    case 1: return Scm_U8VectorCopy(SCM_U8VECTOR(v), start, end);
-    case 2: return Scm_S16VectorCopy(SCM_S16VECTOR(v), start, end);
-    case 3: return Scm_U16VectorCopy(SCM_U16VECTOR(v), start, end);
-    case 4: return Scm_S32VectorCopy(SCM_S32VECTOR(v), start, end);
-    case 5: return Scm_U32VectorCopy(SCM_U32VECTOR(v), start, end);
-    case 6: return Scm_S64VectorCopy(SCM_S64VECTOR(v), start, end);
-    case 7: return Scm_U64VectorCopy(SCM_U64VECTOR(v), start, end);
-    case 8: return Scm_F16VectorCopy(SCM_F16VECTOR(v), start, end);
-    case 9: return Scm_F32VectorCopy(SCM_F32VECTOR(v), start, end);
-    case 10:return Scm_F64VectorCopy(SCM_F64VECTOR(v), start, end);
+    switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
+    case SCM_UVECTOR_S8: return Scm_S8VectorCopy(v, start, end);
+    case SCM_UVECTOR_U8: return Scm_U8VectorCopy(v, start, end);
+    case SCM_UVECTOR_S16: return Scm_S16VectorCopy(v, start, end);
+    case SCM_UVECTOR_U16: return Scm_U16VectorCopy(v, start, end);
+    case SCM_UVECTOR_S32: return Scm_S32VectorCopy(v, start, end);
+    case SCM_UVECTOR_U32: return Scm_U32VectorCopy(v, start, end);
+    case SCM_UVECTOR_S64: return Scm_S64VectorCopy(v, start, end);
+    case SCM_UVECTOR_U64: return Scm_U64VectorCopy(v, start, end);
+    case SCM_UVECTOR_F16: return Scm_F16VectorCopy(v, start, end);
+    case SCM_UVECTOR_F32: return Scm_F32VectorCopy(v, start, end);
+    case SCM_UVECTOR_F64: return Scm_F64VectorCopy(v, start, end);
     default: Scm_Error("uniform vector required, but got %S", v);
         return SCM_UNDEFINED;
     }
@@ -1395,18 +1267,18 @@ ScmObj Scm_UVectorCopy(ScmUVector *v, int start, int end)
  */
 ScmObj Scm_UVectorSwapBytes(ScmUVector *v)
 {
-    switch (uvector_index(Scm_ClassOf(SCM_OBJ(v)))) {
-    case 0: return SCM_OBJ(v);
-    case 1: return SCM_OBJ(v);
-    case 2: return Scm_S16VectorSwapBytes(SCM_S16VECTOR(v));
-    case 3: return Scm_U16VectorSwapBytes(SCM_U16VECTOR(v));
-    case 4: return Scm_S32VectorSwapBytes(SCM_S32VECTOR(v));
-    case 5: return Scm_U32VectorSwapBytes(SCM_U32VECTOR(v));
-    case 6: return Scm_S64VectorSwapBytes(SCM_S64VECTOR(v));
-    case 7: return Scm_U64VectorSwapBytes(SCM_U64VECTOR(v));
-    case 8: return Scm_F16VectorSwapBytes(SCM_F16VECTOR(v));
-    case 9: return Scm_F32VectorSwapBytes(SCM_F32VECTOR(v));
-    case 10:return Scm_F64VectorSwapBytes(SCM_F64VECTOR(v));
+    switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
+    case SCM_UVECTOR_S8:  return SCM_OBJ(v);
+    case SCM_UVECTOR_U8:  return SCM_OBJ(v);
+    case SCM_UVECTOR_S16: return Scm_S16VectorSwapBytes(v);
+    case SCM_UVECTOR_U16: return Scm_U16VectorSwapBytes(v);
+    case SCM_UVECTOR_S32: return Scm_S32VectorSwapBytes(v);
+    case SCM_UVECTOR_U32: return Scm_U32VectorSwapBytes(v);
+    case SCM_UVECTOR_S64: return Scm_S64VectorSwapBytes(v);
+    case SCM_UVECTOR_U64: return Scm_U64VectorSwapBytes(v);
+    case SCM_UVECTOR_F16: return Scm_F16VectorSwapBytes(v);
+    case SCM_UVECTOR_F32: return Scm_F32VectorSwapBytes(v);
+    case SCM_UVECTOR_F64: return Scm_F64VectorSwapBytes(v);
     default: Scm_Error("uniform vector required, but got %S", v);
         return SCM_UNDEFINED;
     }
@@ -1414,18 +1286,18 @@ ScmObj Scm_UVectorSwapBytes(ScmUVector *v)
 
 ScmObj Scm_UVectorSwapBytesX(ScmUVector *v)
 {
-    switch (uvector_index(Scm_ClassOf(SCM_OBJ(v)))) {
-    case 0: return SCM_OBJ(v);
-    case 1: return SCM_OBJ(v);
-    case 2: return Scm_S16VectorSwapBytesX(SCM_S16VECTOR(v));
-    case 3: return Scm_U16VectorSwapBytesX(SCM_U16VECTOR(v));
-    case 4: return Scm_S32VectorSwapBytesX(SCM_S32VECTOR(v));
-    case 5: return Scm_U32VectorSwapBytesX(SCM_U32VECTOR(v));
-    case 6: return Scm_S64VectorSwapBytesX(SCM_S64VECTOR(v));
-    case 7: return Scm_U64VectorSwapBytesX(SCM_U64VECTOR(v));
-    case 8: return Scm_F16VectorSwapBytesX(SCM_F16VECTOR(v));
-    case 9: return Scm_F32VectorSwapBytesX(SCM_F32VECTOR(v));
-    case 10:return Scm_F64VectorSwapBytesX(SCM_F64VECTOR(v));
+    switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
+    case SCM_UVECTOR_S8:  return SCM_OBJ(v);
+    case SCM_UVECTOR_U8:  return SCM_OBJ(v);
+    case SCM_UVECTOR_S16: return Scm_S16VectorSwapBytesX(v);
+    case SCM_UVECTOR_U16: return Scm_U16VectorSwapBytesX(v);
+    case SCM_UVECTOR_S32: return Scm_S32VectorSwapBytesX(v);
+    case SCM_UVECTOR_U32: return Scm_U32VectorSwapBytesX(v);
+    case SCM_UVECTOR_S64: return Scm_S64VectorSwapBytesX(v);
+    case SCM_UVECTOR_U64: return Scm_U64VectorSwapBytesX(v);
+    case SCM_UVECTOR_F16: return Scm_F16VectorSwapBytesX(v);
+    case SCM_UVECTOR_F32: return Scm_F32VectorSwapBytesX(v);
+    case SCM_UVECTOR_F64: return Scm_F64VectorSwapBytesX(v);
     default: Scm_Error("uniform vector required, but got %S", v);
         return SCM_UNDEFINED;
     }

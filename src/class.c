@@ -3150,6 +3150,18 @@ void Scm__InitClass(void)
     
     /* vector.c */
     CINIT(SCM_CLASS_VECTOR,           "<vector>");
+    CINIT(SCM_CLASS_UVECTOR,          "<uvector>");
+    CINIT(SCM_CLASS_S8VECTOR,         "<s8vector>");
+    CINIT(SCM_CLASS_U8VECTOR,         "<u8vector>");
+    CINIT(SCM_CLASS_S16VECTOR,        "<s16vector>");
+    CINIT(SCM_CLASS_U16VECTOR,        "<u16vector>");
+    CINIT(SCM_CLASS_S32VECTOR,        "<s32vector>");
+    CINIT(SCM_CLASS_U32VECTOR,        "<u32vector>");
+    CINIT(SCM_CLASS_S64VECTOR,        "<s64vector>");
+    CINIT(SCM_CLASS_U64VECTOR,        "<u64vector>");
+    CINIT(SCM_CLASS_F16VECTOR,        "<f16vector>");
+    CINIT(SCM_CLASS_F32VECTOR,        "<f32vector>");
+    CINIT(SCM_CLASS_F64VECTOR,        "<f64vector>");
     
     /* weak.c */
     CINIT(SCM_CLASS_WEAK_VECTOR,      "<weak-vector>");

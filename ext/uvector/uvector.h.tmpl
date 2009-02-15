@@ -56,37 +56,6 @@ SCM_DECL_BEGIN
  * to access uniform vectors in C level.
  */
 
-/*
- * Common structure for generic uvector operation
- */
-typedef struct ScmUVectorRec {
-    SCM_HEADER;
-    unsigned int immutable : 1;
-    int size : (SIZEOF_INT*CHAR_BIT-1);
-    void *owner;
-    void *elements;
-} ScmUVector;
-
-SCM_CLASS_DECL(Scm_UVectorClass);
-#define SCM_CLASS_UVECTOR         (&Scm_UVectorClass)
-#define SCM_UVECTOR(obj)          ((ScmUVector*)(obj))
-#define SCM_UVECTORP(obj)         Scm_TypeP(obj, SCM_CLASS_UVECTOR)
-#define SCM_UVECTOR_SIZE(obj)     (SCM_UVECTOR(obj)->size)
-#define SCM_UVECTOR_IMMUTABLE_P(obj) (SCM_UVECTOR(obj)->immutable)
-#define SCM_UVECTOR_OWNER(obj)    (SCM_UVECTOR(obj)->owner)
-#define SCM_UVECTOR_ELEMENTS(obj) (SCM_UVECTOR(obj)->elements)
-
-#define SCM_UVECTOR_CHECK_MUTABLE(obj)                 \
-  do { if (SCM_UVECTOR_IMMUTABLE_P(obj)) {             \
-    Scm_Error("uniform vector is immutable: %S", obj); \
-  }} while (0)
-
-SCM_EXTERN int    Scm_UVectorElementSize(ScmClass *klass);
-SCM_EXTERN int    Scm_UVectorSizeInBytes(ScmUVector *v);
-SCM_EXTERN ScmObj Scm_MakeUVector(ScmClass *klass, int size, void *init);
-SCM_EXTERN ScmObj Scm_MakeUVectorFull(ScmClass *klass, int size, void *init,
-                                  int immutablep, void *owner);
-
 SCM_EXTERN ScmObj Scm_UVectorAlias(ScmClass *klass, ScmUVector *v,
                                int start, int end);
 
@@ -104,25 +73,6 @@ SCM_EXTERN ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
 ///(define *tmpl-body* '(
 /* ${T}Vector */
 
-typedef struct Scm${T}VectorRec {
-    SCM_HEADER;
-    unsigned int immutable : 1;
-    int size : (SIZEOF_INT*CHAR_BIT-1);
-    void *owner;
-    ${etype} *elements;
-} Scm${T}Vector;
-
-SCM_CLASS_DECL(Scm_${T}VectorClass);
-#define SCM_CLASS_${T}VECTOR  (&Scm_${T}VectorClass)
-
-#define SCM_${T}VECTOR(obj)        ((Scm${T}Vector*)(obj))
-#define SCM_${T}VECTORP(obj)       SCM_XTYPEP(obj, SCM_CLASS_${T}VECTOR)
-#define SCM_${T}VECTOR_SIZE(obj)   (SCM_${T}VECTOR(obj)->size)
-#define SCM_${T}VECTOR_ELEMENTS(obj) (SCM_${T}VECTOR(obj)->elements)
-
-SCM_EXTERN ScmObj Scm_Make${T}Vector(int size, ${etype} fill);
-SCM_EXTERN ScmObj Scm_Make${T}VectorFromArray(int size, const ${etype} array[]);
-SCM_EXTERN ScmObj Scm_Make${T}VectorFromArrayShared(int size, ${etype} array[]);
 SCM_EXTERN ScmObj Scm_${T}VectorFill(Scm${T}Vector *vec, ${etype} fill, int, int);
 SCM_EXTERN ScmObj Scm_${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_${T}VectorSet(Scm${T}Vector *vec, int index, ScmObj val, int clamp);
