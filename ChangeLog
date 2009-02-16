@@ -1,5 +1,9 @@
 2009-02-15  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvlib.stub.tmpl, ext/uvector/uvector.h.tmpl,
+	  ext/uvector/uvector.c.tmpl, ext/uvector/uvgen.scm:
+	  Let *vector-dot routine to take advantage of FFX.
+
 	* lib/gauche/cgen/type.scm: Fixed boxer definition of <float>,
 	  <double> and <real> to use ScmVMReturnFlonum to take advantage
 	  of FFX.  Also added <uvector> to builtin types, since it is now

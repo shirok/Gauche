@@ -1005,7 +1005,7 @@ static inline ScmUInt64 u64muladd(ScmUInt64 x, ScmUInt64 y, ScmUInt64 acc, ScmOb
 ///))
 
 ///(define *tmpl-dotop* '(
-ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
+static ScmObj ${T}VectorDotProd(Scm${T}Vector *x, ScmObj y, int vmp)
 {
     int i, size = SCM_${T}VECTOR_SIZE(x), oor;
     ${ntype} r, vx, vy;
@@ -1053,13 +1053,27 @@ ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
     /* r may contain a value bigger than the normal element value
        of ${t}vector, so it needs some care. */
     if (SCM_EQ(rr, SCM_MAKE_INT(0))) {
-        ${NBOX rr r};
+        if (vmp) {
+            ${VMNBOX rr r};
+        } else {
+            ${NBOX rr r};
+        }
     } else {
         ScmObj sr;
         ${NBOX sr r};
         rr = Scm_Add(rr, sr);
     }
     return rr;
+}
+
+ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
+{
+    return ${T}VectorDotProd(x, y, FALSE);
+}
+
+ScmObj Scm_VM${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
+{
+    return ${T}VectorDotProd(x, y, TRUE);
 }
 ///)) ;; end of tmpl-dotop
 
