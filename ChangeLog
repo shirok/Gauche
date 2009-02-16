@@ -1,3 +1,10 @@
+2009-02-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/type.scm: Fixed boxer definition of <float>,
+	  <double> and <real> to use ScmVMReturnFlonum to take advantage
+	  of FFX.  Also added <uvector> to builtin types, since it is now
+	  supported in the core.
+
 2009-02-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vector.h, src/vector.c, ext/uvector/uvector.c.tmpl,

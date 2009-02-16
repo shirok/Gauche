@@ -188,7 +188,7 @@
  '(;; Numeric types
    (<fixnum>  "int" "small integer" "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
    (<integer> "ScmObj" "exact integer" "SCM_EXACTP" "")
-   (<real>    "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
+   (<real>    "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
    (<number>  "ScmObj" "number" "SCM_NUMBERP" "")
    (<int>     "int" "C integer" "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
    (<long>    "long" "C long integer" "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
@@ -202,8 +202,8 @@
    (<uint8>   "u_int" "C integer" "SCM_UINTP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
    (<uint16>  "u_int" "C integer" "SCM_UINTP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
    (<uint32>  "u_int" "C integer" "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
-   (<float>   "float" "real number" "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
-   (<double>  "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
+   (<float>   "float" "real number" "SCM_REALP" "(float)Scm_GetDouble" "Scm_VMReturnFlonum")
+   (<double>  "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
    
    ;; Basic immediate types
    (<boolean> "int" "boolean" "SCM_BOOLP"   "SCM_BOOL_VALUE" "SCM_MAKE_BOOL")
@@ -218,6 +218,7 @@
    (<pair> "ScmPair*" "pair" "SCM_PAIRP" "SCM_PAIR" "SCM_OBJ")
    (<list> "ScmObj" "list" "SCM_LISTP" "")
    (<vector> "ScmVector*" "vector" "SCM_VECTORP" "SCM_VECTOR")
+   (<uvector> "ScmUVector*" "uniform vector" "SCM_UVECTORP" "SCM_UVECTOR")
    (<string> "ScmString*" "string" "SCM_STRINGP" "SCM_STRING")
    (<symbol> "ScmSymbol*" "symbol" "SCM_SYMBOLP" "SCM_SYMBOL")
    (<keyword> "ScmKeyword*" "keyword" "SCM_KEYWORDP" "SCM_KEYWORD")
