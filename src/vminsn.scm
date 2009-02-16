@@ -98,6 +98,12 @@
                  (if (SCM_SMALL_INT_FITS ,r)
                    ($result (SCM_MAKE_INT ,r))
                    ($result (Scm_MakeInteger ,r)))))])
+(define-cise-stmt $result:u
+  [(_ expr) (let1 r (gensym "cise__")
+              `(let* ([,r :: u_long ,expr])
+                 (if (SCM_SMALL_INT_FITS ,r)
+                   ($result (SCM_MAKE_INT ,r))
+                   ($result (Scm_MakeIntegerU ,r)))))])
 (define-cise-stmt $result:f
   [(_ expr) (let1 r (gensym "cise__")
               `(let* ([,r :: double ,expr])
@@ -662,6 +668,46 @@
 (define-insn TAIL-RECEIVE 2 none #f
   ($receive (set! size (ENV_SIZE (+ reqargs restarg)))))
 
+;; RECEIVE-ALL <cont>
+;;  A special version of RECEIVE that pushes all the current values
+;;  into the stack and makes them into an environment.
+;;  It is used primarily for the occasions that compiler knows it needs
+;;  to save the values temporarily (e.g. for evaluate 'after' thunk of
+;;  dynamic-wind, the results of its body needs to be saved).  
+;;  This must be twined with VALUES-N, which reverses the effects, i.e.
+;;  turn the values in the env frame into values.
+(define-insn RECEIVE-ALL 0 addr #f
+  (let* ([nextpc::ScmWord*])
+    (CHECK-STACK-PARANOIA CONT_FRAME_SIZE)
+    (FETCH-LOCATION nextpc)
+    INCR_PC
+    (PUSH-CONT nextpc)
+    ($goto-insn TAIL-RECEIVE-ALL)))
+
+;; TAIL-RECEIVE-ALL 
+;;  Tail version of RECEIVE-ALL.  
+(define-insn TAIL-RECEIVE-ALL 0 none #f
+  (begin (CHECK-STACK-PARANOIA (ENV-SIZE (+ (-> vm numVals) 1)))
+         (PUSH-ARG VAL0)
+         (dotimes [i (- (-> vm numVals) 1)]
+           (PUSH-ARG (aref (-> vm vals) i)))
+         (FINISH-ENV SCM_FALSE ENV)
+         NEXT))
+
+;; VALUES-N
+;;  Inverse of RECEIVE-ALL.  Transfer the current environment content
+;;  to the values register, and pop the env.
+;;  Differ from VALUES since this one doesn't know # of values beforehand.
+(define-insn VALUES-N 0 none #f
+  (begin
+    (VM-ASSERT ENV)
+    (let* ([nvals::int (cast int (-> ENV size))] [v])
+      (set! (-> vm numVals) nvals)
+      (for [() (> nvals 1) (post-- nvals)]
+           (POP-ARG (aref (-> vm vals) (- nvals 1))))
+      (POP-ARG VAL0)
+      NEXT)))
+
 ;; LSET(depth, offset)
 ;;  Local set
 ;;
@@ -1047,6 +1093,19 @@
       (set! (SCM_VECTOR_ELEMENT vec k) v)
       ($result SCM_UNDEFINED))))
 
+(define-insn UVEC-REF    1 none #f    ; uvector-ref
+  (let* ([k VAL0]
+         [utype::int (SCM_VM_INSN_ARG code)])
+    ($w/argp vec
+      (unless (SCM_UVECTOR_SUBTYPE_P vec utype)
+        ($vm-err "%s required, but got %S" (Scm_UVectorTypeName utype) vec))
+      ($type-check k SCM_INTP "fixnum")
+      (when (or (< (SCM_INT_VALUE k) 0)
+                (>= (SCM_INT_VALUE k) (SCM_UVECTOR_SIZE vec)))
+        ($vm-err "uvector-ref index out of range: %S" k))
+      ($result (Scm_VMUVectorRef (SCM_UVECTOR vec) utype (SCM_INT_VALUE k)
+                                 SCM_UNBOUND)))))
+
 (define-insn NUMEQ2      0 none #f      ; =
   ($w/argp arg
     (cond
@@ -1235,51 +1294,6 @@
 ;;;
 ;;; Additional instructions
 ;;;
-;;;  [SK] Note for myself: They're here not to change instruction
-;;;  numbers, so that building from CVS won't be complicated.
-;;;  Need to put them in appropriate places just before 0.8.7-pre1
-;;;  packaging.
-;;;
-
-;; RECEIVE-ALL <cont>
-;;  A special version of RECEIVE that pushes all the current values
-;;  into the stack and makes them into an environment.
-;;  It is used primarily for the occasions that compiler knows it needs
-;;  to save the values temporarily (e.g. for evaluate 'after' thunk of
-;;  dynamic-wind, the results of its body needs to be saved).  
-;;  This must be twined with VALUES-N, which reverses the effects, i.e.
-;;  turn the values in the env frame into values.
-(define-insn RECEIVE-ALL 0 addr #f
-  (let* ([nextpc::ScmWord*])
-    (CHECK-STACK-PARANOIA CONT_FRAME_SIZE)
-    (FETCH-LOCATION nextpc)
-    INCR_PC
-    (PUSH-CONT nextpc)
-    ($goto-insn TAIL-RECEIVE-ALL)))
-
-;; TAIL-RECEIVE-ALL 
-;;  Tail version of RECEIVE-ALL.  
-(define-insn TAIL-RECEIVE-ALL 0 none #f
-  (begin (CHECK-STACK-PARANOIA (ENV-SIZE (+ (-> vm numVals) 1)))
-         (PUSH-ARG VAL0)
-         (dotimes [i (- (-> vm numVals) 1)]
-           (PUSH-ARG (aref (-> vm vals) i)))
-         (FINISH-ENV SCM_FALSE ENV)
-         NEXT))
-
-;; VALUES-N
-;;  Inverse of RECEIVE-ALL.  Transfer the current environment content
-;;  to the values register, and pop the env.
-;;  Differ from VALUES since this one doesn't know # of values beforehand.
-(define-insn VALUES-N 0 none #f
-  (begin
-    (VM-ASSERT ENV)
-    (let* ([nvals::int (cast int (-> ENV size))] [v])
-      (set! (-> vm numVals) nvals)
-      (for [() (> nvals 1) (post-- nvals)]
-           (POP-ARG (aref (-> vm vals) (- nvals 1))))
-      (POP-ARG VAL0)
-      NEXT)))
 
 ;; PUSH-HANDLERS
 ;; POP-HANDLERS

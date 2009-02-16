@@ -4431,6 +4431,13 @@
                                 ,(pass1 val cenv)))]
       [else (error "wrong number of arguments for vector-set!:" form)])))
 
+(define-builtin-inliner %uvector-ref
+  (lambda (form cenv)
+    (match form
+      [(_ vec type ind)
+       (asm-arg2 form `(,UVEC-REF ,type) vec ind cenv)]
+      [else (undefined)])))
+
 (define-builtin-inliner zero?
   (lambda (form cenv)
     (match form

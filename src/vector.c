@@ -225,6 +225,24 @@ ScmUVectorType Scm_UVectorType(ScmClass *klass)
     else return SCM_UVECTOR_INVALID;
 }
 
+const char *Scm_UVectorTypeName(int type) /* for error msgs etc. */
+{
+    switch (type) {
+    case SCM_UVECTOR_S8:  return "s8vector";
+    case SCM_UVECTOR_U8:  return "u8vector";
+    case SCM_UVECTOR_S16: return "s16vector";
+    case SCM_UVECTOR_U16: return "u16vector";
+    case SCM_UVECTOR_S32: return "s32vector";
+    case SCM_UVECTOR_U32: return "u32vector";
+    case SCM_UVECTOR_S64: return "s64vector";
+    case SCM_UVECTOR_U64: return "u64vector";
+    case SCM_UVECTOR_F16: return "f16vector";
+    case SCM_UVECTOR_F32: return "f32vector";
+    case SCM_UVECTOR_F64: return "f64vector";
+    default: return "invalid type of uvector (possibly implementation error)";
+    }
+}
+
 /* Returns the size of element of the uvector of given class */
 int Scm_UVectorElementSize(ScmClass *klass)
 {
@@ -265,6 +283,36 @@ ScmObj Scm_MakeUVector(ScmClass *klass, int size, void *init)
 {
     return Scm_MakeUVectorFull(klass, size, init, FALSE, NULL);
 }
+
+/* Generic accessor, intended to be called from VM loop.
+   (As the 'VM' in the name suggests, the return value of this API
+   should immediately be passed to VM.  See comments on FFX in gauche/number.h)
+ */
+ScmObj Scm_VMUVectorRef(ScmUVector *v, int t, int k, ScmObj fallback)
+{
+    SCM_ASSERT(Scm_UVectorType(SCM_CLASS_OF(v)) == t);
+    if (k < 0 || k >= SCM_UVECTOR_SIZE(v)) return fallback;
+    switch (t) {
+    case SCM_UVECTOR_S8:  return SCM_MAKE_INT(SCM_S8VECTOR_ELEMENT(v, k));
+    case SCM_UVECTOR_U8:  return SCM_MAKE_INT(SCM_U8VECTOR_ELEMENT(v, k));
+    case SCM_UVECTOR_S16: return SCM_MAKE_INT(SCM_S16VECTOR_ELEMENT(v, k));
+    case SCM_UVECTOR_U16: return SCM_MAKE_INT(SCM_U16VECTOR_ELEMENT(v, k));
+    case SCM_UVECTOR_S32: return Scm_MakeInteger(SCM_S32VECTOR_ELEMENT(v, k));
+    case SCM_UVECTOR_U32: return Scm_MakeIntegerU(SCM_U32VECTOR_ELEMENT(v, k));
+    case SCM_UVECTOR_S64: return Scm_MakeInteger64(SCM_S64VECTOR_ELEMENT(v, k));
+    case SCM_UVECTOR_U64: return Scm_MakeIntegerU64(SCM_U64VECTOR_ELEMENT(v, k));
+    case SCM_UVECTOR_F16:
+        return Scm_VMReturnFlonum(Scm_HalfToDouble(SCM_F16VECTOR_ELEMENT(v, k)));
+    case SCM_UVECTOR_F32:
+        return Scm_VMReturnFlonum((double)(SCM_F32VECTOR_ELEMENT(v, k)));
+    case SCM_UVECTOR_F64:
+        return Scm_VMReturnFlonum(SCM_F64VECTOR_ELEMENT(v, k));
+    default:
+        Scm_Error("[internal error] unknown uvector type given to Scm_VMUVectorRef");
+        return SCM_UNDEFINED;   /* dummy */
+    }
+}
+
 
 /*
  * Inidividual constructors for convenience

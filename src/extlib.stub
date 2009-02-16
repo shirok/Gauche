@@ -613,6 +613,21 @@
 (define-cproc weak-vector-set! (wv::<weak-vector> index::<fixnum> val)
   Scm_WeakVectorSet)
 
+;; uniform vector
+;; (public uniform vector APIs are defined in gauche.uvector, which calls
+;; this one internally).
+(define-cproc %uvector-ref (v::<uvector> t::<int> k::<integer>
+                            :optional fallback)
+  (unless (== (Scm_UVectorType (SCM_CLASS_OF v)) t)
+    (Scm_TypeError "vec" (Scm_UVectorTypeName t) (SCM_OBJ v)))
+  (cond [(or (SCM_BIGNUMP k)
+             (< (SCM_INT_VALUE k) 0)
+             (>= (SCM_INT_VALUE k) (SCM_UVECTOR_SIZE v)))
+         (when (SCM_UNBOUNDP fallback)
+           (Scm_Error "%s-ref index out of range: %S" (Scm_UVectorTypeName t) k))
+         (result fallback)]
+        [else (result (Scm_VMUVectorRef v t (SCM_INT_VALUE k) fallback))]))
+
 ;;
 ;; 6.4  Control Features
 ;;
@@ -1559,7 +1574,6 @@
 
 (define-cproc procedure-info (proc::<procedure>)
   (result (SCM_PROCEDURE_INFO proc)))
-
 
 ;; Local variables:
 ;; mode: scheme

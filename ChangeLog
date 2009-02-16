@@ -1,5 +1,10 @@
 2009-02-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/vector.h, src/vector.c, src/extlib.stub (%uvector-ref):
+	  Experimentally added internal support of generic uvector referencer.
+	* src/vminsn.scm (UVEC-REF), src/compile.scm: Experimentally added
+	  instruction for %uvector-ref
+
 	* ext/uvector/uvlib.stub.tmpl, ext/uvector/uvector.h.tmpl,
 	  ext/uvector/uvector.c.tmpl, ext/uvector/uvgen.scm:
 	  Let *vector-dot routine to take advantage of FFX.
