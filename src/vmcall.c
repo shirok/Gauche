@@ -9,22 +9,54 @@
  * Checks the argument count is OK for call to PROC.  if PROC takes &rest
  * args, fold those arguments to the list.  Modifies ARGC to hold the
  * adjusted size of the argument frame.
+ *
+ * There's two cases in how the arguments are pushed in the VM stack
+ * (normal call and apply call), and there's two cases in how the arguments
+ * should be prepared (fixed-argument call and variable-argument call), so
+ * there are four cases in total.
+ *
+ * Input:
+ *  In normal call, arguments at the call site are pushed in the stack
+ *  in left-to-right order.  For example, if the call site is (f x y z),
+ *  the top 3 stack entries of the stack are like this ('|' indicates 
+ *  stack top; stack grows to right):
+ *
+ *      ... x  y  z|
+ *
+ *  in this case, input ARGC is 3.
+ *
+ *  In apply call, the stack top is a list of tail of argument list.
+ *  If the call site is (apply f x (list y z)), input ARGC is 2 and the
+ *  stack top has these two entries:
+ *
+ *      ... x  (y z)|
+ *
+ * Output:
+ *  Suppose proc->required == N and proc->optional == M.
+ *  If M == 0, it is a fixed-argument procedure.  The stack must contain
+ *  N values, and ARGC must be N.
+ *
+ *  If M > 0, the stack must contain between N+1 to N+M values, where 
+ *  the last value is the tail of the argument list.  For standard Scheme
+ *  variable argument procedure, M is always 1 and the stack contains
+ *  N required arguments plus one list of 'rest' argument.
  */
 
 #undef ADJUST_ARGUMENT_FRAME
 #if !defined(APPLY_CALL)
 #define ADJUST_ARGUMENT_FRAME(proc, argc)                               \
     do {                                                                \
-        int reqargs, restarg;                                           \
+        int reqargs, optargs;                                           \
         reqargs = SCM_PROCEDURE_REQUIRED(proc);                         \
-        restarg = SCM_PROCEDURE_OPTIONAL(proc);                         \
-        if (restarg) {                                                  \
+        optargs = SCM_PROCEDURE_OPTIONAL(proc);                         \
+        if (optargs) SCM_ASSERT(optargs == 1);                          \
+        if (optargs) {                                                  \
             ScmObj p = SCM_NIL, a;                                      \
             if (argc < reqargs) {                                       \
                 wna(vm, VAL0, argc, -1); RETURN_OP(); NEXT;             \
             }                                                           \
             /* fold &rest args */                                       \
-            while (argc > reqargs) {                                    \
+            while (argc > reqargs+optargs-1) {                          \
                 POP_ARG(a);                                             \
                 p = Scm_Cons(a, p);                                     \
                 argc--;                                                 \
@@ -40,34 +72,36 @@
 #else /*APPLY_CALL*/
 #define ADJUST_ARGUMENT_FRAME(proc, argc)                               \
     do {                                                                \
-        int reqargs, restarg;                                           \
+        int reqargs, optargs;                                           \
         int rargc = Scm_Length(*(SP-1)), c;                             \
         ScmObj p, a;                                                    \
         reqargs = SCM_PROCEDURE_REQUIRED(proc);                         \
-        restarg = SCM_PROCEDURE_OPTIONAL(proc);                         \
-        if ((!restarg && ((rargc+argc-1) != reqargs))                   \
-            || (restarg && ((rargc+argc-1) < reqargs))) {               \
+        optargs = SCM_PROCEDURE_OPTIONAL(proc);                         \
+        if (optargs) SCM_ASSERT(optargs == 1);                          \
+        if ((!optargs && ((rargc+argc-1) != reqargs))                   \
+            || (optargs && ((rargc+argc-1) < reqargs))) {               \
             wna(vm, VAL0, rargc+argc-1, rargc); RETURN_OP(); NEXT;      \
         }                                                               \
-        if (argc+rargc < reqargs+(restarg?1:0)) {                       \
-            CHECK_STACK(reqargs+(restarg?1:0) - (argc+rargc));          \
+        if (argc+rargc < reqargs+optargs) {                             \
+            CHECK_STACK(reqargs + optargs - (argc+rargc));              \
         }                                                               \
-        POP_ARG(p);                                                     \
+        POP_ARG(p);  /* already folded args */                          \
         if (argc-1 > reqargs) {                                         \
-            /* fold rest args */                                        \
+            /* fold rest args.  optargs == 0 case is already            \
+               eliminated by above wna check.  */                       \
             p = Scm_CopyList(p);                                        \
-            for (c=argc-1; c > reqargs; c--) {                          \
+            for (c=argc; c>reqargs+optargs; c--) {                      \
                 POP_ARG(a);                                             \
                 p = Scm_Cons(a, p);                                     \
             }                                                           \
             PUSH_ARG(p);                                                \
         } else {                                                        \
             /* 'unfold' rest arg */                                     \
-            for (c=argc-1; c<reqargs; c++) {                            \
+            for (c=argc; c<reqargs+(optargs? optargs:1); c++) {         \
                 PUSH_ARG(SCM_CAR(p));                                   \
                 p = SCM_CDR(p);                                         \
             }                                                           \
-            if (restarg) {                                              \
+            if (optargs) {                                              \
                 p = Scm_CopyList(p);                                    \
                 PUSH_ARG(p);                                            \
             }                                                           \

@@ -1,3 +1,9 @@
+2009-02-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/vmcall.c (ADJUST_ARGUMENT_FRAME),
+	  src/gauche.h (ScmProcedure): Allow procedure->optional to be more
+	  than 1.  This is preparation for optional arg handling optimization.
+
 2009-02-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vector.h, src/vector.c, src/extlib.stub (%uvector-ref):

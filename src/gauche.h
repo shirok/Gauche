@@ -1187,8 +1187,8 @@ typedef ScmObj (*ScmTransformerProc)(ScmObj self, ScmObj form, ScmObj env,
 /* Base structure */
 struct ScmProcedureRec {
     SCM_INSTANCE_HEADER;
-    unsigned int required : 10;    /* # of required args */
-    unsigned int optional : 1;     /* 1 if it takes rest args */
+    unsigned int required : 16;    /* # of required args */
+    unsigned int optional : 8;     /* >=1 if it takes opt args. see below.*/
     unsigned int type     : 3;     /* ScmProcedureType */
     unsigned int locked   : 1;     /* setter locked? */
     unsigned int currying : 1;     /* autocurrying */
@@ -1196,6 +1196,25 @@ struct ScmProcedureRec {
     ScmObj setter;                 /* setter, if exists. */
     ScmObj inliner;                /* inliner information.  see below. */
 };
+
+/* About optional slot:
+   If this slot is non-zero, the procedure takes optional arguments.
+   For Standard Scheme procedures with 'rest' arguments, this slot is 1
+   and all excessive arguments are 'folded' in a list.
+
+   This slot may have a value more than 1.  If it is N (>1), then up to N-1
+   optional arguments are passed wihtout being folded (that is, passed
+   'on the stack'.  Only when the given argument is more than or equal to
+   N + reqargs, the excessive arguments are folded and passed in a list.
+   Thus, such procedure may get between reqargs values and N+reqargs values
+   after folding (NB: Fixed argument procedure always get regargs values,
+   and standard Scheme variable argument procedure always get reqargs+1 values
+   after argument folding).
+
+   This special treatment is to avoid unnecessary consing of argumets;
+   if we know the callee immeidately unfolds the rest argument, it's no 
+   use to fold excessive arguments anyway.
+ */
 
 /* About procedure inliner:
    This slot holds information to inline procedures.  The value of this slot
