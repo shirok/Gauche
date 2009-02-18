@@ -1,5 +1,7 @@
 2009-02-17  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/stub.scm (process-cproc-args): Code cleanup.
+
 	* src/vmcall.c (ADJUST_ARGUMENT_FRAME),
 	  src/gauche.h (ScmProcedure): Allow procedure->optional to be more
 	  than 1.  This is preparation for optional arg handling optimization.

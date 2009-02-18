@@ -503,26 +503,28 @@
 
 ;; returns a list of args list of keyword args, # of reqargs, # of
 ;; optargs, have-rest-arg?, and allow-other-keys?
+;; each keyword arg and a rest arg counts 1 oprtarg for each.
 (define (process-cproc-args name argspecs)
   (define (badarg arg)
     (error <cgen-stub-error> "bad argument in argspec:"arg" in "name))
+  
+  (define (xlate-old-lambda-keywords specs) ; support old &-notation
+    (map (^(s)(cond [(assq s '((&optional . :optional) (&keyword . :key)
+                               (&rest . :rest)
+                               (&allow-other-keys . :allow-other-keys)))
+                     => cdr]
+                    [else s]))
+         specs))
 
   (define (required specs args nreqs)
     (match specs
-      [()                   (values (reverse args) '() nreqs 0 #f #f)]
+      [()                  (values (reverse args) '() nreqs 0 #f #f)]
       [(:optional . specs) (optional specs args nreqs 0)]
       [(:rest . specs)     (rest specs args '() nreqs 0 #f)]
-      [(:key . specs)  (keyword specs args '() nreqs 0)]
+      [(:key . specs)      (keyword specs args '() nreqs 0)]
       [(:allow-other-kyes . specs)
        (error <cgen-stub-error>
               "misplaced :allow-other-key parameter:"argspecs" in "name)]
-      ;; NB: &-keywords are deprecated.
-      [('&optional . specs) (optional specs args nreqs 0)]
-      [('&rest . specs)     (rest specs args '() nreqs 0 #f)]
-      [('&keyword . specs)  (keyword specs args '() nreqs 0)]
-      [('&allow-other-keys . specs)
-       (error <cgen-stub-error>
-              "misplaced &allow-other-key parameter:"argspecs" in "name)]
       [([? symbol? sym] . specs)
        (required specs
                  (cons (make-arg <required-arg> sym nreqs) args)
@@ -540,15 +542,6 @@
       [(:rest . specs)     (rest specs args '() nreqs nopts #f)]
       [(:allow-other-keys . specs)
        (error <cgen-stub-error> "misplaced :allow-other-key parameter in "name)]
-      ;; NB: &-keywords are deprecated.
-      [('&optional . specs)
-       (error <cgen-stub-error> "extra &optional parameter in "name)]
-      [('&keyword . specs)
-       (error <cgen-stub-error>
-              "&keyword and &optional can't be used together in "name)]
-      [('&rest . specs)     (rest specs args '() nreqs nopts #f)]
-      [('&allow-other-keys . specs)
-       (error <cgen-stub-error> "misplaced &allow-other-key parameter in "name)]
       [([? symbol? sym] . specs)
        (optional specs
                  (cons (make-arg <optional-arg> sym (+ nreqs nopts)) args)
@@ -568,7 +561,7 @@
       [() (values (reverse args) (reverse keyargs) nreqs nopts #f #f)]
       [(:allow-other-keys)
        (values (reverse args) (reverse keyargs) nreqs nopts #f #t)]
-      [(:allow-other-keys &rest . specs)
+      [(:allow-other-keys :rest . specs)
        (rest specs args keyargs nreqs nopts #t)]
       [(:allow-other-keys . specs)
        (error <cgen-stub-error> "misplaced :allow-other-keys parameter in "name)]
@@ -578,19 +571,6 @@
        (error <cgen-stub-error>
               ":key and :optional can't be used together in "name)]
       [(:rest . specs)     (rest specs args keyargs nreqs nopts #f)]
-      ;; NB: &-keywords are deprecated.
-      [('&allow-other-keys)
-       (values (reverse args) (reverse keyargs) nreqs nopts #f #t)]
-      [('&allow-other-keys &rest . specs)
-       (rest specs args keyargs nreqs nopts #t)]
-      [('&allow-other-keys . specs)
-       (error <cgen-stub-error> "misplaced &allow-other-keys parameter in "name)]
-      [('&keyword . specs)
-       (error <cgen-stub-error> "extra &keyword parameter in "name)]
-      [('&optional . specs)
-       (error <cgen-stub-error>
-              "&keyword and &optional can't be used together in "name)]
-      [('&rest . specs)     (rest specs args keyargs nreqs nopts #f)]
       [([? symbol? sym] . specs)
        (keyword specs args
                 (cons (make-arg <keyword-arg> sym (+ nreqs nopts))
@@ -613,7 +593,7 @@
                nreqs (+ nopts 1) #t other-keys?)]
       [_ (badarg (car specs))]))
 
-  (required argspecs '() 0)
+  (required (xlate-old-lambda-keywords argspecs) '() 0)
   )
 
 ;; returns two values, body stmts and return-type.  return-type can be #f
@@ -804,8 +784,7 @@
   ;; argument decl
   (for-each emit-arg-decl (~ cproc'args))
   (for-each emit-arg-decl (~ cproc'keyword-args))
-  (when (or (> (~ cproc'num-optargs) 0)
-            (not (null? (~ cproc'keyword-args))))
+  (when (> (~ cproc'num-optargs) 0)
     (p "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
   (p "  SCM_ENTER_SUBR(\""(~ cproc'scheme-name)"\");")
   ;; argument count check (for optargs)
