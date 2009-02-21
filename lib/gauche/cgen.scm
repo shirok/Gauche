@@ -34,7 +34,7 @@
 ;;;
 
 ;; *EXPERIMENTAL*
-;; gauche.cgen.* modules is intended to provide a common framework
+;; gauche.cgen.* modules are intended to provide a common framework
 ;; to generate C code from Scheme.  They will be used for stub
 ;; generators or any other kind of automatic code generation.
 
@@ -116,7 +116,7 @@
 ;;     - #include <gauche.h>
 ;;     - declarations of static array ;; scm__staticObjs etc.  not yet
 ;;                                ;; defined, but decls are put here
-;;                                ;; to allow foward reference.
+;;                                ;; to allow forward reference.
 ;;     - <decl part>
 ;;     - definitions of static array
 ;;     - <body part>

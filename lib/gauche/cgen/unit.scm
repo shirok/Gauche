@@ -162,7 +162,6 @@
 (define-method cgen-emit-init ((node <cgen-node>)) #f)
 
 ;; Should apply WALKER to the <cgen-node> instances the NODE
-
 ;; routine should visit.  The default method scans all slots
 ;; and picks up any <cgen-node>.  It fails to recognize, for example,
 ;; the node keeps a list of <cgen-nodes>; in which case the subclass
