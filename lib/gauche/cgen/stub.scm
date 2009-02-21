@@ -1,5 +1,5 @@
 ;;;
-;;; gauche.cgen.stub - stub forms parsing and code generation
+;;; gauce.cgen.stub - stub forms parsing and code generation
 ;;;  
 ;;;   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
 ;;;   
@@ -421,10 +421,14 @@
   ((args              :initform '() :init-keyword :args)
    (keyword-args      :initform '() :init-keyword :keyword-args)
    (num-reqargs       :initform 0   :init-keyword :num-reqargs)
+      ;; # of required arguments.
    (num-optargs       :initform 0   :init-keyword :num-optargs)
-   (have-rest-arg?    :initform #f  :accessor have-rest-arg? :init-keyword :have-rest-arg?)
-   (allow-other-keys? :initform '() :accessor allow-other-keys?
-                      :init-keyword :allow-other-keys?)
+      ;; # of optional arguments.  including keyword-args.  rest-arg
+      ;; is counted as 1 if the procedure takes it.
+   (have-rest-arg?    :initform #f  :init-keyword :have-rest-arg?)
+      ;; true if the procedure takes a rest-arg.
+   (allow-other-keys? :initform '() :init-keyword :allow-other-keys?)
+      ;; true if :allow-other-keys has veen given.
    (return-type       :initform #f :init-keyword :return-type)
       ;; return type given by ::<type>.
    (decls             :initform '())
@@ -435,7 +439,9 @@
       ;; If not null, the entire procedure body is wrapped by 'try' and
       ;; an appropriate handlers are emitted.  Necessary to write a stub
       ;; for C++ functions that may throw an exception.
-   (flags             :initform '() :init-keyword :flags :accessor flags-of)
+   (flags             :initform '() :init-keyword :flags)
+      ;; list of symbols to modify code generation.  currently only 
+      ;; `fast-flonum' is supported.
    ))
 
 (define (get-arg cproc arg) (find (^(x) (eq? arg (~ x'name))) (~ cproc'args)))
@@ -904,7 +910,7 @@
  
 (define (emit-keyword-args-unbox cproc)
   (let ([args (~ cproc'keyword-args)]
-        [other-keys? (allow-other-keys? cproc)])
+        [other-keys? (~ cproc'allow-other-keys?)])
     (p "  if (Scm_Length(SCM_OPTARGS) % 2)")
     (p "    Scm_Error(\"keyword list not even: %S\", SCM_OPTARGS);")
     (p "  while (!SCM_NULLP(SCM_OPTARGS)) {")
@@ -1040,7 +1046,7 @@
      (~ method'c-name))
   (p "{")
   (for-each emit-arg-decl (~ method'args))
-  (when (have-rest-arg? method)
+  (when (~ method'have-rest-arg?)
     (p "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
   (for-each emit-arg-unbox (~ method'args))
   ;; body
@@ -1055,7 +1061,7 @@
   (p "};")
   (f "static SCM_DEFINE_METHOD(~a__STUB, &~a, ~a, ~a, ~a__SPEC, ~:*~a, NULL);"
      (~ method'c-name) (~ method'c-generic)
-     (~ method'num-reqargs) (if (have-rest-arg? method) "1" "0")
+     (~ method'num-reqargs) (if (~ method'have-rest-arg?) "1" "0")
      (~ method'c-name))
   (p "")
   )
