@@ -91,8 +91,20 @@
 ;;----------------------------------------------------------------
 (test-section "application")
 
-(prim-test "apply" '(1 2 3) (lambda ()  (apply list 1 '(2 3))))
-(prim-test "apply" '(1 2 3) (lambda ()  (apply apply (list list 1 2 '(3)))))
+(prim-test "apply" '(1 2 3) (lambda ()  (apply list '(1 2 3))))
+(prim-test "apply" '(2 3 4) (lambda ()  (apply list 2 '(3 4))))
+(prim-test "apply" '(3 4 5) (lambda ()  (apply list 3 4 '(5))))
+(prim-test "apply" '(4 5 6) (lambda ()  (apply list 4 5 6 '())))
+
+(prim-test "apply^2" '() (lambda () (apply apply list '() '())))
+(prim-test "apply^2" '() (lambda () (apply apply list '(()))))
+(prim-test "apply^2" '(1 . 2) (lambda () (apply apply cons '((1 2)))))
+(prim-test "apply^2" '(3 . 4) (lambda () (apply apply cons 3 '((4)))))
+(prim-test "apply^2" '(5 . 6) (lambda () (apply apply (list cons 5 '(6)))))
+                                          
+
+(prim-test "apply" '(6 7 8) (lambda ()  (apply apply (list list 6 7 '(8)))))
+
 
 ;; This tests 'unfolding' path in ADJUST_ARGUMENT_FRAME.
 (prim-test "apply, copying args" '(1 2 3)

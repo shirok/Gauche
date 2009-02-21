@@ -1,3 +1,12 @@
+2009-02-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm, src/vmcall.c (ADJUST_ARGUMENT_FRAME):
+	  Made SUBR's :optional argument does not cause caller to cons
+	  the optional arguments.  Improved performance quite a bit,
+	  especially when passing flonums in optional args (if optional args
+	  are consed, the flonums have to be moved to the heap; now it can
+	  stay in the flonum stack).
+
 2009-02-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm (process-cproc-args): Code cleanup.

@@ -36,6 +36,7 @@
 (define-module gauche.cgen.stub
   (use srfi-1)
   (use srfi-13)
+  (use srfi-42)
   (use util.match)
   (use text.tr)
   (use gauche.parameter)
@@ -326,8 +327,10 @@
    ;; - #f or <cgen-literal> : default value for optional/keyword arg
    ))
 
+;; The opt-count is an integer, indicating the position of this optional
+;; arg counted from the beginning of the optional arg
 (define-class <required-arg> (<arg>) ())
-(define-class <optional-arg> (<arg>) ())
+(define-class <optional-arg> (<arg>) ((opt-count :init-keyword :opt-count)))
 (define-class <keyword-arg>  (<arg>) (keyword))
 (define-class <rest-arg>     (<arg>) ())
 
@@ -501,14 +504,15 @@
   (receive (arg type) (grok-argname argname)
     (apply make class :name arg :type type :count count rest)))
 
-;; returns a list of args list of keyword args, # of reqargs, # of
+;; returns a list of args, a list of keyword args, # of reqargs, # of
 ;; optargs, have-rest-arg?, and allow-other-keys?
 ;; each keyword arg and a rest arg counts 1 oprtarg for each.
 (define (process-cproc-args name argspecs)
   (define (badarg arg)
     (error <cgen-stub-error> "bad argument in argspec:"arg" in "name))
-  
-  (define (xlate-old-lambda-keywords specs) ; support old &-notation
+
+  ;; support old &-notation.  will fade away.
+  (define (xlate-old-lambda-keywords specs) 
     (map (^(s)(cond [(assq s '((&optional . :optional) (&keyword . :key)
                                (&rest . :rest)
                                (&allow-other-keys . :allow-other-keys)))
@@ -533,7 +537,7 @@
 
   (define (optional specs args nreqs nopts)
     (match specs
-      [() (values (reverse args) '() nreqs nopts #f #f)]
+      [()   (values (reverse args) '() nreqs nopts #f #f)]
       [(:optional . specs)
        (error <cgen-stub-error> "extra :optional parameter in "name)]
       [(:key . specs)
@@ -541,15 +545,19 @@
               ":key and :optional can't be used together in "name)]
       [(:rest . specs)     (rest specs args '() nreqs nopts #f)]
       [(:allow-other-keys . specs)
-       (error <cgen-stub-error> "misplaced :allow-other-key parameter in "name)]
+       (error <cgen-stub-error>
+              "misplaced :allow-other-keys parameter in "name)]
       [([? symbol? sym] . specs)
        (optional specs
-                 (cons (make-arg <optional-arg> sym (+ nreqs nopts)) args)
+                 (cons (make-arg <optional-arg> sym (+ nreqs nopts)
+                                 :opt-count nopts)
+                       args)
                  nreqs
                  (+ nopts 1))]
       [(([? symbol? sym] default) . specs)
        (optional specs
                  (cons (make-arg <optional-arg> sym (+ nreqs nopts)
+                                 :opt-count nopts
                                  :default (make-literal default))
                        args)
                  nreqs
@@ -784,18 +792,19 @@
   ;; argument decl
   (for-each emit-arg-decl (~ cproc'args))
   (for-each emit-arg-decl (~ cproc'keyword-args))
-  (when (> (~ cproc'num-optargs) 0)
+  (unless (null? (~ cproc'keyword-args))
     (p "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
   (p "  SCM_ENTER_SUBR(\""(~ cproc'scheme-name)"\");")
   ;; argument count check (for optargs)
   (when (and (> (~ cproc'num-optargs) 0)
              (null? (~ cproc'keyword-args))
-             (not (have-rest-arg? cproc)))
-    (p "  if (Scm_Length(SCM_OPTARGS) > "(~ cproc'num-optargs)")")
+             (not (~ cproc'have-rest-arg?)))
+    (p "  if (SCM_ARGCNT >= "(+ (~ cproc'num-reqargs) (~ cproc'num-optargs) 1))
+    (p "      && !SCM_NULLP(SCM_ARGREF(SCM_ARGCNT-1)))")
     (p "    Scm_Error(\"too many arguments: up to "
        (+ (~ cproc'num-reqargs) (~ cproc'num-optargs))
-       " is expected, %d given.\", Scm_Length(SCM_OPTARGS)+"
-       (~ cproc'num-reqargs)");"))
+       " is expected, %d given.\", "
+       "SCM_ARGCNT + Scm_Length(SCM_ARGREF(SCM_ARGCNT-1)) - 1);"))
   ;; argument assertions & unbox op.
   (for-each emit-arg-unbox (~ cproc'args))
   (unless (null? (~ cproc'keyword-args))
@@ -820,7 +829,10 @@
      (if (memq 'fast-flonum (~ cproc'flags)) "I" "")
      (c-stub-name cproc)
      (~ cproc'num-reqargs)
-     (if (or (have-rest-arg? cproc) (> (~ cproc'num-optargs) 0)) 1 0)
+     (cond [(zero? (~ cproc'num-optargs)) 0]
+           [(not (null? (~ cproc'keyword-args))) 1]
+           [(~ cproc'have-rest-arg?) (~ cproc'num-optargs)]
+           [else (+ (~ cproc'num-optargs) 1)])
      (cgen-c-name (~ cproc'proc-name))
      (~ cproc'c-name)
      (cond [(~ cproc'inline-insn)
@@ -875,15 +887,15 @@
   (emit-arg-unbox-rec arg))
 
 (define-method emit-arg-unbox ((arg <optional-arg>))
-  (p "  if (SCM_NULLP(SCM_OPTARGS)) "(~ arg'scm-name)" = "(get-arg-default arg)";")
-  (p "  else {")
-  (p "    "(~ arg'scm-name)" = SCM_CAR(SCM_OPTARGS);")
-  (p "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
+  (p "  if (SCM_ARGCNT > "(~ arg'count)"+1) {")
+  (p "    "(~ arg'scm-name)" = SCM_ARGREF("(~ arg'count)");")
+  (p "  } else {")
+  (p "    "(~ arg'scm-name)" = "(get-arg-default arg)";")
   (p "  }")
   (emit-arg-unbox-rec arg))
  
 (define-method emit-arg-unbox ((arg <rest-arg>))
-  (f "  ~a = SCM_OPTARGS;" (~ arg'scm-name))
+  (p "  "(~ arg'scm-name)" = SCM_ARGREF(SCM_ARGCNT-1);")
   (emit-arg-unbox-rec arg))
 
 (define (get-arg-default arg)

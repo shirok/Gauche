@@ -49,7 +49,6 @@
         int reqargs, optargs;                                           \
         reqargs = SCM_PROCEDURE_REQUIRED(proc);                         \
         optargs = SCM_PROCEDURE_OPTIONAL(proc);                         \
-        if (optargs) SCM_ASSERT(optargs == 1);                          \
         if (optargs) {                                                  \
             ScmObj p = SCM_NIL, a;                                      \
             if (argc < reqargs) {                                       \
@@ -77,33 +76,49 @@
         ScmObj p, a;                                                    \
         reqargs = SCM_PROCEDURE_REQUIRED(proc);                         \
         optargs = SCM_PROCEDURE_OPTIONAL(proc);                         \
-        if (optargs) SCM_ASSERT(optargs == 1);                          \
-        if ((!optargs && ((rargc+argc-1) != reqargs))                   \
-            || (optargs && ((rargc+argc-1) < reqargs))) {               \
-            wna(vm, VAL0, rargc+argc-1, rargc); RETURN_OP(); NEXT;      \
-        }                                                               \
-        if (argc+rargc < reqargs+optargs) {                             \
-            CHECK_STACK(reqargs + optargs - (argc+rargc));              \
-        }                                                               \
-        POP_ARG(p);  /* already folded args */                          \
-        if (argc-1 > reqargs) {                                         \
-            /* fold rest args.  optargs == 0 case is already            \
-               eliminated by above wna check.  */                       \
-            p = Scm_CopyList(p);                                        \
-            for (c=argc; c>reqargs+optargs; c--) {                      \
-                POP_ARG(a);                                             \
-                p = Scm_Cons(a, p);                                     \
+        if (optargs) {                                                  \
+            if ((rargc+argc-1) < reqargs) {                             \
+                wna(vm, VAL0, rargc+argc-1, rargc); RETURN_OP(); NEXT;  \
             }                                                           \
-            PUSH_ARG(p);                                                \
-        } else {                                                        \
-            /* 'unfold' rest arg */                                     \
-            for (c=argc; c<reqargs+(optargs? optargs:1); c++) {         \
-                PUSH_ARG(SCM_CAR(p));                                   \
-                p = SCM_CDR(p);                                         \
-            }                                                           \
-            if (optargs) {                                              \
+            POP_ARG(p);  /* tail of arglist */                          \
+            if (argc > reqargs+optargs) {                               \
+                /* fold rest args. */                                   \
+                p = Scm_CopyList(p);                                    \
+                for (c=argc; c>reqargs+optargs; c--) {                  \
+                    POP_ARG(a);                                         \
+                    p = Scm_Cons(a, p);                                 \
+                }                                                       \
+                PUSH_ARG(p);                                            \
+            } else {                                                    \
+                /* 'unfold' rest arg */                                 \
+                CHECK_STACK(reqargs + optargs - (argc+rargc));          \
+                for (c=argc; SCM_PAIRP(p) && c<reqargs+optargs; c++) {  \
+                    PUSH_ARG(SCM_CAR(p));                               \
+                    p = SCM_CDR(p);                                     \
+                }                                                       \
                 p = Scm_CopyList(p);                                    \
                 PUSH_ARG(p);                                            \
+            }                                                           \
+        } else {                                                        \
+            /* no optargs */                                            \
+            if ((rargc+argc-1) != reqargs) {                            \
+                wna(vm, VAL0, rargc+argc-1, rargc); RETURN_OP(); NEXT;  \
+            }                                                           \
+            POP_ARG(p);  /* tail of arglist */                          \
+            if (argc > reqargs ) {                                      \
+                /* fold rest args. */                                   \
+                p = Scm_CopyList(p);                                    \
+                for (c=argc-1; c>reqargs+1; c--) {                        \
+                    POP_ARG(a);                                         \
+                    p = Scm_Cons(a, p);                                 \
+                }                                                       \
+            } else {                                                    \
+                /* 'unfold' rest arg */                                 \
+                CHECK_STACK(reqargs - (argc+rargc));                    \
+                for (c=argc-1; SCM_PAIRP(p) && c<reqargs; c++) {        \
+                    PUSH_ARG(SCM_CAR(p));                               \
+                    p = SCM_CDR(p);                                     \
+                }                                                       \
             }                                                           \
         }                                                               \
         argc = SP-ARGP;                                                 \
