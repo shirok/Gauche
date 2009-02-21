@@ -1,3 +1,13 @@
+2009-02-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm: Added support of :optarray argument
+	  spec; it allows SUBR to receive optional arguments as a C array of
+	  ScmObj.
+	* ext/uvector/uvector.c.tmpl, ext/uvector/uvector.h.tmpl,
+	  ext/uvector/uvlib.stub.tmpl: Changed 'TAGvector' function using
+	  :optarray argument spec, so that if the argument list is short
+	  it won't cons.
+
 2009-02-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm, src/vmcall.c (ADJUST_ARGUMENT_FRAME):

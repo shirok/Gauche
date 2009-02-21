@@ -230,19 +230,25 @@ ScmObj Scm_ListTo${T}Vector(ScmObj list, int clamp)
     return SCM_OBJ(vec);
 }
 
+ScmObj Scm_ObjArrayTo${T}Vector(ScmObj *arr, int size, int clamp)
+{
+    int i;
+    ScmUVector *vec = (ScmUVector*)Scm_Make${T}Vector(size, 0);
+    for (i=0; i<size; i++) {
+        ${etype} elt;
+        ScmObj obj = arr[i];
+        ${UNBOX elt obj clamp};
+        SCM_${T}VECTOR_ELEMENTS(vec)[i] = elt;
+    }
+    return SCM_OBJ(vec);
+}
+
 ScmObj Scm_VectorTo${T}Vector(ScmVector *ivec, int start, int end, int clamp)
 {
     int length = SCM_VECTOR_SIZE(ivec), i;
-    ScmUVector *vec;
     SCM_CHECK_START_END(start, end, length);
-    vec = (ScmUVector*)Scm_Make${T}Vector(end-start, 0);
-    for (i=start; i<end; i++) {
-        ${etype} elt;
-        ScmObj obj = SCM_VECTOR_ELEMENT(ivec, i);
-        ${UNBOX elt obj clamp};
-        SCM_${T}VECTOR_ELEMENTS(vec)[i-start] = elt;
-    }
-    return SCM_OBJ(vec);
+    return Scm_ObjArrayTo${T}Vector(SCM_VECTOR_ELEMENTS(ivec)+start,
+                                    end-start, clamp);
 }
 
 /*

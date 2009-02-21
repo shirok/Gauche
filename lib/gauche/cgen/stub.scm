@@ -64,6 +64,32 @@
 ;;
 ;;      Create a subr function.
 ;;
+;;      <args> specifies arguments.   
+;;
+;;       (<arg> ... [:rest <var>])
+;;          Each <arg> is variable name or var::type, specifies required
+;;          argument.  If :rest is given, list of excessive arguments are
+;;          passed to <var>.
+;;
+;;       (<arg> ... :optional <spec> ... [:rest <var>])
+;;          Optional arguments.  <spec> is <arg> or (<arg> <default>).
+;;          If no default is given, <arg> receives SCM_UNBOUND---if <arg>
+;;          isn't a type of ScmObj it will raise an error.
+;;
+;;       (<arg> ... :key <spec> ... [:allow-other-keys [:rest <var>]])
+;;          Keyword arguments.  <spec> is <arg> or (<arg> <default>).
+;;          If no default is given, <arg> receives SCM_UNBOUND---if <arg>
+;;          isn't a type of ScmObj it will raise an error.
+;;
+;;       (<arg> ... :optarray (<var> <cnt> <max>) [:rest <var>])
+;;          A special syntax to receive optional arguments as a C array.
+;;          <var> is a C variable of type ScmObj*.  <cnt> is a C
+;;          variable of type int, which receives the number of optional
+;;          argument in the ScmObj array.  <max> specifies the maximum number
+;;          of optional arguments that can be passed in the array form.
+;;          If more than <max> args are given, a list of excessive arguments
+;;          are passed to the rest <var> if it is specified, or 
+;;
 ;;      <Rettype> specifies the return type of SUBR.
 ;;
 ;;      <rettype>  = :: <typespec> | ::<typespec>
@@ -333,6 +359,8 @@
 (define-class <optional-arg> (<arg>) ((opt-count :init-keyword :opt-count)))
 (define-class <keyword-arg>  (<arg>) (keyword))
 (define-class <rest-arg>     (<arg>) ())
+(define-class <optarray-arg> (<arg>) ((count-var :init-keyword :count-var)
+                                      (max-count :init-keyword :max-count)))
 
 (define-method write-object ((self <arg>) out)
   (format out "#<~a ~a>" (class-of self) (~ self'name)))
@@ -515,7 +543,7 @@
 ;; each keyword arg and a rest arg counts 1 oprtarg for each.
 (define (process-cproc-args name argspecs)
   (define (badarg arg)
-    (error <cgen-stub-error> "bad argument in argspec:"arg" in "name))
+    (errorf <cgen-stub-error> "bad argument in argspec: ~a in ~a" arg name))
 
   ;; support old &-notation.  will fade away.
   (define (xlate-old-lambda-keywords specs) 
@@ -533,8 +561,16 @@
       [(:rest . specs)     (rest specs args '() nreqs 0 #f)]
       [(:key . specs)      (keyword specs args '() nreqs 0)]
       [(:allow-other-kyes . specs)
-       (error <cgen-stub-error>
-              "misplaced :allow-other-key parameter:"argspecs" in "name)]
+       (errorf <cgen-stub-error>
+               "misplaced :allow-other-key parameter: ~s in ~a" argspecs name)]
+      [(:optarray (var cnt max) . specs)
+       (let1 args (cons (make-arg <optarray-arg> var nreqs
+                                  :count-var cnt :max-count max)
+                        args)
+         (match specs
+           [() (values (reverse args) '() nreqs max #f #f)]
+           [(:rest . specs) (rest specs args '() nreqs max #f)]
+           [_ (badarg specs)]))]
       [([? symbol? sym] . specs)
        (required specs
                  (cons (make-arg <required-arg> sym nreqs) args)
@@ -549,6 +585,9 @@
       [(:key . specs)
        (error <cgen-stub-error>
               ":key and :optional can't be used together in "name)]
+      [(:optarray . specs)
+       (error <cgen-stub-error>
+              ":optarray and :optional can't be used together in "name)]
       [(:rest . specs)     (rest specs args '() nreqs nopts #f)]
       [(:allow-other-keys . specs)
        (error <cgen-stub-error>
@@ -584,6 +623,9 @@
       [(:optional . specs)
        (error <cgen-stub-error>
               ":key and :optional can't be used together in "name)]
+      [(:optarray . specs)
+       (error <cgen-stub-error>
+              ":optarray and :optional can't be used together in "name)]
       [(:rest . specs)     (rest specs args keyargs nreqs nopts #f)]
       [([? symbol? sym] . specs)
        (keyword specs args
@@ -878,6 +920,10 @@
   (p "  ScmObj "(~ arg'scm-name)" = "(get-arg-default arg)";")
   (p "  "(~ arg'type'c-type)" "(~ arg'c-name)";"))
 
+(define-method emit-arg-decl ((arg <optarray-arg>))
+  (p "  ScmObj* "(~ arg'c-name)";")
+  (p "  int "(get-c-name "" (~ arg'count-var))";"))
+
 (define (emit-arg-unbox-rec arg)
   (let1 pred (~ arg'type'c-predicate)
     (when (and pred (not (string-null? pred)))
@@ -903,6 +949,10 @@
 (define-method emit-arg-unbox ((arg <rest-arg>))
   (p "  "(~ arg'scm-name)" = SCM_ARGREF(SCM_ARGCNT-1);")
   (emit-arg-unbox-rec arg))
+
+(define-method emit-arg-unbox ((arg <optarray-arg>))
+  (p "  "(~ arg'c-name)" = &SCM_ARGREF("(~ arg'count)");")
+  (p "  "(get-c-name "" (~ arg'count-var))" = SCM_ARGCNT-1-"(~ arg'count)";"))
 
 (define (get-arg-default arg)
   (cond [(~ arg'default) => cgen-cexpr]

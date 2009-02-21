@@ -78,8 +78,16 @@
     (${t}unboxer filler fill)
     (result (Scm_Make${T}Vector length filler))))
 
-(define-cproc ${t}vector (:rest args)
-  (result (Scm_ListTo${T}Vector args SCM_CLAMP_ERROR)))
+(define-cproc ${t}vector (:optarray (elts nelts 10) :rest args)
+  :fast-flonum
+  (cond [(SCM_NULLP args)
+         (result (Scm_ObjArrayTo${T}Vector elts nelts SCM_CLAMP_ERROR))]
+        [else
+         (let* ([i::int (- nelts 1)] [p args])
+           (for [() (>= i 0) (post-- i)]
+                (SCM_FLONUM_ENSURE_MEM (aref elts i))
+                (set! p (Scm_Cons (aref elts i) p)))
+           (result (Scm_ListTo${T}Vector p SCM_CLAMP_ERROR)))]))
 
 (define-cproc ${t}vector-length (v::<${t}vector>) ::<int> SCM_${T}VECTOR_SIZE)
 

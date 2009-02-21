@@ -82,6 +82,7 @@ SCM_EXTERN ScmObj Scm_ListTo${T}Vector(ScmObj list, int clamp);
 SCM_EXTERN ScmObj Scm_${T}VectorCopy(Scm${T}Vector *vec, int start, int end);
 SCM_EXTERN ScmObj Scm_${T}VectorCopyX(Scm${T}Vector *dst, int dstart,
                                       Scm${T}Vector *src, int sstart, int send);
+SCM_EXTERN ScmObj Scm_ObjArrayTo${T}Vector(ScmObj *arr, int size, int clamp);
 SCM_EXTERN ScmObj Scm_${T}VectorToVector(Scm${T}Vector *vec, int start, int end);
 SCM_EXTERN ScmObj Scm_VectorTo${T}Vector(ScmVector *vec, int start, int end, int clamp);
 
