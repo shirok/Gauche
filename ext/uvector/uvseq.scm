@@ -38,6 +38,27 @@
 (use gauche.sequence)
 (use util.queue)
 
+;; Experimental - compile-time inlining *-ref
+;; The constant must be in sync with ScmUVectorType in gauche/vector.h
+(define-macro (set-reference-inliner ref type)
+  `((with-module gauche.internal attach-inline-transformer)
+    ,ref (lambda (x r c)
+           (if (= (length x) 3)
+             (list '%uvector-ref (cadr x) ,type (caddr x))
+             x))))
+
+(set-reference-inliner s8vector-ref 0)
+(set-reference-inliner u8vector-ref 1)
+(set-reference-inliner s16vector-ref 2)
+(set-reference-inliner u16vector-ref 3)
+(set-reference-inliner s32vector-ref 4)
+(set-reference-inliner u32vector-ref 5)
+(set-reference-inliner s64vector-ref 6)
+(set-reference-inliner u64vector-ref 7)
+(set-reference-inliner f16vector-ref 8)
+(set-reference-inliner f32vector-ref 9)
+(set-reference-inliner f64vector-ref 10)
+
 ;; collection protocol implementation
 (define-macro (%define-srfi-4-collection-interface tag)
   (let* ((tagvector (string->symbol #`",|tag|vector"))
@@ -117,3 +138,4 @@
   (string->u32vector src))
 (define-method coerce-to ((dst <s32vector-meta>) (src <string>))
   (string->s32vector src))
+

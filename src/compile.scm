@@ -4472,6 +4472,32 @@
       [(_) ($asm form `(,CURERR) '())]
       [else (undefined)])))
 
+;;--------------------------------------------------------
+;; Customizable inliner interface
+;;
+
+;; This is a hook for compiler macros and other experiment
+;; on user-level optimization.  The "custom inliner" procedure
+;; takes a form, and returns a form that may be translated.
+;; We haven't decided our base mechanism of hygienic macros,
+;; but for the time being, we mimic explicitly renaming macro.
+
+(define (attach-inline-transformer proc xformer)
+  (set! (%procedure-inliner proc)
+        (lambda (form cenv)
+          (let1 r
+              ;; Call the transformer with rename and compare procedure,
+              ;; just like explicit renaming macro.  However, THE CURRENT
+              ;; CODE DOES NOT IMPLEMENT PROPER SEMANTICS.  They're just
+              ;; placeholders for experiment.
+              (xformer form
+                       (cut ensure-identifier <> cenv)
+                       (lambda (a b) ; this is just a placeholder!
+                         (eq? (identifier->symbol a) (identifier->symbol b))))
+            (if (eq? form r)
+              (undefined) ; no inline operation is triggered.
+              (pass1 r cenv))))))
+
 ;;============================================================
 ;; Utilities
 ;;
