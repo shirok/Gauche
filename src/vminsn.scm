@@ -288,7 +288,6 @@
       (VM-ASSERT (<= (- nargs 1) (- SP (-> vm stackBase))))
       (when (> nargs 0)
         (for [() (> i 0) (post-- i)]
-             (SCM_FLONUM_ENSURE_MEM v)
              (set! (aref (-> vm vals) (- i 1)) v)
              (POP-ARG v)))
       (set! VAL0 v)
@@ -1107,6 +1106,18 @@
         ($vm-err "uvector-ref index out of range: %S" k))
       ($result (Scm_VMUVectorRef (SCM_UVECTOR vec) utype (SCM_INT_VALUE k)
                                  SCM_UNBOUND)))))
+
+;; not enough evidence yet to support this is worth
+;; (define-insn UVEC-REFI   1 none #f    ; uvector-ref, index in arg.
+;;   (let* ([arg::int (SCM_VM_INSN_ARG code)]
+;;          [utype::uint (logand arg #x0f)]
+;;          [k::uint (>> arg 4)])
+;;     ($w/argr vec
+;;       (unless (SCM_UVECTOR_SUBTYPE_P vec utype)
+;;         ($vm-err "%s required, but got %S" (Scm_UVectorTypeName utype) vec))
+;;       (when (>= k (SCM_UVECTOR_SIZE vec))
+;;         ($vm-err "uvector-ref index out of range: %d" k))
+;;       ($result (Scm_VMUVectorRef (SCM_UVECTOR vec) utype k SCM_UNBOUND)))))
 
 (define-insn NUMEQ2      0 none #f      ; =
   ($w/argp arg

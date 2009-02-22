@@ -971,8 +971,11 @@ void Scm_VMFlushFPStack(ScmVM *vm)
     gettimeofday(&t0, NULL);
 #endif
 
-    /* first, scan VAL0 and incomplete frames */
+    /* first, scan value registers and incomplete frames */
     SCM_FLONUM_ENSURE_MEM(VAL0);
+    for (i=0; i<SCM_VM_MAX_VALUES; i++) {
+        SCM_FLONUM_ENSURE_MEM(vm->vals[i]);
+    }
     if (IN_STACK_P(ARGP)) {
         for (p = ARGP; p < SP; p++) SCM_FLONUM_ENSURE_MEM(*p);
     }

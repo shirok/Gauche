@@ -1,5 +1,14 @@
 2009-02-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c (Scm_VMFlushFPStack), src/vminsn.scm ($values):
+	  Allow register flonums in vm->vals registers.  Make sure they're
+	  moved to heap when FP stack is flushed.
+
+	* src/vminsn.scm (UVEC-REFI), src/compile.scm: An experimental code
+	  to add UVEC-REFI instruction.  Not enough evidence is collected
+	  to support the instruction, though, so they are commented out
+	  in this commit.
+
 	* src/compile.scm (attach-inline-transformer): Experimentally added
 	  a hook for pass1 inliner.  It's still highly experimental and
 	  purely for internal use.

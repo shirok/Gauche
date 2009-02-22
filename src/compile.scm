@@ -4435,7 +4435,11 @@
   (lambda (form cenv)
     (match form
       [(_ vec type ind)
-       (asm-arg2 form `(,UVEC-REF ,type) vec ind cenv)]
+;; not enough evidence yet to support this is worth (see also vminsn.scm)
+;;       (if (and (integer? ind)
+;;                (unsigned-integer-fits-insn-arg? (* ind 16)))
+;;         (asm-arg1 form `(,UVEC-REFI ,(+ (* ind 16) type)) vec cenv)
+         (asm-arg2 form `(,UVEC-REF ,type) vec ind cenv)]
       [else (undefined)])))
 
 (define-builtin-inliner zero?
