@@ -1,5 +1,8 @@
 2009-02-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/uvector/uvector.c.tmpl (arg2_check): Fixed a bug that passed
+	  too few arguments to Scm_Error.
+
 	* src/vminsn.scm (NUMBERP, REALP): Added instructions.
 	* src/stdlib.stub (number?, complex?, real?, rational?): Use new
 	  instructions for inline.

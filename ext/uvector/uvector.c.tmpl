@@ -113,9 +113,9 @@ static ArgType arg2_check(const char *name, ScmObj x, ScmObj y, int const_ok)
         if (Scm_Length(y) != size) size_mismatch(name, SCM_OBJ(x), y);
         return ARGTYPE_LIST;
     } else if (!const_ok) {
-        Scm_Error("%s: second operand must be either a matching uvector, a vector, or a list, but got %S", y);
+        Scm_Error("%s: second operand must be either a matching uvector, a vector, or a list, but got %S", name, y);
     } else if (!SCM_REALP(y)) {
-        Scm_Error("%s: second operand must be either a matching uvector, a vector, a list or a number, but got %S", y);
+        Scm_Error("%s: second operand must be either a matching uvector, a vector, a list or a number, but got %S", name, y);
     }
     return ARGTYPE_CONST;
 }
@@ -715,6 +715,7 @@ static inline ScmUInt64 u64num(ScmObj x, int *oor)
 ///))
 
 ///(define *tmpl-numop* '(
+/* NB: s1 can be register flonum. */
 static void ${t}vector_${opname}(const char *name,
                                  ScmObj d, ScmObj s0, ScmObj s1, int clamp)
 {
@@ -1053,6 +1054,7 @@ static ScmObj ${T}VectorDotProd(Scm${T}Vector *x, ScmObj y, int vmp)
         }
         break;
     case ARGTYPE_CONST:
+        /* this case should've been eliminated by arg2_check. */
         Scm_Panic("something wrong");
     }
 
