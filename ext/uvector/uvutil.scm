@@ -1,5 +1,5 @@
 ;;;
-;;; uvseq - sequence framework implementation 
+;;; uvutil - miscellaneous utility procedures for uvector
 ;;;  
 ;;;   Copyright (c) 2000-2008  Shiro Kawai  <shiro@acm.org>
 ;;;   
@@ -38,8 +38,9 @@
 (use gauche.sequence)
 (use util.queue)
 
+;;-------------------------------------------------------------
 ;; Experimental - compile-time inlining *-ref
-;; The constant must be in sync with ScmUVectorType in gauche/vector.h
+;; The TYPE constant must be in sync with ScmUVectorType in gauche/vector.h
 (define-macro (set-reference-inliner ref type)
   `((with-module gauche.internal attach-inline-transformer)
     ,ref (lambda (x r c)
@@ -59,7 +60,10 @@
 (set-reference-inliner f32vector-ref 9)
 (set-reference-inliner f64vector-ref 10)
 
-;; collection protocol implementation
+;;-------------------------------------------------------------
+;; Sequence protocol implementation
+;;
+
 (define-macro (%define-srfi-4-collection-interface tag)
   (let* ((tagvector (string->symbol #`",|tag|vector"))
          (class     (string->symbol #`"<,|tagvector|>"))

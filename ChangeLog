@@ -3,8 +3,8 @@
 	* src/compile.scm (attach-inline-transformer): Experimentally added
 	  a hook for pass1 inliner.  It's still highly experimental and
 	  purely for internal use.
-	* ext/uvector/uvseq.scm: Inline expand TAGvector-ref into %uvector-ref
-	  using inline transformer (experimenal).
+	* ext/uvector/uvutil.scm: Renamed from uvseq.scm.  Inline expand
+	  TAGvector-ref into %uvector-ref using inline transformer.
 
 2009-02-21  Shiro Kawai  <shiro@acm.org>
 

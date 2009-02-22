@@ -96,6 +96,6 @@ SCM_EXTENSION_ENTRY void Scm_Init_libgauche_uvector(void)
     Scm_InitStaticClassWithMeta(&Scm_F64VectorClass, "<f64vector>", m, NULL, SCM_NIL, NULL, 0);
 
     Scm_Init_uvlib(m);
-    Scm_Init_uvseq();
+    Scm_Init_uvutil();
     Scm__InstallReadUvectorHook(read_uvector);
 }

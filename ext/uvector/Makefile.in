@@ -11,7 +11,7 @@ SCMFILES = array.scm uvector.scm matrix.scm
 HDRFILES = gauche/uvector.h
 
 GENERATED = Makefile
-XCLEANFILES =  uvlib.c uvlib.stub uvector.c uvseq.c \
+XCLEANFILES =  uvlib.c uvlib.stub uvector.c uvutil.c \
 	       gauche/uvector.h uvector_head.c uvector_tail.c
 
 all : $(LIBFILES)
@@ -20,7 +20,7 @@ uvector_OBJECTS = uvector_head.$(OBJEXT) \
                   uvector.$(OBJEXT)      \
                   uvinit.$(OBJEXT)       \
                   uvlib.$(OBJEXT)        \
-                  uvseq.$(OBJEXT)        \
+                  uvutil.$(OBJEXT)       \
                   uvector_tail.$(OBJEXT)
 
 libgauche-uvector.$(SOEXT) : $(uvector_OBJECTS) 
@@ -46,8 +46,8 @@ uvlib.stub : uvlib.stub.tmpl
 	rm -rf uvlib.stub
 	$(GOSH) ./uvgen.scm uvlib.stub.tmpl
 
-uvseq.c : uvseq.scm
-	$(GENCOMP) uvseq.scm
+uvutil.c : uvutil.scm
+	$(GENCOMP) uvutil.scm
 
 install : install-std
 
