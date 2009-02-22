@@ -1,5 +1,9 @@
 2009-02-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/vminsn.scm (NUMBERP, REALP): Added instructions.
+	* src/stdlib.stub (number?, complex?, real?, rational?): Use new
+	  instructions for inline.
+
 	* src/stdlib.stub (numcmp): Rewrote =, <, <=, >= and > using :optarray
 	  to avoid consing in 3- and 4-ary cases.
 	* src/number.c (Scm_NumCmp): Deferred SCM_FLONUM_ENSURE_MEM until

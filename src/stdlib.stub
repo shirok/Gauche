@@ -54,10 +54,10 @@
 ;; 6.2  Numbers
 ;;
 
-(define-cproc number? (obj)  ::<boolean> :fast-flonum SCM_NUMBERP)
-(define-cproc complex? (obj) ::<boolean> :fast-flonum SCM_NUMBERP)
-(define-cproc real? (obj)    ::<boolean> :fast-flonum SCM_REALP)
-(define-cproc rational? (obj)::<boolean> :fast-flonum SCM_REALP)
+(define-cproc number? (obj)  ::<boolean> :fast-flonum (inliner NUMBERP) SCM_NUMBERP)
+(define-cproc complex? (obj) ::<boolean> :fast-flonum (inliner NUMBERP) SCM_NUMBERP)
+(define-cproc real? (obj)    ::<boolean> :fast-flonum (inliner REALP) SCM_REALP)
+(define-cproc rational? (obj)::<boolean> :fast-flonum (inliner REALP) SCM_REALP)
 (define-cproc integer? (obj) ::<boolean> :fast-flonum
   (result (and (SCM_NUMBERP obj) (Scm_IntegerP obj))))
 
