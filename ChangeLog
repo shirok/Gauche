@@ -1,5 +1,8 @@
 2009-02-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/uvector/uvlib.stub.tmpl: Flag :fast-flonum for uvector arithmetic
+	  (e.g. TAGvector-add etc.)  The second arg can be a register flonum.
+
 	* src/uvector/uvector.c.tmpl (arg2_check): Fixed a bug that passed
 	  too few arguments to Scm_Error.
 
