@@ -2418,17 +2418,17 @@ int Scm_NumEq(ScmObj arg0, ScmObj arg1)
     }
 }
 
-/* 2-arg comparison */
+/* 2-arg comparison.
+   NB: This routine is called from VM or built-in SUBRs when arg0 and/or
+   arg1 contain register flonums.  That's why we insert SCM_FLONUM_ENSURE_MEM
+   in the path to Scm_Error at the end.  For all other paths we know the
+   register flonum will never leak out.   If you make changes here,
+   keep in mind that args can be register flonums, and make sure to insert
+   SCM_FLONUM_ENSURE_MEM wherever they can leak out.
+ */
 int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
 {
     ScmObj badnum;
-
-    /* NB: these ENSURE_MEMs are moved here from vm loop to reduce
-       the register pressure there.  In most cases these increases
-       just a couple of mask-and-test instructions on the data on
-       the register. */
-    SCM_FLONUM_ENSURE_MEM(arg0);
-    SCM_FLONUM_ENSURE_MEM(arg1);
     
     if (SCM_INTP(arg0)) {
         if (SCM_INTP(arg1)) {
@@ -2534,6 +2534,8 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
         badnum = arg1;
     }
     else badnum = arg0;
+
+    SCM_FLONUM_ENSURE_MEM(badnum);
     Scm_Error("real number required: %S", badnum);
     return 0;                    /* dummy */
 }

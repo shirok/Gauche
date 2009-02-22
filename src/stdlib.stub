@@ -65,28 +65,48 @@
 (define-cproc inexact? (obj) ::<boolean> :fast-flonum SCM_INEXACTP)
 
 ;; NB: numeric procedures =, <, <=, >, >=, +, -, * and / have inliners
-;; defined in compile.scm.  When one of these operators appears at the
+;; defined in compile.scm.   When one of these operators appears at the
 ;; operator position of an expression, it is inlined so that the following
-;; SUBRs won't be called.  They are used only when called with 'apply',
-;; or called like ((if test + *) a b).
-
-(define-cproc = (arg0 arg1 :rest args) ::<boolean> :fast-flonum
-  (loop (cond [(not (Scm_NumEq arg0 arg1)) (result FALSE) (break)]
-              [(SCM_NULLP args) (result TRUE) (break)]
-              [else (set! arg1 (SCM_CAR args) args (SCM_CDR args))])))
+;; SUBRs won't be called.  N-ary arithmetic operations (N>2) are expanded
+;; to a series of binary arithmetic operations in the compiler.
+;; N-ary comparison operations (N>2) are NOT expanded by the compiler,
+;; and these SUBRs are called.  In order to avoid extra consing for those
+;; N-ary comparison expressions, we use :optarray to receive the first few
+;; arguments on stack.
+;;
+;; SUBRs are always called when those numeric procedures are invoked via
+;; apply, or as a result of expression in the operator position,
+;; such as ((if x + *) 2 3).
 
 (define-cise-stmt numcmp
-  [(_ op)
-   `(loop (cond [(not (,op (Scm_NumCmp arg0 arg1) 0)) (result FALSE) (break)]
-                [(SCM_NULLP args) (result TRUE) (break)]
-                [else (set! arg0 arg1
-                            arg1 (SCM_CAR args)
-                            args (SCM_CDR args))]))])
+  [(_ op compar)
+   `(begin
+      (result FALSE)
+      (cond [(not (,op (,compar arg0 arg1) 0))]
+            [(== optcnt 0) (result TRUE)]
+            [(not (,op (,compar arg1 (aref oarg 0)) 0))]
+            [(== optcnt 1) (result TRUE)]
+            [(not (,op (,compar (aref oarg 0) (aref oarg 1)) 0))]
+            [(== optcnt 2) (result TRUE)]
+            [else
+             (set! arg0 (aref oarg 1)   arg1 (aref oarg 2))
+             (loop (cond [(not (,op (,compar arg0 arg1) 0)) (break)]
+                         [(SCM_NULLP args) (result TRUE) (break)]
+                         [else (set! arg0 arg1
+                                     arg1 (SCM_CAR args)
+                                     args (SCM_CDR args))]))]))])
 
-(define-cproc <  (arg0 arg1 :rest args) ::<boolean> :fast-flonum (numcmp <))
-(define-cproc <= (arg0 arg1 :rest args) ::<boolean> :fast-flonum (numcmp <=))
-(define-cproc >  (arg0 arg1 :rest args) ::<boolean> :fast-flonum (numcmp >))
-(define-cproc >= (arg0 arg1 :rest args) ::<boolean> :fast-flonum (numcmp >=))
+(define-cproc =  (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
+  ::<boolean> :fast-flonum (numcmp +  Scm_NumEq)) ;'+' is a trick to share
+                                                  ;numcmp macro
+(define-cproc <  (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
+  ::<boolean> :fast-flonum (numcmp <  Scm_NumCmp))
+(define-cproc <= (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
+  ::<boolean> :fast-flonum (numcmp <= Scm_NumCmp))
+(define-cproc >  (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
+  ::<boolean> :fast-flonum (numcmp >  Scm_NumCmp))
+(define-cproc >= (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
+  ::<boolean> :fast-flonum (numcmp >= Scm_NumCmp))
 
 (define-cproc zero? (obj::<number>) ::<boolean> :fast-flonum
   (result (and (SCM_REALP obj) (== (Scm_Sign obj) 0))))
