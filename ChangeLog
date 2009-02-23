@@ -1,5 +1,7 @@
 2009-02-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/vminsn.scm: Bug fix: added some missing SCM_FLONUM_ENSURE_MEMs.
+
 	* src/vm.c (Scm_VMFlushFPStack), src/vminsn.scm ($values):
 	  Allow register flonums in vm->vals registers.  Make sure they're
 	  moved to heap when FP stack is flushed.

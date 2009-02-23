@@ -719,6 +719,7 @@
          (set! e (-> e up)))
     (VM-ASSERT (!= e NULL))
     (VM-ASSERT (> (-> e size) off))
+    (SCM_FLONUM_ENSURE_MEM VAL0)
     (set! (ENV-DATA e off) VAL0)
     NEXT1))
 
@@ -895,6 +896,7 @@
 (define-insn LIST        1 none #f
   (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [arg])
     (when (> nargs 0)
+      (SCM_FLONUM_ENSURE_MEM VAL0)
       (set! cp (Scm_Cons VAL0 cp))
       (while (> (pre-- nargs) 0)
         (POP-ARG arg)
@@ -904,6 +906,7 @@
 (define-insn LIST-STAR   1 none #f      ; list*
   (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [arg])
     (when (> nargs 0)
+      (SCM_FLONUM_ENSURE_MEM VAL0)
       (set! cp VAL0)
       (while (> (pre-- nargs) 0)
         (POP-ARG arg)
@@ -925,6 +928,7 @@
 (define-insn APPEND      1 none #f
   (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [arg])
     (when (> nargs 0)
+      (SCM_FLONUM_ENSURE_MEM VAL0)
       (set! cp VAL0)
       (while (> (pre-- nargs) 0)
         (POP-ARG arg)
@@ -939,6 +943,7 @@
   ;; this instruction will go away soon.  for now it only appears
   ;; as the result of 'cond' with srfi-61 extension.
   (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp])
+    (SCM_FLONUM_ENSURE_MEM VAL0)
     (while (> (pre-- nargs) 1)
       (POP-ARG cp)
       (set! VAL0 (Scm_Cons cp VAL0)))
@@ -1039,6 +1044,7 @@
 (define-insn APP-VEC     1 none #f      ; (compose list->vector append)
   (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [arg])
     (when (> nargs 0)
+      (SCM_FLONUM_ENSURE_MEM VAL0)
       (set! cp VAL0)
       (while (> (pre-- nargs) 0)
         (POP-ARG arg)
