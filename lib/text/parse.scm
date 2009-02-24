@@ -79,9 +79,10 @@
       (scan 0 1 (read-char in-port))
       )))
 
-;; the functions taking CHAR-LIST in oleg's utilities are extended to
-;; accept a character set, or a list of mixture of characters, 
-;; character sets and symbol *eof*.
+;; Common utility function for the functions taking CHAR-LIST.
+;; Oleg's utilities are extended to accept a character set,
+;; or a list of mixture of characters, character sets and symbol *eof*.
+;; Returns a character set and a flag indicating whether *eof* is allowed.
 
 (define (fold-char-list char-list)
   (cond
