@@ -1046,27 +1046,25 @@
 
 
 ;; using famous socks example (Corman)
-(test* "topological-sort"
-       '(socks undershorts watch shirt tie pants belt jacket shoes)
-       (topological-sort '((shirt tie belt)
-                           (tie jacket)
-                           (belt jacket)
-                           (watch)
-                           (pants shoes belt)
-                           (undershorts pants shoes)
-                           (socks shoes))
-                         eq?))
+(let ([sorted '(socks undershorts watch shirt tie pants belt jacket shoes)]
+      [input '((shirt tie belt)
+               (tie jacket)
+               (belt jacket)
+               (watch)
+               (pants shoes belt)
+               (undershorts pants shoes)
+               (socks shoes))])
 
-(test* "topological-sort"
-       '("socks" "undershorts" "watch" "shirt" "tie" "pants" "belt" "jacket" "shoes")
-       (topological-sort '(("shirt" "tie" "belt")
-                           ("tie" "jacket")
-                           ("belt" "jacket")
-                           ("watch")
-                           ("pants" "shoes" "belt")
-                           ("undershorts" "pants" "shoes")
-                           ("socks" "shoes"))
-                         equal?))
+  (test* "topological-sort, default" sorted
+         (topological-sort input))
+
+  (test* "topological-sort, eq?" sorted
+         (topological-sort input eq?))
+
+  (test* "topological-sort, string=?"
+         (map symbol->string sorted)
+         (topological-sort (map (cut map symbol->string <>) input) string=?))
+  )
 
 ;;-----------------------------------------------
 (test-section "util.trie")

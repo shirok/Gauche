@@ -18,8 +18,7 @@
 ;;
 ;;  nodes : a list of (<from> <to0> <to1> ...)
 
-(define (topological-sort nodes . maybe=)
-  (define = (if (pair? maybe=) (car maybe=) eqv?))
+(define (topological-sort nodes :optional (eq eqv?))
   (define table (map (lambda (n) (cons (car n) 0)) nodes))
   (define queue '())
   (define result '())
@@ -28,7 +27,7 @@
   (define (set-up)
     (for-each (lambda (node)
                 (for-each (lambda (to)
-                            (cond ((assoc to table =)
+                            (cond ((assoc to table eq)
                                    => (lambda (p) (inc! (cdr p))))
                                   (else
                                    (push! table (cons to 1)))))
@@ -38,10 +37,10 @@
   ;; traverse
   (define (traverse)
     (unless (null? queue)
-      (let ((n0 (assoc (pop! queue) nodes =)))
+      (let ((n0 (assoc (pop! queue) nodes eq)))
         (when n0
           (for-each (lambda (to)
-                      (cond ((assoc to table =)
+                      (cond ((assoc to table eq)
                              => (lambda (p)
                                   (let ((cnt (- (cdr p) 1)))
                                     (when (= cnt 0)

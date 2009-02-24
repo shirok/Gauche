@@ -1,3 +1,9 @@
+2009-02-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/toposort.scm (topological-sort): Fix the code that locally
+	  shadows '=' by the given optional argument, that breaks when the
+	  optional equality predicate isn't compatibile with numeric comparison.
+
 2009-02-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm: Bug fix: added some missing SCM_FLONUM_ENSURE_MEMs.
