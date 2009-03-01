@@ -418,8 +418,8 @@ static int sb_strcasecmp(const char *px, int sizx,
 {
     char cx, cy;
     for (; sizx > 0 && sizy > 0; sizx--, sizy--, px++, py++) {
-        cx = tolower(*px);
-        cy = tolower(*py);
+        cx = tolower((u_char)*px);
+        cy = tolower((u_char)*py);
         if (cx == cy) continue;
         return (cx - cy);
     }
@@ -458,8 +458,8 @@ int Scm_StringCiCmp(ScmString *x, ScmString *y)
         Scm_Error("cannot compare incomplete strings in case-insensitive way: %S, %S",
                   SCM_OBJ(x), SCM_OBJ(y));
     }
-    sizx = SCM_STRING_BODY_SIZE(xb); lenx = SCM_STRING_BODY_SIZE(xb);
-    sizy = SCM_STRING_BODY_SIZE(yb); leny = SCM_STRING_BODY_SIZE(yb);
+    sizx = SCM_STRING_BODY_SIZE(xb); lenx = SCM_STRING_BODY_LENGTH(xb);
+    sizy = SCM_STRING_BODY_SIZE(yb); leny = SCM_STRING_BODY_LENGTH(yb);
     px = SCM_STRING_BODY_START(xb);
     py = SCM_STRING_BODY_START(yb);
     
