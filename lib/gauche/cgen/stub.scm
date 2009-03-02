@@ -171,6 +171,10 @@
 ;;      (slot-spec ...)
 ;;      property-clause ...
 ;;
+;;   define-cptr scheme-class-name [qualifiers] c-typename c-class-var
+;;      property-clause ...
+;;      *UNFINISHED*
+;;
 ;;   define-symbol scheme-name [c-name]
 ;;      Defines a Scheme symbol.  No Scheme binding is created.
 ;;      When c-name is given, the named C variable points to the
@@ -1407,6 +1411,54 @@
 
 (define-method emit-spec-definition ((slot <cslot>))
   (p "  SCM_CLASS_SLOT_SPEC(\""(~ slot'scheme-name)"\", "(slot-getter-name slot)", "(slot-setter-name slot)"),"))
+
+;;===================================================================
+;; Foreign pointers
+;;  NOT FINISHED YET.  
+
+;; (define-class <c-ptr> (<stub>)
+;;   ((c-type     :init-keyword :c-type)
+;;    (qualifiers :init-keyword :qualifiers)))
+
+;; (define-form-parser define-cptr (scm-name . args)
+;;   (check-arg symbol? scm-name)
+;;   (receive (quals rest) (span keyword? args)
+;;     (cond
+;;      [(lset-difference eqv? quals '(:keep-identity :map-null :private)) pair?
+;;       => (cut error <cgen-stub-error>
+;;               "unknown define-foreign-pointer qualifier(s)" <>)])
+;;     (match rest
+;;       [(c-type c-name)
+;;        (check-arg string? c-name)
+;;        (let1 fptr (make <c-ptr>
+;;                     :scheme-name scm-name :c-type c-type :c-name c-name
+;;                     :qualifiers quals)
+;;          (cgen-add! fptr))])))
+
+;; (define-method cgen-emit-body ((self <c-ptr>))
+;;   (when (memv :private (~ self'qualifiers))
+;;     (let1 type (cgen-type-from-name (~ self'scheme-name))
+;;       (p "static ScmClass *" (~ self'c-name))
+;;       (p "#define "(~ type'unboxer)"(obj) "
+;;          "SCM_FOREIGN_POINTER_REF("(~ self'c-type)", obj")
+;;       (p "#define "(~ type'c-predicate)"(obj) "
+;;          "SCM_XTYPEP(obj, "(~ self'c-name)")")
+;;       (p "#define "(~ type'c-boxer)"(ptr) "
+;;          "Scm_MakeForeignPointer("(~ self'c-name)", ptr)")))
+;;   )
+
+;; (define-method cgen-emit-init ((self <c-ptr>))
+;;   (p "  "(~ self'c-name)" = Scm_MakeForeignPointerClass(mod,"
+;;      "\""(~ self'scheme-name)"\", NULL, NULL, "
+;;      (if (null? (~ self'flags))
+;;        "0"
+;;        (string-join `(,@(if (memq ':keep-identity (~ self'flags))
+;;                           '("SCM_FOREIGN_POINTER_KEEP_IDENTITY")
+;;                           '())
+;;                       ,@(if (memq ':map-null (~ self'flags))
+;;                           '("SCM_FOREIGN_POINTER_MAP_NULL")
+;;                           '()))
+;;                     "|"))))
 
 ;;===================================================================
 ;; Miscellaneous utilities
