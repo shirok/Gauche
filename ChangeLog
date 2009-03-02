@@ -1,3 +1,11 @@
+2009-03-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/extend.h (SCM_INIT_EXTENSION): Redefined this macro
+	  to no-op.  The old scheme of registering data/bss start/end by
+	  this macro is no longer relevant, since modern linkers doesn't
+	  keep the relative locations of static symbols anyway.  Eventually
+	  we'll make *_head.c/_tail.c fade out as well.
+
 2009-02-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (Scm_StringCiCmp): a couple of bug fix, thanks to
