@@ -2430,8 +2430,34 @@ On the other hand, @code{string-map!} modifies @var{s}.
 @subsection Other string operations
 @c NODE 他の文字列操作
 
-@defun string-replace s1 s2 start1 end2 &optional start2 end2
+@defun string-replace s1 s2 start1 end1 &optional start2 end2
 [SRFI-13]
+@c EN
+Returns a new string whose content is a copy of a string @var{s1}, except
+the part beginning from the index
+@var{start1} (inclusive) and ending at the index @var{end1} (exclusive)
+are replaced by a string @var{s2}.   When optional @var{start2} and @var{end2}
+arguments are given, @var{s2} is trimmed first according to them.
+The size of the @emph{gap}, @code{(- @var{end1} @var{start1})}, doesn't
+need to be the same as the size of the inserted string.
+Effectively, this is the same as the following code.
+@c JP
+文字列@var{s1}の@var{start1}文字目(inclusive)から@var{end1}文字目(exclusive)
+までを文字列@var{s2}に置き換えた文字列を新たに作って返します。@var{s1}, @var{s2}は
+変更されません。
+オプショナルな引数@var{start2}、@var{end2}が与えられた場合は、
+@var{s2}がまずそれらによって切り取られて置換文字列として使われます。
+置き換える隙間の大きさ、つまり@code{(- @var{end1} @var{start1})}は
+@var{s2}と同じ長さである必要はありません。
+実質的に、この手続きは次のコードと等価です。
+@c COMMON
+
+@example
+(string-append (substring s1 0 start1)
+               (substring s2 start2 end2)
+               (substring s1 end1 (string-length s1)))
+@end example
+
 @end defun
 
 @defun string-tokenize s &optional token-set start end
