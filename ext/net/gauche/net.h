@@ -120,6 +120,12 @@ struct sockaddr_storage {
  * Socket address
  */
 
+/* NB: built-in socket address structures are allocated as ATOMIC---when
+   you want to extend them, be careful not to introduce sole pointers to
+   allocated objects; GC will collect them prematurely.  The only
+   pointer, the tagged pointer to the class, is protected since they're
+   bound to global variables. */
+
 typedef struct ScmSockAddrRec {
     SCM_HEADER;
     socklen_t addrlen;

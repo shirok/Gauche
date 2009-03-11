@@ -44,6 +44,12 @@ static ScmObj key_any = SCM_FALSE;
 static ScmObj key_broadcast = SCM_FALSE;
 static ScmObj key_loopback = SCM_FALSE;
 
+/* NB: built-in socket address structures are allocated as ATOMIC---when
+   you want to extend them, be careful not to introduce sole pointers to
+   allocated objects; GC will collect them prematurely.  The only
+   pointer, the tagged pointer to the class, is protected since they're
+   bound to global variables. */
+
 /*==================================================================
  * Generic Socket Address
  */
@@ -97,8 +103,8 @@ static ScmObj sockaddr_allocate(ScmClass *klass, ScmObj initargs)
 ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
 {
     ScmSockAddr *addr;
-    addr = SCM_NEW2(ScmSockAddr*,
-                    sizeof(ScmSockAddr) - sizeof(struct sockaddr) + len);
+    addr = SCM_NEW_ATOMIC2(ScmSockAddr*,
+                           sizeof(ScmSockAddr) - sizeof(struct sockaddr) + len);
     if (klass == NULL) {
         switch (saddr->sa_family) {
         case AF_UNIX:
@@ -140,7 +146,7 @@ static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
     if (!SCM_FALSEP(path) && !SCM_STRINGP(path)) {
         Scm_Error(":path parameter must be a string, but got %S", path);
     }
-    addr = SCM_NEW(ScmSockAddrUn);
+    addr = SCM_NEW_ATOMIC(ScmSockAddrUn);
     SCM_SET_CLASS(addr, SCM_CLASS_SOCKADDR_UN);
     memset(&addr->addr, 0, sizeof(struct sockaddr_un));
 #ifdef HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
@@ -180,7 +186,7 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
         Scm_Error(":port parameter must be a small exact integer, but got %S",
                   port);
     }
-    addr = SCM_NEW(ScmSockAddrIn);
+    addr = SCM_NEW_ATOMIC(ScmSockAddrIn);
     SCM_SET_CLASS(addr, SCM_CLASS_SOCKADDR_IN);
     memset(&addr->addr, 0, sizeof(struct sockaddr_in));
 #ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
@@ -255,7 +261,7 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
         Scm_Error(":port parameter must be a small exact integer, but got %S",
                   port);
     }
-    addr = SCM_NEW(ScmSockAddrIn6);
+    addr = SCM_NEW_ATOMIC(ScmSockAddrIn6);
     SCM_SET_CLASS(addr, SCM_CLASS_SOCKADDR_IN6);
     memset(&addr->addr, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN

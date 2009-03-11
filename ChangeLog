@@ -1,5 +1,8 @@
 2009-03-10  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/addr.c: Allocates <sockaddr-*> instances as ATOMIC to
+	  reduce the risk of false pointers.
+
 	* src/core.c (Scm_Abort): Tells the compiler that we intentionally
 	  ignore the return value of write(2).  Newer gcc whined on it.
 
