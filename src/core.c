@@ -86,6 +86,7 @@ extern void Scm__InitSystem(void);
 extern void Scm__InitCode(void);
 extern void Scm__InitVM(void);
 extern void Scm__InitRepl(void);
+extern void Scm__InitRecord(void);
 extern void Scm__InitParameter(void);
 extern void Scm__InitAutoloads(void);
 extern void Scm__InitCollection(void);
@@ -155,11 +156,11 @@ void Scm_Init(const char *signature)
     Scm__InitSignal();
     Scm__InitSystem();
     Scm__InitRepl();
-    
+    Scm__InitRecord();
+
     Scm_Init_stdlib(Scm_SchemeModule());
     Scm_Init_extlib(Scm_GaucheModule());
     Scm_Init_syslib(Scm_GaucheModule());
-    //Scm_Init_moplib(Scm_GaucheModule());
     Scm_Init_intlib(Scm_GaucheInternalModule());
 
     Scm_Init_scmlib();
@@ -363,7 +364,7 @@ void Scm_Panic(const char *msg, ...)
 void Scm_Abort(const char *msg)
 {
     int size = (int)strlen(msg);
-    write(2, msg, size); /* this may return an error, but we don't care */
+    (void)write(2, msg, size); /* this may return an error, but we don't care */
     _exit(1);
 }
 

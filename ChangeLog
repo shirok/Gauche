@@ -1,3 +1,8 @@
+2009-03-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (Scm_Abort): Tells the compiler that we intentionally
+	  ignore the return value of write(2).  Newer gcc whined on it.
+
 2009-03-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/extend.h (SCM_INIT_EXTENSION): Redefined this macro
