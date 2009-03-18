@@ -33,15 +33,59 @@
 ;;;  $Id: dictionary.scm,v 1.3 2008-05-10 13:35:54 shirok Exp $
 ;;;
 
-;; EXPERIMENTAL
-
 (define-module gauche.dictionary
   (use gauche.collection)
-  (export dict-fold dict-fold-right
+  (export dict-get dict-put! |setter of dict-get|
+          dict-exists? dict-delete!
+          dict-fold dict-fold-right
           dict-for-each dict-map
-          dict-keys dict-values)
-  )
+          dict-keys dict-values
+          <bimap> make-bimap bimap-put!
+          bimap-left bimap-left-get bimap-left-exists? bimap-left-delete!
+          bimap-right bimap-right-get bimap-right-exists? bimap-right-delete!
+          ))
 (select-module gauche.dictionary)
+
+;;; Generic dictionary interface.
+;;; The minimal requirements for dictionary framework implementors:
+;;;
+;;;    dict-get dict key [default]
+;;;    dict-put! dict key value
+;;;    dict-exists? dict key
+;;;    dict-delete! dict key
+
+
+;;-----------------------------------------------
+;; Basic accessors
+;;
+
+;; NB: avoid using apply for performance
+(define-method dict-get ((dict <hash-table>) key . maybe-default)
+  (if (null? maybe-default)
+    (hash-table-get dict key)
+    (hash-table-get dict key (car maybe-default))))
+(define-method dict-get ((dict <tree-map>) key . maybe-default)
+  (if (null? maybe-default)
+    (tree-map-get dict key)
+    (tree-map-get dict key (car maybe-default))))
+
+(define-method dict-put! ((dict <hash-table>) key val)
+  (hash-table-put! dict key val))
+(define-method dict-put! ((dict <tree-map>) key val)
+  (tree-map-put! dict key val))
+
+(define-method (setter dict-get) (dict key val)
+  (dict-put! dict key val))
+
+(define-method dict-delete! ((dict <hash-table>) key)
+  (hash-table-delete! dict key))
+(define-method dict-delete! ((dict <tree-map>) key)
+  (tree-map-delete! dict key))
+
+(define-method dict-exists? ((dict <hash-table>) key)
+  (hash-table-exists? dict key))
+(define-method dict-exists? ((dict <tree-map>) key)
+  (tree-map-exists? dict key))
 
 ;;-----------------------------------------------
 ;; dict-fold, dict-fold-right
@@ -108,6 +152,73 @@
 (define-method dict-values ((dict <tree-map>))
   (tree-map-values dict))
 
+;;;
+;;; Bidirectional map
+;;;
+
+;; Currently we only support strict one-to-one mapping.
+(define-class <bimap> (<dictionary>)
+  ((left  :init-keyword :left)    ; x -> y
+   (right :init-keyword :right)   ; y -> x
+   ))
+
+(define (make-bimap left right)
+  (make <bimap> :left left :right right))
+
+(define (bimap-left bm)  (slot-ref bm 'left))
+(define (bimap-right bm) (slot-ref bm 'right))
+
+(define-macro (define-bimap-ops lr fwd rev)
+  (define (N templ) (string->symbol (format templ lr)))
+  `(begin
+     (define (,(N "bimap-~a-get") bm key . maybe-default)
+       (apply dict-get (,fwd bm) key maybe-default))
+     (define (,(N "bimap-~a-exists?") bm key)
+       (dict-exists? (,fwd bm) key))
+     (define (,(N "bimap-~a-delete!") bm key)
+       (let ([f (,fwd bm)]
+             [r (,rev bm)])
+         (and (dict-exists? f key)
+              (let1 val (dict-get f key)
+                (dict-delete! f key)
+                (dict-delete! r val)))))
+     ))
+
+(define-bimap-ops left  bimap-left bimap-right)
+(define-bimap-ops right bimap-right bimap-left)
+
+(define (bimap-put! bm x y :key (on-conflict :supersede))
+  (let ([x-exists? (dict-exists? (bimap-left bm) x)]
+        [y-exists? (dict-exists? (bimap-right bm) y)])
+    (case on-conflict
+      [(:error)
+       (if x-exists?
+         (error "attempt to insert duplicate left-key into bimap: " x)
+         (error "attempt to insert duplicate right-key into bimap: " y))]
+      [(#f) #f]
+      [(:supersede)
+       (when x-exists?
+         (dict-delete! (bimap-right bm) (dict-get (bimap-left bm) x)))
+       (when y-exists?
+         (dict-delete! (bimap-left bm) (dict-get (bimap-right bm) y)))
+       (dict-put! (bimap-left bm) x y)
+       (dict-put! (bimap-right bm) y x)
+       #t]
+      [else
+       (error "bimap-put!: on-conflict argument must be either one of \
+              :supersede, :error or #f, but got:" on-conflict)])))
+
+;; the normal ref/set! uses left map
+(define-method dict-get ((dict <bimap>) key . maybe-default)
+  (apply bimap-left-get dict key maybe-default))
+(define-method dict-put! ((dict <bimap>) key val)
+  (bimap-put! dict key val))
+(define-method dict-exists? ((dict <bimap>) key)
+  (bimap-left-exists? dict key))
+(define-method dict-delete! ((dict <bimap>) key)
+  (bimap-left-delete! dict key))
+(define-method dict-fold ((dict <bimap>) proc seed)
+  (dict-fold (bimap-left dict) proc seed))
 
 (provide "gauche/dictionary")
 

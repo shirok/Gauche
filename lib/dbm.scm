@@ -192,6 +192,18 @@
 ;        (lambda () (begin0 buf (set! buf (fetch))))))
 
 ;; Dictionary framework
+(define-method dict-get ((dbm <dbm>) key . maybe-default)
+  (apply dbm-get dbm key maybe-default))
+
+(define-method dict-put! ((dbm <dbm>) key val)
+  (dbm-put! dbm key val))
+
+(define-method dict-exists? ((dbm <dbm>) key)
+  (dbm-exists? dbm key))
+
+(define-method dict-delete! ((dbm <dbm>) key)
+  (dbm-delete! dbm key))
+
 (define-method dict-fold ((dbm <dbm>) proc seed)
   (dbm-fold dbm proc seed))
 

@@ -2472,13 +2472,61 @@ without any argument from the shell, to find out the valid options.
 @c EN
 A dictionary is an abstract class for objects that can
 map a key to a value.  This module provides some useful generic
-functions for dictionaries.
+functions for dictionaries, plus generic dictionary classes
+built on top of other dictionary classes.
 @c JP
 ディクショナリはキーから値への写像ができるオブジェクトを表わす抽象クラ
-スです。このモジュールではディクショナリに対してよく使うジェネリック関
-数を提供しています。
+スです。このモジュールではディクショナリに対してよく使うジェネリック関数、
+および他のディクショナリクラスの上に構築される汎用的なディクショナリクラスを
+提供します。
 @c COMMON
 @end deftp
+
+@menu
+* Generic functions for dictionaries::  
+* Generic dictionaries::        
+@end menu
+
+@node Generic functions for dictionaries, Generic dictionaries, Dictionary framework, Dictionary framework
+@subsection Generic functions for dictionaries
+@c NODE ディクショナリのためのジェネリック関数
+
+These generic functions are useful to implement algorithms
+common to any dictionary-like objects.
+Among built-in classes, @code{<hash-table>} and @code{<tree-map>}
+implement the dictionary interface.  All the @code{<dbm>} classes
+provided by @code{dbm} module also implement it.
+
+To make your own class implement the dictionary interface, you have
+to provide at least @code{dict-get}, @code{dict-put!}, @code{dict-exists?},
+@code{dict-delete!} and @code{dict-fold}.   Other generic functions
+have default behavior built on top of these.  Of course your can
+implement other methods as well, potentially to gain better performance.
+
+@deffn {Generic function} dict-get (dict @code{<dictionary>}) key &optional default
+Returns the value corresponding to the @var{key}.  
+If the dictionary doesn't have an entry with @var{key},
+returns @var{default} when it is provided, or raises an error
+if not.
+@end deffn
+
+@deffn {Generic function} dict-put! (dict @code{<dictionary>}) key value
+Puts the mapping from @var{key} to @var{value} into the dictionary.
+@end deffn
+
+@deffn {Generic function} {(setter dict-get)} (dict @code{<dictionary>}) key value
+This works the same as @code{dict-put!}.
+@end deffn
+
+@deffn {Generic function} dict-exists? (dict @code{<dictionary>}) key
+Returns @code{#t} if the dictionary has an entry with @var{key},
+@code{#f} if not.
+@end deffn
+
+@deffn {Generic function} dict-delete! (dict @code{<dictionary>}) key
+Removes an entry with @var{key} form the dictionary.
+If the dictionary doesn't have such an entry, this function is noop.
+@end deffn
 
 @deffn {Generic function} dict-fold (dict @code{<dictionary>}) proc seed
 @c EN
@@ -2570,6 +2618,97 @@ in the increasing order of keys.
 んでいます。
 @c COMMON
 @end deffn
+
+@node Generic dictionaries,  , Generic functions for dictionaries, Dictionary framework
+@subsection Generic dictionaries
+@c NODE 汎用ディクショナリ
+
+@deftp {Class} <bimap> 
+Provides a bidirectional map (@emph{bimap}), a relation between two
+set of values, of which you can lookup both ways.
+
+Internally, a bimap consists of two dictionaries, @emph{left} map
+and @emph{right} map.  Think a bimap as a relation between @var{x}s
+and @var{y}s.  The left map takes an @var{x} as a key and returns
+corresponding @var{y} as its value.  The right map takes an @var{y}
+as a key and returns corresponding @var{x} as its value.
+
+Currently, @code{<bimap>} only supports strict one-to-one mapping.
+Mutating interface (@code{bimap-*-put!}, @code{bimap-*-delete!} etc)
+modifies both left and right maps to maintain this one-to-one mapping.
+(In future, we may provide an option to make many-to-one and
+many-to-many mappings).
+
+A bimap can be used as a dictionary, with the generic dictionary
+functions such as @code{dict-get}.  In such cases, the left map takes
+precedence; that is, the key given to @code{dict-get} etc. is 
+regarded as the key to the left map.
+@end deftp
+
+@defun make-bimap left-map right-map
+Creates a new bimap consists of two dictionaries, @var{left-map}
+and @var{right-map}.   It is the caller's responsibility to
+choose appropriate type of dictionaries; for example, if you want
+to create a relation between a string and a number, you man want
+to create it like this:
+
+@example
+(make-bimap (make-hash-table 'string=?)  ; string -> number
+            (make-hash-table 'eqv?))     ; number -> string
+@end example
+@end defun
+
+@defun bimap-left bimap
+@defunx bimap-right bimap
+Returns the left or right map of @var{bimap}, respectively.
+@end defun
+
+@defun bimap-left-get bimap key &optional default
+@defunx bimap-right-get bimap key &optional default
+Lookup the value corresponding to the @var{key} in the left or right
+map of @var{bimap}.   If no entry is found for @var{key}, 
+@var{default} is returned if provided, otherwise an error is
+raised.
+@end defun
+
+@defun bimap-left-exists? bimap key
+@defunx bimap-right-exists? bimap key
+Returns @code{#f} if the left or right map of @var{bimap} has an entry of
+the key, @code{#t} otherwise.
+@end defun
+
+@defun bimap-put! bimap x y &key (on-conflict :supersede)
+Put a relation (@var{x}, @var{y}) into the bimap.
+After this, @code{(bimap-left-get @var{x})} will return @var{y},
+and @code{(bimap-left-get @var{y})} will return @var{x}.
+
+If there's already a relation (@var{x}, _) and/or (_, @var{y}),
+the behavior depends on the value of the keyword argument @var{on-conflit}.
+
+@table @code
+@item :supersede
+This is the default behavior.  Duplicate relations are silently
+removed in order to maintain one-to-one mapping.  For example,
+suppose a bimap between strings and numbers has had
+@code{("foo", 1)} and @code{("bar", 2)}.  When you try to
+put @code{("bar", 2)} with this option, the first two entries
+are removed.  Returns @code{#t}.
+
+@item :error
+Raises an error when duplicate relations are found.
+
+@item #f
+When duplicate relations are found, does nothing and returns @code{#f}.
+@end table
+
+@end defun
+
+@defun bimap-left-delete! bimap key
+@defunx bimap-right-delete! bimap key
+Deletes an relation with the given left key or right key from @var{bimap}.
+Both left and right maps are modified so that the consistency is maintained.
+If there's no relations with given key, these are noop.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Low-level file operations, Hooks, Dictionary framework, Library modules - Gauche extensions
