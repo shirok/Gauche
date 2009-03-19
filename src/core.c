@@ -362,7 +362,8 @@ void Scm_Panic(const char *msg, ...)
 void Scm_Abort(const char *msg)
 {
     int size = (int)strlen(msg);
-    (void)write(2, msg, size); /* this may return an error, but we don't care */
+    /* this may return an error, but we don't care, since we exit anyway. */
+    SCM_IGNORE_RESULT(write(2, msg, size));
     _exit(1);
 }
 

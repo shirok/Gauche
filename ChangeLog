@@ -1,3 +1,11 @@
+2009-03-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (SCM_IGNORE_RESULT): Added this macro to silence
+	  "ignoring return value" warnings when the return value is
+	  intentionally ignored.
+	* src/core.c (Scm_Abort), src/string.c (Scm_DStringDump):
+	  Using SCM_IGNORE_RESULT.
+
 2009-03-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/dictionary.scm (<bimap>): Added bidirectional map.

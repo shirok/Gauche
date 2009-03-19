@@ -127,6 +127,12 @@ SCM_DECL_BEGIN
 
 #define SCM_WORD_BITS   (SIZEOF_LONG*8)
 
+/* Newer gcc/glibc adds lots of __attribute__((warn_unused_result)) that
+   causes excessive warnings for the code that intentionally ignores the
+   return value.  Casting the result to void won't silence it.
+   Hence this macro. */
+#define SCM_IGNORE_RESULT(expr)  do {} while (expr)
+
 /*-------------------------------------------------------------
  * BASIC TYPES
  */

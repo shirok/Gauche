@@ -1543,18 +1543,18 @@ void Scm_DStringDump(FILE *out, ScmDString *dstr)
     if (dstr->anchor) {
         ScmDStringChain *chain; int i;
         fprintf(out, "  chunk0[%3d] = \"", dstr->init.bytes);
-        fwrite(dstr->init.data, 1, dstr->init.bytes, out);
+        SCM_IGNORE_RESULT(fwrite(dstr->init.data, 1, dstr->init.bytes, out));
         fprintf(out, "\"\n");
         for (i=1, chain = dstr->anchor; chain; chain = chain->next, i++) {
             int size = (chain->next? chain->chunk->bytes : (int)(dstr->current - dstr->tail->chunk->data));
             fprintf(out, "  chunk%d[%3d] = \"", i, size);
-            fwrite(chain->chunk->data, 1, size, out);
+            SCM_IGNORE_RESULT(fwrite(chain->chunk->data, 1, size, out));
             fprintf(out, "\"\n");
         }
     } else {
         int size = (int)(dstr->current - dstr->init.data);
         fprintf(out, "  chunk0[%3d] = \"", size);
-        fwrite(dstr->init.data, 1, size, out);
+        SCM_IGNORE_RESULT(fwrite(dstr->init.data, 1, size, out));
         fprintf(out, "\"\n");
     }
 }
