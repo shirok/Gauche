@@ -117,7 +117,7 @@ INSTALL_HEADERS = gauche.h \
 	../gc/include/gc_pthread_redirects.h ../gc/include/gc_tiny_fl.h \
 	../gc/include/gc_typed.h ../gc/include/gc_version.h 
 INSTALL_SUBHEADERS = \
-	gauche/arch.h gauche/bignum.h gauche/bits.h \
+	gauche/arch.h gauche/bignum.h gauche/bits.h gauche/bits_inline.h \
 	gauche/builtin-syms.h gauche/char_euc_jp.h gauche/char_none.h \
 	gauche/char_sjis.h gauche/char_utf_8.h gauche/charset.h \
 	gauche/class.h gauche/code.h gauche/collection.h \
