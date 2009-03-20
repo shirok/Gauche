@@ -1,3 +1,10 @@
+2009-03-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/bits_inline.h, src/bits.c: Splitted some useful and
+	  performance-critical routines from bits.c into a separate header.
+	  The header is not for general inclusion; only those code that
+	  needs such routines should explicitly include it.
+
 2009-03-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (SCM_IGNORE_RESULT): Added this macro to silence
