@@ -1166,6 +1166,15 @@ static void vprintf_proc(ScmPort *out, const char *fmt, ScmObj args,
             case '#':
                 pound_appeared++;
                 goto fallback;
+            case '*':
+                SCM_ASSERT(SCM_PAIRP(args));
+                if (dot_appeared) {
+                    prec = Scm_GetInteger(SCM_CAR(args));
+                } else {
+                    width = Scm_GetInteger(SCM_CAR(args));
+                }
+                args = SCM_CDR(args);
+                goto fallback;
             fallback:
             default:
                 SCM_DSTRING_PUTB(&argbuf, c);
@@ -1243,6 +1252,12 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, int sharedp)
                     int c = va_arg(ap, int);
                     SCM_APPEND1(h, t, Scm_MakeInteger(c));
                     break;
+                }
+            case '*':
+                {
+                    int c = va_arg(ap, int);
+                    SCM_APPEND1(h, t, Scm_MakeInteger(c));
+                    continue;
                 }
             default:
                 continue;
