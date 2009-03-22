@@ -5,6 +5,7 @@
 
 	* src/hash.c (insert_entry): Clears old bucket array when hashtable
 	  is extended, in order to reduce inadvertent retention of garbages.
+	  (Scm_HashString): Allow modulo == 0.
 
 	* ext/sparse: Added sparse data structures (initially just a sparse
 	  vector; eventually we'll add sparse uniform vectors and sparse

@@ -218,7 +218,8 @@ u_long Scm_HashString(ScmString *str, u_long modulo)
     const ScmStringBody *b = SCM_STRING_BODY(str);
     p = SCM_STRING_BODY_START(b);
     STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
-    return (hashval % modulo);
+    if (modulo == 0) return hashval;
+    else return (hashval % modulo);
 }
 
 /*------------------------------------------------------------
@@ -750,7 +751,7 @@ ScmObj Scm_HashTableDelete(ScmHashTable *ht, ScmObj key)
     ScmDictEntry *e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(ht),
                                          (intptr_t)key, SCM_DICT_DELETE);
     if (e && e->value) return SCM_DICT_VALUE(e);
-    else              return SCM_UNBOUND;
+    else               return SCM_UNBOUND;
 }
 
 ScmObj Scm_HashTableKeys(ScmHashTable *table)
