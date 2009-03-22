@@ -35,7 +35,8 @@
 
 
 (define-module util.sparse
-  (export-all)
+  (export <spvector> make-spvector spvector-num-elements
+          spvector-ref spvector-set! %spvector-dump)
   )
 (select-module util.sparse)
 
