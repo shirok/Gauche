@@ -126,7 +126,7 @@ static Node *node_delete(Node *orig, u_long ind)
  * Leaves
  */
 
-#define LEAF_KEY(leaf)            ((leaf)->key0 + ((leaf)->key1 << 16))
+#define LEAF_KEY(leaf) (((leaf)->key0&0xffff) + (((leaf)->key1&0xffff) << 16))
 
 static Leaf *new_leaf(u_long key, Leaf *(*creator)(void*), void *data)
 {
@@ -269,31 +269,33 @@ static char digit32(u_int n)
 static char *key_dump(u_long key, char *buf) /* buf must be of length 8 */
 {
     int i;
-    for (i=0; i<BUF_SIZE; i++) {
-        buf[BUF_SIZE-i-1] = digit32(key&TRIE_MASK);
+    buf[BUF_SIZE-1] = '\0';
+    for (i=0; i<BUF_SIZE-1; i++) {
+        buf[BUF_SIZE-i-2] = digit32(key&TRIE_MASK);
         key >>= TRIE_SHIFT;
     }
     return buf;
 }
 
-static void leaf_dump(FILE *out, Leaf *self, int indent,
-                      void (*dumper)(FILE*, Leaf*, int, void*), void *data)
+static void leaf_dump(ScmPort *out, Leaf *self, int indent,
+                      void (*dumper)(ScmPort*, Leaf*, int, void*), void *data)
 {
     char keybuf[BUF_SIZE];
-    fprintf(out, "LEAF(%s,%x) ", key_dump(LEAF_KEY(self), keybuf), LEAF_KEY(self));
+    Scm_Printf(out, "LEAF(%s,%x) ", key_dump(LEAF_KEY(self), keybuf),
+               LEAF_KEY(self));
     if (dumper) dumper(out, self, indent, data);
-    fprintf(out, "\n");
+    Scm_Printf(out, "\n");
 }
 
-static void node_dump(FILE *out, Node *n, int level, 
-                      void (*dumper)(FILE*, Leaf*, int, void*), void *data)
+static void node_dump(ScmPort *out, Node *n, int level, 
+                      void (*dumper)(ScmPort*, Leaf*, int, void*), void *data)
 {
     int i;
     
-    fprintf(out, "NODE(%p)\n", n);
+    Scm_Printf(out, "NODE(%p)\n", n);
     for (i=0; i<MAX_NODE_SIZE; i++) {
         if (!NODE_HAS_ARC(n, i)) continue;
-        fprintf(out, " %*s%c:", level*2, "", digit32(i));
+        Scm_Printf(out, " %*s%c:", level*2, "", digit32(i));
         if (NODE_ARC_IS_LEAF(n, i)) {
             leaf_dump(out, (Leaf*)NODE_ENTRY(n, NODE_INDEX2OFF(n, i)),
                       level*2+1, dumper, data);
@@ -304,12 +306,12 @@ static void node_dump(FILE *out, Node *n, int level,
     }
 }
 
-void CompactTrieDump(FILE *out, CompactTrie *ct,
-                     void (*dumper)(FILE*, Leaf*, int, void*), void *data)
+void CompactTrieDump(ScmPort *out, CompactTrie *ct,
+                     void (*dumper)(ScmPort*, Leaf*, int, void*), void *data)
 {
-    fprintf(out, "CompactTrie(%p, nentries=%d):\n", ct, ct->numEntries);
+    Scm_Printf(out, "CompactTrie(%p, nentries=%d):\n", ct, ct->numEntries);
     if (ct->root == NULL) {
-        fputs("(empty)\n", out);
+        Scm_Putz("(empty)\n", -1, out);
     } else {
         node_dump(out, ct->root, 0, dumper, data);
     }

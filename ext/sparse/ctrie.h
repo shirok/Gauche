@@ -98,8 +98,8 @@ extern Leaf *CompactTrieDelete(CompactTrie *ct, u_long key);
 
 /* For debug */
 #if SCM_DEBUG_HELPER
-extern void CompactTrieDump(FILE *out, CompactTrie *ct,
-                            void (*dumper)(FILE *, Leaf*, int, void*),
+extern void CompactTrieDump(ScmPort *out, CompactTrie *ct,
+                            void (*dumper)(ScmPort *, Leaf*, int, void*),
                             void *data);
 #endif /*SCM_DEBUG_HELPER*/
 

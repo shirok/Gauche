@@ -36,14 +36,19 @@
 
 (define-module util.sparse
   (export <spvector> make-spvector spvector-num-elements
-          spvector-ref spvector-set! %spvector-dump)
+          spvector-ref spvector-set! %spvector-dump
+          <sptable> make-sptable sptable-num-elements
+          sptable-ref sptable-set! %sptable-dump)
   )
 (select-module util.sparse)
 
 (inline-stub
  "#include \"ctrie.h\""
- "#include \"spvec.h\"")
+ "#include \"spvec.h\""
+ "#include \"sptab.h\""
+ )
 
+;; Sparse vectors
 (inline-stub
  (initcode "Scm_Init_spvec(mod);")
 
@@ -66,5 +71,37 @@
    SparseVectorDump)
  )
 
+;; Sparse hashtables
+(inline-stub
+ (initcode "Scm_Init_sptab(mod);")
+
+ (define-type <sptable> "SparseTable*" "sparse table"
+   "SPARSE_TABLE_P" "SPARSE_TABLE")
+
+ (define-cproc make-sptable (type)
+   (let* ([t::ScmHashType SCM_HASH_EQ])
+     (cond
+      [(SCM_EQ type 'eq?)      (set! t SCM_HASH_EQ)]
+      [(SCM_EQ type 'eqv?)     (set! t SCM_HASH_EQV)]
+      [(SCM_EQ type 'equal?)   (set! t SCM_HASH_EQUAL)]
+      [(SCM_EQ type 'string=?) (set! t SCM_HASH_STRING)]
+      [else (Scm_Error "unsupported sptable hash type: %S" type)])
+     (result (MakeSparseTable t 0))))
+
+ (define-cproc sptable-num-elements (st::<sptable>) ::<ulong>
+   (result (-> st numElements)))
+ 
+ (define-cproc sptable-ref (st::<sptable> key :optional fallback)
+   (let* ([r (SparseTableRef st key fallback)])
+     (when (SCM_UNBOUNDP r)
+       (Scm_Error "%S doesn't have an entry for key %S" (SCM_OBJ st) key))
+     (result r)))
+
+ (define-cproc sptable-set! (st::<sptable> key value)
+   (result (SparseTableSet st key value 0)))
+
+ (define-cproc %sptable-dump (st::<sptable>) ::<void>
+   SparseTableDump)
+ )
 
 (provide "util/sparse")

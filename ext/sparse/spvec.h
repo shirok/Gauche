@@ -73,7 +73,7 @@ struct SparseVectorDescriptorRec {
     ScmObj   (*retrieve)(void *elements, u_long offset);
     void     (*store)(void *elements, u_long offset, ScmObj value);
     void    *(*extend)(void *elements, int origsize, int insertion);
-    void     (*dump)(FILE *out, Leaf *leaf, int indent, void *data);
+    void     (*dump)(ScmPort *out, Leaf *leaf, int indent, void *data);
 
     const char *name;           /* name used in error messages */
     u_char      elementAtomic;  /* TRUE if we can use ATOMIC vector for elts */

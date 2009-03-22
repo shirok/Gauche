@@ -9,7 +9,7 @@ SCM_CATEGORY = util
 LIBFILES = sparse.$(SOEXT)
 SCMFILES = util/sparse.scm
 
-OBJECTS = sparse.$(OBJEXT) ctrie.$(OBJEXT) spvec.$(OBJEXT)
+OBJECTS = sparse.$(OBJEXT) ctrie.$(OBJEXT) spvec.$(OBJEXT) sptab.$(OBJEXT)
 
 GENERATED = Makefile
 XCLEANFILES = sparse.c util/sparse.scm
@@ -19,7 +19,7 @@ all : $(LIBFILES) $(SCMFILES)
 sparse.$(SOEXT) : $(OBJECTS) 
 	$(MODLINK) sparse.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-$(OBJECTS): ctrie.h spvec.h
+$(OBJECTS): ctrie.h spvec.h sptab.h
 
 sparse.c util/sparse.scm : sparse.scm
 	$(GENCOMP) --ext-module=util/sparse.scm sparse.scm

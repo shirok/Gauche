@@ -127,7 +127,7 @@ void SparseVectorSet(SparseVector *sv, u_long index, ScmObj value)
 #if SCM_DEBUG_HELPER
 void SparseVectorDump(SparseVector *sv)
 {
-    CompactTrieDump(stdout, &sv->trie, sv->desc->dump, sv->desc);
+    CompactTrieDump(SCM_CUROUT, &sv->trie, sv->desc->dump, sv->desc);
 }
 #endif /*SCM_DEBUG_HELPER*/
 
@@ -179,15 +179,15 @@ static void *g_extend(void *elements, int origsize, int insertion)
 }
 
 #if SCM_DEBUG_HELPER
-void g_dump(FILE *out, Leaf *leaf, int indent, void *data)
+static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
 {
     int i;
     SPVLeaf *z = (SPVLeaf *)leaf;
 
-    fprintf(out, "nelts=%d", Scm__CountBitsInWord(z->ebits));
+    Scm_Printf(out, "nelts=%d", Scm__CountBitsInWord(z->ebits));
     for (i=0; i<(1UL<<MAX_CHUNK_BITS); i++) {
         if (leaf_has_elem(z, i)) {
-            fprintf(out, "\n  %*s%2d: %p", indent, "", i,
+            Scm_Printf(out, "\n  %*s%25.1S: %p", indent, "", i,
                     ((ScmObj*)z->elements)[leaf_offset(z, i)]);
         }
     }
