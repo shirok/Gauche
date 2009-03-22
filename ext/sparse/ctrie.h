@@ -81,10 +81,19 @@ typedef struct LeafRec {
     u_long   key1;              /* upper half word of the key */
 } Leaf;
 
+#define LEAF_KEY(leaf) (((leaf)->key0&0xffff) + (((leaf)->key1&0xffff) << 16))
+
 typedef struct CompactTrieRec {
     u_int    numEntries;
     Node     *root;
 } CompactTrie;
+
+typedef struct CompactTrieIterRec {
+    CompactTrie *trie;
+    u_long       key;
+    char         begin;
+    char         end;
+} CompactTrieIter;
 
 /* Create empty CompactTrie */
 extern CompactTrie *MakeCompactTrie(void);
@@ -99,8 +108,14 @@ extern Leaf *CompactTrieAdd(CompactTrie *ct, u_long key,
                             Leaf *(*creator)(void*), void *data);
 extern Leaf *CompactTrieDelete(CompactTrie *ct, u_long key);
 
-/* Iterator */
+extern Leaf *CompactTrieFirstLeaf(CompactTrie *ct);
+extern Leaf *CompactTrieLastLeaf(CompactTrie *ct);
+extern Leaf *CompactTrieNextLeaf(CompactTrie *ct, u_long key);
 
+
+/* Iterator */
+extern void  CompactTrieIterInit(CompactTrieIter *it, CompactTrie *ct);
+extern Leaf *CompactTrieIterNext(CompactTrieIter *it);
 
 /* For debug */
 #if SCM_DEBUG_HELPER

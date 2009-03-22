@@ -205,7 +205,7 @@ static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
     Scm_Printf(out, "nelts=%d", Scm__CountBitsInWord(z->ebits));
     for (i=0; i<(1UL<<MAX_CHUNK_BITS); i++) {
         if (leaf_has_elem(z, i)) {
-            Scm_Printf(out, "\n  %*s%25.1S: %p", indent, "", i,
+            Scm_Printf(out, "\n  %*s%2d: %25.1S", indent, "", i,
                     ((ScmObj*)z->elements)[leaf_offset(z, i)]);
         }
     }

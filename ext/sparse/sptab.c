@@ -214,6 +214,40 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
 }
 
 /*===================================================================
+ * Iterators
+ */
+
+void SparseTableIterInit(SparseTableIter *it, SparseTable *st)
+{
+    it->st = st;
+    CompactTrieIterInit(&it->ctit, &st->trie);
+    it->chain = SCM_NIL;
+    it->end = FALSE;
+}
+
+/* returns (key . value) or #f */
+ScmObj SparseTableIterNext(SparseTableIter *it)
+{
+    //fprintf(stderr, "ung %p\n", it->st);
+    if (it->end) return SCM_FALSE;
+    if (SCM_PAIRP(it->chain)) {
+        ScmObj p = SCM_CAR(it->chain);
+        it->chain = SCM_CDR(it->chain);
+        return p;
+    } else {
+        SPTLeaf *z = (SPTLeaf*)CompactTrieIterNext(&it->ctit);
+        //fprintf(stderr, "gngn %p\n", z);
+        if (z == NULL) { it->end = TRUE; return SCM_FALSE; }
+        if (!leaf_is_chained(z)) {
+            return Scm_Cons(z->d.entry.key, z->d.entry.value);
+        }
+        it->chain = z->d.chain.next;
+        return z->d.chain.pair;
+    }
+}
+
+
+/*===================================================================
  * Miscellaneous
  */
 

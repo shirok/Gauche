@@ -38,7 +38,7 @@
           (cond [(hash-table-exists? ht k) (loop i)]
                 [else (hash-table-put! ht k (* k k)) (loop (+ i 1))]))))))
 
-(define (heavy-test name obj %ref %set! %cnt %clr keygen)
+(define (heavy-test name obj %ref %set! %cnt %clr %keys %vals keygen)
   (test* #`",name many set!" *data-set-size*
          (let/cc return
            (hash-table-fold *data-set*
@@ -62,6 +62,31 @@
                                   (+ cnt 1)
                                   (return `(error ,cnt ,kk ,v ,(%ref obj kk))))))
                             0)))
+  (when %keys
+    (test* #`",name keys" *data-set-size*
+           (let/cc return
+             (let1 tt (make-sptable 'equal?)
+               (hash-table-for-each *data-set*
+                                    (lambda (k v)
+                                      (sptable-set! tt (keygen k) #t)))
+               (fold (lambda (k cnt)
+                       (if (sptable-ref tt k #f)
+                         (+ cnt 1)
+                         (return `(error ,cnt ,k))))
+                     0 (%keys obj))))))
+  (when %vals
+    (test* #`",name values" *data-set-size*
+           (let/cc return
+             (let1 tt (make-sptable 'equal?)
+               (hash-table-for-each *data-set*
+                                    (lambda (k v)
+                                      (sptable-set! tt v #t)))
+               (fold (lambda (v cnt)
+                       (if (sptable-ref tt v #f)
+                         (+ cnt 1)
+                         (return `(error ,cnt ,v))))
+                     0 (%vals obj))))))
+    
   (test* #`",name many clear!" 0 (begin (%clr obj) (%cnt obj)))
   (test* #`",name many ref2" *data-set-size*
          (let/cc return
@@ -81,7 +106,7 @@
              (const 0) (const 1))
 
 (heavy-test "spvector" (make-spvector) spvector-ref spvector-set!
-            spvector-num-entries spvector-clear! values)
+            spvector-num-entries spvector-clear! #f #f values)
 
 ;; sparse table----------------------------------------------------
 (test-section "sptable")
@@ -98,7 +123,7 @@
 (define (sptab-heavy-test type keygen)
   (heavy-test #`"sptable (,type)" (make-sptable type)
               sptable-ref sptable-set! sptable-num-entries sptable-clear!
-              keygen))
+              sptable-keys sptable-values keygen))
 
 (sptab-heavy-test 'eqv? values)
 (sptab-heavy-test 'equal? (lambda (k) (list k k)))

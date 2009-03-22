@@ -38,7 +38,9 @@
   (export <spvector> make-spvector spvector-num-entries
           spvector-ref spvector-set! spvector-clear! %spvector-dump
           <sptable> make-sptable sptable-num-entries
-          sptable-ref sptable-set! sptable-clear! %sptable-dump)
+          sptable-ref sptable-set! sptable-clear! %sptable-dump
+          sptable-fold sptable-map sptable-for-each
+          sptable-keys sptable-values)
   )
 (select-module util.sparse)
 
@@ -106,8 +108,42 @@
  (define-cproc sptable-clear! (st::<sptable>) ::<void>
    SparseTableClear)
 
+ (define-cfn sptable-iter (args::ScmObj* nargs::int data::void*) :static
+   (let* ([iter::SparseTableIter* (cast SparseTableIter* data)]
+          [r (SparseTableIterNext iter)]
+          [eofval (aref args 0)])
+     (if (SCM_FALSEP r)
+       (return (values eofval eofval))
+       (return (values (SCM_CAR r) (SCM_CDR r))))))
+
+ (define-cproc %sptable-iter (st::<sptable>)
+   (let* ([iter::SparseTableIter* (SCM_NEW SparseTableIter)])
+     (SparseTableIterInit iter st)
+     (result (Scm_MakeSubr sptable-iter iter 1 0 '"sptable-iterator"))))
+
  (define-cproc %sptable-dump (st::<sptable>) ::<void>
    SparseTableDump)
  )
+
+(define (sptable-fold st proc seed)
+  (let ([iter (%sptable-iter st)]
+        [end  (list)])
+    (let loop ((seed seed))
+      (receive (key val) (iter end)
+        (if (eq? key end)
+          seed
+          (loop (proc key val seed)))))))
+
+(define (sptable-map st proc)
+  (sptable-fold st (lambda (k v s) (cons (proc k v) s)) '()))
+
+(define (sptable-for-each st proc)
+  (sptable-fold st (lambda (k v _) (proc k v)) #f))
+
+(define (sptable-keys st)
+  (sptable-fold st (lambda (k v s) (cons k s)) '()))
+
+(define (sptable-values st)
+  (sptable-fold st (lambda (k v s) (cons v s)) '()))
 
 (provide "util/sparse")

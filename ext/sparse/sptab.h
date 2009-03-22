@@ -61,6 +61,17 @@ extern void   SparseTableClear(SparseTable *st);
 
 extern void   SparseTableDump(SparseTable *sv);
 
+/* Iterator */
+typedef struct SparseTableIterRec {
+    SparseTable *st;
+    CompactTrieIter ctit;
+    ScmObj chain;
+    int end;
+} SparseTableIter;
+
+extern void   SparseTableIterInit(SparseTableIter *it, SparseTable *st);
+extern ScmObj SparseTableIterNext(SparseTableIter *it);
+
 extern void   Scm_Init_sptab(ScmModule *mod);
 
 #endif /*GAUCHE_SPTAB_H*/

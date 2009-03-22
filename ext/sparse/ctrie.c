@@ -126,8 +126,6 @@ static Node *node_delete(Node *orig, u_long ind)
  * Leaves
  */
 
-#define LEAF_KEY(leaf) (((leaf)->key0&0xffff) + (((leaf)->key1&0xffff) << 16))
-
 static Leaf *new_leaf(u_long key, Leaf *(*creator)(void*), void *data)
 {
     Leaf *l = creator(data);
@@ -220,7 +218,7 @@ Leaf *CompactTrieAdd(CompactTrie *ct, u_long key,
 }
 
 /*
- * Delete
+ * Delete and clear
  */
 Node *del_rec(CompactTrie *ct, Node *n, u_long key, int level, Leaf **result)
 {
@@ -288,6 +286,100 @@ void CompactTrieClear(CompactTrie *ct,
     ct->root = NULL;
 
     clear_rec(ct, n, clearer, data);
+}
+
+/*
+ * Key finding
+ */
+static Leaf *next_rec(Node *n, u_long key, int level, int over)
+{
+    u_int i, ind = over? 0 : KEY2INDEX(key, level);
+    
+    for (i = ind; i < MAX_NODE_SIZE; i++) {
+        if (!NODE_HAS_ARC(n, i)) continue;
+        if (NODE_ARC_IS_LEAF(n, i)) {
+            if (!over && i == ind) continue;
+            return (Leaf*)NODE_ENTRY(n, NODE_INDEX2OFF(n, i));
+        } else {
+            Leaf *l = next_rec((Node*)NODE_ENTRY(n, NODE_INDEX2OFF(n, i)),
+                               key, level+1, (over || (i > ind)));
+            if (l) return l;
+        }
+    }
+    return NULL;
+}
+
+Leaf *CompactTrieNextLeaf(CompactTrie *ct, u_long key)
+{
+    if (ct->root) return next_rec(ct->root, key, 0, FALSE);
+    else return NULL;
+}
+
+/* Find leaves with minimum and maximum key.  Note: minkey==0 or maxkey==0
+   situation only occurs when another thread is modifying the same trie.
+   We don't guarantee correct operation under the race condition, but
+   we don't want SEGV as well, so we just return NULL in such case.
+ */
+static Leaf *first_rec(Node *n)
+{
+    int minkey;
+    if (n->emap == 0) return NULL; /* for safety in MT situation */
+    minkey = Scm__LowestBitNumber(n->emap);
+    if (NODE_ARC_IS_LEAF(n, minkey)) {
+        return (Leaf*)NODE_ENTRY(n, NODE_INDEX2OFF(n, minkey));
+    } else {
+        return first_rec((Node*)NODE_ENTRY(n, NODE_INDEX2OFF(n, minkey)));
+    }
+}
+
+Leaf *CompactTrieFirstLeaf(CompactTrie *ct)
+{
+    if (ct->root) return first_rec(ct->root);
+    else return NULL;
+}
+
+static Leaf *last_rec(Node *n)
+{
+    int maxkey;
+    if (n->emap == 0) return NULL; /* for safety in MT situation */
+    maxkey = Scm__HighestBitNumber(n->emap);
+    if (NODE_ARC_IS_LEAF(n, maxkey)) {
+        return (Leaf*)NODE_ENTRY(n, NODE_INDEX2OFF(n, maxkey));
+    } else {
+        return last_rec((Node*)NODE_ENTRY(n, NODE_INDEX2OFF(n, maxkey)));
+    }
+}
+
+Leaf *CompactTrieLastLeaf(CompactTrie *ct)
+{
+    if (ct->root) return last_rec(ct->root);
+    else return NULL;
+}
+
+/*
+ * Iterator
+ */
+void CompactTrieIterInit(CompactTrieIter *it, CompactTrie *ct)
+{
+    it->trie = ct;
+    it->key = 0;
+    it->begin = TRUE;
+    it->end = FALSE;
+}
+
+Leaf *CompactTrieIterNext(CompactTrieIter *it)
+{
+    Leaf *l;
+    if (it->end) return NULL;
+    if (it->begin) {
+        l = CompactTrieFirstLeaf(it->trie);
+        it->begin = FALSE;
+    } else {
+        l = CompactTrieNextLeaf(it->trie, it->key);
+    }
+    if (l) it->key = LEAF_KEY(l);
+    else   it->end = TRUE;
+    return l;
 }
 
 /*
