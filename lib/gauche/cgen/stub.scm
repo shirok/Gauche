@@ -683,12 +683,17 @@
       [(('catch . spec) . r) (process-catch-spec cproc spec) (loop r)]
       [(('code . stmts) . r) (dolist (s stmts) (push-stmt! cproc s)) (loop r)]
       [([? symbol? s]) ; 'call' convention
+       ;; If the named C routine returns multiple values, we don't need to
+       ;; call Scm_Values*() by ourselves.   Hence we intercept
        (let* ([args (map (cut ref <> 'name)
                          (append (~ cproc'args) (~ cproc'keyword-args)))]
               [form (if (eq? (~ cproc'return-type) '<void>)
                       `((,s ,@args))
-                      `((result (,s ,@args))))])
-         (process-body-inner cproc (~ cproc'return-type) form))]
+                      `((result (,s ,@args))))]
+              [rettype (if (pair? (~ cproc'return-type))
+                         '<top>
+                         (~ cproc'return-type))])
+         (process-body-inner cproc rettype form))]
       [_ (process-body-inner cproc (~ cproc'return-type) body)])))
 
 (define-method process-setter ((cproc <cproc>) decl)
@@ -1080,11 +1085,16 @@
              (for-each (cut push-stmt! method <>) stmts)
              (loop r)]
             [([? symbol? s]) ; 'call' convention
+             ;; If the named C routine returns multiple values, we don't need to
+             ;; call Scm_Values*() by ourselves.   Hence we intercept
              (let* ([args (map (cut ref <> 'name) (~ method'args))]
-                    [form (if (eq? (~ cproc'return-type) '<void>)
+                    [form (if (eq? (~ method'return-type) '<void>)
                             `((,s ,@args))
-                            `((result (,s ,@args))))]))
-             (process-body-inner method (~ method'return-type) form)]
+                            `((result (,s ,@args))))]
+                    [rettype (if (pair? (~ method'return-type))
+                               '<top>
+                               (~ method'return-type))])
+               (process-body-inner method rettype form))]
             [_ (process-body-inner method (~ method'return-type) body)]))
         (unless (~ method'c-generic)
           (set! (~ method'c-generic)

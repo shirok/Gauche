@@ -1,5 +1,10 @@
 2009-03-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/stub.scm (process-body): Fix the case when
+	  C routine calls Scm_Values*.  In such case, the stub generator
+	  doesn't need to generate Scm_Values* code, but just passes
+	  the return value from C routine as if it returns a single value.
+
 	* src/write.c (Scm_Vprintf): Support '*' in the precision and width
 	  position of the format directives.
 
