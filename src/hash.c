@@ -283,6 +283,9 @@ static Entry *insert_entry(ScmHashCore *table,
             f->next = newb[index];
             newb[index] = f;
         }
+        /* gc friendliness */
+        for (i=0; i<table->numBuckets; i++) table->buckets[i] = NULL;
+        
         table->numBuckets = newsize;
         table->numBucketsLog2 = newbits;
         table->buckets = (void**)newb;
