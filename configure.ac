@@ -724,6 +724,7 @@ AC_OUTPUT(Makefile
           ext/mt-random/Makefile
           ext/net/Makefile
 dnl          ext/peg/Makefile
+          ext/sparse/Makefile
           ext/srfi/Makefile
           ext/sxml/Makefile
           ext/syslog/Makefile

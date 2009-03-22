@@ -3,6 +3,15 @@
 	* src/hash.c (insert_entry): Clears old bucket array when hashtable
 	  is extended, in order to reduce inadvertent retention of garbages.
 
+	* ext/sparse: Added sparse data structures (initially just a sparse
+	  vector; eventually we'll add sparse uniform vectors and sparse
+	  hashtable---hashtable using sparse vector as a backend store).
+	  The main advantage of sparse vectors over hashtables is that it
+	  behaves better in memory consumption when structures with large
+	  number of elements (like >1M) are repeatedly created and discarded.
+	  Although each sparse vector uses more memory than a hashtable of
+	  the same number of elements, large hashtables are more likely to
+	  become "dead memory", because of its large bucket vector.
 
 2009-03-19  Shiro Kawai  <shiro@acm.org>
 
