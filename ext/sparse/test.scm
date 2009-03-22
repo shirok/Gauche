@@ -38,7 +38,7 @@
           (cond [(hash-table-exists? ht k) (loop i)]
                 [else (hash-table-put! ht k (* k k)) (loop (+ i 1))]))))))
 
-(define (heavy-test name obj %ref %set! %cnt %clr %keys %vals keygen)
+(define (heavy-test name obj %ref %set! %cnt %clr %keys %vals %del keygen)
   (test* #`",name many set!" *data-set-size*
          (let/cc return
            (hash-table-fold *data-set*
@@ -97,6 +97,17 @@
                                   (return `(error ,cnt ,kk ,v ,(%ref obj kk)))
                                   (+ cnt 1))))
                             0)))
+
+  (when %del
+    (test* #`",name many delete!" '(#t 0)
+           (begin
+             (hash-table-for-each *data-set*
+                                  (lambda (k v) (%set! obj (keygen k) v)))
+             (let1 r
+                 (hash-table-fold *data-set*
+                                  (lambda (k v s) (and s (%del obj (keygen k))))
+                                  #t)
+               (list r (%cnt obj))))))
   )
 
 ;; sparse vector-------------------------------------------------
@@ -106,7 +117,7 @@
              (const 0) (const 1))
 
 (heavy-test "spvector" (make-spvector) spvector-ref spvector-set!
-            spvector-num-entries spvector-clear! #f #f values)
+            spvector-num-entries spvector-clear! #f #f #f values)
 
 ;; sparse table----------------------------------------------------
 (test-section "sptable")
@@ -123,7 +134,7 @@
 (define (sptab-heavy-test type keygen)
   (heavy-test #`"sptable (,type)" (make-sptable type)
               sptable-ref sptable-set! sptable-num-entries sptable-clear!
-              sptable-keys sptable-values keygen))
+              sptable-keys sptable-values sptable-delete! keygen))
 
 (sptab-heavy-test 'eqv? values)
 (sptab-heavy-test 'equal? (lambda (k) (list k k)))

@@ -214,6 +214,70 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
 }
 
 /*===================================================================
+ * Deletion
+ */
+
+/* returns value of the deleted entry, or SCM_UNBOUND if there's no entry */
+ScmObj SparseTableDelete(SparseTable *st, ScmObj key)
+{
+    u_long hv = st->hashfn(key);
+    SPTLeaf *z = (SPTLeaf*)CompactTrieGet(&st->trie, hv);
+    ScmObj retval = SCM_UNBOUND;
+    
+    if (z != NULL) {
+        if (!leaf_is_chained(z)) {
+            if (st->cmpfn(key, z->d.entry.key)) {
+                retval = z->d.entry.value;
+                CompactTrieDelete(&st->trie, hv);
+                st->numEntries--;
+            }
+        } else {
+            if (st->cmpfn(key, SCM_CAR(z->d.chain.pair))) {
+                ScmObj p = z->d.chain.next;
+                SCM_ASSERT(SCM_PAIRP(p));
+                retval = SCM_CDR(z->d.chain.pair);
+                z->d.chain.pair = SCM_CAR(p);
+                z->d.chain.next = SCM_CDR(p);
+                st->numEntries--;
+            } else {
+                ScmObj cp, prev = SCM_FALSE;
+                SCM_FOR_EACH(cp, z->d.chain.next) {
+                    ScmObj pp = SCM_CAR(cp);
+                    if (st->cmpfn(key, SCM_CAR(pp))) {
+                        retval = SCM_CDR(pp);
+                        if (SCM_FALSEP(prev)) z->d.chain.next = SCM_CDR(cp);
+                        else SCM_SET_CDR(prev, SCM_CDR(cp));
+                        st->numEntries--;
+                        break;
+                    }
+                    prev = cp;
+                }
+            }
+            /* make sure we have more than one entry in achained leaf */
+            if (SCM_NULLP(z->d.chain.next)) {
+                ScmObj p = z->d.chain.pair;
+                leaf_mark_unchained(z);
+                z->d.entry.key = SCM_CAR(p);
+                z->d.entry.value = SCM_CDR(p);
+            }
+        }
+    }
+    return retval;
+}
+
+static void clear_leaf(Leaf *f, void *data)
+{
+    SPTLeaf *z = (SPTLeaf*)f;
+    z->d.entry.key = z->d.entry.value = NULL;
+}
+
+void SparseTableClear(SparseTable *st)
+{
+    st->numEntries = 0;
+    CompactTrieClear(&st->trie, clear_leaf, NULL);
+}
+
+/*===================================================================
  * Iterators
  */
 
@@ -250,18 +314,6 @@ ScmObj SparseTableIterNext(SparseTableIter *it)
 /*===================================================================
  * Miscellaneous
  */
-
-static void clear_leaf(Leaf *f, void *data)
-{
-    SPTLeaf *z = (SPTLeaf*)f;
-    z->d.entry.key = z->d.entry.value = NULL;
-}
-
-void SparseTableClear(SparseTable *st)
-{
-    st->numEntries = 0;
-    CompactTrieClear(&st->trie, clear_leaf, NULL);
-}
 
 #if SCM_DEBUG_HELPER
 static void leaf_dump(ScmPort *out, Leaf *leaf, int indent, void *data)

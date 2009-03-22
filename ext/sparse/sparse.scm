@@ -38,9 +38,9 @@
   (export <spvector> make-spvector spvector-num-entries
           spvector-ref spvector-set! spvector-clear! %spvector-dump
           <sptable> make-sptable sptable-num-entries
-          sptable-ref sptable-set! sptable-clear! %sptable-dump
+          sptable-ref sptable-set! sptable-clear! sptable-delete!
           sptable-fold sptable-map sptable-for-each
-          sptable-keys sptable-values)
+          sptable-keys sptable-values %sptable-dump)
   )
 (select-module util.sparse)
 
@@ -104,6 +104,9 @@
 
  (define-cproc sptable-set! (st::<sptable> key value)
    (result (SparseTableSet st key value 0)))
+
+ (define-cproc sptable-delete! (st::<sptable> key) ::<boolean>
+   (result (not (SCM_UNBOUNDP (SparseTableDelete st key)))))
 
  (define-cproc sptable-clear! (st::<sptable>) ::<void>
    SparseTableClear)
