@@ -28,13 +28,6 @@
 
 (define (const x) (lambda () x))
 
-;; sparse vector-------------------------------------------------
-(test-section "spvector")
-
-(simple-test "spvector" (make-spvector) spvector-ref spvector-set!
-             (const 0) (const 1))
-
-;(define *data-set-size* 500000)
 (define *data-set-size* 200000)
 
 (define *data-set*
@@ -45,31 +38,50 @@
           (cond [(hash-table-exists? ht k) (loop i)]
                 [else (hash-table-put! ht k (* k k)) (loop (+ i 1))]))))))
 
-(let1 spv (make-spvector)
-  (test* "spvector many set!" *data-set-size*
+(define (heavy-test name obj %ref %set! %cnt %clr keygen)
+  (test* #`",name many set!" *data-set-size*
          (let/cc return
            (hash-table-fold *data-set*
                             (lambda (k v cnt)
-                              (if (and (not (spvector-ref spv k #f))
-                                       (begin
-                                         (spvector-set! spv k v)
-                                         (equal? v (spvector-ref spv k #f))))
-                                (+ cnt 1)
-                                (return `(error ,cnt ,k ,v
-                                                ,(spvector-ref spv k #f)))))
+                              (let1 kk (keygen k)
+                                (if (and (not (%ref obj kk #f))
+                                         (begin (%set! obj kk v)
+                                                (equal? v (%ref obj kk #f))))
+                                  (+ cnt 1)
+                                  (return
+                                   `(error ,cnt ,kk ,v ,(%ref obj kk #f))))))
                             0)))
 
-  (test* "spvector many numelements" *data-set-size* (spvector-num-elements spv))
-  (test* "spvector many ref" *data-set-size*
+  (test* #`",name many numelements" *data-set-size* (%cnt obj))
+  (test* #`",name many ref" *data-set-size*
          (let/cc return
            (hash-table-fold *data-set*
                             (lambda (k v cnt)
-                              (if (equal? (spvector-ref spv k) v)
-                                (+ cnt 1)
-                                (return `(error ,cnt ,k ,v
-                                                ,(spvector-ref spv k)))))
+                              (let1 kk (keygen k)
+                                (if (equal? (%ref obj kk) v)
+                                  (+ cnt 1)
+                                  (return `(error ,cnt ,kk ,v ,(%ref obj kk))))))
+                            0)))
+  (test* #`",name many clear!" 0 (begin (%clr obj) (%cnt obj)))
+  (test* #`",name many ref2" *data-set-size*
+         (let/cc return
+           (hash-table-fold *data-set*
+                            (lambda (k v cnt)
+                              (let1 kk (keygen k)
+                                (if (%ref obj kk #f)
+                                  (return `(error ,cnt ,kk ,v ,(%ref obj kk)))
+                                  (+ cnt 1))))
                             0)))
   )
+
+;; sparse vector-------------------------------------------------
+(test-section "spvector")
+
+(simple-test "spvector" (make-spvector) spvector-ref spvector-set!
+             (const 0) (const 1))
+
+(heavy-test "spvector" (make-spvector) spvector-ref spvector-set!
+            spvector-num-entries spvector-clear! values)
 
 ;; sparse table----------------------------------------------------
 (test-section "sptable")
@@ -83,40 +95,13 @@
 (simple-test "sptable (string=?)" (make-sptable 'string=?)
              sptable-ref sptable-set! (cut string #\a) (cut string #\b))
 
-(define (heavy-test type keygen)
-  (let1 st (make-sptable type)
-    (test* #`"sptable (,type) many set!" *data-set-size*
-           (let/cc return
-             (hash-table-fold *data-set*
-                              (lambda (k v cnt)
-                                (if (and (not (sptable-ref st (keygen k) #f))
-                                         (begin
-                                           (sptable-set! st (keygen k) v)
-                                           (equal? v (sptable-ref st (keygen k) #f))))
-                                  (+ cnt 1)
-                                  (return `(error ,cnt ,(keygen k) ,v
-                                                  ,(sptable-ref st (keygen k) #f)))))
-                              0)))
+(define (sptab-heavy-test type keygen)
+  (heavy-test #`"sptable (,type)" (make-sptable type)
+              sptable-ref sptable-set! sptable-num-entries sptable-clear!
+              keygen))
 
-    (test* #`"sptable (,type) many numelements" *data-set-size*
-           (sptable-num-elements st))
-
-    (unless (eqv? (sptable-num-elements st) *data-set-size*)
-      (%sptable-dump st))
-
-    (test* #`"sptable (,type) many ref" *data-set-size*
-           (let/cc return
-             (hash-table-fold *data-set*
-                              (lambda (k v cnt)
-                                (if (equal? (sptable-ref st (keygen k)) v)
-                                  (+ cnt 1)
-                                  (return `(error ,cnt ,(keygen k) ,v
-                                                  ,(sptable-ref st (keygen k))))))
-                              0)))
-    ))
-
-(heavy-test 'eqv? values)
-(heavy-test 'equal? (lambda (k) (list k k)))
-(heavy-test 'string=? (lambda (k) (number->string k 36)))
+(sptab-heavy-test 'eqv? values)
+(sptab-heavy-test 'equal? (lambda (k) (list k k)))
+(sptab-heavy-test 'string=? (lambda (k) (number->string k 36)))
 
 (test-end)

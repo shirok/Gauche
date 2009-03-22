@@ -71,7 +71,7 @@ static void leaf_insert(SparseVector *sv, SPVLeaf *leaf,
         leaf->elements = sv->desc->extend(leaf->elements, origsize, insertion);
         SCM_BITS_SET(&leaf->ebits, index);
         sv->desc->store(leaf->elements, insertion, value);
-        sv->numElements++;
+        sv->numEntries++;
     }
 }
 
@@ -87,7 +87,7 @@ ScmObj MakeSparseVectorGeneric(ScmClass *klass,
     SparseVector *v = SCM_NEW(SparseVector);
     SCM_SET_CLASS(v, klass);
     CompactTrieInit(&v->trie);
-    v->numElements = 0;
+    v->numEntries = 0;
     v->chunkBits = chunkBits;
     v->trieBits = trieBits;
     v->desc = desc;
@@ -122,6 +122,24 @@ void SparseVectorSet(SparseVector *sv, u_long index, ScmObj value)
     }
     z = (SPVLeaf*)CompactTrieAdd(&sv->trie, triekey, leaf_allocate, NULL);
     leaf_insert(sv, z, chunkkey, value);
+}
+
+static void sparse_clear(Leaf *f, void *data)
+{
+    SPVLeaf *z = (SPVLeaf*)f;
+    SparseVectorDescriptor *desc = (SparseVectorDescriptor*)data;
+
+    int size = Scm__CountBitsInWord(z->ebits);
+    if (size&1) size++;
+    if (!desc->elementAtomic) {
+        memset(z->elements, 0, desc->elementSize * size);
+    }
+}
+
+void SparseVectorClear(SparseVector *sv)
+{
+    sv->numEntries = 0;
+    CompactTrieClear(&sv->trie, sparse_clear, sv->desc);
 }
 
 #if SCM_DEBUG_HELPER

@@ -35,10 +35,10 @@
 
 
 (define-module util.sparse
-  (export <spvector> make-spvector spvector-num-elements
-          spvector-ref spvector-set! %spvector-dump
-          <sptable> make-sptable sptable-num-elements
-          sptable-ref sptable-set! %sptable-dump)
+  (export <spvector> make-spvector spvector-num-entries
+          spvector-ref spvector-set! spvector-clear! %spvector-dump
+          <sptable> make-sptable sptable-num-entries
+          sptable-ref sptable-set! sptable-clear! %sptable-dump)
   )
 (select-module util.sparse)
 
@@ -58,14 +58,17 @@
  (define-cproc make-spvector ()
    (result (MakeSparseVector 0)))
 
- (define-cproc spvector-num-elements (sv::<spvector>) ::<ulong>
-   (result (-> sv numElements)))
+ (define-cproc spvector-num-entries (sv::<spvector>) ::<ulong>
+   (result (-> sv numEntries)))
  
  (define-cproc spvector-ref (sv::<spvector> index::<ulong> :optional fallback)
    SparseVectorRef)
 
  (define-cproc spvector-set! (sv::<spvector> index::<ulong> value) ::<void>
    SparseVectorSet)
+
+ (define-cproc spvector-clear! (sv::<spvector>) ::<void>
+   SparseVectorClear)
 
  (define-cproc %spvector-dump (sv::<spvector>) ::<void>
    SparseVectorDump)
@@ -88,8 +91,8 @@
       [else (Scm_Error "unsupported sptable hash type: %S" type)])
      (result (MakeSparseTable t 0))))
 
- (define-cproc sptable-num-elements (st::<sptable>) ::<ulong>
-   (result (-> st numElements)))
+ (define-cproc sptable-num-entries (st::<sptable>) ::<ulong>
+   (result (-> st numEntries)))
  
  (define-cproc sptable-ref (st::<sptable> key :optional fallback)
    (let* ([r (SparseTableRef st key fallback)])
@@ -99,6 +102,9 @@
 
  (define-cproc sptable-set! (st::<sptable> key value)
    (result (SparseTableSet st key value 0)))
+
+ (define-cproc sptable-clear! (st::<sptable>) ::<void>
+   SparseTableClear)
 
  (define-cproc %sptable-dump (st::<sptable>) ::<void>
    SparseTableDump)

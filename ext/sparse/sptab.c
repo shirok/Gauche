@@ -103,7 +103,7 @@ ScmObj MakeSparseTable(ScmHashType type, u_long flags)
     SparseTable *v = SCM_NEW(SparseTable);
     SCM_SET_CLASS(v, SCM_CLASS_SPARSE_TABLE);
     CompactTrieInit(&v->trie);
-    v->numElements = 0;
+    v->numEntries = 0;
 
     switch (type) {
     case SCM_HASH_EQ:
@@ -181,7 +181,7 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
             /* new entry */
             z->d.entry.key = key;
             z->d.entry.value = value;
-            sh->numElements++;
+            sh->numEntries++;
             return value;
         } else if (sh->cmpfn(z->d.entry.key, key)) {
             z->d.entry.value = value;
@@ -209,13 +209,25 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
     }
     z->d.chain.next = Scm_Cons(z->d.chain.pair, z->d.chain.next);
     z->d.chain.pair = Scm_Cons(key, value);
-    sh->numElements++;
+    sh->numEntries++;
     return value;
 }
 
 /*===================================================================
  * Miscellaneous
  */
+
+static void clear_leaf(Leaf *f, void *data)
+{
+    SPTLeaf *z = (SPTLeaf*)f;
+    z->d.entry.key = z->d.entry.value = NULL;
+}
+
+void SparseTableClear(SparseTable *st)
+{
+    st->numEntries = 0;
+    CompactTrieClear(&st->trie, clear_leaf, NULL);
+}
 
 #if SCM_DEBUG_HELPER
 static void leaf_dump(ScmPort *out, Leaf *leaf, int indent, void *data)

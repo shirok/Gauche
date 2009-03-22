@@ -255,6 +255,41 @@ Leaf *CompactTrieDelete(CompactTrie *ct, u_long key)
     return e;
 }
 
+/* 'init' can smash all the contents, but if you want to be more GC-friendly,
+   this one clears up all the freed chunks. */
+static void clear_rec(CompactTrie *ct, Node *n, 
+                      void (*clearer)(Leaf*, void*),
+                      void *data)
+{
+    int i, off;
+    int size = Scm__CountBitsInWord(n->emap);
+    char is_leaf[MAX_NODE_SIZE];
+
+    for (i=0, off=0; i<MAX_NODE_SIZE; i++) {
+        if (NODE_HAS_ARC(n, i)) {
+            if (NODE_ARC_IS_LEAF(n, i)) is_leaf[off++] = TRUE;
+            else is_leaf[off++] = FALSE;
+        }
+    }
+    for (i=0; i<size; i++) {
+        if (is_leaf[i]) clearer((Leaf*)NODE_ENTRY(n, i), data);
+        else clear_rec(ct, (Node*)NODE_ENTRY(n, i), clearer, data);
+        NODE_ENTRY(n, i) = NULL;
+    }
+    n->emap = n->lmap = 0;
+}
+
+void CompactTrieClear(CompactTrie *ct,
+                      void (*clearer)(Leaf*, void*),
+                      void *data)
+{
+    Node *n = ct->root;
+    ct->numEntries = 0;
+    ct->root = NULL;
+
+    clear_rec(ct, n, clearer, data);
+}
+
 /*
  * Debug dump
  */

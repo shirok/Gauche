@@ -56,7 +56,7 @@ typedef struct SparseVectorRec {
     SCM_HEADER;
     SparseVectorDescriptor *desc;
     CompactTrie trie;
-    u_long      numElements;
+    u_long      numEntries;
     u_char      chunkBits;
     u_char      trieBits;
 } SparseVector;
@@ -168,6 +168,7 @@ extern ScmObj MakeSparseVectorGeneric(ScmClass *klass,
 
 extern ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback);
 extern void   SparseVectorSet(SparseVector *sv, u_long index, ScmObj value);
+extern void   SparseVectorClear(SparseVector *sv);
 
 extern void   SparseVectorDump(SparseVector *sv);
 

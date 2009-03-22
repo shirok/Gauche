@@ -89,12 +89,18 @@ typedef struct CompactTrieRec {
 /* Create empty CompactTrie */
 extern CompactTrie *MakeCompactTrie(void);
 extern void CompactTrieInit(CompactTrie *);
+extern void CompactTrieClear(CompactTrie *,
+                             void (*clearer)(Leaf*, void*),
+                             void *data);
 
 /* Search CompactTrie with KEY. */
 extern Leaf *CompactTrieGet(CompactTrie *ct, u_long key);
 extern Leaf *CompactTrieAdd(CompactTrie *ct, u_long key,
                             Leaf *(*creator)(void*), void *data);
 extern Leaf *CompactTrieDelete(CompactTrie *ct, u_long key);
+
+/* Iterator */
+
 
 /* For debug */
 #if SCM_DEBUG_HELPER
