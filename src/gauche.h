@@ -131,7 +131,7 @@ SCM_DECL_BEGIN
    causes excessive warnings for the code that intentionally ignores the
    return value.  Casting the result to void won't silence it.
    Hence this macro. */
-#define SCM_IGNORE_RESULT(expr)  do {} while (expr)
+#define SCM_IGNORE_RESULT(expr)  do {} while ((expr)&&0)
 
 /*-------------------------------------------------------------
  * BASIC TYPES
