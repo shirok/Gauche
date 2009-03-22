@@ -4,7 +4,7 @@ top_srcdir   = @top_srcdir@
 
 include ../Makefile.ext
 
-SCM_CATEGORY = util
+SCM_CATEGORY =
 
 LIBFILES = sparse.$(SOEXT)
 SCMFILES = util/sparse.scm
