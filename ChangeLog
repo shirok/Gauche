@@ -1,3 +1,9 @@
+2009-03-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sparse: Renamed spvector for sparse-vector and sptable for
+	  sparse-table.  It's more verbose, but abbrev form seems to lack
+	  consistency.
+
 2009-03-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm (process-body): Fix the case when

@@ -65,24 +65,24 @@
   (when %keys
     (test* #`",name keys" *data-set-size*
            (let/cc return
-             (let1 tt (make-sptable 'equal?)
+             (let1 tt (make-sparse-table 'equal?)
                (hash-table-for-each *data-set*
                                     (lambda (k v)
-                                      (sptable-set! tt (keygen k) #t)))
+                                      (sparse-table-set! tt (keygen k) #t)))
                (fold (lambda (k cnt)
-                       (if (sptable-ref tt k #f)
+                       (if (sparse-table-ref tt k #f)
                          (+ cnt 1)
                          (return `(error ,cnt ,k))))
                      0 (%keys obj))))))
   (when %vals
     (test* #`",name values" *data-set-size*
            (let/cc return
-             (let1 tt (make-sptable 'equal?)
+             (let1 tt (make-sparse-table 'equal?)
                (hash-table-for-each *data-set*
                                     (lambda (k v)
-                                      (sptable-set! tt v #t)))
+                                      (sparse-table-set! tt v #t)))
                (fold (lambda (v cnt)
-                       (if (sptable-ref tt v #f)
+                       (if (sparse-table-ref tt v #f)
                          (+ cnt 1)
                          (return `(error ,cnt ,v))))
                      0 (%vals obj))))))
@@ -111,30 +111,30 @@
   )
 
 ;; sparse vector-------------------------------------------------
-(test-section "spvector")
+(test-section "sparse-vector")
 
-(simple-test "spvector" (make-spvector) spvector-ref spvector-set!
+(simple-test "sparse-vector" (make-sparse-vector) sparse-vector-ref sparse-vector-set!
              (const 0) (const 1))
 
-(heavy-test "spvector" (make-spvector) spvector-ref spvector-set!
-            spvector-num-entries spvector-clear! #f #f #f values)
+(heavy-test "sparse-vector" (make-sparse-vector) sparse-vector-ref sparse-vector-set!
+            sparse-vector-num-entries sparse-vector-clear! #f #f #f values)
 
 ;; sparse table----------------------------------------------------
-(test-section "sptable")
+(test-section "sparse-table")
 
-(simple-test "sptable (eq?)" (make-sptable 'eq?)
-             sptable-ref sptable-set! (const 'a) (const 'b))
-(simple-test "sptable (eqv?)" (make-sptable 'eqv?)
-             sptable-ref sptable-set! (cut / 3) (cut / 2))
-(simple-test "sptable (equal?)" (make-sptable 'equal?)
-             sptable-ref sptable-set! (cut list 1) (cut list 2))
-(simple-test "sptable (string=?)" (make-sptable 'string=?)
-             sptable-ref sptable-set! (cut string #\a) (cut string #\b))
+(simple-test "sparse-table (eq?)" (make-sparse-table 'eq?)
+             sparse-table-ref sparse-table-set! (const 'a) (const 'b))
+(simple-test "sparse-table (eqv?)" (make-sparse-table 'eqv?)
+             sparse-table-ref sparse-table-set! (cut / 3) (cut / 2))
+(simple-test "sparse-table (equal?)" (make-sparse-table 'equal?)
+             sparse-table-ref sparse-table-set! (cut list 1) (cut list 2))
+(simple-test "sparse-table (string=?)" (make-sparse-table 'string=?)
+             sparse-table-ref sparse-table-set! (cut string #\a) (cut string #\b))
 
 (define (sptab-heavy-test type keygen)
-  (heavy-test #`"sptable (,type)" (make-sptable type)
-              sptable-ref sptable-set! sptable-num-entries sptable-clear!
-              sptable-keys sptable-values sptable-delete! keygen))
+  (heavy-test #`"sparse-table (,type)" (make-sparse-table type)
+              sparse-table-ref sparse-table-set! sparse-table-num-entries sparse-table-clear!
+              sparse-table-keys sparse-table-values sparse-table-delete! keygen))
 
 (sptab-heavy-test 'eqv? values)
 (sptab-heavy-test 'equal? (lambda (k) (list k k)))

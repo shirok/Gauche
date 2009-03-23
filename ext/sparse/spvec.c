@@ -238,7 +238,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SparseVectorClass, NULL, NULL, NULL, NULL, NULL);
 
 void Scm_Init_spvec(ScmModule *mod)
 {
-    Scm_InitStaticClass(&Scm_SparseVectorClass, "<spvector>",
+    Scm_InitStaticClass(&Scm_SparseVectorClass, "<sparse-vector>",
                         mod, NULL, 0);
 }
 

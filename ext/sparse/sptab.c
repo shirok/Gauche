@@ -349,7 +349,7 @@ void SparseTableDump(SparseTable *st)
 
 void Scm_Init_sptab(ScmModule *mod)
 {
-    Scm_InitStaticClass(&Scm_SparseTableClass, "<sptable>",
+    Scm_InitStaticClass(&Scm_SparseTableClass, "<sparse-table>",
                         mod, NULL, 0);
 }
 
