@@ -134,7 +134,7 @@
 
 (define (sparse-table-fold st proc seed)
   (let ([iter (%sparse-table-iter st)]
-        [end  (list)])
+        [end  (list #f)])
     (let loop ((seed seed))
       (receive (key val) (iter end)
         (if (eq? key end)

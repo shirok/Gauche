@@ -217,7 +217,7 @@ static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
 static SparseVectorDescriptor g_desc = {
     g_check, g_retrieve, g_store, g_extend, g_dump,
     "spvector",
-    TRUE,                       /* elementAtomic */
+    FALSE,                      /* elementAtomic */
     sizeof(ScmObj),             /* elementSize */
 };
 

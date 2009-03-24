@@ -65,8 +65,8 @@ typedef struct SparseVectorRec {
 #define MAX_TRIE_BITS  32
 
 /* SparseVectorDescriptor has common information per class (it should be
-   a part of each class, but we just hack for the time being.  The constructor
-   of each class sets appropriate descriptor to the instance.
+   a part of each class, but we just hack for the time being.)
+   The constructor of each class sets appropriate descriptor to the instance.
  */
 struct SparseVectorDescriptorRec {
     int      (*check)(ScmObj value);
@@ -80,6 +80,14 @@ struct SparseVectorDescriptorRec {
     u_char      elementSize;    /* element size in bytes */
 };
 
+/* Iterator.  Since CompactTrie uses key bits from LSB to MSB, we can't
+ * order 
+ */
+
+
+/*
+ * Class stuff
+ */
 SCM_CLASS_DECL(Scm_SparseVectorBaseClass);
 #define SCM_CLASS_SPARSE_VECTOR_BASE  (&Scm_SparseVectorBaseClass)
 #define SCM_SPARSE_VECTOR_BASE_P(obj) SCM_ISA(obj, SCM_CLASS_SPARSE_VECTOR_BASE)
