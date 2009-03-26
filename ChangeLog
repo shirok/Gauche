@@ -1,5 +1,6 @@
 2009-03-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h (SCM_IGNORE_RESULT): fix again to properly fool gcc.
 	* src/gencomp, lib/gauche/cgen/precomp.scm: Moved gencomp functionality
 	  into gauche.cgen.precomp module.
 
