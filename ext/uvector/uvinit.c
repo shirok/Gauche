@@ -74,6 +74,7 @@ static ScmObj read_uvector(ScmPort *port, const char *tag,
  * Initialization
  */
 extern void Scm_Init_uvlib(ScmModule *);
+extern void Scm_Init_uvutil();
 extern void Scm_Init_uvseq(void);
  
 SCM_EXTENSION_ENTRY void Scm_Init_libgauche_uvector(void)
