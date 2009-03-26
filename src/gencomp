@@ -43,8 +43,9 @@
 ;;; in a way the source is written.
 ;;;
 
-(use gauche.cgen.precomp)
 (use gauche.parseopt)
+(use gauche.cgen.precomp)
+(use gauche.experimental.app)
 (use util.match)
 
 (define (main args)
@@ -55,21 +56,25 @@
          [output-base "o|output=s" #f]
          [#f "D=s" => (lambda (sym) (push! predef-syms sym))]
          . args)
-      (let1 macros-to-keep
-          (map string->symbol (string-split keep-private-macro #\,))
-        (match args
-          [(scmfile)
-           (cgen-with-ext-module ext-module
-                                 (cut cgen-precompile scmfile output-base
-                                      :predef-syms predef-syms
-                                      :macros-to-keep macros-to-keep))]
-          [else
-           (exit 0 "Usage: gosh gencomp [options] <file.scm>\n\
-                    Options:\
-                    \n  --keep-private-macro=NAME,NAME,...\
-                    \n  --ext-module=MODULE-NAME\
-                    \n  --output=FILE.C\n")]))))
+      (let1 macros-to-keep ($ map string->symbol
+                              $ string-split keep-private-macro #\,)
+        (when (null? args) (usage))
+        (when (and (> (length args) 1) output-base)
+          (exit 1 "-o|-output option can be used when there's exactly one \
+                   input file."))
+        (cgen-with-ext-module ext-module
+                              (cut for-each (cut cgen-precompile <> output-base
+                                                 :predef-syms predef-syms
+                                                 :macros-to-keep macros-to-keep)
+                                   args)))))
   0)
+
+(define (usage)
+  (print "Usage: gosh gencomp [options] <file.scm> ...")
+  (print "Options:")
+  (print "  --keep-private-macro=NAME,NAME,...")
+  (print "  --ext-module=MODULE-NAME")
+  (print "  --output=FILE.C"))
 
 ;; Local variables:
 ;; mode: scheme
