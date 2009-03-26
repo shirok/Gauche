@@ -94,11 +94,7 @@
                (undefined))
             (compile-module))
       ;; Static stuff
-      (cgen-decl "#include <gauche/code.h>")
-      (cgen-decl "#include <gauche/macro.h>") ; for MakeMacroTransformerOld. temporary.
-      (cgen-decl "#define INIT_ENTRY") ; may be overrided by insert-ext-initializer.
-      (and-let* ([extm (ext-module-file)])
-        (insert-ext-initializer (port-name extm)))
+      (static-setup)
       ;; Main processing
       (with-input-from-file src
         (lambda ()
@@ -168,40 +164,40 @@
 (define vm-code->list (with-module gauche.internal vm-code->list))
 (define vm-eval-situation
   (with-module gauche.internal vm-eval-situation))
+(define global-eq?? (with-module gauche.internal global-eq??))
 
 (define-constant SCM_VM_COMPILING 2) ;; must match with vm.h
-
-;; global-eq?? is defined in compile.scm, but it wasn't in 0.8.13.
-;; We duplicate it here so that we can compile compile.scm with 0.8.13.
-;; There's another catch: the symbol (that gencomp must recognize) may
-;; not have binding yet in the host gosh, when we're compiling the
-;; gauche core.  For example, 0.8.13 doesn't have inline-stub binding yet
-;; so we can't really compare inline-stub identifier by global-eq??.
-;; The extra check if id-gloc makes global-eq?? for such identifiers
-;; always fail.
-(define (global-eq?? sym srcmod modgen)
-  (let* ((find-binding (with-module gauche.internal find-binding))
-         (id-gloc (find-binding (find-module srcmod) sym #f)))
-    (lambda (var)
-      (and id-gloc (eq? id-gloc (find-binding (modgen) var #f))))))
 
 ;;================================================================
 ;; Utilities
 ;;
 
+(define (get-unit src base predef-syms)
+  (define safe-name (string-tr (sys-basename base) "-+" "__"))
+  (make <cgen-stub-unit>
+    :name base :c-name-prefix safe-name
+    :preamble `(,(format "/* Generated automatically from ~a.  DO NOT EDIT */"
+                         src))
+    :pre-decl (map (lambda (s) #`"#define ,s") predef-syms)
+    :init-prologue (format "INIT_ENTRY void Scm_Init_~a() { ScmModule *mod;"
+                           safe-name)
+    ))
+
 (define (write-ext-module form)
   (cond [(ext-module-file) => (^_ (write form _) (newline _))]))
 
-;; If we're compiling stand-alone Scheme file (i.e. --ext-module is
-;; given), we need to include SCM_INIT_EXTENSION in the initialization
-;; code.
-(define (insert-ext-initializer ext-module-file-name)
-  (cgen-decl "#include <gauche/extend.h>")
-  (cgen-decl "#undef INIT_ENTRY")
-  (cgen-decl "#define INIT_ENTRY SCM_EXTENSION_ENTRY")
-  (let* ([extname (path-sans-extension ext-module-file-name)]
-         [safe-extname (regexp-replace-all #/\W/ extname "_")])
-    (cgen-init #`"SCM_INIT_EXTENSION(,safe-extname);")))
+(define (static-setup)
+  (cgen-decl "#include <gauche/code.h>")
+  (cgen-decl "#include <gauche/macro.h>") ; for MakeMacroTransformerOld. temporary.
+  (cond [(ext-module-file)
+         => (lambda (extm)
+              (cgen-decl "#include <gauche/extend.h>")
+              (cgen-decl "#define INIT_ENTRY SCM_EXTENSION_ENTRY")
+              (let* ([extname (path-sans-extension (port-name extm))]
+                     [safe-extname (regexp-replace-all #/\W/ extname "_")])
+                (cgen-init #`"SCM_INIT_EXTENSION(,safe-extname);")))]
+        [else
+         (cgen-decl "#define INIT_ENTRY")]))
 
 ;;================================================================
 ;; Compiler stuff
@@ -556,16 +552,10 @@
   )
 
 ;; NB: for compatibility, we check modnam vs '# to find out anonymous
-;; modules.  As of 0.8.4, module-name should return #f for
-;; anonymous modules.
-;; NB: we also filter out user module---an identifiers inserted by local
-;; macros are attributed to user module incorrectly in some version of
-;; pre-0.8.4 compiler, and we need to work around that to compile the
-;; corrent compiler.
+;; modules.  (By 0.8.14 anonymous modules are named as |#|.)
 (define (module-name-fix module)
-  (and-let* ((nam (module-name module))
-             ( (not (eq? nam '|#|)) ) ;|# <- to fool emacs
-             ( (not (eq? nam 'user)) ))
+  (and-let* ([nam (module-name module)]
+             [ (not (eq? nam '|#|)) ]) ;|# <- to fool emacs
     nam))
 
 ;; NB: for now, we ignore macros (we assume they are only used within
@@ -590,26 +580,5 @@
             (ref (ref self 'gf-name) 'c-name)))
   (static (self) #f)
   )
-
-;;================================================================
-;; Utilities
-;;
-
-(define (get-unit src base predef-syms)
-  (define safe-name (string-tr (sys-basename base) "-+" "__"))
-  (make <cgen-stub-unit>
-    :name base :c-name-prefix safe-name
-    :preamble `(,(format "/* Generated automatically from ~a.  DO NOT EDIT */"
-                         src))
-    :pre-decl (map (lambda (s) #`"#define ,s") predef-syms)
-    :init-prologue (format "INIT_ENTRY void Scm_Init_~a() { ScmModule *mod;"
-                           safe-name)
-    ))
-
-
-
-
-
-
 
 (provide "gauche.cgen.precomp")

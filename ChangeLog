@@ -1,5 +1,8 @@
 2009-03-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/precomp.scm: Removed old cruft and reorganized
+	  the source a bit.
+
 	* src/module.c (Scm_MakeModule): Made anonymous module name's name
 	  to #f instead of '|#|.  I planned this change long time ago, but
 	  apparently forgot to implement it.   It shouldn't affect exiting
