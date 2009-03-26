@@ -1,3 +1,8 @@
+2009-03-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/gencomp, lib/gauche/cgen/precomp.scm: Moved gencomp functionality
+	  into gauche.cgen.precomp module.
+
 2009-03-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sparse/sparse.scm (sparse-table-fold): fix a bug about the end

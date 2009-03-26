@@ -48,7 +48,10 @@
 (use gauche.cgen.stub)
 (test-module 'gauche.cgen.stub)
 
-
+;;====================================================================
+(test-section "gauche.cgen.precomp")
+(use gauche.cgen.precomp)
+(test-module 'gauche.cgen.precomp)
 
 ;;====================================================================
 (test-section "gauche.cgen")
