@@ -47,7 +47,7 @@
  *
  *  Modules are registered to global hash table using their names
  *  as keys, so that the module is retrieved by its name.  The exception
- *  is "anonymous modules", which have '#' as the name field
+ *  is "anonymous modules", which have #f as the name field
  *  and not registered in the global table.   Anonymous modules are especially
  *  useful for certain applications that need temporary, segregated
  *  namespace---for example, a 'sandbox' environment to evaluate an
@@ -83,12 +83,10 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_ModuleClass,
 
 /* Global module table */
 static struct {
-    ScmObj anon_name;       /* Name used for anonymous modules.
-                               Symbol '#', set by init */
     ScmHashTable *table;    /* Maps name -> module. */
     ScmInternalMutex mutex; /* Lock for table.  Only register_module and
                                lookup_module may hold the lock. */
-} modules = { SCM_UNBOUND, NULL };
+} modules;
 
 /* Predefined modules - slots will be initialized by Scm__InitModule */
 #define DEFINE_STATIC_MODULE(cname) \
@@ -108,7 +106,7 @@ static ScmObj defaultMpl =     SCM_NIL; /* will be initialized */
  * Constructor
  */
 
-static void init_module(ScmModule *m, ScmSymbol *name)
+static void init_module(ScmModule *m, ScmObj name)
 {
     m->name = name;
     m->imported = m->exported = m->depended = SCM_NIL;
@@ -119,7 +117,7 @@ static void init_module(ScmModule *m, ScmSymbol *name)
 }
 
 /* Internal */
-static ScmObj make_module(ScmSymbol *name)
+static ScmObj make_module(ScmObj name)
 {
     ScmModule *m;
     m = SCM_NEW(ScmModule);
@@ -148,7 +146,7 @@ static ScmModule *lookup_module_create(ScmSymbol *name, int *created)
                            (intptr_t)name,
                            SCM_DICT_CREATE);
     if (e->value == 0) {
-        (void)SCM_DICT_SET_VALUE(e, make_module(name));
+        (void)SCM_DICT_SET_VALUE(e, make_module(SCM_OBJ(name)));
         *created = TRUE;
     } else {
         *created = FALSE;
@@ -160,9 +158,8 @@ static ScmModule *lookup_module_create(ScmSymbol *name, int *created)
 ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists)
 {
     ScmObj r;
-    if (name == NULL) name = SCM_SYMBOL(modules.anon_name);
-    if (SCM_EQ(SCM_OBJ(name), modules.anon_name)) {
-        r = make_module(name);
+    if (name == NULL) {
+        r = make_module(SCM_FALSE);
     } else {
         int created;
         r = SCM_OBJ(lookup_module_create(name, &created));
@@ -602,8 +599,8 @@ ScmModule *Scm_CurrentModule(void)
 #define INIT_MOD(mod, mname, mpl)                                           \
     do {                                                                    \
       SCM_SET_CLASS(&mod, SCM_CLASS_MODULE);                                \
-      init_module(&mod, SCM_SYMBOL(mname));                                 \
-      Scm_HashTableSet(modules.table, SCM_OBJ((mod).name), SCM_OBJ(&mod), 0);\
+      init_module(&mod, mname);                                             \
+      Scm_HashTableSet(modules.table, (mod).name, SCM_OBJ(&mod), 0);        \
       mod.parents = (SCM_NULLP(mpl)? SCM_NIL : SCM_LIST1(SCM_CAR(mpl)));    \
       mpl = mod.mpl = Scm_Cons(SCM_OBJ(&mod), mpl);                         \
     } while (0)
@@ -625,7 +622,6 @@ void Scm__InitModule(void)
     mpl = SCM_CDR(mpl);  /* default mpl doesn't include user module */
     defaultParents = SCM_LIST1(SCM_CAR(mpl));
     defaultMpl = mpl;
-    modules.anon_name = SCM_SYM_SHARP;
 
     /* other modules */
     mpl = defaultMpl;

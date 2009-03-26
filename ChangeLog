@@ -1,3 +1,10 @@
+2009-03-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (Scm_MakeModule): Made anonymous module name's name
+	  to #f instead of '|#|.  I planned this change long time ago, but
+	  apparently forgot to implement it.   It shouldn't affect exiting
+	  code.
+
 2009-03-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (SCM_IGNORE_RESULT): fix again to properly fool gcc.
@@ -7383,7 +7390,7 @@
 	* ext/auxsys/auxsyslib.stub (sys-putenv) : use system malloc to
 	  allocate string to be passed to putenv(), to avoid the string
 	  from being GCed.
-	
+
 2003-01-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-37.scm : added.
@@ -10995,7 +11002,7 @@
 	* src/class.c: added Scm_MakeBuiltinClass.
 	* src/string.c, extlib.stub: added string-append, string-join
 	* src/file.c: added
-	
+
 2001-01-31  Shiro Kawai  <shiro@acm.org>
 
 	* internal release 0.0.1

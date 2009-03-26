@@ -43,7 +43,7 @@
 
 struct ScmModuleRec {
     SCM_HEADER;
-    ScmSymbol *name;
+    ScmObj name;                /* symbol or #f */
     ScmObj imported;            /* list of imported modules */
     ScmObj exported;            /* list of exported symbols */
     int    exportAll;           /* TRUE if (export-all) */
