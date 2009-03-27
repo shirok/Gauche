@@ -1,5 +1,17 @@
 2009-03-27  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/literal.scm, lib/gauche/cgen/literal-uv.scm:
+	  Added support for uvector literals.  (NOTE: To build this revision
+	  you have to use 0.8.14 as host Gauche.  The bug in %uvector-ref
+	  inlining support, which was fixed by the previous commit, would
+	  interfere with this module.  See also the comment in literal-uv.scm
+	  and don't forget to merge it into literal.scm after releasing the
+	  next version.)
+
+	* src/extlib.stub (uvector-length, uvector-immutable?, SCM_UVECTOR_*):
+	  Expose some more uvector stuff here to support uvector literal
+	  in cgen.
+
 	* src/compile.scm (%uvector-ref): Fix the inliner to emit UVEC-REF
 	  only when 'type' arg is a constant integer.
 

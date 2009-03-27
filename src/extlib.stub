@@ -628,6 +628,21 @@
          (result fallback)]
         [else (result (Scm_VMUVectorRef v t (SCM_INT_VALUE k) fallback))]))
 
+(define-enum SCM_UVECTOR_S8)
+(define-enum SCM_UVECTOR_U8)
+(define-enum SCM_UVECTOR_S16)
+(define-enum SCM_UVECTOR_U16)
+(define-enum SCM_UVECTOR_S32)
+(define-enum SCM_UVECTOR_U32)
+(define-enum SCM_UVECTOR_S64)
+(define-enum SCM_UVECTOR_U64)
+(define-enum SCM_UVECTOR_F16)
+(define-enum SCM_UVECTOR_F32)
+(define-enum SCM_UVECTOR_F64)
+
+(define-cproc uvector-length (v::<uvector>) ::<int> SCM_UVECTOR_SIZE)
+(define-cproc uvector-immutable? (v::<uvector>) ::<boolean> SCM_UVECTOR_IMMUTABLE_P)
+
 ;;
 ;; 6.4  Control Features
 ;;

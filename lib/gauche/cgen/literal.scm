@@ -42,6 +42,7 @@
   (use gauche.cgen.unit)
   (use gauche.experimental.ref)
   (use gauche.experimental.lamb)
+  (use gauche.experimental.app)
   (use util.match)
   (export <cgen-literal> cgen-c-name cgen-cexpr cgen-make-literal
           cgen-literal-static?
@@ -627,6 +628,15 @@
          (print "  ((ScmObj*)"(cgen-c-name self)")["(+ ind 2)"] = "(cgen-cexpr elt)";")))
      (~ self'literals)))
   )
+
+;; KLUDGE to prevent 0.8.14 from complaining uvector support code.
+;; This module is read by 0.8.14 to build the newer version.
+;; But 0.8.14 doesn't have uvector core support in core, and it would
+;; bark at the uvector support code.
+;; Once next version is released, the content of litearl-uv.scm should
+;; be insreted here.
+(when (global-variable-bound? (find-module 'gauche) '<uvector>)
+  (load "gauche/cgen/literal-uv.scm"))
 
 ;; char-set -----------------------------------------------------
 

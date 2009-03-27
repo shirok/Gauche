@@ -96,6 +96,10 @@ SCM_CLASS_DECL(Scm_UVectorClass);
     Scm_Error("uniform vector is immutable: %S", obj); \
   }} while (0)
 
+#define SCM_UVECTOR_INITIALIZER(klass, size, elements, immutable, owner) \
+    { { SCM_CLASS_STATIC_TAG(klass) }, (immutable), (size), \
+      (owner), (elements) }
+
 /* A convenient enum to dispatch by specific uvector subclasses
    within a generic uvector API. */
 typedef enum {
