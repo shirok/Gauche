@@ -109,6 +109,7 @@
 
 (define (cgen-with-ext-module ext-module-file-name thunk)
   (cond [ext-module-file-name
+         (make-directory* (sys-dirname ext-module-file-name))
          (call-with-output-file ext-module-file-name
            (lambda (p)
              (display ";; generated automatically.  DO NOT EDIT\n" p)

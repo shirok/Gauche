@@ -1,5 +1,8 @@
 2009-03-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/precomp.scm (cgen-with-ext-module): ensure the
+	  directory to put ext module file.
+
 	* lib/gauche/cgen/literal.scm (cgen-make-literal)
 	  (<cgen-user-defined-type>, infer-literal-handler): Allow precompiler
 	  to embed a constant value of user-defined type, as far as the type
