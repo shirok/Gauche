@@ -4434,7 +4434,7 @@
 (define-builtin-inliner %uvector-ref
   (lambda (form cenv)
     (match form
-      [(_ vec type ind)
+      [(_ vec (? integer? type) ind)
 ;; not enough evidence yet to support this is worth (see also vminsn.scm)
 ;;       (if (and (integer? ind)
 ;;                (unsigned-integer-fits-insn-arg? (* ind 16)))

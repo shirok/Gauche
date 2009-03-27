@@ -1,3 +1,8 @@
+2009-03-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (%uvector-ref): Fix the inliner to emit UVEC-REF
+	  only when 'type' arg is a constant integer.
+
 2009-03-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (cgen-with-ext-module): ensure the
