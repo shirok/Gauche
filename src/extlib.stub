@@ -942,7 +942,10 @@
   (result (Scm_ReadList port closer)))
 
 (define-cproc define-reader-ctor (symbol proc :optional (finisher #f))
-  Scm_DefineReaderCtor)
+  (result (Scm_DefineReaderCtor symbol proc finisher SCM_FALSE)))
+
+(define-cproc %get-reader-ctor (symbol)
+  (result (Scm_GetReaderCtor symbol SCM_FALSE)))
 
 (define-cproc define-reader-directive (symbol proc)
   Scm_DefineReaderDirective)

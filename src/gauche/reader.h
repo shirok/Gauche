@@ -96,7 +96,8 @@ SCM_EXTERN void   Scm_ReadError(ScmPort *port, const char *fmt, ...);
  * SRFI-10 hash-comma syntax
  */
 SCM_EXTERN ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc,
-                                       ScmObj finisher);
+                                       ScmObj finisher, ScmObj module);
+SCM_EXTERN ScmObj Scm_GetReaderCtor(ScmObj symbol, ScmObj module);
 
 /*
  * Hash-bang reader directive handlers

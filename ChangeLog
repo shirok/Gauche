@@ -1,5 +1,14 @@
 2009-03-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/literal.scm (cgen-make-literal)
+	  (<cgen-user-defined-type>, infer-literal-handler): Allow precompiler
+	  to embed a constant value of user-defined type, as far as the type
+	  has external representation using SRFI-10 syntax.
+	* src/read.c (Scm_GetReaderCtor), src/extlib.stub (%get-reader-ctor):
+	  Added interface to obtain reader constructor.
+	* src/read.c (Scm_DefineReaderCtor): Added an argument for future
+	  extension of making reader-ctor module-aware.
+
 	* lib/gauche/cgen/precomp.scm: Removed old cruft and reorganized
 	  the source a bit.
 

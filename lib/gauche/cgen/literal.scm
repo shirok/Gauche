@@ -42,6 +42,7 @@
   (use gauche.cgen.unit)
   (use gauche.experimental.ref)
   (use gauche.experimental.lamb)
+  (use util.match)
   (export <cgen-literal> cgen-c-name cgen-cexpr cgen-make-literal
           cgen-literal-static?
           define-cgen-literal cgen-literal
@@ -242,6 +243,8 @@
    ;;  It may have a thunk that computes the expression.
    (value  :init-keyword :value :init-value #f)
    ;; VALUE: the Scheme value this literal represents.
+
+   (inferred-literal-types :allocation :class :init-value '())
    ))
 
 (define-method initialize ((node <cgen-literal>) initargs)
@@ -261,7 +264,8 @@
   (cgen-c-name node))
 
 (define-method cgen-make-literal (value)
-  (error "cannot make a static C data for Scheme value:" value))
+  (or (infer-literal-handler value)
+      (error "cannot make a static C data for Scheme value:" value)))
 
 (define-method cgen-literal-static? (self) #t)
 
@@ -657,6 +661,49 @@
             (cgen-c-name (~ self'source-string))
             (if (~ self'case-fold?) "SCM_REGEXP_CASE_FOLD" "0")))
   (static (self) #f))
+
+;;---------------------------------------------------------------
+;; Inferring literal handlers.
+;;  The code generator does not know how to generate literals for
+;;  user-defined objects.  But we can do something if its read-time
+;;  constructor is defined.
+
+;;  NB: this routine writes value to a string and read it back (sans
+;;  srfi-10 prefix if any).   If the written out value contains *nested*
+;;  srfi-10 syntax, reader constructor of the inner srfi-10 is invoked
+;;  in this process.  If the reader constructor have side effects, this
+;;  routine may cause undesirable side effects as well.  There's no way
+;;  we can know if it is safe. 
+
+(define-class <cgen-user-defined-type> (<cgen-literal>)
+  ((ctor-name :init-keyword :ctor-name)
+   (ctor-args :init-keyword :ctor-args)))
+
+(define-method cgen-emit-init ((self <cgen-user-defined-type>))
+  (print "{ ScmObj ctor = Scm_GetReaderCtor("(cgen-cexpr (~ self'ctor-name))","
+         "SCM_FALSE);")
+  (print "ScmObj args = "(cgen-cexpr (~ self'ctor-args))";")
+  (print "if (SCM_FALSEP(ctor)) {")
+  (print "  Scm_Error(\"Unknown reader constructor name: ~S\", "
+         (cgen-cexpr (~ self'ctor-name))");")
+  (print "}")
+  (print "  "(cgen-c-name self)" = Scm_ApplyRec(SCM_CAR(ctor), args);")
+  (print "}"))
+
+(define (infer-literal-handler value)
+  (and-let* ([s (guard (e [else #f]) (write-to-string value))]
+             [m (#/#,\(/ s)]  ; srfi-10 syntax
+             [xpr (guard (e [else #f]) (read-from-string (string-drop s 2)))])
+    (match xpr
+      [(tag . args)
+       (unless (%get-reader-ctor tag)
+         (errorf "Reader constructor name '~s' is unknown \
+                 to the code generator" tag))
+       (make <cgen-user-defined-type>
+         :c-name (cgen-allocate-static-datum)
+         :ctor-name (cgen-make-literal tag)
+         :ctor-args (cgen-make-literal args))]
+      [_ #f])))
 
 ;;=============================================================
 ;; Utilities

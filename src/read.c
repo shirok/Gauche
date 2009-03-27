@@ -1105,7 +1105,12 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
  * SRFI-10 support
  */
 
-ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc, ScmObj finisher)
+/* NB: The 'module' argument of DefineReaderCtor and GetReaderCtor may
+   be used in future to make reader-ctor binding associated with modules.
+   For now, it is not used and the caller should pass SCM_FALSE. */
+
+ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc, ScmObj finisher,
+                            ScmObj module /*reserved*/)
 {
     ScmObj pair;
     if (!SCM_PROCEDUREP(proc)) {
@@ -1116,6 +1121,15 @@ ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc, ScmObj finisher)
     Scm_HashTableSet(readCtorData.table, symbol, pair, 0);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(readCtorData.mutex);
     return SCM_UNDEFINED;
+}
+
+ScmObj Scm_GetReaderCtor(ScmObj symbol, ScmObj module /*reserved*/)
+{
+    ScmObj r;
+    (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
+    r = Scm_HashTableRef(readCtorData.table, symbol, SCM_FALSE);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(readCtorData.mutex);
+    return r;
 }
 
 static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx)
@@ -1161,7 +1175,7 @@ static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
 static ScmObj reader_ctor(ScmObj *args, int nargs, void *data)
 {
     ScmObj optarg = (nargs > 2? args[2] : SCM_FALSE);
-    return Scm_DefineReaderCtor(args[0], args[1], optarg);
+    return Scm_DefineReaderCtor(args[0], args[1], optarg, SCM_FALSE);
 }
 
 /*----------------------------------------------------------------
@@ -1299,7 +1313,7 @@ void Scm__InitRead(void)
     Scm_DefineReaderCtor(SCM_SYM_DEFINE_READER_CTOR,
                          Scm_MakeSubr(reader_ctor, NULL, 2, 1,
                                       SCM_SYM_DEFINE_READER_CTOR),
-                         SCM_FALSE);
+                         SCM_FALSE, SCM_FALSE);
 
     hashBangData.table =
         SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
