@@ -19,8 +19,8 @@
                  (format "  SCM_UVECTOR_INITIALIZER(~a, ~a, ~a, ~a, NULL)"
                          (uvector-class->c-name (class-of value))
                          (uvector-length value)
-                         (if (uvector-immutable? value) "TRUE" "FALSE")
-                         elts))))]
+                         elts
+                         (if (uvector-immutable? value) 1 0)))))]
   [decl (self)
     (let* ([value (~ self'value)]
            [class (class-of value)])
@@ -29,13 +29,14 @@
         ($ uvector-class-emit-elt class
            $ %uvector-ref value (uvector-class->type-enum class) i))
       (print  "};"))]
+  [static (self) #f]
   )
 
 (define (uvector-class->tag-name class)
   (rxmatch->string #/<(.\d+)vector>/ (symbol->string (class-name class)) 1))
       
 (define (uvector-class->c-name class)
-  #`"Scm_,(string-upcase (uvector-class->tag-name class))")
+  #`"Scm_,(string-upcase (uvector-class->tag-name class))VectorClass")
 
 (define (uvector-class->type-enum class)
   (global-variable-ref

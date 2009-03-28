@@ -470,10 +470,24 @@
     (make <cgen-scheme-string>
       :c-name (cgen-allocate-static-datum
                'constant 'ScmString
-               (format "  SCM_STRING_CONST_INITIALIZER(~s, ~a, ~a)"
-                       value (string-size value) (string-length value)))
+               (format "  SCM_STRING_CONST_INITIALIZER(~a, ~a, ~a)"
+                       (c-safe-string-literal value)
+                       (string-size value) (string-length value)))
       :value value))
   )
+
+(define (c-safe-string-literal value)
+  (with-string-io value
+    (lambda ()
+      (display "\"")
+      (port-for-each (lambda (b)
+                       (if (or (= #x20 b) (= #x21 b) ; #x22 = #\"
+                               (<= #x23 b #x5b)      ; #x5c = #\\
+                               (<= #x5d b #x7e))
+                         (write-byte b)
+                         (format #t "\\~3,'0o" b)))
+                     read-byte)
+      (display "\""))))
 
 ;; symbol ------------------------------------------------------
 
@@ -700,6 +714,8 @@
   (print "  "(cgen-c-name self)" = Scm_ApplyRec(SCM_CAR(ctor), args);")
   (print "}"))
 
+(define-method cgen-literal-static? ((self <cgen-user-defined-type>)) #f)
+
 (define (infer-literal-handler value)
   (and-let* ([s (guard (e [else #f]) (write-to-string value))]
              [m (#/#,\(/ s)]  ; srfi-10 syntax
@@ -710,6 +726,7 @@
          (errorf "Reader constructor name '~s' is unknown \
                  to the code generator" tag))
        (make <cgen-user-defined-type>
+         :value value
          :c-name (cgen-allocate-static-datum)
          :ctor-name (cgen-make-literal tag)
          :ctor-args (cgen-make-literal args))]
