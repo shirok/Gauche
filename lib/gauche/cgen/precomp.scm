@@ -58,25 +58,63 @@
 ;;================================================================
 ;; Main Entry point
 ;;
+;;  The cgen-precompile function reads a scheme file SRC, compiles it
+;;  and dumps the result as a C source.  VM instructions and Scheme
+;;  constants are generated as C static data whenever possible.  One
+;;  C function is created, which should be called to initialize the
+;;  rest of the data which should be created at runtime.
+;;
+;;  The initialization function is named Scm_Init_xxx, where xxx is
+;;  the basename sans extension of the source Scheme file, unless
+;;  otherwise specified.   It takes no arguments, and must be called
+;;  when the extension is initialized (typically it is called from
+;;  extension's initialization routine, which is invoked when the
+;;  extension is dynamically loaded.)
+;;
+;;  The initialization function itself can be an extention
+;;  initialization routine, by giving ext-initializer keyword argument.
+;;  It is convenient to make it so, when there's no auxiliary C files
+;;  in the sources of the extension.
+;;
 ;; SRC: a Scheme source file name.
 ;; OUT: a output C file name.  If #f, the name is calculate from SRC by
-;;      swapping its suffxi to .c and stripping directory part.
+;;      swapping its suffix to .c and stripping directory part.
+;;
+;; Keyword arguments:
+;;
+;; EXT-INITIALIZER: If true, generate extra code in the initialization
+;;      routine so that it works as an extention initializer.
+;;      Default is #f.
+;;
+;; SUB-INITIALIZERS: Give a list of C initializer names that should be
+;;      called from the initializer of this code.  Mainly intended to be
+;;      used with EXT-INITIALIZER, when multiple Scheme sources are to
+;;      be compiled into single extension file.
+;;
 ;; PREDEF-SYMS: A list of strings, to insert #defines at the top of
 ;;      generated C source.
+;;
 ;; MACROS-TO-KEEP: List of names of private macros that should be included
 ;;      in the output.  Usually private macros (macros bound to a variable
 ;;      which isn't exported) are not included in the output.  But sometimes
 ;;      hygienic public macros expands to a call of private macros, and
 ;;      gauche.cgen.precomp cannot detect such dependencies yet.
+;; 
 ;;
 ;; If this procedure is called in the dynamic extent of cgen-with-ext-module,
 ;; several forms such as define-module, use, export, and dynamic-load are
 ;; written to the "external module file".
 ;;
-(define (cgen-precompile src out :key (predef-syms ()) (macros-to-keep ()))
+(define (cgen-precompile src out
+                         :key (ext-initializer #f)
+                              (sub-initializers '())
+                              (predef-syms '())
+                              (macros-to-keep '()))
   (let1 base (or out (sys-basename (path-sans-extension src)))
     ;; see PARAMETERS section below
-    (parameterize ([cgen-current-unit (get-unit src base predef-syms)]
+    (parameterize ([cgen-current-unit (get-unit src base predef-syms
+                                                ext-initializer
+                                                sub-initializers)]
                    [compile-module    (make-module #f)]
                    [compile-file-basename base]
                    [vm-eval-situation SCM_VM_COMPILING]
@@ -94,7 +132,7 @@
                (undefined))
             (compile-module))
       ;; Static stuff
-      (static-setup)
+      (static-setup sub-initializers)
       ;; Main processing
       (with-input-from-file src
         (lambda ()
@@ -173,32 +211,32 @@
 ;; Utilities
 ;;
 
-(define (get-unit src base predef-syms)
+(define (get-unit src base predef-syms ext-init? sub-inits)
   (define safe-name (string-tr (sys-basename base) "-+" "__"))
   (make <cgen-stub-unit>
     :name base :c-name-prefix safe-name
     :preamble `(,(format "/* Generated automatically from ~a.  DO NOT EDIT */"
                          src))
     :pre-decl (map (lambda (s) #`"#define ,s") predef-syms)
-    :init-prologue (format "INIT_ENTRY void Scm_Init_~a() { ScmModule *mod;"
+    :init-prologue (format "~avoid Scm_Init_~a() { ScmModule *mod;"
+                           (if ext-init? "SCM_EXTENSION_ENTRY " "")
                            safe-name)
     ))
 
 (define (write-ext-module form)
   (cond [(ext-module-file) => (^_ (write form _) (newline _))]))
 
-(define (static-setup)
+(define (static-setup subinits)
   (cgen-decl "#include <gauche/code.h>")
   (cgen-decl "#include <gauche/macro.h>") ; for MakeMacroTransformerOld. temporary.
   (cond [(ext-module-file)
          => (lambda (extm)
               (cgen-decl "#include <gauche/extend.h>")
-              (cgen-decl "#define INIT_ENTRY SCM_EXTENSION_ENTRY")
               (let* ([extname (path-sans-extension (port-name extm))]
                      [safe-extname (regexp-replace-all #/\W/ extname "_")])
-                (cgen-init #`"SCM_INIT_EXTENSION(,safe-extname);")))]
-        [else
-         (cgen-decl "#define INIT_ENTRY")]))
+                (cgen-init #`"SCM_INIT_EXTENSION(,safe-extname);")))])
+  (dolist [init subinits]
+    (cgen-decl #`"extern void ,init(void);")))
 
 ;;================================================================
 ;; Compiler stuff
