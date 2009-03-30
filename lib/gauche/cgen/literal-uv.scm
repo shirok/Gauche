@@ -1,6 +1,6 @@
 ;; KLUDGE to prevent 0.8.14 from complaining uvector support code.
 ;; literal.scm must be read by 0.8.14 to build the newer version,
-;; but it doesn't have uvector core support so it would abrk at this code.
+;; but it doesn't have uvector core support so it would bark at this code.
 ;; Once next version is released, the content of this file should be
 ;; merged into literal.scm
 
