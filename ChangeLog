@@ -1,3 +1,12 @@
+2009-03-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/gencomp, lib/gauche/cgen/precomp.scm: Some modifications to
+	  support muliple scm files into one DSO case.  This version is still
+	  not good enough; if the source consists of multiple modules,
+	  each modules should have corresponding ext-module file instead of
+	  just one in the current version.  But then, who is responsible
+	  to load the common DSO?  Trying to find better pattern.
+
 2009-03-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/literal.scm (<cgen-scheme-string>): Properly

@@ -46,6 +46,8 @@
 (use gauche.parseopt)
 (use gauche.cgen.precomp)
 (use gauche.experimental.app)
+(use srfi-1)
+(use file.util)
 (use util.match)
 
 (define (main args)
@@ -58,15 +60,33 @@
          . args)
       (let1 macros-to-keep ($ map string->symbol
                               $ string-split keep-private-macro #\,)
-        (when (null? args) (usage))
-        (when (and (> (length args) 1) output-base)
-          (exit 1 "-o|-output option can be used when there's exactly one \
-                   input file."))
-        (cgen-with-ext-module ext-module
-                              (cut for-each (cut cgen-precompile <> output-base
-                                                 :predef-syms predef-syms
-                                                 :macros-to-keep macros-to-keep)
-                                   args)))))
+        (match args
+          [() (usage)]
+          [(src)
+           ($ cgen-with-ext-module ext-module
+              (cut cgen-precompile src output-base
+                   :ext-initializer ext-module
+                   :predef-syms predef-syms
+                   :macros-to-keep macros-to-keep))]
+          [(srcs ...)
+           (when output-base
+             (exit 1 "-o|-output option can be used when there's exactly one \
+                      input file."))
+           ($ cgen-with-ext-module ext-module
+              (lambda ()
+                (dolist [src srcs]
+                  (let* ([ext-init? (equal? (base-sans-ext src)
+                                            (base-sans-ext ext-module))]
+                         [subinits (if ext-init?
+                                     (delete (base-sans-ext src)
+                                             (map base-sans-ext args))
+                                     '())])
+                    (cgen-precompile src #f
+                                     :ext-initializer ext-init?
+                                     :sub-initializers subinits
+                                     :predef-syms predef-syms
+                                     :macros-to-keep macros-to-keep)))))]
+          ))))
   0)
 
 (define (usage)
@@ -76,6 +96,9 @@
   (print "  --ext-module=MODULE-NAME")
   (print "  --output=FILE.C"))
 
+(define (base-sans-ext path)
+  (and path (path-sans-extension (sys-basename path))))
+         
 ;; Local variables:
 ;; mode: scheme
 ;; end:

@@ -117,6 +117,7 @@
                                                 sub-initializers)]
                    [compile-module    (make-module #f)]
                    [compile-file-basename base]
+                   [ext-initializer? ext-initializer]
                    [vm-eval-situation SCM_VM_COMPILING]
                    [private-macros-to-keep macros-to-keep])
       ;; Set up initial environment
@@ -131,13 +132,15 @@
                          forms)
                (undefined))
             (compile-module))
-      ;; Static stuff
-      (static-setup sub-initializers)
+      ;; Setup
+      (setup ext-initializer sub-initializers)
       ;; Main processing
       (with-input-from-file src
         (lambda ()
           (emit-toplevel-executor
            (reverse (port-fold compile-toplevel-form '() read)))))
+      ;; Finalize
+      (finalize sub-initializers)
       ;; Emitting
       (cgen-emit-c (cgen-current-unit))))
   )
@@ -181,6 +184,9 @@
 ;; NB: we insert (dynamic-load ...) just after select-module in the ext-module
 ;; file, assuming the source file has standard layout.
 (define ext-module-file (make-parameter #f))
+
+;; Flag to indicate the initializer should be an extention initializer.
+(define ext-initializer? (make-parameter #f))
 
 ;; list of private macros that should be included in the output.
 ;; (--keep-private-macro=name,name,...)
@@ -226,17 +232,22 @@
 (define (write-ext-module form)
   (cond [(ext-module-file) => (^_ (write form _) (newline _))]))
 
-(define (static-setup subinits)
+(define (setup ext-init? subinits)
   (cgen-decl "#include <gauche/code.h>")
   (cgen-decl "#include <gauche/macro.h>") ; for MakeMacroTransformerOld. temporary.
-  (cond [(ext-module-file)
+  (cond [(and ext-init? (ext-module-file))
          => (lambda (extm)
               (cgen-decl "#include <gauche/extend.h>")
-              (let* ([extname (path-sans-extension (port-name extm))]
+              (let* ([extname ($ path-sans-extension
+                                 $ sys-basename $ port-name extm)]
                      [safe-extname (regexp-replace-all #/\W/ extname "_")])
                 (cgen-init #`"SCM_INIT_EXTENSION(,safe-extname);")))])
   (dolist [init subinits]
-    (cgen-decl #`"extern void ,init(void);")))
+    (cgen-decl #`"extern void Scm_Init_,init(void);")))
+
+(define (finalize subinits)
+  (dolist [init subinits]
+    (cgen-init #`"  Scm_Init_,init();")))
 
 ;;================================================================
 ;; Compiler stuff
@@ -308,8 +319,9 @@
          (fold compile-toplevel-form seed body))]
       [((? =select-module?) mod)
        (write-ext-module form)
-       (write-ext-module
-        `(dynamic-load ,(compile-file-basename)))
+       (when (ext-initializer?)
+         (write-ext-module
+          `(dynamic-load ,(compile-file-basename))))
        (let1 sym (cgen-literal mod)
          (cgen-init
           (format "  mod = Scm_FindModule(SCM_SYMBOL(~a),\
