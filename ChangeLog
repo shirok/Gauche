@@ -1,3 +1,8 @@
+2009-03-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/scmlib.scm (exit-handler): Let the default exit handler add
+	  newline to the output.
+
 2009-03-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/gencomp, lib/gauche/cgen/precomp.scm: Some modifications to

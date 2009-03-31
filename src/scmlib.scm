@@ -415,8 +415,9 @@
     (%vm-parameter-set! index id
                         (lambda (code fmt args)
                           (when fmt
-                            (apply format (standard-error-port) fmt args))))
-    (lambda maybe-arg                   ;todo: replace with :optional syntax
+                            (apply format (standard-error-port) fmt args)
+                            (newline (standard-error-port)))))
+    (lambda maybe-arg
       (rlet1 old (%vm-parameter-ref index id)
         (when (pair? maybe-arg)
           (%vm-parameter-set! index id (car maybe-arg)))))))
