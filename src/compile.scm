@@ -2306,7 +2306,7 @@
       [(var . rest) (collect-args rest (cons var r))]))
   (define (parse-kargs xs os ks r a)
     (match xs
-      [() (expand-rest os ks r a)]
+      [() (expand-opt os ks r a)]
       [(:optional . xs)
        (unless (null? os) (too-many :optional))
        (receive (os xs) (collect-args xs '()) (parse-kargs xs os ks r a))]
@@ -2331,22 +2331,22 @@
       [_ (error "invalid extended lambda list:" kargs)]))
   (define (too-many key)
     (errorf "too many ~s keywords in the extended lambda list: ~s" key kargs))
-  (define (expand-rest os ks r a)
-    (if r
-      `(((with-module gauche let) ((,r ,garg)) ,@(expand-opt os ks a)))
-      (expand-opt os ks a)))
-  (define (expand-opt os ks a)
+  (define (expand-opt os ks r a)
     (if (null? os)
-      (expand-key ks a)
-      `(((with-module gauche let-optionals*) ,garg
-         ,(map (match-lambda 
-                 [[? symbol? o] o]
-                 [[? identifier? o] o]
-                 [(o init) `(,o ,init)]
-                 [_ (error "illegal optional argument spec in " kargs)])
-               os)
-         ,@(expand-key ks a)))))
-  (define (expand-key ks a)
+      (if r
+        `(((with-module gauche let) ((,r ,garg)) ,@(expand-key ks garg a)))
+        (expand-key ks garg a))
+      (let ([binds (map (match-lambda 
+                          [[? symbol? o] o]
+                          [[? identifier? o] o]
+                          [(o init) `(,o ,init)]
+                          [_ (error "illegal optional argument spec in " kargs)])
+                        os)]
+            [rest (cond [r] [(null? ks) #f] [else (gensym)])])
+        `(((with-module gauche let-optionals*) ,garg
+           ,(if rest (append binds rest) binds)
+           ,@(expand-key ks (or rest garg) a))))))
+  (define (expand-key ks garg a)
     (if (null? ks)
       body
       (let1 args (map (match-lambda

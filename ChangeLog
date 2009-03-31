@@ -1,5 +1,8 @@
 2009-03-31  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass1/extended-lambda): Fixed the case when
+	  :rest and (:optional and/or :key) are both specified.
+
 	* src/scmlib.scm (exit-handler): Let the default exit handler add
 	  newline to the output.
 

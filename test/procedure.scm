@@ -342,33 +342,93 @@
 ;; it expands to let-optionals*/let-keywords*, so we test it here.
 (test-section "extended lambda formals")
 
-(define (test-optkey proc arg res)
+(define (test-optkey sig proc arg res)
   (let loop ((res  res)
              (rarg (reverse arg)))
-    (test* "let :optional" (car res) (apply proc (reverse rarg)))
+    (test* sig (car res) (apply proc (reverse rarg)))
     (unless (null? rarg)
       (loop (cdr res) (cdr rarg)))))
 
-(test-optkey (lambda (a b :optional c d) (list a b c d))
+(test-optkey ":optional c d"
+             (lambda (a b :optional c d) (list a b c d))
              '(1 2 3 4)
              `((1 2 3 4) (1 2 3 ,(undefined))
                (1 2 ,(undefined) ,(undefined))
                ,*test-error* ,*test-error*))
 
-(test-optkey (lambda (a b :optional (c 99) (d 100)) (list a b c d))
+(test-optkey ":optional (c 99) (d 100)"
+             (lambda (a b :optional (c 99) (d 100)) (list a b c d))
              '(1 2 3 4)
              `((1 2 3 4) (1 2 3 100) (1 2 99 100)
                ,*test-error* ,*test-error*))
 
-(test-optkey (lambda (:optional a (b 99) (c 100) d) (list a b c d))
+(test-optkey ":optional a (b 99) (c 100) d"
+             (lambda (:optional a (b 99) (c 100) d) (list a b c d))
              '(1 2 3 4)
              `((1 2 3 4) (1 2 3 ,(undefined)) (1 2 100 ,(undefined))
                (1 99 100 ,(undefined)) (,(undefined) 99 100 ,(undefined))))
 
-(test-optkey (lambda (a b :key (c 99) (d 100)) (list a b c d))
+(test-optkey ":key (c 99) (d 100)"
+             (lambda (a b :key (c 99) (d 100)) (list a b c d))
              '(1 2 :c 3 :d 4)
              `((1 2 3 4) ,*test-error* (1 2 3 100) ,*test-error*
                (1 2 99 100)
                ,*test-error* ,*test-error*))
+
+(test-optkey ":optional (c 0) (d 1) :rest z"
+             (lambda (a b :optional (c 0) (d 1) :rest z) (list a b c d z))
+             '(1 2 3 4 5 6)
+             `((1 2 3 4 (5 6))
+               (1 2 3 4 (5))
+               (1 2 3 4 ())
+               (1 2 3 1 ())
+               (1 2 0 1 ())
+               ,*test-error*
+               ,*test-error*))
+
+(test-optkey ":rest z :optional (c 0) (d 1)"
+             (lambda (a b :rest z :optional (c 0) (d 1)) (list a b c d z))
+             '(1 2 3 4 5 6)
+             `((1 2 3 4 (5 6))
+               (1 2 3 4 (5))
+               (1 2 3 4 ())
+               (1 2 3 1 ())
+               (1 2 0 1 ())
+               ,*test-error*
+               ,*test-error*))
+
+(test-optkey ":key (b 0) (c 1) :rest z"
+             (lambda (a :key (b 0) (c 1) :rest z) (list a b c z))
+             '(1 :c 99 :b 88)
+             `((1 88 99 (:c 99 :b 88)) ,*test-error*
+               (1 0 99 (:c 99)) ,*test-error*
+               (1 0 1 ()) ,*test-error*))
+
+(test-optkey ":key (b 0) (c 1) :allow-other-keys :rest z"
+             (lambda (a :key (b 0) (c 1) :allow-other-keys :rest z)
+               (list a b c z))
+             '(1 :c 99 :a 77)
+             `((1 0 99 (:c 99 :a 77)) ,*test-error*
+               (1 0 99 (:c 99)) ,*test-error*
+               (1 0 1 ()) ,*test-error*))
+
+(test-optkey ":key (b 0) (c 1) :allow-other-keys y :rest z"
+             (lambda (a :key (b 0) (c 1) :allow-other-keys y :rest z)
+               (list a b c y z))
+             '(1 :d 66 :c 99 :a 77)
+             `((1 0 99 (:a 77 :d 66) (:d 66 :c 99 :a 77)) ,*test-error*
+               (1 0 99 (:d 66) (:d 66 :c 99)) ,*test-error*
+               (1 0 1 (:d 66) (:d 66)) ,*test-error*
+               (1 0 1 () ()) ,*test-error*))
+
+(test-optkey ":optional b c :key (d 0) (e 1) :rest z"
+             (lambda (a :optional b c :key (d 0) (e 1) :rest z)
+               (list a b c d e z))
+             '(1 :e 99 :d 66)
+             `((1 :e 99 66 1 (:d 66)) ,*test-error*
+               (1 :e 99 0 1 ())
+               (1 :e ,(undefined) 0 1 ())
+               (1 ,(undefined) ,(undefined) 0 1 ())
+               ,*test-error*))
 
 (test-end)
