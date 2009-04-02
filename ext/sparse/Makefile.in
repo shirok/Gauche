@@ -22,7 +22,7 @@ sparse.$(SOEXT) : $(OBJECTS)
 $(OBJECTS): ctrie.h spvec.h sptab.h
 
 sparse.c util/sparse.scm : sparse.scm
-	$(GENCOMP) --ext-module=util/sparse.scm sparse.scm
+	$(PRECOMP) --ext-module=util/sparse.scm sparse.scm
 
 install : install-std
 

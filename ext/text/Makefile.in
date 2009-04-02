@@ -31,7 +31,7 @@ text-gettext_head.c text-gettext_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension text-gettext
 
 text-gettext-lib.c text/gettext.scm : $(srcdir)/text-gettext-lib.scm
-	$(GENCOMP) --ext-module text/gettext.scm $(srcdir)/text-gettext-lib.scm
+	$(PRECOMP) --ext-module text/gettext.scm $(srcdir)/text-gettext-lib.scm
 
 #
 # text.tr
@@ -48,5 +48,5 @@ text-tr_head.c text-tr_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension text-tr
 
 text-tr-lib.c text/tr.scm : $(top_srcdir)/libsrc/text/tr.scm
-	$(GENCOMP) --ext-module text/tr.scm -o text-tr-lib $(top_srcdir)/libsrc/text/tr.scm
+	$(PRECOMP) --ext-module text/tr.scm -o text-tr-lib $(top_srcdir)/libsrc/text/tr.scm
 

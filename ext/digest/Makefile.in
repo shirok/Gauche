@@ -22,7 +22,7 @@ md5-lib.$(SOEXT) : $(md5_OBJECTS)
 	$(MODLINK) md5-lib.$(SOEXT) $(md5_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 md5.scm md5-lib.c : md5-lib.scm
-	$(GENCOMP) --ext-module=md5.scm md5-lib.scm
+	$(PRECOMP) --ext-module=md5.scm md5-lib.scm
 
 sha_OBJECTS = sha_head.$(OBJEXT) sha-lib.$(OBJEXT) sha2.$(OBJEXT) sha_tail.$(OBJEXT)
 
@@ -32,7 +32,7 @@ sha-lib.$(SOEXT) : $(sha_OBJECTS)
 	$(MODLINK) sha-lib.$(SOEXT) $(sha_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 sha.scm sha-lib.c : sha-lib.scm
-	$(GENCOMP) --ext-module=sha.scm sha-lib.scm
+	$(PRECOMP) --ext-module=sha.scm sha-lib.scm
 
 md5_head.c md5_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension md5

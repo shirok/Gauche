@@ -371,7 +371,7 @@
 ;; here for efficiency.
 ;; Some procedures depend on the structure defined in compile.scm,
 ;; and need to be adjusted if the structure is changed.
-;; In future, gencomp should be extended so that these routines can
+;; In future, precomp should be extended so that these routines can
 ;; be written in compile.scm as "inlined C" code.
 
 ;; %imax - max for unsigned integer only, unsafe.

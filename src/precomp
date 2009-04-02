@@ -1,5 +1,5 @@
 ;;;
-;;; gencomp - convert compiled code into static C data
+;;; precomp - Precompiler
 ;;;
 ;;;   Copyright (c) 2004-2009 Shiro Kawai, All rights reserved.
 ;;;   
@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.35 2008-05-13 05:44:15 shirok Exp $
-;;;
 
 ;;;
 ;;; This is a hack to "compile" the Scheme-written compiler into static
@@ -90,7 +88,7 @@
   0)
 
 (define (usage)
-  (print "Usage: gosh gencomp [options] <file.scm> ...")
+  (print "Usage: gosh precomp [options] <file.scm> ...")
   (print "Options:")
   (print "  --keep-private-macro=NAME,NAME,...")
   (print "  --ext-module=MODULE-NAME")

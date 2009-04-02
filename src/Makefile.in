@@ -76,7 +76,7 @@ INSTALL   = @INSTALL@
 POSTBUILD = TARGETLIB=`pwd` $(MAKEVERSLINK) libgauche.$(SOEXT)
 POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) libgauche.$(SOEXT)
 
-GENCOMP   = $(srcdir)/gencomp -D LIBGAUCHE_BODY
+PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY
 
 # for cross build
 BUILD_CC     = @BUILD_CC@
@@ -137,7 +137,7 @@ INSTALL_BINS = gosh$(EXEEXT)           \
                gauche-install$(EXEEXT) \
 	       gauche-package$(EXEEXT) \
 	       gauche-cesconv$(EXEEXT)
-INSTALL_SCMS = gauche-init.scm genstub gencomp cesconv
+INSTALL_SCMS = gauche-init.scm genstub precomp cesconv
 
 GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
 
@@ -205,14 +205,14 @@ builtin-syms.c gauche/builtin-syms.h : builtin-syms.scm
 vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
 	$(BUILD_GOSH) ./geninsn
 
-compile.c : compile.scm gencomp vminsn.scm ../lib/gauche/vm/insn.scm
-	$(BUILD_GOSH) $(GENCOMP) compile.scm
+compile.c : compile.scm precomp vminsn.scm ../lib/gauche/vm/insn.scm
+	$(BUILD_GOSH) $(PRECOMP) compile.scm
 
-scmlib.c : scmlib.scm gencomp vminsn.scm ../lib/gauche/vm/insn.scm
-	$(BUILD_GOSH) $(GENCOMP) --keep-private-macro=inline-stub,declare scmlib.scm
+scmlib.c : scmlib.scm precomp vminsn.scm ../lib/gauche/vm/insn.scm
+	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=inline-stub,declare scmlib.scm
 
-objlib.c : objlib.scm gencomp vminsn.scm ../lib/gauche/vm/insn.scm
-	$(BUILD_GOSH) $(GENCOMP) objlib.scm
+objlib.c : objlib.scm precomp vminsn.scm ../lib/gauche/vm/insn.scm
+	$(BUILD_GOSH) $(PRECOMP) objlib.scm
 
 symbol.$(OBJEXT) : builtin-syms.c
 

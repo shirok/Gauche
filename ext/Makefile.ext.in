@@ -43,7 +43,7 @@ MODLINK   = $(CCLD) $(CFLAGS) $(LDFLAGS)
 @CROSS_COMPILING_yes@GOSH           = gosh
 @CROSS_COMPILING_yes@GAUCHE_CONFIG  = $(top_builddir)/src/$(HOST)-gauche-config
 GAUCHE_INSTALL = $(GOSH) $(top_srcdir)/src/gauche-install.in
-GENCOMP        = $(GOSH) $(top_srcdir)/src/gencomp
+PRECOMP        = $(GOSH) $(top_srcdir)/src/precomp
 INSTALL_TYPE   = sys
 
 EXT_LIBGAUCHE  = -L$(top_builddir)/src @EXT_LIBGAUCHE@

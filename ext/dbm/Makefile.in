@@ -23,7 +23,7 @@ gdbm-lib.$(SOEXT) : $(gdbm_OBJECTS)
 	$(MODLINK) gdbm-lib.$(SOEXT) $(gdbm_OBJECTS) $(EXT_LIBGAUCHE) @GDBMLIB@ $(LIBS)
 
 gdbm.scm gdbm-lib.c : gdbm-lib.scm
-	$(GENCOMP) --ext-module=gdbm.scm gdbm-lib.scm
+	$(PRECOMP) --ext-module=gdbm.scm gdbm-lib.scm
 
 ndbm_OBJECTS   = ndbm_head.$(OBJEXT) ndbm-lib.$(OBJEXT) ndbm_tail.$(OBJEXT)
 
@@ -31,7 +31,7 @@ ndbm-lib.$(SOEXT) : $(ndbm_OBJECTS)
 	$(MODLINK) ndbm-lib.$(SOEXT) $(ndbm_OBJECTS) $(EXT_LIBGAUCHE) @NDBMLIB@ $(LIBS)
 
 ndbm.scm ndbm-lib.c : ndbm-lib.scm
-	$(GENCOMP) --ext-module=ndbm.scm ndbm-lib.scm
+	$(PRECOMP) --ext-module=ndbm.scm ndbm-lib.scm
 
 ndbm-lib.$(OBJEXT): ndbm-lib.c ndbm-suffixes.h
 
@@ -41,7 +41,7 @@ odbm-lib.$(SOEXT) : $(odbm_OBJECTS)
 	$(MODLINK) odbm-lib.$(SOEXT) $(odbm_OBJECTS) $(EXT_LIBGAUCHE) @ODBMLIB@ $(LIBS)
 
 odbm.scm odbm-lib.c : odbm-lib.scm
-	$(GENCOMP) --ext-module=odbm.scm odbm-lib.scm
+	$(PRECOMP) --ext-module=odbm.scm odbm-lib.scm
 
 gdbm_head.c gdbm_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension gdbm

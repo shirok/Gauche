@@ -171,7 +171,7 @@
 ;; pre-compiled into C.  Technically we can kick C compiler at
 ;; runtime, but it'll need some more work, so we signal an error
 ;; when inline-stub form is evaluated at runtime.  The precompiler
-;; (gencomp) handles this form specially.
+;; (precomp) handles this form specially.
 
 (define-macro (inline-stub . _)
   (warn "The inline-stub form can only be used for Scheme source \

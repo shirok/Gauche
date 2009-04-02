@@ -1231,7 +1231,7 @@
         [else lvar]))
 
 ;; Translate instruction code embedded in $ASM node.  This isn't directly
-;; used within the compiler, but called from the pre-compiler (gencomp).
+;; used within the compiler, but called from the pre-compiler (precomp).
 ;; This is necessary to compile gauche core (compile.scm, scmlib.scm, ...)
 ;; after the instruction set has been changed.
 ;; SRC is a packed iform, TARGET-INSN-ALIST is a list of (insn-name . insn)

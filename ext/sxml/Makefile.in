@@ -4,7 +4,7 @@ top_srcdir   = @top_srcdir@
 
 include ../Makefile.ext
 
-SCMCOMPILE = $(GOSH) -I. $(top_srcdir)/src/gencomp
+SCMCOMPILE = $(GOSH) -I. $(top_srcdir)/src/precomp
 SCMTRANS   = $(GOSH) ./trans.scm
 
 GENERATED_TARGET = sxml/tree-trans.scm sxml/to-html.scm \

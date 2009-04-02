@@ -33,7 +33,7 @@ charconv_head.c charconv_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension charconv
 
 convaux.c : convaux.scm
-	$(GENCOMP) convaux.scm
+	$(PRECOMP) convaux.scm
 
 jconv.$(OBJEXT) : eucj2ucs.c ucs2eucj.c jconv.c
 

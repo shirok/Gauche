@@ -24,7 +24,7 @@ peg-lib.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) peg-lib.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 peg.scm peg-lib.c : peg-lib.scm
-	$(GENCOMP) --ext-module=peg.scm \
+	$(PRECOMP) --ext-module=peg.scm \
 	           --keep-private-macro=return-failure/compound,return-failure/expect,return-result \
 	           peg-lib.scm
 

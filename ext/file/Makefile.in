@@ -25,7 +25,7 @@ file-util_head.c file-util_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension file-util
 
 file-util-lib.c file/util.scm : $(top_srcdir)/libsrc/file/util.scm
-	$(GENCOMP) --ext-module file/util.scm -o file-util-lib $(top_srcdir)/libsrc/file/util.scm
+	$(PRECOMP) --ext-module file/util.scm -o file-util-lib $(top_srcdir)/libsrc/file/util.scm
 
 install : install-std
 
