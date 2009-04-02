@@ -1,7 +1,7 @@
 ;;;
 ;;; install - Generic installation utility
 ;;;  
-;;;   Copyright (c) 2004-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2009 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -45,29 +45,33 @@
 (use gauche.parseopt)
 (use gauche.parameter)
 (use file.util)
+(use util.list)
 
 (define (p . args) (for-each print args))
 
 (define (usage)
-  (p "Usage: gauche-install [options] file dest             (1st format)"
-     "       gauche-install [options] file ... directory    (2nd format)"
-     "       gauche-install -d [options] directory ...      (3rd format)"
+  (p "Usage: gauche-install [options] file dest             (1st format*)"
+     "       gauche-install [options] file ... directory    (2nd format*)"
+     "       gauche-install -d [options] directory ...      (3rd format*)"
      "       gauche-install -T directory [options] file ... (4th format)"
      "       gauche-install -U directory [options] file ... (5th format)"
+     "(*: 1st,2nd and 3rd format are compatible with BSD install)"
      "Options:"
-     "  -T, --target=DIR  : installs files to the DIR, creating paths if needed."
+     "  -T, --target=DIR  : Installs files to the DIR, creating paths if needed."
      "                      Partial path of files are preserved. (4th format only)"
      "  -U, --uninstall=DIR : Reverse of -T, e.g. removes files from its"
      "                      destination."
-     "  -S, --srcdir=DIR  : look for files within DIR; useful if VPATH is used"
-     "      --shebang=PATH : adds #!PATH before the file contents."
-     "                       useful to install scripts."
-     "  -d, --directory   : creates directories.  (3rd format only)."
-     "  -m, --mode=MODE   : change mode of the installed file."
-     "  -o, --owner=OWNER : change owner of the installed file (root only)."
-     "  -g, --group=GROUP : change owner of the installed file (root only)."
-     "  -v, --verbose     : work verbosely"
-     "  -n, --dry-run     : just prints what actions to be done."
+     "  -S, --srcdir=DIR  : Look for files within DIR; useful if VPATH is used"
+     "      --shebang=PATH : Adds #!PATH before the file contents."
+     "                       Useful to install scripts."
+     "  -d, --directory   : Creates directories.  (3rd format only)."
+     "  -m, --mode=MODE   : Change mode of the installed file."
+     "  -p, --strip=NUM   : Strip NUM prefix dirs from FILEs before installation."
+     "                      (4th/5th format only)."
+     "  -o, --owner=OWNER : Change owner of the installed file (root only)."
+     "  -g, --group=GROUP : Change owner of the installed file (root only)."
+     "  -v, --verbose     : Work verbosely"
+     "  -n, --dry-run     : Just prints what actions to be done."
      )
   (exit 0))
 
@@ -76,45 +80,37 @@
 
 (define-syntax do-it
   (syntax-rules ()
-    ((_ mesg . actions)
+    [(_ mesg . actions)
      (begin (when (and (verbose) mesg) (print mesg))
-            (unless (dry-run) . actions)))))
+            (unless (dry-run) . actions))]))
 
-(define (app-errorf fmt msg)
-  (format (current-error-port) fmt msg)
-  (newline (current-error-port))
-  (exit 1))
-
-(define (ensure-directory path . args)
+(define (ensure-directory path :optional (mode #f) (owner #f) (group #f))
   (if (file-exists? path)
     (unless (file-is-directory? path)
-      (app-errorf "non-directory file gets in my way: ~s" path))
-    (let-optionals* args ((mode #f)
-                          (owner #f)
-                          (group #f))
-      (do-it #`"creating directory ,path"
-             (guard (e (else (app-errorf "can't create directory: ~s"
-                                         (ref e 'message))))
-               (when (make-directory* path)
-                 (when mode (sys-chmod path mode))
-                 (when (or owner group)
-                   (sys-chown path
-                              (->ugid sys-user-name->uid owner "user")
-                              (->ugid sys-group-name->gid group "group")))))
-             ))))
+      (exit 1 "gauche-install: non-directory file gets in my way: ~s" path))
+    (do-it #`"creating directory ,path"
+           (guard (e [else (exit 1 "can't create directory: ~s"
+                                 (ref e 'message))])
+             (when (make-directory* path)
+               (when mode (sys-chmod path mode))
+               (when (or owner group)
+                 (sys-chown path
+                            (->ugid sys-user-name->uid owner "user")
+                            (->ugid sys-group-name->gid group "group")))))
+           )))
 
 ;; user/group -> uid/gid
 (define (->ugid str->id arg type)
-  (cond ((not arg) -1)
-        ((integer? arg) arg)
-        ((and (string? arg) (str->id arg)))
-        (else (app-errorf #`"bad ,type name: ~a" arg))))
+  (cond [(not arg) -1]
+        [(integer? arg) arg]
+        [(and (string? arg) (str->id arg))]
+        [else (exit 1 "bad ~a name: ~a" type arg)]))
 
 ;; find source path
 (define (ensure-src file srcdir)
-  (or (and-let* ((srcdir)
-                 (srcpath (build-path srcdir file))
-                 ((file-exists? srcpath)))
+  (or (and-let* ([ srcdir ]
+                 [srcpath (build-path srcdir file)]
+                 [ (file-exists? srcpath) ])
         srcpath)
       file))
 
@@ -123,9 +119,7 @@
   (if prelude
     (receive (out name) (sys-mkstemp src)
       (display prelude out)
-      (call-with-input-file src
-        (lambda (in)
-          (copy-port in out :unit 65536)))
+      (call-with-input-file src (cut copy-port <> out :unit 65536))
       (close-output-port out)
       (move-file name dest :if-exists :supersede))
     (copy-file src dest :if-exists :supersede :safe #t)))
@@ -140,60 +134,63 @@
                            (->ugid sys-user-name->uid owner "user")
                            (->ugid sys-group-name->gid group "group"))))))
 
+;; strip P components
+(define (strip-dir p path)
+  (if (or (not p) (<= p 0))
+    path
+    (let1 r (drop* (string-split path #[/\\]) p)
+      (when (null? r)
+        (exit 1 "number of stripped components (-p option) too high: ~a" p))
+      (string-join r "/"))))
 
 ;; Entry point
 (define (main args)
   (let-args (cdr args)
-      ((#f      "c")        ;; ignore for historical reason
-       (mkdir   "d|directory")
-       (mode    "m|mode=s" #o755 => (cut string->number <> 8))
-       (owner   "o|owner=s")
-       (group   "g|group=s")
-       (srcdir  "S|srcdir=s")
-       (target  "T|target=s")
-       (utarget "U|uninstall=s")
-       (shebang "shebang=s")
-       (verb    "v")
-       (dry     "n|dry-run")
-       (#f      "h|help" => usage)
-       (else (opt . _) (print "Unknown option : " opt) (usage))
+      ([#f      "c"]        ;; ignore for historical reason
+       [mkdir   "d|directory"]
+       [mode    "m|mode=s" #o755 => (cut string->number <> 8)]
+       [owner   "o|owner=s"]
+       [group   "g|group=s"]
+       [srcdir  "S|srcdir=s"]
+       [target  "T|target=s"]
+       [utarget "U|uninstall=s"]
+       [shebang "shebang=s"]
+       [verb    "v"]
+       [dry     "n|dry-run"]
+       [strip   "p|strip=i"]
+       [#f      "h|help" => usage]
+       [else (opt . _) (print "Unknown option : " opt) (usage)]
        . args)
 
-    (parameterize ((verbose (or verb dry))
-                   (dry-run dry))
+    (parameterize ([verbose (or verb dry)]
+                   [dry-run dry])
       (when shebang (set! shebang #`"#!,shebang\n"))
       (cond
-       (mkdir  (for-each (cut ensure-directory <> mode owner group) args))
-       (target (for-each (lambda (src)
-                           (let1 dst (build-path target src)
-                             (ensure-directory (sys-dirname dst))
-                             (install (ensure-src src srcdir) dst
-                                      shebang mode owner group)))
-                         args))
-       (utarget (for-each (lambda (src)
-                            (sys-unlink (build-path utarget src)))
-                          args))
-       (else
+       [mkdir  (for-each (cut ensure-directory <> mode owner group) args)]
+       [target (dolist [src args]
+                 (let1 dst (build-path target (strip-dir strip src))
+                   (ensure-directory (sys-dirname dst))
+                   (install (ensure-src src srcdir) dst shebang mode owner group)))]
+       [utarget (dolist [src args]
+                  (sys-unlink (build-path utarget (strip-dir strip src))))]
+       [else
         (case (length args)
-          ((0) (usage))
-          ((1) #f)          ;; no-op
-          ((2) ;; file to file or file to dir
-           (let* ((src (car args))
-                  (dst (if (file-is-directory? (cadr args))
+          [(0) (usage)]
+          [(1) #f]          ;; no-op
+          [(2) ;; file to file or file to dir
+           (let* ([src (car args)]
+                  [dst (if (file-is-directory? (cadr args))
                          (build-path (cadr args) (sys-basename src))
-                         (cadr args))))
+                         (cadr args))])
              (ensure-directory (sys-dirname dst))
-             (install (ensure-src src srcdir) dst
-                      shebang mode owner group)))
-          (else
-           (let ((target (car (last-pair args))))
-             (for-each (lambda (src)
-                         (let1 dst (build-path target (sys-basename src))
-                           (ensure-directory (sys-dirname dst))
-                           (install (ensure-src src srcdir) dst
-                                    shebang mode owner group)))
-                       (drop-right args 1)))))))
-      ))
+             (install (ensure-src src srcdir) dst shebang mode owner group))]
+          [else
+           (let1 target (car (last-pair args))
+             (dolist [src (drop-right args 1)]
+               (let1 dst (build-path target (sys-basename src))
+                 (ensure-directory (sys-dirname dst))
+                 (install (ensure-src src srcdir) dst shebang mode owner group))))]
+          )])))
   0)
 
 ;; Local variables:
