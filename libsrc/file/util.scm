@@ -295,7 +295,6 @@
         [[? name?] (do-file (mkpath dir node))]
         [([? name? n] . args)
          (receive (opts content) (collect-options args)
-           (print "opts=" opts " content=" content)
            (if (list? content)
              (apply do-dir (mkpath dir n) content opts)
              (apply do-file (mkpath dir n) content opts)))]
