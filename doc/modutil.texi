@@ -3576,6 +3576,128 @@ The meanings of the other keyword arguments are the same as
 @c COMMON
 @end defun
 
+@defun create-directory-tree dir spec
+@c EN
+Creates a directory tree under @var{dir} according to @var{spec}.
+This procedure is useful to set up certain directory hierarchy at once.
+
+The @var{spec} argument is an S-expression with the following structure:
+
+@example
+<spec> : <name>                             ; empty file
+       | (<name> <option> ...)              ; empty file
+       | (<name> <option> ... <string>)     ; file with content
+       | (<name> <option> ... <procedure>)  ; file with generated content
+       | (<name> <option> ... (<spec> ...)) ; directory
+
+<name> : string or symbol
+
+<option> ... : keyword-value alternating list
+@end example
+@c JP
+@var{spec}で指定されるディレクトリツリーを@var{dir}の下に作成します。
+特定のディレクトリ構造を一気にセットアップする際に便利です。
+
+@var{spec}引数は次に示される構造をもつS式です。
+
+@example
+<spec> : <name>                             ; 空のファイル
+       | (<name> <option> ...)              ; 空のファイル
+       | (<name> <option> ... <string>)     ; 固定内容のファイル
+       | (<name> <option> ... <procedure>)  ; 内容を生成するファイル
+       | (<name> <option> ... (<spec> ...)) ; ディレクトリ
+
+<name> : 文字列かシンボル
+
+<option> ... : キーワードと値の交代リスト
+@end example
+@c COMMON
+
+@c EN
+With the first and second form of @var{spec}, an empty file is created
+with the given name.
+With the third form of @var{spec}, the string becomes the
+content of the file.  
+
+With the fourth form of @var{spec}, the procedure is called with the
+pathname as an argument, and output to the current output
+port within the procedure is written to the created file.
+The pathname is relative to the @var{dir} argument.
+At the time the procedure is called, its parent directory
+is already created.
+
+The last form of @var{spec} creates a named directory,
+then creates its children recursively according to the specs.
+@c JP
+@var{spec}の最初と2番目の形式では、名前@var{name}を持つ空のファイルが作られます。
+3番目の形式では与えられた文字列がファイルの内容となります。
+
+4番目の形式では、手続きがファイルのパス名を引数として呼び出され、
+その手続きがcurrent output portに出力した内容がファイルの内容となります。
+引数に渡されるパス名は@var{dir}引数からの相対パスです。
+手続きが呼ばれる時、その親ディレクトリは既につくられています。
+
+最後の形式は、名前@var{name}を持つディレクトリを作成し、
+その子供として再帰的に指定された@var{spec}によるファイル/ディレクトリを作成します。
+@c COMMON
+
+@c EN
+With @var{option}s you can control attributes of created files/directories.
+Currently the following options are recognized.
+
+@table @code
+@item :mode @var{mode}
+Takes integer as permission mode bits.
+@item :owner @var{uid}
+@itemx :group @var{gid}
+Takes integer uid/gid of the owner/group of the file/directory.
+Calling process may need special priviledge to change the owner
+and/or group.
+@item :symlink @var{path}
+This is only valid for file spec, and it causes 
+@code{create-directory-tree} to create a named symbolic link
+whose content is @var{path}.
+@end table
+@c JP
+@var{option}によって、作られるファイル/ディレクトリの属性を細かく指定できます。
+今のところ、次のオプションが認識されます。
+
+@table @code
+@item :mode @var{mode}
+整数@var{mode}でパーミッションのモードビットを指定します。
+@item :owner @var{uid}
+@itemx :group @var{gid}
+整数@var{uid}/@var{gid}で作成されるエントリのオーナー/グループを指定します。
+作成されるエントリのオーナー/グループを変更するには、
+呼び出すプロセスに特権が必要かもしれません。
+@item :symlink @var{path}
+ファイルを作成する@var{spec}でのみ有効なオプションで、
+@var{path}を指すシンボリックリンクを作成します。
+@end table
+@c COMMON
+@end defun
+
+@defun check-directory-tree dir spec
+@c EN
+Checks if a directory hierarchy according to @var{spec} exists
+under @var{dir}.  Returns @code{#t} if it exists, or @var{#f} otherwise.
+
+The format of @var{spec} is the same
+as @code{create-directory-tree} described above.
+
+If @var{spec} contains options, the attributes of existing 
+files/directories are also checked if they match the given options.
+@c JP
+@var{spec}で記述されるディレクトリ階層が@var{dir}の下に存在するかどうかを
+調べ、存在すれば@code{#t}、そうでなければ@code{#f}を返します。
+
+@var{spec}の形式は上で説明した@code{create-directory-tree}と同じです。
+
+@var{spec}がオプションを含んでいる場合、該当するファイル/ディレクトリの
+属性もそのオプションに合致するかどうかチェックされます。
+@c COMMON
+@end defun
+
 
 @node Pathname utilities, File attribute utilities, Directory utilities, Filesystem utilities
 @subsection Pathname utilities

@@ -46,10 +46,13 @@
   (use srfi-13)
   (use util.list)
   (use util.match)
+  (use gauche.experimental.lamb)
+  (use gauche.experimental.ref)
   (export current-directory directory-list directory-list2 directory-fold
           home-directory temporary-directory
           make-directory* create-directory* remove-directory* delete-directory*
           copy-directory*
+          create-directory-tree check-directory-tree
           build-path resolve-path expand-path simplify-path decompose-path
           absolute-path? relative-path? find-file-in-paths
 	  path-separator
@@ -257,6 +260,90 @@
             (rec src dst)])]
         [else (rec src dst)])
   )
+
+;; Create/check certain directory structure at once
+;;
+;; Directory Tree
+;;   <tree> : <name>                      ; empty file
+;;          | (<name> [options])          ; empty file
+;;          | (<name> [options] <string>) ; file with content
+;;          | (<name> [options] <proc>)   ;   using output of <proc>
+;;          | (<name> [options] (<tree> ...)) ; directory
+;;   <name> : string
+;;
+;;   options is alternating list of keywords and values.
+;;
+;;     :mode <integer>   ; file/dir mode bits
+;;     :owner <id>       ; file/dir owner
+;;     :group <id>       ; file/dir group
+;;     :symlink <path>   ; file is actually a symlink to <path>
+
+(define-values (create-directory-tree
+                check-directory-tree)
+  (let ()
+    (define (name? x) (or (string? x) (symbol? x)))
+    (define (collect-options args)
+      (let loop ([args args] [r '()])
+        (match args
+          [() (values (reverse r) #f)]
+          [([? keyword? k] val . rest) (loop rest (list* val k r))]
+          [(arg) (values (reverse r) arg)]
+          [_ (error "invalid option list:" args)])))
+    (define (mkpath dir name) (build-path dir (x->string name)))
+    (define (walk dir node do-file do-dir)
+      (match node
+        [[? name?] (do-file (mkpath dir node))]
+        [([? name? n] . args)
+         (receive (opts content) (collect-options args)
+           (print "opts=" opts " content=" content)
+           (if (list? content)
+             (apply do-dir (mkpath dir n) content opts)
+             (apply do-file (mkpath dir n) content opts)))]
+        [_ (error "invalid tree node:" node)]))  
+
+    (define (ensure-file path content
+                         :key (mode #f) (owner -1) (group -1) (symlink #f))
+      (if symlink
+        (sys-symlink symlink path)
+        (cond
+         [(not content) (touch-file path)]
+         [(string? content) (with-output-to-file path (cut display content))]
+         [else (with-output-to-file path (cut content path))]))
+      (when mode (sys-chmod path mode))
+      (when (or (>= owner 0) (>= group 0)) (sys-chown path owner group)))
+    (define (ensure-dir path children :key (mode #o755) (owner -1) (group -1))
+      (make-directory* path mode)
+      (for-each (cut ensure path <>) children)
+      (when (or (>= owner 0) (>= group 0)) (sys-chown path owner group)))
+    (define (ensure dir node) (walk dir node ensure-file ensure-dir))
+    (define (create-directory-tree start tree) (ensure start tree))
+
+    (define (check-file path content
+                        :key (mode #f) (owner -1) (group -1) (symlink #f))
+      (if symlink
+        (and (file-is-symlink? path)
+             (check-attrs path mode owner group)
+             (equal? symlink (sys-readlink path)))
+        (and (file-is-regular? path)
+             (check-attrs path mode owner group)
+             (cond
+              [(not content) #t]
+              [(string? content) (string=? content (file->string path))]
+              [else (equal? (with-output-to-string (cut content path))
+                            (file->string path))]))))
+    (define (check-dir path children :key (mode #f) (owner -1) (group -1))
+      (and (file-is-directory? path)
+           (check-attrs path mode owner group)
+           (every (cut check path <>) children)))
+    (define (check-attrs path mode owner group)
+      (let1 s (sys-lstat path)
+        (or (not mode) (= (~ s'perm) mode))
+        (or (negative? owner) (= (~ s'uid) owner))
+        (or (negative? group) (= (~ s'gid) group))))
+    (define (check dir node) (walk dir node check-file check-dir))
+    (define (check-directory-tree start tree) (check start tree))
+
+    (values create-directory-tree check-directory-tree)))
 
 ;;;=============================================================
 ;;; Pathnames

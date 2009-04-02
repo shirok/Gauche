@@ -1,3 +1,8 @@
+2009-04-01  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (create-directory-tree, check-directory-tree):
+	  Added.
+
 2009-03-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1/extended-lambda): Fixed the case when

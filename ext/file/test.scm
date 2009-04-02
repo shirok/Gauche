@@ -11,6 +11,77 @@
 (use file.util)
 (test-module 'file.util)
 
+;;=====================================================================
+(test-section "pathname utils")
+
+(test* "build-path" "" (build-path ""))
+(test* "build-path" "." (build-path "."))
+(test* "build-path" "/" (build-path "/"))
+(test* "build-path" "a/b/c" (build-path "a" "b" "c"))
+(test* "build-path" "a/b/c" (build-path "a/" "b/" "c"))
+(test* "build-path" "/a/b/c" (build-path "/" "a/b" "c"))
+(test* "build-path" "./a/b/c" (build-path "." "a/b" "c"))
+(test* "build-path" *test-error* (build-path "." "/a/b"))
+(test* "build-path" "foo" (build-path "" "foo"))
+(test* "build-path" "foo/bar" (build-path "" "foo" "" "bar"))
+(test* "build-path" "foo" (build-path "" "foo" ""))
+
+(test* "decompose-path" '("/a/b/c" "d" "e")
+       (receive r (decompose-path "/a/b/c/d.e") r))
+(test* "decompose-path" '("." "d" "e")
+       (receive r (decompose-path "d.e") r))
+(test* "decompose-path" '("." "d" "")
+       (receive r (decompose-path "d.") r))
+(test* "decompose-path" '("." "d" #f)
+       (receive r (decompose-path "d") r))
+(test* "decompose-path" '("/a.b" "c" #f)
+       (receive r (decompose-path "/a.b/c") r))
+(test* "decompose-path" '("/a.b" #f #f)
+       (receive r (decompose-path "/a.b/") r))
+(test* "decompose-path" '("/a.b" "c.c" "d")
+       (receive r (decompose-path "/a.b/c.c.d") r))
+(test* "decompose-path" '("/a.b" ".d" #f)
+       (receive r (decompose-path "/a.b/.d") r))
+
+(test* "path-extension" "c" (path-extension "/a.b/c.d/e.c"))
+(test* "path-extension" "" (path-extension "/a.b/c.d/e.c."))
+(test* "path-extension" #f (path-extension "/a.b/c.d/.e"))
+(test* "path-extension" #f (path-extension "/a.b/c.d/e"))
+
+(test* "path-sans-extension" "/a.b/c.d/e"
+       (path-sans-extension "/a.b/c.d/e.c"))
+(test* "path-sans-extension" "/a.b/c.d/e.c"
+       (path-sans-extension "/a.b/c.d/e.c."))
+(test* "path-sans-extension" "/a.b/c.d/.e"
+       (path-sans-extension "/a.b/c.d/.e"))
+(test* "path-sans-extension" "/a.b/c.d/e"
+       (path-sans-extension "/a.b/c.d/e"))
+(test* "path-sans-extension" "a" (path-sans-extension "a.c"))
+(test* "path-sans-extension" "a" (path-sans-extension "a."))
+(test* "path-sans-extension" "a" (path-sans-extension "a"))
+(test* "path-sans-extension" ".a" (path-sans-extension ".a"))
+(test* "path-sans-extension" ".a" (path-sans-extension ".a.c"))
+
+(test* "path-swap-extension" "/a.b/c.d/e.o"
+       (path-swap-extension "/a.b/c.d/e.c" "o"))
+(test* "path-swap-extension" "/a.b/c.d/e.c.o"
+       (path-swap-extension "/a.b/c.d/e.c." "o"))
+(test* "path-swap-extension" "/a.b/c.d/.e.o"
+       (path-swap-extension "/a.b/c.d/.e" "o"))
+(test* "path-swap-extension" "/a.b/c.d/e.o"
+       (path-swap-extension "/a.b/c.d/e" "o"))
+(test* "path-swap-extension" "/a.b/c.d/e"
+       (path-swap-extension "/a.b/c.d/e.c" #f))
+(test* "path-swap-extension" "a.o" (path-swap-extension "a.c" "o"))
+(test* "path-swap-extension" "a.o" (path-swap-extension "a." "o"))
+(test* "path-swap-extension" "a.o" (path-swap-extension "a" "o"))
+(test* "path-swap-extension" ".a.o" (path-swap-extension ".a" "o"))
+(test* "path-swap-extension" ".a.o" (path-swap-extension ".a.c" "o"))
+
+
+;;=====================================================================
+(test-section "directories")
+
 (test "current-directory" '("/" "/" #t #t)
       (lambda ()
         (let* ((cur   (sys-getcwd))
@@ -22,36 +93,89 @@
                (cur** (current-directory)))
           (list root root* (string=? cur cur*) (string=? cur* cur**)))))
 
+;; rm -rf
+(define (cmd-rmrf dir)
+  ;; shorthand of normalizing pathname.  this doesn't do anything on
+  ;; unix, but on Windows the separator in PATHNAME is replaced.
+  (define (n pathname) (sys-normalize-pathname pathname))
+
+  (cond-expand
+   [gauche.os.windows
+    (sys-system #`"rmdir /q /s ,(n dir) > NUL 2>&1")
+    (sys-system #`"del /q ,(n dir) > NUL 2>&1")]
+   [else
+    (sys-system #`"rm -rf ,dir > /dev/null")]))
+
 ;; prepare test data set
-(sys-system "rm -rf test.out test2.out")
-(sys-system "mkdir test.out")
-(with-output-to-file "test.out/test1.o" (cut display (make-string 100 #\o)))
-(with-output-to-file "test.out/test2.o" (cut display (make-string 100 #\o)))
-(with-output-to-file "test.out/test3.o" (cut display (make-string 100 #\i)))
-(with-output-to-file "test.out/test4.o" (cut display (make-string 20000 #\i)))
-(with-output-to-file "test.out/test5.o" (cut display (make-string 20000 #\i)))
+(define *test-tree*
+  `(test.out
+    ((test1.o ,(make-string 100 #\o))
+     (test2.o ,(make-string 100 #\o))
+     (test3.o ,(make-string 100 #\i))
+     (test4.o ,(make-string 20000 #\i))
+     (test5.o ,(make-string 20000 #\i))
+     ,@(cond-expand
+        [gauche.sys.symlink
+         '((test6.o :symlink "test1.o")
+           (test7.o :symlink "test6.o")
+           (test2.d :symlink "test.d"))]
+        [else
+         '((test6.o "\n")
+           (test7.o "\n")
+           (test2.d :mode 777 ()))])
+     (test.d ((test10.o ,(make-string 100 #\o))
+              ,(cond-expand
+                [gauche.sys.symlink
+                 '(test11.o :symlink "../test1.o")]
+                [else
+                 '(test11.o "\n")])))
+     )))
 
-(cond-expand
- [gauche.sys.symlink
-  (sys-symlink "test1.o" "test.out/test6.o")
-  (sys-symlink "test6.o" "test.out/test7.o")
-  (sys-symlink "test.d" "test.out/test2.d")]
- [else
-  (with-output-to-file "test.out/test6.o" (cut newline))
-  (with-output-to-file "test.out/test7.o" (cut newline))
-  (sys-mkdir "test.out/test2.d" #o777)])
+(cmd-rmrf "test.out")
 
-(sys-system "mkdir test.out/test.d")
-(with-output-to-file "test.out/test.d/test10.o"
-  (cut display (make-string 100 #\o)))
+(test* "create-directory-tree" #t
+       (begin (create-directory-tree "." *test-tree*)
+              (and (file-is-directory? "test.out")
+                   (file-is-regular? "test.out/test1.o")
+                   (file-is-regular? "test.out/test2.o")
+                   (file-is-regular? "test.out/test3.o")
+                   (file-is-regular? "test.out/test4.o")
+                   (file-is-regular? "test.out/test5.o")
+                   (file-is-directory? "test.out/test.d")
+                   (file-is-regular? "test.out/test.d/test10.o"))))
 
-(cond-expand
- [gauche.sys.symlink
-  (sys-symlink "../test1.o" "test.out/test.d/test11.o")
-  (test* "file-is-symlink?" #t
-         (file-is-symlink? "test.out/test.d/test11.o"))]
- [else
-  (with-output-to-file "test.out/test.d/test11.o" (cut newline))])
+(test* "check-directory-tree" #t
+       (check-directory-tree "." *test-tree*))
+           
+;; (sys-system "rm -rf test.out test2.out")
+;; (sys-system "mkdir test.out")
+;; (with-output-to-file "test.out/test1.o" (cut display (make-string 100 #\o)))
+;; (with-output-to-file "test.out/test2.o" (cut display (make-string 100 #\o)))
+;; (with-output-to-file "test.out/test3.o" (cut display (make-string 100 #\i)))
+;; (with-output-to-file "test.out/test4.o" (cut display (make-string 20000 #\i)))
+;; (with-output-to-file "test.out/test5.o" (cut display (make-string 20000 #\i)))
+
+;; (cond-expand
+;;  [gauche.sys.symlink
+;;   (sys-symlink "test1.o" "test.out/test6.o")
+;;   (sys-symlink "test6.o" "test.out/test7.o")
+;;   (sys-symlink "test.d" "test.out/test2.d")]
+;;  [else
+;;   (with-output-to-file "test.out/test6.o" (cut newline))
+;;   (with-output-to-file "test.out/test7.o" (cut newline))
+;;   (sys-mkdir "test.out/test2.d" #o777)])
+
+;; (sys-system "mkdir test.out/test.d")
+;; (with-output-to-file "test.out/test.d/test10.o"
+;;   (cut display (make-string 100 #\o)))
+
+;; (cond-expand
+;;  [gauche.sys.symlink
+;;   (sys-symlink "../test1.o" "test.out/test.d/test11.o")
+;;   (test* "file-is-symlink?" #t
+;;          (file-is-symlink? "test.out/test.d/test11.o"))]
+;;  [else
+;;   (with-output-to-file "test.out/test.d/test11.o" (cut newline))])
 
 (test* "directory-list"
        '("." ".." "test.d" "test1.o" "test2.d" "test2.o"
@@ -207,18 +331,14 @@
                                                     files))))))
        )
 
-(test* "build-path" "" (build-path ""))
-(test* "build-path" "." (build-path "."))
-(test* "build-path" "/" (build-path "/"))
-(test* "build-path" "a/b/c" (build-path "a" "b" "c"))
-(test* "build-path" "a/b/c" (build-path "a/" "b/" "c"))
-(test* "build-path" "/a/b/c" (build-path "/" "a/b" "c"))
-(test* "build-path" "./a/b/c" (build-path "." "a/b" "c"))
-(test* "build-path" *test-error* (build-path "." "/a/b"))
-(test* "build-path" "foo" (build-path "" "foo"))
-(test* "build-path" "foo/bar" (build-path "" "foo" "" "bar"))
-(test* "build-path" "foo" (build-path "" "foo" ""))
+(cmd-rmrf "test.out")
 
+;;=====================================================================
+(test-section "file utils")
+
+(create-directory-tree "." *test-tree*)
+
+;; resolve-path should be here for it uses test.out hierarchy created above.
 (test* "resolve-path" "/" (resolve-path "/"))
 (test* "resolve-path" "." (resolve-path "."))
 (test* "resolve-path" "test.out" (resolve-path "test.out"))
@@ -236,59 +356,6 @@
          (resolve-path "test.out/test.d/../test2.d/test11.o"))
   ]
  [else])
-
-(test* "decompose-path" '("/a/b/c" "d" "e")
-       (receive r (decompose-path "/a/b/c/d.e") r))
-(test* "decompose-path" '("." "d" "e")
-       (receive r (decompose-path "d.e") r))
-(test* "decompose-path" '("." "d" "")
-       (receive r (decompose-path "d.") r))
-(test* "decompose-path" '("." "d" #f)
-       (receive r (decompose-path "d") r))
-(test* "decompose-path" '("/a.b" "c" #f)
-       (receive r (decompose-path "/a.b/c") r))
-(test* "decompose-path" '("/a.b" #f #f)
-       (receive r (decompose-path "/a.b/") r))
-(test* "decompose-path" '("/a.b" "c.c" "d")
-       (receive r (decompose-path "/a.b/c.c.d") r))
-(test* "decompose-path" '("/a.b" ".d" #f)
-       (receive r (decompose-path "/a.b/.d") r))
-
-(test* "path-extension" "c" (path-extension "/a.b/c.d/e.c"))
-(test* "path-extension" "" (path-extension "/a.b/c.d/e.c."))
-(test* "path-extension" #f (path-extension "/a.b/c.d/.e"))
-(test* "path-extension" #f (path-extension "/a.b/c.d/e"))
-
-(test* "path-sans-extension" "/a.b/c.d/e"
-       (path-sans-extension "/a.b/c.d/e.c"))
-(test* "path-sans-extension" "/a.b/c.d/e.c"
-       (path-sans-extension "/a.b/c.d/e.c."))
-(test* "path-sans-extension" "/a.b/c.d/.e"
-       (path-sans-extension "/a.b/c.d/.e"))
-(test* "path-sans-extension" "/a.b/c.d/e"
-       (path-sans-extension "/a.b/c.d/e"))
-(test* "path-sans-extension" "a" (path-sans-extension "a.c"))
-(test* "path-sans-extension" "a" (path-sans-extension "a."))
-(test* "path-sans-extension" "a" (path-sans-extension "a"))
-(test* "path-sans-extension" ".a" (path-sans-extension ".a"))
-(test* "path-sans-extension" ".a" (path-sans-extension ".a.c"))
-
-(test* "path-swap-extension" "/a.b/c.d/e.o"
-       (path-swap-extension "/a.b/c.d/e.c" "o"))
-(test* "path-swap-extension" "/a.b/c.d/e.c.o"
-       (path-swap-extension "/a.b/c.d/e.c." "o"))
-(test* "path-swap-extension" "/a.b/c.d/.e.o"
-       (path-swap-extension "/a.b/c.d/.e" "o"))
-(test* "path-swap-extension" "/a.b/c.d/e.o"
-       (path-swap-extension "/a.b/c.d/e" "o"))
-(test* "path-swap-extension" "/a.b/c.d/e"
-       (path-swap-extension "/a.b/c.d/e.c" #f))
-(test* "path-swap-extension" "a.o" (path-swap-extension "a.c" "o"))
-(test* "path-swap-extension" "a.o" (path-swap-extension "a." "o"))
-(test* "path-swap-extension" "a.o" (path-swap-extension "a" "o"))
-(test* "path-swap-extension" ".a.o" (path-swap-extension ".a" "o"))
-(test* "path-swap-extension" ".a.o" (path-swap-extension ".a.c" "o"))
-
 
 (test* "file-type" #f
        (file-type "nonexistent/file"))
