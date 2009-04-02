@@ -3,8 +3,6 @@
 #
 # Generates gauche-config.c and gauche/arch.h
 #
-# $Id: genconfig.in,v 1.16 2008-04-18 15:19:49 shirok Exp $
-#
 
 # TODO: we have almost exactly the same table in gauche-config.c part
 # (cmds[]) and config.scm part (*configurations*).  They should be

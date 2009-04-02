@@ -1,7 +1,7 @@
 ;;;
 ;;; gencomp - convert compiled code into static C data
 ;;;
-;;;   Copyright (c) 2004-2008 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2009 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
