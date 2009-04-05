@@ -33,6 +33,8 @@
 ;;;  $Id: compile.scm,v 1.62 2008-05-13 05:44:15 shirok Exp $
 ;;;
 
+(declare) ;; a dummy form to suppress generation of "sci" file
+
 (define-module gauche.internal
   (use srfi-2)
   (use util.match)

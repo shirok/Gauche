@@ -33,6 +33,8 @@
 ;;;  $Id: objlib.scm,v 1.11 2008-05-10 13:36:20 shirok Exp $
 ;;;
 
+(declare) ;; a dummy form to suppress generation of "sci" file
+
 ;; This module is not meant to be `use'd.   It is just to hide
 ;; auxiliary procedures from the rest of the system.  The necessary
 ;; bindings are injected into 'gauche' module at the initialization time.
