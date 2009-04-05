@@ -42,8 +42,6 @@
 #include <ctype.h>
 #include <fcntl.h>
 
-#define LOAD_SUFFIX ".scm"      /* default load suffix */
-
 /*
  * Load file.
  */
@@ -956,7 +954,6 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export_)
 
 int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
 {
-    ScmObj filename;
     ScmVM *vm = Scm_VM();
     ScmObj provided, providing, p, q;
     int loop = FALSE, r;
@@ -1015,8 +1012,7 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
     }
         
     if (!SCM_FALSEP(provided)) return 0; /* no work to do */
-    filename = Scm_StringAppendC(SCM_STRING(feature), ".scm", 4, 4);
-    r = Scm_Load(Scm_GetStringConst(SCM_STRING(filename)), 0, &xresult);
+    r = Scm_Load(Scm_GetStringConst(SCM_STRING(feature)), 0, &xresult);
     if (packet) packet->exception = xresult.exception;
 
     if (r < 0) {
@@ -1299,7 +1295,8 @@ void Scm__InitLoad(void)
     SCM_APPEND1(init_dynload_path, t, Scm_ArchitectureDirectory());
 
     init_load_suffixes = t = SCM_NIL;
-    SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(LOAD_SUFFIX));
+    SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(".sci"));
+    SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(".scm"));
 
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.path_mutex);
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.prov_mutex);
