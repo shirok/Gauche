@@ -51,113 +51,133 @@
   (use util.match)
   (use util.list)
   (use text.tr)
-  (export cgen-precompile
-          cgen-with-ext-module))
+  (export cgen-precompile))
 (select-module gauche.cgen.precomp)
 
 ;;================================================================
 ;; Main Entry point
 ;;
-;;  The cgen-precompile function reads a scheme file SRC, compiles it
-;;  and dumps the result as a C source.  VM instructions and Scheme
-;;  constants are generated as C static data whenever possible.  One
-;;  C function is created, which should be called to initialize the
-;;  rest of the data which should be created at runtime.
+;;  The cgen-precompile function reads a scheme file "<foo>.scm",
+;;  compiles it and dumps the result as a C source "<foo>.c".
+;;  It may also generates "<foo>.sci", an interface definition file
+;;  which contains forms like define-module, use, export, etc.
 ;;
-;;  The initialization function is named Scm_Init_xxx, where xxx is
-;;  the basename sans extension of the source Scheme file, unless
-;;  otherwise specified.   It takes no arguments, and must be called
-;;  when the extension is initialized (typically it is called from
-;;  extension's initialization routine, which is invoked when the
-;;  extension is dynamically loaded.)
+;;  A generated C file contains an initialization function, named
+;;  Scm_Init_<foo> by default.   Typically it is called by "extention
+;;  initializer", which is invoked when the DSO file is loaded by
+;;  dynamic-load.
 ;;
-;;  The initialization function itself can be an extention
-;;  initialization routine, by giving ext-initializer keyword argument.
-;;  It is convenient to make it so, when there's no auxiliary C files
-;;  in the sources of the extension.
+;;    Example1:
 ;;
-;; SRC: a Scheme source file name.
-;; OUT: a output C file name.  If #f, the name is calculate from SRC by
-;;      swapping its suffix to .c and stripping directory part.
+;;     *  An extention extention.so is built from extension.c,
+;;        foo.scm and bar.scm.
 ;;
+;;     *  extension.c must contain a funciton Scm_Init_extension(),
+;;        which is the extention initializer.  It is called from
+;;        (dynamic-load "extension")
+;;
+;;     *  By processing foo.scm and bar.scm, you'll get foo.c and
+;;        bar.c, each contain Scm_Init_foo() and Scm_Init_bar(),
+;;        respectively.
+;;
+;;     *  Scm_Init_extension() is responsible to call Scm_Init_foo()
+;;        and Scm_Init_bar().
+;;
+;;  Sometimes sources consist of Scheme files only.  In which case,
+;;  giving true value to ext-initializer keyword argument makes
+;;  the inialization function work as an extention initializer.
+;;
+;;    Example2:
+;;
+;;     * An extension extension.so is built from extention.scm.
+;;
+;;     * Processing extension.scm with :ext-initializer #t
+;;       makes generated Scm_Init_extension() work as an extention
+;;       initializer.
+;;
+;;  If there are more than one Scheme files and you want to make
+;;  one of its initializer funtion as an extention initializer,
+;;  give :sub-initializers argument to the 'main' source whose
+;;  initialization function becomes an extention initializer.
+;;
+;;    Example3:
+;;
+;;     * An extension extension.so is built from extension.scm,
+;;       foo.scm and bar.scm
+;;
+;;     * foo.c and bar.c are to be created normally.  Each has
+;;       Scm_Init_foo() and Scm_Init_bar(), respectively.
+;;
+;;     * extension.c are to be created with :ext-initializer #t
+;;       and :sub-initializers '(Scm_Init_foo Scm_Init_bar).
+;;       The generated Scm_Init_extension() works as an extension
+;;       initializer, _and_ it calls Scm_Init_foo() and Scm_Init_bar().
+;;
+
 ;; Keyword arguments:
 ;;
-;; EXT-INITIALIZER: If true, generate extra code in the initialization
-;;      routine so that it works as an extention initializer.
-;;      Default is #f.
+;; ext-initializer : See above.
+;; sub-initializers : See above.
 ;;
-;; SUB-INITIALIZERS: Give a list of C initializer names that should be
-;;      called from the initializer of this code.  Mainly intended to be
-;;      used with EXT-INITIALIZER, when multiple Scheme sources are to
-;;      be compiled into single extension file.
+;; out.c : Alternative name for C output  #f to use the default
+;;         (path-swap-extension (sys-basename src) "c").
+;; out.sci : Alternative name for SCI output.  If #f, take the default
+;;           behavior which is:
+;;           - If the source's first form is define-module, use
+;;             (path-swap-extension src "sci")
+;;           - Otherwise, do not produce SCI output.
+;;           If the source has define-module form and you don't want
+;;           to create SCI output, pass "/dev/null" to this argument.
 ;;
-;; PREDEF-SYMS: A list of strings, to insert #defines at the top of
+;; predef-syms : A list of strings, to insert #defines at the top of
 ;;      generated C source.
 ;;
-;; MACROS-TO-KEEP: List of names of private macros that should be included
+;; macros-to-keep : List of names of private macros that should be included
 ;;      in the output.  Usually private macros (macros bound to a variable
 ;;      which isn't exported) are not included in the output.  But sometimes
 ;;      hygienic public macros expands to a call of private macros, and
 ;;      gauche.cgen.precomp cannot detect such dependencies yet.
-;; 
-;;
-;; If this procedure is called in the dynamic extent of cgen-with-ext-module,
-;; several forms such as define-module, use, export, and dynamic-load are
-;; written to the "external module file".
-;;
-(define (cgen-precompile src out
-                         :key (ext-initializer #f)
+
+(define (cgen-precompile src
+                         :key (out.c #f)
+                              (out.sci #f)
+                              (ext-initializer #f)
                               (sub-initializers '())
                               (predef-syms '())
                               (macros-to-keep '()))
-  (let1 base (or out (sys-basename (path-sans-extension src)))
+  (let* ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
+         [sexprs  (file->sexp-list src)]
+         [out.sci (or out.sci
+                      (match sexprs
+                        [(('define-module . _) . _)
+                         (path-swap-extension src "sci")]
+                        [else #f]))])
+
     ;; see PARAMETERS section below
-    (parameterize ([cgen-current-unit (get-unit src base predef-syms
-                                                ext-initializer
-                                                sub-initializers)]
+    (parameterize ([cgen-current-unit (get-unit src out.c predef-syms
+                                                ext-initializer)]
                    [compile-module    (make-module #f)]
-                   [compile-file-basename base]
-                   [ext-initializer? ext-initializer]
+                   [dso-name (and ext-initializer
+                                  (sys-basename (path-sans-extension out.c)))]
                    [vm-eval-situation SCM_VM_COMPILING]
                    [private-macros-to-keep macros-to-keep])
-      ;; Set up initial environment
-      (eval '(define-macro (current-module)
-               `(find-module ',(with-module gauche.cgen.precomp
-                                 (compile-module-name))))
-            (compile-module))
-      (eval '(define-macro (inline-stub . forms)
-               (for-each (lambda (s)
-                           ((with-module gauche.cgen.stub cgen-stub-parse-form)
-                            (unwrap-syntax s)))
-                         forms)
-               (undefined))
-            (compile-module))
-      ;; Setup
-      (setup ext-initializer sub-initializers)
-      ;; Main processing
-      (with-input-from-file src
-        (lambda ()
-          (emit-toplevel-executor
-           (reverse (port-fold compile-toplevel-form '() read)))))
-      ;; Finalize
-      (finalize sub-initializers)
-      ;; Emitting
-      (cgen-emit-c (cgen-current-unit))))
-  )
+      (cond [out.sci
+             (make-directory* (sys-dirname out.sci))
+             (call-with-output-file out.sci
+               (lambda (p)
+                 (display ";; generated automatically.  DO NOT EDIT\n" p)
+                 (display "#!no-fold-case\n" p)
+                 (parameterize ([ext-module-file p])
+                   (do-it sexprs ext-initializer sub-initializers))))]
+            [else
+             (parameterize ([ext-module-file #f])
+               (do-it sexprs ext-initializer sub-initializers))]))))
 
-;; An utility function to set up external module file.
-;; EXT-MODULE-FILE-NAME is a filename or #f.
-
-(define (cgen-with-ext-module ext-module-file-name thunk)
-  (cond [ext-module-file-name
-         (make-directory* (sys-dirname ext-module-file-name))
-         (call-with-output-file ext-module-file-name
-           (lambda (p)
-             (display ";; generated automatically.  DO NOT EDIT\n" p)
-             (display "#!no-fold-case\n" p)
-             (parameterize ([ext-module-file p]) (thunk))))]
-        [else
-         (parameterize ([ext-module-file #f]) (thunk))]))
+(define (do-it sexprs ext-initializer sub-initializers)
+  (setup ext-initializer sub-initializers)
+  (emit-toplevel-executor (reverse (fold compile-toplevel-form '() sexprs)))
+  (finalize sub-initializers)
+  (cgen-emit-c (cgen-current-unit)))
 
 ;;================================================================
 ;; Parameters
@@ -171,8 +191,9 @@
 ;; runtime.
 (define compile-module-name (make-parameter #f))
 
-;; keep the basename sans extension of the compiling file.
-(define compile-file-basename (make-parameter #f))
+;; The name of the generated DSO (w/o extension), to be used for extention
+;; initialization, if ext-initializer is true.
+(define dso-name (make-parameter #f))
 
 ;; keep the list of exported bindings (or #t if export-all)
 (define compile-module-exports (make-parameter '()))
@@ -184,9 +205,6 @@
 ;; NB: we insert (dynamic-load ...) just after select-module in the ext-module
 ;; file, assuming the source file has standard layout.
 (define ext-module-file (make-parameter #f))
-
-;; Flag to indicate the initializer should be an extention initializer.
-(define ext-initializer? (make-parameter #f))
 
 ;; list of private macros that should be included in the output.
 ;; (--keep-private-macro=name,name,...)
@@ -217,17 +235,17 @@
 ;; Utilities
 ;;
 
-(define (get-unit src base predef-syms ext-init? sub-inits)
-  (define safe-name (string-tr (sys-basename base) "-+" "__"))
-  (make <cgen-stub-unit>
-    :name base :c-name-prefix safe-name
-    :preamble `(,(format "/* Generated automatically from ~a.  DO NOT EDIT */"
-                         src))
-    :pre-decl (map (lambda (s) #`"#define ,s") predef-syms)
-    :init-prologue (format "~avoid Scm_Init_~a() { ScmModule *mod;"
-                           (if ext-init? "SCM_EXTENSION_ENTRY " "")
-                           safe-name)
-    ))
+(define (get-unit src out.c predef-syms ext-init?)
+  (let* ([base (path-sans-extension (sys-basename out.c))]
+         [safe-name (string-tr base "-+" "__")])
+    (make <cgen-stub-unit>
+      :name base :c-name-prefix safe-name
+      :preamble `(,#`"/* Generated automatically from ,|src|.  DO NOT EDIT */")
+      :pre-decl (map (lambda (s) #`"#define ,s") predef-syms)
+      :init-prologue (format "~avoid Scm_Init_~a() { ScmModule *mod;"
+                             (if ext-init? "SCM_EXTENSION_ENTRY " "")
+                             safe-name)
+      )))
 
 (define (write-ext-module form)
   (cond [(ext-module-file) => (^_ (write form _) (newline _))]))
@@ -243,7 +261,20 @@
                      [safe-extname (regexp-replace-all #/\W/ extname "_")])
                 (cgen-init #`"SCM_INIT_EXTENSION(,safe-extname);")))])
   (dolist [init subinits]
-    (cgen-decl #`"extern void Scm_Init_,init(void);")))
+    (cgen-decl #`"extern void Scm_Init_,init(void);"))
+
+  ;; Set up initial environment
+  (eval '(define-macro (current-module)
+           `(find-module ',(with-module gauche.cgen.precomp
+                             (compile-module-name))))
+        (compile-module))
+  (eval '(define-macro (inline-stub . forms)
+           (for-each (lambda (s)
+                       ((with-module gauche.cgen.stub cgen-stub-parse-form)
+                        (unwrap-syntax s)))
+                     forms)
+           (undefined))
+        (compile-module)))
 
 (define (finalize subinits)
   (dolist [init subinits]
@@ -319,9 +350,8 @@
          (fold compile-toplevel-form seed body))]
       [((? =select-module?) mod)
        (write-ext-module form)
-       (when (ext-initializer?)
-         (write-ext-module
-          `(dynamic-load ,(compile-file-basename))))
+       (when (dso-name)
+         (write-ext-module `(dynamic-load ,(dso-name))))
        (let1 sym (cgen-literal mod)
          (cgen-init
           (format "  mod = Scm_FindModule(SCM_SYMBOL(~a),\

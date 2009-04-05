@@ -35,11 +35,6 @@
 ;;; This is a hack to "compile" the Scheme-written compiler into static
 ;;; C data structure, so that it can be linked into libgauche.
 ;;;
-;;; Eventually this code will grow to a generic tool to create compiled
-;;; executable from Scheme; for the time being, however, we concentrate
-;;; on making just a compiler work.  So there are quite a few assumptions
-;;; in a way the source is written.
-;;;
 
 (use gauche.parseopt)
 (use gauche.cgen.precomp)
@@ -52,39 +47,20 @@
   (let1 predef-syms '()
     (let-args (cdr args)
         ([keep-private-macro "keep-private-macro=s" ""]
-         [ext-module "ext-module=s" #f]
-         [output-base "o|output=s" #f]
+         [ext-module         "ext-module=s" #f]
+         [ext-main           "e|ext-main"]
+         [out.c              "o|output=s" #f]
          [#f "D=s" => (lambda (sym) (push! predef-syms sym))]
          . args)
+      (when (or (null? args) (not (null? (cdr args)))) (usage))
       (let1 macros-to-keep ($ map string->symbol
                               $ string-split keep-private-macro #\,)
-        (match args
-          [() (usage)]
-          [(src)
-           ($ cgen-with-ext-module ext-module
-              (cut cgen-precompile src output-base
-                   :ext-initializer ext-module
-                   :predef-syms predef-syms
-                   :macros-to-keep macros-to-keep))]
-          [(srcs ...)
-           (when output-base
-             (exit 1 "-o|-output option can be used when there's exactly one \
-                      input file."))
-           ($ cgen-with-ext-module ext-module
-              (lambda ()
-                (dolist [src srcs]
-                  (let* ([ext-init? (equal? (base-sans-ext src)
-                                            (base-sans-ext ext-module))]
-                         [subinits (if ext-init?
-                                     (delete (base-sans-ext src)
-                                             (map base-sans-ext args))
-                                     '())])
-                    (cgen-precompile src #f
-                                     :ext-initializer ext-init?
-                                     :sub-initializers subinits
-                                     :predef-syms predef-syms
-                                     :macros-to-keep macros-to-keep)))))]
-          ))))
+        (cgen-precompile (car args)
+                         :out.c out.c
+                         :out.sci ext-module
+                         :ext-initializer (or ext-module ext-main)
+                         :predef-syms predef-syms
+                         :macros-to-keep macros-to-keep))))
   0)
 
 (define (usage)
@@ -92,7 +68,9 @@
   (print "Options:")
   (print "  --keep-private-macro=NAME,NAME,...")
   (print "  --ext-module=MODULE-NAME")
-  (print "  --output=FILE.C"))
+  (print "  --ext-main")
+  (print "  --output=FILE.C")
+  (exit 0))
 
 (define (base-sans-ext path)
   (and path (path-sans-extension (sys-basename path))))
