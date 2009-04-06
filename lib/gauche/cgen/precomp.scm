@@ -327,6 +327,7 @@
 (define-global-pred =use?             use)
 (define-global-pred =export?          export)
 (define-global-pred =export-all?      export-all)
+(define-global-pred =export-if-defined? export-if-defined)
 (define-global-pred =provide?         provide)
 (define-global-pred =define-macro?    define-macro)
 (define-global-pred =define-syntax?   define-syntax)
@@ -369,6 +370,7 @@
           (lset-union eq? syms (compile-module-exports))))
        (eval `(export ,@syms) (compile-module)) seed]
       [((? =export-all?)) (compile-module-exports #t)]
+      [((? =export-if-defined?) . _) (write-ext-module form) seed]
       [((? =provide?) arg) (write-ext-module form) seed]
       ;; For the time being, we only compile the legacy macros into C file.
       ;; R5RS macros are put in ext-module file as is.

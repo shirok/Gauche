@@ -1,5 +1,10 @@
 2009-04-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/precomp: Support --strip-prefix and --strip-prefix-all options.
+	  Added short options.
+
+	* lib/gauche/cgen/precomp.scm: Recognize export-if-defined form.
+
 	* src/genconfig.in: Write to tmp file then rename.  Otherwise
 	  parallel make may grab a partially written file and fail.
 

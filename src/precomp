@@ -40,24 +40,34 @@
 (use gauche.cgen.precomp)
 (use gauche.experimental.app)
 (use srfi-1)
+(use srfi-13)
 (use file.util)
 (use util.match)
 
 (define (main args)
   (let1 predef-syms '()
     (let-args (cdr args)
-        ([keep-private-macro "keep-private-macro=s" ""]
-         [ext-module         "ext-module=s" #f]
+        ([keep-private-macro "M|keep-private-macro=s" ""]
          [ext-main           "e|ext-main"]
-         [out.c              "o|output=s" #f]
+         [xprefix            "p|strip-prefix=s"]
+         [xprefix-all        "P|strip-prefix-all"]
+         [out.sci            "i|interface=s"]
+         [out.c              "o|output=s"]
+         [ext-module         "ext-module=s" #f] ;for backward compatibility
          [#f "D=s" => (lambda (sym) (push! predef-syms sym))]
+         [else => (lambda _ (usage))]
          . args)
       (when (or (null? args) (not (null? (cdr args)))) (usage))
-      (let1 macros-to-keep ($ map string->symbol
-                              $ string-split keep-private-macro #\,)
+      (let* ([macros-to-keep ($ map string->symbol
+                                $ string-split keep-private-macro #\,)]
+             [srcfile (car args)]
+             [scibase (or out.sci ext-module (path-swap-extension (car args) "sci"))]
+             [scifile (cond [xprefix-all (sys-basename scibase)]
+                            [xprefix (strip-prefix scibase xprefix)]
+                            [else (or out.sci ext-module)])])
         (cgen-precompile (car args)
                          :out.c out.c
-                         :out.sci ext-module
+                         :out.sci scifile
                          :ext-initializer (or ext-module ext-main)
                          :predef-syms predef-syms
                          :macros-to-keep macros-to-keep))))
@@ -67,14 +77,19 @@
   (print "Usage: gosh precomp [options] <file.scm> ...")
   (print "Options:")
   (print "  --keep-private-macro=NAME,NAME,...")
-  (print "  --ext-module=MODULE-NAME")
-  (print "  --ext-main")
-  (print "  --output=FILE.C")
+  (print "  -i,--interface=FILE.SCI")
+  (print "  -e,--ext-main")
+  (print "  -o,--output=FILE.C")
+  (print "  -p,--strip-prefix=PREFIX")
+  (print "  -P,--strip-prefix-all")
   (exit 0))
 
-(define (base-sans-ext path)
-  (and path (path-sans-extension (sys-basename path))))
-         
+(define (strip-prefix path prefix)
+  (let1 pre (if (#/[\/\\]$/ prefix) prefix (string-append prefix "/"))
+    (if (string-prefix? pre path)
+      (string-drop path (string-length pre))
+      path)))
+
 ;; Local variables:
 ;; mode: scheme
 ;; end:
