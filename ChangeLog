@@ -1,5 +1,11 @@
 2009-04-06  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/precomp.scm (check-first-form-is-define-module):
+	  We can't read entire source first, since it may contain srfi-10
+	  extended reader syntax precomp is not aware of.  Instead we just
+	  read the first sexp to check define-module, then read and process
+	  forms one by one.
+
 	* ext/*: Removed dependency on ext/uvector.  Extension modules only
 	  need the uvector features built into core, so they don't need
 	  to link DSO in ext/uvector.  Now we can avoid hairy dependency

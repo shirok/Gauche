@@ -145,14 +145,10 @@
                               (sub-initializers '())
                               (predef-syms '())
                               (macros-to-keep '()))
-  (let* ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
-         [sexprs  (file->sexp-list src)]
-         [out.sci (or out.sci
-                      (match sexprs
-                        [(('define-module . _) . _)
-                         (path-swap-extension src "sci")]
-                        [else #f]))])
-
+  (let ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
+        [out.sci (or out.sci
+                     (and (check-first-form-is-define-module src)
+                          (path-swap-extension src "sci")))])
     ;; see PARAMETERS section below
     (parameterize ([cgen-current-unit (get-unit src out.c predef-syms
                                                 ext-initializer)]
@@ -168,14 +164,16 @@
                  (display ";; generated automatically.  DO NOT EDIT\n" p)
                  (display "#!no-fold-case\n" p)
                  (parameterize ([ext-module-file p])
-                   (do-it sexprs ext-initializer sub-initializers))))]
+                   (do-it src ext-initializer sub-initializers))))]
             [else
              (parameterize ([ext-module-file #f])
-               (do-it sexprs ext-initializer sub-initializers))]))))
+               (do-it src ext-initializer sub-initializers))]))))
 
-(define (do-it sexprs ext-initializer sub-initializers)
+(define (do-it src ext-initializer sub-initializers)
   (setup ext-initializer sub-initializers)
-  (emit-toplevel-executor (reverse (fold compile-toplevel-form '() sexprs)))
+  (with-input-from-file src
+    (cut emit-toplevel-executor
+         (reverse (port-fold compile-toplevel-form '() read))))
   (finalize sub-initializers)
   (cgen-emit-c (cgen-current-unit)))
 
@@ -246,6 +244,17 @@
                              (if ext-init? "SCM_EXTENSION_ENTRY " "")
                              safe-name)
       )))
+
+;; See if the first form is define-module.
+;; We don't read the entire content of the file, since it may contain
+;; srfi-10 read-time constructor that we don't know about yet.  We just
+;; read the first form here.
+(define (check-first-form-is-define-module src)
+  (with-input-from-file src
+    (lambda ()
+      (match (read)
+        [('define-module . _) #t]
+        [else #f]))))
 
 (define (write-ext-module form)
   (cond [(ext-module-file) => (^_ (write form _) (newline _))]))
