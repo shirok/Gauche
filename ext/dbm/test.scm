@@ -260,18 +260,18 @@
 ;; GDBM test
 ;;
 
-(test-if-exists "gdbm-lib" dbm.gdbm <gdbm>)
+(test-if-exists "dbm-gdbm" dbm.gdbm <gdbm>)
 
 ;;
 ;; NDBM test
 ;;
 
-(test-if-exists "ndbm-lib" dbm.ndbm <ndbm>)
+(test-if-exists "dbm-ndbm" dbm.ndbm <ndbm>)
 
 ;;
 ;; DBM test
 ;;
 
-(test-if-exists "odbm-lib" dbm.odbm <odbm>)
+(test-if-exists "dbm-odbm" dbm.odbm <odbm>)
 
 (test-end)

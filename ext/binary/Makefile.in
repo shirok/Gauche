@@ -6,26 +6,20 @@ SCM_CATEGORY = binary
 
 include ../Makefile.ext
 
-LIBFILES = binary.$(SOEXT)
+LIBFILES = binary--io.$(SOEXT)
 SCMFILES = io.scm
 
 GENERATED = Makefile
-XCLEANFILES = binarylib.c binary_head.c binary_tail.c
+XCLEANFILES = binarylib.c
 
 EXTRA_INCLUDES = -I$(srcdir)/../uvector
 
-OBJECTS = binary_head.$(OBJEXT) \
-          binary.$(OBJEXT) \
-          binarylib.$(OBJEXT) \
-          binary_tail.$(OBJEXT)
+OBJECTS = binary.$(OBJEXT) binarylib.$(OBJEXT)
 
 all : $(LIBFILES)
 
-binary.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) binary.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
-
-binary_head.c binary_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension binary
+binary--io.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) binary--io.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 binarylib.c : binarylib.stub
 

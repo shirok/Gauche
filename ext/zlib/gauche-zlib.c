@@ -562,13 +562,13 @@ ScmObj Scm_InflateSync(ScmPort *port)
  */
 extern void Scm_Init_zliblib(ScmModule*);
 
-ScmObj Scm_Init_zlib(void)
+ScmObj Scm_Init_rfc__zlib(void)
 {
     ScmModule *mod;
     ScmClass *cond_meta;
 
     /* Register this DSO to Gauche */
-    SCM_INIT_EXTENSION(zlib);
+    SCM_INIT_EXTENSION(rfc__zlib);
 
     /* Create the module if it doesn't exist yet. */
     mod = SCM_MODULE(SCM_FIND_MODULE("rfc.zlib", TRUE));

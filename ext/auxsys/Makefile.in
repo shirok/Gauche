@@ -6,21 +6,18 @@ SCM_CATEGORY = gauche
 
 include ../Makefile.ext
 
-LIBFILES = auxsys.$(SOEXT)
+LIBFILES = gauche--auxsys.$(SOEXT)
 SCMFILES = auxsys.scm
 
 GENERATED = Makefile auxsysconf.h
 XCLEANFILES = auxsyslib.c auxsys_head.c auxsys_tail.c
 
-OBJECTS = auxsys_head.$(OBJEXT) auxsys.$(OBJEXT) auxsyslib.$(OBJEXT) auxsys_tail.$(OBJEXT)
+OBJECTS = auxsys.$(OBJEXT) auxsyslib.$(OBJEXT)
 
 all : $(LIBFILES)
 
-auxsys.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) auxsys.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
-
-auxsys_head.c auxsys_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension auxsys
+gauche--auxsys.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) gauche--auxsys.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 auxsyslib.c : auxsyslib.stub
 

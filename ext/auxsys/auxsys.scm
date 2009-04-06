@@ -47,7 +47,7 @@
   )
 (select-module gauche.auxsys)
 
-(dynamic-load "auxsys")
+(dynamic-load "gauche--auxsys")
 
 ;; define alternatives if the platform doesn't support...
 

@@ -6,35 +6,30 @@ include ../Makefile.ext
 
 SCM_CATEGORY = gauche
 
-LIBFILES = libnet.$(SOEXT)
+LIBFILES = gauche--net.$(SOEXT)
 SCMFILES = net.scm
 HDRFILES = gauche/net.h
 
-OBJECTS = net_head.$(OBJEXT) \
-          net.$(OBJEXT)      \
+OBJECTS = net.$(OBJEXT)      \
           addr.$(OBJEXT)     \
           netdb.$(OBJEXT)    \
           netlib.$(OBJEXT)   \
-          netaux.$(OBJEXT)   \
-          net_tail.$(OBJEXT)
+          netaux.$(OBJEXT)
 
 GENERATED = Makefile 
-XCLEANFILES = netlib.c netaux.c net_head.c net_tail.c
+XCLEANFILES = netlib.c netaux.c
 
 EXTRA_INCLUDES = -I$(srcdir)/../uvector
 
 all : $(LIBFILES)
 
-libnet.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) libnet.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+gauche--net.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) gauche--net.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 netlib.c : netlib.stub
 
 netaux.c : netaux.scm
 	$(PRECOMP) netaux.scm
-
-net_head.c net_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension net
 
 install : install-std
 

@@ -3,7 +3,7 @@ top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
 GENERATED = Makefile charconv.h eucj2ucs.c ucs2eucj.c guess_tab.c
-XCLEANFILES = convaux.c charconv_head.c charconv_tail.c 
+XCLEANFILES = convaux.c
 PRE_PACKAGE_FILES = eucj2ucs.c guess_tab.c pre-package-data
 
 include ../Makefile.ext
@@ -14,23 +14,18 @@ XLIBS     = @ICONV_LIB@
 
 SCM_CATEGORY = gauche
 
-LIBFILES = libcharconv.$(SOEXT)
+LIBFILES = gauche--charconv.$(SOEXT)
 SCMFILES = charconv.scm
 
-OBJECTS = charconv_head.$(OBJEXT) \
-          charconv.$(OBJEXT)      \
+OBJECTS = charconv.$(OBJEXT)      \
           convaux.$(OBJEXT)       \
           jconv.$(OBJEXT)         \
-          guess.$(OBJEXT)         \
-          charconv_tail.$(OBJEXT)
+          guess.$(OBJEXT)
 
 all : $(LIBFILES)
 
-libcharconv.$(SOEXT) : $(OBJECTS)
-	$(MODLINK) libcharconv.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
-
-charconv_head.c charconv_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension charconv
+gauche--charconv.$(SOEXT) : $(OBJECTS)
+	$(MODLINK) gauche--charconv.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 convaux.c : convaux.scm
 	$(PRECOMP) convaux.scm

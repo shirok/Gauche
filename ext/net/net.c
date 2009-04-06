@@ -589,11 +589,11 @@ extern void Scm_Init_netaux(void);
 
 
 
-SCM_EXTENSION_ENTRY void Scm_Init_libnet(void)
+SCM_EXTENSION_ENTRY void Scm_Init_gauche__net(void)
 {
     ScmModule *mod;
 
-    SCM_INIT_EXTENSION(net);
+    SCM_INIT_EXTENSION(gauche__net);
     mod = SCM_FIND_MODULE("gauche.net", SCM_FIND_MODULE_CREATE);
 #ifdef HAVE_IPV6
     Scm_AddFeature("gauche.net.ipv6", NULL);

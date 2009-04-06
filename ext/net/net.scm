@@ -64,7 +64,7 @@
   
 (select-module gauche.net)
 
-(dynamic-load "libnet")
+(dynamic-load "gauche--net")
 
 (export-if-defined
  IPPROTO_IP IPPROTO_ICMP IPPROTO_TCP

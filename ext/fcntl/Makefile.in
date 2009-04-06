@@ -6,23 +6,20 @@ include ../Makefile.ext
 
 SCM_CATEGORY = gauche
 
-LIBFILES = fcntl.$(SOEXT)
+LIBFILES = gauche--fcntl.$(SOEXT)
 SCMFILES = fcntl.scm
 
-OBJECTS = fcntl_head.$(OBJEXT) fcntl.$(OBJEXT) fcntlib.$(OBJEXT) fcntl_tail.$(OBJEXT)
+OBJECTS = fcntl.$(OBJEXT) fcntlib.$(OBJEXT)
 
 GENERATED = Makefile
-XCLEANFILES = fcntlib.c fcntl_head.c fcntl_tail.c
+XCLEANFILES = fcntlib.c
 
 all : $(LIBFILES)
 
-fcntl.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) fcntl.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+gauche--fcntl.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) gauche--fcntl.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 fcntlib.c : fcntlib.stub
-
-fcntl_head.c fcntl_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension fcntl
 
 install : install-std
 

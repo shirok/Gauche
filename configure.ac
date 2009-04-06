@@ -741,7 +741,7 @@ dnl ===========================================================
 dnl Show some of the configuration results, for developer's
 dnl convenience.
 
-OPTDBMS=`echo "$DBM_SCMFILES" | sed s/\.scm//g`
+[OPTDBMS=`echo "$DBM_SCMFILES" | sed 's/\.sci//g'`]
 if test "$ac_cv_use_zlib" = yes; then OPTZLIB=" zlib"; else OPTZLIB=" "; fi
 
 AC_MSG_RESULT(

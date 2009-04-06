@@ -656,10 +656,10 @@ void Scm_PutBinaryF64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
  */
 extern void Scm_Init_binarylib(ScmModule *mod);
 
-SCM_EXTENSION_ENTRY void Scm_Init_binary(void)
+SCM_EXTENSION_ENTRY void Scm_Init_binary__io(void)
 {
     ScmModule *mod_io = SCM_FIND_MODULE("binary.io", SCM_FIND_MODULE_CREATE);
-    SCM_INIT_EXTENSION(binary);
+    SCM_INIT_EXTENSION(binary__io);
     Scm_DefinePrimitiveParameter(mod_io, "default-endian",
                                  SCM_OBJ(DEFAULT_ENDIAN_SYMBOL),
                                  &default_endian);

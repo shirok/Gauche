@@ -10,50 +10,41 @@ LIBFILES = @DBM_ARCHFILES@
 SCMFILES = @DBM_SCMFILES@
 
 GENERATED = Makefile dbmconf.h
-XCLEANFILES = gdbm-lib.c gdbm.scm \
-              ndbm-lib.c ndbm.scm \
-              odbm-lib.c odbm.scm \
-              ndbm-makedb ndbm-suffixes.h *_head.c *_tail.c
+XCLEANFILES = dbm--gdbm.c gdbm.sci \
+              dbm--ndbm.c ndbm.sci \
+              dbm--odbm.c odbm.sci \
+              ndbm-makedb ndbm-suffixes.h
 
 all : $(LIBFILES)
 
-gdbm_OBJECTS   = gdbm_head.$(OBJEXT) gdbm-lib.$(OBJEXT) gdbm_tail.$(OBJEXT)
+gdbm_OBJECTS   = dbm--gdbm.$(OBJEXT)
 
-gdbm-lib.$(SOEXT) : $(gdbm_OBJECTS)
-	$(MODLINK) gdbm-lib.$(SOEXT) $(gdbm_OBJECTS) $(EXT_LIBGAUCHE) @GDBMLIB@ $(LIBS)
+dbm--gdbm.$(SOEXT) : $(gdbm_OBJECTS)
+	$(MODLINK) dbm--gdbm.$(SOEXT) $(gdbm_OBJECTS) $(EXT_LIBGAUCHE) @GDBMLIB@ $(LIBS)
 
-gdbm.scm gdbm-lib.c : gdbm-lib.scm
-	$(PRECOMP) --ext-module=gdbm.scm gdbm-lib.scm
+gdbm.sci dbm--gdbm.c : gdbm.scm
+	$(PRECOMP) -e -o dbm--gdbm gdbm.scm
 
-ndbm_OBJECTS   = ndbm_head.$(OBJEXT) ndbm-lib.$(OBJEXT) ndbm_tail.$(OBJEXT)
+ndbm_OBJECTS   = dbm--ndbm.$(OBJEXT)
 
-ndbm-lib.$(SOEXT) : $(ndbm_OBJECTS)
-	$(MODLINK) ndbm-lib.$(SOEXT) $(ndbm_OBJECTS) $(EXT_LIBGAUCHE) @NDBMLIB@ $(LIBS)
+dbm--ndbm.$(SOEXT) : $(ndbm_OBJECTS)
+	$(MODLINK) dbm--ndbm.$(SOEXT) $(ndbm_OBJECTS) $(EXT_LIBGAUCHE) @NDBMLIB@ $(LIBS)
 
-ndbm.scm ndbm-lib.c : ndbm-lib.scm
-	$(PRECOMP) --ext-module=ndbm.scm ndbm-lib.scm
+ndbm.sci dbm--ndbm.c : ndbm.scm
+	$(PRECOMP) -e -o dbm--ndbm ndbm.scm
 
-ndbm-lib.$(OBJEXT): ndbm-lib.c ndbm-suffixes.h
+dbm--ndbm.$(OBJEXT): dbm--ndbm.c ndbm-suffixes.h
 
-odbm_OBJECTS   = odbm_head.$(OBJEXT) odbm-lib.$(OBJEXT) odbm_tail.$(OBJEXT)
+odbm_OBJECTS   = dbm--odbm.$(OBJEXT)
 
-odbm-lib.$(SOEXT) : $(odbm_OBJECTS)
-	$(MODLINK) odbm-lib.$(SOEXT) $(odbm_OBJECTS) $(EXT_LIBGAUCHE) @ODBMLIB@ $(LIBS)
+dbm--odbm.$(SOEXT) : $(odbm_OBJECTS)
+	$(MODLINK) dbm--odbm.$(SOEXT) $(odbm_OBJECTS) $(EXT_LIBGAUCHE) @ODBMLIB@ $(LIBS)
 
-odbm.scm odbm-lib.c : odbm-lib.scm
-	$(PRECOMP) --ext-module=odbm.scm odbm-lib.scm
+odbm.sci dbm--odbm.c : odbm.scm
+	$(PRECOMP) -e -o dbm--odbm odbm.scm
 
-gdbm_head.c gdbm_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension gdbm
 
-ndbm_head.c ndbm_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension ndbm
-
-odbm_head.c odbm_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension odbm
-
-# auxiliary stuff.
-# a bit tricky,
+# auxiliary stuff to find out the extension of ndbm file(s).
 ndbm-makedb : ndbm-makedb.c
 	$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) -o ndbm-makedb \
 	  ndbm-makedb.c $(LOCAL_LFLAGS) $(XLDFLAGS) @NDBMLIB@ $(LIBS)

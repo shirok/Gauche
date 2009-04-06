@@ -51,6 +51,6 @@
           ))
 (select-module gauche.charconv)
 
-(dynamic-load "libcharconv")
+(dynamic-load "gauche--charconv")
 
 (provide "gauche/charconv")

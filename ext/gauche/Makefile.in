@@ -2,18 +2,18 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
-SCM_CATEGORY =
+SCM_CATEGORY = gauche
 
 include ../Makefile.ext
 
-LIBFILES = gauche-collection-lib.$(SOEXT) \
-           gauche-sequence-lib.$(SOEXT)   \
-           gauche-parameter-lib.$(SOEXT)  \
-           gauche-hook-lib.$(SOEXT)
-SCMFILES = gauche/collection.scm \
-           gauche/sequence.scm   \
-           gauche/parameter.scm  \
-           gauche/hook.scm
+LIBFILES = gauche--collection.$(SOEXT) \
+           gauche--sequence.$(SOEXT)   \
+           gauche--parameter.$(SOEXT)  \
+           gauche--hook.$(SOEXT)
+SCMFILES = collection.sci \
+           sequence.sci   \
+           parameter.sci  \
+           hook.sci
 
 GENERATED = Makefile
 XCLEANFILES = *.c $(SCMFILES)
@@ -21,62 +21,42 @@ XCLEANFILES = *.c $(SCMFILES)
 all : $(LIBFILES)
 
 # gauche.collection
-gauche-collection_OBJECTS = gauche-collection_head.$(OBJEXT) \
-                            gauche-collection-lib.$(OBJEXT)  \
-                            gauche-collection_tail.$(OBJEXT)
+gauche-collection_OBJECTS = gauche--collection.$(OBJEXT)
 
-gauche-collection-lib.$(SOEXT) : $(gauche-collection_OBJECTS) 
-	$(MODLINK) gauche-collection-lib.$(SOEXT) $(gauche-collection_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+gauche--collection.$(SOEXT) : $(gauche-collection_OBJECTS) 
+	$(MODLINK) gauche--collection.$(SOEXT) $(gauche-collection_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-gauche-collection_head.c gauche-collection_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension gauche-collection
-
-gauche-collection-lib.c gauche/collection.scm : $(top_srcdir)/libsrc/gauche/collection.scm
-	$(PRECOMP) --ext-module gauche/collection.scm -o gauche-collection-lib $(top_srcdir)/libsrc/gauche/collection.scm
+gauche--collection.c collection.sci : $(top_srcdir)/libsrc/gauche/collection.scm
+	$(PRECOMP) -e -P -o gauche--collection $(top_srcdir)/libsrc/gauche/collection.scm
 
 
 # gauche.sequence
-gauche-sequence_OBJECTS = gauche-sequence_head.$(OBJEXT) \
-                          gauche-sequence-lib.$(OBJEXT)  \
-                          gauche-sequence_tail.$(OBJEXT)
+gauche-sequence_OBJECTS = gauche--sequence.$(OBJEXT)
 
-gauche-sequence-lib.$(SOEXT) : $(gauche-sequence_OBJECTS) 
-	$(MODLINK) gauche-sequence-lib.$(SOEXT) $(gauche-sequence_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+gauche--sequence.$(SOEXT) : $(gauche-sequence_OBJECTS) 
+	$(MODLINK) gauche--sequence.$(SOEXT) $(gauche-sequence_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-gauche-sequence_head.c gauche-sequence_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension gauche-sequence
-
-gauche-sequence-lib.c gauche/sequence.scm : $(top_srcdir)/libsrc/gauche/sequence.scm
-	$(PRECOMP) --ext-module gauche/sequence.scm -o gauche-sequence-lib $(top_srcdir)/libsrc/gauche/sequence.scm
+gauche--sequence.c sequence.sci : $(top_srcdir)/libsrc/gauche/sequence.scm
+	$(PRECOMP) -e -P -o gauche--sequence $(top_srcdir)/libsrc/gauche/sequence.scm
 
 
 # gauche.parameter
-gauche-parameter_OBJECTS = gauche-parameter_head.$(OBJEXT) \
-                           gauche-parameter-lib.$(OBJEXT)  \
-                           gauche-parameter_tail.$(OBJEXT)
+gauche-parameter_OBJECTS = gauche--parameter.$(OBJEXT)
 
-gauche-parameter-lib.$(SOEXT) : $(gauche-parameter_OBJECTS) 
-	$(MODLINK) gauche-parameter-lib.$(SOEXT) $(gauche-parameter_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+gauche--parameter.$(SOEXT) : $(gauche-parameter_OBJECTS) 
+	$(MODLINK) gauche--parameter.$(SOEXT) $(gauche-parameter_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-gauche-parameter_head.c gauche-parameter_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension gauche-parameter
-
-gauche-parameter-lib.c gauche/parameter.scm : $(top_srcdir)/libsrc/gauche/parameter.scm
-	$(PRECOMP) --keep-private-macro=%parameterize --ext-module gauche/parameter.scm -o gauche-parameter-lib $(top_srcdir)/libsrc/gauche/parameter.scm
+gauche--parameter.c parameter.sci : $(top_srcdir)/libsrc/gauche/parameter.scm
+	$(PRECOMP) -M=%parameterize -e -P -o gauche--parameter $(top_srcdir)/libsrc/gauche/parameter.scm
 
 # gauche.hook
-gauche-hook_OBJECTS = gauche-hook_head.$(OBJEXT) \
-                      gauche-hook-lib.$(OBJEXT)  \
-                      gauche-hook_tail.$(OBJEXT)
+gauche-hook_OBJECTS = gauche--hook.$(OBJEXT)
 
-gauche-hook-lib.$(SOEXT) : $(gauche-hook_OBJECTS) 
-	$(MODLINK) gauche-hook-lib.$(SOEXT) $(gauche-hook_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+gauche--hook.$(SOEXT) : $(gauche-hook_OBJECTS) 
+	$(MODLINK) gauche--hook.$(SOEXT) $(gauche-hook_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-gauche-hook_head.c gauche-hook_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension gauche-hook
-
-gauche-hook-lib.c gauche/hook.scm : $(top_srcdir)/libsrc/gauche/hook.scm
-	$(PRECOMP) --ext-module gauche/hook.scm -o gauche-hook-lib $(top_srcdir)/libsrc/gauche/hook.scm
+gauche--hook.c hook.sci : $(top_srcdir)/libsrc/gauche/hook.scm
+	$(PRECOMP) -e -P -o gauche--hook $(top_srcdir)/libsrc/gauche/hook.scm
 
 
 install : install-std

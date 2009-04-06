@@ -37,10 +37,9 @@
   (use gauche.uvector)
   (export-all)
   )
-
 (select-module gauche.termios)
 
-(dynamic-load "termios")
+(dynamic-load "gauche--termios")
 
 
 (provide "gauche/termios")

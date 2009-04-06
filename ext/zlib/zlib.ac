@@ -67,7 +67,7 @@ fi
 
 if test "$ac_cv_use_zlib" = yes; then
   AC_DEFINE(USE_ZLIB)
-  ZLIB_ARCHFILES=zlib.$SHLIB_SO_SUFFIX
+  ZLIB_ARCHFILES=rfc--zlib.$SHLIB_SO_SUFFIX
   AC_SUBST(ZLIB_ARCHFILES)
   ZLIB_SCMFILES=zlib.scm
   AC_SUBST(ZLIB_SCMFILES)

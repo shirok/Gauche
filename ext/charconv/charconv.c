@@ -607,10 +607,10 @@ static int chartoucs(ScmChar ch)
 extern void Scm_Init_convaux(void);
 extern void Scm_Init_convguess(void);
 
-SCM_EXTENSION_ENTRY void Scm_Init_libcharconv(void)
+SCM_EXTENSION_ENTRY void Scm_Init_gauche__charconv(void)
 {
     ScmModule *mod;
-    SCM_INIT_EXTENSION(charconv);
+    SCM_INIT_EXTENSION(gauche__charconv);
     mod = SCM_FIND_MODULE("gauche.charconv", SCM_FIND_MODULE_CREATE);
     guess.procs = NULL;
     (void)SCM_INTERNAL_MUTEX_INIT(guess.mutex);

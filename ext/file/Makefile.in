@@ -2,30 +2,25 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
-SCM_CATEGORY =
+SCM_CATEGORY = file
 
 include ../Makefile.ext
 
-LIBFILES = file-util-lib.$(SOEXT)
-SCMFILES = file/util.scm
+LIBFILES = file--util.$(SOEXT)
+SCMFILES = util.sci
 
 GENERATED = Makefile
-XCLEANFILES = *.c file/util.scm
+XCLEANFILES = *.c util.sci
 
-file-util_OBJECTS = file-util_head.$(OBJEXT) \
-                    file-util-lib.$(OBJEXT)  \
-                    file-util_tail.$(OBJEXT)
+file-util_OBJECTS = file--util.$(OBJEXT)
 
 all : $(LIBFILES)
 
-file-util-lib.$(SOEXT) : $(file-util_OBJECTS) 
-	$(MODLINK) file-util-lib.$(SOEXT) $(file-util_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+file--util.$(SOEXT) : $(file-util_OBJECTS) 
+	$(MODLINK) file--util.$(SOEXT) $(file-util_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-file-util_head.c file-util_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension file-util
-
-file-util-lib.c file/util.scm : $(top_srcdir)/libsrc/file/util.scm
-	$(PRECOMP) --ext-module file/util.scm -o file-util-lib $(top_srcdir)/libsrc/file/util.scm
+file--util.c util.sci : $(top_srcdir)/libsrc/file/util.scm
+	$(PRECOMP) -e -P -o file--util $(top_srcdir)/libsrc/file/util.scm
 
 install : install-std
 

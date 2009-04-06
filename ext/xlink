@@ -47,7 +47,8 @@
     (unless (or *link* *unlink*) (usage))
     (for-each (lambda (file)
                 (let ((path   (build-path (sys-getcwd) file))
-                      (target (if (string-suffix? ".scm" file)
+                      (target (if (or (string-suffix? ".scm" file)
+                                      (string-suffix? ".sci" file))
                                 (build-path *srcdir* "lib" *group* file)
                                 (build-path *builddir* "src" file))))
                   (if *unlink*

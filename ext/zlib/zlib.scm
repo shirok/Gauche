@@ -60,7 +60,7 @@
           ))
 (select-module rfc.zlib)
 
-(dynamic-load "zlib")
+(dynamic-load "rfc--zlib")
 
 ;; body
 (define (open-deflating-port source :key

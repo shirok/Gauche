@@ -48,7 +48,7 @@
   )
 (select-module math.mt-random)
 
-(dynamic-load "mt-random" :export-symbols #t)
+(dynamic-load "math--mt-random")
 
 (define (%get-nword-random-int mt n)
   (let loop ((i 0) (r (%mt-random-uint32 mt)))

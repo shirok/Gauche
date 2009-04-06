@@ -13,24 +13,21 @@ SCM_CATEGORY = rfc
 LIBFILES = @ZLIB_ARCHFILES@
 SCMFILES = @ZLIB_SCMFILES@
 
-OBJECTS = zlib_head.$(OBJEXT) gauche-zlib.$(OBJEXT) zliblib.$(OBJEXT) zlib_tail.$(OBJEXT)
+OBJECTS = gauche-zlib.$(OBJEXT) zliblib.$(OBJEXT)
 
 GENERATED = Makefile
-XCLEANFILES = zliblib.c zlib_head.c zlib_tail.c
+XCLEANFILES = zliblib.c
 
 EXTRA_INCLUDES = -I$(srcdir)/../uvector
 
 all : $(LIBFILES)
 
-zlib.$(SOEXT) : $(OBJECTS)
-	$(MODLINK) zlib.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+rfc--zlib.$(SOEXT) : $(OBJECTS)
+	$(MODLINK) rfc--zlib.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 $(OBJECTS) : gauche-zlib.h
 
 zliblib.c : zliblib.stub
-
-zlib_head.c zlib_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension zlib
 
 install : install-std
 

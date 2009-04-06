@@ -49,7 +49,7 @@
 
 (select-module gauche.fcntl)
 
-(dynamic-load "fcntl" :export-symbols #t)
+(dynamic-load "gauche--fcntl")
 
 (export-if-defined
  F_GETOWN F_SETOWN F_GETSIG F_SETSIG

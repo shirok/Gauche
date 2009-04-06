@@ -203,11 +203,11 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
 
 extern void Scm_Init_fcntlib(ScmModule *mod);
 
-SCM_EXTENSION_ENTRY void Scm_Init_fcntl(void)
+SCM_EXTENSION_ENTRY void Scm_Init_gauche__fcntl(void)
 {
     ScmModule *mod;
 
-    SCM_INIT_EXTENSION(fcntl);
+    SCM_INIT_EXTENSION(gauche__fcntl);
     mod = SCM_FIND_MODULE("gauche.fcntl", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClass(&Scm_SysFlockClass, "<sys-flock>",
                         mod, flock_slots, 0);

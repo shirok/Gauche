@@ -2,100 +2,81 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
+SCM_CATEGORY = sxml
+
 include ../Makefile.ext
 
-SCMCOMPILE = $(GOSH) -I. $(top_srcdir)/src/precomp
+SCMCOMPILE = $(GOSH) -I. -ladaptor -E "import sxml.adaptor" $(top_srcdir)/src/precomp
 SCMTRANS   = $(GOSH) ./trans.scm
 
-GENERATED_TARGET = sxml/tree-trans.scm sxml/to-html.scm \
-                   sxml/ssax.scm sxml/tools.scm sxml/sxpath.scm \
-	           sxml/serializer.scm
-GENERATED_FILES = sxml-ssax.c sxml-ssax.scm \
-                  sxml-sxpath.c sxml-sxpath.scm \
-                  sxml-tools.c sxml-tools.scm \
-	          sxml-serializer.c sxml-serializer.scm
+GENERATED_TARGET = tree-trans.scm to-html.scm \
+                   ssax.sci tools.sci sxpath.sci \
+	           serializer.sci
+GENERATED_FILES = sxml--ssax.c sxml-ssax.scm \
+                  sxml--sxpath.c sxml-sxpath.scm \
+                  sxml--tools.c sxml-tools.scm \
+	          sxml--serializer.c sxml-serializer.scm
 GENERATED_TEST = ssax-test.scm tree-trans-test.scm to-html-test.scm
-XCLEANFILES = $(GENERATED_TARGET) $(GENERATED_TEST) $(GENERATED_FILES) \
-              *_head.c *_tail.c
+XCLEANFILES = $(GENERATED_TARGET) $(GENERATED_TEST) $(GENERATED_FILES)
 GENERATED = Makefile
 
-LIBFILES = sxml-ssax.$(SOEXT) sxml-sxpath.$(SOEXT) sxml-tools.$(SOEXT) \
-	   sxml-serializer.$(SOEXT)
-SCMFILES = sxml/adaptor.scm sxml/ssax.scm sxml/sxpath.scm sxml/tools.scm \
-           sxml/tree-trans.scm sxml/to-html.scm sxml/serializer.scm
+LIBFILES = sxml--ssax.$(SOEXT) sxml--sxpath.$(SOEXT) sxml--tools.$(SOEXT) \
+	   sxml--serializer.$(SOEXT)
+SCMFILES = adaptor.scm ssax.sci sxpath.sci tools.sci \
+           tree-trans.scm to-html.scm serializer.sci
 
 all : $(LIBFILES) $(GENERATED_TARGET)
 
 ### sxml-ssax
 
-ssax_OBJECTS = sxml-ssax_head.$(OBJEXT) \
-               sxml-ssax.$(OBJEXT)      \
-               sxml-ssax_tail.$(OBJEXT)
+ssax_OBJECTS = sxml--ssax.$(OBJEXT)
 
-sxml-ssax.$(SOEXT) : $(ssax_OBJECTS)
-	$(MODLINK) sxml-ssax.$(SOEXT) $(ssax_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+sxml--ssax.$(SOEXT) : $(ssax_OBJECTS)
+	$(MODLINK) sxml--ssax.$(SOEXT) $(ssax_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-sxml-ssax.c sxml/ssax.scm : sxml-ssax.scm.in src/SSAX.scm 
-	$(SCMTRANS) sxml-ssax.scm.in
-	$(SCMCOMPILE) --ext-module sxml/ssax.scm sxml-ssax.scm
-
-sxml-ssax_head.c sxml-ssax_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension sxml-ssax sxml_ssax
+sxml--ssax.c ssax.sci : sxml-ssax.scm.in src/SSAX.scm 
+	$(SCMTRANS) $(srcdir)/sxml-ssax.scm.in
+	$(SCMCOMPILE) -e -i ssax.sci -o sxml--ssax sxml-ssax.scm
 
 ### sxml-sxpath
 
-sxpath_OBJECTS = sxml-sxpath_head.$(OBJEXT) \
-                 sxml-sxpath.$(OBJEXT)      \
-                 sxml-sxpath_tail.$(OBJEXT)
+sxpath_OBJECTS = sxml--sxpath.$(OBJEXT)
 
-sxml-sxpath.$(SOEXT) : $(sxpath_OBJECTS)
-	$(MODLINK) sxml-sxpath.$(SOEXT) $(sxpath_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+sxml--sxpath.$(SOEXT) : $(sxpath_OBJECTS)
+	$(MODLINK) sxml--sxpath.$(SOEXT) $(sxpath_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-sxml-sxpath.c sxml/sxpath.scm : sxml-sxpath.scm.in src/sxpath.scm src/sxpathlib.scm src/sxpath-ext.scm sxml/tools.scm
-	$(SCMTRANS) sxml-sxpath.scm.in
-	$(SCMCOMPILE) --ext-module sxml/sxpath.scm sxml-sxpath.scm
-
-sxml-sxpath_head.c sxml-sxpath_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension sxml-sxpath sxml_sxpath
+sxml--sxpath.c sxpath.sci : sxml-sxpath.scm.in src/sxpath.scm src/sxpathlib.scm src/sxpath-ext.scm tools.sci
+	$(SCMTRANS) $(srcdir)/sxml-sxpath.scm.in
+	$(SCMCOMPILE) -e -i sxpath.sci -o sxml--sxpath sxml-sxpath.scm
 
 ### sxml-tools
 
-tools_OBJECTS = sxml-tools_head.$(OBJEXT) \
-                sxml-tools.$(OBJEXT)      \
-                sxml-tools_tail.$(OBJEXT)
+tools_OBJECTS = sxml--tools.$(OBJEXT)
 
-sxml-tools.$(SOEXT) : $(tools_OBJECTS)
-	$(MODLINK) sxml-tools.$(SOEXT) $(tools_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+sxml--tools.$(SOEXT) : $(tools_OBJECTS)
+	$(MODLINK) sxml--tools.$(SOEXT) $(tools_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-sxml-tools.c sxml/tools.scm : sxml-tools.scm.in src/sxml-tools.scm
-	$(SCMTRANS) sxml-tools.scm.in
-	$(SCMCOMPILE) --ext-module sxml/tools.scm sxml-tools.scm
-
-sxml-tools_head.c sxml-tools_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension sxml-tools sxml_tools
+sxml--tools.c tools.sci : sxml-tools.scm.in src/sxml-tools.scm
+	$(SCMTRANS) $(srcdir)/sxml-tools.scm.in
+	$(SCMCOMPILE) -e -i tools.sci -o sxml--tools sxml-tools.scm
 
 ### sxml-serializer
 
-serializer_OBJECTS = sxml-serializer_head.$(OBJEXT) \
-                     sxml-serializer.$(OBJEXT)      \
-                     sxml-serializer_tail.$(OBJEXT)
+serializer_OBJECTS = sxml--serializer.$(OBJEXT)
 
-sxml-serializer.$(SOEXT) : $(serializer_OBJECTS)
-	$(MODLINK) sxml-serializer.$(SOEXT) $(serializer_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+sxml--serializer.$(SOEXT) : $(serializer_OBJECTS)
+	$(MODLINK) sxml--serializer.$(SOEXT) $(serializer_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-sxml-serializer.c sxml/serializer.scm : sxml-serializer.scm.in src/serializer.scm
-	$(SCMTRANS) sxml-serializer.scm.in
-	$(SCMCOMPILE) --ext-module sxml/serializer.scm sxml-serializer.scm
-
-sxml-serializer_head.c sxml-serializer_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension sxml-serializer sxml_serializer
+sxml--serializer.c serializer.sci : sxml-serializer.scm.in src/serializer.scm
+	$(SCMTRANS) $(srcdir)/sxml-serializer.scm.in
+	$(SCMCOMPILE) -e -i serializer.sci -o sxml--serializer sxml-serializer.scm
 
 ### miscellaneous
-sxml/tree-trans.scm : src/SXML-tree-trans.scm
-	$(GOSH) ./trans.scm sxml/tree-trans.scm.in
+tree-trans.scm : src/SXML-tree-trans.scm tree-trans.scm.in
+	$(GOSH) ./trans.scm tree-trans.scm.in
 
-sxml/to-html.scm : src/SXML-to-HTML.scm
-	$(GOSH) ./trans.scm sxml/to-html.scm.in
+to-html.scm : src/SXML-to-HTML.scm to-html.scm.in
+	$(GOSH) ./trans.scm to-html.scm.in
 
 ### tests
 ssax-test.scm: ssax-test.scm.in

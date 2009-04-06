@@ -283,10 +283,10 @@ ScmObj Scm_ThreadTerminate(ScmVM *target)
 extern void Scm_Init_mutex(ScmModule*);
 extern void Scm_Init_thrlib(ScmModule*);
 
-SCM_EXTENSION_ENTRY void Scm_Init_threads(void)
+SCM_EXTENSION_ENTRY void Scm_Init_gauche__threads(void)
 {
     ScmModule *mod = SCM_FIND_MODULE("gauche.threads", SCM_FIND_MODULE_CREATE);
-    SCM_INIT_EXTENSION(threads);
+    SCM_INIT_EXTENSION(gauche__threads);
 #ifdef GAUCHE_USE_PTHREADS
     sigfillset(&threadrec.defaultSigmask);
 #endif /*GAUCHE_USE_PTHREADS*/

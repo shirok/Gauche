@@ -6,23 +6,20 @@ include ../Makefile.ext
 
 SCM_CATEGORY = gauche
 
-LIBFILES = threads.$(SOEXT)
+LIBFILES = gauche--threads.$(SOEXT)
 SCMFILES = threads.scm
 
-OBJECTS = threads_head.$(OBJEXT) threads.$(OBJEXT) mutex.$(OBJEXT) thrlib.$(OBJEXT) threads_tail.$(OBJEXT)
+OBJECTS = threads.$(OBJEXT) mutex.$(OBJEXT) thrlib.$(OBJEXT)
 
 GENERATED = Makefile 
-XCLEANFILES = thrlib.c threads_head.c threads_tail.c
+XCLEANFILES = thrlib.c
 
 all : $(LIBFILES)
 
-threads.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) threads.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+gauche--threads.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) gauche--threads.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 thrlib.c : thrlib.stub
-
-threads_head.c threads_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension threads
 
 install : install-std
 

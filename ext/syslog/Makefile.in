@@ -6,23 +6,21 @@ include ../Makefile.ext
 
 SCM_CATEGORY = gauche
 
-LIBFILES = syslog.$(SOEXT)
-SCMFILES = syslog.scm
+LIBFILES = gauche--syslog.$(SOEXT)
+SCMFILES = syslog.sci
 
-OBJECTS = syslog_head.$(OBJEXT) syslog.$(OBJEXT) syslog_tail.$(OBJEXT)
+OBJECTS = gauche--syslog.$(OBJEXT)
 
 GENERATED = Makefile
-XCLEANFILES = syslog.c syslog_head.c syslog_tail.c
+XCLEANFILES = gauche--syslog.c $(SCMFILES)
 
 all : $(LIBFILES)
 
-syslog.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) syslog.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+gauche--syslog.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) gauche--syslog.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-syslog.c : syslog.stub
-
-syslog_head.c syslog_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension syslog
+gauche--syslog.c syslog.sci : syslog.scm
+	$(PRECOMP) -e -P -o gauche--syslog $(srcdir)/syslog.scm
 
 install : install-std
 

@@ -187,17 +187,17 @@
       (close-input-port p)
       (list (equal? a b) (port-closed? src))))
 
-  (test* "vport.c"      '(#t #t) (test-biport "vport.c" #f))
-  (test* "vport_head.c" '(#t #t) (test-biport "vport_head.c" #f))
+  (test* "vport.c" '(#t #t) (test-biport "vport.c" #f))
+  (test* "vport.h" '(#t #t) (test-biport "vport.h" #f))
 
   (test* "vport.c (bufsize=100)"
          '(#t #t) (test-biport "vport.c" 100))
-  (test* "vport_head.c (bufsize=100)"
-         '(#t #t) (test-biport "vport_head.c" 100))
+  (test* "vport.h (bufsize=100)"
+         '(#t #t) (test-biport "vport.h" 100))
   (test* "vport.c (bufsize=65536)"
          '(#t #t) (test-biport "vport.c" 65536))
-  (test* "vport_head.c (bufsize=65536)"
-         '(#t #t) (test-biport "vport_head.c" 65536))
+  (test* "vport.h (bufsize=65536)"
+         '(#t #t) (test-biport "vport.h" 65536))
   (test* "vport.c (bufsize=1)"
          '(#t #t) (test-biport "vport.c" 1))
   (test* "vport.c (bufsize=0)"
@@ -226,16 +226,16 @@
             closed?)))
   
   (test* "vport.c"      '(#t #t) (test-boport "vport.c" #f))
-  (test* "vport_head.c" '(#t #t) (test-boport "vport_head.c" #f))
+  (test* "vport.h" '(#t #t) (test-boport "vport.h" #f))
 
   (test* "vport.c (bufsize=100)"
          '(#t #t) (test-boport "vport.c" 100))
-  (test* "vport_head.c (bufsize=100)"
-         '(#t #t) (test-boport "vport_head.c" 100))
+  (test* "vport.h (bufsize=100)"
+         '(#t #t) (test-boport "vport.h" 100))
   (test* "vport.c (bufsize=65536)"
          '(#t #t) (test-boport "vport.c" 65536))
-  (test* "vport_head.c (bufsize=65536)"
-         '(#t #t) (test-boport "vport_head.c" 65536))
+  (test* "vport.h (bufsize=65536)"
+         '(#t #t) (test-boport "vport.h" 65536))
   (test* "vport.c (bufsize=1)"
          '(#t #t) (test-boport "vport.c" 1))
   (test* "vport.c (bufsize=0)"

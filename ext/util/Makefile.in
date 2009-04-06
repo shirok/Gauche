@@ -2,30 +2,25 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
-SCM_CATEGORY =
+SCM_CATEGORY = util
 
 include ../Makefile.ext
 
-LIBFILES = util-match-lib.$(SOEXT)
-SCMFILES = util/match.scm
+LIBFILES = util--match.$(SOEXT)
+SCMFILES = match.sci
 
 GENERATED = Makefile
-XCLEANFILES =  *.c util/match.scm
+XCLEANFILES =  *.c match.sci
 
-util_match_OBJECTS = util-match_head.$(OBJEXT) \
-                     util-match-lib.$(OBJEXT)  \
-                     util-match_tail.$(OBJEXT)
+util_match_OBJECTS = util--match.$(OBJEXT)
 
 all : $(LIBFILES)
 
-util-match-lib.$(SOEXT) : $(util_match_OBJECTS) 
-	$(MODLINK) util-match-lib.$(SOEXT) $(util_match_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+util--match.$(SOEXT) : $(util_match_OBJECTS) 
+	$(MODLINK) util--match.$(SOEXT) $(util_match_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-util-match_head.c util-match_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension util-match
-
-util-match-lib.c util/match.scm : $(top_srcdir)/libsrc/util/match.scm
-	$(PRECOMP) --ext-module util/match.scm -o util-match-lib $(top_srcdir)/libsrc/util/match.scm
+util--match.c match.sci : $(top_srcdir)/libsrc/util/match.scm
+	$(PRECOMP) -e -P -o util--match $(top_srcdir)/libsrc/util/match.scm
 
 install : install-std
 

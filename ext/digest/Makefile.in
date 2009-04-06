@@ -6,39 +6,33 @@ include ../Makefile.ext
 
 SCM_CATEGORY = rfc
 
-LIBFILES = md5-lib.$(SOEXT) sha-lib.$(SOEXT)
-SCMFILES = md5.scm sha1.scm sha.scm
+LIBFILES = rfc--md5.$(SOEXT) rfc--sha.$(SOEXT)
+SCMFILES = md5.sci sha1.scm sha.sci
 
 GENERATED = Makefile
-XCLEANFILES = md5.scm md5-lib.c sha.scm sha-lib.c *_head.c *_tail.c
+XCLEANFILES = rfc--md5.c rfc--sha.c *.sci
 
 EXTRA_INCLUDES = -I$(srcdir)/../uvector
 
 all : $(LIBFILES)
 
-md5_OBJECTS = md5_head.$(OBJEXT) md5-lib.$(OBJEXT) md5c.$(OBJEXT) md5_tail.$(OBJEXT)
+md5_OBJECTS = rfc--md5.$(OBJEXT) md5c.$(OBJEXT)
 
-md5-lib.$(SOEXT) : $(md5_OBJECTS) 
-	$(MODLINK) md5-lib.$(SOEXT) $(md5_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+rfc--md5.$(SOEXT) : $(md5_OBJECTS) 
+	$(MODLINK) rfc--md5.$(SOEXT) $(md5_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
-md5.scm md5-lib.c : md5-lib.scm
-	$(PRECOMP) --ext-module=md5.scm md5-lib.scm
+md5.sci rfc--md5.c : md5.scm
+	$(PRECOMP) -e -o rfc--md5 md5.scm
 
-sha_OBJECTS = sha_head.$(OBJEXT) sha-lib.$(OBJEXT) sha2.$(OBJEXT) sha_tail.$(OBJEXT)
+sha_OBJECTS = rfc--sha.$(OBJEXT) sha2.$(OBJEXT)
 
 $(sha_OBJECTS) : sha2.h
 
-sha-lib.$(SOEXT) : $(sha_OBJECTS)
-	$(MODLINK) sha-lib.$(SOEXT) $(sha_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+rfc--sha.$(SOEXT) : $(sha_OBJECTS)
+	$(MODLINK) rfc--sha.$(SOEXT) $(sha_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
-sha.scm sha-lib.c : sha-lib.scm
-	$(PRECOMP) --ext-module=sha.scm sha-lib.scm
-
-md5_head.c md5_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension md5
-
-sha_head.c sha_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension sha
+sha.sci rfc--sha.c : sha.scm
+	$(PRECOMP) -e -o rfc--sha sha.scm
 
 install : install-std
 

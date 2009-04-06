@@ -21,8 +21,8 @@ dnl
 dnl The ndbm case is so complicated because, besides it may be emulated
 dnl by gdbm, the ndbm functions could be in libndbm, libdbm, or even libc.
 AC_CHECK_HEADERS(gdbm.h, [
-  DBM_ARCHFILES=gdbm-lib.$SHLIB_SO_SUFFIX
-  DBM_SCMFILES=gdbm.scm
+  DBM_ARCHFILES=dbm--gdbm.$SHLIB_SO_SUFFIX
+  DBM_SCMFILES=gdbm.sci
   AC_CHECK_LIB(gdbm, gdbm_open, [ GDBMLIB="-lgdbm" ])
 ])
 
@@ -63,8 +63,8 @@ AC_CHECK_HEADER(gdbm-ndbm.h, [
   ])
 ])])])
 if test "$NDBM_HEADER" != ""; then
-  DBM_ARCHFILES="ndbm-lib.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
-  DBM_SCMFILES="ndbm.scm $DBM_SCMFILES"
+  DBM_ARCHFILES="dbm--ndbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
+  DBM_SCMFILES="ndbm.sci $DBM_SCMFILES"
 fi
 
 ODBM_HEADER=""
@@ -100,8 +100,8 @@ AC_CHECK_HEADER(gdbm-dbm.h, [
   ])
 ])])])
 if test "$ODBM_HEADER" != ""; then
-  DBM_ARCHFILES="odbm-lib.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
-  DBM_SCMFILES="odbm.scm $DBM_SCMFILES"
+  DBM_ARCHFILES="dbm--odbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
+  DBM_SCMFILES="odbm.sci $DBM_SCMFILES"
 fi
 
 AC_SUBST(DBM_ARCHFILES)
@@ -109,8 +109,6 @@ AC_SUBST(DBM_SCMFILES)
 AC_SUBST(GDBMLIB)
 AC_SUBST(NDBMLIB)
 AC_SUBST(ODBMLIB)
-
-
 
 dnl Local variables:
 dnl mode: autoconf

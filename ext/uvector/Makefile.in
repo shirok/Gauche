@@ -12,22 +12,17 @@ HDRFILES = gauche/uvector.h
 
 GENERATED = Makefile
 XCLEANFILES =  uvlib.c uvlib.stub uvector.c uvutil.c \
-	       gauche/uvector.h uvector_head.c uvector_tail.c
+	       gauche/uvector.h
 
 all : $(LIBFILES)
 
-uvector_OBJECTS = uvector_head.$(OBJEXT) \
-                  uvector.$(OBJEXT)      \
+uvector_OBJECTS = uvector.$(OBJEXT)      \
                   uvinit.$(OBJEXT)       \
                   uvlib.$(OBJEXT)        \
-                  uvutil.$(OBJEXT)       \
-                  uvector_tail.$(OBJEXT)
+                  uvutil.$(OBJEXT)
 
 libgauche-uvector.$(SOEXT) : $(uvector_OBJECTS) 
 	$(MODLINK) libgauche-uvector.$(SOEXT) $(uvector_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
-
-uvector_head.c uvector_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension uvector
 
 gauche/uvector.h : uvector.h.tmpl uvgen.scm
 	if test ! -d gauche; then mkdir gauche; fi

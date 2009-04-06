@@ -38,7 +38,7 @@
 #include <gauche/extend.h>
 #include <gauche/uvector.h>
 
-#include "gauche/vport.h"
+#include "vport.h"
 
 #undef close    /* windows black magic */
 
@@ -709,10 +709,10 @@ static ScmClassStaticSlotSpec boport_slots[] = {
 
 void Scm_Init_vportlib(ScmModule*);
 
-SCM_EXTENSION_ENTRY void Scm_Init_vport(void)
+SCM_EXTENSION_ENTRY void Scm_Init_gauche__vport(void)
 {
     ScmModule *mod;
-    SCM_INIT_EXTENSION(vport);
+    SCM_INIT_EXTENSION(gauche__vport);
     mod = SCM_FIND_MODULE("gauche.vport", SCM_FIND_MODULE_CREATE);
     
     Scm_InitStaticClass(&Scm_VirtualInputPortClass,

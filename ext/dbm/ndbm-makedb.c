@@ -2,7 +2,7 @@
  * ndbm-makedb.c - create an empty ndbm database
  */
 
-/* There are some variations in ndbm implementations that uses different
+/* There are some variations in ndbm implementations that use different
    suffixes for database files.  I think the original ndbm inherited
    *.dir/*.pag from the original dbm, while BSD-traits uses *.db (they
    might be a wrapper of old berkeley db, though I'm not sure.)

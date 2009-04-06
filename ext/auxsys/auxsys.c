@@ -184,11 +184,11 @@ clock_t times(struct tms *info)
 
 extern void Scm_Init_auxsyslib(ScmModule *mod);
 
-SCM_EXTENSION_ENTRY void Scm_Init_auxsys(void)
+SCM_EXTENSION_ENTRY void Scm_Init_gauche__auxsys(void)
 {
     ScmModule *mod;
 
-    SCM_INIT_EXTENSION(auxsys);
+    SCM_INIT_EXTENSION(gauche__auxsys);
     mod = SCM_FIND_MODULE("gauche.auxsys", SCM_FIND_MODULE_CREATE);
     Scm_Init_auxsyslib(mod);
 }

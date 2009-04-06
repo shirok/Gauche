@@ -6,25 +6,22 @@ include ../Makefile.ext
 
 SCM_CATEGORY = gauche
 
-LIBFILES = termios.$(SOEXT)
+LIBFILES = gauche--termios.$(SOEXT)
 SCMFILES = termios.scm
 
-OBJECTS = termios_head.$(OBJEXT) termios.$(OBJEXT) termiolib.$(OBJEXT) termios_tail.$(OBJEXT)
+OBJECTS = termios.$(OBJEXT) termiolib.$(OBJEXT)
 
 GENERATED = Makefile
-XCLEANFILES =  termiolib.c termios_head.c termios_tail.c
+XCLEANFILES =  termiolib.c
 
 EXTRA_INCLUDES = -I$(srcdir)/../uvector
 
 all : $(LIBFILES)
 
-termios.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) termios.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+gauche--termios.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) gauche--termios.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 termiolib.c : termiolib.stub
-
-termios_head.c termios_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension termios
 
 install : install-std
 

@@ -37,7 +37,7 @@
   (export-all))
 (select-module gauche.threads)
 
-(dynamic-load "threads" :export-symbols #t)
+(dynamic-load "gauche--threads")
 
 ;;
 ;; Thread

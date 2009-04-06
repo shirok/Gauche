@@ -6,25 +6,22 @@ include ../Makefile.ext
 
 SCM_CATEGORY = gauche
 
-LIBFILES = vport.$(SOEXT)
+LIBFILES = gauche--vport.$(SOEXT)
 SCMFILES = vport.scm
 
-OBJECTS = vport_head.$(OBJEXT) vport.$(OBJEXT) vportlib.$(OBJEXT) vport_tail.$(OBJEXT)
+OBJECTS = vport.$(OBJEXT) vportlib.$(OBJEXT)
 
 GENERATED = Makefile
-XCLEANFILES = vportlib.c vport_head.c vport_tail.c
+XCLEANFILES = vportlib.c
 
 EXTRA_INCLUDES = -I$(srcdir)/../uvector
 
 all : $(LIBFILES)
 
-vport.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) vport.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+gauche--vport.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) gauche--vport.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 vportlib.c : vportlib.stub
-
-vport_head.c vport_tail.c :
-	$(GAUCHE_CONFIG) --fixup-extension vport
 
 install : install-std
 

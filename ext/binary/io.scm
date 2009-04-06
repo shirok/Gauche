@@ -61,7 +61,7 @@
           ))
 (select-module binary.io)
 
-(dynamic-load "binary")
+(dynamic-load "binary--io")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; config

@@ -1,5 +1,11 @@
 2009-04-05  Shiro Kawai  <shiro@acm.org>
 
+	* ext/*: Modified to match the new naming convention of DSO files
+	  and generated scheme interface files (except uvector, for some
+	  external modules depend on the name "libgauche-uvector.so" yet).
+	  Also removed *_head.c/*_tail.c magics; they are no longer relevant
+	  with modern compilers.
+
 	* src/precomp: Support --strip-prefix and --strip-prefix-all options.
 	  Added short options.
 
@@ -16,7 +22,7 @@
 	  cgen-with-ext-module API.  For the convenience of converting
 	  Scheme libraries into precompiled DSO + ext-module file, we set
 	  a new convention: A Scheme library "foo/bar.scm" is to be
-	  precompiled into "foo-bar.so" and "foo/bar.sci".
+	  precompiled into "foo--bar.so" and "foo/bar.sci".
 
 	  Since we can now infer ext-module file name, --ext-module option
 	  for precomp isn't a necessary condition to generate ext-module

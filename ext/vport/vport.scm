@@ -45,7 +45,7 @@
           ))
 (select-module gauche.vport)
 
-(dynamic-load "vport")
+(dynamic-load "gauche--vport")
 
 ;;=======================================================
 ;; A port backed up by an uniform vector

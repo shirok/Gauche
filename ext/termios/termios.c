@@ -189,10 +189,10 @@ ScmObj Scm_ForkptyAndExec(ScmString *file, ScmObj args, ScmObj iomap,
 
 extern void Scm_Init_termiolib(ScmModule *mod);
 
-SCM_EXTENSION_ENTRY void Scm_Init_termios(void)
+SCM_EXTENSION_ENTRY void Scm_Init_gauche__termios(void)
 {
     ScmModule *mod;
-    SCM_INIT_EXTENSION(termios);
+    SCM_INIT_EXTENSION(gauche__termios);
     mod = SCM_FIND_MODULE("gauche.termios", SCM_FIND_MODULE_CREATE);
     Scm_Init_termiolib(mod);
 
