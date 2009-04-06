@@ -1,3 +1,8 @@
+2009-04-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/genconfig.in: Write to tmp file then rename.  Otherwise
+	  parallel make may grab a partially written file and fail.
+
 2009-04-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/precomp, lib/gauche/cgen/precomp.scm: Reworked API.  Since
