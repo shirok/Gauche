@@ -33,8 +33,7 @@
  *  $Id: addr.c,v 1.34 2008-05-10 13:35:41 shirok Exp $
  */
 
-#include "gauche/net.h"
-#include "gauche/uvector.h"
+#include "gauche-net.h"
 #include <string.h>
 
 static ScmObj key_path = SCM_FALSE;

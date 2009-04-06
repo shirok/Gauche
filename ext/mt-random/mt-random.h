@@ -49,7 +49,6 @@
 */
 
 #include <gauche.h>
-#include <gauche/uvector.h>
 #include <gauche/extend.h>
 
 #if defined(EXTMTRANDOM_EXPORTS)

@@ -33,10 +33,9 @@
  *  $Id: net.c,v 1.60 2008-05-10 13:35:41 shirok Exp $
  */
 
-#include "gauche/net.h"
+#include "gauche-net.h"
 #include <fcntl.h>
 #include <gauche/extend.h>
-#include <gauche/uvector.h>
 
 /*==================================================================
  * Socket

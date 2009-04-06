@@ -38,7 +38,7 @@
 #include <gauche/class.h>
 #include <gauche/extend.h>
 
-#include "gauche/termios.h"
+#include "gauche-termios.h"
 
 #if !defined(GAUCHE_WINDOWS)
 

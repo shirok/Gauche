@@ -12,14 +12,12 @@ SCMFILES = md5.sci sha1.scm sha.sci
 GENERATED = Makefile
 XCLEANFILES = rfc--md5.c rfc--sha.c *.sci
 
-EXTRA_INCLUDES = -I$(srcdir)/../uvector
-
 all : $(LIBFILES)
 
 md5_OBJECTS = rfc--md5.$(OBJEXT) md5c.$(OBJEXT)
 
 rfc--md5.$(SOEXT) : $(md5_OBJECTS) 
-	$(MODLINK) rfc--md5.$(SOEXT) $(md5_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) rfc--md5.$(SOEXT) $(md5_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 md5.sci rfc--md5.c : md5.scm
 	$(PRECOMP) -e -o rfc--md5 md5.scm
@@ -29,7 +27,7 @@ sha_OBJECTS = rfc--sha.$(OBJEXT) sha2.$(OBJEXT)
 $(sha_OBJECTS) : sha2.h
 
 rfc--sha.$(SOEXT) : $(sha_OBJECTS)
-	$(MODLINK) rfc--sha.$(SOEXT) $(sha_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) rfc--sha.$(SOEXT) $(sha_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 sha.sci rfc--sha.c : sha.scm
 	$(PRECOMP) -e -o rfc--sha sha.scm

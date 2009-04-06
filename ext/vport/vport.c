@@ -36,7 +36,6 @@
 #include <gauche.h>
 #include <gauche/class.h>
 #include <gauche/extend.h>
-#include <gauche/uvector.h>
 
 #include "vport.h"
 

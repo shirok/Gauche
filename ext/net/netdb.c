@@ -33,7 +33,7 @@
  *  $Id: netdb.c,v 1.19 2008-05-10 13:35:41 shirok Exp $
  */
 
-#include "gauche/net.h"
+#include "gauche-net.h"
 #include <gauche/class.h>
 
 #define DATA_BUFSIZ  980

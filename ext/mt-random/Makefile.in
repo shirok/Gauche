@@ -14,12 +14,10 @@ SCMFILES = mt-random.scm
 
 OBJECTS = mt-random.$(OBJEXT) mt-lib.$(OBJEXT)
 
-EXTRA_INCLUDES = -I$(srcdir)/../uvector
-
 all : $(LIBFILES)
 
 math--mt-random.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) math--mt-random.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) math--mt-random.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 mt-lib.c : mt-lib.stub
 

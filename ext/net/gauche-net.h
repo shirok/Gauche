@@ -38,7 +38,6 @@
 
 #include <sys/types.h>
 #include <gauche.h>
-#include <gauche/uvector.h>
 #include <errno.h>
 
 #if !defined(GAUCHE_WINDOWS)

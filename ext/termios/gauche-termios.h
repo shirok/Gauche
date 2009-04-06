@@ -37,7 +37,6 @@
 #define GAUCHE_TERMIOS_H
 
 #include <gauche.h>
-#include <gauche/uvector.h>
 
 #if !defined(GAUCHE_WINDOWS)
 

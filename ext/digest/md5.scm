@@ -92,7 +92,6 @@
 
 (inline-stub
  "#include <gauche/class.h>"
- "#include <gauche/uvector.h>"
  "#include \"md5.h\""
 
  "#define LIBGAUCHE_EXT_BODY"

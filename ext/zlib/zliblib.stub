@@ -36,7 +36,6 @@
 
 "
 #include \"gauche-zlib.h\"
-#include \"gauche/uvector.h\"
 "
 
 (define-type <deflating-port> "ScmPort*" "deflating port"
@@ -54,7 +53,7 @@
                           siz::int*)
   ::void :static
   (cond [(SCM_U8VECTORP data)
-         (set! (* start) (SCM_UVECTOR-ELEMENTS (SCM_U8VECTOR data))
+         (set! (* start) (SCM_UVECTOR_ELEMENTS (SCM_U8VECTOR data))
                (* siz)   (SCM_U8VECTOR_SIZE (SCM_U8VECTOR data)))]
         [(SCM_STRINGP data)
          (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY data)])

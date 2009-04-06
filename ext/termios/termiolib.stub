@@ -33,7 +33,7 @@
 ;;; $Id: termiolib.stub,v 1.19 2008-05-10 13:35:43 shirok Exp $
 ;;;
 
-"#include \"gauche/termios.h\""
+"#include \"gauche-termios.h\""
 
 ;;---------------------------------------------------------------------
 ;; termios.h

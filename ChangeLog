@@ -1,3 +1,10 @@
+2009-04-06  Shiro Kawai  <shiro@acm.org>
+
+	* ext/*: Removed dependency on ext/uvector.  Extension modules only
+	  need the uvector features built into core, so they don't need
+	  to link DSO in ext/uvector.  Now we can avoid hairy dependency
+	  issues at build time.
+
 2009-04-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/*: Modified to match the new naming convention of DSO files

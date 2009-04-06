@@ -12,14 +12,12 @@ SCMFILES = io.scm
 GENERATED = Makefile
 XCLEANFILES = binarylib.c
 
-EXTRA_INCLUDES = -I$(srcdir)/../uvector
-
 OBJECTS = binary.$(OBJEXT) binarylib.$(OBJEXT)
 
 all : $(LIBFILES)
 
 binary--io.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) binary--io.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) binary--io.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 binarylib.c : binarylib.stub
 

@@ -8,7 +8,6 @@ SCM_CATEGORY = gauche
 
 LIBFILES = gauche--net.$(SOEXT)
 SCMFILES = net.scm
-HDRFILES = gauche/net.h
 
 OBJECTS = net.$(OBJEXT)      \
           addr.$(OBJEXT)     \
@@ -19,12 +18,10 @@ OBJECTS = net.$(OBJEXT)      \
 GENERATED = Makefile 
 XCLEANFILES = netlib.c netaux.c
 
-EXTRA_INCLUDES = -I$(srcdir)/../uvector
-
 all : $(LIBFILES)
 
 gauche--net.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) gauche--net.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) gauche--net.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 netlib.c : netlib.stub
 

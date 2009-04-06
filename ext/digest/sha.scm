@@ -118,7 +118,6 @@
 ;;;
 
 (inline-stub
- "#include <gauche/uvector.h>"
  "#include <gauche/class.h>"
  ;; customization for sha2.h
  "#define SHA2_USE_INTTYPES_H" ; use uintXX_t

@@ -14,12 +14,10 @@ OBJECTS = termios.$(OBJEXT) termiolib.$(OBJEXT)
 GENERATED = Makefile
 XCLEANFILES =  termiolib.c
 
-EXTRA_INCLUDES = -I$(srcdir)/../uvector
-
 all : $(LIBFILES)
 
 gauche--termios.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) gauche--termios.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) gauche--termios.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 termiolib.c : termiolib.stub
 

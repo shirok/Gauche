@@ -35,7 +35,6 @@
 
 #include <gauche.h>
 #include <gauche/builtin-syms.h>
-#include <gauche/uvector.h>
 
 extern ScmObj Scm_DefaultEndian(void);
 

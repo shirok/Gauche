@@ -33,18 +33,15 @@
 ;;;  $Id: netlib.stub,v 1.54 2008-05-10 13:35:41 shirok Exp $
 ;;;
 
-"#include \"gauche/net.h\"
+"#include \"gauche-net.h\"
 #include <gauche/class.h>
 #include <gauche/bignum.h>
-#include <gauche/uvector.h>
 "
 
 (define-type <socket-address> "ScmSockAddr*" "socket address"
   "Scm_SockAddrP" "SCM_SOCKADDR")
 
 (define-type <socket> "ScmSocket*")
-
-(define-type <uvector> "ScmUVector*")
 
 ;;----------------------------------------------------------
 ;; Socket address methods
