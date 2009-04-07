@@ -1224,15 +1224,14 @@ static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
             Scm_Warn("Ignoring unrecognized hash-bang directive: #!%S", id);
             return SCM_UNDEFINED;
         }
-        /* Reader directive may return zero or one value. */
+        /* Reader directive may return zero or one value.  When it returns
+           no values, we call Scm_VMSetResult to adjust the number of values.
+         */
         r = Scm_ApplyRec3(e, id, SCM_OBJ(port), SCM_OBJ(ctx));
-        if (Scm_VMGetNumResults(Scm_VM()) == 0) return SCM_UNDEFINED;
-        else                                    return r;
+        if (Scm_VMGetNumResults(Scm_VM()) == 1) return r;
+        else { Scm_VMSetResult(SCM_UNDEFINED); return SCM_UNDEFINED; }
     }
 }
-
-
-
 
 /*----------------------------------------------------------------
  * Uvector

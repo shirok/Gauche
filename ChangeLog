@@ -1,3 +1,8 @@
+2009-04-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (read_shebang): Fixed a problem that left incorrect
+	  VM's numVals after calling shebang handler.
+
 2009-04-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (check-first-form-is-define-module):
