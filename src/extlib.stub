@@ -1013,8 +1013,8 @@
 
 (define-cproc dynamic-load (file::<string>
                             :key (init-function #f)
-                                 (export-symbols #f))
-  (result (Scm_DynLoad file init_function (not (SCM_FALSEP export_symbols)))))
+                                 (export-symbols #f)); for backward compatibility
+  (result (Scm_DynLoad file init_function 0)))
 
 (define-cproc %require (feature) ::<boolean>
   (result (not (Scm_Require feature SCM_LOAD_PROPAGATE_ERROR NULL))))

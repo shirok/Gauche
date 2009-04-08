@@ -1,5 +1,8 @@
 2009-04-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/load.c (Scm_DynLoad): Turned the obsoleted third argument
+	  into 'flags' argument for future extension.
+
 	* src/read.c (read_shebang): Fixed a problem that left incorrect
 	  VM's numVals after calling shebang handler.
 

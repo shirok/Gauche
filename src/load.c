@@ -758,7 +758,7 @@ static ScmObj find_so_from_la(ScmString *lafile)
 /* Dynamically load the specified object by FILENAME.
    FILENAME must not contain the system's suffix (.so, for example).
 */
-ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export_)
+ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, u_long flags/*unused*/)
 {
     ScmObj reqname, truename, load_paths = Scm_GetDynLoadPath();
     const char *cpath, *initname;
