@@ -1,3 +1,15 @@
+2009-04-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/precomp, lib/gauche/cgen/precomp.scm: Support multiple Scheme
+	  sources to precompile into single DSO.  Each source generates
+	  individual *.sci file, which includes dynamic-load form with
+	  :init-function to initialize the corresponding part of DSO.
+	  It is the key to solve the dependency problem.
+	  The API and functionality are not fixed yet; especially we need
+	  to redesign naming convention of init function name, since currently
+	  we can't have more than one source file with the same basename
+	  (e.g. foo/bar.scm and baz/bar.scm).
+
 2009-04-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_DynLoad): Allow multiple initialization function

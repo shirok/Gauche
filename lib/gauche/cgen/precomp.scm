@@ -50,8 +50,9 @@
   (use file.util)
   (use util.match)
   (use util.list)
+  (use util.toposort)
   (use text.tr)
-  (export cgen-precompile))
+  (export cgen-precompile cgen-precompile-multi))
 (select-module gauche.cgen.precomp)
 
 ;;================================================================
@@ -119,15 +120,29 @@
 ;; ext-initializer : See above.
 ;; sub-initializers : See above.
 ;;
-;; out.c : Alternative name for C output  #f to use the default
-;;         (path-swap-extension (sys-basename src) "c").
+;; out.c :   Alternative name for C output  #f to use the default
+;;           (path-swap-extension (sys-basename src) "c").
 ;; out.sci : Alternative name for SCI output.  If #f, take the default
 ;;           behavior which is:
 ;;           - If the source's first form is define-module, use
-;;             (path-swap-extension src "sci")
+;;             (strip-prefix prefix (path-swap-extension src "sci"))
 ;;           - Otherwise, do not produce SCI output.
 ;;           If the source has define-module form and you don't want
 ;;           to create SCI output, pass "/dev/null" to this argument.
+;;
+;; strip-prefix : Used to derive sci file path from the source file name.
+;;           This argument is ignored when out.sci is specified.
+;;           - If #f, the sci file is the same as src except its suffix is
+;;             substituted for ".sci".
+;;           - If #t, the sci file is the basename of src, with its suffx
+;;             substituted for ".sci".
+;;           - Otherwise, this argument must be a string.  First src's
+;;             prefix is checked to match this argument; if they match,
+;;             the matching prefix is removed from SRC, then its extension
+;;             is substituted for ".sci".  If SRC's suffix does not match,
+;;             it works just like #f is given to this argument.
+;;           This feature is useful to generate *.sci files mirroring
+;;           the source directory hierarchy.
 ;;
 ;; predef-syms : A list of strings, to insert #defines at the top of
 ;;      generated C source.
@@ -141,20 +156,27 @@
 (define (cgen-precompile src
                          :key (out.c #f)
                               (out.sci #f)
+                              ((:strip-prefix prefix) #f)
                               (ext-initializer #f)
+                              ((:dso-name dso) #f)
+                              (initializer-name #f)
                               (sub-initializers '())
                               (predef-syms '())
                               (macros-to-keep '()))
   (let ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
         [out.sci (or out.sci
                      (and (check-first-form-is-define-module src)
-                          (path-swap-extension src "sci")))])
+                          (strip-prefix (path-swap-extension src "sci")
+                                        prefix)))])
     ;; see PARAMETERS section below
     (parameterize ([cgen-current-unit (get-unit src out.c predef-syms
                                                 ext-initializer)]
                    [compile-module    (make-module #f)]
-                   [dso-name (and ext-initializer
-                                  (sys-basename (path-sans-extension out.c)))]
+                   [dso-name (cons
+                              (or dso
+                                  (and ext-initializer
+                                       (basename-sans-extension out.c)))
+                              initializer-name)]
                    [vm-eval-situation SCM_VM_COMPILING]
                    [private-macros-to-keep macros-to-keep])
       (cond [out.sci
@@ -177,6 +199,28 @@
   (finalize sub-initializers)
   (cgen-emit-c (cgen-current-unit)))
 
+;; Precompile multiple Scheme sources that are to be linked into
+;; single DSO.  Need to check dependency.  The name of the first
+;; source is used to derive DSO name.
+(define (cgen-precompile-multi srcs
+                               :key (ext-initializer #f)
+                                    ((:strip-prefix prefix) #f)
+                                    ((:dso-name dso) #f)
+                                    (predef-syms '())
+                                    (macros-to-keep '()))
+  (match srcs
+    [() #f]
+    [(main . subs)
+     (dolist [src (order-files-by-dependency srcs)]
+       (cgen-precompile src
+                        :dso-name (basename-sans-extension main)
+                        :predef-syms predef-syms
+                        :strip-prefix prefix
+                        :macros-to-keep macros-to-keep
+                        :ext-initializer (and (equal? src main) ext-initializer)
+                        :initializer-name #`"Scm_Init_,(basename-sans-extension src)"))]
+    ))
+
 ;;================================================================
 ;; Parameters
 ;;
@@ -189,8 +233,8 @@
 ;; runtime.
 (define compile-module-name (make-parameter #f))
 
-;; The name of the generated DSO (w/o extension), to be used for extention
-;; initialization, if ext-initializer is true.
+;; A pair of the name of the generated DSO (w/o extension) and the name
+;; of the initializer function.  
 (define dso-name (make-parameter #f))
 
 ;; keep the list of exported bindings (or #t if export-all)
@@ -234,7 +278,7 @@
 ;;
 
 (define (get-unit src out.c predef-syms ext-init?)
-  (let* ([base (path-sans-extension (sys-basename out.c))]
+  (let* ([base (basename-sans-extension out.c)]
          [safe-name (string-tr base "-+" "__")])
     (make <cgen-stub-unit>
       :name base :c-name-prefix safe-name
@@ -245,16 +289,48 @@
                              safe-name)
       )))
 
-;; See if the first form is define-module.
+(define (strip-prefix path prefix)
+  (cond
+   [(not prefix) path]
+   [(eq? prefix #t) (sys-basename path)]
+   [else
+    (let1 pre (if (#/[\/\\]$/ prefix) prefix (string-append prefix "/"))
+      (if (string-prefix? pre path)
+        (string-drop path (string-length pre))
+        path))]))
+
+(define (basename-sans-extension path)
+  (path-sans-extension (sys-basename path)))
+
+;; Read the first form.
 ;; We don't read the entire content of the file, since it may contain
-;; srfi-10 read-time constructor that we don't know about yet.  We just
-;; read the first form here.
+;; srfi-10 read-time constructor that we don't know about yet.
+(define (first-form src) (with-input-from-file src read))
+
+;; Check if the first form is define-module.
 (define (check-first-form-is-define-module src)
-  (with-input-from-file src
-    (lambda ()
-      (match (read)
-        [('define-module . _) #t]
-        [else #f]))))
+  (match (first-form src)
+    [('define-module . _) #t]
+    [else #f]))
+
+;; Returns (<module> <srcname> (<depended> ...))
+(define (get-module-dependency src)
+  (match (first-form src)
+    [('define-module modname . forms)
+     (list modname src
+           (filter-map (^(x)(match x [('use mod . _) mod] [_ #f])) forms))]
+    [_ #f]))
+
+;; Sort the given list of source files so that each file only depends on
+;; the files that appear later.
+(define (order-files-by-dependency srcs)
+  (let* ([deps (filter-map get-module-dependency srcs)]
+         [sorted (topological-sort (map (^.[(n _ ns) (cons n ns)]) deps))]
+         [sorted-srcs (filter-map (^(s) (cond [(assq s deps) => cadr]
+                                               [else #f]))
+                                   sorted)]
+         [unsorted-srcs (lset-difference string=? srcs sorted-srcs)])
+    (append sorted-srcs unsorted-srcs)))
 
 (define (write-ext-module form)
   (cond [(ext-module-file) => (^_ (write form _) (newline _))]))
@@ -360,8 +436,12 @@
          (fold compile-toplevel-form seed body))]
       [((? =select-module?) mod)
        (write-ext-module form)
-       (when (dso-name)
-         (write-ext-module `(dynamic-load ,(dso-name))))
+       (match (dso-name)
+         [(name . #f)
+          (write-ext-module `(dynamic-load ,name))]
+         [(name . initfn)
+          (write-ext-module `(dynamic-load ,name :init-function ,initfn))]
+         [_ #f])
        (let1 sym (cgen-literal mod)
          (cgen-init
           (format "  mod = Scm_FindModule(SCM_SYMBOL(~a),\

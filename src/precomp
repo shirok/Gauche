@@ -47,30 +47,41 @@
 (define (main args)
   (let1 predef-syms '()
     (let-args (cdr args)
-        ([keep-private-macro "M|keep-private-macro=s" ""]
+        ([keep-private-macro "M|keep-private-macro=s"]
          [ext-main           "e|ext-main"]
          [xprefix            "p|strip-prefix=s"]
          [xprefix-all        "P|strip-prefix-all"]
          [out.sci            "i|interface=s"]
          [out.c              "o|output=s"]
+         [subinits           "s|sub-initializers=s"]
+         [dso-name           "d|dso-name=s"]
          [ext-module         "ext-module=s" #f] ;for backward compatibility
          [#f "D=s" => (lambda (sym) (push! predef-syms sym))]
          [else => (lambda _ (usage))]
          . args)
-      (when (or (null? args) (not (null? (cdr args)))) (usage))
-      (let* ([macros-to-keep ($ map string->symbol
-                                $ string-split keep-private-macro #\,)]
-             [srcfile (car args)]
-             [scibase (or out.sci ext-module (path-swap-extension (car args) "sci"))]
-             [scifile (cond [xprefix-all (sys-basename scibase)]
-                            [xprefix (strip-prefix scibase xprefix)]
-                            [else (or out.sci ext-module)])])
-        (cgen-precompile (car args)
-                         :out.c out.c
-                         :out.sci scifile
-                         :ext-initializer (or ext-module ext-main)
-                         :predef-syms predef-syms
-                         :macros-to-keep macros-to-keep))))
+      (let ([mtk      (split-to-symbols keep-private-macro)]
+            [subinits (split-to-symbols subinits)]
+            [extini   (or ext-module ext-main)]
+            [prefix   (or xprefix-all xprefix)])
+        (match args
+          [() (usage)]
+          [(src)
+           (cgen-precompile src
+                            :out.c out.c
+                            :out.sci (or out.sci ext-module)
+                            :strip-prefix prefix
+                            :ext-initializer extini
+                            :sub-initializers subinits
+                            :dso-name dso-name
+                            :predef-syms predef-syms
+                            :macros-to-keep mtk)]
+          [(srcs ...)
+           (cgen-precompile-multi srcs
+                                  :ext-initializer extini
+                                  :strip-prefix prefix
+                                  :dso-name dso-name
+                                  :predef-syms predef-syms
+                                  :macros-to-keep mtk)]))))
   0)
 
 (define (usage)
@@ -84,11 +95,10 @@
   (print "  -P,--strip-prefix-all")
   (exit 0))
 
-(define (strip-prefix path prefix)
-  (let1 pre (if (#/[\/\\]$/ prefix) prefix (string-append prefix "/"))
-    (if (string-prefix? pre path)
-      (string-drop path (string-length pre))
-      path)))
+(define (split-to-symbols arg)
+  (if arg
+    ($ map string->symbol $ string-split arg #\,)
+    '()))
 
 ;; Local variables:
 ;; mode: scheme
