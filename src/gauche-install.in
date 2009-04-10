@@ -40,6 +40,7 @@
 
 (use srfi-1)
 (use srfi-2)
+(use srfi-13)
 (use gauche.parseopt)
 (use gauche.parameter)
 (use file.util)
@@ -64,8 +65,8 @@
      "                       Useful to install scripts."
      "  -d, --directory   : Creates directories.  (3rd format only)."
      "  -m, --mode=MODE   : Change mode of the installed file."
-     "  -p, --strip=NUM   : Strip NUM prefix dirs from FILEs before installation."
-     "                      (4th/5th format only)."
+     "  -p, --strip-prefix=PREFIX : Strip prefix dirs from FILEs before "
+     "                      installation. (4th/5th format only)."
      "  -o, --owner=OWNER : Change owner of the installed file (root only)."
      "  -g, --group=GROUP : Change owner of the installed file (root only)."
      "  -v, --verbose     : Work verbosely"
@@ -132,14 +133,16 @@
                            (->ugid sys-user-name->uid owner "user")
                            (->ugid sys-group-name->gid group "group"))))))
 
-;; strip P components
-(define (strip-dir p path)
-  (if (or (not p) (<= p 0))
-    path
-    (let1 r (drop* (string-split path #[/\\]) p)
-      (when (null? r)
-        (exit 1 "number of stripped components (-p option) too high: ~a" p))
-      (string-join r "/"))))
+;; strip PREFIX from path if possible.
+(define (strip-dir prefix path)
+  (cond
+   [(not prefix) path]
+   [(eq? prefix #t) (sys-basename path)]
+   [else
+    (let1 pre (if (#/[\/\\]$/ prefix) prefix (string-append prefix "/"))
+      (if (string-prefix? pre path)
+        (string-drop path (string-length pre))
+        path))]))
 
 ;; Entry point
 (define (main args)
@@ -155,7 +158,7 @@
        [shebang "shebang=s"]
        [verb    "v"]
        [dry     "n|dry-run"]
-       [strip   "p|strip=i"]
+       [sprefix "p|strip-prefix=s"]
        [#f      "h|help" => usage]
        [else (opt . _) (print "Unknown option : " opt) (usage)]
        . args)
@@ -166,11 +169,11 @@
       (cond
        [mkdir  (for-each (cut ensure-directory <> mode owner group) args)]
        [target (dolist [src args]
-                 (let1 dst (build-path target (strip-dir strip src))
+                 (let1 dst (build-path target (strip-dir sprefix src))
                    (ensure-directory (sys-dirname dst))
                    (install (ensure-src src srcdir) dst shebang mode owner group)))]
        [utarget (dolist [src args]
-                  (sys-unlink (build-path utarget (strip-dir strip src))))]
+                  (sys-unlink (build-path utarget (strip-dir sprefix src))))]
        [else
         (case (length args)
           [(0) (usage)]

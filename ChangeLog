@@ -1,5 +1,9 @@
 2009-04-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-install.in: Changed -p option to take actual path prefix
+	  instead of the number of path components to strip.  It is rather
+	  useful to make it so to strip $(srcdir) in the make rules.
+
 	* src/precomp, lib/gauche/cgen/precomp.scm: Support multiple Scheme
 	  sources to precompile into single DSO.  Each source generates
 	  individual *.sci file, which includes dynamic-load form with

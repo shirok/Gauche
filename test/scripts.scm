@@ -67,7 +67,7 @@
                    (not (file-exists? "test1.o/dest/test.o/bin/command2")))))
 
 (test* "-T -p" #t
-       (begin (run-install "-T" "test1.o/dest" "-m" "555" "-p" "1"
+       (begin (run-install "-T" "test1.o/dest" "-m" "555" "-p" "test.o"
                            "test.o/bin/command1"
                            "test.o/bin/command2")
               (and (= (file-perm "test1.o/dest/bin/command1")
@@ -79,7 +79,7 @@
                                 "test1.o/dest/bin/command2"))))
 
 (test* "-U -p" #t
-       (begin (run-install "-U" "test1.o/dest" "-m" "555" "-p" "1"
+       (begin (run-install "-U" "test1.o/dest" "-m" "555" "-p" "test.o"
                            "test.o/bin/command1"
                            "test.o/bin/command2")
               (and (not (file-exists? "test1.o/dest/bin/command1"))
