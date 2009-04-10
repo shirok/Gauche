@@ -86,7 +86,7 @@ SCM_EXTERN ScmObj Scm_AddLoadPath(const char *cpath, int afterp);
  * Dynamic Loading
  */
 
-SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, int export_);
+SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, u_long flags);
 
 /*=================================================================
  * Require & Provide

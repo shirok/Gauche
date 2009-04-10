@@ -47,6 +47,7 @@
  */
 
 typedef struct dlobj_rec dlobj;
+typedef struct dlobj_initfn_rec dlobj_initfn;
 
 /* Static parameters */
 static struct {
@@ -590,7 +591,7 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
  *     Returns the last error occurred on HANDLE in the dl_* function.
  *
  * Notes:
- *   - The caller takes care of mutex so that dl_ won't be called from
+ *   - The caller must take care of mutex so that dl_ won't be called from
  *     more than one thread at a time, and no other thread calls
  *     dl_* functions between dl_open and dl_error (so that dl_open
  *     can store the error info in global variable).
@@ -598,6 +599,22 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
  * Since this API assumes the caller does a lot of work, the implementation
  * should be much simpler than implementing fully dlopen()-compatible
  * functions.
+ */
+
+/* The implementation of dynamic loader is a bit complicated in the presense
+   of multiple threads and multiple initialization routines.
+
+   We keep struct dlobj_rec record for each DYNAMIC-LOADed files (keyed
+   by pathname including suffix) to track the state of loading.  The thread
+   must lock the structure first to operate on the particluar DSO.
+
+   By default, a DSO has one initialization function (initfn) whose name
+   can be derived from DSO's basename (if DSO is /foo/bar/baz.so, the
+   initfn is Scm_Init_baz).  DSO may have more than one initfn, if it is
+   made from multiple Scheme files via precompiler; in which case, each
+   initfn initializes a part of DSO corresponding to a Scheme module.
+   Each *.sci file contains dynamic-load form of the DSO with :init-function
+   keyword arguments.
  */
 
 typedef void (*ScmDynLoadInitFn)(void);
@@ -608,17 +625,26 @@ enum dlobj_state {
     DLOBJ_INITIALIZED       /* initialized and ready to use */
 };
 
+struct dlobj_initfn_rec {
+    struct dlobj_initfn_rec *next; /* chain */
+    const char *name;           /* name of initfn (always w/ leading '_') */
+    ScmDynLoadInitFn fn;        /* function ptr */
+    int initialized;            /* TRUE once fn returns */
+};
+
 struct dlobj_rec {
     dlobj *next;                /* chain */
     const char *path;           /* pathname for DSO, including suffix */
-    enum dlobj_state state;     /* state of loading */
+    int loaded;                 /* TRUE if this DSO is already loaded.
+                                   It may need to be initialized, though.
+                                   Check initfns.  */
     void *handle;               /* whatever dl_open returned */
-    ScmVM *loader;              /* VM who's loading this.  NULL once done. */
-    ScmDynLoadInitFn initfn;    /* initialization fn */
+    ScmVM *loader;              /* The VM that's holding the lock to operate
+                                   on this DLO. */
+    dlobj_initfn *initfns;      /* list of initializer functions */
     ScmInternalMutex mutex;
     ScmInternalCond  cv;
 };
-
 
 /* NB: we rely on dlcompat library for dlopen instead of using dl_darwin.c
    for now; Boehm GC requires dlopen when compiled with pthread, so there's
@@ -631,13 +657,56 @@ struct dlobj_rec {
 #include "dl_dummy.c"
 #endif
 
+/* Find dlobj with path, creating one if there aren't, and returns it. */
+static dlobj *find_dlobj(const char *path)
+{
+    dlobj *z = NULL;
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
+    for (z = ldinfo.dso_list; z; z = z->next) {
+        if (strcmp(z->path, path) == 0) break;
+    }
+    if (z == NULL) {
+        z = SCM_NEW(dlobj);
+        z->path = path;
+        z->loader = NULL;
+        z->loaded = FALSE;
+        z->initfns = NULL;
+        (void)SCM_INTERNAL_MUTEX_INIT(z->mutex);
+        (void)SCM_INTERNAL_COND_INIT(z->cv);
+        z->next = ldinfo.dso_list;
+        ldinfo.dso_list = z;
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
+    return z;
+}
+
+static void lock_dlobj(dlobj *dlo)
+{
+    ScmVM *vm = Scm_VM();
+    (void)SCM_INTERNAL_MUTEX_LOCK(dlo->mutex);
+    while (dlo->loader != vm) {
+        if (dlo->loader == NULL) break;
+        (void)SCM_INTERNAL_COND_WAIT(dlo->cv, dlo->mutex);
+    }
+    dlo->loader = vm;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(dlo->mutex);
+}
+
+static void unlock_dlobj(dlobj *dlo)
+{
+    (void)SCM_INTERNAL_MUTEX_LOCK(dlo->mutex);
+    dlo->loader = NULL;
+    (void)SCM_INTERNAL_COND_BROADCAST(dlo->cv);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(dlo->mutex);
+}
+
 /* Derives initialization function name from the module file name.
    This function _always_ appends underscore before the symbol.
    The dynamic loader first tries the symbol without underscore,
    then tries with underscore. */
 #define DYNLOAD_PREFIX   "_Scm_Init_"
 
-static const char *get_dynload_initfn(const char *filename)
+static const char *derive_dynload_initfn(const char *filename)
 {
     const char *head, *tail, *s;
     char *name, *d;
@@ -658,239 +727,137 @@ static const char *get_dynload_initfn(const char *filename)
     return name;
 }
 
-static dlobj *make_dlobj(const char *path)
+/* find dlobj_initfn from the given dlobj with name. 
+   Assuming the caller holding the lock of OBJ. */
+static dlobj_initfn *find_initfn(dlobj *dlo, const char *name)
 {
-    dlobj *z = SCM_NEW(dlobj);
-    z->next = NULL;
-    z->path = path;
-    z->loader = Scm_VM();
-    z->state = DLOBJ_NONE;
-    z->initfn = NULL;
-    (void)SCM_INTERNAL_MUTEX_INIT(z->mutex);
-    (void)SCM_INTERNAL_COND_INIT(z->cv);
-    return z;
+    dlobj_initfn *fns = dlo->initfns;
+    for (; fns != NULL; fns = fns->next) {
+        if (strcmp(name, fns->name) == 0) return fns;
+    }
+    fns = SCM_NEW(dlobj_initfn);
+    fns->name = name;
+    fns->fn = NULL;
+    fns->initialized = FALSE;
+    fns->next = dlo->initfns;
+    dlo->initfns = fns;
+    return fns;    
 }
 
-static dlobj *find_or_add_dlobj(dlobj *newobj)
+/* From the given DSO name, find out the path of the actual DSO */
+static const char *find_dso_path(ScmString *dsoname)
 {
-    dlobj *z = NULL;
-    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
-    for (z = ldinfo.dso_list; z; z = z->next) {
-        if (strcmp(z->path, newobj->path) == 0) break;
+    ScmObj lpaths = Scm_GetDynLoadPath();
+    ScmObj spath = Scm_FindFile(dsoname, &lpaths, ldinfo.dso_suffixes, TRUE);
+    if (SCM_FALSEP(spath)) {
+        Scm_Error("can't find dlopen-able module %S", dsoname);
     }
-    if (z == NULL) {
-        newobj->next = ldinfo.dso_list;
-        ldinfo.dso_list = z = newobj;
-    }
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
-    return z;
+    return Scm_GetStringConst(SCM_STRING(spath));
 }
 
-#if 0  /* Turned off libtool *.la support.  Not sure if we need this. */
-/* Aux fn to get a parameter value from *.la file line */
-static const char *get_la_val(const char *start)
+/* Obtain the initializer function name (with '_' prepended) */
+const char *get_initfn_name(ScmObj initfn, const char *dsopath)
 {
-    const char *end;
-    if (start[0] == '\'') start++;
-    end = strrchr(start, '\'');
-    if (end) {
-        char *p = SCM_NEW_ATOMIC2(char*, (end-start+1));
-        memcpy(p, start, (end-start));
-        p[end-start] = '\0';
-        return (const char*)p;
+    if (SCM_STRINGP(initfn)) {
+        ScmObj _initfn =
+            Scm_StringAppend2(SCM_STRING(Scm_MakeString("_", 1, 1, 0)),
+                              SCM_STRING(initfn));
+        return Scm_GetStringConst(SCM_STRING(_initfn));
     } else {
-        return start;
+        return derive_dynload_initfn(dsopath);
     }
 }
 
-/* We found libtool *.la file.  Retrieve DSO path from it.
-   This routine make some assumption on .la file.  I couldn't
-   find a formal specification of .la file format. */
-static ScmObj find_so_from_la(ScmString *lafile)
+/* Load the DSO.  The caller holds the lock of dlobj.  May throw an error;
+   the caller makes sure it releases the lock even in that case. */
+static void load_dlo(dlobj *dlo)
 {
-    ScmObj f = Scm_OpenFilePort(Scm_GetStringConst(lafile),
-                                O_RDONLY, SCM_PORT_BUFFER_FULL, 0);
-    const char *dlname = NULL, *libdir = NULL;
-    int installed = FALSE;
+    ScmVM *vm = Scm_VM();
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
+        int len = Scm_Length(vm->load_history);
+        SCM_PUTZ(";;", 2, SCM_CURERR);
+        while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
+        Scm_Printf(SCM_CURERR, "Dynamically Loading %s...\n", dlo->path);
+    }
+    dlo->handle = dl_open(dlo->path);
+    if (dlo->handle == NULL) {
+        const char *err = dl_error();
+        if (err == NULL) {
+            Scm_Error("failed to link %s dynamically", dlo->path);
+        } else {
+            Scm_Error("failed to link %s dynamically: %s", dlo->path, err);
+        }
+        /*NOTREACHED*/
+    }
+    dlo->loaded = TRUE;
+}
+
+/* Call the DSO's initfn.  The caller holds the lock of dlobj, and responsible
+   to release the lock even when this fn throws an error. */
+static void call_initfn(dlobj *dlo, const char *name)
+{
+    dlobj_initfn *ifn = find_initfn(dlo, name);
+
+    if (ifn->initialized) return;
+
+    if (!ifn->fn) {
+        /* locate initfn.  Name always has '_'.  Whether the actual
+           symbol dl_sym returns has '_' or not depends on the platform,
+           so we first try without '_', then '_'. */
+        ifn->fn = dl_sym(dlo->handle, name+1);
+        if (ifn->fn == NULL) {
+            ifn->fn = (void(*)(void))dl_sym(dlo->handle, name);
+            if (ifn->fn == NULL) {
+                dl_close(dlo->handle);
+                dlo->handle = NULL;
+                Scm_Error("dynamic linking of %s failed: "
+                          "couldn't find initialization function %s",
+                          dlo->path, name);
+                /*NOTREACHED*/
+            }
+        }
+    }
     
-    for (;;) {
-        const char *cline;
-        ScmObj line = Scm_ReadLineUnsafe(SCM_PORT(f));
-        if (SCM_EOFP(line)) break;
-        cline = Scm_GetStringConst(SCM_STRING(line));
-        if (strncmp(cline, "dlname=", sizeof("dlname=")-1) == 0) {
-            dlname = get_la_val(cline+sizeof("dlname=")-1);
-            continue;
-        }
-        if (strncmp(cline, "libdir=", sizeof("libdir=")-1) == 0) {
-            libdir = get_la_val(cline+sizeof("libdir=")-1);
-            continue;
-        }
-        if (strncmp(cline, "installed=yes", sizeof("installed=yes")-1) == 0) {
-            installed = TRUE;
-            continue;
-        }
-    }
-    Scm_ClosePort(SCM_PORT(f));
-    if (!dlname) return SCM_FALSE;
-    if (installed && libdir) {
-        ScmObj path = Scm_StringAppendC(SCM_STRING(SCM_MAKE_STR(libdir)),
-                                        "/", 1, 1);
-        path = Scm_StringAppend2(SCM_STRING(path),
-                                 SCM_STRING(SCM_MAKE_STR(dlname)));
-        /*Scm_Printf(SCM_CURERR, "Z=%S\n", path);*/
-        if (regfilep(path)) return path;
-    } else {
-        ScmObj dir = Scm_DirName(lafile);
-        ScmObj path = Scm_StringAppendC(SCM_STRING(dir),
-                                        "/" SCM_LIBTOOL_OBJDIR "/",
-                                        sizeof("/" SCM_LIBTOOL_OBJDIR "/")-1,
-                                        sizeof("/" SCM_LIBTOOL_OBJDIR "/")-1);
-        path = Scm_StringAppend2(SCM_STRING(path),
-                                 SCM_STRING(SCM_MAKE_STR(dlname)));
-        /*Scm_Printf(SCM_CURERR, "T=%S\n", path);*/
-        if (regfilep(path)) return path;
-    }
-    return SCM_FALSE;
+    /* Call initialization function.  note that there can be arbitrary
+       complex stuff done within func(), including evaluation of
+       Scheme procedures and/or calling dynamic-load for other
+       object.  There's a chance that, with some contrived case,
+       func() can trigger the dynamic loading of the same file we're
+       loading right now.  However, if the code follows the Gauche's
+       standard module structure, such circular dependency is detected
+       by Scm_Load, so we don't worry about it here. */
+    ifn->fn();
+    ifn->initialized = TRUE;
 }
-#endif
 
 /* Dynamically load the specified object by FILENAME.
    FILENAME must not contain the system's suffix (.so, for example).
+   The same name of DSO can be only loaded once.
+   A DSO may contain multiple initialization functions (initfns), in
+   which case each initfn is called at most once.
 */
-ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, u_long flags/*unused*/)
+ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, u_long flags/*reserved*/)
 {
-    ScmObj reqname, truename, load_paths = Scm_GetDynLoadPath();
-    const char *cpath, *initname;
-    dlobj *newdlo, *dlo;
+    const char *dsopath = find_dso_path(filename);
+    const char *initname = get_initfn_name(initfn, dsopath);
+    dlobj *dlo = find_dlobj(dsopath);
 
-    truename = Scm_FindFile(filename, &load_paths, ldinfo.dso_suffixes, TRUE);
-    if (SCM_FALSEP(truename)) {
-        Scm_Error("can't find dlopen-able module %S", filename);
-    }
-    reqname = truename;         /* save requested name */
-    cpath = Scm_GetStringConst(SCM_STRING(truename));
-
-#if 0  /* Turned off libtool *.la support.  Not sure if we need this. */
-    if ((suff = strrchr(cpath, '.')) && strcmp(suff, ".la") == 0) {
-        truename = find_so_from_la(SCM_STRING(truename));
-        if (SCM_FALSEP(truename)) {
-            Scm_Error("couldn't find dlopen-able module from libtool archive file %s", cpath);
-        }
-        cpath = Scm_GetStringConst(SCM_STRING(truename));
-    }
-#endif
-
-    if (SCM_STRINGP(initfn)) {
-        ScmObj _initfn = Scm_StringAppend2(SCM_STRING(Scm_MakeString("_", 1, 1, 0)),
-                                           SCM_STRING(initfn));
-        initname = Scm_GetStringConst(SCM_STRING(_initfn));
-    } else {
-        /* NB: we use requested name to derive initfn name, instead of
-           the one given in libtool .la file.  For example, on cygwin,
-           the actual DLL that libtool library libfoo.la points to is
-           named cygfoo.dll; we still want Scm_Init_libfoo in that case,
-           not Scm_Init_cygfoo. */
-        initname = get_dynload_initfn(Scm_GetStringConst(SCM_STRING(reqname)));
+    /* Load the dlobj if necessary. */
+    lock_dlobj(dlo);
+    if (!dlo->loaded) {
+        SCM_UNWIND_PROTECT { load_dlo(dlo); }
+        SCM_WHEN_ERROR { unlock_dlobj(dlo); SCM_NEXT_HANDLER; }
+        SCM_END_PROTECT;
     }
 
-    newdlo = make_dlobj(cpath);
-    dlo = find_or_add_dlobj(newdlo);
+    /* Now the dlo is loaded.  We need to call initializer. */
+    SCM_ASSERT(dlo->loaded);
 
-    if (dlo != newdlo) {
-        /* somebody has tried to load this DSO. */
-        (void)SCM_INTERNAL_MUTEX_LOCK(dlo->mutex);
-        while (dlo->state != DLOBJ_INITIALIZED) {
-            if (dlo->loader == NULL) {
-                /* loading is abandoned.  we take it over. */
-                dlo->loader = newdlo->loader;  /* this is our VM */
-                break;
-            } else {
-                (void)SCM_INTERNAL_COND_WAIT(dlo->cv, dlo->mutex);
-            }
-        }
-        (void)SCM_INTERNAL_MUTEX_UNLOCK(dlo->mutex);
+    SCM_UNWIND_PROTECT { call_initfn(dlo, initname); }
+    SCM_WHEN_ERROR { unlock_dlobj(dlo);  SCM_NEXT_HANDLER; }
+    SCM_END_PROTECT;
 
-        if (dlo->state == DLOBJ_INITIALIZED) {
-            /* it is already loaded. we just return. */
-            return SCM_TRUE;
-        }
-        /* FALLTHROUGH */
-    }
-
-    /* At this moment, dlo is owned by our thread (either we're the
-       first one to load, or we took over the abandoned dlo).  Note that
-       only the loader can touch dlo->state; so it is safe to inspect
-       it here without locking it. */
-    SCM_UNWIND_PROTECT {
-        ScmVM *vm = Scm_VM();
-
-        switch (dlo->state) {
-        case DLOBJ_NONE:
-            /* First, we dl_open the DSO. */
-            if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
-                int len = Scm_Length(vm->load_history);
-                SCM_PUTZ(";;", 2, SCM_CURERR);
-                while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
-                Scm_Printf(SCM_CURERR, "Dynamically Loading %s...\n", cpath);
-            }
-            dlo->handle = dl_open(cpath);
-            if (dlo->handle == NULL) {
-                const char *err = dl_error();
-                if (err == NULL) {
-                    Scm_Error("failed to link %S dynamically", filename);
-                } else {
-                    Scm_Error("failed to link %S dynamically: %s", filename, err);
-                }
-                /*NOTREACHED*/
-            }
-            /* locate initfn.  initname always has '_'.  Whether the actual
-               symbol dl_sym returns has '_' or not depends on the platform,
-               so we first try without '_', then '_'. */
-            dlo->initfn = dl_sym(dlo->handle, initname+1);
-            if (dlo->initfn == NULL) {
-                dlo->initfn = (void(*)(void))dl_sym(dlo->handle, initname);
-                if (dlo->initfn == NULL) {
-                    dl_close(dlo->handle);
-                    dlo->handle = NULL;
-                    Scm_Error("dynamic linking of %S failed: couldn't find initialization function %s", filename, initname);
-                    /*NOTREACHED*/
-                }
-            }
-            dlo->state = DLOBJ_LOADED;
-            /*FALLTHROUGH*/
-        case DLOBJ_LOADED:
-            SCM_ASSERT(dlo->initfn != NULL);
-            /* Call initialization function.  note that there can be arbitrary
-               complex stuff done within func(), including evaluation of
-               Scheme procedures and/or calling dynamic-load for other
-               object.  There's a chance that, with some contrived example,
-               func() can trigger the dynamic loading of the same file we're
-               loading right now.  However, if the code follows the Gauche's
-               standard module structure, such circular dependency is detected
-               by Scm_Load, so we don't worry about it here. */
-            dlo->initfn();
-            /* Alright.  Everything seems fine. */
-            dlo->state = DLOBJ_INITIALIZED;
-            /*FALLTHROUGH*/
-        default:
-            /*Nothing to do*/
-            break;
-        }
-    } SCM_WHEN_ERROR {
-        (void)SCM_INTERNAL_MUTEX_LOCK(dlo->mutex);
-        dlo->loader = NULL;
-        (void)SCM_INTERNAL_COND_BROADCAST(dlo->cv);
-        (void)SCM_INTERNAL_MUTEX_UNLOCK(dlo->mutex);
-        SCM_NEXT_HANDLER;
-    } SCM_END_PROTECT;
-
-    /* All is done. */
-    (void)SCM_INTERNAL_MUTEX_LOCK(dlo->mutex);
-    dlo->loader = NULL;
-    (void)SCM_INTERNAL_COND_BROADCAST(dlo->cv);
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(dlo->mutex);
-
+    unlock_dlobj(dlo);
     return SCM_TRUE;
 }
 

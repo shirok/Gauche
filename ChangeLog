@@ -1,3 +1,9 @@
+2009-04-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_DynLoad): Allow multiple initialization function
+	  in a DSO, in order to support precompiling multiple Scheme sources
+	  (modules) into single DSO.
+
 2009-04-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_DynLoad): Turned the obsoleted third argument
