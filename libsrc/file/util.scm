@@ -290,6 +290,9 @@
           [(arg) (values (reverse r) arg)]
           [_ (error "invalid option list:" args)])))
     (define (mkpath dir name) (build-path dir (x->string name)))
+    (define chown (cond-expand
+                   [gauche.sys.lchown sys-lchown]
+                   [else sys-chown]))
     (define (walk dir node do-file do-dir)
       (match node
         [[? name?] (do-file (mkpath dir node))]
@@ -308,8 +311,10 @@
          [(not content) (touch-file path)]
          [(string? content) (with-output-to-file path (cut display content))]
          [else (with-output-to-file path (cut content path))]))
-      (when mode (sys-chmod path mode))
-      (when (or (>= owner 0) (>= group 0)) (sys-chown path owner group)))
+      ;; NB: BSD systems has lchmod, so we may support :mode with :symlink
+      ;; in future.
+      (when (and mode (not symlink)) (sys-chmod path mode))
+      (when (or (>= owner 0) (>= group 0)) (chown path owner group)))
     (define (ensure-dir path children :key (mode #o755) (owner -1) (group -1))
       (make-directory* path mode)
       (for-each (cut ensure path <>) children)
@@ -336,9 +341,9 @@
            (every (cut check path <>) children)))
     (define (check-attrs path mode owner group)
       (let1 s (sys-lstat path)
-        (or (not mode) (= (~ s'perm) mode))
-        (or (negative? owner) (= (~ s'uid) owner))
-        (or (negative? group) (= (~ s'gid) group))))
+        (and (or (not mode) (= (~ s'perm) mode))
+             (or (negative? owner) (= (~ s'uid) owner))
+             (or (negative? group) (= (~ s'gid) group)))))
     (define (check dir node) (walk dir node check-file check-dir))
     (define (check-directory-tree start tree) (check start tree))
 

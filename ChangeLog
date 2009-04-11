@@ -1,5 +1,11 @@
 2009-04-10  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/file/util.scm (create-directory-tree):   Make :owner and
+	  :group work with :symlink to change symlink's owner/group instead
+	  of the file pointed by it.  Note that :mode is ignored if :symlink;
+	  we may honor :mode on systems that has lchmod in future.
+	  (check-directory-tree): Fix bug in attribute check.
+
 	* src/gauche-install.in: Changed -p option to take actual path prefix
 	  instead of the number of path components to strip.  It is rather
 	  useful to make it so to strip $(srcdir) in the make rules.
