@@ -46,7 +46,7 @@
           socket-address socket-status socket-input-port socket-output-port
           socket-shutdown socket-close socket-bind socket-connect socket-fd
           socket-listen socket-accept socket-setsockopt socket-getsockopt
-          socket-getsockname socket-getpeername
+          socket-getsockname socket-getpeername socket-ioctl
           socket-send socket-sendto socket-sendmsg socket-buildmsg
           socket-recv socket-recv! socket-recvfrom socket-recvfrom!
           <sockaddr> <sockaddr-in> <sockaddr-un> make-sockaddrs
