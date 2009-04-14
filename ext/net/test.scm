@@ -6,6 +6,7 @@
 
 (use gauche.test)
 (use gauche.uvector)
+(use gauche.experimental.app)
 (use srfi-1)
 (use srfi-13)
 (test-start "net")
@@ -437,24 +438,49 @@
            (socket-close sock)
            (sys-wait))))
 
-(test* "udp uvector API" '(#t #t)
-       (let ((s-sock (make-socket PF_INET SOCK_DGRAM))
-             (r-sock (make-socket PF_INET SOCK_DGRAM))
-             (s-addr (make <sockaddr-in> :host :loopback :port *inet-port*))
-             (r-addr (make <sockaddr-in> :host :any :port *inet-port*))
-             (from   (make <sockaddr-in>))
-             (data   (make-u8vector 1024 #x3c))
-             (buf    (make-u8vector 1024 #xa5)))
-         (socket-setsockopt r-sock SOL_SOCKET SO_REUSEADDR 1)
-         (socket-bind r-sock r-addr)
-         (socket-sendto s-sock data s-addr)
-         (unwind-protect
-             (receive (size f-addr) (socket-recvfrom! r-sock buf (list from))
-               (list (eq? f-addr from)
-                     (equal? buf data)))
-           (begin
-             (socket-close r-sock)
-             (socket-close s-sock)))
-         ))
+(define (with-sr-udp proc)
+  (let ((s-sock (make-socket PF_INET SOCK_DGRAM))
+        (r-sock (make-socket PF_INET SOCK_DGRAM))
+        (s-addr (make <sockaddr-in> :host :loopback :port *inet-port*))
+        (r-addr (make <sockaddr-in> :host :any :port *inet-port*)))
+    (socket-setsockopt r-sock SOL_SOCKET SO_REUSEADDR 1)
+    (socket-bind r-sock r-addr)
+    (unwind-protect
+        (proc s-sock s-addr r-sock r-addr)
+      (begin (socket-close r-sock)
+             (socket-close s-sock)))))
+
+(with-sr-udp
+ (lambda (s-sock s-addr r-sock r-addr)
+   (let ([from (make <sockaddr-in>)]
+         [data (make-u8vector 1024 #x3c)]
+         [buf  (make-u8vector 1024 #xa5)])
+     (test* "udp uvector API" '(#t #t)
+            (begin
+              (socket-sendto s-sock data s-addr)
+              (receive (size f-addr) (socket-recvfrom! r-sock buf (list from))
+                (list (eq? f-addr from)
+                      (equal? buf data))))))))
+
+(with-sr-udp
+ (lambda (s-sock s-addr r-sock r-addr)
+   (let ([from   (make <sockaddr-in>)]
+         [data   `#(,(make-string 255 #\a) ,(make-u8vector 255 48))]
+         [sbuf   (make-u8vector 1024)]
+         [rbuf   (make-u8vector 1024 0)])
+
+     (define (xtest sbuf)
+       (socket-sendmsg s-sock (socket-buildmsg r-addr data '() 0 sbuf))
+       (receive (size f-addr) (socket-recvfrom! r-sock rbuf (list from))
+         (list (eq? f-addr from)
+               (equal? (uvector-alias <u8vector> rbuf 0 size)
+                       ($ string->u8vector
+                          $ string-concatenate
+                          $ map (lambda (z)
+                                  (if (string? z) z (u8vector->string z)))
+                          $ vector->list data)))))
+              
+     (test* "udp sendmsg w/sendbuf" '(#t #t) (xtest sbuf))
+     (test* "udp sendmsg w/o sendbuf" '(#t #t) (xtest #f)))))
 
 (test-end)

@@ -341,9 +341,7 @@ ScmObj Scm_SocketSend(ScmSocket *sock, ScmObj msg, int flags)
     CLOSE_CHECK(sock->fd, "send to", sock);
     cmsg = get_message_body(msg, &size);
     SCM_SYSCALL(r, send(sock->fd, cmsg, size, flags));
-    if (r < 0) {
-        Scm_SysError("send(2) failed");
-    }
+    if (r < 0) Scm_SysError("send(2) failed");
     return SCM_MAKE_INT(r);
 }
 
@@ -356,9 +354,18 @@ ScmObj Scm_SocketSendTo(ScmSocket *sock, ScmObj msg, ScmSockAddr *to,
     cmsg = get_message_body(msg, &size);
     SCM_SYSCALL(r, sendto(sock->fd, cmsg, size, flags,
                           &SCM_SOCKADDR(to)->addr, SCM_SOCKADDR(to)->addrlen));
-    if (r < 0) {
-        Scm_SysError("sendto(2) failed");
-    }
+    if (r < 0) Scm_SysError("sendto(2) failed");
+    return SCM_MAKE_INT(r);
+}
+
+ScmObj Scm_SocketSendMsg(ScmSocket *sock, ScmObj msg, int flags)
+{
+    int r; u_int size;
+    const char *cmsg;
+    CLOSE_CHECK(sock->fd, "send to", sock);
+    cmsg = get_message_body(msg, &size);
+    SCM_SYSCALL(r, sendmsg(sock->fd, (struct msghdr*)cmsg, flags));
+    if (r < 0) Scm_SysError("sendmsg(2) failed");
     return SCM_MAKE_INT(r);
 }
 
@@ -455,6 +462,101 @@ ScmObj Scm_SocketRecvFromX(ScmSocket *sock, ScmUVector *buf,
     return Scm_Values2(Scm_MakeInteger(r), addr);
 }
 
+/* Low level message builder */
+ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
+                          ScmObj control, int flags,
+                          ScmUVector *buf)
+{
+    struct msghdr *msg;
+    int bufsiz = 0;
+    char *bufptr = 0;
+
+    if (buf != NULL) {
+        bufsiz = Scm_UVectorSizeInBytes(buf);
+        bufptr = (char*)SCM_UVECTOR_ELEMENTS(buf);
+    }
+    
+    if (bufsiz >= sizeof(struct msghdr)) {
+        msg = (struct msghdr*)bufptr;
+        bufptr += sizeof(struct msghdr); bufsiz -= sizeof(struct msghdr);
+    } else {
+        msg = SCM_NEW(struct msghdr);
+    }
+
+    if (name != NULL) {
+        msg->msg_name = &name->addr;
+        msg->msg_namelen = name->addrlen;
+    } else {
+        msg->msg_name = NULL;
+        msg->msg_namelen = 0;
+    }
+
+    if (iov != NULL) {
+        int i;
+        int iovsiz = SCM_VECTOR_SIZE(iov) * sizeof(struct iovec);
+        msg->msg_iovlen = SCM_VECTOR_SIZE(iov);
+        if (bufsiz >= iovsiz) {
+            msg->msg_iov = (struct iovec*)bufptr;
+            bufptr += iovsiz; bufsiz -= iovsiz;
+        } else {
+            msg->msg_iov = SCM_NEW_ARRAY(struct iovec, msg->msg_iovlen);
+        }
+        for (i=0; i < msg->msg_iovlen; i++) {
+            ScmObj elt = SCM_VECTOR_ELEMENT(iov, i);
+            u_int iovlen;
+            msg->msg_iov[i].iov_base = (char*)get_message_body(elt, &iovlen);
+            msg->msg_iov[i].iov_len  = iovlen;
+        }
+    } else {
+        msg->msg_iov = NULL;
+        msg->msg_iovlen = 0;
+    }
+
+    if (SCM_PAIRP(control)) {
+        ScmObj cp;
+        int ctrllen = 0;
+        struct cmsghdr *cmsg;
+        
+        SCM_FOR_EACH(cp, control) {
+            u_int clen;
+            ScmObj c = SCM_CAR(cp);
+            if (!(Scm_Length(c) == 3
+                  && SCM_INTP(SCM_CAR(c))
+                  && SCM_INTP(SCM_CADR(c))
+                  && (SCM_STRINGP(SCM_CAR(SCM_CDDR(c)))
+                      || SCM_U8VECTORP(SCM_CAR(SCM_CDDR(c)))))) {
+                Scm_Error("socket-buildmsg: invalid control message spec: %S", c);
+            }
+            (void*)get_message_body(SCM_CAR(SCM_CDDR(c)), &clen);
+            ctrllen += CMSG_SPACE(clen);
+        }
+        msg->msg_controllen = ctrllen;
+        if (bufsiz >= ctrllen) {
+            msg->msg_control = bufptr;
+        } else {
+            msg->msg_control = SCM_NEW_ATOMIC_ARRAY(char, ctrllen);
+        }
+        cmsg = CMSG_FIRSTHDR(msg);
+        SCM_FOR_EACH(cp, control) {
+            u_int clen;
+            ScmObj c = SCM_CAR(cp);
+            const char *cdata = get_message_body(SCM_CAR(SCM_CDDR(c)), &clen);
+            cmsg->cmsg_level = SCM_INT_VALUE(SCM_CAR(c));
+            cmsg->cmsg_type = SCM_INT_VALUE(SCM_CADR(c));
+            cmsg->cmsg_len = CMSG_LEN(clen);
+            memcpy(CMSG_DATA(cmsg), cdata, clen);
+            cmsg = CMSG_NXTHDR(msg, cmsg);
+        }
+    } else {
+        msg->msg_control = NULL;
+        msg->msg_controllen = 0;
+    }
+    msg->msg_flags = flags;
+
+    if (buf != NULL) return SCM_OBJ(buf);
+    else return Scm_MakeUVector(SCM_CLASS_U8VECTOR, sizeof(struct msghdr), msg);
+}
+
 /* Low-level setsockopt() and getsockopt() interface. */
 /* for getsockopt(), we need to know the size of the result.
    if rtype > 0, it is used as the size of result buffer and
@@ -503,6 +605,36 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
         if (r < 0) Scm_SysError("getsockopt failed");
         return Scm_MakeInteger(val);
     }
+}
+
+/* Low-level ioctl. */
+ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
+{
+    int r = 0;
+#if HAVE_STRUCT_IFREQ
+    struct ifreq ifreq_pkt;
+
+    CLOSE_CHECK(s->fd, "ioctl on", s);
+    memset(&ifreq_pkt, 0, sizeof(ifreq_pkt));
+    switch (request) {
+#if defined(SIOCGIFINDEX)
+    case SIOCGIFINDEX:
+        if (!SCM_STRINGP(data)) {
+            Scm_TypeError("SIOCGIFINDEX ioctl argument", "string", data);
+        }
+        strncpy(ifreq_pkt.ifr_name, Scm_GetStringConst(SCM_STRING(data)),
+                IFNAMSIZ-1);
+        SCM_SYSCALL(r, ioctl(s->fd, SIOCGIFINDEX, &ifreq_pkt));
+        if (r < 0) Scm_SysError("ioctl(SIOCGIFINDEX) failed");
+        return Scm_MakeInteger(ifreq_pkt.ifr_ifindex);
+#endif /*SIOCGIFNAME*/
+    default:
+        Scm_Error("unsupported ioctl operation: %d", request);
+    }
+#else  /*!HAVE_STRUCT_IFREQ*/
+    Scm_Error("unsupported ioctl operation: %d", request);
+#endif /*!HAVE_STRUCT_IFREQ*/
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 /*==================================================================

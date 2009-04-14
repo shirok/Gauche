@@ -143,6 +143,9 @@
 /* Define to 1 if you have the `nanosleep' function. */
 #undef HAVE_NANOSLEEP
 
+/* Define to 1 if you have the <net/if.h> header file. */
+#undef HAVE_NET_IF_H
+
 /* Define if you have openpty */
 #undef HAVE_OPENPTY
 
@@ -211,6 +214,9 @@
 
 /* Define if "struct group" has gr_passwd */
 #undef HAVE_STRUCT_GROUP_GR_PASSWD
+
+/* Define if you have "struct ifreq" */
+#undef HAVE_STRUCT_IFREQ
 
 /* Define if "struct passwd" has pw_class */
 #undef HAVE_STRUCT_PASSWD_PW_CLASS

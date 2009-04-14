@@ -216,6 +216,9 @@
                              :optional (flags::<fixnum> 0))
   Scm_SocketSendTo)
 
+(define-cproc socket-sendmsg (sock::<socket> msg :optional (flags::<fixnum> 0))
+  Scm_SocketSendMsg)
+
 (define-cproc socket-recv (sock::<socket> bytes::<fixnum>
                            :optional (flags::<fixnum> 0))
   Scm_SocketRecv)
@@ -232,8 +235,15 @@
                                 :optional (flags::<fixnum> 0))
   Scm_SocketRecvFromX)
 
-;; socket option interface
+;; struct msghdr builder
+(define-cproc socket-buildmsg (name::<socket-address>?
+                               iov::<vector>?
+                               control  ;list of (level type data)
+                               flags::<int>
+                               :optional (buf::<uvector>? #f))
+  Scm_SocketBuildMsg)
 
+;; socket option interface
 (define-cproc socket-setsockopt (sock::<socket>
                                  level::<fixnum> option::<fixnum> value)
   Scm_SocketSetOpt)
@@ -290,6 +300,51 @@
 (define-enum-conditionally IP_ADD_MEMBERSHIP)
 (define-enum-conditionally IP_DROP_MEMBERSHIP)
 (define-enum-conditionally IP_MULTICAST_IF)
+
+;; network device access
+;; this is pretty much Linux-specific.
+
+(when (defined "HAVE_NET_IF_H")
+  (define-cproc socket-ioctl (sock::<socket> request::<int> data)
+    Scm_SocketIoctl)
+  ) ; "HAVE_NET_IF_H"
+
+(define-enum-conditionally SIOCGIFNAME)
+(define-enum-conditionally SIOCSIFNAME)
+(define-enum-conditionally SIOCGIFINDEX)
+(define-enum-conditionally SIOCGIFFLAGS)
+(define-enum-conditionally SIOCSIFFLAGS)
+(define-enum-conditionally SIOCGIFMETRIC)
+(define-enum-conditionally SIOCSIFMETRIC)
+(define-enum-conditionally SIOCGIFMTU)
+(define-enum-conditionally SIOCSIFMTU)
+(define-enum-conditionally SIOCGIFHWADDR)
+(define-enum-conditionally SIOCSIFHWADDR)
+(define-enum-conditionally SIOCSIFHWBROADCAST)
+(define-enum-conditionally SIOCGIFMAP)
+(define-enum-conditionally SIOCSIFMAP)
+(define-enum-conditionally SIOCADDMULTI)
+(define-enum-conditionally SIOCDELMULTI)
+(define-enum-conditionally SIOGIFTXQLEN)
+(define-enum-conditionally SIOSIFTXQLEN)
+(define-enum-conditionally SIOCGIFCONF)
+
+(define-enum-conditionally IFF_UP)
+(define-enum-conditionally IFF_BROADCAST)
+(define-enum-conditionally IFF_DEBUG)
+(define-enum-conditionally IFF_LOOPBACK)
+(define-enum-conditionally IFF_POINTTOPOINT)
+(define-enum-conditionally IFF_RUNNING)
+(define-enum-conditionally IFF_NOARP)
+(define-enum-conditionally IFF_PROMISC)
+(define-enum-conditionally IFF_NOTRAILERS)
+(define-enum-conditionally IFF_ALLMULTI)
+(define-enum-conditionally IFF_MASTER)
+(define-enum-conditionally IFF_SLAVE)
+(define-enum-conditionally IFF_MULTICAST)
+(define-enum-conditionally IFF_PORTSEL)
+(define-enum-conditionally IFF_AUTOMEDIA)
+(define-enum-conditionally IFF_DYNAMIC)
 
 ;;----------------------------------------------------------
 ;; netdb routines

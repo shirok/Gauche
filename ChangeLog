@@ -1,3 +1,12 @@
+2009-04-14  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netlib.stub (socket-sendmsg, socket-buildmsg, socket-ioctl),
+	  ext/net/net.c (Scm_SocketSendMsg, Scm_SocketBuildMsg,
+	  Scm_SocketIoctl): Added these low-level stuff.  SocketIoctl only
+	  supports SIOCGIFINDEX for now.
+	* ext/net/net.ac, src/gauche/configure.h.in (HAVE_NET_IF_H,
+	  HAVE_STRUCT_IFREQ): Added these checks to support socket-ioctl.
+
 2009-04-10  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm (create-directory-tree):   Make :owner and

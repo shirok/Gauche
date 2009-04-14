@@ -5335,6 +5335,106 @@ and @code{sendto(2)} for the details.
 @c COMMON
 @end defun
 
+@defun socket-sendmsg socket msghdr &optional flags
+@c EN
+Sends a packet described by @var{msghdr} through @var{socket}
+using @code{sendmsg(3)}.  The @var{msghdr} argument must be a
+string or u8vector, and it must be prepared as a binary representation
+of @code{struct msghdr}.  A reliable way to build a @var{msghdr} is
+to use @code{socket-buildmsg} described below.
+
+The @var{flags} argument is the same as @code{socket-send} and
+@code{socket-sendto}.
+
+Returns number of octets sent.
+@c JP
+@code{sendmsg(3)}を使って、@var{msghdr}で記述されるパケットを@var{socket}
+を通じて送ります。@var{msghdr}引数は文字列かu8vectorで、
+@code{struct msghdr}構造体のバイナリ表現でなければなりません。
+@var{msghdr}引数に適したデータを構築する確かな方法は、下に述べる
+@code{socket-buildmsg}を使うことです。
+
+@var{flags}引数は@code{socket-send}および@code{socket-sendto}と同じです。
+
+送り出されたオクテット数を返します。
+@c COMMON
+@end defun
+
+@defun socket-buildmsg addr iov control flags &optional buf
+@c EN
+Builds a binary representation of @code{struct msghdr} which is
+suitable to be given to @code{socket-sendmsg}.
+You have to be familiar with @code{sendmsg(3)} system call
+to understand this procedure.
+
+The @var{addr} argument must be an instance of @code{<sockaddr>}
+or @code{#f}.  If it is a sockaddr, the @code{msg_name} field
+of the msghdr is filled with the address.
+
+The @var{iov} argument must be a vector or @code{#f}.  If it is
+a vector, each element must be either a string or a u8vector.
+They are used to fill @code{msg_iov} field of the msghdr.
+Their contents will be concatenated in the kernel to make a payload.
+
+The @var{control} argument represents ancillary data, a.k.a. cmsg.
+It can be @code{#f} if you don't need ancillary data.  Otherwise,
+it must be a list in the following form:
+@example
+((@var{level} @var{type} @var{data}) @dots{})
+@end example
+Where @var{level} and @var{type} are exact integers,
+and @var{data} is either a string or a u8vector.
+The former two are used to fill cmsg's @code{cmsg_level}
+and @code{cmsg_type} fields.  The @var{data} is for
+cmsg's data (@code{cmsg_len} is calculated from @var{data}).
+ 
+The @var{flags} argument is used to fill @code{msg_flags}.
+
+If the @var{buf} argument is @code{#f} or omitted, new memories
+are allocated to construct the msghdr.  If a mutable
+u8vector is given to @var{buf}, @code{socket-buildmsg} tries
+to use it to construct the msghdr as much as possible; it allocates
+memory only if @var{buf} is used up.
+
+Returns the constructed msghdr as a u8vector.
+@c JP
+@code{struct msghdr}構造体のバイナリ表現を構築します。
+作られたmsghdrは@code{socket-sendmsg}に渡すことができます。
+この手続きを理解するには、@code{sendmsg(3)}の動作をよく知っていることが必要です。
+
+@var{addr}引数は@code{<sockaddr>}のインスタンスか@code{#f}でなければ
+なりません。@code{<sockaddr>}のインスタンスである場合、そのアドレスが
+msghdrの@code{msg_name}フィールドに使われます。
+
+@var{iov}引数はベクタか@code{#f}でなければなりません。ベクタの場合、
+各要素は文字列かu8vectorでなければなりません。これはmsghdrの
+@code{msg_iov}フィールドに使われます。各要素の内容はカーネル内で
+結合されてペイロードとなります。
+
+@var{control}引数は補助データ(cmsg)を指定します。補助データが必要ない
+場合は@code{#f}を渡せます。そうでなければ、@var{control}引数は
+次の形式を持つリストでなければなりません。
+@example
+((@var{level} @var{type} @var{data}) @dots{})
+@end example
+@var{level}と@var{type}は正確な整数で、@var{data}は文字列かu8vectorの
+いずれかです。
+最初の2つはそれぞれcmsgの@code{cmsg_level}と
+@code{cmsg_type}フィールドを指定します。@var{data}はcmsgのデータとなります。
+(@code{cmsg_len}は@var{data}から計算されます)。
+ 
+@var{flags}引数は@code{msg_flags}フィールドに使われます。
+
+@var{buf}引数が省略されるか@code{#f}の場合、msghdrを構築するのに
+必要なメモリがアロケートされます。書き換え可能なu8vectorが@var{buf}
+に渡されれば、@code{socket-buildmsg}はできるだけそれをバッファに使って
+msghdrを構築しようとします。@var{buf}で領域が不足する場合のみ
+新たなメモリをアロケートします。
+
+この手続きは構築されたmsghdrをu8vectorとして返します。
+@c COMMON
+@end defun
+
 @defun socket-recv! socket buf &optional flags
 @c EN
 Interface to @code{recv(2)}.  Receives a message from @var{socket},

@@ -47,7 +47,7 @@
           socket-shutdown socket-close socket-bind socket-connect socket-fd
           socket-listen socket-accept socket-setsockopt socket-getsockopt
           socket-getsockname socket-getpeername
-          socket-send socket-sendto
+          socket-send socket-sendto socket-sendmsg socket-buildmsg
           socket-recv socket-recv! socket-recvfrom socket-recvfrom!
           <sockaddr> <sockaddr-in> <sockaddr-un> make-sockaddrs
           sockaddr-name sockaddr-family sockaddr-addr sockaddr-port
@@ -82,6 +82,19 @@
  IP_ADD_MEMBERSHIP IP_DROP_MEMBERSHIP IP_MULTICAST_IF
  MSG_CTRUNC MSG_DONTROUTE MSG_EOR MSG_OOB MSG_PEEK MSG_TRUNC
  MSG_WAITALL)
+
+;; Netdevice control.  OS specific.
+(export-if-defined
+ SIOCGIFNAME SIOCSIFNAME SIOCGIFINDEX SIOCGIFFLAGS SIOCSIFFLAGS
+ SIOCGIFMETRIC SIOCSIFMETRIC SIOCGIFMTU SIOCSIFMTU
+ SIOCGIFHWADDR SIOCSIFHWADDR SIOCSIFHWBROADCAST
+ SIOCGIFMAP SIOCSIFMAP SIOCADDMULTI SIOCDELMULTI
+ SIOGIFTXQLEN SIOSIFTXQLEN SIOCGIFCONF
+
+ IFF_UP IFF_BROADCAST IFF_DEBUG IFF_LOOPBACK IFF_POINTTOPOINT
+ IFF_RUNNING IFF_NOARP IFF_PROMISC IFF_NOTRAILERS IFF_ALLMULTI
+ IFF_MASTER IFF_SLAVE IFF_MULTICAST IFF_PORTSEL IFF_AUTOMEDIA
+ IFF_DYNAMIC)
 
 ;; if ipv6 is supported, these symbols are defined in the C routine.
 

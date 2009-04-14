@@ -47,6 +47,12 @@ case "$target" in
 esac
 
 dnl
+dnl Check if net/if.h and struct ifreq
+dnl
+AC_CHECK_HEADERS(net/if.h)
+AC_CHECK_TYPES([struct ifreq],,,[#include <net/if.h>])
+
+dnl
 dnl Checks if sockaddr_in and sockaddr_in6 has *_len field
 dnl
 AC_CHECK_MEMBERS([struct sockaddr_un.sun_len],,,[#include <sys/un.h>])

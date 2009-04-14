@@ -47,6 +47,7 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <sys/un.h>
+#include <sys/ioctl.h>
 typedef int Socket;
 #define closeSocket close
 #define INVALID_SOCKET  ((Socket)-1)
@@ -64,6 +65,10 @@ typedef SOCKET Socket;
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
+
+#ifdef HAVE_NET_IF_H
+#include <net/if.h>
 #endif
 
 #if defined(EXTNET_EXPORTS)
@@ -235,16 +240,22 @@ extern ScmObj Scm_SocketGetPeerName(ScmSocket *s);
 
 extern ScmObj Scm_SocketSend(ScmSocket *s, ScmObj msg, int flags);
 extern ScmObj Scm_SocketSendTo(ScmSocket *s, ScmObj msg, ScmSockAddr *to, int flags);
+extern ScmObj Scm_SocketSendMsg(ScmSocket *s, ScmObj msg, int flags);
 extern ScmObj Scm_SocketRecv(ScmSocket *s, int bytes, int flags);
 extern ScmObj Scm_SocketRecvX(ScmSocket *s, ScmUVector *buf, int flags);
 extern ScmObj Scm_SocketRecvFrom(ScmSocket *s, int bytes, int flags);
 extern ScmObj Scm_SocketRecvFromX(ScmSocket *s, ScmUVector *buf, 
                                   ScmObj addrs, int flags);
 
+extern ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
+                                 ScmObj control, int flags,
+                                 ScmUVector *buf);
+
 extern ScmObj Scm_SocketSetOpt(ScmSocket *s, int level,
                                int option, ScmObj value);
 extern ScmObj Scm_SocketGetOpt(ScmSocket *s, int level,
                                int option, int resulttype);
+extern ScmObj Scm_SocketIoctl(ScmSocket *s, int requiest, ScmObj data);
     
 /*==================================================================
  * Netdb interface
