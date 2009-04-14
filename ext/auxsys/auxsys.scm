@@ -41,7 +41,7 @@
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname
           sys-putenv sys-setenv sys-unsetenv sys-environ sys-environ->alist
-          sys-chown sys-lchown sys-utime
+          sys-utime
           sys-getgroups sys-getlogin sys-localeconv
           sys-getloadavg)
   )
@@ -62,7 +62,6 @@
   (define sys-setuid #f)
   (define sys-getgroups #f)
   (define sys-uname #f)
-  (define sys-chown #f)
   ]
  [else])
 
@@ -148,10 +147,6 @@
 
 (cond-expand
  [(not gauche.sys.getpgid) (define sys-getpgid #f)] ;make autoload happy
- [else])
-
-(cond-expand
- [(not gauche.sys.lchown) (define sys-lchown #f)] ;make autoload happy
  [else])
 
 (cond-expand

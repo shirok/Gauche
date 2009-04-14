@@ -150,7 +150,7 @@
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname
           sys-putenv sys-setenv sys-unsetenv sys-environ sys-environ->alist
-          sys-chown sys-lchown sys-utime
+          sys-utime
           sys-getgroups sys-getlogin sys-localeconv
           sys-getloadavg)
 

@@ -14,7 +14,7 @@
              :allow-undefined '(sys-mkfifo sys-setgid sys-setpgid
                                 sys-getpgrp sys-setsid sys-setuid
                                 sys-getgroups sys-uname %sys-gethostname
-                                %sys-getdomainname sys-ctermid sys-chown))
+                                %sys-getdomainname sys-ctermid))
 
 
 ;; It is difficult to test some functions in gauche.auxsys

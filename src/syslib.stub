@@ -606,6 +606,23 @@
       (when (< r 0) (Scm_SysError "fchmod failed"))))
   ) ;; !defined(GAUCHE_WINDOWS)
 
+;; chown
+(define-cproc sys-chown (path::<const-cstring> owner::<int> group::<int>)
+  ::<int>
+  (|#if| "!defined(GAUCHE_WINDOWS)"
+         (SCM_SYSCALL SCM_RESULT (chown path owner group))
+         (set! SCM_RESULT 0))
+  (when (< SCM_RESULT 0) (Scm_SysError "chown failed on %s" path)))
+
+;; lchown
+(when "defined HAVE_LCHOWN"
+  (define-cproc sys-lchown (path::<const-cstring> owner::<int> group::<int>)
+    ::<int>
+    (SCM_SYSCALL SCM_RESULT (lchown path owner group))
+    (when (< SCM_RESULT 0) (Scm_SysError "lchown failed on %S" path)))
+  (initcode "Scm_AddFeature(\"gauche.sys.lchown\", NULL);")
+  )
+
 ;; NB: we force GC just befor fork().  It appeares necessary on some
 ;; platform to synchronize page dirty bit information, so that incremental
 ;; GC works properly.

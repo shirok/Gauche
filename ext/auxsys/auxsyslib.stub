@@ -267,23 +267,6 @@ extern ScmObj Scm_Environ(void);
          (let* ([buf::(.array char [(+ L_ctermid 1)])])
            (result (ctermid buf)))))
 
-;; chown
-(if "!defined(GAUCHE_WINDOWS)"
-(define-cproc sys-chown (path::<const-cstring> owner::<int> group::<int>)
-  ::<int>
-  (SCM_SYSCALL SCM_RESULT (chown path owner group))
-  (when (< SCM_RESULT 0) (Scm_SysError "chown failed on %s" path)))
-) ;; !defined(GAUCHE_WINDOWS)
-
-;; lchown
-(when "defined HAVE_LCHOWN"
-  (define-cproc sys-lchown (path::<const-cstring> owner::<int> group::<int>)
-    ::<int>
-    (SCM_SYSCALL SCM_RESULT (lchown path owner group))
-    (when (< SCM_RESULT 0) (Scm_SysError "lchown failed on %S" path)))
-  (initcode "Scm_AddFeature(\"gauche.sys.lchown\", NULL);")
-  )
-
 ;; localeconv
 
 (define-cise-expr lc-elt

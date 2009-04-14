@@ -1,5 +1,13 @@
 2009-04-14  Shiro Kawai  <shiro@acm.org>
 
+	* ext/auxsyslib.stub, ext/auxsys.scm, src/syslib.stub, src/autoloads.scm
+	  (sys-chown, sys-lchown): Moved these from auxsys to core.  The
+	  primary motivation is to avoid file.util depending on auxsys
+	  (the dependency causes a build problem).  But in fact, I don't
+	  remember why I factored these out to auxsys.  Since loading time
+	  isn't much issue now, probably I should consider merging all auxsys
+	  into core again.
+
 	* ext/net/netlib.stub (socket-sendmsg, socket-buildmsg, socket-ioctl),
 	  ext/net/net.c (Scm_SocketSendMsg, Scm_SocketBuildMsg,
 	  Scm_SocketIoctl): Added these low-level stuff.  SocketIoctl only
