@@ -129,7 +129,8 @@ ScmObj MakeSparseTable(ScmHashType type, u_long flags)
 }
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_SparseTableClass,
-                         NULL, NULL, NULL, NULL, NULL);
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_DICTIONARY_CPL);
 
 /*===================================================================
  * Lookup
@@ -292,7 +293,6 @@ void SparseTableIterInit(SparseTableIter *it, SparseTable *st)
 /* returns (key . value) or #f */
 ScmObj SparseTableIterNext(SparseTableIter *it)
 {
-    //fprintf(stderr, "ung %p\n", it->st);
     if (it->end) return SCM_FALSE;
     if (SCM_PAIRP(it->chain)) {
         ScmObj p = SCM_CAR(it->chain);
@@ -300,7 +300,6 @@ ScmObj SparseTableIterNext(SparseTableIter *it)
         return p;
     } else {
         SPTLeaf *z = (SPTLeaf*)CompactTrieIterNext(&it->ctit);
-        //fprintf(stderr, "gngn %p\n", z);
         if (z == NULL) { it->end = TRUE; return SCM_FALSE; }
         if (!leaf_is_chained(z)) {
             return Scm_Cons(z->d.entry.key, z->d.entry.value);

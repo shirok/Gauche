@@ -1,3 +1,8 @@
+2009-04-15  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sparse/sparse.scm, ext/sparse/sptab.c: Implemented dictionary
+	  protocol to <sparse-table>.
+
 2009-04-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/auxsyslib.stub, ext/auxsys.scm, src/syslib.stub, src/autoloads.scm
