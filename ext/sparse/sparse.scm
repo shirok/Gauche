@@ -40,7 +40,7 @@
           sparse-vector-ref sparse-vector-set!
           sparse-vector-clear! %sparse-vector-dump
           <sparse-table> make-sparse-table sparse-table-num-entries
-          sparse-table-ref sparse-table-set!
+          sparse-table-ref sparse-table-set! sparse-table-exists?
           sparse-table-clear! sparse-table-delete!
           sparse-table-fold sparse-table-map sparse-table-for-each
           sparse-table-keys sparse-table-values %sparse-table-dump)
@@ -109,6 +109,10 @@
 
  (define-cproc sparse-table-set! (st::<sparse-table> key value)
    (result (SparseTableSet st key value 0)))
+
+ (define-cproc sparse-table-exists? (st::<sparse-table> key) ::<boolean>
+   (let* ([r (SparseTableRef st key SCM_UNBOUND)])
+     (result (not (SCM_UNBOUNDP r)))))
 
  (define-cproc sparse-table-delete! (st::<sparse-table> key) ::<boolean>
    (result (not (SCM_UNBOUNDP (SparseTableDelete st key)))))

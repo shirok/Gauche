@@ -9,7 +9,7 @@
 (use util.sparse)
 (test-module 'util.sparse)
 
-(define (simple-test name obj %ref %set! key1 key2)
+(define (simple-test name obj %ref %set! key1 key2 :optional (%exists? #f))
   (test* #`",name basic set!/ref" 'ok
          (begin (%set! obj (key1) 'ok)
                 (%ref obj (key1))))
@@ -17,6 +17,9 @@
          (%ref obj (key2)))
   (test* #`",name referencing nokey fallback" 'huh?
          (%ref obj (key2) 'huh?))
+  (when %exists?
+    (test* #`",name exists?" #t (%exists? obj (key1)))
+    (test* #`",name exists?" #f (%exists? obj (key2))))
   (test* #`",name replace" 'okok
          (begin (%set! obj (key1) 'okok)
                 (%ref obj (key1))))
@@ -123,13 +126,17 @@
 (test-section "sparse-table")
 
 (simple-test "sparse-table (eq?)" (make-sparse-table 'eq?)
-             sparse-table-ref sparse-table-set! (const 'a) (const 'b))
+             sparse-table-ref sparse-table-set! (const 'a) (const 'b)
+             sparse-table-exists?)
 (simple-test "sparse-table (eqv?)" (make-sparse-table 'eqv?)
-             sparse-table-ref sparse-table-set! (cut / 3) (cut / 2))
+             sparse-table-ref sparse-table-set! (cut / 3) (cut / 2)
+             sparse-table-exists?)
 (simple-test "sparse-table (equal?)" (make-sparse-table 'equal?)
-             sparse-table-ref sparse-table-set! (cut list 1) (cut list 2))
+             sparse-table-ref sparse-table-set! (cut list 1) (cut list 2)
+             sparse-table-exists?)
 (simple-test "sparse-table (string=?)" (make-sparse-table 'string=?)
-             sparse-table-ref sparse-table-set! (cut string #\a) (cut string #\b))
+             sparse-table-ref sparse-table-set! (cut string #\a) (cut string #\b)
+             sparse-table-exists?)
 
 (define (sptab-heavy-test type keygen)
   (heavy-test #`"sparse-table (,type)" (make-sparse-table type)
