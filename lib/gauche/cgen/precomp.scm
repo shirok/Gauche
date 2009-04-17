@@ -153,12 +153,18 @@
 ;;      hygienic public macros expands to a call of private macros, and
 ;;      gauche.cgen.precomp cannot detect such dependencies yet.
 
+;; TO BE FIXED AFTER 0.9 RELEASE:
+;;  The keyword arguments marked 'TBF' in cgen-precomp and cgen-precomp-multi
+;;  should be fixed to the newer syntax ((:key var) init).  We use older
+;;  syntax here just to make the source buildable by 0.8.14.  After releasing
+;;  0.9 they should be changed to use the newer syntax.  See also the
+;;  pass1/extended-lambda for another temporary fix.
 (define (cgen-precompile src
                          :key (out.c #f)
                               (out.sci #f)
-                              ((:strip-prefix prefix) #f)
+                              (prefix :strip-prefix #f) ; TBF
                               (ext-initializer #f)
-                              ((:dso-name dso) #f)
+                              (dso :dso-name #f)        ; TBF
                               (initializer-name #f)
                               (sub-initializers '())
                               (predef-syms '())
@@ -204,8 +210,8 @@
 ;; source is used to derive DSO name.
 (define (cgen-precompile-multi srcs
                                :key (ext-initializer #f)
-                                    ((:strip-prefix prefix) #f)
-                                    ((:dso-name dso) #f)
+                                    (prefix :strip-prefix #f) ; TBF
+                                    (dso :dso-name #f)        ; TBF
                                     (predef-syms '())
                                     (macros-to-keep '()))
   (match srcs

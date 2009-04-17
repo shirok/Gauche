@@ -1,3 +1,14 @@
+2009-04-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass1/extended-lambda),
+	  lib/gauche/cgen/precomp.scm (cgen-precompile, cgen-precompile-multi):
+	  precomp.scm has been using a new keyword arg syntax in extended
+	  lambda (the one compatible to CL's), but that prevents svn trunk
+	  from compiling on 0.8.14 since it doesn't understand the new syntax.
+	  So we reverted the offending part temporarily, and changed
+	  compile.scm to allow both syntax; they should be gone once we
+	  roll out the next release.
+
 2009-04-15  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sparse/sparse.scm, ext/sparse/sptab.c: Implemented dictionary
