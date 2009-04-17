@@ -298,7 +298,7 @@
   (flusher sink headers))
 
 (define (receive-body-nochunked size remote sink)
-  (copy-port remote sink :size size))
+  (when (positive? size) (copy-port remote sink :size size)))
 
 ;; NB: chunk extension and trailer are ignored for now.
 (define (receive-body-chunked remote sink)

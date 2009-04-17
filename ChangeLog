@@ -1,5 +1,8 @@
 2009-04-16  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/http.scm (receive-body-nochunked): Fixed the bug that made
+	  http-get hang when Content-Length is 0.  Patch from kzfm1024.
+
 	* src/compile.scm (pass1/extended-lambda),
 	  lib/gauche/cgen/precomp.scm (cgen-precompile, cgen-precompile-multi):
 	  precomp.scm has been using a new keyword arg syntax in extended
