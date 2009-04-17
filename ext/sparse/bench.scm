@@ -5,9 +5,9 @@
 (use gauche.time)
 (use srfi-27)
 
-(define *problem-size* 2000000)
+(define *problem-size* 20000)
 
-(define *num-repeat* 5)
+(define *num-repeat* (ceiling->exact (/. 10000000 *problem-size*)))
 
 (define *problem-set*
   (let1 ht (make-hash-table 'eqv?)
@@ -32,28 +32,24 @@
 
 (define (sv-set spv)
   (dolist [n *problem-set*]
-    (spvector-set! spv n n)))
+    (sparse-vector-set! spv n n)))
 
 (define (sv-ref spv)
   (dolist [n *problem-set*]
-    (spvector-ref spv n)))
+    (sparse-vector-ref spv n)))
 
 (define (st-set st)
   (dolist [n *problem-set*]
-    (sptable-set! st n n)))
+    (sparse-table-set! st n n)))
 
 (define (st-ref st)
   (dolist [n *problem-set*]
-    (sptable-ref st n n)))
+    (sparse-table-ref st n n)))
   
-(define (bench-speed)
+(define (bench-speed name %make %ref %set %cleanup)
   (let ([null-timer  (make <user-time-counter>)]
-        [htset-timer (make <user-time-counter>)]
-        [htref-timer (make <user-time-counter>)]
-        [svset-timer (make <user-time-counter>)]
-        [svref-timer (make <user-time-counter>)]
-        [stset-timer (make <user-time-counter>)]
-        [stref-timer (make <user-time-counter>)])
+        [set-timer   (make <user-time-counter>)]
+        [ref-timer   (make <user-time-counter>)])
 
     (define (calc-time timer)
       (* (/. (- (time-counter-value timer) (time-counter-value null-timer))
@@ -63,23 +59,13 @@
 
     (dotimes [i *num-repeat*]
       (with-time-counter null-timer (null))
-      (let1 ht (make-hash-table 'eqv?)
-        (with-time-counter htset-timer (ht-set ht))
-        (with-time-counter htref-timer (ht-ref ht))
-        (hash-table-clear! ht))
-      (let1 sv (make-spvector)
-        (with-time-counter svset-timer (sv-set sv))
-        (with-time-counter svref-timer (sv-ref sv)))
-      (let1 st (make-sptable 'eqv?)
-        (with-time-counter stset-timer (st-set st))
-        (with-time-counter stref-timer (st-ref st))))
+      (let1 obj (%make)
+        (with-time-counter set-timer (%set obj))
+        (with-time-counter ref-timer (%ref obj))
+        (%cleanup obj)))
 
-    (print "Hash table insertion: "    (calc-time htset-timer))
-    (print "Hash table lookup: "       (calc-time htref-timer))
-    (print "Sparse vector insertion: " (calc-time svset-timer))
-    (print "Sparse vector lookup: "    (calc-time svref-timer))
-    (print "Sparse table insertion: "  (calc-time stset-timer))
-    (print "Sparse table lookup: "     (calc-time stref-timer))
+    (print name " insertion: " (calc-time set-timer))
+    (print name " lookup:    " (calc-time ref-timer))
     ))
 
 (define (active-memory-size)
@@ -94,22 +80,19 @@
 
 (define (main args)
   (match (cdr args)
-    [("speed") (bench-speed)]
-    [("htmem") (print "Hash table mem: "
-                      (bench-mem (lambda () (ht-set (make-hash-table 'eqv?)))))]
-    [("svmem") (print "Sparse vector mem: "
-                      (bench-mem (lambda () (sv-set (make-spvector)))))]
-    [("stmem") (print "Sparse table mem: "
-                      (bench-mem (lambda () (st-set (make-sptable 'eqv?)))))]
-    [_ (print "Usage: bench speed|htmem|svmem|stmem")])
+    [("ht" "speed") (bench-speed "Hash table" (cut make-hash-table 'eqv?)
+                                 ht-ref ht-set hash-table-clear!)]
+    [("sv" "speed") (bench-speed "Sparse vector" (cut make-sparse-vector)
+                                 sv-ref sv-set sparse-vector-clear!)]
+    [("st" "speed") (bench-speed "Sparse table" (cut make-sparse-table 'eqv?)
+                                 st-ref st-set sparse-table-clear!)]
+    
+    [("ht" "mem") (print "Hash table mem: "
+                         (bench-mem (cut ht-set (make-hash-table 'eqv?))))]
+    [("sv" "mem") (print "Sparse vector mem: "
+                        (bench-mem (cut sv-set (make-sparse-vector))))]
+    [("st" "mem") (print "Sparse table mem: "
+                         (bench-mem (cut st-set (make-sparse-table 'eqv?))))]
+    [_ (exit 1 "Usage: bench ht|sv|st speed|mem")])
+  (print "size: "  *problem-size*)
   0)
-  
-    
-    
-       
-
-
-
-  
-    
-  

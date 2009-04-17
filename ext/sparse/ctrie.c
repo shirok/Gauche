@@ -56,24 +56,26 @@ void CompactTrieInit(CompactTrie *t)
 
 #define KEY2INDEX(key, level) (((key)>>((level)*TRIE_SHIFT)) & TRIE_MASK)
 
-#define NODE_HAS_ARC(node, ind)      SCM_BITS_TEST(&node->emap, (ind))
-#define NODE_ARC_SET(node, ind)      SCM_BITS_SET(&node->emap, (ind))
-#define NODE_ARC_RESET(node, ind)    SCM_BITS_RESET(&node->emap, (ind))
+#define NODE_HAS_ARC(node, ind)     SCM_BITS_TEST_IN_WORD(node->emap, (ind))
+#define NODE_ARC_SET(node, ind)     SCM_BITS_SET_IN_WORD(node->emap, (ind))
+#define NODE_ARC_RESET(node, ind)   SCM_BITS_RESET_IN_WORD(node->emap, (ind))
 
-#define NODE_ARC_IS_LEAF(node, ind)  SCM_BITS_TEST(&node->lmap, (ind))
-#define NODE_LEAF_SET(node, ind)     SCM_BITS_SET(&node->lmap, (ind))
-#define NODE_LEAF_RESET(node, ind)   SCM_BITS_RESET(&node->lmap, (ind))
+#define NODE_ARC_IS_LEAF(node, ind) SCM_BITS_TEST_IN_WORD(node->lmap, (ind))
+#define NODE_LEAF_SET(node, ind)    SCM_BITS_SET_IN_WORD(node->lmap, (ind))
+#define NODE_LEAF_RESET(node, ind)  SCM_BITS_RESET_IN_WORD(node->lmap, (ind))
 
 #define NODE_INDEX2OFF(node, ind)    Scm__CountBitsBelow(node->emap, (ind))
 
 #define NODE_ENTRY(node, off)        ((node)->entries[(off)])
 
+/* When extending the node, we increase the number of entries by this
+   number instead of increasing every word, to avoid too frequent
+   reallocation.   Must be a power of two. */
+#define NODE_SIZE_INCR 2
+
 static Node *make_node(int nentry)
 {
-    /* We round up nentry by every two; on 32bit machine Boehm GC allocates
-       by 8byte boundary anyways.  It also reduces number of allocations
-       when entries are added constantly. */
-    int nalloc = (nentry+1)&(~1);
+    int nalloc = (nentry+NODE_SIZE_INCR-1)&(~(NODE_SIZE_INCR-1));
     /* SCM_NEW2 returns zero cleared chunk. */
     return SCM_NEW2(Node*, sizeof(Node) + sizeof(void*)*(nalloc-2));
 }
@@ -84,7 +86,7 @@ static Node *node_insert(Node *orig, u_long ind, void *entry, int leafp)
     int insertpoint = Scm__CountBitsBelow(orig->emap, ind);
     int i;
     
-    if (size&1) {
+    if (size&(NODE_SIZE_INCR-1)) {
         /* we have one more room */
         NODE_ARC_SET(orig, ind);
         if (leafp) NODE_LEAF_SET(orig, ind);
@@ -97,7 +99,7 @@ static Node *node_insert(Node *orig, u_long ind, void *entry, int leafp)
         return orig;
     } else {
         /* we need to extend the node */
-        Node *newn = make_node(size+2);
+        Node *newn = make_node(size+NODE_SIZE_INCR);
         newn->emap = orig->emap;
         newn->lmap = orig->lmap;
         NODE_ARC_SET(newn, ind);
@@ -187,7 +189,7 @@ static Node *add_rec(CompactTrie *ct, Node *n, u_long key, int level,
 
         if (key == k0) { *result = l0; return n; }
         i0 = KEY2INDEX(LEAF_KEY(l0), level+1);
-        Node *m = make_node(2);
+        Node *m = make_node(NODE_SIZE_INCR);
         NODE_ARC_SET(m, i0);
         NODE_LEAF_SET(m, i0);
         NODE_ENTRY(m, 0) = l0;
@@ -203,7 +205,7 @@ Leaf *CompactTrieAdd(CompactTrie *ct, u_long key,
     key &= 0xffffffff;
     if (ct->root == NULL) {
         Leaf *l = new_leaf(key, creator, data);
-        ct->root = make_node(2);
+        ct->root = make_node(NODE_SIZE_INCR);
         ct->numEntries = 1;
         NODE_ARC_SET(ct->root, key&TRIE_MASK);
         NODE_LEAF_SET(ct->root, key&TRIE_MASK);

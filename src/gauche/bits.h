@@ -58,14 +58,18 @@ SCM_EXTERN ScmBits *Scm_MakeBits(int numbits);
 #define SCM_BITS_NUM_WORDS(size) \
     (((size)+SCM_WORD_BITS-1)/SCM_WORD_BITS)
 
+#define SCM_BITS_TEST_IN_WORD(word, ind_w)  (0!=((word) & (1UL<<(ind_w))))
+#define SCM_BITS_SET_IN_WORD(word, ind_w)   ((word) |= (1UL<<(ind_w)))
+#define SCM_BITS_RESET_IN_WORD(word, ind_w) ((word) &= ~(1UL<<(ind_w)))
+
 #define SCM_BITS_TEST(bits, index)                \
-    (0!=((bits)[(index)/SCM_WORD_BITS] & (1UL<<((index)%SCM_WORD_BITS))))
+  SCM_BITS_TEST_IN_WORD((bits)[(index)/SCM_WORD_BITS], (index)%SCM_WORD_BITS)
 
 #define SCM_BITS_SET(bits, index)                 \
-    ((bits)[(index)/SCM_WORD_BITS] |= (1UL<<((index)%SCM_WORD_BITS)))
+  SCM_BITS_SET_IN_WORD((bits)[(index)/SCM_WORD_BITS], (index)%SCM_WORD_BITS)
 
 #define SCM_BITS_RESET(bits, index)               \
-    ((bits)[(index)/SCM_WORD_BITS] &= ~(1UL<<((index)%SCM_WORD_BITS)))
+  SCM_BITS_RESET_IN_WORD((bits)[(index)/SCM_WORD_BITS], (index)%SCM_WORD_BITS)
 
 /* calculates a mask to extract bits between s (inclusive) and e (exclusive)
    from a word.  e==0 means e is just left of the word (i.e. bits up to

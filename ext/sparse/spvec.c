@@ -45,7 +45,7 @@ typedef struct SPVLeafRec {
 
 static inline int leaf_has_elem(SPVLeaf *leaf, int index)
 {
-    return SCM_BITS_TEST(&leaf->ebits, index);
+    return SCM_BITS_TEST_IN_WORD(leaf->ebits, index);
 }
 
 static inline u_long leaf_offset(SPVLeaf *leaf, int index)
@@ -69,7 +69,7 @@ static void leaf_insert(SparseVector *sv, SPVLeaf *leaf,
         u_long origsize = Scm__CountBitsInWord(leaf->ebits);
         u_long insertion = leaf_offset(leaf, index);
         leaf->elements = sv->desc->extend(leaf->elements, origsize, insertion);
-        SCM_BITS_SET(&leaf->ebits, index);
+        SCM_BITS_SET_IN_WORD(leaf->ebits, index);
         sv->desc->store(leaf->elements, insertion, value);
         sv->numEntries++;
     }
@@ -96,7 +96,7 @@ ScmObj MakeSparseVectorGeneric(ScmClass *klass,
 
 ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback)
 {
-    u_long triekey = index >> sv->chunkBits;
+    u_long triekey = index & ~((1UL<<sv->chunkBits)-1);
     u_long chunkkey = index & ((1UL<<sv->chunkBits)-1);
     SPVLeaf *z = (SPVLeaf*)CompactTrieGet(&sv->trie, triekey);
     if (z != NULL && leaf_has_elem(z, chunkkey)) {
@@ -112,7 +112,7 @@ ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback)
 
 void SparseVectorSet(SparseVector *sv, u_long index, ScmObj value)
 {
-    u_long triekey = index >> sv->chunkBits;
+    u_long triekey = index & ~((1UL<<sv->chunkBits)-1);
     u_long chunkkey = index & ((1UL<<sv->chunkBits)-1);
     SPVLeaf *z;
 
@@ -169,22 +169,31 @@ static void g_store(void *elements, u_long offset, ScmObj value)
     ((ScmObj*)elements)[offset] = value;
 }
 
+/* We realloc for every G_INCR words.  Must be a power of 2. */
+#define G_INCR 2
+
 static void *g_extend(void *elements, int origsize, int insertion)
 {
     int i;
     SCM_ASSERT(insertion <= origsize);
     if (elements == NULL) {
-        ScmObj *newchunk = SCM_NEW_ARRAY(ScmObj, 2);
+        ScmObj *newchunk = SCM_NEW_ARRAY(ScmObj, G_INCR);
+#if G_INCR == 2
         newchunk[0] = newchunk[1] = SCM_UNDEFINED;
+#elif G_INCR == 4
+        newchunk[0] = newchunk[1] = newchunk[2] = newchunk[3] = SCM_UNDEFINED;
+#else
+        for (i=0; i<G_INCR; i++) newchunk[i] = SCM_UNDEFINED;
+#endif
         return newchunk;
-    } else if (origsize & 1) {
-        /* we have room for one more element*/
+    } else if (origsize & (G_INCR-1)) {
+        /* we have room for this elements*/
         for (i=origsize; i>insertion; i--) {
             ((ScmObj*)elements)[i] = ((ScmObj*)elements)[i-1];
         }
         return elements;
     } else {
-        ScmObj *newchunk = SCM_NEW_ARRAY(ScmObj, origsize+2);
+        ScmObj *newchunk = SCM_NEW_ARRAY(ScmObj, origsize+G_INCR);
         for (i=0; i<insertion; i++) newchunk[i] = ((ScmObj*)elements)[i];
         newchunk[i++] = SCM_UNDEFINED;
         for (; i<=origsize; i++) newchunk[i] = ((ScmObj*)elements)[i-1];

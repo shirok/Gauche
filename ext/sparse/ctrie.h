@@ -46,7 +46,9 @@
  * hence we don't use 'Scm' prefix for data structures, for simplicity.
  */
 
-/* CompactTrie consists of NODEs and LEAFs.  LEAF is just an intptr_t value.
+/* CompactTrie consists of NODEs and LEAFs.  LEAF is application-dependent
+ * structure whose header contains the key value that uniquely identifies
+ * the leaf.
  * NODE is a variable length structure, whose first two words are bitmaps.
  * (NB: we may change the layout here, since full-word bitmap tends to become
  * false pointer and may have negative impact to our conservative GC.)
@@ -71,11 +73,14 @@
 #define TRIE_MASK     (0x1f)
 
 typedef struct NodeRec {
-    u_long   emap;
-    u_long   lmap;
+    u_long   emap;              /* bitmap: 1 = has child */
+    u_long   lmap;              /* bitmap: 1 = child is leaf */
     void    *entries[2];        /* variable length; 2 is the minimum entries */
 } Node;
 
+/* We split key into two words; a well distributed keys are hard to
+   distinguish from pointers by our conserative GC, and sometimes lead
+   to poor GC performance when we have very large table.  */
 typedef struct LeafRec {
     u_long   key0;              /* lower half word of the key */
     u_long   key1;              /* upper half word of the key */
