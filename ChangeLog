@@ -8,6 +8,7 @@
 	  So we reverted the offending part temporarily, and changed
 	  compile.scm to allow both syntax; they should be gone once we
 	  roll out the next release.
+	  (NB: You need fresh 0.8.14 installed to compile this revision)
 
 2009-04-15  Shiro Kawai  <shiro@acm.org>
 
