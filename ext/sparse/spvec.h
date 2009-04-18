@@ -45,39 +45,28 @@ typedef struct SparseVectorDescriptorRec SparseVectorDescriptor;
    object, ScmSparseVector.
 
    ScmSparseVector uses CompactTrie as a backing storage.  The 'leaf'
-   of the CompactTrie is a compacted array that can contain up to
-   2^chunkBits.   Currently we support up to 5 chunkBits---that is,
-   the leaf array can contain up to 32 elements.
-
-   The current CompactTrie can use up to 32bit key, so the maximum
-   bits of ScmSparseVector is 32+5=37bits.  This may be extended later.
+   of the CompactTrie may contain 1 to 16 elements of the vector,
+   depending on the type of the sparse vector.
 */
 typedef struct SparseVectorRec {
     SCM_HEADER;
     SparseVectorDescriptor *desc;
     CompactTrie trie;
     u_long      numEntries;
-    u_char      chunkBits;
-    u_char      trieBits;
 } SparseVector;
-
-#define MAX_CHUNK_BITS  5
-#define MAX_TRIE_BITS  32
 
 /* SparseVectorDescriptor has common information per class (it should be
    a part of each class, but we just hack for the time being.)
    The constructor of each class sets appropriate descriptor to the instance.
  */
 struct SparseVectorDescriptorRec {
-    int      (*check)(ScmObj value);
-    ScmObj   (*retrieve)(void *elements, u_long offset);
-    void     (*store)(void *elements, u_long offset, ScmObj value);
-    void    *(*extend)(void *elements, int origsize, int insertion);
+    ScmObj   (*ref)(SparseVector *sv, u_long index);
+    int      (*set)(SparseVector *sv, u_long index, ScmObj value);
+    ScmObj   (*delete)(SparseVector *sv, u_long index);
+    void     (*clear)(Leaf*, void*);
     void     (*dump)(ScmPort *out, Leaf *leaf, int indent, void *data);
 
     const char *name;           /* name used in error messages */
-    u_char      elementAtomic;  /* TRUE if we can use ATOMIC vector for elts */
-    u_char      elementSize;    /* element size in bytes */
 };
 
 /* Iterator.  Since CompactTrie uses key bits from LSB to MSB, we can't
@@ -171,11 +160,11 @@ SCM_CLASS_DECL(Scm_SparseF64VectorClass);
 #endif /*0*/
 
 extern ScmObj MakeSparseVectorGeneric(ScmClass *klass,
-                                      int chunkBits, int trieBits,
                                       SparseVectorDescriptor *desc);
 
 extern ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback);
 extern void   SparseVectorSet(SparseVector *sv, u_long index, ScmObj value);
+extern ScmObj SparseVectorDelete(SparseVector *sv, u_long index);
 extern void   SparseVectorClear(SparseVector *sv);
 
 extern void   SparseVectorDump(SparseVector *sv);

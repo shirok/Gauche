@@ -34,112 +34,45 @@
 #include "spvec.h"
 
 /*===================================================================
- * Leaf node manipulation
- */
-
-typedef struct SPVLeafRec {
-    Leaf hdr;
-    u_long ebits;               /* 1 if element exists */
-    void*  elements;            /* variable length element vector */
-} SPVLeaf;
-
-static inline int leaf_has_elem(SPVLeaf *leaf, int index)
-{
-    return SCM_BITS_TEST_IN_WORD(leaf->ebits, index);
-}
-
-static inline u_long leaf_offset(SPVLeaf *leaf, int index)
-{
-    return (u_long)Scm__CountBitsBelow(leaf->ebits, index);
-}
-
-static Leaf *leaf_allocate(void *data)
-{
-    SPVLeaf *z = SCM_NEW(SPVLeaf); /* NB: ebits = 0 */
-    z->elements = NULL;
-    return (Leaf*)z;
-}
-
-static void leaf_insert(SparseVector *sv, SPVLeaf *leaf,
-                        int index, ScmObj value)
-{
-    if (leaf_has_elem(leaf, index)) {
-        sv->desc->store(leaf->elements, leaf_offset(leaf, index), value);
-    } else {
-        u_long origsize = Scm__CountBitsInWord(leaf->ebits);
-        u_long insertion = leaf_offset(leaf, index);
-        leaf->elements = sv->desc->extend(leaf->elements, origsize, insertion);
-        SCM_BITS_SET_IN_WORD(leaf->ebits, index);
-        sv->desc->store(leaf->elements, insertion, value);
-        sv->numEntries++;
-    }
-}
-
-/*===================================================================
  * Generic stuff
  */
 
 ScmObj MakeSparseVectorGeneric(ScmClass *klass,
-                               int chunkBits,
-                               int trieBits,
                                SparseVectorDescriptor *desc)
 {
     SparseVector *v = SCM_NEW(SparseVector);
     SCM_SET_CLASS(v, klass);
     CompactTrieInit(&v->trie);
     v->numEntries = 0;
-    v->chunkBits = chunkBits;
-    v->trieBits = trieBits;
     v->desc = desc;
     return SCM_OBJ(v);
 }
 
 ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback)
 {
-    u_long triekey = index & ~((1UL<<sv->chunkBits)-1);
-    u_long chunkkey = index & ((1UL<<sv->chunkBits)-1);
-    SPVLeaf *z = (SPVLeaf*)CompactTrieGet(&sv->trie, triekey);
-    if (z != NULL && leaf_has_elem(z, chunkkey)) {
-        ScmObj v = sv->desc->retrieve(z->elements, leaf_offset(z, chunkkey));
-        SCM_ASSERT(v != NULL);
-        return v;
-    }
-    if (SCM_UNBOUNDP(fallback)) {
-        Scm_Error("%s-ref: no value at index %lu", sv->desc->name, index);
-    }
-    return fallback;
+    ScmObj v = sv->desc->ref(sv, index);
+    if (SCM_UNBOUNDP(v)) return fallback;
+    else return v;
 }
 
 void SparseVectorSet(SparseVector *sv, u_long index, ScmObj value)
 {
-    u_long triekey = index & ~((1UL<<sv->chunkBits)-1);
-    u_long chunkkey = index & ((1UL<<sv->chunkBits)-1);
-    SPVLeaf *z;
-
-    if (!sv->desc->check(value)) {
-        Scm_Error("%s-set!: element value out of range: %S",
-                  sv->desc->name, value);
-    }
-    z = (SPVLeaf*)CompactTrieAdd(&sv->trie, triekey, leaf_allocate, NULL);
-    leaf_insert(sv, z, chunkkey, value);
+    /* set returns TRUE if this is new entry */
+    if (sv->desc->set(sv, index, value)) sv->numEntries++;
 }
 
-static void sparse_clear(Leaf *f, void *data)
-{
-    SPVLeaf *z = (SPVLeaf*)f;
-    SparseVectorDescriptor *desc = (SparseVectorDescriptor*)data;
-
-    int size = Scm__CountBitsInWord(z->ebits);
-    if (size&1) size++;
-    if (!desc->elementAtomic) {
-        memset(z->elements, 0, desc->elementSize * size);
-    }
+/* returns value of the deleted entry, or SCM_UNBOUND if there's no entry */
+ScmObj SparseVectorDelete(SparseVector *sv, u_long index)
+{ 
+    ScmObj r = sv->desc->delete(sv, index);
+    if (!SCM_UNBOUNDP(r)) sv->numEntries--;
+    return r;
 }
 
 void SparseVectorClear(SparseVector *sv)
 {
     sv->numEntries = 0;
-    CompactTrieClear(&sv->trie, sparse_clear, sv->desc);
+    CompactTrieClear(&sv->trie, sv->desc->clear, sv->desc);
 }
 
 #if SCM_DEBUG_HELPER
@@ -150,72 +83,64 @@ void SparseVectorDump(SparseVector *sv)
 #endif /*SCM_DEBUG_HELPER*/
 
 /*===================================================================
- * Individual types
+ * Individual vector types
  */
 
-/* general vector */
-static int g_check(ScmObj value)
+/*-------------------------------------------------------------------
+ * General vector
+ */
+
+typedef struct GLeafRec {
+    Leaf hdr;
+    ScmObj val[2];
+} GLeaf;
+
+static ScmObj g_ref(SparseVector *sv, u_long index)
 {
-    return TRUE;
+    GLeaf *z = (GLeaf*)CompactTrieGet(&sv->trie, index>>1);
+    if (z == NULL) return SCM_UNBOUND;
+    else return z->val[index&1];
 }
 
-static ScmObj g_retrieve(void *elements, u_long offset)
+static Leaf *g_allocate(void *data)
 {
-    return ((ScmObj*)elements)[offset];
+    GLeaf *z = SCM_NEW(GLeaf);
+    z->val[0] = z->val[1] = SCM_UNBOUND;
+    return (Leaf*)z;
 }
 
-static void g_store(void *elements, u_long offset, ScmObj value)
+static int g_set(SparseVector *sv, u_long index, ScmObj value)
 {
-    ((ScmObj*)elements)[offset] = value;
+    GLeaf *z = (GLeaf*)CompactTrieAdd(&sv->trie, index>>1, g_allocate, NULL);
+    ScmObj v = z->val[index&1];
+    z->val[index&1] = value;
+    return SCM_UNBOUNDP(v);
 }
 
-/* We realloc for every G_INCR words.  Must be a power of 2. */
-#define G_INCR 2
-
-static void *g_extend(void *elements, int origsize, int insertion)
+static ScmObj g_delete(SparseVector *sv, u_long index)
 {
-    int i;
-    SCM_ASSERT(insertion <= origsize);
-    if (elements == NULL) {
-        ScmObj *newchunk = SCM_NEW_ARRAY(ScmObj, G_INCR);
-#if G_INCR == 2
-        newchunk[0] = newchunk[1] = SCM_UNDEFINED;
-#elif G_INCR == 4
-        newchunk[0] = newchunk[1] = newchunk[2] = newchunk[3] = SCM_UNDEFINED;
-#else
-        for (i=0; i<G_INCR; i++) newchunk[i] = SCM_UNDEFINED;
-#endif
-        return newchunk;
-    } else if (origsize & (G_INCR-1)) {
-        /* we have room for this elements*/
-        for (i=origsize; i>insertion; i--) {
-            ((ScmObj*)elements)[i] = ((ScmObj*)elements)[i-1];
-        }
-        return elements;
-    } else {
-        ScmObj *newchunk = SCM_NEW_ARRAY(ScmObj, origsize+G_INCR);
-        for (i=0; i<insertion; i++) newchunk[i] = ((ScmObj*)elements)[i];
-        newchunk[i++] = SCM_UNDEFINED;
-        for (; i<=origsize; i++) newchunk[i] = ((ScmObj*)elements)[i-1];
-        newchunk[i] = SCM_UNDEFINED;
+    ScmObj v;
+    GLeaf *z = (GLeaf*)CompactTrieGet(&sv->trie, index>>1);
+    if (z == NULL) return SCM_UNBOUND;
+    v = z->val[index&1];
+    z->val[index&1] = SCM_UNBOUND;
+    return v;
+}
 
-        memset(elements, 0, sizeof(ScmObj)*origsize); /* gc friendly */
-
-        return (void*)newchunk;
-    }
+static void g_clear(Leaf *leaf, void *data)
+{
+    GLeaf *z = (GLeaf*)leaf;
+    z->val[0] = z->val[1] = NULL;
 }
 
 #if SCM_DEBUG_HELPER
 static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
 {
     int i;
-    SPVLeaf *z = (SPVLeaf *)leaf;
-
-    Scm_Printf(out, "nelts=%d", Scm__CountBitsInWord(z->ebits));
-    for (i=0; i<(1UL<<MAX_CHUNK_BITS); i++) {
-        if (leaf_has_elem(z, i)) {
-            Scm_Printf(out, "\n  %*s%2d: %25.1S", indent, "", i,
-                    ((ScmObj*)z->elements)[leaf_offset(z, i)]);
+    GLeaf *z = (GLeaf*)leaf;
+    for (i=0; i<2; i++) {
+        if (!SCM_UNBOUNDP(z->val[i])) {
+            Scm_Printf(out, "\n  %*s%2d: %25.1S", indent, "", i, z->val[i]);
         }
     }
 }
@@ -224,21 +149,16 @@ static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
 #endif /*SCM_DEBUG_HELPER*/
 
 static SparseVectorDescriptor g_desc = {
-    g_check, g_retrieve, g_store, g_extend, g_dump,
-    "spvector",
-    FALSE,                      /* elementAtomic */
-    sizeof(ScmObj),             /* elementSize */
+    g_ref, g_set, g_delete, g_clear, g_dump,
+    "sparse-vector",
 };
 
 ScmObj MakeSparseVector(u_long flags)
 {
-    return MakeSparseVectorGeneric(SCM_CLASS_SPARSE_VECTOR,
-                                   MAX_CHUNK_BITS, MAX_TRIE_BITS,
-                                   &g_desc);
+    return MakeSparseVectorGeneric(SCM_CLASS_SPARSE_VECTOR, &g_desc);
 }
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_SparseVectorClass, NULL, NULL, NULL, NULL, NULL);
-
 
 
 /*===================================================================

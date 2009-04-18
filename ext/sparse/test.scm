@@ -120,7 +120,8 @@
              (const 0) (const 1))
 
 (heavy-test "sparse-vector" (make-sparse-vector) sparse-vector-ref sparse-vector-set!
-            sparse-vector-num-entries sparse-vector-clear! #f #f #f values)
+            sparse-vector-num-entries sparse-vector-clear! #f #f
+            sparse-vector-delete! values)
 
 ;; sparse table----------------------------------------------------
 (test-section "sparse-table")

@@ -2,8 +2,10 @@
 
 	* src/gauche/bits.h: Added SCM_BITS_TEST_IN_WORD etc. for single-
 	  word bit manipulation.
-	* ext/sparse/*: Some generalization as preparation of performance
-	  tuning.
+	* ext/sparse/spvec.[ch], ext/sparse/sparse.scm: Revised implementation
+	  of sparse vector; dropped extra leaf array and let it store values
+	  directly in the ctrie's leaf node, which showed better performance
+	  and memeory usage.
 
 2009-04-16  Shiro Kawai  <shiro@acm.org>
 

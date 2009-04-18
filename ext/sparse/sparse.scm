@@ -37,8 +37,9 @@
 (define-module util.sparse
   (use gauche.dictionary)
   (export <sparse-vector> make-sparse-vector sparse-vector-num-entries
-          sparse-vector-ref sparse-vector-set!
-          sparse-vector-clear! %sparse-vector-dump
+          sparse-vector-ref sparse-vector-set! sparse-vector-exists?
+          sparse-vector-clear! sparse-vector-delete!
+          %sparse-vector-dump
           <sparse-table> make-sparse-table sparse-table-num-entries
           sparse-table-ref sparse-table-set! sparse-table-exists?
           sparse-table-clear! sparse-table-delete!
@@ -68,11 +69,23 @@
  
  (define-cproc sparse-vector-ref
    (sv::<sparse-vector> index::<ulong> :optional fallback)
-   SparseVectorRef)
+   (let* ([r (SparseVectorRef sv index fallback)])
+     (when (SCM_UNBOUNDP r)
+       (Scm_Error "%S doesn't have an entry at index %lu" (SCM_OBJ sv) index))
+     (result r)))
+
+ (define-cproc sparse-vector-exists?
+   (sv::<sparse-vector> index::<ulong>) ::<boolean>
+   (let* ([r (SparseVectorRef sv index SCM_UNBOUND)])
+     (result (not (SCM_UNBOUNDP r)))))
 
  (define-cproc sparse-vector-set!
    (sv::<sparse-vector> index::<ulong> value) ::<void>
    SparseVectorSet)
+
+ (define-cproc sparse-vector-delete! (sv::<sparse-vector> index::<ulong>)
+   ::<boolean>
+   (result (not (SCM_UNBOUNDP (SparseVectorDelete sv index)))))
 
  (define-cproc sparse-vector-clear! (sv::<sparse-vector>) ::<void>
    SparseVectorClear)
