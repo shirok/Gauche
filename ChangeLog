@@ -1,3 +1,7 @@
+2009-04-18  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sparse/spvec.[ch]: Start adding sparse uniform vector support.
+
 2009-04-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/bits.h: Added SCM_BITS_TEST_IN_WORD etc. for single-

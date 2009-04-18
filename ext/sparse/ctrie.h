@@ -82,11 +82,21 @@ typedef struct NodeRec {
    distinguish from pointers by our conserative GC, and sometimes lead
    to poor GC performance when we have very large table.  */
 typedef struct LeafRec {
-    u_long   key0;              /* lower half word of the key */
+    u_long   key0;              /* lower half word of the key + subclass data */
     u_long   key1;              /* upper half word of the key */
 } Leaf;
 
 #define LEAF_KEY(leaf) (((leaf)->key0&0xffff) + (((leaf)->key1&0xffff) << 16))
+
+#define LEAF_DATA(leaf) ((leaf)->key0 >> 16)
+#define LEAF_DATA_SET(leaf, val) \
+    (((leaf)->key0) = (((leaf)->key0)&0x0ffff) | ((val)<<16))
+#define LEAF_DATA_BIT_TEST(leaf, bit) \
+    (((leaf)->key0) & (1UL << ((bit)+16)))
+#define LEAF_DATA_BIT_SET(leaf, bit) \
+    (((leaf)->key0) |= (1UL << ((bit)+16)))
+#define LEAF_DATA_BIT_RESET(leaf, bit) \
+    (((leaf)->key0) &= ~(1UL << ((bit)+16)))
 
 typedef struct CompactTrieRec {
     u_int    numEntries;

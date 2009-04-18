@@ -5,7 +5,7 @@
 (use gauche.time)
 (use srfi-27)
 
-(define *problem-size* 20000)
+(define *problem-size* 200000)
 
 (define *num-repeat* (ceiling->exact (/. 10000000 *problem-size*)))
 

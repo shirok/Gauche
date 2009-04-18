@@ -56,6 +56,92 @@
  "#include \"sptab.h\""
  )
 
+(define-macro (define-walkers type iter)
+  (let ((x-fold     (string->symbol #`",|type|-fold"))
+        (x-map      (string->symbol #`",|type|-map"))
+        (x-for-each (string->symbol #`",|type|-for-each"))
+        (x-keys     (string->symbol #`",|type|-keys"))
+        (x-values   (string->symbol #`",|type|-values")))
+    `(begin
+       (define (,x-fold st proc seed)
+         (let ([iter (,iter st)]
+               [end  (list #f)])
+           (let loop ((seed seed))
+             (receive (key val) (iter end)
+               (if (eq? key end)
+                 seed
+                 (loop (proc key val seed)))))))
+       (define (,x-map st proc)
+         (,x-fold st (lambda (k v s) (cons (proc k v) s)) '()))
+       (define (,x-for-each st proc)
+         (,x-fold st (lambda (k v _) (proc k v)) #f))
+       (define (,x-keys st)
+         (,x-fold st (lambda (k v s) (cons k s)) '()))
+       (define (,x-values st)
+         (,x-fold st (lambda (k v s) (cons v s)) '()))
+       )))
+  
+;;===============================================================
+;; Sparse hashtables
+;;
+
+(inline-stub
+ (initcode "Scm_Init_sptab(mod);")
+
+ (define-type <sparse-table> "SparseTable*" "sparse table"
+   "SPARSE_TABLE_P" "SPARSE_TABLE")
+
+ (define-cproc make-sparse-table (type)
+   (let* ([t::ScmHashType SCM_HASH_EQ])
+     (cond
+      [(SCM_EQ type 'eq?)      (set! t SCM_HASH_EQ)]
+      [(SCM_EQ type 'eqv?)     (set! t SCM_HASH_EQV)]
+      [(SCM_EQ type 'equal?)   (set! t SCM_HASH_EQUAL)]
+      [(SCM_EQ type 'string=?) (set! t SCM_HASH_STRING)]
+      [else (Scm_Error "unsupported sparse-table hash type: %S" type)])
+     (result (MakeSparseTable t 0))))
+
+ (define-cproc sparse-table-num-entries (st::<sparse-table>) ::<ulong>
+   (result (-> st numEntries)))
+ 
+ (define-cproc sparse-table-ref (st::<sparse-table> key :optional fallback)
+   (let* ([r (SparseTableRef st key fallback)])
+     (when (SCM_UNBOUNDP r)
+       (Scm_Error "%S doesn't have an entry for key %S" (SCM_OBJ st) key))
+     (result r)))
+
+ (define-cproc sparse-table-set! (st::<sparse-table> key value)
+   (result (SparseTableSet st key value 0)))
+
+ (define-cproc sparse-table-exists? (st::<sparse-table> key) ::<boolean>
+   (let* ([r (SparseTableRef st key SCM_UNBOUND)])
+     (result (not (SCM_UNBOUNDP r)))))
+
+ (define-cproc sparse-table-delete! (st::<sparse-table> key) ::<boolean>
+   (result (not (SCM_UNBOUNDP (SparseTableDelete st key)))))
+
+ (define-cproc sparse-table-clear! (st::<sparse-table>) ::<void>
+   SparseTableClear)
+
+ (define-cfn sparse-table-iter (args::ScmObj* nargs::int data::void*) :static
+   (let* ([iter::SparseTableIter* (cast SparseTableIter* data)]
+          [r (SparseTableIterNext iter)]
+          [eofval (aref args 0)])
+     (if (SCM_FALSEP r)
+       (return (values eofval eofval))
+       (return (values (SCM_CAR r) (SCM_CDR r))))))
+
+ (define-cproc %sparse-table-iter (st::<sparse-table>)
+   (let* ([iter::SparseTableIter* (SCM_NEW SparseTableIter)])
+     (SparseTableIterInit iter st)
+     (result (Scm_MakeSubr sparse-table-iter iter 1 0 '"sparse-table-iterator"))))
+
+ (define-cproc %sparse-table-dump (st::<sparse-table>) ::<void>
+   SparseTableDump)
+ )
+
+(define-walkers sparse-table %sparse-table-iter)
+
 ;;===============================================================
 ;; Sparse vectors
 ;;
@@ -112,107 +198,11 @@
    SparseVectorDump)
  )
 
-(define (sparse-vector-fold st proc seed)
-  (let ([iter (%sparse-vector-iter st)]
-        [end  (list #f)])
-    (let loop ((seed seed))
-      (receive (k v) (iter end)
-        (if (eq? k end)
-          seed
-          (loop (proc k v seed)))))))
-
-(define (sparse-vector-map st proc)
-  (sparse-vector-fold st (lambda (k v s) (cons (proc k v) s)) '()))
-
-(define (sparse-vector-for-each st proc)
-  (sparse-vector-fold st (lambda (k v _) (proc k v)) #f))
-
-(define (sparse-vector-keys st)
-  (sparse-vector-fold st (lambda (k v s) (cons k s)) '()))
-
-(define (sparse-vector-values st)
-  (sparse-vector-fold st (lambda (k v s) (cons v s)) '()))
+(define-walkers sparse-vector %sparse-vector-iter)
 
 ;;===============================================================
-;; Sparse hashtables
-;;
-(inline-stub
- (initcode "Scm_Init_sptab(mod);")
-
- (define-type <sparse-table> "SparseTable*" "sparse table"
-   "SPARSE_TABLE_P" "SPARSE_TABLE")
-
- (define-cproc make-sparse-table (type)
-   (let* ([t::ScmHashType SCM_HASH_EQ])
-     (cond
-      [(SCM_EQ type 'eq?)      (set! t SCM_HASH_EQ)]
-      [(SCM_EQ type 'eqv?)     (set! t SCM_HASH_EQV)]
-      [(SCM_EQ type 'equal?)   (set! t SCM_HASH_EQUAL)]
-      [(SCM_EQ type 'string=?) (set! t SCM_HASH_STRING)]
-      [else (Scm_Error "unsupported sparse-table hash type: %S" type)])
-     (result (MakeSparseTable t 0))))
-
- (define-cproc sparse-table-num-entries (st::<sparse-table>) ::<ulong>
-   (result (-> st numEntries)))
- 
- (define-cproc sparse-table-ref (st::<sparse-table> key :optional fallback)
-   (let* ([r (SparseTableRef st key fallback)])
-     (when (SCM_UNBOUNDP r)
-       (Scm_Error "%S doesn't have an entry for key %S" (SCM_OBJ st) key))
-     (result r)))
-
- (define-cproc sparse-table-set! (st::<sparse-table> key value)
-   (result (SparseTableSet st key value 0)))
-
- (define-cproc sparse-table-exists? (st::<sparse-table> key) ::<boolean>
-   (let* ([r (SparseTableRef st key SCM_UNBOUND)])
-     (result (not (SCM_UNBOUNDP r)))))
-
- (define-cproc sparse-table-delete! (st::<sparse-table> key) ::<boolean>
-   (result (not (SCM_UNBOUNDP (SparseTableDelete st key)))))
-
- (define-cproc sparse-table-clear! (st::<sparse-table>) ::<void>
-   SparseTableClear)
-
- (define-cfn sparse-table-iter (args::ScmObj* nargs::int data::void*) :static
-   (let* ([iter::SparseTableIter* (cast SparseTableIter* data)]
-          [r (SparseTableIterNext iter)]
-          [eofval (aref args 0)])
-     (if (SCM_FALSEP r)
-       (return (values eofval eofval))
-       (return (values (SCM_CAR r) (SCM_CDR r))))))
-
- (define-cproc %sparse-table-iter (st::<sparse-table>)
-   (let* ([iter::SparseTableIter* (SCM_NEW SparseTableIter)])
-     (SparseTableIterInit iter st)
-     (result (Scm_MakeSubr sparse-table-iter iter 1 0 '"sparse-table-iterator"))))
-
- (define-cproc %sparse-table-dump (st::<sparse-table>) ::<void>
-   SparseTableDump)
- )
-
-(define (sparse-table-fold st proc seed)
-  (let ([iter (%sparse-table-iter st)]
-        [end  (list #f)])
-    (let loop ((seed seed))
-      (receive (key val) (iter end)
-        (if (eq? key end)
-          seed
-          (loop (proc key val seed)))))))
-
-(define (sparse-table-map st proc)
-  (sparse-table-fold st (lambda (k v s) (cons (proc k v) s)) '()))
-
-(define (sparse-table-for-each st proc)
-  (sparse-table-fold st (lambda (k v _) (proc k v)) #f))
-
-(define (sparse-table-keys st)
-  (sparse-table-fold st (lambda (k v s) (cons k s)) '()))
-
-(define (sparse-table-values st)
-  (sparse-table-fold st (lambda (k v s) (cons v s)) '()))
-
 ;; dictionary protocol
+;;
 
 (define-method dict-get ((dict <sparse-table>) key . maybe-default)
   (if (null? maybe-default)
