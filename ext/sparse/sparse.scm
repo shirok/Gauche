@@ -39,7 +39,9 @@
   (export <sparse-vector> make-sparse-vector sparse-vector-num-entries
           sparse-vector-ref sparse-vector-set! sparse-vector-exists?
           sparse-vector-clear! sparse-vector-delete!
-          %sparse-vector-dump
+          sparse-vector-fold sparse-vector-map sparse-vector-for-each
+          sparse-vector-keys sparse-vector-values %sparse-vector-dump
+          
           <sparse-table> make-sparse-table sparse-table-num-entries
           sparse-table-ref sparse-table-set! sparse-table-exists?
           sparse-table-clear! sparse-table-delete!
@@ -54,7 +56,9 @@
  "#include \"sptab.h\""
  )
 
+;;===============================================================
 ;; Sparse vectors
+;;
 (inline-stub
  (initcode "Scm_Init_spvec(mod);")
 
@@ -90,11 +94,48 @@
  (define-cproc sparse-vector-clear! (sv::<sparse-vector>) ::<void>
    SparseVectorClear)
 
+ (define-cfn sparse-vector-iter (args::ScmObj* nargs::int data::void*) :static
+   (let* ([iter::SparseVectorIter* (cast SparseVectorIter* data)]
+          [r (SparseVectorIterNext iter)]
+          [eofval (aref args 0)])
+     (if (SCM_FALSEP r)
+       (return (values eofval eofval))
+       (return (values (SCM_CAR r) (SCM_CDR r))))))
+
+ (define-cproc %sparse-vector-iter (sv::<sparse-vector>)
+   (let* ([iter::SparseVectorIter* (SCM_NEW SparseVectorIter)])
+     (SparseVectorIterInit iter sv)
+     (result
+      (Scm_MakeSubr sparse-vector-iter iter 1 0 '"sparse-vector-iterator"))))
+ 
  (define-cproc %sparse-vector-dump (sv::<sparse-vector>) ::<void>
    SparseVectorDump)
  )
 
+(define (sparse-vector-fold st proc seed)
+  (let ([iter (%sparse-vector-iter st)]
+        [end  (list #f)])
+    (let loop ((seed seed))
+      (receive (k v) (iter end)
+        (if (eq? k end)
+          seed
+          (loop (proc k v seed)))))))
+
+(define (sparse-vector-map st proc)
+  (sparse-vector-fold st (lambda (k v s) (cons (proc k v) s)) '()))
+
+(define (sparse-vector-for-each st proc)
+  (sparse-vector-fold st (lambda (k v _) (proc k v)) #f))
+
+(define (sparse-vector-keys st)
+  (sparse-vector-fold st (lambda (k v s) (cons k s)) '()))
+
+(define (sparse-vector-values st)
+  (sparse-vector-fold st (lambda (k v s) (cons v s)) '()))
+
+;;===============================================================
 ;; Sparse hashtables
+;;
 (inline-stub
  (initcode "Scm_Init_sptab(mod);")
 

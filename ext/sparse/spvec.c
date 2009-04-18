@@ -37,14 +37,16 @@
  * Generic stuff
  */
 
-ScmObj MakeSparseVectorGeneric(ScmClass *klass,
-                               SparseVectorDescriptor *desc)
+static ScmObj MakeSparseVectorGeneric(ScmClass *klass,
+                                      SparseVectorDescriptor *desc,
+                                      int ordered)
 {
     SparseVector *v = SCM_NEW(SparseVector);
     SCM_SET_CLASS(v, klass);
     CompactTrieInit(&v->trie);
     v->numEntries = 0;
     v->desc = desc;
+    v->ordered = ordered;
     return SCM_OBJ(v);
 }
 
@@ -57,7 +59,7 @@ ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback)
 
 void SparseVectorSet(SparseVector *sv, u_long index, ScmObj value)
 {
-    /* set returns TRUE if this is new entry */
+    /* set returns TRUE if this is a new entry */
     if (sv->desc->set(sv, index, value)) sv->numEntries++;
 }
 
@@ -73,6 +75,32 @@ void SparseVectorClear(SparseVector *sv)
 {
     sv->numEntries = 0;
     CompactTrieClear(&sv->trie, sv->desc->clear, sv->desc);
+}
+
+void SparseVectorIterInit(SparseVectorIter *iter, SparseVector *sv)
+{
+    iter->sv = sv;
+    iter->leaf = NULL;
+    CompactTrieIterInit(&iter->citer, &sv->trie);
+    iter->leafIndex = -1;
+}
+
+ScmObj SparseVectorIterNext(SparseVectorIter *iter)
+{
+    ScmObj (*iterproc)(Leaf*,int*) = iter->sv->desc->iter;
+    for (;;) {
+        if (iter->leaf) {
+            ScmObj r = iterproc(iter->leaf, &iter->leafIndex);
+            if (!SCM_UNBOUNDP(r)) {
+                u_long ind = ((LEAF_KEY(iter->leaf) << iter->sv->desc->shift)
+                              + iter->leafIndex);
+                return Scm_Cons(Scm_MakeIntegerU(ind), r);
+            }
+        }
+        iter->leaf = CompactTrieIterNext(&iter->citer);
+        if (iter->leaf == NULL) return SCM_FALSE; /* we're at the end */
+        iter->leafIndex = -1;
+    }
 }
 
 #if SCM_DEBUG_HELPER
@@ -133,6 +161,21 @@ static void g_clear(Leaf *leaf, void *data)
     z->val[0] = z->val[1] = NULL;
 }
 
+static ScmObj g_iter(Leaf *leaf, int *index)
+{
+    GLeaf *z = (GLeaf*)leaf;
+    if (++(*index) == 0) {
+        if (!SCM_UNBOUNDP(z->val[0])) return z->val[0];
+        (*index)++;
+        /*FALLTHROUGH*/
+    }
+    if (*index == 1) {
+        if (!SCM_UNBOUNDP(z->val[1])) return z->val[1];
+        (*index)++;
+    }
+    return SCM_UNBOUND;
+}
+
 #if SCM_DEBUG_HELPER
 static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
 {
@@ -149,13 +192,13 @@ static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
 #endif /*SCM_DEBUG_HELPER*/
 
 static SparseVectorDescriptor g_desc = {
-    g_ref, g_set, g_delete, g_clear, g_dump,
-    "sparse-vector",
+    g_ref, g_set, g_delete, g_clear, g_iter, g_dump, 1
 };
 
 ScmObj MakeSparseVector(u_long flags)
 {
-    return MakeSparseVectorGeneric(SCM_CLASS_SPARSE_VECTOR, &g_desc);
+    return MakeSparseVectorGeneric(SCM_CLASS_SPARSE_VECTOR, &g_desc,
+                                   flags&SPARSE_VECTOR_ORDERED);
 }
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_SparseVectorClass, NULL, NULL, NULL, NULL, NULL);

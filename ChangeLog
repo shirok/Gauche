@@ -5,7 +5,7 @@
 	* ext/sparse/spvec.[ch], ext/sparse/sparse.scm: Revised implementation
 	  of sparse vector; dropped extra leaf array and let it store values
 	  directly in the ctrie's leaf node, which showed better performance
-	  and memeory usage.
+	  and memeory usage.  Added delete!, exists? and iterators.
 
 2009-04-16  Shiro Kawai  <shiro@acm.org>
 

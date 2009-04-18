@@ -53,25 +53,65 @@ typedef struct SparseVectorRec {
     SparseVectorDescriptor *desc;
     CompactTrie trie;
     u_long      numEntries;
+    int         ordered;     /* If TRUE, iterators walks in the order of
+                                index. */
 } SparseVector;
+
+/* Iterator. */
+typedef struct SparseVectorIterRec {
+    SparseVector   *sv;
+    Leaf           *leaf;
+    int             leafIndex;
+    CompactTrieIter citer;
+} SparseVectorIter;
 
 /* SparseVectorDescriptor has common information per class (it should be
    a part of each class, but we just hack for the time being.)
    The constructor of each class sets appropriate descriptor to the instance.
+
+   ref(SV,I)   - Returns an element at index I of sparsevector SV.
+                 SCM_UNBOUND if the element doesn't exist.
+   set(SV,I,X) - Sets X as a value at index I of SV.  Returns TRUE
+                 if that caused new element creation.
+   delete(SV, I) - Deletes I-th entry.  Returns the original value,
+                 or SCM_UNBOUND if the entry wasn't exist.
+   clear(L,_)  - Clears subtype-dependent part of the leaf structure.
+   iter(L,&I)  - Returns the next object after I's index in the leaf L,
+                 and updates I.  SCM_UNBOUND if the next object is not in L.
+                 I is intra-leaf index, not the vector-wide index.
+   dump(P,L,I,_) - Dumps leaf data.
+
+   The numEntries field is taken care of by generic routine.
  */
 struct SparseVectorDescriptorRec {
     ScmObj   (*ref)(SparseVector *sv, u_long index);
     int      (*set)(SparseVector *sv, u_long index, ScmObj value);
     ScmObj   (*delete)(SparseVector *sv, u_long index);
     void     (*clear)(Leaf*, void*);
+    ScmObj   (*iter)(Leaf*, int*);
     void     (*dump)(ScmPort *out, Leaf *leaf, int indent, void *data);
 
-    const char *name;           /* name used in error messages */
+    int shift;                  /* # of shift bits to access Leaf */
 };
 
-/* Iterator.  Since CompactTrie uses key bits from LSB to MSB, we can't
- * order 
- */
+/* Flags for constructors */
+enum {
+    SPARSE_VECTOR_ORDERED = (1L<<0)
+};
+
+/* Generic API. */
+extern ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback);
+extern void   SparseVectorSet(SparseVector *sv, u_long index, ScmObj value);
+extern ScmObj SparseVectorDelete(SparseVector *sv, u_long index);
+extern void   SparseVectorClear(SparseVector *sv);
+extern void   SparseVectorDump(SparseVector *sv);
+
+extern void   SparseVectorIterInit(SparseVectorIter *iter, SparseVector *sv);
+extern ScmObj SparseVectorIterNext(SparseVectorIter *iter);
+
+extern void   Scm_Init_spvec(ScmModule *mod);
+
+
 
 
 /*
@@ -159,16 +199,5 @@ SCM_CLASS_DECL(Scm_SparseF64VectorClass);
 
 #endif /*0*/
 
-extern ScmObj MakeSparseVectorGeneric(ScmClass *klass,
-                                      SparseVectorDescriptor *desc);
-
-extern ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback);
-extern void   SparseVectorSet(SparseVector *sv, u_long index, ScmObj value);
-extern ScmObj SparseVectorDelete(SparseVector *sv, u_long index);
-extern void   SparseVectorClear(SparseVector *sv);
-
-extern void   SparseVectorDump(SparseVector *sv);
-
-extern void   Scm_Init_spvec(ScmModule *mod);
 
 #endif /*GAUCHE_SPVEC_H*/
