@@ -124,7 +124,7 @@ void SparseVectorDump(SparseVector *sv)
 
 /*-------------------------------------------------------------------
  * General vector
- */
+v */
 
 typedef struct GLeafRec {
     Leaf hdr;
@@ -520,7 +520,7 @@ static ScmObj f64_iter(Leaf *leaf, int *index)
         SCM_CPP_CAT(tag,_iter),                                         \
         NULL, shift,                                                    \
     };                                                                  \
-    ScmObj SCM_CPP_CAT3(Scm_MakeSparse,TAG,Vector)(u_long flags)        \
+    ScmObj SCM_CPP_CAT3(MakeSparse,TAG,Vector)(u_long flags)            \
     {                                                                   \
         MakeSparseVectorGeneric(SCM_CPP_CAT3(SCM_CLASS_SPARSE_,TAG,VECTOR), \
                                 &SCM_CPP_CAT(tag,_desc),                \
