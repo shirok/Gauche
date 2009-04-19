@@ -31,7 +31,7 @@
 
 (define (const x) (lambda () x))
 
-(define *data-set-size* 200000)
+(define *data-set-size* 20000)
 
 (define *data-set*
   (rlet1 ht (make-hash-table 'eqv?)
@@ -41,18 +41,20 @@
           (cond [(hash-table-exists? ht k) (loop i)]
                 [else (hash-table-put! ht k (* k k)) (loop (+ i 1))]))))))
 
-(define (heavy-test name obj %ref %set! %cnt %clr %keys %vals %del keygen)
+(define (heavy-test name obj %ref %set! %cnt %clr %keys %vals %del
+                    keygen valgen)
   (test* #`",name many set!" *data-set-size*
          (let/cc return
            (hash-table-fold *data-set*
                             (lambda (k v cnt)
-                              (let1 kk (keygen k)
+                              (let ([kk (keygen k)]
+                                    [vv (valgen v)])
                                 (if (and (not (%ref obj kk #f))
-                                         (begin (%set! obj kk v)
-                                                (equal? v (%ref obj kk #f))))
+                                         (begin (%set! obj kk vv)
+                                                (equal? vv (%ref obj kk #f))))
                                   (+ cnt 1)
                                   (return
-                                   `(error ,cnt ,kk ,v ,(%ref obj kk #f))))))
+                                   `(error ,cnt ,kk ,vv ,(%ref obj kk #f))))))
                             0)))
 
   (test* #`",name many numelements" *data-set-size* (%cnt obj))
@@ -60,10 +62,11 @@
          (let/cc return
            (hash-table-fold *data-set*
                             (lambda (k v cnt)
-                              (let1 kk (keygen k)
-                                (if (equal? (%ref obj kk) v)
+                              (let ([kk (keygen k)]
+                                    [vv (valgen v)])
+                                (if (equal? (%ref obj kk) vv)
                                   (+ cnt 1)
-                                  (return `(error ,cnt ,kk ,v ,(%ref obj kk))))))
+                                  (return `(error ,cnt ,kk ,vv ,(%ref obj kk))))))
                             0)))
   (when %keys
     (test* #`",name keys" *data-set-size*
@@ -83,7 +86,7 @@
              (let1 tt (make-sparse-table 'equal?)
                (hash-table-for-each *data-set*
                                     (lambda (k v)
-                                      (sparse-table-set! tt v #t)))
+                                      (sparse-table-set! tt (valgen v) #t)))
                (fold (lambda (v cnt)
                        (if (sparse-table-ref tt v #f)
                          (+ cnt 1)
@@ -95,9 +98,10 @@
          (let/cc return
            (hash-table-fold *data-set*
                             (lambda (k v cnt)
-                              (let1 kk (keygen k)
+                              (let ([kk (keygen k)]
+                                    [vv (valgen v)])
                                 (if (%ref obj kk #f)
-                                  (return `(error ,cnt ,kk ,v ,(%ref obj kk)))
+                                  (return `(error ,cnt ,kk ,vv ,(%ref obj kk)))
                                   (+ cnt 1))))
                             0)))
 
@@ -105,7 +109,8 @@
     (test* #`",name many delete!" '(#t 0)
            (begin
              (hash-table-for-each *data-set*
-                                  (lambda (k v) (%set! obj (keygen k) v)))
+                                  (lambda (k v)
+                                    (%set! obj (keygen k) (valgen v))))
              (let1 r
                  (hash-table-fold *data-set*
                                   (lambda (k v s) (and s (%del obj (keygen k))))
@@ -126,10 +131,28 @@
 
 (for-each spvec-simple '(#f s8 u8 s16 u16 s32 u32 s64 u64 f16 f32 f64))
 
-(heavy-test "sparse-vector" (make-sparse-vector) sparse-vector-ref sparse-vector-set!
-            sparse-vector-num-entries sparse-vector-clear!
-            sparse-vector-keys sparse-vector-values sparse-vector-delete!
-            values)
+(define (spvec-heavy tag valgen)
+  (heavy-test #`"sparse-,(or tag \"\")vector"
+              (make-sparse-vector tag)
+              sparse-vector-ref sparse-vector-set!
+              sparse-vector-num-entries sparse-vector-clear!
+              sparse-vector-keys sparse-vector-values sparse-vector-delete!
+              values valgen))
+
+(spvec-heavy #f values)
+(spvec-heavy 's8  (lambda (x) (- (logand x #xff) #x80)))
+(spvec-heavy 'u8  (lambda (x) (logand x #xff)))
+(spvec-heavy 's16 (lambda (x) (- (logand x #xffff) #x8000)))
+(spvec-heavy 'u16 (lambda (x) (logand x #xffff)))
+(spvec-heavy 's32 (lambda (x) (- (logand x #xffffffff) #x80000000)))
+(spvec-heavy 'u32 (lambda (x) (logand x #xffffffff)))
+(spvec-heavy 's64 (lambda (x) (- (logand x #xffffffffffffffff)
+                                 #x8000000000000000)))
+(spvec-heavy 'u64 (lambda (x) (logand x #xffffffffffffffff)))
+(spvec-heavy 'f16 (lambda (x) (exact->inexact (logand x #x3ff))))
+(spvec-heavy 'f32 (lambda (x) (exact->inexact (logand x #xfffff))))
+(spvec-heavy 'f64 exact->inexact)
+
 
 ;; sparse table----------------------------------------------------
 (test-section "sparse-table")
@@ -144,13 +167,14 @@
 (sptab-simple 'equal?  (cut list 1) (cut list 2))
 (sptab-simple 'string=? (cut string #\a) (cut string #\b))
 
-(define (sptab-heavy-test type keygen)
+(define (sptab-heavy type keygen)
   (heavy-test #`"sparse-table (,type)" (make-sparse-table type)
-              sparse-table-ref sparse-table-set! sparse-table-num-entries sparse-table-clear!
-              sparse-table-keys sparse-table-values sparse-table-delete! keygen))
+              sparse-table-ref sparse-table-set! sparse-table-num-entries
+              sparse-table-clear! sparse-table-keys sparse-table-values
+              sparse-table-delete! keygen values))
 
-(sptab-heavy-test 'eqv? values)
-(sptab-heavy-test 'equal? (lambda (k) (list k k)))
-(sptab-heavy-test 'string=? (lambda (k) (number->string k 36)))
+(sptab-heavy 'eqv? values)
+(sptab-heavy 'equal? (lambda (k) (list k k)))
+(sptab-heavy 'string=? (lambda (k) (number->string k 36)))
 
 (test-end)
