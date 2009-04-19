@@ -9,24 +9,24 @@
 (use util.sparse)
 (test-module 'util.sparse)
 
-(define (simple-test name obj %ref %set! key1 key2 :optional (%exists? #f))
-  (test* #`",name basic set!/ref" 'ok
-         (begin (%set! obj (key1) 'ok)
+(define (simple-test name obj %ref %set! %exists? key1 key2
+                     :optional (val1 'ok) (val2 'okok) (val3 'okokok))
+  (test* #`",name basic set!/ref" val1
+         (begin (%set! obj (key1) val1)
                 (%ref obj (key1))))
   (test* #`",name referencing nokey" *test-error*
          (%ref obj (key2)))
   (test* #`",name referencing nokey fallback" 'huh?
          (%ref obj (key2) 'huh?))
-  (when %exists?
-    (test* #`",name exists?" #t (%exists? obj (key1)))
-    (test* #`",name exists?" #f (%exists? obj (key2))))
-  (test* #`",name replace" 'okok
-         (begin (%set! obj (key1) 'okok)
+  (test* #`",name exists?" #t (%exists? obj (key1)))
+  (test* #`",name exists?" #f (%exists? obj (key2)))
+  (test* #`",name replace" val2
+         (begin (%set! obj (key1) val2)
                 (%ref obj (key1))))
-  (test* #`",name add" 'okokok
-         (begin (%set! obj (key2) 'okokok)
+  (test* #`",name add" val3
+         (begin (%set! obj (key2) val3)
                 (%ref obj (key2))))
-  (test* #`",name ref" 'okok (%ref obj (key1)))
+  (test* #`",name ref" val2 (%ref obj (key1)))
   )
 
 (define (const x) (lambda () x))
@@ -116,8 +116,15 @@
 ;; sparse vector-------------------------------------------------
 (test-section "sparse-vector")
 
-(simple-test "sparse-vector" (make-sparse-vector) sparse-vector-ref sparse-vector-set!
-             (const 0) (const 1))
+(define (spvec-simple tag)
+  (apply simple-test #`"sparse-,(or tag \"\")vector" (make-sparse-vector tag)
+         sparse-vector-ref sparse-vector-set! sparse-vector-exists?
+         (const 0) (const 1)
+         (if (memq tag '(f16 f32 f64))
+           '(3.0 6.0 9.0)
+           '(3 6 9))))
+
+(for-each spvec-simple '(#f s8 u8 s16 u16 s32 u32 s64 u64 f16 f32 f64))
 
 (heavy-test "sparse-vector" (make-sparse-vector) sparse-vector-ref sparse-vector-set!
             sparse-vector-num-entries sparse-vector-clear!
@@ -127,18 +134,15 @@
 ;; sparse table----------------------------------------------------
 (test-section "sparse-table")
 
-(simple-test "sparse-table (eq?)" (make-sparse-table 'eq?)
-             sparse-table-ref sparse-table-set! (const 'a) (const 'b)
-             sparse-table-exists?)
-(simple-test "sparse-table (eqv?)" (make-sparse-table 'eqv?)
-             sparse-table-ref sparse-table-set! (cut / 3) (cut / 2)
-             sparse-table-exists?)
-(simple-test "sparse-table (equal?)" (make-sparse-table 'equal?)
-             sparse-table-ref sparse-table-set! (cut list 1) (cut list 2)
-             sparse-table-exists?)
-(simple-test "sparse-table (string=?)" (make-sparse-table 'string=?)
-             sparse-table-ref sparse-table-set! (cut string #\a) (cut string #\b)
-             sparse-table-exists?)
+(define (sptab-simple type key1 key2)
+  (simple-test #`"sparse-table (,type)" (make-sparse-table type)
+               sparse-table-ref sparse-table-set! sparse-table-exists?
+               key1 key2))
+
+(sptab-simple 'eq?     (const 'a) (const 'b))
+(sptab-simple 'eqv?    (cut / 3) (cut / 2))
+(sptab-simple 'equal?  (cut list 1) (cut list 2))
+(sptab-simple 'string=? (cut string #\a) (cut string #\b))
 
 (define (sptab-heavy-test type keygen)
   (heavy-test #`"sparse-table (,type)" (make-sparse-table type)

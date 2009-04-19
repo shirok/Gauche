@@ -54,7 +54,7 @@ typedef struct SparseVectorRec {
     CompactTrie trie;
     u_long      numEntries;
     int         ordered;     /* If TRUE, iterators walks in the order of
-                                index. */
+                                index.  (Not used yet) */
 } SparseVector;
 
 /* Iterator. */
@@ -69,11 +69,11 @@ typedef struct SparseVectorIterRec {
    a part of each class, but we just hack for the time being.)
    The constructor of each class sets appropriate descriptor to the instance.
 
-   ref(SV,I)   - Returns an element at index I of sparsevector SV.
-                 SCM_UNBOUND if the element doesn't exist.
-   set(SV,I,X) - Sets X as a value at index I of SV.  Returns TRUE
-                 if that caused new element creation.
-   delete(SV, I) - Deletes I-th entry.  Returns the original value,
+   ref(L,I)   - Returns an element at index I in leaf L.
+                SCM_UNBOUND if the element doesn't exist.
+   set(L,I,X) - Sets X as a value at index I in leaf L.  Returns TRUE
+                if that caused new element creation.
+   delete(L, I) - Deletes I-th entry.  Returns the original value,
                  or SCM_UNBOUND if the entry wasn't exist.
    clear(L,_)  - Clears subtype-dependent part of the leaf structure.
    iter(L,&I)  - Returns the next object after I's index in the leaf L,
@@ -101,6 +101,7 @@ enum {
 };
 
 /* Generic API. */
+extern ScmObj MakeSparseVector(ScmClass *klass, u_long flags);
 extern ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback);
 extern void   SparseVectorSet(SparseVector *sv, u_long index, ScmObj value);
 extern ScmObj SparseVectorDelete(SparseVector *sv, u_long index);
@@ -112,86 +113,71 @@ extern ScmObj SparseVectorIterNext(SparseVectorIter *iter);
 
 extern void   Scm_Init_spvec(ScmModule *mod);
 
-
-
-
 /*
  * Class stuff
  */
 SCM_CLASS_DECL(Scm_SparseVectorBaseClass);
 #define SCM_CLASS_SPARSE_VECTOR_BASE  (&Scm_SparseVectorBaseClass)
-#define SCM_SPARSE_VECTOR_BASE_P(obj) SCM_ISA(obj, SCM_CLASS_SPARSE_VECTOR_BASE)
+#define SPARSE_VECTOR_BASE_P(obj) SCM_ISA(obj, SCM_CLASS_SPARSE_VECTOR_BASE)
 
 SCM_CLASS_DECL(Scm_SparseVectorClass);
 #define SCM_CLASS_SPARSE_VECTOR   (&Scm_SparseVectorClass)
 #define SPARSE_VECTOR(obj)        ((SparseVector*)(obj))
 #define SPARSE_VECTOR_P(obj)      SCM_XTYPEP(obj, SCM_CLASS_SPARSE_VECTOR)
-extern ScmObj MakeSparseVector(u_long flags);
 
 SCM_CLASS_DECL(Scm_SparseS8VectorClass);
 #define SCM_CLASS_SPARSE_S8VECTOR   (&Scm_SparseS8VectorClass)
 #define SPARSE_S8VECTOR(obj)        ((SparseVector*)(obj))
 #define SPARSE_S8VECTOR_P(obj)      SCM_XTYPEP(obj, SCM_CLASS_SPARSE_S8VECTOR)
-extern ScmObj MakeSparseS8Vector(u_long flags);
 
 SCM_CLASS_DECL(Scm_SparseU8VectorClass);
 #define SCM_CLASS_SPARSE_U8VECTOR   (&Scm_SparseU8VectorClass)
 #define SPARSE_U8VECTOR(obj)        ((SparseVector*)(obj))
 #define SPARSE_U8VECTOR_P(obj)      SCM_XTYPEP(obj, SCM_CLASS_SPARSE_U8VECTOR)
-extern ScmObj MakeSparseU8Vector(u_long flags);
 
 SCM_CLASS_DECL(Scm_SparseS16VectorClass);
 #define SCM_CLASS_SPARSE_S16VECTOR  (&Scm_SparseS16VectorClass)
 #define SPARSE_S16VECTOR(obj)       ((SparseVector*)(obj))
 #define SPARSE_S16VECTOR_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_S16VECTOR)
-extern ScmObj MakeSparseS16Vector(u_long flags);
 
 SCM_CLASS_DECL(Scm_SparseU16VectorClass);
 #define SCM_CLASS_SPARSE_U16VECTOR  (&Scm_SparseU16VectorClass)
 #define SPARSE_U16VECTOR(obj)       ((SparseVector*)(obj))
 #define SPARSE_U16VECTOR_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_U16VECTOR)
-extern ScmObj MakeSparseU16Vector(u_long flags);
 
 SCM_CLASS_DECL(Scm_SparseS32VectorClass);
 #define SCM_CLASS_SPARSE_S32VECTOR  (&Scm_SparseS32VectorClass)
 #define SPARSE_S32VECTOR(obj)       ((SparseVector*)(obj))
 #define SPARSE_S32VECTOR_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_S32VECTOR)
-extern ScmObj MakeSparseS32Vector(u_long flags);
 
 SCM_CLASS_DECL(Scm_SparseU32VectorClass);
 #define SCM_CLASS_SPARSE_U32VECTOR  (&Scm_SparseU32VectorClass)
 #define SPARSE_U32VECTOR(obj)       ((SparseVector*)(obj))
 #define SPARSE_U32VECTOR_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_U32VECTOR)
-extern ScmObj MakeSparseU32Vector(u_long flags);
 
 SCM_CLASS_DECL(Scm_SparseS64VectorClass);
 #define SCM_CLASS_SPARSE_S64VECTOR  (&Scm_SparseS64VectorClass)
 #define SPARSE_S64VECTOR(obj)       ((SparseVector*)(obj))
 #define SPARSE_S64VECTOR_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_S64VECTOR)
-extern ScmObj MakeSparseS64Vector(u_long flags);
 
 SCM_CLASS_DECL(Scm_SparseU64VectorClass);
 #define SCM_CLASS_SPARSE_U64VECTOR  (&Scm_SparseU64VectorClass)
 #define SPARSE_U64VECTOR(obj)       ((SparseVector*)(obj))
 #define SPARSE_U64VECTOR_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_U64VECTOR)
-extern ScmObj MakeSparseU64Vector(u_long flags);
 
 SCM_CLASS_DECL(Scm_SparseF16VectorClass);
 #define SCM_CLASS_SPARSE_F16VECTOR  (&Scm_SparseF16VectorClass)
 #define SPARSE_F16VECTOR(obj)       ((SparseVector*)(obj))
 #define SPARSE_F16VECTOR_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_F16VECTOR)
-extern ScmObj MakeSparseF16Vector(u_long flags);
 
 SCM_CLASS_DECL(Scm_SparseF32VectorClass);
 #define SCM_CLASS_SPARSE_F32VECTOR  (&Scm_SparseF32VectorClass)
 #define SPARSE_F32VECTOR(obj)       ((SparseVector*)(obj))
 #define SPARSE_F32VECTOR_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_F32VECTOR)
-extern ScmObj MakeSparseF32Vector(u_long flags);
 
 SCM_CLASS_DECL(Scm_SparseF64VectorClass);
 #define SCM_CLASS_SPARSE_F64VECTOR  (&Scm_SparseF64VectorClass)
 #define SPARSE_F64VECTOR(obj)       ((SparseVector*)(obj))
 #define SPARSE_F64VECTOR_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_F64VECTOR)
-extern ScmObj MakeSparseF64Vector(u_long flags);
 
 #endif /*GAUCHE_SPVEC_H*/

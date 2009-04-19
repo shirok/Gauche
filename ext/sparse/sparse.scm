@@ -36,17 +36,23 @@
 
 (define-module util.sparse
   (use gauche.dictionary)
-  (export <sparse-vector> make-sparse-vector sparse-vector-num-entries
+  (export <sparse-table> make-sparse-table sparse-table-num-entries
+          sparse-table-ref sparse-table-set! sparse-table-exists?
+          sparse-table-clear! sparse-table-delete!
+          sparse-table-fold sparse-table-map sparse-table-for-each
+          sparse-table-keys sparse-table-values %sparse-table-dump
+
+          <sparse-vector-base> <sparse-vector> <sparse-s8vector>
+          <sparse-u8vector> <sparse-s16vector> <sparse-u16vector>
+          <sparse-s32vector> <sparse-u32vector> <sparse-s64vector>
+          <sparse-u64vector> <sparse-f16vector> <sparse-f32vector>
+          <sparse-f64vector>
+          make-sparse-vector sparse-vector-num-entries
           sparse-vector-ref sparse-vector-set! sparse-vector-exists?
           sparse-vector-clear! sparse-vector-delete!
           sparse-vector-fold sparse-vector-map sparse-vector-for-each
           sparse-vector-keys sparse-vector-values %sparse-vector-dump
-          
-          <sparse-table> make-sparse-table sparse-table-num-entries
-          sparse-table-ref sparse-table-set! sparse-table-exists?
-          sparse-table-clear! sparse-table-delete!
-          sparse-table-fold sparse-table-map sparse-table-for-each
-          sparse-table-keys sparse-table-values %sparse-table-dump)
+          )
   )
 (select-module util.sparse)
 
@@ -149,10 +155,29 @@
  (initcode "Scm_Init_spvec(mod);")
 
  (define-type <sparse-vector> "SparseVector*" "sparse vector"
-   "SPARSE_VECTOR_P" "SPARSE_VECTOR")
+   "SPARSE_VECTOR_BASE_P" "SPARSE_VECTOR")
 
- (define-cproc make-sparse-vector ()
-   (result (MakeSparseVector 0)))
+ (define-cproc make-sparse-vector (:optional (type #f) (flags::<ulong> 0))
+   (let* ([klass::ScmClass* NULL])
+     (cond [(SCM_CLASSP type)  (set! klass (SCM_CLASS type))]
+           [(SCM_FALSEP type)  (set! klass SCM_CLASS_SPARSE_VECTOR)]
+           [(SCM_EQ type 's8)  (set! klass SCM_CLASS_SPARSE_S8VECTOR)]
+           [(SCM_EQ type 'u8)  (set! klass SCM_CLASS_SPARSE_U8VECTOR)]
+           [(SCM_EQ type 's16) (set! klass SCM_CLASS_SPARSE_S16VECTOR)]
+           [(SCM_EQ type 'u16) (set! klass SCM_CLASS_SPARSE_U16VECTOR)]
+           [(SCM_EQ type 's32) (set! klass SCM_CLASS_SPARSE_S32VECTOR)]
+           [(SCM_EQ type 'u32) (set! klass SCM_CLASS_SPARSE_U32VECTOR)]
+           [(SCM_EQ type 's64) (set! klass SCM_CLASS_SPARSE_S64VECTOR)]
+           [(SCM_EQ type 'u64) (set! klass SCM_CLASS_SPARSE_U64VECTOR)]
+           [(SCM_EQ type 'f16) (set! klass SCM_CLASS_SPARSE_F16VECTOR)]
+           [(SCM_EQ type 'f32) (set! klass SCM_CLASS_SPARSE_F32VECTOR)]
+           [(SCM_EQ type 'f64) (set! klass SCM_CLASS_SPARSE_F64VECTOR)]
+           [else (Scm_TypeError "type"
+                                "subclass of <sparse-vector-base>, #f, or \
+                                 one of symbols s8, u8, s16, u16, s32, u32, \
+                                 s64, u64, f16, f32, f64"
+                                type)])
+     (result (MakeSparseVector klass flags))))
 
  (define-cproc sparse-vector-num-entries (sv::<sparse-vector>) ::<ulong>
    (result (-> sv numEntries)))

@@ -35,20 +35,22 @@
 
 /*===================================================================
  * Generic stuff
+ * NB: The generic constructor is defined near the bottom of the source,
+ * since it should come after static descriptor definitions.
  */
 
-static ScmObj MakeSparseVectorGeneric(ScmClass *klass,
-                                      SparseVectorDescriptor *desc,
-                                      int ordered)
-{
-    SparseVector *v = SCM_NEW(SparseVector);
-    SCM_SET_CLASS(v, klass);
-    CompactTrieInit(&v->trie);
-    v->numEntries = 0;
-    v->desc = desc;
-    v->ordered = ordered;
-    return SCM_OBJ(v);
-}
+/* Common CPL */
+ScmClass *spvec_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_SparseVectorBaseClass),
+    SCM_CLASS_STATIC_PTR(Scm_DictionaryClass),
+    SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_SparseVectorBaseClass,
+                         NULL, NULL, NULL, NULL,
+                         spvec_cpl+1);
 
 ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback)
 {
@@ -197,13 +199,8 @@ static SparseVectorDescriptor g_desc = {
      g_ref, g_set, g_allocate, g_delete, g_clear, g_iter, g_dump, 1
 };
 
-ScmObj MakeSparseVector(u_long flags)
-{
-    return MakeSparseVectorGeneric(SCM_CLASS_SPARSE_VECTOR, &g_desc,
-                                   flags&SPARSE_VECTOR_ORDERED);
-}
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_SparseVectorClass, NULL, NULL, NULL, NULL, NULL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SparseVectorClass, NULL, NULL, NULL, NULL,
+                         spvec_cpl);
 
 /*-------------------------------------------------------------------
  * Uniform sparse vector common stuff
@@ -267,7 +264,7 @@ static void u_clear(Leaf *leaf, void *data)
  */
 
 #define REF_CHECK(leaf, index, mask) \
-    do { if (!U_HAS_ENTRY(leaf, index, mask)) return SCM_UNDEFINED; } while(0)
+    do { if (!U_HAS_ENTRY(leaf, index, mask)) return SCM_UNBOUND; } while(0)
 
 #define U_REF(tag, mask, box)                                           \
     static ScmObj SCM_CPP_CAT(tag,_ref)(Leaf *leaf, u_long index)       \
@@ -520,14 +517,8 @@ static ScmObj f64_iter(Leaf *leaf, int *index)
         SCM_CPP_CAT(tag,_iter),                                         \
         NULL, shift,                                                    \
     };                                                                  \
-    ScmObj SCM_CPP_CAT3(MakeSparse,TAG,Vector)(u_long flags)            \
-    {                                                                   \
-        MakeSparseVectorGeneric(SCM_CPP_CAT3(SCM_CLASS_SPARSE_,TAG,VECTOR), \
-                                &SCM_CPP_CAT(tag,_desc),                \
-                                flags&SPARSE_VECTOR_ORDERED);           \
-    }                                                                   \
     SCM_DEFINE_BUILTIN_CLASS(SCM_CPP_CAT3(Scm_Sparse,TAG,VectorClass),  \
-                             NULL, NULL, NULL, NULL, NULL)    
+                             NULL, NULL, NULL, NULL, spvec_cpl)
 
 U_DECL(s8, S8, SHIFT8);
 U_DECL(u8, U8, SHIFT8);
@@ -542,13 +533,60 @@ U_DECL(f32, F32, SHIFT32);
 U_DECL(f64, F64, SHIFT64);
 
 /*===================================================================
+ * Generic constructor
+ */
+
+ScmObj MakeSparseVector(ScmClass *klass, u_long flags)
+{
+    SparseVectorDescriptor *desc = NULL;
+    SparseVector *v = SCM_NEW(SparseVector);
+
+    if (SCM_EQ(SCM_CLASS_SPARSE_VECTOR, klass))         desc = &g_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_S8VECTOR, klass))  desc = &s8_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_U8VECTOR, klass))  desc = &u8_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_S16VECTOR, klass)) desc = &s16_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_U16VECTOR, klass)) desc = &u16_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_S32VECTOR, klass)) desc = &s32_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_U32VECTOR, klass)) desc = &u32_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_S64VECTOR, klass)) desc = &s64_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_U64VECTOR, klass)) desc = &u64_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_F16VECTOR, klass)) desc = &f16_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_F32VECTOR, klass)) desc = &f32_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_F64VECTOR, klass)) desc = &f64_desc;
+    else {
+        Scm_TypeError("class", "subclass of <sparse-vector-base>",
+                      SCM_OBJ(klass));
+    }
+    
+    SCM_SET_CLASS(v, klass);
+    CompactTrieInit(&v->trie);
+    v->numEntries = 0;
+    v->desc = desc;
+    v->ordered = flags&SPARSE_VECTOR_ORDERED;
+    return SCM_OBJ(v);
+}
+
+/*===================================================================
  * Initialization
  */
 
 void Scm_Init_spvec(ScmModule *mod)
 {
-    Scm_InitStaticClass(&Scm_SparseVectorClass, "<sparse-vector>",
-                        mod, NULL, 0);
-}
+#define INITC(klass, name) \
+    Scm_InitStaticClass(&klass, name, mod, NULL, 0)
 
+    INITC(Scm_SparseVectorBaseClass, "<sparse-vector-base>");
+    INITC(Scm_SparseVectorClass, "<sparse-vector>");
+    INITC(Scm_SparseS8VectorClass, "<sparse-s8vector>");
+    INITC(Scm_SparseU8VectorClass, "<sparse-u8vector>");
+    INITC(Scm_SparseS16VectorClass, "<sparse-s16vector>");
+    INITC(Scm_SparseU16VectorClass, "<sparse-u16vector>");
+    INITC(Scm_SparseS32VectorClass, "<sparse-s32vector>");
+    INITC(Scm_SparseU32VectorClass, "<sparse-u32vector>");
+    INITC(Scm_SparseS64VectorClass, "<sparse-s64vector>");
+    INITC(Scm_SparseU64VectorClass, "<sparse-u64vector>");
+    INITC(Scm_SparseF16VectorClass, "<sparse-f16vector>");
+    INITC(Scm_SparseF32VectorClass, "<sparse-f32vector>");
+    INITC(Scm_SparseF64VectorClass, "<sparse-f64vector>");
+}
 
