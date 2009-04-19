@@ -1,7 +1,8 @@
 2009-04-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/bits_inline.h (Scm__CountBitsInWord): Faster code.
-	  (Benchmarks on Core2 Quad Q6600 2.4GHz: 11ns -> 6.2ns).
+	  (Benchmarks on Core2 Quad Q6600 2.4GHz 64bit: 11ns -> 6.2ns,
+	   Core Duo L2400 1.66GHz 32bit: 10ns -> 8ns)
 
 	* ext/sparse/spvec.[ch], ext/sparse/sparse.scm: Added sparse uniform
 	  vector support.
