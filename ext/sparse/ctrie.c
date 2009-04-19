@@ -286,8 +286,7 @@ void CompactTrieClear(CompactTrie *ct,
     Node *n = ct->root;
     ct->numEntries = 0;
     ct->root = NULL;
-
-    clear_rec(ct, n, clearer, data);
+    if (n) clear_rec(ct, n, clearer, data);
 }
 
 /*
