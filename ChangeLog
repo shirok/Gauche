@@ -1,3 +1,8 @@
+2009-04-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sparse/spvec.[ch], ext/sparse/sparse.scm (sparse-vector-inc!):
+	  Experimentally added.
+
 2009-04-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/bits_inline.h (Scm__CountBitsInWord): Faster code.

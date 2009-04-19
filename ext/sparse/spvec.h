@@ -106,6 +106,8 @@ extern ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback);
 extern void   SparseVectorSet(SparseVector *sv, u_long index, ScmObj value);
 extern ScmObj SparseVectorDelete(SparseVector *sv, u_long index);
 extern void   SparseVectorClear(SparseVector *sv);
+extern ScmObj SparseVectorInc(SparseVector *sv, u_long index, ScmObj delta,
+                              ScmObj fallback);
 extern void   SparseVectorDump(SparseVector *sv);
 
 extern void   SparseVectorIterInit(SparseVectorIter *iter, SparseVector *sv);

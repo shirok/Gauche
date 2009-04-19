@@ -113,6 +113,26 @@ ScmObj SparseVectorIterNext(SparseVectorIter *iter)
     }
 }
 
+/* special routine for uniform numeric sparse vectors */
+/* TODO: Allow clamp arg */
+ScmObj SparseVectorInc(SparseVector *sv, u_long index,
+                       ScmObj delta,    /* number */
+                       ScmObj fallback) /* number */
+{
+    Leaf *leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
+    if (leaf == NULL) {
+        ScmObj v = Scm_Add(fallback, delta);
+        SparseVectorSet(sv, index, v);
+        return v;
+    } else {
+        ScmObj v = sv->desc->ref(leaf, index);
+        if (SCM_UNBOUNDP(v)) v = fallback;
+        v = Scm_Add(v, delta);
+        sv->desc->set(leaf, index, v);
+        return v;
+    }
+}
+
 #if SCM_DEBUG_HELPER
 void SparseVectorDump(SparseVector *sv)
 {

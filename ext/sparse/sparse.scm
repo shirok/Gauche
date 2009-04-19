@@ -50,6 +50,7 @@
           make-sparse-vector sparse-vector-num-entries
           sparse-vector-ref sparse-vector-set! sparse-vector-exists?
           sparse-vector-clear! sparse-vector-delete!
+          sparse-vector-inc!
           sparse-vector-fold sparse-vector-map sparse-vector-for-each
           sparse-vector-keys sparse-vector-values %sparse-vector-dump
           )
@@ -204,6 +205,12 @@
 
  (define-cproc sparse-vector-clear! (sv::<sparse-vector>) ::<void>
    SparseVectorClear)
+
+ (define-cproc sparse-vector-inc! (sv::<sparse-vector>
+                                   index::<ulong>
+                                   delta::<number>
+                                   :optional (fallback::<number> 0))
+   SparseVectorInc)
 
  (define-cfn sparse-vector-iter (args::ScmObj* nargs::int data::void*) :static
    (let* ([iter::SparseVectorIter* (cast SparseVectorIter* data)]
