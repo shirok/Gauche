@@ -54,17 +54,15 @@ static inline u_long Scm__CountBitsInWord(u_long word)
     word = (word&0x55555555UL) + ((word>>1)&0x55555555UL);
     word = (word&0x33333333UL) + ((word>>2)&0x33333333UL);
     word = (word&0x0f0f0f0fUL) + ((word>>4)&0x0f0f0f0fUL);
-    word = (word&0x00ff00ffUL) + ((word>>8)&0x00ff00ffUL);
-    word = (word&0x0000ffffUL) + ((word>>16)&0x0000ffffUL);
+    word *= 0x01010101UL;
+    return word >> 24;
 #else
     word = (word&0x5555555555555555UL) + ((word>>1)&0x5555555555555555UL);
     word = (word&0x3333333333333333UL) + ((word>>2)&0x3333333333333333UL);
     word = (word&0x0f0f0f0f0f0f0f0fUL) + ((word>>4)&0x0f0f0f0f0f0f0f0fUL);
-    word = (word&0x00ff00ff00ff00ffUL) + ((word>>8)&0x00ff00ff00ff00ffUL);
-    word = (word&0x0000ffff0000ffffUL) + ((word>>16)&0x0000ffff0000ffffUL);
-    word = (word&0x00000000ffffffffUL) + ((word>>32)&0x00000000ffffffffUL);
+    word *= 0x0101010101010101UL;
+    return word >> 56;
 #endif
-    return word;
 }
 
 /* Counts '1' bits within a word, _below_ the n-th bit (exclusive) */

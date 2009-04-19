@@ -84,6 +84,8 @@
                                  ht-ref ht-set hash-table-clear!)]
     [("sv" "speed") (bench-speed "Sparse vector" (cut make-sparse-vector)
                                  sv-ref sv-set sparse-vector-clear!)]
+    [("suv" "speed") (bench-speed "Sparse u32vector" (cut make-sparse-vector 'u32)
+                                 sv-ref sv-set sparse-vector-clear!)]
     [("st" "speed") (bench-speed "Sparse table" (cut make-sparse-table 'eqv?)
                                  st-ref st-set sparse-table-clear!)]
     
@@ -91,6 +93,8 @@
                          (bench-mem (cut ht-set (make-hash-table 'eqv?))))]
     [("sv" "mem") (print "Sparse vector mem: "
                         (bench-mem (cut sv-set (make-sparse-vector))))]
+    [("suv" "mem") (print "Sparse u32vector mem: "
+                        (bench-mem (cut sv-set (make-sparse-vector 'u32))))]
     [("st" "mem") (print "Sparse table mem: "
                          (bench-mem (cut st-set (make-sparse-table 'eqv?))))]
     [_ (exit 1 "Usage: bench ht|sv|st speed|mem")])
