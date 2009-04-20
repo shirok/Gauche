@@ -1,3 +1,9 @@
+2009-04-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm (cgen-genstub): Moved genstub main
+	  functionarity here.
+	* src/genstub: only command-line processing remains.
+
 2009-04-19  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sparse/spvec.[ch], ext/sparse/sparse.scm (sparse-vector-inc!):
