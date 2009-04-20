@@ -96,7 +96,9 @@
 
        ;; TODO: rewrite these more efficiently
        (define (,x-update! sv k proc . fallback)
-         (,set sv k (proc (apply ,ref sv k fallback))))
+         (let1 tmp (proc (apply ,ref sv k fallback))
+           (,set sv k tmp)
+           tmp))
        (define (,x-push! sv k val)
          (,set sv k (cons val (,ref sv k '()))))
        (define (,x-pop! sv k . fallback)
