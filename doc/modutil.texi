@@ -56,6 +56,7 @@
 * Red black tree::              util.rbtree
 * SLIB-compatible record type::  util.record
 * Relation framework::          util.relation
+* Sparse data containers::      util.sparse
 * Stream library::              util.stream
 * Trie::                        util.trie
 * Topological sort::            util.toposort
@@ -16217,7 +16218,7 @@ obj @result{} #<my-record 0x819d9b0>
 @end example
 
 @c ----------------------------------------------------------------------
-@node Relation framework, Stream library, SLIB-compatible record type, Library modules - Utilities
+@node Relation framework, Sparse data containers, SLIB-compatible record type, Library modules - Utilities
 @section @code{util.relation} - Relation framework
 @c NODE @code{util.relation} - リレーションフレームワーク
 
@@ -16562,9 +16563,311 @@ you can write like this:
 @deftp {Class} <object-set-relation>
 @end deftp
 
+@c ----------------------------------------------------------------------
+@node Sparse data containers, Stream library, Relation framework, Library modules - Utilities
+@section @code{util.sparse} - Sparse data containers
+@c NODE @code{util.sparse} - 疎なデータコンテナ
+
+@deftp {Module} util.sparse
+@mdindex util.sparse
+This module provides a @emph{sparse vector}, a space efficient
+data containter indexed by nonnegative integer, and
+a @emph{sparse table}, a hash table using a sparse vector
+as a backing storage.
+@end deftp
+
+A sparse vector associates a nonnegative integer index 
+to a value.  It has @emph{vector} in its name since it is indexed
+by an integer, but it isn't like a flat array on contiguous memory;
+it's more like an associative array.  (Internally, the current
+implementation uses compact trie structure.)
+It is guaranteed that you can store a value with index at least
+up to @code{2^32-1}; the actual maximum bits of indexes can
+be queried by @code{sparse-vector-max-index-bits}.
+
+Unlike ordinary vectors, you don't need to specify the size
+of a sparse vector when you create one.  You can just set
+a value to any index in the supported range.
+
+@example
+(define v (make-sparse-vector))
+
+(sparse-vector-set! v 0 'a)
+(sparse-vector-ref v 0) @result{} a
+
+(sparse-vector-set! v 100000000 'b)
+(sparse-vector-ref v 100000000) @result{} b
+@end example
+
+If you try to access an element that hasn't been set,
+an error is signalled by default.  You can give a
+fallback value to @code{sparse-vector-ref} to suppress
+the error.
+
+@example
+(sparse-vector-ref v 1)        @result{} @r{error}
+(sparse-vector-ref v 1 'noval) @result{} noval
+@end example
+
+A sparse table works just like a hash table, but it uses
+a sparse vector to store the values using hashed number of keys.
+
+The main reason of these sparse data containers are for
+memory efficiency.   If you want to store values in a vector
+but knows you'll use only some entries sparsely, obviously it
+is waste to allocate a large vector and to leave many entries unused.
+But it is worse than that; Gauche's GC doesn't like a large 
+contiguous region of memory.  Using lots of large vectors adds 
+GC overhead quickly.  It becomes especially visible when you
+store large number of entries (like >100,000) into hash tables,
+since Gauche's builtin hash tables use a flat vector as a backing
+storage.   You'll see the heap size grows quickly and
+GC runs more frequently and longer.
+On the other hand, sparse table works pretty stable with
+large number of entries.  
+
+Sparse data containers does have overhead on access speed.
+They are a bit slower than the ordinary hash tables,
+and much slower than ordinary vectors.  We should note, however,
+as the number of entries grow, access speed on ordinary hash
+tables grows quicker than sparse tables and eventually two become
+comparable.
+
+It depends on your application which you should use, and
+if you're not sure, you need to benchmark.
+As a rule of thumb, if you use more than several hashtables
+each of which contains more than a few tens of thousands of
+entries, sparse tables may work better.
+If you see GC Warnings telling ``repeated allocation of large
+blocks'', you should definitely consider sparse tables.
+
+@menu
+* Sparse vectors::              
+* Sparse tables::          
+@end menu
+
+@node Sparse vectors, Sparse tables, Sparse data containers, Sparse data containers
+@subsection Sparse vectors
+@c NODE 疎なベクタ
+
+@deftp {Class} <sparse-vector-base>
+@clindex sparse-vector-base
+An abstract base class of sparse vectors. 
+Inherits @code{<dictionary>} and @code{<collection>}.
+Note that sparse vectors are @emph{not} @code{<sequence>}; even
+they can be indexable by integers, they don't have
+means of @emph{ordered} access.
+
+Sparse vector may be a general vector
+that can contain any Scheme objects (like @code{<vector>}), 
+or a specialized vector that can contain only certain
+types of numbers (like @code{<s8vector>} etc.).
+
+All of these sparse vectors can be accessed by the same API.
+
+Sparse vectors also implements the Collection API
+(@xref{Collection framework}) and the Dictionary API
+(@xref{Dictionary framework}).
+@end deftp
+
+@deftp {Class} <sparse-vector>
+@deftpx {Class} <sparse-@var{TAG}vector>
+@clindex sparse-vector
+@clindex sparse-s8vector
+@clindex sparse-u8vector
+@clindex sparse-s16vector
+@clindex sparse-u16vector
+@clindex sparse-s32vector
+@clindex sparse-u32vector
+@clindex sparse-s64vector
+@clindex sparse-u64vector
+@clindex sparse-f16vector
+@clindex sparse-f32vector
+@clindex sparse-f64vector
+The actual sparse vector classes.  Inherits @code{<sparse-vector-base>}.
+An instance of @code{<sparse-vector>} can contain any Scheme objects.
+
+@var{TAG} either one of @code{s8}, @code{u8},
+@code{s16}, @code{u16}, @code{s32}, @code{u32},
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, or @code{f64}.
+The range of values an instance of those classes can hold
+is the same as the corresponding @code{<@var{TAG}vector>} class
+in @code{gauche.uvector} (@xref{Uniform vectors}).  That is,
+@code{<sparse-u8vector>} can have exact integer values 
+between 0 and 255.
+@end deftp
+
+@defun make-sparse-vector &optional type
+Creates an empty sparse vector.  The @var{type} argument can be
+@code{#f} (default), one of subclasses of @code{<sparse-vector-base>},
+or a symbol of either one of @code{s8}, @code{u8},
+@code{s16}, @code{u16}, @code{s32}, @code{u32},
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, or @code{f64}.
+
+If @var{type} is omitted or @code{#f}, a @code{<sparse-vector>} is
+created.  If it is a class, an instance of the class is created
+(It is an error to pass a class that is not a subclass of
+@code{<sparse-vector-base>}.)
+If it is a symbol, an instance of corresponding @code{<sparse-@var{TAG}vector>}
+is created.
+@end defun
+
+@defun sparse-vector-max-index-bits
+Returns maximum number of bits of allowed integer.  If this 
+returns 32, the index up to @code{(expt 2 32)} is supported.
+It is guaranteed that this is at least 32.
+@end defun
+
+In the following descriptions, the argument @var{sv} denotes
+an instance of sparse vector; an error is signalled if other
+object is passed.
+ 
+@defun sparse-vector-ref sv k &optional default
+Returns @var{k}-th element of a sparse vector @var{sv}, where
+@var{k} must be a nonnegative exact integer.  If @var{k} is
+equal to or greater than the allowed index range, an error
+is signalled.
+
+If @var{k} is within the allowed range but the sparse vector
+doesn't have a value for @var{k}, @var{default} is returned
+if it is provided, otherwise an error is signalled.
+@end defun
+
+@defun sparse-vector-set! sv k value
+Sets @var{value} for @var{k}-th element of a sparse vector @var{sv}.
+@var{K} must be a nonnegative exact integer, and below the maximum
+allowed index.
+
+If @var{sv} is a numeric sparse vector, @var{value} must also be
+within the allowed range, or an error is signalled.
+@end defun
+
+@defun sparse-vector-num-entries sv
+Returns the number of entries in @var{sv}.
+@end defun
+
+@defun sparse-vector-exists? sv k
+Returns @code{#t} if @var{sv} has an entry for index @var{k},
+@code{#f} otherwise.
+@end defun
+
+@defun sparse-vector-delete! sv k
+Delets the @var{k}-th entry of @var{sv}.  If @var{sv} had the entry ,
+returns @code{#t}.  If @var{sv} didn't have the entry, returns @code{#f}.
+@end defun
+
+@defun sparse-vector-clear! sv
+Empties a sparse vector.
+@end defun
+
+@defun sparse-vector-inc! sv k delta &optional (fallback 0)
+This is a shortcut of the following.  It is especially efficient
+for numeric sparse vectors.
+
+@example
+(sparse-vector-set! sv k (+ (sparse-vector-ref sv k fallback) delta))
+@end example
+
+If the result of addition exceeds the allowed value range of @var{sv},
+an error is signalled.  In future we'll allow an option to clamp
+the result value within the range.
+@end defun
+
+@defun sparse-vector-update! sv k proc &optional fallback
+@defunx sparse-vector-push! sv k val
+@defunx sparse-vector-pop! sv k &optional fallback
+Convenience routines to fetch-and-update an entry of
+a sparse vector.  Works just like @code{hash-table-update!},
+@code{hash-table-push!} and @code{hash-table-pop!}; 
+(@xref{Hashtables}).
+@end defun
+
+
+The following procedures traverses a sparse vector.
+Note that elements are not visited in the order of index;
+it's just like hash table traversers.
+
+At this moment, if you want to walk a sparse vector with
+increasing/decreasing index order, you have to get a list
+of keys by @code{sparse-vector-keys}, sort it, then use
+it to retrieve values.
+We may add an option in future to @code{make-sparse-vector} so that
+those walk operation
+
+@defun sparse-vector-fold sv proc seed
+For each entry in @var{sv}, calls @var{proc} as
+@code{(proc @var{k_n} @var{v_n} @var{seed_n})}, where 
+@var{k_n} is an index and @var{v_n} is a value for it,
+and @var{seed_n} is the returned value of the previous
+call to @code{proc} if @var{n} @code{>=} 1, and @var{seed} if @var{n} = 0.
+Returns the value of the last call of @code{proc}.
+@end defun
+
+@defun sparse-vector-for-each sv proc
+@defunx sparse-vector-map sv proc
+Calls @code{proc} with index and value, e.g. @code{(proc k value)},
+for each element of @var{sv}.
+
+The results of @var{proc} are discarded by @code{sparse-vector-for-each},
+and gathered to a list and returned by @code{sparse-vector-map}.
+@end defun
+
+@defun sparse-vector-keys sv
+@defunx sparse-vector-values sv
+Returns a list of all keys and all values in @var{sv}, respectively.
+@end defun
+
+@node Sparse tables,  , Sparse vectors, Sparse data containers
+@subsection Sparse tables
+@c NODE 疎なテーブル
+
+@deftp {Class} <sparse-table>
+@clindex sparse-table
+A class for sparse table.  Inherits @code{<dictionary>} and
+@code{<collection>}.
+
+Operationally sparse tables are the same as hash tables, but
+the former consumes less memory in trade of slight slower access.
+@end deftp
+
+@defun make-sparse-table type
+a@end defun
+
+@defun sparse-table-num-entries st
+@end defun
+
+@defun sparse-table-ref st key &optional fallback
+@end defun
+
+@defun sparse-table-set! st key value
+@end defun
+
+@defun sparse-table-exists? st key
+@end defun
+
+@defun sparse-table-delete! st key
+@end defun
+
+@defun sparse-table-clear! st
+@end defun
+
+@defun sparse-table-update! st key proc &optional fallback
+@defunx sparse-table-push! st key val
+@defunx sparse-table-pop! st key &optional fallback
+@end defun
+
+@defun sparse-table-fold st proc seed
+@defunx sparse-table-for-each st proc
+@defunx sparse-table-map st proc
+@end defun
+
+@defun sparse-table-keys st
+@defunx sparse-table-values st
+@end defun
+
 
 @c ----------------------------------------------------------------------
-@node Stream library, Trie, Relation framework, Library modules - Utilities
+@node Stream library, Trie, Sparse data containers, Library modules - Utilities
 @section @code{util.stream} - Stream library
 @c NODE ストリームライブラリ, @code{util.stream} - ストリームライブラリ
 
