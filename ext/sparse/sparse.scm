@@ -39,6 +39,7 @@
   (export <sparse-table> make-sparse-table sparse-table-num-entries
           sparse-table-ref sparse-table-set! sparse-table-exists?
           sparse-table-clear! sparse-table-delete!
+          sparse-table-update! sparse-table-push! sparse-table-pop!
           sparse-table-fold sparse-table-map sparse-table-for-each
           sparse-table-keys sparse-table-values %sparse-table-dump
 
@@ -47,10 +48,12 @@
           <sparse-s32vector> <sparse-u32vector> <sparse-s64vector>
           <sparse-u64vector> <sparse-f16vector> <sparse-f32vector>
           <sparse-f64vector>
+          sparse-vector-max-index-bits
           make-sparse-vector sparse-vector-num-entries
           sparse-vector-ref sparse-vector-set! sparse-vector-exists?
           sparse-vector-clear! sparse-vector-delete!
-          sparse-vector-inc!
+          sparse-vector-update! sparse-vector-inc!
+          sparse-vector-push! sparse-vector-pop!
           sparse-vector-fold sparse-vector-map sparse-vector-for-each
           sparse-vector-keys sparse-vector-values %sparse-vector-dump
           )
@@ -63,12 +66,16 @@
  "#include \"sptab.h\""
  )
 
-(define-macro (define-walkers type iter)
-  (let ((x-fold     (string->symbol #`",|type|-fold"))
-        (x-map      (string->symbol #`",|type|-map"))
-        (x-for-each (string->symbol #`",|type|-for-each"))
-        (x-keys     (string->symbol #`",|type|-keys"))
-        (x-values   (string->symbol #`",|type|-values")))
+(define-macro (define-stuff type iter ref set)
+  (let ([x-fold     (string->symbol #`",|type|-fold")]
+        [x-map      (string->symbol #`",|type|-map")]
+        [x-for-each (string->symbol #`",|type|-for-each")]
+        [x-keys     (string->symbol #`",|type|-keys")]
+        [x-values   (string->symbol #`",|type|-values")]
+        [x-update!  (string->symbol #`",|type|-update!")]
+        [x-push!    (string->symbol #`",|type|-push!")]
+        [x-pop!     (string->symbol #`",|type|-pop!")]
+        [x-pop!-aux (string->symbol #`"%,|type|-pop!-aux")])
     `(begin
        (define (,x-fold st proc seed)
          (let ([iter (,iter st)]
@@ -86,6 +93,24 @@
          (,x-fold st (lambda (k v s) (cons k s)) '()))
        (define (,x-values st)
          (,x-fold st (lambda (k v s) (cons v s)) '()))
+
+       ;; TODO: rewrite these more efficiently
+       (define (,x-update! st k proc . fallback)
+         (,set sv k (proc (apply ,ref sv k fallback))))
+       (define (,x-push! sv k val)
+         (,set sv k (cons val (,ref sv k '()))))
+       (define (,x-pop! sv k . fallback)
+         (if (null? fallback)
+           (,x-pop!-aux sv k (,ref sv k))
+           ;; A trick to use the argument list as a unique object to see if
+           ;; sv doesn't have an entry
+           (let1 p (,ref sv k fallback)
+             (if (eq? p fallback) (car p) (,x-pop!-aux sv k p)))))
+       (define (,x-pop!-aux sv k p)
+         (unless (pair? p)
+           (errorf "~s's value for key ~s is not a pair: ~s" sv k p))
+         (,set sv k (cdr p))
+         (car p))
        )))
   
 ;;===============================================================
@@ -147,7 +172,8 @@
    SparseTableDump)
  )
 
-(define-walkers sparse-table %sparse-table-iter)
+(define-stuff sparse-table %sparse-table-iter
+  sparse-table-ref sparse-table-set!)
 
 ;;===============================================================
 ;; Sparse vectors
@@ -179,6 +205,9 @@
                                  s64, u64, f16, f32, f64"
                                 type)])
      (result (MakeSparseVector klass flags))))
+
+ (define-cproc sparse-vector-max-index-bits () ::<int>
+   (result SPARSE_VECTOR_MAX_INDEX_BITS))
 
  (define-cproc sparse-vector-num-entries (sv::<sparse-vector>) ::<ulong>
    (result (-> sv numEntries)))
@@ -230,7 +259,8 @@
    SparseVectorDump)
  )
 
-(define-walkers sparse-vector %sparse-vector-iter)
+(define-stuff sparse-vector %sparse-vector-iter
+  sparse-vector-ref sparse-vector-set!)
 
 ;;===============================================================
 ;; dictionary protocol

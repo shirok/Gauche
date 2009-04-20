@@ -95,6 +95,10 @@ struct SparseVectorDescriptorRec {
     int shift;                  /* # of shift bits to access Leaf */
 };
 
+/* Max # of bits for index.  Theoretrically we can extend this
+   as much as we like; current limitation is only for simplicity. */
+#define SPARSE_VECTOR_MAX_INDEX_BITS 32
+
 /* Flags for constructors */
 enum {
     SPARSE_VECTOR_ORDERED = (1L<<0)

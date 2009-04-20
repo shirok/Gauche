@@ -1,5 +1,7 @@
 2009-04-20  Shiro Kawai  <shiro@acm.org>
 
+	* ext/sparse/sparse.scm: Added *-update!, *-push! and *-pop!.
+
 	* lib/gauche/cgen/stub.scm (cgen-genstub): Moved genstub main
 	  functionarity here.
 	* src/genstub: only command-line processing remains.
