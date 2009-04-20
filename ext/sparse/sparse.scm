@@ -95,7 +95,7 @@
          (,x-fold st (lambda (k v s) (cons v s)) '()))
 
        ;; TODO: rewrite these more efficiently
-       (define (,x-update! st k proc . fallback)
+       (define (,x-update! sv k proc . fallback)
          (,set sv k (proc (apply ,ref sv k fallback))))
        (define (,x-push! sv k val)
          (,set sv k (cons val (,ref sv k '()))))
