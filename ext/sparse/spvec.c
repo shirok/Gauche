@@ -33,6 +33,17 @@
 
 #include "spvec.h"
 
+#if SIZEOF_LONG == 4
+#define INDEX_CHECK(n)  /*empty*/
+#else   /* SIZEOF_LONG > 4 */
+#define INDEX_CHECK(n)                                                  \
+    do {                                                                \
+        if ((n) >= (1UL << SPARSE_VECTOR_MAX_INDEX_BITS)) {             \
+            Scm_Error("sparse vector index out of range: %lu\n", (n));  \
+        }                                                               \
+    } while (0)
+#endif  /* SIZEOF_LONG > 4 */
+
 /*===================================================================
  * Generic stuff
  * NB: The generic constructor is defined near the bottom of the source,
@@ -55,7 +66,9 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SparseVectorBaseClass,
 ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback)
 {
     ScmObj v;
-    Leaf *leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
+    Leaf *leaf;
+    INDEX_CHECK(index);
+    leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
     if (leaf == NULL) return fallback;
     v = sv->desc->ref(leaf, index);
     if (SCM_UNBOUNDP(v)) return fallback;
@@ -64,8 +77,10 @@ ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback)
 
 void SparseVectorSet(SparseVector *sv, u_long index, ScmObj value)
 {
-    Leaf *leaf = CompactTrieAdd(&sv->trie, index >> sv->desc->shift,
-                                sv->desc->allocate, sv);
+    Leaf *leaf;
+    INDEX_CHECK(index);
+    leaf = CompactTrieAdd(&sv->trie, index >> sv->desc->shift,
+                          sv->desc->allocate, sv);
     /* set returns TRUE if this is a new entry */
     if (sv->desc->set(leaf, index, value)) sv->numEntries++;
 }
@@ -74,7 +89,9 @@ void SparseVectorSet(SparseVector *sv, u_long index, ScmObj value)
 ScmObj SparseVectorDelete(SparseVector *sv, u_long index)
 {
     ScmObj r;
-    Leaf *leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
+    Leaf *leaf;
+    INDEX_CHECK(index);
+    leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
     if (leaf == NULL) return SCM_UNBOUND;
     r = sv->desc->delete(leaf, index);
     if (!SCM_UNBOUNDP(r)) sv->numEntries--;
@@ -119,7 +136,9 @@ ScmObj SparseVectorInc(SparseVector *sv, u_long index,
                        ScmObj delta,    /* number */
                        ScmObj fallback) /* number */
 {
-    Leaf *leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
+    Leaf *leaf;
+    INDEX_CHECK(index);
+    leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
     if (leaf == NULL) {
         ScmObj v = Scm_Add(fallback, delta);
         SparseVectorSet(sv, index, v);

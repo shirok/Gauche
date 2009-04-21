@@ -155,7 +155,7 @@ static Leaf *get_rec(Node *n, u_long key, int level)
 
 Leaf *CompactTrieGet(CompactTrie *ct, u_long key)
 {
-    key &= 0xffffffff;
+    key &= 0xffffffffUL;
     if (ct->root == NULL) return NULL;
     else return get_rec(ct->root, key, 0);
 }
