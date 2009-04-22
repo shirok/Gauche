@@ -53,12 +53,13 @@ void CompactTrieInit(CompactTrie *t)
 /*
  * Nodes
  */
-
 #define KEY2INDEX(key, level) (((key)>>((level)*TRIE_SHIFT)) & TRIE_MASK)
 
 #define NODE_HAS_ARC(node, ind)     SCM_BITS_TEST_IN_WORD(node->emap, (ind))
 #define NODE_ARC_SET(node, ind)     SCM_BITS_SET_IN_WORD(node->emap, (ind))
 #define NODE_ARC_RESET(node, ind)   SCM_BITS_RESET_IN_WORD(node->emap, (ind))
+#define NODE_EMPTY_P(node)          (node->emap == NULL)
+#define NODE_NCHILDREN(node)        Scm__CountBitsInWord(node->emap)
 
 #define NODE_ARC_IS_LEAF(node, ind) SCM_BITS_TEST_IN_WORD(node->lmap, (ind))
 #define NODE_LEAF_SET(node, ind)    SCM_BITS_SET_IN_WORD(node->lmap, (ind))
@@ -67,6 +68,12 @@ void CompactTrieInit(CompactTrie *t)
 #define NODE_INDEX2OFF(node, ind)    Scm__CountBitsBelow(node->emap, (ind))
 
 #define NODE_ENTRY(node, off)        ((node)->entries[(off)])
+
+#if SIZEOF_LONG == 4
+#define KEY_MASK(key) /* empty */
+#else
+#define KEY_MASK(key) (key &= ((1UL<<32)-1))
+#endif
 
 /* When extending the node, we increase the number of entries by this
    number instead of increasing every word, to avoid too frequent
@@ -82,7 +89,7 @@ static Node *make_node(int nentry)
 
 static Node *node_insert(Node *orig, u_long ind, void *entry, int leafp)
 {
-    int size = Scm__CountBitsInWord(orig->emap);
+    int size = NODE_NCHILDREN(orig);
     int insertpoint = Scm__CountBitsBelow(orig->emap, ind);
     int i;
     
@@ -111,9 +118,10 @@ static Node *node_insert(Node *orig, u_long ind, void *entry, int leafp)
     }
 }
 
-static Node *node_delete(Node *orig, u_long ind)
+/* returns # of children left */
+static int node_delete(Node *orig, u_long ind)
 {
-    int size = Scm__CountBitsInWord(orig->emap);
+    int size = NODE_NCHILDREN(orig);
     int deletepoint = Scm__CountBitsBelow(orig->emap, ind);
     int i;
 
@@ -121,7 +129,7 @@ static Node *node_delete(Node *orig, u_long ind)
     NODE_ARC_RESET(orig, ind);
     NODE_LEAF_RESET(orig, ind);
     for (i=deletepoint; i<size-1; i++) orig->entries[i] = orig->entries[i+1];
-    return orig;
+    return size-1;
 }
 
 /*
@@ -155,7 +163,7 @@ static Leaf *get_rec(Node *n, u_long key, int level)
 
 Leaf *CompactTrieGet(CompactTrie *ct, u_long key)
 {
-    key &= 0xffffffffUL;
+    KEY_MASK(key);
     if (ct->root == NULL) return NULL;
     else return get_rec(ct->root, key, 0);
 }
@@ -202,7 +210,7 @@ static Node *add_rec(CompactTrie *ct, Node *n, u_long key, int level,
 Leaf *CompactTrieAdd(CompactTrie *ct, u_long key,
                      Leaf *(*creator)(void*), void *data)
 {
-    key &= 0xffffffff;
+    KEY_MASK(key);
     if (ct->root == NULL) {
         Leaf *l = new_leaf(key, creator, data);
         ct->root = make_node(NODE_SIZE_INCR);
@@ -222,36 +230,56 @@ Leaf *CompactTrieAdd(CompactTrie *ct, u_long key,
 /*
  * Delete and clear
  */
-Node *del_rec(CompactTrie *ct, Node *n, u_long key, int level, Leaf **result)
+
+/* Usually returns the node N, but if deletion of the leaf made N have
+   a leaf as a single child, returns it so that the node itself is
+   eliminated.  That is, if the return value != n, the returned pointer
+   always points to a leaf.
+*/
+void *del_rec(CompactTrie *ct, Node *n, u_long key, int level,
+              Leaf **deleted_leaf)
 {
     u_long ind = KEY2INDEX(key, level);
 
-    if (!NODE_HAS_ARC(n, ind)) return n;
-    else if (!NODE_ARC_IS_LEAF(n, ind)) {
+    if (NODE_HAS_ARC(n, ind)) {
         u_long off = NODE_INDEX2OFF(n, ind);
-        Node *orig = (Node*)NODE_ENTRY(n, off);
-        Node *m = del_rec(ct, orig, key, level+1, result);
-        if (m != orig) NODE_ENTRY(n, off) = m;
-        return n;
+        if (!NODE_ARC_IS_LEAF(n, ind)) {
+            Node *orig = (Node*)NODE_ENTRY(n, off);
+            void *m = del_rec(ct, orig, key, level+1, deleted_leaf);
+            if (m != (void*)orig) {
+                if (NODE_NCHILDREN(n) == 1 && level > 0) return m;
+                NODE_ENTRY(n, off) = m;
+                NODE_LEAF_SET(n, ind);
+            }
+        } else {
+            Leaf *l0 = (Leaf*)NODE_ENTRY(n, off);
+            u_long k0 = LEAF_KEY(l0);
+            if (key == k0) {
+                /* We found the leaf to delete.  If deletion of the leaf
+                   causes this node to have only one leaf, we tell the
+                   parent to skip this node.  */
+                int nc = node_delete(n, ind);
+                *deleted_leaf = l0;
+                ct->numEntries--;
+                if (nc == 1 && n->lmap != 0 && level > 0) {
+                    return NODE_ENTRY(n, 0); /* the only leaf */
+                } else if (nc == 0) {
+                    /* this only happens when N is root. */
+                    SCM_ASSERT(level == 0);
+                    return NULL;
+                }
+            }
+        }
     }
-    else {
-        u_long off = NODE_INDEX2OFF(n, ind);
-        Leaf *l0 = (Leaf*)NODE_ENTRY(n, off);
-        u_long k0 = LEAF_KEY(l0);
-        if (key != k0) return n;
-        
-        *result = l0;
-        return node_delete(n, ind);
-    }
+    return n;
 }
 
 Leaf *CompactTrieDelete(CompactTrie *ct, u_long key)
 {
-    Node *n;
     Leaf *e = NULL;
+    KEY_MASK(key);
     if (ct->root == NULL) return NULL;
-    n = del_rec(ct, ct->root, key, 0, &e);
-    if (n != ct->root) ct->root = n;
+    ct->root = (Node*)del_rec(ct, ct->root, key, 0, &e);
     return e;
 }
 
@@ -312,6 +340,7 @@ static Leaf *next_rec(Node *n, u_long key, int level, int over)
 
 Leaf *CompactTrieNextLeaf(CompactTrie *ct, u_long key)
 {
+    KEY_MASK(key);
     if (ct->root) return next_rec(ct->root, key, 0, FALSE);
     else return NULL;
 }
@@ -355,6 +384,39 @@ Leaf *CompactTrieLastLeaf(CompactTrie *ct)
 {
     if (ct->root) return last_rec(ct->root);
     else return NULL;
+}
+
+/*
+ * Copy.
+ * It is recommended that the caller first clear the dst.  The original
+ * tree in dst is detached but otherwise remains intact, and may not be
+ * friendly to GC.
+ */
+static Node *copy_rec(const Node *s, Leaf *(*copy)(Leaf*, void*), void *data)
+{
+    int i, off;
+    int size = Scm__CountBitsInWord(s->emap);
+    Node *d = make_node(size);
+    d->emap = s->emap;
+    d->lmap = s->lmap;
+    for (i=0, off=0; i<MAX_NODE_SIZE && off < size; i++) {
+        if (!NODE_HAS_ARC(s, i)) continue;
+        if (NODE_ARC_IS_LEAF(s, i)) {
+            NODE_ENTRY(d,off) = copy((Leaf*)NODE_ENTRY(s,off), data);
+        } else {
+            NODE_ENTRY(d,off) = copy_rec((Node*)NODE_ENTRY(s,off), copy, data);
+        }
+        off++;
+    }
+    return d;
+}
+
+void CompactTrieCopy(CompactTrie *dst, const CompactTrie *src,
+                     Leaf *(*copy)(Leaf*, void*), void *data)
+{
+    if (src->root) dst->root = copy_rec(src->root, copy, data);
+    else           dst->root = NULL;
+    dst->numEntries = src->numEntries;
 }
 
 /*
@@ -434,7 +496,7 @@ static void node_dump(ScmPort *out, Node *n, int level,
     }
 }
 
-void CompactTrieDump(ScmPort *out, CompactTrie *ct,
+void CompactTrieDump(ScmPort *out, const CompactTrie *ct,
                      void (*dumper)(ScmPort*, Leaf*, int, void*), void *data)
 {
     Scm_Printf(out, "CompactTrie(%p, nentries=%d):\n", ct, ct->numEntries);
@@ -445,4 +507,46 @@ void CompactTrieDump(ScmPort *out, CompactTrie *ct,
     }
 }
 
+/* returns # of leaves under this subtree. */
+static int check_rec(Node *n, int level,
+                     void (*checker)(Leaf*, ScmObj), ScmObj obj)
+{
+    int direct_leaves = 0, total_leaves = 0, i, off;
+    for (i=0, off=0; i<MAX_NODE_SIZE; i++) {
+        if (NODE_HAS_ARC(n, i)) {
+            if (NODE_ARC_IS_LEAF(n, i)) {
+                direct_leaves++;
+                total_leaves++;
+                if (checker) checker((Leaf*)NODE_ENTRY(n, off), obj);
+            } else {
+                total_leaves +=
+                    check_rec((Node*)NODE_ENTRY(n, off), level+1, checker, obj);
+            }
+            off++;
+        }
+    }
+    if (off == 0) Scm_Error("%S: encountered an empty node", obj);
+    if (off == 1 && direct_leaves == 1 && level > 0) {
+        Scm_Error("%S: non-root node has only one leaf and no other subtrees",
+                  obj);
+    }
+    return total_leaves;
+}
+
+void CompactTrieCheck(const CompactTrie *ct, ScmObj obj,
+                      void (*checker)(Leaf*, ScmObj))
+{
+    if (ct->root == NULL) {
+        if (ct->numEntries != 0) {
+            Scm_Error("%S: ct->root is NULL but numEntries is %d",
+                      obj, ct->numEntries);
+        }
+    } else {
+        int num_leaves = check_rec(ct->root, 0, checker, obj);
+        if (ct->numEntries != num_leaves) {
+            Scm_Error("%S: # of leafs (%d) and numEntries (%d) don't agreee",
+                      obj, num_leaves, ct->numEntries);
+        }
+    }
+}
 #endif /*SCM_DEBUG_HELPER*/

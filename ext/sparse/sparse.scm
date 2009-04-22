@@ -38,10 +38,11 @@
   (use gauche.dictionary)
   (export <sparse-table> make-sparse-table sparse-table-num-entries
           sparse-table-ref sparse-table-set! sparse-table-exists?
-          sparse-table-clear! sparse-table-delete!
+          sparse-table-clear! sparse-table-delete! sparse-table-copy
           sparse-table-update! sparse-table-push! sparse-table-pop!
           sparse-table-fold sparse-table-map sparse-table-for-each
-          sparse-table-keys sparse-table-values %sparse-table-dump
+          sparse-table-keys sparse-table-values
+          %sparse-table-dump %sparse-table-check
 
           <sparse-vector-base> <sparse-vector> <sparse-s8vector>
           <sparse-u8vector> <sparse-s16vector> <sparse-u16vector>
@@ -51,7 +52,7 @@
           sparse-vector-max-index-bits
           make-sparse-vector sparse-vector-num-entries
           sparse-vector-ref sparse-vector-set! sparse-vector-exists?
-          sparse-vector-clear! sparse-vector-delete!
+          sparse-vector-clear! sparse-vector-delete! sparse-vector-copy
           sparse-vector-update! sparse-vector-inc!
           sparse-vector-push! sparse-vector-pop!
           sparse-vector-fold sparse-vector-map sparse-vector-for-each
@@ -157,6 +158,8 @@
  (define-cproc sparse-table-clear! (st::<sparse-table>) ::<void>
    SparseTableClear)
 
+ (define-cproc sparse-table-copy (sv::<sparse-table>) SparseTableCopy)
+ 
  (define-cfn sparse-table-iter (args::ScmObj* nargs::int data::void*) :static
    (let* ([iter::SparseTableIter* (cast SparseTableIter* data)]
           [r (SparseTableIterNext iter)]
@@ -172,6 +175,9 @@
 
  (define-cproc %sparse-table-dump (st::<sparse-table>) ::<void>
    SparseTableDump)
+
+ (define-cproc %sparse-table-check (st::<sparse-table>) ::<void>
+   SparseTableCheck)
  )
 
 (define-stuff sparse-table %sparse-table-iter
@@ -236,6 +242,8 @@
 
  (define-cproc sparse-vector-clear! (sv::<sparse-vector>) ::<void>
    SparseVectorClear)
+
+ (define-cproc sparse-vector-copy (sv::<sparse-vector>) SparseVectorCopy)
 
  (define-cproc sparse-vector-inc! (sv::<sparse-vector>
                                    index::<ulong>

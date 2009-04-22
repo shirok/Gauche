@@ -1,3 +1,15 @@
+2009-04-21  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sparse/ctrie.c (CompactTrieDelete): Fixed a bug that failed
+	  to shrink tree properly.
+	  (CompactTrieCheck): Added consistency checking routine.
+	  (CompactTrieCopy): Added copy operation.
+	* ext/sparse/spvec.[ch]: Added SparseVectorCopy.
+	* ext/sparse/sptab.[ch]: Added SparseTableCopy. Fixed a bug in
+	  SparseTableAdd in the edge case when hash keys conflict.
+	* ext/sparse/sparse.scm (sparse-table-copy, sparse-vector-copy):
+	  Added.
+
 2009-04-20  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sparse/sparse.scm: Added *-update!, *-push! and *-pop!.

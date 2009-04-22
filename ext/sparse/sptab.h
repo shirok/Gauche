@@ -58,8 +58,12 @@ extern ScmObj SparseTableSet(SparseTable *st, ScmObj key,
                              ScmObj value, int flags);
 extern ScmObj SparseTableDelete(SparseTable *st, ScmObj key);
 extern void   SparseTableClear(SparseTable *st);
+extern ScmObj SparseTableCopy(const SparseTable *st);
 
+#if SCM_DEBUG_HELPER
 extern void   SparseTableDump(SparseTable *sv);
+extern void   SparseTableCheck(SparseTable *sv);
+#endif /*SCM_DEBUG_HELPER*/
 
 /* Iterator */
 typedef struct SparseTableIterRec {

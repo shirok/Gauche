@@ -122,6 +122,9 @@ extern Leaf *CompactTrieGet(CompactTrie *ct, u_long key);
 extern Leaf *CompactTrieAdd(CompactTrie *ct, u_long key,
                             Leaf *(*creator)(void*), void *data);
 extern Leaf *CompactTrieDelete(CompactTrie *ct, u_long key);
+extern void  CompactTrieCopy(CompactTrie *dst,
+                             const CompactTrie *src,
+                             Leaf *(*copy)(Leaf*, void*), void *data);
 
 extern Leaf *CompactTrieFirstLeaf(CompactTrie *ct);
 extern Leaf *CompactTrieLastLeaf(CompactTrie *ct);
@@ -134,9 +137,11 @@ extern Leaf *CompactTrieIterNext(CompactTrieIter *it);
 
 /* For debug */
 #if SCM_DEBUG_HELPER
-extern void CompactTrieDump(ScmPort *out, CompactTrie *ct,
+extern void CompactTrieDump(ScmPort *out, const CompactTrie *ct,
                             void (*dumper)(ScmPort *, Leaf*, int, void*),
                             void *data);
+extern void CompactTrieCheck(const CompactTrie *ct, ScmObj obj,
+                             void (*checker)(Leaf*, ScmObj));
 #endif /*SCM_DEBUG_HELPER*/
 
 #endif /*GAUCHE_CTRIE_H*/

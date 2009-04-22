@@ -104,6 +104,16 @@ void SparseVectorClear(SparseVector *sv)
     CompactTrieClear(&sv->trie, sv->desc->clear, sv->desc);
 }
 
+ScmObj SparseVectorCopy(const SparseVector *src)
+{
+    SparseVector *dst =
+        (SparseVector*)MakeSparseVector(Scm_ClassOf(SCM_OBJ(src)),
+                                        src->flags);
+    CompactTrieCopy(&dst->trie, &src->trie, src->desc->copy, src->desc);
+    dst->numEntries = src->numEntries;
+    return SCM_OBJ(dst);
+}
+
 void SparseVectorIterInit(SparseVectorIter *iter, SparseVector *sv)
 {
     iter->sv = sv;
@@ -204,6 +214,13 @@ static void g_clear(Leaf *leaf, void *data)
     z->val[0] = z->val[1] = NULL;
 }
 
+static Leaf *g_copy(Leaf *leaf, void *data)
+{
+    GLeaf *dst = SCM_NEW(GLeaf);
+    *dst = *(GLeaf*)leaf;
+    return (Leaf*)dst;
+}
+
 static ScmObj g_iter(Leaf *leaf, int *index)
 {
     GLeaf *z = (GLeaf*)leaf;
@@ -235,7 +252,7 @@ static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
 #endif /*SCM_DEBUG_HELPER*/
 
 static SparseVectorDescriptor g_desc = {
-     g_ref, g_set, g_allocate, g_delete, g_clear, g_iter, g_dump, 1
+    g_ref, g_set, g_allocate, g_delete, g_clear, g_copy, g_iter, g_dump, 1
 };
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_SparseVectorClass, NULL, NULL, NULL, NULL,
@@ -296,6 +313,13 @@ static Leaf *u_allocate(void *data)
 static void u_clear(Leaf *leaf, void *data)
 {
     /* nothing to do */
+}
+
+static Leaf *u_copy(Leaf *leaf, void *data)
+{
+    ULeaf *z = SCM_NEW_ATOMIC(ULeaf);
+    memcpy(z, leaf, sizeof(ULeaf));
+    return (Leaf*)z;
 }
 
 /*-------------------------------------------------------------------
@@ -487,60 +511,22 @@ static ScmObj u_iter_sub(Leaf *leaf, ScmObj (*ref)(Leaf*, u_long),
     return SCM_UNBOUND;
 }
 
-static ScmObj s8_iter(Leaf *leaf, int *index)
-{
-    return u_iter_sub(leaf, s8_ref, index, MASK8);
-}
+#define U_ITER(tag, mask) \
+    static ScmObj SCM_CPP_CAT(tag,_iter)(Leaf *leaf, int *index) { \
+        return u_iter_sub(leaf, SCM_CPP_CAT(tag,_ref), index, mask); \
+    }
 
-static ScmObj u8_iter(Leaf *leaf, int *index)
-{
-    return u_iter_sub(leaf, u8_ref, index, MASK8);
-}
-
-static ScmObj s16_iter(Leaf *leaf, int *index)
-{
-    return u_iter_sub(leaf, s16_ref, index, MASK16);
-}
-
-static ScmObj u16_iter(Leaf *leaf, int *index)
-{
-    return u_iter_sub(leaf, u16_ref, index, MASK16);
-}
-
-static ScmObj s32_iter(Leaf *leaf, int *index)
-{
-    return u_iter_sub(leaf, s32_ref, index, MASK32);
-}
-
-static ScmObj u32_iter(Leaf *leaf, int *index)
-{
-    return u_iter_sub(leaf, u32_ref, index, MASK32);
-}
-
-static ScmObj s64_iter(Leaf *leaf, int *index)
-{
-    return u_iter_sub(leaf, s64_ref, index, MASK64);
-}
-
-static ScmObj u64_iter(Leaf *leaf, int *index)
-{
-    return u_iter_sub(leaf, u64_ref, index, MASK64);
-}
-
-static ScmObj f16_iter(Leaf *leaf, int *index)
-{
-    return u_iter_sub(leaf, f16_ref, index, MASK16);
-}
-
-static ScmObj f32_iter(Leaf *leaf, int *index)
-{
-    return u_iter_sub(leaf, f32_ref, index, MASK32);
-}
-
-static ScmObj f64_iter(Leaf *leaf, int *index)
-{
-    return u_iter_sub(leaf, f64_ref, index, MASK64);
-}
+U_ITER(s8, MASK8)
+U_ITER(u8, MASK8)
+U_ITER(s16, MASK16)
+U_ITER(u16, MASK16)
+U_ITER(s32, MASK32)
+U_ITER(u32, MASK32)
+U_ITER(s64, MASK64)
+U_ITER(u64, MASK64)
+U_ITER(f16, MASK16)
+U_ITER(f32, MASK32)
+U_ITER(f64, MASK64)
 
 /*-------------------------------------------------------------------
  * Uniform Sparse Vector Descriptors and constructors
@@ -553,6 +539,7 @@ static ScmObj f64_iter(Leaf *leaf, int *index)
         u_allocate,                                                     \
         SCM_CPP_CAT(tag,_delete),                                       \
         u_clear,                                                        \
+        u_copy,                                                         \
         SCM_CPP_CAT(tag,_iter),                                         \
         NULL, shift,                                                    \
     };                                                                  \
@@ -601,7 +588,7 @@ ScmObj MakeSparseVector(ScmClass *klass, u_long flags)
     CompactTrieInit(&v->trie);
     v->numEntries = 0;
     v->desc = desc;
-    v->ordered = flags&SPARSE_VECTOR_ORDERED;
+    v->flags = flags;
     return SCM_OBJ(v);
 }
 

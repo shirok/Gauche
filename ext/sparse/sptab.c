@@ -37,7 +37,7 @@
  * Leaf node manipulation
  */
 
-typedef struct SPTLeafRec {
+typedef struct TLeafRec {
     Leaf hdr;                   /* if key0 > 65536, the entry is chained. */
     union {
         struct {
@@ -48,30 +48,30 @@ typedef struct SPTLeafRec {
             ScmObj next;        /* alist of ((key . value) ...) */
             ScmObj pair;        /* first (key . value) */
         } chain;
-    } d;
-} SPTLeaf;
+    };
+} TLeaf;
 
 #define LEAF_CHAIN_BIT 0x10000
 
-static inline int leaf_is_chained(SPTLeaf *leaf)
+static inline int leaf_is_chained(TLeaf *leaf)
 {
     return leaf->hdr.key0 & LEAF_CHAIN_BIT;
 }
 
-static inline void leaf_mark_chained(SPTLeaf *leaf)
+static inline void leaf_mark_chained(TLeaf *leaf)
 {
     leaf->hdr.key0 |= LEAF_CHAIN_BIT;
 }
 
-static inline void leaf_mark_unchained(SPTLeaf *leaf)
+static inline void leaf_mark_unchained(TLeaf *leaf)
 {
     leaf->hdr.key0 &= ~LEAF_CHAIN_BIT;
 }
 
 static Leaf *leaf_allocate(void *data)
 {
-    SPTLeaf *z = SCM_NEW(SPTLeaf);
-    z->d.entry.key = z->d.entry.value = SCM_UNBOUND;
+    TLeaf *z = SCM_NEW(TLeaf);
+    z->entry.key = z->entry.value = SCM_UNBOUND;
     return (Leaf*)z;
 }
 
@@ -139,17 +139,17 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SparseTableClass,
 ScmObj SparseTableRef(SparseTable *sh, ScmObj key, ScmObj fallback)
 {
     u_long hv = sh->hashfn(key);
-    SPTLeaf *z = (SPTLeaf*)CompactTrieGet(&sh->trie, hv);
+    TLeaf *z = (TLeaf*)CompactTrieGet(&sh->trie, hv);
     ScmObj cp;
     
     if (z != NULL) {
         if (!leaf_is_chained(z)) {
-            if (sh->cmpfn(key, z->d.entry.key)) return z->d.entry.value;
+            if (sh->cmpfn(key, z->entry.key)) return z->entry.value;
             else return fallback;
-        } else if (sh->cmpfn(key, SCM_CAR(z->d.chain.pair))) {
-            return SCM_CDR(z->d.chain.pair);
+        } else if (sh->cmpfn(key, SCM_CAR(z->chain.pair))) {
+            return SCM_CDR(z->chain.pair);
         } else {
-            SCM_FOR_EACH(cp, z->d.chain.next) {
+            SCM_FOR_EACH(cp, z->chain.next) {
                 ScmObj p = SCM_CAR(cp);
                 if (sh->cmpfn(key, SCM_CAR(p))) return SCM_CDR(p);
             }
@@ -167,40 +167,40 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
 {
     int createp = !(flags&SCM_DICT_NO_CREATE);
     u_long hv = sh->hashfn(key);
-    SPTLeaf *z;
+    TLeaf *z;
     ScmObj cp;
 
     if (!createp) {
-        z = (SPTLeaf*)CompactTrieGet(&sh->trie, hv);
+        z = (TLeaf*)CompactTrieGet(&sh->trie, hv);
         if (z == NULL) return SCM_UNBOUND;
     } else {
-        z = (SPTLeaf*)CompactTrieAdd(&sh->trie, hv, leaf_allocate, NULL);
+        z = (TLeaf*)CompactTrieAdd(&sh->trie, hv, leaf_allocate, NULL);
     }
 
     if (!leaf_is_chained(z)) {
-        if (SCM_UNBOUNDP(z->d.entry.key)) {
+        if (SCM_UNBOUNDP(z->entry.key)) {
             /* new entry */
-            z->d.entry.key = key;
-            z->d.entry.value = value;
+            z->entry.key = key;
+            z->entry.value = value;
             sh->numEntries++;
             return value;
-        } else if (sh->cmpfn(z->d.entry.key, key)) {
-            z->d.entry.value = value;
+        } else if (sh->cmpfn(z->entry.key, key)) {
+            z->entry.value = value;
             return value;
         } else {
-            ScmObj p = Scm_Cons(z->d.entry.key, z->d.entry.value);
+            ScmObj p = Scm_Cons(z->entry.key, z->entry.value);
             leaf_mark_chained(z);
-            z->d.chain.next = SCM_NIL;
-            z->d.chain.pair = p;
+            z->chain.next = SCM_NIL;
+            z->chain.pair = p;
             /*FALLTHROUGH*/
         }
     }
     /* we got a chained entry. */
-    if (sh->cmpfn(SCM_CAR(z->d.chain.pair), key)) {
-        SCM_SET_CDR(z->d.chain.pair, value);
+    if (sh->cmpfn(SCM_CAR(z->chain.pair), key)) {
+        SCM_SET_CDR(z->chain.pair, value);
         return value;
     }
-    SCM_FOR_EACH(cp, z->d.chain.next) {
+    SCM_FOR_EACH(cp, z->chain.next) {
         ScmObj p = SCM_CAR(cp);
         SCM_ASSERT(SCM_PAIRP(p));
         if (sh->cmpfn(SCM_CAR(p), key)) {
@@ -208,8 +208,8 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
             return value;
         }
     }
-    z->d.chain.next = Scm_Cons(z->d.chain.pair, z->d.chain.next);
-    z->d.chain.pair = Scm_Cons(key, value);
+    z->chain.next = Scm_Cons(z->chain.pair, z->chain.next);
+    z->chain.pair = Scm_Cons(key, value);
     sh->numEntries++;
     return value;
 }
@@ -222,31 +222,31 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
 ScmObj SparseTableDelete(SparseTable *st, ScmObj key)
 {
     u_long hv = st->hashfn(key);
-    SPTLeaf *z = (SPTLeaf*)CompactTrieGet(&st->trie, hv);
+    TLeaf *z = (TLeaf*)CompactTrieGet(&st->trie, hv);
     ScmObj retval = SCM_UNBOUND;
     
     if (z != NULL) {
         if (!leaf_is_chained(z)) {
-            if (st->cmpfn(key, z->d.entry.key)) {
-                retval = z->d.entry.value;
+            if (st->cmpfn(key, z->entry.key)) {
+                retval = z->entry.value;
                 CompactTrieDelete(&st->trie, hv);
                 st->numEntries--;
             }
         } else {
-            if (st->cmpfn(key, SCM_CAR(z->d.chain.pair))) {
-                ScmObj p = z->d.chain.next;
+            if (st->cmpfn(key, SCM_CAR(z->chain.pair))) {
+                ScmObj p = z->chain.next;
                 SCM_ASSERT(SCM_PAIRP(p));
-                retval = SCM_CDR(z->d.chain.pair);
-                z->d.chain.pair = SCM_CAR(p);
-                z->d.chain.next = SCM_CDR(p);
+                retval = SCM_CDR(z->chain.pair);
+                z->chain.pair = SCM_CAR(p);
+                z->chain.next = SCM_CDR(p);
                 st->numEntries--;
             } else {
                 ScmObj cp, prev = SCM_FALSE;
-                SCM_FOR_EACH(cp, z->d.chain.next) {
+                SCM_FOR_EACH(cp, z->chain.next) {
                     ScmObj pp = SCM_CAR(cp);
                     if (st->cmpfn(key, SCM_CAR(pp))) {
                         retval = SCM_CDR(pp);
-                        if (SCM_FALSEP(prev)) z->d.chain.next = SCM_CDR(cp);
+                        if (SCM_FALSEP(prev)) z->chain.next = SCM_CDR(cp);
                         else SCM_SET_CDR(prev, SCM_CDR(cp));
                         st->numEntries--;
                         break;
@@ -254,12 +254,12 @@ ScmObj SparseTableDelete(SparseTable *st, ScmObj key)
                     prev = cp;
                 }
             }
-            /* make sure we have more than one entry in achained leaf */
-            if (SCM_NULLP(z->d.chain.next)) {
-                ScmObj p = z->d.chain.pair;
+            /* make sure we have more than one entry in a chained leaf */
+            if (SCM_NULLP(z->chain.next)) {
+                ScmObj p = z->chain.pair;
                 leaf_mark_unchained(z);
-                z->d.entry.key = SCM_CAR(p);
-                z->d.entry.value = SCM_CDR(p);
+                z->entry.key = SCM_CAR(p);
+                z->entry.value = SCM_CDR(p);
             }
         }
     }
@@ -268,14 +268,46 @@ ScmObj SparseTableDelete(SparseTable *st, ScmObj key)
 
 static void clear_leaf(Leaf *f, void *data)
 {
-    SPTLeaf *z = (SPTLeaf*)f;
-    z->d.entry.key = z->d.entry.value = NULL;
+    TLeaf *z = (TLeaf*)f;
+    z->entry.key = z->entry.value = NULL;
 }
 
 void SparseTableClear(SparseTable *st)
 {
     st->numEntries = 0;
     CompactTrieClear(&st->trie, clear_leaf, NULL);
+}
+
+/*===================================================================
+ * Copy
+ */
+
+static Leaf *copy_leaf(Leaf *leaf, void *data)
+{
+    TLeaf *s = (TLeaf*)leaf;
+    TLeaf *d = SCM_NEW(TLeaf);
+    d->hdr = s->hdr;
+    if (leaf_is_chained(s)) {
+        ScmObj h = SCM_NIL, t = SCM_NIL, cp;
+        d->chain.pair = Scm_Cons(SCM_CAR(s->chain.pair),
+                                 SCM_CDR(s->chain.pair));
+        SCM_FOR_EACH(cp, s->chain.next) {
+            SCM_APPEND1(h, t, Scm_Cons(SCM_CAAR(cp), SCM_CDAR(cp)));
+        }
+        d->chain.next = h;
+    } else {
+        d->entry.key   = s->entry.key;
+        d->entry.value = s->entry.value;
+    }
+    return (Leaf*)d;
+}
+
+ScmObj SparseTableCopy(const SparseTable *s)
+{
+    SparseTable *d = SCM_NEW(SparseTable);
+    memcpy(d, s, sizeof(SparseTable));
+    CompactTrieCopy(&d->trie, &s->trie, copy_leaf, NULL);
+    return SCM_OBJ(d);
 }
 
 /*===================================================================
@@ -299,13 +331,13 @@ ScmObj SparseTableIterNext(SparseTableIter *it)
         it->chain = SCM_CDR(it->chain);
         return p;
     } else {
-        SPTLeaf *z = (SPTLeaf*)CompactTrieIterNext(&it->ctit);
+        TLeaf *z = (TLeaf*)CompactTrieIterNext(&it->ctit);
         if (z == NULL) { it->end = TRUE; return SCM_FALSE; }
         if (!leaf_is_chained(z)) {
-            return Scm_Cons(z->d.entry.key, z->d.entry.value);
+            return Scm_Cons(z->entry.key, z->entry.value);
         }
-        it->chain = z->d.chain.next;
-        return z->d.chain.pair;
+        it->chain = z->chain.next;
+        return z->chain.pair;
     }
 }
 
@@ -317,28 +349,33 @@ ScmObj SparseTableIterNext(SparseTableIter *it)
 #if SCM_DEBUG_HELPER
 static void leaf_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
 {
-    SPTLeaf *z = (SPTLeaf*)leaf;
+    TLeaf *z = (TLeaf*)leaf;
     ScmObj cp;
 
     if (leaf_is_chained(z)) {
         Scm_Printf(out, "(chained)");
         Scm_Printf(out, "\n  %*s%S => %25.1S", indent, "",
-                   SCM_CAR(z->d.chain.pair), SCM_CDR(z->d.chain.pair));
-        SCM_FOR_EACH(cp, z->d.chain.next) {
+                   SCM_CAR(z->chain.pair), SCM_CDR(z->chain.pair));
+        SCM_FOR_EACH(cp, z->chain.next) {
             ScmObj p = SCM_CAR(cp);
             SCM_ASSERT(SCM_PAIRP(p));
-            Scm_Printf(out, "\n  %*s%S => %25.1S", indent,
+            Scm_Printf(out, "\n  %*s%S => %25.1S", indent, "",
                        SCM_CAR(p), SCM_CDR(p));
         }
     } else {
         Scm_Printf(out, "\n  %*s%S => %25.1S", indent, "",
-                   z->d.entry.key, z->d.entry.value);
+                   z->entry.key, z->entry.value);
     }
 }
 
 void SparseTableDump(SparseTable *st)
 {
     CompactTrieDump(SCM_CUROUT, &st->trie, leaf_dump, NULL);
+}
+
+void SparseTableCheck(SparseTable *st)
+{
+    CompactTrieCheck(&st->trie, SCM_OBJ(st), NULL);
 }
 #endif /*SCM_DEBUG_HELPER*/
 
@@ -351,5 +388,3 @@ void Scm_Init_sptab(ScmModule *mod)
     Scm_InitStaticClass(&Scm_SparseTableClass, "<sparse-table>",
                         mod, NULL, 0);
 }
-
-

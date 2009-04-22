@@ -3,6 +3,7 @@
 ;;
 
 (use gauche.test)
+(use srfi-1)
 (use srfi-27)
 
 (test-start "util.sparse")
@@ -41,8 +42,8 @@
           (cond [(hash-table-exists? ht k) (loop i)]
                 [else (hash-table-put! ht k (* k k)) (loop (+ i 1))]))))))
 
-(define (heavy-test name obj %ref %set! %cnt %clr %keys %vals %del
-                    keygen valgen)
+(define (heavy-test name obj %ref %set! %cnt %clr %keys %vals %del %copy
+                    %check keygen valgen)
   (test* #`",name many set!" *data-set-size*
          (let/cc return
            (hash-table-fold *data-set*
@@ -58,6 +59,9 @@
                             0)))
 
   (test* #`",name many numelements" *data-set-size* (%cnt obj))
+
+  (when %check (test* #`",name many check" #t (begin (%check obj) #t)))
+    
   (test* #`",name many ref" *data-set-size*
          (let/cc return
            (hash-table-fold *data-set*
@@ -68,31 +72,35 @@
                                   (+ cnt 1)
                                   (return `(error ,cnt ,kk ,vv ,(%ref obj kk))))))
                             0)))
-  (when %keys
-    (test* #`",name keys" *data-set-size*
-           (let/cc return
-             (let1 tt (make-sparse-table 'equal?)
-               (hash-table-for-each *data-set*
-                                    (lambda (k v)
-                                      (sparse-table-set! tt (keygen k) #t)))
-               (fold (lambda (k cnt)
-                       (if (sparse-table-ref tt k #f)
-                         (+ cnt 1)
-                         (return `(error ,cnt ,k))))
-                     0 (%keys obj))))))
-  (when %vals
-    (test* #`",name values" *data-set-size*
-           (let/cc return
-             (let1 tt (make-sparse-table 'equal?)
-               (hash-table-for-each *data-set*
-                                    (lambda (k v)
-                                      (sparse-table-set! tt (valgen v) #t)))
-               (fold (lambda (v cnt)
-                       (if (sparse-table-ref tt v #f)
-                         (+ cnt 1)
-                         (return `(error ,cnt ,v))))
-                     0 (%vals obj))))))
-    
+  (test* #`",name keys" *data-set-size*
+         (let/cc return
+           (let1 tt (make-sparse-table 'equal?)
+             (hash-table-for-each *data-set*
+                                  (lambda (k v)
+                                    (sparse-table-set! tt (keygen k) #t)))
+             (fold (lambda (k cnt)
+                     (if (sparse-table-ref tt k #f)
+                       (+ cnt 1)
+                       (return `(error ,cnt ,k))))
+                   0 (%keys obj)))))
+  (test* #`",name values" *data-set-size*
+         (let/cc return
+           (let1 tt (make-sparse-table 'equal?)
+             (hash-table-for-each *data-set*
+                                  (lambda (k v)
+                                    (sparse-table-set! tt (valgen v) #t)))
+             (fold (lambda (v cnt)
+                     (if (sparse-table-ref tt v #f)
+                       (+ cnt 1)
+                       (return `(error ,cnt ,v))))
+                   0 (%vals obj)))))
+  (test* #`",name many copy" (list *data-set-size* #t #t)
+         (let* ([new (%copy obj)]
+                [keys (%keys new)])
+           (list (length keys)
+                 (if %check (begin (%check new) #t) #t)
+                 (every (lambda (k) (equal? (%ref new k) (%ref obj k))) keys))))
+
   (test* #`",name many clear!" 0 (begin (%clr obj) (%cnt obj)))
   (test* #`",name many ref2" *data-set-size*
          (let/cc return
@@ -105,17 +113,19 @@
                                   (+ cnt 1))))
                             0)))
 
-  (when %del
-    (test* #`",name many delete!" '(#t 0)
-           (begin
-             (hash-table-for-each *data-set*
-                                  (lambda (k v)
-                                    (%set! obj (keygen k) (valgen v))))
-             (let1 r
-                 (hash-table-fold *data-set*
-                                  (lambda (k v s) (and s (%del obj (keygen k))))
-                                  #t)
-               (list r (%cnt obj))))))
+  (test* #`",name many delete!" '(#t 0)
+         (begin
+           (hash-table-for-each *data-set*
+                                (lambda (k v)
+                                  (%set! obj (keygen k) (valgen v))))
+           (when %check (%check obj))
+           (let1 r
+               (hash-table-fold *data-set*
+                                (lambda (k v s)
+                                  (when %check (%check obj))
+                                  (and s (%del obj (keygen k))))
+                                #t)
+             (list r (%cnt obj)))))
   )
 
 ;; sparse vector-------------------------------------------------
@@ -137,6 +147,7 @@
               sparse-vector-ref sparse-vector-set!
               sparse-vector-num-entries sparse-vector-clear!
               sparse-vector-keys sparse-vector-values sparse-vector-delete!
+              sparse-vector-copy #f
               values valgen))
 
 (spvec-heavy #f values)
@@ -171,10 +182,47 @@
   (heavy-test #`"sparse-table (,type)" (make-sparse-table type)
               sparse-table-ref sparse-table-set! sparse-table-num-entries
               sparse-table-clear! sparse-table-keys sparse-table-values
-              sparse-table-delete! keygen values))
+              sparse-table-delete! sparse-table-copy %sparse-table-check
+              keygen values))
 
 (sptab-heavy 'eqv? values)
 (sptab-heavy 'equal? (lambda (k) (list k k)))
 (sptab-heavy 'string=? (lambda (k) (number->string k 36)))
+
+;; The following tests use specifically crafted keys that
+;; have the same hash value, so we go through 'chained' leaf path.
+
+(let ((t (make-sparse-table 'equal?))
+      (keys '((0 . 5) (1 . 0) #(0 5) #(1 0))))
+
+  (define (vals tab) (map (cut sparse-table-ref tab <> #f) keys))
+  
+  (sparse-table-set! t '(0 . 5) 'a)
+  (sparse-table-set! t '(1 . 0) 'b)
+  (sparse-table-set! t '#(0 5) 'c)
+  (sparse-table-set! t '#(1 0) 'd)
+
+  (test* "key conflicts / ref" '(a b c d) (vals t))
+  (test* "key conflicts / set" '((z . a) (z . b) (z . c) (z . d))
+         (begin (for-each (cut sparse-table-push! t <> 'z) keys)
+                (vals t)))
+  (let ((u (sparse-table-copy t)))
+    (test* "key conflicts / copy 1" '((z . a) (z . b) (z . c) (z . d))
+           (vals u))
+    (test* "key conflicts / copy 2" '((z z z z) (a b c d))
+           (let1 z (map (cut sparse-table-pop! u <>) keys)
+             (list z (vals u))))
+    (test* "key conflicts / copy (original)" '((z . a) (z . b) (z . c) (z . d))
+           (vals t))
+
+    (test* "key conflicts delete 1" '(#f b c d)
+           (begin (sparse-table-delete! u '(0 . 5)) (vals u)))
+    (test* "key conflicts delete 2" '(#f b #f d)
+           (begin (sparse-table-delete! u '#(0 5)) (vals u)))
+    (test* "key conflicts delete 3" '(#f b #f #f)
+           (begin (sparse-table-delete! u '#(1 0)) (vals u)))
+    (test* "key conflicts delete 4" '(#f #f #f #f)
+           (begin (sparse-table-delete! u '(1 . 0)) (vals u)))
+    ))
 
 (test-end)

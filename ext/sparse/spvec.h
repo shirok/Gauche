@@ -53,8 +53,7 @@ typedef struct SparseVectorRec {
     SparseVectorDescriptor *desc;
     CompactTrie trie;
     u_long      numEntries;
-    int         ordered;     /* If TRUE, iterators walks in the order of
-                                index.  (Not used yet) */
+    u_long      flags;          /* reserved */
 } SparseVector;
 
 /* Iterator. */
@@ -89,6 +88,7 @@ struct SparseVectorDescriptorRec {
     Leaf    *(*allocate)(void *data);
     ScmObj   (*delete)(Leaf*, u_long index);
     void     (*clear)(Leaf*, void*);
+    Leaf    *(*copy)(Leaf*, void*);
     ScmObj   (*iter)(Leaf*, int*);
     void     (*dump)(ScmPort *out, Leaf *leaf, int indent, void *data);
 
@@ -110,6 +110,7 @@ extern ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback);
 extern void   SparseVectorSet(SparseVector *sv, u_long index, ScmObj value);
 extern ScmObj SparseVectorDelete(SparseVector *sv, u_long index);
 extern void   SparseVectorClear(SparseVector *sv);
+extern ScmObj SparseVectorCopy(const SparseVector *src);
 extern ScmObj SparseVectorInc(SparseVector *sv, u_long index, ScmObj delta,
                               ScmObj fallback);
 extern void   SparseVectorDump(SparseVector *sv);
