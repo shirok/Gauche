@@ -16718,9 +16718,13 @@ returns 32, the index up to @code{(expt 2 32)} is supported.
 It is guaranteed that this is at least 32.
 @end defun
 
-In the following descriptions, the argument @var{sv} denotes
+In the following entries, the argument @var{sv} denotes
 an instance of sparse vector; an error is signalled if other
 object is passed.
+
+@defun sparse-vector-copy sv
+Returns a copy of a sparse vector @var{sv}.
+@end defun
  
 @defun sparse-vector-ref sv k &optional default
 Returns @var{k}-th element of a sparse vector @var{sv}, where
@@ -16828,27 +16832,48 @@ A class for sparse table.  Inherits @code{<dictionary>} and
 
 Operationally sparse tables are the same as hash tables, but
 the former consumes less memory in trade of slight slower access.
+(Roughly x1.5 to x2 access time when the table is small.
+As the table gets larger the difference becomes smaller.)
 @end deftp
 
 @defun make-sparse-table type
-a@end defun
+Creates and returns an empty sparse table.  The @var{type} argument
+specifies how to compare the elements; currently it can be
+one of the symbols @code{eq?}, @code{eqv?}, @code{equal?} and
+@code{string=?}, like hash tables (@xref{Hashtables}).
+@end defun
+
+@defun sparse-table-copy st
+Returns a copy of a sparse table @var{st}.
+@end defun
 
 @defun sparse-table-num-entries st
+Returns the number of entries in a sparse table @var{st}.
 @end defun
 
 @defun sparse-table-ref st key &optional fallback
+Retrieves a value associated to the @var{key} in @var{st}.
+If no entry with @var{key} exists, @var{fallback} is returned
+when it is provided, or an error is signalled otherwise.
 @end defun
 
 @defun sparse-table-set! st key value
+Sets @var{value} with @var{key} in @var{st}.
 @end defun
 
 @defun sparse-table-exists? st key
+Returns @code{#t} if an entry with @var{key} exists in @var{st},
+@code{#f} otherwise.
 @end defun
 
 @defun sparse-table-delete! st key
+Deletes an entry with @var{key} in @var{st} if it exists.
+Returns @code{#t} if an entry is actually deleted, or @code{#f}
+if there hasn't been an entry with @var{key}.
 @end defun
 
 @defun sparse-table-clear! st
+Empties @var{st}.
 @end defun
 
 @defun sparse-table-update! st key proc &optional fallback
