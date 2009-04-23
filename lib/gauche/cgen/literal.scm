@@ -573,9 +573,19 @@
   (cexpr (self) (cgen-c-name self))
   (init (self)
     (let1 v (~ self'value)
-      (if (exact? v)
-        (print "  "(cgen-c-name self)" = Scm_MakeRational("(cgen-cexpr (~ self'numer))","(cgen-cexpr (~ self'denom))");")
-        (print "  "(cgen-c-name self)" = Scm_MakeFlonum("v");"))))
+      (print "  "(cgen-c-name self)" = ")
+      (cond
+       [(exact? v)
+        (print "Scm_MakeRational("(cgen-cexpr (~ self'numer))","(cgen-cexpr (~ self'denom))");")]
+       [(finite? v)
+        (print "Scm_MakeFlonum("v");")]
+       [(nan? v)
+        (print "SCM_NAN;")]
+       [(infinite? v)
+        (if (positive? v)
+          (print "SCM_POSITIVE_INFINITY;")
+          (print "SCM_NEGATIVE_INFINITY;"))]
+       [else (error "don't know how to emit real value literal for " v)])))
   (static (self) #f))
 
 (define-cgen-literal <cgen-scheme-complex> <complex>

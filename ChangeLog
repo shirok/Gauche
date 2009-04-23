@@ -1,3 +1,8 @@
+2009-04-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/literal.scm (<cgen-scheme-real>): properly handles
+	  inifinity and NaN flonum constants.
+
 2009-04-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_SysExec),
