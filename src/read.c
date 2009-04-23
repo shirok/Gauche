@@ -179,7 +179,6 @@ ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
 
 ScmReadContext *Scm_MakeReadContext(ScmReadContext *proto)
 {
-    ScmVM *vm = Scm_VM();
     ScmReadContext *ctx = SCM_NEW(ScmReadContext);
     SCM_SET_CLASS(ctx, SCM_CLASS_READ_CONTEXT);
     if (proto == NULL) {
