@@ -1705,6 +1705,7 @@ SCM_EXTERN ScmObj Scm_SortListX(ScmObj objs, ScmObj fn);
 
 #endif /* !GAUCHE_RECKLESS */
 
+#include <gauche/scmconst.h>
 
 SCM_DECL_END
 

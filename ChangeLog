@@ -1,5 +1,7 @@
 2009-04-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h: include scmconst.h.
+
 	* lib/gauche/cgen/literal.scm (<cgen-scheme-real>): properly handles
 	  inifinity and NaN flonum constants.
 
