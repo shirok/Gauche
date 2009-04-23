@@ -15303,7 +15303,7 @@ forkを依頼するという方法です。
 @c COMMON
 @end defun
 
-@defun sys-exec command args &keyword iomap sigmask
+@defun sys-exec command args &keyword directory iomap sigmask
 @c EN
 [POSIX+]
 Execute @var{command} with @var{args}, a list of arguments.
@@ -15323,6 +15323,18 @@ All elements of @var{args} must be strings.  The first element of
 @var{args}の全ての要素は文字列でなければなりません。
 @var{args}の最初の要素は、@code{argv[0]}、すなわちプログラム名として
 使われます。
+@c COMMON
+
+@c EN
+The keyword argument @var{directory} must be a string of a
+directory name or @code{#f}.
+If it is a string, @code{sys-exec} change current working directory
+there before executing the program.
+@c JP
+キーワード引数@var{directory}は文字列によるディレクトリ名
+か@code{#f}でなければなりません。
+文字列だった場合、@code{sys-exec}はプログラムを実行する前に
+カレントワーキングディレクトリを指定ディレクトリに移動します。
 @c COMMON
 
 @c EN
@@ -15410,7 +15422,7 @@ available!), so Gauche simply exits on the error.
 @c COMMON
 @end defun
 
-@defun sys-fork-and-exec command args &keyword iomap sigmask
+@defun sys-fork-and-exec command args &keyword directory iomap sigmask
 @c EN
 Like @code{sys-exec}, but executes @code{fork(2)} just before
 remapping I/O, altering signal mask and call @code{execvp(2)}.

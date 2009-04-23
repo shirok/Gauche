@@ -1396,7 +1396,6 @@ char *win_create_command_line(ScmObj args)
 }
 #endif /*GAUCHE_WINDOWS*/
 
-
 /* Scm_SysExec
  *   execvp(), with optionally setting stdios correctly.
  *
@@ -1421,13 +1420,12 @@ char *win_create_command_line(ScmObj args)
  *   On Windows/MinGW port, I'm not sure we can do I/O swapping in
  *   reasonable way.  For now, iomap is ignored.
  */
-
 ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
-                   ScmSysSigset *mask, int flags)
+                   ScmSysSigset *mask, ScmString *dir, int flags)
 {
     int argc = Scm_Length(args);
     char **argv;
-    const char *program;
+    const char *program, *cdir = NULL;
     pid_t pid = 0;
     int forkp = flags & SCM_EXEC_WITH_FORK;
     int *fds;
@@ -1439,6 +1437,8 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     /* make a C array of C strings */    
     argv = Scm_ListToCStringArray(args, TRUE, NULL);
     program = Scm_GetStringConst(file);
+
+    if (dir != NULL) cdir = Scm_GetStringConst(dir);
 
     /* setting up iomap table */
     fds = Scm_SysPrepareFdMap(iomap);
@@ -1452,11 +1452,19 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
 
     /* Now we swap file descriptors and exec(). */
     if (!forkp || pid == 0) {
+        if (cdir != NULL) {
+            if (chdir(cdir) < 0) {
+                Scm_Panic("chdir to %s failed before executing %s: %s",
+                          cdir, program, strerror(errno));
+            }
+        }
+
         Scm_SysSwapFds(fds);
         if (mask) {
             Scm_ResetSignalHandlers(&mask->set);
             Scm_SysSigmask(SIG_SETMASK, mask);
         }
+
         execvp(program, (char *const*)argv);
         /* here, we failed */
         Scm_Panic("exec failed: %s: %s", program, strerror(errno));
@@ -1493,7 +1501,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
                           TRUE, /* inherit handles */
                           0,    /* creation flags */
                           NULL, /* nenvironment */
-                          NULL, /* current dir */
+                          NULL, /* current dir: WRITEME - HONOR CDIR */
                           &si,  /* startup info */
                           &pi); /* process info */
         if (r == 0) Scm_SysError("spawning %s failed", program);

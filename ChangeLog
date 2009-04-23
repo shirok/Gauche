@@ -1,3 +1,10 @@
+2009-04-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_SysExec),
+	  src/syslib.stub (sys-exec, sys-fork-and-exec): Added support to
+	  chdir() before exec(), by :directory keyword argument.
+	  Dropped support of ancient-style API (sys-exec cmd args iomap).
+
 2009-04-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sparse/ctrie.c (CompactTrieDelete): Fixed a bug that failed
