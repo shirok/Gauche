@@ -7154,6 +7154,7 @@ The following example runs @code{ls -al} synchronously.
 @c JP
 次の例は@code{ls -al}を同期的に実行します。
 @c COMMON
+
 @example
 (run-process '(ls -al) :wait #t)
 @end example
@@ -7168,6 +7169,7 @@ a symbol.
 @code{-i}を引数として渡したい場合は文字列にするか、@code{|-i|}のように
 エスケープしてシンボルにする必要があります。
 @c COMMON
+
 @example
 (run-process '(ls "-i") :wait #t)
 @end example
