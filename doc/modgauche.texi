@@ -7020,7 +7020,8 @@ so we treat them as exceptional situations.
 @end deftp
 
 
-@defun run-process cmd/args &keyword input output error fork wait host sigmask
+@defun run-process cmd/args &keyword input output error @
+                   fork wait directory host sigmask
 @c EN
 Runs a command with arguments given to @var{cmd/args} in a subprocess
 and returns a @code{<process>} object.
@@ -7120,6 +7121,43 @@ The @var{hostname} specifies the remote host name, and the
 リモートホスト名を指定します。@var{port}は@var{protocol}のデフォルト
 以外のポートを使いたい場合に指定します。
 @c COMMON
+
+@item :directory @var{directory}
+@c EN
+If a string is given to @var{directory},
+the process is started with @var{directory} as its working directory.
+If @var{directory} is @code{#f}, this argument is ignored.
+An error is signalled if @var{directory} is other type of objects,
+or it is a string but is not a name of a existing directory.
+
+When @var{host} keyword argunmet is also given, this argument
+specifies the working directory of the @emph{remote} process.
+
+Note: @code{run-process} checks the validity of @var{directory},
+but actual @code{chdir(2)} is done just before @code{exec(2)},
+and it is possible that @code{chdir} fails in spite of previous
+checks.  At the moment when @code{chdir} fails, there's no
+reliable way to raise an exception to the caller of @code{run-process},
+so it writes out an error message to standard error port and exits.
+A robust program may take this case into account.
+@c JP
+@var{directory}に文字列が与えられた場合、
+そのディレクトリが起動されるプロセスのワーキングディレクトリとなります。
+@code{#f}が与えられた場合はの引数は何もしません。
+文字列か@code{#f}以外が与えられた場合、もしくは文字列が存在するディレクトリの
+名前でない場合はエラーが報告されます。
+
+@var{host}キーワード引数も与えられている場合、この引数は
+リモートプロセスのワーキングディレクトリを指定します。
+
+註: @code{run-process}は@var{directory}が有効な値であることを事前に
+チェックしますが、実際の@code{chdir(2)}は@code{exec(2)}の直前に
+行われます。事前のチェックにもかかわらず@code{chdir}が失敗する可能性が
+あります。その時点では@code{run-process}の呼び出し元にエラーを伝える
+確実な方法が無いため、Gaucheは標準エラー出力にメッセージを印字して
+exitします。頑健なプログラムを書く場合、そのようなケースにも留意して下さい。
+@c COMMON
+
 
 @item :sigmask @var{mask}
 @c EN

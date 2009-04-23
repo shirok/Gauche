@@ -93,62 +93,63 @@
 (define (run-process command . args)
   (if (not (list? command))
     (%run-process-old command args) ;; backward compatibility
-    (let-keywords* args ((input  #f)
-                         (output #f)
-                         (error  #f)
-                         (wait   #f)
-                         (fork   #t)
-                         (host   #f)    ;remote execution
-                         (sigmask #f))
-      (define (check-iokey key arg)
-        (unless (or (string? arg) (not arg) (eqv? arg :pipe))
-          (errorf "~s key requires a string or :pipe following, but got ~s"
-                  key arg)))
-      (check-iokey :input input)
-      (check-iokey :output output)
-      (check-iokey :error error)
-      (let* ((argv (map x->string command))
-             (proc (make <process> :command (car argv)))
-             (argv (if host (%prepare-remote host argv) argv)))
-        (receive (iomap toclose)
-            (if (or input output error)
-              (%setup-iomap proc input output error)
-              (values #f '()))
-          (if fork
-            (let1 pid (sys-fork-and-exec (car argv) argv
-                                         :iomap iomap
-                                         :sigmask (%ensure-mask sigmask))
-              (push! (ref proc 'processes) proc)
-              (set!  (ref proc 'pid) pid)
-              (dolist (p toclose)
-                (if (input-port? p)
-                  (close-input-port p)
-                  (close-output-port p)))
-              (when wait
-                ;; the following expr waits until the child exits
-                (set! (ref proc 'status) (values-ref (sys-waitpid pid) 1))
-                (update! (ref proc 'processes) (cut delete proc <>)))
-              proc)
-            (sys-exec (car argv) argv
-                      :iomap iomap
-                      :sigmask (%ensure-mask sigmask))))))))
+    (%run-process-new command args)))
+
+(define (%run-process-new command args)
+  (let-keywords* args ((input  #f) (output #f) (error  #f)
+                       (wait   #f) (fork   #t)
+                       (host   #f)    ;remote execution
+                       (sigmask #f) (directory #f))
+    (%check-iokey :input input)
+    (%check-iokey :output output)
+    (%check-iokey :error error)
+    (let* ([argv (map x->string command)]
+           [proc (make <process> :command (car argv))]
+           [argv (if host (%prepare-remote host argv directory) argv)]
+           [dir  (if host #f directory)])
+      (receive (iomap toclose)
+          (if (or input output error)
+            (%setup-iomap proc input output error)
+            (values #f '()))
+        (if fork
+          (let1 pid (sys-fork-and-exec (car argv) argv
+                                       :iomap iomap :directory dir
+                                       :sigmask (%ensure-mask sigmask))
+            (push! (ref proc 'processes) proc)
+            (set!  (ref proc 'pid) pid)
+            (dolist (p toclose)
+              (if (input-port? p)
+                (close-input-port p)
+                (close-output-port p)))
+            (when wait
+              ;; the following expr waits until the child exits
+              (set! (ref proc 'status) (values-ref (sys-waitpid pid) 1))
+              (update! (ref proc 'processes) (cut delete proc <>)))
+            proc)
+          (sys-exec (car argv) argv
+                    :iomap iomap :directory dir
+                    :sigmask (%ensure-mask sigmask)))))))
+
+(define (%check-iokey key arg)
+  (unless (or (string? arg) (not arg) (eqv? arg :pipe))
+    (errorf "~s key requires a string or :pipe following, but got ~s" key arg)))
 
 ;; The archane API, where one can mix keyword args and command arguments.
 ;; This API is taken from STk.  Now we don't need STk compatibility much,
 ;; so we support this only for backward compatibility.
 (define (%run-process-old command args)
   (let loop ((args args) (argv (list command)) (keys '()))
-    (cond ((null? args)
-           (apply run-process (reverse argv) (reverse keys)))
-          ((keyword? (car args))
+    (cond [(null? args)
+           (%run-process-new (reverse argv) (reverse keys))]
+          [(keyword? (car args))
            (when (null? (cdr args))
              (errorf "~s key requires an argument following" (car args)))
-           (loop (cddr args) argv (cons* (cadr args) (car args) keys)))
-          (else
-           (loop (cdr args) (cons (x->string (car args)) argv) keys)))))
+           (loop (cddr args) argv (cons* (cadr args) (car args) keys))]
+          [else
+           (loop (cdr args) (cons (x->string (car args)) argv) keys)])))
 
 ;; Prepare remote execution via ssh
-(define (%prepare-remote host argv)
+(define (%prepare-remote host argv dir)
   (rxmatch-let (#/^(?:([\w-]+):)?(?:([\w-]+)@)?([\w._]+)(?::(\d+))?$/ host)
       (#f proto user server port)
     (unless (or (not proto) (equal? proto "ssh"))
@@ -158,6 +159,7 @@
       ,@(if user `("-l" ,user) '())
       ,@(if port `("-p" ,port) '())
       ,server
+      ,@(if dir `("cd" ,dir ";") '())
       ,@argv)))
 
 (define (%setup-iomap proc input output error)
@@ -166,9 +168,7 @@
 
   (define (file spec opener)
     (and (string? spec)
-         (let ((p (opener spec)))
-           (push! toclose p)
-           p)))
+         (rlet1 p (opener spec) (push! toclose p))))
 
   (define (in-pipe spec slot)
     (and (eqv? spec :pipe)
@@ -184,24 +184,25 @@
            (push! toclose out)
            out)))
 
-  (let ((iomap `(,(cons 0 (or (file input open-input-file)
-                              (in-pipe input 'input)
-                              0))
-                 ,(cons 1 (or (file output open-output-file)
-                              (out-pipe output 'output)
-                              1))
-                 ,(cons 2 (or (file error open-output-file)
-                              (out-pipe error 'error)
-                              2)))))
+  (let1 iomap `(,(cons 0 (or (file input open-input-file)
+                             (in-pipe input 'input)
+                             0))
+                ,(cons 1 (or (file output open-output-file)
+                             (out-pipe output 'output)
+                             1))
+                ,(cons 2 (or (file error open-output-file)
+                             (out-pipe error 'error)
+                             2)))
     (values iomap toclose)))
 
 (define (%ensure-mask mask)
   (cond
-   ((is-a? mask <sys-sigset>) mask)
-   ((and (list? mask) (every integer? mask))
-    (fold (lambda (sig m) (sys-sigset-add! m sig) m) (make <sys-sigset>) mask))
-   ((not mask) #f)
-   (else (error "run-process: sigmask argument must be either #f, <sys-sigset>, or a list of integers, but got:" mask))))
+   [(is-a? mask <sys-sigset>) mask]
+   [(and (list? mask) (every integer? mask))
+    (fold (lambda (sig m) (sys-sigset-add! m sig) m) (make <sys-sigset>) mask)]
+   [(not mask) #f]
+   [else (error "run-process: sigmask argument must be either #f, \
+                 <sys-sigset>, or a list of integers, but got:" mask)]))
 
 (define (%check-normal-exit process)
   (let1 status (ref process 'status)
@@ -261,12 +262,12 @@
 (define (process-kill process) (process-send-signal process SIGKILL))
 (define (process-stop process)
   (cond-expand
-   (gauche.os.windows (undefined))
-   (else (process-send-signal process SIGSTOP))))
+   [gauche.os.windows (undefined)]
+   [else (process-send-signal process SIGSTOP)]))
 (define (process-continue process)
   (cond-expand
-   (gauche.os.windows (undefined))
-   (else (process-send-signal process SIGCONT))))
+   [gauche.os.windows (undefined)]
+   [else (process-send-signal process SIGCONT)]))
 
 ;;===================================================================
 ;; Process ports

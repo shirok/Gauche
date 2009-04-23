@@ -4,6 +4,8 @@
 	  src/syslib.stub (sys-exec, sys-fork-and-exec): Added support to
 	  chdir() before exec(), by :directory keyword argument.
 	  Dropped support of ancient-style API (sys-exec cmd args iomap).
+	* lib/gauche/process.scm (run-process): Added :directory keyword
+	  argument.
 
 2009-04-21  Shiro Kawai  <shiro@acm.org>
 
