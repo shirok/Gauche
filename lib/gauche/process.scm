@@ -107,6 +107,7 @@
            [proc (make <process> :command (car argv))]
            [argv (if host (%prepare-remote host argv directory) argv)]
            [dir  (if host #f directory)])
+      (%check-directory dir)
       (receive (iomap toclose)
           (if (or input output error)
             (%setup-iomap proc input output error)
@@ -133,6 +134,12 @@
 (define (%check-iokey key arg)
   (unless (or (string? arg) (not arg) (eqv? arg :pipe))
     (errorf "~s key requires a string or :pipe following, but got ~s" key arg)))
+
+(define (%check-directory dir)
+  (when dir
+    (unless (and (string? dir) (file-is-directory? dir) (sys-access dir X_OK))
+      (errorf "cannot set ~s as the executing process's working directory"
+              dir))))
 
 ;; The archane API, where one can mix keyword args and command arguments.
 ;; This API is taken from STk.  Now we don't need STk compatibility much,
