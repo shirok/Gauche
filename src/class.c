@@ -2058,7 +2058,7 @@ static ScmObj compute_applicable_methods(ScmNextMethod *nm,
 {
     ScmGeneric *gf = SCM_GENERIC(argv[0]);
     ScmObj arglist = argv[1];
-    int n = Scm_Length(arglist), i;
+    int n = Scm_Length(arglist);
     if (n < 0) Scm_Error("bad argument list: %S", arglist);
 
     return Scm_ComputeApplicableMethods(gf, &arglist, 1, TRUE);
