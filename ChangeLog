@@ -1,6 +1,9 @@
 2009-04-24  Shiro Kawai  <shiro@acm.org>
 
-	* src/gauche-package.in (compile): Added --gauche-builddir option
+	* src/gauche-package.in (compile),
+	  lib/gauche/package/compile (gauche-package-compile)
+	  (gauche-package-link):
+	  Added --gauche-builddir option / :gauche-builddir keyword arg
 	  to allow compiling extension using not-yet-installed Gauche.
 
 	* src/core.c (Scm_SimpleMain): Added for the convenience of

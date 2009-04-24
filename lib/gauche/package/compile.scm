@@ -43,6 +43,7 @@
   (use gauche.package.util)
   (use gauche.config)
   (use gauche.parameter)
+  (use gauche.cgen.stub)
   (use file.util)
   (export gauche-package-compile-and-link
           gauche-package-compile
@@ -50,85 +51,80 @@
           gauche-package-clean))
 (select-module gauche.package.compile)
 
-(define GOSH     (build-path (gauche-architecture-directory) "gosh"))
-(define CONFIG   (build-path (gauche-architecture-directory) "gauche-config"))
+;; If we use Gauche that's not installed yet, this parameter contains
+;; its top builddir.  We intercept INCDIR and LIBDIR
+(define in-place-dir (make-parameter #f))
+
 (define CC       (gauche-config "--cc"))
 (define CFLAGS   (gauche-config "--so-cflags"))
-(define INCDIR   (gauche-config "-I"))
-(define LIBDIR   (gauche-config "-L"))
+(define (INCDIR) (filter-dir (gauche-config "-I") "--sysincdir"))
+(define (LIBDIR) (filter-dir (gauche-config "-L") "--syslibdir"))
 (define LIBS     (gauche-config "-l"))
 (define OBJEXT   (gauche-config "--object-suffix"))
 (define SOEXT    (gauche-config "--so-suffix"))
 (define LDFLAGS  (gauche-config "--so-ldflags"))
 
-(define (gauche-package-compile file :key
-                                (output #f)
-                                (cppflags #f)
-                                (cflags   #f)
-                                (cc #f)
-                                (ld #f)           ;; dummy
-                                (ldflags #f)      ;; dummy
-                                (libs #f)         ;; dummy
-                                ((:dry-run dry?) #f)
-                                ((:verbose verb?) #f))
-  (parameterize ((dry-run dry?)
-                 (verbose-run verb?))
+(define (gauche-package-compile file :key (output #f)
+                                          (cppflags #f)
+                                          (cflags   #f)
+                                          (cc #f)
+                                          (gauche-builddir #f)
+                                          (ld #f)      ; dummy
+                                          (ldflags #f) ; dummy
+                                          (libs #f)    ; dummy
+                                          ((:dry-run dry?) #f)
+                                          ((:verbose verb?) #f))
+  (parameterize ([dry-run dry?]
+                 [verbose-run verb?]
+                 [in-place-dir gauche-builddir])
     (let1 ofile (or output (sys-basename (path-swap-extension file OBJEXT)))
       (unless (and (file-exists? ofile)
                    (file-mtime>? ofile file))
         (if (equal? (path-extension file) "stub")
           (let1 cfile (path-swap-extension file "c")
             (unwind-protect
-                (begin
-                  (do-genstub file)
-                  (do-compile (or cc CC) cfile ofile
-                              (or cppflags "") (or cflags "")))
+                (begin (cgen-genstub file)
+                       (do-compile (or cc CC) cfile ofile
+                                   (or cppflags "") (or cflags "")))
               (sys-unlink cfile)))
           (do-compile (or cc CC) file ofile
                       (or cppflags "") (or cflags "")))))))
 
-(define (do-genstub stubfile)
-  (run #`"',GOSH' genstub ,stubfile"))
-      
 (define (do-compile cc cfile ofile cppflags cflags)
-  (run #`",cc -c ,cppflags ,INCDIR ,cflags ,CFLAGS -o ',ofile' ',cfile'"))
+  (run #`",cc -c ,cppflags ,(INCDIR) ,cflags ,CFLAGS -o ',ofile' ',cfile'"))
 
-(define (gauche-package-link sofile ofiles :key
-                             (ldflags #f)
-                             (libs #f)
-                             (ld #f)
-                             (output #f)       ;; dummy
-                             (cppflags #f)     ;; dummy
-                             (cflags #f)       ;; dummy
-                             (cc #f)           ;; dummy
-                             ((:dry-run dry?) #f)
-                             ((:verbose verb?) #f))
-  (parameterize ((dry-run dry?)
-                 (verbose-run verb?))
+(define (gauche-package-link sofile ofiles :key (ldflags #f)
+                                                (libs #f)
+                                                (ld #f)
+                                                (gauche-builddir #f)
+                                                (output #f)   ; dummy
+                                                (cppflags #f) ; dummy
+                                                (cflags #f)   ; dummy
+                                                (cc #f)       ; dummy
+                                                ((:dry-run dry?) #f)
+                                                ((:verbose verb?) #f))
+  (parameterize ([dry-run dry?]
+                 [verbose-run verb?]
+                 [in-place-dir gauche-builddir])
     (unless (and (file-exists? sofile)
                  (every (cut file-mtime>? sofile <>) ofiles))
       (let1 all-ofiles (string-join (map (lambda (f) #`"',f'") ofiles) " ")
-        (run #`",(or ld CC) ,(or ldflags \"\") ,LIBDIR ,LDFLAGS ,sofile ,all-ofiles ,LIBS ,(or libs \"\")")))))
+        (run #`",(or ld CC) ,(or ldflags \"\") ,(LIBDIR) ,LDFLAGS ,sofile ,all-ofiles ,LIBS ,(or libs \"\")")))))
 
 (define (gauche-package-compile-and-link module-name files . args)
-  (let ((head.c #`",|module-name|_head.c")
-        (tail.c #`",|module-name|_tail.c")
-        (sofile (or (get-keyword :output args #f)
-                    #`",|module-name|.,|SOEXT|")))
-    (parameterize ((dry-run (get-keyword :dry-run args #f))
-                   (verbose-run (get-keyword :verbose args #f)))
-      (guard (e (else (sys-unlink head.c)
-                      (sys-unlink tail.c)
-                      (sys-unlink sofile)
-                      (raise e)))
-        (run #`"',CONFIG' --fixup-extension ',module-name'")
+  (let1 sofile (or (get-keyword :output args #f)
+                   #`",|module-name|.,|SOEXT|")
+    (parameterize ([dry-run (get-keyword :dry-run args #f)]
+                   [verbose-run (get-keyword :verbose args #f)])
+      (guard (e [else (sys-unlink sofile)
+                      (raise e)])
         (let1 objs (map (lambda (src)
                           (cond
                            [(equal? (path-extension src) OBJEXT) src]
                            [else (apply gauche-package-compile src
                                         (delete-keyword :output args))
                                  (sys-basename (path-swap-extension src OBJEXT))]))
-                        `(,head.c ,@files ,tail.c))
+                        files)
           (apply gauche-package-link sofile objs args)
           sofile)))))
 
@@ -144,5 +140,17 @@
   (dolist (f files)
     (unless (equal? (path-extension f) OBJEXT)
       (sys-unlink (sys-basename (path-swap-extension f OBJEXT))))))
+
+(define (filter-dir optstr dir-key)
+  (or (and-let* ([to-dir   (in-place-dir)]
+                 [orig-dir (regexp-quote (gauche-config dir-key))]
+                 ;; NB: we wrap to-dir by closure to for the case if
+                 ;; to-dir includes submatch replacement spec.
+                 [new (regexp-replace-all (string->regexp orig-dir) optstr
+                                          (lambda (m) #`",|to-dir|/src"))])
+        (if (equal? dir-key "--sysincdir")
+          #`",new -I,|to-dir|/gc/include"
+          new))
+      optstr))
 
 (provide "gauche/package/compile")
