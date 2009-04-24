@@ -55,28 +55,22 @@
 (define *commands* '())
 (define *helps* '())
 
-(define (usage . maybe-command)
-  (let ((cmd (get-optional maybe-command #f)))
-    (if cmd
-      (cond ((assoc-ref *helps* cmd)
-             => (lambda (doc)
-                  (print "Usage: gauche-package " (car doc)) ;; synopsys
-                  (print "  " (cadr doc)) ;; summary
-                  (unless (null? (cddr doc)) (print (caddr doc)))))
-            (else
-             (print "Unknown command name: " cmd)
-             (print "Valid commands are: " (map car (reverse *helps*)))))
-      (begin
-        (print "Usage: gauche-package <command> [options] <args> ...")
-        (print "Commands:")
-        (dolist (help (reverse *helps*))
-          (format #t "  ~15a - ~a\n" (car help) (caddr help)))
-        (print "Type 'gauche-package help <command>' for detailed help of each command."))))
-  (exit 0))
-
-(define (app-error fmt . args)
-  (apply format #t fmt args)
-  (newline)
+(define (usage :optional (cmd #f))
+  (if cmd
+    (cond [(assoc-ref *helps* cmd)
+           => (lambda (doc)
+                (print "Usage: gauche-package " (car doc)) ;; synopsys
+                (print "  " (cadr doc)) ;; summary
+                (unless (null? (cddr doc)) (print (caddr doc))))]
+          [else
+           (print "Unknown command name: " cmd)
+           (print "Valid commands are: " (map car (reverse *helps*)))])
+    (begin
+      (print "Usage: gauche-package <command> [options] <args> ...")
+      (print "Commands:")
+      (dolist (help (reverse *helps*))
+        (format #t "  ~15a - ~a\n" (car help) (caddr help)))
+      (print "Type 'gauche-package help <command>' for detailed help of each command.")))
   (exit 0))
 
 (define *config* '())
@@ -226,20 +220,19 @@ Options:
   (when (null? args) (usage-self))
   (let loop ((p (cdr args))
              (r '()))
-    (cond ((null? p)
+    (cond [(null? p)
            (let ((gpd (apply make <gauche-package-description>
                              :name (car args)
                              (reverse! r))))
              (with-output-to-file #`",(car args).gpd"
-               (cut write-gauche-package-description gpd))))
-          ((null? (cdr p))
-           (app-error "gauche-package: make-gpd: parameter list not even"))
-          (else
+               (cut write-gauche-package-description gpd)))]
+          [(null? (cdr p))
+           (exit 1 "gauche-package: make-gpd: parameter list not even")]
+          [else
            (loop (cddr p)
                  (list* (cadr p)
                         (make-keyword (string-trim (car p) #[-:]))
-                        r)))
-          )))
+                        r))])))
 
 ;;------------------------------------------------------
 ;; compile
@@ -275,6 +268,8 @@ Options:
       --clean         : instead of compile and link, removes the intermediate
                         and output file(s) that would be generated otherwise.
                         useful for 'make clean'.
+  --gauche-buiddir=DIR : specify the top builddir of the Gauche when the
+                        extensions should be compiled for /uninstalled/ Gauche.
   --local=PATH:PATH... : adds PATH/include to inlcude paths and PATH/lib to
                         library search paths for compiling.
   --cc=CC             : alternative C compiler.  Note that the compile should
@@ -288,6 +283,7 @@ Options:
                   (compile-only "c|compile")
                   (output       "o|output=s")
                   (clean        "clean")
+                  (gauche-builddir "gauche-builddir=s")
                   (local        "l|local=s")
                   (cc           "cc=s")
                   (cppflags     "cppflags=s")
@@ -313,13 +309,13 @@ Options:
           (filter values (cons (or given (sys-getenv envname)) additionals))
         (and (not (null? v)) (string-join v))))
     
-    (let ((cc       (param cc "CC"))
-          (cppflags (param cppflags "CPPFLAGS" (local-paths "-I" "include")))
-          (cflags   (param cflags   "CFLAGS"))
-          (ldflags  (param ldflags  "LDFLAGS"
+    (let ([cc       (param cc "CC")]
+          [cppflags (param cppflags "CPPFLAGS" (local-paths "-I" "include"))]
+          [cflags   (param cflags   "CFLAGS")]
+          [ldflags  (param ldflags  "LDFLAGS"
                            (local-paths "-L" "lib")
-                           (local-paths (gauche-config "--rpath-flag") "lib")))
-          (libs     (param libs     "LIBS")))
+                           (local-paths (gauche-config "--rpath-flag") "lib"))]
+          [libs     (param libs     "LIBS")])
       (cond
        [clean
         (unless (null? args)
@@ -330,12 +326,14 @@ Options:
         (unless (= (length args) 1) (usage-self))
         (gauche-package-compile (car args)
                                 :dry-run dry-run :verbose verbose
+                                :gauche-builddir gauche-builddir
                                 :output output :cc cc
                                 :cppflags cppflags :cflags cflags)]
        [else
         (when (<= (length args) 1) (usage-self))
         (gauche-package-compile-and-link (car args) (cdr args)
                                          :dry-run dry-run :verbose verbose
+                                         :gauche-builddir gauche-builddir
                                          :output output :cc cc :ld cc
                                          :cppflags cppflags :cflags cflags
                                          :ldflags ldflags :libs libs)]))
@@ -364,28 +362,28 @@ Options:
                         . more)
     (unless (and package-name (null? more)) (usage-self))
     (unless (#/^[\w-]+$/ package-name)
-      (app-error "Invalid character in package-name ~s: You can only use alphanumeric chars, underscore, and minus sign." package-name))
+      (exit 1 "Invalid character in package-name ~s: You can only use alphanumeric chars, underscore, and minus sign." package-name))
     (unless (or (not module-name) (#/^[\w.-]+$/ module-name))
-      (app-error "Invalid character in module-name ~s" module-name))
-    (let* ((package-name*  (rxmatch-case package-name
+      (exit 1 "Invalid character in module-name ~s" module-name))
+    (let* ([package-name*  (rxmatch-case package-name
                              (#/^Gauche-(.*)/ (#f rest) rest)
-                             (else package-name)))
-           (extension-name (string-tr package-name* "A-Za-z_-" "a-za-z__"))
-           (module-name (string->symbol (or module-name extension-name)))
-           (tmpl-dir (sys-dirname (gauche-library-directory)))
-           (scm-subdir (sys-dirname (module-name->path module-name))))
+                             (else package-name))]
+           [extension-name (string-tr package-name* "A-Za-z_-" "a-za-z__")]
+           [module-name (string->symbol (or module-name extension-name))]
+           [tmpl-dir (sys-dirname (gauche-library-directory))]
+           [scm-subdir (sys-dirname (module-name->path module-name))])
       (make-directory* (simplify-path (build-path package-name scm-subdir)))
       (for-each
        (lambda (file)
-         (let* ((src-path (build-path tmpl-dir #`"template.,file"))
-                (dst-name (regexp-replace* 
+         (let* ([src-path (build-path tmpl-dir #`"template.,file")]
+                [dst-name (regexp-replace* 
                            file
                            #/extension/ extension-name
                            #/module/ (sys-basename
-                                      (module-name->path module-name))))
-                (dst-path (if (equal? file "module.scm")
+                                      (module-name->path module-name)))]
+                [dst-path (if (equal? file "module.scm")
                             (build-path package-name scm-subdir dst-name)
-                            (build-path package-name dst-name))))
+                            (build-path package-name dst-name))])
            (filter-copy src-path dst-path
                         package-name extension-name module-name '("DIST"))))
        '("Makefile.in" "configure.ac" "extension.c" "extension.h"
