@@ -1,3 +1,8 @@
+2009-04-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (Scm_SimpleMain): Added for the convenience of
+	  creating a compiled binary that kicks a Gauche script.
+
 2009-04-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h: include scmconst.h.

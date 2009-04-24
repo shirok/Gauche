@@ -34,7 +34,7 @@
  */
 
 #define LIBGAUCHE_BODY
-#include "gauche.h"
+ #include "gauche.h"
 #include "gauche/arch.h"
 #include "gauche/paths.h"
 #include "gauche/builtin-syms.h"
@@ -93,7 +93,6 @@ extern void Scm__InitCollection(void);
 extern void Scm_Init_stdlib(ScmModule *);
 extern void Scm_Init_extlib(ScmModule *);
 extern void Scm_Init_syslib(ScmModule *);
-//extern void Scm_Init_moplib(ScmModule *);
 extern void Scm_Init_intlib(ScmModule *);
 
 extern void Scm_Init_scmlib(void);
@@ -529,6 +528,10 @@ ScmObj Scm_SiteArchitectureDirectory(void)
     return dir;
 }
 
+/*=============================================================
+ * 'Main'
+ */
+
 /*
  * When creating DLL under Cygwin, we need the following dummy main()
  * or we get "undefined reference _WinMain@16" error.
@@ -540,3 +543,44 @@ int main(void)
     return 0;
 }
 #endif /*__CYGWIN__*/
+
+/*
+ * A simple main routine useful to build a binary executable.
+ */
+
+void Scm_SimpleMain(int argc, const char *argv[],
+                    const char *script, u_long flags)
+{
+    ScmModule *user = Scm_UserModule();
+    ScmObj mainproc, args;
+    ScmLoadPacket lpak;
+
+    SCM_ASSERT(argc > 0);
+    if (Scm_Load("gauche-init.scm", 0, NULL)) {
+        Scm_Printf(SCM_CURERR, "%s: Couldn't load gauche-init.scm: %A(%A).\n",
+                   argv[0], 
+                   Scm_ConditionMessage(lpak.exception),
+                   Scm_ConditionTypeName(lpak.exception));
+        Scm_Exit(1);
+    }
+
+    args = Scm_CStringArrayToList(argv, argc, SCM_STRING_IMMUTABLE);
+    SCM_DEFINE(user, "*program-name*", SCM_CAR(args));
+    SCM_DEFINE(user, "*argv*", SCM_CDR(args));
+
+    if (script) {
+        ScmObj s = SCM_MAKE_STR(script);
+        ScmObj p = Scm_MakeInputStringPort(SCM_STRING(s), TRUE);
+        Scm_LoadFromPort(SCM_PORT(p), SCM_LOAD_PROPAGATE_ERROR, NULL);
+    }
+
+    mainproc = Scm_GlobalVariableRef(user, SCM_SYMBOL(SCM_INTERN("main")), 0);
+    if (SCM_PROCEDUREP(mainproc)) {
+        ScmObj r = Scm_ApplyRec(mainproc, SCM_LIST1(args));
+        if (SCM_INTP(r)) Scm_Exit(SCM_INT_VALUE(r));
+        else             Scm_Exit(70);
+    } else {
+        Scm_Exit(70);
+    }
+}
+

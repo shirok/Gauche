@@ -1647,6 +1647,9 @@ SCM_EXTERN void Scm_Exit(int code);
 SCM_EXTERN void Scm_Abort(const char *msg);
 SCM_EXTERN void Scm_Panic(const char *msg, ...);
 
+SCM_EXTERN void Scm_SimpleMain(int argc, const char *argv[],
+                               const char *script, u_long flags);
+
 SCM_EXTERN void Scm_GC(void);
 SCM_EXTERN void Scm_PrintStaticRoots(void);
 SCM_EXTERN void Scm_RegisterDL(void *data_start, void *data_end,
