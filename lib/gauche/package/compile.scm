@@ -58,7 +58,7 @@
 (define CC       (gauche-config "--cc"))
 (define CFLAGS   (gauche-config "--so-cflags"))
 (define (INCDIR) (filter-dir (gauche-config "-I") "--sysincdir"))
-(define (LIBDIR) (filter-dir (gauche-config "-L") "--syslibdir"))
+(define (LIBDIR) (filter-dir (gauche-config "-L") "--sysarchdir"))
 (define LIBS     (gauche-config "-l"))
 (define OBJEXT   (gauche-config "--object-suffix"))
 (define SOEXT    (gauche-config "--so-suffix"))
