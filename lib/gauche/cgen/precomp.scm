@@ -217,14 +217,20 @@
   (match srcs
     [() #f]
     [(main . subs)
+     (clean-output-files srcs prefix)
      (dolist [src (order-files-by-dependency srcs)]
-       (cgen-precompile src
-                        :dso-name (basename-sans-extension main)
-                        :predef-syms predef-syms
-                        :strip-prefix prefix
-                        :macros-to-keep macros-to-keep
-                        :ext-initializer (and (equal? src main) ext-initializer)
-                        :initializer-name #`"Scm_Init_,(basename-sans-extension src)"))]
+       (let* ([out.c ($ xlate-cfilename
+                        $ strip-prefix (path-swap-extension src "c") prefix)]
+              [initname (string-tr (path-sans-extension out.c) "-+." "___")])
+         (cgen-precompile src
+                          :out.c out.c
+                          :dso-name (or dso (basename-sans-extension main))
+                          :predef-syms predef-syms
+                          :strip-prefix prefix
+                          :macros-to-keep macros-to-keep
+                          :ext-initializer (and (equal? src main)
+                                                ext-initializer)
+                          :initializer-name #`"Scm_Init_,initname")))]
     ))
 
 ;;================================================================
@@ -305,6 +311,10 @@
         (string-drop path (string-length pre))
         path))]))
 
+(define (xlate-cfilename path)
+  (regexp-replace-all #/[\/\\]/ (sys-normalize-pathname path :canonicalize #t)
+                      "--"))
+
 (define (basename-sans-extension path)
   (path-sans-extension (sys-basename path)))
 
@@ -338,6 +348,14 @@
          [unsorted-srcs (lset-difference string=? srcs sorted-srcs)])
     (append sorted-srcs unsorted-srcs)))
 
+;; Removes *.sci files before start compiling so that the old file
+;; won't interfere with compilation.
+(define (clean-output-files scms prefix)
+  (dolist [s scms]
+    (when (equal? (path-extension s) "sci")
+      (error "source file list contains *.sci file:" s))
+    (sys-unlink (strip-prefix (path-swap-extension s "sci") prefix))))
+
 (define (write-ext-module form)
   (cond [(ext-module-file) => (^_ (write form _) (newline _))]))
 
@@ -354,18 +372,8 @@
   (dolist [init subinits]
     (cgen-decl #`"extern void Scm_Init_,init(void);"))
 
-  ;; Set up initial environment
-  (eval '(define-macro (current-module)
-           `(find-module ',(with-module gauche.cgen.precomp
-                             (compile-module-name))))
-        (compile-module))
-  (eval '(define-macro (inline-stub . forms)
-           (for-each (lambda (s)
-                       ((with-module gauche.cgen.stub cgen-stub-parse-form)
-                        (unwrap-syntax s)))
-                     forms)
-           (undefined))
-        (compile-module)))
+  (setup-compiler-environment (compile-module))
+  )
 
 (define (finalize subinits)
   (dolist [init subinits]
@@ -420,11 +428,7 @@
 (define-global-pred =export-all?      export-all)
 (define-global-pred =export-if-defined? export-if-defined)
 (define-global-pred =provide?         provide)
-(define-global-pred =define-macro?    define-macro)
-(define-global-pred =define-syntax?   define-syntax)
-(define-global-pred =define?          define)
 (define-global-pred =lambda?          lambda)
-(define-global-pred =define-constant? define-constant)
 (define-global-pred =declare?         declare)
 
 ;; compile FORM, and conses the toplevel code (something to be
@@ -467,32 +471,6 @@
       [((? =export-all?)) (compile-module-exports #t)]
       [((? =export-if-defined?) . _) (write-ext-module form) seed]
       [((? =provide?) arg) (write-ext-module form) seed]
-      ;; For the time being, we only compile the legacy macros into C file.
-      ;; R5RS macros are put in ext-module file as is.
-      [((? =define-macro?) (name . formals) . body)
-       (eval form (compile-module))
-       (when (or (symbol-exported? name)
-                 (memq name (private-macros-to-keep)))
-         (let* ([body-closure (compile-toplevel-lambda form name formals
-                                                       body (compile-module))]
-                [code (cgen-literal (closure-code body-closure))]
-                [var  (cgen-literal name)])
-           (cgen-init
-            (format "  Scm_Define(mod, SCM_SYMBOL(~a), \
-                             Scm_MakeMacroTransformerOld(SCM_SYMBOL(~a),\
-                                 SCM_PROCEDURE(Scm_MakeClosure(~a, NULL)))); /* ~s */"
-                    (cgen-cexpr var) (cgen-cexpr var)
-                    (cgen-cexpr code) name))))
-       seed]
-      [((? =define-macro?) name . _)
-       (when (symbol-exported? name)
-         (write-ext-module form))
-       (eval form (compile-module)) seed]
-      [((? =define-syntax?) name . _)
-       (when (or (symbol-exported? name)
-                 (memq name (private-macros-to-keep)))
-         (write-ext-module form))
-       (eval form (compile-module)) seed]
       ;; TODO - we need more general framework supporting various declarations.
       ;; for the time being, this ad-hoc solution suffice our needs.
       [((? =declare?) decls ...)
@@ -503,20 +481,6 @@
                  decls)
        seed]
       ;; Finally, ordinary expressions.
-      [((? =define?) (name . args) . body)
-       (compile-toplevel-form `(define ,name (lambda ,args ,@body)) seed)]
-      [((? =define?) (? symbol? name) ((? =lambda?) args . body))
-       (let* ([closure
-               (compile-toplevel-lambda form name args body (compile-module))]
-              [code (cgen-literal (closure-code closure))]
-              [var  (cgen-literal name)])
-         (cgen-init
-          (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeClosure(~a, NULL)); /* ~s */"
-                  (cgen-cexpr var) (cgen-cexpr code) name)))
-       seed]
-      [((? =define-constant?) (? symbol?) expr)
-       (eval form (compile-module))
-       (cons (cgen-literal (compile form (compile-module))) seed)]
       [else
        (let1 compiled-code (compile form (compile-module))
          ;; We exclude a compiled code with only CONSTU-RET, which appears
@@ -545,6 +509,100 @@
 
   (cgen-init (format "  Scm_VMExecuteToplevels(toplevels);"))
   )
+
+;;================================================================
+;; Special form handlers
+;;
+
+;; Some special forms must be handled differently from the ordinary
+;; compilation.  We implement it by replacing those special forms
+;; for tailored handlers within the compiler environment.
+;;
+;; NB: We used to recognize those forms literally within
+;; compile-toplevel-form.  It failed to work, however, when these
+;; forms are generated as the result of macro expansion.
+;; The current approach still has an issue when the compiled source
+;; overrides these special forms.  Such sources should be very unusual,
+;; so we don't support them for the time being.
+
+(define *special-handlers*
+  '((define-macro (current-module)
+      `(find-module ',(with-module gauche.cgen.precomp
+                        (compile-module-name))))
+    (define-macro (inline-stub . forms)
+      (for-each (lambda (s)
+                  ((with-module gauche.cgen.stub cgen-stub-parse-form)
+                   (unwrap-syntax s)))
+                forms)
+      (undefined))
+    (define-macro (define . f)
+      ((with-module gauche.cgen.precomp handle-define) f))
+    (define-macro (define-constant . f)
+      ((with-module gauche.cgen.precomp handle-define-constant) f))
+    (define-macro (define-syntax . f)
+      ((with-module gauche.cgen.precomp handle-define-syntax) f))
+    (define-macro (define-macro . f)
+      ((with-module gauche.cgen.precomp handle-define-macro) f))
+    ))
+
+(define (setup-compiler-environment mod)
+  (dolist [form *special-handlers*]
+    (eval form mod)))
+
+;; For the time being, we only compile the legacy macros into C file.
+;; R5RS macros are put in ext-module file as is.
+(define (handle-define-macro form)
+  (match form
+    [((name . formals) . body)
+     (when (or (symbol-exported? name)
+               (memq name (private-macros-to-keep)))
+       (let* ([body-closure (compile-toplevel-lambda form name formals
+                                                     body (compile-module))]
+              [code (cgen-literal (closure-code body-closure))]
+              [var  (cgen-literal name)])
+         (cgen-init
+          (format "  Scm_Define(mod, SCM_SYMBOL(~a), \
+                             Scm_MakeMacroTransformerOld(SCM_SYMBOL(~a),\
+                                 SCM_PROCEDURE(Scm_MakeClosure(~a, NULL)))); /* ~s */"
+                  (cgen-cexpr var) (cgen-cexpr var)
+                  (cgen-cexpr code) name))))]
+    [(name . expr)
+     (when (symbol-exported? name)
+       (write-ext-module `(define-macro . ,form)))]
+    [_ #f])
+  (cons '(with-module gauche define-macro) form))
+
+(define (handle-define-syntax form)
+  (match form
+    [(name . _)
+     (when (or (symbol-exported? name)
+               (memq name (private-macros-to-keep)))
+       (write-ext-module `(define-syntax . ,form)))]
+    [_ #f])
+  (cons '(with-module gauche define-syntax) form))  
+
+(define (handle-define form)
+  (match form
+    [((name . args) . body)
+     (handle-define `(,name (lambda ,args ,@body)))]
+    [((? symbol? name) ((? =lambda?) args . body))
+     (let* ([closure
+             (compile-toplevel-lambda form name args body (compile-module))]
+            [code (cgen-literal (closure-code closure))]
+            [var  (cgen-literal name)])
+       (cgen-init
+        (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeClosure(~a, NULL)); /* ~s */"
+                (cgen-cexpr var) (cgen-cexpr code) name)))
+     (undefined)]
+    [_
+     (cons '(with-module gauche define) form)]))
+
+(define (handle-define-constant form)
+  (match form
+    [((? symbol? name) expr)
+     (eval `((with-module gauche define-constant) ,@form) (compile-module))]
+    [_ #f])
+  (cons '(with-module gauche define-constant) form))
 
 ;; check to see if the symbol is exported
 (define (symbol-exported? sym)
@@ -708,20 +766,17 @@
   ((id-name   :init-keyword :id-name)
    (mod-name  :init-keyword :mod-name))
   (make (value)
-    (let ((name (ref value 'name))
-          (mod  (ref value 'module))
-          (env  (ref value 'env)))
-      (unless (null? env)
-        (error "identifier with compiler environment can't be compiled" value))
-      (make <cgen-scheme-identifier> :value value
-            :c-name (cgen-allocate-static-datum)
-            :id-name (cgen-literal name)
-            :mod-name (and-let* ((modnam (module-name-fix mod)))
-                        (cgen-literal modnam)))))
+    (unless (null? (~ value'env))
+      (error "identifier with compiler environment can't be compiled" value))
+    (make <cgen-scheme-identifier> :value value
+          :c-name (cgen-allocate-static-datum)
+          :id-name (cgen-literal (~ value'name))
+          :mod-name (and-let* ([modnam (module-name-fix (~ value'module))])
+                      (cgen-literal modnam))))
   (init (self)
-    (let ((name (cgen-cexpr (ref self 'id-name)))
-          (cname (ref self 'c-name)))
-      (or (and-let* ((modnam (ref self 'mod-name)))
+    (let ([name (cgen-cexpr (~ self'id-name))]
+          [cname (~ self'c-name)])
+      (or (and-let* ([modnam (~ self'mod-name)])
             (print "  "cname" = Scm_MakeIdentifier(SCM_SYMBOL("name"), "
                    "Scm_FindModule(SCM_SYMBOL("(cgen-cexpr modnam)"), SCM_FIND_MODULE_CREATE),"
                    "SCM_NIL);"))
@@ -754,8 +809,7 @@
       :gf-name (cgen-literal (ref value 'name))))
   (init (self)
     (format #t "  ~a = Scm_SymbolValue(mod, SCM_SYMBOL(~a));\n"
-            (ref self 'c-name)
-            (ref (ref self 'gf-name) 'c-name)))
+            (~ self'c-name) (~ self'gf-name'c-name)))
   (static (self) #f)
   )
 

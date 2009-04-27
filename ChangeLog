@@ -1,3 +1,14 @@
+2009-04-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm (compile-toplevel-form): Instead of
+	  matchin toplevel define/define-macro/... literally, we override
+	  special form definitions within compile-module to hook the special
+	  actions.  The former approach doesn't work if those special forms
+	  are generated as the result of macro expansion.
+	  The new approach may bread if the compiled source overrides
+	  those special forms as well.  See the comment near
+	  "Special form handlers" for the details.
+
 2009-04-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in (compile),
