@@ -482,7 +482,12 @@ static ScmObj proc_required(ScmProcedure *p)
 
 static ScmObj proc_optional(ScmProcedure *p)
 {
-    return SCM_MAKE_BOOL(p->optional);
+    return SCM_MAKE_BOOL(p->optional); /* for backward compatibility */
+}
+
+static ScmObj proc_optcount(ScmProcedure *p)
+{
+    return SCM_MAKE_INT(p->optional);
 }
 
 static ScmObj proc_locked(ScmProcedure *p)
@@ -508,6 +513,7 @@ static ScmObj proc_setter(ScmProcedure *p)
 static ScmClassStaticSlotSpec proc_slots[] = {
     SCM_CLASS_SLOT_SPEC("required", proc_required, NULL),
     SCM_CLASS_SLOT_SPEC("optional", proc_optional, NULL),
+    SCM_CLASS_SLOT_SPEC("optcount", proc_optcount, NULL),
     SCM_CLASS_SLOT_SPEC("locked", proc_locked, NULL),
     SCM_CLASS_SLOT_SPEC("currying", proc_currying, NULL),
     SCM_CLASS_SLOT_SPEC("info", proc_info, NULL),
