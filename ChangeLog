@@ -1,3 +1,7 @@
+2009-04-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c, src/gauche.h (Scm_ArrayToListWithTail): Added new API.
+
 2009-04-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (compile-toplevel-form): Instead of

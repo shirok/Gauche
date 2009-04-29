@@ -144,13 +144,17 @@ ScmObj Scm_VaCons(va_list pvar)
 
 ScmObj Scm_ArrayToList(ScmObj *elts, int nelts)
 {
+    return Scm_ArrayToListWithTail(elts, nelts, SCM_NIL);
+}
+
+ScmObj Scm_ArrayToListWithTail(ScmObj *elts, int nelts, ScmObj tail)
+{
     ScmObj h = SCM_NIL, t = SCM_NIL;
     if (elts) {
         int i;
-        for (i=0; i<nelts; i++) {
-            SCM_APPEND1(h, t, *elts++);
-        }
+        for (i=0; i<nelts; i++) SCM_APPEND1(h, t, *elts++);
     }
+    if (!SCM_NULLP(tail)) SCM_APPEND(h, t, tail);
     return h;
 }
 

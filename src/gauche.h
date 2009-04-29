@@ -992,6 +992,7 @@ SCM_EXTERN ScmObj Scm_Conses(ScmObj elt, ...);
 SCM_EXTERN ScmObj Scm_VaList(va_list elts);
 SCM_EXTERN ScmObj Scm_VaCons(va_list elts);
 SCM_EXTERN ScmObj Scm_ArrayToList(ScmObj *elts, int nelts);
+SCM_EXTERN ScmObj Scm_ArrayToListWithTail(ScmObj *elts, int nelts, ScmObj tail);
 SCM_EXTERN ScmObj *Scm_ListToArray(ScmObj list, int *nelts, ScmObj *store,
 				   int alloc);
 
