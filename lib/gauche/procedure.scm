@@ -170,24 +170,45 @@
 
 ;; case-lambda (srfi-16) ---------------------------------------
 
-;; This is a temporary implementation.  There's a plan to replace it
-;; for more efficient dispatching mechanism.  (But I'm not sure when).
-
 (define-syntax case-lambda
   (syntax-rules ()
+    [(case-lambda (arg . body)) (lambda arg . body)] ; special case
     [(case-lambda (arg . body) ...)
      (make-dispatcher (list (lambda arg . body) ...))]
     [(case-lambda . _)
      (syntax-error "malformed case-lambda" (case-lambda . _))]))
 
-;; support procedure
 (define (make-dispatcher closures)
-  (lambda args
-    (let ((len (length args)))
-      (cond [(find (lambda (p) (procedure-arity-includes? p len)) closures)
-             => (cut apply <> args)]
-            [else
-             (error "wrong number of arguments to case-lambda:" args)]))))
+  (let1 arities (map arity closures)
+    (receive (min-req max-req) (%find-minmax arities)
+      (let1 v (make-vector (+ (- max-req min-req) 2) #f)
+        (for-each (cut %fill-dispatch-vector! v min-req <> <>) arities closures)
+        ((with-module gauche.internal make-case-lambda-dispatcher)
+         v min-req)))))
+
+(define (%find-minmax arities)
+  (let loop ([as arities] [min-req +inf.0] [max-req 0])
+    (cond [(null? as) (values (inexact->exact min-req) max-req)]
+          [(integer? (car as))
+           (loop (cdr as) (min (car as) min-req) (max (car as) max-req))]
+          [(list? (car as))
+           (receive (min-req2 max-req2) (%find-minmax (car as))
+             (loop (cdr as) (min min-req min-req2) (max max-req max-req2)))]
+          [(is-a? (car as) <arity-at-least>)
+           (let1 m (ref (car as) 'value)
+             (loop (cdr as) (min m min-req) (max (+ m 1) max-req)))]
+          [else (error "[internal] unsupported arity:" (car as))])))
+
+(define (%fill-dispatch-vector! v min-req arity closure)
+  (define (%set n)
+    (let1 i (- n min-req)
+      (unless (vector-ref v i) (vector-set! v i closure))))
+  (cond [(integer? arity) (%set arity)]
+        [(list? arity)
+         (for-each (cut %fill-dispatch-vector v min-req <> closure) arity)]
+        [(is-a? arity <arity-at-least>)
+         (let loop ([n (+ (vector-length v) min-req -1)])
+           (when (>= n min-req) (%set n) (loop (- n 1))))]))
 
 ;; disassembler.
 ;; I'm not sure whether this should be here or not, but fot the time being...

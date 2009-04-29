@@ -464,33 +464,7 @@
                 (char-set= i (->char-set "abcdefABCDEF"))))))
 
 ;;-----------------------------------------------------------------------
-(test-section "srfi-16")
-
-(test* "case-lambda (plus)" '(0 1 3 6 10)
-       (let ()
-         (define plus
-           (case-lambda 
-            (() 0)
-            ((x) x)
-            ((x y) (+ x y))
-            ((x y z) (+ (+ x y) z))
-            (args (apply + args))))
-         (list (plus) (plus 1) (plus 1 2) (plus 1 2 3) (plus 1 2 3 4))))
-
-(test* "case-lambda (mul2)" *test-error*
-       (let ()
-         (define mul2
-           (case-lambda 
-            (() 1)
-            ((x) x)
-            ((x y) (* x y))))
-         (mul2 1 2 3)))
-
-(test* "case-lambda (matching order)" '(1 (2))
-       ((case-lambda
-         ((x . y) (list x y))
-         ((x y) (list x y)))
-        1 2))
+;; srfi-16 case-lambda : moved to procedure.scm (builtin)
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-17")

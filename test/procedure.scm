@@ -431,4 +431,71 @@
                (1 ,(undefined) ,(undefined) 0 1 ())
                ,*test-error*))
 
+;;-----------------------------------------------------------------------
+;; case-lambda
+(test-section "case-lambda")
+
+(define (case-lambda-test sig fn . arg&exp)
+  (for-each (lambda (arg&exp)
+              (let [(args (car arg&exp))
+                    (exp  (cdr arg&exp))]
+                (test* #`"case-lambda ,sig ,(length args)" exp
+                       (apply fn args))))
+            arg&exp))
+
+(case-lambda-test "[0..]"
+                  (case-lambda 
+                    (() 0)
+                    ((x) x)
+                    ((x y) (+ x y))
+                    ((x y z) (+ (+ x y) z))
+                    (args (apply + args)))
+                  '[() . 0]
+                  '[(1) . 1]
+                  '[(1 2) . 3]
+                  '[(1 2 3) . 6]
+                  '[(1 2 3 4) . 10])
+
+(case-lambda-test "[2..4]"
+                  (case-lambda
+                    [(a b) `(two ,a ,b)]
+                    [(a b c) `(three ,a ,b ,c)]
+                    [(a b c d) `(four ,a ,b ,c ,d)])
+                  `[() . ,*test-error*]
+                  `[(1) . ,*test-error*]
+                  `[(1 2) . (two 1 2)]
+                  `[(1 2 3) . (three 1 2 3)]
+                  `[(1 2 3 4) . (four 1 2 3 4)]
+                  `[(1 2 3 4 5) . ,*test-error*])
+
+(case-lambda-test "[1..] matching order"
+                  (case-lambda
+                    [(x y)   `(foo ,x ,y)]
+                    [(x . y) `(bar ,x ,y)])
+                  `[() . ,*test-error*]
+                  `[(1) . (bar 1 ())]
+                  `[(1 2) . (foo 1 2)]
+                  `[(1 2 3) . (bar 1 (2 3))])
+
+(case-lambda-test "[0..] matching order"
+                  (case-lambda
+                    [a   `(foo ,a)]
+                    [(x) `(bar ,x)])
+                  `[(1) . (foo (1))])
+
+(case-lambda-test "[0,2]"
+                  (case-lambda
+                    [() 'yot]
+                    [(x y) `(bot ,x, y)])
+                  `[() . yot]
+                  `[(1) . ,*test-error*]
+                  `[(1 2) . (bot 1 2)])
+
+(case-lambda-test "one lambda"
+                  (case-lambda
+                    [(x . y) `(foo ,x ,y)])
+                  `[() . ,*test-error*]
+                  `[(1) . (foo 1 ())]
+                  `[(1 2) . (foo 1 (2))])
+
 (test-end)

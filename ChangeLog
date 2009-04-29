@@ -4,6 +4,11 @@
 
 	* src/proc.c: Added 'optcount' slot to the procedure object.
 
+	* lib/gauche/procedure.scm (case-lambda),
+	  src/intlib.stub (make-case-lambda-dispatcher): Rewrote case-lambda
+	  implemetation to take advantage of non-consing optional arguments
+	  (i.e. optional > 1).  Simple benchmark showed 20x-80x speedup.
+
 2009-04-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (compile-toplevel-form): Instead of
