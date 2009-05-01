@@ -764,9 +764,11 @@ base-@var{z2} logarithm of @var{z1}.
 @defun atan y x
 [R5RS]
 @c EN
-For real numbers @var{x} and @var{y}, returns @code{atan(@var{y}/@var{x})}.
+For real numbers @var{x} and @var{y}, 
+returns @code{(angle (make-rectangular x y))}.
 @c JP
-実数@var{x}と@var{y}に対して@code{atan(@var{y}/@var{x})}を返します。
+実数@var{x}と@var{y}に対して
+@code{(angle (make-rectangular x y))}を返します。
 @c COMMON
 @end defun
 

@@ -1,3 +1,9 @@
+2009-04-30  Shiro Kawai  <shiro@acm.org>
+
+	* doc/corelib.texi (atan): fix description of 2-argument atan.
+	  (atan y x) and (atan (/ y x)) are equivalent only when x and
+	  y are both nonegative.  Rewrote to use R5RS's definition.
+
 2009-04-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c, src/gauche.h (Scm_ArrayToListWithTail): Added new API.
