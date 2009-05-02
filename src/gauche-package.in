@@ -298,6 +298,7 @@ Options:
     (define (local-paths prefix subdir)
       (and local
            (not (string-null? local))
+           (not (string-null? prefix))
            (string-join (map (lambda (path)
                                (shell-escape-string (build-path path subdir)))
                              (string-split local #\:))

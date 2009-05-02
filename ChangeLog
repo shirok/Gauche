@@ -1,3 +1,8 @@
+2009-05-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche-package.in (compile): Fix a problem when --rpath-flag
+	  is empty (e.g. on OSX)
+
 2009-04-30  Shiro Kawai  <shiro@acm.org>
 
 	* doc/corelib.texi (atan): fix description of 2-argument atan.
