@@ -300,7 +300,7 @@
 
 	* src/module.c (Scm_MakeModule): Made anonymous module name's name
 	  to #f instead of '|#|.  I planned this change long time ago, but
-	  apparently forgot to implement it.   It shouldn't affect exiting
+	  apparently forgot to implement it.   It shouldn't affect existing
 	  code.
 
 2009-03-25  Shiro Kawai  <shiro@acm.org>
@@ -9917,7 +9917,7 @@
 
 	* lib/gauche/common-macros.scm : added several useful macros,
 	  such as push! and dotimes.  They are ugly, but sometimes its
-	  so convenient that I couldn't regist adding them.  It also
+	  so convenient that I couldn't resist adding them.  It also
 	  has the convenient macro syntax-error.
 	* src/list.c, src/vector.c, src/string.c, src/extlib.stub :
 	  added safe version of accessors: list-ref+, vector-ref+ and
