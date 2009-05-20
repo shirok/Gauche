@@ -5017,7 +5017,7 @@ interfering the existing connection.   You can call
 @c COMMON
 @end defun
 
-@defun call-with-client-socket socket proc
+@defun call-with-client-socket socket proc &keyword input-buffering output-buffering
 @c EN
 @var{socket} must be a connected client socket.  @var{proc} is called
 with two arguments, an input port that reads from the socket
@@ -5029,6 +5029,16 @@ raises an error.
 @var{proc}がソケットから読み出す入力ポートと、
 ソケットに書き出す出力ポートを引数として呼ばれます。
 @var{proc}が正常終了するか、エラーを投げた場合にソケットはクローズされます。
+@c COMMON
+
+@c EN
+The keyword arguments @var{input-buffering} and @var{output-buffering}
+are, if given, passed as the @var{buffering} keyword arguments
+of @code{socket-input-port} and @code{socket-output-port}, respectively.
+@c JP
+キーワード引数@var{input-buffering}と@var{output-buffering}が与えられた場合、
+それらはそれぞれ@code{socket-input-port}と@code{socket-output-port}の
+@var{buffering}キーワード引数へと渡されます。
 @c COMMON
 @end defun
 

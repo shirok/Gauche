@@ -1,3 +1,8 @@
+2009-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netaux.scm (call-with-client-socket): Added :input-buffering
+	  and :output-buffering keyword arguments.
+
 2009-05-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in (compile): Fix a problem when --rpath-flag

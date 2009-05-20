@@ -179,9 +179,15 @@
                  (slot-ref hh 'addresses)))
           (list (make <sockaddr-in> :host :any :port port)))))))
 
-(define (call-with-client-socket socket proc)
+(define (call-with-client-socket socket proc
+                                 :key (input-buffering #f) (output-buffering #f))
   (unwind-protect 
-      (proc (socket-input-port socket) (socket-output-port socket))
+      (proc (if input-buffering
+              (socket-input-port socket :buffering input-buffering)
+              (socket-input-port socket))
+            (if output-buffering
+              (socket-output-port socket :buffering output-buffering)
+              (socket-output-port socket)))
     (socket-close socket)))
 
 ;;=================================================================
