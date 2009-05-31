@@ -396,6 +396,7 @@
                   (output-proc cgi-default-output)
                   (merge-cookies #f)
                   (part-handlers '()))
+  (set! (port-buffering (current-error-port)) :line)
   (guard (e (else (output-proc (on-error e))))
     (let1 params (cgi-parse-parameters :merge-cookies merge-cookies
                                        :part-handlers part-handlers)

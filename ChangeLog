@@ -1,3 +1,8 @@
+2009-05-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm (cgi-main): Change buffering mode of the current
+	  error port so that httpd error log will be cleaner.
+
 2009-05-20  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/netaux.scm (call-with-client-socket): Added :input-buffering

@@ -18326,6 +18326,19 @@ to utilize this feature for other purpose.
 @c COMMON
 
 @c EN
+Before calling @var{proc}, @code{cgi-main} changes the buffering mode
+of the current error port to @code{:line} (See @code{port-buffering}
+in @ref{Common port operations} for the details about the buffering mode).
+This makes the error output easier for web servers to capture.
+@c JP
+@var{proc}を呼ぶ前に、@code{cgi-main}はカレントエラーポートの
+バッファリングモードを@code{:line}に変更します。
+(バッファリングモードの詳細については@ref{Common port operations}の
+@code{port-buffering}の項を参照してください)。
+これはwebサーバがcgiスクリプトのエラー出力を捕捉しやすくするためです。
+@c COMMON
+
+@c EN
 The following example shows the parameters given to the CGI program.
 @c JP
 以下の例はCGIに渡されたパラメータ全てをテーブルにして表示します。
