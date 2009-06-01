@@ -51,7 +51,6 @@
           ftp-put-unique ftp-quit ftp-remove ftp-rename ftp-rmdir
           ftp-site ftp-stat ftp-system ftp-transfer-type
           ))
-
 (select-module rfc.ftp)
 
 (define-constant *default-ftp-port* 21)
@@ -114,10 +113,9 @@
 ;; QUIT <CRLF>
 (define (ftp-quit conn)
   (unwind-protect
-   (simple-command conn "QUIT")
-   (cond ((ref conn 'socket)
-          => (lambda (s) (socket-shutdown s) (set! (ref conn 'socket) #f))))))
-
+      (simple-command conn "QUIT")
+    (if-let1 s (ref conn 'socket)
+      (begin (socket-shutdown s) (set! (ref conn 'socket) #f)))))
 
 ;; *ABOR <CRLF>
 
@@ -132,81 +130,59 @@
     (simple-command conn "CWD" dirname)))
 
 ;; DELE <SP> <pathname> <CRLF>
-(define (ftp-remove conn path)
-  (simple-command conn "DELE" path))
-
+(define (ftp-remove conn path) (simple-command conn "DELE" path))
 
 ;; HELP [<SP> <string>] <CRLF>
-(define (ftp-help conn . opt)
-  (apply simple-command conn "HELP" opt))
-
+(define (ftp-help conn . opt) (apply simple-command conn "HELP" opt))
 
 ;; MKD  <SP> <pathname> <CRLF>
 ;; PWD  <CRLF>
-(define-values (ftp-mkdir ftp-current-directory)
-  (let1 parse-257
-      (lambda (res)
-        (rxmatch-if (#/^257 \"((?:[^\"]|\"\")+)\"/ res) (_ dirname)
-          (regexp-replace-all #/""/ dirname "\"")
-          (ftp-error res)))
-    (values (lambda (conn dirname)
-              (parse-257 (simple-command conn "MKD" dirname)))
-            (lambda (conn)
-              (parse-257 (simple-command conn "PWD"))))))
+(define (ftp-mkdir conn dirname)(parse-257 (simple-command conn "MKD" dirname)))
+(define (ftp-current-directory conn) (parse-257 (simple-command conn "PWD")))
+
+(define (parse-257 res)
+  (rxmatch-if (#/^257 \"((?:[^\"]|\"\")+)\"/ res) (_ dirname)
+    (regexp-replace-all #/""/ dirname "\"")
+    (ftp-error res)))
 
 ;; *MODE <SP> <mode-code> <CRLF>
 ;; *SMNT <SP> <pathname> <CRLF>
 
 
 ;; SITE <SP> <string> <CRLF>
-(define (ftp-site conn arg)
-  (simple-command conn "SITE" arg))
+(define (ftp-site conn arg) (simple-command conn "SITE" arg))
 
 
 ;; *STRU <SP> <structure-code> <CRLF>
 
 
 ;; RMD  <SP> <pathname> <CRLF>
-(define (ftp-rmdir conn dirname)
-  (simple-command conn "RMD" dirname))
+(define (ftp-rmdir conn dirname) (simple-command conn "RMD" dirname))
 
 ;; STAT [<SP> <pathname>] <CRLF>
-(define (ftp-stat conn . opt)
-  (apply simple-command conn "STAT" opt))
-
+(define (ftp-stat conn . opt) (apply simple-command conn "STAT" opt))
 
 ;; SYST <CRLF>
-(define (ftp-system conn)
-  (let1 res (simple-command conn "SYST")
-    (string-drop res 4)))
+(define (ftp-system conn) (string-drop (simple-command conn "SYST") 4))
 
 ;; SIZE
 (define (ftp-size conn path)
-  (let1 res (simple-command conn "SIZE" path)
-    (string->number (string-drop res 4))))
+  (ftp-set-type conn)                   ; SIZE is affected by transfer type
+  (x->integer (string-drop (simple-command conn "SIZE" path) 4)))
 
 ;; MDTM
-(define (ftp-mdtm conn path)
-  (simple-command conn "MDTM" path))
+(define (ftp-mdtm conn path) (simple-command conn "MDTM" path))
 
-(define (ftp-mtime conn path . opt)
+(define (ftp-mtime conn path :optional (local-time? #f))
   (rxmatch-let (#/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)/ (ftp-mdtm conn path))
       (#f year month day hour min sec)
-    (let1 zoffset (if (get-optional opt #f)
-                    (date-zone-offset (current-date))
-                    0)
-      (date->time-utc (make-date 0
-                                 (string->number sec)
-                                 (string->number min)
-                                 (string->number hour)
-                                 (string->number day)
-                                 (string->number month)
-                                 (string->number year)
-                                 zoffset)))))
+    (date->time-utc
+     (make-date 0 (x->integer sec) (x->integer min) (x->integer hour)
+                (x->integer day) (x->integer month) (x->integer year)
+                (if local-time? (date-zone-offset (current-date)) 0)))))
 
 ;; NOOP <CRLF>
-(define (ftp-noop conn)
-  (simple-command conn "NOOP"))
+(define (ftp-noop conn) (simple-command conn "NOOP"))
 
 
 ;;; rfc 959 6(2) type command
@@ -215,15 +191,15 @@
 
 ;; LIST [<SP> <pathname>] <CRLF>
 ;; NLST [<SP> <pathname>] <CRLF>
-(define-values (ftp-list ftp-name-list)
-  (let1 make-lister (lambda (cmd)
-                      (lambda (conn . opt)
-                        (req&recv conn
-                                  (cut apply send-command conn cmd opt)
-                                  (cut port->string-list <>)
-                                  'ascii)))
-    (values (make-lister "LIST") (make-lister "NLST"))))
+(define (make-lister cmd)
+  (lambda (conn . opt)
+    (req&recv conn
+              (cut apply send-command conn cmd opt)
+              (cut port->string-list <>)
+              'ascii)))
 
+(define ftp-list (make-lister "LIST"))
+(define ftp-name-list (make-lister "NLST"))
 (define ftp-ls ftp-name-list)
 
 ;; *REIN <CRLF>
@@ -232,12 +208,10 @@
 
 ;; RETR <SP> <pathname> <CRLF>
 (define (ftp-get conn path :key (sink (open-output-string))
-                 (flusher get-output-string))
+                                (flusher get-output-string))
   (req&recv conn
             (cut send-command conn "RETR" path)
-            (lambda (in)
-              (copy-port in sink)
-              (flusher sink))))
+            (lambda (in) (copy-port in sink) (flusher sink))))
 
 ;; STOR <SP> <pathname> <CRLF>
 (define (ftp-put conn from-file :optional (to-file (sys-basename from-file)))
@@ -379,14 +353,12 @@
 
 
 ;; TYPE <SP> <type-code> <CRLF>
-(define (ftp-set-type conn . opt)
-  (let1 type (get-optional opt (ftp-transfer-type conn))
-    (simple-command conn
-                    "TYPE"
-                    (case type
-                      [(ascii) "A"]
-                      [(binary image) "I"]
-                      [else (error "Invalid transfer type:" type)]))))
+(define (ftp-set-type conn :optional (type (ftp-transfer-type conn)))
+  (simple-command conn "TYPE"
+                  (case type
+                    [(ascii) "A"]
+                    [(binary image) "I"]
+                    [else (error "Invalid transfer type:" type)])))
 
 ;; requrest server to send data and receive it
 (define (req&recv conn cmdproc reader . opt)

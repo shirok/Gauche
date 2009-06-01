@@ -44,7 +44,7 @@
 ;; port->something
 ;;   TODO: allow caller to specify reading units
 (define (port->string port)
-  (let ((out (open-output-string :private? #t)))
+  (let1 out (open-output-string :private? #t)
     (with-port-locking port
       (lambda ()
         (let loop ((ch (read-char port)))
@@ -59,14 +59,11 @@
       (let loop ((obj (reader port))
                  (result '()))
         (if (eof-object? obj)
-            (reverse! result)
-            (loop (reader port) (cons obj result)))))))
+          (reverse! result)
+          (loop (reader port) (cons obj result)))))))
 
-(define (port->string-list port)
-  (port->list read-line port))
-
-(define (port->sexp-list port)
-  (port->list read port))
+(define (port->string-list port) (port->list read-line port))
+(define (port->sexp-list port)   (port->list read port))
 
 ;;-----------------------------------------------------
 ;; copy-port
@@ -77,15 +74,15 @@
 
 (define-macro (%do-copy reader writer incr)
   `(with-port-locking src
-    (lambda ()
-      (with-port-locking dst
-        (lambda ()
-          (let loop ((data  ,reader)
-                     (count 0))
-            (if (eof-object? data)
-                count
-                (begin ,writer
-                       (loop ,reader ,incr)))))))))
+     (lambda ()
+       (with-port-locking dst
+         (lambda ()
+           (let loop ((data  ,reader)
+                      (count 0))
+             (if (eof-object? data)
+               count
+               (begin ,writer
+                      (loop ,reader ,incr)))))))))
 
 (define-macro (%do-copy/limit1 reader writer limit)
   `(with-port-locking src

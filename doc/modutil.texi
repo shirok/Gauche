@@ -5993,9 +5993,19 @@ FTPコマンド@code{SYST}をつかってサーバーのオペレーティングシステムを問
 @c EN
 Queries the size of the remote file specified by @var{path}.
 Returns the integer value.
+
+Note: The size may differ whether the connection is in ascii mode
+or binary mode; furthermore, some ftp server may returns the value
+only if the connection is in binary mode.  Make sure you have
+desired transfer type in the connection.
 @c JP
 @var{path}で指定したリモートファイルのサイズを問合せます。
 整数値が返ります。
+
+註：コネクションがasciiモードかbinaryモードかによって、返されるサイズは
+異なるかもしれません。ftpサーバによっては、binaryモードでしか
+sizeリクエストに答えないものもあります。この関数を呼ぶ際には、
+コネクションに望みのtransfer typeがセットされているようにしてください。
 @c COMMON
 @end defun
 

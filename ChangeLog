@@ -1,3 +1,11 @@
+2009-06-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/ftp.scm (ftp-size): Adjust transfer-type by the connection's
+	  transfer-type before sending ftp SIZE request; the value is affected
+	  by transfer-type, and some ftpd rejects SIZE request in ASCII mode
+	  (since the server needs to scan the file to calculate effects of
+	  CRLF conversions).
+
 2009-05-31  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/portutil.scm (copy-port): Make SIZE argument to accept
