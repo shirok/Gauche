@@ -9194,7 +9194,7 @@ Gaucheの名前付け規則を使って@code{sys-seek}と@code{sys-tell}としても
 これも採用しませんでした。結局、新しい名前を採用することにしました。
 @c COMMON
 
-@defun copy-port src dst &keyword (unit 0)
+@defun copy-port src dst &keyword (unit 0) (size #f)
 @c EN
 Copies data from an input port @var{src} to an output port @var{dst},
 until eof is read from @var{src}.
@@ -9222,8 +9222,18 @@ the copying is done character by character, using C-version of
 に読みだし／書き込みが行われます。@var{unit}がシンボル@code{char}であれば、
 キャラクタ毎に読みだし／書き込みが行われます。
 @c COMMON
-@end defun
 
+@c EN
+If nonnegative integer is given to the keyword argument @var{size},
+it specifies the maximum amount of data to be copied.  If @var{unit}
+is a symbol @code{char}, @var{size} specifies the number of characters.
+Otherwise, @var{size} specifies the number of bytes.
+@c JP
+キーワード引数@var{size}に非負の整数が与えられた場合、それはコピーされるデータの
+最大量を指定します。@var{unit}がシンボル@code{char}の場合は@var{size}は
+コピーされる文字数を、そうでない場合はバイト数を指定します。
+@c COMMON
+@end defun
 
 @node File ports, String ports, Common port operations, Input and output
 @subsection File ports

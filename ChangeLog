@@ -1,3 +1,10 @@
+2009-05-31  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/portutil.scm (copy-port): Make SIZE argument to accept
+	  zero as a valid size; previously zero meant no size limit.  This
+	  argument was undocumented, so I hope this change won't affect
+	  existing code.
+
 2009-05-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi.scm (cgi-main): Change buffering mode of the current

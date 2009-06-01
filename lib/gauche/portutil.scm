@@ -89,17 +89,17 @@
 
 (define-macro (%do-copy/limit1 reader writer limit)
   `(with-port-locking src
-    (lambda ()
-      (with-port-locking dst
-        (lambda ()
-          (let loop ((count 0))
-            (if (>= count ,limit)
-                count
-                (let ((data ,reader))
-                  (if (eof-object? data)
-                      count
-                      (begin ,writer
-                             (loop (+ count 1))))))))))))
+     (lambda ()
+       (with-port-locking dst
+         (lambda ()
+           (let loop ((count 0))
+             (if (>= count ,limit)
+               count
+               (let ((data ,reader))
+                 (if (eof-object? data)
+                   count
+                   (begin ,writer
+                          (loop (+ count 1))))))))))))
 
 (define (%do-copy/limitN src dst buf unit limit)
   (with-port-locking src
@@ -118,20 +118,20 @@
                   (begin (write-block buf dst 0 nr)
                          (loop (+ count nr))))))))))))
 
-(define (copy-port src dst :key (unit 4096) (size 0))
+(define (copy-port src dst :key (unit 4096) (size -1))
   (check-arg input-port? src)
   (check-arg output-port? dst)
   (cond [(eq? unit 'byte)
-         (if (and (integer? size) (positive? size))
+         (if (and (integer? size) (not (negative? size)))
            (%do-copy/limit1 (read-byte src) (write-byte data dst) size)
            (%do-copy (read-byte src) (write-byte data dst) (+ count 1)))]
         [(eq? unit 'char)
-         (if (and (integer? size) (positive? size))
+         (if (and (integer? size) (not (negative? size)))
            (%do-copy/limit1 (read-char src) (write-char data dst) size)
            (%do-copy (read-char src) (write-char data dst) (+ count 1)))]
         [(integer? unit)
          (let ((buf (make-u8vector (if (zero? unit) 4096 unit))))
-           (if (and (integer? size) (positive? size))
+           (if (and (integer? size) (not (negative? size)))
              (%do-copy/limitN src dst buf unit size)
              (%do-copy (read-block! buf src) (write-block buf dst 0 data)
                        (+ count data))))]
