@@ -520,14 +520,17 @@ Shapeが@var{shape}であり、与えられた配列@var{array}とバッキングストレージを
 @c EN
 This module defines a set of functions that converts character encoding
 schemes (CES) of the given data stream.
-This module also overloads Gauche's file stream creating functions
-(such as @code{open-input-file} and @code{call-with-output-file})
-so that they accept @code{:encoding} keyword argument.
+
+This module is implicitly loaded when @code{:encoding} keyword argument
+is given to the file stream creating functions
+(such as @code{open-input-file} and @code{call-with-output-file}).
 @c JP
 与えられたデータストリームの文字エンコーディングを変換するための手続き群を提供する
-モジュールです。また、このモジュールは@code{open-input-file}や
-@code{call-with-output-file}等のファイルストリームを作成する手続きを
-置き換え、@code{:encoding} キーワード引数を認識するようにします。
+モジュールです。
+
+このモジュールはまた、@code{open-input-file}や
+@code{call-with-output-file}等のファイルストリームを作成する手続きに
+@code{:encoding}キーワード引数が与えられた場合に暗黙にロードされます。
 @c COMMON
 
 @c EN
@@ -550,7 +553,6 @@ UTF-8 (Unicode 3.2))間の変換を自前で持つようになりました。
 * Supported character encoding schemes::  
 * Autodetecting the encoding scheme::  
 * Conversion ports::            
-* Extended port procedures::    
 @end menu
 
 @node Supported character encoding schemes, Autodetecting the encoding scheme, Character code conversion, Character code conversion
@@ -841,12 +843,13 @@ There are cases that you don't know the CES of the input, but
 you know it is one of several possible encodings.
 The charconv module has a mechanism
 to guess the input encoding.  There can be multiple algorithms,
-and each algorithm has the name.  Right now, there's only one
+and each algorithm has the name (wildcard CES).  Right now, there's only one
 algorithm implemented:
 @c JP
 しばしば、入力のCESが未知であり、可能性のあるいくつかの候補から入力のCESを
 推測しなければならない場合があります。推測するアルゴリズムはいくつも考えられるので、
-それぞれに名前がついています。今のところ、一つのアルゴリズムしか実装されていません。
+それぞれに名前がついています(ワイルドカードCES)。
+今のところ、一つのアルゴリズムしか実装されていません。
 @c COMMON
 @table @code
 @item "*JP"
@@ -860,9 +863,9 @@ ISO2022-JP(-1,2,3), EUCJP, SHIFT_JIS or UTF-8.
 @end table
 
 @c EN
-This name can be used in place of CES name for some conversion functions.
+The wildcard CES can be used in place of CES name for some conversion functions.
 @c JP
-このアルゴリズム名は、いくつかの変換関数においてCES名の代わりに使うことができます。
+ワイルドカードCESは、いくつかの変換関数においてCES名の代わりに使うことができます。
 @c COMMON
 
 
@@ -885,7 +888,7 @@ usually in favor of the native CES.
 @end defun
 
 
-@node Conversion ports, Extended port procedures, Autodetecting the encoding scheme, Character code conversion
+@node Conversion ports,  , Autodetecting the encoding scheme, Character code conversion
 @subsection Conversion ports
 @c NODE 変換ポート
 
@@ -1170,45 +1173,6 @@ the @code{open-*-conversion-port}.
 変換ポート作成手続きに渡されます。
 @c COMMON
 @end defun
-
-@node Extended port procedures,  , Conversion ports, Character code conversion
-@subsection Extended port procedures
-@c NODE 拡張されたポート手続き
-
-
-@defun open-input-file filename &keyword encoding conversion-buffer-size @dots{}
-@defunx call-with-input-file filename proc &keyword encoding conversion-buffer-size @dots{}
-@defunx with-input-from-file filename thunk &keyword encoding conversion-buffer-size @dots{}
-@defunx open-output-file filename &keyword encoding conversion-buffer-size @dots{}
-@defunx call-with-output-file filename proc &keyword encoding conversion-buffer-size @dots{}
-@defunx with-output-to-file filename thunk &keyword encoding conversion-buffer-size @dots{}
-@c EN
-These Gauche built-in procedures are extended to accept two extra
-keyword arguments, @var{encoding} and @var{conversion-buffer-size}.
-(@xref{File ports}, for their default behavior).
-
-You can give a CES of the file @var{filename} to @var{encoding},
-and the port automatically converts the file CES to the Gauche's
-native CES.  You can use a CES guessing algorithm name for
-input file port.
-
-The keyword argument @var{conversion-buffer-size} has the same
-meaning as @var{buffer-size} of @code{open-input-conversion-port}.
-@c JP
-これらのGauche組み込みの手続きは、@var{encoding}と@var{conversion-buffer-size}
-という二つの追加のキーワード引数を取るように拡張されます。
-(これらの手続きの元の動作については@ref{File ports}を参照して下さい)。
-
-@var{filename}の文字エンコーディング名を@var{encoding}に渡すと、
-ファイルを読む際に@var{encoding}からGaucheの内部エンコーディングへの変換が
-行われます。入力の場合は@var{encoding}にCES推測アルゴリズム名を渡すこともできます。
-
-@var{conversion-buffer-size}は@code{open-input-conversion-port}
-における@var{buffer-size}と同じ意味を持ちます。
-@c COMMON
-@end defun
-
-
 
 @c ----------------------------------------------------------------------
 @node Collection framework, Configuration parameters, Character code conversion, Library modules - Gauche extensions

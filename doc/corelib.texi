@@ -9229,19 +9229,19 @@ the copying is done character by character, using C-version of
 @subsection File ports
 @c NODE ファイルポート
 
-@defun open-input-file filename &keyword if-does-not-exist buffering element-type
-@defunx open-output-file filename &keyword if-does-not-exist if-exists buffering element-type
+@defun open-input-file filename &keyword if-does-not-exist buffering element-type encoding conversion-buffer-size
+@defunx open-output-file filename &keyword if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
 [R5RS+]
 @c EN
 Opens a file @var{filename} for input or output, and
 returns an input or output port associated with it, respectively.
 
-The keyword arguments specify precise behavior on the exceptional case.
+The keyword arguments specify precise behavior.
 @c JP
 ファイル@var{filename}を入力または出力用にオープンし、
 入力ポートまたは出力ポートを作成して返します。
 
-キーワード引数により、例外的な場合の動作を細かく指定できます。
+キーワード引数により、動作を細かく指定できます。
 @c COMMON
 
 @table @code
@@ -9417,6 +9417,52 @@ are opened in binary mode.  It doesn't make difference in the Unix platforms.}
 @emph{現在のバージョンでは、この引数は無視され、全てのファイルはバイナリモードで
 オープンされます。いずれにせよUnixプラットフォームでは違いはありません。}
 @c COMMON
+
+@item :encoding
+@c EN
+This argument specifies character encoding of the file.   The argument
+must be a string or a symbol that names a character encoding scheme (CES).
+For @code{open-input-file}, it can be a wildcard CES (e.g. @code{*jp})
+to guess the file's encoding heuristically
+(@xref{Autodetecting the encoding scheme}).
+
+If this argument is given, Gauche automatically loads 
+@code{gauche.charconv} module and converts the input/output characters
+as you read to or write from the port.   
+See @ref{Supported character encoding schemes}, for the details of
+character encoding schemes.
+@c JP
+この引数はファイルの文字エンコーディングを指定します。引数は文字列かシンボルで、
+文字エンコーディングスキーム(CES)の名前でなければなりません。
+@code{open-input-file}では、ここにワイルドカードCES (例: @code{*jp}) を
+渡して、入力ファイルのエンコーディングを推測させることもできます
+(@ref{Autodetecting the encoding scheme}参照)。
+
+この引数が与えられた場合、Gaucheは自動的に@code{gauche.charconv}モジュールを
+ロードし、ポートの入出力時に文字コード変換を行います。
+CESについて詳しくは@ref{Supported character encoding schemes}を参照してください。
+@c COMMON
+
+@item :conversion-buffer-size
+@c EN
+This argument may be used with the @var{encoding} argument to specify
+the buffer size of character encoding conversion.  It is passed as
+a @var{buffer-size} argument of the conversion port constructors
+(@xref{Conversion ports}).
+
+Usually you don't need to give this argument; but if you need to guess
+the input file encoding, larger buffer size may work better since guessing
+routine can have more data before deciding the encoding.
+@c JP
+この引数は、文字エンコーディング変換に使うバッファサイズを指定するために
+@var{encoding}引数と共に使うことができます。渡された値はそのまま
+文字コード変換ポートのコンストラクタの@var{buffer-size}引数に渡されます
+(@ref{Conversion ports}参照)。
+
+この引数を指定する必要は滅多にありませんが、入力ファイルの文字エンコーディングを
+推測しなければならない場合、大きめのバッファサイズの方が精度が上がります。
+推測ルーチンがより多くのデータを見て文字エンコーディングを決定できるからです。
+@c COMMON
 @end table
 
 @c EN
@@ -9458,17 +9504,6 @@ use @code{sys-access} or @code{file-exists?} (@xref{File stats}).
 @c COMMON
 
 @c EN
-Note: @code{gauche.charconv} module extends these procedures to
-take @var{encoding} keyword argument so that they can read or write
-in different character encoding scheme.  @xref{Character code conversion}.
-@c JP
-註：@code{gauche.charconv}モジュールはこれらの手続きを、
-@var{encoding}キーワード引数を取るように拡張して、
-異なる文字エンコーディングでのファイルの読み書きを可能にします。
-@ref{Character code conversion}参照。
-@c COMMON
-
-@c EN
 Note for portability: Some Scheme implementations (e.g. STk) allows
 you to specify a command to @var{filename} and reads from, or
 writes to, the subprocess standard input/output.  Some other scripting
@@ -9489,8 +9524,8 @@ Gaucheでは、@code{open-input-file}と@code{open-output-file}は
 @c COMMON
 @end defun
 
-@defun call-with-input-file string proc &keyword if-does-not-exist buffering element-type
-@defunx call-with-output-file string proc &keyword if-does-not-exist if-exists buffering element-type
+@defun call-with-input-file string proc &keyword if-does-not-exist buffering element-type encoding conversion-buffer-size
+@defunx call-with-output-file string proc &keyword if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
 [R5RS]
 @c EN
 Opens a file specified by @var{string} for input/output,
@@ -9505,15 +9540,13 @@ within @var{proc}, the file is closed.
 @c COMMON
 
 @c EN
-The keyword arguments @code{if-exists}, @code{element-type} and
-@code{if-does-not-exist} have the same meanings of
+The keyword arguments have the same meanings of
 @code{open-input-file} and @code{open-output-file}'s.  Note that
 if you specify @code{#f} to @var{if-exists} and/or @var{if-does-not-exist},
 @var{proc} may receive @code{#f} instead of a port object when
 the file is not opened.
 @c JP
-キーワード引数は@code{if-exists}、@code{buffering}, @code{element-type}、
-@code{if-does-not-exist}は
+キーワード引数は
 @code{open-input-file}及び@code{open-output-file}のものと同じ意味を持ちます。
 @var{if-exists}や@var{if-does-not-exist}に@code{#f}を指定した場合、
 ファイルがオープンされなかった場合は@var{proc}にポートではなく@code{#f}が渡される
@@ -9527,8 +9560,8 @@ Returns the value(s) @code{proc} returned.
 @c COMMON
 @end defun
 
-@defun with-input-from-file string thunk &keyword if-does-not-exist buffering element-type
-@defunx with-output-to-file string thunk &keyword if-does-not-exist if-exists buffering element-type
+@defun with-input-from-file string thunk &keyword if-does-not-exist buffering element-type encoding conversion-buffer-size
+@defunx with-output-to-file string thunk &keyword if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
 [R5RS]
 @c EN
 Opens a file specified by @var{string} for input or output
