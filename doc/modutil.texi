@@ -6302,9 +6302,11 @@ header fields.  Inherits @code{<error>}.
 @defun http-get server request-uri &keyword sink flusher no-redirect @dots{}
 @defunx http-head server request-uri &keyword no-redirect @dots{}
 @defunx http-post server request-uri body &keyword sink flusher no-redirect @dots{}
+@defunx http-put server request-uri body &keyword sink flusher @dots{}
+@defunx http-delete server request-uri &keyword sink flusher @dots{}
 
 @c EN
-Send http GET, HEAD and POST requests to the http @var{server},
+Send http GET, HEAD, POST, PUT and DELETE requests to the http @var{server},
 respectively, and returns the server's reply.
 
 If the server returns "3xx" redirection reply, these procedures

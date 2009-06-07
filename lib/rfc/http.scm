@@ -54,7 +54,7 @@
   (use gauche.parameter)
   (export <http-error>
           http-user-agent make-http-connection
-          http-get http-head http-post
+          http-get http-head http-post http-put http-delete
           http-default-auth-handler
           )
   )
@@ -116,6 +116,12 @@
 
 (define (http-post server request-uri body . options)
   (http-generic 'POST server request-uri body options))
+
+(define (http-put server request-uri body . options)
+  (http-generic 'PUT server request-uri body options))
+
+(define (http-delete server request-uri . options)
+  (http-generic 'DELETE server request-uri #f options))
 
 ;;==============================================================
 ;; HTTP connection context

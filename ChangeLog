@@ -1,3 +1,7 @@
+2009-06-07  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (http-put, http-delete): Added. Patch from illness-P.
+
 2009-06-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/ftp.scm (ftp-size): Adjust transfer-type by the connection's
