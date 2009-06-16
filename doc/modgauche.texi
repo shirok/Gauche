@@ -9575,6 +9575,62 @@ stack is initially empty.
 @c COMMON
 
 @c EN
+A thread is in one of the following four states at a time.
+You can query the thread state by the @code{thread-state} procedure.
+@c JP
+スレッドは以下の4つの状態のうちのひとつを取ります。@code{thread-state}手続きで
+スレッドの状態を調べることができます。
+@c COMMON
+
+@table @code
+@item new
+@c EN
+A thread hasn't started yet.  A thread returned from @code{make-thread}
+is in this state.  
+Once a thread is started it will never be in this state again.
+At this point, no POSIX thread has been created; @code{thread-start!}
+creates a POSIX thread to run the Gauche thread.
+@c JP
+まだ作られたばかりで起動されてない状態です。@code{make-thread}が返すスレッドは
+この状態です。スレッドがひとたび起動されると、そのスレッドがこの状態に戻ることは
+決してありません。
+この時点ではPOSIXスレッドはまだ作られません。@code{thread-start!}によって
+POSIXスレッドが作られ、Gaucheのスレッドを実行します。
+@c COMMON
+@item runnable
+@c EN
+When a thread is started by @code{thread-start!}, it becomes to this
+state.   Note that a thread blocked by a system call is still in
+@code{runnable} state.
+@c JP
+@code{thread-start!}によって起動されたスレッドはこの状態になります。
+スレッドがシステムコールによるブロックされている時もその状態は@code{runnable}
+であることに注意してください。
+@c COMMON
+@item stopped
+@c EN
+A thread becomes in this state when it is stopped by @code{thread-stop!}.
+A thread in this state can go back to @code{runnable} state by
+@code{thread-cont!}, resuming execution from the point when
+it is stopped.
+@c JP
+スレッドが@code{thread-stop!}によって止められるとこの状態になります。
+この状態のスレッドは@code{thread-cont!}によって再び@code{runnable}になり、
+止められた時点から実行を再開することができます。
+@c COMMON
+@item terminated
+@c EN
+When the thread finished executing associated code, or
+is terminated by @code{thread-terminate!}, it becomes in this state.
+Once a thread is in this state, the state can no longer be changed.
+@c JP
+割り当てられたコードの実行が終了したり、@code{thread-terminate!}によって
+強制的に終了させられた時に、スレッドはこの状態になります。
+一度この状態になると他の状態に遷移することはありません。
+@c COMMON
+@end table
+
+@c EN
 Access to the resouces shared by multiple threads must be protected
 explicitly by synchronization primitives.
 @xref{Synchronization primitives}.
@@ -9681,6 +9737,16 @@ is called.
 @c COMMON
 @end defun
 
+@defun thread-state thread
+@c EN
+Returns one of symbols @code{new}, @code{runnable}, @code{stopped}
+or @code{terminated}, indicating the state of @var{thread}.
+@c JP
+@var{thread}の状態を示す、@code{new}、@code{runnable}、@code{stopped}、
+@code{terminated}のいずれかのシンボルを返します。
+@c COMMON
+@end defun
+
 @defun thread-name thread
 @c EN
 [SRFI-18], [SRFI-21]
@@ -9754,6 +9820,53 @@ immediately.
 @c JP
 @var{timeout}が過去の時間を指していたら、@code{thread-sleep!}はすぐに戻ります。
 @c COMMON
+@end defun
+
+@defun thread-stop! thread &optional timeout timeout-val
+Stops execution of the target @var{thread} temporarily.
+You can resume the execution of the @var{thread} by @code{thread-cont!}.
+
+The stop request is handled synchronously; that is,
+Gauche VM only checks the request at the ``safe'' point
+of the VM and stops itself.  It means if the @var{thread} is
+blocked by a system call, it won't become @code{stopped} state
+until the system call returns.
+
+By default, @code{thread-stop!} returns after the target
+thread stops.  Since it may take indefinitely, you can give optional 
+@var{timeout} argument to specify timeout.   The @var{timeout}
+argument can be @code{#f}, which means no timeout, or 
+a @code{<time>} object that specifies an absolute point of time,
+or a real number specifying the number of seconds to wait.
+
+The return value of @code{thread-stop!} is @var{thread} if
+it could successfully stop the target, or @var{timeout-val}
+if timeout reached.   When @var{timeout-val} is omitted, @code{#f}
+is assumed.
+
+If the target @var{thread} has already been stopped by the caller
+thread, this procedure returns immediately.
+
+When @var{thread-stop!} is timed out, the request remains
+effective even after @var{thread-stop!} returns.
+That is, the target thread may stop at some point in future.  
+The caller thread is expected to call @var{thread-stop!}
+again to complete the stop operation.
+
+An error is signalled if the target thread has already been
+stopped by another thread (including the ``pending'' stop
+request issued by other threads), or the target thread
+is in neither @code{runnable} nor @code{stopped} state.
+@end defun
+
+@defun thread-cont! thread
+Resumes execution of @var{thread} which has been stopped by
+@code{thread-stop!}.  An error is raised if @var{thread} 
+is not in stopped state, or it is stopped by another thread.
+
+If the caller thread has already requested to stop the target
+thread but timed out, calling @code{thread-cont!} cancels
+the request.
 @end defun
 
 @defun thread-terminate! thread

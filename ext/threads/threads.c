@@ -83,7 +83,7 @@ ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
    With pthread, the real thread is started as "detached" mode; i.e. once
    the thread exits, the resources allocated for the thread by the system
    is collected, including the result of the thread.  During this
-   deconstruction phase, the handler vm_cleanup() runs and saves the
+   deconstruction phase, the handler thread_cleanup() runs and saves the
    thread result to the ScmVM structure.  If nobody cares about the
    result of the thread, ScmVM structure will eventually be GCed.
    This is to prevent exitted thread's system resources from being
@@ -324,6 +324,7 @@ ScmObj Scm_ThreadCont(ScmVM *target)
     } else {
         target->inspector = NULL;
         target->state = SCM_VM_RUNNABLE;
+        target->stopRequest = FALSE;
         pthread_cond_broadcast(&target->cond);
     }
     pthread_mutex_unlock(&target->vmlock);

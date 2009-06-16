@@ -2303,12 +2303,16 @@ static void process_queued_requests(ScmVM *vm)
        See Scm_ThreadStop() in ext/threads/threads.c */
     if (vm->stopRequest) {
         (void)SCM_INTERNAL_MUTEX_LOCK(vm->vmlock);
-        vm->stopRequest = FALSE;
-        vm->state = SCM_VM_STOPPED;
-        (void)SCM_INTERNAL_COND_BROADCAST(vm->cond);
-        while (vm->state == SCM_VM_STOPPED) {
-            /* Here the inspector thread examines VM state */
-            (void)SCM_INTERNAL_COND_WAIT(vm->cond, vm->vmlock);
+        /* Double check, since stopRequest can be canceled between the above
+           two lines. */
+        if (vm->stopRequest) {
+            vm->stopRequest = FALSE;
+            vm->state = SCM_VM_STOPPED;
+            (void)SCM_INTERNAL_COND_BROADCAST(vm->cond);
+            while (vm->state == SCM_VM_STOPPED) {
+                /* Here the inspector thread examines VM state */
+                (void)SCM_INTERNAL_COND_WAIT(vm->cond, vm->vmlock);
+            }
         }
         (void)SCM_INTERNAL_MUTEX_UNLOCK(vm->vmlock);
     }
