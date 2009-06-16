@@ -255,11 +255,15 @@ ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     ScmVM *vm = Scm_VM();
     ScmVM *taker = NULL;
     int timedout = FALSE;
+    int invalid_state = FALSE;
     pts = Scm_GetTimeSpec(timeout, &ts);
 
  retry:
     pthread_mutex_lock(&target->vmlock);
-    if (target->inspector != NULL
+    if (target->state != SCM_VM_RUNNABLE
+        && target->state != SCM_VM_STOPPED) {
+        invalid_state = TRUE;
+    } else if (target->inspector != NULL
         && target->inspector != vm
         && target->inspector->state != SCM_VM_TERMINATED) {
         taker = target->inspector;
@@ -286,6 +290,10 @@ ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     }
     pthread_mutex_unlock(&target->vmlock);
 
+    if (invalid_state) {
+        Scm_Error("cannot stop a thread %S since it is in neither runnable nor stopped state",
+                  target);
+    }
     if (taker != NULL) {
         Scm_Error("target %S is already under inspection by %S", target, taker);
     }
@@ -298,8 +306,6 @@ ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     return SCM_UNDEFINED;
 #endif /*!GAUCHE_USE_PTHREADS*/
 }
-
-
 
 
 /* Release inspected thread */
