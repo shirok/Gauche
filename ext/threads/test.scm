@@ -83,10 +83,15 @@
   (test* "thread-status" 'runnable (thread-state t1))
   (thread-stop! t1)
   (test* "thread-status" 'stopped (thread-state t1))
+  (thread-stop! t1) ; duplicate stop test
+  (test* "thread-status" 'stopped (thread-state t1))
   (thread-cont! t1)
   (test* "thread-status" 'runnable (thread-state t1))
   (thread-terminate! t1)
-  (test* "thread-status" 'terminated (thread-state t1)))
+  (test* "thread-status" 'terminated 
+         (guard (e [(<terminated-thread-exception> e)
+                    (thread-state t1)])
+           (thread-join! t1))))
 
 ;;---------------------------------------------------------------------
 (test-section "thread and error")
