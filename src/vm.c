@@ -153,6 +153,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     (void)SCM_INTERNAL_MUTEX_INIT(v->vmlock);
     (void)SCM_INTERNAL_COND_INIT(v->cond);
     v->canceller = NULL;
+    v->inspector = NULL;
     v->name = name;
     v->specific = SCM_FALSE;
     v->thunk = NULL;
@@ -169,7 +170,10 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 
     v->compilerFlags = proto? proto->compilerFlags : 0;
     v->runtimeFlags = proto? proto->runtimeFlags : 0;
-    v->queueNotEmpty = 0;
+    v->attentionRequest = 0;
+    v->signalPending = 0;
+    v->finalizerPending = 0;
+    v->stopRequest = 0;
 
 #ifdef USE_CUSTOM_STACK_MARKER
     v->stack = (ScmObj*)GC_generic_malloc((SCM_VM_STACK_SIZE+1)*sizeof(ScmObj),
@@ -616,7 +620,7 @@ pthread_key_t Scm_VMKey(void)
 #define DISPATCH    /*empty*/
 #define NEXT                                            \
     do {                                                \
-        if (vm->queueNotEmpty) goto process_queue;      \
+        if (vm->attentionRequest) goto process_queue;   \
         FETCH_INSN(code);                               \
         goto *dispatch_table[SCM_VM_INSN_CODE(code)];   \
     } while (0)
@@ -707,7 +711,7 @@ static void run_loop()
     for (;;) {
         DISPATCH;
         /*VM_DUMP("");*/
-        if (vm->queueNotEmpty) goto process_queue;
+        if (vm->attentionRequest) goto process_queue;
         FETCH_INSN(code);
         SWITCH(SCM_VM_INSN_CODE(code)) {
 #define VMLOOP
@@ -2282,14 +2286,31 @@ static void process_queued_requests(ScmVM *vm)
     }
     Scm_VMPushCC(process_queued_requests_cc, data, 3);
 
+    /* NB: it is safe to turn off attentionRequest here; if attentionRequest
+       is turned on again after this and before SigCheck() or FinalizerRun(),
+       the new request is processed within these procedures; we'll enter
+       process_queued_requests() again without anything to process, but
+       that's an acceptable overhead. */
+    vm->attentionRequest = FALSE;
+
     /* Process queued stuff.  Currently they call VM recursively,
        but we'd better to arrange them to be processed in the same
        VM level. */
-    if (vm->queueNotEmpty & SCM_VM_SIGQ_MASK) {
-        Scm_SigCheck(vm);
-    }
-    if (vm->queueNotEmpty & SCM_VM_FINQ_MASK) {
-        Scm_VMFinalizerRun(vm);
+    if (vm->signalPending)   Scm_SigCheck(vm);
+    if (vm->finalizerPending) Scm_VMFinalizerRun(vm);
+
+    /* VM STOP is required from other thread.
+       See Scm_ThreadStop() in ext/threads/threads.c */
+    if (vm->stopRequest) {
+        (void)SCM_INTERNAL_MUTEX_LOCK(vm->vmlock);
+        vm->stopRequest = FALSE;
+        vm->state = SCM_VM_STOPPED;
+        (void)SCM_INTERNAL_COND_BROADCAST(vm->cond);
+        while (vm->state == SCM_VM_STOPPED) {
+            /* Here the inspector thread examines VM state */
+            (void)SCM_INTERNAL_COND_WAIT(vm->cond, vm->vmlock);
+        }
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(vm->vmlock);
     }
 }
 

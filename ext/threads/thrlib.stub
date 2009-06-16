@@ -55,6 +55,15 @@
 
 (define-cproc thread? (obj) ::<boolean> SCM_VMP)
 
+(define-cproc thread-state (vm::<thread>)
+  (case (-> vm state)
+    [(SCM_VM_NEW)       (result 'new)]
+    [(SCM_VM_RUNNABLE)  (result 'runnable)]
+    [(SCM_VM_STOPPED)   (result 'stopped)]
+    [(SCM_VM_TERMINATED)(result 'terminated)]
+    [else (Scm_Error "[internal] thread state has invalid value: %d"
+                     (-> vm state))]))
+
 (define-cproc thread-name (vm::<thread>) (result (-> vm name)))
 
 (define-cproc thread-specific (vm::<thread>) (result (-> vm specific)))
@@ -75,6 +84,12 @@
   Scm_ThreadJoin)
 
 (define-cproc thread-terminate! (vm::<thread>) Scm_ThreadTerminate)
+
+(define-cproc thread-stop! (target::<thread>
+                            :optional (timeout #f) (timeout-val #f))
+  Scm_ThreadStop)
+
+(define-cproc thread-cont! (target::<thread>) Scm_ThreadCont)
 
 ;;===============================================================
 ;; Mutex

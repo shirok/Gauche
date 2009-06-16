@@ -1483,7 +1483,7 @@
      (case (-> vm state)
        [(SCM_VM_NEW)        (set! state "new")]
        [(SCM_VM_RUNNABLE)   (set! state "runnable")]
-       [(SCM_VM_BLOCKED)    (set! state "blocked")]
+       [(SCM_VM_STOPPED)    (set! state "stopped")]
        [(SCM_VM_TERMINATED) (set! state "terminated")]
        [else                (set! state "(unknown state")])
      (Scm_Printf port "#<thread %S %s %p>" (-> vm name) state vm)))

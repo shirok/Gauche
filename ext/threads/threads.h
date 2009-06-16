@@ -48,6 +48,8 @@
 extern ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name);
 extern ScmObj Scm_ThreadStart(ScmVM *vm);
 extern ScmObj Scm_ThreadJoin(ScmVM *vm, ScmObj timeout, ScmObj timeoutval);
+extern ScmObj Scm_ThreadStop(ScmVM *vm, ScmObj timeout, ScmObj timeoutval);
+extern ScmObj Scm_ThreadCont(ScmVM *vm);
 extern ScmObj Scm_ThreadSleep(ScmObj timeout);
 extern ScmObj Scm_ThreadTerminate(ScmVM *vm);
 

@@ -250,14 +250,15 @@ void Scm_UnregisterFinalizer(ScmObj z)
 void finalizable(void)
 {
     ScmVM *vm = Scm_VM();
-    vm->queueNotEmpty |= SCM_VM_FINQ_MASK;
+    vm->finalizerPending = TRUE;
+    vm->attentionRequest = TRUE;
 }
 
 /* Called from VM loop.  Queue is not empty. */
 ScmObj Scm_VMFinalizerRun(ScmVM *vm)
 {
     GC_invoke_finalizers();
-    vm->queueNotEmpty &= ~SCM_VM_FINQ_MASK;
+    vm->finalizerPending = FALSE;
     return SCM_UNDEFINED;
 }
 

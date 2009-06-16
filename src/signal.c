@@ -352,7 +352,8 @@ static void sig_handle(int signum)
     } else if (++vm->sigq.sigcounts[signum] >= signalPendingLimit) {
         Scm_Abort("Received too many signals before processing them.  Exitting for the emergency...\n");
     }
-    vm->queueNotEmpty |= SCM_VM_SIGQ_MASK;
+    vm->signalPending = TRUE;
+    vm->attentionRequest = TRUE;
 }
 
 /*-------------------------------------------------------------------
@@ -410,7 +411,7 @@ void Scm_SigCheck(ScmVM *vm)
     SIGPROCMASK(SIG_BLOCK, &sigHandlers.masterSigset, &omask);
     memcpy(sigcounts, vm->sigq.sigcounts, NSIG * sizeof(unsigned char));
     Scm_SignalQueueClear(&vm->sigq);
-    vm->queueNotEmpty &= ~SCM_VM_SIGQ_MASK;
+    vm->signalPending = FALSE;
     SIGPROCMASK(SIG_SETMASK, &omask, NULL);
 
     /* Now, prepare queued signal handlers
@@ -818,7 +819,7 @@ static void scm_sigsuspend(sigset_t *mask)
     ScmVM *vm = Scm_VM();
     for (;;) {
         SIGPROCMASK(SIG_BLOCK, &sigHandlers.masterSigset, &omask);
-        if (vm->queueNotEmpty & SCM_VM_SIGQ_MASK) {
+        if (vm->signalPending) {
             SIGPROCMASK(SIG_SETMASK, &omask, NULL);
             Scm_SigCheck(vm);
             continue;

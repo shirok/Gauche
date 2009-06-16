@@ -76,6 +76,18 @@
           (thread-join! t1)
           (reverse l))))
 
+;; thread stop and cont
+(let1 t1 (make-thread (lambda () (while #t (sys-nanosleep #e5e8))))
+  (test* "thread-status" 'new (thread-state t1))
+  (thread-start! t1)
+  (test* "thread-status" 'runnable (thread-state t1))
+  (thread-stop! t1)
+  (test* "thread-status" 'stopped (thread-state t1))
+  (thread-cont! t1)
+  (test* "thread-status" 'runnable (thread-state t1))
+  (thread-terminate! t1)
+  (test* "thread-status" 'terminated (thread-state t1)))
+
 ;;---------------------------------------------------------------------
 (test-section "thread and error")
 

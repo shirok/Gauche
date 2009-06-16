@@ -43,10 +43,6 @@
 /* Finalizer queue size */
 #define SCM_VM_FINQ_SIZE       32
 
-/* QueueNotEmpty flag */
-#define SCM_VM_SIGQ_MASK       1
-#define SCM_VM_FINQ_MASK       2
-
 #define SCM_PCTYPE ScmWord*
 
 #if defined(ITIMER_PROF) && defined(SIGPROF)
@@ -307,7 +303,7 @@ SCM_EXTERN void Scm_SetSignalPendingLimit(int val);
     ((vm)->queueNotEmpty&SCM_VM_SIGQ_MASK)
 
 #define SCM_SIGCHECK(vm) \
-    do { if (vm->queueNotEmpty&SCM_VM_SIGQ_MASK) Scm_SigCheck(vm); } while (0)
+    do { if (vm->signalPending) Scm_SigCheck(vm); } while (0)
 
 SCM_EXTERN void   Scm_SigCheck(ScmVM *vm);
 
@@ -354,13 +350,14 @@ typedef struct ScmVMProfilerRec ScmVMProfiler;
  *  Most fields of VM are private to the thread that owns the VM.
  *  Only the fields marked as "PUBLIC" should be modified by other
  *  thread, and only with obtaining the lock by VMLOCK mutex.
- *
- *  Note that some fields like "name" and "specific" are not marked
+ *  (Note that some fields like "name" and "specific" are not marked
  *  as PUBLIC although they can be referenced or modified by other
  *  thread (via Scheme call thread-specific-set! etc.)   It is the
- *  user program's responsibility to use a mutex.
- *  When you should introspect other thread (like stack trace), make
- *  sure you stopped that thread, or you may get inconsistent result.
+ *  user program's responsibility to use a mutex.)
+ *
+ *  When you need inspect other thread's private data (like stack
+ *  trace), make the thread is either stopped or terminated, or
+ *  you may get inconsistent result.
  */
 
 struct ScmVMRec {
@@ -373,8 +370,10 @@ struct ScmVMRec {
                                    structure.  PUBLIC. */
     ScmInternalCond cond;       /* the condition variable to wait for state
                                    change of this VM.  PUBLIC. */
-    ScmVM *canceller;           /* the thread that called thread-terminate!
+    ScmVM *canceller;           /* the thread which called thread-terminate!
                                    on this thread.  PUBLIC. */
+    ScmVM *inspector;           /* the thread which requested to stop this
+                                   thread.  PUBLIC. */
     ScmObj name;                /* Scheme thread name. */
     ScmObj specific;            /* Scheme thread specific data. */
     ScmProcedure *thunk;        /* Entry point of this VM. */
@@ -386,7 +385,21 @@ struct ScmVMRec {
                                    "C stack rewinding" below. */
     unsigned int runtimeFlags;  /* Runtime flags */
     unsigned int compilerFlags; /* Compiler flags */
-    unsigned int queueNotEmpty; /* Bitmask if sigq or finq is not empty */
+    intptr_t attentionRequest;  /* Flag if VM needs to check signal queue,
+                                   finalizer queue, or stop request.
+                                   This flag can be turned on asynchronously.
+                                   Only this VM can turn off this flag. */
+    intptr_t signalPending;     /* Flag if there are pending signals.
+                                   Turned on by sig_handle(), turned off
+                                   by Scm_SigCheck(), both in signal.c. */
+    intptr_t finalizerPending;  /* Flag if there are pending finalizers.
+                                   Turned on by finalizable() callback,
+                                   and turned off by Scm_VMFinalizerRun(),
+                                   both in core.c */
+    intptr_t stopRequest;       /* Flag if there is a pending stop request.
+                                   Turned on by Scm_ThreadStop() in
+                                   ext/threads/threads.c, and turned off by
+                                   process_queued_requests() in vm.c */
 
     ScmPort *curin;             /* current input port */
     ScmPort *curout;            /* current output port */
@@ -479,10 +492,8 @@ enum {
                                    initialized. */
     SCM_VM_RUNNABLE,            /* This VM is attached to a thread which is
                                    runnable or blocked. */
-    SCM_VM_BLOCKED,             /* The thread attached to this VM is stopped
-                                   because of thread-yield! or thread-sleep!.
-                                   Note that if the thread is blocked by
-                                   system call, VM's state is still RUNNABLE.*/
+    SCM_VM_STOPPED,             /* The thread attached to this VM is stopped
+                                   by the inspector thread for debugging. */
     SCM_VM_TERMINATED           /* The thread attached to this VM is
                                    terminated. */
 };

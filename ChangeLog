@@ -1,3 +1,20 @@
+2009-06-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/vm.h (ScmVM): Use of queueNotEmpty flag had a race
+	  condition.  We ditched it and introduced separate flags for atomicity.
+	  Also dropped unused SCM_VM_BLOCKED state and introduced
+	  SCM_VM_STOPPED state; the former is for blocked on system calls,
+	  but it's too expensive to change the state for every syscall.
+	  SVM_VM_STOPPED is for being stopped by other thread for debugging.
+	* src/core.c, src/signal.c, src/extlib.stub: Changed accordingly.
+
+	* src/vm.c (process_queued_requests),
+	  ext/threads/threads.c (Scm_ThreadStop, Scm_ThreadCont),
+	  ext/threads/thrlib.stub (thread-stop!, thread-cont!):
+	  Implemented a hand-shake protocol to stop/continue a thread from
+	  another thread.
+	* ext/threads/thrlib.stub (thread-state): Added.
+
 2009-06-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-put, http-delete): Added. Patch from illness-P.

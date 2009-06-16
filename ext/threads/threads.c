@@ -224,6 +224,113 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 #endif /*!GAUCHE_USE_PTHREADS*/
 }
 
+/* Attempt to stop other thread.   See process_queued_requests() in vm.c
+   for the target VM operation.
+
+   VM Stop protocol:
+
+             target                           inspector
+  ------------------------------------------------------------------------
+                                    * LOCK(target->vmlock)
+                                    * Check if target is already inspected
+                                    * Set target's STOP flag
+                                    * Wait on target->cond
+                                      until target->state becomes STOPPED
+   * If STOP flag is up,
+     set self->state to STOPPED 
+     and signal self->cond
+     then wait on self->cond until 
+     target->state changes from STOPPED
+                                    * Inspect target VM state
+                                    * Set taget->state to RUNNABLE,
+                                      then signal state->cond
+   * Resume execution
+  -------------------------------------------------------------------------
+ */
+
+ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
+{
+#ifdef GAUCHE_USE_PTHREADS
+    struct timespec ts, *pts;
+    ScmVM *vm = Scm_VM();
+    ScmVM *taker = NULL;
+    int timedout = FALSE;
+    pts = Scm_GetTimeSpec(timeout, &ts);
+
+ retry:
+    pthread_mutex_lock(&target->vmlock);
+    if (target->inspector != NULL
+        && target->inspector != vm
+        && target->inspector->state != SCM_VM_TERMINATED) {
+        taker = target->inspector;
+    } else {
+        /* NB: if target->inspector == vm, it means we have requested to
+           stop the thread before, and haven't called ThreadCont yet.
+           In that case we don't need to set stopRequest again; either target
+           thread already cleared it and stopped/going to stop, or 
+           the target thread hasn't seen the flag and it's still ON. */
+        if (target->inspector != vm) {
+            target->inspector = vm;
+            target->stopRequest = TRUE;
+            target->attentionRequest = TRUE;
+        }
+        while (target->state != SCM_VM_STOPPED) {
+            if (pts) {
+                timedout = pthread_cond_timedwait(&target->cond,
+                                                  &target->vmlock,
+                                                  pts);
+            } else {
+                pthread_cond_wait(&target->cond, &target->vmlock);
+            }
+        }
+    }
+    pthread_mutex_unlock(&target->vmlock);
+
+    if (taker != NULL) {
+        Scm_Error("target %S is already under inspection by %S", target, taker);
+    }
+
+    if (timedout == EINTR) { Scm_SigCheck(vm); goto retry; }
+    if (timedout == ETIMEDOUT) return timeoutval;
+    return SCM_OBJ(target);
+#else  /*!GAUCHE_USE_PTHREADS*/
+    Scm_Error("not implemented!\n");
+    return SCM_UNDEFINED;
+#endif /*!GAUCHE_USE_PTHREADS*/
+}
+
+
+
+
+/* Release inspected thread */
+ScmObj Scm_ThreadCont(ScmVM *target)
+{
+#ifdef GAUCHE_USE_PTHREADS
+    int not_stopped = FALSE;
+    ScmVM *stopped_by_other = NULL;
+
+    pthread_mutex_lock(&target->vmlock);
+    if (target->inspector == NULL) {
+        not_stopped = TRUE;
+    } else if (target->inspector != Scm_VM()
+               && target->inspector->state != SCM_VM_TERMINATED) {
+        stopped_by_other = target->inspector;
+    } else {
+        target->inspector = NULL;
+        target->state = SCM_VM_RUNNABLE;
+        pthread_cond_broadcast(&target->cond);
+    }
+    pthread_mutex_unlock(&target->vmlock);
+    if (not_stopped) Scm_Error("target %S is not stopped", target);
+    if (stopped_by_other) Scm_Error("target %S is stopped by other thread %S",
+                                    target, stopped_by_other);
+    return SCM_OBJ(target);
+#else  /*!GAUCHE_USE_PTHREADS*/
+    Scm_Error("not implemented!\n");
+    return SCM_UNDEFINED;
+#endif /*!GAUCHE_USE_PTHREADS*/
+}
+
 /* Thread sleep */
 ScmObj Scm_ThreadSleep(ScmObj timeout)
 {
