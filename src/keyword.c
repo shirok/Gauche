@@ -62,19 +62,21 @@ static struct {
  */
 ScmObj Scm_MakeKeyword(ScmString *name)
 {
-    ScmHashEntry *e;
     ScmObj r;
+    ScmKeyword *k;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(keywords.mutex);
-    e = Scm_HashTableGet(keywords.table, SCM_OBJ(name));
-    if (e) r = e->value;
-    else {
-        ScmKeyword *k = SCM_NEW(ScmKeyword);
-        SCM_SET_CLASS(k, SCM_CLASS_KEYWORD);
-        k->name = SCM_STRING(Scm_CopyString(name));
-        Scm_HashTablePut(keywords.table, SCM_OBJ(name), SCM_OBJ(k));
-        r = SCM_OBJ(k);
-    }
+    r = Scm_HashTableRef(keywords.table, SCM_OBJ(name), SCM_FALSE);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(keywords.mutex);
+
+    if (SCM_KEYWORDP(r)) return r;
+
+    k = SCM_NEW(ScmKeyword);
+    SCM_SET_CLASS(k, SCM_CLASS_KEYWORD);
+    k->name = SCM_STRING(Scm_CopyString(name));
+    (void)SCM_INTERNAL_MUTEX_LOCK(keywords.mutex);
+    r = Scm_HashTableSet(keywords.table, SCM_OBJ(name), SCM_OBJ(k),
+                         SCM_DICT_NO_OVERWRITE);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(keywords.mutex);
     return r;
 }

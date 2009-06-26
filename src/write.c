@@ -354,6 +354,16 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ScmHashEntry *e;
     ScmHashTable *ht;
     ScmObj elt;
+
+#define REGISTER(obj)                                           \
+    do {                                                        \
+        ScmObj e = Scm_HashTableRef(ht, (obj), SCM_UNBOUND);    \
+        if (!SCM_UNBOUNDP(e)) {                                 \
+            Scm_HashTableSet(ht, (obj), SCM_TRUE, 0);           \
+            return;                                             \
+        }                                                       \
+        Scm_HashTableSet(ht, obj, SCM_FALSE, 0);                \
+    } while (0)
     
     ht = SCM_HASH_TABLE(SCM_CDR(port->data));
 
@@ -364,28 +374,19 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         }
             
         if (SCM_PAIRP(obj)) {
-            e = Scm_HashTableGet(ht, obj);
-            if (e) { e->value = SCM_TRUE; return; }
-            Scm_HashTablePut(ht, obj, SCM_FALSE);
-
+            REGISTER(obj);
             elt = SCM_CAR(obj);
             if (SCM_PTRP(elt)) write_walk(SCM_CAR(obj), port, ctx);
             obj = SCM_CDR(obj);
             continue;
         }
         if (SCM_STRINGP(obj) && !SCM_STRING_NULL_P(obj)) {
-            e = Scm_HashTableGet(ht, obj);
-            if (e) { e->value = SCM_TRUE; return; }
-            Scm_HashTablePut(ht, obj, SCM_FALSE);
+            REGISTER(obj);
             return;
         }
         if (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) > 0) {
             int i, len = SCM_VECTOR_SIZE(obj);
-
-            e = Scm_HashTableGet(ht, obj);
-            if (e) { e->value = SCM_TRUE; return; }
-            Scm_HashTablePut(ht, obj, SCM_FALSE);
-
+            REGISTER(obj);
             for (i=0; i<len; i++) {
                 elt = SCM_VECTOR_ELEMENT(obj, i);
                 if (SCM_PTRP(elt)) write_walk(elt, port, ctx);
@@ -394,18 +395,13 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         }
         if (SCM_SYMBOLP(obj)) {
             SCM_ASSERT(!SCM_SYMBOL_INTERNED(obj));
-            e = Scm_HashTableGet(ht, obj);
-            if (e) { e->value = SCM_TRUE; return; }
-            Scm_HashTablePut(ht, obj, SCM_FALSE);
+            REGISTER(obj);
             return;
         }
         else {
             /* Now we have user-defined object.
                Call the user's print routine. */
-            e = Scm_HashTableGet(ht, obj);
-            if (e) { e->value = SCM_TRUE; return; }
-            Scm_HashTablePut(ht, obj, SCM_FALSE);
-
+            REGISTER(obj);
             write_general(obj, port, ctx);
             return;
         }
@@ -415,7 +411,7 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 /* pass 2 */
 static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    ScmHashEntry *e;
+    ScmObj e;
     char numbuf[50];  /* enough to contain long number */
     ScmHashTable *ht = NULL;
 
@@ -477,18 +473,18 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     }
 
     if (ht) {
-        e = Scm_HashTableGet(ht, obj);
-        if (e && e->value != SCM_FALSE) {
-            if (SCM_INTP(e->value)) {
+        e = Scm_HashTableRef(ht, obj, SCM_FALSE);
+        if (!SCM_FALSEP(e)) {
+            if (SCM_INTP(e)) {
                 /* This object is already printed. */
-                snprintf(numbuf, 50, "#%ld#", SCM_INT_VALUE(e->value));
+                snprintf(numbuf, 50, "#%ld#", SCM_INT_VALUE(e));
                 Scm_PutzUnsafe(numbuf, -1, port);
                 return;
             } else {
                 /* This object will be seen again. Put a reference tag. */
                 int count = SCM_INT_VALUE(SCM_CAR(port->data));
                 snprintf(numbuf, 50, "#%d=", count);
-                e->value = SCM_MAKE_INT(count);
+                Scm_HashTableSet(ht, obj, SCM_MAKE_INT(count), 0);
                 SCM_SET_CAR(port->data, SCM_MAKE_INT(count+1));
                 Scm_PutzUnsafe(numbuf, -1, port);
             }
@@ -532,8 +528,8 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 return;
             }
             if (ht) {
-                e = Scm_HashTableGet(ht, obj); /* check for shared cdr */
-                if (e && e->value != SCM_FALSE) {
+                e = Scm_HashTableRef(ht, obj, SCM_FALSE); /* check for shared cdr */
+                if (!SCM_FALSEP(e)) {
                     Scm_PutzUnsafe(" . ", -1, port);
                     write_ss_rec(obj, port, ctx);
                     Scm_PutcUnsafe(')', port);

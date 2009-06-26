@@ -1,3 +1,8 @@
+2009-06-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c, src/keyword.c: Replaced calls to obsoleted APIs
+	  HashTableGet/Put for the new APIs HashTableRef/Set.
+
 2009-06-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/symbol.c (symbol_print, Scm_MakeSymbol),
