@@ -177,9 +177,9 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#:}
 @c EN
- @tab Unused
+ @tab Uninterned symbol.  @xref{Symbols}.
 @c JP
- @tab 未使用。
+ @tab インターンされていないシンボル。@ref{Symbols}参照。
 @c COMMON
 @item @code{#;}
 @c EN

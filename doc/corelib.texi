@@ -1781,6 +1781,33 @@ R5RSのシンボルの定義では許されていない文字を使った妙な名前のシンボルを表記するの
 @c COMMON
 @end deftp
 
+@deftp {Reader Syntax} @code{#:@i{name}}
+Denotes uninterned symbol.  Uninterned symbols can be created
+by @code{gensym} or @code{string->uninterned-symbol}.
+
+Uninterned symbols are mainly for legacy macros to avoid
+variable conflicts.   They are not registered in the internal
+dictionary, so such symbols with the same name can't be @code{eq?}.
+
+@example
+(eq? '#:foo '#:foo) @result{} #f
+(eq? '#:foo 'foo) @result{} #f
+@end example
+
+When an S-expression including uninterned symbols are printed,
+the srfi-38 syntax is used to indicate which uninterened symbol
+is the same (@code{eq?}) to which.
+
+@example
+(let1 s '#:foo) (list s s))
+  @result{} @r{prints} (#0=#:foo #0#)
+
+(let ((s '#:foo) (t '#:foo)) (list s t s t))
+  @result{} @r{prints} (#0=#:foo #1=#:foo #0# #1#)
+@end example
+@end deftp
+
+
 @defun symbol? obj
 [R5RS] 
 @c EN
@@ -1796,6 +1823,13 @@ Returns true if and only if @var{obj} is a symbol.
 (symbol? '|-i|)    @result{} #t
 @end example
 @end defun
+
+@defun symbol-interned? symbol
+Returns @code{#t} if @var{symbol} is an interned symbol,
+@code{#f} if it is an uninterned symbol.   An error is signalled
+if @var{symbol} is not a symbol.
+@end defun
+
 
 @defun symbol->string symbol
 [R5RS]
@@ -1826,6 +1860,15 @@ Returns a symbol whose name is a string @var{string}.
 (string->symbol "weird symbol name") @result{} |weird symbol name|
 @end example
 @end defun
+
+@defun string->uninterned-symbol string
+Like @code{string->symbol}, but the created symbol is uninterned.
+
+@example
+(string->uninterned-symbol "a") @result{} #:a
+@end example
+@end defun
+
 
 @defun gensym &optional prefix
 Returns a fresh, uninterned symbol.  The returned symbol can never
