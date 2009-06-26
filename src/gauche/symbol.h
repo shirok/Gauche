@@ -41,18 +41,22 @@
 struct ScmSymbolRec {
     SCM_HEADER;
     ScmString *name;
+    int        interned;
 };
 
 SCM_CLASS_DECL(Scm_SymbolClass);
 #define SCM_CLASS_SYMBOL       (&Scm_SymbolClass)
 
-#define SCM_SYMBOL(obj)        ((ScmSymbol*)(obj))
-#define SCM_SYMBOLP(obj)       SCM_XTYPEP(obj, SCM_CLASS_SYMBOL)
-#define SCM_SYMBOL_NAME(obj)   (SCM_SYMBOL(obj)->name)
+#define SCM_SYMBOL(obj)          ((ScmSymbol*)(obj))
+#define SCM_SYMBOLP(obj)         SCM_XTYPEP(obj, SCM_CLASS_SYMBOL)
+#define SCM_SYMBOL_NAME(obj)     (SCM_SYMBOL(obj)->name)
+#define SCM_SYMBOL_INTERNED(obj) (SCM_SYMBOL(obj)->interned)
 
-SCM_EXTERN ScmObj Scm_Intern(ScmString *name);
+SCM_EXTERN ScmObj Scm_MakeSymbol(ScmString *name, int interned);
 SCM_EXTERN ScmObj Scm_Gensym(ScmString *prefix);
+SCM_EXTERN ScmObj Scm_SymbolSansPrefix(ScmSymbol *s, ScmSymbol *p);
 
+#define Scm_Intern(name)  Scm_MakeSymbol(name, TRUE)
 #define SCM_INTERN(cstr)  Scm_Intern(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(cstr)))
 
 #endif /* GAUCHE_SYMBOL_H */

@@ -60,7 +60,7 @@ static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
 static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
 static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
-static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim);
+static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned);
 static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
@@ -501,6 +501,17 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     if (c2 == '"') return read_string(port, TRUE, ctx);
                     Scm_ReadError(port, "unsupported #*-syntax: #*%C", c2);
                 }
+            case ':':
+                /* #:name - uninterned symbol */
+                {
+                    int c2 = Scm_GetcUnsafe(port);
+                    if (c2 == '|') {
+                        return read_escaped_symbol(port, c2, FALSE);
+                    } else {
+                        ScmObj name = read_word(port, c2, ctx, FALSE);
+                        return Scm_MakeSymbol(SCM_STRING(name), FALSE);
+                    }
+                }
             case ';':
                 /* #;expr - comment out sexpr */
                 {
@@ -531,7 +542,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             }
         }
     case '|':
-        return read_escaped_symbol(port, '|');
+        return read_escaped_symbol(port, '|', TRUE);
     case '[':
         /* TODO: make it customizable */
         return read_list(port, ']', ctx);
@@ -968,7 +979,7 @@ static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
     return Scm_MakeKeyword(s);
 }
 
-static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim)
+static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned)
 {
     int c = 0;
     ScmDString ds;
@@ -980,7 +991,7 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim)
             goto err;
         } else if (c == delim) {
             ScmString *s = SCM_STRING(Scm_DStringGet(&ds, 0));
-            return Scm_Intern(s);
+            return Scm_MakeSymbol(s, interned);
         } else if (c == '\\') {
             /* CL-style single escape */
             c = Scm_GetcUnsafe(port);

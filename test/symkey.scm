@@ -1,9 +1,60 @@
 ;;;
-;;; keyword test
+;;; testing symbols and keywords
 ;;;
 
 (use gauche.test)
-(test-start "keywords")
+(test-start "symbols and keywords")
+
+;;----------------------------------------------------------------
+(test-section "symbols")
+
+(test* "symbol->string" "foo" (symbol->string 'foo))
+(test* "string->symbol" 'foo  (string->symbol "foo") eq?)
+
+(test* "gensym" '(#t #t #f)
+       (let1 s (gensym "ooo")
+         (list (symbol? s)
+               (string=? (substring (symbol->string s) 0 3) "ooo")
+               (eq? s (string->symbol (symbol->string s))))))
+
+(test* "interned?" #t (symbol-interned? (string->symbol "foofoo")))
+(test* "interned?" #f (symbol-interned? (gensym "foofoo")))
+
+(test* "symbol reader" 'foo (read-from-string "foo"))
+(test* "symbol reader" 'foo (read-from-string "foo bar"))
+(test* "symbol reader escaped" 'foo (read-from-string "|foo|"))
+(test* "symbol reader escaped" 'foo (read-from-string "|foo|bar"))
+(test* "symbol reader escaped" '|foo bar| (read-from-string "|foo bar|"))
+
+(test* "symbol writer" 'foo (read-from-string (write-to-string 'foo)))
+(test* "symbol writer" '|foo bar|
+       (read-from-string (write-to-string (string->symbol "foo bar"))))
+
+(test* "symbol reader uninterned" "foo"
+       (let1 s (read-from-string "#:foo")
+         (and (symbol? s) (not (eq? 'foo s)) (symbol->string s))))
+(test* "symbol reader uninterned" "foo bar"
+       (let1 s (read-from-string "#:|foo bar|")
+         (and (symbol? s) (not (eq? '|foo bar| s)) (symbol->string s))))
+(test* "symbol reader uninterned" #f
+       (eq? (read-from-string "#:foo") (read-from-string "#:foo")))
+
+(test* "symbol writer uninterned" "#:foo"
+       (write-to-string (string->uninterned-symbol "foo")))
+(test* "symbol writer uninterned" "#:|foo bar|"
+       (write-to-string (string->uninterned-symbol "foo bar")))
+(test* "symbol writer uninterned" "(#0=#:foo #0#)"
+       (write-to-string (let1 s (string->uninterned-symbol "foo")
+                          (list s s))
+                        write/ss))
+(test* "symbol writer uninterned" "(#:foo #:foo)"
+       (write-to-string (list (string->uninterned-symbol "foo")
+                              (string->uninterned-symbol "foo"))
+                        write/ss))
+
+(test* "prefix" 'bar (symbol-sans-prefix 'foo:bar 'foo:))
+(test* "prefix" #f   (symbol-sans-prefix 'foo:bar 'bar:))
+
 
 ;;----------------------------------------------------------------
 (test-section "keywords")

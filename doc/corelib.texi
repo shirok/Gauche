@@ -1828,6 +1828,24 @@ Returns a symbol whose name is a string @var{string}.
 @end defun
 
 @defun gensym &optional prefix
+Returns a fresh, uninterned symbol.  The returned symbol can never
+be @code{eq?} to other symbol within the process.
+If @var{prefix} is given, which must be a string, it is used
+as a prefix of the name of the generated symbol.  It is mainly for
+the convenience of debugging.
+@end defun
+
+@defun symbol-sans-prefix symbol prefix
+Both @var{symbol} and @var{prefix} must be symbols.
+If the name of @var{prefix} matches the beginning part of the
+name of @var{symbol}, this procedure returns a symbol whose
+name is the name of @var{symbol} without the mached prefix.
+Otherwise, it returns @code{#f}.
+
+@example
+(symbol-sans-prefix 'foo:bar 'foo:) @result{} bar
+(symbol-sans-prefix 'foo:bar 'baz:) @result{} #f
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------

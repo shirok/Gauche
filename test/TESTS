@@ -4,7 +4,7 @@ module.scm
 macro.scm
 number.scm
 string.scm
-keyword.scm
+symkey.scm
 hash.scm
 treemap.scm
 io.scm

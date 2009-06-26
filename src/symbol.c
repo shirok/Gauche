@@ -44,49 +44,88 @@
 static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SymbolClass, symbol_print);
 
-#define INITSYM(sym, nam)                       \
-    sym = SCM_NEW(ScmSymbol);                   \
-    SCM_SET_CLASS(sym, SCM_CLASS_SYMBOL);       \
-    sym->name = SCM_STRING(nam)
+static ScmSymbol *make_sym(ScmObj name, int interned)
+{
+    ScmSymbol *sym = SCM_NEW(ScmSymbol);
+    SCM_SET_CLASS(sym, SCM_CLASS_SYMBOL);
+    sym->name = SCM_STRING(name);
+    sym->interned = interned;
+    return sym;
+}
 
-/* These two are global resource.  Must be protected in MT environment. */
-static ScmHashTable *obtable = NULL;   /* name -> symbol mapper */
-static int gensym_count = 0;
+/* name -> symbol mapper */
+static ScmInternalMutex obtable_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
+static ScmHashTable *obtable = NULL;
 
 /* Intern */
-
-ScmObj Scm_Intern(ScmString *name)
+ScmObj Scm_MakeSymbol(ScmString *name, int interned)
 {
-    ScmHashEntry *e = Scm_HashTableGet(obtable, SCM_OBJ(name));
-    if (e) return e->value;
-    else {
-        ScmObj n = Scm_CopyStringWithFlags(name, SCM_STRING_IMMUTABLE,
-                                           SCM_STRING_IMMUTABLE);
-        ScmSymbol *sym;
-        INITSYM(sym, n);
-        Scm_HashTablePut(obtable, n, SCM_OBJ(sym));
-        return SCM_OBJ(sym);
+    ScmObj e;
+    ScmObj sname;
+    ScmSymbol *sym;
+
+    if (interned) {
+        /* fast path */
+        SCM_INTERNAL_MUTEX_LOCK(obtable_mutex);
+        e = Scm_HashTableRef(obtable, SCM_OBJ(name), SCM_FALSE);
+        SCM_INTERNAL_MUTEX_UNLOCK(obtable_mutex);
+        if (!SCM_FALSEP(e)) return e;
     }
+
+    sname = Scm_CopyStringWithFlags(name, SCM_STRING_IMMUTABLE,
+                                    SCM_STRING_IMMUTABLE);
+    sym = make_sym(sname, interned);
+    if (!interned) return SCM_OBJ(sym);
+
+    /* Using SCM_DICT_NO_OVERWRITE ensures that if another thread interns
+       the same name symbol between above HashTableRef and here, we'll
+       get the already interned symbol. */
+    SCM_INTERNAL_MUTEX_LOCK(obtable_mutex);
+    e = Scm_HashTableSet(obtable, SCM_OBJ(name), SCM_OBJ(sym),
+                         SCM_DICT_NO_OVERWRITE);
+    SCM_INTERNAL_MUTEX_UNLOCK(obtable_mutex);
+    return e;
 }
 
 /* Default prefix string. */
 static SCM_DEFINE_STRING_CONST(default_prefix, "G", 1, 1);
 
-/* Returns uninterned symbol.
-   PREFIX can be NULL*/
+/* Returns uninterned symbol.   PREFIX can be NULL */
 ScmObj Scm_Gensym(ScmString *prefix)
 {
-    ScmString *name;
+    ScmObj name;
     ScmSymbol *sym;
     char numbuf[50];
     int nc;
+    /* We don't need mutex for this variable, since a race on it is
+       tolerated---multiple threads may be get the same name symbols,
+       but they are uninterned and never be eq? to each other. */
+    static intptr_t gensym_count = 0;
 
     if (prefix == NULL) prefix = &default_prefix;
-    nc = snprintf(numbuf, 50, "%d", gensym_count++);
-    name = SCM_STRING(Scm_StringAppendC(prefix, numbuf, nc, nc));
-    INITSYM(sym, name);
+    nc = snprintf(numbuf, 49, "%d", gensym_count++);
+    numbuf[49] = '\0';
+    name = Scm_StringAppendC(prefix, numbuf, nc, nc);
+    sym = make_sym(name, FALSE);
     return SCM_OBJ(sym);
 }
+
+/* If symbol S has a prefix P, returns a symbol without the prefix.
+   Otherwise, returns #f. */
+ScmObj Scm_SymbolSansPrefix(ScmSymbol *s, ScmSymbol *p)
+{
+    const ScmStringBody *bp = SCM_STRING_BODY(SCM_SYMBOL_NAME(p));
+    const ScmStringBody *bs = SCM_STRING_BODY(SCM_SYMBOL_NAME(s));
+    int zp = SCM_STRING_BODY_SIZE(bp);
+    int zs = SCM_STRING_BODY_SIZE(bs);
+    const char *cp = SCM_STRING_BODY_START(bp);
+    const char *cs = SCM_STRING_BODY_START(bs);
+
+    if (zp > zs || memcmp(cp, cs, zp) != 0) return SCM_FALSE;
+    return Scm_Intern(SCM_STRING(Scm_MakeString(cs + zp, zs - zp, -1,
+                                                SCM_STRING_IMMUTABLE)));
+}
+
 
 /* Print */
 
@@ -116,65 +155,78 @@ static char special[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 11,3, 0, 7
 };
 
-static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+/* internal function to write symbol name, with proper escaping */
+static void symbol_write_name(ScmSymbol *sym, ScmPort *port,
+                              ScmWriteContext *ctx)
 {
-    if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
-        SCM_PUTS(SCM_SYMBOL(obj)->name, port);
-    } else {
-        /* See if we have special characters, and use |-escape if necessary. */
-        /* TODO: For now, we regard chars over 0x80 is all "printable".
-           Need a more consistent mechanism. */
-        ScmString *snam = SCM_SYMBOL(obj)->name;
-        const ScmStringBody *b = SCM_STRING_BODY(snam);
-        const char *p = SCM_STRING_BODY_START(b), *q;
-        int siz = SCM_STRING_BODY_SIZE(b), i;
-        int escape = FALSE;
-        int case_mask =
-            ((SCM_WRITE_CASE(ctx) == SCM_WRITE_CASE_FOLD)? 0x12 : 0x02);
+    /* See if we have special characters, and use |-escape if necessary. */
+    /* TODO: For now, we regard chars over 0x80 is all "printable".
+       Need a more consistent mechanism. */
+    ScmString *snam = SCM_SYMBOL_NAME(sym);
+    const ScmStringBody *b = SCM_STRING_BODY(snam);
+    const char *p = SCM_STRING_BODY_START(b), *q;
+    int siz = SCM_STRING_BODY_SIZE(b), i;
+    int escape = FALSE;
+    int case_mask =
+        ((SCM_WRITE_CASE(ctx) == SCM_WRITE_CASE_FOLD)? 0x12 : 0x02);
         
-        if (siz == 0) {         /* special case */
-            SCM_PUTZ("||", -1, port);
-            return;
-        }
-        if (siz == 1 && (*p == '+' || *p == '-')) {
-            SCM_PUTC((unsigned)*p, port);
-            return;
-        }
-        if ((unsigned int)*p < 128 && (special[(unsigned int)*p]&1)) {
-            escape = TRUE;
-        } else {
-            for (i=0, q=p; i<siz; i++, q++) {
-                if ((unsigned int)*q < 128
-                    && (special[(unsigned int)*q]&case_mask)) {
-                    escape = TRUE;
-                    break;
-                }
+    if (siz == 0) {         /* special case */
+        SCM_PUTZ("||", -1, port);
+        return;
+    }
+    if (siz == 1 && (*p == '+' || *p == '-')) {
+        SCM_PUTC((unsigned)*p, port);
+        return;
+    }
+    if ((unsigned int)*p < 128 && (special[(unsigned int)*p]&1)) {
+        escape = TRUE;
+    } else {
+        for (i=0, q=p; i<siz; i++, q++) {
+            if ((unsigned int)*q < 128
+                && (special[(unsigned int)*q]&case_mask)) {
+                escape = TRUE;
+                break;
             }
         }
-        if (escape) {
-            SCM_PUTC('|', port);
-            for (q=p; q<p+siz; ) {
-                unsigned int ch;
-                SCM_CHAR_GET(q, ch);
-                q += SCM_CHAR_NBYTES(ch);
-                if (ch < 128) {
-                    if (special[ch] & 8) {
-                        SCM_PUTC('\\', port);
-                        SCM_PUTC(ch, port);
-                    } else if (special[ch] & 4) {
-                        Scm_Printf(port, "\\x%02x", ch);
-                    } else {
-                        SCM_PUTC(ch, port);
-                    }
+    }
+    if (escape) {
+        SCM_PUTC('|', port);
+        for (q=p; q<p+siz; ) {
+            unsigned int ch;
+            SCM_CHAR_GET(q, ch);
+            q += SCM_CHAR_NBYTES(ch);
+            if (ch < 128) {
+                if (special[ch] & 8) {
+                    SCM_PUTC('\\', port);
+                    SCM_PUTC(ch, port);
+                } else if (special[ch] & 4) {
+                    Scm_Printf(port, "\\x%02x", ch);
                 } else {
                     SCM_PUTC(ch, port);
                 }
+            } else {
+                SCM_PUTC(ch, port);
             }
-            SCM_PUTC('|', port);
-            return;
-        } else {
-            SCM_PUTS(snam, port);
         }
+        SCM_PUTC('|', port);
+        return;
+    } else {
+        SCM_PUTS(snam, port);
+    }
+}
+
+/* Symbol printer.
+   NB: Uninterned symbols are treated as sharable objects (can be written
+   with #n= syntax).  It is handled by upper layer (write.c) so we don't
+   worry about it in this routine.
+ */
+static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
+        SCM_PUTS(SCM_SYMBOL_NAME(obj), port);
+    } else {
+        if (!SCM_SYMBOL_INTERNED(obj)) SCM_PUTZ("#:", -1, port);
+        symbol_write_name(SCM_SYMBOL(obj), port, ctx);
     }
 }
 

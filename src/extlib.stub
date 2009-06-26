@@ -281,7 +281,10 @@
 ;;
 
 (define-cproc gensym (:optional (prefix::<string>? #f)) Scm_Gensym)
-
+(define-cproc symbol-interned? (s::<symbol>) ::<boolean> SCM_SYMBOL_INTERNED)
+(define-cproc string->uninterned-symbol (name::<string>)
+  (result (Scm_MakeSymbol name FALSE)))
+(define-cproc symbol-sans-prefix (s::<symbol> p::<symbol>) Scm_SymbolSansPrefix)
 ;; keywords
 (define-cproc keyword? (obj) ::<boolean> :fast-flonum SCM_KEYWORDP)
 

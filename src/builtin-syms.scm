@@ -28,9 +28,9 @@
     (cgen-body "ScmSymbol Scm_BuiltinSymbols[] = {")
     (cgen-body "#define ENTRY(s) \
                   {{ SCM_CLASS_STATIC_TAG(Scm_SymbolClass) }, \
-                   SCM_STRING(s) }")
+                   SCM_STRING(s), TRUE }")
     (cgen-init "#define INTERN(s, i) \
-                  Scm_HashTablePut(obtable, s, SCM_OBJ(&Scm_BuiltinSymbols[i]))")
+                  Scm_HashTableSet(obtable, s, SCM_OBJ(&Scm_BuiltinSymbols[i]), 0)")
     
     (for-each-with-index
      (lambda (index entry)

@@ -1,7 +1,24 @@
+2009-06-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/symbol.c (symbol_print, Scm_MakeSymbol),
+	  src/read.c (read_internal, read_escaped_symbol),
+	  src/write.c (write_walk): Support #:symbol notation of uninterned
+	  symbols.
+	* src/extlib.stub (string->uninterned-symbol, symbol-interned?):
+	  Added.
+
+2009-06-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/symbol.c (Scm_SymbolSansPrefix),
+	  src/extlib.stub (symbol-sans-prefix): Added.
+
+	* src/symbol.c (Scm_Intern): Doh! Scm_Intern wasn't MT-safe.  Fixed.
+
 2009-06-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vm.h (ScmVM): Use of queueNotEmpty flag had a race
-	  condition.  We ditched it and introduced separate flags for atomicity.
+	  condition.  We ditched it and introduced separate flags for
+	  atomicity.
 	  Also dropped unused SCM_VM_BLOCKED state and introduced
 	  SCM_VM_STOPPED state; the former is for blocked on system calls,
 	  but it's too expensive to change the state for every syscall.

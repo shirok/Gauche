@@ -279,7 +279,7 @@ static const char *char_names[] = {
 static void write_general(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
     ScmClass *c = Scm_ClassOf(obj);
-    if (c->print) c->print(obj, out, ctx); 
+    if (c->print) c->print(obj, out, ctx);
     else          write_object(obj, out, ctx);
 }
 
@@ -358,8 +358,8 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ht = SCM_HASH_TABLE(SCM_CDR(port->data));
 
     for (;;) {
-        if (!SCM_PTRP(obj) || SCM_SYMBOLP(obj) || SCM_KEYWORDP(obj)
-            || SCM_NUMBERP(obj)) {
+        if (!SCM_PTRP(obj) || SCM_KEYWORDP(obj) || SCM_NUMBERP(obj)
+            || (SCM_SYMBOLP(obj) && SCM_SYMBOL_INTERNED(obj))) {
             return;
         }
             
@@ -390,6 +390,13 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 elt = SCM_VECTOR_ELEMENT(obj, i);
                 if (SCM_PTRP(elt)) write_walk(elt, port, ctx);
             }
+            return;
+        }
+        if (SCM_SYMBOLP(obj)) {
+            SCM_ASSERT(!SCM_SYMBOL_INTERNED(obj));
+            e = Scm_HashTableGet(ht, obj);
+            if (e) { e->value = SCM_TRUE; return; }
+            Scm_HashTablePut(ht, obj, SCM_FALSE);
             return;
         }
         else {
@@ -606,6 +613,7 @@ static void format_write(ScmObj obj, ScmPort *port, ScmWriteContext *ctx,
         return;
     }
     if (sharedp) {
+
         write_ss(obj, port, ctx);
     } else {
         write_ss_rec(obj, port, ctx);
