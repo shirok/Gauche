@@ -144,16 +144,16 @@ void collect_samples(ScmVMProfiler *prof)
 {
     int i, cnt;
     for (i=0; i<prof->currentSample; i++) {
-        ScmHashEntry *e = Scm_HashTableGet(prof->statHash,
-                                           prof->samples[i].func);
-        if (e == NULL) {
+        ScmObj e = Scm_HashTableRef(prof->statHash,
+                                    prof->samples[i].func, SCM_UNBOUND);
+        if (SCM_UNBOUNDP(e)) {
             /* NB: just for now */
             Scm_Warn("profiler: uncounted object appeared in a sample: %p (%S)\n",
                      prof->samples[i].func, prof->samples[i].func);
         } else {
-            SCM_ASSERT(SCM_PAIRP(e->value));
-            cnt = SCM_INT_VALUE(SCM_CDR(e->value)) + 1;
-            SCM_SET_CDR(e->value, SCM_MAKE_INT(cnt));
+            SCM_ASSERT(SCM_PAIRP(e));
+            cnt = SCM_INT_VALUE(SCM_CDR(e)) + 1;
+            SCM_SET_CDR(e, SCM_MAKE_INT(cnt));
         }
     }
 }
@@ -181,7 +181,7 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
 
     ncounts = vm->prof->currentCount;
     for (i=0; i<ncounts; i++) {
-        ScmHashEntry *e;
+        ScmObj e;
         int cnt;
         
         func = vm->prof->counts[i].func;
@@ -192,16 +192,20 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
             func = SCM_OBJ(SCM_METHOD(func)->data);
         }
         
-        e = Scm_HashTableAdd(vm->prof->statHash,
+        e = Scm_HashTableSet(vm->prof->statHash,
                              vm->prof->counts[i].func,
-                             SCM_FALSE);
-        if (SCM_FALSEP(e->value)) {
-            e->value = Scm_Cons(SCM_MAKE_INT(0), SCM_MAKE_INT(0));
+                             SCM_FALSE,
+                             SCM_DICT_NO_OVERWRITE);
+        if (SCM_FALSEP(e)) {
+            e = Scm_HashTableSet(vm->prof->statHash,
+                                 vm->prof->counts[i].func,
+                                 Scm_Cons(SCM_MAKE_INT(0), SCM_MAKE_INT(0)),
+                                 0);
         }
 
-        SCM_ASSERT(SCM_PAIRP(e->value));
-        cnt = SCM_INT_VALUE(SCM_CAR(e->value)) + 1;
-        SCM_SET_CAR(e->value, SCM_MAKE_INT(cnt));
+        SCM_ASSERT(SCM_PAIRP(e));
+        cnt = SCM_INT_VALUE(SCM_CAR(e)) + 1;
+        SCM_SET_CAR(e, SCM_MAKE_INT(cnt));
     }
     vm->prof->currentCount = 0;
 
