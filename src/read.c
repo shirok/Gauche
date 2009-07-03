@@ -1225,8 +1225,7 @@ static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
         /*NOTREACHED*/
     } else {
         ScmObj id = read_symbol(port, c2, ctx), e, r;
-        if (SCM_EOFP(id)) return SCM_EOF; /* we may want warn? */
-        
+        SCM_ASSERT(SCM_SYMBOLP(id));
         (void)SCM_INTERNAL_MUTEX_LOCK(hashBangData.mutex);
         e = Scm_HashTableRef(hashBangData.table, id, SCM_FALSE);
         (void)SCM_INTERNAL_MUTEX_UNLOCK(hashBangData.mutex);
