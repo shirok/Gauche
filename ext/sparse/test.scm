@@ -32,7 +32,9 @@
 
 (define (const x) (lambda () x))
 
-(define *data-set-size* 20000)
+;; To test sparse table seriously, set *data-set-size* larger number
+;; like 20000.  The default size is chosen not to take too long for the tests.
+(define *data-set-size* 5000)
 
 (define *data-set*
   (rlet1 ht (make-hash-table 'eqv?)
