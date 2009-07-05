@@ -405,7 +405,7 @@
 ;; TODO: for thread safety, we should use strerror_r when available.
 ;; unfortunately there are conflicting versions of strerror_r among
 ;; various systems.
-(define-cproc sys-strerror (errno::<int>) ::<const-cstring> strerror)
+(define-cproc sys-strerror (errno_::<int>) ::<const-cstring> strerror)
 
 ;;---------------------------------------------------------------------
 ;; sys/resource.h
