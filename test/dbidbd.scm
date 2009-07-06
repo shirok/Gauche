@@ -56,22 +56,19 @@
                     (dbi-do conn "insert into foo values (?, ?)" '()
                             "don't know" #f)))
 
-  (test* "<dbi-parameter-error>" '<dbi-parameter-error>
-         (guard (e (else (class-name (class-of e))))
-           (dbi-execute (dbi-prepare (dbi-connect "dbi:null")
-                                     "select * from foo where x = ?")
-                        1 2)))
+  (test* "<dbi-parameter-error>" (test-error <dbi-parameter-error>)
+         (dbi-execute (dbi-prepare (dbi-connect "dbi:null")
+                                   "select * from foo where x = ?")
+                      1 2))
 
-  (test* "<dbi-parameter-error>" '<dbi-parameter-error>
-         (guard (e (else (class-name (class-of e))))
-           (dbi-execute (dbi-prepare (dbi-connect "dbi:null")
-                                     "select * from foo where x = ?"))))
+  (test* "<dbi-parameter-error>" (test-error <dbi-parameter-error>)
+         (dbi-execute (dbi-prepare (dbi-connect "dbi:null")
+                                   "select * from foo where x = ?")))
 
-  (test* "<dbi-parameter-error>" '<dbi-parameter-error>
-         (guard (e (else (class-name (class-of e))))
-           (dbi-execute (dbi-prepare (dbi-connect "dbi:null")
-                                     "select * from foo where x = 3")
-                        4)))
+  (test* "<dbi-parameter-error>" (test-error <dbi-parameter-error>)
+         (dbi-execute (dbi-prepare (dbi-connect "dbi:null")
+                                   "select * from foo where x = 3")
+                      4))
   )
 
 (test-section "testing conditions")

@@ -34,6 +34,12 @@
 
 #!no-fold-case
 
+;; Note for developers: This module intentionally avoids using
+;; Gauche's convenience features and extended libraries; instead,
+;; we stick to the minimal primitives here as much as possible.
+;; It's because this module is used to test the convenience
+;; features and extended libraries.
+
 ;; Writing your own test
 ;;
 ;;  (use gauche.test)
@@ -78,7 +84,7 @@
 
 (define-module gauche.test
   (export test test* test-start test-end test-section
-          test-module
+          test-module test-error
           *test-error* *test-report-error* test-error? prim-test))
 (select-module gauche.test)
 
@@ -89,17 +95,24 @@
 
 ;; An object to represent error.
 (define-class <test-error> ()
-  ((message :init-keyword :message :initform #f)))
+  ((message :init-keyword :message :init-value #f)
+   (class   :init-keyword :class   :init-value #f)))
 
 (define-method write-object ((obj <test-error>) out)
-  (if (ref obj 'message)
-      (format out "#<error ~s>" (ref obj 'message))
-      (display "#<error>" out)))
+  (let1 cname (if (ref obj'class) (class-name (ref obj'class)) 'error)
+    (if (ref obj 'message)
+      (format out "#<~a ~s>" cname (ref obj 'message))
+      (format out "#<~a>" cname))))
 
 (define-method object-equal? ((x <test-error>) (y <test-error>))
-  #t)
+  (let ([ex (ref x'class)] [ey (ref y'class)])
+    (or (not ex)
+        (memq (ref x'class) (class-precedence-list (ref y'class))))))
 
-(define *test-error* (make <test-error>))
+(define *test-error* (make <test-error>)) ;DEPRECATED
+
+(define (test-error . maybe-class)
+  (make <test-error> :class (and (pair? maybe-class) (car maybe-class))))
 
 (define *test-report-error*
   (sys-getenv "GAUCHE_TEST_REPORT_ERROR"))
@@ -181,6 +194,7 @@
                       (when *test-report-error*
                         (report-error e))
                       (make <test-error>
+                        :class (class-of e)
                         :message (if (is-a? e <message-condition>)
                                    (ref e 'message)
                                    e))))

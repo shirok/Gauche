@@ -365,13 +365,11 @@ fuga
                                           (string "a'b'c'"))
        (sql-tokenize "'abc' 'ab''c' '''abc' 'abc''' '' '''' 'a''b''c'''"))
 
-(test* "sql-tokenize (unterminated literal)" #t
-       (guard (e ((<sql-parse-error> e) #t))
-         (sql-tokenize "'abc def")))
+(test* "sql-tokenize (unterminated literal)" (test-error <sql-parse-error>)
+       (sql-tokenize "'abc def"))
 
-(test* "sql-tokenize (unterminated literal)" #t
-       (guard (e ((<sql-parse-error> e) #t))
-         (sql-tokenize "'abc''def")))
+(test* "sql-tokenize (unterminated literal)" (test-error <sql-parse-error>)
+       (sql-tokenize "'abc''def"))
 
 (test* "sql-tokenize (other stuff)" '((bitstring "0")
                                       (bitstring "010101")

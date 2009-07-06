@@ -1,3 +1,11 @@
+2009-07-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (test-error): Supersedes the global *test-error*
+	  variable.  Now the user can create a new <test-error> object for
+	  each test, giving expected condition type, so that it will be
+	  easier to test if the code raises a particular condition.
+	  *test-error* variable is deprecated, and will fade away.
+
 2009-07-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub (sys-stfrerror): avoid using 'errno' as argument

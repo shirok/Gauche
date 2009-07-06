@@ -344,10 +344,9 @@
                                :error "/dev/null"
                                :on-abnormal-exit :ignore))
 
-(test* "process-output->string (error - raise)" '<process-abnormal-exit>
-       (guard (e (else (class-name (class-of e))))
-         (process-output->string '(cat "NoSuchFile")
-                                 :error "/dev/null")))
+(test* "process-output->string (error - raise)"
+       (test-error <process-abnormal-exit>)
+       (process-output->string '(cat "NoSuchFile") :error "/dev/null"))
 
 (test* "process-output->string-list" #t
        (let ((r (process-output->string-list '(ls -a)))

@@ -797,10 +797,8 @@ Content-Length: 4349
          (cond ((assoc-ref (read-from-string body) "request-uri")
                 => car))))
 
-(test* "http-get (loop)" 'ok
-       (guard (e ((<http-error> e) 'ok))
-         (http-get #`"localhost:,*http-port*" "/loop1")
-         'error))
+(test* "http-get (loop)" (test-error <http-error>)
+       (http-get #`"localhost:,*http-port*" "/loop1"))
 
 (test* "http-get (chunked body)" "OK"
        (receive (code headers body)
