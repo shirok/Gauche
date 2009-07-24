@@ -51,7 +51,6 @@
 
 	* src/symbol.c (Scm_Intern): Doh! Scm_Intern wasn't MT-safe.  Fixed.
 
->>>>>>> .r6697
 2009-06-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vm.h (ScmVM): Use of queueNotEmpty flag had a race
