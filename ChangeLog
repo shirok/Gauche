@@ -1,3 +1,11 @@
+2009-07-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/symbol.h, src/symbol.c (Scm_WriteSymbolName): Made
+	  symbol printing routine available for keyword printing.
+	* src/keyword.c (print_keyword): Escapes keyword name if it contains
+	  weird characters.
+	* src/read.c (read_keyword): Supports :|...| style escaped keywords.
+
 2009-07-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm (test-error): Supersedes the global *test-error*
@@ -43,6 +51,7 @@
 
 	* src/symbol.c (Scm_Intern): Doh! Scm_Intern wasn't MT-safe.  Fixed.
 
+>>>>>>> .r6697
 2009-06-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vm.h (ScmVM): Use of queueNotEmpty flag had a race

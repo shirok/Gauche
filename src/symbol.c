@@ -156,34 +156,36 @@ static char special[] = {
 };
 
 /* internal function to write symbol name, with proper escaping */
-static void symbol_write_name(ScmSymbol *sym, ScmPort *port,
-                              ScmWriteContext *ctx)
+void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
+                         u_int flags)
 {
     /* See if we have special characters, and use |-escape if necessary. */
     /* TODO: For now, we regard chars over 0x80 is all "printable".
        Need a more consistent mechanism. */
-    ScmString *snam = SCM_SYMBOL_NAME(sym);
     const ScmStringBody *b = SCM_STRING_BODY(snam);
     const char *p = SCM_STRING_BODY_START(b), *q;
     int siz = SCM_STRING_BODY_SIZE(b), i;
     int escape = FALSE;
-    int case_mask =
-        ((SCM_WRITE_CASE(ctx) == SCM_WRITE_CASE_FOLD)? 0x12 : 0x02);
+    int spmask = ((SCM_WRITE_CASE(ctx) == SCM_WRITE_CASE_FOLD)? 0x12 : 0x02);
         
     if (siz == 0) {         /* special case */
-        SCM_PUTZ("||", -1, port);
+        if (!(flags & SCM_SYMBOL_WRITER_NOESCAPE_EMPTY)) {
+            SCM_PUTZ("||", -1, port);
+        }
         return;
     }
     if (siz == 1 && (*p == '+' || *p == '-')) {
         SCM_PUTC((unsigned)*p, port);
         return;
     }
-    if ((unsigned int)*p < 128 && (special[(unsigned int)*p]&1)) {
+    if ((unsigned int)*p < 128
+        && (special[(unsigned int)*p]&1)
+        && (!(flags & SCM_SYMBOL_WRITER_NOESCAPE_INITIAL))) {
         escape = TRUE;
     } else {
         for (i=0, q=p; i<siz; i++, q++) {
             if ((unsigned int)*q < 128
-                && (special[(unsigned int)*q]&case_mask)) {
+                && (special[(unsigned int)*q]&spmask)) {
                 escape = TRUE;
                 break;
             }
@@ -226,7 +228,7 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         SCM_PUTS(SCM_SYMBOL_NAME(obj), port);
     } else {
         if (!SCM_SYMBOL_INTERNED(obj)) SCM_PUTZ("#:", -1, port);
-        symbol_write_name(SCM_SYMBOL(obj), port, ctx);
+        Scm_WriteSymbolName(SCM_SYMBOL_NAME(obj), port, ctx, 0);
     }
 }
 

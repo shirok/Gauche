@@ -42,11 +42,25 @@
 
 static void keyword_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    if (SCM_WRITE_MODE(ctx) != SCM_WRITE_DISPLAY) {
+    if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
+        SCM_PUTS(SCM_KEYWORD(obj)->name, port);
+    } else {
         SCM_PUTC(':', port);
+        /* We basically print keyword names in the same way as symbols
+           (i.e. using |-escape if necessary).  However, as a convention,
+           two things are different from the default symbol writer.
+           (1) We don't check the noninitials; :1 is unambiguously a
+           keyword, so we don't need to print :|1|.
+           (2) A keyword with an empty name can be printed just as :,
+           instead of :||.
+           These conventions are useful if we pass the S-expression with
+           these keywords to other Scheme implementations that don't support
+           CL-style keywords; they would just read those ones as symbols.
+        */ 
+        Scm_WriteSymbolName(SCM_KEYWORD(obj)->name, port, ctx,
+                            (SCM_SYMBOL_WRITER_NOESCAPE_INITIAL
+                             |SCM_SYMBOL_WRITER_NOESCAPE_EMPTY));
     }
-    SCM_PUTS(SCM_KEYWORD(obj)->name, port);
-    return;
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_KeywordClass, keyword_print);

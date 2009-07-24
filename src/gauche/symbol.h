@@ -59,5 +59,12 @@ SCM_EXTERN ScmObj Scm_SymbolSansPrefix(ScmSymbol *s, ScmSymbol *p);
 #define Scm_Intern(name)  Scm_MakeSymbol(name, TRUE)
 #define SCM_INTERN(cstr)  Scm_Intern(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(cstr)))
 
+SCM_EXTERN void Scm_WriteSymbolName(ScmString *snam, ScmPort *port,
+                                    ScmWriteContext *ctx, u_int flags);
+
+/* flags for Scm_WriteSymbolName */
+#define SCM_SYMBOL_WRITER_NOESCAPE_INITIAL  1u
+#define SCM_SYMBOL_WRITER_NOESCAPE_EMPTY    2u
+
 #endif /* GAUCHE_SYMBOL_H */
 

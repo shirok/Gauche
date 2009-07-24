@@ -975,8 +975,17 @@ static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadConte
 
 static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
 {
-    ScmString *s = SCM_STRING(read_word(port, SCM_CHAR_INVALID, ctx, FALSE));
-    return Scm_MakeKeyword(s);
+    int c2 = Scm_GetcUnsafe(port);
+    ScmObj name;
+    
+    if (c2 == '|') {
+        name = read_escaped_symbol(port, c2, FALSE); /* read as uninterned */
+        return Scm_MakeKeyword(SCM_SYMBOL_NAME(name));
+    } else {
+        Scm_UngetcUnsafe(c2, port);
+        name = read_word(port, SCM_CHAR_INVALID, ctx, FALSE);
+        return Scm_MakeKeyword(SCM_STRING(name));
+    }
 }
 
 static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned)
