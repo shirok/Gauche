@@ -71,24 +71,23 @@
 ;; their interpretation is dependent on the scheme.
 
 (define (uri-scheme&specific uri)
-  (cond ((#/^([A-Za-z][A-Za-z0-9+.-]*):/ uri)
-         => (lambda (m)
-              (values (string-downcase (m 1)) (m 'after))))
-        (else (values #f uri))))
+  (cond [(#/^([A-Za-z][A-Za-z0-9+.-]*):/ uri)
+         => (lambda (m) (values (string-downcase (m 1)) (m 'after)))]
+        [else (values #f uri)]))
 
 (define (uri-decompose-hierarchical specific)
   (cond
-   ((and (string? specific)
+   [(and (string? specific)
          (#/^(?:\/\/([^\/?#]*))?([^?#]+)?(?:\?([^#]*))?(?:#(.*))?$/ specific))
-    => (lambda (m) (values (m 1) (m 2) (m 3) (m 4))))
-   (else (values #f #f #f #f))))
+    => (lambda (m) (values (m 1) (m 2) (m 3) (m 4)))]
+   [else (values #f #f #f #f)]))
 
 (define (uri-decompose-authority authority)
   (cond
-   ((and (string? authority)
+   [(and (string? authority)
          (#/^(?:(.*?)@)?([^:]*)(?::(\d*))?$/ authority))
-    => (lambda (m) (values (m 1) (m 2) (m 3))))
-   (else (values #f #f #f))))
+    => (lambda (m) (values (m 1) (m 2) (m 3)))]
+   [else (values #f #f #f)]))
 
 ;; A common cliche (suggested by Kouhei Sutou)
 ;; Returns: scheme, user-info, host, port, path, query, fragment
@@ -159,42 +158,34 @@
 
 (define (uri-decode :key (cgi-decode #f))
   (let loop ((c (read-char)))
-    (cond ((eof-object? c))
-          ((char=? c #\%)
-           (let ((c1 (read-char)))
-             (cond ((eof-object? c1)
-                    (write-char c)) ;; just be permissive
-                   ((digit->integer c1 16)
-                    => (lambda (i1)
-                         (let ((c2 (read-char)))
-                           (cond ((eof-object? c2)
-                                  ;; just be permissive
-                                  (write-char c) (write-char c1)) 
-                                 ((digit->integer c2 16)
-                                  => (lambda (i2)
-                                       (write-byte (+ (* i1 16) i2))
-                                       (loop (read-char))))
-                                 (else (write-char c)
-                                       (write-char c1)
-                                       (loop c2))))))
-                   (else (write-char c)
-                         (loop c1)))))
-          ((char=? c #\+)
+    (cond [(eof-object? c)]
+          [(char=? c #\%)
+           (let1 c1 (read-char)
+             (cond
+              [(eof-object? c1) (write-char c)] ;; just be permissive
+              [(digit->integer c1 16)
+               => (lambda (i1)
+                    (let1 c2 (read-char)
+                      (cond [(eof-object? c2) (write-char c) (write-char c1)]
+                            [(digit->integer c2 16)
+                             => (lambda (i2)
+                                  (write-byte (+ (* i1 16) i2))
+                                  (loop (read-char)))]
+                            [else (write-char c) (write-char c1) (loop c2)])))]
+                   [else (write-char c) (loop c1)]))]
+          [(char=? c #\+)
            (if cgi-decode (write-char #\space) (write-char #\+))
-           (loop (read-char)))
-          (else (write-char c)
-                (loop (read-char)))
-          )))
+           (loop (read-char))]
+          [else (write-char c) (loop (read-char))])))
 
 (define (uri-decode-string string :key (encoding (gauche-character-encoding))
                            :allow-other-keys args)
+  (define (wrap out)
+    (wrap-with-output-conversion out (gauche-character-encoding)
+                                 :from-code encoding))
   (call-with-string-io string
     (lambda (in out)
-      (with-ports
-          in
-          (wrap-with-output-conversion out (gauche-character-encoding)
-                                       :from-code encoding)
-          (current-error-port)
+      (with-ports in (wrap out) (current-error-port)
         (lambda ()
           (apply uri-decode args)
           (close-output-port (current-output-port)))))))
@@ -220,13 +211,12 @@
 
 (define (uri-encode-string string :key (encoding (gauche-character-encoding))
                            :allow-other-keys args)
+  (define (wrap in)
+    (wrap-with-input-conversion in (gauche-character-encoding)
+                                :to-code encoding))
   (call-with-string-io string
     (lambda (in out)
-      (with-ports
-          (wrap-with-input-conversion in (gauche-character-encoding)
-                                      :to-code encoding)
-          out
-          (current-error-port)
+      (with-ports (wrap in) out (current-error-port)
         (cut apply uri-encode args)))))
 
 (provide "rfc/uri")
