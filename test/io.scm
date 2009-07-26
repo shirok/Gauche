@@ -11,13 +11,13 @@
 
 (sys-system "rm -rf tmp2.o")
 
-(test* "open-input-file" *test-error*
+(test* "open-input-file" (test-error <system-error>)
        (open-input-file "tmp2.o"))
 
 (test* "open-input-file :if-does-not-exist #f" #f
        (open-input-file "tmp2.o" :if-does-not-exist #f))
 
-(test* "open-output-file :if-does-not-exist :error" *test-error*
+(test* "open-output-file :if-does-not-exist :error" (test-error)
        (open-output-file "tmp2.o" :if-does-not-exist :error))
 
 (test* "open-output-file :if-does-not-exit #f" #f
@@ -36,7 +36,7 @@
          (close-input-port p)
          s))
 
-(test* "open-output-file :if-exists :error" *test-error*
+(test* "open-output-file :if-exists :error" (test-error)
        (open-output-file "tmp2.o" :if-exists :error))
 
 (test* "open-output-file :if-exists :supersede" 'cdefg
@@ -663,9 +663,9 @@
 (test* "format ~@*" "1 2 5"
        (format #f "~a ~a ~4@*~a" 1 2 3 4 5))
 
-(test* "format incomplete tilde sequence" *test-error*
+(test* "format incomplete tilde sequence" (test-error)
        (format #f "~"))
-(test* "format incomplete tilde sequence" *test-error*
+(test* "format incomplete tilde sequence" (test-error)
        (format #f "~123"))
 
 ;;-------------------------------------------------------------------

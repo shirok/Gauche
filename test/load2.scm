@@ -74,7 +74,7 @@
     (write '(provide #f))
     ))
 
-(test* "circular-autoload" *test-error*
+(test* "circular-autoload" (test-error)
        (load "test.o/a"))
 
 (sys-system "rm -rf test.o")

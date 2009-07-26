@@ -29,7 +29,7 @@
       (lambda () (with-module M
                     (cons (with-module user a) (with-module user b)))))
 
-(test "with-module (error)" *test-error*
+(test "with-module (error)" (test-error)
       (lambda () (eval '(with-module MM 4) (interaction-environment))))
 
 (with-module M
@@ -82,7 +82,7 @@
         (eval '(define-in-module M aa 99) (interaction-environment))
         (eval '(with-module M aa) (interaction-environment))))
 
-(test "define-in-module" *test-error*
+(test "define-in-module" (test-error)
       (lambda ()
         (eval '(define-in-module MM aa 99) (interaction-environment))
         (eval '(with-module MM aa) (interaction-environment))))
@@ -116,7 +116,7 @@
                  (get-result))
               (interaction-environment))))
 
-(test "import (error)" *test-error*
+(test "import (error)" (test-error)
       (lambda () (eval '(import MM) (interaction-environment))))
 
 ;;------------------------------------------------------------------
@@ -143,7 +143,7 @@
 
 (test "select-module" 'user (lambda () (module-name (current-module))))
 
-(test "select-module (error)" *test-error*
+(test "select-module (error)" (test-error)
       (lambda () (eval '(select-moulde MM) (interaction-environment))))
 
 ;;------------------------------------------------------------------
@@ -186,7 +186,7 @@
       (lambda ()
         (with-module V (list a b c d))))
 
-(test "moduel inheritance (error)" *test-error*
+(test "moduel inheritance (error)" (test-error)
       (lambda ()
         (eval '(with-module V (extend Q MM)) (interaction-environment))))
 
@@ -194,7 +194,7 @@
       (lambda ()
         (global-variable-ref 'U 'c)))
 
-(test "global-variable-ref" *test-error*
+(test "global-variable-ref" (test-error)
       (lambda ()
         (global-variable-ref 'U 'e)))
 
@@ -214,11 +214,11 @@
         (make-module 'foo)
         (module? (find-module 'foo))))
 
-(test "make-module (duplicate name)" *test-error*
+(test "make-module (duplicate name)" (test-error)
       (lambda ()
         (make-module 'foo)))
 
-(test "make-module (duplicate name)" *test-error*
+(test "make-module (duplicate name)" (test-error)
       (lambda ()
         (make-module 'foo :if-exists :error)))
 
@@ -238,7 +238,7 @@
           (eval '(define x 13) m0)
           (eval 'x m0))))
               
-(test "anonymous module" *test-error*
+(test "anonymous module" (test-error)
       (lambda ()
         (let ((m0 (make-module #f))
               (m1 (make-module #f)))

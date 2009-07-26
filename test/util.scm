@@ -428,7 +428,7 @@
        (receive r (split-at* '(a b c d) 0) r))
 (test* "split-at* (boundary)" '((a b c d) ())
        (receive r (split-at* '(a b c d) 4) r))
-(test* "split-at* (error)" *test-error*
+(test* "split-at* (error)" (test-error)
        (receive r (split-at* '(a b c d) -1) r))
 (test* "split-at* (shorten)" '((a b c d) ())
        (receive r (split-at* '(a b c d) 5) r))
@@ -440,7 +440,7 @@
 (test* "take* (normal)" '(a b c)      (take* '(a b c d) 3))
 (test* "take* (boundary)" '()         (take* '(a b c d) 0))
 (test* "take* (boundary)" '(a b c d)  (take* '(a b c d) 4))
-(test* "take* (error)" *test-error*   (take* '(a b c d) -1))
+(test* "take* (error)" (test-error)   (take* '(a b c d) -1))
 (test* "take* (shorten)" '(a b c d)   (take* '(a b c d) 5))
 (test* "take* (fill)" '(a b c d #f #f) (take* '(a b c d) 6 #t))
 (test* "take* (fill)" '(a b c d z z)  (take* '(a b c d) 6 #t 'z))
@@ -448,20 +448,20 @@
 (test* "drop* (normal)" '(c d)       (drop* '(a b c d) 2))
 (test* "drop* (boundary)" '(a b c d) (drop* '(a b c d) 0))
 (test* "drop* (boundary)" '()        (drop* '(a b c d) 4))
-(test* "drop* (error)" *test-error*  (drop* '(a b c d) -3))
+(test* "drop* (error)" (test-error)  (drop* '(a b c d) -3))
 (test* "drop* (past)" '()            (drop* '(a b c d) 5))
 
 (test* "take-right* (normal)" '(b c d)  (take-right* '(a b c d) 3))
 (test* "take-right* (boundary)" '()     (take-right* '(a b c d) 0))
 (test* "take-right* (boundary)" '(a b c d) (take-right* '(a b c d) 4))
-(test* "take-right* (error)" *test-error*  (take-right* '(a b c d) -1))
+(test* "take-right* (error)" (test-error)  (take-right* '(a b c d) -1))
 (test* "take-right* (shorten)" '(a b c d)  (take-right* '(a b c d) 6))
 (test* "take-right* (fill)" '(z z a b c d) (take-right* '(a b c d) 6 #t 'z))
 
 (test* "drop-right* (normal)" '(a b c)  (drop-right* '(a b c d) 1))
 (test* "drop-right* (boundary)" '()     (drop-right* '(a b c d) 4))
 (test* "drop-right* (boundary)" '(a b c d) (drop-right* '(a b c d) 0))
-(test* "drop-right* (error)" *test-error*  (drop-right* '(a b c d) -1))
+(test* "drop-right* (error)" (test-error)  (drop-right* '(a b c d) -1))
 (test* "drop-right* (past)" '()         (drop-right* '(a b c d) 7))
 
 (test* "slices (normal)" '((0 1 2 3) (4 5 6 7) (8 9 10 11) (12 13 14 15))
@@ -673,13 +673,13 @@
   (test* "make-rbtree" #t
          (begin (set! tree1 (make-rbtree = <))
                 (rbtree? tree1)))
-  (test* "rbtree-get" *test-error*
+  (test* "rbtree-get" (test-error)
          (rbtree-get #f 0 'foo))
   (test* "rbtree-get" 'not-found
          (rbtree-get tree1 0 'not-found))
-  (test* "rbtree-get" *test-error*
+  (test* "rbtree-get" (test-error)
          (rbtree-get tree1 0))
-  (test* "rbtree-put!" *test-error*
+  (test* "rbtree-put!" (test-error)
          (rbtree-put! #f 0 'foo))
   (test* "rbtree-put!" "0"
          (begin (rbtree-put! tree1 0 "0")
@@ -720,7 +720,7 @@
          (rbtree-empty? tree1))
   (test* "rbtree-empty?" #t
          (rbtree-empty? (make-rbtree < =)))
-  (test* "rbtree-empty?" *test-error*
+  (test* "rbtree-empty?" (test-error)
          (rbtree-empty? 'wrong-arg))
   (test* "rbtree-exists?" '(#t #f)
          (let1 tree (make-rbtree = <)
@@ -757,8 +757,8 @@
 
   (test* "rbtree-min" '(0 . "0") (rbtree-min tree2))
   (test* "rbtree-max" '(2 . "2") (rbtree-max tree2))
-  (test* "rbtree-min" *test-error* (rbtree-min 'wrong-arg))
-  (test* "rbtree-min" *test-error* (rbtree-min 'wrong-arg))
+  (test* "rbtree-min" (test-error) (rbtree-min 'wrong-arg))
+  (test* "rbtree-min" (test-error) (rbtree-min 'wrong-arg))
   (test* "rbtree-min" 'default (rbtree-min empty 'default))
   (test* "rbtree-max" 'default (rbtree-max empty 'default))
 
@@ -843,10 +843,10 @@
 (test* "make-record-type" #t
        (is-a? record:1 <class>))
 
-(test* "make-record-type (error)" *test-error*
+(test* "make-record-type (error)" (test-error)
        (make-record-type "record:1" '((x 2) y)))
 
-(test* "make-record-type (error)" *test-error*
+(test* "make-record-type (error)" (test-error)
        (make-record-type "record:1" '(a b a)))
 
 (test* "record-constructor" #t
@@ -1093,7 +1093,7 @@
                   (trie-num-entries t1)))
     (test* "trie: get" 4
            (trie-get t1 "lilo"))
-    (test* "trie: get (error)" *test-error*
+    (test* "trie: get (error)" (test-error)
            (trie-get t1 "LILO"))
     (test* "trie: get (fallback)" 'foo
            (trie-get t1 "LILO" 'foo))
@@ -1163,7 +1163,7 @@
     (test* "trie: trie-update!" 16
            (begin (trie-update! t1 "liliko`i" (cut + <> 8))
                   (trie-get t1 "liliko`i")))
-    (test* "trie: trie-update! (nonexistent)" *test-error*
+    (test* "trie: trie-update! (nonexistent)" (test-error)
            (trie-update! t1 "humuhumu" (cut + <> 8)))
     (test* "trie: trie-update! (nonexistent)" 16
            (begin (trie-update! t1 "humuhumu" (cut + <> 8) 8)

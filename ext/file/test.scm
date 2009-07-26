@@ -21,7 +21,7 @@
 (test* "build-path" "a/b/c" (build-path "a/" "b/" "c"))
 (test* "build-path" "/a/b/c" (build-path "/" "a/b" "c"))
 (test* "build-path" "./a/b/c" (build-path "." "a/b" "c"))
-(test* "build-path" *test-error* (build-path "." "/a/b"))
+(test* "build-path" (test-error) (build-path "." "/a/b"))
 (test* "build-path" "foo" (build-path "" "foo"))
 (test* "build-path" "foo/bar" (build-path "" "foo" "" "bar"))
 (test* "build-path" "foo" (build-path "" "foo" ""))
@@ -412,7 +412,7 @@
        (number->string (logand #o666 (lognot (sys-umask))) 8)
        (number->string (file-perm "test.out/test.copy") 8))
 
-(test* "copy-file (:if-exists :error)" *test-error*
+(test* "copy-file (:if-exists :error)" (test-error)
        (copy-file "test.out/test5.o" "test.out/test.copy"))
 
 (test* "copy-file (:if-exists #f)" #f
@@ -463,7 +463,7 @@
             (not (file-eq? "test.out/test5.o" "test.out/test.copy"))
             (file-equal? "test.out/test5.o" "test.out/test.copy")))
 
-(test* "copy-file (:if-exists :error, safe)" *test-error*
+(test* "copy-file (:if-exists :error, safe)" (test-error)
        (copy-file "test.out/test5.o" "test.out/test.copy" :safe #t))
 
 (test* "copy-file (:if-exists #f, safe)" #f
@@ -487,7 +487,7 @@
             (file-equal? "test.out/test1.o" "test.out/test.copy")
             (file-equal? "test.out/test5.o" "test.out/test.copy~")))
 
-(test* "copy-file (same file)" *test-error*
+(test* "copy-file (same file)" (test-error)
        (copy-file "test.out/test.copy" "test.out/test.copy"
                   :if-exists :supersede))
 
@@ -515,7 +515,7 @@
             (not (file-exists? "test.out/test.copy"))
             (file-equal? "test.out/test1.o" "test.out/test.move")))
 
-(test* "move-file (:if-exists :error)" *test-error*
+(test* "move-file (:if-exists :error)" (test-error)
        (move-file "test.out/test5.o" "test.out/test.move"))
 
 (test* "move-file (:if-exists :supersede)" #t
@@ -531,7 +531,7 @@
             (file-equal? "test.out/test2.o" "test.out/test.move")
             (file-equal? "test.out/test4.o" "test.out/test.move.orig")))
 
-(test* "move-file (same file)" *test-error*
+(test* "move-file (same file)" (test-error)
        (move-file "test.out/test.move" "test.out/test.move"
                   :if-exists :supersede))
 
@@ -566,10 +566,10 @@
                                 (sys-readlink "test2.out")))))
         (remove-files "test.out" "test2.out"))
 
-      (tester "copy-file" copy-file *test-error*)
+      (tester "copy-file" copy-file (test-error))
       (tester "copy-file" copy-file #t :follow-link? #f)
       (tester "copy-directory*" copy-directory* #t)
-      (tester "copy-directory*" copy-directory* *test-error* :follow-link? #t)
+      (tester "copy-directory*" copy-directory* (test-error) :follow-link? #t)
       )]
    [else])
   )
@@ -580,7 +580,7 @@
 
 (test* "file->string, if-does-not-exist #f" #f
        (file->string "test.out" :if-does-not-exist #f))
-(test* "file->string, if-does-not-exist :error" *test-error*
+(test* "file->string, if-does-not-exist :error" (test-error)
        (file->string "test.out" :if-does-not-exist :error))
 
 (with-output-to-file "test.out"

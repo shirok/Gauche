@@ -10,13 +10,13 @@
   (test* "make-tree-map" #t
          (begin (set! tree1 (make-tree-map = <))
                 (tree-map? tree1)))
-  (test* "tree-map-get" *test-error*
+  (test* "tree-map-get" (test-error)
          (tree-map-get #f 0 'foo))
   (test* "tree-map-get" 'not-found
          (tree-map-get tree1 0 'not-found))
-  (test* "tree-map-get" *test-error*
+  (test* "tree-map-get" (test-error)
          (tree-map-get tree1 0))
-  (test* "tree-map-put!" *test-error*
+  (test* "tree-map-put!" (test-error)
          (tree-map-put! #f 0 'foo))
   (test* "tree-map-put!" "0"
          (begin (tree-map-put! tree1 0 "0")
@@ -57,7 +57,7 @@
          (tree-map-empty? tree1))
   (test* "tree-map-empty?" #t
          (tree-map-empty? (make-tree-map = <)))
-  (test* "tree-map-empty?" *test-error*
+  (test* "tree-map-empty?" (test-error)
          (tree-map-empty? 'wrong-arg))
   (test* "tree-map-exists?" '(#t #f)
          (let1 tree (make-tree-map = <)
@@ -94,8 +94,8 @@
 
   (test* "tree-map-min" '(0 . "0") (tree-map-min tree2))
   (test* "tree-map-max" '(2 . "2") (tree-map-max tree2))
-  (test* "tree-map-min" *test-error* (tree-map-min 'wrong-arg))
-  (test* "tree-map-max" *test-error* (tree-map-max 'wrong-arg))
+  (test* "tree-map-min" (test-error) (tree-map-min 'wrong-arg))
+  (test* "tree-map-max" (test-error) (tree-map-max 'wrong-arg))
 
   (test* "tree-map-keys" '(0 1 2)
          (tree-map-keys tree2))

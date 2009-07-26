@@ -119,7 +119,7 @@
             tests)))
 
 (ctest '(1 2) (curried2 1 2) ((curried2 1) 2))
-(ctest *test-error* ((curried2 1) 2 3) (curried2))
+(ctest (test-error) ((curried2 1) 2 3) (curried2))
 
 (ctest '(1 2)
        (apply curried2 '(1 2))
@@ -128,11 +128,11 @@
        ((apply curried2 '(1)) 2)
        ((apply curried2 1 '()) 2)
        (apply (apply curried2 '(1)) '(2)))
-(ctest *test-error* (apply curried2 '()))
+(ctest (test-error) (apply curried2 '()))
 
 (ctest '(1 2 ()) (curried2+ 1 2) ((curried2+ 1) 2))
 (ctest '(1 2 (3 4)) (curried2+ 1 2 3 4) ((curried2+ 1) 2 3 4))
-(ctest *test-error* ((curried2+ 1 2) 3 4))
+(ctest (test-error) ((curried2+ 1 2) 3 4))
 
 (ctest '(1 2 ()) (apply curried2+ '(1 2)) ((apply curried2+ '(1)) 2))
 (ctest '(1 2 (3 4))
@@ -144,7 +144,7 @@
        ((apply curried2+ '(1)) 2 3 4)
        ((apply curried2+ 1 '()) 2 3 4)
        (apply (apply curried2+ '(1)) '(2 3 4)))
-(ctest *test-error* (apply curried2+ '()))
+(ctest (test-error) (apply curried2+ '()))
 
 (ctest '(1 2 3) (curried3 1 2 3) ((curried3 1) 2 3) ((curried3 1 2) 3))
 (ctest '(1 2 3)
@@ -258,7 +258,7 @@
 (test* "let-keywords*" '(0 a 1 c) (oef 0 :bb 1))
 (test* "let-keywords*" '(0 a b 1) (oef 0 :c 1))
 (test* "let-keywords*" '(0 1 2 3) (oef 0 :c 3 :bb 2 :a 1))
-;;(test* "let-keywords*" *test-error* (oef 0 :c 3 :bb 2 :a 1 :unknown 1))
+;;(test* "let-keywords*" (test-error) (oef 0 :c 3 :bb 2 :a 1 :unknown 1))
 
 (define (oef+ x . args)
   (let ((i 0))
@@ -273,7 +273,7 @@
 (test* "let-keywords*" 1 (oef+ 0 :bb 1))
 (test* "let-keywords*" 1 (oef+ 0 :c 1))
 (test* "let-keywords*" 1 (oef+ 0 :c 3 :bb 2 :a 1))
-;;(test* "let-keywords*" *test-error* (oef+ 0 :c 3 :bb 2 :a 1 :unknown 1))
+;;(test* "let-keywords*" (test-error) (oef+ 0 :c 3 :bb 2 :a 1 :unknown 1))
 
 (define (orf x . args)
   (let-keywords args ((a 'a)
@@ -286,7 +286,7 @@
 (test* "let-keywords" '(0 a 1 c)   (orf 0 :bb 1))
 (test* "let-keywords" '(0 a b 1)   (orf 0 :c 1))
 (test* "let-keywords" '(0 1 2 3)   (orf 0 :c 3 :bb 2 :a 1))
-(test* "let-keywords" *test-error* (orf 0 :c 3 :bb 2 :a 1 :unknown 1))
+(test* "let-keywords" (test-error) (orf 0 :c 3 :bb 2 :a 1 :unknown 1))
 
 (define (orf+ x . args)
   (let ((i 0))
@@ -301,7 +301,7 @@
 (test* "let-keywords" 1 (orf+ 0 :bb 1))
 (test* "let-keywords" 1 (orf+ 0 :c 1))
 (test* "let-keywords" 1 (orf+ 0 :c 3 :bb 2 :a 1))
-(test* "let-keywords" *test-error* (orf 0 :c 3 :bb 2 :a 1 :unknown 1))
+(test* "let-keywords" (test-error) (orf 0 :c 3 :bb 2 :a 1 :unknown 1))
 
 ;; let-keywords* combined with syntax rules
 (define-syntax lambda++
@@ -326,7 +326,7 @@
        ((lambda++ (a b c :key d e) (list a b c d e))
         1 2 3 :e 5))
 
-(test* "macro + let-keywords*" *test-error*
+(test* "macro + let-keywords*" (test-error)
        ((lambda++ (a b c :key d e) (list a b c d e))
         1 2 :d 3))
 
@@ -354,13 +354,13 @@
              '(1 2 3 4)
              `((1 2 3 4) (1 2 3 ,(undefined))
                (1 2 ,(undefined) ,(undefined))
-               ,*test-error* ,*test-error*))
+               ,(test-error) ,(test-error)))
 
 (test-optkey ":optional (c 99) (d 100)"
              (lambda (a b :optional (c 99) (d 100)) (list a b c d))
              '(1 2 3 4)
              `((1 2 3 4) (1 2 3 100) (1 2 99 100)
-               ,*test-error* ,*test-error*))
+               ,(test-error) ,(test-error)))
 
 (test-optkey ":optional a (b 99) (c 100) d"
              (lambda (:optional a (b 99) (c 100) d) (list a b c d))
@@ -371,9 +371,9 @@
 (test-optkey ":key (c 99) (d 100)"
              (lambda (a b :key (c 99) (d 100)) (list a b c d))
              '(1 2 :c 3 :d 4)
-             `((1 2 3 4) ,*test-error* (1 2 3 100) ,*test-error*
+             `((1 2 3 4) ,(test-error) (1 2 3 100) ,(test-error)
                (1 2 99 100)
-               ,*test-error* ,*test-error*))
+               ,(test-error) ,(test-error)))
 
 (test-optkey ":optional (c 0) (d 1) :rest z"
              (lambda (a b :optional (c 0) (d 1) :rest z) (list a b c d z))
@@ -383,8 +383,8 @@
                (1 2 3 4 ())
                (1 2 3 1 ())
                (1 2 0 1 ())
-               ,*test-error*
-               ,*test-error*))
+               ,(test-error)
+               ,(test-error)))
 
 (test-optkey ":rest z :optional (c 0) (d 1)"
              (lambda (a b :rest z :optional (c 0) (d 1)) (list a b c d z))
@@ -394,42 +394,42 @@
                (1 2 3 4 ())
                (1 2 3 1 ())
                (1 2 0 1 ())
-               ,*test-error*
-               ,*test-error*))
+               ,(test-error)
+               ,(test-error)))
 
 (test-optkey ":key (b 0) (c 1) :rest z"
              (lambda (a :key (b 0) (c 1) :rest z) (list a b c z))
              '(1 :c 99 :b 88)
-             `((1 88 99 (:c 99 :b 88)) ,*test-error*
-               (1 0 99 (:c 99)) ,*test-error*
-               (1 0 1 ()) ,*test-error*))
+             `((1 88 99 (:c 99 :b 88)) ,(test-error)
+               (1 0 99 (:c 99)) ,(test-error)
+               (1 0 1 ()) ,(test-error)))
 
 (test-optkey ":key (b 0) (c 1) :allow-other-keys :rest z"
              (lambda (a :key (b 0) (c 1) :allow-other-keys :rest z)
                (list a b c z))
              '(1 :c 99 :a 77)
-             `((1 0 99 (:c 99 :a 77)) ,*test-error*
-               (1 0 99 (:c 99)) ,*test-error*
-               (1 0 1 ()) ,*test-error*))
+             `((1 0 99 (:c 99 :a 77)) ,(test-error)
+               (1 0 99 (:c 99)) ,(test-error)
+               (1 0 1 ()) ,(test-error)))
 
 (test-optkey ":key (b 0) (c 1) :allow-other-keys y :rest z"
              (lambda (a :key (b 0) (c 1) :allow-other-keys y :rest z)
                (list a b c y z))
              '(1 :d 66 :c 99 :a 77)
-             `((1 0 99 (:a 77 :d 66) (:d 66 :c 99 :a 77)) ,*test-error*
-               (1 0 99 (:d 66) (:d 66 :c 99)) ,*test-error*
-               (1 0 1 (:d 66) (:d 66)) ,*test-error*
-               (1 0 1 () ()) ,*test-error*))
+             `((1 0 99 (:a 77 :d 66) (:d 66 :c 99 :a 77)) ,(test-error)
+               (1 0 99 (:d 66) (:d 66 :c 99)) ,(test-error)
+               (1 0 1 (:d 66) (:d 66)) ,(test-error)
+               (1 0 1 () ()) ,(test-error)))
 
 (test-optkey ":optional b c :key (d 0) (e 1) :rest z"
              (lambda (a :optional b c :key (d 0) (e 1) :rest z)
                (list a b c d e z))
              '(1 :e 99 :d 66)
-             `((1 :e 99 66 1 (:d 66)) ,*test-error*
+             `((1 :e 99 66 1 (:d 66)) ,(test-error)
                (1 :e 99 0 1 ())
                (1 :e ,(undefined) 0 1 ())
                (1 ,(undefined) ,(undefined) 0 1 ())
-               ,*test-error*))
+               ,(test-error)))
 
 ;;-----------------------------------------------------------------------
 ;; case-lambda
@@ -461,18 +461,18 @@
                     [(a b) `(two ,a ,b)]
                     [(a b c) `(three ,a ,b ,c)]
                     [(a b c d) `(four ,a ,b ,c ,d)])
-                  `[() . ,*test-error*]
-                  `[(1) . ,*test-error*]
+                  `[() . ,(test-error)]
+                  `[(1) . ,(test-error)]
                   `[(1 2) . (two 1 2)]
                   `[(1 2 3) . (three 1 2 3)]
                   `[(1 2 3 4) . (four 1 2 3 4)]
-                  `[(1 2 3 4 5) . ,*test-error*])
+                  `[(1 2 3 4 5) . ,(test-error)])
 
 (case-lambda-test "[1..] matching order"
                   (case-lambda
                     [(x y)   `(foo ,x ,y)]
                     [(x . y) `(bar ,x ,y)])
-                  `[() . ,*test-error*]
+                  `[() . ,(test-error)]
                   `[(1) . (bar 1 ())]
                   `[(1 2) . (foo 1 2)]
                   `[(1 2 3) . (bar 1 (2 3))])
@@ -488,13 +488,13 @@
                     [() 'yot]
                     [(x y) `(bot ,x, y)])
                   `[() . yot]
-                  `[(1) . ,*test-error*]
+                  `[(1) . ,(test-error)]
                   `[(1 2) . (bot 1 2)])
 
 (case-lambda-test "one lambda"
                   (case-lambda
                     [(x . y) `(foo ,x ,y)])
-                  `[() . ,*test-error*]
+                  `[() . ,(test-error)]
                   `[(1) . (foo 1 ())]
                   `[(1 2) . (foo 1 (2))])
 

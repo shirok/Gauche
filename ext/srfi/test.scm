@@ -1070,7 +1070,7 @@
 (define-syntax assert-error
   (syntax-rules ()
     ((_ msg expr)
-     (test* msg *test-error* expr))))
+     (test* msg (test-error) expr))))
 
 (assert-equal "make-vector 0"
               (vector-length (make-vector 5))

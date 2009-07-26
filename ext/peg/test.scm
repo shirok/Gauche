@@ -76,7 +76,7 @@
          (rope3 (make-rope 'foo)))
     (test* "rope->string" "abc"        (rope->string rope1))
     (test* "rope->string" "012abcX"    (rope->string rope2))
-    (test* "rope->string" *test-error* (rope->string rope3))))
+    (test* "rope->string" (test-error) (rope->string rope3))))
 
 
 ;;;============================================================

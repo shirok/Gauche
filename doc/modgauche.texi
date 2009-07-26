@@ -9073,37 +9073,24 @@ without echoing:
 @c EN
 Defines a set of functions to write test scripts.
 A test script will look like this:
+@c JP
+テストスクリプトを書くための手続きを提供します。
+テストスクリプトは次のような形になります。
+@c COMMON
 @lisp
 (use gauche.test)
 (test-start "my feature")
+@c EN
 (load "my-feature")  ; @r{load your program}
 (import my-feature)  ; @r{if your program defines a module.}
 
 (test-module 'my-feature) ; @r{tests consistency in your module.}
-
-(test-section "feature group 1")
-(test "feature 1-1" EXPECT (lambda () TEST-BODY))
-(test "feature 1-2" EXPECT (lambda () TEST-BODY))
- @dots{}
-
-(test-section "feature group 2")
-(define test-data ...)
-(test "feature 2-1" EXPECT (lambda () TEST-BODY))
-(test "feature 2-2" *test-error* (lambda () TEST-THAT-SIGNALS-ERROR))
- @dots{}
-
-(test-end)
-@end lisp
 @c JP
-テストスクリプトを書くための手続きを提供します。
-テストスクリプトは次のような形になります。
-@lisp
-(use gauche.test)
-(test-start "my feature")
 (load "my-feature")  ; @r{テストすべきプログラムをロード}
 (import my-feature)  ; @r{モジュールを定義している場合はインポート}
 
 (test-module 'my-feature) ; @r{モジュールの一貫性チェック}
+@c COMMON
 
 (test-section "feature group 1")
 (test "feature 1-1" EXPECT (lambda () TEST-BODY))
@@ -9113,12 +9100,11 @@ A test script will look like this:
 (test-section "feature group 2")
 (define test-data ...)
 (test "feature 2-1" EXPECT (lambda () TEST-BODY))
-(test "feature 2-2" *test-error* (lambda () TEST-THAT-SIGNALS-ERROR))
+(test "feature 2-2" (test-error) (lambda () TEST-THAT-SIGNALS-ERROR))
  @dots{}
 
 (test-end)
 @end lisp
-@c COMMON
 
 @c EN
 With this convention, you can run test both interactively or
@@ -9138,57 +9124,193 @@ there, and only a small amount of messages go to stderr.
 @c COMMON
 
 @c EN
-It is recommended to have a "test" target always in Makefile
+It is recommended to have a "check" target always in Makefile
 of your module/program, so that the user of your program can run a
 test easily.  The rule may look like this:
 @c JP
-モジュールやプログラムを書いたら、Makefileに"test"ターゲットを作ることを
+モジュールやプログラムを書いたら、Makefileに"check"ターゲットを作ることを
 お薦めします。ルールはこんな感じになるでしょう：
 @c COMMON
 
 @example
-test :
+check :
         gosh my-feature-test.scm > test.log
 @end example
-
 @end deftp
 
-@defun test name expected thunk &optional compare
 @c EN
-Calls @var{thunk}, and compares its result with @var{expected}.
-The comparison predicate is @code{equal?} by default, but you can
-specify your own predicate by the argument @var{compare}.
-@var{Name} is a name of the test, for logging purpose.
-
-If @var{thunk} signals an uncaptured error, it is catched and
-yields a special error object.  A global variable @code{*test-error*}
-is bound to the error object, so that you can test an expected error.
-
-The procedure @var{compare} is called as follows:
-@example
-(@var{compare} @var{expected} @var{result-of-thunk})
-@end example
-It should return @code{#t} if the given result agrees the 
-expected value, or @code{#f} otherwise.
-One typical usage of the custom comparison
-method is to compare inexact numbers tolerating small error.
+@subheading Structuring a test file
 @c JP
-@var{thunk}を呼び、その結果を@var{expected}と比較します。
-比較手続きには、引数@var{compare}が与えられていればそれを用い、
-そうでなければ@code{equal?}
-を用います。@var{name}はログに残すためのテストの名前です。
+@subheading テストファイルの構造
+@c COMMON
 
-@var{thunk}内で捕捉されないエラーが発生した場合、それは捕捉され、
-特別なエラーオブジェクトに置き換えられます。グローバル変数@code{*test-error*}
-がエラーオブジェクトに束縛されており、エラーが期待される状況もテストすることが
-できます。
+@defun test-start module-name
+@c EN
+Initializes internal state and prints a log header.
+This should be called before any tests.
+@var{Module-name} is used only for logging purpose.
+@c JP
+テストの状態を初期化して、ヘッダをログに書き出します。テストを呼ぶ前に呼んで下さい。
+@var{module-name}はログのために使われる文字列です。
+@c COMMON
+@end defun
 
-手続き@var{compare}は次のように呼び出されます。
+@defun test-section section-name
+@c EN
+Marks beginning of the group of tests.  This is just for logging.
+@c JP
+一群のテストの開始をマークします。単にログに使われるだけです。
+@c COMMON
+@end defun
+
+@defun test-end
+@c EN
+Prints out list of failed tests, and returns the number of failed tests.
+@c JP
+失敗したテストのリストを報告し、その総数を返します。
+@c COMMON
+@end defun
+
+@defun test-record-file file
+@c EN
+Suppose you have several test scripts.  Normally you run them
+as a group and what you want to know is a concise summary of
+the whole results, instead of each result of individual test files.
+
+A @emph{test record file} is an auxiliary file used to
+gather summary of the result.   It holds a one-line summary
+of tests like this:
+@c JP
+テストスクリプトがいくつかある場合を考えます。通常は、それらのテストスクリプト
+をひとつづつ走らせて結果を確かめるのではなく、全部を一気に走らせて
+簡単な結果のまとめだけを知りたいと思うでしょう。
+
+@emph{test record file}はテスト結果を集積するための補助ファイルです。
+その内容は次のような一行のサマリになっています。
+@c COMMON
+
 @example
-(@var{compare} @var{expected} @var{result-of-thunk})
+Total:  9939 tests,  9939 passed,     0 failed,     0 aborted.
+@end example
+
+@c EN
+When a test record file exists,
+@code{test-start} reads and parses it, and remembers the numbers.
+Then @code{test-end} adds the count of the results and
+writes them back to the same test record file.
+@c JP
+test record fileが既に存在していると、@code{test-start}は
+それを読みこんで数字を覚えておきます。そして@code{test-end}が
+そのスクリプト中のテスト結果の数字を加算して、同じtest record fileに書き戻します。
+@c COMMON
+
+@c EN
+If you writes the @code{check} target in your makefile as follows,
+you will get the final one-line summary every time you run
+@code{make check}, assuming that @file{test1.scm}, @file{test2.scm}, 
+and @file{test3.scm} all has @code{(test-record-file "test.record")}
+before a call to @code{test-start}.
+@c JP
+makefileの@code{check}ターゲットを次のように書いておけば、
+@code{make check}を実行するたびにテスト結果の一行サマリを
+得ることができます。
+ただし、@file{test1.scm}、@file{test2.scm}、@file{test3.scm}はいずれも
+@code{test-start}呼び出し前に@code{(test-record-file "test.record")}を
+評価しているものとします。
+@c COMMON
+
+@example
+check:
+        @@rm -f test.record test.log
+        gosh test1.scm >> test.log
+        gosh test2.scm >> test.log
+        gosh test3.scm >> test.log
+        @@echo test.record
+@end example
+
+@c EN
+Note that to make @code{test-record-file} work, it must be placed
+before the call to @code{test-start}.
+
+Alternatively, you can use the envionment variable
+@code{GAUCHE_TEST_RECORD_FILE} to specify the test record file.
+@c JP
+@code{test-record-file}手続きがうまく動作するためには、それが
+@code{test-start}より前に呼ばれなければならないことに注意してください。
+
+この手続きのかわりに、環境変数@code{GAUCHE_TEST_RECORD_FILE}を使って
+test record fileを指定することもできます。
+@c COMMON
+@end defun
+
+@deftp {Environment Variable} GAUCHE_TEST_RECORD_FILE
+@c EN
+If this environment varaible is set when the test script is run,
+its value is used as the name of the test record file.
+
+If the test script calls @code{test-record-file}, it takes precedence
+and this environment variable is ignored.
+@c JP
+テストスクリプトが走る時にこの環境変数が指定されていれば、
+その値がtest record fileの名前として使われます。
+
+ただしテストスクリプト中に@code{test-record-file}の呼び出しがあると
+そちらが優先され、この環境変数は無視されます。
+@c COMMON
+@end deftp
+
+@c EN
+@subheading Individual tests
+@c JP
+@subheading 個々のテスト
+@c COMMON
+
+@defmac test* name expected expr &optional compare
+@c EN
+A convenience macro that wraps @var{expr} by lambda.
+@c JP
+@var{expr}をlambdaでくるんでくれる便利なマクロです。
+@c COMMON
+
+@example
+(test* name expected expr)
+  @equiv{} (test name expected (lambda () expr))
+@end example
+@end defmac
+
+@defun test name expected thunk &optional check
+@c EN
+Calls @var{thunk}, and checks its result fits @var{expected}
+using a procedure @var{check}, which
+is called as follows:
+@example
+(@var{check} @var{expected} @var{result-of-thunk})
+@end example
+It should return @code{#t} if the given result agrees with the 
+expected value, or @code{#f} otherwise.
+The default check procedure is @code{test-check} explained
+below.  It compares @var{expected} and @var{result-of-thunk}
+with @code{equal?}, except when @var{expected} is a special
+@code{<test-error>} object.  (See ``testing abnormal cases''
+paragraphs below for this special treatment.)
+
+One typical usage of the custom check
+procedure is to compare inexact numbers tolerating small error.
+@c JP
+@var{thunk}を呼び、その結果が@var{expected}に沿っているかを
+@var{check}を次のとおり呼び出すことで確認します。
+@example
+(@var{check} @var{expected} @var{result-of-thunk})
 @end example
 この手続きは、渡された結果が期待する値と合致する場合に@code{#t}を、
 そうでなければ@code{#f}を返さなければなりません。
+デフォルトの@var{check}手続きは下で述べる@code{test-error}です。
+これは、@var{expected}が特殊な@code{<test-error>}オブジェクトである
+場合を除いては、@var{expected}と@var{result-of-thunk}が@code{equal?}
+である場合に@code{#t}を返します。すなわち、通常はテスト式の結果が
+期待するものと@code{equal?}であればテストは成功である、ということです。
+(特別な場合については下の ``異常系をテストする'' の項を見てください)。
+
 特別な比較手続きのひとつの用法は、不正確な数値を、多少の誤差を許して
 比較するような場合です。
 @c COMMON
@@ -9199,22 +9321,84 @@ method is to compare inexact numbers tolerating small error.
       (lambda (expected result)
         (< (abs (- expected result)) 1.0e-10)))
 @end example
+
+@c EN
+@var{Name} is a name of the test, for the logging purpose.
+@c JP
+@var{name}はログに残すためのテストの名前です。
+@c COMMON
+
+@c EN
+When @var{thunk} signals an uncaptured error, it is catched and
+yields a special error object @code{<test-error>}.
+You can check it with another error object created by
+@code{test-error} function to see if it is an expected type
+of error.  See the entry of @code{test-error} below for the details.
+@c JP
+@var{thunk}内で捕捉されないエラーが発生した場合、それは捕捉され、
+特別なエラーオブジェクト@code{<test-error>}に置き換えられます。
+その結果を、下で説明する@code{test-error}手続きで作った@code{<test-error>}
+オブジェクトと比較することにより、エラーが期待されたものであるか、
+また適切な例外が上がっているかをテストすることができます。
+@c COMMON
+@end defun
+
+@c EN
+@subheading Testing abnormal cases
+@c JP
+@subheading 異常系をテストする
+@c COMMON
+
+@defun test-error &optional (condition-type <error>)
+@c EN
+Returns a new @code{<test-error>} object that mathes with
+other @code{<test-error>} object with the given @var{condition-type}.
+@c JP
+与えられた@var{condition-type}と適合する@code{<test-error>}オブジェクト
+とマッチするような、新たな@code{<test-error>}オブジェクトを作成して返します。
+@c COMMON
+
+@c EN
+The @code{test-check} procedure treats @code{<test-error>} objects
+specially.  When @code{err-expected} and @code{err-actual}
+are @code{<test-error>} objects,
+@code{(test-check err-expected err-actual)} returns @code{#t}
+if @code{err-expected}'s
+condition type is the same as or supertype of @code{err-actual}'s.
+@c JP
+テスト結果をチェックする@code{test-check}手続きは@code{<test-error>}オブジェクトを
+特別に扱います。@code{err-expected}と@code{err-actual}が
+ともに@code{<test-error>}のインスタンスであるとき、
+@code{(test-check err-expected err-actual)}は
+@code{err-expected}の持つcondition typeが@code{err-actual}の
+それと同じであるか、スーパータイプである場合に@code{#t}を返します。
+@c COMMON
+
+@c EN
+For example, if you want to test a call to @code{foo} raises
+an @code{<io-error>} (or its condition subtype), you can write
+as the following example:
+@c JP
+例えば@code{foo}の呼び出しが@code{<io-error>} (もしくはそのサブタイプ) の
+コンディションを投げるかどうかをテストしたければ、次のように書くことができます。
+@c COMMON
+
+@example
+(test "see if foo raises <io-error>" (test-error <io-error>) (foo))
+@end example
 @end defun
 
 @defvar *test-error*
 @c EN
-Bound to a special error object, which can be used as an expected
-value if the test thunk is supposed to signal an error.
+(Deprecated) Bounded to an instance of @code{<test-error>} with
+condition type @code{<error>}.  This is only provided for the
+backward compatibility; new code should use @code{test-error}
+procedure above.
 @c JP
-特別なエラーオブジェクトに束縛されています。
-テストのthunkがエラーを起こすことが期待されている状況で、
-エラーオブジェクトを@var{expected}引数に渡すことができます。
+(非推奨) condition typeとして@code{<error>}を持つ@code{<test-error>}
+オブジェクトに束縛されています。この変数は互換性のためにのみ残されています。
+新しいコードは上に述べた@code{test-error}手続きを使ってください。
 @c COMMON
-
-@example
-(test "test if car signals an error" *test-error*
-      (lambda () (car 5)))
-@end example
 @end defvar
 
 @defvar *test-report-error*
@@ -9246,19 +9430,11 @@ env GAUCHE_TEST_REPORT_ERROR=1 gosh mytest.scm
 @end example
 @end defvar
 
-
-@defmac test* name expected expr &optional compare
 @c EN
-A convenience macro that wraps @var{expr} by lambda.
+@subheading Testing modules
 @c JP
-@var{expr}をlambdaでくるんでくれる便利なマクロです。
+@subheading モジュールのテスト
 @c COMMON
-
-@example
-(test* name expected expr)
-  @equiv{} (test name expected (lambda () expr))
-@end example
-@end defmac
 
 @defun test-module module &keyword allow-undefined
 @c EN
@@ -9300,32 +9476,6 @@ keyword argument; the test will excludes them from the check.
 @c COMMON
 @end defun
 
-@defun test-start module-name
-@c EN
-Initializes internal state and prints a log header.
-This should be called before any tests.
-@var{Module-name} is used only for logging purpose.
-@c JP
-テストの状態を初期化して、ヘッダをログに書き出します。テストを呼ぶ前に呼んで下さい。
-@var{module-name}はログのために使われる文字列です。
-@c COMMON
-@end defun
-
-@defun test-section section-name
-@c EN
-Marks beginning of the group of tests.  This is just for logging.
-@c JP
-一群のテストの開始をマークします。単にログに使われるだけです。
-@c COMMON
-@end defun
-
-@defun test-end
-@c EN
-Prints out list of failed tests, and returns the number of failed tests.
-@c JP
-失敗したテストのリストを報告し、その総数を返します。
-@c COMMON
-@end defun
 
 @c ----------------------------------------------------------------------
 @node Threads, Measure timings, Unit testing, Library modules - Gauche extensions

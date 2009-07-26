@@ -215,13 +215,13 @@
 (test* "scalar (harmless)" "aaa"
        (read-from-string "#1=#0=\"aaa\""))
 
-(test* "bad syntax" *test-error*
+(test* "bad syntax" (test-error)
        (read-from-string "#1"))
-(test* "bad syntax" *test-error*
+(test* "bad syntax" (test-error)
        (read-from-string "#3#"))
-(test* "bad syntax" *test-error*
+(test* "bad syntax" (test-error)
        (read-from-string "#99999999999999999999999999999999999=3"))
-(test* "bad syntax" *test-error*
+(test* "bad syntax" (test-error)
        (read-from-string "#99999999999999999999999999999999999#"))
 
 (test* "pair 1" (circular-list 1 2)

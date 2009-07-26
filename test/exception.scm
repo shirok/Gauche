@@ -188,7 +188,7 @@
                ((<error> x) 'caught-error))
          (car 'a)))
 
-(test* "guard (uncaught error)" *test-error*
+(test* "guard (uncaught error)" (test-error)
        (guard (x
                ((symbol? x) (cons 'symbol x))
                ((is-a? x <error>) 'caught-error))

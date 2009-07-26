@@ -465,7 +465,7 @@
          (list (p) *thr1-val* *thr2-val*)))
 
 (test* "check parameter identification"
-       *test-error*
+       (test-error)
        (let* ((local #f))
          (thread-join!
           (thread-start!

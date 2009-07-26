@@ -33,7 +33,7 @@
 (test* "crc32 (u8vector)" 0 (crc32 #u8()))
 (test* "crc32 (u8vector)" 2666930069 (crc32 (string->u8vector "foobar")))
 (test* "crc32 (u8vector)" 4010574376 (crc32 (string->u8vector "abc") 8563))
-(test* "crc32 (error)" *test-error* (crc32 'foo))
+(test* "crc32 (error)" (test-error) (crc32 'foo))
 
 (test* "adler32 (string)" 1 (adler32 ""))
 (test* "adler32 (string)" 145425018 (adler32 "foobar"))
@@ -41,7 +41,7 @@
 (test* "adler32 (u8vector)" 1 (adler32 #u8()))
 (test* "adler32 (u8vector)" 145425018 (adler32 (string->u8vector "foobar")))
 (test* "adler32 (string)" 1721967257 (adler32 (string->u8vector "abc") 8563))
-(test* "adler32 (error)" *test-error* (adler32 'foo))
+(test* "adler32 (error)" (test-error) (adler32 'foo))
 
 ;;------------------------------------------------------------------
 (test-section "constant values")
@@ -93,7 +93,7 @@
 (test* "open-deflating-port" #t
        (port? (open-deflating-port (open-output-string))))
 
-(test* "open-deflating-port" *test-error*
+(test* "open-deflating-port" (test-error)
        (open-deflating-port (standard-input-port)))
 
 (test* "open-deflating-port :compression-level 9" #t
@@ -127,7 +127,7 @@
 
 (test* "open-deflating-port :dictionary \"abc\"" #t
        (port? (open-deflating-port (open-output-string) :dictionary "abc")))
-(test* "open-deflating-port :dictionary '()" *test-error*
+(test* "open-deflating-port :dictionary '()" (test-error)
        (open-deflating-port (open-output-string) :dictionary '()))
 
 (test* "zstream-dictionary-adler32" #f
@@ -232,7 +232,7 @@
 (test* "open-inflating-port" #t
        (port? (open-inflating-port (open-input-string ""))))
 
-(test* "open-inflating-port" *test-error*
+(test* "open-inflating-port" (test-error)
        (open-inflating-port (open-output-string)))
 
 (test* "open-inflating-port" #t

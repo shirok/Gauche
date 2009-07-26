@@ -295,8 +295,8 @@
 
 (test* "get-u8" '(1 2 254 255)
        (map (cut get-u8 '#u8(1 2 254 255) <>) (iota 4)))
-(test* "get-u8" *test-error* (get-u8 '#u8(1) -1))
-(test* "get-u8" *test-error* (get-u8 '#u8(1) 1))
+(test* "get-u8" (test-error) (get-u8 '#u8(1) -1))
+(test* "get-u8" (test-error) (get-u8 '#u8(1) 1))
 (test* "get-s8" '(1 2 -2 -1)
        (map (cut get-s8 '#u8(1 2 254 255) <>) (iota 4)))
 (test* "get-u16 be" '(#x0102 #x02fe #xfeff)
@@ -305,9 +305,9 @@
 (test* "get-u16 le" '(#x0201 #xfe02 #xfffe)
        (map (cut get-u16 '#u8(1 2 254 255) <> 'little-endian)
             '(0 1 2)))
-(test* "get-u16 bound" *test-error*
+(test* "get-u16 bound" (test-error)
        (get-u16 '#u8(1 2) -1))
-(test* "get-u16 bound" *test-error*
+(test* "get-u16 bound" (test-error)
        (get-u16 '#u8(1 2) 1))
 (test* "get-s16 be" `(#x0102 #x02fe ,(- #xfeff #x10000))
        (map (cut get-s16 '#u8(1 2 254 255) <> 'big-endian)

@@ -76,7 +76,7 @@
 (sexp-tester #t "#/\\/usr\\/bin/")
 (sexp-tester #f "#/\\/usr\\/bin  ")
 (sexp-tester #t "(#/(/ . a)")
-(sexp-tester *test-error* "(ibanr #<booba> )")
+(sexp-tester (test-error) "(ibanr #<booba> )")
 
 (test-section "listener")
 

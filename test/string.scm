@@ -141,7 +141,7 @@
        (string-split "--aa--bbb---c-c-" #/\w+/))
 (test* "string-split (regexp)" '("--aa--bbb---c-c-")
        (string-split "--aa--bbb---c-c-" #/z+/))
-(test* "string-split (regexp)" *test-error* ;; test detection of infinite loop
+(test* "string-split (regexp)" (test-error) ;; test detection of infinite loop
        (string-split "--aa--bbb---c-c-" #/-*/))
 
 (test* "string-split (charset)" '("aa" "bbb" "c" "d")
@@ -363,7 +363,7 @@
        (read (open-input-string "\"0123 \\   \n   4567\"")))
 (test* "line continuation" "0123-4567"
        (read (open-input-string "\"0123\\\n \\  \n -4567\"")))
-(test* "line continuation (invalid)" *test-error*
+(test* "line continuation (invalid)" (test-error)
        (read (open-input-string "\"1234\\ x\"")))
 
 

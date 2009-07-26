@@ -134,7 +134,7 @@
                (code (and-let* ((x (circular-list? foo)))
                        (take foo 3))))
              (make-module #f)))
-(test* "program (requires, no such feature)" *test-error*
+(test* "program (requires, no such feature)" (test-error)
        (eval '(program
                (requires no-such-feature))
              (make-module #f)))
@@ -175,7 +175,7 @@
                 (else (code (define x 2))))
                (code (+ x x)))
              (make-module #f)))
-(test* "program (feature-cond w/o else)" *test-error*
+(test* "program (feature-cond w/o else)" (test-error)
        (eval '(program
                (feature-cond
                 ((not srfi-1) (code (define x 5)))))

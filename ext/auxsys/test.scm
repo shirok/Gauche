@@ -143,7 +143,7 @@
 
   (sys-unlink "test1.o")
   (test* "sys-realpath (dangling)"
-         *test-error*
+         (test-error)
          (sys-realpath "./test2.o"))
 
   (sys-mkdir "test1.o" #o777)
@@ -157,7 +157,7 @@
   (sys-unlink "test2.o")
 
   (test* "sys-realpath (NOENT)"
-         *test-error*
+         (test-error <system-error>)
          (sys-realpath "./test2.o/test.o"))
   ]
  [else])

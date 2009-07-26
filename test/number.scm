@@ -183,9 +183,9 @@
 (test* "rational reader" #f
        (rational-test (string->number "1.3/2")))
 
-(test* "rational reader" *test-error*
+(test* "rational reader" (test-error)
        (rational-test (read-from-string "#e3/0")))
-(test* "rational reader" *test-error*
+(test* "rational reader" (test-error)
        (rational-test (read-from-string "#e-3/0")))
 
 (test* "rational reader w/#e" '(1234 #t)
@@ -337,10 +337,10 @@
 (test* "exact fractonal number" (- (%expt 10 296))
        (string->number "#e-0.0001e300"))
 
-(test* "exact fractonal number" *test-error*
-       (read-from-stirng "#e1e330"))
-(test* "exact fractonal number" *test-error*
-       (read-from-stirng "#e1e-330"))
+(test* "exact fractonal number" (test-error)
+       (read-from-string "#e1e330"))
+(test* "exact fractonal number" (test-error)
+       (read-from-string "#e1e-330"))
 
 
 ;;------------------------------------------------------------------
@@ -653,7 +653,7 @@
 
 (let1 tester
     (lambda (name proc result)
-      (test* name *test-error* (proc #t))
+      (test* name (test-error) (proc #t))
       (test* name result
              (list (proc 1) (proc +inf.0) (proc -inf.0) (proc +nan.0))))
   (tester "finite?"   finite?   `(#t #f #f #f))

@@ -384,12 +384,12 @@
            (receive (pid code) (sys-wait)
              (sys-wait-exit-status code)))))
 
-(test* "socket w/ port error handling" *test-error*
+(test* "socket w/ port error handling" (test-error)
        (let1 s (make-client-socket 'inet "localhost" *inet-port*)
          (close-socket s)
          (socket-input-port s)))
 
-(test* "socket w/ port error handling" *test-error*
+(test* "socket w/ port error handling" (test-error)
        (let1 s (make-client-socket 'inet "localhost" *inet-port*)
          (close-socket s)
          (socket-output-port s)))

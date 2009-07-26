@@ -84,7 +84,7 @@
 
 (define-module gauche.test
   (export test test* test-start test-end test-section
-          test-module test-error
+          test-module test-error test-check test-record-file
           *test-error* *test-report-error* test-error? prim-test))
 (select-module gauche.test)
 
@@ -104,23 +104,28 @@
       (format out "#<~a ~s>" cname (ref obj 'message))
       (format out "#<~a>" cname))))
 
-(define-method object-equal? ((x <test-error>) (y <test-error>))
-  (let ([ex (ref x'class)] [ey (ref y'class)])
-    (or (not ex)
-        (memq (ref x'class) (class-precedence-list (ref y'class))))))
-
-(define *test-error* (make <test-error>)) ;DEPRECATED
+(define (test-error? obj) (is-a? obj <test-error>))
 
 (define (test-error . maybe-class)
   (make <test-error> :class (and (pair? maybe-class) (car maybe-class))))
 
-(define *test-report-error*
-  (sys-getenv "GAUCHE_TEST_REPORT_ERROR"))
+(define (test-check expected result)
+  (cond [(test-error? expected)
+         (and (test-error? result)
+              (let ([ex (slot-ref expected'class)]
+                    [ey (slot-ref result'class)])
+                (or (not ex)
+                    (memq (slot-ref expected'class)
+                          (class-precedence-list (slot-ref result'class))))))]
+        [else (equal? expected result)]))
 
-(define *test-record-file*
-  (sys-getenv "GAUCHE_TEST_RECORD_FILE"))
+(define *test-error* (make <test-error>)) ;DEPRECATED
 
-(define (test-error? obj) (is-a? obj <test-error>))
+(define *test-report-error* (sys-getenv "GAUCHE_TEST_REPORT_ERROR"))
+
+(define *test-record-file* (sys-getenv "GAUCHE_TEST_RECORD_FILE"))
+
+(define (test-record-file flie) (set! *test-record-file* file)) ;public API
 
 ;; List of discrepancies
 (define *discrepancy-list* '())
@@ -170,7 +175,7 @@
 ;; Primitive test.  This doesn't use neither with-error-handler nor
 ;; object system, so it can be used _before_ those constructs are tested.
 (define (prim-test msg expect thunk . compare)
-  (let ((cmp (if (pair? compare) (car compare) equal?)))
+  (let ((cmp (if (pair? compare) (car compare) test-check)))
     (format/ss #t "test ~a, expects ~s ==> " msg expect)
     (flush)
     (test-count++)

@@ -52,7 +52,7 @@
     (newline)))
 
 (test* "detecting loop of require"
-       *test-error*
+       (test-error)
        (eval '(require "test.o/b") (interaction-environment)))
 
 (sys-system "rm -rf test.o")
@@ -117,7 +117,7 @@
   (lambda ()
     (write '(define foo 0))))
 (autoload "test.o/l1" foo1)
-(test* "autoload (file/error)" *test-error* foo1)
+(test* "autoload (file/error)" (test-error) foo1)
 
 (with-output-to-file "test.o/l0.scm"
   (lambda ()

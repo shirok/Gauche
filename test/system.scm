@@ -596,7 +596,7 @@
                (sys-alarm 1)
                (sys-pause))))))
 
-  (test* "sigalrm3" *test-error*
+  (test* "sigalrm3" (test-error)
          (call/cc
           (lambda (k)
             (with-signal-handlers

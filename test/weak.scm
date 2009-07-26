@@ -53,7 +53,7 @@
 ; (test* "weak-hash-table-type" 'eqv? (weak-hash-table-type x))
 ; (test* "weak-hash-table-weakness" 'value (weak-hash-table-weakness x))
 
-; (test* "weak-hash-table-get (nonexistent)" *test-error*
+; (test* "weak-hash-table-get (nonexistent)" (test-error)
 ;        (weak-hash-table-get x 123))
 ; (test* "weak-hash-table-get (nonexistent)" 'foo
 ;        (weak-hash-table-get x 123 'foo))
@@ -91,7 +91,7 @@
 
 ; (test* "weak-hash-table-weakness" 'key (weak-hash-table-weakness x))
 
-; (test* "weak-hash-table-get (nonexistent)" *test-error*
+; (test* "weak-hash-table-get (nonexistent)" (test-error)
 ;        (weak-hash-table-get x (list 1 2 3)))
 ; (test* "weak-hash-table-get (nonexistent)" 'foo
 ;        (weak-hash-table-get x (list 1 2 3) 'foo))

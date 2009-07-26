@@ -44,7 +44,7 @@
             (lambda (c) (c 1 2 3)))
          (list x y z)))
 
-(test* "call/cc (values4)" *test-error*
+(test* "call/cc (values4)" (test-error)
        (receive (x y)
            (call-with-current-continuation
             (lambda (c) (c 1 2 3)))

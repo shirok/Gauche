@@ -1,3 +1,15 @@
+2009-07-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (prim-test, test-check): Changed the default
+	  check procedure from equal? to a new test-check procedure.  It
+	  treats <test-error> objects specially, for the comparison of
+	  error case is non symmetric.  The old version handled error
+	  cases by overloading object-equal? for <test-error>, but it is
+	  awkward since object-equal? is expected to be symmetric.
+
+	* test/*, ext/*/test.scm: Rewrote *test-error* in error case tests
+	  with test-error; the *test-error* variable is obsoleted.
+
 2009-07-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uri.scm (uri-decompose-hierarchical): Changed to regard

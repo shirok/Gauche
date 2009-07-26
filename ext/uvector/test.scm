@@ -1225,7 +1225,7 @@
        (string->u8vector "@ABCD" 1 4))
 (test* "string->u8vector (start, end)" '#u8(64 65 66 67 68)
        (string->u8vector "@ABCD" 0 5))
-(test* "string->u8vector (OOB)" *test-error*
+(test* "string->u8vector (OOB)" (test-error)
        (string->u8vector "abcde" 2 6))
 
 (test* "string->u8vector!" '#u8(64 65 66 67 68)
@@ -1258,7 +1258,7 @@
        (u8vector->string '#u8(64 65 66 67 68) 2 4))
 (test* "u8vector->string (start, end)" "@ABCD"
        (u8vector->string '#u8(64 65 66 67 68) 0 5))
-(test* "u8vector->string (OOB)" *test-error*
+(test* "u8vector->string (OOB)" (test-error)
        (u8vector->string '#u8(64 65 66 67 68) 0 8))
 
 (test* "string->s8vector" '#s8(64 65 66 67 68)
@@ -1269,7 +1269,7 @@
        (string->s8vector "@ABCD" 1 4))
 (test* "string->s8vector (start, end)" '#s8(64 65 66 67 68)
        (string->s8vector "@ABCD" 0 5))
-(test* "string->s8vector (OOB)" *test-error*
+(test* "string->s8vector (OOB)" (test-error)
        (string->s8vector "abcde" 2 6))
 
 (test* "string->s8vector!" '#s8(64 65 66 67 68)
@@ -1302,7 +1302,7 @@
        (s8vector->string '#s8(64 65 66 67 68) 2 4))
 (test* "s8vector->string (start, end)" "@ABCD"
        (s8vector->string '#s8(64 65 66 67 68) 0 5))
-(test* "s8vector->string (OOB)" *test-error*
+(test* "s8vector->string (OOB)" (test-error)
        (s8vector->string '#s8(64 65 66 67 68) 0 8))
 
 (test* "string->u32vector" '#u32(64 65 66 67 68)
@@ -1313,7 +1313,7 @@
        (string->u32vector "@ABCD" 1 4))
 (test* "string->u32vector (start, end)" '#u32(64 65 66 67 68)
        (string->u32vector "@ABCD" 0 5))
-(test* "string->u32vector (OOB)" *test-error*
+(test* "string->u32vector (OOB)" (test-error)
        (string->u32vector "abcde" 2 6))
 
 (test* "u32vector->string" "@ABCD"
@@ -1324,7 +1324,7 @@
        (u32vector->string '#u32(64 65 66 67 68) 2 4))
 (test* "u32vector->string (start, end)" "@ABCD"
        (u32vector->string '#u32(64 65 66 67 68) 0 5))
-(test* "u32vector->string (OOB)" *test-error*
+(test* "u32vector->string (OOB)" (test-error)
        (u32vector->string '#u32(64 65 66 67 68) 0 8))
 
 (test* "string->s32vector" '#s32(64 65 66 67 68)
@@ -1335,7 +1335,7 @@
        (string->s32vector "@ABCD" 1 4))
 (test* "string->s32vector (start, end)" '#s32(64 65 66 67 68)
        (string->s32vector "@ABCD" 0 5))
-(test* "string->s32vector (OOB)" *test-error*
+(test* "string->s32vector (OOB)" (test-error)
        (string->s32vector "abcde" 2 6))
 
 (test* "s32vector->string" "@ABCD"
@@ -1346,7 +1346,7 @@
        (s32vector->string '#s32(64 65 66 67 68) 2 4))
 (test* "s32vector->string (start, end)" "@ABCD"
        (s32vector->string '#s32(64 65 66 67 68) 0 5))
-(test* "s32vector->string (OOB)" *test-error*
+(test* "s32vector->string (OOB)" (test-error)
        (s32vector->string '#s32(64 65 66 67 68) 0 8))
 
 ;; test for multibyte chars
@@ -1406,21 +1406,21 @@
                       4 8))
 
 ;; test alignment check
-(test* "alias u32 u8 (alignment violation)" *test-error*
+(test* "alias u32 u8 (alignment violation)" (test-error)
        (let* ((src (make-u8vector 9))
               (dst (uvector-alias <u32vector>)))
          dst))
-(test* "alias u32 u8 (alignment violation)" *test-error*
+(test* "alias u32 u8 (alignment violation)" (test-error)
        (let* ((src (make-u8vector 32))
               (dst (uvector-alias <u32vector> 2)))
          dst))
-(test* "alias u32 u8 (alignment violation)" *test-error*
+(test* "alias u32 u8 (alignment violation)" (test-error)
        (let* ((src (make-u8vector 32))
               (dst (uvector-alias <u32vector> 4 5)))
          dst))
 
 ;; test if immutable property propagates
-(test* "immutability violation" *test-error*
+(test* "immutability violation" (test-error)
        (let* ((src '#u8(0 1 2 3))
               (dst (uvector-alias <u8vector> src)))
          (u8vector-set! dst 0 1)))
@@ -1444,9 +1444,9 @@
             (shape 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8)
             #t))
 
-(test* "shape" *test-error* (shape 1))
-(test* "shape" *test-error* (shape 1 2 3))
-(test* "shape" *test-error* (shape 3 1))
+(test* "shape" (test-error) (shape 1))
+(test* "shape" (test-error) (shape 1 2 3))
+(test* "shape" (test-error) (shape 3 1))
 
 (test* "make-array" #t
        (and (make-array (shape))

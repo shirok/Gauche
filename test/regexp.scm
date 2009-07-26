@@ -576,11 +576,11 @@
 (test* "(\\d{2}){2}" '("1234" "34")
        (match&list #/(\d{2}){2}/ "a12345b"))
 
-(test* "{2}" *test-error*  (regexp? (string->regexp "{2}")))
+(test* "{2}" (test-error)  (regexp? (string->regexp "{2}")))
 (test* "{z}" #t            (regexp? (string->regexp "{z}")))
 (test* "{-1}" #t           (regexp? (string->regexp "{-1}")))
-(test* "{300}" *test-error* (regexp? (string->regexp "{300}")))
-(test* "{3,1}" *test-error* (regexp? (string->regexp "{3,1}")))
+(test* "{300}" (test-error) (regexp? (string->regexp "{300}")))
+(test* "{3,1}" (test-error) (regexp? (string->regexp "{3,1}")))
 
 ;;-------------------------------------------------------------------------
 (test-section "{n,m} (non-greedy)")
@@ -672,9 +672,9 @@
        (match&list #/(.+)\1/i "AbCaBC"))
 (test* "/(.+)\\1/i" #f
        (match&list #/(.+)\1/ "AbCAb1"))
-(test* "^\\1(.)$" *test-error*
+(test* "^\\1(.)$" (test-error)
        (string->regexp "^\\1(.)"))
-(test* "^(\\1)$" *test-error*
+(test* "^(\\1)$" (test-error)
        (string->regexp "^(\\1)$"))
 
 ;;-------------------------------------------------------------------------
@@ -802,7 +802,7 @@
        (match&list #/(?<=\d{3})(?<!999)foo/ "865foo"))
 (test* "(?<=\d{3})(?<!999)foo" #f
        (match&list #/(?<=\d{3})(?<!999)foo/ "999foo"))
-(test* "(?<=(?>a*))" *test-error*
+(test* "(?<=(?>a*))" (test-error)
        (string->regexp "(?<=(?>a*))"))
 (test* "(abc)...(?<=\\1)" '("abcabc" "abc")
        (match&list #/(abc)...(?<=\1)/ "abcabc"))
@@ -824,7 +824,7 @@
          (list (m 'foo) (m 'bar))))
 (test* "(?<foo>a)(?<bar>.*)" '("abcd" "a" "bcd")
        (match&list #/(?<foo>a)(?<bar>.*)/ "abcd"))
-(test* "(?<foo>a)" *test-error*
+(test* "(?<foo>a)" (test-error)
        (let1 m (#/(?<foo>a)/ "abcd")
          (m 'bar)))
 (test* "(?<foo>^a$)" '("a" "a")
@@ -845,7 +845,7 @@
        (match&list #/(?<foo>.+)\k<foo>/ "abcabc"))
 (test* "(?<foo>.+)\\k<foo>" #f
        (match&list #/(?<foo>.+)\k<foo>/ "abcdef"))
-(test* "\\k<foo>" *test-error*
+(test* "\\k<foo>" (test-error)
        (regexp-parse "\\k<foo>"))
 (test* "rxmatch-before" "abc"
        (rxmatch-before (#/(?<foo>def)/ "abcdefghi") 'foo))
@@ -878,16 +878,16 @@
        (match&list #/(?(?<=a)b)/ "ab"))
 (test* "(?(?<=a)b|c)" #f
        (match&list #/(?(?<=a)b)/ "ac"))
-(test* "(?(?a)b|c)" *test-error*
+(test* "(?(?a)b|c)" (test-error)
        (regexp-parse "(?(?a)b|c)"))
 (test* "()(?(1))" '("" "")
        (match&list #/()(?(1))/ ""))
 
-(test* "()(?(" *test-error*
+(test* "()(?(" (test-error)
        (regexp-parse "()((?("))
-(test* "()(?(1" *test-error*
+(test* "()(?(1" (test-error)
        (regexp-parse "()((?(1"))
-(test* "()(?(1)b|c|d)" *test-error*
+(test* "()(?(1)b|c|d)" (test-error)
        (regexp-parse "()(?(1)b|c|d)"))
 
 ;;-------------------------------------------------------------------------
@@ -964,7 +964,7 @@
 (test* "regexp-replace" "abc|def|ghi"
        (regexp-replace #/(?<match>def|DEF)/ "abcdefghi" "|\\k<match>|"))
 
-(test* "regexp-replace" *test-error*
+(test* "regexp-replace" (test-error)
        (regexp-replace #/(?<match>def|DEF)/ "abcdefghi" "|\\k<matchee>|"))
 
 (test* "regexp-replace" "abraabra**brabra**brabrabracadabrabrabra"
@@ -997,9 +997,9 @@
                                      (/ (string-length (rxmatch-substring m 1))
                                         3)))))
 
-(test* "regexp-replace-all" *test-error*
+(test* "regexp-replace-all" (test-error)
        (regexp-replace-all #/\d*/ "abcdef" "X"))
-(test* "regexp-replace-all" *test-error*
+(test* "regexp-replace-all" (test-error)
        (regexp-replace-all #/\d*/ "123abcdef" "X"))
 
 (test* "regexp-replace*" "cbazzbc"

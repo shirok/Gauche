@@ -61,7 +61,7 @@
 
 (test* "slot-ref-using-class" '(4 5 6)
        (map (lambda (slot) (slot-ref-using-class <x> x1 slot)) '(a b c)))
-(test* "slot-ref-using-class" *test-error*
+(test* "slot-ref-using-class" (test-error)
        (slot-ref-using-class <y> x1 'a))
 
 (test* "slot-ref-using-accessor" '(7 8 9)
@@ -69,7 +69,7 @@
               (let ((sa (class-slot-accessor <x> slot)))
                 (and sa (slot-ref-using-accessor x2 sa))))
             '(a b c)))
-(test* "slot-ref-using-accessor" *test-error*
+(test* "slot-ref-using-accessor" (test-error)
        (let ((sa (class-slot-accessor <y> slot)))
          (and sa (slot-ref-using-accessor x2 sa))))
 
@@ -79,7 +79,7 @@
                                      (- (slot-ref x1 slot)))
               (slot-ref x1 slot))
             '(a b c)))
-(test* "slot-set-using-class!" *test-error*
+(test* "slot-set-using-class!" (test-error)
        (slot-set-using-class! <y> x1 'a 3))
 
 (test* "slot-set-using-accessor!" '(-7 -8 -9)
@@ -89,7 +89,7 @@
                      (slot-set-using-accessor! x2 sa (- (slot-ref x2 slot)))))
               (slot-ref x2 slot))
             '(a b c)))
-(test* "slot-ref-using-accessor!" *test-error*
+(test* "slot-ref-using-accessor!" (test-error)
        (let ((sa (class-slot-accessor <y> slot)))
          (and sa (slot-set-using-accessor! x2 sa -1))))
 
@@ -565,9 +565,9 @@
 (test* "object-compare" -1 (compare #\a #\b))
 (test* "object-compare" 0  (compare #\a #\a))
 (test* "object-compare" 1  (compare #\b #\a))
-(test* "object-compare" *test-error* (compare #\b 4))
-(test* "object-compare" *test-error* (compare "zzz" 4))
-(test* "object-compare" *test-error* (compare 2+i 3+i))
+(test* "object-compare" (test-error) (compare #\b 4))
+(test* "object-compare" (test-error) (compare "zzz" 4))
+(test* "object-compare" (test-error) (compare 2+i 3+i))
 (test* "object-compare" -1 (compare (make <cmp> :x 3) (make <cmp> :x 4)))
 (test* "object-compare" 0 (compare (make <cmp> :x 3) (make <cmp> :x 3)))
 (test* "object-compare" 1 (compare (make <cmp> :x 4) (make <cmp> :x 3)))
@@ -575,7 +575,7 @@
 ;;----------------------------------------------------------------
 (test-section "object hash protocol")
 
-(test* "object-hash" *test-error*
+(test* "object-hash" (test-error)
        (hash (make <cmp> :x (list 1 2))))
 
 (define-method object-hash ((obj <cmp>))
@@ -607,7 +607,7 @@
 (test* "b => non" #t
        (hash-table-get  xht (make <cmp> :x 'b) #t))
 
-(test* "b => error" *test-error*
+(test* "b => error" (test-error)
        (hash-table-get  xht (make <cmp> :x 'b)))
 
 (test* "b => \"b\"" "b"
@@ -889,8 +889,8 @@
 (test* "validator" 99 (slot-ref v 'b))
 (test* "validator" 55 (begin (slot-set! v 'b 55) (slot-ref v 'b)))
 
-(test* "validator" *test-error* (slot-set! v 'b 3.4))
-(test* "validator" *test-error* (set! (b-of v) 3.4))
+(test* "validator" (test-error) (slot-set! v 'b 3.4))
+(test* "validator" (test-error) (set! (b-of v) 3.4))
 
 (define-class <validator2> (<validator-mixin>)
   ((a :validator (lambda (o v)

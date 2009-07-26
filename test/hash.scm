@@ -35,7 +35,7 @@
 (test* "b => non" #t
        (hash-table-get  h-eq 'b #t))
 
-(test* "b => error" *test-error*
+(test* "b => error" (test-error)
        (hash-table-get h-eq 'b))
 
 (test* "b => \"b\"" "b"
@@ -102,7 +102,7 @@
 (test* "b => non" #t
        (hash-table-get  h-eqv 'b #t))
 
-(test* "b => error" *test-error*
+(test* "b => error" (test-error)
        (hash-table-get  h-eqv 'b))
 
 (test* "b => \"b\"" "b"
@@ -179,7 +179,7 @@
 (test* "b => non" #t
        (hash-table-get  h-equal 'b #t))
 
-(test* "b => error" *test-error*
+(test* "b => error" (test-error)
        (hash-table-get  h-equal 'b))
 
 (test* "b => \"b\"" "b"
@@ -258,7 +258,7 @@
 (test* "\"b\" => non" #t
        (hash-table-get  h-string "b" #t))
 
-(test* "\"b\" => non" *test-error*
+(test* "\"b\" => non" (test-error)
        (hash-table-get  h-string "b"))
 
 (test* "\"b\" => \"b\"" "b"

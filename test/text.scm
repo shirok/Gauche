@@ -30,7 +30,7 @@
        (call-with-input-string "   \"ab\nc\" ,  \"de \n\n \nf \"  ,  , \"\" , \"gh\"\"\n\"\"i\""
          (make-csv-reader #\,)))
 
-(test* "csv-reader" *test-error*
+(test* "csv-reader" (test-error)
        (call-with-input-string " abc,  def , \"ghi\"\"\n\n"
          (make-csv-reader #\,)))
 
@@ -208,16 +208,16 @@ fuga
        (test-assert-curr-char "a bcd" '(#\a #\space)))
 (test* "assert-curr-char" '(#\a #\space)
        (test-assert-curr-char "a bcd" #[a ]))
-(test* "assert-curr-char" *test-error*
+(test* "assert-curr-char" (test-error)
        (test-assert-curr-char "bcd" #[a ]))
-(test* "assert-curr-char" *test-error*
+(test* "assert-curr-char" (test-error)
        (test-assert-curr-char "" #[a ]))
 (test* "assert-curr-char" '(eof eof)
        (test-assert-curr-char "" '(#\a #\space *eof*)))
 
 (test* "skip-until number" '(#f #\a)
        (test-parseutil skip-until " abcd" 1))
-(test* "skip-until number" *test-error*
+(test* "skip-until number" (test-error)
        (test-parseutil skip-until " abcd" 10))
 (test* "skip-until number" '(#f eof)
        (test-parseutil skip-until " abcd" 5))
@@ -229,7 +229,7 @@ fuga
        (test-parseutil skip-until "xxxc bcd" #[abc ]))
 (test* "skip-until cset" '(#\c eof)
        (test-parseutil skip-until "xxxc" #[abc ]))
-(test* "skip-until cset" *test-error*
+(test* "skip-until cset" (test-error)
        (test-parseutil skip-until "xxxc" #[def]))
 (test* "skip-until cset" '(eof eof)
        (test-parseutil skip-until "xxxc" '(#[def] *eof*)))
@@ -241,7 +241,7 @@ fuga
 (test* "skip-until proc" '(eof eof)
        (test-parseutil skip-until "xxx"
                        (lambda (x) (not (eqv? x #\x)))))
-(test* "skip-until proc" *test-error*
+(test* "skip-until proc" (test-error)
        (test-parseutil skip-until "yyyy"
                        (lambda (x) (eqv? x #\x))))
 (test* "skip-while" '(#\d #\d)
@@ -269,7 +269,7 @@ fuga
        (test-parseutil next-token "xxxabcd" #[ax ] #[d] "next token"))
 (test* "next-token" '("aeio" #\tab)
        (test-parseutil next-token "   aeio\tnjj" #[\s] #[\s] "next token"))
-(test* "next-token" *test-error*
+(test* "next-token" (test-error)
        (test-parseutil next-token "   aeio" #[\s] #[\s] "next token"))
 (test* "next-token" '("aeio" eof)
        (test-parseutil next-token "   aeio" #[\s] '(#[\s] *eof*) "next token"))

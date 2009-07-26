@@ -272,7 +272,7 @@
 (test* "failure continuation #2" '(#f #f ())
        (receive r (test-match '()) r))
 
-(test* "failure continuation #2" *test-error*
+(test* "failure continuation #2" (test-error)
        (test-match 1))
 
 

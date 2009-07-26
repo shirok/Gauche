@@ -14,7 +14,7 @@
   (set! (dict-get d 'b) 2)
   (test* "put/get" 1 (dict-get d 'a))
   (test* "put/get" 2 (dict-get d 'b))
-  (test* "get nonexistent" *test-error* (dict-get d 'c))
+  (test* "get nonexistent" (test-error) (dict-get d 'c))
   (test* "get default" 3 (dict-get d 'c 3))
   (test* "fold" '((a . 1) (b . 2)) (dict-fold d acons '())
          (cut lset= equal? <> <>))

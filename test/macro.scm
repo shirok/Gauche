@@ -101,22 +101,22 @@
             (mixlevel3 1 (2 3 4 5 6) (7 8 9 10)))
 
 ;; test that wrong usage of ellipsis is correctly identified
-(test "bad epplisis 1" *test-error*
+(test "bad epplisis 1" (test-error)
       (lambda () 
         (eval '(define-syntax badellipsis
                  (syntax-rules () (t) (3 ...)))
               (interaction-environment))))
-(test "bad epplisis 2" *test-error*
+(test "bad epplisis 2" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
                  (syntax-rules () (t a) (a ...)))
               (interaction-environment))))
-(test "bad epplisis 3" *test-error*
+(test "bad epplisis 3" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
                  (syntax-rules () (t a b ...) (a ...)))
               (interaction-environment))))
-(test "bad epplisis 4" *test-error*
+(test "bad epplisis 4" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
                  (syntax-rules () (t a ...) ((a ...) ...)))
@@ -458,12 +458,12 @@
         (gen-idef-1 4)
         (list foo bar)))
 
-(test "define foo (error)" *test-error*
+(test "define foo (error)" (test-error)
       (lambda ()
         (eval '(let ()
                  (list 3 4)
                  (gen-idef-1 5)))))
-(test "define foo (error)" *test-error*
+(test "define foo (error)" (test-error)
       (lambda ()
         (eval '(let ()
                  (gen-idef-1 5)))))
@@ -513,13 +513,13 @@
           (gen-idef-2 3 4))
         (define baz 20)
         (list foo bar baz biz)))
-(test "define foo, bar (error)" *test-error*
+(test "define foo, bar (error)" (test-error)
       (lambda ()
         (eval '(let ()
                  (list 3)
                  (gen-idef-2 -1 -2)
                  (list foo bar)))))
-(test "define foo, bar (error)" *test-error*
+(test "define foo, bar (error)" (test-error)
       (lambda ()
         (eval '(let ()
                  (gen-idef-2 -1 -2)))))

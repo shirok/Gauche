@@ -15,7 +15,7 @@
   (test* #`",name basic set!/ref" val1
          (begin (%set! obj (key1) val1)
                 (%ref obj (key1))))
-  (test* #`",name referencing nokey" *test-error*
+  (test* #`",name referencing nokey" (test-error)
          (%ref obj (key2)))
   (test* #`",name referencing nokey fallback" 'huh?
          (%ref obj (key2) 'huh?))

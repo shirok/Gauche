@@ -90,11 +90,11 @@
        (get-keyword :a *key-value-list*))
 (test* "get-keyword" 'ook
        (get-keyword :d *key-value-list*))
-(test* "get-keyword" *test-error*
+(test* "get-keyword" (test-error)
        (get-keyword :z *key-value-list*))
 (test* "get-keyword" 88
        (get-keyword :z *key-value-list* 88))
-(test* "get-keyword" *test-error*
+(test* "get-keyword" (test-error)
        (get-keyword :z (cdr *key-value-list*)))
 
 (test* "get-keyword*" "foo"
@@ -105,11 +105,11 @@
        (get-keyword* :d *key-value-list*))
 (test* "get-keyword*" 'ook
        (get-keyword* :d *key-value-list* (error "oops")))
-(test* "get-keyword*" *test-error*
+(test* "get-keyword*" (test-error)
        (get-keyword* :z *key-value-list*))
 (test* "get-keyword*" 88
        (get-keyword* :z *key-value-list* 88))
-(test* "get-keyword*" *test-error*
+(test* "get-keyword*" (test-error)
        (get-keyword* :z (cdr *key-value-list*)))
 
 ;;----------------------------------------------------------------
