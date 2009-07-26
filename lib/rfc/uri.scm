@@ -79,7 +79,7 @@
 (define (uri-decompose-hierarchical specific)
   (cond
    ((and (string? specific)
-         (#/^(?:\/\/([^\/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?$/ specific))
+         (#/^(?:\/\/([^\/?#]*))?([^?#]+)?(?:\?([^#]*))?(?:#(.*))?$/ specific))
     => (lambda (m) (values (m 1) (m 2) (m 3) (m 4))))
    (else (values #f #f #f #f))))
 

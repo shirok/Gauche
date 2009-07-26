@@ -661,6 +661,20 @@ Content-Length: 4349
             "//www.example.com:8080/?abc")
          r))
 
+(test* "uri-decompose-hierarchical" '("www.example.com:8080"
+                                      #f
+                                      #f
+                                      #f)
+       (receive r (uri-decompose-hierarchical "//www.example.com:8080") r))
+
+(test* "uri-decompose-hierarchical" '((#f #f  #f #f)
+                                      ("" #f  #f #f)
+                                      (#f "/" #f #f)
+                                      ("" "/" #f #f))
+       (map (lambda (specific)
+              (receive r (uri-decompose-hierarchical specific) r))
+            '("" "//" "/" "///")))
+
 (test* "uri-decompose-authority" '(#f "www.example.com" #f)
        (receive r (uri-decompose-authority "www.example.com") r))
 (test* "uri-decompose-authority" '(#f "www.example.com" "8080")
