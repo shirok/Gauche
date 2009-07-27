@@ -592,7 +592,7 @@ ScmObj Scm_DeleteDuplicates(ScmObj list, int cmpmode)
             SCM_APPEND1(result, tail, SCM_CAR(lp));
         }
     }
-    if (!SCM_NULLP(lp)) SCM_SET_CDR(lp, tail);
+    if (!SCM_PAIRP(lp)) SCM_SET_CDR(tail, lp);
     return result;
 }
 
