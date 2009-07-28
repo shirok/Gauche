@@ -333,6 +333,8 @@
        (delete-duplicates '(a b c d e) eq?))
 (test* "delete-duplicates" '(a b c d e)
        (delete-duplicates '(a b a c b a d d a e) eq?))
+(test* "delete-duplicates" '(a b c d . e)
+       (delete-duplicates '(a b a c b a d d a . e) eq?))
 (test* "delete-duplicates" '(1.0 2.0 3.0 4.0 5.0)
        (delete-duplicates '(1.0 2.0 1.0 2.0 3.0 3.0 4.0 1.0 5.0) eqv?))
 (test* "delete-duplicates" '("a" "b" "c" "d" "e")
