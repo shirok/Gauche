@@ -394,27 +394,74 @@ static void read_nested_comment(ScmPort *port, ScmReadContext *ctx)
     }
 }
 
+/* Table of whitespace characters (Unicode category Zs, Zl and Zp) beyond
+   ASCII range.  Eventually we'll have a generic unicode character category
+   table and this info should be integrated into it.  */
+static ScmChar spaces[] = {
+#if   defined(GAUCHE_CHAR_ENCODING_UTF_8)
+    0x00a0,                     /* Zs NO-BREAK SPACE */
+    0x1680,                     /* Zs OGHAM SPACE MARK */
+    0x180E,                     /* Zs MONGOLIAN VOWEL SEPARATOR */
+    0x2000,                     /* Zs EN QUAD */
+    0x2001,                     /* Zs EM QUAD */
+    0x2002,                     /* Zs EN SPACE */
+    0x2003,                     /* Zs EM SPACE */
+    0x2004,                     /* Zs THREE-PER-EM SPACE */
+    0x2005,                     /* Zs FOUR-PER-EM SPACE */
+    0x2006,                     /* Zs SIX-PER-EM SPACE */
+    0x2007,                     /* Zs FIGURE SPACE */
+    0x2008,                     /* Zs PUNCTUATION SPACE */
+    0x2009,                     /* Zs THIN SPACE */
+    0x200A,                     /* Zs HAIR SPACE */
+    0x202F,                     /* Zs NARROW NO-BREAK SPACE */
+    0x205F,                     /* Zs MEDIUM MATHEMATICAL SPACE */
+    0x2028,                     /* Zl LINE SEPARATOR */
+    0x2029,                     /* Zp PARAGRAPH SEPARATOR */
+    0x3000,                     /* Zs IDEOGRAPHIC SPACE */
+#define MAX_WS 0x3000
+#elif defined(GAUCHE_CHAR_ENCODING_EUC_JP)
+    0xa1a1,                     /* zenkaku space */
+#define MAX_WS 0xa1a1
+#elif defined(GAUCHE_CHAR_ENCODING_SJIS)
+    0x8140,                     /* zenkaku space */
+#define MAX_WS 0x8140
+#else
+    0x00a0,                     /* nbws */
+#define MAX_WS 0x00a0
+#endif
+    SCM_CHAR_INVALID            /* mark */
+};
+
+
 static int skipws(ScmPort *port, ScmReadContext *ctx)
 {
+    ScmChar c0;
+    
     for (;;) {
         int c = Scm_GetcUnsafe(port);
         if (c == EOF) return c;
-        if (c <= 256 && isspace(c)) continue;
-        if (c == ';') {
-            for (;;) {
-                /* NB: comment may contain unexpected character code.
-                   for the safety, we read bytes here. */
-                c = Scm_GetbUnsafe(port);
-                if (c == '\n') {
-                    /* oops.  ugly. */
-                    port->line++;
-                    break;
+        if (c <= 127) {
+            if (isspace(c)) continue;
+            if (c == ';') {
+                for (;;) {
+                    /* NB: comment may contain unexpected character code.
+                       for the safety, we read bytes here. */
+                    c = Scm_GetbUnsafe(port);
+                    if (c == '\n') {
+                        /* oops.  ugly. */
+                        port->line++;
+                        break;
+                    }
+                    if (c == EOF) return EOF;
                 }
-                if (c == EOF) return EOF;
+                continue;
             }
-            continue;
+            return c;
         }
-        return c;
+        if (c > MAX_WS) return c;
+        for (c0 = *spaces; c0 < c && c0 != SCM_CHAR_INVALID; c0++) /*empty*/;
+        if (c == c0) continue;
+        else return c;
     }
 }
 
