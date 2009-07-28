@@ -110,6 +110,9 @@
 
 /* C is an ScmChar > 0x80.  Returns true if C is a whitespace character. */
 #define SCM_CHAR_EXTRA_WHITESPACE(c)  ((c) == 0x8140) /* zenkaku space */
+/* Like SCM_CHAR_EXTRA_WHITESPACE, but excludes Zl and Zp.
+   See R6RS on the intraline whitespaces. */
+#define SCM_CHAR_EXTRA_WHITESPACE_INTRALINE(c) SCM_CHAR_EXTRA_WHITESPACE(c)
 
 #else  /* !SCM_CHAR_ENCODING_BODY */
 /*==================================================================

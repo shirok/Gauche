@@ -757,6 +757,8 @@ static ScmObj read_string(ScmPort *port, int incompletep,
 #define ACCUMULATE(var)                                 \
     if (incompletep) { SCM_DSTRING_PUTB(&ds, var); }    \
     else             { SCM_DSTRING_PUTC(&ds, var); }
+#define INTRALINE_WS(var)                               \
+    ((var)==' ' || (var)=='\t' || SCM_CHAR_EXTRA_WHITESPACE_INTRALINE(var))
 
     for (;;) {
         FETCH(c);
@@ -794,6 +796,7 @@ static ScmObj read_string(ScmPort *port, int incompletep,
                 break;
             }
                 /* R6RS-style line continuation handling*/
+            line_continuation:
             case ' ':
             case '\t': {
                 for (;;) {
@@ -801,7 +804,7 @@ static ScmObj read_string(ScmPort *port, int incompletep,
                     if (c == EOF) goto eof_exit;
                     if (c == '\r') goto cont_cr;
                     if (c == '\n') goto cont_lf;
-                    if (c != ' ' && c != '\t') goto cont_err;
+                    if (!INTRALINE_WS(c)) goto cont_err;
                 }
             }
                 /*FALLTHROUGH*/
@@ -810,7 +813,7 @@ static ScmObj read_string(ScmPort *port, int incompletep,
                 FETCH(c);
                 if (c == EOF)  goto eof_exit;
                 if (c == '\\') goto backslash;
-                if (c != '\n' && c != ' ' && c != '\t') {
+                if (c != '\n' && !INTRALINE_WS(c)) {
                     ACCUMULATE(c);
                     break;
                 }
@@ -822,7 +825,7 @@ static ScmObj read_string(ScmPort *port, int incompletep,
                     FETCH(c);
                     if (c == EOF) goto eof_exit;
                     if (c == '\\') goto backslash;
-                    if (c != ' ' && c != '\t') {
+                    if (!INTRALINE_WS(c)) {
                         ACCUMULATE(c);
                         break;
                     }
@@ -830,10 +833,11 @@ static ScmObj read_string(ScmPort *port, int incompletep,
                 break;
             }
             default:
-                ACCUMULATE(c); break;
+                if (SCM_CHAR_EXTRA_WHITESPACE_INTRALINE(c)) goto line_continuation;
+                else ACCUMULATE(c);
             }
             break;
-        }       
+        } 
         default: ACCUMULATE(c); break;
         }
     }

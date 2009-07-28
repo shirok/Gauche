@@ -130,9 +130,13 @@ SCM_EXTERN void Scm_CharUtf8Putc(unsigned char *, ScmChar);
 
 /* C is an ScmChar > 0x80.  Returns true if C is a whitespace character. */
 #define SCM_CHAR_EXTRA_WHITESPACE(c) \
-    ((c) <= 0x3000 && Scm__CharIsExtraWhiteSpace(c))
+    ((c) <= 0x3000 && Scm__CharIsExtraWhiteSpace(c, FALSE))
+/* Like SCM_CHAR_EXTRA_WHITESPACE, but excludes Zl and Zp.
+   See R6RS on the intraline whitespaces. */
+#define SCM_CHAR_EXTRA_WHITESPACE_INTRALINE(c) \
+    ((c) <= 0x3000 && Scm__CharIsExtraWhiteSpace(c, TRUE))
 
-extern int Scm__CharIsExtraWhiteSpace(ScmChar c);
+extern int Scm__CharIsExtraWhiteSpace(ScmChar c, int intraline);
 
 #else  /* !SCM_CHAR_ENCODING_BODY */
 /*==================================================================
@@ -266,7 +270,7 @@ void Scm_CharUtf8Putc(unsigned char *cp, ScmChar ch)
     }
 }
 
-int Scm__CharIsExtraWhiteSpace(ScmChar c)
+int Scm__CharIsExtraWhiteSpace(ScmChar c, int intraline)
 {
     if (c < 0x2000) {
         return (c == 0x00a0         /* Zs NO-BREAK SPACE */
@@ -278,9 +282,10 @@ int Scm__CharIsExtraWhiteSpace(ScmChar c)
     } else {
         return (c == 0x3000         /* Zs IDEOGRAPHIC SPACE */
                 || c == 0x2028      /* Zl LINE SEPARATOR */
-                || c == 0x2029      /* Zp PARAGRAPH SEPARATOR */
-                || c == 0x202f      /* Zs NARROW NO-BREAK SPACE */
-                || c == 0x205f);    /* Zs MEDIUM MATHEMATICAL SPACE */
+                || c == 0x205f      /* Zs MEDIUM MATHEMATICAL SPACE */
+                || (!intraline
+                    && (c == 0x2029        /* Zp PARAGRAPH SEPARATOR */
+                        || c == 0x202f))); /* Zs NARROW NO-BREAK SPACE */
     }
 }
 

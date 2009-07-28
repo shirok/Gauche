@@ -366,6 +366,20 @@
 (test* "line continuation (invalid)" (test-error)
        (read (open-input-string "\"1234\\ x\"")))
 
+(unless (eq? (gauche-character-encoding) 'none)
+  (test* "line continuation (extended chars)" "abc def1"
+         (read (open-input-string "\"abc \\\u3000\ndef1\"")))
+  (test* "line continuation (extended chars)" "abc def2"
+         (read (open-input-string "\"abc \\ \u3000\ndef2\"")))
+  (test* "line continuation (extended chars)" "abc def3"
+         (read (open-input-string "\"abc \\\u3000 \ndef3\"")))
+  (test* "line continuation (extended chars)" "ABC DEF1"
+         (read (open-input-string "\"ABC \\\n\u3000 DEF1\"")))
+  (test* "line continuation (extended chars)" "ABC DEF2"
+         (read (open-input-string "\"ABC \\\n \u3000DEF2\"")))
+  (test* "line continuation (extended chars)" "uvw xyz1"
+         (read (open-input-string "\"uvw \\\u3000\n\u3000\\\nxyz1\"")))
+  )
 
 (define (read-line-tester str)
   (let1 s (open-input-string str)
