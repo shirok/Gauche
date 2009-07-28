@@ -128,6 +128,12 @@ SCM_EXTERN void Scm_CharUtf8Putc(unsigned char *, ScmChar);
         }                                                       \
     } while (0)
 
+/* C is an ScmChar > 0x80.  Returns true if C is a whitespace character. */
+#define SCM_CHAR_EXTRA_WHITESPACE(c) \
+    ((c) <= 0x3000 && Scm__CharIsExtraWhiteSpace(c))
+
+extern int Scm__CharIsExtraWhiteSpace(ScmChar c);
+
 #else  /* !SCM_CHAR_ENCODING_BODY */
 /*==================================================================
  * This part is included in char.c
@@ -257,6 +263,24 @@ void Scm_CharUtf8Putc(unsigned char *cp, ScmChar ch)
         *cp++ = (u_char)((ch>>12)&0x3f) | 0x80;
         *cp++ = (u_char)((ch>>6)&0x3f) | 0x80;
         *cp++ = (u_char)(ch&0x3f) | 0x80;
+    }
+}
+
+int Scm__CharIsExtraWhiteSpace(ScmChar c)
+{
+    if (c < 0x2000) {
+        return (c == 0x00a0         /* Zs NO-BREAK SPACE */
+                || c == 0x1680      /* Zs OGHAM SPACE MARK */
+                || c == 0x180e);    /* Zs MONGOLIAN VOWEL SEPARATOR */
+    } else if (c <= 0x200a) {
+        /* 0x2000 - 0x200a are all Zs's */
+        return TRUE;
+    } else {
+        return (c == 0x3000         /* Zs IDEOGRAPHIC SPACE */
+                || c == 0x2028      /* Zl LINE SEPARATOR */
+                || c == 0x2029      /* Zp PARAGRAPH SEPARATOR */
+                || c == 0x202f      /* Zs NARROW NO-BREAK SPACE */
+                || c == 0x205f);    /* Zs MEDIUM MATHEMATICAL SPACE */
     }
 }
 

@@ -117,6 +117,10 @@
 
 SCM_EXTERN const char *Scm_CharBackwardEUC(const char *cp, const char *start);
 
+/* C is an ScmChar > 0x80.  Returns true if C is a whitespace character. */
+#define SCM_CHAR_EXTRA_WHITESPACE(c)  ((c) == 0xa1a1) /* zenkaku space */
+
+
 #else  /* !SCM_CHAR_ENCODING_BODY */
 /*==================================================================
  * This part is included in char.c
