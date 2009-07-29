@@ -281,11 +281,11 @@ int Scm__CharIsExtraWhiteSpace(ScmChar c, int intraline)
         return TRUE;
     } else {
         return (c == 0x3000         /* Zs IDEOGRAPHIC SPACE */
-                || c == 0x2028      /* Zl LINE SEPARATOR */
+                || c == 0x202f      /* Zs NARROW NO-BREAK SPACE */
                 || c == 0x205f      /* Zs MEDIUM MATHEMATICAL SPACE */
                 || (!intraline
                     && (c == 0x2029        /* Zp PARAGRAPH SEPARATOR */
-                        || c == 0x202f))); /* Zs NARROW NO-BREAK SPACE */
+                        || c == 0x2028))); /* Zl LINE SEPARATOR */
     }
 }
 
