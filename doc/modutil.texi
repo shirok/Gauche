@@ -4653,7 +4653,7 @@ faster than getting one by one.
 @c        ($return (x->integer (list->string ds)))))
 @c @end example
 
-@c The @code{$do} form works somewhat like @code{ant-let*}; it takes
+@c The @code{$do} form works somewhat like @code{and-let*}; it takes
 @c a form of @code{($do [@var{var} @var{parser}] @dots{} @var{expr})},
 @c applying the @var{parser}s in order, binding the result of each
 @c parser to @var{var}.  The @code{$return} combinator is create a
@@ -17403,7 +17403,7 @@ inserted between elements of @var{stream}.
 @defun stream-append stream @dots{}
 @end defun
 
-@defun steram-concatenate streams
+@defun stream-concatenate streams
 @end defun
 
 @defun stream-reverse stream &optional tail-stream

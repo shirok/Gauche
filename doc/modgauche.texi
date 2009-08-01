@@ -7804,7 +7804,7 @@ Take a look at the code if you want to know the exact behavior.
 評価されてしまうので、そこで起きる副作用は効果を持ちます (例えば
 @code{define-class}はクラスの再定義を行ってしまいます)。
 これは利便のためだけのものだと考えて下さい。
-正確な振舞いをしれたければ、コードを見てください。
+正確な振舞いを知りたければ、コードを見てください。
 @c COMMON
 @end deftp
 
@@ -10317,7 +10317,7 @@ The following example is taken from SRFI-18 document:
 @var{mutex}それ自身は'再帰的なロック'の機能は実装していません。
 つまり、@var{mutex}をロックしたスレッドが再度@var{mutex}をロックしようと
 すると、そのスレッドはブロックします。しかし、このmutexに
-基づいて再帰的なロックをセマンティクスを実装することは難しくありません。
+基づいて再帰的なロックのセマンティクスを実装することは難しくありません。
 次の例は、SRFI-18のドキュメントから引用したものです。
 @c COMMON
 
