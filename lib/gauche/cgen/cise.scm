@@ -153,8 +153,10 @@
 (define-syntax define-cise-macro
   (syntax-rules ()
     [(_ (op form env) . body)
-     (cise-register-macro! 'op (lambda (form env) . body))]))
-
+     (cise-register-macro! 'op (lambda (form env) . body))]
+    [(_ op op2)                         ; alias
+     (cise-register-macro! 'op (or (cise-lookup-macro 'op2)
+                                   (error "unknown cise macro:" 'op2)))]))
 ;;
 ;; define-cise-stmt OP [ENV] CLAUSE ... [:where DEFINITION ...]
 ;; define-cise-expr OP [ENV] CLAUSE ... [:where DEFINITION ...]
@@ -561,9 +563,13 @@
 (define-cise-stmt goto
   [(_ name) `("goto " ,(cise-render-identifier name) ";")])
 
-;; [cise stmt] |#if| STRING STMT [STMT]
+;;
+;; Preprocessor directives
+;;
+
+;; [cise stmt] .if STRING STMT [STMT]
 ;;   c preprocessor directive
-(define-cise-macro (|#if| form env)
+(define-cise-macro (.if form env)
   (ensure-stmt-ctx form env)
   (match form
     [(_ condition stmt1)
@@ -576,6 +582,35 @@
        "#else  /* !",(x->string condition) " */\n" |#reset-line|
        ,(render-rec stmt2 env) "\n"
        "#endif /* " ,(x->string condition) " */\n" |#reset-line|)]))
+
+(define-cise-macro (.cond form env)
+  (ensure-stmt-ctx form env)
+  (match form
+    [(_ (condition . stmts) ...)
+     `("#if 0 /*dummy*/\n"
+       ,@(fold-right (lambda (c ss seed)
+                       `(,(cond [(eq? c 'else) '("#else")]
+                                [else `("#elif " ,(x->string c))])
+                         "\n" |#reset-line|
+                         ,(map (cut render-rec <> env) ss) "\n"
+                         ,@seed))
+                     '("#endif\n" |#reset-line|)
+                     condition stmts))]))
+
+(define-cise-macro (.include form env)
+  (ensure-stmt-ctx form env)
+  (match form
+    [(_ item ...)
+     (map (lambda (f)
+            `("#include "
+              ,(cond [(string? f) (write-to-string f)]
+                     [(symbol? f) (x->string f)]
+                     [else (error "bad argument to .include:" f)])
+              "\n" |#reset-line|))
+          item)]
+    [(_ . other) (error "malformed .include:" form)]))
+
+(define-cise-macro |#if| .if)           ;backward compat.
 
 ;;------------------------------------------------------------
 ;; Operators

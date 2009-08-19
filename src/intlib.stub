@@ -38,14 +38,13 @@
 ;; The API in this module is still fluid.  Do not count on them.
 
 
-"
-#include <gauche/class.h>
-#include <gauche/code.h>
-#include <gauche/vminsn.h>
-#include <gauche/macro.h>
-#include <gauche/prof.h>
-#include <gauche/builtin-syms.h>
-"
+(declcode
+ (.include <gauche/class.h>
+           <gauche/code.h>
+           <gauche/vminsn.h>
+           <gauche/macro.h>
+           <gauche/prof.h>
+           <gauche/builtin-syms.h>))
 
 (define-type <gloc> "ScmGloc*" "GLOC"
   "SCM_GLOCP" "SCM_GLOC" "SCM_OBJ")
@@ -181,18 +180,18 @@
                           (Scm_VM) SCM_COMPILE_NOINLINE_GLOBALS)))
                (set! SCM_RESULT0 gval SCM_RESULT1 'inline)]
               [else (goto normal)])
-        (|#if| "defined(RECORD_DEPENDED_MODULES)"
-               (begin
-                 (dotimes [i 3]
-                   (when (SCM_EQ mod (aref stdmods i)) (goto normal)))
-                 (let* ([curmod (SCM_VECTOR_ELEMENT cenv 0)])
-                   (SCM_ASSERT (SCM_MODULEP curmod))
-                   (when (SCM_FALSEP
-                          (Scm_Memq (SCM_OBJ mod)
-                                    (-> (SCM_MODULE curmod) depended)))
-                     (set! (-> (SCM_MODULE curmod) depended)
-                           (Scm_Cons (SCM_OBJ mod)
-                                     (-> (SCM_MODULE curmod) depended)))))))
+        (.if "defined(RECORD_DEPENDED_MODULES)"
+             (begin
+               (dotimes [i 3]
+                 (when (SCM_EQ mod (aref stdmods i)) (goto normal)))
+               (let* ([curmod (SCM_VECTOR_ELEMENT cenv 0)])
+                 (SCM_ASSERT (SCM_MODULEP curmod))
+                 (when (SCM_FALSEP
+                        (Scm_Memq (SCM_OBJ mod)
+                                  (-> (SCM_MODULE curmod) depended)))
+                   (set! (-> (SCM_MODULE curmod) depended)
+                         (Scm_Cons (SCM_OBJ mod)
+                                   (-> (SCM_MODULE curmod) depended)))))))
         ))
     (label normal)
     ))

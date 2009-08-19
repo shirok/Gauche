@@ -31,14 +31,13 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
 
-"
-#include <fcntl.h>
-#include <gauche/arch.h>
-#include <gauche/class.h>
-#include <gauche/vminsn.h>
-#include <gauche/regexp.h>
-#include <gauche/bignum.h>
-"
+(declcode
+ (.include <fcntl.h>
+           <gauche/arch.h>
+           <gauche/class.h>
+           <gauche/vminsn.h>
+           <gauche/regexp.h>
+           <gauche/bignum.h>))
 
 ;;
 ;; Macros

@@ -1,3 +1,12 @@
+2009-08-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm (.if): Changed preprocessor directive
+	  macro from |#if| to .if, since the former is too intrusive in
+	  the code.
+	  (.cond, .include): Added these to generate preprocessor directives
+	  #if..#elif..#endif and #include.
+	* src/*.stub, ext/syslog/syslog.scm: Changed accordingly.
+
 2009-07-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_string),

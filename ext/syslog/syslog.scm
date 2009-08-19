@@ -53,22 +53,22 @@
 
  (define-cproc sys-openlog
    (ident::<const-cstring> option::<fixnum> facility::<fixnum>) ::<void>
-   (|#if| "defined(HAVE_SYSLOG)" (openlog ident option facility)))
+   (.if "defined(HAVE_SYSLOG)" (openlog ident option facility)))
 
  (define-cproc sys-syslog (prio::<fixnum> message::<const-cstring>) ::<void>
-   (|#if| "defined(HAVE_SYSLOG)" (syslog prio "%s" message)))
+   (.if "defined(HAVE_SYSLOG)" (syslog prio "%s" message)))
 
  (define-cproc sys-closelog () ::<void>
-   (|#if| "defined(HAVE_SYSLOG)" (closelog)))
+   (.if "defined(HAVE_SYSLOG)" (closelog)))
 
  (when "defined(HAVE_SYSLOG)"
    (initcode "Scm_AddFeature(\"gauche.sys.syslog\", NULL);"))
 
  (define-cproc sys-logmask (prio::<fixnum>) ::<fixnum>
-   (|#if| "defined(HAVE_SETLOGMASK)" (result (LOG_MASK prio)) (result 0)))
+   (.if "defined(HAVE_SETLOGMASK)" (result (LOG_MASK prio)) (result 0)))
 
  (define-cproc sys-setlogmask (mask::<fixnum>) ::<fixnum>
-   (|#if| "defined(HAVE_SETLOGMASK)" (result (setlogmask mask)) (result 0)))
+   (.if "defined(HAVE_SETLOGMASK)" (result (setlogmask mask)) (result 0)))
 
  (when "defined(HAVE_SETLOGMASK)"
    (initcode "Scm_AddFeature(\"gauche.sys.setlogmask\", NULL);"))

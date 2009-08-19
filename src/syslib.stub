@@ -36,31 +36,16 @@
 ;; System interface functions.   Mostly I followed POSIX.1, but included
 ;; some non-posix functions which are important for programming on Unix.
 
-"
-#include <locale.h>
-#include <math.h>
-#if !defined(GAUCHE_WINDOWS)
-#include <grp.h>
-#include <pwd.h>
-#include <sys/wait.h>
-#endif /* !GAUCHE_WINDOWS */
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-#if HAVE_CRYPT_H
-#include <crypt.h>
-#endif
-#ifdef HAVE_SYS_RESOURCE_H
-#include <sys/resource.h>
-#endif
-"
+(declcode
+ (.include <locale.h> <math.h>)
+ (.if "!defined(GAUCHE_WINDOWS)"
+      (.include <grp.h> <pwd.h> <sys/wait.h>))
+ (.cond ["TIME_WITH_SYS_TIME" (.include <sys/time.h> <time.h>)]
+        ["HAVE_SYS_TIME_H"    (.include <sys/time.h>)]
+        [else                 (.include <time.h>)])
+ (.if "HAVE_CRYPT_H"        (.include <crypt.h>))
+ (.if "HAVE_SYS_RESOURCE_H" (.include <sys/resource.h>))
+ )     
 
 ;;---------------------------------------------------------------------
 ;; dirent.h - read directory
@@ -338,27 +323,27 @@
 (define-cproc sys-rename (oldname::<const-cstring> newname::<const-cstring>)
   ::<void>
   (let* ([r::int])
-    (|#if| "defined(GAUCHE_WINDOWS)"
-           ;; Windows doesn't allow renaming to the existing file, so we unlink
-           ;; it first.  This breaks the atomicity of rename operation.
-           ;; We don't check and raise an error here, since the error will be
-           ;; caught by rename() call.
-           (begin (chmod newname #o666) (unlink newname)))
+    (.if "defined(GAUCHE_WINDOWS)"
+         ;; Windows doesn't allow renaming to the existing file, so we unlink
+         ;; it first.  This breaks the atomicity of rename operation.
+         ;; We don't check and raise an error here, since the error will be
+         ;; caught by rename() call.
+         (begin (chmod newname #o666) (unlink newname)))
     (SCM_SYSCALL r (rename oldname newname))
     (when (< r 0) (Scm_SysError "renaming %s to %s failed" oldname newname))))
 
 ;; NB: Alghough tmpnam() is in POSIX, its use is discouraged because of
 ;; potential security risk.  We mimic it's behavior by mkstemp() if possible.
 (define-cproc sys-tmpnam ()
-  (|#if| "HAVE_MKSTEMP"
-         (let* ([nam::(.array char [*]) "/tmp/fileXXXXXX"] [fd::int])
-           (SCM_SYSCALL fd (mkstemp nam))
-           (when (< fd 0) (Scm_SysError "mkstemp failed"))
-           (close fd)
-           (unlink nam)
-           (result (SCM_MAKE_STR_COPYING nam)))
-         (let* ([s::char* (tmpnam NULL)])
-           (result (SCM_MAKE_STR_COPYING s)))))
+  (.if "HAVE_MKSTEMP"
+       (let* ([nam::(.array char [*]) "/tmp/fileXXXXXX"] [fd::int])
+         (SCM_SYSCALL fd (mkstemp nam))
+         (when (< fd 0) (Scm_SysError "mkstemp failed"))
+         (close fd)
+         (unlink nam)
+         (result (SCM_MAKE_STR_COPYING nam)))
+       (let* ([s::char* (tmpnam NULL)])
+         (result (SCM_MAKE_STR_COPYING s)))))
 
 (define-cproc sys-mkstemp (template::<string>) Scm_SysMkstemp)
 
@@ -379,23 +364,25 @@
     (SCM_SYSCALL SCM_RESULT (system command))))
 
 (define-cproc sys-random () ::<long>
-  (|#if| "defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)"
-         (result (random))
-         (|#if| "defined(LRAND48) && defined(SRAND48)"
-                (result (lrand48))
-                ;; fallback - we don't want to use rand(), for it is not
-                ;; a very good RNG.
-                (result (rand)))))
+  (.cond ["defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)"
+          (result (random))]
+         ["defined(LRAND48) && defined(SRAND48)"
+          (result (lrand48))]
+         [else
+          ;; fallback - we don't want to use rand(), for it is not
+          ;; a very good RNG.
+          (result (rand))]))
 
 (define-cproc sys-srandom (seed) ::<void>
   (unless (SCM_EXACTP seed) (Scm_Error "exact integer required: %S" seed))
-  (|#if| "defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)"
-         (srandom (Scm_GetUInteger seed))
-         (|#if| "defined(LRAND48) && defined(SRAND48)"
-                (srand48 (Scm_GetUInteger seed))
-                ;; fallback - we don't want to use rand(), for it is not
-                ;; a very good RNG.
-                (srand (Scm_GetUInteger seed)))))
+  (.cond ["defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)"
+          (srandom (Scm_GetUInteger seed))]
+         ["defined(LRAND48) && defined(SRAND48)"
+          (srand48 (Scm_GetUInteger seed))]
+         [else
+          ;; fallback - we don't want to use rand(), for it is not
+          ;; a very good RNG.
+          (srand (Scm_GetUInteger seed))]))
 
 (define-constant RAND_MAX (c "Scm_MakeIntegerFromUI(RAND_MAX)"))
 
@@ -609,9 +596,9 @@
 ;; chown
 (define-cproc sys-chown (path::<const-cstring> owner::<int> group::<int>)
   ::<int>
-  (|#if| "!defined(GAUCHE_WINDOWS)"
-         (SCM_SYSCALL SCM_RESULT (chown path owner group))
-         (set! SCM_RESULT 0))
+  (.if "!defined(GAUCHE_WINDOWS)"
+       (SCM_SYSCALL SCM_RESULT (chown path owner group))
+       (set! SCM_RESULT 0))
   (when (< SCM_RESULT 0) (Scm_SysError "chown failed on %s" path)))
 
 ;; lchown
@@ -717,9 +704,9 @@
 
 (define-cproc sys-mkdir (pathname::<const-cstring> mode::<int>) ::<void>
   (let* ([r::int])
-    (|#if| "!defined(GAUCHE_WINDOWS)"
-           (SCM_SYSCALL r (mkdir pathname mode))
-           (SCM_SYSCALL r (mkdir pathname)))
+    (.if "!defined(GAUCHE_WINDOWS)"
+         (SCM_SYSCALL r (mkdir pathname mode))
+         (SCM_SYSCALL r (mkdir pathname)))
     (when (< r 0) (Scm_SysError "mkdir failed on %s" pathname))))
 
 (define-cproc sys-rmdir (pathname::<const-cstring>) ::<void>
@@ -736,9 +723,9 @@
         [else (SCM_TYPE_ERROR mode "fixnum or #f") (result 0)]))
 
 (define-cproc sys-sleep (seconds::<fixnum>) ::<int>
-  (|#if| "defined(GAUCHE_WINDOWS)"
-         (begin (Sleep (* seconds 1000)) (result 0))
-         (result (sleep seconds))))
+  (.if "defined(GAUCHE_WINDOWS)"
+       (begin (Sleep (* seconds 1000)) (result 0))
+       (result (sleep seconds))))
 
 (when "defined(HAVE_NANOSLEEP)"
   (define-cproc sys-nanosleep (nanoseconds)
