@@ -509,7 +509,7 @@ case $host in
       SHLIB_SO_LDFLAGS="-shared -o"
     else
       SHLIB_SO_CFLAGS="-Kpic"
-      SHLIB_SO_LDFLAGS="-G -h"
+      SHLIB_SO_LDFLAGS="-G -o"
     fi
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS=""
