@@ -12756,8 +12756,8 @@ accessor procedure by yourself.
 @c COMMON
 
 @example
-(define my-gettext (make-gettex "myapp"))
-(define (_ (my-gettext 'getter)))
+(define my-gettext (make-gettext "myapp"))
+(define _ (my-gettext 'getter))
 (_ "Hello, World!")
 @end example
 @end defun

@@ -66,8 +66,8 @@
 ;; build these closures manually for convenience in using multiple
 ;; separate domains or locales at once (useful for server environments):
 ;;
-;;  (define my-gettext (make-gettex "myapp"))
-;;  (define (_ (my-gettext 'getter)))
+;;  (define my-gettext (make-gettext "myapp"))
+;;  (define _ (my-gettext 'getter))
 ;;  (_ "Hello, World!")
 
 (define-module text.gettext
