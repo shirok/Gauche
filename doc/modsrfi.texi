@@ -549,7 +549,7 @@ Note that @code{last-pair} is Gauche built-in procedure.
 @c NODE 種々のリスト処理ルーチン
 
 @defun length+ x
-@ EN
+@c EN
 [SRFI-1] If @var{x} is a proper list, returns its length.
 Otherwise, returns @code{#f}.
 @c JP
