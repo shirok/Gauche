@@ -264,6 +264,14 @@
 (test* "flonum reader (exp)" '(314.0 #t) (flonum-test .314d3))
 (test* "flonum reader (exp)" '(314.0 #t) (flonum-test .314D3))
 
+(test* "flonum reader (minimum denormalized number 5.0e-324)" #t
+       (let1 x (expt 2.0 -1074)
+         (= x (string->number (number->string x)))))
+(test* "flonum reader (minimum denormalized number -5.0e-324)" #t
+       (let1 x (- (expt 2.0 -1074))
+         (= x (string->number (number->string x)))))
+       
+
 (test* "padding" '(10.0 #t) (flonum-test '1#))
 (test* "padding" '(10.0 #t) (flonum-test '1#.))
 (test* "padding" '(10.0 #t) (flonum-test '1#.#))

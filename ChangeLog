@@ -1,5 +1,12 @@
 2009-08-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (MAX_EXPONENT): Changed to 325, since the least
+	  absolute value of denormalized number (expt 2.0 -1024) would be
+	  printed to 5.0e-324, so we do need to handle exponent -324 to
+	  keep read/write invariance.
+	  (iexpt10): handle cases where e is larger than pre-computed
+	  table size.  It can happen in legitimate input, although rarely.
+
 	* src/vm.c (Scm_VMFlushFPStack): Fixed a bug that forgot to scan
 	  ARGP of in-stack continuation when flonum registers are flushed.
 	  (Thanks to naoya_t for finding and providing reproduceable test

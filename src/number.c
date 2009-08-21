@@ -76,11 +76,10 @@ int Scm_IsInf(double x)
 #define RADIX_MAX 36
 
 /* Maximum allowable range of exponent in the number litereal.
-   For flonums, IEEE double can support [-323..308].  For exact
+   For flonums, IEEE double can support [-324..308].  For exact
    numbers we can go futher, but it would easily consume huge
    memory.  So I assume it is reasonable to limit its range. */
-#define MAX_EXPONENT  324
-
+#define MAX_EXPONENT  325
 
 /* Linux gcc have those, but the declarations aren't included unless
    __USE_ISOC9X is defined.  Just in case. */
@@ -2840,8 +2839,19 @@ static double dexpt2_minus_53  = 0.0;  /* 2.0^-53 */
 /* fast 10^n for limited cases */
 static inline ScmObj iexpt10(int e)
 {
-    SCM_ASSERT(e < IEXPT10_TABLESIZ);
-    return iexpt10_n[e];
+    if (e < IEXPT10_TABLESIZ) {
+        return iexpt10_n[e];
+    } else {
+        /* This recursive case can happen if excessive number of decimal
+           digits are given below the decimal point, and the exponent
+           is close to minimum.  There may be more efficient way to
+           prune lower digits so that we can keep scale factor bounded,
+           since those lower digits are very unlikely to contribute to
+           the result.  But it is difficult to avoid double-rounding
+           error compeletely, so we take safer path for now. */
+        return Scm_Mul(iexpt10_n[IEXPT10_TABLESIZ-1],
+                       iexpt10(e - IEXPT10_TABLESIZ + 1));
+    }
 }
 
 /* integer power of R by N, N is rather small.
