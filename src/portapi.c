@@ -940,11 +940,16 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
             /* NB: possible optimization: the specified position is within
                the current buffer, we can avoid calling seeker. */
             if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
+                char *c = p->src.buf.current; /* save current ptr */
                 if (whence == SEEK_CUR) {
-                    o -= (off_t)(p->src.buf.end - p->src.buf.current);
+                    o -= (off_t)(p->src.buf.end - c);
                 }
                 p->src.buf.current = p->src.buf.end; /* invalidate buffer */
                 SAFE_CALL(p, r = p->src.buf.seeker(p, o, whence));
+                if (r == (off_t)-1) {
+                    /* This may happend if seeker somehow gave up */
+                    p->src.buf.current = c;
+                }
             } else {
                 SAFE_CALL(p, bufport_flush(p, 0, TRUE));
                 SAFE_CALL(p, r = p->src.buf.seeker(p, o, whence));

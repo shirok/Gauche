@@ -7,6 +7,7 @@
 (test-start "vport")
 (use gauche.vport)
 (use gauche.uvector)
+(use gauche.sequence)
 (use srfi-1)
 (use srfi-13)
 (use file.util)
@@ -202,6 +203,29 @@
          '(#t #t) (test-biport "vport.c" 1))
   (test* "vport.c (bufsize=0)"
          '(#t #t) (test-biport "vport.c" 0))
+  )
+
+;; test with no seeker; pointed in WiLiKi:Gauche:Bugs
+(let ()
+  (define in
+    (let1 index 0
+      (make <buffered-input-port>
+        :fill (lambda (buf)
+                (for-each-with-index
+                 (lambda (i _)
+                   (u8vector-set! buf i (logand (+ index i) #xFF)))
+                 buf)
+                (let ((size (u8vector-length buf)))
+                  (inc! index size)
+                  size))
+        )))
+  (test* "buffered-input-port w/o seeker"
+         '(0 1 #f 2)
+         (let* ([a (read-byte in)]
+                [b (read-byte in)]
+                [s (port-seek in 5 SEEK_SET)] ;this shouldn't move the point
+                [c (read-byte in)])
+           (list a b s c)))
   )
 
 ;;-----------------------------------------------------------
