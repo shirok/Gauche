@@ -663,6 +663,7 @@
 ;;   shift.
 ;;
 ;; [cise expr] set! LVALUE EXPR LVALUE EXPR ...
+;; [cise expr] =    LVALUE EXPR LVALUE EXPR ...
 ;; [cise expr] +=   LVALUE EXPR
 ;; [cise expr] -=   LVALUE EXPR
 ;; [cise expr] *=   LVALUE EXPR
@@ -814,6 +815,8 @@
                `((,(render-rec var eenv)
                   "=(",(render-rec val eenv)")") ,@r))]
         [_   (error "uneven args for set!:" form)]))))
+
+(define-cise-macro = set!)              ;EXPERIMENTAL
 
 ;;------------------------------------------------------------
 ;; Type-related expressions
