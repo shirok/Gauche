@@ -1,3 +1,10 @@
+2009-08-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_VMFlushFPStack): Fixed a bug that forgot to scan
+	  ARGP of in-stack continuation when flonum registers are flushed.
+	  (Thanks to naoya_t for finding and providing reproduceable test
+	  case.)
+
 2009-08-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/portapi.c (Scm_PortSeek): Fixed to revert the buffer pointer

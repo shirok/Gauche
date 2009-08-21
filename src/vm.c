@@ -1020,6 +1020,10 @@ void Scm_VMFlushFPStack(ScmVM *vm)
           next2:
             e = e->up;
         }
+        if (IN_STACK_P(c->argp) && c->size > 0) {
+            p = c->argp;
+            for (i=0; i<c->size; i++, p++) SCM_FLONUM_ENSURE_MEM(*p);
+        }
         c = c->prev;
     }
 

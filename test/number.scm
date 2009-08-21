@@ -1779,6 +1779,77 @@
 (test* "/. (many)" 0.1 (/. 1 2 5))
 
 ;;------------------------------------------------------------------
+(test-section "ffx optimization")
+
+;; This code is provided by naoya_t to reproduce the FFX bug
+;; existed until r6714.   The bug was that the ARGP words of
+;; in-stack continuations were not scanned when flonum register
+;; bank was cleared.  This code exhibits the case by putting
+;; the result of (sqrt 2) as an unfinished argument, then calling
+;; inverse-erf which caused flushing flonum regs (see "NG" line).
+
+(use math.const)
+(let ()
+  (define *epsilon* 1e-12)
+  
+  ;;
+  ;; normal quantile function (probit function)
+  ;;
+  (define (probit p)
+    (define (probit>0 p)
+      (* (inverse-erf (- (* p 2) 1)) (sqrt 2))) ;; OK
+    (if (< p 0)
+      (- 1 (probit>0 (- p)))
+      (probit>0 p) ))
+  
+  (define (probit p)
+    (define (probit>0 p)
+      (* (sqrt 2) (inverse-erf (- (* p 2) 1)))) ;; NG
+    (if (< p 0)
+      (- 1 (probit>0 (- p)))
+      (probit>0 p) ))
+  
+  ;;
+  ;; inverse error function (erf-1)
+  ;;
+  (define (inverse-erf z)
+    (define (calc-next-ck k c)
+      (let loop ((m 0) (sum 0) (ca c) (cz (reverse c)))
+        (if (= m k) sum
+            (loop (+ m 1)
+                  (+ sum (/. (* (car ca) (car cz)) (+ m 1) (+ m m 1)))
+                  (cdr ca) (cdr cz)))))
+    (define (calc-cks k)
+      (let loop ((i 0) (cks '(1)))
+        (if (= i k) cks
+            (loop (+ i 1) (cons (calc-next-ck (+ i 1) cks) cks)))))
+    (define (calc-ck k) (car (calc-cks k)))
+    
+    (define (inverse-erf>0 z)
+      (let1 r (* pi z z 1/4) ; (¦Ðz^2)/4
+        (let loop ((k 0) (cks '(1)) (sum 0) (a 1))
+          (let1 delta (* a (/ (car cks) (+ k k 1)))
+            (if (< delta (* sum *epsilon*))
+              (* 1/2 z (sqrt pi) sum)
+              (loop (+ k 1)
+                    (cons (calc-next-ck (+ k 1) cks) cks)
+                    (+ sum delta)
+                    (* a r)))))))
+    
+    (cond [(< z 0) (- (inverse-erf>0 (- z)))]
+          [(= z 0) 0]
+          [else (inverse-erf>0 z)]) )
+
+  (define ~= (lambda (x y) (< (abs (- x y)) 1e-7)))
+  ;;
+  ;; TEST
+  ;;
+  (test-section "ffx optimization")
+  (test* "probit(0.025)" -1.959964 (probit 0.025) ~=)
+  (test* "probit(0.975)" 1.959964 (probit 0.975) ~=)
+  )
+
+;;------------------------------------------------------------------
 (test-section "arithmetic operation overload")
 
 ;; NB: these tests requires the object system working.
