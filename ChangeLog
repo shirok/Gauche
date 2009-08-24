@@ -1,3 +1,8 @@
+2009-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/net.ac (net/if.h, struct ifreq): need sys/socket.h on OSX
+	  to check these.
+
 2009-08-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (MAX_EXPONENT): Changed to 325, since the least
