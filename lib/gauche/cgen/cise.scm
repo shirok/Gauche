@@ -541,7 +541,8 @@
 (define-cise-macro (return form env)
   (ensure-stmt-ctx form env)
   (match form
-    [(_ expr) `("return (" ,(render-rec expr (expr-env env)) ");")]))
+    [(_ expr) `("return (" ,(render-rec expr (expr-env env)) ");")]
+    [(_)      `("return;")]))
 
 ;; [cise stmt] break
 ;; [cise stmt] continue
