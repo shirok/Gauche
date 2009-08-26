@@ -51,6 +51,7 @@
           define-cise-macro
           define-cise-stmt
           define-cise-expr
+          define-cise-toplevel
           )
   )
 (select-module gauche.cgen.cise)
@@ -72,8 +73,8 @@
 ;; Environment must be treated opaque from outside of CISE module.
 
 (define-class <cise-env> ()
-  ((context :init-keyword :context :init-value 'stmt) ; stmt or expr
-   (decls   :init-keyword :decls   :init-value '())   ; list of extra decls
+  ((context :init-keyword :context) ; toplevel, stmt or expr
+   (decls   :init-keyword :decls)   ; list of extra decls
    ))
 
 (define (make-env context decls)
@@ -82,6 +83,7 @@
 (define (env-decls env) (~ env'decls))
 (define (expr-ctx? env) (eq? (env-ctx env) 'expr))
 (define (stmt-ctx? env) (eq? (env-ctx env) 'stmt))
+(define (toplevel-ctx? env) (eq? (env-ctx env) 'toplevel))
 
 (define (null-env)      (make-env 'stmt '()))
 
@@ -92,13 +94,21 @@
 
 (define (ensure-stmt-ctx form env)
   (unless (stmt-ctx? env)
-    (error "cise: statment appears in an expression context:" form)))
+    (if (expr-ctx? env)
+      (error "cise: statment appears in an expression context:" form)
+      (error "cise: statment appears in a toplevel context:" form))))
 
+(define (ensure-toplevel-ctx form env)
+  (unless (toplevel-ctx? env)
+    (error "cise: form can only appear in toplevel:" form)))
+(define (ensure-stmt-or-toplevel-ctx form env)
+  (unless (or (toplevel-ctx? env) (stmt-ctx? env))
+    (error "cise: form can only appear in toplevel or statment context:" form)))
 (define (env-decl-add! env decl)
   (push! (~ env'decls) decl))
 
 (define (wrap-expr form env)
-  (if (stmt-ctx? env) `(,form ";") form))
+  (if (expr-ctx? env) form `(,form ";")))
 
 (define (render-env-decls env)
   (map (^.[(var type) `(,(cise-render-typed-var type var env) ";")])
@@ -160,6 +170,7 @@
 ;;
 ;; define-cise-stmt OP [ENV] CLAUSE ... [:where DEFINITION ...]
 ;; define-cise-expr OP [ENV] CLAUSE ... [:where DEFINITION ...]
+;; define-cise-toplevel OP [ENV] CLAUSE ... [:where DEFINITION ...]
 ;;
 (define-syntax define-cise-stmt
   (syntax-rules ()
@@ -199,12 +210,32 @@
     [(_ op env . clauses)
      (define-cise-expr "clauses" op env () clauses)]))
 
+(define-syntax define-cise-toplevel
+  (syntax-rules ()
+    ;; recursion
+    [(_ "clauses" op env clauses (:where defs ...))
+     (define-cise-macro (op form env)
+       defs ...
+       (ensure-toplevel-ctx form env)
+       (match form . clauses))]
+    [(_ "clauses" op env clauses ())
+     (define-cise-toplevel "clauses" op env clauses (:where))]
+    [(_ "clauses" op env (clause ...) (x . y))
+     (define-cise-toplevel "clauses" op env (clause ... x) y)]
+    ;; entry
+    [(_ op (pat . body) .  clauses) ; (pat . body) rules out a single symbol
+     (define-cise-toplevel "clauses" op env ((pat . body)) clauses)]
+    [(_ op env . clauses)
+     (define-cise-toplevel "clauses" op env () clauses)]))
+
 ;;
-;; cise-render cise &optional port as-expr?
+;; cise-render cise &optional port context
+;;
+;; context := 'toplevel | 'stmt | 'expr | #t (expr) | #f (stmt)
 ;;
 ;;   External entry of renderer
 ;;
-(define (cise-render form :optional (port (current-output-port)) (expr #f))
+(define (cise-render form :optional (port (current-output-port)) (ctx 'stmt))
   (define current-file #f)
   (define current-line 1)
   (define (render-finish stree)
@@ -224,12 +255,16 @@
       [(? (any-pred string? symbol? number?) x) (display x port)]
       [_ #f]))
   
-  (let* ((env ((if expr expr-env identity) (null-env)))
-         (stree (render-rec form env)))
+  (let* ([env (case ctx
+                [(toplevel) (make-env 'toplevel '())]
+                [(stmt #f)  (null-env)]
+                [(expr #t)  (expr-env (null-env))]
+                [else (error "cise-render: invalid context:" ctx)])]
+         [stree (render-rec form env)])
     (render-finish `(,@(render-env-decls env) ,stree))))
 
-(define (cise-render-to-string form :optional (expr #f))
-  (call-with-output-string (cut cise-render form <> expr)))
+(define (cise-render-to-string form :optional (ctx #f))
+  (call-with-output-string (cut cise-render form <> ctx)))
 
 ;;
 ;; cise-render-rec cise stmt/expr env
@@ -302,14 +337,15 @@
   ;; hence the ugly nested cise-render, since the extra decls handling
   ;; is done at that level.  Hopefully this is an exception.
   (define (gen-cfn cls name args rettype body)
-    `(,(cise-render-identifier cls) " "
-      ,(cise-render-typed-var rettype name env)
-      "("
-      ,@($ intersperse ","
-           $ map (^.[(var . type) (cise-render-typed-var type var env)]) args)
-      ")" "{"
-      ,(cise-render-to-string `(begin ,@body))
-      "}"))
+    (let1 eenv (expr-env env)
+      `(,(cise-render-identifier cls) " "
+        ,(cise-render-typed-var rettype name env)
+        "("
+        ,@($ intersperse ","
+             $ map (^.[(var . type) (cise-render-typed-var type var eenv)]) args)
+        ")" "{"
+        ,(cise-render-to-string `(begin ,@body) 'stmt)
+        "}")))
   ;; Another ugly hack to allow both :: rettype and ::rettype as
   ;; return type specification.   Duplication in stub.scm.
   (define (type-symbol? s)
@@ -322,10 +358,7 @@
       [(':static . body) (gen-cfn "static" name args ret-type body)]
       [_                 (gen-cfn "" name args ret-type body)]))
   
-  ;; NB: this only works at toplevel.  The stmt check doesn't exclude
-  ;; non-toplevel use, and will give an error at C compilation time.
-  ;; Eventually we need to check better one.
-  (ensure-stmt-ctx form env)
+  (ensure-toplevel-ctx form env)
   (match form
     [(_ name (args ...) ':: ret-type . body)
      (check-static name (argchk args) ret-type body)]
@@ -341,10 +374,13 @@
 ;; [cise stmt]  begin STMT ...
 ;;    Grouping.
 (define-cise-macro (begin form env)
-  (ensure-stmt-ctx form env)
-  (match form
-    [(_ . forms)
-     `("{" ,@(map (cut render-rec <> env) forms) "}")]))
+  (cond
+   [(stmt-ctx? env)
+    `("{" ,@(map (cut render-rec <> env) (cdr form)) "}")]
+   [(toplevel-ctx? env)
+    `(,@(map (cut render-rec <> env) (cdr form)))]
+   [else
+    (intersperse "," (map (cut render-rec <> env) (cdr form)))]))
 
 ;; [cise stmt]  let* ((VAR [:: TYPE] [INIT-EXPR]) ...) STMT ...
 ;;    Local variables.   Because of C semantics, we only support
@@ -381,10 +417,10 @@
     (match form
       [(_ test then)
        `("if (",(render-rec test eenv)")"
-         ,(render-rec then env))]
+         "{",(render-rec then env)"}")]
       [(_ test then else)
        `("if (",(render-rec test eenv)")"
-         ,(render-rec then env)" else " ,(render-rec else env))]
+         "{",(render-rec then env)"} else {" ,(render-rec else env) "}")]
       )))
 
 ;; [cise stmt] when TEST-EXPR STMT ...
@@ -428,7 +464,8 @@
                   `(,@(source-info literals env)
                     ,@(if (eq? literals 'else)
                         '("default: ")
-                        (map (lambda (literal) `("case ",literal" : "))
+                        (map (lambda (literal)
+                               `("case ",(render-rec literal eenv)" : "))
                              literals))
                     ,@(render-rec `(begin ,@clause
                                           ,@(if fallthrough? '() '((break))))
@@ -571,7 +608,7 @@
 ;; [cise stmt] .if STRING STMT [STMT]
 ;;   c preprocessor directive
 (define-cise-macro (.if form env)
-  (ensure-stmt-ctx form env)
+  (ensure-stmt-or-toplevel-ctx form env)
   (match form
     [(_ condition stmt1)
      `("#if " ,(x->string condition) "\n" |#reset-line|
@@ -585,7 +622,7 @@
        "#endif /* " ,(x->string condition) " */\n" |#reset-line|)]))
 
 (define-cise-macro (.cond form env)
-  (ensure-stmt-ctx form env)
+  (ensure-stmt-or-toplevel-ctx form env)
   (match form
     [(_ (condition . stmts) ...)
      `("#if 0 /*dummy*/\n"
@@ -599,7 +636,7 @@
                      condition stmts))]))
 
 (define-cise-macro (.include form env)
-  (ensure-stmt-ctx form env)
+  (ensure-stmt-or-toplevel-ctx form env)
   (match form
     [(_ item ...)
      (map (lambda (f)

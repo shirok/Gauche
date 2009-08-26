@@ -302,7 +302,7 @@
   (eval `(define-cise-expr ,@args) (current-module)))
 
 (define-form-parser define-cfn args
-  (cgen-body (cise-render-to-string `(define-cfn ,@args))))
+  (cgen-body (cise-render-to-string `(define-cfn ,@args) 'toplevel)))
 
 ;;===================================================================
 ;; Type handling
@@ -783,7 +783,7 @@
 (define-method process-expr-spec ((cproc <procstub>) form)
   (define (typed-result rettype expr)
     (let1 expr (if (string? expr) expr
-                   (call-with-output-string (cut cise-render expr <> #t)))
+                   (call-with-output-string (cut cise-render expr <> 'expr)))
       (push-stmt! cproc "{")
       (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
       (push-stmt! cproc #`" SCM_RESULT = (,expr);")
@@ -1513,7 +1513,7 @@
 (define (c-literal-expr item)
   (match item
     [('c (? string? e)) e]
-    [('c cise) (call-with-output-string (cut cise-render cise <> #t))]
+    [('c cise) (call-with-output-string (cut cise-render cise <> 'expr))]
     [else #f]))
 
 ;; Given a c-code fragment in string or cise, get a C code in string.

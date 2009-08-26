@@ -1,3 +1,15 @@
+2009-08-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm (<cise-env>, define-cise-toplevel): Added
+	  "toplevel" context so that we can have a toplevel cise macro
+	  that expands into toplevel cise forms.
+          (cise-render, cies-render-to-string): Because of the above change,
+	  the optional argument to indicate the context now takes a symbol
+	  either one of 'toplevel, 'stmt or 'expr, as opposed to the boolean
+	  value.
+	* lib/gauche/cgen/stub.scm (define-cfn, process-expr-spec)
+	  (c-literal-expr): Changed accordingly.
+
 2009-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/net.ac (net/if.h, struct ifreq): need sys/socket.h on OSX
