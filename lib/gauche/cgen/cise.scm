@@ -767,6 +767,9 @@
 (define-unary pre++  "++")
 (define-unary pre--  "--")
 
+(define-cise-macro inc! pre++)
+(define-cise-macro dec! pre--)
+
 (define-macro (define-post-unary op sop)
   `(define-cise-macro (,op form env)
      (wrap-expr
