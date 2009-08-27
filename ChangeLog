@@ -1,3 +1,9 @@
+2009-08-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm (cise-translate): Added per-file cise
+	  rendering support.  This enables automatic generation of forward
+	  prototype declarations of static procedures in the file.
+
 2009-08-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (<cise-env>, define-cise-toplevel): Added

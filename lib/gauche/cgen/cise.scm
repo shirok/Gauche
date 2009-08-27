@@ -46,6 +46,7 @@
   (use util.match)
   (use util.list)
   (export cise-render cise-render-to-string cise-render-rec
+          cise-translate
           cise-context cise-context-copy cise-register-macro! cise-lookup-macro
           cise-emit-source-line
           define-cise-macro
@@ -63,8 +64,13 @@
 ;; If true, include #line directive in the output.
 (define cise-emit-source-line (make-parameter #t))
 
+;; The global context
+(define-class <cise-context> ()
+  ((macros :init-keyword :macros :init-form (make-hash-table 'eq?))
+   (static-decls  :init-keyword :static-decls  :init-value '())))
+
 ;; Keeps the cise macro bindings.
-(define cise-context (make-parameter (make-hash-table 'eq?)))
+(define cise-context (make-parameter (make <cise-context>)))
 
 ;;=============================================================
 ;; Environment
@@ -123,7 +129,18 @@
       [((? string? file) line)
        `((source-info ,file ,line))]
       [_ '()])))
-   
+
+;;=============================================================
+;; Global decls
+;;
+
+(define (push-static-decl! stree :optional (context (cise-context)))
+  (push! (ref context'static-decls) stree))
+                                
+(define (emit-static-decls port :optional (context (cise-context)))
+  (dolist [stree (reverse (ref context'static-decls))]
+    (render-finalize stree port)))
+
 ;;=============================================================
 ;; Expander
 ;;
@@ -139,7 +156,7 @@
 ;;   opaque cise environmen.
 ;;
 (define (cise-register-macro! name expander :optional (context (cise-context)))
-  (hash-table-put! context name expander))
+  (hash-table-put! (ref context'macros) name expander))
 
 ;;
 ;; cise-lookup-macro NAME &optional CONTEXT
@@ -147,13 +164,15 @@
 ;;   Lookup cise macro.
 ;;
 (define (cise-lookup-macro name :optional (context (cise-context)))
-  (hash-table-get context name #f))
+  (hash-table-get (ref context'macros) name #f))
 
 ;;
 ;; copy the current cise context
 ;;
 (define (cise-context-copy :optional (context (cise-context)))
-  (hash-table-copy context))
+  (make <cise-context>
+    :macros (hash-table-copy (ref context'macros))
+    :static-decls  (ref context'static-decls)))
 
 ;;
 ;; define-cise-macro (OP FORM ENV) . BODY
@@ -185,6 +204,8 @@
     [(_ "clauses" op env (clause ...) (x . y))
      (define-cise-stmt "clauses" op env (clause ... x) y)]
     ;; entry
+    [(_ (op . args) . body)       ; single pattern case
+     (define-cise-stmt "clauses" op env (((_ . args) . body)) ())]
     [(_ op (pat . body) .  clauses) ; (pat . body) rules out a single symbol
      (define-cise-stmt "clauses" op env ((pat . body)) clauses)]
     [(_ op env . clauses)
@@ -205,6 +226,8 @@
     [(_ "clauses" op env (clause ...) (x . y))
      (define-cise-expr "clauses" op env (clause ... x) y)]
     ;; entry
+    [(_ (op . args) . body)       ; single pattern case
+     (define-cise-expr "clauses" op env (((_ . args) . body)) ())]
     [(_ op (pat . body) .  clauses)
      (define-cise-expr "clauses" op env ((pat . body)) clauses)]
     [(_ op env . clauses)
@@ -223,6 +246,8 @@
     [(_ "clauses" op env (clause ...) (x . y))
      (define-cise-toplevel "clauses" op env (clause ... x) y)]
     ;; entry
+    [(_ (op . args) . body)       ; single pattern case
+     (define-cise-toplevel "clauses" op env (((_ . args) . body)) ())]
     [(_ op (pat . body) .  clauses) ; (pat . body) rules out a single symbol
      (define-cise-toplevel "clauses" op env ((pat . body)) clauses)]
     [(_ op env . clauses)
@@ -236,9 +261,21 @@
 ;;   External entry of renderer
 ;;
 (define (cise-render form :optional (port (current-output-port)) (ctx 'stmt))
+  (let* ([env (case ctx
+                [(toplevel) (make-env 'toplevel '())]
+                [(stmt #f)  (null-env)]
+                [(expr #t)  (expr-env (null-env))]
+                [else (error "cise-render: invalid context:" ctx)])]
+         [stree (render-rec form env)])
+    (render-finalize `(,@(render-env-decls env) ,stree) port)))
+
+(define (cise-render-to-string form :optional (ctx #f))
+  (call-with-output-string (cut cise-render form <> ctx)))
+
+(define (render-finalize stree port)
   (define current-file #f)
   (define current-line 1)
-  (define (render-finish stree)
+  (define (rec stree)
     (match stree
       [('source-info (? string? file) line)
        (cond [(and (equal? file current-file) (eqv? line current-line))]
@@ -251,20 +288,10 @@
               (format port "\n#line ~a ~s\n" line file)])]
       ['|#reset-line| ; reset source info
        (set! current-file #f) (set! current-line 0)]
-      [(x . y) (render-finish x) (render-finish y)]
+      [(x . y) (rec x) (rec y)]
       [(? (any-pred string? symbol? number?) x) (display x port)]
       [_ #f]))
-  
-  (let* ([env (case ctx
-                [(toplevel) (make-env 'toplevel '())]
-                [(stmt #f)  (null-env)]
-                [(expr #t)  (expr-env (null-env))]
-                [else (error "cise-render: invalid context:" ctx)])]
-         [stree (render-rec form env)])
-    (render-finish `(,@(render-env-decls env) ,stree))))
-
-(define (cise-render-to-string form :optional (ctx #f))
-  (call-with-output-string (cut cise-render form <> ctx)))
+  (rec stree))
 
 ;;
 ;; cise-render-rec cise stmt/expr env
@@ -320,6 +347,48 @@
                               "'") env)]
     [_           (error "Invalid CISE form: " form)]))
 
+;;
+;; cise-translate inp outp &key enviroment
+;;
+;;   External interface to translate entire CiSE file into C.
+;;   CiSE expressions are read from INP and the resulting C code
+;;   is written to OUTP.
+;;
+;;   If CISE-TRANSLATE encounters a form (.static-decls),
+;;   it expands the rest of CiSE forms into a temporary string,
+;;   then emits the forward declarations of static functions
+;;   into outp, followed by the accumulated C code.  With this
+;;   you don't need to write forward declarations in CiSE source.
+
+(define (cise-translate inp outp
+                        :key (environment (make-module #f))
+                             (context (cise-context-copy (cise-context))))
+  (define (finish toutp)
+    (unless (eq? outp toutp)
+      (emit-static-decls outp)
+      (display (get-output-string toutp) outp))
+    (newline outp))
+  
+  (eval '(use gauche.cgen.cise) environment)
+  (eval '(use util.match) environment)
+  (parameterize ([cise-context context])
+    (let loop ((toutp outp))
+      (match (read inp)
+        [(? eof-object?) (finish toutp)]
+        [('.raw-c-code . cs)
+         (dolist [c cs] (newline toutp) (display c toutp)) (loop toutp)]
+        [(and ((or 'define-cise-stmt 'define-cise-expr 'define-cise-toplevel)
+               . _)
+              f)
+         (eval f environment)
+         (loop toutp)]
+        [('.static-decls) (loop (open-output-string))]
+        [(and (op . _) f)
+         (if (cise-lookup-macro op)
+           (cise-render f toutp 'toplevel)
+           (eval f environment))
+         (loop toutp)]))))
+
 ;;=============================================================
 ;; Built-in macros
 ;;
@@ -333,19 +402,17 @@
       [() '()]
       [((var ':: type) . rest) `((,var . ,type) ,@(argchk rest))]
       [(var . rest) `((,var . ScmObj) ,@(argchk rest))]))
-  ;; NB: we need to confine temporary decls within the function body,
-  ;; hence the ugly nested cise-render, since the extra decls handling
-  ;; is done at that level.  Hopefully this is an exception.
-  (define (gen-cfn cls name args rettype body)
+
+  (define (gen-args args env)
     (let1 eenv (expr-env env)
-      `(,(cise-render-identifier cls) " "
-        ,(cise-render-typed-var rettype name env)
-        "("
-        ,@($ intersperse ","
-             $ map (^.[(var . type) (cise-render-typed-var type var eenv)]) args)
-        ")" "{"
-        ,(cise-render-to-string `(begin ,@body) 'stmt)
-        "}")))
+      ($ intersperse ","
+         $ map (^.[(var . type) (cise-render-typed-var type var eenv)]) args)))
+
+  (define (gen-cfn cls name args rettype body)
+    `(,(cise-render-identifier cls) " "
+      ,(cise-render-typed-var rettype name env)
+      "(" ,(gen-args args env) ")"
+      "{",(cise-render-to-string `(begin ,@body) 'stmt)"}"))
   ;; Another ugly hack to allow both :: rettype and ::rettype as
   ;; return type specification.   Duplication in stub.scm.
   (define (type-symbol? s)
@@ -353,9 +420,15 @@
   (define (type-symbol-type s)
     (string->symbol (string-drop (keyword->string s) 1)))
 
+  (define (record-static name args ret-type)
+    (push-static-decl!
+     `(,(source-info form env)
+       "static ",ret-type" ",name"(",(gen-args args env)");")))
+
   (define (check-static name args ret-type body)
     (match body
-      [(':static . body) (gen-cfn "static" name args ret-type body)]
+      [(':static . body) (record-static name args ret-type)
+                         (gen-cfn "static" name args ret-type body)]
       [_                 (gen-cfn "" name args ret-type body)]))
   
   (ensure-toplevel-ctx form env)
