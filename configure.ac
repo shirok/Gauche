@@ -273,6 +273,9 @@ AC_CHECK_HEADERS(sunmath.h)
 dnl ===========================================================
 dnl Checks processor type, for processor-specific stuff
 case $host in
+  i?86-apple-darwin*)
+    AC_CHECK_DEFINED(i386,
+      AC_DEFINE(SCM_TARGET_I386,1,[Define if uses i386 optimizations])) ;;
   i?86-*)
     AC_DEFINE(SCM_TARGET_I386,1,[Define if uses i386 optimizations]) ;;
   alpha*)
