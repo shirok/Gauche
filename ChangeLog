@@ -2,6 +2,8 @@
 
 	* ext/digest/md5.*: Renamed MD5Final -> MD5_Final etc. to avoid
 	  name conflict in Snow Leopard.  Patch from KOGURO Naoki.
+	* gc/match_dep.c: Fix build problem on Snow Leopard.
+	  Patch from KOGURO Naoki.
 
 2009-08-26  Shiro Kawai  <shiro@acm.org>
 
