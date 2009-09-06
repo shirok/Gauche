@@ -108,25 +108,25 @@
    [allocator
     (let* ([md5::ScmMd5Context* (SCM_ALLOCATE ScmMd5Context klass)])
       (SCM_SET_CLASS md5 klass)
-      (MD5Init (& (-> md5 ctx)))
+      (MD5_Init (& (-> md5 ctx)))
       (return (SCM_OBJ md5)))])
 
  (define-cproc %md5-update (md5::<md5-context> data) ::<void>
    (cond
     [(SCM_U8VECTORP data)
-     (MD5Update (& (-> md5 ctx))
+     (MD5_Update (& (-> md5 ctx))
                 (SCM_UVECTOR_ELEMENTS (SCM_U8VECTOR data))
                 (SCM_U8VECTOR_SIZE (SCM_U8VECTOR data)))]
     [(SCM_STRINGP data)
      (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY data)])
-       (MD5Update (& (-> md5 ctx))
+       (MD5_Update (& (-> md5 ctx))
                   (cast (const unsigned char*) (SCM_STRING_BODY_START b))
                   (SCM_STRING_BODY_SIZE b)))]
     [else (SCM_TYPE_ERROR data "u8vector or string")]))
 
  (define-cproc %md5-final (md5::<md5-context>)
    (let* ([digest::(.array (unsigned char) [16])])
-     (MD5Final digest (& (-> md5 ctx)))
+     (MD5_Final digest (& (-> md5 ctx)))
      (result (Scm_MakeString (cast (char *) digest) 16 16
                              (logior SCM_STRING_INCOMPLETE
                                      SCM_STRING_COPYING)))))

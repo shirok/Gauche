@@ -38,7 +38,7 @@ void byteReverse(unsigned char *buf, unsigned longs)
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  */
-void MD5Init(MD5_CTX *ctx)
+void MD5_Init(MD5_CTX *ctx)
 {
     ctx->buf[0] = 0x67452301;
     ctx->buf[1] = 0xefcdab89;
@@ -53,7 +53,7 @@ void MD5Init(MD5_CTX *ctx)
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-void MD5Update(MD5_CTX *ctx, unsigned char const *buf, unsigned len)
+void MD5_Update(MD5_CTX *ctx, unsigned char const *buf, unsigned len)
 {
     u_int32_t t;
 
@@ -78,7 +78,7 @@ void MD5Update(MD5_CTX *ctx, unsigned char const *buf, unsigned len)
 	}
 	memcpy(p, buf, t);
 	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (u_int32_t *) ctx->in);
+	MD5_Transform(ctx->buf, (u_int32_t *) ctx->in);
 	buf += t;
 	len -= t;
     }
@@ -87,7 +87,7 @@ void MD5Update(MD5_CTX *ctx, unsigned char const *buf, unsigned len)
     while (len >= 64) {
 	memcpy(ctx->in, buf, 64);
 	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (u_int32_t *) ctx->in);
+	MD5_Transform(ctx->buf, (u_int32_t *) ctx->in);
 	buf += 64;
 	len -= 64;
     }
@@ -101,7 +101,7 @@ void MD5Update(MD5_CTX *ctx, unsigned char const *buf, unsigned len)
  * Final wrapup - pad to 64-byte boundary with the bit pattern 
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
-void MD5Final(unsigned char digest[16], MD5_CTX *ctx)
+void MD5_Final(unsigned char digest[16], MD5_CTX *ctx)
 {
     unsigned count;
     unsigned char *p;
@@ -122,7 +122,7 @@ void MD5Final(unsigned char digest[16], MD5_CTX *ctx)
 	/* Two lots of padding:  Pad the first block to 64 bytes */
 	memset(p, 0, count);
 	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (u_int32_t *) ctx->in);
+	MD5_Transform(ctx->buf, (u_int32_t *) ctx->in);
 
 	/* Now fill the next block with 56 bytes */
 	memset(ctx->in, 0, 56);
@@ -136,7 +136,7 @@ void MD5Final(unsigned char digest[16], MD5_CTX *ctx)
     ((u_int32_t *) ctx->in)[14] = ctx->bits[0];
     ((u_int32_t *) ctx->in)[15] = ctx->bits[1];
 
-    MD5Transform(ctx->buf, (u_int32_t *) ctx->in);
+    MD5_Transform(ctx->buf, (u_int32_t *) ctx->in);
     byteReverse((unsigned char *) ctx->buf, 4);
     memcpy(digest, ctx->buf, 16);
     memset((char *) ctx, 0, sizeof(ctx));	/* In case it's sensitive */
@@ -159,7 +159,7 @@ void MD5Final(unsigned char digest[16], MD5_CTX *ctx)
  * reflect the addition of 16 longwords of new data.  MD5Update blocks
  * the data and converts bytes into longwords for this routine.
  */
-void MD5Transform(u_int32_t buf[4], u_int32_t const in[16])
+void MD5_Transform(u_int32_t buf[4], u_int32_t const in[16])
 {
     register u_int32_t a, b, c, d;
 
