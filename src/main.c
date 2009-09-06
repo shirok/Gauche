@@ -275,7 +275,7 @@ void cleanup_main(void *data)
     if (stats_mode) {
         fprintf(stderr, "\n;; Statistics (*: main thread only):\n");
         fprintf(stderr,
-                ";;  GC: %dbytes heap, %dbytes allocated\n",
+                ";;  GC: %zubytes heap, %zubytes allocated\n",
                 GC_get_heap_size(), GC_get_total_bytes());
         fprintf(stderr,
                 ";;  stack overflow*: %ldtimes, %.2fms total/%.2fms avg\n",

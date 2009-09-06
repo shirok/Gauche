@@ -4,6 +4,9 @@
 	  name conflict in Snow Leopard.  Patch from KOGURO Naoki.
 	* gc/match_dep.c: Fix build problem on Snow Leopard.
 	  Patch from KOGURO Naoki.
+	* src/symbol.c (Scm_Gensym), src/main.c (cleanup_main):
+	  Suppress warning on printf directive size mismatch.
+	  Patch from KOGURO Naoki.
 
 2009-08-26  Shiro Kawai  <shiro@acm.org>
 

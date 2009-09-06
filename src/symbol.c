@@ -103,7 +103,7 @@ ScmObj Scm_Gensym(ScmString *prefix)
     static intptr_t gensym_count = 0;
 
     if (prefix == NULL) prefix = &default_prefix;
-    nc = snprintf(numbuf, 49, "%d", gensym_count++);
+    nc = snprintf(numbuf, 49, "%"PRIdPTR, gensym_count++);
     numbuf[49] = '\0';
     name = Scm_StringAppendC(prefix, numbuf, nc, nc);
     sym = make_sym(name, FALSE);
