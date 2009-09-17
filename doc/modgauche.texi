@@ -10092,7 +10092,7 @@ If @var{thread} terminates abnormally, @code{thread-join!} raises
 an exception which is stored in the result exception field of @var{thread}.
 @c JP
 @var{thread}が正常に終了したら、@code{thread-join!}は@var{thread}の
-結果フィールとに格納されている値を返します。
+結果フィールドに格納されている値を返します。
 @var{thread}が異常終了したら、@code{thread-join!}は@var{thread}の結果例外
 フィールドに格納されている例外を投げます。
 @c COMMON
@@ -10101,7 +10101,7 @@ an exception which is stored in the result exception field of @var{thread}.
 If the timeout is reached, @var{thread-join!} returns @var{timeout-val}
 if given, or raises @code{<join-timeout-exception>}.
 @c JP
-タイムアウトに達すると、@var{timeout-val}が与えられていれば@var{thread-join!}を返し、
+タイムアウトに達すると、@var{timeout-val}が与えられていれば@var{timeout-val}を返し、
 与えられていなければ@code{<join-timeout-exception>}を投げます。
 @c COMMON
 @end defun
