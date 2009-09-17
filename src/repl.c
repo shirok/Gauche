@@ -48,7 +48,7 @@
  *          (lambda ()
  *            (prompter)
  *            (let loop2 ((exp (reader)))
- *              (if (eof-object? loop2)
+ *              (if (eof-object? exp)
  *                  #f
  *                  (begin
  *                    (call-with-values
