@@ -1,3 +1,10 @@
+2009-09-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (process_queued_requests): Make sure the VM's lock
+	  is unlocked when the thread is canceled while stopped.
+	  Note: The same fix is needed wherever LOCK/UNLOCK pair contains
+	  cancellation point.
+
 2009-09-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/digest/md5.*: Renamed MD5Final -> MD5_Final etc. to avoid
