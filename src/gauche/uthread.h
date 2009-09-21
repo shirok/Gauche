@@ -62,4 +62,7 @@ typedef int ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_UNLOCK(fl)   (0)
 #define SCM_INTENRAL_FASTLOCK_DESTROY(fl)  (0)
 
+#define SCM_INTERNAL_THREAD_CLEANUP_PUSH(proc, mutex)  /*empty*/
+#define SCM_INTERNAL_THREAD_CLEANUP_POP(flag)          /*empty*/
+
 #endif /* GAUCHE_UTHREAD_H */

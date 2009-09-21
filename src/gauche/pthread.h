@@ -83,4 +83,10 @@ typedef pthread_mutex_t ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_DESTROY(fl) SCM_INTERNAL_MUTEX_DESTROY(fl)
 #endif /*!HAVE_PTHREAD_SPINLOCK_T*/
 
+/* Cleanup */
+#define SCM_INTERNAL_THREAD_CLEANUP_PUSH(proc, mutex) \
+    pthread_cleanup_push(proc, mutex)
+#define SCM_INTERNAL_THREAD_CLEANUP_POP(flag) \
+    pthread_cleanup_pop(flag)
+
 #endif /* GAUCHE_PTHREAD_H */

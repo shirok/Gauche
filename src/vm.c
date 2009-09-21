@@ -2270,11 +2270,13 @@ static ScmObj process_queued_requests_cc(ScmObj result, void **data)
     return vm->val0;
 }
 
+#ifdef GAUCHE_USE_PTHREADS
 static void mutex_unlock_cleanup(void *arg)
 {
     ScmInternalMutex *lock = arg;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(*lock);
 }
+#endif /*GAUCHE_USE_PTHREADS*/
 
 static void process_queued_requests(ScmVM *vm)
 {
@@ -2315,7 +2317,7 @@ static void process_queued_requests(ScmVM *vm)
         (void)SCM_INTERNAL_MUTEX_LOCK(vm->vmlock);
         /* The thread may be canceled during stopped, and we make sure
            the vmlock is unlocked in such case. */
-        pthread_cleanup_push(mutex_unlock_cleanup, &vm->vmlock);
+        SCM_INTERNAL_THREAD_CLEANUP_PUSH(mutex_unlock_cleanup, &vm->vmlock);
         /* Double check, since stopRequest can be canceled between the above
            two lines. */
         if (vm->stopRequest) {
@@ -2327,7 +2329,7 @@ static void process_queued_requests(ScmVM *vm)
                 (void)SCM_INTERNAL_COND_WAIT(vm->cond, vm->vmlock);
             }
         }
-        pthread_cleanup_pop(1);
+        SCM_INTERNAL_THREAD_CLEANUP_POP(1);
     }
 }
 
