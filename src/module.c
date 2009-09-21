@@ -181,8 +181,7 @@ ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists)
 
 #define SEARCHED_ARRAY_SIZE  64
 
-ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
-                         int flags)
+ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
 {
     ScmModule *m = module;
     ScmObj v, p, mp;
