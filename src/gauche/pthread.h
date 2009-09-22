@@ -51,11 +51,15 @@ typedef pthread_mutex_t ScmInternalMutex;
 
 SCM_EXTERN void Scm__MutexCleanup(void *); /* in core.c */
 
-/* Mutex operation with cleanup */
+/* Mutex operation with cleanup.  The dummy statement before
+   pthread_cleanup_pop() allows a label to be placed before
+   SAFE_LOCK_END macro.  Without that, it could be an error
+   if pthread_cleanup_pop expands into something beginning with
+   closing brace. */
 #define SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex)               \
     pthread_mutex_lock(&(mutex));                               \
     pthread_cleanup_push(Scm__MutexCleanup, &(mutex))
-#define SCM_INTERNAL_MUTEX_SAFE_LOCK_END() pthread_cleanup_pop(1)
+#define SCM_INTERNAL_MUTEX_SAFE_LOCK_END() /*dummy*/; pthread_cleanup_pop(1)
 
 /* Condition variable */
 typedef pthread_cond_t ScmInternalCond;
