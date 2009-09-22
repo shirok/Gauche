@@ -48,6 +48,9 @@ typedef int ScmInternalMutex;
 #define SCM_INTERNAL_MUTEX_UNLOCK(mutex)   (0)
 #define SCM_INTERNAL_MUTEX_INITIALIZER     (0)
 
+#define SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex) /*empty*/
+#define SCM_INTERNAL_MITEX_SAFE_LOCK_END()        /*empty*/
+
 typedef int ScmInternalCond;
 #define SCM_INTERNAL_COND_INIT(cond)       (0)
 #define SCM_INTERNAL_COND_SIGNAL(cond)     (0)
@@ -61,8 +64,5 @@ typedef int ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_LOCK(fl)     (0)
 #define SCM_INTERNAL_FASTLOCK_UNLOCK(fl)   (0)
 #define SCM_INTENRAL_FASTLOCK_DESTROY(fl)  (0)
-
-#define SCM_INTERNAL_THREAD_CLEANUP_PUSH(proc, mutex)  /*empty*/
-#define SCM_INTERNAL_THREAD_CLEANUP_POP(flag)          /*empty*/
 
 #endif /* GAUCHE_UTHREAD_H */

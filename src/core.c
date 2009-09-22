@@ -307,6 +307,16 @@ void Scm_DeleteCleanupHandler(void *handle)
     }
 }
 
+/* pthread specific cleanup handler to unlock mutex */
+#ifdef GAUCHE_USE_PTHREADS
+void Scm__MutexCleanup(void *mutex_)
+{
+    ScmInternalMutex *mutex = mutex_;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(*mutex);
+}
+#endif /* GAUCHE_USE_PTHREADS */
+
+
 /* Scm_Cleanup and Scm_Exit
    Usually calling Scm_Exit is the easiest way to terminate Gauche
    application safely.  If the application wants to continue operation

@@ -49,6 +49,14 @@ typedef pthread_mutex_t ScmInternalMutex;
 #define SCM_INTERNAL_MUTEX_INITIALIZER \
     PTHREAD_MUTEX_INITIALIZER
 
+SCM_EXTERN void Scm__MutexCleanup(void *); /* in core.c */
+
+/* Mutex operation with cleanup */
+#define SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex)               \
+    pthread_mutex_lock(&(mutex));                               \
+    pthread_cleanup_push(Scm__MutexCleanup, &(mutex))
+#define SCM_INTERNAL_MUTEX_SAFE_LOCK_END() pthread_cleanup_pop(1)
+
 /* Condition variable */
 typedef pthread_cond_t ScmInternalCond;
 #define SCM_INTERNAL_COND_INIT(cond) \
@@ -82,11 +90,5 @@ typedef pthread_mutex_t ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_UNLOCK(fl) SCM_INTERNAL_MUTEX_UNLOCK(fl)
 #define SCM_INTERNAL_FASTLOCK_DESTROY(fl) SCM_INTERNAL_MUTEX_DESTROY(fl)
 #endif /*!HAVE_PTHREAD_SPINLOCK_T*/
-
-/* Cleanup */
-#define SCM_INTERNAL_THREAD_CLEANUP_PUSH(proc, mutex) \
-    pthread_cleanup_push(proc, mutex)
-#define SCM_INTERNAL_THREAD_CLEANUP_POP(flag) \
-    pthread_cleanup_pop(flag)
 
 #endif /* GAUCHE_PTHREAD_H */
