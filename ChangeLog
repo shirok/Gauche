@@ -1,3 +1,18 @@
+2009-09-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (Scm_FindBinding, Scm_ImportModule),
+	  src/gauche/module.h, src/intlib.stub (%import-module),
+	  src/compile.scm (import): Added a feature to import a module
+	  with prefixed names.  (import (MODULE :prefix PREFIX)) imports
+	  exported bindings of MODULE into the current module, exposing
+	  the symbols with PREFIX attached.
+	  The C-level API Scm_ImportModules() is deprecated, since it
+	  is not very convenient for the callers to call it with the
+	  new prefixed format.  Instead the C programs should call
+	  Scm_ImportModule() for each module to be imported.
+	* src/main.c: Rewritten using Scm_ImportModule() instead of
+	  Scm_ImportModules().
+
 2009-09-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c (Scm__MutexCleanup),

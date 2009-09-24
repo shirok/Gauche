@@ -44,7 +44,8 @@
 struct ScmModuleRec {
     SCM_HEADER;
     ScmObj name;                /* symbol or #f */
-    ScmObj imported;            /* list of imported modules */
+    ScmObj imported;            /* list of imported modules.  each element
+                                   may be #<module> or (#<module> . prefix) */
     ScmObj exported;            /* list of exported symbols */
     int    exportAll;           /* TRUE if (export-all) */
     ScmObj parents;             /* direct parent modules */
@@ -80,7 +81,9 @@ SCM_EXTERN ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol,
                                   ScmObj value);
 
 SCM_EXTERN ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers);
-SCM_EXTERN ScmObj Scm_ImportModules(ScmModule *module, ScmObj list);
+SCM_EXTERN ScmObj Scm_ImportModule(ScmModule *module, ScmObj imported,
+                                   ScmObj prefix, u_long flags);
+SCM_EXTERN ScmObj Scm_ImportModules(ScmModule *module, ScmObj list);/*deprecated*/
 SCM_EXTERN ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list);
 SCM_EXTERN ScmObj Scm_ExportAll(ScmModule *module);
 SCM_EXTERN ScmModule *Scm_FindModule(ScmSymbol *name, int flags);

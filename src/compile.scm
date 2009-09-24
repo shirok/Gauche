@@ -2572,7 +2572,10 @@
   ($const-undef))
 
 (define-pass1-syntax (import form cenv) :gauche
-  (%import-modules (cenv-module cenv) (cdr form))
+  (dolist [f (cdr form)]
+    (match f
+      [(m :prefix p) (%import-module (cenv-module cenv) m p)]
+      [m             (%import-module (cenv-module cenv) m)]))
   ($const-undef))
 
 (define-pass1-syntax (extend form cenv) :gauche

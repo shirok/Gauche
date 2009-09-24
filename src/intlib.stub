@@ -118,7 +118,14 @@
 (define-cproc %insert-binding (mod::<module> name::<symbol> value)
   Scm_Define)
 (define-cproc %export-symbols (mod::<module> names) Scm_ExportSymbols)
-(define-cproc %import-modules (mod::<module> mods) Scm_ImportModules)
+
+(define-cproc %import-module (mod::<module> imported
+                                            :optional (prefix #f)
+                                                      (flags::<ulong> 0))
+  Scm_ImportModule)
+
+(define-cproc %import-modules (mod::<module> mods) ;deprecated
+  Scm_ImportModules)
 
 (define-cproc gloc-ref (gloc::<gloc>) SCM_GLOC_GET)
 (define-cproc gloc-set! (gloc::<gloc> value) SCM_GLOC_SET)

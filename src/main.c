@@ -422,8 +422,8 @@ int main(int argc, char **argv)
                             0, &lpak) < 0) {
                 error_exit(lpak.exception);
             }
-            Scm_ImportModules(SCM_CURRENT_MODULE(),
-                              SCM_LIST1(Scm_Intern(SCM_STRING(v))));
+            Scm_ImportModule(SCM_CURRENT_MODULE(), Scm_Intern(SCM_STRING(v)),
+                             SCM_FALSE, 0);
             break;
         case 'e':
             if (Scm_EvalCString(Scm_GetStringConst(SCM_STRING(v)),
@@ -496,8 +496,9 @@ int main(int argc, char **argv)
             if (Scm_Require(SCM_MAKE_STR("gauche/interactive"), 0, &lpak) < 0) {
                 Scm_Warn("couldn't load gauche.interactive\n");
             } else {
-                Scm_ImportModules(SCM_CURRENT_MODULE(),
-                                  SCM_LIST1(SCM_INTERN("gauche.interactive")));
+                Scm_ImportModule(SCM_CURRENT_MODULE(),
+                                 SCM_INTERN("gauche.interactive"),
+                                 SCM_FALSE, 0);
             }
         }
 

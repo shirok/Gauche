@@ -119,6 +119,33 @@
 (test "import (error)" (test-error)
       (lambda () (eval '(import MM) (interaction-environment))))
 
+(define-module OO
+  (import (N :prefix N:))
+  (define + *))
+
+(test "import w/prefix" '(56 72)
+      (lambda ()
+        (eval '(with-module OO
+                 (N:reset-result)
+                 (define a 7)
+                 (define b 8)
+                 (define c 9)
+                 (N:push-result (+ a b))
+                 (N:push-result (+ b c))
+                 (N:get-result))
+              (interaction-environment))))
+
+(test "import w/prefix (error)" (test-error)
+      (lambda ()
+        (eval '(with-module OO (reset-result))
+              (interaction-environment))))
+
+(test "import w/prefix (insertion)" 99
+      (lambda ()
+        (eval '(with-module N (export new-binding) (define (new-binding) 99))
+              (interaction-environment))
+        (eval '(with-module OO (N:new-binding)) (interaction-environment))))
+
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().
 

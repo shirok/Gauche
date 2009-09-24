@@ -194,7 +194,7 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
     int num_searched = 0, i;
     ScmObj more_searched = SCM_NIL;
 
-    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(modules.mutex);
 
     /* first, search from the specified module.
        NB: we directly check gloc->value instead of calling
@@ -209,8 +209,23 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
     if (!stay_in_module) {
         /* Next, search from imported modules */
         SCM_FOR_EACH(p, module->imported) {
-            SCM_ASSERT(SCM_MODULEP(SCM_CAR(p)));
-            SCM_FOR_EACH(mp, SCM_MODULE(SCM_CAR(p))->mpl) {
+            ScmObj elt = SCM_CAR(p);
+            ScmModule *mod = NULL;
+            ScmObj sym = SCM_OBJ(symbol);
+            if (SCM_MODULEP(elt)) {
+                mod = SCM_MODULE(elt);
+            } else if (SCM_PAIRP(elt) && SCM_SYMBOLP(SCM_CDR(elt))
+                       && SCM_MODULEP(SCM_CAR(elt))) {
+                /* Prefixed import */
+                sym = Scm_SymbolSansPrefix(symbol, SCM_SYMBOL(SCM_CDR(elt)));
+                if (!SCM_SYMBOLP(sym)) continue; /* if symbol doesn't have
+                                                    the prefix, never matches.*/
+                mod = SCM_MODULE(SCM_CAR(elt));
+            } else {
+                SCM_ASSERT(!"can't be here: import list of a module corrupted.");
+            }
+
+            SCM_FOR_EACH(mp, mod->mpl) {
                 ScmGloc *g;
                 
                 SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
@@ -225,7 +240,7 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
                 }
                 
                 m = SCM_MODULE(SCM_CAR(mp));
-                v = Scm_HashTableRef(m->table, SCM_OBJ(symbol), SCM_FALSE);
+                v = Scm_HashTableRef(m->table, SCM_OBJ(sym), SCM_FALSE);
                 /* see above comment about the check of gloc->value */
                 if (SCM_GLOCP(v) && (g = SCM_GLOC(v))->exported
                     && !SCM_UNBOUNDP(g->value)) {
@@ -251,7 +266,7 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
         }
     }
   found:
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
     return gloc;
 }
 
@@ -344,25 +359,62 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     return SCM_OBJ(g);
 }
 
+ScmObj Scm_ImportModule(ScmModule *module,
+                        ScmObj imported,
+                        ScmObj prefix,
+                        u_long flags) /* reserved for future use */
+{
+    ScmModule *imp = NULL;
+    ScmObj p;
+    if (SCM_MODULEP(imported)) {
+        imp = SCM_MODULE(imported);
+    } else if (SCM_SYMBOLP(imported)) {
+        imp = Scm_FindModule(SCM_SYMBOL(imported), 0);
+    } else if (SCM_IDENTIFIERP(imported)) {
+        imp = Scm_FindModule(SCM_IDENTIFIER(imported)->name, 0);
+    } else {
+        Scm_Error("module name or module required, but got %S", imported);
+    }
+
+    if (SCM_SYMBOLP(prefix)) {
+        p = Scm_Cons(SCM_OBJ(imp), prefix);
+    } else {
+        p = SCM_OBJ(imp);
+    }
+    /* Preallocate a pair, so that we won't call malloc during locking */
+    p = Scm_Cons(p, SCM_NIL);
+
+    /* Prepend imported module to module->imported list. */
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+    {
+        ScmObj ms, prev = p;
+        SCM_SET_CDR(p, module->imported);
+        /* Remove duplicate module, if any. */
+        SCM_FOR_EACH(ms, SCM_CDR(p)) {
+            ScmObj m = SCM_CAR(ms);
+            if ((SCM_MODULEP(m) && !SCM_EQ(m, SCM_OBJ(imp)))
+                ||(SCM_PAIRP(m) && !SCM_EQ(SCM_CAR(m), SCM_OBJ(imp)))) {
+                prev = ms;
+                continue;
+            }
+            SCM_SET_CDR(prev, SCM_CDR(ms));
+            break;
+        }
+        module->imported = p;
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+
+    return module->imported;
+}
+
+/* Deprecated */
 ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 {
     ScmObj lp;
-    ScmModule *mod;
-    ScmSymbol *name = NULL;
     SCM_FOR_EACH(lp, list) {
-        if (SCM_SYMBOLP(SCM_CAR(lp))) {
-            name = SCM_SYMBOL(SCM_CAR(lp));
-        } else if (SCM_IDENTIFIERP(SCM_CAR(lp))) {
-            name = SCM_IDENTIFIER(SCM_CAR(lp))->name;
-        } else {
-            Scm_Error("module name required, but got %S", SCM_CAR(lp));
-        }
-        mod = Scm_FindModule(name, 0);
-        (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
-        module->imported =
-            Scm_Cons(SCM_OBJ(mod),
-                     Scm_DeleteX(SCM_OBJ(mod), module->imported, SCM_CMP_EQ));
-        (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+        ScmObj p = SCM_CAR(lp);
+        if (SCM_PAIRP(p)) Scm_ImportModule(module, SCM_CAR(p), SCM_CDR(p), 0);
+        else              Scm_ImportModule(module, p, SCM_FALSE, 0);
     }
     return module->imported;
 }
