@@ -146,6 +146,33 @@
               (interaction-environment))
         (eval '(with-module OO (N:new-binding)) (interaction-environment))))
 
+(define-module O1
+  (import (N :only (reset-result get-result))))
+(test "import w/only" '()
+      (lambda () (eval '(with-module O1 (reset-result) (get-result))
+                       (current-module))))
+(test "import w/only (error)" (test-error)
+      (lambda () (eval '(with-module O1 (push-result 'a))
+                       (current-module))))
+
+(define-module O2
+  (import (N :only (reset-result get-result) :prefix N:)))
+(test "import w/only-prefix" '()
+      (lambda () (eval '(with-module O2 (N:reset-result) (N:get-result))
+                       (current-module))))
+(test "import w/only-prefix (error)" (test-error)
+      (lambda () (eval '(with-module O2 (N:push-result 'a))
+                       (current-module))))
+
+(define-module O3
+  (import (N :prefix N: :only (N:reset-result N:get-result))))
+(test "import w/only-prefix" '()
+      (lambda () (eval '(with-module O3 (N:reset-result) (N:get-result))
+                       (current-module))))
+(test "import w/only-prefix (error)" (test-error)
+      (lambda () (eval '(with-module O3 (N:push-result 'a))
+                       (current-module))))
+
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().
 

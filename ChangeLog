@@ -1,3 +1,8 @@
+2009-09-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (import): Added support of :only qualifier
+	  in import.
+
 2009-09-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (Scm_FindBinding, Scm_ImportModule),

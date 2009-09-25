@@ -2574,9 +2574,34 @@
 (define-pass1-syntax (import form cenv) :gauche
   (dolist [f (cdr form)]
     (match f
-      [(m :prefix p) (%import-module (cenv-module cenv) m p)]
-      [m             (%import-module (cenv-module cenv) m)]))
+      [(m . r) (process-import (cenv-module cenv) m r)]
+      [m       (process-import (cenv-module cenv) m '())]))
   ($const-undef))
+
+(define (process-import current imported args)
+  (let loop ([imported imported]
+             [args args]
+             [prefix #f])
+    (match args
+      [()  (%import-module current imported prefix)]
+      [(:prefix p . rest)
+       (loop imported rest (if prefix (string->symbol #`",p,prefix") p))]
+      [(:only (ss ...) . rest)
+       (let1 m (make-module #f)
+         (dolist [s (map unwrap-syntax ss)]
+           (unless (symbol? s)
+             (error ":only option of import must take list of symbols, but got:"
+                    (unwrap-syntax ss)))
+           (let1 s2 (if prefix
+                      (rlet1 sans (symbol-sans-prefix s prefix)
+                        (unless sans
+                          (error ":only specifies nonexistent symbol:" s)))
+                      s)
+             (eval `(define ,s (with-module ,imported ,s2)) m)
+             (%export-symbols m (list s))))
+         (%extend-module m '())
+         (loop m rest #f))]
+      [(other . rest) (error "invalid import spec:" args)])))
 
 (define-pass1-syntax (extend form cenv) :gauche
   (%extend-module (cenv-module cenv)
