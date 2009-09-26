@@ -166,11 +166,43 @@
 
 (define-module O3
   (import (N :prefix N: :only (N:reset-result N:get-result))))
-(test "import w/only-prefix" '()
+(test "import w/prefix-only" '()
       (lambda () (eval '(with-module O3 (N:reset-result) (N:get-result))
                        (current-module))))
-(test "import w/only-prefix (error)" (test-error)
+(test "import w/prefix-only (error)" (test-error)
       (lambda () (eval '(with-module O3 (N:push-result 'a))
+                       (current-module))))
+(test "import w/prefix-only (nonexistent error)" (test-error)
+      (lambda () (eval '(define-module O3bis
+                          (import N :prefix N: :only (reset-result)))
+                       (current-module))))
+
+(define-module O4
+  (import (N :except (push-result))))
+(test "import w/except" '()
+      (lambda () (eval '(with-module O4 (reset-result) (get-result))
+                       (current-module))))
+(test "import w/except (error)" (test-error)
+      (lambda () (eval '(with-module O4 push-result) (current-module))))
+
+(define-module O5
+  (import (N :except (push-result) :prefix N:)))
+(test "import w/except-prefix" '()
+      (lambda () (eval '(with-module O5 (N:reset-result) (N:get-result))
+                       (current-module))))
+(test "import w/except-prefix (error)" (test-error)
+      (lambda () (eval '(with-module O5 N:push-result) (current-module))))
+
+(define-module O6
+  (import (N :prefix N: :except (N:push-result))))
+(test "import w/prefix-except" '()
+      (lambda () (eval '(with-module O6 (N:reset-result) (N:get-result))
+                       (current-module))))
+(test "import w/prefix-except (error)" (test-error)
+      (lambda () (eval '(with-module O6 N:push-result) (current-module))))
+(test "import w/prefix-except (nonexistent error)" (test-error)
+      (lambda () (eval '(define-module O6bis
+                          (import N :prefix N: :except (reset-result)))
                        (current-module))))
 
 ;;------------------------------------------------------------------

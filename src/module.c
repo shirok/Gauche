@@ -181,19 +181,50 @@ ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists)
 
 #define SEARCHED_ARRAY_SIZE  64
 
+/* Keep record of searched modules.  we use stack array for small # of
+   modules, in order to avoid consing for typical cases. */
+typedef struct {
+    int num_searched;
+    ScmObj searched[SEARCHED_ARRAY_SIZE];
+    ScmObj more_searched;
+} module_cache;
+
+static inline void init_module_cache(module_cache *c)
+{
+    c->num_searched = 0;
+    c->more_searched = SCM_NIL;
+}
+
+static inline int module_visited_p(module_cache *c, ScmObj m)
+{
+    int i;
+    for (i=0; i<c->num_searched; i++) {
+        if (SCM_EQ(m, c->searched[i])) return TRUE;
+    }
+    if (!SCM_NULLP(c->more_searched)) {
+        if (!SCM_FALSEP(Scm_Memq(m, c->more_searched))) return TRUE;
+    }
+    return FALSE;
+}
+
+static inline void module_add_visited(module_cache *c, ScmObj m)
+{
+    if (c->num_searched < SEARCHED_ARRAY_SIZE) {
+        c->searched[c->num_searched++] = m;
+    } else {
+        c->more_searched = Scm_Cons(m, c->more_searched);
+    }
+}
+
 ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
 {
     ScmModule *m = module;
     ScmObj v, p, mp;
     ScmGloc *gloc = NULL;
     int stay_in_module = flags&SCM_BINDING_STAY_IN_MODULE;
+    module_cache searched;
 
-    /* keep record of searched modules.  we use stack array for small # of
-       modules, in order to avoid consing for typical cases. */
-    ScmObj searched[SEARCHED_ARRAY_SIZE];
-    int num_searched = 0, i;
-    ScmObj more_searched = SCM_NIL;
-
+    init_module_cache(&searched);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(modules.mutex);
 
     /* first, search from the specified module.
@@ -203,69 +234,59 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
     v = Scm_HashTableRef(m->table, SCM_OBJ(symbol), SCM_FALSE);
     if (SCM_GLOCP(v)) {
         gloc = SCM_GLOC(v);
-        if (!SCM_UNBOUNDP(gloc->value)) goto found;
+        if (!SCM_GLOC_PHANTOM_BINDING_P(gloc)) goto out;
     }
+    if (stay_in_module) goto out;
     
-    if (!stay_in_module) {
-        /* Next, search from imported modules */
-        SCM_FOR_EACH(p, module->imported) {
-            ScmObj elt = SCM_CAR(p);
-            ScmModule *mod = NULL;
-            ScmObj sym = SCM_OBJ(symbol);
-            if (SCM_MODULEP(elt)) {
-                mod = SCM_MODULE(elt);
-            } else if (SCM_PAIRP(elt) && SCM_SYMBOLP(SCM_CDR(elt))
-                       && SCM_MODULEP(SCM_CAR(elt))) {
-                /* Prefixed import */
-                sym = Scm_SymbolSansPrefix(symbol, SCM_SYMBOL(SCM_CDR(elt)));
-                if (!SCM_SYMBOLP(sym)) continue; /* if symbol doesn't have
-                                                    the prefix, never matches.*/
-                mod = SCM_MODULE(SCM_CAR(elt));
-            } else {
-                SCM_ASSERT(!"can't be here: import list of a module corrupted.");
-            }
-
-            SCM_FOR_EACH(mp, mod->mpl) {
-                ScmGloc *g;
-                
-                SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
-                
-                for (i=0; i<num_searched; i++) {
-                    if (SCM_EQ(SCM_CAR(mp), searched[i])) goto skip;
-                }
-                if (!SCM_NULLP(more_searched)) {
-                    if (!SCM_FALSEP(Scm_Memq(SCM_CAR(mp), more_searched))) {
-                        goto skip;
-                    }
-                }
-                
-                m = SCM_MODULE(SCM_CAR(mp));
-                v = Scm_HashTableRef(m->table, SCM_OBJ(sym), SCM_FALSE);
-                /* see above comment about the check of gloc->value */
-                if (SCM_GLOCP(v) && (g = SCM_GLOC(v))->exported
-                    && !SCM_UNBOUNDP(g->value)) {
-                    gloc = g;
-                    goto found;
-                }
-
-                if (num_searched < SEARCHED_ARRAY_SIZE) {
-                    searched[num_searched++] = SCM_OBJ(m);
-                } else {
-                    more_searched = Scm_Cons(SCM_OBJ(m), more_searched);
-                }
-            }
-          skip:;
+    /* Next, search from imported modules */
+    SCM_FOR_EACH(p, module->imported) {
+        ScmObj elt = SCM_CAR(p);
+        ScmModule *mod = NULL;
+        ScmObj sym = SCM_OBJ(symbol);
+        if (SCM_MODULEP(elt)) {
+            mod = SCM_MODULE(elt);
+        } else if (SCM_PAIRP(elt) && SCM_SYMBOLP(SCM_CDR(elt))
+                   && SCM_MODULEP(SCM_CAR(elt))) {
+            /* Prefixed import */
+            sym = Scm_SymbolSansPrefix(symbol, SCM_SYMBOL(SCM_CDR(elt)));
+            if (!SCM_SYMBOLP(sym)) continue; /* if symbol doesn't have
+                                                the prefix, never matches.*/
+            mod = SCM_MODULE(SCM_CAR(elt));
+        } else {
+            SCM_ASSERT(!"can't be here: import list of a module corrupted.");
         }
-        /* Then, search from parent modules */
-        SCM_ASSERT(SCM_PAIRP(module->mpl));
-        SCM_FOR_EACH(mp, SCM_CDR(module->mpl)) {
+
+        SCM_FOR_EACH(mp, mod->mpl) {
+            ScmGloc *g;
+                
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
+
+            if (module_visited_p(&searched, SCM_CAR(mp))) goto skip;
             m = SCM_MODULE(SCM_CAR(mp));
-            v = Scm_HashTableRef(m->table, SCM_OBJ(symbol), SCM_FALSE);
-            if (SCM_GLOCP(v)) { gloc = SCM_GLOC(v); goto found; }
+            v = Scm_HashTableRef(m->table, SCM_OBJ(sym), SCM_FALSE);
+            /* see above comment about the check of gloc->value */
+            if (SCM_GLOCP(v)) {
+                g = SCM_GLOC(v);
+                if (g->hidden) break;
+                if (g->exported && !SCM_UNBOUNDP(g->value)) {
+                    gloc = g;
+                    goto out;
+                }
+            }
+            module_add_visited(&searched, SCM_OBJ(m));
         }
+    skip:;
     }
-  found:
+
+    /* Then, search from parent modules */
+    SCM_ASSERT(SCM_PAIRP(module->mpl));
+    SCM_FOR_EACH(mp, SCM_CDR(module->mpl)) {
+        SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
+        m = SCM_MODULE(SCM_CAR(mp));
+        v = Scm_HashTableRef(m->table, SCM_OBJ(symbol), SCM_FALSE);
+        if (SCM_GLOCP(v)) { gloc = SCM_GLOC(v); goto out; }
+    }
+ out:
     SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
     return gloc;
 }
@@ -359,6 +380,40 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     return SCM_OBJ(g);
 }
 
+/*
+ * Injecting hidden binding
+ *   This inserts a dummy binding with hidden==true so that 
+ *   the module effectively removes the binding of the given symbol
+ *   inherited from parent.
+ *   This is not for genreral use.  It is intended to be used for
+ *   intermediate anonymous modules, created by import handling
+ *   routine to implement :except and :rename qualifiers.
+ */
+void Scm_HideBinding(ScmModule *module, ScmSymbol *symbol)
+{
+    ScmGloc *g;
+    ScmObj v;
+    int err_exists = FALSE;
+    
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+    v = Scm_HashTableRef(module->table, SCM_OBJ(symbol), SCM_FALSE);
+    if (!SCM_FALSEP(v)) {
+        err_exists = TRUE;
+    } else {
+        g = SCM_GLOC(Scm_MakeGloc(symbol, module));
+        g->hidden = TRUE;
+        Scm_HashTableSet(module->table, SCM_OBJ(symbol), SCM_OBJ(g), 0);
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+
+    if (err_exists) {
+        Scm_Error("hide-binding: binding already exists: %S", SCM_OBJ(symbol));
+    }
+}
+
+/*
+ * Import
+ */
 ScmObj Scm_ImportModule(ScmModule *module,
                         ScmObj imported,
                         ScmObj prefix,
@@ -419,6 +474,9 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
     return module->imported;
 }
 
+/*
+ * Export
+ */
 ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
 {
     ScmObj lp, syms, badsym = SCM_FALSE;
@@ -430,7 +488,7 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
     /* We used to do something like
      *  (set! (module-exports module)
      *        (delete-duplicates (union (module-exports module) list)))
-     * This is slow when we export lots of symbols.  As of 0.8.6,
+     * This was slow when we exported lots of symbols.  As of 0.8.6,
      * each GLOC has exported flag, so we can check whether a binding
      * is exported or not in O(1).   Module-exports list is kept
      * for backward compatibility.

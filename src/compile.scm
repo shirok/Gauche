@@ -2592,16 +2592,29 @@
            (unless (symbol? s)
              (error ":only option of import must take list of symbols, but got:"
                     (unwrap-syntax ss)))
-           (let1 s2 (if prefix
-                      (rlet1 sans (symbol-sans-prefix s prefix)
-                        (unless sans
-                          (error ":only specifies nonexistent symbol:" s)))
-                      s)
+           (let1 s2 (process-import:zap-prefix prefix s :only)
              (eval `(define ,s (with-module ,imported ,s2)) m)
              (%export-symbols m (list s))))
          (%extend-module m '())
          (loop m rest #f))]
+      [(:except (ss ...) . rest)
+       (let1 m (make-module #f)
+         (dolist [s (map unwrap-syntax ss)]
+           (unless (symbol? s)
+             (error ":except option of import must take list of symbols, but got:"
+                    (unwrap-syntax ss)))
+           (let1 s2 (process-import:zap-prefix prefix s :except)
+             (%hide-binding m s2)))
+         (%extend-module m (list (or (find-module imported)
+                                     (error "undefined module" imported))))
+         (loop m rest prefix))]
       [(other . rest) (error "invalid import spec:" args)])))
+
+(define (process-import:zap-prefix prefix sym who)
+  (if prefix
+    (rlet1 sans (symbol-sans-prefix sym prefix)
+      (unless sans (errorf "~a specifies nonexistent symbol: ~a" who sym)))
+    sym))
 
 (define-pass1-syntax (extend form cenv) :gauche
   (%extend-module (cenv-module cenv)

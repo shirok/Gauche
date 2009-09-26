@@ -79,6 +79,7 @@ SCM_EXTERN ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol,
 			     ScmObj value);
 SCM_EXTERN ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol,
                                   ScmObj value);
+SCM_EXTERN void   Scm_HideBinding(ScmModule *module, ScmSymbol *symbol);
 
 SCM_EXTERN ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers);
 SCM_EXTERN ScmObj Scm_ImportModule(ScmModule *module, ScmObj imported,

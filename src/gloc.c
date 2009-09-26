@@ -58,6 +58,7 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
     g->module = module;
     g->value = SCM_UNBOUND;
     g->exported = FALSE;
+    g->hidden = FALSE;
     g->getter = NULL;
     g->setter = NULL;
     return SCM_OBJ(g);

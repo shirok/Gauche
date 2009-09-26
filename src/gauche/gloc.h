@@ -42,11 +42,46 @@ struct ScmGlocRec {
     SCM_HEADER;
     ScmSymbol *name;
     ScmModule *module;
-    ScmObj value;
-    int exported;
-    ScmObj (*getter)(ScmGloc *);
-    ScmObj (*setter)(ScmGloc *, ScmObj);
+    ScmObj value;               /* The actual value.  Have to be accessed
+                                   via SCM_GLOC_{GET|SET} macros. */
+    char exported;              /* TRUE if this binding is exported */
+    char hidden;                /* TRUE if this is a "negative binding",
+                                   see below. */
+    ScmObj (*getter)(ScmGloc *);         /* see 'hooks' below */
+    ScmObj (*setter)(ScmGloc *, ScmObj); /* see 'hooks' below */
 };
+
+/* About negative binding:
+ *
+ *   Negative binding is a dummy binding inserted in an intermediate
+ *   anonymous module created by 'import' form, to realize :except
+ *   and :rename modifiers.   It *never* occurs in modules created
+ *   explicitly by define-module form or make-module procedure.
+ *
+ *   While Scm_FindBinding searches imported modules and parent modules,
+ *   if it finds negative binding, it stop searching for the MPL chain
+ *   currently it is looking at.  In other word, a negative binding
+ *   has an effect to remove the inherited binding from the exported list.
+ *
+ * About phantom binding.
+ *
+ *   A binding may be inserted either by definition or export special
+ *   forms.  We don't know which comes first.  If we've seen only an
+ *   'export' form but not an actual definition, the GLOC of the binding
+ *   has value SCM_UNDEFINED, and indicates it is a phantom binding.
+ *
+ *   A phantom binding is ignored when we search imported modules and
+ *   their MPLs.
+ *
+ * Hooks (getter and setter)
+ *   All reference and modification of toplevel binding go through
+ *   SCM_GLOC_GET/SET macros, which check getter and setter handlers.
+ *   These handlers allow to hook global variable reference.  They
+ *   are reserved for internal use; its' not for application-level
+ *   abstraction.  As of 0.9, getter is not used, and setter is only
+ *   used to check the attempt of modifying constant bindings.
+ *   Future plans include some kind of debugging facility.
+ */
 
 SCM_CLASS_DECL(Scm_GlocClass);
 #define SCM_CLASS_GLOC          (&Scm_GlocClass)
@@ -59,8 +94,8 @@ SCM_CLASS_DECL(Scm_GlocClass);
 #define SCM_GLOC_SET(gloc, val) \
     ((gloc)->setter? (gloc)->setter((gloc), (val)) : ((gloc)->value = (val)))
 
-#define SCM_GLOC_CONST_P(gloc) \
-    ((gloc)->setter == Scm_GlocConstSetter)
+#define SCM_GLOC_CONST_P(gloc)  ((gloc)->setter == Scm_GlocConstSetter)
+#define SCM_GLOC_PHANTOM_BINDING_P(gloc) SCM_UNBOUNDP((gloc)->value)
 
 /* INTERNAL */
 SCM_EXTERN ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module);

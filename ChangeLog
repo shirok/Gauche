@@ -1,3 +1,15 @@
+2009-09-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/gloc.h, src/gloc.c,
+	  src/gauche/module.h, src/module.c (Scm_HideBinding, Scm_FindBinding),
+	  src/intlib.stub (%hide-binding): Added a hack to hide binding
+	  inherited from parent modules.  This feature is not for general
+	  use; it is an internal tool to implement import's :except
+	  and :rename qualifiers via intermediate module.
+
+	* src/compile.scm (process-import): Added support of :except
+	  qualifier in import, using the above feature.
+
 2009-09-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (import): Added support of :only qualifier
