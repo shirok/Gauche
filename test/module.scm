@@ -149,29 +149,25 @@
 (define-module O1
   (import (N :only (reset-result get-result))))
 (test "import w/only" '()
-      (lambda () (eval '(with-module O1 (reset-result) (get-result))
-                       (current-module))))
+      (lambda () (eval '(begin (reset-result) (get-result)) (find-module 'O1))))
 (test "import w/only (error)" (test-error)
-      (lambda () (eval '(with-module O1 (push-result 'a))
-                       (current-module))))
+      (lambda () (eval '(push-result 'a) (find-module 'O1))))
 
 (define-module O2
   (import (N :only (reset-result get-result) :prefix N:)))
 (test "import w/only-prefix" '()
-      (lambda () (eval '(with-module O2 (N:reset-result) (N:get-result))
-                       (current-module))))
+      (lambda ()
+        (eval '(begin (N:reset-result) (N:get-result)) (find-module 'O2))))
 (test "import w/only-prefix (error)" (test-error)
-      (lambda () (eval '(with-module O2 (N:push-result 'a))
-                       (current-module))))
+      (lambda () (eval '(N:push-result 'a) (find-module 'O2))))
 
 (define-module O3
   (import (N :prefix N: :only (N:reset-result N:get-result))))
 (test "import w/prefix-only" '()
-      (lambda () (eval '(with-module O3 (N:reset-result) (N:get-result))
-                       (current-module))))
+      (lambda ()
+        (eval '(begin (N:reset-result) (N:get-result)) (find-module 'O3))))
 (test "import w/prefix-only (error)" (test-error)
-      (lambda () (eval '(with-module O3 (N:push-result 'a))
-                       (current-module))))
+      (lambda () (eval '(N:push-result 'a) (find-module 'O3))))
 (test "import w/prefix-only (nonexistent error)" (test-error)
       (lambda () (eval '(define-module O3bis
                           (import N :prefix N: :only (reset-result)))
@@ -180,30 +176,65 @@
 (define-module O4
   (import (N :except (push-result))))
 (test "import w/except" '()
-      (lambda () (eval '(with-module O4 (reset-result) (get-result))
-                       (current-module))))
+      (lambda () (eval '(begin (reset-result) (get-result)) (find-module 'O4))))
 (test "import w/except (error)" (test-error)
-      (lambda () (eval '(with-module O4 push-result) (current-module))))
+      (lambda () (eval 'push-result (find-module 'O4))))
 
 (define-module O5
   (import (N :except (push-result) :prefix N:)))
 (test "import w/except-prefix" '()
-      (lambda () (eval '(with-module O5 (N:reset-result) (N:get-result))
-                       (current-module))))
+      (lambda ()
+        (eval '(begin (N:reset-result) (N:get-result)) (find-module 'O5))))
 (test "import w/except-prefix (error)" (test-error)
-      (lambda () (eval '(with-module O5 N:push-result) (current-module))))
+      (lambda () (eval 'N:push-result (find-module 'O5))))
 
 (define-module O6
   (import (N :prefix N: :except (N:push-result))))
 (test "import w/prefix-except" '()
-      (lambda () (eval '(with-module O6 (N:reset-result) (N:get-result))
-                       (current-module))))
+      (lambda ()
+        (eval '(begin (N:reset-result) (N:get-result)) (find-module 'O6))))
 (test "import w/prefix-except (error)" (test-error)
-      (lambda () (eval '(with-module O6 N:push-result) (current-module))))
+      (lambda ()
+        (eval 'N:push-result (find-module 'O6))))
 (test "import w/prefix-except (nonexistent error)" (test-error)
-      (lambda () (eval '(define-module O6bis
-                          (import N :prefix N: :except (reset-result)))
-                       (current-module))))
+      (lambda ()
+        (eval '(define-module O6bis
+                 (import N :prefix N: :except (reset-result)))
+              (current-module))))
+
+;; (define-module O7
+;;   (import (N :rename ((reset-result reset) (get-result get)))))
+;; (test "import w/rename" '(1 2)
+;;       (lambda ()
+;;         (eval '(begin (reset) (push-result 1) (push-result 2) (get))
+;;               (find-module 'O7))))
+;; (test "import w/rename (make sure old binding is removed)" (test-error)
+;;       (lambda ()
+;;         (eval '(reset-result) (find-module 'O7))))
+
+;; (define-module O8
+;;   ;; swapping names
+;;   (import (N :rename ((reset-result get-result) (get-result reset-result)))))
+;; (test "import w/rename (swap)" '(1 2)
+;;       (lambda ()
+;;         (eval '(begin
+;;                  (get-result) (push-result 1) (push-result 2) (reset-result))
+;;               (find-module 'O8))))
+
+;; (define-module O9
+;;   (import (N :rename ((reset-result r) (get-result g)) :prefix n:)))
+;; (test "import w/rename-preifx" '(1 2)
+;;       (lambda ()
+;;         (eval '(begin (n:r) (n:push-result 1) (n:push-result 2) (n:g))
+;;               (find-module 'O9))))
+
+;; (define-module Oa
+;;   (import (N :prefix n: :rename ((n:reset-result r) (n:get-result g)))))
+;; (test "import w/preifx-rename" '(1 2)
+;;       (lambda ()
+;;         (eval '(begin (r) (n:push-result 1) (n:push-result 2) (g))
+;;               (find-module 'Oa))))
+
 
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().

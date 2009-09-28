@@ -2587,30 +2587,50 @@
       [(:prefix p . rest)
        (loop imported rest (if prefix (string->symbol #`",p,prefix") p))]
       [(:only (ss ...) . rest)
-       (let1 m (make-module #f)
-         (dolist [s (map unwrap-syntax ss)]
-           (unless (symbol? s)
-             (error ":only option of import must take list of symbols, but got:"
-                    (unwrap-syntax ss)))
-           (let1 s2 (process-import:zap-prefix prefix s :only)
-             (eval `(define ,s (with-module ,imported ,s2)) m)
-             (%export-symbols m (list s))))
+       (let1 m (process-import:remap
+                :only (unwrap-syntax ss) prefix
+                (lambda (m sym bare-sym)
+                  (let1 gv (global-variable-ref imported bare-sym)
+                    (%insert-binding m sym gv))
+                  (%export-symbols m (list sym))))
          (%extend-module m '())
          (loop m rest #f))]
       [(:except (ss ...) . rest)
-       (let1 m (make-module #f)
-         (dolist [s (map unwrap-syntax ss)]
-           (unless (symbol? s)
-             (error ":except option of import must take list of symbols, but got:"
-                    (unwrap-syntax ss)))
-           (let1 s2 (process-import:zap-prefix prefix s :except)
-             (%hide-binding m s2)))
+       (let1 m (process-import:remap
+                :except (unwrap-syntax ss) prefix
+                (lambda (m sym bare-sym) (%hide-binding m bare-sym)))
          (%extend-module m (list (or (find-module imported)
                                      (error "undefined module" imported))))
          (loop m rest prefix))]
+;;;       [(:rename ((ss ds) ...) . rest)
+;;;        (let* ([ss (unwrap-syntax ss)]
+;;;               [ds (unwrap-syntax ds)]
+;;;               [m1 (process-import:remap
+;;;                    :rename ss prefix
+;;;                    (lambda (m sym bare-sym) (%hide-binding m bare-sym)))]
+;;;               [m2 (rlet1 m2 (make-module #f)
+;;;                     (for-each (lambda (s d)
+;;;                                 (let1 gv (global-variable-ref
+;;;                                           imported
+;;;                                           (process-import:strip-prefix :rename s prefix))
+;;;                                   (%insert-binding m2 d gv))
+;;;                                 (%export-symbols m2 (list d)))
+;;;                               ss ds))])
+;;;          (%extend-module m1 (list (or (find-module imported)
+;;;                                       (error "undefined module" imported))))
+;;;          (%extend-module m2 (list m1))
+;;;          (loop m2 rest #f))]
       [(other . rest) (error "invalid import spec:" args)])))
 
-(define (process-import:zap-prefix prefix sym who)
+(define (process-import:remap who syms prefix process)
+  (rlet1 m (make-module #f)
+    (dolist [sym syms]
+      (unless (symbol? sym)
+        (errorf "~a option of import must take list of symbols, but got: ~s"
+                who syms))
+      (process m sym (process-import:strip-prefix who sym prefix)))))
+
+(define (process-import:strip-prefix who sym prefix)
   (if prefix
     (rlet1 sans (symbol-sans-prefix sym prefix)
       (unless sans (errorf "~a specifies nonexistent symbol: ~a" who sym)))
