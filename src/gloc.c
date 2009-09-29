@@ -64,11 +64,16 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
     return SCM_OBJ(g);
 }
 
-ScmObj Scm_MakeConstGloc(ScmSymbol *sym, ScmModule *module)
+ScmObj Scm_GlocMarkConst(ScmGloc *gloc)
 {
-    ScmGloc *g = SCM_GLOC(Scm_MakeGloc(sym, module));
-    g->setter = Scm_GlocConstSetter;
-    return SCM_OBJ(g);
+    gloc->setter = Scm_GlocConstSetter;
+    return SCM_OBJ(gloc);
+}
+
+ScmObj Scm_GlocUnmarkConst(ScmGloc *gloc)
+{
+    gloc->setter = NULL;
+    return SCM_OBJ(gloc);
 }
 
 ScmObj Scm_GlocConstSetter(ScmGloc *gloc, ScmObj val)

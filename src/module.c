@@ -309,49 +309,16 @@ ScmObj Scm_GlobalVariableRef(ScmModule *module,
 
 /*
  * Definition.
- *  TODO: consolidate the common code between Scm_Define and Scm_DefineConst.
  */
-ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
-{
-    ScmGloc *g;
-    ScmObj v;
-    int redefining = FALSE;
-    
-    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
-    v = Scm_HashTableRef(module->table, SCM_OBJ(symbol), SCM_FALSE);
-    if (SCM_GLOCP(v)) {
-        g = SCM_GLOC(v);
-        if (SCM_GLOC_CONST_P(g)) {
-            redefining = TRUE;
-            g->setter = NULL;
-        }
-        SCM_GLOC_SET(g, value);
-    } else {
-        g = SCM_GLOC(Scm_MakeGloc(symbol, module));
-        SCM_GLOC_SET(g, value);
-        Scm_HashTableSet(module->table, SCM_OBJ(symbol), SCM_OBJ(g), 0);
-        /* If module is marked 'export-all', export this binding by default */
-        if (module->exportAll) {
-            g->exported = TRUE;
-            module->exported = Scm_Cons(SCM_OBJ(g->name), module->exported);
-        }
-    }
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
-    
-    if (redefining) {
-        Scm_Warn("redefining constant %S::%S", g->module, g->name);
-    }
-    return SCM_OBJ(g);
-}
-
-ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
+static ScmObj do_define(ScmModule *module, ScmSymbol *symbol, ScmObj value,
+                        int constp)
 {
     ScmGloc *g;
     ScmObj v;
     ScmObj oldval = SCM_UNDEFINED;
     int redefining = FALSE;
 
-    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(modules.mutex);
     v = Scm_HashTableRef(module->table, SCM_OBJ(symbol), SCM_FALSE);
     /* NB: this function bypasses check of gloc setter */
     if (SCM_GLOCP(v)) {
@@ -359,12 +326,10 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
         if (SCM_GLOC_CONST_P(g)) {
             redefining = TRUE;
             oldval = g->value;
+            if (!constp) Scm_GlocUnmarkConst(g);
         }
-        g->setter = Scm_GlocConstSetter;
-        g->value  = value;
     } else {
-        g = SCM_GLOC(Scm_MakeConstGloc(symbol, module));
-        g->value = value;
+        g = SCM_GLOC(Scm_MakeGloc(symbol, module));
         Scm_HashTableSet(module->table, SCM_OBJ(symbol), SCM_OBJ(g), 0);
         /* If module is marked 'export-all', export this binding by default */
         if (module->exportAll) {
@@ -372,12 +337,30 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
             module->exported = Scm_Cons(SCM_OBJ(g->name), module->exported);
         }
     }
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
 
-    if (redefining && !Scm_EqualP(value, oldval)) {
+    /* SCM_GLOC_SET may throw an error, so we call it after unlocking. */
+    if (constp) {
+        g->value  = value;
+        Scm_GlocMarkConst(g);
+    } else {
+        SCM_GLOC_SET(g, value);
+    }
+
+    if (redefining && (!constp || !Scm_EqualP(value, oldval))) {
         Scm_Warn("redefining constant %S::%S", g->module->name, g->name);
     }
     return SCM_OBJ(g);
+}
+
+ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
+{
+    return do_define(module, symbol, value, FALSE);
+}
+
+ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
+{
+    return do_define(module, symbol, value, TRUE);
 }
 
 /*

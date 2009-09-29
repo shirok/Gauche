@@ -99,7 +99,8 @@ SCM_CLASS_DECL(Scm_GlocClass);
 
 /* INTERNAL */
 SCM_EXTERN ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module);
-SCM_EXTERN ScmObj Scm_MakeConstGloc(ScmSymbol *sym, ScmModule *module);
+SCM_EXTERN ScmObj Scm_GlocMarkConst(ScmGloc *g);
+SCM_EXTERN ScmObj Scm_GlocUnmarkConst(ScmGloc *g);
 SCM_EXTERN ScmObj Scm_GlocConstSetter(ScmGloc *g, ScmObj val);
 
 #endif /* GAUCHE_GLOC_H */
