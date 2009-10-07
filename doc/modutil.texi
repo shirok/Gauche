@@ -6273,14 +6273,12 @@ HTTP/1.1, defined in RFC2616, "Hypertext Transfer Protocol -- HTTP/1.1"
 
 @c EN
 Current API implements only a part of the protocol.
-Only GET, HEAD, and POST requests are supported,
-it doesn't talk with HTTP/1.0 server yet,
+It doesn't talk with HTTP/1.0 server yet,
 and it doesn't support HTTP/1.1 advanced features
 such as persistent connection.
 Support for those features may be added in the future versions.
 @c JP
 現在のAPIは、プロトコルの一部のみ実装されています。
-GET、HEAD、POSTリクエストのみがサポートされており、
 HTTP/1.0のサーバーとはうまく通信できません。
 また、HTTP/1.1の先進的機能、例えば永続的接続などはサポートしていません。
 これらの機能は、将来のバージョンで追加されるでしょう。
