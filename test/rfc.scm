@@ -493,15 +493,15 @@ Content-Length: 4349
 
 (test* "mime-compose-parameters (simple)"
        "; ab=cd; ef=gh"
-       (mime-compose-parameters '((ab . cd) (ef . gh)) :port #f))
+       (mime-compose-parameters '((ab . cd) (ef . gh)) #f))
 (test* "mime-compose-parameters (quote)"
        "; ab=\"c d\"; ef=\"\\\"\\\\\""
-       (mime-compose-parameters '((ab . "c d") (ef . "\"\\")) :port #f))
+       (mime-compose-parameters '((ab . "c d") (ef . "\"\\")) #f))
 (test* "mime-compose-parameters (long)"
        "; ab=cd;\r\n foo=012345678901234567890123456789012345679012345678901234567890123456789"
        (mime-compose-parameters
         '((ab . cd) (foo . "012345678901234567890123456789012345679012345678901234567890123456789"))
-        :port #f))
+        #f))
 
 (test* "mime-encode-text (pass-through)" "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod\r\n tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim\r\n veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea\r\n commodo consequat. Duis aute irure dolor in reprehenderit in voluptate\r\n velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat\r\n cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id\r\n est laborum."
        (mime-encode-text "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."))

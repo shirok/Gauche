@@ -121,7 +121,7 @@
 ;;   ;parameter=value;parameter=value
 ;; => ((parameter . value) ...)
 ;; NB: This will support RFC2231, but not yet.
-(define (mime-parse-parameters input)
+(define (mime-parse-parameters :optional (input (current-input-port)))
   (let loop ((r '()))
     (cond [(and-let* ([ (eqv? #\; (rfc822-next-token input '())) ]
                       [attr (rfc822-next-token input `(,*ct-token-chars*))]
@@ -139,8 +139,9 @@
 ;; Inverse of mime-parse-parameters.
 ;; ((parameter . value) ...) => ;parameter=value;parameter=value ...
 ;; NB: This will support RFC2231, but not yet.
-(define (mime-compose-parameters pvs :key (start-column 0)
-                                               (port (current-output-port)))
+(define (mime-compose-parameters pvs
+                                 :optional (port (current-output-port))
+                                 :key (start-column 0))
   (define (quote-value v)               ; TODO: possibly folding?
     (if (string-every *ct-token-chars* v)
       v
@@ -671,7 +672,7 @@
     (rfc822-write-headers
      `(("Content-type"
         ,(format "~a/~a~a" (ref part'type) (ref part'subtype)
-                 (mime-compose-parameters (ref part'parameters) :port #f)))
+                 (mime-compose-parameters (ref part'parameters) #f)))
        ,@(cond-list [cte => (cut list "Content-transfer-encoding" <>)])
        ,@(filter-map gen-header-1 (ref part'headers)))
      :output port :check :ignore)))
@@ -682,9 +683,8 @@
     [("content-type" . _) #f]
     [(name (value pv ...))
      (let* ([sval (x->string value)]
-            [spvs (mime-compose-parameters pv
-                   :start-column (+ (string-length name) (string-length sval) 2)
-                   :port #f)])
+            [spvs (mime-compose-parameters pv #f
+                   :start-column (+ (string-length name) (string-length sval) 2))])
        `(,name ,(if (null? pv) sval #`",|sval|,|spvs|")))]
     [(name value) h]))  
 
