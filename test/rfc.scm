@@ -6,6 +6,7 @@
 (use gauche.sequence)
 (use gauche.process)
 (use util.list)
+(use util.match)
 (test-start "rfc")
 
 ;;--------------------------------------------------------------------
@@ -490,6 +491,18 @@ Content-Length: 4349
            a=b"))
 |#
 
+(test* "mime-compose-parameter-value (simple)"
+       "; ab=cd; ef=gh"
+       (mime-compose-parameter-value '((ab . cd) (ef . gh)) :port #f))
+(test* "mime-compose-parameter-value (quote)"
+       "; ab=\"c d\"; ef=\"\\\"\\\\\""
+       (mime-compose-parameter-value '((ab . "c d") (ef . "\"\\")) :port #f))
+(test* "mime-compose-parameter-value (long)"
+       "; ab=cd;\r\n foo=012345678901234567890123456789012345679012345678901234567890123456789"
+       (mime-compose-parameter-value
+        '((ab . cd) (foo . "012345678901234567890123456789012345679012345678901234567890123456789"))
+        :port #f))
+
 (test* "mime-encode-text (pass-through)" "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod\r\n tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim\r\n veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea\r\n commodo consequat. Duis aute irure dolor in reprehenderit in voluptate\r\n velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat\r\n cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id\r\n est laborum."
        (mime-encode-text "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."))
 (test* "mime-encode-text (pass-through, nonbreak)" "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
@@ -602,6 +615,60 @@ Content-Length: 4349
         '(("mime-version" " 1.0")
           ("content-type" "multipart/form-data; boundary=\"---------------------------6578815652962098482130719379\"")))))
 
+(let1 b (mime-make-boundary)
+  (test* "mime-compose-message (simple)"
+         (string-append "\r\n--"b"\r\n"
+                        "Content-type: text/plain\r\n"
+                        "Content-transfer-encoding: 7bit\r\n\r\n"
+                        "This is a pen."
+                        "\r\n--"b"\r\n"
+                        "Content-type: text/html; charset=us-ascii\r\n\r\n"
+                        "<html><head></head><body></body></html>"
+                        "\r\n--"b"\r\n"
+                        "Content-type: application/octet-stream\r\n"
+                        "Content-transfer-encoding: base64\r\n\r\n"
+                        "YWJjZGVmZw=="
+                        "\r\n--"b"--\r\n")
+         (receive (s bb)
+           (mime-compose-message-string
+            '((("text" "plain")
+               (("content-transfer-encoding" "7bit"))
+               "This is a pen.")
+              (("text" "html" ("charset" . "us-ascii"))
+               ()
+               "<html><head></head><body></body></html>")
+              (("application" "octet-stream")
+               (("content-transfer-encoding" "base64"))
+               "abcdefg"))
+            :boundary b)
+           (and (equal? b bb) s))))
+
+(define (mime-roundtrip-tester num)
+  (define (gen-parts mesg)
+    (match mesg
+      [(ctype _ (? string? body))
+       `(,(mime-parse-content-type ctype) '() ,body)]
+      [("message/rfc822" _ ("text/plain" _ body))
+       `(("message" "rfc822") '()
+         ,#`"content-type: text/plain\r\n\r\n,body")]
+      [(ctype _ children ...)
+       `(,(mime-parse-content-type ctype) '()
+         (subparts ,@(map gen-parts children)))]))
+  (let1 src (call-with-input-file #`"../test/data/rfc-mime-,|num|.res.txt" read)
+    (receive (composed boundary)
+        (mime-compose-message-string (list (gen-parts src)))
+      (test* #`"mime-roundtrip (,num)"
+             `("multipart/mixed" 0 ,src)
+             (mime-message-resolver
+              (call-with-input-string composed
+                (cut mime-parse-message <>
+                     `(("mime-version" "1.0")
+                       ("content-type" ,#`"multipart/mixed; boundary=\",|boundary|\""))
+                     (cut mime-body->string <> <>)))
+              #f)))))
+                     
+(dotimes (n 8) (mime-roundtrip-tester n))
+    
 ;;--------------------------------------------------------------------
 (test-section "rfc.uri")
 (use rfc.uri)

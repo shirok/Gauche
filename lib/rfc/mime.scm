@@ -56,22 +56,24 @@
   (use util.list)
   (export mime-parse-version
           mime-parse-content-type mime-parse-content-disposition
-          mime-parse-parameter-value
+          mime-parse-parameter-value mime-compose-parameter-value
           mime-encode-word mime-encode-text
           mime-decode-word mime-decode-text
           <mime-part>
           mime-parse-message mime-retrieve-body
           mime-body->string mime-body->file
+          mime-make-boundary mime-compose-message mime-compose-message-string
           )
   )
 (select-module rfc.mime)
 
 (autoload rfc.quoted-printable quoted-printable-decode-string
-          quoted-printable-encode-string)
+          quoted-printable-encode quoted-printable-encode-string)
 (autoload rfc.base64 base64-decode-string base64-decode
-          base64-encode-string)
+          base64-encode-string base64-encode)
 (autoload gauche.charconv
           ces-upper-compatible? ces-conversion-supported? ces-convert)
+(autoload srfi-27 random-integer)       ;for MIME boundary generation
 
 ;;===============================================================
 ;; Basic utility
@@ -133,6 +135,36 @@
              (cons attr val))
            => (lambda (p) (loop (cons p r)))]
           [else (reverse! r)])))
+
+;; Inverse of mime-parse-parameter-value.
+;; ((parameter . value) ...) => ;parameter=value;parameter=value ...
+;; NB: This will support RFC2231, but not yet.
+(define (mime-compose-parameter-value pvs :key (start-column 0)
+                                               (port (current-output-port)))
+  (define (quote-value v)               ; TODO: possibly folding?
+    (if (string-every *ct-token-chars* v)
+      v
+      (string-append "\"" (regexp-replace-all #/[\"\\]/ v "\\\\\\0") "\"")))
+  (define (valid-name p)
+    (rlet1 z (x->string p)
+      (unless (string-every *ct-token-chars* z)
+        (error "invalid parameter value for rfc2822 header:" p))))
+  (define (gen)
+    (fold (lambda (pv column)
+            (match pv
+              [(p . v)
+               (let* ([z #`",(valid-name p)=,(quote-value (x->string v))"]
+                      [len (+ (string-length z) column)])
+                 (cond [(> len 78)
+                        (display ";\r\n ") (display z) (string-length z)]
+                       [else
+                        (display "; ") (display z) (+ len column 2)]))]
+              [_ (error "bad parameter-value entry:" pv)]))
+          start-column pvs))
+  (match port
+    [#f (with-output-to-string gen)]
+    [#t (gen)]
+    [(? port?) (with-output-to-port port gen)]))
 
 ;;===============================================================
 ;; RFC2047 header field encoding
@@ -404,14 +436,15 @@
 
 ;; message information packet
 (define-class <mime-part> ()
-  ((type     :init-keyword :type)
-   (subtype  :init-keyword :subtype)
-   (parameters :init-keyword :parameters)
-   (transfer-encoding :init-keyword :transfer-encoding)
-   (headers  :init-keyword :headers)
+  ((type     :init-keyword :type :init-value "text")
+   (subtype  :init-keyword :subtype :init-value "plain")
+   (parameters :init-keyword :parameters :init-value '())
+   (transfer-encoding :init-keyword :transfer-encoding :init-value #f)
+   (headers  :init-keyword :headers :init-value '())
    (parent   :init-keyword :parent :init-value #f)
    (index    :init-keyword :index :init-value 0)
-   (content  :init-value #f)
+   (content  :init-keyword :content :init-value #f)
+   (source   :init-keyword :soruce :init-value #f) ; only used for composing
    ))
 
 (define (mime-parse-message port headers handler)
@@ -419,19 +452,18 @@
                   '("text" "plain" ("charset" . "us-ascii"))))
 
 (define (internal-parse port headers handler parent index default-type)
-  (let* ((ctype (or (mime-parse-content-type
+  (let* ([ctype (or (mime-parse-content-type
                      (rfc822-header-ref headers "content-type"))
-                    default-type))
-         (enc   (rfc822-header-ref headers "content-transfer-encoding" "7bit"))
-         (packet (make <mime-part>
+                    default-type)]
+         [enc   (rfc822-header-ref headers "content-transfer-encoding" "7bit")]
+         [packet (make <mime-part>
                    :type (car ctype)
                    :subtype (cadr ctype)
                    :parameters (cddr ctype)
                    :transfer-encoding enc
                    :parent parent
                    :index index
-                   :headers headers))
-         )
+                   :headers headers)])
     (cond
      [(equal? (car ctype) "multipart")
       (multipart-parse port packet handler)]
@@ -444,32 +476,31 @@
      )))
 
 (define (multipart-parse port packet handler)
-  (let* ((boundary (or (assoc-ref (ref packet 'parameters) "boundary")
-                       (error "No boundary given for multipart message")))
-         (default-type (if (equal? (ref packet 'subtype) "digest")
+  (let* ([boundary (or (assoc-ref (ref packet 'parameters) "boundary")
+                       (error "No boundary given for multipart message"))]
+         [default-type (if (equal? (ref packet 'subtype) "digest")
                          '("message" "rfc822")
-                         '("text" "plain" ("charset" . "us-ascii"))))
-         (mime-port (make-mime-port boundary port))
-         )
+                         '("text" "plain" ("charset" . "us-ascii")))]
+         [mime-port (make-mime-port boundary port)])
     (let loop ((index 0)
                (contents '()))
-      (let* ((headers (rfc822-header->list mime-port))
-             (r (internal-parse mime-port headers handler
+      (let* ([headers (rfc822-header->list mime-port)]
+             [r (internal-parse mime-port headers handler
                                 packet index
-                                default-type)))
+                                default-type)])
         (case (ref mime-port 'state)
-          ((boundary)
+          [(boundary)
            (set! (ref mime-port 'state) 'body)
-           (loop (+ index 1) (cons r contents)))
-          ((eof)
+           (loop (+ index 1) (cons r contents))]
+          [(eof)
            (set! (ref packet 'content) (reverse! (cons r contents)))
-           packet)
-          (else ;; parser returned without readling entire part.
+           packet]
+          [else ;; parser returned without readling entire part.
            ;; discard the rest of the part.
            (let loop ((b (read-byte port)))
              (unless (eof-object? b)
                (loop (read-byte port))))
-           packet))))
+           packet])))
     ))
 
 (define (message-parse port packet handler)
@@ -545,5 +576,126 @@
       (with-port-locking outp
         (cut mime-retrieve-body packet inp outp))))
   filename)
+
+;;===============================================================
+;; MIME composer
+;;
+
+;; Each PART must be either an instance of <mime-part>, or a list
+;; of <mime-part-list>, where
+;;   <mime-part-list> : (<content-type> (<header> ...) <body>)
+;;   <content-type>   : (<type> <subtype> <header-param> ...)
+;;   <header-param>   : (<key> . <value>) ...
+;;   <header>         : (<header-name> <encoded-header-value>)
+;;                    | (<header-name (<header-value> <header-param> ...))
+;;   <body>           : string
+;;                    | (file <filename>)
+;;                    | (subparts <part> ...)
+;;
+;; Note: In the first form of <header>, <encoded-header-value> must
+;; already be encoded using RFC2047 or RFC2231 if the original value
+;; contains non-ascii characters.
+;; In the second form, we plan to do RFC2231 encoding on behalf of
+;; the caller; but the current version does not implement it.  The
+;; caller SHOULD NOT pass encoded words in this form, since it may
+;; result double-encoding when we implement the auto encoding feature;
+;; for the time being, the second form restricts ASCII-only values.
+
+;; Emits composed message to PORT, and returns boundary string.
+;; The boundary string is automatically generated unless provided
+;; by the optional argument.
+(define (mime-compose-message parts
+                              :optional (port (current-output-port))
+                              :key (boundary (mime-make-boundary)))
+  (dolist [p parts]
+    (for-each (cut display <> port) `("\r\n--" ,boundary "\r\n"))
+    (mime-generate-one-part (canonical-part p) port))
+  (for-each (cut display <> port) `("\r\n--" ,boundary "--\r\n"))
+  boundary)
+
+;; Returns composed message in string, AND the boundary.
+(define (mime-compose-message-string parts
+                                     :key (boundary (mime-make-boundary)))
+  (values (call-with-output-string
+            (cut mime-compose-message parts <> :boundary boundary))
+          boundary))
+
+(define (mime-make-boundary)
+  (format "boundary-~a" (number->string (* (random-integer (expt 2 64))
+                                           (sys-time) (sys-getpid))
+                                        36)))
+
+;; internal stuff
+(define (canonical-part p)
+  (match p
+    [(? (cut is-a? <> <mime-part>)) p]
+    [((type subtype . params) (headers ...) body)
+     (let1 hs (filter-map canonical-header headers)
+       (apply make <mime-part>
+              :type type :subtype subtype :parameters params :headers hs 
+              :transfer-encoding (rfc822-header-ref hs "content-transfer-encoding")
+              (match body
+                [(? string?) `(:content ,body)]
+                [('file name) `(:source ,name)]
+                [('subparts ps ...) `(:content ,(map canonical-part ps))]
+                [_ (error "Invalid mime part body spec:" body)])))]
+    [_ (error "Invalid mime part spec:" p)]))
+
+(define (canonical-header header)
+  (match header
+    [(name . x) (cons (x->string name) x)]
+    [_ #f]))
+
+(define (mime-generate-one-part part port)
+  (when (list? (ref part'content))
+    (unless (member "boundary" (ref part'parameters))
+      (push! (ref part'parameters) (cons "boundary" (mime-make-boundary)))))
+  (let1 cte (mime-generate-part-header part port)
+    (with-output-to-port port
+      (lambda ()
+        (cond
+         [(ref part'source) =>
+          (cut with-input-from-file <> (cut mime-generate-part-body part cte))]
+         [(list? (ref part'content))
+          (mime-compose-message (ref part'content) port
+                                :boundary (assoc-ref (ref part'parameters)
+                                                     "boundary"))]
+         [(string? (ref part'content))
+          (with-input-from-string (ref part'content)
+            (cut mime-generate-part-body part cte))]
+         [else (error "unsupported MIME part content")])))))
+
+;; returns content-transfer-encoding
+(define (mime-generate-part-header part port)
+  (rlet1 cte (ref part'transfer-encoding)
+    (rfc822-write-headers
+     `(("Content-type"
+        ,(format "~a/~a~a" (ref part'type) (ref part'subtype)
+                 (mime-compose-parameter-value (ref part'parameters) :port #f)))
+       ,@(cond-list [cte => (cut list "Content-transfer-encoding" <>)])
+       ,@(filter-map gen-header-1 (ref part'headers)))
+     :output port :check :ignore)))
+
+(define (gen-header-1 h)
+  (match h
+    [("content-transfer-encoding" . _) #f]
+    [("content-type" . _) #f]
+    [(name (value pv ...))
+     (let* ([sval (x->string value)]
+            [spvs (mime-compose-parameter-value pv
+                   :start-column (+ (string-length name) (string-length sval) 2)
+                   :port #f)])
+       `(,name ,(if (null? pv) sval #`",|sval|,|spvs|")))]
+    [(name value) h]))  
+
+;; current-input-port -> current-output-port
+(define (mime-generate-part-body part transfer-enc)
+  (cond
+   [(or (not transfer-enc) (member transfer-enc '("binary" "7bit") string-ci=?))
+    (copy-port (current-input-port) (current-output-port))]
+   [(string-ci=? transfer-enc "base64") (base64-encode)]
+   [(string-ci=? transfer-enc "quoted-printable") (quoted-printable-encode)]
+   [else (error "Unsupported transfer encoding encountered while composing \
+                 mime message: " transfer-enc)]))
 
 (provide "rfc/mime")
