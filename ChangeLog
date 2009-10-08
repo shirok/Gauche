@@ -2,6 +2,8 @@
 
 	* lib/rfc/mime.scm (mime-compose-message, mime-compose-message-string)
 	  (mime-make-boundary): Added support of composing a MIME message.
+	  (mime-parse-parameters, mime-compose-parameters): Expose those
+	  APIs (the former renamed from mime-parse-parameter-value).
 
 2009-09-29  Shiro Kawai  <shiro@acm.org>
 

@@ -491,15 +491,15 @@ Content-Length: 4349
            a=b"))
 |#
 
-(test* "mime-compose-parameter-value (simple)"
+(test* "mime-compose-parameters (simple)"
        "; ab=cd; ef=gh"
-       (mime-compose-parameter-value '((ab . cd) (ef . gh)) :port #f))
-(test* "mime-compose-parameter-value (quote)"
+       (mime-compose-parameters '((ab . cd) (ef . gh)) :port #f))
+(test* "mime-compose-parameters (quote)"
        "; ab=\"c d\"; ef=\"\\\"\\\\\""
-       (mime-compose-parameter-value '((ab . "c d") (ef . "\"\\")) :port #f))
-(test* "mime-compose-parameter-value (long)"
+       (mime-compose-parameters '((ab . "c d") (ef . "\"\\")) :port #f))
+(test* "mime-compose-parameters (long)"
        "; ab=cd;\r\n foo=012345678901234567890123456789012345679012345678901234567890123456789"
-       (mime-compose-parameter-value
+       (mime-compose-parameters
         '((ab . cd) (foo . "012345678901234567890123456789012345679012345678901234567890123456789"))
         :port #f))
 

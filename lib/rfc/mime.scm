@@ -56,7 +56,7 @@
   (use util.list)
   (export mime-parse-version
           mime-parse-content-type mime-parse-content-disposition
-          mime-parse-parameter-value mime-compose-parameter-value
+          mime-parse-parameters mime-compose-parameters
           mime-encode-word mime-encode-text
           mime-decode-word mime-decode-text
           <mime-part>
@@ -103,7 +103,7 @@
                       [ (string? subtype) ])
              (list* (string-downcase type)
                     (string-downcase subtype)
-                    (mime-parse-parameter-value input)))))))
+                    (mime-parse-parameters input)))))))
 
 ;; RFC2183 Content-Disposition header field
 ;; returns (<token> (<attribute> . <value>) ...)
@@ -114,14 +114,14 @@
            (and-let* ([token (rfc822-next-token input `(,*ct-token-chars*))]
                       [ (string? token) ])
              (cons (string-downcase token)
-                   (mime-parse-parameter-value input)))))))
+                   (mime-parse-parameters input)))))))
            
 
 ;; parse a parameter-values type header field
 ;;   ;parameter=value;parameter=value
 ;; => ((parameter . value) ...)
 ;; NB: This will support RFC2231, but not yet.
-(define (mime-parse-parameter-value input)
+(define (mime-parse-parameters input)
   (let loop ((r '()))
     (cond [(and-let* ([ (eqv? #\; (rfc822-next-token input '())) ]
                       [attr (rfc822-next-token input `(,*ct-token-chars*))]
@@ -136,10 +136,10 @@
            => (lambda (p) (loop (cons p r)))]
           [else (reverse! r)])))
 
-;; Inverse of mime-parse-parameter-value.
+;; Inverse of mime-parse-parameters.
 ;; ((parameter . value) ...) => ;parameter=value;parameter=value ...
 ;; NB: This will support RFC2231, but not yet.
-(define (mime-compose-parameter-value pvs :key (start-column 0)
+(define (mime-compose-parameters pvs :key (start-column 0)
                                                (port (current-output-port)))
   (define (quote-value v)               ; TODO: possibly folding?
     (if (string-every *ct-token-chars* v)
@@ -671,7 +671,7 @@
     (rfc822-write-headers
      `(("Content-type"
         ,(format "~a/~a~a" (ref part'type) (ref part'subtype)
-                 (mime-compose-parameter-value (ref part'parameters) :port #f)))
+                 (mime-compose-parameters (ref part'parameters) :port #f)))
        ,@(cond-list [cte => (cut list "Content-transfer-encoding" <>)])
        ,@(filter-map gen-header-1 (ref part'headers)))
      :output port :check :ignore)))
@@ -682,7 +682,7 @@
     [("content-type" . _) #f]
     [(name (value pv ...))
      (let* ([sval (x->string value)]
-            [spvs (mime-compose-parameter-value pv
+            [spvs (mime-compose-parameters pv
                    :start-column (+ (string-length name) (string-length sval) 2)
                    :port #f)])
        `(,name ,(if (null? pv) sval #`",|sval|,|spvs|")))]
