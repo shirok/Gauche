@@ -6773,10 +6773,28 @@ in an incomplete string.
 This module provides utility procedures to handle
 Multipurpose Internet Mail Extensions (MIME) messages,
 defined in RFC2045 thorough RFC2049.
+Provided APIs include procedures to parse or compose MIME-specific
+header fields, and parse or compose MIME-encoded message bodies.
 @c JP
 RFC2045からRFC2049で定義されている、
 多目的インターネットメール拡張(Multipurpose Internet Mail Extensions; MIME)
-メッセージを扱う便利な手続きです。
+メッセージを扱う便利な手続きです。MIME特有のヘッダフィールドやメッセージボディを
+パーズしたり作成したりするAPIが提供されます。
+@c COMMON
+
+@c EN
+This module mainly focuses on providing low-level building-block procedures,
+on top of which application-specific modules are to be built.
+For example, @code{rfc.http} uses this module to compose
+@code{multipart/form-data} message for the body of POST requests
+(@xref{HTTP}).
+@c JP
+このモジュールは主としてビルディングブロックとなる低レベルの手続きに
+フォーカスしており、アプリケーション特有のモジュールがこの上に
+構築されることを意図しています。例えば@code{rfc.http}はPOSTリクエストの
+ボディを@code{multipart/form-data}として構築する際にこのモジュールを
+利用します(@ref{HTTP}参照)。
+@c COMMON
 
 @c EN
 This module is supposed to be used with @code{rfc.822} module
@@ -6857,6 +6875,84 @@ returned.
 @code{#f}が返ります。
 @c COMMON
 @end defun
+
+@defun mime-parse-content-disposition field
+@c EN
+Parses Content-disposition header field as specified in RFC2183.
+@c JP
+RFC2183に定められたContent-Dispositionヘッダフィールドをパーズします。
+@c COMMON
+(mime-parse-content-disposition "attachment; filename=genome.jpeg;\
+  modification-date=\"Wed, 12 Feb 1997 16:29:51 -0500\";")
+ @result{} ("attachment"
+      ("filename" . "genome.jpeg")
+      ("modification-date" . "Wed, 12 Feb 1997 16:29:51 -0500"))
+@end defun
+
+
+@defun mime-parse-parameters &optional iport
+@defunx mime-compose-parameters params &optional oport &key start-column
+@c EN
+These are low-level utility procedures to parse and compose @emph{parameter}
+part of header fields (as appeared in RFC2045 Section 5.1 etc).
+
+@code{Mime-parse-parameters} reads the parameter
+part of the header body from an input port @var{iport}, and
+returns an assoc list of the parameter names and values.
+Conversely, @code{mime-compose-parameters} takes an assoc
+list of names and values, compose parameter part and
+emit it to @var{oport}.   When omitted, the current input
+port and the current output port are used for @var{iport}
+and @var{oport}, respectively.  You can pass @code{#f} to
+@var{oport} and @code{mime-compose-parameters} returns the
+result in a string instead of emitting it to a port.
+@c JP
+これらは、(RFC2045の5.1節にあるような)ヘッダフィールドの値の@emph{parameter}
+部分をパーズしたり作成したりするための低レベルのユーティリティ手続きです。
+
+@code{mime-parse-parameters}はヘッダフィールドの値のパラメータ部分を
+入力ポート@var{iport}から読んでパーズし、パラメータの名前と値の
+連想リストを返します。
+@code{mime-compose-parameters}はその逆で、連想リストをとり、
+パラメータ部分を構成して@var{oport}へと書き出します。
+@var{iport}、@var{oport}はそれぞれ省略された場合、
+@code{current-input-port}と@code{current-output-port}を
+デフォルトとします。また、@var{oport}に@code{#f}を渡すと
+@code{mime-compose-parameters}は結果をポートに書き出すかわりに
+文字列として返します。
+@c COMMON
+
+@example
+(call-with-input-string 
+   "; name=foo; filename=\"foo/bar/baz\""
+   mime-parse-parameters)
+ @result{} (("name" . "foo") ("filename" . "foo/bar/baz"))
+
+(mime-compose-parameters
+ '(("name" . "foo") ("filename" . "foo/bar/baz"))
+ #f)
+ @result{} "; name=foo; filename=\"foo/bar/baz\""
+@end example
+
+@c EN
+@code{Mime-compose-parameters} tries to insert folding line breaks
+between parameters to avoid the header line becomes too long.
+You can pass the beginning column position of the parameter
+part via @var{start-column} argument.
+@c JP
+@var{mime-compose-parameters}はヘッダ行が長くなりすぎる場合に
+パラメータ間に折り返し改行を入れようとします。パラメータ部分が始まる
+カラム数は@var{start-column}で与えることができます。
+@c COMMON
+
+@c EN
+We plan to make these procedures handle RFC2231's parameter value
+extension transparentlyk in future.
+@c JP
+将来は、これらの手続きにRFC2231のパラメータ値拡張を透過的に処理させる予定です。
+@c COMMON
+@end defun
+
 
 @defun mime-decode-word word
 @c EN
@@ -7283,6 +7379,21 @@ Otherwise, the return value of @var{handler} is stored.
 格納されています。
 @c COMMON
 @end defivar
+
+@defivar {<mime-part>} source
+@c EN
+This slot is only used when composing a MIME message.
+The caller can set this slot a name of the file to be inserted
+into this part, instead of setting the entire content of the
+file to the @code{content} slot.   See 
+@code{mime-compose-message} below for the more details.
+@c JP
+このスロットはMIMEメッセージを作成する時のみ使われます。
+呼び出し元は、このスロットにファイル名をセットすることで、
+MIMEメッセージのこのパートにファイルの内容を挿入することができます。
+詳しくは下の@code{mime-compose-message}の項を参照してください。
+@c COMMON
+@end defivar
 @end deftp
 
 @defun mime-retrieve-body part-info xport outp
@@ -7385,6 +7496,80 @@ blocks, instead of all-in-one procedure.
 それが、このモジュールが、オールインワンの手続きではなく、
 ビルディングブロックを提供している理由です。
 @c COMMON
+
+@subheading Message composer
+
+@defun mime-compose-message parts &optional port &key boundary
+@defunx mime-compose-message-string parts &key boundary
+Composes a MIME multipart message.  @code{Mime-compose-message}
+emits the result to an output port @var{port}, whose default
+is the current output port.  @code{Mime-compose-message-string}
+makes the result into a string.   You can give a boundary string
+via @var{boundary} argument; when omitted, a fresh boundary string
+is automatically generated by @code{mime-make-boundary} below.
+
+@code{Mime-compose-message} returns the boundary string.
+@code{Mime-compose-message-string} returns two values, the result
+string and the boundary string.
+
+The content of the message is provided by the @var{parts} argument,
+which can be a list of instances of @code{<mime-part>} (see above)
+or lists that describe parts.  The list form is supported for
+the caller's convenience, and internally it is converted to
+a list of @code{<mime-part>}s.
+
+The syntax of each part element in @var{parts} are defined as follow.
+
+@example
+<part>           : <mime-part> | <mime-part-desc>
+
+<mime-part>      : @r{an instance of the class} <mime-part>
+
+<mime-part-desc> : (<content-type> (<header> ...) <body>)
+<content-type>   : (<type> <subtype> <header-param> ...)
+<header-param>   : (<key> . <value>) ...
+<header>         : (<header-name> <encoded-header-value>)
+                 | (<header-name> (<header-value> <header-param> ...))
+<body>           : @r{a string}
+                 | (file <filename>)
+                 | (subparts <part> ...)
+@end example
+
+Note: In the first form of @code{<header>},
+@code{<encoded-header-value>} must already be encoded using RFC2047
+or RFC2231 if the original value contains non-ascii characters.
+In the second form, we plan to do RFC2231 encoding on behalf of
+the caller; but the current version does not implement it.  The
+caller should not pass encoded words in this form, since it may
+result double-encoding when we implement the auto encoding feature;
+for the time being, the second form restricts ASCII-only values.
+
+If @code{<body>} is a string, it is used as the part's content.
+If @code{<body>} is @code{(file @var{filename})}, the content is
+read from the named file.   If @code{<body>} is 
+@code{(subparts @var{part} @dots{})}, the part becomes nested
+MIME part.
+
+It is the caller's responsibility to give the proper content.
+For example, if @code{<body>} is in the third form, the
+part must have @code{multipart} content type.
+
+The caller needs to provide proper @code{content-transfer-encoding}
+header, depending on the application.  If none is given, the content
+is inserted into the message as is, which may be appropriate for
+some applications, but if you want to use the result in email 
+message you certainly want to encode binary part with base64,
+for example.
+@end defun
+
+@defun mime-make-boundary
+@c EN
+Returns a unique string that can be used as a boundary of a MIME multipart
+message.
+@c JP
+MIMEマルチパートメッセージのboundaryとして使えるユニークな文字列を返します。
+@c COMMON
+@end defun
 
 
 @c ----------------------------------------------------------------------
