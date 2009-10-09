@@ -775,6 +775,9 @@ Content-Length: 4349
        (and (is-a? http-user-agent <parameter>)
             (http-user-agent)))
 
+(test* "http-compose-query" "/search?q=foo%20bar&n=20"
+       (http-compose-query "/search" '((q . "foo bar") (n . 20))))
+
 (define *http-port* 6726)
 
 (define (alist-equal? alis1 alis2)

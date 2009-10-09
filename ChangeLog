@@ -1,3 +1,9 @@
+2009-10-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (http-compose-query, http-generic): Support
+	  application/x-www-form-urlencoded query composition in http-*
+	  procedures.
+
 2009-10-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/mime.scm (mime-compose-message, mime-compose-message-string)

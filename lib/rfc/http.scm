@@ -39,6 +39,8 @@
 ;;  http://www.ietf.org/rfc/rfc2616.txt
 ;; RFC2617 HTTP Authentication: Basic and Digest Access Authentication
 ;;  http://www.ietf.org/rfc/rfc2617.txt
+;; RFC2388 Returning Values from Forms:  multipart/form-data
+;;  http://www.ietf.org/rfc/rfc2388.txt
 
 ;; HTTP 1.1 has lots of features.  This module doesn't yet cover all of them.
 ;; The features required for typical client usage are implemented first.
@@ -52,13 +54,17 @@
   (use rfc.uri)
   (use gauche.net)
   (use gauche.parameter)
+  (use util.match)
+  (use util.list)
   (export <http-error>
-          http-user-agent make-http-connection
+          http-user-agent make-http-connection http-compose-query
           http-get http-head http-post http-put http-delete
           http-default-auth-handler
           )
   )
 (select-module rfc.http)
+
+(autoload rfc.mime mime-compose-message-string)
 
 ;;==============================================================
 ;; Conditions
@@ -92,7 +98,13 @@
 ;; as persistent connection and authentication tokens, suitable for
 ;; a series of communications to a server.
 ;;
-;; The request-uri argument is as specified in RFC2616.
+;; The request-uri argument can be a string as specified in RFC2616,
+;; or a list in the form of (<path> (<name> . <value>) ...).  In the
+;; latter form, (<name> . <value>) assoc list is converted into a
+;; url query form as defined in HTML4 (application/x-www-form-urlencoded)
+;; and appended to <path>.
+;;
+;; The body argument must be a string representing the request body.
 ;;
 ;; The options are handled by various low-level routines, and here's
 ;; the summary:
@@ -105,6 +117,9 @@
 ;;   no-redirect - if true, the procedures won't attempt to issue
 ;;             the request specified by 3xx response headers.
 ;;   auth-user, auth-password, auth-handler - authentication parameters.
+;;   request-encoding - when http-* is to construct request-uri and/or
+;;             request body, this argument specifies the character encoding
+;;             to be used as the external encoding.
 ;;
 ;; Other unrecognized options are passed as request headers.
 
@@ -165,6 +180,29 @@
   conn)
 
 ;;==============================================================
+;; query and request body composition
+;;
+
+;; Query string composition.
+;; NB: Query string syntax (aka application/x-www-form-urlencoded) is
+;; not defined in RFC2616.  In fact, it is not clearly defined at all
+;; in RFC.  The most definitive source might be the HTML4 specification,
+;; section 17.13.4 "Form content types", 
+;; <http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.1>.
+;; In reality it is used very frequently with http, so we put it here.
+(define (http-compose-query path params
+                            :optional (encoding (gauche-character-encoding)))
+  (define (esc s) (uri-encode-string (x->string s) :encoding encoding))
+  (define (query-1 n&v)
+    (match n&v
+      [(name . value) #`",(esc name)=,(esc value)"]
+      [_ (error "invalid request-uri form: ~s" params)]))
+  (define (query) (string-concatenate (intersperse "&" (map query-1 params))))
+  (cond [(not path) (query)]
+        [(null? params) path]
+        [else #`",|path|?,(query)"]))
+
+;;==============================================================
 ;; internal utilities
 ;;
 
@@ -175,12 +213,14 @@
                          (auth-user     (undefined))
                          (auth-password (undefined))
                          (extra-headers (undefined))
+                         (enc :request-encoding (gauche-character-encoding))
                          . opts)
-    (let1 conn (ensure-connection server auth-handler auth-user auth-password
-                                  extra-headers)
+    (let* ([conn (ensure-connection server auth-handler auth-user auth-password
+                                    extra-headers)]
+           [request-body (ensure-request-body request-body conn)])
       (let loop ((history '())
                  (host host)
-                 (request-uri request-uri))
+                 (request-uri (ensure-request-uri request-uri enc)))
         (receive (code headers body)
             (request-response request conn host request-uri request-body opts)
           (or (and-let* ([ (not no-redirect) ]
@@ -195,6 +235,17 @@
                         (ref (redirect conn new-server)'server)
                         path*)))
               (values code headers body)))))))
+
+(define (ensure-request-uri request-uri enc)
+  (match request-uri
+    [(? string?) request-uri]
+    [(path n&v ...) (http-compose-query path n&v :encoding enc)]
+    [_ (error "Invalid request-uri form for http request API:" request-uri)]))
+
+(define (ensure-request-body request-body conn)
+  (cond [(string? request-body) request-body]
+        [(not request-body) #f]
+        [else (with-output-to-string (cut request-body conn))]))
 
 ;; Always returns a connection object.
 (define (ensure-connection server auth-handler auth-user auth-password extra-headers)

@@ -6312,7 +6312,7 @@ try to follow the URI returned in the "location" reply message header
 by default.  See the "keyword arguments" heading below to suppress
 redirection following.
 @c JP
-@var{server}に、それぞれHTTPのGET、HEAD、POSTリクエストを送り、
+@var{server}に、それぞれHTTPのGET、HEAD、POST、PUT、DELETEリクエストを送り、
 サーバの応答を返します。
 
 サーバが "3xx" のリダイレクトを指示する応答を返した場合、これらの手続きは
@@ -6332,20 +6332,69 @@ A server name can be optionally followed by colon and a port number.
 Examples: @code{"w3c.org"}, @code{"mycompany.com:8080"}.
 
 @c EN
-The @var{request-uri} argument is the request-uri specified in
+The @var{request-uri} argument can be a string or a list.
+If it is a string, it's @emph{request-uri} specified in
 RFC2616; usually, this is the path part of http url.
 
-@code{Http-post} takes the third argument, @var{body}, which is
+If @var{request-uri} is a list, it must be in the following form:
+@c JP
+@var{request-uri}引数は文字列かリストです。
+文字列の場合、RFC2616で規定されているリクエストURIと解釈されます。
+通常これはHTTP URLのパス部分です。
+
+@var{request-uri}がリストの場合は、次の形式でなければなりません。
+@c COMMON
+
+@example
+(@var{path} (@var{name} . @var{value}) ...)
+@end example
+
+@c EN
+Here, @var{path} is a string specifying up to the path component
+of the request-uri.
+From provided alist of @var{name}s and @var{value}s,
+http procedures compose a query string in 
+@code{application/x-www-form-urlencoded} format
+as defined in HTML4, and append it to @var{path}.
+For example, the following two requests have the same effect.
+Note that url escaping is automatically handled in the second call.
+@c JP
+ここで@var{path}はリクエストURIのパスコンポーネントまでを指定する
+文字列です。与えられた@var{name}と@var{value}のalistから、
+httpリクエスト手続きはHTML4で定められた
+@code{application/x-www-form-urlencoded}形式の
+クエリ文字列を構成し、@var{path}にアペンドします。
+例えば次のふたつのリクエストは同じ効果を持ちます。
+二番目の呼び出しではurlエスケープが自動的に行われることに注目してください。
+@c COMMON
+
+@example
+(http-get "example.com" "/search?q=foo%20bar&n=20")
+
+(http-get "example.com" '("/search" (q . "foo bar") (n . 20)))
+@end example
+
+@c EN
+If @var{request-encoding} keyword argument is also given,
+@var{name}s and @var{value}s 
+are converted into the specified character encoding before url escaping.
+If it is omitted, gauche's internal character encoding is used.
+@c JP
+@var{request-encoding}キーワード引数が与えられた場合、
+@var{name}と@var{value}はまずその文字エンコーディングに変換されたのちに
+urlエスケープされます。そうでない場合はgaucheの内部
+エンコーディングがそのまま使われます。
+@c COMMON
+
+@c EN
+Some procedures take the third argument, @var{body}, which is
 a string to be posted to the server.   The body is sent "as is";
 the caller has to take care of necessary escaping or encoding.
 
 So, the most simple form of retrieving the content will be
 something like this:
 @c JP
-@var{request-uri}引数は、RFC2616で規定されているリクエストURIで、通常これは
-HTTP URLのパス部分です。
-
-@code{http-post}は、サーバへポストされる文字列、@var{body}を第3引数として
+いくつかの手続きは、サーバへポストされる文字列、@var{body}を第3引数として
 取ります。ボディは"そのまま"送られるので、呼び出し側は必要なエスケープや
 エンコーディングを行う必要があります。
 
