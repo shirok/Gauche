@@ -776,7 +776,7 @@ Content-Length: 4349
             (http-user-agent)))
 
 (test* "http-compose-query" "/search?q=foo%20bar&n=20"
-       (http-compose-query "/search" '((q . "foo bar") (n . 20))))
+       (http-compose-query "/search" '((q "foo bar") (n 20))))
 
 (define *http-port* 6726)
 

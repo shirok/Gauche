@@ -99,8 +99,8 @@
 ;; a series of communications to a server.
 ;;
 ;; The request-uri argument can be a string as specified in RFC2616,
-;; or a list in the form of (<path> (<name> . <value>) ...).  In the
-;; latter form, (<name> . <value>) assoc list is converted into a
+;; or a list in the form of (<path> (<name> <value>) ...).  In the
+;; latter form, (<name> <value>) assoc list is converted into a
 ;; url query form as defined in HTML4 (application/x-www-form-urlencoded)
 ;; and appended to <path>.
 ;;
@@ -195,7 +195,7 @@
   (define (esc s) (uri-encode-string (x->string s) :encoding encoding))
   (define (query-1 n&v)
     (match n&v
-      [(name . value) #`",(esc name)=,(esc value)"]
+      [(name value) #`",(esc name)=,(esc value)"]
       [_ (error "invalid request-uri form: ~s" params)]))
   (define (query) (string-concatenate (intersperse "&" (map query-1 params))))
   (cond [(not path) (query)]

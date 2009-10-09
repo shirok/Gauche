@@ -6346,7 +6346,7 @@ If @var{request-uri} is a list, it must be in the following form:
 @c COMMON
 
 @example
-(@var{path} (@var{name} . @var{value}) ...)
+(@var{path} (@var{name} @var{value}) ...)
 @end example
 
 @c EN
@@ -6371,7 +6371,7 @@ httpリクエスト手続きはHTML4で定められた
 @example
 (http-get "example.com" "/search?q=foo%20bar&n=20")
 
-(http-get "example.com" '("/search" (q . "foo bar") (n . 20)))
+(http-get "example.com" '("/search" (q "foo bar") (n 20)))
 @end example
 
 @c EN
