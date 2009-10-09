@@ -64,7 +64,11 @@
   )
 (select-module rfc.http)
 
-(autoload rfc.mime mime-compose-message-string)
+(autoload rfc.mime
+          mime-compose-message
+          mime-compose-message-string
+          mime-compose-parameters
+          mime-parse-content-type)
 
 ;;==============================================================
 ;; Conditions
@@ -202,6 +206,51 @@
         [(null? params) path]
         [else #`",|path|?,(query)"]))
 
+;; multipart/form-data composition [RFC2388]
+;; <params> : (<param> ...)
+;; <param>  : (<name> <value>)  ; same as http-compose-query
+;;          | (<name> <key> <value> <key2> <value2> ...)
+;; <key>    : :value | :file | :content-type | :content-transfer-encoding
+;;          | other keywords (used as a header name)
+;; composed message is put to the current output port.
+;; returns the boundary string.
+(define (http-compose-form-data params port
+                                :optional (encoding (gauche-character-encoding)))
+  (define (translate-param param)
+    (match param
+      [(name value) (translate-param `(,name :value ,value))]
+      [(name . kvs)
+       (unless (even? (length kvs))
+         (error "invalid parameter format to create multipart/form-data:" param))
+       (let-keywords kvs ([value ""]
+                          [file  #f]
+                          [content-type #f]
+                          [content-transfer-encoding #f] . other-keys)
+         `(,(canonical-content-type (mime-parse-content-type content-type)
+                                    value file)
+           (("content-transfer-encoding" "binary")
+            ("content-disposition" ,(make-content-disposition name file))
+            ,@(map (cut map x->string <>) (slices other-keys 2)))
+           ,(if file `(file ,file) (x->string value))))]))
+  (define (canonical-content-type ct value file)
+    (match ct
+      [#f (if (or file (string-incomplete? value))
+            '("application" "octet-stream")
+            `("text" "plain" ("charset" . ,(x->string encoding))))]
+      [(type subtype . options)
+       (if (assoc "charset" options)
+         ct
+         `(,type ,subtype ("charset" . ,(x->string encoding)) ,@options))]))
+  (define (make-content-disposition name file)
+    (with-output-to-string
+      (lambda ()
+        (display "form-data")
+        (mime-compose-parameters `(("name" . ,name)
+                                   ,@(cond-list [file `("filename" . ,file)]))))))
+  (if (not port)
+    (mime-compose-message-string (map translate-param params))
+    (mime-compose-message (map translate-param params) port)))
+  
 ;;==============================================================
 ;; internal utilities
 ;;
@@ -215,26 +264,26 @@
                          (extra-headers (undefined))
                          (enc :request-encoding (gauche-character-encoding))
                          . opts)
-    (let* ([conn (ensure-connection server auth-handler auth-user auth-password
-                                    extra-headers)]
-           [request-body (ensure-request-body request-body conn)])
-      (let loop ((history '())
-                 (host host)
-                 (request-uri (ensure-request-uri request-uri enc)))
-        (receive (code headers body)
-            (request-response request conn host request-uri request-body opts)
-          (or (and-let* ([ (not no-redirect) ]
-                         [ (string-prefix? "3" code) ]
-                         [loc (assoc "location" headers)])
-                (receive (uri new-server path*)
-                    (canonical-uri (cadr loc) (ref conn'server))
-                  (when (or (member uri history)
-                            (> (length history) 20))
-                    (errorf <http-error> "redirection is looping via ~a" uri))
-                  (loop (cons uri history)
-                        (ref (redirect conn new-server)'server)
-                        path*)))
-              (values code headers body)))))))
+    (let1 conn (ensure-connection server auth-handler auth-user auth-password
+                                  extra-headers)
+      (receive (body opts) (canonical-body request-body opts enc)
+        (let loop ((history '())
+                   (host host)
+                   (request-uri (ensure-request-uri request-uri enc)))
+          (receive (code headers body)
+              (request-response request conn host request-uri body opts)
+            (or (and-let* ([ (not no-redirect) ]
+                           [ (string-prefix? "3" code) ]
+                           [loc (assoc "location" headers)])
+                  (receive (uri new-server path*)
+                      (canonical-uri (cadr loc) (ref conn'server))
+                    (when (or (member uri history)
+                              (> (length history) 20))
+                      (errorf <http-error> "redirection is looping via ~a" uri))
+                    (loop (cons uri history)
+                          (ref (redirect conn new-server)'server)
+                          path*)))
+                (values code headers body))))))))
 
 (define (ensure-request-uri request-uri enc)
   (match request-uri
@@ -242,10 +291,17 @@
     [(path n&v ...) (http-compose-query path n&v :encoding enc)]
     [_ (error "Invalid request-uri form for http request API:" request-uri)]))
 
-(define (ensure-request-body request-body conn)
-  (cond [(string? request-body) request-body]
-        [(not request-body) #f]
-        [else (with-output-to-string (cut request-body conn))]))
+(define (canonical-body request-body extra-headers enc)
+  (cond [(not request-body) (values #f extra-headers)]
+        [(string? request-body) (values request-body extra-headers)]
+        [(list? request-body)
+         (receive (body boundary) (http-compose-form-data request-body #f enc)
+           (values body
+                   `(:mime-version "1.0"
+                     :content-type
+                     ,#`"multipart/form-data; boundary=,boundary"
+                     ,@(delete-keyword! :content-type extra-headers))))]
+        [else (error "Invalid request-body format:" request-body)]))
 
 ;; Always returns a connection object.
 (define (ensure-connection server auth-handler auth-user auth-password extra-headers)

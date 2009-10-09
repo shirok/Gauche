@@ -1,3 +1,9 @@
+2009-10-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (http-compose-form-data, http-generic):
+	  Support automatic multipart/form-data composition in
+	  http-post and http-put.
+
 2009-10-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-compose-query, http-generic): Support

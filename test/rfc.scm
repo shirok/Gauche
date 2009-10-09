@@ -908,6 +908,28 @@ Content-Length: 4349
               (read-from-string body)))
        alist-equal?)
 
+(test* "http-post (multipart/form-data)" '(("a" "b") ("c" "d"))
+       (receive (code headers body)
+           (http-post #`"localhost:,*http-port*" "/post"
+                      '(("a" "b") ("c" "d")))
+         (and-let* ([ (equal? code "200") ]
+                    [ (equal? headers '(("content-type" "text/plain"))) ]
+                    [r (read-from-string body)]
+                    [body (assoc "request-body" r)]
+                    [part (call-with-input-string (cadr body)
+                            (cut mime-parse-message <> r mime-body->string))]
+                    [ (is-a? part <mime-part>) ]
+                    [ (list? (ref part'content)) ])
+           (map (lambda (p)
+                  (match (mime-parse-content-disposition
+                          (rfc822-header-ref (ref p'headers)
+                                             "content-disposition"))
+                    [("form-data" ("name" . name))
+                     (list name (ref p'content))]
+                    [else
+                     (list (ref p'headers) (ref p'content))]))
+                (ref part'content)))))
+
 (test* "<http-error>" #t
        (guard (e (else (is-a? e <http-error>)))
          (http-get #`"localhost:,*http-port*" "/exit")))
