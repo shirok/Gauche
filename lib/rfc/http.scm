@@ -82,7 +82,7 @@
 
 ;; default string to be used for user-agent.  
 (define http-user-agent
-  (make-parameter "gauche.http/0.1"))
+  (make-parameter #`"gauche.http/,(gauche-version)"))
 
 ;;==============================================================
 ;; Higher-level API
@@ -256,13 +256,14 @@
 ;;
 
 (define (http-generic request server request-uri request-body options)
-  (let-keywords options ((host #f)
-                         (no-redirect #f)
-                         (auth-handler  (undefined))
-                         (auth-user     (undefined))
-                         (auth-password (undefined))
-                         (extra-headers (undefined))
-                         (enc :request-encoding (gauche-character-encoding))
+  (let-keywords options ([host #f]
+                         [no-redirect #f]
+                         [auth-handler  (undefined)]
+                         [auth-user     (undefined)]
+                         [auth-password (undefined)]
+                         [extra-headers (undefined)]
+                         [user-agent (http-user-agent)]
+                         [enc :request-encoding (gauche-character-encoding)]
                          . opts)
     (let1 conn (ensure-connection server auth-handler auth-user auth-password
                                   extra-headers)
@@ -271,7 +272,8 @@
                    (host host)
                    (request-uri (ensure-request-uri request-uri enc)))
           (receive (code headers body)
-              (request-response request conn host request-uri body opts)
+              (request-response request conn host request-uri body
+                                `(:user-agent ,user-agent ,@opts))
             (or (and-let* ([ (not no-redirect) ]
                            [ (string-prefix? "3" code) ]
                            [loc (assoc "location" headers)])
