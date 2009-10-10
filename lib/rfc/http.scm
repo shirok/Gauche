@@ -58,6 +58,7 @@
   (use util.list)
   (export <http-error>
           http-user-agent make-http-connection http-compose-query
+          http-compose-form-data
           http-get http-head http-post http-put http-delete
           http-default-auth-handler
           )

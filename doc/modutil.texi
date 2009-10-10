@@ -6335,12 +6335,17 @@ Examples: @code{"w3c.org"}, @code{"mycompany.com:8080"}.
 The @var{request-uri} argument can be a string or a list.
 If it is a string, it's @emph{request-uri} specified in
 RFC2616; usually, this is the path part of http url.
+The string is passed to the server as is, so the caller must
+properly convert character encodings and perform necessary
+url encodings.
 
 If @var{request-uri} is a list, it must be in the following form:
 @c JP
 @var{request-uri}引数は文字列かリストです。
 文字列の場合、RFC2616で規定されているリクエストURIと解釈されます。
 通常これはHTTP URLのパス部分です。
+文字列はそのままサーバに渡されるので、呼び出し側で必要な
+文字コード変換やurlエンコーディングを行う必要があります。
 
 @var{request-uri}がリストの場合は、次の形式でなければなりません。
 @c COMMON
@@ -6387,22 +6392,86 @@ urlエスケープされます。そうでない場合はgaucheの内部
 @c COMMON
 
 @c EN
-Some procedures take the third argument, @var{body}, which is
-a string to be posted to the server.   The body is sent "as is";
-the caller has to take care of necessary escaping or encoding.
+Some procedures take the third argument, @var{body}, 
+to specify the body of the request message.
+It can be a string, which will be copied verbatim to the request body,
+or a list, which will be encoded in @code{multipart/form-data} message.
 
-So, the most simple form of retrieving the content will be
-something like this:
+If @var{body} is a list, it is a list of parameter specs.  Each parameter
+spec is either a list of name and value, e.g.
+@code{("submit" "OK")} or a name followed by keyword-value list,
+e.g. @code{("upload" :file "logo.png" :content-type "image/png")}.
+
+The first form is for the convenience.  It is also compatible to the
+query parameter list in @var{request-uri}, so that you can use the
+same format for GET and POST request.  Each value is put
+in a MIME part with @code{text/plain} media type, with the
+character encoding specified by @code{request-encoding} keyword argument
+described below.
+
+The second form allows further control over each MIME part's attributes.
+The following keywords are treated specially.
+
+@table @code
+@item :value
+Speficies the value of the parameter.  The convenience form,
+@code{(@var{name} @var{val})}, is just an abbreviation of
+@code{(@var{name} :value @var{val})}.
+@item :file
+Specifies the pathname of the file, whose content is inserted
+as the value of the parameter.  Useful to upload a file.
+This option has precedence over @code{:value}.
+MIME type of the part is set to @code{application/octet-stream}
+unless specified otherwise.
+@item :content-type
+Overrides the MIME type of the part.  A charset parameter is
+added to the content-type if not given in this argument.
+@item :content-transfer-encoding
+Specifies the value of content-transfer-encoding; currently the
+following values are supported: @code{7bit},
+@code{binary}, @code{quoted-printable} and @code{base64}.
+If omitted, @code{binary} is used.
+@end table
+
+Other keywords are used as the header of the MIME part.
 @c JP
-いくつかの手続きは、サーバへポストされる文字列、@var{body}を第3引数として
-取ります。ボディは"そのまま"送られるので、呼び出し側は必要なエスケープや
-エンコーディングを行う必要があります。
+いくつかの手続きは、リクエストメッセージのボディを指定する@var{body}を第3引数として
+取ります。@var{body}は文字列かリストで、文字列の場合はそのまま送られ、
+リストの場合は@code{multipart/form-data}形式にエンコードされて送られます。
 
-あるURLのコンテンツを取得する最もシンプルなフォームは次のようになるでしょう。
+@var{body}がリストの場合、それはパラメータ指定のリストです。
+各パラメータ指定は、@code{("submit" "OK")}のような名前と値のリスト、
+もしくは@code{("upload" :file "logo.png" :content-type "image/png")}
+のように名前の後にキーワード-値リストを付加したものです。
+
+最初の形式は使うのが簡単で、また@var{request-uri}のクエリパラメータリストと
+同じ形式なのでGETとPOSTでルーチンを共有したい場合にも便利でしょう。
+この形式では、各値はMIMEパーとに@code{text/plain}として置かれます。
+文字コードは下に述べる@code{request-encoding}キーワード引数により変換されます。
+
+二番目の形式では、MIMEパートの属性についてより細かな指定を行うことができます。
+以下のキーワードが特別に扱われます。
+
+@table @code
+@item :value
+パラメータの値を指定します。簡潔な@code{(@var{name} @var{val})}形式は
+@code{(@var{name} :value @var{val})}の省略形です。
+@item :file
+指定された名前のファイルの中身をパラメータの値として挿入します。
+ファイルのアップロードに便利です。このオプションは@code{:value}より
+優先されます。MIMEタイプは、指定が無ければ
+@code{application/octet-stream}となります。
+@item :content-type
+MIMEタイプをオーバライドします。与えられた値にcharsetパラメータが
+ついていない場合は自動的に付加されます。
+@item :content-transfer-encoding
+content-transfer-encodingを
+@code{7bit}、@code{binary}、@code{quoted-printable}、@code{base64}の
+いずれかで指定します。指定が無ければ@code{binary}が使われます。
+@end table
+
+残りのキーワードはMIMEパートのヘッダにそのまま使われます。
 @c COMMON
-@example
-(http-get "practical-scheme.net" "/gauche/index.html")
-@end example
 
 @c EN
 Access via proxy can be done by specifying proxy server to @var{server}
@@ -6490,6 +6559,36 @@ and do not appear in the request headers.
 @c COMMON
 
 @table @var
+@item request-encoding
+@c EN
+When a list is given to the @var{request-uri} or @var{body} arguments,
+the characters in names and values of the parameters are first 
+converted to the character encoding specified by this keyword
+argument, then encoded into @code{application/x-www-form-urlencoded}
+or @code{multipart/form-data} MIME formats.
+If this argument is omitted, Gauche's internal character encoding is used.
+
+For @code{multipart/form-data}, you can override character encodings
+for individual parameters by giving @code{content-type} header.
+See the description of @var{body} arguments above.
+
+If you give a string to @var{request-uri} or @var{body}, 
+it is used without encoding conversion.  It is caller's responsibility
+to ensure desired character encodings are used.
+@c JP
+@var{request-uri}や@var{body}がリストで与えられた場合、パラメータの
+名前や値はまずこの引数で指定される文字エンコーディングへと変換され、
+その後、@code{application/x-www-form-urlencoded}や
+@code{multipart/form-data} MIME形式にしたがったエンコーディングが行われます。
+この引数が省略された場合はGaucheの内部文字エンコーディングが使われます。
+
+@code{multipart/form-data}については、パラメータに@code{content-type}ヘッダを
+与えることでパラメータごとに文字エンコーディングの設定をオーバライドできます。
+詳しくは上の@var{body}引数の説明を参照してください。
+
+@var{request-uri}や@var{body}に文字列を与えた場合は、文字エンコーディング変換は
+行われません。呼び出し側で望みの文字コードにあらかじめ変換しておいてください。
+@c COMMON
 @item no-redirect
 @c EN
 If a true value is given, suppress the redirection tracking;
@@ -6500,7 +6599,7 @@ i.e. the procedures return "3xx" message as is.
 @c COMMON
 @item sink, flusher
 @c EN
-You can customize how the message body is handled by these
+You can customize how the reply message body is handled by these
 keyword arguments.  You have to pass an output port to @var{sink},
 and a procedure that takes two arguments to @var{flusher}.
 
@@ -6519,7 +6618,7 @@ port and the default value of @var{flusher} is
 The following example saves the message body directly to a file,
 without allocating (potentially very big) string buffer.
 @c JP
-これらのキーワード引数によりメッセージ・ボディがどのように扱われるかを
+これらのキーワード引数によりリプライメッセージ・ボディがどのように扱われるかを
 カスタマイズできます。@var{sink}には出力ポートを、@var{flusher}には2引数を
 取る手続きを渡さなければなりません。
 
@@ -6547,6 +6646,49 @@ without allocating (potentially very big) string buffer.
 @end table
 
 @end defun
+
+The module also provides some utility procedures.
+
+@deffn {Parameter} http-user-agent &optional value
+@c EN
+The value of this parameter is used as a default value
+to pass to the user-agent header.
+The default value is something like @code{gauche.http/*},
+where @code{*} is Gauche's version.
+An application is encouraged to set this parameter appropriately.
+@c JP
+user-agentヘッダに渡される値のデフォルト値を指定するパラメータです。
+デフォルトの値は@code{gauche.http/*} (@code{*}部分はGaucheのバージョン)
+になっています。
+各アプリケーションは適切な値を設定するようにしてください。
+@c COMMON
+@end deffn
+
+@defun http-compose-query path params &optional encoding
+A helper procedure to create a request-uri from
+a list of query parameters.  @var{Encoding} specifies
+the character encodings to be used.
+
+@example
+(http-compose-query "/search" '((q "$foo") (n 20)))
+ @result{} "/search?q=%24foo&n=20"
+@end example
+@end defun
+
+@defun http-compose-form-data params port &optional encoding
+A helper procedure to create @code{multipart/form-data}
+from a list of parameters.  The format of @var{params} argument 
+is the same as the list format of @var{body} argument of
+http request procedures.  The result is written to an output
+port @var{port}, and the boundary string used to compose
+MIME message is returned.  Alternatively you can pass @code{#f}
+to the @var{port} to get the result in a string.
+In that case, two values are returned, the MIME message string
+and the boundary string.
+
+@var{Encoding} specifies the character encodings to be used.
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node IP packets, ICMP packets, HTTP, Library modules - Utilities

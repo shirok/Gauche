@@ -771,7 +771,7 @@ Content-Length: 4349
 
 (use gauche.parameter)
 
-(test* "http-user-agent" "gauche.http/0.1"
+(test* "http-user-agent" #`"gauche.http/,(gauche-version)"
        (and (is-a? http-user-agent <parameter>)
             (http-user-agent)))
 
@@ -858,9 +858,10 @@ Content-Length: 4349
 
 (test* "http-get" `(("method" "GET")
                     ("request-uri" "/get")
+                    ("request-body" "")
                     ("host" ,#`"localhost:,*http-port*")
-                    ("my-header" "foo")
-                    ("request-body" ""))
+                    ("user-agent" ,#`"gauche.http/,(gauche-version)")
+                    ("my-header" "foo"))
        (receive (code headers body)
            (http-get #`"localhost:,*http-port*" "/get"
              :my-header "foo")
@@ -900,6 +901,7 @@ Content-Length: 4349
                      ("request-uri" "/post")
                      ("content-length" "4")
                      ("host" ,#`"localhost:,*http-port*")
+                     ("user-agent" ,#`"gauche.http/,(gauche-version)")
                      ("request-body" "data"))
        (receive (code headers body)
            (http-post #`"localhost:,*http-port*" "/post" "data")
