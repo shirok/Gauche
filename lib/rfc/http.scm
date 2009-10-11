@@ -295,7 +295,7 @@
 (define (ensure-request-uri request-uri enc)
   (match request-uri
     [(? string?) request-uri]
-    [(path n&v ...) (http-compose-query path n&v :encoding enc)]
+    [(path n&v ...) (http-compose-query path n&v enc)]
     [_ (error "Invalid request-uri form for http request API:" request-uri)]))
 
 (define (canonical-body request-body extra-headers enc)
