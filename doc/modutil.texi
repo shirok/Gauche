@@ -6589,6 +6589,14 @@ to ensure desired character encodings are used.
 @var{request-uri}や@var{body}に文字列を与えた場合は、文字エンコーディング変換は
 行われません。呼び出し側で望みの文字コードにあらかじめ変換しておいてください。
 @c COMMON
+@item proxy
+@c EN
+Specify http proxy server in a string of a form @code{hostname} or
+@code{hostname:port}.
+@c JP
+httpプロキシサーバを、@code{hostname}または@code{hostname:port}形式の
+文字列で指定します。
+@c COMMON
 @item no-redirect
 @c EN
 If a true value is given, suppress the redirection tracking;

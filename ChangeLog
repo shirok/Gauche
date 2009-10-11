@@ -2,6 +2,7 @@
 
 	* lib/rfc/http.scm (http-generic): adds user-agent header automatically,
 	  using default value from the parameter http-user-agent.
+	  Also supports :proxy option.
 
 2009-10-09  Shiro Kawai  <shiro@acm.org>
 

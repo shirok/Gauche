@@ -162,6 +162,7 @@
    (auth-handler  :init-keyword :auth-handler) ; unused yet
    (auth-user     :init-keyword :auth-user)    ; unused yet
    (auth-password :init-keyword :auth-password); unused yet
+   (proxy         :init-keyword :proxy)
    (extra-headers :init-keyword :extra-headers)
    ))
 
@@ -169,10 +170,12 @@
                               (auth-handler  http-default-auth-handler)
                               (auth-user     #f)
                               (auth-password #f)
+                              (proxy #f)
                               (extra-headers '()))
   (make <http-connection>
     :server server :auth-handler auth-handler :auth-user auth-user
-    :auth-password auth-password :extra-headers extra-headers))
+    :auth-password auth-password :proxy proxy
+    :extra-headers extra-headers))
 
 (define (redirect conn new-server)
   (let1 orig-server (ref conn'server)
@@ -262,12 +265,13 @@
                          [auth-handler  (undefined)]
                          [auth-user     (undefined)]
                          [auth-password (undefined)]
+                         [proxy         (undefined)]
                          [extra-headers (undefined)]
                          [user-agent (http-user-agent)]
                          [enc :request-encoding (gauche-character-encoding)]
                          . opts)
     (let1 conn (ensure-connection server auth-handler auth-user auth-password
-                                  extra-headers)
+                                  proxy extra-headers)
       (receive (body opts) (canonical-body request-body opts enc)
         (let loop ((history '())
                    (host host)
@@ -307,17 +311,19 @@
         [else (error "Invalid request-body format:" request-body)]))
 
 ;; Always returns a connection object.
-(define (ensure-connection server auth-handler auth-user auth-password extra-headers)
+(define (ensure-connection server auth-handler auth-user auth-password
+                           proxy extra-headers)
   (rlet1 conn (cond [(is-a? server <http-connection>) server]
                     [(string? server) (make-http-connection server)]
                     [else (error "bad type of argument for server: must be an <http-connection> object or a string of the server's name, but got:" server)])
     (let-syntax ([check-override
                   (syntax-rules ()
                     [(_ id)
-                     (unless (undefined? id) (set! (ref server'id) id))])])
+                     (unless (undefined? id) (set! (ref conn'id) id))])])
       (check-override auth-handler)
       (check-override auth-user)
       (check-override auth-password)
+      (check-override proxy)
       (check-override extra-headers))))
 
 (define (server->socket server)
@@ -332,20 +338,21 @@
       (socket-close s))))
 
 (define (request-response request conn host request-uri request-body options)
-  (with-connection
-   conn
-   (lambda (in out)
-     (send-request out request (or host (ref conn'server))
-                   request-uri request-body options)
-     (receive (code headers) (receive-header in)
-       (values code
-               headers
-               (and (not (eq? request 'HEAD))
-                    (let-keywords options
-                        ((sink    (open-output-string))
-                         (flusher (lambda (sink _) (get-output-string sink)))
-                         . #f)
-                      (receive-body in headers sink flusher))))))))
+  (receive (host uri)
+      (consider-proxy conn (or host (ref conn'server)) request-uri)
+    (with-connection
+     conn
+     (lambda (in out)
+       (send-request out request host uri request-body options)
+       (receive (code headers) (receive-header in)
+         (values code
+                 headers
+                 (and (not (eq? request 'HEAD))
+                      (let-keywords options
+                          ((sink    (open-output-string))
+                           (flusher (lambda (sink _) (get-output-string sink)))
+                           . #f)
+                        (receive-body in headers sink flusher)))))))))
 
 ;; canonicalize uri for the sake of redirection.
 ;; URI is a request-uri given to the API, or the redirect location specified
@@ -364,6 +371,12 @@
               (or h host)
               ;; drop "//"
               (string-drop (uri-compose :path p :query q :fragment f) 2)))))
+
+;; canonicalize host and uri w.r.t. proxy
+(define (consider-proxy conn host uri)
+  (if (ref conn'proxy)
+    (values (ref conn'proxy) (uri-compose :scheme "http" :host host :path* uri))
+    (values host uri)))
 
 ;; send
 (define (send-request out request host uri body options)
