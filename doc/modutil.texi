@@ -6474,15 +6474,6 @@ content-transfer-encodingを
 @c COMMON
 
 @c EN
-Access via proxy can be done by specifying proxy server to @var{server}
-and passing the entire URI to @var{request-uri}, but the author
-haven't tested yet.
-@c JP
-プロクシを通してのアクセスは、@var{server}にプロクシ・サーバを指定し、
-@var{request-uri}に完全なURIを渡すことで行えますが、まだテストされていません。
-@c COMMON
-
-@c EN
 @strong{Return values:}
 All procedures return three values.
 
