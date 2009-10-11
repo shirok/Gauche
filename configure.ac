@@ -156,7 +156,7 @@ case $GAUCHE_THREAD_TYPE in
       THREADLIBS="-lpthread -lrt"
       GAUCHE_THREAD_TYPE=pthreads
       ;;
-    *-*-freebsd*|*-*-dragonfly*)
+    *-*-*freebsd*|*-*-dragonfly*)
       AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
       AC_DEFINE(GC_FREEBSD_THREADS,1,[Define to use FreeBSD threads])
       INCLUDES="$INCLUDES -pthread"

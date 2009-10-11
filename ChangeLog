@@ -1,3 +1,8 @@
+2009-10-11  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac: platform match for freebsd allows *freebsd, in order
+	  to support kfreebsd (Patch from Jens Thiele).
+
 2009-10-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-generic): adds user-agent header automatically,
