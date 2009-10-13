@@ -1503,6 +1503,15 @@
   (:optional (vm::<thread> (c "SCM_OBJ(Scm_VM())")))
   (result (Scm_VMGetStackLite vm)))
 
+(define-cproc %vm-show-stack-trace (trace :key
+                                          (port::<port> (current-output-port))
+                                          (maxdepth::<int> 0)
+                                          (skip::<int> 0)
+                                          (offset::<int> 0))
+  ::<void>
+  (Scm_ShowStackTrace port trace maxdepth skip offset
+                      SCM_STACK_TRACE_FORMAT_ORIGINAL))
+
 (define-cproc vm-set-default-exception-handler (vm::<thread> handler) ::<void>
   (unless (or (SCM_FALSEP handler) (SCM_PROCEDUREP handler))
     (SCM_TYPE_ERROR handler "a procedure or #f"))

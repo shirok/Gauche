@@ -1,3 +1,8 @@
+2009-10-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (%vm-show-stack-trace): experimentally expose
+	  this function for diagnostics.
+
 2009-10-11  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: platform match for freebsd allows *freebsd, in order
