@@ -423,7 +423,8 @@
   (define (record-static name args ret-type)
     (push-static-decl!
      `(,(source-info form env)
-       "static ",ret-type" ",name"(",(gen-args args env)");")))
+       "static ",ret-type" ",(cise-render-identifier name)
+       "(",(gen-args args env)");")))
 
   (define (check-static name args ret-type body)
     (match body

@@ -1,5 +1,8 @@
 2009-10-13  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/cise.scm (define-cfn): Fixed a bug that didn't
+	  escape identifiers for forward-declaration in record-static.
+
 	* src/extlib.stub (%vm-show-stack-trace): experimentally expose
 	  this function for diagnostics.
 
