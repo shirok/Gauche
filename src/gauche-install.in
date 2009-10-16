@@ -45,6 +45,7 @@
 (use gauche.parameter)
 (use file.util)
 (use util.list)
+(use util.match)
 
 (define (p . args) (for-each print args))
 
@@ -56,6 +57,8 @@
      "       gauche-install -U directory [options] file ... (5th format)"
      "(*: 1st,2nd and 3rd format are compatible with BSD install)"
      "Options:"
+     "  -C, --canonical-suffix : If installed file has a suffix *.sci, replace"
+     "                      it for *.scm.   This is Gauche specific convention."
      "  -T, --target=DIR  : Installs files to the DIR, creating paths if needed."
      "                      Partial path of files are preserved. (4th format only)"
      "  -U, --uninstall=DIR : Reverse of -T, e.g. removes files from its"
@@ -124,14 +127,18 @@
     (copy-file src dest :if-exists :supersede :safe #t)))
 
 ;; standard install
-(define (install src dest prelude mode owner group)
+(define (install src dest prelude mode owner group canonical?)
+  (ensure-directory (sys-dirname dest))
   (do-it #`"installing ,src to ,dest"
          (and (cp src dest prelude)
               (sys-chmod dest mode)
-              (when (or owner group)
-                (sys-chown dest
-                           (->ugid sys-user-name->uid owner "user")
-                           (->ugid sys-group-name->gid group "group"))))))
+              (begin
+                (when (or owner group)
+                  (sys-chown dest
+                             (->ugid sys-user-name->uid owner "user")
+                             (->ugid sys-group-name->gid group "group")))
+                (when (and canonical? (string-suffix? ".sci" dest))
+                  (sys-rename dest (path-swap-extension dest "scm")))))))
 
 ;; strip PREFIX from path if possible.
 (define (strip-dir prefix path)
@@ -152,6 +159,7 @@
        [mode    "m|mode=s" #o755 => (cut string->number <> 8)]
        [owner   "o|owner=s"]
        [group   "g|group=s"]
+       [csfx    "C|canonical-suffix"]
        [srcdir  "S|srcdir=s"]
        [target  "T|target=s"]
        [utarget "U|uninstall=s"]
@@ -169,28 +177,27 @@
       (cond
        [mkdir  (for-each (cut ensure-directory <> mode owner group) args)]
        [target (dolist [src args]
-                 (let1 dst (build-path target (strip-dir sprefix src))
-                   (ensure-directory (sys-dirname dst))
-                   (install (ensure-src src srcdir) dst shebang mode owner group)))]
+                 (install (ensure-src src srcdir)
+                          (build-path target (strip-dir sprefix src))
+                          shebang mode owner group csfx))]
        [utarget (dolist [src args]
                   (sys-unlink (build-path utarget (strip-dir sprefix src))))]
        [else
-        (case (length args)
-          [(0) (usage)]
-          [(1) #f]          ;; no-op
-          [(2) ;; file to file or file to dir
-           (let* ([src (car args)]
-                  [dst (if (file-is-directory? (cadr args))
-                         (build-path (cadr args) (sys-basename src))
-                         (cadr args))])
-             (ensure-directory (sys-dirname dst))
-             (install (ensure-src src srcdir) dst shebang mode owner group))]
-          [else
+        (match args
+          [() (usage)]
+          [(_) #f]                      ; no op
+          [(src dst)                    ; file to file or file to dir
+           (install (ensure-src src srcdir)
+                    (if (file-is-directory? (cadr args))
+                      (build-path (cadr args) (sys-basename src))
+                      (cadr args))
+                    shebang mode owner group csfx)]
+          [(args ...)
            (let1 target (car (last-pair args))
              (dolist [src (drop-right args 1)]
-               (let1 dst (build-path target (sys-basename src))
-                 (ensure-directory (sys-dirname dst))
-                 (install (ensure-src src srcdir) dst shebang mode owner group))))]
+               (install (ensure-src src srcdir)
+                        (build-path target (sys-basename src))
+                        shebang mode owner group csfx)))]
           )])))
   0)
 
