@@ -81,8 +81,6 @@ static ScmCompiledCode internal_apply_compiled_code =
                                         SCM_NIL, SCM_FALSE,
                                         SCM_FALSE, SCM_FALSE);
 
-
-
 /*
  * The VM. 
  *
@@ -110,6 +108,7 @@ static ScmSubr default_exception_handler_rec;
 static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *, ScmVM *);
 static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
 static void   process_queued_requests(ScmVM *vm);
+static void   vm_finalize(ScmObj vm, void *data);
 
 static ScmEnvFrame *get_env(ScmVM *vm);
 
@@ -228,6 +227,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->thread = (pthread_t)NULL;
 #endif /*GAUCHE_USE_PTHREADS*/
 
+    Scm_RegisterFinalizer(SCM_OBJ(v), vm_finalize, NULL);
     return v;
 }
 
@@ -295,6 +295,19 @@ pthread_key_t Scm_VMKey(void)
     return vm_key;
 }
 #endif /*GAUCHE_USE_PTHREADS*/
+
+/* Warn if VM is terminated by uncaught exception, and GC-ed without
+   joining.  It is cleary an unexpected case and worth reporting. */
+static void vm_finalize(ScmObj obj, void *data)
+{
+    ScmVM *vm = SCM_VM(obj);
+    ScmObj re = vm->resultException;
+
+    if (SCM_UNCAUGHT_EXCEPTION_P(re)) {
+        Scm_Warn("A thread %S died a lonely death with uncaught exception %S.",
+                 vm->name, SCM_THREAD_EXCEPTION(re)->data);
+    }
+}
 
 /*====================================================================
  * VM interpreter

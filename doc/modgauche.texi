@@ -9863,18 +9863,63 @@ Returns @code{#t} if @var{obj} is a thread, @code{#f} otherwise.
 @defun make-thread thunk &optional name
 @c EN
 [SRFI-18], [SRFI-21]
-Creates and returns a new thread.  To run the thread, you need to
-call @code{thread-start!}.
+Creates and returns a new thread to execute @var{thunk}.
+To run the thread, you need to call @code{thread-start!}.
+The result of @var{thunk} may be retrieved by calling @var{thread-join!}.
 @c JP
 [SRFI-18]、[SRFI-21]
-新しいスレッドを生成して返します。そのスレッドを実行するためには、
-@code{thread-start!}を呼ぶ必要があります。
+@var{thunk}を実行するための新しいスレッドを生成して返します。
+そのスレッドの実行を開始するには、@code{thread-start!}を呼ぶ必要があります。
+@var{thunk}の実行結果は、@var{thread-join!}を呼ぶことで回収できます。
 @c COMMON
 
 @c EN
 You can provide the name of the thread by the optional argument @var{name}.
 @c JP
 オプション引数@var{name}を与えることで、そのスレッドに名前を与えることができます。
+@c COMMON
+
+@c EN
+The created thread inherits the signal mask of the calling thread
+(@xref{Signals and threads}), and has a copy of
+parameters of the calling thread at the time of creation
+(@xref{Parameters}).
+@c JP
+作成されたスレッドは、呼び出したスレッドのシグナルマスクを継承し
+(@ref{Signals and threads}参照)、また呼び出したスレッドの持つ
+その時点でのパラメータのコピーを受けとります。
+@c COMMON
+
+@c EN
+Other than those initial setups, there will be no relationship between
+the new thread and the calling thread; there's no parent-child 
+relationship like Unix process.   Any thread can call @code{thread-join!}
+on any other thread to receive the result.  If nobody issues
+@code{thread-join!} and nobody holds a
+reference to the created thread, it will be garbage collected
+after the execution of the thread terminates.
+@c JP
+これらの初期化操作以外に、作られるスレッドと呼び出したスレッド間の関係は
+ありません。Unixのプロセスのような親子関係があるわけではないのです。
+どのスレッドも、他のスレッドに対して@code{thread-join!}を発行
+して結果を受け取ることができます。
+もし誰も@code{thread-join!}を発行せず、また作られたスレッドに対する
+参照を保持していなかった場合、スレッドは実行が終了した後にガベージコレクトされます。
+@c COMMON
+
+@c EN
+If a thread execution is terminated because of uncaught exception,
+and its result is never retrieved by @code{thread-join!}, a warning
+will be printed to the standard error port notifying 
+``thread dies a lonely death'':  It usually indicates some coding
+error.  If you don't collect the result of threads, you have to
+make sure that all the exceptions are captured and handled within @var{thunk}.
+@c JP
+もしスレッドが捕捉されない例外のために実行を終了し、その結果が@code{thread-join!}で
+回収されなかった場合、標準エラーポートに``thread dies a lonely death'' という
+警告メッセージが出力されます。そのようなケースは通常何らかのコーディングエラーで
+あるからです。スレッドの結果を回収しない場合は、
+@var{thunk}中ですべての例外を捕捉し処理しなければなりません。
 @c COMMON
 
 @c EN
@@ -10044,8 +10089,8 @@ won't return.  Otherwise, this procedure returns unspecified value.
 @c EN
 This procedure should be used with care, since
 @var{thread} won't have a chance to call cleanup
-procedures (such as 'after' thunks of @code{dynamic-wind})
-If @var{thread} is in the critical section, it leaves some state
+procedures (such as 'after' thunks of @code{dynamic-wind}).
+If @var{thread} is in a critical section, it can leave some state
 inconsistent.  However, once a thread is terminated, any mutex
 that the thread has kept becomes 'abandoned' state, and an attempt
 to lock such a mutex by other thread raises an 'abandoned mutex exception',
@@ -10090,11 +10135,15 @@ If @var{thread} terminates normally, @code{thread-join!} returns
 a value which is stored in the result field of @var{thread}.
 If @var{thread} terminates abnormally, @code{thread-join!} raises
 an exception which is stored in the result exception field of @var{thread}.
+It can be either a @code{<terminated-thread-exception>} or
+@code{<uncaught-exception>}.
 @c JP
 @var{thread}が正常に終了したら、@code{thread-join!}は@var{thread}の
 結果フィールドに格納されている値を返します。
 @var{thread}が異常終了したら、@code{thread-join!}は@var{thread}の結果例外
-フィールドに格納されている例外を投げます。
+フィールドに格納されている例外を投げます。それは
+@code{<terminated-thread-exception>}か
+@code{<uncaught-exception>}のどちらかです。
 @c COMMON
 
 @c EN
@@ -10103,6 +10152,12 @@ if given, or raises @code{<join-timeout-exception>}.
 @c JP
 タイムアウトに達すると、@var{timeout-val}が与えられていれば@var{timeout-val}を返し、
 与えられていなければ@code{<join-timeout-exception>}を投げます。
+@c COMMON
+
+@c EN
+@xref{Thread exceptions}, for the details of these exceptions.
+@c JP
+これらの例外の詳細については@ref{Thread exceptions}を参照してください。
 @c COMMON
 @end defun
 

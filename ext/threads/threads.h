@@ -54,33 +54,6 @@ extern ScmObj Scm_ThreadSleep(ScmObj timeout);
 extern ScmObj Scm_ThreadTerminate(ScmVM *vm);
 
 /*---------------------------------------------------------
- * Thread exception classes.
- * NB: The actual structure, ScmThreadException, is defined in
- * src/gauche/exception.h.
- */
-
-SCM_CLASS_DECL(Scm_ThreadExceptionClass);
-#define SCM_CLASS_THREAD_EXCEPTION  (&Scm_ThreadExceptionClass)
-#define SCM_THREAD_EXCEPTION_P(obj) SCM_ISA(obj, SCM_CLASS_THREAD_EXCEPTION)
-#define SCM_THREAD_EXCEPTION(obj)   ((ScmThreadException*)(obj))
-
-SCM_CLASS_DECL(Scm_JoinTimeoutExceptionClass);
-#define SCM_CLASS_JOIN_TIMEOUT_EXCEPTION (&Scm_JoinTimeoutExceptionClass)
-#define SCM_JOIN_TIMEOUT_EXCEPTION_P     SCM_ISA(obj, SCM_CLASS_JOIN_TIMEOUT_EXCEPTION)
-
-SCM_CLASS_DECL(Scm_AbandonedMutexExceptionClass);
-#define SCM_CLASS_ABANDONED_MUTEX_EXCEPTION (&Scm_AbandonedMutexExceptionClass)
-#define SCM_ABANDONED_MUTEX_EXCEPTION_P     SCM_ISA(obj, SCM_CLASS_ABANDONED_MUTEX_EXCEPTION)
-
-SCM_CLASS_DECL(Scm_TerminatedThreadExceptionClass);
-#define SCM_CLASS_TERMINATED_THREAD_EXCEPTION (&Scm_TerminatedThreadExceptionClass)
-#define SCM_TERMINATED_THREAD_EXCEPTION_P     SCM_ISA(obj, SCM_CLASS_TERMINATED_THREAD_EXCEPTION)
-
-SCM_CLASS_DECL(Scm_UncaughtExceptionClass);
-#define SCM_CLASS_UNCAUGHT_EXCEPTION (&Scm_UncaughtExceptionClass)
-#define SCM_UNCAUGHT_EXCEPTION_P     SCM_ISA(obj, SCM_CLASS_UNCAUGHT_EXCEPTION)
-
-/*---------------------------------------------------------
  * SYNCHRONIZATION DEVICES
  *
  *  Scheme-level synchrnization devices (ScmMutex, ScmConditionVariable,

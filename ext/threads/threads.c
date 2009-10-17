@@ -194,7 +194,7 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     int intr = FALSE, tout = FALSE;
     
     pts = Scm_GetTimeSpec(timeout, &ts);
-    (void)SCM_INTERNAL_MUTEX_LOCK(target->vmlock);
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(target->vmlock);
     while (target->state != SCM_VM_TERMINATED) {
         if (pts) {
             int tr = pthread_cond_timedwait(&(target->cond), &(target->vmlock), pts);
@@ -204,8 +204,11 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
             pthread_cond_wait(&(target->cond), &(target->vmlock));
         }
     }
-    if (!tout) { result = target->result; resultx = target->resultException; }
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
+    if (!tout) {
+        result = target->result; resultx = target->resultException;
+        target->resultException = SCM_FALSE; /* clear it */
+    }
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
     if (intr) Scm_SigCheck(Scm_VM());
     if (tout) {
         if (SCM_UNBOUNDP(timeoutval)) {

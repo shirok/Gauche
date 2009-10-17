@@ -1,3 +1,15 @@
+2009-10-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (vm_finalize): Issue a warning when a thread is terminated
+	  by an uncaught exception and its state is never retrieved by
+	  thread-join!.  Such a case must be a coding error, and usually
+	  causes pain in debugging if such thread dies silently.
+	* src/exclib.stub, src/gauche/exception.h, ext/thread/thrlib.stub:
+	  Moved thread exception definitions from the thread subsystem to
+	  the core; we need <uncaught-exception> in the core to implement
+	  the above feature.
+	* ext/threads/threads.c (Scm_ThreadJoin): Use SAEF_LOCK_BEGIN|END.
+
 2009-10-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-install.in: Added -C|--canonical-suffix option that
