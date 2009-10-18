@@ -1,5 +1,8 @@
 2009-10-17  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/experimental/ref.scm (~): Experimenally attached
+	  compile-time expander to '~'.
+
 	* src/vm.c (vm_finalize): Issue a warning when a thread is terminated
 	  by an uncaught exception and its state is never retrieved by
 	  thread-join!.  Such a case must be a coding error, and usually
