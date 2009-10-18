@@ -174,6 +174,7 @@ case "$THREADS" in
      *-*-cygwin*)
 	AC_DEFINE(GC_WIN32_THREADS)
 	AC_DEFINE(THREAD_LOCAL_ALLOC)
+        THREADDLLIBS=""
 	win32_threads=true
 	;;
      *-*-darwin*)
@@ -313,6 +314,7 @@ fi
 # dyld calls anyway
 case "$host" in
   *-*-darwin*) ;;
+  *-*-cygwin*) ;;
   *)
     AC_CHECK_LIB(dl, dlopen, THREADDLLIBS="$THREADDLLIBS -ldl")
     ;;

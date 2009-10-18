@@ -1,3 +1,8 @@
+2009-10-18  Shiro Kawai  <shiro@acm.org>
+
+	* gc/configure.ac: Applied a patch to avoid adding -lpthread -ldl
+	  when building on Cygwin, for it causes link error.
+
 2009-10-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (vm_finalize): Issue a warning when a thread is terminated
