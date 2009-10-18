@@ -21,15 +21,15 @@
       (apply (setter ref) (ref obj selector) selector2 rest)])))
 
 ;; EXPERIMENTAL EXPERIMENTAL
-((with-module gauche.internal attach-inline-transformer)
- ~
- (lambda (x r c)
-   (define (nested form)
-     (match form
-       [(obj sel) `(ref ,obj ,sel)]
-       [(obj sel . sels) (nested `((ref ,obj ,sel) ,@sels))]))
-   (match x
-     [(_ obj sel . sels) (nested (cdr x))]
-     [_ x])))
+;; ((with-module gauche.internal attach-inline-transformer)
+;;  ~
+;;  (lambda (x r c)
+;;    (define (nested form)
+;;      (match form
+;;        [(obj sel) `(ref ,obj ,sel)]
+;;        [(obj sel . sels) (nested `((ref ,obj ,sel) ,@sels))]))
+;;    (match x
+;;      [(_ obj sel . sels) (nested (cdr x))]
+;;      [_ x])))
 
 (provide "gauche/experimental/ref")
