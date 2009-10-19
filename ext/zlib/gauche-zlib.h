@@ -42,6 +42,12 @@
 #include <gauche/extend.h>
 #include <zlib.h>
 
+#if defined(EXTZLIB_EXPORTS)
+#define LIBGAUCHE_EXT_BODY
+#endif
+#include <gauche/extern.h>      /* redefine SCM_EXTERN */
+
+
 SCM_DECL_BEGIN
 
 typedef struct ScmZlibInfoRec {
@@ -70,13 +76,13 @@ SCM_CLASS_DECL(Scm_InflatingPortClass);
 #define SCM_CLASS_INFLATING_PORT  (&Scm_InflatingPortClass)
 #define SCM_INFLATING_PORT_P(obj) SCM_ISA(obj, SCM_CLASS_INFLATING_PORT)
 
-SCM_EXTERN ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
-                                        int window_bits, int memlevel,
-                                        int strategy, ScmObj dict,
-                                        int bufsiz, int ownerp);
-SCM_EXTERN ScmObj Scm_MakeInflatingPort(ScmPort *sink, int bufsiz,
-                                        int window_bits, ScmObj dict,
-                                        int ownerp);
+extern ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
+				    int window_bits, int memlevel,
+				    int strategy, ScmObj dict,
+				    int bufsiz, int ownerp);
+extern ScmObj Scm_MakeInflatingPort(ScmPort *sink, int bufsiz,
+				    int window_bits, ScmObj dict,
+				    int ownerp);
 
 /*================================================================
  * Conditions
@@ -119,9 +125,9 @@ SCM_CLASS_DECL(Scm_ZlibVersionErrorClass);
 #define SCM_ZLIB_VERSION_ERROR(obj)     ((ScmZlibVersionError*)(obj))
 #define SCM_ZLIB_VERSION_ERRORP(obj)    SCM_ISA(obj, SCM_CLASS_ZLIB_VERSION_ERROR)
 
-SCM_EXTERN ScmObj Scm_MakeZlibError(ScmObj message, int error_code);
-SCM_EXTERN void Scm_ZlibError(int error_code, const char *msg, ...);
-SCM_EXTERN ScmObj Scm_InflateSync(ScmPort *port);
+extern ScmObj Scm_MakeZlibError(ScmObj message, int error_code);
+extern void Scm_ZlibError(int error_code, const char *msg, ...);
+extern ScmObj Scm_InflateSync(ScmPort *port);
 
 /* Epilogue */
 SCM_DECL_END
