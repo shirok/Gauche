@@ -1,0 +1,15 @@
+;;;
+;;; precompiler
+;;;
+
+;; This file is for the backward compatibility.  New makefile should
+;; use "precomp".
+
+(define (main args)
+  (warn "Gencomp is deprecated.  Please use precomp instead.")
+  (load "precomp")
+  (main args))                          ;this 'main' is precomp's.
+
+;; Local variables:
+;; mode: scheme
+;; end:

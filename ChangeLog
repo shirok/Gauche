@@ -1,5 +1,8 @@
 2009-10-19  Shiro Kawai  <shiro@acm.org>
 
+	* gencomp: Resurrected for the backward compatibility.  It issues
+	  warning to move on to precomp.
+
 	* src/gauche.h, src/gauche/load.h, src/gauche/hash.h, src/gauche/port.h,
 	  src/main.c, src/test-vmstack.c, ext/Makefile.ext.in:
 	  Removed GAUCHE_API_0_9 flags.  Now 0.9 API is the default.  The
