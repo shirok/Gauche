@@ -1,5 +1,8 @@
 2009-10-19  Shiro Kawai  <shiro@acm.org>
 
+	* test/system.scm: Excluded fork&wait test on cygwin platform since
+	  fork() on cygwin is so unreliable.
+
 	* src/core.c (init_cond_features): Added a feature gauche.os.cygwin
 	  on cygwin platform.  It comes short to provide an illusion of
 	  complete unix emulation, so the program may want to switch its

@@ -405,7 +405,8 @@
    (else (sys-sleep 1))))
 
 (cond-expand
- ((not gauche.os.windows)  ;; win32 doesn't support fork at all.
+ ((and (not gauche.os.windows)  ;; win32 doesn't support fork at all.
+       (not gauche.os.cygwin))	;; cygwin's fork is not reliable.
   (test* "fork & wait" #t
          (let ((pid (sys-fork)))
            (if (= pid 0)
