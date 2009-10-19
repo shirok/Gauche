@@ -1,3 +1,11 @@
+2009-10-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/gauche/load.h, src/gauche/hash.h, src/gauche/port.h,
+	  src/main.c, src/test-vmstack.c, ext/Makefile.ext.in:
+	  Removed GAUCHE_API_0_9 flags.  Now 0.9 API is the default.  The
+	  backward compatibility API is available under a new flag,
+	  GAUCHE_API_PRE_0_9.
+
 2009-10-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/extend.h (SCM_INIT_EXTENSION): Revived data/bss area

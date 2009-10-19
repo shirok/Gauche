@@ -4,7 +4,6 @@
  */
 
 #include <stdio.h>
-#define GAUCHE_API_0_8_8
 #include "gauche.h"
 #include "gauche/vm.h"
 

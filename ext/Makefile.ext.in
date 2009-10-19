@@ -80,7 +80,7 @@ TESTRECORD = $(top_builddir)/test.record
 	$(COMPILE) -c $<
 
 .stub.c :
-	$(GOSH) genstub -D GAUCHE_API_0_9 $<
+	$(GOSH) genstub $<
 
 default : all link
 

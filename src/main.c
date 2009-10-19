@@ -33,7 +33,6 @@
  *  $Id: main.c,v 1.104 2008-05-10 13:36:19 shirok Exp $
  */
 
-#define GAUCHE_API_0_9        /* temporary compatibility stuff */
 #include "gauche.h"
 
 #include <signal.h>

@@ -504,17 +504,17 @@ typedef struct ScmEvalPacketRec {
     ScmModule *module;          /* 'Current module' after evaluation */
 } ScmEvalPacket;
 
-#if defined(GAUCHE_API_0_8_8) || defined(GAUCHE_API_0_9) || defined(LIBGAUCHE_BODY)
+#if !defined(GAUCHE_API_PRE_0_9)
 SCM_EXTERN int Scm_Eval(ScmObj form, ScmObj env, ScmEvalPacket *packet);
 SCM_EXTERN int Scm_EvalCString(const char *form, ScmObj env,
                                ScmEvalPacket *packet);
 SCM_EXTERN int Scm_Apply(ScmObj proc, ScmObj args,
                          ScmEvalPacket *packet);
-#else  /*!GAUCHE_API_0_8_8*/
+#else  /*GAUCHE_API_PRE_0_9*/
 #define Scm_Eval(f, e)        Scm_EvalRec(f, e)
 #define Scm_EvalCString(f, e) Scm_EvalCString(f, e)
 #define Scm_Apply(p, a)       Scm_ApplyRec(p, a)
-#endif /*!GAUCHE_API_0_8_8*/
+#endif /*GAUCHE_API_PRE_0_9*/
 
 /* Calls VM recursively to evaluate the Scheme code.  These
    ones does not capture exceptions. */
