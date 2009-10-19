@@ -37,6 +37,11 @@
 #include <gauche.h>
 #include <gauche/extend.h>
 
+#if defined(EXTSPARSE_EXPORTS)
+#define LIBGAUCHE_EXT_BODY
+#endif
+#include <gauche/extern.h>      /* redefine SCM_EXTERN */
+
 #include "ctrie.h"
 
 typedef struct SparseTableRec {
