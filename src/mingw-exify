@@ -26,7 +26,7 @@ int main(int argc, char **argv)
     ScmModule *usermod;
 
     Scm_Init(GAUCHE_SIGNATURE);
-    Scm_Load("gauche-init.scm", 0);
+    Scm_Load("gauche-init.scm", 0, NULL);
     for (i=0; i<argc; i++) {
         SCM_APPEND1(h, t, SCM_MAKE_STR(argv[i]));
     }
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     SCM_DEFINE(usermod, "*program-name*", SCM_CAR(h));
     progstr = SCM_MAKE_STR(script);
     progport = Scm_MakeInputStringPort(SCM_STRING(progstr), TRUE);
-    Scm_LoadFromPort(SCM_PORT(progport), 0);
+    Scm_LoadFromPort(SCM_PORT(progport), 0, NULL);
     mainproc = Scm_SymbolValue(usermod, SCM_SYMBOL(SCM_INTERN("main")));
     if (SCM_PROCEDUREP(mainproc)) {
         ScmObj r = Scm_ApplyRec(mainproc, SCM_LIST1(h));
