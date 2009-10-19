@@ -1,5 +1,8 @@
 2009-10-18  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/extend.h (SCM_INIT_EXTENSION): Revived data/bss area
+	  registration code only for Cygwin; it still seems to need them.
+
 	* gc/configure.ac: Applied a patch to avoid adding -lpthread -ldl
 	  when building on Cygwin, for it causes link error.
 
