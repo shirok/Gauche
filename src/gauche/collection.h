@@ -52,8 +52,10 @@ SCM_CLASS_DECL(Scm_OrderedDictionaryClass);
 #define SCM_CLASS_DICTIONARY         (&Scm_DictionaryClass)
 #define SCM_CLASS_ORDERED_DICTIONARY (&Scm_OrderedDictionaryClass)
 
-SCM_EXTERN ScmClass *Scm__OrderedDictionaryCPL[];
-SCM_EXTERN ScmClass *Scm__SequenceCPL[];
+/* NB: we can't use SCM_EXTERN because Windows DLL can't use the address of
+   dllimport-ed variables as constants. */
+extern ScmClass *Scm__OrderedDictionaryCPL[];
+extern ScmClass *Scm__SequenceCPL[];
 
 #define SCM_CLASS_COLLECTION_CPL         (Scm__SequenceCPL+1)
 #define SCM_CLASS_SEQUENCE_CPL           (Scm__SequenceCPL)
