@@ -431,6 +431,9 @@ init_cond_features()
         { "gauche.os.windows", NULL },
         { "gauche-windows", NULL }, /* for backward compatibility */
 #endif
+#ifdef __CYGWIN__              /* cygwin is different enough to deserve this */
+        { "gauche.os.cygwin", NULL },
+#endif
 #ifdef GAUCHE_USE_PTHREADS
         { "gauche.sys.pthreads", "gauche.threads" },
 #endif

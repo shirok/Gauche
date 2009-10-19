@@ -1,5 +1,10 @@
 2009-10-19  Shiro Kawai  <shiro@acm.org>
 
+	* src/core.c (init_cond_features): Added a feature gauche.os.cygwin
+	  on cygwin platform.  It comes short to provide an illusion of
+	  complete unix emulation, so the program may want to switch its
+	  behavior.
+
 	* gencomp: Resurrected for the backward compatibility.  It issues
 	  warning to move on to precomp.
 
