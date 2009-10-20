@@ -17,7 +17,7 @@ echo '!!                 $ /bin/rebaseall -v -T dlls.txt                      !!
 echo '!!                                                                      !!'
 echo '!! It must be run without running other Cygwin processes but ash.       !!'
 echo '!! (You must not even run bash.  Close all cygwin windows, open Windows !!'
-echo '!! command prompt, run \\cygwin\\bin\\ash (the actual path may differ   !!'
+echo '!! command prompt, run \cygwin\bin\ash (the actual path may differ      !!'
 echo '!! depending on how you install cygwin), cd to your build directory,    !!'
 echo '!! then run the above command.)                                         !!'
 echo '!! See http://www.tishler.net/jason/software/rebase/rebase-2.4.2.README !!'
