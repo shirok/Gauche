@@ -5,6 +5,19 @@
 #  $ /bin/rebaseall -v -T dlls.txt
 # After finishing 'make'.   (Even make check won't run without rebase).
 
+needrebase=no
+if [ ! -f dlls.txt ]; then
+  needrebase=yes
+else
+  for dll in `cat dlls.txt`; do
+    if [ -e $dll -a $dll -nt dlls.txt ]; then
+      needrebase=yes
+    fi
+  done
+fi
+
+if [ $needrebase = no ]; then exit 0; fi
+
 find . -name '*.dll' -print > dlls.txt
 
 echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
