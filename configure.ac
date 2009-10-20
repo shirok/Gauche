@@ -446,6 +446,9 @@ ext_use_uvector=no
 # darwin, in this variable.
 xhost=$host
 
+# On cygwin, we likely to need rebaseall to make dlls work with sys-fork.
+CYGWIN_FIXDLL=:
+
 case $host in
   *freebsd2*)
     SHLIB_SO_CFLAGS="-fpic -fPIC"
@@ -542,6 +545,7 @@ case $host in
     ext_use_uvector=yes
     ext_use_libgauche=yes
     libgauche_version_link=no
+    CYGWIN_FIXDLL=src/cygwin-fixdll.sh
     ;;
   *mingw*)
     SHLIB_SO_CFLAGS=""
@@ -605,6 +609,7 @@ AC_SUBST(GOSH_USE_SHLIB)
 AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX")
 AC_SUBST(LINK_HELPER)
 AC_SUBST(MAKEVERSLINK)
+AC_SUBST(CYGWIN_FIXDLL)
 AC_MSG_RESULT($SHLIB_OK)
 
 dnl Check to see if the linker takes --rpath flag via -Wl.
