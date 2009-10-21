@@ -757,6 +757,11 @@
 
 (define-cproc sys-unlink (pathname::<const-cstring>)
   (let* ([r::int])
+    (.if "defined(GAUCHE_WINDOWS)"
+         ;; Windows doesn't allow unlinking a read-only file.  We don't check
+         ;; an error here, since the error will be caught by next unlink call.
+         (when (not (access pathname F_OK))
+           (chmod pathname #o600)))
     (SCM_SYSCALL r (unlink pathname))
     (if (< r 0)
       (if (== errno ENOENT)

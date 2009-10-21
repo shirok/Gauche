@@ -1,3 +1,9 @@
+2009-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub (sys-unlink): On GAUCHE_WINDOWS, make file writable
+	  before unlink(), since Windows doesn't allow unlinking a read-only
+	  file.
+
 2009-10-19  Shiro Kawai  <shiro@acm.org>
 
 	* test/system.scm: Excluded fork&wait test on cygwin platform since
