@@ -827,6 +827,7 @@ Content-Length: 4349
                    (body (read-block bodylen in)))
               (cond
                ((equal? request-uri "/exit")
+		(socket-close client)
                 (sys-exit 0))
                ((hash-table-get %predefined-contents request-uri #f)
                 => (lambda (contents)
