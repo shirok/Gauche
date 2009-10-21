@@ -1,3 +1,11 @@
+2009-10-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub (sys-stat): On GAUCHE_WINDOWS, remove trailing
+	  path separator in PATH if any (excluding the root directory; e.g.
+	  "/" or "c:\\" are untouched).  This is because Windows stat()
+	  raises error if there's trailing separator, except the root
+	  directory case.
+
 2009-10-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub (sys-unlink): On GAUCHE_WINDOWS, make file writable

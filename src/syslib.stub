@@ -457,14 +457,42 @@
 
 (define-type <sys-stat> "ScmSysStat*")
 
-;; commn code for stat and lstat
+;; Commn code for stat and lstat.
 (define-cise-stmt stat-common
   [(_ statfn)
-   `(let* ([s::ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat))] [r::int])
-      (SCM_SYSCALL r (,statfn path (SCM_SYS_STAT_STAT s)))
-      (when (< r 0) (Scm_SysError "%s failed for %s" ,(x->string statfn) path))
+   `(let* ([s::ScmSysStat* (SCM_SYS_STAT (Scm_MakeSysStat))] [r::int]
+           [p::(const char*) (check-trailing-separator path)])
+      (SCM_SYSCALL r (,statfn p (SCM_SYS_STAT_STAT s)))
+      (when (< r 0) (Scm_SysError "%s failed for %s" ,(x->string statfn) p))
       (result s))])
-   
+
+;; On Windows stat() fails if PATH has a trailing directory separator,
+;; except if we're stat()-ing the root directory.  For the convenience
+;; we remove the trailing separator if any.  It is quite complicated,
+;; for we have to deal with optional drive letters.
+(when "defined(GAUCHE_WINDOWS)"
+  (define-cfn check-trailing-separator (path::(const char*))
+    ::(const char*) :static
+    (let* ([size::int (strlen path)]
+           [ends::(const char*) (+ path size)]
+           [lastchar::(const char*)])
+      (SCM_CHAR_BACKWARD ends path lastchar)
+      (unless (and (>= lastchar path) (< lastchar ends))
+        (Scm_SysError "invalid pathname: %s" path))
+      (when (and (not (== lastchar path))
+                 (not (and (== lastchar (+ path 2))
+                           (== (aref path 1) #\:)))
+                 (or (== (* lastchar) #\\)
+                     (== (* lastchar) #\/)))
+        (let* ([pcopy::(char *) (SCM_NEW_ATOMIC_ARRAY (char) size)])
+          (memcpy pcopy path (- size 1))
+          (set! (aref pcopy (- size 1)) 0)
+          (set! path (cast (const char *) pcopy))))
+      (return path))))
+(when "!defined(GAUCHE_WINDOWS)"
+  (define-cfn check-trailing-separator (path::(const char*))
+    ::(const char*) :static (return path)))
+    
 (define-cproc sys-stat (path::<const-cstring>) ::<sys-stat> (stat-common stat))
 
 ;; On Windows we don't have lstat.  Omitting sys-lstat from Windows is
