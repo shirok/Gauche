@@ -115,7 +115,7 @@
       (substring pp 0 (- (string-length pp) 1))
       pp)))
 
-(test* "sys-realpath (/)" "/" (sys-realpath "/"))
+(test* "sys-realpath (/)" (sys-normalize-pathname "/") (sys-realpath "/"))
 (test* "sys-realpath (.)" (expected-path ".") (sys-realpath "."))
 
 (cond-expand
