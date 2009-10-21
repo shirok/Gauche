@@ -13,10 +13,15 @@
 
 ;; shorthand of normalizing pathname.  this doesn't do anything on
 ;; unix, but on Windows the separator in PATHNAME is replaced.
+;; NB: we remove the drive letter from DOS path to accomodate
+;; different installations.
 (define (n pathname . pathnames)
+  (define (normalize s)
+    (let1 s (sys-normalize-pathname s)
+      (if (#/^[a-zA-Z]:/ s) (string-drop s 2) s)))
   (if (null? pathnames)
-    (sys-normalize-pathname pathname)
-    (map sys-normalize-pathname (cons pathname pathnames))))
+    (normalize pathname)
+    (map normalize (cons pathname pathnames))))
 
 ;; mingw doesn't have fully compatible permissions as unix.
 ;; this procedure compensates it.  
@@ -101,8 +106,8 @@
       (lambda ()
         (let* ((cur   (sys-getcwd))
                (root  (begin (current-directory "/")
-                             (sys-getcwd)))
-               (root* (current-directory))
+                             (n (sys-getcwd))))
+               (root* (n (current-directory)))
                (cur*  (begin (current-directory cur)
                              (sys-getcwd)))
                (cur** (current-directory)))

@@ -222,11 +222,11 @@
 (test-section "open -> #f")
 
 (test* "input :if-does-not-exist #f" #f
-       (with-input-from-file ":NOT;EXIST:" (lambda () (error "PANIC!"))
+       (with-input-from-file "_NOT_EXIST_" (lambda () (error "PANIC!"))
                              :if-does-not-exist #f :encoding "*JP"))
 
 (test* "output :if-does-not-exist #f" #f
-       (with-output-to-file ":NOT;EXIST:" (lambda () (error "PANIC!"))
+       (with-output-to-file "_NOT_EXIST_" (lambda () (error "PANIC!"))
                             :if-does-not-exist #f :encoding "UTF-8"))
 
 ;;--------------------------------------------------------------------
