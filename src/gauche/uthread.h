@@ -49,7 +49,7 @@ typedef int ScmInternalMutex;
 #define SCM_INTERNAL_MUTEX_INITIALIZER     (0)
 
 #define SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex) /*empty*/
-#define SCM_INTERNAL_MITEX_SAFE_LOCK_END()        /*empty*/
+#define SCM_INTERNAL_MUTEX_SAFE_LOCK_END()        /*empty*/
 
 typedef int ScmInternalCond;
 #define SCM_INTERNAL_COND_INIT(cond)       (0)

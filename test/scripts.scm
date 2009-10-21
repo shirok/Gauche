@@ -6,12 +6,17 @@
 
 (test-start "utility scripts")
 
+(define *nulldev*
+  (cond-expand
+   [gauche.os.windows "NUL"]
+   [else "/dev/null"]))
+
 ;;=======================================================================
 (test-section "gauche-install")
 
 (define (run-install . args)
   (run-process `("./gosh" "-ftest" "gauche-install.in" ,@args)
-               :output "/dev/null" :wait #t))
+               :output *nulldev* :wait #t))
 
 (remove-files "test.o" "test1.o")
 
@@ -53,7 +58,9 @@
                            "test.o/bin/command2")
               (and (= (file-perm "test1.o/dest/test.o/bin/command1")
                       (file-perm "test1.o/dest/test.o/bin/command2")
-                      #o555)
+		      (cond-expand
+		       [gauche.os.windows #o444]
+		       [else #o555]))
                    (file-equal? "test.o/bin/command1"
                                 "test1.o/dest/test.o/bin/command1")
                    (file-equal? "test.o/bin/command2"
@@ -72,7 +79,9 @@
                            "test.o/bin/command2")
               (and (= (file-perm "test1.o/dest/bin/command1")
                       (file-perm "test1.o/dest/bin/command2")
-                      #o555)
+		      (cond-expand
+		       [gauche.os.windows #o444]
+		       [else #o555]))
                    (file-equal? "test.o/bin/command1"
                                 "test1.o/dest/bin/command1")
                    (file-equal? "test.o/bin/command2"
