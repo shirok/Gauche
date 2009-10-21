@@ -360,6 +360,7 @@ ScmObj Scm_SocketSendTo(ScmSocket *sock, ScmObj msg, ScmSockAddr *to,
 
 ScmObj Scm_SocketSendMsg(ScmSocket *sock, ScmObj msg, int flags)
 {
+#if !GAUCHE_WINDOWS
     int r; u_int size;
     const char *cmsg;
     CLOSE_CHECK(sock->fd, "send to", sock);
@@ -367,6 +368,10 @@ ScmObj Scm_SocketSendMsg(ScmSocket *sock, ScmObj msg, int flags)
     SCM_SYSCALL(r, sendmsg(sock->fd, (struct msghdr*)cmsg, flags));
     if (r < 0) Scm_SysError("sendmsg(2) failed");
     return SCM_MAKE_INT(r);
+#else  /*GAUCHE_WINDOWS*/
+    Scm_Error("sendmsg is not implemented on this platform.");
+    return SCM_UNDEFINED;	/* dummy */
+#endif /*GAUCHE_WINDOWS*/
 }
 
 ScmObj Scm_SocketRecv(ScmSocket *sock, int bytes, int flags)
@@ -467,6 +472,7 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
                           ScmObj control, int flags,
                           ScmUVector *buf)
 {
+#if !GAUCHE_WINDOWS
     struct msghdr *msg;
     int bufsiz = 0;
     char *bufptr = 0;
@@ -555,6 +561,10 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
 
     if (buf != NULL) return SCM_OBJ(buf);
     else return Scm_MakeUVector(SCM_CLASS_U8VECTOR, sizeof(struct msghdr), msg);
+#else  /*GAUCHE_WINDOWS*/
+    Scm_Error("buildmsg is not implemented on this platform.");
+    return SCM_UNDEFINED;
+#endif /*GAUCHE_WINDOWS*/
 }
 
 /* Low-level setsockopt() and getsockopt() interface. */

@@ -184,9 +184,11 @@
          (and host
               (or (equal? (slot-ref host 'name) "localhost")
                   (member "localhost" (slot-ref host 'aliases))
-                  ;; cygwin usually doesn't define "localhost", and
-                  ;; returns hostname.  For now we skip this test.
-                  (string-suffix? "cygwin" (gauche-architecture)))
+                  ;; cygwin and mingw usually doesn't define "localhost", and
+                  ;; returns hostname.
+                  (cond-expand
+                   [(or gauche.os.cygwin gauche.os.windows) #t]
+                   [else #f]))
               (member "127.0.0.1" (slot-ref host 'addresses))
               #t)))
 
@@ -195,9 +197,11 @@
          (and host
               (or (equal? (slot-ref host 'name) "localhost")
                   (member "localhost" (slot-ref host 'aliases))
-                  ;; cygwin usually doesn't define "localhost", and
+                  ;; cygwin and mingw usually doesn't define "localhost", and
                   ;; returns hostname.  For now we skip this test.
-                  (string-suffix? "cygwin" (gauche-architecture)))
+                  (cond-expand
+                   [(or gauche.os.cygwin gauche.os.windows) #t]
+                   [else #f]))
               (member "127.0.0.1" (slot-ref host 'addresses))
               #t)))
 
@@ -298,43 +302,47 @@
 
 (sys-unlink "sock.o")
 
-(test* "unix server socket" #f
-       (begin
-         (run-simple-server '(make-server-socket 'unix "sock.o"))
-         (let1 stat (sys-stat "sock.o")
-           (not (memq (sys-stat->file-type stat) '(socket fifo))))))
+(cond-expand
+ [gauche.os.windows #f]
+ [else
+  (test* "unix server socket" #f
+	 (begin
+	   (run-simple-server '(make-server-socket 'unix "sock.o"))
+	   (let1 stat (sys-stat "sock.o")
+		 (not (memq (sys-stat->file-type stat) '(socket fifo))))))
 
-(test* "unix client socket" '("ABC" "XYZ")
-       (call-with-client-socket (make-client-socket 'unix "sock.o")
-         (lambda (in out)
-           (display "abc\n" out) (flush out)
-           (let ((abc (read-line in)))
-             (display "xyz\n" out) (flush out)
-             (list abc (read-line in))))))
+  (test* "unix client socket" '("ABC" "XYZ")
+         (call-with-client-socket (make-client-socket 'unix "sock.o")
+           (lambda (in out)
+             (display "abc\n" out) (flush out)
+             (let ((abc (read-line in)))
+               (display "xyz\n" out) (flush out)
+               (list abc (read-line in))))))
 
-(test* "unix client socket" #t
-       (call-with-client-socket (make-client-socket 'unix "sock.o")
-         (lambda (in out)
-           (display (make-string *chunk-size* #\a) out)
-           (newline out)
-           (flush out)
-           (string=? (read-line in) (make-string *chunk-size* #\A)))))
+  (test* "unix client socket" #t
+         (call-with-client-socket (make-client-socket 'unix "sock.o")
+           (lambda (in out)
+             (display (make-string *chunk-size* #\a) out)
+             (newline out)
+             (flush out)
+             (string=? (read-line in) (make-string *chunk-size* #\A)))))
 
-(test* "unix client socket" #t
-       (call-with-client-socket (make-client-socket (make <sockaddr-un> :path "sock.o"))
-         (lambda (in out)
-           (display (make-string *chunk-size* #\a) out)
-           (newline out)
-           (flush out)
-           (string=? (read-line in) (make-string *chunk-size* #\A)))))
+  (test* "unix client socket" #t
+         (call-with-client-socket
+          (make-client-socket (make <sockaddr-un> :path "sock.o"))
+          (lambda (in out)
+            (display (make-string *chunk-size* #\a) out)
+            (newline out)
+            (flush out)
+            (string=? (read-line in) (make-string *chunk-size* #\A)))))
 
-(test* "unix client socket" 33
-       (call-with-client-socket (make-client-socket 'unix "sock.o")
-         (lambda (in out)
-           (display "END\n" out) (flush out)
-           (receive (pid code) (sys-wait)
-             (sys-wait-exit-status code)))))
-
+  (test* "unix client socket" 33
+         (call-with-client-socket (make-client-socket 'unix "sock.o")
+           (lambda (in out)
+             (display "END\n" out) (flush out)
+             (receive (pid code) (sys-wait)
+                      (sys-wait-exit-status code)))))
+  ])
 
 (sys-unlink "sock.o")
 
@@ -465,7 +473,8 @@
 (cond-expand
  ;; NB: as of 0.9, sendmsg fails on cygwin.  We don't have time to track
  ;; it down yet.  For now, we skip the tests.
- [(not gauche.os.cygwin)
+ [(and (not gauche.os.cygwin)
+       (not gauche.os.windows))
   (with-sr-udp
    (lambda (s-sock s-addr r-sock r-addr)
      (let ([from   (make <sockaddr-in>)]
