@@ -325,9 +325,12 @@
     (define (check-file path content
                         :key (mode #f) (owner -1) (group -1) (symlink #f))
       (if symlink
-        (and (file-is-symlink? path)
-             (check-attrs path mode owner group)
-             (equal? symlink (sys-readlink path)))
+        (cond-expand
+         [gauche.sys.symlink
+          (and (file-is-symlink? path)
+               (check-attrs path mode owner group)
+               (equal? symlink (sys-readlink path)))]
+         [else #f])
         (and (file-is-regular? path)
              (check-attrs path mode owner group)
              (cond
@@ -389,9 +392,12 @@
           (cond [(>= count 8) ;; arbitrary upper bound to detect infinite loop
                  (error "possibly looping symlink" pat)]
                 [(eq? (file-type p :follow-link? #f) 'symlink)
-                 (loop (+ count 1)
-                       (let1 np (sys-readlink p)
-                         (if (absolute-path? np) np (pathcat ndir np))))]
+                 (cond-expand
+                  [gauche.sys.symlink
+                   (loop (+ count 1)
+                         (let1 np (sys-readlink p)
+                           (if (absolute-path? np) np (pathcat ndir np))))]
+                  [else p])]
                 [else p])))))
   (rec (expand-path path)))
 
