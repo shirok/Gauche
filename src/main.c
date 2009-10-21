@@ -37,6 +37,7 @@
 
 #include <signal.h>
 #include <ctype.h>
+#include <fcntl.h>		/* for _O_BINMODE on windows. */
 
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
@@ -319,6 +320,13 @@ int main(int argc, char **argv)
     int exit_code = 0;
     ScmEvalPacket epak;
     ScmLoadPacket lpak;
+
+#if defined(GAUCHE_WINDOWS)
+    /* This saves so much trouble. */
+    _setmode(_fileno(stdin),  _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+    _setmode(_fileno(stderr), _O_BINARY);
+#endif /*GAUCHE_WINDOWS*/
 
     GC_INIT();
     Scm_Init(GAUCHE_SIGNATURE);

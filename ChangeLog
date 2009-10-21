@@ -6,6 +6,12 @@
 	  raises error if there's trailing separator, except the root
 	  directory case.
 
+	* src/main.c (main): On GAUCHE_WINDOWS, sets stdin, stdout and
+	  stderr to binary mode.  This will align gosh's behavior the
+	  same on Windows and Unix, and save lots of troubles.  Note that
+	  applications that want to link libgauche.dll should take care
+	  of this by themselves.
+
 2009-10-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub (sys-unlink): On GAUCHE_WINDOWS, make file writable
