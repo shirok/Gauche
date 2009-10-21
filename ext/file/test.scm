@@ -11,20 +11,35 @@
 (use file.util)
 (test-module 'file.util)
 
+;; shorthand of normalizing pathname.  this doesn't do anything on
+;; unix, but on Windows the separator in PATHNAME is replaced.
+(define (n pathname . pathnames)
+  (if (null? pathnames)
+    (sys-normalize-pathname pathname)
+    (map sys-normalize-pathname (cons pathname pathnames))))
+
+;; mingw doesn't have fully compatible permissions as unix.
+;; this procedure compensates it.  
+(define (P perm)
+  (cond-expand
+   [gauche.os.windows (let1 p (ash perm -6)
+                        (logior p (ash p 3) (ash p 6)))]
+   [else perm]))
+
 ;;=====================================================================
 (test-section "pathname utils")
 
 (test* "build-path" "" (build-path ""))
 (test* "build-path" "." (build-path "."))
-(test* "build-path" "/" (build-path "/"))
-(test* "build-path" "a/b/c" (build-path "a" "b" "c"))
-(test* "build-path" "a/b/c" (build-path "a/" "b/" "c"))
-(test* "build-path" "/a/b/c" (build-path "/" "a/b" "c"))
-(test* "build-path" "./a/b/c" (build-path "." "a/b" "c"))
+(test* "build-path" (n "/") (build-path "/"))
+(test* "build-path" (n "a/b/c") (build-path "a" "b" "c"))
+(test* "build-path" (n "a/b/c") (build-path "a/" "b/" "c"))
+(test* "build-path" (n "/a/b/c") (build-path "/" "a/b" "c"))
+(test* "build-path" (n "./a/b/c") (build-path "." "a/b" "c"))
 (test* "build-path" (test-error) (build-path "." "/a/b"))
-(test* "build-path" "foo" (build-path "" "foo"))
-(test* "build-path" "foo/bar" (build-path "" "foo" "" "bar"))
-(test* "build-path" "foo" (build-path "" "foo" ""))
+(test* "build-path" (n "foo") (build-path "" "foo"))
+(test* "build-path" (n "foo/bar") (build-path "" "foo" "" "bar"))
+(test* "build-path" (n "foo") (build-path "" "foo" ""))
 
 (test* "decompose-path" '("/a/b/c" "d" "e")
        (receive r (decompose-path "/a/b/c/d.e") r))
@@ -82,7 +97,7 @@
 ;;=====================================================================
 (test-section "directories")
 
-(test "current-directory" '("/" "/" #t #t)
+(test "current-directory" (list (n "/") (n "/") #t #t)
       (lambda ()
         (let* ((cur   (sys-getcwd))
                (root  (begin (current-directory "/")
@@ -120,15 +135,17 @@
            (test7.o :symlink "test6.o")
            (test2.d :symlink "test.d"))]
         [else
-         '((test6.o "\n")
-           (test7.o "\n")
-           (test2.d :mode 777 ()))])
+         `((test6.o ,(make-string 100 #\o))
+           (test7.o ,(make-string 100 #\o))
+           (test2.d :mode 777
+		    ((test10.o ,(make-string 100 #\o))
+		     (test11.o ,(make-string 100 #\o)))))])
      (test.d ((test10.o ,(make-string 100 #\o))
               ,(cond-expand
                 [gauche.sys.symlink
                  '(test11.o :symlink "../test1.o")]
                 [else
-                 '(test11.o "\n")])))
+                 `(test11.o ,(make-string 100 #\o))])))
      )))
 
 (cmd-rmrf "test.out")
@@ -188,23 +205,23 @@
        (directory-list "test.out" :children? #t))
 
 (test* "directory-list :add-path?"
-       '("test.out/." "test.out/.." "test.out/test.d" "test.out/test1.o"
-         "test.out/test2.d" "test.out/test2.o"  "test.out/test3.o"
-         "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
-         "test.out/test7.o" )
+       (n "test.out/." "test.out/.." "test.out/test.d" "test.out/test1.o"
+          "test.out/test2.d" "test.out/test2.o"  "test.out/test3.o"
+          "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
+          "test.out/test7.o" )
        (directory-list "test.out/" :add-path? #t))
 
 (test* "directory-list :filter"
-       '("test.out/test1.o"
-         "test.out/test2.o"  "test.out/test3.o" "test.out/test4.o"
-         "test.out/test5.o" "test.out/test6.o" "test.out/test7.o" )
+       (n "test.out/test1.o"
+          "test.out/test2.o"  "test.out/test3.o" "test.out/test4.o"
+          "test.out/test5.o" "test.out/test6.o" "test.out/test7.o" )
        (directory-list "test.out" :add-path? #t
                        :filter (lambda (p) (string-suffix? "o" p))))
 
 (test* "directory-list :filter"
-       '("test.out/test1.o"
-         "test.out/test2.o"  "test.out/test3.o" "test.out/test4.o"
-         "test.out/test5.o" "test.out/test6.o" "test.out/test7.o" )
+       (n "test.out/test1.o"
+          "test.out/test2.o"  "test.out/test3.o" "test.out/test4.o"
+          "test.out/test5.o" "test.out/test6.o" "test.out/test7.o" )
        (directory-list "test.out" :add-path? #t :filter-add-path? #t
                        :filter file-is-regular?))
 
@@ -215,17 +232,17 @@
        (receive x (directory-list2 "test.out") x))
 
 (test* "directory-list2 :add-path"
-       '(("test.out/." "test.out/.." "test.out/test.d" "test.out/test2.d")
-         ("test.out/test1.o" "test.out/test2.o"  "test.out/test3.o"
-          "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
-          "test.out/test7.o"))
+       `(,(n "test.out/." "test.out/.." "test.out/test.d" "test.out/test2.d")
+         ,(n "test.out/test1.o" "test.out/test2.o"  "test.out/test3.o"
+             "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
+             "test.out/test7.o"))
        (receive x (directory-list2 "test.out" :add-path? #t) x))
 
 (test* "directory-list2 :children"
-       '(("test.out/test.d" "test.out/test2.d")
-         ("test.out/test1.o" "test.out/test2.o"  "test.out/test3.o"
+       `(,(n "test.out/test.d" "test.out/test2.d")
+         ,(n "test.out/test1.o" "test.out/test2.o"  "test.out/test3.o"
           "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
-          "test.out/test7.o"))
+         "test.out/test7.o"))
        (receive x (directory-list2 "test.out" :add-path? #t :children? #t) x))
 
 (test* "directory-list2 :filter"
@@ -249,18 +266,11 @@
  [else])
 
 (test* "directory-fold"
-       (cond-expand
-        [gauche.sys.symlink
-         '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
-           "test.out/test1.o"
-           "test.out/test2.d/test10.o" "test.out/test2.d/test11.o"
-           "test.out/test2.o" "test.out/test3.o"
-           "test.out/test6.o" "test.out/test7.o")]
-        [else
-         '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
-           "test.out/test1.o"
-           "test.out/test2.o" "test.out/test3.o"
-           "test.out/test6.o" "test.out/test7.o")])
+       (n "test.out/test.d/test10.o" "test.out/test.d/test11.o"
+          "test.out/test1.o"
+          "test.out/test2.d/test10.o" "test.out/test2.d/test11.o"
+          "test.out/test2.o" "test.out/test3.o"
+          "test.out/test6.o" "test.out/test7.o")
        (reverse
         (directory-fold "test.out"
                         (lambda (path result)
@@ -271,16 +281,16 @@
        )
 
 (test* "directory-fold"
-       '("test.out"
-         "test.out/test.d"
-         "test.out/test.d/test10.o" "test.out/test.d/test11.o"
-         "test.out/test1.o"
-         "test.out/test2.d"
-         "test.out/test2.d/test10.o"
-         "test.out/test2.d/test11.o"
-         "test.out/test2.o" "test.out/test3.o"
-         "test.out/test4.o" "test.out/test5.o"
-         "test.out/test6.o" "test.out/test7.o")
+       (n "test.out"
+          "test.out/test.d"
+          "test.out/test.d/test10.o" "test.out/test.d/test11.o"
+          "test.out/test1.o"
+          "test.out/test2.d"
+          "test.out/test2.d/test10.o"
+          "test.out/test2.d/test11.o"
+          "test.out/test2.o" "test.out/test3.o"
+          "test.out/test4.o" "test.out/test5.o"
+          "test.out/test6.o" "test.out/test7.o")
        (reverse
         (directory-fold "test.out" cons '()
                         :lister (lambda (path seed)
@@ -294,10 +304,10 @@
 (cond-expand
  [gauche.sys.symlink
   (test* "directory-fold :follow-link? #f"
-         '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
-           "test.out/test1.o"
-           "test.out/test2.o" "test.out/test3.o"
-           "test.out/test6.o" "test.out/test7.o")
+         (n "test.out/test.d/test10.o" "test.out/test.d/test11.o"
+            "test.out/test1.o"
+            "test.out/test2.o" "test.out/test3.o"
+            "test.out/test6.o" "test.out/test7.o")
          (reverse 
           (directory-fold "test.out"
                           (lambda (path result)
@@ -309,17 +319,24 @@
   ;; this tests dangling symlink
   (sys-symlink "foo" "test.out/test.dangling")
   (test* "directory-fold :follow-link? #t; dangling link"
-         '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
-           "test.out/test.dangling" "test.out/test1.o"
-           "test.out/test2.d/test10.o" "test.out/test2.d/test11.o"
-           "test.out/test2.o" "test.out/test3.o" "test.out/test4.o"
-           "test.out/test5.o" "test.out/test6.o" "test.out/test7.o")
+         (n "test.out/test.d/test10.o" "test.out/test.d/test11.o"
+            "test.out/test.dangling" "test.out/test1.o"
+            "test.out/test2.d/test10.o" "test.out/test2.d/test11.o"
+            "test.out/test2.o" "test.out/test3.o" "test.out/test4.o"
+            "test.out/test5.o" "test.out/test6.o" "test.out/test7.o")
          (sort (directory-fold "test.out" cons '())))
   (sys-unlink "test.out/test.dangling")]
  [else])
 
 (test* "directory-fold :lister"
-       '("test.out/test.d/test10.o" "test.out/test.d/test11.o" "test.out/test1.o")
+       (cond-expand
+        [gauche.sys.symlink
+         (n "test.out/test.d/test10.o" "test.out/test.d/test11.o"
+            "test.out/test1.o")]
+        [else
+         (n "test.out/test.d/test10.o" "test.out/test.d/test11.o"
+            "test.out/test2.d/test10.o" "test.out/test2.d/test11.o"
+            "test.out/test1.o")])
        (reverse
         (directory-fold "test.out" cons '()
                         :follow-link? #f
@@ -339,7 +356,7 @@
 (create-directory-tree "." *test-tree*)
 
 ;; resolve-path should be here for it uses test.out hierarchy created above.
-(test* "resolve-path" "/" (resolve-path "/"))
+'(test* "resolve-path" "/" (resolve-path "/"))
 (test* "resolve-path" "." (resolve-path "."))
 (test* "resolve-path" "test.out" (resolve-path "test.out"))
 (cond-expand
@@ -493,7 +510,7 @@
 
 (sys-unlink "test.out/test.copy")
 
-(test* "copy-file (keep-mode)" #o642
+(test* "copy-file (keep-mode)" (P #o642)
        (begin (sys-chmod "test.out/test1.o" #o642)
               (copy-file "test.out/test1.o" "test.out/test.copy"
                          :keep-mode #t)
@@ -501,7 +518,7 @@
 
 (sys-unlink "test.out/test.copy")
 
-(test* "copy-file (keep-mode w/safe)" #o624
+(test* "copy-file (keep-mode w/safe)" (P #o624)
        (begin (sys-chmod "test.out/test1.o" #o624)
               (copy-file "test.out/test1.o" "test.out/test.copy"
                          :keep-mode #t)
@@ -537,7 +554,7 @@
 
 (let ()
   (define (listdir d)
-    (map (cut regexp-replace #/^test2?\.out\// <> "")
+    (map (cut regexp-replace #/^test2?\.out[\/\\]/ <> "")
          (directory-fold d cons '())))
     
   (test* "copy-directory*" (listdir "test.out")
