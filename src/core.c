@@ -323,10 +323,13 @@ void Scm__MutexCleanup(void *mutex_)
    after shutting down the Scheme part, however, it can call Scm_Cleanup().
 */
 
+/* To avoid complication in supporting different platforms */
+#define EXIT_CODE(code) ((code)&0xff)
+
 void Scm_Exit(int code)
 {
     Scm_Cleanup();
-    exit(code);
+    exit(EXIT_CODE(code));
 }
 
 void Scm_Cleanup(void)
@@ -365,7 +368,7 @@ void Scm_Panic(const char *msg, ...)
     va_end(args);
     fputc('\n', stderr);
     fflush(stderr);
-    _exit(1);
+    _exit(EXIT_CODE(1));
 }
 
 /* Use this for absolute emergency.  Newline is not attached to msg. */
@@ -374,7 +377,7 @@ void Scm_Abort(const char *msg)
     int size = (int)strlen(msg);
     /* this may return an error, but we don't care, since we exit anyway. */
     SCM_IGNORE_RESULT(write(2, msg, size));
-    _exit(1);
+    _exit(EXIT_CODE(1));
 }
 
 /*=============================================================

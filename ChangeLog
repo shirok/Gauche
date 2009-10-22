@@ -1,5 +1,9 @@
 2009-10-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/system.c (Scm_SysExec, pipe), src/gauche/win-compat.h:
+	  Support I/O redirection using pipes on Windows, and try to
+	  align process exit status handling.
+
 	* src/port.c (Scm_PortFdDup), src/extlib.stub (port-fd-dup!):
 	  Support these under Windows as well (via _dup2()).  They are
 	  not fully compatible (Windows seems to have some restrictions

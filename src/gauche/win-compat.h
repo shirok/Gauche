@@ -253,14 +253,17 @@ unsigned int alarm(unsigned int seconds);
 #define WNOHANG   (1L<<0)
 #define WUNTRACED (1L<<1)
 
-/* Windows doesn't really distinguish how the process is ended.  The
-   exit status passed to exit() is obtained by GetExitCodeProcess "as is".
-   Since signals are not much of use on Windows, we regard the process
-   always "exited". */
-#define WIFEXITED(status)   TRUE
-#define WEXITSTATUS(stauts) (status)
-#define WIFSIGNALED(status) FALSE
-#define WTERMSIG(stauts)    (status)
+/* Windows doesn't really distinguish how the process is ended.  We
+   kind of emulate it with the following way:
+   For normal exit via Scm_Exit() - use the lower 8 bits of status
+     code as they are.
+   For signalled temination by Scm_SysKill() - the sending process
+     sends 0x100 + signal_number as the exit code.
+ */
+#define WIFEXITED(status)   (((status)>>8)==0)
+#define WEXITSTATUS(stauts) ((status)&0xff)
+#define WIFSIGNALED(status) (((status)>>8)==1)
+#define WTERMSIG(stauts)    ((status)&0xff)
 #define WIFSTOPPED(status)  FALSE
 #define WSTOPSIG(status)    (status)
 

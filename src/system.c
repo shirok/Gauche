@@ -1315,8 +1315,6 @@ int Scm_IsSugid(void)
  *   unclaimed.
  *   One issue is that we cannot wait() for child processes that
  *   are created by Gauche extension code and not using Scm_SysExec API.
- *   I don't think it's a big problem, for such extensions must take
- 
  */
 #if defined(GAUCHE_WINDOWS)
 static struct process_mgr_rec {
@@ -1416,9 +1414,6 @@ char *win_create_command_line(ScmObj args)
  *   On Windows port, this returns a process handle obejct instead of   
  *   pid of the child process in fork mode.  We need to keep handle, or
  *   the process exit status will be lost when the child process terminates.
- *
- *   On Windows/MinGW port, I'm not sure we can do I/O swapping in
- *   reasonable way.  For now, iomap is ignored.
  */
 ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
                    ScmSysSigset *mask, ScmString *dir, int flags)
@@ -1641,7 +1636,22 @@ static HANDLE *win_prepare_handles(int *fds)
     for (i=0; i<count; i++) {
         int to = fds[i+1], from = fds[i+1+count];
         if (to >= 0 && to < 3) {
-            hs[to] = (HANDLE)_get_osfhandle(from);
+            if (from >= 3) {
+                /* from_fd may be a pipe. */
+                HANDLE zh;
+                if (!DuplicateHandle(GetCurrentProcess(),
+                                     (HANDLE)_get_osfhandle(from),
+                                     GetCurrentProcess(),
+                                     &zh,
+                                     0, TRUE, 
+                                     DUPLICATE_CLOSE_SOURCE
+                                     |DUPLICATE_SAME_ACCESS)) {
+                    Scm_SysError("DuplicateHandle failed");
+                }
+                hs[to] = zh;
+            } else {
+                hs[to] = (HANDLE)_get_osfhandle(from);
+            }
         }
     }
     for (i=0; i<3; i++) {
@@ -1693,7 +1703,9 @@ void Scm_SysKill(ScmObj process, int signal)
         } else {
             p = Scm_WinProcessHandle(process);
         }
-        r = TerminateProcess(p, SIGKILL);
+        /* We send 0x100 + KILL, so that the receiving process (if it is
+           Gauche) can yield an exit status that indicates it is kill. */
+        r = TerminateProcess(p, SIGKILL+0x100);
         errcode = GetLastError();
         if (pid_given) CloseHandle(p);
         SetLastError(errcode);
@@ -2207,7 +2219,10 @@ int fork(void)
 int pipe(int fd[])
 {
 #define PIPE_BUFFER_SIZE 512
-    int r = _pipe(fd, PIPE_BUFFER_SIZE, O_BINARY);
+    /* NB: We create pipe with NOINHERIT to avoid complextion when spawning
+       child process.  Sys_Exec will dups the handle with inheritable flag
+       for the children.  */
+    int r = _pipe(fd, PIPE_BUFFER_SIZE, O_BINARY|O_NOINHERIT);
     return r;
 }
 
