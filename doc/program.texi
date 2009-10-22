@@ -767,11 +767,18 @@ write Scheme code portable across multiple implementations.
 @item gauche.os.windows
 @c EN
 Defined on Windows native platform (currently using MinGW, but we'll
-have VC++ version in future).  Note that cygwin is considered unix.
+have VC++ version in future).  Note that cygwin does not define
+this feature identifier (but see below).
 @c JP
 Windowsネイティブプラットフォームで定義されます。(現時点では、MinGWを
-使っていますが、将来VC++版をサポートする予定です。) cygwinはUNIXとみな
-すことに注意してください。
+使っていますが、将来VC++版をサポートする予定です。) cygwinでは
+この機能識別子は定義されません (下記も参照)。
+@c COMMON
+@item gauche.os.cygwin
+@c EN
+Defined on Cygwin.
+@c JP
+Cygwin上で定義されます。
 @c COMMON
 @item gauche.sys.pthreads
 @c EN

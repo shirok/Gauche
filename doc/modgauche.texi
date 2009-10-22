@@ -5332,6 +5332,16 @@ Returns number of octets sent.
 
 送り出されたオクテット数を返します。
 @c COMMON
+
+@c EN
+This procedure is not yet supported under the Windows native platform.
+You can use the feature identifier @code{gauche.os.windows} to check
+availability of this procedure (@xref{Platform-dependent features}).
+@c JP
+この手続きはWindowsネイティブ環境では(まだ)サポートされません。
+これが使えるかどうかは、機能識別子@code{gauche.os.windows}を使って判定
+できます (@ref{Platform-dependent features}参照)。
+@c COMMON
 @end defun
 
 @defun socket-buildmsg addr iov control flags &optional buf
@@ -5406,6 +5416,16 @@ msghdrを構築しようとします。@var{buf}で領域が不足する場合のみ
 新たなメモリをアロケートします。
 
 この手続きは構築されたmsghdrをu8vectorとして返します。
+@c COMMON
+
+@c EN
+This procedure is not yet supported under the Windows native platform.
+You can use the feature identifier @code{gauche.os.windows} to check
+availability of this procedure (@xref{Platform-dependent features}).
+@c JP
+この手続きはWindowsネイティブ環境では(まだ)サポートされません。
+これが使えるかどうかは、機能識別子@code{gauche.os.windows}を使って判定
+できます (@ref{Platform-dependent features}参照)。
 @c COMMON
 @end defun
 
@@ -7340,10 +7360,24 @@ If there's no child processes, this procedure immediately returns @code{#f}.
 Returns exit status of @var{process} retrieved by @code{process-wait}.
 If this is called before @code{process-wait} is called on @var{process},
 the result is undefined.
+
+The meaning of exit status depends on the platform.  You need to
+use @code{sys-wait-exited?} or @code{sys-wait-signaled?} to
+see if it is terminated voluntarily or by a signal, and
+use @code{sys-wait-exit-status} or @code{sys-wait-termsig}
+to extract the exit code or the terminating signal
+(@xref{Unix process management}).
 @c JP
 @code{process-wait}によって取得された@var{process}の終了ステータスを
 返します。@var{process}に対して@code{process-wait}を呼ぶ前にこの手続きを
 呼んだ場合の結果は未定義です。
+
+終了ステータスの解釈はプラットフォームに依存します。プロセスが自発的に
+(@code{exit}を呼んで)終了したか、それともシグナルによって終了させられたかを
+確かめるには@code{sys-wait-exited?}か@code{sys-wait-signaled?}を
+使ってください。また、終了コードもしくは終了と原因となったシグナルを
+知るには@code{sys-wait-exit-status}を@code{sys-wait-termsig}
+使ってください (@ref{Unix process management}参照)。
 @c COMMON
 @end defun
 
