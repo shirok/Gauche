@@ -1,5 +1,11 @@
 2009-10-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/error.c (Scm_SysError): On GAUCHE_WINDOWS, check both
+	  errno and GetLastError; posix-compatible API uses the former
+	  and Windows API uses the latter, and Scm_SysError doesn't know
+	  which for sure.  We always reset both errors after Scm_SysError
+	  so we can guess that non-zero one reflects the actual error.
+
 	* src/syslib.stub (sys-stat): On GAUCHE_WINDOWS, remove trailing
 	  path separator in PATH if any (excluding the root directory; e.g.
 	  "/" or "c:\\" are untouched).  This is because Windows stat()

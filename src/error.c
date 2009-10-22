@@ -509,6 +509,16 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
  *   The interaction with dynamic environment of VM is handled by
  *   Scm_VMThrowException() in vm.c.   These routines provide
  *   application interface.
+ *
+ *   Note on Windows system error: Windows may return error code
+ *   in two different ways; GetLastError for Windows API, and errno
+ *   for posix-compatibility calls.   When Scm_SysError is called
+ *   we don't know which error code to look at for sure.  As a
+ *   convention, we always clear both error code after Scm_SysError
+ *   and assumes whichever non-zero code indicates the actual error.
+ *   To map to integer error code, we reverse the sign of Windows
+ *   error code (Windows error code reserves full 32bit, but they don't
+ *   seem to use over 2^31 for the time being).
  */
 
 /*
@@ -545,24 +555,27 @@ void Scm_Error(const char *msg, ...)
  * Just for convenience to report a system error.   Add strerror() message
  * after the provided message.
  */
-
 static ScmObj get_syserrmsg(int en)
 {
     ScmObj syserr;
 #if !defined(GAUCHE_WINDOWS)
     syserr = SCM_MAKE_STR_COPYING(strerror(en));
 #else  /*GAUCHE_WINDOWS*/
-    LPTSTR msgbuf;
-    const char *xmsgbuf;
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,
-		  NULL,
-		  en,
-		  0,
-		  (LPTSTR)&msgbuf,
-                  0, NULL);
-    xmsgbuf = SCM_WCS2MBS(msgbuf);
-    syserr = SCM_MAKE_STR_COPYING(xmsgbuf);
-    LocalFree(msgbuf);
+    if (en < 0) {
+      LPTSTR msgbuf;
+      const char *xmsgbuf;
+      FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,
+                    NULL,
+                    -en,
+                    0,
+                    (LPTSTR)&msgbuf,
+                    0, NULL);
+      xmsgbuf = SCM_WCS2MBS(msgbuf);
+      syserr = SCM_MAKE_STR_COPYING(xmsgbuf);
+      LocalFree(msgbuf);
+    } else {
+      syserr = SCM_MAKE_STR_COPYING(strerror(en));
+    }
 #endif /*GAUCHE_WINDOWS*/
     return syserr;
 }
@@ -572,7 +585,12 @@ static int get_errno(void)
 #if !defined(GAUCHE_WINDOWS)
     return errno;
 #else  /*GAUCHE_WINDOWS*/
-    return GetLastError();
+    if (errno == 0) {
+      return -(int)GetLastError();
+    } else {
+      return errno;             /* NB: MSDN says we should use _get_errno,
+                                   but MinGW doesn't seem to have it yet.*/
+    }
 #endif /*GAUCHE_WINDOWS*/
 }
 
@@ -583,6 +601,14 @@ void Scm_SysError(const char *msg, ...)
     ScmVM *vm = Scm_VM();
     int en = get_errno();
     ScmObj syserr = get_syserrmsg(en);
+
+#if defined(GAUCHE_WINDOWS)
+    /* Reset the error code, so that we can find which is the actual
+       error code in the next occasion. */
+    errno = 0;                  /* NB: MSDN says we should use _set_errno,
+                                   but MinGW doesn't seem to have it yet. */
+    SetLastError(0);
+#endif /*GAUCHE_WINDOWS*/
     
     SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
