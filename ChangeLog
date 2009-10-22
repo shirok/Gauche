@@ -1,5 +1,11 @@
 2009-10-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c (Scm_PortFdDup), src/extlib.stub (port-fd-dup!):
+	  Support these under Windows as well (via _dup2()).  They are
+	  not fully compatible (Windows seems to have some restrictions
+	  on which file descriptors can be dup'ed?) but it's better than
+	  nothing.
+
 	* src/error.c (Scm_SysError): On GAUCHE_WINDOWS, check both
 	  errno and GetLastError; posix-compatible API uses the former
 	  and Windows API uses the latter, and Scm_SysError doesn't know

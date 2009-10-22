@@ -857,9 +857,7 @@
   (let* ([i::int (Scm_PortFileNo port)])
     (result (?: (< i 0) SCM_FALSE (Scm_MakeInteger i)))))
 
-(when "!defined(GAUCHE_WINDOWS)"
-  (define-cproc port-fd-dup! (dst::<port> src::<port>) ::<void> Scm_PortFdDup)
-  )
+(define-cproc port-fd-dup! (dst::<port> src::<port>) ::<void> Scm_PortFdDup)
 
 (define-enum SEEK_SET)
 (define-enum SEEK_CUR)

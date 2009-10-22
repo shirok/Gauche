@@ -244,7 +244,6 @@ int Scm_PortFileNo(ScmPort *port)
 /* Duplicates the file descriptor of the source port, and set it to
    the destination port.  Both source and destination port must be
    file ports. */
-#if !defined(GAUCHE_WINDOWS)
 void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
 {
     int r, srcfd, dstfd;
@@ -271,11 +270,14 @@ void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
         /* flush the current buffer */
         Scm_Flush(dst);
     }
+#if defined(GAUCHE_WINDOWS)
+    SCM_SYSCALL(r, _dup2(srcfd, dstfd));
+#else  /*!GAUCHE_WINDOWS*/
     SCM_SYSCALL(r, dup2(srcfd, dstfd));
+#endif /*!GAUCHE_WINDOWS*/
     if (r < 0) Scm_SysError("dup2 failed");
     dst->src.buf.data = (void*)(intptr_t)r;
 }
-#endif /*!defined(GAUCHE_WINDOWS)*/
 
 /* Low-level function to find if the file descriptor is ready or not.
    DIR specifies SCM_PORT_INPUT or SCM_PORT_OUTPUT.
