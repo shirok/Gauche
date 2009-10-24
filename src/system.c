@@ -1388,7 +1388,13 @@ char *win_create_command_line(ScmObj args)
 {
     ScmObj ap, out;
     ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
-    SCM_FOR_EACH(ap, args) Scm_Printf(SCM_PORT(ostr), "%S ", SCM_CAR(ap));
+    ScmObj proc = Scm_GlobalVariableRef(Scm_GaucheModule(),
+                                        SCM_SYMBOL(SCM_INTERN("%sys-escape-windows-command-line")),
+                                        0);
+    SCM_FOR_EACH(ap, args) {
+      ScmObj escaped = Scm_ApplyRec1(proc, SCM_CAR(ap));
+      Scm_Printf(SCM_PORT(ostr), "%A ", escaped);
+    }
     out = Scm_GetOutputStringUnsafe(SCM_PORT(ostr), 0);
     return Scm_GetString(SCM_STRING(out));
 }

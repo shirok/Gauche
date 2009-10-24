@@ -1,3 +1,14 @@
+2009-10-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/scmlib.scm (%sys-escape-windows-command-line),
+	  src/system.c (win_create_command_line),
+	  lib/gauche/process.scm (shell-escape-string):
+	  Moved Windows shell argument escape routine from shell-escape-string
+	  to src/scmlib.scm, since it is also needed to implement
+	  Scm_Exec on Windows correctly (well, almost.  Windows does not
+	  enforce consistent rules of parsing command lines, so all we can
+	  do is cross our fingers.)
+
 2009-10-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_SysExec, pipe), src/gauche/win-compat.h:

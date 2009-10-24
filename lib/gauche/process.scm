@@ -367,16 +367,8 @@
 (define (shell-escape-string str)
   (cond-expand
    [gauche.os.windows
-    ;; There seems no reliable way to escape command line arguments on
-    ;; windows, since the parsing is up to every application.  However,
-    ;; the standard C runtime seems to obey that (a) whitespaces can be
-    ;; embedded if the argument is surrounded by double quotes, and (b)
-    ;; within double-quotes, consecutive two double-quotes are replaced
-    ;; for one double-quote.
-    (cond [(string-null? str) "\"\""]
-          [(string-index str #[\s\"])
-           (string-append "\"" (regexp-replace-all #/\"/ str "\"\"") "\"")]
-          [else str])]
+    ;; This is supported in src/scmlib.scm.  See the comment in it.
+    (%sys-escape-windows-command-line str)]
    [else
     ;; We follow standard unix shell convention: if STR contains special
     ;; chars, we quote the entire STR by single-quotes.  If STR contains

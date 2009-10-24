@@ -441,12 +441,33 @@
   (receive vals (producer) (apply consumer vals)))
 
 ;;;=======================================================
-;;; signal utility
+;;; other system utilities
 ;;;
 (define (sys-sigset . signals)
   (if (null? signals)
     (make <sys-sigset>)
     (apply sys-sigset-add! (make <sys-sigset>) signals)))
+
+;; This is originally a part of shell-escape-string in gauche.process,
+;; but the lower level function Scm_Exec() requires this to build
+;; windows command line string from given argument list.   It would be
+;; clumsy to implement this in C, so we provide this here to be shared
+;; by Scm_Exec() and shell-escape-string.
+;; NB:  There seems no reliable way to escape command line arguments on
+;; windows, since the parsing is up to every application.  However,
+;; the standard C runtime seems to obey that (a) whitespaces can be
+;; embedded if the argument is surrounded by double quotes, and (b)
+;; within double-quotes, consecutive two double-quotes are replaced
+;; for one double-quote.
+;; NB: The second condition would be clearer if we use string-index, but
+;; it is in srfi-13.  string-split, otoh, is built-in.  The overhead of
+;; using string-split here would be negligible.
+(define (%sys-escape-windows-command-line s)
+  (cond [(not (string? s))
+         (%sys-escape-windows-command-line (write-to-string s))]
+        [(equal? s "") "\"\""]
+        [(null? (cdr (string-split s #[\s\"]))) s]
+        [else (string-append "\"" (regexp-replace-all #/\"/ s "\"\"") "\"")]))
 
 ;;;=======================================================
 ;;; standard hash-bang tokens
