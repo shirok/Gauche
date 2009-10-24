@@ -436,4 +436,6 @@
   (test* "shell-escape-string" "'a'\"'\"'c'" (shell-escape-string "a'c"))
   ])
 
+(rmrf "testc.o")
+
 (test-end)
