@@ -953,6 +953,15 @@
 
 (define-cproc sys-win-process? (obj) ::<boolean> Scm_WinProcessP)
 (define-cproc sys-win-process-pid (obj) ::<int> Scm_WinProcessPID)
+
+;; windows handle
+
+(define-cproc sys-get-osfhandle (port-or-fd)
+  (let* ([fd::int (Scm_GetPortFd port-or-fd TRUE)]
+         [h::HANDLE (cast HANDLE (_get_osfhandle fd))])
+    (when (== h INVALID_HANDLE_VALUE) (Scm_SysError "get_osfhandle failed"))
+    (result (Scm_MakeWinHandle h '#f))))
+    
 ) ;; GAUCHE_WINDOWS
 
 ;; Local variables:

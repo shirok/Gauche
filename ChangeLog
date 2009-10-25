@@ -1,5 +1,8 @@
 2009-10-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/syslib.stub (sys-get-osfhandle): Added this for low-level
+	  tweaking on Windows.
+
 	* ext/termios/termios.scm (without-echoing): Added a high-level
 	  utitily for reading input without echoing, which can be used
 	  across platforms.
