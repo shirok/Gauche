@@ -1,3 +1,9 @@
+2009-10-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/type.scm, ext/uvector/uvlib.stub.tmpl:
+	  Moved stub type definitions of <s8vector> etc. from ext/uvector
+	  to cgen/type.scm, since they are now supported by core.
+
 2009-10-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub (Scm_MakeWinHandle, Scm_WinHandleP etc.),

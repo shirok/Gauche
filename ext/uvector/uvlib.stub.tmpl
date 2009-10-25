@@ -54,8 +54,6 @@
                     but got %S" clamp)])
   (return SCM_CLAMP_ERROR))
 
-(define-type <uvector> "ScmUVector*")
-
 ///)) ;; End prologue
 
 ///;; Begin template ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,8 +63,6 @@
 ;;--------------------------------------------------------------------
 ;; ${t}vector basic API
 ;;
-(define-type <${t}vector> "Scm${T}Vector*")
-
 (define-cproc ${t}vector? (obj) ::<boolean> SCM_${T}VECTORP)
 
 ;; we need this in string, for the UNBOX macro is substituted to the
