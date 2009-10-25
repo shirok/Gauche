@@ -4,6 +4,9 @@
 	  Moved stub type definitions of <s8vector> etc. from ext/uvector
 	  to cgen/type.scm, since they are now supported by core.
 
+	* ext/termios/termiolib.stub: Added bunch of Windows Console API
+	  on GAUCHE_WINDOWS.
+
 2009-10-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub (Scm_MakeWinHandle, Scm_WinHandleP etc.),
