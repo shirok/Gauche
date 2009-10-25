@@ -63,24 +63,8 @@
 
 ;; Read password from the terminal without echoing
 (define (get-password)
-  (let ((prompt "Password: ")
-        (iport (open-input-file "/dev/tty"))
-        (oport (open-output-file "/dev/tty")))
-    (let* ((attr  (sys-tcgetattr iport))
-           (lflag (ref attr 'lflag)))
-      (dynamic-wind
-          (lambda ()
-            (set! (ref attr 'lflag)
-                  (logand lflag (lognot (logior ECHO ICANON ISIG))))
-            (sys-tcsetattr iport TCSANOW attr))
-          (lambda ()
-            (display prompt oport) (flush oport)
-            (read-line iport))
-          (lambda ()
-            (set! (ref attr 'lflag) lflag)
-            (sys-tcsetattr iport TCSANOW attr)
-            (close-input-port iport)
-            (close-output-port oport)
-            )))))
+  (with-output-to-file "/dev/tty"
+    (lambda () (display "Password: ") (flush)))
+  (without-echoing #f read-line))
 
 (provide "gauche/package/util")

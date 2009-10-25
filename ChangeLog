@@ -1,5 +1,11 @@
 2009-10-25  Shiro Kawai  <shiro@acm.org>
 
+	* ext/termios/termios.scm (without-echoing): Added a high-level
+	  utitily for reading input without echoing, which can be used
+	  across platforms.
+	* lib/gauche/package/util.scm (get-password): Rewrote this using
+	  without-echoing.
+
 	* lib/gauche/cgen/type.scm, ext/uvector/uvlib.stub.tmpl:
 	  Moved stub type definitions of <s8vector> etc. from ext/uvector
 	  to cgen/type.scm, since they are now supported by core.

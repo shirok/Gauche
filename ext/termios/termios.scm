@@ -41,6 +41,34 @@
 
 (dynamic-load "gauche--termios")
 
+;;
+;; High-level utilities
+;;
+
+(define (without-echoing iport proc)
+  (cond [(not iport) ;; open tty
+         (call-with-input-file
+             (cond-expand [gauche.os.windows "CON"] [else "/dev/tty"])
+           (cut without-echoing <> proc))]
+        [(sys-isatty iport)
+         (let ()
+           (cond-expand
+            [gauche.os.windows
+             (error "not supported yet")]
+            [else
+             (begin
+               (define attr (sys-tcgetattr iport))
+               (define lflag-save (ref attr'lflag))
+               (define (echo-off)
+                 (set! (ref attr'lflag)
+                       (logand (ref attr'lflag)
+                               (lognot (logior ECHO ICANON ISIG))))
+                 (sys-tcsetattr iport TCSANOW attr))
+               (define (echo-on)
+                 (set! (ref attr'lflag) lflag-save)
+                 (sys-tcsetattr iport TCSANOW attr)))])
+           (unwind-protect (begin (echo-off) (proc iport)) (echo-on)))]
+        [else (proc iport)]))
 
 (provide "gauche/termios")
 
