@@ -63,7 +63,8 @@
 
 ;; Read password from the terminal without echoing
 (define (get-password)
-  (with-output-to-file "/dev/tty"
+  (with-output-to-file
+      (cond-expand [gauche.os.windows "CON"] [else "/dev/tty"])
     (lambda () (display "Password: ") (flush)))
   (without-echoing #f read-line))
 

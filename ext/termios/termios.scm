@@ -45,16 +45,24 @@
 ;; High-level utilities
 ;;
 
+;; NB: on windows, this only works with iport==#f.
 (define (without-echoing iport proc)
   (cond [(not iport) ;; open tty
-         (call-with-input-file
+         (call-with-input-file 
              (cond-expand [gauche.os.windows "CON"] [else "/dev/tty"])
            (cut without-echoing <> proc))]
         [(sys-isatty iport)
          (let ()
            (cond-expand
             [gauche.os.windows
-             (error "not supported yet")]
+             (define ihandle (sys-get-std-handle STD_INPUT_HANDLE))
+             (define orig-mode (sys-get-console-mode ihandle))
+             (define (echo-off)
+               (sys-set-console-mode ihandle
+                                     (logand orig-mode
+                                             (lognot ENABLE_ECHO_INPUT))))
+             (define (echo-on)
+               (sys-set-console-mode ihandle orig-mode))]
             [else
              (begin
                (define attr (sys-tcgetattr iport))
@@ -69,6 +77,16 @@
                  (sys-tcsetattr iport TCSANOW attr)))])
            (unwind-protect (begin (echo-off) (proc iport)) (echo-on)))]
         [else (proc iport)]))
+
+#|
+;; sample
+(define (get-password)
+  (with-output-to-file
+      (cond-expand [gauche.os.windows "CON"] [else "/dev/tty"])
+    (lambda () (display "Password: ") (flush)))
+  (without-echoing #f read-line))
+|#
+
 
 (provide "gauche/termios")
 

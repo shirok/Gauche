@@ -12,9 +12,10 @@
 (test-module 'gauche.termios)
 
 (cond-expand
- (gauche.os.windows)
- (else
-
+ [(not gauche.os.windows)
+  ;;
+  ;; POSIX version
+  ;;
   (define (list-if-bound . cans)
     (let loop ((cans cans)
                (syms '())
@@ -144,6 +145,11 @@
                  )))
            ccs)))
 
-  )) ;; cond-expand
+  ]
+ [else
+  ;;
+  ;; Windows Version
+  ;;
+  ])
 
 (test-end)
