@@ -1,5 +1,7 @@
 2009-10-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c (Scm_FdReady): Made it work with Windows pipe.
+
 	* src/syslib.stub (sys-get-osfhandle): Added this for low-level
 	  tweaking on Windows.
 

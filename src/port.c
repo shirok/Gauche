@@ -304,9 +304,24 @@ int Scm_FdReady(int fd, int dir)
     if (r < 0) Scm_SysError("select failed");
     if (r > 0) return SCM_FD_READY;
     else       return SCM_FD_WOULDBLOCK;
-#else  /*!HAVE_SELECT*/
+#elif  defined(GAUCHE_WINDOWS)
+    if (dir == SCM_PORT_OUTPUT) {
+        /* We assume it is always ok */
+        return SCM_FD_READY;
+    } else {
+        HANDLE h = (HANDLE)_get_osfhandle(fd);
+        DWORD avail;
+        if (h == INVALID_HANDLE_VALUE) return SCM_FD_READY;
+        if (PeekNamedPipe(h, NULL, 0, NULL, &avail, NULL) == 0) {
+            /* We assume the port isn't an end of a pipe. */
+            return SCM_FD_UNKNOWN;
+        }
+        if (avail == 0) return SCM_FD_WOULDBLOCK;
+        else return SCM_FD_READY;
+    }
+#else  /*!HAVE_SELECT && !GAUCHE_WINDOWS */
     return SCM_FD_UNKNOWN;
-#endif /*!HAVE_SELECT*/
+#endif /*!HAVE_SELECT && !GAUCHE_WINDOWS */
 }
 
 /*===============================================================
