@@ -901,9 +901,59 @@
 ;;;
 
 (when "defined(GAUCHE_WINDOWS)"
-  (define-cproc sys-win-process? (obj) ::<boolean> Scm_WinProcessP)
-  (define-cproc sys-win-process-pid (obj) ::<int> Scm_WinProcessPID)
-  ) ;; GAUCHE_WINDOWS
+;; Windows HANDLE wrapper
+;; We use foreign pointer for HANDLE.  If the type of handle is known at
+;; the creation time, it is attached as the foreign pointer attribute
+;; with the key 'handle-type.
+
+(define-cfn handle-cleanup (h) ::void :static
+  (CloseHandle (SCM_FOREIGN_POINTER_REF HANDLE h)))
+
+(define-cfn handle-print (h p::ScmPort* c::ScmWriteContext*) ::void :static
+  (let* ([type (Scm_ForeignPointerAttrGet (SCM_FOREIGN_POINTER h)
+                                          'handle-type '#f)])
+    (cond
+     [(SCM_EQ type 'process)
+      (Scm_Printf p "#<win:handle process %d @%p>" (Scm_WinProcessPID h) h)]
+     [else
+      (Scm_Printf p "#<win:handle @%p>" h)])))
+  
+(declcode "static ScmClass *WinHandleClass = NULL;")
+(initcode (= WinHandleClass (Scm_MakeForeignPointerClass
+                             mod "<win:handle>" handle-print handle-cleanup
+                             SCM_FOREIGN_POINTER_KEEP_IDENTITY)))
+
+(define-cfn Scm_MakeWinHandle (wh::HANDLE type)
+  (let* ([h (Scm_MakeForeignPointer WinHandleClass wh)])
+    (unless (SCM_FALSEP type)
+      (Scm_ForeignPointerAttrSet (SCM_FOREIGN_POINTER h) 'handle-type type))
+    (return h)))
+
+(define-cfn Scm_WinHandleP (obj type) ::int
+  (unless (SCM_XTYPEP obj WinHandleClass) (return FALSE))
+  (return
+   (or (SCM_FALSEP type)
+       (SCM_EQ type (Scm_ForeignPointerAttrGet (SCM_FOREIGN_POINTER obj)
+                                               'handle-type SCM_FALSE)))))
+
+(define-cfn Scm_WinHandle (h type) ::HANDLE
+  (unless (Scm_WinHandleP h type) (SCM_TYPE_ERROR h "<win:handle>"))
+  (return (SCM_FOREIGN_POINTER_REF HANDLE h)))
+
+;; windows process
+
+(define-cfn Scm_MakeWinProcess (h::HANDLE)
+  (return (Scm_MakeWinHandle h 'process)))
+
+(define-cfn Scm_WinProcessP (obj) ::int
+  (return (Scm_WinHandleP obj 'process)))
+
+(define-cfn Scm_WinProcess (obj) ::HANDLE
+  (Scm_WinHandle obj 'process))
+
+(define-cproc sys-win-process? (obj) ::<boolean> Scm_WinProcessP)
+(define-cproc sys-win-process-pid (obj) ::<int> Scm_WinProcessPID)
+) ;; GAUCHE_WINDOWS
 
 ;; Local variables:
 ;; mode: scheme

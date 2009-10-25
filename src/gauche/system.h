@@ -262,11 +262,15 @@ SCM_EXTERN ScmObj Scm_SysMkstemp(ScmString *tmpl);
  */
 
 #if defined(GAUCHE_WINDOWS)
-/* special object to wrap windows process handle */
+/* special object to wrap windows handle */
+SCM_EXTERN ScmObj Scm_MakeWinHAndle(HANDLE h, ScmObj type);
+SCM_EXTERN int    Scm_WinHandleP(ScmObj obj, ScmObj type);
+SCM_EXTERN HANDLE Scm_WinHandle(ScmObj h, ScmObj type);
+
 SCM_EXTERN ScmObj Scm_MakeWinProcess(HANDLE h);
 SCM_EXTERN int    Scm_WinProcessP(ScmObj p);
 SCM_EXTERN pid_t  Scm_WinProcessPID(ScmObj p);
-SCM_EXTERN HANDLE Scm_WinProcessHandle(ScmObj p);
+SCM_EXTERN HANDLE Scm_WinProcess(ScmObj p);
 #endif /* GAUCHE_WINDOWS */
 
 #endif /* GAUCHE_SYSTEM_H */

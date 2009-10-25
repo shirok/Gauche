@@ -1366,7 +1366,7 @@ void win_process_cleanup(void *data)
     ScmObj cp;
     SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
     SCM_FOR_EACH(cp, process_mgr.children) {
-        CloseHandle(Scm_WinProcessHandle(SCM_CAR(cp)));
+        CloseHandle(Scm_WinHandle(SCM_CAR(cp), SCM_FALSE));
     }
     process_mgr.children = SCM_NIL;
     SCM_INTERNAL_MUTEX_UNLOCK(process_mgr.mutex);
@@ -1707,7 +1707,7 @@ void Scm_SysKill(ScmObj process, int signal)
             p = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
             if (p == NULL) Scm_SysError("OpenProcess failed for pid %d", pid);
         } else {
-            p = Scm_WinProcessHandle(process);
+            p = Scm_WinProcess(process);
         }
         /* We send 0x100 + KILL, so that the receiving process (if it is
            Gauche) can yield an exit status that indicates it is kill. */
@@ -1812,7 +1812,7 @@ ScmObj Scm_SysWait(ScmObj process, int options)
             }
             handles = SCM_NEW_ATOMIC_ARRAY(HANDLE, num_children);
             for (i=0; i<num_children; i++) {
-                handles[i] = Scm_WinProcessHandle(children[i]);
+                handles[i] = Scm_WinProcess(children[i]);
             }
             r = win_wait_for_handles(handles, num_children, options, &status);
             if (r == -2) goto timeout;
@@ -1827,7 +1827,7 @@ ScmObj Scm_SysWait(ScmObj process, int options)
             SetLastError(ERROR_WAIT_NO_CHILDREN);
             Scm_SysError("waitpid failed");
         }
-        handle = Scm_WinProcessHandle(process);
+        handle = Scm_WinProcess(process);
         r = win_wait_for_handles(&handle, 1, options, &status);
         if (r == -2) goto timeout;
         if (r == -1) goto error;
@@ -2065,38 +2065,7 @@ static ScmObj get_relative_processes(int childrenp)
     }
 }
 
-/* Windows "HANDLE" wrapper.  */
-
-void handle_cleanup(ScmObj handle)
-{
-    CloseHandle(SCM_FOREIGN_POINTER_REF(HANDLE, handle));
-}
-
-void handle_print(ScmObj handle, ScmPort *sink, ScmWriteContext *mode)
-{
-    Scm_Printf(sink, "#<win:process-handle %d @%p>",
-               Scm_WinProcessPID(handle), handle);
-}
-
-static ScmClass *WinProcessHandleClass = NULL;
-
-ScmObj Scm_MakeWinProcess(HANDLE h)
-{
-    return Scm_MakeForeignPointer(WinProcessHandleClass, (void*)h);
-}
-
-int Scm_WinProcessP(ScmObj p)
-{
-    return SCM_XTYPEP(p, WinProcessHandleClass);
-}
-
-HANDLE Scm_WinProcessHandle(ScmObj handle)
-{
-    if (!SCM_XTYPEP(handle, WinProcessHandleClass)) {
-        SCM_TYPE_ERROR(handle, "<win:process-handle>");
-    }
-    return SCM_FOREIGN_POINTER_REF(HANDLE, handle);
-}
+/* Retrieve PID from windows process handle wrapper.  */
 
 pid_t Scm_WinProcessPID(ScmObj handle)
 {
@@ -2109,6 +2078,10 @@ pid_t Scm_WinProcessPID(ScmObj handle)
     static DWORD (WINAPI *pGetProcessId)(HANDLE) = NULL;
     static int queried = FALSE;
 
+    if (!Scm_WinProcessP(handle)) {
+        SCM_TYPE_ERROR(handle, "<win:handle process>");
+    }
+
     if (pGetProcessId == NULL) {
         if (queried) return (pid_t)-1;
         pGetProcessId = get_api_entry(_T("kernel32.dll"), "GetProcessId",
@@ -2118,7 +2091,7 @@ pid_t Scm_WinProcessPID(ScmObj handle)
             return (pid_t)-1;
         }
     }
-    return pGetProcessId(Scm_WinProcessHandle(handle));
+    return pGetProcessId(Scm_WinProcess(handle));
 }
 
 /*
@@ -2378,10 +2351,6 @@ void Scm__InitSystem(void)
 #ifdef GAUCHE_WINDOWS
     init_winsock();
     Scm_AddCleanupHandler(fini_winsock, NULL);
-    WinProcessHandleClass =
-        Scm_MakeForeignPointerClass(mod, "<win:process-handle>",
-                                    handle_print, handle_cleanup,
-                                    SCM_FOREIGN_POINTER_KEEP_IDENTITY);
     Scm_AddCleanupHandler(win_process_cleanup, NULL);
 #endif
 }

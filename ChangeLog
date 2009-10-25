@@ -1,5 +1,10 @@
 2009-10-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/syslib.stub (Scm_MakeWinHandle, Scm_WinHandleP etc.),
+	  src/system.c (Scm_WinProcessPID), src/gauche/system.h:
+	  Created generic Windows HANDLE wrapper and redefined Windows
+	  process handle API on top of it.
+
 	* src/scmlib.scm (%sys-escape-windows-command-line),
 	  src/system.c (win_create_command_line),
 	  lib/gauche/process.scm (shell-escape-string):
