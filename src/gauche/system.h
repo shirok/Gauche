@@ -263,7 +263,7 @@ SCM_EXTERN ScmObj Scm_SysMkstemp(ScmString *tmpl);
 
 #if defined(GAUCHE_WINDOWS)
 /* special object to wrap windows handle */
-SCM_EXTERN ScmObj Scm_MakeWinHAndle(HANDLE h, ScmObj type);
+SCM_EXTERN ScmObj Scm_MakeWinHandle(HANDLE h, ScmObj type);
 SCM_EXTERN int    Scm_WinHandleP(ScmObj obj, ScmObj type);
 SCM_EXTERN HANDLE Scm_WinHandle(ScmObj h, ScmObj type);
 
