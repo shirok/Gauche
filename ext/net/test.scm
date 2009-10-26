@@ -439,9 +439,18 @@
 (test* "udp client socket" "ABC"
        (let ((sock (make-socket PF_INET SOCK_DGRAM))
              (addr (make <sockaddr-in> :host :loopback :port *inet-port*)))
-         (socket-setsockopt sock SOL_SOCKET SO_REUSEADDR 1)
-         (socket-connect sock addr)
-         (socket-send sock "abc")
+         ;; NB: Cygwin weirdness... Somehow the first udp packet
+         ;; is always dropped on CYGWIN_NT-5.1 1.5.25(0.156/4/2) on XP SP3,
+         ;; so we send it twice.  Curiously such symptom does not appear
+         ;; on Vista.
+         (cond-expand
+          [gauche.os.cygwin
+           (socket-sendto sock "abc" addr)
+           (sys-sleep 1)
+           (socket-sendto sock "abc" addr)]
+          [else
+           (socket-connect sock addr)
+           (socket-send sock "abc")])
          (begin0 (string-incomplete->complete (socket-recv sock 1024))
            (socket-close sock)
            (sys-wait))))
