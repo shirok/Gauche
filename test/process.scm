@@ -28,7 +28,11 @@
                           1])
                  (set! (port-buffering (current-input-port)) :none)
                  (if (null? args)
-                   (copy-port (current-input-port) (current-output-port))
+                   (begin
+                     (set! (port-buffering (current-input-port)) :none)
+                     (set! (port-buffering (current-output-port)) :none)
+                     (copy-port (current-input-port) (current-output-port)
+                                :unit 'byte))
                    (dolist [f args]
                      (call-with-input-file f
                        (cut copy-port <> (current-output-port)))))
@@ -150,6 +154,9 @@
        (let ((p (run-process (cmd "cat")
                              :input :pipe :output :pipe
                              :error *nulldev*)))
+         (display "abc\n" (process-input p))
+         (flush (process-input p))
+         (read-line (process-output p))
          (process-kill p)
          (process-wait p)
          (let ((x (process-exit-status p)))
