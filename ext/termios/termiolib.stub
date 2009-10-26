@@ -385,9 +385,9 @@
                             :type <uint>)
    (key.control-key-state   :c-name "rec.Event.KeyEvent.dwControlKeyState"
                             :type <uint>)
-   (mouse.position.x        :c-name "rec.Event.MouseEvent.dwMousePosition.X"
+   (mouse.x                 :c-name "rec.Event.MouseEvent.dwMousePosition.X"
                             :type <short>)
-   (mouse.position.y        :c-name "rec.Event.MouseEvent.dwMousePosition.Y"
+   (mouse.y                 :c-name "rec.Event.MouseEvent.dwMousePosition.Y"
                             :type <short>)
    (mouse.button-state      :c-name "rec.Event.MouseEvent.dwButtonState"
                             :type <uint>)
