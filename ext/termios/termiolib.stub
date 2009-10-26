@@ -193,9 +193,9 @@
 (define-enum FILE_SHARE_READ)
 (define-enum FILE_SHARE_WRITE)
 
-(define-cproc create-console-screen-buffer (desired-access::<uint>
-                                            share-mode::<uint>
-                                            inheritable::<boolean>)
+(define-cproc sys-create-console-screen-buffer (desired-access::<uint>
+                                                share-mode::<uint>
+                                                inheritable::<boolean>)
   (let* ([sa::SECURITY_ATTRIBUTES])
     (when inheritable
       (= (ref sa nLength) (sizeof SECURITY_ATTRIBUTES)
