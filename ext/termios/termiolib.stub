@@ -497,7 +497,7 @@
                                (cast (SMALL_RECT*)
                                      (SCM_UVECTOR_ELEMENTS window)))))
 
-(define-cproc write-console (h s::<string>) ::<int>
+(define-cproc sys-write-console (h s::<string>) ::<int>
   (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY s)]
          [nwritten::DWORD 0])
     (check (WriteConsole (Scm_WinHandle h '#f)
@@ -506,8 +506,8 @@
                          (& nwritten) NULL))
     (result nwritten)))
 
-(define-cproc write-console-output-character (h s::<string>
-                                                x::<short> y::<short>)
+(define-cproc sys-write-console-output-character (h s::<string>
+                                                    x::<short> y::<short>)
   ::<int>
   (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY s)]
          [c::COORD] [nwritten::DWORD 0])
@@ -547,10 +547,6 @@
 ;;  WriteConsoleOutputAttribute
 
 ) ;; defined(GAUCHE_WINDOWS)
-
-;; a kludge to make sure the genstub-generated static table has at least
-;; one entry, otherwise C compiler will complain.
-(define-symbol dummy "sym_dummy") 
 
 ;; Local variables:
 ;; mode: scheme
