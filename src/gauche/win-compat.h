@@ -260,9 +260,9 @@ unsigned int alarm(unsigned int seconds);
    For signalled temination by Scm_SysKill() - the sending process
      sends 0x100 + signal_number as the exit code.
  */
-#define WIFEXITED(status)   (((status)>>8)==0)
-#define WEXITSTATUS(stauts) ((status)&0xff)
-#define WIFSIGNALED(status) (((status)>>8)==1)
+#define WIFEXITED(status)   (((status)>>8)!=0xff)
+#define WEXITSTATUS(stauts) (status)
+#define WIFSIGNALED(status) (((status)>>8)==0xff)
 #define WTERMSIG(stauts)    ((status)&0xff)
 #define WIFSTOPPED(status)  FALSE
 #define WSTOPSIG(status)    (status)

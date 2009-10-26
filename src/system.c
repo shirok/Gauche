@@ -1709,9 +1709,9 @@ void Scm_SysKill(ScmObj process, int signal)
         } else {
             p = Scm_WinProcess(process);
         }
-        /* We send 0x100 + KILL, so that the receiving process (if it is
+        /* We send 0xff00 + KILL, so that the receiving process (if it is
            Gauche) can yield an exit status that indicates it is kill. */
-        r = TerminateProcess(p, SIGKILL+0x100);
+        r = TerminateProcess(p, SIGKILL+0xff00);
         errcode = GetLastError();
         if (pid_given) CloseHandle(p);
         SetLastError(errcode);
