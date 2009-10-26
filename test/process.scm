@@ -154,6 +154,7 @@
        (let ((p (run-process (cmd "cat")
                              :input :pipe :output :pipe
                              :error *nulldev*)))
+         ;; handshake to make sure child process is up
          (display "abc\n" (process-input p))
          (flush (process-input p))
          (read-line (process-output p))
@@ -167,11 +168,14 @@
        (let* ((p  (run-process (cmd "cat")
                                :input :pipe :output :pipe
                                :error *nulldev*))
-              (r0 (process-wait p #t))
-              (r1 (begin (process-kill p) (process-wait p)))
-              (r2 (process-wait p #t))
-              )
-         (list r0 r1 r2)))
+              (r0 (process-wait p #t)))
+         ;; handshake to make sure child process is up
+         (display "abc\n" (process-input p))
+         (flush (process-input p))
+         (read-line (process-output p))
+         (let* ((r1 (begin (process-kill p) (process-wait p)))
+                (r2 (process-wait p #t)))
+           (list r0 r1 r2))))
 
 (test* "wait with signalling error" (list #t SIGKILL)
        (guard (e ((<process-abnormal-exit> e)
@@ -181,6 +185,10 @@
          (let1 p (run-process (cmd "cat")
                               :input :pipe :output :pipe
                               :error *nulldev*)
+           ;; handshake to make sure child process is up
+           (display "abc\n" (process-input p))
+           (flush (process-input p))
+           (read-line (process-output p))
            (process-kill p)
            (process-wait p #f #t))))
 
