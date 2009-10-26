@@ -565,11 +565,11 @@ you can pipe the data into and out of child processes easily, for example.
 @c EN
 Gauche core provides the primitive @code{fork} and @code{exec} interface
 as well as the convenient @code{system} call
-(see @ref{Unix process management}).  Use them when you want a precise
+(see @ref{Process management}).  Use them when you want a precise
 control over what you're doing.
 @c JP
 Gaucheコアはプリミティブな@code{fork}および@code{exec}のインタフェース
-を、便利な@code{system}コール(@ref{Unix process management}参照)同様提
+を、便利な@code{system}コール(@ref{Process management}参照)同様提
 供しています。やりたいことを細かくコントロールしたい場合に使うとよいで
 しょう。
 @c COMMON

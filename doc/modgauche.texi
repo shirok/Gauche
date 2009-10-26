@@ -24,7 +24,7 @@
 * Simple dispatcher::           gauche.selector
 * Sequence framework::          gauche.sequence
 * Syslog::                      gauche.syslog
-* Termios::                     gauche.termios
+* Terminal control::            gauche.termios
 * Unit testing::                gauche.test
 * Threads::                     gauche.threads
 * Measure timings::             gauche.time
@@ -7162,7 +7162,7 @@ signal mask of executed process is set to it.   A list of integers
 are treated as a list of signals to mask.  It is important
 to set an appropriate mask if you call @code{run-process} from
 multithreaded application.
-See the description of @code{sys-exec} (@ref{Unix process management})
+See the description of @code{sys-exec} (@ref{Process management})
 for the details.
 
 If the @var{host} keyword argument is specified, this argument
@@ -7174,7 +7174,7 @@ merely sets the signal mask of the local process (@code{ssh}).
 プロセスのシグナルマスクになります。整数のリストの場合は各整数が
 マスクすべきシグナル番号とみなされます。マルチスレッドアプリケーションで
 @code{run-process}を使う場合はシグナルマスクを適切に設定することが重要です。
-@code{sys-exec}の説明を参照して下さい (@ref{Unix process management})。
+@code{sys-exec}の説明を参照して下さい (@ref{Process management})。
 
 @var{host}キーワード引数が与えられている場合は、この引数は
 ローカル側のプロセス(@code{ssh})のみのシグナルマスクをセットします。
@@ -7366,7 +7366,7 @@ use @code{sys-wait-exited?} or @code{sys-wait-signaled?} to
 see if it is terminated voluntarily or by a signal, and
 use @code{sys-wait-exit-status} or @code{sys-wait-termsig}
 to extract the exit code or the terminating signal
-(@xref{Unix process management}).
+(@xref{Process management}).
 @c JP
 @code{process-wait}によって取得された@var{process}の終了ステータスを
 返します。@var{process}に対して@code{process-wait}を呼ぶ前にこの手続きを
@@ -7377,7 +7377,7 @@ to extract the exit code or the terminating signal
 確かめるには@code{sys-wait-exited?}か@code{sys-wait-signaled?}を
 使ってください。また、終了コードもしくは終了と原因となったシグナルを
 知るには@code{sys-wait-exit-status}を@code{sys-wait-termsig}
-使ってください (@ref{Unix process management}参照)。
+使ってください (@ref{Process management}参照)。
 @c COMMON
 @end defun
 
@@ -8547,7 +8547,7 @@ Like @code{shuffle}, but the result is stored back to @var{src}.
 
 
 @c ----------------------------------------------------------------------
-@c @node Serializer, Termios, Simple dispatcher, Library modules
+@c @node Serializer, Terminal control, Simple dispatcher, Library modules
 @c @section @code{gauche.serializer} - Serializer
 
 @c @deftp {Module} gauche.serializer
@@ -8555,7 +8555,7 @@ Like @code{shuffle}, but the result is stored back to @var{src}.
 @c @end deftp
 
 @c ----------------------------------------------------------------------
-@node  Syslog, Termios, Sequence framework, Library modules - Gauche extensions
+@node  Syslog, Terminal control, Sequence framework, Library modules - Gauche extensions
 @section @code{gauche.syslog} - Syslog
 @c NODE Syslog, @code{gauche.syslog} - Syslog
 
@@ -8701,22 +8701,66 @@ the log level @var{level}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Termios, Unit testing, Syslog, Library modules - Gauche extensions
-@section @code{gauche.termios} - Termios
-@c NODE Termios, @code{gauche.termios} - Termios
+@node Terminal control, Unit testing, Syslog, Library modules - Gauche extensions
+@section @code{gauche.termios} - Terminal control
+@c NODE 端末の制御, @code{gauche.termios} - 端末の制御
 
 @deftp {Module} gauche.termios
 @mdindex gauche.termios
 @c EN
-This module defines POSIX termios interface, which
-controls terminal attributes.  This module also provides
-pseudo tty interface, if the system provides it.
+This module provides procedures to control terminals.
+The terminal API is too different between POSIX and Windows
+to provide a unified interface with reasonable resolution.
+Thus we provide different set of low-level APIs for these
+two platforms, and build high-level utility routines that
+can be used on both.
 @c JP
-このモジュールは端末の属性を制御する POSIX termios インタフェースを
-定義しています。さらに、このモジュールでは、システムが提供している場合には
+このモジュールは端末の制御のための手続きを提供します。
+端末制御APIはPOSIXとWindowsであまりに異なり、
+十分に細かい制御ができる統一したインタフェースを作るのは不可能です。
+そこで、これら二つのプラットフォームで異なる低レベルAPIを提供し、
+その上に若干の共通な高レベルAPIを構築しています。
+@c COMMON
+
+@c EN
+On Unix platforms, the low-level API provides POSIX termios interface
+as the module name suggests.  This module also provides
+pseudo tty interface, if the system supports it.
+@c JP
+Unix環境では、低レベルAPIはモジュール名からわかるように
+POSIX termiosへのインタフェースを提供しています。
+さらに、このモジュールでは、システムがサポートしている場合には
 擬似 tty のインタフェースも提供しています。
 @c COMMON
+
+@c EN
+On Windows native platforms, the low-plevel API 
+corresponds to Windows Console API.
+@c JP
+Windowsネイティブ環境では、低レベルはWindowsコンソールAPIに対応します。
+@c COMMON
 @end deftp
+
+@menu
+* Posix termios interface::     
+* Windows console API::         
+* Common high-level terminal control::  
+@end menu
+
+@node Posix termios interface, Windows console API, Terminal control, Terminal control
+@subsection Posix termios interface
+@c NODE POSIX termiosインタフェース
+
+@c EN
+These procedures are available when the feature identifier
+@code{gauche.os.windows} is @emph{not} defined.   See @code{cond-expand}
+in @ref{Feature conditional} for how to switch code using
+feature identifiers.
+@c JP
+ここに挙げる手続きは、機能シンボル@code{gauche.os.windows}が定義されて@emph{いない}
+場合にのみ利用可能です。機能シンボルによってコードを切り替える方法は
+@ref{Feature conditional}の@code{cond-expand}を参照してください。
+@c COMMON
 
 @deftp {Builtin Class} <sys-termios>
 @clindex sys-termios
@@ -9032,11 +9076,11 @@ This function is available only if the system supports @code{forkpty(3)}.
 
 @c EN
 Note: @code{sys-forkpty} has the same MT hazard as @code{sys-fork}
-(see @ref{Unix process management}, for details).  If you're
+(see @ref{Process management}, for details).  If you're
 running multiple threads, use @code{sys-forkpty-and-exec} below.
 @c JP
 注意: @code{sys-forkpty}には@code{sys-fork}と同様のマルチスレッドハザー
-ドの危険性があります。(詳細については@ref{Unix process management}参照
+ドの危険性があります。(詳細については@ref{Process management}参照
 してください)。マルチスレッドプログラムでは後述の
 @code{sys-forkpty-and-exec}を利用してください。
 @c COMMON
@@ -9057,48 +9101,291 @@ the hazard in multi-thread environment.
 @c EN
 The meanings of arguments @var{command}, @var{args}, @var{iomap} and
 @var{sigmask}
-are the same as @code{sys-exec} (see @ref{Unix process management}).
+are the same as @code{sys-exec} (see @ref{Process management}).
 If the keyword argument @var{term} is given, it is used to initialize
 the slave pty.
 @c JP
 引数@var{command}、@var{args}、@var{iomap}、@var{sigmask}の意味は
-@code{sys-exec}のものと同じです。(@ref{Unix process management}を見て
+@code{sys-exec}のものと同じです。(@ref{Process management}を見て
 ください)。キーワード引数@var{term}が与えられれば、スレーブptyの初期化
 に使われます。
 @c COMMON
 @end defun
 
+@node Windows console API, Common high-level terminal control, Posix termios interface, Terminal control
+@subsection Windows Console API
+@c NODE WindowsコンソールAPI
+
 @c EN
-The following example shows how to get a password from the user
-without echoing:
+These procedures are available when the feature identifier
+@code{gauche.os.windows} is defined.   See @code{cond-expand}
+in @ref{Feature conditional} for how to switch code using
+feature identifiers.
 @c JP
-以下の例は、ユーザからのパスワードをエコーなしで取得する方法を示しています。
+ここに挙げる手続きは、機能シンボル@code{gauche.os.windows}が定義されている
+場合にのみ利用可能です。機能シンボルによってコードを切り替える方法は
+@ref{Feature conditional}の@code{cond-expand}を参照してください。
 @c COMMON
 
-@example
-(use gauche.termios)
+Most of the procedures correspond to Windows Console API one-to-one.
+See the Windows reference for the detail description of what each API does.
 
-(define (get-password prompt)
-  (let* ((port (current-input-port))
-         (attr (sys-tcgetattr port))
-         (lflag (slot-ref attr 'lflag)))
-    ;; Show prompt
-    (display prompt)
-    (flush)
-    ;; Turn off echo during reading.
-    (dynamic-wind
-     (lambda ()
-       (slot-set! attr 'lflag (logand lflag (lognot ECHO)))
-       (sys-tcsetattr port TCSAFLUSH attr))
-     (lambda ()
-       (read-line port))
-     (lambda ()
-       (slot-set! attr 'lflag lflag)
-       (sys-tcsetattr port TCSANOW attr)))))
-@end example
+@subsubheading Attaching and detaching
+
+@defun sys-alloc-console 
+@defunx sys-free-console 
+[Windows] 
+Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
+@end defun
+
+@defun sys-generate-console-ctrl-event event pgid
+[Windows] 
+@end defun
+
+@defvr {Constant} CTRL_C_EVENT
+@defvrx {Constant} CTRL_BREAK_EVENT
+[Windows] 
+@end defvr
+
+@subsubheading Console codepage
+
+@defun sys-get-console-cp
+@defunx sys-get-console-output-cp
+@defunx sys-set-console-cp codepage
+@defunx sys-set-console-output-cp codepage
+[Windows] 
+@end defun
+
+@defun sys-get-console-cursor-info handle
+@defunx sys-set-console-cursor-info handle size visible
+[Windows] 
+@end defun
+
+@defun sys-set-console-cursor-position handle x y
+[Windows] 
+@end defun
+
+@subsubheading Console mode
+
+@defun sys-get-console-mode handle
+@defunx sys-set-console-mode handle mode
+[Windows] 
+@end defun
+
+@defvr {Constant} ENABLE_LINE_INPUT
+@defvrx {Constant} ENABLE_ECHO_INPUT
+@defvrx {Constant} ENABLE_PROCESSED_INPUT
+@defvrx {Constant} ENABLE_WINDOW_INPUT
+@defvrx {Constant} ENABLE_MOUSE_INPUT
+@defvrx {Constant} ENABLE_PROCESSED_OUTPUT
+@defvrx {Constant} ENABLE_WRAP_AT_EOL_OUTPUT
+[Windows] 
+@end defvr
+
+@subsubheading Screen buffer
+
+@defun sys-create-console-screen-buffer desired-access share-mode inheritable
+[Windows] 
+@end defun
+
+@defvr {Constant} GENERIC_READ
+@defvrx {Constant} GENERIC_WRITE
+[Windows] 
+@end defvr
+
+@defvr {Constant} FILE_SHARE_READ
+@defvrx {Constant} FILE_SHARE_WRITE
+[Windows] 
+@end defvr
+
+@defun sys-set-console-active-screen-buffer handle
+[Windows] 
+@end defun
+
+@defun sys-scroll-console-screen-buffer handle scroll-rectangle clip-rectangle x y fill
+[Windows] 
+@end defun
+
+@deftp {Class} <win:console-screen-buffer-info>
+[Windows] 
+
+@defivar {<win:console-screen-buffer-info>} size.x
+@defivarx {<win:console-screen-buffer-info>} size.y
+@end defivar
+
+@defivar {<win:console-screen-buffer-info>} cursor-position.x
+@defivarx {<win:console-screen-buffer-info>} cursor-position.y
+@end defivar
+
+@defivar {<win:console-screen-buffer-info>} attributes
+@end defivar
+
+@defivar {<win:console-screen-buffer-info>} window.left
+@defivarx {<win:console-screen-buffer-info>} window.top
+@defivarx {<win:console-screen-buffer-info>} window.right
+@defivarx {<win:console-screen-buffer-info>} window.bottom
+@end defivar
+
+@defivar {<win:console-screen-buffer-info>} maximum-window-size.x
+@defivarx {<win:console-screen-buffer-info>} maximum-window-size.y
+@end defivar
+
+@end deftp
+
+@defvr {Constant} FOREGROUND_BLUE
+@defvrx {Constant} FOREGROUND_GREEN
+@defvrx {Constant} FOREGROUND_RED
+@defvrx {Constant} FOREGROUND_INTENSITY
+@defvrx {Constant} BACKGROUND_BLUE
+@defvrx {Constant} BACKGROUND_GREEN
+@defvrx {Constant} BACKGROUND_RED
+@defvrx {Constant} BACKGROUND_INTENSITY
+[Windows] 
+@end defvr
+
+@defun sys-get-console-screen-buffer-info handle
+[Windows] 
+@end defun
+
+@defun sys-get-largest-console-window-size handle
+[Windows] 
+@end defun
+
+@defun sys-set-screen-buffer-size handle x y
+[Windows] 
+@end defun
+
+@subsubheading Console input/output
+
+@deftp {Class} <win:input-record>
+[Windows] 
+
+@defivar {<win:input-record>} event-type
+@end defivar
+
+@defivar {<win:input-record>} key.down
+@defivarx {<win:input-record>} key.repeat-count
+@defivarx {<win:input-record>} key.virtual-key-code
+@defivarx {<win:input-record>} key.unicode-char
+@defivarx {<win:input-record>} key.ascii-char
+@defivarx {<win:input-record>} key.control-key-state
+@end defivar
+
+@defivar {<win:input-record>} mouse.x
+@defivarx {<win:input-record>} mouse.y
+@defivarx {<win:input-record>} mouse.button-state
+@defivarx {<win:input-record>} mouse.event-flags
+@end defivar
+
+@defivar {<win:input-record>} window-buffer-size.x
+@defivarx {<win:input-record>} window-buffer-size.y
+@end defivar
+
+@defivar {<win:input-record>} menu.command-id
+@end defivar
+
+@defivar {<win:input-record>} focus.set-focus
+@end defivar
+
+@end deftp
+
+@defun sys-get-number-of-console-input-events handle
+[Windows] 
+@end defun
+
+@defun sys-get-number-of-console-mouse-buttons
+[Windows] 
+@end defun
+
+@defun sys-peek-console-input handle
+@defunx sys-read-console-input handle
+[Windows] 
+@end defun
+
+@defun sys-read-console handle buf
+[Windows] 
+@end defun
+
+@defun sys-read-console-output handle buf w h x y region
+[Windows] 
+@end defun
+
+@defun sys-read-console-output-attribute handle buf x y
+[Windows] 
+@end defun
+
+@defun sys-read-console-output-character handle len x y
+[Windows] 
+@end defun
+
+@defun sys-set-console-text-attribute handle attr
+[Windows] 
+@end defun
+
+@defun sys-set-console-window-info handle absolute window
+[Windows] 
+@end defun
+
+@defun sys-write-console handle string
+[Windows] 
+@end defun
+
+@defun sys-write-console-output-character handle string x y
+[Windows] 
+@end defun
+
+@defun sys-get-console-title 
+[Windows] 
+@end defun
+
+@subsubheading Standard handles
+
+@defun sys-get-std-handle which
+@defunx sys-set-std-handle which handle
+[Windows] 
+@end defun
+
+@defvr {Constant} STD_INPUT_HANDLE
+@defvrx {Constant} STD_OUTPUT_HANDLE
+@defvrx {Constant} STD_ERROR_HANDLE
+@end defvr
+
+
+@node Common high-level terminal control,  , Windows console API, Terminal control
+@subsection Common high-level terminal control
+@c NODE 共通の高レベル端末制御
+
+Currently we only have one high-level API.  We may add more as needed.
+
+@defun without-echoing iport proc
+If @var{iport} is an input port connected to a terminal, 
+sets the terminal mode non-echoing and call @var{proc} with
+@var{iport} as an argument.  Before returning from
+@code{without-echoing}, or throwing an error,
+the terminal mode is reset to the original state when this
+procedure is called.  The procedure returns whatever value(s)
+@var{proc} returns.
+
+You can also pass @code{#f} to @var{iport}.  In that case,
+this procedure tries to open a console (@code{/dev/tty} on Unix,
+@code{CON} on Windows) and set the console mode, then calls
+@var{proc} with the opened input port.  An error is thrown
+if the procedure can not open a console.
+
+If @var{iport} is other than above, this procedure
+simply calls @var{proc} with @var{iport}.  This allows
+the caller to read password from redirected input, 
+for example.
+
+Note: Because of an implementation issue, on Windows native
+platforms this procedure always changes console mode
+of the standard input handle when @code{iport} is either
+@code{#f} or a terminal input port.
+@end defun
+
 
 @c ----------------------------------------------------------------------
-@node Unit testing, Threads, Termios, Library modules - Gauche extensions
+@node Unit testing, Threads, Terminal control, Library modules - Gauche extensions
 @section @code{gauche.test} - Unit Testing
 @c NODE 単体テスト, @code{gauche.test} - 単体テスト
 

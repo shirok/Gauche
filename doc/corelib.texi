@@ -12142,7 +12142,7 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してあります。
 * Signal::                      
 * System inquiry::              
 * Time::                        
-* Unix process management::     
+* Process management::     
 * I/O multiplexing::            
 * Miscellaneous system calls::  
 @end menu
@@ -13896,6 +13896,14 @@ the handler returns.
 リスタートされます。
 @c COMMON
 
+@c EN
+On Windows native platforms, signals don't work except
+some limited support of @code{sys-kill}.
+@c JP
+Windowsネイティブ環境では、@code{sys-kill}の限定的なサポートを
+除いてシグナルは動作しません。
+@c COMMON
+
 @menu
 * Signals and signal sets::     
 * Sending signals::             
@@ -14103,6 +14111,25 @@ the process group @var{-pid}.
 全てのプロセスに送られます。
 @c COMMON
 @end itemize
+
+@c EN
+On Windows native platforms, @code{sys-kill} may take positive integer
+or a process handle (@code{<win:handle>} instance) as @var{pid}.
+Only @code{SIGKILL}, @code{SIGINT} and @code{SIGABRT} are allowed
+as @var{sig}; Gauche uses @code{TerminateProcess} to terminate
+the target process for @code{SIGKILL},
+and sends the target process
+@code{CTRL_C_EVENT} and @code{CTRL_BREAK_EVENT} for
+@code{SIGINT} and @code{SIGABRT}, respectively.
+@c JP
+Windowsネイティブ環境では、@code{sys-kill}は@var{pid}に正整数か
+プロセスハンドル(@code{<win:handle>}のインスタンス)を取ります。
+@var{sig}がサポートするのは@code{SIGKILL}、@code{SIGINT}、@code{SIGABRT}
+のみです。@code{SIGKILL}に対しては@code{TerminateProcess}を使って
+対象プロセスを終了させます。@code{SIGINT}と@code{SIGABRT}に対しては
+対象プロセスにそれぞれ@code{CTRL_C_EVENT}と@code{CTRL_BREAK_EVENT}を
+送ります。
+@c COMMON
 @end defun
 
 @c EN
@@ -15017,7 +15044,7 @@ EFBIG
 @end example
 @end defun
 
-@node Time, Unix process management, System inquiry, System interface
+@node Time, Process management, System inquiry, System interface
 @subsection Time
 @c NODE 時間
 
@@ -15307,9 +15334,9 @@ timeオブジェクトと秒数(POSIX時間)を変換します。
 @end defun
 
 
-@node Unix process management, I/O multiplexing, Time, System interface
-@subsection Unix process management
-@c NODE Unixのプロセス管理
+@node Process management, I/O multiplexing, Time, System interface
+@subsection Process management
+@c NODE プロセス管理
 
 @c EN
 The following procedures provide pretty raw, direct interface
@@ -15343,6 +15370,12 @@ interpret the returned value in a portable way.
 この関数は、@code{system()}が返した整数値を返します。
 POSIXは@code{system()}が何を返すかを定義していないので、
 戻り値をポータブルな方法で解釈することができません。
+@c COMMON
+
+@c EN
+On Windows native platforms this will pass the argument to @code{cmd.exe}.
+@c JP
+Windowsネイティブな環境では、引数は@code{cmd.exe}に渡されます。
 @c COMMON
 @end defun
 
@@ -15406,6 +15439,12 @@ you ask the manager process to fork one for you.
 アプリケーションの起動後すぐにマネージャプロセスとなる子プロセスをfork
 しておき、新たなプロセスが欲しくなったらそのマネージャプロセスに
 forkを依頼するという方法です。
+@c COMMON
+
+@c EN
+This procedure is not available on Windows native platforms.
+@c JP
+Windowsネイティブな環境ではこの手続きは使えません。
 @c COMMON
 @end defun
 
@@ -15526,6 +15565,16 @@ available!), so Gauche simply exits on the error.
 ことは実行不可能です(標準エラーがまだ有効かどうかさえ知る術がありません)。
 したがって、その場合はGaucheはエラー時には単に終了するだけです。
 @c COMMON
+
+@c EN
+On Windows native platforms, only redirections of stdin, stdout and stderr
+are handled.   Singal mask is ignored, for Windows doesn't have
+singals as the means of interprocess communication.
+@c JP
+Windowsネイティブ環境では、標準入力、標準出力、標準エラー出力に
+関するリダイレクションのみが処理されます。Windowsはプロセス間通信としての
+シグナルをサポートしないので、シグナルマスクは無視されます。
+@c COMMON
 @end defun
 
 @defun sys-fork-and-exec command args &keyword directory iomap sigmask
@@ -15552,6 +15601,24 @@ so it's pretty safe in the multithreaded environment.
 この手続き中では、@code{fork(2)}と@code{execvp(2)}の間で
 メモリアロケーションもロックの獲得も行われないため、
 マルチスレッド環境で実行しても安全になっています。
+@c COMMON
+
+@c EN
+On Windows native platforms, this procedure returns a
+Windows handle object (@code{<win:handle>}) of the created
+process instead of an integer process ID.  See below for
+Windows process handle specific API.
+
+Like @code{sys-exec}, only redirections of stdin, stdout and stderr
+are handled on Windows native platforms.
+@c JP
+Windowsネイティブ環境では、この手続きはプロセスIDではなく
+作られたプロセスに対するWindowsのハンドルオブジェクト 
+(@code{<win:handle>}) を返します。Windowsプロセスハンドル
+特有の手続きについては後に述べます。
+
+また、@code{sys-exec}同様、Windowsネイティブ環境では、標準入力、標準出力、標準エラー出力に
+関するリダイレクションのみが処理されます。
 @c COMMON
 @end defun
 
@@ -15630,6 +15697,20 @@ no child process status is available, the first value is zero.
 戻り値は2つの正確整数で、1つ目は子プロセスのID、2つ目はステータスコードです。
 @var{nohang}が真で子プロセスのステータスが利用できない場合は、1つ目の値は0です。
 @c COMMON
+
+@c EN
+On Windows native platforms, this procedure may also accept
+a Windows process handle (@code{<win:handle>}) object as @var{pid} to
+wait the specific process.  You can pass @code{-1} as @var{pid}
+to wait for any children, but you cannot wait for a specific
+process group.
+@c JP
+Windowsネイティブ環境では、この関数は@var{pid}にWindowsプロセスハンドル
+(@code{<win:handle>})オブジェクトを受け取ることもできます。
+その場合はそのハンドルの指すプロセスの終了を待ちます。
+また、@code{-1}を渡していずれかの子プロセスの終了を待つこともできますが、
+特定のプロセスグループの中の子プロセスを待つことはできません。
+@c COMMON
 @end defun
 
 @defun sys-wait-exited? status
@@ -15689,7 +15770,51 @@ signum number that stopped the child.
 @c COMMON
 @end defun
 
-@node I/O multiplexing, Miscellaneous system calls, Unix process management, System interface
+@c EN
+On Windows native platforms, exit code is not structured as on Unix.
+You cannot distinguish a process being exitted voluntarily or
+by forced termination.  Gauche uses exit code @code{#xff09} to
+terminate other process with @code{sys-kill},
+and the above @code{sys-wait-*} procedures are adjusted accordingly,
+so that @code{sys-wait-signaled?} can likely to be used to check
+whether if the child process is terminated by Gauche.
+(@xref{Signal}, for the details of signal support on Windows.)
+@code{Sys-wait-stopped?} never returns true
+on Windows native platforms (yet).
+@c JP
+Windowsネイティブ環境では、終了コードはUnixのように構造化されておらず、
+プロセスが自発的に終了したか強制的に終了させられたかを判断する一般的な方法は
+ありません。Gauche自身は他のプロセスを@code{sys-kill}で
+終了させる場合に終了コード@code{#xff09}を送り、上の@code{sys-wait-*}
+手続きもそれに合わせてあります。従ってGaucheによって終了させられたプロセスでは
+@code{sys-wait-signaled?}でそのことを検出できる可能性が高いでしょう。
+(Windows上のシグナルのサポートについては@ref{Signal}を参照してください。)
+Windowsネイティブ環境では、@code{sys-wait-stopped?}が真を返すことは
+(今のところ)ありません。
+@c COMMON
+
+@subsubheading Windows specific utilities
+
+The following procedures are to access Windows process handle.
+They are only available on Windows native platforms.
+
+@defun sys-win-process? obj
+[Windows] Returns @code{#t} iff @var{obj} is a Windows process handle object.
+@end defun
+
+@defun sys-win-process-pid handle
+[Windows] Returns an integer PID of the process represented by 
+a Windows process handle @var{handle}.  An error is signalled
+if @var{handle} is not a valid Windows process handle.
+
+Note that the API to get a pid from a process handle is only
+provided on or after Windows XP SP1.  If you call this
+procedure on Windows version before that, @code{-1} will be
+returned.
+@end defun
+
+
+@node I/O multiplexing, Miscellaneous system calls, Process management, System interface
 @subsection I/O multiplexing
 @c NODE I/Oの多重化
 
@@ -16008,6 +16133,14 @@ Bound to a positive integer that @code{sys-random} may return.
 @code{sys-random}が返す正の整数に束縛されます。
 @c COMMON
 @end defvar
+
+@defun sys-get-osfhandle port-or-fd
+[Windows] This procedure is only available on Windows native platforms.
+Returns a Windows file handle associated to the given port or
+integer file descriptor.   Throws an error if the given argument
+does not have associated file handle.
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Development helper API,  , System interface, Core library

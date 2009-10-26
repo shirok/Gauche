@@ -337,10 +337,10 @@ R5RS の @code{ceiling}。@ref{Arithmetics}参照。
 @itemx cfsetospeed
 @c EN
 Gauche's @code{sys-cfgetispeed}, @code{sys-cfgetospeed},
-@code{sys-cfsetispeed}, @code{sys-cfsetospeed}.  @xref{Termios}.
+@code{sys-cfsetispeed}, @code{sys-cfsetospeed}.  @xref{Terminal control}.
 @c JP
 Gauche の @code{sys-cfgetispeed}、@code{sys-cfgetospeed}、
-@code{sys-cfsetispeed}、@code{sys-cfsetospeed}。@ref{Termios}参照。
+@code{sys-cfsetispeed}、@code{sys-cfsetospeed}。@ref{Terminal control}参照。
 @c COMMON
 @item chdir
 @c EN
@@ -468,10 +468,10 @@ Not directly supported, but you can use @code{port-fd-dup!}.
 @itemx execve
 @itemx execvp
 @c EN
-Gauche @code{sys-exec}.  @xref{Unix process management}.
+Gauche @code{sys-exec}.  @xref{Process management}.
 For higher level interface, @ref{High Level Process Interface}.
 @c JP
-Gauche の @code{sys-exec}。@ref{Unix process management} 参照。
+Gauche の @code{sys-exec}。@ref{Process management} 参照。
 より高水準のインタフェースについては @ref{High Level Process Interface} 参照。
 @c COMMON
 @item exit
@@ -592,15 +592,15 @@ corresponds to this operation.  @xref{File ports}.
 @c COMMON
 @item fork
 @c EN
-Gauche's @code{sys-fork}.   @xref{Unix process management}.
+Gauche's @code{sys-fork}.   @xref{Process management}.
 @c JP
-Gauche の @code{sys-fork}。@ref{Unix process management} 参照。
+Gauche の @code{sys-fork}。@ref{Process management} 参照。
 @c COMMON
 @item forkpty
 @c EN
-Use @code{sys-forkpty}.  @xref{Termios}.
+Use @code{sys-forkpty}.  @xref{Terminal control}.
 @c JP
-@code{sys-forkpty} を使いましょう。@ref{Termios} 参照。
+@code{sys-forkpty} を使いましょう。@ref{Terminal control} 参照。
 @c COMMON
 @item fpathconf
 @c EN
@@ -1096,9 +1096,9 @@ You can use @code{sys-readdir} to read the directory entries at once.
 @c COMMON
 @item openpty
 @c EN
-Use @code{sys-openpty}.  @xref{Termios}.
+Use @code{sys-openpty}.  @xref{Terminal control}.
 @c JP
-@code{sys-openpty} を使いましょう。@ref{Termios} 参照。
+@code{sys-openpty} を使いましょう。@ref{Terminal control} 参照。
 @c COMMON
 @item pathconf
 @c EN
@@ -1638,11 +1638,11 @@ Not supported yet.
 @c COMMON
 @item system
 @c EN
-Gauche's @code{sys-system}.   @xref{Unix process management}.
+Gauche's @code{sys-system}.   @xref{Process management}.
 It is generally recommended to use the process library
 (@ref{High Level Process Interface}).
 @c JP
-Gauche の @code{sys-system}。@ref{Unix process management}参照。
+Gauche の @code{sys-system}。@ref{Process management}参照。
 一般的にはプロセスライブラリ(@ref{High Level Process Interface})
 を使うことを推奨します。
 @c COMMON
@@ -1665,12 +1665,12 @@ R5RS の @code{tan} および Gauche の @code{tanh}。@ref{Arithmetics}参照。
 Corresponding functions are: @code{sys-tcdrain}, @code{sys-tcflow},
 @code{sys-tcflush}, @code{sys-tcgetattr}, @code{sys-tcgetpgrp},
 @code{sys-tcsendbreak}, @code{sys-tcsetattr}, @code{sys-tcsetpgrp}.
-@xref{Termios}
+@xref{Terminal control}
 @c JP
 対応する関数はそれぞれ、@code{sys-tcdrain}、@code{sys-tcflow}、
 @code{sys-tcflush}、@code{sys-tcgetattr}、@code{sys-tcgetpgrp}、
 @code{sys-tcsendbreak}、@code{sys-tcsetattr}、@code{sys-tcsetpgrp} です。
-@ref{Termios}参照。
+@ref{Terminal control}参照。
 @c COMMON
 @item time
 @c EN
@@ -1773,15 +1773,15 @@ SLIB has @code{printf} implementation.
 @c COMMON
 @item wait
 @c EN
-Gauche's @code{sys-wait}.  @xref{Unix process management}.
+Gauche's @code{sys-wait}.  @xref{Process management}.
 @c JP
-Gauche の @code{sys-wait}。@ref{Unix process management}参照。
+Gauche の @code{sys-wait}。@ref{Process management}参照。
 @c COMMON
 @item waitpid
 @c EN
-Gauche's @code{sys-waitpid}.  @xref{Unix process management}.
+Gauche's @code{sys-waitpid}.  @xref{Process management}.
 @c JP
-Gauche の @code{sys-waitpid}。@ref{Unix process management}参照。
+Gauche の @code{sys-waitpid}。@ref{Process management}参照。
 @c COMMON
 @item wcstombs
 @itemx wctomb
