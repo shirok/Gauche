@@ -1,3 +1,11 @@
+2009-10-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm (process-body): Recognize obsoleted
+	  (return <c-func-name>) and (return <type> <c-func-name>) to
+	  issue a warning and treat them as 'call' forms.  The extensions
+	  that have not been updated recently may have thes forms, and
+	  it will be inconvenient if we stop supporting them now.
+
 2009-10-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c (Scm_FdReady): Made it work with Windows pipe.

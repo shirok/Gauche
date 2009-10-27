@@ -713,7 +713,9 @@
       [(('code . stmts) . r) (dolist (s stmts) (push-stmt! cproc s)) (loop r)]
       [([? symbol? s]) ; 'call' convention
        ;; If the named C routine returns multiple values, we don't need to
-       ;; call Scm_Values*() by ourselves.   Hence we intercept
+       ;; call Scm_Values*() by ourselves.  We generate an appropriate cise
+       ;; form (if return type is <void>, we just calls the named proc,
+       ;; otherwise we insert result stmt) and pass it to process-body-inner.
        (let* ([args (map (cut ref <> 'name)
                          (append (~ cproc'args) (~ cproc'keyword-args)))]
               [form (if (eq? (~ cproc'return-type) '<void>)
@@ -723,7 +725,21 @@
                          '<top>
                          (~ cproc'return-type))])
          (process-body-inner cproc rettype form))]
+      ;; The following two patters are obsoleted forms.  We issue a warning
+      ;; and process it as if call form is specified.
+      [(('return [? symbol? s] [? string? p]) . r)
+       (warn-obsoleted-return-form (car body))
+       (loop `((call ,s ,p) ,@r))]
+      [(('return [? string? p2]) . r)
+       (warn-obsoleted-return-form (car body))
+       (loop `((call <top> ,p2) ,@r))]
       [_ (process-body-inner cproc (~ cproc'return-type) body)])))
+
+(define (warn-obsoleted-return-form form)
+  (let1 sinfo (debug-source-info form)
+    (warn "~s:~a: Stub file contains obsoleted cproc body form ~s. \
+           It must be replaced by either 'call' form or CiSE expr."
+          (if sinfo (car sinfo) "") (if sinfo (cadr sinfo) "") form)))
 
 (define-method process-setter ((cproc <cproc>) decl)
   (cond
