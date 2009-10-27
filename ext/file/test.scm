@@ -142,7 +142,7 @@
         [else
          `((test6.o ,(make-string 100 #\o))
            (test7.o ,(make-string 100 #\o))
-           (test2.d :mode 777
+           (test2.d :mode #o777
 		    ((test10.o ,(make-string 100 #\o))
 		     (test11.o ,(make-string 100 #\o)))))])
      (test.d ((test10.o ,(make-string 100 #\o))
