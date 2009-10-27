@@ -200,7 +200,7 @@
 
 (rmrf "test.o" "test1.o" "test2.o")
 (touch "test.o")
-(run-process (cmd "ls" "-a") :output "test.o")
+(sys-system (cmds "ls" "-a" ">" "test.o"))
 
 (test* "open-input-process-port" #t
        (receive (p process) (open-input-process-port (cmd 'ls '-a))
