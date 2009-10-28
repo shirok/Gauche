@@ -72,10 +72,10 @@
 (define-enum Z_FILTERED)
 (define-enum Z_HUFFMAN_ONLY)
 (define-enum Z_RLE)
-(define-enum Z_FIXED)
+(define-enum-conditionally Z_FIXED)
 (define-enum Z_DEFAULT_STRATEGY)
 (define-enum Z_BINARY)
-(define-enum Z_TEXT)
+(define-enum-conditionally Z_TEXT)
 (define-enum Z_ASCII)
 (define-enum Z_UNKNOWN)
 

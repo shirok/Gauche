@@ -1,3 +1,8 @@
+2009-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* ext/zlib/zliblib.stub (Z_TEXT, Z_FIXED): Conditionally define
+	  these, since older zlib doesn't have them.
+
 2009-10-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm (process-body): Recognize obsoleted

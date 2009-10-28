@@ -55,12 +55,14 @@
           Z_NO_COMPRESSION Z_BEST_SPEED
           Z_BEST_COMPRESSION Z_DEFAULT_COMPRESSION
           Z_FILTERED Z_HUFFMAN_ONLY
-          Z_RLE Z_FIXED Z_DEFAULT_STRATEGY
-          Z_BINARY Z_TEXT Z_ASCII Z_UNKNOWN
+          Z_RLE Z_DEFAULT_STRATEGY
+          Z_BINARY Z_ASCII Z_UNKNOWN
           ))
 (select-module rfc.zlib)
 
 (dynamic-load "rfc--zlib")
+
+(export-if-defined Z_TEXT Z_FIXED)
 
 ;; body
 (define (open-deflating-port source :key
