@@ -27,7 +27,9 @@ dnl
 if test $enable_ipv6 = yes; then
   AC_CACHE_CHECK([for IPv6], ac_cv_ipv6, [
   AC_TRY_COMPILE([
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
 #include <sys/socket.h>], [
   socket(AF_INET6, SOCK_STREAM, 0);
   ], ac_cv_ipv6=yes, ac_cv_ipv6=no)])
@@ -49,18 +51,38 @@ esac
 dnl
 dnl Check if net/if.h and struct ifreq
 dnl
-AC_CHECK_HEADERS(net/if.h,,,[#include <sys/socket.h>])
-AC_CHECK_TYPES([struct ifreq],,,[
+AC_CHECK_HEADERS(net/if.h,,,[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
 #include <sys/socket.h>
+])
+AC_CHECK_TYPES([struct ifreq],,,[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#include <sys/socket.h>
+#ifdef HAVE_NET_IF_H
 #include <net/if.h>
+#endif
 ])
 
 dnl
 dnl Checks if sockaddr_in and sockaddr_in6 has *_len field
 dnl
-AC_CHECK_MEMBERS([struct sockaddr_un.sun_len],,,[#include <sys/un.h>])
+AC_CHECK_MEMBERS([struct sockaddr_un.sun_len],,,[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#include <sys/un.h>
+])
 AC_CHECK_MEMBERS([struct sockaddr_in.sin_len,
-                  struct sockaddr_in6.sin6_len],,,[#include <netinet/in.h>])
+                  struct sockaddr_in6.sin6_len],,,[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#include <netinet/in.h>
+])
 
 dnl
 dnl Check for some extra libraries
