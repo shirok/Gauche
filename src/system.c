@@ -2198,7 +2198,7 @@ int fork(void)
 int pipe(int fd[])
 {
 #define PIPE_BUFFER_SIZE 512
-    /* NB: We create pipe with NOINHERIT to avoid complextion when spawning
+    /* NB: We create pipe with NOINHERIT to avoid complication when spawning
        child process.  Sys_Exec will dups the handle with inheritable flag
        for the children.  */
     int r = _pipe(fd, PIPE_BUFFER_SIZE, O_BINARY|O_NOINHERIT);
