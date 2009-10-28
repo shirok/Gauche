@@ -68,6 +68,20 @@ AC_CHECK_TYPES([struct ifreq],,,[
 ])
 
 dnl
+dnl Checks if sturct ifreq has ifr_ifindex and/or ifr_index field
+dnl
+AC_CHECK_MEMBERS([struct ifreq.ifr_ifindex,
+                  struct ifreq.ifr_index],,,[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#include <sys/socket.h>
+#ifdef HAVE_NET_IF_H
+#include <net/if.h>
+#endif
+])
+
+dnl
 dnl Checks if sockaddr_in and sockaddr_in6 has *_len field
 dnl
 AC_CHECK_MEMBERS([struct sockaddr_un.sun_len],,,[

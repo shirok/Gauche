@@ -636,8 +636,12 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
                 IFNAMSIZ-1);
         SCM_SYSCALL(r, ioctl(s->fd, SIOCGIFINDEX, &ifreq_pkt));
         if (r < 0) Scm_SysError("ioctl(SIOCGIFINDEX) failed");
+#if HAVE_STRUCT_IFREQ_IFR_IFINDEX
         return Scm_MakeInteger(ifreq_pkt.ifr_ifindex);
-#endif /*SIOCGIFNAME*/
+#elif HAVE_STRUCT_IFREQ_IFR_INDEX
+       return Scm_MakeInteger(ifreq_pkt.ifr_index);
+#endif /*HAVE_STRUCT_IFREQ_IFR_INDEX*/
+#endif /*SIOCGIFINDEX*/
     default:
         Scm_Error("unsupported ioctl operation: %d", request);
     }

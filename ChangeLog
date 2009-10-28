@@ -1,3 +1,10 @@
+2009-10-28  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/net.c, ext/net/net.ac, src/gauche/config.h.in
+	  (HAVE_STRUCT_IFREQ_IFR_IFINDEX, HAVE_STRUCT_IFREQ_IFR_INDEX):
+	  FreeBSD7.2 has ifreq.ifr_index instead of ifreq.ifr_ifindex,
+	  so we check which is available.  Patch from Naohiro NISHIKAWA.
+
 2009-10-27  Shiro Kawai  <shiro@acm.org>
 
 	* ext/zlib/zliblib.stub (Z_TEXT, Z_FIXED): Conditionally define
