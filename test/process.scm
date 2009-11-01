@@ -357,7 +357,7 @@
          (call-with-output-process (cmds "cat" "NoSuchFile")
            (lambda (out) #f) :error "test1.o")))
 
-(test* "call-with-input-process (redirect/error - handle)" 1
+(test* "call-with-output-process (redirect/error - handle)" 1
        (let/cc k
          (call-with-output-process (cmd 'cat 'NoSuchFile)
            port->string
