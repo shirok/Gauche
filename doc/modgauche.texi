@@ -4048,7 +4048,7 @@ the log drain temporary.
 引数無しで呼ばれると、@code{log-format}が使う、
 現在のデフォルトのログの行き先が返されます。
 まだデフォルトのログの行き先が@code{log-open}で指定されていない場合は
-@code{#f}が帰ります。
+@code{#f}が返ります。
 
 新たな@code{<log-drain>}オブジェクトか@code{#f}を引数にして呼び出すと、
 デフォルトのログの行き先がそれに変更されます。
@@ -5844,7 +5844,7 @@ Looks up a host named @var{name}.
 If found, returns a @code{<sys-hostent>} object.
 Otherwise, returns @code{#f}.
 @c JP
-@var{name}という名まえのホストを探し、見つかれば、@code{<sys-hostent>}
+@var{name}という名前のホストを探し、見つかれば、@code{<sys-hostent>}
 オブジェクトを返します。見つからなければ、@code{#f} を返します。
 @c COMMON
 @example
@@ -5932,7 +5932,7 @@ Otherwise, @code{#f} is returned.
 ネットワークサービスデータベースをサービス名 @var{name} および
 プロトコル @var{proto} で検索します。@var{name} および @var{proto}
 は文字列でなければなりません。サービスが見つかれば、@code{<sys-servent>}
-のインスタンスが返します。見つからなければ、@code{#f} を返します。
+のインスタンスを返します。見つからなければ、@code{#f} を返します。
 @c COMMON
 @example
 (let ((serv (sys-getservbyname "http" "tcp")))
@@ -5956,7 +5956,7 @@ Otherwise, @code{#f} is returned.
 プロトコル @var{proto} で検索します。@var{port} は正確な整数でなければ
 なりません。また、@var{proto} は文字列でなければなりません。
 サービスが見つかれば、@code{<sys-servent>}
-のインスタンスが返します。見つからなければ、@code{#f} を返します。
+のインスタンスを返します。見つからなければ、@code{#f} を返します。
 @c COMMON
 @example
 (let ((serv (sys-getservbyport 6000 "tcp")))
