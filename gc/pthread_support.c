@@ -275,7 +275,9 @@ static ptr_t marker_sp[MAX_MARKERS] = {0};
 void * GC_mark_thread(void * id)
 {
   word my_mark_no = 0;
+  IF_CANCEL(int cancel_state;)
 
+  DISABLE_CANCEL(cancel_state);
   marker_sp[(word)id] = GC_approx_sp();
 # ifdef IA64
     marker_bsp[(word)id] = GC_save_regs_in_stack();
@@ -381,6 +383,19 @@ GC_thread GC_new_thread(pthread_t id)
     	result = &first_thread;
     	first_thread_used = TRUE;
     } else {
+        /* [SK] */
+        GC_thread z = GC_lookup_thread(id);
+        if (z) {
+#   if defined(THREAD_LOCAL_ALLOC)
+            GC_destroy_thread_local(&(z->tlfs));
+#   endif
+            if (z -> flags & DETACHED) {
+                GC_delete_thread(id);
+            } else {
+                z -> flags |= FINISHED;
+            }
+        }
+        /* [/SK] */
         result = (struct GC_Thread_Rep *)
         	 GC_INTERNAL_MALLOC(sizeof(struct GC_Thread_Rep), NORMAL);
 	GC_ASSERT(result -> flags == 0);
@@ -594,6 +609,7 @@ extern GC_bool GC_collection_in_progress(void);
 void GC_wait_for_gc_completion(GC_bool wait_for_all)
 {
     GC_ASSERT(I_HOLD_LOCK());
+    ASSERT_CANCEL_DISABLED();
     if (GC_incremental && GC_collection_in_progress()) {
 	int old_gc_no = GC_gc_no;
 
@@ -621,6 +637,7 @@ void GC_wait_for_gc_completion(GC_bool wait_for_all)
 /* quite guarantee that.  But we give it our best shot.  (That same	*/
 /* spec also implies that it's not safe to call the system malloc	*/
 /* between fork() and exec().  Thus we're doing no worse than it.	*/
+IF_CANCEL(static int fork_cancel_state;)
 
 /* Called before a fork()		*/
 void GC_fork_prepare_proc(void)
@@ -633,6 +650,7 @@ void GC_fork_prepare_proc(void)
     /* Wait for an ongoing GC to finish, since we can't finish it in	*/
     /* the (one remaining thread in) the child.				*/
       LOCK();
+      DISABLE_CANCEL(fork_cancel_state);
 #     if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
         GC_wait_for_reclaim();
 #     endif
@@ -648,6 +666,7 @@ void GC_fork_parent_proc(void)
 #   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
       GC_release_mark_lock();
 #   endif
+    RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
 }
 
@@ -665,6 +684,7 @@ void GC_fork_child_proc(void)
         GC_markers = 1;
         GC_parallel = FALSE;
 #   endif /* PARALLEL_MARK */
+    RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
 }
 #endif /* HANDLE_FORK */
@@ -910,8 +930,10 @@ struct start_info {
 int GC_unregister_my_thread(void)
 {
     GC_thread me;
+    IF_CANCEL(int cancel_state;)
 
     LOCK();
+    DISABLE_CANCEL(cancel_state);
     /* Wait for any GC that may be marking from our stack to	*/
     /* complete before we remove this thread.			*/
     GC_wait_for_gc_completion(FALSE);
@@ -927,6 +949,7 @@ int GC_unregister_my_thread(void)
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_remove_specific(GC_thread_key);
 #   endif
+    RESTORE_CANCEL(cancel_state);
     UNLOCK();
     return GC_SUCCESS;
 }
@@ -1188,9 +1211,12 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     /* with it.  Thus it doesn't matter whether it is otherwise		*/
     /* visible to the collector.					*/
     if (0 == result) {
+        IF_CANCEL(int cancel_state;)
+        DISABLE_CANCEL(cancel_state);
 	while (0 != sem_wait(&(si -> registered))) {
             if (EINTR != errno) ABORT("sem_wait failed");
 	}
+        RESTORE_CANCEL(cancel_state);
     }
     sem_destroy(&(si -> registered));
     LOCK();
@@ -1429,6 +1455,7 @@ void GC_release_mark_lock(void)
 void GC_wait_builder(void)
 {
     GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
+    ASSERT_CANCEL_DISABLED();
 #   ifdef GC_ASSERTIONS
 	GC_mark_lock_holder = NO_THREAD;
 #   endif
@@ -1467,6 +1494,7 @@ static pthread_cond_t mark_cv = PTHREAD_COND_INITIALIZER;
 void GC_wait_marker(void)
 {
     GC_ASSERT(GC_mark_lock_holder == NUMERIC_THREAD_ID(pthread_self()));
+    ASSERT_CANCEL_DISABLED();
 #   ifdef GC_ASSERTIONS
 	GC_mark_lock_holder = NO_THREAD;
 #   endif

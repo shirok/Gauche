@@ -66,6 +66,10 @@
 # define GC_REGISTER_MAIN_STATIC_DATA() TRUE
 #endif
 
+#ifdef NEED_CANCEL_DISABLE_COUNT
+  __thread unsigned char GC_cancel_disable_count = 0;
+#endif
+
 GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 
 
@@ -477,8 +481,11 @@ void GC_init_inner()
         word dummy;
 #   endif
     word initial_heap_sz = (word)MINHINCR;
+    IF_CANCEL(int cancel_state;)
     
     if (GC_is_initialized) return;
+
+    DISABLE_CANCEL(cancel_state);
 
     /* Note that although we are nominally called with the */
     /* allocation lock held, the allocation lock is now	   */
@@ -772,6 +779,7 @@ void GC_init_inner()
         GC_init_dyld();
     }
 #   endif
+    RESTORE_CANCEL(cancel_state);
 }
 
 void GC_enable_incremental(void)
@@ -919,7 +927,9 @@ size_t len;
 {
      register int bytes_written = 0;
      register int result;
-     
+     IF_CANCEL(int cancel_state;)
+
+     DISABLE_CANCEL(cancel_state);
      while (bytes_written < len) {
 #	ifdef GC_SOLARIS_THREADS
 	    result = syscall(SYS_write, fd, buf + bytes_written,
@@ -927,9 +937,13 @@ size_t len;
 #	else
      	    result = write(fd, buf + bytes_written, len - bytes_written);
 #	endif
-	if (-1 == result) return(result);
+        if (-1 == result) {
+            RESTORE_CANCEL(cancel_state);
+            return(result);
+        }
 	bytes_written += result;
     }
+     RESTORE_CANCEL(cancel_state);
     return(bytes_written);
 }
 #endif /* UN*X */

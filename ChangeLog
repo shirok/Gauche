@@ -1,3 +1,17 @@
+2009-11-03  Shiro Kawai  <shiro@acm.org>
+
+	* gc/misc.c, gc/alloc.c, gc/os_dep.c, gc_pthread_support.c,
+	  gc/pthread_stop_world.c, gc/include/private/gcconfig.h,
+	  gc/include/private/gc_priv.h: Back port pthread_cancel safe
+	  patch from gc cvs head.
+	* gc_pthread_support.c (GC_new_thread): Remove duplicate entry
+	  before registering a new one.  This particular case happens
+	  with glibc-2.7/i386, where GC_exit_handler isn't called when
+	  the thread exits with pthread_exit() or pthread_cancel().
+	  I'm not sure the real cause is in gc or glibc, but at least
+	  this change workarounds the deadlock situation caused by the
+	  failure of GC_exit_handler.
+
 2009-10-28  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/net.c, ext/net/net.ac, src/gauche/config.h.in

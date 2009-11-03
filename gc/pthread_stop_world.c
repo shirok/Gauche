@@ -150,6 +150,7 @@ void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
     int dummy;
     pthread_t my_thread = pthread_self();
     GC_thread me;
+    IF_CANCEL(int cancel_state;)
 #   ifdef PARALLEL_MARK
 	word my_mark_no = GC_mark_no;
 	/* Marker can't proceed until we acknowledge.  Thus this is	*/
@@ -160,6 +161,7 @@ void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 
     if (sig != SIG_SUSPEND) ABORT("Bad signal in suspend_handler");
 
+    DISABLE_CANCEL(cancel_state);
 #   if DEBUG_THREADS
       GC_printf("Suspending 0x%x\n", (unsigned)my_thread);
 #   endif
@@ -175,7 +177,8 @@ void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 	    WARN("Duplicate suspend signal in thread %lx\n",
 		 pthread_self());
 	}
-	return;
+        RESTORE_CANCEL(cancel_state);
+        return;
     }
 #   ifdef SPARC
 	me -> stop_info.stack_ptr = GC_save_regs_in_stack();
@@ -217,6 +220,7 @@ void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 #   if DEBUG_THREADS
       GC_printf("Continuing 0x%x\n", (unsigned)my_thread);
 #   endif
+    RESTORE_CANCEL(cancel_state);
 }
 
 void GC_restart_handler(int sig)

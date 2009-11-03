@@ -264,6 +264,7 @@ void GC_maybe_gc(void)
     static int n_partial_gcs = 0;
 
     GC_ASSERT(I_HOLD_LOCK());
+    ASSERT_CANCEL_DISABLED();
     if (GC_should_collect()) {
         if (!GC_incremental) {
             GC_gcollect_inner();
@@ -320,6 +321,7 @@ void GC_maybe_gc(void)
 GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 {
     CLOCK_TYPE start_time, current_time;
+    ASSERT_CANCEL_DISABLED();
     if (GC_dont_gc) return FALSE;
     if (GC_incremental && GC_collection_in_progress()) {
       if (GC_print_stats) {
@@ -401,8 +403,10 @@ int GC_deficit = 0;	/* The number of extra calls to GC_mark_some	*/
 void GC_collect_a_little_inner(int n)
 {
     int i;
-    
+    IF_CANCEL(int cancel_state;)
+
     if (GC_dont_gc) return;
+    DISABLE_CANCEL(cancel_state);
     if (GC_incremental && GC_collection_in_progress()) {
     	for (i = GC_deficit; i < GC_RATE*n; i++) {
     	    if (GC_mark_some((ptr_t)0)) {
@@ -432,6 +436,7 @@ void GC_collect_a_little_inner(int n)
     } else {
         GC_maybe_gc();
     }
+    RESTORE_CANCEL(cancel_state);
 }
 
 int GC_collect_a_little(void)
@@ -750,17 +755,20 @@ int GC_try_to_collect(GC_stop_func stop_func)
 {
     int result;
     DCL_LOCK_STATE;
+    IF_CANCEL(int cancel_state;)
     
     if (!GC_is_initialized) GC_init();
     if (GC_debugging_started) GC_print_all_smashed();
     GC_INVOKE_FINALIZERS();
     LOCK();
+    DISABLE_CANCEL(cancel_state);
     ENTER_GC();
     if (!GC_is_initialized) GC_init_inner();
     /* Minimize junk left in my registers */
       GC_noop(0,0,0,0,0,0);
     result = (int)GC_try_to_collect_inner(stop_func);
     EXIT_GC();
+    RESTORE_CANCEL(cancel_state);
     UNLOCK();
     if(result) {
         if (GC_debugging_started) GC_print_all_smashed();
@@ -985,6 +993,9 @@ unsigned GC_fail_count = 0;
 
 GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page)
 {
+    IF_CANCEL(int cancel_state;)
+
+    DISABLE_CANCEL(cancel_state);
     if (!GC_incremental && !GC_dont_gc &&
 	((GC_dont_expand && GC_bytes_allocd > 0) || GC_should_collect())) {
       GC_gcollect_inner();
@@ -1019,6 +1030,7 @@ GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page)
 #	    if !defined(AMIGA) || !defined(GC_AMIGA_FASTALLOC)
 	      WARN("Out of Memory!  Returning NIL!\n", 0);
 #	    endif
+            RESTORE_CANCEL(cancel_state);
 	    return(FALSE);
 	}
       } else {
@@ -1027,6 +1039,7 @@ GC_bool GC_collect_or_expand(word needed_blocks, GC_bool ignore_off_page)
 	  }
       }
     }
+    RESTORE_CANCEL(cancel_state);
     return(TRUE);
 }
 

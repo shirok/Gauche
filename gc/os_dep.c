@@ -154,6 +154,7 @@ ssize_t GC_repeat_read(int fd, char *buf, size_t count)
     ssize_t num_read = 0;
     ssize_t result;
     
+    ASSERT_CANCEL_DISABLED();
     while (num_read < count) {
 	result = READ(fd, buf + num_read, count - num_read);
 	if (result < 0) return result;
@@ -1196,8 +1197,13 @@ int GC_get_stack_base(struct GC_stack_base *b)
       /* least the main thread.						*/
       LOCK();
       {
-	ptr_t bsp = GC_save_regs_in_stack();
-	ptr_t next_stack = GC_greatest_stack_base_below(bsp);
+        IF_CANCEL(int cancel_state;)
+        ptr_t bsp;
+        ptr_t next_stack;
+
+        DISABLE_CANCEL(cancel_state);
+	bsp = GC_save_regs_in_stack();
+	next_stack = GC_greatest_stack_base_below(bsp);
 	if (0 == next_stack) {
           b -> reg_base = GC_find_limit(bsp, FALSE);
 	} else {
@@ -1205,6 +1211,7 @@ int GC_get_stack_base(struct GC_stack_base *b)
 	  /* growing it.						*/
           b -> reg_base = GC_find_limit_with_bound(bsp, FALSE, next_stack);
 	}
+        RESTORE_CANCEL(cancel_state);
       }
       UNLOCK();
 #   endif
@@ -1225,9 +1232,10 @@ int GC_get_stack_base(struct GC_stack_base *b)
 /* FIXME - Implement better strategies here.			*/
 int GC_get_stack_base(struct GC_stack_base *b)
 {
-    int dummy;
-
 #   ifdef NEED_FIND_LIMIT
+      int dummy;
+      IF_CANCEL(int cancel_state;)
+      DISABLE_CANCEL(cancel_state);
 #     ifdef STACK_GROWS_DOWN
     	b -> mem_base = GC_find_limit((ptr_t)(&dummy), TRUE);
 #       ifdef IA64
@@ -1236,6 +1244,7 @@ int GC_get_stack_base(struct GC_stack_base *b)
 #     else
 	b -> mem_base = GC_find_limit(&dummy, FALSE);
 #     endif
+      RESTORE_CANCEL(cancel_state);
       return GC_SUCCESS;
 #   else
       return GC_UNIMPLEMENTED;
