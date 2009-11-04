@@ -1,5 +1,8 @@
 2009-11-03  Shiro Kawai  <shiro@acm.org>
 
+	* gc/dyn_load.c (GC_FirstDLOpenedLinkMap): Applied a patch
+	  from enami to support the newest NetBSD-current.
+
 	* gc/misc.c, gc/alloc.c, gc/os_dep.c, gc_pthread_support.c,
 	  gc/pthread_stop_world.c, gc/include/private/gcconfig.h,
 	  gc/include/private/gc_priv.h: Back port pthread_cancel safe

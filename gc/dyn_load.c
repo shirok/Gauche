@@ -78,6 +78,8 @@ static int (*GC_has_static_roots)(const char *, void *, size_t);
 #endif
 
 #if defined(NETBSD)
+#   include <sys/param.h>
+#   include <dlfcn.h>
 #   include <machine/elf_machdep.h>
 #   define ELFSIZE ARCH_ELFSIZE
 #endif
@@ -484,12 +486,17 @@ GC_bool GC_register_main_static_data()
 
 # endif
 
+#ifndef __NetBSD_Prereq__
+#define __NetBSD_Prereq__(x,y,z) 0
+#endif
+
 #ifdef __GNUC__
 # pragma weak _DYNAMIC
 #endif
 extern ElfW(Dyn) _DYNAMIC[];
 
 static struct link_map *
+
 GC_FirstDLOpenedLinkMap()
 {
     ElfW(Dyn) *dp;
@@ -499,6 +506,7 @@ GC_FirstDLOpenedLinkMap()
         return(0);
     }
     if( cachedResult == 0 ) {
+#if !defined(NETBSD) || !__NetBSD_Prereq__(5,99,19)
         int tag;
         for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
             if( tag == DT_DEBUG ) {
@@ -508,6 +516,15 @@ GC_FirstDLOpenedLinkMap()
                 break;
             }
         }
+#else  /* defined(NETBSD) && __NetBSD_Prereq__(5,99,19) */
+        struct link_map *lm = NULL;
+        int rv = dlinfo(RTLD_SELF, RTLD_DI_LINKMAP, &lm); 
+        if (rv != 0)
+            return (0);
+        if (lm == NULL)
+            return (0);
+        cachedResult = lm;
+#endif /* defined(NETBSD) && __NetBSD_Prereq__(5,99,19) */
     }
     return cachedResult;
 }
