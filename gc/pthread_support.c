@@ -367,6 +367,8 @@ void GC_push_thread_structures(void)
 #   endif
 }
 
+void GC_delete_thread(pthread_t id);
+
 /* It may not be safe to allocate when we register the first thread.	*/
 static struct GC_Thread_Rep first_thread;
 
