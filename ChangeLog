@@ -2,6 +2,10 @@
 
 	* gc/dyn_load.c (GC_FirstDLOpenedLinkMap): Applied a patch
 	  from enami to support the newest NetBSD-current.
+	  NB: We avoid using __NetBSD_Prereq__, for its definition
+	  was changed in incompatible way sometime around 4.99.x and
+	  that made it unusable to test across wider range of
+	  NetBSD versions.
 
 	* gc/misc.c, gc/alloc.c, gc/os_dep.c, gc_pthread_support.c,
 	  gc/pthread_stop_world.c, gc/include/private/gcconfig.h,
