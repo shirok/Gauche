@@ -91,7 +91,7 @@
                 PUSH_ARG(p);                                            \
             } else {                                                    \
                 /* 'unfold' rest arg */                                 \
-                CHECK_STACK(reqargs + optargs - argc);                  \
+                CHECK_STACK(reqargs + optargs - argc + 1);              \
                 for (c=argc; SCM_PAIRP(p) && c<reqargs+optargs; c++) {  \
                     PUSH_ARG(SCM_CAR(p));                               \
                     p = SCM_CDR(p);                                     \
@@ -105,13 +105,13 @@
                 wna(vm, VAL0, rargc+argc-1, rargc); RETURN_OP(); NEXT;  \
             }                                                           \
             POP_ARG(p);  /* tail of arglist */                          \
-            if (argc-1 < reqargs) {                                     \
+            if (rargc > 0) {                                            \
                 /* 'unfold' rest arg */                                 \
-                CHECK_STACK(reqargs - argc);                            \
-                for (c=argc-1; SCM_PAIRP(p) && c<reqargs; c++) {        \
+                CHECK_STACK(rargc);                                     \
+                do {                                                    \
                     PUSH_ARG(SCM_CAR(p));                               \
                     p = SCM_CDR(p);                                     \
-                }                                                       \
+                } while (--rargc > 0);                                  \
             }                                                           \
         }                                                               \
         argc = SP-ARGP;                                                 \
