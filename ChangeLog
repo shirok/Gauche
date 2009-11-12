@@ -1,3 +1,8 @@
+2009-11-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (with-connection): Fixed to make a connection
+	  to the proxy if it is specified (pointed by Naohiro NISHIKAWA).
+
 2009-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/vmcall.c (ADJUST_ARGUMENT_FRAME): Fixed a boundary case

@@ -332,7 +332,7 @@
         (else (make-client-socket server 80))))
 
 (define (with-connection conn proc)
-  (let1 s (server->socket (ref conn'server))
+  (let1 s (server->socket (or (ref conn'proxy) (ref conn'server)))
     (unwind-protect
         (proc (socket-input-port s) (socket-output-port s))
       (socket-close s))))
