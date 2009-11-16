@@ -1,15 +1,13 @@
-# Create Mingw binary distribution.
+# Create MinGW binary distribution.
+# You need MinGW and MSYS.  (You no longer need Cygwin.)
+# The compiled binary is installed in ../Gauche-mingw-dist.  You can just
+# zip it and distribute.
 # See mingw-memo.txt for the details.
 
-# You need Cygwin, and Cygwin-version of Gauche installed in order to
-# make Mingw binary package from the release tarball.
-
-# Set those two variables for your env.
-mingwdir=${MINGWDIR:-/cygdrive/c/mingw}
-cyggosh=${CYGGOSH:-/usr/local/bin/gosh}
+# Set MINGWDIR if MinGW is installed in different place.
+mingwdir=${MINGWDIR:-/mingw}
 
 # make sure we're going to use Mingw gcc
-PATH=$mingwdir/bin:$PATH
 case `gcc --version` in
   *mingw*) ;;
   *) echo "Set PATH to have MinGW bin directory first"
@@ -21,16 +19,26 @@ if [ -f Makefile ]; then make distclean; fi
 if [ -f examples/spigot/Makefile ]; then 
   (cd examples/spigot; make maintainer-clean);
 fi
+if [ -f examples/mqueue-cpp/Makefile ]; then 
+  (cd examples/mqueue-cpp; make maintainer-clean);
+fi
 distdir=`pwd`/../Gauche-mingw-dist
 rm -rf $distdir
-./configure --build=i686-pc-mingw32 --enable-multibyte=utf8 --prefix=$distdir/Gauche
+./configure --enable-multibyte=utf8 --prefix=$distdir/Gauche
 make
 
-# use Cygwin's gosh to install stuff
-VERSION=`cat VERSION`
-make GOSH=$cyggosh install
-(cd src; make GOSH=$cyggosh install-mingw)
+# prepare precompiled directory tree.
+make install
+(cd src; make install-mingw)
 rm -rf $distdir/Gauche/lib/libgauche.dll*
 cp COPYING $distdir/Gauche
 cp $mingwdir/bin/mingwm10.dll $distdir/Gauche/bin
-(cd $distdir; zip -r Gauche-mingw-$VERSION.zip Gauche)
+for dll in libcharset-1.dll libiconv-2.dll libz-1.dll; do
+  if [ -f $mingwdir/bin/$dll ]; then
+    cp $mingwdir/bin/$dll $distdir/Gauche/bin
+  fi
+done
+
+# 'zip' isn't included in MinGW.
+#VERSION=`cat VERSION`
+#(cd $distdir; zip -r Gauche-mingw-$VERSION.zip Gauche)
