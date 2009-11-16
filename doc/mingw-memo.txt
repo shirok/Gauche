@@ -2,73 +2,44 @@ A note on Windows/MinGW support
 
 Now you can compile Gauche to use MinGW runtime library
 (see http://www.mingw.org/ ), so that the produced binary can
-be easily distributed.   Although many system-related functions
-don't work because MinGW is not quite POSIX, it may be useful
-for Windows users to try out Gauche without installing the pile
-of other libraries.
+be easily distributed.
 
-The quality is experimental.  Tests fail miserably.  We'll
-gradually add support layer to emulate the features MinGW lacks.
+Because of the difference of the underlying system, not all
+system-related procedures are available on MinGW port.
+The reference manual tells whether a particular procedure
+is supported on "Windows native"---meaning MinGW or WinVC version.
 
 
 [Compilation]
 
-Although you can run pre-compiled Gauche/mingw stand-alone,
-you need cygwin enviroment to compile it.  (I haven't tried
-MSYS.  It may work, too).
+To compile MinGW version, you also need MSYS environment
+in order to run 'configure'.   (You don't need MSYS to run
+the compiled Gauche.)
 
-First, set PATH so that MinGW's gcc comes before Cygwin gcc.  
-For example, if you installed MinGW environment under C:/mingw, say:
+Most extension modules work, although system-related ones
+may have limited functionalities.   You can compile ext/zlib
+if you have installed mingw-zlib DLL before 'configure'
+(you need both "dll" and "dev" tarballs installed).
 
-  $ PATH=/cygdrive/c/mingw/bin:${PATH}
-
-Now you can run configure with --build option to tell you'll 
-configure for mingw.  It is better to set the encoding utf8,
-to deal with multibyte file names.
-
-  $ ./configure --build=i386-pc-mingw32 \
-                --enable-multibyte=utf8 \
-                --prefix=/path/to/install
-
-(You can use 'i586' or 'i686', depending on which processor
-you have).
-
-Then you can make it.  (Make sure you start from a clean source 
-tree; if you have remaining stuff from cygwin build, for example,
-you'll fail.  Good way to make sure of it is to run 'make distclean'
-before configure.)
-
-You need a bit of trick for installation, though.  Give the
-Cygwin version of gosh as GOSH parameter.  You also have to run
-install-mingw target.
-
-  $ make
-  $ make GOSH=/path/to/cygwin/gosh install
-  $ (cd src; make GOSH=/path/to/cygwin/gosh install-mingw)
-
-If you want to specify the installation directory by --prefix, 
-you should give it a Cygwin pathname.   Unlike the normal Gauche,
-however, the installation path won't be embedded in the Gauche 
-library; gosh and gauche-config will know its installed 
-location at runtime.  So you can move the installed Gauche tree
-afterwards.
- 
-In the src/ directory, there's a shell script mingw-dist.sh
-which configures, builds and creates a zip archive of MinGW
-distribution.  
+Gdbm isn't work straightforwardly, since there's no official
+MinGW port of gdbm.  MSYS-gdbm does NOT work.  You may be
+able to compile gdbm from source on MinGW (you need some patch;
+look for the Net.  It is also said that you have to configure
+it with --disable-shared.)  Once you have MinGW gdbm installed,
+Gauche's 'configure' will find it and builds dbm.gdbm etc,
+though some test errors result.
 
 
-[Building extensions]
+[Installtaion and packaging]
 
-We checked at least Gauche-gl works with MinGW version of gosh.
-Again, you need Cygwin environment to build the extension
-(you have to run ./configure after all).
-However, you no longer need Cygwin version of gosh; actually,
-you have to set a path so that the ./configure script finds
-MinGW version of gosh, gauche-config and other gauche-* tools.
+If you want to run the mingw version of Gauche on the same
+machine you compile it, probably it is easier to give
+--prefix=/mingw to 'configure'.
 
-Just ./configure, make, and make install should work.
-
-
-
-
+If you want to copy compiled Gauche to the machine where
+mingw might not exist, you need to include mingw DLL 
+(and zlib DLL if you compiled with zlib).  There's a
+convenience shell script in src/mingw-dist.sh.   Just run
+it on the top of the Gauche source directory, and it will
+create a directory ../Gauche-mingw-dist and installs compiled
+Gauche into it, with MinGW dlls.
