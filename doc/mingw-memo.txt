@@ -16,12 +16,23 @@ To compile MinGW version, you also need MSYS environment
 in order to run 'configure'.   (You don't need MSYS to run
 the compiled Gauche.)
 
-Most extension modules work, although system-related ones
-may have limited functionalities.   You can compile ext/zlib
-if you have installed mingw-zlib DLL before 'configure'
-(you need both "dll" and "dev" tarballs installed).
+The following MinGW libraries are also recommended, although
+you can build Gauche without them.   They don't come with MinGW
+itself.  You have to download the precompiled tarballs from
+the MinGW download site and untar them under c:\mingw (or
+the directory you installed MinGW.)
 
-Gdbm isn't work straightforwardly, since there's no official
+- MinGW libiconv
+    Required to make gauche.charconv fully functional.
+    You need libiconv-dll, libiconv-dev, libcharset-dll.
+- MinGW zlib
+    Required to make rfc.zlib.
+    You need libz-dll and libz-dev.
+
+(Note: You'll find MSYS {libiconv,zlib} and MinGW {libiconv,zlib}
+on the dowlonad site; make sure you download MinGW version.)
+
+Gdbm doesn't work straightforwardly, since there's no official
 MinGW port of gdbm.  MSYS-gdbm does NOT work.  You may be
 able to compile gdbm from source on MinGW (you need some patch;
 look for the Net.  It is also said that you have to configure
