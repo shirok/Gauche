@@ -108,7 +108,7 @@
   (let-keywords opts ((separator #[/])
                       (folder glob-fs-folder))
     (define (rec node matcher seed)
-      (cond [(null? matcher) (proc seed)]
+      (cond [(null? matcher) seed]
             [(eq? (car matcher) '**)
              (rec* node (cdr matcher) seed)]
             [(null? (cdr matcher))

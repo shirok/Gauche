@@ -1,3 +1,8 @@
+2009-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/fileutil.scm (glob-fold-1): Fixed a bug that caused
+	  an error on (glob "**").
+
 2009-11-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (with-connection): Fixed to make a connection
