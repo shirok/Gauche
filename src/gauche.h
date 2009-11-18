@@ -55,6 +55,7 @@
 #include <errno.h>
 #include <gauche/int64.h>
 #include <gauche/float.h>
+#include <gauche/arch.h>
 
 #if defined(LIBGAUCHE_BODY)
 #if !defined(GC_DLL)

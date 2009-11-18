@@ -1,3 +1,8 @@
+2009-11-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h: Include gauche/arch.h as it should be.
+	* src/main.c (version): Includes the architecture in output.
+
 2009-11-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/fileutil.scm (glob-fold-1): Fixed a bug that caused

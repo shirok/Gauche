@@ -88,11 +88,11 @@ void usage(void)
             "      load-verbose    report while loading files\n"
             "      no-inline       don't inline procedures & constants (combined\n"
             "                      no-inline-globals, no-inline-locals, and\n"
-            "                      no-inline-constants.\n"
+            "                      no-inline-constants.)\n"
             "      no-inline-globals don't inline global procedures.\n"
             "      no-inline-locals  don't inline local procedures.\n"
             "      no-inline-constants don't inline constants.\n"
-            "      no-source-info  don't preserve source information for debug\n"
+            "      no-source-info  don't preserve source information for debugging\n"
             "      test            test mode, to run gosh inside the build tree\n"
             );
     exit(1);
@@ -106,8 +106,8 @@ void usage(void)
 
 void version(void)
 {
-    printf("Gauche scheme interpreter, version %s [%s%s]\n",
-           GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, PTHREAD_OPT);
+    printf("Gauche scheme shell, version %s [%s%s], %s\n",
+           GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, PTHREAD_OPT, GAUCHE_ARCH);
     exit(0);
 }
 
