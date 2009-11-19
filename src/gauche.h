@@ -513,7 +513,7 @@ SCM_EXTERN int Scm_Apply(ScmObj proc, ScmObj args,
                          ScmEvalPacket *packet);
 #else  /*GAUCHE_API_PRE_0_9*/
 #define Scm_Eval(f, e)        Scm_EvalRec(f, e)
-#define Scm_EvalCString(f, e) Scm_EvalCString(f, e)
+#define Scm_EvalCString(f, e) Scm_EvalCStringRec(f, e)
 #define Scm_Apply(p, a)       Scm_ApplyRec(p, a)
 #endif /*GAUCHE_API_PRE_0_9*/
 
