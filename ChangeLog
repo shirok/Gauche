@@ -1,3 +1,7 @@
+2009-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (SCM_CHAR_VALUE): make sure it returns unsigned value.
+
 2009-11-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h: Include gauche/arch.h as it should be.
