@@ -20,23 +20,17 @@ cat <<EOF
 
 int main(int argc, char **argv)
 {
-    int i;
-    ScmObj h = SCM_NIL, t = SCM_NIL;
-    ScmObj progstr, progport, mainproc;
-    ScmModule *usermod;
+    ScmObj args, progstr, progport, mainproc;
 
     Scm_Init(GAUCHE_SIGNATURE);
     Scm_Load("gauche-init.scm", 0, NULL);
-    for (i=0; i<argc; i++) {
-        SCM_APPEND1(h, t, SCM_MAKE_STR(argv[i]));
-    }
-    usermod = Scm_UserModule();
-    SCM_DEFINE(usermod, "*argv*", SCM_CDR(h));
-    SCM_DEFINE(usermod, "*program-name*", SCM_CAR(h));
+    args = Scm_CStringArrayToList((const char*)argv, argc, SCM_STRING_COPYING);
+    SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_CDR(h));
+    SCM_DEFINE(Scm_UserModule(), "*program-name*", SCM_CAR(h));
     progstr = SCM_MAKE_STR(script);
     progport = Scm_MakeInputStringPort(SCM_STRING(progstr), TRUE);
     Scm_LoadFromPort(SCM_PORT(progport), 0, NULL);
-    mainproc = Scm_SymbolValue(usermod, SCM_SYMBOL(SCM_INTERN("main")));
+    mainproc = Scm_SymbolValue(Scm_UserModule(), SCM_SYMBOL(SCM_INTERN("main")));
     if (SCM_PROCEDUREP(mainproc)) {
         ScmObj r = Scm_ApplyRec(mainproc, SCM_LIST1(h));
         if (SCM_INTP(r)) Scm_Exit(SCM_INT_VALUE(r));
