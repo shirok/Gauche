@@ -25,14 +25,14 @@ int main(int argc, char **argv)
     Scm_Init(GAUCHE_SIGNATURE);
     Scm_Load("gauche-init.scm", 0, NULL);
     args = Scm_CStringArrayToList((const char*)argv, argc, SCM_STRING_COPYING);
-    SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_CDR(h));
-    SCM_DEFINE(Scm_UserModule(), "*program-name*", SCM_CAR(h));
+    SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_CDR(args));
+    SCM_DEFINE(Scm_UserModule(), "*program-name*", SCM_CAR(args));
     progstr = SCM_MAKE_STR(script);
     progport = Scm_MakeInputStringPort(SCM_STRING(progstr), TRUE);
     Scm_LoadFromPort(SCM_PORT(progport), 0, NULL);
     mainproc = Scm_SymbolValue(Scm_UserModule(), SCM_SYMBOL(SCM_INTERN("main")));
     if (SCM_PROCEDUREP(mainproc)) {
-        ScmObj r = Scm_ApplyRec(mainproc, SCM_LIST1(h));
+        ScmObj r = Scm_ApplyRec(mainproc, SCM_LIST1(args));
         if (SCM_INTP(r)) Scm_Exit(SCM_INT_VALUE(r));
         else Scm_Exit(70);
     }
