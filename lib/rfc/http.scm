@@ -375,7 +375,7 @@
 ;; canonicalize host and uri w.r.t. proxy
 (define (consider-proxy conn host uri)
   (if (ref conn'proxy)
-    (values (ref conn'proxy) (uri-compose :scheme "http" :host host :path* uri))
+    (values host (uri-compose :scheme "http" :host (ref conn'server) :path* uri))
     (values host uri)))
 
 ;; send

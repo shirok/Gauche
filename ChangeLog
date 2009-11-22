@@ -1,3 +1,10 @@
+2009-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (consider-proxy): Fix host header handling with
+	  proxy.  Now the server given to :proxy only used for the connection.
+	  The host request header is the destination server, which may
+	  be overwritten by :host keyword argument.   Patch for teppey.
+
 2009-11-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (SCM_CHAR_VALUE): make sure it returns unsigned value.
