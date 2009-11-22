@@ -1,5 +1,7 @@
 2009-11-21  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.9
+
 	* examples/spigot, examples/mqueue-cpp: Updated to use the newer
 	  stub forms.
 

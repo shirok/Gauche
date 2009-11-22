@@ -12,11 +12,11 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.8.14
+%define version  0.9
 %define encoding utf8
 %define threads  pthreads
 
-Summary: Scheme script interpreter with multibyte character handling
+Summary: Scheme script engine with multibyte character handling
 Name: Gauche
 Version: %{version}
 Release: 1
@@ -29,30 +29,30 @@ URL: http://practical-scheme.net/gauche/
 #Prefix: /usr
 
 %description
-Gauche is a Scheme interpreter conforming Revised^5 Report on
+Gauche is a Scheme engine conforming Revised^5 Report on
 Algorithmic Language Scheme.  It is designed for rapid development
 of daily tools like system management and text processing.
 It can handle multibyte character strings natively.
 
 %package %{encoding}
-Summary: Scheme script interpreter with multibyte character handling
+Summary: Scheme script engine with multibyte character handling
 Group: Development/Languages
 Provides: Gauche libgauche.so
 License: revised BSD
 Requires: Gauche-common
 %description %{encoding}
-Gauche is a Scheme interpreter conforming Revised^5 Report on
+Gauche is a Scheme engine conforming Revised^5 Report on
 Algorithmic Language Scheme.  It is designed for rapid development
 of daily tools like system management and text processing.
 It can handle multibyte character strings natively.
 This package is compiled with %{encoding} as the native character encoding.
 
 %package common
-Summary: Scheme script interpreter with multibyte character handling
+Summary: Scheme script engine with multibyte character handling
 Group: Development/Languages
 License: revised BSD
 %description common
-Gauche is a Scheme interpreter conforming Revised^5 Report on
+Gauche is a Scheme engine conforming Revised^5 Report on
 Algorithmic Language Scheme.  It is designed for rapid development
 of daily tools like system management and text processing.
 It can handle multibyte character strings natively.
@@ -124,6 +124,9 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 %defattr(-,root,root)
 
 %changelog
+* Sat Nov 21 2009 Shiro Kawai
+- Gauche release 0.9.
+
 * Mon Oct  6 2008 Shiro Kawai
 - Gauche release 0.8.14.
 
