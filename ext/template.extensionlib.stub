@@ -10,7 +10,7 @@
 ;; Replace it for your definitions.
 
 (define-cproc test-@@extname@@ () ::<const-cstring>
-  (result "test_@@extname@@"))
+  (result "@@extname@@ is working"))
 
 
 ;; Local variables:
