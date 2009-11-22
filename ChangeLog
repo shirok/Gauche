@@ -1,5 +1,8 @@
 2009-11-21  Shiro Kawai  <shiro@acm.org>
 
+	* examples/spigot, examples/mqueue-cpp: Updated to use the newer
+	  stub forms.
+
 	* lib/gauche/cgen/stub.scm (process-expr-spec, process-call-spec):
 	  As a transition from old (expr ...) and (call ...) form, we make
 	  these forms check the ::<type> style return-type if the result
