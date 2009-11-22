@@ -1,5 +1,8 @@
 2009-11-21  Shiro Kawai  <shiro@acm.org>
 
+	* ext/template.DIST, examples/spigot/DIST, examples/mqueue-cpp/DIST:
+	  Exclude .svn subdir from tarball as well as CVS.
+
 	* lib/rfc/http.scm (consider-proxy): Fix host header handling with
 	  proxy.  Now the server given to :proxy only used for the connection.
 	  The host request header is the destination server, which may
