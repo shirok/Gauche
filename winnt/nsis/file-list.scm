@@ -13,7 +13,7 @@
 (use text.tree)
 
 (define *instdir* "$INSTDIR")
-(define *ignore-path* "CVS")
+(define *ignore-path* ".svn")
 (define *target-prefix* "    SetOutPath ")
 (define *install-prefix* "    File ")
 (define *delete-prefix* "    Delete /REBOOTOK ")
@@ -45,15 +45,14 @@
                (values d (acons path f seed))))))
 
 (define (initialize path version)
-  (begin0
-   (*root-path* path)
-   (*current-version* (canonical-version version))
-   (*file-list*
-    (reverse
-     (filter
-      (lambda (ls) (and (pair? (cdr ls))
-			(not (string-contains (car ls) *ignore-path*))))
-      (file-list (*root-path*)))))))
+  (*root-path* path)
+  (*current-version* (canonical-version version))
+  (*file-list*
+   (reverse
+    (filter
+     (lambda (ls) (and (pair? (cdr ls))
+                       (not (string-contains (car ls) *ignore-path*))))
+     (file-list (*root-path*))))))
 
 (define (inst-str ls)
   (cons

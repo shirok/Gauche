@@ -9,15 +9,19 @@ Name Gauche
 !define COMPANY "Kahua Project"
 !define URL http://practical-scheme.net/gauche/
 
+!define MULTIUSER_EXECUTIONLEVEL
+!include MultiUser.nsh
+
 # MUI defines
-!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
+#!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
+!define MUI_ICON "gauche-wrapped.ico"
 !define MUI_FINISHPAGE_NOAUTOCLOSE
 !define MUI_STARTMENUPAGE_REGISTRY_ROOT HKLM
 !define MUI_STARTMENUPAGE_NODISABLE
 !define MUI_STARTMENUPAGE_REGISTRY_KEY ${REGKEY}
 !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME StartMenuGroup
 !define MUI_STARTMENUPAGE_DEFAULTFOLDER Gauche
-!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico"
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
 # Included files
@@ -131,12 +135,14 @@ SectionEnd
 
 # Installer functions
 Function .onInit
+    !insertmacro MULTIUSER_INIT
     InitPluginsDir
 FunctionEnd
 
 # Uninstaller functions
 Function un.onInit
     ReadRegStr $INSTDIR HKLM "${REGKEY}" Path
+    !insertmacro MULTIUSER_UNINIT
     !insertmacro MUI_STARTMENU_GETFOLDER Application $StartMenuGroup
     !insertmacro SELECT_UNSECTION Main ${UNSEC0000}
 FunctionEnd
