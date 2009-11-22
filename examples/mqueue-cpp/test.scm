@@ -79,6 +79,8 @@
              (mqueue-pop! (ref *vec* n)))
            (gc))
          (dotimes (n *size*) (set! (ref *vec* n) #f))
+         ;; smash the stack
+         (let loop ((j 0)) (unless (= j *size*) (loop (+ j 1))) #t)
          (dotimes (k 10) (gc))
          (every (cut not <>) (coerce-to <list> *wvec*))))
 
