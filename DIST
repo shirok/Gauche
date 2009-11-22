@@ -151,8 +151,8 @@ if [ "$rpmfiles" = "yes" ]; then
   check_version
   find /usr/share/gauche/$VERSION -type f -print | grep -v 'dbm/[ong]dbm' > rpmfiles-common.txt
   find /usr/share/gauche/$VERSION -type f -print | grep 'dbm/[ong]dbm' > rpmfiles-gdbm.txt
-  find /usr/lib/gauche/$VERSION -type f -print | grep -v '/[ong]dbm' > rpmfiles-encoding.txt
-  find /usr/lib/gauche/$VERSION -type f -print | grep '/[ong]dbm' >> rpmfiles-gdbm.txt
+  find /usr/lib/gauche/$VERSION -type f -print | grep -v '/dbm--[ong]dbm' > rpmfiles-encoding.txt
+  find /usr/lib/gauche/$VERSION -type f -print | grep '/dbm--[ong]dbm' >> rpmfiles-gdbm.txt
 fi
 
 if [ "$rpm" = "yes" ]; then
