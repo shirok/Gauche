@@ -1,5 +1,17 @@
 2009-11-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/stub.scm (process-expr-spec, process-call-spec):
+	  As a transition from old (expr ...) and (call ...) form, we make
+	  these forms check the ::<type> style return-type if the result
+	  type is not given in these forms.  We can't obsolete these forms
+	  completely, for the new CiSE spec is not yet fixed and it won't
+	  cover all cases (esp. C++ support is weak).  So the stub file
+	  may still use expr or call form if CiSE can't be used.  However,
+	  the stub can now use the new style of return type form, e.g.:
+	  (define-cproc foo () ::<return-type> (expr "Some_C_Expr"))
+	  instead of the old style:
+	  (define-cproc foo () (expr <return-type> "Some_C_Expr"))
+
 	* ext/template.DIST, examples/spigot/DIST, examples/mqueue-cpp/DIST:
 	  Exclude .svn subdir from tarball as well as CVS.
 

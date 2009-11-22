@@ -778,7 +778,11 @@
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
   (match form
-    [([? check-expr expr]) (typed-result *scm-type* expr)]
+    [([? check-expr expr])
+     (let1 rt (~ cproc'return-type)
+       (if rt
+         (process-call-spec cproc `(,rt ,expr)) ; for transition
+         (typed-result *scm-type* expr)))]
     [('<void> [? check-expr expr])
      (push-stmt! cproc #`",expr(,(args));")
      (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
@@ -811,7 +815,10 @@
     [([? symbol? rettype] expr)
      (typed-result (name->type rettype) expr)]
     [(expr)
-     (typed-result *scm-type* expr)]
+     (let1 rt (~ cproc'return-type)
+       (if rt
+         (process-expr-spec cproc `(,rt ,expr)) ; for transition
+         (typed-result *scm-type* expr)))]
     [else (error <cgen-stub-error> "malformed 'expr' spec:" form)]))
 
 (define-method process-catch-spec ((cproc <procstub>) form)
