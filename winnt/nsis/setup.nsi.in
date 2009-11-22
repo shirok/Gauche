@@ -9,7 +9,7 @@ Name Gauche
 !define COMPANY "Kahua Project"
 !define URL http://practical-scheme.net/gauche/
 
-!define MULTIUSER_EXECUTIONLEVEL
+!define MULTIUSER_EXECUTIONLEVEL Highest
 !include MultiUser.nsh
 
 # MUI defines
