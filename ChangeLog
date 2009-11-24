@@ -1,3 +1,8 @@
+2009-11-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/literal.scm, lib/gauche/cgen/literal-uv.scm:
+	  Merged literal-uv.scm into literal.scm.
+
 2009-11-21  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.9
