@@ -76,15 +76,14 @@
 
 ;; Thread exception classes
 
-(define-cfn thread_exception_allocate ((klass :: ScmClass*) initargs) :static
+(define-cfn thread_exception_allocate (klass::ScmClass* initargs) :static
   (let* ([e::ScmThreadException* (SCM_ALLOCATE ScmThreadException klass)])
     (SCM_SET_CLASS e klass)
     (set! (-> e thread) NULL)
     (set! (-> e data) SCM_UNDEFINED)
     (return (SCM_OBJ e))))
 
-(define-cfn thread_exception_print (obj (port :: ScmPort*)
-                                        (ctx :: ScmWriteContext*))
+(define-cfn thread_exception_print (obj port::ScmPort* ctx::ScmWriteContext*)
   ::void :static
   (let* ([k::ScmClass* (SCM_CLASS_OF obj)]
          [exc::ScmThreadException* (SCM_THREAD_EXCEPTION obj)]
@@ -94,15 +93,13 @@
       (Scm_Printf port "#<%A %S %S>" cname (SCM_OBJ_SAFE (-> exc thread))
                   (-> exc data)))))
 
-(define-cfn uncaught_exception_print (obj (port :: ScmPort*)
-                                          (ctx :: ScmWriteContext*))
+(define-cfn uncaught_exception_print (obj port::ScmPort* ctx::ScmWriteContext*)
   ::void :static
   (let* ([exc::ScmThreadException* (SCM_THREAD_EXCEPTION obj)])
     (Scm_Printf port "#<uncaught-exception in thread %S: %S>"
                 (SCM_OBJ_SAFE (-> exc thread)) (-> exc data))))
 
-(define-cfn terminated_thread_print (obj (port :: ScmPort*)
-                                         (ctx :: ScmWriteContext*))
+(define-cfn terminated_thread_print (obj port::ScmPort* ctx::ScmWriteContext*)
   ::void :static
   (let* ([exc::ScmThreadException* (SCM_THREAD_EXCEPTION obj)])
     (Scm_Printf port "#<terminated-thread-exception: %S terminated by %S>"
