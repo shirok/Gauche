@@ -264,7 +264,7 @@ These classes consist a class hierarchy of number objects.
 @code{<complex>},@code{<rational>} inherits @code{<real>}
  and @code{<integer>} inherits @code{<rational>}.
 
-Note that these classes does not exactly corresponds to the
+Note that these classes do not exactly corresponds to the
 number hierarchy defined in R5RS.  Especially, 
 only exact integers are the instances of the @code{<integer>}
 class.  That is,
