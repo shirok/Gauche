@@ -338,6 +338,7 @@
       (socket-close s))))
 
 (define (request-response request conn host request-uri request-body options)
+  (define no-body-replies '("204" "304"))
   (receive (host uri)
       (consider-proxy conn (or host (ref conn'server)) request-uri)
     (with-connection
@@ -348,6 +349,7 @@
          (values code
                  headers
                  (and (not (eq? request 'HEAD))
+                      (not (member code no-body-replies))
                       (let-keywords options
                           ((sink    (open-output-string))
                            (flusher (lambda (sink _) (get-output-string sink)))

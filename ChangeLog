@@ -1,3 +1,9 @@
+2009-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (request-response): When server returns status
+	  code 204 or 304, we should not try to retrieve the message body,
+	  otherwise the function hangs waiting for the body.
+
 2009-11-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/literal.scm, lib/gauche/cgen/literal-uv.scm:
