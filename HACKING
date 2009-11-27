@@ -12,8 +12,8 @@ In order to build Gauche from the svn sources, instead of from
 the distribution, you need to have autoconf 2.54 or higher.
 The author using autoconf 2.57.
 
-You also need to have the *latest* Gauche installed on your
-machine, for it is required to generate some C files.
+You also need to have the *latest* release of Gauche installed
+on your machine, for it is required to generate some C files.
 
 The svn source tree doesn't include "configure" scripts.
 You can use the DIST script like the following to generate them.
