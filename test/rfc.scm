@@ -7,6 +7,7 @@
 (use gauche.process)
 (use util.list)
 (use util.match)
+(use srfi-19)
 (test-start "rfc")
 
 ;;--------------------------------------------------------------------
@@ -121,6 +122,16 @@ Content-Length: 4349
 
 (test* "rfc822-parse-date (invalid)" '(#f #f #f #f #f #f #f #f)
        (receive r (rfc822-parse-date "Sun 2 Mar 2002") r))
+
+(test* "date->rfc822-date" "Sun, 29 Nov 2009 01:23:45 +0000"
+       (date->rfc822-date (make-date 0 45 23 01 29 11 2009 0)))
+(test* "date->rfc822-date" "Sun, 29 Nov 2009 01:23:45 +0900"
+       (date->rfc822-date (make-date 0 45 23 01 29 11 2009 32400)))
+(test* "date->rfc822-date" "Sun, 29 Nov 2009 01:23:45 -0830"
+       (date->rfc822-date (make-date 0 45 23 01 29 11 2009 -30600)))
+(test* "date->rfc822-date" "Sun, 29 Nov 2009 01:23:45 +0030"
+       (date->rfc822-date (make-date 0 45 23 01 29 11 2009 1800)))
+
 
 (test* "rfc822-invalid-header-field" #f
        (rfc822-invalid-header-field "abcde"))

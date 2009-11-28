@@ -1,3 +1,8 @@
+2009-11-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/822.scm (date->rfc822-date): Added the reverse operation
+	  of rfc822-date->date for the convenience.
+
 2009-11-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (request-response): When server returns status

@@ -50,7 +50,7 @@
           *rfc822-atext-chars* *rfc822-standard-tokenizers*
           rfc822-atom rfc822-dot-atom rfc822-quoted-string
           rfc822-next-token rfc822-field->tokens
-          rfc822-parse-date rfc822-date->date
+          rfc822-parse-date rfc822-date->date date->rfc822-date
 
           rfc822-invalid-header-field rfc822-write-headers
           )
@@ -265,6 +265,23 @@
          (make-date 0 sec min hour day month year
                     (receive (quot rem) (quotient&remainder tz 100)
                       (+ (* quot 3600) (* rem 60)))))))
+
+;; inverse of rfc822-date->date.  Take srfi-19 date and returns
+;; formatted string.
+(define (date->rfc822-date date)
+  (let1 tz (date-zone-offset date)
+    (format "~a, ~2d ~a ~4d ~2,'0d:~2,'0d:~2,'0d ~a~2,'0d~2,'0d"
+            (ref '#("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat")
+                 (date-week-day date))
+            (date-day date)
+            (ref '#("" "Jan" "Feb" "Mar" "Apr" "May" "Jun"
+                    "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")
+                 (date-month date))
+            (date-year date)
+            (date-hour date) (date-minute date) (date-second date)
+            (if (>= tz 0) "+" "-")
+            (quotient (abs tz) 3600)
+            (modulo (quotient (abs tz) 60) 60))))
 
 ;;------------------------------------------------------------------
 ;; Address specification (Section 3.4)

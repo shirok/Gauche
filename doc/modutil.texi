@@ -5353,10 +5353,16 @@ If the string is not parsable, all the elements are #f.
 Parses RFC822 type date format and returns SRFI-19 @code{<date>} object
 (see @ref{SRFI-19 Date}).  If @var{string} can't be parsed, 
 returns @code{#f} instead.
+
+To consturct rfc822 date string from SRFI-19 date, you can use
+@code{date->rfc822-date} below.
 @c JP
 RFC822形式の日付フォーマットをパーズし、SRFI-19 の @code{<date>} オブジェクト
 (@ref{SRFI-19 Date} 参照) を返します。@var{string} がパーズできないときは
 かわりに @code{#f} を返します。
+
+SRFI-19の日付からRFC822形式の日付文字列を作成するには、
+後で述べる@code{date->rfc822-date}が使えます。
 @c COMMON
 @end defun
 
@@ -5439,6 +5445,17 @@ proper line folding.
 
 @end defun
 
+@defun date->rfc822-date date
+@c EN
+Takes SRFI-19 @code{<date>} object (see @ref{SRFI-19 Date})
+and returns a string of its rfc822 date representation.
+This is a reverse operation of @code{rfc822-date->date}.
+@c JP
+SRFI-19の@code{<date>}オブジェクト(@ref{SRFI-19 Date}参照)
+を取り、そのrfc822日付形式表現の文字列を返します。
+@code{rfc822-date->date}の逆関数です。
+@c COMMON
+@end defun
 
 
 @c ----------------------------------------------------------------------
