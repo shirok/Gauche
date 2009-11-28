@@ -58,11 +58,11 @@
  * So ScmString is allocated with initial body.   The 'body' pointer
  * of ScmString is NULL when it is created, which indicates the initial
  * body is used (this convention allows static definition of ScmString).
- * Once the string is mutated, a new the 'body' pointer points to a
+ * Once the string is mutated, the 'body' pointer points to a
  * fresh ScmStringBody.  Note that it means the initial content of the
  * string, pointed by initialBody.start, won't be GC-ed as far as the
  * ScmString is alive, even if its content is mutated and the initial
- * content isn't used.  
+ * content isn't used.   Another reason to avoid string mutations.
  */
 
 typedef struct ScmStringBodyRec {
