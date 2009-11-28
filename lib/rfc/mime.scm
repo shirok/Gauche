@@ -698,4 +698,3 @@
    [else (error "Unsupported transfer encoding encountered while composing \
                  mime message: " transfer-enc)]))
 
-(provide "rfc/mime")

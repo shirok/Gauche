@@ -1251,4 +1251,3 @@
   (set! tm:leap-second-table (tm:read-tai-utc-data filename))
   (values))
 
-(provide "srfi-19")

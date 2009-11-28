@@ -68,4 +68,3 @@
     (lambda () (display "Password: ") (flush)))
   (without-echoing #f read-line))
 
-(provide "gauche/package/util")

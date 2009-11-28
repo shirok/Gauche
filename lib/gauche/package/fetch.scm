@@ -74,4 +74,3 @@
          (error "can't read the package: " uri))
        uri))))
 
-(provide "gauche/package/fetch")

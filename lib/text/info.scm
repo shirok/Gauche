@@ -179,4 +179,3 @@
           [else (menu (read-line) r)]))
       (skip (read-line)))))
 
-(provide "text/info")

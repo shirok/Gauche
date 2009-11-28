@@ -75,4 +75,3 @@
           (lambda () (accum (read-char) (open-output-string)))))
   )
 
-(provide "gauche/interpolate")

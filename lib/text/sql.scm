@@ -217,5 +217,4 @@
   ;;
   (entry (skip-ws sql-string) '()))
 
-(provide "text/sql")
 

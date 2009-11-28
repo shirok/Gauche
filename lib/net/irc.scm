@@ -33,5 +33,4 @@
     ;; return the ftp connection
     irc))
 
-(provide "net/irc")
 

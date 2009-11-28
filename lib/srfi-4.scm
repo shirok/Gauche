@@ -39,4 +39,3 @@
   (extend gauche.uvector)
   )
 
-(provide "srfi-4")

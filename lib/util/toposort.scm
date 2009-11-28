@@ -59,4 +59,3 @@
   (traverse)
   (reverse result))
 
-(provide "util/toposort")

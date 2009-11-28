@@ -20,4 +20,3 @@
 (define-constant 180/pi 57.29577951308232)
 (define-constant e      2.718281828459045)
 
-(provide "math/const")

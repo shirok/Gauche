@@ -61,5 +61,4 @@
         (nntp-quit nntp ""))
       )))
 
-(provide "net/nntp")
 

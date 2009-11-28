@@ -19,5 +19,4 @@
 (define-generic uri-directory-uris)
 (define-generic uri-directory-objects)
 
-(provide "net/file/base")
 

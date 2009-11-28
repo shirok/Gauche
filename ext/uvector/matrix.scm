@@ -584,5 +584,4 @@
           (return <array>) ; already most general array
           (loop next (cdr l)))))))
 
-(provide "gauche/matrix")
 

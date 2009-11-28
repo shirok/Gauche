@@ -47,5 +47,4 @@
                                   (headers-of obj))))))
      1024)))
 
-(provide "net/file/mailto")
 

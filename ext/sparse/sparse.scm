@@ -293,4 +293,3 @@
 (define-method dict-fold ((dict <sparse-table>) proc seed)
   (sparse-table-fold dict proc seed))
 
-(provide "util/sparse")

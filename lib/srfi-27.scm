@@ -123,4 +123,3 @@
     (values (lambda (n) (mt-random-integer src n))
             (lambda ()  (mt-random-real src)))))
 
-(provide "srfi-27")

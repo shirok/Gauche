@@ -21,6 +21,5 @@
      (syntax-error "malformed rec" (rec . _)))
     ))
 
-(provide "srfi-31")
 
 

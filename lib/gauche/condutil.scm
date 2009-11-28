@@ -164,4 +164,3 @@
 (define &i/o-closed-error <io-closed-error>)
 (define &read-error  <read-error>)
 
-(provide "gauche/condutil")

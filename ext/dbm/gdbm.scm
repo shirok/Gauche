@@ -336,4 +336,4 @@
  (define-enum GDBM_COALESCEBLKS)
  )
 
-(provide "dbm/gdbm")
+

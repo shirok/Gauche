@@ -60,4 +60,3 @@
  O_ASYNC   O_NOCTTY  O_NONBLOCK O_TRUNC 
  )
 
-(provide "gauche/fcntl")

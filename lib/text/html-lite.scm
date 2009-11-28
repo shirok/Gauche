@@ -222,6 +222,5 @@
 ;; FRAMES
 (define-html-elements frameset frame noframes iframe)
 
-(provide "text/html-lite")
 
 

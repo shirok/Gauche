@@ -253,4 +253,3 @@
 
 (define glob-fs-folder (make-glob-fs-fold))
 
-(provide "gauche/fileutil")

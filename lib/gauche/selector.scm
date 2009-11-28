@@ -134,6 +134,5 @@
                    (pick-handlers xfds (slot-ref selector 'xhandlers) 'x))))
       nfds)))
 
-(provide "gauche/selector")
 
                            

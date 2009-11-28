@@ -95,4 +95,3 @@
   ()
   :metaclass <propagate-meta>)
 
-(provide "gauche/mop/propagate")

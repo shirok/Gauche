@@ -567,4 +567,3 @@
                 '()
                 col))))
 
-(provide "gauche/collection")

@@ -68,4 +68,3 @@
 
   (rec clauses))
   
-(provide "srfi-0")

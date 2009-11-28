@@ -82,4 +82,3 @@
           (let ((next (rdc name)))
             (and (pair? next) (loop next)))))))
 
-(provide "srfi-29/bundle")

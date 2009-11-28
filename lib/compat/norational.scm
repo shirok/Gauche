@@ -9,5 +9,4 @@
 
 (define / inexact-/)
 
-(provide "compat/norational")
 

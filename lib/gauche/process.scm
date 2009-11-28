@@ -425,4 +425,3 @@
     (else (unless (zero? (process-exit-status process))
             (on-abnormal-exit process)))))
 
-(provide "gauche/process")

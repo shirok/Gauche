@@ -24,8 +24,6 @@
 
 ;#include-body "src/serializer.scm"
 
-(provide "sxml/serializer")
-
 ;; Local variables:
 ;; mode: scheme
 ;; end:

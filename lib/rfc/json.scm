@@ -181,4 +181,3 @@
            ((vector? x) (print-array x))
            (else (error "->json expects list or vector, but got" x))))))
 
-(provide "rfc/json")

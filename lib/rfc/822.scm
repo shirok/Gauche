@@ -343,4 +343,3 @@
                   'stray-crlf]
                  [else #f]))]))
            
-(provide "rfc/822")

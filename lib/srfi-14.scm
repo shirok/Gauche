@@ -317,4 +317,3 @@
 (define char-set:empty       (char-set))
 (define char-set:full        (%char-set-complement! (char-set)))
 
-(provide "srfi-14")

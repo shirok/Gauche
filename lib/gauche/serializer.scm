@@ -133,5 +133,4 @@
            (loop (cdr slots) (cons (slot-definition-name (car slots)) result)))
           (else (loop (cdr slots) result)))))
 
-(provide "gauche/serializer")
 

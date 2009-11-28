@@ -754,4 +754,3 @@
                 %check-class-binding
                 )
 
-(provide "gauche/object")

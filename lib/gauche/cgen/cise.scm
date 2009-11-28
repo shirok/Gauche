@@ -1055,5 +1055,4 @@
 
   (scan (fold-right expand-type '() vardecls) '()))
 
-(provide "gauche/cgen/cise")
 

@@ -121,4 +121,3 @@
                           #xc05863))) ; 192.88.99.0/24 6to4 anycast relay
          )))
 
-(provide "rfc/ip")

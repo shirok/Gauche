@@ -194,4 +194,3 @@
              ,(map class-name (ref obj 'specializers)))]
    [else (write-to-string obj)]))
 
-(provide "gauche/vm/profiler")

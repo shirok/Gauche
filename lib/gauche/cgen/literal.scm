@@ -830,5 +830,4 @@
   (let1 counter 0
     (lambda () (format "~5,'0d" (inc! counter)))))
 
-(provide "gauche/cgen/literal")
 

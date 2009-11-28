@@ -280,5 +280,4 @@
            => (cut build-path <> (path->hash p) p)]
           [else (build-path (path->hash p) p)])))
 
-(provide "dbm/fsdbm")
 

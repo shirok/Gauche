@@ -236,4 +236,3 @@
   (< (abs (- x y))
      (/ (max (abs x) (abs y)) tolerance)))
 
-(provide "gauche/numerical")

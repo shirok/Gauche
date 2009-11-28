@@ -66,4 +66,3 @@
     (lambda ()
       (port-for-each (lambda (x) (format #t "~2,'0x" x)) read-byte))))
 
-(provide "util/digest")

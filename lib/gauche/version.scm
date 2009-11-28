@@ -140,5 +140,4 @@
 (define (version>? a b)  (>  (version-compare a b) 0))
 (define (version>=? a b) (>= (version-compare a b) 0))
 
-(provide "gauche/version")
 

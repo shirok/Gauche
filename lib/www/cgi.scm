@@ -426,4 +426,3 @@
      (cut write-tree tree)
      :encoding (cgi-output-character-encoding))))
 
-(provide "www/cgi")

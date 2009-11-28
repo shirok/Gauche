@@ -359,4 +359,3 @@
     [(unwind-protect . other)
      (syntax-error "malformed unwind-protect" (unwind-protect . other))]))
 
-(provide "gauche/common-macros")

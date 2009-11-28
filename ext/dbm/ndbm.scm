@@ -302,4 +302,3 @@
  (define-enum O_TRUNC)
  )
 
-(provide "dbm/ndbm")

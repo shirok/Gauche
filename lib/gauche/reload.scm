@@ -140,5 +140,4 @@
                (reload name rule))))
          (all-modules))))))
 
-(provide "gauche/reload")
 

@@ -238,4 +238,3 @@
      (FROM_DATUM SCM_RESULT dnkey)))
  )
   
-(provide "dbm/odbm")

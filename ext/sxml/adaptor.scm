@@ -151,4 +151,3 @@
 ;; small function used in txpath.scm
 (define (substring? pat str) (string-contains str pat))
 
-(provide "sxml/adaptor")

@@ -896,4 +896,3 @@
     (return-failure/expect "end of input" s)
     (return-result #t (cdr s))))
 
-(provide "parser/peg")

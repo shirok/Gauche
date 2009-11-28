@@ -167,4 +167,3 @@
 (define-in-module gauche update-direct-subclass! update-direct-subclass!)
 (define-in-module gauche change-object-class change-object-class)
 
-(provide "gauche/redefutil")

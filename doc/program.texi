@@ -1321,12 +1321,6 @@ Gaucheのライブラリで使われているテンプレートは次のような形式です。
 
 @dots{} module body @dots{}
 
-@c EN
-;; Make `require' happy
-@c JP
-;; `require' に対応するprovide
-@c COMMON
-(provide "foo")
 @end example
 
 @c EN
@@ -1388,15 +1382,6 @@ of the exported symbols will be directly accessible from outside.
 それらはモジュール@code{foo}の中で評価されます。モジュール内で定義するトップレベルの
 束縛のうち、明示的に`export'で指定されたシンボルのみが、このモジュールをインポートする他の
 モジュールから見えます。
-@c COMMON
-
-@c EN
-The last @code{provide} form is just a cliche.  It is needed since
-the `use' mechanism uses traditional require-provide mechanism (if you
-don't know about it, it's ok--just put it as a magic spell).
-@c JP
-最後の@code{provide}は一種の定型句です。`use'がrequire-provideメカニズムを
-利用しているために必要です。
 @c COMMON
 
 @c EN

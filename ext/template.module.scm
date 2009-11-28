@@ -15,7 +15,5 @@
 ;; Put your Scheme definitions here
 ;;
 
-;; Epilogue
-(provide "@@modpath@@")
 
 

@@ -41,8 +41,6 @@
 
 ;#include-body "src/SSAX.scm"
 
-(provide "sxml/ssax")
-
 ;; Local variables:
 ;; mode: scheme
 ;; end:

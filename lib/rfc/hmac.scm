@@ -87,4 +87,3 @@
   (with-input-from-string string
     (lambda() (apply hmac-digest args))))
 
-(provide "rfc/hmac")

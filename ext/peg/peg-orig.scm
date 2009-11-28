@@ -506,4 +506,3 @@
 ;; Token Parsers
 ;;
 
-(provide "peg-orig")

@@ -108,4 +108,3 @@
  sys-getnameinfo
  NI_NOFQDN NI_NUMERICHOST NI_NAMEREQD NI_NUMERICSERV NI_DGRAM)
 
-(provide "gauche/net")

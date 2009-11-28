@@ -197,5 +197,4 @@
 
 (define stable-sort-by! sort-by!)
 
-(provide "gauche/sortutil")
 

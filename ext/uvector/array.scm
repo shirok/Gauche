@@ -759,4 +759,3 @@
       (make-vector (array-rank ar)))
     (get)))
 
-(provide "gauche/array")

@@ -353,5 +353,4 @@
         (error "couldn't finishing message"))
       )))
 
-(provide "net/smtp")
 

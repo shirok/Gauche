@@ -1,5 +1,8 @@
 2009-11-28  Shiro Kawai  <shiro@acm.org>
 
+	* Many files: Removed (provide "...") idioms, for it is no longer
+	  necessary with the autoprovide feature.
+
 	* lib/rfc/822.scm (date->rfc822-date): Added the reverse operation
 	  of rfc822-date->date for the convenience.
 

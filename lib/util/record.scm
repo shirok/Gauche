@@ -69,4 +69,3 @@
   (map (lambda (x) (if (pair? x) (car x) x))
        (compute-slots record-class)))
 
-(provide "util/record")

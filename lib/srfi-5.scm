@@ -57,4 +57,3 @@
         name)
       val ... rest-val ...))))
 
-(provide "srfi-5")

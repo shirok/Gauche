@@ -176,4 +176,3 @@
     (/. (+ (list-ref times 0) (list-ref times 1))
         (list-ref times 4))))
 
-(provide "gauche/time")

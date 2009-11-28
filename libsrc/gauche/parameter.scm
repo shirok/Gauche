@@ -148,7 +148,6 @@
       (delete-hook! (parameter-post-observers self) proc))
     ))
 
-(provide "gauche/parameter")
 
      
      

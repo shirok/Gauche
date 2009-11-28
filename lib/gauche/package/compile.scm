@@ -153,4 +153,3 @@
           new))
       optstr))
 
-(provide "gauche/package/compile")

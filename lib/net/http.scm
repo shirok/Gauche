@@ -68,5 +68,4 @@
 (define http-trace   (net-command 'TRACE))
 (define http-connect (net-command 'CONNECT))
 
-(provide "net/http")
 

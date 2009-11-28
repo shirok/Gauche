@@ -108,7 +108,6 @@
     (else
      (error "vm-build-insn: bad insn:" insn))))
 
-(provide "gauche/vm/insn-core")
 
 
 

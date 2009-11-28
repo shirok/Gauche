@@ -140,4 +140,3 @@
           )))
   (scan-args args seeds))
 
-(provide "srfi-37")

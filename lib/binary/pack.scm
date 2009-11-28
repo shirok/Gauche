@@ -1056,5 +1056,4 @@
     (with-input-from-port in
       (cut packer 'skip))))
 
-(provide "binary/pack")
 

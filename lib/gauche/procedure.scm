@@ -216,4 +216,3 @@
 (define (disasm proc)
   ((with-module gauche.internal vm-dump-code) (closure-code proc)))
 
-(provide "gauche/procedure")

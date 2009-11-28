@@ -217,4 +217,3 @@
               (display c)
               (loop (+ i 1)))))))))
 
-(provide "text/parse")

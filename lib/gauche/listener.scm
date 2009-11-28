@@ -276,4 +276,3 @@
    (else (and (<unhandled-signal-error> e)
               (eqv? (ref e 'signal) SIGPIPE)))))
 
-(provide "gauche/listener")

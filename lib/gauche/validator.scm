@@ -11,4 +11,3 @@
 
 (warn "gauche.validator is obsoleted.  use gauche.mop.validator.")
 
-(provide "gauche/validator")

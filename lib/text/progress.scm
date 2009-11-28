@@ -139,4 +139,3 @@
          (error "text-progress-bar: unrecognized message:" msg))))
     ))
 
-(provide "text/progress")

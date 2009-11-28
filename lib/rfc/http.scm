@@ -458,4 +458,3 @@
 ;; dummy - to be written
 (define (http-default-auth-handler . _) #f)
 
-(provide "rfc/http")

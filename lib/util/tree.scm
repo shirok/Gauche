@@ -43,5 +43,4 @@
       (fold rec r (reverse branches))))
   (if (leaf? tree) (proc tree knil) (rec tree knil)))
                     
-(provide "util/tree")
 

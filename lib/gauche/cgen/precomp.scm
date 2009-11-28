@@ -813,4 +813,3 @@
   (static (self) #f)
   )
 
-(provide "gauche.cgen.precomp")

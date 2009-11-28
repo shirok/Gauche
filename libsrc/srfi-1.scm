@@ -932,4 +932,3 @@
                 (%alist-delete! key alist 'equal?)
                 (filter! (lambda (elt) (not (= key (car elt)))) alist)))
 
-(provide "srfi-1")

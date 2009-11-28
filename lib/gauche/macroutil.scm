@@ -22,4 +22,3 @@
     ((_ ?form)
      (unwrap-syntax (%macroexpand-1 ?form)))))
 
-(provide "gauche/macroutil")

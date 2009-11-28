@@ -197,5 +197,4 @@
    (common-final SHA512_Final ctx SHA512_DIGEST_LENGTH))
  )
 
-(provide "rfc/sha")
 

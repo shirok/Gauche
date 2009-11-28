@@ -18,4 +18,3 @@
 (define-module srfi-29
   (extend srfi-29.bundle srfi-29.format))
 
-(provide "srfi-29")

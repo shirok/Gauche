@@ -101,5 +101,4 @@
     (viewer (ref (info-get-node *info* nodename) 'content)))
   (values))
 
-(provide "gauche/interactive/info")
 

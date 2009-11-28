@@ -185,4 +185,3 @@
     (unless (null? last) (push! hunks (reverse! last))))
   (reverse! hunks))
 
-(provide "util/lcs")

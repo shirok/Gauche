@@ -942,6 +942,5 @@
                       (kmp-step pat rv (string-ref s si)
                                 vi c= p-start)))))))
     
-(provide "srfi-13")
 
           

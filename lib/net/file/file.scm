@@ -33,5 +33,4 @@
       (map (cut string-append "file:" <>) (directory-list uri :children? #t :add-path #t))
       '())))
 
-(provide "net/file/file")
 

@@ -132,4 +132,3 @@
   (check-arg uncaught-exception? exc)
   (slot-ref exc 'reason))
 
-(provide "gauche/threads")

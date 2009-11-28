@@ -139,4 +139,3 @@
       (when closed (closed)))
     (make <buffered-input-port> :fill filler :close closer)))
 
-(provide "gauche/vport")

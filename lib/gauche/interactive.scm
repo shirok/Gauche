@@ -149,4 +149,3 @@
   (when (sys-access dotfile F_OK)
     (load dotfile :environment (find-module 'user))))
 
-(provide "gauche/interactive")

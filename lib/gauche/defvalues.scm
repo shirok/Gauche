@@ -79,5 +79,4 @@
      (set!-values-sub (tmp ... tmp1) (v2 ...) (var ...) expr))
     ))
 
-(provide "gauche/defvalues")
 

@@ -201,4 +201,3 @@
                (else (write-char c) (loop (read-char))))))
          (display "$"))))))
 
-(provide "gauche/libutil")

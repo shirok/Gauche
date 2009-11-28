@@ -202,4 +202,3 @@
                           :all-versions all-versions))))
     (path->gauche-package-description path)))
 
-(provide "gauche/package")

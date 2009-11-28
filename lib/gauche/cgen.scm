@@ -131,4 +131,3 @@
 ;;   and the opening curly brace) and the epilogue (including the closing
 ;;   curly brace).
 
-(provide "gauche/cgen")

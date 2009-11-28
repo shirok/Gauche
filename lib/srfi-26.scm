@@ -110,4 +110,3 @@
     ((cute . slots-or-exprs)
      (srfi-26-internal-cute () () () . slots-or-exprs))))
 
-(provide "srfi-26")

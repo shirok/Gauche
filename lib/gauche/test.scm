@@ -366,4 +366,3 @@
     ;; Returns the number of failed tests.
     (length *discrepancy-list*)))
 
-(provide "gauche/test")

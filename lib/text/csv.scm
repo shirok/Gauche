@@ -134,4 +134,3 @@
                   (cdr fields)))
       (display newline port))))
 
-(provide "text/csv")

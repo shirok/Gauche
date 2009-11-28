@@ -184,4 +184,3 @@
 
 (define (port-tell p) (port-seek p 0 SEEK_CUR))
 
-(provide "gauche/portutil")

@@ -99,4 +99,3 @@
             (else (display (car format-list) buffer)
                   (loop (cdr format-list) objects #f))))))
 
-(provide "srfi-29/format")

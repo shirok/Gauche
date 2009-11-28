@@ -155,5 +155,4 @@
 (define (base64-encode-string string . opts)
   (with-string-io string (cut apply base64-encode opts)))
 
-(provide "rfc/base64")
 

@@ -184,4 +184,3 @@
 (define assq-set!  (cut assoc-set! <> <> <> eq?))
 (define assv-set!  (cut assoc-set! <> <> <> eqv?))
 
-(provide "util/list")

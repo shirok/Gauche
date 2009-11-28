@@ -390,4 +390,3 @@
   ;; string-set! is super-slow, so we provide the alternative.
   (%string-replace-body! seq (apply shuffle seq args)))
 
-(provide "gauche/sequence")

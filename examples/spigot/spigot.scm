@@ -18,5 +18,3 @@
 
 ;; You can define Scheme functions here if you want.
 
-;; Epilogue
-(provide "spigot")

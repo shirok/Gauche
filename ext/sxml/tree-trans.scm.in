@@ -21,8 +21,6 @@
 
 ;#include-body "src/SXML-tree-trans.scm"
 
-(provide "sxml/tree-trans")
-
 ;; Local variables:
 ;; mode: scheme
 ;; end:

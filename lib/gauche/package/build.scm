@@ -159,4 +159,3 @@
         (make-install config dir sudo-user sudo-pass))
       (when clean?   (clean config dir)))))
 
-(provide "gauche/package/build")

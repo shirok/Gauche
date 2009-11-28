@@ -106,4 +106,3 @@
        (rxmatch-case #t temp strp ?clause ...)))
     ))
 
-(provide "gauche/regexp")

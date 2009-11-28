@@ -20,8 +20,6 @@
 
 ;#include-body "src/SXML-to-HTML.scm"
 
-(provide "sxml/to-html")
-
 ;; Local variables:
 ;; mode: scheme
 ;; end:

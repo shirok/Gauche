@@ -12,7 +12,4 @@
 ;; Loads extension
 (dynamic-load "mqueue_cpp")
 
-;; Epilogue
-(provide "example/mqueue-cpp")
-
 

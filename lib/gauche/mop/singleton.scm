@@ -60,4 +60,3 @@
   ()
   :metaclass <singleton-meta>)
 
-(provide "gauche/mop/singleton")

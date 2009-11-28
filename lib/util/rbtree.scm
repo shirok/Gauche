@@ -57,4 +57,3 @@
 
 (define rbtree-check %tree-map-check-consistency)
 
-(provide "util/rbtree")

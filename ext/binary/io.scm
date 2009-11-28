@@ -232,4 +232,3 @@
                (write-u8 (logior (logand n #b01111111) #b10000000))])))
     (write-u8 final)))
 
-(provide "binary/io")

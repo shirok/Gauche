@@ -40,4 +40,3 @@
             (source->list b reader)
             equal))
 
-(provide "text/diff")

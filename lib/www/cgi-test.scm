@@ -7,4 +7,3 @@
 (define-module www.cgi-test
   (extend www.cgi.test))
 
-(provide "www/cgi-test")

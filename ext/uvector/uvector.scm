@@ -47,4 +47,3 @@
   )
 (select-module gauche.uvector)
 (dynamic-load "libgauche-uvector")
-(provide "gauche/uvector")

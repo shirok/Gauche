@@ -132,4 +132,3 @@
                                      SCM_STRING_COPYING)))))
  )
 
-(provide "rfc/md5")

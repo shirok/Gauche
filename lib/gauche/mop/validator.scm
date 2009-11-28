@@ -69,4 +69,3 @@
   ()
   :metaclass <validator-meta>)
 
-(provide "gauche/mop/validator")

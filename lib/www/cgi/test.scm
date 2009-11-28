@@ -130,4 +130,3 @@
 (define (build-env env-table)
   (hash-table-map env-table (lambda (k v) #`",|k|=,|v|")))
 
-(provide "www/cgi/test")

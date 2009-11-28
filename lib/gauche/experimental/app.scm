@@ -37,4 +37,3 @@
     [(_ apps      (e ...) x . rest)  (%$-rec apps (e ... x) . rest)]
     [(_ (app ...) es)                (app ... . es)]))
 
-(provide "gauche/experimental/app")

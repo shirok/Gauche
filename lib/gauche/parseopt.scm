@@ -328,4 +328,3 @@
      (syntax-error "malformed let-args:" (let-args . otherwise)))
     ))
 
-(provide "gauche/parseopt")

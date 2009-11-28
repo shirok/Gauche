@@ -276,4 +276,3 @@
 ;    (comment-url :init-keyword :comment-url :init-value #f)
 ;    ))
 
-(provide "rfc/cookie")

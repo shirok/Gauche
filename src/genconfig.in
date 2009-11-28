@@ -411,7 +411,6 @@ cat > ../lib/gauche/config.scm.tmp <<EOF
     ("--libgauche-so"    "$libgauche_so")
     )))
 
-(provide "gauche/config")
 EOF
 
 mv ../lib/gauche/config.scm.tmp ../lib/gauche/config.scm

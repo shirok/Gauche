@@ -89,4 +89,3 @@
                 (errorf "invalid define-record-type for ~a: constructor definition contains a tag ~a which is not a field" type init-tag)))
             init-tags))
 
-(provide "srfi-9")

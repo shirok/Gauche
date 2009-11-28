@@ -198,4 +198,3 @@
     (resolve '() (append! (if (absolute? path) '() (decompose (sys-getcwd)))
                           (decompose path))))])
 
-(provide "gauche/auxsys")

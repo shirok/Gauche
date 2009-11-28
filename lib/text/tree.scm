@@ -26,4 +26,3 @@
 (define (tree->string tree)
   (with-output-to-string (lambda () (write-tree tree))))
 
-(provide "text/tree")

@@ -247,4 +247,3 @@
 
 (define dbm-db-rename dbm-db-move) ; backward compatibility
 
-(provide "dbm")

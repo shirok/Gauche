@@ -88,6 +88,5 @@
 |#
 
 
-(provide "gauche/termios")
 
 

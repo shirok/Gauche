@@ -1592,4 +1592,3 @@
     (when (or (pair? r) (string? r))
       (cgen-stub-parse-form r))))
 
-(provide "gauche/cgen/stub")

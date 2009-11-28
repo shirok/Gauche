@@ -104,5 +104,4 @@
 (define ftp-help (net-command 'HELP))
 (define ftp-noop (net-command 'NOOP))
 
-(provide "net/ftp")
 

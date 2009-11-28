@@ -220,5 +220,4 @@
 (define-method dict-fold ((dict <bimap>) proc seed)
   (dict-fold (bimap-left dict) proc seed))
 
-(provide "gauche/dictionary")
 

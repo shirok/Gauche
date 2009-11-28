@@ -101,4 +101,3 @@
           (loop after (cons before r))
           (reverse! (cons before r))))))
 
-(provide "gauche/stringutil")

@@ -243,5 +243,4 @@
 (define posix-host-name sys-gethostname)
 (define posix-domain-name sys-getdomainname)
 
-(provide "compat/stk")
 

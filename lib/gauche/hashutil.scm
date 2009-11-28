@@ -72,4 +72,3 @@
             r
             (loop (kons k v r)))))))
 
-(provide "gauche/hashutil")

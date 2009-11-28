@@ -46,9 +46,6 @@
 ;#include-body "src/sxpath-ext.scm"
 ;#include-body "src/txpath.scm"
 
-(provide "sxml/sxpath")
-
-          
 ;; Local variables:
 ;; mode: scheme
 ;; end:

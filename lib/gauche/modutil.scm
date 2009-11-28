@@ -65,4 +65,3 @@
                (require ,compat)
                (import ,module))))))))
 
-(provide "gauche/modutil")

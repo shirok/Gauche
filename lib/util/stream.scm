@@ -670,4 +670,3 @@
 ;        stream-null
 ;        (stream-cons (stream-car stream) (stream-chomp (stream-cdr stream) lastchar))))))
 
-(provide "util/stream")

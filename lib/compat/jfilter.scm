@@ -127,4 +127,3 @@
                 input))
     ))
 
-(provide "compat/jfilter")

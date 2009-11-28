@@ -157,5 +157,4 @@
           (list resp (net-get-data client))
           (list resp #f))))))
 
-(provide "net/client")
 

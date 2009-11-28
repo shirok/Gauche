@@ -32,4 +32,3 @@
 ;;      [(_ obj sel . sels) (nested (cdr x))]
 ;;      [_ x])))
 
-(provide "gauche/experimental/ref")

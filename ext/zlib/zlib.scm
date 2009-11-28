@@ -108,4 +108,3 @@
           :window-bits (+ 15 16)
           args)))
 
-(provide "rfc/zlib")

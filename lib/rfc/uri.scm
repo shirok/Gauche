@@ -219,4 +219,3 @@
       (with-ports (wrap in) out (current-error-port)
         (cut apply uri-encode args)))))
 
-(provide "rfc/uri")

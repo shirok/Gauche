@@ -184,5 +184,4 @@
 (define-method instance-pool-map ((self <instance-pool-mixin>) proc)
   (instance-pool-map (class-of self) proc))
 
-(provide "gauche/mop/instance-pool")
 

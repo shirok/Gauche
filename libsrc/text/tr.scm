@@ -328,5 +328,4 @@
                                   (char->integer (cadr to-seg))))))
           (loop (+ from-ch to-size) (cdr to-segs) (cons entry r))))))
 
-(provide "text/tr")
 

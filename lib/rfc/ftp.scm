@@ -404,4 +404,3 @@
   (let1 dst-path (send-data)
     (retrieve-response (get-response conn) dst-path)))
 
-(provide "rfc/ftp")

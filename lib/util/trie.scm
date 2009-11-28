@@ -339,4 +339,3 @@
 (define-method coerce-to ((class <hash-table-meta>) (trie <trie>))
   (trie->hash-table trie 'equal?))
 
-(provide "util/trie")

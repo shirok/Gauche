@@ -52,5 +52,4 @@
      (begin (cond-expand (requirement (program stuff ...)) ...)
             (program more ...)))))
 
-(provide "srfi-7")
 

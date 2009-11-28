@@ -333,6 +333,5 @@
 (define (cgen-safe-comment str)
   (regexp-replace-all* (x->string str) #/\/\*/ "/ *" #/\*\// "* /"))
 
-(provide "gauche/cgen/unit")
 
 

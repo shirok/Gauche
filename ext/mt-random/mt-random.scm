@@ -69,4 +69,3 @@
               (quotient r q)
               (loop (%get-nword-random-int mt siz)))))))
 
-(provide "math/mt-random")

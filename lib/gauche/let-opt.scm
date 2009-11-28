@@ -11,4 +11,3 @@
 
 (warn "gauche.let-opt is obsoleted.  You don't need to use it anymore.  The functionality is supported in the core.")
 
-(provide "gauche/let-opt")

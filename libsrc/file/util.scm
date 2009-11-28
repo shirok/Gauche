@@ -782,4 +782,3 @@
 (define (file->sexp-list file . opts)
   (apply call-with-input-file file (%maybe (cut port->list read <>)) opts))
 
-(provide "file/util")

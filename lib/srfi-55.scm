@@ -41,7 +41,6 @@
                        ,(require-srfi (cdr ids) rest))))))
   (rec clauses))
 
-(provide "srfi-55")
 
 
 

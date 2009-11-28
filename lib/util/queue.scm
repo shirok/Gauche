@@ -187,4 +187,3 @@
 ;;   (remove-from-queue! (lambda (elt) (eq? item elt)) q))
 
 
-(provide "util/queue")

@@ -103,7 +103,6 @@
     (lambda ()
       (write-header)
       (for-each write-insn insns)
-      (write '(provide "gauche/vm/insn"))
       (newline))
     :if-exists :supersede)
   )

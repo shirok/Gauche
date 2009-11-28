@@ -85,5 +85,4 @@
                 (cdr vals))))
   (apply values vals))
 
-(provide "gauche/vm/debugger")
 

@@ -574,4 +574,3 @@
               lookup)
             (make-gettext-internal domain locale dirs cdir gettext-cached?)))))))
 
-(provide "text/gettext")

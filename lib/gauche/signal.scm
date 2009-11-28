@@ -91,6 +91,5 @@
        (for-each (lambda (p) (set-signal-handler! (car p) (cdr p)))
                  ohandlers)))))
 
-(provide "gauche/signal")
 
     

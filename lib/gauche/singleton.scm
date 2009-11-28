@@ -11,4 +11,3 @@
 
 (warn "gauche.singleton is obsoleted.  use gauche.mop.sigleton.")
 
-(provide "gauche/singleton")

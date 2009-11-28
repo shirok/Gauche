@@ -85,4 +85,3 @@
     (dolist (kv alist)
       (tree-map-put! tm (car kv) (cdr kv)))))
 
-(provide "gauche/treeutil")

@@ -201,4 +201,3 @@
      (error "Input serializer required:" self))
   (read-rec))
 
-(provide "gauche/serializer/aserializer")

@@ -102,4 +102,3 @@
 (define-method object-apply ((hook <hook>) . args)
   (apply run-hook hook args))
 
-(provide "gauche/hook")

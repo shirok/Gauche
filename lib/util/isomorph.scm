@@ -91,4 +91,3 @@
 (define-method object-isomorphic? (a b context)
   (equal? a b))                         ;default
 
-(provide "util/isomorph")

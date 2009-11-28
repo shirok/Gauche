@@ -103,9 +103,6 @@
 
 ;#include-body "src/sxml-tools.scm"
 
-(provide "sxml/tools")
-
-          
 ;; Local variables:
 ;; mode: scheme
 ;; end:

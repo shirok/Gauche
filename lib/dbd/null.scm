@@ -38,5 +38,4 @@
 (define-method dbi-close ((c <null-connection>))
   (set! (ref c 'open?) #f))
 
-(provide "dbd/null")
 
