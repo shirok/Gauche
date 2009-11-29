@@ -134,13 +134,14 @@ SCM_DECL_BEGIN
    Hence this macro. */
 #define SCM_IGNORE_RESULT(expr)  do { if(expr) {} } while(0)
 
-/* On-memory Scheme objects needs to be aligned in 8-byte boundary.
-   For the dynamically allocated ones, Boehm GC guarantees that.
-   We need this for statically allocated ones. */
+/* ScmFlonum and ScmClass must always be aligned in 8-byte boundaries.
+   (All other Scheme objects can be in 4-byte boundary.)
+   Some platform doesn't align static double in 8-byte boundaries, so
+   we try this as well.  */
 #ifdef __GNUC__
-#define SCM_OBJ_ALIGN  __attribute__ ((aligned (8)))
+#define SCM_ALIGN8  __attribute__ ((aligned (8)))
 #else  /* !__GNUC__ */
-#define SCM_OBJ_ALIGN  /*empty*/
+#define SCM_ALIGN8  /*empty*/
 #endif /* !__GNUC__ */
 
 /*-------------------------------------------------------------
@@ -298,7 +299,7 @@ SCM_EXTERN int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 
 typedef struct ScmFlonumRec {
     double val;
-} ScmFlonum;
+} ScmFlonum SCM_ALIGN8;
 
 #define SCM_FLONUM(obj)            ((ScmFlonum*)(SCM_WORD(obj)&~0x07))
 #define SCM_FLONUMP(obj)           (SCM_TAG2(obj) == 2)
@@ -373,7 +374,7 @@ typedef struct ScmHeaderRec {
     ScmByte *tag;                /* private.  should be accessed
                                     only via SCM_CLASS_OF and SCM_SET_CLASS
                                     macros. */
-} ScmHeader SCM_OBJ_ALIGN;
+} ScmHeader;
 
 #define SCM_HEADER       ScmHeader hdr /* for declaration */
 
@@ -608,13 +609,9 @@ typedef ScmObj (*ScmClassAllocateProc)(ScmClass *klass, ScmObj initargs);
    those fields casually.  Also, the order of these fields must be
    reflected to the class definition macros below. */
 struct ScmClassRec {
-    /* We need all class structures be aligned on (at least) 8-byte boundary
-       to make our tagging scheme work.  Dynamically allocated objects
-       are *always* 8-byte aligned due to Boehm GC's architecture.  However,
-       we found that statically allocated class structures can be placed
-       4-byte boundary on some 32bit systems if we started ScmClassRec
-       with SCM_INSTANCE_HEADER.  The following union is the trick
-       to ensure 8-byte alighment on such systems. */ 
+    /* A trick to align statically allocated class structure on 8-byte
+       boundary.  This doesn't guarantee, though, so we use __alignment__
+       attribute as well, whenever possible (see SCM_ALIGN8 macro). */
     union {
         SCM_INSTANCE_HEADER;
         double align_dummy;
@@ -651,7 +648,7 @@ struct ScmClassRec {
     ScmInternalMutex mutex;     /* to protect from MT hazard */
     ScmInternalCond cv;         /* wait on this while a class being updated */
     void   *data;               /* extra data to do nasty trick */
-};
+} SCM_ALIGN8;
 
 typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
 
@@ -910,7 +907,7 @@ SCM_EXTERN ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
 struct ScmPairRec {
     ScmObj car;                 /* should be accessed via macros */
     ScmObj cdr;                 /* ditto */
-} SCM_OBJ_ALIGN;
+};
 
 /* To keep extra information such as source-code info, some pairs
  * actually have one extra word for attribute assoc-list.  Checking
@@ -921,7 +918,7 @@ struct ScmExtendedPairRec {
     ScmObj car;                 /* should be accessed via macros */
     ScmObj cdr;                 /* ditto */
     ScmObj attributes;          /* should be accessed via API func. */
-} SCM_OBJ_ALIGN;
+};
 
 #define SCM_PAIRP(obj)          (SCM_HPTRP(obj)&&SCM_HTAG(obj)!=7)
 
