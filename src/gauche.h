@@ -134,6 +134,15 @@ SCM_DECL_BEGIN
    Hence this macro. */
 #define SCM_IGNORE_RESULT(expr)  do { if(expr) {} } while(0)
 
+/* On-memory Scheme objects needs to be aligned in 8-byte boundary.
+   For the dynamically allocated ones, Boehm GC guarantees that.
+   We need this for statically allocated ones. */
+#ifdef __GNUC__
+#define SCM_OBJ_ALIGN  __attribute__ ((aligned (8)))
+#else  /* !__GNUC__ */
+#define SCM_OBJ_ALIGN  /*empty*/
+#endif /* !__GNUC__ */
+
 /*-------------------------------------------------------------
  * BASIC TYPES
  */
@@ -364,7 +373,7 @@ typedef struct ScmHeaderRec {
     ScmByte *tag;                /* private.  should be accessed
                                     only via SCM_CLASS_OF and SCM_SET_CLASS
                                     macros. */
-} ScmHeader;
+} ScmHeader SCM_OBJ_ALIGN;
 
 #define SCM_HEADER       ScmHeader hdr /* for declaration */
 
@@ -901,7 +910,7 @@ SCM_EXTERN ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
 struct ScmPairRec {
     ScmObj car;                 /* should be accessed via macros */
     ScmObj cdr;                 /* ditto */
-};
+} SCM_OBJ_ALIGN;
 
 /* To keep extra information such as source-code info, some pairs
  * actually have one extra word for attribute assoc-list.  Checking
@@ -912,7 +921,7 @@ struct ScmExtendedPairRec {
     ScmObj car;                 /* should be accessed via macros */
     ScmObj cdr;                 /* ditto */
     ScmObj attributes;          /* should be accessed via API func. */
-};
+} SCM_OBJ_ALIGN;
 
 #define SCM_PAIRP(obj)          (SCM_HPTRP(obj)&&SCM_HTAG(obj)!=7)
 

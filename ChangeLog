@@ -1,5 +1,9 @@
 2009-11-28  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h (SCM_OBJ_ALIGN): Constrains on-memory Scheme objects to
+	  be aligned in 8-byte boundary using __attribute__.  It is important
+	  for statically allocated Scheme objects.
+
 	* Many files: Removed (provide "...") idioms, for it is no longer
 	  necessary with the autoprovide feature.
 
