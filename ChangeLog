@@ -1,5 +1,9 @@
 2009-11-28  Shiro Kawai  <shiro@acm.org>
 
+	* ext/sxml/Makefile.in (SCMCOMPILE): Needs to add "provide" expr
+	  in command line, since we removed explicit provides, but autoprovide
+	  doesn't work in this particular case.
+
 	* src/gauche.h (SCM_ALIGN8): Constrains some Scheme objects to
 	  be aligned in 8-byte boundary using __attribute__.  See the comment
 	  for the details.

@@ -6,7 +6,8 @@ SCM_CATEGORY = sxml
 
 include ../Makefile.ext
 
-SCMCOMPILE = $(GOSH) -I. -ladaptor -E "import sxml.adaptor" $(top_srcdir)/src/precomp
+SCMCOMPILE = $(GOSH) -I. -ladaptor -E "import sxml.adaptor" \
+                 -E 'provide "sxml/adaptor"' $(top_srcdir)/src/precomp
 SCMTRANS   = $(GOSH) ./trans.scm
 
 GENERATED_TARGET = tree-trans.scm to-html.scm \
