@@ -34,7 +34,7 @@
  */
 
 #define LIBGAUCHE_BODY
- #include "gauche.h"
+#include "gauche.h"
 #include "gauche/arch.h"
 #include "gauche/paths.h"
 #include "gauche/builtin-syms.h"

@@ -1,3 +1,19 @@
+2009-11-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/float.h: Moved ScmIEEEDouble definition to src/number.c.
+	  Since ARM's double endian needs special care, it's no longer
+	  casually usable.
+	* src/number.c (check_armendian): On ARM, checks double's endian
+	  at runtime.
+	  (decode_double, Scm__EncodeDouble): Enclose ARM special handling
+	  in these.
+	  (Scm_DecodeFlonum, Scm_DoubleToHalf): No longer touches ScmIEEEDouble
+	  directly.
+	* src/bignum.c (Scm_BignumToDouble): No longer touches ScmIEEEDouble
+	  directly.
+	* configure.ac, src/gauche/config.h.in: Comment adjusted to reflect
+	  above changes.
+
 2009-11-28  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml/Makefile.in (SCMCOMPILE): Needs to add "provide" expr

@@ -122,6 +122,58 @@ static double roundeven(double);
     ScmObj b(ScmObj obj1, ScmObj obj2) { return kernel(obj1, obj2, TRUE); }
 
 /*================================================================
+ * IEEE754 double flonum handling.
+ */
+
+/* Structure to extract bits from a double.  This info may be provided
+ * by a system header (e.g. ieee754.h) but for the portability we
+ * define by ourselves.
+ */
+typedef union {
+    double d;
+    struct {
+#ifdef WORDS_BIGENDIAN
+#if SIZEOF_LONG >= 8
+        unsigned int sign:1;
+        unsigned int exp:11;
+        unsigned long mant:52;
+#else  /*SIZEOF_LONG < 8*/
+        unsigned int sign:1;
+        unsigned int exp:11;
+        unsigned long mant0:20;
+        unsigned long mant1:32;
+#endif /*SIZEOF_LONG < 8*/
+#else  /*!WORDS_BIGENDIAN*/
+#if SIZEOF_LONG >= 8
+        unsigned long mant:52;
+        unsigned int  exp:11;
+        unsigned int  sign:1;
+#else  /*SIZEOF_LONG < 8*/
+        unsigned long mant1:32;
+        unsigned long mant0:20;
+        unsigned int  exp:11;
+        unsigned int  sign:1;
+#endif /*SIZEOF_LONG < 8*/
+#endif /*!WORDS_BIGENDIAN*/
+    } components;
+} ScmIEEEDouble;
+
+#ifdef DOUBLE_ARMENDIAN
+/* ARM processor may be configured to use a special mixed endian.
+   We check at runtime. */
+typedef union {
+    double d;
+    struct {
+        unsigned long mant0:20;
+        unsigned int exp:11;
+        unsigned int sign:1;
+        unsigned long mant1:32;
+    } components;
+} ScmIEEEDoubleARM;
+#endif /*DOUBLE_ARMENDIAN*/
+
+
+/*================================================================
  * Classes of Numeric Tower
  */
 
@@ -181,7 +233,7 @@ static SCM_DEFINE_GENERIC(generic_div, bad_number_method, "/");
 
 #undef COUNT_FLONUM_ALLOC
 
-#ifdef COUNT_FLONUM_ALLOC
+#ifdef COUNT_FLONUM_ALLOC  /* for benchmarks.  usually this should be off. */
 static u_long flonum_count = 0;
 
 static void report_flonum_count(void *data)
@@ -189,6 +241,37 @@ static void report_flonum_count(void *data)
     fprintf(stderr, "allocated flonums = %8d\n", flonum_count);
 }
 #endif /*COUNT_FLONUM_ALLOC*/
+
+/* ARM special handling */
+#ifdef DOUBLE_ARMENDIAN
+static int armendian_p = FALSE;
+static int armendian_checked = FALSE;
+
+#define TEST_DBL 1.9999999999999998  /* all '1' bits for mantissa */
+
+void check_armendian()
+{
+    ScmIEEEDouble z;
+    z.d = TEST_DBL;
+    if (z.components.exp != 1023) {
+        ScmIEEEDoubleARM z2;
+        z2.d = TEST_DBL;
+        if (z2.components.exp != 1023) {
+            Scm_Panic("Initiaization failed: Cannot determine double's endian "
+                      "on this ARM processor.");
+        }
+        armendian_p = TRUE;
+    } else {
+        armendian_p = FALSE;
+    }
+    armendian_checked = TRUE;
+}
+
+#define CHECK_ARMENDIAN() \
+    do { if (!armendian_checked) check_armendian(); } while (0)
+
+#endif  /*DOUBLE_ARMENDIAN*/
+
 
 ScmObj Scm_MakeFlonum(double d)
 {
@@ -230,23 +313,55 @@ ScmObj Scm_MakeFlonumToNumber(double d, int exact)
  * Cf. IEEE 754 Reference
  * http://babbage.cs.qc.edu/courses/cs341/IEEE-754references.html
  */
-ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
+static inline void decode_double(double d, u_long *mant1, u_long *mant0,
+                                 int *exp, int *sign)
 {
     ScmIEEEDouble dd;
-    ScmObj f;
+#ifdef DOUBLE_ARMENDIAN         /* ARM-specific handling */
+    ScmIEEEDoubleARM dd2;
     
-    dd.d = d;
+    CHECK_ARMENDIAN();
+    if (armendian_p) {
+        dd2.d = d;
+        *mant1 = (u_int)dd2.components.mant1;
+        *mant0 = (u_int)dd2.components.mant0;
+        *exp   = dd2.components.exp;
+        *sign  = dd2.components.sign;
+        return;
+    }
+#endif /*DOUBLE_ARMENDIAN*/
 
-    *sign = (dd.components.sign? -1 : 1);
+    dd.d = d;
+#if SIZEOF_LONG >= 8
+    *mant0 = dd.components.mant;
+    *exp   = dd.components.exp;
+    *sign  = dd.components.sign;
+#else  /* SIZEOF_LONG == 4 */
+    *mant1 = (u_int)dd.components.mant1;
+    *mant0 = (u_int)dd.components.mant0;
+    *exp   = dd.components.exp;
+    *sign  = dd.components.sign;
+#endif /* SIZEOF_LONG == 4 */
+}
+
+ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
+{
+    ScmObj f;
+    u_long mant1, mant0;
+    int exp0, sign0;
+
+    decode_double(d, &mant1, &mant0, &exp0, &sign0);
+    
+    *sign = (sign0? -1 : 1);
 
     /* Check exceptional cases */
-    if (dd.components.exp == 0x7ff) {
+    if (exp0 == 0x7ff) {
         *exp = 0;
         if (
 #if SIZEOF_LONG >= 8
-            dd.components.mant == 0
+            mant0 == 0
 #else  /*SIZEOF_LONG < 8*/
-            dd.components.mant0 == 0 && dd.components.mant1 == 0
+            mant0 == 0 && mant1 == 0
 #endif /*SIZEOF_LONG < 8*/
             ) {
             return SCM_TRUE;  /* infinity */
@@ -255,24 +370,19 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
         }
     }
 
-    *exp  = (dd.components.exp? dd.components.exp - 0x3ff - 52 : -0x3fe - 52);
+    *exp  = (exp0? exp0 - 0x3ff - 52 : -0x3fe - 52);
     
 #if SIZEOF_LONG >= 8
     {
-        unsigned long lf = dd.components.mant;
-        if (dd.components.exp > 0) {
-            lf += (1L<<52);     /* hidden bit */
-        }
-        f = Scm_MakeInteger(lf);
+        if (exp0 > 0) mant0 += (1L<<52); /* hidden bit */
+        f = Scm_MakeInteger(mant0);
     }
 #else  /*SIZEOF_LONG < 8*/
     {
-        unsigned long values[2];
-        values[0] = dd.components.mant1;
-        values[1] = dd.components.mant0;
-        if (dd.components.exp > 0) {
-            values[1] += (1L<<20); /* hidden bit */
-        }
+        ulong values[2];
+        values[0] = mant1;
+        values[1] = mant0;
+        if (exp0 > 0) values[1] += (1L<<20); /* hidden bit */
         f = Scm_NormalizeBignum(SCM_BIGNUM(Scm_MakeBignumFromUIArray(1, values, 2)));
     }
 #endif /*SIZEOF_LONG < 8*/
@@ -306,44 +416,46 @@ double Scm_HalfToDouble(ScmHalfFloat v)
 
 ScmHalfFloat Scm_DoubleToHalf(double v)
 {
-    ScmIEEEDouble dd;
+    ulong mant1, mant0;
+    int exp0, sign0;
     int e, mbits;
     unsigned long m, r;
+
+    decode_double(v, &mant1, &mant0, &exp0, &sign0);
     
-    dd.d = v;
-    if (dd.components.exp == 0x7ff) {  /* special */
+    if (exp0 == 0x7ff) {  /* special */
         if (
 #if SIZEOF_LONG >= 8
-            dd.components.mant == 0
+            mant0 == 0
 #else  /*SIZEOF_LONG < 8*/
-            dd.components.mant0 == 0 && dd.components.mant1 == 0
+            mant0 == 0 && mant1 == 0
 #endif /*SIZEOF_LONG < 8*/
             ) {
-            return dd.components.sign? 0xfc00 : 0x7c00;
+            return sign0? 0xfc00 : 0x7c00;
         } else {
             return 0x7fff;
         }
     }
-    e = dd.components.exp - 1023 + 15;
+    e = exp0 - 1023 + 15;
     if (e >= 31) {              /* overflow */
-        return dd.components.sign? 0xfc00 : 0x7c00;
+        return sign0? 0xfc00 : 0x7c00;
     }
     /* Calculate required mantissa bits.  We need upper 10 bits, unless
        e < 0, in which case we get denormalized number. */
     mbits = 10 + ((e <= 0)? e-1 : 0);
     if (mbits < -1) {           /* underflow (-1 for rounding, see below) */
-        return dd.components.sign? 0x8000 : 0x0000;
+        return sign0? 0x8000 : 0x0000;
     }
     if (e < 0) e = 0;
     /* Take the mantissa bits.  We take one extra bit to perform
        roudning.  R is used to determine whether lower bits are
        all 0 or not. */
 #if SIZEOF_LONG >= 8
-    m = dd.components.mant >> (52-mbits-1);
-    r = dd.components.mant & ((1UL << (52-mbits-1)) - 1);
+    m = mant0 >> (52-mbits-1);
+    r = mant0 & ((1UL << (52-mbits-1)) - 1);
 #else  /*SIZEOF_LONG < 8*/
-    m = dd.components.mant0 >> (20-mbits-1);
-    r = (dd.components.mant0 & ((1UL << (20-mbits-1)) - 1))|dd.components.mant1;
+    m = mant0 >> (20-mbits-1);
+    r = (mant0 & ((1UL << (20-mbits-1)) - 1))|mant1;
 #endif /*SIZEOF_LONG < 8*/
     m += 1<<(mbits+1);          /* recover hidden bit */
     
@@ -367,13 +479,48 @@ ScmHalfFloat Scm_DoubleToHalf(double v)
         m &= ~0x400;
     }
     if (e >= 31) {              /* overflow by rounding */
-        return dd.components.sign? 0xfc00 : 0x7c00;
+        return sign0? 0xfc00 : 0x7c00;
     }
     /* at this point, normalized numbers should get
        0x400 <= m <= 0x7ff, e > 0,  and denormalized numbers should get
        0 <= m <= 0x3ff, e == 0.  So we don't need to treat denormalized
        specially. */
-    return (ScmHalfFloat)((dd.components.sign? 0x8000 : 0x0000)|(e << 10)|(m & 0x3ff));
+    return (ScmHalfFloat)((sign0? 0x8000 : 0x0000)|(e << 10)|(m & 0x3ff));
+}
+
+/* Construct a double directly from the given bit patterns.  Usually
+   user program don't need this; but it is useful if the rounding of
+   the last bit really matters.
+   
+   On 64bit architecture, only mant0 is used for mantissa.
+   On 32bit architecture, lower 20bits of mant1 is used for higher
+   bits of mantissa.
+ */
+double Scm__EncodeDouble(u_long mant1, u_long mant0, int exp, int sign)
+{
+    ScmIEEEDouble dd;
+#ifdef DOUBLE_ARMENDIAN
+    ScmIEEEDoubleARM dd2;
+
+    CHECK_ARMENDIAN();
+    if (armendian_p) {
+        dd2.components.mant1 = mant1;
+        dd2.components.mant0 = mant0;
+        dd2.components.exp = exp;
+        dd2.components.sign = sign;
+        return dd2.d;
+    }
+#endif /*DOUBLE_ARMENDIAN*/
+    
+    dd.components.exp = exp;
+    dd.components.sign = sign;
+#if SIZEOF_LONG >= 8
+    dd.components.mant = mant0;
+#else  /*SIZEOF_LONG==4*/
+    dd.components.mant1 = mant1;
+    dd.components.mant0 = mant0;
+#endif /*SIZEOF_LONG==4*/
+    return dd.d;
 }
 
 /*=====================================================================

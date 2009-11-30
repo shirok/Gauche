@@ -340,8 +340,11 @@
    first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
 
-/* Define if endian of double is ARM style (each 32bit word is little endian,
-   but the lower 32bit word comes after the upper 32bit word. ) */
+/* Define if endian of double can be ARM style (each 32bit word is little
+   endian, but the lower 32bit word comes after the upper 32bit word.)
+   ARM processors can be configured with this mixed endian or ordinary
+   consistent endian, so if this is defined, we check the endian at
+   runtime. */
 #undef DOUBLE_ARMENDIAN
 
 /* Define to empty if `const' does not conform to ANSI C. */

@@ -404,6 +404,8 @@ ScmUInt64 Scm_BignumToUI64(ScmBignum *b, int clamp, int *oor)
 #endif /* SIZEOF_LONG == 4 */
 
 
+extern double Scm__EncodeDouble(u_long, u_long, int, int);
+
 /* Converts a bignum b to a double.  b must be normalized.
    We don't rely on double arithmetic, for it may result
    an error in the LSB from multiple roundings.  Instead we
@@ -412,7 +414,6 @@ ScmUInt64 Scm_BignumToUI64(ScmBignum *b, int clamp, int *oor)
  */
 double Scm_BignumToDouble(ScmBignum *b)
 {
-    ScmIEEEDouble dd;
     ScmBits *bits = (ScmBits*)b->values;
     ScmBits dst[2];
     int maxbit, exponent;
@@ -440,14 +441,8 @@ double Scm_BignumToDouble(ScmBignum *b)
             exponent++;
         }
     }
-    if (exponent > 2046) {
-        dd.components.mant = 0;
-        dd.components.exp = 2047;
-    } else {
-        dd.components.mant = dst[0];
-        dd.components.exp  = exponent;
-    }
-    dd.components.sign = (b->sign < 0);
+    if (exponent > 2046) return Scm__EncodeDouble(0, 0, 2047, (b->sign < 0));
+    else return Scm__EncodeDouble(0, dst[0], exponent, (b->sign < 0));
 #else  /*SIZEOF_LONG == 4 */
     dst[0] = dst[1] = 0;
     if (maxbit < 53) {
@@ -470,18 +465,9 @@ double Scm_BignumToDouble(ScmBignum *b)
             }
         }
     }
-    if (exponent > 2046) {
-        dd.components.mant0 = 0;
-        dd.components.mant1 = 0;
-        dd.components.exp = 2047;
-    } else {
-        dd.components.mant0 = dst[1];
-        dd.components.mant1 = dst[0];
-        dd.components.exp = exponent;
-    }
-    dd.components.sign = (b->sign < 0);
+    if (exponent > 2046) return Scm__EncodeDouble(0, 0, 2047, (b->sign < 0));
+    else return Scm__EncodeDouble(dst[0], dst[1], exponent, (b->sign < 0));
 #endif /*SIZEOF_LONG==4*/
-    return dd.d;
 }
 
 /* return -b, normalized */

@@ -281,7 +281,8 @@ case $host in
   alpha*)
     CFLAGS="$CFLAGS -mieee" ;;
   arm*)
-    # ARM processor uses a special mixed endian for doubles.
+    # ARM processor may use a special mixed endian for doubles.  It can
+    # be switched by processor configuration.  So we check it at runtime.
     AC_DEFINE(DOUBLE_ARMENDIAN,1) ;;
 esac
 
