@@ -21,8 +21,7 @@
   (use gauche.uvector)
   (use srfi-1)  ;; list library
   (use srfi-13) ;; string library
-  (export default-endian
-          read-uint read-u8 read-u16 read-u32 read-u64
+  (export read-uint read-u8 read-u16 read-u32 read-u64
           read-sint read-s8 read-s16 read-s32 read-s64
           read-ber-integer read-f16 read-f32 read-f64
           write-uint write-u8 write-u16 write-u32 write-u64

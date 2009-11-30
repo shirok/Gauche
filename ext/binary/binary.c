@@ -44,25 +44,19 @@
  * Endian handling
  */
 
-typedef enum {
-    SCM_BE  = 0,
-    SCM_LE  = 1,
-    SCM_ARM_LE = 2              /* special mixed endian for ARM */
-} Endian;
+#define IS_BE(endian)     (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG_ENDIAN))
+#define IS_LE(endian)     (SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE_ENDIAN))
+#define IS_ARM_LE(endian) (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN))
 
 #if WORDS_BIGENDIAN
-#define SWAP_REQUIRED(endian)   ((endian)!=SCM_BE)
-#else  /*!WORDS_BIGENDIAN.  This covers both SCM_LE and SCM_ARM_LE. */
-#define SWAP_REQUIRED(endian)   ((endian)==SCM_BE)
+#define SWAP_REQUIRED(endian)   (!IS_BE(endian))
+#else  /*!WORDS_BIGENDIAN.  Covers both little-endian and arm-little-endian. */
+#define SWAP_REQUIRED(endian)   IS_BE(endian)
 #endif
 
-#if WORDS_BIGENDIAN
-#define DEFAULT_ENDIAN_SYMBOL SCM_SYM_BIG_ENDIAN
-#elif defined(DOUBLE_ARMENDIAN)
-#define DEFAULT_ENDIAN_SYMBOL SCM_SYM_ARM_LITTLE_ENDIAN
-#else
-#define DEFAULT_ENDIAN_SYMBOL SCM_SYM_LITTLE_ENDIAN
-#endif
+#define ECHECK(endian) \
+    do { if (endian == NULL) endian = SCM_SYMBOL(Scm_DefaultEndian()); \
+    } while (0)
 
 /*
  * Swapping macros.   They can be used both ways (native <-> external)
@@ -70,133 +64,77 @@ typedef enum {
 
 #define CSWAP(buf, tmp, n, m) (tmp=buf[n], buf[n]=buf[m], buf[m]=tmp)
 
-#define SWAP2() \
-  do { char z; if (SWAP_REQUIRED(endian)) CSWAP(v.buf, z, 0, 1); } while (0)
+#define SWAP2(e) \
+  do { char z; if (SWAP_REQUIRED(e)) CSWAP(v.buf, z, 0, 1); } while (0)
 
-#define SWAP4()                                 \
-    do { char z;                                \
-        if (SWAP_REQUIRED(endian)) {            \
-            CSWAP(v.buf, z, 0, 3);              \
-            CSWAP(v.buf, z, 1, 2);              \
-        }                                       \
+#define SWAP4(e)                                                \
+    do { char z;                                                \
+        if (SWAP_REQUIRED(e)) {                                 \
+            CSWAP(v.buf, z, 0, 3); CSWAP(v.buf, z, 1, 2);       \
+        }                                                       \
     } while (0)
 
-#define SWAP8()                                 \
-    do { char z;                                \
-        if (SWAP_REQUIRED(endian)) {            \
-            CSWAP(v.buf, z, 0, 7);              \
-            CSWAP(v.buf, z, 1, 6);              \
-            CSWAP(v.buf, z, 2, 5);              \
-            CSWAP(v.buf, z, 3, 4);              \
-        }                                       \
+#define SWAP8(e)                                                \
+    do { char z;                                                \
+        if (SWAP_REQUIRED(e)) {                                 \
+            CSWAP(v.buf, z, 0, 7); CSWAP(v.buf, z, 1, 6);       \
+            CSWAP(v.buf, z, 2, 5); CSWAP(v.buf, z, 3, 4);       \
+        }                                                       \
     } while (0)
+
+#if WORDS_BIGENDIAN
+#define SWAPD_STD(e)                                            \
+    do { char z;                                                \
+        if (IS_BE(e)) {                                         \
+            ; /*noop*/                                          \
+        } else if (IS_LE(e)) {     f                            \
+            CSWAP(v.buf, z, 0, 7); CSWAP(v.buf, z, 1, 6);       \
+            CSWAP(v.buf, z, 2, 5); CSWAP(v.buf, z, 3, 4);       \
+        } else if (IS_ARM_LE(e)) {                              \
+            CSWAP(v.buf, z, 0, 3); CSWAP(v.buf, z, 1, 2);       \
+            CSWAP(v.buf, z, 4, 7); CSWAP(v.buf, z, 5, 6);       \
+        }                                                       \
+    } while (0)
+#else  /*!WORDS_BIGENDIAN*/
+#define SWAPD_STD(e)                                            \
+    do { char z;                                                \
+        if (IS_BE(e)) {                                         \
+            CSWAP(v.buf, z, 0, 7); CSWAP(v.buf, z, 1, 6);       \
+            CSWAP(v.buf, z, 2, 5); CSWAP(v.buf, z, 3, 4);       \
+        } else if (IS_LE(e)) {                                  \
+            ; /*noop*/                                          \
+        } else if (IS_ARM_LE(e)) {                              \
+            CSWAP(v.buf, z, 0, 4); CSWAP(v.buf, z, 1, 5);       \
+            CSWAP(v.buf, z, 2, 6); CSWAP(v.buf, z, 3, 7);       \
+        }                                                       \
+    } while (0)
+#endif /*!WORDS_BIGENDIAN*/
 
 /* Swapping for double float is a bit tricky for ARM_LE case:
    [01234567] -> [32107654]. */
 #ifdef DOUBLE_ARMENDIAN
-#define SWAPD()                                 \
-    do { char z;                                \
-        switch (endian) {                       \
-        case SCM_BE:                            \
-            CSWAP(v.buf, z, 0, 3);              \
-            CSWAP(v.buf, z, 1, 2);              \
-            CSWAP(v.buf, z, 4, 7);              \
-            CSWAP(v.buf, z, 5, 6);              \
-            break;                              \
-        case SCM_LE:                            \
-            CSWAP(v.buf, z, 0, 4);              \
-            CSWAP(v.buf, z, 1, 5);              \
-            CSWAP(v.buf, z, 2, 6);              \
-            CSWAP(v.buf, z, 3, 7);              \
-            break;                              \
-        case SCM_ARM_LE:                        \
-            break;                              \
-        }                                       \
+#define SWAPD_ARM(e)                                            \
+    do { char z;                                                \
+        if (IS_BE(e)) {                                         \
+            CSWAP(v.buf, z, 0, 3); CSWAP(v.buf, z, 1, 2);       \
+            CSWAP(v.buf, z, 4, 7); CSWAP(v.buf, z, 5, 6);       \
+        } else if (IS_LE(e)) {                                  \
+            CSWAP(v.buf, z, 0, 4); CSWAP(v.buf, z, 1, 5);       \
+            CSWAP(v.buf, z, 2, 6); CSWAP(v.buf, z, 3, 7);       \
+        } else if (IS_ARM_LE(e)) {                              \
+            ; /*noop*/                                          \
+        }                                                       \
     } while (0)
-#elif WORDS_BIGENDIAN
-#define SWAPD()                                 \
-    do { char z;                                \
-        switch (endian) {                       \
-        case SCM_BE:                            \
-            break;                              \
-        case SCM_LE:                            \
-            CSWAP(v.buf, z, 0, 7);              \
-            CSWAP(v.buf, z, 1, 6);              \
-            CSWAP(v.buf, z, 2, 5);              \
-            CSWAP(v.buf, z, 3, 4);              \
-            break;                              \
-        case SCM_ARM_LE:                        \
-            CSWAP(v.buf, z, 0, 3);              \
-            CSWAP(v.buf, z, 1, 2);              \
-            CSWAP(v.buf, z, 4, 7);              \
-            CSWAP(v.buf, z, 5, 6);              \
-            break;                              \
-        }                                       \
+
+#define SWAPD(e)                                         \
+    do {                                                 \
+        if (IS_ARM_LE(Scm_NativeEndian())) SWAPD_ARM(e); \
+        else SWAPD_STD(e);                               \
     } while (0)
-#else  /*!DOUBLE_ARMENDIAN && !WORDS_BIGENDIAN*/
-#define SWAPD()                                 \
-    do { char z;                                \
-        switch (endian) {                       \
-        case SCM_BE:                            \
-            CSWAP(v.buf, z, 0, 7);              \
-            CSWAP(v.buf, z, 1, 6);              \
-            CSWAP(v.buf, z, 2, 5);              \
-            CSWAP(v.buf, z, 3, 4);              \
-            break;                              \
-        case SCM_LE:                            \
-            break;                              \
-        case SCM_ARM_LE:                        \
-            CSWAP(v.buf, z, 0, 4);              \
-            CSWAP(v.buf, z, 1, 5);              \
-            CSWAP(v.buf, z, 2, 6);              \
-            CSWAP(v.buf, z, 3, 7);              \
-            break;                              \
-        }                                       \
-    } while (0)
-#endif /*!DOUBLE_ARMENDIAN && !WORDS_BIGENDIAN*/
 
-/*
- * Scheme bridge
- */
-static ScmParameterLoc default_endian;
-
-ScmObj Scm_DefaultEndian(void)
-{
-    return Scm_ParameterRef(Scm_VM(), &default_endian);
-}
-
-static Endian symbol2endian(ScmSymbol *s)
-{
-    ScmObj z;
-    if (!s) {
-        ScmObj d = Scm_DefaultEndian();
-        if (!SCM_SYMBOLP(d)) { z = d; goto err; }
-        s = SCM_SYMBOL(d);
-    }
-    if (SCM_EQ(SCM_OBJ(s), SCM_SYM_BIG_ENDIAN)) {
-        return SCM_BE;
-    } else if (SCM_EQ(SCM_OBJ(s), SCM_SYM_LITTLE_ENDIAN)) {
-        return SCM_LE;
-    } else if (SCM_EQ(SCM_OBJ(s), SCM_SYM_ARM_LITTLE_ENDIAN)) {
-        return SCM_ARM_LE;
-    }
-    z = SCM_OBJ(s);
-  err:
-    Scm_TypeError("Either one of symbols big-endian, little-endian, or arm-little-endian",
-                  "Endian argument", z);
-    return SCM_BE;          /* dummy */
-}
-
-#if 0 /* not used (yet) */
-static ScmObj endian2symbol(Endian e)
-{
-    switch (e) {
-    case SCM_BE: return SCM_OBJ(SCM_SYM_BIG_ENDIAN);
-    case SCM_LE: return SCM_OBJ(SCM_SYM_LITTLE_ENDIAN);
-    case SCM_ARM_LE: return SCM_OBJ(SCM_SYM_ARM_LITTLE_ENDIAN);
-    }
-}
-#endif
+#else  /*!DOUBLE_ARMENDIAN*/
+#define SWAPD(e)  SWAPD_STD(e)
+#endif /*!DOUBLE_ARMENDIAN*/
 
 /*===========================================================
  * Readers
@@ -216,101 +154,103 @@ static inline int getbytes(char *buf, int len, ScmPort *iport)
     return nread;
 }
 
-ScmObj Scm_ReadBinaryU8(ScmPort *iport, ScmSymbol *sendian)
+ScmObj Scm_ReadBinaryU8(ScmPort *iport, ScmSymbol *endian)
 {
     int b;
     ENSURE_IPORT(iport);
+    ECHECK(endian);
     if ((b = Scm_Getb(iport)) == EOF) return SCM_EOF;
     else return SCM_MAKE_INT(b);
 }
 
-ScmObj Scm_ReadBinaryS8(ScmPort *iport, ScmSymbol *sendian)
+ScmObj Scm_ReadBinaryS8(ScmPort *iport, ScmSymbol *endian)
 {
     int b;
     ENSURE_IPORT(iport);
+    ECHECK(endian);
     if ((b = Scm_Getb(iport)) == EOF) return SCM_EOF;
     if (b >= 128) b -= 256;
     return SCM_MAKE_INT(b);
 }
 
-ScmObj Scm_ReadBinaryU16(ScmPort *iport, ScmSymbol *sendian)
+ScmObj Scm_ReadBinaryU16(ScmPort *iport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[2]; unsigned short val; } v;
+    ECHECK(endian);
     if (getbytes(v.buf, 2, iport) == EOF) return SCM_EOF;
-    SWAP2();
+    SWAP2(endian);
     return SCM_MAKE_INT(v.val);
 }
 
-ScmObj Scm_ReadBinaryS16(ScmPort *iport, ScmSymbol *sendian)
+ScmObj Scm_ReadBinaryS16(ScmPort *iport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[2]; short val; } v;
+    ECHECK(endian);
     if (getbytes(v.buf, 2, iport) == EOF) return SCM_EOF;
-    SWAP2();
+    SWAP2(endian);
     return SCM_MAKE_INT(v.val);
 }
 
-ScmObj Scm_ReadBinaryU32(ScmPort *iport, ScmSymbol *sendian)
+ScmObj Scm_ReadBinaryU32(ScmPort *iport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[4]; ScmUInt32 val; } v;
+    ECHECK(endian);
     if (getbytes(v.buf, 4, iport) == EOF) return SCM_EOF;
-    SWAP4();
+    SWAP4(endian);
     return Scm_MakeIntegerFromUI(v.val);
 }
 
-ScmObj Scm_ReadBinaryS32(ScmPort *iport, ScmSymbol *sendian)
+ScmObj Scm_ReadBinaryS32(ScmPort *iport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[4]; ScmInt32 val; } v;
+    ECHECK(endian);
     if (getbytes(v.buf, 4, iport) == EOF) return SCM_EOF;
-    SWAP4();
+    SWAP4(endian);
     return Scm_MakeInteger(v.val);
 }
 
-ScmObj Scm_ReadBinaryU64(ScmPort *iport, ScmSymbol *sendian)
+ScmObj Scm_ReadBinaryU64(ScmPort *iport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[8]; ScmUInt64 val; } v;
+    ECHECK(endian);
     if (getbytes(v.buf, 8, iport) == EOF) return SCM_EOF;
-    SWAP8();
+    SWAP8(endian);
     return Scm_MakeIntegerU64(v.val);
 }
 
-ScmObj Scm_ReadBinaryS64(ScmPort *iport, ScmSymbol *sendian)
+ScmObj Scm_ReadBinaryS64(ScmPort *iport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[8]; ScmInt64 val; } v;
+    ECHECK(endian);
     if (getbytes(v.buf, 8, iport) == EOF) return SCM_EOF;
-    SWAP8();
+    SWAP8(endian);
     return Scm_MakeInteger64(v.val);
 }
 
-ScmObj Scm_ReadBinaryF16(ScmPort *iport, ScmSymbol *sendian)
+ScmObj Scm_ReadBinaryF16(ScmPort *iport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[2]; ScmHalfFloat val; } v;
+    ECHECK(endian);
     if (getbytes(v.buf, 2, iport) == EOF) return SCM_EOF;
-    SWAP2();
+    SWAP2(endian);
     return Scm_MakeFlonum(Scm_HalfToDouble(v.val));
 }
 
-ScmObj Scm_ReadBinaryF32(ScmPort *iport, ScmSymbol *sendian)
+ScmObj Scm_ReadBinaryF32(ScmPort *iport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[4]; float val; } v;
+    ECHECK(endian);
     if (getbytes(v.buf, 4, iport) == EOF) return SCM_EOF;
-    SWAP4();
+    SWAP4(endian);
     return Scm_MakeFlonum((double)v.val);
 }
 
-ScmObj Scm_ReadBinaryF64(ScmPort *iport, ScmSymbol *sendian)
+ScmObj Scm_ReadBinaryF64(ScmPort *iport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[8]; double val;} v;
+    ECHECK(endian);
     if (getbytes(v.buf, 8, iport) == EOF) return SCM_EOF;
-    SWAPD();
+    SWAPD(endian);
     return Scm_MakeFlonum(v.val);
 }
 
@@ -318,107 +258,109 @@ ScmObj Scm_ReadBinaryF64(ScmPort *iport, ScmSymbol *sendian)
  * Writers
  */
 
-void Scm_WriteBinaryU8(ScmObj sval, ScmPort *oport, ScmSymbol *sendian)
+void Scm_WriteBinaryU8(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
     int val = Scm_GetIntegerU8Clamp(sval, SCM_CLAMP_NONE, NULL);
+    ECHECK(endian);
     ENSURE_OPORT(oport);
     Scm_Putb(val, oport);
 }
 
-void Scm_WriteBinaryS8(ScmObj sval, ScmPort *oport, ScmSymbol *sendian)
+void Scm_WriteBinaryS8(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
     int val = Scm_GetInteger8Clamp(sval, SCM_CLAMP_NONE, NULL);
+    ECHECK(endian);
     ENSURE_OPORT(oport);
     Scm_Putb(val, oport);
 }
 
-void Scm_WriteBinaryU16(ScmObj sval, ScmPort *oport, ScmSymbol *sendian)
+void Scm_WriteBinaryU16(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[2]; u_short val; } v;
     ENSURE_OPORT(oport);
+    ECHECK(endian);
     v.val = Scm_GetIntegerU16Clamp(sval, SCM_CLAMP_NONE, NULL);
-    SWAP2();
+    SWAP2(endian);
     Scm_Putz(v.buf, 2, oport);
 }
 
-void Scm_WriteBinaryS16(ScmObj sval, ScmPort *oport, ScmSymbol *sendian)
+void Scm_WriteBinaryS16(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[2]; short val; } v;
     ENSURE_OPORT(oport);
+    ECHECK(endian);
     v.val = Scm_GetInteger16Clamp(sval, SCM_CLAMP_NONE, NULL);
-    SWAP2();
+    SWAP2(endian);
     Scm_Putz(v.buf, 2, oport);
 }
 
-void Scm_WriteBinaryU32(ScmObj sval, ScmPort *oport, ScmSymbol *sendian)
+void Scm_WriteBinaryU32(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[4]; ScmUInt32 val; } v;
     ENSURE_OPORT(oport);
+    ECHECK(endian);
     v.val = Scm_GetIntegerU32Clamp(sval, FALSE, FALSE);
-    SWAP4();
+    SWAP4(endian);
     Scm_Putz(v.buf, 4, oport);
 }
 
-void Scm_WriteBinaryS32(ScmObj sval, ScmPort *oport, ScmSymbol *sendian)
+void Scm_WriteBinaryS32(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[4]; ScmInt32 val; } v;
     ENSURE_OPORT(oport);
+    ECHECK(endian);
     v.val = Scm_GetInteger32Clamp(sval, FALSE, FALSE);
-    SWAP4();
+    SWAP4(endian);
     Scm_Putz(v.buf, 4, oport);
 }
 
-void Scm_WriteBinaryU64(ScmObj sval, ScmPort *oport, ScmSymbol *sendian)
+void Scm_WriteBinaryU64(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[8]; ScmUInt64 val; } v;
     ENSURE_OPORT(oport);
+    ECHECK(endian);
     v.val = Scm_GetIntegerU64Clamp(sval, FALSE, FALSE);
-    SWAP8();
+    SWAP8(endian);
     Scm_Putz(v.buf, 8, oport);
 }
 
-void Scm_WriteBinaryS64(ScmObj sval, ScmPort *oport, ScmSymbol *sendian)
+void Scm_WriteBinaryS64(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[8]; ScmInt64 val; } v;
     ENSURE_OPORT(oport);
+    ECHECK(endian);
     v.val = Scm_GetInteger64Clamp(sval, FALSE, FALSE);
-    SWAP8();
+    SWAP8(endian);
     Scm_Putz(v.buf, 8, oport);
 }
 
-void Scm_WriteBinaryF16(ScmObj sval, ScmPort *oport, ScmSymbol *sendian)
+void Scm_WriteBinaryF16(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[2]; ScmHalfFloat val; } v;
     ENSURE_OPORT(oport);
+    ECHECK(endian);
     v.val = Scm_DoubleToHalf(Scm_GetDouble(sval));
-    SWAP2();
+    SWAP2(endian);
     Scm_Putz(v.buf, 2, oport);
 }
 
-void Scm_WriteBinaryF32(ScmObj sval, ScmPort *oport, ScmSymbol *sendian)
+void Scm_WriteBinaryF32(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[4]; float val; } v;
     ENSURE_OPORT(oport);
+    ECHECK(endian);
     v.val = (float)Scm_GetDouble(sval);
-    SWAP4();
+    SWAP4(endian);
     Scm_Putz(v.buf, 4, oport);
 }
 
-void Scm_WriteBinaryF64(ScmObj sval, ScmPort *oport, ScmSymbol *sendian)
+void Scm_WriteBinaryF64(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { char buf[8]; double val; } v;
     ENSURE_OPORT(oport);
+    ECHECK(endian);
     v.val = Scm_GetDouble(sval);
-    SWAPD();
+    SWAPD(endian);
     Scm_Putz(v.buf, 8, oport);
 }
 
@@ -441,100 +383,102 @@ static void extract(ScmUVector *uv, unsigned char *buf, int off, int eltsize)
 }
 
 
-ScmObj Scm_GetBinaryU8(ScmUVector *uv, int off, ScmSymbol *sendian)
+ScmObj Scm_GetBinaryU8(ScmUVector *uv, int off, ScmSymbol *endian)
 {
     unsigned char b;
+    ECHECK(endian);
     extract(uv, &b, off, 1);
     return SCM_MAKE_INT(b);
 }
 
-ScmObj Scm_GetBinaryS8(ScmUVector *uv, int off, ScmSymbol *sendian)
+ScmObj Scm_GetBinaryS8(ScmUVector *uv, int off, ScmSymbol *endian)
 {
     unsigned char b; int r;
+    ECHECK(endian);
     extract(uv, &b, off, 1);
     r = b;
     if (r >= 128) r -= 256; 
     return SCM_MAKE_INT(r);
 }
 
-ScmObj Scm_GetBinaryU16(ScmUVector *uv, int off, ScmSymbol *sendian)
+ScmObj Scm_GetBinaryU16(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { unsigned char buf[2]; unsigned short val; } v;
+    ECHECK(endian);
     extract(uv, v.buf, off, 2);
-    SWAP2();
+    SWAP2(endian);
     return SCM_MAKE_INT(v.val);
 }
 
-ScmObj Scm_GetBinaryS16(ScmUVector *uv, int off, ScmSymbol *sendian)
+ScmObj Scm_GetBinaryS16(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { unsigned char buf[2]; short val; } v;
+    ECHECK(endian);
     extract(uv, v.buf, off, 2);
-    SWAP2();
+    SWAP2(endian);
     return SCM_MAKE_INT(v.val);
 }
 
-ScmObj Scm_GetBinaryU32(ScmUVector *uv, int off, ScmSymbol *sendian)
+ScmObj Scm_GetBinaryU32(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { unsigned char buf[4]; ScmUInt32 val; } v;
+    ECHECK(endian);
     extract(uv, v.buf, off, 4);
-    SWAP4();
+    SWAP4(endian);
     return Scm_MakeIntegerFromUI(v.val);
 }
 
-ScmObj Scm_GetBinaryS32(ScmUVector *uv, int off, ScmSymbol *sendian)
+ScmObj Scm_GetBinaryS32(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { unsigned char buf[4]; ScmInt32 val; } v;
+    ECHECK(endian);
     extract(uv, v.buf, off, 4);
-    SWAP4();
+    SWAP4(endian);
     return Scm_MakeInteger(v.val);
 }
 
-ScmObj Scm_GetBinaryU64(ScmUVector *uv, int off, ScmSymbol *sendian)
+ScmObj Scm_GetBinaryU64(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { unsigned char buf[8]; ScmUInt64 val; } v;
+    ECHECK(endian);
     extract(uv, v.buf, off, 8);
-    SWAP8();
+    SWAP8(endian);
     return Scm_MakeIntegerU64(v.val);
 }
 
-ScmObj Scm_GetBinaryS64(ScmUVector *uv, int off, ScmSymbol *sendian)
+ScmObj Scm_GetBinaryS64(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { unsigned char buf[8]; ScmInt64 val; } v;
+    ECHECK(endian);
     extract(uv, v.buf, off, 8);
-    SWAP8();
+    SWAP8(endian);
     return Scm_MakeInteger64(v.val);
 }
 
-ScmObj Scm_GetBinaryF16(ScmUVector *uv, int off, ScmSymbol *sendian)
+ScmObj Scm_GetBinaryF16(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { unsigned char buf[2]; ScmHalfFloat val; } v;
+    ECHECK(endian);
     extract(uv, v.buf, off, 2);
-    SWAP2();
+    SWAP2(endian);
     return Scm_MakeFlonum(Scm_HalfToDouble(v.val));
 }
 
-ScmObj Scm_GetBinaryF32(ScmUVector *uv, int off, ScmSymbol *sendian)
+ScmObj Scm_GetBinaryF32(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { unsigned char buf[4]; float val; } v;
+    ECHECK(endian);
     extract(uv, v.buf, off, 4);
-    SWAP4();
+    SWAP4(endian);
     return Scm_MakeFlonum((double)v.val);
 }
 
-ScmObj Scm_GetBinaryF64(ScmUVector *uv, int off, ScmSymbol *sendian)
+ScmObj Scm_GetBinaryF64(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    Endian endian = symbol2endian(sendian);
     union { unsigned char buf[8]; double val;} v;
+    ECHECK(endian);
     extract(uv, v.buf, off, 8);
-    SWAPD();
+    SWAPD(endian);
     return Scm_MakeFlonum(v.val);
 }
 
@@ -561,93 +505,95 @@ static void inject(ScmUVector *uv, unsigned char *buf, int off, int eltsize)
 void Scm_PutBinaryU8(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     u_char v = (u_char)Scm_GetIntegerU8Clamp(val, SCM_CLAMP_NONE, NULL);
+    ECHECK(e);
     inject(uv, &v, off, 1);
 }
 
 void Scm_PutBinaryS8(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     u_char v = (u_char)Scm_GetInteger8Clamp(val, SCM_CLAMP_NONE, NULL);
+    ECHECK(e);
     inject(uv, &v, off, 1);
 }
 
 void Scm_PutBinaryU16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    Endian endian = symbol2endian(e);
     union { unsigned char buf[2]; u_short val; } v;
+    ECHECK(e);
     v.val = Scm_GetIntegerU16Clamp(val, SCM_CLAMP_NONE, NULL);
-    SWAP2();
+    SWAP2(e);
     inject(uv, v.buf, off, 2);
 }
 
 void Scm_PutBinaryS16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    Endian endian = symbol2endian(e);
     union { unsigned char buf[2]; short val; } v;
+    ECHECK(e);
     v.val = Scm_GetInteger16Clamp(val, SCM_CLAMP_NONE, NULL);
-    SWAP2();
+    SWAP2(e);
     inject(uv, v.buf, off, 2);
 }
 
 void Scm_PutBinaryU32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    Endian endian = symbol2endian(e);
     union { unsigned char buf[4]; ScmUInt32 val; } v;
+    ECHECK(e);
     v.val = Scm_GetIntegerU32Clamp(val, FALSE, FALSE);
-    SWAP4();
+    SWAP4(e);
     inject(uv, v.buf, off, 4);
 }    
 
 void Scm_PutBinaryS32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    Endian endian = symbol2endian(e);
     union { unsigned char buf[4]; ScmInt32 val; } v;
+    ECHECK(e);
     v.val = Scm_GetInteger32Clamp(val, FALSE, FALSE);
-    SWAP4();
+    SWAP4(e);
     inject(uv, v.buf, off, 4);
 }
 
 void Scm_PutBinaryU64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    Endian endian = symbol2endian(e);
     union { unsigned char buf[8]; ScmUInt64 val; } v;
+    ECHECK(e);
     v.val = Scm_GetIntegerU64Clamp(val, FALSE, FALSE);
-    SWAP8();
+    SWAP8(e);
     inject(uv, v.buf, off, 8);
 }
 
 void Scm_PutBinaryS64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    Endian endian = symbol2endian(e);
     union { unsigned char buf[8]; ScmInt64 val; } v;
+    ECHECK(e);
     v.val = Scm_GetInteger64Clamp(val, FALSE, FALSE);
-    SWAP8();
+    SWAP8(e);
     inject(uv, v.buf, off, 8);
 }
 
 void Scm_PutBinaryF16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    Endian endian = symbol2endian(e);
     union { unsigned char buf[2]; ScmHalfFloat val; } v;
+    ECHECK(e);
     v.val = Scm_DoubleToHalf(Scm_GetDouble(val));
-    SWAP2();
+    SWAP2(e);
     inject(uv, v.buf, off, 2);
 }
 
 void Scm_PutBinaryF32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    Endian endian = symbol2endian(e);
     union { unsigned char buf[4]; float val; } v;
+    ECHECK(e);
     v.val = (float)Scm_GetDouble(val);
-    SWAP4();
+    SWAP4(e);
     inject(uv, v.buf, off, 4);
 }
 
 void Scm_PutBinaryF64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    Endian endian = symbol2endian(e);
     union { unsigned char buf[8]; double val; } v;
+    ECHECK(e);
     v.val = Scm_GetDouble(val);
-    SWAPD();
+    SWAPD(e);
     inject(uv, v.buf, off, 8);
 }
 
@@ -660,8 +606,5 @@ SCM_EXTENSION_ENTRY void Scm_Init_binary__io(void)
 {
     ScmModule *mod_io = SCM_FIND_MODULE("binary.io", SCM_FIND_MODULE_CREATE);
     SCM_INIT_EXTENSION(binary__io);
-    Scm_DefinePrimitiveParameter(mod_io, "default-endian",
-                                 SCM_OBJ(DEFAULT_ENDIAN_SYMBOL),
-                                 &default_endian);
     Scm_Init_binarylib(mod_io);
 }

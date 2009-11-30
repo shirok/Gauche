@@ -36,8 +36,6 @@
 #include <gauche.h>
 #include <gauche/builtin-syms.h>
 
-extern ScmObj Scm_DefaultEndian(void);
-
 extern ScmObj Scm_ReadBinaryU8(ScmPort *iport, ScmSymbol *e);
 extern ScmObj Scm_ReadBinaryU16(ScmPort *iport, ScmSymbol *e);
 extern ScmObj Scm_ReadBinaryU32(ScmPort *iport, ScmSymbol *e);

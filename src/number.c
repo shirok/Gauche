@@ -36,6 +36,7 @@
 #include "gauche/bignum.h"
 #include "gauche/scmconst.h"
 #include "gauche/bits.h"
+#include "gauche/builtin-syms.h"
 
 #include <limits.h>
 #include <float.h>
@@ -122,58 +123,6 @@ static double roundeven(double);
     ScmObj b(ScmObj obj1, ScmObj obj2) { return kernel(obj1, obj2, TRUE); }
 
 /*================================================================
- * IEEE754 double flonum handling.
- */
-
-/* Structure to extract bits from a double.  This info may be provided
- * by a system header (e.g. ieee754.h) but for the portability we
- * define by ourselves.
- */
-typedef union {
-    double d;
-    struct {
-#ifdef WORDS_BIGENDIAN
-#if SIZEOF_LONG >= 8
-        unsigned int sign:1;
-        unsigned int exp:11;
-        unsigned long mant:52;
-#else  /*SIZEOF_LONG < 8*/
-        unsigned int sign:1;
-        unsigned int exp:11;
-        unsigned long mant0:20;
-        unsigned long mant1:32;
-#endif /*SIZEOF_LONG < 8*/
-#else  /*!WORDS_BIGENDIAN*/
-#if SIZEOF_LONG >= 8
-        unsigned long mant:52;
-        unsigned int  exp:11;
-        unsigned int  sign:1;
-#else  /*SIZEOF_LONG < 8*/
-        unsigned long mant1:32;
-        unsigned long mant0:20;
-        unsigned int  exp:11;
-        unsigned int  sign:1;
-#endif /*SIZEOF_LONG < 8*/
-#endif /*!WORDS_BIGENDIAN*/
-    } components;
-} ScmIEEEDouble;
-
-#ifdef DOUBLE_ARMENDIAN
-/* ARM processor may be configured to use a special mixed endian.
-   We check at runtime. */
-typedef union {
-    double d;
-    struct {
-        unsigned long mant0:20;
-        unsigned int exp:11;
-        unsigned int sign:1;
-        unsigned long mant1:32;
-    } components;
-} ScmIEEEDoubleARM;
-#endif /*DOUBLE_ARMENDIAN*/
-
-
-/*================================================================
  * Classes of Numeric Tower
  */
 
@@ -228,24 +177,59 @@ static SCM_DEFINE_GENERIC(generic_mul, bad_number_method, "*");
 static SCM_DEFINE_GENERIC(generic_div, bad_number_method, "/");
 
 /*=====================================================================
- *  Flonums
+ * IEEE754 double and Endianness
  */
 
-#undef COUNT_FLONUM_ALLOC
+/* Structure to extract bits from a double.  This info may be provided
+ * by a system header (e.g. ieee754.h) but for the portability we
+ * define by ourselves.
+ */
+typedef union {
+    double d;
+    struct {
+#ifdef WORDS_BIGENDIAN
+#if SIZEOF_LONG >= 8
+        unsigned int sign:1;
+        unsigned int exp:11;
+        unsigned long mant:52;
+#else  /*SIZEOF_LONG < 8*/
+        unsigned int sign:1;
+        unsigned int exp:11;
+        unsigned long mant0:20;
+        unsigned long mant1:32;
+#endif /*SIZEOF_LONG < 8*/
+#else  /*!WORDS_BIGENDIAN*/
+#if SIZEOF_LONG >= 8
+        unsigned long mant:52;
+        unsigned int  exp:11;
+        unsigned int  sign:1;
+#else  /*SIZEOF_LONG < 8*/
+        unsigned long mant1:32;
+        unsigned long mant0:20;
+        unsigned int  exp:11;
+        unsigned int  sign:1;
+#endif /*SIZEOF_LONG < 8*/
+#endif /*!WORDS_BIGENDIAN*/
+    } components;
+} ScmIEEEDouble;
 
-#ifdef COUNT_FLONUM_ALLOC  /* for benchmarks.  usually this should be off. */
-static u_long flonum_count = 0;
-
-static void report_flonum_count(void *data)
-{
-    fprintf(stderr, "allocated flonums = %8d\n", flonum_count);
-}
-#endif /*COUNT_FLONUM_ALLOC*/
+#ifdef DOUBLE_ARMENDIAN
+/* ARM processor may be configured to use a special mixed endian.
+   We check at runtime. */
+typedef union {
+    double d;
+    struct {
+        unsigned long mant0:20;
+        unsigned int exp:11;
+        unsigned int sign:1;
+        unsigned long mant1:32;
+    } components;
+} ScmIEEEDoubleARM;
+#endif /*DOUBLE_ARMENDIAN*/
 
 /* ARM special handling */
 #ifdef DOUBLE_ARMENDIAN
 static int armendian_p = FALSE;
-static int armendian_checked = FALSE;
 
 #define TEST_DBL 1.9999999999999998  /* all '1' bits for mantissa */
 
@@ -264,14 +248,49 @@ void check_armendian()
     } else {
         armendian_p = FALSE;
     }
-    armendian_checked = TRUE;
 }
-
-#define CHECK_ARMENDIAN() \
-    do { if (!armendian_checked) check_armendian(); } while (0)
-
 #endif  /*DOUBLE_ARMENDIAN*/
 
+static ScmParameterLoc default_endian;
+
+ScmObj Scm_NativeEndian()
+{
+#ifdef DOUBLE_ARMENDIAN
+    if (armendian_p) return SCM_SYM_ARM_LITTLE_ENDIAN;
+#endif /*DOUBLE_ARMENDIAN*/
+#if WORDS_BIGENDIAN
+    return SCM_SYM_BIG_ENDIAN;
+#else
+    return SCM_SYM_LITTLE_ENDIAN;
+#endif
+}
+
+ScmObj Scm_DefaultEndian(void)
+{
+    return Scm_ParameterRef(Scm_VM(), &default_endian);
+}
+
+void Scm_SetDefaultEndian(ScmObj endian)
+{
+    /* We trust the caller passes one of symbols big-endian, little-endian
+       or arm-little-endian. */
+    Scm_ParameterSet(Scm_VM(), &default_endian, endian);
+}
+
+/*=====================================================================
+ *  Flonums
+ */
+
+#undef COUNT_FLONUM_ALLOC
+
+#ifdef COUNT_FLONUM_ALLOC  /* for benchmarks.  usually this should be off. */
+static u_long flonum_count = 0;
+
+static void report_flonum_count(void *data)
+{
+    fprintf(stderr, "allocated flonums = %8d\n", flonum_count);
+}
+#endif /*COUNT_FLONUM_ALLOC*/
 
 ScmObj Scm_MakeFlonum(double d)
 {
@@ -319,8 +338,6 @@ static inline void decode_double(double d, u_long *mant1, u_long *mant0,
     ScmIEEEDouble dd;
 #ifdef DOUBLE_ARMENDIAN         /* ARM-specific handling */
     ScmIEEEDoubleARM dd2;
-    
-    CHECK_ARMENDIAN();
     if (armendian_p) {
         dd2.d = d;
         *mant1 = (u_int)dd2.components.mant1;
@@ -379,7 +396,7 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
     }
 #else  /*SIZEOF_LONG < 8*/
     {
-        ulong values[2];
+        u_long values[2];
         values[0] = mant1;
         values[1] = mant0;
         if (exp0 > 0) values[1] += (1L<<20); /* hidden bit */
@@ -416,7 +433,7 @@ double Scm_HalfToDouble(ScmHalfFloat v)
 
 ScmHalfFloat Scm_DoubleToHalf(double v)
 {
-    ulong mant1, mant0;
+    u_long mant1, mant0;
     int exp0, sign0;
     int e, mbits;
     unsigned long m, r;
@@ -501,8 +518,6 @@ double Scm__EncodeDouble(u_long mant1, u_long mant0, int exp, int sign)
     ScmIEEEDouble dd;
 #ifdef DOUBLE_ARMENDIAN
     ScmIEEEDoubleARM dd2;
-
-    CHECK_ARMENDIAN();
     if (armendian_p) {
         dd2.components.mant1 = mant1;
         dd2.components.mant0 = mant0;
@@ -3875,7 +3890,7 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict)
     }
 }
 
-/*
+/*===============================================================
  * Initialization
  */
 
@@ -3921,6 +3936,14 @@ void Scm__InitNumber(void)
     Scm_InitBuiltinGeneric(&generic_sub, "object--", mod);
     Scm_InitBuiltinGeneric(&generic_mul, "object-*", mod);
     Scm_InitBuiltinGeneric(&generic_div, "object-/", mod);
+
+#ifdef DOUBLE_ARMENDIAN
+    check_armendian();
+#endif /*DOUBLE_ARMENDIAN*/
+
+    Scm_DefinePrimitiveParameter(Scm_GaucheModule(), "default-endian",
+                                 SCM_OBJ(Scm_NativeEndian()),
+                                 &default_endian);
 
 #ifdef COUNT_FLONUM_ALLOC
     Scm_AddCleanupHandler(report_flonum_count, NULL);

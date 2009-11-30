@@ -1,5 +1,13 @@
 2009-11-30  Shiro Kawai  <shiro@acm.org>
 
+	* ext/binary/binary.c, src/number.c, src/gauche/number.h
+	  (Scm_DefaultEndian, Scm_NativeEndian, Scm_SetDefaultEndian):
+	  Move the default-endian parameter from to the core, for it will
+	  be used in all binary i/o consistently.  binary.c reflects the
+	  change below to check ARM_LITTLE_ENDIAN at runtime.
+	* ext/binary/binary.h, ext/binary/io.scm: changed accordingly.
+	* src/extlib.stub (native-endian): added.
+
 	* src/parameter.c (Scm_ParameterSet): Make it return the previous value,
 	  for the consistency to Scheme-level parameter behavior.
 

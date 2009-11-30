@@ -182,6 +182,9 @@
            (result v))]
         [else (SCM_TYPE_ERROR num "real number") (result SCM_UNDEFINED)]))
 
+;; default-endian is defined in Scm__InitNumber().
+(define-cproc native-endian () Scm_NativeEndian)
+
 ;; just for debug...
 (when "SCM_DEBUG_HELPER"
   (define-cproc %bignum-dump (obj) ::<void>
