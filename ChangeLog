@@ -1,3 +1,8 @@
+2009-11-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/parameter.c (Scm_ParameterSet): Make it return the previous value,
+	  for the consistency to Scheme-level parameter behavior.
+
 2009-11-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/float.h: Moved ScmIEEEDouble definition to src/number.c.

@@ -138,14 +138,16 @@ ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *loc)
 
 ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *loc, ScmObj value)
 {
+    ScmObj oldval;
     ScmVMParameterTable *p = &(vm->parameters);
     SCM_ASSERT(loc->index >= 0);
     if (loc->index >= p->numParameters || p->ids[loc->index] != loc->id) {
         Scm_Error("the thread %S doesn't have parameter (%d:%d)",
                   vm, loc->index, loc->id);
     }
+    oldval = p->vector[loc->index];
     p->vector[loc->index] = value;
-    return value;
+    return oldval;
 }
 
 struct prim_data {
