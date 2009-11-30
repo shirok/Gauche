@@ -354,6 +354,10 @@ or
 @node Naming convention, Scheme types and C types, Fundamental concepts, Fundamental concepts
 @section Naming convention
 
+@c Memo:
+@c   Scm_XXXXSet(XXXX xxxx, ...) - operation to modify xxxx.
+@c   Scm_SetXXXX(...)  - operation to modify some global (or per-vm) value.
+
 @node Scheme types and C types, Memories, Naming convention, Fundamental concepts
 @section Scheme types and C types
 
