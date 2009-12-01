@@ -1,5 +1,8 @@
 2009-11-30  Shiro Kawai  <shiro@acm.org>
 
+	* src/core.c (Scm_Init): Initiailize parameter before number,
+	  since now InitNumber calls parameter routines.
+
 	* ext/binary/binary.c, src/number.c, src/gauche/number.h
 	  (Scm_DefaultEndian, Scm_NativeEndian, Scm_SetDefaultEndian):
 	  Move the default-endian parameter from to the core, for it will
