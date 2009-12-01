@@ -1,5 +1,8 @@
 2009-11-30  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/bytes_inline.h, src/binary.c: Factored out byte swapping
+	  macros.
+
 	* src/core.c (Scm_Init), src/parameter.c (Scm__InitParameter):
 	  Removed InitParameter, since all we need is statically initialize
 	  mutex.  This alleviates headache of ordering Scm__Init* routines
