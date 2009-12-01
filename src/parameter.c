@@ -65,7 +65,7 @@
  * dereferencnig a parameter created by an unrelated thread.
  */
 static int next_parameter_id = 0;
-ScmInternalMutex parameter_mutex;
+ScmInternalMutex parameter_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 
 /* Init table.  For primordial thread, base == NULL.  For non-primordial
  * thread, base is the current thread (this must be called from the
@@ -189,13 +189,4 @@ void Scm_DefinePrimitiveParameter(ScmModule *mod,
     subr = Scm_MakeSubr(parameter_handler, pd, 0, 1, sname);
     Scm_Define(mod, SCM_SYMBOL(Scm_Intern(SCM_STRING(sname))), subr);
     *location = pd->loc;
-}
-
-
-/*
- * Initialization
- */
-void Scm__InitParameter(void)
-{
-    SCM_INTERNAL_MUTEX_INIT(parameter_mutex);
 }
