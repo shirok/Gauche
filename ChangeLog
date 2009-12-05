@@ -4,6 +4,14 @@
 	  commonly used in the swapping operations.
 	* ext/binary/binary.c: Changed to use above types.
 
+	* ext/uvector/uvector.c.tmpl, ext/uvector/uvector.h.tmpl,
+	  ext/uvector/uvectorP.h, ext/uvector/uvgen.scm,
+	  ext/uvector/uvlib.stub.tmpl: Changed uvector-swap-bytes and
+	  uvector-swap-bytes! to deal with ARM's mixed endian, by taking
+	  optional argument.  Also changed read-block! and write-block to deal
+	  with ARM mixed endian, and obey default-endian parameter if endian
+	  argument is omitted.
+
 2009-11-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/bytes_inline.h, src/binary.c: Factored out byte swapping

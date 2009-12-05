@@ -191,9 +191,21 @@
   (klass::<class> v::<uvector> :optional (start::<int> 0) (end::<int> -1))
   Scm_UVectorAlias)
 
-(define-cproc uvector-swap-bytes (v::<uvector>) Scm_UVectorSwapBytes)
+(define-cise-stmt swap-bytes-common
+  [(_ c-fn v type)
+   `(let* ([opt::int SWAPB_STD])
+      (cond [(== ,type NULL)]
+            [(SCM_EQ (SCM_OBJ ,type) 'le:arm-le) (= opt SWAPB_ARM_LE)]
+            [(SCM_EQ (SCM_OBJ ,type) 'be:arm-le) (= opt SWAPB_ARM_BE)]
+            [else (Scm_TypeError "type" "#f or a symbol le:arm-le or be:arm-le"
+                                 (SCM_OBJ ,type))])
+      (,c-fn ,v opt))])
 
-(define-cproc uvector-swap-bytes! (v::<uvector>) Scm_UVectorSwapBytesX)
+(define-cproc uvector-swap-bytes (v::<uvector> :optional (type::<symbol>? #f))
+  (swap-bytes-common Scm_UVectorSwapBytes v type))
+
+(define-cproc uvector-swap-bytes! (v::<uvector> :optional (type::<symbol>? #f))
+  (swap-bytes-common Scm_UVectorSwapBytesX v type))
 
 (define-cproc uvector-size (v::<uvector>) ::<int> Scm_UVectorSizeInBytes)
 
@@ -201,14 +213,14 @@
                            :optional (port::<input-port> (current-input-port))
                                      (start::<fixnum> 0)
                                      (end::<fixnum> -1)
-                                     (endian #f))
+                                     (endian::<symbol>? #f))
   Scm_ReadBlockX)
 
 (define-cproc write-block (v::<uvector>
                            :optional (port::<output-port> (current-output-port))
                                      (start::<fixnum> 0)
                                      (end::<fixnum> -1)
-                                     (endian #f))
+                                     (endian::<symbol>? #f))
   Scm_WriteBlock)
 
 ;;; String operations 

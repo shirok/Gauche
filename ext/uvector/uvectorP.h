@@ -201,4 +201,15 @@ static inline ScmUInt64 range_u64lo(ScmUInt64 val, int clamp)
     return val;
 }
 
+/*
+ * 'option' argument for Scm_UVectorSwapBytes.
+ */
+
+enum {
+    SWAPB_STD,                  /* simple swapping */
+    SWAPB_ARM_LE,               /* arm-little-endian <-> little-endian */
+    SWAPB_ARM_BE                /* arm-little-endian <-> big-endian */
+};
+
+
 #endif /* GAUCHE_UVECTOR_P_H */

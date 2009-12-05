@@ -449,9 +449,9 @@
     (let1 tag (string->symbol (assq-ref rule 't))
       (define (SWAPB)
         (case tag
-          ((s16 u16 f16) "swapb16")
-          ((s32 u32 f32) "swapb32")
-          ((s64 u64 f64) "swapb64")))
+          ((s16 u16 f16) "SWAP_2")
+          ((s32 u32 f32) "SWAP_4")
+          ((s64 u64 f64) "SWAP_8")))
       (unless (memq tag '(s8 u8))
         (for-each (cute substitute <> (list* `(SWAPB . ,SWAPB)
                                              rule))

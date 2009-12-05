@@ -60,13 +60,13 @@ SCM_EXTERN ScmObj Scm_UVectorAlias(ScmClass *klass, ScmUVector *v,
                                int start, int end);
 
 SCM_EXTERN ScmObj Scm_UVectorCopy(ScmUVector *v, int start, int end);
-SCM_EXTERN ScmObj Scm_UVectorSwapBytes(ScmUVector *v);
-SCM_EXTERN ScmObj Scm_UVectorSwapBytesX(ScmUVector *v);
+SCM_EXTERN ScmObj Scm_UVectorSwapBytes(ScmUVector *v, int option);
+SCM_EXTERN ScmObj Scm_UVectorSwapBytesX(ScmUVector *v, int option);
 
 SCM_EXTERN ScmObj Scm_ReadBlockX(ScmUVector *v, ScmPort *port,
-                                 int start, int end, ScmObj endian);
+                                 int start, int end, ScmSymbol *endian);
 SCM_EXTERN ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
-                                 int start, int end, ScmObj endian);
+                                 int start, int end, ScmSymbol *endian);
 
 ///)) ;; tmpl-prologue
 
