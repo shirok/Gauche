@@ -1233,18 +1233,35 @@ exact integer @var{n}.  Negative integer is assumed to be in
 @subsection Endianness
 @c NODE エンディアン
 
+@c EN
 In the Scheme world you rarely need to know about how the numbers
 are represented inside the machine.  However, it matters
 when you have to exchange data to/from the outer world in
 binary representation.
+@c JP
+Schemeの世界では、数値がマシン上でどのように表現されているかを気にする
+必要はほとんどありません。しかし、外の世界とバイナリ表現でデータを
+やりとりする場合はそれが問題になります。
+@c COMMON
 
-When Gauche performs binary I/O, it uses the system's native
-endianness unless specified otherwise.  For example,
-procedures in the @code{binary.io} module (@xref{Binary I/O}) and
-@code{write-block}/@code{read-block!} in the @code{gauche.uvector} module
-(@xref{Uniform vectors}) take optional @var{endian} argument.
+@c EN
+Gauche's binary I/O procedures, such as in
+the @code{binary.io} module (@xref{Binary I/O}) and
+@code{write-block}/@code{read-block!}
+(@xref{Uniform vectors}), take optional @var{endian} argument
+to specify the endianness.
+@c JP
+@code{binary.io}モジュール(@ref{Binary I/O}参照)や
+@code{write-block}/@code{read-block!}(@ref{Uniform vectors}参照)
+等、Gaucheのバイナリ入出力手続きはエンディアンを指定する
+省略可能な@var{endian}引数を取ります。
+@c COMMON
 
+@c EN
 Currently Gauche recognizes the following endiannesses.
+@c JP
+エンディアンの指定には次のシンボルを使います。
+@c COMMON
 
 @table @code
 @item big-endian
@@ -1252,7 +1269,7 @@ Currently Gauche recognizes the following endiannesses.
 Big endian.  With this endianness, a 32-bit integer @code{#x12345678}
 will be written out as an octet sequence @code{#x12 #x34 #x56 #x78}.
 @c JP
-ビッグエンディアン。整数値@code{#x12345678}は@code{#x12 #x34 #x56 #x78}
+ビッグエンディアン。32ビット整数値@code{#x12345678}は@code{#x12 #x34 #x56 #x78}
 のようなバイトシーケンスとして出力されます。
 @c COMMON
 @item little-endian
@@ -1260,7 +1277,7 @@ will be written out as an octet sequence @code{#x12 #x34 #x56 #x78}.
 Little endian.  With this endianness, a 32-bit integer @code{#x12345678}
 is written out as an octet sequence @code{#x78 #x56 #x34 #x12}.
 @c JP
-リトルエンディアン。整数値@code{#x12345678}は@code{#x78 #x56 #x34 #x12}
+リトルエンディアン。32ビット整数値@code{#x12345678}は@code{#x78 #x56 #x34 #x12}
 のようなバイトシーケンスとして出力されます。
 @c COMMON
 @item arm-little-endian
@@ -1281,9 +1298,8 @@ it is written as @code{#x04 #x03 #x02 #x01 #x08 #x07 #x06 #x05}.
 @c COMMON
 @end table
 
-@defun native-endian
-Returns a symbol representing the system's endianness.
-@end defun
+When the @var{endian} argument is omitted, those procedures
+use the parameter @code{default-endian}:
 
 @deffn {Parameter} default-endian
 This is a dynamic parameter (@xref{Parameters}) to specify
@@ -1291,6 +1307,14 @@ the endianness the binary I/O routines use when its @var{endian}
 argument is omitted.  The default value of this parameter is
 the system's native endianness.
 @end deffn
+
+The system's native endianness can be queried with the following
+procedure:
+
+@defun native-endian
+Returns a symbol representing the system's endianness.
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Booleans, Pairs and Lists, Numbers, Core library
