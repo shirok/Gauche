@@ -1,3 +1,9 @@
+2009-12-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/bytes_inline.h: Added swap_*_t for the union types
+	  commonly used in the swapping operations.
+	* ext/binary/binary.c: Changed to use above types.
+
 2009-11-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/bytes_inline.h, src/binary.c: Factored out byte swapping

@@ -59,7 +59,20 @@
  * Swapping macros.   They can be used both ways (native <-> external)
  */
 
+typedef union { char buf[2]; short val; }        swap_s16_t;
+typedef union { char buf[2]; u_short val; }      swap_u16_t;
+typedef union { char buf[4]; ScmInt32 val; }     swap_s32_t;
+typedef union { char buf[4]; ScmUInt32 val; }    swap_u32_t;
+typedef union { char buf[8]; ScmInt64 val; }     swap_s64_t;
+typedef union { char buf[8]; ScmUInt64 val; }    swap_u64_t;
+
+typedef union { char buf[2]; ScmHalfFloat val; } swap_f16_t;
+typedef union { char buf[4]; float val; }        swap_f32_t;
+typedef union { char buf[8]; double val; }       swap_f64_t;
+
 #define CSWAP(buf, tmp, n, m) (tmp=buf[n], buf[n]=buf[m], buf[m]=tmp)
+
+/* In the following macros, 'v' is of type one of the suitable swap_*_t. */
 
 #define SWAP_2(v) \
     do { char tmp; CSWAP(v.buf, tmp, 0, 1); } while (0)

@@ -110,7 +110,7 @@ ScmObj Scm_ReadBinaryS8(ScmPort *iport, ScmSymbol *endian)
 
 ScmObj Scm_ReadBinaryU16(ScmPort *iport, ScmSymbol *endian)
 {
-    union { char buf[2]; unsigned short val; } v;
+    swap_u16_t v;
     CHECK_ENDIAN(endian);
     if (getbytes(v.buf, 2, iport) == EOF) return SCM_EOF;
     SWAP_16(endian, v);
@@ -119,7 +119,7 @@ ScmObj Scm_ReadBinaryU16(ScmPort *iport, ScmSymbol *endian)
 
 ScmObj Scm_ReadBinaryS16(ScmPort *iport, ScmSymbol *endian)
 {
-    union { char buf[2]; short val; } v;
+    swap_s16_t v;
     CHECK_ENDIAN(endian);
     if (getbytes(v.buf, 2, iport) == EOF) return SCM_EOF;
     SWAP_16(endian, v);
@@ -128,7 +128,7 @@ ScmObj Scm_ReadBinaryS16(ScmPort *iport, ScmSymbol *endian)
 
 ScmObj Scm_ReadBinaryU32(ScmPort *iport, ScmSymbol *endian)
 {
-    union { char buf[4]; ScmUInt32 val; } v;
+    swap_u32_t v;
     CHECK_ENDIAN(endian);
     if (getbytes(v.buf, 4, iport) == EOF) return SCM_EOF;
     SWAP_32(endian, v);
@@ -137,7 +137,7 @@ ScmObj Scm_ReadBinaryU32(ScmPort *iport, ScmSymbol *endian)
 
 ScmObj Scm_ReadBinaryS32(ScmPort *iport, ScmSymbol *endian)
 {
-    union { char buf[4]; ScmInt32 val; } v;
+    swap_s32_t v;
     CHECK_ENDIAN(endian);
     if (getbytes(v.buf, 4, iport) == EOF) return SCM_EOF;
     SWAP_32(endian, v);
@@ -146,7 +146,7 @@ ScmObj Scm_ReadBinaryS32(ScmPort *iport, ScmSymbol *endian)
 
 ScmObj Scm_ReadBinaryU64(ScmPort *iport, ScmSymbol *endian)
 {
-    union { char buf[8]; ScmUInt64 val; } v;
+    swap_u64_t v;
     CHECK_ENDIAN(endian);
     if (getbytes(v.buf, 8, iport) == EOF) return SCM_EOF;
     SWAP_64(endian, v);
@@ -155,7 +155,7 @@ ScmObj Scm_ReadBinaryU64(ScmPort *iport, ScmSymbol *endian)
 
 ScmObj Scm_ReadBinaryS64(ScmPort *iport, ScmSymbol *endian)
 {
-    union { char buf[8]; ScmInt64 val; } v;
+    swap_s64_t v;
     CHECK_ENDIAN(endian);
     if (getbytes(v.buf, 8, iport) == EOF) return SCM_EOF;
     SWAP_64(endian, v);
@@ -164,7 +164,7 @@ ScmObj Scm_ReadBinaryS64(ScmPort *iport, ScmSymbol *endian)
 
 ScmObj Scm_ReadBinaryF16(ScmPort *iport, ScmSymbol *endian)
 {
-    union { char buf[2]; ScmHalfFloat val; } v;
+    swap_f16_t v;
     CHECK_ENDIAN(endian);
     if (getbytes(v.buf, 2, iport) == EOF) return SCM_EOF;
     SWAP_16(endian, v);
@@ -173,7 +173,7 @@ ScmObj Scm_ReadBinaryF16(ScmPort *iport, ScmSymbol *endian)
 
 ScmObj Scm_ReadBinaryF32(ScmPort *iport, ScmSymbol *endian)
 {
-    union { char buf[4]; float val; } v;
+    swap_f32_t v;
     CHECK_ENDIAN(endian);
     if (getbytes(v.buf, 4, iport) == EOF) return SCM_EOF;
     SWAP_32(endian, v);
@@ -182,7 +182,7 @@ ScmObj Scm_ReadBinaryF32(ScmPort *iport, ScmSymbol *endian)
 
 ScmObj Scm_ReadBinaryF64(ScmPort *iport, ScmSymbol *endian)
 {
-    union { char buf[8]; double val;} v;
+    swap_f64_t v;
     CHECK_ENDIAN(endian);
     if (getbytes(v.buf, 8, iport) == EOF) return SCM_EOF;
     SWAP_D(endian, v);
@@ -211,7 +211,7 @@ void Scm_WriteBinaryS8(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 
 void Scm_WriteBinaryU16(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    union { char buf[2]; u_short val; } v;
+    swap_u16_t v;
     ENSURE_OPORT(oport);
     CHECK_ENDIAN(endian);
     v.val = Scm_GetIntegerU16Clamp(sval, SCM_CLAMP_NONE, NULL);
@@ -221,7 +221,7 @@ void Scm_WriteBinaryU16(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 
 void Scm_WriteBinaryS16(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    union { char buf[2]; short val; } v;
+    swap_s16_t v;
     ENSURE_OPORT(oport);
     CHECK_ENDIAN(endian);
     v.val = Scm_GetInteger16Clamp(sval, SCM_CLAMP_NONE, NULL);
@@ -231,7 +231,7 @@ void Scm_WriteBinaryS16(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 
 void Scm_WriteBinaryU32(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    union { char buf[4]; ScmUInt32 val; } v;
+    swap_u32_t v;
     ENSURE_OPORT(oport);
     CHECK_ENDIAN(endian);
     v.val = Scm_GetIntegerU32Clamp(sval, FALSE, FALSE);
@@ -241,7 +241,7 @@ void Scm_WriteBinaryU32(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 
 void Scm_WriteBinaryS32(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    union { char buf[4]; ScmInt32 val; } v;
+    swap_s32_t v;
     ENSURE_OPORT(oport);
     CHECK_ENDIAN(endian);
     v.val = Scm_GetInteger32Clamp(sval, FALSE, FALSE);
@@ -251,7 +251,7 @@ void Scm_WriteBinaryS32(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 
 void Scm_WriteBinaryU64(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    union { char buf[8]; ScmUInt64 val; } v;
+    swap_u64_t v;
     ENSURE_OPORT(oport);
     CHECK_ENDIAN(endian);
     v.val = Scm_GetIntegerU64Clamp(sval, FALSE, FALSE);
@@ -261,7 +261,7 @@ void Scm_WriteBinaryU64(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 
 void Scm_WriteBinaryS64(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    union { char buf[8]; ScmInt64 val; } v;
+    swap_s64_t v;
     ENSURE_OPORT(oport);
     CHECK_ENDIAN(endian);
     v.val = Scm_GetInteger64Clamp(sval, FALSE, FALSE);
@@ -271,7 +271,7 @@ void Scm_WriteBinaryS64(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 
 void Scm_WriteBinaryF16(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    union { char buf[2]; ScmHalfFloat val; } v;
+    swap_f16_t v;
     ENSURE_OPORT(oport);
     CHECK_ENDIAN(endian);
     v.val = Scm_DoubleToHalf(Scm_GetDouble(sval));
@@ -281,7 +281,7 @@ void Scm_WriteBinaryF16(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 
 void Scm_WriteBinaryF32(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    union { char buf[4]; float val; } v;
+    swap_f32_t v;
     ENSURE_OPORT(oport);
     CHECK_ENDIAN(endian);
     v.val = (float)Scm_GetDouble(sval);
@@ -291,7 +291,7 @@ void Scm_WriteBinaryF32(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 
 void Scm_WriteBinaryF64(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
 {
-    union { char buf[8]; double val; } v;
+    swap_f64_t v;
     ENSURE_OPORT(oport);
     CHECK_ENDIAN(endian);
     v.val = Scm_GetDouble(sval);
@@ -338,7 +338,7 @@ ScmObj Scm_GetBinaryS8(ScmUVector *uv, int off, ScmSymbol *endian)
 
 ScmObj Scm_GetBinaryU16(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    union { unsigned char buf[2]; unsigned short val; } v;
+    swap_u16_t v;
     CHECK_ENDIAN(endian);
     extract(uv, v.buf, off, 2);
     SWAP_16(endian, v);
@@ -347,7 +347,7 @@ ScmObj Scm_GetBinaryU16(ScmUVector *uv, int off, ScmSymbol *endian)
 
 ScmObj Scm_GetBinaryS16(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    union { unsigned char buf[2]; short val; } v;
+    swap_s16_t v;
     CHECK_ENDIAN(endian);
     extract(uv, v.buf, off, 2);
     SWAP_16(endian, v);
@@ -356,7 +356,7 @@ ScmObj Scm_GetBinaryS16(ScmUVector *uv, int off, ScmSymbol *endian)
 
 ScmObj Scm_GetBinaryU32(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    union { unsigned char buf[4]; ScmUInt32 val; } v;
+    swap_u32_t v;
     CHECK_ENDIAN(endian);
     extract(uv, v.buf, off, 4);
     SWAP_32(endian, v);
@@ -365,7 +365,7 @@ ScmObj Scm_GetBinaryU32(ScmUVector *uv, int off, ScmSymbol *endian)
 
 ScmObj Scm_GetBinaryS32(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    union { unsigned char buf[4]; ScmInt32 val; } v;
+    swap_s32_t v;
     CHECK_ENDIAN(endian);
     extract(uv, v.buf, off, 4);
     SWAP_32(endian, v);
@@ -374,7 +374,7 @@ ScmObj Scm_GetBinaryS32(ScmUVector *uv, int off, ScmSymbol *endian)
 
 ScmObj Scm_GetBinaryU64(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    union { unsigned char buf[8]; ScmUInt64 val; } v;
+    swap_u64_t v;
     CHECK_ENDIAN(endian);
     extract(uv, v.buf, off, 8);
     SWAP_64(endian, v);
@@ -383,7 +383,7 @@ ScmObj Scm_GetBinaryU64(ScmUVector *uv, int off, ScmSymbol *endian)
 
 ScmObj Scm_GetBinaryS64(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    union { unsigned char buf[8]; ScmInt64 val; } v;
+    swap_s64_t v;
     CHECK_ENDIAN(endian);
     extract(uv, v.buf, off, 8);
     SWAP_64(endian, v);
@@ -392,7 +392,7 @@ ScmObj Scm_GetBinaryS64(ScmUVector *uv, int off, ScmSymbol *endian)
 
 ScmObj Scm_GetBinaryF16(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    union { unsigned char buf[2]; ScmHalfFloat val; } v;
+    swap_f16_t v;
     CHECK_ENDIAN(endian);
     extract(uv, v.buf, off, 2);
     SWAP_16(endian, v);
@@ -401,7 +401,7 @@ ScmObj Scm_GetBinaryF16(ScmUVector *uv, int off, ScmSymbol *endian)
 
 ScmObj Scm_GetBinaryF32(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    union { unsigned char buf[4]; float val; } v;
+    swap_f32_t v;
     CHECK_ENDIAN(endian);
     extract(uv, v.buf, off, 4);
     SWAP_32(endian, v);
@@ -410,7 +410,7 @@ ScmObj Scm_GetBinaryF32(ScmUVector *uv, int off, ScmSymbol *endian)
 
 ScmObj Scm_GetBinaryF64(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    union { unsigned char buf[8]; double val;} v;
+    swap_f64_t v;
     CHECK_ENDIAN(endian);
     extract(uv, v.buf, off, 8);
     SWAP_D(endian, v);
@@ -453,7 +453,7 @@ void Scm_PutBinaryS8(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 
 void Scm_PutBinaryU16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    union { unsigned char buf[2]; u_short val; } v;
+    swap_u16_t v;
     CHECK_ENDIAN(e);
     v.val = Scm_GetIntegerU16Clamp(val, SCM_CLAMP_NONE, NULL);
     SWAP_16(e, v);
@@ -462,7 +462,7 @@ void Scm_PutBinaryU16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 
 void Scm_PutBinaryS16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    union { unsigned char buf[2]; short val; } v;
+    swap_s16_t v;
     CHECK_ENDIAN(e);
     v.val = Scm_GetInteger16Clamp(val, SCM_CLAMP_NONE, NULL);
     SWAP_16(e, v);
@@ -471,7 +471,7 @@ void Scm_PutBinaryS16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 
 void Scm_PutBinaryU32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    union { unsigned char buf[4]; ScmUInt32 val; } v;
+    swap_u32_t v;
     CHECK_ENDIAN(e);
     v.val = Scm_GetIntegerU32Clamp(val, FALSE, FALSE);
     SWAP_32(e, v);
@@ -480,7 +480,7 @@ void Scm_PutBinaryU32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 
 void Scm_PutBinaryS32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    union { unsigned char buf[4]; ScmInt32 val; } v;
+    swap_s32_t v;
     CHECK_ENDIAN(e);
     v.val = Scm_GetInteger32Clamp(val, FALSE, FALSE);
     SWAP_32(e, v);
@@ -489,7 +489,7 @@ void Scm_PutBinaryS32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 
 void Scm_PutBinaryU64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    union { unsigned char buf[8]; ScmUInt64 val; } v;
+    swap_u64_t v;
     CHECK_ENDIAN(e);
     v.val = Scm_GetIntegerU64Clamp(val, FALSE, FALSE);
     SWAP_64(e, v);
@@ -498,7 +498,7 @@ void Scm_PutBinaryU64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 
 void Scm_PutBinaryS64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    union { unsigned char buf[8]; ScmInt64 val; } v;
+    swap_s64_t v;
     CHECK_ENDIAN(e);
     v.val = Scm_GetInteger64Clamp(val, FALSE, FALSE);
     SWAP_64(e, v);
@@ -507,7 +507,7 @@ void Scm_PutBinaryS64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 
 void Scm_PutBinaryF16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    union { unsigned char buf[2]; ScmHalfFloat val; } v;
+    swap_f16_t v;
     CHECK_ENDIAN(e);
     v.val = Scm_DoubleToHalf(Scm_GetDouble(val));
     SWAP_16(e, v);
@@ -516,7 +516,7 @@ void Scm_PutBinaryF16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 
 void Scm_PutBinaryF32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    union { unsigned char buf[4]; float val; } v;
+    swap_f32_t v;
     CHECK_ENDIAN(e);
     v.val = (float)Scm_GetDouble(val);
     SWAP_32(e, v);
@@ -525,7 +525,7 @@ void Scm_PutBinaryF32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 
 void Scm_PutBinaryF64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
-    union { unsigned char buf[8]; double val; } v;
+    swap_f64_t v;
     CHECK_ENDIAN(e);
     v.val = Scm_GetDouble(val);
     SWAP_D(e, v);
