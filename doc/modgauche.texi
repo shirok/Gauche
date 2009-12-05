@@ -12640,36 +12640,20 @@ EOFに達していなくても、@var{vec}を埋める前に戻ることがあります
 @c EN
 The data is read as a byte stream, so if you give uniform vectors
 other than s8vector or u8vector, your result may affected by
-the endian.    Suppose the input stream
-has a byte sequence @code{#x01, #x02, #x03, #x04}.  If you read
-it into u32vector, the first element you'll get may be
-@code{#x01020304} if you're using big-endian,
-or @code{#x04030201} if you're using little-endian.
-By default @code{read-block!} uses the platform's native endian.
-You can specify the endian by passing either symbol @code{big-endian}
-or @code{little-endian} to the optional argument @var{endian}.
+the endianness.  If the optional argument @var{endian} is
+given, the input is interpreted in that endianness.
+When omitted, the value of the parameter @code{default-endian}
+is used.  @xref{Endianness}, for more about endian handling.
 @c JP
 データはバイトストリームとして読まれるので、
 s8vectorとu8vector以外のユニフォームベクタを与えた場合は
 結果がエンディアンに影響を受けることに注意して下さい。
-例えば入力が@code{#x01, #x02, #x03, #x04}というバイトシーケンスだったと
-します。これをu32vectorに読み込んだ場合、最初の要素は
-ビッグエンディアンでは@code{#x01020304}になりますが、
-リトルエンディアンでは@code{#x04030201}となるでしょう。
-デフォルトではプラットフォームのエンディアンが使われます。
-エンディアンを指定したい場合は、シンボル@code{big-endian}もしくは
-@code{little-endian}を@var{endian}引数に渡して下さい。
+省略可能引数@var{endian}によって、入力データのエンディアンを指定
+することができます。省略した場合はパラメータ@code{default-endian}の
+値が使われます。エンディアンの扱いについてより詳しくは@ref{Endianness}を参照して
+ください。
 @c COMMON
 @end defun
-
-@c EN
-(Technically there are more variations than a simple big/little endians.
-See the discussion in @ref{Binary I/O}.)
-@c JP
-(実際には、単純なビッグ/リトル以外のエンディアンも存在します。
-@ref{Binary I/O}の議論も参照してください。)
-@c COMMON
-
 
 @defun write-block vec &optional oport start end endian
 @c EN
@@ -12692,18 +12676,15 @@ This procedure returns an unspecified value.
 @c EN
 If you write out a uniform vector except s8vector and u8vector, the 
 care should be taken about the endianness, as in @code{read-block!}.
-The number @code{#x01020304} in your u32vector may be written out
-as the byte sequence @code{#x01, #x02, #x03, #x04} or
-@code{#x04, #x03, #x02, #x01}, depends on the @var{endian} argument,
-whose default is platform-dependent.
+The optional argument @var{endian} specifies the output endian.
+When it is omitted, the value of the parameter @code{default-endian}
+is used (@xref{Endianness}).
 @c JP
 @code{s8vector}と@code{u8vector}以外のユニフォームベクタを与えた場合、
 @code{read-block!}と同じようにエンディアンの影響を受けることに注意して
-下さい。u32vector中の数値@code{#x01020304}は、
-@var{endian}引数によって
-バイトシーケンス@code{#x01, #x02, #x03, #x04}と
-なるかもしれませんし、@code{#x04, #x03, #x02, #x01}となるかもしれません。
-@var{endian}引数のデフォルト値はプラットフォームによって異なります。
+下さい。省略可能引数@var{endian}によって出力のエンディアンを
+指定できます。省略した場合はパラメータ@code{default-endian}の値が
+使われます (@xref{Endianness}参照)。
 @c COMMON
 @end defun
 

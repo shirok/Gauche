@@ -105,77 +105,20 @@ specifying the byte order of the binary input.
 It must be either one of symbols @code{big-endian}, @code{little-endian},
 or @code{arm-little-endian}.
 If the endian argument is omitted, the current value of the builtin
-parameter @code{default-endian} is used.  The default value of
-the @code{default-endian} parameter is the machine's native endian.
+parameter @code{default-endian} is used (@xref{Endianness}).
 (For 8-bit I/O procedures like @code{read-u8} the endian
 argument has no effect, but is accepted for consistency).
 @c JP
 @subheading エンディアン
-
 このモジュールのほとんどの手続はオプション引数として@var{endian}引数を
 とります。これは@code{big-endian}、@code{little-endian}、
 @code{arm-little-endian}のいずれかのシンボルでなければなりません。
 エンディアン引数が省略された場合には、組込みパラメータ@code{default-endian}
-の現在値が使われます。@code{default-endian}の初期値は
-その計算機でのエンディアンです。(@code{read-u8}の ような
+の現在値が使われます (@ref{Endianness}参照)。
+(@code{read-u8}の ような
 8ビット入出力手続ではエンディアン引数は意味がありませんが、
 一貫性のため受け入れるようにしてあります。)
 @c COMMON
-
-@deffn {Builtin Parameter} default-endian &optional value
-@c EN
-When called without @var{value}, returns the current default
-endian.  When called with @var{value}, sets the current endian
-to the @var{value}, which must be one of the following symbols:
-@c JP
-@var{value}無しで呼ばれると、現在のデフォルトエンディアンの値を返します。
-@var{value}を伴って呼ばれると、その値をデフォルトエンディアンとします。
-エンディアンの値は以下のいずれかのシンボルでなければなりません。
-@c COMMON
-@table @code
-@item big-endian
-@c EN
-Big endian.  An integer @code{#x12345678} is written out as an octet
-sequence @code{#x12 #x34 #x56 #x78}.
-@c JP
-ビッグエンディアン。整数値@code{#x12345678}は@code{#x12 #x34 #x56 #x78}
-のようなバイトシーケンスとして出力されます。
-@c COMMON
-@item little-endian
-@c EN
-Little endian.  An integer @code{#x12345678} is written out as an octet
-sequence @code{#x78 #x56 #x34 #x12}.
-@c JP
-リトルエンディアン。整数値@code{#x12345678}は@code{#x78 #x56 #x34 #x12}
-のようなバイトシーケンスとして出力されます。
-@c COMMON
-@item arm-little-endian
-@c EN
-This is a variation of @code{little-endian}, and used in ARM
-processors in some specific modes.  It works just like @code{little-endian},
-except reading/writing double-precision floating point number (@code{f64}),
-which is written as two little-endian 32bit words ordered by big-endian
-(e.g. If machine register's representation is @code{#x0102030405060708},
-it is written as @code{#x04 #x03 #x02 #x01 #x08 #x07 #x06 #x05}.
-@c JP
-これは@code{little-endian}のバリエーションで、ARMプロセッサの
-特定のモードで使われるものです。倍精度浮動小数点数以外は@code{little-endian}
-と同様に動作します。倍精度浮動小数点数については、ふたつのリトルエンディアンワードが
-ビッグエンディアンの順で書き出されます (例えばマシンレジスタ上でのビットパターンが
-@code{#x0102030405060708}の場合、出力は
-@code{#x04 #x03 #x02 #x01 #x08 #x07 #x06 #x05}となります)。
-@c COMMON
-@end table
-
-@c EN
-The default endian value is thread-local.  You can use @code{parameterize}
-(@xref{Parameters}) to switch default endianness within certain dynamic scope.
-@c JP
-デフォルトエンディアン値はスレッドローカルです。@code{parameterize}
-(@ref{Parameters}参照)を用いることで、この値を特定のダイナミックスコープの
-間だけ変更することができます。
-@c COMMON
-@end deffn
 
 @c EN
 @subheading I/O using port

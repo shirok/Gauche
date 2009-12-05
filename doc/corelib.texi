@@ -242,6 +242,7 @@ Gaucheは次のタイプの数値をサポートしています。
 * Arithmetics::                 
 * Numerical conversions::       
 * Bitwise operations::          
+* Endianness::                  
 @end menu
 
 @node Number classes, Numerical predicates, Numbers, Numbers
@@ -1050,7 +1051,7 @@ Other class may provide a method to customize the behavior.
 @c COMMON
 @end deffn
 
-@node Bitwise operations,  , Numerical conversions, Numbers
+@node Bitwise operations, Endianness, Numerical conversions, Numbers
 @subsection Bitwise operations
 @c NODE ビット演算
 
@@ -1227,6 +1228,69 @@ exact integer @var{n}.  Negative integer is assumed to be in
 (integer-length -257)  @result{} 9
 @end example
 @end defun
+
+@node Endianness,  , Bitwise operations, Numbers
+@subsection Endianness
+@c NODE エンディアン
+
+In the Scheme world you rarely need to know about how the numbers
+are represented inside the machine.  However, it matters
+when you have to exchange data to/from the outer world in
+binary representation.
+
+When Gauche performs binary I/O, it uses the system's native
+endianness unless specified otherwise.  For example,
+procedures in the @code{binary.io} module (@xref{Binary I/O}) and
+@code{write-block}/@code{read-block!} in the @code{gauche.uvector} module
+(@xref{Uniform vectors}) take optional @var{endian} argument.
+
+Currently Gauche recognizes the following endiannesses.
+
+@table @code
+@item big-endian
+@c EN
+Big endian.  With this endianness, a 32-bit integer @code{#x12345678}
+will be written out as an octet sequence @code{#x12 #x34 #x56 #x78}.
+@c JP
+ビッグエンディアン。整数値@code{#x12345678}は@code{#x12 #x34 #x56 #x78}
+のようなバイトシーケンスとして出力されます。
+@c COMMON
+@item little-endian
+@c EN
+Little endian.  With this endianness, a 32-bit integer @code{#x12345678}
+is written out as an octet sequence @code{#x78 #x56 #x34 #x12}.
+@c JP
+リトルエンディアン。整数値@code{#x12345678}は@code{#x78 #x56 #x34 #x12}
+のようなバイトシーケンスとして出力されます。
+@c COMMON
+@item arm-little-endian
+@c EN
+This is a variation of @code{little-endian}, and used in ARM
+processors in some specific modes.  It works just like @code{little-endian},
+except reading/writing double-precision floating point number (@code{f64}),
+which is written as two little-endian 32bit words ordered by big-endian
+(e.g. If machine register's representation is @code{#x0102030405060708},
+it is written as @code{#x04 #x03 #x02 #x01 #x08 #x07 #x06 #x05}.
+@c JP
+これは@code{little-endian}のバリエーションで、ARMプロセッサの
+特定のモードで使われるものです。倍精度浮動小数点数以外は@code{little-endian}
+と同様に動作します。倍精度浮動小数点数については、ふたつのリトルエンディアンワードが
+ビッグエンディアンの順で書き出されます (例えばマシンレジスタ上でのビットパターンが
+@code{#x0102030405060708}の場合、出力は
+@code{#x04 #x03 #x02 #x01 #x08 #x07 #x06 #x05}となります)。
+@c COMMON
+@end table
+
+@defun native-endian
+Returns a symbol representing the system's endianness.
+@end defun
+
+@deffn {Parameter} default-endian
+This is a dynamic parameter (@xref{Parameters}) to specify
+the endianness the binary I/O routines use when its @var{endian}
+argument is omitted.  The default value of this parameter is
+the system's native endianness.
+@end deffn
 
 @c ----------------------------------------------------------------------
 @node Booleans, Pairs and Lists, Numbers, Core library
@@ -12142,7 +12206,7 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してあります。
 * Signal::                      
 * System inquiry::              
 * Time::                        
-* Process management::     
+* Process management::          
 * I/O multiplexing::            
 * Miscellaneous system calls::  
 @end menu
