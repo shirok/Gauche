@@ -214,5 +214,31 @@
 ;; I'm not sure whether this should be here or not, but fot the time being...
 
 (define (disasm proc)
-  ((with-module gauche.internal vm-dump-code) (closure-code proc)))
-
+  (define dump (with-module gauche.internal vm-dump-code))
+  (define (dump-case-lambda min-reqargs proc-array)
+    (print "CASE-LAMBDA")
+    (let1 len (vector-length proc-array)
+      (do ([i 0 (+ i 1)])
+          ((= i len) #t)
+        (when (closure? (vector-ref proc-array i))
+          (if (= i (- len 1))
+            (print ";;; numargs >= " (+ i min-reqargs))
+            (print ";;; numargs = " (+ i min-reqargs)))
+          (dump (closure-code (vector-ref proc-array i)))))))
+    
+  (cond
+   [(closure? proc) (print "CLOSURE " proc) (dump (closure-code proc))]
+   [(and (subr? proc)
+         (let1 info (procedure-info proc)
+           ;; NB: Detect case-lamdba.  The format of procedure-info of
+           ;; case-lambda is tentative, and may be changed in future.
+           ;; See the comment of make-case-lambda-dispatcher in intlib.stub.
+           (and (pair? info)
+                (eq? (car info) 'case-lambda-dispatcher)
+                (pair? (cdr info))
+                (integer? (cadr info))
+                (pair? (cddr info))
+                (vector? (caddr info))
+                (apply dump-case-lambda (cdr info)))))]
+   [else (print "Disassemble not applicable for " proc)])
+  (values))

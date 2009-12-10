@@ -530,6 +530,10 @@
          (Scm_VMApply p (Scm_ArrayToListWithTail args (- nargs 1) rarg))))
       )))
 
+;; NB: We keep dispatch-vector in the procedure info, so that disasm
+;; and other inspection routines can find it.  The structure of
+;; the procedure info here is tentative; it may be changed later.
+;; Routines that depends on this info must be aware of that.
 (define-cproc make-case-lambda-dispatcher (dispatch-vector::<vector>
                                            min-reqargs::<int>)
   (let* ([max-optargs::int (SCM_VECTOR_SIZE dispatch-vector)]
@@ -538,7 +542,10 @@
           (-> packet max_optargs) max-optargs
           (-> packet dispatch_vector) dispatch-vector)
     (result (Scm_MakeSubr case_lambda_dispatch packet
-                          min_reqargs max_optargs '"case-lambda-dispatcher"))))
+                          min_reqargs max_optargs
+                          (SCM_LIST3 'case-lambda-dispatcher
+                                     (SCM_MAKE_INT min-reqargs)
+                                     (SCM_OBJ dispatch-vector))))))
 
 ;; Local variables:
 ;; mode: scheme
