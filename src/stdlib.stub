@@ -124,18 +124,12 @@
 
 (define-cproc * (:rest args) ::<number> :fast-flonum
   (cond [(not (SCM_PAIRP args)) (result (SCM_MAKE_INT 1))]
-        [(not (SCM_NUMBERP (SCM_CAR args)))
-         (Scm_Error "number required, but got %S" (SCM_CAR args))
-         (result SCM_UNDEFINED)]       ;dummy
         [else (let* ([r::ScmObj (SCM_CAR args)])
                 (dolist [v (SCM_CDR args)] (set! r (Scm_Mul r v)))
                 (result r))]))
 
 (define-cproc + (:rest args) ::<number> :fast-flonum
   (cond [(not (SCM_PAIRP args)) (result (SCM_MAKE_INT 0))]
-        [(not (SCM_NUMBERP (SCM_CAR args)))
-         (Scm_Error "number required, but got %S" (SCM_CAR args))
-         (result SCM_UNDEFINED)]       ;dummy
         [else (let* ([r::ScmObj (SCM_CAR args)])
                 (dolist [v (SCM_CDR args)] (set! r (Scm_Add r v)))
                 (result r))]))
