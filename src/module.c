@@ -310,13 +310,14 @@ ScmObj Scm_GlobalVariableRef(ScmModule *module,
 /*
  * Definition.
  */
-static ScmObj do_define(ScmModule *module, ScmSymbol *symbol, ScmObj value,
-                        int constp)
+ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
+                         ScmObj value, int flags)
 {
     ScmGloc *g;
     ScmObj v;
     ScmObj oldval = SCM_UNDEFINED;
     int redefining = FALSE;
+    int constp = flags&SCM_BINDING_INLINABLE;
 
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(modules.mutex);
     v = Scm_HashTableRef(module->table, SCM_OBJ(symbol), SCM_FALSE);
@@ -350,17 +351,18 @@ static ScmObj do_define(ScmModule *module, ScmSymbol *symbol, ScmObj value,
     if (redefining && (!constp || !Scm_EqualP(value, oldval))) {
         Scm_Warn("redefining constant %S::%S", g->module->name, g->name);
     }
-    return SCM_OBJ(g);
+    return g;
 }
 
+/* Convenience wrapper (return value is ScmObj for the backward compatibility)*/
 ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 {
-    return do_define(module, symbol, value, FALSE);
+    return SCM_OBJ(Scm_MakeBinding(module, symbol, value, 0));
 }
 
 ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 {
-    return do_define(module, symbol, value, TRUE);
+    return SCM_OBJ(Scm_MakeBinding(module, symbol, value, SCM_BINDING_CONST));
 }
 
 /*

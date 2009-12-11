@@ -63,23 +63,31 @@ SCM_CLASS_DECL(Scm_ModuleClass);
 
 SCM_EXTERN ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists);
 
-/* Flags for Scm_FindBinding and Scm_GlobalVariableRef */
+/* Flags for Scm_FindBinding (F), MakeBinding (M)
+   and Scm_GlobalVariableRef (R)*/
 enum {
-    /* do not search parent/imported */
-    SCM_BINDING_STAY_IN_MODULE = (1L<<0)
+    SCM_BINDING_STAY_IN_MODULE = (1L<<0), /*(F,R) do not search parent/imported*/
+    SCM_BINDING_CONST = (1L<<1),          /*(M) constant binding */
+    SCM_BINDING_INLINABLE = (1L<<2)       /*(M) inlinable binding */
 };
 
 SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
 				    int flags);
+SCM_EXTERN ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
+                                    ScmObj value, int flags);
 SCM_EXTERN ScmObj Scm_GlobalVariableRef(ScmModule *module,
                                         ScmSymbol *symbol,
                                         int flags);
-
-SCM_EXTERN ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol,
-			     ScmObj value);
-SCM_EXTERN ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol,
-                                  ScmObj value);
 SCM_EXTERN void   Scm_HideBinding(ScmModule *module, ScmSymbol *symbol);
+
+/* Convenience API.  Wrapper of Scm_MakeBinding. */
+SCM_EXTERN ScmObj Scm_Define(ScmModule *module,
+                             ScmSymbol *symbol,
+			     ScmObj value);
+SCM_EXTERN ScmObj Scm_DefineConst(ScmModule *module,
+                                  ScmSymbol *symbol,
+                                  ScmObj value);
+
 
 SCM_EXTERN ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers);
 SCM_EXTERN ScmObj Scm_ImportModule(ScmModule *module, ScmObj imported,

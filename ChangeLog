@@ -1,5 +1,8 @@
 2009-12-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/module.h, src/module.c (Scm_MakeBinding): A generic API
+	  to insert global binding.  Eventually it will supersede Scm_Define.
+
 	* src/stdlib.stub (+, *): Fixed these by removing SCM_NUMBERP checks,
 	  since they should be handled in Scm_Add and Scm_Mul.  It can be
 	  legal to pass non-numbers to them, because of object-+ and object-*
