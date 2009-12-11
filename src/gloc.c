@@ -43,9 +43,12 @@
 static void gloc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmGloc *g = SCM_GLOC(obj);
-    Scm_Printf(port, "#<gloc %S%s%S>", g->module->name,
+    Scm_Printf(port, "#<gloc %S%s%S%s>", g->module->name,
                (g->exported?"#":"##"),
-               g->name);
+               g->name,
+               (Scm_GlocConstP(g)
+                ? " const"
+                : (Scm_GlocInlinableP(g) ? " inlinable" : "")));
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_GlocClass, gloc_print);
