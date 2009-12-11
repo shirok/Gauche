@@ -2,6 +2,7 @@
 
 	* src/gauche/gloc.h, src/gloc.c (Scm_GlocInlinableSetter, Scm_GlocMark):
 	  Laying out the base to support proper inlining behavior.
+	* src/module.c (Scm_MakeBinding): Added support of inlinable bindings.
 
 2009-12-10  Shiro Kawai  <shiro@acm.org>
 

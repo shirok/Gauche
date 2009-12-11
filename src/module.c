@@ -316,19 +316,21 @@ ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
     ScmGloc *g;
     ScmObj v;
     ScmObj oldval = SCM_UNDEFINED;
-    int redefining = FALSE;
-    int constp = flags&SCM_BINDING_INLINABLE;
+    int prev_kind = 0;
+    int kind = ((flags&SCM_BINDING_CONST)
+                ? SCM_BINDING_CONST
+                : ((flags&SCM_BINDING_INLINABLE)
+                   ? SCM_BINDING_INLINABLE
+                   : 0));
 
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(modules.mutex);
     v = Scm_HashTableRef(module->table, SCM_OBJ(symbol), SCM_FALSE);
     /* NB: this function bypasses check of gloc setter */
     if (SCM_GLOCP(v)) {
         g = SCM_GLOC(v);
-        if (SCM_GLOC_CONST_P(g)) {
-            redefining = TRUE;
-            oldval = g->value;
-            if (!constp) Scm_GlocUnmarkConst(g);
-        }
+        if (Scm_GlocConstP(g))          prev_kind = SCM_BINDING_CONST;
+        else if (Scm_GlocInlinableP(g)) prev_kind = SCM_BINDING_INLINABLE;
+        oldval = g->value;
     } else {
         g = SCM_GLOC(Scm_MakeGloc(symbol, module));
         Scm_HashTableSet(module->table, SCM_OBJ(symbol), SCM_OBJ(g), 0);
@@ -341,15 +343,36 @@ ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
     SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
 
     /* SCM_GLOC_SET may throw an error, so we call it after unlocking. */
-    if (constp) {
-        g->value  = value;
-        Scm_GlocMarkConst(g);
-    } else {
+    switch (kind) {
+    case SCM_BINDING_CONST:
+        g->value = value;
+        Scm_GlocMark(g, SCM_BINDING_CONST);
+        break;
+    case SCM_BINDING_INLINABLE:
+        g->value = value;
+        Scm_GlocMark(g, SCM_BINDING_INLINABLE);
+        break;
+    default:
         SCM_GLOC_SET(g, value);
+        Scm_GlocMark(g, 0);
+        break;
     }
 
-    if (redefining && (!constp || !Scm_EqualP(value, oldval))) {
-        Scm_Warn("redefining constant %S::%S", g->module->name, g->name);
+    if (prev_kind != 0) {
+        switch (kind) {
+        case SCM_BINDING_CONST:
+            if (prev_kind != SCM_BINDING_CONST || !Scm_EqualP(value, oldval)) {
+                Scm_Warn("redefining constant %S::%S",
+                         g->module->name, g->name);
+            }
+            break;
+        case SCM_BINDING_INLINABLE:
+            if (prev_kind != SCM_BINDING_INLINABLE || !Scm_EqualP(value, oldval)) {
+                Scm_Warn("redefining inlinable %S::%S",
+                         g->module->name, g->name);
+            }
+            break;
+        }
     }
     return g;
 }
