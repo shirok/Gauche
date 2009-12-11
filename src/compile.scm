@@ -87,6 +87,16 @@
   (define-constant SYNTAX  1)
   (define-constant PATTERN 2))
 
+;; used by pass3/$DEFINE.
+;; This should match the values in src/gauche/module.h.  We intentionally
+;; avoid referring to the C value,
+;; using (inline-stub (define-enum SCM_BINDING_CONST) ...), since doing so
+;; would complicate the compilation process in case we need to change those
+;; constants.  (Compile.scm is compiled by the host gauche which refers to
+;; the old value.)
+(define-constant SCM_BINDING_CONST 2)
+(define-constant SCM_BINDING_INLINABLE 4)
+
 (define-macro (define-enum name . syms)
   (let1 alist '()
     `(eval-when (:compile-toplevel)
@@ -1852,9 +1862,9 @@
      (if (global-eq? op 'lambda cenv)
        (pass1/define-inline form name args body cenv)
        (pass1/define `(_ ,name (,op ,args ,@body)) form
-                     '() (cenv-module cenv) cenv))]
+                     '(inlinable) (cenv-module cenv) cenv))]
     [(_ name expr)
-     (pass1/define `(_ ,name ,expr) form '(const) (cenv-module cenv) cenv)]
+     (pass1/define `(_ ,name ,expr) form '(inlinable) (cenv-module cenv) cenv)]
     [_ (error "syntax-error: malformed define-inline:" form)]))
 
 (define (pass1/define-inline form name formals body cenv)
@@ -1884,7 +1894,8 @@
     ;; define the procedure normally.  the packed form of p1 is included
     ;; in p2, which will eventually be a part of ScmCompiledCode, and
     ;; when executed, it'll be passed to ScmProcedure's inliner field.
-    ($define form '() (make-identifier (unwrap-syntax name) module '()) p2)))
+    ($define form '(inlinable)
+             (make-identifier (unwrap-syntax name) module '()) p2)))
 
 (define (pass1/inliner-procedure ivec)
   (lambda (form cenv)
@@ -3370,8 +3381,10 @@
 ;;
 
 (define (pass3/$DEFINE iform ccb renv ctx)
-  (let ((d (pass3/rec ($define-expr iform) ccb '() 'normal/bottom))
-        (f (if (memq 'const ($define-flags iform)) 1 0)))
+  (let ([d (pass3/rec ($define-expr iform) ccb '() 'normal/bottom)]
+        [f (cond [(memq 'const ($define-flags iform)) SCM_BINDING_CONST]
+                 [(memq 'inlinable ($define-flags iform)) SCM_BINDING_INLINABLE]
+                 [else 0])])
     (compiled-code-emit1oi! ccb DEFINE f ($define-id iform) ($*-src iform))
     d))
 

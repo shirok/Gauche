@@ -132,7 +132,8 @@
 
 (define-cproc gloc-ref (gloc::<gloc>) SCM_GLOC_GET)
 (define-cproc gloc-set! (gloc::<gloc> value) SCM_GLOC_SET)
-(define-cproc gloc-const? (gloc::<gloc>) ::<boolean> SCM_GLOC_CONST_P)
+(define-cproc gloc-const? (gloc::<gloc>) ::<boolean> Scm_GlocConstP)
+(define-cproc gloc-inlinable? (gloc::<gloc>) ::<boolean> Scm_GlocInlinableP)
 
 ;;
 ;; Compiler interface

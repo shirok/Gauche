@@ -3,6 +3,11 @@
 	* src/gauche/gloc.h, src/gloc.c (Scm_GlocInlinableSetter, Scm_GlocMark):
 	  Laying out the base to support proper inlining behavior.
 	* src/module.c (Scm_MakeBinding): Added support of inlinable bindings.
+	* src/compile.scm (pass1/define-inline, pass3/$DEFINE): Ditto.
+	  Define-inline will create an inlinable binding.
+	* src/vminsn.scm (DEFINE): Support creating inlinable bindings.
+
+	* src/intlib.stub (gloc-inlinable?): added.
 
 2009-12-10  Shiro Kawai  <shiro@acm.org>
 

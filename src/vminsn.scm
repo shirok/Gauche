@@ -394,19 +394,22 @@
 ;;  The value is taken from the input stack.
 ;;  This instruction only appears at the toplevel.  Internal defines
 ;;  are recognized and eliminated by the compiling process.
-;;  If flag == 1, the definition becomes 'constant'.
-;;
+;;  Flag can be 0, SCM_BINDING_CONST(2) or SCM_BINDING_INLINABLE(4).
+;;  (flag == 1 is also supported for the backward compatibility; remove
+;;  it after 0.9.1 release!)
 (define-insn DEFINE     1 obj #f
-  (let* ([var] [name::ScmSymbol*] [v VAL0] [flags::int (SCM_VM_INSN_ARG code)])
+  (let* ([var] [val VAL0])
     (FETCH-OPERAND var)
     (VM_ASSERT (SCM_IDENTIFIERP var))
-    (SCM_FLONUM_ENSURE_MEM v)
+    (SCM_FLONUM_ENSURE_MEM val)
     INCR-PC
-    (set! name (-> (SCM_IDENTIFIER var) name))
-    (if (== flags 0)
-      (Scm_Define (-> (SCM_IDENTIFIER var) module) name v)
-      (Scm_DefineConst (-> (SCM_IDENTIFIER var) module) name v))
-    ($result (SCM_OBJ name))))
+    (let* ([mod::ScmModule* (-> (SCM_IDENTIFIER var) module)]
+           [name::ScmSymbol* (-> (SCM_IDENTIFIER var) name)])
+      (case (SCM_VM_INSN_ARG code)        ;flag
+        [(0)                    (Scm_MakeBinding mod name val 0)]
+        [(1 SCM_BINDING_CONST)  (Scm_MakeBinding mod name val SCM_BINDING_CONST)]
+        [(SCM_BINDING_INLINABLE)(Scm_MakeBinding mod name val SCM_BINDING_INLINABLE)])
+      ($result (SCM_OBJ name)))))
 
 ;; CLOSURE <code>
 ;;  Create a closure capturing current environment.
