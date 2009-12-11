@@ -342,36 +342,16 @@ ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
     }
     SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
 
-    /* SCM_GLOC_SET may throw an error, so we call it after unlocking. */
-    switch (kind) {
-    case SCM_BINDING_CONST:
-        g->value = value;
-        Scm_GlocMark(g, SCM_BINDING_CONST);
-        break;
-    case SCM_BINDING_INLINABLE:
-        g->value = value;
-        Scm_GlocMark(g, SCM_BINDING_INLINABLE);
-        break;
-    default:
-        SCM_GLOC_SET(g, value);
-        Scm_GlocMark(g, 0);
-        break;
-    }
+    g->value = value;
+    Scm_GlocMark(g, kind);
 
     if (prev_kind != 0) {
-        switch (kind) {
-        case SCM_BINDING_CONST:
-            if (prev_kind != SCM_BINDING_CONST || !Scm_EqualP(value, oldval)) {
-                Scm_Warn("redefining constant %S::%S",
-                         g->module->name, g->name);
-            }
-            break;
-        case SCM_BINDING_INLINABLE:
-            if (prev_kind != SCM_BINDING_INLINABLE || !Scm_EqualP(value, oldval)) {
-                Scm_Warn("redefining inlinable %S::%S",
-                         g->module->name, g->name);
-            }
-            break;
+        /* TODO: value and oldval may have circular structure, and we should
+           avoid diverging. */
+        if (prev_kind != kind || !Scm_EqualP(value, oldval)) {
+            Scm_Warn("redefining %s %S::%S",
+                     (prev_kind == SCM_BINDING_CONST)? "constant" : "inlinable",
+                     g->module->name, g->name);
         }
     }
     return g;
