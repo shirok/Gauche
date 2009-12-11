@@ -94,14 +94,23 @@ SCM_CLASS_DECL(Scm_GlocClass);
 #define SCM_GLOC_SET(gloc, val) \
     ((gloc)->setter? (gloc)->setter((gloc), (val)) : ((gloc)->value = (val)))
 
-#define SCM_GLOC_CONST_P(gloc)  ((gloc)->setter == Scm_GlocConstSetter)
 #define SCM_GLOC_PHANTOM_BINDING_P(gloc) SCM_UNBOUNDP((gloc)->value)
 
+SCM_EXTERN int    Scm_GlocConstP(ScmGloc *g);
+SCM_EXTERN int    Scm_GlocInlinableP(ScmGloc *g);
+
 /* INTERNAL */
+
 SCM_EXTERN ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module);
+/* flags may be 0, SCM_BINDING_CONST, or SCM_BINDING_INLINABLE. */
+SCM_EXTERN void   Scm_GlocMark(ScmGloc *g, int flags);
+SCM_EXTERN ScmObj Scm_GlocConstSetter(ScmGloc *g, ScmObj val);
+SCM_EXTERN ScmObj Scm_GlocInlinableSetter(ScmGloc *g, ScmObj val);
+
+/* For ABI compatibility.  Should be gone at api1.0. */
+#define SCM_GLOC_CONST_P(gloc)  ((gloc)->setter == Scm_GlocConstSetter)
 SCM_EXTERN ScmObj Scm_GlocMarkConst(ScmGloc *g);
 SCM_EXTERN ScmObj Scm_GlocUnmarkConst(ScmGloc *g);
-SCM_EXTERN ScmObj Scm_GlocConstSetter(ScmGloc *g, ScmObj val);
 
 #endif /* GAUCHE_GLOC_H */
 

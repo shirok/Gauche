@@ -1,3 +1,8 @@
+2009-12-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/gloc.h, src/gloc.c (Scm_GlocInlinableSetter, Scm_GlocMark):
+	  Laying out the base to support proper inlining behavior.
+
 2009-12-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/module.h, src/module.c (Scm_MakeBinding): A generic API

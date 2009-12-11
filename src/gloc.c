@@ -64,22 +64,54 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
     return SCM_OBJ(g);
 }
 
-ScmObj Scm_GlocMarkConst(ScmGloc *gloc)
-{
-    gloc->setter = Scm_GlocConstSetter;
-    return SCM_OBJ(gloc);
-}
-
-ScmObj Scm_GlocUnmarkConst(ScmGloc *gloc)
-{
-    gloc->setter = NULL;
-    return SCM_OBJ(gloc);
-}
-
+/* special setters for const and inlinable bindings. */
 ScmObj Scm_GlocConstSetter(ScmGloc *gloc, ScmObj val)
 {
     Scm_Error("cannot change constant value of %S#%S",
               gloc->module->name, gloc->name);
     return SCM_UNDEFINED;       /* dummy */
+}
+
+ScmObj Scm_GlocInlinableSetter(ScmGloc *gloc, ScmObj val)
+{
+    Scm_Warn("altering binding of inlinable procedure: %S#%S",
+             gloc->module->name, gloc->name);
+    return val;
+}
+
+int Scm_GlocConstP(ScmGloc *gloc)
+{
+    return ((gloc)->setter == Scm_GlocConstSetter);
+}
+
+int Scm_GlocInlinableP(ScmGloc *gloc)
+{
+    return ((gloc)->setter == Scm_GlocInlinableSetter);
+}
+
+/* Change binding flags.  Do not use casually. */
+void Scm_GlocMark(ScmGloc *gloc, int flags)
+{
+    if (flags & SCM_BINDING_CONST) {
+        gloc->setter = Scm_GlocConstSetter;
+    } else if (flags & SCM_BINDING_INLINABLE) {
+        gloc->setter = Scm_GlocInlinableSetter;
+    } else {
+        gloc->setter = NULL;
+    }
+}
+
+/* For the backward ABI compatibility */
+ScmObj Scm_GlocMarkConst(ScmGloc *gloc)
+{
+    Scm_GlocMark(gloc, SCM_BINDING_CONST);
+    return SCM_OBJ(gloc);
+}
+
+/* For the backward ABI compatibility */
+ScmObj Scm_GlocUnmarkConst(ScmGloc *gloc)
+{
+    Scm_GlocMark(gloc, 0);
+    return SCM_OBJ(gloc);
 }
 
