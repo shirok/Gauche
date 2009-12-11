@@ -432,10 +432,10 @@
         (initval (make-literal init)))
     (when c-name
       (cgen-decl #`"#define ,c-name (,(cgen-cexpr symbol))"))
-    (cgen-init (format "  ~a(mod, SCM_SYMBOL(~a), ~a);\n"
-                       (if const? "Scm_DefineConst" "Scm_Define")
+    (cgen-init (format "  Scm_MakeBinding(mod, SCM_SYMBOL(~a), ~a, ~a);\n"
                        (cgen-cexpr symbol)
-                       (cgen-cexpr initval)))
+                       (cgen-cexpr initval)
+                       (if const? "SCM_BINDING_CONST" "0")))
     (cgen-add! symbol)
     (cgen-add! initval)))
 
@@ -952,9 +952,10 @@
 
 (define-method cgen-emit-init ((cproc <cproc>))
   (when (symbol? (~ cproc'scheme-name))
-    (f "  SCM_DEFINE(mod, ~s, SCM_OBJ(&~a));"
+    (f "  Scm_MakeBinding(mod, SCM_SYMBOL(SCM_INTERN(~s)), SCM_OBJ(&~a), ~a);"
        (symbol->string (~ cproc'scheme-name))
-       (c-stub-name cproc)))
+       (c-stub-name cproc)
+       (if (~ cproc'inline-insn) "SCM_BINDING_INLINABLE" "0")))
   (next-method)
   )
 

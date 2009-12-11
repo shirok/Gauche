@@ -6,6 +6,8 @@
 	* src/compile.scm (pass1/define-inline, pass3/$DEFINE): Ditto.
 	  Define-inline will create an inlinable binding.
 	* src/vminsn.scm (DEFINE): Support creating inlinable bindings.
+	* lib/gauche/cgen/stub.scm (cgen-emit-init, variable-parser-common):
+	  Add inlinable flag to the bindings of cprocs inlinable to vm insn.
 
 	* src/intlib.stub (gloc-inlinable?): added.
 
