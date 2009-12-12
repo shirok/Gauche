@@ -1,5 +1,13 @@
 2009-12-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (%attach-inline-er-transformer),
+	  src/intlib.scm (%mark-binding-inlinable!),
+	  src/scmlib.scm (define-compiler-macro): Added tentative compiler-
+	  macro API.  This is still a kind of stub; don't expect it to work
+	  universally (esp. it is unlikely to go well with precompilation.)
+	* ext/uvector/uvutil.scm: Adjusted TAGvector-ref expander to the
+	  above API.
+
 	* src/gauche/gloc.h, src/gloc.c (Scm_GlocInlinableSetter, Scm_GlocMark):
 	  Laying out the base to support proper inlining behavior.
 	* src/module.c (Scm_MakeBinding): Added support of inlinable bindings.

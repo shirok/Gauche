@@ -4311,7 +4311,8 @@
 (define-macro (define-builtin-inliner name proc)
   (let1 debug-name (string->symbol #`"inliner/,name")
     `(let1 ,debug-name ,proc
-       (set! (%procedure-inliner ,name) ,debug-name))))
+       (set! (%procedure-inliner ,name) ,debug-name)
+       (%mark-binding-inlinable! (find-module 'gauche) ',name))))
 
 ;; Some useful utilities
 ;;
@@ -4563,21 +4564,24 @@
 ;; We haven't decided our base mechanism of hygienic macros,
 ;; but for the time being, we mimic explicitly renaming macro.
 
-(define (attach-inline-transformer proc xformer)
-  (set! (%procedure-inliner proc)
-        (lambda (form cenv)
-          (let1 r
-              ;; Call the transformer with rename and compare procedure,
-              ;; just like explicit renaming macro.  However, THE CURRENT
-              ;; CODE DOES NOT IMPLEMENT PROPER SEMANTICS.  They're just
-              ;; placeholders for experiment.
-              (xformer form
-                       (cut ensure-identifier <> cenv)
-                       (lambda (a b) ; this is just a placeholder!
-                         (eq? (identifier->symbol a) (identifier->symbol b))))
-            (if (eq? form r)
-              (undefined) ; no inline operation is triggered.
-              (pass1 r cenv))))))
+(define (%attach-inline-er-transformer module name xformer)
+  (let1 proc (global-variable-ref module name)
+    (set! (%procedure-inliner proc)
+          (lambda (form cenv)
+            (let1 r
+                ;; Call the transformer with rename and compare procedure,
+                ;; just like explicit renaming macro.  However, THE CURRENT
+                ;; CODE DOES NOT IMPLEMENT PROPER SEMANTICS.  They're just
+                ;; placeholders for experiment.
+                (xformer form
+                         (cut ensure-identifier <> cenv)
+                         (lambda (a b) ; this is just a placeholder!
+                           (eq? (identifier->symbol a) (identifier->symbol b))))
+              (if (eq? form r)
+                (undefined) ; no inline operation is triggered.
+                (pass1 r cenv)))))
+    (%mark-binding-inlinable! module name)
+    name))
 
 ;;============================================================
 ;; Utilities

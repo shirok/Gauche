@@ -243,6 +243,13 @@
           (set! (-> proc inliner) inliner))
   (result (?: (-> proc inliner) (-> proc inliner) '#f)))
 
+(define-cproc %mark-binding-inlinable! (mod::<module> name::<symbol>) ::<void>
+  (let* ([g::ScmGloc* (Scm_FindBinding mod name 0)])
+    (unless g
+      (Scm_Error "[internal] %mark-binding-inlinable!: no such binding for %S \
+                  in %S" (SCM_OBJ name) (SCM_OBJ mod)))
+    (Scm_GlocMark g SCM_BINDING_INLINABLE)))
+
 ;;
 ;; Compiled code builder interface
 ;;

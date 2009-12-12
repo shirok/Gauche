@@ -40,7 +40,7 @@
 (select-module gauche)
 
 ;;;=======================================================
-;;; Optional and keyword arguments
+;;; Extending procedures
 ;;;
 
 ;; Extended lambda formals (:optional, :key, :rest etc) are
@@ -53,7 +53,7 @@
 
 ;; KLUDGE: We need these to include the compiled macro transformer
 ;; in the binary.  Will be gone in future.
-(export let-keywords let-keywords* let-optionals*)
+(export let-keywords let-keywords* let-optionals* define-compiler-macro)
 
 (define-macro (let-optionals* arg specs . body)
   (define (rec arg vars&inits rest)
@@ -161,6 +161,27 @@
                            ,@tmps)])))
               ]))))
   )
+
+;; Tentative compiler macro.
+;;
+;;  (define-compiler-macro <name>
+;;    (er-transformer
+;;     (lambda (form rename compare) ...)))
+;;
+;; Er-transformer is a wrapper to indicate the transformer is
+;; explicit-renaming.  It leaves room to support other type of macro
+;; transformers in future.
+;; The transformer itself must return <FORM> itself if it aborts
+;; expansion.
+
+(define-macro (define-compiler-macro name xformer-spec)
+  ;; TODO: Rewrite this after we get builtin patter matching.
+  (unless (and (= (length xformer-spec) 2)
+               (eq? (unwrap-syntax (car xformer-spec)) 'er-transformer))
+    (error "malformed define-compiler-macro: "
+           `(define-compiler-macro ,name ,xformer-spec)))
+  `((with-module gauche.internal %attach-inline-er-transformer)
+    (current-module) ',name ,(cadr xformer-spec)))
 
 ;;;=======================================================
 ;;; Inline stub and declarations
