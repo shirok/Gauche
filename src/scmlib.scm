@@ -180,7 +180,7 @@
                (eq? (unwrap-syntax (car xformer-spec)) 'er-transformer))
     (error "malformed define-compiler-macro: "
            `(define-compiler-macro ,name ,xformer-spec)))
-  `((with-module gauche.internal %attach-inline-er-transformer)
+  `((with-module gauche.internal %bind-inline-er-transformer)
     (current-module) ',name ,(cadr xformer-spec)))
 
 ;;;=======================================================

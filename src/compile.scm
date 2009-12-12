@@ -4564,24 +4564,26 @@
 ;; We haven't decided our base mechanism of hygienic macros,
 ;; but for the time being, we mimic explicitly renaming macro.
 
-(define (%attach-inline-er-transformer module name xformer)
-  (let1 proc (global-variable-ref module name)
-    (set! (%procedure-inliner proc)
-          (lambda (form cenv)
-            (let1 r
-                ;; Call the transformer with rename and compare procedure,
-                ;; just like explicit renaming macro.  However, THE CURRENT
-                ;; CODE DOES NOT IMPLEMENT PROPER SEMANTICS.  They're just
-                ;; placeholders for experiment.
-                (xformer form
-                         (cut ensure-identifier <> cenv)
-                         (lambda (a b) ; this is just a placeholder!
-                           (eq? (identifier->symbol a) (identifier->symbol b))))
-              (if (eq? form r)
-                (undefined) ; no inline operation is triggered.
-                (pass1 r cenv)))))
-    (%mark-binding-inlinable! module name)
-    name))
+(define (%bind-inline-er-transformer module name xformer)
+  (%attach-inline-er-transformer (global-variable-ref module name) xformer)
+  (%mark-binding-inlinable! module name)
+  name)
+
+(define (%attach-inline-er-transformer proc xformer)
+  (set! (%procedure-inliner proc)
+        (lambda (form cenv)
+          (let1 r
+              ;; Call the transformer with rename and compare procedure,
+              ;; just like explicit renaming macro.  However, THE CURRENT
+              ;; CODE DOES NOT IMPLEMENT PROPER SEMANTICS.  They're just
+              ;; placeholders for experiment.
+              (xformer form
+                       (cut ensure-identifier <> cenv)
+                       (lambda (a b) ; this is just a placeholder!
+                         (eq? (identifier->symbol a) (identifier->symbol b))))
+            (if (eq? form r)
+              (undefined) ; no inline operation is triggered.
+              (pass1 r cenv))))))  
 
 ;;============================================================
 ;; Utilities

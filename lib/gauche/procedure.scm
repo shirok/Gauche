@@ -183,8 +183,7 @@
     (receive (min-req max-req) (%find-minmax arities)
       (let1 v (make-vector (+ (- max-req min-req) 2) #f)
         (for-each (cut %fill-dispatch-vector! v min-req <> <>) arities closures)
-        ((with-module gauche.internal make-case-lambda-dispatcher)
-         v min-req)))))
+        (%build-case-lambda v min-req max-req)))))
 
 (define (%find-minmax arities)
   (let loop ([as arities] [min-req +inf.0] [max-req 0])
@@ -209,6 +208,17 @@
         [(is-a? arity <arity-at-least>)
          (let loop ([n (+ (vector-length v) min-req -1)])
            (when (>= n min-req) (%set n) (loop (- n 1))))]))
+
+(define (%build-case-lambda v min-req max-req)
+  (rlet1 p ((with-module gauche.internal make-case-lambda-dispatcher) v min-req)
+    ((with-module gauche.internal %attach-inline-er-transformer)
+     p
+     (lambda (form r c)
+       (let1 nargs (- (length form) 1)
+         (if (and (<= min-req nargs max-req)
+                  (vector-ref v (- nargs min-req)))
+           (cons (vector-ref v (- nargs min-req)) (cdr form))
+           form))))))
 
 ;; disassembler.
 ;; I'm not sure whether this should be here or not, but fot the time being...
