@@ -1,3 +1,15 @@
+2009-12-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (transparent?): More sophisticated check to see if
+	  we can safely move around or eliminate subtree of IForm.
+	  (pass2/remove-unused-lvars): If an lvar became unused and its initval
+	  is transparent, we eliminate the initval expr (previously we only
+	  eliminate if initval is $const or $lambda).
+	  (pass2p/$IF): If the test becomes a constant due to prior optimization,
+	  expands then or else node directly.
+	  (pass2p/$ASM): Partially evaluate NULLP and NOT insn if we know enough
+	  about the arg.
+
 2009-12-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass2/local-call-embedder): Bug fix: It could

@@ -1326,6 +1326,42 @@
 
   (pack-iform (rec (unpack-iform src))))
 
+;; See if the given iform is referentially transparent.   That is,
+;; the iform is side-effect free, and also the value of iform
+;; won't change even if we move ifrom to a different place in the subtree.
+(define (transparent? iform)
+  (case/unquote
+   (iform-tag iform)
+   [($LREF) (zero? (lvar-set-count ($lref-lvar iform)))]
+   [($CONST) #t]
+   [($IF)   (and (transparent? ($if-test iform))
+                 (transparent? ($if-then iform))
+                 (transparent? ($if-else iform)))]
+   [($LET)  (and (every transparent? ($let-inits iform))
+                 (transparent? ($let-body iform)))]
+   [($RECEIVE) (and (transparent? ($receive-expr iform))
+                    (transparent? ($receive-body iform)))]
+   [($LAMBDA) #t]
+   [($LABEL)  (transparent? ($label-body iform))]
+   [($SEQ)    (every transparent? ($seq-body iform))]
+   [($CALL)   (and (side-effect-free-proc? ($call-proc iform))
+                   (every transparent? ($call-args iform)))]
+   [($ASM)    (and (side-effect-free-insn? ($asm-insn iform))
+                   (every transparent? ($asm-args iform)))]
+   [($PROMISE) #t]
+   [($CONS $APPEND $MEMV $EQ? $EQV?)
+    (and (transparent? ($*-arg0 iform))
+         (transparent? ($*-arg1 iform)))]
+   [($VECTOR $LIST $LIST*) (every transparent? ($*-args iform))]
+   [($LIST->VECTOR) (transparent? ($*-arg0 iform))]
+   [($IT) #t] ; this branch is only executed when $if-test of the parent is
+              ; transparent, thus this node is also transparent.
+   [else #f]))
+
+(define (side-effect-free-proc? iform) #f) ;for now
+
+(define (side-effect-free-insn? insn)  #f) ;for now
+
 ;; An aux proc called during pass 2 to determine free variables of
 ;; a closure.   Bounds is a list of lvars that are bound in this scope
 ;; (thus can't be free).
@@ -2978,7 +3014,7 @@
                  (cond [($lref? (car inits))
                         (lvar-ref--! ($lref-lvar (car inits)))
                         rr]
-                       [(memv (iform-tag (car inits)) `(,$CONST ,$LAMBDA)) rr]
+                       [(transparent? (car inits)) rr]
                        [else (cons (car inits) rr)]))]
           [else
            (loop (cdr lvars) (cdr inits)
@@ -3360,10 +3396,14 @@
   (let ([test (pass2p/rec ($if-test iform))]
         [then (pass2p/rec ($if-then iform))]
         [else (pass2p/rec ($if-else iform))])
-    ($if-test-set! iform test)
-    ($if-then-set! iform then)
-    ($if-else-set! iform else)
-    iform))
+    (if ($const? test)
+      (let1 val-form (if ($const-value test) then else)
+        (if ($it? val-form) test val-form))
+      (begin
+        ($if-test-set! iform test)
+        ($if-then-set! iform then)
+        ($if-else-set! iform else)
+        iform))))
                        
 (define (pass2p/$LET iform)
   (let ([lvars ($let-lvars iform)]
@@ -3394,8 +3434,67 @@
   iform)
 
 (define (pass2p/$ASM iform)
-  ($asm-args-set! iform (imap pass2p/rec ($asm-args iform)))
-  iform)
+  (let1 args (imap pass2p/rec ($asm-args iform))
+    (or (and (every $const? args)
+             (case/unquote
+              (car ($asm-insn iform))
+              [(NULLP) (if (eq? ($const-value (car args)) '())
+                         ($const-t) ($const-f))]
+              [(NOT)   (if ($const-value (car args)) ($const-f) ($const-t))]
+              [else #f]))
+        (and-let* ([ (pair? args) ]
+                   [ (null? (cdr args)) ]
+                   [ ($lref? (car args)) ]
+                   [lvar ($lref-lvar (car args))]
+                   [ (zero? (lvar-set-count lvar)) ]
+                   [initval (lvar-initval lvar)])
+          (case/unquote
+           (car ($asm-insn iform))
+           [(NULLP) (and (initval-never-null? initval)
+                         (begin (lvar-ref--! lvar) ($const-f)))]
+           [(NOT)   (and (initval-never-false? initval)
+                         (begin (lvar-ref--! lvar) ($const-f)))]
+;           [(CAR)   (and (initval-always-list? initval)
+;                         (transparent? initval)
+;                         (begin (lvar-ref--! lvar) (initval-list-car initval)))]
+;           [(CDR)   (and (initval-always-list? initval)
+;                         (transparent? initval)
+;                         (begin (lvar-ref--! lvar) (initval-list-cdr initval)))]
+           [else #f]))
+        (begin ($asm-args-set! iform args) iform))))
+
+(define (initval-never-null? val)
+  (and (vector? val)
+       (let1 tag (iform-tag val)
+         (or (and (eqv? tag $LIST) (not (null? ($*-args val))))
+             (and (eqv? tag $LIST*) (not (null? ($*-args val))))
+             (memv tag `(,$LAMBDA ,$PROMISE ,$CONS ,$EQ? ,$EQV?
+                                  ,$VECTOR ,$LIST->VECTOR))))))
+
+(define (initval-never-false? val)
+  (and (vector? val)
+       (let1 tag (iform-tag val)
+         (memv tag `(,$LAMBDA ,$PROMISE ,$CONS ,$VECTOR
+                     ,$LIST->VECTOR ,$LIST)))))
+
+(define (initval-always-list? val)
+  (and (vector? val)
+       (or (has-tag? val $LIST)
+           (pair? ($*-args val)))
+       (or (has-tag? val $LIST*)
+           (pair? ($*-args val))
+           (pair? (cdr ($*-args val))))))
+
+(define (initval-list-car val) ;assumes (initval-always-list? val) is #t
+  (car ($*-args val)))
+
+(define (initval-list-cdr val) ;assumes (initval-always-list? val) is #t
+  (cond [(has-tag? val $LIST)
+         (let1 v (cdr ($*-args val))
+           (if (null? v) ($const-nil) ($list v)))]
+        [(has-tag? val $LIST*)
+         ($list* (cdr ($*-args val)))]
+        [else (error "[internal] initval-list-cdr")]))
 
 (define (pass2p/onearg-inliner iform)
   ($*-arg0-set! iform (pass2p/rec ($*-arg0 iform)))
@@ -3912,7 +4011,7 @@
           (imax (pass3/rec (car exprs) ccb renv ctx) depth)
           (loop (cdr exprs)
                 (imax (pass3/rec (car exprs) ccb renv (stmt-context ctx))
-                     depth))))])))
+                      depth))))])))
 
 ;; $CALL.
 ;;  There are several variations in $CALL node.  Each variation may also
