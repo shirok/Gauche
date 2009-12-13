@@ -275,14 +275,12 @@
 
 (define-macro (define-simple-struct name tag constructor :optional (slot-defs '()))
   (define (take l n) ; we can't use srfi-1 take, so here it is.
-    (if (zero? n)
-      '()
-      (cons (car l) (take (cdr l) (- n 1)))))
+    (if (zero? n) '() (cons (car l) (take (cdr l) (- n 1)))))
   (define (make-constructor)
-    (let ((args (gensym))
-          (num-slots  (length slot-defs))
-          (slot-names (map (lambda (s) (if (symbol? s) s (car s))) slot-defs))
-          (init-vals  (map (lambda (s) (if (symbol? s) #f (cadr s))) slot-defs)))
+    (let ([args (gensym)]
+          [num-slots  (length slot-defs)]
+          [slot-names (map (lambda (s) (if (symbol? s) s (car s))) slot-defs)]
+          [init-vals  (map (lambda (s) (if (symbol? s) #f (cadr s))) slot-defs)])
       `(define-macro (,constructor . ,args)
          (match ,args
            ,@(let loop ((n 0)
@@ -610,13 +608,12 @@
 (define-simple-struct $const $CONST $const
   (value     ; Scheme value
    ))
-
-(define $const-undef ;; common case
-  (let1 x ($const (undefined)) (lambda () x)))
-(define $const-nil
-  (let1 x ($const '()) (lambda () x)))
-(define $const-f
-  (let1 x ($const #f) (lambda () x)))
+(define-inline ($const? x) (has-tag? x $CONST))
+;; common cases
+(define $const-undef (let1 x ($const (undefined)) (lambda () x)))
+(define $const-nil   (let1 x ($const '()) (lambda () x)))
+(define $const-f     (let1 x ($const #f) (lambda () x)))
+(define $const-t     (let1 x ($const #t) (lambda () x)))
 
 ;; $if <src> <test> <then> <else>
 ;;   Conditional.
