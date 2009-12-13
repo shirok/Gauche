@@ -319,8 +319,7 @@
                     r))))))
   )
 
-(define-inline (variable? arg)
-  (or (symbol? arg) (identifier? arg)))
+(define-inline (variable? arg) (or (symbol? arg) (identifier? arg)))
 
 ;; Local variables (lvar)
 ;;
@@ -580,6 +579,7 @@
    ))
 (define-inline ($lref lvar)
   (lvar-ref++! lvar) (vector $LREF lvar))
+(define-inline ($lref? iform) (has-tag? iform $LREF))
 
 ;; $lset <lvar> <expr>
 ;;   Local variable assignment.  The result of <expr> is set to <lvar>.
@@ -727,7 +727,7 @@
 ;; $it
 ;;   A special node.  See the explanation of $if above.
 (define $it (let ((c `#(,$IT))) (lambda () c)))
-
+(define-inline ($it? x) (has-tag? x $IT))
 
 ;; The followings are builtin version of standard procedures.
 ;; 
@@ -2169,7 +2169,7 @@
       [('unquote x)
        (if (zero? level)
          (let1 r (pass1 x cenv)
-           (if (has-tag? r $CONST)
+           (if ($const? r)
              (values #t ($const-value r))
              (values #f r)))
          (receive (xc? xx) (quasi x (- level 1))
@@ -2187,7 +2187,7 @@
       [(('unquote-splicing x))            ;; `(,@x)
        (if (zero? level)
          (let1 r (pass1 x cenv)
-           (if (has-tag? r $CONST)
+           (if ($const? r)
              (values #t ($const-value r))
              (values #f r)))
          (receive (xc? xx) (quasi x (- level 1))
@@ -2201,7 +2201,7 @@
        (receive (yc? yy) (quasi y level)
          (if (zero? level)
            (let1 r (pass1 x cenv)
-             (if (and yc? (has-tag? r $CONST))
+             (if (and yc? ($const? r))
                (values #t (append ($const-value r) yy))
                (values #f ($append obj r (wrap yc? yy)))))
            (receive (xc? xx) (quasi x (- level 1))
@@ -2216,7 +2216,7 @@
        (receive (xc? xx) (quasi x level)
          (if (zero? level)
            (let1 r (pass1 y cenv)
-             (if (and xc? (has-tag? r $CONST))
+             (if (and xc? ($const? r))
                (values #t (cons xx ($const-value r)))
                (values #f ($cons obj (wrap xc? xx) r))))
            (receive (yc? yy) (quasi y level)
@@ -2797,12 +2797,12 @@
     (if (zero? (lvar-set-count lvar))
       (let1 initval (lvar-initval lvar)
         (cond [(not (vector? initval)) iform]
-              [(has-tag? initval $CONST)
+              [($const? initval)
                (lvar-ref--! lvar)
                (vector-set! iform 0 $CONST)
                ($const-value-set! iform ($const-value initval))
                iform]
-              [(and (has-tag? initval $LREF)
+              [(and ($lref? initval)
                     (zero? (lvar-set-count ($lref-lvar initval))))
                (when (eq? iform initval)
                  (error "circular reference appeared in letrec bindings:"
@@ -2868,7 +2868,7 @@
          (has-tag? test $IF)
          (let ((test-then ($if-then test))
                (test-else ($if-else test)))
-           (cond [(has-tag? test-then $IT)
+           (cond [($it? test-then)
                   (receive (l0 l1)
                       (pass2/label-or-dup
                        (pass2/rec ($if-then iform) penv tail?))
@@ -2879,8 +2879,8 @@
                                                      l1
                                                      ($if-else iform))
                                                 penv tail?)))]
-                 [(or (has-tag? test-else $IT)
-                      (and (has-tag? test-else $CONST)
+                 [(or ($it? test-else)
+                      (and ($const? test-else)
                            (not ($const-value test-else))))
                   (receive (l0 l1)
                       (pass2/label-or-dup
@@ -2892,15 +2892,13 @@
                                                      l0)
                                                 penv tail?)
                                      l1))]
-                 [(and (has-tag? test-then $CONST)
+                 [(and ($const? test-then)
                        (not ($const-value test-then)))
                   (receive (l0 l1)
                       (pass2/label-or-dup
                        (pass2/rec ($if-else iform) penv tail?))
                     (pass2/update-if iform ($if-test test)
-                                     (if (has-tag? l0 $IT)
-                                       ($const-f)
-                                       l0)
+                                     (if ($it? l0) ($const-f) l0)
                                      (pass2/rec ($if #f
                                                      test-else
                                                      ($if-then iform)
@@ -2977,7 +2975,7 @@
           [(and (zero? (lvar-ref-count (car lvars)))
                 (zero? (lvar-set-count (car lvars))))
            (loop (cdr lvars) (cdr inits) rl ri
-                 (cond [(has-tag? (car inits) $LREF)
+                 (cond [($lref? (car inits))
                         (lvar-ref--! ($lref-lvar (car inits)))
                         rr]
                        [(memv (iform-tag (car inits)) `(,$CONST ,$LAMBDA)) rr]
@@ -3062,8 +3060,7 @@
                                 SMALL_LAMBDA_SIZE)
                              (pass2/local-call-inliner lvar lambda-node
                                                        locals))))))
-        (pass2/local-call-optimizer lvar lambda-node)
-        )))
+        (pass2/local-call-optimizer lvar lambda-node))))
 
 ;; Classify the calls into categories.  TAIL-REC call is classified as
 ;; REC if the call is across the closure boundary.
@@ -3243,7 +3240,7 @@
        [(has-tag? proc $LAMBDA) ;; ((lambda (...) ...) arg ...)
         (pass2/rec (expand-inlined-procedure ($*-src iform) proc args)
                    penv tail?)]
-       [(and (has-tag? proc $LREF)
+       [(and ($lref? proc)
              (pass2/head-lref proc penv tail?))
         => (lambda (result)
              (cond
@@ -3391,7 +3388,8 @@
   iform)
 
 (define (pass2p/$CALL iform)
-  ($call-proc-set! iform (pass2p/rec ($call-proc iform)))
+  (unless (eq? ($call-flag iform) 'jump)
+    ($call-proc-set! iform (pass2p/rec ($call-proc iform))))
   ($call-args-set! iform (imap pass2p/rec ($call-args iform)))
   iform)
 
@@ -3399,10 +3397,10 @@
   ($asm-args-set! iform (imap pass2p/rec ($asm-args iform)))
   iform)
 
-(define (pass2p/onarg-inliner iform)
+(define (pass2p/onearg-inliner iform)
   ($*-arg0-set! iform (pass2p/rec ($*-arg0 iform)))
   iform)
-(define pass2p/$LIST->VECTOR pass2p/onarg-inliner)
+(define pass2p/$LIST->VECTOR pass2p/onearg-inliner)
 
 (define (pass2p/twoarg-inliner iform)
   ($*-arg0-set! iform (pass2p/rec ($*-arg0 iform)))
@@ -3541,8 +3539,8 @@
 ;;   else clause is ($IT)), thus we treat such a case specially.
 (define (pass3/$IF iform ccb renv ctx)
   (cond
-   [(and (not (has-tag? ($if-then iform) $IT))
-         (not (has-tag? ($if-else iform) $IT))
+   [(and (not ($it? ($if-then iform)))
+         (not ($it? ($if-else iform)))
          (has-tag? ($if-test iform) $ASM)
          (eqv? (car ($asm-insn ($if-test iform))) NOT))
     (pass3/$IF ($if ($*-src iform)
@@ -3594,10 +3592,10 @@
      [(has-tag? test $EQV?)
       (pass3/if-eqv iform ($*-arg0 test) ($*-arg1 test)
                     ($*-src iform) ccb renv ctx)]
-     [(has-tag? test $CONST) ; this may occur as a result of macro expansion
+     [($const? test)   ; this may occur as a result of macro expansion
       (pass3/rec (if ($const-value test)
-                   (if (has-tag? ($if-then iform) $IT) test ($if-then iform))
-                   (if (has-tag? ($if-else iform) $IT) test ($if-else iform)))
+                   (if ($it? ($if-then iform)) test ($if-then iform))
+                   (if ($it? ($if-else iform)) test ($if-else iform)))
                  ccb renv ctx)]
      [else
       (pass3/if-final iform test BF 0 0 ($*-src iform) ccb renv ctx)]
@@ -3606,14 +3604,10 @@
 ;; 
 (define (pass3/if-eq iform x y info ccb renv ctx)
   (cond
-   [(has-tag? x $CONST)
-    (pass3/if-final iform y BNEQC ($const-value x)
-                    0
-                    info ccb renv ctx)]
-   [(has-tag? y $CONST)
-    (pass3/if-final iform x BNEQC ($const-value y)
-                    0
-                    info ccb renv ctx)]
+   [($const? x) (pass3/if-final iform y BNEQC ($const-value x)
+                                0 info ccb renv ctx)]
+   [($const? y) (pass3/if-final iform x BNEQC ($const-value y)
+                                0 info ccb renv ctx)]
    [else
     (let1 depth (imax (pass3/rec x ccb renv (normal-context ctx)) 1)
       (compiled-code-emit0! ccb PUSH)
@@ -3623,14 +3617,10 @@
 
 (define (pass3/if-eqv iform x y info ccb renv ctx)
   (cond
-   [(has-tag? x $CONST)
-    (pass3/if-final iform y BNEQVC ($const-value x)
-                    0
-                    info ccb renv ctx)]
-   [(has-tag? y $CONST)
-    (pass3/if-final iform x BNEQVC ($const-value y)
-                    0
-                    info ccb renv ctx)]
+   [($const? x) (pass3/if-final iform y BNEQVC ($const-value x)
+                                0 info ccb renv ctx)]
+   [($const? y) (pass3/if-final iform x BNEQVC ($const-value y)
+                                0 info ccb renv ctx)]
    [else
     (let1 depth (imax (pass3/rec x ccb renv (normal-context ctx)) 1)
       (compiled-code-emit0! ccb PUSH)
@@ -3639,22 +3629,22 @@
                       info ccb renv ctx))]))
 
 (define (pass3/if-numeq iform x y info ccb renv ctx)
-  (or (and (has-tag? x $CONST)
+  (or (and ($const? x)
            (integer-fits-insn-arg? ($const-value x))
            (pass3/if-final iform y BNUMNEI ($const-value x)
                            0
                            info ccb renv ctx))
-      (and (has-tag? y $CONST)
+      (and ($const? y)
            (integer-fits-insn-arg? ($const-value y))
            (pass3/if-final iform x BNUMNEI ($const-value y)
                            0
                            info ccb renv ctx))
-      (and (has-tag? x $LREF)
+      (and ($lref? x)
            (pass3/if-final iform #f LREF-VAL0-BNUMNE
                            (pass3/if-numcmp-lrefarg x renv)
                            (pass3/rec y ccb renv (normal-context ctx))
                            info ccb renv ctx))
-      (and (has-tag? y $LREF)
+      (and ($lref? y)
            (pass3/if-final iform #f LREF-VAL0-BNUMNE
                            (pass3/if-numcmp-lrefarg y renv)
                            (pass3/rec x ccb renv (normal-context ctx))
@@ -3670,12 +3660,12 @@
                   (,BNGT . ,LREF-VAL0-BNGT) (,BNGE . ,LREF-VAL0-BNGE)))
   (define .rev. `((,BNLT . ,LREF-VAL0-BNGT) (,BNLE . ,LREF-VAL0-BNGE)
                   (,BNGT . ,LREF-VAL0-BNLT) (,BNGE . ,LREF-VAL0-BNLE)))
-  (or (and (has-tag? x $LREF)
+  (or (and ($lref? x)
            (pass3/if-final iform #f (cdr (assv insn .fwd.))
                            (pass3/if-numcmp-lrefarg x renv)
                            (pass3/rec y ccb renv (normal-context ctx))
                            info ccb renv ctx))
-      (and (has-tag? y $LREF)
+      (and ($lref? y)
            (pass3/if-final iform #f (cdr (assv insn .rev.))
                            (pass3/if-numcmp-lrefarg y renv)
                            (pass3/rec x ccb renv (normal-context ctx))
@@ -3731,12 +3721,10 @@
     (cond
      [(tail-context? ctx)
       (cond
-       [(and (eqv? code BF)
-             (has-tag? ($if-then iform) $IT))
+       [(and (eqv? code BF) ($it? ($if-then iform)))
         (compiled-code-emit0i! ccb RT info)
         (imax (pass3/rec ($if-else iform) ccb renv ctx) depth)]
-       [(and (eqv? code BF)
-             (has-tag? ($if-else iform) $IT))
+       [(and (eqv? code BF) ($it? ($if-else iform)))
         (compiled-code-emit0i! ccb RF info)
         (imax (pass3/rec ($if-then iform) ccb renv ctx) depth)]
        [else
@@ -3755,10 +3743,10 @@
           (compiled-code-emit0oi! ccb code (list arg0/opr elselabel) info)
           (compiled-code-emit1oi! ccb code arg0/opr elselabel info))
         (set! depth (imax (pass3/rec ($if-then iform) ccb renv ctx) depth))
-        (unless (has-tag? ($if-else iform) $IT)
+        (unless ($it? ($if-else iform))
           (compiled-code-emit0o! ccb JUMP mergelabel))
         (compiled-code-set-label! ccb elselabel)
-        (unless (has-tag? ($if-else iform) $IT)
+        (unless ($it? ($if-else iform))
           (set! depth (imax (pass3/rec ($if-else iform) ccb renv ctx) depth)))
         (compiled-code-set-label! ccb mergelabel)
         depth)])))
@@ -3843,7 +3831,7 @@
         (partition-letrec-inits (cdr inits) ccb renv (+ cnt 1)
                                 (cons (pass3/lambda init ccb renv) closures)
                                 others)]
-       [(has-tag? init $CONST)
+       [($const? init)
         (partition-letrec-inits (cdr inits) ccb renv (+ cnt 1)
                                 (cons ($const-value init) closures)
                                 others)]
@@ -4290,27 +4278,27 @@
   (pass3/builtin-twoargs info code 0 x y))
 
 (define (pass3/asm-numadd2 info x y ccb renv ctx)
-  (or (and (has-tag? x $CONST)
+  (or (and ($const? x)
            (integer-fits-insn-arg? ($const-value x))
            (pass3/builtin-onearg info NUMADDI ($const-value x) y))
-      (and (has-tag? y $CONST)
+      (and ($const? y)
            (integer-fits-insn-arg? ($const-value y))
            (pass3/builtin-onearg info NUMADDI ($const-value y) x))
-      (and (has-tag? y $LREF)
+      (and ($lref? y)
            (receive (depth offset) (renv-lookup renv ($lref-lvar y))
              (pass3/builtin-onearg info LREF-VAL0-NUMADD2
                                    (+ (ash offset 10) depth) x)))
-      (and (has-tag? x $LREF)
+      (and ($lref? x)
            (receive (depth offset) (renv-lookup renv ($lref-lvar x))
              (pass3/builtin-onearg info LREF-VAL0-NUMADD2
                                    (+ (ash offset 10) depth) y)))
       (pass3/builtin-twoargs info NUMADD2 0 x y)))
 
 (define (pass3/asm-numsub2 info x y ccb renv ctx)
-  (or (and (has-tag? x $CONST)
+  (or (and ($const? x)
            (integer-fits-insn-arg? ($const-value x))
            (pass3/builtin-onearg info NUMSUBI ($const-value x) y))
-      (and (has-tag? y $CONST)
+      (and ($const? y)
            (integer-fits-insn-arg? ($const-value y))
            (pass3/builtin-onearg info NUMADDI (- ($const-value y)) x))
       (pass3/builtin-twoargs info NUMSUB2 0 x y)))
@@ -4323,14 +4311,14 @@
 
 
 (define (pass3/asm-vec-ref info vec k ccb renv ctx)
-  (cond [(and (has-tag? k $CONST)
+  (cond [(and ($const? k)
               (unsigned-integer-fits-insn-arg? ($const-value k)))
          (pass3/builtin-onearg info VEC-REFI ($const-value k) vec)]
         [else
          (pass3/builtin-twoargs info VEC-REF 0 vec k)]))
 
 (define (pass3/asm-vec-set info vec k obj ccb renv ctx)
-  (cond [(and (has-tag? k $CONST)
+  (cond [(and ($const? k)
               (unsigned-integer-fits-insn-arg? ($const-value k)))
          (pass3/builtin-twoargs info VEC-SETI ($const-value k) vec obj)]
         [else
@@ -4343,14 +4331,14 @@
                (imax d0 (+ d1 1) (+ d2 2)))))]))
 
 (define (pass3/asm-slot-ref info obj slot ccb renv ctx)
-  (cond [(has-tag? slot $CONST)
+  (cond [($const? slot)
          (rlet1 d (pass3/rec obj ccb renv (normal-context ctx))
            (compiled-code-emit0oi! ccb SLOT-REFC ($const-value slot) info))]
         [else
          (pass3/builtin-twoargs info SLOT-REF 0 obj slot)]))
 
 (define (pass3/asm-slot-set info obj slot val ccb renv ctx)
-  (cond [(has-tag? slot $CONST)
+  (cond [($const? slot)
          (let1 d0 (pass3/rec obj ccb renv (normal-context ctx))
            (compiled-code-emit0! ccb PUSH)
            (let1 d1 (pass3/rec val ccb renv 'normal/top)
@@ -4464,7 +4452,7 @@
   (if (number? form)
     (values form #f)
     (let1 f (pass1 form cenv)
-      (if (and (has-tag? f $CONST) (number? ($const-value f)))
+      (if (and ($const? f) (number? ($const-value f)))
         (values ($const-value f) f)
         (values #f f)))))
 

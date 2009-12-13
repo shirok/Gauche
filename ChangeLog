@@ -9,6 +9,9 @@
 	  count when $lref is removed from the inits of the $let.  This didn't
 	  cause a malfunction but caused slightly inefficient code, and covered
 	  up the aforementioned bug.
+	  ($const?, $lref?, $it?): Added for conciseness.
+	  (pass2p/$CALL): Do not recurse if the call is marked 'jump, since
+	  its body is shared by other call nodes.
 
 	* src/scmlib.scm (every), libsrc/srfi-1.scm: Make 'every' built-in,
 	  for it is used in compile.scm now.
