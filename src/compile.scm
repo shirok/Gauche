@@ -792,7 +792,7 @@
     (symbol->string (slot-ref id 'name)))
 
   (define (lvar->string lvar)
-    (format "~a[~a;~a]" (variable-name (lvar-name lvar))
+    (format "~a[~a:~a]" (variable-name (lvar-name lvar))
             (lvar-ref-count lvar) (lvar-set-count lvar)))
   
   (define (rec ind iform)
@@ -842,7 +842,7 @@
       (rec (+ ind 4) ($receive-expr iform)) (nl (+ ind 2))
       (rec (+ ind 2) ($receive-body iform)) (display ")")]
      [($LAMBDA)
-      (format #t "($lambda[~a;~a] ~a" ($lambda-name iform)
+      (format #t "($lambda[~a:~a] ~a" ($lambda-name iform)
               (length ($lambda-calls iform))
               (map lvar->string ($lambda-lvars iform)))
       (nl (+ ind 2))
@@ -888,7 +888,8 @@
      [($LIST $LIST* $VECTOR)
       (display (format "(~a " (iform-tag-name (iform-tag iform))))
       (for-each (lambda (elt) (nl (+ ind 2)) (rec (+ ind 2) elt))
-                (vector-ref iform 2))]
+                (vector-ref iform 2))
+      (display ")")]
      [($LIST->VECTOR)
       (display "($LIST->VECTOR ")
       (rec (+ ind 14) (vector-ref iform 2))
@@ -1758,7 +1759,7 @@
   (if (zero? optarg)
     iargs
     (receive (reqs opts) (split-at iargs reqargs)
-      (append! reqs (list ($list #f opts))))))
+      (append! reqs (list (if (null? opts) ($const '()) ($list #f opts)))))))
     
 ;;----------------------------------------------------------------
 ;; Pass1 syntaxes
