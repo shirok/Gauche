@@ -286,6 +286,20 @@
               [(apply pred cars)]
               [else (loop cdrs)])))))
 
+(define (every pred lis . more)
+  (if (null? more)
+    (or (null-list? lis)
+        (let loop ((head (car lis)) (tail (cdr lis)))
+          (cond [(null-list? tail) (pred head)] ; tail call
+                [(not (pred head)) #f]
+                [else (loop (car tail) (cdr tail))])))
+    (let loop ((liss (cons lis more)))
+      (receive (cars cdrs)
+          ((with-module gauche.internal %zip-nary-args) liss)
+        (cond [(not cars)]
+              [(not (apply pred cars)) #f]
+              [else (loop cdrs)])))))
+
 (define (fold kons knil lis . more)
   (if (null? more)
     (let loop ((lis lis) (knil knil))

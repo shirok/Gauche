@@ -1,5 +1,8 @@
 2009-12-12  Shiro Kawai  <shiro@acm.org>
 
+	* src/scmlib.scm (every), libsrc/srfi-1.scm: Make 'every' built-in,
+	  for it is used in compile.scm now.
+
 	* src/compile.scm (adjust-arglist): Emit ($CONST ()) for the restarg
 	  instead of ($LIST).  This allows further constant elimination.
 	  (pp-iform): Fix missing close paren in $LIST, $LIST* and $VECTOR

@@ -31,7 +31,7 @@
           pair-fold-right reduce-right append-map append-map!
           map! pair-for-each filter-map map-in-order
           filter partition remove filter! partition! remove!
-          member find-tail every list-index
+          member find-tail list-index
           take-while drop-while take-while! span break span! break!
           delete delete-duplicates delete! delete-duplicates!
           assoc alist-cons alist-copy alist-delete alist-delete!
@@ -631,25 +631,6 @@
 
 (define (break  pred lis) (span  (lambda (x) (not (pred x))) lis))
 (define (break! pred lis) (span! (lambda (x) (not (pred x))) lis))
-
-(define (every pred lis1 . lists)
-  (if (pair? lists)
-
-    ;; N-ary case
-    (receive (heads tails) (%cars+cdrs (cons lis1 lists))
-      (or (not (pair? heads))
-          (let lp ((heads heads) (tails tails))
-            (receive (next-heads next-tails) (%cars+cdrs tails)
-              (if (pair? next-heads)
-                (and (apply pred heads) (lp next-heads next-tails))
-                (apply pred heads)))))) ; Last PRED app is tail call.
-
-    ;; Fast path
-    (or (null-list? lis1)
-        (let lp ((head (car lis1))  (tail (cdr lis1)))
-          (if (null-list? tail)
-            (pred head)	; Last PRED app is tail call.
-            (and (pred head) (lp (car tail) (cdr tail))))))))
 
 (define (list-index pred lis1 . lists)
   (if (pair? lists)
