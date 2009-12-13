@@ -3273,8 +3273,7 @@
     (let ((proc ($call-proc iform))
           (args ($call-args iform)))
       (cond
-       [;(vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_LOCALS)
-        (vm-compiler-flag-noinline-locals?)
+       [(vm-compiler-flag-noinline-locals?)
         ($call-args-set! iform (imap (cut pass2/rec <> penv #f) args))
         iform]
        [(has-tag? proc $LAMBDA) ;; ((lambda (...) ...) arg ...)
