@@ -92,6 +92,7 @@ void usage(void)
             "      no-inline-globals don't inline global procedures.\n"
             "      no-inline-locals  don't inline local procedures.\n"
             "      no-inline-constants don't inline constants.\n"
+            "      no-post-inline-pass  don't run post-inline optimization pass.\n"
             "      no-source-info  don't preserve source information for debugging\n"
             "      test            test mode, to run gosh inside the build tree\n"
             );
@@ -127,6 +128,9 @@ void further_options(const char *optarg)
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_GLOBALS);
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_LOCALS);
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_CONSTS);
+    }
+    else if (strcmp(optarg, "no-post-inline-pass") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NO_PASS2POST);
     }
     else if (strcmp(optarg, "no-source-info") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOSOURCE);

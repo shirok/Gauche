@@ -2808,7 +2808,9 @@
 ;; Pass2 entry point.  We have a small post-pass to eliminate redundancy
 ;; introduced by closure optimization.
 (define (pass2 iform)
-  (pass2p/rec (pass2/rec iform '() #t)))
+  (if (vm-compiler-flag-no-pass2-post?)
+    (pass2/rec iform '() #t)
+    (pass2p/rec (pass2/rec iform '() #t))))
 
 (define (pass2/$DEFINE iform penv tail?)
   ($define-expr-set! iform (pass2/rec ($define-expr iform) penv #f))

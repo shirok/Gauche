@@ -1,5 +1,14 @@
 2009-12-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/main.c (-fno-post-inline-pass),
+	  src/gauche/vm.h (SCM_COMPILE_NO_PASS2POST),
+	  src/intlib.stub (vm-compiler-flag-no-pass2-post?),
+	  src/compile.scm (pass2): Added a new compiler flag to skip post-pass2
+	  optimization, mainly for troubleshooting.
+
+	* src/intlib.stub (vm-compiler-flag-noinline-locals?): Bug fix:
+	  Missing 'result' caused this function always return false.
+
 	* src/compile.scm (transparent?): More sophisticated check to see if
 	  we can safely move around or eliminate subtree of IForm.
 	  (pass2/remove-unused-lvars): If an lvar became unused and its initval

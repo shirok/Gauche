@@ -367,7 +367,9 @@
   (SCM_VM_COMPILER_FLAG_CLEAR (Scm_VM) flag))
 
 (define-cproc vm-compiler-flag-noinline-locals? () ::<boolean>
-  (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NOINLINE_LOCALS))
+  (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NOINLINE_LOCALS)))
+(define-cproc vm-compiler-flag-no-pass2-post? () ::<boolean>
+  (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NO_PASS2POST)))
 
 (define-enum SCM_COMPILE_NOINLINE_GLOBALS)
 (define-enum SCM_COMPILE_NOINLINE_LOCALS)
@@ -375,6 +377,7 @@
 (define-enum SCM_COMPILE_NOSOURCE)
 (define-enum SCM_COMPILE_SHOWRESULT)
 (define-enum SCM_COMPILE_NOCOMBINE)
+(define-enum SCM_COMPILE_NO_PASS2POST)
 
 ;; Set/get VM's current module info. (temporary)
 (define-cproc vm-current-module () (result (SCM_OBJ (-> (Scm_VM) module))))
