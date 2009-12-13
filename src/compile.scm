@@ -2979,13 +2979,12 @@
            (values (reverse rl) (reverse ri) (reverse rr))]
           [(and (zero? (lvar-ref-count (car lvars)))
                 (zero? (lvar-set-count (car lvars))))
-           ;; TODO: if we remove $LREF from inits, we have to decrement
-           ;; refcount?
            (loop (cdr lvars) (cdr inits) rl ri
-                 (if (memv (iform-tag (car inits))
-                           `(,$CONST ,$LREF ,$LAMBDA))
-                   rr
-                   (cons (car inits) rr)))]
+                 (cond [(has-tag? (car inits) $LREF)
+                        (lvar-ref--! ($lref-lvar (car inits)))
+                        rr]
+                       [(memv (iform-tag (car inits)) `(,$CONST ,$LAMBDA)) rr]
+                       [else (cons (car inits) rr)]))]
           [else
            (loop (cdr lvars) (cdr inits)
                  (cons (car lvars) rl) (cons (car inits) ri) rr)])))
@@ -3127,17 +3126,16 @@
     ($call-flag-set! call 'embed)
     ($call-proc-set! call lambda-node)
     ($lambda-flag-set! lambda-node 'dissolved)
+    ($lambda-body-set! lambda-node ($label ($lambda-src lambda-node) #f
+                                           ($lambda-body lambda-node)))
     (unless (null? rec-calls)
-      (let1 body
-          ($label ($lambda-src lambda-node) #f ($lambda-body lambda-node))
-        ($lambda-body-set! lambda-node body)
-        (dolist (jcall rec-calls)
-          (lvar-ref--! lvar)
-          ($call-args-set! jcall (adjust-arglist reqargs optarg
-                                                ($call-args jcall)
-                                                name))
-          ($call-proc-set! jcall call)
-          ($call-flag-set! jcall 'jump))))))
+      (dolist (jcall rec-calls)
+        (lvar-ref--! lvar)
+        ($call-args-set! jcall (adjust-arglist reqargs optarg
+                                               ($call-args jcall)
+                                               name))
+        ($call-proc-set! jcall call)
+        ($call-flag-set! jcall 'jump)))))
 
 ;; Called when the local function (lambda-node) doesn't have recursive
 ;; calls, can be inlined, and called from multiple places.

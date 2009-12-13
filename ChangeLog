@@ -1,5 +1,15 @@
 2009-12-12  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass2/local-call-embedder): Bug fix: It could
+	  generate an embed $call node without inserting $label node in its
+	  child's $lambda.  Pass3 assumes there's always a $label node, thus
+	  fails in such a case.  This bug has been covered by the another bug
+	  fixed below:
+	  (pass2/remove-unused-lvars): Bug fix: It didn't decrement lvar ref
+	  count when $lref is removed from the inits of the $let.  This didn't
+	  cause a malfunction but caused slightly inefficient code, and covered
+	  up the aforementioned bug.
+
 	* src/scmlib.scm (every), libsrc/srfi-1.scm: Make 'every' built-in,
 	  for it is used in compile.scm now.
 
