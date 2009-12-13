@@ -1,5 +1,8 @@
 2009-12-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (unpack-iform): Recover lvar's initvals after
+	  unpacking.  Missing initvals prevented some optimizations.
+
 	* src/main.c (-fno-post-inline-pass),
 	  src/gauche/vm.h (SCM_COMPILE_NO_PASS2POST),
 	  src/intlib.stub (vm-compiler-flag-no-pass2-post?),

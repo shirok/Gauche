@@ -1048,9 +1048,11 @@
         ($if (V i 1)
              (unpack-rec (V i 2)) (unpack-rec (V i 3)) (unpack-rec (V i 4)))]
        [($LET)
-        ($let (V i 1) (V i 2)
-              (map unpack-rec (V i 3)) (map unpack-rec (V i 4))
-              (unpack-rec (V i 5)))]
+        (rlet1 unpacked ($let (V i 1) (V i 2)
+                              (map unpack-rec (V i 3)) (map unpack-rec (V i 4))
+                              (unpack-rec (V i 5)))
+          (ifor-each2 (lambda (lv in) (lvar-initval-set! lv in))
+                      ($let-lvars unpacked) ($let-inits unpacked)))]
        [($RECEIVE)
         ($receive (V i 1) (V i 2) (V i 3)
                   (map unpack-rec (V i 4)) (unpack-rec (V i 5))
