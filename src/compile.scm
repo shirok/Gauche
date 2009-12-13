@@ -3440,9 +3440,20 @@
     (or (and (every $const? args)
              (case/unquote
               (car ($asm-insn iform))
-              [(NULLP) (if (eq? ($const-value (car args)) '())
-                         ($const-t) ($const-f))]
-              [(NOT)   (if ($const-value (car args)) ($const-f) ($const-t))]
+              [(NOT)     (pass2p/const-pred not args)]
+              [(NULLP)   (pass2p/const-pred null? args)]
+              [(PAIRP)   (pass2p/const-pred pair? args)]
+              [(CHARP)   (pass2p/const-pred char? args)]
+              [(STRINGP) (pass2p/const-pred string? args)]
+              [(VECTORP) (pass2p/const-pred vector? args)]
+              [(NUMBERP) (pass2p/const-pred number? args)]
+              [(REALP)   (pass2p/const-pred real? args)]
+              [(CAR)     (pass2p/const-cxr car args)]
+              [(CDR)     (pass2p/const-cxr cdr args)]
+              [(CAAR)    (pass2p/const-cxxr car caar args)]
+              [(CADR)    (pass2p/const-cxxr cdr cadr args)]
+              [(CDAR)    (pass2p/const-cxxr car cdar args)]
+              [(CDDR)    (pass2p/const-cxxr cdr cddr args)]
               [else #f]))
         (and-let* ([ (pair? args) ]
                    [ (null? (cdr args)) ]
@@ -3456,14 +3467,25 @@
                          (begin (lvar-ref--! lvar) ($const-f)))]
            [(NOT)   (and (initval-never-false? initval)
                          (begin (lvar-ref--! lvar) ($const-f)))]
-;           [(CAR)   (and (initval-always-list? initval)
-;                         (transparent? initval)
-;                         (begin (lvar-ref--! lvar) (initval-list-car initval)))]
-;           [(CDR)   (and (initval-always-list? initval)
-;                         (transparent? initval)
-;                         (begin (lvar-ref--! lvar) (initval-list-cdr initval)))]
+           [(CAR)   (and (initval-always-list? initval)
+                         (transparent? initval)
+                         (begin (lvar-ref--! lvar) (initval-list-car initval)))]
+           [(CDR)   (and (initval-always-list? initval)
+                         (transparent? initval)
+                         (begin (lvar-ref--! lvar) (initval-list-cdr initval)))]
            [else #f]))
         (begin ($asm-args-set! iform args) iform))))
+
+(define (pass2p/const-pred pred args)
+  (if (pred ($const-value (car args))) ($const-t) ($const-f)))
+         
+(define (pass2p/const-cxr proc args)
+  (let1 v ($const-value (car args))
+    (and (pair? v) ($const (proc v)))))
+
+(define (pass2p/const-cxxr proc0 proc args)
+  (let1 v ($const-value (car args))
+    (and (pair? v) (pair? (proc0 v)) ($const (proc v)))))
 
 (define (initval-never-null? val)
   (and (vector? val)
@@ -3481,11 +3503,11 @@
 
 (define (initval-always-list? val)
   (and (vector? val)
-       (or (has-tag? val $LIST)
-           (pair? ($*-args val)))
-       (or (has-tag? val $LIST*)
-           (pair? ($*-args val))
-           (pair? (cdr ($*-args val))))))
+       (or (and (has-tag? val $LIST)
+                (pair? ($*-args val)))
+           (and (has-tag? val $LIST*)
+                (pair? ($*-args val))
+                (pair? (cdr ($*-args val)))))))
 
 (define (initval-list-car val) ;assumes (initval-always-list? val) is #t
   (car ($*-args val)))

@@ -16,8 +16,8 @@
 	  eliminate if initval is $const or $lambda).
 	  (pass2p/$IF): If the test becomes a constant due to prior optimization,
 	  expands then or else node directly.
-	  (pass2p/$ASM): Partially evaluate NULLP and NOT insn if we know enough
-	  about the arg.
+	  (pass2p/$ASM): Partially evaluate some assemblers if we know enough
+	  about the arguments.
 
 2009-12-12  Shiro Kawai  <shiro@acm.org>
 
