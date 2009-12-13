@@ -219,6 +219,15 @@
          (loop (cons (,proc (car ,p1) (car ,p2)) ,r) (cdr ,p1) (cdr ,p2))))
     ))
 
+(define-macro (ifor-each2 proc lis1 lis2)
+  (let ((p1 (gensym))
+        (p2 (gensym)))
+    `(let loop ((,p1 ,lis1) (,p2 ,lis2))
+       (unless (null? ,p1)
+         (,proc (car ,p1) (car ,p2))
+         (loop (cdr ,p1) (cdr ,p2))))
+    ))
+
 ;; Inlining max
 ;; We only compare unsigned integers (in Pass 3), so we use the specialized
 ;; version of max.
@@ -2746,20 +2755,27 @@
 
 ;; This pass may modify the tree by changing IForm nodes destructively.
 
-;; Each handler is called with three arguments: the IForm, Env, and Tail?
+;; Each handler is called with three arguments: the IForm, Penv, and Tail?
 ;;
 ;; Penv is a list of $LAMBDA nodes that we're compiling.   It is used to
 ;; detect self-recursive local calls.  Tail? is a flag to indicate whether
 ;; the expression is tail position or not.
+;;
+;; Each hander returns IForm.
 
-;; Dispatch pass2 handler.
+;; Dispatch pass2 and pass2 post handler.
 ;; *pass2-dispatch-table* is defined below, after all handlers are defined.
 (define-inline (pass2/rec iform penv tail?)
   ((vector-ref *pass2-dispatch-table* (iform-tag iform))
    iform penv tail?))
 
+(define-inline (pass2p/rec iform)
+  ((vector-ref *pass2p-dispatch-table* (iform-tag iform)) iform))
+
+;; Pass2 entry point.  We have a small post-pass to eliminate redundancy
+;; introduced by closure optimization.
 (define (pass2 iform)
-  (pass2/rec iform '() #t))
+  (pass2p/rec (pass2/rec iform '() #t)))
 
 (define (pass2/$DEFINE iform penv tail?)
   ($define-expr-set! iform (pass2/rec ($define-expr iform) penv #f))
@@ -2777,6 +2793,9 @@
 ;; lambda.  It is dealt by pass2/head-lref, which is called by pass2/$CALL.
 
 (define (pass2/$LREF iform penv tail?)
+  (pass2/lref-eliminate iform))
+
+(define (pass2/lref-eliminate iform)
   (let1 lvar ($lref-lvar iform)
     (if (zero? (lvar-set-count lvar))
       (let1 initval (lvar-initval lvar)
@@ -2794,7 +2813,7 @@
                (lvar-ref--! lvar)
                (lvar-ref++! ($lref-lvar initval))
                ($lref-lvar-set! iform ($lref-lvar initval))
-               (pass2/$LREF iform penv tail?)]
+               (pass2/lref-eliminate iform)]
               [else iform]))
       iform)))
 
@@ -2925,29 +2944,34 @@
 ;;   its usage.
 
 (define (pass2/$LET iform penv tail?)
-  (let ((lvars ($let-lvars iform))
-        (inits (imap (cut pass2/rec <> penv #f) ($let-inits iform)))
-        (obody (pass2/rec ($let-body iform) penv tail?)))
-    (for-each pass2/optimize-closure lvars inits)
-    (receive (new-lvars new-inits removed-inits)
-        (pass2/remove-unused-lvars lvars inits)
-      (cond [(null? new-lvars)
-             (if (null? removed-inits)
-               obody
-               ($seq (append! removed-inits (list obody))))]
-            [else
-             ($let-lvars-set! iform new-lvars)
-             ($let-inits-set! iform new-inits)
-             ($let-body-set! iform obody)
-             (unless (null? removed-inits)
-               (if (has-tag? obody $SEQ)
-                 ($seq-body-set! obody
-                                 (append! removed-inits
-                                          ($seq-body obody)))
-                 ($let-body-set! iform
-                                 ($seq (append removed-inits
-                                               (list obody))))))
-             iform]))))
+  (let ([lvars ($let-lvars iform)]
+        [inits (imap (cut pass2/rec <> penv #f) ($let-inits iform))])
+    (ifor-each2 (lambda (lv in) (lvar-initval-set! lv in)) lvars inits)
+    (let1 obody (pass2/rec ($let-body iform) penv tail?)
+      ;; NB: We have to run optimize-closure after pass2 of body.
+      (for-each pass2/optimize-closure lvars inits)
+      (pass2/shrink-let-frame iform lvars inits obody))))
+
+(define (pass2/shrink-let-frame iform lvars inits obody)
+  (receive (new-lvars new-inits removed-inits)
+      (pass2/remove-unused-lvars lvars inits)
+    (cond [(null? new-lvars)
+           (if (null? removed-inits)
+             obody
+             ($seq (append! removed-inits (list obody))))]
+          [else
+           ($let-lvars-set! iform new-lvars)
+           ($let-inits-set! iform new-inits)
+           ($let-body-set! iform obody)
+           (unless (null? removed-inits)
+             (if (has-tag? obody $SEQ)
+               ($seq-body-set! obody
+                               (append! removed-inits
+                                        ($seq-body obody)))
+               ($let-body-set! iform
+                               ($seq (append removed-inits
+                                             (list obody))))))
+           iform])))
 
 (define (pass2/remove-unused-lvars lvars inits)
   (let loop ((lvars lvars) (inits inits) (rl '()) (ri '()) (rr '()))
@@ -3314,6 +3338,100 @@
                   .intermediate-tags.)))
 
 (define *pass2-dispatch-table* (pass2-generate-dispatch-table))
+
+;; Pass 2 post-pass.
+;; Closure optimization can introduce superfluous $LET, which can
+;; be optimized further.  (In fact, this process can be repeated
+;; until we reach optimal equilibrium.  However, compilation speed is
+;; also important for Gauche, so we just run this post pass once.)
+
+(define (pass2p/$DEFINE iform)
+  ($define-expr-set! iform (pass2p/rec ($define-expr iform)))
+  iform)
+
+(define (pass2p/$LREF iform) (pass2/lref-eliminate iform))
+
+(define (pass2p/$LSET iform)
+  ($lset-expr-set! iform (pass2p/rec ($lset-expr iform)))
+  iform)
+
+(define (pass2p/$GREF iform) iform)
+
+(define (pass2p/$GSET iform)
+  ($gset-expr-set! iform (pass2p/rec ($gset-expr iform)))
+  iform)
+
+(define (pass2p/$CONST iform) iform)
+(define (pass2p/$IT iform) iform)
+
+(define (pass2p/$IF iform)
+  (let ([test (pass2p/rec ($if-test iform))]
+        [then (pass2p/rec ($if-then iform))]
+        [else (pass2p/rec ($if-else iform))])
+    ($if-test-set! iform test)
+    ($if-then-set! iform then)
+    ($if-else-set! iform else)
+    iform))
+                       
+(define (pass2p/$LET iform)
+  (let ([lvars ($let-lvars iform)]
+        [inits (imap pass2p/rec ($let-inits iform))])
+    (ifor-each2 (lambda (lv in) (lvar-initval-set! lv in)) lvars inits)
+    (pass2/shrink-let-frame iform lvars inits (pass2p/rec ($let-body iform)))))
+
+(define (pass2p/$RECEIVE iform)
+  ($receive-expr-set! iform (pass2p/rec ($receive-expr iform)))
+  ($receive-body-set! iform (pass2p/rec ($receive-body iform)))
+  iform)
+
+(define (pass2p/$LAMBDA iform)
+  ($lambda-body-set! iform (pass2p/rec ($lambda-body iform)))
+  iform)
+(define (pass2p/$LABEL iform) iform)
+(define (pass2p/$PROMISE iform)
+  ($promise-expr-set! iform (pass2p/rec ($promise-expr iform)))
+  iform)
+(define (pass2p/$SEQ iform)
+  ($seq-body-set! iform (imap pass2p/rec ($seq-body iform)))
+  iform)
+
+(define (pass2p/$CALL iform)
+  ($call-proc-set! iform (pass2p/rec ($call-proc iform)))
+  ($call-args-set! iform (imap pass2p/rec ($call-args iform)))
+  iform)
+
+(define (pass2p/$ASM iform)
+  ($asm-args-set! iform (imap pass2p/rec ($asm-args iform)))
+  iform)
+
+(define (pass2p/onarg-inliner iform)
+  ($*-arg0-set! iform (pass2p/rec ($*-arg0 iform)))
+  iform)
+(define pass2p/$LIST->VECTOR pass2p/onarg-inliner)
+
+(define (pass2p/twoarg-inliner iform)
+  ($*-arg0-set! iform (pass2p/rec ($*-arg0 iform)))
+  ($*-arg1-set! iform (pass2p/rec ($*-arg1 iform)))
+  iform)
+(define pass2p/$CONS   pass2p/twoarg-inliner)
+(define pass2p/$APPEND pass2p/twoarg-inliner)
+(define pass2p/$MEMV   pass2p/twoarg-inliner)
+(define pass2p/$EQ?    pass2p/twoarg-inliner)
+(define pass2p/$EQV?   pass2p/twoarg-inliner)
+
+(define (pass2p/narg-inliner iform)
+  ($*-args-set! iform (imap pass2p/rec ($*-args iform)))
+  iform)
+(define pass2p/$LIST   pass2p/narg-inliner)
+(define pass2p/$LIST*  pass2p/narg-inliner)
+(define pass2p/$VECTOR pass2p/narg-inliner)
+
+;; Dispatch table.
+(define-macro (pass2p-generate-dispatch-table)
+  `(vector ,@(map (lambda (p) (string->symbol #`"pass2p/,(car p)"))
+                  .intermediate-tags.)))
+
+(define *pass2p-dispatch-table* (pass2p-generate-dispatch-table))
 
 ;;===============================================================
 ;; Pass 3.  Code generation

@@ -4,6 +4,11 @@
 	  instead of ($LIST).  This allows further constant elimination.
 	  (pp-iform): Fix missing close paren in $LIST, $LIST* and $VECTOR
 	  branch.  Also replaced ';' by ':' for Emacs-friendliness.
+	  (pass2): Introduced extra pass after pass2 to do further optimizations
+	  that are made available by closure optimization.
+	  When closures are inlined, we have a good chance to partially evaluate
+	  the original body, since some of the provided arguments can be
+	  constants.
 
 2009-12-11  Shiro Kawai  <shiro@acm.org>
 
