@@ -159,7 +159,7 @@
 (define-constant SMALL_LAMBDA_SIZE 12)
 
 ;;;============================================================
-;;; Utility macro
+;;; Utility macros
 ;;;
 
 ;; We use integers, instead of symbols, as tags, for it allows
@@ -1331,31 +1331,38 @@
 ;; See if the given iform is referentially transparent.   That is,
 ;; the iform is side-effect free, and also the value of iform
 ;; won't change even if we move iform to a different place in the subtree.
-(define (transparent? iform)
+;; NB: This may be called after pass2, so $LABEL node may have circular
+;; reference.  We have to be careful not to diverge.
+;; TODO: we lift transparent?/rec manually to avoid closure allocation
+;; because of the unsophisticated compiler.  Fix this in future.
+(define (transparent? iform) (transparent?/rec iform (list #f)))
+(define (transparent?/rec iform labels)
   (case/unquote
    (iform-tag iform)
-   [($LREF) (zero? (lvar-set-count ($lref-lvar iform)))]
-   [($CONST) #t]
-   [($IF)   (and (transparent? ($if-test iform))
-                 (transparent? ($if-then iform))
-                 (transparent? ($if-else iform)))]
-   [($LET)  (and (every transparent? ($let-inits iform))
-                 (transparent? ($let-body iform)))]
-   [($RECEIVE) (and (transparent? ($receive-expr iform))
-                    (transparent? ($receive-body iform)))]
+   [($LREF)   (zero? (lvar-set-count ($lref-lvar iform)))]
+   [($CONST)  #t]
+   [($IF)     (and (transparent?/rec ($if-test iform) labels)
+                   (transparent?/rec ($if-then iform) labels)
+                   (transparent?/rec ($if-else iform) labels))]
+   [($LET)    (and (everyc transparent?/rec ($let-inits iform) labels)
+                   (transparent?/rec ($let-body iform) labels))]
+   [($RECEIVE)(and (transparent?/rec ($receive-expr iform) labels)
+                   (transparent?/rec ($receive-body iform) labels))]
    [($LAMBDA) #t]
-   [($LABEL)  (transparent? ($label-body iform))]
-   [($SEQ)    (every transparent? ($seq-body iform))]
+   [($LABEL)  (or (memq iform (cdr labels))
+                  (begin (set-cdr! labels (cons iform (cdr labels)))
+                         (transparent?/rec ($label-body iform) labels)))]
+   [($SEQ)    (everyc transparent?/rec ($seq-body iform) labels)]
    [($CALL)   (and (side-effect-free-proc? ($call-proc iform))
-                   (every transparent? ($call-args iform)))]
+                   (every transparent?/rec ($call-args iform) labels))]
    [($ASM)    (and (side-effect-free-insn? ($asm-insn iform))
-                   (every transparent? ($asm-args iform)))]
+                   (every transparent?/rec ($asm-args iform) labels))]
    [($PROMISE) #t]
    [($CONS $APPEND $MEMV $EQ? $EQV?)
-    (and (transparent? ($*-arg0 iform))
-         (transparent? ($*-arg1 iform)))]
-   [($VECTOR $LIST $LIST*) (every transparent? ($*-args iform))]
-   [($LIST->VECTOR) (transparent? ($*-arg0 iform))]
+    (and (transparent?/rec ($*-arg0 iform) labels)
+         (transparent?/rec ($*-arg1 iform) labels))]
+   [($VECTOR $LIST $LIST*) (everyc transparent?/rec ($*-args iform) labels)]
+   [($LIST->VECTOR) (transparent?/rec ($*-arg0 iform) labels)]
    [($IT) #t] ; this branch is only executed when $if-test of the parent is
               ; transparent, thus this node is also transparent.
    [else #f]))
@@ -4838,6 +4845,13 @@
          (and (identifier? v)
               (eq? (slot-ref v 'name) sym)
               (null? (slot-ref v 'env))))))
+
+(define (everyc proc lis c)             ;avoid closure allocation
+  (or (null? lis)
+      (let loop ((lis lis))
+        (match lis
+          [(x) (proc x c)]
+          [(x . xs) (and (proc x c) (loop xs))]))))
 
 ;; To compare identifiers w/ hygiene.  Returns a predicate that takes
 ;; a single argument VAR, which must be a symbol or identifier that

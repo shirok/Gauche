@@ -2,6 +2,7 @@
 
 	* src/compile.scm (unpack-iform): Recover lvar's initvals after
 	  unpacking.  Missing initvals prevented some optimizations.
+	  (transparent?): Check circular/shared reference of $LABEL node.
 
 	* src/main.c (-fno-post-inline-pass),
 	  src/gauche/vm.h (SCM_COMPILE_NO_PASS2POST),
