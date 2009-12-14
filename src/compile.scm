@@ -2811,15 +2811,15 @@
   ((vector-ref *pass2-dispatch-table* (iform-tag iform))
    iform penv tail?))
 
-(define-inline (pass2p/rec iform)
-  ((vector-ref *pass2p-dispatch-table* (iform-tag iform)) iform))
+(define-inline (pass2p/rec iform labels)
+  ((vector-ref *pass2p-dispatch-table* (iform-tag iform)) iform labels))
 
 ;; Pass2 entry point.  We have a small post-pass to eliminate redundancy
 ;; introduced by closure optimization.
 (define (pass2 iform)
   (if (vm-compiler-flag-no-pass2-post?)
     (pass2/rec iform '() #t)
-    (pass2p/rec (pass2/rec iform '() #t))))
+    (pass2p/rec (pass2/rec iform '() #t) (make-hash-table 'eq?))))
 
 (define (pass2/$DEFINE iform penv tail?)
   ($define-expr-set! iform (pass2/rec ($define-expr iform) penv #f))
@@ -3383,29 +3383,29 @@
 ;; until no further optimization can be possible  However, compilation
 ;; speed is also important for Gauche, so we just run this post pass once.)
 
-(define (pass2p/$DEFINE iform)
-  ($define-expr-set! iform (pass2p/rec ($define-expr iform)))
+(define (pass2p/$DEFINE iform labels)
+  ($define-expr-set! iform (pass2p/rec ($define-expr iform) labels))
   iform)
 
-(define (pass2p/$LREF iform) (pass2/lref-eliminate iform))
+(define (pass2p/$LREF iform labels) (pass2/lref-eliminate iform))
 
-(define (pass2p/$LSET iform)
-  ($lset-expr-set! iform (pass2p/rec ($lset-expr iform)))
+(define (pass2p/$LSET iform labels)
+  ($lset-expr-set! iform (pass2p/rec ($lset-expr iform) labels))
   iform)
 
-(define (pass2p/$GREF iform) iform)
+(define (pass2p/$GREF iform labels) iform)
 
-(define (pass2p/$GSET iform)
-  ($gset-expr-set! iform (pass2p/rec ($gset-expr iform)))
+(define (pass2p/$GSET iform labels)
+  ($gset-expr-set! iform (pass2p/rec ($gset-expr iform) labels))
   iform)
 
-(define (pass2p/$CONST iform) iform)
-(define (pass2p/$IT iform) iform)
+(define (pass2p/$CONST iform labels) iform)
+(define (pass2p/$IT iform labels) iform)
 
-(define (pass2p/$IF iform)
-  (let ([test (pass2p/rec ($if-test iform))]
-        [then (pass2p/rec ($if-then iform))]
-        [else (pass2p/rec ($if-else iform))])
+(define (pass2p/$IF iform labels)
+  (let ([test (pass2p/rec ($if-test iform) labels)]
+        [then (pass2p/rec ($if-then iform) labels)]
+        [else (pass2p/rec ($if-else iform) labels)])
     (if ($const? test)
       (let1 val-form (if ($const-value test) then else)
         (if ($it? val-form) test val-form))
@@ -3415,36 +3415,43 @@
         ($if-else-set! iform else)
         iform))))
                        
-(define (pass2p/$LET iform)
+(define (pass2p/$LET iform labels)
   (let ([lvars ($let-lvars iform)]
-        [inits (imap pass2p/rec ($let-inits iform))])
+        [inits (imap (cut pass2p/rec <> labels) ($let-inits iform))])
     (ifor-each2 (lambda (lv in) (lvar-initval-set! lv in)) lvars inits)
-    (pass2/shrink-let-frame iform lvars inits (pass2p/rec ($let-body iform)))))
+    (pass2/shrink-let-frame iform lvars inits
+                            (pass2p/rec ($let-body iform) labels))))
 
-(define (pass2p/$RECEIVE iform)
-  ($receive-expr-set! iform (pass2p/rec ($receive-expr iform)))
-  ($receive-body-set! iform (pass2p/rec ($receive-body iform)))
-  iform)
-
-(define (pass2p/$LAMBDA iform)
-  ($lambda-body-set! iform (pass2p/rec ($lambda-body iform)))
-  iform)
-(define (pass2p/$LABEL iform) iform)
-(define (pass2p/$PROMISE iform)
-  ($promise-expr-set! iform (pass2p/rec ($promise-expr iform)))
-  iform)
-(define (pass2p/$SEQ iform)
-  ($seq-body-set! iform (imap pass2p/rec ($seq-body iform)))
+(define (pass2p/$RECEIVE iform labels)
+  ($receive-expr-set! iform (pass2p/rec ($receive-expr iform) labels))
+  ($receive-body-set! iform (pass2p/rec ($receive-body iform) labels))
   iform)
 
-(define (pass2p/$CALL iform)
+(define (pass2p/$LAMBDA iform labels)
+  ($lambda-body-set! iform (pass2p/rec ($lambda-body iform) labels))
+  iform)
+
+(define (pass2p/$LABEL iform labels)
+  (unless (hash-table-exists? labels iform)
+    ($label-body-set! iform (pass2p/rec ($label-body iform) labels)))
+  iform)
+
+(define (pass2p/$PROMISE iform labels)
+  ($promise-expr-set! iform (pass2p/rec ($promise-expr iform) labels))
+  iform)
+
+(define (pass2p/$SEQ iform labels)
+  ($seq-body-set! iform (imap (cut pass2p/rec <> labels) ($seq-body iform)))
+  iform)
+
+(define (pass2p/$CALL iform labels)
   (unless (eq? ($call-flag iform) 'jump)
-    ($call-proc-set! iform (pass2p/rec ($call-proc iform))))
-  ($call-args-set! iform (imap pass2p/rec ($call-args iform)))
+    ($call-proc-set! iform (pass2p/rec ($call-proc iform) labels)))
+  ($call-args-set! iform (imap (cut pass2p/rec <> labels) ($call-args iform)))
   iform)
 
-(define (pass2p/$ASM iform)
-  (let1 args (imap pass2p/rec ($asm-args iform))
+(define (pass2p/$ASM iform labels)
+  (let1 args (imap (cut pass2p/rec <> labels) ($asm-args iform))
     (or (and (every $const? args)
              (case/unquote
               (car ($asm-insn iform))
@@ -3528,14 +3535,14 @@
          ($list* (cdr ($*-args val)))]
         [else (error "[internal] initval-list-cdr")]))
 
-(define (pass2p/onearg-inliner iform)
-  ($*-arg0-set! iform (pass2p/rec ($*-arg0 iform)))
+(define (pass2p/onearg-inliner iform labels)
+  ($*-arg0-set! iform (pass2p/rec ($*-arg0 iform) labels))
   iform)
 (define pass2p/$LIST->VECTOR pass2p/onearg-inliner)
 
-(define (pass2p/twoarg-inliner iform)
-  ($*-arg0-set! iform (pass2p/rec ($*-arg0 iform)))
-  ($*-arg1-set! iform (pass2p/rec ($*-arg1 iform)))
+(define (pass2p/twoarg-inliner iform labels)
+  ($*-arg0-set! iform (pass2p/rec ($*-arg0 iform) labels))
+  ($*-arg1-set! iform (pass2p/rec ($*-arg1 iform) labels))
   iform)
 (define pass2p/$CONS   pass2p/twoarg-inliner)
 (define pass2p/$APPEND pass2p/twoarg-inliner)
@@ -3543,8 +3550,8 @@
 (define pass2p/$EQ?    pass2p/twoarg-inliner)
 (define pass2p/$EQV?   pass2p/twoarg-inliner)
 
-(define (pass2p/narg-inliner iform)
-  ($*-args-set! iform (imap pass2p/rec ($*-args iform)))
+(define (pass2p/narg-inliner iform labels)
+  ($*-args-set! iform (imap (cut pass2p/rec <> labels) ($*-args iform)))
   iform)
 (define pass2p/$LIST   pass2p/narg-inliner)
 (define pass2p/$LIST*  pass2p/narg-inliner)
