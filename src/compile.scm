@@ -36,7 +36,7 @@
 (declare) ;; a dummy form to suppress generation of "sci" file
 
 (define-module gauche.internal
-  (use srfi-2)
+  (use gauche.experimental.lamb)
   (use util.match)
   )
 (select-module gauche.internal)
@@ -306,9 +306,9 @@
      ,@(let loop ((s slot-defs) (i (if tag 1 0)) (r '()))
          (if (null? s)
            (reverse r)
-           (let* ((slot-name (if (pair? (car s)) (caar s) (car s)))
-                  (acc (string->symbol #`",|name|-,|slot-name|"))
-                  (mod (string->symbol #`",|name|-,|slot-name|-set!")))
+           (let* ([slot-name (if (pair? (car s)) (caar s) (car s))]
+                  [acc (string->symbol #`",|name|-,|slot-name|")]
+                  [mod (string->symbol #`",|name|-,|slot-name|-set!")])
              (loop (cdr s)
                    (+ i 1)
                    (list*
@@ -577,8 +577,7 @@
 (define-simple-struct $lref $LREF #f
   (lvar      ; lvar struct.
    ))
-(define-inline ($lref lvar)
-  (lvar-ref++! lvar) (vector $LREF lvar))
+(define-inline ($lref lvar)   (lvar-ref++! lvar) (vector $LREF lvar))
 (define-inline ($lref? iform) (has-tag? iform $LREF))
 
 ;; $lset <lvar> <expr>
@@ -795,38 +794,31 @@
             (lvar-ref-count lvar)
             (make-string (lvar-set-count lvar) #\!)))
   
-  (define (rec ind iform)
+  (let rec ([ind 0] [iform iform])
     (case/unquote
      (iform-tag iform)
-     [($DEFINE) 
-      (format #t "($define ~a ~a" ($define-flags iform)
-              (id->string ($define-id iform)))
-      (nl (+ ind 2))
-      (rec (+ ind 2) ($define-expr iform)) (display ")")]
-     [($LREF)
-      (format #t "($lref ~a)" (lvar->string ($lref-lvar iform)))]
-     [($LSET)
-      (format #t "($lset ~a"  (lvar->string ($lset-lvar iform)))
-      (nl (+ ind 2))
-      (rec (+ ind 2) ($lset-expr iform)) (display ")")]
-     [($GREF)
-      (format #t "($gref ~a)" (id->string ($gref-id iform)))]
-     [($GSET)
-      (format #t "($gset ~a" (id->string ($gset-id iform)))
-      (nl (+ ind 2))
-      (rec (+ ind 2) ($gset-expr iform)) (display ")")]
-     [($CONST)
-      (format #t "($const ~s)" ($const-value iform))]
-     [($IF)
-      (display "($if ")
-      (rec (+ ind 5) ($if-test iform)) (nl (+ ind 2))
-      (rec (+ ind 2) ($if-then iform)) (nl (+ ind 2))
-      (rec (+ ind 2) ($if-else iform)) (display ")")]
+     [($DEFINE) (format #t "($define ~a ~a" ($define-flags iform)
+                        (id->string ($define-id iform)))
+                (nl (+ ind 2))
+                (rec (+ ind 2) ($define-expr iform)) (display ")")]
+     [($LREF)   (format #t "($lref ~a)" (lvar->string ($lref-lvar iform)))]
+     [($LSET)   (format #t "($lset ~a"  (lvar->string ($lset-lvar iform)))
+                (nl (+ ind 2))
+                (rec (+ ind 2) ($lset-expr iform)) (display ")")]
+     [($GREF)   (format #t "($gref ~a)" (id->string ($gref-id iform)))]
+     [($GSET)   (format #t "($gset ~a" (id->string ($gset-id iform)))
+                (nl (+ ind 2))
+                (rec (+ ind 2) ($gset-expr iform)) (display ")")]
+     [($CONST)  (format #t "($const ~s)" ($const-value iform))]
+     [($IF)     (display "($if ")
+                (rec (+ ind 5) ($if-test iform)) (nl (+ ind 2))
+                (rec (+ ind 2) ($if-then iform)) (nl (+ ind 2))
+                (rec (+ ind 2) ($if-else iform)) (display ")")]
      [($LET)
-      (let* ((hdr  (format "($let~a (" (case ($let-type iform)
-                                         ((let) "") ((rec) "rec"))))
-             (xind (+ ind (string-length hdr)))
-             (first #t))
+      (let* ([hdr  (format "($let~a (" (case ($let-type iform)
+                                         ((let) "") ((rec) "rec")))]
+             [xind (+ ind (string-length hdr))]
+             [first #t])
         (display hdr)
         (for-each (lambda (var init)
                     (if first (set! first #f) (nl xind))
@@ -842,33 +834,29 @@
       (nl (+ ind 4))
       (rec (+ ind 4) ($receive-expr iform)) (nl (+ ind 2))
       (rec (+ ind 2) ($receive-body iform)) (display ")")]
-     [($LAMBDA)
-      (format #t "($lambda[~a.~a] ~a" ($lambda-name iform)
-              (length ($lambda-calls iform))
-              (map lvar->string ($lambda-lvars iform)))
-      (nl (+ ind 2))
-      (rec (+ ind 2) ($lambda-body iform)) (display ")")]
-     [($LABEL)
-      (cond [(assq iform labels) => (lambda (p) (format #t "label#~a" (cdr p)))]
-            [else
-             (let1 num (length labels)
-               (push! labels (cons iform num))
-               (format #t "($label #~a" num)
-               (nl (+ ind 2))
-               (rec (+ ind 2) ($label-body iform)) (display ")"))])]
-     [($SEQ)
-      (format #t "($seq")
-      (for-each (lambda (node) (nl (+ ind 2)) (rec (+ ind 2) node))
-                ($seq-body iform))
-      (display ")")]
-     [($CALL)
-      (let1 pre (cond [($call-flag iform) => (cut format "($call[~a] " <>)]
-                      [else "($call "])
-        (format #t pre)
-        (rec (+ ind (string-length pre)) ($call-proc iform))
-        (for-each (lambda (node) (nl (+ ind 2)) (rec (+ ind 2) node))
-                  ($call-args iform))
-        (display ")"))]
+     [($LAMBDA) (format #t "($lambda[~a.~a] ~a" ($lambda-name iform)
+                        (length ($lambda-calls iform))
+                        (map lvar->string ($lambda-lvars iform)))
+                (nl (+ ind 2))
+                (rec (+ ind 2) ($lambda-body iform)) (display ")")]
+     [($LABEL) (cond [(assq iform labels) => (^p (format #t "label#~a" (cdr p)))]
+                     [else
+                      (let1 num (length labels)
+                        (push! labels (cons iform num))
+                        (format #t "($label #~a" num)
+                        (nl (+ ind 2))
+                        (rec (+ ind 2) ($label-body iform)) (display ")"))])]
+     [($SEQ)   (format #t "($seq")
+               (for-each (^n (nl (+ ind 2)) (rec (+ ind 2) n)) ($seq-body iform))
+               (display ")")]
+     [($CALL)  (let1 pre
+                   (cond [($call-flag iform) => (cut format "($call[~a] " <>)]
+                         [else "($call "])
+                 (format #t pre)
+                 (rec (+ ind (string-length pre)) ($call-proc iform))
+                 (for-each (^n (nl (+ ind 2)) (rec (+ ind 2) n))
+                           ($call-args iform))
+                 (display ")"))]
      [($ASM)
       (let* ([insn ($asm-insn iform)]
              [args ($asm-args iform)]
@@ -877,34 +865,28 @@
         (case (length args)
           [(0)]
           [(1) (display " ") (rec (+ ind (string-length hdr) 1) (car args))]
-          [else (for-each (lambda (node) (nl (+ ind 2)) (rec (+ ind 2) node))
+          [else (for-each (^n (nl (+ ind 2)) (rec (+ ind 2) n))
                           ($asm-args iform))])
         (display ")"))]
-     [($PROMISE)
-      (display "($promise ")
-      (rec (+ ind 10) ($promise-expr iform))
-      (display ")")]
-     [($IT) (display "($it)")]
+     [($PROMISE) (display "($promise ")
+                 (rec (+ ind 10) ($promise-expr iform))
+                 (display ")")]
+     [($IT)      (display "($it)")]
      [($CONS $APPEND $MEMV $EQ? $EQV?)
-      (let* ((s (format "(~a " (iform-tag-name (iform-tag iform))))
-             (ind (+ ind (string-length s))))
+      (let* ([s (format "(~a " (iform-tag-name (iform-tag iform)))]
+             [ind (+ ind (string-length s))])
         (display s)
         (rec ind (vector-ref iform 2)) (nl ind)
         (rec ind (vector-ref iform 3)) (display ")"))]
      [($LIST $LIST* $VECTOR)
       (display (format "(~a " (iform-tag-name (iform-tag iform))))
-      (for-each (lambda (elt) (nl (+ ind 2)) (rec (+ ind 2) elt))
-                (vector-ref iform 2))
+      (dolist [elt (vector-ref iform 2)] (nl (+ ind 2)) (rec (+ ind 2) elt))
       (display ")")]
      [($LIST->VECTOR)
       (display "($LIST->VECTOR ")
       (rec (+ ind 14) (vector-ref iform 2))
       (display ")")]
-     [else
-      (error "pp-iform: unknown tag:" (iform-tag iform))]
-     ))
-
-  (rec 0 iform)
+     [else (error "pp-iform: unknown tag:" (iform-tag iform))]))
   (newline))
 
 ;; Sometimes we need to save IForm for later use (e.g. procedure inlining)
@@ -927,7 +909,7 @@
   (define (put! iform . objs)
     (rlet1 head c
       (hash-table-put! dict iform head)
-      (dolist (obj objs) (push! r obj) (inc! c))))
+      (dolist [obj objs] (push! r obj) (inc! c))))
 
   (define (get-ref iform)
     (or (hash-table-get dict iform #f) (pack-iform-rec iform)))
@@ -935,61 +917,47 @@
   (define (pack-iform-rec iform)
     (case/unquote
      (iform-tag iform)
-     [($DEFINE)
-      (put! iform $DEFINE ($*-src iform)
-            ($define-flags iform) ($define-id iform)
-            (get-ref ($define-expr iform)))]
-     [($LREF)
-      (put! iform $LREF (get-ref ($lref-lvar iform)))]
-     [($LSET)
-      (put! iform $LSET
-            (get-ref ($lset-lvar iform)) (get-ref ($lset-expr iform)))]
-     [($GREF)
-      (put! iform $GREF ($gref-id iform))]
-     [($GSET)
-      (put! iform $GSET ($gset-id iform) (get-ref ($gset-expr iform)))]
-     [($CONST)
-      (put! iform $CONST ($const-value iform))]
-     [($IF)
-      (put! iform $IF ($*-src iform)
-            (get-ref ($if-test iform))
-            (get-ref ($if-then iform))
-            (get-ref ($if-else iform)))]
-     [($LET)
-      (put! iform (iform-tag iform) ($*-src iform) ($let-type iform)
-            (map get-ref ($let-lvars iform))
-            (map get-ref ($let-inits iform))
-            (get-ref ($let-body iform)))]
-     [($RECEIVE)
-      (put! iform $RECEIVE ($*-src iform)
-            ($receive-reqargs iform) ($receive-optarg iform)
-            (map get-ref ($receive-lvars iform))
-            (get-ref ($receive-expr iform))
-            (get-ref ($receive-body iform)))]
-     [($LAMBDA)
-      (put! iform $LAMBDA ($*-src iform)
-            ($lambda-name iform) ($lambda-reqargs iform) ($lambda-optarg iform)
-            (map get-ref ($lambda-lvars iform))
-            (get-ref ($lambda-body iform))
-            ($lambda-flag iform))]
-     [($LABEL)
-      (put! iform $LABEL ($*-src iform) #f (get-ref ($label-body iform)))]
-     [($SEQ)
-      (put! iform $SEQ (map get-ref ($seq-body iform)))]
-     [($CALL)
-      (put! iform $CALL ($*-src iform)
-            (get-ref ($call-proc iform))
-            (map get-ref ($call-args iform))
-            ($call-flag iform))]
-     [($ASM)
-      (put! iform $ASM ($*-src iform)
-            ($asm-insn iform)
-            (map get-ref ($asm-args iform)))]
-     [($IT)
-      (put! iform $IT)]
-     [($PROMISE)
-      (put! iform $PROMISE ($*-src iform)
-            (get-ref ($promise-expr iform)))]
+     [($DEFINE) (put! iform $DEFINE ($*-src iform)
+                      ($define-flags iform) ($define-id iform)
+                      (get-ref ($define-expr iform)))]
+     [($LREF) (put! iform $LREF (get-ref ($lref-lvar iform)))]
+     [($LSET) (put! iform $LSET
+                    (get-ref ($lset-lvar iform)) (get-ref ($lset-expr iform)))]
+     [($GREF) (put! iform $GREF ($gref-id iform))]
+     [($GSET) (put! iform $GSET ($gset-id iform) (get-ref ($gset-expr iform)))]
+     [($CONST)(put! iform $CONST ($const-value iform))]
+     [($IF)   (put! iform $IF ($*-src iform)
+                    (get-ref ($if-test iform))
+                    (get-ref ($if-then iform))
+                    (get-ref ($if-else iform)))]
+     [($LET)  (put! iform (iform-tag iform) ($*-src iform) ($let-type iform)
+                    (map get-ref ($let-lvars iform))
+                    (map get-ref ($let-inits iform))
+                    (get-ref ($let-body iform)))]
+     [($RECEIVE) (put! iform $RECEIVE ($*-src iform)
+                       ($receive-reqargs iform) ($receive-optarg iform)
+                       (map get-ref ($receive-lvars iform))
+                       (get-ref ($receive-expr iform))
+                       (get-ref ($receive-body iform)))]
+     [($LAMBDA) (put! iform $LAMBDA ($*-src iform)
+                      ($lambda-name iform) ($lambda-reqargs iform)
+                      ($lambda-optarg iform)
+                      (map get-ref ($lambda-lvars iform))
+                      (get-ref ($lambda-body iform))
+                      ($lambda-flag iform))]
+     [($LABEL)  (put! iform $LABEL ($*-src iform) #f
+                      (get-ref ($label-body iform)))]
+     [($SEQ)    (put! iform $SEQ (map get-ref ($seq-body iform)))]
+     [($CALL)   (put! iform $CALL ($*-src iform)
+                      (get-ref ($call-proc iform))
+                      (map get-ref ($call-args iform))
+                      ($call-flag iform))]
+     [($ASM)    (put! iform $ASM ($*-src iform)
+                      ($asm-insn iform)
+                      (map get-ref ($asm-args iform)))]
+     [($IT)     (put! iform $IT)]
+     [($PROMISE)(put! iform $PROMISE ($*-src iform)
+                      (get-ref ($promise-expr iform)))]
      [($CONS $APPEND $MEMV $EQ? $EQV?)
       (put! iform (iform-tag iform) ($*-src iform)
             (get-ref ($*-arg0 iform))
@@ -1007,8 +975,8 @@
      ))
 
   ;; main body of pack-iform
-  (let* ((start (pack-iform-rec iform))
-         (vec (make-vector c)))
+  (let* ([start (pack-iform-rec iform)]
+         [vec (make-vector c)])
     (do ([i (- c 1) (- i 1)]
          [r r (cdr r)])
         [(null? r)]
@@ -1017,90 +985,66 @@
     vec))
 
 (define (unpack-iform ivec)
-  (let-syntax ((V (syntax-rules ()
-                    ((V ix) (vector-ref ivec ix))
-                    ((V ix off) (vector-ref ivec (+ ix off)))))
-               )
-  
+  (let-syntax ([V (syntax-rules ()
+                    [(V ix) (vector-ref ivec ix)]
+                    [(V ix off) (vector-ref ivec (+ ix off))])])
     (define dict (make-hash-table 'eqv?))
-
     (define (unpack-rec ref)
       (cond [(hash-table-get dict ref #f)]
             [else (rlet1 body (unpack-body ref)
                     (hash-table-put! dict ref body))]))
-
     (define (unpack-body i)
       (case/unquote
        (V i)
-       [($DEFINE)
-        ($define (V i 1) (V i 2) (V i 3) (unpack-rec (V i 4)))]
-       [($LREF)
-        ($lref (unpack-rec (V i 1)))]
-       [($LSET)
-        ($lset (unpack-rec (V i 1)) (unpack-rec (V i 2)))]
-       [($GREF)
-        ($gref (V i 1))]
-       [($GSET)
-        ($gset (V i 1) (unpack-rec (V i 2)))]
-       [($CONST)
-        ($const (V i 1))]
-       [($IF)
-        ($if (V i 1)
-             (unpack-rec (V i 2)) (unpack-rec (V i 3)) (unpack-rec (V i 4)))]
-       [($LET)
-        (rlet1 unpacked ($let (V i 1) (V i 2)
-                              (map unpack-rec (V i 3)) (map unpack-rec (V i 4))
-                              (unpack-rec (V i 5)))
-          (ifor-each2 (lambda (lv in) (lvar-initval-set! lv in))
-                      ($let-lvars unpacked) ($let-inits unpacked)))]
-       [($RECEIVE)
-        ($receive (V i 1) (V i 2) (V i 3)
-                  (map unpack-rec (V i 4)) (unpack-rec (V i 5))
-                  (unpack-rec (V i 6)))]
-       [($LAMBDA)
-        ($lambda (V i 1) (V i 2) (V i 3) (V i 4)
-                 (map unpack-rec (V i 5)) (unpack-rec (V i 6)) (V i 7))]
-       [($LABEL)
-        ($label (V i 1) (V i 2) (unpack-rec (V i 3)))]
-       [($SEQ)
-        ($seq (map unpack-rec (V i 1)))]
-       [($CALL)
-        ($call (V i 1) (unpack-rec (V i 2)) (map unpack-rec (V i 3)) (V i 4))]
-       [($ASM)
-        ($asm (V i 1) (V i 2) (map unpack-rec (V i 3)))]
-       [($PROMISE)
-        ($promise (V i 1) (unpack-rec (V i 2)))]
+       [($DEFINE) ($define (V i 1) (V i 2) (V i 3) (unpack-rec (V i 4)))]
+       [($LREF)   ($lref (unpack-rec (V i 1)))]
+       [($LSET)   ($lset (unpack-rec (V i 1)) (unpack-rec (V i 2)))]
+       [($GREF)   ($gref (V i 1))]
+       [($GSET)   ($gset (V i 1) (unpack-rec (V i 2)))]
+       [($CONST)  ($const (V i 1))]
+       [($IF)     ($if (V i 1) (unpack-rec (V i 2))
+                       (unpack-rec (V i 3)) (unpack-rec (V i 4)))]
+       [($LET)    (rlet1 unpacked
+                      ($let (V i 1) (V i 2)
+                            (map unpack-rec (V i 3)) (map unpack-rec (V i 4))
+                            (unpack-rec (V i 5)))
+                    (ifor-each2 (^(lv in) (lvar-initval-set! lv in))
+                                ($let-lvars unpacked) ($let-inits unpacked)))]
+       [($RECEIVE) ($receive (V i 1) (V i 2) (V i 3)
+                             (map unpack-rec (V i 4)) (unpack-rec (V i 5))
+                             (unpack-rec (V i 6)))]
+       [($LAMBDA)  ($lambda (V i 1) (V i 2) (V i 3) (V i 4)
+                            (map unpack-rec (V i 5))
+                            (unpack-rec (V i 6)) (V i 7))]
+       [($LABEL)   ($label (V i 1) (V i 2) (unpack-rec (V i 3)))]
+       [($SEQ)     ($seq (map unpack-rec (V i 1)))]
+       [($CALL)    ($call (V i 1) (unpack-rec (V i 2))
+                          (map unpack-rec (V i 3)) (V i 4))]
+       [($ASM)     ($asm (V i 1) (V i 2) (map unpack-rec (V i 3)))]
+       [($PROMISE) ($promise (V i 1) (unpack-rec (V i 2)))]
        [($IT) ($it)]
        [($CONS $APPEND $MEMV $EQ? $EQV?)
         (vector (V i) (V i 1) (unpack-rec (V i 2)) (unpack-rec (V i 3)))]
-       [($VECTOR $LIST $LIST*)
-        (vector (V i) (V i 1) (map unpack-rec (V i 2)))]
-       [($LIST->VECTOR)
-        (vector (V i) (V i 1) (unpack-rec (V i 2)))]
-       [('lvar)
-        (make-lvar (V i 1))]
-       [else
-        (errorf "[internal error] unpack-iform: ivec broken at ~a: ~S"
-                i ivec)]
-       ))
+       [($VECTOR $LIST $LIST*) (vector (V i) (V i 1) (map unpack-rec (V i 2)))]
+       [($LIST->VECTOR) (vector (V i) (V i 1) (unpack-rec (V i 2)))]
+       [('lvar)    (make-lvar (V i 1))]
+       [else (errorf "[internal error] unpack-iform: ivec broken at ~a: ~S"
+                     i ivec)]))
 
     (unpack-rec (V 0))))
 
 ;; Counts the size (approx # of nodes) of the iform.
 (define (iform-count-size-upto iform limit)
   (define (rec iform cnt)
-    (letrec-syntax ((sum-items
+    (letrec-syntax ([sum-items
                      (syntax-rules (*)
                        [(_ cnt) cnt]
                        [(_ cnt (* item1) item2 ...)
                         (let1 s1 (rec-list item1 cnt)
-                          (if (>= s1 limit) limit
-                              (sum-items s1 item2 ...)))]
+                          (if (>= s1 limit) limit (sum-items s1 item2 ...)))]
                        [(_ cnt item1 item2 ...)
                         (let1 s1 (rec item1 cnt)
-                          (if (>= s1 limit) limit
-                              (sum-items s1 item2 ...)))]))
-                    )
+                          (if (>= s1 limit) limit (sum-items s1 item2 ...)))])])
       (case/unquote
        (iform-tag iform)
        [($DEFINE) (sum-items (+ cnt 1) ($define-expr iform))]
@@ -1142,108 +1086,86 @@
 (define (iform-copy iform lv-alist)
   (case/unquote
    (iform-tag iform)
-   [($DEFINE)
-    ($define ($*-src iform) ($define-flags iform) ($define-id iform)
-             (iform-copy ($define-expr iform) lv-alist))]
-   [($LREF)
-    ($lref (iform-copy-lvar ($lref-lvar iform) lv-alist))]
-   [($LSET)
-    ($lset (iform-copy-lvar ($lset-lvar iform) lv-alist)
-           (iform-copy ($lset-expr iform) lv-alist))]
-   [($GREF)
-    ($gref ($gref-id iform))]
-   [($GSET)
-    ($gset ($gset-id iform) (iform-copy ($gset-expr iform) lv-alist))]
-   [($CONST)
-    ($const ($const-value iform))]
-   [($IF)
-    ($if ($*-src iform)
-         (iform-copy ($if-test iform) lv-alist)
-         (iform-copy ($if-then iform) lv-alist)
-         (iform-copy ($if-else iform) lv-alist))]
-   [($LET)
-    (receive (newlvs newalist)
-        (iform-copy-zip-lvs ($let-lvars iform) lv-alist)
-      ($let ($*-src iform) ($let-type iform)
-            newlvs
-            (imap (cute iform-copy <> (case ($let-type iform)
-                                        ((let) lv-alist)
-                                        ((rec) newalist)))
-                  ($let-inits iform))
-            (iform-copy ($let-body iform) newalist)))]
-   [($RECEIVE)
-    (receive (newlvs newalist)
-        (iform-copy-zip-lvs ($receive-lvars iform) lv-alist)
-      ($receive ($*-src iform)
-                ($receive-reqargs iform) ($receive-optarg iform)
-                newlvs (iform-copy ($receive-expr iform) lv-alist)
-                (iform-copy ($receive-body iform) newalist)))]
-   [($LAMBDA)
-    (receive (newlvs newalist)
-        (iform-copy-zip-lvs ($lambda-lvars iform) lv-alist)
-      ($lambda ($*-src iform) ($lambda-name iform)
-               ($lambda-reqargs iform) ($lambda-optarg iform)
-               newlvs
-               (iform-copy ($lambda-body iform) newalist)
-               ($lambda-flag iform)))]
+   [($DEFINE) ($define ($*-src iform) ($define-flags iform) ($define-id iform)
+                       (iform-copy ($define-expr iform) lv-alist))]
+   [($LREF) ($lref (iform-copy-lvar ($lref-lvar iform) lv-alist))]
+   [($LSET) ($lset (iform-copy-lvar ($lset-lvar iform) lv-alist)
+                   (iform-copy ($lset-expr iform) lv-alist))]
+   [($GREF) ($gref ($gref-id iform))]
+   [($GSET) ($gset ($gset-id iform) (iform-copy ($gset-expr iform) lv-alist))]
+   [($CONST)($const ($const-value iform))]
+   [($IF)   ($if ($*-src iform)
+                 (iform-copy ($if-test iform) lv-alist)
+                 (iform-copy ($if-then iform) lv-alist)
+                 (iform-copy ($if-else iform) lv-alist))]
+   [($LET) (receive (newlvs newalist)
+               (iform-copy-zip-lvs ($let-lvars iform) lv-alist)
+             ($let ($*-src iform) ($let-type iform)
+                   newlvs
+                   (imap (cute iform-copy <> (case ($let-type iform)
+                                               ((let) lv-alist)
+                                               ((rec) newalist)))
+                         ($let-inits iform))
+                   (iform-copy ($let-body iform) newalist)))]
+   [($RECEIVE) (receive (newlvs newalist)
+                   (iform-copy-zip-lvs ($receive-lvars iform) lv-alist)
+                 ($receive ($*-src iform)
+                           ($receive-reqargs iform) ($receive-optarg iform)
+                           newlvs (iform-copy ($receive-expr iform) lv-alist)
+                           (iform-copy ($receive-body iform) newalist)))]
+   [($LAMBDA) (receive (newlvs newalist)
+                  (iform-copy-zip-lvs ($lambda-lvars iform) lv-alist)
+                ($lambda ($*-src iform) ($lambda-name iform)
+                         ($lambda-reqargs iform) ($lambda-optarg iform)
+                         newlvs
+                         (iform-copy ($lambda-body iform) newalist)
+                         ($lambda-flag iform)))]
    [($LABEL)
-    (cond [(assq iform lv-alist) => (lambda (p) (cdr p))]
+    (cond [(assq iform lv-alist) => (^p (cdr p))]
           [else
            (rlet1 newnode
                ($label ($label-src iform) ($label-label iform) #f)
              ($label-body-set! newnode
                                (iform-copy ($label-body iform)
                                            (acons iform newnode lv-alist))))])]
-   [($SEQ)
-    ($seq (imap (cut iform-copy <> lv-alist) ($seq-body iform)))]
-   [($CALL)
-    ($call ($*-src iform)
-           (iform-copy ($call-proc iform) lv-alist)
-           (imap (cut iform-copy <> lv-alist) ($call-args iform))
-           #f)]
-   [($ASM)
-    ($asm ($*-src iform) ($asm-insn iform)
-          (imap (cut iform-copy <> lv-alist) ($asm-args iform)))]
-   [($PROMISE)
-    ($promise ($*-src iform) (iform-copy ($promise-expr iform) lv-alist))]
-   [($CONS)
-    ($cons ($*-src iform)
-           (iform-copy ($*-arg0 iform) lv-alist)
-           (iform-copy ($*-arg1 iform) lv-alist))]
-   [($APPEND)
-    ($append ($*-src iform)
-             (iform-copy ($*-arg0 iform) lv-alist)
-             (iform-copy ($*-arg1 iform) lv-alist))]
-   [($VECTOR)
-    ($vector ($*-src iform)
-             (imap (cut iform-copy <> lv-alist) ($*-args iform)))]
+   [($SEQ) ($seq (imap (cut iform-copy <> lv-alist) ($seq-body iform)))]
+   [($CALL) ($call ($*-src iform)
+                   (iform-copy ($call-proc iform) lv-alist)
+                   (imap (cut iform-copy <> lv-alist) ($call-args iform))
+                   #f)]
+   [($ASM) ($asm ($*-src iform) ($asm-insn iform)
+                 (imap (cut iform-copy <> lv-alist) ($asm-args iform)))]
+   [($PROMISE)($promise ($*-src iform)
+                        (iform-copy ($promise-expr iform) lv-alist))]
+   [($CONS)   ($cons ($*-src iform)
+                     (iform-copy ($*-arg0 iform) lv-alist)
+                     (iform-copy ($*-arg1 iform) lv-alist))]
+   [($APPEND) ($append ($*-src iform)
+                       (iform-copy ($*-arg0 iform) lv-alist)
+                       (iform-copy ($*-arg1 iform) lv-alist))]
+   [($VECTOR) ($vector ($*-src iform)
+                       (imap (cut iform-copy <> lv-alist) ($*-args iform)))]
    [($LIST->VECTOR)
     ($list->vector ($*-src iform) (iform-copy ($*-arg0 iform) lv-alist))]
-   [($LIST)
-    ($list ($*-src iform)
-           (imap (cut iform-copy <> lv-alist) ($*-args iform)))]
-   [($LIST*)
-    ($list* ($*-src iform)
-            (imap (cut iform-copy <> lv-alist) ($*-args iform)))]
-   [($MEMV)
-    ($memv ($*-src iform)
-           (iform-copy ($*-arg0 iform) lv-alist)
-           (iform-copy ($*-arg1 iform) lv-alist))]
-   [($EQ?)
-    ($eq? ($*-src iform)
-          (iform-copy ($*-arg0 iform) lv-alist)
-          (iform-copy ($*-arg1 iform) lv-alist))]
-   [($EQV?)
-    ($eqv? ($*-src iform)
-           (iform-copy ($*-arg0 iform) lv-alist)
-           (iform-copy ($*-arg1 iform) lv-alist))]
+   [($LIST)   ($list ($*-src iform)
+                     (imap (cut iform-copy <> lv-alist) ($*-args iform)))]
+   [($LIST*)  ($list* ($*-src iform)
+                      (imap (cut iform-copy <> lv-alist) ($*-args iform)))]
+   [($MEMV)   ($memv ($*-src iform)
+                     (iform-copy ($*-arg0 iform) lv-alist)
+                     (iform-copy ($*-arg1 iform) lv-alist))]
+   [($EQ?)    ($eq? ($*-src iform)
+                    (iform-copy ($*-arg0 iform) lv-alist)
+                    (iform-copy ($*-arg1 iform) lv-alist))]
+   [($EQV?)   ($eqv? ($*-src iform)
+                     (iform-copy ($*-arg0 iform) lv-alist)
+                     (iform-copy ($*-arg1 iform) lv-alist))]
    [($IT) ($it)]
    [else iform]))
 
 (define (iform-copy-zip-lvs orig-lvars lv-alist)
-  (let1 new-lvars (imap (lambda (lv) (make-lvar (lvar-name lv))) orig-lvars)
-    (values new-lvars
-            (fold-right acons lv-alist orig-lvars new-lvars))))
+  (let1 new-lvars (imap (^v (make-lvar (lvar-name v))) orig-lvars)
+    (values new-lvars (fold-right acons lv-alist orig-lvars new-lvars))))
 
 (define (iform-copy-lvar lvar lv-alist)
   ;; NB: using extra lambda after => is a kludge for the current optimizer
@@ -1371,115 +1293,8 @@
 
 (define (side-effect-free-insn? insn)  #f) ;for now
 
-;; An aux proc called during pass 2 to determine free variables of
-;; a closure.   Bounds is a list of lvars that are bound in this scope
-;; (thus can't be free).
-;(define (iform-free-lvars iform bounds)
-;  (define label-alist '()) ;; alist of old-label & new-label 
-  
-;  (case/unquote
-;   (iform-tag iform)
-;   (($DEFINE)
-;    ($define ($*-src iform) ($define-flags iform) ($define-id iform)
-;             (iform-copy ($define-expr iform) lv-alist)))
-;   (($LREF)
-;    ($lref (iform-copy-lvar ($lref-lvar iform) lv-alist)))
-;   (($LSET)
-;    ($lset ($lset-lvar iform) (iform-copy ($lset-expr iform) lv-alist)))
-;   (($GREF)
-;    ($gref ($gref-id iform)))
-;   (($GSET)
-;    ($gset ($gset-id iform) (iform-copy ($gset-expr iform) lv-alist)))
-;   (($CONST)
-;    ($const ($const-value iform)))
-;   (($IF)
-;    ($if ($*-src iform)
-;         (iform-copy ($if-test iform) lv-alist)
-;         (iform-copy ($if-then iform) lv-alist)
-;         (iform-copy ($if-else iform) lv-alist)))
-;   (($LET)
-;    (receive (newlvs newalist)
-;        (iform-copy-zip-lvs ($let-lvars iform) lv-alist)
-;      ($let ($*-src iform) ($let-type iform)
-;            newlvs
-;            (map (cute iform-copy <> (case ($let-type iform)
-;                                       ((let) lv-alist)
-;                                       ((rec) newalist)))
-;                 ($let-inits iform))
-;            (iform-copy ($let-body iform) newalist))))
-;   (($RECEIVE)
-;    (receive (newlvs newalist)
-;        (iform-copy-zip-lvs ($receive-lvars iform) lv-alist)
-;      ($receive ($*-src iform)
-;                ($receive-reqargs iform) ($receive-optarg iform)
-;                newlvs (iform-copy ($receive-expr iform) lv-alist)
-;                (iform-copy ($receive-body iform) newalist))))
-;   (($LAMBDA)
-;    (receive (newlvs newalist)
-;        (iform-copy-zip-lvs ($lambda-lvars iform) lv-alist)
-;      ($lambda ($*-src iform) ($lambda-name iform)
-;               ($lambda-reqargs iform) ($lambda-optarg iform)
-;               newlvs
-;               (iform-copy ($lambda-body iform) newalist)
-;               ($lambda-flag iform))))
-;   (($LABEL)
-;    (cond ((assq iform label-alist) => (lambda (p) (cdr p)))
-;          (else
-;           (let1 newnode
-;               ($label ($label-src iform) ($label-label iform) #f)
-;             (push! label-alist (cons iform newnode))
-;             ($label-body-set! newnode
-;                               (iform-copy ($label-body iform) label-alist))
-;             newnode))))
-;   (($SEQ)
-;    ($seq (map (cut iform-copy <> lv-alist) ($seq-body iform))))
-;   (($CALL)
-;    ($call ($*-src iform)
-;           (iform-copy ($call-proc iform) lv-alist)
-;           (map (cut iform-copy <> lv-alist) ($call-args iform))
-;           #f))
-;   (($ASM)
-;    ($asm ($*-src iform) ($asm-insn iform)
-;          (map (cut iform-copy <> lv-alist) ($asm-args iform))))
-;   (($PROMISE)
-;    ($promise ($*-src iform) (iform-copy ($promise-expr iform) lv-alist)))
-;   (($CONS)
-;    ($cons ($*-src iform)
-;           (iform-copy ($*-arg0 iform) lv-alist)
-;           (iform-copy ($*-arg1 iform) lv-alist)))
-;   (($APPEND)
-;    ($append ($*-src iform)
-;             (iform-copy ($*-arg0 iform) lv-alist)
-;             (iform-copy ($*-arg1 iform) lv-alist)))
-;   (($VECTOR)
-;    ($vector ($*-src iform)
-;             (map (cut iform-copy <> lv-alist) ($*-args iform))))
-;   (($LIST->VECTOR)
-;    ($list->vector ($*-src iform) (iform-copy ($*-arg0 iform) lv-alist)))
-;   (($LIST)
-;    ($list ($*-src iform)
-;           (map (cut iform-copy <> lv-alist) ($*-args iform))))
-;   (($LIST*)
-;    ($list* ($*-src iform)
-;            (map (cut iform-copy <> lv-alist) ($*-args iform))))
-;   (($MEMV)
-;    ($memv ($*-src iform)
-;           (iform-copy ($*-arg0 iform) lv-alist)
-;           (iform-copy ($*-arg1 iform) lv-alist)))
-;   (($EQ?)
-;    ($eq? ($*-src iform)
-;          (iform-copy ($*-arg0 iform) lv-alist)
-;          (iform-copy ($*-arg1 iform) lv-alist)))
-;   (($EQV?)
-;    ($eqv? ($*-src iform)
-;           (iform-copy ($*-arg0 iform) lv-alist)
-;           (iform-copy ($*-arg1 iform) lv-alist)))
-;   (($IT) ($it))
-;   (else iform)))
-  
-
 ;;============================================================
-;; Entry point
+;; Entry points
 ;;
 
 ;; compile:: Sexpr, Module -> CompiledCode
@@ -1506,18 +1321,15 @@
       )))
 
 ;; stub for future extension
-(define (compile-partial program module)
-  #f)
-
-(define (compile-finish cc)
-  #f)
+(define (compile-partial program module) #f)
+(define (compile-finish cc) #f)
 
 ;; Returns a compiled toplevel closure.  This is a shortcut of
 ;; evaluating lambda expression---it skips extra code segment
 ;; that only has CLOSURE instruction.
 (define (compile-toplevel-lambda oform name formals body module)
-  (let* ((cenv (make-cenv module '() name))
-         (iform (pass2 (pass1/lambda oform formals body cenv #f))))
+  (let* ([cenv (make-cenv module '() name)]
+         [iform (pass2 (pass1/lambda oform formals body cenv #f))])
     (make-toplevel-closure (pass3/lambda iform #f '()))))
   
 ;; For testing
@@ -1598,8 +1410,8 @@
     (let1 inliner (%procedure-inliner proc)
       (cond
        [(integer? inliner)
-        (let ((nargs (length (cdr program)))
-              (opt?  (slot-ref proc 'optional)))
+        (let ([nargs (length (cdr program))]
+              [opt?  (slot-ref proc 'optional)])
           (unless (argcount-ok? (cdr program) (slot-ref proc 'required) opt?)
             (errorf "wrong number of arguments: ~a requires ~a, but got ~a"
                     (variable-name name) (slot-ref proc 'required) nargs))
@@ -1622,13 +1434,12 @@
       (error "proper list required for function application or macro use:" program))
     (cond
      [(pass1/lookup-head (car program) cenv)
-      => (lambda (head)
-           (cond
-            [(identifier? head) (pass1/global-call head)]
-            [(lvar? head) (pass1/call program ($lref head) (cdr program) cenv)]
-            [(macro? head) ;; local macro
-             (pass1 (call-macro-expander head program (cenv-frames cenv)) cenv)]
-            [else (error "[internal] unknown resolution of head:" head)]))]
+      => (^h (cond
+              [(identifier? h) (pass1/global-call h)]
+              [(lvar? h) (pass1/call program ($lref h) (cdr program) cenv)]
+              [(macro? h) ;; local macro
+               (pass1 (call-macro-expander h program (cenv-frames cenv)) cenv)]
+              [else (error "[internal] unknown resolution of head:" h)]))]
      [else (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
                        (cdr program) cenv)])]
    [(variable? program)                 ; variable reference
@@ -1778,13 +1589,12 @@
 
 ;; returns a module specified by THING.
 (define (ensure-module thing name create?)
-  (let1 mod 
-      (cond [(symbol? thing) (find-module thing)]
-            [(identifier? thing) (find-module (slot-ref thing 'name))]
-            [(module? thing) thing]
-            [else
-             (errorf "~a requires a module name or a module, but got: ~s"
-                     name thing)])
+  (let1 mod (cond [(symbol? thing) (find-module thing)]
+                  [(identifier? thing) (find-module (slot-ref thing 'name))]
+                  [(module? thing) thing]
+                  [else
+                   (errorf "~a requires a module name or a module, but got: ~s"
+                           name thing)])
     (or mod
         (if create?
           (make-module (if (identifier? thing) (slot-ref thing 'name) thing))
@@ -1795,9 +1605,9 @@
 ;; The nodes within IFORM will be reused in the resulting $LET structure,
 ;; so be careful not to share substructures of IFORM accidentally.
 (define (expand-inlined-procedure src iform iargs)
-  (let ((lvars ($lambda-lvars iform))
-        (args  (adjust-arglist ($lambda-reqargs iform) ($lambda-optarg iform)
-                               iargs ($lambda-name iform))))
+  (let ([lvars ($lambda-lvars iform)]
+        [args  (adjust-arglist ($lambda-reqargs iform) ($lambda-optarg iform)
+                               iargs ($lambda-name iform))])
     (for-each (lambda (lv a) (lvar-initval-set! lv a)) lvars args)
     ($let src 'let lvars args ($lambda-body iform))))
 
@@ -1817,17 +1627,14 @@
 ;;
 
 (define-macro (define-pass1-syntax formals module . body)
-  (let ((mod (case module
-               ((:null)   'null)
-               ((:gauche) 'gauche)))
+  (let ([mod (case module ((:null) 'null) ((:gauche) 'gauche))]
         ;; a trick to assign comprehensive name to body:
-        (name (string->symbol #`"syntax/,(car formals)")))
+        [name (string->symbol #`"syntax/,(car formals)")])
     `(let ((,name (lambda ,(cdr formals) ,@body)))
        (%insert-binding (find-module ',mod) ',(car formals)
                         (make-syntax ',(car formals) ,name)))))
 
-(define (global-id id)
-  (make-identifier id (find-module 'gauche) '()))
+(define (global-id id) (make-identifier id (find-module 'gauche) '()))
 
 (define lambda. (global-id 'lambda))
 (define setter. (global-id 'setter))
@@ -1840,8 +1647,7 @@
   (check-toplevel oform cenv)
   (match form
     [(_ (name . args) body ...)
-     (pass1/define `(define ,name
-                      (,lambda. ,args ,@body))
+     (pass1/define `(define ,name (,lambda. ,args ,@body))
                    oform flags module cenv)]
     [(_ name expr)
      (unless (variable? name) (error "syntax-error:" oform))
@@ -2712,9 +2518,7 @@
 
 (define-pass1-syntax (require form cenv) :gauche
   (match form
-    [(_ feature)
-     (%require feature)
-     ($const-undef)]
+    [(_ feature) (%require feature) ($const-undef)]
     [_ (error "syntax-error: malformed require:" form)]))
 
 ;; Class stuff ........................................
@@ -2729,9 +2533,7 @@
   (match form
     [(_ name . opts)
      (check-toplevel form cenv)
-     (pass1 (with-module gauche.object
-              (%expand-define-generic name opts))
-            cenv)]
+     (pass1 (with-module gauche.object (%expand-define-generic name opts)) cenv)]
     [_ (error "syntax-error: malformed define-generic:" form)]))
 
 (define-pass1-syntax (define-method form cenv) :gauche
@@ -2741,8 +2543,7 @@
      ;; is consistent with toplevel define and define-syntax.  Allowing
      ;; define-method in non-toplevel is rather CL-ish and not like Scheme.
      ;(check-toplevel form cenv)
-     (pass1 (with-module gauche.object
-              (%expand-define-method  name specs body))
+     (pass1 (with-module gauche.object (%expand-define-method name specs body))
             cenv)]
     [_ (error "syntax-error: malformed define-method:" form)]))
 
@@ -2761,7 +2562,7 @@
   (match form
     [(_ (w ...) expr ...)
      ;; check
-     (let ((wlist
+     (let ([wlist
             (let loop ((w w) (r '()))
               (cond [(null? w) r]
                     [(memq (car w) '(:compile-toplevel :load-toplevel :execute))
@@ -2771,12 +2572,12 @@
                     [else
                      (error "eval-when: situation must be a list of \
                              :compile-toplevel, :load-toplevel or :execute, \
-                             but got:" (car w))])))
-           (situ (vm-eval-situation)))
+                             but got:" (car w))]))]
+           [situ (vm-eval-situation)])
        (when (and (eqv? situ SCM_VM_COMPILING)
                   (memq :compile-toplevel wlist)
                   (cenv-toplevel? cenv))
-         (dolist (e expr) (eval e (cenv-module cenv))))
+         (dolist [e expr] (eval e (cenv-module cenv))))
        (if (or (and (eqv? situ SCM_VM_LOADING)
                     (memq :load-toplevel wlist)
                     (cenv-toplevel? cenv))
@@ -2794,16 +2595,21 @@
 ;; Walk down IForm and perform optimizations.
 ;; The main focus is to lift or inline closures, and eliminate
 ;; local frames by beta reduction.
-
 ;; This pass may modify the tree by changing IForm nodes destructively.
 
-;; Each handler is called with three arguments: the IForm, Penv, and Tail?
+;; Precisely speaking, this pass walks up and down (sub)trees multiple
+;; times.
 ;;
-;; Penv is a list of $LAMBDA nodes that we're compiling.   It is used to
-;; detect self-recursive local calls.  Tail? is a flag to indicate whether
-;; the expression is tail position or not.
+;; Main pass (pass2/rec):
+;;   Each handler is called with three arguments: the IForm, Penv, and Tail?
+;;   Penv is a list of $LAMBDA nodes that we're compiling.   It is used to
+;;   detect self-recursive local calls.  Tail? is a flag to indicate whether
+;;   the expression is tail position or not.
+;;   Each hander returns IForm.
 ;;
-;; Each hander returns IForm.
+;; Post pass (pass2p/rec):
+;;   Each handler is called with IForm and a list of label nodes.
+;;   Returs IForm.
 
 ;; Dispatch pass2 and pass2 post handler.
 ;; *pass2-dispatch-table* is defined below, after all handlers are defined.
