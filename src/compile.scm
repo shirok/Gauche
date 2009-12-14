@@ -2682,8 +2682,8 @@
 
 (define (pass2/$IF iform penv tail?)
   (let ([test-form (pass2/rec ($if-test iform) penv #f)]
-        [then-form (pass2/rec ($if-then iform) penv #f)]
-        [else-form (pass2/rec ($if-else iform) penv #f)])
+        [then-form (pass2/rec ($if-then iform) penv tail?)]
+        [else-form (pass2/rec ($if-else iform) penv tail?)])
     (or (pass2/branch-cut iform test-form then-form else-form)
         (pass2/update-if iform test-form then-form else-form))))
 
