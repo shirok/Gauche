@@ -2,6 +2,12 @@
 
 	* src/compile.scm (pp-iform): Slightly changed output format for
 	  better readability.
+	  (pass2/$IF, pass2p/$IF): Moved $if-$it optimization to the pass2p,
+	  for it won't affect main pass2 optimization, but it introduces
+	  shared node and makes later pass cumbersome.
+	  (pass2/$ASM, pass2p/$ASM, pass2/check-constant-asm): Perform
+	  $ASM-node constant folding in pass2 main as well.  This benefits
+	  other pass2 main optimization.
 
 2009-12-13  Shiro Kawai  <shiro@acm.org>
 

@@ -2642,8 +2642,7 @@
 ;; position.  If it is bound to $LAMBDA, we may be able to inline the
 ;; lambda.  It is dealt by pass2/head-lref, which is called by pass2/$CALL.
 
-(define (pass2/$LREF iform penv tail?)
-  (pass2/lref-eliminate iform))
+(define (pass2/$LREF iform penv tail?) (pass2/lref-eliminate iform))
 
 (define (pass2/lref-eliminate iform)
   (let1 lvar ($lref-lvar iform)
@@ -2681,98 +2680,22 @@
 
 (define (pass2/$IT iform penv tail?) iform)
 
-;; If optimization:
-;;
-;;  If the 'test' clause of $IF node contains another $IF that has $IT in
-;;  either then or else clause, the straightforward code generation emits
-;;  redundant jump/branch instructions.  We translate the tree into
-;;  an acyclic directed graph:
-;;
-;;    ($if ($if <t0> ($it) <e0>) <then> <else>)
-;;     => ($if <t0> #0=($label L0 <then>) ($if <e0> #0# <else>))
-;;
-;;    ($if ($if <t0> <e0> ($it)) <then> <else>)
-;;    ($if ($if <t0> <e0> ($const #f)) <then> <else>)
-;;     => ($if <t0> ($if <e0> <then> #0=($label L0 <else>)) #0#)
-;;
-;;    ($if ($if <t0> ($const #f) <e0>) <then> <else>)
-;;     => ($if <t0> #0=($label L0 <else>) ($if <e0> <then> #0#))
-;;        iff <else> != ($it)
-;;     => ($if <t0> ($const #f) ($if <e0> <then> ($it)))
-;;        iff <else> == ($it)
-;;
-;;  NB: If <then> or <else> clause is simple enough, we just duplicate
-;;      it instead of creating $label node.  It is not only for optimization,
-;;      but crucial when the clause is ($IT), since it affects the Pass3
-;;      code generation stage.
-;;
-;;  NB: The latter two patterns may seem contrived, but it appears
-;;      naturally in the 'cond' clause, e.g. (cond ((some-condition?) #f) ...)
-;;      or (cond .... (else #f)).
-;;
-;;    ($if <t0> #0=($label ...) #0#)
-;;     => ($seq <t0> ($label ...))
-;;
-;;  This form may appear as the result of if optimization.
-
 (define (pass2/$IF iform penv tail?)
-  (let1 test (pass2/rec ($if-test iform) penv #f)
-    (or (and
-         (has-tag? test $IF)
-         (let ((test-then ($if-then test))
-               (test-else ($if-else test)))
-           (cond [($it? test-then)
-                  (receive (l0 l1)
-                      (pass2/label-or-dup
-                       (pass2/rec ($if-then iform) penv tail?))
-                    (pass2/update-if iform ($if-test test)
-                                     l0
-                                     (pass2/rec ($if #f
-                                                     test-else
-                                                     l1
-                                                     ($if-else iform))
-                                                penv tail?)))]
-                 [(or ($it? test-else)
-                      (and ($const? test-else)
-                           (not ($const-value test-else))))
-                  (receive (l0 l1)
-                      (pass2/label-or-dup
-                       (pass2/rec ($if-else iform) penv tail?))
-                    (pass2/update-if iform ($if-test test)
-                                     (pass2/rec ($if #f
-                                                     test-then
-                                                     ($if-then iform)
-                                                     l0)
-                                                penv tail?)
-                                     l1))]
-                 [(and ($const? test-then)
-                       (not ($const-value test-then)))
-                  (receive (l0 l1)
-                      (pass2/label-or-dup
-                       (pass2/rec ($if-else iform) penv tail?))
-                    (pass2/update-if iform ($if-test test)
-                                     (if ($it? l0) ($const-f) l0)
-                                     (pass2/rec ($if #f
-                                                     test-else
-                                                     ($if-then iform)
-                                                     l1)
-                                                penv tail?)))]
-                 [else #f])))
-        ;; default case
-        (pass2/update-if iform
-                         test
-                         (pass2/rec ($if-then iform) penv tail?)
-                         (pass2/rec ($if-else iform) penv tail?)))))
+  (let ([test-form (pass2/rec ($if-test iform) penv #f)]
+        [then-form (pass2/rec ($if-then iform) penv #f)]
+        [else-form (pass2/rec ($if-else iform) penv #f)])
+    (or (pass2/branch-cut iform test-form then-form else-form)
+        (pass2/update-if iform test-form then-form else-form))))
 
-(define (pass2/label-or-dup iform)
-  (if (memv (iform-tag iform) `(,$LREF ,$CONST ,$IT))
-    (values iform (iform-copy iform '()))
-    (let1 lab ($label #f #f iform)
-      (values lab lab))))
+;; NB: pass2/branch-cut and pass2/update-if are also called in pass2p/$IF.
+(define (pass2/branch-cut iform test-form then-form else-form)
+  (and ($const? test-form)
+       (let1 val-form (if ($const-value test-form) then-form else-form)
+         (if ($it? val-form) test-form val-form))))
 
 (define (pass2/update-if iform new-test new-then new-else)
   (if (eq? new-then new-else)
-    ($seq (list new-test new-then))
+    ($seq (list new-test new-then))     ;this case happens after pass2p.
     (begin ($if-test-set! iform new-test)
            ($if-then-set! iform new-then)
            ($if-else-set! iform new-else)
@@ -3147,9 +3070,92 @@
   (find (cut eq? node <>) penv))
 
 (define (pass2/$ASM iform penv tail?)
-  ($asm-args-set! iform (imap (cut pass2/rec <> penv #f)
-                              ($asm-args iform)))
-  iform)
+  (let1 args (imap (cut pass2/rec <> penv #f) ($asm-args iform))
+    (pass2/check-constant-asm iform args)))
+
+(define (pass2/check-constant-asm iform args)
+  (or (and (every $const? args)
+           (case/unquote
+            (car ($asm-insn iform))
+            [(NOT)     (pass2/const-pred not args)]
+            [(NULLP)   (pass2/const-pred null? args)]
+            [(PAIRP)   (pass2/const-pred pair? args)]
+            [(CHARP)   (pass2/const-pred char? args)]
+            [(STRINGP) (pass2/const-pred string? args)]
+            [(VECTORP) (pass2/const-pred vector? args)]
+            [(NUMBERP) (pass2/const-pred number? args)]
+            [(REALP)   (pass2/const-pred real? args)]
+            [(CAR)     (pass2/const-cxr car args)]
+            [(CDR)     (pass2/const-cxr cdr args)]
+            [(CAAR)    (pass2/const-cxxr car caar args)]
+            [(CADR)    (pass2/const-cxxr cdr cadr args)]
+            [(CDAR)    (pass2/const-cxxr car cdar args)]
+            [(CDDR)    (pass2/const-cxxr cdr cddr args)]
+            [else #f]))
+      (and-let* ([ (pair? args) ]
+                 [ (null? (cdr args)) ]
+                 [ ($lref? (car args)) ]
+                 [lvar ($lref-lvar (car args))]
+                 [ (zero? (lvar-set-count lvar)) ]
+                 [initval (lvar-initval lvar)])
+        (case/unquote
+         (car ($asm-insn iform))
+         [(NULLP) (and (initval-never-null? initval)
+                       (begin (lvar-ref--! lvar) ($const-f)))]
+         [(NOT)   (and (initval-never-false? initval)
+                       (begin (lvar-ref--! lvar) ($const-f)))]
+         [(CAR)   (and (initval-always-list? initval)
+                       (transparent? initval)
+                       (begin (lvar-ref--! lvar) (initval-list-car initval)))]
+         [(CDR)   (and (initval-always-list? initval)
+                       (transparent? initval)
+                       (begin (lvar-ref--! lvar) (initval-list-cdr initval)))]
+         [else #f]))
+      (begin ($asm-args-set! iform args) iform)))
+
+(define (pass2/const-pred pred args)
+  (if (pred ($const-value (car args))) ($const-t) ($const-f)))
+         
+(define (pass2/const-cxr proc args)
+  (let1 v ($const-value (car args))
+    (and (pair? v) ($const (proc v)))))
+
+(define (pass2/const-cxxr proc0 proc args)
+  (let1 v ($const-value (car args))
+    (and (pair? v) (pair? (proc0 v)) ($const (proc v)))))
+
+(define (initval-never-null? val)
+  (and (vector? val)
+       (let1 tag (iform-tag val)
+         (or (and (eqv? tag $LIST) (not (null? ($*-args val))))
+             (and (eqv? tag $LIST*) (not (null? ($*-args val))))
+             (memv tag `(,$LAMBDA ,$PROMISE ,$CONS ,$EQ? ,$EQV?
+                                  ,$VECTOR ,$LIST->VECTOR))))))
+
+(define (initval-never-false? val)
+  (and (vector? val)
+       (let1 tag (iform-tag val)
+         (memv tag `(,$LAMBDA ,$PROMISE ,$CONS ,$VECTOR
+                     ,$LIST->VECTOR ,$LIST)))))
+
+(define (initval-always-list? val)
+  (and (vector? val)
+       (or (and (has-tag? val $LIST)
+                (pair? ($*-args val)))
+           (and (has-tag? val $LIST*)
+                (pair? ($*-args val))
+                (pair? (cdr ($*-args val)))))))
+
+(define (initval-list-car val) ;assumes (initval-always-list? val) is #t
+  (car ($*-args val)))
+
+(define (initval-list-cdr val) ;assumes (initval-always-list? val) is #t
+  (cond [(has-tag? val $LIST)
+         (let1 v (cdr ($*-args val))
+           (if (null? v) ($const-nil) ($list v)))]
+        [(has-tag? val $LIST*)
+         ($list* (cdr ($*-args val)))]
+        [else (error "[internal] initval-list-cdr")]))
 
 (define (pass2/onearg-inliner iform penv tail?)
   ($*-arg0-set! iform (pass2/rec ($*-arg0 iform) penv #f))
@@ -3208,19 +3214,80 @@
 (define (pass2p/$CONST iform labels) iform)
 (define (pass2p/$IT iform labels) iform)
 
+;; If optimization:
+;;
+;;  If the 'test' clause of $IF node contains another $IF that has $IT in
+;;  either then or else clause, the straightforward code generation emits
+;;  redundant jump/branch instructions.  We translate the tree into
+;;  an acyclic directed graph:
+;;
+;;    ($if ($if <t0> ($it) <e0>) <then> <else>)
+;;     => ($if <t0> #0=($label L0 <then>) ($if <e0> #0# <else>))
+;;
+;;    ($if ($if <t0> <e0> ($it)) <then> <else>)
+;;    ($if ($if <t0> <e0> ($const #f)) <then> <else>)
+;;     => ($if <t0> ($if <e0> <then> #0=($label L0 <else>)) #0#)
+;;
+;;    ($if ($if <t0> ($const #f) <e0>) <then> <else>)
+;;     => ($if <t0> #0=($label L0 <else>) ($if <e0> <then> #0#))
+;;        iff <else> != ($it)
+;;     => ($if <t0> ($const #f) ($if <e0> <then> ($it)))
+;;        iff <else> == ($it)
+;;
+;;  NB: If <then> or <else> clause is simple enough, we just duplicate
+;;      it instead of creating $label node.  It is not only for optimization,
+;;      but crucial when the clause is ($IT), since it affects the Pass3
+;;      code generation stage.
+;;
+;;  NB: The latter two patterns may seem contrived, but it appears
+;;      naturally in the 'cond' clause, e.g. (cond ((some-condition?) #f) ...)
+;;      or (cond .... (else #f)).
+;;
+;;    ($if <t0> #0=($label ...) #0#)
+;;     => ($seq <t0> ($label ...))
+;;
+;;  This form may appear as the result of if optimization.
+
 (define (pass2p/$IF iform labels)
-  (let ([test (pass2p/rec ($if-test iform) labels)]
-        [then (pass2p/rec ($if-then iform) labels)]
-        [else (pass2p/rec ($if-else iform) labels)])
-    (if ($const? test)
-      (let1 val-form (if ($const-value test) then else)
-        (if ($it? val-form) test val-form))
-      (begin
-        ($if-test-set! iform test)
-        ($if-then-set! iform then)
-        ($if-else-set! iform else)
-        iform))))
-                       
+  (let ([test-form (pass2p/rec ($if-test iform) labels)]
+        [then-form (pass2p/rec ($if-then iform) labels)]
+        [else-form (pass2p/rec ($if-else iform) labels)])
+    (or (pass2/branch-cut iform test-form then-form else-form)
+        (and
+         (has-tag? test-form $IF)
+         (let ([test-then ($if-then test-form)]
+               [test-else ($if-else test-form)])
+           (cond [($it? test-then)
+                  (receive (l0 l1) (pass2p/label-or-dup then-form)
+                    (pass2/update-if iform ($if-test test-form)
+                                     l0
+                                     (pass2p/rec ($if #f test-else l1 else-form)
+                                                 labels)))]
+                 [(or ($it? test-else)
+                      (and ($const? test-else)
+                           (not ($const-value test-else))))
+                  (receive (l0 l1) (pass2p/label-or-dup else-form)
+                    (pass2/update-if iform ($if-test test-form)
+                                     (pass2p/rec ($if #f test-then then-form l0)
+                                                 labels)
+                                     l1))]
+                 [(and ($const? test-then)
+                       (not ($const-value test-then)))
+                  (receive (l0 l1) (pass2p/label-or-dup else-form)
+                    (pass2/update-if iform ($if-test test-form)
+                                     (if ($it? l0) ($const-f) l0)
+                                     (pass2p/rec ($if #f test-else then-form l1)
+                                                  labels)))]
+                 [else #f])))
+        ;; default case
+        (pass2/update-if iform test-form then-form else-form))))
+
+(define (pass2p/label-or-dup iform)
+  (if (memv (iform-tag iform) `(,$LREF ,$CONST ,$IT))
+    (values iform (iform-copy iform '()))
+    (let1 lab ($label #f #f iform)
+      (values lab lab))))
+
 (define (pass2p/$LET iform labels)
   (let ([lvars ($let-lvars iform)]
         [inits (imap (cut pass2p/rec <> labels) ($let-inits iform))])
@@ -3259,88 +3326,7 @@
 
 (define (pass2p/$ASM iform labels)
   (let1 args (imap (cut pass2p/rec <> labels) ($asm-args iform))
-    (or (and (every $const? args)
-             (case/unquote
-              (car ($asm-insn iform))
-              [(NOT)     (pass2p/const-pred not args)]
-              [(NULLP)   (pass2p/const-pred null? args)]
-              [(PAIRP)   (pass2p/const-pred pair? args)]
-              [(CHARP)   (pass2p/const-pred char? args)]
-              [(STRINGP) (pass2p/const-pred string? args)]
-              [(VECTORP) (pass2p/const-pred vector? args)]
-              [(NUMBERP) (pass2p/const-pred number? args)]
-              [(REALP)   (pass2p/const-pred real? args)]
-              [(CAR)     (pass2p/const-cxr car args)]
-              [(CDR)     (pass2p/const-cxr cdr args)]
-              [(CAAR)    (pass2p/const-cxxr car caar args)]
-              [(CADR)    (pass2p/const-cxxr cdr cadr args)]
-              [(CDAR)    (pass2p/const-cxxr car cdar args)]
-              [(CDDR)    (pass2p/const-cxxr cdr cddr args)]
-              [else #f]))
-        (and-let* ([ (pair? args) ]
-                   [ (null? (cdr args)) ]
-                   [ ($lref? (car args)) ]
-                   [lvar ($lref-lvar (car args))]
-                   [ (zero? (lvar-set-count lvar)) ]
-                   [initval (lvar-initval lvar)])
-          (case/unquote
-           (car ($asm-insn iform))
-           [(NULLP) (and (initval-never-null? initval)
-                         (begin (lvar-ref--! lvar) ($const-f)))]
-           [(NOT)   (and (initval-never-false? initval)
-                         (begin (lvar-ref--! lvar) ($const-f)))]
-           [(CAR)   (and (initval-always-list? initval)
-                         (transparent? initval)
-                         (begin (lvar-ref--! lvar) (initval-list-car initval)))]
-           [(CDR)   (and (initval-always-list? initval)
-                         (transparent? initval)
-                         (begin (lvar-ref--! lvar) (initval-list-cdr initval)))]
-           [else #f]))
-        (begin ($asm-args-set! iform args) iform))))
-
-(define (pass2p/const-pred pred args)
-  (if (pred ($const-value (car args))) ($const-t) ($const-f)))
-         
-(define (pass2p/const-cxr proc args)
-  (let1 v ($const-value (car args))
-    (and (pair? v) ($const (proc v)))))
-
-(define (pass2p/const-cxxr proc0 proc args)
-  (let1 v ($const-value (car args))
-    (and (pair? v) (pair? (proc0 v)) ($const (proc v)))))
-
-(define (initval-never-null? val)
-  (and (vector? val)
-       (let1 tag (iform-tag val)
-         (or (and (eqv? tag $LIST) (not (null? ($*-args val))))
-             (and (eqv? tag $LIST*) (not (null? ($*-args val))))
-             (memv tag `(,$LAMBDA ,$PROMISE ,$CONS ,$EQ? ,$EQV?
-                                  ,$VECTOR ,$LIST->VECTOR))))))
-
-(define (initval-never-false? val)
-  (and (vector? val)
-       (let1 tag (iform-tag val)
-         (memv tag `(,$LAMBDA ,$PROMISE ,$CONS ,$VECTOR
-                     ,$LIST->VECTOR ,$LIST)))))
-
-(define (initval-always-list? val)
-  (and (vector? val)
-       (or (and (has-tag? val $LIST)
-                (pair? ($*-args val)))
-           (and (has-tag? val $LIST*)
-                (pair? ($*-args val))
-                (pair? (cdr ($*-args val)))))))
-
-(define (initval-list-car val) ;assumes (initval-always-list? val) is #t
-  (car ($*-args val)))
-
-(define (initval-list-cdr val) ;assumes (initval-always-list? val) is #t
-  (cond [(has-tag? val $LIST)
-         (let1 v (cdr ($*-args val))
-           (if (null? v) ($const-nil) ($list v)))]
-        [(has-tag? val $LIST*)
-         ($list* (cdr ($*-args val)))]
-        [else (error "[internal] initval-list-cdr")]))
+    (pass2/check-constant-asm iform args)))
 
 (define (pass2p/onearg-inliner iform labels)
   ($*-arg0-set! iform (pass2p/rec ($*-arg0 iform) labels))
