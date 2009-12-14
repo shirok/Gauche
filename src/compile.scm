@@ -1257,7 +1257,7 @@
 ;; reference.  We have to be careful not to diverge.
 ;; TODO: we lift transparent?/rec manually to avoid closure allocation
 ;; because of the unsophisticated compiler.  Fix this in future.
-(define (transparent? iform) (transparent?/rec iform (list #f)))
+(define (transparent? iform) (transparent?/rec iform (make-label-dic)))
 (define (transparent?/rec iform labels)
   (case/unquote
    (iform-tag iform)
@@ -1271,8 +1271,8 @@
    [($RECEIVE)(and (transparent?/rec ($receive-expr iform) labels)
                    (transparent?/rec ($receive-body iform) labels))]
    [($LAMBDA) #t]
-   [($LABEL)  (or (memq iform (cdr labels))
-                  (begin (set-cdr! labels (cons iform (cdr labels)))
+   [($LABEL)  (or (label-seen? labels iform)
+                  (begin (label-push! labels iform)
                          (transparent?/rec ($label-body iform) labels)))]
    [($SEQ)    (everyc transparent?/rec ($seq-body iform) labels)]
    [($CALL)   (and (side-effect-free-proc? ($call-proc iform))
@@ -2625,7 +2625,7 @@
 (define (pass2 iform)
   (if (vm-compiler-flag-no-pass2-post?)
     (pass2/rec iform '() #t)
-    (pass2p/rec (pass2/rec iform '() #t) (list #f))))
+    (pass2p/rec (pass2/rec iform '() #t) (make-label-dic))))
 
 (define (pass2/$DEFINE iform penv tail?)
   ($define-expr-set! iform (pass2/rec ($define-expr iform) penv #f))
@@ -3305,8 +3305,8 @@
   iform)
 
 (define (pass2p/$LABEL iform labels)
-  (unless (memq iform (cdr labels))
-    (set-cdr! labels (cons iform (cdr labels)))
+  (unless (label-seen? labels iform)
+    (label-push! labels iform)
     ($label-body-set! iform (pass2p/rec ($label-body iform) labels)))
   iform)
 
@@ -4621,6 +4621,12 @@
 ;;============================================================
 ;; Utilities
 ;;
+
+;; Keep track of visited $LABEL node while traversing IForm.  The lookup
+;; is only done when we hit $LABEL node, so the performance is not so critical.
+(define (make-label-dic) (list #f))
+(define (label-seen? label-dic label-node) (memq label-node (cdr label-dic)))
+(define (label-push! label-dic label-node) (push! (cdr label-dic) label-node))
 
 ;; see if the immediate integer value fits in the insn arg.
 (define (integer-fits-insn-arg? obj)
