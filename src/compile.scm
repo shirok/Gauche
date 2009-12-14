@@ -193,40 +193,35 @@
 
 (define-macro (imap proc lis)
   (match proc
-    [('cut p '<> c)
-     `(%map1c ,p ,lis ,c)]
-    [('cut p '<> c1 c2)
-     `(%map1cc ,p ,lis ,c1 ,c2)]
-    ['make-lvar+
-     `(%map-make-lvar ,lis)]
+    [('cut p '<> c)      `(%map1c ,p ,lis ,c)]
+    [('cut p '<> c1 c2)  `(%map1cc ,p ,lis ,c1 ,c2)]
+    ['make-lvar+         `(%map-make-lvar ,lis)]
     [('lambda . _)
-     (let ((p (gensym))
-           (r (gensym)))
-       `(let loop ((,r '()) (,p ,lis))
+     (let ([p (gensym)] [r (gensym)] [loop (gensym)])
+       `(let ,loop ((,r '()) (,p ,lis))
           (if (null? ,p)
             (reverse ,r)
-            (loop (cons (,proc (car ,p)) ,r) (cdr ,p))))
-       )]
+            (,loop (cons (,proc (car ,p)) ,r) (cdr ,p)))))]
     [else `(map ,proc ,lis)]))
 
 (define-macro (imap2 proc lis1 lis2)
-  (let ((p1 (gensym))
-        (p2 (gensym))
-        (r  (gensym)))
-    `(let loop ((,r '()) (,p1 ,lis1) (,p2 ,lis2))
+  (let ([p1 (gensym)] [p2 (gensym)] [r (gensym)] [loop (gensym)])
+    `(let ,loop ((,r '()) (,p1 ,lis1) (,p2 ,lis2))
        (if (null? ,p1)
          (reverse ,r)
-         (loop (cons (,proc (car ,p1) (car ,p2)) ,r) (cdr ,p1) (cdr ,p2))))
-    ))
+         (,loop (cons (,proc (car ,p1) (car ,p2)) ,r) (cdr ,p1) (cdr ,p2))))))
+
+(define-macro (ifor-each proc lis)
+  (let ([p (gensym)] [loop (gensym)])
+    `(let ,loop ((,p ,lis))
+       (unless (null? ,p) (,proc (car ,p)) (,loop (cdr ,p))))))
 
 (define-macro (ifor-each2 proc lis1 lis2)
-  (let ((p1 (gensym))
-        (p2 (gensym)))
-    `(let loop ((,p1 ,lis1) (,p2 ,lis2))
+  (let ([p1 (gensym)] [p2 (gensym)] [loop (gensym)])
+    `(let ,loop ((,p1 ,lis1) (,p2 ,lis2))
        (unless (null? ,p1)
          (,proc (car ,p1) (car ,p2))
-         (loop (cdr ,p1) (cdr ,p2))))
-    ))
+         (,loop (cdr ,p1) (cdr ,p2))))))
 
 ;; Inlining max
 ;; We only compare unsigned integers (in Pass 3), so we use the specialized
@@ -339,8 +334,10 @@
 (define (make-lvar+ name) ;; procedure version of constructor, for mapping
   (make-lvar name))
 
-(define-inline (lvar? obj)
-  (and (vector? obj) (eq? (vector-ref obj 0) 'lvar)))
+(define-inline (lvar? obj) (and (vector? obj) (eq? (vector-ref obj 0) 'lvar)))
+(define (lvar-reset lvar)
+  (lvar-ref-count-set! lvar 0)
+  (lvar-set-count-set! lvar 0))
 
 ;; implemented in C for better performance.
 (inline-stub
@@ -1276,9 +1273,9 @@
                          (transparent?/rec ($label-body iform) labels)))]
    [($SEQ)    (everyc transparent?/rec ($seq-body iform) labels)]
    [($CALL)   (and (side-effect-free-proc? ($call-proc iform))
-                   (every transparent?/rec ($call-args iform) labels))]
+                   (everyc transparent?/rec ($call-args iform) labels))]
    [($ASM)    (and (side-effect-free-insn? ($asm-insn iform))
-                   (every transparent?/rec ($asm-args iform) labels))]
+                   (everyc transparent?/rec ($asm-args iform) labels))]
    [($PROMISE) #t]
    [($CONS $APPEND $MEMV $EQ? $EQV?)
     (and (transparent?/rec ($*-arg0 iform) labels)
@@ -1292,6 +1289,45 @@
 (define (side-effect-free-proc? iform) #f) ;for now
 
 (define (side-effect-free-insn? insn)  #f) ;for now
+
+;; Reset lvar reference count.  This is called in the intermediate
+;; stage in pass2, when a subgraph of IForm is eliminated.
+(define (reset-lvars iform) (reset-lvars/rec iform (make-label-dic)) iform)
+(define (reset-lvars/rec iform labels)
+  (case/unquote
+   (iform-tag iform)
+   [($DEFINE) (reset-lvars/rec ($define-expr iform) labels)]
+   [($LREF)   (lvar-ref++! ($lref-lvar iform))]
+   [($LSET)   (lvar-set++! ($lset-lvar iform))
+              (reset-lvars/rec ($lset-expr iform) labels)]
+   [($GSET)   (reset-lvars/rec ($gset-expr iform) labels)]
+   [($IF)     (reset-lvars/rec ($if-test iform) labels)
+              (reset-lvars/rec ($if-then iform) labels)
+              (reset-lvars/rec ($if-else iform) labels)]
+   [($LET)    (for-each lvar-reset ($let-lvars iform))
+              (reset-lvars/rec* ($let-inits iform) labels)
+              (reset-lvars/rec ($let-body iform) labels)]
+   [($RECEIVE)(for-each lvar-reset ($receive-lvars iform))
+              (reset-lvars/rec ($receive-expr iform) labels)
+              (reset-lvars/rec ($receive-body iform) labels)]
+   [($LAMBDA) (for-each lvar-reset ($lambda-lvars iform))
+              (reset-lvars/rec ($lambda-body iform) labels)]
+   [($LABEL)  (unless (label-seen? labels iform)
+                (label-push! labels iform)
+                (reset-lvars/rec ($label-body iform) labels))]
+   [($SEQ)    (reset-lvars/rec* ($seq-body iform) labels)]
+   [($CALL)   (unless (eq? ($call-flag iform) 'jump)
+                (reset-lvars/rec ($call-proc iform) labels))
+              (reset-lvars/rec* ($call-args iform) labels)]
+   [($ASM)    (reset-lvars/rec* ($asm-args iform) labels)]
+   [($PROMISE)(reset-lvars/rec ($promise-expr iform) labels)]
+   [($CONS $APPEND $MEMV $EQ? $EQV?)
+    (reset-lvars/rec ($*-arg0 iform) labels)
+    (reset-lvars/rec ($*-arg1 iform) labels)]
+   [($VECTOR $LIST $LIST*) (reset-lvars/rec* ($*-args iform) labels)]
+   [($LIST->VECTOR) (reset-lvars/rec ($*-arg0 iform) labels)]))
+(define (reset-lvars/rec* iforms labels)
+  (ifor-each (lambda (x) (reset-lvars/rec x labels)) iforms))
 
 ;;============================================================
 ;; Entry points
@@ -2625,7 +2661,7 @@
 (define (pass2 iform)
   (if (vm-compiler-flag-no-pass2-post?)
     (pass2/rec iform '() #t)
-    (pass2p/rec (pass2/rec iform '() #t) (make-label-dic))))
+    (pass2p/rec (reset-lvars (pass2/rec iform '() #t)) (make-label-dic))))
 
 (define (pass2/$DEFINE iform penv tail?)
   ($define-expr-set! iform (pass2/rec ($define-expr iform) penv #f))

@@ -8,6 +8,8 @@
 	  (pass2/$ASM, pass2p/$ASM, pass2/check-constant-asm): Perform
 	  $ASM-node constant folding in pass2 main as well.  This benefits
 	  other pass2 main optimization.
+	  (reset-lvars): Re-adjust lvar reference count after pass2 main,
+	  for the pass may prune subtree from IForm.
 
 2009-12-13  Shiro Kawai  <shiro@acm.org>
 
