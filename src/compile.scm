@@ -65,7 +65,7 @@
 ;;;     - Constant expressons are folded.
 ;;;
 ;;;   Pass 2 (Optimization):
-;;;     - Traverses IFrom and modify the tree to optimize it.
+;;;     - Traverses IForm and modify the tree to optimize it.
 ;;;     - Limited beta-substitution (local variable substitution and
 ;;;       inline local functions for the obvious cases).
 ;;;     - Closure optimization (generates efficient code for truly local
@@ -1330,7 +1330,7 @@
 
 ;; See if the given iform is referentially transparent.   That is,
 ;; the iform is side-effect free, and also the value of iform
-;; won't change even if we move ifrom to a different place in the subtree.
+;; won't change even if we move iform to a different place in the subtree.
 (define (transparent? iform)
   (case/unquote
    (iform-tag iform)
@@ -3372,9 +3372,9 @@
 
 ;; Pass 2 post-pass.
 ;; Closure optimization can introduce superfluous $LET, which can
-;; be optimized further.  (In fact, this process can be repeated
-;; until we reach optimal equilibrium.  However, compilation speed is
-;; also important for Gauche, so we just run this post pass once.)
+;; be optimized further.  (In fact, pass2 and pass2p can be repeated
+;; until no further optimization can be possible  However, compilation
+;; speed is also important for Gauche, so we just run this post pass once.)
 
 (define (pass2p/$DEFINE iform)
   ($define-expr-set! iform (pass2p/rec ($define-expr iform)))
