@@ -787,19 +787,13 @@
 (define (pp-iform iform)
 
   (define labels '()) ;; alist of label node and count
-
-  (define (indent count)
-    (dotimes (i count) (write-char #\space)))
-
-  (define (nl ind)
-    (newline) (indent ind))
-
-  (define (id->string id)
-    (symbol->string (slot-ref id 'name)))
-
+  (define (indent count) (dotimes (i count) (write-char #\space)))
+  (define (nl ind) (newline) (indent ind))
+  (define (id->string id) (symbol->string (slot-ref id 'name)))
   (define (lvar->string lvar)
-    (format "~a[~a:~a]" (variable-name (lvar-name lvar))
-            (lvar-ref-count lvar) (lvar-set-count lvar)))
+    (format "~a.~a~a" (variable-name (lvar-name lvar))
+            (lvar-ref-count lvar)
+            (make-string (lvar-set-count lvar) #\!)))
   
   (define (rec ind iform)
     (case/unquote
@@ -831,14 +825,15 @@
      [($LET)
       (let* ((hdr  (format "($let~a (" (case ($let-type iform)
                                          ((let) "") ((rec) "rec"))))
-             (xind (+ ind (string-length hdr))))
+             (xind (+ ind (string-length hdr)))
+             (first #t))
         (display hdr)
         (for-each (lambda (var init)
-                    (let1 z (format "(~a " (lvar->string var))
+                    (if first (set! first #f) (nl xind))
+                    (let1 z (format "[~a " (lvar->string var))
                       (display z)
                       (rec (+ xind  (string-length z)) init)
-                      (display ")")
-                      (nl xind)))
+                      (display "]")))
                   ($let-lvars iform) ($let-inits iform))
         (display ")") (nl (+ ind 2))
         (rec (+ ind 2) ($let-body iform)) (display ")"))]
@@ -848,7 +843,7 @@
       (rec (+ ind 4) ($receive-expr iform)) (nl (+ ind 2))
       (rec (+ ind 2) ($receive-body iform)) (display ")")]
      [($LAMBDA)
-      (format #t "($lambda[~a:~a] ~a" ($lambda-name iform)
+      (format #t "($lambda[~a.~a] ~a" ($lambda-name iform)
               (length ($lambda-calls iform))
               (map lvar->string ($lambda-lvars iform)))
       (nl (+ ind 2))
@@ -875,11 +870,16 @@
                   ($call-args iform))
         (display ")"))]
      [($ASM)
-      (let1 insn ($asm-insn iform)
-        (format #t "($asm ~a" (cons (insn-name (car insn)) (cdr insn))))
-      (for-each (lambda (node) (nl (+ ind 2)) (rec (+ ind 2) node))
-                ($asm-args iform))
-      (display ")")]
+      (let* ([insn ($asm-insn iform)]
+             [args ($asm-args iform)]
+             [hdr  (format "($asm ~a" (cons (insn-name (car insn)) (cdr insn)))])
+        (display hdr)
+        (case (length args)
+          [(0)]
+          [(1) (display " ") (rec (+ ind (string-length hdr) 1) (car args))]
+          [else (for-each (lambda (node) (nl (+ ind 2)) (rec (+ ind 2) node))
+                          ($asm-args iform))])
+        (display ")"))]
      [($PROMISE)
       (display "($promise ")
       (rec (+ ind 10) ($promise-expr iform))

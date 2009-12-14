@@ -1,3 +1,8 @@
+2009-12-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pp-iform): Slightly changed output format for
+	  better readability.
+
 2009-12-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (unpack-iform): Recover lvar's initvals after
