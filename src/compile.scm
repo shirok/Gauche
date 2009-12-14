@@ -2819,7 +2819,7 @@
 (define (pass2 iform)
   (if (vm-compiler-flag-no-pass2-post?)
     (pass2/rec iform '() #t)
-    (pass2p/rec (pass2/rec iform '() #t) (make-hash-table 'eq?))))
+    (pass2p/rec (pass2/rec iform '() #t) (list #f))))
 
 (define (pass2/$DEFINE iform penv tail?)
   ($define-expr-set! iform (pass2/rec ($define-expr iform) penv #f))
@@ -3432,7 +3432,8 @@
   iform)
 
 (define (pass2p/$LABEL iform labels)
-  (unless (hash-table-exists? labels iform)
+  (unless (memq iform (cdr labels))
+    (set-cdr! labels (cons iform (cdr labels)))
     ($label-body-set! iform (pass2p/rec ($label-body iform) labels)))
   iform)
 
