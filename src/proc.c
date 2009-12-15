@@ -500,6 +500,11 @@ static ScmObj proc_currying(ScmProcedure *p)
     return SCM_MAKE_BOOL(p->currying);
 }
 
+static ScmObj proc_constant(ScmProcedure *p)
+{
+    return SCM_MAKE_BOOL(p->constant);
+}
+
 static ScmObj proc_info(ScmProcedure *p)
 {
     return p->info;
@@ -516,6 +521,7 @@ static ScmClassStaticSlotSpec proc_slots[] = {
     SCM_CLASS_SLOT_SPEC("optcount", proc_optcount, NULL),
     SCM_CLASS_SLOT_SPEC("locked", proc_locked, NULL),
     SCM_CLASS_SLOT_SPEC("currying", proc_currying, NULL),
+    SCM_CLASS_SLOT_SPEC("constant", proc_constant, NULL),
     SCM_CLASS_SLOT_SPEC("info", proc_info, NULL),
     SCM_CLASS_SLOT_SPEC("setter", proc_setter, NULL),
     SCM_CLASS_SLOT_SPEC_END()

@@ -40,6 +40,7 @@
   (use util.match)
   (use text.tr)
   (use file.util)
+  (use util.list)
   (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.mop.instance-pool)
@@ -101,12 +102,23 @@
 ;;
 ;;      When omitted, SUBR is assumed to return <top>.
 ;;
-;;      <Flag> is a keyword to modify some aspects of SUBR.  Currently,
-;;      the only supported <flag> is :fast-flonum, which indicates that
-;;      the SUBR accepts flonum arguments yet it won't retain the reference
-;;      to them (This improves floating-point number handling, but it's
-;;      behavior is highly VM-specific; ordinary stub writers shouldn't need
-;;      to care about this flag at all.)
+;;      <Flag> is a keyword to modify some aspects of SUBR.  Supported
+;;      flags are as follows:
+;;
+;;        :fast-flonum   - indicates that the SUBR accepts flonum arguments
+;;               and it won't retain the reference to them.  The VM can pass
+;;               flonums on VM registers to the SUBRs with this flag.
+;;               (This improves floating-point number handling, but it's
+;;               behavior is highly VM-specific; ordinary stub writers
+;;               shouldn't need to care about this flag at all.)
+;;        :constant      - indicates that this SUBR returns a constant value
+;;               if all args are compile-time constants.  The compiler may
+;;               replace the call to this proc with the value, if it determines
+;;               all arguments are known at the compile time.  The resulting
+;;               value should be serializable to the precompiled file.
+;;               NB: Since this procedure may be called at compile time,
+;;               a subr that may return a different value for batch/cross
+;;               compilation shouldn't have this flag.
 ;;
 ;;      <Qual> (qualifier) is a list to adds auxiliary information to the
 ;;      SUBR.  Currently the following <quals> are officially supported.
@@ -501,8 +513,8 @@
       ;; an appropriate handlers are emitted.  Necessary to write a stub
       ;; for C++ functions that may throw an exception.
    (flags             :initform '() :init-keyword :flags)
-      ;; list of symbols to modify code generation.  currently only 
-      ;; `fast-flonum' is supported.
+      ;; list of keywords to modify code generation.  currently
+      ;; :fast-flonum and :constant are supported.
    ))
 
 (define (get-arg cproc arg) (find (^(x) (eq? arg (~ x'name))) (~ cproc'args)))
@@ -525,15 +537,16 @@
     ;; we know that we can safely pass FLONUM_REGs, since the args
     ;; are immediately type-checked and/or unboxed.
     (let1 unsafe-types (list *scm-type* (name->type '<number>))
-      (when (and (not (memq 'fast-flonum (~ cproc'flags)))
+      (when (and (not (memq :fast-flonum (~ cproc'flags)))
                  (every (^(arg) (or (is-a? arg <rest-arg>)
                                     (not (memq (~ arg'type) unsafe-types))))
                         args))
-        (push! (~ cproc'flags) 'fast-flonum))))
+        (push! (~ cproc'flags) :fast-flonum))))
   (define (extract-flags body)
-    (match body
-      [(:fast-flonum . body) (values '(fast-flonum) body)]
-      [_                     (values '() body)]))
+    (receive (flags body) (span keyword? body)
+      (unless (every (cut memq <> '(:fast-flonum :constant)) flags)
+        (error "Invalid cproc flag in " flags))
+      (values flags body)))
 
   (check-arg symbol? scheme-name)
   (check-arg list? argspec)
@@ -934,20 +947,28 @@
   (p "}")
   (p)
   ;; emit stub record
-  (f "static SCM_DEFINE_SUBR~a(~a, ~a, ~a, ~a, ~a, ~a, NULL);"
-     (if (memq 'fast-flonum (~ cproc'flags)) "I" "")
-     (c-stub-name cproc)
-     (~ cproc'num-reqargs)
-     (cond [(zero? (~ cproc'num-optargs)) 0]
-           [(not (null? (~ cproc'keyword-args))) 1]
-           [(~ cproc'have-rest-arg?) (~ cproc'num-optargs)]
-           [else (+ (~ cproc'num-optargs) 1)])
-     (cgen-c-name (~ cproc'proc-name))
-     (~ cproc'c-name)
-     (cond [(~ cproc'inline-insn)
-            => (^(insn) (format "SCM_MAKE_INT(SCM_VM_~a)"
-                                (string-tr (x->string insn) "-" "_")))]
-           [else "NULL"]))
+  (let1 flags (~ cproc'flags)
+    (format #t "static SCM_DEFINE_SUBR~a(" (if (null? flags) "" "X"))
+    (format #t "~a, ~a, ~a,"
+            (c-stub-name cproc)                       ; cvar
+            (~ cproc'num-reqargs)                     ; req
+            (cond [(zero? (~ cproc'num-optargs)) 0]
+                  [(not (null? (~ cproc'keyword-args))) 1]
+                  [(~ cproc'have-rest-arg?) (~ cproc'num-optargs)]
+                  [else (+ (~ cproc'num-optargs) 1)])); opt
+    (unless (null? flags)                             ; cst
+      (if (memq :constant flags) (display "1, ") (display "0, ")))
+    (format #t "~a," (cgen-c-name (~ cproc'proc-name))); inf
+    (unless (null? flags)                              ; flags
+      (if (memq :fast-flonum flags)
+        (display "SCM_SUBR_IMMEDIATE_ARG, ")
+        (display "0, ")))
+    (format #t "~a, ~a, NULL);\n"
+            (~ cproc'c-name)                          ; func
+            (cond [(~ cproc'inline-insn)
+                   => (^(insn) (format "SCM_MAKE_INT(SCM_VM_~a)"
+                                       (string-tr (x->string insn) "-" "_")))]
+                  [else "NULL"])))                    ; inliner
   (p))
 
 (define-method cgen-emit-init ((cproc <cproc>))
@@ -955,7 +976,8 @@
     (f "  Scm_MakeBinding(mod, SCM_SYMBOL(SCM_INTERN(~s)), SCM_OBJ(&~a), ~a);"
        (symbol->string (~ cproc'scheme-name))
        (c-stub-name cproc)
-       (if (~ cproc'inline-insn) "SCM_BINDING_INLINABLE" "0")))
+       (if (or (~ cproc'inline-insn) (memq :constant (~ cproc'flags)))
+         "SCM_BINDING_INLINABLE" "0")))
   (next-method)
   )
 

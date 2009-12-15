@@ -66,9 +66,9 @@
 ;; 6.2  Numbers
 ;;
 
-(define-cproc ash (num cnt::<fixnum>) Scm_Ash)
+(define-cproc ash (num cnt::<fixnum>) :constant Scm_Ash)
 
-(define-cproc lognot (x) Scm_LogNot)
+(define-cproc lognot (x) :constant Scm_LogNot)
 
 (define-cise-stmt logop
   [(_ fn)
@@ -76,11 +76,11 @@
       (for-each (lambda (v) (set! r (,fn r v))) args)
       (result r))])
 
-(define-cproc logand (x y :rest args) (logop Scm_LogAnd))
-(define-cproc logior (x y :rest args) (logop Scm_LogIor))
-(define-cproc logxor (x y :rest args) (logop Scm_LogXor))
+(define-cproc logand (x y :rest args) :constant (logop Scm_LogAnd))
+(define-cproc logior (x y :rest args) :constant (logop Scm_LogIor))
+(define-cproc logxor (x y :rest args) :constant (logop Scm_LogXor))
 
-(define-cproc logcount (n) ::<int>
+(define-cproc logcount (n) ::<int> :constant 
   (cond [(SCM_EQ n (SCM_MAKE_INT 0)) (result 0)]
         [(SCM_INTP n)
          (let* ([z::ScmBits (cast ScmBits (cast long (SCM_INT_VALUE n)))])
@@ -90,9 +90,10 @@
         [(SCM_BIGNUMP n) (result (Scm_BignumLogCount (SCM_BIGNUM n)))]
         [else (SCM_TYPE_ERROR n "exact integer") (result 0)]))
 
+;; fixnum? and bignum? is not :constant, since it is platform-dependent.
 (define-cproc fixnum? (x) ::<boolean> :fast-flonum SCM_INTP)
 (define-cproc bignum? (x) ::<boolean> :fast-flonum SCM_BIGNUMP)
-(define-cproc flonum? (x) ::<boolean> :fast-flonum SCM_FLONUMP)
+(define-cproc flonum? (x) ::<boolean> :fast-flonum :constant SCM_FLONUMP)
 
 (define-cproc finite?   (x::<number>) ::<boolean> :fast-flonum Scm_FiniteP)
 (define-cproc infinite? (x::<number>) ::<boolean> :fast-flonum Scm_InfiniteP)
@@ -120,26 +121,26 @@
 ;; Inexact arithmetics.  Useful for speed-sensitive code to avoid
 ;; accidental use of bignum or ratnum.   We might want to optimize
 ;; these more, even adding special VM insns for them.
-(define-cproc +. (:rest args)
+(define-cproc +. (:rest args) :constant
   (let* ([a '0.0])
     (dolist [x args] (set! a (Scm_Add a (Scm_ExactToInexact x))))
     (result a)))
-(define-cproc *. (:rest args)
+(define-cproc *. (:rest args) :constant
   (let* ([a '1.0])
     (dolist [x args] (set! a (Scm_Mul a (Scm_ExactToInexact x))))
     (result a)))
-(define-cproc -. (arg1 :rest args)
+(define-cproc -. (arg1 :rest args) :constant
   (cond
    [(SCM_NULLP args) (result (Scm_Negate (Scm_ExactToInexact arg1)))]
    [else (dolist [x args] (set! arg1 (Scm_Sub arg1 (Scm_ExactToInexact x))))
          (result arg1)]))
-(define-cproc /. (arg1 :rest args)
+(define-cproc /. (arg1 :rest args) :constant
   (cond
    [(SCM_NULLP args) (result (Scm_Reciprocal (Scm_ExactToInexact arg1)))]
    [else (dolist [x args] (set! arg1 (Scm_Div arg1 (Scm_ExactToInexact x))))
          (result arg1)]))
 
-(define-cproc clamp (x :optional (min #f) (max #f)) :fast-flonum
+(define-cproc clamp (x :optional (min #f) (max #f)) :fast-flonum :constant
   (let* ([r x] [maybe_exact::int (SCM_EXACTP x)])
     (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
     (cond [(SCM_EXACTP min) (when (< (Scm_NumCmp x min) 0) (set! r min))]
@@ -156,13 +157,13 @@
       (return (Scm_ExactToInexact r))
       (return r))))
 
-(define-cproc floor->exact (num) :fast-flonum
+(define-cproc floor->exact (num) :fast-flonum :constant
   (result (Scm_RoundToExact num SCM_ROUND_FLOOR)))
-(define-cproc ceiling->exact (num) :fast-flonum
+(define-cproc ceiling->exact (num) :fast-flonum :constant
   (result (Scm_RoundToExact num SCM_ROUND_CEIL)))
-(define-cproc truncate->exact (num) :fast-flonum
+(define-cproc truncate->exact (num) :fast-flonum :constant
   (result (Scm_RoundToExact num SCM_ROUND_TRUNC)))
-(define-cproc round->exact (num) :fast-flonum
+(define-cproc round->exact (num) :fast-flonum :constant
   (result (Scm_RoundToExact num SCM_ROUND_ROUND)))
 
 (define-cproc decode-float (num)        ;from ChezScheme
@@ -202,18 +203,19 @@
 ;;
 
 ;; a convenient coercer
-(define-cproc boolean (obj) ::<boolean> (result (not (SCM_FALSEP obj))))
+(define-cproc boolean (obj) ::<boolean> :constant
+  (result (not (SCM_FALSEP obj))))
 
 ;;
 ;; 6.3.2  Pairs and lists
 ;;
 
-(define-cproc proper-list? (obj)   ::<boolean> SCM_PROPER_LIST_P)
-(define-cproc dotted-list? (obj)   ::<boolean> SCM_DOTTED_LIST_P)
-(define-cproc circular-list? (obj) ::<boolean> SCM_CIRCULAR_LIST_P)
+(define-cproc proper-list? (obj)   ::<boolean> :constant SCM_PROPER_LIST_P)
+(define-cproc dotted-list? (obj)   ::<boolean> :constant SCM_DOTTED_LIST_P)
+(define-cproc circular-list? (obj) ::<boolean> :constant SCM_CIRCULAR_LIST_P)
 (define-cproc make-list (len::<fixnum> :optional (fill #f)) Scm_MakeList)
 (define-cproc acons (caa cda cd) Scm_Acons)
-(define-cproc last-pair (list) Scm_LastPair)
+(define-cproc last-pair (list) :constant Scm_LastPair)
 (define-cproc list-copy (list) Scm_CopyList)
 
 (define-cproc list* (:rest args)
@@ -288,7 +290,7 @@
   (result (Scm_MakeSymbol name FALSE)))
 (define-cproc symbol-sans-prefix (s::<symbol> p::<symbol>) Scm_SymbolSansPrefix)
 ;; keywords
-(define-cproc keyword? (obj) ::<boolean> :fast-flonum SCM_KEYWORDP)
+(define-cproc keyword? (obj) ::<boolean> :fast-flonum :constant SCM_KEYWORDP)
 
 (define-cproc make-keyword (name)
   (let* ([sname::ScmString* NULL])
@@ -297,7 +299,8 @@
           [else (SCM_TYPE_ERROR name "string or symbol")])
     (result (Scm_MakeKeyword sname))))
 
-(define-cproc get-keyword (key list :optional fallback) Scm_GetKeyword)
+(define-cproc get-keyword (key list :optional fallback) :constant
+  Scm_GetKeyword)
 
 (define-cproc delete-keyword (key list)  Scm_DeleteKeyword)
 (define-cproc delete-keyword! (key list) Scm_DeleteKeywordX)
@@ -306,10 +309,10 @@
   (result (SCM_OBJ (SCM_KEYWORD_NAME key))))
 
 ;; identifiers
-(define-cproc identifier? (obj) ::<boolean>
+(define-cproc identifier? (obj) ::<boolean> :constant
   (inliner IDENTIFIERP) SCM_IDENTIFIERP)
 
-(define-cproc identifier->symbol (obj::<identifier>)
+(define-cproc identifier->symbol (obj::<identifier>) :constant
   (result (SCM_OBJ (-> (SCM_IDENTIFIER obj) name))))
 
 ;;
@@ -317,6 +320,7 @@
 ;;
 
 (define-cproc digit->integer (ch::<char> :optional (radix::<fixnum> 10))
+  :constant
   (let* ([r::int])
     (when (or (< radix 2) (> radix 36))
       (Scm_Error "radix must be between 2 and 36, but got %d" radix))
@@ -324,6 +328,7 @@
     (result (?: (>= r 0) (SCM_MAKE_INT r) '#f))))
 
 (define-cproc integer->digit (n::<fixnum> :optional (radix::<fixnum> 10))
+  :constant
   (let* ([r::ScmChar])
     (when (or (< radix 2) (> radix 36))
       (Scm_Error "radix must be between 2 and 36, but got %d" radix))
@@ -352,7 +357,7 @@
 
 (define-constant *char-code-max* (c "Scm_MakeInteger(SCM_CHAR_MAX)"))
 
-(define-cproc char-set? (obj) ::<boolean> SCM_CHARSETP)
+(define-cproc char-set? (obj) ::<boolean> :constant SCM_CHARSETP)
 
 (define-cfn char_set_add (cs::ScmCharSet* chars) ::void :static
   (dolist [ch chars]
@@ -394,7 +399,7 @@
     (result (Scm_CharSetAddRange cs (cast ScmChar f) (cast ScmChar t)))))
           
 (define-cproc char-set-contains? (cs::<char-set> ch::<char>)
-  ::<boolean> Scm_CharSetContains)
+  ::<boolean> :constant Scm_CharSetContains)
 
 (define-cproc %char-set-add! (dst::<char-set> src::<char-set>) Scm_CharSetAdd)
 (define-cproc %char-set-complement! (cs::<char-set>) Scm_CharSetComplement)
@@ -438,7 +443,7 @@
           [else (SCM_TYPE_ERROR handling ":omit, #f, or a character")])
     (result (Scm_StringIncompleteToComplete str h sub))))
 
-(define-cproc string-size (str::<string>) ::<fixnum>
+(define-cproc string-size (str::<string>) ::<fixnum> :constant
   (result (SCM_STRING_BODY_SIZE (SCM_STRING_BODY str))))
 
 (define-cproc make-byte-string (size::<fixnum> :optional (byte::<fixnum> 0))
@@ -541,7 +546,7 @@
     )
 
 ;; Regexp
-(define-cproc regexp? (obj)   ::<boolean> SCM_REGEXPP)
+(define-cproc regexp? (obj)   ::<boolean> :constant SCM_REGEXPP)
 (define-cproc regmatch? (obj) ::<boolean> SCM_REGMATCHP)
 
 (define-cproc string->regexp (str::<string> :key (case-fold #f))
@@ -623,6 +628,7 @@
 ;; this one internally).
 (define-cproc %uvector-ref (v::<uvector> t::<int> k::<integer>
                             :optional fallback)
+  :constant
   (unless (== (Scm_UVectorType (SCM_CLASS_OF v)) t)
     (Scm_TypeError "vec" (Scm_UVectorTypeName t) (SCM_OBJ v)))
   (cond [(or (SCM_BIGNUMP k)
@@ -645,7 +651,7 @@
 (define-enum SCM_UVECTOR_F32)
 (define-enum SCM_UVECTOR_F64)
 
-(define-cproc uvector-length (v::<uvector>) ::<int> SCM_UVECTOR_SIZE)
+(define-cproc uvector-length (v::<uvector>) ::<int> :constant SCM_UVECTOR_SIZE)
 (define-cproc uvector-immutable? (v::<uvector>) ::<boolean> SCM_UVECTOR_IMMUTABLE_P)
 
 ;;
@@ -660,9 +666,9 @@
   
 (define-cproc has-setter? (proc) ::<boolean> Scm_HasSetter)
 
-(define-cproc identity (val) (result val))   ;sometimes useful
+(define-cproc identity (val) :constant (result val))   ;sometimes useful
 
-(define-cproc promise? (obj) ::<boolean>
+(define-cproc promise? (obj) ::<boolean> :constant
   (result (SCM_XTYPEP obj SCM_CLASS_PROMISE)))
 
 (define-cproc eager (obj)               ;srfi-45
@@ -1028,7 +1034,7 @@
   ::<void> Scm_DefineAutoload)
 
 (define-cproc undefined () (inliner CONSTU) (result SCM_UNDEFINED))
-(define-cproc undefined? (obj) ::<boolean> SCM_UNDEFINEDP)
+(define-cproc undefined? (obj) ::<boolean> :constant SCM_UNDEFINEDP)
 
 (define-cproc warn (fmt::<string> :rest args) ::<void> Scm_FWarn)
 
@@ -1397,7 +1403,7 @@
 ;; Modules
 ;;
 
-(define-cproc module? (obj) ::<boolean> SCM_MODULEP)
+(define-cproc module? (obj) ::<boolean> :constant SCM_MODULEP)
 
 (define-cproc module-name (mod::<module>)
   (result (SCM_OBJ (-> (SCM_MODULE mod) name))))

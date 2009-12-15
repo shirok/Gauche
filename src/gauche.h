@@ -1206,6 +1206,8 @@ struct ScmProcedureRec {
     unsigned int type     : 3;     /* ScmProcedureType */
     unsigned int locked   : 1;     /* setter locked? */
     unsigned int currying : 1;     /* autocurrying */
+    unsigned int constant : 1;     /* constant procedure. see below. */
+    unsigned int reserved : 2;     /* unused yet. */
     ScmObj info;                   /* source code info */
     ScmObj setter;                 /* setter, if exists. */
     ScmObj inliner;                /* inliner information.  see below. */
@@ -1228,6 +1230,16 @@ struct ScmProcedureRec {
    This special treatment is to avoid unnecessary consing of argumets;
    if we know the callee immeidately unfolds the rest argument, it's no 
    use to fold excessive arguments anyway.
+ */
+
+/* About 'constant' flag:
+   This flag being TRUE means this procedure returns the same constant
+   value if given same constant arguments.  The compiler may use this
+   info to replace a call of this proc with the resulting value, if
+   all the arguments are known at compile-time.  The resulting value must
+   be serializable to the precompiled file.  The result shouldn't be affected
+   by the timing of the compile, architecture on which the compiler runs,
+   or the compiler configuration (e.g. internal encoding).
  */
 
 /* About procedure inliner:
@@ -1284,12 +1296,15 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
     SCM_PROCEDURE(obj)->type = typ,                     \
     SCM_PROCEDURE(obj)->locked = FALSE,                 \
     SCM_PROCEDURE(obj)->currying = FALSE,               \
+    SCM_PROCEDURE(obj)->constant = FALSE,               \
+    SCM_PROCEDURE(obj)->reserved = 0,                   \
     SCM_PROCEDURE(obj)->info = inf,                     \
     SCM_PROCEDURE(obj)->setter = SCM_FALSE,             \
     SCM_PROCEDURE(obj)->inliner = SCM_FALSE
 
-#define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, inf, inl)  \
-    { { klass }, (req), (opt), (typ), FALSE, FALSE, (inf), SCM_FALSE, (inl) }
+#define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, inf, inl)  \
+    { { klass }, (req), (opt), (typ), FALSE, FALSE, cst, 0,              \
+      (inf), SCM_FALSE, (inl) }
 
 SCM_EXTERN ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given,
                                      int ngiven, int foldlen);
@@ -1322,18 +1337,27 @@ struct ScmSubrRec {
 #define SCM_SUBR_FUNC(obj)         SCM_SUBR(obj)->func
 #define SCM_SUBR_DATA(obj)         SCM_SUBR(obj)->data
 
-#define SCM_SUBR_IMMEDIATE_ARG     (1L<<0)
+/* flags */
+#define SCM_SUBR_IMMEDIATE_ARG  (1L<<0) /* This subr will not retain a reference
+                                           to the flonums given to args.  VM
+                                           can safely pass the register flonums
+                                           to the subr.  This is added when
+                                           the :fast-flonum flag is given to
+                                           define-cproc. */
 
-#define SCM__DEFINE_SUBR_INT(cvar, req, opt, inf, flags, func, inliner, data) \
+#define SCM__DEFINE_SUBR_INT(cvar, req, opt, cst, inf, flags, func, inliner, data) \
     ScmSubr cvar = {                                                        \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_ProcedureClass),\
-                                   req, opt, SCM_PROC_SUBR, inf, inliner),  \
+            req, opt, SCM_PROC_SUBR, cst, inf, inliner),                    \
         flags, (func), (data)                                               \
     }
 
 #define SCM_DEFINE_SUBR(cvar, req, opt, inf, func, inliner, data) \
-    SCM__DEFINE_SUBR_INT(cvar, req, opt, inf, 0, func, inliner, data)
+    SCM__DEFINE_SUBR_INT(cvar, req, opt, 0, inf, 0, func, inliner, data)
+#define SCM_DEFINE_SUBRX(cvar, req, opt, cst, inf, flags, func, inliner, data) \
+    SCM__DEFINE_SUBR_INT(cvar, req, opt, cst, inf, flags, func, inliner, data)
 
+/* old interface.  will be gone. */
 #define SCM_DEFINE_SUBRI(cvar, req, opt, inf, func, inliner, data) \
     SCM__DEFINE_SUBR_INT(cvar, req, opt, inf, SCM_SUBR_IMMEDIATE_ARG, \
                          func, inliner, data)
@@ -1369,8 +1393,8 @@ SCM_CLASS_DECL(Scm_GenericClass);
 #define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
     ScmGeneric cvar = {                                                 \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_GenericClass),\
-                                   0, 0, SCM_PROC_GENERIC, SCM_FALSE,   \
-                                   NULL),                               \
+                                   0, 0, SCM_PROC_GENERIC, 0,           \
+                                   SCM_FALSE, NULL),                    \
         SCM_NIL, 0, cfunc, data                                         \
     }
 
@@ -1404,7 +1428,7 @@ SCM_CLASS_DECL(Scm_MethodClass);
 #define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
     ScmMethod cvar = {                                                  \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_MethodClass),\
-                                   req, opt, SCM_PROC_METHOD,           \
+                                   req, opt, SCM_PROC_METHOD, 0,        \
                                    SCM_FALSE, NULL),                    \
         gf, specs, func, data, NULL                                     \
     }
