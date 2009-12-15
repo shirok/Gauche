@@ -338,7 +338,7 @@
 (define-cproc symbol->string (obj::<symbol>) :constant
   (result (SCM_OBJ (SCM_SYMBOL_NAME obj))))
 
-(define-cproc string->symbol (obj::<string>) Scm_Intern)
+(define-cproc string->symbol (obj::<string>) :constant Scm_Intern)
 
 ;;
 ;; 6.3.4  Characters
