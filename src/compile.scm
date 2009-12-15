@@ -3350,9 +3350,22 @@
   ($promise-expr-set! iform (pass2p/rec ($promise-expr iform) labels))
   iform)
 
+;; We may have a dead code in $SEQ as the result of pass2 main.
+;; We eliminate if the value of subtree is not used, and it is
+;; referentially transparent.
 (define (pass2p/$SEQ iform labels)
-  ($seq-body-set! iform (imap (cut pass2p/rec <> labels) ($seq-body iform)))
-  iform)
+  (let1 xs ($seq-body iform)
+    (if (null? xs)
+      iform
+      (let loop ([r '()] [xs xs])
+        (match xs
+          [(x) (cond [(null? r) (pass2p/rec x labels)]
+                     [else
+                      ($seq-body-set! iform
+                                      (reverse! (cons (pass2p/rec x labels) r)))
+                      iform])]
+          [(x . xs) (let1 x. (pass2p/rec x labels)
+                      (loop (if (transparent? x.) r (cons x. r)) xs))])))))
 
 ;; Some extra optimization on $CALL.  We need to run this here, since
 ;; $CALL classifications needs to be done by the surrounding $LET.
