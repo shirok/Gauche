@@ -13,6 +13,8 @@
 	* src/stdlib.stub, src/extlib.stub: Added :constant flags to
 	  cprocs when applicable.
 
+	* src/compile.scm (pass2p/optimize-call): Enables constant folding
+	  involving procedures marked as 'constant'.
 
 2009-12-14  Shiro Kawai  <shiro@acm.org>
 

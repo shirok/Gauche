@@ -3127,6 +3127,8 @@
             [(CADR)    (pass2/const-cxxr cdr cadr args)]
             [(CDAR)    (pass2/const-cxxr car cdar args)]
             [(CDDR)    (pass2/const-cxxr cdr cddr args)]
+            [(MEMQ)    (pass2/const-memx memq args)]
+            [(MEMV)    (pass2/const-memx memv args)]
             [else #f]))
       (and-let* ([ (pair? args) ]
                  [ (null? (cdr args)) ]
@@ -3159,6 +3161,11 @@
 (define (pass2/const-cxxr proc0 proc args)
   (let1 v ($const-value (car args))
     (and (pair? v) (pair? (proc0 v)) ($const (proc v)))))
+
+(define (pass2/const-memx proc args)
+  (let ([item ($const-value (car args))]
+        [lis  ($const-value (cadr args))])
+    (and (list? lis) ($const (proc item lis)))))
 
 (define (initval-never-null? val)
   (and (vector? val)
@@ -3383,7 +3390,8 @@
     [else (pass2p/optimize-call iform labels)]))
 
 (define (pass2p/optimize-call iform labels)
-  (let1 proc (pass2p/rec ($call-proc iform) labels)
+  (let ([proc (pass2p/rec ($call-proc iform) labels)]
+        [args ($call-args iform)])
     (cond [;; If we get ($call ($let (...) body) args ...), we transform it
            ;; to ($let (...) ($call body args...)).  This may allow further
            ;; optimization.
@@ -3397,13 +3405,16 @@
           [;; As the result of above opration, we may get a direct lambda
            ;; call ($call ($lambda ...) args ...)
            (has-tag? proc $LAMBDA)
-           (expand-inlined-procedure ($call-src iform) proc
-                                     ($call-args iform))]
+           (expand-inlined-procedure ($call-src iform) proc args)]
           [;; If we get ($call ($gref proc) args ...) and proc is inlinable,
-           ;; we can inline the call. 
+           ;; we can inline the call.
            (and-let* ([ (has-tag? proc $GREF) ]
-                      [proc-val (pass2p/inlinable-gref? proc)])
-             (pass2p/late-inline iform proc proc-val))]
+                      [p (gref-inlinable-proc proc)])
+             (or (and (%procedure-inliner p)
+                      (pass2p/late-inline iform proc p))
+                 (and (slot-ref p 'constant)
+                      (every $const? args)
+                      (pass2p/precompute-constant p args))))]
           [;; Like above, but we follow $LREFs.
            ;; We expand $lambda iff lvar's count is 1, in which case we know
            ;; for sure there's no recursive call in $lambda.
@@ -3412,29 +3423,26 @@
                       [val (lvar-initval ($lref-lvar proc))]
                       [ (vector? val) ])
              (or (and-let* ([ (has-tag? val $GREF) ]
-                            [proc-val (pass2p/inlinable-gref? val)])
-                   (rlet1 iform.
-                       (pass2p/late-inline iform val proc-val)
+                            [p (gref-inlinable-proc val)]
+                            [ (%procedure-inliner p) ])
+                   (rlet1 iform. (pass2p/late-inline iform val p)
                      (when iform. (lvar-ref--! ($lref-lvar proc)))))
                  (and-let* ([ (has-tag? val $LAMBDA) ]
                             [ (= (lvar-ref-count ($lref-lvar proc)) 1) ])
                    (rlet1 iform.
-                       (expand-inlined-procedure ($call-src iform) val
-                                                 ($call-args iform))
+                       (expand-inlined-procedure ($call-src iform) val args)
                      (when iform. (lvar-ref--! ($lref-lvar proc)))))
                  ))]
           [else ($call-proc-set! iform proc) iform])))
 
-;; Check if PROC (which is a value of $call-proc slot) can be 
-(define (pass2p/inlinable-gref? gref)
+;; Get the value of GREF if it is bound and inlinable procedure
+(define (gref-inlinable-proc gref)
   (and-let* ([id ($gref-id gref)]
-             [gloc (find-binding (identifier-module id)
-                                 (identifier->symbol id)
-                                 #f)]
+             [gloc
+              (find-binding (identifier-module id) (identifier->symbol id) #f)]
              [ (gloc-inlinable? gloc) ]
              [val (gloc-ref gloc)]
-             [ (procedure? val) ]
-             [(%procedure-inliner val)])
+             [ (procedure? val) ])
     val))
 
 ;; TODO: This is similar to pass1/expand-inliner.  Call for refactoring.
@@ -3460,6 +3468,16 @@
       ;; We can't run procedural inliner here, since what we have is no
       ;; longer an S-expr.
       #f])))
+
+;; PROC is inlinable, constant procedure, and args-node is all $const node.
+;; So we can precompute the value and replace the $call node to a single
+;; $const node.  One caveat: the application may yield an error, but if
+;; we let the compiler fail, it will be confusing since even a call in
+;; a dead code can be the cause.  So if we get an error, we give up this
+;; optimization and let the runtime fail.
+(define (pass2p/precompute-constant proc arg-nodes)
+  (guard (e [else #f])                  ; give up optimization
+    ($const (apply proc (imap (lambda (a) ($const-value a)) arg-nodes)))))
 
 (define (pass2p/$ASM iform labels)
   (let1 args (imap (cut pass2p/rec <> labels) ($asm-args iform))
