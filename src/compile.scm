@@ -2658,10 +2658,19 @@
 
 ;; Pass2 entry point.  We have a small post-pass to eliminate redundancy
 ;; introduced by closure optimization.
+;; The post pass (pass2p) may prune the subtree of iform because of constant
+;; folding.  It may further allow pruning of other subtrees.  So, when
+;; pruning occurs, pass2p records the fact by setting label-dic-info to #t.
+;; We repeat the post process then.
 (define (pass2 iform)
   (if (vm-compiler-flag-no-pass2-post?)
     (pass2/rec iform '() #t)
-    (pass2p/rec (reset-lvars (pass2/rec iform '() #t)) (make-label-dic))))
+    (let loop ([iform (pass2/rec iform '() #t)]
+               [label-dic (make-label-dic)])
+      (let1 iform. (pass2p/rec (reset-lvars iform) label-dic)
+        (if (label-dic-info label-dic)
+          (loop iform. (make-label-dic))
+          iform.)))))
 
 (define (pass2/$DEFINE iform penv tail?)
   ($define-expr-set! iform (pass2/rec ($define-expr iform) penv #f))
@@ -3295,7 +3304,9 @@
   (let ([test-form (pass2p/rec ($if-test iform) labels)]
         [then-form (pass2p/rec ($if-then iform) labels)]
         [else-form (pass2p/rec ($if-else iform) labels)])
-    (or (pass2/branch-cut iform test-form then-form else-form)
+    (or (and-let* ([r (pass2/branch-cut iform test-form then-form else-form)])
+          (label-dic-info-set! labels #t) ; mark that we cut a branch
+          r)
         (and
          (has-tag? test-form $IF)
          (let ([test-then ($if-then test-form)]
@@ -3405,13 +3416,13 @@
           [;; As the result of above opration, we may get a direct lambda
            ;; call ($call ($lambda ...) args ...)
            (has-tag? proc $LAMBDA)
-           (expand-inlined-procedure ($call-src iform) proc args)]
+           (pass2p/inline-call iform proc args labels)]
           [;; If we get ($call ($gref proc) args ...) and proc is inlinable,
            ;; we can inline the call.
            (and-let* ([ (has-tag? proc $GREF) ]
                       [p (gref-inlinable-proc proc)])
              (or (and (%procedure-inliner p)
-                      (pass2p/late-inline iform proc p))
+                      (pass2p/late-inline iform proc p labels))
                  (and (slot-ref p 'constant)
                       (every $const? args)
                       (pass2p/precompute-constant p args))))]
@@ -3425,14 +3436,12 @@
              (or (and-let* ([ (has-tag? val $GREF) ]
                             [p (gref-inlinable-proc val)]
                             [ (%procedure-inliner p) ])
-                   (rlet1 iform. (pass2p/late-inline iform val p)
+                   (rlet1 iform. (pass2p/late-inline iform val p labels)
                      (when iform. (lvar-ref--! ($lref-lvar proc)))))
                  (and-let* ([ (has-tag? val $LAMBDA) ]
                             [ (= (lvar-ref-count ($lref-lvar proc)) 1) ])
-                   (rlet1 iform.
-                       (expand-inlined-procedure ($call-src iform) val args)
-                     (when iform. (lvar-ref--! ($lref-lvar proc)))))
-                 ))]
+                   (lvar-ref--! ($lref-lvar proc))
+                   (pass2p/inline-call iform val args labels))))]
           [else ($call-proc-set! iform proc) iform])))
 
 ;; Get the value of GREF if it is bound and inlinable procedure
@@ -3445,8 +3454,13 @@
              [ (procedure? val) ])
     val))
 
+(define (pass2p/inline-call call-node proc args labels)
+  ;; This inlining may enable further inlining by post pass again.
+  (label-dic-info-set! labels #t)
+  (expand-inlined-procedure ($call-src call-node) proc args))
+
 ;; TODO: This is similar to pass1/expand-inliner.  Call for refactoring.
-(define (pass2p/late-inline call-node gref-node proc)
+(define (pass2p/late-inline call-node gref-node proc labels)
   (let ([inliner (%procedure-inliner proc)]
         [src ($call-src call-node)])
     (cond
@@ -3461,9 +3475,8 @@
         ($asm src (if opt? `(,inliner ,nargs) `(,inliner))
               ($call-args call-node)))]
      [(vector? inliner)
-      (expand-inlined-procedure src
-                                (unpack-iform inliner)
-                                ($call-args call-node))]
+      (pass2p/inline-call call-node (unpack-iform inliner)
+                          ($call-args call-node) labels)]
      [else
       ;; We can't run procedural inliner here, since what we have is no
       ;; longer an S-expr.
@@ -4779,9 +4792,13 @@
 
 ;; Keep track of visited $LABEL node while traversing IForm.  The lookup
 ;; is only done when we hit $LABEL node, so the performance is not so critical.
+;; The CAR of label-dic isn't used to keep label info, and may be used by
+;; the caller to keep extra info.
 (define (make-label-dic) (list #f))
 (define (label-seen? label-dic label-node) (memq label-node (cdr label-dic)))
 (define (label-push! label-dic label-node) (push! (cdr label-dic) label-node))
+(define (label-dic-info label-dic) (car label-dic))
+(define (label-dic-info-set! label-dic val) (set-car! label-dic val))
 
 ;; see if the immediate integer value fits in the insn arg.
 (define (integer-fits-insn-arg? obj)

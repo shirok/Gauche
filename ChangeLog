@@ -15,6 +15,9 @@
 
 	* src/compile.scm (pass2p/optimize-call): Enables constant folding
 	  involving procedures marked as 'constant'.
+	  (pass2, pass2p/$IF, pass2p/optimize-call): If IForm structure
+	  is changed significantly during pass2 post, repeat pass2 post again
+	  for further optimization.
 
 2009-12-14  Shiro Kawai  <shiro@acm.org>
 
