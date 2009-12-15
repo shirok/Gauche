@@ -10,6 +10,11 @@
 	  other pass2 main optimization.
 	  (reset-lvars): Re-adjust lvar reference count after pass2 main,
 	  for the pass may prune subtree from IForm.
+	  (pass2p/$CALL): Another call optimization.  At this point we know
+	  a lot about $CALL node, so we can perform some more optimization.
+
+	* src/intlib.stub (identifier-module): Added to be used in
+	  pass2p/inlinable-gref? in compile.scm.
 
 2009-12-13  Shiro Kawai  <shiro@acm.org>
 

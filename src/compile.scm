@@ -3354,11 +3354,99 @@
   ($seq-body-set! iform (imap (cut pass2p/rec <> labels) ($seq-body iform)))
   iform)
 
+;; Some extra optimization on $CALL.  We need to run this here, since
+;; $CALL classifications needs to be done by the surrounding $LET.
+;; That is:
+;;   pass2 main root -> leaf  : gather call sites
+;;   pass2 main leaf -> root  : classify calls and lift closures
+;;   pass2 post root -> leaf  : call optimization; *we are here*
+
 (define (pass2p/$CALL iform labels)
-  (unless (eq? ($call-flag iform) 'jump)
-    ($call-proc-set! iform (pass2p/rec ($call-proc iform) labels)))
   ($call-args-set! iform (imap (cut pass2p/rec <> labels) ($call-args iform)))
-  iform)
+  (case ($call-flag iform)
+    [(jump) iform]
+    [(embed) ($call-proc-set! iform (pass2p/rec ($call-proc iform) labels))
+             iform]
+    [else (pass2p/optimize-call iform labels)]))
+
+(define (pass2p/optimize-call iform labels)
+  (let1 proc (pass2p/rec ($call-proc iform) labels)
+    (cond [;; If we get ($call ($let (...) body) args ...), we transform it
+           ;; to ($let (...) ($call body args...)).  This may allow further
+           ;; optimization.
+           (has-tag? proc $LET)
+           (let loop ([node proc]
+                      [body ($let-body proc)])
+             (cond [(has-tag? body $LET) (loop body ($let-body body))]
+                   [else ($call-proc-set! iform body)
+                         ($let-body-set! node (pass2p/optimize-call iform labels))
+                         proc]))]
+          [;; As the result of above opration, we may get a direct lambda
+           ;; call ($call ($lambda ...) args ...)
+           (has-tag? proc $LAMBDA)
+           (expand-inlined-procedure ($call-src iform) proc
+                                     ($call-args iform))]
+          [;; If we get ($call ($gref proc) args ...) and proc is inlinable,
+           ;; we can inline the call. 
+           (and-let* ([ (has-tag? proc $GREF) ]
+                      [proc-val (pass2p/inlinable-gref? proc)])
+             (pass2p/late-inline iform proc proc-val))]
+          [;; Like above, but we follow $LREFs.
+           ;; We expand $lambda iff lvar's count is 1, in which case we know
+           ;; for sure there's no recursive call in $lambda.
+           (and-let* ([ (has-tag? proc $LREF) ]
+                      [ (zero? (lvar-set-count ($lref-lvar proc))) ]
+                      [val (lvar-initval ($lref-lvar proc))]
+                      [ (vector? val) ])
+             (or (and-let* ([ (has-tag? val $GREF) ]
+                            [proc-val (pass2p/inlinable-gref? val)])
+                   (rlet1 iform.
+                       (pass2p/late-inline iform val proc-val)
+                     (when iform. (lvar-ref--! ($lref-lvar proc)))))
+                 (and-let* ([ (has-tag? val $LAMBDA) ]
+                            [ (= (lvar-ref-count ($lref-lvar proc)) 1) ])
+                   (rlet1 iform.
+                       (expand-inlined-procedure ($call-src iform) val
+                                                 ($call-args iform))
+                     (when iform. (lvar-ref--! ($lref-lvar proc)))))
+                 ))]
+          [else ($call-proc-set! iform proc) iform])))
+
+;; Check if PROC (which is a value of $call-proc slot) can be 
+(define (pass2p/inlinable-gref? gref)
+  (and-let* ([id ($gref-id gref)]
+             [gloc (find-binding (identifier-module id)
+                                 (identifier->symbol id)
+                                 #f)]
+             [ (gloc-inlinable? gloc) ]
+             [val (gloc-ref gloc)]
+             [ (procedure? val) ]
+             [(%procedure-inliner val)])
+    val))
+
+;; TODO: This is similar to pass1/expand-inliner.  Call for refactoring.
+(define (pass2p/late-inline call-node gref-node proc)
+  (let ([inliner (%procedure-inliner proc)]
+        [src ($call-src call-node)])
+    (cond
+     [(integer? inliner)
+      (let ([nargs (length ($call-args call-node))]
+            [opt?  (slot-ref proc 'optional)])
+        (unless (argcount-ok? ($call-args call-node)
+                              (slot-ref proc 'required) opt?)
+          (errorf "wrong number of arguments: ~a requires ~a, but got ~a"
+                  (variable-name ($gref-id gref))
+                  (slot-ref proc 'required) nargs))
+        ($asm src (if opt? `(,inliner ,nargs) `(,inliner))
+              ($call-args call-node)))]
+     [(vector? inliner)
+      (expand-inlined-procedure src
+                                (unpack-iform inliner)
+                                ($call-args call-node))]
+     [else
+      ;; We can't run procedural inliner here, since what we have is no
+      ;; longer an S-expr.
+      #f])))
 
 (define (pass2p/$ASM iform labels)
   (let1 args (imap (cut pass2p/rec <> labels) ($asm-args iform))

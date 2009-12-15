@@ -91,6 +91,9 @@
 (define-cproc make-identifier (name::<symbol> mod::<module> env::<list>)
   Scm_MakeIdentifier)
 
+(define-cproc identifier-module (id::<identifier>)
+  (result (SCM_OBJ (-> id module))))
+
 ;;
 ;; Symbol table
 ;;
