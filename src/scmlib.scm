@@ -57,8 +57,15 @@
 
 (define-macro (let-optionals* arg specs . body)
   (define (rec arg vars&inits rest)
-    (if (null? vars&inits)
-      (if (null? rest) body `((let ((,rest ,arg)) ,@body)))
+    (cond
+     [(null? (cdr vars&inits))
+      `((let ((,(caar vars&inits)
+               (if (null? ,arg) ,(cdar vars&inits) (car ,arg)))
+              ,@(if (null? rest)
+                  '()
+                  `((,rest (if (null? ,arg) '() (cdr ,arg))))))
+          ,@body))]
+     [else
       (let ([g (gensym)]
             [v (caar vars&inits)]
             [i (cdar vars&inits)])
@@ -67,7 +74,7 @@
         ;; twice is faster.
         `((let ((,v (if (null? ,arg) ,i (car ,arg)))
                 (,g (if (null? ,arg) '() (cdr ,arg))))
-            ,@(rec g (cdr vars&inits) rest))))))
+            ,@(rec g (cdr vars&inits) rest))))]))
   (let1 g (gensym)
     `(let ((,g ,arg))
        ,@(rec g (map (lambda (s)

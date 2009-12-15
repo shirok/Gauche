@@ -1,5 +1,8 @@
 2009-12-14  Shiro Kawai  <shiro@acm.org>
 
+	* src/scmlib.scm (let-optionals*): Improved not to emit unnecessary
+	  code to advance a pointer in the last of optional argument.
+
 	* src/compile.scm (pp-iform): Slightly changed output format for
 	  better readability.
 	  (pass2/$IF, pass2p/$IF): Moved $if-$it optimization to the pass2p,
