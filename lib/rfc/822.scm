@@ -169,7 +169,7 @@
 
 ;; NB: this is loose, but usually OK.
 (define (rfc822-dot-atom input)
-  (next-token-of (list *rfc822-atext-chars* #\.) input))
+  (next-token-of `(,*rfc822-atext-chars* #\.) input))
 
 ;; Assuming the first char in input is DQUOTE
 (define (rfc822-quoted-string input)
