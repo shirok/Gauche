@@ -68,7 +68,7 @@ struct ScmGlocRec {
  *   A binding may be inserted either by definition or export special
  *   forms.  We don't know which comes first.  If we've seen only an
  *   'export' form but not an actual definition, the GLOC of the binding
- *   has value SCM_UNDEFINED, and indicates it is a phantom binding.
+ *   has value SCM_UNBOUND, and indicates it is a phantom binding.
  *
  *   A phantom binding is ignored when we search imported modules and
  *   their MPLs.
