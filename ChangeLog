@@ -1,5 +1,8 @@
 2009-12-15  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/parse.scm: Rewritten to take advantage of the new
+	  compiler optimization.
+
 	* src/gauche.h (ScmProcedure): Added 'constant' bit.  See the
 	  comment for the details.
 	  (SCM_DEFINE_SUBRX): A new macro to specify 'constant' bit.  This
