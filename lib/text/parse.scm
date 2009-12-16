@@ -197,14 +197,14 @@
                [(>= i num) #f]
                [else (loop (+ i 1) (read-char port))]))))
 
-(define-inline (skip-until/pred pred port)
+(define-inline (skip-until/common pred port)
   (let loop ([c (read-char port)])
     (cond [(pred c) c]
           [(eof-object? c) (errorf "~aunexpected EOF" (ppp port))]
           [else (loop (read-char port))])))
-
+(define skip-until/pred skip-until/common);trick to prevent excessive inlining
 (define (skip-until/char-list pred char-list port)
-  (skip-until/pred (lambda (c) (pred char-list c)) port))
+  (skip-until/common (cut pred char-list <>) port))
 
 
 ;; SKIP-WHILE <char-list/pred> :optional <port>
@@ -217,13 +217,13 @@
 
 (define-compiler-macro skip-while (er-transformer prefold-macro-1))
 
-(define-inline (skip-while/pred pred port)
+(define-inline (skip-while/common pred port)
   (let loop ([c (peek-char port)])
     (cond [(pred c) (read-char port) (loop (peek-char port))]
           [else c])))
-
+(define skip-while/pred skip-while/common)
 (define (skip-while/char-list pred char-list port)
-  (skip-while/pred (lambda (c) (pred char-list c)) port))
+  (skip-while/common (cut pred char-list <>) port))
 
 ;; PEEK-NEXT-CHAR :optional <port>
 (define-inline (peek-next-char :optional (port (current-input-port)))
@@ -233,8 +233,8 @@
 ;; NEXT-TOKEN <prefix-char-list/pred> <break-char-list/pred>
 ;;            :optional <comment> <port>
 (define-inline (next-token prefix-char-list/pred break-char-list/pred
-                    :optional (comment "unexpected EOF")
-                              (port (current-input-port)))
+                           :optional (comment "unexpected EOF")
+                                     (port (current-input-port)))
   (let1 c (skip-while prefix-char-list/pred port)
     (if (procedure? break-char-list/pred)
       (next-token/pred break-char-list/pred c port comment)
@@ -243,14 +243,15 @@
 
 (define-compiler-macro next-token (er-transformer prefold-macro-2))
 
-(define-inline (next-token/pred break-pred char port errmsg)
-  (let loop ([c char][cs '()])
-    (cond [(break-pred c) (list->string (reverse cs))]
+(define-inline (next-token/common break-pred char port errmsg)
+  (define o (open-output-string))
+  (let loop ([c char])
+    (cond [(break-pred c) (get-output-string o)]
           [(eof-object? c) (errorf "~a~a" (ppp port) errmsg)]
-          [else (read-char port) (loop (peek-char port) (cons c cs))])))
-
+          [else (write-char c o) (read-char port) (loop (peek-char port))])))
+(define next-token/pred next-token/common)
 (define (next-token/char-list pred char-list char port errmsg)
-  (next-token/pred (lambda (c) (pred char-list c)) char port errmsg))
+  (next-token/common (cut pred char-list <>) char port errmsg))
 
 ;; NEXT-TOKEN-OF <char-list/pred> :optional <port>
 (define-inline (next-token-of char-list/pred
@@ -262,25 +263,25 @@
 
 (define-compiler-macro next-token-of (er-transformer prefold-macro-1))
 
-(define-inline (next-token-of/pred pred port)
-  (let loop ([c (peek-char port)][cs '()])
-    (cond [(or (eof-object? c) (not (pred c))) (list->string (reverse cs))]
-          [else (read-char port) (loop (peek-char port) (cons c cs))])))
-
+(define-inline (next-token-of/common pred port)
+  (define o (open-output-string))
+  (let loop ([c (peek-char port)])
+    (cond [(or (eof-object? c) (not (pred c))) (get-output-string o)]
+          [else (write-char c o) (read-char port) (loop (peek-char port))])))
+(define next-token-of/pred next-token-of/common)
 (define (next-token-of/char-list pred char-list port)
-  (next-token-of/pred (lambda (c) (pred char-list c)) port))
+  (next-token-of/common (cut pred char-list <>) port))
 
 
 ;; read-line is built in Gauche.
 
 ;; READ-STRING <n> :optional <port>
 (define (read-string n :optional (port (current-input-port)))
-  (with-output-to-string
-    (lambda ()
-      (let loop ((i 0))
-        (unless (>= i n)
-          (let ((c (read-char port)))
-            (unless (eof-object? c)
-              (display c)
-              (loop (+ i 1)))))))))
-
+  (define o (open-output-string :private? #t))
+  (let loop ((i 0))
+    (if (>= i n)
+      (get-output-string o)
+      (let1 c (read-char port)
+        (if (eof-object? c)
+          (get-output-string o)
+          (begin (write-char c o) (loop (+ i 1))))))))
