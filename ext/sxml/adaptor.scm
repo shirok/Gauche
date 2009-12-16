@@ -16,9 +16,9 @@
 (define ascii->char integer->char)
 (define ucscode->char ucs->char)
 
-(define char-return  #\return)
-(define char-tab     #\tab)
-(define char-newline #\newline)
+(define-constant char-return  #\return)
+(define-constant char-tab     #\tab)
+(define-constant char-newline #\newline)
 
 ;; make-char-quotator, used in sxml.to-html and sxml.tools
 (define (make-char-quotator rules)
@@ -141,7 +141,7 @@
                 (display x (current-error-port))))
             args))
 
-(define nl "\n")
+(define-constant nl "\n")
 
 ;; pretty-printer called in sxpathlib.scm (node-trace).  it is used for
 ;; debugging code, so for the time being we use 'write' instead.

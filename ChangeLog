@@ -3,6 +3,9 @@
 	* lib/text/parse.scm: Rewritten to take advantage of the new
 	  compiler optimization.
 	* libsrc/srfi-13.scm: Avoid creation of closure by %get-char-pred.
+	* ext/sxml/sxml-ssax.scm.in, ext/sxml/trans.scm, ext/sxml/adaptor.scm:
+	  Make some global bindings constant so that the compiler can perform
+	  more optimization.
 
 	* src/gauche.h (ScmProcedure): Added 'constant' bit.  See the
 	  comment for the details.

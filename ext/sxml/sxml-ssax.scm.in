@@ -39,6 +39,9 @@
       (newline err)
       ((ssax:warn-handler) (get-output-string err)))))
 
+;; We make this constant so that various parsing routines can be optimized.
+(define-constant ssax:S-chars (map ascii->char '(32 10 9 13)))
+
 ;#include-body "src/SSAX.scm"
 
 ;; Local variables:

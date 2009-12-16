@@ -35,6 +35,8 @@
      (define (string-whitespace? str) (string-every #[\s] str)))
     ((define (fold-right ...) ...))
     ((define (fold ...) ...))
+    ;; We have constant definition instead.
+    ((define ssax:S-chars ...))
     ;; These forms are in sxml-tools.
     ;; We have Gauche-specific versions for them
     ((define-macro (sxml:find-name-separator ...) ...))
