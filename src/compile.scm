@@ -785,7 +785,8 @@
   (define labels '()) ;; alist of label node and count
   (define (indent count) (dotimes (i count) (write-char #\space)))
   (define (nl ind) (newline) (indent ind))
-  (define (id->string id) (symbol->string (slot-ref id 'name)))
+  (define (id->string id)
+    (format "~a#~a" (module-name (slot-ref id'module)) (slot-ref id'name)))
   (define (lvar->string lvar)
     (format "~a.~a~a" (variable-name (lvar-name lvar))
             (lvar-ref-count lvar)
@@ -4781,20 +4782,32 @@
   name)
 
 (define (%attach-inline-er-transformer proc xformer)
-  (set! (%procedure-inliner proc)
-        (lambda (form cenv)
-          (let1 r
-              ;; Call the transformer with rename and compare procedure,
-              ;; just like explicit renaming macro.  However, THE CURRENT
-              ;; CODE DOES NOT IMPLEMENT PROPER SEMANTICS.  They're just
-              ;; placeholders for experiment.
-              (xformer form
-                       (cut ensure-identifier <> cenv)
-                       (lambda (a b) ; this is just a placeholder!
-                         (eq? (identifier->symbol a) (identifier->symbol b))))
-            (if (eq? form r)
-              (undefined) ; no inline operation is triggered.
-              (pass1 r cenv))))))  
+  ;; If PROC is defined by define-inline (thus have a packed IForm in
+  ;; %procedure-inliner), we keep it and applies expand-inline-procedure
+  ;; after the compiler macro finishes its job.
+  (let1 orig-inliner (%procedure-inliner proc)
+    (when (procedure? orig-inliner)
+      (warn "Attaching a compiler macro to ~a clobbers previously attached \
+             inline transformers." proc))
+    (set! (%procedure-inliner proc)
+          (lambda (form cenv)
+            (let1 r
+                ;; Call the transformer with rename and compare procedure,
+                ;; just like explicit renaming macro.  However, THE CURRENT
+                ;; CODE DOES NOT IMPLEMENT PROPER SEMANTICS.  They're just
+                ;; placeholders for experiment.
+                (xformer form
+                         (cut ensure-identifier <> cenv)
+                         (lambda (a b) ; this is just a placeholder!
+                           (eq? (identifier->symbol a) (identifier->symbol b))))
+              (cond [(eq? form r) ; no inline operation is triggered.
+                     (if (vector? orig-inliner)
+                       (expand-inlined-procedure form
+                                                 (unpack-iform orig-inliner)
+                                                 (imap (cut pass1 <> cenv)
+                                                       (cdr form)))
+                       (undefined))]
+                    [else (pass1 r cenv)]))))))
 
 ;;============================================================
 ;; Utilities

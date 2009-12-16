@@ -20,6 +20,10 @@
 	  for further optimization.
 	  (pass2, compile-p2): Added dump? argument for troubleshooting.
 	  (initval-list-cdr): Fixed a bug that creates invalid $LIST node.
+	  (%attach-inline-er-transformer): Preserve inliner info attached
+	  by define-inline, so that we can set a compiler macro on
+	  procedures defined by define-inline.
+	  (pp-iform): Include identifier's module info.
 
 	* src/intlib.stub (identifier-module): Removed after all.  Speed is
 	  no so critical, so we can use (slot-ref id 'module) instead.
