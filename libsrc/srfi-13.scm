@@ -80,17 +80,17 @@
           ))
 (select-module srfi-13)
 
-;; utility macro to handle char/char-set/pred match.
-(define-syntax %get-char-pred
-  (syntax-rules ()
-    ((_ char/char-set/pred)
-     (cond ((char? char/char-set/pred)
-            (lambda (x) (char=? char/char-set/pred x)))
-           ((char-set? char/char-set/pred)
-            (lambda (x) (char-set-contains? char/char-set/pred x)))
-           ((procedure? char/char-set/pred) char/char-set/pred)
-           (else (error "argument needs to be either a character, a char-set, or a procedure:" char/char-set/pred))))
-    ))
+;; Utility macro to handle char/char-set/pred match.
+;; To avoid closure creation in inner loop, this returns a static procedure
+;; that takes char/char-set/pred and char.
+(define-inline (%get-char-pred char/char-set/pred)
+  (cond [(char? char/char-set/pred) char=?]
+        [(char-set? char/char-set/pred) char-set-contains?]
+        [(procedure? char/char-set/pred) %char-pred/pred]
+        [else (error "argument needs to be either a character, a char-set, \
+                      or a procedure:" char/char-set/pred)]))
+
+(define (%char-pred/pred c/s/p x) (c/s/p x))
 
 ;;;
 ;;; Predicates
@@ -107,14 +107,14 @@
                (r  #t))
       (cond ((not r) #f)
             ((eof-object? ch) r)
-            (else (loop (read-char src) (pred ch)))))))
+            (else (loop (read-char src) (pred c/s/p ch)))))))
 
 (define (string-any c/s/p s . args)
   (let* ((src  (open-input-string (apply %maybe-substring s args)))
          (pred (%get-char-pred c/s/p)))
     (let loop ((ch (read-char src)))
       (cond ((eof-object? ch) #f)
-            ((pred ch))
+            ((pred c/s/p ch))
             (else (loop (read-char src)))))))
 
 ;;;
@@ -204,7 +204,7 @@
         (sp (make-string-pointer (%maybe-substring s start end))))
     (let loop ((ch (string-pointer-next! sp)))
       (cond ((eof-object? ch) "")
-            ((pred ch) (loop (string-pointer-next! sp)))
+            ((pred c/s/p ch) (loop (string-pointer-next! sp)))
             (else (string-pointer-prev! sp)
                   (string-pointer-substring sp :after #t))))
     ))
@@ -215,7 +215,7 @@
         (sp (make-string-pointer (%maybe-substring s start end) -1)))
     (let loop ((ch (string-pointer-prev! sp)))
       (cond ((eof-object? ch) "")
-            ((pred ch) (loop (string-pointer-prev! sp)))
+            ((pred c/s/p ch) (loop (string-pointer-prev! sp)))
             (else (string-pointer-next! sp)
                   (string-pointer-substring sp))))
     ))
@@ -226,13 +226,13 @@
         (sp (make-string-pointer (%maybe-substring s start end))))
     (let loop ((ch (string-pointer-next! sp)))
       (cond ((eof-object? ch) "")
-            ((pred ch) (loop (string-pointer-next! sp)))
+            ((pred c/s/p ch) (loop (string-pointer-next! sp)))
             (else (string-pointer-prev! sp)
                   (let ((sp (make-string-pointer
                              (string-pointer-substring sp :after #t) -1)))
                     (let loop ((ch (string-pointer-prev! sp)))
                       (cond ((eof-object? ch) "")
-                            ((pred ch) (loop (string-pointer-prev! sp)))
+                            ((pred c/s/p ch) (loop (string-pointer-prev! sp)))
                             (else (string-pointer-next! sp)
                                   (string-pointer-substring sp))))
                     ))))
@@ -474,7 +474,7 @@
         (sp (apply make-string-pointer s 0 args)))
     (let loop ((ch (string-pointer-next! sp)))
       (cond ((eof-object? ch) #f)
-            ((pred ch) (+ offset (- (string-pointer-index sp) 1)))
+            ((pred c/s/p ch) (+ offset (- (string-pointer-index sp) 1)))
             (else (loop (string-pointer-next! sp)))))))
 
 (define (string-index-right s c/s/p . args)
@@ -484,7 +484,7 @@
         (sp (apply make-string-pointer s -1 args)))
     (let loop ((ch (string-pointer-prev! sp)))
       (cond ((eof-object? ch) #f)
-            ((pred ch) (+ offset (string-pointer-index sp)))
+            ((pred c/s/p ch) (+ offset (string-pointer-index sp)))
             (else (loop (string-pointer-prev! sp)))))))
 
 (define (string-skip s c/s/p . args)
@@ -494,7 +494,7 @@
         (sp (apply make-string-pointer s 0 args)))
     (let loop ((ch (string-pointer-next! sp)))
       (cond ((eof-object? ch) #f)
-            ((pred ch) (loop (string-pointer-next! sp)))
+            ((pred c/s/p ch) (loop (string-pointer-next! sp)))
             (else (+ offset (- (string-pointer-index sp) 1)))))))
 
 (define (string-skip-right s c/s/p . args)
@@ -504,7 +504,7 @@
         (sp (apply make-string-pointer s -1 args)))
     (let loop ((ch (string-pointer-prev! sp)))
       (cond ((eof-object? ch) #f)
-            ((pred ch) (loop (string-pointer-prev! sp)))
+            ((pred c/s/p ch) (loop (string-pointer-prev! sp)))
             (else (+ offset (string-pointer-index sp)))))))
 
 (define (string-count s c/s/p . args)
@@ -514,7 +514,7 @@
     (let loop ((ch (string-pointer-next! sp))
                (count 0))
       (cond ((eof-object? ch) count)
-            ((pred ch) (loop (string-pointer-next! sp) (+ count 1)))
+            ((pred c/s/p ch) (loop (string-pointer-next! sp) (+ count 1)))
             (else      (loop (string-pointer-next! sp) count))))))
 
 (define (string-contains s1 s2 :optional (start1 0) end1 start2 end2)
@@ -817,7 +817,7 @@
         (pred (%get-char-pred c/s/p)))
     (let loop ((ch (read-char src)))
       (cond ((eof-object? ch) (get-output-string dest))
-            ((pred ch) (write-char ch dest) (loop (read-char src)))
+            ((pred c/s/p ch) (write-char ch dest) (loop (read-char src)))
             (else (loop (read-char src)))))
     ))
 
@@ -828,7 +828,7 @@
         (pred (%get-char-pred c/s/p)))
     (let loop ((ch (read-char src)))
       (cond ((eof-object? ch) (get-output-string dest))
-            ((pred ch) (loop (read-char src)))
+            ((pred c/s/p ch) (loop (read-char src)))
             (else (write-char ch dest) (loop (read-char src)))))
     ))
 
