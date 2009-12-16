@@ -1351,7 +1351,7 @@
                       (cadr srcinfo) program)
               (errorf "Compile Error: ~a\n" (slot-ref e 'message))))])
       (let1 p1 (pass1 program cenv)
-        (pass3 (pass2 p1)
+        (pass3 (pass2 p1 #f)
                (make-compiled-code-builder 0 0 '%toplevel #f #f)
                '() 'tail))
       )))
@@ -1365,15 +1365,15 @@
 ;; that only has CLOSURE instruction.
 (define (compile-toplevel-lambda oform name formals body module)
   (let* ([cenv (make-cenv module '() name)]
-         [iform (pass2 (pass1/lambda oform formals body cenv #f))])
+         [iform (pass2 (pass1/lambda oform formals body cenv #f) #f)])
     (make-toplevel-closure (pass3/lambda iform #f '()))))
   
 ;; For testing
 (define (compile-p1 program)
   (pp-iform (pass1 program (make-bottom-cenv))))
 
-(define (compile-p2 program)
-  (pp-iform (pass2 (pass1 program (make-bottom-cenv)))))
+(define (compile-p2 program :optional (show? #f))
+  (pp-iform (pass2 (pass1 program (make-bottom-cenv)) show?)))
 
 (define (compile-p3 program)
   (vm-dump-code (pass3 (pass2 (pass1 program (make-bottom-cenv)))
@@ -2658,19 +2658,30 @@
 
 ;; Pass2 entry point.  We have a small post-pass to eliminate redundancy
 ;; introduced by closure optimization.
+;;
 ;; The post pass (pass2p) may prune the subtree of iform because of constant
 ;; folding.  It may further allow pruning of other subtrees.  So, when
 ;; pruning occurs, pass2p records the fact by setting label-dic-info to #t.
 ;; We repeat the post process then.
-(define (pass2 iform)
+;;
+;; If SHOW? flag is on, IForm is dumped after each intra-pass.  It is for
+;; troubleshooting.
+(define (pass2 iform show?)
   (if (vm-compiler-flag-no-pass2-post?)
     (pass2/rec iform '() #t)
     (let loop ([iform (pass2/rec iform '() #t)]
-               [label-dic (make-label-dic)])
+               [label-dic (make-label-dic)]
+               [count 0])
+      (when show? (pass2-dump iform count))
       (let1 iform. (pass2p/rec (reset-lvars iform) label-dic)
         (if (label-dic-info label-dic)
-          (loop iform. (make-label-dic))
+          (loop iform. (make-label-dic) (+ count 1))
           iform.)))))
+
+(define (pass2-dump iform count)
+  (format #t "~78,,,'=a\n"
+          (if (zero? count) "pass2 main " #`"pass2 post #,count "))
+  (pp-iform iform))
 
 (define (pass2/$DEFINE iform penv tail?)
   ($define-expr-set! iform (pass2/rec ($define-expr iform) penv #f))
@@ -3204,9 +3215,9 @@
 (define (initval-list-cdr val) ;assumes (initval-always-list? val) is #t
   (cond [(has-tag? val $LIST)
          (let1 v (cdr ($*-args val))
-           (if (null? v) ($const-nil) ($list v)))]
+           (if (null? v) ($const-nil) ($list #f v)))]
         [(has-tag? val $LIST*)
-         ($list* (cdr ($*-args val)))]
+         ($list* #f (cdr ($*-args val)))]
         [else (error "[internal] initval-list-cdr")]))
 
 (define (pass2/onearg-inliner iform penv tail?)

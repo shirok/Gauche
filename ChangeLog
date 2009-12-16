@@ -18,6 +18,8 @@
 	  (pass2, pass2p/$IF, pass2p/optimize-call): If IForm structure
 	  is changed significantly during pass2 post, repeat pass2 post again
 	  for further optimization.
+	  (pass2, compile-p2): Added dump? argument for troubleshooting.
+	  (initval-list-cdr): Fixed a bug that creates invalid $LIST node.
 
 2009-12-14  Shiro Kawai  <shiro@acm.org>
 
