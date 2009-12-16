@@ -8,6 +8,12 @@
 	* src/compile.scm: Changed accordingly to avoid dereferincing unbound
 	  glocs.
 
+	* src/compile.scm (pass2p/optimize-call): Added some heuristics
+	  to deduce result of built-in predicate from what we know about
+	  its argument.
+	  (lvar-const-value): Factored out the common usage to get initval
+	  of lvar if it is a constant binding.
+
 2009-12-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/parse.scm: Rewritten to take advantage of the new

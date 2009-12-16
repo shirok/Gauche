@@ -339,6 +339,14 @@
   (lvar-ref-count-set! lvar 0)
   (lvar-set-count-set! lvar 0))
 
+;; Returns IForm if this lvar has initval and it never changes.  Only valid
+;; after lvar reference counting is done (that is, after pass1, and after
+;; each reset-lvars call.
+(define (lvar-const-value lvar)
+  (and (zero? (lvar-set-count lvar))
+       (vector? (lvar-initval lvar))
+       (lvar-initval lvar)))
+
 ;; implemented in C for better performance.
 (inline-stub
  ;; offsets must be in sync with lvar definition above
@@ -3107,9 +3115,7 @@
 
 (define (pass2/head-lref iform penv tail?)
   (and-let* ([lvar ($lref-lvar iform)]
-             [ (zero? (lvar-set-count lvar)) ]
-             [initval (lvar-initval lvar)]
-             [ (vector? initval) ]
+             [initval (lvar-const-value lvar)]
              [ (has-tag? initval $LAMBDA) ])
     (cond
      [(pass2/self-recursing? initval penv) (if tail? 'tail-rec 'rec)]
@@ -3154,8 +3160,7 @@
                  [ (null? (cdr args)) ]
                  [ ($lref? (car args)) ]
                  [lvar ($lref-lvar (car args))]
-                 [ (zero? (lvar-set-count lvar)) ]
-                 [initval (lvar-initval lvar)])
+                 [initval (lvar-const-value lvar)])
         (case/unquote
          (car ($asm-insn iform))
          [(NULLP) (and (initval-never-null? initval)
@@ -3429,21 +3434,27 @@
                  (and (slot-ref p 'constant)
                       (every $const? args)
                       (pass2p/precompute-constant p args))))]
+          [(and-let* ([ (has-tag? proc $GREF) ]
+                      [ (pair? args) ]
+                      [ (null? (cdr args)) ]
+                      [val (if ($lref? (car args))
+                             (lvar-const-value ($lref-lvar (car args)))
+                             (car args))])
+             (pass2p/deduce-predicate-result proc val))]
           [;; Like above, but we follow $LREFs.
            ;; We expand $lambda iff lvar's count is 1, in which case we know
            ;; for sure there's no recursive call in $lambda.
-           (and-let* ([ (has-tag? proc $LREF) ]
-                      [ (zero? (lvar-set-count ($lref-lvar proc))) ]
-                      [val (lvar-initval ($lref-lvar proc))]
-                      [ (vector? val) ])
+           (and-let* ([ ($lref? proc) ]
+                      [lvar ($lref-lvar proc)]
+                      [val (lvar-const-value ($lref-lvar proc))])
              (or (and-let* ([ (has-tag? val $GREF) ]
                             [p (gref-inlinable-proc val)]
                             [ (%procedure-inliner p) ])
                    (rlet1 iform. (pass2p/late-inline iform val p labels)
-                     (when iform. (lvar-ref--! ($lref-lvar proc)))))
+                     (when iform. (lvar-ref--! lvar))))
                  (and-let* ([ (has-tag? val $LAMBDA) ]
-                            [ (= (lvar-ref-count ($lref-lvar proc)) 1) ])
-                   (lvar-ref--! ($lref-lvar proc))
+                            [ (= (lvar-ref-count lvar) 1) ])
+                   (lvar-ref--! lvar)
                    (pass2p/inline-call iform val args labels))))]
           [else ($call-proc-set! iform proc) iform])))
 
@@ -3456,6 +3467,39 @@
              [val (gloc-ref gloc)]
              [ (procedure? val) ])
     val))
+
+;; An ad-hoc table of builtin predicates that we can deduce its value
+;; from what we know about its argument at compile-time.  Even the argument
+;; is not a constant, we sometimes know its type and thus we know how
+;; the predicate responds.   Ideally, this information should be attached
+;; to individual procedures, instead of keeping it in the compiler.  For now,
+;; however, we don't know how to show our internal information to such
+;; custom handlers.
+
+(define (pass2p/pred:null? val)
+  (and (initval-never-null? val) ($const-f)))
+(define (pass2p/pred:not val)
+  (and (initval-never-false? val) ($const-f)))
+(define (pass2p/pred:pair? val)
+  (and (initval-always-pair? val) ($const-t)))
+(define (pass2p/pred:procedure? val)
+  (and (initval-always-procedure? val) ($const-t)))
+(define (pass2p/pred:fallback val) #f)
+
+(define *pass2p/pred-table*
+  `((,(global-id 'null?)      . ,pass2p/pred:null?)
+    (,(global-id 'not)        . ,pass2p/pred:not)
+    (,(global-id 'pair?)      . ,pass2p/pred:pair?)
+    (,(global-id 'procedure?) . ,pass2p/pred:procedure?)))
+
+(define (pass2p/find-deducible-predicate id)
+  (let loop ((tab *pass2p/pred-table*))
+    (cond [(null? tab) pass2p/pred:fallback]
+          [(bound-id=? id (caar tab)) (cdar tab)]
+          [else (loop (cdr tab))])))
+
+(define (pass2p/deduce-predicate-result gref arg)
+  ((pass2p/find-deducible-predicate ($gref-id gref)) arg))
 
 (define (pass2p/inline-call call-node proc args labels)
   ;; This inlining may enable further inlining by post pass again.
