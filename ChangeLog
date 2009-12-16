@@ -1,5 +1,9 @@
 2009-12-16  Shiro Kawai  <shiro@acm.org>
 
+	* src/vmcall.c: Pass the actual # of args in the stack via VAL0
+	  to Scheme-defined procedures/methods.  This info will be used
+	  for efficient optional argument handling.
+
 	* src/intlib.stub (gloc-ref, gloc-bound?): Fix a bug that gloc-ref
 	  potentially leaks out #<unbound> to the Scheme world.  Now gloc-ref
 	  raises an error if it doesn't have a binding.  You can give a

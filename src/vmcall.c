@@ -201,6 +201,7 @@
         PC = vm->base->code;
         CHECK_STACK(vm->base->maxstack);
         SCM_PROF_COUNT_CALL(vm, SCM_OBJ(vm->base));
+        VAL0 = SCM_MAKE_INT(argc); /* keep argc to VAL0. */
         NEXT;
     }
 
@@ -373,6 +374,7 @@
         PC = vm->base->code;
         CHECK_STACK(vm->base->maxstack);
         SCM_PROF_COUNT_CALL(vm, SCM_OBJ(vm->base));
+        VAL0 = SCM_MAKE_INT(argc); /* keep argc to VAL0. */
     }
     NEXT;
 }
