@@ -3458,8 +3458,7 @@
 ;; Get the value of GREF if it is bound and inlinable procedure
 (define (gref-inlinable-proc gref)
   (and-let* ([id ($gref-id gref)]
-             [gloc
-              (find-binding (identifier-module id) (identifier->symbol id) #f)]
+             [gloc (find-binding (slot-ref id'module) (slot-ref id'name) #f)]
              [ (gloc-inlinable? gloc) ]
              [val (gloc-ref gloc)]
              [ (procedure? val) ])

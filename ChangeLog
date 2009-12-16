@@ -21,6 +21,9 @@
 	  (pass2, compile-p2): Added dump? argument for troubleshooting.
 	  (initval-list-cdr): Fixed a bug that creates invalid $LIST node.
 
+	* src/intlib.stub (identifier-module): Removed after all.  Speed is
+	  no so critical, so we can use (slot-ref id 'module) instead.
+
 2009-12-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/scmlib.scm (let-optionals*): Improved not to emit unnecessary
