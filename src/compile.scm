@@ -1376,7 +1376,7 @@
   (pp-iform (pass2 (pass1 program (make-bottom-cenv)) show?)))
 
 (define (compile-p3 program)
-  (vm-dump-code (pass3 (pass2 (pass1 program (make-bottom-cenv)))
+  (vm-dump-code (pass3 (pass2 (pass1 program (make-bottom-cenv)) #f)
                        (make-compiled-code-builder 0 0 '%toplevel #f #f)
                        '() 'tail)))
 
