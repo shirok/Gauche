@@ -1,3 +1,13 @@
+2009-12-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/intlib.stub (gloc-ref, gloc-bound?): Fix a bug that gloc-ref
+	  potentially leaks out #<unbound> to the Scheme world.  Now gloc-ref
+	  raises an error if it doesn't have a binding.  You can give a
+	  fallback value to avoid an error.  Also provides gloc-bound? to
+	  check if the gloc has a value.
+	* src/compile.scm: Changed accordingly to avoid dereferincing unbound
+	  glocs.
+
 2009-12-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/parse.scm: Rewritten to take advantage of the new

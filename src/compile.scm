@@ -81,7 +81,7 @@
 ;; Compile-time constants
 ;;
 
-;; used by find-binding
+;; used by cenv-lookup
 (eval-when (:compile-toplevel)
   (define-constant LEXICAL 0)
   (define-constant SYNTAX  1)
@@ -1501,12 +1501,8 @@
        (variable? (caddr expr))
        ;; we check the heaviest one last.
        (and-let* ([var (cenv-lookup cenv (car expr) SYNTAX)]
-                  [ (identifier? var) ]
-                  [gloc (find-binding (slot-ref var 'module)
-                                      (slot-ref var 'name)
-                                      #f)]
-                  [wm   (find-binding (find-module 'gauche) 'with-module #f)])
-         (eq? (gloc-ref gloc) (gloc-ref wm)))))
+                  [ (identifier? var) ])
+         (bound-id=? var (global-id 'with-module)))))
 
 ;; Compiling body with internal definitions.
 ;;
@@ -1557,6 +1553,7 @@
                 (or (and-let* ([gloc (find-binding (slot-ref head 'module)
                                                    (slot-ref head 'name)
                                                    #f)]
+                               [ (gloc-bound? gloc) ]
                                [gval (gloc-ref gloc)]
                                [ (macro? gval) ])
                       (pass1/body
@@ -3165,12 +3162,8 @@
                        (begin (lvar-ref--! lvar) ($const-f)))]
          [(NOT)   (and (initval-never-false? initval)
                        (begin (lvar-ref--! lvar) ($const-f)))]
-         [(CAR)   (and (initval-always-list? initval)
-                       (transparent? initval)
-                       (begin (lvar-ref--! lvar) (initval-list-car initval)))]
-         [(CDR)   (and (initval-always-list? initval)
-                       (transparent? initval)
-                       (begin (lvar-ref--! lvar) (initval-list-cdr initval)))]
+         [(PAIRP) (and (initval-always-pair? initval)
+                       (begin (lvar-ref--! lvar) ($const-t)))]
          [else #f]))
       (begin ($asm-args-set! iform args) iform)))
 
@@ -3207,24 +3200,17 @@
          (memv tag `(,$LAMBDA ,$PROMISE ,$CONS ,$VECTOR
                      ,$LIST->VECTOR ,$LIST)))))
 
-(define (initval-always-list? val)
+(define (initval-always-pair? val)
   (and (vector? val)
-       (or (and (has-tag? val $LIST)
+       (or (has-tag? val $CONS)
+           (and (has-tag? val $LIST)
                 (pair? ($*-args val)))
            (and (has-tag? val $LIST*)
                 (pair? ($*-args val))
                 (pair? (cdr ($*-args val)))))))
 
-(define (initval-list-car val) ;assumes (initval-always-list? val) is #t
-  (car ($*-args val)))
-
-(define (initval-list-cdr val) ;assumes (initval-always-list? val) is #t
-  (cond [(has-tag? val $LIST)
-         (let1 v (cdr ($*-args val))
-           (if (null? v) ($const-nil) ($list #f v)))]
-        [(has-tag? val $LIST*)
-         ($list* #f (cdr ($*-args val)))]
-        [else (error "[internal] initval-list-cdr")]))
+(define (initval-always-procedure? val)
+  (and (vector? val) (has-tag? val $LAMBDA)))
 
 (define (pass2/onearg-inliner iform penv tail?)
   ($*-arg0-set! iform (pass2/rec ($*-arg0 iform) penv #f))
@@ -3465,6 +3451,7 @@
 (define (gref-inlinable-proc gref)
   (and-let* ([id ($gref-id gref)]
              [gloc (find-binding (slot-ref id'module) (slot-ref id'name) #f)]
+             [ (gloc-bound? gloc) ]
              [ (gloc-inlinable? gloc) ]
              [val (gloc-ref gloc)]
              [ (procedure? val) ])
@@ -4845,12 +4832,18 @@
         [(lvar? arg) (lvar-name arg)]
         [else (error "variable required, but got:" arg)]))
 
-(define (global-eq? var sym cenv)
+(define (global-eq? var sym cenv)  ; like free-identifier=?, used in pass1.
   (and (variable? var)
        (let1 v (cenv-lookup cenv var LEXICAL)
          (and (identifier? v)
               (eq? (slot-ref v 'name) sym)
               (null? (slot-ref v 'env))))))
+
+(define (bound-id=? id1 id2) ; like bound-identifier=? only for toplevel
+  (let ([g1 (find-binding (slot-ref id1'module) (slot-ref id1'name) #f)]
+        [g2 (find-binding (slot-ref id2'module) (slot-ref id2'name) #f)])
+    (and g1 g2 (gloc-bound? g1) (gloc-bound? g2)
+         (eq? (gloc-ref g1) (gloc-ref g2)))))
 
 (define (everyc proc lis c)             ;avoid closure allocation
   (or (null? lis)
@@ -4864,6 +4857,7 @@
 ;; appears in the toplevel environment with a module that are returned by
 ;; calling a thunk MODGEN.  The predicate returns #t iff VAR represents
 ;; the same global binding of SYM within the module SRCMOD.
+;; This is used in precomp.
 (define (global-eq?? sym srcmod modgen)
   (let1 id-gloc (find-binding (find-module srcmod) sym #f)
     (lambda (var)

@@ -130,7 +130,15 @@
 (define-cproc %import-modules (mod::<module> mods) ;deprecated
   Scm_ImportModules)
 
-(define-cproc gloc-ref (gloc::<gloc>) SCM_GLOC_GET)
+(define-cproc gloc-bound? (gloc::<gloc>) ::<boolean>
+  (result (not (SCM_UNBOUNDP (SCM_GLOC_GET gloc)))))
+(define-cproc gloc-ref (gloc::<gloc> :optional fallback)
+  (let* ([v::ScmObj (SCM_GLOC_GET gloc)])
+    (if (SCM_UNBOUNDP v)
+      (if (SCM_UNBOUNDP fallback)
+        (Scm_Error "gloc %S doesn't have a value" (SCM_OBJ gloc))
+        (result fallback))
+      (result v))))
 (define-cproc gloc-set! (gloc::<gloc> value) SCM_GLOC_SET)
 (define-cproc gloc-const? (gloc::<gloc>) ::<boolean> Scm_GlocConstP)
 (define-cproc gloc-inlinable? (gloc::<gloc>) ::<boolean> Scm_GlocInlinableP)
