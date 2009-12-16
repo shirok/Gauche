@@ -3150,6 +3150,8 @@
             [(CDDR)    (pass2/const-cxxr cdr cddr args)]
             [(MEMQ)    (pass2/const-memx memq args)]
             [(MEMV)    (pass2/const-memx memv args)]
+            [(EQ)      (pass2/const-eqx  eq? args)]
+            [(EQV)     (pass2/const-eqx  eqv? args)]
             [else #f]))
       (and-let* ([ (pair? args) ]
                  [ (null? (cdr args)) ]
@@ -3187,6 +3189,9 @@
   (let ([item ($const-value (car args))]
         [lis  ($const-value (cadr args))])
     (and (list? lis) ($const (proc item lis)))))
+
+(define (pass2/const-eqx proc args)
+  ($const (proc ($const-value (car args)) ($const-value (cadr args)))))
 
 (define (initval-never-null? val)
   (and (vector? val)
