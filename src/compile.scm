@@ -1397,12 +1397,15 @@
 ;;   variable references (defined by define-constant) are converted to
 ;;   its values at this stage.
 
-;; small macro to handle procedure call
+;; Common entry to handle procedure call
+;; proc is IForm.  args is [Sexpr].
 (define-inline (pass1/call program proc args cenv)
-  (if (null? args)
-    ($call program proc '()) ;; fast path
-    (let1 cenv (cenv-sans-name cenv)
-      ($call program proc (imap (cut pass1 <> cenv) args)))))
+  (cond
+   [(has-tag? proc $LAMBDA)        ; immediate lambda
+    (expand-inlined-procedure program proc (imap (cut pass1 <> cenv) args))]
+   [(null? args) ($call program proc '())] ; fast path
+   [else (let1 cenv (cenv-sans-name cenv)
+           ($call program proc (imap (cut pass1 <> cenv) args)))]))
 
 ;; Check if the head of the list is a variable, and if so, lookup it.
 ;; Note that we need to detect the case ((with-module foo bar) arg ...)

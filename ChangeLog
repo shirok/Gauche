@@ -1,3 +1,9 @@
+2009-12-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass1/call): Expand immediate lambda here, too,
+	  for such a form can appear as a result of macro expansion.
+	  Elimiating lambda here helps later pass to optimize clsures.
+
 2009-12-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/vmcall.c: Pass the actual # of args in the stack via VAL0
