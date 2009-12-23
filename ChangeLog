@@ -1,3 +1,9 @@
+2009-12-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm (PUSH-HANDLERS): Fixed: the order of arguments is
+	  reversed; "before" comes first (hence in the stack) and "after"
+	  follows (hence in VAL0).
+
 2009-12-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1/call): Expand immediate lambda here, too,

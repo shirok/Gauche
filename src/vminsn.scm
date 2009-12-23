@@ -1322,9 +1322,9 @@
 ;;   Used for dynamic-wind and alike.
 
 (define-insn PUSH-HANDLERS 0 none #f    ; push dynamic handlers
-  (let* ((before VAL0) (after))
+  (let* ((before) (after VAL0))
     (VM-ASSERT (>= (- SP (-> vm stackBase)) 1))
-    (POP-ARG after)
+    (POP-ARG before)
     (SCM_FLONUM_ENSURE_MEM before)
     (SCM_FLONUM_ENSURE_MEM after)
     (set! (-> vm handlers) (Scm_Acons before after (-> vm handlers)))
