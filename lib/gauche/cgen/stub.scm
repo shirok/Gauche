@@ -296,7 +296,7 @@
                  [else form]))))
 
 (define (cgen-stub-parser key)
-  (cond [(find (^(p) (eq? key (~ p'name))) (instance-pool->list <form-parser>))
+  (cond [(find (^p (eq? key (~ p'name))) (instance-pool->list <form-parser>))
          => (lambda (parser) (cut invoke parser <>))]
         [else #f]))
 
@@ -517,7 +517,7 @@
       ;; :fast-flonum and :constant are supported.
    ))
 
-(define (get-arg cproc arg) (find (^(x) (eq? arg (~ x'name))) (~ cproc'args)))
+(define (get-arg cproc arg) (find (^x (eq? arg (~ x'name))) (~ cproc'args)))
 (define (push-stmt! cproc stmt) (push! (~ cproc'stmts) stmt))
 
 (define-generic c-stub-name )
@@ -538,8 +538,8 @@
     ;; are immediately type-checked and/or unboxed.
     (let1 unsafe-types (list *scm-type* (name->type '<number>))
       (when (and (not (memq :fast-flonum (~ cproc'flags)))
-                 (every (^(arg) (or (is-a? arg <rest-arg>)
-                                    (not (memq (~ arg'type) unsafe-types))))
+                 (every (^a (or (is-a? a <rest-arg>)
+                                (not (memq (~ a'type) unsafe-types))))
                         args))
         (push! (~ cproc'flags) :fast-flonum))))
   (define (extract-flags body)
@@ -593,11 +593,11 @@
 
   ;; support old &-notation.  will fade away.
   (define (xlate-old-lambda-keywords specs) 
-    (map (^(s)(cond [(assq s '((&optional . :optional) (&keyword . :key)
-                               (&rest . :rest)
-                               (&allow-other-keys . :allow-other-keys)))
-                     => cdr]
-                    [else s]))
+    (map (^s (cond [(assq s '((&optional . :optional) (&keyword . :key)
+                              (&rest . :rest)
+                              (&allow-other-keys . :allow-other-keys)))
+                    => cdr]
+                   [else s]))
          specs))
 
   (define (required specs args nreqs)
@@ -966,8 +966,8 @@
     (format #t "~a, ~a, NULL);\n"
             (~ cproc'c-name)                          ; func
             (cond [(~ cproc'inline-insn)
-                   => (^(insn) (format "SCM_MAKE_INT(SCM_VM_~a)"
-                                       (string-tr (x->string insn) "-" "_")))]
+                   => (^i (format "SCM_MAKE_INT(SCM_VM_~a)"
+                                  (string-tr (x->string i) "-" "_")))]
                   [else "NULL"])))                    ; inliner
   (p))
 
@@ -1110,7 +1110,7 @@
     (error <cgen-stub-error> "bad form of anonymous setter:" `(setter ,@decl))))
 
 (define (get-c-generic-name name)
-  (cond [(find (^(x) (eq? (~ x'scheme-name) name)) (get-stubs <cgeneric>))
+  (cond [(find (^x (eq? (~ x'scheme-name) name)) (get-stubs <cgeneric>))
          => (cut ref <> 'c-name)]
         [else #f]))
 
