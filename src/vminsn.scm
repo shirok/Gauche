@@ -957,7 +957,10 @@
     NEXT1))
 
 (define-insn TAIL-APPLY  1 none #f
-  ;; Inlined apply at the tail position.
+  ;; Inlined apply.  Assumes the call is at the tail position.
+  ;; NB: As of 0.9, all 'apply' call is expanded into this instruction.
+  ;; If the code is not at the tail position, compiler pass 3 inserts
+  ;; PRE-CALL instruction so that the call of apply becomes a tail call.
   ;;
   ;; Here, the stack should have the following layout.
   ;;
