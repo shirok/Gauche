@@ -519,7 +519,7 @@
 (define-cproc for-each (proc args::<list> :rest moreargs) Scm_ForEach)
 (define-cproc force (p) Scm_Force)
 (define-cproc call-with-current-continuation (proc) Scm_VMCallCC)
-(define-cproc values (:rest args) (inliner VALUES) Scm_Values)
+(define-cproc values (:rest args) :constant (inliner VALUES) Scm_Values)
 (define-cproc dynamic-wind (pre body post) Scm_VMDynamicWind)
 (define-cproc eval (expr env) Scm_VMEval)
 
