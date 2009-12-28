@@ -1234,10 +1234,11 @@ struct ScmProcedureRec {
 
 /* About 'constant' flag:
    This flag being TRUE means this procedure returns the same constant
-   value if given same constant arguments.  The compiler may use this
-   info to replace a call of this proc with the resulting value, if
-   all the arguments are known at compile-time.  The resulting value must
-   be serializable to the precompiled file.  The result shouldn't be affected
+   value if given same constant arguments, and it does not have any other
+   external effects.   The compiler may use this info to replace a call
+   of this proc with the resulting value, if all the arguments are known
+   at compile-time.  The resulting value must be serializable to the
+   precompiled file.  The result shouldn't be affected
    by the timing of the compile, architecture on which the compiler runs,
    or the compiler configuration (e.g. internal encoding).
  */
