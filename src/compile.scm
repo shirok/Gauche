@@ -1685,6 +1685,7 @@
 (define setter. (global-id 'setter))
 (define lazy.   (global-id 'lazy))
 (define eager.  (global-id 'eager))
+(define values. (global-id 'values))
 
 ;; Definitions ........................................
 
@@ -4809,6 +4810,35 @@
       [(_) ($asm form `(,CURERR) '())]
       [else (undefined)])))
 
+(define-builtin-inliner dynamic-wind
+  (lambda (form cenv)
+    (match form
+      [(_ before thunk after)
+       (let ([tenv (cenv-sans-name cenv)])
+         (let ([b (pass1 before tenv)]
+               [t (pass1 thunk cenv)]
+               [a (pass1 after tenv)]
+               [r (make-lvar 'tmp)])
+           (if (constant-lambda? a)
+             ;; when after thunk is dummy, we don't bother to call it.
+             ($seq
+              `(,($call before b '())
+                ,($asm form `(,PUSH-HANDLERS) `(,b ,a))
+                ,($call thunk t '())))
+             ;; normal path
+             ($seq
+              `(,($call before b '())
+                ,($asm form `(,PUSH-HANDLERS) `(,b ,a))
+                ,($receive #f 0 1 (list r)
+                           ($call thunk t '())
+                           ($seq
+                            `(,($asm form `(,POP-HANDLERS) '())
+                              ,($call after a '())
+                              ,($asm #f `(,TAIL-APPLY 2)
+                                     (list ($gref values.) ($lref r))))))
+                )))))]
+      [_ (undefined)])))
+
 ;;--------------------------------------------------------
 ;; Customizable inliner interface
 ;;
@@ -4902,6 +4932,12 @@
         (match lis
           [(x) (proc x c)]
           [(x . xs) (and (proc x c) (loop xs))]))))
+
+;; Check if iform is a lambda node that has no side effects.
+(define (constant-lambda? iform)
+  (and (vector? iform)
+       (has-tag? iform $LAMBDA)
+       (transparent? ($lambda-body iform))))
 
 ;; To compare identifiers w/ hygiene.  Returns a predicate that takes
 ;; a single argument VAR, which must be a symbol or identifier that

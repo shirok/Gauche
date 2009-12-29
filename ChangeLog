@@ -1,3 +1,9 @@
+2009-12-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (dynamic-wind): Added builtin inliner for
+	  dynamic-wind.  This expansion uses PUSH-HANDLERS and POP-HANDLERS
+	  instructions.
+
 2009-12-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass2p/precompute-constant): Support the case
