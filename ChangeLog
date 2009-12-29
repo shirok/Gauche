@@ -1,3 +1,10 @@
+2009-12-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass2p/precompute-constant): Support the case
+	  when the precomputation procedure returns multiple values
+	  (for now, we give up optimization if the proc returns more than
+	  one value.  will be fixed in future.)
+
 2009-12-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm (PUSH-HANDLERS): Fixed: the order of arguments is

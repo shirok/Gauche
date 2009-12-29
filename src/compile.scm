@@ -3540,7 +3540,11 @@
 ;; optimization and let the runtime fail.
 (define (pass2p/precompute-constant proc arg-nodes)
   (guard (e [else #f])                  ; give up optimization
-    ($const (apply proc (imap (lambda (a) ($const-value a)) arg-nodes)))))
+    (receive r (apply proc (imap (lambda (a) ($const-value a)) arg-nodes))
+      (match r
+        [()  ($const-undef)]
+        [(r) ($const r)]
+        [_   #f]))))             ;for now, don't support multivalue const
 
 (define (pass2p/$ASM iform labels)
   (let1 args (imap (cut pass2p/rec <> labels) ($asm-args iform))
