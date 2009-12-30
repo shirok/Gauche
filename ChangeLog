@@ -1,5 +1,8 @@
 2009-12-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/scmlib.scm (current-load-path): Added.  It is going to be more
+	  reliable and convenient to obtain the path than via current-load-port.
+
 	* src/compile.scm (dynamic-wind): Added builtin inliner for
 	  dynamic-wind.  This expansion uses PUSH-HANDLERS and POP-HANDLERS
 	  instructions.

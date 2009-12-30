@@ -104,6 +104,58 @@
          (eval '(load "test.o/d") (find-module 'load.test))
          (with-module load.test foo)))
 
+;; current-load-* --------------------------------------
+(test-section "current-load-* info")
+
+(with-output-to-file "test.o/c1.scm"
+  (lambda ()
+    (write '(print (current-load-history)))
+    (write '(print (current-load-next)))
+    (write '(print (current-load-port)))
+    (write '(print (current-load-path)))
+    (write '(load "./test.o/c2.scm"))
+    (write '(print (current-load-history)))
+    (write '(print (current-load-next)))
+    (write '(print (current-load-port)))
+    (write '(print (current-load-path)))))
+
+(with-output-to-file "test.o/c2.scm"
+  (lambda ()
+    (write '(print (current-load-history)))
+    (write '(print (current-load-next)))
+    (write '(print (current-load-port)))
+    (write '(print (current-load-path)))))
+
+(with-output-to-file "test.o/c.out"
+  (lambda () (load "./test.o/c1.scm")))
+
+(with-input-from-file "test.o/c.out"
+  (lambda ()
+    (test* "current-load-history (1)" #/^\(\(#<iport [.\/]*test\/load\.scm/
+           (read-line) rxmatch)
+    (test* "current-load-next (1)" "()" (read-line))
+    (test* "current-load-port (1)" #/^#<iport \.\/test\.o\/c1\.scm/
+           (read-line) rxmatch)
+    (test* "current-load-path (1)" "./test.o/c1.scm"
+           (read-line) rxmatch)
+
+    (test* "current-load-history (2)"
+           #/^\(\(#<iport [.\/]*test\.o\/c1\.scm [^\)]*\) \(#<iport [.\/]*test\/load\.scm [^\)]*\)/
+           (read-line) rxmatch)
+    (test* "current-load-next (2)" "()" (read-line))
+    (test* "current-load-port (2)" #/^#<iport \.\/test\.o\/c2\.scm/
+           (read-line) rxmatch)
+    (test* "current-load-path (2)" "./test.o/c2.scm"
+           (read-line) rxmatch)
+
+    (test* "current-load-history (3)" #/^\(\(#<iport [.\/]*test\/load\.scm/
+           (read-line) rxmatch)
+    (test* "current-load-next (3)" "()" (read-line))
+    (test* "current-load-port (3)" #/^#<iport \.\/test\.o\/c1\.scm/
+           (read-line) rxmatch)
+    (test* "current-load-path (3)" "./test.o/c1.scm"
+           (read-line) rxmatch)
+    ))
 
 ;; autoloading -----------------------------------------
 (test-section "autoload")

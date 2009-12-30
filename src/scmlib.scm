@@ -785,3 +785,12 @@
                 (current-output-port oport)
                 (current-error-port eport))
                thunk))
+
+;; Get the file path currently loading from.
+;; We may swap the implementation with more reliable way in future.
+(define (current-load-path)
+  (and-let* ([p (current-load-port)]
+             [info (port-name p)]
+             [ (string? info) ]
+             [ (not (#/^\(.*\)$/ info)) ])
+    info))

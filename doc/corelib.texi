@@ -11370,6 +11370,7 @@ the "@code{coding:}" magic comment won't be handled.
 @end defun
 
 @defun current-load-port
+@defunx current-load-path
 @defunx current-load-history
 @defunx current-load-next
 @c EN
@@ -11377,7 +11378,11 @@ These procedures allows you to query the current context of loading.
 They returns the following values when called inside a file being loaded:
 @table @code
 @item current-load-port
-Returns the port object from which the file is being read.
+Returns the port object from which this form is being loaded.
+@item current-load-path
+Returns the pathname of the file from which this form is being loaded.
+Note that this may return @code{#f} if the source of @code{load} is
+not a file.
 @item current-load-history
 Returns a list of pairs of a port and a line number (integer),
 representing the nesting of loads.  Suppose you load
@@ -11399,13 +11404,16 @@ Then, inside @file{foo.scm}, @code{current-load-next} returns:
 @end table
 
 When called outside of @code{load}, these procedures returns
-@code{#f}, @code{()} and @code{()}, respectively.
+@code{#f}, @code{#f}, @code{()} and @code{()}, respectively.
 @c JP
 これらの手続きによって、現在のロードのコンテクストを知ることができます。
 ロードされているファイルの中でこれらの手続きを呼ぶと、次のような値が返されます。
 @table @code
 @item current-load-port
-現在のファイルがロードされている入力ポート。
+現在のフォームがロードされている入力ポート。
+@item current-load-path
+現在のフォームがロードされているファイル。
+ロードのソースがファイルでない場合、この値は@code{#f}。
 @item current-load-history
 入力ポートと行番号のペアのリストで、ロードのネスティングを示したもの。
 例えばあなたが@file{foo.scm}をロードし、そのファイルの7行目で
@@ -11428,7 +11436,7 @@ When called outside of @code{load}, these procedures returns
 @end table
 
 @code{load}されていない状態で呼ばれた時は、これらの手続きはそれぞれ@code{#f}、
-@code{()}、@code{()}を返します。
+@code{#f}、@code{()}、@code{()}を返します。
 @c COMMON
 @end defun
 
