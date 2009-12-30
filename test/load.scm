@@ -10,14 +10,6 @@
 
 ;; Some abstraction for win32... The file.util module provides
 ;; higher abstraction, but we're not at the stage of using it yet.
-
-(define *win32*
-  ;; we can't use string-suffix? yet.
-  (let* ((arch (gauche-architecture))
-	 (len  (string-length arch)))
-    (and (> len 7)
-	 (string=? (substring arch (- len 7) len) "mingw32"))))
-
 (define (P path) (sys-normalize-pathname path))
 
 (define (rmrf . files)
