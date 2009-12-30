@@ -20,10 +20,19 @@
 
 (define (P path) (sys-normalize-pathname path))
 
+(define (rmrf . files)
+  (dolist [f files]
+    (cond-expand
+     [gauche.os.windows
+      (sys-system #`"rmdir /q /s ,(P f) > NUL 2>&1")
+      (sys-system #`"del /q ,(P f) > NUL 2>&1")]
+     [else
+      (sys-system #`"rm -rf ,f > /dev/null")])))
+
 ;;----------------------------------------------------------------
 (test-section "require and provide")
 
-(sys-system "rm -rf test.o")
+(rmrf "test.o")
 (sys-mkdir "test.o" #o777)
 (with-output-to-file "test.o/a.scm"
   (lambda ()
@@ -38,7 +47,7 @@
          (eval '(require "test.o/a") (interaction-environment))
          #t))
 
-(sys-system "rm -rf test.o")
+(rmrf "test.o")
 (sys-mkdir "test.o" #o777)
 (with-output-to-file "test.o/b.scm"
   (lambda ()
@@ -55,7 +64,7 @@
        (test-error)
        (eval '(require "test.o/b") (interaction-environment)))
 
-(sys-system "rm -rf test.o")
+(rmrf "test.o")
 (sys-mkdir "test.o" #o777)
 (with-output-to-file "test.o/d.scm"
   (lambda ()
@@ -130,7 +139,7 @@
 (test* "autoload environment" #t
        (load "./test.o/l0.scm"))
 
-(sys-system "rm -rf test.o")
+(rmrf "test.o")
 
 ;; library utilities -----------------------------------
 
@@ -302,6 +311,6 @@
 ;; we check module here, since gauche.libutil is autoloaded.
 (test-module 'gauche.libutil)
 
-(sys-system "rm -rf test.o")
+(rmrf "test.o")
 
 (test-end)
