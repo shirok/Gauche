@@ -231,6 +231,11 @@
     `(%imax ,x ,y)
     `(%imax ,x (imax ,y ,@more))))
 
+;; Generate dispatch table
+(define-macro (generate-dispatch-table prefix)
+  `(vector ,@(map (lambda (p) (string->symbol #`",|prefix|/,(car p)"))
+                  .intermediate-tags.)))
+
 ;;============================================================
 ;; Data structures
 ;;
@@ -3307,11 +3312,7 @@
 (define pass2/$VECTOR pass2/narg-inliner)
 
 ;; Dispatch table.
-(define-macro (pass2-generate-dispatch-table)
-  `(vector ,@(map (lambda (p) (string->symbol #`"pass2/,(car p)"))
-                  .intermediate-tags.)))
-
-(define *pass2-dispatch-table* (pass2-generate-dispatch-table))
+(define *pass2-dispatch-table* (generate-dispatch-table pass2))
 
 ;; Pass 2 post-pass.
 ;; Closure optimization can introduce superfluous $LET, which can
@@ -3632,11 +3633,7 @@
 (define pass2p/$VECTOR pass2p/narg-inliner)
 
 ;; Dispatch table.
-(define-macro (pass2p-generate-dispatch-table)
-  `(vector ,@(map (lambda (p) (string->symbol #`"pass2p/,(car p)"))
-                  .intermediate-tags.)))
-
-(define *pass2p-dispatch-table* (pass2p-generate-dispatch-table))
+(define *pass2p-dispatch-table* (generate-dispatch-table pass2p))
 
 ;;===============================================================
 ;; Pass 3.  Code generation
@@ -4566,11 +4563,7 @@
                (imax d0 (+ d1 1) (+ d2 2)))))]))
 
 ;; Dispatch table.
-(define-macro (pass3-generate-dispatch-table)
-  `(vector ,@(map (lambda (p) (string->symbol #`"pass3/,(car p)"))
-                  .intermediate-tags.)))
-
-(define *pass3-dispatch-table* (pass3-generate-dispatch-table))
+(define *pass3-dispatch-table* (generate-dispatch-table pass3))
      
 ;; Returns depth and offset of local variable reference.
 ;;   renv-lookup : [[Lvar]], Lvar -> Int, Int
