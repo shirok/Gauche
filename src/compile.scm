@@ -1509,16 +1509,12 @@
 ;; be redefined.  We assume this function is called infrequently,
 ;; thus we can afford the time.
 (define (module-qualified-variable? expr cenv)
-  (and (pair? expr)
-       (variable? (car expr))
-       (pair? (cdr expr))
-       (pair? (cddr expr))
-       (null? (cdddr expr))
-       (variable? (caddr expr))
-       ;; we check the heaviest one last.
-       (and-let* ([var (cenv-lookup cenv (car expr) SYNTAX)]
-                  [ (identifier? var) ])
-         (bound-id=? var (global-id 'with-module)))))
+  (match expr
+    [((? variable? wm) mod (? variable? v))
+     (and-let* ([var (cenv-lookup cenv wm SYNTAX)]
+                [ (identifier? var) ])
+       (bound-id=? var (global-id 'with-module)))]
+    [_ #f]))
 
 ;;--------------------------------------------------------------
 ;; pass1/body - Compiling body with internal definitions.
