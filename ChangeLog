@@ -3,6 +3,7 @@
 	* src/compile.scm: (id->bound-gloc): Refactored.
 	  (cenv): Added 'source-path' slot to support include.
 	  (pass1/body): Factored out the recursive parts as pass1/body-rec.
+	  (syntax/include): Added 'include'.
 
 2009-12-29  Shiro Kawai  <shiro@acm.org>
 

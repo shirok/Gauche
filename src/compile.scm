@@ -482,6 +482,9 @@
 (define-inline (cenv-add-name cenv name)
   (cenv-copy-except cenv :exp-name name))
 
+(define-inline (cenv-add-name/source cenv name source)
+  (cenv-copy-except cenv :exp-name name :source-path source))
+
 (define-inline (cenv-sans-name cenv)
   (if (cenv-exp-name cenv)
     (cenv-copy-except cenv :exp-name #f)
@@ -1424,6 +1427,7 @@
              (cenv-lookup (cenv-swap-module cenv mod)
                           (caddr head) SYNTAX)))))
 
+;;--------------------------------------------------------------
 ;; pass1 :: Sexpr, Cenv -> IForm
 ;;
 ;;  The Pass 1 entry point.
@@ -1516,6 +1520,7 @@
                   [ (identifier? var) ])
          (bound-id=? var (global-id 'with-module)))))
 
+;;--------------------------------------------------------------
 ;; pass1/body - Compiling body with internal definitions.
 ;;
 ;; First we scan internal defines.  We need to expand macros at this stage,
@@ -1535,84 +1540,95 @@
 ;; let*-like semantics for the purpose of determining macro binding
 ;; during expansion.
 
-;; First, we pair up each expr with dummy source info '().  Some of expr
-;; may be an 'include' form and expanded into the content of the file,
-;; in which case we keep the source file info in each cdr of the pair.
+;; pass1/body :: [Sexpr], Cenv -> IForm
 (define (pass1/body exprs cenv)
+  ;; First, we pair up each expr with dummy source info '().  Some of expr
+  ;; may be an 'include' form and expanded into the content of the file,
+  ;; in which case we keep the source file info in each cdr of the pair.
   (pass1/body-rec (map list exprs) '() cenv))
 
+;; Walks exprs and gathers internal definitions into intdefs in the form
+;; of ((var init) ...).  We need to expand macros, begins and includes
+;; that appears in the bone of exprs, for it may insert more internal
+;; definitions.
 (define (pass1/body-rec exprs intdefs cenv)
-
   (match exprs
-    [()  ($const-undef)]
     [(((op . args) . src) . rest)
-     (cond
-      [(and (not (assq op intdefs))
-            (pass1/lookup-head op cenv))
-       => (lambda (head)
-            (unless (list? args)
-              (error "proper list required for function application \
-                      or macro use:" (caar exprs)))
-            (cond
-             [(lvar? head) (pass1/body-wrap-intdefs intdefs exprs cenv)]
-             [(macro? head)
-              (pass1/body-macro-expand-rec head exprs intdefs cenv)]
-             [(identifier? head)
-              (cond
-               [(global-eq? head 'define cenv)
-                (when (null? args)
-                  (error "malformed internal define:" (caar exprs)))
-                (pass1/body-handle-intdef args rest intdefs cenv)]
-               [(global-eq? head 'begin cenv)
-                ;; intersperse the body of begin
-                (pass1/body-rec (append (imap (cut cons <> src) args) rest)
-                                intdefs cenv)]
-               [else
-                (or (and-let* ([gloc (id->bound-gloc head)]
-                               [gval (gloc-ref gloc)]
-                               [ (macro? gval) ])
-                      (pass1/body-macro-expand-rec gval exprs intdefs cenv))
-                    (pass1/body-wrap-intdefs intdefs exprs cenv))])]
-             [else
-              (error "[internal] pass1/body" head)]))]
-      [else (pass1/body-wrap-intdefs intdefs exprs cenv)])]
-    [_ (pass1/body-wrap-intdefs intdefs exprs cenv)]))
+     (or (and-let* ([ (not (assq op intdefs)) ]
+                    [head (pass1/lookup-head op cenv)])
+           (unless (list? args)
+             (error "proper list required for function application \
+                     or macro use:" (caar exprs)))
+           (cond
+            [(lvar? head) (pass1/body-finish intdefs exprs cenv)]
+            [(macro? head)
+             (pass1/body-macro-expand-rec head exprs intdefs cenv)]
+            [(global-eq? head 'define cenv)
+             (let1 def (match args
+                         [((name . formals) . body)
+                          `(,name (,lambda. ,formals ,@body) . ,src)]
+                         [(var init) `(,var ,init . ,src)]
+                         [_ (error "malformed internal define:" (caar exprs))])
+               (pass1/body-rec rest (cons def intdefs) cenv))]
+            [(global-eq? head 'begin cenv) ;intersperse forms
+             (pass1/body-rec (append (imap (cut cons <> src) args) rest)
+                             intdefs cenv)]
+            [(global-eq? head 'include cenv)
+             (pass1/body-rec (cons (pass1/expand-include args cenv) rest)
+                             intdefs cenv)]
+            [(identifier? head)
+             (or (and-let* ([gloc (id->bound-gloc head)]
+                            [gval (gloc-ref gloc)]
+                            [ (macro? gval) ])
+                   (pass1/body-macro-expand-rec gval exprs intdefs cenv))
+                 (pass1/body-finish intdefs exprs cenv))]
+            [else (error "[internal] pass1/body" head)]))
+         (pass1/body-finish intdefs exprs cenv))]
+    [_ (pass1/body-finish intdefs exprs cenv)]))
 
 (define (pass1/body-macro-expand-rec mac exprs intdefs cenv)
   (pass1/body-rec
    (acons (call-macro-expander mac (caar exprs) (cenv-frames cenv))
-          (cdar exprs) (cdr exprs))
+          (cdar exprs) ;src
+          (cdr exprs)) ;rest
    intdefs cenv))
-
-;; an internal define is found.  def is cdr of internal define.
-;; we know def isn't null.
-(define (pass1/body-handle-intdef def exprs intdefs cenv)
-  (match def
-    [((name . args) . body)
-     (pass1/body-rec exprs
-                     (cons (list name `(,lambda. ,args ,@body)) intdefs)
-                     cenv)]
-    [(_ _)
-     (pass1/body-rec exprs (cons def intdefs) cenv)]
-    [else
-     (error "malformed internal define:" `(define . ,def))]))
 
 ;; Finishing internal definitions.  If we have internal defs, we wrap
 ;; the rest by letrec.
-(define (pass1/body-wrap-intdefs intdefs exprs cenv)
-  (cond
-   [(not (null? intdefs))
-    (pass1 `(,(global-id 'letrec) ,(reverse intdefs) ,@(map car exprs)) cenv)]
-   [(null? exprs) ($seq '())]
-   [(null? (cdr exprs)) (pass1 (caar exprs) cenv)]
-   [else
-    (let1 stmtenv (cenv-sans-name cenv)
-      ($seq (let loop ((exprs (map car exprs))
-                       (r '()))
-              (if (null? (cdr exprs))
-                (reverse (cons (pass1 (car exprs) cenv) r))
-                (loop (cdr exprs)
-                      (cons (pass1 (car exprs) stmtenv) r))))))]))
+(define (pass1/body-finish intdefs exprs cenv)
+  (if (null? intdefs)
+    (pass1/body-rest exprs cenv)
+    (let* ([intdefs. (reverse intdefs)]
+           [vars  (map car intdefs.)]
+           [lvars (imap make-lvar+ vars)]
+           [newenv (cenv-extend cenv (%map-cons vars lvars) LEXICAL)])
+      ($let #f 'rec lvars
+            (imap2 (cut pass1/body-init <> <> newenv) lvars (map cdr intdefs.))
+            (pass1/body-rest exprs newenv)))))
+
+(define (pass1/body-init lvar init&src newenv)
+  (let1 e (if (null? (cdr init&src))
+            (cenv-add-name newenv (lvar-name lvar))
+            (cenv-add-name/source newenv (lvar-name lvar) (cdr init&src)))
+    (rlet1 iexpr (pass1 (car init&src) e)
+      (lvar-initval-set! lvar iexpr))))  
+
+(define (pass1/body-rest exprs cenv)
+  (match exprs
+    [() ($seq '())]
+    [(expr&src) (pass1/body-1 expr&src cenv)]
+    [_ (let1 stmtenv (cenv-sans-name cenv)
+         ($seq (let loop ([exprs exprs] [r '()])
+                 (if (null? (cdr exprs))
+                   (reverse (cons (pass1/body-1 (car exprs) cenv) r))
+                   (loop (cdr exprs)
+                         (cons (pass1/body-1 (car exprs) stmtenv) r))))))]))
+
+(define (pass1/body-1 expr&src cenv)
+  (let1 src (cdr expr&src)
+    (if (string? src)
+      (pass1 (car expr&src) (cenv-swap-source cenv src))
+      (pass1 (car expr&src) cenv))))
 
 ;;--------------------------------------------------------------
 ;; Pass1 utilities
@@ -2569,6 +2585,51 @@
   (match form
     [(_ feature) (%require feature) ($const-undef)]
     [_ (error "syntax-error: malformed require:" form)]))
+
+;; Include .............................................
+
+(define-pass1-syntax (include form cenv) :gauche
+  (match-let1 (form . src) (pass1/expand-include (cdr form) cenv)
+    (pass1 form (cenv-swap-source cenv src))))
+
+;; Returns a pair of Sexpr and the filename.
+(define (pass1/expand-include args cenv)
+  (match args
+    [((? string? filename)) (pass1/do-include filename (cenv-source-path cenv))]
+    [(x) (error "include requires literal string, but got:" x)]
+    [_   (error "syntax-error: malformed include:" `(include ,@args))]))
+
+(define (pass1/do-include filename includer-path)
+  (let1 iport (pass1/open-include-file filename includer-path)
+    (unwind-protect
+        (let loop ([r (read iport)] [forms '()])
+          (if (eof-object? r)
+            `((begin ,@(reverse forms)) . ,(port-name iport))
+            (loop (read iport) (cons r forms))))
+      (close-input-port iport))))
+
+;; If filename is relative, we try to resolve it with the source file
+;; if we can figure it out.
+(define (pass1/open-include-file path includer-path)
+  ;; NB: we can't depend on file.util.
+  (define (absolute-path? path)
+    (cond-expand
+     [gauche.os.windows (#/^[\/\\]|^[A-Za-z]:/ path)]
+     [else              (#/^\// path)]))
+  (define (build-path path file)
+    (cond-expand
+     [gauche.os.windows #`",|path|\\,file"]
+     [else              #`",|path|/,file"]))
+  (define (check path)
+    (any (^s (open-input-file #`",|path|,s" :if-does-not-exist #f))
+         (cons "" *load-suffixes*)))
+  (define (bad) (error "include file is not readable:" path))
+  
+  (cond [(absolute-path? path) (or (check path) (bad))]
+        [(and includer-path
+              (check (build-path (sys-dirname includer-path) path)))]
+        [(check path)]
+        [else (bad)]))
 
 ;; Class stuff ........................................
 

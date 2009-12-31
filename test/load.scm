@@ -157,6 +157,44 @@
            (read-line) rxmatch)
     ))
 
+;; include --------------------------------------
+(test-section "include")
+
+(with-output-to-file "test.o/inc0.scm"
+  (lambda ()
+    (write '(define inc-var 4))
+    (write 'inc-var)))
+(with-output-to-file "test.o/inc1.scm"
+  (lambda ()
+    (write '(define inc-var 10))
+    (write '(let ((x inc-var))
+              (include "inc0.scm")
+              (+ x inc-var)))))
+(with-output-to-file "test.o/inc2.scm"
+  (lambda ()
+    (write '(define inc-var2 (let () (include "inc0"))))))
+
+(define (include-into-toplevel filename)
+  (eval `(begin (define inc-var 0)
+                (include ,filename))
+        (current-module)))
+
+(test* "include (relative to current, expands into toplevel)" 4
+       (include-into-toplevel "test.o/inc0"))
+(test* "include (relative to current, expands inside let)" 4
+       (let ((inc-var 2))
+         (include "test.o/inc0")
+         inc-var))
+(test* "include (absolute, expands into toplevel)" 4
+       (include-into-toplevel
+        (sys-normalize-pathname "test.o/inc0" :absolute #t)))
+(test* "include (nested)" 14
+       (include-into-toplevel "test.o/inc1"))
+(test* "include (postcondition)" 10
+       (eval 'inc-var (current-module)))
+(test* "include (within init part)" 4
+       (let () (include "test.o/inc2.scm") inc-var2))
+
 ;; autoloading -----------------------------------------
 (test-section "autoload")
 
