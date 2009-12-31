@@ -1561,10 +1561,7 @@
                 ;; intersperse the body of begin
                 (pass1/body (append args rest) intdefs cenv)]
                [else
-                (or (and-let* ([gloc (find-binding (slot-ref head 'module)
-                                                   (slot-ref head 'name)
-                                                   #f)]
-                               [ (gloc-bound? gloc) ]
+                (or (and-let* ([gloc (id->bound-gloc head)]
                                [gval (gloc-ref gloc)]
                                [ (macro? gval) ])
                       (pass1/body
@@ -3464,9 +3461,7 @@
 
 ;; Get the value of GREF if it is bound and inlinable procedure
 (define (gref-inlinable-proc gref)
-  (and-let* ([id ($gref-id gref)]
-             [gloc (find-binding (slot-ref id'module) (slot-ref id'name) #f)]
-             [ (gloc-bound? gloc) ]
+  (and-let* ([gloc (id->bound-gloc ($gref-id gref))]
              [ (gloc-inlinable? gloc) ]
              [val (gloc-ref gloc)]
              [ (procedure? val) ])
@@ -4913,6 +4908,13 @@
         [(lvar? arg) (lvar-name arg)]
         [else (error "variable required, but got:" arg)]))
 
+;; Returns GLOC if id is bound to one, or #f.  If GLOC is returned,
+;; it is always bound.
+(define (id->bound-gloc id)
+  (and-let* ([gloc (find-binding (slot-ref id'module) (slot-ref id'name) #f)]
+             [ (gloc-bound? gloc) ])
+    gloc))
+
 (define (global-eq? var sym cenv)  ; like free-identifier=?, used in pass1.
   (and (variable? var)
        (let1 v (cenv-lookup cenv var LEXICAL)
@@ -4920,11 +4922,10 @@
               (eq? (slot-ref v 'name) sym)
               (null? (slot-ref v 'env))))))
 
-(define (bound-id=? id1 id2) ; like bound-identifier=? only for toplevel
-  (let ([g1 (find-binding (slot-ref id1'module) (slot-ref id1'name) #f)]
-        [g2 (find-binding (slot-ref id2'module) (slot-ref id2'name) #f)])
-    (and g1 g2 (gloc-bound? g1) (gloc-bound? g2)
-         (eq? (gloc-ref g1) (gloc-ref g2)))))
+(define (bound-id=? id1 id2) ; like bound-identifier=? but only for toplevel
+  (let ([g1 (id->bound-gloc id1)]
+        [g2 (id->bound-gloc id2)])
+    (and g1 g2 (eq? (gloc-ref g1) (gloc-ref g2)))))
 
 (define (everyc proc lis c)             ;avoid closure allocation
   (or (null? lis)

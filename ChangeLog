@@ -1,3 +1,7 @@
+2009-12-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm: (id->bound-gloc): Refactored.
+
 2009-12-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/scmlib.scm (current-load-path): Added.  It is going to be more
