@@ -1,3 +1,10 @@
+2010-01-03  Shiro Kawai  <shiro@acm.org>
+
+	* ext/bcrypt: Added crypt_blowfish binding.  We chose to include it
+	  in the main distribution instead of providing it as an external
+	  package, in order to encourage users to use a modern password
+	  hashing scheme rather than relying on crypt(3) or rolling their own.
+
 2009-12-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm: (id->bound-gloc): Refactored.

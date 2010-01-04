@@ -723,6 +723,7 @@ AC_OUTPUT(Makefile
           doc/gosh.1 doc/gauche-config.1 doc/Makefile
           ext/Makefile ext/Makefile.ext
           ext/auxsys/Makefile
+          ext/bcrypt/Makefile
           ext/binary/Makefile
           ext/charconv/Makefile ext/charconv/charconv.h
           ext/dbm/Makefile
