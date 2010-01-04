@@ -20,6 +20,6 @@
               ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
 (test* "bcrypt-gensalt" "$2a$12$"
-       (string-take (bcrypt-gensalt "$2a$" 12) 7))
+       (string-take (bcrypt-gensalt :count 12) 7))
 
 (test-end)

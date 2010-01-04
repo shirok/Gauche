@@ -13871,10 +13871,21 @@ This is the interface to @code{crypt(3)}.   @var{Key} and @var{salt}
 must be a string, and an encrypted string is returned.
 On systems where @code{crypt(3)} is not available, call to this
 function signals an error.
+
+This routine is only for the code that needs to check password
+against the system's password database.
+If you are building user database on your own, you @emph{must} use
+@code{gauche.bcrypt} module (@xref{Password hashing}) instead of 
+this routine.
 @c JP
 これは、@code{crypt(3)}へのインターフェースです。@var{key}と@var{salt}は
 文字列でなければならず、暗号化された文字列が返されます。
 @code{crypt(3)}が利用できないシステムでこの関数を呼ぶとエラーが通知されます。
+
+このルーチンは、システムのパスワードデータベースを使ってパスワードチェックを
+しなければならない時以外に使うべきではありません。独自のパスワードデータベースを
+新たに作る場合は、@code{gauche.bcrypt}モジュール(@ref{Password hashing})を
+使ってください。
 @c COMMON
 @end defun
 
