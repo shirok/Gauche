@@ -117,13 +117,16 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 #/usr/lib/libgauche.a
 /usr/lib/libgauche.so
 /usr/lib/libgauche.so.0
-/usr/lib/libgauche.so.%{version}
+/usr/lib/libgauche.so.%{version}.0
 /usr/lib/gauche/site/
 
 %files gdbm-%{encoding} -f rpmfiles-gdbm.txt
 %defattr(-,root,root)
 
 %changelog
+* Mon Jan  4 2010 Shiro Kawai
+- Fix missing micro version of libgauche.so in %files section.
+
 * Sat Nov 21 2009 Shiro Kawai
 - Gauche release 0.9.
 
