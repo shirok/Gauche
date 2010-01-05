@@ -1,3 +1,8 @@
+2010-01-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/genconfig.in: Use unique name for temporary file to avoid
+	  race condition when make is run in parallel.
+
 2010-01-04  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, */Makefile.in, src/genconfig.in, src/makeverslink.in,
