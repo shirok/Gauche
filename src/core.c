@@ -113,7 +113,7 @@ void Scm_Init(const char *signature)
 {
     /* make sure the main program links the same version of libgauche */
     if (strcmp(signature, GAUCHE_SIGNATURE) != 0) {
-        Scm_Panic("libgauche version mismatch: libgauche %s, expected %s",
+        Scm_Panic("libgauche ABI version mismatch: libgauche %s, expected %s",
                   GAUCHE_SIGNATURE, signature);
     }
 

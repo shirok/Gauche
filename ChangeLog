@@ -1,5 +1,12 @@
 2010-01-04  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, */Makefile.in, src/genconfig.in, src/makeverslink.in,
+	  src/gauche/config.h.in: Adopted the new installation directory
+	  strcture to keep binary compatibility for the same ABI version.
+	  Bumped to 0.9.1_pre1.
+	* src/scmlib.scm: Added a temporary workaround to use extension
+	  modules compiled for 0.9 to work with 0.9.x series.
+
 	* Gauche.spec: Fix rpm build problem caused by missing micro version.
 	  This is peculiar to the new minor version up; remember to revert it
 	  upon 0.9.1 release.

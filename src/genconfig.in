@@ -40,7 +40,8 @@ esac
 
 datarootdir=@datarootdir@  # for autoconf 2.60 and later.
 gdatadir=@datadir@/gauche
-garchdir=@libdir@/gauche
+garchabi=gauche-@GAUCHE_ABI_VERSION@
+garchdir=@libdir@/$garchabi
 
 mandir=`echo @mandir@ | $pathfix`
 infodir=`echo @infodir@ | $pathfix`
@@ -51,10 +52,10 @@ gauche_aclocaldir=`echo "$gdatadir/$gauche_version/" | $pathfix`
 gauche_archdir=`echo "$garchdir/$gauche_version/$host" | $pathfix`
 gauche_siteincdir=`echo "$garchdir/site/include" | $pathfix`
 gauche_sitelibdir=`echo "$gdatadir/site/lib" | $pathfix`
-gauche_sitearchdir=`echo "$garchdir/site/$gauche_version/$host" | $pathfix`
+gauche_sitearchdir=`echo "$garchdir/site/$host" | $pathfix`
 gauche_pkgincdir=`echo '${libdir}'"/gauche/site/include" | $pathfix`
 gauche_pkglibdir=`echo '${datadir}'"/gauche/site/lib" | $pathfix`
-gauche_pkgarchdir=`echo '${libdir}'"/gauche/site/$gauche_version/$host" | $pathfix`
+gauche_pkgarchdir=`echo '${libdir}'"/$garchabi/site/$host" | $pathfix`
 
 gauche_libs="@LIBS@"
 gauche_configure_args="@GAUCHE_CONFIGURE_ARGS@"
@@ -169,7 +170,7 @@ static struct cmd_rec {
     { "-I", "-I$gauche_incdir" },
     { "-L", "-L$gauche_archdir $local_libdir" },
     { "--ac", "$gauche_aclocaldir" },
-    { "-l", "-lgauche $gauche_libs" },
+    { "-l", "-l$garchabi $gauche_libs" },
     { "--cc", "$cc" },
     { "--reconfigure", "./configure $gauche_configure_args" },
 
@@ -376,7 +377,7 @@ cat > ../lib/gauche/config.scm.tmp <<EOF
     ("-I"  "-I$gauche_incdir")
     ("-L"  "-L$gauche_archdir $local_libdir")
     ("--ac"  "$gauche_aclocaldir")
-    ("-l"  "-lgauche $gauche_libs")
+    ("-l"  "-l$garchabi $gauche_libs")
     ("--cc"  "$cc")
     ("--reconfigure"  "./configure $gauche_configure_args")
 

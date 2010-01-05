@@ -59,12 +59,15 @@ INCLUDES = -I$(srcdir) -I$(srcdir)/../gc/include @LOCAL_INC@
 RANLIB   = @RANLIB@
 OBJEXT   = @OBJEXT@
 EXEEXT   = @EXEEXT@
+LIBGAUCHE = @LIBGAUCHE@
 SOEXT    = @SHLIB_DYLIB_SUFFIX@
 LINK_HELPER = @LINK_HELPER@
 RPATH_TMP  = @RPATH_TMP@
 RPATH_REAL = @RPATH_REAL@
 SONAME_FLAG = @SONAME_FLAG@
 MAKEVERSLINK = @MAKEVERSLINK@
+GAUCHE_VERSION = @GAUCHE_VERSION@
+GAUCHE_ABI_VERSION = @GAUCHE_ABI_VERSION@
 
 # Main definition of compilation commands
 COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
@@ -73,8 +76,8 @@ CCLD      = $(LINK_HELPER) $(CC)
 LINK      = TARGETLIB=`pwd` $(CCLD) $(CFLAGS) $(RPATH_TMP) -L. $(LDFLAGS)
 RELINK    = TARGETLIB=$(TARGETLIB) $(CCLD) $(CFLAGS) $(RPATH_REAL) -L. $(LDFLAGS)
 INSTALL   = @INSTALL@
-POSTBUILD = TARGETLIB=`pwd` $(MAKEVERSLINK) libgauche.$(SOEXT)
-POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) libgauche.$(SOEXT)
+POSTBUILD = TARGETLIB=`pwd` $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
+POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
 
 PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY
 
@@ -96,13 +99,13 @@ BIN_INSTALL_DIR  = @bindir@
 DATA_INSTALL_DIR = $(datadir)
 
 GAUCHE_DATA_DIR = $(datadir)/gauche
-GAUCHE_ARCH_DIR = @libdir@/gauche
+GAUCHE_ARCH_DIR = @libdir@/gauche-$(GAUCHE_ABI_VERSION)
 
-HEADER_INSTALL_DIR    = $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@/include
-SCM_INSTALL_DIR       = $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@/lib
-ARCH_INSTALL_DIR      = $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@/@host@
+HEADER_INSTALL_DIR    = $(GAUCHE_ARCH_DIR)/$(GAUCHE_VERSION)/include
+SCM_INSTALL_DIR       = $(GAUCHE_DATA_DIR)/$(GAUCHE_VERSION)/lib
+ARCH_INSTALL_DIR      = $(GAUCHE_ARCH_DIR)/$(GAUCHE_VERSION)/@host@
 SITE_SCM_DIR          = $(GAUCHE_DATA_DIR)/site/lib
-SITE_ARCH_DIR         = $(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@/@host@
+SITE_ARCH_DIR         = $(GAUCHE_ARCH_DIR)/site/@host@
 ARCH = @host@
 
 # targetlib is given when we relink the final version of gosh to embed
@@ -132,7 +135,7 @@ INSTALL_SUBHEADERS = \
 	gauche/treemap.h gauche/uthread.h gauche/vector.h gauche/vm.h \
 	gauche/vminsn.h gauche/weak.h gauche/win-compat.h
 
-INSTALL_LIBS = libgauche.$(SOEXT)
+INSTALL_LIBS = $(LIBGAUCHE).$(SOEXT)
 INSTALL_BINS = gosh$(EXEEXT)           \
 	       gauche-config$(EXEEXT)  \
                gauche-install$(EXEEXT) \
@@ -153,10 +156,10 @@ GCLIB = ../gc/libgc.la
 
 gosh_SOURCES = main.c
 gosh_OBJECTS = main.$(OBJEXT)
-gosh_LDADD   = -lgauche
+gosh_LDADD   = -l@LINKGAUCHE@
 gosh_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
 
-libgauche_LIBRARY = libgauche.$(SOEXT)
+libgauche_LIBRARY = $(LIBGAUCHE).$(SOEXT)
 libgauche_OBJECTS = \
         core.$(OBJEXT) vm.$(OBJEXT) compaux.$(OBJEXT) macro.$(OBJEXT) \
 	code.$(OBJEXT) error.$(OBJEXT) class.$(OBJEXT) prof.$(OBJEXT) \
@@ -178,15 +181,15 @@ HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
 OBJECTS = $(libgauche_OBJECTS) $(gosh_OBJECTS)
 
-@CROSS_COMPILING_no@all : libgauche.$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS)
-@CROSS_COMPILING_yes@all : libgauche.$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS) $(host)-gauche-config
+@CROSS_COMPILING_no@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS)
+@CROSS_COMPILING_yes@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS) $(host)-gauche-config
 
-gosh$(EXEEXT) : libgauche.$(SOEXT) $(gosh_OBJECTS) 
+gosh$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_OBJECTS) 
 	@rm -f gosh$(EXEEXT)
 	$(LINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT) $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 
 relink :
-	$(RELINK) $(libgauche_LDFLAGS) libgauche.$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
+	$(RELINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
 	$(RELINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT)  $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 
 $(OBJECTS) : $(HEADERS)
@@ -225,8 +228,8 @@ load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
 
 paths.$(OBJEXT) : getdir_win.c getdir_dummy.c getdir_darwin.c
 
-libgauche.$(SOEXT) : $(libgauche_OBJECTS) $(GCLIB)
-	$(LINK) $(libgauche_LDFLAGS) libgauche.$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
+$(LIBGAUCHE).$(SOEXT) : $(libgauche_OBJECTS) $(GCLIB)
+	$(LINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
 	$(POSTBUILD)
 
 gauche-config$(EXEEXT) : gauche-config.$(OBJEXT)
@@ -278,10 +281,10 @@ test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT)
 	 ./gosh -ftest -fcase-fold -e "(define *case-fold* #t)" ../test/symcase.scm >> test.log
 	@echo "See test.log for details."
 
-test-vmstack$(EXEEXT) : test-vmstack.$(OBJEXT) libgauche.$(SOEXT)
+test-vmstack$(EXEEXT) : test-vmstack.$(OBJEXT) $(LIBGAUCHE).$(SOEXT)
 	$(LINK)	-o test-vmstack$(EXEEXT) test-vmstack.$(OBJEXT) $(gosh_LDADD) $(LIBS)
 
-test-arith$(EXEEXT) : test-arith.$(OBJEXT) libgauche.$(SOEXT)
+test-arith$(EXEEXT) : test-arith.$(OBJEXT) $(LIBGAUCHE).$(SOEXT)
 	$(LINK)	-o test-arith$(EXEEXT) test-arith.$(OBJEXT) $(gosh_LDADD) $(LIBS)
 
 test-arith.$(OBJEXT) : gauche/arith.h
@@ -297,13 +300,13 @@ GENERATED = stdlib.c extlib.c exclib.c syslib.c intlib.c scmlib.c \
 	    objlib.c compile.c autoloads.c builtin-syms.c \
 	    gauche/builtin-syms.h vminsn.c gauche/vminsn.h \
             ../lib/gauche/vm/insn.scm
-CONFIG_GENERATED = Makefile genconfig gauche/config.h
+CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h
 
 clean :
 	rm -rf core core.[0-9]* gosh$(EXEEXT) gauche-config$(EXEEXT) \
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT)   \
 	       $(GENERATED_SCRIPTS) gauche-config.c \
-	       libgauche.$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe \
+	       $(LIBGAUCHE).$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe \
 	       test.log test.dir so_locations gauche/*~ gauche/arch.h \
 	       gauche-config.in.c \
 	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \

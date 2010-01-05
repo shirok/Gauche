@@ -1,10 +1,15 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl $Id: configure.ac,v 1.113 2008-05-26 07:23:48 shirok Exp $
 AC_PREREQ(2.54)
-AC_INIT(Gauche, 0.9, shiro@acm.org)
+AC_INIT(Gauche, 0.9.1_pre1, shiro@acm.org)
 AC_REVISION($Revision: 1.113 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
+
+# ABI_VERSION is set to major.minor of Gauche version by default.
+# It can be overridden by uncommenting the following line.
+# (This may be useful for "prerelease", such as 0.99.x as pre-1.0)
+# GAUCHE_ABI_VERSION=X.Y
 
 dnl ==========================================================
 dnl Process args given to configure
@@ -234,6 +239,46 @@ AC_ARG_ENABLE(framework,
       ;;
     esac
   ], [])
+
+dnl ===========================================================
+dnl Set up version-related macros
+GAUCHE_VERSION=$PACKAGE_VERSION
+AC_SUBST(GAUCHE_VERSION)
+AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
+
+changequote(<<, >>)dnl
+GAUCHE_VERSION_TRUNC=`echo $GAUCHE_VERSION | sed 's/[-_].*//'`
+changequote([, ])dnl
+OLD_IFS=$IFS; IFS="."; set $GAUCHE_VERSION_TRUNC; IFS=$OLD_IFS
+GAUCHE_MAJOR_VERSION=$1
+GAUCHE_MINOR_VERSION=$2
+GAUCHE_MICRO_VERSION=$3
+if test -z "$GAUCHE_MICRO_VERSION"; then GAUCHE_MICRO_VERSION=0; fi
+AC_SUBST(GAUCHE_MAJOR_VERSION)
+AC_SUBST(GAUCHE_MINOR_VERSION)
+AC_SUBST(GAUCHE_MICRO_VERSION)
+AC_DEFINE_UNQUOTED(GAUCHE_MAJOR_VERSION, $GAUCHE_MAJOR_VERSION,[Gauche major version number])
+AC_DEFINE_UNQUOTED(GAUCHE_MINOR_VERSION, $GAUCHE_MINOR_VERSION,[Gauche minor version number])
+AC_DEFINE_UNQUOTED(GAUCHE_MICRO_VERSION, $GAUCHE_MICRO_VERSION,[Gauche patch level number])
+
+if test -z "$GAUCHE_ABI_VERSION"; then
+  GAUCHE_ABI_VERSION="$GAUCHE_MAJOR_VERSION.$GAUCHE_MINOR_VERSION"
+fi
+AC_SUBST(GAUCHE_ABI_VERSION)
+AC_DEFINE_UNQUOTED(GAUCHE_ABI_VERSION, "$GAUCHE_ABI_VERSION")
+
+GAUCHE_SIGNATURE="$GAUCHE_ABI_VERSION,$GAUCHE_CHAR_ENCODING,$GAUCHE_THREAD_TYPE"
+AC_DEFINE_UNQUOTED(GAUCHE_SIGNATURE, "$GAUCHE_SIGNATURE")
+
+LIBGAUCHE=libgauche-$GAUCHE_ABI_VERSION
+AC_SUBST(LIBGAUCHE)
+LINKGAUCHE=gauche-$GAUCHE_ABI_VERSION
+AC_SUBST(LINKGAUCHE)
+
+dnl put the args to the configure in gauche-config script for later use.
+dnl the use of ac_configure_args depends on autoconf 2.52.
+GAUCHE_CONFIGURE_ARGS="`echo ""$ac_configure_args"" | sed 's/[\\""\`\$]/\\\&/g'`"
+AC_SUBST(GAUCHE_CONFIGURE_ARGS)
 
 dnl ==========================================================
 dnl Checks for programs.
@@ -575,12 +620,12 @@ if test -z "$SHLIB_DYLIB_SUFFIX"; then
   SHLIB_DYLIB_SUFFIX=$SHLIB_SO_SUFFIX
 fi
 if test "$SHLIB_OK" = ok; then
-  LIBGAUCHE_SO="libgauche.$SHLIB_DYLIB_SUFFIX"
+  LIBGAUCHE_SO="$LIBGAUCHE.$SHLIB_DYLIB_SUFFIX"
 else
   LIBGAUCHE_SO=
 fi
 if test "$ext_use_libgauche" = yes; then
-  EXT_LIBGAUCHE='-lgauche'
+  EXT_LIBGAUCHE="-l$LINKGAUCHE"
 else
   EXT_LIBGAUCHE=
 fi
@@ -590,7 +635,7 @@ else
   EXT_UVECTOR=
 fi
 if test "$libgauche_version_link" = yes -a "$SHLIB_OK" = ok; then
-  MAKEVERSLINK='./makeverslink'
+  MAKEVERSLINK='$(SHELL) ./makeverslink'
 else
   MAKEVERSLINK=:
 fi
@@ -654,39 +699,12 @@ AC_CACHE_CHECK([linker takes --soname flag], ac_cv_linker_soname_flag, [
                    ac_cv_linker_soname_flag=no)])
 CFLAGS="$cflags_save"
 if test "$ac_cv_linker_soname_flag" = "yes"; then
-  major_version=`echo $PACKAGE_VERSION | sed 's/\..*//'`
-  SONAME_FLAG="-Wl,--soname,libgauche.so.$major_version"
+  SONAME_FLAG="-Wl,--soname,$LIBGAUCHE.so.0.$GAUCHE_MICRO_VERSION"
 fi
 AC_SUBST(SONAME_FLAG)
 
 dnl Sets some optimization flags by heuristics.
 AC_GAUCHE_OPTFLAGS
-
-dnl ===========================================================
-dnl Add version macro
-GAUCHE_VERSION=$PACKAGE_VERSION
-AC_SUBST(GAUCHE_VERSION)
-AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
-
-GAUCHE_SIGNATURE="$GAUCHE_VERSION,$GAUCHE_CHAR_ENCODING,$GAUCHE_THREAD_TYPE"
-AC_DEFINE_UNQUOTED(GAUCHE_SIGNATURE, "$GAUCHE_SIGNATURE")
-
-changequote(<<, >>)dnl
-GAUCHE_VERSION_TRUNC=`echo $GAUCHE_VERSION | sed 's/[-_].*//'`
-changequote([, ])dnl
-OLD_IFS=$IFS; IFS="."; set $GAUCHE_VERSION_TRUNC; IFS=$OLD_IFS
-GAUCHE_MAJOR_VERSION=$1
-GAUCHE_MINOR_VERSION=$2
-GAUCHE_MICRO_VERSION=$3
-if test -z "$GAUCHE_MICRO_VERSION"; then GAUCHE_MICRO_VERSION=0; fi
-AC_DEFINE_UNQUOTED(GAUCHE_MAJOR_VERSION, $GAUCHE_MAJOR_VERSION,[Gauche major version number])
-AC_DEFINE_UNQUOTED(GAUCHE_MINOR_VERSION, $GAUCHE_MINOR_VERSION,[Gauche minor version number])
-AC_DEFINE_UNQUOTED(GAUCHE_MICRO_VERSION, $GAUCHE_MICRO_VERSION,[Gauche patch level number])
-
-dnl put the args to the configure in gauche-config script for later use.
-dnl the use of ac_configure_args depends on autoconf 2.52.
-GAUCHE_CONFIGURE_ARGS="`echo ""$ac_configure_args"" | sed 's/[\\""\`\$]/\\\&/g'`"
-AC_SUBST(GAUCHE_CONFIGURE_ARGS)
 
 dnl ===========================================================
 dnl Tests for extensions
@@ -718,7 +736,7 @@ dnl ===========================================================
 dnl Create output files
 echo $GAUCHE_VERSION > VERSION
 AC_OUTPUT(Makefile
-          src/Makefile src/genconfig
+          src/Makefile src/genconfig src/makeverslink
           lib/Makefile lib/slib.scm
           doc/gosh.1 doc/gauche-config.1 doc/Makefile
           ext/Makefile ext/Makefile.ext

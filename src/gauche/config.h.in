@@ -22,6 +22,9 @@
 /* Define if we use pthreads */
 #undef GAUCHE_USE_PTHREADS
 
+/* Gauche API version string */
+#undef GAUCHE_API_VERSION
+
 /* Gauche version string */
 #undef GAUCHE_VERSION
 
