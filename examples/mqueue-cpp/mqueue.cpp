@@ -10,6 +10,7 @@
 
 #include "mqueue.h"
 #include <functional>
+#include <algorithm>
 
 class MQueue_eq : public unary_function<MQueue*, bool> {
     string name;
