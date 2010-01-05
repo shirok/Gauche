@@ -807,7 +807,7 @@
 ;;; Ordinary programs should never modify *load-path*/*dynamic-load-path*
 ;;; directly.
 (let* ([archdir (gauche-architecture-directory)]
-       [m (rxmatch #/gauche-0\.9\/0\.9[^\/]*\// archdir)]
+       [m (rxmatch #/gauche-0\.9[\/\\]0\.9[^\/\\]*[\/\\]/ archdir)]
        [oldsitedir (string-append (rxmatch-before m)
                                   "gauche/site/0.9/"
                                   (rxmatch-after m))]
@@ -817,8 +817,6 @@
   (set! *dynamic-load-path*
         (append *dynamic-load-path* (list oldsitedir oldarchdir))))
 (let* ([libdir (gauche-library-directory)]
-       [m (rxmatch #/0\.9[^\/]*/ libdir)]
+       [m (rxmatch #/0\.9[^\/\\]*/ libdir)]
        [oldlibdir (string-append (rxmatch-before m)"0.9"(rxmatch-after m))])
   (set! *load-path* (append *load-path* (list oldlibdir))))
-  
-  

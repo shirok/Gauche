@@ -15,7 +15,7 @@ static int get_install_dir(char *buf, int buflen,
     int len;
     const char *mbpath;
     TCHAR path[MAX_PATH];
-    const TCHAR *libname = _T("libgauche.dll");
+    const TCHAR *libname = _T("libgauche-"GAUCHE_ABI_VERSION".dll");
 
     if ((mod = GetModuleHandle(libname)) == NULL) {
         errfn("GetModuleHandle failed");
