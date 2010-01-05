@@ -49,8 +49,10 @@
 (define (get-entropy)
   (or (call-with-input-file "/dev/urandom"
         (lambda (p)
-          (rlet1 v (make-u8vector +esize+ 0)
-            (dotimes [i +esize+] (set! (u8vector-ref v i) (read-byte p)))))
+          (and p
+               (rlet1 v (make-u8vector +esize+ 0)
+                 (dotimes [i +esize+]
+                   (set! (u8vector-ref v i) (read-byte p))))))
         :if-does-not-exist #f)
       (let1 mt (make <mersenne-twister> :seed (* (sys-time) (sys-getpid)))
         (rlet1 v (make-u8vector +esize+ 0)
