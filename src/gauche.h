@@ -656,6 +656,8 @@ typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
 #define SCM_CLASS(obj)        ((ScmClass*)(obj))
 #define SCM_CLASSP(obj)       SCM_ISA(obj, SCM_CLASS_CLASS)
 
+#define SCM_CLASS_NUM_INSTANCE_SLOTS(obj)  SCM_CLASS(obj)->numInstanceSlots
+
 /* Class categories
 
    In C level, there are four categories of classes.  The category of
@@ -663,11 +665,10 @@ typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
 
    SCM_CLASS_BUILTIN
        An instance of this class doesn't have "slots" member (thus
-       cannot be casted to ScmInstance).   From Scheme level, this
-       class cannot be inherited, nor redefined.  In C you can create
-       subclasses, by making sure the subclass' instance structure
-       to include this class's instance structure.  Such "hard-wired"
-       inheritance only forms a tree, i.e. no multiple inheritance.
+       cannot be cast to ScmInstance*).   From Scheme level, this
+       class cannot be redefined.   It cannot be inherited in Scheme
+       code with the standard inheritance mechanism; though it can have
+       subclasses, provided a special allocator and initializer.
 
    SCM_CLASS_ABSTRACT 
        This class is defined in C, but doesn't allowed to create an
@@ -678,15 +679,37 @@ typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
    SCM_CLASS_BASE
        This class is defined in C, and can be subclassed in Scheme.
        An instance of this class must have "slots" member and be
-       able to be casted to ScmInstance.  The instance may have other
+       able to be cast to ScmInstance.  The instance may have other
        C members.  This class cannot be redefined.
 
    SCM_CLASS_SCHEME
-       A Scheme-defined class.  This class should have at most one
-       SCM_CLASS_BASE class in its CPL, except the <object> class,
-       which is always in the CPL of Scheme-defined class.  All other
-       classes in CPL must be either SCM_CLASS_ABSTRACT or
-       SCM_CLASS_SCHEME.  This class can be redefined.
+       A Scheme-defined class.  This class will have one or more
+       SCM_CLASS_BASE classes in its CPL.  Specifically, <object>
+       class is always included in its CPL.  This class can be
+       redefined.
+
+   This classification and its rules are to integrate C structures
+   and Scheme classes.   C structure level inheritance has to be
+   single-inheritance, with the subclass structure including its
+   parent structure.  Scheme level inheritance is more flexible,
+   but for that flexibility it has to have "slots" member in its
+   instance (i.e. it has to be castable to ScmInstance*).
+
+   Here's the basic inheritance rules:
+                   
+   - First, ABSTRACT class can be inserted at any place in the
+     inheritance chain.  It doesn't affect C-level operation.  It is
+     only to add the type information in Scheme-level.
+     In the following rules we ignore ABSTRACT classes.
+
+   - BASE class can be inherited from BASE classes, and its
+     inheritance chain must form a single inheritance.
+
+   - BUILTIN class can be inherited from BUILTIN classes, and
+     its inheritance chain must form a single inheritance
+     
+   - SCHEME class can be inherited from SCHEME or BASE classes.
+     It can inherite from multiple SCHEME and/or BASE classes.
 */
 
 enum {
