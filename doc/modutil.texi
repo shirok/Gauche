@@ -3245,16 +3245,17 @@ of the user cannot be determined, @code{#f} is returned.
 @c COMMON
 @end defun
 
-@defun temporary-directory
+@deffn {Parameter} temporary-directory
 @c EN
-Returns the name of the directory that can be used
-to create a temporary files.   It returns the value of 
+A parameter that keeps the name of the directory that can be used
+to create a temporary files. 
+The default value can be specified by
 the environment variable @code{TMPDIR} if it is defined,
 or @file{/tmp} otherwise.
 @c JP
-一時ファイルを作るのに適したディレクトリ名を返します。
-環境変数@code{TMPDIR}が定義されていればその値を、
-そうでなければ@file{/tmp}を返すようになっています。
+一時ファイルを作るのに適したディレクトリ名を保持しているパラメータです。
+デフォルトの値は環境変数@code{TMPDIR}が定義されていればそれを、
+そうでなければ@file{/tmp}が使われます。
 @c COMMON
 @end defun
 

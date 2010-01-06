@@ -1,5 +1,8 @@
 2010-01-05  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/file/util.scm (temporary-directory): Make this parameter,
+	  for sometimes it is useful to change the temporary directory.
+
 	* src/compile.scm (pass1/open-include-file): Check the platform at
 	  run-time instead of compile-time, since compile.scm is likely to be
 	  pre-compiled on a machine different from the one actually runs it.

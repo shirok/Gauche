@@ -46,6 +46,7 @@
   (use srfi-13)
   (use util.list)
   (use util.match)
+  (use gauche.parameter)
   (use gauche.experimental.lamb)
   (use gauche.experimental.ref)
   (export current-directory directory-list directory-list2 directory-fold
@@ -102,8 +103,8 @@
                         (else (error "bad user" user)))])
     (slot-ref ent 'dir)))
 
-(define (temporary-directory)
-  (or (sys-getenv "TMPDIR") "/tmp"))
+(define temporary-directory
+  (make-parameter (or (sys-getenv "TMPDIR") "/tmp")))
 
 ;; utility for directory-list and directory-list2
 (define (%directory-filter dir pred filter-add-path?)
