@@ -2612,15 +2612,14 @@
 ;; If filename is relative, we try to resolve it with the source file
 ;; if we can figure it out.
 (define (pass1/open-include-file path includer-path)
+  ;; We can't use cond-expand, since a host that compiles this file
+  ;; may not be the same as the host that runs this compiler.
+  (define windows? (assq 'gauche.os.windows (cond-features)))
   ;; NB: we can't depend on file.util.
   (define (absolute-path? path)
-    (cond-expand
-     [gauche.os.windows (#/^[\/\\]|^[A-Za-z]:/ path)]
-     [else              (#/^\// path)]))
+    (if windows? (#/^[\/\\]|^[A-Za-z]:/ path) (#/^\// path)))
   (define (build-path path file)
-    (cond-expand
-     [gauche.os.windows #`",|path|\\,file"]
-     [else              #`",|path|/,file"]))
+    (if windows? #`",|path|\\,file" #`",|path|/,file"))
   (define (check path)
     (any (^s (open-input-file #`",|path|,s" :if-does-not-exist #f))
          (cons "" *load-suffixes*)))

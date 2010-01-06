@@ -1,5 +1,9 @@
 2010-01-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass1/open-include-file): Check the platform at
+	  run-time instead of compile-time, since compile.scm is likely to be
+	  pre-compiled on a machine different from the one actually runs it.
+
 	* src/genconfig.in: Use unique name for temporary file to avoid
 	  race condition when make is run in parallel.
 
