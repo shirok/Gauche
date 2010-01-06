@@ -380,7 +380,7 @@ typedef struct ScmHeaderRec {
 
 /* Here comes the ugly part.  To understand the general idea, just ignore
    GAUCHE_BROKEN_LINKER_WORKAROUND part; except that, it's pretty simple.
-   Every heap allocated object contains (pointer to its class + 3) in its
+   Every heap allocated object contains (pointer to its class + 7) in its
    tag field.  */
 #if !defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
 
@@ -647,7 +647,8 @@ struct ScmClassRec {
                                    otherwise #f */
     ScmInternalMutex mutex;     /* to protect from MT hazard */
     ScmInternalCond cv;         /* wait on this while a class being updated */
-    void   *data;               /* extra data to do nasty trick */
+    void   *data;               /* extra data to do nasty trick.  See the note
+                                   in class.c */
 } SCM_ALIGN8;
 
 typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
