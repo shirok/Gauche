@@ -3257,7 +3257,7 @@ or @file{/tmp} otherwise.
 デフォルトの値は環境変数@code{TMPDIR}が定義されていればそれを、
 そうでなければ@file{/tmp}が使われます。
 @c COMMON
-@end defun
+@end deffn
 
 @defun directory-list path &keyword children? add-path? filter filter-add-path?
 @c EN
