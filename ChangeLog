@@ -1,3 +1,8 @@
+2010-01-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/autoloads.scm: Allow multiple symbols in :macro entry, for
+	  conciseness.
+
 2010-01-05  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm (temporary-directory): Make this parameter,

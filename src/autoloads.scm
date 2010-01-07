@@ -6,6 +6,7 @@
 
 (use srfi-1)
 (use util.list)
+(use util.match)
 (use gauche.cgen)
 
 (define *autoloads* '())
@@ -21,11 +22,11 @@
 (define (register-autoload target path entries)
   (push! *autoloads*
          (list target path
-               (map (lambda (entry)
-                      (if (pair? entry)
-                        (cons (cadr entry) #t) ;; :macro
-                        (cons entry #f)))
-                    entries))))
+               (fold (lambda (entry r)
+                       (match entry
+                         [(:macro . syms) (fold (cut acons <> #t <>) r syms)]
+                         [sym (acons sym #f r)]))
+                     '() entries))))
 
 ;; Emit code
 (define (main args)
@@ -80,41 +81,35 @@
           redefine-class! class-redefinition
           update-direct-subclass! change-object-class)
 
-(autoload gauche.charconv
-          %open-input-file/conv %open-output-file/conv)
+(autoload gauche.charconv %open-input-file/conv %open-output-file/conv)
 
-(autoload "gauche/signal"
-          (:macro with-signal-handlers))
+(autoload "gauche/signal" (:macro with-signal-handlers))
 
-(autoload gauche.modutil
-          (:macro export-if-defined) (:macro use-version))
+(autoload gauche.modutil (:macro export-if-defined use-version))
 
 (autoload gauche.portutil
           port->string port->list port->string-list port->sexp-list
           copy-port port-fold port-fold-right port-for-each port-map 
           port-position-prefix port-tell)
 
-(autoload "gauche/numerical"
-          sinh cosh tanh asinh acosh atanh)
+(autoload "gauche/numerical" sinh cosh tanh asinh acosh atanh)
 
 (autoload "gauche/logical"
           logtest logbit? copy-bit bit-field copy-bit-field
           integer-length)
 
 (autoload "gauche/common-macros"
-          (:macro syntax-error) (:macro syntax-errorf)
-          (:macro push!) (:macro pop!) (:macro inc!) (:macro dec!)
-          (:macro update!)
-          (:macro check-arg) (:macro get-optional) (:macro get-keyword*)
-          (:macro let1) (:macro if-let1) (:macro rlet1)
+          (:macro syntax-error syntax-errorf)
+          (:macro push! pop! inc! dec! update!)
+          (:macro check-arg get-optional get-keyword*)
+          (:macro let1 if-let1 rlet1)
           (:macro let/cc) (:macro begin0) (:macro fluid-let)
           (:macro values-ref)
-          (:macro dotimes) (:macro dolist) (:macro while) (:macro until)
-          (:macro guard) (:macro unwind-protect))
+          (:macro dotimes dolist while until)
+          (:macro guard unwind-protect))
 
 (autoload gauche.regexp
-          (:macro rxmatch-let) (:macro rxmatch-if)
-          (:macro rxmatch-cond) (:macro rxmatch-case))
+          (:macro rxmatch-let rxmatch-if rxmatch-cond rxmatch-case))
 
 (autoload gauche.procedure
           compose .$ complement pa$ map$ for-each$ apply$
@@ -136,7 +131,7 @@
 
 (autoload srfi-0  (:macro cond-expand))
 (autoload srfi-7  (:macro program))
-(autoload srfi-26 (:macro cut) (:macro cute))
+(autoload srfi-26 (:macro cut cute))
 (autoload srfi-31 (:macro rec))
 (autoload srfi-55 (:macro require-extension))
 
@@ -154,8 +149,7 @@
           sys-getgroups sys-getlogin sys-localeconv
           sys-getloadavg)
 
-(autoload gauche.defvalues
-          (:macro define-values) (:macro set!-values))
+(autoload gauche.defvalues (:macro define-values set!-values))
 
 (autoload gauche.stringutil string-split)
 
@@ -187,8 +181,7 @@
 
 (autoload gauche.condutil make-condition-type condition-type?
                           make-condition condition-ref extract-condition
-                          (:macro define-condition-type)
-                          (:macro condition)
+                          (:macro define-condition-type condition)
                           &condition &message &serious &error
                           &i/o-error &i/o-port-error
                           &i/o-read-error &i/o-write-error &i/o-closed-error
