@@ -3487,14 +3487,106 @@ Scheme 定義のクラスは、@code{scheme} というシンボルを持っています。それ以外の
 
 
 @deffn {Generic Function} compute-slots
+@deffnx {Generic Function} compute-get-n-set
+These two generic functions are used to calculate slots
+and its options a class has, during @code{define-class}.
+
+In the @code{initialize} method of a class,
+@code{compute-slots} is called after the class's
+@code{direct-supers}, @code{cpl} and @code{direct-slots} are set.
+It must decide what slots the class should have, and what
+slot options each slot should have, based on those three piece
+of information.  The returned value should have the following
+form, and it is used as the value of the @code{slots} slot of the class.
+
+@example
+<slots> : (<slot-definition> ...)
+<slot-definition> : (<slot-name> . <slot-options>)
+<slot-name> : symbol
+<slot-options> : keyword-value alternating list.
+@end example
+
+After the @code{slots} slot of the class is set by the returned
+value from @code{compute-slots},
+@code{compute-get-n-set} is called for each slot
+to calculate how to access and modify the slot.
+The class and the slot definition are the arguments.
+It must return either one of the followings:
+
+@table @asis
+@item an integer @var{n}
+This slot becomes @var{n}-th instance slot.  This is the only way to
+allocate a slot per instance (however you can make a wrapper
+of existing slot accessor using MOP; details below).
+
+@item a list @code{(@var{get-proc} @var{set-proc} @var{bound?-proc} @var{initializable})}
+The @var{get-proc}, @var{set-proc} and @var{bound?-proc} elements are procedures
+invoked when this slot of an instance is accessed (either via 
+@code{slot-ref}/@code{slot-set!}/@code{slot-bound?}, 
+or an accessor method specified by @code{:getter}/@code{:setter} slot options).
+The value other than @var{get-proc} may be @code{#f}, and can be omitted
+if all the values after it is also @code{#f}.  That is, the simplest
+form of this type of return value is a list of one element,
+@var{get-proc}.
+
+@itemize @bullet
+@item
+When this slot is about to be read, @var{get-proc} is called with
+an argument, the instance.  The returned value of @var{get-proc} is
+the value of the slot.
+
+The procedure may return @code{#<undefined>} to indicate the slot is 
+unbound.  It triggers the @code{slot-unbound} generic function.
+(That is, this type of slot cannot have @code{#<undefined>} as its value.)   
+
+@item
+When this slot is about to be written, @var{set-proc} is called
+with two arguments, the instance and the new value.  It is called
+purely for the side effect; the procedure may change the value
+of other slot of the instance, for example.
+
+If this element is @code{#f} or omitted, the slot becomes read-only; 
+any attempt to write to the slot will raise an error.
+
+@item
+When @code{slot-bound?} is called to check whether the slot of
+an instance is bound, @var{bound?-proc} is called with
+an argument, the instance.  It should return a boolean value
+which will be the result of @code{slot-bound?}.
+
+If this element is @code{#f} or omitted, @code{slot-bound?} will
+call @var{get-proc} and returns true if it returns
+@code{#<undefined>}.
+
+@item
+The last element, @var{initializable}, is a flag that indicates
+whether this slot should be initialized when @code{:init-value}
+or @code{:init-form}.  
+@end itemize
+
+@item A @code{<slot-accessor>} object
+Access to this slot is redirected through the returned
+slot-accessor object.
+@end table
 @end deffn
 
-@deffn {Generic Function} compute-get-n-set
+@deffn {Method} compute-slots (class <class>)
+The standard method walks CPL of @var{class} and gathers
+all direct slots.  If slots with the same name are found,
+the one of a class closer to @var{class} in CPL takes precedence.
+@end deffn
+
+@deffn {Method} compute-get-n-set (class <class>) slot
+The standard processes the slot definition with the following
+slot allocations: @code{:instance}, @code{:class},
+@code{each-subclass} and @code{:virtual}.
 @end deffn
 
 @defun slot-ref-using-accessor obj slot-accessor
 @defunx slot-set-using-accessor obj slot-accessor value
 @end defun
+
+
 
 @node Method instantiation, Customizing method application, Customizing slot access, Metaobject protocol
 @subsection Method instantiation
