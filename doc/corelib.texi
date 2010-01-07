@@ -374,6 +374,31 @@ respectively.  It is an error to pass a non-real number.
 @c COMMON
 @end defun
 
+@defun finite? z
+@defunx infinite? z
+@defunx nan? z
+@c EN
+For real numbers, returns @code{#f} iff the given number
+is finite, infinite, or NaN, respectively.
+
+For non-real complex numbers, @code{finite?} returns @code{#t} iff
+both real and imaginary components are finite, @code{infinite?}
+returns @code{#t} if at least either real or imagnary component
+is infinite, and @code{nan?} returns @code{#t} if at least either
+real or imagnary component is NaN.  (Note: It is incompatible
+to R6RS, in which these procedures must raise an error if
+the given arugment is non-real number.)
+@c JP
+実数に対して、それが有限、無限、NaNであればそれぞれ@code{#t}を返します。
+
+非実数の複素数に対しては、@code{finite?}は実数部と仮数部がともに
+有限なら@code{#t}を、@code{infinite?}は実数部と仮数部の少なくともどちらかが
+無限なら@code{#t}を、@code{nan?}は実数部と仮数部の少なくともどちらかが
+NaNなら@code{#t}を返します。(これはR6RSとは非互換です。R6RSでは
+これらの手続きは引数に非実数の数が与えられた場合はエラーを通知しなければならないからです。)
+@c COMMON
+@end defun
+
 @defun odd? n
 @defunx even? n
 [R5RS]
