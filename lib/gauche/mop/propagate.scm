@@ -37,6 +37,7 @@
 
 (define-module gauche.mop.propagate
   (use srfi-2)
+  (use util.match)
   (export <propagate-meta> <propagate-mixin>)
   )
 (select-module gauche.mop.propagate)
@@ -52,42 +53,28 @@
 ;; (slot-set! (slot-ref obj 'bar) 'foo value).  If a list (bar baz)
 ;; is given, baz is used as the actual slot name instead of foo.
 
-(define-class <propagate-meta> (<class>)
-  ())
+(define-class <propagate-meta> (<class>) ())
 
 (define-method compute-get-n-set ((class <propagate-meta>) slot)
-  (let ((name  (slot-definition-name slot))
-        (alloc (slot-definition-allocation slot)))
+  (let ([name  (slot-definition-name slot)]
+        [alloc (slot-definition-allocation slot)])
     (if (eq? alloc :propagated)
-      (let1 prop (or (slot-definition-option slot :propagate #f)
+      (match (or (slot-definition-option slot :propagate #f)
                      (slot-definition-option slot :propagate-to #f))
-        (cond ((symbol? prop)
-               (list (lambda (o)
-                       (slot-ref (slot-ref-using-class class o prop) name))
-                     (lambda (o v)
-                       (slot-set! (slot-ref-using-class class o prop) name v))
-                     (lambda (o)
-                       (slot-bound? (slot-ref-using-class class o prop) name))))
-              ((and-let* (((list? prop))
-                          ((= (length prop) 2))
-                          (object-slot (car prop))
-                          ((symbol? object-slot))
-                          (real-slot (cadr prop))
-                          ((symbol? real-slot)))
-                 (list (lambda (o)
-                         (slot-ref (slot-ref-using-class class o object-slot)
-                                   real-slot))
-                       (lambda (o v)
-                         (slot-set! (slot-ref-using-class class o object-slot)
-                                    real-slot v))
-                       (lambda (o)
-                         (slot-bound? (slot-ref-using-class class o object-slot)
-                                      real-slot))
-                       )))
-              (else
-               (errorf "bad :propagated slot option value ~s for slot ~s of class ~s"
-                       prop name class))
-              ))
+        [(? symbol? prop)
+         `(,(^o (slot-ref (slot-ref-using-class class o prop) name))
+           ,(^(o v) (slot-set! (slot-ref-using-class class o prop) name v))
+           ,(^o (slot-bound? (slot-ref-using-class class o prop) name)))]
+        [((? symbol? object-slot) (? symbol? real-slot))
+         `(,(^o (slot-ref (slot-ref-using-class class o object-slot)
+                          real-slot))
+           ,(^(o v) (slot-set! (slot-ref-using-class class o object-slot)
+                               real-slot v))
+           ,(^o (slot-bound? (slot-ref-using-class class o object-slot)
+                             real-slot)))]
+        [other
+         (errorf "bad :propagated slot option value ~s for slot ~s of class ~s"
+                 other name class)])
       (next-method))))
 
 ;; convenient to be used as a mixin
