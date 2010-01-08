@@ -3535,9 +3535,9 @@ When this slot is about to be read, @var{get-proc} is called with
 an argument, the instance.  The returned value of @var{get-proc} is
 the value of the slot.
 
-The procedure may return @code{#<undefined>} to indicate the slot is 
+The procedure may return @code{#<undef>} to indicate the slot is 
 unbound.  It triggers the @code{slot-unbound} generic function.
-(That is, this type of slot cannot have @code{#<undefined>} as its value.)   
+(That is, this type of slot cannot have @code{#<undef>} as its value.)   
 
 @item
 When this slot is about to be written, @var{set-proc} is called
@@ -3556,7 +3556,7 @@ which will be the result of @code{slot-bound?}.
 
 If this element is @code{#f} or omitted, @code{slot-bound?} will
 call @var{get-proc} and returns true if it returns
-@code{#<undefined>}.
+@code{#<undef>}.
 
 @item
 The last element, @var{initializable}, is a flag that indicates
