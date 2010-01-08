@@ -35,6 +35,11 @@
 
 ;;; Defines number of useful macros.  This file is to be autoloaded.
 
+;; Note: This file is so fundamental that most other autoloaded files
+;; depend on it.  If you modify this file, be very careful not to depend
+;; on other autoloaded files, since it is easy to create circular
+;; dependency.
+
 (select-module gauche)
 
 ;;; syntax-error
@@ -151,6 +156,21 @@
 
 ;;;-------------------------------------------------------------
 ;;; bind construct
+
+;; ^ == lambda
+(define-syntax ^
+  (syntax-rules ()
+    [(^ formals . body) (lambda formals . body)]))
+
+;; (^x . body) == (lambda (x) . body) where x in #[a-z_]
+;; TODO: need to make 'lambda's hygineic!
+(define-macro (^-generator var)
+  (let ([name (string->symbol (string-append "^" (symbol->string var)))])
+    `(define-macro (,name . body)
+       `(lambda (,',var) ,@body))))
+(define-macro (define-^x . vars)
+  `(begin ,@(map (lambda (x) `(^-generator ,x)) vars)))
+(define-^x _ a b c d e f g h i j k l m n o p q r s t u v w x y z)
 
 (define-syntax let1                     ;single variable bind
   (syntax-rules ()

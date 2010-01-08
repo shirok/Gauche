@@ -1,5 +1,10 @@
 2010-01-07  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/common-macros.scm (^ ^a ...),
+	  lib/gauche/experimental/lamb.scm,
+	  src/autoloads.scm:
+	  Moved ^ and ^x macro from experimental to built-in.
+
 	* src/autoloads.scm: Allow multiple symbols in :macro entry, for
 	  conciseness.
 
