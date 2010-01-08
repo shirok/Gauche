@@ -107,6 +107,9 @@
                          (unwrap-syntax (cadr var&default))
                          (caddr var&default))]
             [else #f]))
+        (and-let* ([var (unwrap-syntax var&default)]
+                   [ (symbol? var) ])
+          (values var (make-keyword var) (undefined)))
         (error "bad binding form in let-keywords" var&default)))
   (define (process-specs specs)
     (let loop ((specs specs)

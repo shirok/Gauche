@@ -1,5 +1,8 @@
 2010-01-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/scmlib.scm (let-keywords, let-keywords*): Allow single variable
+	  without default value, for the consistency with let-optionals*.
+
 	* lib/gauche/common-macros.scm (^ ^a ...),
 	  lib/gauche/experimental/lamb.scm,
 	  src/autoloads.scm:
