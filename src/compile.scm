@@ -2207,7 +2207,7 @@
         intform)
       (let1 g (gensym)
         (pass1/lambda form (append args g)
-                      (pass1/extended-lambda g kargs body)
+                      (pass1/extended-lambda form g kargs body)
                       cenv flag)))))
 
 (define-pass1-syntax (receive form cenv) :gauche
@@ -2235,7 +2235,7 @@
 
 ;; Handles extended lambda list.  garg is a gensymed var that receives
 ;; restarg.
-(define (pass1/extended-lambda garg kargs body)
+(define (pass1/extended-lambda form garg kargs body)
   (define (collect-args xs r)
     (match xs
       [() (values (reverse r) '())]
@@ -2279,10 +2279,14 @@
                           [(o init) `(,o ,init)]
                           [_ (error "illegal optional argument spec in " kargs)])
                         os)]
-            [rest (cond [r] [(null? ks) #f] [else (gensym)])])
-        `(((with-module gauche let-optionals*) ,garg
-           ,(if rest (append binds rest) binds)
-           ,@(expand-key ks (or rest garg) a))))))
+            [rest (or r (gensym))])
+        `(((with-module gauche let-optionals*) ,garg ,(append binds rest)
+           ,@(if (and (not r) (null? ks))
+               ;; TODO: better error message!
+               `((unless (null? ,rest)
+                   (error "too many arguments for" ',form))
+                 (let () ,@(expand-key ks rest a)))
+               (expand-key ks rest a)))))))
   (define (expand-key ks garg a)
     (if (null? ks)
       body

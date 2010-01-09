@@ -1,3 +1,12 @@
+2010-01-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass1/extended-lambda): If :optional spec is given
+	  but not :key nor :rest, and given arguments exceeds maximum number
+	  of optional arguments, signals an error.  It is consistent to
+	  SUBR with :optional args, and also to Common Lisp.
+	  NB: The error message needs to be improved.  Thinking to change that
+	  when we adopt better compilation strategy for optiona arguments.
+
 2010-01-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/scmlib.scm (let-keywords*): Grace period expires; raises an error
