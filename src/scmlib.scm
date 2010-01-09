@@ -92,7 +92,7 @@
   (%let-keywords-rec arg specs body 'let 'errorf))
 
 (define-macro (let-keywords* arg specs . body)
-  (%let-keywords-rec arg specs body 'let* 'warn))
+  (%let-keywords-rec arg specs body 'let* 'errorf))
 
 (define (%let-keywords-rec arg specs body %let %error/warn)
   (define (triplet var&default)

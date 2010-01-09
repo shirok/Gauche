@@ -1,3 +1,8 @@
+2010-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/scmlib.scm (let-keywords*): Grace period expires; raises an error
+	  if unknown keyword is given (see 2007-01-21).
+
 2010-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/scmlib.scm (let-keywords, let-keywords*): Allow single variable
