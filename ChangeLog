@@ -1,5 +1,8 @@
 2010-01-09  Shiro Kawai  <shiro@acm.org>
 
+	* doc/coresyn.texi: officially document extended lambda formals, ^,
+	  and ^c.
+
 	* src/compile.scm (pass1/extended-lambda): If :optional spec is given
 	  but not :key nor :rest, and given arguments exceeds maximum number
 	  of optional arguments, signals an error.  It is consistent to

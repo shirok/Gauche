@@ -466,7 +466,8 @@ if you try to alter a constant string.
 @c NODE  手続きを作る
 
 @defspec lambda formals body @dots{}
-[R5RS]
+@defspecx ^ formals body @dots{}
+[R5RS+]
 @c EN
 Evaluates to a procedure.  The environment in effect when this expression
 is evaluated is stored in the procedure.   When the procedure
@@ -480,38 +481,9 @@ and returns the value(s) of the last expression in the body.
 @c COMMON
 
 @c EN
-@var{Formals} should have one of the following forms:
-@itemize @bullet
-@item
-@code{(@var{variable} @dots{})} : The procedure takes a fixed number of
-arguments.  The actual arguments are bound to the corresponding
-variables.
-@item
-@code{@var{variable}} : The procedure takes any number of arguments.
-The actual arguments are collected to form a new list and bound to
-the variable.
-@item
-@code{(@var{variable_0} @dots{} @var{variable_N-1}. @var{variable_N})} : 
-The procedure takes at least @var{N} arguments.  The actual arguments
-up to @var{N} is bound to the corresponding variables.
-If more than @var{N} arguments are given, the rest arguments are
-collected to form a new list and bound to @var{variable_N}.
-@end itemize
+@code{^} is a concise alias of @code{lambda}.  It is Gauche's extension.
 @c JP
-@var{Formals} は以下のいずれかの形でなければなりません。
-@itemize @bullet
-@item
-@code{(@var{variable} @dots{})} : 手続きは決まった数の引数を取ります。
-実引数がそれぞれ対応する@var{variable}に束縛されます。
-@item
-@code{@var{variable}} : 手続きは不定個の引数を取ります。
-実引数は新しいリストに集められて、そのリストが@var{varible}に束縛されます。
-@item
-@code{(@var{variable_0} @dots{} @var{variable_N-1}. @var{variable_N})} :
-手続きは少なくとも@var{N}個の引数を取ります。@var{N}個までの実引数は対応する@var{variable}
-に束縛されます。@var{N}個を越えた実引数は新しいリストに集められて
-@var{variable_N}に束縛されます。
-@end itemize
+@code{^}は@code{lambda}の短い別名です。これはGauche独自の拡張です。
 @c COMMON
 
 @example
@@ -522,20 +494,349 @@ collected to form a new list and bound to @var{variable_N}.
   @result{} @r{二つの引数を加算する手続き}
 @c COMMON
 
-((lambda (a b) (+ a b)) 1 2)
-  @result{} 3
+((lambda (a b) (+ a b)) 1 2) @result{} 3
+
+((^(a b) (+ a b)) 1 2)       @result{} 3
 @end example
-@end defspec
 
 @c EN
-@emph{Note:} Some Scheme implementations extend the syntax of @var{formals}
-to have notation of optional arguments or keyword arguments, similar to
-CommonLisp's.  Gauche doesn't have such extensions now.
+Gauche also extends R5RS @code{lambda} to take extended syntax in
+@var{formals} to specify optional and keyword arguments easily.
+The same functionality can be written in pure R5RS, with parsing
+variable-length arguments explicitly, but the code tends
+to be longer and verbose.   It is recommended to use extended syntax
+unless you're writing portable code.
 @c JP
-@emph{注:} いくつかのSchemeの実装では@var{formals}の構文を拡張して、
-CommonLispのように省略可能引数やキーワード引数などの表記を可能にしているものが
-あります。Gaucheには今のところそのような拡張はありません。
+Gaucheはまた、@code{lambda}が取る@var{formals}の構文を拡張し、
+省略可能引数やキーワード引数を簡単に指定できるようにしています。
+同じ機能は純粋なR5RSでも、可変長引数を自力で解析することで実現可能ですが、
+コードはより長く冗長になってしまいます。ポータブルなコードを書いているのでなければ
+拡張構文を使った方が良いでしょう。
 @c COMMON
+
+@c EN
+@var{Formals} should have one of the following forms:
+@c JP
+@var{Formals} は以下のいずれかの形でなければなりません。
+@c COMMON
+@itemize @bullet
+@item
+@code{(@var{variable} @dots{})} :
+@c EN
+The procedure takes a fixed number of arguments.
+The actual arguments are bound to the corresponding variables.
+@c JP
+@code{(@var{variable} @dots{})} : 手続きは決まった数の引数を取ります。
+実引数がそれぞれ対応する@var{variable}に束縛されます。
+@c COMMON
+
+@example
+((lambda (a) a) 1)    @result{} 1
+
+((lambda (a) a) 1 2)  @result{} @i{error - wrong number of arguments}
+@end example
+
+@item
+@code{@var{variable}} :
+@c EN
+The procedure takes any number of arguments.
+The actual arguments are collected to form a new list and bound to
+the variable.
+@c JP
+@code{@var{variable}} : 手続きは不定個の引数を取ります。
+実引数は新しいリストに集められて、そのリストが@var{varible}に束縛されます。
+@c COMMON
+
+@example
+((lambda a a) 1 2 3)  @result{} (1 2 3)
+@end example
+
+@item
+@code{(@var{variable_0} @dots{} @var{variable_N-1} . @var{variable_N})} : 
+@c EN
+The procedure takes at least @var{N} arguments.  The actual arguments
+up to @var{N} is bound to the corresponding variables.
+If more than @var{N} arguments are given, the rest arguments are
+collected to form a new list and bound to @var{variable_N}.
+@c JP
+@code{(@var{variable_0} @dots{} @var{variable_N-1}. @var{variable_N})} :
+手続きは少なくとも@var{N}個の引数を取ります。@var{N}個までの実引数は対応する@var{variable}
+に束縛されます。@var{N}個を越えた実引数は新しいリストに集められて
+@var{variable_N}に束縛されます。
+@c COMMON
+
+@example
+((lambda (a b . c) (print "a="a" b="b" c="c)) 1 2 3 4 5)
+ @result{} @r{prints} a=1 b=2 c=(3 4 5)
+@end example
+
+@item
+@code{(@var{variable} @dots{} @var{extended-spec} @dots{})} :
+@c EN
+Extended argument specification.  Zero or more variables that
+specifies required formal arguments, followed
+by an @emph{extended spec}, a list beginning with
+a keyword @code{:optional}, @code{:key} or @code{:rest}.
+
+The @var{extended-spec} part consists of the optional argument spec,
+the keyword argument spec and the rest argument spec.  They can
+appear in any combinations.
+@c JP
+拡張引数指定です。ゼロ個以上の必須引数を示す変数のリストの後に、
+キーワード@code{:optional}、@code{:key}あるいは@code{:rest}で
+始まる@var{extended-spec}が続きます。
+
+@var{extended-spec}は省略可能引数指定、キーワード引数指定、残余引数指定の
+任意の組み合わせにより構成されます。
+@c COMMON
+
+@table @code
+@item :optional @var{optspec} @dots{}
+@c EN
+Specifies optional arguments.  Each @var{optspec} can be either
+one of the following forms:
+@c JP
+省略可能引数を指定します。各@var{optspec}は以下のいずれかの形式です。
+@c COMMON
+
+@example
+@var{variable}
+(@var{variable} @var{init-expr})
+@end example
+
+@c EN
+The @var{variable} names the formal argument, which is bound to
+the value of the actual argument if given, or the value of
+the expression @var{init-expr} otherwise.   If @var{optspec} is just
+a variable, and the actual argument is not given to it, then 
+@var{variable} will be bound to @code{#<undef>}.
+
+The expression @var{init-expr} is only evaluated if the actual
+argument for @var{variable} is not given.  The scope in which
+@var{init-expr} is evaluated includes the preceding formal arguments.
+@c JP
+仮引数@var{variable}は、対応する実引数が与えられればその値に、
+与えられなければ@var{init-expr}を評価した値に束縛されます。
+@var{optspec}が@code{@var{variable}}だけである場合は、
+実引数が省略された時の仮引数の値は@code{#<undef>}になります。
+
+@var{init-expr}は対応する実引数が与えられなかった場合にのみ評価されます。
+@var{init-expr}の評価環境にはこの@var{optspec}に先立つ仮引数が含まれます。
+@c COMMON
+
+@example
+((lambda (a b :optional (c (+ a b))) (list a b c))
+ 1 2)    @result{} (1 2 3)
+
+((lambda (a b :optional (c (+ a b))) (list a b c))
+ 1 2 -1) @result{} (1 2 -1)
+
+((lambda (a b :optional c) (list a b c))
+ 1 2)    @result{} (1 2 #<undef>)
+
+((lambda (:optional (a 0) (b (+ a 1))) (list a b))
+ )       @result{} (0 1)
+@end example
+
+@c EN
+The procedure signals an error if more actual arguments than 
+the number of required and optional arguments are given, unless it also has
+@code{:key} or @code{:rest} argument spec.
+@c JP
+必須引数と省略可能引数の総数よりも多い実引数が渡された場合、
+その手続きが@code{:key}や@code{:rest}引数指定を持っていない限りは
+エラーが通知されます。
+@c COMMON
+
+@example
+((lambda (:optional a b) (list a b)) 1 2 3)
+ @result{} @i{error - too many arguments}
+
+((lambda (:optional a b :rest r) (list a b r)) 1 2 3)
+ @result{} (1 2 (3))
+@end example
+
+@item :key @var{keyspec} @dots{} [:allow-other-keys [@var{variable}]]
+@c EN
+Specifies keyword arguments.  Each @var{keyspec} can be 
+either one of the following forms.
+@c JP
+キーワード引数を指定します。各@var{keyspec}は以下の形式のいずれかです。
+@c COMMON
+
+@example
+@var{variable}
+(@var{variable} @var{init-expr})
+((@var{keyword} @var{variable}) @var{init-expr})
+@end example
+
+@c EN
+The @var{variable} names the formal argument, which is bound to the 
+actual argument given with the keyword of the same name as @var{variable}.
+When the actual argument is not given, @var{init-expr} is evaluated
+and the result is bound to @var{variable} in the second and third form,
+or @code{#<undef>} is bound in the first form.
+@c JP
+仮引数@var{variable}は、実引数に@var{variable}と同名のキーワードによる
+キーワード引数が与えられればその値に、そうでなければ@var{init-expr}を評価
+した値に束縛されます。@var{init-expr}の無い最初の形式では、実引数が
+与えられなければ@var{variable}は@code{#<undef>}に束縛されます。
+@c COMMON
+
+@example
+(define f (lambda (a :key (b (+ a 1)) (c (+ b 1)))
+            (list a b c)))
+
+(f 10)            @result{} (10 11 12)
+(f 10 :b 4)       @result{} (10 4 5)
+(f 10 :c 8)       @result{} (10 11 8)
+(f 10 :c 1 :b 3)  @result{} (10 3 1)
+@end example
+
+@c EN
+With the third form you can name the formal argument differently from
+the keyword to specify the argument.
+@c JP
+三番目の形式では、仮引数の名前とは別に引数を与えるキーワードを指定できます。
+@c COMMON
+
+@example
+((lambda (:key ((:aa a) -1)) a) :aa 2)
+  @result{} 2
+@end example
+
+@c EN
+By default, the procedure with keyword argument spec raises an
+error if a keyword argument with an unrecognized keyword is given.
+Giving @code{:allow-other-keys} in the formals suppresses this behavior.
+If you give @var{variable} after @code{:allow-other-keys},
+the list of unrecognized keywords and their arguments are bound to it.
+Again, see the example below will help to understand the behavior.
+@c JP
+デフォルトでは、キーワード引数指定をもつ手続きは、認識できないキーワード引数が
+与えられた場合にエラーを通知します。仮引数リストに@code{:allow-other-keys}を指定することで、
+この動作を抑制することができます。
+@code{:allow-other-keys}に続いて@var{variable}を与えれば、
+認識できなかったキーワード引数のリストが@var{variable}に束縛されます。
+@c COMMON
+
+@example
+((lambda (:key a) a)
+ :a 1 :b 2)  @result{} @i{error - unknown keyword :b}
+
+((lambda (:key a :allow-other-keys) a)
+ :a 1 :b 2)  @result{} 1
+
+((lambda (:key a :allow-other-keys z) (list a z))
+ :a 1 :b 2)  @result{} (1 (:b 2))
+@end example
+
+@c EN
+When used with @code{:optional} argument spec, the keyword arguments
+are searched after all the optional arguments are bound.
+@c JP
+@code{:optional}引数指定と同時に使われた場合、キーワード引数はすべての
+省略可能引数が束縛された後の実引数リストから探されます。
+@c COMMON
+
+@example
+((lambda (:optional a b :key c) (list a b c))
+ 1 2 :c 3)  @result{} (1 2 3)
+
+((lambda (:optional a b :key c) (list a b c))
+ :c 3)      @result{} (:c 3 #<undef>)
+
+((lambda (:optional a b :key c) (list a b c))
+ 1 :c 3)     @result{} @i{error - keyword list not even}
+@end example
+
+
+@item :rest @var{variable}
+
+@c EN
+Specifies the rest argument.   If specified without @code{:optional}
+argument spec, a list of remaining arguments after required arguments are
+taken is bound to @var{variable}.  If specified with @code{:optional}
+argument spec, the actual arguments are first bound to required and
+all optional arguments, and the remaining arguments are bound to @var{variable}.
+@c JP
+残余引数を指定します。@code{:optional}引数指定が無い場合は、
+必須引数の束縛が済んだ後で残っている実引数のリストが@var{variable}に
+束縛されます。@code{:optional}引数指定がある場合は、
+必須引数とすべての省略可能引数の束縛が済んだ後で残っている実引数の
+リストが@var{variable}に束縛されます。
+@c COMMON
+
+@example
+((lambda (a b :rest z) (list a b z))
+ 1 2 3 4 5)  @result{} (1 2 (3 4 5))
+
+((lambda (a b :optional c d :rest z) (list a b c d z))
+ 1 2 3 4 5)  @result{} (1 2 3 4 (5))
+
+((lambda (a b :optional c d :rest z) (list a b c d z))
+ 1 2 3)      @result{} (1 2 3 #<undef> ())
+@end example
+
+@c EN
+When the rest argument spec is used with the keyword argument spec,
+both accesses the same list of actual argument---the remaining arguments
+after required and optional arguments are taken.
+@c JP
+残余引数指定とキーワード引数指定の両方が与えられた場合、
+両者はともに、必須引数と省略可能引数が処理された後の実引数リストを処理の対象とします。
+@c COMMON
+
+@example
+((lambda (:optional a :rest r :key k) (list a r k))
+ 1 :k 3)  @result{} (1 (:k 3) 3)
+@end example
+
+@end table
+
+@end itemize
+@end defspec
+
+@defmac ^c body @dots{}
+@findex ^_
+@findex ^a
+@findex ^b
+@findex ^d
+@findex ^e
+@findex ^f
+@findex ^g
+@findex ^h
+@findex ^i
+@findex ^j
+@findex ^k
+@findex ^l
+@findex ^m
+@findex ^n
+@findex ^o
+@findex ^p
+@findex ^q
+@findex ^r
+@findex ^s
+@findex ^t
+@findex ^u
+@findex ^v
+@findex ^w
+@findex ^x
+@findex ^y
+@findex ^z
+@c EN
+A shorthand notation of @code{(lambda (@var{c}) @var{body} @dots{})}.
+where @code{c} can be any character in @code{#[_a-z]}.
+@c JP
+@code{(lambda (@var{c}) @var{body} @dots{})}の短縮表記です。
+@code{c}には@code{#[_a-z]}に含まれる任意の一文字が使えます。
+@c COMMON
+
+@example
+(map (^x (* x x)) '(1 2 3 4 5)) @result{} (1 4 9 16 25)
+@end example
+@end defmac
+
 
 @defmac cut expr-or-slot expr-or-slot2 @dots{}
 @defmacx cute expr-or-slot expr-or-slot2 @dots{}
