@@ -454,13 +454,10 @@ ScmClass *Scm_ClassOf(ScmObj obj)
         if (SCM_EOFP(obj))  return SCM_CLASS_EOF_OBJECT;
         if (SCM_UNDEFINEDP(obj)) return SCM_CLASS_UNDEFINED_OBJECT;
         else return SCM_CLASS_UNKNOWN;
-    } else if (SCM_FLONUMP(obj)) {
-        return SCM_CLASS_REAL;
-    } else if (SCM_PAIRP(obj)) {
-        return SCM_CLASS_PAIR;
-    } else {
-        return SCM_CLASS_OF(obj);
     }
+    if (SCM_FLONUMP(obj)) return SCM_CLASS_REAL;
+    if (SCM_PAIRP(obj))   return SCM_CLASS_PAIR;
+    return SCM_CLASS_OF(obj);
 }
 
 /* Returns the pointer of the first base class found in the given
@@ -471,9 +468,7 @@ ScmClass *Scm_BaseClassOf(ScmClass *klass)
     ScmClass **cp = klass->cpa;
     ScmClass *k;
     while ((k = *cp++) != NULL) {
-        if (SCM_CLASS_CATEGORY(k) == SCM_CLASS_BASE) {
-            return k;
-        }
+        if (SCM_CLASS_CATEGORY(k) == SCM_CLASS_BASE) return k;
     }
     return NULL;
 }
