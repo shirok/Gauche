@@ -1,3 +1,9 @@
+2010-01-10  Shiro Kawai  <shiro@acm.org>
+
+	* ext/Makefile.ext.in (GAUCHE_ARCHDIR etc): Reverted not to use
+	  gauche-config, for it caused problem on MinGW, on which gauche-config
+	  returns a pathname relative to the executable.
+
 2010-01-09  Shiro Kawai  <shiro@acm.org>
 
 	* doc/coresyn.texi: officially document extended lambda formals, ^,
