@@ -3488,8 +3488,8 @@ Scheme 定義のクラスは、@code{scheme} というシンボルを持っています。それ以外の
 
 @deffn {Generic Function} compute-slots
 @deffnx {Generic Function} compute-get-n-set
-These two generic functions are used to calculate slots
-and its options a class has, during @code{define-class}.
+These two generic functions are responsible to determine
+what slots a class has, and how each slot is accessed.
 
 In the @code{initialize} method of a class,
 @code{compute-slots} is called after the class's
@@ -3516,8 +3516,17 @@ It must return either one of the followings:
 @table @asis
 @item an integer @var{n}
 This slot becomes @var{n}-th instance slot.  This is the only way to
-allocate a slot per instance (however you can make a wrapper
-of existing slot accessor using MOP; details below).
+allocate a slot per instance.
+
+The base method of @var{compute-get-n-set} keeps track of the current
+number of allocated instance slots in the class's @code{num-instance-slots}
+slot.  It is not recommended for other specialized methods to use or
+change the value of this slot, unless you know a very good reason to
+override the object system behavior in deep down.  Usually it is suffice
+to call @code{next-method} to let the base method reserve an instnace
+slot for you.
+
+See the examples below for modifying instance slot access behaviors.
 
 @item a list @code{(@var{get-proc} @var{set-proc} @var{bound?-proc} @var{initializable})}
 The @var{get-proc}, @var{set-proc} and @var{bound?-proc} elements are procedures
@@ -3566,8 +3575,35 @@ or @code{:init-form}.
 
 @item A @code{<slot-accessor>} object
 Access to this slot is redirected through the returned
-slot-accessor object.
+slot-accessor object.   See below for more on @code{<slot-accessor>}.
 @end table
+
+The value returned by @code{compute-get-n-set} is immediately passed
+to @code{compute-slot-accessor} to create a @emph{slot accessor} object,
+which encapsulates how to access and modify the slot.
+
+After all slot definitions are processed by @code{compute-get-n-set}
+and @code{compute-slot-accessor}, an assoc list of 
+slot names and @code{<slot-accessor>} objects are stored in the
+class's @code{accessors} slot.
+@end deffn
+
+@deffn {Generic Function} compute-slot-accessor
+@deffnx {Method} compute-slot-accessor (class <class>) slot access-specifier
+@var{Access-specifier} is a value returned from
+@code{compute-get-n-set}.  The base method creates an instance
+of @code{<slot-accessor>} that encapsulates how to 
+access the given slot.
+
+Created slot accessor objects are stored (as an assoc list using
+slot names as keys) in the class's @code{accessors} slot.
+Standard slot accessors and mutators, such as @code{slot-ref},
+@code{slot-set!}, @code{slot-bound?}, and the slot accessor
+methods specified in @code{:getter}, @code{:setter} and @code{:accessor}
+slot options, all go through slot accessor object eventually.
+Specifically, those functions and methods first looks up
+the slot accessor object of the desired slot, then calls
+@code{slot-ref-using-accessor} etc.
 @end deffn
 
 @deffn {Method} compute-slots (class <class>)
@@ -3583,8 +3619,127 @@ slot allocations: @code{:instance}, @code{:class},
 @end deffn
 
 @defun slot-ref-using-accessor obj slot-accessor
-@defunx slot-set-using-accessor obj slot-accessor value
+@defunx slot-set-using-accessor! obj slot-accessor value
+@defunx slot-bound-using-accessor? obj slot-accessor
+@defunx slot-initialize-using-accessor! obj slot-accessor initargs
+The low-level slot accessing mechanism.  Every function or
+method that needs to read or write to a slot eventually comes
+down to one of these functions.
+
+Ordinary programs need not call these functions directly.  
+If you ever need to call them, you have to be careful not 
+to grab the reference to @var{slot-accessor} too long; if
+@var{obj}'s class is changed or redefined, @var{slot-accessor}
+can no longer be used.
 @end defun
+
+Here we show a couple of small examples to illustrate how slot access
+protocol can be customized.  You can also look at @code{gauche.mop.*}
+modules (in the source tree, look under @code{lib/gauche/mop/})
+for more examples.
+
+The first example implements the same functionality of
+@code{:virtual} slot allocation.  We add @code{:procedural}
+slot allocation, which adds @code{:ref}, @code{:set!} and @code{:bound?}
+slot options.
+
+@example
+(define-class <procedural-slot-meta> (<class>) ())
+
+(define-method compute-get-n-set ((class <procedural-slot-meta>) slot)
+  (if (eqv? (slot-definition-allocation slot) :procedural)
+    (let ([get-proc   (slot-definition-option slot :ref)]
+          [set-proc   (slot-definition-option slot :set!)]
+          [bound-proc (slot-definition-option slot :bound?)])
+      (list get-proc set-proc bound-proc))
+    (next-method)))
+@end example
+
+A specialized @code{compute-get-n-set} is defined on a metaclass
+@code{<procedural-slot-meta>}.  It checks the slot allocation,
+handles it if it is @code{:procedural}, and delegates other
+slot allocation cases to @code{next-method}.  This is a typical
+way to add new slot allocation by layering.
+
+To use this @code{:procedural} slot, give @code{<procedural-slot-meta>}
+to a @code{:metaclass} argument of @code{define-class}:
+
+@example
+(define-class <temp> ()
+  ((temp-c :init-keyword :temp-c :init-value 0)
+   (temp-f :allocation :procedural
+           :ref   (lambda (o) (+ (*. (ref o 'temp-c) 9/5) 32))
+           :set!  (lambda (o v) 
+                    (set! (ref o 'temp-c) (*. (- v 32) 5/9)))
+           :bound? (lambda (o) (slot-bound? o 'temp-c))))
+  :metaclass <procedural-slot-meta>)
+@end example
+
+An instance of @code{<temp>} keeps a temperature in both
+Celsius and Fahrenheit.  Here's an example interaction.
+
+@example
+gosh> (define T (make <temp>))
+T
+gosh> (d T)
+#<<temp> 0xb6b5c0> is an instance of class <temp>
+slots:
+  temp-c    : 0
+  temp-f    : 32.0
+gosh> (set! (ref T 'temp-c) 100)
+#<undef>
+gosh> (d T)
+#<<temp> 0xb6b5c0> is an instance of class <temp>
+slots:
+  temp-c    : 100
+  temp-f    : 212.0
+gosh> (set! (ref T 'temp-f) 450)
+#<undef>
+gosh> (d T)
+#<<temp> 0xb6b5c0> is an instance of class <temp>
+slots:
+  temp-c    : 232.22222222222223
+  temp-f    : 450.0
+@end example
+
+Our next example is a simpler version of @code{gauche.mop.validator}.
+We add a slot option @code{:filter}, which takes a procedure
+that is applied to a value to be set to the slot.
+
+@example
+(define-class <filter-meta> (<class>) ())
+
+(define-method compute-get-n-set ((class <filter-meta>) slot)
+  (cond [(slot-definition-option slot :filter #f)
+         => (lambda (f)
+              (let1 acc (compute-slot-accessor class slot (next-method))
+                (list (lambda (o) (slot-ref-using-accessor o acc))
+                      (lambda (o v) (slot-set-using-accessor! o acc (f v)))
+                      (lambda (o) (slot-bound-using-accessor? o acc))
+                      #t)))]
+        [else (next-method)]))
+@end example
+
+The trick here is to call @code{next-method} and
+@code{compute-slot-accessor} to calculate the slot accessor
+and wrap it.  See how this metaclass works:
+
+@example
+(define-class <foo> ()
+  ((v :init-value 0 :filter x->number))
+  :metaclass <filter-meta>)
+
+gosh> (define foo (make <foo>))
+foo
+gosh> (ref foo'v)
+0
+gosh> (set! (ref foo'v) "123")
+#<undef>
+gosh> (ref foo'v)
+123
+@end example
+
+
 
 
 
