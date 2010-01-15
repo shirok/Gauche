@@ -5012,7 +5012,10 @@
 (define (global-eq?? sym srcmod modgen)
   (let1 id-gloc (find-binding (find-module srcmod) sym #f)
     (lambda (var)
-      (eq? id-gloc (find-binding (modgen) var #f)))))
+      (eq? id-gloc
+           (if (identifier? var)
+             (find-binding (slot-ref var'module) (slot-ref var'name) #f)
+             (find-binding (modgen) var #f))))))
 
 ;;============================================================
 ;; Initialization
