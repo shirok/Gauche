@@ -1,5 +1,9 @@
 2010-01-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass1/define-inline, pass1/inlinable-lambda):
+	  Factored out the part to save intermediate IForm to $lambda node.
+	  This is to prepare for further aggressive inlining.
+
 	* lib/gauche/record.scm: Added srfi-99/srfi-9 compatible record type.
 	* src/class.c (Scm__AllocateAndInitializeInstance),
 	  src/objlib.scm (%make-record,%make-recordv,%record-ref,%record-set!):

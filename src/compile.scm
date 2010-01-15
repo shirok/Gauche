@@ -1792,34 +1792,20 @@
     [_ (error "syntax-error: malformed define-inline:" form)]))
 
 (define (pass1/define-inline form name formals body cenv)
-  ;; We need to put packed form of $lambda node into the $lambda node
-  ;; itself, which seems to lead to a circular reference, something
-  ;; the current literal dumper can't handle well.  In fact, we don't
-  ;; really need a complete circle---in $lambda's flag slot, we want
-  ;; to find a packed IForm that yields the same $lambda node when unpacked,
-  ;; but the latter $lambda node doesn't need to have a packed IForm
-  ;; in it's flag slot, since that $lambda node is to be inline expanded
-  ;; and dissapear.  So, we first build a $lambda node, pack it,
-  ;; then build another $lambda node which include the packed form of
-  ;; the first $lambda node.
-  (let* ((p1 (pass1/lambda form formals body
-                           (cenv-add-name cenv (variable-name name))
-                           #f))
-         (packed (pack-iform p1))
-         (module  (cenv-module cenv))
-         (p2 (pass1/lambda form formals body
-                           (cenv-add-name cenv (variable-name name))
-                           packed))
-         (dummy-proc (lambda _ (undefined))))
+  (let ([p (pass1/inlinable-lambda form formals body
+                                   (cenv-add-name cenv (variable-name name)))]
+        [module  (cenv-module cenv)]
+        [dummy-proc (lambda _ (undefined))])
     ;; record inliner function for compiler.  this is used only when
     ;; the procedure needs to be inlined in the same compiler unit.
     (%insert-binding module name dummy-proc)
-    (set! (%procedure-inliner dummy-proc) (pass1/inliner-procedure packed))
+    (set! (%procedure-inliner dummy-proc)
+          (pass1/inliner-procedure ($lambda-flag p)))
     ;; define the procedure normally.  the packed form of p1 is included
     ;; in p2, which will eventually be a part of ScmCompiledCode, and
     ;; when executed, it'll be passed to ScmProcedure's inliner field.
     ($define form '(inlinable)
-             (make-identifier (unwrap-syntax name) module '()) p2)))
+             (make-identifier (unwrap-syntax name) module '()) p)))
 
 (define (pass1/inliner-procedure ivec)
   (lambda (form cenv)
@@ -2209,6 +2195,24 @@
         (pass1/lambda form (append args g)
                       (pass1/extended-lambda form g kargs body)
                       cenv flag)))))
+
+(define-pass1-syntax (%inlinable-lambda form cenv) :gauche
+  ;; EXPERIMENTAL
+  ;; This compiles to the same code as lambda, but keeps the intermediate
+  ;; compilation info (a packed IForm) in the resulting procedure.  The info
+  ;; can be used later to inline the procedure.   This feature is splitted
+  ;; from pass1/define-inline, since creating inlinable procedure and defining
+  ;; inlinable binding are different concepts.
+  ;; Ideally we want make all lambdas implicitly inlinable to maximize the
+  ;; chance of inlining.  But currently it takes more time and space to
+  ;; retain extra data, so it's better to be used consciously by the programmer.
+  (match form
+    [(_ formals . body) (pass1/inlinable-lambda form formals body cenv)]
+    [_ (error "syntax-error: malformed inlinable lambda:" form)]))
+
+(define (pass1/inlinable-lambda form formals body cenv)
+  (rlet1 p1 (pass1/lambda form formals body cenv #f)
+    ($lambda-flag-set! p1 (pack-iform p1))))
 
 (define-pass1-syntax (receive form cenv) :gauche
   (match form
