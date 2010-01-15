@@ -184,32 +184,6 @@
 (sys-system "rm -rf test.o")
 
 ;;-----------------------------------------------------------------------
-(test-section "srfi-9")
-(use srfi-9)
-(test-module 'srfi-9)
-
-(define-record-type pare
-  (kons x y)
-  pare?
-  (x kar set-kar!)
-  (y kdr))
-
-(test* "pare kons" #t (pare? (kons 1 2)))
-(test* "pare kons" #f (pare? (cons 1 2)))
-(test* "pare kar" 1 (kar (kons 1 2)))
-(test* "pare kdr" 2 (kdr (kons 1 2)))
-(test* "pare set-kar!" 3 (let ((k (kons 1 2))) (set-kar! k 3) (kar k)))
-
-(define-record-type xpare
-  (xkons y x)
-  xpare?
-  (x kar)
-  (y kdr))
-
-(test* "xpare kons" '(1 . 2)
-       (let ((k (xkons 2 1))) (cons (kar k) (kdr k))))
-
-;;-----------------------------------------------------------------------
 (test-section "srfi-14")
 (use srfi-14)
 (test-module 'srfi-14)

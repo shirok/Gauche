@@ -109,6 +109,10 @@ SCM_CLASS_DECL(Scm_AccessorMethodClass);
 
 SCM_EXTERN ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs);
 SCM_EXTERN ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize);
+SCM_EXTERN ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
+                                                     ScmObj *inits,
+                                                     int numInits,
+                                                     u_long flags);
 SCM_EXTERN ScmObj Scm_ComputeCPL(ScmClass *klass);
 SCM_EXTERN ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf,
                                                ScmObj *argv,

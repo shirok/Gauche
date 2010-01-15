@@ -1163,6 +1163,42 @@ ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
     return obj;
 }
 
+/* A special procedure that shortcuts allocate-instance and initialize
+ * slots directly.
+ * This is mainly used for fast construction of records.  This bypasses
+ * normal MOP initialization steps, so this shouldn't be used casually.
+ */
+ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
+                                          ScmObj *inits, int numInits,
+                                          u_long flags /*reserved*/)
+{
+    int corewords, i;
+    ScmObj obj;
+    ScmObj *slots;
+
+    if (SCM_CLASS_CATEGORY(klass) != SCM_CLASS_BASE
+        && SCM_CLASS_CATEGORY(klass) != SCM_CLASS_SCHEME) {
+        Scm_Error("Scm_AllocateAndInitializeInstance can't be called on "
+                  "this class: %S", SCM_OBJ(klass));
+    }
+
+    /* We allocate an instance and a slot vector at once for speed.
+       It is reasonable optimization, since record classes won't be redefined,
+       and the instances' slot vector will never be replaced.
+       We may provide an another mode to allocate the slot vector separately,
+       using FLAGS argument. */
+    corewords = (klass->coreSize + sizeof(ScmObj)-1)/sizeof(ScmObj);
+    obj = SCM_NEW2(ScmObj, (corewords+klass->numInstanceSlots)*sizeof(ScmObj));
+    SCM_SET_CLASS(obj, klass);
+    slots = ((ScmObj*)obj) + corewords;
+    for (i=0; i<klass->numInstanceSlots; i++) {
+        if (i < numInits) slots[i] = inits[i];
+        else slots[i] = SCM_UNBOUND;
+    }
+    SCM_INSTANCE(obj)->slots = slots;
+    return obj;
+}
+
 /* Invoke class redefinition method */
 static ScmObj instance_class_redefinition(ScmObj obj, ScmClass *old)
 {

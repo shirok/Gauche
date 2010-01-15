@@ -1,3 +1,11 @@
+2010-01-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/record.scm: Added srfi-99/srfi-9 compatible record type.
+	* src/class.c (Scm__AllocateAndInitializeInstance),
+	  src/objlib.scm (%make-record,%make-recordv,%record-ref,%record-set!):
+	  Auxiliary internal procedures to support record type efficiently.
+	* lib/srfi-9.scm: Just extend gauche.record.
+
 2010-01-10  Shiro Kawai  <shiro@acm.org>
 
 	* ext/Makefile.ext.in (GAUCHE_ARCHDIR etc): Reverted not to use

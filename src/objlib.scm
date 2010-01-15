@@ -497,6 +497,30 @@
  (define-cproc instance-slot-set (obj num::<fixnum> value) ::<void>
    Scm_InstanceSlotSet)
 
+ (define-cproc %make-record (klass::<class>
+                             :optarray (inits numinits 10)
+                             :rest rinits)
+   (let* ([obj (Scm__AllocateAndInitializeInstance klass inits numinits 0)])
+     (when (== numinits 10)
+       (let* ([i::int 10])
+         (dolist [init rinits] (Scm_InstanceSlotSet obj (post++ i) init))))
+     (result obj)))
+
+ (define-cproc %make-recordv (klass::<class> argv::<vector>)
+   (let* ([v::ScmObj* (SCM_VECTOR_ELEMENTS argv)]
+          [n::int     (SCM_VECTOR_SIZE argv)])
+     (result (Scm__AllocateAndInitializeInstance klass v n 0))))
+
+ (define-cproc %record-ref (klass::<class> obj k::<fixnum>)
+   (unless (SCM_ISA obj klass)
+     (Scm_Error "%record-ref: instance of %S expected, got %S" klass obj))
+   (result (Scm_InstanceSlotRef obj k)))
+
+ (define-cproc %record-set! (klass::<class> obj k::<fixnum> val) ::<void>
+   (unless (SCM_ISA obj klass)
+     (Scm_Error "%record-set!: instance of %S expected, got %S" klass obj))
+   (Scm_InstanceSlotSet obj k val))
+ 
  (define-cproc touch-instance! (obj) Scm_VMTouchInstance)
  )
 
