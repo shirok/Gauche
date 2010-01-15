@@ -158,6 +158,11 @@
 
 (define (rtd? obj) (is-a? obj <record-meta>))
 
+;; For conciseness.  We need to use macros (for now) to ensure Gauche compiler
+;; optimize the gref away---a kludge not recommended in general.
+(define-macro (%make)  '(with-module gauche.object %make-record))
+(define-macro (%makev) '(with-module gauche.object %make-recordv))
+
 ;; We dispatch by the number of slots to initialize, for fixed-argument
 ;; lambdas can be optimized more easily.
 (define-macro (define-ctor-generator name body-maker rest-maker)
@@ -165,22 +170,24 @@
      (define precalc-args 10)
      (define tmps (map (^_(gensym)) (iota (+ precalc-args 1))))
      `(case ,len
+        [(0) (lambda ()            ((%make) ,rtd))]
+        [(1) (lambda (,(car tmps)) ((%make) ,rtd ,(car tmps)))]
         ,@(map (^n (let1 vars (drop tmps (- precalc-args n -1))
                      `[(,n) (lambda ,vars ,,body-maker)]))
-               (iota 10))
+               (iota (- precalc-args 1) 2))
         [else (lambda (,@(cdr tmps) . ,(car tmps))
                 ,,rest-maker)])))
 
 (define-ctor-generator %gen-default-ctor-body
-  `(%make ,rtd ,@vars)
-  `(apply %make ,rtd ,@(cdr tmps) ,(car tmps)))
+  `((%make) ,rtd ,@vars)
+  `(apply (%make) ,rtd ,@(cdr tmps) ,(car tmps)))
 
 (define-ctor-generator %gen-custom-ctor-body
   (let1 argv (gensym)
     `(let1 ,argv (make-vector nfields)
        ,@(map-with-index (^(i v) `(vector-set! ,argv (vector-ref mapvec ,i) ,v))
                          vars)
-       (%makev ,rtd ,argv)))
+       ((%makev) ,rtd ,argv)))
   (let ([argv (gensym)] [i (gensym)] [restvar (car tmps)])
     `(let1 ,argv (make-vector nfields)
        ,@(map-with-index (^(i v) `(vector-set! ,argv (vector-ref mapvec ,i) ,v))
@@ -189,7 +196,7 @@
             [,i ,precalc-args (+ ,i 1)])
            [(null? ,restvar)]
          (vector-set! ,argv (vector-ref mapvec ,i) (car ,restvar)))
-       (%makev ,rtd ,argv))))
+       ((%makev) ,rtd ,argv))))
 
 ;; Returns a vector where V[k] = i means k-th argument of the constructor
 ;; initializes i-th field.
@@ -201,8 +208,6 @@
             fieldspecs)))
 
 (define (rtd-constructor rtd :optional fieldspecs)
-  (define %make  (with-module gauche.object %make-record))
-  (define %makev (with-module gauche.object %make-recordv))
   (%check-rtd rtd)
   (if (undefined? fieldspecs)
     (%gen-default-ctor-body rtd (length (slot-ref rtd'slots)))
@@ -211,7 +216,7 @@
             [nfields (vector-length all-names)])
         (%gen-custom-ctor-body rtd (vector-length fieldspecs))))))
 
-(define (rtd-predicate rtd) (%check-rtd rtd) (^o (is-a? o rtd)))
+(define (rtd-predicate rtd) (^o (is-a? o rtd)))
 
 (define (rtd-accessor rtd field)
   (%check-rtd rtd)
