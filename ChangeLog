@@ -1,3 +1,8 @@
+2010-01-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (transparent?/rec): Treat $GREF of inlinable
+	  bindings as referentially trasparent.
+
 2010-01-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/link-dylib: Adjust install_name according to the ABI version

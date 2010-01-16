@@ -1277,6 +1277,7 @@
   (case/unquote
    (iform-tag iform)
    [($LREF)   (zero? (lvar-set-count ($lref-lvar iform)))]
+   [($GREF)   (gref-inlinable-gloc iform)]
    [($CONST)  #t]
    [($IF)     (and (transparent?/rec ($if-test iform) labels)
                    (transparent?/rec ($if-then iform) labels)
