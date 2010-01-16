@@ -4,7 +4,8 @@
 CCLD=$1
 shift
 if echo "$*" | grep dynamiclib > /dev/null 2>&1 ; then
-  $CCLD -install_name ${TARGETLIB}/libgauche.dylib "$@"
+  libname=`echo "$*" | sed -n 's/.*-o  *\(libgauche-[0-9.]*\.dylib\).*/\1/p'`
+  $CCLD -install_name ${TARGETLIB}/${libname} "$@"
 else
   $CCLD "$@"
 fi

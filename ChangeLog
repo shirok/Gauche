@@ -1,5 +1,8 @@
 2010-01-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/link-dylib: Adjust install_name according to the ABI version
+	  (patch from Tatsuya BIZENN).
+
 	* src/compile.scm (pass1/define-inline, pass1/inlinable-lambda):
 	  Factored out the part to save intermediate IForm to $lambda node.
 	  This is to prepare for further aggressive inlining.
