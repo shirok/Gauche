@@ -61,7 +61,7 @@
 ;;;     - Macros and global inlinable functions are expanded.
 ;;;     - Global constant variables are substituted to its value.
 ;;;     - Variable bindings are resolved.  Local variables are marked
-;;;       according to its usage.
+;;;       according to its usage (# of reference count and set count).
 ;;;     - Constant expressons are folded.
 ;;;
 ;;;   Pass 2 (Optimization):
@@ -1827,30 +1827,30 @@
 (define-pass1-syntax (let-syntax form cenv) :null
   (match form
     [(_ ((name trans-spec) ...) body ...)
-     (let* ((trans (map (match-lambda*
+     (let* ([trans (map (match-lambda*
                           [(n ('syntax-rules (lit ...) rule ...))
                            (compile-syntax-rules n lit rule
                                                  (cenv-module cenv)
                                                  (cenv-frames cenv))]
                           [_ (error "syntax-error: malformed transformer-spec:"
                                     spec)])
-                        name trans-spec))
-            (newenv (cenv-extend cenv (%map-cons name trans) SYNTAX)))
+                        name trans-spec)]
+            [newenv (cenv-extend cenv (%map-cons name trans) SYNTAX)])
        (pass1/body body newenv))]
     [_ (error "syntax-error: malformed let-syntax:" form)]))
 
 (define-pass1-syntax (letrec-syntax form cenv) :null
   (match form
     [(_ ((name trans-spec) ...) body ...)
-     (let* ((newenv (cenv-extend cenv (%map-cons name trans-spec) SYNTAX))
-            (trans (map (match-lambda*
+     (let* ([newenv (cenv-extend cenv (%map-cons name trans-spec) SYNTAX)]
+            [trans (map (match-lambda*
                           [(n ('syntax-rules (lit ...) rule ...))
                            (compile-syntax-rules n lit rule
                                                  (cenv-module cenv)
                                                  (cenv-frames newenv))]
                           [_ (error "syntax-error: malformed transformer-spec:"
                                     spec)])
-                        name trans-spec)))
+                        name trans-spec)])
        (for-each set-cdr! (cdar (cenv-frames newenv)) trans)
        (pass1/body body newenv))]
     [_ (error "syntax-error: malformed letrec-syntax:" form)]))
@@ -1916,8 +1916,8 @@
        ($seq (imap (cut pass1 <> cenv) exprs))]
       ;; (test => proc)
       [((test [? (cut global-eq? <> '=> cenv)] proc) . rest)
-       (let ((test (pass1 test cenv))
-             (tmp (make-lvar 'tmp)))
+       (let ([test (pass1 test cenv)]
+             [tmp (make-lvar 'tmp)])
          (lvar-initval-set! tmp test)
          ($let (car cls) 'let
                (list tmp)
@@ -1974,8 +1974,8 @@
          ;; (else . exprs)
          [_ ($seq (imap (cut pass1 <> cenv) exprs))])]
       [((elts exprs ...) . rest)
-       (let ((nelts (length elts))
-             (elts  (map unwrap-syntax elts)))
+       (let ([nelts (length elts)]
+             [elts  (map unwrap-syntax elts)])
          (unless (> nelts 0) (error "syntax-error: bad clause in case:" form))
          ($if (car cls)
               (if (> nelts 1)
@@ -1998,8 +1998,8 @@
     [(_)
      (error "syntax-error: at least one clause is required for case:" form)]
     [(_ expr clause ...)
-     (let* ((etree (pass1 expr cenv))
-            (tmp (make-lvar 'tmp)))
+     (let* ([etree (pass1 expr cenv)]
+            [tmp (make-lvar 'tmp)])
        (lvar-initval-set! tmp etree)
        ($let form 'let
              (list tmp)
@@ -2143,15 +2143,15 @@
     (if (vector-has-splicing? obj)
       (receive (c? r) (quasi (vector->list obj) level)
         (values #f ($list->vector obj (wrap c? r))))
-      (let* ((need-construct? #f)
-             (elts (map (lambda (elt)
+      (let* ([need-construct? #f]
+             [elts (map (lambda (elt)
                           (receive (c? tree) (quasi elt level)
                             (if c?
                               ($const tree)
                               (begin
                                 (set! need-construct? #t)
                                 tree))))
-                        (vector->list obj))))
+                        (vector->list obj))])
         (if need-construct?
           (values #f ($vector obj elts))
           (values #t (list->vector (map (lambda (e) ($const-value e)) elts))))
@@ -2184,11 +2184,11 @@
 (define (pass1/lambda form formals body cenv flag)
   (receive (args reqargs optarg kargs) (parse-lambda-args formals)
     (if (null? kargs)
-      (let* ((lvars (imap make-lvar+ args))
-             (intform ($lambda form (cenv-exp-name cenv)
-                               reqargs optarg lvars #f flag))
-             (newenv (cenv-extend/proc cenv (%map-cons args lvars)
-                                       LEXICAL intform)))
+      (let* ([lvars (imap make-lvar+ args)]
+             [intform ($lambda form (cenv-exp-name cenv)
+                               reqargs optarg lvars #f flag)]
+             [newenv (cenv-extend/proc cenv (%map-cons args lvars)
+                                       LEXICAL intform)])
         (vector-set! intform 6 (pass1/body body newenv))
         intform)
       (let1 g (gensym)
@@ -2314,8 +2314,8 @@
     [(_ () body ...)
      (pass1/body body cenv)]
     [(_ ((var expr) ...) body ...)
-     (let* ((lvars (imap make-lvar+ var))
-            (newenv (cenv-extend cenv (%map-cons var lvars) LEXICAL)))
+     (let* ([lvars (imap make-lvar+ var)]
+            [newenv (cenv-extend cenv (%map-cons var lvars) LEXICAL)])
        ($let form 'let lvars
              (map (lambda (init lvar)
                     (rlet1 iexpr
@@ -2338,13 +2338,13 @@
      ;;
      ;;  The reason is that this form can be more easily spotted by
      ;;  our simple-minded closure optimizer in Pass 2.
-     (let ((lvar (make-lvar name))
-           (args (imap make-lvar+ var))
-           (argenv (cenv-sans-name cenv)))
-       (let* ((env1 (cenv-extend cenv `((,name . ,lvar)) LEXICAL))
-              (env2 (cenv-extend/name env1 (%map-cons var args) LEXICAL name))
-              (lmda ($lambda form name (length args) 0 args
-                             (pass1/body body env2))))
+     (let ([lvar (make-lvar name)]
+           [args (imap make-lvar+ var)]
+           [argenv (cenv-sans-name cenv)])
+       (let* ([env1 (cenv-extend cenv `((,name . ,lvar)) LEXICAL)]
+              [env2 (cenv-extend/name env1 (%map-cons var args) LEXICAL name)]
+              [lmda ($lambda form name (length args) 0 args
+                             (pass1/body body env2))])
          (lvar-initval-set! lvar lmda)
          ($let form 'rec
                (list lvar)
@@ -2356,13 +2356,12 @@
 (define-pass1-syntax (let* form cenv) :null
   (match form
     [(_ ((var expr) ...) body ...)
-     (let loop ((vars var) (inits expr) (cenv cenv))
+     (let loop ([vars var] [inits expr] [cenv cenv])
        (if (null? vars)
          (pass1/body body cenv)
-         (let* ((lv (make-lvar (car vars)))
-                (newenv (cenv-extend cenv `((,(car vars) . ,lv)) LEXICAL))
-                (iexpr (pass1 (car inits)
-                              (cenv-add-name cenv (car vars)))))
+         (let* ([lv (make-lvar (car vars))]
+                [newenv (cenv-extend cenv `((,(car vars) . ,lv)) LEXICAL)]
+                [iexpr (pass1 (car inits) (cenv-add-name cenv (car vars)))])
            (lvar-initval-set! lv iexpr)
            ($let #f 'let (list lv) (list iexpr)
                  (loop (cdr vars) (cdr inits) newenv)))))]
@@ -2395,10 +2394,11 @@
 (define-pass1-syntax (do form cenv) :null
   (match form
     [(_ ((var init . update) ...) (test expr ...) body ...)
-     (let* ((tmp  (make-lvar 'do-proc))
-            (args (imap make-lvar+ var))
-            (newenv (cenv-extend/proc cenv (%map-cons var args) LEXICAL 'do-proc))
-            (clo ($lambda
+     (let* ([tmp  (make-lvar 'do-proc)]
+            [args (imap make-lvar+ var)]
+            [newenv (cenv-extend/proc cenv (%map-cons var args)
+                                      LEXICAL 'do-proc)]
+            [clo ($lambda
                   form 'do-body (length var) 0 args
                   ($if #f
                        (pass1 test newenv)
@@ -2415,8 +2415,7 @@
                                        [((expr) _) (pass1 expr newenv)]
                                        [_ (error "bad update expr in do:" form)])
                                      update args)))))
-                  #f))
-            )
+                  #f)])
        (lvar-initval-set! tmp clo)
        ($let form 'rec
              (list tmp)
@@ -2441,8 +2440,8 @@
     [(_ name expr)
      (unless (variable? name)
        (error "syntax-error: malformed set!:" form))
-     (let ((var (cenv-lookup cenv name LEXICAL))
-           (val (pass1 expr cenv)))
+     (let ([var (cenv-lookup cenv name LEXICAL)]
+           [val (pass1 expr cenv)])
        (if (lvar? var)
          ($lset var val)
          ($gset (ensure-identifier var cenv) val)))]
@@ -2471,16 +2470,16 @@
   (check-toplevel form cenv)
   (match form
     [(_ name body ...)
-     (let* ((mod (ensure-module name 'define-module #t))
-            (newenv (make-bottom-cenv mod)))
+     (let* ([mod (ensure-module name 'define-module #t)]
+            [newenv (make-bottom-cenv mod)])
        ($seq (imap (cut pass1 <> newenv) body)))]
     [_ (error "syntax-error: malformed define-module:" form)]))
 
 (define-pass1-syntax (with-module form cenv) :gauche
   (match form
     [(_ name body ...)
-     (let* ((mod (ensure-module name 'with-module #f))
-            (newenv (cenv-swap-module cenv mod)))
+     (let* ([mod (ensure-module name 'with-module #f)]
+            [newenv (cenv-swap-module cenv mod)])
        ($seq (imap (cut pass1 <> newenv) body)))]
     [_ (error "syntax-error: malformed with-module:" form)]))
 
@@ -2883,7 +2882,7 @@
            iform])))
 
 (define (pass2/remove-unused-lvars lvars inits)
-  (let loop ((lvars lvars) (inits inits) (rl '()) (ri '()) (rr '()))
+  (let loop ([lvars lvars] [inits inits] [rl '()] [ri '()] [rr '()])
     (cond [(null? lvars)
            (values (reverse rl) (reverse ri) (reverse rr))]
           [(and (zero? (lvar-ref-count (car lvars)))
@@ -2980,41 +2979,37 @@
 ;; REC if the call is across the closure boundary.
 (define (pass2/classify-calls call&envs lambda-node)
   (define (direct-call? env)
-    (let loop ((env env))
+    (let loop ([env env])
       (cond [(null? env) #t]
             [(eq? (car env) lambda-node) #t]
             [(eq? ($lambda-flag (car env)) 'dissolved)
              (loop (cdr env))] ;; skip dissolved (inlined) lambdas
             [else #f])))
-  (let loop ((call&envs call&envs)
-             (local '())
-             (rec '())
-             (trec '()))
+  (let loop ([call&envs call&envs]
+             [local '()]
+             [rec '()]
+             [trec '()])
     (match call&envs
-      [()
-       (values local rec trec)]
+      [() (values local rec trec)]
       [((call . env) . more)
        (case ($call-flag call)
-         [(tail-rec)
-          (if (direct-call? env)
-            (loop more local rec (cons call trec))
-            (loop more local (cons call rec) trec))]
-         [(rec) (loop more local (cons call rec) trec)]
-         [else  (loop more (cons call local) rec trec)])])
-    ))
+         [(tail-rec) (if (direct-call? env)
+                       (loop more local rec (cons call trec))
+                       (loop more local (cons call rec) trec))]
+         [(rec)      (loop more local (cons call rec) trec)]
+         [else       (loop more (cons call local) rec trec)])])))
 
 ;; Set up local calls to LAMBDA-NODE.  Marking $call node as 'local
 ;; lets pass3 to generate LOCAL-ENV-CALL instruction.
 (define (pass2/local-call-optimizer lvar lambda-node)
-  (let ((reqargs ($lambda-reqargs lambda-node))
-        (optarg  ($lambda-optarg lambda-node))
-        (name    ($lambda-name lambda-node))
-        (calls   ($lambda-calls lambda-node)))
-    (dolist (call calls)
-      ($call-args-set! (car call)
-                       (adjust-arglist reqargs optarg
-                                       ($call-args (car call))
-                                       name))
+  (let ([nreqs ($lambda-reqargs lambda-node)]
+        [nopts ($lambda-optarg lambda-node)]
+        [name  ($lambda-name lambda-node)]
+        [calls ($lambda-calls lambda-node)])
+    (dolist [call calls]
+      ($call-args-set! (car call) (adjust-arglist nreqs nopts
+                                                  ($call-args (car call))
+                                                  name))
       ($call-flag-set! (car call) 'local))
     ;; We clear the calls list, just in case if the lambda-node is
     ;; traversed more than once.
@@ -3024,12 +3019,10 @@
 ;; and can be embedded.
 ;; NB: this operation introduces a shared/circular structure in the IForm.
 (define (pass2/local-call-embedder lvar lambda-node call rec-calls)
-  (let ((reqargs ($lambda-reqargs lambda-node))
-        (optarg  ($lambda-optarg lambda-node))
-        (name    ($lambda-name lambda-node))
-        )
-    ($call-args-set! call (adjust-arglist reqargs optarg ($call-args call)
-                                          name))
+  (let ([nreqs ($lambda-reqargs lambda-node)]
+        [nopts ($lambda-optarg lambda-node)]
+        [name  ($lambda-name lambda-node)])
+    ($call-args-set! call (adjust-arglist nreqs nopts ($call-args call) name))
     (lvar-ref--! lvar)
     ($call-flag-set! call 'embed)
     ($call-proc-set! call lambda-node)
@@ -3037,10 +3030,9 @@
     ($lambda-body-set! lambda-node ($label ($lambda-src lambda-node) #f
                                            ($lambda-body lambda-node)))
     (unless (null? rec-calls)
-      (dolist (jcall rec-calls)
+      (dolist [jcall rec-calls]
         (lvar-ref--! lvar)
-        ($call-args-set! jcall (adjust-arglist reqargs optarg
-                                               ($call-args jcall)
+        ($call-args-set! jcall (adjust-arglist nreqs nopts ($call-args jcall)
                                                name))
         ($call-proc-set! jcall call)
         ($call-flag-set! jcall 'jump)))))
@@ -3065,7 +3057,7 @@
   
   (lvar-ref-count-set! lvar 0)
   ($lambda-flag-set! lambda-node 'dissolved)
-  (let loop ((calls calls))
+  (let loop ([calls calls])
     (cond [(null? (cdr calls))
            (inline-it (car calls) lambda-node)]
           [else
@@ -3094,8 +3086,8 @@
 (define (pass2/$SEQ iform penv tail?)
   (if (null? ($seq-body iform))
     iform
-    (let loop ((body ($seq-body iform))
-               (r '()))
+    (let loop ([body ($seq-body iform)]
+               [r '()])
       (cond [(null? (cdr body))
              ($seq-body-set! iform
                              (reverse (cons (pass2/rec (car body) penv tail?)
@@ -3144,8 +3136,8 @@
    [else
     ;; scan OP first to give an opportunity of variable renaming
     ($call-proc-set! iform (pass2/rec ($call-proc iform) penv #f))
-    (let ((proc ($call-proc iform))
-          (args ($call-args iform)))
+    (let ([proc ($call-proc iform)]
+          [args ($call-args iform)])
       (cond
        [(vm-compiler-flag-noinline-locals?)
         ($call-args-set! iform (imap (cut pass2/rec <> penv #f) args))
@@ -3646,7 +3638,7 @@
 ;; Pass 3.  Code generation
 ;;
 
-;; This pass pushes down a runtime environment, renv.  It is
+;; This pass passes down a runtime environment, renv.  It is
 ;; a nested list of lvars, and used to generate LREF/LSET instructions.
 ;; 
 ;; The context, ctx, is either one of the following symbols.
