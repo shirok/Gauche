@@ -1709,19 +1709,19 @@
 
 ;; Definitions ........................................
 
-(define (pass1/define form oform flags module cenv)
-  (check-toplevel oform cenv)
-  (match form
-    [(_ (name . args) body ...)
-     (pass1/define `(define ,name (,lambda. ,args ,@body))
-                   oform flags module cenv)]
-    [(_ name expr)
-     (unless (variable? name) (error "syntax-error:" oform))
-     (let1 cenv (cenv-add-name cenv (variable-name name))
-       ($define oform flags
-                (make-identifier (unwrap-syntax name) module '())
-                (pass1 expr cenv)))]
-    [_ (error "syntax-error:" oform)]))
+;; Note on constant binding and inlinable binding:
+;;   define-constant and define-inline both create a binding that
+;;   is not supposed to be altered, but they have slightly different
+;;   semantics.   Define-constant binds a global variable to a value that
+;;   is computable at compile time, and serializable to a precompiled
+;;   file.  When the compiler sees a global variable reference with
+;;   a constant binding, it replaces the reference to the value itself
+;;   at pass 1.  Define-inline can bind a variable to a value that is
+;;   calculated at runtime.  The compiler does not replace the variable
+;;   references with values, but it freely rearranges the rerences within
+;;   the source code.  If an inlinable binding is used at the head position,
+;;   the compiler looks at its value, and if it is known to be bound to
+;;   an inlinable procedure, the procedure's body is inlined.
 
 (define-pass1-syntax (define form cenv) :null
   (pass1/define form form '() (cenv-module cenv) cenv))
@@ -1737,41 +1737,19 @@
                    cenv)]
     [_ (error "syntax-error: malformed define-in-module:" form)]))
 
-(define (pass1/define-macro form oform module cenv)
+(define (pass1/define form oform flags module cenv)
   (check-toplevel oform cenv)
   (match form
-    [(_ (name . formals) body ...)
-     (let1 trans
-         (make-macro-transformer name
-                                 (compile-toplevel-lambda form name formals
-                                                          body module))
-       (%insert-binding module name trans)
-       ($const-undef))]
+    [(_ (name . args) body ...)
+     (pass1/define `(define ,name (,lambda. ,args ,@body))
+                   oform flags module cenv)]
     [(_ name expr)
      (unless (variable? name) (error "syntax-error:" oform))
-     ;; TODO: macro autoload
-     (let1 trans (make-macro-transformer name (eval expr module))
-       (%insert-binding module name trans)
-       ($const-undef))]
+     (let1 cenv (cenv-add-name cenv (variable-name name))
+       ($define oform flags
+                (make-identifier (unwrap-syntax name) module '())
+                (pass1 expr cenv)))]
     [_ (error "syntax-error:" oform)]))
-
-(define-pass1-syntax (define-macro form cenv) :gauche
-  (check-toplevel form cenv)
-  (pass1/define-macro form form (cenv-module cenv) cenv))
-
-
-(define-pass1-syntax (define-syntax form cenv) :null
-  (check-toplevel form cenv)
-  ;; Temporary: we use the old compiler's syntax-rules implementation
-  ;; for the time being.
-  (match form
-    [(_ name ('syntax-rules (literal ...) rule ...))
-     (let1 transformer
-         (compile-syntax-rules name literal rule
-                               (cenv-module cenv) (cenv-frames cenv))
-       (%insert-binding (cenv-module cenv) name transformer)
-       ($const-undef))]
-    [_ (error "syntax-error: malformed define-syntax:" form)]))
 
 ;; Inlinable procedure.
 ;;   Inlinable procedure has both properties of a macro and a procedure.
@@ -1811,6 +1789,43 @@
   (lambda (form cenv)
     (expand-inlined-procedure form (unpack-iform ivec)
                               (imap (cut pass1 <> cenv) (cdr form)))))
+
+;; Toplevel macro definitions
+
+(define-pass1-syntax (define-macro form cenv) :gauche
+  (check-toplevel form cenv)
+  (pass1/define-macro form form (cenv-module cenv) cenv))
+
+(define (pass1/define-macro form oform module cenv)
+  (check-toplevel oform cenv)
+  (match form
+    [(_ (name . formals) body ...)
+     (let1 trans
+         (make-macro-transformer name
+                                 (compile-toplevel-lambda form name formals
+                                                          body module))
+       (%insert-binding module name trans)
+       ($const-undef))]
+    [(_ name expr)
+     (unless (variable? name) (error "syntax-error:" oform))
+     ;; TODO: macro autoload
+     (let1 trans (make-macro-transformer name (eval expr module))
+       (%insert-binding module name trans)
+       ($const-undef))]
+    [_ (error "syntax-error:" oform)]))
+
+(define-pass1-syntax (define-syntax form cenv) :null
+  (check-toplevel form cenv)
+  ;; Temporary: we use the old compiler's syntax-rules implementation
+  ;; for the time being.
+  (match form
+    [(_ name ('syntax-rules (literal ...) rule ...))
+     (let1 transformer
+         (compile-syntax-rules name literal rule
+                               (cenv-module cenv) (cenv-frames cenv))
+       (%insert-binding (cenv-module cenv) name transformer)
+       ($const-undef))]
+    [_ (error "syntax-error: malformed define-syntax:" form)]))
 
 ;; Macros ...........................................
 
@@ -2800,6 +2815,18 @@
                (lvar-ref++! ($lref-lvar initval))
                ($lref-lvar-set! iform ($lref-lvar initval))
                (pass2/lref-eliminate iform)]
+              ;; Generally we can't reorder $GREF, since it may change
+              ;; the semantics (the value of the variable may be altered,
+              ;; or it raises an unbound error).  However, if $GREF refers to
+              ;; an inlinable binding, we can assume it is bound and its
+              ;; value won't be changed.  NB: Constant bindings are already
+              ;; dissolved in pass1, so we don't need to consider it.
+              [(and (has-tag? initval $GREF)
+                    (gref-inlinable-gloc initval))
+               (lvar-ref--! lvar)
+               (vector-set! iform 0 $GREF)
+               ($gref-id-set! iform ($gref-id initval))
+               iform]
               [else iform]))
       iform)))
 
@@ -2874,11 +2901,9 @@
            (unless (null? removed-inits)
              (if (has-tag? obody $SEQ)
                ($seq-body-set! obody
-                               (append! removed-inits
-                                        ($seq-body obody)))
+                               (append! removed-inits ($seq-body obody)))
                ($let-body-set! iform
-                               ($seq (append removed-inits
-                                             (list obody))))))
+                               ($seq (append removed-inits (list obody))))))
            iform])))
 
 (define (pass2/remove-unused-lvars lvars inits)
@@ -3522,11 +3547,16 @@
                    (pass2p/inline-call iform val args labels))))]
           [else ($call-proc-set! iform proc) iform])))
 
+;; Returns GLOC if gref refers to an inlinable binding
+(define (gref-inlinable-gloc gref)
+  (and-let* ([gloc (id->bound-gloc ($gref-id gref))]
+             [ (gloc-inlinable? gloc) ])
+    gloc))
+
 ;; Get the value of GREF if it is bound and inlinable procedure
 (define (gref-inlinable-proc gref)
-  (and-let* ([gloc (id->bound-gloc ($gref-id gref))]
-             [ (gloc-inlinable? gloc) ]
-             [val (gloc-ref gloc)]
+  (and-let* ([gloc (gref-inlinable-gloc gref)]
+             [val  (gloc-ref gloc)]
              [ (procedure? val) ])
     val))
 
