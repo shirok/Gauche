@@ -71,7 +71,9 @@
           mime-compose-parameters
           mime-parse-content-type)
 
-(autoload gauche.process run-process process-input process-output process-wait)
+(autoload gauche.process
+          run-process process-input process-output
+          process-wait process-kill)
 
 ;;==============================================================
 ;; Conditions
