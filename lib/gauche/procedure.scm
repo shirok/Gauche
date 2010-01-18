@@ -42,7 +42,7 @@
           any-pred every-pred
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
-          case-lambda disasm
+          case-lambda ~ ref* disasm
           ))
 
 (select-module gauche.procedure)
@@ -220,7 +220,26 @@
            (cons (vector-ref v (- nargs min-req)) (cdr form))
            form))))))
 
-;; disassembler.
+;; ~, ref*  ----------------------------------------------------
+;;  (~ a b c d) => (ref (ref (ref a b) c) d)
+;;  NB: TEMPORARY BEING HERE: This is better to be in src/objlib.scm,
+;;  but we need to depend on case-lambda, so this should be defined
+;;  after case-lambda (& related helper procedures) to be loaded.
+;;  The way to go is to integrate case-lambda in the core first, then
+;;  move this to objlib.scm.
+(define ~
+  (getter-with-setter
+   (case-lambda
+     [(obj selector) (ref obj selector)]
+     [(obj selector . more) (apply ~ (ref obj selector) more)])
+   (case-lambda
+     [(obj selector val) ((setter ref) obj selector val)]
+     [(obj selector selector2 . rest)
+      (apply (setter ~) (ref obj selector) selector2 rest)])))
+
+(define ref* ~)                         ;for the backward compatibility
+
+;; disassembler ------------------------------------------------
 ;; I'm not sure whether this should be here or not, but fot the time being...
 
 (define (disasm proc)

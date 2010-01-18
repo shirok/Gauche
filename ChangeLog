@@ -1,5 +1,11 @@
 2010-01-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/objlib.scm, lib/gauche/procedure.scm, src/autoloads.scm,
+	  lib/gauche/experimental/ref.scm (~): Integrated '~' into the
+	  core (currently autoloaded from gauche/procedure.scm).  Now
+	  it's officially supported.  'ref*' became an alias of '~', but
+	  it's only for the backward compatibility and will fade out.
+
 	* doc/corelib.texi (Combinators): formally account '.$' as an
 	  altenative name of 'compose'.
 

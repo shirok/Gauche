@@ -6006,13 +6006,115 @@ Returns (a) value(s) @var{proc} returns.
 
 
 @menu
+* Universal accessor::          
 * Mapping::                     
 * Combinators::                 
 * Optional argument parsing::   
 * Procedure arity::             
 @end menu
 
-@node Mapping, Combinators, Procedures, Procedures
+@node Universal accessor, Mapping, Procedures, Procedures
+@subsubsection Universal accessor
+@c NODE 万能アクセサ
+
+@defun ~ obj key keys @dots{}
+@defunx {(setter ~)} obj key keys @dots{}
+The procedure @code{~} can be used to access a part of various
+aggregate types.
+
+@example
+;; Access to an element of a sequence by index
+(~ '(a b c) 0)       @result{} a
+(~ '#(a b c) 2)      @result{} c
+(~ "abc" 1)          @result{} #\b
+(~ '#u8(10 20 30) 1) @result{} 20
+
+;; Access to an element of a collection by key
+(~ (hash-table 'eq? '(a . 1) '(b . 2)) 'a)
+  @result{} 1
+
+;; Access to a slot of an object by slot name
+(~ (sys-localtime (sys-time)) 'hour)
+  @result{} 20
+@end example
+
+The access can be chained:
+
+@example
+(~ '#((a b c) (d e f) (g h i)) 1 2) @result{} f
+
+(~ (hash-table 'eq? '(a . "abc") '(d . "def")) 'a 2)
+  @result{} #\c
+@end example
+
+You can think @code{~} as left-associative, that is,
+@example
+(~ x k j) @equiv{} (~ (~ x k) j)
+@end example
+and so on.
+
+The generalized setter @code{set!} can be used with @code{~} to
+replace the specified element.
+
+@example
+(define z (vector 'a 'b 'c))
+(set! (~ z 1) 'Z)
+
+z @result{} #(a Z c)
+
+(define z (vector (list (vector 'a 'b 'c)
+                        (vector 'd 'e 'f)
+                        (vector 'g 'h 'i))
+                  (list (vector 'a 'b 'c)
+                        (vector 'd 'e 'f)
+                        (vector 'g 'h 'i))))
+
+z @result{} #((#(a b c) #(d e f) #(g h i))
+     (#(a b c) #(d e f) #(g h i)))
+
+(set! (~ z 1 2 0) 'Z)
+z @result{}  #((#(a b c) #(d e f) #(g h i))
+     (#(a b c) #(d e f) #(Z h i)))
+@end example
+@end defun
+
+Internally, a call to @code{~} is implemented by a generic 
+function @code{ref}.  See @ref{Object system} for more about
+generic functions.
+
+@deffn {Generic function} ref object key &optional args @dots{}
+@deffnx {Generic function} {(setter ref)} object key value
+Many aggregate types defines a specialized method of these
+to provide uniform access and mutation.   Meaning of
+optional arguments @var{args} of @code{ref} depends
+on each specialized method,
+but it is common that the first optional argument of @code{ref} 
+is a @emph{fallback} value, which is to be returned when
+@var{object} doesn't have a meaningful association with @var{key}.
+
+The manual entry of each aggregate type shows the specialized
+method and its semantics in detail.
+@end deffn
+
+Conceptually, @code{~} can be understood as follows:
+
+@example
+(define ~
+  (getter-with-setter
+   (case-lambda
+     [(obj selector) (ref obj selector)]
+     [(obj selector . more) (apply ~ (ref obj selector) more)])
+   (case-lambda
+     [(obj selector val) ((setter ref) obj selector val)]
+     [(obj selector selector2 . rest)
+      (apply (setter ~) (ref obj selector) selector2 rest)])))
+@end example
+
+(Gauche may use some short-cut for optimization, though,
+so this code may not reflect the actual implementation.)
+
+
+@node Mapping, Combinators, Universal accessor, Procedures
 @subsubsection Mapping
 @c NODE マッピング
 

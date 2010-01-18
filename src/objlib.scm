@@ -681,23 +681,6 @@
 (define-method (setter ref) ((obj <string>) (index <integer>) val)
   (string-set! obj index val))
 
-;; ref* - chain of refs.
-;;                                        
-;; This allows us to write
-;;   (ref (ref (ref foo 'bar) 'baz) 'bang)
-;; as
-;;   (ref* foo 'bar 'baz 'bang)
-;; Credit to Issac Trotts.
-;; NB: In future we may drop this in favor of ~ (see gauche.experimental.ref)
-
-;; Once we have a compiler-macro, or optimized case-lambda, we
-;; can make them more efficient by expanding ref* to refs in
-;; fixed-argument case.
-(define (ref* x y . more)
-  (if (null? more)
-    (ref x y)
-    (apply ref* (ref x y) more)))
-
 ;;----------------------------------------------------------------
 ;; Generalized application hooks
 ;;  (should this be in separate file, e.g. apply.scm?)
@@ -767,7 +750,7 @@
                 slot-definition-allocation slot-definition-getter
                 slot-definition-setter slot-definition-accessor
                 class-slot-definition class-slot-accessor
-                x->string x->integer x->number ref ref* |setter of ref|
+                x->string x->integer x->number ref |setter of ref|
 
                 ;; These shouldn't be necessary to be injected into gauche
                 ;; module; unfortunately, the current define-method and
