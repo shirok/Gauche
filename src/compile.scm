@@ -2720,6 +2720,14 @@
          ($const-undef)))]
     [_ (error "syntax-error: malformed eval-when:" form)]))
 
+#|
+(define-pass1-syntax (with-meta form cenv) :gauche
+  (match form
+    [(_ (meta ...) expr)
+     (let1 exp (pass1 expr cenv)
+       exp)]
+    [_ (error "syntax-error: malformed with-meta:" form)]))
+|#
 
 ;;===============================================================
 ;; Pass 2.  Optimization
