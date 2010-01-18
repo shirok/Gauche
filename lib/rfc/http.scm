@@ -71,6 +71,8 @@
           mime-compose-parameters
           mime-parse-content-type)
 
+(autoload gauche.process run-process process-input process-output process-wait)
+
 ;;==============================================================
 ;; Conditions
 ;;
@@ -119,6 +121,8 @@
 ;;             and written to the sink.  The value returned by flusher
 ;;             becomes the return value of http-get and http-post.
 ;;   host    - the host name passed to the 'host' header field.
+;;   secure  - if true, using secure connection (via external stunnel
+;;             process).
 ;;   no-redirect - if true, the procedures won't attempt to issue
 ;;             the request specified by 3xx response headers.
 ;;   auth-user, auth-password, auth-handler - authentication parameters.
@@ -159,11 +163,15 @@
    (socket :init-value #f)              ; A <socket> for persistent connection.
                                         ; If it is shutdown by the server,
                                         ; the APIs attempt to reconnect.
+   (secure-agent  :init-value #f)       ; When using secure connection via
+                                        ; external process, this slot holds
+                                        ; its handle.
    (auth-handler  :init-keyword :auth-handler) ; unused yet
    (auth-user     :init-keyword :auth-user)    ; unused yet
    (auth-password :init-keyword :auth-password); unused yet
    (proxy         :init-keyword :proxy)
    (extra-headers :init-keyword :extra-headers)
+   (secure        :init-keyword :secure)
    ))
 
 (define (make-http-connection server :key
@@ -177,14 +185,17 @@
     :auth-password auth-password :proxy proxy
     :extra-headers extra-headers))
 
-(define (redirect conn new-server)
-  (let1 orig-server (ref conn'server)
-    (unless (string=? orig-server new-server)
-      (and-let* ([s (ref conn'socket)])
+(define (redirect conn proto new-server)
+  (let1 orig-server (~ conn'server)
+    (unless (and (string=? orig-server new-server)
+                 (eq? (~ conn'secure) (equal? proto "https")))
+      (shutdown-secure-agent conn)
+      (and-let* ([s (~ conn'socket)])
         (socket-shutdown s)
         (socket-close s)
-        (set! (ref conn'socket) #f))
-      (set! (ref conn'server) new-server)))
+        (set! (~ conn'socket) #f))
+      (set! (~ conn'server) new-server)
+      (set! (~ conn'secure) (equal? proto "https"))))
   conn)
 
 ;;==============================================================
@@ -268,27 +279,28 @@
                          [proxy         (undefined)]
                          [extra-headers (undefined)]
                          [user-agent (http-user-agent)]
+                         [secure #f]
                          [enc :request-encoding (gauche-character-encoding)]
                          . opts)
     (let1 conn (ensure-connection server auth-handler auth-user auth-password
-                                  proxy extra-headers)
+                                  proxy secure extra-headers)
       (receive (body opts) (canonical-body request-body opts enc)
-        (let loop ((history '())
-                   (host host)
-                   (request-uri (ensure-request-uri request-uri enc)))
+        (let loop ([history '()]
+                   [host host]
+                   [request-uri (ensure-request-uri request-uri enc)])
           (receive (code headers body)
               (request-response request conn host request-uri body
                                 `(:user-agent ,user-agent ,@opts))
             (or (and-let* ([ (not no-redirect) ]
                            [ (string-prefix? "3" code) ]
                            [loc (assoc "location" headers)])
-                  (receive (uri new-server path*)
-                      (canonical-uri (cadr loc) (ref conn'server))
+                  (receive (uri proto new-server path*)
+                      (canonical-uri conn (cadr loc) (ref conn'server))
                     (when (or (member uri history)
                               (> (length history) 20))
                       (errorf <http-error> "redirection is looping via ~a" uri))
                     (loop (cons uri history)
-                          (ref (redirect conn new-server)'server)
+                          (ref (redirect conn proto new-server)'server)
                           path*)))
                 (values code headers body))))))))
 
@@ -312,7 +324,7 @@
 
 ;; Always returns a connection object.
 (define (ensure-connection server auth-handler auth-user auth-password
-                           proxy extra-headers)
+                           proxy secure extra-headers)
   (rlet1 conn (cond [(is-a? server <http-connection>) server]
                     [(string? server) (make-http-connection server)]
                     [else (error "bad type of argument for server: must be an <http-connection> object or a string of the server's name, but got:" server)])
@@ -324,7 +336,8 @@
       (check-override auth-user)
       (check-override auth-password)
       (check-override proxy)
-      (check-override extra-headers))))
+      (check-override extra-headers)
+      (check-override secure))))
 
 (define (server->socket server)
   (cond ((#/([^:]+):(\d+)/ server)
@@ -332,10 +345,17 @@
         (else (make-client-socket server 80))))
 
 (define (with-connection conn proc)
-  (let1 s (server->socket (or (ref conn'proxy) (ref conn'server)))
-    (unwind-protect
-        (proc (socket-input-port s) (socket-output-port s))
-      (socket-close s))))
+  (cond [(~ conn'secure)
+         (start-secure-agent conn)
+         (unwind-protect
+             (proc (process-output (~ conn'secure-agent))
+                   (process-input (~ conn'secure-agent)))
+           (shutdown-secure-agent conn))]
+        [else
+         (let1 s (server->socket (or (ref conn'proxy) (ref conn'server)))
+           (unwind-protect
+               (proc (socket-input-port s) (socket-output-port s))
+             (socket-close s)))]))
 
 (define (request-response request conn host request-uri request-body options)
   (define no-body-replies '("204" "304"))
@@ -363,13 +383,14 @@
 ;; fill the URI if necessary.
 ;; Returns three values; the full URI to access (it is used to detect a loop
 ;; in redirections), the server name, and the new request uri.
-(define (canonical-uri uri host)
-  (let*-values (((scheme specific) (uri-scheme&specific uri))
-                ((h p q f) (uri-decompose-hierarchical specific)))
-    (let ((scheme (or scheme "http")) ;; NB: consider https
-          (host (or h host)))
+(define (canonical-uri conn uri host)
+  (let*-values ([(scheme specific) (uri-scheme&specific uri)]
+                [(h p q f) (uri-decompose-hierarchical specific)])
+    (let ([scheme (or scheme (if (~ conn'secure) "https" "http"))]
+          [host (or h host)])
       (values (uri-compose :scheme scheme :host host
                            :path p :query q :fragment f)
+              scheme
               (or h host)
               ;; drop "//"
               (string-drop (uri-compose :path p :query q :fragment f) 2)))))
@@ -451,6 +472,29 @@
       (error <http-error> "bad line in chunked data:" line))
     ))
 
+;;==============================================================
+;; secure agent handling
+;;
+
+(define (shutdown-secure-agent conn)
+  (when (~ conn'secure-agent)
+    (close-output-port (process-input (~ conn'secure-agent)))
+    (or (process-wait (~ conn'secure-agent) #t)
+        (begin (sys-nanosleep #e1e8)    ;0.1s
+               (process-wait (~ conn'secure-agent) #t))
+        (begin (sys-nanosleep #e1e8)    ;0.1s
+               (process-kill (~ conn'secure-agent))))
+    (set! (~ conn'secure-agent) #f)))
+
+(define (start-secure-agent conn)
+  (when (~ conn'secure-agent) (shutdown-secure-agent conn))
+  (let* ([rhost      (or (~ conn'proxy) (~ conn'server))]
+         [rhost:port (if (string-index rhost #\:) rhost #`",|rhost|:https")]
+         [proc (run-process `("stunnel" "-c" "-r" ,rhost:port)
+                            :input :pipe :output :pipe
+                            :error "/dev/null" :wait #f)])
+    (set! (~ conn'secure-agent) proc)))
+     
 ;;==============================================================
 ;; authentication handling
 ;;

@@ -1,3 +1,11 @@
+2010-01-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm: Experimentally added https support, using
+	  stunnel as an external agent to handle SSL.  Pass :secure #t
+	  to http-get etc.  Needs more test to become 'official'.
+	  (Current problem: There seems to be no way to get erroneous
+	  condition in stunnel side).
+
 2010-01-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/objlib.scm, lib/gauche/procedure.scm, src/autoloads.scm,
