@@ -794,7 +794,20 @@ after required and optional arguments are taken.
 
 @end table
 
+@c EN
+See also @code{let-optionals*}, @code{let-keywords} and
+@code{let-keywords*} macros in @ref{Optional argument parsing}
+for an alternative way to receive optional/keyword arguments
+within the spec of R5RS.
+@c JP
+R5RSの仕様範囲内で省略可能引数、キーワード引数を受け取るように
+書くこともできます。@ref{Optional argument parsing}の
+@code{let-optionals*}、@code{let-keywords}、
+@code{let-keywords*}を参照してください。
+@c COMMON
+
 @end itemize
+
 @end defspec
 
 @defmac ^c body @dots{}

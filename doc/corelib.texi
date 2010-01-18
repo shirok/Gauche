@@ -2017,16 +2017,18 @@ It is extensively used in pass-by-name arguments (keyword arguments),
 and keyword-value list.
 Unlike CommonLisp, keywords and symbols are distinct types.
 
-See also @code{let-keywords} macro (@ref{Optional argument parsing})
-for keyword argument processing.
+See also @ref{Making Procedures} for how Gauche supports keyword
+arguments, and @code{let-keywords} macro (@ref{Optional argument parsing})
+for parsing keyword-value list manually.
 @c JP
 キーワードは特別なシンボルの一種で、自動的にクォートされます。
 名前で渡す引数(キーワード引数)や、キーワード-値のリストで広く使われて
 います。
-CommonLisp とは異なり、キーワードとシンボルは明確に区別される型です。
+CommonLisp とは異なり、キーワードとシンボルは別々の型として扱われます。
 
-キーワード引数の処理については、@code{let-keywords} マクロ
-(@ref{Optional argument parsing}) を参照して下さい。
+Gaucheにおけるキーワード引数のサポートについては@ref{Making Procedures}を、
+また独自にキーワード-値リストをパーズする方法については
+@code{let-keywords} マクロ(@ref{Optional argument parsing}) も参照して下さい。
 @c COMMON
 @end  deftp
 
@@ -6289,13 +6291,45 @@ returns @code{#f} without calling further @var{pred}s.
 @c NODE 省略可能引数のパージング
 
 @c EN
-To have optional arguments or keyword arguments in Scheme,
-you have to take variable arguments as a list and decompose
-them by yourself.   The following macros help it.
+Gauche supports optional and keyword arguments in extended
+lambda syntax (@xref{Making Procedures}).  However, you can
+also use the following macros to parse optional and keyword
+arguments, without relying Gauche's extension.
 @c JP
-Schemeでオプショナル引数やキーワード引数を使うためには、
-可変引数をリストとして取り自分で分解しなければなりません。
-以下のマクロがヘルパーとして使えます。
+Gaucheは省略可能引数やキーワード引数を拡張lambda構文で
+サポートしています (@ref{Making Procedures}参照)。
+けれども、Gauche拡張に頼らずに、以下のマクロを使って独自にこれらの引数を
+パーズすることもできます。
+@c COMMON
+
+@example
+(define (foo a b :optional (c #f) (d 'none)) 
+  body ...)
+
+@c EN
+;; is roughly equivalent to ...
+@c JP
+;; は次の式とだいたい同じ:
+@c COMMON
+
+(define (foo a b . args)
+  (let-optionals* args ((c #f) (d 'none))
+    body ...))
+@end example
+
+@c EN
+Explicitly parsing the extended arguments may be useful for
+portable programs, since it is rather straightforward to
+implement those macros rather than extend lambda syntax.
+
+Those macros can also be useful to factor out common
+argument parsing routines.
+@c JP
+明示的に拡張引数をパーズする方法は、ポータブルなコードを書く時に
+役に立つでしょう。以下のマクロを実装するのは、lambdaの構文を
+拡張するより簡単だからです。
+
+また、共通する拡張引数の処理ルーチンを括り出す場合にもこれらのマクロは有用です。
 @c COMMON
 
 @defmac let-optionals* restargs (var-spec @dots{}) body @dots{}
