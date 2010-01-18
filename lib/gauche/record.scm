@@ -216,26 +216,23 @@
             [nfields (vector-length all-names)])
         (%gen-custom-ctor-body rtd (vector-length fieldspecs))))))
 
-(define (rtd-predicate rtd) (^o (is-a? o rtd)))
+(define-inline (rtd-predicate rtd) (^o (is-a? o rtd)))
 
-(define (rtd-accessor rtd field)
+(define (%get-slot-index rtd field modify?)
   (%check-rtd rtd)
   (cond [(assq field (class-slots rtd))
-         => (^s (let1 k (slot-definition-option s :index)
-                  (^o ((with-module gauche.object %record-ref) rtd o k))))]
-        [else
-         (errorf "rtd-accessor: ~s does not have a slot named ~s" rtd field)]))
+         => (^s (when (and modify? (slot-definition-option s :immutable #f))
+                  (errorf "slot ~s of ~s is immutable" field rtd))
+                (slot-definition-option s :index))]
+        [else (errorf "record ~s does not have a slot named ~s" rtd field)]))
 
-(define (rtd-mutator rtd field)
-  (%check-rtd rtd)
-  (cond [(assq field (class-slots rtd))
-         => (^s (when (slot-definition-option s :immutable #f)
-                  (errorf "rtf-mutator: slot ~s of ~s is immutable" field rtd))
-                (let1 k (slot-definition-option s :index)
-                  (^(o v) ((with-module gauche.object %record-set!) rtd o k v)))
-                )]
-        [else
-         (errorf "rtd-mutator: ~s does not have a slot named ~s" rtd field)]))
+(define-inline (rtd-accessor rtd field)
+  (let1 k (%get-slot-index rtd field #f)
+    (^o ((with-module gauche.object %record-ref) rtd o k))))
+
+(define-inline (rtd-mutator rtd field)
+  (let1 k (%get-slot-index rtd field #t)
+    (^(o v) ((with-module gauche.object %record-set!) rtd o k v))))
 
 ;;;
 ;;; Syntactic layer
@@ -251,6 +248,7 @@
   (define %pred (->id 'rtd-predicate))
   (define %asor (->id 'rtd-accessor))
   (define %mtor (->id 'rtd-mutator))
+  (define tmp   (gensym))
   (define (build-field-spec)
     (map-to <vector> (match-lambda
                        [((? id? f) a s) f]
@@ -260,7 +258,7 @@
                        [x (error "invalid field spec:" x)])
             field-specs))
   (define (build-def typename parent)
-    `(define ,typename
+    `(define-inline ,typename
        (,%make ',typename ,(build-field-spec) ,@(if parent `(,parent) '()))))
   (define (build-ctor typename)
     (match ctor-spec
@@ -274,9 +272,10 @@
   (define (build-pred typename)
     (match pred-spec
       [#f '()]
-      [#t `((define-inline ,(sym #`",|typename|?") (,%pred ,typename)))]
+      [#t `((define-inline (,(sym #`",|typename|?") ,tmp)
+              ((,%pred ,typename) ,tmp)))]
       [(? id? pred-name)
-       `((define-inline ,pred-name (,%pred ,typename)))]
+       `((define-inline (,pred-name ,tmp) ((,%pred ,typename) ,tmp)))]
       [x (error "invalid predicate spec" pred-spec)]))
   (define (build-accessors typename)
     (map (match-lambda
