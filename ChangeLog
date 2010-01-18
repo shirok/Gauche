@@ -1,3 +1,8 @@
+2010-01-17  Shiro Kawai  <shiro@acm.org>
+
+	* doc/corelib.texi (Combinators): formally account '.$' as an
+	  altenative name of 'compose'.
+
 2010-01-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (transparent?/rec): Treat $GREF of inlinable
