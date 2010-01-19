@@ -6302,7 +6302,7 @@ is returned.
 @c EN
 Note: The name @code{.$} comes from the fact that @code{.} is 
 commonly used for function composition in literatures and some
-programming languages, and that Gauche uses prefix @code{$} to
+programming languages, and that Gauche uses suffix @code{$} to
 indicate combinators.   However, since it is not a valid R5RS/R6RS
 identifier, portable programs may want to use the alias @code{compose},
 with which you can easily add a portable definition using @code{srfi-0},
