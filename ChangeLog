@@ -1,3 +1,8 @@
+2010-01-21  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/collection.scm, lib/gauche/mop/instance-pool.scm:
+	  Remove dependency to util.queue; it caused build problem.
+
 2010-01-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm: Experimentally added https support, using

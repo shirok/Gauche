@@ -37,7 +37,6 @@
 
 (define-module gauche.mop.instance-pool
   (use srfi-1)
-  (use util.queue)
   (export <instance-pool-meta> <instance-pool-mixin>
           <instance-table-meta> <instance-table-mixin>
           instance-pool-of instance-pools-of

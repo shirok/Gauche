@@ -38,7 +38,6 @@
 
 (define-module gauche.collection
   (use srfi-1)
-  (use util.queue)
   (export call-with-iterator with-iterator call-with-iterators
           call-with-builder  with-builder
           fold fold2 fold3 map map-to map-accum for-each
@@ -49,6 +48,15 @@
           group-collection)
   )
 (select-module gauche.collection)
+
+;; utility - we can't depend on util.queue, so this is a simple
+;; alternative.
+(define (make-queue)   (let1 anchor (list #f) (cons anchor anchor)))
+(define (enqueue! q x) (set! (cddr q) (list x)) (set! (cdr q) (cddr q)))
+(define (dequeue! q)   (if (null? (cdar q))
+                         (error "queue is empty" q)
+                         (rlet1 v (cadar q) (set! (cdar q) (cddar q)))))
+(define (queue->list q) (cdar q))
 
 ;;-------------------------------------------------
 ;; Call-with-iterator - the fundamental iterator
@@ -124,7 +132,7 @@
 
 (define-method call-with-builder ((class <list-meta>) proc . args)
   (let ((q (make-queue)))
-    (proc (cut enqueue! q <>) (cut dequeue-all! q))))
+    (proc (cut enqueue! q <>) (cut queue->list q))))
 
 (define-method call-with-builder ((class <vector-meta>) proc . args)
   (let ((size (get-keyword :size args #f)))
@@ -138,7 +146,7 @@
                 (lambda () v)))
         (let ((q (make-queue)))
           (proc (cut enqueue! q <>)
-                (cut list->vector (dequeue-all! q)))))))
+                (cut list->vector (queue->list q)))))))
 
 (define-method call-with-builder ((class <weak-vector-meta>) proc . args)
   (let ((size (get-keyword :size args #f)))
@@ -266,7 +274,7 @@
   (if (null? more)
       (with-iterator (coll end? next)
         (do ((q (make-queue)))
-            ((end?) (dequeue-all! q))
+            ((end?) (queue->list q))
           (enqueue! q (proc (next)))))
       (let ((%map (with-module gauche map)))
         (call-with-iterators
@@ -274,7 +282,7 @@
          (lambda (ends? nexts)
            (do ((q (make-queue)))
                ((any (cut <>) ends?)
-                (dequeue-all! q))
+                (queue->list q))
              (enqueue! q (apply proc (%map (cut <>) nexts))))))
         )))
 
@@ -457,7 +465,7 @@
   (let ((q (make-queue)))
     (with-iterator (coll end? next)
       (until (end?) (let ((e (next))) (when (pred e) (enqueue! q e))))
-      (dequeue-all! q))))
+      (queue->list q))))
 
 (define-method filter-to ((class <class>) pred (coll <collection>))
   (with-builder (class add! get)
@@ -480,7 +488,7 @@
   (let ((q (make-queue)))
     (with-iterator (coll end? next)
       (until (end?) (let ((e (next))) (unless (pred e) (enqueue! q e))))
-      (dequeue-all! q))))
+      (queue->list q))))
 
 (define-method remove-to ((class <class>) pred (coll <collection>))
   (with-builder (class add! get)
