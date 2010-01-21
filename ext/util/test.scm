@@ -1,14 +1,11 @@
-;; Tests Andrew Wright's match package in Gauche
-;; $Id: test.scm,v 1.2 2006-09-29 11:58:53 shirok Exp $
-
 (use gauche.test)
 
-(test-start "util.match")
-(use util.match)
-(test-module 'util.match)
+(test-start "util*")
 
 ;;--------------------------------------------------------------
-(test-section "simple patterns")
+(test-section "util.match")
+(use util.match)
+(test-module 'util.match)
 
 (test* "primitive types" '(emptylist
                            true
@@ -116,7 +113,6 @@
           )))
 
 ;;--------------------------------------------------------------
-(test-section "predicate")
 
 (test* "pred" '(a b c)
        (match '("abc" a b c)
@@ -127,7 +123,6 @@
          (((? string? k) x ...) k)))
 
 ;;--------------------------------------------------------------
-(test-section "struct")
 
 (define-class <foo> ()
   ((a :init-keyword :a :accessor a-of)
@@ -200,7 +195,6 @@
                               (map (lambda (d) (a d 3)) (list b c))))))
 
 ;;--------------------------------------------------------------
-(test-section "accessor and mutator")
 
 (test* "get! / pair" 3
        (let ((x (list 1 (list 2 3))))
@@ -253,7 +247,6 @@
             (ref v 's)))))
 
 ;;--------------------------------------------------------------
-(test-section "failure continuation")
 
 ;; test case derived from the bug report from Tatsuya BIZENN.
 
@@ -277,10 +270,120 @@
 
 
 ;;--------------------------------------------------------------
-(test-section "match-let etc.")
 
 (test* "match-let1" '((a b c) (1 2 3))
        (match-let1 ((ca . cd) ...) '((a . 1) (b . 2) (c . 3))
          (list ca cd)))
+
+;;-----------------------------------------------
+(test-section "util.queue")
+(use util.queue)
+(test-module 'util.queue)
+
+(test* "queue?" #f (queue? (cons 'a 'b)))
+(test* "queue?" #f (queue? 3))
+(test* "queue?" #f (queue? '()))
+(define q (make-queue))
+
+(test* "queue?" #t (queue? q))
+(test* "enqueue!" #t (begin (enqueue! q 'a) (queue? q)))
+(test* "enqueue!" #t (begin (enqueue! q 'b) (queue? q)))
+(test* "enqueue!" #t (begin (enqueue! q 'c) (queue? q)))
+
+(test* "queue-front" 'a (queue-front q))
+(test* "queue-rear" 'c (queue-rear q))
+
+(test* "enqueue!" '(a f)
+       (begin
+         (enqueue! q 'd 'e 'f)
+         (list (queue-front q) (queue-rear q))))
+
+(test* "dequeue!" 'a (dequeue! q))
+(test* "dequeue!" 'b (dequeue! q))
+(test* "queue-empty?" #f (queue-empty? q))
+(test* "dequeue!" 'c (dequeue! q))
+(test* "dequeue!" 'd (dequeue! q))
+(test* "dequeue!" 'e (dequeue! q))
+(test* "dequeue!" 'f (dequeue! q))
+(test* "queue-empty?" #t (queue-empty? q))
+
+(test* "queue-push!" '(c a)
+       (begin
+         (queue-push! q 'a) (queue-push! q 'b) (queue-push! q 'c)
+         (list (queue-front q) (queue-rear q))))
+(test* "queue-push!" '(f a)
+       (begin
+         (queue-push! q 'd 'e 'f)
+         (list (queue-front q) (queue-rear q))))
+(test* "queue-pop!" 'f (queue-pop! q))
+(test* "queue-pop!" 'e (queue-pop! q))
+(test* "queue-empty?" #f (queue-empty? q))
+(test* "queue-pop!" 'd (queue-pop! q))
+(test* "queue-pop!" 'c (queue-pop! q))
+(test* "queue-pop!" 'b (queue-pop! q))
+(test* "queue-pop!" 'a (queue-pop! q))
+(test* "queue-empty?" #t (queue-empty? q))
+
+(test* "dequeue-all!" '(a b c d e)
+       (begin (enqueue! q 'a 'b 'c 'd 'e) (dequeue-all! q)))
+(test* "dequeue-all!" '()
+       (dequeue-all! q))
+(test* "dequeue-all!" #t
+       (queue-empty? q))
+
+(test* "find-in-queue" #f
+       (find-in-queue (cut eq? <> 'a) q))
+(test* "find-in-queue" 'a
+       (begin (enqueue! q 'a 'b 'c 'd 'e)
+              (find-in-queue (cut eq? <> 'a) q)))
+(test* "find-in-queue" 'c
+       (find-in-queue (cut eq? <> 'c) q))
+(test* "find-in-queue" 'e
+       (find-in-queue (cut eq? <> 'e) q))
+(test* "find-in-queue" '#f
+       (find-in-queue (cut eq? <> 'f) q))
+
+(test* "remove-from-queue!" #f
+       (remove-from-queue! (cut eq? <> 'f) q))
+(test* "remove-from-queue!" #t
+       (remove-from-queue! (cut eq? <> 'e) q))
+(test* "remove-from-queue!" #f
+       (remove-from-queue! (cut eq? <> 'e) q))
+(test* "remove-from-queue!" #t
+       (remove-from-queue! (cut eq? <> 'a) q))
+(test* "remove-from-queue!" #t
+       (remove-from-queue! (cut memq <> '(b c)) q))
+(test* "remove-from-queue!" #t
+       (remove-from-queue! (cut eq? <> 'd) q))
+(test* "remove-from-queue!" #t
+       (queue-empty? q))
+(test* "remove-from-queue!" #f
+       (remove-from-queue! (cut eq? <> 'd) q))
+
+
+(let ((q (make-queue)))
+  (test* "enqueue-unique!" '("a")
+         (begin (enqueue-unique! q equal? "a")
+                (queue->list q)))
+  (test* "enqueue-unique!" '("a" "b")
+         (begin (enqueue-unique! q equal? "b")
+                (queue->list q)))
+  (test* "enqueue-unique!" '("a" "b")
+         (begin (enqueue-unique! q equal? "a")
+                (queue->list q)))
+  (test* "enqueue-unique!" '("a" "b" "c" "d")
+         (begin (enqueue-unique! q equal? "a" "b" "c" "d")
+                (queue->list q)))
+  (test* "queue-push-unique!" '("e" "a" "b" "c" "d")
+         (begin (queue-push-unique! q equal? "d" "e")
+                (queue->list q)))
+  (set! q (make-queue))
+  (test* "queue-push-unique!" '("e" "d")
+         (begin (queue-push-unique! q equal? "d" "e")
+                (queue->list q)))
+  (test* "queue-push-unique!" '("c" "b" "a" "e" "d")
+         (begin (queue-push-unique! q equal? "a" "b" "c" "d" "e")
+                (queue->list q)))
+  )
 
 (test-end)

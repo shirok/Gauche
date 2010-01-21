@@ -3,6 +3,11 @@
 	* libsrc/gauche/collection.scm, lib/gauche/mop/instance-pool.scm:
 	  Remove dependency to util.queue; it caused build problem.
 
+	* ext/util/queue.scm, lib/util/queue.scm: Rewrote util.queue
+	  partly using C, in order to support thread-safe queue efficiently.
+	* ext/util/Makefile.in, ext/Makefile.in, test/util.scm,
+	  ext/util/test.scm: Changed accordingly.
+
 2010-01-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm: Experimentally added https support, using
