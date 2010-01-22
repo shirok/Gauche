@@ -49,7 +49,8 @@
 (define-module util.queue
   (use srfi-1)
   (export <queue> <mtqueue>
-          make-queue queue? queue-empty? copy-queue
+          make-queue make-mtqueue queue? mtqueue?
+          queue-empty? copy-queue
           queue-push! queue-push-unique! enqueue! enqueue-unique!
           queue-pop! dequeue! dequeue-all!
           queue-front queue-rear queue-length
@@ -98,7 +99,7 @@
  ;;
  "typedef struct MtQueueReq {"
  "  Queue q;"
- "  int maxlen;"
+ "  u_int maxlen;"
  "  ScmInternalMutex mutex;"
  "  ScmObj locker;"  ;thread holding the lock.  see the comment above.
  "  ScmInternalCond lockWait;"
@@ -113,7 +114,7 @@
  "#define MTQ_MUTEX(obj)  (MTQ(obj)->mutex)"
  "#define MTQ_LOCKER(obj) (MTQ(obj)->locker)"
 
- (define-cfn makemtq (klass::ScmClass* maxlen::int)
+ (define-cfn makemtq (klass::ScmClass* maxlen::u_int)
    (let* ([z::MtQueue*
            (cast MtQueue* (Scm_AllocateInstance klass (sizeof MtQueue)))])
      (SCM_SET_CLASS z klass)
@@ -129,19 +130,22 @@
  (define-type <mtqueue> "MtQueue*" "mt-queue" "MTQP" "MTQ")
  (define-cclass <mtqueue>
    "MtQueue*" "MtQueueClass" ("QueueClass")
-   ()
+   ((max-length :type <uint> :c-name "maxlen"))
    (allocator 
     (let* ([ml (Scm_GetKeyword ':max-length initargs SCM_FALSE)])
-      (return (makemtq klass (?: (SCM_INTP ml) (SCM_INT_VALUE ml) -1)))))
+      (return (makemtq klass (?: (SCM_INTP ml) (SCM_INT_VALUE ml) 0)))))
    (printer 
     (Scm_Printf port "#<mt-queue %d @%p>" (Q_LENGTH obj) obj)))
 
  ;; lock macros
+ (define-cise-expr big-locked?
+   [(_ q) `(and (SCM_VMP (MTQ_LOCKER ,q))
+                (not (== (-> (SCM_VM (MTQ_LOCKER ,q)) state)
+                         SCM_VM_TERMINATED)))])
+ 
  (define-cise-stmt wait-mtq-big-lock    ;to be called while locking mutex
    [(_ q)
-    `(while (and (SCM_VMP (MTQ_LOCKER ,q))
-                 (not (== (-> (SCM_VM (MTQ_LOCKER ,q)) state)
-                          SCM_VM_TERMINATED)))
+    `(while (big-locked? ,q)
        (SCM_INTERNAL_COND_WAIT (-> (MTQ ,q) lockWait) (MTQ_MUTEX ,q)))])
 
  (define-cise-stmt with-mtq-light-lock
@@ -156,12 +160,19 @@
    [(_ q)
     `(with-mtq-light-lock q (set! (MTQ_LOCKER ,q) (SCM_OBJ (Scm_VM))))])
 
+ (define-cise-stmt wake-up-lockers
+   [(_ q) `(SCM_INTERNAL_COND_BROADCAST (-> (MTQ ,q) lockWait))])
+ (define-cise-stmt wake-up-writers
+   [(_ q) `(SCM_INTERNAL_COND_BROADCAST (-> (MTQ ,q) writerWait))])
+ (define-cise-stmt wake-up-readers
+   [(_ q) `(SCM_INTERNAL_COND_BROADCAST (-> (MTQ ,q) readerWait))])
+
  (define-cise-stmt release-mtq-big-lock
    [(_ q)
     `(begin
        (SCM_INTERNAL_MUTEX_LOCK (MTQ_MUTEX ,q))
        (set! (MTQ_LOCKER ,q) SCM_FALSE)
-       (SCM_INTERNAL_COND_BROADCAST (-> (MTQ ,q) lockWait))
+       (wake-up-lockers ,q)
        (SCM_INTERNAL_MUTEX_UNLOCK (MTQ_MUTEX ,q)))])
 
  (define-cproc %lock-mtq (q::<mtqueue>) ::<void>   (grab-mtq-big-lock q))
@@ -174,6 +185,10 @@
     [(_ q body)
      (cond [(mtqueue? q) (%lock-mtq q) (unwind-protect body (%unlock-mtq q))]
            [(queue? q) body]
+           [else (error "queue required, but got" q)])]
+    [(_ q body mtbody)
+     (cond [(mtqueue? q) (%lock-mtq q) (unwind-protect mtbody (%unlock-mtq q))]
+           [(queue? q) body]
            [else (error "queue required, but got" q)])]))
 
 ;;;
@@ -182,7 +197,7 @@
 (inline-stub
  (define-cproc make-queue ()
    (result (makeq (& QueueClass))))
- (define-cproc make-mtqueue (:key (max-length::<int> -1))
+ (define-cproc make-mtqueue (:key (max-length::<int> 0))
    (result (makemtq (& MtQueueClass) max-length)))
 
  ;; caller must hold lock
@@ -289,14 +304,13 @@
                                   (set! ovf TRUE)
                                   (begin
                                     (enqueue_int q cnt head tail)
-                                    (SCM_INTERNAL_COND_BROADCAST
-                                     (-> (MTQ q) readerWait)))))
+                                    (wake-up-readers q))))
          (when ovf (Scm_Error "queue is full: %S" q))))
      (result (SCM_OBJ q))))
 
  (define-cproc enqueue/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                          (timeout-val #f))
-   ;; WRITEME
+   ;;WRITEME
    (result (SCM_OBJ q))
    )
  )
