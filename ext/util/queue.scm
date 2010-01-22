@@ -212,7 +212,6 @@
  (define-cproc queue-empty? (q::<queue>) ::<boolean>
    (if (MTQP q)
      (let* ([r::int FALSE])
-       (Scm_Printf SCM_CURERR "bunga\n")
        (with-mtq-light-lock q (set! r (Q_EMPTY_P q)))
        (result r))
      (result (Q_EMPTY_P q))))
@@ -272,6 +271,11 @@
 
  (define-cproc %enqueue! (q::<queue> cnt::<uint> head tail) ::<void>
    (enqueue_int q cnt head tail))
+
+ (define-cise-expr mtq-overflows
+   [(_ q cnt)
+    `(and (> (MTQ_MAXLEN ,q) 0)
+          (> (+ ,cnt (Q_LENGTH ,q)) (MTQ_MAXLEN ,q)))])
  
  (define-cproc enqueue! (q::<queue> obj :rest more-objs)
    (let* ([head (Scm_Cons obj more-objs)] [tail] [cnt::u_int])
@@ -280,7 +284,14 @@
        (set! tail (Scm_LastPair more-objs) cnt (Scm_Length head)))
      (if (not (MTQP q))
        (enqueue_int q cnt head tail)
-       (with-mtq-light-lock q (enqueue_int q cnt head tail)))
+       (let* ([ovf::int FALSE])
+         (with-mtq-light-lock q (if (mtq-overflows q cnt)
+                                  (set! ovf TRUE)
+                                  (begin
+                                    (enqueue_int q cnt head tail)
+                                    (SCM_INTERNAL_COND_BROADCAST
+                                     (-> (MTQ q) readerWait)))))
+         (when ovf (Scm_Error "queue is full: %S" q))))
      (result (SCM_OBJ q))))
 
  (define-cproc enqueue/wait! (q::<mtqueue> obj :optional (timeout #f)
@@ -319,7 +330,13 @@
              cnt  (Scm_Length head)))
      (if (not (MTQP q))
        (queue-push-int q cnt head tail)
-       (with-mtq-light-lock q (queue-push-int q cnt head tail)))
+       (let* ([ovf::int FALSE])
+         (with-mtq-light-lock q (if (and (> (MTQ_MAXLEN q) 0)
+                                         (> (+ cnt (Q_LENGTH q))
+                                            (MTQ_MAXLEN q)))
+                                  (set! ovf TRUE)
+                                  (queue-push-int q cnt head tail)))
+         (when ovf (Scm_Error "queue is full: %S" q))))
      (result (SCM_OBJ q))))
 
  (define-cproc queue-push/wait! (q::<mtqueue> obj :optional (timeout #f)
