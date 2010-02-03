@@ -477,6 +477,45 @@
            (make-thread
             (lambda ()
               (local)))))))
-         
+
+;;---------------------------------------------------------------------
+(test-section "synchrnization by queues")
+
+;; These are actually for testing mtqueue, but put here since they
+;; require threads to work.
+
+(use util.queue)
+
+(define (test-producer-consumer name qs ndata nthreads)
+  (define qr (make-mtqueue))
+  (define data (iota ndata))
+  (define (producer)
+    (dolist [n data] (enqueue/wait! qs n))
+    (dotimes [k nthreads] (enqueue/wait! qs #f)))
+  (define (consumer)
+    (let loop ([x (dequeue/wait! qs)])
+      (when x
+        (enqueue! qr x)
+        (sys-nanosleep #e1e7)
+        (loop (dequeue/wait! qs)))))
+
+  (test* #`"synchronized queue ,name" data
+         (let* ([cs (map (^_ (thread-start! (make-thread consumer)))
+                         (iota nthreads))]
+                [p1 (make-thread producer)])
+           (sys-nanosleep #e1e8)
+           (thread-start! p1)
+           (for-each thread-join! cs)
+           (thread-join! p1)
+           (queue->list qr))))
+
+(test-producer-consumer "(unbound queue length)"
+                        (make-mtqueue)
+                        100 3)
+
+(test-producer-consumer "(bound queue length)"
+                        (make-mtqueue :max-length 5)
+                        100 3)
+
 (test-end)
 

@@ -308,6 +308,13 @@
   (test* #`",|what| dequeue!" 'f (dequeue! q))
   (test* #`",|what| queue-empty?" #t (queue-empty? q))
 
+  (test* #`",|what| dequeue! (error)" (test-error) (dequeue! q))
+  (test* #`",|what| dequeue! (fallback)" "empty!" (dequeue! q "empty!"))
+  (test* #`",|what| queue-front (error)" (test-error) (queue-front q))
+  (test* #`",|what| queue-front (fallback)" "foo" (queue-front q "foo"))
+  (test* #`",|what| queue-rear (error)" (test-error) (queue-rear q))
+  (test* #`",|what| queue-rear (fallback)" "foo" (queue-rear q "foo"))
+
   (test* #`",|what| queue-push!" '(c a)
          (begin
            (queue-push! q 'a) (queue-push! q 'b) (queue-push! q 'c)
@@ -390,5 +397,36 @@
 
 (queue-basic-test "simple queue" make-queue)
 (queue-basic-test "mtqueue"      make-mtqueue)
+
+(let ((q (make-mtqueue :max-length 3)))
+  (test* "mtqueue maxlen" 'c
+         (begin (enqueue! q 'a)
+                (enqueue! q 'b)
+                (enqueue! q 'c)
+                (queue-rear q)))
+  (test* "mtqueue maxlen (enqueue! overflow)" (test-error)
+         (enqueue! q 'd))
+  (test* "mtqueue maxlen (enqueue! unchanged after overflow)" '(a b c)
+         (queue->list q))
+  (test* "mtqueue maxlen (enqueue! multiarg overflow)" (test-error)
+         (begin (dequeue! q)
+                (enqueue! q 'd 'e 'f)))
+  (test* "mtqueue maxlen (enqueue! atomicity)" '(b c)
+         (queue->list q))
+
+  (test* "mtqueue maxlen (queue-push! overflow)" (test-error)
+         (begin (queue-push! q 'a)
+                (queue-push! q 'z)))
+  (test* "mtqueue maxlen (queue-push! postcheck)" '(a b c)
+         (queue->list q))
+  (test* "mtqueue maxlen (queue-push! multiarg overflow)" (test-error)
+         (begin (dequeue! q)
+                (queue-push! q 'd 'e 'f)))
+  (test* "mtqueue maxlen (queue-push! atomicity)" '(b c)
+         (queue->list q))
+  )
+
+;; Note: */wait! APIs are tested in ext/threads/test.scm instead of here,
+;; since we need threads working.
 
 (test-end)

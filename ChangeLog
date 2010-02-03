@@ -1,3 +1,11 @@
+2010-02-02  Shiro Kawai  <shiro@acm.org>
+
+	* ext/util/queue.scm (enqueue/wait! etc.): Implemented synchronizing
+	  operations.
+	* ext/threads/test.scm: Added tests of interacting between threads
+	  using mtqueue.
+	* doc/modutil.texi: Extended descriptions of util.queue.
+
 2010-01-21  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/collection.scm, lib/gauche/mop/instance-pool.scm:
