@@ -507,7 +507,8 @@
            (thread-start! p1)
            (for-each thread-join! cs)
            (thread-join! p1)
-           (queue->list qr))))
+           (queue->list qr))
+         (cut lset= eqv? <> <>)))
 
 (test-producer-consumer "(unbound queue length)"
                         (make-mtqueue)
@@ -516,6 +517,7 @@
 (test-producer-consumer "(bound queue length)"
                         (make-mtqueue :max-length 5)
                         100 3)
+
 
 (test-end)
 
