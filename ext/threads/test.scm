@@ -519,5 +519,16 @@
                         100 3)
 
 
+(test* "dequeue/wait! timeout" "timed out!"
+       (dequeue/wait! (make-mtqueue) 0.01 "timed out!"))
+(test* "enqueue/wait! timeout" "timed out!"
+       (let1 q (make-mtqueue :max-length 1)
+         (enqueue! q 'a)
+         (enqueue/wait! q 'b 0.01 "timed out!")))
+'(test* "queue-push/wait! timeout" "timed out!"
+       (let1 q (make-mtqueue :max-length 1)
+         (enqueue! q 'a)
+         (queue-push/wait! q 'b 0.01 "timed out!")))
+
 (test-end)
 

@@ -185,17 +185,38 @@
  "#define CW_TIMEDOUT 1"
  "#define CW_INTR     2"
  (define-cise-stmt wait-cv
-   [(_ q slot ptimespec res)
-    `(cond [,ptimespec
-            (let* ([r::int
-                    (pthread_cond_timedwait (& (-> ,q ,slot))
-                                            (& (MTQ_MUTEX ,q))
-                                            ,ptimespec)])
-              (cond [(== r ETIMEDOUT) (set! ,res CW_TIMEDOUT)]
-                    [(== r EINTR)     (set! ,res CW_INTR)]
-                    [else             (set! ,res 0)]))]
-           [else (pthread_cond_wait (& (-> ,q ,slot)) (& (MTQ_MUTEX ,q)))
-                 (set! ,res 0)])])
+   [(_ q slot ptimespec status)
+    (let1 r (gensym)
+      `(cond [,ptimespec
+              (let* ([,r :: int
+                      (pthread_cond_timedwait (& (-> ,q ,slot))
+                                              (& (MTQ_MUTEX ,q))
+                                              ,ptimespec)])
+                (cond [(== ,r ETIMEDOUT) (set! ,status CW_TIMEDOUT)]
+                      [(== ,r EINTR)     (set! ,status CW_INTR)]
+                      [else              (set! ,status 0)]))]
+             [else (pthread_cond_wait (& (-> ,q ,slot)) (& (MTQ_MUTEX ,q)))
+                   (set! ,status 0)]))])
+
+ (define-cise-stmt do-with-timeout
+   [(_ q retval timeout timeout-val wait-check cv-slot do-ok)
+    (let ([ts (gensym)] [pts (gensym)] [status (gensym)])
+      `(let* ([,ts :: (struct timespec)] [,status :: int 0]
+              [,pts :: (struct timespec*) (Scm_GetTimeSpec ,timeout (& ,ts))])
+         (while TRUE
+           (with-mtq-mutex-lock ,q
+             (while TRUE
+               (wait-mtq-big-lock ,q)
+               (cond [,wait-check (wait-cv ,q ,cv-slot ,pts ,status)
+                                  (when (== ,status 0) (continue))]
+                     [else ,do-ok (set! ,status 0)])
+               (set! (MTQ_LOCKER ,q) SCM_FALSE)
+               (notify-lockers ,q)
+               (break)))
+           (case ,status
+             [(CW_TIMEDOUT) (set! ,retval ,timeout-val)]
+             [(CW_INTR)     (Scm_SigCheck (Scm_VM)) (continue)]) ;restart op
+           (break))))])
 
  (define-cproc %lock-mtq (q::<mtqueue>) ::<void>   (grab-mtq-big-lock q))
  (define-cproc %unlock-mtq (q::<mtqueue>) ::<void> (release-mtq-big-lock q))
@@ -339,20 +360,14 @@
 
  (define-cproc enqueue/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                          (timeout-val #f))
-   (let* ([cell (SCM_LIST1 obj)])
+   (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
      (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined (GAUCHE_USE_PTHREADS)"
-          (let* ([ts::(struct timespec)] [r::int 0]
-                 [pts::(struct timespec*) (Scm_GetTimeSpec timeout (& ts))])
-            (with-mtq-mutex-lock q
-              (while TRUE
-                (wait-mtq-big-lock q)
-                (cond [(mtq-overflows q 1) (wait-cv q writerWait pts r)]
-                      [else (enqueue_int (Q q) 1 cell cell)
-                            (notify-readers (Q q))
-                            (break)]))))
-          ;; w/o threads
-          (enqueue_int (Q q) 1 cell cell)))
-   (result (SCM_OBJ q)))
+          (do-with-timeout q retval timeout timeout-val
+                           (mtq-overflows q 1) writerWait
+                           (begin (enqueue_int (Q q) 1 cell cell)
+                                  (notify-readers (Q q))))
+          (enqueue_int (Q q) 1 cell cell))
+     (result retval)))
  )
 
 (define (enqueue-unique! q cmp obj . more-objs)
@@ -393,20 +408,14 @@
 
  (define-cproc queue-push/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                             (timeout-val #f))
-   (let* ([cell (SCM_LIST1 obj)])
+   (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
      (.if "defined(HAVR_STRUCT_TIMESPEC)&&defined(GAUCHE_USE_PTHREADS)"
-          (let* ([ts::(struct timespec)] [r::int 0]
-                 [pts::(struct timespec*) (Scm_GetTimeSpec timeout (& ts))])
-            (with-mtq-mutex-lock q
-              (while TRUE
-                (wait-mtq-big-lock q)
-                (cond [(mtq-overflows q 1) (wait-cv q writerWait pts r)]
-                      [else (queue_push_int (Q q) 1 cell cell)
-                            (notify-readers (Q q))
-                            (break)]))))
-          ;; w/o threads
-          (queue_push_int (Q q) 1 cell cell)))
-   (result (SCM_OBJ q)))
+          (do-with-timeout q retval timeout timeout-val
+                           (mtq-overflows q 1) writerWait
+                           (begin (queue_push_int (Q q) 1 cell cell)
+                                  (notify-readers (Q q))))
+          (queue_push_int (Q q) 1 cell cell))
+     (result retval)))
  )
 
 (define (queue-push-unique! q cmp obj . more-objs)
@@ -447,20 +456,14 @@
 
  (define-cproc dequeue/wait! (q::<mtqueue> :optional (timeout #f)
                                                      (timeout-val #f))
-   (let* ([elt SCM_UNDEFINED])
+   (let* ([retval SCM_UNDEFINED])
      (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined (GAUCHE_USE_PTHREADS)"
-          (let* ([ts::(struct timespec)] [r::int 0]
-                 [pts::(struct timespec*) (Scm_GetTimeSpec timeout (& ts))])
-            (with-mtq-mutex-lock q
-              (while TRUE
-                (wait-mtq-big-lock q)
-                (cond [(Q_EMPTY_P q) (wait-cv q readerWait pts r)]
-                      [else (dequeue_int (Q q) (& elt))
-                            (notify-writers (Q q))
-                            (break)]))))
-          ;; w/o threads
-          (dequeue_int (Q q) (& elt)))
-     (result elt)))
+          (do-with-timeout q retval timeout timeout-val
+                           (Q_EMPTY_P q) readerWait
+                           (begin (dequeue_int (Q q) (& retval))
+                                  (notify-writers (Q q))))
+          (dequeue_int (Q q) (& retval)))
+     (result retval)))
 
  (define-cfn dequeue-all-int (q::Queue*)
    (let* ([lis (Q_HEAD q)])
