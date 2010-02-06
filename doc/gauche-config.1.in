@@ -1,6 +1,5 @@
-.\" $Id: gauche-config.1.in,v 1.3 2006-11-11 20:45:17 shirok Exp $ -*-nroff-*-
-.TH GOSH "version @GAUCHE_VERSION@"
-.UC 4
+.\" -*-nroff-*-
+.TH GAUCHE\-CONFIG "1" "" "Gauche @GAUCHE_VERSION@" "Gauche Commands"
 .SH NAME
 gauche-config \- retrieve configuration parameters of Gauche
 .SH SYNOPSIS
@@ -22,6 +21,8 @@ Gauche version.
 .TP
 .B --reconfigure
 Prints the command line used to configure the current Gauche installation.
+It is pretty handy to configure another Gauche source tree with the same
+configuration; just type `gauche-config --reconfigure | sh'.
 
 .SS Parameters to compile an application using Gauche
 .TP
@@ -43,22 +44,41 @@ architecture-dependent files, e.g. "i686-pc-linux-gnu".
 
 .SS Parameters to install files
 .TP
-.B --syslibdir, --sitelibdir
-Directories where system/site scheme files go.
+.B --syslibdir, --sysarchdir, --sysincdir
+Directories where the Gauche core system's Scheme files,
+architecture-dependent files, and header files are installed,
+respectively.
+These directories belong to Gauche core; additional packages
+should not put files in them.
 .TP
-.B --sysarchdir, --sitearchdir
-Directories where architecture-dependent system/site files go.
+.B --sitelibdir, --sitearchdir, --siteincdir
+Directories where the additional packages will put
+Scheme files, architecture-dependent files, and
+header files, respectively.
 .TP
-.B --sysincdir, --siteincdir
-Directories where system/site header files of extensions go.
+.B --pkglibdir, --pkgarchdir, --pkgincdir
+Same as --sitelibdir etc, except that the base directory name
+is left as `${datadir}'.  The result is suitable to be embedded
+in Makefiles, for the base directory could be overridden at
+build time rather than configure time.  The default template for
+Gauche extension packages use these options.
 .TP
 .B --mandir, --infodir
 Directories where gauche manpage and info docs are installed.
 
-.SH Parameters to compile Gauche extention
+.SS Parameters to compile Gauche extention
+.TP
+.B --object-suffix
+Extension of the compiled objects (e.g. 'o').
+.TP
+.B --executable-suffix
+Suffix of the executable (usually empty on Unix variants,
+and '.exe' on Windows.  Note that '.' is a part of suffix in
+this option, as opposed to other -suffix options.
 .TP
 .B --so-suffix
-Object file suffix of the gauche extension.
+Extension of the dynamically loadable (dlopen-able) modules 
+(e.g. 'so' or 'dll').
 .TP 
 .B --so-cflags
 Flags required to compile shared object.
@@ -70,10 +90,17 @@ Flags required to link a gauche extension.
 Libraries to be linked with a gauche extension.
 .TP
 .B --dylib-suffix
-Dynamic/shared library file suffix of the system.
+Suffix for dynamically linked libraries.  Some unix variants
+require special suffix (such as 'dylib').  On other platforms
+this is the same as '--so-suffix'.
 .TP
 .B --dylib-ldflags
-Flags required to link dynamic/shared library file.
+Flags required to link dynamically linked library file.
+Some unix variants require special flags.  On other platforms
+this is the same as '--so-ldflags'.
+.TP
+.B --rpath-flag
+Compler flag(s) to embed RPATH in the binary.
 .TP
 .B --libgauche-so
 The name of shared library of libgauche.
@@ -82,9 +109,9 @@ The name of shared library of libgauche.
 Shiro Kawai (shiro @ acm . org)
 
 .SH SEE ALSO
-gosh(1)
+gosh(1), gauche-package(1)
 .PP
-Gauche Scheme interpreter:
+Gauche Scheme script engine:
 .br
 http://practical-scheme.net/gauche/
 

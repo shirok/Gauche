@@ -1,6 +1,5 @@
-.\" $Id: gosh.1.in,v 1.4 2006-11-11 20:45:17 shirok Exp $ -*-nroff-*-
-.TH GOSH "version @GAUCHE_VERSION@"
-.UC 4
+.\" -*-nroff-*-
+.TH "GOSH" "1" "" "Gauche @GAUCHE_VERSION@" "Gauche Commands"
 .SH NAME
 gosh \- a Scheme script interpreter
 .SH SYNOPSIS
@@ -37,7 +36,7 @@ gosh \- a Scheme script interpreter
 .I Gosh
 is a stand-alone Scheme interpreter built on top of the
 .I Gauche
-Scheme implementation.
+Scheme script engine.
 
 When
 .I script
@@ -73,7 +72,7 @@ This behavior can be controlled by -i or -b option; see below.
 Command line options are processed before loading the script file
 or entering the interactive mode.
 
-The options -I, -A, -u, -l, -e and -E are processed in the order
+The options -I, -A, -u, -l, -L, -e and -E are processed in the order
 of appearance.  For example, adding a load path by -I option
 affects the -l options after it, but not the ones before it.
 
@@ -113,6 +112,11 @@ as if "(use
 Loads a Scheme file
 .I file.
 .TP
+.BI -L file
+Like -l, but doesn't complain if 
+.I file
+doesn't exist.
+.TP
 .BI -e expr
 Evaluates a Scheme expression
 .I expr.
@@ -122,12 +126,27 @@ Same as -e, except that the
 .I expr
 is read as if it is surrounded by parenthesis.
 .TP
+.BI -p type
+Turns on the profiler.  Currently
+.I type
+can only be 'time'.
+.TP
 .BI -f flag
 Sets various flags.
-  no-inline       don't inline primitive procedures
-  no-source-info  don't preserve source information for debug
-  load-verbose    report while loading files
   case-fold       uses case-insensitive reader (as in R5RS)
+  load-verbose    report while loading files
+  no-inline       don't inline primitive procedures and constants
+                  (combined no-inline-globals, no-inline-locals, and
+                  no-inline-constants.)
+  no-inline-globals don't inline global procedures.
+  no-inline-locals  don't inline local procedures.
+  no-inline-constants don't inline constants.
+  no-post-inline-pass don't run post-inline optimization pass.
+.TP
+.BI -F feature
+Makes
+.I feature
+available in cond-expand forms.
 .TP
 .BI --
 Specifies that there are no more options.  If there are more
@@ -153,7 +172,7 @@ Shiro Kawai (shiro @ acm . org)
 .SH SEE ALSO
 gauche-config(1)
 .PP
-Gauche Scheme interpreter:
+Gauche Scheme script engine:
 .br
 http://practical-scheme.net/gauche/
 .PP

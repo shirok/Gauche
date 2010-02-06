@@ -1,3 +1,11 @@
+2010-02-05  Shiro Kawai  <shiro@acm.org>
+
+	* doc/gauche-install.1.in, doc/gauche-package.1.in,
+	  doc/gauche-cesconv.1.in: Added these manpages based on the ones
+	  provided by Jens Thiele.
+	* doc/gosh.1.in, doc/gauche-config.1.in: Updated.
+	* configure.ac: Changed to process the added manpages.
+
 2010-02-02  Shiro Kawai  <shiro@acm.org>
 
 	* ext/util/queue.scm (enqueue/wait! etc.): Implemented synchronizing

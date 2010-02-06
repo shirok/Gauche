@@ -1,0 +1,88 @@
+.\"  -*-nroff-*-
+.TH "GAUCHE\-CESCONV" "1" "" "Gauche @GAUCHE_VERSION@" "Gauche Commands"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+gauche-cesconv \- convert text from one character encoding scheme to another
+.SH "SYNOPSIS"
+.HP 15
+\fBgauche\-cesconv\fR [\fB\-h\fR] [\fB\-f\fR\ \fIencoding\fR] [\fB\-t\fR\ \fIencoding\fR] [\fB\-o\fR\ \fIoutfile\fR] [\fIinfile\fR]
+.SH "DESCRIPTION"
+.PP
+The
+\fBgauche\-cesconv\fR
+command is a program to convert text from one character encoding scheme (CES) 
+to another\&, using Gauche's character conversion module.
+Hence the supported character sets are the same as Gauche's.
+See the info document of Gauche for more details.
+.PP
+There are other commands that provide the same functionality and more,
+such as iconv(1) or nkf(1), but they are not universally available
+by default.  
+This command is provided for Gauche's external packages to ease 
+the installation and configuration process; for those packages,
+it is certain that gauche-cesconv is available, so they don't
+need to check availability of iconv etc.
+.PP
+When
+\fIinfile\fR
+is omitted, the text is read from standard input\&.
+.SH "OPTIONS"
+.PP
+\fB\-f\fR, \fB\-\-from\-code=\fR\fB\fIencoding\fR\fR
+.RS 4
+Selects input encoding\&. Can be \'*JP\' to guess the
+character encoding from japanese text, 
+among either ISO2022\-JP(\-1,2,3), EUCJP, SHIFT_JIS or UTF\-8\&. 
+If omitted, gauche\'s native CES is used\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Show summary of options\&.
+.RE
+.PP
+\fB\-o\fR, \fB\-\-output=\fR\fB\fIoutfile\fR\fR
+.RS 4
+Place output in file
+\fIoutfile\fR\&. If omitted the converted text is written to standard output\&.
+.RE
+.PP
+\fB\-t\fR, \fB\-\-to\-code=\fR\fB\fIencoding\fR\fR
+.RS 4
+Selects output encoding\&. (see also
+\fB\-\-from\-code\fR)
+.RE
+.SH "DIAGNOSTICS"
+.PP
+\fBgauche\-cesconv\fR
+exits with status 0 on success\&.
+.SH "SEE ALSO"
+.PP
+\fBgauche-package\fR(1),
+\fBiconv\fR(1)
+.PP
+The program will be documented fully by the
+Gauche Developers\' Reference
+available via the
+\fBinfo\fR(1)
+system\&.
+.SH "AUTHORS"
+.PP
+\fBShiro Kawai\fR <\&shiro@acm\&.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.PP
+\fBJens Thiele\fR <\&karme@karme\&.de\&>
+.sp -1n
+.IP "" 4
+Wrote this manpage for the Debian system\&.
+.SH "COPYRIGHT"
+Copyright \(co 2010 Jens Thiele
+.br
+.PP
+Copying and distribution of this file, with or without modification, are permitted in any medium without royalty provided the copyright notice and this notice are preserved\&. This file is offered as\-is, without any warranty\&.
+.sp
