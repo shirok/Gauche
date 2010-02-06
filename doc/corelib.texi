@@ -720,7 +720,7 @@ returns the closest even integer.
 
 @defun floor->exact x
 @defunx ceiling->exact x
-@defunx truncate->exacte x
+@defunx truncate->exact x
 @defunx round->exact x
 @c EN
 These are convenience procedures of the popular 
