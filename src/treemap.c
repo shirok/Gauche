@@ -160,7 +160,10 @@ static Node *core_bound(ScmTreeCore *tc, ScmTreeCoreBoundOp op, int pop)
     Node *root = ROOT(tc);
     if (root) {
         Node *n = (op == SCM_TREE_CORE_MIN)? leftmost(root) : rightmost(root);
-        if (pop) n = delete_node(tc, n);
+        if (pop) {
+            n = delete_node(tc, n);
+            tc->num_entries--;
+        }
         return n;
     } else {
         return NULL;

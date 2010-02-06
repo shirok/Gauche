@@ -1,3 +1,9 @@
+2010-02-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/treemap.c (core_bound), test/treemap.scm: Fixed a bug that
+	  tree-map-pop-min! didn't update num_entries.  Patch from
+	  Masatake YAMATO.
+
 2010-02-05  Shiro Kawai  <shiro@acm.org>
 
 	* doc/*.texi: Switched from euc-jp to utf-8.
