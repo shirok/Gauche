@@ -70,8 +70,8 @@
      "  -m, --mode=MODE   : Change mode of the installed file."
      "  -p, --strip-prefix=PREFIX : Strip prefix dirs from FILEs before "
      "                      installation. (4th/5th format only)."
-     "  -o, --owner=OWNER : Change owner of the installed file (root only)."
-     "  -g, --group=GROUP : Change owner of the installed file (root only)."
+     "  -o, --owner=OWNER : Change owner of the installed file(s)."
+     "  -g, --group=GROUP : Change group of the installed file(s)."
      "  -v, --verbose     : Work verbosely"
      "  -n, --dry-run     : Just prints what actions to be done."
      )
