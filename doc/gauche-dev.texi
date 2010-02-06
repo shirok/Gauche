@@ -2215,12 +2215,12 @@ with inserting a delimiter @var{delim} between them.  The @var{grammer}
 argument must be one of the following enums:
 
 @example
-enum {
+enum @{
     SCM_STRING_JOIN_INFIX,
     SCM_STRING_JOIN_STRICT_INFIX,
     SCM_STRING_JOIN_SUFFIX,
     SCM_STRING_JOIN_PREFIX
-};
+@};
 @end example
 
 They correspond to @code{infix}, @code{strict-infix}, @code{suffix},
