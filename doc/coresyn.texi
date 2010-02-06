@@ -1,6 +1,7 @@
+@c -*- mode: texinfo; coding: utf-8; -*-
 @node Core syntax, Macros, Programming in Gauche, Top
 @chapter Core syntax
-@c NODE ´ğËÜÅª¤Ê¹½Ê¸
+@c NODE åŸºæœ¬çš„ãªæ§‹æ–‡
 
 @c ----------------------------------------------------------------------
 @menu
@@ -19,12 +20,12 @@
 
 @node Lexical structure, Literals, Core syntax, Core syntax
 @section Lexical structure
-@c NODE »ú¶ç¹½Â¤
+@c NODE å­—å¥æ§‹é€ 
 
 @c EN
 Gauche extends R5RS Scheme parser in some ways:
 @c JP
-Gauche¤ÏR5RS Scheme¤Î¥Ñ¡¼¥¶¤ò¤¤¤¯¤Ä¤«¤ÎÅÀ¤Ç³ÈÄ¥¤·¤Æ¤¤¤Ş¤¹¡£
+Gaucheã¯R5RS Schemeã®ãƒ‘ãƒ¼ã‚¶ã‚’ã„ãã¤ã‹ã®ç‚¹ã§æ‹¡å¼µã—ã¦ã„ã¾ã™ã€‚
 @c COMMON
 
 @table @emph
@@ -33,9 +34,9 @@ Gauche¤ÏR5RS Scheme¤Î¥Ñ¡¼¥¶¤ò¤¤¤¯¤Ä¤«¤ÎÅÀ¤Ç³ÈÄ¥¤·¤Æ¤¤¤Ş¤¹¡£
 A text surrounded by '@code{#|}' and '@code{|#}' becomes a comment.
 It can be nested.
 @c JP
-@item ¥Í¥¹¥È²ÄÇ½¤Ê¥Ö¥í¥Ã¥¯¥³¥á¥ó¥È (SRFI-30)
-'@code{#|}' ¤È '@code{|#}' ¤Ç°Ï¤Ş¤ì¤¿¥Æ¥­¥¹¥È¤Ï¥³¥á¥ó¥È¤Ë¤Ê¤ê¤Ş¤¹¡£
-¥Í¥¹¥È²ÄÇ½¤Ç¤¹¡£
+@item ãƒã‚¹ãƒˆå¯èƒ½ãªãƒ–ãƒ­ãƒƒã‚¯ã‚³ãƒ¡ãƒ³ãƒˆ (SRFI-30)
+'@code{#|}' ã¨ '@code{|#}' ã§å›²ã¾ã‚ŒãŸãƒ†ã‚­ã‚¹ãƒˆã¯ã‚³ãƒ¡ãƒ³ãƒˆã«ãªã‚Šã¾ã™ã€‚
+ãƒã‚¹ãƒˆå¯èƒ½ã§ã™ã€‚
 @c COMMON
 
 @c EN
@@ -51,15 +52,15 @@ the positive infinity, the negative infinity, and NaN,
 which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
 respectively.  (@code{-nan.0} is also read as NaN.)
 @c JP
-@item ¿ôÃÍ¥ê¥Æ¥é¥ë
-ÉÔÀµ³Î¤Ê¼Â¿ô¤ÎÀ°¿ôÉô¤Ş¤¿¤Ï¾®¿ôÉô¤Î¤¤¤º¤ì¤«¤¬0¤Î¾ì¹ç¡¢¤½¤ì¤ò¾ÊÎ¬¤¹¤ë¤³¤È¤¬
-¤Ç¤­¤Ş¤¹¡£Îã¡§@code{30.}, @code{.25}, @code{-.4}¡£
-¿ôÃÍ¤Î¥ê¡¼¥À¤Ï¡¢¥Ñ¥Ç¥£¥ó¥°¤Î'@code{#}'¤òÇ§¼±¤·¤Ş¤¹¡£
-Ê£ÁÇ¿ôÉ½µ­¤ÏÄ¾¸òºÂÉ¸·Á (Îã¡§@code{1+0.3i}) ¤Ç¤â¶ËºÂÉ¸·Á (Îã¡§3.0@@1.57) ¤Ç¤â
-Ç§¼±¤µ¤ì¤Ş¤¹¡£
-ÈóÀµ³Î¤Ê¼Â¿ô¤Ï¡¢Àµ¤ÎÌµ¸ÂÂç¡¢Éé¤ÎÌµ¸ÂÂç¡¢Èó¿ô(NaN)¤ò´Ş¤ß¡¢
-¤½¤ì¤é¤Ï¤½¤ì¤¾¤ì@code{+inf.0}¡¢@code{-inf.0}¡¢¤ª¤è¤Ó@code{+nan.0}¤È
-É½µ­¤µ¤ì¤Ş¤¹¡£(@code{-nan.0}¤âÈó¿ô(NaN)¤È¤·¤ÆÆÉ¤Ş¤ì¤Ş¤¹)¡£
+@item æ•°å€¤ãƒªãƒ†ãƒ©ãƒ«
+ä¸æ­£ç¢ºãªå®Ÿæ•°ã®æ•´æ•°éƒ¨ã¾ãŸã¯å°æ•°éƒ¨ã®ã„ãšã‚Œã‹ãŒ0ã®å ´åˆã€ãã‚Œã‚’çœç•¥ã™ã‚‹ã“ã¨ãŒ
+ã§ãã¾ã™ã€‚ä¾‹ï¼š@code{30.}, @code{.25}, @code{-.4}ã€‚
+æ•°å€¤ã®ãƒªãƒ¼ãƒ€ã¯ã€ãƒ‘ãƒ‡ã‚£ãƒ³ã‚°ã®'@code{#}'ã‚’èªè­˜ã—ã¾ã™ã€‚
+è¤‡ç´ æ•°è¡¨è¨˜ã¯ç›´äº¤åº§æ¨™å½¢ (ä¾‹ï¼š@code{1+0.3i}) ã§ã‚‚æ¥µåº§æ¨™å½¢ (ä¾‹ï¼š3.0@@1.57) ã§ã‚‚
+èªè­˜ã•ã‚Œã¾ã™ã€‚
+éæ­£ç¢ºãªå®Ÿæ•°ã¯ã€æ­£ã®ç„¡é™å¤§ã€è² ã®ç„¡é™å¤§ã€éæ•°(NaN)ã‚’å«ã¿ã€
+ãã‚Œã‚‰ã¯ãã‚Œãã‚Œ@code{+inf.0}ã€@code{-inf.0}ã€ãŠã‚ˆã³@code{+nan.0}ã¨
+è¡¨è¨˜ã•ã‚Œã¾ã™ã€‚(@code{-nan.0}ã‚‚éæ•°(NaN)ã¨ã—ã¦èª­ã¾ã‚Œã¾ã™)ã€‚
 @c COMMON
 
 @c EN
@@ -71,13 +72,13 @@ Other weird characters can be included in a symbol name by surrounding
 it with '|', e.g. '@code{|this is a symbol|}'.
 @xref{Symbols}, for details.
 @c JP
-@item ¥·¥ó¥Ü¥ëÌ¾
-¥·¥ó¥Ü¥ëÌ¾¤Ï¥Ç¥Õ¥©¥ë¥È¤ÇÂçÊ¸»ú¾®Ê¸»ú¤ò¶èÊÌ¤·¤Ş¤¹ (@ref{Case-sensitivity}»²¾È)¡£
-¿ô»ú¤ä'@code{+}', '@code{-}' ¤Ç»Ï¤Ş¤ë¥·¥ó¥Ü¥ëÌ¾¤â¡¢
-¥È¡¼¥¯¥ó¤¬Í­¸ú¤Ê¿ôÃÍ¥ê¥Æ¥é¥ë¤ò¹½À®¤·¤Ê¤¤¸Â¤êµö¤µ¤ì¤Ş¤¹¡£
-¤Ş¤¿¡¢Â¾¤ÎÊÑ¤ÊÊ¸»ú¤â '|' ¤Ç¥·¥ó¥Ü¥ë¤ò°Ï¤à¤³¤È¤Ë¤è¤Ã¤Æ¥·¥ó¥Ü¥ëÌ¾¤Ë´Ş¤á¤ë¤³¤È¤¬
-¤Ç¤­¤Ş¤¹ (Îã¡§'@code{|this is a symbol|}')¡£
-@ref{Symbols}¤â»²¾È¤·¤Æ²¼¤µ¤¤¡£
+@item ã‚·ãƒ³ãƒœãƒ«å
+ã‚·ãƒ³ãƒœãƒ«åã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§å¤§æ–‡å­—å°æ–‡å­—ã‚’åŒºåˆ¥ã—ã¾ã™ (@ref{Case-sensitivity}å‚ç…§)ã€‚
+æ•°å­—ã‚„'@code{+}', '@code{-}' ã§å§‹ã¾ã‚‹ã‚·ãƒ³ãƒœãƒ«åã‚‚ã€
+ãƒˆãƒ¼ã‚¯ãƒ³ãŒæœ‰åŠ¹ãªæ•°å€¤ãƒªãƒ†ãƒ©ãƒ«ã‚’æ§‹æˆã—ãªã„é™ã‚Šè¨±ã•ã‚Œã¾ã™ã€‚
+ã¾ãŸã€ä»–ã®å¤‰ãªæ–‡å­—ã‚‚ '|' ã§ã‚·ãƒ³ãƒœãƒ«ã‚’å›²ã‚€ã“ã¨ã«ã‚ˆã£ã¦ã‚·ãƒ³ãƒœãƒ«åã«å«ã‚ã‚‹ã“ã¨ãŒ
+ã§ãã¾ã™ (ä¾‹ï¼š'@code{|this is a symbol|}')ã€‚
+@ref{Symbols}ã‚‚å‚ç…§ã—ã¦ä¸‹ã•ã„ã€‚
 @c COMMON
 
 @c EN
@@ -86,11 +87,11 @@ Character literals can be written using its code,
 by @code{#\x@var{NN}} (Gauche internal code) or @code{#\u@var{NN}} (Unicode).
 @xref{Characters}, for details.
 @c JP
-@item Ê¸»ú¥³¡¼¥É¤Ë¤è¤ëÊ¸»ú¥ê¥Æ¥é¥ë
-Ê¸»ú¥ê¥Æ¥é¥ë¤òÊ¸»ú¥³¡¼¥É¤Ë¤è¤êÉ½µ­¤¹¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£
-GaucheÆâÉô¥³¡¼¥É¤ò»È¤¦ @code{#\x@var{NN}} ¤È¡¢
-Unicode¤ò»È¤¦ @code{#\u@var{NN}}¤È¤¤¤¦É½µ­¤¬¤¢¤ê¤Ş¤¹¡£
-@ref{Characters}¤ò»²¾È¤·¤Æ²¼¤µ¤¤¡£
+@item æ–‡å­—ã‚³ãƒ¼ãƒ‰ã«ã‚ˆã‚‹æ–‡å­—ãƒªãƒ†ãƒ©ãƒ«
+æ–‡å­—ãƒªãƒ†ãƒ©ãƒ«ã‚’æ–‡å­—ã‚³ãƒ¼ãƒ‰ã«ã‚ˆã‚Šè¡¨è¨˜ã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚
+Gaucheå†…éƒ¨ã‚³ãƒ¼ãƒ‰ã‚’ä½¿ã† @code{#\x@var{NN}} ã¨ã€
+Unicodeã‚’ä½¿ã† @code{#\u@var{NN}}ã¨ã„ã†è¡¨è¨˜ãŒã‚ã‚Šã¾ã™ã€‚
+@ref{Characters}ã‚’å‚ç…§ã—ã¦ä¸‹ã•ã„ã€‚
 @c COMMON
 
 @c EN
@@ -98,16 +99,16 @@ Unicode¤ò»È¤¦ @code{#\u@var{NN}}¤È¤¤¤¦É½µ­¤¬¤¢¤ê¤Ş¤¹¡£
 Many more special tokens begins with '@code{#}' are defined.
 See the table below.
 @c JP
-@item ³ÈÄ¥¤µ¤ì¤¿#¹½Ê¸
-'@code{#}' ¤Ç»Ï¤Ş¤ëÆÃ¼ì¹½Ê¸¤¬¤¿¤¯¤µ¤óÄêµÁ¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
-²¼¤ÎÉ½¤ò»²¾È¤·¤Æ²¼¤µ¤¤¡£
+@item æ‹¡å¼µã•ã‚ŒãŸ#æ§‹æ–‡
+'@code{#}' ã§å§‹ã¾ã‚‹ç‰¹æ®Šæ§‹æ–‡ãŒãŸãã•ã‚“å®šç¾©ã•ã‚Œã¦ã„ã¾ã™ã€‚
+ä¸‹ã®è¡¨ã‚’å‚ç…§ã—ã¦ä¸‹ã•ã„ã€‚
 @c COMMON
 @end table
 
 @c EN
 The table below lists sharp-syntaxes.
 @c JP
-°Ê²¼¤ÎÉ½¤Ï¥·¥ã¡¼¥×¹½Ê¸¤Î¥ê¥¹¥È¤Ç¤¹¡£
+ä»¥ä¸‹ã®è¡¨ã¯ã‚·ãƒ£ãƒ¼ãƒ—æ§‹æ–‡ã®ãƒªã‚¹ãƒˆã§ã™ã€‚
 @c COMMON
 
 @multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
@@ -117,246 +118,246 @@ The table below lists sharp-syntaxes.
       (shebang) of a script, or a special token that affects the mode
       of the reader.  See `hash-bang token' section below.
 @c JP
- @tab [R6RS][SRFI-22] ¤³¤ì¤Ï¡¢¥¹¥¯¥ê¥×¥È¤Î¥¤¥ó¥¿¥×¥ê¥¿»ØÄê¹Ô(shebang)¤Î
-      ³«»Ï¤ò¼¨¤¹¤«¡¢¥ê¡¼¥À¤Î¥â¡¼¥É¤Ë±Æ¶Á¤òÍ¿¤¨¤ëÆÃÊÌ¤Ê¥È¡¼¥¯¥ó¤È¤·¤ÆÆÉ¤Ş¤ì¤Ş¤¹¡£
-      ²¼¤Î`hash-bang token'¤ÎÀá¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
+ @tab [R6RS][SRFI-22] ã“ã‚Œã¯ã€ã‚¹ã‚¯ãƒªãƒ—ãƒˆã®ã‚¤ãƒ³ã‚¿ãƒ—ãƒªã‚¿æŒ‡å®šè¡Œ(shebang)ã®
+      é–‹å§‹ã‚’ç¤ºã™ã‹ã€ãƒªãƒ¼ãƒ€ã®ãƒ¢ãƒ¼ãƒ‰ã«å½±éŸ¿ã‚’ä¸ãˆã‚‹ç‰¹åˆ¥ãªãƒˆãƒ¼ã‚¯ãƒ³ã¨ã—ã¦èª­ã¾ã‚Œã¾ã™ã€‚
+      ä¸‹ã®`hash-bang token'ã®ç¯€ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
 @c COMMON
 @item @code{#"}, @code{##}, @code{#$}, @code{#%}, @code{#&}, @code{#'}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#(}
 @c EN
  @tab [R5RS] Introduces a vector.
 @c JP
- @tab [R5RS] ¥Ù¥¯¥¿¤òÀèÆ³¤·¤Ş¤¹¡£
+ @tab [R5RS] ãƒ™ã‚¯ã‚¿ã‚’å…ˆå°ã—ã¾ã™ã€‚
 @c COMMON
 @item @code{#)}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#*}
 @c EN
  @tab If followed by a double quote, denotes an incomplete string.  @xref{Strings}.
 @c JP
- @tab Æó½Å°úÍÑÉä¤¬¤³¤ì¤ËÂ³¤¯¤È¤­¤Ï¡¢ÉÔ´°Á´¤ÊÊ¸»úÎó¤òÉ½¤·¤Ş¤¹¡£@ref{Strings}»²¾È¡£
+ @tab äºŒé‡å¼•ç”¨ç¬¦ãŒã“ã‚Œã«ç¶šãã¨ãã¯ã€ä¸å®Œå…¨ãªæ–‡å­—åˆ—ã‚’è¡¨ã—ã¾ã™ã€‚@ref{Strings}å‚ç…§ã€‚
 @c COMMON
 @item @code{#+}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#,}
 @c EN
  @tab [SRFI-10] Introduces reader constructor syntax.
 @c JP
- @tab [SRFI-10] ¥ê¡¼¥À¹½ÃÛ»Ò¹½Ê¸¤òÀèÆ³¤·¤Ş¤¹¡£
+ @tab [SRFI-10] ãƒªãƒ¼ãƒ€æ§‹ç¯‰å­æ§‹æ–‡ã‚’å…ˆå°ã—ã¾ã™ã€‚
 @c COMMON
 @item @code{#-}, @code{#.}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#/}
 @c EN
  @tab Introduces a literal regular expression.  @xref{Regular expression}.
 @c JP
- @tab ¥ê¥Æ¥é¥ë¤ÎÀµµ¬É½¸½¤òÀèÆ³¤·¤Ş¤¹¡£@ref{Regular expression}»²¾È¡£
+ @tab ãƒªãƒ†ãƒ©ãƒ«ã®æ­£è¦è¡¨ç¾ã‚’å…ˆå°ã—ã¾ã™ã€‚@ref{Regular expression}å‚ç…§ã€‚
 @c COMMON
 @item @code{#0} @dots{} @code{#9}
 @c EN
  @tab [SRFI-38] Shared substructure definition and reference.
 @c JP
- @tab [SRFI-38] ¶¦Í­¥µ¥Ö¥¹¥È¥é¥¯¥Á¥ã¤ÎÄêµÁ¤È»²¾È¡£
+ @tab [SRFI-38] å…±æœ‰ã‚µãƒ–ã‚¹ãƒˆãƒ©ã‚¯ãƒãƒ£ã®å®šç¾©ã¨å‚ç…§ã€‚
 @c COMMON
 @item @code{#:}
 @c EN
  @tab Uninterned symbol.  @xref{Symbols}.
 @c JP
- @tab ¥¤¥ó¥¿¡¼¥ó¤µ¤ì¤Æ¤¤¤Ê¤¤¥·¥ó¥Ü¥ë¡£@ref{Symbols}»²¾È¡£
+ @tab ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ³ã•ã‚Œã¦ã„ãªã„ã‚·ãƒ³ãƒœãƒ«ã€‚@ref{Symbols}å‚ç…§ã€‚
 @c COMMON
 @item @code{#;}
 @c EN
  @tab [SRFI-62] S-expression comment.  Reads next one S-expression and
       discard it.
 @c JP
- @tab [SRFI-62] S¼°¥³¥á¥ó¥È¡£Â³¤¯S¼°¤ò¤Ò¤È¤ÄÆÉ¤ó¤Ç¼Î¤Æ¤Ş¤¹¡£
+ @tab [SRFI-62] Så¼ã‚³ãƒ¡ãƒ³ãƒˆã€‚ç¶šãSå¼ã‚’ã²ã¨ã¤èª­ã‚“ã§æ¨ã¦ã¾ã™ã€‚
 @c COMMON
 @item @code{#<}
 @c EN
  @tab Introduces an unreadable object.
 @c JP
- @tab ÆÉ¤ß¼è¤êÉÔ²ÄÇ½¥ª¥Ö¥¸¥§¥¯¥È¤òÀèÆ³¤·¤Ş¤¹¡£
+ @tab èª­ã¿å–ã‚Šä¸å¯èƒ½ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’å…ˆå°ã—ã¾ã™ã€‚
 @c COMMON
 @item @code{#=}, @code{#>}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#?}
 @c EN
  @tab Introduces debug macros.  @xref{Debugging}.
 @c JP
- @tab ¥Ç¥Ğ¥Ã¥°¥Ş¥¯¥í¤òÀèÆ³¤·¤Ş¤¹¡£@ref{Debugging}»²¾È¡£
+ @tab ãƒ‡ãƒãƒƒã‚°ãƒã‚¯ãƒ­ã‚’å…ˆå°ã—ã¾ã™ã€‚@ref{Debugging}å‚ç…§ã€‚
 @c COMMON
 @item @code{#@@}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#a}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#b}
 @c EN
  @tab [R5RS] Binary number prefix.
 @c JP
- @tab [R5RS] 2¿Ê¿ôÀÜÆ¬¼­¡£
+ @tab [R5RS] 2é€²æ•°æ¥é ­è¾ã€‚
 @c COMMON
 @item @code{#c}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#d}
 @c EN
  @tab [R5RS] Decimal number prefix.
 @c JP
- @tab [R5RS] 10¿Ê¿ôÀÜÆ¬¼­¡£
+ @tab [R5RS] 10é€²æ•°æ¥é ­è¾ã€‚
 @c COMMON
 @item @code{#e}
 @c EN
  @tab [R5RS] Exact number prefix.
 @c JP
- @tab [R5RS] Àµ³Î¿ôÀÜÆ¬¼­¡£
+ @tab [R5RS] æ­£ç¢ºæ•°æ¥é ­è¾ã€‚
 @c COMMON
 @item @code{#f}
 @c EN
  @tab [R5RS] Boolean false, or
       introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
 @c JP
- @tab [R5RS] ¿¿ÍıÃÍ¤Îµ¶¡¢¤¢¤ë¤¤¤Ï
-      SRFI-4 ¤Î¥æ¥Ë¥Õ¥©¡¼¥à¥Ù¥¯¥¿¤òÀèÆ³¤·¤Ş¤¹¡£@ref{Uniform vectors}»²¾È
+ @tab [R5RS] çœŸç†å€¤ã®å½ã€ã‚ã‚‹ã„ã¯
+      SRFI-4 ã®ãƒ¦ãƒ‹ãƒ•ã‚©ãƒ¼ãƒ ãƒ™ã‚¯ã‚¿ã‚’å…ˆå°ã—ã¾ã™ã€‚@ref{Uniform vectors}å‚ç…§
 @c COMMON
 @item @code{#g}, @code{#h}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#i}
 @c EN
  @tab [R5RS] Inxact number prefix.
 @c JP
- @tab [R5RS] ÉÔÀµ³Î¿ôÀÜÆ¬¼­¡£
+ @tab [R5RS] ä¸æ­£ç¢ºæ•°æ¥é ­è¾ã€‚
 @c COMMON
 @item @code{#j}, @code{#k}, @code{#l}, @code{#m}, @code{#n}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#o}
 @c EN
  @tab [R5RS] Octal number prefix.
 @c JP
- @tab [R5RS] 8¿Ê¿ôÀÜÆ¬¼­¡£
+ @tab [R5RS] 8é€²æ•°æ¥é ­è¾ã€‚
 @c COMMON
 @item @code{#p}, @code{#q}, @code{#r}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#s}
 @c EN
  @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
 @c JP
- @tab [SRFI-4] SRFI-4 ¤Î¥æ¥Ë¥Õ¥©¡¼¥à¥Ù¥¯¥¿¤òÀèÆ³¤·¤Ş¤¹¡£@ref{Uniform vectors}»²¾È¡£
+ @tab [SRFI-4] SRFI-4 ã®ãƒ¦ãƒ‹ãƒ•ã‚©ãƒ¼ãƒ ãƒ™ã‚¯ã‚¿ã‚’å…ˆå°ã—ã¾ã™ã€‚@ref{Uniform vectors}å‚ç…§ã€‚
 @c COMMON
 @item @code{#t}
 @c EN
  @tab [R5RS] Boolean true.
 @c JP
- @tab [R5RS] ¿¿ÍıÃÍ¤Î¿¿¡£
+ @tab [R5RS] çœŸç†å€¤ã®çœŸã€‚
 @c COMMON
 @item @code{#u}
 @c EN
  @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
 @c JP
- @tab [SRFI-4] SRFI-4 ¤Î¥æ¥Ë¥Õ¥©¡¼¥à¥Ù¥¯¥¿¤òÀèÆ³¤·¤Ş¤¹¡£@ref{Uniform vectors}»²¾È¡£
+ @tab [SRFI-4] SRFI-4 ã®ãƒ¦ãƒ‹ãƒ•ã‚©ãƒ¼ãƒ ãƒ™ã‚¯ã‚¿ã‚’å…ˆå°ã—ã¾ã™ã€‚@ref{Uniform vectors}å‚ç…§ã€‚
 @c COMMON
 @item @code{#v}, @code{#w}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#x}
 @c EN
  @tab [R5RS] Hexadecimal number prefix.
 @c JP
- @tab [R5RS] 16¿Ê¿ôÀÜÆ¬¼­
+ @tab [R5RS] 16é€²æ•°æ¥é ­è¾
 @c COMMON
 @item @code{#y}, @code{#z}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#[}
 @c EN
  @tab Introduces a literal character set.  @xref{Character set}.
 @c JP
- @tab ¥ê¥Æ¥é¥ë¤ÎÊ¸»ú½¸¹ç¤òÀèÆ³¤·¤Ş¤¹¡£@ref{Character set}»²¾È
+ @tab ãƒªãƒ†ãƒ©ãƒ«ã®æ–‡å­—é›†åˆã‚’å…ˆå°ã—ã¾ã™ã€‚@ref{Character set}å‚ç…§
 @c COMMON
 @item @code{#\}
 @c EN
  @tab [R5RS] Introduces a literal character.  @xref{Characters}.
 @c JP
- @tab [R5RS] ¥ê¥Æ¥é¥ë¤ÎÊ¸»ú¤òÀèÆ³¤·¤Ş¤¹¡£@ref{Characters}»²¾È¡£
+ @tab [R5RS] ãƒªãƒ†ãƒ©ãƒ«ã®æ–‡å­—ã‚’å…ˆå°ã—ã¾ã™ã€‚@ref{Characters}å‚ç…§ã€‚
 @c COMMON
 @item @code{#]}, @code{#^}, @code{#_}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#`}
 @c EN
  @tab Introduces an interpolated string.  @xref{String interpolation}.
 @c JP
- @tab Êä´Ö¤µ¤ì¤¿Ê¸»úÎó¤òÀèÆ³¤·¤Ş¤¹¡£@ref{String interpolation}»²¾È¡£
+ @tab è£œé–“ã•ã‚ŒãŸæ–‡å­—åˆ—ã‚’å…ˆå°ã—ã¾ã™ã€‚@ref{String interpolation}å‚ç…§ã€‚
 @c COMMON
 @item @code{#@{}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @item @code{#|}
 @c EN
  @tab [SRFI-30] Introduces a block comment.  Comment ends by matching '@code{|#}'.
 @c JP
- @tab [SRFI-30] ¥Ö¥í¥Ã¥¯¥³¥á¥ó¥È¤òÀèÆ³¤·¤Ş¤¹¡£¥³¥á¥ó¥È¤ÏÂĞ±ş¤¹¤ë '@code{|#}' ¤Ç½ª¤ê¤Ş¤¹¡£
+ @tab [SRFI-30] ãƒ–ãƒ­ãƒƒã‚¯ã‚³ãƒ¡ãƒ³ãƒˆã‚’å…ˆå°ã—ã¾ã™ã€‚ã‚³ãƒ¡ãƒ³ãƒˆã¯å¯¾å¿œã™ã‚‹ '@code{|#}' ã§çµ‚ã‚Šã¾ã™ã€‚
 @c COMMON
 @item @code{#@}}, @code{#~}
 @c EN
  @tab Unused.
 @c JP
- @tab Ì¤»ÈÍÑ¡£
+ @tab æœªä½¿ç”¨ã€‚
 @c COMMON
 @end multitable
 
@@ -387,41 +388,41 @@ program is strictly conforms R6RS.  Gauche doesn't support R6RS, and
 currently it issues warning when it sees @code{#!r6rs} token, though
 it keeps reading on.
 @c JP
-Ê¸»ú¥·¡¼¥±¥ó¥¹@code{#!}¤Ï¡¢¤É¤³¤Ç¤É¤Î¤è¤¦¤Ë¸½¤ì¤ë¤«¤Ë¤è¤Ã¤Æ2¤Ä¤ÎÁ´¤¯°Û¤Ê¤ë
-°ÕÌ£¤ò»ı¤Á¤Ş¤¹¡£
+æ–‡å­—ã‚·ãƒ¼ã‚±ãƒ³ã‚¹@code{#!}ã¯ã€ã©ã“ã§ã©ã®ã‚ˆã†ã«ç¾ã‚Œã‚‹ã‹ã«ã‚ˆã£ã¦2ã¤ã®å…¨ãç•°ãªã‚‹
+æ„å‘³ã‚’æŒã¡ã¾ã™ã€‚
 
-¥Õ¥¡¥¤¥ë¤¬@code{#!/}¤â¤·¤¯¤Ï@code{#! } (¥Ï¥Ã¥·¥å¡¢¥Ğ¥ó¥°¡¢¶õÇò) ¤«¤é»Ï
-¤Ş¤Ã¤Æ¤¤¤ë¾ì¹ç¡¢ÆÉ¤ß¹ş¤ß¥ë¡¼¥Á¥ó¤Ï¤½¤ì¤ò¥¹¥¯¥ê¥×¥È¤Î¥¤¥ó¥¿¥×¥ê¥¿»ØÄê¹Ô
-(shebang) ¤È¤ß¤Ê¤·¡¢ºÇ½é¤Î¹ÔËö¤Ş¤Ç¤òÌµ»ë¤·¤Ş¤¹¡£
-(¼Âºİ¤Ï¡¢¥½¡¼¥¹¤Ï¥Õ¥¡¥¤¥ë¤Ç¤Ê¤¯¤Æ¤â¹½¤¤¤Ş¤»¤ó¡£¥ê¡¼¥À¤Ï¥İ¡¼¥È¤ÎÀèÆ¬¤«¤É¤¦¤«¤Ç
-È½ÃÇ¤·¤Ş¤¹¡£)
+ãƒ•ã‚¡ã‚¤ãƒ«ãŒ@code{#!/}ã‚‚ã—ãã¯@code{#! } (ãƒãƒƒã‚·ãƒ¥ã€ãƒãƒ³ã‚°ã€ç©ºç™½) ã‹ã‚‰å§‹
+ã¾ã£ã¦ã„ã‚‹å ´åˆã€èª­ã¿è¾¼ã¿ãƒ«ãƒ¼ãƒãƒ³ã¯ãã‚Œã‚’ã‚¹ã‚¯ãƒªãƒ—ãƒˆã®ã‚¤ãƒ³ã‚¿ãƒ—ãƒªã‚¿æŒ‡å®šè¡Œ
+(shebang) ã¨ã¿ãªã—ã€æœ€åˆã®è¡Œæœ«ã¾ã§ã‚’ç„¡è¦–ã—ã¾ã™ã€‚
+(å®Ÿéš›ã¯ã€ã‚½ãƒ¼ã‚¹ã¯ãƒ•ã‚¡ã‚¤ãƒ«ã§ãªãã¦ã‚‚æ§‹ã„ã¾ã›ã‚“ã€‚ãƒªãƒ¼ãƒ€ã¯ãƒãƒ¼ãƒˆã®å…ˆé ­ã‹ã©ã†ã‹ã§
+åˆ¤æ–­ã—ã¾ã™ã€‚)
 
-¤½¤Î¾ì¹ç°Ê³°¤Ç¤Ï¡¢@code{#!@var{identifier}}¤¬¤Ò¤È¤Ä¤Î¥È¡¼¥¯¥ó¤È¤·¤ÆÆÉ¤Ş
-¤ì¡¢ÆÃÊÌ¤Ê°ÕÌ£¤ò»ı¤Á¤Ş¤¹¡£¤³¤Î¼ï¤Î¥È¡¼¥¯¥ó¤Ï¥Ç¡¼¥¿¤È¤·¤ÆÆÉ¤Ş¤ì¤ë¤Î¤Ç¤Ï
-¤Ê¤¯¡¢¥ê¡¼¥À¤ËÂĞ¤·¤ÆÆÃÊÌ¤Ê»ØÄê¤òÍ¿¤¨¤ë¤³¤È¤â¤¢¤ê¤Ş¤¹¡£
+ãã®å ´åˆä»¥å¤–ã§ã¯ã€@code{#!@var{identifier}}ãŒã²ã¨ã¤ã®ãƒˆãƒ¼ã‚¯ãƒ³ã¨ã—ã¦èª­ã¾
+ã‚Œã€ç‰¹åˆ¥ãªæ„å‘³ã‚’æŒã¡ã¾ã™ã€‚ã“ã®ç¨®ã®ãƒˆãƒ¼ã‚¯ãƒ³ã¯ãƒ‡ãƒ¼ã‚¿ã¨ã—ã¦èª­ã¾ã‚Œã‚‹ã®ã§ã¯
+ãªãã€ãƒªãƒ¼ãƒ€ã«å¯¾ã—ã¦ç‰¹åˆ¥ãªæŒ‡å®šã‚’ä¸ãˆã‚‹ã“ã¨ã‚‚ã‚ã‚Šã¾ã™ã€‚
 
-¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï¡¢¤³¤Î¤è¤¦¤Ê3¤Ä¤Î¥È¡¼¥¯¥ó¤¬Ç§¼±¤µ¤ì¤Ş¤¹¡£
-@code{#!fold-case}¤È@code{#!no-fold-case}¤Ï¥ê¡¼¥À¤¬ÂçÊ¸»ú¾®Ê¸»ú¤ò¶èÊÌ¤¹
-¤ë¤«¤É¤¦¤«¤òÀÚ¤êÂØ¤¨¤Ş¤¹¡£@code{#!fold-case}¤Ë½Ğ²ñ¤¦¤È¥ê¡¼¥À¤ÏÂçÊ¸»ú¾®
-Ê¸»ú¤ò¶èÊÌ¤·¤Ê¤¤¥â¡¼¥É¤Ë¤Ê¤ê¡¢@code{#!no-fold-case}¤Ë½Ğ²ñ¤¦¤È¤½¤ÎµÕ¤Ë¤Ê
-¤ê¤Ş¤¹¡£(@ref{Case-sensitivity}¤â»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£)
+ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ã¯ã€ã“ã®ã‚ˆã†ãª3ã¤ã®ãƒˆãƒ¼ã‚¯ãƒ³ãŒèªè­˜ã•ã‚Œã¾ã™ã€‚
+@code{#!fold-case}ã¨@code{#!no-fold-case}ã¯ãƒªãƒ¼ãƒ€ãŒå¤§æ–‡å­—å°æ–‡å­—ã‚’åŒºåˆ¥ã™
+ã‚‹ã‹ã©ã†ã‹ã‚’åˆ‡ã‚Šæ›¿ãˆã¾ã™ã€‚@code{#!fold-case}ã«å‡ºä¼šã†ã¨ãƒªãƒ¼ãƒ€ã¯å¤§æ–‡å­—å°
+æ–‡å­—ã‚’åŒºåˆ¥ã—ãªã„ãƒ¢ãƒ¼ãƒ‰ã«ãªã‚Šã€@code{#!no-fold-case}ã«å‡ºä¼šã†ã¨ãã®é€†ã«ãª
+ã‚Šã¾ã™ã€‚(@ref{Case-sensitivity}ã‚‚å‚ç…§ã—ã¦ãã ã•ã„ã€‚)
 
-¥È¡¼¥¯¥ó@code{#!r6rs}¤ÏR6RS¤ÇÆ³Æş¤µ¤ì¡¢¥×¥í¥°¥é¥à¤¬R6RS¤Ë½àµò¤·¤Æ¤¤¤ë¤³
-¤È¤ò¼¨¤·¤Ş¤¹¡£Gauche¤ÏR6RS¤ò¥µ¥İ¡¼¥È¤·¤Æ¤¤¤Ş¤»¤ó¤¬¡¢º£¤Î¤È¤³¤í¤³¤Î¥È¡¼
-¥¯¥ó¤Ë½Ğ²ñ¤Ã¤Æ¤â·Ù¹ğ¤ò½Ğ¤¹¤À¤±¤ÇÆÉ¤ß¹ş¤ß¤Ï·ÑÂ³¤·¤Ş¤¹¡£
+ãƒˆãƒ¼ã‚¯ãƒ³@code{#!r6rs}ã¯R6RSã§å°å…¥ã•ã‚Œã€ãƒ—ãƒ­ã‚°ãƒ©ãƒ ãŒR6RSã«æº–æ‹ ã—ã¦ã„ã‚‹ã“
+ã¨ã‚’ç¤ºã—ã¾ã™ã€‚Gaucheã¯R6RSã‚’ã‚µãƒãƒ¼ãƒˆã—ã¦ã„ã¾ã›ã‚“ãŒã€ä»Šã®ã¨ã“ã‚ã“ã®ãƒˆãƒ¼
+ã‚¯ãƒ³ã«å‡ºä¼šã£ã¦ã‚‚è­¦å‘Šã‚’å‡ºã™ã ã‘ã§èª­ã¿è¾¼ã¿ã¯ç¶™ç¶šã—ã¾ã™ã€‚
 @c COMMON
 
 @c ----------------------------------------------------------------------
 @node Literals, Making Procedures, Lexical structure, Core syntax
 @section Literals
-@c NODE ¥ê¥Æ¥é¥ë
+@c NODE ãƒªãƒ†ãƒ©ãƒ«
 
 @defspec quote datum
 [R5RS]
 @c EN
 Evaluates to @var{datum}.
 @c JP
-@var{datum}¤½¤ì¼«¿È¤òÊÖ¤·¤Ş¤¹¡£
+@var{datum}ãã‚Œè‡ªèº«ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 @example
 (quote x) @result{} x
@@ -434,7 +435,7 @@ Evaluates to @var{datum}.
 @c EN
 Equivalent to @code{(quote datum)}.
 @c JP
-@code{(quote datum)}¤ÎÎ¬µ­¤Ç¤¹¡£
+@code{(quote datum)}ã®ç•¥è¨˜ã§ã™ã€‚
 @c COMMON
 @example
 'x @result{} x
@@ -452,18 +453,18 @@ and @code{vector-set!}.  Doing so will cause unexpected results.
 Gauche does check constant-ness of strings, and signals an error
 if you try to alter a constant string.
 @c JP
-@emph{Ãí:} R5RS¤Ï¡¢¥ê¥Æ¥é¥ë¼°¤ÎÃÍ¤òÊÑ¹¹¤¹¤ë¤Î¤Ï¥¨¥é¡¼¤Ç¤¢¤ë¤È¤·¤Æ¤¤¤Ş¤¹¡£
-¤·¤«¤·Gauche¤Ï¥Ú¥¢¤È¥Ù¥¯¥¿¤Ë¤Ä¤¤¤Æ¤Ï¤½¤ì¤¬Äê¿ô¤Ç¤¢¤ë¤«¤É¤¦¤«¤ò¥Á¥§¥Ã¥¯¤·¤Æ¤ª¤é¤º¡¢
-@code{set-car!}¤ä@code{vector-set!}Åù¤ÎÇË²õÅª¼êÂ³¤­¤Ë¤è¤Ã¤Æ¤½¤ì¤é¤ÎÃÍ¤ò
-ÊÑ¹¹¤·¤Æ¤â¥¨¥é¡¼¤ÏÊó¹ğ¤µ¤ì¤Ş¤»¤ó¡£¤½¤¦¤·¤¿¾ì¹ç¤ÎÆ°ºî¤ÏÉÔÄê¤Ç¤¹¡£
-Ê¸»úÎó¤Ë´Ø¤·¤Æ¤ÏÄê¿ô¤«¤É¤¦¤«¤Î¥Á¥§¥Ã¥¯¤ò¹Ô¤Ã¤Æ¤ª¤ê¡¢Äê¿ôÊ¸»úÎó¤òÊÑ¹¹¤·¤è¤¦¤È¤¹¤ë¤È
-¥¨¥é¡¼¤¬Êó¹ğ¤µ¤ì¤Ş¤¹¡£
+@emph{æ³¨:} R5RSã¯ã€ãƒªãƒ†ãƒ©ãƒ«å¼ã®å€¤ã‚’å¤‰æ›´ã™ã‚‹ã®ã¯ã‚¨ãƒ©ãƒ¼ã§ã‚ã‚‹ã¨ã—ã¦ã„ã¾ã™ã€‚
+ã—ã‹ã—Gaucheã¯ãƒšã‚¢ã¨ãƒ™ã‚¯ã‚¿ã«ã¤ã„ã¦ã¯ãã‚ŒãŒå®šæ•°ã§ã‚ã‚‹ã‹ã©ã†ã‹ã‚’ãƒã‚§ãƒƒã‚¯ã—ã¦ãŠã‚‰ãšã€
+@code{set-car!}ã‚„@code{vector-set!}ç­‰ã®ç ´å£Šçš„æ‰‹ç¶šãã«ã‚ˆã£ã¦ãã‚Œã‚‰ã®å€¤ã‚’
+å¤‰æ›´ã—ã¦ã‚‚ã‚¨ãƒ©ãƒ¼ã¯å ±å‘Šã•ã‚Œã¾ã›ã‚“ã€‚ãã†ã—ãŸå ´åˆã®å‹•ä½œã¯ä¸å®šã§ã™ã€‚
+æ–‡å­—åˆ—ã«é–¢ã—ã¦ã¯å®šæ•°ã‹ã©ã†ã‹ã®ãƒã‚§ãƒƒã‚¯ã‚’è¡Œã£ã¦ãŠã‚Šã€å®šæ•°æ–‡å­—åˆ—ã‚’å¤‰æ›´ã—ã‚ˆã†ã¨ã™ã‚‹ã¨
+ã‚¨ãƒ©ãƒ¼ãŒå ±å‘Šã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @c ----------------------------------------------------------------------
 @node Making Procedures, Assignments, Literals, Core syntax
 @section Making Procedures
-@c NODE  ¼êÂ³¤­¤òºî¤ë
+@c NODE  æ‰‹ç¶šãã‚’ä½œã‚‹
 
 @defspec lambda formals body @dots{}
 @defspecx ^ formals body @dots{}
@@ -475,15 +476,15 @@ is called, @var{body} is evaluated sequentially in the
 stored environment extended by the bindings of the formal arguments,
 and returns the value(s) of the last expression in the body.
 @c JP
-¤³¤Î¼°¤ÏÉ¾²Á¤µ¤ì¤ë¤È¼êÂ³¤­¤òÀ¸À®¤·¤Ş¤¹¡£¤³¤Î¼°¤¬É¾²Á¤µ¤ì¤¿»şÅÀ¤Î´Ä¶­¤¬¼êÂ³¤­Ãæ¤ËÊİ»ı¤µ¤ì¤Ş¤¹¡£
-¼êÂ³¤­¤¬¸Æ¤Ğ¤ì¤ë¤È¡¢µ­²±¤µ¤ì¤¿´Ä¶­¤Ë°ú¿ô¤ÎÂ«Çû¤òÄÉ²Ã¤·¤¿´Ä¶­Ãæ¤Ç@var{body} ¤¬½ç¤ËÉ¾²Á¤µ¤ì¡¢
-ºÇ¸å¤Î¼°¤ÎÃÍ¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£
+ã“ã®å¼ã¯è©•ä¾¡ã•ã‚Œã‚‹ã¨æ‰‹ç¶šãã‚’ç”Ÿæˆã—ã¾ã™ã€‚ã“ã®å¼ãŒè©•ä¾¡ã•ã‚ŒãŸæ™‚ç‚¹ã®ç’°å¢ƒãŒæ‰‹ç¶šãä¸­ã«ä¿æŒã•ã‚Œã¾ã™ã€‚
+æ‰‹ç¶šããŒå‘¼ã°ã‚Œã‚‹ã¨ã€è¨˜æ†¶ã•ã‚ŒãŸç’°å¢ƒã«å¼•æ•°ã®æŸç¸›ã‚’è¿½åŠ ã—ãŸç’°å¢ƒä¸­ã§@var{body} ãŒé †ã«è©•ä¾¡ã•ã‚Œã€
+æœ€å¾Œã®å¼ã®å€¤ãŒè¿”ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @c EN
 @code{^} is a concise alias of @code{lambda}.  It is Gauche's extension.
 @c JP
-@code{^}¤Ï@code{lambda}¤ÎÃ»¤¤ÊÌÌ¾¤Ç¤¹¡£¤³¤ì¤ÏGaucheÆÈ¼«¤Î³ÈÄ¥¤Ç¤¹¡£
+@code{^}ã¯@code{lambda}ã®çŸ­ã„åˆ¥åã§ã™ã€‚ã“ã‚Œã¯Gaucheç‹¬è‡ªã®æ‹¡å¼µã§ã™ã€‚
 @c COMMON
 
 @example
@@ -491,7 +492,7 @@ and returns the value(s) of the last expression in the body.
 @c EN
   @result{} @r{procedure that adds two arguments}
 @c JP
-  @result{} @r{Æó¤Ä¤Î°ú¿ô¤ò²Ã»»¤¹¤ë¼êÂ³¤­}
+  @result{} @r{äºŒã¤ã®å¼•æ•°ã‚’åŠ ç®—ã™ã‚‹æ‰‹ç¶šã}
 @c COMMON
 
 ((lambda (a b) (+ a b)) 1 2) @result{} 3
@@ -507,17 +508,17 @@ variable-length arguments explicitly, but the code tends
 to be longer and verbose.   It is recommended to use extended syntax
 unless you're writing portable code.
 @c JP
-Gauche¤Ï¤Ş¤¿¡¢@code{lambda}¤¬¼è¤ë@var{formals}¤Î¹½Ê¸¤ò³ÈÄ¥¤·¡¢
-¾ÊÎ¬²ÄÇ½°ú¿ô¤ä¥­¡¼¥ï¡¼¥É°ú¿ô¤ò´ÊÃ±¤Ë»ØÄê¤Ç¤­¤ë¤è¤¦¤Ë¤·¤Æ¤¤¤Ş¤¹¡£
-Æ±¤¸µ¡Ç½¤Ï½ã¿è¤ÊR5RS¤Ç¤â¡¢²ÄÊÑÄ¹°ú¿ô¤ò¼«ÎÏ¤Ç²òÀÏ¤¹¤ë¤³¤È¤Ç¼Â¸½²ÄÇ½¤Ç¤¹¤¬¡¢
-¥³¡¼¥É¤Ï¤è¤êÄ¹¤¯¾éÄ¹¤Ë¤Ê¤Ã¤Æ¤·¤Ş¤¤¤Ş¤¹¡£¥İ¡¼¥¿¥Ö¥ë¤Ê¥³¡¼¥É¤ò½ñ¤¤¤Æ¤¤¤ë¤Î¤Ç¤Ê¤±¤ì¤Ğ
-³ÈÄ¥¹½Ê¸¤ò»È¤Ã¤¿Êı¤¬ÎÉ¤¤¤Ç¤·¤ç¤¦¡£
+Gaucheã¯ã¾ãŸã€@code{lambda}ãŒå–ã‚‹@var{formals}ã®æ§‹æ–‡ã‚’æ‹¡å¼µã—ã€
+çœç•¥å¯èƒ½å¼•æ•°ã‚„ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°ã‚’ç°¡å˜ã«æŒ‡å®šã§ãã‚‹ã‚ˆã†ã«ã—ã¦ã„ã¾ã™ã€‚
+åŒã˜æ©Ÿèƒ½ã¯ç´”ç²‹ãªR5RSã§ã‚‚ã€å¯å¤‰é•·å¼•æ•°ã‚’è‡ªåŠ›ã§è§£æã™ã‚‹ã“ã¨ã§å®Ÿç¾å¯èƒ½ã§ã™ãŒã€
+ã‚³ãƒ¼ãƒ‰ã¯ã‚ˆã‚Šé•·ãå†—é•·ã«ãªã£ã¦ã—ã¾ã„ã¾ã™ã€‚ãƒãƒ¼ã‚¿ãƒ–ãƒ«ãªã‚³ãƒ¼ãƒ‰ã‚’æ›¸ã„ã¦ã„ã‚‹ã®ã§ãªã‘ã‚Œã°
+æ‹¡å¼µæ§‹æ–‡ã‚’ä½¿ã£ãŸæ–¹ãŒè‰¯ã„ã§ã—ã‚‡ã†ã€‚
 @c COMMON
 
 @c EN
 @var{Formals} should have one of the following forms:
 @c JP
-@var{Formals} ¤Ï°Ê²¼¤Î¤¤¤º¤ì¤«¤Î·Á¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
+@var{Formals} ã¯ä»¥ä¸‹ã®ã„ãšã‚Œã‹ã®å½¢ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @itemize @bullet
 @item
@@ -526,8 +527,8 @@ Gauche¤Ï¤Ş¤¿¡¢@code{lambda}¤¬¼è¤ë@var{formals}¤Î¹½Ê¸¤ò³ÈÄ¥¤·¡¢
 The procedure takes a fixed number of arguments.
 The actual arguments are bound to the corresponding variables.
 @c JP
-@code{(@var{variable} @dots{})} : ¼êÂ³¤­¤Ï·è¤Ş¤Ã¤¿¿ô¤Î°ú¿ô¤ò¼è¤ê¤Ş¤¹¡£
-¼Â°ú¿ô¤¬¤½¤ì¤¾¤ìÂĞ±ş¤¹¤ë@var{variable}¤ËÂ«Çû¤µ¤ì¤Ş¤¹¡£
+@code{(@var{variable} @dots{})} : æ‰‹ç¶šãã¯æ±ºã¾ã£ãŸæ•°ã®å¼•æ•°ã‚’å–ã‚Šã¾ã™ã€‚
+å®Ÿå¼•æ•°ãŒãã‚Œãã‚Œå¯¾å¿œã™ã‚‹@var{variable}ã«æŸç¸›ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -543,8 +544,8 @@ The procedure takes any number of arguments.
 The actual arguments are collected to form a new list and bound to
 the variable.
 @c JP
-@code{@var{variable}} : ¼êÂ³¤­¤ÏÉÔÄê¸Ä¤Î°ú¿ô¤ò¼è¤ê¤Ş¤¹¡£
-¼Â°ú¿ô¤Ï¿·¤·¤¤¥ê¥¹¥È¤Ë½¸¤á¤é¤ì¤Æ¡¢¤½¤Î¥ê¥¹¥È¤¬@var{varible}¤ËÂ«Çû¤µ¤ì¤Ş¤¹¡£
+@code{@var{variable}} : æ‰‹ç¶šãã¯ä¸å®šå€‹ã®å¼•æ•°ã‚’å–ã‚Šã¾ã™ã€‚
+å®Ÿå¼•æ•°ã¯æ–°ã—ã„ãƒªã‚¹ãƒˆã«é›†ã‚ã‚‰ã‚Œã¦ã€ãã®ãƒªã‚¹ãƒˆãŒ@var{varible}ã«æŸç¸›ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -560,9 +561,9 @@ If more than @var{N} arguments are given, the rest arguments are
 collected to form a new list and bound to @var{variable_N}.
 @c JP
 @code{(@var{variable_0} @dots{} @var{variable_N-1}. @var{variable_N})} :
-¼êÂ³¤­¤Ï¾¯¤Ê¤¯¤È¤â@var{N}¸Ä¤Î°ú¿ô¤ò¼è¤ê¤Ş¤¹¡£@var{N}¸Ä¤Ş¤Ç¤Î¼Â°ú¿ô¤ÏÂĞ±ş¤¹¤ë@var{variable}
-¤ËÂ«Çû¤µ¤ì¤Ş¤¹¡£@var{N}¸Ä¤ò±Û¤¨¤¿¼Â°ú¿ô¤Ï¿·¤·¤¤¥ê¥¹¥È¤Ë½¸¤á¤é¤ì¤Æ
-@var{variable_N}¤ËÂ«Çû¤µ¤ì¤Ş¤¹¡£
+æ‰‹ç¶šãã¯å°‘ãªãã¨ã‚‚@var{N}å€‹ã®å¼•æ•°ã‚’å–ã‚Šã¾ã™ã€‚@var{N}å€‹ã¾ã§ã®å®Ÿå¼•æ•°ã¯å¯¾å¿œã™ã‚‹@var{variable}
+ã«æŸç¸›ã•ã‚Œã¾ã™ã€‚@var{N}å€‹ã‚’è¶ŠãˆãŸå®Ÿå¼•æ•°ã¯æ–°ã—ã„ãƒªã‚¹ãƒˆã«é›†ã‚ã‚‰ã‚Œã¦
+@var{variable_N}ã«æŸç¸›ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -582,12 +583,12 @@ The @var{extended-spec} part consists of the optional argument spec,
 the keyword argument spec and the rest argument spec.  They can
 appear in any combinations.
 @c JP
-³ÈÄ¥°ú¿ô»ØÄê¤Ç¤¹¡£¥¼¥í¸Ä°Ê¾å¤ÎÉ¬¿Ü°ú¿ô¤ò¼¨¤¹ÊÑ¿ô¤Î¥ê¥¹¥È¤Î¸å¤Ë¡¢
-¥­¡¼¥ï¡¼¥É@code{:optional}¡¢@code{:key}¤¢¤ë¤¤¤Ï@code{:rest}¤Ç
-»Ï¤Ş¤ë@var{extended-spec}¤¬Â³¤­¤Ş¤¹¡£
+æ‹¡å¼µå¼•æ•°æŒ‡å®šã§ã™ã€‚ã‚¼ãƒ­å€‹ä»¥ä¸Šã®å¿…é ˆå¼•æ•°ã‚’ç¤ºã™å¤‰æ•°ã®ãƒªã‚¹ãƒˆã®å¾Œã«ã€
+ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰@code{:optional}ã€@code{:key}ã‚ã‚‹ã„ã¯@code{:rest}ã§
+å§‹ã¾ã‚‹@var{extended-spec}ãŒç¶šãã¾ã™ã€‚
 
-@var{extended-spec}¤Ï¾ÊÎ¬²ÄÇ½°ú¿ô»ØÄê¡¢¥­¡¼¥ï¡¼¥É°ú¿ô»ØÄê¡¢»ÄÍ¾°ú¿ô»ØÄê¤Î
-Ç¤°Õ¤ÎÁÈ¤ß¹ç¤ï¤»¤Ë¤è¤ê¹½À®¤µ¤ì¤Ş¤¹¡£
+@var{extended-spec}ã¯çœç•¥å¯èƒ½å¼•æ•°æŒ‡å®šã€ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°æŒ‡å®šã€æ®‹ä½™å¼•æ•°æŒ‡å®šã®
+ä»»æ„ã®çµ„ã¿åˆã‚ã›ã«ã‚ˆã‚Šæ§‹æˆã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @table @code
@@ -596,7 +597,7 @@ appear in any combinations.
 Specifies optional arguments.  Each @var{optspec} can be either
 one of the following forms:
 @c JP
-¾ÊÎ¬²ÄÇ½°ú¿ô¤ò»ØÄê¤·¤Ş¤¹¡£³Æ@var{optspec}¤Ï°Ê²¼¤Î¤¤¤º¤ì¤«¤Î·Á¼°¤Ç¤¹¡£
+çœç•¥å¯èƒ½å¼•æ•°ã‚’æŒ‡å®šã—ã¾ã™ã€‚å„@var{optspec}ã¯ä»¥ä¸‹ã®ã„ãšã‚Œã‹ã®å½¢å¼ã§ã™ã€‚
 @c COMMON
 
 @example
@@ -615,13 +616,13 @@ The expression @var{init-expr} is only evaluated if the actual
 argument for @var{variable} is not given.  The scope in which
 @var{init-expr} is evaluated includes the preceding formal arguments.
 @c JP
-²¾°ú¿ô@var{variable}¤Ï¡¢ÂĞ±ş¤¹¤ë¼Â°ú¿ô¤¬Í¿¤¨¤é¤ì¤ì¤Ğ¤½¤ÎÃÍ¤Ë¡¢
-Í¿¤¨¤é¤ì¤Ê¤±¤ì¤Ğ@var{init-expr}¤òÉ¾²Á¤·¤¿ÃÍ¤ËÂ«Çû¤µ¤ì¤Ş¤¹¡£
-@var{optspec}¤¬@code{@var{variable}}¤À¤±¤Ç¤¢¤ë¾ì¹ç¤Ï¡¢
-¼Â°ú¿ô¤¬¾ÊÎ¬¤µ¤ì¤¿»ş¤Î²¾°ú¿ô¤ÎÃÍ¤Ï@code{#<undef>}¤Ë¤Ê¤ê¤Ş¤¹¡£
+ä»®å¼•æ•°@var{variable}ã¯ã€å¯¾å¿œã™ã‚‹å®Ÿå¼•æ•°ãŒä¸ãˆã‚‰ã‚Œã‚Œã°ãã®å€¤ã«ã€
+ä¸ãˆã‚‰ã‚Œãªã‘ã‚Œã°@var{init-expr}ã‚’è©•ä¾¡ã—ãŸå€¤ã«æŸç¸›ã•ã‚Œã¾ã™ã€‚
+@var{optspec}ãŒ@code{@var{variable}}ã ã‘ã§ã‚ã‚‹å ´åˆã¯ã€
+å®Ÿå¼•æ•°ãŒçœç•¥ã•ã‚ŒãŸæ™‚ã®ä»®å¼•æ•°ã®å€¤ã¯@code{#<undef>}ã«ãªã‚Šã¾ã™ã€‚
 
-@var{init-expr}¤ÏÂĞ±ş¤¹¤ë¼Â°ú¿ô¤¬Í¿¤¨¤é¤ì¤Ê¤«¤Ã¤¿¾ì¹ç¤Ë¤Î¤ßÉ¾²Á¤µ¤ì¤Ş¤¹¡£
-@var{init-expr}¤ÎÉ¾²Á´Ä¶­¤Ë¤Ï¤³¤Î@var{optspec}¤ËÀèÎ©¤Ä²¾°ú¿ô¤¬´Ş¤Ş¤ì¤Ş¤¹¡£
+@var{init-expr}ã¯å¯¾å¿œã™ã‚‹å®Ÿå¼•æ•°ãŒä¸ãˆã‚‰ã‚Œãªã‹ã£ãŸå ´åˆã«ã®ã¿è©•ä¾¡ã•ã‚Œã¾ã™ã€‚
+@var{init-expr}ã®è©•ä¾¡ç’°å¢ƒã«ã¯ã“ã®@var{optspec}ã«å…ˆç«‹ã¤ä»®å¼•æ•°ãŒå«ã¾ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -643,9 +644,9 @@ The procedure signals an error if more actual arguments than
 the number of required and optional arguments are given, unless it also has
 @code{:key} or @code{:rest} argument spec.
 @c JP
-É¬¿Ü°ú¿ô¤È¾ÊÎ¬²ÄÇ½°ú¿ô¤ÎÁí¿ô¤è¤ê¤âÂ¿¤¤¼Â°ú¿ô¤¬ÅÏ¤µ¤ì¤¿¾ì¹ç¡¢
-¤½¤Î¼êÂ³¤­¤¬@code{:key}¤ä@code{:rest}°ú¿ô»ØÄê¤ò»ı¤Ã¤Æ¤¤¤Ê¤¤¸Â¤ê¤Ï
-¥¨¥é¡¼¤¬ÄÌÃÎ¤µ¤ì¤Ş¤¹¡£
+å¿…é ˆå¼•æ•°ã¨çœç•¥å¯èƒ½å¼•æ•°ã®ç·æ•°ã‚ˆã‚Šã‚‚å¤šã„å®Ÿå¼•æ•°ãŒæ¸¡ã•ã‚ŒãŸå ´åˆã€
+ãã®æ‰‹ç¶šããŒ@code{:key}ã‚„@code{:rest}å¼•æ•°æŒ‡å®šã‚’æŒã£ã¦ã„ãªã„é™ã‚Šã¯
+ã‚¨ãƒ©ãƒ¼ãŒé€šçŸ¥ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -661,7 +662,7 @@ the number of required and optional arguments are given, unless it also has
 Specifies keyword arguments.  Each @var{keyspec} can be 
 either one of the following forms.
 @c JP
-¥­¡¼¥ï¡¼¥É°ú¿ô¤ò»ØÄê¤·¤Ş¤¹¡£³Æ@var{keyspec}¤Ï°Ê²¼¤Î·Á¼°¤Î¤¤¤º¤ì¤«¤Ç¤¹¡£
+ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°ã‚’æŒ‡å®šã—ã¾ã™ã€‚å„@var{keyspec}ã¯ä»¥ä¸‹ã®å½¢å¼ã®ã„ãšã‚Œã‹ã§ã™ã€‚
 @c COMMON
 
 @example
@@ -677,10 +678,10 @@ When the actual argument is not given, @var{init-expr} is evaluated
 and the result is bound to @var{variable} in the second and third form,
 or @code{#<undef>} is bound in the first form.
 @c JP
-²¾°ú¿ô@var{variable}¤Ï¡¢¼Â°ú¿ô¤Ë@var{variable}¤ÈÆ±Ì¾¤Î¥­¡¼¥ï¡¼¥É¤Ë¤è¤ë
-¥­¡¼¥ï¡¼¥É°ú¿ô¤¬Í¿¤¨¤é¤ì¤ì¤Ğ¤½¤ÎÃÍ¤Ë¡¢¤½¤¦¤Ç¤Ê¤±¤ì¤Ğ@var{init-expr}¤òÉ¾²Á
-¤·¤¿ÃÍ¤ËÂ«Çû¤µ¤ì¤Ş¤¹¡£@var{init-expr}¤ÎÌµ¤¤ºÇ½é¤Î·Á¼°¤Ç¤Ï¡¢¼Â°ú¿ô¤¬
-Í¿¤¨¤é¤ì¤Ê¤±¤ì¤Ğ@var{variable}¤Ï@code{#<undef>}¤ËÂ«Çû¤µ¤ì¤Ş¤¹¡£
+ä»®å¼•æ•°@var{variable}ã¯ã€å®Ÿå¼•æ•°ã«@var{variable}ã¨åŒåã®ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰ã«ã‚ˆã‚‹
+ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°ãŒä¸ãˆã‚‰ã‚Œã‚Œã°ãã®å€¤ã«ã€ãã†ã§ãªã‘ã‚Œã°@var{init-expr}ã‚’è©•ä¾¡
+ã—ãŸå€¤ã«æŸç¸›ã•ã‚Œã¾ã™ã€‚@var{init-expr}ã®ç„¡ã„æœ€åˆã®å½¢å¼ã§ã¯ã€å®Ÿå¼•æ•°ãŒ
+ä¸ãˆã‚‰ã‚Œãªã‘ã‚Œã°@var{variable}ã¯@code{#<undef>}ã«æŸç¸›ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -697,7 +698,7 @@ or @code{#<undef>} is bound in the first form.
 With the third form you can name the formal argument differently from
 the keyword to specify the argument.
 @c JP
-»°ÈÖÌÜ¤Î·Á¼°¤Ç¤Ï¡¢²¾°ú¿ô¤ÎÌ¾Á°¤È¤ÏÊÌ¤Ë°ú¿ô¤òÍ¿¤¨¤ë¥­¡¼¥ï¡¼¥É¤ò»ØÄê¤Ç¤­¤Ş¤¹¡£
+ä¸‰ç•ªç›®ã®å½¢å¼ã§ã¯ã€ä»®å¼•æ•°ã®åå‰ã¨ã¯åˆ¥ã«å¼•æ•°ã‚’ä¸ãˆã‚‹ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰ã‚’æŒ‡å®šã§ãã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -713,11 +714,11 @@ If you give @var{variable} after @code{:allow-other-keys},
 the list of unrecognized keywords and their arguments are bound to it.
 Again, see the example below will help to understand the behavior.
 @c JP
-¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï¡¢¥­¡¼¥ï¡¼¥É°ú¿ô»ØÄê¤ò¤â¤Ä¼êÂ³¤­¤Ï¡¢Ç§¼±¤Ç¤­¤Ê¤¤¥­¡¼¥ï¡¼¥É°ú¿ô¤¬
-Í¿¤¨¤é¤ì¤¿¾ì¹ç¤Ë¥¨¥é¡¼¤òÄÌÃÎ¤·¤Ş¤¹¡£²¾°ú¿ô¥ê¥¹¥È¤Ë@code{:allow-other-keys}¤ò»ØÄê¤¹¤ë¤³¤È¤Ç¡¢
-¤³¤ÎÆ°ºî¤òÍŞÀ©¤¹¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£
-@code{:allow-other-keys}¤ËÂ³¤¤¤Æ@var{variable}¤òÍ¿¤¨¤ì¤Ğ¡¢
-Ç§¼±¤Ç¤­¤Ê¤«¤Ã¤¿¥­¡¼¥ï¡¼¥É°ú¿ô¤Î¥ê¥¹¥È¤¬@var{variable}¤ËÂ«Çû¤µ¤ì¤Ş¤¹¡£
+ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ã¯ã€ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°æŒ‡å®šã‚’ã‚‚ã¤æ‰‹ç¶šãã¯ã€èªè­˜ã§ããªã„ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°ãŒ
+ä¸ãˆã‚‰ã‚ŒãŸå ´åˆã«ã‚¨ãƒ©ãƒ¼ã‚’é€šçŸ¥ã—ã¾ã™ã€‚ä»®å¼•æ•°ãƒªã‚¹ãƒˆã«@code{:allow-other-keys}ã‚’æŒ‡å®šã™ã‚‹ã“ã¨ã§ã€
+ã“ã®å‹•ä½œã‚’æŠ‘åˆ¶ã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚
+@code{:allow-other-keys}ã«ç¶šã„ã¦@var{variable}ã‚’ä¸ãˆã‚Œã°ã€
+èªè­˜ã§ããªã‹ã£ãŸã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°ã®ãƒªã‚¹ãƒˆãŒ@var{variable}ã«æŸç¸›ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -735,8 +736,8 @@ Again, see the example below will help to understand the behavior.
 When used with @code{:optional} argument spec, the keyword arguments
 are searched after all the optional arguments are bound.
 @c JP
-@code{:optional}°ú¿ô»ØÄê¤ÈÆ±»ş¤Ë»È¤ï¤ì¤¿¾ì¹ç¡¢¥­¡¼¥ï¡¼¥É°ú¿ô¤Ï¤¹¤Ù¤Æ¤Î
-¾ÊÎ¬²ÄÇ½°ú¿ô¤¬Â«Çû¤µ¤ì¤¿¸å¤Î¼Â°ú¿ô¥ê¥¹¥È¤«¤éÃµ¤µ¤ì¤Ş¤¹¡£
+@code{:optional}å¼•æ•°æŒ‡å®šã¨åŒæ™‚ã«ä½¿ã‚ã‚ŒãŸå ´åˆã€ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°ã¯ã™ã¹ã¦ã®
+çœç•¥å¯èƒ½å¼•æ•°ãŒæŸç¸›ã•ã‚ŒãŸå¾Œã®å®Ÿå¼•æ•°ãƒªã‚¹ãƒˆã‹ã‚‰æ¢ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -760,11 +761,11 @@ taken is bound to @var{variable}.  If specified with @code{:optional}
 argument spec, the actual arguments are first bound to required and
 all optional arguments, and the remaining arguments are bound to @var{variable}.
 @c JP
-»ÄÍ¾°ú¿ô¤ò»ØÄê¤·¤Ş¤¹¡£@code{:optional}°ú¿ô»ØÄê¤¬Ìµ¤¤¾ì¹ç¤Ï¡¢
-É¬¿Ü°ú¿ô¤ÎÂ«Çû¤¬ºÑ¤ó¤À¸å¤Ç»Ä¤Ã¤Æ¤¤¤ë¼Â°ú¿ô¤Î¥ê¥¹¥È¤¬@var{variable}¤Ë
-Â«Çû¤µ¤ì¤Ş¤¹¡£@code{:optional}°ú¿ô»ØÄê¤¬¤¢¤ë¾ì¹ç¤Ï¡¢
-É¬¿Ü°ú¿ô¤È¤¹¤Ù¤Æ¤Î¾ÊÎ¬²ÄÇ½°ú¿ô¤ÎÂ«Çû¤¬ºÑ¤ó¤À¸å¤Ç»Ä¤Ã¤Æ¤¤¤ë¼Â°ú¿ô¤Î
-¥ê¥¹¥È¤¬@var{variable}¤ËÂ«Çû¤µ¤ì¤Ş¤¹¡£
+æ®‹ä½™å¼•æ•°ã‚’æŒ‡å®šã—ã¾ã™ã€‚@code{:optional}å¼•æ•°æŒ‡å®šãŒç„¡ã„å ´åˆã¯ã€
+å¿…é ˆå¼•æ•°ã®æŸç¸›ãŒæ¸ˆã‚“ã å¾Œã§æ®‹ã£ã¦ã„ã‚‹å®Ÿå¼•æ•°ã®ãƒªã‚¹ãƒˆãŒ@var{variable}ã«
+æŸç¸›ã•ã‚Œã¾ã™ã€‚@code{:optional}å¼•æ•°æŒ‡å®šãŒã‚ã‚‹å ´åˆã¯ã€
+å¿…é ˆå¼•æ•°ã¨ã™ã¹ã¦ã®çœç•¥å¯èƒ½å¼•æ•°ã®æŸç¸›ãŒæ¸ˆã‚“ã å¾Œã§æ®‹ã£ã¦ã„ã‚‹å®Ÿå¼•æ•°ã®
+ãƒªã‚¹ãƒˆãŒ@var{variable}ã«æŸç¸›ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -783,8 +784,8 @@ When the rest argument spec is used with the keyword argument spec,
 both accesses the same list of actual argument---the remaining arguments
 after required and optional arguments are taken.
 @c JP
-»ÄÍ¾°ú¿ô»ØÄê¤È¥­¡¼¥ï¡¼¥É°ú¿ô»ØÄê¤ÎÎ¾Êı¤¬Í¿¤¨¤é¤ì¤¿¾ì¹ç¡¢
-Î¾¼Ô¤Ï¤È¤â¤Ë¡¢É¬¿Ü°ú¿ô¤È¾ÊÎ¬²ÄÇ½°ú¿ô¤¬½èÍı¤µ¤ì¤¿¸å¤Î¼Â°ú¿ô¥ê¥¹¥È¤ò½èÍı¤ÎÂĞ¾İ¤È¤·¤Ş¤¹¡£
+æ®‹ä½™å¼•æ•°æŒ‡å®šã¨ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°æŒ‡å®šã®ä¸¡æ–¹ãŒä¸ãˆã‚‰ã‚ŒãŸå ´åˆã€
+ä¸¡è€…ã¯ã¨ã‚‚ã«ã€å¿…é ˆå¼•æ•°ã¨çœç•¥å¯èƒ½å¼•æ•°ãŒå‡¦ç†ã•ã‚ŒãŸå¾Œã®å®Ÿå¼•æ•°ãƒªã‚¹ãƒˆã‚’å‡¦ç†ã®å¯¾è±¡ã¨ã—ã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -800,10 +801,10 @@ See also @code{let-optionals*}, @code{let-keywords} and
 for an alternative way to receive optional/keyword arguments
 within the spec of R5RS.
 @c JP
-R5RS¤Î»ÅÍÍÈÏ°ÏÆâ¤Ç¾ÊÎ¬²ÄÇ½°ú¿ô¡¢¥­¡¼¥ï¡¼¥É°ú¿ô¤ò¼õ¤±¼è¤ë¤è¤¦¤Ë
-½ñ¤¯¤³¤È¤â¤Ç¤­¤Ş¤¹¡£@ref{Optional argument parsing}¤Î
-@code{let-optionals*}¡¢@code{let-keywords}¡¢
-@code{let-keywords*}¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
+R5RSã®ä»•æ§˜ç¯„å›²å†…ã§çœç•¥å¯èƒ½å¼•æ•°ã€ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°ã‚’å—ã‘å–ã‚‹ã‚ˆã†ã«
+æ›¸ãã“ã¨ã‚‚ã§ãã¾ã™ã€‚@ref{Optional argument parsing}ã®
+@code{let-optionals*}ã€@code{let-keywords}ã€
+@code{let-keywords*}ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
 @c COMMON
 
 @end itemize
@@ -841,8 +842,8 @@ R5RS¤Î»ÅÍÍÈÏ°ÏÆâ¤Ç¾ÊÎ¬²ÄÇ½°ú¿ô¡¢¥­¡¼¥ï¡¼¥É°ú¿ô¤ò¼õ¤±¼è¤ë¤è¤¦¤Ë
 A shorthand notation of @code{(lambda (@var{c}) @var{body} @dots{})}.
 where @code{c} can be any character in @code{#[_a-z]}.
 @c JP
-@code{(lambda (@var{c}) @var{body} @dots{})}¤ÎÃ»½ÌÉ½µ­¤Ç¤¹¡£
-@code{c}¤Ë¤Ï@code{#[_a-z]}¤Ë´Ş¤Ş¤ì¤ëÇ¤°Õ¤Î°ìÊ¸»ú¤¬»È¤¨¤Ş¤¹¡£
+@code{(lambda (@var{c}) @var{body} @dots{})}ã®çŸ­ç¸®è¡¨è¨˜ã§ã™ã€‚
+@code{c}ã«ã¯@code{#[_a-z]}ã«å«ã¾ã‚Œã‚‹ä»»æ„ã®ä¸€æ–‡å­—ãŒä½¿ãˆã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -859,8 +860,8 @@ Convenience macros to notate a procedure compactly.
 This form can be used to realize partial application, 
 a.k.a sectioning or projection.
 @c JP
-¼êÂ³¤­¤ò´Ê·é¤Ë½ñ¤±¤ëÊØÍø¤Ê¥Ş¥¯¥í¤Ç¤¹¡£
-¤¤¤ï¤æ¤ëÉôÊ¬Å¬ÍÑ¤ò¼Â¸½¤¹¤ë¤¿¤á¤Ë»È¤¨¤Ş¤¹¡£
+æ‰‹ç¶šãã‚’ç°¡æ½”ã«æ›¸ã‘ã‚‹ä¾¿åˆ©ãªãƒã‚¯ãƒ­ã§ã™ã€‚
+ã„ã‚ã‚†ã‚‹éƒ¨åˆ†é©ç”¨ã‚’å®Ÿç¾ã™ã‚‹ãŸã‚ã«ä½¿ãˆã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -880,17 +881,17 @@ In case there is a rest-slot symbol, the resulting procedure is also
 of variable arity, and all the extra arguments are passed
 to the call of @var{expr-or-slot}.  See the fourth example below.
 @c JP
-³Æ@var{expr-or-slot}¤Ï¼°¤Ş¤¿¤Ï¥·¥ó¥Ü¥ë@code{<>}¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
-ºÇ¸å¤Î@var{expr-or-slot}¤Ï¥·¥ó¥Ü¥ë@code{<...>}¤Ç¤¢¤Ã¤Æ¤â¹½¤¤¤Ş¤»¤ó¡£
-@code{cut}¤Ï¡¢¤½¤Î¥Õ¥©¡¼¥àÃæ¤Ë¤¢¤ë@code{<>}¤ÈÆ±¤¸¿ô¤Î°ú¿ô¤ò¼è¤ë
-@code{lambda}¥Õ¥©¡¼¥à¤ËÅ¸³«¤µ¤ì¤Ş¤¹¡£¤½¤Î¥Õ¥©¡¼¥à¤Î¥Ü¥Ç¥£¤Ë¤Ï¼¡¤Î¼°¤¬ÃÖ¤«¤ì¤Ş¤¹¡£
+å„@var{expr-or-slot}ã¯å¼ã¾ãŸã¯ã‚·ãƒ³ãƒœãƒ«@code{<>}ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚
+æœ€å¾Œã®@var{expr-or-slot}ã¯ã‚·ãƒ³ãƒœãƒ«@code{<...>}ã§ã‚ã£ã¦ã‚‚æ§‹ã„ã¾ã›ã‚“ã€‚
+@code{cut}ã¯ã€ãã®ãƒ•ã‚©ãƒ¼ãƒ ä¸­ã«ã‚ã‚‹@code{<>}ã¨åŒã˜æ•°ã®å¼•æ•°ã‚’å–ã‚‹
+@code{lambda}ãƒ•ã‚©ãƒ¼ãƒ ã«å±•é–‹ã•ã‚Œã¾ã™ã€‚ãã®ãƒ•ã‚©ãƒ¼ãƒ ã®ãƒœãƒ‡ã‚£ã«ã¯æ¬¡ã®å¼ãŒç½®ã‹ã‚Œã¾ã™ã€‚
 @example
   (@var{expr-or-slot} @var{expr-or-slot2} @dots{})
 @end example
-Ã¢¤·¡¢³Æ@code{<>}¤ÏÂĞ±ş¤¹¤ë²¾°ú¿ô¤ËÃÖ¤­´¹¤¨¤é¤ì¤Ş¤¹¡£
-¤â¤·¥·¥ó¥Ü¥ë@code{<...>}¤¬Í¿¤¨¤é¤ì¤Æ¤¤¤¿¾ì¹ç¡¢Å¸³«¤µ¤ì¤¿@code{lambda}¥Õ¥©¡¼¥à¤Ï
-²ÄÊÑÄ¹°ú¿ô¤ò¼è¤ë¼êÂ³¤­¤È¤Ê¤ê¡¢ºîÀ®¤µ¤ì¤ë¼êÂ³¤­¤ËÍ¿¤¨¤é¤ì¤¿¤¹¤Ù¤Æ¤Î°ú¿ô¤¬
-@var{expr-or-slot}¤ò¸Æ¤Ó½Ğ¤¹¤Î¤Ë»È¤ï¤ì¤Ş¤¹(²¼¤Î4ÈÖÌÜ¤ÎÎã¤ò»²¾È¤Î¤³¤È)¡£
+ä½†ã—ã€å„@code{<>}ã¯å¯¾å¿œã™ã‚‹ä»®å¼•æ•°ã«ç½®ãæ›ãˆã‚‰ã‚Œã¾ã™ã€‚
+ã‚‚ã—ã‚·ãƒ³ãƒœãƒ«@code{<...>}ãŒä¸ãˆã‚‰ã‚Œã¦ã„ãŸå ´åˆã€å±•é–‹ã•ã‚ŒãŸ@code{lambda}ãƒ•ã‚©ãƒ¼ãƒ ã¯
+å¯å¤‰é•·å¼•æ•°ã‚’å–ã‚‹æ‰‹ç¶šãã¨ãªã‚Šã€ä½œæˆã•ã‚Œã‚‹æ‰‹ç¶šãã«ä¸ãˆã‚‰ã‚ŒãŸã™ã¹ã¦ã®å¼•æ•°ãŒ
+@var{expr-or-slot}ã‚’å‘¼ã³å‡ºã™ã®ã«ä½¿ã‚ã‚Œã¾ã™(ä¸‹ã®4ç•ªç›®ã®ä¾‹ã‚’å‚ç…§ã®ã“ã¨)ã€‚
 @c COMMON
 
 @example
@@ -910,8 +911,8 @@ to the call of @var{expr-or-slot}.  See the fourth example below.
 @code{Cute} is a variation of @code{cut} that evaluates @code{expr-or-slot}s
 before creating the procedure.
 @c JP
-@code{cute}¤Ï@code{cut}¤È¤Û¤ÜÆ±¤¸¤Ç¤¹¤¬¡¢@code{expr-or-slot}¤ËÍ¿¤¨¤é¤ì¤¿
-¥Õ¥©¡¼¥à¤¬¼êÂ³¤­¤òºî¤ëÁ°¤ËÉ¾²Á¤µ¤ì¤ëÅÀ¤¬°Û¤Ê¤ê¤Ş¤¹¡£
+@code{cute}ã¯@code{cut}ã¨ã»ã¼åŒã˜ã§ã™ãŒã€@code{expr-or-slot}ã«ä¸ãˆã‚‰ã‚ŒãŸ
+ãƒ•ã‚©ãƒ¼ãƒ ãŒæ‰‹ç¶šãã‚’ä½œã‚‹å‰ã«è©•ä¾¡ã•ã‚Œã‚‹ç‚¹ãŒç•°ãªã‚Šã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -923,8 +924,8 @@ before creating the procedure.
 Gauche also has a built-in procedure @code{pa$} for partial application
 (@xref{Combinators}).
 @c JP
-Gauche¤Ï¤Ş¤¿¡¢ÉôÊ¬Å¬ÍÑ¤ò¹Ô¤¦@code{pa$}¤È¤¤¤¦ÁÈ¤ß¹ş¤ß¼êÂ³¤­¤ò»ı¤Ã¤Æ¤¤¤Ş¤¹
-(@xref{Combinators}»²¾È)¡£
+Gaucheã¯ã¾ãŸã€éƒ¨åˆ†é©ç”¨ã‚’è¡Œã†@code{pa$}ã¨ã„ã†çµ„ã¿è¾¼ã¿æ‰‹ç¶šãã‚’æŒã£ã¦ã„ã¾ã™
+(@xref{Combinators}å‚ç…§)ã€‚
 @c COMMON
 @end defmac
 
@@ -947,26 +948,26 @@ arguments, and the @var{expr} @dots{} are evaluated within the environment.
 It is an error for the arguments not to agree with
 the @var{formals} of any @var{clause}.
 @c JP
-¤½¤ì¤¾¤ì¤Î @var{clause} ¤Ï (@var{formals} @var{expr} @dots{}) ¤È¤¤¤¦·Á¼°
-¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£¤³¤³¤Ç¡¢@var{formals} ¤Ï @code{lambda} ¤Î²¾°ú¿ô
-¥ê¥¹¥È¤Ç¤¹¡£
+ãã‚Œãã‚Œã® @var{clause} ã¯ (@var{formals} @var{expr} @dots{}) ã¨ã„ã†å½¢å¼
+ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚ã“ã“ã§ã€@var{formals} ã¯ @code{lambda} ã®ä»®å¼•æ•°
+ãƒªã‚¹ãƒˆã§ã™ã€‚
 
-¤³¤Î¼°¤Ï¡¢É¾²Á¤µ¤ì¤ë¤È²ÄÊÑ¿ô¤Î°ú¿ô¤ò¤È¤ê¡¢@code{lambda} ¼°¤«¤é·ë²Ì¤È¤·¤Æ
-¤Ç¤­¤ë¼êÂ³¤­Æ±¤¸¥ì¥­¥·¥«¥ë¥¹¥³¡¼¥×¤ò¤â¤Ä¼êÂ³¤­¤Ë¤Ê¤ê¤Ş¤¹¡£¤³¤Î¼êÂ³¤­¤¬
-¤¤¤¯¤Ä¤«¤Î°ú¿ô¤È¤È¤â¤Ë¸Æ¤Ğ¤ì¤ë¤È¡¢@var{formals} ¤È°ìÃ×¤¹¤ë°ú¿ô¤ËÂĞ±ş¤¹¤ë
-ºÇ½é¤Î @var{clause} ¤¬ÁªÂò¤µ¤ì¤Ş¤¹¡£¤³¤Î°ú¿ô¤Î°ìÃ×¤È¤¤¤¦¤Î¤Ï¡¢
-@code{lambda} ¼°¤Î @var{formals} ¤ËÂĞ±ş¤¹¤ë¤â¤Î¤È¤·¤Æ»ØÄê¤µ¤ì¤ë¤â¤Î¤Ç¤¹¡£
-@code{formals} ¤ÎÊÑ¿ô¤Ï¼Â°ú¿ô¤ËÂ«Çû¤µ¤ì¡¢ @var{expr} @dots{} ¤¬¤½¤Î
-´Ä¶­Æâ¤ÇÉ¾²Á¤µ¤ì¤Ş¤¹¡£
+ã“ã®å¼ã¯ã€è©•ä¾¡ã•ã‚Œã‚‹ã¨å¯å¤‰æ•°ã®å¼•æ•°ã‚’ã¨ã‚Šã€@code{lambda} å¼ã‹ã‚‰çµæœã¨ã—ã¦
+ã§ãã‚‹æ‰‹ç¶šãåŒã˜ãƒ¬ã‚­ã‚·ã‚«ãƒ«ã‚¹ã‚³ãƒ¼ãƒ—ã‚’ã‚‚ã¤æ‰‹ç¶šãã«ãªã‚Šã¾ã™ã€‚ã“ã®æ‰‹ç¶šããŒ
+ã„ãã¤ã‹ã®å¼•æ•°ã¨ã¨ã‚‚ã«å‘¼ã°ã‚Œã‚‹ã¨ã€@var{formals} ã¨ä¸€è‡´ã™ã‚‹å¼•æ•°ã«å¯¾å¿œã™ã‚‹
+æœ€åˆã® @var{clause} ãŒé¸æŠã•ã‚Œã¾ã™ã€‚ã“ã®å¼•æ•°ã®ä¸€è‡´ã¨ã„ã†ã®ã¯ã€
+@code{lambda} å¼ã® @var{formals} ã«å¯¾å¿œã™ã‚‹ã‚‚ã®ã¨ã—ã¦æŒ‡å®šã•ã‚Œã‚‹ã‚‚ã®ã§ã™ã€‚
+@code{formals} ã®å¤‰æ•°ã¯å®Ÿå¼•æ•°ã«æŸç¸›ã•ã‚Œã€ @var{expr} @dots{} ãŒãã®
+ç’°å¢ƒå†…ã§è©•ä¾¡ã•ã‚Œã¾ã™ã€‚
 
-¼Âºİ¤Î°ú¿ô¤¬¤É¤Î @var{clause} ¤Î @var{formals} ¤Ë¤â°ìÃ×¤·¤Ê¤±¤ì¤Ğ¥¨¥é¡¼¤Ç¤¹¡£
+å®Ÿéš›ã®å¼•æ•°ãŒã©ã® @var{clause} ã® @var{formals} ã«ã‚‚ä¸€è‡´ã—ãªã‘ã‚Œã°ã‚¨ãƒ©ãƒ¼ã§ã™ã€‚
 @c COMMON
 @end defmac
 
 @c ----------------------------------------------------------------------
 @node Assignments, Conditionals, Making Procedures, Core syntax
 @section Assignments
-@c NODE  ÂåÆş
+@c NODE  ä»£å…¥
 
 @defspec set! symbol expression
 @defspecx set! (proc arg @dots{}) expression
@@ -979,10 +980,10 @@ the result of @var{expression}.
 If @var{symbol} is not locally bound, the global variable named @var{symbol}
 must already exist, or an error is signalled.
 @c JP
-¤Ş¤º@var{expression}¤¬É¾²Á¤µ¤ì¤Ş¤¹¡£ºÇ½é¤Î·Á¼°¤Ç¤Ï¡¢@var{symbol}¤Ø¤ÎÂ«Çû¤¬
-@var{expression}¤Î·ë²Ì¤ò»Ø¤¹¤è¤¦¤ËÊÑ¹¹¤µ¤ì¤Ş¤¹¡£
-¤â¤·@var{symbol}¤¬¥í¡¼¥«¥ë¤ËÂ«Çû¤µ¤ì¤Æ¤¤¤Ê¤¤¾ì¹ç¤Ï¡¢¥°¥í¡¼¥Ğ¥ë¤ÊÊÑ¿ô@var{symbol}¤¬
-Â¸ºß¤·¤Æ¤¤¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£¤½¤¦¤Ç¤Ê¤±¤ì¤Ğ¥¨¥é¡¼¤¬Êó¹ğ¤µ¤ì¤Ş¤¹¡£
+ã¾ãš@var{expression}ãŒè©•ä¾¡ã•ã‚Œã¾ã™ã€‚æœ€åˆã®å½¢å¼ã§ã¯ã€@var{symbol}ã¸ã®æŸç¸›ãŒ
+@var{expression}ã®çµæœã‚’æŒ‡ã™ã‚ˆã†ã«å¤‰æ›´ã•ã‚Œã¾ã™ã€‚
+ã‚‚ã—@var{symbol}ãŒãƒ­ãƒ¼ã‚«ãƒ«ã«æŸç¸›ã•ã‚Œã¦ã„ãªã„å ´åˆã¯ã€ã‚°ãƒ­ãƒ¼ãƒãƒ«ãªå¤‰æ•°@var{symbol}ãŒ
+å­˜åœ¨ã—ã¦ã„ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚ãã†ã§ãªã‘ã‚Œã°ã‚¨ãƒ©ãƒ¼ãŒå ±å‘Šã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -996,14 +997,14 @@ differs from CommonLisp's @code{setf}.
 
 Some examples:
 @c JP
-2ÈÖÌÜ¤Î·Á¼°¤ÏSRFI-17¤ËÄêµÁ¤µ¤ì¤Æ¤¤¤ë¡Ö°ìÈÌ²½¤µ¤ì¤¿set!¡×¤Ç¤¹¡£
-¤³¤ì¤Ï¹½Ê¸Åª¤ÊÁõ¾ş¤Ç¤¢¤ê¡¢¼Âºİ¤Ï°Ê²¼¤Î¤è¤¦¤Ë²ò¼á¤µ¤ì¤Ş¤¹¡£
+2ç•ªç›®ã®å½¢å¼ã¯SRFI-17ã«å®šç¾©ã•ã‚Œã¦ã„ã‚‹ã€Œä¸€èˆ¬åŒ–ã•ã‚ŒãŸset!ã€ã§ã™ã€‚
+ã“ã‚Œã¯æ§‹æ–‡çš„ãªè£…é£¾ã§ã‚ã‚Šã€å®Ÿéš›ã¯ä»¥ä¸‹ã®ã‚ˆã†ã«è§£é‡ˆã•ã‚Œã¾ã™ã€‚
 @example
 ((setter @var{proc}) @var{arg} @dots{} @var{expression})
 @end example
-CommonLisp¤Î@code{setf}¤È¤Ï¡¢setter¼êÂ³¤­¤ËÅÏ¤µ¤ì¤ë°ú¿ô¤Î½ç½ø¤¬°Û¤Ê¤ë¤³¤È¤ËÃí°Õ¤·¤Æ²¼¤µ¤¤¡£
+CommonLispã®@code{setf}ã¨ã¯ã€setteræ‰‹ç¶šãã«æ¸¡ã•ã‚Œã‚‹å¼•æ•°ã®é †åºãŒç•°ãªã‚‹ã“ã¨ã«æ³¨æ„ã—ã¦ä¸‹ã•ã„ã€‚
 
-Îã¡§
+ä¾‹ï¼š
 @c COMMON
 
 @example
@@ -1022,9 +1023,9 @@ Sets values of multiple variables at once.  @var{Expr} must yield
 as many values as @var{var} @dots{}.  Each value is set to
 the corresponding @var{var}.
 @c JP
-Ê£¿ô¤ÎÊÑ¿ô¤òÆ±»ş¤Ë¹¹¿·¤·¤Ş¤¹¡£@var{Expr}¤ÏÍ¿¤¨¤é¤ì¤¿ÊÑ¿ô¤ÈÆ±¤¸
-¿ô¤À¤±¤ÎÃÍ¤òÀ¸À®¤·¤Ê¤±¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£³ÆÃÍ¤¬ÂĞ±ş¤¹¤ë@var{var}¤Ë
-¥»¥Ã¥È¤µ¤ì¤Ş¤¹¡£
+è¤‡æ•°ã®å¤‰æ•°ã‚’åŒæ™‚ã«æ›´æ–°ã—ã¾ã™ã€‚@var{Expr}ã¯ä¸ãˆã‚‰ã‚ŒãŸå¤‰æ•°ã¨åŒã˜
+æ•°ã ã‘ã®å€¤ã‚’ç”Ÿæˆã—ãªã‘ã°ãªã‚Šã¾ã›ã‚“ã€‚å„å€¤ãŒå¯¾å¿œã™ã‚‹@var{var}ã«
+ã‚»ãƒƒãƒˆã•ã‚Œã¾ã™ã€‚
 @c COMMON
 @example
 (define a 0)
@@ -1065,26 +1066,26 @@ it allows the applicable object extension to work
 seamlessly with the generalized @code{set!}.
 @xref{Applicable objects}, for the details.
 @c JP
-¼êÂ³¤­@var{proc}¤Îsetter¼êÂ³¤­¤òÊÖ¤·¤Ş¤¹¡£
-@var{proc}¤¬setter¼êÂ³¤­¤ò»ı¤¿¤Ê¤¤¾ì¹ç¤ÎÆ°ºî¤ÏÌ¤ÄêµÁ¤Ç¤¹¡£
+æ‰‹ç¶šã@var{proc}ã®setteræ‰‹ç¶šãã‚’è¿”ã—ã¾ã™ã€‚
+@var{proc}ãŒsetteræ‰‹ç¶šãã‚’æŒãŸãªã„å ´åˆã®å‹•ä½œã¯æœªå®šç¾©ã§ã™ã€‚
 
-¤¢¤ë´Ø¿ô@var{f}¤Îsetter¼êÂ³¤­@var{g}¤È¤Ï¡¢¤â¤·@code{(g a b @dots{} v)}¤Î¤è¤¦¤Ë
-¸Æ¤Ğ¤ì¤¿¾ì¹ç¡¢¼¡¤Î@code{(f a b @dots{})}¤¬@var{v}¤òÊÖ¤¹¤è¤¦¤Ë¤Ê¤ë¼êÂ³¤­¤Î¤³¤È¤Ç¤¹¡£
+ã‚ã‚‹é–¢æ•°@var{f}ã®setteræ‰‹ç¶šã@var{g}ã¨ã¯ã€ã‚‚ã—@code{(g a b @dots{} v)}ã®ã‚ˆã†ã«
+å‘¼ã°ã‚ŒãŸå ´åˆã€æ¬¡ã®@code{(f a b @dots{})}ãŒ@var{v}ã‚’è¿”ã™ã‚ˆã†ã«ãªã‚‹æ‰‹ç¶šãã®ã“ã¨ã§ã™ã€‚
 
-¤¢¤ë¼êÂ³¤­¤Ësetter¼êÂ³¤­¤ò´ØÏ¢ÉÕ¤±¤ë¤Ë¤Ï¡¢@code{setter}¼«¿È¤Îsetter¼êÂ³¤­¤ò»È¤¦¤³¤È¤¬
-¤Ç¤­¤Ş¤¹¡£
+ã‚ã‚‹æ‰‹ç¶šãã«setteræ‰‹ç¶šãã‚’é–¢é€£ä»˜ã‘ã‚‹ã«ã¯ã€@code{setter}è‡ªèº«ã®setteræ‰‹ç¶šãã‚’ä½¿ã†ã“ã¨ãŒ
+ã§ãã¾ã™ã€‚
 @example
 (set! (setter @var{f}) @var{g})
 @end example
 
-ÆÃÄê¤Î¼êÂ³¤­¤Ësetter¼êÂ³¤­¤ò¡Ö¥í¥Ã¥¯¡×¤¹¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£¥·¥¹¥Æ¥à´ûÄê¤Îsetter¼êÂ³¤­¡¢
-Îã¤¨¤Ğ@code{car}¤ËÂĞ¤¹¤ë@code{set-car!}Åù¤Ï¥í¥Ã¥¯¤µ¤ì¤Æ¤¤¤Æ¡¢¾åµ­¤Î¤è¤¦¤ÊÊıË¡¤Ç
-ÊÑ¹¹¤¹¤ë¤³¤È¤Ï½ĞÍè¤Ş¤»¤ó¡£¥æ¡¼¥¶ÄêµÁ¼êÂ³¤­¤Ësetter¼êÂ³¤­¤ò¥í¥Ã¥¯¤¹¤ë¤Ë¤Ï²¼µ­¤Î
-@code{getter-with-setter}¤ò»È¤¤¤Ş¤¹¡£
+ç‰¹å®šã®æ‰‹ç¶šãã«setteræ‰‹ç¶šãã‚’ã€Œãƒ­ãƒƒã‚¯ã€ã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚ã‚·ã‚¹ãƒ†ãƒ æ—¢å®šã®setteræ‰‹ç¶šãã€
+ä¾‹ãˆã°@code{car}ã«å¯¾ã™ã‚‹@code{set-car!}ç­‰ã¯ãƒ­ãƒƒã‚¯ã•ã‚Œã¦ã„ã¦ã€ä¸Šè¨˜ã®ã‚ˆã†ãªæ–¹æ³•ã§
+å¤‰æ›´ã™ã‚‹ã“ã¨ã¯å‡ºæ¥ã¾ã›ã‚“ã€‚ãƒ¦ãƒ¼ã‚¶å®šç¾©æ‰‹ç¶šãã«setteræ‰‹ç¶šãã‚’ãƒ­ãƒƒã‚¯ã™ã‚‹ã«ã¯ä¸‹è¨˜ã®
+@code{getter-with-setter}ã‚’ä½¿ã„ã¾ã™ã€‚
 
-@var{proc}¤¬¼êÂ³¤­¤Ç¤Ê¤¤¾ì¹ç¤Ï¡¢@code{object-apply}¥¸¥§¥Í¥ê¥Ã¥¯¥Õ¥¡¥ó¥¯¥·¥ç¥ó¤Î
-setter¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£¤³¤ì¤Ë¤è¤ê¡¢Å¬ÍÑ²ÄÇ½¥ª¥Ö¥¸¥§¥¯¥È¤¬°ìÈÌ²½¤µ¤ì¤¿@code{set!}
-¤Ç¤â¤¦¤Ş¤¯Æ°ºî¤·¤Ş¤¹¡£¾Ü¤·¤¯¤Ï@ref{Applicable objects}¤ò»²¾È¤·¤Æ²¼¤µ¤¤¡£
+@var{proc}ãŒæ‰‹ç¶šãã§ãªã„å ´åˆã¯ã€@code{object-apply}ã‚¸ã‚§ãƒãƒªãƒƒã‚¯ãƒ•ã‚¡ãƒ³ã‚¯ã‚·ãƒ§ãƒ³ã®
+setterãŒè¿”ã•ã‚Œã¾ã™ã€‚ã“ã‚Œã«ã‚ˆã‚Šã€é©ç”¨å¯èƒ½ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãŒä¸€èˆ¬åŒ–ã•ã‚ŒãŸ@code{set!}
+ã§ã‚‚ã†ã¾ãå‹•ä½œã—ã¾ã™ã€‚è©³ã—ãã¯@ref{Applicable objects}ã‚’å‚ç…§ã—ã¦ä¸‹ã•ã„ã€‚
 @c COMMON
 @end defun
 
@@ -1092,7 +1093,7 @@ setter¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£¤³¤ì¤Ë¤è¤ê¡¢Å¬ÍÑ²ÄÇ½¥ª¥Ö¥¸¥§¥¯¥È¤¬°ìÈÌ²½¤µ¤ì¤¿@code{set!}
 @c EN
 Returns @code{#t} if a setter is associated to @var{proc}.
 @c JP
-@var{proc}¤¬setter¼êÂ³¤­¤ò»ı¤Ã¤Æ¤¤¤ë¾ì¹ç¤Ï@code{#t}¤òÊÖ¤·¤Ş¤¹¡£
+@var{proc}ãŒsetteræ‰‹ç¶šãã‚’æŒã£ã¦ã„ã‚‹å ´åˆã¯@code{#t}ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 @end defun
 
@@ -1107,12 +1108,12 @@ The intention of this procedure is, according to the SRFI-17 document,
 to allow implementations to inline setters efficiently.  Gauche
 hasn't implement such optimization yet.
 @c JP
-2¤Ä¤Î¼êÂ³¤­¡¢@var{get}¤È@var{set}¤ò¼è¤ê¡¢¿·¤·¤¤¼êÂ³¤­¤òÊÖ¤·¤Ş¤¹¡£
-¿·¤·¤¤¼êÂ³¤­¤Ï@var{get}¤ÈÆ±¤¸Æ°ºî¤ò¤·¡¢¤½¤Îsetter¼êÂ³¤­¤Ï@var{set}¤Ë¥í¥Ã¥¯¤µ¤ì¤Æ
-¤¤¤Ş¤¹¡£
+2ã¤ã®æ‰‹ç¶šãã€@var{get}ã¨@var{set}ã‚’å–ã‚Šã€æ–°ã—ã„æ‰‹ç¶šãã‚’è¿”ã—ã¾ã™ã€‚
+æ–°ã—ã„æ‰‹ç¶šãã¯@var{get}ã¨åŒã˜å‹•ä½œã‚’ã—ã€ãã®setteræ‰‹ç¶šãã¯@var{set}ã«ãƒ­ãƒƒã‚¯ã•ã‚Œã¦
+ã„ã¾ã™ã€‚
 
-¤³¤Î¼êÂ³¤­¤Ï¡¢SRFI-17¤Ë¤è¤ì¤Ğ¡¢setter¼êÂ³¤­¤Î¥¤¥ó¥é¥¤¥óÅ¸³«¤ò²ÄÇ½¤Ë¤¹¤ë¤¿¤á¤Î
-¤â¤Î¤Ç¤¹¤¬¡¢Gauche¤Ç¤Ï¤Ş¤À¤½¤Î¤è¤¦¤ÊºÇÅ¬²½¤Ï¼ÂÁõ¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¡£
+ã“ã®æ‰‹ç¶šãã¯ã€SRFI-17ã«ã‚ˆã‚Œã°ã€setteræ‰‹ç¶šãã®ã‚¤ãƒ³ãƒ©ã‚¤ãƒ³å±•é–‹ã‚’å¯èƒ½ã«ã™ã‚‹ãŸã‚ã®
+ã‚‚ã®ã§ã™ãŒã€Gaucheã§ã¯ã¾ã ãã®ã‚ˆã†ãªæœ€é©åŒ–ã¯å®Ÿè£…ã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚
 @c COMMON
 @end defun
 
@@ -1120,8 +1121,8 @@ hasn't implement such optimization yet.
 A few macros that adopts the same semantics of generalized @code{set!}
 are also provided.  They are built on top of @code{set!}.
 @c JP
-Gauche¤Ç¤Ï¡¢°ìÈÌ²½¤µ¤ì¤¿@code{set!}¤ÈÆ±¤¸¥»¥Ş¥ó¥Æ¥£¥¯¥¹¤ò»ı¤Ä¤¤¤¯¤Ä¤«¤Î¥Ş¥¯¥í¤¬ÄêµÁ
-¤µ¤ì¤Æ¤¤¤Ş¤¹¡£¤³¤ì¤é¤Ï@var{set!}¤ò»È¤Ã¤¿·Á¤ËÅ¸³«¤µ¤ì¤Ş¤¹¡£
+Gaucheã§ã¯ã€ä¸€èˆ¬åŒ–ã•ã‚ŒãŸ@code{set!}ã¨åŒã˜ã‚»ãƒãƒ³ãƒ†ã‚£ã‚¯ã‚¹ã‚’æŒã¤ã„ãã¤ã‹ã®ãƒã‚¯ãƒ­ãŒå®šç¾©
+ã•ã‚Œã¦ã„ã¾ã™ã€‚ã“ã‚Œã‚‰ã¯@var{set!}ã‚’ä½¿ã£ãŸå½¢ã«å±•é–‹ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @defmac push! place item
@@ -1132,10 +1133,10 @@ and the value of @var{place}, then sets the result to @var{place}.
 as the second argument of @code{set!}.   The result of this form
 is undefined.
 @c JP
-@var{item}¤È@var{place}¤ÎÃÍ¤ò¥³¥ó¥¹¤·¡¢¤½¤Î·ë²Ì¤òºÆ¤Ó@var{place}¤Ë¥»¥Ã¥È¤·¤Ş¤¹¡£
-@var{place}¤Ï@code{set!}¤ÈÆ±ÍÍ¤Ë¡¢
-ÊÑ¿ô¤«@var{(proc arg @dots{})}¤È¤¤¤¦·Á¼°¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£¤³¤Î¥Ş¥¯¥í¤ÎÌá¤êÃÍ¤Ï
-Ì¤ÄêµÁ¤Ç¤¹¡£
+@var{item}ã¨@var{place}ã®å€¤ã‚’ã‚³ãƒ³ã‚¹ã—ã€ãã®çµæœã‚’å†ã³@var{place}ã«ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+@var{place}ã¯@code{set!}ã¨åŒæ§˜ã«ã€
+å¤‰æ•°ã‹@var{(proc arg @dots{})}ã¨ã„ã†å½¢å¼ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚ã“ã®ãƒã‚¯ãƒ­ã®æˆ»ã‚Šå€¤ã¯
+æœªå®šç¾©ã§ã™ã€‚
 @c COMMON
 
 @example
@@ -1150,7 +1151,7 @@ x @result{} (3 4 2)
 @c EN
 When @var{place} is a list, it roughly expands like the following.
 @c JP
-@var{place}¤¬¥ê¥¹¥È¤Î¾ì¹ç¡¢¤À¤¤¤¿¤¤¤³¤ó¤Ê¤Õ¤¦¤ËÅ¸³«¤µ¤ì¤Ş¤¹¡£
+@var{place}ãŒãƒªã‚¹ãƒˆã®å ´åˆã€ã ã„ãŸã„ã“ã‚“ãªãµã†ã«å±•é–‹ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -1171,12 +1172,12 @@ argument order, but it appends @var{item} at the end of the array
 You can use a queue (@xref{Queue}) if you need a behavior of Perl's
 @code{push}.
 @c JP
-Ãğ¡§Common Lisp¤Î@code{push}¥Ş¥¯¥í¤Ï°ú¿ô¤òµÕ¤Î½çÈÖ¤Ç¼è¤ê¤Ş¤¹¡£
-@code{push!}¤ÏÂ¾¤ÎÉûºîÍÑ¤ò»ı¤Ä·Á¼°¤È¤Î¸ß´¹À­¤ò¹Í¤¨¤Æ¤³¤Î½çÈÖ¤È¤·¤Ş¤·¤¿¡£
-Perl¤Î@code{push}´Ø¿ô¤Ï@code{push!}¥Ş¥¯¥í¤ÈÆ±¤¸°ú¿ô½ç¤Ç¤¹¤¬¡¢
-@var{item}¤Ï¥·¡¼¥±¥ó¥¹¤ÎËöÈø¤ËÄÉ²Ã¤µ¤ì¤Ş¤¹ (Perl¤Î@code{unshift}¤ÎÊı¤¬
-@code{push!}¤ÎÆ°ºî¤Ë¶á¤¤¤Ç¤¹)¡£
-Perl¤Îpush¥ª¥Ú¥ì¡¼¥¿¤ÎÆ°ºî¤¬É¬Í×¤Ê¤éQueue¤¬»È¤¨¤Ş¤¹ (@ref{Queue}»²¾È)¡£
+è¨»ï¼šCommon Lispã®@code{push}ãƒã‚¯ãƒ­ã¯å¼•æ•°ã‚’é€†ã®é †ç•ªã§å–ã‚Šã¾ã™ã€‚
+@code{push!}ã¯ä»–ã®å‰¯ä½œç”¨ã‚’æŒã¤å½¢å¼ã¨ã®äº’æ›æ€§ã‚’è€ƒãˆã¦ã“ã®é †ç•ªã¨ã—ã¾ã—ãŸã€‚
+Perlã®@code{push}é–¢æ•°ã¯@code{push!}ãƒã‚¯ãƒ­ã¨åŒã˜å¼•æ•°é †ã§ã™ãŒã€
+@var{item}ã¯ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ã®æœ«å°¾ã«è¿½åŠ ã•ã‚Œã¾ã™ (Perlã®@code{unshift}ã®æ–¹ãŒ
+@code{push!}ã®å‹•ä½œã«è¿‘ã„ã§ã™)ã€‚
+Perlã®pushã‚ªãƒšãƒ¬ãƒ¼ã‚¿ã®å‹•ä½œãŒå¿…è¦ãªã‚‰QueueãŒä½¿ãˆã¾ã™ (@ref{Queue}å‚ç…§)ã€‚
 @c COMMON
 @end defmac
 
@@ -1185,8 +1186,8 @@ Perl¤Îpush¥ª¥Ú¥ì¡¼¥¿¤ÎÆ°ºî¤¬É¬Í×¤Ê¤éQueue¤¬»È¤¨¤Ş¤¹ (@ref{Queue}»²¾È)¡£
 Retrieves the value of @var{place}, sets its cdr back to @var{place}
 and returns its car.
 @c JP
-@var{place}¤ÎÃÍ¤ò¼è¤ê½Ğ¤·¡¢¤½¤Î@code{cdr}¤ò@var{place}¤Ë¥»¥Ã¥È¤·¤Ş¤¹¡£
-¸µ¤ÎÃÍ¤Î@code{car}¤òÊÖ¤·¤Ş¤¹¡£
+@var{place}ã®å€¤ã‚’å–ã‚Šå‡ºã—ã€ãã®@code{cdr}ã‚’@var{place}ã«ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+å…ƒã®å€¤ã®@code{car}ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -1205,9 +1206,9 @@ Note: This works the same as Common Lisp's @code{pop}.
 Perl's @code{pop} pops value from the end of the sequence;
 its @code{shift} does the same thing as @code{pop!}.
 @c JP
-Ãğ¡§¤³¤ÎÆ°ºî¤ÏCommon Lisp¤Î@code{pop}¤ÈÆ±¤¸¤Ç¤¹¡£
-Perl¤Î@code{pop}¤Ï¥·¡¼¥±¥ó¥¹¤ÎËöÈø¤«¤éÃÍ¤ò¼è¤ê¤Ş¤¹¡£
-Perl¤Ê¤é@code{shift}¤¬@code{pop!}¤ÎÆ°ºî¤Ë¶á¤¤¤Ç¤¹¡£
+è¨»ï¼šã“ã®å‹•ä½œã¯Common Lispã®@code{pop}ã¨åŒã˜ã§ã™ã€‚
+Perlã®@code{pop}ã¯ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ã®æœ«å°¾ã‹ã‚‰å€¤ã‚’å–ã‚Šã¾ã™ã€‚
+Perlãªã‚‰@code{shift}ãŒ@code{pop!}ã®å‹•ä½œã«è¿‘ã„ã§ã™ã€‚
 @c COMMON
 @end defmac
 
@@ -1222,11 +1223,11 @@ and then stores the result to @var{place}.  The default value of
 
 This is Common Lisp's @code{incf} and @code{decf}.
 @c JP
-@var{place}¤ÎÃÍ¤òÉ¾²Á¤·¤Ş¤¹¡£¤½¤ì¤Ï¿ôÃÍ¤Ë¤Ê¤é¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
-¤½¤ÎÃÍ¤Ë@var{delta}¤¬²Ã»»(@code{inc!})¤â¤·¤¯¤Ï¸º»»(@code{dec!})¤µ¤ì¡¢
-·ë²Ì¤¬@var{place}¤Ë³ÊÇ¼¤µ¤ì¤Ş¤¹¡£@var{delta}¤Î´ûÄêÃÍ¤Ï1¤Ç¤¹¡£
+@var{place}ã®å€¤ã‚’è©•ä¾¡ã—ã¾ã™ã€‚ãã‚Œã¯æ•°å€¤ã«ãªã‚‰ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚
+ãã®å€¤ã«@var{delta}ãŒåŠ ç®—(@code{inc!})ã‚‚ã—ãã¯æ¸›ç®—(@code{dec!})ã•ã‚Œã€
+çµæœãŒ@var{place}ã«æ ¼ç´ã•ã‚Œã¾ã™ã€‚@var{delta}ã®æ—¢å®šå€¤ã¯1ã§ã™ã€‚
 
-Common Lisp¤Î@code{incf}¤È@code{decf}¤ËÅö¤¿¤ê¤Ş¤¹¡£
+Common Lispã®@code{incf}ã¨@code{decf}ã«å½“ãŸã‚Šã¾ã™ã€‚
 @c COMMON
 @end defmac
 
@@ -1237,9 +1238,9 @@ which takes one argument and returns one value.   The original value of
 @var{place} is passed to the @var{proc}, then its result is set to
 @var{place}.
 @c JP
-@code{push!}Åù¤Î¥Ş¥¯¥í¤Î°ìÈÌ²½¤µ¤ì¤¿·Á¼°¤Ç¤¹¡£
-@var{proc}¤Ï°ì¤Ä¤Î°ú¿ô¤ò¼è¤ê¡¢°ì¤Ä¤ÎÃÍ¤òÊÖ¤¹¼êÂ³¤­¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
-@var{place}¤ÎÃÍ¤¬@var{proc}¤ËÅÏ¤µ¤ì¡¢@var{proc}¤Î·ë²Ì¤¬@var{place}¤Ë³ÊÇ¼¤µ¤ì¤Ş¤¹¡£
+@code{push!}ç­‰ã®ãƒã‚¯ãƒ­ã®ä¸€èˆ¬åŒ–ã•ã‚ŒãŸå½¢å¼ã§ã™ã€‚
+@var{proc}ã¯ä¸€ã¤ã®å¼•æ•°ã‚’å–ã‚Šã€ä¸€ã¤ã®å€¤ã‚’è¿”ã™æ‰‹ç¶šãã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚
+@var{place}ã®å€¤ãŒ@var{proc}ã«æ¸¡ã•ã‚Œã€@var{proc}ã®çµæœãŒ@var{place}ã«æ ¼ç´ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 @example
 (define a (cons 2 3))
@@ -1254,7 +1255,7 @@ a @result{} (6 . 0)
 @c ----------------------------------------------------------------------
 @node Conditionals, Binding constructs, Assignments, Core syntax
 @section Conditionals
-@c NODE ¾ò·ï¼°
+@c NODE æ¡ä»¶å¼
 
 @defspec if test consequent alternative
 @defspecx if test consequent
@@ -1264,9 +1265,9 @@ a @result{} (6 . 0)
 @var{consequent} is evaluated.  Otherwise, @var{alternative} is
 evaluated.  If @var{alternative} is not provided, it results undefined value.
 @c JP
-¤Ş¤º@code{test}¤òÉ¾²Á¤·¡¢¤½¤ì¤¬¿¿¤ÎÃÍ¤òÊÖ¤·¤¿¤é@var{consequent}¤òÉ¾²Á¤·¤Ş¤¹¡£
-¤½¤¦¤Ç¤Ê¤±¤ì¤Ğ@var{alternative}¤òÉ¾²Á¤·¤Ş¤¹¡£¤â¤·@var{alternative}¤¬Í¿¤¨¤é¤ì¤Æ
-¤¤¤Ê¤±¤ì¤ĞÌ¤ÄêµÁ¤ÎÃÍ¤òÊÖ¤·¤Ş¤¹¡£
+ã¾ãš@code{test}ã‚’è©•ä¾¡ã—ã€ãã‚ŒãŒçœŸã®å€¤ã‚’è¿”ã—ãŸã‚‰@var{consequent}ã‚’è©•ä¾¡ã—ã¾ã™ã€‚
+ãã†ã§ãªã‘ã‚Œã°@var{alternative}ã‚’è©•ä¾¡ã—ã¾ã™ã€‚ã‚‚ã—@var{alternative}ãŒä¸ãˆã‚‰ã‚Œã¦
+ã„ãªã‘ã‚Œã°æœªå®šç¾©ã®å€¤ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -1315,35 +1316,35 @@ If the last clause is else clause and all tests are failed,
 @var{expr}s in the else clause are evaluated, and its last
 @var{expr}'s result(s) is(are) returned.
 @c JP
-³Æ@code{clause}Àá¤Ï¼¡¤Î¤¤¤º¤ì¤«¤Î·Á¼°¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
+å„@code{clause}ç¯€ã¯æ¬¡ã®ã„ãšã‚Œã‹ã®å½¢å¼ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚
 @example
 (@var{test} @var{expr} @dots{})
 (@var{test} => @var{expr})
 (@var{test} @var{guard} => @var{expr})
 (else @var{expr} @var{expr2} @dots{})
 @end example
-ºÇ¸å¤Î·Á¼°¤ÏºÇ¸å¤ÎÀá¤Î¤ß¤Ëµö¤µ¤ì¤Ş¤¹¡£
+æœ€å¾Œã®å½¢å¼ã¯æœ€å¾Œã®ç¯€ã®ã¿ã«è¨±ã•ã‚Œã¾ã™ã€‚
 
-ºÇ½é¤ÎÀá¤«¤é½ç¤Ë@var{test}¤¬É¾²Á¤µ¤ì¡¢¤½¤ì¤¬¿¿¤ÎÃÍ¤òÊÖ¤¹¤Ş¤Ç¼¡¤ÎÀá¤Î@var{test}¤¬
-É¾²Á¤µ¤ì¤Ş¤¹¡£@var{test}¤¬¿¿¤ÎÃÍ¤òÊÖ¤·¤¿¤é¡¢¤½¤ì¤¬ºÇ½é¤Î·Á¼°¤Ç¤¢¤ì¤Ğ
-¤½¤ÎÀá¤Î@var{expr}¤¬½ç¤ËÉ¾²Á¤µ¤ì¡¢ºÇ¸å¤ÎÉ¾²ÁÃÍ¤¬Ìá¤êÃÍ¤È¤Ê¤ê¤Ş¤¹¡£
-¤½¤ì¤¬2ÈÖÌÜ¤Î·Á¼°¤Ç¤¢¤ì¤Ğ¡¢@var{expr}¤¬¤Ş¤ºÉ¾²Á¤µ¤ì¤Ş¤¹¡£
-@var{expr}¤Ï°ú¿ô¤ò¤Ò¤È¤Ä¼è¤ë¼êÂ³¤­¤òÊÖ¤µ¤Í¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
-Â³¤¤¤Æ¡¢@var{test}¤Î·ë²Ì¤¬¤½¤Î¼êÂ³¤­¤ËÅÏ¤µ¤ì¡¢¤½¤Î¼êÂ³¤­¤ÎÌá¤êÃÍ¤¬@code{cond}·Á¼°¤Î
-É¾²ÁÃÍ¤È¤Ê¤ê¤Ş¤¹¡£
+æœ€åˆã®ç¯€ã‹ã‚‰é †ã«@var{test}ãŒè©•ä¾¡ã•ã‚Œã€ãã‚ŒãŒçœŸã®å€¤ã‚’è¿”ã™ã¾ã§æ¬¡ã®ç¯€ã®@var{test}ãŒ
+è©•ä¾¡ã•ã‚Œã¾ã™ã€‚@var{test}ãŒçœŸã®å€¤ã‚’è¿”ã—ãŸã‚‰ã€ãã‚ŒãŒæœ€åˆã®å½¢å¼ã§ã‚ã‚Œã°
+ãã®ç¯€ã®@var{expr}ãŒé †ã«è©•ä¾¡ã•ã‚Œã€æœ€å¾Œã®è©•ä¾¡å€¤ãŒæˆ»ã‚Šå€¤ã¨ãªã‚Šã¾ã™ã€‚
+ãã‚ŒãŒ2ç•ªç›®ã®å½¢å¼ã§ã‚ã‚Œã°ã€@var{expr}ãŒã¾ãšè©•ä¾¡ã•ã‚Œã¾ã™ã€‚
+@var{expr}ã¯å¼•æ•°ã‚’ã²ã¨ã¤å–ã‚‹æ‰‹ç¶šãã‚’è¿”ã•ã­ã°ãªã‚Šã¾ã›ã‚“ã€‚
+ç¶šã„ã¦ã€@var{test}ã®çµæœãŒãã®æ‰‹ç¶šãã«æ¸¡ã•ã‚Œã€ãã®æ‰‹ç¶šãã®æˆ»ã‚Šå€¤ãŒ@code{cond}å½¢å¼ã®
+è©•ä¾¡å€¤ã¨ãªã‚Šã¾ã™ã€‚
 
-3ÈÖÌÜ¤Î·Á¼°¤ÏSRFI-61¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤Ş¤¹¡£¤³¤Î·Á¼°¤Ç¤Ï¡¢@var{test}¤Ï
-Ç¤°Õ¤Î¿ô¤ÎÃÍ¤ËÉ¾²Á¤µ¤ì¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£¤½¤ì¤é¤ÎÃÍ¤¬¤Ş¤º
-@var{guard}¤ËÅÏ¤µ¤ì¡¢¤â¤·@var{guard}¤¬¿¿¤ÎÃÍ¤òÊÖ¤·¤¿¤é¡¢Æ±¤¸°ú¿ô¤¬@var{expr}¤Ë
-Å¬ÍÑ¤µ¤ì¤Æ¡¢¤½¤ÎÌá¤êÃÍ¤¬@code{cond}·Á¼°¤ÎÉ¾²ÁÃÍ¤È¤Ê¤ê¤Ş¤¹¡£
-@var{guard}¤¬@code{#f}¤òÊÖ¤·¤¿¾ì¹ç¤Ï¼¡¤ÎÀá¤Ø¤ÈÉ¾²Á¤¬¿Ê¤ß¤Ş¤¹¡£
-@var{guard}¤È@var{expr}
-¤Ï¡¢@var{test}¤¬ÊÖ¤¹¤Î¤ÈÆ±¿ô¤Î°ú¿ô¤ò¼è¤ì¤Ê¤±¤ì¤Ğ¤¤¤±¤Ş¤»¤ó¡£
+3ç•ªç›®ã®å½¢å¼ã¯SRFI-61ã§å®šç¾©ã•ã‚Œã¦ã„ã¾ã™ã€‚ã“ã®å½¢å¼ã§ã¯ã€@var{test}ã¯
+ä»»æ„ã®æ•°ã®å€¤ã«è©•ä¾¡ã•ã‚Œã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚ãã‚Œã‚‰ã®å€¤ãŒã¾ãš
+@var{guard}ã«æ¸¡ã•ã‚Œã€ã‚‚ã—@var{guard}ãŒçœŸã®å€¤ã‚’è¿”ã—ãŸã‚‰ã€åŒã˜å¼•æ•°ãŒ@var{expr}ã«
+é©ç”¨ã•ã‚Œã¦ã€ãã®æˆ»ã‚Šå€¤ãŒ@code{cond}å½¢å¼ã®è©•ä¾¡å€¤ã¨ãªã‚Šã¾ã™ã€‚
+@var{guard}ãŒ@code{#f}ã‚’è¿”ã—ãŸå ´åˆã¯æ¬¡ã®ç¯€ã¸ã¨è©•ä¾¡ãŒé€²ã¿ã¾ã™ã€‚
+@var{guard}ã¨@var{expr}
+ã¯ã€@var{test}ãŒè¿”ã™ã®ã¨åŒæ•°ã®å¼•æ•°ã‚’å–ã‚Œãªã‘ã‚Œã°ã„ã‘ã¾ã›ã‚“ã€‚
 
-¤â¤·Á´¤Æ¤Î¥Æ¥¹¥È¤¬µ¶¤ÎÃÍ¤òÊÖ¤·¡¢ºÇ¸å¤ÎÀá¤¬4ÈÖÌÜ¤Î·Á¼°(elseÀá)¤Ç¤Ê¤±¤ì¤Ğ¡¢Ì¤ÄêµÁ¤ÎÃÍ¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£
+ã‚‚ã—å…¨ã¦ã®ãƒ†ã‚¹ãƒˆãŒå½ã®å€¤ã‚’è¿”ã—ã€æœ€å¾Œã®ç¯€ãŒ4ç•ªç›®ã®å½¢å¼(elseç¯€)ã§ãªã‘ã‚Œã°ã€æœªå®šç¾©ã®å€¤ãŒè¿”ã•ã‚Œã¾ã™ã€‚
 
-ºÇ¸å¤ÎÀá¤¬@code{else}Àá¤Ç¡¢Â¾¤ÎÁ´¤Æ¤Î¥Æ¥¹¥È¤¬¼ºÇÔ¤·¤¿¾ì¹ç¡¢@code{else}Àá¤Î@var{expr}
-¤¬½ç¤ËÉ¾²Á¤µ¤ì¡¢¤½¤ÎºÇ¸å¤ÎÃÍ¤¬@code{cond}·Á¼°¤ÎÃÍ¤È¤Ê¤ê¤Ş¤¹¡£
+æœ€å¾Œã®ç¯€ãŒ@code{else}ç¯€ã§ã€ä»–ã®å…¨ã¦ã®ãƒ†ã‚¹ãƒˆãŒå¤±æ•—ã—ãŸå ´åˆã€@code{else}ç¯€ã®@var{expr}
+ãŒé †ã«è©•ä¾¡ã•ã‚Œã€ãã®æœ€å¾Œã®å€¤ãŒ@code{cond}å½¢å¼ã®å€¤ã¨ãªã‚Šã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -1389,29 +1390,29 @@ If the result of evaluating @var{key} is different from every @var{datum},
 then if there is an else clause its expressions are evaluated and
 the result(s) of the last is(are) the result(s) of the case expression;
 otherwise the result of the case expression is undefined.
-@c skimu ¤³¤Î¥Õ¥¡¥¤¥ë¤ÎÂ¾¤Î¾ì½ê¤Ç¤Ï undefined ¤Ê¤Î¤Ç¤½¤ì¤Ë¹ç¤ï¤»¤Ş¤·¤¿¡£
+@c skimu ã“ã®ãƒ•ã‚¡ã‚¤ãƒ«ã®ä»–ã®å ´æ‰€ã§ã¯ undefined ãªã®ã§ãã‚Œã«åˆã‚ã›ã¾ã—ãŸã€‚
 @c JP
-@var{key}¤ÏÇ¤°Õ¤Î¼°¤Ç¤¹¡£@var{clause}¤Ï°Ê²¼¤Î·Á¼°¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
+@var{key}ã¯ä»»æ„ã®å¼ã§ã™ã€‚@var{clause}ã¯ä»¥ä¸‹ã®å½¢å¼ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚
 @example
 ((@var{datum} ...) @var{expr} @var{expr2} @dots{})
 ((@var{datum} ...) => @var{proc})
 @end example
-¤³¤³¤Ç¡¢³Æ@var{datum}¤ÏScheme¥ª¥Ö¥¸¥§¥¯¥È¤Î³°ÉôÉ½¸½¤Ç¤¢¤ê¡¢Á´¤Æ¤Î@var{datum}¤Ï
-°Û¤Ê¤Ã¤Æ¤¤¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£ºÇ¸å¤Î@var{clause}¤Ë¤Ï¼¡¤Î·Á¼°¤ò»ı¤ÄelseÀá¤¬µö¤µ¤ì¤Ş¤¹¡£
+ã“ã“ã§ã€å„@var{datum}ã¯Schemeã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®å¤–éƒ¨è¡¨ç¾ã§ã‚ã‚Šã€å…¨ã¦ã®@var{datum}ã¯
+ç•°ãªã£ã¦ã„ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚æœ€å¾Œã®@var{clause}ã«ã¯æ¬¡ã®å½¢å¼ã‚’æŒã¤elseç¯€ãŒè¨±ã•ã‚Œã¾ã™ã€‚
 @example
 (else @var{expr} @var{expr2} @dots{})
 (else => @var{proc})
 @end example
 
-¤Ş¤º@var{key}¤¬É¾²Á¤µ¤ì¡¢¤½¤Î·ë²Ì¤¬¤½¤ì¤¾¤ì¤Î@var{datum}¤ÈÈæ³Ó¤µ¤ì¤Ş¤¹¡£
-@var{key}¤ÎÃÍ¤È@code{eqv?}(@ref{Equivalence}»²¾È)¤ò»È¤Ã¤Æ°ìÃ×¤¹¤ë@var{datum}
-¤¬¸«¤Ä¤«¤ì¤Ğ¡¢ÂĞ±ş¤¹¤ë@var{expr}¤¬½ç¤ËÉ¾²Á¤µ¤ì¡¢¤½¤ÎºÇ¸å¤ÎÃÍ¤¬@code{case}¤Î
-ÃÍ¤È¤Ê¤ê¤Ş¤¹¡£@code{=>}¤ò´Ş¤àÀá¤ÏSRFI-87¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤Ş¤¹¡£¤³¤ì¤é¤ÎÀá¤Ç¤Ï¡¢
-@var{key}¤Î·ë²Ì¤¬@var{proc}¤ËÅÏ¤µ¤ì¡¢¤½¤Î·ë²Ì¤¬@code{case}¤ÎÃÍ¤È¤Ê¤ê¤Ş¤¹¡£
+ã¾ãš@var{key}ãŒè©•ä¾¡ã•ã‚Œã€ãã®çµæœãŒãã‚Œãã‚Œã®@var{datum}ã¨æ¯”è¼ƒã•ã‚Œã¾ã™ã€‚
+@var{key}ã®å€¤ã¨@code{eqv?}(@ref{Equivalence}å‚ç…§)ã‚’ä½¿ã£ã¦ä¸€è‡´ã™ã‚‹@var{datum}
+ãŒè¦‹ã¤ã‹ã‚Œã°ã€å¯¾å¿œã™ã‚‹@var{expr}ãŒé †ã«è©•ä¾¡ã•ã‚Œã€ãã®æœ€å¾Œã®å€¤ãŒ@code{case}ã®
+å€¤ã¨ãªã‚Šã¾ã™ã€‚@code{=>}ã‚’å«ã‚€ç¯€ã¯SRFI-87ã§å®šç¾©ã•ã‚Œã¦ã„ã¾ã™ã€‚ã“ã‚Œã‚‰ã®ç¯€ã§ã¯ã€
+@var{key}ã®çµæœãŒ@var{proc}ã«æ¸¡ã•ã‚Œã€ãã®çµæœãŒ@code{case}ã®å€¤ã¨ãªã‚Šã¾ã™ã€‚
 
-¤â¤·°ìÃ×¤¹¤ë@var{datum}¤¬¸«¤Ä¤«¤é¤Ê¤¤¾ì¹ç¡¢elseÀá¤¬Í¿¤¨¤é¤ì¤Æ¤¤¤ì¤Ğ
-¤½¤Î@var{expr}¤¬½ç¤ËÉ¾²Á¤µ¤ì¡¢ºÇ¸å¤ÎÃÍ¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£elseÀá¤¬¤Ê¤±¤ì¤Ğ@code{case}Àá
-¤ÎÃÍ¤ÏÌ¤ÄêµÁ¤Ç¤¹¡£
+ã‚‚ã—ä¸€è‡´ã™ã‚‹@var{datum}ãŒè¦‹ã¤ã‹ã‚‰ãªã„å ´åˆã€elseç¯€ãŒä¸ãˆã‚‰ã‚Œã¦ã„ã‚Œã°
+ãã®@var{expr}ãŒé †ã«è©•ä¾¡ã•ã‚Œã€æœ€å¾Œã®å€¤ãŒè¿”ã•ã‚Œã¾ã™ã€‚elseç¯€ãŒãªã‘ã‚Œã°@code{case}ç¯€
+ã®å€¤ã¯æœªå®šç¾©ã§ã™ã€‚
 
 @c COMMON
 @example
@@ -1450,10 +1451,10 @@ If all the expressions evaluate to true values,
 the value of the last expression is returned.
 If there are no expressions then @code{#t} is returned.
 @c JP
-@var{test}¼°¤¬½ç¤ËÉ¾²Á¤µ¤ì¤Ş¤¹¡£ºÇ½é¤Ëµ¶¤ÎÃÍ¤òÊÖ¤·¤¿¤È¤³¤í¤ÇÉ¾²Á¤¬»ß¤Ş¤ê¡¢
-µ¶¤ÎÃÍ¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£»Ä¤ê¤Î¼°¤ÏÉ¾²Á¤µ¤ì¤Ş¤»¤ó¡£
-¤â¤·Á´¤Æ¤Î¼°¤¬¿¿¤ÎÃÍ¤òÊÖ¤·¤¿¾ì¹ç¤Ï¡¢ºÇ¸å¤Î¼°¤ÎÃÍ¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£
-¼°¤¬Í¿¤¨¤ì¤Ê¤¤¾ì¹ç¤Ï@code{#t}¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£
+@var{test}å¼ãŒé †ã«è©•ä¾¡ã•ã‚Œã¾ã™ã€‚æœ€åˆã«å½ã®å€¤ã‚’è¿”ã—ãŸã¨ã“ã‚ã§è©•ä¾¡ãŒæ­¢ã¾ã‚Šã€
+å½ã®å€¤ãŒè¿”ã•ã‚Œã¾ã™ã€‚æ®‹ã‚Šã®å¼ã¯è©•ä¾¡ã•ã‚Œã¾ã›ã‚“ã€‚
+ã‚‚ã—å…¨ã¦ã®å¼ãŒçœŸã®å€¤ã‚’è¿”ã—ãŸå ´åˆã¯ã€æœ€å¾Œã®å¼ã®å€¤ãŒè¿”ã•ã‚Œã¾ã™ã€‚
+å¼ãŒä¸ãˆã‚Œãªã„å ´åˆã¯@code{#t}ãŒè¿”ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -1475,10 +1476,10 @@ If all expressions evaluate to false values, the value of the
 last expression is returned. If there are no expressions then
 @code{#f} is returned.
 @c JP
-@var{test}¼°¤¬½ç¤ËÉ¾²Á¤µ¤ì¤Ş¤¹¡£ºÇ½é¤Ë¿¿¤ÎÃÍ¤òÊÖ¤·¤¿¤È¤³¤í¤ÇÉ¾²Á¤¬»ß¤Ş¤ê¡¢
-¤½¤ÎÃÍ¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£»Ä¤ê¤Î¼°¤ÏÉ¾²Á¤µ¤ì¤Ş¤»¤ó¡£
-¤â¤·Á´¤Æ¤Î¼°¤¬µ¶¤ÎÃÍ¤òÊÖ¤·¤¿¾ì¹ç¤Ï¡¢µ¶¤ÎÃÍ¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£
-¼°¤¬Í¿¤¨¤ì¤Ê¤¤¾ì¹ç¤Ï@code{#f}¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£
+@var{test}å¼ãŒé †ã«è©•ä¾¡ã•ã‚Œã¾ã™ã€‚æœ€åˆã«çœŸã®å€¤ã‚’è¿”ã—ãŸã¨ã“ã‚ã§è©•ä¾¡ãŒæ­¢ã¾ã‚Šã€
+ãã®å€¤ãŒè¿”ã•ã‚Œã¾ã™ã€‚æ®‹ã‚Šã®å¼ã¯è©•ä¾¡ã•ã‚Œã¾ã›ã‚“ã€‚
+ã‚‚ã—å…¨ã¦ã®å¼ãŒå½ã®å€¤ã‚’è¿”ã—ãŸå ´åˆã¯ã€å½ã®å€¤ãŒè¿”ã•ã‚Œã¾ã™ã€‚
+å¼ãŒä¸ãˆã‚Œãªã„å ´åˆã¯@code{#f}ãŒè¿”ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -1498,15 +1499,15 @@ Evaluates @var{test}.  If it yields true value (or false in case of
 the result(s) of the last evaluation is(are) returned.  Otherwise, undefined
 value is returned.
 @c JP
-¤Ş¤º@var{test}¤¬É¾²Á¤µ¤ì¤Ş¤¹¡£¤½¤ì¤¬¿¿¤ÎÃÍ(@code{unless}¤Î¾ì¹ç¤Ïµ¶¤ÎÃÍ)¤òÊÖ¤·¤¿¾ì¹ç¡¢
-°úÂ³¤­@var{body}¤¬½ç¤ËÉ¾²Á¤µ¤ì¡¢ºÇ¸å¤Î@var{body}¤ÎÉ¾²ÁÃÍ¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£
-¤½¤¦¤Ç¤Ê¤±¤ì¤Ğ¡¢Ì¤ÄêµÁ¤ÎÃÍ¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£
+ã¾ãš@var{test}ãŒè©•ä¾¡ã•ã‚Œã¾ã™ã€‚ãã‚ŒãŒçœŸã®å€¤(@code{unless}ã®å ´åˆã¯å½ã®å€¤)ã‚’è¿”ã—ãŸå ´åˆã€
+å¼•ç¶šã@var{body}ãŒé †ã«è©•ä¾¡ã•ã‚Œã€æœ€å¾Œã®@var{body}ã®è©•ä¾¡å€¤ãŒè¿”ã•ã‚Œã¾ã™ã€‚
+ãã†ã§ãªã‘ã‚Œã°ã€æœªå®šç¾©ã®å€¤ãŒè¿”ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 @end defspec
 
 @node Binding constructs, Sequencing, Conditionals, Core syntax
 @section Binding constructs
-@c NODE ÊÑ¿ôÂ«Çû
+@c NODE å¤‰æ•°æŸç¸›
 
 @defspec let ((var expr) @dots{}) body @dots{}
 @defspecx let* ((var expr) @dots{}) body @dots{}
@@ -1519,10 +1520,10 @@ value of @var{expr} @dots{}, then evaluates @var{body} @dots{}.
 The value(s) of the last expression of @var{body} @dots{} becomes
 the value(s) of this form.
 @c JP
-³ÆÊÑ¿ô@var{var}¤¬@var{expr}¤ÎÃÍ¤ËÂ«Çû¤µ¤ì¤Æ¤¤¤ë¥í¡¼¥«¥ë¤Ê´Ä¶­¤òºîÀ®¤·¡¢
-¤½¤ÎÃæ¤Ç@var{body} @dots{}¤òÉ¾²Á¤·¤Ş¤¹¡£@var{var}¤Ï¥·¥ó¥Ü¥ë¤Ç¤Ê¤±¤ì¤Ğ
-¤Ê¤é¤º¡¢½ÅÊ£¤¬¤¢¤Ã¤Æ¤Ï¤Ê¤ê¤Ş¤»¤ó¡£@var{body} @dots{}¤ÎºÇ¸å¤Î¼°¤ÎÃÍ¤¬
-¤³¤Î¥Õ¥©¡¼¥à¤ÎÃÍ¤È¤Ê¤ê¤Ş¤¹¡£
+å„å¤‰æ•°@var{var}ãŒ@var{expr}ã®å€¤ã«æŸç¸›ã•ã‚Œã¦ã„ã‚‹ãƒ­ãƒ¼ã‚«ãƒ«ãªç’°å¢ƒã‚’ä½œæˆã—ã€
+ãã®ä¸­ã§@var{body} @dots{}ã‚’è©•ä¾¡ã—ã¾ã™ã€‚@var{var}ã¯ã‚·ãƒ³ãƒœãƒ«ã§ãªã‘ã‚Œã°
+ãªã‚‰ãšã€é‡è¤‡ãŒã‚ã£ã¦ã¯ãªã‚Šã¾ã›ã‚“ã€‚@var{body} @dots{}ã®æœ€å¾Œã®å¼ã®å€¤ãŒ
+ã“ã®ãƒ•ã‚©ãƒ¼ãƒ ã®å€¤ã¨ãªã‚Šã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -1533,12 +1534,12 @@ it are bound.   @code{Letrec} evaluates @var{expr}s in the environment
 where @var{var}s are already bound (to an undefined value, initially).
 @code{letrec} is necessary to define mutually recursive local procedures.
 @c JP
-¤³¤ì¤é¤Î3¤Ä¤Î¥Õ¥©¡¼¥à¤Î°ã¤¤¤Ï¡¢@var{expr}¤¬É¾²Á¤µ¤ì¤ë»şÅÀ¤Î¥¹¥³¡¼¥×¤Ë¤¢¤ê¤Ş¤¹¡£
-@code{let}¤Ï@var{expr}¤ò@var{let}¥Õ¥©¡¼¥à¤ËÆş¤ëÁ°¤Î´Ä¶­¤Ë¤ª¤¤¤ÆÉ¾²Á¤·¤Ş¤¹¡£
-@code{let*}¤Ï@var{expr}¤ò½ç¤Ë¡¢¤½¤ì°ÊÁ°¤Î@var{var}¤¬Â«Çû¤µ¤ì¤¿´Ä¶­¤Ë¤ª¤¤¤ÆÉ¾²Á¤·¤Æ
-¤æ¤­¤Ş¤¹¡£@var{letrec}¤ÏÁ´¤Æ¤Î@var{var}¤¬²¾ÁÛÅª¤ËÉÔÄê¤ÎÃÍ¤ËÂ«Çû¤µ¤ì¤¿´Ä¶­¤Ë¤ª¤¤¤Æ
-³Æ@var{expr}¤òÉ¾²Á¤·¤Ş¤¹¡£@var{letrec}¤ÏÁê¸ßºÆµ¢Åª¤Ê¥í¡¼¥«¥ë´Ø¿ô¤òÄêµÁ¤¹¤ë¾ì¹ç¤Ë
-É¬Í×¤Ç¤¹¡£
+ã“ã‚Œã‚‰ã®3ã¤ã®ãƒ•ã‚©ãƒ¼ãƒ ã®é•ã„ã¯ã€@var{expr}ãŒè©•ä¾¡ã•ã‚Œã‚‹æ™‚ç‚¹ã®ã‚¹ã‚³ãƒ¼ãƒ—ã«ã‚ã‚Šã¾ã™ã€‚
+@code{let}ã¯@var{expr}ã‚’@var{let}ãƒ•ã‚©ãƒ¼ãƒ ã«å…¥ã‚‹å‰ã®ç’°å¢ƒã«ãŠã„ã¦è©•ä¾¡ã—ã¾ã™ã€‚
+@code{let*}ã¯@var{expr}ã‚’é †ã«ã€ãã‚Œä»¥å‰ã®@var{var}ãŒæŸç¸›ã•ã‚ŒãŸç’°å¢ƒã«ãŠã„ã¦è©•ä¾¡ã—ã¦
+ã‚†ãã¾ã™ã€‚@var{letrec}ã¯å…¨ã¦ã®@var{var}ãŒä»®æƒ³çš„ã«ä¸å®šã®å€¤ã«æŸç¸›ã•ã‚ŒãŸç’°å¢ƒã«ãŠã„ã¦
+å„@var{expr}ã‚’è©•ä¾¡ã—ã¾ã™ã€‚@var{letrec}ã¯ç›¸äº’å†å¸°çš„ãªãƒ­ãƒ¼ã‚«ãƒ«é–¢æ•°ã‚’å®šç¾©ã™ã‚‹å ´åˆã«
+å¿…è¦ã§ã™ã€‚
 @c COMMON
 @example
 (define x 'top-x)
@@ -1561,7 +1562,7 @@ where @var{var}s are already bound (to an undefined value, initially).
 A convenient macro when you have only one variable.
 Expanded as follows.
 @c JP
-ÊÑ¿ô¤¬°ì¤Ä¤·¤«Ìµ¤¤¾ì¹ç¤ÎÊØÍø¤Ê¥Ş¥¯¥í¤Ç¤¹¡£¼¡¤Î¤è¤¦¤ËÅ¸³«¤µ¤ì¤Ş¤¹¡£
+å¤‰æ•°ãŒä¸€ã¤ã—ã‹ç„¡ã„å ´åˆã®ä¾¿åˆ©ãªãƒã‚¯ãƒ­ã§ã™ã€‚æ¬¡ã®ã‚ˆã†ã«å±•é–‹ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -1574,7 +1575,7 @@ Expanded as follows.
 @c EN
 This macro simplifies the following idiom:
 @c JP
-¤³¤Î¥Ş¥¯¥í¤Ï¼¡¤Î¤è¤¦¤Ê¥¤¥Ç¥£¥ª¥à¤ò´ÊÁÇ²½¤·¤Ş¤¹¡£
+ã“ã®ãƒã‚¯ãƒ­ã¯æ¬¡ã®ã‚ˆã†ãªã‚¤ãƒ‡ã‚£ã‚ªãƒ ã‚’ç°¡ç´ åŒ–ã—ã¾ã™ã€‚
 @c COMMON
 @example
 (let1 @var{var} @var{expr}
@@ -1586,7 +1587,7 @@ This macro simplifies the following idiom:
 @c EN
 This macro simplifies the following idiom:
 @c JP
-¤³¤Î¥Ş¥¯¥í¤Ï¼¡¤Î¤è¤¦¤Ê¥¤¥Ç¥£¥ª¥à¤ò´ÊÁÇ²½¤·¤Ş¤¹¡£
+ã“ã®ãƒã‚¯ãƒ­ã¯æ¬¡ã®ã‚ˆã†ãªã‚¤ãƒ‡ã‚£ã‚ªãƒ ã‚’ç°¡ç´ åŒ–ã—ã¾ã™ã€‚
 @c COMMON
 @example
 (let1 @var{var} @var{expr}
@@ -1601,15 +1602,15 @@ This macro simplifies the following idiom:
 In short, it works like @code{let*}, but returns @code{#f} immediately
 whenever the expression in @var{binding}s evaluates to @code{#f}.
 @c JP
-´ÊÃ±¤Ë¸À¤¦¤È¡¢¤³¤Î¥Õ¥©¡¼¥à¤Ï@code{let*}¤Î¤è¤¦¤ËÆ°ºî¤·¤Ş¤¹¤¬¡¢
-@var{bindings}Ãæ¤Î¼°¤¬@code{#f}¤ËÉ¾²Á¤µ¤ì¤¿¤é¤½¤³¤ÇÉ¾²Á¤òÂÇ¤ÁÀÚ¤ê
-@code{#f}¤òÊÖ¤·¤Ş¤¹¡£
+ç°¡å˜ã«è¨€ã†ã¨ã€ã“ã®ãƒ•ã‚©ãƒ¼ãƒ ã¯@code{let*}ã®ã‚ˆã†ã«å‹•ä½œã—ã¾ã™ãŒã€
+@var{bindings}ä¸­ã®å¼ãŒ@code{#f}ã«è©•ä¾¡ã•ã‚ŒãŸã‚‰ãã“ã§è©•ä¾¡ã‚’æ‰“ã¡åˆ‡ã‚Š
+@code{#f}ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 
 @c EN
 Each @var{binding} should be one of the following form:
 @c JP
-³Æ@var{binding}¤Ï°Ê²¼¤Î¤¤¤º¤ì¤«¤Î·Á¼°¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
+å„@var{binding}ã¯ä»¥ä¸‹ã®ã„ãšã‚Œã‹ã®å½¢å¼ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @table @var
 @item (variable expression)
@@ -1619,10 +1620,10 @@ is bound to @var{variable}, then proceed to the next binding.  If
 no more bindings, evaluates @var{body} @dots{}.   If @var{expression}
 yieds @code{#f}, stops evaluation and returns @code{#f} from @code{and-let*}.
 @c JP
-@var{expression}¤¬É¾²Á¤µ¤ì¤Ş¤¹¡£¤½¤ì¤¬¿¿¤ÎÃÍ¤òÊÖ¤·¤¿¤é¡¢¤½¤ÎÃÍ¤¬@var{variable}
-¤ËÂ«Çû¤µ¤ì¡¢¼¡¤Î@var{binding}¤Ø¤È¿Ê¤ß¤Ş¤¹¡£¤â¤¦@var{binding}¤¬Ìµ¤±¤ì¤Ğ
-@var{body} @dots{}¤¬É¾²Á¤µ¤ì¤Ş¤¹¡£¤â¤·@var{expression}¤¬@code{#f}¤òÊÖ¤·¤¿¤é¡¢
-É¾²Á¤òÂÇ¤ÁÀÚ¤ê¡¢@code{and-let*}¤«¤é@code{#f}¤òÊÖ¤·¤Ş¤¹¡£
+@var{expression}ãŒè©•ä¾¡ã•ã‚Œã¾ã™ã€‚ãã‚ŒãŒçœŸã®å€¤ã‚’è¿”ã—ãŸã‚‰ã€ãã®å€¤ãŒ@var{variable}
+ã«æŸç¸›ã•ã‚Œã€æ¬¡ã®@var{binding}ã¸ã¨é€²ã¿ã¾ã™ã€‚ã‚‚ã†@var{binding}ãŒç„¡ã‘ã‚Œã°
+@var{body} @dots{}ãŒè©•ä¾¡ã•ã‚Œã¾ã™ã€‚ã‚‚ã—@var{expression}ãŒ@code{#f}ã‚’è¿”ã—ãŸã‚‰ã€
+è©•ä¾¡ã‚’æ‰“ã¡åˆ‡ã‚Šã€@code{and-let*}ã‹ã‚‰@code{#f}ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 @item (expression)
 @c EN
@@ -1630,8 +1631,8 @@ In this form, @var{variable} is omitted.  @var{Expression} is evaluated
 and the result is used just to determine whether we continue or
 stop further evaluation.
 @c JP
-¤³¤Î·Á¼°¤Ç¤Ï@var{variable}¤¬¾ÊÎ¬¤µ¤ì¤Æ¤¤¤Ş¤¹¡£@var{Expression}¤¬É¾²Á¤µ¤ì¡¢
-¤½¤Î·ë²Ì¤ÏÉ¾²Á¤òÂ³¹Ô¤¹¤ë¤«ÂÇ¤ÁÀÚ¤ë¤«¤òÈ½ÃÇ¤¹¤ë¤¿¤á¤Ë¤Î¤ß»È¤ï¤ì¤Ş¤¹¡£
+ã“ã®å½¢å¼ã§ã¯@var{variable}ãŒçœç•¥ã•ã‚Œã¦ã„ã¾ã™ã€‚@var{Expression}ãŒè©•ä¾¡ã•ã‚Œã€
+ãã®çµæœã¯è©•ä¾¡ã‚’ç¶šè¡Œã™ã‚‹ã‹æ‰“ã¡åˆ‡ã‚‹ã‹ã‚’åˆ¤æ–­ã™ã‚‹ãŸã‚ã«ã®ã¿ä½¿ã‚ã‚Œã¾ã™ã€‚
 @c COMMON
 @item bound-variable
 @c EN
@@ -1639,8 +1640,8 @@ In this form, @var{bound-variable} should be an identifier denoting
 a bound variable.  If its value is not @code{#f}, we continue
 the evaluation of the clauses.
 @c JP
-¤³¤Î·Á¼°¤Ç¤Ï@var{bound-variable}¤ÏÂ«ÇûÊÑ¿ô¤ò¼¨¤¹¼±ÊÌ»Ò¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
-¤½¤ÎÊÑ¿ô¤ÎÃÍ¤¬µ¶¤Ç¤Ê¤±¤ì¤ĞÉ¾²Á¤òÂ³¹Ô¤·¤Ş¤¹¡£
+ã“ã®å½¢å¼ã§ã¯@var{bound-variable}ã¯æŸç¸›å¤‰æ•°ã‚’ç¤ºã™è­˜åˆ¥å­ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚
+ãã®å¤‰æ•°ã®å€¤ãŒå½ã§ãªã‘ã‚Œã°è©•ä¾¡ã‚’ç¶šè¡Œã—ã¾ã™ã€‚
 @c COMMON
 @end table
 
@@ -1648,8 +1649,8 @@ the evaluation of the clauses.
 Let's see some examples.  The following code searches @var{key}
 from an assoc-list @var{alist} and returns its value if found.
 @c JP
-¤¤¤¯¤Ä¤«Îã¤òµó¤²¤Ş¤¹¡£¼¡¤Î¥³¡¼¥É¤ÏÏ¢ÁÛ¥ê¥¹¥È@var{alist}¤«¤é@var{key}¤ò
-Ãµ¤·¡¢¸«¤Ä¤«¤Ã¤¿¤é¤½¤ÎÃÍ¤òÊÖ¤·¤Ş¤¹¡£
+ã„ãã¤ã‹ä¾‹ã‚’æŒ™ã’ã¾ã™ã€‚æ¬¡ã®ã‚³ãƒ¼ãƒ‰ã¯é€£æƒ³ãƒªã‚¹ãƒˆ@var{alist}ã‹ã‚‰@var{key}ã‚’
+æ¢ã—ã€è¦‹ã¤ã‹ã£ãŸã‚‰ãã®å€¤ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 @example
 (and-let* ((entry (assoc key alist))) (cdr entry))
@@ -1659,8 +1660,8 @@ from an assoc-list @var{alist} and returns its value if found.
 If @var{arg} is a string representation of an exact integer, returns its value;
 otherwise, returns 0:
 @c JP
-¤â¤·@var{arg}¤¬Àµ³Î¤ÊÀ°¿ô¤ÎÊ¸»úÎóÉ½¸½¤À¤Ã¤¿¾ì¹ç¤Ï@var{num}¤òÊÖ¤·¡¢¤½¤¦¤Ç¤Ê¤±¤ì¤Ğ
-0¤òÊÖ¤·¤Ş¤¹¡§
+ã‚‚ã—@var{arg}ãŒæ­£ç¢ºãªæ•´æ•°ã®æ–‡å­—åˆ—è¡¨ç¾ã ã£ãŸå ´åˆã¯@var{num}ã‚’è¿”ã—ã€ãã†ã§ãªã‘ã‚Œã°
+0ã‚’è¿”ã—ã¾ã™ï¼š
 @c COMMON
 @example
 (or (and-let* ((num (string->number arg))
@@ -1675,8 +1676,8 @@ The following is a hypothetical code that searches a certain server port
 number from a few possibilities (environment variable, configuration file,
 ...)
 @c JP
-°Ê²¼¤Î¥³¡¼¥É¤Ï¤È¤¢¤ë¥µ¡¼¥Ğ¡¼¤Î¥İ¡¼¥ÈÈÖ¹æ¤ò¤¤¤¯¤Ä¤«¤Î²ÄÇ½À­
-(´Ä¶­ÊÑ¿ô¡¢ÀßÄê¥Õ¥¡¥¤¥ë¡Ä)¤ÎÃæ¤«¤éÃµ¤¹²¾ÁÛÅª¤Ê¥³¡¼¥É¤Ç¤¹¡£
+ä»¥ä¸‹ã®ã‚³ãƒ¼ãƒ‰ã¯ã¨ã‚ã‚‹ã‚µãƒ¼ãƒãƒ¼ã®ãƒãƒ¼ãƒˆç•ªå·ã‚’ã„ãã¤ã‹ã®å¯èƒ½æ€§
+(ç’°å¢ƒå¤‰æ•°ã€è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«â€¦)ã®ä¸­ã‹ã‚‰æ¢ã™ä»®æƒ³çš„ãªã‚³ãƒ¼ãƒ‰ã§ã™ã€‚
 @c COMMON
 @example
 (or (and-let* ((val (sys-getenv "SERVER_PORT")))
@@ -1707,17 +1708,17 @@ all the threads.   This form is provided mainly for
 the porting convenience.   Use parameter objects instead
 (@xref{Parameters}) for thread-local dynamic state.
 @c JP
-Æ°Åª¥¹¥³¡¼¥×¤ÎÊÑ¿ô¤ò¥¨¥ß¥å¥ì¡¼¥È¤¹¤ë¥Ş¥¯¥í¤Ç¤¹¡£
-@var{var}¤Ï@code{fluid-let}¥Õ¥©¡¼¥à¤ò´Ş¤à¥¹¥³¡¼¥×¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤ë
-ÊÑ¿ô¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£@var{val}¤Ï¼°¤Ç¤¹¡£
-@code{fluid-let}¤Ï¤Ş¤º@var{val}¤òÉ¾²Á¤·¡¢
-@var{val}¤ò@var{var}¤ËÆ°Åª¥¹¥³¡¼¥×¤ÇÂ«Çû¤·¤Æ@var{body} @dots{} ¤òÉ¾²Á¤·¤Ş¤¹¡£
+å‹•çš„ã‚¹ã‚³ãƒ¼ãƒ—ã®å¤‰æ•°ã‚’ã‚¨ãƒŸãƒ¥ãƒ¬ãƒ¼ãƒˆã™ã‚‹ãƒã‚¯ãƒ­ã§ã™ã€‚
+@var{var}ã¯@code{fluid-let}ãƒ•ã‚©ãƒ¼ãƒ ã‚’å«ã‚€ã‚¹ã‚³ãƒ¼ãƒ—ã§å®šç¾©ã•ã‚Œã¦ã„ã‚‹
+å¤‰æ•°ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚@var{val}ã¯å¼ã§ã™ã€‚
+@code{fluid-let}ã¯ã¾ãš@var{val}ã‚’è©•ä¾¡ã—ã€
+@var{val}ã‚’@var{var}ã«å‹•çš„ã‚¹ã‚³ãƒ¼ãƒ—ã§æŸç¸›ã—ã¦@var{body} @dots{} ã‚’è©•ä¾¡ã—ã¾ã™ã€‚
 
-¥Ş¥ë¥Á¥¹¥ì¥Ã¥É´Ä¶­²¼¤Ç¤Ï¡¢@var{var}¤ÎÃÍ¤ÎÊÑ²½¤ÏÁ´¤Æ¤Î¥¹¥ì¥Ã¥É¤«¤é¸«¤¨¤Ş¤¹¡£
-¤³¤Î¥Õ¥©¡¼¥à¤Ï¼ç¤È¤·¤ÆÂ¾¤Î½èÍı·Ï¤Î¥³¡¼¥É¤ò°Ü¿¢¤¹¤ëºİ¤ÎÍøÊØÀ­¤Î¤¿¤á¤Ë
-ÄÉ²Ã¤µ¤ì¤Ş¤·¤¿¡£¥¹¥ì¥Ã¥É¥í¡¼¥«¥ë¤ÊÆ°Åª¾õÂÖ¤ò¼Â¸½¤¹¤ë¤Ë¤Ï¡¢
-¥Ñ¥é¥á¡¼¥¿¥ª¥Ö¥¸¥§¥¯¥È(@ref{Parameters}»²¾È)¤ò
-»È¤Ã¤Æ²¼¤µ¤¤¡£
+ãƒãƒ«ãƒã‚¹ãƒ¬ãƒƒãƒ‰ç’°å¢ƒä¸‹ã§ã¯ã€@var{var}ã®å€¤ã®å¤‰åŒ–ã¯å…¨ã¦ã®ã‚¹ãƒ¬ãƒƒãƒ‰ã‹ã‚‰è¦‹ãˆã¾ã™ã€‚
+ã“ã®ãƒ•ã‚©ãƒ¼ãƒ ã¯ä¸»ã¨ã—ã¦ä»–ã®å‡¦ç†ç³»ã®ã‚³ãƒ¼ãƒ‰ã‚’ç§»æ¤ã™ã‚‹éš›ã®åˆ©ä¾¿æ€§ã®ãŸã‚ã«
+è¿½åŠ ã•ã‚Œã¾ã—ãŸã€‚ã‚¹ãƒ¬ãƒƒãƒ‰ãƒ­ãƒ¼ã‚«ãƒ«ãªå‹•çš„çŠ¶æ…‹ã‚’å®Ÿç¾ã™ã‚‹ã«ã¯ã€
+ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ(@ref{Parameters}å‚ç…§)ã‚’
+ä½¿ã£ã¦ä¸‹ã•ã„ã€‚
 @c COMMON
 @example
 (define x 0)
@@ -1738,11 +1739,11 @@ This is the way to receive multiple values.
 are bound to @var{formals} like the binding of lambda formals,
 then @var{body} @dots{} are evaluated.
 @c JP
-¤³¤Î¹½Ê¸¤Ë¤è¤ê¡¢Â¿ÃÍ¤ò¼õ¤±¼è¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£
-@var{formals}¤Ï¥·¥ó¥Ü¥ë¤Î¥ê¥¹¥È¤Ç¤¹¡£ÉÔ´°Á´¤Ê¥ê¥¹¥È¤Ç¤¢¤Ã¤Æ¤â¹½¤¤¤Ş¤»¤ó¡£
-@var{expression}¤¬É¾²Á¤µ¤ì¡¢ÊÖ¤µ¤ì¤¿ÃÍ¤¬lambda·Á¼°¤Î°ú¿ô¤ÎÂ«Çû¤È
-Æ±¤¸¤è¤¦¤Ë¤·¤Æ@var{formals}Æâ¤ÎÊÑ¿ô¤ÈÂ«Çû¤µ¤ì¡¢¤½¤Î´Ä¶­²¼¤Ç@var{body} @dots{}¤¬
-É¾²Á¤µ¤ì¤Ş¤¹¡£
+ã“ã®æ§‹æ–‡ã«ã‚ˆã‚Šã€å¤šå€¤ã‚’å—ã‘å–ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚
+@var{formals}ã¯ã‚·ãƒ³ãƒœãƒ«ã®ãƒªã‚¹ãƒˆã§ã™ã€‚ä¸å®Œå…¨ãªãƒªã‚¹ãƒˆã§ã‚ã£ã¦ã‚‚æ§‹ã„ã¾ã›ã‚“ã€‚
+@var{expression}ãŒè©•ä¾¡ã•ã‚Œã€è¿”ã•ã‚ŒãŸå€¤ãŒlambdaå½¢å¼ã®å¼•æ•°ã®æŸç¸›ã¨
+åŒã˜ã‚ˆã†ã«ã—ã¦@var{formals}å†…ã®å¤‰æ•°ã¨æŸç¸›ã•ã‚Œã€ãã®ç’°å¢ƒä¸‹ã§@var{body} @dots{}ãŒ
+è©•ä¾¡ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -1768,12 +1769,12 @@ Also @code{let-values} and @code{let*-values}
 in SRFI-11 (@ref{Let-values}) provides
 @code{let}-like syntax with multiple values.
 @c JP
-¤Ê¤ª¡¢@ref{Multiple values}¤Î@code{call-with-values}¤Ï
-@code{receive}¤ÈÅù²Á¤Ê¼êÂ³¤­Åª¥¤¥ó¥¿¥Õ¥§¡¼¥¹¤Ç¤¹¡£
-Â¿ÃÍ¤òÊ£¿ô¤Î¥È¥Ã¥×¥ì¥Ù¥ëÊÑ¿ô¤ËÂ«Çû¤¹¤ë¤Ë¤Ï¡¢@code{define-values}
-(@ref{Definitions}»²¾È) ¤¬»È¤¨¤Ş¤¹¡£
-¤Ş¤¿¡¢SRFI-11 (@ref{Let-values}) ¤Î@code{let-values}¤È
-@code{let*-values}¤Ï@code{let}¤Î¤è¤¦¤Ê·Á¼°¤ÇÂ¿ÃÍ¤ò°·¤¦¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£
+ãªãŠã€@ref{Multiple values}ã®@code{call-with-values}ã¯
+@code{receive}ã¨ç­‰ä¾¡ãªæ‰‹ç¶šãçš„ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹ã§ã™ã€‚
+å¤šå€¤ã‚’è¤‡æ•°ã®ãƒˆãƒƒãƒ—ãƒ¬ãƒ™ãƒ«å¤‰æ•°ã«æŸç¸›ã™ã‚‹ã«ã¯ã€@code{define-values}
+(@ref{Definitions}å‚ç…§) ãŒä½¿ãˆã¾ã™ã€‚
+ã¾ãŸã€SRFI-11 (@ref{Let-values}) ã®@code{let-values}ã¨
+@code{let*-values}ã¯@code{let}ã®ã‚ˆã†ãªå½¢å¼ã§å¤šå€¤ã‚’æ‰±ã†ã“ã¨ãŒã§ãã¾ã™ã€‚
 @c COMMON
 @end defspec
 
@@ -1787,11 +1788,11 @@ In the first form, evaluates expr while @var{var} in @var{expr} is
 bound to the result of @var{expr}.
 The second form is equivalent to the followings.
 @c JP
-ºÆµ¢Åª¤Ê»²¾È¤Î¤¢¤ë¼°¤ÎÉ¾²Á¤ò¹Ô¤¦¥Ş¥¯¥í¤Ç¤¹¡£
+å†å¸°çš„ãªå‚ç…§ã®ã‚ã‚‹å¼ã®è©•ä¾¡ã‚’è¡Œã†ãƒã‚¯ãƒ­ã§ã™ã€‚
 
-ºÇ½é¤Î·Á¼°¤Ï¡¢@var{var}¤¬@var{expr}¤Î·ë²Ì¤ËÂ«Çû¤µ¤ì¤ë¾õÂÖ¤Ç@var{expr}¤ò
-É¾²Á¤·¤Ş¤¹¡£
-2ÈÖÌÜ¤Î·Á¼°¤Ï°Ê²¼¤Î·Á¼°¤ÈÅù²Á¤Ç¤¹¡£
+æœ€åˆã®å½¢å¼ã¯ã€@var{var}ãŒ@var{expr}ã®çµæœã«æŸç¸›ã•ã‚Œã‚‹çŠ¶æ…‹ã§@var{expr}ã‚’
+è©•ä¾¡ã—ã¾ã™ã€‚
+2ç•ªç›®ã®å½¢å¼ã¯ä»¥ä¸‹ã®å½¢å¼ã¨ç­‰ä¾¡ã§ã™ã€‚
 @c COMMON
 @example
 (rec @var{name} (lambda @var{vars} @var{expr} @dots{}))
@@ -1800,7 +1801,7 @@ The second form is equivalent to the followings.
 @c EN
 Some examples:
 @c JP
-Îã¡§
+ä¾‹ï¼š
 @c COMMON
 
 @example
@@ -1817,7 +1818,7 @@ Some examples:
 
 @node Sequencing, Iteration, Binding constructs, Core syntax
 @section Sequencing
-@c NODE ½ç¼¡¼Â¹Ô
+@c NODE é †æ¬¡å®Ÿè¡Œ
 
 
 @defspec begin form @dots{}
@@ -1825,7 +1826,7 @@ Some examples:
 @c EN
 Evaluates @var{form}s sequentially, and returns the last result(s).
 @c JP
-@var{form}¤ò½ç¤ËÉ¾²Á¤·¡¢ºÇ¸å¤ÎÃÍ¤òÊÖ¤·¤Ş¤¹¡£
+@var{form}ã‚’é †ã«è©•ä¾¡ã—ã€æœ€å¾Œã®å€¤ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -1836,12 +1837,12 @@ are spliced into the surrounding context.
 For example, topleve expression like the following is the same
 as two toplevel definitions:
 @c JP
-@code{Begin}¤Ï@code{let}¤Î¤è¤¦¤Ê¡Ö¥Ö¥í¥Ã¥¯¡×¤òºîÀ®¤¹¤ë¤ï¤±¤Ç¤Ï¤¢¤ê¤Ş¤»¤ó¡£
-¤¹¤Ê¤ï¤Á¡¢°ìÈÌÅª¤Ë¤Ï@var{form} @dots{}¤ÎÀèÆ¬¤Ë¡ÖÆâÉô¤Îdefine (internal define)¡×¤ò
-ÃÖ¤¯¤³¤È¤Ï¤Ç¤­¤Ş¤»¤ó¡£°ÕÌ£Åª¤Ë¤Ï¡¢@code{begin}¤Ï¤Ş¤ë¤Ç@var{form} @dots{}¤¬
-@code{begin}¤ò°Ï¤à¥³¥ó¥Æ¥¯¥¹¥ÈÃæ¤ËÅ¸³«¤µ¤ì¤Æ¤¤¤ë¤«¤Î¤è¤¦¤Ë¿¶Éñ¤¤¤Ş¤¹¡£
-Îã¤¨¤Ğ¡¢¥È¥Ã¥×¥ì¥Ù¥ë¤Ë¼¡¤Î¤è¤¦¤Ê¼°¤¬¤¢¤Ã¤¿¾ì¹ç¡¢¤½¤ì¤Ï2¤Ä¤Î¥È¥Ã¥×¥ì¥Ù¥ë¤Îdefine¤È
-Æ±Åù¤Ç¤¹¡£
+@code{Begin}ã¯@code{let}ã®ã‚ˆã†ãªã€Œãƒ–ãƒ­ãƒƒã‚¯ã€ã‚’ä½œæˆã™ã‚‹ã‚ã‘ã§ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
+ã™ãªã‚ã¡ã€ä¸€èˆ¬çš„ã«ã¯@var{form} @dots{}ã®å…ˆé ­ã«ã€Œå†…éƒ¨ã®define (internal define)ã€ã‚’
+ç½®ãã“ã¨ã¯ã§ãã¾ã›ã‚“ã€‚æ„å‘³çš„ã«ã¯ã€@code{begin}ã¯ã¾ã‚‹ã§@var{form} @dots{}ãŒ
+@code{begin}ã‚’å›²ã‚€ã‚³ãƒ³ãƒ†ã‚¯ã‚¹ãƒˆä¸­ã«å±•é–‹ã•ã‚Œã¦ã„ã‚‹ã‹ã®ã‚ˆã†ã«æŒ¯èˆã„ã¾ã™ã€‚
+ä¾‹ãˆã°ã€ãƒˆãƒƒãƒ—ãƒ¬ãƒ™ãƒ«ã«æ¬¡ã®ã‚ˆã†ãªå¼ãŒã‚ã£ãŸå ´åˆã€ãã‚Œã¯2ã¤ã®ãƒˆãƒƒãƒ—ãƒ¬ãƒ™ãƒ«ã®defineã¨
+åŒç­‰ã§ã™ã€‚
 @c COMMON
 
 @example
@@ -1851,7 +1852,7 @@ as two toplevel definitions:
 @c EN
 Here's a trickier example:
 @c JP
-¤è¤ê¥È¥ê¥Ã¥­¡¼¤ÊÎã:
+ã‚ˆã‚Šãƒˆãƒªãƒƒã‚­ãƒ¼ãªä¾‹:
 @c COMMON
 
 @example
@@ -1881,12 +1882,12 @@ This is called @code{prog1} in CommonLisp.
 Unlike @code{begin}, this @emph{does} creates a "block",
 for the @code{begin0} form is expanded as follows.
 @c JP
-@var{exp0}, @var{exp1}, @dots{} ¤òÉ¾²Á¤·¡¢@var{exp0}¤Î·ë²Ì¤òÊÖ¤·¤Ş¤¹¡£
-¤³¤ÎÌ¾Á°¤ÏMzScheme¤«¤é¼è¤é¤ì¤Ş¤·¤¿¡£¤³¤ì¤ÏCommonLisp¤Ç
-@code{prog1}¤È¸Æ¤Ğ¤ì¤Æ¤¤¤ë¤â¤Î¤Ç¤¹¡£
+@var{exp0}, @var{exp1}, @dots{} ã‚’è©•ä¾¡ã—ã€@var{exp0}ã®çµæœã‚’è¿”ã—ã¾ã™ã€‚
+ã“ã®åå‰ã¯MzSchemeã‹ã‚‰å–ã‚‰ã‚Œã¾ã—ãŸã€‚ã“ã‚Œã¯CommonLispã§
+@code{prog1}ã¨å‘¼ã°ã‚Œã¦ã„ã‚‹ã‚‚ã®ã§ã™ã€‚
 
-@code{begin}¤È°ã¤Ã¤Æ¡¢¤³¤ì¤Ï¡Ö¥Ö¥í¥Ã¥¯¡×¤ò¹½À®¤·¤Ş¤¹¡£
-@code{begin0}¥Õ¥©¡¼¥à¤Ï¼¡¤Î¤è¤¦¤ËÅ¸³«¤µ¤ì¤ë¤«¤é¤Ç¤¹¡£
+@code{begin}ã¨é•ã£ã¦ã€ã“ã‚Œã¯ã€Œãƒ–ãƒ­ãƒƒã‚¯ã€ã‚’æ§‹æˆã—ã¾ã™ã€‚
+@code{begin0}ãƒ•ã‚©ãƒ¼ãƒ ã¯æ¬¡ã®ã‚ˆã†ã«å±•é–‹ã•ã‚Œã‚‹ã‹ã‚‰ã§ã™ã€‚
 @c COMMON
 
 @example
@@ -1899,7 +1900,7 @@ for the @code{begin0} form is expanded as follows.
 
 @node Iteration, Quasiquotation, Sequencing, Core syntax
 @section Iteration
-@c NODE ·«¤êÊÖ¤·
+@c NODE ç¹°ã‚Šè¿”ã—
 
 @defspec do ((variable init [step]) @dots{}) (test expr @dots{}) body @dots{}
 [R5RS]
@@ -1918,7 +1919,7 @@ for the @code{begin0} form is expanded as follows.
 Imported from Common Lisp.  These are equivalent to the following forms,
 respectively.
 @c JP
-Common Lisp¤«¤é¤ÎÍ¢Æş¤Ç¤¹¡£¤½¤ì¤¾¤ì°Ê²¼¤Î¤è¤¦¤ËÅ¸³«¤µ¤ì¤Ş¤¹¡£
+Common Lispã‹ã‚‰ã®è¼¸å…¥ã§ã™ã€‚ãã‚Œãã‚Œä»¥ä¸‹ã®ã‚ˆã†ã«å±•é–‹ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 @example
 (dotimes (variable limit result) body @dots{})
@@ -1943,7 +1944,7 @@ Common Lisp¤«¤é¤ÎÍ¢Æş¤Ç¤¹¡£¤½¤ì¤¾¤ì°Ê²¼¤Î¤è¤¦¤ËÅ¸³«¤µ¤ì¤Ş¤¹¡£
 @var{Var} is an identifier and @var{guard} is a procedure
 that takes one argument.
 @c JP
-@var{Var} ¤Ï¼±ÊÌ»Ò¤Ç@var{guard}¤Ï°ì¤Ä¤Î°ú¿ô¤ò¤È¤ë¼êÂ³¤­¤Ç¤¹¡£
+@var{Var} ã¯è­˜åˆ¥å­ã§@var{guard}ã¯ä¸€ã¤ã®å¼•æ•°ã‚’ã¨ã‚‹æ‰‹ç¶šãã§ã™ã€‚
 @c COMMON
 
 @c EN
@@ -1951,17 +1952,17 @@ In the first form, @var{expr} is evaluated, and if it yields a true
 value, @var{body} @dots{} are evaluated.  It is repeated while
 @var{expr} yields true value.
 @c JP
-ºÇ½é¤Î·Á¼°¤Ç¤Ï¤Ş¤º@var{expr}¤¬É¾²Á¤µ¤ì¡¢¤â¤·¤½¤ì¤¬¿¿ÃÍ¤òÊÖ¤·¤¿¤é
-@var{body} @dots{} ¤¬É¾²Á¤µ¤ì¤Ş¤¹¡£¤½¤·¤Æ@var{expr}¤¬¿¿ÃÍ¤òÊÖ¤¹
-¸Â¤ê·«¤êÊÖ¤µ¤ì¤Ş¤¹¡£
+æœ€åˆã®å½¢å¼ã§ã¯ã¾ãš@var{expr}ãŒè©•ä¾¡ã•ã‚Œã€ã‚‚ã—ãã‚ŒãŒçœŸå€¤ã‚’è¿”ã—ãŸã‚‰
+@var{body} @dots{} ãŒè©•ä¾¡ã•ã‚Œã¾ã™ã€‚ãã—ã¦@var{expr}ãŒçœŸå€¤ã‚’è¿”ã™
+é™ã‚Šç¹°ã‚Šè¿”ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @c EN
 In the second form, @var{var} is bound to a result of @var{expr}
 in the scope of @var{body} @dots{}.
 @c JP
-2ÈÖÌÜ¤Î·Á¼°¤Ç¤Ï¡¢@var{body} @dots{} ¤ÇÍ­¸ú¤ÊÊÑ¿ô@var{var}¤ò
-ºîÀ®¤·¡¢@var{expr}¤Î·ë²Ì¤ËÂ«Çû¤·¤Ş¤¹¡£
+2ç•ªç›®ã®å½¢å¼ã§ã¯ã€@var{body} @dots{} ã§æœ‰åŠ¹ãªå¤‰æ•°@var{var}ã‚’
+ä½œæˆã—ã€@var{expr}ã®çµæœã«æŸç¸›ã—ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -1970,15 +1971,15 @@ In the third form, the value @var{expr} yields are passed to
 while @var{guard} returns a true value.  @var{var} is bound
 to the result of @var{expr}.
 @c JP
-ºÇ¸å¤Î·Á¼°¤Ç¤Ï¡¢@var{expr} ¤ÎÊÖ¤êÃÍ¤¬ @var{guard} ¤ËÅÏ¤µ¤ì¤³¤Î
-·ë²Ì¤¬¿¿ÃÍ¤Ç¤¢¤ë¸Â¤ê @var{body} @dots{} ¤¬·«¤êÊÖ¤µ¤ì¤Ş¤¹¡£
-ÊÑ¿ô @var{var} ¤Ï @var{expr} ¤Î·ë²Ì¤ËÂ«Çû¤µ¤ì¤Ş¤¹¡£
+æœ€å¾Œã®å½¢å¼ã§ã¯ã€@var{expr} ã®è¿”ã‚Šå€¤ãŒ @var{guard} ã«æ¸¡ã•ã‚Œã“ã®
+çµæœãŒçœŸå€¤ã§ã‚ã‚‹é™ã‚Š @var{body} @dots{} ãŒç¹°ã‚Šè¿”ã•ã‚Œã¾ã™ã€‚
+å¤‰æ•° @var{var} ã¯ @var{expr} ã®çµæœã«æŸç¸›ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @c EN
 The return value of @code{while} form itself isn't specified.
 @c JP
-@code{while} ¼«ÂÎ¤ÎÊÖ¤êÃÍ¤ÏÉÔÄê¤Ç¤¹¡£
+@code{while} è‡ªä½“ã®è¿”ã‚Šå€¤ã¯ä¸å®šã§ã™ã€‚
 @c COMMON
 
 @example
@@ -2002,25 +2003,25 @@ the result of @var{expr} is passed to @var{guard}, and the
 execution is repeated until it returns true.  @var{Var} is bound
 to the result of @var{expr}.
 @c JP
-@code{while} ¤Î¾ò·ï¤òµÕ¤Ë¤·¤¿¤â¤Î¤Ç¤¹¡£ ¤Ä¤Ş¤ê¡¢
-ºÇ½é¤Î·Á¼°¤Ç¤Ï@var{expr}¤¬¿¿ÃÍ¤òÊÖ¤¹¤Ş¤Ç @var{body} @dots{} ¤ò
-·«¤êÊÖ¤·¤Ş¤¹¡£2ÈÖÌÜ¤Î·Á¼°¤Ç¤Ï@var{expr}¤Î·ë²Ì¤¬@var{guard} ¤ËÅÏ¤µ¤ì
-¤½¤ì¤¬¿¿ÃÍ¤òÊÖ¤¹¤Ş¤Ç·«¤êÊÖ¤·¤Ş¤¹¡£ @var{Var}¤Ï@var{expr}ÊÖ¤êÃÍ¤Ë
-Â«Çû¤µ¤ì¤Ş¤¹¡£
+@code{while} ã®æ¡ä»¶ã‚’é€†ã«ã—ãŸã‚‚ã®ã§ã™ã€‚ ã¤ã¾ã‚Šã€
+æœ€åˆã®å½¢å¼ã§ã¯@var{expr}ãŒçœŸå€¤ã‚’è¿”ã™ã¾ã§ @var{body} @dots{} ã‚’
+ç¹°ã‚Šè¿”ã—ã¾ã™ã€‚2ç•ªç›®ã®å½¢å¼ã§ã¯@var{expr}ã®çµæœãŒ@var{guard} ã«æ¸¡ã•ã‚Œ
+ãã‚ŒãŒçœŸå€¤ã‚’è¿”ã™ã¾ã§ç¹°ã‚Šè¿”ã—ã¾ã™ã€‚ @var{Var}ã¯@var{expr}è¿”ã‚Šå€¤ã«
+æŸç¸›ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @c EN
 (The second form without @var{guard} isn't useful in @code{until}, since
 @var{var} would always be bound to @code{#f}).
 @c JP
-(@var{guard} ¤ò¾Ê¤¤¤¿2ÈÖÌÜ¤Î·Á¼°¤Ç¤Ï@var{var}¤Ï¾ï¤Ë@code{#f}¤Ø
-Â«Çû¤µ¤ì¤ë¤¿¤á¡¢¤¢¤Ş¤ê°ÕÌ£¤¬¤¢¤ê¤Ş¤»¤ó¡£)
+(@var{guard} ã‚’çœã„ãŸ2ç•ªç›®ã®å½¢å¼ã§ã¯@var{var}ã¯å¸¸ã«@code{#f}ã¸
+æŸç¸›ã•ã‚Œã‚‹ãŸã‚ã€ã‚ã¾ã‚Šæ„å‘³ãŒã‚ã‚Šã¾ã›ã‚“ã€‚)
 @c COMMON
 
 @c EN
 The return value of @code{until} form itself isn't specified.
 @c JP
-@code{until}¼«ÂÎ¤ÎÊÖ¤êÃÍ¤ÏÉÔÄê¤Ç¤¹¡£
+@code{until}è‡ªä½“ã®è¿”ã‚Šå€¤ã¯ä¸å®šã§ã™ã€‚
 @c COMMON
 
 @example
@@ -2038,7 +2039,7 @@ The return value of @code{until} form itself isn't specified.
 @c ----------------------------------------------------------------------
 @node Quasiquotation, Definitions, Iteration, Core syntax
 @section Quasiquotation
-@c NODE ½à¥¯¥ª¡¼¥È, ½à¥¯¥ª¡¼¥È(Quasiquote)
+@c NODE æº–ã‚¯ã‚ªãƒ¼ãƒˆ, æº–ã‚¯ã‚ªãƒ¼ãƒˆ(Quasiquote)
 
 @defspec quasiquote template
 [R5RS]
@@ -2046,8 +2047,8 @@ The return value of @code{until} form itself isn't specified.
 Quasiquotation is a convenient way to build a structure that has
 some fixed parts and some variable parts.  See the explanation below.
 @c JP
-½à¥¯¥©¡¼¥È¤Ï¸ÇÄêÉôÊ¬¤ÈÊÑ¿ôÉôÊ¬¤ÎÎ¾Êı¤ò»ı¤Ä¤è¤¦¤Ê¹½Â¤¤ò¹½À®¤¹¤ë¤Î¤ËÊØÍø
-¤Ç¤¹¡£¾ÜºÙ¤Ï°Ê²¼¤ÎÀâÌÀ¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
+æº–ã‚¯ã‚©ãƒ¼ãƒˆã¯å›ºå®šéƒ¨åˆ†ã¨å¤‰æ•°éƒ¨åˆ†ã®ä¸¡æ–¹ã‚’æŒã¤ã‚ˆã†ãªæ§‹é€ ã‚’æ§‹æˆã™ã‚‹ã®ã«ä¾¿åˆ©
+ã§ã™ã€‚è©³ç´°ã¯ä»¥ä¸‹ã®èª¬æ˜ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
 @c COMMON
 @end defspec
 
@@ -2056,7 +2057,7 @@ some fixed parts and some variable parts.  See the explanation below.
 @c EN
 The syntax @code{`x} is read as @code{(quasiquote x)}.
 @c JP
-@code{`x}¤Ï@code{(quasiquote x)}¤È¤·¤ÆÆÉ¤ß¹ş¤Ş¤ì¤Ş¤¹¡£
+@code{`x}ã¯@code{(quasiquote x)}ã¨ã—ã¦èª­ã¿è¾¼ã¾ã‚Œã¾ã™ã€‚
 @c COMMON
 @end deftp
 
@@ -2070,11 +2071,11 @@ appear outside of quasiquote.  Gauche signals an error in such case,
 for it usually indicates you forget quasiquote somewhere.
 See the explanation below for the meaning of these.
 @c JP
-¤³¤ì¤é¤Î¹½Ê¸¤Ï½à¥¯¥©¡¼¥È¤µ¤ì¤¿@var{template}Æâ¤Ë¤¢¤ë¤È¤­¤Ë¤À¤±°ÕÌ£¤ò»ı¤Á
-¤Ş¤¹¡£É¸½à»ÅÍÍ¤Ç¤Ï¤³¤ì¤é¤Î¹½Ê¸¤¬½à¥¯¥©¡¼¥È¤Î³°Â¦¤Ç¸½¤ï¤ì¤¿¤È¤­¤Î°ÕÌ£¤Ë
-¤Ä¤¤¤Æ¤Ï²¿¤â¸ÀµÚ¤·¤Æ¤¤¤Ş¤»¤ó¡£Gauche¤Ç¤Ï¤½¤Î¤è¤¦¤Ê¾ì¹ç¤Ë¤ÏÄÌ¾ï¤É¤³¤«¤Ç
-½à¥¯¥©¡¼¥ÈËº¤ì¤¬¤¢¤ë¤³¤È¤ò¼¨¤¹¥¨¥é¡¼¤¬È¯À¸¤·¤Ş¤¹¡£¤³¤ì¤é¤Î°ÕÌ£¤Ë¤Ä¤¤¤Æ
-¤Ï°Ê²¼¤ÎÀâÌÀ¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
+ã“ã‚Œã‚‰ã®æ§‹æ–‡ã¯æº–ã‚¯ã‚©ãƒ¼ãƒˆã•ã‚ŒãŸ@var{template}å†…ã«ã‚ã‚‹ã¨ãã«ã ã‘æ„å‘³ã‚’æŒã¡
+ã¾ã™ã€‚æ¨™æº–ä»•æ§˜ã§ã¯ã“ã‚Œã‚‰ã®æ§‹æ–‡ãŒæº–ã‚¯ã‚©ãƒ¼ãƒˆã®å¤–å´ã§ç¾ã‚ã‚ŒãŸã¨ãã®æ„å‘³ã«
+ã¤ã„ã¦ã¯ä½•ã‚‚è¨€åŠã—ã¦ã„ã¾ã›ã‚“ã€‚Gaucheã§ã¯ãã®ã‚ˆã†ãªå ´åˆã«ã¯é€šå¸¸ã©ã“ã‹ã§
+æº–ã‚¯ã‚©ãƒ¼ãƒˆå¿˜ã‚ŒãŒã‚ã‚‹ã“ã¨ã‚’ç¤ºã™ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¾ã™ã€‚ã“ã‚Œã‚‰ã®æ„å‘³ã«ã¤ã„ã¦
+ã¯ä»¥ä¸‹ã®èª¬æ˜ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
 @c COMMON
 @end defspec
 
@@ -2085,15 +2086,15 @@ See the explanation below for the meaning of these.
 The syntaxes @code{,x} and @code{,@@x} are read as @code{(unquote x)}
 and @code{(unquote-splicing x)}, respectively.
 @c JP
-@code{,x}¤ª¤è¤Ó@code{,@@x}¤Ï¡¢¤½¤ì¤¾¤ì@code{(unquote x)}¤ª¤è¤Ó
-@code{(unquote-splicing x)}¤È¤·¤ÆÆÉ¤ß¹ş¤Ş¤ì¤Ş¤¹¡£
+@code{,x}ãŠã‚ˆã³@code{,@@x}ã¯ã€ãã‚Œãã‚Œ@code{(unquote x)}ãŠã‚ˆã³
+@code{(unquote-splicing x)}ã¨ã—ã¦èª­ã¿è¾¼ã¾ã‚Œã¾ã™ã€‚
 @c COMMON
 @end deftp
 
 @c EN
 @subheading Quasiquote basics
 @c JP
-@subheading ½à¥¯¥©¡¼¥È¤Î´ğËÜ
+@subheading æº–ã‚¯ã‚©ãƒ¼ãƒˆã®åŸºæœ¬
 @c COMMON
 
 @c EN
@@ -2104,11 +2105,11 @@ let's assume we have variables @var{x} and @var{y} that provides those
 values.)  One way to do that is to call the function @code{list}
 explicitly.
 @c JP
-@code{(foo bar @var{x} @var{y})}¤Î¤è¤¦¤Ê¥ê¥¹¥È¤ò¹½À®¤·¤¿¤¤¤È¤·¤Ş¤·¤ç¤¦¡£
-¤³¤³¤Ç¤Ï@code{foo}¤ª¤è¤Ó@code{bar}¤Ï¥·¥ó¥Ü¥ë¤Ç¡¢@var{x}¤ª¤è¤Ó@var{y}¤Ï
-¼Â¹Ô»ş¤ËÄê¤Ş¤ëÃÍ¤È¤·¤Ş¤¹¡£(ÀâÌÀ¤Î¤¿¤á¤Ë¡¢ÊÑ¿ô@var{x}¤ª¤è¤Ó@var{y}¤¬¤½
-¤ì¤é¤ÎÃÍ¤ò»ı¤Ã¤Æ¤¤¤ë¤â¤Î¤È¤·¤Ş¤¹¡£) ¤Ò¤È¤Ä¤ÎÊıË¡¤Ï@code{list}´Ø¿ô¤òÌÀ
-¼¨Åª¤Ë¸Æ¤Ö¤³¤È¤Ç¤¹¡£
+@code{(foo bar @var{x} @var{y})}ã®ã‚ˆã†ãªãƒªã‚¹ãƒˆã‚’æ§‹æˆã—ãŸã„ã¨ã—ã¾ã—ã‚‡ã†ã€‚
+ã“ã“ã§ã¯@code{foo}ãŠã‚ˆã³@code{bar}ã¯ã‚·ãƒ³ãƒœãƒ«ã§ã€@var{x}ãŠã‚ˆã³@var{y}ã¯
+å®Ÿè¡Œæ™‚ã«å®šã¾ã‚‹å€¤ã¨ã—ã¾ã™ã€‚(èª¬æ˜ã®ãŸã‚ã«ã€å¤‰æ•°@var{x}ãŠã‚ˆã³@var{y}ãŒã
+ã‚Œã‚‰ã®å€¤ã‚’æŒã£ã¦ã„ã‚‹ã‚‚ã®ã¨ã—ã¾ã™ã€‚) ã²ã¨ã¤ã®æ–¹æ³•ã¯@code{list}é–¢æ•°ã‚’æ˜
+ç¤ºçš„ã«å‘¼ã¶ã“ã¨ã§ã™ã€‚
 @c COMMON
 
 @example
@@ -2119,7 +2120,7 @@ explicitly.
 @c EN
 You can do the same thing with quasiquote, like this:
 @c JP
-Æ±¤¸¤³¤È¤ò½à¥¯¥©¡¼¥È¤ò»È¤¦¤È°Ê²¼¤Î¤è¤¦¤Ë¤Ê¤ê¤Ş¤¹¡£
+åŒã˜ã“ã¨ã‚’æº–ã‚¯ã‚©ãƒ¼ãƒˆã‚’ä½¿ã†ã¨ä»¥ä¸‹ã®ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -2133,9 +2134,9 @@ quotes the parts that you want to insert literally into the result,
 while the quasiquote version @emph{unquotes} the parts that you
 don't want to quote.  
 @c JP
-¤Õ¤¿¤Ä¤Îµ­Ë¡¤Î°ã¤¤¤Ï¡¢Á°¼Ô¤Ç¤Ï·ë²Ì¤Ë½ñ¤¤¤¿¤È¤ª¤ê¤òÆş¤ì¹ş¤ß¤¿¤¤¤È¤³¤í¤Ç
-¥¯¥©¡¼¥È¤ò»È¤¤¡¢¸å¼Ô¤Ç¤Ï¥¯¥©¡¼¥È¤·¤¿¤¯¤Ê¤¤¤È¤³¤í¤Ë@emph{unquotes}¤ò»È
-¤¦¤³¤È¤Ç¤¹¡£  
+ãµãŸã¤ã®è¨˜æ³•ã®é•ã„ã¯ã€å‰è€…ã§ã¯çµæœã«æ›¸ã„ãŸã¨ãŠã‚Šã‚’å…¥ã‚Œè¾¼ã¿ãŸã„ã¨ã“ã‚ã§
+ã‚¯ã‚©ãƒ¼ãƒˆã‚’ä½¿ã„ã€å¾Œè€…ã§ã¯ã‚¯ã‚©ãƒ¼ãƒˆã—ãŸããªã„ã¨ã“ã‚ã«@emph{unquotes}ã‚’ä½¿
+ã†ã“ã¨ã§ã™ã€‚  
 @c COMMON
 
 @c EN
@@ -2143,8 +2144,8 @@ The quasiquote version gets simpler and more readable when you
 have lots of static parts with scattered variable parts in your
 structure.  
 @c JP
-¤Û¤È¤ó¤É¤¬¸ÇÄêÉôÊ¬¤Ç¤½¤ÎÃæ¤ËÊÑ¿ôÉôÊ¬¤¬»¶ºß¤¹¤ë¤è¤¦¤Ê¾ì¹ç¤Ë¤Ï½à¥¯¥©¡¼¥È
-¤ò»È¤Ã¤¿Êı¤¬Ã±½ã¤ÇÆÉ¤ß¤ä¤¹¤¯¤Ê¤ê¤Ş¤¹¡£
+ã»ã¨ã‚“ã©ãŒå›ºå®šéƒ¨åˆ†ã§ãã®ä¸­ã«å¤‰æ•°éƒ¨åˆ†ãŒæ•£åœ¨ã™ã‚‹ã‚ˆã†ãªå ´åˆã«ã¯æº–ã‚¯ã‚©ãƒ¼ãƒˆ
+ã‚’ä½¿ã£ãŸæ–¹ãŒå˜ç´”ã§èª­ã¿ã‚„ã™ããªã‚Šã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -2154,10 +2155,10 @@ create program fragments from variable parts provided as
 macro arguments.  See the simple-minded @code{my-if} macro
 that expands to @code{cond} form:
 @c JP
-¤½¤¦¤¤¤¦¤ï¤±¤Ç¡¢µìÍè¤Î¥Ş¥¯¥í¤Ç¤Ï½à¥¯¥©¡¼¥È¤¬ÉÑÈË¤Ë¤Ä¤«¤ï¤ì¤Æ¤¤¤Ş¤·¤¿¡£
-µìÍè¤Î¥Ş¥¯¥í¤Ï´ğËÜÅª¤Ë¥Ş¥¯¥í¤Î°ú¿ô¤È¤·¤ÆÍ¿¤¨¤é¤ì¤¿ÊÑ¿ôÉôÊ¬¤«¤é¥×¥í¥°¥é
-¥àÃÇÊÒ¤òÀ¸À®¤¹¤ë¼êÂ³¤À¤«¤é¤Ç¤¹¡£´ÊÃ±¤Ê@code{my-if}¥Ş¥¯¥í¤ÎÄêµÁ¤È¤½¤ì¤¬
-@code{cond}¤ËÅ¸³«¤µ¤ì¤ë¤è¤¦¤¹¤ò¸«¤Æ¤ß¤Ş¤·¤ç¤¦¡£
+ãã†ã„ã†ã‚ã‘ã§ã€æ—§æ¥ã®ãƒã‚¯ãƒ­ã§ã¯æº–ã‚¯ã‚©ãƒ¼ãƒˆãŒé »ç¹ã«ã¤ã‹ã‚ã‚Œã¦ã„ã¾ã—ãŸã€‚
+æ—§æ¥ã®ãƒã‚¯ãƒ­ã¯åŸºæœ¬çš„ã«ãƒã‚¯ãƒ­ã®å¼•æ•°ã¨ã—ã¦ä¸ãˆã‚‰ã‚ŒãŸå¤‰æ•°éƒ¨åˆ†ã‹ã‚‰ãƒ—ãƒ­ã‚°ãƒ©
+ãƒ æ–­ç‰‡ã‚’ç”Ÿæˆã™ã‚‹æ‰‹ç¶šã ã‹ã‚‰ã§ã™ã€‚ç°¡å˜ãª@code{my-if}ãƒã‚¯ãƒ­ã®å®šç¾©ã¨ãã‚ŒãŒ
+@code{cond}ã«å±•é–‹ã•ã‚Œã‚‹ã‚ˆã†ã™ã‚’è¦‹ã¦ã¿ã¾ã—ã‚‡ã†ã€‚
 @c COMMON
 
 @example
@@ -2174,10 +2175,10 @@ Note the two @code{else}s in the macro definition; one isn't unquoted,
 thus appears liteally in the output, while another is unquoted and
 the corresponding macro argument is inserted in its place.
 @c JP
-¥Ş¥¯¥íÄêµÁÆâ¤Î2¤Ä¤Î@code{else}¤ËÃíÌÜ¤·¤Æ¤¯¤À¤µ¤¤¡£¤Ò¤È¤Ä¤Ï¥¢¥ó¥¯¥©¡¼¥È
-¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤Î¤Ç¡¢½ĞÎÏ¤Ë¤Ï¤½¤Î¤Ş¤Ş¸½¤ï¤ì¤Ş¤¹¡£¤â¤¦¤Ò¤È¤Ä¤ÎÊı¤Ï¤È¤¤¤¨
-¤Ğ¡¢¤³¤Á¤é¤Ï¥¢¥ó¥¯¥©¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤¹¤Î¤Ç¡¢¤½¤Î¾ì½ê¤Ë¥Ş¥¯¥í¤Î°ú¿ô¤¬Æş¤ê
-¤Ş¤¹¡£
+ãƒã‚¯ãƒ­å®šç¾©å†…ã®2ã¤ã®@code{else}ã«æ³¨ç›®ã—ã¦ãã ã•ã„ã€‚ã²ã¨ã¤ã¯ã‚¢ãƒ³ã‚¯ã‚©ãƒ¼ãƒˆ
+ã•ã‚Œã¦ã„ã¾ã›ã‚“ã®ã§ã€å‡ºåŠ›ã«ã¯ãã®ã¾ã¾ç¾ã‚ã‚Œã¾ã™ã€‚ã‚‚ã†ã²ã¨ã¤ã®æ–¹ã¯ã¨ã„ãˆ
+ã°ã€ã“ã¡ã‚‰ã¯ã‚¢ãƒ³ã‚¯ã‚©ãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã™ã®ã§ã€ãã®å ´æ‰€ã«ãƒã‚¯ãƒ­ã®å¼•æ•°ãŒå…¥ã‚Š
+ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -2188,19 +2189,19 @@ quasiquoted form can be more concise.  Gauche also tries to minimize
 runtime allocation for quasiquoted forms, so it may potentially
 be more efficient; see "How static are quasiquoted forms?" below.
 @c JP
-¤â¤Á¤í¤ó¥Ş¥¯¥í¤È¤Ï´Ø·¸¤Î¤Ê¤¤¤È¤³¤í¤Ç¤â½à¥¯¥©¡¼¥È¤Ï»È¤¨¤Ş¤¹¡£½à¥¯¥©¡¼¥È
-¤Ï¹½Â¤¤Î¤¢¤ë¥Ç¡¼¥¿¤ò¹½ÃÛ¤¹¤ëÈÆÍÑÅª¤ÊÊıË¡¤Ç¤¹¡£¤Û¤È¤ó¤É¤¬ÊÑ¿ôÉôÊ¬¤Ç¤¢¤ë
-¤è¤¦¤Ê¹½Â¤¤Ç¤â½à¥¯¥©¡¼¥È¤ò¹¥¤ó¤Ç»È¤¦¥×¥í¥°¥é¥Ş¤â¤¤¤Ş¤¹¡£½à¥¯¥©¡¼¥È¤ò»È¤Ã
-¤¿Êı¤¬´Ê·é¤Ë½ñ¤±¤ë¤«¤é¤Ç¤¹¡£¤µ¤é¤ËGauche¤Ç¤Ï½à¥¯¥©¡¼¥È·Á¼°¤ËÂĞ¤¹¤ë¼Â¹Ô
-»ş¥¢¥í¥±¡¼¥·¥ç¥ó¤¬¤Ç¤­¤ë¤À¤±¾¯¤¯¤Ê¤ë¤è¤¦¤Ë¤·¤Æ¤¤¤Ş¤¹¤Î¤Ç¡¢½à¥¯¥©¡¼¥È¤ò
-»È¤Ã¤¿Êı¤¬¸úÎ¨¤¬¤¤¤¤¤Ï¤º¤Ç¤¹¡£¤³¤ÎÅÀ¤Ë¤Ä¤¤¤Æ¤Ï¸å½Ò¤Î¡Ö½à¥¯¥©¡¼¥È¤Ï¤É¤Î
-¤¯¤é¤¤ÀÅÅª¤«¡×¤ò¸«¤Æ¤¯¤À¤µ¤¤¡£
+ã‚‚ã¡ã‚ã‚“ãƒã‚¯ãƒ­ã¨ã¯é–¢ä¿‚ã®ãªã„ã¨ã“ã‚ã§ã‚‚æº–ã‚¯ã‚©ãƒ¼ãƒˆã¯ä½¿ãˆã¾ã™ã€‚æº–ã‚¯ã‚©ãƒ¼ãƒˆ
+ã¯æ§‹é€ ã®ã‚ã‚‹ãƒ‡ãƒ¼ã‚¿ã‚’æ§‹ç¯‰ã™ã‚‹æ±ç”¨çš„ãªæ–¹æ³•ã§ã™ã€‚ã»ã¨ã‚“ã©ãŒå¤‰æ•°éƒ¨åˆ†ã§ã‚ã‚‹
+ã‚ˆã†ãªæ§‹é€ ã§ã‚‚æº–ã‚¯ã‚©ãƒ¼ãƒˆã‚’å¥½ã‚“ã§ä½¿ã†ãƒ—ãƒ­ã‚°ãƒ©ãƒã‚‚ã„ã¾ã™ã€‚æº–ã‚¯ã‚©ãƒ¼ãƒˆã‚’ä½¿ã£
+ãŸæ–¹ãŒç°¡æ½”ã«æ›¸ã‘ã‚‹ã‹ã‚‰ã§ã™ã€‚ã•ã‚‰ã«Gaucheã§ã¯æº–ã‚¯ã‚©ãƒ¼ãƒˆå½¢å¼ã«å¯¾ã™ã‚‹å®Ÿè¡Œ
+æ™‚ã‚¢ãƒ­ã‚±ãƒ¼ã‚·ãƒ§ãƒ³ãŒã§ãã‚‹ã ã‘å°‘ããªã‚‹ã‚ˆã†ã«ã—ã¦ã„ã¾ã™ã®ã§ã€æº–ã‚¯ã‚©ãƒ¼ãƒˆã‚’
+ä½¿ã£ãŸæ–¹ãŒåŠ¹ç‡ãŒã„ã„ã¯ãšã§ã™ã€‚ã“ã®ç‚¹ã«ã¤ã„ã¦ã¯å¾Œè¿°ã®ã€Œæº–ã‚¯ã‚©ãƒ¼ãƒˆã¯ã©ã®
+ãã‚‰ã„é™çš„ã‹ã€ã‚’è¦‹ã¦ãã ã•ã„ã€‚
 @c COMMON
 
 @c EN
 @subheading Splicing
 @c JP
-@subheading ¥¹¥×¥é¥¤¥·¥ó¥°
+@subheading ã‚¹ãƒ—ãƒ©ã‚¤ã‚·ãƒ³ã‚°
 @c COMMON
 
 @c EN
@@ -2208,9 +2209,9 @@ When @code{(unquote-splicing @var{expr})} appears in a quasiquoted form,
 @var{expr} must evaluate to a list, which is @emph{spliced} into the
 surrounding context.  It's easier to see examples:
 @c JP
-@code{(unquote-splicing @var{expr})}¤¬½à¥¯¥©¡¼¥È·Á¼°¤ÎÃæ¤Ç»È¤ï¤ì¤Æ¤¤¤ì
-¤Ğ¡¢@var{expr}¤ÏÉ¾²Á¤µ¤ì¤Æ¥ê¥¹¥È¤Ë¤Ê¤ë¤â¤Î¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤é¤º¡¢¤½¤ì¤ò¤È¤ê
-¤Ş¤¯¥³¥ó¥Æ¥­¥¹¥È¤Ç·Ñ¤®¹ç¤ï¤µ¤ì¤Ş¤¹¡£Îã¤ò¸«¤ë¤È´ÊÃ±¤Ë¤ï¤«¤ê¤Ş¤¹¡£
+@code{(unquote-splicing @var{expr})}ãŒæº–ã‚¯ã‚©ãƒ¼ãƒˆå½¢å¼ã®ä¸­ã§ä½¿ã‚ã‚Œã¦ã„ã‚Œ
+ã°ã€@var{expr}ã¯è©•ä¾¡ã•ã‚Œã¦ãƒªã‚¹ãƒˆã«ãªã‚‹ã‚‚ã®ã§ãªã‘ã‚Œã°ãªã‚‰ãšã€ãã‚Œã‚’ã¨ã‚Š
+ã¾ãã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆã§ç¶™ãåˆã‚ã•ã‚Œã¾ã™ã€‚ä¾‹ã‚’è¦‹ã‚‹ã¨ç°¡å˜ã«ã‚ã‹ã‚Šã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -2228,20 +2229,20 @@ surrounding context.  It's easier to see examples:
 Compare the unquote version and unquote-splicing version.  Splicing
 also works within a vector.
 @c JP
-¥¢¥ó¥¯¥©¡¼¥ÈÈÇ¤È¥¢¥ó¥¯¥©¡¼¥È¥¹¥×¥é¥¤¥·¥ó¥°ÈÇ¤òÈæ¤Ù¤Æ¤¯¤À¤µ¤¤¡£¥¹¥×¥é¥¤
-¥·¥ó¥°¤Ï¥Ù¥¯¥¿¤ËÂĞ¤·¤Æ¤âµ¡Ç½¤·¤Ş¤¹¡£
+ã‚¢ãƒ³ã‚¯ã‚©ãƒ¼ãƒˆç‰ˆã¨ã‚¢ãƒ³ã‚¯ã‚©ãƒ¼ãƒˆã‚¹ãƒ—ãƒ©ã‚¤ã‚·ãƒ³ã‚°ç‰ˆã‚’æ¯”ã¹ã¦ãã ã•ã„ã€‚ã‚¹ãƒ—ãƒ©ã‚¤
+ã‚·ãƒ³ã‚°ã¯ãƒ™ã‚¯ã‚¿ã«å¯¾ã—ã¦ã‚‚æ©Ÿèƒ½ã—ã¾ã™ã€‚
 @c COMMON
 
 @c EN
 @subheading Some edge cases
 @c JP
-@subheading ¶ËÃ¼¤Ê¥±¡¼¥¹
+@subheading æ¥µç«¯ãªã‚±ãƒ¼ã‚¹
 @c COMMON
 
 @c EN
 @subheading How static are quasiquated forms?
 @c JP
-@subheading ½à¥¯¥©¡¼¥È¤Ï¤É¤Î¤¯¤é¤¤ÀÅÅª¤«
+@subheading æº–ã‚¯ã‚©ãƒ¼ãƒˆã¯ã©ã®ãã‚‰ã„é™çš„ã‹
 @c COMMON
 
 @c EN
@@ -2251,10 +2252,10 @@ runtime is just the same as when an explicit form is used:
 However, Gauche tries to minimize runtime allocation when
 a quasiquoted form has static parts.
 @c JP
-½à¥¯¥©¡¼¥È·Á¼°¤¬ÊÑ¿ôÉôÊ¬¤ò´Ş¤à¾ì¹ç¡¢¼Â¹Ô»ş¤Ë¤Ï¡¢ÌÀ¼¨Åª¤Ê·Á¼°¤¬»È¤ï¤ì¤¿
-¤È¤­¤ÈÆ±¤¸¤³¤È¤¬¤ª¤³¤ê¤Ş¤¹¡£@code{`(,x ,y)}¤Ï@code{(list x y)}¤Î¤è¤¦¤Ë
-É¾²Á¤µ¤ì¤Ş¤¹¡£¤·¤«¤·¡¢Gauche¤Ç¤Ï½à¥¯¥©¡¼¥È·Á¼°¤¬¸ÇÄêÉôÊ¬¤ò»ı¤Ä¾ì¹ç¤Ë¤Ï
-¼Â¹Ô»ş¥¢¥í¥±¡¼¥·¥ç¥ó¤¬¤Ç¤­¤ë¤À¤±¾¯¤¯¤Ê¤ë¤è¤¦¤Ë¤·¤Ş¤¹¡£
+æº–ã‚¯ã‚©ãƒ¼ãƒˆå½¢å¼ãŒå¤‰æ•°éƒ¨åˆ†ã‚’å«ã‚€å ´åˆã€å®Ÿè¡Œæ™‚ã«ã¯ã€æ˜ç¤ºçš„ãªå½¢å¼ãŒä½¿ã‚ã‚ŒãŸ
+ã¨ãã¨åŒã˜ã“ã¨ãŒãŠã“ã‚Šã¾ã™ã€‚@code{`(,x ,y)}ã¯@code{(list x y)}ã®ã‚ˆã†ã«
+è©•ä¾¡ã•ã‚Œã¾ã™ã€‚ã—ã‹ã—ã€Gaucheã§ã¯æº–ã‚¯ã‚©ãƒ¼ãƒˆå½¢å¼ãŒå›ºå®šéƒ¨åˆ†ã‚’æŒã¤å ´åˆã«ã¯
+å®Ÿè¡Œæ™‚ã‚¢ãƒ­ã‚±ãƒ¼ã‚·ãƒ§ãƒ³ãŒã§ãã‚‹ã ã‘å°‘ããªã‚‹ã‚ˆã†ã«ã—ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -2264,10 +2265,10 @@ If there is a static tail in the sturcture, it is also allocated
 statically; e.g. @code{`((,x a b) (,y c d))} works like
 @code{(list (cons x '(a b)) (cons y '(c d)))}.
 @c JP
-¤Ş¤º¡¢@code{`(a b c)}¤Î¤è¤¦¤Ë½à¥¯¥©¡¼¥È·Á¼°¤ËÊÑ¿ôÉôÊ¬¤¬¤Ê¤¤¾ì¹ç¡¢Á´ÂÎ
-¤ÏÀÅÅª¤Ë¥¢¥í¥±¡¼¥È¤µ¤ì¤Ş¤¹¡£¹½Â¤¤ÎËöÈø¤¬¸ÇÄêÉôÊ¬¤Î¾ì¹ç¤Ë¤âÀÅÅª¤Ë¥¢¥í¥±¡¼
-¥È¤µ¤ì¤Ş¤¹¡£¤¿¤È¤¨¤Ğ¡¢@code{`((,x a b) (,y c d))}¤Ï@code{(list (cons x
-'(a b)) (cons y '(c d)))}¤Î¤è¤¦¤Ëµ¡Ç½¤·¤Ş¤¹¡£
+ã¾ãšã€@code{`(a b c)}ã®ã‚ˆã†ã«æº–ã‚¯ã‚©ãƒ¼ãƒˆå½¢å¼ã«å¤‰æ•°éƒ¨åˆ†ãŒãªã„å ´åˆã€å…¨ä½“
+ã¯é™çš„ã«ã‚¢ãƒ­ã‚±ãƒ¼ãƒˆã•ã‚Œã¾ã™ã€‚æ§‹é€ ã®æœ«å°¾ãŒå›ºå®šéƒ¨åˆ†ã®å ´åˆã«ã‚‚é™çš„ã«ã‚¢ãƒ­ã‚±ãƒ¼
+ãƒˆã•ã‚Œã¾ã™ã€‚ãŸã¨ãˆã°ã€@code{`((,x a b) (,y c d))}ã¯@code{(list (cons x
+'(a b)) (cons y '(c d)))}ã®ã‚ˆã†ã«æ©Ÿèƒ½ã—ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -2278,11 +2279,11 @@ form.  If you've defined a constant like
 @code{`(,x ,(+ x 1))} is compiled as the constant @code{'(3 4)}.
 (See @ref{Definitions}, for the explanation of @code{define-constant} form.)
 @c JP
-¤µ¤é¤Ë¥¢¥ó¥¯¥©¡¼¥È¼°¤¬Äê¿ô¼°¤Î¾ì¹ç¡¤Gauche¤Ï¤½¤ì¤ò½à¥¯¥©¡¼¥È¤Î¸ÇÄêÉôÊ¬
-¤ËËä¤á¹ş¤ß¤Ş¤¹¡£¤¿¤È¤¨¤Ğ¡¢@code{(define-constant x 3)}¤Î¤è¤¦¤ËÄêµÁ¤·¤¿
-¤È¤·¤Ş¤·¤ç¤¦¡£¤³¤Î¾ì¹ç@code{`(,x ,(+ x 1))}¤ÏÄê¿ô@code{'(3 4)}¤Î¤è¤¦¤Ë
-¥³¥ó¥Ñ¥¤¥ë¤µ¤ì¤Ş¤¹¡£(@code{define-constant}·Á¼°¤Ë¤Ä¤¤¤Æ¤Ï¡¢
-@ref{Definitions}¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£)
+ã•ã‚‰ã«ã‚¢ãƒ³ã‚¯ã‚©ãƒ¼ãƒˆå¼ãŒå®šæ•°å¼ã®å ´åˆï¼ŒGaucheã¯ãã‚Œã‚’æº–ã‚¯ã‚©ãƒ¼ãƒˆã®å›ºå®šéƒ¨åˆ†
+ã«åŸ‹ã‚è¾¼ã¿ã¾ã™ã€‚ãŸã¨ãˆã°ã€@code{(define-constant x 3)}ã®ã‚ˆã†ã«å®šç¾©ã—ãŸ
+ã¨ã—ã¾ã—ã‚‡ã†ã€‚ã“ã®å ´åˆ@code{`(,x ,(+ x 1))}ã¯å®šæ•°@code{'(3 4)}ã®ã‚ˆã†ã«
+ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã•ã‚Œã¾ã™ã€‚(@code{define-constant}å½¢å¼ã«ã¤ã„ã¦ã¯ã€
+@ref{Definitions}ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚)
 @c COMMON
 
 @c EN
@@ -2292,16 +2293,16 @@ write a code that assumes some parts of the structure returned from
 quasiquote are freshly allocated.  In other words, you better avoid
 mutating such structures.
 @c JP
-°ìÈÌÅª¤Ë¤Ï¡¢½à¥¯¥©¡¼¥È·Á¼°¤Î¤É¤ÎÉôÊ¬¤¬¸ÇÄê¥Ç¡¼¥¿¤È¤·¤Æ¥³¥ó¥Ñ¥¤¥ë¤µ¤ì¤É
-¤ÎÉôÊ¬¤¬¤µ¤ì¤Ê¤¤¤Î¤«¤òÆÃÄê¤¹¤ë¤³¤È¤Ïº¤Æñ¤Ç¤¹¡£¤½¤ì¤æ¤¨¡¢½à¥¯¥©¡¼¥È¤ÎÊÖ
-¤¹¹½Â¤¤Î°ìÉô¤¬¿·µ¬¤Ë¥¢¥í¥±¡¼¥È¤µ¤ì¤Æ¤¤¤ë¤³¤È¤òÁ°Äó¤È¤·¤¿¥³¡¼¥É¤ò½ñ¤¤¤Æ
-¤Ï¤¤¤±¤Ş¤»¤ó¡£¤¤¤¤¤«¤¨¤ë¤È¡¢¤½¤Î¤è¤¦¤Ê¹½Â¤¤òÊÑ¹¹¤¹¤ë¤Î¤ÏÈò¤±¤ë¤Ù¤­¤Ç¤¹¡£
+ä¸€èˆ¬çš„ã«ã¯ã€æº–ã‚¯ã‚©ãƒ¼ãƒˆå½¢å¼ã®ã©ã®éƒ¨åˆ†ãŒå›ºå®šãƒ‡ãƒ¼ã‚¿ã¨ã—ã¦ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã•ã‚Œã©
+ã®éƒ¨åˆ†ãŒã•ã‚Œãªã„ã®ã‹ã‚’ç‰¹å®šã™ã‚‹ã“ã¨ã¯å›°é›£ã§ã™ã€‚ãã‚Œã‚†ãˆã€æº–ã‚¯ã‚©ãƒ¼ãƒˆã®è¿”
+ã™æ§‹é€ ã®ä¸€éƒ¨ãŒæ–°è¦ã«ã‚¢ãƒ­ã‚±ãƒ¼ãƒˆã•ã‚Œã¦ã„ã‚‹ã“ã¨ã‚’å‰æã¨ã—ãŸã‚³ãƒ¼ãƒ‰ã‚’æ›¸ã„ã¦
+ã¯ã„ã‘ã¾ã›ã‚“ã€‚ã„ã„ã‹ãˆã‚‹ã¨ã€ãã®ã‚ˆã†ãªæ§‹é€ ã‚’å¤‰æ›´ã™ã‚‹ã®ã¯é¿ã‘ã‚‹ã¹ãã§ã™ã€‚
 @c COMMON
 
 @c ----------------------------------------------------------------------
 @node Definitions, Modules, Quasiquotation, Core syntax
 @section Definitions
-@c NODE ÄêµÁ
+@c NODE å®šç¾©
 
 @defspec define variable expression
 @defspecx define (variable . formals) body @dots{}
@@ -2314,11 +2315,11 @@ On toplevel, it defines a global binding to a symbol @var{variable}.
 In the first form, it globally binds a symbol @var{variable}
 to the value of @var{expression}, in the current module.
 @c JP
-¤³¤Î·Á¼°¤Ï¥È¥Ã¥×¥ì¥Ù¥ë (¥í¡¼¥«¥ë¤ÊÂ«Çû¤¬Ìµ¤¤¾õÂÖ) ¤È¥í¡¼¥«¥ë¥¹¥³¡¼¥×¤¬¤¢¤ë¾õÂÖ¤È¤Ç
-ÊÌ¤Î°ÕÌ£¤ò»ı¤Á¤Ş¤¹¡£
+ã“ã®å½¢å¼ã¯ãƒˆãƒƒãƒ—ãƒ¬ãƒ™ãƒ« (ãƒ­ãƒ¼ã‚«ãƒ«ãªæŸç¸›ãŒç„¡ã„çŠ¶æ…‹) ã¨ãƒ­ãƒ¼ã‚«ãƒ«ã‚¹ã‚³ãƒ¼ãƒ—ãŒã‚ã‚‹çŠ¶æ…‹ã¨ã§
+åˆ¥ã®æ„å‘³ã‚’æŒã¡ã¾ã™ã€‚
 
-¥È¥Ã¥×¥ì¥Ù¥ë¤Ç¤Ï¡¢¤³¤Î·Á¼°¤ÏÊÑ¿ô@var{variable}¤ËÂĞ¤¹¤ë¥°¥í¡¼¥Ğ¥ë¤ÊÂ«Çû¤òÄêµÁ¤·¤Ş¤¹¡£
-ºÇ½é¤Î·Á¼°¤Ç¤Ï¡¢@var{expression}¤¬É¾²Á¤µ¤ì¡¢¤½¤Î·ë²Ì¤¬ÊÑ¿ô@var{variable}¤ÎÃÍ¤È¤Ê¤ê¤Ş¤¹¡£
+ãƒˆãƒƒãƒ—ãƒ¬ãƒ™ãƒ«ã§ã¯ã€ã“ã®å½¢å¼ã¯å¤‰æ•°@var{variable}ã«å¯¾ã™ã‚‹ã‚°ãƒ­ãƒ¼ãƒãƒ«ãªæŸç¸›ã‚’å®šç¾©ã—ã¾ã™ã€‚
+æœ€åˆã®å½¢å¼ã§ã¯ã€@var{expression}ãŒè©•ä¾¡ã•ã‚Œã€ãã®çµæœãŒå¤‰æ•°@var{variable}ã®å€¤ã¨ãªã‚Šã¾ã™ã€‚
 @c COMMON
 @example
 (define x (+ 1 2))
@@ -2331,7 +2332,7 @@ x @result{} 3
 The second form is a syntactic sugar of defining a procedure.
 It is equivalent to the following form.
 @c JP
-2ÈÖÌÜ¤Î·Á¼°¤Ï¼êÂ³¤­¤òÄêµÁ¤¹¤ë¤¿¤á¤Î¹½Ê¸Åª¤Ê½¤¾ş¤Ç¡¢°Ê²¼¤Î·Á¼°¤ÈÆ±¤¸¤Ç¤¹¡£
+2ç•ªç›®ã®å½¢å¼ã¯æ‰‹ç¶šãã‚’å®šç¾©ã™ã‚‹ãŸã‚ã®æ§‹æ–‡çš„ãªä¿®é£¾ã§ã€ä»¥ä¸‹ã®å½¢å¼ã¨åŒã˜ã§ã™ã€‚
 @c COMMON
 @example
 (define (@var{name} . @var{args}) @var{body} @dots{})
@@ -2344,7 +2345,7 @@ this introduce a local binding of the variable.
 
 @c explanation of internal define here
 @c JP
-¤³¤Î¥Õ¥©¡¼¥à¤¬¥í¡¼¥«¥ë¥¹¥³¡¼¥×¤ÎÃæ¤Ë¸½¤ï¤ì¤¿¾ì¹ç¡¢¥í¡¼¥«¥ëÊÑ¿ô¤ÎÂ«Çû¤È¤Ê¤ê¤Ş¤¹¡£
+ã“ã®ãƒ•ã‚©ãƒ¼ãƒ ãŒãƒ­ãƒ¼ã‚«ãƒ«ã‚¹ã‚³ãƒ¼ãƒ—ã®ä¸­ã«ç¾ã‚ã‚ŒãŸå ´åˆã€ãƒ­ãƒ¼ã‚«ãƒ«å¤‰æ•°ã®æŸç¸›ã¨ãªã‚Šã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -2352,9 +2353,9 @@ Note that @code{begin} (@xref{Sequencing}) doesn't introduce a new scope.
 @code{Define}s in the @code{begin} act as if @code{begin} and surrounding
 parenthesis are not there.  Thus these two forms are equivalent.
 @c JP
-@code{begin}¤Ï¿·¤·¤¤¥¹¥³¡¼¥×¤òºî¤é¤Ê¤¤¤³¤È¤ËÃí°Õ¤·¤Æ¤¯¤À¤µ¤¤(@ref{Sequencing}»²¾È)¡£
-@code{begin}¤ÎÃæ¤Ë¸½¤ï¤ì¤ë@code{define}¤Ï¡¢¤¢¤¿¤«¤â@code{begin}¤È¤½¤ì¤ò°Ï¤à
-³ç¸Ì¤¬Ìµ¤¤¤«¤Î¤è¤¦¤Ë¿¶Éñ¤¤¤Ş¤¹¡£¤¹¤Ê¤ï¤Á¡¢°Ê²¼¤Î2¤Ä¤Î·Á¼°¤ÏÅù²Á¤Ç¤¹¡£
+@code{begin}ã¯æ–°ã—ã„ã‚¹ã‚³ãƒ¼ãƒ—ã‚’ä½œã‚‰ãªã„ã“ã¨ã«æ³¨æ„ã—ã¦ãã ã•ã„(@ref{Sequencing}å‚ç…§)ã€‚
+@code{begin}ã®ä¸­ã«ç¾ã‚ã‚Œã‚‹@code{define}ã¯ã€ã‚ãŸã‹ã‚‚@code{begin}ã¨ãã‚Œã‚’å›²ã‚€
+æ‹¬å¼§ãŒç„¡ã„ã‹ã®ã‚ˆã†ã«æŒ¯èˆã„ã¾ã™ã€‚ã™ãªã‚ã¡ã€ä»¥ä¸‹ã®2ã¤ã®å½¢å¼ã¯ç­‰ä¾¡ã§ã™ã€‚
 @c COMMON
 @example
 (let ((x 0))
@@ -2375,9 +2376,9 @@ parenthesis are not there.  Thus these two forms are equivalent.
 bound to each variable in @var{var} @dots{}.
 @xref{Let-values}.
 @c JP
-¤Ş¤º@var{expr}¤¬É¾²Á¤µ¤ì¤Ş¤¹¡£¤½¤ì¤ÏÍ¿¤¨¤é¤ì¤¿@var{var}¤ÈÆ±¿ô¤ÎÃÍ¤ò
-ÊÖ¤µ¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£Â³¤¤¤Æ³ÆÃÍ¤¬@var{var}¤Ë½ç¤ËÂ«Çû¤µ¤ì¤Ş¤¹¡£
-@ref{Let-values}¤â»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
+ã¾ãš@var{expr}ãŒè©•ä¾¡ã•ã‚Œã¾ã™ã€‚ãã‚Œã¯ä¸ãˆã‚‰ã‚ŒãŸ@var{var}ã¨åŒæ•°ã®å€¤ã‚’
+è¿”ã•ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚ç¶šã„ã¦å„å€¤ãŒ@var{var}ã«é †ã«æŸç¸›ã•ã‚Œã¾ã™ã€‚
+@ref{Let-values}ã‚‚å‚ç…§ã—ã¦ãã ã•ã„ã€‚
 @c COMMON
 @example
 (define-values (lo hi) (min&max 3 -1 15 2))
@@ -2398,12 +2399,12 @@ An error is signalled when you use @code{set!} to change the value
 of @var{variable}.   It is allowed to redefine @var{variable},
 but a warning is printed.
 @c JP
-@code{define}¤ÈÆ±¤¸¤è¤¦¤ËÆ°ºî¤·¤Ş¤¹¤¬¡¢
-¥³¥ó¥Ñ¥¤¥é¤Ï@var{variable}¤ÎÃÍ¤¬º£¸åÊÑ¹¹¤µ¤ì¤Ê¤¤¤â¤Î¤È¤·¤Æ
-ºÇÅ¬²½¤µ¤ì¤¿¥³¡¼¥É¤òÀ¸À®¤·¤Ş¤¹¡£
+@code{define}ã¨åŒã˜ã‚ˆã†ã«å‹•ä½œã—ã¾ã™ãŒã€
+ã‚³ãƒ³ãƒ‘ã‚¤ãƒ©ã¯@var{variable}ã®å€¤ãŒä»Šå¾Œå¤‰æ›´ã•ã‚Œãªã„ã‚‚ã®ã¨ã—ã¦
+æœ€é©åŒ–ã•ã‚ŒãŸã‚³ãƒ¼ãƒ‰ã‚’ç”Ÿæˆã—ã¾ã™ã€‚
 
-@var{variable}¤ÎÃÍ¤ò@code{set!}¤ÇÊÑ¹¹¤·¤è¤¦¤È¤¹¤ë¤È¥¨¥é¡¼¤È¤Ê¤ê¤Ş¤¹¡£
-@var{variable}¤òºÆÄêµÁ¤¹¤ë¤³¤È¤Ïµö¤µ¤ì¤Ş¤¹¤¬¡¢·Ù¹ğ¤¬É½¼¨¤µ¤ì¤Ş¤¹¡£
+@var{variable}ã®å€¤ã‚’@code{set!}ã§å¤‰æ›´ã—ã‚ˆã†ã¨ã™ã‚‹ã¨ã‚¨ãƒ©ãƒ¼ã¨ãªã‚Šã¾ã™ã€‚
+@var{variable}ã‚’å†å®šç¾©ã™ã‚‹ã“ã¨ã¯è¨±ã•ã‚Œã¾ã™ãŒã€è­¦å‘ŠãŒè¡¨ç¤ºã•ã‚Œã¾ã™ã€‚
 @c COMMON
 @end defspec
 
@@ -2419,14 +2420,14 @@ must exist.
 
 The second form is merely a syntactic sugar of:
 @c JP
-¤³¤Î·Á¼°¤Ï@var{variable}¤Î¥°¥í¡¼¥Ğ¥ë¤ÊÂ«Çû¤ò@var{module}Ãæ¤ËºîÀ®¤·¤Ş¤¹¡£
-@var{module}¤Ï¥â¥¸¥å¡¼¥ëÌ¾¤òÉ½¤¹¥·¥ó¥Ü¥ë¤«¡¢¥â¥¸¥å¡¼¥ë¥ª¥Ö¥¸¥§¥¯¥È¤Ç
-¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£@var{module}¤¬¥·¥ó¥Ü¥ë¤Î¾ì¹ç¡¢¤½¤ÎÌ¾Á°¤ò»ı¤Ä
-¥â¥¸¥å¡¼¥ë¤¬´û¤ËÂ¸ºß¤·¤Æ¤¤¤ëÉ¬Í×¤¬¤¢¤ê¤Ş¤¹¡£
+ã“ã®å½¢å¼ã¯@var{variable}ã®ã‚°ãƒ­ãƒ¼ãƒãƒ«ãªæŸç¸›ã‚’@var{module}ä¸­ã«ä½œæˆã—ã¾ã™ã€‚
+@var{module}ã¯ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«åã‚’è¡¨ã™ã‚·ãƒ³ãƒœãƒ«ã‹ã€ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã§
+ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚@var{module}ãŒã‚·ãƒ³ãƒœãƒ«ã®å ´åˆã€ãã®åå‰ã‚’æŒã¤
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒæ—¢ã«å­˜åœ¨ã—ã¦ã„ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚
 
-@var{expression}¤Ï¸½ºß¤Î¥â¥¸¥å¡¼¥ëÃæ¤ÇÉ¾²Á¤µ¤ì¤Ş¤¹¡£
+@var{expression}ã¯ç¾åœ¨ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ä¸­ã§è©•ä¾¡ã•ã‚Œã¾ã™ã€‚
 
-2ÈÖÌÜ¤Î·Á¼°¤Ï¼¡¤Î·Á¼°¤Î¹½Ê¸Åª½¤¾ş¤Ç¤¹¡£
+2ç•ªç›®ã®å½¢å¼ã¯æ¬¡ã®å½¢å¼ã®æ§‹æ–‡çš„ä¿®é£¾ã§ã™ã€‚
 @c COMMON
 @example
 (define-in-module module variable (lambda formals body @dots{}))
@@ -2438,24 +2439,24 @@ Note: to find out if a symbol has definition (global binding) in
 the current module, you can use @code{global-variable-bound?}
 (@xref{Module introspection}).
 @c JP
-Ãğ: ¥·¥ó¥Ü¥ë¤¬¸½ºß¤Î¥â¥¸¥å¡¼¥ëÃæ¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤ë¤«(¥°¥í¡¼¥Ğ¥ë¤ÊÂ«Çû¤ò»ı¤Ä¤«)
-¤òÄ´¤Ù¤ë¤Ë¤Ï¡¢@code{global-variable-bound?}¤¬»È¤¨¤Ş¤¹
-(@ref{Module introspection}»²¾È)¡£
+è¨»: ã‚·ãƒ³ãƒœãƒ«ãŒç¾åœ¨ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ä¸­ã§å®šç¾©ã•ã‚Œã¦ã„ã‚‹ã‹(ã‚°ãƒ­ãƒ¼ãƒãƒ«ãªæŸç¸›ã‚’æŒã¤ã‹)
+ã‚’èª¿ã¹ã‚‹ã«ã¯ã€@code{global-variable-bound?}ãŒä½¿ãˆã¾ã™
+(@ref{Module introspection}å‚ç…§)ã€‚
 @c COMMON
 
 @c ----------------------------------------------------------------------
 @node Modules,  , Definitions, Core syntax
 @section Modules
-@c NODE ¥â¥¸¥å¡¼¥ë
+@c NODE ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«
 
 @c EN
 This section describes the semantics of Gauche modules and its API.
 See also @ref{Writing Gauche modules}, for the conventions
 Gauche is using for its modules.
 @c JP
-¤³¤Î¾Ï¤Ç¤Ï¡¢Gauche¤Î¥â¥¸¥å¡¼¥ë¤Î¥»¥Ş¥ó¥Æ¥£¥¯¥¹¤ÈAPI¤ò½Ò¤Ù¤Ş¤¹¡£
-Gauche¤Ç»È¤ï¤ì¤Æ¤¤¤ë¥â¥¸¥å¡¼¥ë¤Î½ñË¡¤Ë¤Ä¤¤¤Æ¤Ï@ref{Writing Gauche modules}¤â
-Ê»¤»¤Æ»²¾È¤·¤Æ²¼¤µ¤¤¡£
+ã“ã®ç« ã§ã¯ã€Gaucheã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ã‚»ãƒãƒ³ãƒ†ã‚£ã‚¯ã‚¹ã¨APIã‚’è¿°ã¹ã¾ã™ã€‚
+Gaucheã§ä½¿ã‚ã‚Œã¦ã„ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®æ›¸æ³•ã«ã¤ã„ã¦ã¯@ref{Writing Gauche modules}ã‚‚
+ä½µã›ã¦å‚ç…§ã—ã¦ä¸‹ã•ã„ã€‚
 @c COMMON
 
 @menu
@@ -2470,14 +2471,14 @@ Gauche¤Ç»È¤ï¤ì¤Æ¤¤¤ë¥â¥¸¥å¡¼¥ë¤Î½ñË¡¤Ë¤Ä¤¤¤Æ¤Ï@ref{Writing Gauche modules}¤â
 
 @node Module semantics, Modules and libraries, Modules, Modules
 @subsection Module semantics
-@c NODE ¥â¥¸¥å¡¼¥ë¤Î¥»¥Ş¥ó¥Æ¥£¥¯¥¹
+@c NODE ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ã‚»ãƒãƒ³ãƒ†ã‚£ã‚¯ã‚¹
 
 @c EN
 Module is an object that maps symbols onto @emph{bindings},
 and affects the resolution of global variable reference.
 @c JP
-¥â¥¸¥å¡¼¥ë¤Ï¡¢¥·¥ó¥Ü¥ë¤òÂ«Çû¤Ø¤È¥Ş¥Ã¥×¤¹¤ë¥ª¥Ö¥¸¥§¥¯¥È¤Ç¡¢
-¥°¥í¡¼¥Ğ¥ëÊÑ¿ô¤Î²ò·è¤Ë±Æ¶Á¤òÍ¿¤¨¤Ş¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ã€ã‚·ãƒ³ãƒœãƒ«ã‚’æŸç¸›ã¸ã¨ãƒãƒƒãƒ—ã™ã‚‹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã§ã€
+ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°ã®è§£æ±ºã«å½±éŸ¿ã‚’ä¸ãˆã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -2489,20 +2490,20 @@ keeps a value.
 Different modules can associate different bindings
 to the same symbol, that yield different values.
 @c JP
-CommonLisp¤Î¥Ñ¥Ã¥±¡¼¥¸¤ÏÌ¾Á°¤«¤é¥·¥ó¥Ü¥ë¤Ø¤Î¥Ş¥Ã¥Ô¥ó¥°¤ò¹Ô¤¤¤Ş¤¹¤¬¡¢
-Gauche¤Ç¤ÏÆ±¤¸Ì¾Á°¤ò»ı¤Ä¥·¥ó¥Ü¥ë¤Ï¾ï¤Ë@code{eq?}¤Ç¤¹¡£¤·¤«¤·¡¢
-Gauche¤Î¥·¥ó¥Ü¥ë¤Ï¡ÖÃÍ¡×¤Î¥¹¥í¥Ã¥È¤ò»ı¤Ã¤Æ¤¤¤Ş¤»¤ó¡£
-¥â¥¸¥å¡¼¥ë¤Ë¤è¤Ã¤Æ¥·¥ó¥Ü¥ë¤ËÂĞ±ş¤¹¤ëÂ«Çû¤¬¸«ÉÕ¤±¤é¤ì¡¢ÃÍ¤Ï¤½¤³¤Ë
-³ÊÇ¼¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
-¥â¥¸¥å¡¼¥ë¤¬°ã¤¨¤ĞÆ±¤¸¥·¥ó¥Ü¥ë¤ÏÊÌ¡¹¤ÎÂ«Çû¤Ø¤È¥Ş¥Ã¥×¤µ¤ì¡¢°ã¤¦ÃÍ¤ò
-ÊÖ¤·¤Ş¤¹¡£
+CommonLispã®ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã¯åå‰ã‹ã‚‰ã‚·ãƒ³ãƒœãƒ«ã¸ã®ãƒãƒƒãƒ”ãƒ³ã‚°ã‚’è¡Œã„ã¾ã™ãŒã€
+Gaucheã§ã¯åŒã˜åå‰ã‚’æŒã¤ã‚·ãƒ³ãƒœãƒ«ã¯å¸¸ã«@code{eq?}ã§ã™ã€‚ã—ã‹ã—ã€
+Gaucheã®ã‚·ãƒ³ãƒœãƒ«ã¯ã€Œå€¤ã€ã®ã‚¹ãƒ­ãƒƒãƒˆã‚’æŒã£ã¦ã„ã¾ã›ã‚“ã€‚
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«ã‚ˆã£ã¦ã‚·ãƒ³ãƒœãƒ«ã«å¯¾å¿œã™ã‚‹æŸç¸›ãŒè¦‹ä»˜ã‘ã‚‰ã‚Œã€å€¤ã¯ãã“ã«
+æ ¼ç´ã•ã‚Œã¦ã„ã¾ã™ã€‚
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒé•ãˆã°åŒã˜ã‚·ãƒ³ãƒœãƒ«ã¯åˆ¥ã€…ã®æŸç¸›ã¸ã¨ãƒãƒƒãƒ—ã•ã‚Œã€é•ã†å€¤ã‚’
+è¿”ã—ã¾ã™ã€‚
 @c COMMON
 
 @example
 @c EN
 ;; Makes two modules A and B, and defines a global variable 'x' in them
 @c JP
-;; Æó¤Ä¤Î¥â¥¸¥å¡¼¥ëA¤ÈB¤òºîÀ®¤·¡¢¥°¥í¡¼¥Ğ¥ëÊÑ¿ô'x'¤ò¤½¤ÎÃæ¤ÇÄêµÁ
+;; äºŒã¤ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«Aã¨Bã‚’ä½œæˆã—ã€ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°'x'ã‚’ãã®ä¸­ã§å®šç¾©
 @c COMMON
 (define-module A (define x 3))
 (define-module B (define x 4))
@@ -2521,11 +2522,11 @@ A module can @emph{import} other modules, and their exported
 bindings become visible to the module.
 A module can import any number of modules.
 @c JP
-¥â¥¸¥å¡¼¥ë¤Ï¡¢¼«¿È¤¬»ı¤Ä°ìÉô¤Ş¤¿¤ÏÁ´¤Æ¤ÎÂ«Çû¤òÂ¾¤Î¥â¥¸¥å¡¼¥ë¤«¤é¤â
-»È¤¨¤ë¤è¤¦¤Ë@emph{export}¤¹¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£¤¢¤ë¥â¥¸¥å¡¼¥ëX¤¬Â¾¤Î
-¥â¥¸¥å¡¼¥ëY¤ò@emph{import}¤¹¤ë¤È¡¢
-¥â¥¸¥å¡¼¥ëY¤Çexport¤µ¤ì¤Æ¤¤¤ëÂ«Çû¤¬¸µ¤Î¥â¥¸¥å¡¼¥ëX¤«¤é¸«¤¨¤ë¤è¤¦¤Ë¤Ê¤ê¤Ş¤¹¡£
-¥â¥¸¥å¡¼¥ë¤Ï¤¤¤¯¤Ä¤Ç¤âÂ¾¤Î¥â¥¸¥å¡¼¥ë¤òimport¤¹¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ã€è‡ªèº«ãŒæŒã¤ä¸€éƒ¨ã¾ãŸã¯å…¨ã¦ã®æŸç¸›ã‚’ä»–ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‹ã‚‰ã‚‚
+ä½¿ãˆã‚‹ã‚ˆã†ã«@emph{export}ã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚ã‚ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«XãŒä»–ã®
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«Yã‚’@emph{import}ã™ã‚‹ã¨ã€
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«Yã§exportã•ã‚Œã¦ã„ã‚‹æŸç¸›ãŒå…ƒã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«Xã‹ã‚‰è¦‹ãˆã‚‹ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ã„ãã¤ã§ã‚‚ä»–ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’importã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -2556,14 +2557,14 @@ From outside, the new module looks like having
 all exported bindings of the original module plus the newly
 defined and exported bindings.
 @c JP
-¤Ş¤¿¡¢¥â¥¸¥å¡¼¥ë¤Ï·Ñ¾µ¤¹¤ë¤³¤È¤â¤Ç¤­¤Ş¤¹¡£
-´ûÂ¸¤Î¥â¥¸¥å¡¼¥ë¤ò·Ñ¾µ¤·¤¿¥â¥¸¥å¡¼¥ë¤Ë¿·¤·¤¤Â«Çû¤òÂ­¤·¤Æexport¤¹¤ë¤³¤È¤Ë¤è¤ê¡¢
-´ûÂ¸¤Î¥â¥¸¥å¡¼¥ë¤ò³ÈÄ¥¤¹¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£¿·¤·¤¤¥â¥¸¥å¡¼¥ë¤ÎÆâÉô¤«¤é¤Ï¡¢
-·Ñ¾µ¸µ¤Î¥â¥¸¥å¡¼¥ë¤ÎÂ«Çû¤¬(export¤µ¤ì¤Æ¤¤¤Ê¤¤¤â¤Î¤â´Ş¤á)Á´¤Æ¸«¤¨¤Ş¤¹¡£
-(¿·¤·¤¯ºî¤é¤ì¤ë¥â¥¸¥å¡¼¥ë¤Ï¥Ç¥Õ¥©¥ë¥È¤Ç@code{gauche}¥â¥¸¥å¡¼¥ë¤ò·Ñ¾µ¤·¤Æ¤¤¤Ş¤¹¡£
-¿·¤·¤¤¥â¥¸¥å¡¼¥ë¤«¤é@code{gauche}¤ÎÁÈ¹ş¤ß¼êÂ³¤­Åù¤¬»È¤¨¤ë¤Î¤Ï¤½¤Î¤¿¤á¤Ç¤¹)¡£
-³°¤«¤é¤Ï¡¢¿·¤·¤¤¥â¥¸¥å¡¼¥ë¤Ë¤Ï¸µ¤Î¥â¥¸¥å¡¼¥ë¤ÎÁ´¤Æ¤Îexport¤µ¤ì¤¿Â«Çû¤È
-¿·¤¿¤ËÄÉ²Ã¤µ¤ìexport¤µ¤ì¤¿Â«Çû¤¬¸«¤¨¤Ş¤¹¡£
+ã¾ãŸã€ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ç¶™æ‰¿ã™ã‚‹ã“ã¨ã‚‚ã§ãã¾ã™ã€‚
+æ—¢å­˜ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ç¶™æ‰¿ã—ãŸãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«æ–°ã—ã„æŸç¸›ã‚’è¶³ã—ã¦exportã™ã‚‹ã“ã¨ã«ã‚ˆã‚Šã€
+æ—¢å­˜ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’æ‹¡å¼µã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚æ–°ã—ã„ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®å†…éƒ¨ã‹ã‚‰ã¯ã€
+ç¶™æ‰¿å…ƒã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®æŸç¸›ãŒ(exportã•ã‚Œã¦ã„ãªã„ã‚‚ã®ã‚‚å«ã‚)å…¨ã¦è¦‹ãˆã¾ã™ã€‚
+(æ–°ã—ãä½œã‚‰ã‚Œã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§@code{gauche}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ç¶™æ‰¿ã—ã¦ã„ã¾ã™ã€‚
+æ–°ã—ã„ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‹ã‚‰@code{gauche}ã®çµ„è¾¼ã¿æ‰‹ç¶šãç­‰ãŒä½¿ãˆã‚‹ã®ã¯ãã®ãŸã‚ã§ã™)ã€‚
+å¤–ã‹ã‚‰ã¯ã€æ–°ã—ã„ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«ã¯å…ƒã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®å…¨ã¦ã®exportã•ã‚ŒãŸæŸç¸›ã¨
+æ–°ãŸã«è¿½åŠ ã•ã‚Œexportã•ã‚ŒãŸæŸç¸›ãŒè¦‹ãˆã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -2604,16 +2605,16 @@ the variable reference code is replaced for the the code to
 access the binding.  If the variable reference is not found even
 at run time, an 'undefined variable' error is signalled.
 @c JP
-¥³¥ó¥Ñ¥¤¥ëÃæ¤Î¤É¤Î»şÅÀ¤Ç¤â¡¢¡Ö¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¡×¤¬°ì°Õ¤Ë·èÄê¤µ¤ì¡¢
-¥°¥í¡¼¥Ğ¥ëÊÑ¿ô¤ÎÂ«Çû¤Ï¤½¤Î¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤òµ¯ÅÀ¤ËÃµ¤µ¤ì¤Ş¤¹¡£
-¤½¤ÎÊÑ¿ô¤ÎÂ«Çû¤¬¸«ÉÕ¤«¤ì¤Ğ¡¢ÊÑ¿ô»²¾È¤Î¼°¤Ï¤½¤ÎÂ«Çû¤Ø¥¢¥¯¥»¥¹¤¹¤ë¥³¡¼¥É¤È¤·¤Æ
-¥³¥ó¥Ñ¥¤¥ë¤µ¤ì¤Ş¤¹¡£¤â¤·¥³¥ó¥Ñ¥¤¥é¤¬Â«Çû¤ò¸«ÉÕ¤±¤é¤ì¤Ê¤«¤Ã¤¿¾ì¹ç¡¢
-ÊÑ¿ô»²¾È¤Î¼°¤Ï¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤Ç¥Ş¡¼¥¯¤µ¤ì¡¢Â«Çû¤Î²ò·è¤Ï¥é¥ó¥¿¥¤¥à¤Ø¤È
-ÀèÁ÷¤ê¤µ¤ì¤Ş¤¹¡£¤¹¤Ê¤ï¤Á¡¢¥é¥ó¥¿¥¤¥à¤Ë¤½¤ÎÊÑ¿ô¤¬»È¤ï¤ì¤ë»şÅÀ¤Ç
-ºÆ¤Ó¥Ş¡¼¥¯¤µ¤ì¤Æ¤¤¤¿¥â¥¸¥å¡¼¥ë¤«¤éÂ«Çû¤ÎÃµº÷¤¬¹Ô¤ï¤ì¤Ş¤¹
-(¥é¥ó¥¿¥¤¥à¤Ç¤Î¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤«¤é¤Ç¤ÏÌµ¤¤¤³¤È¤ËÃí°Õ)¡£
-Â«Çû¤¬¸«ÉÕ¤«¤ì¤Ğ¡¢Â«Çû¤Ø¥¢¥¯¥»¥¹¤¹¤ë¥³¡¼¥É¤¬¥³¥ó¥Ñ¥¤¥ë¤µ¤ì¤¿¥³¡¼¥ÉÎó¤Ë
-ÁŞÆş¤µ¤ì¤Ş¤¹¡£¸«ÉÕ¤«¤é¤Ê¤±¤ì¤Ğ'undefined variable'¥¨¥é¡¼¤¬Êó¹ğ¤µ¤ì¤Ş¤¹¡£
+ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ä¸­ã®ã©ã®æ™‚ç‚¹ã§ã‚‚ã€ã€Œã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã€ãŒä¸€æ„ã«æ±ºå®šã•ã‚Œã€
+ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°ã®æŸç¸›ã¯ãã®ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’èµ·ç‚¹ã«æ¢ã•ã‚Œã¾ã™ã€‚
+ãã®å¤‰æ•°ã®æŸç¸›ãŒè¦‹ä»˜ã‹ã‚Œã°ã€å¤‰æ•°å‚ç…§ã®å¼ã¯ãã®æŸç¸›ã¸ã‚¢ã‚¯ã‚»ã‚¹ã™ã‚‹ã‚³ãƒ¼ãƒ‰ã¨ã—ã¦
+ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã•ã‚Œã¾ã™ã€‚ã‚‚ã—ã‚³ãƒ³ãƒ‘ã‚¤ãƒ©ãŒæŸç¸›ã‚’è¦‹ä»˜ã‘ã‚‰ã‚Œãªã‹ã£ãŸå ´åˆã€
+å¤‰æ•°å‚ç…§ã®å¼ã¯ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã§ãƒãƒ¼ã‚¯ã•ã‚Œã€æŸç¸›ã®è§£æ±ºã¯ãƒ©ãƒ³ã‚¿ã‚¤ãƒ ã¸ã¨
+å…ˆé€ã‚Šã•ã‚Œã¾ã™ã€‚ã™ãªã‚ã¡ã€ãƒ©ãƒ³ã‚¿ã‚¤ãƒ ã«ãã®å¤‰æ•°ãŒä½¿ã‚ã‚Œã‚‹æ™‚ç‚¹ã§
+å†ã³ãƒãƒ¼ã‚¯ã•ã‚Œã¦ã„ãŸãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‹ã‚‰æŸç¸›ã®æ¢ç´¢ãŒè¡Œã‚ã‚Œã¾ã™
+(ãƒ©ãƒ³ã‚¿ã‚¤ãƒ ã§ã®ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‹ã‚‰ã§ã¯ç„¡ã„ã“ã¨ã«æ³¨æ„)ã€‚
+æŸç¸›ãŒè¦‹ä»˜ã‹ã‚Œã°ã€æŸç¸›ã¸ã‚¢ã‚¯ã‚»ã‚¹ã™ã‚‹ã‚³ãƒ¼ãƒ‰ãŒã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã•ã‚ŒãŸã‚³ãƒ¼ãƒ‰åˆ—ã«
+æŒ¿å…¥ã•ã‚Œã¾ã™ã€‚è¦‹ä»˜ã‹ã‚‰ãªã‘ã‚Œã°'undefined variable'ã‚¨ãƒ©ãƒ¼ãŒå ±å‘Šã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -2621,9 +2622,9 @@ Once the appropriate binding is found for the global variable,
 the access to the binding is hard-wired in the compiled code
 and the global variable resolution will never take place again.
 @c JP
-¥°¥í¡¼¥Ğ¥ëÊÑ¿ô¤ËÂĞ¤·¤ÆÅ¬ÀÚ¤ÊÂ«Çû¤¬¤Ò¤È¤¿¤ÓÈ¯¸«¤µ¤ì¤ì¤Ğ¡¢
-¤½¤ÎÂ«Çû¤Ø¤Î¥¢¥¯¥»¥¹¤Ï¥³¥ó¥Ñ¥¤¥ë¤µ¤ì¤¿¥³¡¼¥É¤ËËä¤á¹ş¤Ş¤ì¡¢
-¤½¤ÎÊÑ¿ô¤ÎÂ«Çû¤ÎÃµº÷¤ÏÆóÅÙ¤È¹Ô¤ï¤ì¤Ş¤»¤ó¡£
+ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°ã«å¯¾ã—ã¦é©åˆ‡ãªæŸç¸›ãŒã²ã¨ãŸã³ç™ºè¦‹ã•ã‚Œã‚Œã°ã€
+ãã®æŸç¸›ã¸ã®ã‚¢ã‚¯ã‚»ã‚¹ã¯ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã•ã‚ŒãŸã‚³ãƒ¼ãƒ‰ã«åŸ‹ã‚è¾¼ã¾ã‚Œã€
+ãã®å¤‰æ•°ã®æŸç¸›ã®æ¢ç´¢ã¯äºŒåº¦ã¨è¡Œã‚ã‚Œã¾ã›ã‚“ã€‚
 @c COMMON
 
 @c EN
@@ -2631,9 +2632,9 @@ The definition special form such as @code{define} and @code{define-syntax}
 inserts the binding to the current module.   Thus it may shadow
 the binding of imported or inherited modules.
 @c JP
-@code{define}¤ä@code{define-syntax}Åù¤ÎÄêµÁ¤ò¹Ô¤¦ÆÃ¼ì·Á¼°¤Ï
-¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤ËÂ«Çû¤òÁŞÆş¤·¤Ş¤¹¡£¤³¤ì¤Ï¡¢import¤·¤¿¤ê·Ñ¾µ¤·¤¿¤ê¤·¤Æ¤¤¤ë
-¥â¥¸¥å¡¼¥ë¤ÎÆ±Ì¾¤ÎÂ«Çû¤ò¥·¥ã¥É¥¦¤·¤Ş¤¹¡£
+@code{define}ã‚„@code{define-syntax}ç­‰ã®å®šç¾©ã‚’è¡Œã†ç‰¹æ®Šå½¢å¼ã¯
+ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«æŸç¸›ã‚’æŒ¿å…¥ã—ã¾ã™ã€‚ã“ã‚Œã¯ã€importã—ãŸã‚Šç¶™æ‰¿ã—ãŸã‚Šã—ã¦ã„ã‚‹
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®åŒåã®æŸç¸›ã‚’ã‚·ãƒ£ãƒ‰ã‚¦ã—ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -2645,13 +2646,13 @@ Note that import is not transitive; imported module list is not
 chased recursively.
 Finally, ancestors of the current module are searched in order.
 @c JP
-¥°¥í¡¼¥Ğ¥ëÊÑ¿ô¤ÎÂ«Çû¤Î²ò·è¤Ï¼¡¤Î¼ê½ç¤Ç¹Ô¤ï¤ì¤Ş¤¹¡£
-¤Ş¤º¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤¬Ãµ¤µ¤ì¤Ş¤¹¡£¼¡¤Ë¡¢import¤·¤Æ¤¤¤ë¥â¥¸¥å¡¼¥ë¤¬
-import¤µ¤ì¤¿µÕ¤Î½çÈÖ¤ËÊÂ¤Ù¤é¤ì¡¢¤½¤ì¤¾¤ì¤Ë¤Ä¤¤¤Æ¤½¤Î
-¥â¥¸¥å¡¼¥ë¤ª¤è¤Ó¤½¤Î¥â¥¸¥å¡¼¥ë¤ÎÀèÁÄ(·Ñ¾µ¤µ¤ì¤Æ¤¤¤ë¥â¥¸¥å¡¼¥ë)¤¬½ç¤ËÃµ¤µ¤ì¤Ş¤¹¡£
-import¤ÏÁ«°ÜÅª¤Ç¤Ï¤¢¤ê¤Ş¤»¤ó¡¨import¤µ¤ì¤¿¥â¥¸¥å¡¼¥ë¤¬import¤·¤Æ¤¤¤ë¥â¥¸¥å¡¼¥ë¡Ä
-¤È¤¤¤¦¤Õ¤¦¤ËºÆµ¢Åª¤ËÃ©¤ë¤³¤È¤Ï¤·¤Ş¤»¤ó¡£
-ºÇ¸å¤Ë¡¢¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤ÎÀèÁÄ¤¬½ç¤ËÃµ¤µ¤ì¤Ş¤¹¡£
+ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°ã®æŸç¸›ã®è§£æ±ºã¯æ¬¡ã®æ‰‹é †ã§è¡Œã‚ã‚Œã¾ã™ã€‚
+ã¾ãšã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒæ¢ã•ã‚Œã¾ã™ã€‚æ¬¡ã«ã€importã—ã¦ã„ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒ
+importã•ã‚ŒãŸé€†ã®é †ç•ªã«ä¸¦ã¹ã‚‰ã‚Œã€ãã‚Œãã‚Œã«ã¤ã„ã¦ãã®
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŠã‚ˆã³ãã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®å…ˆç¥–(ç¶™æ‰¿ã•ã‚Œã¦ã„ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«)ãŒé †ã«æ¢ã•ã‚Œã¾ã™ã€‚
+importã¯é·ç§»çš„ã§ã¯ã‚ã‚Šã¾ã›ã‚“ï¼›importã•ã‚ŒãŸãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒimportã—ã¦ã„ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«â€¦
+ã¨ã„ã†ãµã†ã«å†å¸°çš„ã«è¾¿ã‚‹ã“ã¨ã¯ã—ã¾ã›ã‚“ã€‚
+æœ€å¾Œã«ã€ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®å…ˆç¥–ãŒé †ã«æ¢ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -2665,29 +2666,29 @@ If you import @code{A}, then @code{B}, then @code{A} again,
 the last import takes precedence; that is, you'll see @code{A}'s
 binding.
 @c JP
-¤³¤Î½ç½ø¤Ï¡¢Ê£¿ô¤Î¥â¥¸¥å¡¼¥ë¤ÇÆ±¤¸Ì¾Á°¤¬ÄêµÁ¤µ¤ì¡¢¤¢¤Ê¤¿¤Î¥â¥¸¥å¡¼¥ë¤¬
-¤½¤ÎÎ¾Êı¤ò¥¤¥ó¥İ¡¼¥È¤·¤Æ¤¤¤ë¾ì¹ç¤Ë½ÅÍ×¤Ë¤Ê¤ê¤Ş¤¹¡£
-¤½¤ÎÌ¾Á°¤¬¤¢¤Ê¤¿¤Î¥â¥¸¥å¡¼¥ë¤Ç
-ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤¤È¤·¤Æ¡¢¤â¤·¥â¥¸¥å¡¼¥ë@code{A}¤¬¤Ş¤ºimport¤µ¤ì¡¢
-¼¡¤Ë@code{B}¤¬import¤µ¤ì¤Æ¤¤¤ë¾ì¹ç¡¢¤¢¤Ê¤¿¤Î¥³¡¼¥É¤Ï@code{B}¤Î
-Â«Çû¤ò¸«¤ë¤³¤È¤Ë¤Ê¤ê¤Ş¤¹¡£
+ã“ã®é †åºã¯ã€è¤‡æ•°ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã§åŒã˜åå‰ãŒå®šç¾©ã•ã‚Œã€ã‚ãªãŸã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒ
+ãã®ä¸¡æ–¹ã‚’ã‚¤ãƒ³ãƒãƒ¼ãƒˆã—ã¦ã„ã‚‹å ´åˆã«é‡è¦ã«ãªã‚Šã¾ã™ã€‚
+ãã®åå‰ãŒã‚ãªãŸã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã§
+å®šç¾©ã•ã‚Œã¦ã„ãªã„ã¨ã—ã¦ã€ã‚‚ã—ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«@code{A}ãŒã¾ãšimportã•ã‚Œã€
+æ¬¡ã«@code{B}ãŒimportã•ã‚Œã¦ã„ã‚‹å ´åˆã€ã‚ãªãŸã®ã‚³ãƒ¼ãƒ‰ã¯@code{B}ã®
+æŸç¸›ã‚’è¦‹ã‚‹ã“ã¨ã«ãªã‚Šã¾ã™ã€‚
 
-@code{A}¤òimport¤·¤Æ@code{B}¤òimport¤·¤¿¸å¤ËºÆ¤Ó@code{A}¤òimport
-¤·¤¿¾ì¹ç¡¢¸å¤Îimport¤ÎÊı¤¬¸úÎÏ¤ò»ı¤Á¤Ş¤¹¡£¤¹¤Ê¤ï¤Á¡¢@code{A}¤ÎÂ«Çû¤¬
-¸«¤¨¤ë¤³¤È¤Ë¤Ê¤ê¤Ş¤¹¡£
+@code{A}ã‚’importã—ã¦@code{B}ã‚’importã—ãŸå¾Œã«å†ã³@code{A}ã‚’import
+ã—ãŸå ´åˆã€å¾Œã®importã®æ–¹ãŒåŠ¹åŠ›ã‚’æŒã¡ã¾ã™ã€‚ã™ãªã‚ã¡ã€@code{A}ã®æŸç¸›ãŒ
+è¦‹ãˆã‚‹ã“ã¨ã«ãªã‚Šã¾ã™ã€‚
 @c COMMON
 
 @node Modules and libraries, Defining and selecting modules, Module semantics, Modules
 @subsection Modules and libraries
-@c NODE ¥â¥¸¥å¡¼¥ë¤È¥é¥¤¥Ö¥é¥ê
+@c NODE ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¨ãƒ©ã‚¤ãƒ–ãƒ©ãƒª
 
 @c EN
 Modules are run-time data structure; you can procedurally
 create modules with arbitrary names at run-time.
 
 @c JP
-¥â¥¸¥å¡¼¥ë¤Ï¼Â¹Ô»ş¥Ç¡¼¥¿¹½Â¤¤Ç¤¹¡£¼Â¹Ô»ş¤ËÇ¤°Õ¤ÎÌ¾Á°¤Î¥â¥¸¥å¡¼¥ë¤ò
-¼êÂ³¤­Åª¤ËºîÀ®¤¹¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯å®Ÿè¡Œæ™‚ãƒ‡ãƒ¼ã‚¿æ§‹é€ ã§ã™ã€‚å®Ÿè¡Œæ™‚ã«ä»»æ„ã®åå‰ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’
+æ‰‹ç¶šãçš„ã«ä½œæˆã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚
 
 @c EN
 However, most libraries use modules to create their own
@@ -2695,9 +2696,9 @@ namespace, so that they can control which bindings to be
 visible from library users.
 
 @c JP
-¤·¤«¤·¤Û¤È¤ó¤É¤Î¥é¥¤¥Ö¥é¥ê¤Ï¡¢¸ÇÍ­¤ÎÌ¾Á°¶õ´Ö¤òÀ¸À®¤¹¤ë¤¿¤á¤Ë
-¥â¥¸¥å¡¼¥ë¤òÍÑ¤¤¤Ş¤¹¡£¤³¤ì¤Ë¤è¤ê¡¢¤É¤ÎÂ«Çû¤ò¥é¥¤¥Ö¥é¥ê»ÈÍÑ¼Ô¤Ë
-¸«¤»¤ë¤«¤òÀ©¸æ¤Ç¤­¤Ş¤¹¡£
+ã—ã‹ã—ã»ã¨ã‚“ã©ã®ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã¯ã€å›ºæœ‰ã®åå‰ç©ºé–“ã‚’ç”Ÿæˆã™ã‚‹ãŸã‚ã«
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ç”¨ã„ã¾ã™ã€‚ã“ã‚Œã«ã‚ˆã‚Šã€ã©ã®æŸç¸›ã‚’ãƒ©ã‚¤ãƒ–ãƒ©ãƒªä½¿ç”¨è€…ã«
+è¦‹ã›ã‚‹ã‹ã‚’åˆ¶å¾¡ã§ãã¾ã™ã€‚
 
 @c EN
 Usually a library is provided in the form of one or more Scheme
@@ -2707,11 +2708,11 @@ library file and import its module by one action with @code{use}
 macro, for example.
 
 @c JP
-ÄÌ¾ï¥é¥¤¥Ö¥é¥ê¤Ï1¤Ä°Ê¾å¤ÎScheme¥½¡¼¥¹¥Õ¥¡¥¤¥ë·Á¼°¤ÇÄó¶¡¤µ¤ì¤Ş¤¹¡£
-¤·¤¿¤¬¤Ã¤Æ¡¢¥Õ¥¡¥¤¥ëÌ¾¤ò¥â¥¸¥å¡¼¥ëÌ¾¤ËÂĞ±ş¤Å¤±¤ë(¤Ş¤¿¤Ï¤½¤ÎµÕ¤Î)
-µ¬Ìó¤Ë¤·¤Æ¤ª¤±¤ĞÊØÍø¤Ç¤¹¡£¤½¤¦¤¹¤ì¤Ğ¡¢¤¿¤È¤¨¤Ğ¡¢¥é¥¤¥Ö¥é¥ê¡¼¥Õ¥¡¥¤¥ë¤ò
-¥í¡¼¥É¤·¤¿¤ê¡¢@code{use} ¥Ş¥¯¥í¤ò»È¤Ã¤Æ¥â¥¸¥å¡¼¥ë¤ò°ìÆ°ºî¤Ç¡¢
-¥¤¥ó¥İ¡¼¥È¤·¤¿¤ê¤Ç¤­¤Ş¤¹¡£
+é€šå¸¸ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã¯1ã¤ä»¥ä¸Šã®Schemeã‚½ãƒ¼ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«å½¢å¼ã§æä¾›ã•ã‚Œã¾ã™ã€‚
+ã—ãŸãŒã£ã¦ã€ãƒ•ã‚¡ã‚¤ãƒ«åã‚’ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«åã«å¯¾å¿œã¥ã‘ã‚‹(ã¾ãŸã¯ãã®é€†ã®)
+è¦ç´„ã«ã—ã¦ãŠã‘ã°ä¾¿åˆ©ã§ã™ã€‚ãã†ã™ã‚Œã°ã€ãŸã¨ãˆã°ã€ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ¼ãƒ•ã‚¡ã‚¤ãƒ«ã‚’
+ãƒ­ãƒ¼ãƒ‰ã—ãŸã‚Šã€@code{use} ãƒã‚¯ãƒ­ã‚’ä½¿ã£ã¦ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ä¸€å‹•ä½œã§ã€
+ã‚¤ãƒ³ãƒãƒ¼ãƒˆã—ãŸã‚Šã§ãã¾ã™ã€‚
 
 @c EN
 For the time being, Gauche uses a simple rules for this mapping:
@@ -2724,13 +2725,13 @@ replacing periods to directory separator, i.e.
 @code{gauche/mop/validator.scm} in the load paths.
 
 @c JP
-ÅöÊ¬¤Î´Ö¡¢Gauche ¤Ï¤³¤ÎÂĞ±ş¤Å¤±¤Î¤¿¤á¤ÎÃ±½ã¤Ê¥ë¡¼¥ë¤ò»ÈÍÑ¤·¤Ş¤¹¡£¤¹¤Ê¤ï¤Á¡¢
-¥â¥¸¥å¡¼¥ëÌ¾¤Ï¡¢Îã¤¨¤Ğ @code{gauche.mop.validator} ¤Î¤è¤¦¤Ë `@code{.}' 
-(¥Ô¥ê¥ª¥É)µ­¹æ¤Ç³¬ÁØÅª¤Ë¶èÀÚ¤Ã¤Æ¹½À®¤µ¤ì¤Ş¤¹¡£¤³¤Î¤è¤¦¤Ê¥â¥¸¥å¡¼¥ë¤¬
-Í×µá¤µ¤ì¤Æ¤â¡¢¸½ºß¤Î¼Â¹Ô»ş´Ä¶­¤ËÂ¸ºß¤·¤Ê¤¤¾ì¹ç¤Ë¤Ï¡¢Gauche ¤Ï
-¥Ô¥ê¥ª¥Éµ­¹æ¤ò¥Ç¥£¥ì¥¯¥È¥ê¶èÀÚ¤ê¤ËÊÑ´¹¤·¤Æ @code{gauche/mop/validator}
-¤Î¤è¤¦¤Ë¥â¥¸¥å¡¼¥ëÌ¾¤«¤é¥Ñ¥¹Ì¾¤ËÊÑ´¹¤·¤Ş¤¹¡£¤½¤Î¸å¡¢
-@code{gauche/mop/validator.scm} ¤ò¥í¡¼¥É¥Ñ¥¹¤«¤éÃµ¤·¤Ş¤¹¡£
+å½“åˆ†ã®é–“ã€Gauche ã¯ã“ã®å¯¾å¿œã¥ã‘ã®ãŸã‚ã®å˜ç´”ãªãƒ«ãƒ¼ãƒ«ã‚’ä½¿ç”¨ã—ã¾ã™ã€‚ã™ãªã‚ã¡ã€
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«åã¯ã€ä¾‹ãˆã° @code{gauche.mop.validator} ã®ã‚ˆã†ã« `@code{.}' 
+(ãƒ”ãƒªã‚ªãƒ‰)è¨˜å·ã§éšå±¤çš„ã«åŒºåˆ‡ã£ã¦æ§‹æˆã•ã‚Œã¾ã™ã€‚ã“ã®ã‚ˆã†ãªãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒ
+è¦æ±‚ã•ã‚Œã¦ã‚‚ã€ç¾åœ¨ã®å®Ÿè¡Œæ™‚ç’°å¢ƒã«å­˜åœ¨ã—ãªã„å ´åˆã«ã¯ã€Gauche ã¯
+ãƒ”ãƒªã‚ªãƒ‰è¨˜å·ã‚’ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªåŒºåˆ‡ã‚Šã«å¤‰æ›ã—ã¦ @code{gauche/mop/validator}
+ã®ã‚ˆã†ã«ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«åã‹ã‚‰ãƒ‘ã‚¹åã«å¤‰æ›ã—ã¾ã™ã€‚ãã®å¾Œã€
+@code{gauche/mop/validator.scm} ã‚’ãƒ­ãƒ¼ãƒ‰ãƒ‘ã‚¹ã‹ã‚‰æ¢ã—ã¾ã™ã€‚
 
 @c EN
 Note that this is just a default behavior.
@@ -2744,20 +2745,20 @@ default rule blindly.   Gauche provides two procedures,
 to do mapping for you (see @ref{Module introspection}, for details).
 
 @c JP
-¤³¤ì¤¬Ã±¤Ë¥Ç¥Õ¥©¥ë¥È¤Î¿¶¤ëÉñ¤¤¤Ç¤¢¤ë¤³¤È¤ËÃí°Õ¤·¤Æ¤¯¤À¤µ¤¤¡£
-ÍıÏÀ¾å¡¢1¤Ä¤ÎScheme¥½¡¼¥¹¡¦¥Õ¥¡¥¤¥ë¤ÏÂ¿¿ô¤Î¥â¥¸¥å¡¼¥ë¤ò´Ş¤à¤³¤È¤¬¤¢¤ê¤Ş¤¹¡£
-¤¢¤ë¤¤¤Ï¡¢1¤Ä¤Î¥â¥¸¥å¡¼¥ë¼ÂÁõ¤ÏÂ¿¿ô¤Î¥Õ¥¡¥¤¥ë¤Ë¤Ş¤¿¤¬¤ë¤³¤È¤â¤¢¤ê¤¨¤Ş¤¹¡£
-¾­Íè¡¢ÆÃÊÌ¤Ê¥±¡¼¥¹¤Î¤¿¤á¤Ë¡¢¤³¤ÎÂĞ±şÉÕ¤±¤ò¥«¥¹¥¿¥Ş¥¤¥º¤¹¤ë¥Õ¥Ã¥¯¤ò
-ÍÑ°Õ¤¹¤ë¤«¤â¤·¤ì¤Ş¤»¤ó¡£¤·¤¿¤¬¤Ã¤Æ¡¢¥â¥¸¥å¡¼¥ë¤ª¤è¤Ó¥é¥¤¥Ö¥é¥ê¡¼¥Õ¥¡¥¤¥ë¤ò
-°·¤¦¥ë¡¼¥Á¥ó¤ò½ñ¤¯¾ì¹ç¤Ë¤Ï¡¢¾åµ­¤Î¥Ç¥Õ¥©¥ë¥È¥ë¡¼¥ë¤òÌÕÌÜÅª¤ËÅ¬ÍÑ¤·¤Ê¤¤¤Ç
-¤¯¤À¤µ¤¤¡£Gauche¤Ï @code{module-name->path} ¤È @code{path->module-name} ¤È¤¤¤¦
-2¤Ä¤ÎÂĞ±ş¤Å¤±¼êÂ³¤­(¾ÜºÙ¤Ë´Ø¤·¤Æ¤Ï¡¢@ref{Module introspection}»²¾È)
-¤òÍÑ°Õ¤·¤Æ¤¤¤Ş¤¹¡£
+ã“ã‚ŒãŒå˜ã«ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®æŒ¯ã‚‹èˆã„ã§ã‚ã‚‹ã“ã¨ã«æ³¨æ„ã—ã¦ãã ã•ã„ã€‚
+ç†è«–ä¸Šã€1ã¤ã®Schemeã‚½ãƒ¼ã‚¹ãƒ»ãƒ•ã‚¡ã‚¤ãƒ«ã¯å¤šæ•°ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’å«ã‚€ã“ã¨ãŒã‚ã‚Šã¾ã™ã€‚
+ã‚ã‚‹ã„ã¯ã€1ã¤ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«å®Ÿè£…ã¯å¤šæ•°ã®ãƒ•ã‚¡ã‚¤ãƒ«ã«ã¾ãŸãŒã‚‹ã“ã¨ã‚‚ã‚ã‚Šãˆã¾ã™ã€‚
+å°†æ¥ã€ç‰¹åˆ¥ãªã‚±ãƒ¼ã‚¹ã®ãŸã‚ã«ã€ã“ã®å¯¾å¿œä»˜ã‘ã‚’ã‚«ã‚¹ã‚¿ãƒã‚¤ã‚ºã™ã‚‹ãƒ•ãƒƒã‚¯ã‚’
+ç”¨æ„ã™ã‚‹ã‹ã‚‚ã—ã‚Œã¾ã›ã‚“ã€‚ã—ãŸãŒã£ã¦ã€ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŠã‚ˆã³ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ¼ãƒ•ã‚¡ã‚¤ãƒ«ã‚’
+æ‰±ã†ãƒ«ãƒ¼ãƒãƒ³ã‚’æ›¸ãå ´åˆã«ã¯ã€ä¸Šè¨˜ã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆãƒ«ãƒ¼ãƒ«ã‚’ç›²ç›®çš„ã«é©ç”¨ã—ãªã„ã§
+ãã ã•ã„ã€‚Gaucheã¯ @code{module-name->path} ã¨ @code{path->module-name} ã¨ã„ã†
+2ã¤ã®å¯¾å¿œã¥ã‘æ‰‹ç¶šã(è©³ç´°ã«é–¢ã—ã¦ã¯ã€@ref{Module introspection}å‚ç…§)
+ã‚’ç”¨æ„ã—ã¦ã„ã¾ã™ã€‚
 
 @c COMMON
 @node Defining and selecting modules, Using modules, Modules and libraries, Modules
 @subsection Defining and selecting modules
-@c NODE ¥â¥¸¥å¡¼¥ë¤ÎÄêµÁ¤ÈÁªÂò
+@c NODE ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®å®šç¾©ã¨é¸æŠ
 
 @defspec define-module name body @dots{}
 @c EN
@@ -2765,9 +2766,9 @@ to do mapping for you (see @ref{Module introspection}, for details).
 If a module named @var{name} does not exist, create one.
 Then evaluates @var{body} sequentially in the module.
 @c JP
-@var{name}¤Ï¥·¥ó¥Ü¥ë¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
-Ì¾Á°@var{name}¤ò»ı¤Ä¥â¥¸¥å¡¼¥ë¤¬Â¸ºß¤·¤Ê¤±¤ì¤Ğ¤Ş¤ººîÀ®¤·¤Ş¤¹¡£
-¤½¤ì¤«¤é¡¢@var{body} @dots{} ¤ò¥â¥¸¥å¡¼¥ë@var{name}Ãæ¤ÇÉ¾²Á¤·¤Ş¤¹¡£
+@var{name}ã¯ã‚·ãƒ³ãƒœãƒ«ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚
+åå‰@var{name}ã‚’æŒã¤ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒå­˜åœ¨ã—ãªã‘ã‚Œã°ã¾ãšä½œæˆã—ã¾ã™ã€‚
+ãã‚Œã‹ã‚‰ã€@var{body} @dots{} ã‚’ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«@var{name}ä¸­ã§è©•ä¾¡ã—ã¾ã™ã€‚
 @c COMMON
 @end defspec
 
@@ -2781,12 +2782,12 @@ limited inside the file, i.e. even if you load/require a file that uses
 @code{select-module} internally, the current module of requirer is
 not affected.
 @c JP
-Ì¾Á°@var{name}¤ò»ı¤Ä¥â¥¸¥å¡¼¥ë¤ò¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤È¤·¤Ş¤¹¡£
-¤½¤ÎÌ¾Á°¤ò»ı¤Ä¥â¥¸¥å¡¼¥ë¤¬Ìµ¤±¤ì¤Ğ¥¨¥é¡¼¤È¤Ê¤ê¤Ş¤¹¡£
+åå‰@var{name}ã‚’æŒã¤ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¨ã—ã¾ã™ã€‚
+ãã®åå‰ã‚’æŒã¤ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒç„¡ã‘ã‚Œã°ã‚¨ãƒ©ãƒ¼ã¨ãªã‚Šã¾ã™ã€‚
 
-@code{select-module}¤¬Scheme¥Õ¥¡¥¤¥ë¤ÎÃæ¤ÇÍÑ¤¤¤é¤ì¤¿¾ì¹ç¡¢
-¤½¤Î¸ú²Ì¤Ï¤½¤Î¥Õ¥¡¥¤¥ë¤Î½ªÎ»¤Ş¤Ç¤Ë¸Â¤é¤ì¤Ş¤¹¡£@code{select-module}¤òÃæ¤Ç¸Æ¤ó¤Ç¤¤¤ë
-¥Õ¥¡¥¤¥ë¤òload¤ärequire¤·¤Æ¤â¡¢¸Æ¤ó¤ÀÂ¦¤Î¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤Ï±Æ¶Á¤ò¼õ¤±¤Ş¤»¤ó¡£
+@code{select-module}ãŒSchemeãƒ•ã‚¡ã‚¤ãƒ«ã®ä¸­ã§ç”¨ã„ã‚‰ã‚ŒãŸå ´åˆã€
+ãã®åŠ¹æœã¯ãã®ãƒ•ã‚¡ã‚¤ãƒ«ã®çµ‚äº†ã¾ã§ã«é™ã‚‰ã‚Œã¾ã™ã€‚@code{select-module}ã‚’ä¸­ã§å‘¼ã‚“ã§ã„ã‚‹
+ãƒ•ã‚¡ã‚¤ãƒ«ã‚’loadã‚„requireã—ã¦ã‚‚ã€å‘¼ã‚“ã å´ã®ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯å½±éŸ¿ã‚’å—ã‘ã¾ã›ã‚“ã€‚
 @c COMMON
 @end defspec
 
@@ -2796,8 +2797,8 @@ Evaluates @var{body} sequentially in the module
 named @var{name}.  Returns the last result(s).
 If no module named @var{name}, an error is signalled.
 @c JP
-Ì¾Á°@var{name}¤ò»ı¤Ä¥â¥¸¥å¡¼¥ë¤ò¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤È¤·¤¿¾õÂÖ¤Ç@var{body} @dots{}
-¤ò½ç¤ËÉ¾²Á¤·¡¢ºÇ¸å¤Î·ë²Ì¤òÊÖ¤·¤Ş¤¹¡£³ºÅö¤¹¤ë¥â¥¸¥å¡¼¥ë¤¬Â¸ºß¤·¤Ê¤±¤ì¤Ğ¥¨¥é¡¼¤È¤Ê¤ê¤Ş¤¹¡£
+åå‰@var{name}ã‚’æŒã¤ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¨ã—ãŸçŠ¶æ…‹ã§@var{body} @dots{}
+ã‚’é †ã«è©•ä¾¡ã—ã€æœ€å¾Œã®çµæœã‚’è¿”ã—ã¾ã™ã€‚è©²å½“ã™ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒå­˜åœ¨ã—ãªã‘ã‚Œã°ã‚¨ãƒ©ãƒ¼ã¨ãªã‚Šã¾ã™ã€‚
 @c COMMON
 @end defspec
 
@@ -2807,9 +2808,9 @@ Evaluates to the current module in the compile context.
 Note that this is a special form, not a function.
 Module in Gauche is statically determined at compile time.
 @c JP
-¥³¥ó¥Ñ¥¤¥ë»şÅÀ¤Ç¤Î¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤ËÉ¾²Á¤µ¤ì¤Ş¤¹¡£
-¤³¤ì¤Ï¼êÂ³¤­¤Ç¤Ï¤Ê¤¯ÆÃ¼ì·Á¼°¤Ç¤¹¡£
-Gauche¤Ç¤Ï¥â¥¸¥å¡¼¥ë¤Ï¥³¥ó¥Ñ¥¤¥ë»ş¤ËÀÅÅª¤Ë·èÄê¤µ¤ì¤Ş¤¹¡£
+ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«æ™‚ç‚¹ã§ã®ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«è©•ä¾¡ã•ã‚Œã¾ã™ã€‚
+ã“ã‚Œã¯æ‰‹ç¶šãã§ã¯ãªãç‰¹æ®Šå½¢å¼ã§ã™ã€‚
+Gaucheã§ã¯ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«æ™‚ã«é™çš„ã«æ±ºå®šã•ã‚Œã¾ã™ã€‚
 @c COMMON
 @lisp
 (define-module foo
@@ -2825,15 +2826,15 @@ Gauche¤Ç¤Ï¥â¥¸¥å¡¼¥ë¤Ï¥³¥ó¥Ñ¥¤¥ë»ş¤ËÀÅÅª¤Ë·èÄê¤µ¤ì¤Ş¤¹¡£
 
 @node Using modules, Module inheritance, Defining and selecting modules, Modules
 @subsection Using modules
-@c NODE ¥â¥¸¥å¡¼¥ë¤Î»ÈÍÑ
+@c NODE ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ä½¿ç”¨
 
 @defspec export symbol @dots{}
 @c EN
 Makes bindings of @var{symbol}s in the current module available
 to modules that imports the current module.
 @c JP
-¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤ÎÃæ¤Ç¡¢¥·¥ó¥Ü¥ë@var{symbol}¤ËÂĞ±ş¤¹¤ëÂ«Çû¤òexport¤·¤Ş¤¹¡£
-export¤µ¤ì¤¿Â«Çû¤Ï¡¢¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤òimport¤·¤¿¥â¥¸¥å¡¼¥ëÃæ¤Ç¸«¤¨¤ë¤è¤¦¤Ë¤Ê¤ê¤Ş¤¹¡£
+ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ä¸­ã§ã€ã‚·ãƒ³ãƒœãƒ«@var{symbol}ã«å¯¾å¿œã™ã‚‹æŸç¸›ã‚’exportã—ã¾ã™ã€‚
+exportã•ã‚ŒãŸæŸç¸›ã¯ã€ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’importã—ãŸãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ä¸­ã§è¦‹ãˆã‚‹ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚
 @c COMMON
 @end defspec
 
@@ -2842,7 +2843,7 @@ export¤µ¤ì¤¿Â«Çû¤Ï¡¢¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤òimport¤·¤¿¥â¥¸¥å¡¼¥ëÃæ¤Ç¸«¤¨¤ë¤è¤¦¤Ë¤Ê¤ê
 Makes all bindings in the current module available to modules
 that imports it.
 @c JP
-¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ëÃæ¤ÎÁ´¤Æ¤ÎÂ«Çû¤òexport¤·¤Ş¤¹¡£
+ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ä¸­ã®å…¨ã¦ã®æŸç¸›ã‚’exportã—ã¾ã™ã€‚
 @c COMMON
 @end defspec
 
@@ -2858,17 +2859,17 @@ This keeps modules' modularity; a library module can import whatever
 modules it needs without worrying about polluting the namespace of
 the user of the module.
 @c JP
-@var{module-name}¤È¤¤¤¦Ì¾Á°¤Î¥â¥¸¥å¡¼¥ë¤¬export¤·¤Æ¤¤¤ëÂ«Çû¤ò
-¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ëÃæ¤Ç»È¤¨¤ë¤è¤¦¤Ë¤·¤Ş¤¹¡£³ºÅö¤¹¤ë¥â¥¸¥å¡¼¥ë¤Ï
-¥³¥ó¥Ñ¥¤¥ë»ş¤ËÂ¸ºß¤·¤Æ¤¤¤Ê¤¯¤Æ¤Ï¤Ê¤ê¤Ş¤»¤ó¡£
+@var{module-name}ã¨ã„ã†åå‰ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒexportã—ã¦ã„ã‚‹æŸç¸›ã‚’
+ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ä¸­ã§ä½¿ãˆã‚‹ã‚ˆã†ã«ã—ã¾ã™ã€‚è©²å½“ã™ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯
+ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«æ™‚ã«å­˜åœ¨ã—ã¦ã„ãªãã¦ã¯ãªã‚Šã¾ã›ã‚“ã€‚
 
-¥â¥¸¥å¡¼¥ë¤Îimport¤ÏÁ«°ÜÅª¤Ç¤Ê¤¤¤³¤È¤ËÃí°Õ¤·¤Æ¤¯¤À¤µ¤¤¡£
-¤Ä¤Ş¤ê@code{module-name}¤Ç»ØÄê¤µ¤ì¤¿¥â¥¸¥å¡¼¥ë¤¬¤½¤ÎÆâÉô¤Çimport
-¤·¤Æ¤¤¤ë¥â¥¸¥å¡¼¥ë¤Ï¼«Æ°Åª¤Ë¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤Ë¤Ïimport¤µ¤ì¤Æ¤Ş¤»¤ó¡£
-¥â¥¸¥å¡¼¥ë¤ÎÆÈÎ©À­¤òÊİ¤Ä¤¿¤á¤ÎÀß·×¤Ç¤¹¡£¤³¤ÎÀ­¼Á¤Ë¤è¤ê¡¢
-¥é¥¤¥Ö¥é¥ê¥â¥¸¥å¡¼¥ë¤Îºî¼Ô¤Ï¤¤¤¯¤éÂ¾¤Î¥â¥¸¥å¡¼¥ë¤ò
-import¤·¤è¤¦¤È¤âÍøÍÑ¼Ô¤ÎÌ¾Á°¶õ´Ö¤òÉÔ°Õ¤Ë±øÀ÷¤·¤Æ¤·¤Ş¤¦¿´ÇÛ¤Ï¤¢¤ê¤Ş¤»¤ó¡£
-(ÍøÍÑ¼Ô¤«¤é¤Ï¤½¤Î¥â¥¸¥å¡¼¥ë¤Çexport¤·¤Æ¤¤¤ëÌ¾Á°¤·¤«¸«¤¨¤Ê¤¤¤«¤é¤Ç¤¹¡£)
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®importã¯é·ç§»çš„ã§ãªã„ã“ã¨ã«æ³¨æ„ã—ã¦ãã ã•ã„ã€‚
+ã¤ã¾ã‚Š@code{module-name}ã§æŒ‡å®šã•ã‚ŒãŸãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒãã®å†…éƒ¨ã§import
+ã—ã¦ã„ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯è‡ªå‹•çš„ã«ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«ã¯importã•ã‚Œã¦ã¾ã›ã‚“ã€‚
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ç‹¬ç«‹æ€§ã‚’ä¿ã¤ãŸã‚ã®è¨­è¨ˆã§ã™ã€‚ã“ã®æ€§è³ªã«ã‚ˆã‚Šã€
+ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ä½œè€…ã¯ã„ãã‚‰ä»–ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’
+importã—ã‚ˆã†ã¨ã‚‚åˆ©ç”¨è€…ã®åå‰ç©ºé–“ã‚’ä¸æ„ã«æ±šæŸ“ã—ã¦ã—ã¾ã†å¿ƒé…ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
+(åˆ©ç”¨è€…ã‹ã‚‰ã¯ãã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã§exportã—ã¦ã„ã‚‹åå‰ã—ã‹è¦‹ãˆãªã„ã‹ã‚‰ã§ã™ã€‚)
 @c COMMON
 @end defspec
 
@@ -2886,16 +2887,16 @@ loaded) which defines a module named @code{foo} in it,
 and then import the module
 @code{foo} into the current module.
 @c JP
-¥â¥¸¥å¡¼¥ë¤Î¥¤¥ó¥İ¡¼¥È¤ÈÉ¬Í×¤Ë±ş¤¸¤Æ¥Õ¥¡¥¤¥ë¤Î¥í¡¼¥É¤ò¹ç¤ï¤»¤Æ¹Ô¤¦¡¢
-ÊØÍø¤Ê¥Ş¥¯¥í¤Ç¤¹¡£´ğËÜÅª¤Ë¡¢@code{(use foo)} ¤Ï°Ê²¼¤Î¤Õ¤¿¤Ä¤Î¥Õ¥©¡¼¥à¤È
-Åù²Á¤Ç¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ã‚¤ãƒ³ãƒãƒ¼ãƒˆã¨å¿…è¦ã«å¿œã˜ã¦ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ­ãƒ¼ãƒ‰ã‚’åˆã‚ã›ã¦è¡Œã†ã€
+ä¾¿åˆ©ãªãƒã‚¯ãƒ­ã§ã™ã€‚åŸºæœ¬çš„ã«ã€@code{(use foo)} ã¯ä»¥ä¸‹ã®ãµãŸã¤ã®ãƒ•ã‚©ãƒ¼ãƒ ã¨
+ç­‰ä¾¡ã§ã™ã€‚
 @example
 (require "foo")
 (import foo)
 @end example
-¤¹¤Ê¤ï¤Á¡¢¤Ş¤ºÌ¾Á°``@code{foo}''¤ò»ı¤Ä¥é¥¤¥Ö¥é¥ê¥Õ¥¡¥¤¥ë¤¬(¤Ş¤À¥í¡¼¥É¤µ¤ì¤Æ
-¤¤¤Ê¤±¤ì¤Ğ)¥í¡¼¥É¤µ¤ì¡¢¤½¤ÎÃæ¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤ë¥â¥¸¥å¡¼¥ë@code{foo}¤ò¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤Ë
-¥¤¥ó¥İ¡¼¥È¤·¤Ş¤¹¡£
+ã™ãªã‚ã¡ã€ã¾ãšåå‰``@code{foo}''ã‚’æŒã¤ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ•ã‚¡ã‚¤ãƒ«ãŒ(ã¾ã ãƒ­ãƒ¼ãƒ‰ã•ã‚Œã¦
+ã„ãªã‘ã‚Œã°)ãƒ­ãƒ¼ãƒ‰ã•ã‚Œã€ãã®ä¸­ã§å®šç¾©ã•ã‚Œã¦ã„ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«@code{foo}ã‚’ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«
+ã‚¤ãƒ³ãƒãƒ¼ãƒˆã—ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -2906,11 +2907,11 @@ Gauche doesn't force you to do so, and you can always use
 modules provided with Gauche are arranged so that they can be
 used by @code{use} macro.
 @c JP
-¥Õ¥¡¥¤¥ë¤Î¥í¡¼¥É¤È¥â¥¸¥å¡¼¥ë¤È¤ÏÄ¾¸ò¤¹¤ë³µÇ°¤Ç¤¹¤¬¡¢
-¼ÂÍÑÅª¤Ë¤Ï¥â¥¸¥å¡¼¥ëËè¤Ë¥Õ¥¡¥¤¥ë¤òÊ¬³ä¤¹¤ë¤Î¤¬ÊØÍø¤Ç¤¹¡£
-É¬¤º¤·¤â¤½¤¦¤¹¤ëÉ¬Í×¤ÏÌµ¤¯¡¢@code{require} ¤È @code{import} ¤òÊÌ¡¹¤Ë
-»È¤Ã¤Æ¤â¹½¤¤¤Ş¤»¤ó¡£¤¬¡¢Gauche¤ËÉíÂ°¤·¤Æ¤¯¤ë¥é¥¤¥Ö¥é¥ê¤Ï¤¹¤Ù¤Æ¡¢
-@code{use} ¥Ş¥¯¥í¤Ç»È¤¨¤ë¤è¤¦¤Ë½ñ¤«¤ì¤Æ¤¤¤Ş¤¹¡£
+ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ­ãƒ¼ãƒ‰ã¨ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¨ã¯ç›´äº¤ã™ã‚‹æ¦‚å¿µã§ã™ãŒã€
+å®Ÿç”¨çš„ã«ã¯ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«æ¯ã«ãƒ•ã‚¡ã‚¤ãƒ«ã‚’åˆ†å‰²ã™ã‚‹ã®ãŒä¾¿åˆ©ã§ã™ã€‚
+å¿…ãšã—ã‚‚ãã†ã™ã‚‹å¿…è¦ã¯ç„¡ãã€@code{require} ã¨ @code{import} ã‚’åˆ¥ã€…ã«
+ä½¿ã£ã¦ã‚‚æ§‹ã„ã¾ã›ã‚“ã€‚ãŒã€Gaucheã«é™„å±ã—ã¦ãã‚‹ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã¯ã™ã¹ã¦ã€
+@code{use} ãƒã‚¯ãƒ­ã§ä½¿ãˆã‚‹ã‚ˆã†ã«æ›¸ã‹ã‚Œã¦ã„ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -2918,9 +2919,9 @@ If a module is too big to fit in one file, you can split them
 into several subfiles and one main file.  The main file defines
 the module, and either loads, requires, or autoloads subfiles.
 @c JP
-¤â¤·¥â¥¸¥å¡¼¥ë¤¬°ì¤Ä¤Î¥Õ¥¡¥¤¥ë¤Ë¼ı¤á¤ë¤Ë¤ÏÂç¤­¤¹¤®¤ë¾ì¹ç¡¢°ì¤Ä¤Î¥á¥¤¥ó¥Õ¥¡¥¤¥ë¤È
-¤¤¤¯¤Ä¤«¤Î¥µ¥Ö¥Õ¥¡¥¤¥ë¤ËÊ¬¤±¤ë¤³¤È¤â½ĞÍè¤Ş¤¹¡£¥á¥¤¥ó¥Õ¥¡¥¤¥ë¤ÎÃæ¤Ç¥â¥¸¥å¡¼¥ë¤ò
-ÄêµÁ¤·¡¢¥µ¥Ö¥Õ¥¡¥¤¥ë¤ò¤Ş¤È¤á¤Æ¥í¡¼¥É¤¹¤ë¤«¡¢¥ª¡¼¥È¥í¡¼¥É¤òÀßÄê¤·¤Ş¤¹¡£
+ã‚‚ã—ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒä¸€ã¤ã®ãƒ•ã‚¡ã‚¤ãƒ«ã«åã‚ã‚‹ã«ã¯å¤§ãã™ãã‚‹å ´åˆã€ä¸€ã¤ã®ãƒ¡ã‚¤ãƒ³ãƒ•ã‚¡ã‚¤ãƒ«ã¨
+ã„ãã¤ã‹ã®ã‚µãƒ–ãƒ•ã‚¡ã‚¤ãƒ«ã«åˆ†ã‘ã‚‹ã“ã¨ã‚‚å‡ºæ¥ã¾ã™ã€‚ãƒ¡ã‚¤ãƒ³ãƒ•ã‚¡ã‚¤ãƒ«ã®ä¸­ã§ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’
+å®šç¾©ã—ã€ã‚µãƒ–ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã¾ã¨ã‚ã¦ãƒ­ãƒ¼ãƒ‰ã™ã‚‹ã‹ã€ã‚ªãƒ¼ãƒˆãƒ­ãƒ¼ãƒ‰ã‚’è¨­å®šã—ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -2936,27 +2937,27 @@ for `@code{/}';  for example,
 This is not very Scheme-ish way, but nevertheless convenient.
 In future, there may be some mechanism to customize this mapping.
 @c JP
-¼Âºİ¤Ï¡¢Í¿¤¨¤é¤ì¤¿¥â¥¸¥å¡¼¥ëÌ¾¤«¤é¥Õ¥¡¥¤¥ë¤Î¥Ñ¥¹Ì¾¤òÆÀ¤ë¤Î¤Ë
-¼êÂ³¤­@code{module-name->path}¤¬»È¤ï¤ì¤Ş¤¹¡£¥Ç¥Õ¥©¥ë¥È¤ÎÊÑ´¹µ¬Â§¤Ï¡¢
-¥â¥¸¥å¡¼¥ëÌ¾@var{name}Ãæ¤Î¥Ô¥ê¥ª¥É`@code{.}'¤ò`@code{/}'¤ËÃÖ´¹
-¤¹¤ë¤È¤¤¤¦¤â¤Î¤Ç¤¹¡£Îã¤¨¤Ğ@code{(use foo.bar.baz)}¤Ï
+å®Ÿéš›ã¯ã€ä¸ãˆã‚‰ã‚ŒãŸãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«åã‹ã‚‰ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ‘ã‚¹åã‚’å¾—ã‚‹ã®ã«
+æ‰‹ç¶šã@code{module-name->path}ãŒä½¿ã‚ã‚Œã¾ã™ã€‚ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®å¤‰æ›è¦å‰‡ã¯ã€
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«å@var{name}ä¸­ã®ãƒ”ãƒªã‚ªãƒ‰`@code{.}'ã‚’`@code{/}'ã«ç½®æ›
+ã™ã‚‹ã¨ã„ã†ã‚‚ã®ã§ã™ã€‚ä¾‹ãˆã°@code{(use foo.bar.baz)}ã¯
 @example
 (require "foo/bar/baz")
 (import foo.bar.baz)
 @end example
-¤È¤Ê¤ê¤Ş¤¹¡£¤³¤ì¤Ï¤¢¤Ş¤êSchemeÉ÷¤Ç¤Ï¤¢¤ê¤Ş¤»¤ó¤¬¡¢ÊØÍø¤Ç¤Ï¤¢¤ê¤Ş¤¹¡£
-¾­Íè¡¢¤³¤Î¥Ş¥Ã¥Ô¥ó¥°¥ë¡¼¥ë¤ò¥«¥¹¥¿¥Ş¥¤¥º¤¹¤ëµ¡¹½¤¬Æ³Æş¤µ¤ì¤ë¤«¤â¤·¤ì¤Ş¤»¤ó¡£
+ã¨ãªã‚Šã¾ã™ã€‚ã“ã‚Œã¯ã‚ã¾ã‚ŠSchemeé¢¨ã§ã¯ã‚ã‚Šã¾ã›ã‚“ãŒã€ä¾¿åˆ©ã§ã¯ã‚ã‚Šã¾ã™ã€‚
+å°†æ¥ã€ã“ã®ãƒãƒƒãƒ”ãƒ³ã‚°ãƒ«ãƒ¼ãƒ«ã‚’ã‚«ã‚¹ã‚¿ãƒã‚¤ã‚ºã™ã‚‹æ©Ÿæ§‹ãŒå°å…¥ã•ã‚Œã‚‹ã‹ã‚‚ã—ã‚Œã¾ã›ã‚“ã€‚
 @c COMMON
 @end defmac
 
 @node Module inheritance, Module introspection, Using modules, Modules
 @subsection Module inheritance
-@c NODE ¥â¥¸¥å¡¼¥ë¤Î·Ñ¾µ
+@c NODE ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ç¶™æ‰¿
 
 @c EN
 The export-import mechanism doesn't work well in some cases, such as:
 @c JP
-export-import¥á¥«¥Ë¥º¥à¤Ï¡¢¼¡¤Î¤è¤¦¤Ê¾ì¹ç¤ò¤¦¤Ş¤¯½èÍı¤Ç¤­¤Ş¤»¤ó¡£
+export-importãƒ¡ã‚«ãƒ‹ã‚ºãƒ ã¯ã€æ¬¡ã®ã‚ˆã†ãªå ´åˆã‚’ã†ã¾ãå‡¦ç†ã§ãã¾ã›ã‚“ã€‚
 @c COMMON
 
 @itemize @bullet
@@ -2964,24 +2965,24 @@ export-import¥á¥«¥Ë¥º¥à¤Ï¡¢¼¡¤Î¤è¤¦¤Ê¾ì¹ç¤ò¤¦¤Ş¤¯½èÍı¤Ç¤­¤Ş¤»¤ó¡£
 @item You want to create a module that is mostly the same as the
 existing one, but adding or altering some definitions.
 @c JP
-@item ´ûÂ¸¤Î¥â¥¸¥å¡¼¥ë¤È¤Û¤ÜÆ±Åù¤Îµ¡Ç½¤ò»ı¤Ä¤¬¡¢¼ã´³ÄêµÁ¤òÂ­¤·¤¿¤êÊÑ¹¹¤·¤¿¤ê
-¤·¤¿¥â¥¸¥å¡¼¥ë¤òºî¤ê¤¿¤¤¡£
+@item æ—¢å­˜ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¨ã»ã¼åŒç­‰ã®æ©Ÿèƒ½ã‚’æŒã¤ãŒã€è‹¥å¹²å®šç¾©ã‚’è¶³ã—ãŸã‚Šå¤‰æ›´ã—ãŸã‚Š
+ã—ãŸãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ä½œã‚ŠãŸã„ã€‚
 @c COMMON
 @c EN
 @item You wrote a bunch of related modules that are often used together,
 and not want your users to repeat a bunch of 'use' forms every time
 they use your module.
 @c JP
-@item Áê¸ß¤Ë´ØÏ¢¤¹¤ë¤¤¤¯¤Ä¤â¤Î¥â¥¸¥å¡¼¥ë¤òºîÀ®¤·¤¿¡£
-¥æ¡¼¥¶¤¬¤³¤ì¤é¤Î¥â¥¸¥å¡¼¥ë¤ò»È¤¦»ş¤ËËè²ó¤¤¤¯¤Ä¤â 'use' ¤òÊÂ¤Ù¤Ê¤¤¤ÇºÑ¤à¤è¤¦¤Ë
-°ì¤Ä¤Ë¤Ş¤È¤á¤¿¤¤¡£
+@item ç›¸äº’ã«é–¢é€£ã™ã‚‹ã„ãã¤ã‚‚ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ä½œæˆã—ãŸã€‚
+ãƒ¦ãƒ¼ã‚¶ãŒã“ã‚Œã‚‰ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ä½¿ã†æ™‚ã«æ¯å›ã„ãã¤ã‚‚ 'use' ã‚’ä¸¦ã¹ãªã„ã§æ¸ˆã‚€ã‚ˆã†ã«
+ä¸€ã¤ã«ã¾ã¨ã‚ãŸã„ã€‚
 @c COMMON
 @end itemize
 
 @c EN
 You can use module inheritance in these cases.
 @c JP
-¤³¤Î¤è¤¦¤Ê¾ì¹ç¤Ë¥â¥¸¥å¡¼¥ë¤Î·Ñ¾µ¤¬»È¤¨¤Ş¤¹¡£
+ã“ã®ã‚ˆã†ãªå ´åˆã«ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ç¶™æ‰¿ãŒä½¿ãˆã¾ã™ã€‚
 @c COMMON
 
 @defmac extend module-name @dots{}
@@ -2990,9 +2991,9 @@ Makes the current module inherit from named modules.
 The current inheritance information is altered by the
 inheritance information calculated from given modules.
 @c JP
-¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤¬¡¢@var{module-name} @dots{}¤Ëµó¤²¤é¤ì¤¿¥â¥¸¥å¡¼¥ë¤ò
-·Ñ¾µ¤¹¤ë¤è¤¦¤Ë¤·¤Ş¤¹¡£¤½¤ì¤Ş¤Ç¤Î·Ñ¾µ¤Î¾ğÊó¤Ï¼Î¤Æ¤é¤ì¡¢@var{module-name} @dots{}
-¤«¤é·×»»¤µ¤ì¤ë·Ñ¾µ¾ğÊó¤¬Í­¸ú¤Ë¤Ê¤ê¤Ş¤¹¡£
+ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒã€@var{module-name} @dots{}ã«æŒ™ã’ã‚‰ã‚ŒãŸãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’
+ç¶™æ‰¿ã™ã‚‹ã‚ˆã†ã«ã—ã¾ã™ã€‚ãã‚Œã¾ã§ã®ç¶™æ‰¿ã®æƒ…å ±ã¯æ¨ã¦ã‚‰ã‚Œã€@var{module-name} @dots{}
+ã‹ã‚‰è¨ˆç®—ã•ã‚Œã‚‹ç¶™æ‰¿æƒ…å ±ãŒæœ‰åŠ¹ã«ãªã‚Šã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -3003,21 +3004,21 @@ that has only bindings defined in R5RS, hence, after the export
 form, you can't use 'import' or any other @code{gauche}-specific
 bindings in the module.
 @c JP
-¿·¤¿¤Ëºî¤é¤ì¤ë¥â¥¸¥å¡¼¥ë¤Ï¥Ç¥Õ¥©¥ë¥È¤Ç@code{gauche}¥â¥¸¥å¡¼¥ë¤ò·Ñ¾µ¤·¤Æ¤¤¤Ş¤¹¡£
-Îã¤¨¤Ğ¤½¤Î¥â¥¸¥å¡¼¥ë¤Ë@code{(extend scheme)}¤È¤¤¤¦¥Õ¥©¡¼¥à¤òÆş¤ì¤¿¾ì¹ç¡¢
-¤½¤Î»şÅÀ¤Ç¤½¤Î¥â¥¸¥å¡¼¥ë¤Ï@code{scheme}¥â¥¸¥å¡¼¥ë(R5RS¤ÇÄêµÁ¤µ¤ì¤¿Â«Çû
-¤Î¤ß¤ò´Ş¤à)¤òÄ¾ÀÜ·Ñ¾µ¤¹¤ë¤è¤¦¤Ë¤Ê¤ê¤Ş¤¹¡£¤·¤¿¤¬¤Ã¤Æ¡¢¤½¤Î¥Õ¥©¡¼¥à¤Î¸å¤Ç
-'import' ¤ä¤½¤ÎÂ¾@code{gauche}ÆÃÍ­¤ÎÂ«Çû¤Ï¤½¤Î¥â¥¸¥å¡¼¥ëÆâ¤Ç¤Ï
-»È¤¨¤Ê¤¯¤Ê¤ê¤Ş¤¹¡£
+æ–°ãŸã«ä½œã‚‰ã‚Œã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§@code{gauche}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ç¶™æ‰¿ã—ã¦ã„ã¾ã™ã€‚
+ä¾‹ãˆã°ãã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«@code{(extend scheme)}ã¨ã„ã†ãƒ•ã‚©ãƒ¼ãƒ ã‚’å…¥ã‚ŒãŸå ´åˆã€
+ãã®æ™‚ç‚¹ã§ãã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯@code{scheme}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«(R5RSã§å®šç¾©ã•ã‚ŒãŸæŸç¸›
+ã®ã¿ã‚’å«ã‚€)ã‚’ç›´æ¥ç¶™æ‰¿ã™ã‚‹ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚ã—ãŸãŒã£ã¦ã€ãã®ãƒ•ã‚©ãƒ¼ãƒ ã®å¾Œã§
+'import' ã‚„ãã®ä»–@code{gauche}ç‰¹æœ‰ã®æŸç¸›ã¯ãã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«å†…ã§ã¯
+ä½¿ãˆãªããªã‚Šã¾ã™ã€‚
 @c COMMON
 
 @c EN
 If a named module is not defined yet, @code{extend}
 tries to load it, using the same convention @code{use} macro does.
 @c JP
-@var{module-name}¤Ëµó¤²¤é¤ì¤¿¥â¥¸¥å¡¼¥ë¤¬¤Ş¤ÀÂ¸ºß¤·¤Ê¤«¤Ã¤¿¾ì¹ç¡¢
-@code{extend}¤Ï@code{use}¤ÈÆ±¤¸¥á¥«¥Ë¥º¥à¤ò»È¤Ã¤Æ¥Õ¥¡¥¤¥ë¤ò¥í¡¼¥É¤¹¤ë¤³¤È¤ò
-»î¤ß¤Ş¤¹¡£
+@var{module-name}ã«æŒ™ã’ã‚‰ã‚ŒãŸãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒã¾ã å­˜åœ¨ã—ãªã‹ã£ãŸå ´åˆã€
+@code{extend}ã¯@code{use}ã¨åŒã˜ãƒ¡ã‚«ãƒ‹ã‚ºãƒ ã‚’ä½¿ã£ã¦ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ãƒ­ãƒ¼ãƒ‰ã™ã‚‹ã“ã¨ã‚’
+è©¦ã¿ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -3025,9 +3026,9 @@ A module can inherit multiple modules, exactly the same way as
 a class can inherit from multiple classes.  The resolution of
 order of inheritance needs to be explained a bit.
 @c JP
-¥â¥¸¥å¡¼¥ë¤ÏÊ£¿ô¤Î¥â¥¸¥å¡¼¥ë¤ò·Ñ¾µ¤¹¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£
-ÃúÅÙ¡¢¥¯¥é¥¹¤¬Ê£¿ô¤Î¥¯¥é¥¹¤ò·Ñ¾µ¤Ç¤­¤ë¤Î¤ÈÆ±¤¸¤è¤¦¤Ë¤Ç¤¹¡£
-Â¿½Å·Ñ¾µ¤Î¾ì¹ç¡¢¼¡¤Î¤è¤¦¤Ë¤·¤Æ¥â¥¸¥å¡¼¥ë´Ö¤ÎÍ¥Àè½ç°Ì¤¬·è¤á¤é¤ì¤Ş¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯è¤‡æ•°ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ç¶™æ‰¿ã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚
+ä¸åº¦ã€ã‚¯ãƒ©ã‚¹ãŒè¤‡æ•°ã®ã‚¯ãƒ©ã‚¹ã‚’ç¶™æ‰¿ã§ãã‚‹ã®ã¨åŒã˜ã‚ˆã†ã«ã§ã™ã€‚
+å¤šé‡ç¶™æ‰¿ã®å ´åˆã€æ¬¡ã®ã‚ˆã†ã«ã—ã¦ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«é–“ã®å„ªå…ˆé †ä½ãŒæ±ºã‚ã‚‰ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -3042,16 +3043,16 @@ in @code{extend} form, A has to appear before B in the resulting
 module precedence list.   If no precedence list can be constructed
 with these constraints, an error is signalled.
 @c JP
-³Æ¥â¥¸¥å¡¼¥ë¤Ï@emph{module precedence list}¤È¤¤¤¦¥â¥¸¥å¡¼¥ë¤Î¥ê¥¹¥È¤ò
-»ı¤Ã¤Æ¤¤¤Ş¤¹¡£¤½¤³¤Ë¥ê¥¹¥È¤µ¤ì¤¿½ç¤ËÂ«Çû¤¬Ãµ¤µ¤ì¤Ş¤¹¡£
-¥â¥¸¥å¡¼¥ë¤¬Ê£¿ô¤Î¥â¥¸¥å¡¼¥ë¤òÂ¿½Å·Ñ¾µ¤·¤¿¾ì¹ç¡¢·Ñ¾µ¤µ¤ì¤ë³Æ¥â¥¸¥å¡¼¥ë¤Î
-module precedence list¤ò¡¢¼¡¤Ëµó¤²¤ëÀ©Ìó¤òËş¤¿¤¹¤è¤¦¤Ë¥Ş¡¼¥¸
-¤·¤¿¤â¤Î¤¬¿·¤¿¤Êmodule precedence list¤È¤Ê¤ê¤Ş¤¹¡§
-(1) ¤¢¤ëmodule precedence list¤Ç¥â¥¸¥å¡¼¥ëA¤¬¥â¥¸¥å¡¼¥ëB¤è¤êÁ°¤Ë¸½¤ì¤Æ¤¤¤¿¤é¡¢
-·ë²Ì¤Îmodule precedence list¤Ç¤âA¤ÏB¤è¤êÁ°¤Ë¸½¤ì¤ë¡§
-(2) ¥â¥¸¥å¡¼¥ëA¤¬¥â¥¸¥å¡¼¥ëB¤è¤ê@code{extend}¥Õ¥©¡¼¥à¤ÇÁ°¤Ë¸½¤ì¤Æ¤¤¤¿¤é¡¢
-·ë²Ì¤Îmodule precedence list¤Ç¤âA¤ÏB¤è¤êÁ°¤Ë¸½¤ì¤ë¡£
-¤³¤Î¾ò·ï¤òËş¤¿¤¹¤è¤¦¤Êmodule precedence list¤¬¹½À®¤Ç¤­¤Ê¤¤¾ì¹ç¤Ï¥¨¥é¡¼¤È¤Ê¤ê¤Ş¤¹¡£
+å„ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯@emph{module precedence list}ã¨ã„ã†ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ãƒªã‚¹ãƒˆã‚’
+æŒã£ã¦ã„ã¾ã™ã€‚ãã“ã«ãƒªã‚¹ãƒˆã•ã‚ŒãŸé †ã«æŸç¸›ãŒæ¢ã•ã‚Œã¾ã™ã€‚
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒè¤‡æ•°ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’å¤šé‡ç¶™æ‰¿ã—ãŸå ´åˆã€ç¶™æ‰¿ã•ã‚Œã‚‹å„ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®
+module precedence listã‚’ã€æ¬¡ã«æŒ™ã’ã‚‹åˆ¶ç´„ã‚’æº€ãŸã™ã‚ˆã†ã«ãƒãƒ¼ã‚¸
+ã—ãŸã‚‚ã®ãŒæ–°ãŸãªmodule precedence listã¨ãªã‚Šã¾ã™ï¼š
+(1) ã‚ã‚‹module precedence listã§ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«AãŒãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«Bã‚ˆã‚Šå‰ã«ç¾ã‚Œã¦ã„ãŸã‚‰ã€
+çµæœã®module precedence listã§ã‚‚Aã¯Bã‚ˆã‚Šå‰ã«ç¾ã‚Œã‚‹ï¼š
+(2) ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«AãŒãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«Bã‚ˆã‚Š@code{extend}ãƒ•ã‚©ãƒ¼ãƒ ã§å‰ã«ç¾ã‚Œã¦ã„ãŸã‚‰ã€
+çµæœã®module precedence listã§ã‚‚Aã¯Bã‚ˆã‚Šå‰ã«ç¾ã‚Œã‚‹ã€‚
+ã“ã®æ¡ä»¶ã‚’æº€ãŸã™ã‚ˆã†ãªmodule precedence listãŒæ§‹æˆã§ããªã„å ´åˆã¯ã‚¨ãƒ©ãƒ¼ã¨ãªã‚Šã¾ã™ã€‚
 @c COMMON
 @end defmac
 
@@ -3061,10 +3062,10 @@ For example, suppose you wrote a library in modules
 You can bundle those modules into one module by creating
 a module @code{mylib}, as follows:
 @c JP
-Îã¤¨¤Ğ¤¢¤Ê¤¿¤¬¥é¥¤¥Ö¥é¥ê¤ò3¤Ä¤Î¥â¥¸¥å¡¼¥ë¡¢
-@code{mylib.base}¡¢@code{mylib.util}¡¢@code{mylib.system}¤ËÊ¬¤±¤Æ
-½ñ¤¤¤¿¤È¤·¤Ş¤·¤ç¤¦¡£¼¡¤Î¤è¤¦¤Ë½ñ¤±¤Ğ¡¢¤³¤ì¤é¤Î¥â¥¸¥å¡¼¥ë¤ò
-°ì¤Ä¤Î@code{mylib}¥â¥¸¥å¡¼¥ë¤Ë¸«¤»¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£
+ä¾‹ãˆã°ã‚ãªãŸãŒãƒ©ã‚¤ãƒ–ãƒ©ãƒªã‚’3ã¤ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã€
+@code{mylib.base}ã€@code{mylib.util}ã€@code{mylib.system}ã«åˆ†ã‘ã¦
+æ›¸ã„ãŸã¨ã—ã¾ã—ã‚‡ã†ã€‚æ¬¡ã®ã‚ˆã†ã«æ›¸ã‘ã°ã€ã“ã‚Œã‚‰ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’
+ä¸€ã¤ã®@code{mylib}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«è¦‹ã›ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚
 @c COMMON
 
 @example
@@ -3076,13 +3077,13 @@ a module @code{mylib}, as follows:
 The user of your module just says @code{(use mylib)} and
 all exported symbols from three submodules become available.
 @c JP
-¤³¤Î¥é¥¤¥Ö¥é¥ê¥â¥¸¥å¡¼¥ë¤Î¥æ¡¼¥¶¤Ï @code{(use mylib)} ¤È¤¹¤ë¤À¤±¤Ç
-Á´¤Æ¤Î¥µ¥Ö¥â¥¸¥å¡¼¥ë¤Îexport¤µ¤ì¤¿Â«Çû¤òÍøÍÑ¤¹¤ë¤³¤È¤¬¤Ç¤­¤ë¤è¤¦¤Ë¤Ê¤ê¤Ş¤¹¡£
+ã“ã®ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ãƒ¦ãƒ¼ã‚¶ã¯ @code{(use mylib)} ã¨ã™ã‚‹ã ã‘ã§
+å…¨ã¦ã®ã‚µãƒ–ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®exportã•ã‚ŒãŸæŸç¸›ã‚’åˆ©ç”¨ã™ã‚‹ã“ã¨ãŒã§ãã‚‹ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚
 @c COMMON
 
 @node Module introspection, Predefined modules, Module inheritance, Modules
 @subsection Module introspection
-@c NODE ¥â¥¸¥å¡¼¥ë¥¤¥ó¥È¥í¥¹¥Ú¥¯¥·¥ç¥ó
+@c NODE ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚¤ãƒ³ãƒˆãƒ­ã‚¹ãƒšã‚¯ã‚·ãƒ§ãƒ³
 
 @c EN
 This subsection lists procedures that operates on modules at run-time.
@@ -3092,12 +3093,12 @@ example.  However, don't forget that modules are primarily
 compile-time structures.  Tweaking modules at run-time is only
 for those who know what they are doing.
 @c JP
-¤³¤ÎÀá¤Ç¤Ï¡¢¼Â¹Ô»ş¤Ë¥â¥¸¥å¡¼¥ë¤òÁàºî¤¹¤ë¼êÂ³¤­¤ò¥ê¥¹¥È¤·¤Ş¤¹¡£
-¤³¤ì¤é¤Î¼êÂ³¤­¤Ë¤è¤ê¡¢Îã¤¨¤Ğ¥â¥¸¥å¡¼¥ë¤ÎÆâÉô¤òÄ´¤Ù¤¿¤ê¡¢¼êÂ³¤­Åª¤Ë
-¿·¤·¤¤¥â¥¸¥å¡¼¥ë¤òºîÀ®¤·¤¿¤ê¡¢ÆÃÄê¤Î¥â¥¸¥å¡¼¥ë¤ä¥é¥¤¥Ö¥é¥ê¤ÎÂ¸ºß¤ò
-Ä´¤Ù¤¿¤ê¤¹¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£¤¿¤À¤·¡¢¥â¥¸¥å¡¼¥ë¤ÏÂè°ì¤Ë¥³¥ó¥Ñ¥¤¥ë»ş¤Î
-¹½Â¤¤Ç¤¢¤ë¤³¤È¤òËº¤ì¤Ê¤¤¤Ç¤¯¤À¤µ¤¤¡£¼Â¹Ô»ş¤Ë¥â¥¸¥å¡¼¥ë¤ò¤¤¤¸¤¯¤ë¤Î¤Ï¡¢
-½½Ê¬¤Ë¥â¥¸¥å¡¼¥ë¤Î¹½Â¤¤òÍı²ò¤·¤¿¾å¤Ç¹Ô¤Ã¤Æ¤¯¤À¤µ¤¤¡£
+ã“ã®ç¯€ã§ã¯ã€å®Ÿè¡Œæ™‚ã«ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’æ“ä½œã™ã‚‹æ‰‹ç¶šãã‚’ãƒªã‚¹ãƒˆã—ã¾ã™ã€‚
+ã“ã‚Œã‚‰ã®æ‰‹ç¶šãã«ã‚ˆã‚Šã€ä¾‹ãˆã°ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®å†…éƒ¨ã‚’èª¿ã¹ãŸã‚Šã€æ‰‹ç¶šãçš„ã«
+æ–°ã—ã„ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ä½œæˆã—ãŸã‚Šã€ç‰¹å®šã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚„ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®å­˜åœ¨ã‚’
+èª¿ã¹ãŸã‚Šã™ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚ãŸã ã—ã€ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ç¬¬ä¸€ã«ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«æ™‚ã®
+æ§‹é€ ã§ã‚ã‚‹ã“ã¨ã‚’å¿˜ã‚Œãªã„ã§ãã ã•ã„ã€‚å®Ÿè¡Œæ™‚ã«ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ã„ã˜ãã‚‹ã®ã¯ã€
+ååˆ†ã«ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®æ§‹é€ ã‚’ç†è§£ã—ãŸä¸Šã§è¡Œã£ã¦ãã ã•ã„ã€‚
 @c COMMON
 
 @deftp {Builtin Class} <module>
@@ -3105,7 +3106,7 @@ for those who know what they are doing.
 @c EN
 A module class.
 @c JP
-¥â¥¸¥å¡¼¥ë¥¯¥é¥¹¤Ç¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚¯ãƒ©ã‚¹ã§ã™ã€‚
 @c COMMON
 @end deftp
 
@@ -3113,7 +3114,7 @@ A module class.
 @c EN
 Returns true if @var{obj} is a module.
 @c JP
-@var{obj}¤¬¥â¥¸¥å¡¼¥ë¤Ê¤é¿¿¤ÎÃÍ¤òÊÖ¤·¤Ş¤¹¡£
+@var{obj}ãŒãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãªã‚‰çœŸã®å€¤ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 @end defun
 
@@ -3122,8 +3123,8 @@ Returns true if @var{obj} is a module.
 Returns a module object whose name is a symbol @var{name}.
 If the named module doesn't exist, @code{#f} is returned.
 @c JP
-Ì¾Á°¤¬¥·¥ó¥Ü¥ë@var{name}¤Ç¤¢¤ë¤è¤¦¤Ê¥â¥¸¥å¡¼¥ë¤òÊÖ¤·¤Ş¤¹¡£
-¤½¤ÎÌ¾Á°¤ò¤â¤Ä¥â¥¸¥å¡¼¥ë¤¬Â¸ºß¤·¤Ê¤±¤ì¤Ğ¡¢@code{#f}¤òÊÖ¤·¤Ş¤¹¡£
+åå‰ãŒã‚·ãƒ³ãƒœãƒ«@var{name}ã§ã‚ã‚‹ã‚ˆã†ãªãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’è¿”ã—ã¾ã™ã€‚
+ãã®åå‰ã‚’ã‚‚ã¤ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒå­˜åœ¨ã—ãªã‘ã‚Œã°ã€@code{#f}ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 @end defun
 
@@ -3134,11 +3135,11 @@ If the named module already exists, the behavior is specified by
 @var{if-exists} keyword argument.  If it is @code{:error} (default),
 an error is signalled.  If it is @code{#f}, @code{#f} is returned.
 @c JP
-¥·¥ó¥Ü¥ë¤ÎÌ¾Á°@var{name}¤ò»ı¤Ä¥â¥¸¥å¡¼¥ë¤òºîÀ®¤·¤ÆÊÖ¤·¤Ş¤¹¡£
-¤½¤ÎÌ¾Á°¤ò»ı¤Ä¥â¥¸¥å¡¼¥ë¤¬´û¤ËÂ¸ºß¤·¤Æ¤¤¤¿¾ì¹ç¡¢¤½¤ÎÆ°ºî¤Ï
-@var{if-exists}¥­¡¼¥ï¡¼¥É°ú¿ô¤Ç»ØÄê¤µ¤ì¤Ş¤¹¡£
-@var{if-exists}°ú¿ô¤¬@code{:error}¤Ç¤¢¤ë¾ì¹ç¡Ê¥Ç¥Õ¥©¥ë¥È¡Ë¡¢
-¥¨¥é¡¼¤¬Êó¹ğ¤µ¤ì¤Ş¤¹¡£¤½¤ì¤¬@code{#f}¤Ç¤¢¤ë¾ì¹ç¤ÏÃ±¤Ë@code{#f}¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£
+ã‚·ãƒ³ãƒœãƒ«ã®åå‰@var{name}ã‚’æŒã¤ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ä½œæˆã—ã¦è¿”ã—ã¾ã™ã€‚
+ãã®åå‰ã‚’æŒã¤ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒæ—¢ã«å­˜åœ¨ã—ã¦ã„ãŸå ´åˆã€ãã®å‹•ä½œã¯
+@var{if-exists}ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°ã§æŒ‡å®šã•ã‚Œã¾ã™ã€‚
+@var{if-exists}å¼•æ•°ãŒ@code{:error}ã§ã‚ã‚‹å ´åˆï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆï¼‰ã€
+ã‚¨ãƒ©ãƒ¼ãŒå ±å‘Šã•ã‚Œã¾ã™ã€‚ãã‚ŒãŒ@code{#f}ã§ã‚ã‚‹å ´åˆã¯å˜ã«@code{#f}ãŒè¿”ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -3153,16 +3154,16 @@ You can pass a module to @code{eval} to compile and
 evaluate such dynamically created
 programs in it (@xref{Eval and repl}).
 @c JP
-¥â¥¸¥å¡¼¥ë¤ò¼Â¹Ô»ş¤ËÆ°Åª¤ËÀ¸À®¤¹¤ë¤³¤È¤Ï¡¢ÄÌ¾ï¤Î¥¹¥¯¥ê¥×¥È¤Ç¤Ï
-¤¢¤Ş¤êÉ¬Í×¤È¤Ï¤µ¤ì¤Ş¤»¤ó¡£´û¤Ë½ñ¤«¤ì¤¿¥×¥í¥°¥é¥à¤Î²ò¼á¤Ë¤ª¤¤¤Æ¤Ï¡¢
-¥â¥¸¥å¡¼¥ë¤ÏÌ¾Á°¤Ç»ØÄê¤µ¤ì¤Æ¤¤¤ëÉ¬Í×¤¬¤¢¤ë¤«¤é¤Ç¤¹¡£
-¹½Ê¸@code{define-module}¡¢@code{import}¡¢@code{extend}¡¢@code{with-module}
-Åù¤Ï¥â¥¸¥å¡¼¥ë¤½¤Î¤â¤Î¤Ç¤Ï¤Ê¤¯¥â¥¸¥å¡¼¥ëÌ¾¤ò¼è¤ê¤Ş¤¹¡£
-¤³¤ì¤Ï¡¢¥â¥¸¥å¡¼¥ë¤¬ËÜ¼ÁÅª¤Ë¥³¥ó¥Ñ¥¤¥ë»ş¤Î¹½Â¤¤Ç¤¢¤ë¤¿¤á¤Ç¤¹¡£
-¤·¤«¤·¡¢Æ°Åª¤Ëºî¤é¤ì¤ë¥â¥¸¥å¡¼¥ë¤¬Í­ÍÑ¤Ê¾ì¹ç¤â¤¢¤ê¤Ş¤¹---¥×¥í¥°¥é¥à¤½¤Î¤â¤Î¤¬¡¢
-Æ°Åª¤Ëºî¤é¤ì¤ë¾ì¹ç¤Ç¤¹¡£@code{eval}¤Ë¥â¥¸¥å¡¼¥ë¤òÅÏ¤·¤Æ¡¢
-¤½¤Î¤è¤¦¤ÊÆ°Åª¤Ëºî¤é¤ì¤¿¥×¥í¥°¥é¥à¤¬¤½¤Î¥â¥¸¥å¡¼¥ë¤ÎÃæ¤Ç
-¥³¥ó¥Ñ¥¤¥ë¤µ¤ìÉ¾²Á¤µ¤ì¤ë¤è¤¦¤Ë¤Ç¤­¤Ş¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’å®Ÿè¡Œæ™‚ã«å‹•çš„ã«ç”Ÿæˆã™ã‚‹ã“ã¨ã¯ã€é€šå¸¸ã®ã‚¹ã‚¯ãƒªãƒ—ãƒˆã§ã¯
+ã‚ã¾ã‚Šå¿…è¦ã¨ã¯ã•ã‚Œã¾ã›ã‚“ã€‚æ—¢ã«æ›¸ã‹ã‚ŒãŸãƒ—ãƒ­ã‚°ãƒ©ãƒ ã®è§£é‡ˆã«ãŠã„ã¦ã¯ã€
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯åå‰ã§æŒ‡å®šã•ã‚Œã¦ã„ã‚‹å¿…è¦ãŒã‚ã‚‹ã‹ã‚‰ã§ã™ã€‚
+æ§‹æ–‡@code{define-module}ã€@code{import}ã€@code{extend}ã€@code{with-module}
+ç­‰ã¯ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãã®ã‚‚ã®ã§ã¯ãªããƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«åã‚’å–ã‚Šã¾ã™ã€‚
+ã“ã‚Œã¯ã€ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒæœ¬è³ªçš„ã«ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«æ™‚ã®æ§‹é€ ã§ã‚ã‚‹ãŸã‚ã§ã™ã€‚
+ã—ã‹ã—ã€å‹•çš„ã«ä½œã‚‰ã‚Œã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒæœ‰ç”¨ãªå ´åˆã‚‚ã‚ã‚Šã¾ã™---ãƒ—ãƒ­ã‚°ãƒ©ãƒ ãã®ã‚‚ã®ãŒã€
+å‹•çš„ã«ä½œã‚‰ã‚Œã‚‹å ´åˆã§ã™ã€‚@code{eval}ã«ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’æ¸¡ã—ã¦ã€
+ãã®ã‚ˆã†ãªå‹•çš„ã«ä½œã‚‰ã‚ŒãŸãƒ—ãƒ­ã‚°ãƒ©ãƒ ãŒãã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ä¸­ã§
+ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã•ã‚Œè©•ä¾¡ã•ã‚Œã‚‹ã‚ˆã†ã«ã§ãã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -3178,15 +3179,15 @@ discards the module when the connection is terminated.
 Anonymous modules are not registered in the system dictionary
 and are garbage collected when nobody keeps reference to it.
 @c JP
-¤Ş¤¿¡¢@var{name}¤Ë@code{#f}¤òÅÏ¤¹¤³¤È¤ÇÌµÌ¾¤Î¥â¥¸¥å¡¼¥ë¤òºî¤ë¤³¤È¤â¤Ç¤­¤Ş¤¹¡£
-ÌµÌ¾¤Î¥â¥¸¥å¡¼¥ë¤Ï@code{find-module}¤ÇÃµ¤¹¤³¤È¤Ï¤Ç¤­¤Ş¤»¤ó¤·¡¢
-Â¾¤Î¥â¥¸¥å¡¼¥ë¤«¤é@code{import}¤¹¤ë¤³¤È¤â@code{extend}¤µ¤ì¤ë¤³¤È¤â
-¤Ç¤­¤Ş¤»¤ó¡Ê@code{import}¤ä@code{extend}¤Ï¥â¥¸¥å¡¼¥ëÌ¾¤òÉ¬Í×¤È¤¹¤ë¤«¤é¤Ç¤¹¡Ë¡£
-ÌµÌ¾¤Î¥â¥¸¥å¡¼¥ë¤Ï¡¢°ì»şÅª¤Ë³ÖÎ¥¤µ¤ì¤¿Ì¾Á°¶õ´Ö¤òÆ°Åª¤Ëºî¤ê¤¿¤¤»ş¤Ë
-ÊØÍø¤Ç¤¹¡£Îã¤¨¤Ğ¥Í¥Ã¥È¥ï¡¼¥¯¤ÇÀÜÂ³¤µ¤ì¤¿¥×¥í¥°¥é¥à¤«¤éÁ÷¤é¤ì¤¿¼°¤ò
-¤½¤ÎÃæ¤ÇÉ¾²Á¤·¤Æ¡¢¥³¥Í¥¯¥·¥ç¥ó¤¬½ªÎ»¤·¤¿¤éÌ¾Á°¶õ´Ö¤´¤È¼Î¤Æ¤Æ¤·¤Ş¤¦¤È¤¤¤¦
-¤è¤¦¤Ê¾ì¹ç¤Ç¤¹¡£ÌµÌ¾¤Î¥â¥¸¥å¡¼¥ë¤Ï¥·¥¹¥Æ¥à¤ÎÆâÉô¼­½ñ¤ËÅĞÏ¿¤µ¤ì¤Ê¤¤¤Î¤Ç¡¢
-¥â¥¸¥å¡¼¥ë¤Ø¤Î»²¾È¤¬Ìµ¤¯¤Ê¤ì¤Ğ¥¬¥Ù¡¼¥¸¥³¥ì¥¯¥È¤µ¤ì¤Ş¤¹¡£
+ã¾ãŸã€@var{name}ã«@code{#f}ã‚’æ¸¡ã™ã“ã¨ã§ç„¡åã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ä½œã‚‹ã“ã¨ã‚‚ã§ãã¾ã™ã€‚
+ç„¡åã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯@code{find-module}ã§æ¢ã™ã“ã¨ã¯ã§ãã¾ã›ã‚“ã—ã€
+ä»–ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‹ã‚‰@code{import}ã™ã‚‹ã“ã¨ã‚‚@code{extend}ã•ã‚Œã‚‹ã“ã¨ã‚‚
+ã§ãã¾ã›ã‚“ï¼ˆ@code{import}ã‚„@code{extend}ã¯ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«åã‚’å¿…è¦ã¨ã™ã‚‹ã‹ã‚‰ã§ã™ï¼‰ã€‚
+ç„¡åã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ã€ä¸€æ™‚çš„ã«éš”é›¢ã•ã‚ŒãŸåå‰ç©ºé–“ã‚’å‹•çš„ã«ä½œã‚ŠãŸã„æ™‚ã«
+ä¾¿åˆ©ã§ã™ã€‚ä¾‹ãˆã°ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã§æ¥ç¶šã•ã‚ŒãŸãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‹ã‚‰é€ã‚‰ã‚ŒãŸå¼ã‚’
+ãã®ä¸­ã§è©•ä¾¡ã—ã¦ã€ã‚³ãƒã‚¯ã‚·ãƒ§ãƒ³ãŒçµ‚äº†ã—ãŸã‚‰åå‰ç©ºé–“ã”ã¨æ¨ã¦ã¦ã—ã¾ã†ã¨ã„ã†
+ã‚ˆã†ãªå ´åˆã§ã™ã€‚ç„¡åã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ã‚·ã‚¹ãƒ†ãƒ ã®å†…éƒ¨è¾æ›¸ã«ç™»éŒ²ã•ã‚Œãªã„ã®ã§ã€
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¸ã®å‚ç…§ãŒç„¡ããªã‚Œã°ã‚¬ãƒ™ãƒ¼ã‚¸ã‚³ãƒ¬ã‚¯ãƒˆã•ã‚Œã¾ã™ã€‚
 @c COMMON
 @end defun
 
@@ -3195,8 +3196,8 @@ and are garbage collected when nobody keeps reference to it.
 Returns a list of all named modules.
 Anonymous modules are not included.
 @c JP
-¸½ºßÂ¸ºß¤¹¤ëÁ´¤Æ¤ÎÌ¾Á°ÉÕ¤­¥â¥¸¥å¡¼¥ë¤Î¥ê¥¹¥È¤òÊÖ¤·¤Ş¤¹¡£
-ÌµÌ¾¤Î¥â¥¸¥å¡¼¥ë¤Ï´Ş¤Ş¤ì¤Ş¤»¤ó¡£
+ç¾åœ¨å­˜åœ¨ã™ã‚‹å…¨ã¦ã®åå‰ä»˜ããƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ãƒªã‚¹ãƒˆã‚’è¿”ã—ã¾ã™ã€‚
+ç„¡åã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯å«ã¾ã‚Œã¾ã›ã‚“ã€‚
 @c COMMON
 @end defun
 
@@ -3210,24 +3211,24 @@ list of imported modules, list of exported symbols, and a hash table
 that maps symbols to bindings, of the @var{module} are returned,
 respectively.
 @c JP
-¥â¥¸¥å¡¼¥ë¥ª¥Ö¥¸¥§¥¯¥È¤Î¥¢¥¯¥»¥¹¥á¥½¥Ã¥É¤Ç¤¹¡£
-@var{module}¤ÎÌ¾Á°(¥·¥ó¥Ü¥ë)¡¢@var{module}¤¬¥¤¥ó¥İ¡¼¥È¤·¤Æ¤¤¤ë¥â¥¸¥å¡¼¥ë¤Î¥ê¥¹¥È¡¢
-¥¨¥¯¥¹¥İ¡¼¥È¤·¤Æ¤¤¤ë¥·¥ó¥Ü¥ë¤Î¥ê¥¹¥È¡¢¤½¤·¤Æ
-¥·¥ó¥Ü¥ë¤«¤éÂ«Çû¤Ø¤Î¥Ş¥Ã¥×¤ò¹Ô¤¦¥Ï¥Ã¥·¥å¥Æ¡¼¥Ö¥ë¤òÊÖ¤·¤Ş¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ã‚¢ã‚¯ã‚»ã‚¹ãƒ¡ã‚½ãƒƒãƒ‰ã§ã™ã€‚
+@var{module}ã®åå‰(ã‚·ãƒ³ãƒœãƒ«)ã€@var{module}ãŒã‚¤ãƒ³ãƒãƒ¼ãƒˆã—ã¦ã„ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ãƒªã‚¹ãƒˆã€
+ã‚¨ã‚¯ã‚¹ãƒãƒ¼ãƒˆã—ã¦ã„ã‚‹ã‚·ãƒ³ãƒœãƒ«ã®ãƒªã‚¹ãƒˆã€ãã—ã¦
+ã‚·ãƒ³ãƒœãƒ«ã‹ã‚‰æŸç¸›ã¸ã®ãƒãƒƒãƒ—ã‚’è¡Œã†ãƒãƒƒã‚·ãƒ¥ãƒ†ãƒ¼ãƒ–ãƒ«ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 
 @c EN
 If the @var{module} exports all symbols, @code{module-exports} returns
 @code{#t}.
 @c JP
-¤â¤·@var{module}¤¬Á´¤Æ¤Î¥·¥ó¥Ü¥ë¤ò¥¨¥¯¥¹¥İ¡¼¥È¤·¤Æ¤¤¤ë¾ì¹ç¤Ï¡¢@code{module-exports}
-¤Ï@code{#t}¤òÊÖ¤·¤Ş¤¹¡£
+ã‚‚ã—@var{module}ãŒå…¨ã¦ã®ã‚·ãƒ³ãƒœãƒ«ã‚’ã‚¨ã‚¯ã‚¹ãƒãƒ¼ãƒˆã—ã¦ã„ã‚‹å ´åˆã¯ã€@code{module-exports}
+ã¯@code{#t}ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 
 @c EN
 It is an error to pass a non-module object.
 @c JP
-¥â¥¸¥å¡¼¥ë¥ª¥Ö¥¸¥§¥¯¥È°Ê³°¤¬ÅÏ¤µ¤ì¤¿¾ì¹ç¤Ï¥¨¥é¡¼¤Ë¤Ê¤ê¤Ş¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆä»¥å¤–ãŒæ¸¡ã•ã‚ŒãŸå ´åˆã¯ã‚¨ãƒ©ãƒ¼ã«ãªã‚Šã¾ã™ã€‚
 @c COMMON
 @end defun
 
@@ -3239,10 +3240,10 @@ Returns the information of module inheritance.
 from.  @code{Module-precedence-list} returns the module precedence
 list of @var{module} (@xref{Module inheritance}).
 @c JP
-¥â¥¸¥å¡¼¥ë¤Î·Ñ¾µ¤Ë´Ø¤¹¤ë¾ğÊó¤òÊÖ¤·¤Ş¤¹¡£
-@code{module-parents}¤Ï@var{module}¤¬Ä¾ÀÜ·Ñ¾µ¤·¤Æ¤¤¤ë¥â¥¸¥å¡¼¥ë¤Î¥ê¥¹¥È¤ò
-ÊÖ¤·¤Ş¤¹¡£@code{module-precedence-list}¤Ï@var{module}¤Îmodule precedence
-list (@ref{Module inheritance}»²¾È) ¤òÊÖ¤·¤Ş¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ç¶™æ‰¿ã«é–¢ã™ã‚‹æƒ…å ±ã‚’è¿”ã—ã¾ã™ã€‚
+@code{module-parents}ã¯@var{module}ãŒç›´æ¥ç¶™æ‰¿ã—ã¦ã„ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®ãƒªã‚¹ãƒˆã‚’
+è¿”ã—ã¾ã™ã€‚@code{module-precedence-list}ã¯@var{module}ã®module precedence
+list (@ref{Module inheritance}å‚ç…§) ã‚’è¿”ã—ã¾ã™ã€‚
 @c COMMON
 @end defun
 
@@ -3263,20 +3264,20 @@ of confusion when the current module differs between
 compile-time and runtime.  The new name and API made it clear
 that you are querying module's property.
 @c JP
-@var{symbol}¤Î¥°¥í¡¼¥Ğ¥ë¤Ê¥Ğ¥¤¥ó¥Ç¥£¥ó¥°¤¬@var{module}¤«¤é
-²Ä»ë¤Ç¤¢¤ì¤Ğ¡¢¿¿¤òÊÖ¤·¤Ş¤¹¡£@var{module}¤Ï¥â¥¸¥å¡¼¥ë¥ª¥Ö¥¸¥§¥¯¥È¤«
-´ûÂ¸¤Î¥â¥¸¥å¡¼¥ëÌ¾¤ò¼¨¤¹¥·¥ó¥Ü¥ë¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
+@var{symbol}ã®ã‚°ãƒ­ãƒ¼ãƒãƒ«ãªãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ãŒ@var{module}ã‹ã‚‰
+å¯è¦–ã§ã‚ã‚Œã°ã€çœŸã‚’è¿”ã—ã¾ã™ã€‚@var{module}ã¯ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‹
+æ—¢å­˜ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«åã‚’ç¤ºã™ã‚·ãƒ³ãƒœãƒ«ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚
 
-Ãğ: °ÊÁ°¡¢¤³¤Î¼êÂ³¤­¤Îµ¡Ç½¤Ï@code{symbol-bound?}¤È¤¤¤¦¼êÂ³¤­¤Ç
-¼Â¸½¤µ¤ì¤Æ¤¤¤Ş¤·¤¿¡£@code{symbol-bound?}¤ÏÈó¿ä¾©¤È¤Ê¤ê¡¢¿·¤·¤¤¥³¡¼¥É¤Ï
-@code{global-variable-bound?}¤ò»È¤ï¤Í¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
-¤³¤ÎÊÑ¹¹¤ÎÍıÍ³¤Ï¡¢@code{symbol-bound?}¤¬¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤ò¥Ç¥Õ¥©¥ë¥È¤È
-¤·¤Æ¤ª¤ê¡¢¤Ş¤¿¤½¤ÎÌ¾Á°¤«¤é¤â¡¢¥°¥í¡¼¥Ğ¥ë¤ÊÂ«ÇûÃÍ¤¬¤¢¤¿¤«¤â
-(CommonLisp¤Î¤è¤¦¤Ë)¥·¥ó¥Ü¥ë¤½¤Î¤â¤Î¤ÎÂ°À­¤Ç¤¢¤ë¤«¤Î¤è¤¦¤Ê¸í²ò¤ò¾·¤¤¤Æ
-¤¤¤¿¤«¤é¤Ç¤¹¡£¤½¤Î¤»¤¤¤Ç¡¢ÆÃ¤Ë¥³¥ó¥Ñ¥¤¥ë»ş¤È¼Â¹Ô»ş¤Ç¥«¥ì¥ó¥È¥â¥¸¥å¡¼¥ë¤¬
-°Û¤Ê¤ë¤è¤¦¤Ê¾ì¹ç¤ËÂ¿¤¯¤Îº®Íğ¤¬À¸¤¸¤Æ¤¤¤Ş¤·¤¿¡£
-¿·¤·¤¤Ì¾Á°¤ÈAPI¤Ï¡¢¥°¥í¡¼¥Ğ¥ë¤ÊÂ«ÇûÃÍ¤Ë¤Ä¤¤¤Æ¥â¥¸¥å¡¼¥ë¤ËÌä¤¤¹ç¤ï¤»¤Æ¤¤¤ë
-¤È¤¤¤¦¤³¤È¤òÌÀ³Î¤Ë¤·¤Æ¤¤¤Ş¤¹¡£
+è¨»: ä»¥å‰ã€ã“ã®æ‰‹ç¶šãã®æ©Ÿèƒ½ã¯@code{symbol-bound?}ã¨ã„ã†æ‰‹ç¶šãã§
+å®Ÿç¾ã•ã‚Œã¦ã„ã¾ã—ãŸã€‚@code{symbol-bound?}ã¯éæ¨å¥¨ã¨ãªã‚Šã€æ–°ã—ã„ã‚³ãƒ¼ãƒ‰ã¯
+@code{global-variable-bound?}ã‚’ä½¿ã‚ã­ã°ãªã‚Šã¾ã›ã‚“ã€‚
+ã“ã®å¤‰æ›´ã®ç†ç”±ã¯ã€@code{symbol-bound?}ãŒã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¨
+ã—ã¦ãŠã‚Šã€ã¾ãŸãã®åå‰ã‹ã‚‰ã‚‚ã€ã‚°ãƒ­ãƒ¼ãƒãƒ«ãªæŸç¸›å€¤ãŒã‚ãŸã‹ã‚‚
+(CommonLispã®ã‚ˆã†ã«)ã‚·ãƒ³ãƒœãƒ«ãã®ã‚‚ã®ã®å±æ€§ã§ã‚ã‚‹ã‹ã®ã‚ˆã†ãªèª¤è§£ã‚’æ‹›ã„ã¦
+ã„ãŸã‹ã‚‰ã§ã™ã€‚ãã®ã›ã„ã§ã€ç‰¹ã«ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«æ™‚ã¨å®Ÿè¡Œæ™‚ã§ã‚«ãƒ¬ãƒ³ãƒˆãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒ
+ç•°ãªã‚‹ã‚ˆã†ãªå ´åˆã«å¤šãã®æ··ä¹±ãŒç”Ÿã˜ã¦ã„ã¾ã—ãŸã€‚
+æ–°ã—ã„åå‰ã¨APIã¯ã€ã‚°ãƒ­ãƒ¼ãƒãƒ«ãªæŸç¸›å€¤ã«ã¤ã„ã¦ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«å•ã„åˆã‚ã›ã¦ã„ã‚‹
+ã¨ã„ã†ã“ã¨ã‚’æ˜ç¢ºã«ã—ã¦ã„ã¾ã™ã€‚
 @c COMMON
 @end defun
 
@@ -3289,12 +3290,12 @@ global binding from @var{module} for @var{symbol},
 an error is signalled, unless the @var{default} argument is
 provided, in which case it is returned instead.
 @c JP
-¥â¥¸¥å¡¼¥ë@var{module}¤«¤é²Ä»ë¤Î¡¢¥·¥ó¥Ü¥ë@var{symbol}¤Î¥°¥í¡¼¥Ğ¥ë¤Ê
-Â«ÇûÃÍ¤òÊÖ¤·¤Ş¤¹¡£@var{module}¤Ï¥â¥¸¥å¡¼¥ë¥ª¥Ö¥¸¥§¥¯¥È¤«
-´ûÂ¸¤Î¥â¥¸¥å¡¼¥ëÌ¾¤ò¼¨¤¹¥·¥ó¥Ü¥ë¤Ç¤Ê¤±¤ì¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
-@var{symbol}¤ËÂĞ¤¹¤ë²Ä»ë¤Î¥°¥í¡¼¥Ğ¥ëÂ«Çû¤¬Ìµ¤¤¾ì¹ç¤Ï¡¢
-@var{default}°ú¿ô¤¬¤¢¤¿¤¨¤é¤ì¤Æ¤¤¤ì¤Ğ¤½¤ÎÃÍ¤òÊÖ¤·¡¢
-Ìµ¤±¤ì¤Ğ¥¨¥é¡¼¤òÄÌÃÎ¤·¤Ş¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«@var{module}ã‹ã‚‰å¯è¦–ã®ã€ã‚·ãƒ³ãƒœãƒ«@var{symbol}ã®ã‚°ãƒ­ãƒ¼ãƒãƒ«ãª
+æŸç¸›å€¤ã‚’è¿”ã—ã¾ã™ã€‚@var{module}ã¯ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‹
+æ—¢å­˜ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«åã‚’ç¤ºã™ã‚·ãƒ³ãƒœãƒ«ã§ãªã‘ã‚Œã°ãªã‚Šã¾ã›ã‚“ã€‚
+@var{symbol}ã«å¯¾ã™ã‚‹å¯è¦–ã®ã‚°ãƒ­ãƒ¼ãƒãƒ«æŸç¸›ãŒç„¡ã„å ´åˆã¯ã€
+@var{default}å¼•æ•°ãŒã‚ãŸãˆã‚‰ã‚Œã¦ã„ã‚Œã°ãã®å€¤ã‚’è¿”ã—ã€
+ç„¡ã‘ã‚Œã°ã‚¨ãƒ©ãƒ¼ã‚’é€šçŸ¥ã—ã¾ã™ã€‚
 @c COMMON
 @end defun
 
@@ -3303,8 +3304,8 @@ provided, in which case it is returned instead.
 Converts a module name @var{symbol} to a fragment of pathname string
 (which you use for @code{require} and @code{provide}).
 @c JP
-¥â¥¸¥å¡¼¥ëÌ¾@var{symbol}¤ò¡¢¥Ñ¥¹Ì¾¤Î°ìÉô(@code{require}¤ä@code{provide}¤¬
-»È¤¦¤è¤¦¤Ê)¤Ø¤ÈÊÑ´¹¤·¤Ş¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«å@var{symbol}ã‚’ã€ãƒ‘ã‚¹åã®ä¸€éƒ¨(@code{require}ã‚„@code{provide}ãŒ
+ä½¿ã†ã‚ˆã†ãª)ã¸ã¨å¤‰æ›ã—ã¾ã™ã€‚
 @c COMMON
 @end defun
 
@@ -3312,7 +3313,7 @@ Converts a module name @var{symbol} to a fragment of pathname string
 @c EN
 Reverse function of @code{module-name->path}.
 @c JP
-@code{module-name->path}¤ÎµÕ´Ø¿ô¤Ç¤¹¡£
+@code{module-name->path}ã®é€†é–¢æ•°ã§ã™ã€‚
 @c COMMON
 @end defun
 
@@ -3321,18 +3322,18 @@ If you want to find out
 specific libraries and/or modules are installed in the system and
 available from the program, see @ref{Operations on libraries}.
 @c JP
-ÆÃÄê¤Î¥é¥¤¥Ö¥é¥ê¤ä¥â¥¸¥å¡¼¥ë¤¬¥·¥¹¥Æ¥à¤Ë¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ»È¤¨¤ë¾õÂÖ¤Ë¤¢¤ë¤«
-Ä´¤Ù¤¿¤ê¤¹¤ë¾ì¹ç¤Ï¡¢@ref{Operations on libraries}¤ò»²¾È¤·¤Æ²¼¤µ¤¤¡£
+ç‰¹å®šã®ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã‚„ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒã‚·ã‚¹ãƒ†ãƒ ã«ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œã¦ä½¿ãˆã‚‹çŠ¶æ…‹ã«ã‚ã‚‹ã‹
+èª¿ã¹ãŸã‚Šã™ã‚‹å ´åˆã¯ã€@ref{Operations on libraries}ã‚’å‚ç…§ã—ã¦ä¸‹ã•ã„ã€‚
 @c COMMON
 
 @node Predefined modules,  , Module introspection, Modules
 @subsection Predefined modules
-@c NODE ÁÈ¤ß¹ş¤ß¥â¥¸¥å¡¼¥ë
+@c NODE çµ„ã¿è¾¼ã¿ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«
 
 @c EN
 Several modules are predefined in Gauche.
 @c JP
-Gaucheµ¯Æ°»ş¤Ë¤¤¤¯¤Ä¤«¤Î¥â¥¸¥å¡¼¥ë¤¬¤¢¤é¤«¤¸¤áÄêµÁ¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
+Gaucheèµ·å‹•æ™‚ã«ã„ãã¤ã‹ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒã‚ã‚‰ã‹ã˜ã‚å®šç¾©ã•ã‚Œã¦ã„ã¾ã™ã€‚
 @c COMMON
 
 @deftp {Builtin Module} null
@@ -3341,8 +3342,8 @@ Gaucheµ¯Æ°»ş¤Ë¤¤¤¯¤Ä¤«¤Î¥â¥¸¥å¡¼¥ë¤¬¤¢¤é¤«¤¸¤áÄêµÁ¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
 This module corresponds to the null environment referred in R5RS.
 This module contains only syntactic bindings of R5RS syntax.
 @c JP
-¤³¤Î¥â¥¸¥å¡¼¥ë¤ÏR5RS¤Ç½Ò¤Ù¤é¤ì¤Æ¤¤¤ë"null environment"¤ËÁêÅö¤·¤Ş¤¹¡£
-R5RS¤Î¹½Ê¸Í×ÁÇ¤Ø¤ÎÂ«Çû¤À¤±¤ò´Ş¤ó¤À¥â¥¸¥å¡¼¥ë¤Ç¤¹¡£
+ã“ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯R5RSã§è¿°ã¹ã‚‰ã‚Œã¦ã„ã‚‹"null environment"ã«ç›¸å½“ã—ã¾ã™ã€‚
+R5RSã®æ§‹æ–‡è¦ç´ ã¸ã®æŸç¸›ã ã‘ã‚’å«ã‚“ã ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã§ã™ã€‚
 @c COMMON
 @end deftp
 
@@ -3352,8 +3353,8 @@ R5RS¤Î¹½Ê¸Í×ÁÇ¤Ø¤ÎÂ«Çû¤À¤±¤ò´Ş¤ó¤À¥â¥¸¥å¡¼¥ë¤Ç¤¹¡£
 This module contains all the binding of @code{null} module,
 and the binding of procedures defined in R5RS.
 @c JP
-¤³¤Î¥â¥¸¥å¡¼¥ë¤Ï@code{null}¥â¥¸¥å¡¼¥ëÆâ¤ÎÂ«ÇûÁ´¤Æ¤Ë²Ã¤¨¤Æ¡¢
-R5RS¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤ëÁ´¤Æ¤Î¼êÂ³¤­¤ÎÂ«Çû¤ò´Ş¤ß¤Ş¤¹¡£
+ã“ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯@code{null}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«å†…ã®æŸç¸›å…¨ã¦ã«åŠ ãˆã¦ã€
+R5RSã§å®šç¾©ã•ã‚Œã¦ã„ã‚‹å…¨ã¦ã®æ‰‹ç¶šãã®æŸç¸›ã‚’å«ã¿ã¾ã™ã€‚
 @c COMMON
 @end deftp
 
@@ -3364,9 +3365,9 @@ to switch back to other modules, since module-related syntaxes
 and procedures are not visible from @code{null} and @code{scheme}
 modules.
 @c JP
-@code{select-module}¤Ë¤è¤Ã¤Æ°ìÅÙ@code{null}¤ä@code{scheme}¥â¥¸¥å¡¼¥ë¤Ë
-Æş¤ë¤È¡¢¤½¤³¤«¤éÂ¾¤Î¥â¥¸¥å¡¼¥ë¤Ë°Ü¤ë¤³¤È¤Ï¤Ç¤­¤Ê¤¯¤Ê¤ë¤³¤È¤ËÃí°Õ¤·¤Æ¤¯¤À¤µ¤¤¡£
-¤³¤ì¤é¤Î¥â¥¸¥å¡¼¥ë¤«¤é¤Ï¡¢¤¢¤é¤æ¤ë¥â¥¸¥å¡¼¥ëÁàºî¹½Ê¸¤¬ÉÔ²Ä»ë¤À¤«¤é¤Ç¤¹¡£
+@code{select-module}ã«ã‚ˆã£ã¦ä¸€åº¦@code{null}ã‚„@code{scheme}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«
+å…¥ã‚‹ã¨ã€ãã“ã‹ã‚‰ä»–ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«ç§»ã‚‹ã“ã¨ã¯ã§ããªããªã‚‹ã“ã¨ã«æ³¨æ„ã—ã¦ãã ã•ã„ã€‚
+ã“ã‚Œã‚‰ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‹ã‚‰ã¯ã€ã‚ã‚‰ã‚†ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«æ“ä½œæ§‹æ–‡ãŒä¸å¯è¦–ã ã‹ã‚‰ã§ã™ã€‚
 @c COMMON
 
 @deftp {Builtin Module} gauche
@@ -3375,8 +3376,8 @@ modules.
 This module contains all the bindings of @code{scheme} module,
 plus Gauche specific built-in procedures.
 @c JP
-¤³¤Î¥â¥¸¥å¡¼¥ë¤Ï@code{scheme}¥â¥¸¥å¡¼¥ëÆâ¤ÎÁ´¤Æ¤ÎÂ«Çû¤Ë²Ã¤¨¡¢
-Gauche¤ÎÁÈ¹ş¤ß¼êÂ³¤­¤ä¹½Ê¸¤¬´Ş¤Ş¤ì¤Æ¤¤¤Ş¤¹¡£
+ã“ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯@code{scheme}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«å†…ã®å…¨ã¦ã®æŸç¸›ã«åŠ ãˆã€
+Gaucheã®çµ„è¾¼ã¿æ‰‹ç¶šãã‚„æ§‹æ–‡ãŒå«ã¾ã‚Œã¦ã„ã¾ã™ã€‚
 @c COMMON
 @end deftp
 
@@ -3386,8 +3387,8 @@ Gauche¤ÎÁÈ¹ş¤ß¼êÂ³¤­¤ä¹½Ê¸¤¬´Ş¤Ş¤ì¤Æ¤¤¤Ş¤¹¡£
 This module is the default module the user code is compiled.
 all the bindings of @code{gauche} module is imported.
 @c JP
-¤³¤Î¥â¥¸¥å¡¼¥ë¤Ï¥æ¡¼¥¶¥³¡¼¥É¤¬¥³¥ó¥Ñ¥¤¥ë¤µ¤ì¤ë´ûÄê¤Î¥â¥¸¥å¡¼¥ë¤Ç¤¹¡£
-@code{gauche}¥â¥¸¥å¡¼¥ëÆâ¤ÎÁ´¤Æ¤ÎÂ«Çû¤¬¥¤¥ó¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
+ã“ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ãƒ¦ãƒ¼ã‚¶ã‚³ãƒ¼ãƒ‰ãŒã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã•ã‚Œã‚‹æ—¢å®šã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã§ã™ã€‚
+@code{gauche}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«å†…ã®å…¨ã¦ã®æŸç¸›ãŒã‚¤ãƒ³ãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã™ã€‚
 @c COMMON
 @end deftp
 

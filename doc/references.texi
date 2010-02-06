@@ -1,6 +1,7 @@
+@c -*- mode: texinfo; coding: utf-8; -*-
 @node References, C to Scheme mapping, Library modules - Utilities, Top
 @appendix References
-@c NODE »²¹ÍÊ¸¸¥
+@c NODE å‚è€ƒæ–‡çŒ®
 
 @table @asis
 @anchor{r5rs}

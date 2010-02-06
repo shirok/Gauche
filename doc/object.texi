@@ -1,6 +1,7 @@
+@c -*- mode: texinfo; coding: utf-8; -*-
 @node Object system, Library modules - Overview, Core library, Top
 @chapter Object system
-@c NODE ���֥������ȥ����ƥ�
+@c NODE オブジェクトシステム
 
 @c EN
 Gauche's object system design is largely inspired by
@@ -8,10 +9,10 @@ STklos, whose design has come from TinyCLOS.
 It supports multiple inheritance, multimethods,
 and metaobject protocol.
 @c JP
-Gauche�Υ��֥������ȥ����ƥ�Υǥ�����ϡ�TinyCLOS����
-��������STklos�����礭�ʱƶ�������Ƥ��ޤ���
-¿�ŷѾ����ޥ���᥽�åɡ��᥿���֥������ȥץȥ������
-���ݡ��Ȥ��Ƥ��ޤ���
+Gaucheのオブジェクトシステムのデザインは、TinyCLOSから
+派生したSTklosから大きな影響を受けています。
+多重継承、マルチメソッド、メタオブジェクトプトロコルを
+サポートしています。
 @c COMMON
 
 @c EN
@@ -19,8 +20,8 @@ The type system is integrated to the object system,
 that is, a string is an instance of the class @code{<string>},
 and so on.
 @c JP
-�������ƥ�ϡ����֥������ȥ����ƥ�����礵��Ƥ��ޤ���
-�Ĥޤꡢʸ�����@code{<string>}���饹�Υ��󥹥��󥹤Ǥ��롢�ʤɤǤ���
+型システムは、オブジェクトシステムに統合されています。
+つまり、文字列は@code{<string>}クラスのインスタンスである、などです。
 @c COMMON
 
 @c ----------------------------------------------------------------------
@@ -35,7 +36,7 @@ and so on.
 
 @node Introduction to the object system, General Inquiry, Object system, Object system
 @section  Introduction to the object system
-@c NODE ���֥������ȥ����ƥ�ξҲ�
+@c NODE オブジェクトシステムの紹介
 
 @c EN
 This section briefly explains the basic structure of
@@ -59,22 +60,22 @@ A point class can be defined using @code{define-class} macro.
 In the shortest form, it can be defined like this:
 
 @c JP
-������Ǥ� Gauche �Υ��֥������ȥ����ƥ�δ���Ū��¤�ˤĤ��Ƽ�û����
-�������ޤ���Gauche �Υ��֥������ȥ����ƥ�� CLOS (Common-Listp Object System)
-�˶����ƶ�����Ƥ��ޤ���CLOS �䤽��ˤ������Τ��� TinyCLOS��STklos��
-���뤤�� Guile �Υ��֥������ȥ����ƥ�ηи����������ϡ�����������Ф��ơ�
-������ˤ��äƤ�褤�Ǥ��礦��
+この節では Gauche のオブジェクトシステムの基本的構造について手短かに
+説明します。Gauche のオブジェクトシステムは CLOS (Common-Listp Object System)
+に強く影響されています。CLOS やそれにかかわりのある TinyCLOS、STklos、
+あるいは Guile のオブジェクトシステムの経験がある方は、この節を飛ばして、
+次の節にいってもよいでしょう。
 
-CLOS ���Υ��֥������ȥ����ƥ�Ǥ� 3 �Ĥγ�ǰ���濴Ū������Ϥ����ޤ���
-@emph{���饹}��@emph{�����ͥ�å��ؿ�}�������@emph{�᥽�å�}�Ǥ���
+CLOS 風のオブジェクトシステムでは 3 つの概念が中心的な役割をはたします。
+@emph{クラス}、@emph{ジェネリック関数}、それに@emph{メソッド}です。
 
-@emph{���饹}�ϥ��֥������Ȥι�¤����ꤷ�ޤ����ޤ����ǡ�������������ޤ�
-(��̩�ˤ����ȡ��ǡ������ȤϤ�������ΤǤ������񤷤��Ȥ����Ϻ���
-�����Ƥ����ޤ��礦)��
+@emph{クラス}はオブジェクトの構造を指定します。また、データ型も定義します
+(厳密にいうと、データ型とはちがうものですが、難しいところは今は
+おいておきましょう)。
 
-���Ȥ��С�2 �������֤����� x ��ɸ�� y ��ɸ��ɽ���Ǥ��ޤ������Υ��饹��
-@code{define-class} �ޥ�����Ȥä�����Ǥ��ޤ�����äȤ��û���ˤϡ�
-���Τ褦������Ǥ��ޤ���
+たとえば、2 次元空間の点は x 座標と y 座標で表現できます。点のクラスは
+@code{define-class} マクロを使って定義できます。もっとも手短かには、
+次のように定義できます。
 
 @c COMMON
 @example
@@ -107,27 +108,27 @@ to create an instance.  (Don't worry about what generic function
 is---think it as a special type of function, just for now).
 
 @c JP
-(������������������ɤ� Gauche ����������ʪ�Τʤ��� 
-@code{examples/oointro.scm} �ˤ���ޤ���)
+(この節の例の定義コードは Gauche ソース配布物のなかの 
+@code{examples/oointro.scm} にあります。)
 
-����ܥ� @code{<2d-point>} �ϥ��饹��̾���Ǥ����������Х��ѿ�
-@code{<2d-point>}�ϥ��饹���֥������Ȥ�«������Ƥ��ޤ������饹̾��
-@code{<} �� @code{>} �ǰϤ�Τϴ����ˤ����ޤ���@code{define-class}
-�ˤ�Ǥ�դΥ���ܥ���Ϥ����Ȥ��Ǥ��ޤ���
+シンボル @code{<2d-point>} はクラスの名前です。グローバル変数
+@code{<2d-point>}はクラスオブジェクトに束縛されています。クラス名を
+@code{<} と @code{>} で囲むのは慣習にすぎません。@code{define-class}
+には任意のシンボルを渡すことができます。
 
-@code{define-class}����������ϡ�ľ�ܤΥ����ѡ����饹�Υꥹ�ȤǤ���
-����Ǥ��Υ��饹�ηѾ�����ꤷ�ޤ�������ˤĤ��Ƥϸ���������ޤ���
+@code{define-class}の第二引数は、直接のスーパークラスのリストです。
+これでこのクラスの継承を指定します。これについては後で説明します。
 
-@code{define-class}���軰������@emph{�����å�}�Υꥹ�ȤǤ���
-�����åȤϤʤˤ����Ǽ���Ƥ������ǡ��̾�ϳƥ��֥������Ȥ��Ф��ơ��ͤ��Ǽ�Ǥ��ޤ���
-����ϡ�¾�Υ��������Ȼظ�����Ǥϡ��ե�����ɤȤ����󥹥����ѿ��ʤɤ�
-�ƤФ�Ƥ����Τ˻�����ΤǤ����������������åȤ�ñ�ʤ�ƥ��֥����������
-��Ǽ���ڡ����ʾ�λȤ������Ǥ��ޤ���
+@code{define-class}の第三引数は@emph{スロット}のリストです。
+スロットはなにかを格納しておく場所で、通常は各オブジェクトに対して、値を格納できます。
+これは、他のオジェクト指向言語では、フィールドとかインスタンス変数などと
+呼ばれているものに似たものです。しかし、スロットは単なる各オブジェクト毎の
+格納スペース以上の使い方ができます。
 
-���ơ�2 ���������Υ��饹��������ޤ����Τǡ����Υ��󥹥��󥹤������Ǥ��ޤ���
-���饹�򥸥��ͥ�å��ؿ� @code{make} ���Ϥ��ƥ��󥹥��󥹤��������ޤ���
-(�����ͥ�å��ؿ����ɤ�ʤ�ΤǤ��뤫�ϵ��ˤ��ʤ��ǲ����������Ϥ����ü��
-�����פδؿ��Ȥ����ͤ��Ƥ����Ƥ���������)
+さて、2 次元の点のクラスを定義しましたので、点のインスタンスを生成できます。
+クラスをジェネリック関数 @code{make} に渡してインスタンスを生成します。
+(ジェネリック関数がどんなものであるかは気にしないで下さい。今はある特殊な
+タイプの関数とだけ考えておいてください。)
 
 @c COMMON
 @example
@@ -145,10 +146,10 @@ the convenience.  (See @ref{Interactive session}
 for the details).
 
 @c JP
-���å⡼�ɤ� @code{gosh} ��ȤäƤ���ʤ顢�����ͥ�å��ؿ� @code{describe} ��
-�Ȥäơ����󥹥��󥹤������������Ǥ��ޤ���
-�����ʤΤǡ���ά���Ȥ���@code{d}�Ȥ���̾�����������Ƥ��ޤ���
-(�ܺ٤ˤĤ��Ƥϡ�@ref{Interactive session}����)
+対話モードで @code{gosh} を使っているなら、ジェネリック関数 @code{describe} を
+使って、インスタンスの内部を点検できます。
+便利なので、省略形として@code{d}という名前も定義されています。
+(詳細については、@ref{Interactive session}参照)
 
 @c COMMON
 @example
@@ -175,15 +176,15 @@ These names are taken from STklos.
 @end example
 
 @c JP
-�����åȤ��ͤ˥����������뤤���ͤ��ѹ����뤿��ˤϡ����줾�졢
-@code{slot-ref} ����� @code{slot-set!} ���Ȥ��ޤ���������̾����
-STklos ����Ȥ�ޤ�����
+スロットの値にアクセスあるいは値を変更するためには、それぞれ、
+@code{slot-ref} および @code{slot-set!} が使えます。これらの名前は
+STklos からとりました。
 
 @example
-(slot-ref a-point 'x)  ;; a-point �Υ����å� x �˥�������
+(slot-ref a-point 'x)  ;; a-point のスロット x にアクセス
   @result{} @r{error, since slot 'x doesn't have a value yet}
 
-(slot-set! a-point 'x 10.0)  ;; a-point �Υ����å� x �� 10.0 ������
+(slot-set! a-point 'x 10.0)  ;; a-point のスロット x を 10.0 に設定
 
 (slot-ref a-point 'x)
   @result{} 10.0
@@ -193,8 +194,8 @@ STklos ����Ȥ�ޤ�����
 Gauche also provides a shorter name, @code{ref}, which can also
 be used in srfi-17's generalized @code{set!} syntax:
 @c JP
-Gauche �Ǥϡ����û����̾�� @code{ref} ��Ȥ��ޤ��������Ȥ���
-srfi-17 �ΰ��̲����줿 @code{set!} �ι�ʸ���Ȥ��ޤ���
+Gauche では、より短かい名前 @code{ref} も使えます。これを使えば
+srfi-17 の一般化された @code{set!} の構文が使えます。
 @c COMMON
 @example
 (ref a-point 'x) @result{} 10.0
@@ -207,7 +208,7 @@ srfi-17 �ΰ��̲����줿 @code{set!} �ι�ʸ���Ȥ��ޤ���
 @c EN
 Now you can see slot values are set.
 @c JP
-�����åȤ��ͤ����ꤵ��Ƥ��뤳�Ȥ򸫤Ƥߤޤ��礦��
+スロットの値が設定されていることを見てみましょう。
 @c COMMON
 @example
 gosh> (d a-point)
@@ -224,10 +225,10 @@ Such information can be specified by @emph{slot options}.
 Let's modify the definition of @code{<2d-point>} like this:
 
 @c JP
-�ºݤˤϡ������åȤ˥ǥե�����ͤ�����Ǥ����ꡢ���󥹥�����������
-�����åȤ��ͤ�����Ǥ���������ʤ��Ȥ�¿���Ǥ������Τ褦�ʾ���ϡ�
-@emph{�����åȥ��ץ����}�ǻ���Ǥ��ޤ���@code{<2d-point>}�������
-���Τ褦���ѹ����Ƥߤޤ��礦��
+実際には、スロットにデフォルト値を設定できたり、インスタンス生成時に
+スロットに値を設定できると便利なことが多いです。このような情報は、
+@emph{スロットオプション}で指定できます。@code{<2d-point>}の定義を
+次のように変更してみましょう。
 
 @c COMMON
 @example
@@ -252,19 +253,19 @@ Let's see some interactive session.  You create an instance
 of the new @code{<2d-point>} class, and you can see the slots are
 initialized by the default values.
 @c JP
-�ƥ����åȤλ���ϡ�������Ǥϰ�ĤΥ���ܥ�Ǥ�����������ɤϥꥹ��
-�Ǥ��뤳�Ȥ����դ��Ƥ���������
-����ɤϡ��ꥹ�Ȥ� car ��ʬ�������å�̾�λ���ǡ�cdr ��ʬ�ˤ��������ʾ���
-�Ϥ���ޤ���@code{:init-value} �Τ��������ͤϤ��Υ����åȤΥǥե�����ͤ�
-������Ƥ��ޤ���@code{:init-keyword}�Τ������Υ�����ɤϡ��������˥����åȤ�
-��������뤿��� @code{make} ���Ϥ����ȤΤǤ��륭����ɰ�����������Ƥ��ޤ���
-������� @code{:accessor} �Τ�������̾���ϡ������åȤؤΥ�������/�ѹ���
-����˻Ȥ��른���ͥ�å��ؿ���«������ޤ��������
-@code{slot-ref}/@code{slot-set!} �Τ����˻Ȥ��ޤ���
+各スロットの指定は、前の例では一つのシンボルでしたが、こんどはリスト
+であることに注意してください。
+こんどは、リストの car 部分がスロット名の指定で、cdr 部分にいろいろな情報が
+はいります。@code{:init-value} のうしろの値はそのスロットのデフォルト値を
+定義しています。@code{:init-keyword}のうしろのキーワードは、生成時にスロットを
+初期化するために @code{make} に渡すことのできるキーワード引数を定義しています。
+キーワード @code{:accessor} のうしろの名前は、スロットへのアクセス/変更の
+ために使えるジェネリック関数に束縛されます。これは
+@code{slot-ref}/@code{slot-set!} のかわりに使います。
 
-����äȤ������å��å�����ߤƤߤޤ��礦�������� @code{<2d-point>} ���饹��
-���󥹥��󥹤�Ĥ���ޤ��������åȤ��ǥե�����ͤǽ��������Ƥ���Τ��狼��
-�ޤ��͡�
+ちょっとした対話セッションをみてみましょう。新しい @code{<2d-point>} クラスの
+インスタンスをつくります。スロットがデフォルト値で初期化されているのがわかり
+ますね。
 @c COMMON
 @example
 gosh> (define a-point (make <2d-point>))
@@ -280,7 +281,7 @@ slots:
 You create another instance, this time giving initialization values
 by keyword arguments.
 @c JP
-����ɤϡ�������ɰ����ǽ���ͤ�Ϳ���ơ��̤Υ��󥹥��󥹤���ޤ���
+こんどは、キーワード引数で初期値を与えて、別のインスタンスを作ります。
 @c COMMON
 @example
 gosh> (define b-point (make <2d-point> :x 50.0 :y -10.0))
@@ -296,8 +297,8 @@ slots:
 Accessors are less verbose than @code{slot-ref}/@code{slot-set!}, thus
 convenient.
 @c JP
-���������� @code{slot-ref}/@code{slot-set!} ���û�����ʤä�������
-�ʤ�ޤ����͡�
+アクセサは @code{slot-ref}/@code{slot-set!} より短かくなって便利に
+なりましたね。
 @c COMMON
 @example
 gosh> (x-of a-point)
@@ -325,17 +326,17 @@ See @ref{Metaobject protocol}, for details.
 We can also have @code{<2d-vector>} class in similar fashion.
 
 @c JP
-���Ѳ�ǽ���������åȥ��ץ����Υꥹ�Ȥ�@ref{Defining class}�ˤ���ޤ���
-����äȸ���ȡ������Υ����åȥ��ץ���������Ͼ�Ĺ�˸����뤫�⤷��ޤ���
-�����ƥ�¦�ǽ����������ɤ䥢������̾��ưŪ�����������Ū�ʻ��Ȥ�
-�Ѱդ��뤳�Ȥ�Ǥ������⤷��ޤ���
-�������ʤ��顢CLOS ���Υ����ƥ�ǤϽ�������������Ż뤷�ޤ���
-�᥿���֥������ȥץ��ȥ���ȸƤФ�뵡���������ơ�������
-�����åȥ��ץ���󤬤ɤΤ褦�˲�ᤵ��뤫�򥫥����ޥ������뤳�Ȥ��Ǥ��ޤ���
-�ޤ�����ʬ�ѤΥ����åȥ��ץ������ɲä��뤳�Ȥ�Ǥ��ޤ���
-�ܤ����� @ref{Metaobject protocol} �򸫤Ƥ���������
+利用可能な全スロットオプションのリストは@ref{Defining class}にあります。
+ちょっと見ると、これらのスロットオプションの宣言は冗長に見えるかもしれません。
+システム側で初期化キーワードやアクセス名を自動的に定義する静的な仕組を
+用意することもできたかもしれません。
+しかしながら、CLOS 風のシステムでは柔軟性の方をより重視します。
+メタオブジェクトプロトコルと呼ばれる機構をもちいて、これらの
+スロットオプションがどのように解釈されるかをカスタマイズすることができます。
+また、自分用のスロットオプションを追加することもできます。
+詳しくは @ref{Metaobject protocol} を見てください。
 
-�ޤ��������褦��ή���� @code{<2d-vector>} ���饹������Ǥ��ޤ���
+また、似たような流儀で @code{<2d-vector>} クラスを定義できます。
 
 @c COMMON
 @example
@@ -355,14 +356,14 @@ three arguments, @var{pt}, @var{dx}, @var{dy}, where @var{pt} is
 an instance of @code{<2d-point>}.
 
 @c JP
-�����Ǥ���Ʊ����������̾�� @code{x-of} �Τ褦�˻Ȥ����Ȥ��Ǥ��ޤ���
-����ϻ��¾塢¿���������ޤ���
+そうです。同じアクセサ名を @code{x-of} のように使うことができます。
+これは事実上、多重定義されます。
 
-��ή�Υ��֥������Ȼظ�����˴��줿���ϡ������������᥽�åɤϤɤ��ˤ���Τ���
-�פ��Ϥ�Ƥ��뤫�⤷��ޤ��󡣤��褤��᥽�åɤ��о�Ǥ����ʲ��Υե�����ϡ�3 �Ĥΰ���
-@var{pt}��@var{dy}��@var{dy} ��Ȥꡢ
-������@var{pt} �� @code{<2d-point>} �Υ��󥹥��󥹤Ǥ���褦��
-�᥽�å� @code{move-by!} ����������ΤǤ���
+主流のオブジェクト指向言語に慣れた方は、そろそろ、メソッドはどこにあるのだと
+思い始めているかもしれません。いよいよメソッドの登場です。以下のフォームは、3 つの引数
+@var{pt}、@var{dy}、@var{dy} をとり、
+しかも@var{pt} は @code{<2d-point>} のインスタンスであるような
+メソッド @code{move-by!} を定義するものです。
 
 @c COMMON
 @example
@@ -379,10 +380,10 @@ can be any type.   The syntax to call a method is just like
 the one to call an ordinary function.
 
 @c JP
-@code{define-method} �ޥ��������������@emph{�᥽�å����경�ҥꥹ��}��
-���ꤷ�Ƥ��ޤ�������ϡ��������� @code{<2d-point>} �Υ��󥹥��󥹤�
-�ʤ���Фʤ�ʤ����Ȥ򼨤��������軰������Ǥ�դη��Ǥ褤���Ȥ�
-�����Ƥ��ޤ����᥽�åɸƤӽФ��ι�ʸ���̾�ؿ��θƤӽФ���Ʊ���Ǥ���
+@code{define-method} マクロの第二引数は@emph{メソッド特定化子リスト}を
+指定しています。これは、第一引数が @code{<2d-point>} のインスタンスで
+なければならないことを示し、第二、第三引数は任意の型でよいことを
+示しています。メソッド呼び出しの構文は通常関数の呼び出しと同じです。
 
 @c COMMON
 @example
@@ -399,8 +400,8 @@ slots:
 You can overload the method by different specializers; here
 you can move a point using a vector.
 @c JP
-�̤����경�Ҥˤ�ꤳ�Υ᥽�åɤ�¿��������뤳�Ȥ���ǽ�Ǥ����ʲ��Τ褦��
-�٥�����Ȥä�����ư�������Ȥ�Ǥ��ޤ���
+別の特定化子によりこのメソッドを多重定義することが可能です。以下のように
+ベクタを使って点を動かすこともできます。
 @c COMMON
 @example
 (define-method move-by! ((pt <2d-point>) (delta <2d-vector>))
@@ -411,8 +412,8 @@ you can move a point using a vector.
 Specialization isn't limited to a user-defined classes.
 You can also specialize a method using Gauche's built-in type.
 @c JP
-���경�ϥ桼������Υ��饹�ˤ������ꤵ��Ƥ���櫓�ǤϤ���ޤ���
-Gauche ���Ȥ߹��߷���Ȥäƥ᥽�åɤ����경���뤳�Ȥ�Ǥ��ޤ���
+特定化はユーザ定義のクラスにだけ限定されているわけではありません。
+Gauche の組み込み型を使ってメソッドを特定化することもできます。
 
 @c COMMON
 @example
@@ -423,7 +424,7 @@ Gauche ���Ȥ߹��߷���Ȥäƥ᥽�åɤ����경���뤳�Ȥ�Ǥ��ޤ���
 @c EN
 And here's the example session:
 @c JP
-�ʲ��ϥ��å������Ǥ���
+以下はセッション例です。
 @c COMMON
 @example
 gosh> (define d-vector (make <2d-vector> :x -9.0 :y 7.25))
@@ -456,15 +457,15 @@ reveals that it is an instance of @code{<generic>}, a generic function.
 (Note that @code{describe} truncates the printed value in @code{methods}
 slot for the sake of readability).
 @c JP
-�᥽�åɤ����μ�쥷���� @code{<2d-point>} �ˤ�äƤΤߥǥ����ѥå������
-�ΤǤϤʤ�������¾�ΰ����ˤ�äƤ�ǥ����ѥå�����Ƥ���Τ��狼��Ȼפ��ޤ���
-�¤ϡ��������ϻĤ�ΰ�������٤Ʋ������̤ǤϤ���ޤ���
-CLOS ���Υ����ƥ�Ǥϥ᥽�åɤ�����Υ��饹��°�����ΤǤϤʤ��ΤǤ���
+メソッドがその主レシーバ @code{<2d-point>} によってのみディスパッチされる
+のではなく、その他の引数によってもディスパッチされているのがわかると思います。
+実は、第一引数は残りの引数に比べて何ら特別ではありません。
+CLOS 風のシステムではメソッドは特定のクラスに属するものではないのです。
 
-�Ǥϥ᥽�åɤȤϤ��ä����ʤ�Ǥ��礦��@code{move-by!} ���������Ƥߤ��
-���줬 @code{<generic>} �Υ��󥹥��󥹤Ǥ��ꡢ�����ͥ�å��ؿ��Ǥ����
-�狼��ޤ���(@code{describe} �ϲ������Τ���� @code{methods} �����åȤ�
-�ͤΰ�����������ڤäƤ��뤳�Ȥ����դ��Ƥ���������)
+ではメソッドとはいったいなんでしょう。@code{move-by!} を点検してみると
+それが @code{<generic>} のインスタンスであり、ジェネリック関数であると
+わかります。(@code{describe} は可読性のために @code{methods} スロットの
+値の印字を途中で切っていることに注意してください。)
 
 @c COMMON
 @example
@@ -495,18 +496,18 @@ and the body, and (3) to add the method object to the generic function.
 The accessors are also generic functions, created implicitly by the
 @code{define-class} macro.
 @c JP
-�����ͥ�å��ؿ������̤ʥ����פδؿ����ȸ����ޤ�������Gauche �ǤϤ����
-Ŭ�Ѳ�ǽ���֥������ȤȤ���ǧ������ޤ�������ϡ�Ŭ�Ѥ����Ȥ��ΰ�����
-�б�����Ŭ�ڤʥ᥽�åɤ����򤷤ơ��������򤵤줿�᥽�åɤ�ƤӽФ��Ȥ���ư���
-�Ԥ��ޤ���
+ジェネリック関数は特別なタイプの関数だと言いましたが、Gauche ではこれは
+適用可能オブジェクトとして認識されます。それは、適用されるとその引数に
+対応して適切なメソッドを選択して、その選択されたメソッドを呼び出すという動作を
+行います。
 
-�º� @code{define-method} �ޥ�������äƤ��뤳�Ȥϡ�(1)�⤷Ϳ����줿
-̾���Υ����ͥ�å��ؿ����ޤ�¸�ߤ��Ƥ��ʤ���С��������������(2)Ϳ����줿
-���경�Ҥ����ΤȤǥ᥽�åɥ��֥������Ȥ���������(3)�����ͥ�å��ؿ���
-���Υ᥽�åɥ��֥������Ȥ��ɲä��롢�Ȥ������ȤǤ���
+実際 @code{define-method} マクロがやっていることは、(1)もし与えられた
+名前のジェネリック関数がまだ存在していなければ、これを生成し、(2)与えられた
+特定化子と本体とでメソッドオブジェクトを生成し、(3)ジェネリック関数に
+そのメソッドオブジェクトを追加する、ということです。
 
-����������Ʊ�ͤ˥����ͥ�å��ؿ��ǡ�@code{define-class} �ޥ��������ۤΤ�����
-�������ޤ���
+アクセサも同様にジェネリック関数で、@code{define-class} マクロが暗黙のうちに
+生成します。
 
 @c COMMON
 @example
@@ -531,17 +532,17 @@ they don't know how to print.  You can define its method
 specialized to your class to customize how the instance is
 printed.
 @c JP
-��ή��ưŪ���������Ȼظ�����Ǥϡ����饹�ˤ�¿������䤬����ޤ���
-���饹�Ϲ�¤�ȷ���������������åȤȥ᥽�åɤ�̾�����֤���������
-�᥽�åɤΥǥ����ѥå�����Ǥ�����ޤ���Gauche�Ǥϡ�̾�����֤�
-�⥸�塼��ˤ�äƴ��������᥽�åɤΥǥ����ѥå��ϥ����ͥ�å��ؿ���
-���Ĥ����ޤ���
+主流の動的オジェクト指向言語では、クラスには多くの役割があります。
+クラスは構造と型を定義し、スロットとメソッドの名前空間を生成し、
+メソッドのディスパッチに責任をもちます。Gaucheでは、名前空間は
+モジュールによって管理し、メソッドのディスパッチはジェネリック関数で
+あつかいます。
 
-���֥������Ȥΰ���ɽ���ϡ��ǥե���ȤǤϡ����ޤ�桼���ˤ䤵��������ޤ���
-Gauche �� @code{write} ����� @code{display} �ؿ��ϡ��ɤΤ褦�˰�������
-�褤���狼��ʤ����󥹥��󥹤ˤǤ����ȡ������ͥ�å��ؿ� @code{write-object}
-��ƤӤޤ�������������饹�Υ��󥹥��󥹤�ɤΤ褦�˰������뤫��
-�������ޥ������뤿��ˡ����Υ��饹�����ꤷ���᥽�åɤ�������뤳�Ȥ��Ǥ��ޤ���
+オブジェクトの印字表現は、デフォルトでは、あまりユーザにやさしくありません。
+Gauche の @code{write} および @code{display} 関数は、どのように印字して
+よいかわからないインスタンスにであうと、ジェネリック関数 @code{write-object}
+を呼びます。定義したクラスのインスタンスをどのように印字するかを
+カスタマイズするために、そのクラスに特定したメソッドを定義することができます。
 
 @c COMMON
 @example
@@ -555,7 +556,7 @@ Gauche �� @code{write} ����� @code{display} �ؿ��ϡ��ɤΤ褦�˰�������
 @c EN
 And what you'll get is:
 @c JP
-�ǡ��ɤ��ʤä����Ȥ����ȡ�
+で、どうなったかというと、
 @c COMMON
 @example
 gosh> a-point
@@ -576,14 +577,14 @@ functionality for user-defined objects.  For example, if
 you specialize a generic function @code{object-equal?}, 
 you can compare the instances by @code{equal?}:
 @c JP
-srfi-10 �Υե����ޥåȤ������褦�˰���ɽ���򥫥����ޥ��������ɤ߹��߻�
-���ۻҤ��������С���ʬ������������饹�Υ��󥹥��󥹤��Ȥ߹���
-���֥������Ȥ�Ʊ�ͤ˽񤭽Ф����ɤ��ᤷ�Ǥ��ޤ����ܤ�����
-@ref{Read-time constructor} �򸫤Ƥ���������
+srfi-10 のフォーマットを満すように印字表現をカスタマイズし、読み込み時
+構築子を定義すれば、自分の定義したクラスのインスタンスを、組み込み
+オブジェクトと同様に書き出し、読み戻しできます。詳しくは
+@ref{Read-time constructor} を見てください。
 
-�����Ĥ����Ȥ߹��ߴؿ��ϥ桼��������֥������Ȥ��Ф���Ʊ�ͤ���ˡ��
-��ǽ��ĥ�Ǥ��ޤ������Ȥ��С�@code{object-equal?} �����경����С�
-@code{equal?} ��Ȥäƥ��󥹥��󥹤���Ӥ��Ǥ��ޤ���
+いくつかの組み込み関数はユーザ定義オブジェクトに対して同様の方法で
+機能拡張できます。たとえば、@code{object-equal?} を特定化すれば、
+@code{equal?} を使ってインスタンスの比較ができます。
 
 @c COMMON
 @example
@@ -614,9 +615,9 @@ which is an entity that can be drawn.
 As a base class, it keeps
 common attributes such as a color and line thickness in its slots.
 @c JP
-��äȤ��⤷������򸫤Ƥߤޤ��礦�������ǽ�� @code{<shape>} �Ȥ������饹
-��ͤ��ޤ���
-���ܥ��饹�Ȥ��ơ��������������Ȥ��ä�����°���򥹥��åȤ˻������ޤ���
+もっとおもしろい例を見てみましょう。描画可能な @code{<shape>} というクラス
+を考えます。
+基本クラスとして、色や線の太さといった共通属性をスロットに持たせます。
 
 @c COMMON
 @example
@@ -648,24 +649,24 @@ since we still need the init-keywords to be handled.
   (push! *shapes* self)) ;; record myself to the global list
 @end example
 @c JP
-���󥹥��󥹤���������ݡ�@code{make} �ϥ����ͥ�å��ؿ� @code{initialize}
-��ƤӤޤ������δؿ��� init-keyword �� init-value ���������褦�ʥ����åȤ�
-���ݤ򸫤ޤ������� @code{initialize} �᥽�åɤ����경���뤳�Ȥˤ�äơ������
-�ο��񤤤򥫥����ޥ������뤳�Ȥ��Ǥ��ޤ���@code{initialize} �᥽�åɤ���Ĥ�
-�����ȤȤ�˸ƤФ�ޤ����ҤȤĤϿ������������줿���󥹥��󥹡��⤦�ҤȤĤ�
-@code{make} �ˤ錄���줿�����Υꥹ�ȤǤ���
+インスタンスを生成する際、@code{make} はジェネリック関数 @code{initialize}
+を呼びます。この関数は init-keyword や init-value を処理するようなスロットの
+面倒を見ます。この @code{initialize} メソッドを特定化することによって、初期化
+の振舞いをカスタマイズすることができます。@code{initialize} メソッドは二つの
+引数とともに呼ばれます。ひとつは新しく生成されたインスタンス、もうひとつは
+@code{make} にわたされた引数のリストです。
 
-@code{initialize} �᥽�åɤ� @code{<shape>} ���饹�Ѥ���������������줿
-shape ����ưŪ�˥������Х�ʥꥹ�Ȥ���Ͽ�����褦�ˤ��ޤ��礦��
-�����ƥ�Τ�� @code{initialize} �ο��񤤤������֤����������Ϥʤ��Ȥ���
-���Ȥ����դ��Ƥ���������init-keyword �����Ѥ�餺����ɬ�פ����뤫��Ǥ���
+@code{initialize} メソッドを @code{<shape>} クラス用に定義し、生成された
+shape が自動的にグローバルなリストに登録されるようにしましょう。
+システムのもつ @code{initialize} の振舞いを完全に置き換えたくはないという
+ことに注意してください。init-keyword は相変わらず扱う必要があるからです。
 
 @example
-(define *shapes* '())  ;; �������Х�� shape �Υꥹ��
+(define *shapes* '())  ;; グローバルな shape のリスト
 
 (define-method initialize ((self <shape>) initargs)
-  (next-method)  ;; ���Υ����ƥब�����åȤν���������򤹤�褦�ˤ���
-  (push! *shapes* self)) ;; ��ʬ���Ȥ򥰥����Х�ʥꥹ�Ȥ���Ͽ����
+  (next-method)  ;; このシステムがスロットの初期化処理をするようにする
+  (push! *shapes* self)) ;; 自分自身をグローバルなリストに登録する
 @end example
 
 @c EN
@@ -701,36 +702,36 @@ The @code{<shape>} class represents just an abstract concept of
 shape.  Now we define some concrete drawable shapes, by
 @emph{subclassing} the @code{<shape>} class.
 @c JP
-�ųݤ��ϡ����̤ʥ᥽�å� @code{next-method} �ˤ���ޤ��������
-�᥽�å����Τ���Ǥ����Ȥ��ޤ���Ʊ�������ͥ�å��ؿ���
-@emph{���경���ٹ礬����㤤�᥽�å�}��ƤӤޤ�������ϡ�ŵ��Ū�ˤ�
-�����ѡ����饹��Ʊ���᥽�åɤ�Ƥ֤Ȥ������Ȥ��̣���ޤ���
-�ۤȤ�ɤΥ��������Ȼظ�����ˤϡ������ѡ����饹�Υ᥽�åɤ�Ƥ֤Ȥ���
-��ǰ������ޤ���¿�Ű����ǥ����ѥå���¿�ŷѾ��Τ���� @code{next-method}
-�Ͼ���ʣ���ˤϤʤäƤ��ޤ���������Ū�ʥ����ǥ�����Ʊ���Ǥ���
+仕掛けは、特別なメソッド @code{next-method} にあります。これは
+メソッド本体の中でしか使えません。同じジェネリック関数の
+@emph{特定化の度合がより低いメソッド}を呼びます。これは、典型的には
+スーパークラスの同じメソッドを呼ぶということを意味します。
+ほとんどのオジェクト指向言語には、スーパークラスのメソッドを呼ぶという
+概念があります。多重引数ディスパッチと多重継承のために @code{next-method}
+は少し複雑にはなっていますが、基本的なアイディアは同じです。
 
-���ơ��Ǥ� @code{<shape>} �Υ����ѡ����饹�Ϥʤ�Ǥ��礦���¤ϡ�
-���٤Ƥ� Scheme ��������줿���饹�� @code{<object>} �Ȥ������饹��
-�Ѿ����ޤ��������åȤΤ��ɤ��򸫤Ƥ���Τϡ�@code{<object>} ��
-������᥽�åɤʤΤǤ�����ʬ��������� @code{initialize} �᥽�å����
-@code{next-method} ��ƤӤ��������ȤǤϡ����٤ƤΥ����åȤ�
-���������˥���饤�����줿�Ȥߤʤ��ޤ����Ȥ����櫓�ǡ���ʬ���������
-@code{initialize} �Τʤ����̾�ǽ�ˤ��٤����Ȥ� @code{next-method}
-��Ƥ֤��ȤǤ���
+さて、では @code{<shape>} のスーパークラスはなんでしょう。実は、
+すべての Scheme で定義されたクラスは @code{<object>} というクラスを
+継承します。スロットのめんどうを見ているのは、@code{<object>} の
+初期化メソッドなのです。自分で定義した @code{initialize} メソッド中で
+@code{next-method} を呼びだしたあとでは、すべてのスロットが
+正しくイニシャライズされたとみなせます。というわけで、自分で定義した
+@code{initialize} のなかで通常、最初にすべきことは @code{next-method}
+を呼ぶことです。
 
-��Υ����ɤ��������Ƥߤޤ��礦��@code{(make <shape> args @dots{})} ��Ƥ֤ȡ�
-�����ƥ�� @code{<shape>} �Υ��󥹥��󥹤Τ���Υ������ݤ���
-@code{initialize} �����ͥ�å��ؿ��򡢤��Υ��󥹥��󥹤� @code{args @dots{}}
-�ǸƤӤޤ�������ϡ����޼�ʬ��������� @code{initialize} �˥ǥ����ѥå�
-����ޤ���������� @code{next-method} ��ӡ����줬����ɤ� @code{<object>}
-���饹�� @code{initialize} �᥽�åɤ��Ӥޤ�������Ǥ��Υ��󥹥��󥹤�
-init-value �� init-keyword �ǽ��������ޤ���@code{next-method} �����ɤä�
-���ȡ������� @code{<shape>} ���󥹥��󥹤򥰥����Х�� shape �ꥹ�Ȥ�
-@code{*shapes*} ����Ͽ���ޤ���
+上のコードを点検してみましょう。@code{(make <shape> args @dots{})} を呼ぶと、
+システムは @code{<shape>} のインスタンスのためのメモリを確保し、
+@code{initialize} ジェネリック関数を、そのインスタンスと @code{args @dots{}}
+で呼びます。これは、いま自分で定義した @code{initialize} にディスパッチ
+されます。その中で @code{next-method} よび、それがこんどは @code{<object>}
+クラスの @code{initialize} メソッドをよびます。これでこのインスタンスは
+init-value と init-keyword で初期化されます。@code{next-method} からもどった
+あと、新しい @code{<shape>} インスタンスをグローバルの shape リストに
+@code{*shapes*} に登録します。
 
-���� @code{<shape>} ���饹�� shape �����Ū��ǰ��ɽ�����Ƥ���ˤ����ޤ���
-�Ǥϡ������Ĥ��ζ���Ū�������ǽ�� shape �� @code{<shape>} ��
-@emph{���֥��饹��}�ˤ�ä�������ޤ��礦��
+この @code{<shape>} クラスは shape の抽象的概念を表現しているにすぎません。
+では、いくつかの具体的な描画可能な shape を @code{<shape>} の
+@emph{サブクラス化}によって定義しましょう。
 
 @c COMMON
 @example
@@ -783,40 +784,40 @@ method polymorphic, we define a postscript output device class,
 @code{<ps-device>}.
 
 @c JP
-@code{define-class} ��������������ܤ��Ƥ��������������
-@code{<point-shape>} ����� @code{<polyline-shape>} �� @code{<shape>}
-���饹�Υ����åȤ�Ѿ����Ƥ��뤳�Ȥ򼨤��Ƥ��ޤ��������� @code{<shape>}
-���饹������������ΤϤ��٤ơ������Υ��֥��饹�Ǥ���������뤳��
-�⼨���Ƥ��ޤ���
+@code{define-class} の第二引数に注目してください。これは
+@code{<point-shape>} および @code{<polyline-shape>} が @code{<shape>}
+クラスのスロットを継承していることを示しています。そして @code{<shape>}
+クラスが受け入れるものはすべて、それらのサブクラスでも受け入れらること
+も示しています。
 
-@code{<point-shape>} �ˤ� @code{point} �Ȥ��������åȤ��ҤȤ��ɲ�
-����Ƥ��ޤ������Υ����åȤϤ�����κǽ�����������@code{<2d-point>} ��
-���󥹥��󥹤�����ޤ���@code{<polyline-shape>} ���饹�����Υꥹ�ȡ�
-�ե饰���Ǽ���ޤ����ե饰��¿�ѷ��Υ饤�󤬽����Ȼ����Ĥʤ��Ǥ��뤫
-�ɤ�������ꤷ�ޤ���
+@code{<point-shape>} には @code{point} というスロットがひとつ追加
+されています。このスロットはこの節の最初で定義した、@code{<2d-point>} の
+インスタンスを持ちます。@code{<polyline-shape>} クラスは点のリスト、
+フラグを格納します。フラグは多角形のラインが終点と始点つないでいるか
+どうかを指定します。
 
-�Ѿ��ϤȤꤢ�Ĥ��������դ�ɬ�פʶ��Ϥʵ����Ǥ������ä��ꤹ��Ȥ�����
-������ǽ�ʥ����ɤ��Ǥ�������ޤ���(Paul Graham �ϡ�ɴǯ�θ���٤Ȥ���
-�����Τʤ��ǡ��֥��֥������Ȼظ��ץ�����ߥ󥰤ϥ��ѥ��åƥ������ɤ�
-�񤯤���λ�³Ū����ˡ���󶡤��Ƥ���롣�פȸ��äƤ���褦�ˡ�)
-�и�§���餤���ȥ��֥����פ�ɬ�פʤȤ��˥��֥��饹����Τ��褤�褦�Ǥ���
-�����åȤηѾ����տ魯��ʤˤ��ǤϤ���ޤ��������֥��饹���Τ����
-���פ���ͳ�ˤ��ƤϤ����ޤ���@code{<point-shape>} ���饹�Ǥ�ä��褦��
-���֥��ȥ饯�����֥��󥯥롼�ɡפ��뤳�ȤϾ�ˤǤ���ΤǤ���
+継承はとりあつかいに注意が必要な強力な機構です。うっかりするとすぐに
+追跡不能なコードができあがります。(Paul Graham は『百年の言語』という
+記事のなかで、「オブジェクト指向プログラミングはスパゲッティコードを
+書くための持続的な方法を提供してくれる。」と言っているように。)
+経験則からいうとサブタイプが必要なときにサブクラスを作るのがよいようです。
+スロットの継承は付随するなにかではありますが、サブクラス化のための
+主要な理由にしてはいけません。@code{<point-shape>} クラスでやったように
+サブストラクチャを「インクルード」することは常にできるのです。
 
-@code{<point-shape>} ���饹�˿����������åȥ��ץ���󤬤�����ޤ�����
-@code{:init-form} �Ȥ��������åȥ��ץ����ϡ�init-keyword ��
-@code{make} ��Ϳ�����ʤ��ä��Ȥ��Τ��Υ����åȤΥǥե�����ͤ���ꤷ�ޤ���
-�����������饹�������ɾ������� @code{:init-value} ���ͤȤϤ����äơ�
-���� @code{:init-form} ��Ȥ�ʤ��ͤϥ����ƥब�ºݤΤ����ͤ�ɬ�פȤ���
-�Ȥ���ɾ������ޤ����������äơ�@code{<point-shape>} �Υ��󥹥���
-�Ǥϡ�@code{<point-shape>} ���󥹥��󥹤� @code{:point} ������ɰ�����
-�錄���줺���������줿�Ȥ��ˤΤߡ��ǥե���Ȥ� @code{<2d-point>} 
-���󥹥��󥹤���������ޤ���
+@code{<point-shape>} クラスに新しいスロットオプションがあらわれました。
+@code{:init-form} というスロットオプションは、init-keyword が
+@code{make} に与えられなかったときのそのスロットのデフォルト値を指定します。
+しかし、クラス定義時に評価される @code{:init-value} の値とはちがって、
+この @code{:init-form} をともなう値はシステムが実際のその値を必要とした
+ときに評価されます。したがって、@code{<point-shape>} のインスタンス
+では、@code{<point-shape>} インスタンスが @code{:point} キーワード引数を
+わたされずに生成されたときにのみ、デフォルトの @code{<2d-point>} 
+インスタンスが生成されます。
 
-shape ���̤ΥǥХ������̤���ˡ�����褵�����ޤ������ޤΤȤ����ϡ�
-PostScript ���Ϥ������θ���ޤ��礦��@code{draw} �᥽�åɤ�¿�������������
-����ˡ�PostScript ���ϥǥХ��� @code{<ps-device>} ��������ޤ���
+shape は別のデバイスに別の方法で描画され得ます。いまのところは、
+PostScript 出力だけを考慮しましょう。@code{draw} メソッドに多相性を持たせる
+ために、PostScript 出力デバイス @code{<ps-device>} を定義します。
 
 @c COMMON
 @example
@@ -827,8 +828,8 @@ PostScript ���Ϥ������θ���ޤ��礦��@code{draw} �᥽�åɤ�¿�������������
 Then we can write a @code{draw} method, specialized for
 both @code{<shape>} and @code{<ps-device>}.
 @c JP
-��������ȡ�@code{<shape>} ����� @code{<ps-device>} ��ξ�������경����
-@code{draw} �᥽�åɤ�񤯤��Ȥ��Ǥ��ޤ���
+こうすると、@code{<shape>} および @code{<ps-device>} の両方に特定化した
+@code{draw} メソッドを書くことができます。
 
 @c COMMON
 @example
@@ -850,13 +851,13 @@ a @code{draw} method that is specialized for such devices.
 The above @code{draw} method does the common work, but actual
 drawing must be done in specialized way for each subclasses.
 @c JP
-���Υ����ɤǤ� @var{device} �����ϥ᥽�å�������ǤϻȤ��Ƥ��ޤ���
-�᥽�åɥǥ����ѥå��Τ���Τߤ˻Ȥ��ޤ����������̤ν��ϥǥХ���
-��ɬ�פˤʤä��顢���ΥǥХ��������경���� @code{draw} �᥽�åɤ�
-�ɲä��뤳�Ȥ��Ǥ��ޤ���
+このコードでは @var{device} 引数はメソッド本体内では使われていません。
+メソッドディスパッチのためのみに使われます。いずれ別の出力デバイス
+を必要になったら、そのデバイスに特定化した @code{draw} メソッドを
+追加することができます。
 
-��� @code{draw} �᥽�åɤ϶��̤λŻ��򤷤ޤ������ºݤ������
-���줾��Υ��֥��饹�Ѥ����경���줿��ˡ�ǹԤ�ʤ���Фʤ�ޤ���
+上の @code{draw} メソッドは共通の仕事をしますが、実際の描画は
+それぞれのサブクラス用に特定化された方法で行わなければなりません。
 
 @c COMMON
 @example
@@ -886,9 +887,9 @@ Finally, we do a little hack.  Let @code{draw} method work on
 the list of shapes, so that we can draw multiple shapes within a page
 in batch.
 @c JP
-�Ǹ�ˤ⤦�����������ϥå����ޤ��礦��@code{draw} �᥽�åɤ�
-shape �Υꥹ�Ȥ��Ф��Ƥ�ư���褦�ˤ��ޤ�����������С�
-Ʊ��ڡ������ʣ���� shape ��ҤĤޤȤ������Ǥ��ޤ���
+最後にもう少しだけ、ハックしましょう。@code{draw} メソッドを
+shape のリストに対しても動作するようにします。こうすれば、
+同一ページ内で複数の shape をひつまとめで描画できます。
 
 @c COMMON
 @example
@@ -901,7 +902,7 @@ shape �Υꥹ�Ȥ��Ф��Ƥ�ư���褦�ˤ��ޤ�����������С�
 @c EN
 Then we can write some simple figures @dots{}.
 @c JP
-����Ǵ�ñ�ʿޤ�񤱤�褦�ˤʤ�ޤ���
+これで簡単な図を書けるようになります。
 
 @c COMMON
 @example
@@ -947,9 +948,9 @@ simple drawing to the current output port.  You can write it out
 to file by the following expression, and then view the result
 by PostScript viewer such as GhostScript.
 @c JP
-�ؿ� @code{shape-sample} �ϸ��ߤν��ϥݡ��Ȥ˴�ñ�� PostScript �����襳����
-��񤭽Ф��ޤ��������ʲ��Τ褦�ʼ��ǥե�����˽��Ϥ���GhostScript�ʤɤ�
-PostScript�ӥ塼��Ƿ�̤򸫤Ƥ���������
+関数 @code{shape-sample} は現在の出力ポートに簡単な PostScript の描画コード
+を書き出します。これを以下のような式でファイルに出力し、GhostScriptなどの
+PostScriptビューワで結果を見てください。
 
 @c COMMON
 @example
@@ -960,13 +961,13 @@ PostScript�ӥ塼��Ƿ�̤򸫤Ƥ���������
 @c ----------------------------------------------------------------------
 @node General Inquiry, Class, Introduction to the object system, Object system
 @section  General Inquiry
-@c NODE ����Ū���䤤��碌
+@c NODE 一般的な問い合わせ
 
 @defun class-of obj
 @c EN
 Returns a class metaobject of @var{obj}.
 @c JP
-@var{obj}�Υ��饹���֤��ޤ���
+@var{obj}のクラスを返します。
 @c COMMON
 
 @example
@@ -981,8 +982,8 @@ Returns a class metaobject of @var{obj}.
 Returns true if @var{obj} is an instance of @var{class} or an instance
 of descendants of @var{class}.
 @c JP
-@var{obj}��@var{class}�Υ��󥹥��󥹤Ǥ��뤫��@var{class}�Υ��֥��饹��
-���󥹥��󥹤Ǥ�����ˡ������֤��ޤ���
+@var{obj}が@var{class}のインスタンスであるか、@var{class}のサブクラスの
+インスタンスである場合に、真を返します。
 @c COMMON
 
 @example
@@ -1004,13 +1005,13 @@ below.
 See @ref{Class redefinition} for the details of the semantics
 of redefined class.
 @c JP
-@var{obj}�Υ��饹�����������Ƥ��ޤ��ȡ������μ�³���ϡ��ǽ��
-@var{obj}�Υ��饹�򿷤������饹���ѹ����ޤ����������äơ�@code{class-of} ��
-���Ĥ⿷�������饹���֤��ޤ������ο��񤤤� stklos 0.55 �Ȥϰۤ�ޤ���
-stklos 0.55 �Ǥ� @code{class-of}�ϡ�@var{obj}����������Ƥ��ʤ���С�
-�줤���饹���֤��ޤ����⤷���줤���饹��ɬ�פʤФ����ϡ��ʲ���
-@code{current-class-of} ��Ȥ��٤��Ǥ������饹������Υ��ޥ�ƥ�������
-�ܺ٤ˤĤ��Ƥ� @ref{Class redefinition} �򸫤Ƥ���������
+@var{obj}のクラスが再定義されてしまうと、これらの手続きは、最初に
+@var{obj}のクラスを新しいクラスに変更します。したがって、@code{class-of} は
+いつも新しいクラスを返します。この振舞いは stklos 0.55 とは異ります。
+stklos 0.55 では @code{class-of}は、@var{obj}が更新されていなければ、
+旧いクラスを返します。もし、旧いクラスが必要なばあいは、以下の
+@code{current-class-of} を使うべきです。クラス再定義のセマンティクスの
+詳細については @ref{Class redefinition} を見てください。
 @c COMMON
 
 @defun current-class-of obj
@@ -1024,26 +1025,26 @@ You need this procedure in rare occasions, such as within
 @code{change-class} method, in which you don't want to trigger
 updating @var{obj} (which would cause infinite loop).
 @c JP
-@var{obj} �Υ��饹�᥿���֥������Ȥ��֤��ޤ���@var{obj} �Υ��饹��
-���������Ƥ��ޤä����Ǥ⡢@var{obj} �������ѹ��˹礻�ƹ��������
-���ʤ����ˤϡ����μ�³���� @var{obj} �θ��Υ��饹���֤��ޤ���
-���μ�³���ϡ�@var{obj} �򹹿����ޤ���
+@var{obj} のクラスメタオブジェクトを返します。@var{obj} のクラスが
+再定義されてしまった場合でも、@var{obj} がその変更に合せて更新されて
+いない場合には、この手続きは @var{obj} の元のクラスを返します。
+この手続きは、@var{obj} を更新しません。
 
-���μ�³���Ϥ�ä���ɬ�פˤϤʤ�ޤ���ɬ�פˤʤ�Τ� @code{change-class}
-�᥽�å���ǡ�@var{obj} �ι����Υȥꥬ������������ʤ��褦�ʾ��
-(̵�¥롼�פ򵯤���ǽ����������)�Ǥ���
+この手続きはめったに必要にはなりません。必要になるのは @code{change-class}
+メソッド内で、@var{obj} の更新のトリガーを引きたくないような場合
+(無限ループを起す可能性がある場合)です。
 @c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
 @node Class, Instance, General Inquiry, Object system
 @section Class
-@c NODE ���饹
+@c NODE クラス
 
 @c EN
 In this section, a class in Gauche is explained in detail.
 @c JP
-������Ǥϡ�Gauche �ˤ����륯�饹�ˤĤ��ƾܤ����������ޤ���
+この節では、Gauche におけるクラスについて詳しく説明します。
 @c COMMON
 
 @menu
@@ -1057,12 +1058,12 @@ In this section, a class in Gauche is explained in detail.
 
 @node Defining class, Inheritance, Class, Class
 @subsection Defining class
-@c NODE ���饹�����
+@c NODE クラスの定義
 
 @c EN
 To define a class, use a macro @code{define-class}.
 @c JP
-���饹���������ˤϡ�@code{define-class} �ޥ�����Ȥ��ޤ���
+クラスを定義するには、@code{define-class} マクロを使います。
 @c COMMON
 
 @defmac define-class name supers (slot-spec @dots{}) option @dots{}
@@ -1094,37 +1095,37 @@ another class).   Other options are passed to the @code{make}
 method to create the class object.  @xref{Class instantiation},
 for the usage of metaclass.
 @c JP
-�����ˤ�äƻ��ꤵ�줿���饹���֥������Ȥ������������� @var{name} ��
-�������Х��«�����ޤ������Υޥ����ϥȥåץ�٥�ǤΤ߻Ȥ����Ȥ��Ǥ��ޤ���
+引数によって指定されたクラスオブジェクトを作成し、それを @var{name} に
+グローバルに束縛します。このマクロはトップレベルでのみ使うことができます。
 
-@var{Supers} �Ϥ��Υ��饹���Ѿ�����ľ�ܤΥ����ѡ����饹�Υꥹ�ȤǤ���
-¿�ŷѾ���Ȥ��ޤ����Ѿ��ξܺ٤ˤĤ��Ƥ�@ref{Inheritance} �򻲾Ȥ��Ʋ�������
+@var{Supers} はそのクラスが継承する直接のスーパークラスのリストです。
+多重継承も使えます。継承の詳細については@ref{Inheritance} を参照して下さい。
 
-@var{Slot-spec} �ϡ֥����åȡפλ��ͤǡ�¾�θ���ǤϤ褯
-�֥ե�����ɡפ�֥��󥹥����ѿ��פȸƤФ���ΤǤ� 
-(@var{slot-spec} ��Ȥäơ֥��饹�ѿ��פ���ꤹ�뤳�Ȥ�Ǥ��ޤ�)��
-@var{slot-spec} �κǤ�ñ��ʥե�����ϥ���ܥ뤽�Τ�Τǡ�����̾����
-�����åȤǤ����ΤǤ������뤤�ϡ��ǽ�����Ǥ�����ܥ�ǻĤ�����Ǥ�
-������ɤ��ͤ���ߤ����ꥹ�Ȥ��Ϥ����Ȥ�Ǥ��ޤ���
+@var{Slot-spec} は「スロット」の仕様で、他の言語ではよく
+「フィールド」や「インスタンス変数」と呼ばれるものです 
+(@var{slot-spec} を使って「クラス変数」を指定することもできます)。
+@var{slot-spec} の最も単純なフォームはシンボルそのもので、その名前が
+スロットであるものです。あるいは、最初の要素がシンボルで残りの要素が
+キーワードと値が交互に来るリストを渡すこともできます。
 
-���Υꥹ�ȥե�����ϡ������åȤ�̾���������������Ǥʤ������Υ����åȤ�
-�����񤤤�������ޤ��������åȤ�����ˤĤ��Ƥϰʲ����������ޤ���
+このリストフォームは、スロットの名前を定義するだけでなく、そのスロットの
+振る舞いも定義します。スロットの定義については以下で説明します。
 
-�Ǹ�ˡ�@var{option} @dots{} �ϡ����饹���֥������Ȥ��ɤΤ褦��
-����뤫����ꤹ�롢������ɤ��ͤ���ߤ����ꥹ�ȤǤ���
+最後に、@var{option} @dots{} は、クラスオブジェクトがどのように
+作られるかを指定する、キーワードと値が交互に来るリストです。
 
-���Υޥ����Ǥ�1�ĤΥ�����ɰ�����@code{:metaclass} �ˤ�ꡢ
-�᥿���饹(¾�Υ��饹�򥤥󥹥��󥹲����륯�饹)�����Ǥ��ޤ���
-¾�Υ��ץ����ϥ��饹���֥������Ȥ�������뤿��ˡ�@code{make}
-�᥽�åɤ��Ϥ���ޤ����᥿���饹�λ�����ˡ�ˤĤ��Ƥϡ�
-@ref{Class instantiation}�򻲾ȡ�
+このマクロでは1つのキーワード引数、@code{:metaclass} により、
+メタクラス(他のクラスをインスタンス化するクラス)を指定できます。
+他のオプションはクラスオブジェクトを作成するために、@code{make}
+メソッドに渡されます。メタクラスの使用方法については、
+@ref{Class instantiation}を参照。
 @c COMMON
 @end defmac
 
 @c EN
 If a slot specification is a list, it should be in the following form:
 @c JP
-�����åȤλ���ϥꥹ�Ȥǡ��ʲ��Τ褦�ʥե�����Ǥ���٤��Ǥ���
+スロットの指定はリストで、以下のようなフォームであるべきです。
 @c COMMON
 
 @example
@@ -1241,128 +1242,128 @@ calls the procedure given to @code{slot-ref} instead, and see whether
 its return value is @code{#<undef>} or not.
 @end table
 @c JP
-�ƥ������(@code{option1} �ʤ�) �� @emph{slot option} ��Ϳ���ޤ���
-�ǥե���ȤǤϡ��ʲ��Υ����åȥ��ץ����ǧ������ޤ���
-�᥿���饹��������뤳�Ȥǡ��ǥե���Ȱʳ��Υ����åȥ��ץ�����
-�ɲäǤ��ޤ���
+各キーワード(@code{option1} など) は @emph{slot option} を与えます。
+デフォルトでは、以下のスロットオプションが認識されます。
+メタクラスを定義することで、デフォルト以外のスロットオプションを
+追加できます。
 
 @table @code
 
 @item :allocation
-���Υ����åȤΥ�����������󥿥��פ���ꤷ�ޤ�������ϡ����Υ����åȤ�
-�ɤΤ褦���ͤ��Ǽ���뤫����ꤷ�ޤ����ʲ��Τ褦�ʥ�������ͤ�
-ɸ�९�饹�ˤ�ä�ǧ������ޤ����ץ�����ޤϡ���ʬ�ѤΥ᥿���饹���������
-�����ʳ��Υ�����������󥿥��פ�ǧ������褦�ˡ����Υ��饹���ĥ���뤳��
-���Ǥ��ޤ���
+このスロットのアロケーションタイプを指定します。これは、このスロットが
+どのように値を格納するかを指定します。以下のようなキーワード値が
+標準クラスによって認識されます。プログラマは、自分用のメタクラスを定義し、
+これら以外のアロケーションタイプを認識するように、このクラスを拡張すること
+ができます。
 
 @table @code
 @item :instance
-�����åȤϳƥ��󥹥�����˥��������Ȥ���ޤ����������äơ����Τ��Τ�
-���󥹥��󥹤��̡����ͤ��Ƥޤ�������ϡ�������֥��󥹥���
-�ѿ��פο��񤤤�¸����ޤ���@code{:allocation} �����åȥ��ץ����
-��ά���줿��硢���줬�ǥե���ȤȤʤ�ޤ���
+スロットは各インスタンス毎にアロケートされます。したがって、おのおのの
+インスタンスは別々の値をもてます。これは、いわゆる「インスタンス
+変数」の振舞いを実現します。@code{:allocation} スロットオプションが
+省略された場合、これがデフォルトとなります。
 @item :class
-�����åȤϥ��饹���֥������ȼ��Ȥ˥��������Ȥ���ޤ����������äơ����Τ��Τ�
-���󥹥��󥹤Ϥ��Υ����åȤ�Ʊ���ͤ�ͭ���ޤ�������ϡ�������
-�֥��饹�ѿ��פο��񤤤�¸����ޤ������Υ����åȤ��ͤϡ����٤ƤΥ��֥��饹
-�Ǥⶦͭ����ޤ���(�����������֥��饹����������Υ����åȤ򥷥�ɥ�����
-���ˤϡ����Τ�����ǤϤ���ޤ���)
+スロットはクラスオブジェクト自身にアロケートされます。したがって、おのおのの
+インスタンスはこのスロットの同じ値を共有します。これは、いわゆる
+「クラス変数」の振舞いを実現します。このスロットの値は、すべてのサブクラス
+でも共有されます。(ただし、サブクラスの定義がこのスロットをシャドウする
+場合には、そのかぎりではありません。)
 @item :each-subclass
-@code{class} �������������Ȼ��Ƥ��ޤ����������åȤϥ��饹��˥���������
-����ޤ������ʤ�������Υ����åȤϡ����Υ��饹�Τ��٤ƤΥ��󥹥��󥹤�
-��ͭ����ޤ��������֥��饹�Υ��󥹥��󥹤ˤ϶�ͭ����ޤ���
+@code{class} アロケーションと似ていますが、スロットはクラス毎にアロケート
+されます。すなわち、このスロットは、このクラスのすべてのインスタンスで
+共有されますが、サブクラスのインスタンスには共有されません。
 @item :virtual
-���Υ����פΥ����å��Ѥˤϳ�Ǽ�ΰ�ϥ��������Ȥ���ޤ��󡣤��Υ����å�
-�˥�����������Ȱʲ����������� @code{:slot-ref} ����� @code{:slot-set!}
-���ץ�����Ϳ����줿��³�����ƤФ�ޤ�������������С���³�������åȤ�
-�����Ǥ���Ȥ������ȤǤ��������åȥ������������ virtual �Ȼ��ꤵ���
-�����硢���ʤ��Ȥ� @code{:slot-ref} ���ץ����Ʊ����
-���ꤵ��Ƥ��ʤ���Фʤ�ޤ��󡣤���ʤ���С�@code{define-class} ��
-���顼��ȯ�������ޤ���
+このタイプのスロット用には格納領域はアロケートされません。このスロット
+にアクセスすると以下で説明する @code{:slot-ref} および @code{:slot-set!}
+オプションで与えられた手続きが呼ばれます。いいかえれば、手続きスロットを
+作成できるということです。スロットアロケーションが virtual と指定されて
+いる場合、少なくとも @code{:slot-ref} オプションが同時に
+指定されていなければなりません。さもなければ、@code{define-class} は
+エラーを発生させます。
 @item :builtin
-���Υ�����������󥿥��פ��Ȥ߹��ߥ��饹��������˸���ޤ���
-Scheme ����Υ��饹�Ǥ��Υ����פ���ꤹ�뤳�ȤϤǤ��ޤ���
+このアロケーションタイプは組み込みクラスの中だけに現れます。
+Scheme 定義のクラスでこのタイプを指定することはできません。
 @end table
 
 @item :init-keyword
-���Υ����åȥ��ץ�����Ϳ����줿��������ͤϡ����󥹥��󥹤�����
-�����ݤ� @code{make} �᥽�åɤ˽���ͤ�錄������˻Ȥ��ޤ���
+このスロットオプションに与えられたキーワード値は、インスタンスが生成
+される際に @code{make} メソッドに初期値をわたすために使えます。
 
 @item :init-value
-�������˥�����ɰ����ǽ��������Ƥʤ������åȤξ�硢����ˤ�ä�
-�����åȤν���ͤ�Ϳ���ޤ��������ͤ� @code{define-class} ��ɾ�������
-�Ȥ��ˡ�ɾ������ޤ���
+生成時にキーワード引数で初期化されてないスロットの場合、これによって
+スロットの初期値を与えます。その値は @code{define-class} が評価される
+ときに、評価されます。
 
 @item :init-form
-@code{init-value} �Ȼ��Ƥ��ޤ�����Ϳ����줿�ͤ� thunk ����ޤ�Ƥ��ơ�
-�����ͤ�ɬ�פȤ��줿�������ɾ������ޤ���@code{init-value} ��
-@code{init-form} �Ȥ�ξ����Ϳ����줿���ˤ� @code{init-form} ��̵�뤵��ޤ���
-�ºݤˤϡ�@code{:init-form @var{expr}} �� @code{define-class} �ޥ�����
-@code{:init-thunk (lambda () @var{expr})} ���Ѵ�����ޤ���
+@code{init-value} と似ていますが、与えられた値は thunk で包まれていて、
+その値が必要とされた時に毎回評価されます。@code{init-value} と
+@code{init-form} との両方が与えられた時には @code{init-form} が無視されます。
+実際には、@code{:init-form @var{expr}} は @code{define-class} マクロの
+@code{:init-thunk (lambda () @var{expr})} に変換されます。
 
 @item :initform
-@code{init-form} ��Ʊ���Ǥ���STk �Ȥθߴ����Τ���ˤ���ޤ��������������ɤ�
-�񤯾��ˤϻȤ��٤��ǤϤ���ޤ���
+@code{init-form} と同義です。STk との互換性のためにあります。新しくコードを
+書く場合には使うべきではありません。
 
 @item :init-thunk
-thunk ��Ϳ���ޤ����⤷�����������åȤ��������˥�����ɰ����ˤ�ä�
-���������Ƥ��ʤ���С����� thunk ��ɾ���������������åȤν���ͤȤ��ޤ���
-@code{:init-form} �� @code{value} ��Ϳ���뤳�Ȥȡ�@code{:init-thunk}
-�� @code{(lambda () value)} ��Ϳ���뤳�Ȥ�Ʊ�����ȤǤ���
+thunk を与えます。もし、当該スロットが生成時にキーワード引数によって
+初期化されていなければ、その thunk を評価して当該スロットの初期値とします。
+@code{:init-form} に @code{value} を与えることと、@code{:init-thunk}
+に @code{(lambda () value)} を与えることは同じことです。
 
 @item :getter
-����ܥ��Ȥꡢgetter �᥽�åɤ���������Ʊ��̾���Υ����ͥ�å��ؿ���
-«�����ޤ���getter �᥽�åɤ��������饹�Υ��󥹥��󥹤�����Ȥ�������
-�����åȤ��ͤ��֤��ޤ���
+シンボルをとり、getter メソッドを生成し、同じ名前のジェネリック関数に
+束縛します。getter メソッドは当該クラスのインスタンスを引数とし、当該
+スロットの値を返します。
 
 @item :setter
-����ܥ��Ȥꡢsetter �᥽�åɤ���������Ʊ��̾���Υ����ͥ�å��ؿ���
-«�����ޤ���setter �᥽�åɤ��������饹�Υ��󥹥��󥹤��ͤ�ҤȤİ���
-�Ȥ��ơ����Υ��󥹥��󥹤����������åȤ��ͤ򤽤��ͤ˥��åȤ��ޤ���
+シンボルをとり、setter メソッドを生成し、同じ名前のジェネリック関数に
+束縛します。setter メソッドは当該クラスのインスタンスと値をひとつ引数
+として、そのインスタンスの当該スロットの値をその値にセットします。
 
 @item :accessor
-����ܥ��Ȥꡢ2 �ĤΥ᥽�å�(getter �᥽�åɤ� setter �᥽�å�)��
-�������ޤ���getter �᥽�åɤ�Ϳ����줿̾���Υ����ͥ�å��ؿ���
-«�����졢setter �᥽�åɤϡ�Ϳ����줿̾���Υ����ͥ�å�
-�ؿ���setter�Ȥ����ɲä���ޤ�(setter �ˤĤ��Ƥ� @ref{Assignments}
-�򻲾Ȥ��Ʋ�����)��
+シンボルをとり、2 つのメソッド(getter メソッドと setter メソッド)を
+生成します。getter メソッドは与えられた名前のジェネリック関数に
+束縛され、setter メソッドは、与えられた名前のジェネリック
+関数のsetterとして追加されます(setter については @ref{Assignments}
+を参照して下さい)。
 
 @item :slot-ref
-ɾ������Ȱ���(���󥹥���)���ĤȤ��³���Ȥʤ��ͤ���ꤷ�ޤ���
-���Υ����åȥ��ץ��������������åȤΥ������������ @code{virtual}
-�Ǥ����硢ɬ�����ꤵ��Ƥ��ʤ���Фʤ�ޤ��󡣥ץ�����ब
-@code{slot-ref}��getter �᥽�åɤ�Ȥä�
-���������åȤ��ͤ����褦�Ȥ���ȡ�
-���Υ��ץ����˻��ꤵ�줿��³�����ƤФ졢���η�̤�
-���������åȤ��ͤȤ����֤���ޤ�����³���� undef �ͤ��֤�
-(@code{undefined}�������)�������åȤ��ͤ��äƤ��ʤ����Ȥ򼨤�
-���Ȥ��Ǥ��ޤ����⤷�����åȤΥ������������ @code{virtual} ��
-�ʤ���С����Υ����åȥ��ץ�����̵�뤵��ޤ���
+評価すると引数(インスタンス)を一つとる手続きとなる値を指定します。
+このスロットオプションは当該スロットのアロケーションが @code{virtual}
+である場合、必ず指定されていなければなりません。プログラムが
+@code{slot-ref}やgetter メソッドを使って
+当該スロットの値を得ようとすると、
+このオプションに指定された手続きが呼ばれ、その結果が
+当該スロットの値として返されます。手続きは undef 値を返し
+(@code{undefined}の戻り値)、スロットが値をもっていないことを示す
+ことができます。もしスロットのアロケーションが @code{virtual} で
+なければ、このスロットオプションは無視されます。
 
 @item :slot-set!
-ɾ���������Ĥΰ���(���󥹥��󥹤���)��Ȥ��³���Ȥʤ��ͤ���ꤷ�ޤ���
-�ץ�����ब@code{slot-set!} ���뤤�� setter �᥽�åɤ�Ȥä�
-���������åȤ��ͤ򥻥åȤ��褦�Ȥ���Ȥ��ˡ�
-���ꤷ����³�������󥹥��󥹤ȥ��åȤ��٤��ͤ�����Ȥ���
-�ƤФ�ޤ��������åȥ������������
-@code{virtual}�Ǥʤ���С����Υ����åȥ��ץ�����̵�뤵��ޤ���
-���Υ����åȥ��ץ�����̵��virtual�����åȤϥ꡼�ɥ���꡼�����åȤȤʤ�ޤ���
+評価すると二つの引数(インスタンスと値)をとる手続きとなる値を指定します。
+プログラムが@code{slot-set!} あるいは setter メソッドを使って
+当該スロットに値をセットしようとするときに、
+指定した手続きがインスタンスとセットすべき値を引数として
+呼ばれます。スロットアロケーションが
+@code{virtual}でなければ、このスロットオプションは無視されます。
+このスロットオプションの無いvirtualスロットはリードオンリースロットとなります。
 
 @item :slot-bound?
-ɾ������Ȱ���(���󥹥���)���ĤȤ��³���Ȥʤ��ͤ���ꤷ�ޤ���
-���Υ����åȥ��ץ��������������åȤΥ������������ @code{virtual}
-�Ǥ����礷����̣������ޤ���
-�ץ�����ब���������åȤ��ͤ���äƤ��뤫�ɤ�������ꤷ�褦�Ȥ����Ȥ��ˡ�
-���μ�³����ƤФ�ޤ�����³���ϡ������åȤ��ͤ��Ĥʤ顢�����ͤ�
-�����Ǥʤ����@code{#f} ���֤��ޤ������ۥ����åȤ��Ф��ơ����Υ����å�
-���ץ���󤬾�ά�����ȡ������ƥ������ @code{slot-ref} ��Ϳ�����
-����³����Ƥӡ����줬��@code{#<undef>} ���֤����ɤ������ޤ���
+評価すると引数(インスタンス)を一つとる手続きとなる値を指定します。
+このスロットオプションは当該スロットのアロケーションが @code{virtual}
+である場合しか意味を持ちません。
+プログラムが当該スロットが値を持っているかどうかを決定しようとしたときに、
+この手続きを呼ばれます。手続きは、スロットが値をもつなら、真の値を、
+そうでなければ@code{#f} を返します。仮想スロットに対して、このスロット
+オプションが省略されると、システムは代りに @code{slot-ref} に与えられ
+た手続きを呼び、それが、@code{#<undef>} を返すかどうか見ます。
 @end table
 @c COMMON
 
 @node Inheritance, Class object, Defining class, Class
 @subsection Inheritance
-@c NODE �Ѿ�
+@c NODE 継承
 
 @c EN
 Inheritance has two roles.  First, you can @emph{extend} the existing
@@ -1370,10 +1371,10 @@ class by adding more slots.  Second, you can @emph{specialize} the
 methods related to the existing class so that those methods will
 do a little more specific task than the original methods.
 @c JP
-�Ѿ��ˤϤդ��Ĥ���䤬����ޤ������ˡ������åȤ��ɲä��뤳�Ȥ�
-��¸�Υ��饹��@emph{��ĥ}�Ǥ��ޤ�������ˤϡ���¸�Υ��饹
-��Ϣ����᥽�åɤ�@emph{���경}���ơ������Υ᥽�åɤ��⤹����
-���경�����Ż����餻��褦�ˤǤ��ޤ���
+継承にはふたつの役割があります。第一に、スロットを追加することで
+既存のクラスを@emph{拡張}できます。第二には、既存のクラス
+関連するメソッドを@emph{特定化}して、元々のメソッドよりもすこし
+特定化した仕事をやらせるようにできます。
 @c COMMON
 
 @c EN
@@ -1387,17 +1388,17 @@ Specifically, if @code{<T>} directly inherits @code{<S>}, that is,
 then @code{<S>} is a @emph{direct superclass} of @code{<T>}, 
 and @code{<T>} is a @emph{direct subclass} of @code{<S>}.
 @c JP
-�����Ĥ����Ѹ��������Ƥ����ޤ��礦�����饹 @code{<T>} �����饹
-@code{<S>}��Ѿ����Ƥ���Ȥ���@code{<T>} �� @code{<S>} ��
-@emph{���֥��饹}�Ȥ�����@code{<S>} �� @code{<T>} ��
-@emph{�����ѡ����饹}�Ȥ����ޤ������δط��Ͽ��Ū�Ǥ������ʤ����
-@code{<T>} �Υ��֥��饹�ϡ���Ϥ� @code{<S>} �Υ��֥��饹�Ǥ��ꡢ
-@code{<S>} �Υ����ѡ����饹�ϡ���Ϥ� @code{<T>} �Υ����ѡ����饹�Ǥ���
-�äˡ�@code{<T>} �� @code{<S>} ��ľ�ܷѾ����Ƥ����硢���ʤ����
-@code{<S>} �� @code{<T>} ���������ݤΥ����ѡ����饹�ꥹ�Ȥ�
-�����Ƥ�����ˤ� @code{<S>} �� @code{<T>} ��
-@emph{ľ�ܥ����ѡ����饹}�Ȥ�����@code{<T>} �� @code{<S>} ��
-@emph{ľ�ܥ��֥��饹}�Ȥ����ޤ���
+いくつかの用語を定義しておきましょう。クラス @code{<T>} がクラス
+@code{<S>}を継承しているとき、@code{<T>} を @code{<S>} の
+@emph{サブクラス}といい、@code{<S>} を @code{<T>} の
+@emph{スーパークラス}といいます。この関係は推移的です。すなわち、
+@code{<T>} のサブクラスは、やはり @code{<S>} のサブクラスであり、
+@code{<S>} のスーパークラスは、やはり @code{<T>} のスーパークラスです。
+特に、@code{<T>} が @code{<S>} を直接継承している場合、すなわち、
+@code{<S>} が @code{<T>} を定義する際のスーパークラスリストに
+現われている場合には @code{<S>} を @code{<T>} の
+@emph{直接スーパークラス}といい、@code{<T>} を @code{<S>} の
+@emph{直接サブクラス}といいます。
 @c COMMON
 
 @c EN
@@ -1410,14 +1411,14 @@ A CPL of a class always begins with the class itself, and ends with
 
 You can query a class's CPL by a procedure @code{class-precedence-list}:
 @c JP
-���饹����������Ȥ������Υ��饹�Ȥ��Υ����ѡ����饹�ϡ����֥��饹����
-�����ѡ����饹�Ȥ�������ˤʤꡢ���饹�Υꥹ�Ȥ����ν����������ޤ���
-���Υꥹ�ȤΤ��Ȥ�@emph{���饹��̥ꥹ��}�����뤤�� CPL �Ȥ����ޤ���
-���٤ƤΥ��饹�Ϥ��줾�켫�Ȥ� CPL ����äƤ��ޤ���
-���饹�� CPL �Ͼ�˼�ʬ���Ȥ���Ϥ��ޤꡢ@code{<top>} �ǽ���ޤ���
+クラスを定義したとき、そのクラスとそのスーパークラスは、サブクラスから
+スーパークラスという順序になり、クラスのリストがその順で生成されます。
+このリストのことを@emph{クラス順位リスト}、あるいは CPL といいます。
+すべてのクラスはそれぞれ自身の CPL を持っています。
+クラスの CPL は常に自分自身からはじまり、@code{<top>} で終ります。
 
-��³�� @code{class-precedence-list} ���Ѥ��ƥ��饹�� CPL ���䤤��碌
-�뤳�Ȥ��Ǥ��ޤ���
+手続き @code{class-precedence-list} を用いてクラスの CPL を問い合わせ
+ることができます。
 @c COMMON
 
 @example
@@ -1434,12 +1435,12 @@ between itself and @code{<top>}; the above example shows @code{<string>}
 class inherits @code{<sequence>} and @code{<collection>}.
 That means a string can behave both as a sequence and a collection.
 @c JP
-����Ȥ狼��褦�ˡ����٤ƤΥ��饹�� @code{<top>} �Ȥ���̾���Υ��饹��
-�Ѿ����Ƥ��ޤ����Ȥ߹��ߥ��饹�ˤϡ������Ĥ�����ݥ��饹�� CPL ���
-��ʬ���Ȥ� @code{<top>} �δ֤�Ϣ�ͤƤ����Τ⤢��ޤ��������Ǥ�
-@code{<string>} ���饹�� @code{<sequence>} �� @code{<collection>} ��
-�Ѿ����Ƥ��ޤ�������ϡ�ʸ���󤬥������󥹤Ȥ��Ƥ⡢���쥯�����Ȥ���
-�⿶�񤦤��Ȥ��Ǥ���Ȥ������ȤǤ���
+見るとわかるように、すべてのクラスは @code{<top>} という名前のクラスを
+継承しています。組み込みクラスには、いくつかの抽象クラスを CPL 中で
+自分自身と @code{<top>} の間に連ねているものもあります。上の例では
+@code{<string>} クラスは @code{<sequence>} と @code{<collection>} を
+継承しています。これは、文字列がシーケンスとしても、コレクションとして
+も振舞うことができるということです。
 @c COMMON
 
 @example
@@ -1458,11 +1459,11 @@ you can just follow the class's super, its super's super, its
 super's super's super, @dots{}, until you reach @code{<top>}.
 See the example:
 @c JP
-Scheme������������饹�ηѾ��ˤĤ��ƤϤɤ��Ǥ��礦��
-ñ��Ѿ��ʤ顢CPL ��ľ٣Ū�Ǥ������Υ��饹�Υ����ѡ����饹��
-�����ѡ����饹�Υ����ѡ����饹��
-�����ѡ����饹�Υ����ѡ����饹�Υ����ѡ����饹��@dots{} ��
-@code{<top>} ����ã����ޤǡ����ɤäƤ����ޤ�����򸫤Ƥ���������
+Schemeで定義したクラスの継承についてはどうでしょう。
+単一継承なら、CPL は直截的です。そのクラスのスーパークラス、
+スーパークラスのスーパークラス、
+スーパークラスのスーパークラスのスーパークラス、@dots{} と
+@code{<top>} に到達するまで、たどっていけます。例を見てください。
 @c COMMON
 
 @example
@@ -1498,23 +1499,23 @@ be constructed with satisfying consistencies, an error is reported.
 
 Here's a simple example of multiple inheritance.
 @c JP
-Scheme����Υ��饹�Ͼ�� @code{<object>} ��Ѿ����ޤ���
-�����ƥब��ưŪ���������ޤ���
+Scheme定義のクラスは常に @code{<object>} を継承します。
+システムが自動的に挿入します。
 
-¿�ŷѾ����Ȥ�����ˤ��äϤ�����ʣ���ˤʤ�ޤ���ʣ���Υ����ѡ����饹��
-ʣ���� CPL ��ҤȤĤ� CPL �˥ޡ������ʤ���Фʤ�ޤ��󡣤��Τ��Ȥ�
-@emph{������}�Ȥ����������Ĥ�����������ά���Τ��Ƥ��ޤ���Gauche �Ǥ�
-�ǥե���Ȥ� @emph{C3 ������}�ȸƤФ�Ƥ��륢�르�ꥺ���Ȥ��ޤ���
-���Υ��르�ꥺ��϶ɽ�Ū�ʽ�̡�ñĴ������ĥ��̥���դ��������ΤȤ줿
-��ΤǤ��������ǤϾܺ٤�Ω������ޤ��󤬡�����Ū�ʥ롼��Ȥ��ơ�
-CPL ��Υ����ѡ����饹�ν���ϡ��Ĥͤˤ��Υ��饹��ľ�ܥ����ѡ����饹��
-��������줾��Υ����ѡ����饹�� CPL �ν��������ӡ��ƥ����ѡ����饹
-��ľ�ܥ����ѡ����饹�ν�����ʤɤ������������ޤ������Τ������ˤĤ���
-��@ref{dylan,[Dylan],Dylan}�򻲾Ȥ��Ƥ���������
+多重継承が使われる場合には話はすこし複雑になります。複数のスーパークラスの
+複数の CPL をひとつの CPL にマージしなければなりません。このことを
+@emph{線形化}といい、いくつかの線形化戦略が知られています。Gauche では
+デフォルトで @emph{C3 線形化}と呼ばれているアルゴリズムを使います。
+このアルゴリズムは局所的な順位、単調性、拡張順位グラフと整合性のとれた
+ものです。ここでは詳細に立ち入りませんが、一般的なルールとして、
+CPL 中のスーパークラスの順序は、つねにそのクラスの直接スーパークラスの
+順序、それぞれのスーパークラスの CPL の順序、および、各スーパークラス
+の直接スーパークラスの順序、などと整合性をもちます。正確な説明について
+は@ref{dylan,[Dylan],Dylan}を参照してください。
 
-�⤷���饹������������������ CPL ���ۤǤ��ʤ��褦�ʤ������
-ʣ���Υ����ѡ����饹��Ѿ�����ȡ����顼�ˤʤ�ޤ����ʲ���¿�ŷѾ���
-ñ�����Ǥ���
+もしクラスが、整合性を満した CPL を構築できないようなやり方で
+複数のスーパークラスを継承すると、エラーになります。以下は多重継承の
+単純な例です。
 @c COMMON
 
 @example
@@ -1537,10 +1538,10 @@ Note that the order of direct superclasses of @code{<hv-grid>}
 
 The following is a little twisted example:
 @c JP
-@code{<hv-grid>} ��ľ�ܥ����ѡ����饹(@code{<horizontal-grid>}��
-@code{<vertical-grid>})�ν������¸����Ƥ��뤳�Ȥ����դ��Ƥ���������
+@code{<hv-grid>} の直接スーパークラス(@code{<horizontal-grid>}と
+@code{<vertical-grid>})の順序が保存されていることに注意してください。
 
-�ʲ��ϡ��������Ҥͤ��줿��Ǥ���
+以下は、すこしひねくれた例です。
 @c COMMON
 
 @example
@@ -1579,20 +1580,20 @@ of which @code{b} and @code{e}'s definitions come from @code{<U>}'s
 definitions, @code{c} and @code{d}'s come from @code{<T>}, and
 @code{a}'s comes from @code{<S>}.
 @c JP
-���ä��󥯥饹��̤���ޤ�ȡ�������줿���饹�Υ����åȤ��ʲ��μ���
-�׻�����ޤ��������åȤ������ CPL ��Υ����ѡ����饹���饵�֥��饹�ؤ�
-��ǽ�����ޤ������֥��饹�˥����ѡ����饹��Ʊ��̾���Υ����å������
-���ä����ˤϡ����֥��饹�Τ��Υ����å���������Ѥ��졢�����ѡ����饹
-����������ϼΤƤ��ޤ������륯�饹 @code{<S>} �������å� @code{a}��
-@code{b}������� @code{c} ��������Ƥ��ꡢ���륯�饹 @code{<T>} ��
-�����å� @code{c}��@code{d}������� @code{e} �������������ˡ�
-���륯�饹 @code{<U>} �������å� @code{b} ����� @code{e} ��������Ƥ����
-���褦��@code{<U>} �� CPL �� @code{(<U> <T> <S> <object> <top>)} ��
-�ʤäƤ����硢@code{<U>} �Υ����åȤ����οޤΤ褦�˷׻�����ޤ���
-���ʤ����@code{<U>} �� 5 �ĤΥ����åȤ�����
-@code{b} ����� @code{e} ������� @code{<U>} �Τ�Τ�@code{c}
-����� @code{d} ������� @code{<T>} ͳ��Τ�Τ򡢤����ơ�@code{a}
-������� @code{<S>} ͳ��Τ�ΤȤʤ�ޤ���
+いったんクラス順位が決まると、定義されたクラスのスロットが以下の手順で
+計算されます。スロットの定義が CPL 中のスーパークラスからサブクラスへの
+順で集められます。サブクラスにスーパークラスと同じ名前のスロット定義が
+あった場合には、サブクラスのそのスロット定義が採用され、スーパークラス
+の方の定義は捨てられます。あるクラス @code{<S>} がスロット @code{a}、
+@code{b}、および @code{c} を定義しており、あるクラス @code{<T>} が
+スロット @code{c}、@code{d}、および @code{e} を定義し、さらに、
+あるクラス @code{<U>} がスロット @code{b} および @code{e} を定義していると
+しよう。@code{<U>} の CPL が @code{(<U> <T> <S> <object> <top>)} と
+なっている場合、@code{<U>} のスロットが下の図のように計算されます。
+すなわち、@code{<U>} は 5 つのスロットをもち、
+@code{b} および @code{e} の定義は @code{<U>} のものを、@code{c}
+および @code{d} の定義は @code{<T>} 由来のものを、そして、@code{a}
+の定義は @code{<S>} 由来のものとなります。
 @c COMMON
 
 @c EN
@@ -1610,8 +1611,8 @@ definitions, @code{c} and @code{d}'s come from @code{<T>}, and
 @end example
 @c JP
 @example
-   CPL         | �����åȤ����
-               |  () �ϥ���ɥ����줿�����åȤ�ɽ��
+   CPL         | スロットの定義
+               |  () はシャドウされたスロットを表す
  --------------+-------------------
    <top>       |
    <object>    |
@@ -1619,7 +1620,7 @@ definitions, @code{c} and @code{d}'s come from @code{<T>}, and
    <T>         |         c   d  (e)
    <U>         |     b           e
  --------------+--------------------
- <U>�Υ����å� | a   b   c   d   e
+ <U>のスロット | a   b   c   d   e
 @end example
 @c COMMON
 
@@ -1635,21 +1636,21 @@ of the same slot names, instead of the one shadowing the other.
 Or you can write a metaclass that forbids a subclass shadows
 the superclass's slot.
 @c JP
-@code{class-slots} �ؿ���Ȥäƥ��饹���֥������ȤΥ����å������
-�ꥹ�Ȥ����뤳�Ȥ��Ǥ��ޤ���
+@code{class-slots} 関数を使ってクラスオブジェクトのスロット定義の
+リストを得ることができます。
 
-��Ҥο��񤤤ϥǥե���Ȥο��񤤤ˤ����ʤ����Ȥ����դ��Ƥ���������
-CPL �η׻���ˡ���뤤�ϥ����å�����ηѾ���ˡ�ϡ��᥿���饹��
-������뤳�Ȥǥ������ޥ�����ǽ�Ǥ������Ȥ��С�Ʊ�������å�̾��
-�����åȥ��ץ����Ϥɤ줫��¾�Τ�Τ򥷥�ɥ����ޤ����������
-�ޡ������뤳�Ȥ��Ǥ���褦�˥᥿���饹��񤯤��Ȥ��Ǥ��ޤ���
-���뤤�ϡ����֥��饹�������ѡ����饹�Υ����åȤ򥷥�ɥ�����Τ�
-�ػߤ���褦�˥᥿���饹��񤯤��Ȥ��Ǥ��ޤ���
+上述の振舞いはデフォルトの振舞いにすぎないことに注意してください。
+CPL の計算方法あるいはスロット定義の継承方法は、メタクラスを
+定義することでカスタマイズ可能です。たとえば、同じスロット名の
+スロットオプションはどれかが他のものをシャドウしますが、これを
+マージすることができるようにメタクラスを書くことができます。
+あるいは、サブクラスがスーパークラスのスロットをシャドウするのを
+禁止するようにメタクラスを書くことができます。
 @c COMMON
 
 @node Class object, Slot definition object, Inheritance, Class
 @subsection Class object
-@c NODE ���饹���֥�������
+@c NODE クラスオブジェクト
 
 @c EN
 What is a class?  In Gauche, a class is just an object that implements
@@ -1660,19 +1661,19 @@ for the convenience of such introspection.
 Note that if those procedures return a list, it belongs to
 the class and you shouldn't modify it.
 @c JP
-���饹�Ȥϲ�����Gauche �Ǥϥ��饹�ϥ��֥������Ȥ򥤥󥹥��󥹲�����
-��������ε�ǽ���������褦�ʥ��֥������Ȥˤ����ޤ���
-�����ʤΤǡ������åȤ��ͤ򸫤�����ǡ����饹�����������ޤ���
-���Τ褦�������������Τ������ʼ�³���������Ĥ��Ѱդ���Ƥ��ޤ���
-�����μ�³�����ꥹ�Ȥ��֤���硢����ϥ��饹�˽�°�����Τǡ�
-�ѹ����ƤϤ����ʤ��Ȥ������Ȥ����դ��Ƥ���������
+クラスとは何か。Gauche ではクラスはオブジェクトをインスタンス化して
+ある特定の機能を実装するようなオブジェクトにすぎません。
+そうなので、スロットの値を見るだけで、クラス内部を覗けます。
+このように内部を覗くのに便利な手続きがいくつか用意されています。
+これらの手続きがリストを返す場合、それはクラスに所属するもので、
+変更してはいけないということに注意してください。
 @c COMMON
 
 @defun class-name class
 @c EN
 Returns the name of @var{class}.
 @c JP
-@var{class} ��̾�����֤��ޤ���
+@var{class} の名前を返します。
 @c COMMON
 
 @example
@@ -1684,7 +1685,7 @@ Returns the name of @var{class}.
 @c EN
 Returns the class precedence list of @var{class}.
 @c JP
-@var{class} �Υ��饹��̥ꥹ�Ȥ��֤��ޤ���
+@var{class} のクラス順位リストを返します。
 @c COMMON
 
 @example
@@ -1702,8 +1703,8 @@ Returns a list of direct superclasses of @var{class}.
 A direct superclass is a class from which
 @var{class} inherits directly.
 @c JP
-@var{class} ��ľ�ܥ����ѡ����饹�Υꥹ�Ȥ��֤��ޤ���
-ľ�ܥ����ѡ����饹�� @var{class} ��ľ�ܷѾ����Ƥ��륯�饹�Ǥ���
+@var{class} の直接スーパークラスのリストを返します。
+直接スーパークラスは @var{class} が直接継承しているクラスです。
 @c COMMON
 
 @example
@@ -1719,10 +1720,10 @@ A direct subclass is a class that directly inherits
 @var{class}.  If @code{<T>} is a direct subclass of @code{<S>},
 then @code{<S>} is a direct superclass of @code{<T>}.
 @c JP
-@var{class} ��ľ�ܥ��֥��饹�Υꥹ�Ȥ��֤��ޤ���
-ľ�ܥ��֥��饹�� @var{class} ��ľ�ܷѾ����Ƥ��륯�饹�Ǥ���
-@code{<T>} �� @code{<S>} ��ľ�ܥ��֥��饹�Ǥ���С�
-@code{<S>} �� @code{<T>} ��ľ�ܥ����ѡ����饹�Ǥ���
+@var{class} の直接サブクラスのリストを返します。
+直接サブクラスは @var{class} を直接継承しているクラスです。
+@code{<T>} が @code{<S>} の直接サブクラスであれば、
+@code{<S>} は @code{<T>} の直接スーパークラスです。
 @c COMMON
 @end defun
 
@@ -1737,14 +1738,14 @@ the slot has.  See @ref{Slot definition object} for the details.
 The standard way to get a list of slot names of a given class
 is @code{(map slot-definition-name (class-slots class))}.
 @c JP
-@var{class} �� @emph{�����å����} �Υꥹ�Ȥ��֤��ޤ��������å������
-�ꥹ�Ȥǡ����� car ���ϥ����å�̾��cdr ���ϥ����åȥ��ץ�������ꤹ��
-��������ͤΥꥹ�ȤǤ��������å���������������ƥ����åȤΤ�����ʤ�
-�Τ뤳�Ȥ��Ǥ��ޤ����ܤ����� @ref{Slot definition object} ��
-���Ȥ��Ƥ���������
+@var{class} の @emph{スロット定義} のリストを返します。スロット定義は
+リストで、その car 部はスロット名、cdr 部はスロットオプションを指定する
+キーワード値のリストです。スロット定義内部を覗いてスロットのもつ性格を
+知ることができます。詳しくは @ref{Slot definition object} を
+参照してください。
 
-Ϳ����줿���饹�Υ����å�̾�Υꥹ�Ȥ����뤿���ɸ��Ū����ˡ�ϡ�
-@code{(map slot-definition-name (class-slots class))} �Ǥ���
+与えられたクラスのスロット名のリストを得るための標準的な方法は、
+@code{(map slot-definition-name (class-slots class))} です。
 @c COMMON
 @end defun
 
@@ -1754,9 +1755,9 @@ Returns a slot definition of a slot specified by @var{slot-name} in
 a class @var{class}.  If @var{class} doesn't have a named slot,
 @code{#f} is returned.
 @c JP
-���饹 @var{class} ��� @var{slot-name} �ǻ��ꤵ�줿�����åȤ�
-�����å�������֤��ޤ���@var{class} �����ꤷ��̾���Υ����åȤ�
-�����ʤ���� @code{#f} ���֤�ޤ���
+クラス @var{class} 中の @var{slot-name} で指定されたスロットの
+スロット定義を返します。@var{class} が指定した名前のスロットを
+持たなければ @code{#f} が返ります。
 @c COMMON
 @end defun
 
@@ -1767,9 +1768,9 @@ in this class (i.e. not inherited from superclasses).
 This information is used to calculate slot inheritance
 during class initialization.
 @c JP
-�������饹��ľ���������Ƥ���(�Ĥޤꥹ���ѡ����饹����Ѿ����줿
-��ΤǤϤʤ�)�����å�����Υꥹ�Ȥ��֤��ޤ������ξ���ϡ����饹��
-������κݤ˥����åȤηѾ���������뤿������Ѥ���ޤ���
+当該クラスで直接定義されている(つまりスーパークラスから継承された
+ものではない)スロット定義のリストを返します。この情報は、クラスの
+初期化の際にスロットの継承を処理するために利用されます。
 @c COMMON
 @end defun
 
@@ -1777,7 +1778,7 @@ during class initialization.
 @c EN
 Returns a list of methods that has @var{class} in its specializer.
 @c JP
-@var{class}�����경����ˤ�ĥ᥽�åɤΥꥹ�Ȥ��֤��ޤ���
+@var{class}を特定化子中にもつメソッドのリストを返します。
 @c COMMON
 @end defun
 
@@ -1791,19 +1792,19 @@ the information how to access, modify, and initialize the given slot.
 You don't usually need to deal with slot accessor objects unless
 you are defining some special slots using metaobject protocol.
 @c JP
-@var{class} �� @var{slot-name} �ǻ��ꤷ�������åȤ�
-�����åȥ����������֥������Ȥ��֤��ޤ���
-�����åȥ����������֥������Ȥ��������֥������Ȥ�Ϳ����줿�����åȤؤ�
-����������ˡ���ѹ���ˡ�����������ˡ�Ȥ�������򥫥ץ��벽���Ƥ��ޤ���
+@var{class} で @var{slot-name} で指定したスロットの
+スロットアクセサオブジェクトを返します。
+スロットアクセサオブジェクトは内部オブジェクトで与えられたスロットへの
+アクセス方法、変更方法、初期化の方法という情報をカプセル化しています。
 
-�᥿���֥������ȥץ��ȥ����Ȥä����̤ʥ����åȤ��������ΤǤʤ���С�
-�̾凉���åȥ����������֥������Ȥ򰷤�ɬ�פϤ���ޤ���
+メタオブジェクトプロトコルを使って特別なスロットを定義するのでなければ、
+通常スロットアクセサオブジェクトを扱う必要はありません。
 @c COMMON
 @end defun
 
 @node Slot definition object, Class redefinition, Class object, Class
 @subsection Slot definition object
-@c NODE �����å�������֥�������
+@c NODE スロット定義オブジェクト
 
 @c EN
 A slot definition object, returned by @code{class-slots},
@@ -1815,21 +1816,21 @@ Gauche keeps such a structure in future; you should use the
 following dedicated accessor methods to obtain information
 of a slot definition object.
 @c JP
-@code{class-slots} ���֤������åȤ�������֥�������
-@code{class-direct-slots} ����� @code{class-slot-definition}
-�ϥ����åȤ˴ؤ��������ݻ����Ƥ��ޤ���
-�������Ǥ� Gauche �ϥ����å������ɽ������Τ˥ꥹ�Ȥ�ȤäƤ��ޤ��������
-STklos �� TinyCLOS ��Ʊ���Ǥ�����������Gauche ������ˤ錄�äơ����ι�¤��
-�ݻ����뤫�ɤ������ݾڤΤ�����ǤϤ���ޤ��󡣥����å�������֥������Ȥ�
-���������ˤϰʲ��Τ������ѤΥ��������᥽�åɤ�Ȥ��٤��Ǥ���
+@code{class-slots} が返すスロットの定義オブジェクト
+@code{class-direct-slots} および @code{class-slot-definition}
+はスロットに関する情報を保持しています。
+現時点では Gauche はスロット定義を表現するのにリストを使っています。これは
+STklos や TinyCLOS と同じです。しかし、Gauche が将来にわたって、この構造を
+保持するかどうかは保証のかぎりではありません。スロット定義オブジェクトの
+情報を得るには以下のそれ専用のアクセサメソッドを使うべきです。
 @c COMMON
 
 @defun slot-definition-name slot-def
 @c EN
 Returns the name of a slot given by a slot definition object @var{slot-def}.
 @c JP
-�����å�������֥������� @var{slot-def} ��Ϳ����줿�����åȤ�̾����
-�֤��ޤ���
+スロット定義オブジェクト @var{slot-def} で与えられたスロットの名前を
+返します。
 @c COMMON
 @end defun
 
@@ -1837,7 +1838,7 @@ Returns the name of a slot given by a slot definition object @var{slot-def}.
 @c EN
 Returns a keyword-value list of slot options of @var{slot-def}.
 @c JP
-@var{slot-def} �Υ����åȥ��ץ����Υ�������ͥꥹ�Ȥ��֤��ޤ���
+@var{slot-def} のスロットオプションのキーワード値リストを返します。
 @c COMMON
 @end defun
 
@@ -1845,7 +1846,7 @@ Returns a keyword-value list of slot options of @var{slot-def}.
 @c EN
 Returns the value of @code{:allocation} option of @var{slot-def}.
 @c JP
-@var{slot-def} �� @code{:allocation} ���ץ������ͤ��֤��ޤ���
+@var{slot-def} の @code{:allocation} オプションの値を返します。
 @c COMMON
 @end defun
 
@@ -1856,8 +1857,8 @@ Returns the value of @code{:allocation} option of @var{slot-def}.
 Returns the value of @code{:getter}, @code{:setter} and @code{:accessor}
 slot options of @var{slot-def}, respectively.
 @c JP
-���줾�졢@var{slot-def} �� @code{:getter}��@code{:setter} �����
-@code{:accessor} �����åȥ��ץ������ͤ��֤��ޤ���
+それぞれ、@var{slot-def} の @code{:getter}、@code{:setter} および
+@code{:accessor} スロットオプションの値を返します。
 @c COMMON
 @end defun
 
@@ -1867,15 +1868,15 @@ Returns the value of slot option @var{option} of @var{slot-def}.
 If there's no such an option, @var{default} is returned
 if given, or an error is signalled otherwise.
 @c JP
-@var{slot-def} �Υ����åȥ��ץ���� @var{option} ���ͤ��֤��ޤ���
-���Τ褦�ʥ��ץ���󤬤ʤ����ˤϡ�@var{default} ��Ϳ�����Ƥ����
-������֤�������ʤ���С����顼�����ʥ뤬������ޤ���
+@var{slot-def} のスロットオプション @var{option} の値を返します。
+そのようなオプションがない場合には、@var{default} が与えられていれば
+それを返し、さもなければ、エラーシグナルがあがります。
 @c COMMON
 @end defun
 
 @node Class redefinition, Class definition examples, Slot definition object, Class
 @subsection Class redefinition
-@c NODE ���饹�κ����
+@c NODE クラスの再定義
 
 @c EN
 If the specified class name is bound to a class when @code{define-class}
@@ -1883,10 +1884,10 @@ is used, it is regarded as @emph{redefinition} of the original class.
 
 Redefinition of a class means the following operations:
 @c JP
-@code{define-class} ��Ȥ��Ȥ������ꤷ�����饹̾�����Ǥˤ��륯�饹��«��
-����Ƥ����硢����ϸ����Υ��饹��@emph{�����}�ȴ��蘆��ޤ���
+@code{define-class} を使うとき、指定したクラス名がすでにあるクラスに束縛
+されている場合、これは元々のクラスの@emph{再定義}と看倣されます。
 
-���饹�κ�����ϰʲ��������̣���ޤ���
+クラスの再定義は以下の操作を意味します。
 @c COMMON
 @c EN
 @itemize @bullet
@@ -1916,25 +1917,25 @@ The original class is marked @emph{redefined}.
 @c JP
 @itemize @bullet
 @item
-���������饹���֥������ȤϿ���������ˤ�ȤŤ����������졢
-@code{define-class} ��Ϳ����줿�ѿ���«������ޤ���
+新しいクラスオブジェクトは新しい定義にもとづいて生成され、
+@code{define-class} に与えられた変数に束縛されます。
 
 @item 
-�����Υ��饹���Ф���������줿�᥽�å�(���ʤ�������경�Ҥ����
-�����Υ��饹����ĥ᥽�å�)�Ͽ��������饹���������줿�褦��
-�ѹ�����ޤ���
+元々のクラスに対して定義されたメソッド(すなわち、特定化子の中に
+元々のクラスを持つメソッド)は新しいクラス上で定義されたように
+変更されます。
 
 @item
-�����Υ��饹��ľ�ܥ����ѡ����饹��ľ�ܥ��֥��饹��󥯤ϡ�
-���������饹��ؤ��褦���ѹ�����ޤ���
+元々のクラスの直接スーパークラスの直接サブクラスリンクは、
+新しいクラスを指すように変更されます。
 
 @item
-�����Υ��饹�Τ��٤ƤΥ��֥��饹�Ϥ��Υ��饹���ѹ���ȿ�Ǥ���褦��
-�Ƶ�Ū�˺��������ޤ����ƥ��饹�Ϥ��ν����������Ф��Ƥ��ꡢ
-��������줿���֥��饹�ϸ����Υ��֥��饹��Ʊ�����������������Ȥ�ޤ���
+元々のクラスのすべてのサブクラスはそのクラスの変更を反映するように
+再帰的に再定義されます。各クラスはその初期化引数を覚えており、
+再定義されたサブクラスは元々のサブクラスと同じ初期化引数を受けとります。
 
 @item
-�����Υ��饹�ˤ�@emph{�����}�ޡ������դ��ޤ���
+元々のクラスには@emph{再定義}マークが付きます。
 @end itemize
 @c COMMON
 
@@ -1948,13 +1949,13 @@ care.  You can customize class redefinition behavior by
 defining the @code{class-redefinition} method; see 
 @ref{Metaobject protocol} for the details.
 @c JP
-�����Υ��饹�ȿ��������饹���̤Υ��֥������ȤǤ��뤳�Ȥ����դ��Ƥ���������
-�����Υ��饹���֥������Ȥϸ����ɤΥ⥸�塼��Ǥɤ��ѿ���«������Ƥ�������
-�Ф��Ƥ��ꡢ����«���򿷤������饹���֤������ޤ����ɤ����ǡ������Υ��饹��
-��ľ�ܻ��Ȥ���äƤ���С����λ��Ȥϸ������饹�ؤλ��ȤΤޤޤǤ���������
-�ˤĤ��Ƥ��ä����դ��Ƥ���������@code{class-redefinition} �᥽�åɤ�
-������뤳�Ȥˤ�ꥯ�饹������ο��񤤤򥫥����ޥ����Ǥ��ޤ���
-�ܤ����� @ref{Metaobject protocol}�򻲾Ȥ��Ƥ���������
+元々のクラスと新しいクラスは別のオブジェクトであることに注意してください。
+元々のクラスオブジェクトは元々どのモジュールでどの変数に束縛されていたかを
+覚えており、この束縛を新しいクラスに置き換えます。どこかで、元々のクラスへ
+の直接参照を持っていれば、その参照は元々クラスへの参照のままです。この点
+については特に注意してください。@code{class-redefinition} メソッドを
+定義することによりクラス再定義の振舞いをカスタマイズできます。
+詳しくは @ref{Metaobject protocol}を参照してください。
 @c COMMON
 
 @c EN
@@ -1963,10 +1964,10 @@ are automatically @emph{updated} when it is about to be accessed or modified
 via @code{class-of}, @code{is-a?}, @code{slot-ref},
 @code{slot-set!}, @code{ref}, a getter method, or a setter method.  
 @c JP
-�����Υ��饹�Υ��󥹥��󥹤�¸�ߤ��Ƥ����硢�����Υ��󥹥��󥹤�
-�ʲ��Τ褦�ʥ᥽�åɤǥ����������뤤���ѹ����褦�Ȥ����Ȥ��˼�ưŪ��
-��������ޤ���@code{class-of}��@code{is-a?}��@code{slot-ref}��
-@code{slot-set!}��@code{ref}��getter�᥽�åɡ�setter�᥽�åɡ�
+元々のクラスのインスタンスが存在している場合、それらのインスタンスは
+以下のようなメソッドでアクセスあるいは変更しようとしたときに自動的に
+更新されます。@code{class-of}、@code{is-a?}、@code{slot-ref}、
+@code{slot-set!}、@code{ref}、getterメソッド、setterメソッド。
 @c COMMON
 
 @c EN
@@ -1980,13 +1981,13 @@ removed from the original class are discarded.
 You can customize this behavior by writing the @code{change-class} method.
 See @ref{Changing classes}, for the details.
 @c JP
-���󥹥��󥹤ι����Ȥϡ����󥹥��󥹤Υ��饹��(�줤���饹���鿷�������饹��)
-�ѹ�����Ȥ������ȤǤ����ǥե���ȤǤϡ������Υ��饹�ȿ��������饹��
-���̤Υ����åȤ��ͤϤ��Τޤް����Ѥ���ޤ������������饹���ɲä��줿
-�����åȤϿ��������饹�ǤΤ��Υ����åȤλ��ͤˤ������äƽ��������ޤ���
-�����Υ��饹���������줿�����åȤ��ͤ��˴�����ޤ������ο��񤤤ϡ�
-@code{change-class} �᥽�åɤ�񤯤��Ȥǥ������ޥ����Ǥ��ޤ����ܤ�����
-@ref{Changing classes} �򻲾Ȥ��Ƥ���������
+インスタンスの更新とは、インスタンスのクラスを(旧いクラスから新しいクラスへ)
+変更するということです。デフォルトでは、元々のクラスと新しいクラスで
+共通のスロットの値はそのまま引き継がれます。新しいクラスで追加された
+スロットは新しいクラスでのそのスロットの仕様にしたがって初期化されます。
+元々のクラスから削除されたスロットの値は破棄されます。この振舞いは、
+@code{change-class} メソッドを書くことでカスタマイズできます。詳しくは
+@ref{Changing classes} を参照してください。
 @c COMMON
 
 @c EN
@@ -1998,12 +1999,12 @@ class redefinition protocol simultaneously.   So Gauche uses
 a process-wide lock to limit only one thread to enter the
 class redefinition protocol at a time.  
 @c JP
-@subsubheading ����åɰ������ˤĤ���
+@subsubheading スレッド安全性について
 
-���饹����������ϥ�������ʽ����ǤϤʤ���¿���������Ѥ�Ԥ��ޤ���
-ʣ���Υ���åɤ�Ʊ���˥��饹������ץ��ȥ�������餻������
-���������ݾڤ���ΤϺ���Ǥ���������Gauche �Ǥϡ����٤ˤҤȤĤΥ���åɤ���
-���饹������ץ��ȥ��������ʤ��褦�ˡ��ץ�������٥�Υ��å�����Ѥ��ޤ���
+クラス再定義処理はローカルな処理ではなく、多くの副作用を行います。
+複数のスレッドが同時にクラス再定義プロトコルを走らせた場合の
+安全性を保証するのは困難です。そこでGauche では、一度にひとつのスレッドしか
+クラス再定義プロトコルに入らないように、プロセスレベルのロックを使用します。
 @c COMMON
 
 @c EN
@@ -2015,13 +2016,13 @@ subclasses, and all the methods and generic functions that
 are related to the class and subclasses, it is not trivial
 to determine two classes are completely independent or not.
 @c JP
-����åɤ����̤Υ���åɤ�������ץ��ȥ���ˤ������˥��饹��
-��������褦�Ȥ�����硢���Ȥ����̡��Υ��饹���������褦�Ȥ��Ƥ���
-���Ǥ⡢���Υ���åɤϥ֥��å�����ޤ������Τ褦�ˤ���Τϡ�
-����������Τ��٤ƤΥ��֥��饹�����Υ��饹�Ȥ��Υ��֥��饹��
-�ؤ�뤹�٤ƤΥ᥽�åɤ���ӥ����ͥ�å��ؿ��˱ƶ����뤫��ǡ�
-�դ��ĤΥ��饹����������Ω�Ǥ��뤫�ɤ�������ꤹ��Τϡ������Ǥ�
-�ʤ�����Ǥ���
+スレッドが、別のスレッドが再定義プロトコルにいる最中にクラスを
+再定義しようとした場合、たとえ、別々のクラスを再定義しようとしている
+場合でも、そのスレッドはブロックされます。このようにするのは、
+再定義がそのすべてのサブクラス、そのクラスとそのサブクラスに
+関わるすべてのメソッドおよびジェネリック関数に影響するからで、
+ふたつのクラスが完全に独立であるかどうかを決定するのは、自明では
+ないからです。
 @c COMMON
 
 @c EN
@@ -2029,9 +2030,9 @@ If a thread tries to access an instance whose class
 is being redefined by another thread, also the thread
 is blocked until the redefinition is finished.
 @c JP
-����åɤ�¾�Υ���åɤ���������褦�Ȥ��Ƥ��륯�饹�Υ��󥹥��󥹤�
-�����������褦�Ȥ������ˤ⡢���Υ���åɤϺ��������λ����ޤǡ�
-�֥��å�����ޤ���
+スレッドが他のスレッドが再定義しようとしているクラスのインスタンスに
+アクセスしようとした場合にも、このスレッドは再定義が完了するまで、
+ブロックされます。
 @c COMMON
 
 @c EN
@@ -2046,15 +2047,15 @@ However, an extra care is required to have mutex within
 an instance; just accessing the mutex in it may trigger
 the instance update protocol.
 @c JP
-���󥹥��󥹹����ץ��ȥ����ľ�󲽤���ޤ��󡣤դ��ĤΥ���åɤ�
-��������줿���饹�Υ��󥹥��󥹤˥����������褦�Ȥ���ȡ�ξ����
-����åɤ������ץ��ȥ����ư���ޤ�������Ϲ��ޤ����ʤ�������֤�
-�������ǽ��������ޤ������Τ褦�ʾ�礬�����ʤ��褦�ˤ���Τ�
-���ץꥱ����������Ǥ�Ǥ������󥹥��󥹤ؤΥ��������ϤɤΤߤ�
-�����ƥबľ�󲽤���櫓�ǤϤʤ��Τǡ�����ϼ����ʤ��ȤǤ���
-���󥹥������ mutex �������������ä����դ�ɬ�פǤ���
-���󥹥������mutex�˥���������������ǥ��󥹥��󥹹����ץ��ȥ����
-��ư���뤳�Ȥˤʤ��ǽ�������뤫��Ǥ���
+インスタンス更新プロトコルは直列化されません。ふたつのスレッドが
+再定義されたクラスのインスタンスにアクセスしようとすると、両方の
+スレッドが更新プロトコルを起動します。これは好ましくない競合状態を
+生じる可能性があります。このような場合がおきないようにするのは
+アプリケーションの責任です。インスタンスへのアクセスはどのみち
+システムが直列化するわけではないので、これは自然なことです。
+インスタンス内に mutex を持たせる場合は特に注意が必要です。
+インスタンス中のmutexにアクセスするだけでインスタンス更新プロトコルを
+起動することになる可能性があるからです。
 @c COMMON
 
 @c EN
@@ -2072,23 +2073,23 @@ will turn to the redefined class.
 As far as the author knows, class redefinition is not thread-safe
 in both STklos 0.56 and Guile 1.6.4.
 @c JP
-@subsubheading �ߴ����˴ؤ���
+@subsubheading 互換性に関して
 
-���饹������ץ��ȥ���� CLOS���� Scheme �����ƥ�Ȥ���̯�˰㤤�ޤ���
-Gauche �Τ�Τ� STklos �Τ�Τˤ褯���Ƥ��ޤ�����STklos 0.56 �Ϻ����
-���֥��饹��«�����֤��������������������Ф�����Ϥ��ʤ��Τǡ�
-��������줿���֥��饹�ϡ������Υ��֥��饹�����äƤ�������Τʤˤ�������
-���äƤ��ޤ���ǽ��������Ȥ������ˤ�����������ޤ���Guile �Υ��֥�������
-�����ƥ�ϥ��饹������ץ��ȥ���κǸ�ǡ������Υ��饹�Υ����ǥ�ƥ��ƥ���
-��������줿���饹�򥢥��ǥ�ƥ��ƥ��������ؤ��Ƥ��ޤ��ޤ�������椨��
-�����Υ��饹�ؤλ��Ȥϡ���������줿���饹�ؤλ��ȤȤʤ�ޤ���ɮ�Ԥ�
-�Τ뤫���ꡢ���饹������ϡ�STklos 0.56 �ˤ����Ƥ⡢Guile 1.6.4 �ˤ����Ƥ�
-����åɰ����ǤϤ���ޤ���
+クラス再定義プロトコルは CLOS風の Scheme システムとは微妙に違います。
+Gauche のものは STklos のものによく似ていますが、STklos 0.56 は再定義
+サブクラスの束縛を置き換えず、初期化引数を覚えたりはしないので、
+再定義されたサブクラスは、元々のサブクラスが持っていた情報のなにがしかを
+失ってしまう可能性があるという点にちがいがあります。Guile のオブジェクト
+システムはクラス再定義プロトコルの最後で、元々のクラスのアイデンティティと
+再定義されたクラスをアイデンティティを入れ替えてしまします。それゆえ、
+元々のクラスへの参照は、再定義されたクラスへの参照となります。筆者が
+知るかぎり、クラス再定義は、STklos 0.56 においても、Guile 1.6.4 においても
+スレッド安全ではありません。
 @c COMMON
 
 @node Class definition examples,  , Class redefinition, Class
 @subsection Class definition examples
-@c NODE ���饹�������
+@c NODE クラスの定義例
 
 @c EN
 Let's see some examples.  Suppose you are defining a graphical
@@ -2101,14 +2102,14 @@ parent window.  Finally, we create a "root" window that
 covers entire screen.  It also serves the default parent window.
 So far, what we get is something like this:
 @c JP
-�����Ĥ������ߤޤ��礦������ե�����ġ��륭�åȤ�������Ƥ���Ȥ���
-���Ȥ������Ȥˤ��ޤ��礦��@code{<window>} �ϥ����꡼���ζ���ΰ�ǡ�
-���ȹ⤵������ޤ���������ع�¤�˹������뤳�Ȥ���ǽ�Ǥ������ʤ����
-���� window ���̤� window ����֤����Ȥ��Ǥ����� window �ؤΥݥ��󥿤�
-��äƤ����ΤȤ��ޤ���window �ΰ��֤ϡ��ƥ�����ɥ��ΰ��֤����
-���к�ɸ��x �� y �ǻ��ꤷ�ޤ��������꡼�����Τ�ʤ���֥롼�ȡ�window 
-���ꡢ���줬�ǥե���Ȥο� window �ˤ�ʤ�ޤ��������ޤǤǡ����Τ褦��
-�ʤ�ޤ���
+いくつかの例をみましょう。グラフィカルツールキットを定義しているところ
+だということにしましょう。@code{<window>} はスクリーン上の矩形領域で、
+幅と高さを持ちます。これを階層構造に構成することが可能です。すなわち、
+ある window は別の window 中に置くことができ、親 window へのポインタを
+もっているものとします。window の位置は、親ウィンドウの位置からの
+相対座標、x と y で指定します。スクリーン全体を覆う「ルート」window 
+を作り、これがデフォルトの親 window にもなります。ここまでで、次のように
+なります。
 @c COMMON
 
 @example
@@ -2136,9 +2137,9 @@ Note the usage of @code{:init-value} and @code{:init-form}.
 When the @code{<window>} class is defined, we haven't bound
 @code{*root-window*} yet, so we can't use @code{:init-value} here.
 @c JP
-@code{:init-value} ����� @code{:init-form} �λȤ��������դ��Ƥ���������
-@code{<window>} ���饹��������줿�Ȥ���@code{*root-window*} �Ϥޤ�«��
-����Ƥ��ޤ���Τǡ������Ǥ� @code{:init-value} �ϻȤ��ޤ���
+@code{:init-value} および @code{:init-form} の使い方に注意してください。
+@code{<window>} クラスが定義されたとき、@code{*root-window*} はまだ束縛
+されていませんので、ここでは @code{:init-value} は使えません。
 @c COMMON
 
 @example
@@ -2176,12 +2177,12 @@ Add the following slot option to the definition of @code{<window>},
 and the slot @code{root-window} of the @code{<window>} class
 refers to the same storage space.
 @c JP
-ɮ�Ԥ�Ʊ�����Фλ�����ʤ顢@code{*root-window*} �Τ褦�ʥ������Х�
-�ѿ���ġ��륭�åȤΥ桼���˸��������Ȥϻפ�ʤ��Ǥ��礦�������
-���ץ��벽����ҤȤĤ���ˡ�ϡ��롼�� window �ؤΥݥ��󥿤򥯥饹�ѿ���
-�ݻ������뤳�ȤǤ���@code{<window>} ������˰ʲ��Τ褦�ʥ����åȥ��ץ�����
-�ɲä���� @code{<window>} ���饹�� @code{root-window} �����åȤ�Ʊ��
-��Ǽ�ΰ�򻲾Ȥ���褦�ˤʤ�ޤ���
+筆者と同じ感覚の持ち主なら、@code{*root-window*} のようなグローバル
+変数をツールキットのユーザに見せたいとは思わないでしょう。これを
+カプセル化するひとつの方法は、ルート window へのポインタをクラス変数に
+保持させることです。@code{<window>} の定義に以下のようなスロットオプションを
+追加すると @code{<window>} クラスの @code{root-window} スロットは同じ
+格納領域を参照するようになります。
 @c COMMON
 
 @example
@@ -2204,14 +2205,14 @@ of the window (the coordinates in the root window) instead of
 the relative position.  You may provide virtual slots that
 returns the absolute positions, like the following:
 @c JP
-@code{<window>} �Υ��󥹥��󥹤��Ф��ơ�@code{slot-ref} �����
-@code{slot-set!} �򡢤ޤ���@code{<window>} ���饹���Τ�Τ��Ф��Ƥϡ�
-@code{class-slot-ref} �� @code{class-slot-set!} ��Ȥä�
-@code{root-window} �����åȤ��ͤ���������ꡢ���åȤ�����Ǥ��ޤ���
+@code{<window>} のインスタンスに対して、@code{slot-ref} および
+@code{slot-set!} を、また、@code{<window>} クラスそのものに対しては、
+@code{class-slot-ref} や @code{class-slot-set!} を使って
+@code{root-window} スロットの値を取得したり、セットしたりできます。
 
-�ġ��륭�åȤΥ桼���� window �����к�ɸ�Τ��������к�ɸ(�롼�ȥ�����ɥ�
-��κ�ɸ)���ߤ����Ȼפ����Ȥ�����Ǥ��礦���ʲ��Τ褦�ˤ��ơ����к�ɸ��
-�֤����ۥ����åȤ��󶡤��뤳�Ȥ��Ǥ��ޤ���
+ツールキットのユーザは window の相対座標のかわりに絶対座標(ルートウィンドウ
+中の座標)が欲しいと思うことがあるでしょう。以下のようにして、絶対座標を
+返す仮想スロットを提供することができます。
 @c COMMON
 
 @example
@@ -2245,25 +2246,25 @@ by hiding instance variables and exposing methods.  In Gauche
 and other CLOS-like systems, slots are always visible to the
 users, so the situation is a bit different.
 @c JP
-�᥽�åɤ��뤤�ϲ��ۥ����åȷ�ͳ�Τ��Τ褦�ʥ��󥿥ե������򶡵뤹�뤳�Ȥ�
-�����֤󤫼�̣������Ǥ������ۥ����åȤϼ������ѹ��򱣤����Ȥ��Ǥ���Ȥ���
-����������ޤ����Ĥޤꡢ@code{root-x} ��¥����åȤ��ݻ�����褦���ѹ�����
-@code{x} �򤢤Ȥǲ��ۥ����åȤ��ѹ�����Ȥ������Ȥ� @code{<window>}��
-�Ȥ������ɤ����ˤ��뤳�Ȥʤ������ʤ��ޤ������֥������Ȼظ��μ�ή�θ���
-�Ǥϡ��̾盧�Τ褦�ʡּ����ѹ��α��áפϥ��󥹥����ѿ��򱣤����᥽�åɤ�
-��������Ȥ������ȤǤ����ʤ��Ƥ��ޤ���Gauche �䤽��¾�� CLOS �������ƥ�Ǥ�
-�����åȤϾ�˥桼�����鸫���Ƥ�������Ϥ������㤦�ΤǤ���
+メソッドあるいは仮想スロット経由のこのようなインタフェースを供給することは
+いくぶんか趣味の問題です。仮想スロットは実装の変更を隠すことができるという
+利点があります。つまり、@code{root-x} を実スロットに保持するように変更し、
+@code{x} をあとで仮想スロットに変更するということを @code{<window>}を
+使うコードをだめにすることなくおこなえます。オブジェクト指向の主流の言語
+では、通常このような「実装変更の隠蔽」はインスタンス変数を隠し、メソッドを
+公開するということでおこなわれています。Gauche やその他の CLOS 風システムでは
+スロットは常にユーザから見えており状況はすこし違うのです。
 @c COMMON
 
 @c ----------------------------------------------------------------------
 @node Instance, Generic function and method, Class, Object system
 @section Instance
-@c NODE ���󥹥���
+@c NODE インスタンス
 
 @c EN
 In this section, we explain how to create and use an instance.
 @c JP
-������Ǥϡ����󥹥��󥹤������Τ������ȻȤ����ˤĤ����������ޤ���
+この節では、インスタンスの生成のしかたと使い方について説明します。
 @c COMMON
 
 @menu
@@ -2274,16 +2275,16 @@ In this section, we explain how to create and use an instance.
 
 @node Creating instance, Accessing instance, Instance, Instance
 @subsection Creating instance
-@c NODE ���󥹥��󥹤κ���
+@c NODE インスタンスの作成
 
 @c EN
 Using class object, you can create an instance of the class
 by a generic function @code{make}.
 A specialized method for standard @code{<class>} is defined:
 @c JP
-���饹���֥������Ȥ�Ĥ����ȡ������ͥ�å��ؿ� @code{make} �Ǥ���
-���饹�Υ��󥹥��󥹤������Ǥ��ޤ���ɸ��� @code{<class>} ���Ф���
-���경���줿�᥽�åɤϰʲ��ΤȤ����������Ƥ��ޤ���
+クラスオブジェクトをつかうと、ジェネリック関数 @code{make} でその
+クラスのインスタンスを生成できます。標準の @code{<class>} に対して
+特定化されたメソッドは以下のとおり定義されています。
 @c COMMON
 
 @deffn {Generic Function} make
@@ -2293,8 +2294,8 @@ Creates an instance of @var{class} and returns it.
 @var{Arg} @dots{} is typically a keyword-value list
 to initialize the instance.
 @c JP
-@var{class} �Υ��󥹥��󥹤���������������֤��ޤ���@var{arg} @dots{} ��
-ŵ��Ū�ʾ��ˤϡ����Υ��󥹥��󥹤��������뤿��Υ�������ͤΥꥹ�ȤǤ���
+@var{class} のインスタンスを生成し、それを返します。@var{arg} @dots{} は
+典型的な場合には、そのインスタンスを初期化するためのキーワード値のリストです。
 @c COMMON
 @end deffn
 
@@ -2302,8 +2303,8 @@ to initialize the instance.
 Conceptually, the default @code{make} method is defined
 as follows:
 @c JP
-��ǰ�Ȥ��Ƥϡ��ǥե���Ȥ� @code{make} �᥽�åɤϰʲ��Τ褦����������
-���ޤ���
+概念としては、デフォルトの @code{make} メソッドは以下のように定義されて
+います。
 @c COMMON
 
 @example
@@ -2317,8 +2318,8 @@ as follows:
 That is, first it allocates memory for @var{class}'s instance,
 then initialize it with the @code{initialize} method.
 @c JP
-���ʤ�����ǽ顢@code{class} �Υ��󥹥����Ѥ˥���򥢥������Ȥ���
-���줫�顢@code{initialize} �᥽�åɤ��Ѥ��Ƥ�����������ޤ���
+すなわち、最初、@code{class} のインスタンス用にメモリをアロケートし、
+それから、@code{initialize} メソッドを用いてそれを初期化します。
 @c COMMON
 
 @deffn {Generic Function} allocate-instance
@@ -2326,7 +2327,7 @@ then initialize it with the @code{initialize} method.
 @c EN
 Returns a newly-allocated uninitialized instance of @var{class}.
 @c JP
-@var{class}�ο����˥��������Ȥ��줿�����������Ƥ��ʤ����󥹥��󥹤��֤��ޤ���
+@var{class}の新規にアロケートされた、初期化されていないインスタンスを返します。
 @c COMMON
 @end deffn
 
@@ -2335,7 +2336,7 @@ Returns a newly-allocated uninitialized instance of @var{class}.
 @c EN
 The default initialize method for @code{<object>} works as follows:
 @c JP
-@code{<object>} ���Ф���ǥե���Ȥν�����᥽�åɤϰʲ��Τ褦��Ư���ޤ���
+@code{<object>} に対するデフォルトの初期化メソッドは以下のように働きます。
 @c COMMON
 
 @c EN
@@ -2361,21 +2362,21 @@ Else: The slot is left unbound.
 @c JP
 @itemize @bullet
 @item
-���Υ��饹�ν������ǽ�ʥ����åȤΤ��줾����Ф��ơ�
+そのクラスの初期化可能なスロットのそれぞれに対して、
 @itemize @bullet
 @item
-�⤷ (���Υ����åȤ� :init-keyword �����åȥ��ץ�����������֤��ġ�
-���Υ�����ɤ� @var{initargs} ��ˤ���)
-���ΤȤ��ϡ��б������ͤ����Υ����åȤ���������Τ˻Ȥ��ޤ���
+もし (そのスロットが :init-keyword スロットオプションを持ち、「かつ」
+そのキーワードが @var{initargs} 中にある)
+そのときは、対応する値がそのスロットを初期化するのに使われます。
 @item
-�����ǤϤʤ��Ȥ����⤷�����Υ����åȤ���:init-value �����åȥ��ץ�����
-���ƤС����Υ��ץ�����Ϳ����줿�ͤ����Υ����åȤ���������Τ˻Ȥ��ޤ���
+そうではないとき、もし、そのスロットが、:init-value スロットオプションを
+持てば、そのオプションに与えられた値がそのスロットを初期化するのに使われます。
 @item
-�����Ǥ�ʤ��Ȥ����⤷�����Υ����åȤ���:init-thunk �����åȥ��ץ�����
-���ƤС����� thunk ���ƤФ줽���֤��ͤ������Υ����åȤ���������Τ�
-�Ȥ��ޤ���
+そうでもないとき、もし、そのスロットが、:init-thunk スロットオプションを
+持てば、その thunk が呼ばれその返り値が、そのスロットを初期化するのに
+使われます。
 @item
-����ˤɤ�Ǥ�ʤ���С����Υ����åȤ�̤«���ΤޤޤǤ���
+さらにどれでもなければ、そのスロットは未束縛のままです。
 @end itemize
 @end itemize
 @c COMMON
@@ -2389,12 +2390,12 @@ are initialized when the class object is created, if
 @code{:init-value} or @code{:init-form} slot option is given.
 Virtual slots aren't initialized at all.
 @c JP
-�ǥե���ȤΥ����åȥ�����������󥯥饹�Τʤ��ǡ����󥹥��󥹥���������
-�����åȤ������������ǽ�ǡ����ή��ǽ�������ޤ������饹����������
-�����å�(���ʤ���������åȥ������������ @code{:class} ���뤤��
-@code{:each-subclass} �Τɤ��餫�ξ��)�ϡ�@code{:init-value} ���뤤��
-@code{:init-form} �����åȥ��ץ����Ϳ�����Ƥ���С����饹���֥�������
-�������˽��������ޤ������ۥ����åȤ������������뤳�ȤϤ���ޤ���
+デフォルトのスロットアロケーションクラスのなかで、インスタンスアロケート
+スロットだけが初期化可能で、上の流れで処理されます。クラスアロケート
+スロット(すなわち、スロットアロケーションが @code{:class} あるいは
+@code{:each-subclass} のどちらかの場合)は、@code{:init-value} あるいは
+@code{:init-form} スロットオプションが与えられていれば、クラスオブジェクト
+生成時に初期化されます。仮想スロットが、初期化されることはありません。
 @c COMMON
 
 @c EN
@@ -2402,8 +2403,8 @@ An user-defined allocation class can be
 configured either initializable or not initializable; see
 @ref{Metaobject protocol} for the details.
 @c JP
-�桼�����������������󥯥饹�ϡ��������ǽ�ˤ��Բ�ǽ�ˤ����ꤹ�뤳�Ȥ�
-�Ǥ��ޤ����ܤ����� @ref{Metaobject protocol} �򻲾Ȥ��Ƥ���������
+ユーザ定義アロケーションクラスは、初期化可能にも不可能にも設定することが
+できます。詳しくは @ref{Metaobject protocol} を参照してください。
 @c COMMON
 
 @c EN
@@ -2412,10 +2413,10 @@ If you specialize @code{initialize} method, make sure to call
 by the default sequence, before accessing any slot of the
 newly created instance.
 @c JP
-@code{initialize} �᥽�åɤ����경������ˤ� @code{next-method} ��
-�μ¤˸ƤФ��褦�ˤ��ơ��������������줿���󥹥��󥹤Τ��٤Ƥ�
-�����åȤ˥��������������˥ǥե���Ȥ�ή��ǡ����Υ����åȤ�������
-����������褦�ˤ��Ƥ���������
+@code{initialize} メソッドを特定化する場合には @code{next-method} が
+確実に呼ばれるようにして、新しく生成されたインスタンスのすべての
+スロットにアクセスする前にデフォルトの流れで、そのスロットが正しく
+初期化されるようにしてください。
 @c COMMON
 @end deffn
 
@@ -2428,25 +2429,25 @@ However, knowing that how @code{make} works, you can specialize
 @code{make} itself to avoid allocation of instance in
 some circumstances (e.g. using pre-allocated instances).
 @c JP
-����������饹���б����� @code{initialize} �᥽�åɤ����경����
-���󥹥��󥹤ν��������ˡ�򥫥����ޥ�������Ȥ����Τ���ŵ��Ū��
-��꤫���Ǥ���
+定義したクラスに対応する @code{initialize} メソッドを特定化して
+インスタンスの初期化の方法をカスタマイズするというのが、典型的な
+やりかたです。
 
-@code{allocate-instance} �᥽�åɤ����경����Ȥ����Τϰ���Ū����ˡ�Ǥ�
-����ޤ��󡣤������ʤ��顢@code{make} ���ɤΤ褦��Ư�������ΤäƤ���ʤ顢
-@code{make} ���Τ�Τ����경���ơ��ʤ�餫�ξ���(���Ȥ��С����餫����
-���������Ȥ��Ƥ��륤�󥹥��󥹤�Ȥ��Ȥ����褦�ʾ���)�ǥ��󥹥��󥹤�
-�����������������Ǥ��ޤ���
+@code{allocate-instance} メソッドを特定化するというのは一般的な方法では
+ありません。しかしながら、@code{make} がどのように働くかを知っているなら、
+@code{make} そのものを特定化して、なんらかの状況(たとえば、あらかじめ
+アロケートしてあるインスタンスを使うというような状況)でインスタンスの
+アロケーションを回避できます。
 @c COMMON
 
 @node Accessing instance, Changing classes, Creating instance, Instance
 @subsection Accessing instance
-@c NODE ���󥹥��󥹤ؤΥ�������
+@c NODE インスタンスへのアクセス
 
 @c EN
 @subsubheading Standard accessors
 @c JP
-@subsubheading ɸ�ॢ������
+@subsubheading 標準アクセサ
 @c COMMON
 
 @defun slot-ref obj slot
@@ -2464,17 +2465,17 @@ arguments, @var{obj}'s class,
 @var{obj}, and @var{slot}.  The default behavior of @code{slot-missing}
 is to signal an error.
 @c JP
-���֥�������@var{obj}�Υ����å�@var{slot}���ͤ��֤��ޤ���
+オブジェクト@var{obj}のスロット@var{slot}の値を返します。
 
-���ꤷ�������åȤ��ͤ�«������Ƥ��ʤ���硢�����ͥ�å��ؿ�
-@code{slot-unbound}��3�Ĥΰ�����@var{obj}�Υ��饹��@var{obj}��@var{slot}
-��ȼ�äƸƤӽФ���ޤ���@code{slot-unbound}�Υǥե���Ȥο����񤤤ϡ�
-���顼�����ΤǤ���
+指定したスロットが値に束縛されていない場合、ジェネリック関数
+@code{slot-unbound}が3つの引数、@var{obj}のクラス、@var{obj}、@var{slot}
+を伴って呼び出されます。@code{slot-unbound}のデフォルトの振る舞いは、
+エラーの通知です。
 
-���֥������Ȥ����ꤵ�줿�����åȤ���äƤ��ʤ����ϡ������ͥ�å��ؿ�
-@code{slot-missing}��3�Ĥΰ�����@var{obj}�Υ��饹��@var{obj}��@var{slot}��
-ȼ�äƸƤӽФ���ޤ���@code{slot-missing}�Υǥե���Ȥο����񤤤ϡ�
-���顼�����ΤǤ���
+オブジェクトが指定されたスロットを持っていない場合は、ジェネリック関数
+@code{slot-missing}が3つの引数、@var{obj}のクラス、@var{obj}、@var{slot}を
+伴って呼び出されます。@code{slot-missing}のデフォルトの振る舞いは、
+エラーの通知です。
 @c COMMON
 @end defun
 
@@ -2487,12 +2488,12 @@ If the object doesn't have the specified slot, a generic function
 @code{slot-missing} is called with four arguments,
 @var{obj}'s class, @var{obj}, @var{slot}, @var{value}.
 @c JP
-���֥�������@var{obj}�Υ����å�@var{slot}���ͤ�@var{value}��
-���åȤ��ޤ���
+オブジェクト@var{obj}のスロット@var{slot}の値を、@var{value}に
+セットします。
 
-���֥������Ȥ����ꤷ�������åȤ���äƤ��ʤ����ϡ������ͥ�å��ؿ�
-@code{slot-missing}��4�Ĥΰ�����@var{obj}�Υ��饹��@var{obj}��
-@var{slot}��@var{value}��ȼ�äƸƤӽФ���ޤ���
+オブジェクトが指定したスロットを持っていない場合は、ジェネリック関数
+@code{slot-missing}が4つの引数、@var{obj}のクラス、@var{obj}、
+@var{slot}、@var{value}を伴って呼び出されます。
 @c COMMON
 @end defun
 
@@ -2505,12 +2506,12 @@ If the object doesn't have the specified slot, a generic function
 @code{slot-missing} is called with three arguments,
 @var{obj}'s class, @var{obj}, @var{slot}.
 @c JP
-���֥�������@var{obj}�Υ����å�@var{slot}��«������Ƥ���п���
-�����Ǥʤ���е����֤��ޤ���
+オブジェクト@var{obj}のスロット@var{slot}が束縛されていれば真を、
+そうでなければ偽を返します。
 
-���֥������Ȥ����ꤷ�������åȤ���äƤ��ʤ����ϡ������ͥ�å��ؿ�
-@code{slot-missing}��3�Ĥΰ�����@var{obj}�Υ��饹��@var{obj}��
-@var{slot}��ȼ�äƸƤӽФ���ޤ���
+オブジェクトが指定したスロットを持っていない場合は、ジェネリック関数
+@code{slot-missing}が3つの引数、@var{obj}のクラス、@var{obj}、
+@var{slot}を伴って呼び出されます。
 @c COMMON
 @end defun
 
@@ -2518,7 +2519,7 @@ If the object doesn't have the specified slot, a generic function
 @c EN
 Returns true if @var{obj} has the slot named @var{slot}.
 @c JP
-@var{obj}��@var{slot}����äƤ���п����֤��ޤ���
+@var{obj}が@var{slot}を持っていれば真を返します。
 @c COMMON
 @end defun
 
@@ -2528,9 +2529,9 @@ This function implements the common idiom.
 It can be defined like the following code
 (but it may be optimized in the future versions).
 @c JP
-���δؿ��ϡ�����Ū�ʥ��ǥ�����μ����Ǥ���
-����ϰʲ��Τ褦�ʥ����ɤ�����Ǥ��ޤ�(��������ΥС������Ǥ�
-��Ŭ�������Ǥ��礦)��
+この関数は、一般的なイディオムの実装です。
+これは以下のようなコードで定義できます(が、将来のバージョンでは
+最適化されるでしょう)。
 @c COMMON
 @example
 (define (slot-push! obj slot value)
@@ -2545,16 +2546,16 @@ These methods just calls @code{slot-ref} and @code{slot-set!}, respectively.
 They are slightly less efficient than directly calling @code{slot-ref}
 and @code{slot-set!}, but more compact in the program code.
 @c JP
-�����Υ᥽�åɤϤ��줾�졢ñ�� @code{slot-ref} ����� @code{slot-set!}
-��Ƥ֤����Ǥ���ľ�� @code{slot-ref} �� @code{slot-set!} ��Ƥ֤���
-��Ψ�Ϥ����������Ǥ������ץ�����ॳ���ɤϥ���ѥ��Ȥˤʤ�ޤ���
+これらのメソッドはそれぞれ、単に @code{slot-ref} および @code{slot-set!}
+を呼ぶだけです。直接 @code{slot-ref} や @code{slot-set!} を呼ぶよりも
+効率はすこし悪いですが、プログラムコードはコンパクトになります。
 @c COMMON
 @end deffn
 
 @c EN
 @subsubheading Fallback methods
 @c JP
-@subsubheading �ե�����Хå��᥽�å�
+@subsubheading フォールバックメソッド
 @c COMMON
 
 @deffn {Generic Function} slot-unbound
@@ -2566,11 +2567,11 @@ returned to the caller that tried to get the value.
 
 The default method just signals an error.
 @c JP
-���Υ����ͥ�å��ؿ���«������Ƥ��ʤ������åȤ��ͤ���Ф����Ȥ����Ȥ���
-�ƤӽФ���ޤ������Υ����ͥ�å��ؿ����֤��ͤ��ͤ����褦�Ȥ����ƽФ���Ȥ�
-�֤���ޤ���
+このジェネリック関数は束縛されていないスロットの値を取り出そうとしたときに
+呼び出されます。このジェネリック関数の返り値は値を得ようとした呼出しもとに
+返されます。
 
-�ǥե���ȤΥ᥽�åɤ�ñ�˥��顼�Υ����ʥ�򤢤�������Ǥ���
+デフォルトのメソッドは単にエラーのシグナルをあげるだけです。
 @c COMMON
 @end deffn
 
@@ -2583,18 +2584,18 @@ function will be returned to the caller that tried to get the value.
 
 The default method just signals an error.
 @c JP
-���Υ����ͥ�å��ؿ���¸�ߤ��ʤ������åȤ��ͤ���Ф����Ȥ����Ȥ������뤤��
-���ꤷ�褦�Ȥ����Ȥ��˸ƤӤ�����ޤ������Υ����ͥ�å��ؿ����֤��ͤϡ�
-�ͤ����褦�Ȥ����ƽФ���Ȥ��֤���ޤ���
+このジェネリック関数は存在しないスロットの値を取り出そうとしたとき、あるいは
+設定しようとしたときに呼びだされます。このジェネリック関数の返り値は、
+値を得ようとした呼出しもとに返されます。
 
-�ǥե���ȤΥ᥽�åɤ�ñ�˥��顼�Υ����ʥ�򤢤�������Ǥ���
+デフォルトのメソッドは単にエラーのシグナルをあげるだけです。
 @c COMMON
 @end deffn
 
 @c EN
 @subsubheading Special accessors
 @c JP
-@subsubheading �ü쥢������
+@subsubheading 特殊アクセサ
 @c COMMON
 
 @defun class-slot-ref class slot-name
@@ -2605,9 +2606,9 @@ When slot's @code{:allocation} option is either @code{:class}
 or @code{:each-subclass}, these procedures allow you to
 get/set the value of the slot without having an instance.
 @c JP
-�����åȤ�@code{:allocation}���ץ����@code{:class}�⤷����
-@code{:each-subclass}�Ǥ����硢�����μ�³����Ȥäơ�
-���󥹥���̵���Ǥ����Υ����åȤ��ͤ����/����Ǥ��ޤ���
+スロットの@code{:allocation}オプションが@code{:class}もしくは
+@code{:each-subclass}である場合、これらの手続きを使って、
+インスタンス無しでそれらのスロットの値を取得/設定できます。
 @c COMMON
 @end defun
 
@@ -2624,13 +2625,13 @@ redefinition when @var{obj}'s class has been redefined
 (i.e. in which case, @var{class} should be the original class
 of @var{obj}).
 @c JP
-@code{slot-ref}��@code{slot-set!}��@code{slot-bound?} �Υ����ͥ�å�
-�ؿ��ǤǤ���@var{class} �� @var{object} �Υ��饹�Ǥʤ���Фʤ�ޤ���
+@code{slot-ref}、@code{slot-set!}、@code{slot-bound?} のジェネリック
+関数版です。@var{class} は @var{object} のクラスでなければなりません。
 
-�����δؿ��ϡ������ͥ�å��Ǥ��뤳�Ȥ˲ä��ơ�
-@var{obj} �Υ��饹�����������Ƥ⥯�饹�κ������ư���ʤ�
-(���Τ褦�ʾ�硢@var{class}�� @var{obj} �θ����Υ��饹��
-�ʤ���Фʤ�ʤ�)�Ȥ������Ǽ�³���ǤȤϰ㤤�ޤ���
+これらの関数は、ジェネリックであることに加えて、
+@var{obj} のクラスが再定義されてもクラスの再定義を起動しない
+(そのような場合、@var{class}は @var{obj} の元々のクラスで
+なければならない)という点で手続き版とは違います。
 @c COMMON
 
 @c EN
@@ -2642,19 +2643,19 @@ used within @code{change-class} method; especially, @code{slot-ref} etc.
 can't be used during @var{obj}'s being redefined, since they
 trigger class redefinition again (see @ref{Changing classes} for details).
 @c JP
-�н�: CLOS �ȤϤ�������@code{slot-ref} �ʤɤϡ�������ǥ����ͥ�å�
-�ؿ��Ǥ�Ƥ֤��ȤϤ���ޤ��󡣤���椨��@code{slot-ref-using-class} ��
-���경���뤳�Ȥˤ�äơ�@code{slot-ref} �򥫥����ޥ������뤳�ȤϤǤ��ޤ���
-�Ĥޤꡢ�����Υ����ͥ�å��ؿ��μ礿����Ū�� @code{change-class} 
-�᥽�åɤ������ǻȤ��뤳�ȤǤ����Ȥ��ˡ�@code{slot-ref} �ʤɤ�
-���饹���������ٵ�ư����(�ܺ٤ˤĤ��Ƥ� @ref{Changing classes} ��
-����)�Τǡ�@var{obj} �κ������ˤϻȤ��ޤ���
+覚書: CLOS とはちがい、@code{slot-ref} などは、その中でジェネリック
+関数版を呼ぶことはありません。それゆえ、@code{slot-ref-using-class} を
+特定化することによって、@code{slot-ref} をカスタマイズすることはできません。
+つまり、これらのジェネリック関数の主たる目的は @code{change-class} 
+メソッドの内部で使われることです。とくに、@code{slot-ref} などは
+クラス再定義を再度起動する(詳細については @ref{Changing classes} を
+参照)ので、@var{obj} の再定義中には使えません。
 @c COMMON
 @end deffn
 
 @node Changing classes,  , Accessing instance, Instance
 @subsection Changing classes
-@c NODE ���饹���ѹ�
+@c NODE クラスの変更
 
 @c EN
 @subsubheading Class change protocol
@@ -2664,11 +2665,11 @@ you can change classes of an existing instance.  The two
 classes doesn't need to be related; you can change a sewing
 machine into an umbrella, if you like.
 @c JP
-@subsubheading ���饹�ѹ��ץ��ȥ���
+@subsubheading クラス変更プロトコル
 
-CLOS�ϤΥ��֥������ȥ����ƥ�Υ�ˡ����ʵ�ǽ�ϴ�¸�Υ��󥹥��󥹤�
-���饹���ѹ��Ǥ���Ȥ������ȤǤ���������ĤΥ��饹�˴�Ϣ��������ɬ�פ�
-����ޤ��󡣤��Τ��ߤʤ顢�ߥ���򱫤������ѹ����뤳�Ȥ�Ǥ��ޤ���
+CLOS系のオブジェクトシステムのユニークな機能は既存のインスタンスの
+クラスを変更できるということです。新旧二つのクラスに関連性がある必要は
+ありません。おのぞみなら、ミシンを雨がさに変更することもできます。
 @c COMMON
 
 @deffn {Generic Function} change-class
@@ -2677,8 +2678,8 @@ CLOS�ϤΥ��֥������ȥ����ƥ�Υ�ˡ����ʵ�ǽ�ϴ�¸�Υ��󥹥��󥹤�
 Changes an object @var{obj}'s class to @var{new-class}.
 The default method just calls @code{change-object-class} procedure.
 @c JP
-���֥������� @var{obj} �Υ��饹�� @var{new-class} ���ѹ����ޤ���
-�ǥե���ȤΥ᥽�åɤ�ñ�� @code{change-object-class} ��³����Ƥ֤����Ǥ���
+オブジェクト @var{obj} のクラスを @var{new-class} に変更します。
+デフォルトのメソッドは単に @code{change-object-class} 手続きを呼ぶだけです。
 @c COMMON
 @end deffn
 
@@ -2718,41 +2719,41 @@ If you desire, you can call it by your own @code{change-class} method.
 
 @code{Change-object-class} returns @var{obj}.
 @c JP
-���֥������� @var{obj} �Υ��饹�� @var{orig-class} ���� @var{new-class}
-���ѹ����ޤ�������ϥ����ͥ�å��ؿ��ǤϤ���ޤ���
-���֥������ȤΥ��饹���ѹ�����ˤϤ���äȤ�����̩������Ū��ɬ�פǡ�
-���μ�³���Ϥ�����ä��Ƥ��ޤ���
+オブジェクト @var{obj} のクラスを @var{orig-class} から @var{new-class}
+に変更します。これはジェネリック関数ではありません。
+オブジェクトのクラスを変更するにはちょっとした秘密の内部的操作が必要で、
+この手続きはそれを隠蔽しています。
 
-���饹���ѹ��������Τʥ��ƥåפϰʲ��Τ褦�ˤʤäƤ��ޤ���
+クラスを変更する正確なステップは以下のようになっています。
 
 @enumerate
 @item
-@var{new-class} �ο��������󥹥��󥹤� @code{allocate-instance} �ˤ�ä�
-���������Ȥ���롣
+@var{new-class} の新しいインスタンスが @code{allocate-instance} によって
+アロケートされる。
 
 @item
-@var{new-class}�γƥ����åȤ��Ф��ơ�
+@var{new-class}の各スロットに対して、
 @enumerate
 @item
-�⤷�����Υ����åȤ� @var{old-class} ��¸�ߤ���@var{obj} ��«������Ƥ���С�
-�����ͤ� @var{obj} ������Ф��졢���������󥹥��󥹤˥��åȤ���롣
-(���Υ����åȤ�@emph{�����ۤ���}�ޤ���)
+もし、そのスロットが @var{old-class} に存在し、@var{obj} で束縛されていれば、
+その値は @var{obj} から取り出され、新しいインスタンスにセットされる。
+(そのスロットは@emph{持ち越され}ます。)
 @item
-�����Ǥʤ���С����������󥹥��󥹤Υ����åȤϡ�@ref{Creating instance} ��
-�������줿���ǡ�ɸ��Υ����åȽ�����ץ��ȥ���ˤ�äƽ��������ޤ���
+そうでなければ、新しいインスタンスのスロットは、@ref{Creating instance} で
+説明された手順で、標準のスロット初期化プロトコルによって初期化されます。
 @end enumerate
 
 @item
-�Ǹ�ˡ����������󥹥��󥹤����Ƥ� @var{obj} ��@emph{�ܿ�}����ޤ������ʤ����
-@var{obj} �������ǥ�ƥ��ƥ����Ѥ��뤳�Ȥʤ� @var{new-class} �Υ��󥹥���
-�Ȥʤ�ޤ���
+最後に、新しいインスタンスの内容が @var{obj} に@emph{移植}されます。すなわち、
+@var{obj} がアイデンティティを変えることなく @var{new-class} のインスタンス
+となります。
 @end enumerate
 
-@var{obj}���Ф���@var{new-class}��@code{initilize} �᥽�åɤϸƤФ�ʤ����Ȥ�
-���դ��Ƥ���������ɬ�פʤ顢�ȼ��� @code{change-class} �᥽�åɤ�
-�������@code{intialize}��Ƥ֤褦�ˤ��뤳�Ȥ��Ǥ��ޤ���
+@var{obj}に対して@var{new-class}の@code{initilize} メソッドは呼ばれないことに
+注意してください。必要なら、独自の @code{change-class} メソッドを
+定義して@code{intialize}を呼ぶようにすることができます。
 
-@code{change-object-class} �� @var{obj} ���֤��ޤ���
+@code{change-object-class} は @var{obj} を返します。
 @c COMMON
 @end defun
 
@@ -2762,11 +2763,11 @@ Instead, she can define a specialized @code{change-class}.  For example,
 if she wants to carry over the slot @code{x} of old class to the
 slot @code{y} of new class, she may write something like this:
 @c JP
-�桼��������ξ�硢@code{change-object-class}��ľ�ܸƤ�ɬ�פ�̵���Ǥ��礦��
-���Τ���ꡢ���경���� @code{change-class} ���������٤��Ǥ���
-���Ȥ��С��줤���饹�Υ����å� @code{x} ��
-���������饹�Υ����å� @code{y} �ػ����ۤ����Ȥϡ�
-��������˽񤱤в�ǽ�Ǥ���
+ユーザは大抵の場合、@code{change-object-class}を直接呼ぶ必要は無いでしょう。
+そのかわり、特定化した @code{change-class} を定義するべきです。
+たとえば、旧いクラスのスロット @code{x} を
+新しいクラスのスロット @code{y} へ持ち越すことは、
+こんな風に書けば可能です。
 @c COMMON
 
 @example
@@ -2799,25 +2800,25 @@ So you need to keep the reference to the old class before
 redefining the class, and use the old class to specialize 
 @code{change-class} method:
 @c JP
-@subsubheading ���󥹥��󥹹����Υ������ޥ���
+@subsubheading インスタンス更新のカスタマイズ
 
-��������줿���饹�Υ��󥹥��󥹤������������ϡ�����⥯�饹�ѹ��Ȥ���
-�����ޤ������֥������Ȥ��̾�Υ����åȥ�������/��ǥ��ե�����
-��ͳ�ǥ������������Ȥ��ˡ����Υ��饹����������줿���ɤ�����
-�����å�����ޤ����⤷��������Ԥ��Ƥ���С�
-��������줿���饹��@var{new-class}�Ȥ���
-@code{change-class}���ƤФ�ޤ���
-���ʤ�������󥹥��󥹤ι����ϥ��֥������Ȥ�
-���饹�򸵡��Τ�Τ����������줿��Τ��ѹ����뤳�Ȥȴ��蘆��ޤ���
+再定義されたクラスのインスタンスが更新される場合は、それもクラス変更として
+扱われます。オブジェクトは通常のスロットアクセサ/モディファイア
+経由でアクセスされるときに、そのクラスが再定義されたかどうかを
+チェックされます。もし再定義が行われていれば、
+再定義されたクラスを@var{new-class}として
+@code{change-class}が呼ばれます。
+すなわち、インスタンスの更新はオブジェクトの
+クラスを元々のものから再定義されたものへ変更することと看倣されます。
 
-@code{change-class} �����경���뤳�Ȥǡ����󥹥��󥹤��������줿
-���饹�Ѥ˹���������ˡ�򥫥����ޥ����Ǥ��ޤ��������������饹�����
-�Ѥ� @code{change-class} ��񤯤ˤ����̤����դ�ɬ�פǤ���
+@code{change-class} を特定化することで、インスタンスを再定義された
+クラス用に更新する方法をカスタマイズできます。しかし、クラス再定義
+用の @code{change-class} を書くには特別な注意が必要です。
 
-�ޤ���������ϥ��饹���֥������ȤΥ������Х��«�����ѹ����Ƥ��ޤ��ޤ���
-����椨�����饹����������������ε줤���饹�ؤλ��Ȥ��ݻ����Ƥ���
-ɬ�פ����ꡢ@code{change-class} �᥽�åɤ����경�򤹤�ˤϡ����ε줤
-���饹��Ȥ�ɬ�פ�����ޤ���
+まず、再定義はクラスオブジェクトのグローバルな束縛を変更してしまいます。
+それゆえ、クラス再定義がおこる前の旧いクラスへの参照を保持しておく
+必要があり、@code{change-class} メソッドの特定化をするには、この旧い
+クラスを使う必要があります。
 @c COMMON
 
 @example
@@ -2862,39 +2863,39 @@ although very powerful.   You can find some nontrivial
 cases in the test program of Gauche source code;
 take a look at @code{test/object.scm}.
 @c JP
-���ˡ���� @code{change-class} �᥽�åɤϡ�@code{slot-ref}��@code{slot-set!}��
-@code{class-of} �ʤɤ��ͳ���ơ����ۤΤ����˵�ư��������뤳�Ȥ�
-���դ��Ƥ����������⤷��@code{change-class} ��ǡ�@var{obj} ���Ф���
-���� @code{slot-ref} �Τ褦�ʼ�³���Ȥ��ȡ����󥹥��󥹹����ץ��ȥ��뤬
-�Ƶ�Ū�˵�ư���졢̵�¥롼�פ�Ҥ����������Ȥˤʤ�ޤ������󥹥���
-������ư���ʤ��褦�ʥ᥽�åɤ����Ȥ��ޤ��󡣤��ʤ����
-@code{slot-ref-using-class}��@code{slot-set-using-class!}��
-@code{slot-bound-using-class?}��@code{current-class-of} �����Ȥ��ޤ���
+次に、上の @code{change-class} メソッドは、@code{slot-ref}、@code{slot-set!}、
+@code{class-of} などを経由して、暗黙のうちに起動される得ることに
+注意してください。もし、@code{change-class} 内で、@var{obj} に対して
+再度 @code{slot-ref} のような手続き使うと、インスタンス更新プロトコルが
+再帰的に起動され、無限ループをひきおこすことになります。インスタンス
+更新を起動しないようなメソッドしか使えません。すなわち、
+@code{slot-ref-using-class}、@code{slot-set-using-class!}、
+@code{slot-bound-using-class?}、@code{current-class-of} しか使えません。
 
-���ۥ����åȤΤ褦�ˡ���³���ˤ�äƷ׻�������ͤ��ĥ����åȤ�
-�����ۤ������ΤǤ���С�@code{slot-ref} ����¾�������Υ����åȤ��ͤ�
-�׻����Ƥ������ˡ�����΢�� @var{obj} ���Ф��ƸƤФ�뤳�Ȥ����ꤨ�ޤ���
-�ºݤΤȤ����ϡ�@code{change-object-class} �Ϥ��Τ褦�ʺƵ��򸡽Ф���
-�ݸ�����äƤ��ޤ����⤷�����Τ褦�ʤ��Ȥ�������С�
-@code{change-object-class} �Ϥ��Υ����åȤ��ͤ���Ф��Τ����ᡢ
-���������󥹥��󥹤Υ����åȤ�줤�����åȤ�̤«���Ǥ���Ȥ��ơ�
-��������ޤ���
+仮想スロットのように、手続きによって計算される値をもつスロットを
+持ち越したいのであれば、@code{slot-ref} その他が、そのスロットの値を
+計算している最中に、暗黙裏に @var{obj} に対して呼ばれることがありえます。
+実際のところは、@code{change-object-class} はこのような再帰を検出する
+保護機構をもっています。もし、このようなことが起これば、
+@code{change-object-class} はそのスロットの値を取り出すのを諦め、
+新しいインスタンスのスロットを旧いスロットが未束縛であるとして、
+初期化します。
 
-���󥹥��󥹹����򥫥����ޥ�������Τ����˶��ϤǤ��������ؤ�
-�ȥ�å����ʻŻ��Ǥ���Gauche �Υ�������Υƥ��ȥץ������
-�ˤϼ����ǤϤʤ������Ĥ��Υ��������ޤޤ�Ƥ��ޤ���@code{test/object.scm}
-���ƤߤƤ���������
+インスタンス更新をカスタマイズするのは非常に強力ですがたいへん
+トリッキーな仕事です。Gauche のソース中のテストプログラム
+には自明ではないいくつかのケースが含まれています。@code{test/object.scm}
+見てみてください。
 @c COMMON
 
 @c ----------------------------------------------------------------------
 @node Generic function and method, Metaobject protocol, Instance, Object system
 @section Generic function and method
-@c NODE �����ͥ�å��ե��󥯥����ȥ᥽�å�
+@c NODE ジェネリックファンクションとメソッド
 
 @c EN
 @subheading Defining methods
 @c JP
-@subheading �᥽�åɤ����
+@subheading メソッドの定義
 @c COMMON
 
 @defmac define-generic name &keyword class
@@ -2910,15 +2911,15 @@ instance of the passed class, instead of the default @code{<generic>} class.
 It is useful when you defined a subclass of @code{<generic>} to customize
 generic function application behavior.
 @c JP
-�����ͥ�å��ؿ�����������@var{name} ��«�����ޤ���
+ジェネリック関数を生成し、@var{name} に束縛します。
 
-�̾�ϡ������Ȥ�ɬ�פϤ���ޤ��󡣤⤷���ޤ�¸�ߤ��Ƥ��ʤ���С�
-@code{define-method} �ޥ���������΢�˥����ͥ�å��ؿ����������Ƥ���뤫��Ǥ���
+通常は、これを使う必要はありません。もし、まだ存在していなければ、
+@code{define-method} マクロが暗黙裏にジェネリック関数を生成してくれるからです。
 
-������ɰ���@code{class}�ˡ�@code{<generic>}�Υ��֥��饹���Ϥ����Ȥǡ�
-����른���ͥ�å��ؿ���ǥե���Ȥ�@code{<generic>}���饹�Υ��󥹥��󥹤Ǥ�
-�ʤ�����Υ��饹�Υ��󥹥��󥹤ˤ��뤳�Ȥ��Ǥ��ޤ���@code{<generic>}��
-���֥��饹��������ƥ᥽�å�Ŭ�Ѥ򥫥����ޥ���������������Ǥ���
+キーワード引数@code{class}に、@code{<generic>}のサブクラスを渡すことで、
+作られるジェネリック関数をデフォルトの@code{<generic>}クラスのインスタンスでは
+なく指定のクラスのインスタンスにすることができます。@code{<generic>}の
+サブクラスを定義してメソッド適用をカスタマイズする場合に便利です。
 @c COMMON
 @end defmac
 
@@ -2935,15 +2936,15 @@ added to it.
 It's like the argument list of lambda form, except you can specify
 the type of each argument.
 @c JP
-@var{name} �Ȥ���̾���Υ᥽�åɤ�������ޤ������Ǥ˥������Х�� @var{name}
-��«������Ƥ��른���ͥ�å��ؿ����֥������Ȥ�¸�ߤ��Ƥ���С��������줿
-�᥽�åɤϤ��Υ����ͥ�å��ؿ����ɲä���ޤ���@var{name} ��̤«���Ǥ��뤫
-�ޤ��ϥ����ͥ�å��ؿ��ʳ���«������Ƥ���ʤ顢�����������ͥ�å��ؿ���
-�������졢@var{name} ��«������ơ��������᥽�åɤ�������ɲä���ޤ���
+@var{name} という名前のメソッドを定義します。すでにグローバルに @var{name}
+に束縛されているジェネリック関数オブジェクトが存在していれば、生成された
+メソッドはそのジェネリック関数に追加されます。@var{name} が未束縛であるか
+またはジェネリック関数以外に束縛されているなら、新しいジェネリック関数が
+生成され、@var{name} に束縛されて、新しいメソッドがそれに追加されます。
 
-@var{specs} �Ϥ��Υ᥽�åɤ��б���������Ȥ��η�����ꤷ�ޤ��������
-lambda �����ΰ����ꥹ�Ȥ˻��Ƥ��ޤ��������줾��ΰ����η������Ǥ���
-�Ȥ������㤤�ޤ���
+@var{specs} はこのメソッドに対応する引数とその型を指定します。これは
+lambda 形式の引数リストに似ていますが、それぞれの引数の型を指定できる
+ところが違います。
 @c COMMON
 
 @example
@@ -2967,13 +2968,13 @@ function will select appropriate methods(s).
 Here are some examples of @var{specs} and the corresponding 
 specializer list:
 @c JP
-@i{class} �ϰ�������°���٤����饹����ꤷ�ޤ���@code{@i{arg}} ��ñ��
-����ܥ�Ǥ���С�@code{(@i{arg} <top>)} ��Ʊ���Ǥ���rest ������
-������ꤹ�뤳�ȤϤǤ��ޤ��󡣤���Ͼ�˥ꥹ�Ȥ�«������뤫��Ǥ���
+@i{class} は引数が所属すべきクラスを指定します。@code{@i{arg}} が単に
+シンボルであれば、@code{(@i{arg} <top>)} と同じです。rest 引数の
+型を指定することはできません。それは常にリストに束縛されるからです。
 
-�����ꥹ�ȤΥ��饹�Υꥹ�Ȥ�@emph{�᥽�å����경�ҥꥹ��}�Ȥ�����
-������ˡ������ͥ�å��ؿ���Ŭ�ڤʥ᥽�åɤ����򤷤ޤ���@var{specs} ��
-������б��������경�ҥꥹ�Ȥ���򤢤��Ƥ����ޤ���
+引数リストのクラスのリストは@emph{メソッド特定化子リスト}といい、
+これを基に、ジェネリック関数は適切なメソッドを選択します。@var{specs} と
+それに対応する特定化子リストの例をあげておきます。
 @c COMMON
 
 @example
@@ -2995,16 +2996,16 @@ If you define a method on @var{name} whose specializer list matches with
 one in the generic function's methods, then the existing method is
 replaced by the newly defined one.
 @c JP
-�������경�ҥꥹ�Ȥ������ͥ�å��ؿ�����Υ᥽�åɤΰ�Ĥ˰��פ���褦��
-@var{name} ��Υ᥽�åɤ��������ȡ���¸�Υ᥽�åɤϿ�����������줿
-�᥽�åɤ��֤��������ޤ���
+その特定化子リストがジェネリック関数の中のメソッドの一つに一致するような
+@var{name} 上のメソッドを定義すると、既存のメソッドは新しく定義された
+メソッドに置き換えられます。
 @c COMMON
 @end defmac
 
 @c EN
 @subheading Applying generic function
 @c JP
-@subheading �����ͥ�å��ؿ���Ŭ��
+@subheading ジェネリック関数の適用
 @c COMMON
 
 @c EN
@@ -3021,15 +3022,15 @@ Then the selected methods are sorted from the most
 @emph{specific} method to the least specific method.
 It is calculated as follows:
 @c JP
-�����ͥ�å��ؿ���Ŭ�Ѥ����ȡ��ޤ���Ϳ����줿������Ŭ�礹��
-���경�ҥꥹ�Ȥ���ĥ᥽�åɤ����򤷤ޤ������Ȥ��С������ͥ�å��ؿ� 
-@code{foo} �� 3�ĤΥ᥽�åɤ���äƤ��ꡢ���������경�ҥꥹ�Ȥ�
-���줾�졢@code{(<string> <top>)}��@code{(<string> <string>)}��
-@code{(<top> <top>)} �Ǥ���Ȥ��ޤ���@code{foo} �� @code{(foo "abc" 3)} ��
-�褦��Ŭ�Ѥ��줿�Ȥ����ǽ�� 3���ܤΥ᥽�åɤ����򤵤�ޤ���
+ジェネリック関数は適用されると、まず、与えられた引数に適合する
+特定化子リストを持つメソッドを選択します。たとえば、ジェネリック関数 
+@code{foo} が 3つのメソッドを持っており、それらの特定化子リストが
+それぞれ、@code{(<string> <top>)}、@code{(<string> <string>)}、
+@code{(<top> <top>)} であるとします。@code{foo} が @code{(foo "abc" 3)} の
+ように適用されたとき、最初と 3番目のメソッドが選択されます。
 
-���򤵤줿�᥽�åɤϡ���äȤ�@emph{���경���줿}��Τ��顢��äȤ����Ū�ʤ�Τ�
-�ν�ǥ����Ȥ���ޤ�������ϰʲ��Τ褦�˷׻�����ޤ���
+選択されたメソッドは、もっとも@emph{特定化された}ものから、もっとも一般的なものへ
+の順でソートされます。これは以下のように計算されます。
 @c COMMON
 
 @itemize
@@ -3054,21 +3055,21 @@ and another doesn't, then the method that doesn't have an improper
 tail is more specific than the one that has.
 @c JP
 @item
-@code{(A1 A2 @dots{})} �Ȥ������경�ҥꥹ�Ȥ��ĥ᥽�å� @code{a} ��
-@code{(B1 B2 @dots{})} �Ȥ������경�ҥꥹ�Ȥ��ĥ᥽�å� @code{b} �Ȥ�
-����Ȥ��ޤ���
+@code{(A1 A2 @dots{})} という特定化子リストをもつメソッド @code{a} と
+@code{(B1 B2 @dots{})} という特定化子リストをもつメソッド @code{b} とが
+あるとします。
 
 @item
-@code{An} �� @code{Bn} �Ȥ��ۤ�Ǿ��� @var{n} �򸫤Ĥ��ޤ���@var{n} ���ܤ�
-�����Υ��饹��Ȥꡢ���Υ��饹�ν�̥ꥹ�Ȥ�����å����ޤ����⤷��
-���� CPL ����ǡ�@code{An} �� @code{Bn} �����ˤ���С�method @code{a} ��
-�᥽�å� @code{b} ������경����Ƥ���Ȥ������Ȥˤ�������ʤ���С�
-@code{b} �� @code{a} ��������경����Ƥ���Ȥ������Ȥˤ��ޤ���
+@code{An} と @code{Bn} とが異る最小の @var{n} を見つけます。@var{n} 番目の
+引数のクラスをとり、そのクラスの順位リストをチェックします。もし、
+その CPL の中で、@code{An} が @code{Bn} より先にくれば、method @code{a} は
+メソッド @code{b} より特定化されているということにし、さもなければ、
+@code{b} が @code{a} がより特定化されているということにします。
 
 @item
-�⤷��@code{a} ����� @code{b} �Τ��٤Ƥ����경�Ҥ��������� rest ����
-�������⤦�����Ϥ⤿�ʤ��Ȥ����ʳ�Ʊ���Ǥ���С�rest ������⤿�ʤ�
-�᥽�åɤΤۤ��������Ǥʤ���Τ�����경����Ƥ���Ȥ��ޤ���
+もし、@code{a} および @code{b} のすべての特定化子が、一方は rest 引数
+をもち、もう一方はもたないという以外同じであれば、rest 引数をもたない
+メソッドのほうがそうでないものより特定化されているとします。
 @c COMMON
 @end itemize
 
@@ -3079,10 +3080,10 @@ called with the actual argument.
 Within the method body, a special local variable @code{next-method}
 is bound implicitly.
 @c JP
-�᥽�åɤ������Ȥ��줿�顢�ǽ�Υ᥽�åɤ����Τ��°����ǸƤФ�ޤ���
+メソッドがソートされたら、最初のメソッドの本体が実引数で呼ばれます。
 
-�᥽�å����������Ǥϡ����̤ʥ��������ѿ� @code{next-method}������΢��
-«������ޤ���
+メソッド本体内部では、特別なローカル変数 @code{next-method}が暗黙裏に
+束縛されます。
 @c COMMON
 
 @deffn {Next method} next-method 
@@ -3100,22 +3101,22 @@ with the passed arguments.
 If @code{next-method} is called in the least specific method,
 i.e. there's no "next method", an error is signalled.
 @c JP
-�����ѿ��ϡ��᥽�å����������ǡ������Ȥ��줿�᥽�åɥꥹ�ȤǼ��Υ᥽�å�
-�򥫥ץ��벽�������̤ʥ��֥������Ȥ�«������ޤ���
+この変数は、メソッド本体内部で、ソートされたメソッドリストで次のメソッド
+をカプセル化した特別なオブジェクトに束縛されます。
 
-�����ʤ��ǸƤ֤ȡ����Υ᥽�åɤ����Υ᥽�åɤ�Ф줿�Ȥ��Ȥ�Ʊ��������
-��ư����ޤ���@var{args} @dots{} ������Ū�ˤ錄���ȡ����Υ᥽�åɤ�����
-�Ϥ��줿�����ǵ�ư����ޤ���
+引数なしで呼ぶと、次のメソッドがこのメソッドよばれたときとと同じ引数で
+起動されます。@var{args} @dots{} を明示的にわたすと、次のメソッドがその
+渡された引数で起動されます。
 
-@code{next-method} ����äȤ����경����Ƥ��ʤ��᥽�åɤǸƤФ줿��硢
-���ʤ�����ּ��Υ᥽�åɡפ��ʤ���硢���顼�����ʥ뤬������ޤ���
+@code{next-method} がもっとも特定化されていないメソッドで呼ばれた場合、
+すなわち、「次のメソッド」がない場合、エラーシグナルがあがります。
 @c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
 @node Metaobject protocol,  , Generic function and method, Object system
 @section Metaobject protocol
-@c NODE �᥿���֥������ȥץ��ȥ���
+@c NODE メタオブジェクトプロトコル
 
 @c EN
 In CLOS-like object systems, the object system is built on
@@ -3135,21 +3136,21 @@ during operations of the object system.  Subclassing these classes
 and specializing these methods are the means of customizing object
 system behaviors.
 @c JP
-CLOS ���Υ��֥������ȥ����ƥ�Ǥϡ����֥������ȥ����ƥब���켫�Ȥξ��
-���ۤ���ޤ������ʤ�������饹��¤�Τ褦�ʤ�Ρ����饹��ɤΤ褦��
-�������뤫�����󥹥��󥹤�ɤΤ褦����������������뤫���᥽�åɤ�ɤΤ褦��
-�ǥ����ѥå����ƤӽФ����������Ϥ��٤ƥ��֥������ȥ����ƥ�ˤ�äơ�
-�������ޤ������Ȥ��С����饹�ϥ����ͥ�å��ʹ�¤��ɸ��Ū���饹��
-���񤤤�������� @code{<class>} ���饹�Υ��󥹥��󥹤Ǥ���@code{<class>}
-�򥵥֥��饹������ȡ��ǥե���ȤΤ�ΤȤϰ㤦���񤤤򤹤롢�ȼ���
-���饹�����Ĥ��뤳�Ȥ��Ǥ��ޤ�������Ϸ�ɡ��ȼ��Υ��֥������ȥ����ƥ��
-�Ĥ��뤳�Ȥˤʤ�ޤ���
+CLOS 風のオブジェクトシステムでは、オブジェクトシステムがそれ自身の上に
+構築されます。すなわち、クラス構造のようなもの、クラスをどのように
+生成するか、インスタンスをどのように生成し初期化するか、メソッドをどのように
+ディスパッチし呼び出すか、これらはすべてオブジェクトシステムによって、
+定義されます。たとえば、クラスはジェネリックな構造と標準的クラスの
+振舞いを定義する @code{<class>} クラスのインスタンスです。@code{<class>}
+をサブクラス化すると、デフォルトのものとは違う振舞いをする、独自の
+クラス集合をつくることができます。これは結局、独自のオブジェクトシステムを
+つくることになります。
 
-@emph{�᥿���֥������ȥץ��ȥ���}�ϡ��ɤΤ褦�˥��֥������ȥ����ƥ��
-���ۤ��뤫�˴�Ϣ���� API ��������Ǥ����֥��å����ۤΥ��饹�����֥�������
-�����ƥ�����뤢�����˸ƤФ�른���ͥ�å��ؿ���̾���Ƚ���ʤɤǤ���
-�����Υ��饹�򥵥֥��饹�����������Υ᥽�åɤ����경���뤳�Ȥϡ�
-���֥������ȥ����ƥ�ο��񤤤򥫥����ޥ������뤳�Ȥ��̣���ޤ���
+@emph{メタオブジェクトプロトコル}は、どのようにオブジェクトシステムを
+構築するかに関連する API 群の定義です。ブロック構築のクラス、オブジェクト
+システムを操作するあいだに呼ばれるジェネリック関数の名前と順序などです。
+これらのクラスをサブクラス化し、これらのメソッドを特定化することは、
+オブジェクトシステムの振舞いをカスタマイズすることを意味します。
 @c COMMON
 
 @menu
@@ -3162,7 +3163,7 @@ CLOS ���Υ��֥������ȥ����ƥ�Ǥϡ����֥������ȥ����ƥब���켫�Ȥξ��
 
 @node Class instantiation, Customizing slot access, Metaobject protocol, Metaobject protocol
 @subsection Class instantiation
-@c NODE ���饹�Υ��󥹥��󥷥��������
+@c NODE クラスのインスタンシエーション
 
 @c EN
 Every class is an instance of a group of special classes.
@@ -3177,16 +3178,16 @@ the code that creates an instance of @code{<class>}
 (or specified metaclass) and bind it to the given name.
 Suppose you have the following @code{define-class} form.
 @c JP
-���٤ƤΥ��饹�Ϥ����ü�ʥ��饹�Υ��롼�פΥ��󥹥��󥹤ˤʤäƤ��ޤ���
-¾�Υ��饹�Υ��饹�ˤʤ��褦�ʥ��饹�Τ��Ȥ� @emph{�᥿���饹} �ȸƤӤޤ���
-Gauche �Ǥ� @code{<class>} ���饹����Ӥ��Υ��֥��饹�Τߤ��᥿���饹��
-�ʤ�ޤ���
+すべてのクラスはある特殊なクラスのグループのインスタンスになっています。
+他のクラスのクラスになれるようなクラスのことを @emph{メタクラス} と呼びます。
+Gauche では @code{<class>} クラスおよびそのサブクラスのみがメタクラスに
+なれます。
 
-@subsubheading @code{define-class} ��Ÿ��
+@subsubheading @code{define-class} の展開
 
-@code{define-class} �ޥ����ϴ���Ū�ˤ� @code{<class>} (���뤤�ϻ��ꤵ�줿
-�᥿���饹)�Υ��󥹥��󥹤��������륳���ɤΥ�åѡ��ǡ������Ϳ����줿
-̾����«�����ޤ����ʲ��Τ褦�� @code{define-class} ����������Ȥ��ޤ���
+@code{define-class} マクロは基本的には @code{<class>} (あるいは指定された
+メタクラス)のインスタンスを生成するコードのラッパーで、それを与えられた
+名前に束縛します。以下のような @code{define-class} 形式を前提とします。
 
 @c COMMON
 @example
@@ -3200,9 +3201,9 @@ It is expanded into a form like this (you can see the exact form
 by looking at the definition of @code{define-class} macro in
 @file{`gauche-config --syslibdir`/gauche/object.scm}).
 @c JP
-����򼡤Τ褦��Ÿ�����ޤ���
-(@file{`gauche-config --syslibdir`/gauche/object.scm} �� @code{define-class}
-�ޥ����������ߤ��Ÿ�������򸫤뤳�Ȥ��Ǥ��ޤ���)
+これを次のように展開します。
+(@file{`gauche-config --syslibdir`/gauche/object.scm} の @code{define-class}
+マクロの定義をみれば展開形式を見ることができます。)
 @c COMMON
 @example
 (define @var{name}
@@ -3221,8 +3222,8 @@ by looking at the definition of @code{define-class} macro in
 The created class's class, i.e. @var{metaclass}, 
 is determined by the following rules.
 @c JP
-��������륯�饹�Υ��饹���Ĥޤꡢ@var{metaclass} �ϰʲ��Υ롼���
-���ꤵ��ޤ���
+生成されるクラスのクラス、つまり、@var{metaclass} は以下のルールで
+決定されます。
 @c COMMON
 
 @enumerate
@@ -3250,24 +3251,24 @@ is a metaclass that inherits all of those metaclasses
 @end itemize
 @c JP
 @item
-�⤷��@code{:metaclass} ���ץ���� @code{define-class} �ޥ�����
-Ϳ�����Ƥ���С������ͤ�Ȥ��ޤ��������ͤϡ�@code{<class>} ���饹��
-���뤤�Ϥ��λ�¹�Ǥʤ���Фʤ�ޤ���
+もし、@code{:metaclass} オプションが @code{define-class} マクロに
+与えられていれば、その値を使います。その値は、@code{<class>} クラスか
+あるいはその子孫でなければなりません。
 @item
-����ʤ���С����饹��̥ꥹ����Υ��饹�Υ᥿���饹�����ޤ���
+さもなければ、クラス順位リスト中のクラスのメタクラスが試されます。
 @itemize @bullet
 @item
-�⤷�����٤ƤΥ᥿���饹�� @code{<class>} �Ǥ���ʤ顢���������
-���饹�Υ᥿���饹�� @code{<class>} �ˤʤ�ޤ���
+もし、すべてのメタクラスが @code{<class>} であるなら、生成される
+クラスのメタクラスも @code{<class>} になります。
 @item
-�⤷�����٤ƤΥ᥿���饹�� @code{<class>} �����뤤���̤Υ᥿���饹
-@code{A} �Τɤ��餫�Ǥ���С���������륯�饹�Υ᥿���饹�ϡ�@code{A} ��
-�ʤ�ޤ���
+もし、すべてのメタクラスが @code{<class>} かあるいは別のメタクラス
+@code{A} のどちらかであれば、生成されるクラスのメタクラスは、@code{A} に
+なります。
 @item
-�⤷�᥿���饹�ν��礬 @code{<class>} �ʳ��� 2�İʾ�Υ᥿���饹
-(@code{A}, @code{B}, @code{C} @dots{})��ޤ��硢��������륯�饹��
-�᥿���饹�Ϥ����Υ᥿���饹 @code{A}, @code{B}, @code{C} @dots{} ���٤Ƥ�
-�Ѿ������᥿���饹�ˤʤ�ޤ���
+もしメタクラスの集合が @code{<class>} 以外の 2つ以上のメタクラス
+(@code{A}, @code{B}, @code{C} @dots{})を含む場合、生成されるクラスの
+メタクラスはこれらのメタクラス @code{A}, @code{B}, @code{C} @dots{} すべてを
+継承したメタクラスになります。
 @end itemize
 @c COMMON
 @end enumerate
@@ -3297,31 +3298,31 @@ Then, the methods given to @code{:getter}, @code{:setter}
 and @code{:accessor} slot options in @var{slot-spec} are
 collected and registered to the corresponding generic functions.
 @c JP
-���饹��̾���������ѡ����饹�������åȤ�����Ͻ���������Ȥ���
-�����ͥ�å��ؿ� @code{make} �˰����Ϥ��졢����ʳ��ΰ�����
-@code{define-class} �˰����Ϥ���ޤ������������ @code{define-modules} ��
-�ɤΥ⥸�塼��Ǥ��Υ��饹��������줿����Ф��Ƥ�������˰����Ϥ���ޤ���
-����Ϥ��Υ��饹�κ�����ΤȤ��ѤǤ���
+クラスの名前、スーパークラス、スロットの定義は初期化引数として
+ジェネリック関数 @code{make} に引き渡され、それ以外の引数は
+@code{define-class} に引き渡されます。初期化引数 @code{define-modules} は
+どのモジュールでそのクラスが定義されたかを覚えておくために引き渡されます。
+これはこのクラスの再定義のとき用です。
 
-�����åȤλ��� @var{slot-specs} �������᥽�å� @var{process-slot-definitions}
-(�����ľ�ܸƤӽФ����ȤϤǤ��ޤ���)�ǽ������졢�����å�����ˤʤ�ޤ���
-��̩�ˤϡ�@code{:init-form} �����åȥ��ץ����ϡ�@code{:init-thunk} ���ץ����
-�ˤʤꡢ@code{:getter}��@code{:setter}��@code{:accessor} �Υ����åȥ��ץ�����
-���Ѥ���ޤ���
+スロットの仕様 @var{slot-specs} は内部メソッド @var{process-slot-definitions}
+(これは直接呼び出すことはできません)で処理され、スロット定義になります。
+厳密には、@code{:init-form} スロットオプションは、@code{:init-thunk} オプション
+になり、@code{:getter}、@code{:setter}、@code{:accessor} のスロットオプションは
+引用されます。
 
-���饹(@var{metaclass} �Υ��󥹥���)���������줿�塢@var{name} �Υ������Х�
-��«���������å�����ޤ������줬�����饹��«������Ƥ���С����饹�κ����
-�ץ��ȥ��뤬��ư����ޤ�(@ref{Class redefinition} ����)��
+クラス(@var{metaclass} のインスタンス)が生成された後、@var{name} のグローバル
+な束縛がチェックされます。それが、クラスに束縛されていれば、クラスの再定義
+プロトコルが起動されます(@ref{Class redefinition} 参照)。
 
-���θ塢@var{slot-specs} ��ǡ�@code{:getter}��@code{:setter}��
-@code{:accessor} �����åȥ��ץ�����Ϳ����줿�᥽�åɤ������졢�б�����
-�����ͥ�å��ؿ�����Ͽ����ޤ���
+その後、@var{slot-specs} 中で、@code{:getter}、@code{:setter}、
+@code{:accessor} スロットオプションに与えられたメソッドが集められ、対応する
+ジェネリック関数に登録されます。
 @c COMMON
 
 @c EN
 @subsubheading Class structure
 @c JP
-@subsubheading ���饹��¤
+@subsubheading クラス構造
 @c COMMON
 
 @deftp {Class} <class>
@@ -3334,12 +3335,12 @@ the class is initialized.  It is recommended to obtain information
 about a class by procedures described in @ref{Class object}, instead
 of directly accessing those slots.
 @c JP
-���٤ƤΥ᥿���饹�Υ١������饹�Ǥ��� @code{<class>} �ϰʲ��Τ褦��
-�����åȤ���äƤ��ޤ��������Υ����åȤ�����Ū�ʴ����Τ���ˤ���Τ�
-���饹����������줿��ˡ��������ͤ��ѹ����٤��ǤϤʤ��Ȥ������Ȥ�
-���դ��Ƥ������������饹�ξ��������ˤϡ������Υ����åȤ�ľ��
-������������ΤǤϤʤ���@ref{Class object} �ˤ����³����Ȥ����Ȥ򤪤�����
-���ޤ���
+すべてのメタクラスのベースクラスである @code{<class>} は以下のような
+スロットを持っています。これらのスロットは内部的な管理のためにあるので
+クラスが初期化された後に、これらの値を変更すべきではないということに
+注意してください。クラスの情報を得るには、これらのスロットに直接
+アクセスするのではなく、@ref{Class object} にある手続きを使うことをおすすめ
+します。
 @c COMMON
 
 @defivar <class> name
@@ -3347,8 +3348,8 @@ of directly accessing those slots.
 The name of the class; the symbol given to @code{define-class} macro.
 @code{class-name} returns this value.
 @c JP
-���饹��̾����@code{define-class} �ޥ�����Ϳ����줿����ܥ�Ǥ���
-@code{class-name} �Ϥ����ͤ��֤��ޤ���
+クラスの名前、@code{define-class} マクロに与えられたシンボルです。
+@code{class-name} はこの値を返します。
 @c COMMON
 @end defivar
 
@@ -3356,7 +3357,7 @@ The name of the class; the symbol given to @code{define-class} macro.
 @c EN
 Class precedence list.  @code{class-precedence-list} returns this value.
 @c JP
-���饹��̥ꥹ�ȤǤ���@code{class-precedence-list} �Ϥ����ͤ��֤��ޤ���
+クラス順位リストです。@code{class-precedence-list} はこの値を返します。
 @c COMMON
 @end defivar
 
@@ -3365,8 +3366,8 @@ Class precedence list.  @code{class-precedence-list} returns this value.
 The list of direct superclasses.
 @code{class-direct-supers} returns this value.
 @c JP
-ľ�ܥ����ѡ����饹�Υꥹ�ȤǤ���
-@code{class-direct-supers} �Ϥ����ͤ��֤��ޤ���
+直接スーパークラスのリストです。
+@code{class-direct-supers} はこの値を返します。
 @c COMMON
 @end defivar
 
@@ -3375,8 +3376,8 @@ The list of direct superclasses.
 An assoc list of slot accessors---it encapsulates how each slot
 should be accessed.
 @c JP
-�����åȥ���������Ϣ�ۥꥹ�ȤǤ�������ϳƥ����åȤ��ɤΤ褦�˥������������
-�٤����򥫥ץ��벽���Ƥ��ޤ���
+スロットアクセサの連想リストです。これは各スロットがどのようにアクセスされる
+べきかをカプセル化しています。
 @c COMMON
 @end defivar
 
@@ -3385,8 +3386,8 @@ should be accessed.
 A list of slot definitions.  @code{class-slots} returns this value.
 See @ref{Slot definition object}, for the details of slot definitions.
 @c JP
-�����å�����Υꥹ�ȤǤ���@code{class-slots} �Ϥ����ͤ��֤��ޤ���
-�����å�����ˤĤ��Ƥξܺ٤ϡ�@ref{Slot definition object} �򻲾Ȥ��Ƥ���������
+スロット定義のリストです。@code{class-slots} はこの値を返します。
+スロット定義についての詳細は、@ref{Slot definition object} を参照してください。
 @c COMMON
 @end defivar
 
@@ -3396,8 +3397,8 @@ A list of slot definitions that is directly specified in this
 class definition (i.e. not inherited).
 @code{class-direct-slots} returns this value.
 @c JP
-���Υ��饹�������ľ�ܻ��ꤵ�줿(�Ĥޤ�Ѿ�������ΤǤϤʤ�)�����å������
-�ꥹ�ȤǤ���@code{class-direct-slots} �Ϥ����ͤ��֤��ޤ���
+このクラスの定義で直接指定された(つまり継承したものではない)スロット定義の
+リストです。@code{class-direct-slots} はこの値を返します。
 @c COMMON
 @end defivar
 
@@ -3405,7 +3406,7 @@ class definition (i.e. not inherited).
 @c EN
 The number of instance allocated slots.
 @c JP
-���󥹥��󥹤˥��������Ȥ���륹���åȤο��Ǥ���
+インスタンスにアロケートされるスロットの数です。
 @c COMMON
 @end defivar
 
@@ -3414,8 +3415,8 @@ The number of instance allocated slots.
 A list of classes that directly inherits this class.
 @code{class-direct-subclasses} returns this value.
 @c JP
-���Υ��饹��ľ�ܷѾ����Ƥ��륯�饹�Υꥹ�ȤǤ���
-@code{class-direct-subclasses} �Ϥ����ͤ��֤��ޤ���
+このクラスを直接継承しているクラスのリストです。
+@code{class-direct-subclasses} はこの値を返します。
 @c COMMON
 @end defivar
 
@@ -3424,8 +3425,8 @@ A list of classes that directly inherits this class.
 A list of methods that has this class in its specializer list.
 @code{class-direct-methods} returns this value.
 @c JP
-���Υ��饹�����경�ҥꥹ����ˤ�ĥ᥽�åɤΥꥹ�ȤǤ���
-@code{class-direct-methods} �Ϥ����ͤ��֤��ޤ���
+このクラスを特定化子リスト中にもつメソッドのリストです。
+@code{class-direct-methods} はこの値を返します。
 @c COMMON
 @end defivar
 
@@ -3435,8 +3436,8 @@ The initialization argument list when this class is created.
 The information is used to initialize redefined class
 (see @ref{Class redefinition}).
 @c JP
-���Υ��饹�����������Ȥ��ν���������ꥹ�ȤǤ������ξ����
-��������줿���饹����������Τ˻Ȥ��ޤ�(@ref{Class redefinition} ����)��
+このクラスが生成されるときの初期化引数リストです。この情報は
+再定義されたクラスを初期化するのに使います(@ref{Class redefinition} 参照)。
 @c COMMON
 @end defivar
 
@@ -3444,7 +3445,7 @@ The information is used to initialize redefined class
 @c EN
 A list of modules where this class has a global binding.
 @c JP
-���Υ��饹���������Х�«�����ĥ⥸�塼��Υꥹ�ȤǤ���
+このクラスがグローバル束縛をもつモジュールのリストです。
 @c COMMON
 @end defivar
 
@@ -3453,8 +3454,8 @@ A list of modules where this class has a global binding.
 If this class has been redefined, this slot contains a reference
 to the new class.  Otherwise, this slot has @code{#f}.
 @c JP
-���Υ��饹����������줿��硢���Υ����åȤϿ��������饹�ؤλ��Ȥ�ޤߤޤ���
-�����Ǥʤ����ˤϤ��Υ����åȤ� @code{#f} ���äƤ��ޤ���
+このクラスが再定義された場合、このスロットは新しいクラスへの参照を含みます。
+そうでない場合にはこのスロットは @code{#f} をもっています。
 @c COMMON
 @end defivar
 
@@ -3464,9 +3465,9 @@ The value of this slot indicates how this class is created.
 Scheme defined class has a symbol @code{scheme}.  Other values
 are for internal use.
 @c JP
-���Υ����åȤ��ͤϡ����Υ��饹���ɤΤ褦���������줿���򼨤��Ƥ��ޤ���
-Scheme ����Υ��饹�ϡ�@code{scheme} �Ȥ�������ܥ����äƤ��ޤ�������ʳ���
-�ͤ�����Ū�˻��Ѥ�������Ǥ���
+このスロットの値は、このクラスがどのように生成されたかを示しています。
+Scheme 定義のクラスは、@code{scheme} というシンボルを持っています。それ以外の
+値は内部的に使用するだけです。
 @c COMMON
 @end defivar
 @end deftp
@@ -3474,7 +3475,7 @@ Scheme ����Υ��饹�ϡ�@code{scheme} �Ȥ�������ܥ����äƤ��ޤ�������ʳ���
 @c EN
 @subsubheading The make method for @code{<class>}
 @c JP
-@subsubheading @code{<class>} �Ѥ� make �᥽�å�
+@subsubheading @code{<class>} 用の make メソッド
 @c COMMON
 
 @deffn {Method} make (class <class>) &rest initargs
@@ -3483,7 +3484,7 @@ Scheme ����Υ��饹�ϡ�@code{scheme} �Ȥ�������ܥ����äƤ��ޤ�������ʳ���
 
 @node Customizing slot access, Method instantiation, Class instantiation, Metaobject protocol
 @subsection Customizing slot access
-@c NODE �����åȥ��������Υ������ޥ���
+@c NODE スロットアクセスのカスタマイズ
 
 
 @deffn {Generic Function} compute-slots
@@ -3745,14 +3746,14 @@ gosh> (ref foo'v)
 
 @node Method instantiation, Customizing method application, Customizing slot access, Metaobject protocol
 @subsection Method instantiation
-@c NODE �᥽�åɤΥ��󥹥��󥷥��������
+@c NODE メソッドのインスタンシエーション
 
 @deffn {Method} make (class <method>) &rest initargs
 @end deffn
 
 @node Customizing method application,  , Method instantiation, Metaobject protocol
 @subsection Customizing method application
-@c NODE �᥽�å�Ŭ�ѤΥ������ޥ���
+@c NODE メソッド適用のカスタマイズ
 
 @deffn {Generic Function} apply-generic gf args
 @end deffn

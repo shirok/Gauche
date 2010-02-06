@@ -1,6 +1,7 @@
+@c -*- mode: texinfo; coding: utf-8; -*-
 @node Class Index, Variable Index, Module Index, Top
 @appendix Class Index
-@c NODE Index - ¥¯¥é¥¹º÷°ú
+@c NODE Index - ã‚¯ãƒ©ã‚¹ç´¢å¼•
 
 For readability, the surrounding @code{<} and @code{>} are stripped off.
 

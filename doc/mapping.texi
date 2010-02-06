@@ -1,14 +1,15 @@
+@c -*- mode: texinfo; coding: utf-8; -*-
 @node C to Scheme mapping, Function and Syntax Index, References, Top
 @appendix C to Scheme mapping
-@c NODE C¤ÈScheme¤Î´Ø¿ô¤ÎÂĞ±ş
+@c NODE Cã¨Schemeã®é–¢æ•°ã®å¯¾å¿œ
 
 @c EN
 For the convenience of the programmers familiar to C, 
 I composed a simple table of C operators and library functions with
 the corresponding Scheme functions.
 @c JP
-C¤ËÆëÀ÷¤ó¤À¥×¥í¥°¥é¥Ş¤Î¤¿¤á¤Ë¡¢C¤Î¥ª¥Ú¥ì¡¼¥¿¤È¥é¥¤¥Ö¥é¥ê´Ø¿ô¤«¤é
-Scheme¤Î´Ø¿ô¤Ø¤ÎÂĞ±şÉ½¤ò¼¨¤·¤Æ¤ª¤­¤Ş¤¹¡£
+Cã«é¦´æŸ“ã‚“ã ãƒ—ãƒ­ã‚°ãƒ©ãƒã®ãŸã‚ã«ã€Cã®ã‚ªãƒšãƒ¬ãƒ¼ã‚¿ã¨ãƒ©ã‚¤ãƒ–ãƒ©ãƒªé–¢æ•°ã‹ã‚‰
+Schemeã®é–¢æ•°ã¸ã®å¯¾å¿œè¡¨ã‚’ç¤ºã—ã¦ãŠãã¾ã™ã€‚
 @c COMMON
 
 @table @code
@@ -16,129 +17,129 @@ Scheme¤Î´Ø¿ô¤Ø¤ÎÂĞ±şÉ½¤ò¼¨¤·¤Æ¤ª¤­¤Ş¤¹¡£
 @c EN
 R5RS arithmetic procedure @code{+}.   @xref{Arithmetics}.
 @c JP
-R5RS ¤Î»»½Ñ±é»»¼êÂ³¤­ @code{+}¡£@ref{Arithmetics}»²¾È¡£
+R5RS ã®ç®—è¡“æ¼”ç®—æ‰‹ç¶šã @code{+}ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item +=
 @c EN
 Gauche @code{inc!} macro.  @xref{Assignments}.
 @c JP
-Gauche ¤Î @code{inc!} ¥Ş¥¯¥í¡£@ref{Assignments}»²¾È¡£
+Gauche ã® @code{inc!} ãƒã‚¯ãƒ­ã€‚@ref{Assignments}å‚ç…§ã€‚
 @c COMMON
 @item -
 @c EN
 R5RS arithmetic procedure @code{-}.   @xref{Arithmetics}.
 @c JP
-R5RS ¤Î»»½Ñ±é»»¼êÂ³¤­ @code{-}¡£@ref{Arithmetics}»²¾È¡£
+R5RS ã®ç®—è¡“æ¼”ç®—æ‰‹ç¶šã @code{-}ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item -=
 @c EN
 Gauche @code{dec!} macro.  @xref{Assignments}.
 @c JP
-Gauche ¤Î @code{dec!} ¥Ş¥¯¥í¡£@ref{Assignments}»²¾È¡£
+Gauche ã® @code{dec!} ãƒã‚¯ãƒ­ã€‚@ref{Assignments}å‚ç…§ã€‚
 @c COMMON
 @item ->
 @c EN
 Gauche @code{slot-ref} is something close to this.  @xref{Accessing instance}.
 @c JP
-Gauche ¤Î @code{slot-ref} ¤¬¶á¤¤¤â¤Î¤Ç¤¹¡£@ref{Accessing instance}»²¾È¡£
+Gauche ã® @code{slot-ref} ãŒè¿‘ã„ã‚‚ã®ã§ã™ã€‚@ref{Accessing instance}å‚ç…§ã€‚
 @c COMMON
 @c EN
 @item * (binary)
 R5RS arithmetic procedure @code{*}.   @xref{Arithmetics}.
 @c JP
-@item * (Æó¹à±é»»»Ò)
-R5RS ¤Î»»½Ñ±é»»¼êÂ³¤­ @code{*}¡£@ref{Arithmetics}»²¾È¡£
+@item * (äºŒé …æ¼”ç®—å­)
+R5RS ã®ç®—è¡“æ¼”ç®—æ‰‹ç¶šã @code{*}ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @c EN
 @item * (unary)
 No equivalent procedure.  Scheme doesn't have explicit notation of
 pointers.
 @c JP
-@item * (Ã±¹à±é»»»Ò)
-Æ±Åù¤Î¼êÂ³¤­¤Ï¤¢¤ê¤Ş¤»¤ó¡£Scheme ¤Ë¤ÏÌÀ¼¨Åª¥İ¥¤¥ó¥¿É½µ­¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+@item * (å˜é …æ¼”ç®—å­)
+åŒç­‰ã®æ‰‹ç¶šãã¯ã‚ã‚Šã¾ã›ã‚“ã€‚Scheme ã«ã¯æ˜ç¤ºçš„ãƒã‚¤ãƒ³ã‚¿è¡¨è¨˜ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item *=
 @c EN
 No equivalent procedure.
 @c JP
-Æ±Åù¤Î¼êÂ³¤­¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+åŒç­‰ã®æ‰‹ç¶šãã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item /
 @c EN
 R5RS arithmetic procedure @code{/}.   @xref{Arithmetics}.
 @c JP
-R5RS ¤Î»»½Ñ±é»»¼êÂ³¤­ @code{/}¡£@ref{Arithmetics}»²¾È¡£
+R5RS ã®ç®—è¡“æ¼”ç®—æ‰‹ç¶šã @code{/}ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item /=
 @c EN
 No equivalent procedure.
 @c JP
-Æ±Åù¤Î¼êÂ³¤­¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+åŒç­‰ã®æ‰‹ç¶šãã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @c EN
 @item & (binary)
 Gauche @code{logand}.  @xref{Bitwise operations}.
 @c JP
-@item & (Æó¹à±é»»»Ò)
-Gauche ¤Î @code{logand}¡£@ref{Bitwise operations}»²¾È¡£
+@item & (äºŒé …æ¼”ç®—å­)
+Gauche ã® @code{logand}ã€‚@ref{Bitwise operations}å‚ç…§ã€‚
 @c COMMON
 @c EN
 @item & (unary)
 No equivalent procedure.  Scheme doesn't have explicit notation of
 pointers.
 @c JP
-@item & (Ã±¹à±é»»»Ò)
-Æ±Åù¤Î¼êÂ³¤­¤Ï¤¢¤ê¤Ş¤»¤ó¡£Scheme ¤Ë¤ÏÌÀ¼¨Åª¥İ¥¤¥ó¥¿É½µ­¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+@item & (å˜é …æ¼”ç®—å­)
+åŒç­‰ã®æ‰‹ç¶šãã¯ã‚ã‚Šã¾ã›ã‚“ã€‚Scheme ã«ã¯æ˜ç¤ºçš„ãƒã‚¤ãƒ³ã‚¿è¡¨è¨˜ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item &&
 @c EN
 R5RS syntax @code{and}.  @xref{Conditionals}.
 @c JP
-R5RS ¤Î¹½Ê¸ @code{and}¡£@ref{Conditionals}»²¾È¡£
+R5RS ã®æ§‹æ–‡ @code{and}ã€‚@ref{Conditionals}å‚ç…§ã€‚
 @c COMMON
 @item &=
 @c EN
 No equivalent procedure.
 @c JP
-Æ±Åù¤Î¼êÂ³¤­¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+åŒç­‰ã®æ‰‹ç¶šãã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item |
 @c EN
 Gauche @code{logior}.  @xref{Bitwise operations}.
 @c JP
-Gauche ¤Î @code{logior}¡£@ref{Bitwise operations}»²¾È¡£
+Gauche ã® @code{logior}ã€‚@ref{Bitwise operations}å‚ç…§ã€‚
 @c COMMON
 @item ||
 @c EN
 R5RS syntax @code{or}.  @xref{Conditionals}.
 @c JP
-R5RS ¤Î¹½Ê¸ @code{or}¡£@ref{Conditionals}»²¾È¡£
+R5RS ã®æ§‹æ–‡ @code{or}ã€‚@ref{Conditionals}å‚ç…§ã€‚
 @c COMMON
 @item |=
 @c EN
 No equivalent procedure.
 @c JP
-Æ±Åù¤Î¼êÂ³¤­¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+åŒç­‰ã®æ‰‹ç¶šãã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item ^
 @c EN
 Gauche @code{logxor}.  @xref{Bitwise operations}.
 @c JP
-Gauche ¤Î @code{logxor}¡£@ref{Bitwise operations}»²¾È¡£
+Gauche ã® @code{logxor}ã€‚@ref{Bitwise operations}å‚ç…§ã€‚
 @c COMMON
 @item =
 @c EN
 R5RS syntax @code{set!}.  @xref{Assignments}.
 @c JP
-R5RS ¤Î¹½Ê¸ @code{set!}¡£@ref{Assignments}»²¾È¡£
+R5RS ã®æ§‹æ–‡ @code{set!}ã€‚@ref{Assignments}å‚ç…§ã€‚
 @c COMMON
 @item ==
 @c EN
 R5RS equivalence procedure, @code{eq?}, @code{eqv?} and @code{equal?}.
 @xref{Equivalence}.
 @c JP
-R5RS ¤ÎÆ±ÅùÀ­¼êÂ³¤­ @code{eq?}¡¢@code{eqv?} ¤ª¤è¤Ó @code{equal?}¡£
-@ref{Equivalence}»²¾È¡£
+R5RS ã®åŒç­‰æ€§æ‰‹ç¶šã @code{eq?}ã€@code{eqv?} ãŠã‚ˆã³ @code{equal?}ã€‚
+@ref{Equivalence}å‚ç…§ã€‚
 @c COMMON
 @item <
 @itemx <=
@@ -147,21 +148,21 @@ R5RS arithmetic procedure @code{<} and @code{<=}.
 @xref{Numerical comparison}.  Unlike C operator, Scheme version
 is transitive.
 @c JP
-R5RS ¤Î»»½Ñ±é»»¼êÂ³¤­ @code{<} ¤ª¤è¤Ó @code{<=}¡£
-@ref{Numerical comparison}»²¾È¡£C ¤Î±é»»»Ò¤È¤Á¤¬¤¤¡¢Scheme ¤Î¤â¤Î¤Ï
-¿ä°ÜÅª¤Ê¤â¤Î¤Ç¤¹¡£
+R5RS ã®ç®—è¡“æ¼”ç®—æ‰‹ç¶šã @code{<} ãŠã‚ˆã³ @code{<=}ã€‚
+@ref{Numerical comparison}å‚ç…§ã€‚C ã®æ¼”ç®—å­ã¨ã¡ãŒã„ã€Scheme ã®ã‚‚ã®ã¯
+æ¨ç§»çš„ãªã‚‚ã®ã§ã™ã€‚
 @c COMMON
 @item <<
 @c EN
 Gauche @code{ash}.  @xref{Bitwise operations}.
 @c JP
-Gauche ¤Î @code{ash}¡£@ref{Bitwise operations}»²¾È¡£
+Gauche ã® @code{ash}ã€‚@ref{Bitwise operations}å‚ç…§ã€‚
 @c COMMON
 @item <<=
 @c EN
 No equivalent procedure.
 @c JP
-Æ±Åù¤Î¼êÂ³¤­¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+åŒç­‰ã®æ‰‹ç¶šãã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item >
 @itemx >=
@@ -170,33 +171,33 @@ R5RS arithmetic procedure @code{>} and @code{>=}.
 @xref{Numerical comparison}.  Unlike C operator, Scheme version
 is transitive.
 @c JP
-R5RS ¤Î»»½Ñ±é»»¼êÂ³¤­ @code{<} ¤ª¤è¤Ó @code{<=}¡£
-@ref{Numerical comparison}»²¾È¡£C ¤Î±é»»»Ò¤È¤Á¤¬¤¤¡¢Scheme ¤Î¤â¤Î¤Ï
-¿ä°ÜÅª¤Ê¤â¤Î¤Ç¤¹¡£
+R5RS ã®ç®—è¡“æ¼”ç®—æ‰‹ç¶šã @code{<} ãŠã‚ˆã³ @code{<=}ã€‚
+@ref{Numerical comparison}å‚ç…§ã€‚C ã®æ¼”ç®—å­ã¨ã¡ãŒã„ã€Scheme ã®ã‚‚ã®ã¯
+æ¨ç§»çš„ãªã‚‚ã®ã§ã™ã€‚
 @c COMMON
 @item >>
 @c EN
 Gauche @code{ash}.  @xref{Bitwise operations}.
 @c JP
-Gauche ¤Î @code{ash}¡£@ref{Bitwise operations}»²¾È¡£
+Gauche ã® @code{ash}ã€‚@ref{Bitwise operations}å‚ç…§ã€‚
 @c COMMON
 @item >>=
 @c EN
 No equivalent procedure.
 @c JP
-Æ±Åù¤Î¼êÂ³¤­¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+åŒç­‰ã®æ‰‹ç¶šãã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item %
 @c EN
 R5RS operator @code{modulo} and @code{remainder}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î±é»»»Ò @code{modulo} ¤ª¤è¤Ó @code{remainder}¡£@ref{Arithmetics}»²¾È¡£
+R5RS ã®æ¼”ç®—å­ @code{modulo} ãŠã‚ˆã³ @code{remainder}ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item %=
 @c EN
 No equivalent procedure.
 @c JP
-Æ±Åù¤Î¼êÂ³¤­¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+åŒç­‰ã®æ‰‹ç¶šãã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item []
 @c EN
@@ -204,94 +205,94 @@ R5RS @code{vector-ref} (@xref{Vectors}) is something close.
 Or you can use Gauche's generic function @code{ref} (@xref{Sequence framework})
 for arbitrary sequences.
 @c JP
-R5RS ¤Î @code{vector-ref} (@ref{Vectors}»²¾È) ¤¬¶á¤¤¤â¤Î¤Ç¤¹¡£¤¢¤ë¤¤¤Ï¡¢
-Gauche ¤Î¥¸¥§¥Í¥ê¥Ã¥¯´Ø¿ô @code{ref} (@ref{Sequence framework}»²¾È)¤¬¡¢
-Ç¤°Õ¤ÎÊÂ¤ÓÍÑ¤Ë¤Ê¤Ã¤Æ¤¤¤Ş¤¹¡£
+R5RS ã® @code{vector-ref} (@ref{Vectors}å‚ç…§) ãŒè¿‘ã„ã‚‚ã®ã§ã™ã€‚ã‚ã‚‹ã„ã¯ã€
+Gauche ã®ã‚¸ã‚§ãƒãƒªãƒƒã‚¯é–¢æ•° @code{ref} (@ref{Sequence framework}å‚ç…§)ãŒã€
+ä»»æ„ã®ä¸¦ã³ç”¨ã«ãªã£ã¦ã„ã¾ã™ã€‚
 @c COMMON
 @item .
 @c EN
 Gauche @code{slot-ref} is something close to this.  @xref{Accessing instance}.
 @c JP
-Gauche ¤Î @code{slot-ref} ¤¬¤³¤ì¤Ë¶á¤¤¤â¤Î¤Ç¤¹¡£@ref{Accessing instance}»²¾È¡£
+Gauche ã® @code{slot-ref} ãŒã“ã‚Œã«è¿‘ã„ã‚‚ã®ã§ã™ã€‚@ref{Accessing instance}å‚ç…§ã€‚
 @c COMMON
 @item ~
 @c EN
 Gauche @code{lognot}.  @xref{Bitwise operations}.
 @c JP
-Gauche ¤Î @code{lognot}¡£@ref{Bitwise operations}»²¾È¡£
+Gauche ã® @code{lognot}ã€‚@ref{Bitwise operations}å‚ç…§ã€‚
 @c COMMON
 @item ~=
 @c EN
 No equivalent procedure.
 @c JP
-Æ±Åù¤Î¼êÂ³¤­¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+åŒç­‰ã®æ‰‹ç¶šãã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item !
 @c EN
 R5RS procedure @code{not}.  @xref{Booleans}.
 @c JP
-R5RS ¤Î¼êÂ³¤­ @code{not}¡£@ref{Booleans}»²¾È¡£
+R5RS ã®æ‰‹ç¶šã @code{not}ã€‚@ref{Booleans}å‚ç…§ã€‚
 @c COMMON
 @item !=
 @c EN
 No equivalent procedure.
 @c JP
-Æ±Åù¤Î¼êÂ³¤­¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+åŒç­‰ã®æ‰‹ç¶šãã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item abort
 @c EN
 Gauche @code{sys-abort}.   @xref{Program termination}.
 @c JP
-Gauche ¤Î @code{sys-abort}¡£@ref{Program termination}»²¾È¡£
+Gauche ã® @code{sys-abort}ã€‚@ref{Program termination}å‚ç…§ã€‚
 @c COMMON
 @item abs
 @c EN
 R5RS @code{abs}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{abs}¡£@ref{Arithmetics}»²¾È¡£
+R5RS ã® @code{abs}ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item access
 @c EN
 Gauche @code{sys-access}.  @xref{File stats}.
 @c JP
-Gauche ¤Î @code{sys-access}¡£@ref{File stats}»²¾È¡£
+Gauche ã® @code{sys-access}ã€‚@ref{File stats}å‚ç…§ã€‚
 @c COMMON
 @item acos
 @c EN
 R5RS @code{acos}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{acos}¡£@ref{Arithmetics}»²¾È¡£
+R5RS ã® @code{acos}ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item alarm
 @c EN
 Gauche @code{sys-alarm}.   @xref{Miscellaneous system calls}.
 @c JP
-Gauche ¤Î @code{sys-alarm}¡£@ref{Miscellaneous system calls}»²¾È¡£
+Gauche ã® @code{sys-alarm}ã€‚@ref{Miscellaneous system calls}å‚ç…§ã€‚
 @c COMMON
 @item asctime
 @c EN
 Gauche @code{sys-asctime}.  @xref{Time}.
 @c JP
-Gauche ¤Î @code{sys-asctime}¡£@ref{Time}»²¾È¡£
+Gauche ã® @code{sys-asctime}ã€‚@ref{Time}å‚ç…§ã€‚
 @c COMMON
 @item asin
 @c EN
 R5RS @code{asin}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{asin}¡£@ref{Arithmetics}»²¾È¡£
+R5RS ã® @code{asin}ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item assert
 @c EN
 No equivalent function in Gauche.
 @c JP
-Gauche ¤Ë¤ÏÆ±Åù¤Î´Ø¿ô¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+Gauche ã«ã¯åŒç­‰ã®é–¢æ•°ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item atan
 @itemx atan2
 @c EN
 R5RS @code{atan}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{atan}¡£@ref{Arithmetics}»²¾È¡£
+R5RS ã® @code{atan}ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item atexit
 @c EN
@@ -299,9 +300,9 @@ No equivalent function in Gauche, but the "after" thunk of active
 dynamic handlers are called when @code{exit} is called.
 @xref{Program termination}, and @xref{Continuation}.
 @c JP
-Gauche ¤Ë¤ÏÆ±Åù¤Î´Ø¿ô¤Ï¤¢¤ê¤Ş¤»¤ó¤¬¡¢@code{exit} ¤¬¸Æ¤Ğ¤ì¤¿¤È¤­
-¥¢¥¯¥Æ¥£¥Ö¤ÊÆ°Åª¥Ï¥ó¥É¥é¤Î¡Ö»ö¸å¡×¥µ¥ó¥¯¤¬¸Æ¤Ğ¤ì¤Ş¤¹¡£
-@ref{Program termination} ¤ª¤è¤Ó @ref{Continuation} »²¾È¡£
+Gauche ã«ã¯åŒç­‰ã®é–¢æ•°ã¯ã‚ã‚Šã¾ã›ã‚“ãŒã€@code{exit} ãŒå‘¼ã°ã‚ŒãŸã¨ã
+ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªå‹•çš„ãƒãƒ³ãƒ‰ãƒ©ã®ã€Œäº‹å¾Œã€ã‚µãƒ³ã‚¯ãŒå‘¼ã°ã‚Œã¾ã™ã€‚
+@ref{Program termination} ãŠã‚ˆã³ @ref{Continuation} å‚ç…§ã€‚
 @c COMMON
 @item atof
 @itemx atoi
@@ -309,27 +310,27 @@ Gauche ¤Ë¤ÏÆ±Åù¤Î´Ø¿ô¤Ï¤¢¤ê¤Ş¤»¤ó¤¬¡¢@code{exit} ¤¬¸Æ¤Ğ¤ì¤¿¤È¤­
 @c EN
 You can use @code{string->number}.  @xref{Numerical conversions}.
 @c JP
-@code{string->number} ¤¬»È¤¨¤Ş¤¹¡£@ref{Numerical conversions}»²¾È¡£
+@code{string->number} ãŒä½¿ãˆã¾ã™ã€‚@ref{Numerical conversions}å‚ç…§ã€‚
 @c COMMON
 @item bsearch
 @c EN
 You can use SRFI-43's @code{vector-binary-search}.
 @xref{Vector library}.
 @c JP
-SRFI-43¤Î@code{vector-binary-search}¤¬»È¤¨¤Ş¤¹¡£
-@ref{Vector library}»²¾È¡£
+SRFI-43ã®@code{vector-binary-search}ãŒä½¿ãˆã¾ã™ã€‚
+@ref{Vector library}å‚ç…§ã€‚
 @c COMMON
 @item calloc
 @c EN
 Allocation is handled automatically in Scheme.
 @c JP
-Scheme ¤Ç¤Ï¥á¥â¥ê³äÅö¤Ï¼«Æ°Åª¤Ë½èÍı¤µ¤ì¤Ş¤¹¡£
+Scheme ã§ã¯ãƒ¡ãƒ¢ãƒªå‰²å½“ã¯è‡ªå‹•çš„ã«å‡¦ç†ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 @item ceil
 @c EN
 R5RS @code{ceiling}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{ceiling}¡£@ref{Arithmetics}»²¾È¡£
+R5RS ã® @code{ceiling}ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item cfgetispeed
 @itemx cfgetospeed
@@ -339,40 +340,40 @@ R5RS ¤Î @code{ceiling}¡£@ref{Arithmetics}»²¾È¡£
 Gauche's @code{sys-cfgetispeed}, @code{sys-cfgetospeed},
 @code{sys-cfsetispeed}, @code{sys-cfsetospeed}.  @xref{Terminal control}.
 @c JP
-Gauche ¤Î @code{sys-cfgetispeed}¡¢@code{sys-cfgetospeed}¡¢
-@code{sys-cfsetispeed}¡¢@code{sys-cfsetospeed}¡£@ref{Terminal control}»²¾È¡£
+Gauche ã® @code{sys-cfgetispeed}ã€@code{sys-cfgetospeed}ã€
+@code{sys-cfsetispeed}ã€@code{sys-cfsetospeed}ã€‚@ref{Terminal control}å‚ç…§ã€‚
 @c COMMON
 @item chdir
 @c EN
 Gauche's @code{sys-chdir}.   @xref{Other file operations}.
 @c JP
-Gauche ¤Î @code{sys-chdir}¡£@ref{Other file operations}»²¾È¡£
+Gauche ã® @code{sys-chdir}ã€‚@ref{Other file operations}å‚ç…§ã€‚
 @c COMMON
 @item chmod
 @c EN
 Gauche's @code{sys-chmod}.   @xref{File stats}.
 @c JP
-Gauche ¤Î @code{sys-chmod}¡£@ref{File stats}»²¾È¡£
+Gauche ã® @code{sys-chmod}ã€‚@ref{File stats}å‚ç…§ã€‚
 @c COMMON
 @item chown
 @c EN
 Gauche's @code{sys-chown}.   @xref{File stats}.
 @c JP
-Gauche ¤Î @code{sys-chown}¡£@ref{File stats}»²¾È¡£
+Gauche ã® @code{sys-chown}ã€‚@ref{File stats}å‚ç…§ã€‚
 @c COMMON
 @item clearerr
 @c EN
 Not supported yet.
 @c JP
-Ì¤¥µ¥İ¡¼¥È¡£
+æœªã‚µãƒãƒ¼ãƒˆã€‚
 @c COMMON
 @item clock
 @c EN
 No equivalent function in Gauche.  You can use @code{sys-times}
 to get information about CPU time.
 @c JP
-Gauche ¤Ë¤ÏÆ±Åù¤Î´Ø¿ô¤Ï¤¢¤ê¤Ş¤»¤ó¡£@code{sys-times} ¤ò»È¤Ã¤Æ¡¢
-CPU¥¿¥¤¥à¤Ë¾ğÊó¤òÆÀ¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£
+Gauche ã«ã¯åŒç­‰ã®é–¢æ•°ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚@code{sys-times} ã‚’ä½¿ã£ã¦ã€
+CPUã‚¿ã‚¤ãƒ ã«æƒ…å ±ã‚’å¾—ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚
 @c COMMON
 @item close
 @c EN
@@ -384,13 +385,13 @@ when operation is finished.  The file is also closed when
 its governing port is garbage collected.
 @xref{Common port operations}.
 @c JP
-¥Õ¥¡¥¤¥ë¥Ç¥£¥¹¥¯¥ê¥×¥¿¤òÄ¾ÀÜ¥¯¥í¡¼¥º¤¹¤ë¤³¤È¤Ï¤Ç¤­¤Ş¤»¤ó¤¬¡¢
-@code{close-input-port} ¤¢¤ë¤¤¤Ï @code{close-output-port} ¤ò»È¤¦¤È¡¢
-¸µ¤Ë¤Ê¤ë¥Õ¥¡¥¤¥ë¤Ï¥¯¥í¡¼¥º¤µ¤ì¤Ş¤¹¡£
-¤¤¤¯¤Ä¤«¤Î¥İ¡¼¥È¤Ë´ØÏ¢¤¹¤ë´Ø¿ô¡¢¤¿¤È¤¨¤Ğ¡¢@code{call-with-output-file}
-¤Ê¤É¤Ï¡¢Áàºî½ªÎ»»ş¤Ë¼«Æ°Åª¤Ë¥Õ¥¡¥¤¥ë¤ò¥¯¥í¡¼¥º¤·¤Ş¤¹¡£
-¤Ş¤¿¡¢¤½¤ì¤ò»ÙÇÛ¤·¤Æ¤¤¤ë¥İ¡¼¥È¤¬GC¤µ¤ì¤¿¤È¤­¤Ë¥¯¥í¡¼¥º¤µ¤ì¤Ş¤¹¡£
-@ref{Common port operations}»²¾È¡£
+ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‡ã‚£ã‚¹ã‚¯ãƒªãƒ—ã‚¿ã‚’ç›´æ¥ã‚¯ãƒ­ãƒ¼ã‚ºã™ã‚‹ã“ã¨ã¯ã§ãã¾ã›ã‚“ãŒã€
+@code{close-input-port} ã‚ã‚‹ã„ã¯ @code{close-output-port} ã‚’ä½¿ã†ã¨ã€
+å…ƒã«ãªã‚‹ãƒ•ã‚¡ã‚¤ãƒ«ã¯ã‚¯ãƒ­ãƒ¼ã‚ºã•ã‚Œã¾ã™ã€‚
+ã„ãã¤ã‹ã®ãƒãƒ¼ãƒˆã«é–¢é€£ã™ã‚‹é–¢æ•°ã€ãŸã¨ãˆã°ã€@code{call-with-output-file}
+ãªã©ã¯ã€æ“ä½œçµ‚äº†æ™‚ã«è‡ªå‹•çš„ã«ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã‚¯ãƒ­ãƒ¼ã‚ºã—ã¾ã™ã€‚
+ã¾ãŸã€ãã‚Œã‚’æ”¯é…ã—ã¦ã„ã‚‹ãƒãƒ¼ãƒˆãŒGCã•ã‚ŒãŸã¨ãã«ã‚¯ãƒ­ãƒ¼ã‚ºã•ã‚Œã¾ã™ã€‚
+@ref{Common port operations}å‚ç…§ã€‚
 @c COMMON
 @item closedir
 @c EN
@@ -398,37 +399,37 @@ No equivalent function in Gauche.  You can use
 @code{sys-readdir} to read the directory entries at once.
 @xref{Directories}.
 @c JP
-Gauche ¤Ë¤ÏÆ±Åù¤Î´Ø¿ô¤Ï¤¢¤ê¤Ş¤»¤ó¡£@code{sys-readdir} ¤ò»È¤¦¤È
-¥Ç¥£¥ì¥¯¥È¥ê¤ÎÆâÍÆ¤ò°ìÅÙ¤ËÆÉ¤à¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£
-@ref{Directories} »²¾È¡£
+Gauche ã«ã¯åŒç­‰ã®é–¢æ•°ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚@code{sys-readdir} ã‚’ä½¿ã†ã¨
+ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®å†…å®¹ã‚’ä¸€åº¦ã«èª­ã‚€ã“ã¨ãŒã§ãã¾ã™ã€‚
+@ref{Directories} å‚ç…§ã€‚
 @c COMMON
 @item cos
 @itemx cosh
 @c EN
 @code{cos} and @code{cosh}.  @xref{Arithmetics}.
 @c JP
-@code{cos} ¤ª¤è¤Ó @code{cosh}¡£@ref{Arithmetics} »²¾È¡£
+@code{cos} ãŠã‚ˆã³ @code{cosh}ã€‚@ref{Arithmetics} å‚ç…§ã€‚
 @c COMMON
 @item creat
 @c EN
 A file is implictly created by default when you open it for writing.
 See @ref{File ports} for more control over the creation of files.
 @c JP
-¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï¡¢½ñ¤­¹ş¤ß¤Î¤¿¤á¤Ë¥Õ¥¡¥¤¥ë¤ò¥ª¡¼¥×¥ó¤·¤¿¤È¤­¤Ë¡¢°ÅÌÛ¤Î¤¦¤Á¤Ë
-¥Õ¥¡¥¤¥ë¤¬ºîÀ®¤µ¤ì¤Ş¤¹¡£¥Õ¥¡¥¤¥ëºîÀ®¤Î¤è¤ê¾Ü¤·¤¤À©¸æ¤Ë¤Ä¤¤¤Æ¤Ï 
-@ref{File ports} ¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
+ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ã¯ã€æ›¸ãè¾¼ã¿ã®ãŸã‚ã«ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã‚ªãƒ¼ãƒ—ãƒ³ã—ãŸã¨ãã«ã€æš—é»™ã®ã†ã¡ã«
+ãƒ•ã‚¡ã‚¤ãƒ«ãŒä½œæˆã•ã‚Œã¾ã™ã€‚ãƒ•ã‚¡ã‚¤ãƒ«ä½œæˆã®ã‚ˆã‚Šè©³ã—ã„åˆ¶å¾¡ã«ã¤ã„ã¦ã¯ 
+@ref{File ports} ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
 @c COMMON
 @item ctermid
 @c EN
 Gauche @code{sys-ctermid}.  @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-ctermid}¡£@ref{System inquiry} »²¾È¡£
+Gauche ã® @code{sys-ctermid}ã€‚@ref{System inquiry} å‚ç…§ã€‚
 @c COMMON
 @item ctime
 @c EN
 Gauche @code{sys-ctime}.  @xref{Time}.
 @c JP
-Gauche ¤Î @code{sys-ctime}¡£@ref{Time} »²¾È¡£
+Gauche ã® @code{sys-ctime}ã€‚@ref{Time} å‚ç…§ã€‚
 @c COMMON
 @item cuserid
 @c EN
@@ -436,30 +437,30 @@ No equivalent function.  This is removed from the newer POSIX.
 You can use alternative functions, such as @code{sys-getlogin} or
 @code{sys-getpwuid} with @code{sys-getuid}.
 @c JP
-Æ±Åù¤Î´Ø¿ô¤Ï¤¢¤ê¤Ş¤»¤ó¡£¤³¤ì¤Ï¿·¤·¤¤ POSIX ¤«¤é¤Ïºï½ü¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
-ÊÌË¡¤È¤·¤Æ¡¢@code{sys-getuid} ¤È¤¤¤Ã¤·¤ç¤Ë¡¢@code{sys-getlogin}
-¤¢¤ë¤¤¤Ï @code{sys-getpwuid} ¤Ê¤É¤Î´Ø¿ô¤¬»È¤¨¤Ş¤¹¡£
+åŒç­‰ã®é–¢æ•°ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚ã“ã‚Œã¯æ–°ã—ã„ POSIX ã‹ã‚‰ã¯å‰Šé™¤ã•ã‚Œã¦ã„ã¾ã™ã€‚
+åˆ¥æ³•ã¨ã—ã¦ã€@code{sys-getuid} ã¨ã„ã£ã—ã‚‡ã«ã€@code{sys-getlogin}
+ã‚ã‚‹ã„ã¯ @code{sys-getpwuid} ãªã©ã®é–¢æ•°ãŒä½¿ãˆã¾ã™ã€‚
 @c COMMON
 @item difftime
 @c EN
 Gauche @code{sys-difftime}.  @xref{Time}.
 @c JP
-Gauche ¤Î @code{sys-difftime}¡£@ref{Time} »²¾È¡£
+Gauche ã® @code{sys-difftime}ã€‚@ref{Time} å‚ç…§ã€‚
 @c COMMON
 @item div
 @c EN
 You can use R5RS @code{quotient} and @code{remainder}.
 @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{quotient} ¤ª¤è¤Ó @code{remainder} ¤ò»È¤¨¤Ş¤¹¡£
-@ref{Arithmetics} »²¾È¡£
+R5RS ã® @code{quotient} ãŠã‚ˆã³ @code{remainder} ã‚’ä½¿ãˆã¾ã™ã€‚
+@ref{Arithmetics} å‚ç…§ã€‚
 @c COMMON
 @item dup
 @itemx dup2
 @c EN
 Not directly supported, but you can use @code{port-fd-dup!}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢@code{port-fd-dup!} ¤¬»È¤¨¤Ş¤¹¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€@code{port-fd-dup!} ãŒä½¿ãˆã¾ã™ã€‚
 @c COMMON
 @item execl
 @itemx execle
@@ -471,8 +472,8 @@ Not directly supported, but you can use @code{port-fd-dup!}.
 Gauche @code{sys-exec}.  @xref{Process management}.
 For higher level interface, @ref{High Level Process Interface}.
 @c JP
-Gauche ¤Î @code{sys-exec}¡£@ref{Process management} »²¾È¡£
-¤è¤ê¹â¿å½à¤Î¥¤¥ó¥¿¥Õ¥§¡¼¥¹¤Ë¤Ä¤¤¤Æ¤Ï @ref{High Level Process Interface} »²¾È¡£
+Gauche ã® @code{sys-exec}ã€‚@ref{Process management} å‚ç…§ã€‚
+ã‚ˆã‚Šé«˜æ°´æº–ã®ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹ã«ã¤ã„ã¦ã¯ @ref{High Level Process Interface} å‚ç…§ã€‚
 @c COMMON
 @item exit
 @item _exit
@@ -480,20 +481,20 @@ Gauche ¤Î @code{sys-exec}¡£@ref{Process management} »²¾È¡£
 Use @code{exit} or @code{sys-exit}, depends on what you need.
 @xref{Program termination}.
 @c JP
-É¬Í×¤Ê¤³¤È¤Ë±ş¤¸¤Æ¡¢@code{exit} ¤¢¤ë¤¤¤Ï @code{sys-exit} ¤ò»È¤¤¤Ş¤·¤ç¤¦¡£
-@ref{Program termination} »²¾È¡£
+å¿…è¦ãªã“ã¨ã«å¿œã˜ã¦ã€@code{exit} ã‚ã‚‹ã„ã¯ @code{sys-exit} ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚
+@ref{Program termination} å‚ç…§ã€‚
 @c COMMON
 @item exp
 @c EN
 R5RS @code{exp}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{exp}¡£@ref{Arithmetics} »²¾È¡£
+R5RS ã® @code{exp}ã€‚@ref{Arithmetics} å‚ç…§ã€‚
 @c COMMON
 @item fabs
 @c EN
 R5RS @code{abs}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{abs}¡£@ref{Arithmetics} »²¾È¡£
+R5RS ã® @code{abs}ã€‚@ref{Arithmetics} å‚ç…§ã€‚
 @c COMMON
 @item fclose
 @c EN
@@ -504,109 +505,109 @@ file is closed.  Some port-related functions, such as
 when operation is finished.  The file is also closed when
 its governing port is garbage collected.
 @c JP
-¥Õ¥¡¥¤¥ë¥¹¥È¥ê¡¼¥à¤òÄ¾ÀÜ¥¯¥í¡¼¥º¤¹¤ë¤³¤È¤Ï¤Ç¤­¤Ş¤»¤ó¤¬¡¢
-@code{close-input-port} ¤¢¤ë¤¤¤Ï @code{close-output-port} ¤ò»È¤¦¤È¡¢
-¸µ¤Ë¤Ê¤ë¥Õ¥¡¥¤¥ë¤Ï¥¯¥í¡¼¥º¤µ¤ì¤Ş¤¹¡£
-¤¤¤¯¤Ä¤«¤Î¥İ¡¼¥È¤Ë´ØÏ¢¤¹¤ë´Ø¿ô¡¢¤¿¤È¤¨¤Ğ¡¢@code{call-with-output-file}
-¤Ê¤É¤Ï¡¢Áàºî½ªÎ»»ş¤Ë¼«Æ°Åª¤Ë¥Õ¥¡¥¤¥ë¤ò¥¯¥í¡¼¥º¤·¤Ş¤¹¡£
-¤Ş¤¿¡¢¤½¤ì¤ò»ÙÇÛ¤·¤Æ¤¤¤ë¥İ¡¼¥È¤¬GC¤µ¤ì¤¿¤È¤­¤Ë¥¯¥í¡¼¥º¤µ¤ì¤Ş¤¹¡£
-@ref{Common port operations}»²¾È¡£
+ãƒ•ã‚¡ã‚¤ãƒ«ã‚¹ãƒˆãƒªãƒ¼ãƒ ã‚’ç›´æ¥ã‚¯ãƒ­ãƒ¼ã‚ºã™ã‚‹ã“ã¨ã¯ã§ãã¾ã›ã‚“ãŒã€
+@code{close-input-port} ã‚ã‚‹ã„ã¯ @code{close-output-port} ã‚’ä½¿ã†ã¨ã€
+å…ƒã«ãªã‚‹ãƒ•ã‚¡ã‚¤ãƒ«ã¯ã‚¯ãƒ­ãƒ¼ã‚ºã•ã‚Œã¾ã™ã€‚
+ã„ãã¤ã‹ã®ãƒãƒ¼ãƒˆã«é–¢é€£ã™ã‚‹é–¢æ•°ã€ãŸã¨ãˆã°ã€@code{call-with-output-file}
+ãªã©ã¯ã€æ“ä½œçµ‚äº†æ™‚ã«è‡ªå‹•çš„ã«ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã‚¯ãƒ­ãƒ¼ã‚ºã—ã¾ã™ã€‚
+ã¾ãŸã€ãã‚Œã‚’æ”¯é…ã—ã¦ã„ã‚‹ãƒãƒ¼ãƒˆãŒGCã•ã‚ŒãŸã¨ãã«ã‚¯ãƒ­ãƒ¼ã‚ºã•ã‚Œã¾ã™ã€‚
+@ref{Common port operations}å‚ç…§ã€‚
 @c COMMON
 @item fcntl
 @c EN
 Implemented as @code{sys-fcntl} in @code{gauche.fcntl} module.
 @xref{Low-level file operations}.
 @c JP
-@code{gauche.fcntl} ¥â¥¸¥å¡¼¥ë¤Ç¡¢@code{sys-fcntl} ¤È¤·¤Æ¼ÂÁõ¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
-@ref{Low-level file operations} »²¾È¡£
+@code{gauche.fcntl} ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã§ã€@code{sys-fcntl} ã¨ã—ã¦å®Ÿè£…ã•ã‚Œã¦ã„ã¾ã™ã€‚
+@ref{Low-level file operations} å‚ç…§ã€‚
 @c COMMON
 @item fdopen
 @c EN
 Gauche's @code{open-input-fd-port} or @code{open-output-fd-port}.
 @xref{File ports}.
 @c JP
-Gauche ¤Î @code{open-input-fd-port} ¤¢¤ë¤¤¤Ï @code{open-output-fd-port}¡£
-@ref{File ports} »²¾È¡£
+Gauche ã® @code{open-input-fd-port} ã‚ã‚‹ã„ã¯ @code{open-output-fd-port}ã€‚
+@ref{File ports} å‚ç…§ã€‚
 @c COMMON
 @item feof
 @c EN
 Not supported yet.
 @c JP
-Ì¤¥µ¥İ¡¼¥È¡£
+æœªã‚µãƒãƒ¼ãƒˆã€‚
 @c COMMON
 @item ferror
 @c EN
 Not supported yet.
 @c JP
-Ì¤¥µ¥İ¡¼¥È¡£
+æœªã‚µãƒãƒ¼ãƒˆã€‚
 @c COMMON
 @item fflush
 @c EN
 Gauche's @code{flush}.   @xref{Output}.
 @c JP
-Gauche ¤Î @code{flush}¡£@ref{Output} »²¾È¡£
+Gauche ã® @code{flush}ã€‚@ref{Output} å‚ç…§ã€‚
 @c COMMON
 @item fgetc
 @c EN
 Use @code{read-char} or @code{read-byte}.  @xref{Input}.
 @c JP
-@code{read-char} ¤¢¤ë¤¤¤Ï @code{read-byte} ¤ò»È¤¤¤Ş¤·¤ç¤¦¡£@ref{Input} »²¾È¡£
+@code{read-char} ã‚ã‚‹ã„ã¯ @code{read-byte} ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚@ref{Input} å‚ç…§ã€‚
 @c COMMON
 @item fgetpos
 @c EN
 Use Gauche's @code{port-tell} (@xref{Common port operations})
 @c JP
-Gauche ¤Î @code{port-tell} ¤ò»È¤¤¤Ş¤·¤ç¤¦¡£(@ref{Common port operations}»²¾È¡£)
+Gauche ã® @code{port-tell} ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚(@ref{Common port operations}å‚ç…§ã€‚)
 @c COMMON
 @item fgets
 @c EN
 Use @code{read-line} or @code{read-block}.    @xref{Input}.
 @c JP
-@code{read-line} ¤¢¤ë¤¤¤Ï @code{read-block} ¤ò»È¤¤¤Ş¤·¤ç¤¦¡£@ref{Input} »²¾È¡£
+@code{read-line} ã‚ã‚‹ã„ã¯ @code{read-block} ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚@ref{Input} å‚ç…§ã€‚
 @c COMMON
 @item fileno
 @c EN
 @code{port-file-numer}.   @xref{Common port operations}.
 @c JP
-@code{port-file-numer}¡£@ref{Common port operations} »²¾È¡£
+@code{port-file-numer}ã€‚@ref{Common port operations} å‚ç…§ã€‚
 @c COMMON
 @item floor
 @c EN
 R5RS @code{floor}.   @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{floor}¡£@ref{Arithmetics} »²¾È¡£
+R5RS ã® @code{floor}ã€‚@ref{Arithmetics} å‚ç…§ã€‚
 @c COMMON
 @item fmod
 @c EN
 Gauche's @code{fmod}.
 @c JP
-Gauche ¤Î @code{fmod}¡£
+Gauche ã® @code{fmod}ã€‚
 @c COMMON
 @item fopen
 @c EN
 R5RS @code{open-input-file} or @code{open-output-file}
 corresponds to this operation.  @xref{File ports}.
 @c JP
-¤³¤ÎÁàºî¤ËÂĞ±ş¤¹¤ë¤Î¤Ï¡¢R5RS ¤Î @code{open-input-file} ¤¢¤ë¤¤¤Ï 
-@code{open-output-file} ¤Ç¤¹¡£@ref{File ports} »²¾È¡£
+ã“ã®æ“ä½œã«å¯¾å¿œã™ã‚‹ã®ã¯ã€R5RS ã® @code{open-input-file} ã‚ã‚‹ã„ã¯ 
+@code{open-output-file} ã§ã™ã€‚@ref{File ports} å‚ç…§ã€‚
 @c COMMON
 @item fork
 @c EN
 Gauche's @code{sys-fork}.   @xref{Process management}.
 @c JP
-Gauche ¤Î @code{sys-fork}¡£@ref{Process management} »²¾È¡£
+Gauche ã® @code{sys-fork}ã€‚@ref{Process management} å‚ç…§ã€‚
 @c COMMON
 @item forkpty
 @c EN
 Use @code{sys-forkpty}.  @xref{Terminal control}.
 @c JP
-@code{sys-forkpty} ¤ò»È¤¤¤Ş¤·¤ç¤¦¡£@ref{Terminal control} »²¾È¡£
+@code{sys-forkpty} ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚@ref{Terminal control} å‚ç…§ã€‚
 @c COMMON
 @item fpathconf
 @c EN
 Not supported.
 @c JP
-Ì¤¥µ¥İ¡¼¥È¡£
+æœªã‚µãƒãƒ¼ãƒˆã€‚
 @c COMMON
 @item fprintf
 @c EN
@@ -614,21 +615,21 @@ Not directly supported, but Gauche's @code{format}
 provides similar functionality.  @xref{Output}.
 SLIB has @code{printf} implementation.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢Gauche ¤Î @code{format} ¤Ï
-»÷¤¿¤è¤¦¤Êµ¡Ç½¤òÄó¶¡¤·¤Æ¤¤¤Ş¤¹¡£@ref{Output}»²¾È¡£
-SLIB ¤Ï @code{printf} ¤Î¼ÂÁõ¤ò»ı¤Ã¤Æ¤¤¤Ş¤¹¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€Gauche ã® @code{format} ã¯
+ä¼¼ãŸã‚ˆã†ãªæ©Ÿèƒ½ã‚’æä¾›ã—ã¦ã„ã¾ã™ã€‚@ref{Output}å‚ç…§ã€‚
+SLIB ã¯ @code{printf} ã®å®Ÿè£…ã‚’æŒã£ã¦ã„ã¾ã™ã€‚
 @c COMMON
 @item fputc
 @c EN
 Use @code{write-char} or @code{write-byte}.  @xref{Output}.
 @c JP
-@code{write-char} ¤¢¤ë¤¤¤Ï @code{write-byte}¤ò»È¤¤¤Ş¤·¤ç¤¦¡£@ref{Output}»²¾È¡£
+@code{write-char} ã‚ã‚‹ã„ã¯ @code{write-byte}ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚@ref{Output}å‚ç…§ã€‚
 @c COMMON
 @item fputs
 @c EN
 Use @code{display}.  @xref{Output}.
 @c JP
-@code{display}¤ò»È¤¤¤Ş¤·¤ç¤¦¡£@ref{Output} »²¾È¡£
+@code{display}ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚@ref{Output} å‚ç…§ã€‚
 @c COMMON
 @item fread
 @c EN
@@ -638,28 +639,28 @@ If you want to read a chunk of bytes, you may be
 able to use @code{read-block!}.
 @xref{Uvector block I/O}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¡£
-¥Ğ¥¤¥Ê¥ê¤Î¿ôÃÍ¤òÆÉ¤à¾ì¹ç¤Ï@ref{Binary I/O}¤ò»²¾È¤Î¤³¤È¡£
-¥Ğ¥¤¥È¤Î¥Á¥ã¥ó¥¯¤ÇÆÉ¤ß¤¿¤±¤ì¤Ğ¡¢
-@code{read-block!} ¤¬»È¤¨¤ë¤Ç¤·¤ç¤¦ (@ref{Uvector block I/O}»²¾È)¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚
+ãƒã‚¤ãƒŠãƒªã®æ•°å€¤ã‚’èª­ã‚€å ´åˆã¯@ref{Binary I/O}ã‚’å‚ç…§ã®ã“ã¨ã€‚
+ãƒã‚¤ãƒˆã®ãƒãƒ£ãƒ³ã‚¯ã§èª­ã¿ãŸã‘ã‚Œã°ã€
+@code{read-block!} ãŒä½¿ãˆã‚‹ã§ã—ã‚‡ã† (@ref{Uvector block I/O}å‚ç…§)ã€‚
 @c COMMON
 @item free
 @c EN
 You don't need this in Scheme.
 @c JP
-Scheme ¤Ç¤ÏÉ¬Í×¤¬¤¢¤ê¤Ş¤»¤ó¡£
+Scheme ã§ã¯å¿…è¦ãŒã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item freopen
 @c EN
 Not supported.
 @c JP
-Ì¤¥µ¥İ¡¼¥È¡£
+æœªã‚µãƒãƒ¼ãƒˆã€‚
 @c COMMON
 @item frexp
 @c EN
 Gauche's @code{frexp}
 @c JP
-Gauche ¤Î @code{frexp}¡£
+Gauche ã® @code{frexp}ã€‚
 @c COMMON
 @item fscanf
 @c EN
@@ -669,34 +670,34 @@ If the syntax is very simple, you may be able to utilize
 @code{string-tokenize} in @code{srfi-14} (@ref{String library}),
 and/or regular expression stuff (@ref{Regular expression}).
 @c JP
-¥µ¥İ¡¼¥È¤·¤Æ¤¤¤Ş¤»¤ó¡£°ìÈÌÅª¤Ë¤Ï¥Ñ¡¼¥¶¤ò½ñ¤«¤Í¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
-¥Ç¡¼¥¿¤ò S¼°¤ÇÊİ»ı¤·¤Æ¤¤¤ë¤Ê¤é¡¢@code{read} ¤¬»È¤¨¤Ş¤¹¡£
-¹½Ê¸¤¬¤´¤¯Ã±½ã¤Ê¤é¡¢@code{srfi-14} (@ref{String library}) ¤Î
-@code{string-tokenize} ¤ä¡¢Àµµ¬É½¸½ (@ref{Regular expression}) ¤¬»È¤¨¤ë¤Ç¤·¤ç¤¦¡£
+ã‚µãƒãƒ¼ãƒˆã—ã¦ã„ã¾ã›ã‚“ã€‚ä¸€èˆ¬çš„ã«ã¯ãƒ‘ãƒ¼ã‚¶ã‚’æ›¸ã‹ã­ã°ãªã‚Šã¾ã›ã‚“ã€‚
+ãƒ‡ãƒ¼ã‚¿ã‚’ Så¼ã§ä¿æŒã—ã¦ã„ã‚‹ãªã‚‰ã€@code{read} ãŒä½¿ãˆã¾ã™ã€‚
+æ§‹æ–‡ãŒã”ãå˜ç´”ãªã‚‰ã€@code{srfi-14} (@ref{String library}) ã®
+@code{string-tokenize} ã‚„ã€æ­£è¦è¡¨ç¾ (@ref{Regular expression}) ãŒä½¿ãˆã‚‹ã§ã—ã‚‡ã†ã€‚
 @c COMMON
 @item fseek
 @c EN
 Use Gauche's @code{port-seek} (@xref{Common port operations})
 @c JP
-Gauche ¤Î @code{port-seek}(@ref{Common port operations}»²¾È)¤ò»È¤¤¤Ş¤·¤ç¤¦¡£
+Gauche ã® @code{port-seek}(@ref{Common port operations}å‚ç…§)ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚
 @c COMMON
 @item fsetpos
 @c EN
 Use Gauche's @code{port-seek} (@xref{Common port operations})
 @c JP
-Gauche ¤Î @code{port-seek}(@ref{Common port operations}»²¾È)¤ò»È¤¤¤Ş¤·¤ç¤¦¡£
+Gauche ã® @code{port-seek}(@ref{Common port operations}å‚ç…§)ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚
 @c COMMON
 @item fstat
 @c EN
 Gauche's @code{sys-stat}.  @xref{File stats}.
 @c JP
-Gauche ¤Î @code{sys-stat}¡£@ref{File stats} »²¾È¡£
+Gauche ã® @code{sys-stat}ã€‚@ref{File stats} å‚ç…§ã€‚
 @c COMMON
 @item ftell
 @c EN
 Use Gauche's @code{port-tell} (@xref{Common port operations})
 @c JP
-Gauche ¤Î @code{port-tell}(@xref{Common port operations}»²¾È)¤ò»È¤¤¤Ş¤·¤ç¤¦¡£
+Gauche ã® @code{port-tell}(@xref{Common port operations}å‚ç…§)ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚
 @c COMMON
 @item fwrite
 @c EN
@@ -706,125 +707,125 @@ If you want to write a chunk of bytes,
 you can simply use @code{display} or @code{write-block}
 (@xref{Uvector block I/O}).
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¡£
-¥Ğ¥¤¥Ê¥ê¤Î¿ôÃÍ¤ò½ñ¤­½Ğ¤¹¤Î¤Ê¤é¡¢@ref{Binary I/O}»²¾È¤Î¤³¤È¡£
-¥Ğ¥¤¥ÈÎó¤Î¥Á¥ã¥ó¥¯¤ò½ñ¤­½Ğ¤·¤¹¤Ê¤é¡¢
-Ã±¤Ë @code{display} ¤ò»È¤¦¤«¡¢@code{write-block} ¤¬»È¤¨¤Ş¤¹
-(@ref{Uvector block I/O}»²¾È)¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚
+ãƒã‚¤ãƒŠãƒªã®æ•°å€¤ã‚’æ›¸ãå‡ºã™ã®ãªã‚‰ã€@ref{Binary I/O}å‚ç…§ã®ã“ã¨ã€‚
+ãƒã‚¤ãƒˆåˆ—ã®ãƒãƒ£ãƒ³ã‚¯ã‚’æ›¸ãå‡ºã—ã™ãªã‚‰ã€
+å˜ã« @code{display} ã‚’ä½¿ã†ã‹ã€@code{write-block} ãŒä½¿ãˆã¾ã™
+(@ref{Uvector block I/O}å‚ç…§)ã€‚
 @c COMMON
 @item getc
 @itemx getchar
 @c EN
 Use @code{read-char} or @code{read-byte}.  @xref{Input}.
 @c JP
-@code{read-char} ¤¢¤ë¤¤¤Ï @code{read-byte}¤ò»È¤¤¤Ş¤·¤ç¤¦¡£@ref{Input}»²¾È¡£
+@code{read-char} ã‚ã‚‹ã„ã¯ @code{read-byte}ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚@ref{Input}å‚ç…§ã€‚
 @c COMMON
 @item getcwd
 @c EN
 Gauche's @code{sys-getcwd}.   @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-getcwd}¡£@ref{System inquiry} »²¾È¡£
+Gauche ã® @code{sys-getcwd}ã€‚@ref{System inquiry} å‚ç…§ã€‚
 @c COMMON
 @item getdomainname
 @c EN
 Gauche's @code{sys-getdomainname}.  @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-getdomainname}¡£@ref{System inquiry} »²¾È¡£
+Gauche ã® @code{sys-getdomainname}ã€‚@ref{System inquiry} å‚ç…§ã€‚
 @c COMMON
 @item getegid
 @c EN
 Gauche's @code{sys-getegid}.   @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-getegid}¡£@ref{System inquiry} »²¾È¡£
+Gauche ã® @code{sys-getegid}ã€‚@ref{System inquiry} å‚ç…§ã€‚
 @c COMMON
 @item getenv
 @c EN
 Gauche's @code{sys-getenv}.   @xref{Environment Inquiry}.
 @c JP
-Gauche ¤Î @code{sys-getenv}¡£@ref{Environment Inquiry} »²¾È¡£
+Gauche ã® @code{sys-getenv}ã€‚@ref{Environment Inquiry} å‚ç…§ã€‚
 @c COMMON
 @item geteuid
 @c EN
 Gauche's @code{sys-geteuid}.   @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-geteuid}¡£@ref{System inquiry} »²¾È¡£
+Gauche ã® @code{sys-geteuid}ã€‚@ref{System inquiry} å‚ç…§ã€‚
 @c COMMON
 @item gethostname
 @c EN
 Gauche's @code{sys-gethostname}.  @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-gethostname}¡£@ref{System inquiry} »²¾È¡£
+Gauche ã® @code{sys-gethostname}ã€‚@ref{System inquiry} å‚ç…§ã€‚
 @c COMMON
 @item getgid
 @c EN
 Gauche's @code{sys-getgid}.   @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-getgid}¡£@ref{System inquiry} »²¾È¡£
+Gauche ã® @code{sys-getgid}ã€‚@ref{System inquiry} å‚ç…§ã€‚
 @c COMMON
 @item getgrgid
 @itemx getgrnam
 @c EN
 Gauche's @code{sys-getgrgid} and @code{sys-getgrnam}.  @xref{Unix groups and users}.
 @c JP
-Gauche ¤Î @code{sys-getgrgid} ¤ª¤è¤Ó @code{sys-getgrnam}¡£
-@ref{Unix groups and users} »²¾È¡£
+Gauche ã® @code{sys-getgrgid} ãŠã‚ˆã³ @code{sys-getgrnam}ã€‚
+@ref{Unix groups and users} å‚ç…§ã€‚
 @c COMMON
 @item getgroups
 @c EN
 Gauche's @code{sys-getgroups}.   @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-getgroups}¡£@ref{System inquiry}»²¾È¡£
+Gauche ã® @code{sys-getgroups}ã€‚@ref{System inquiry}å‚ç…§ã€‚
 @c COMMON
 @item getlogin
 @c EN
 Gauche's @code{sys-getlogin}.  @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-getlogin}¡£@ref{System inquiry}»²¾È¡£
+Gauche ã® @code{sys-getlogin}ã€‚@ref{System inquiry}å‚ç…§ã€‚
 @c COMMON
 @item getpgrp
 @c EN
 Gauche's @code{sys-getpgrp}.   @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-getpgrp}¡£@ref{System inquiry} »²¾È¡£
+Gauche ã® @code{sys-getpgrp}ã€‚@ref{System inquiry} å‚ç…§ã€‚
 @c COMMON
 @item getpid
 @itemx getppid
 @c EN
 Gauche's @code{sys-getpid}.   @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-getpid}¡£@ref{System inquiry} »²¾È¡£
+Gauche ã® @code{sys-getpid}ã€‚@ref{System inquiry} å‚ç…§ã€‚
 @c COMMON
 @item getpwnam
 @itemx getpwuid
 @c EN
 Gauche's @code{sys-getpwnam} and @code{sys-getpwuid}.  @xref{Unix groups and users}.
 @c JP
-Gauche ¤Î @code{sys-getpwnam} ¤ª¤è¤Ó @code{sys-getpwuid}¡£
-@ref{Unix groups and users} »²¾È¡£
+Gauche ã® @code{sys-getpwnam} ãŠã‚ˆã³ @code{sys-getpwuid}ã€‚
+@ref{Unix groups and users} å‚ç…§ã€‚
 @c COMMON
 @item gets
 @c EN
 Use @code{read-line} or @code{read-block}.  @xref{Input}.
 @c JP
-@code{read-line} ¤Ş¤¿¤Ï @code{read-block}¤ò»È¤¤¤Ş¤·¤ç¤¦¡£@ref{Input}»²¾È¡£
+@code{read-line} ã¾ãŸã¯ @code{read-block}ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚@ref{Input}å‚ç…§ã€‚
 @c COMMON
 @item gettimeofday
 @c EN
 Gauche's @code{sys-gettimeofday}.   @xref{Time}.
 @c JP
-Gauche ¤Î @code{sys-gettimeofday}¡£@ref{Time} »²¾È¡£
+Gauche ã® @code{sys-gettimeofday}ã€‚@ref{Time} å‚ç…§ã€‚
 @c COMMON
 @item getuid
 @c EN
 Gauche's @code{sys-getuid}.  @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-getuid}¡£@ref{System inquiry} »²¾È¡£
+Gauche ã® @code{sys-getuid}ã€‚@ref{System inquiry} å‚ç…§ã€‚
 @c COMMON
 @item gmtime
 @c EN
 Gauche's @code{sys-gmtime}.   @xref{Time}.
 @c JP
-Gauche ¤Î @code{sys-gmtime}¡£@ref{Time} »²¾È¡£
+Gauche ã® @code{sys-gmtime}ã€‚@ref{Time} å‚ç…§ã€‚
 @c COMMON
 @item isalnum
 @c EN
@@ -832,23 +833,23 @@ Not directly supported, but you can use R5RS @code{char-alphabetic?} and
 @code{char-numeric?}.  @xref{Characters}.   You can also use
 character set.  @xref{Character set}, also @ref{Character-set library}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢R5RS ¤Î @code{char-alphabetic?} ¤ª¤è¤Ó
-@code{char-numeric?} ¤¬»È¤¨¤Ş¤¹¡£@ref{Characters} »²¾È¡£¤Ş¤¿¡¢Ê¸»ú½¸¹ç¤â
-»È¤¨¤Ş¤¹¡£@ref{Character set}¡¢@ref{Character-set library} »²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€R5RS ã® @code{char-alphabetic?} ãŠã‚ˆã³
+@code{char-numeric?} ãŒä½¿ãˆã¾ã™ã€‚@ref{Characters} å‚ç…§ã€‚ã¾ãŸã€æ–‡å­—é›†åˆã‚‚
+ä½¿ãˆã¾ã™ã€‚@ref{Character set}ã€@ref{Character-set library} å‚ç…§ã€‚
 @c COMMON
 @item isalpha
 @c EN
 R5RS @code{char-alphabetic?}.  @xref{Characters}.  See also
 @ref{Character set} and @ref{Character-set library}.
 @c JP
-R5RS ¤Î @code{char-alphabetic?}¡£@ref{Characters} »²¾È¡£¤Ş¤¿¡¢
-@ref{Character set} ¤ª¤è¤Ó @ref{Character-set library} ¤â»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
+R5RS ã® @code{char-alphabetic?}ã€‚@ref{Characters} å‚ç…§ã€‚ã¾ãŸã€
+@ref{Character set} ãŠã‚ˆã³ @ref{Character-set library} ã‚‚å‚ç…§ã—ã¦ãã ã•ã„ã€‚
 @c COMMON
 @item isatty
 @c EN
 Gauche's @code{sys-isatty}.   @xref{Other file operations}.
 @c JP
-Gauche ¤Î @code{sys-isatty}¡£@ref{Other file operations} »²¾È¡£
+Gauche ã® @code{sys-isatty}ã€‚@ref{Other file operations} å‚ç…§ã€‚
 @c COMMON
 @item iscntrl
 @c EN
@@ -856,9 +857,9 @@ Not directly supported, but you can use
 @code{(char-set-contains? char-set:iso-control c)} with @code{srfi-14}.
 @xref{Character-set library}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢@code{srfi-14} ¤Ç
-@code{(char-set-contains? char-set:iso-control c)} ¤¬»È¤¨¤Ş¤¹¡£
-@ref{Character-set library} »²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€@code{srfi-14} ã§
+@code{(char-set-contains? char-set:iso-control c)} ãŒä½¿ãˆã¾ã™ã€‚
+@ref{Character-set library} å‚ç…§ã€‚
 @c COMMON
 @item isdigit
 @c EN
@@ -866,9 +867,9 @@ R5RS @code{char-numeric?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:digit c)}
 with @code{srfi-14}.   @xref{Character-set library}.
 @c JP
-R5RS ¤Î @code{char-numeric?}¡£@ref{Characters} »²¾È¡£
-@code{srfi-14} ¤Ç¡¢@code{(char-set-contains? char-set:digit c)} ¤â
-»È¤¨¤Ş¤¹¡£@ref{Character-set library} »²¾È¡£
+R5RS ã® @code{char-numeric?}ã€‚@ref{Characters} å‚ç…§ã€‚
+@code{srfi-14} ã§ã€@code{(char-set-contains? char-set:digit c)} ã‚‚
+ä½¿ãˆã¾ã™ã€‚@ref{Character-set library} å‚ç…§ã€‚
 @c COMMON
 @item isgraph
 @c EN
@@ -876,9 +877,9 @@ Not directly supported, but you can use
 @code{(char-set-contains? char-set:graphic c)} with @code{srfi-14}.
 @xref{Character-set library}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢@code{srfi-14} ¤Ç
-@code{(char-set-contains? char-set:graphic c)} ¤¬»È¤¨¤Ş¤¹¡£
-@ref{Character-set library} »²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€@code{srfi-14} ã§
+@code{(char-set-contains? char-set:graphic c)} ãŒä½¿ãˆã¾ã™ã€‚
+@ref{Character-set library} å‚ç…§ã€‚
 @c COMMON
 @item islower
 @c EN
@@ -886,9 +887,9 @@ R5RS @code{char-lower-case?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:lower-case c)}
 with @code{srfi-14}.   @xref{Character-set library}.
 @c JP
-R5RS ¤Î @code{char-lower-case?}¡£@ref{Characters} »²¾È¡£
-@code{srfi-14} ¤Ç @code{(char-set-contains? char-set:lower-case c)}
-¤â»È¤¨¤Ş¤¹¡£@ref{Character-set library} »²¾È¡£
+R5RS ã® @code{char-lower-case?}ã€‚@ref{Characters} å‚ç…§ã€‚
+@code{srfi-14} ã§ @code{(char-set-contains? char-set:lower-case c)}
+ã‚‚ä½¿ãˆã¾ã™ã€‚@ref{Character-set library} å‚ç…§ã€‚
 @c COMMON
 @item isprint
 @c EN
@@ -896,9 +897,9 @@ Not directly supported, but you can use
 @code{(char-set-contains? char-set:printing c)} with @code{srfi-14}.
 @xref{Character-set library}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢@code{srfi-14} ¤Ç
-@code{(char-set-contains? char-set:printing c)} ¤¬»È¤¨¤Ş¤¹¡£
-@ref{Character-set library} »²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€@code{srfi-14} ã§
+@code{(char-set-contains? char-set:printing c)} ãŒä½¿ãˆã¾ã™ã€‚
+@ref{Character-set library} å‚ç…§ã€‚
 @c COMMON
 @item ispunct
 @c EN
@@ -906,9 +907,9 @@ Not directly supported, but you can use
 @code{(char-set-contains? char-set:punctuation c)} with @code{srfi-14}.
 @xref{Character-set library}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢@code{srfi-14} ¤Ç
-@code{(char-set-contains? char-set:punctuation c)} ¤¬»È¤¨¤Ş¤¹¡£
-@ref{Character-set library} »²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€@code{srfi-14} ã§
+@code{(char-set-contains? char-set:punctuation c)} ãŒä½¿ãˆã¾ã™ã€‚
+@ref{Character-set library} å‚ç…§ã€‚
 @c COMMON
 @item isspace
 @c EN
@@ -916,9 +917,9 @@ R5RS @code{char-whitespace?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:whitespace c)}
 with @code{srfi-14}.   @xref{Character-set library}.
 @c JP
-R5RS ¤Î @code{char-whitespace?}¡£@ref{Characters} »²¾È¡£
-@code{srfi-14} ¤Ç @code{(char-set-contains? char-set:whitespace c)}
-¤â»È¤¨¤Ş¤¹¡£@ref{Character-set library} »²¾È¡£
+R5RS ã® @code{char-whitespace?}ã€‚@ref{Characters} å‚ç…§ã€‚
+@code{srfi-14} ã§ @code{(char-set-contains? char-set:whitespace c)}
+ã‚‚ä½¿ãˆã¾ã™ã€‚@ref{Character-set library} å‚ç…§ã€‚
 @c COMMON
 @item isupper
 @c EN
@@ -926,9 +927,9 @@ R5RS @code{char-upper-case?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:upper-case c)}
 with @code{srfi-14}.   @xref{Character-set library}.
 @c JP
-R5RS ¤Î @code{char-upper-case?}¡£@ref{Characters} »²¾È¡£
-@code{srfi-14} ¤Ç @code{(char-set-contains? char-set:upper-case c)}
-¤â»È¤¨¤Ş¤¹¡£@ref{Character-set library} »²¾È¡£
+R5RS ã® @code{char-upper-case?}ã€‚@ref{Characters} å‚ç…§ã€‚
+@code{srfi-14} ã§ @code{(char-set-contains? char-set:upper-case c)}
+ã‚‚ä½¿ãˆã¾ã™ã€‚@ref{Character-set library} å‚ç…§ã€‚
 @c COMMON
 @item isxdigit
 @c EN
@@ -936,86 +937,86 @@ Not directly supported, but you can use
 @code{(char-set-contains? char-set:hex-digit c)} with @code{srfi-14}.
 @xref{Character-set library}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢@code{srfi-14} ¤Ç
-@code{(char-set-contains? char-set:hex-digit c)} ¤¬»È¤¨¤Ş¤¹¡£
-@ref{Character-set library} »²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€@code{srfi-14} ã§
+@code{(char-set-contains? char-set:hex-digit c)} ãŒä½¿ãˆã¾ã™ã€‚
+@ref{Character-set library} å‚ç…§ã€‚
 @c COMMON
 @item kill
 @c EN
 Gauche's @code{sys-kill}.  @xref{Signal}.
 @c JP
-Gauche ¤Î @code{sys-kill}¡£@ref{Signal} »²¾È¡£
+Gauche ã® @code{sys-kill}ã€‚@ref{Signal} å‚ç…§ã€‚
 @c COMMON
 @item labs
 @c EN
 R5RS @code{abs}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{abs}¡£@ref{Arithmetics} »²¾È¡£
+R5RS ã® @code{abs}ã€‚@ref{Arithmetics} å‚ç…§ã€‚
 @c COMMON
 @item ldexp
 @c EN
 Gauche's @code{ldexp}.
 @c JP
-Gauche ¤Î @code{ldexp}¡£
+Gauche ã® @code{ldexp}ã€‚
 @c COMMON
 @item ldiv
 @c EN
 Use R5RS @code{quotient} and @code{remainder}.
 @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{quotient} ¤ª¤è¤Ó @code{remainder} ¤ò»È¤¤¤Ş¤·¤ç¤¦¡£
-@ref{Arithmetics}»²¾È¡£
+R5RS ã® @code{quotient} ãŠã‚ˆã³ @code{remainder} ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚
+@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item link
 @c EN
 Gauche's @code{sys-link}.  @xref{Directory manipulation}.
 @c JP
-Gauche ¤Î @code{sys-link}¡£@ref{Directory manipulation}»²¾È¡£
+Gauche ã® @code{sys-link}ã€‚@ref{Directory manipulation}å‚ç…§ã€‚
 @c COMMON
 @item localeconv
 @c EN
 Gauche's @code{sys-localeconv}. @xref{Locale}.
 @c JP
-Gauche ¤Î @code{sys-localeconv}¡£@ref{Locale} »²¾È¡£
+Gauche ã® @code{sys-localeconv}ã€‚@ref{Locale} å‚ç…§ã€‚
 @c COMMON
 @item localtime
 @c EN
 Gauche's @code{sys-localtime}.  @xref{Time}.
 @c JP
-Gauche ¤Î @code{sys-localtime}¡£@ref{Time} »²¾È¡£
+Gauche ã® @code{sys-localtime}ã€‚@ref{Time} å‚ç…§ã€‚
 @c COMMON
 @item log
 @c EN
 R5RS @code{log}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{log}¡£@ref{Arithmetics} »²¾È¡£
+R5RS ã® @code{log}ã€‚@ref{Arithmetics} å‚ç…§ã€‚
 @c COMMON
 @item log10
 @c EN
 Not directly supported.  @code{log10(z)} @equiv{} @code{(/ (log z) (log 10))}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¡£
-@code{log10(z)} @equiv{} @code{(/ (log z) (log 10))} ¤Ç¤¹¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚
+@code{log10(z)} @equiv{} @code{(/ (log z) (log 10))} ã§ã™ã€‚
 @c COMMON
 @item longjmp
 @c EN
 R5RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuation}.
 @c JP
-R5RS ¤Î @code{call/cc} ¤¬Îà»÷(¾å°Ì)¤Î¥á¥«¥Ë¥º¥à¤òÄó¶¡¤·¤Æ¤¤¤Ş¤¹¡£
-@ref{Continuation} »²¾È¡£
+R5RS ã® @code{call/cc} ãŒé¡ä¼¼(ä¸Šä½)ã®ãƒ¡ã‚«ãƒ‹ã‚ºãƒ ã‚’æä¾›ã—ã¦ã„ã¾ã™ã€‚
+@ref{Continuation} å‚ç…§ã€‚
 @c COMMON
 @item lseek
 @c EN
 Use Gauche's @code{port-seek} (@xref{Common port operations})
 @c JP
-Gauche ¤Î @code{port-seek} (@ref{Common port operations}»²¾È) ¤ò»È¤¤¤Ş¤·¤ç¤¦¡£
+Gauche ã® @code{port-seek} (@ref{Common port operations}å‚ç…§) ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚
 @c COMMON
 @item malloc
 @c EN
 Not necessary in Scheme.
 @c JP
-Scheme ¤Ç¤ÏÉ¬Í×¤¢¤ê¤Ş¤»¤ó¡£
+Scheme ã§ã¯å¿…è¦ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item mblen
 @itemx mbstowcs
@@ -1027,11 +1028,11 @@ always returns a number of characters for a string in supported
 encoding.   If you want to convert the character encoding,
 see @ref{Character code conversion}.
 @c JP
-Gauche ¤Ç¤Ï¥Ş¥ë¥Á¥Ğ¥¤¥ÈÊ¸»úÎó¤òÆâÉôÅª¤Ë½èÍı¤·¤Ş¤¹¤Î¤Ç¡¢°ìÈÌÅª¤Ë¤Ï
-Ê¸»úÎó¤¬¥Ş¥ë¥Á¥Ğ¥¤¥È¤Ç¤¢¤ë¤«¤É¤¦¤«¤òµ¤¤Ë¤¹¤ëÉ¬Í×¤Ï¤¢¤ê¤Ş¤»¤ó¡£
-@code{string-length} ¤Ï¾ï¤Ë¡¢¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤ë¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°¤Î
-Ê¸»úÎó¤ËÂĞ¤·¤Æ¡¢Ê¸»ú¿ô¤òÊÖ¤·¤Ş¤¹¡£Ê¸»ú¤Î¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°ÊÑ´¹¤ò
-¤·¤¿¤¤¤Î¤Ç¤¢¤ì¤Ğ¡¢@ref{Character code conversion} ¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
+Gauche ã§ã¯ãƒãƒ«ãƒãƒã‚¤ãƒˆæ–‡å­—åˆ—ã‚’å†…éƒ¨çš„ã«å‡¦ç†ã—ã¾ã™ã®ã§ã€ä¸€èˆ¬çš„ã«ã¯
+æ–‡å­—åˆ—ãŒãƒãƒ«ãƒãƒã‚¤ãƒˆã§ã‚ã‚‹ã‹ã©ã†ã‹ã‚’æ°—ã«ã™ã‚‹å¿…è¦ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
+@code{string-length} ã¯å¸¸ã«ã€ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã‚‹ã‚¨ãƒ³ã‚³ãƒ¼ãƒ‡ã‚£ãƒ³ã‚°ã®
+æ–‡å­—åˆ—ã«å¯¾ã—ã¦ã€æ–‡å­—æ•°ã‚’è¿”ã—ã¾ã™ã€‚æ–‡å­—ã®ã‚¨ãƒ³ã‚³ãƒ¼ãƒ‡ã‚£ãƒ³ã‚°å¤‰æ›ã‚’
+ã—ãŸã„ã®ã§ã‚ã‚Œã°ã€@ref{Character code conversion} ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
 @c COMMON
 @item memcmp
 @itemx memcpy
@@ -1040,39 +1041,39 @@ Gauche ¤Ç¤Ï¥Ş¥ë¥Á¥Ğ¥¤¥ÈÊ¸»úÎó¤òÆâÉôÅª¤Ë½èÍı¤·¤Ş¤¹¤Î¤Ç¡¢°ìÈÌÅª¤Ë¤Ï
 @c EN
 No equivalent functions.
 @c JP
-Æ±Åù¤Î´Ø¿ô¤Ï¤¢¤ê¤Ş¤»¤ó¡£
+åŒç­‰ã®é–¢æ•°ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item mkdir
 @c EN
 Gauche's @code{sys-mkdir}.  @xref{Directory manipulation}.
 @c JP
-Gauche ¤Î @code{sys-mkdir}¡£@ref{Directory manipulation} »²¾È¡£
+Gauche ã® @code{sys-mkdir}ã€‚@ref{Directory manipulation} å‚ç…§ã€‚
 @c COMMON
 @item mkfifo
 @c EN
 Gauche's @code{sys-mkfifo}.
 @c JP
-Gauche ¤Î @code{sys-mkfifo}¡£
+Gauche ã® @code{sys-mkfifo}ã€‚
 @c COMMON
 @item mkstemp
 @c EN
 Gauche's @code{sys-mkstemp}.   @xref{Directory manipulation}.
 Use this instead of tmpnam.
 @c JP
-Gauche ¤Î @code{sys-mkstemp}¡£@ref{Directory manipulation} »²¾È¡£
-tmpnam ¤ÎÂå¤ê¤Ë¤³¤Á¤é¤ò»È¤¤¤Ş¤·¤ç¤¦¡£
+Gauche ã® @code{sys-mkstemp}ã€‚@ref{Directory manipulation} å‚ç…§ã€‚
+tmpnam ã®ä»£ã‚Šã«ã“ã¡ã‚‰ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚
 @c COMMON
 @item mktime
 @c EN
 Gauche's @code{sys-mktime}.  @xref{Time}.
 @c JP
-Gauche ¤Î @code{sys-mktime}¡£@ref{Time} »²¾È¡£
+Gauche ã® @code{sys-mktime}ã€‚@ref{Time} å‚ç…§ã€‚
 @c COMMON
 @item modf
 @c EN
 Gauche's @code{modf}.
 @c JP
-Gauche ¤Î @code{modf}¡£
+Gauche ã® @code{modf}ã€‚
 @c COMMON
 @item open
 @c EN
@@ -1080,9 +1081,9 @@ Not directly supported.
 R5RS @code{open-input-file} or @code{open-output-file}
 corresponds to this operation.  @xref{File ports}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¡£¤³¤ÎÁàºî¤ËÂĞ±ş¤¹¤ë¤Î¤Ê
-R5RS ¤Î @code{open-input-file} ¤Ş¤¿¤Ï @code{open-output-file} ¤Ç¤¹¡£
-@ref{File ports} »²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚ã“ã®æ“ä½œã«å¯¾å¿œã™ã‚‹ã®ãª
+R5RS ã® @code{open-input-file} ã¾ãŸã¯ @code{open-output-file} ã§ã™ã€‚
+@ref{File ports} å‚ç…§ã€‚
 @c COMMON
 @item opendir
 @c EN
@@ -1090,27 +1091,27 @@ Not directly supported.
 You can use @code{sys-readdir} to read the directory entries at once.
 @xref{Directories}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¡£
-¥Ç¥£¥ì¥¯¥È¥ê¤Î¥¨¥ó¥È¥ê¤ò¤¤¤Á¤É¤ËÆÉ¤à¤Ë¤Ï @code{sys-readdir}
-¤¬»È¤¨¤Ş¤¹¡£@ref{Directories} »²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚
+ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®ã‚¨ãƒ³ãƒˆãƒªã‚’ã„ã¡ã©ã«èª­ã‚€ã«ã¯ @code{sys-readdir}
+ãŒä½¿ãˆã¾ã™ã€‚@ref{Directories} å‚ç…§ã€‚
 @c COMMON
 @item openpty
 @c EN
 Use @code{sys-openpty}.  @xref{Terminal control}.
 @c JP
-@code{sys-openpty} ¤ò»È¤¤¤Ş¤·¤ç¤¦¡£@ref{Terminal control} »²¾È¡£
+@code{sys-openpty} ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚@ref{Terminal control} å‚ç…§ã€‚
 @c COMMON
 @item pathconf
 @c EN
 Not supported.
 @c JP
-¥µ¥İ¡¼¥È¤·¤Ş¤»¤ó¡£
+ã‚µãƒãƒ¼ãƒˆã—ã¾ã›ã‚“ã€‚
 @c COMMON
 @item pause
 @c EN
 Gauche's @code{sys-pause}.  @xref{Miscellaneous system calls}.
 @c JP
-Gauche ¤Î @code{sys-pause}¡£@ref{Miscellaneous system calls} »²¾È¡£
+Gauche ã® @code{sys-pause}ã€‚@ref{Miscellaneous system calls} å‚ç…§ã€‚
 @c COMMON
 @item perror
 @c EN
@@ -1118,21 +1119,21 @@ No equivalent function in Gauche.  System calls generally throws an
 error (@code{<system-error>}), including the description of the reason
 of failure.
 @c JP
-Gauche ¤Ë¤ÏÆ±Åù¤Î´Ø¿ô¤Ï¤¢¤ê¤Ş¤»¤ó¡£¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ï°ìÈÌÅª¤Ë¤Ï error
-(@code{<system-error>}) ¤òÅê¤²¤Ş¤¹¡£¤³¤ì¤Ë¤Ï¡¢¼ºÇÔ¤·¤¿ÍıÍ³¤ÎÀâÌÀ¤¬´Ş¤Ş¤ì¤Æ
-¤¤¤Ş¤¹¡£
+Gauche ã«ã¯åŒç­‰ã®é–¢æ•°ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚ã‚·ã‚¹ãƒ†ãƒ ã‚³ãƒ¼ãƒ«ã¯ä¸€èˆ¬çš„ã«ã¯ error
+(@code{<system-error>}) ã‚’æŠ•ã’ã¾ã™ã€‚ã“ã‚Œã«ã¯ã€å¤±æ•—ã—ãŸç†ç”±ã®èª¬æ˜ãŒå«ã¾ã‚Œã¦
+ã„ã¾ã™ã€‚
 @c COMMON
 @item pipe
 @c EN
 Gauche's @code{sys-pipe}.  @xref{Other file operations}.
 @c JP
-Gauche ¤Î @code{sys-pipe}¡£@ref{Other file operations} »²¾È¡£
+Gauche ã® @code{sys-pipe}ã€‚@ref{Other file operations} å‚ç…§ã€‚
 @c COMMON
 @item pow
 @c EN
 R5RS @code{expt}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{expt}¡£@ref{Arithmetics} »²¾È¡£
+R5RS ã® @code{expt}ã€‚@ref{Arithmetics} å‚ç…§ã€‚
 @c COMMON
 @item printf
 @c EN
@@ -1140,29 +1141,29 @@ Not directly supported, but Gauche's @code{format}
 provides similar functionality.  @xref{Output}.
 SLIB has @code{printf} implementation.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢Gauche ¤Î @code{format} ¤ÏÎà»÷¤Îµ¡Ç½¤ò
-Äó¶¡¤·¤Æ¤¤¤Ş¤¹¡£@ref{Output} »²¾È¡£SLIB ¤Ë¤Ï @code{printf} ¤Î¼ÂÁõ¤¬¤¢¤ê¤Ş¤¹¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€Gauche ã® @code{format} ã¯é¡ä¼¼ã®æ©Ÿèƒ½ã‚’
+æä¾›ã—ã¦ã„ã¾ã™ã€‚@ref{Output} å‚ç…§ã€‚SLIB ã«ã¯ @code{printf} ã®å®Ÿè£…ãŒã‚ã‚Šã¾ã™ã€‚
 @c COMMON
 @item putc
 @itemx putchar
 @c EN
 Use @code{write-char} or @code{write-byte}.  @xref{Output}.
 @c JP
-@code{write-char} ¤Ş¤¿¤Ï @code{write-byte} ¤ò»È¤¤¤Ş¤·¤ç¤¦¡£@ref{Output} »²¾È¡£
+@code{write-char} ã¾ãŸã¯ @code{write-byte} ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚@ref{Output} å‚ç…§ã€‚
 @c COMMON
 @item puts
 @c EN
 Use @code{display}.   @xref{Output}.
 @c JP
-@code{display} ¤ò»È¤¤¤Ş¤·¤ç¤¦¡£@ref{Output} »²¾È¡£
+@code{display} ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚@ref{Output} å‚ç…§ã€‚
 @c COMMON
 @item qsort
 @c EN
 Gauche's @code{sort} and @code{sort!} provides a convenient way to sort
 list of items.  @xref{Comparison and sorting}.
 @c JP
-Gauche ¤Î @code{sort} ¤ª¤è¤Ó @code{sort!} ¤Ï¥ê¥¹¥È¤ò¥½¡¼¥È¤¹¤ëÊØÍø¤ÊÊıË¡¤ò
-Äó¶¡¤·¤Æ¤¤¤Ş¤¹¡£@ref{Comparison and sorting} »²¾È¡£
+Gauche ã® @code{sort} ãŠã‚ˆã³ @code{sort!} ã¯ãƒªã‚¹ãƒˆã‚’ã‚½ãƒ¼ãƒˆã™ã‚‹ä¾¿åˆ©ãªæ–¹æ³•ã‚’
+æä¾›ã—ã¦ã„ã¾ã™ã€‚@ref{Comparison and sorting} å‚ç…§ã€‚
 @c COMMON
 @item raise
 @c EN
@@ -1170,17 +1171,17 @@ No equivalent function in Gauche.  Scheme function @code{raise} (SRFI-18)
 is to raise an exception.   You can use @code{(sys-kill (sys-getpid) SIG)}
 to send a signal @code{SIG} to the current process.
 @c JP
-Gauche ¤Ë¤ÏÆ±Åù¤Î´Ø¿ô¤Ï¤¢¤ê¤Ş¤»¤ó¡£Scheme ¤Î´Ø¿ô @code{raise} (SRFI-18)
-¤ÏÎã³°¤òÈ¯À¸¤µ¤»¤Ş¤¹¡£¥·¥°¥Ê¥ë @code{SIG} ¤ò¸½ºß¤Î¥×¥í¥»¥¹¤ËÁ÷¤ë¤Ë¤Ï
-@code{(sys-kill (sys-getpid) SIG)} ¤¬»È¤¨¤Ş¤¹¡£
+Gauche ã«ã¯åŒç­‰ã®é–¢æ•°ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚Scheme ã®é–¢æ•° @code{raise} (SRFI-18)
+ã¯ä¾‹å¤–ã‚’ç™ºç”Ÿã•ã›ã¾ã™ã€‚ã‚·ã‚°ãƒŠãƒ« @code{SIG} ã‚’ç¾åœ¨ã®ãƒ—ãƒ­ã‚»ã‚¹ã«é€ã‚‹ã«ã¯
+@code{(sys-kill (sys-getpid) SIG)} ãŒä½¿ãˆã¾ã™ã€‚
 @c COMMON
 @item rand
 @c EN
 Not supported directly, but on most platforms a better RNG is available
 as @code{sys-random}.  @xref{Miscellaneous system calls}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢Â¿¤¯¤Î¥×¥é¥Ã¥È¥Õ¥©¡¼¥à¾å¤Ç¡¢@code{sys-random}
-¤Î¤è¤¦¤Ê¡¢¤è¤ê¤è¤¤ RNG ¤¬ÍøÍÑ²ÄÇ½¤Ç¤¹¡£@ref{Miscellaneous system calls} »²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€å¤šãã®ãƒ—ãƒ©ãƒƒãƒˆãƒ•ã‚©ãƒ¼ãƒ ä¸Šã§ã€@code{sys-random}
+ã®ã‚ˆã†ãªã€ã‚ˆã‚Šã‚ˆã„ RNG ãŒåˆ©ç”¨å¯èƒ½ã§ã™ã€‚@ref{Miscellaneous system calls} å‚ç…§ã€‚
 @c COMMON
 @item read
 @c EN
@@ -1188,59 +1189,59 @@ Not supported directly, but you may be able to use
 @code{read-block} (@xref{Input}) or
 @code{read-block!} (@xref{Uvector block I/O}).
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢
-@code{read-block} (@ref{Input}»²¾È) ¤¢¤ë¤¤¤Ï
-@code{read-block!} (@ref{Uvector block I/O}»²¾È)¤¬»È¤¨¤Ş¤¹¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€
+@code{read-block} (@ref{Input}å‚ç…§) ã‚ã‚‹ã„ã¯
+@code{read-block!} (@ref{Uvector block I/O}å‚ç…§)ãŒä½¿ãˆã¾ã™ã€‚
 @c COMMON
 @item readdir
 @c EN
 Not supported directly.   Gauche's @code{sys-readdir} reads
 the directory at once.  @xref{Directories}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¡£Gauche ¤Î @code{sys-readdir} ¤Ï
-»ØÄê¤Î¥Ç¥£¥ì¥¯¥È¥ê¤ò°ìÅÙ¤ËÆÉ¤ß¤Ş¤¹¡£@ref{Directories} »²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚Gauche ã® @code{sys-readdir} ã¯
+æŒ‡å®šã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‚’ä¸€åº¦ã«èª­ã¿ã¾ã™ã€‚@ref{Directories} å‚ç…§ã€‚
 @c COMMON
 @item readlink
 @c EN
 Gauche's @code{sys-readlink}.  @xref{Directory manipulation}.
 This function is available on systems that support symbolink links.
 @c JP
-Gauche ¤Î @code{sys-readlink}¡£@ref{Directory manipulation} »²¾È¡£
-¤³¤Î´Ø¿ô¤Ï¥·¥ó¥Ü¥ê¥Ã¥¯¥ê¥ó¥¯¤ò¥µ¥İ¡¼¥È¤·¤Æ¤¤¤ë¥·¥¹¥Æ¥à¾å¤ÇÍøÍÑ²ÄÇ½¤Ç¤¹¡£
+Gauche ã® @code{sys-readlink}ã€‚@ref{Directory manipulation} å‚ç…§ã€‚
+ã“ã®é–¢æ•°ã¯ã‚·ãƒ³ãƒœãƒªãƒƒã‚¯ãƒªãƒ³ã‚¯ã‚’ã‚µãƒãƒ¼ãƒˆã—ã¦ã„ã‚‹ã‚·ã‚¹ãƒ†ãƒ ä¸Šã§åˆ©ç”¨å¯èƒ½ã§ã™ã€‚
 @c COMMON
 @item realloc
 @c EN
 Not necessary in Scheme.
 @c JP
-Scheme ¤Ç¤ÏÉ¬Í×¤¢¤ê¤Ş¤»¤ó¡£
+Scheme ã§ã¯å¿…è¦ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item realpath
 @c EN
 Gauche's @code{sys-normalize-pathname} or @code{sys-realpath}.
 @xref{Pathnames}.
 @c JP
-Gauche ¤Î @code{sys-normalize-pathname} ¤¢¤ë¤¤¤Ï @code{sys-realpath}¡£
-@ref{Pathnames}»²¾È¡£
+Gauche ã® @code{sys-normalize-pathname} ã‚ã‚‹ã„ã¯ @code{sys-realpath}ã€‚
+@ref{Pathnames}å‚ç…§ã€‚
 @c COMMON
 @item remove
 @c EN
 Gauche's @code{sys-remove}.  @xref{Directory manipulation}.
 @c JP
-Gauche ¤Î @code{sys-remove}¡£@ref{Directory manipulation}»²¾È¡£
+Gauche ã® @code{sys-remove}ã€‚@ref{Directory manipulation}å‚ç…§ã€‚
 @c COMMON
 @item rename
 @c EN
 Gauche's @code{sys-rename}.  @xref{Directory manipulation}.
 @c JP
-Gauche ¤Î @code{sys-rename}¡£@ref{Directory manipulation}»²¾È¡£
+Gauche ã® @code{sys-rename}ã€‚@ref{Directory manipulation}å‚ç…§ã€‚
 @c COMMON
 @item rewind
 @c EN
 Not directly supported, but you can use @code{port-seek} instead.
 @xref{Common port operations}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Ş¤»¤ó¤¬¡¢@code{port-seek}¤¬Âå¤ï¤ê¤Ë»È¤¨¤Ş¤¹¡£
-@ref{Common port operations}»²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¾ã›ã‚“ãŒã€@code{port-seek}ãŒä»£ã‚ã‚Šã«ä½¿ãˆã¾ã™ã€‚
+@ref{Common port operations}å‚ç…§ã€‚
 @c COMMON
 @item rewinddir
 @c EN
@@ -1248,15 +1249,15 @@ Not supported directly.
 You can use @code{sys-readdir} to read the directory entries at once.
 @xref{Directories}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¡£
-¥Ç¥£¥ì¥¯¥È¥ê¥¨¥ó¥È¥ê¤ò°ìÅÙ¤ËÆÉ¤à¤Ë¤Ï @code{sys-readdir} ¤¬»È¤¨¤Ş¤¹¡£
-@ref{Directories}»²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚
+ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‚¨ãƒ³ãƒˆãƒªã‚’ä¸€åº¦ã«èª­ã‚€ã«ã¯ @code{sys-readdir} ãŒä½¿ãˆã¾ã™ã€‚
+@ref{Directories}å‚ç…§ã€‚
 @c COMMON
 @item rmdir
 @c EN
 Gauche's @code{sys-rmdir}.  @xref{Directory manipulation}.
 @c JP
-Gauche ¤Î @code{sys-rmdir}¡£@ref{Directory manipulation}»²¾È¡£
+Gauche ã® @code{sys-rmdir}ã€‚@ref{Directory manipulation}å‚ç…§ã€‚
 @c COMMON
 @item scanf
 @c EN
@@ -1266,75 +1267,75 @@ If the syntax is very simple, you may be able to utilize
 @code{string-tokenize} in @code{srfi-14} (@ref{String library}),
 and/or regular expression stuff (@ref{Regular expression}).
 @c JP
-¥µ¥İ¡¼¥È¤·¤Æ¤¤¤Ş¤»¤ó¡£°ìÈÌÅª¤Ë¤Ï¥Ñ¡¼¥¶¤ò½ñ¤«¤Í¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
-¥Ç¡¼¥¿¤ò S¼°¤ÇÊİ»ı¤Ç¤­¤ë¤Ê¤é¡¢@code{read} ¤¬»È¤¨¤Ş¤¹¡£
-¹½Ê¸¤¬¤´¤¯Ã±½ã¤Ê¤é¡¢@code{srfi-14} (@ref{String library}) ¤Î
-@code{string-tokenize} ¤ä¡¢Àµµ¬É½¸½ (@ref{Regular expression})
-¤¬»È¤¨¤ë¤Ç¤·¤ç¤¦¡£
+ã‚µãƒãƒ¼ãƒˆã—ã¦ã„ã¾ã›ã‚“ã€‚ä¸€èˆ¬çš„ã«ã¯ãƒ‘ãƒ¼ã‚¶ã‚’æ›¸ã‹ã­ã°ãªã‚Šã¾ã›ã‚“ã€‚
+ãƒ‡ãƒ¼ã‚¿ã‚’ Så¼ã§ä¿æŒã§ãã‚‹ãªã‚‰ã€@code{read} ãŒä½¿ãˆã¾ã™ã€‚
+æ§‹æ–‡ãŒã”ãå˜ç´”ãªã‚‰ã€@code{srfi-14} (@ref{String library}) ã®
+@code{string-tokenize} ã‚„ã€æ­£è¦è¡¨ç¾ (@ref{Regular expression})
+ãŒä½¿ãˆã‚‹ã§ã—ã‚‡ã†ã€‚
 @c COMMON
 @item select
 @c EN
 Gauche's @code{sys-select}.  @xref{I/O multiplexing}.
 @c JP
-Gauche ¤Î @code{sys-select}¡£@ref{I/O multiplexing}»²¾È¡£
+Gauche ã® @code{sys-select}ã€‚@ref{I/O multiplexing}å‚ç…§ã€‚
 @c COMMON
 @item setbuf
 @c EN
 Not necessary.
 @c JP
-É¬Í×¤¢¤ê¤Ş¤»¤ó¡£
+å¿…è¦ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item setgid
 @c EN
 Gauche's @code{sys-setgid}.
 @c JP
-Gauche ¤Î @code{sys-getgid}¡£
+Gauche ã® @code{sys-getgid}ã€‚
 @c COMMON
 @item setjmp
 @c EN
 R5RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuation}.
 @c JP
-R5RS ¤Î @code{call/cc} ¤¬Îà»÷(¾å°Ì)¤Î¥á¥«¥Ë¥º¥à¤òÄó¶¡¤·¤Æ¤¤¤Ş¤¹¡£
-@ref{Continuation} »²¾È¡£
+R5RS ã® @code{call/cc} ãŒé¡ä¼¼(ä¸Šä½)ã®ãƒ¡ã‚«ãƒ‹ã‚ºãƒ ã‚’æä¾›ã—ã¦ã„ã¾ã™ã€‚
+@ref{Continuation} å‚ç…§ã€‚
 @c COMMON
 @item setlocale
 @c EN
 Gauche's @code{sys-setlocale}.  @xref{Locale}.
 @c JP
-Gauche ¤Î @code{sys-setlocale}¡£@ref{Locale}»²¾È¡£
+Gauche ã® @code{sys-setlocale}ã€‚@ref{Locale}å‚ç…§ã€‚
 @c COMMON
 @item setpgid
 @c EN
 Gauche's @code{sys-setpgid}.  @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-setpgid}¡£@ref{System inquiry}»²¾È¡£
+Gauche ã® @code{sys-setpgid}ã€‚@ref{System inquiry}å‚ç…§ã€‚
 @c COMMON
 @item setsid
 @c EN
 Gauche's @code{sys-setsid}.  @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-setsid}¡£@ref{System inquiry}»²¾È¡£
+Gauche ã® @code{sys-setsid}ã€‚@ref{System inquiry}å‚ç…§ã€‚
 @c COMMON
 @item setuid
 @c EN
 Gauche's @code{sys-setuid}.  @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-setuid}¡£@ref{System inquiry}»²¾È¡£
+Gauche ã® @code{sys-setuid}ã€‚@ref{System inquiry}å‚ç…§ã€‚
 @c COMMON
 @item setvbuf
 @c EN
 Not necessary.
 @c JP
-É¬Í×¤¢¤ê¤Ş¤»¤ó¡£
+å¿…è¦ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item sigaction
 @c EN
 You can use @code{set-signal-handler!} to install signal handlers.
 @xref{Handling signals}.
 @c JP
-¥·¥°¥Ê¥ë¥Ï¥ó¥É¥é¤òÀßÄê¤¹¤ë¤Ë¤Ï¡¢@code{set-signal-handler!} ¤¬»È¤¨¤Ş¤¹¡£
-@ref{Handling signals}»²¾È¡£
+ã‚·ã‚°ãƒŠãƒ«ãƒãƒ³ãƒ‰ãƒ©ã‚’è¨­å®šã™ã‚‹ã«ã¯ã€@code{set-signal-handler!} ãŒä½¿ãˆã¾ã™ã€‚
+@ref{Handling signals}å‚ç…§ã€‚
 @c COMMON
 @item sigaddset
 @itemx sigdelset
@@ -1344,75 +1345,75 @@ You can use @code{set-signal-handler!} to install signal handlers.
 Gauche's @code{sys-sigset-add!} and @code{sys-sigset-delete!}.
 @xref{Signals and signal sets}.
 @c JP
-Gauche ¤Î @code{sys-sigset-add!} ¤ª¤è¤Ó @code{sys-sigset-delete!}¡£
-@ref{Signals and signal sets}»²¾È¡£
+Gauche ã® @code{sys-sigset-add!} ãŠã‚ˆã³ @code{sys-sigset-delete!}ã€‚
+@ref{Signals and signal sets}å‚ç…§ã€‚
 @c COMMON
 @item sigismember
 @c EN
 Not supported yet.
 @c JP
-Ì¤¥µ¥İ¡¼¥È¡£
+æœªã‚µãƒãƒ¼ãƒˆã€‚
 @c COMMON
 @item siglongjmp
 @c EN
 R5RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuation}.
 @c JP
-R5RS ¤Î @code{call/cc} ¤¬Îà»÷(¾å°Ì)¤Î¥á¥«¥Ë¥º¥à¤òÄó¶¡¤·¤Æ¤¤¤Ş¤¹¡£
-@ref{Continuation} »²¾È¡£
+R5RS ã® @code{call/cc} ãŒé¡ä¼¼(ä¸Šä½)ã®ãƒ¡ã‚«ãƒ‹ã‚ºãƒ ã‚’æä¾›ã—ã¦ã„ã¾ã™ã€‚
+@ref{Continuation} å‚ç…§ã€‚
 @c COMMON
 @item signal
 @c EN
 You can use @code{with-signal-handlers} to install signal handlers.
 @xref{Handling signals}.
 @c JP
-¥·¥°¥Ê¥ë¥Ï¥ó¥É¥é¤òÀßÄê¤¹¤ë¤Î¤Ë¤Ï¡¢@code{with-signal-handlers} ¤¬»È¤¨¤Ş¤¹¡£
-@ref{Handling signals} »²¾È¡£
+ã‚·ã‚°ãƒŠãƒ«ãƒãƒ³ãƒ‰ãƒ©ã‚’è¨­å®šã™ã‚‹ã®ã«ã¯ã€@code{with-signal-handlers} ãŒä½¿ãˆã¾ã™ã€‚
+@ref{Handling signals} å‚ç…§ã€‚
 @c COMMON
 @item sigpending
 @c EN
 Not supported yet.
 @c JP
-Ì¤¥µ¥İ¡¼¥È
+æœªã‚µãƒãƒ¼ãƒˆ
 @c COMMON
 @item sigprocmask
 @c EN
 Signal mask is handled internally.  @xref{Handling signals}.
 @c JP
-¥·¥°¥Ê¥ë¥Ş¥¹¥¯¤ÏÆâÉôÅª¤Ë½èÍı¤µ¤ì¤Ş¤¹¡£@ref{Handling signals}»²¾È¡£
+ã‚·ã‚°ãƒŠãƒ«ãƒã‚¹ã‚¯ã¯å†…éƒ¨çš„ã«å‡¦ç†ã•ã‚Œã¾ã™ã€‚@ref{Handling signals}å‚ç…§ã€‚
 @c COMMON
 @item sigsetjmp
 @c EN
 R5RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuation}.
 @c JP
-R5RS ¤Î @code{call/cc} ¤¬Îà»÷(¾å°Ì)¤Î¥á¥«¥Ë¥º¥à¤òÄó¶¡¤·¤Æ¤¤¤Ş¤¹¡£
-@ref{Continuation} »²¾È¡£
+R5RS ã® @code{call/cc} ãŒé¡ä¼¼(ä¸Šä½)ã®ãƒ¡ã‚«ãƒ‹ã‚ºãƒ ã‚’æä¾›ã—ã¦ã„ã¾ã™ã€‚
+@ref{Continuation} å‚ç…§ã€‚
 @c COMMON
 @item sigsuspend
 @c EN
 Gauche's @code{sys-sigsuspend}.  @xref{Masking and waiting signals}.
 @c JP
-Gauche ¤Î @code{sys-sigsuspend}¡£@ref{Masking and waiting signals}»²¾È¡£
+Gauche ã® @code{sys-sigsuspend}ã€‚@ref{Masking and waiting signals}å‚ç…§ã€‚
 @c COMMON
 @item sigwait
 @c EN
 Gauche's @code{sys-sigwait}.  @xref{Masking and waiting signals}.
 @c JP
-Gauche ¤Î @code{sys-sigwait}¡£@ref{Masking and waiting signals}»²¾È¡£
+Gauche ã® @code{sys-sigwait}ã€‚@ref{Masking and waiting signals}å‚ç…§ã€‚
 @c COMMON
 @item sin
 @itemx sinh
 @c EN
 Use @code{sin} and @code{sinh}.   @xref{Arithmetics}.
 @c JP
-@code{sin} ¤ª¤è¤Ó @code{sinh} ¤ò»È¤¤¤Ş¤·¤ç¤¦¡£@ref{Arithmetics}»²¾È¡£
+@code{sin} ãŠã‚ˆã³ @code{sinh} ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item sleep
 @c EN
 Gauche's @code{sys-sleep}.  @xref{Miscellaneous system calls}.
 @c JP
-Gauche ¤Î @code{sys-sleep}¡£@ref{Miscellaneous system calls}»²¾È¡£
+Gauche ã® @code{sys-sleep}ã€‚@ref{Miscellaneous system calls}å‚ç…§ã€‚
 @c COMMON
 @item sprintf
 @c EN
@@ -1420,14 +1421,14 @@ Not directly supported, but Gauche's @code{format}
 provides similar functionality.  @xref{Output}.
 SLIB has @code{printf} implementation.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢Gauche ¤Î @code{format} ¤ÏÎà»÷¤Îµ¡Ç½¤ò
-Äó¶¡¤·¤Æ¤¤¤Ş¤¹¡£@ref{Output} »²¾È¡£SLIB ¤Ë¤Ï @code{printf} ¤Î¼ÂÁõ¤¬¤¢¤ê¤Ş¤¹¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€Gauche ã® @code{format} ã¯é¡ä¼¼ã®æ©Ÿèƒ½ã‚’
+æä¾›ã—ã¦ã„ã¾ã™ã€‚@ref{Output} å‚ç…§ã€‚SLIB ã«ã¯ @code{printf} ã®å®Ÿè£…ãŒã‚ã‚Šã¾ã™ã€‚
 @c COMMON
 @item sqrt
 @c EN
 R5RS @code{sqrt}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{sqrt}¡£@ref{Arithmetics}»²¾È¡£
+R5RS ã® @code{sqrt}ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item srand
 @c EN
@@ -1436,10 +1437,10 @@ as @code{sys-srandom} (@xref{Miscellaneous system calls}).
 The @code{math.mt-random} module provides much superior RNG
 (@xref{Mersenne-Twister random number generator}).
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢Â¿¤¯¤Î¥×¥é¥Ã¥È¥Õ¥©¡¼¥à¾å¤Ç¡¢@code{sys-random}
-¤Î¤è¤¦¤Ê¡¢¤è¤ê¤è¤¤ RNG ¤¬ÍøÍÑ²ÄÇ½¤Ç¤¹¡£@ref{Miscellaneous system calls} »²¾È¡£
-¤Ş¤¿¡¢@code{math.mt-random}¤Ï¤µ¤é¤ËÍ¥¤ì¤¿RNG¤òÄó¶¡¤·¤Ş¤¹
-(@ref{Mersenne-Twister random number generator}»²¾È)¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€å¤šãã®ãƒ—ãƒ©ãƒƒãƒˆãƒ•ã‚©ãƒ¼ãƒ ä¸Šã§ã€@code{sys-random}
+ã®ã‚ˆã†ãªã€ã‚ˆã‚Šã‚ˆã„ RNG ãŒåˆ©ç”¨å¯èƒ½ã§ã™ã€‚@ref{Miscellaneous system calls} å‚ç…§ã€‚
+ã¾ãŸã€@code{math.mt-random}ã¯ã•ã‚‰ã«å„ªã‚ŒãŸRNGã‚’æä¾›ã—ã¾ã™
+(@ref{Mersenne-Twister random number generator}å‚ç…§)ã€‚
 @c COMMON
 @item sscanf
 @c EN
@@ -1449,91 +1450,91 @@ If the syntax is very simple, you may be able to utilize
 @code{string-tokenize} in @code{srfi-14} (@ref{String library}),
 and/or regular expression stuff (@ref{Regular expression}).
 @c JP
-¥µ¥İ¡¼¥È¤·¤Æ¤¤¤Ş¤»¤ó¡£°ìÈÌÅª¤Ë¤Ï¥Ñ¡¼¥¶¤ò½ñ¤«¤Í¤Ğ¤Ê¤ê¤Ş¤»¤ó¡£
-¥Ç¡¼¥¿¤ò S¼°¤ÇÊİ»ı¤Ç¤­¤ë¤Ê¤é¡¢@code{read} ¤¬»È¤¨¤Ş¤¹¡£
-¹½Ê¸¤¬¤´¤¯Ã±½ã¤Ê¤é¡¢@code{srfi-14} (@ref{String library}) ¤Î
-@code{string-tokenize} ¤ä¡¢Àµµ¬É½¸½ (@ref{Regular expression})
-¤¬»È¤¨¤ë¤Ç¤·¤ç¤¦¡£
+ã‚µãƒãƒ¼ãƒˆã—ã¦ã„ã¾ã›ã‚“ã€‚ä¸€èˆ¬çš„ã«ã¯ãƒ‘ãƒ¼ã‚¶ã‚’æ›¸ã‹ã­ã°ãªã‚Šã¾ã›ã‚“ã€‚
+ãƒ‡ãƒ¼ã‚¿ã‚’ Så¼ã§ä¿æŒã§ãã‚‹ãªã‚‰ã€@code{read} ãŒä½¿ãˆã¾ã™ã€‚
+æ§‹æ–‡ãŒã”ãå˜ç´”ãªã‚‰ã€@code{srfi-14} (@ref{String library}) ã®
+@code{string-tokenize} ã‚„ã€æ­£è¦è¡¨ç¾ (@ref{Regular expression})
+ãŒä½¿ãˆã‚‹ã§ã—ã‚‡ã†ã€‚
 @c COMMON
 @item stat
 @c EN
 Gauche's @code{sys-stat}.  @xref{File stats}.
 @c JP
-Gauche ¤Î @code{sys-stat}¡£@ref{File stats}»²¾È¡£
+Gauche ã® @code{sys-stat}ã€‚@ref{File stats}å‚ç…§ã€‚
 @c COMMON
 @item strcasecmp
 @c EN
 R5RS @code{string-ci=?} and other comparison functions.
 @xref{String Comparison}.
 @c JP
-R5RS ¤Î @code{string-ci=?} ¤ª¤è¤Ó¡¢¤½¤ÎÂ¾¤ÎÈæ³Ó´Ø¿ô¡£
-@ref{String Comparison}»²¾È¡£
+R5RS ã® @code{string-ci=?} ãŠã‚ˆã³ã€ãã®ä»–ã®æ¯”è¼ƒé–¢æ•°ã€‚
+@ref{String Comparison}å‚ç…§ã€‚
 @c COMMON
 @item strcat
 @c EN
 R5RS @code{string-append}.  @xref{String utilities}.
 @c JP
-R5RS ¤Î @code{string-append}¡£@ref{String utilities}»²¾È¡£
+R5RS ã® @code{string-append}ã€‚@ref{String utilities}å‚ç…§ã€‚
 @c COMMON
 @item strchr
 @c EN
 SRFI-13 @code{string-index}.  @xref{SRFI-13 String searching}.
 @c JP
-SRFI-13 ¤Î @code{string-index}¡£  @ref{SRFI-13 String searching}»²¾È¡£
+SRFI-13 ã® @code{string-index}ã€‚  @ref{SRFI-13 String searching}å‚ç…§ã€‚
 @c COMMON
 @item strcmp
 @c EN
 R5RS @code{string=?} and other comparison functions.
 @xref{String Comparison}.
 @c JP
-R5RS ¤Î @code{string=?} ¤ª¤è¤Ó¡¢¤½¤ÎÂ¾¤ÎÈæ³Ó´Ø¿ô¡£
-@ref{String Comparison}»²¾È¡£
+R5RS ã® @code{string=?} ãŠã‚ˆã³ã€ãã®ä»–ã®æ¯”è¼ƒé–¢æ•°ã€‚
+@ref{String Comparison}å‚ç…§ã€‚
 @c COMMON
 @item strcoll
 @c EN
 Not supported yet.
 @c JP
-Ì¤¥µ¥İ¡¼¥È¡£
+æœªã‚µãƒãƒ¼ãƒˆã€‚
 @c COMMON
 @item strcpy
 @c EN
 R5RS @code{string-copy}.    @xref{String utilities}.
 @c JP
-R5RS ¤Î @code{string-copy}¡£@ref{String utilities}»²¾È¡£
+R5RS ã® @code{string-copy}ã€‚@ref{String utilities}å‚ç…§ã€‚
 @c COMMON
 @item strcspn
 @c EN
 Not directly supported, but you can use SRFI-13 @code{string-skip}
 with a character set.  @xref{SRFI-13 String searching}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢Ê¸»ú½¸¹ç¤È¤È¤â¤Ë¡¢SRFI-13 ¤Î
-@code{string-skip} ¤¬»È¤¨¤Ş¤¹¡£@ref{SRFI-13 String searching}»²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€æ–‡å­—é›†åˆã¨ã¨ã‚‚ã«ã€SRFI-13 ã®
+@code{string-skip} ãŒä½¿ãˆã¾ã™ã€‚@ref{SRFI-13 String searching}å‚ç…§ã€‚
 @c COMMON
 @item strerror
 @c EN
 Gauche's @code{sys-strerror}.  @xref{System inquiry}.
 @c JP
-Gauche¤Î@code{sys-strerror}¡£  @ref{System inquiry}»²¾È¡£
+Gaucheã®@code{sys-strerror}ã€‚  @ref{System inquiry}å‚ç…§ã€‚
 @c COMMON
 @item strftime
 @c EN
 Gauche's @code{sys-strftime}.  @xref{Time}.
 @c JP
-Gauche ¤Î @code{sys-strftime}¡£@ref{Time}»²¾È¡£
+Gauche ã® @code{sys-strftime}ã€‚@ref{Time}å‚ç…§ã€‚
 @c COMMON
 @item strlen
 @c EN
 R5RS @code{string-length}.  @xref{String Accessors & Modifiers}.
 @c JP
-R5RS ¤Î @code{string-length}¡£@ref{String Accessors & Modifiers}»²¾È¡£
+R5RS ã® @code{string-length}ã€‚@ref{String Accessors & Modifiers}å‚ç…§ã€‚
 @c COMMON
 @item strncat
 @c EN
 Not directly supported, but you can use @code{string-append} and
 @code{substring}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢@code{string-append} ¤ª¤è¤Ó
-@code{substring} ¤¬»È¤¨¤Ş¤¹¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€@code{string-append} ãŠã‚ˆã³
+@code{substring} ãŒä½¿ãˆã¾ã™ã€‚
 @c COMMON
 @item strncasecmp
 @c EN
@@ -1543,10 +1544,10 @@ SRFI-13 @code{string-compare-ci} provides the most flexible
 If what you want is just to check the fixed-length prefixes of two
 string matches, you can use SRFI-13 @code{string-prefix-ci?}.
 @c JP
-SRFI-13 ¤Î @code{string-compare-ci} ¤ÏÈó¾ï¤Ë½ÀÆğ¤Ê(¤·¤«¤·¡¢»È¤¦¤Î¤Ï
-Â¿¾¯Æñ¤·¤¤)µ¡Ç½¤òÄó¶¡¤·¤Æ¤¤¤Ş¤¹¡£@ref{SRFI-13 String Comparison}»²¾È¡£
-¤Õ¤¿¤Ä¤ÎÊ¸»úÎó¤Î¸ÇÄêÄ¹¤ÎÀÜÆ¬¼­¤¬°ìÃ×¤·¤Æ¤¤¤ë¤«¤É¤¦¤«¤ò¥Á¥§¥Ã¥¯¤·¤¿¤¤
-¤À¤±¤Ê¤é¡¢SRFI-13 ¤Î @code{string-prefix-ci?} ¤¬»È¤¨¤Ş¤¹¡£
+SRFI-13 ã® @code{string-compare-ci} ã¯éå¸¸ã«æŸ”è»Ÿãª(ã—ã‹ã—ã€ä½¿ã†ã®ã¯
+å¤šå°‘é›£ã—ã„)æ©Ÿèƒ½ã‚’æä¾›ã—ã¦ã„ã¾ã™ã€‚@ref{SRFI-13 String Comparison}å‚ç…§ã€‚
+ãµãŸã¤ã®æ–‡å­—åˆ—ã®å›ºå®šé•·ã®æ¥é ­è¾ãŒä¸€è‡´ã—ã¦ã„ã‚‹ã‹ã©ã†ã‹ã‚’ãƒã‚§ãƒƒã‚¯ã—ãŸã„
+ã ã‘ãªã‚‰ã€SRFI-13 ã® @code{string-prefix-ci?} ãŒä½¿ãˆã¾ã™ã€‚
 @c COMMON
 @item strncmp
 @c EN
@@ -1557,84 +1558,84 @@ If what you want is just to check the fixed-length prefixes of two
 string matches, you can use SRFI-13 @code{string-prefix?}.
 @xref{SRFI-13 String Prefixes & Suffixes}.
 @c JP
-SRFI-13 ¤Î @code{string-compare-ci} ¤ÏÈó¾ï¤Ë½ÀÆğ¤Ê(¤·¤«¤·¡¢»È¤¦¤Î¤Ï
-Â¿¾¯Æñ¤·¤¤)µ¡Ç½¤òÄó¶¡¤·¤Æ¤¤¤Ş¤¹¡£@ref{SRFI-13 String Comparison}»²¾È¡£
-¤Õ¤¿¤Ä¤ÎÊ¸»úÎó¤Î¸ÇÄêÄ¹¤ÎÀÜÆ¬¼­¤¬°ìÃ×¤·¤Æ¤¤¤ë¤«¤É¤¦¤«¤ò¥Á¥§¥Ã¥¯¤·¤¿¤¤
-¤À¤±¤Ê¤é¡¢SRFI-13 ¤Î @code{string-prefix-ci?} ¤¬»È¤¨¤Ş¤¹¡£
-@ref{SRFI-13 String Prefixes & Suffixes}»²¾È¡£
+SRFI-13 ã® @code{string-compare-ci} ã¯éå¸¸ã«æŸ”è»Ÿãª(ã—ã‹ã—ã€ä½¿ã†ã®ã¯
+å¤šå°‘é›£ã—ã„)æ©Ÿèƒ½ã‚’æä¾›ã—ã¦ã„ã¾ã™ã€‚@ref{SRFI-13 String Comparison}å‚ç…§ã€‚
+ãµãŸã¤ã®æ–‡å­—åˆ—ã®å›ºå®šé•·ã®æ¥é ­è¾ãŒä¸€è‡´ã—ã¦ã„ã‚‹ã‹ã©ã†ã‹ã‚’ãƒã‚§ãƒƒã‚¯ã—ãŸã„
+ã ã‘ãªã‚‰ã€SRFI-13 ã® @code{string-prefix-ci?} ãŒä½¿ãˆã¾ã™ã€‚
+@ref{SRFI-13 String Prefixes & Suffixes}å‚ç…§ã€‚
 @c COMMON
 @item strncpy
 @c EN
 SRFI-13 @code{substring}.  @xref{String utilities}.
 @c JP
-SRFI-13 ¤Î @code{substring}¡£@ref{String utilities}»²¾È¡£
+SRFI-13 ã® @code{substring}ã€‚@ref{String utilities}å‚ç…§ã€‚
 @c COMMON
 @item strpbrk
 @c EN
 Not directly supported, but you can use SRFI-13 @code{string-skip}
 with a character set.  @xref{SRFI-13 String searching}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢Ê¸»ú½¸¹ç¤È SRFI-13 ¤Î @code{string-skip}
-¤¬»È¤¨¤Ş¤¹¡£@ref{SRFI-13 String searching}»²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€æ–‡å­—é›†åˆã¨ SRFI-13 ã® @code{string-skip}
+ãŒä½¿ãˆã¾ã™ã€‚@ref{SRFI-13 String searching}å‚ç…§ã€‚
 @c COMMON
 @item strrchr
 @c EN
 SRFI-13 @code{string-index-right}.  @xref{SRFI-13 String searching}.
 @c JP
-SRFI-13 ¤Î @code{string-index-right}¡£@ref{SRFI-13 String searching}»²¾È¡£
+SRFI-13 ã® @code{string-index-right}ã€‚@ref{SRFI-13 String searching}å‚ç…§ã€‚
 @c COMMON
 @item strspn
 @c EN
 Not directly supported, but you can use SRFI-13 @code{string-index}
 with a character set.  @xref{SRFI-13 String searching}.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢Ê¸»ú½¸¹ç¤È SRFI-13 ¤Î @code{string-index}
-¤¬»È¤¨¤Ş¤¹¡£@ref{SRFI-13 String searching}»²¾È¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€æ–‡å­—é›†åˆã¨ SRFI-13 ã® @code{string-index}
+ãŒä½¿ãˆã¾ã™ã€‚@ref{SRFI-13 String searching}å‚ç…§ã€‚
 @c COMMON
 @item strstr
 @c EN
 SRFI-13 @code{string-contains}.  @xref{SRFI-13 String searching}.
 @c JP
-SRFI-13 ¤Î @code{string-contains}¡£@ref{SRFI-13 String searching}»²¾È¡£
+SRFI-13 ã® @code{string-contains}ã€‚@ref{SRFI-13 String searching}å‚ç…§ã€‚
 @c COMMON
 @item strtod
 @c EN
 You can use R5RS @code{string->number}.   @xref{Numerical conversions}.
 @c JP
-R5RS ¤Î @code{string->number}¤¬»È¤¨¤Ş¤¹¡£@ref{Numerical conversions}»²¾È¡£
+R5RS ã® @code{string->number}ãŒä½¿ãˆã¾ã™ã€‚@ref{Numerical conversions}å‚ç…§ã€‚
 @c COMMON
 @item strtok
 @c EN
 SRFI-13 @code{string-tokenize}.  @xref{SRFI-13 other string operations}.
 @c JP
-SRFI-13 ¤Î @code{string-tokenize}¡£@ref{SRFI-13 other string operations}»²¾È¡£
+SRFI-13 ã® @code{string-tokenize}ã€‚@ref{SRFI-13 other string operations}å‚ç…§ã€‚
 @c COMMON
 @item strtol
 @itemx strtoul
 @c EN
 You can use R5RS @code{string->number}.   @xref{Numerical conversions}.
 @c JP
-R5RS ¤Î @code{string->number}¤¬»È¤¨¤Ş¤¹¡£@ref{Numerical conversions}»²¾È¡£
+R5RS ã® @code{string->number}ãŒä½¿ãˆã¾ã™ã€‚@ref{Numerical conversions}å‚ç…§ã€‚
 @c COMMON
 @item strxfrm
 @c EN
 Not supported yet.
 @c JP
-Ì¤¥µ¥İ¡¼¥È¡£
+æœªã‚µãƒãƒ¼ãƒˆã€‚
 @c COMMON
 @item symlink
 @c EN
 Gauche's @code{sys-symlink}.  @xref{Directory manipulation}.
 This function is available on systems that support symbolink links.
 @c JP
-Gauche ¤Î @code{sys-symlink}¡£@ref{Directory manipulation}»²¾È¡£
-¤³¤Î´Ø¿ô¤Ï¡¢¥·¥ó¥Ü¥ê¥Ã¥¯¥ê¥ó¥¯¤ò¥µ¥İ¡¼¥È¤·¤Æ¤¤¤ë¥·¥¹¥Æ¥à¾å¤ÇÍøÍÑ²ÄÇ½¤Ç¤¹¡£
+Gauche ã® @code{sys-symlink}ã€‚@ref{Directory manipulation}å‚ç…§ã€‚
+ã“ã®é–¢æ•°ã¯ã€ã‚·ãƒ³ãƒœãƒªãƒƒã‚¯ãƒªãƒ³ã‚¯ã‚’ã‚µãƒãƒ¼ãƒˆã—ã¦ã„ã‚‹ã‚·ã‚¹ãƒ†ãƒ ä¸Šã§åˆ©ç”¨å¯èƒ½ã§ã™ã€‚
 @c COMMON
 @item sysconf
 @c EN
 Not supported yet.
 @c JP
-Ì¤¥µ¥İ¡¼¥È¡£
+æœªã‚µãƒãƒ¼ãƒˆã€‚
 @c COMMON
 @item system
 @c EN
@@ -1642,16 +1643,16 @@ Gauche's @code{sys-system}.   @xref{Process management}.
 It is generally recommended to use the process library
 (@ref{High Level Process Interface}).
 @c JP
-Gauche ¤Î @code{sys-system}¡£@ref{Process management}»²¾È¡£
-°ìÈÌÅª¤Ë¤Ï¥×¥í¥»¥¹¥é¥¤¥Ö¥é¥ê(@ref{High Level Process Interface})
-¤ò»È¤¦¤³¤È¤ò¿ä¾©¤·¤Ş¤¹¡£
+Gauche ã® @code{sys-system}ã€‚@ref{Process management}å‚ç…§ã€‚
+ä¸€èˆ¬çš„ã«ã¯ãƒ—ãƒ­ã‚»ã‚¹ãƒ©ã‚¤ãƒ–ãƒ©ãƒª(@ref{High Level Process Interface})
+ã‚’ä½¿ã†ã“ã¨ã‚’æ¨å¥¨ã—ã¾ã™ã€‚
 @c COMMON
 @item tan
 @itemx tanh
 @c EN
 R5RS @code{tan} and Gauche @code{tanh}.  @xref{Arithmetics}.
 @c JP
-R5RS ¤Î @code{tan} ¤ª¤è¤Ó Gauche ¤Î @code{tanh}¡£@ref{Arithmetics}»²¾È¡£
+R5RS ã® @code{tan} ãŠã‚ˆã³ Gauche ã® @code{tanh}ã€‚@ref{Arithmetics}å‚ç…§ã€‚
 @c COMMON
 @item tcdrain
 @item tcflow
@@ -1667,28 +1668,28 @@ Corresponding functions are: @code{sys-tcdrain}, @code{sys-tcflow},
 @code{sys-tcsendbreak}, @code{sys-tcsetattr}, @code{sys-tcsetpgrp}.
 @xref{Terminal control}
 @c JP
-ÂĞ±ş¤¹¤ë´Ø¿ô¤Ï¤½¤ì¤¾¤ì¡¢@code{sys-tcdrain}¡¢@code{sys-tcflow}¡¢
-@code{sys-tcflush}¡¢@code{sys-tcgetattr}¡¢@code{sys-tcgetpgrp}¡¢
-@code{sys-tcsendbreak}¡¢@code{sys-tcsetattr}¡¢@code{sys-tcsetpgrp} ¤Ç¤¹¡£
-@ref{Terminal control}»²¾È¡£
+å¯¾å¿œã™ã‚‹é–¢æ•°ã¯ãã‚Œãã‚Œã€@code{sys-tcdrain}ã€@code{sys-tcflow}ã€
+@code{sys-tcflush}ã€@code{sys-tcgetattr}ã€@code{sys-tcgetpgrp}ã€
+@code{sys-tcsendbreak}ã€@code{sys-tcsetattr}ã€@code{sys-tcsetpgrp} ã§ã™ã€‚
+@ref{Terminal control}å‚ç…§ã€‚
 @c COMMON
 @item time
 @c EN
 Gauche's @code{sys-time}.  @xref{Time}.
 @c JP
-Gauche ¤Î @code{sys-time}¡£  @ref{Time}»²¾È¡£
+Gauche ã® @code{sys-time}ã€‚  @ref{Time}å‚ç…§ã€‚
 @c COMMON
 @item times
 @c EN
 Gauche's @code{sys-times}.  @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-times}¡£@ref{System inquiry}»²¾È¡£
+Gauche ã® @code{sys-times}ã€‚@ref{System inquiry}å‚ç…§ã€‚
 @c COMMON
 @item tmpfile
 @c EN
 Not exactly supported.
 @c JP
-¸·Ì©¤Ë¤Ï¡¢¥µ¥İ¡¼¥È¤·¤Ş¤»¤ó¡£
+å³å¯†ã«ã¯ã€ã‚µãƒãƒ¼ãƒˆã—ã¾ã›ã‚“ã€‚
 @c COMMON
 @item tmpnam
 @c EN
@@ -1697,60 +1698,60 @@ This function is provided since it is in POSIX, but its use is
 discouraged for the potential security risk.  Use @code{sys-mkstemp}
 instead.   @xref{Directory manipulation}.
 @c JP
-Gauche ¤Î @code{sys-tmpnam}¡£¤³¤Î´Ø¿ô¤Ï POSIX ¤Ë¤¢¤ë¤Î¤ÇÄó¶¡¤µ¤ì¤Æ¤¤¤Ş¤¹¤¬¡¢
-ÀøºßÅª¤Ê¥»¥­¥å¥ê¥Æ¥£¥ê¥¹¥¯¤¬¤¢¤ë¤¿¤á¡¢ÍøÍÑ¤Ï¤ª¤¹¤¹¤á¤Ç¤­¤Ş¤»¤ó¡£
-Âå¤ê¤Ë @code{sys-mkstemp} ¤ò»È¤¤¤Ş¤·¤ç¤¦¡£@ref{Directory manipulation}»²¾È¡£
+Gauche ã® @code{sys-tmpnam}ã€‚ã“ã®é–¢æ•°ã¯ POSIX ã«ã‚ã‚‹ã®ã§æä¾›ã•ã‚Œã¦ã„ã¾ã™ãŒã€
+æ½œåœ¨çš„ãªã‚»ã‚­ãƒ¥ãƒªãƒ†ã‚£ãƒªã‚¹ã‚¯ãŒã‚ã‚‹ãŸã‚ã€åˆ©ç”¨ã¯ãŠã™ã™ã‚ã§ãã¾ã›ã‚“ã€‚
+ä»£ã‚Šã« @code{sys-mkstemp} ã‚’ä½¿ã„ã¾ã—ã‚‡ã†ã€‚@ref{Directory manipulation}å‚ç…§ã€‚
 @c COMMON
 @item tolower
 @itemx toupper
 @c EN
 R5RS @code{char-upcase} and @code{char-downcase}.   @xref{Characters}.
 @c JP
-R5RS ¤Î @code{char-upcase} ¤ª¤è¤Ó @code{char-downcase}¡£@ref{Characters}»²¾È¡£
+R5RS ã® @code{char-upcase} ãŠã‚ˆã³ @code{char-downcase}ã€‚@ref{Characters}å‚ç…§ã€‚
 @c COMMON
 @item ttyname
 @c EN
 Gauche's @code{sys-ttyname}.  @xref{Other file operations}.
 @c JP
-Gauche ¤Î @code{sys-ttyname}¡£@ref{Other file operations}»²¾È¡£
+Gauche ã® @code{sys-ttyname}ã€‚@ref{Other file operations}å‚ç…§ã€‚
 @c COMMON
 @item tzset
 @c EN
 Not supported yet.
 @c JP
-Ì¤¥µ¥İ¡¼¥È¡£
+æœªã‚µãƒãƒ¼ãƒˆã€‚
 @c COMMON
 @item umask
 @c EN
 Gauche's @code{sys-umask}.  @xref{Directory manipulation}.
 @c JP
-Gauche ¤Î @code{sys-umask}¡£@ref{Directory manipulation}»²¾È¡£
+Gauche ã® @code{sys-umask}ã€‚@ref{Directory manipulation}å‚ç…§ã€‚
 @c COMMON
 @item uname
 @c EN
 Gauche's @code{sys-uname}.  @xref{System inquiry}.
 @c JP
-Gauche ¤Î @code{sys-uname}¡£@ref{System inquiry}»²¾È¡£
+Gauche ã® @code{sys-uname}ã€‚@ref{System inquiry}å‚ç…§ã€‚
 @c COMMON
 @item ungetc
 @c EN
 Not directly supported.  You can use @code{peek-char} to look
 one character ahead, instead of pushing back.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Ş¤»¤ó¡£¥×¥Ã¥·¥å¤·¤Ê¤ª¤¹Âå¤ê¤Ë¡¢@code{peek-char} ¤ò¤Ä¤«¤Ã¤Æ
-ÀèÆÉ¤ß¤·¤Ş¤·¤ç¤¦¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¾ã›ã‚“ã€‚ãƒ—ãƒƒã‚·ãƒ¥ã—ãªãŠã™ä»£ã‚Šã«ã€@code{peek-char} ã‚’ã¤ã‹ã£ã¦
+å…ˆèª­ã¿ã—ã¾ã—ã‚‡ã†ã€‚
 @c COMMON
 @item unlink
 @c EN
 Gauche's @code{sys-unlink}.  @xref{Directory manipulation}.
 @c JP
-Gauche ¤Î @code{sys-unlink}¡£@ref{Directory manipulation}»²¾È¡£
+Gauche ã® @code{sys-unlink}ã€‚@ref{Directory manipulation}å‚ç…§ã€‚
 @c COMMON
 @item utime
 @c EN
 Gauche's @code{sys-utime}. @xref{File stats}.
 @c JP
-Gauche ¤Î @code{sys-utime}¡£@ref{File stats}»²¾È¡£
+Gauche ã® @code{sys-utime}ã€‚@ref{File stats}å‚ç…§ã€‚
 @c COMMON
 @item va_arg
 @itemx va_end
@@ -1758,7 +1759,7 @@ Gauche ¤Î @code{sys-utime}¡£@ref{File stats}»²¾È¡£
 @c EN
 Not necessary, for Scheme handles variable number of arguments naturally.
 @c JP
-Scheme ¤Ï²ÄÊÑÄ¹°ú¿ô¤ò¼«Á³¤Ë½èÍı¤Ç¤­¤Ş¤¹¤Î¤Ç¡¢É¬Í×¤¢¤ê¤Ş¤»¤ó¡£
+Scheme ã¯å¯å¤‰é•·å¼•æ•°ã‚’è‡ªç„¶ã«å‡¦ç†ã§ãã¾ã™ã®ã§ã€å¿…è¦ã‚ã‚Šã¾ã›ã‚“ã€‚
 @c COMMON
 @item vfprintf
 @itemx vprintf
@@ -1768,20 +1769,20 @@ Not directly supported, but Gauche's @code{format}
 provides similar functionality.  @xref{Output}.
 SLIB has @code{printf} implementation.
 @c JP
-Ä¾ÀÜ¤Ï¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤Ş¤»¤ó¤¬¡¢Gauche ¤Î @code{format} ¤ÏÎà»÷¤Îµ¡Ç½¤ò
-Äó¶¡¤·¤Æ¤¤¤Ş¤¹¡£@ref{Output} »²¾È¡£SLIB ¤Ë¤Ï @code{printf} ¤Î¼ÂÁõ¤¬¤¢¤ê¤Ş¤¹¡£
+ç›´æ¥ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ãŒã€Gauche ã® @code{format} ã¯é¡ä¼¼ã®æ©Ÿèƒ½ã‚’
+æä¾›ã—ã¦ã„ã¾ã™ã€‚@ref{Output} å‚ç…§ã€‚SLIB ã«ã¯ @code{printf} ã®å®Ÿè£…ãŒã‚ã‚Šã¾ã™ã€‚
 @c COMMON
 @item wait
 @c EN
 Gauche's @code{sys-wait}.  @xref{Process management}.
 @c JP
-Gauche ¤Î @code{sys-wait}¡£@ref{Process management}»²¾È¡£
+Gauche ã® @code{sys-wait}ã€‚@ref{Process management}å‚ç…§ã€‚
 @c COMMON
 @item waitpid
 @c EN
 Gauche's @code{sys-waitpid}.  @xref{Process management}.
 @c JP
-Gauche ¤Î @code{sys-waitpid}¡£@ref{Process management}»²¾È¡£
+Gauche ã® @code{sys-waitpid}ã€‚@ref{Process management}å‚ç…§ã€‚
 @c COMMON
 @item wcstombs
 @itemx wctomb
@@ -1792,19 +1793,19 @@ always returns a number of characters for a string in supported
 encoding.   If you want to convert the character encoding,
 see @ref{Character code conversion}.
 @c JP
-Gauche ¤Ï¥Ş¥ë¥Á¥Ğ¥¤¥ÈÊ¸»úÎó¤òÆâÉôÅª¤Ë½èÍı¤·¤Ş¤¹¡£¤½¤ì¤æ¤¨¡¢°ìÈÌÅª¤Ë¤Ï
-Ê¸»úÎó¤¬¥Ş¥ë¥Á¥Ğ¥¤¥È¤Ç¤¢¤ë¤«¤É¤¦¤«¤òµ¤¤Ë¤¹¤ëÉ¬Í×¤Ï¤¢¤ê¤Ş¤»¤ó¡£
-@code{string-length} ¤Ï¾ï¤Ë¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤ë¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°¤Ç¤ÎÊ¸»úÎó¤Î
-Ê¸»ú¿ô¤òÊÖ¤·¤Ş¤¹¡£Ê¸»ú¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°¤òÊÑ´¹¤·¤¿¤±¤ì¤Ğ¡¢
-@ref{Character code conversion}¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
+Gauche ã¯ãƒãƒ«ãƒãƒã‚¤ãƒˆæ–‡å­—åˆ—ã‚’å†…éƒ¨çš„ã«å‡¦ç†ã—ã¾ã™ã€‚ãã‚Œã‚†ãˆã€ä¸€èˆ¬çš„ã«ã¯
+æ–‡å­—åˆ—ãŒãƒãƒ«ãƒãƒã‚¤ãƒˆã§ã‚ã‚‹ã‹ã©ã†ã‹ã‚’æ°—ã«ã™ã‚‹å¿…è¦ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚
+@code{string-length} ã¯å¸¸ã«ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã‚‹ã‚¨ãƒ³ã‚³ãƒ¼ãƒ‡ã‚£ãƒ³ã‚°ã§ã®æ–‡å­—åˆ—ã®
+æ–‡å­—æ•°ã‚’è¿”ã—ã¾ã™ã€‚æ–‡å­—ã‚¨ãƒ³ã‚³ãƒ¼ãƒ‡ã‚£ãƒ³ã‚°ã‚’å¤‰æ›ã—ãŸã‘ã‚Œã°ã€
+@ref{Character code conversion}ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
 @c COMMON
 @item write
 @c EN
 R5RS @code{display} (@xref{Output}).
 Or @code{write-block} (@xref{Uvector block I/O}).
 @c JP
-R5RS ¤Î @code{display} (@xref{Output})¡£
-¤¢¤ë¤¤¤Ï @code{write-block} (@ref{Uvector block I/O}»²¾È)¡£
+R5RS ã® @code{display} (@xref{Output})ã€‚
+ã‚ã‚‹ã„ã¯ @code{write-block} (@ref{Uvector block I/O}å‚ç…§)ã€‚
 @c COMMON
 @end table
 

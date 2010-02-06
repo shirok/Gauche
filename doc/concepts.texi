@@ -1,13 +1,14 @@
+@c -*- mode: texinfo; coding: utf-8; -*-
 @node Concepts, Programming in Gauche, Introduction, Top
 @chapter Concepts
-@c NODE ���פʳ�ǰ
+@c NODE 主要な概念
 
 @c EN
 In this chapter I describe a few Gauche's design concepts
 that help you to understand how Gauche works.
 @c JP
-�ܾϤǤϡ�Gaucheư����طʤȤʤ뤤���Ĥ��γ�ǰ���������ޤ���
-Gauche��ư������Τ����򤹤�����ˤʤ�Ȼפ��ޤ���
+本章では、Gauche動作の背景となるいくつかの概念を説明します。
+Gaucheの動作を正確に理解する助けになると思います。
 @c COMMON
 
 @menu
@@ -22,14 +23,14 @@ Gauche��ư������Τ����򤹤�����ˤʤ�Ȼפ��ޤ���
 
 @node Standard conformance, Multibyte Strings, Concepts, Concepts
 @section Standard conformance
-@c NODE ɸ��ؤν��
+@c NODE 標準への準拠
 
 @c EN
 Gauche conforms "Revised^5 Report of Algorithmic Language Scheme,"
 including optional syntax and procedures, except the following features.
 @c JP
-Gauche�ϡ��ʲ��˵󤲤�������������ץ���ʥ�ʹ�ʸ���³����ޤ�
-"Revised^5 Report of Algorithmic Language Scheme" �˽�򤷤Ƥ��ޤ���
+Gaucheは、以下に挙げる点を除き、オプショナルな構文や手続きも含め
+"Revised^5 Report of Algorithmic Language Scheme" に準拠しています。
 @c COMMON
 
 @itemize @bullet
@@ -40,9 +41,9 @@ You can switch the reader's case sensitivity by a command-line
 option or special reader directive
 (@xref{Case-sensitivity}, for details).
 @c JP
-�ǥե���Ȥǡ�Gauche�ϥ���ܥ��̾������ʸ����ʸ������̤��ޤ���
-���ޥ�ɥ饤�󥪥ץ��������̤ʥ꡼���ؼ��Ҥˤ�äơ�
-��ʸ����ʸ������̤��뤫�ɤ��������ؤ��뤳�Ȥ��Ǥ��ޤ�(@ref{Case-sensitivity}����)��
+デフォルトで、Gaucheはシンボルの名前の大文字小文字を区別します。
+コマンドラインオプションや特別なリーダ指示子によって、
+大文字小文字を区別するかどうかを切替えることができます(@ref{Case-sensitivity}参照)。
 @c COMMON
 @item
 @c EN
@@ -50,9 +51,9 @@ Continuations created in a certain situation
 (specifically, inside a Scheme code that is called from external
 C routine) have limited extent (@xref{Continuation}, for details).
 @c JP
-�����ﲼ�Ǻ��줿��³�ϸ¤�줿�������ƥ�Ȥ�����ޤ�
-(����Ū�ˤϡ�C�Υ����ɤ��饳����Хå��Ȥ��ƸƤФ��Scheme��������Ǻ�����³
-������ˤ�����ޤ�)���ܤ�����@ref{Continuation}�򻲾Ȥ��Ʋ�������
+ある条件下で作られた継続は限られたエクステントを持ちます
+(具体的には、Cのコードからコールバックとして呼ばれるSchemeコード内で作られる継続
+がこれにあたります)。詳しくは@ref{Continuation}を参照して下さい。
 @c COMMON
 @item
 @c EN
@@ -60,17 +61,17 @@ Full numeric tower (integer, rational, real and complex numbers) are supported,
 but ratinals are only exact, and complex numbers are always inexact.
 The reader can recognize '@code{#}' as insignificant digits.
 @c JP
-������Numeric tower(������ͭ�������¿���ʣ�ǿ�)�����ݡ��Ȥ���ޤ�����
-ͭ���������Τ�ɽ���Τߤǡ��ޤ�ʣ�ǿ��������Τ�ɽ���Τߤ�����ޤ���
-�꡼���ϡ����٤˱ƶ���Ϳ���ʤ����'@code{#}'��ɽ������ɽ����ǧ�����ޤ���
+完全なNumeric tower(整数、有理数、実数、複素数)がサポートされますが、
+有理数は正確な表現のみで、また複素数は不正確な表現のみを持ちます。
+リーダは、精度に影響を与えない桁を'@code{#}'で表す数字表記を認識します。
 @c COMMON
 @item
 @c EN
 Procedures @code{rationalize}, @code{transcript-on} and @code{transcript-off}
 are not supported.
 @c JP
-��³��@code{rationalize}��@code{transcript-on}���ڤ�@code{transcript-off}
-�ϥ��ݡ��Ȥ���Ƥ��ޤ���
+手続き@code{rationalize}、@code{transcript-on}、及び@code{transcript-off}
+はサポートされていません。
 @c COMMON
 @end itemize
 
@@ -79,15 +80,15 @@ are not supported.
 Although we don't have a plan to change Gauche to conform R6RS in near future,
 we'll gradually add modules that are compatible to R6RS).
 @c JP
-(��2007ǯ9��ˡ�������Scheme��ɸ��Ǥ���R6RS�����ꤵ��ޤ�����
-Gauche��R6RS���ˤ���ͽ��϶ᤤ����ˤϤ���ޤ��󤬡�
-R6RS�ȸߴ��ʥ⥸�塼���������ɲä��Ƥ椯ͽ��Ǥ���)
+(註：2007年9月に、新たなSchemeの標準であるR6RSが制定されました。
+GaucheをR6RS準拠にする予定は近い将来にはありませんが、
+R6RSと互換なモジュールを徐々に追加してゆく予定です。)
 @c COMMON
 
 @c EN
 Gauche also supports the following SRFIs (Scheme Request for Implementation).
 @c JP
-Gauche�Ϥޤ����ʲ���SRFI�򥵥ݡ��Ȥ��Ƥ��ޤ���
+Gaucheはまた、以下のSRFIをサポートしています。
 @c COMMON
 
 @table @asis
@@ -95,8 +96,8 @@ Gauche�Ϥޤ����ʲ���SRFI�򥵥ݡ��Ȥ��Ƥ��ޤ���
 @item SRFI-0, Feature-based conditional expansion construct.
 As an autoloaded macro.   @xref{Feature conditional}.
 @c JP
-@item SRFI-0, ��ǽ�١����ξ��Ÿ��
-�����ȥ����ɤ����ޥ����Ȥ��ƥ��ݡ��Ȥ���ޤ���@ref{Feature conditional}���ȡ�
+@item SRFI-0, 機能ベースの条件展開
+オートロードされるマクロとしてサポートされます。@ref{Feature conditional}参照。
 @c COMMON
 
 @c EN
@@ -104,17 +105,17 @@ As an autoloaded macro.   @xref{Feature conditional}.
 Supported by the module @code{srfi-1}.  @xref{List library}.
 (Some of SRFI-1 procedures are built-in).
 @c JP
-@item SRFI-1, �ꥹ�ȥ饤�֥��
-�⥸�塼��@code{srfi-1}�ǥ��ݡ��Ȥ���ޤ���@ref{List library}���ȡ�
-SRFI-1�μ�³���Τ��������Ĥ����Ȥ߹��ߤˤʤäƤ��ޤ���
+@item SRFI-1, リストライブラリ
+モジュール@code{srfi-1}でサポートされます。@ref{List library}参照。
+SRFI-1の手続きのうちいくつかは組み込みになっています。
 @c COMMON
 
 @c EN
 @item SRFI-2, AND-LET*: an AND with local bindings, a guarded LET* special form.
 Supported natively.  @xref{Binding constructs}.
 @c JP
-@item SRFI-2, AND-LET*: �ɽ�«����Ȥ�ʤ� AND���������� LET* �ü�ե�����
-�Ȥ߹��ߤǤ���@ref{Binding constructs}���ȡ�
+@item SRFI-2, AND-LET*: 局所束縛をともなう AND、ガード付 LET* 特殊フォーム
+組み込みです。@ref{Binding constructs}参照。
 @c COMMON
 
 @c EN
@@ -123,11 +124,11 @@ The module @code{gauche.uvector} provides a superset of
 @code{srfi-4} procedures, including arithmetic operations and
 generic interface on the SRFI-4 vectors.  @xref{Uniform vectors}.
 @c JP
-@item SRFI-4, ���ͤʿ��ͥ٥�����
-�⥸�塼��@code{gauche.uvector}��
-@code{srfi-4}�ξ�̸ߴ���³�����󶡤��ޤ���
-Ʊ�⥸�塼��ˤ�SRFI-4�μ�³���˲ä���
-���ѱ黻�䥸���ͥ�å��ʥ��󥿥ե��������������Ƥ��ޤ���@ref{Uniform vectors}���ȡ�
+@item SRFI-4, 一様な数値ベクタ型
+モジュール@code{gauche.uvector}が
+@code{srfi-4}の上位互換手続きを提供します。
+同モジュールにはSRFI-4の手続きに加え、
+算術演算やジェネリックなインタフェースが定義されています。@ref{Uniform vectors}参照。
 @c COMMON
 
 @c EN
@@ -135,17 +136,17 @@ generic interface on the SRFI-4 vectors.  @xref{Uniform vectors}.
 Supported by the module @code{srfi-5}.  
 @xref{A compatible let form with signatures and rest arguments}.
 @c JP
-@item SRFI-5, �����ͥ����rest�����˸ߴ����Τ���let����
-�⥸�塼��@code{srfi-5}�ǥ��ݡ��Ȥ���ޤ���
-@ref{A compatible let form with signatures and rest arguments}���ȡ�
+@item SRFI-5, シグネチャとrest引数に互換性のあるlet形式
+モジュール@code{srfi-5}でサポートされます。
+@ref{A compatible let form with signatures and rest arguments}参照。
 @c COMMON
 
 @c EN
 @item SRFI-6, Basic String Ports.
 SRFI-6 procedures are built-in.  @xref{String ports}.
 @c JP
-@item SRFI-6, ����ʸ����ݡ���
-SRFI-6�μ�³�����Ȥ߹��ߤˤʤäƤ��ޤ���@ref{String ports}���ȡ�
+@item SRFI-6, 基本文字列ポート
+SRFI-6の手続きは組み込みになっています。@ref{String ports}参照。
 @c COMMON
 
 @c EN
@@ -153,41 +154,41 @@ SRFI-6�μ�³�����Ȥ߹��ߤˤʤäƤ��ޤ���@ref{String ports}���ȡ�
 Supported as an autoloaded macro.  
 @xref{Feature-based program configuration language}.
 @c JP
-@item SRFI-7, ��ǽ�١����ץ�������������
-�����ȥ����ɤ����ޥ����Ȥ��ƥ��ݡ��Ȥ���Ƥ��ޤ���
-@ref{Feature-based program configuration language}���ȡ�
+@item SRFI-7, 機能ベースプログラム設定言語
+オートロードされるマクロとしてサポートされています。
+@ref{Feature-based program configuration language}参照。
 @c COMMON
 
 @c EN
 @item SRFI-8, receive: Binding to multiple values.
 Syntax @code{receive} is built-in.  @xref{Binding constructs}.
 @c JP
-@item SRFI-8, receive: ¿��«��
-��ʸ@code{receive}���Ȥ߹��ߤˤʤäƤ��ޤ���@ref{Binding constructs}���ȡ�
+@item SRFI-8, receive: 多値束縛
+構文@code{receive}は組み込みになっています。@ref{Binding constructs}参照。
 @c COMMON
 
 @c EN
 @item SRFI-9, Defining record types.
 Supported by the module @code{srfi-9}.  @xref{Record types}.
 @c JP
-@item SRFI-9, �쥳���ɷ������
-�⥸�塼��@code{srfi-9}�ǥ��ݡ��Ȥ���ޤ���@ref{Record types}���ȡ�
+@item SRFI-9, レコード型の定義
+モジュール@code{srfi-9}でサポートされます。@ref{Record types}参照。
 @c COMMON
 
 @c EN
 @item SRFI-10, Sharp-comma external form.
 Built-in.  @xref{Read-time constructor}.
 @c JP
-@item SRFI-10, Sharp-comma�����ե�����
-�Ȥ߹��ߤǤ���@ref{Read-time constructor}���ȡ�
+@item SRFI-10, Sharp-comma外部フォーム
+組み込みです。@ref{Read-time constructor}参照。
 @c COMMON
 
 @c EN
 @item SRFI-11, Syntax for receiving multiple values.
 Supported by the module @code{srfi-11}.  @xref{Let-values}.
 @c JP
-@item SRFI-11, ¿�ͤ������뤿��ι�ʸ
-�⥸�塼��@code{srfi-11}�ǥ��ݡ��Ȥ���ޤ���@ref{Let-values}���ȡ�
+@item SRFI-11, 多値を受け取るための構文
+モジュール@code{srfi-11}でサポートされます。@ref{Let-values}参照。
 @c COMMON
 
 @c EN
@@ -195,9 +196,9 @@ Supported by the module @code{srfi-11}.  @xref{Let-values}.
 Supported by the module @code{srfi-13}.  @xref{String library}.
 (Some of SRFI-13 procedures are built-in).
 @c JP
-@item SRFI-13, ʸ����饤�֥��
-�⥸�塼��@code{srfi-13}�ǥ��ݡ��Ȥ���ޤ���@ref{String library}���ȡ�
-(SRFI-13�μ�³���Τ����Ĥ����Ȥ߹��ߤˤʤäƤ��ޤ���)
+@item SRFI-13, 文字列ライブラリ
+モジュール@code{srfi-13}でサポートされます。@ref{String library}参照。
+(SRFI-13の手続きのいくつかは組み込みになっています。)
 @c COMMON
 
 @c EN
@@ -207,26 +208,26 @@ Character-set object and a few SRFI-14 procedures are built-in.
 Complete set of SRFI-14 is supported by the module @code{srfi-14}.
 @xref{Character-set library}.
 @c JP
-@item SRFI-14, ʸ������Υ饤�֥��
-ʸ������ȴ���Ū��SRFI-14��³�����Ȥ߹��ߤˤʤäƤ��ޤ���
-@ref{Character set}���ȡ�SRFI-14�δ����ʥ��ݡ��Ȥϥ⥸�塼��@code{srfi-14}
-���󶡤���Ƥ��ޤ���@ref{Character-set library}���ȡ�
+@item SRFI-14, 文字集合のライブラリ
+文字集合と基本的なSRFI-14手続きは組み込みになっています。
+@ref{Character set}参照。SRFI-14の完全なサポートはモジュール@code{srfi-14}
+で提供されています。@ref{Character-set library}参照。
 @c COMMON
 
 @c EN
 @item SRFI-16, Syntax for procedures of variable arity (case-lambda)
 Built-in.  @xref{Making Procedures}.
 @c JP
-@item SRFI-16, ����Ĺ������³����ʸ (case-lambda)
-�Ȥ߹��ߤǤ���@ref{Making Procedures}���ȡ�
+@item SRFI-16, 可変長引数手続き構文 (case-lambda)
+組み込みです。@ref{Making Procedures}参照。
 @c COMMON
 
 @c EN
 @item SRFI-17, Generalized set!
 Built-in.  @xref{Assignments}.
 @c JP
-@item SRFI-17, ���̲����줿 set!
-�Ȥ߹��ߤǤ���@ref{Assignments}���ȡ�
+@item SRFI-17, 一般化された set!
+組み込みです。@ref{Assignments}参照。
 @c COMMON
 
 @c EN
@@ -234,9 +235,9 @@ Built-in.  @xref{Assignments}.
 Some SRFI-18 features are built-in, and the rest is in @code{gauche.threads}
 module.  @xref{Threads}.
 @c JP
-@item SRFI-18, �ޥ������åɤΥ��ݡ���
-�����Ĥ���SRFI-18�ε�ǽ���Ȥ߹��ߤǤ��ꡢ���Ĥ��API��
-@code{gauche.threads}�⥸�塼����󶡤���ޤ���@ref{Threads}���ȡ�
+@item SRFI-18, マルチスレッドのサポート
+いくつかのSRFI-18の機能は組み込みであり、、残りのAPIは
+@code{gauche.threads}モジュールで提供されます。@ref{Threads}参照。
 @c COMMON
 
 @c EN
@@ -245,26 +246,26 @@ Time data type is Gauche built-in (@xref{Time}).
 Complete set of SRFI-19 is supported by the module @code{srfi-19}.
 @xref{Time data types and procedures}.
 @c JP
-@item SRFI-19, ���֥ǡ����η��ȼ�³��
-���֤Υǡ�������Gauche�Ȥ߹��ߤǤ�(@ref{Time}����)��
-SRFI-19�δ����ʥ��ݡ��Ȥϥ⥸�塼��@code{srfi-19}���󶡤���Ƥ��ޤ���
-@ref{Time data types and procedures}���ȡ�
+@item SRFI-19, 時間データの型と手続き
+時間のデータ型はGauche組み込みです(@ref{Time}参照)。
+SRFI-19の完全なサポートはモジュール@code{srfi-19}で提供されています。
+@ref{Time data types and procedures}参照。
 @c COMMON
 
 @c EN
 @item SRFI-22, Running Scheme scripts on Unix
 Supported.  @xref{Writing Scheme scripts}.
 @c JP
-@item SRFI-22, UNIX ��� Scheme ������ץȤμ¹�
-���ݡ��Ȥ���Ƥ��ޤ���@ref{Writing Scheme scripts}���ȡ�
+@item SRFI-22, UNIX 上の Scheme スクリプトの実行
+サポートされています。@ref{Writing Scheme scripts}参照。
 @c COMMON
 
 @c EN
 @item SRFI-23, Error reporting mechanism.
 Built-in.   @xref{Signalling exceptions}.
 @c JP
-@item SRFI-23, ���顼��𵡹�
-�Ȥ߹��ߤǤ���@ref{Signalling exceptions}���ȡ�
+@item SRFI-23, エラー報告機構
+組み込みです。@ref{Signalling exceptions}参照。
 @c COMMON
 
 @c EN
@@ -272,25 +273,25 @@ Built-in.   @xref{Signalling exceptions}.
 Supported by the module @code{gauche.array}, which defines
 superset of SRFI-25.  @xref{Arrays}.
 @c JP
-@item SRFI-25, ¿��������Υץ�ߥƥ���
-�⥸�塼��@code{gauche.array}����SRFI-25�ξ�̸ߴ���
-�ʤäƤ��ޤ���@ref{Arrays}���ȡ�
+@item SRFI-25, 多次元配列のプリミティブ
+モジュール@code{gauche.array}が、SRFI-25の上位互換と
+なっています。@ref{Arrays}参照。
 @c COMMON
 
 @c EN
 @item SRFI-26, Notation for specializing parameters without currying.
 As an autoloaded macro.  @xref{Making Procedures}.
 @c JP
-@item SRFI-26, ���꡼����Ȥ�ʤ�ʤ��ѥ�᡼�����ü첽��ˡ
-�����ȥ����ɤ����ޥ����Ȥ����������Ƥ��ޤ���@ref{Making Procedures}���ȡ�
+@item SRFI-26, カリー化をともなわないパラメータの特殊化記法
+オートロードされるマクロとして定義されています。@ref{Making Procedures}参照。
 @c COMMON
 
 @c EN
 @item SRFI-27, Sources of Random Bits.
 Supported by the module @code{srfi-27}.  @xref{Sources of random bits}.
 @c JP
-@item SRFI-27, ������ӥåȤΥ�����
-�⥸�塼��@code{srfi-27}�ǥ��ݡ��Ȥ���ޤ���@ref{Sources of random bits}���ȡ�
+@item SRFI-27, ランダムビットのソース
+モジュール@code{srfi-27}でサポートされます。@ref{Sources of random bits}参照。
 @c COMMON
 
 @c EN
@@ -298,9 +299,9 @@ Supported by the module @code{srfi-27}.  @xref{Sources of random bits}.
 Gauche's built-in @code{format} procedure is a superset of
 SRFI-28 @code{format}.  @xref{Output}.
 @c JP
-@item SRFI-28, ���ܥե����ޥå�ʸ����
-Gauche�Ȥ߹��ߤ�@code{format}��SRFI-28�Τ�Τξ�̸ߴ���
-�ʤäƤ��ޤ���@ref{Output}���ȡ�
+@item SRFI-28, 基本フォーマット文字列
+Gauche組み込みの@code{format}がSRFI-28のものの上位互換に
+なっています。@ref{Output}参照。
 @c COMMON
 
 @c EN
@@ -308,25 +309,25 @@ Gauche�Ȥ߹��ߤ�@code{format}��SRFI-28�Τ�Τξ�̸ߴ���
 Supported by the module @code{srfi-29}.
 @xref{Localization}.
 @c JP
-@item SRFI-29, �ϰ貽
-�⥸�塼��@code{srfi-29}�ǥ��ݡ��Ȥ���ޤ���
-@ref{Localization}���ȡ�
+@item SRFI-29, 地域化
+モジュール@code{srfi-29}でサポートされます。
+@ref{Localization}参照。
 @c COMMON
 
 @c EN
 @item SRFI-30, Nested multi-line comments.
 Supported by the native reader.  @xref{Lexical structure}.
 @c JP
-@item SRFI-30, �ͥ��Ȥ���ʣ���ԥ�����
-�ͥ��ƥ��֤Υ꡼���ǥ��ݡ��Ȥ���Ƥ��ޤ���@ref{Lexical structure}���ȡ�
+@item SRFI-30, ネストした複数行コメント
+ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
 @c COMMON
 
 @c EN
 @item SRFI-31, A special form rec for recursive evaluation
 Defined as an autoloaded macro.  @xref{Binding constructs}.
 @c JP
-@item SRFI-31, �Ƶ�ɾ���Ѥ��ü�ե����� rec
-�����ȥ����ɤ����ޥ����Ȥ����������Ƥ��ޤ���@ref{Binding constructs}���ȡ�
+@item SRFI-31, 再帰評価用の特殊フォーム rec
+オートロードされるマクロとして定義されています。@ref{Binding constructs}参照。
 @c COMMON
 
 @c EN
@@ -335,26 +336,26 @@ Built-in.  @xref{Exceptions}.
 (However, Gauche implements srfi-18's semantics of @code{raise} literally,
 which differs slightly from srfi-34's.  This may be changed in future.)
 @c JP
-@item SRFI-34, �ץ��������㳰����
-�Ȥ߹��ߤǤ���@ref{Exceptions}���ȡ�
-(â����Gauche��@code{raise}�˴ؤ��Ƥ�srfi-18�Υ��ޥ�ƥ�������ʸ���̤�
-�������Ƥ��ơ������srfi-34�ȼ㴳�ۤʤ�ޤ��������srfi-34�˹�碌�뤫�⤷��ޤ���)
+@item SRFI-34, プログラムの例外処理
+組み込みです。@ref{Exceptions}参照。
+(但し、Gaucheは@code{raise}に関してはsrfi-18のセマンティクスを文字通り
+実装していて、それはsrfi-34と若干異なります。将来はsrfi-34に合わせるかもしれません。)
 @c COMMON
 
 @c EN
 @item SRFI-35, Conditions
 Built-in.  @xref{Conditions}.
 @c JP
-@item SRFI-35, ����ǥ������
-�Ȥ߹��ߤǤ���@ref{Conditions}���ȡ�
+@item SRFI-35, コンディション
+組み込みです。@ref{Conditions}参照。
 @c COMMON
 
 @c EN
 @item SRFI-36, I/O Conditions
 Partly supported.  @xref{Conditions}.
 @c JP
-@item SRFI-36, I/O ����ǥ������
-��ʬŪ�˥��ݡ��Ȥ���Ƥ��ޤ�.  @ref{Conditions}���ȡ�
+@item SRFI-36, I/O コンディション
+部分的にサポートされています.  @ref{Conditions}参照。
 @c COMMON
 
 @c EN
@@ -362,17 +363,17 @@ Partly supported.  @xref{Conditions}.
 Supported by the module @code{srfi-37}.
 @xref{A program argument processor}.
 @c JP
-@item SRFI-37, args-fold: �ץ�������������
-�⥸�塼��@code{srfi-37}�ǥ��ݡ��Ȥ���ޤ���
-@ref{A program argument processor}���ȡ�
+@item SRFI-37, args-fold: プログラム引数処理
+モジュール@code{srfi-37}でサポートされます。
+@ref{A program argument processor}参照。
 @c COMMON
 
 @c EN
 @item SRFI-38, External Representation for Data With Shared Structure
 Built-in.  See @ref{Reading data} and @ref{Output}.
 @c JP
-@item SRFI-38, ��ͭ�����ǡ����γ���ɽ��
-�Ȥ߹��ߤǤ���@ref{Reading data}��@ref{Output}���ȡ�
+@item SRFI-38, 共有されるデータの外部表現
+組み込みです。@ref{Reading data}と@ref{Output}参照。
 @c COMMON
 
 @c EN
@@ -380,9 +381,9 @@ Built-in.  See @ref{Reading data} and @ref{Output}.
 Supported by the module @code{gauche.parameter}.
 @xref{Parameters}.
 @c JP
-@item SRFI-39, �ѥ�᡼�����֥�������
-�⥸�塼��@code{gauche.parameter}�ǥ��ݡ��Ȥ���ޤ���
-@ref{Parameters}���ȡ�
+@item SRFI-39, パラメータオブジェクト
+モジュール@code{gauche.parameter}でサポートされます。
+@ref{Parameters}参照。
 @c COMMON
 
 @c EN
@@ -390,8 +391,8 @@ Supported by the module @code{gauche.parameter}.
 Supported by the module @code{util.stream}.
 @xref{Stream library}.
 @c JP
-@item SRFI-40, ���ȥ꡼��饤�֥��
-�⥸�塼��@code{util.stream}�ǥ��ݡ��Ȥ���Ƥ��ޤ���
+@item SRFI-40, ストリームライブラリ
+モジュール@code{util.stream}でサポートされています。
 @xref{Stream library}.
 @c COMMON
 
@@ -400,9 +401,9 @@ Supported by the module @code{util.stream}.
 Supported by the module @code{srfi-42}.
 @xref{Eager comprehensions}.
 @c JP
-@item SRFI-42, ���ɾ��Ū����ɽ��
-�⥸�塼��@code{srfi-42}�ǥ��ݡ��Ȥ���ޤ���
-@ref{Eager comprehensions}���ȡ�
+@item SRFI-42, 先行評価的内包表記
+モジュール@code{srfi-42}でサポートされます。
+@ref{Eager comprehensions}参照。
 @c COMMON
 
 @c EN
@@ -410,9 +411,9 @@ Supported by the module @code{srfi-42}.
 Supported by the module @code{srfi-43}.
 @xref{Vector library}.
 @c JP
-@item SRFI-43, �٥����饤�֥��
-�⥸�塼��@code{srfi-43}�ǥ��ݡ��Ȥ���ޤ���
-@ref{Vector library}���ȡ�
+@item SRFI-43, ベクタライブラリ
+モジュール@code{srfi-43}でサポートされます。
+@ref{Vector library}参照。
 @c COMMON
 
 @c EN
@@ -420,8 +421,8 @@ Supported by the module @code{srfi-43}.
 Built-in.
 @xref{Delayed evaluation}.
 @c JP
-@item SRFI-45, ȿ��Ū Lazy ���르�ꥺ��Τ���δ��ܴؿ�
-�Ȥ߹��ߤǤ���
+@item SRFI-45, 反復的 Lazy アルゴリズムのための基本関数
+組み込みです。
 @xref{Delayed evaluation}.
 @c COMMON
 
@@ -430,40 +431,40 @@ Built-in.
 Supported as an autoloaded macro.
 @xref{Requiring extensions}.
 @c JP
-@item SRFI-55, require�γ�ĥ
-�����ȥ����ɥޥ����Ȥ��ƥ��ݡ��Ȥ���ޤ���
-@ref{Requiring extensions}���ȡ�
+@item SRFI-55, requireの拡張
+オートロードマクロとしてサポートされます。
+@ref{Requiring extensions}参照。
 @c COMMON
 
 @c EN
 @item SRFI-61, A more general @code{cond} clause
 Supported natively.  @xref{Conditionals}.
 @c JP
-@item SRFI-61, �������Ū��@code{cond}��
-�ȹ��ߤǤ���@ref{Conditionals}���ȡ�
+@item SRFI-61, より汎用的な@code{cond}節
+組込みです。@ref{Conditionals}参照。
 @c COMMON
 
 @c EN
 @item SRFI-62, S-expression comments
 Supported by the native reader.  @xref{Lexical structure}.
 @c JP
-@item SRFI-62, S��������
-�ͥ��ƥ��֤Υ꡼���ǥ��ݡ��Ȥ���Ƥ��ޤ���@ref{Lexical structure}���ȡ�
+@item SRFI-62, S式コメント
+ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
 @c COMMON
 
 @c EN
 @item SRFI-87, @code{=>} in case clauses
 Supported natively.  @xref{Conditionals}.
 @c JP
-@item SRFI-87, case��Ǥ�@code{=>}
-�ȹ��ߤǤ���@ref{Conditionals}���ȡ�
+@item SRFI-87, case節での@code{=>}
+組込みです。@ref{Conditionals}参照。
 @c COMMON
 
 @end table
 
 @node Multibyte Strings, Multibyte scripts, Standard conformance, Concepts
 @section Multibyte Strings
-@c NODE �ޥ���Х���ʸ����
+@c NODE マルチバイト文字列
 
 @c EN
 Traditionally, a string is considered as a simple array of bytes.
@@ -471,10 +472,10 @@ Programmers tend to imagine a string as a simple
 array of characters (though a character may occupy more than one byte).
 It's not the case in Gauche.
 @c JP
-���衢ʸ�����ñ�ʤ�Х��Ȥ�����Ȥ��ư����Ƥ��ޤ�����
-���Τ����ʸ����ʣ���Х��Ȥ�����褦�ˤʤäƤ�
-ʸ�����ñ���ʸ��������Ǥ���ȹͤ���줬���Ǥ�����
-Gauche�ˤ����Ƥϡ������ǤϤ���ޤ���
+従来、文字列は単なるバイトの配列として扱われてきました。
+そのため一文字が複数バイトを占めるようになっても
+文字列は単純な文字の配列であると考えられがちですが、
+Gaucheにおいては、そうではありません。
 @c COMMON
 
 @c EN
@@ -484,11 +485,11 @@ in a string.   Gauche retains semantic compatibility of
 Scheme string, so such details can be hidden, but it'll helpful
 if you know a few points.
 @c JP
-Gauche������Ū��@emph{�ޥ���Х���ʸ����}�򥵥ݡ��Ȥ��ޤ���
-���ʤ����ʸ�������ʸ��������Х��ȿ��ϰ��ꤷ�Ƥ��ޤ���
-Scheme��ʸ����ץ�ߥƥ��֤Υ��ޥ�ƥ��������ݤ���Ƥ���Τǡ�
-�ܺ٤򵤤ˤ��ʤ��Ǥ�ץ������Ͻ񤱤ޤ�����
-���ˤ����뤤���Ĥ��������ΤäƤ������ۤ����ɤ��Ǥ��礦��
+Gaucheは内部的に@emph{マルチバイト文字列}をサポートします。
+すなわち、文字列中の文字が占めるバイト数は一定していません。
+Schemeの文字列プリミティブのセマンティクスは保たれているので、
+詳細を気にしないでもプログラムは書けますが、
+下にあげるいくつかの点を知っておいたほうが良いでしょう。
 @c COMMON
 
 @c EN
@@ -502,11 +503,11 @@ by @code{copy-string}, the underlying storage is shared
 is not @code{eq?} to the original string).
 The actual string is copied only if you destructively modify it.
 @c JP
-ʸ���󥪥֥������ȤϷ�������ʸ�������ΤؤΥݥ��󥿤��ݻ����Ƥ��ޤ���
-ʸ�������Τϡ�copy-on-write�������Ǵ�������ޤ������ʤ����@code{substring}
-������ɽ����Ȥä���ʬʸ������ڤ�Ф����ꡢ���뤤��ñ��ʸ����򥳥ԡ�������硢
-ʸ���󥪥֥������Ȥ��Τ�Τ��̤ˤĤ����ޤ�����ʸ�������Τ϶�ͭ����ޤ���
-ʸ�����˲�Ū���ѹ��������ˤΤߡ�ʸ�������Τ����ԡ�����ޤ���
+文字列オブジェクトは型タグと文字列本体へのポインタを保持しています。
+文字列本体は「copy-on-write」方式で管理されます。すなわち、@code{substring}
+や正規表現を使って部分文字列を切り出したり、あるいは単に文字列をコピーした場合、
+文字列オブジェクトそのものは別につくられますが、文字列本体は共有されます。
+文字列が破壊的に変更される場合にのみ、文字列本体がコピーされます。
 @c COMMON
 
 @c EN
@@ -517,12 +518,12 @@ becomes @emph{extremely} inefficient in Gauche.  Don't do it.
 Sequential access of string is much more efficient
 using @emph{string ports} (@xref{String ports}).
 @c JP
-�������äơ�@code{make-string}�Ǥ����礭����ʸ����򤢤餫���ᥢ��������
-���Ƥ�����@code{string-set!}�ǽ�����ƹԤ��褦�ʥ��르�ꥺ���
-Gauche�Ǥ����˸�Ψ�������ʤ�ޤ������Τ褦�ʥ��르�ꥺ��ϻȤ�ʤ������ɤ��Ǥ��礦��
-(���Τ褦�ʥ��르�ꥺ��ϥޥ���Х���ʸ����Ȥ��������ɤ�����ޤ���)��
-ʸ����������ƹԤ�����@emph{string ports}��Ȥ��Τ�
-��Ψ���ɤ���ˡ�Ǥ� (@ref{String ports}����)��
+したがって、@code{make-string}である大きさの文字列をあらかじめアロケート
+しておき、@code{string-set!}で順に埋めて行くようなアルゴリズムは
+Gaucheでは非常に効率が悪くなります。そのようなアルゴリズムは使わない方が良いでしょう。
+(そのようなアルゴリズムはマルチバイト文字列とも相性が良くありません)。
+文字列を順に埋めて行く場合は@emph{string ports}を使うのが
+効率の良い方法です (@ref{String ports}参照)。
 @c COMMON
 
 @c EN
@@ -531,9 +532,9 @@ and regular expression matcher (@xref{Regular expression})
 can return a matched string directly, without
 using index access at all.
 @c JP
-@code{string-scan} (@ref{String utilities}����) ������ɽ��
-(@ref{Regular expression}����) �ʤ�ʸ����򸡺�����ץ�ߥƥ��֤ϡ�
-����ǥå�����𤵤��˰��פ���ʸ�����ľ���֤����Ȥ��Ǥ��ޤ���
+@code{string-scan} (@ref{String utilities}参照) や正規表現
+(@ref{Regular expression}参照) など文字列を検索するプリミティブは、
+インデックスを介さずに一致した文字列を直接返すことができます。
 @c COMMON
 
 @c EN
@@ -542,10 +543,10 @@ Gauche.   At runtime, a procedure @code{gauche-character-encoding}
 can be used to query the internal encoding.  Currently, the following
 internal encodings are supported.
 @c JP
-Gauche�Υ���ѥ�����ˡ�ʸ����@emph{�������󥳡��ǥ���}�����򤹤뤳�Ȥ��Ǥ��ޤ���
-�¹Ի��˼�³��@code{gauche-character-encoding}�ˤ�äƤɤ��������󥳡��ǥ���
-�ǥ���ѥ��뤵�줿�����Τ뤳�Ȥ�����ޤ���
-���ΤȤ������ʲ��Υ��󥳡��ǥ��󥰤����ݡ��Ȥ���Ƥ��ޤ���
+Gaucheのコンパイル時に、文字の@emph{内部エンコーディング}を選択することができます。
+実行時に手続き@code{gauche-character-encoding}によってどの内部エンコーディング
+でコンパイルされたかを知ることが出来ます。
+今のところ、以下のエンコーディングがサポートされています。
 @c COMMON
 
 @table @code
@@ -554,8 +555,8 @@ Gauche�Υ���ѥ�����ˡ�ʸ����@emph{�������󥳡��ǥ���}�����򤹤뤳�Ȥ��Ǥ��ޤ
 EUC-JP encoding of ASCII, JIS X 0201 kana, JIS X 0212 and JIS X 0213:2000
 Japanese character set.
 @c JP
-ASCII��JIS X 0201���ʡ�JIS X 0212�ڤ�JIS X 0213:2000ʸ�������EUC-JP
-���󥳡��ǥ���
+ASCII、JIS X 0201カナ、JIS X 0212及びJIS X 0213:2000文字集合のEUC-JP
+エンコーディング
 @c COMMON
 @item sjis
 @c EN
@@ -563,15 +564,15 @@ Shift-JIS encoding of JIS X 0201 kana and JIS X 0213:2000
 Japanese character set.  For source-code compatibility, the character
 code between 0 and 0x7f is mapped to ASCII.
 @c JP
-JIS X 0201���ʵڤ�JIS X 0213:2000ʸ�������Shift-JIS���󥳡��ǥ��󥰡�
-�����������ɤθߴ����Τ��ᡢʸ��������0����0x7f���ϰϤ�JIS X 0201 roman
-�ǤϤʤ�ASCII�˥ޥåפ���ޤ���
+JIS X 0201カナ及びJIS X 0213:2000文字集合のShift-JISエンコーディング。
+ソースコードの互換性のため、文字コード0から0x7fの範囲はJIS X 0201 roman
+ではなくASCIIにマップされます。
 @c COMMON
 @item utf-8
 @c EN
 UTF-8 encoding of Unicode.
 @c JP
-Unicode��UTF-8���󥳡��ǥ��󥰡�
+UnicodeのUTF-8エンコーディング。
 @c COMMON
 @item none
 @c EN
@@ -579,8 +580,8 @@ Unicode��UTF-8���󥳡��ǥ��󥰡�
 matches ASCII.  It's up to the application to interpret the string
 with certain character encodings.
 @c JP
-8�ӥåȸ���Ĺ��ʸ�����󥳡��ǥ��󥰡�ʸ��������0����0x7f���ϰϤ�ASCII��
-�ߤʤ��ޤ���ʸ�����ɤΥ��󥳡��ǥ��󥰤Ȥ��Ʋ�᤹�뤫�ϥ��ץꥱ���������Ǥ���
+8ビット固定長の文字エンコーディング。文字コード0から0x7fの範囲はASCIIと
+みなします。文字列をどのエンコーディングとして解釈するかはアプリケーション次第です。
 @c COMMON
 @end table
 
@@ -588,30 +589,30 @@ with certain character encodings.
 Conversions from other encoding scheme is provided 
 as a special port. @xref{Character code conversion}, for details.
 @c JP
-¾��ʸ�����󥳡��ǥ��󥰤�����Ѵ������̤ʥݡ��Ȥ�ȤäƹԤ��ޤ���
-@ref{Character code conversion} �򻲾Ȥ��Ʋ�������
+他の文字エンコーディングからの変換は特別なポートを使って行われます。
+@ref{Character code conversion} を参照して下さい。
 @c COMMON
 
 @c EN
 The way to specify the encoding of source programs will be
 explained in the next section.
 @c JP
-�������ץ������Υ��󥳡��ǥ��󥰤���ꤹ����ˡ�ˤĤ��Ƥ�
-���ξϤ��������ޤ���
+ソースプログラムのエンコーディングを指定する方法については
+次の章で説明します。
 @c COMMON
 
 @node Multibyte scripts, Case-sensitivity, Multibyte Strings, Concepts
 @section Multibyte scripts
-@c NODE �ޥ���Х��ȥ�����ץ�
+@c NODE マルチバイトスクリプト
 
 @c EN
 You can use characters other than @code{us-ascii} not only in
 literal strings and characters, but in in commens, symbol names,
 literal regular expressions, and so on.
 @c JP
-��ƥ��ʸ�����ʸ���ʳ��ˤ⡢�����ȡ�����ܥ�̾��
-��ƥ������ɽ���ʤ��͡��ʲս�ǡ�@code{us-ascii}�ʳ���ʸ����
-�Ȥ����Ȥ��Ǥ��ޤ���
+リテラル文字列や文字以外にも、コメント、シンボル名、
+リテラル正規表現など様々な箇所で、@code{us-ascii}以外の文字を
+使うことができます。
 @c COMMON
 
 @c EN
@@ -621,11 +622,11 @@ as symbol constituent characters.  Unicode defines more than dozen
 characters in future.  So it's better to avoid those characters
 (except in the strings, regexps and characters) for the time being.
 @c JP
-���ޤΤȤ�����Gauche��@code{us-ascii}�ʳ���ʸ�������ơ�����ܥ��
-��������ʸ���Ȥ��ư����ޤ���â����Unicode�Ͻ����ĤΡֶ����ʸ�������
-���Ƥ��ꡢ����Ϥ�����ʸ�����ץ�����������Ȥ��ư�����褦��
-�ʤ�Ǥ��礦�����äƸ��ߤΤȤ����Ϥ�����ʸ���λ��Ѥ�
-(ʸ��������ɽ����ʸ���ʳ��βս�Ǥ�)�򤱤Ƥ����Τ��ɤ��Ǥ��礦��
+いまのところ、Gaucheは@code{us-ascii}以外の文字を全て、シンボルを
+構成する文字として扱います。但し、Unicodeは十数個の「空白」文字を定義
+しており、将来はそれらの文字がプログラム上も空白として扱われるように
+なるでしょう。従って現在のところはそれらの文字の使用は
+(文字列、正規表現、文字以外の箇所では)避けておくのが良いでしょう。
 @c COMMON
 
 @c EN
@@ -635,10 +636,10 @@ scripts to use your own environment, but it becomes a problem if
 somebody else tries to use your script and finds out you're using
 different character encoding than his/hers.
 @c JP
-�ǥե���ȤǤϡ�Gauche��Scheme�ץ�������Gauche������ʸ�����󥳡��ǥ��󥰤�
-�񤫤�Ƥ����ΤȤ��ư����ޤ�������ϡ���ʬ�ǽ񤤤�������ץȤ�ʬ��
-�Ķ������餻������ʤ齽ʬ�Ǥ������̤�ʸ�����󥳡��ǥ��󥰤�Ȥ��褦��
-����ѥ��뤵�줿�Ķ��ǥ�����ץȤ����餻������������Ȥʤ�ޤ���
+デフォルトでは、GaucheはSchemeプログラムをGaucheの内部文字エンコーディングで
+書かれているものとして扱います。これは、自分で書いたスクリプトを自分の
+環境で走らせるだけなら十分ですが、別の文字エンコーディングを使うように
+コンパイルされた環境でスクリプトを走らせたい場合に問題となります。
 @c COMMON
 
 @c EN
@@ -647,10 +648,10 @@ the first two lines of the program source, it assumes the rest of
 the source code is written in @code{<encoding-name>}, and does
 the appropriate character encoding conversion to read the source code:
 @c JP
-�����ǡ�Gauche�ϡ����Τ褦�ʥ����Ȥ��ץ�����ॽ���������ɤ�
-2���ܤޤǤ˸��줿��硢�����������ɤλĤ����ʬ��@code{<encoding-name>}��
-���ꤵ��륨�󥳡��ǥ��󥰤ǽ񤫤�Ƥ����ΤȤ��ơ�ɬ�פʤ��
-Ŭ�ڤʥ��󥳡��ǥ����Ѵ���Ԥ��ޤ���
+そこで、Gaucheは、次のようなコメントがプログラムソースコードの
+2行目までに現れた場合、ソースコードの残りの部分が@code{<encoding-name>}で
+指定されるエンコーディングで書かれているものとして、必要ならば
+適切なエンコーディング変換を行います。
 @c COMMON
 @example
 ;; coding: <encoding-name>
@@ -664,12 +665,12 @@ If there are multiple matches, only the first one is effective.
 The first two lines must not contain characters other than us-ascii
 in order for this mechanism to work.
 @c JP
-������Τˤϡ�1���ܤޤ���2���ܤΥ����Ȥǡ�
-����ɽ��@code{#/coding[:=]\s*([\w.-]+)/}�˥ޥå������Τ����ä����ˡ�
-�ǽ����ʬ�ޥå������󥳡��ǥ���̾�Ȥ���ǧ������ޤ���
-ʣ���Υޥå������ä����Ϻǽ�Τ�Τ�ͭ���ˤʤ�ޤ���
-���Υᥫ�˥�������Ѥ��뤿��ˤϡ��ǽ��2�԰����us-ascii�ʳ���ʸ����
-�ޤ�ʤ��褦�ˤ��Ʋ�������
+より正確には、1行目または2行目のコメントで、
+正規表現@code{#/coding[:=]\s*([\w.-]+)/}にマッチするものがあった場合に、
+最初の部分マッチがエンコーディング名として認識されます。
+複数のマッチがあった場合は最初のものが有効になります。
+このメカニズムを利用するためには、最初の2行以内にus-ascii以外の文字を
+含めないようにして下さい。
 @c COMMON
 
 @c EN
@@ -678,9 +679,9 @@ in EUC-JP encoding.   Note that the string "@code{-*-}" around the coding
 would be recognized by Emacs to select the buffer's encoding
 appropriately.
 @c JP
-�㤨�м�����Ǥϡ�Gauche�ϥ�����ץȤ�euc-jp�ǽ񤫤�Ƥ����Τ�
-ǧ�����ޤ���coding����μ��Ϥ�"@code{-*-}"�ϡ�Emacs��
-�Хåե��Υ��󥳡��ǥ��󥰤�Ŭ�ڤ����ꤹ��Τ˻Ȥ��ޤ���
+例えば次の例では、Gaucheはスクリプトがeuc-jpで書かれているものと
+認識します。coding指定の周囲の"@code{-*-}"は、Emacsが
+バッファのエンコーディングを適切に設定するのに使われます。
 @c COMMON
 
 @example
@@ -696,15 +697,15 @@ a special type of port.  See @ref{Coding-aware ports} for the
 details.  See also @ref{Loading Scheme file} for how to disable
 this feature.
 @c JP
-�����Ǥϡ������ü�ʥ����Ȥν��������̤ʥݡ��Ȥˤ�ä�
-�Ԥ��Ƥ��ޤ����ܺ٤�@ref{Coding-aware ports}�򻲾Ȥ��Ʋ�������
-�ޤ������ν�����Ԥ�ʤ��褦�ˤ�����ˡ�ˤĤ��Ƥ�
-@ref{Loading Scheme file}�򻲾Ȥ��Ʋ�������
+内部では、この特殊なコメントの処理は特別なポートによって
+行われています。詳細は@ref{Coding-aware ports}を参照して下さい。
+また、この処理を行わないようにする方法については
+@ref{Loading Scheme file}を参照して下さい。
 @c COMMON
 
 @node Case-sensitivity, Integrated Object System, Multibyte scripts, Concepts
 @section Case-sensitivity
-@c NODE ��ʸ����ʸ���ζ���
+@c NODE 大文字小文字の区別
 
 @c EN
 Historically, most Lisp-family languages are case-insensitive
@@ -712,11 +713,11 @@ for symbols.  Scheme is no exception and R5RS defines symbols are
 read in case-insensitive way.  (Note that symbols are case-sensitive
 internally even in R5RS Scheme; case-insensitivity is about readers.)
 @c JP
-Lisp�Ϥθ�������Ū�˥���ܥ����ʸ����ʸ������̤��Ƥ��ޤ���Ǥ�����
-Scheme�⤽��ή�����Ǥ��ꡢR5RS�Ǥ⥷��ܥ���ɤ߹��ޤ�������ʸ����ʸ����
-���̤򤷤ʤ����������Ƥ��ޤ���(â����R5RS���ϰ���Ǥ�����������Ǥ�
-��ʸ����ʸ������̤��뤳�ȤˤʤäƤޤ���
-����������Ȥ��Ƥ���Τ��ɤ߹��߻���ư��Ǥ���)
+Lisp系の言語は歴史的にシンボルの大文字小文字を区別していませんでした。
+Schemeもその流れを汲んでおり、R5RSでもシンボルは読み込まれる時に大文字小文字の
+区別をしないと定義されています。(但し、R5RSの範囲内でも処理系内部では
+大文字小文字を区別することになってます。
+ここで問題としているのは読み込み時の動作です。)
 @c COMMON
 
 @c EN
@@ -725,9 +726,9 @@ When you have to interact with other languages that distinguish uppercase
 and lowercase characters, it is desirable that Scheme distinguishes them
 as well.
 @c JP
-���������ߤǤϡ��ץ�����ߥ󥰤���Ĥθ���Ǵ��뤹�뤳�Ȥ���¿�ˤ���ޤ���
-¾�θ���ȥ��󥿥ե����������硢Scheme¦�Ǥ���ʸ����ʸ������̤���褦��
-���Ƥ��������������Ǥ���
+しかし現在では、プログラミングが一つの言語で完結することは滅多にありません。
+他の言語とインタフェースを取る場合、Scheme側でも大文字小文字を区別するように
+しておいた方が便利です。
 @c COMMON
 
 @c EN
@@ -735,9 +736,9 @@ So Gauche has two modes in reading and writing symbols.
 @emph{By default, Gauche reads and writes symbols in case-sensitive manner}.
 This behavior doesn't conform R5RS.
 @c JP
-������Gauche�Ǥϡ�����ܥ���ɤ߹��ߤȽ񤭽Ф���2�ĤΥ⡼�ɤ��Ѱդ��ޤ�����
-@emph{�ǥե���ȤΥ⡼�ɤǤϡ�Gauche�Υ꡼���ȥ饤���ϥ���ܥ����ʸ����ʸ������̤��ޤ�}��
-���Τդ�ޤ��ϸ�̩�ˤ�R5RS�˽�򤷤ޤ���
+そこでGaucheでは、シンボルの読み込みと書き出しに2つのモードを用意しました。
+@emph{デフォルトのモードでは、Gaucheのリーダとライタはシンボルの大文字小文字を区別します}。
+このふるまいは厳密にはR5RSに準拠しません。
 @c COMMON
 
 @example
@@ -756,11 +757,11 @@ In this mode, the reader folds uppercase characters in symbols to lowercase
 ones.  If a symbol name contains uppercase characters, it is written
 out using |-escape (@xref{Symbols}).
 @c JP
-@code{gosh}���󥿥ץ꥿�ε�ư����@code{-fcase-fold}���ޥ�ɥ饤�������
-Ϳ����ȡ�Gauche����ʸ����ʸ������̤��ʤ��⡼�ɤ�ư��ޤ� (@ref{Invoking Gosh}����)��
-���Υ⡼�ɤǤϡ��꡼���ϥ���ܥ���ɤ߹��ߤκݤ���ʸ����ʸ�����Ѵ����ޤ���
-��ʸ����ޤ�Ǥ��륷��ܥ�˴ؤ��Ƥϡ�`|' ʸ���ǥ��������פ���ƽ񤭽Ф���ޤ�
-(@ref{Symbols}����)��
+@code{gosh}インタプリタの起動時に@code{-fcase-fold}コマンドライン引数を
+与えると、Gaucheは大文字小文字を区別しないモードで動作します (@ref{Invoking Gosh}参照)。
+このモードでは、リーダはシンボルの読み込みの際に大文字を小文字に変換します。
+大文字を含んでいるシンボルに関しては、`|' 文字でエスケープされて書き出されます
+(@ref{Symbols}参照)。
 @c COMMON
 
 @example
@@ -781,32 +782,32 @@ from which they are read, and are in effect until EOF
 or another instance of these tokens are read.
 See @ref{Lexical structure} for more details on @code{#!} syntax.
 @c JP
-�ޤ����꡼���ϥȡ�����@code{#!fold-case}���ɤ����ʸ����ʸ����
-���̤��ʤ��⡼�ɤ��ڤ��ؤ��ޤ����ȡ�����@code{#!no-fold-case}��
-���εդθ��̡����ʤ����ʸ����ʸ������̤���⡼�ɤؤ��ڤ��ؤ��ޤ���
-�����Υȡ�����ϡ����줬�ɤޤ줿�ݡ��Ȥ���ΰʹߤ��ɤ߹��ߤ˱ƶ���
-Ϳ���ޤ����ڤ��ؤ���ȡ����󤬺Ƥ��ɤޤ�뤫��EOF�˽в񤦤ޤǱƶ��Ϸ�³���ޤ���
-@code{#!}��ʸ�ˤĤ��Ƥ��ܤ�����@ref{Lexical structure}�򻲾Ȥ��Ƥ���������
+また、リーダはトークン@code{#!fold-case}を読むと大文字小文字を
+区別しないモードに切り替わります。トークン@code{#!no-fold-case}は
+その逆の効果、すなわち大文字小文字を区別するモードへと切り替えます。
+これらのトークンは、それが読まれたポートからの以降の読み込みに影響を
+与えます。切り替えるトークンが再び読まれるか、EOFに出会うまで影響は継続します。
+@code{#!}構文についてより詳しくは@ref{Lexical structure}を参照してください。
 @c COMMON
 
 @node Integrated Object System, Module system, Case-sensitivity, Concepts
 @section Integrated Object System
-@c NODE ���礵�줿���֥������ȥ����ƥ�
+@c NODE 統合されたオブジェクトシステム
 
 @c EN
 Gauche has a STklos-style object system, similar to CLOS.
 If you have used some kind of object oriented (OO) languages,
 you'll find it easy to understand the basic usage:
 @c JP
-Gauche��CLOS�����������STklos��������Υ��֥������ȥ����ƥ����äƤ��ޤ���
-���ʤ������餫�Υ��֥������Ȼظ�(OO)�����Ȥä����Ȥ�����С�
-����Ū�ʻȤ����ϴ�ñ�ˤ狼��Ǥ��礦��
+GaucheはCLOSに類似した、STklosスタイルのオブジェクトシステムを持っています。
+あなたが何らかのオブジェクト指向(OO)言語を使ったことがあれば、
+基本的な使い方は簡単にわかるでしょう。
 @c COMMON
 @example
 @c EN
 ;; @r{Defines a class point, that has x and y coordinate}
 @c JP
-;; @r{x, y��ɸ�����point���饹�����}
+;; @r{x, y座標を持つpointクラスを定義}
 @c COMMON
 (define-class point ()
   ((x :init-value 0)
@@ -830,11 +831,11 @@ when you look deeper into it.
 Here I describe several characteristics of Gauche object system quickly.
 @xref{Object system}, for details.
 @c JP
-����������ή�Υ��֥������Ȼظ�����˴���ƤϤ��뤬CLOS��������Υ��֥������ȥ����ƥ��
-����Ƥ��ʤ��ץ�����ޤϡ�Gauche�Υ��֥������ȥ����ƥ�ξܺ٤򸫤Ƥ椯��
-��̯�˴����뤳�Ȥ�����ΤǤϤʤ����Ȼפ��ޤ���
-�����Ǥ�Gauche�Υ��֥������ȥ����ƥ����ɽŪ���������ñ�˽Ҥ٤Ƥ����ޤ���
-�ܤ�����@ref{Object system}�ξϤ򻲾Ȥ��Ʋ�������
+しかし、主流のオブジェクト指向言語に慣れてはいるがCLOSスタイルのオブジェクトシステムに
+慣れていないプログラマは、Gaucheのオブジェクトシステムの詳細を見てゆくと
+奇妙に感じることがあるのではないかと思います。
+ここではGaucheのオブジェクトシステムの代表的な性質を簡単に述べておきます。
+詳しくは@ref{Object system}の章を参照して下さい。
 @c COMMON
 
 @table @emph
@@ -850,14 +851,14 @@ Note that, however, in CLOS-like paradigm it doesn't really matter
 whether everything is an object or not, because of the following
 characteristics:
 @c JP
-@item ���Ƥϥ��֥������ȤǤ��� (���줬���ˤʤ�ͤˤ�)
-���Τ褦�ʼ�ĥ��¾��OO����Ǥ⸫�����Ȥ�����Ǥ��礦��
-Gauche�⤽����ˤ�줺���¹Ի��˥��饹��������᥽�åɤ�ƤӽФ�����Ȥ��ä�
-��Ǥ�դΥ��֥������Ȥ��Ф��ƽ����Ȥ�����̣�ǡ����Ƥϥ��֥������ȤǤ���
-�ޤ��ȹ��ߥ��饹��ޤ᤿�ɤ�ʥ��饹���Ф��Ƥ⿷�����᥽�åɤ�������뤳�Ȥ��Ǥ��ޤ���
+@item 全てはオブジェクトである (それが気になる人には)
+このような主張は他のOO言語でも見たことがあるでしょう。
+Gaucheもその例にもれず、実行時にクラスを得たりメソッドを呼び出したりといった
+操作が任意のオブジェクトに対して出来るという意味で、全てはオブジェクトです。
+また組込みクラスを含めたどんなクラスに対しても新しいメソッドを定義することができます。
 
-��������CLOS�ϤΥѥ������Ǥϡ����Ƥ����֥������Ȥ��ɤ����Ȥ��������Ϥ��ޤ�
-����ǤϤ���ޤ��󡣤Ȥ����Τϼ��Τ褦�����������뤫��Ǥ���
+しかし、CLOS系のパラダイムでは、全てがオブジェクトかどうかという議論はあまり
+問題ではありません。というのは次のような性質があるからです。
 @c COMMON
 
 @c EN
@@ -871,14 +872,14 @@ For example, suppose you define a numeric vector class
 You can define a method @code{product} with all possible combinations
 of those type of arguments:
 @c JP
-@item �᥽�åɤ����Ƥΰ����ˤ�äƥǥ����ѥå������
-C++��Objective C��Python��Ruby�ʤɤ�OO����Ǥϡ��᥽�åɤ�����Υ��饹��
-��°���Ƥ��ޤ���Gauche�Ǥϥ᥽�åɤϥ��饹�˽�°���ޤ���
+@item メソッドは全ての引数によってディスパッチされる
+C++、Objective C、Python、RubyなどのOO言語では、メソッドは特定のクラスに
+所属しています。Gaucheではメソッドはクラスに従属しません。
 
-�㤨�С����ͤ��������Ǥ˻��ĥ٥��������饹@code{<num-vector>}��
-���󥯥饹@code{<num-matrix>}����������Ȥ��ޤ���
-�ץ�����ޤϡ��ʲ��Τ褦�ʤ�������ˤĤ��ƥ᥽�å�@code{product}��
-�̡���������뤳�Ȥ��Ǥ��ޤ���
+例えば、数値だけを要素に持つベクタークラス@code{<num-vector>}と
+行列クラス@code{<num-matrix>}を定義したとします。
+プログラマは、以下のようなあらゆる場合についてメソッド@code{product}を
+別々に定義することができます。
 @c COMMON
 
 @example
@@ -903,15 +904,15 @@ on the built-in class @code{<number>}.   That is why I said
 it doesn't make much sense to discuss whether everything is object
 or not in CLOS-style object system.
 @c JP
-�����γƥ᥽�åɤϡ�@code{<num-vector>}���饹��@code{<num-matrix>}
-���饹�˽�°����櫓�ǤϤ���ޤ���
+これらの各メソッドは、@code{<num-vector>}クラスや@code{<num-matrix>}
+クラスに所属するわけではありません。
 
-�᥽�åɤ����饹�˽�ͭ����Ƥ���櫓�ǤϤʤ��Τǡ�����¸�ߤ��륯�饹���Ф��Ƥ��ĤǤ�
-�ȼ��Υ᥽�åɤ�������뤳�Ȥ��Ǥ��ޤ�(â���������Ĥ����ȹ��ߥ��饹�δ���Υ᥽�åɤˤ�
-�ѹ��Ǥ��ʤ���Τ�����ޤ�)�������Ǵ��ˤ���ϼ�����Ƥ��ޤ����ץ�����ޤ�
-�᥽�å�@code{product}���ȹ��ߥ��饹@code{<number>}���Ф���������뤳�Ȥ�
-�Ǥ��ޤ������줬�����Ƥϥ��֥������ȤǤ��뤫�ɤ�����CLOS��������Υ��֥������ȥ����ƥ�
-�Ǥ�����ˤʤ�ʤ��ȸ��ä���ͳ�Ǥ���
+メソッドがクラスに所有されているわけではないので、既に存在するクラスに対していつでも
+独自のメソッドを定義することができます(但し、いくつかの組込みクラスの既定のメソッドには
+変更できないものがあります)。上の例で既にこれは示されています。プログラマは
+メソッド@code{product}を組込みクラス@code{<number>}に対して定義することが
+できます。これが、全てはオブジェクトであるかどうかはCLOSスタイルのオブジェクトシステム
+では問題にならないと言った理由です。
 @c COMMON
 
 @c EN
@@ -919,8 +920,8 @@ To step into the details a bit, the methods are belong to a
 @emph{generic function}, which is responsible for dispatching
 appropriate methods.
 @c JP
-�����ܤ������Ȥ�����С��᥽�åɤ�@emph{�����ͥ�å��ؿ�}��°���Ƥ��ꡢ
-�����ͥ�å��ؿ���Ŭ�ڤʥ᥽�åɤ���������̤����ޤ���
+少し詳しいことを言えば、メソッドは@emph{ジェネリック関数}に属しており、
+ジェネリック関数が適切なメソッドを選ぶ役割を果たします。
 @c COMMON
 
 @c EN
@@ -941,23 +942,23 @@ You can also read @code{lib/gauche/mop/object.scm}, which actually
 defines how a class is defined in Gauche.
 For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
 @c JP
-@item ���饹�ϥ��󥹥��󥹤Ǥ⤢��
-�ǥե���ȤǤϡ����饹��@code{<class>}�Ȥ������饹�Υ��󥹥��󥹤Ǥ��ꡢ
-�����ͥ�å��ؿ���@code{<generic>}�Ȥ������饹�Υ��󥹥��󥹤Ǥ���
-��������@code{<class>}��Ѿ��������饹��������뤳�Ȥˤ�ꡢ
-���֥������Ȥν�������ɤΤ褦�˹Ԥ��뤫�Ȥ��������åȤ��ɤΤ褦��
-������������뤫�Ȥ��ä�ư��򥫥����ޥ������뤳�Ȥ��Ǥ��ޤ���
-�ޤ���@code{<generic>}��Ѿ��������饹��������뤳�Ȥˤ�ꡢ
-Ŭ�Ѳ�ǽ�ʥ᥽�åɤ��ɤΤ褦�����򤵤�ơ��ɤΤ褦�ʽ����Ŭ�Ѥ���뤫
-�Ȥ��ä����Ȥ��������ޥ�����ǽ�Ǥ������Υᥫ�˥����@emph{�᥿���֥������ȥץ��ȥ���}
-�ȸƤФ�Ƥ��ޤ����᥿���֥������ȥץ��ȥ���ϡ�����򤽤θ��줽�Τ�Τǳ�ĥ������ˡ��
-������Ǥ��礦��
+@item クラスはインスタンスでもある
+デフォルトでは、クラスは@code{<class>}というクラスのインスタンスであり、
+ジェネリック関数は@code{<generic>}というクラスのインスタンスです。
+しかし、@code{<class>}を継承したクラスを定義することにより、
+オブジェクトの初期化がどのように行われるかとか、スロットがどのように
+アクセスされるかといった動作をカスタマイズすることができます。
+また、@code{<generic>}を継承したクラスを定義することにより、
+適用可能なメソッドがどのように選択されて、どのような順序で適用されるか
+といったことがカスタマイズ可能です。このメカニズムは@emph{メタオブジェクトプロトコル}
+と呼ばれています。メタオブジェクトプロトコルは、言語をその言語そのもので拡張する方法と
+言えるでしょう。
 
-��Ȥ��ơ��ǥ����ȥ�ӥ塼�����˴ޤޤ��@code{lib/gauche/mop/singleton.scm}��
-@code{lib/gauche/mop/validator}��������ޤ���@code{src/objlib.scm}��
-�ɤ�С����饹���Ȥ�Gauche�ǤɤΤ褦���������Ƥ��뤫���狼��ޤ���
-�᥿���֥������ȥץ��ȥ���ι��˾ܤ������ȤˤĤ��Ƥϡ�
-@ref{mop,[MOP],MOP}�����ͤˤʤ�ޤ���
+例として、ディストリビューションに含まれる@code{lib/gauche/mop/singleton.scm}や
+@code{lib/gauche/mop/validator}等があります。@code{src/objlib.scm}を
+読めば、クラス自身がGaucheでどのように定義されているかがわかります。
+メタオブジェクトプロトコルの更に詳しいことについては、
+@ref{mop,[MOP],MOP}が参考になります。
 @c COMMON
 
 @c EN
@@ -967,25 +968,25 @@ This isn't the case in CLOS-style object system.
 In Gauche, a namespace is managed by the module system
 which is orthogonal to the object system.
 @c JP
-@item ���饹��̾�����֤���ʤ�
-�ᥤ�󥹥ȥ꡼���OO����Ǥϥ��饹��̾�����֤��뤳�Ȥ��褯����ޤ���
-CLOS��������Υ��֥������ȥ����ƥ�Ϥ����ǤϤ���ޤ���
-Gauche�Ǥϡ�̾�����֤ϥ��֥������ȥ����ƥ�Ȥ�ľ�򤹤롢
-�⥸�塼�륷���ƥ�ˤ�äƴ�������ޤ���
+@item クラスは名前空間を作らない
+メインストリームのOO言語ではクラスが名前空間を作ることがよくあります。
+CLOSスタイルのオブジェクトシステムはそうではありません。
+Gaucheでは、名前空間はオブジェクトシステムとは直交する、
+モジュールシステムによって管理されます。
 @c COMMON
 
 @end table
 
 @node Module system, Compilation, Integrated Object System, Concepts
 @section Module system
-@c NODE �⥸�塼�륷���ƥ�
+@c NODE モジュールシステム
 
 @c EN
 Gauche has a simple module system that allows
 modularlized development of large software.
 @c JP
-Gauche���礭�ʥ��եȥ�������⥸�塼�벽���Ƴ�ȯ���뤿��Ρ�
-ñ��ʥ⥸�塼�륷���ƥ�������Ƥ��ޤ���
+Gaucheは大きなソフトウェアをモジュール化して開発するための、
+単純なモジュールシステムを備えています。
 @c COMMON
 
 @c EN
@@ -997,12 +998,12 @@ This form is a macro and interpreted at compile time.
 Usually it loads the files that defines @code{foo}'s features,
 and imports the external APIs into the calling module.
 @c JP
-���٥�Υ��󥿥ե�������Ȥ��Τϥ桼���ˤȤäƤ����˴�ñ�Ǥ���
-�⥸�塼��@code{foo}���󶡤��뵡ǽ��Ȥ�������С�
-�ץ���������@code{(use foo)}��ɽ����������Ǥ���
-���Υե�����ϥޥ����ǡ�����ѥ�����˲�ᤵ��ޤ���
-�̾�ϡ�@code{foo}�ε�ǽ����������ե����������ɤ���
-���γ���API��ƤӽФ����⥸�塼����˥���ݡ��Ȥ��ޤ���
+高レベルのインタフェースを使うのはユーザにとっては非常に簡単です。
+モジュール@code{foo}が提供する機能を使いたければ、
+プログラム中で@code{(use foo)}と表記するだけです。
+このフォームはマクロで、コンパイル時に解釈されます。
+通常は、@code{foo}の機能を実装したファイルをロードし、
+その外部APIを呼び出したモジュール中にインポートします。
 @c COMMON
 
 @c EN
@@ -1011,9 +1012,9 @@ lower mechanisms, namespace separation and file loading mechanism.
 Those two lower mechanisms can be used separately, although it is much more
 convenient when used together.
 @c JP
-@code{use}�ᥫ�˥���ϡ�̾�����֤�ʬΥ�ȥե���������ǥ��󥰤Ȥ���
-��Ĥ���Ω�����٥�Υᥫ�˥���ξ�˼�������Ƥ��ޤ���
-���������٥�ᥫ�˥���Ϥ��줾���̡��˻Ȥ����Ȥ�Ǥ��ޤ���
+@code{use}メカニズムは、名前空間の分離とファイルローディングという
+二つの独立な低レベルのメカニズムの上に実装されています。
+これらの低レベルメカニズムはそれぞれ別々に使うこともできます。
 @c COMMON
 
 @c EN
@@ -1027,16 +1028,16 @@ B, what C wants to see is just a high-level abstraction, and
 doesn't concern how B implements such functionality.  If C wants
 to access low-level stuff, C has to @var{use} A explicitly.
 @c JP
-@code{use}�ᥫ�˥����������Ū�Ǥ������ʤ����
-�⥸�塼��B���⥸�塼��A��'use'��������˥⥸�塼��C���⥸�塼��B��
-'use'���Ƥ����硢�⥸�塼��C����ϥ⥸�塼��A���«���ϸ����ޤ���
-B��A��@var{is-a}�ط��ǤϤʤ�����Ǥ���
-�㤨�Х⥸�塼��A�����٥�������������
-�⥸�塼��B�����ξ�˹��٥�����Ū�ʥ��󥿥ե�������������Ƥ���Ȥ��ޤ��礦��
-�⥸�塼��C���⥸�塼��B��'use'���Ƥ���Ȥ������Ȥϡ�
-C��B���󶡤�����ݥ쥤��˶�̣������Ȥ������ȤǤ���
-�⤷C����������٥���ؤˤ⥢�������������ʤ�С�C��A������Ū��'use'���ʤ����
-�ʤ�ޤ���
+@code{use}メカニズムは非遷移的です。すなわち、
+モジュールBがモジュールAを'use'し、さらにモジュールCがモジュールBを
+'use'している場合、モジュールCからはモジュールA内の束縛は見えません。
+BとAは@var{is-a}関係ではないためです。
+例えばモジュールAが低レベルの操作を実装し、
+モジュールBがその上に高レベルの抽象的なインタフェースを実装しているとしましょう。
+モジュールCがモジュールBを'use'しているということは、
+CはBの提供する抽象レイヤに興味があるということです。
+もしCがさらに低レベルの層にもアクセスしたいならば、CはAを明示的に'use'しなければ
+なりません。
 @c COMMON
 
 @c EN
@@ -1047,12 +1048,12 @@ B is-a A, and it'd be natural that the module that uses B can also
 see A's bindings.   In Gauche, it is called @emph{module inheritance}
 and realized by @code{extend} form.
 @c JP
-���������̤η��δط���ɬ�פʾ��⤢��ޤ����㤨�д�¸�Υ⥸�塼��A��
-����äȿ��������󥿥ե��������դ��ä����⥸�塼��B��A�γ�ĥ�Ȥ���
-�󶡤������Ȥ������Ǥ������λ���B��A��@var{is-a}�ط��Ǥ��ꡢB��'use'
-���Ƥ���⥸�塼�뤫��A���«���⸫����Τ������Ǥ���
-Gauche�Ǥϡ������⥸�塼��ηѾ��ȸƤӡ�
-@code{extend}�ե�����ˤ��¸����Ƥ��ޤ���
+しかし、別の形の関係が必要な場合もあります。例えば既存のモジュールAに
+ちょっと新しいインタフェースを付け加えたモジュールBをAの拡張として
+提供したいという場合です。この時、BとAは@var{is-a}関係であり、Bを'use'
+しているモジュールからA内の束縛も見えるのが自然です。
+Gaucheでは、これをモジュールの継承と呼び、
+@code{extend}フォームにより実現しています。
 @c COMMON
 
 @c EN
@@ -1068,20 +1069,20 @@ define and to use modules, along the built-in functions
 to introspect module internals.
 @end itemize
 @c JP
-�ʲ��Υ��������ǥ⥸�塼��ε�ǽ�ˤĤ��ƾܤ����������Ƥ��ޤ���
+以下のセクションでモジュールの機能について詳しく説明しています。
 @itemize @bullet
 @item
-@ref{Writing Gauche modules} �Ǥϥ⥸�塼��ν����ˤĤ���
-�������ޤ���
+@ref{Writing Gauche modules} ではモジュールの書き方について
+説明します。
 @item
-@ref{Modules} �Ǥϥ⥸�塼������������Ȥ�������ü�����ȥޥ�����
-����ӥ⥸�塼���������Ĵ�٤뤿����ȹ��߼�³���ˤĤ����������ޤ���
+@ref{Modules} ではモジュールを定義したり使うための特殊形式とマクロ、
+およびモジュールの内部を調べるための組込み手続きについて説明します。
 @end itemize
 @c COMMON
 
 @node Compilation,  , Module system, Concepts
 @section Compilation
-@c NODE ����ѥ���
+@c NODE コンパイル
 
 @c EN
 Gauche is a Scheme interpreter, in the sense that it reads
@@ -1089,9 +1090,9 @@ a Scheme form at a time and evaluates it.   Actually,
 Gauche compiles every toplevel form into an intermediate form
 before executing.
 @c JP
-Gauche�ϡ�Scheme�ե������ҤȤĤŤ��ɤ߹���Ǥ�ɾ������Ȥ�����̣�Ǥ�
-���󥿥ץ꥿�Ǥ��������������Ǥϡ�Gauche�ϤҤȤĤҤȤĤΥե��������ַ�����
-����ѥ��뤷�Ʋ��ۥޥ���Ǽ¹Ԥ��Ƥ��ޤ���
+Gaucheは、Schemeフォームをひとつづつ読み込んでは評価するという意味では
+インタプリタです。しかし内部では、Gaucheはひとつひとつのフォームを中間形式に
+コンパイルして仮想マシンで実行しています。
 @c COMMON
 
 @c EN
@@ -1100,16 +1101,16 @@ at the compilation time.  Some built-in procedures are
 expanded in-line as far as the compiler can see the global
 binding is not altered at the time the form is compiled.
 @c JP
-�Ȥ߹��ߤι�ʸ�ȥޥ����ϥ���ѥ������ǧ�������Ÿ������ޤ���
-�褯�Ȥ����Ȥ߹��ߴؿ��ϡ�����ѥ�����˥������Х��«�����֤�����äƤ��ʤ����ˡ�
-����饤��Ÿ������ޤ���
+組み込みの構文とマクロはコンパイル時に認識されて展開されます。
+よく使われる組み込み関数は、コンパイル時にグローバルな束縛が置き換わっていない場合に、
+インライン展開されます。
 @c COMMON
 
 @c EN
 This raises a few problems you should care.
 @c JP
-�ץ�����ޤ��̾����ѥ����ư��򵤤ˤ���ɬ�פϤۤȤ�ɤ���ޤ��󤬡�
-�����Ĥ����������դ���ɬ�פ�����ޤ���
+プログラマは通常、コンパイラの動作を気にする必要はほとんどありませんが、
+いくつかの点に注意する必要があります。
 @c COMMON
 
 @table @emph
@@ -1121,12 +1122,12 @@ after the toplevel form containing @code{load} is evaluated.  So, suppose
 @code{foo.scm} defines a macro @code{foo}, and you use the macro
 like this:
 @c JP
-@item load�ϼ¹Ի���ɾ�������
-@code{load}��Gauche�Ǥϰ��̤δؿ��ʤΤǡ��¹Ի���ɾ������ޤ���
-�����ɤ����ե�������ǥޥ�����������Ƥ����硢���Υޥ�����
-����@code{load}�θƤӽФ���ޤ�ȥåץ�٥�ե����बɾ�����줿���
-ͭ���ˤʤ�ޤ����㤨�С�@code{foo.scm}���ޥ���@code{foo}��������Ƥ���Ȥ��ơ�
-���Τ褦����ˡ��ͤ��ƤߤƤ���������
+@item loadは実行時に評価される
+@code{load}はGaucheでは一般の関数なので、実行時に評価されます。
+ロードされるファイル中でマクロを定義している場合、そのマクロは
+その@code{load}の呼び出しを含むトップレベルフォームが評価された後で
+有効になります。例えば、@code{foo.scm}がマクロ@code{foo}を定義しているとして、
+次のような用法を考えてみてください。
 @c COMMON
 @example
 ;; @r{in ``foo.scm''}
@@ -1148,20 +1149,20 @@ The latter example works, however, since the execution
 of the toplevel form @code{(load "foo")} is done before
 @code{(foo (1 2 3))} is compiled.
 @c JP
-@code{begin}��@code{load}��@code{foo}�θƤӽФ���Ϥ����硢
-����ѥ���Ϥޤ�@code{begin}���Τ򥳥�ѥ��뤷�ޤ������λ����ǥޥ���
-@code{foo}���������Ƥ��ޤ��󤫤顢�����ɾ�����˥��顼�ˤʤ�ޤ���
-��������ԤǤ�@code{load}��ɾ������Ƥ���@code{foo}������ѥ��뤵���Τǡ�
-����ϵ����ޤ���
+@code{begin}で@code{load}と@code{foo}の呼び出しを囲んだ場合、
+コンパイラはまず@code{begin}全体をコンパイルします。その時点でマクロ
+@code{foo}は定義されていませんから、これは評価時にエラーになります。
+一方、後者では@code{load}が評価されてから@code{foo}がコンパイルされるので、
+問題は起きません。
 @c COMMON
 
 @c EN
 To avoid this kind of subtleties, use @code{require} or @code{use}
 to load a program fragments.  Those are recognized by the compiler.
 @c JP
-���Τ褦�ʺ�����򤱤뤿��ˡ��̤Υץ������ե�������ɤ߹���ɬ�פ��������
-@code{require}��@code{use}��Ȥ����Ȥ򴫤�ޤ��������Ϲ�ʸ�Ǥ��ꡢ
-����ѥ����ǧ������ޤ���
+このような混乱を避けるために、別のプログラムファイルを読み込む必要がある時は
+@code{require}か@code{use}を使うことを勧めます。これらは構文であり、
+コンパイラに認識されます。
 @c COMMON
 
 @c EN
@@ -1172,11 +1173,11 @@ is in the conditional expression.   If you really need to load
 a file on certain condition, use @code{load} or do dispatch in macro
 (i.e. at compile time).
 @c JP
-@item require �ϥ���ѥ������ɾ�������
-�嵭��΢�֤��Ǥ�����@code{require}��@code{use}�ϥ���ѥ������
-��ᤵ��ޤ����������äơ�@code{if}�ʤɤξ��ʸ�Υܥǥ��ˤ����Υե������
-�֤��Ƥ����Ƥ⡢���ꤵ�줿�ե�����Ͼ��ˤ�����餺�ɤ߹��ޤ�Ƥ��ޤ��ޤ���
-�ɤ����Ƥ�⤷���ˤ�ä��ɤ߹��फ�ɤ������Ѥ��������ϡ�@code{load}��Ȥ�����
-���Ƚ�Ǽ��Τ�ޥ����ǹԤ��褦�ˤ��Ƥ���������
+@item require はコンパイル時に評価される
+上記の裏返しですが、@code{require}と@code{use}はコンパイル時に
+解釈されます。したがって、@code{if}などの条件文のボディにこれらのフォームを
+置いておいても、指定されたファイルは条件にかかわらず読み込まれてしまいます。
+どうしてももし条件によって読み込むかどうかを変えたい場合は、@code{load}を使うか、
+条件判断自体をマクロで行うようにしてください。
 @c COMMON
 @end table

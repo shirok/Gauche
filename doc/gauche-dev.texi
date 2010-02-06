@@ -1,4 +1,4 @@
-\input texinfo  @c -*-texinfo-*-
+\input texinfo  @c -*- mode: texinfo; coding: utf-8; -*-
 @comment %**start of header
 @c EN
 @setfilename gauche-deve.info
@@ -3385,7 +3385,7 @@ file
 @c ======================================================================
 @node Indices,  , Helper program reference, Top
 @appendix Indices
-@c NODE -Aº÷°ú$)B
+@c NODE -Aç´¢å¼•$)B
 
 @menu
 * Function and Macro Index::    

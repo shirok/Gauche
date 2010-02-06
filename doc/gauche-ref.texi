@@ -1,4 +1,4 @@
-\input texinfo  @c -*-texinfo-*-
+\input texinfo  @c -*- mode: texinfo; coding: utf-8; -*-
 @comment %**start of header
 @c EN
 @setfilename gauche-refe.info
@@ -9,12 +9,12 @@
 @end direntry
 @c JP
 @setfilename gauche-refj.info
-@settitle Gauche ¥æ¡¼¥¶¥ê¥Õ¥¡¥ì¥ó¥¹
+@settitle Gauche ãƒ¦ãƒ¼ã‚¶ãƒªãƒ•ã‚¡ãƒ¬ãƒ³ã‚¹
 @dircategory The Algorithmic Language Scheme
 @direntry
 * Gauche (ja): (gauche-refj.info).	An R5RS Scheme implementation.
 @end direntry
-@documentencoding euc-jp
+@documentencoding utf-8
 @c COMMON
 @comment %**end of header
 
@@ -35,7 +35,7 @@
 @subtitle version @VERSION@
 @author Shiro Kawai (shiro@@acm.org)
 @c JP
-@title Gauche ¥æ¡¼¥¶¥ê¥Õ¥¡¥ì¥ó¥¹
+@title Gauche ãƒ¦ãƒ¼ã‚¶ãƒªãƒ•ã‚¡ãƒ¬ãƒ³ã‚¹
 @subtitle version @VERSION@
 @author Shiro Kawai (shiro@@acm.org)
 @c COMMON
@@ -53,8 +53,8 @@ Copyright @copyright{} 2009 Shiro Kawai (shiro@@acm.org)
 This is a reference manual of Gauche, an R5RS Scheme implementation.
 This manual is for version @VERSION@.
 @c JP
-ËÜ½ñ¤Ï¡¢R5RS½àµò¤ÎScheme½èÍı·Ï¡¢Gauche¤Î¥ê¥Õ¥¡¥ì¥ó¥¹¥Ş¥Ë¥å¥¢¥ë¤Ç¤¹¡£
-Gauche¤Î¥Ğ¡¼¥¸¥ç¥ó@VERSION@¤ËÂĞ±ş¤·¤Ş¤¹¡£
+æœ¬æ›¸ã¯ã€R5RSæº–æ‹ ã®Schemeå‡¦ç†ç³»ã€Gaucheã®ãƒªãƒ•ã‚¡ãƒ¬ãƒ³ã‚¹ãƒãƒ‹ãƒ¥ã‚¢ãƒ«ã§ã™ã€‚
+Gaucheã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³@VERSION@ã«å¯¾å¿œã—ã¾ã™ã€‚
 @c COMMON
 @end ifnottex
 

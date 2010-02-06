@@ -1,6 +1,7 @@
+@c -*- mode: texinfo; coding: utf-8; -*-
 @node Programming in Gauche, Core syntax, Concepts, Top
 @chapter  Programming in Gauche
-@c NODE Gauche�ǤΥץ�����ߥ�
+@c NODE Gaucheでのプログラミング
 
 @menu
 * Invoking Gosh::               
@@ -15,16 +16,16 @@
 
 @node Invoking Gosh, Interactive development, Programming in Gauche, Programming in Gauche
 @section Invoking Gosh
-@c NODE Gauche��ư����
+@c NODE Gaucheを起動する
 
 @c EN
 Gauche can be used either as an independent Scheme interpreter
 or as an embedded Scheme library.   The interpreter
 which comes with Gauche distribution is a program named @code{gosh}.
 @c JP
-Gauche����Ω����Scheme���󥿥ץ꥿�Ȥ��Ƥ⡢�Ȥ߹��ߤ�Scheme�饤�֥��Ȥ��Ƥ�
-�Ȥ����Ȥ��Ǥ��ޤ���Gauche�Υǥ����ȥ�ӥ塼�����ˤϡ�@code{gosh}�Ȥ���
-���󥿥ץ꥿����°���Ƥ��ޤ���
+Gaucheは独立したSchemeインタプリタとしても、組み込みのSchemeライブラリとしても
+使うことができます。Gaucheのディストリビューションには、@code{gosh}という
+インタプリタが附属しています。
 @c COMMON
 
 @deftp {Program} gosh [options] [scheme-file arg @dots{}]
@@ -34,10 +35,10 @@ interactively, i.e. it reads a Scheme expression from the standard input,
 evaluates it, and prints the result, and repeat that until it reads EOF or
 is terminated.
 @c JP
-Gauche�Υ��󥿥ץ꥿�Ǥ���  @var{scheme-file}��Ϳ�����ʤ���С�
-@code{gosh}�ϥ��󥿥饯�ƥ��֤�ư��ޤ������ʤ����ɸ�����Ϥ���Scheme�����ɤ߹��ߡ�
-�����ɾ�����Ʒ�̤�ץ��Ȥ���Ȥ���ư���EOF���ɤफ����Ū�˽�λ��������ޤ�
-³���ޤ���
+Gaucheのインタプリタです。  @var{scheme-file}が与えられなければ、
+@code{gosh}はインタラクティブに動作します。すなわち、標準入力からScheme式を読み込み、
+それを評価して結果をプリントするという動作を、EOFを読むか明示的に終了させられるまで
+続けます。
 @c COMMON
 
 @c EN
@@ -47,10 +48,10 @@ out a prompt while waiting input form.  This is useful when you
 pipe Scheme program into @code{gosh}.  You can force this behavior
 or suppress this behavior by @code{-b} and @code{-i} options.
 @c JP
-�⤷@var{scheme-file}��Ϳ�����Ƥ��餺�����������Ϥ�ü���Ǥʤ���硢
-@code{gosh}��read-eval-print�롼�פ�����ޤ����������Ԥ��κݤ˥ץ���ץȤ�
-ɽ�����ޤ��󡣤����Scheme����ѥ��פ�@var{gosh}�˽�����������������Ǥ���
-@code{-b}�ޤ���@code{-i}���ץ����Ǥ���ư�����Ū��on�ޤ���off�Ǥ��ޤ���
+もし@var{scheme-file}が与えられておらず、しかし入力が端末でない場合、
+@code{gosh}はread-eval-printループに入りますが、入力待ちの際にプロンプトを
+表示しません。これはScheme式をパイプで@var{gosh}に処理させる場合に便利です。
+@code{-b}または@code{-i}オプションでこの動作を強制的にonまたはoffできます。
 @c COMMON
 
 @c EN
@@ -58,16 +59,16 @@ If @var{scheme-file} is specified, @code{gosh} runs it as a
 Scheme program and exit.
 @xref{Writing Scheme scripts}, for details.
 @c JP
-@var{scheme-file}��Ϳ����줿��硢@code{gosh}�Ϥ����Scheme�ץ������Ȥ���
-�����ɤ�����λ���ޤ�������ư��˴ؤ��Ƥ�@ref{Writing Scheme scripts}�򻲾Ȥ���
-��������
+@var{scheme-file}が与えられた場合、@code{gosh}はそれをSchemeプログラムとして
+ロードし、終了します。この動作に関しては@ref{Writing Scheme scripts}を参照して
+下さい。
 @c COMMON
 @end deftp
 
 @c EN
 @subheading Command-line options
 @c JP
-@subheading ���ޥ�ɥ饤�󥪥ץ����
+@subheading コマンドラインオプション
 @c COMMON
 
 @c EN
@@ -76,10 +77,10 @@ The first command line argument which doesn't begin with `@minus{}'
 is recognized as the script file.  If you want to specify a file
 that begins with a minus sign, use a dummy option `@code{--}'.
 @c JP
-@code{gosh}�ˤϰʲ��Τ褦�ʥ��ޥ�ɥ饤�󥪥ץ���󤬤���ޤ���
-`@minus{}' �ǻϤޤ�ʤ��ǽ�Υ��ޥ�ɥ饤�������������ץȥե������ǧ������ޤ���
-������ץȥե�����̾�� `@minus{}' �ǻϤޤäƤ����ǽ����������ϡ����ߡ����ץ����
-`@code{--}' �򥹥���ץȥե�����̾�������֤��Ʋ�������
+@code{gosh}には以下のようなコマンドラインオプションがあります。
+`@minus{}' で始まらない最初のコマンドライン引数がスクリプトファイルと認識されます。
+スクリプトファイル名が `@minus{}' で始まっている可能性がある場合は、ダミーオプション
+`@code{--}' をスクリプトファイル名の前に置いて下さい。
 @c COMMON
 
 @deftp {Command Option} -I path
@@ -87,7 +88,7 @@ that begins with a minus sign, use a dummy option `@code{--}'.
 Prepends @var{path} to the load path list.
 You can specify this option more than once to add multiple paths.
 @c JP
-@var{path}������ɥѥ��Υꥹ�Ȥκǽ�˲ä��ޤ������Υ��ץ�����ʣ������Ǥ��ޤ���
+@var{path}をロードパスのリストの最初に加えます。このオプションは複数指定できます。
 @c COMMON
 @end deftp
 
@@ -96,7 +97,7 @@ You can specify this option more than once to add multiple paths.
 Appends @var{path} to the tail of the load path list.
 You can specify this option more than once to add multiple paths.
 @c JP
-@var{path}������ɥѥ��Υꥹ�Ȥ������˲ä��ޤ������Υ��ץ�����ʣ������Ǥ��ޤ���
+@var{path}をロードパスのリストの末尾に加えます。このオプションは複数指定できます。
 @c COMMON
 @end deftp
 
@@ -104,7 +105,7 @@ You can specify this option more than once to add multiple paths.
 @c EN
 Makes @code{gosh} not to load the default initialization file.
 @c JP
-@code{gosh}����ư���˥����ƥ�ν�����ե����������ɤ��ʤ��褦�ˤ��ޤ���
+@code{gosh}が起動時にシステムの初期化ファイルをロードしないようにします。
 @c COMMON
 @end deftp
 
@@ -112,7 +113,7 @@ Makes @code{gosh} not to load the default initialization file.
 @c EN
 Prints the @code{gosh} version and exits.
 @c JP
-@code{gosh}�ΥС�������ɽ�����ƽ�λ���ޤ���
+@code{gosh}のバージョンを表示して終了します。
 @c COMMON
 @end deftp
 
@@ -123,10 +124,10 @@ the read-eval-print loop, the specified module is @var{use}d, i.e.
 it is loaded and imported (@xref{Defining and selecting modules}, for details of @code{use}).
 You can specify this option more than once to use multiple modules.
 @c JP
-��ư�塢���󥿥饯�ƥ��֤�read-eval-print�롼�פ����������⤷����@var{scheme-file}
-������ɤ�������@var{module}��``use''���ޤ����Ĥޤꤽ�Υ⥸�塼�뤬�����ɤ���
-����ݡ��Ȥ���ޤ���(@code{use}�ξܺ٤ˤĤ��Ƥ�@ref{Defining and selecting modules}�򻲾Ȥ��Ʋ�������)
-���Υ��ץ�����ʣ������Ǥ��ޤ���
+起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
+をロードする前に@var{module}を``use''します。つまりそのモジュールがロードされ
+インポートされます。(@code{use}の詳細については@ref{Defining and selecting modules}を参照して下さい。)
+このオプションは複数指定できます。
 @c COMMON
 @end deftp
 
@@ -137,9 +138,9 @@ the read-eval-print loop.   The file is loaded in the same way as
 @code{load} (@xref{Loading Scheme file}).
 You can specify this option more than once to load multiple files.
 @c JP
-��ư�塢���󥿥饯�ƥ��֤�read-eval-print�롼�פ����������⤷����@var{scheme-file}
-������ɤ�������@var{file}������ɤ��ޤ��������ɤξܺ٤ˤĤ��Ƥ�@ref{Loading Scheme file}
-�򻲾Ȥ��Ʋ����������Υ��ץ�����ʣ������Ǥ��ޤ���
+起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
+をロードする前に@var{file}をロードします。ロードの詳細については@ref{Loading Scheme file}
+を参照して下さい。このオプションは複数指定できます。
 @c COMMON
 @end deftp
 
@@ -151,10 +152,10 @@ the read-eval-print loop.   Evaluation is done in the
 @var{interaction-environment} (@xref{Eval and repl}).
 You can specify this option more than once to evaluate multiple expressions.
 @c JP
-��ư�塢���󥿥饯�ƥ��֤�read-eval-print�롼�פ����������⤷����@var{scheme-file}
-������ɤ�������@var{scheme-expression}��ɾ�����ޤ���ɾ����
-@var{interaction-environment}��ǹԤ��ޤ�(@ref{Eval and repl}����)��
-���Υ��ץ�����ʣ������Ǥ��ޤ���
+起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
+をロードする前に@var{scheme-expression}を評価します。評価は
+@var{interaction-environment}中で行われます(@ref{Eval and repl}参照)。
+このオプションは複数指定できます。
 @c COMMON
 @end deftp
 
@@ -163,9 +164,9 @@ You can specify this option more than once to evaluate multiple expressions.
 Same as -e, except the @var{scheme-expression} is read
 as if it is surrounded by parenthesis.  For example:
 @c JP
-���ץ����-e�Ȥۤ�Ʊ���Ǥ�����@var{scheme-expression}��
-���줬��̤ǰϤޤ�Ƥ��뤫�Τ褦���ɤޤ�ޤ���
-���Υ��ץ�����ʣ������Ǥ��ޤ����㡧
+オプション-eとほぼ同じですが、@var{scheme-expression}は
+それが括弧で囲まれているかのように読まれます。
+このオプションは複数指定できます。例：
 @c COMMON
 @example
 % gosh -umath.const -E"print (sin (* pi/180 15))" -Eexit
@@ -177,7 +178,7 @@ as if it is surrounded by parenthesis.  For example:
 @c EN
 Batch. Does not print prompts even if the input is a terminal.
 @c JP
-�Хå������Ϥ�ü���Ǥ��äƤ�ץ���ץȤ�Ф��ʤ��褦�ˤ��ޤ���
+バッチ。入力が端末であってもプロンプトを出さないようにします。
 @c COMMON
 @end deftp
 
@@ -185,7 +186,7 @@ Batch. Does not print prompts even if the input is a terminal.
 @c EN
 Interactive. Print prompts even if the input is not a terminal.
 @c JP
-���󥿥饯�ƥ��֡����Ϥ�ü����̵���Ƥ�ץ���ץȤ�Ф��褦�ˤ��ޤ���
+インタラクティブ。入力が端末で無くてもプロンプトを出すようにします。
 @c COMMON
 @end deftp
 
@@ -216,29 +217,29 @@ initialization file.  This is useful when you want to test the
 compiled @code{gosh} interpreter inside source tree, without installing it.
 @end table
 @c JP
-���Υ��ץ����ϥ���ѥ���ȥ�󥿥����ư��˱ƶ���Ϳ���ޤ���
-���ΤȤ��������Υ��ץ����Τߤ�@var{compiler-option}�Ȥ���ͭ���Ǥ���
+このオプションはコンパイラとランタイムの動作に影響を与えます。
+今のところ、次のオプションのみが@var{compiler-option}として有効です。
 @table @asis
 @item no-inline
-���ڤΥ���饤��Ÿ����Ԥ��ޤ��󡣤��Υ��ץ����ϰʲ��� no-inline-globals
-no-inline-locals ����� no-inline-constants ��Ʊ���˻��ꤷ���Τ������Ǥ���
+一切のインライン展開を行いません。このオプションは以下の no-inline-globals
+no-inline-locals および no-inline-constants を同時に指定したのと等価です。
 @item no-inline-globals
-���(global)�ؿ��Υ���饤��Ÿ����Ÿ����Ԥʤ��ޤ���
+大域(global)関数のインライン展開を展開を行ないません。
 @item no-inline-locals
-�ɽ�(local)�ؿ��Υ���饤��Ÿ����Ÿ����Ԥʤ��ޤ���
+局所(local)関数のインライン展開を展開を行ないません。
 @item no-inline-constants
-����Υ���饤��Ÿ����Ԥʤ��ޤ���
+定数のインライン展開を行ないません。
 @item no-source-info
-�ǥХå��Τ���Υ������ե����������ݻ����ޤ��󡣥���λ����̤Ͼ������ʤ�ޤ���
+デバッグのためのソースファイル情報を保持しません。メモリの使用量は小さくなります。
 @item load-verbose
-�ե����뤬�����ɤ������ˤ������𤷤ޤ���
+ファイルがロードされる時にそれを報告します。
 @item case-fold
-R5RS�˼�������̤ꡢ����ܥ����ʸ����ʸ������̤��ޤ���
-(�ǥե���ȤǤϤ����϶��̤���ޤ�)�� @ref{Case-sensitivity} �򻲾Ȥ��Ʋ�������
+R5RSに示される通り、シンボルの大文字小文字を区別しません。
+(デフォルトではこれらは区別されます)。 @ref{Case-sensitivity} を参照して下さい。
 @item test
-"@code{../src}" �� "@code{../lib}" �򡢽�����ե�������ɤ�����
-�����ɥѥ��˲ä��ޤ�������ϡ��������줿@code{gosh}�򥤥󥹥ȡ��뤻����
-�������ĥ꡼����Ǽ¹Ԥ��Ƥߤ�Τ������Ǥ���
+"@code{../src}" と "@code{../lib}" を、初期化ファイルを読む前に
+ロードパスに加えます。これは、作成された@code{gosh}をインストールせずに
+ソースツリーの中で実行してみるのに便利です。
 @end table
 @c COMMON
 @end deftp
@@ -247,8 +248,8 @@ R5RS�˼�������̤ꡢ����ܥ����ʸ����ʸ������̤��ޤ���
 @c EN
 Turn on the profiler.  The following @var{profiler-option} is recognized:
 @c JP
-�ץ��ե������ͭ���ˤ��ޤ����ʲ��Τ褦��@var{profiler-option}��
-���ΤȤ������ݡ��Ȥ���Ƥ��ޤ���
+プロファイラを有効にします。以下のような@var{profiler-option}が
+今のところサポートされています。
 @c COMMON
 
 @table @code
@@ -257,7 +258,7 @@ Turn on the profiler.  The following @var{profiler-option} is recognized:
 Records and reports time spent on function calls and number of times
 each function is called.
 @c JP
-�ؿ�����񤵤줿���֤ȡ��ƴؿ����ƤФ줿�����Ͽ������𤷤ޤ���
+関数中で費された時間と、各関数が呼ばれた回数を記録して報告します。
 @c COMMON
 @item load
 @c EN
@@ -265,16 +266,16 @@ Records and reports time spent on loading each modules.
 Useful to tune start-up time of the scripts.
 (Results are in elapsed time).
 @c JP
-�ƥ⥸�塼�������ɤ���Τˤ����ä����֤�Ͽ������𤷤ޤ���
-������ץȤε�ư���֤���塼�󤹤�Τ������Ǥ�
-(�·в���֤���𤵤�ޤ�)��
+各モジュールをロードするのにかかった時間を記録して報告します。
+スクリプトの起動時間をチューンするのに便利です
+(実経過時間が報告されます)。
 @c COMMON
 @end table
 
 @c EN
 See @ref{Using profiler} for the details of the profiler.
 @c JP
-�ܤ�����@ref{Using profiler}�򻲾Ȥ��Ʋ�������
+詳しくは@ref{Using profiler}を参照して下さい。
 @c COMMON
 @end deftp
 
@@ -286,9 +287,9 @@ and takes next command line argument as a script file.  It is useful
 in case if you have a script file that begins with a minus sign,
 although it is not generally recommended.
 @c JP
-���Υ��ץ����˽в񤦤ȡ�@code{gosh}�ϥ��ץ����β��Ϥ�ߤ�ơ����μ��ΰ�����
-̵����@var{scheme-file}�Ǥ���ȸ��路�ޤ���@var{scheme-file}���ޥ��ʥ������
-�ϤޤäƤ������ɬ�פǤ���
+このオプションに出会うと、@code{gosh}はオプションの解析を止めて、その次の引数を
+無条件に@var{scheme-file}であると見倣します。@var{scheme-file}がマイナス記号で
+始まっている場合に必要です。
 @c COMMON
 @end deftp
 
@@ -297,22 +298,22 @@ The options -I, -A, -l, -u, -e and -E are processes in the order
 of appearance.  For example, adding a load path by -I affects the
 -l and -u option after it but not before it.
 @c JP
-���ץ����-I, -A, -l, -u, -e �ڤ� -E �ϡ�����餬���ޥ�ɥ饤������Ȥ���
-�и�������˽�������ޤ����㤨�С�-I�ˤ���ɲä��������ɥѥ���
-����ʹߤ�-l��-u���ץ����˱ƶ���Ϳ���ޤ�������������Τ�Τˤϱƶ���
-Ϳ���ޤ���
+オプション-I, -A, -l, -u, -e 及び -E は、それらがコマンドライン引数として
+出現した順に処理されます。例えば、-Iにより追加されるロードパスは
+それ以降の-lや-uオプションに影響を与えますが、それ以前のものには影響を
+与えません。
 @c COMMON
 
 @c EN
 @subheading Environment variables
 @c JP
-@subheading �Ķ��ѿ�
+@subheading 環境変数
 @c COMMON
 
 @c EN
 The following environment variables are recognized:
 @c JP
-�ʲ��δĶ��ѿ���ǧ�����ޤ���
+以下の環境変数を認識します。
 @c COMMON
 
 @deftp {Environment variable} GAUCHE_LOAD_PATH
@@ -321,10 +322,10 @@ You can specify additional load paths by this environment
 variable, delimiting the paths by '@code{:}'.
 The paths are appended before the system default load paths.
 @c JP
-���δĶ��ѿ��ˤ�äơ��ɲä�������ɥѥ������Ǥ��ޤ���
-�ѥ��� '@code{:}' �Ƕ��ڤ�ޤ���
-�����ѿ��ˤ�äƻ��ꤵ�줿�ѥ��ϥ����ƥ�Υǥե���ȤΥ����ɥѥ�������
-Ϣ�뤵��ޤ���
+この環境変数によって、追加するロードパスを指定できます。
+パスは '@code{:}' で区切ります。
+この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
+連結されます。
 @c COMMON
 @end deftp
 
@@ -334,32 +335,32 @@ You can specify additional load paths for dynamically loaded
 objects by this environment variable, delimiting the paths by '@code{:}'.
 The paths are appended before the system default load paths.
 @c JP
-�����ѿ��ˤ�äơ�ưŪ�˥����ɤ��륪�֥��������Ѥ��ɲå����ɥѥ���
-����Ǥ��ޤ����ѥ��� '@code{:}' �Ƕ��ڤ�ޤ���
-�����ѿ��ˤ�äƻ��ꤵ�줿�ѥ��ϥ����ƥ�Υǥե���ȤΥ����ɥѥ�������
-Ϣ�뤵��ޤ���
+この変数によって、動的にロードするオブジェクト用の追加ロードパスを
+指定できます。パスは '@code{:}' で区切ります。
+この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
+連結されます。
 @c COMMON
 @end deftp
 
 @c ----------------------------------------------------------------------
 @node Interactive development, Writing Scheme scripts, Invoking Gosh, Programming in Gauche
 @section Interactive development
-@c NODE  ���󥿥饯�ƥ��֤ʳ�ȯ
+@c NODE  インタラクティブな開発
 
 @c EN
 When @code{gosh} is invoked without any script files,
 it goes into interactive read-eval-print loop.
 @c JP
-������ץȥե����뤬Ϳ�����ʤ��ä���硢
-@code{gosh}�ϥ��󥿥饯�ƥ��֤�read-eval-print�롼�פ�����ޤ���
+スクリプトファイルが与えられなかった場合、
+@code{gosh}はインタラクティブなread-eval-printループに入ります。
 @c COMMON
 
 @c EN
 To exit the interpreter, type EOF (usually Control-D in Unix terminals)
 or evaluate @code{(exit)}.
 @c JP
-���󥿥ץ꥿��λ����ˤϡ�EOFʸ��(Unixü���Ǥ��̾�Control-D)�򥿥��פ��뤫��
-@code{(exit)}��ɾ�����ޤ���
+インタプリタを終了するには、EOF文字(Unix端末では通常Control-D)をタイプするか、
+@code{(exit)}を評価します。
 @c COMMON
 
 @c EN
@@ -372,14 +373,14 @@ You may put settings there that would help interactive debugging.
 @file{.gaucherc} is no longer loaded when @code{gosh} is run
 in script mode.)
 @c JP
-���󥿥饯�ƥ��֥��å����Ǥϡ�@code{gosh}��
-@code{gauche.interactive}�⥸�塼�������ɤ��ޤ�
-(@ref{Interactive session}����)��
-���Υ⥸�塼��Ϥޤ����桼�����Υۡ���ǥ��쥯�ȥ��@file{.gaucherc}�Ȥ���
-�ե����뤬����Ф�������ɤ��ޤ���
-���󥿥饯�ƥ��֥ǥХå�������������򤽤��˽񤤤Ƥ������Ȥ��Ǥ��ޤ���
-(Gauche release 0.7.3���顢@file{.gaucherc}��gosh��������ץȥ⡼�ɤ�
-��ư���줿�����ɤޤ�ʤ��ʤ�ޤ�����)
+インタラクティブセッションでは、@code{gosh}は
+@code{gauche.interactive}モジュールをロードします
+(@ref{Interactive session}参照)。
+このモジュールはまた、ユーザーのホームディレクトリに@file{.gaucherc}という
+ファイルがあればをれをロードします。
+インタラクティブデバッグに便利な設定をそこに書いておくことができます。
+(Gauche release 0.7.3から、@file{.gaucherc}はgoshがスクリプトモードで
+起動された時は読まれなくなりました。)
 @c COMMON
 
 @c EN
@@ -391,10 +392,10 @@ Put the following line to your @file{.emacs} file:
 @end example
 And you can run @code{gosh} by @key{M-x run-scheme}.
 @c JP
-@code{gosh}��Emacs���������餻�뤳�Ȥ򤪴��ᤷ�ޤ���
-Emacs��Scheme���֥ץ����������뤿���˭�٤ʵ�ǽ����äƤ��ޤ���
-���ιԤ�@file{.emacs}�˲ä��Ƥ����ȡ�@key{M-x run-scheme} ��
-Emacs�ΥХåե����@code{gosh}������ޤ���
+@code{gosh}をEmacs内部で走らせることをお勧めします。
+EmacsはSchemeサブプロセスを操作するための豊富な機能を持っています。
+次の行を@file{.emacs}に加えておくと、@key{M-x run-scheme} で
+Emacsのバッファ内で@code{gosh}が走ります。
 @example
 (setq scheme-program-name "gosh -i")
 @end example
@@ -405,22 +406,22 @@ If you want to use multibyte characters in the interaction,
 make sure your terminal's settings is in sync with @code{gosh}'s
 internal character encodings.
 @c JP
-���ôĶ��ǥޥ���Х���ʸ����Ȥ����ϡ�ü����ʸ�����󥳡��ǥ��󥰤�@code{gosh}��
-�������󥳡��ǥ��󥰤ȹ�碌��褦�ˤ��Ʋ�������
+対話環境でマルチバイト文字を使う場合は、端末の文字エンコーディングを@code{gosh}の
+内部エンコーディングと合わせるようにして下さい。
 @c COMMON
 
 @c EN
 Currently @code{gosh} has no fancy features such as
 line-editing or command history.   They'll be added in future.
 @c JP
-���ΤȤ�����@code{gosh}�Ϲ��Խ��䥳�ޥ�ɥҥ��ȥ�ʤɤ������ʵ�ǽ��
-�����Ƥ��ޤ��󡣾���Ϥ��Τؤ�⽼�¤��Ƥ椯�Ǥ��礦��
+今のところ、@code{gosh}は行編集やコマンドヒストリなどの便利な機能を
+備えていません。将来はこのへんも充実してゆくでしょう。
 @c COMMON
 
 @c ----------------------------------------------------------------------
 @node Writing Scheme scripts, Debugging, Interactive development, Programming in Gauche
 @section Writing Scheme scripts
-@c NODE Scheme������ץȤ��
+@c NODE Schemeスクリプトを書く
 
 @c EN
 When a Scheme program file is given to @code{gosh}, it
@@ -431,11 +432,11 @@ sequence ``@code{#!}'', the entire line is ignored by @code{gosh}.
 This is useful to write a Scheme program that works as an executable
 script in unix-like systems.
 @c JP
-@code{gosh}�Υ��ޥ�ɥ饤���Scheme�ץ������Υե�����̾���Ϥ��줿��硢
-@code{gosh}�Ϥ���ʹߤΥ��ޥ�ɥ饤������Υꥹ�Ȥ򥰥����Х��ѿ�@code{*argv*}��«������
-Scheme�ץ�����������ɤ��ޤ����⤷@var{scheme-file}�κǽ�ιԤ�``@code{#!}''�ǻϤޤä�
-�����顢���ιԤ�̵�뤵��ޤ�������ˤ�ꡢUnix�ϤΥ����ƥ�Ǽ¹Բ�ǽ��Scheme������ץ�
-��񤯤��Ȥ�����ޤ���
+@code{gosh}のコマンドラインにSchemeプログラムのファイル名が渡された場合、
+@code{gosh}はそれ以降のコマンドライン引数のリストをグローバル変数@code{*argv*}に束縛し、
+Schemeプログラムをロードします。もし@var{scheme-file}の最初の行が``@code{#!}''で始まって
+いたら、その行は無視されます。これにより、Unix系のシステムで実行可能なSchemeスクリプト
+を書くことが出来ます。
 @c COMMON
 
 @c EN
@@ -455,18 +456,18 @@ The third form is useful when you want to pass extra arguments
 to @code{gosh}, for typically @code{#!}-magic of executable scripts
 has limitations for the number of arguments to pass the interpreter.
 @c JP
-ŵ��Ū��Gauche������ץȤκǽ�ιԤϼ��Τ褦�ʤ�ΤǤ���
+典型的なGaucheスクリプトの最初の行は次のようなものです。
 @example
 #!/usr/local/bin/gosh
-  @r{�ޤ���,}
+  @r{または,}
 #!/usr/bin/env gosh
-  @r{�ޤ���,}
+  @r{または,}
 #!/bin/sh
 :; exec gosh -- $0 "$@@"
 @end example
-���2�Ĥϡ֥�����ȥ��ݥ��ץƥ��˥å����Ѥ��ơ�@code{gosh}��PATH�ˤ���ǥ��쥯�ȥ��
-�ɤ����ˤ���е�ư�Ǥ���褦�ˤ��Ƥ��ޤ���3���ܤ���ˡ�ϡ�
-@code{gosh}�ˤ����Ĥ����ޥ�ɥ饤�󥪥ץ������Ϥ��������������Ǥ���
+後の2つは「シェルトランポリン」テクニックを用いて、@code{gosh}がPATHにあるディレクトリの
+どこかにあれば起動できるようにしています。3番目の方法は、
+@code{gosh}にいくつかコマンドラインオプションを渡したい時に便利です。
 @c COMMON
 
 @c EN
@@ -483,17 +484,17 @@ This behavior is compatible with the SRFI-22.
 If the @code{main} procedure is not defined, @code{gosh} exits
 after loading the script file.
 @c JP
-�ե����뤬����˥����ɤ��줿�顢@code{gosh}��
-user�⥸�塼��� `@code{main}' �Ȥ�����³�����������Ƥ��뤫�ɤ���Ĵ�١�
-�������Ƥ���Ф����ƤӤޤ���@code{main}�ˤϡ�������ץȤؤΰ����Υꥹ�Ȥ�
-ͣ��ΰ����Ȥ����Ϥ���ޤ����ꥹ�Ȥκǽ�����Ǥϥ�����ץȥե�����̾�Ǥ���
+ファイルが正常にロードされたら、@code{gosh}は
+userモジュールに `@code{main}' という手続きが定義されているかどうか調べ、
+定義されていればそれを呼びます。@code{main}には、スクリプトへの引数のリストが
+唯一の引数として渡されます。リストの最初の要素はスクリプトファイル名です。
 
-@code{main}���������ͤ��֤����顢@code{gosh}�Ϥ����ͤ�λ���ơ������Ȥ��ƽ�λ���ޤ���
-@code{main}�������ʳ����ͤ��֤�������@code{gosh}�Ͻ�λ���ơ�����70
-(@code{EX_SOFTWARE})�ǽ�λ���ޤ������Τդ�ޤ���SRFI-22�ȸߴ��Ǥ���
+@code{main}が整数の値を返したら、@code{gosh}はその値を終了ステータスとして終了します。
+@code{main}が整数以外の値を返した場合は@code{gosh}は終了ステータス70
+(@code{EX_SOFTWARE})で終了します。このふるまいはSRFI-22と互換です。
 
-@code{main}���������Ƥ��ʤ����@code{gosh}�ϥ����ɸ�ˤ��Τޤޥ��ơ�����0��
-��λ���ޤ���
+@code{main}が定義されていなければ@code{gosh}はロード後にそのままステータス0で
+終了します。
 @c COMMON
 
 @c EN
@@ -502,10 +503,10 @@ main body as toplevel expressions, like shell scripts or Perl scripts,
 it is much convenient to use this `@code{main}' convention, for
 you can load the script file interactively to debug.
 @c JP
-�����륹����ץȤ�Perl������ץȤ�Ʊ���褦�ˡ�������ץȤΥܥǥ���ľ��
-�¹Ԥ���뼰��񤯤��Ȥ�Ǥ��ޤ������ʤ�٤� `@code{main}' ��Ȥä���ˡ��
-�Ȥ����Ȥ����ᤷ�ޤ�����������ȡ�������ץȤ򥤥󥿥ץ꥿�˥��󥿥饯�ƥ��֤�
-�����ɤ��ƥǥХå����뤳�Ȥ�Ǥ��ޤ���
+シェルスクリプトやPerlスクリプトと同じように、スクリプトのボディに直接
+実行される式を書くこともできますが、なるべく `@code{main}' を使った方法を
+使うことをお薦めします。そうすると、スクリプトをインタプリタにインタラクティブに
+ロードしてデバッグすることもできます。
 @c COMMON
 
 
@@ -520,13 +521,13 @@ but other Scheme implementations use different ways.  It is better
 to define @code{main} procedure and uses its argument to receive
 command line arguments, for it is expected to be more portable.
 @c JP
-Scheme������ץȰʹߤΥ��ޥ�ɥ饤������Υꥹ�Ȥϡ�������ץȤΥ����ɤ�����
-�����ѿ���«������ޤ���@code{gosh}�����󥿥饯�ƥ��֥⡼�ɤǵ�ư���줿����
-�����ѿ���@code{()}�Ȥʤ�ޤ���
+Schemeスクリプト以降のコマンドライン引数のリストは、スクリプトのロードの前に
+この変数に束縛されます。@code{gosh}がインタラクティブモードで起動された場合は
+この変数は@code{()}となります。
 
-�����ѿ���STk�ȸߴ���������ޤ�����¾��Scheme�����ϰ�ä���ˡ��Ȥäƥ��ޥ�ɥ饤��
-���������ޤ����ݡ����֥�ʥ�����ץȤ�񤯤ˤϡ�@code{main}��³����Ȥ���ˡ��
-�����ᤷ�ޤ���
+この変数はSTkと互換性がありますが、他のScheme実装は違った方法を使ってコマンドライン
+引数を得ます。ポータブルなスクリプトを書くには、@code{main}手続きを使う方法を
+お薦めします。
 @c COMMON
 @end defvar
 
@@ -539,10 +540,10 @@ contains the pathname of @code{gosh} itself.
 STk uses the same variable to access the program/script name.
 Other Scheme implementations use different ways.
 @c JP
-�����ѿ��ϥ�����ץȥե�����̾��«������ޤ������󥿥饯�ƥ��֥⡼�ɤǤ�
-�����ѿ���@code{gosh}���Ȥ�̾������äƤ��ޤ���
+この変数はスクリプトファイル名に束縛されます。インタラクティブモードでは
+この変数は@code{gosh}自身の名前を持っています。
 
-�����ѿ���STk�ȸߴ���������ޤ�����¾�μ����ϰ�ä���ˡ��Ȥ��ޤ���
+この変数はSTkと互換性がありますが、他の実装は違った方法を使います。
 @c COMMON
 @end defvar
 
@@ -551,8 +552,8 @@ Now I show several simple examples below.
 First, this script works like @code{cat(1)}, without any command-line
 option processing and error handling.
 @c JP
-�����Ĥ���ñ����򼨤��ޤ����ǽ�����Unix��@code{cat(1)}���ޥ�ɤ��Ϥ����ΤǤ���
-���顼�����䥳�ޥ�ɥ饤�󥪥ץ����ν����ϹԤäƤ��ޤ���
+いくつか簡単な例を示します。最初の例はUnixの@code{cat(1)}コマンドを模するものです。
+エラー処理やコマンドラインオプションの処理は行っていません。
 @c COMMON
 
 @example
@@ -572,7 +573,7 @@ option processing and error handling.
 @c EN
 The following script is a simple grep command.
 @c JP
-���Υ�����ץȤϴ�ñ��grep���ޥ�ɤǤ���
+次のスクリプトは簡単なgrepコマンドです。
 @c COMMON
 
 @example
@@ -612,21 +613,21 @@ The following script is a simple grep command.
 See also @ref{Parsing command-line options}, for a convenient way to
 parse command-line options.
 @c JP
-�ޤ���@ref{Parsing command-line options}��Ȥ��ȼ�ڤ˥��ޥ�ɥ饤�󥪥ץ����
-��������뤳�Ȥ��Ǥ��ޤ���
+また、@ref{Parsing command-line options}を使うと手軽にコマンドラインオプション
+を処理することができます。
 @c COMMON
 
 @c ----------------------------------------------------------------------
 @node Debugging, Platform-dependent features, Writing Scheme scripts, Programming in Gauche
 @section Debugging
-@c NODE �ǥХå�
+@c NODE デバッグ
 
 @c EN
 Gauche doesn't have much support for debugging yet.
 The idea of good debugging interfaces are welcome.
 @c JP
-Gauche�ˤϤޤ��ǥХå��򥵥ݡ��Ȥ��뵡ǽ�����ޤ��������Ƥ��ޤ���
-�ǥХå��󥰤Υ��󥿥ե������˴ؤ����ɤ������ǥ���������Ф��󤻤���������
+Gaucheにはまだデバッグをサポートする機能があまり実装されていません。
+デバッギングのインタフェースに関して良いアイディアがあればお寄せください。
 @c COMMON
 
 @c EN
@@ -636,11 +637,11 @@ defined, which is read as @code{(debug-print @var{expr})}.
 The macro @code{debug-print} evaluates and returns the result(s),
 printing messages before and after evaluation of @var{expr}.
 @c JP
-���ΤȤ�������Ԥ�ɬ�פʻ��ϸ�ŵŪ�ʡ֥ץ��ȥ����֡�������ȤäƤ��ޤ���
-���Τ���Υ꡼�����ޥ��� @code{#?=@var{expr}} ���������Ƥ��ޤ���
-����� @code{(debug-print @var{expr})} �Τ褦���ɤޤ졢
-�ޥ��� @code{debug-print} ��@var{expr}��ɾ�����Ƥ����ͤ��֤��ޤ�����
-ɾ������ɾ����˥�å���������Ϥ��ޤ���
+今のところ、作者は必要な時は古典的な「プリントスタブ」方式を使っています。
+そのためのリーダーマクロ @code{#?=@var{expr}} が定義されています。
+これは @code{(debug-print @var{expr})} のように読まれ、
+マクロ @code{debug-print} は@var{expr}を評価してその値を返しますが、
+評価前と評価後にメッセージを出力します。
 @c COMMON
 
 @example
@@ -680,14 +681,14 @@ gosh> (fact 5)
 You can also use trace/untrace macros in Gauche, written by Shigenobu Kimura:
 @url{http://homepage.mac.com/skimu/ggc/}.
 @c JP
-�ޤ�����¼�ɿ�����Gauche�Ѥ�trace/untrace�ޥ�����񤤤Ƥ���ޤ�����
+また、木村栄伸さんがGauche用のtrace/untraceマクロを書いてくれました：
 @url{http://homepage.mac.com/skimu/ggc/}.
 @c COMMON
 
 @c ----------------------------------------------------------------------
 @node Platform-dependent features, Profiling and tuning, Debugging, Programming in Gauche
 @section Using platform-dependent features
-@c NODE �ץ�åȥե������¸�ε�ǽ
+@c NODE プラットフォーム依存の機能
 
 @c EN
 Gauche tries to provide low-level APIs close to what the underlying
@@ -696,11 +697,11 @@ POSIX does not require @code{symlink}, so some systems may lack
 @code{sys-symlink} (@xref{Directory manipulation}).  Quite a few
 unix-specific system functions are not available on Windows platform.
 @c JP
-Gauche�Ǥ�OS���󶡤���API�˶ᤤ���٥�API���󶡤���褦�ˤ��Ƥ��ޤ���
-�������������ƥऴ�Ȥ˰����ΰ㤦��Τ�����ޤ������Ȥ��С�POSIX�Ǥ�
-@code{symlink}��ɬ�ܤǤϤ���ޤ���Τǡ������ƥ�ˤ�äƤ�
-@code{sys-symlink} (@ref{Directory manipulation}����)������ޤ���
-UNIX�ϤΥ����ƥ�ؿ��Ͼ��ʤ��餺Windows�ǤϻȤ��ޤ���
+GaucheではOSが提供するAPIに近い低レベルAPIを提供するようにしています。
+しかし、システムごとに扱いの違うものがあります。たとえば、POSIXでは
+@code{symlink}は必須ではありませんので、システムによっては
+@code{sys-symlink} (@ref{Directory manipulation}参照)がありません。
+UNIX系のシステム関数は少なからずWindowsでは使えません。
 
 @c EN
 To allow writing a portable program across those platforms, Gauche
@@ -711,13 +712,13 @@ has @code{symlink}, a feature identifier @code{gauche.sys.symlink}
 is defined.   So you can write a code that can switch based on
 the availability of @code{sys-symlink} as follows:
 @c JP
-�ץ�åȥե�����֤ǥݡ����֥�ʥץ�������񤯤���ˡ�Gauche�Ǥ�
-���ˤ�@code{cond-expand} ��Ȥ��ޤ�(@ref{Feature conditional}����)��
-��ĥ���줿@emph{��ǽ���̻�(feature-identifier)}���󶡤���Ƥ��ꡢ����
-��Ȥä�����ε�ǽ�����Ѳ�ǽ���ɤ��������å��Ǥ��ޤ������Ȥ��С�
-@code{symlink}�����륷���ƥ�Ǥϵ�ǽ���̻�@code{gauche.sys.symlink}��
-�������ޤ����������äơ��ʲ��Τ褦��@code{sys-symlink}�����ѤǤ��뤫
-�ɤ����ˤ�äơ������ɤ򥹥��å�����褦�ʥץ�������񤱤ޤ���
+プラットフォーム間でポータブルなプログラムを書くために、Gaucheでは
+頻繁に@code{cond-expand} を使います(@ref{Feature conditional}参照)。
+拡張された@emph{機能識別子(feature-identifier)}が提供されており、これ
+を使って特定の機能が利用可能かどうかチェックできます。たとえば、
+@code{symlink}があるシステムでは機能識別子@code{gauche.sys.symlink}が
+定義されます。したがって、以下のように@code{sys-symlink}が利用できるか
+どうかによって、コードをスイッチするようなプログラムを書けます。
 @c COMMON
 
 @example
@@ -733,8 +734,8 @@ the availability of @code{sys-symlink} as follows:
 If you're familiar with system programming in C, you can think
 it equivalent to the following C idiom:
 @c JP
-C�Υ����ƥ�ץ�����ߥ󥰤˾ܤ����ʤ顢��Υ����ɤϰʲ���C�Υ��ǥ�����
-��Ʊ�����Ȥߤʤ��ޤ���
+Cのシステムプログラミングに詳しいなら、上のコードは以下のCのイディオム
+と同じだとみなせます。
 @c COMMON
 
 @example
@@ -750,9 +751,9 @@ There are quite a few such feature identifiers; each identifier is
 explained in the maunal entry of the procedures that depend on the feature.
 Here we list a few important ones:
 @c JP
-���Τ褦�ʵ�ǽ���̻ҤϤ������󤢤ꡢ���줾��μ��̻ҤˤĤ��ƤϤ��Υޥ˥�
-������Τ��ε�ǽ�˰�¸������³���ι��ܤ��������Ƥ��ޤ����ä˽��פʤ��
-��ʲ��˥ꥹ�ȥ��åפ��Ƥ����ޤ���
+このような機能識別子はたくさんあり、それぞれの識別子についてはこのマニュ
+アル中のその機能に依存した手続きの項目で説明しています。特に重要なもの
+を以下にリストアップしておきます。
 @c COMMON
 
 @table @code
@@ -761,8 +762,8 @@ Here we list a few important ones:
 This feature identifier is always defined.  It is useful when you
 write Scheme code portable across multiple implementations.
 @c JP
-���ε�ǽ���̻ҤϾ���������Ƥ��ޤ���Gauche�ʳ���Scheme�μ����Ȥ�ߴ�
-���Τ��륳���ɤ�񤯤Ȥ��˻Ȥ��ޤ���
+この機能識別子は常に定義されています。Gauche以外のSchemeの実装とも互換
+性のあるコードを書くときに使えます。
 @c COMMON
 @item gauche.os.windows
 @c EN
@@ -770,27 +771,27 @@ Defined on Windows native platform (currently using MinGW, but we'll
 have VC++ version in future).  Note that cygwin does not define
 this feature identifier (but see below).
 @c JP
-Windows�ͥ��ƥ��֥ץ�åȥե�������������ޤ���(�������Ǥϡ�MinGW��
-�ȤäƤ��ޤ���������VC++�Ǥ򥵥ݡ��Ȥ���ͽ��Ǥ���) cygwin�Ǥ�
-���ε�ǽ���̻Ҥ��������ޤ��� (�����⻲��)��
+Windowsネイティブプラットフォームで定義されます。(現時点では、MinGWを
+使っていますが、将来VC++版をサポートする予定です。) cygwinでは
+この機能識別子は定義されません (下記も参照)。
 @c COMMON
 @item gauche.os.cygwin
 @c EN
 Defined on Cygwin.
 @c JP
-Cygwin����������ޤ���
+Cygwin上で定義されます。
 @c COMMON
 @item gauche.sys.pthreads
 @c EN
 Defined if Gauche is compiled with pthread support.
 @c JP
-Gauche��pthread�򥵥ݡ��Ȥ���褦�˥���ѥ��뤵��Ƥ�������������ޤ���
+Gaucheがpthreadをサポートするようにコンパイルされている場合に定義されます。
 @c COMMON
 @item gauche.net.ipv6
 @c EN
 Defined if Gauche is compiled with IPv6 support.
 @c JP
-Gauche��IPv6�򥵥ݡ��Ȥ���褦�˥���ѥ��뤵��Ƥ�������������ޤ���
+GaucheがIPv6をサポートするようにコンパイルされている場合に定義されます。
 @c COMMON
 @end table
 
@@ -799,9 +800,9 @@ Because @code{cond-expand} is a macro, the body of clauses
 are expanded into toplevel if @code{cond-expand} itself is in
 toplevel.  That means you can switch toplevel definitions:
 @c JP
-@code{cond-expand}�ϥޥ����ʤΤǡ�@code{cond-expand}���Ȥ��ȥåץ�٥�
-�ˤ���С�������Τϥȥåץ�٥��Ÿ������ޤ�������ϥȥåץ�٥����
-���򥹥��å��Ǥ���Ȥ������ȤǤ���
+@code{cond-expand}はマクロなので、@code{cond-expand}自身がトップレベル
+にあれば、節の本体はトップレベルで展開されます。これはトップレベルの定
+義をスイッチできるということです。
 @c COMMON
 
 @example
@@ -817,7 +818,7 @@ toplevel.  That means you can switch toplevel definitions:
 @c EN
 Or even conditionally "use" the modules:
 @c JP
-���뤤�Ͼ��ˤ�äƥ⥸�塼���Ȥ��櫓���ޤ���
+あるいは条件によってモジュールを使いわけられます。
 @c COMMON
 
 @example
@@ -834,11 +835,11 @@ does not work well, since the test is done in runtime, while
 the @code{use} form takes effect at compile time.  It is strongly
 recommended to use @code{cond-expand} whenever possible.
 @c JP
-�¹Ի��˥ȥåץ�٥��«��������å�����褦�ʵ줤�ƥ��˥å�
-(@code{global-variable-bound?}��Ȥ�, @ref{Module introspection}����)
-��������Ư���ޤ��󡣤���ϥץ������¹Ի��˼¹Ԥ���ޤ�����@code{use}
-�����ϥ���ѥ�����˰�̣�����ޤ�����ǽ�ʤ����ꡢ@code{cond-expand}��
-�Ȥ����Ȥ�侩���ޤ���
+実行時にトップレベルの束縛をチェックするような旧いテクニック
+(@code{global-variable-bound?}を使う, @ref{Module introspection}参照)
+は正しく働きません。これはプログラム実行時に実行されますが、@code{use}
+形式はコンパイル時に意味をもちます。可能なかぎり、@code{cond-expand}を
+使うことを推奨します。
 @c COMMON
 
 @c EN
@@ -848,17 +849,17 @@ We have a plan to extend this feature to enable adding new feature
 identifiers; but such feature can complicate semantics when compilation
 and execution is interleaved, so we're carefully assessing the effects now.
 @c JP
-�������Ǥϵ�ǽ���̻ҽ����Gauche�Υ���ѥ�����˸��ꤵ��ޤ����Ĥޤꡢ
-C�Υץ�ץ����å���Ȥä����ʬ�����������������ޤ������ε�ǽ���
-ĥ���Ƥ��Ȥ��鵡ǽ���̻Ҥ��ɲäǤ���褦�ˤ���ײ�Ǥ��������ε�ǽ��ĥ
-�ϥ���ѥ���ȼ¹Ը�ߤˤ�����Ȥ��Υ��ޥ�ƥ�������ʣ���ˤ��Ƥ��ޤ���
-ǽ�������ꡢ���ߤ��αƶ��򿵽Ťˤߤ����Ƥ������Ǥ���
+現時点では機能識別子集合はGaucheのコンパイル時に固定されます。つまり、
+Cのプリプロセッサを使った条件分岐よりも柔軟性に劣ります。この機能を拡
+張してあとから機能識別子を追加できるようにする計画ですが、この機能拡張
+はコンパイルと実行交互におこるときのセマンティクスを複雑にしてしまう可
+能性があり、現在その影響を慎重にみきわめている最中です。
 @c COMMON
 
 @c EN
 A couple of notes:
 @c JP
-�����Ĥ����ջ��ब����ޤ���
+いくつか注意事項があります。
 @c COMMON
 
 @c EN
@@ -867,9 +868,9 @@ within the @var{feature-requirement} part of @code{cond-expand}
 (see @ref{Feature conditional} for the complete definition of
 feature requirements).
 @c JP
-��ǽ���̻Ҥ��ѿ��ǤϤ���ޤ���@code{cond-expand}��
-@var{feature-requirement}���������ǤΤ����Ѳ�ǽ�Ǥ�(��ǽ�׵���������
-�ˤĤ��Ƥ�@ref{Feature conditional}�򸫤Ƥ�������)��
+機能識別子は変数ではありません。@code{cond-expand}の
+@var{feature-requirement}部の内部でのみ利用可能です(機能要求の定義全般
+については@ref{Feature conditional}を見てください)。
 @c COMMON
 
 @c EN
@@ -879,23 +880,23 @@ clause.  A rule of thumb is to provide @code{else} clause always,
 even it does nothing (like the above example that has empty @code{else}
 clause).
 @c JP
-@code{srfi-0}������ˤ�ꡢ��ǽ�׵᤬�����줺������@code{else}�᤬�ʤ�
-���ˤ�@code{cond-expand}�ϥ��顼�򤢤��ޤ������@code{else}��񤤤�
-�����Τ��褤�Ǥ��礦�� �����Τ褦�ˡ�@code{else}��Ǥʤˤ⤷�ʤ��Ȥ�
-�Ǥ⡢����@code{else}���񤯤Τ��褤�Ǥ��礦��
+@code{srfi-0}の定義により、機能要求が満されず、かつ@code{else}節がない
+場合には@code{cond-expand}はエラーをあげます。常に@code{else}を書いて
+おくのがよいでしょう。 上の例のように、@code{else}節でなにもしないとき
+でも、空の@code{else}節を書くのがよいでしょう。
 @c COMMON
 
 @c ----------------------------------------------------------------------
 @node Profiling and tuning, Writing Gauche modules, Platform-dependent features, Programming in Gauche
 @section Profiling and tuning
-@c NODE �ץ��ե�����󥰤ȥ��塼�˥�
+@c NODE プロファイリングとチューニング
 
 @c EN
 If you find your script isn't running fast enough,
 there are several possibilities to improve its performance.
 @c JP
-��ʬ�Υ�����ץȤΥ��ԡ��ɤ���ʬ�˽Фʤ��Ȥ����Ȥ��ˤϡ�
-��ǽ���������ݥ���ȤȤ��ƹͤ��������������Ĥ�����ޤ���
+自分のスクリプトのスピードが十分に出ないというときには、
+性能を改善するポイントとして考えられる点がいくつかあります。
 @c COMMON
 
 @c EN
@@ -907,13 +908,13 @@ is spent in each procedure, and how many times it is called.
 The @code{gauche.time} module (@ref{Measure timings}) provides
 APIs to measure execution time of specific parts of the code.
 @c JP
-�ɤ�ʤȤ��Ǥ⡢�¹Ի��֤򿩤��Ĥ֤��Ƥ��륳������ʬ�򸫤Ĥ���Ȥ�����
-���褺�ǽ�ˤ��Τ��褤�Ǥ��礦��Gauche �ˤϤ��κ�Ȥ�����������Ū
-�ʥġ��뤬2�Ĥ���ޤ����ȹ��Υ���ץ�󥰥ץ��ե�����(����ˤĤ��Ƥϼ�
-������������ޤ�)��Ȥ��гƼ�³���Ǥɤ�ۤɤλ��֤������ꡢ���μ�³��
-������ƤФ줿����ɽ���Ǥ��ޤ���@code{gauche.time} �⥸�塼��
-(@ref{Measure timings}) �Ǥϥ����ɤ�����������ʬ�μ¹Ԥˤ�������֤�
-¬�ꤹ�뤿���API���󶡤���Ƥ��ޤ���
+どんなときでも、実行時間を食いつぶしているコード部分を見つけるというの
+を先ず最初にやるのがよいでしょう。Gauche にはこの作業を補助する基本的
+なツールが2つあります。組込のサンプリングプロファイラ(これについては次
+の節で説明します)を使えば各手続きでどれほどの時間がかかり、その手続き
+が何回呼ばれたかを表示できます。@code{gauche.time} モジュール
+(@ref{Measure timings}) ではコードの中の特定の部分の実行にかかる時間を
+測定するためのAPIが提供されています。
 @c COMMON
 
 @c EN
@@ -925,12 +926,12 @@ some patterns it cannot.  The next subsection, @ref{Performance tips},
 will give you some tips of how to adapt your code to fit
 the patterns Gauche can execute well.
 @c JP
-��Ŭ���Ȥ����Τ��ü첽�Ȥ������ȤǤ⤢��ޤ�����äȤ�褯�Ȥ���
-�¹ԤΥѥ������õ���ơ��������Ψ�褯�¹Ԥ������ѤΥѥ����ߤ��뤳�Ȥ�
-����Gauche ���Ȥ��㳰�ǤϤ���ޤ��󡣤������äơ�Gauche����Ψ�褯�¹�
-�Ǥ���ѥ����󤬤����Ĥ�����ޤ������ޤ������Ǥϸ�Ψ�褯�¹ԤǤ��ʤ���
-������⤢��ޤ���������Ǥϡ�@ref{Performance tips} �Ǥ� Gauche ����
-Ψ�ɤ��¹ԤǤ���ѥ�����˥����ɤ򤢤碌�����åȤ������Ĥ򶵤��ޤ��礦��
+最適化というのは特殊化ということでもあります。もっともよく使われる
+実行のパターンを探して、そこを効率よく実行する専用のパスを設けることで
+す。Gauche 自身も例外ではありません。したがって、Gaucheが効率よく実行
+できるパターンがいくつかありますし、また一方では効率よく実行できないパ
+ターンもあります。次の節では、@ref{Performance tips} では Gauche が効
+率良く実行できるパターンにコードをあわせるチョットしたコツを教えましょう。
 @c COMMON
 
 @menu
@@ -940,25 +941,25 @@ the patterns Gauche can execute well.
 
 @node Using profiler, Performance tips, Profiling and tuning, Profiling and tuning
 @subsection Using profiler
-@c NODE �ץ��ե������Ȥ�
+@c NODE プロファイラを使う
 
 @c EN
 As of 0.8.4, Gauche has a built-in profiler.  It is still experimental
 quality and only be tested on Linux.  It isn't available for all
 platforms.   It works only in single-thread applications for now.
 @c JP
-0.8.4 ���� Gauche ���ȹ��ߤΥץ��ե�����������Ƥ��ޤ��������
-�������ǤϤޤ��¸�Ū�ʤ�Τǡ�Linux ��Ǥ����ƥ��Ȥ��Ƥ��ޤ��󡣤��٤ƤΥ�
-��åȥե���������ѤǤ���櫓�ǤϤ���ޤ��󤷡����󥰥륹��åɤ�
-���ץꥱ�������Ǥ���ư���ޤ���
+0.8.4 から Gauche は組込みのプロファイラを備えています。これは
+現時点ではまだ実験的なもので、Linux 上でしかテストしていません。すべてのプ
+ラットフォームで利用できるわけではありませんし、シングルスレッドの
+アプリケーションでしか動きません。
 @c COMMON
 
 @c EN
 To use the profiler non-interactively, give @code{-ptime}
 command-line option to gosh. 
 @c JP
-�����ôĶ��Ǥ��Υץ��ե������Ȥ��ˤϡ�gosh �Υ��ޥ�ɥ饤�󥪥ץ���
-��Ȥ��� @code{-ptime}����ꤷ�Ƥ���������
+非対話環境でこのプロファイラを使うには、gosh のコマンドラインオプショ
+ンとして @code{-ptime}を指定してください。
 @c COMMON
 
 @example
@@ -970,9 +971,9 @@ After the execution of @file{your-script.scm} is completed, Gauche prints
 out the table of functions with its call count and its consumed time,
 sorted by the total consumed time.
 @c JP
-@file{your-script.scm} �μ¹Դ�λ�塢Gauche �ϳƴؿ��ˤĤ��Ƥ��θƤӽФ����
-����Ӿ�����֤򼨤���ɽ��������ޤ�������ɽ����������֤ν�ǥ����Ȥ�
-��Ƥ��ޤ���
+@file{your-script.scm} の実行完了後、Gauche は各関数についてその呼び出し回数
+および消費時間を示した表を印字します。この表は総消費時間の順でソートさ
+れています。
 @c COMMON
 
 @example
@@ -1013,12 +1014,12 @@ is very sparse.  However, if we run the program long enough,
 we can expect the distribution of samples per each function 
 approximately reflects the distribution of time spent in each function.
 @c JP
-���֥ץ��ե����������Ūɸ�ܲ��򤪤��ʤäƤ��뤳�Ȥ����դ��Ƥ���������
-�ץ��ե������10�ߥ��ä��Ȥ˥ץ������˳����ǡ����λ����Ǽ¹Ԥ���Ƥ�
-��ؿ���Ͽ���ޤ����ʥ��å������δؿ��ƽФ����Ȥθ��̤μ¹Ի��֤���٤�
-�ȡ����Υ���ץ�󥰥졼�ȤϤ��ʤ��Ƥ���ΤǤ����������ʤ��顢�ץ�
-�����μ¹Ի��֤�Ĺ����С��ƴؿ����Ȥ�ɸ��ʬ�ۤϴؿ����Ȥξ�����֤�
-�ۤ�ȿ�Ǥ��Ƥ���������ȴ��ԤǤ��ޤ���
+時間プロファイラは統計的標本化をおこなっていることに注意してください。
+プロファイラは10ミリ秒ごとにプロセスに割込んで、その時点で実行されてい
+る関数を記録します。ナノ秒オーダの関数呼出しごとの個別の実行時間に比べる
+と、このサンプリングレートはかなり粗いものです。しかしながら、プロ
+グラムの実行時間が長ければ、各関数ごとの標本分布は関数ごとの消費時間を
+ほぼ反映しているだろうと期待できます。
 @c COMMON
 
 @c EN
@@ -1031,22 +1032,22 @@ near-top of the list.
 To know the general pattern, it is a good custom to run the program
 with several different data sets.
 @c JP
-�����Ϥ����ޤǶ���ˤ����ʤ�����
-�򿴤ˤȤ�Ƥ����Ƥ����������ҤȤĤδؿ��������ɸ�ܿ��ϥץ�����ब��
-���ǡ������㤨�С��������Ѳ����Ƥ��ޤ����Ȥ�����ޤ���
-�ޤ������ΤȤ���GC�ˤ�������֤�GC���ȥꥬ���줿�ؿ��μ¹Ի��֤�
-��������Ƥ��ޤäƤ��뤳�Ȥ����դ��Ʋ�����������ˤ�äơ����ޤ�
-���פǤʤ��ؿ����ꥹ�Ȥξ�̤��⤫�Ӥ����äƤ��뤳�Ȥ�����ޤ���
-����Ū�ʥѥ�������Τ�ˤϡ��ץ������򤤤������ʥǡ��������餻��
-�ߤ���ɤ��Ǥ��礦��
+数字はあくまで近似にすぎないこと
+を心にとめておいてください。ひとつの関数あたりの標本数はプログラムが扱
+うデータが違えば、すぐに変化してしまうことがあります。
+また、今のところGCにかかる時間はGCがトリガされた関数の実行時間に
+算入されてしまっていることに注意して下さい。これによって、あまり
+重要でない関数がリストの上位に浮かびあがってくることがあります。
+一般的なパターンを知るには、プログラムをいろいろなデータで走らせて
+みると良いでしょう。
 @c COMMON
 
 @c EN
 On the other hand, the call count is accurate since Gauche actually
 counts each call.
 @c JP
-�������ؿ��ƤӽФ�����Υ�����Ȥ����Τʤ�ΤǤ�������� Gauche ��
-�ºݤθƽФ����Ȥ˥�����Ȥ��Ƥ��뤫��Ǥ���
+一方、関数呼び出し回数のカウントは正確なものです。これは Gauche は
+実際の呼出しごとにカウントしているからです。
 @c COMMON
 
 @c EN
@@ -1057,11 +1058,11 @@ the first time.  Internal functions are printed as a list of names,
 reflecting the nesting of functions.  Methods are also printed as a
 list of the name and specializers.
 @c JP
-Scheme�Ǥϴ���Ū�ˤ��٤Ƥδؿ���̵̾�ʤΤǡ��ץ��ե������̤�'name'
-�ե�����ɤϥҥ�Ȥˤ����ޤ��󡣥ȥåץ�٥��«������Ƥ���ؿ��ˤĤ�
-�Ƥ��̾綠�줬�ǽ��«�����줿�������Х��ѿ�̾����������ޤ��������ؿ�
-�ˤĤ��Ƥϴؿ�������ҹ�¤��ȿ�Ǥ���̾���Υꥹ�Ȥ���������ޤ���
-�᥽�åɤϡ�̾�������경�ҤΥꥹ�ȤȤ��ư�������ޤ���
+Schemeでは基本的にすべての関数は無名なので、プロファイル結果の'name'
+フィールドはヒントにすぎません。トップレベルで束縛されている関数につい
+ては通常それが最初に束縛されたグローバル変数名が印字されます。内部関数
+については関数の入れ子構造を反映して名前のリストが印字されます。
+メソッドは、名前と特定化子のリストとして印字されます。
 @c COMMON
 
 @c EN
@@ -1072,16 +1073,16 @@ a non-stop server program and want to obtain the statistics without
 exiting the server, you can call the profiler API from your program;
 see @ref{Profiler API}, for the details.
 @c JP
-�ץ��ե�����Ϥ��켫�Ȥ˥����Хإåɤ�����ޤ����̾�ϡ��������֤�
-20-30% ���ä��ޤ����ץ��ե����������Ū�˥���ˤ��������䡢
-��ߤ��ʤ������Хץ����������餻�Ƥ��ơ����Υ����Ф���ߤ��뤳�Ȥʤ���
-���פ��ꤿ���褦�ʾ��ˤϡ��ץ�����फ��ץ��ե����� API��Ƥ֤���
-���Ǥ��ޤ����ܺ٤ˤĤ��Ƥ� @ref{Profiler API} �򻲾Ȥ��Ƥ���������
+プロファイラはそれ自身にオーバヘッドがあります。通常は、処理時間が
+20-30% 増加します。プロファイラを選択的にオンにしたい場合や、
+停止しないサーバプログラムを走らせていて、そのサーバを停止することなく、
+統計を取りたいような場合には、プログラムからプロファイラ APIを呼ぶこと
+ができます。詳細については @ref{Profiler API} を参照してください。
 @c COMMON
 
 @node Performance tips,  , Using profiler, Profiling and tuning
 @subsection Performance tips
-@c NODE �ѥե����ޥ󥹤˴ؤ���ҥ��
+@c NODE パフォーマンスに関するヒント
 
 @c EN
 Don't guess, just benchmark.  It is the first rule of
@@ -1093,13 +1094,13 @@ Gauche has such implementation-specific characteristics, and
 to know some of them would help to see what to look out in
 the benchmark results.
 @c JP
-������� run �פ��줬�ѥե����ޥ󥹥��塼�˥󥰤����ˡ§�Ǥ���
-Scheme �Τ褦�ʹ�����Ǥϡ������ѥե����ޥ󥹤˶����ƶ���
-Ϳ���뤫�Ϥ��ȤΤۤ����μ������礭����¸������������ϤǤ�
-�ȤƤ�²������̤ν����ϤǤϤȤƤ����ˤʤ����ޤ���
-Gauche �ˤ⤽�Τ褦�ʥѥե����ޥ󥹤˴ؤ��������ͭ����ħ�����ꡢ
-�����Τ����Τ����Ĥ����ΤäƤ������Ȥϡ��٥���ޡ����η�̤�
-�ɤ������ܤ��٤������Τ뤦���ǽ����ˤʤ�Ǥ��礦��
+「論より run 」これがパフォーマンスチューニングの第一法則です。
+Scheme のような高級言語では、何がパフォーマンスに強い影響を
+与えるかはことのほかその実装に大きく依存し、ある処理系では
+とても安価な操作が別の処理系ではとても高価になり得ます。
+Gauche にもそのようなパフォーマンスに関する実装特有の特徴があり、
+それらのうちのいくつかを知っておくことは、ベンチマークの結果の
+どこに着目すべきかを知るうえで助けになるでしょう。
 @c COMMON
 
 @c EN
@@ -1110,13 +1111,13 @@ tips below, but it doesn't mean you need to watch them all the time.
 It is better to keep most of the code clean and easy to understand,
 and only do tricks on the innermost loop.
 @c JP
-�֥����������ɤ�2�䤬�¹Ի��֤�8�����񤹤�פȤ����Τ�Ť�����
-�����Ƥ��ޤ����ºݤμ¹Ի��֤��礷���ƶ���ڤܤ��ʤ��Ȥ�����
-����ˤ������äƥץ�������狼��Ť餯���뤳�Ȥ��򤱤ޤ��礦��
-���줫�餤���Ĥ��Υҥ�Ȥ�Ҥ٤ޤ����������Τ��Ȥ��ϻ���浤�ˤ���
-�ץ�����ߥ󥰤��ʤ���Фʤ�ʤ��Ȥ������ȤǤϤ���ޤ���
-�ष���������������ƤǤ狼��䤹���ץ������򿴤������롼�פΰ��ֿ����Ȥ���
-(��äȤ���֤���񤹤�Ȥ���)�Ǥ����Υȥ�å���Ȥ��Τ��ɤ��Ǥ��礦��
+「ソースコードの2割が実行時間の8割を消費する」というのも古くから
+言われています。実際の実行時間に大した影響を及ぼさないところを
+下手にいじくってプログラムをわかりづらくすることは避けましょう。
+これからいくつかのヒントを述べますが、これらのことを四六時中気にして
+プログラミングしなければならないということではありません。
+むしろ、出来るだけ明瞭でわかりやすいプログラムを心がけ、ループの一番深いところ
+(もっとも時間を消費するところ)でこれらのトリックを使うのが良いでしょう。
 @c COMMON
 
 @c EN
@@ -1134,20 +1135,20 @@ that port accesses rarely collide.  If you know it is possible that
 more than one threads read from or write to the same port, it is
 your responsibility to use mutex explicitly to avoid the collision.)
 @c JP
-@strong{Ports}: SRFI-18 (����å�) �λ��ͤ������������
-Gauche �Τ��٤Ƥ������ϴ��ܴؿ��ϥݡ��Ȥ���å����ޤ���
-���Υ����С��إåɤϾ�ñ��(�㤨�ХХ�����)�������Ϥ�Ԥʤ�
-���ץꥱ�������Ǥ�̵��Ǥ��ʤ��Ǥ��礦��
-�����ϴ��ܴؿ����̾�ƤӤ�����˥ݡ��Ȥ���å��������������
-���̥�٥�������Ϥϥ��å��Υ����С��إåɤαƶ����������
-�Ԥʤ��ޤ����Ǥ����� @code{read} ��@code{raed-block} 
-�ʤɤΤ���礭��ñ�̤������Ϥ�Ԥʤ����ܴؿ��Ǥ������
-�ʤ뤳�Ȥ����ʤ��ʤ�ޤ���
-(���ա������δ��ܴؿ�����˥ݡ��Ȥ���å����ĤŤ��뤳�Ȥ�
-�ݾڤ����ΤǤϤʤ����Ȥ����դ��Ƥ����������ޤ����ݡ��ȤΥ��å���
-���礬�ۤȤ��ȯ�����ʤ����˺�Ŭ������Ƥ��ޤ���
-�ݡ��ȤؤΥ���������ʣ���Υ���åɤǶ��礹���ǽ����������ϡ�
-���ץꥱ�������¦��mutex������Ū���Ѥ��ƶ�����򤱤Ƥ���������)
+@strong{Ports}: SRFI-18 (スレッド) の仕様を満たすために
+Gauche のすべての入出力基本関数はポートをロックします。
+このオーバーヘッドは小単位(例えばバイト毎)の入出力を行なう
+アプリケーションでは無視できないでしょう。
+入出力基本関数は通常呼びだし毎にポートをロックし、そこからの
+下位レベルの入出力はロックのオーバーヘッドの影響を受けずに
+行なわれます。ですから @code{read} や@code{raed-block} 
+などのより大きな単位で入出力を行なう基本関数では問題と
+なることが少なくなります。
+(注意：これらの基本関数が常にポートをロックしつづけることを
+保証するものではないことに注意してください。また、ポートのロックは
+競合がほとんど発生しない場合に最適化されています。
+ポートへのアクセスが複数のスレッドで競合する可能性がある場合は、
+アプリケーション側でmutexを明示的に用いて競合を避けてください。)
 @c COMMON
 
 @c EN
@@ -1156,9 +1157,9 @@ of things you can consider: (1) Try using the larger-unit primitives,
 instead of calling the smaller-unit ones.  (2) Use @code{with-port-locking}
 (see @ref{Port and threads}) to lock the port in larger context.
 @c JP
-�ݡ��ȥ��å����ºݤ�����Ȥʤä���硢��ĤФ����н�����ͤ����ޤ���
-(1) ����礭��ñ�̤������Ϥ�Ԥʤ���(2) @code{with-port-locking}
-(@ref{Port and threads} ����)��ȤäƤ�깭�ϰϤǥݡ��Ȥ���å����롣
+ポートロックが実際に問題となった場合、二つばかり対処策が考えられます。
+(1) より大きな単位で入出力を行なう。(2) @code{with-port-locking}
+(@ref{Port and threads} 参照)を使ってより広範囲でポートをロックする。
 @c COMMON
 
 @c EN
@@ -1174,17 +1175,17 @@ higher-level primitives are provided (see @ref{String utilities},
 If you're using strings to represent an octet sequence, use uniform
 vectors (see @ref{Uniform vectors}) instead.
 @c JP
-@strong{ʸ����}: ¿�Х���ʸ����μ谷���Τ��ᡢGauche �Ǥ�ʸ�����
-�ѹ��ȥ���ǥå����ˤ�륢���������ä˹�������Ȥʤ�ޤ���
-����ϰտ�Ū���߷פǤ��� Gauche �ǤϤ�����Ĥ������򤱤��ץ�����ߥ󥰤�
-�侩���Ƥ��ޤ��� ʸ��������ʸ�����˥�����������ˤ�
-(����ǥå�����Ȥ鷺��)ʸ����ݡ���(@ref{String ports}����)��Ȥ���
-������Ƥ��ĸ�ΨŪ�ʥץ������Ȥʤꡢ����������������ʬʸ�����Ȥ�Ф�
-�Ȥ��ä����ˤϡ�¿�̤ʹ��٥�ؿ����Ѱդ���Ƥ��ޤ���
-(�㤨�� @ref{String utilities}��@ref{Regular expression}��
- @ref{String library} ���򻲾ȡ�)  �Х������ɽ������Τ�
-ʸ�����ȤäƤ����ʤ顢����˥�˥ե�����٥���(@ref{Uniform vectors}
-����)��Ȥ��ޤ��礦��
+@strong{文字列}: 多バイト文字列の取扱いのため、Gauche では文字列の
+変更とインデックスによるアクセスが特に高価な操作となります。
+これは意図的な設計です。 Gauche ではこの二つの操作を避けたプログラミングを
+推奨しています。 文字列の中の文字を順にアクセスするには
+(インデックスを使わずに)文字列ポート(@ref{String ports}参照)を使うと
+より明瞭かつ効率的なプログラムとなり、一方サーチして部分文字列をとり出す
+といった操作には、多彩な高レベル関数が用意されています。
+(例えば @ref{String utilities}、@ref{Regular expression}、
+ @ref{String library} 等を参照。)  バイト列を表現するのに
+文字列を使っていたなら、代わりにユニフォームベクタ(@ref{Uniform vectors}
+参照)を使いましょう。
 @c COMMON
 
 @c EN
@@ -1195,12 +1196,12 @@ overflows and Gauche moves the content of the stack into the heap.
 This incurs some overhead.  If you observe a performance degradation
 beyond a certain amount of data, check out this possibility.
 @c JP
-@strong{�����Ƶ�}: Gauche �β��۵���(VM)�ϸ�ΨŪ��
-��������ե졼�������ƤΤ���˥����å���ȤäƤ��ޤ���
-�Ƶ��������ʤä�(�ץ������ˤ���ޤ��������ο�ɴ�󤫤����)
-�����å��������С��ե�������ȥ����å������Ƥ�ҡ��פ����򤹤�Ȥ���
-�����С��إåɤ������ޤ��� ����ǡ����̤�ۤ����Ȥ����ǥѥե����ޥ󥹤�
-�㲼������줿�ʤ�С������Ƶ����ʤ���Ĵ�٤ƤߤƲ�������
+@strong{深い再帰}: Gauche の仮想機械(VM)は効率的な
+ローカルフレーム割り当てのためにスタックを使っています。
+再帰が深くなって(プログラムにもよりますが、大体数百回から千回)
+スタックがオーバーフローするとスタックの内容をヒープに退避するという
+オーバーヘッドが生じます。 あるデータ量を越えたところでパフォーマンスの
+低下が見られたならば、深い再帰がないか調べてみて下さい。
 @c COMMON
 
 @c EN
@@ -1213,14 +1214,14 @@ reasons in general, but if you do find single function call consuming
 a large part of execution time and it is calling a generic
 function in its inner loop---then it may be worth to modify it.
 @c JP
-@strong{Generic functions}: Generic function �λ���ưŪ��������
-���ᡢ�����θƤӽФ����̾�μ�³���ƤӽФ�����٤��ʤ�ޤ���
-�¹Ի��Υǥ����ѥå��Υ����Хإåɤ����Ǥʤ���
-VM �����ɤؤΥ���ѥ�����ˤ������ƺ�Ŭ�����Ԥ��ʤ�����Ǥ���
-�ѥե����ޥ󥹤Τ���� Generic function �����Ѥ�ɤ�ʾ��ˤ��򤱤�
-�Ȥ���ɬ�פϤ���ޤ��󤬡��⤷�����Ĥδؿ����¹Ի��֤�����ʬ��
-���Ƥ��ơ����δؿ��� Generic function �������ǸƤӽФ��Ƥ���ʤ�
-�����Ȥ�ʤ��褦���ѹ����Ƥߤ���ͤϤ���Ǥ��礦��
+@strong{Generic functions}: Generic function の持つ動的な性質の
+ため、これらの呼び出しは通常の手続き呼び出しより遅くなります。
+実行時のディスパッチのオーバヘッドだけでなく、
+VM コードへのコンパイル時にたいして最適化が行えないためです。
+パフォーマンスのために Generic function の利用をどんな場合にも避ける
+という必要はありませんが、もしある一つの関数が実行時間の大部分を
+占めていて、その関数が Generic function を内部で呼び出しているなら
+それを使わないように変更してみる価値はあるでしょう。
 @c COMMON
 
 @c EN
@@ -1231,13 +1232,13 @@ For example, put redefined functions in a separate module and
 use the module in the code that absolutely needs those functions
 replaced.  
 @c JP
-@strong{�ȹ��ߴؿ��κ����}:
-Gauche �Υ���ѥ���Ϥ����Ĥ����ȹ��ߴؿ���(����餬���������Ƥ��ʤ����)
-����饤��Ÿ�����ޤ��� ���ܴؿ�����������Τϻ��ˤ������Ǥ�����
-�¤�줿�ϰϤˤȤɤ�Ƥ����������褤�Ǥ��礦��
-������ϡ��������ɤ����̤Υ⥸�塼��˽���Ƥ������ɤ����Ƥ�����
-�С������ɬ�פʤȤ��˸¤äƤ��Υ⥸�塼�� use ����Ȥ����褦��
-���Ƥ����Ф褤�Ǥ��礦��
+@strong{組込み関数の再定義}:
+Gauche のコンパイラはいくつかの組込み関数を(それらが再定義されていなければ)
+インライン展開します。 基本関数を再定義するのは時には便利ですが、
+限られた範囲にとどめておいた方がよいでしょう。
+やり方は、再定義をどこか別のモジュールに集めておき、どうしても再定義
+バージョンが必要なときに限ってそのモジュール use するというように
+しておけばよいでしょう。
 @c COMMON
 
 @c EN
@@ -1251,13 +1252,13 @@ typical cases, in which case you see the local function's bodies
 are inlined.  If you see a @code{CLOSURE} instruction, though, it
 means a closure is created.
 @c JP
-@strong{����������κ���}: ������������������Ȥ��줬���ĴĶ����ҡ��פ�
-���ԡ�����ޤ��� �����С��إåɤϾ������Ǥ�������ɴ�����ƤФ��褦��
-�롼�פ���Ǻ���������̵��Ǥ��ʤ��ʤ�Ǥ��礦������ʵ����������
-���δؿ���ե�����֥뤷�Ƥߤޤ��礦�� Gauche �Υ���ѥ���ϥ����������
-��ñ�ʲ��Ϥ�Ԥʤ�������ʤ�٤��򤱤�褦�ˤʤäƤ��ޤ������Τ褦�ʾ��
-�ɽ�ؿ������Τϥ���饤��Ÿ������Ƥ��ޤ����ե�����֥�Υ����ɤ�
-@code{CLOSURE}̿�᤬�ޤޤ�Ƥ���С���ǰ�ʤ��饯�������㤬��������ޤ���
+@strong{クロージャの作成}: クロージャを作成するとそれが持つ環境がヒープに
+コピーされます。 オーバーヘッドは小さいですが、何百万回も呼ばれるような
+ループの中で作成されれば無視できなくなるでしょう。そんな疑いがあれば
+その関数を逆アセンブルしてみましょう。 Gauche のコンパイラはクロージャの
+簡単な解析を行ない生成をなるべく避けるようになっています。そのような場合
+局所関数の本体はインライン展開されています。逆アセンブルのコードに
+@code{CLOSURE}命令が含まれていれば、残念ながらクロージャが生成されます。
 @c COMMON
 
 @c EN
@@ -1265,15 +1266,15 @@ This list isn't complete, and may change when Gauche's implementation
 is improved, so don't take this as fixed features.
 We'll adjust it occasionally.
 @c JP
-�����Υҥ�Ƚ��ϴ����Ǥʤ�����Gauche �β��ɤȤȤ���Ѥ�äƤ����Ǥ��礦��
-�Ǥ����顢���ꤵ�줿��ħ���Ȥϻפ�ʤ��ǲ�������
-���Υҥ�Ƚ��Ϻ��塢�ޤ򸫤Ƽ������б������ƹ������Ƥ椭�ޤ���
+これらのヒント集は完全でないし、Gauche の改良とともに変わっていくでしょう。
+ですから、固定された特徴だとは思わないで下さい。
+このヒント集は今後、折を見て実装に対応させて更新してゆきます。
 @c COMMON
 
 @c ----------------------------------------------------------------------
 @node Writing Gauche modules, Using extension packages, Profiling and tuning, Programming in Gauche
 @section Writing Gauche modules
-@c NODE Gauche�Υ⥸�塼����
+@c NODE Gaucheのモジュールを書く
 
 @c EN
 Gauche's libraries are organized by modules.   Although Gauche
@@ -1282,11 +1283,11 @@ Gauche's libraries follow.    When you write a chunk of Scheme
 code for Gauche, it is convenient to make it a module,
 so that it can be shared and/or reused.
 @c JP
-Gauche�Υ饤�֥��ϥ⥸�塼�������������Ƥ��ޤ���Gauche�Ϥɤ�ʷ����Ǥ⡢
-ͭ����Scheme�����񤫤�Ƥ�������Х����ɤ��뤳�Ȥ��Ǥ��ޤ�����
-Gauche�Υ饤�֥��ϰ���η������ݤäƽ񤫤�Ƥ��ޤ���
-Gauche�ѤˤޤȤޤä�Scheme�����ɤ�񤤤��顢�����⥸�塼������ˤ��Ƥ�����
-�����Ѥ����䤹���ʤ�Ǥ��礦��
+Gaucheのライブラリはモジュール毎に整理されています。Gaucheはどんな形式でも、
+有効なScheme式が書かれてさえいればロードすることができますが、
+Gaucheのライブラリは一定の形式を保って書かれています。
+Gauche用にまとまったSchemeコードを書いたら、それをモジュール形式にしておくと
+再利用がしやすくなるでしょう。
 @c COMMON
 
 @c EN
@@ -1295,17 +1296,17 @@ a multi-file module.
 First I explain the structure of a single-file module.
 The following template is the convention used in Gauche's libraries.
 @c JP
-�̾�ҤȤĤΥե������
-�ҤȤĤΥ⥸�塼���������ޤ������⥸�塼���ʣ���Υե������ʬ���뤳�Ȥ�Ǥ��ޤ���
-�ޤ��ҤȤĤΥե�����ǥ⥸�塼������������ˡ���������ޤ���
-Gauche�Υ饤�֥��ǻȤ��Ƥ���ƥ�ץ졼�Ȥϼ��Τ褦�ʷ����Ǥ���
+通常ひとつのファイルで
+ひとつのモジュールを定義しますが、モジュールを複数のファイルに分けることもできます。
+まずひとつのファイルでモジュールを定義する方法を説明します。
+Gaucheのライブラリで使われているテンプレートは次のような形式です。
 @c COMMON
 
 @example
 @c EN
 ;; Define the module interface
 @c JP
-;; �⥸�塼��Υ��󥿥ե����������
+;; モジュールのインタフェースの定義
 @c COMMON
 (define-module foo
   (use xxx)
@@ -1315,7 +1316,7 @@ Gauche�Υ饤�֥��ǻȤ��Ƥ���ƥ�ץ졼�Ȥϼ��Τ褦�ʷ����Ǥ���
 @c EN
 ;; Enter the module
 @c JP
-;; �⥸�塼������
+;; モジュール本体
 @c COMMON
 (select-module foo)
 
@@ -1327,8 +1328,8 @@ Gauche�Υ饤�֥��ǻȤ��Ƥ���ƥ�ץ졼�Ȥϼ��Τ褦�ʷ����Ǥ���
 This file must be saved as ``foo.scm'' in some directory in the
 @code{*load-path*}.
 @c JP
-���Υե������``foo.scm''�Ȥ���̾�ǡ�@code{*load-path*}�ˤ���ǥ��쥯�ȥ��
-�����줫���֤���ʤ���Фʤ�ޤ���
+このファイルは``foo.scm''という名で、@code{*load-path*}にあるディレクトリの
+いずれかに置かれなければなりません。
 @c COMMON
 
 @c EN
@@ -1339,11 +1340,11 @@ syntax.
 (See section @ref{Defining and selecting modules}, for detailed specification of those
 syntaxes).
 @c JP
-�ޤ���@code{define-module}�ե����ब�⥸�塼��@code{foo}��������ޤ���
-@code{define-module}�ե�������ǡ����Υ⥸�塼�뤬��¸���Ƥ���¾�Υ⥸�塼��
-�� `@code{use}' �ޥ�����Ȥäƥ����ɤ������Υ⥸�塼�뤬�������ݡ��Ȥ��륷��ܥ��
-`@code{export}' ��ʸ��Ȥäƻ��ꤷ�ޤ���(�����ι�ʸ�ξܺ٤�@ref{Defining and selecting modules}��
-���Ȥ��Ʋ�����)��
+まず、@code{define-module}フォームがモジュール@code{foo}を作成します。
+@code{define-module}フォーム内で、このモジュールが依存している他のモジュール
+を `@code{use}' マクロを使ってロードし、このモジュールがエクスポートするシンボルを
+`@code{export}' 構文を使って指定します。(これらの構文の詳細は@ref{Defining and selecting modules}を
+参照して下さい)。
 @c COMMON
 
 @c EN
@@ -1352,10 +1353,10 @@ in the @code{define-module} form, but it is a good convention to keep
 them in there at the head of the file so that it is visually recognizable
 which modules @code{foo} depends and which symbols it exports.
 @c JP
-������@code{use}�ե������@code{export}�ե������ɬ������@code{define-module}
-�ե��������Ƭ���֤�ɬ�פϤ���ޤ��󤬡����Τ褦�˥ե�����κǽ�����˸Ǥ�Ƥ������Ȥǡ�
-@code{foo}����¸���Ƥ���⥸�塼�뷲��@code{foo}���󶡤��륷��ܥ�����
-�������䤹���ʤ�ޤ���
+これらの@code{use}フォームや@code{export}フォームは必ずしも@code{define-module}
+フォームの先頭に置く必要はありませんが、このようにファイルの最初の方に固めておくことで、
+@code{foo}が依存しているモジュール群や@code{foo}が提供するシンボル等が
+一覧しやすくなります。
 @c COMMON
 
 @c EN
@@ -1367,10 +1368,10 @@ However, I think it is error-prone, for the closing parenthesis
 can be easily forgotten or the automatic indentation mechanism of
 editor will be confused.
 @c JP
-���Ρ�`@code{select-module}' �ե�����ˤ�ꡢ����ʹߤ�Scheme����
-�⥸�塼��@code{foo}�����ɾ������ޤ����⥸�塼������Ƥ�����@code{define-module}�����
-�񤤤Ƥ��ޤ����Ȥ����ޤ������Ǹ�γ�̤��Ĥ�˺��䤹�����Ȥ䡢���ǥ����Υ���ǥ�Ȥ�
-�������Ȥʤɤ��顢���ޤꤪ���ᤷ�ޤ���
+次の、`@code{select-module}' フォームにより、それ以降のScheme式が
+モジュール@code{foo}の中で評価されます。モジュールの内容を全て@code{define-module}の中に
+書いてしまうことも出来ますが、最後の括弧を閉じ忘れやすいことや、エディタのインデントが
+狂うことなどから、あまりお薦めしません。
 @c COMMON
 
 @c EN
@@ -1378,10 +1379,10 @@ After @code{select-module} you can write whatever Scheme expression.
 It is evaluated in the selected module, @code{foo}.   Only the bindings
 of the exported symbols will be directly accessible from outside.
 @c JP
-@code{select-module}�ե�����θ�ˤϡ��⥸�塼������ƤǤ���Scheme����ͳ�˽񤱤ޤ���
-�����ϥ⥸�塼��@code{foo}�����ɾ������ޤ����⥸�塼������������ȥåץ�٥��
-«���Τ���������Ū��`export'�ǻ��ꤵ�줿����ܥ�Τߤ������Υ⥸�塼��򥤥�ݡ��Ȥ���¾��
-�⥸�塼�뤫�鸫���ޤ���
+@code{select-module}フォームの後には、モジュールの内容であるScheme式を自由に書けます。
+それらはモジュール@code{foo}の中で評価されます。モジュール内で定義するトップレベルの
+束縛のうち、明示的に`export'で指定されたシンボルのみが、このモジュールをインポートする他の
+モジュールから見えます。
 @c COMMON
 
 @c EN
@@ -1397,12 +1398,12 @@ gauche-config --sitelibdir
 @end example
 from shell.
 @c JP
-����ǡ�¾�Υץ������� `@code{(use foo)}' �Ȥ�������Ǥ��Υ⥸�塼��ε�ǽ��
-���Ѳ�ǽ�ˤʤ�ޤ����⤷�⥸�塼��򥵥������Τ����ѤǤ���褦�ˤ�������С�@code{gosh}���
+これで、他のプログラムは `@code{(use foo)}' とするだけでこのモジュールの機能が
+利用可能になります。もしモジュールをサイト全体で利用できるようにしたければ、@code{gosh}内で
 @example
 (gauche-site-library-directory)
 @end example
-��ɾ������������ǥ��쥯�ȥ��@code{foo.scm}���֤��Ʋ�������
+を評価して得られるディレクトリに@code{foo.scm}を置いて下さい。
 @c COMMON
 
 @c EN
@@ -1413,23 +1414,23 @@ For example, @code{text.tr} module is implemented in ``text/tr.scm'' file.
 Note that the pathname separator `/' in the file becomes a period in the
 module name.
 @c JP
-�⥸�塼���̾�����֤Υȥåפ˿����ʥ⥸�塼����ɲä���Τ˵�����������ϡ�
-�⥸�塼�����Ū�˹������뤳�Ȥ�Ǥ��ޤ���Gauche�Υ⥸�塼���¿���ϴ��˳���Ū��
-��������Ƥ��ޤ�������Ū�ʥ⥸�塼�����@ref{Library modules - Overview}�򻲾Ȥ��Ʋ�������
-�㤨�С�@code{text.tr}�⥸�塼��� ``@code{text/tr.scm}'' �ե������
-��������Ƥ��ޤ����ѥ�̾�ζ��ڤ�ʸ��`/'���⥸�塼��̾�Ǥϥԥꥪ�ɤˤʤ뤳�Ȥ�
-���դ��Ʋ�������
+モジュールの名前空間のトップに新たなモジュールを追加するのに気が引ける場合は、
+モジュールを階層的に構成することもできます。Gaucheのモジュールの多くは既に階層的に
+構成されています。具体的なモジュール例は@ref{Library modules - Overview}を参照して下さい。
+例えば、@code{text.tr}モジュールは ``@code{text/tr.scm}'' ファイルに
+実装されています。パス名の区切り文字`/'がモジュール名ではピリオドになることに
+注意して下さい。
 @c COMMON
 
 @c ----------------------------------------------------------------------
 @node Using extension packages,  , Writing Gauche modules, Programming in Gauche
 @section Using extension packages
-@c NODE ��ĥ�ѥå������λ���
+@c NODE 拡張パッケージの使用
 
 @c EN
 @subheading Building and installing packages
 @c JP
-@subheading �ѥå������ι��ۤȥ��󥹥ȡ���
+@subheading パッケージの構築とインストール
 @c COMMON
 
 @c EN
@@ -1444,16 +1445,16 @@ or database clients.   If the package has some C code,
 it is likely that you need to compile it on your machine with
 the installed Gauche system.
 @c JP
-Gauche �ˤϤޤȤޤä��饤�֥�꤬��°���Ƥ��ޤ�����
-Gauche ��ץ����������Ķ������Ѥ���ΤˤϤȤƤ⽽ʬ�ȤϤ����ޤ���
-���Ѳ�ǽ���ɲå饤�֥��⤤���Ĥ⤢��ޤ������������饤�֥���
-@emph{��ĥ�ѥå�����}�����뤤��ñ�˥ѥå������Ȥ����ޤ������줾���
-�ѥå��������ɲõ�ǽ���󶡤���ҤȤĤ��뤤�Ϥ���ʾ�Υ⥸�塼���
-�󶡤��ޤ����ۤȤ�ɤΥѥå��������̤�C�Υ饤�֥��ؤΥХ���ǥ��󥰤�
-�󶡤��Ƥ��ޤ������Ȥ��С�����ե��å����饤�֥��Ȥ��ǡ����١���
-���饤����ȤʤɤǤ����⤷���ѥå������������֤�Ǥ�C�Υ����ɤ�ޤ�
-���ϡ����Ѥ���ޥ����ǡ����˥��󥹥ȡ��뤵��Ƥ��� Gauche �����ƥ��
-�Ȥäơ����Υ����ɤ򥳥�ѥ��뤹��ɬ�פ�����ޤ���
+Gauche にはまとまったライブラリが付属していますが、
+Gauche をプロダクション環境で利用するのにはとても十分とはいえません。
+利用可能な追加ライブラリもいくつもあります。こうしたライブラリを
+@emph{拡張パッケージ}、あるいは単にパッケージといいます。それぞれの
+パッケージは追加機能を提供するひとつあるいはそれ以上のモジュールを
+提供します。ほとんどのパッケージは別のCのライブラリへのバインディングを
+提供しています。たとえば、グラフィックスライブラリとかデータベース
+クライアントなどです。もし、パッケージがいくぶんでもCのコードを含む
+場合は、利用するマシン上で、既にインストールされている Gauche システムを
+使って、そのコードをコンパイルする必要があります。
 @c COMMON
 
 @c EN
@@ -1463,11 +1464,11 @@ Read the package's document, for you may be able to tailor
 the library for your own needs by giving command-line options
 to the @code{configure} script.
 @c JP
-�̾�ѥå������ϰ��� tarball �η����ˤʤäƤ��ޤ���ɸ��Ū�ˤϡ�
-��gz�β��� + tar��Ÿ�� + configure + make + make install�פȤ��Ф褤�褦��
-�ʤäƤ��ޤ����ѥå������Υɥ�����Ȥ��ɤ�С�ɬ�פ˱����ơ�
-@code{configure} ������ץȤ�Ϳ���륳�ޥ�ɥ饤�󥪥ץ�����
-�饤�֥���Ĵ���Ǥ���褦�ˤʤäƤ��ޤ���
+通常、パッケージは圧縮 tarball の形式になっています。標準的には、
+「gzの解凍 + tarの展開 + configure + make + make install」とやればよいように
+なっています。パッケージのドキュメントを読めば、必要に応じて、
+@code{configure} スクリプトに与えるコマンドラインオプションで
+ライブラリを調整できるようになっています。
 @c COMMON
 
 @c EN
@@ -1475,9 +1476,9 @@ From Gauche 0.8, an utility script called @code{gauche-package} is
 installed for the convenience.  It automates the build and install
 process of packages.
 @c JP
-Gauche 0.8 ��ꡢ@code{gauche-package} �Ȥ����桼�ƥ���ƥ�������ץȤ�
-���󥹥ȡ��뤵���褦�ˤʤäƤ��ޤ�������ϥѥå������ι��ۤ�
-���󥹥ȡ����ư�����ޤ���
+Gauche 0.8 より、@code{gauche-package} というユーティリティスクリプトが
+インストールされるようになっています。これはパッケージの構築と
+インストールを自動化します。
 @c COMMON
 
 @c EN
@@ -1485,8 +1486,8 @@ Suppose you have downloaded a package @file{Package-1.0.tar.gz}.
 If the package follows the convention, all you have to do is
 to type this:
 @c JP
-@file{Package-1.0.tar.gz} �Ȥ����ѥå����������������ɤ��Ƥ���
-�Ȥ��ޤ��礦���⤷�����Υѥå�����������˽��äƤ���С���뤳�Ȥ�
+@file{Package-1.0.tar.gz} というパッケージをダウンロードしてきた
+としましょう。もし、このパッケージが慣例に従っていれば、やることは
 @c COMMON
 
 @example
@@ -1499,12 +1500,12 @@ subdirectory, run configure, make, and make install.
 By default, @code{gauche-package} untars the tarball in the current
 working directory.  You can change it by a customization file; see below.
 @c JP
-�ȥ����פ�������Ǥ���
-����ǡ�gzip���̥ե�����β��ࡢtar���������֥ե������Ÿ����
-@file{Package-1.0} ���֥ǥ��쥯�ȥ�ؤΰ�ư��configure ������ץȤ�
-�¹ԡ�make��make install ���Ԥ��ޤ����ǥե���ȤǤϡ�
-@code{gauche-package} �ϥ����ȥǥ��쥯�ȥ�� tarball ��Ÿ�����ޤ���
-����򥫥����ޥ����ե�����(���)���ѹ����뤳�Ȥ��Ǥ��ޤ���
+とタイプするだけです。
+これで、gzip圧縮ファイルの解凍、tarアーカイブファイルの展開、
+@file{Package-1.0} サブディレクトリへの移動、configure スクリプトの
+実行、make、make install が行われます。デフォルトでは、
+@code{gauche-package} はカレントディレクトリに tarball を展開します。
+これをカスタマイズファイル(後述)で変更することができます。
 @c COMMON
 
 @c EN
@@ -1512,9 +1513,9 @@ If you need a special priviledge to install the files, you can
 use @code{--install-as} option which runs @code{make install} part via
 the @code{sudo} program.
 @c JP
-�ե�����򥤥󥹥ȡ��뤹��Τ����̤ʸ��¤�ɬ�פʾ��ˤϡ�
-@code{--install-as} �Ȥ������ץ�����Ȥ��ȡ�@code{make install} 
-��ʬ����@code{sudo} ��ȤäƼ¹Ԥ���ޤ���
+ファイルをインストールするのに特別な権限が必要な場合には、
+@code{--install-as} というオプションを使うと、@code{make install} 
+部分が、@code{sudo} を使って実行されます。
 @c COMMON
 
 @example
@@ -1527,18 +1528,18 @@ by @code{gauche-package build Package-1.0.tar.gz}, then
 manually cd to the @file{Package-1.0} directory and run 
 @code{make install}.
 @c JP
-��꤯�����ʤ����ˤϡ�@code{gauche-package build Package-1.0.tar.gz}
-�Ȥ�äƥѥå������ι��ۤ������뤳�Ȥ�Ǥ��ޤ������ξ�硢���
-@file{Package-1.0} �ǥ��쥯�ȥ�˰�ư���ơ�@code{make install} ��
-�¹Ԥ��ޤ���
+上手くいかない場合には、@code{gauche-package build Package-1.0.tar.gz}
+とやってパッケージの構築だけすることもできます。この場合、手で
+@file{Package-1.0} ディレクトリに移動して、@code{make install} を
+実行します。
 @c COMMON
 
 @c EN
 You can give configuration options via @code{-C} or @code{--configure-options}
 command-line argument, like this:
 @c JP
-���ꥪ�ץ����� @code{-C} ���뤤�� @code{--configure-options}
-�Ȥ������ޥ�ɥ饤�������Ϳ�����ޤ������Ȥ��С�
+設定オプションを @code{-C} あるいは @code{--configure-options}
+というコマンドライン引数で与えられます。たとえば、
 @c COMMON
 
 @example
@@ -1553,13 +1554,13 @@ again.  (If you're a package developer, check out
 @file{examples/spigot/README} file in the Gauche source tree
 to see how to cooperate with Gauche's package management system.)
 @c JP
-�⤷�ѥå����������ο��������ҥե��������Ѥ��Ƥ���ʤ顢
-�����˻��ꤷ�����ꥪ�ץ����򵭲����Ƥ��ơ����Υѥå�������
-���٥��󥹥ȡ��뤹��Ȥ��ˤϡ���ưŪ�ˤ��������Ѥ��ޤ���
-(�ѥå�������ȯ�Ԥ����ϡ�Gauche �Υ������ĥ꡼�ˤ��롢
-@file{examples/spigot/README} �ե����������å������Ȥ���С�
-�ɤΤ褦�� Gauche �Υѥå������ޥ͡������ȥ����ƥब��äƤ��뤫��
-�����ޤ���)
+もしパッケージがこの新しい記述ファイルを採用しているなら、
+以前に指定した設定オプションを記憶していて、そのパッケージを
+再度インストールするときには、自動的にそれを再利用します。
+(パッケージ開発者の方は、Gauche のソースツリーにある、
+@file{examples/spigot/README} ファイルをチェックアウトすれば、
+どのように Gauche のパッケージマネージメントシステムがやっているかを
+見られます。)
 @c COMMON
 
 @c EN
@@ -1569,11 +1570,11 @@ to @code{gauche-package}.  It understands @code{http} and @code{ftp},
 and uses either @code{wget} or @code{ncftpget} to download the tarball,
 then runs configure and make.
 @c JP
-tarball ����������ǥ��쥯�ȥ�ˤʤ����Ǥ⡢����������ɤ��Ƥ���
-URL ���ΤäƤ���ʤ顢���� URL ��ľ�� @code{gauche-package} ��Ϳ����
-���Ȥ��Ǥ��ޤ���@code{gauche-package} �� @code{http} ����� @code{ftp}
-�����򤷡�@code{wget} �� @code{ncftpget} �Τɤ��餫��Ȥäơ�����
-tarball �����������ɤ���configure ����� make ��¹Ԥ��ޤ���
+tarball がローカルディレクトリにない場合でも、ダウンロードしてくる
+URL を知っているなら、その URL を直接 @code{gauche-package} に与える
+ことができます。@code{gauche-package} は @code{http} および @code{ftp}
+を理解し、@code{wget} か @code{ncftpget} のどちらかを使って、その
+tarball をダウンロードし、configure および make を実行します。
 @c COMMON
 
 @example
@@ -1583,7 +1584,7 @@ $ gauche-package install http://www.example.com/download/Package-1.0.tar.gz
 @c EN
 @subheading Customizing @code{gauche-package}
 @c JP
-@subheading @code{gauche-package} �Υ������ޥ���
+@subheading @code{gauche-package} のカスタマイズ
 @c COMMON
 
 @c EN
@@ -1591,9 +1592,9 @@ The @code{gauche-package} program reads @file{~/.gauche-package} if
 it exists.  It must contain an associative list of parameters.
 It may look like this:
 @c JP
-@code{gauche-package} �ץ������� @file{~/.gauche-package} ������С�
-������ɤߤޤ������Υե�����ˤϥѥ�᡼����Ϣ�ۥꥹ�Ȥ��ޤޤ��
-���ʤ���Фʤ�ޤ��󡣤���ʴ����Ǥ���
+@code{gauche-package} プログラムは @file{~/.gauche-package} があれば、
+それを読みます。このファイルにはパラメータの連想リストが含まれて
+いなければなりません。こんな感じです。
 @c COMMON
 
 @example
@@ -1610,9 +1611,9 @@ The following is a list of recognized parameters.
 If the program isn't given in the configuration file, @code{gauche-package}
 searches @code{PATH} to find one.
 @c JP
-�ʲ��ϡ�ǧ�������ѥ�᡼���Υꥹ�ȤǤ���
-����ե�����˥ץ�����बͿ�����Ƥ��ʤ���С�@code{gauche-package}
-�� @code{PATH} ��õ���ޤ���
+以下は、認識されるパラメータのリストです。
+設定ファイルにプログラムが与えられていなければ、@code{gauche-package}
+は @code{PATH} を探します。
 @c COMMON
 
 @c EN
@@ -1640,23 +1641,23 @@ Path to the program @code{wget}.
 @c JP
 @table @code
 @item build-dir
-tarball ��Ÿ�������ǥ��쥯�ȥꡣ�⤷��URL ��Ϳ������С�
-����������ɤ��줿�ե�����Ϥ��Υǥ��쥯�ȥ���֤���ޤ���
+tarball が展開されるディレクトリ。もし、URL が与えられれば、
+ダウンロードされたファイルはこのディレクトリに置かれます。
 @item bzip2
-@code{bzip2} �ץ������ؤΥѥ�
+@code{bzip2} プログラムへのパス
 @item cat
-@code{cat} �ץ������ؤΥѥ�
+@code{cat} プログラムへのパス
 @item make
-@code{make} �ץ������ؤΥѥ�
+@code{make} プログラムへのパス
 @item ncftpget
-@code{ncftpget} �ץ������ؤΥѥ�
+@code{ncftpget} プログラムへのパス
 @item rm
-@code{rm} �ץ������ؤΥѥ�
+@code{rm} プログラムへのパス
 @item sudo
-@code{sudo} �ץ������ؤΥѥ�
+@code{sudo} プログラムへのパス
 @item tar
-@code{tar} �ץ������ؤΥѥ�
+@code{tar} プログラムへのパス
 @item wget
-@code{wget} �ץ������ؤΥѥ�
+@code{wget} プログラムへのパス
 @end table
 @c COMMON

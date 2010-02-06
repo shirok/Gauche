@@ -1,6 +1,5 @@
 # -*- mode: perl -*-
 
-$USE_UNICODE = 0;
-# $ENCODING = "euc-jp";
+$USE_UNICODE = 1;
 
 1;

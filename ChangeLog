@@ -1,5 +1,8 @@
 2010-02-05  Shiro Kawai  <shiro@acm.org>
 
+	* doc/*.texi: Switched from euc-jp to utf-8.
+	* doc/extract: Changed accordingly.
+
 	* doc/gauche-install.1.in, doc/gauche-package.1.in,
 	  doc/gauche-cesconv.1.in: Added these manpages based on the ones
 	  provided by Jens Thiele.

@@ -1,5 +1,6 @@
+@c -*- mode: texinfo; coding: utf-8; -*-
 @node Variable Index, , Class Index, Top
 @appendix Variable Index
-@c NODE Index - ÊÑ¿ôº÷°ú
+@c NODE Index - å¤‰æ•°ç´¢å¼•
 @printindex vr
 

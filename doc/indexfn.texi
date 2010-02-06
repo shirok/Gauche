@@ -1,4 +1,5 @@
+@c -*- mode: texinfo; coding: utf-8; -*-
 @node Function and Syntax Index, Module Index, C to Scheme mapping, Top
 @appendix Function and Syntax Index
-@c NODE Index - ¼êÂ³¤­¤È¹½Ê¸º÷°ú
+@c NODE Index - æ‰‹ç¶šãã¨æ§‹æ–‡ç´¢å¼•
 @printindex fn

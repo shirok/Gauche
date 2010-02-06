@@ -1,13 +1,14 @@
+@c -*- mode: texinfo; coding: utf-8; -*-
 @node Macros, Core library, Core syntax, Top
 @chapter Macros
-@c NODE �ޥ���
+@c NODE マクロ
 
 @c EN
 Gauche supports both R5RS hygienic macros and
 traditional macros.
 @c JP
-Gauche�Ǥϡ�R5RS����������ַ�����(hygienic)�ץޥ�����
-����Ū�ʥޥ�����ξ�����Ȥ��ޤ���
+Gaucheでは、R5RSに定義される「健全な(hygienic)」マクロと
+伝統的なマクロの両方が使えます。
 @c COMMON
 
 @c EN
@@ -19,10 +20,10 @@ so that you can run a Scheme program written to other Scheme
 implementations, and you can even design your own mini-language
 to solve your problem easily.
 @c JP
-Lisp�ϸ���Υޥ����ϡ�¾�θ���˸�����ޥ���(�㤨��C�ץ�ץ����å��ޥ���)�Ȥ�
-�礭���ۤʤ�ޤ���Lisp�Υޥ����ϸ��θ���ι�ʸ���ĥ������ʤʤΤǤ���
-�㤨�С�Gauche�ι�ʸ��㴳�Ѥ��뤳�Ȥ�¾��Scheme�����Ѥ˽񤫤줿Scheme�ץ�������
-���餻���ꡢ���뤤�ϼ�ʬ���������Ŭ�����֥ߥ˸���פ�ǥ����󤹤뤳�Ȥ����Ǥ��ޤ���
+Lisp系言語のマクロは、他の言語に見られるマクロ(例えばCプリプロセッサマクロ)とは
+大きく異なります。Lispのマクロは元の言語の構文を拡張する手段なのです。
+例えば、Gaucheの構文を若干変えることで他のScheme実装用に書かれたSchemeプログラムを
+走らせたり、あるいは自分の問題解決に適した「ミニ言語」をデザインすることさえできます。
 @c COMMON
 
 @menu
@@ -34,7 +35,7 @@ Lisp�ϸ���Υޥ����ϡ�¾�θ���˸�����ޥ���(�㤨��C�ץ�ץ����å��ޥ���)�Ȥ�
 
 @node Hygienic Macros, Traditional Macros, Macros, Macros
 @section Hygienic Macros
-@c NODE �����ʥޥ���
+@c NODE 健全なマクロ
 
 @c EN
 R5RS hygienic macro is based on a special pattern language,
@@ -43,11 +44,11 @@ and guaranteed that no "variable capture" occurs.
 bindings in the expanded form, the new bindings
 shadows the bindings in the form passed to the macro.
 @c JP
-R5RS�η����ʥޥ��������̤ʥѥ��������˴�Ť��Ƥ��ơ�
-�ޤ����ѿ���ª�פ�������ʤ����Ȥ��ݾڤ���Ƥ��ޤ���
-���ѿ���ª�פȤϡ��ޥ������������ѿ�«����Ƴ���������ˡ�����«����
-�ޥ������Ϥ��줿�ե���������ѿ�̾�Ⱦ��ͤ��ơ������ѿ�̾�������«���򱣤���
-���ޤ����Ȥ�����ޤ���
+R5RSの健全なマクロは特別なパターン言語に基づいていて、
+また「変数捕捉」が起こらないことが保証されています。
+「変数捕捉」とは、マクロが新しい変数束縛を導入した時に、その束縛が
+マクロに渡されたフォーム中の変数名と衝突して、その変数名の本来の束縛を隠して
+しまうことを言います。
 @c COMMON
 
 @defspec define-syntax name transformer-spec
@@ -66,7 +67,7 @@ R5RS�η����ʥޥ��������̤ʥѥ��������˴�Ť��Ƥ��ơ�
 
 @node Traditional Macros, Macro expansion, Hygienic Macros, Macros
 @section Traditional Macros
-@c NODE ����Ū�ʥޥ���
+@c NODE 伝統的なマクロ
 
 @defspec define-macro name procedure
 @defspecx define-macro (name . formals) body @dots{}
@@ -74,8 +75,8 @@ R5RS�η����ʥޥ��������̤ʥѥ��������˴�Ť��Ƥ��ơ�
 Defines @var{name} to be a global macro whose transformer is @var{procedure}.
 The second form is a shorthand notation of the following form:
 @c JP
-�Ѵ��Ҥ� @var{procedure} �Ǥ������ޥ��� @var{name} ��������ޤ���
-2���ܤΥե�����ϡ��ʲ��Υե�����δʰ׵�ˡ�Ǥ���
+変換子が @var{procedure} である大域マクロ @var{name} を定義します。
+2番目のフォームは、以下のフォームの簡易記法です。
 @c COMMON
 @example
 (define-macro name (lambda formals body @dots{}))
@@ -87,16 +88,16 @@ it calls @var{procedure} with @var{arg} @dots{}.  When @var{procedure}
 returns, the compiler inserts the returned form in place of the original
 form, and compile it again.
 @c JP
-����ѥ��餬 @code{(name @var{arg} @dots{})} �Ȥ����ե�����򸫤Ĥ���ȡ�
-@var{arg} @dots{} ������Ȥ��� @var{procedure} ��ƤӽФ��ޤ���
-@var{procedure} �����ȡ�����ѥ���ϸ��Υե�����ξ����֤��줿�ե������
-�����������٤���򥳥�ѥ��뤷�ޤ���
+コンパイラが @code{(name @var{arg} @dots{})} というフォームを見つけると、
+@var{arg} @dots{} を引数として @var{procedure} を呼び出します。
+@var{procedure} が戻ると、コンパイラは元のフォームの場所に返されたフォームを
+挿入し、再度それをコンパイルします。
 @c COMMON
 @end defspec
 
 @node Macro expansion, Macro utilities, Traditional Macros, Macros
 @section Macro expansion
-@c NODE �ޥ�����Ÿ��
+@c NODE マクロの展開
 
 @defun macroexpand form
 @defunx macroexpand-1 form
@@ -111,16 +112,16 @@ returns the expanded form.  Otherwise, returns @var{form} as is.
 
 These procedures can be used to expand globally defined macros.
 @c JP
-@var{form} ���ꥹ�Ȥǡ����κǽ�����Ǥ����Ū�˥ޥ�����«�����줿
-�ѿ��Ǥ���ʤ�С�@code{macroexpand-1}�Ϥ��Υޥ����Ѵ��Ҥ�¹Ԥ���
-Ÿ�����줿�ե�������֤��ޤ��������Ǥʤ���С�@var{form} �򤽤Τޤ�
-�֤��ޤ���
+@var{form} がリストで、その最初の要素が大域的にマクロに束縛された
+変数であるならば、@code{macroexpand-1}はそのマクロ変換子を実行し、
+展開されたフォームを返します。そうでなければ、@var{form} をそのまま
+返します。
 
-@code{macroexpand} �ϡ�@var{form} ��Ÿ���Ǥ��ʤ��ʤ�ޤ�
-@code{macroexpand-1} �򷫤��֤��ޤ���
+@code{macroexpand} は、@var{form} が展開できなくなるまで
+@code{macroexpand-1} を繰り返します。
 
-�����μ�³���ϡ����Ū��������줿�ޥ�����Ÿ�����뤿��˻Ȥ����Ȥ�
-�Ǥ��ޤ���
+これらの手続きは、大域的に定義されたマクロを展開するために使うことが
+できます。
 @c COMMON
 @end defun
 
@@ -130,7 +131,7 @@ These procedures can be used to expand globally defined macros.
 
 @node Macro utilities,  , Macro expansion, Macros
 @section Macro utilities
-@c NODE �ޥ����桼�ƥ���ƥ�
+@c NODE マクロユーティリティ
 
 @defmac syntax-error msg arg @dots{}
 @defmacx syntax-errorf fmt arg @dots{}
@@ -146,15 +147,15 @@ expander.   Because of the purpose, @var{arg} @dots{} are first
 passed to @code{unwrap-syntax} described below, to strip off
 the internal syntactic binding informations.
 @c JP
-������@code{error}��@code{errorf} (@ref{Signalling exceptions}����) ��
-�ۤ�Ʊ���Ǥ������¹Ի��ǤϤʤ��ޥ���Ÿ����(���ʤ��������ѥ����)��
-���顼�����Τ���Ȥ������ۤʤ�ޤ���
+これらは@code{error}と@code{errorf} (@ref{Signalling exceptions}参照) と
+ほぼ同じですが、実行時ではなくマクロ展開時(すなわち、コンパイル時)に
+エラーを通知するところが異なります。
 
-�����μ�³���ϡ��ޥ����θ��ä��Ȥ�����
-�ޥ���Ÿ���롼����νФ�ʣ���ʥ��顼�ǤϤʤ���
-ʬ����䤹����ˡ�ǥ桼���������Τ���Τ˻Ȥ��ޤ���
-���Τ��ᡢ@var{arg} @dots{}�Ϥޤ����˽Ҥ٤�@code{unwrap-syntax}���Ϥ����
-�����ι�ʸŪ«����������������Ǥ����μ�³�����Ϥ���ޤ���
+これらの手続きは、マクロの誤った使い方を、
+マクロ展開ルーチンの出す複雑なエラーではなく、
+分かりやすい方法でユーザーに通知するのに使えます。
+そのため、@var{arg} @dots{}はまず下に述べる@code{unwrap-syntax}に渡されて
+内部の構文的束縛情報を取り除いた後でこれらの手続きに渡されます。
 @c COMMON
 
 @example
@@ -182,13 +183,13 @@ for users if it appears in the messages.  This function
 replaces occurrences of identifiers in @var{form} to the original
 symbols.
 @c JP
-@var{form}������Ū�ʹ�ʸ�����������ޤ���
-�����ʥޥ����μ����Τ���ˡ��ޥ�����ĥ�롼����ϥޥ�����Υ���ܥ��
-���̻�(identifier)���֤������ޤ������̻ҤϤ��줬����빽ʸŪ�Ķ���
-��ª���ޤ�������ϥ���ѥ���˼�äƤ�ɬ�פʾ���Ǥ�����
-���顼��å������˸����ȥ桼�������𤵤����Ȥˤ�ʤ�ޤ���
-�����ǡ����μ�³���Ǥ�@var{form}��μ��̻Ҥ��ȤΥ���ܥ��
-�ִ����ʤ����ޤ���
+@var{form}の内部的な構文情報を取り除きます。
+健全なマクロの実装のために、マクロ拡張ルーチンはマクロ内のシンボルを
+識別子(identifier)に置き換えます。識別子はそれが現れる構文的環境を
+捕捉します。それはコンパイラに取っては必要な情報ですが、
+エラーメッセージに現れるとユーザーを混乱させるもとにもなります。
+そこで、この手続きでは@var{form}中の識別子をもとのシンボルに
+置換しなおします。
 @c COMMON
 @end defun
 

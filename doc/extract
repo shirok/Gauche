@@ -47,7 +47,7 @@
             (push! *node-table* (cons current-node jn))
             (push! *header-table* (cons current-header jh))))
          (#/^@include\s+(\S+)/ (#f file)
-           (with-input-from-file file (cut scan-nodes) :encoding 'euc-jp))
+           (with-input-from-file file (cut scan-nodes) :encoding 'utf8))
          ))
      read-line)))
 
@@ -59,7 +59,7 @@
       (pattern-out () (out (read-line)))
       (#/^@include\s+(\S+)/ (#f file)
         (with-input-from-file file (cut filter pattern-in pattern-out)
-                              :encoding 'euc-jp)
+                              :encoding 'utf8)
         (in (read-line)))
       (#/^@c COMMON$/ () (in (read-line)))
       (test (lambda _ (eq? *lang* 'en))
@@ -142,22 +142,20 @@
         ((en) (filter #/^@c EN$/ #/^@c JP$/))
         ((jp) (filter #/^@c JP$/ #/^@c EN$/))))
 
-    (define outenc (if (eq? *lang* 'jp) 'euc-jp 'utf8))
-    
     (unless (= (length a) 1) (usage))
 
     (when (eq? *lang* 'jp)
-      (with-input-from-file (car a) scan-nodes :encoding 'euc-jp))
+      (with-input-from-file (car a) scan-nodes :encoding 'utf8))
     
     (with-input-from-file (car a)
       (lambda ()
         (if *outfile*
-          (with-output-to-file *outfile* do-it :encoding outenc)
-          (let1 out (open-output-conversion-port
-                     (current-output-port) outenc)
+          (with-output-to-file *outfile* do-it :encoding 'utf8)
+          (let1 out (wrap-with-output-conversion
+                     (current-output-port) 'utf8)
             (with-output-to-port out do-it)
             (close-output-port out))))
-      :encoding 'euc-jp)
+      :encoding 'utf8)
     0))
 
 ;; Local variables:

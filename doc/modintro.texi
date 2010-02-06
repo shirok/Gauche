@@ -1,6 +1,7 @@
+@c -*- mode: texinfo; coding: utf-8; -*-
 @node Library modules - Overview, Library modules - Gauche extensions, Object system, Top
 @chapter Library modules - Overview
-@c NODE ¥é¥¤¥Ö¥é¥ê¥â¥¸¥å¡¼¥ë - ³µÍ×
+@c NODE ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ« - æ¦‚è¦
 
 @c EN
 In the following chapters, we explain library modules bundled with Gauche's
@@ -8,11 +9,11 @@ distribution.
 These modules should generally be loaded and imported (usually using @code{use}
 - @xref{Using modules}, for details), unless otherwise noted.
 @c JP
-Â³¤¯¤¤¤¯¤Ä¤«¤Î¾Ï¤Ç¡¢Gauche¤Î¥Ç¥£¥¹¥È¥ê¥Ó¥å¡¼¥·¥ç¥ó¤Ë´Ş¤Ş¤ì¤ë
-¥é¥¤¥Ö¥é¥ê¥â¥¸¥å¡¼¥ë¤ò²òÀâ¤·¤Ş¤¹¡£
-¤³¤ì¤é¤Î¥â¥¸¥å¡¼¥ë¤ò»È¤¦¤Ë¤¢¤¿¤Ã¤Æ¤Ï¡¢ÆÃ¤ËÃÇ¤ê¤Î¤Ê¤¤¸Â¤ê¡¢
-¥â¥¸¥å¡¼¥ë¤ò¥í¡¼¥É¤·¤Æimport¤¹¤ë¤³¤È¤¬É¬Í×¤Ç¤¹
-(ÄÌ¾ï¤Ï@code{use}¥Ş¥¯¥í¤¬»È¤¨¤Ş¤¹¡£@ref{Using modules}»²¾È)¡£
+ç¶šãã„ãã¤ã‹ã®ç« ã§ã€Gaucheã®ãƒ‡ã‚£ã‚¹ãƒˆãƒªãƒ“ãƒ¥ãƒ¼ã‚·ãƒ§ãƒ³ã«å«ã¾ã‚Œã‚‹
+ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’è§£èª¬ã—ã¾ã™ã€‚
+ã“ã‚Œã‚‰ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ä½¿ã†ã«ã‚ãŸã£ã¦ã¯ã€ç‰¹ã«æ–­ã‚Šã®ãªã„é™ã‚Šã€
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ãƒ­ãƒ¼ãƒ‰ã—ã¦importã™ã‚‹ã“ã¨ãŒå¿…è¦ã§ã™
+(é€šå¸¸ã¯@code{use}ãƒã‚¯ãƒ­ãŒä½¿ãˆã¾ã™ã€‚@ref{Using modules}å‚ç…§)ã€‚
 @c COMMON
 
 @c EN
@@ -21,11 +22,11 @@ to @code{load} or @code{use} the module explicitly; at the first time
 the bindings are used in the program, the module is automatically
 loaded and imported.  See @ref{Autoload}, for the details of autoloading.
 @c JP
-¤¤¤¯¤Ä¤«¤Î¥â¥¸¥å¡¼¥ë¤Ï¡Ö¥ª¡¼¥È¥í¡¼¥É¤µ¤ì¤ë¡×¤ÈÉ½µ­¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
-¤³¤Î¾ì¹ç¤Ï¡¢¤½¤Î¥â¥¸¥å¡¼¥ë¤ò»È¤¦¤Ë¤¢¤¿¤Ã¤Æ¤¢¤é¤«¤¸¤á¥â¥¸¥å¡¼¥ë¤ò¥í¡¼¥É¤·¤¿¤ê
-@code{use}¤·¤Æ¤ª¤¯É¬Í×¤Ï¤¢¤ê¤Ş¤»¤ó¡£¤½¤Î¥â¥¸¥å¡¼¥ë¤ÎÂ«Çû¤¬»È¤ï¤ì¤¿»şÅÀ¤Ç¡¢
-¥â¥¸¥å¡¼¥ë¤¬¼«Æ°Åª¤Ë¥í¡¼¥É¤µ¤ì¥¤¥ó¥İ¡¼¥È¤µ¤ì¤Ş¤¹¡£¥ª¡¼¥È¥í¡¼¥É¤Î
-¾ÜºÙ¤Ë¤Ä¤¤¤Æ¤Ï@ref{Autoload}¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
+ã„ãã¤ã‹ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ã€Œã‚ªãƒ¼ãƒˆãƒ­ãƒ¼ãƒ‰ã•ã‚Œã‚‹ã€ã¨è¡¨è¨˜ã•ã‚Œã¦ã„ã¾ã™ã€‚
+ã“ã®å ´åˆã¯ã€ãã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ä½¿ã†ã«ã‚ãŸã£ã¦ã‚ã‚‰ã‹ã˜ã‚ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ãƒ­ãƒ¼ãƒ‰ã—ãŸã‚Š
+@code{use}ã—ã¦ãŠãå¿…è¦ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚ãã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®æŸç¸›ãŒä½¿ã‚ã‚ŒãŸæ™‚ç‚¹ã§ã€
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒè‡ªå‹•çš„ã«ãƒ­ãƒ¼ãƒ‰ã•ã‚Œã‚¤ãƒ³ãƒãƒ¼ãƒˆã•ã‚Œã¾ã™ã€‚ã‚ªãƒ¼ãƒˆãƒ­ãƒ¼ãƒ‰ã®
+è©³ç´°ã«ã¤ã„ã¦ã¯@ref{Autoload}ã‚’å‚ç…§ã—ã¦ãã ã•ã„ã€‚
 @c COMMON
 
 @c EN
@@ -34,9 +35,9 @@ to find the one you need.  If you feel lost, check
 out the section @ref{Finding libraries you need}, in which
 we categorize libraries by their purposes.
 @c JP
-ÉÕÂ°¥é¥¤¥Ö¥é¥ê¤Î¿ô¤¬Áı¤¨¤ë¤Ë¤Ä¤ì¡¢É¬Í×¤Ê¥é¥¤¥Ö¥é¥ê¤òÃµ¤¹¤Î¤¬Æñ¤·¤¯
-¤Ê¤ê¤Ä¤Ä¤¢¤ê¤Ş¤¹¡£ÌÂ¤Ã¤¿¤é¡¢@ref{Finding libraries you need}¤ò
-¸«¤Æ¤ß¤Æ²¼¤µ¤¤¡£ÌÜÅª¤Ë¹ç¤ï¤»¤Æ¥é¥¤¥Ö¥é¥ê¤ò¥«¥Æ¥´¥é¥¤¥º¤·¤Æ¤¤¤Ş¤¹¡£
+ä»˜å±ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®æ•°ãŒå¢—ãˆã‚‹ã«ã¤ã‚Œã€å¿…è¦ãªãƒ©ã‚¤ãƒ–ãƒ©ãƒªã‚’æ¢ã™ã®ãŒé›£ã—ã
+ãªã‚Šã¤ã¤ã‚ã‚Šã¾ã™ã€‚è¿·ã£ãŸã‚‰ã€@ref{Finding libraries you need}ã‚’
+è¦‹ã¦ã¿ã¦ä¸‹ã•ã„ã€‚ç›®çš„ã«åˆã‚ã›ã¦ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã‚’ã‚«ãƒ†ã‚´ãƒ©ã‚¤ã‚ºã—ã¦ã„ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -56,20 +57,20 @@ of supported SRFIs.
 ---including database interface, filesystem utilities,
 network protocol utilities, and more.
 @c JP
-¤³¤Î¾Ï¤ËÂ³¤¯3¤Ä¤Î¾Ï¤Ç¡¢³Æ¥é¥¤¥Ö¥é¥ê¤Ë¤Ä¤¤¤Æ¾ÜºÙ¤Ëµ­½Ò¤·¤Ş¤¹¡£
-³Æ¾Ï¤ÏÌ¾Á°¤Ç¥°¥ë¡¼¥×²½¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
-@ref{Library modules - Gauche extensions}¤Ç¤Ï@code{gauche.*}¤È¤¤¤¦
-Ì¾Á°¤ò»ı¤Ä¥â¥¸¥å¡¼¥ë¤òÀâÌÀ¤·¤Ş¤¹¡£¤³¤ì¤é¤Ï¤¢¤ë°ÕÌ£Gauche¤Î´ğËÜÅª¤Ê
-µ¡Ç½¤Ê¤Î¤Ç¤¹¤¬¡¢»È¤ï¤ì¤ëÉÑÅÙ¤¬¾¯¤Ê¤¤¤¿¤á¤ËÊÌ¥â¥¸¥å¡¼¥ë¤Ë¤Ê¤Ã¤¿¤È¤¤¤¦¤â¤Î¤Ç¤¹¡£
-(¤¤¤¯¤Ä¤«¤Î¥â¥¸¥å¡¼¥ë¤Ï¤â¤Ã¤ÈÉÕ²ÃÅª¤Ê¤â¤Î¤Ç¤¹¤¬¡¢Îò»ËÅªÍıÍ³¤«¤é¤³¤³¤Ë¤¢¤ê¤Ş¤¹)¡£
-@ref{Library modules - SRFIs}¤Ç¤ÏSRFI¤Îµ¡Ç½¤òÄó¶¡¤¹¤ë¥â¥¸¥å¡¼¥ë¤ò
-°·¤¤¤Ş¤¹¡£@code{srfi-}¤Ç»Ï¤Ş¤ëÌ¾Á°¤ò»ı¤Á¤Ş¤¹¡£
-¤¤¤¯¤Ä¤«¤ÎSRFI¤Ë¤Ä¤¤¤Æ¤ÏGauche¤Î¥³¥¢¤ËÁÈ¤ß¹ş¤ß¤Ë¤Ê¤Ã¤Æ¤¤¤ë¤¿¤á¡¢
-¤³¤Î¾Ï¤Ë¤Ï¸½¤ì¤Ê¤¤¤³¤È¤ËÃí°Õ¤·¤Æ¤¯¤À¤µ¤¤¡£¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤ëSRFI¤Î
-´°Á´¤Ê¥ê¥¹¥È¤Ë¤Ä¤¤¤Æ¤Ï@ref{Standard conformance}¤ò¸«¤Æ²¼¤µ¤¤¡£
-@ref{Library modules - Utilities}¤Ç¤Ï»Ä¤ê¤Î¥â¥¸¥å¡¼¥ë¤Ë
-¤Ä¤¤¤ÆÀâÌÀ¤·¤Ş¤¹¡£¥Ç¡¼¥¿¥Ù¡¼¥¹¥¤¥ó¥¿¥Õ¥§¡¼¥¹¡¢¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¡¢
-¥Í¥Ã¥È¥ï¡¼¥¯¥×¥í¥È¥³¥ë¡¢¤½¤ÎÂ¾ÍÍ¡¹¤Ê¥é¥¤¥Ö¥é¥ê¤¬¤¢¤ê¤Ş¤¹¡£
+ã“ã®ç« ã«ç¶šã3ã¤ã®ç« ã§ã€å„ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã«ã¤ã„ã¦è©³ç´°ã«è¨˜è¿°ã—ã¾ã™ã€‚
+å„ç« ã¯åå‰ã§ã‚°ãƒ«ãƒ¼ãƒ—åŒ–ã•ã‚Œã¦ã„ã¾ã™ã€‚
+@ref{Library modules - Gauche extensions}ã§ã¯@code{gauche.*}ã¨ã„ã†
+åå‰ã‚’æŒã¤ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’èª¬æ˜ã—ã¾ã™ã€‚ã“ã‚Œã‚‰ã¯ã‚ã‚‹æ„å‘³Gaucheã®åŸºæœ¬çš„ãª
+æ©Ÿèƒ½ãªã®ã§ã™ãŒã€ä½¿ã‚ã‚Œã‚‹é »åº¦ãŒå°‘ãªã„ãŸã‚ã«åˆ¥ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«ãªã£ãŸã¨ã„ã†ã‚‚ã®ã§ã™ã€‚
+(ã„ãã¤ã‹ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ã‚‚ã£ã¨ä»˜åŠ çš„ãªã‚‚ã®ã§ã™ãŒã€æ­´å²çš„ç†ç”±ã‹ã‚‰ã“ã“ã«ã‚ã‚Šã¾ã™)ã€‚
+@ref{Library modules - SRFIs}ã§ã¯SRFIã®æ©Ÿèƒ½ã‚’æä¾›ã™ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’
+æ‰±ã„ã¾ã™ã€‚@code{srfi-}ã§å§‹ã¾ã‚‹åå‰ã‚’æŒã¡ã¾ã™ã€‚
+ã„ãã¤ã‹ã®SRFIã«ã¤ã„ã¦ã¯Gaucheã®ã‚³ã‚¢ã«çµ„ã¿è¾¼ã¿ã«ãªã£ã¦ã„ã‚‹ãŸã‚ã€
+ã“ã®ç« ã«ã¯ç¾ã‚Œãªã„ã“ã¨ã«æ³¨æ„ã—ã¦ãã ã•ã„ã€‚ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã‚‹SRFIã®
+å®Œå…¨ãªãƒªã‚¹ãƒˆã«ã¤ã„ã¦ã¯@ref{Standard conformance}ã‚’è¦‹ã¦ä¸‹ã•ã„ã€‚
+@ref{Library modules - Utilities}ã§ã¯æ®‹ã‚Šã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«
+ã¤ã„ã¦èª¬æ˜ã—ã¾ã™ã€‚ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹ã€ãƒ•ã‚¡ã‚¤ãƒ«ã‚·ã‚¹ãƒ†ãƒ ã€
+ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã€ãã®ä»–æ§˜ã€…ãªãƒ©ã‚¤ãƒ–ãƒ©ãƒªãŒã‚ã‚Šã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -77,9 +78,9 @@ There are a few procedures that help your program to check
 the existence of certain modules or libraries at run-time.
 See @ref{Operations on libraries}, for the details.
 @c JP
-¼Â¹Ô»ş¤Ë¥×¥í¥°¥é¥à¤¬ÆÃÄê¤Î¥â¥¸¥å¡¼¥ë¤ä¥é¥¤¥Ö¥é¥ê¤ÎÂ¸ºß¤ò¸¡ºº¤Ç¤­¤ë
-¼êÂ³¤­¤¬¤¤¤¯¤Ä¤«Äó¶¡¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
-¾Ü¤·¤¯¤Ï@ref{Operations on libraries}¤ò»²¾È¤·¤Æ²¼¤µ¤¤¡£
+å®Ÿè¡Œæ™‚ã«ãƒ—ãƒ­ã‚°ãƒ©ãƒ ãŒç‰¹å®šã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚„ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®å­˜åœ¨ã‚’æ¤œæŸ»ã§ãã‚‹
+æ‰‹ç¶šããŒã„ãã¤ã‹æä¾›ã•ã‚Œã¦ã„ã¾ã™ã€‚
+è©³ã—ãã¯@ref{Operations on libraries}ã‚’å‚ç…§ã—ã¦ä¸‹ã•ã„ã€‚
 @c COMMON
 
 @menu
@@ -89,7 +90,7 @@ See @ref{Operations on libraries}, for the details.
 
 @node Finding libraries you need, Naming convention of libraries, Library modules - Overview, Library modules - Overview
 @section Finding libraries you need
-@c NODE É¬Í×¤Ê¥é¥¤¥Ö¥é¥ê¤ÎÃµ¤·Êı
+@c NODE å¿…è¦ãªãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®æ¢ã—æ–¹
 
 @c EN
 Each module is named more or less after what it implements
@@ -100,12 +101,12 @@ of an algorithm can solve multiple different problems; thus
 it is difficult to name the modules in problem-oriented
 (or purpose-oriented) way.
 @c JP
-³Æ¥â¥¸¥å¡¼¥ëÌ¾¤Ï³µ¤Í²¿¤ò¼ÂÁõ¤·¤Æ¤¤¤ë¤«¤ò¼¨¤¹¤è¤¦¤ÊÌ¾Á°¤Ë¤Ê¤Ã¤Æ¤¤¤Æ¡¢
-@emph{²¿¤Î¤¿¤á¤Î}¼ÂÁõ¤Ë¤Ê¤Ã¤Æ¤¤¤ë¤«¤Ï¼¨¤·¤Æ¤¤¤Ş¤»¤ó¡£¥â¥¸¥å¡¼¥ë¤¬¤Ò¤È
-¤Ä¤ÎÌäÂê¤ò²ò¤¯¤¿¤á¤Ë¤¢¤ë¤Î¤Ê¤éÎ¾Êı¤Ï°ìÃ×¤·¤Ş¤¹¤¬¡¢ÌäÂê¤Î²òË¡¤¬Ê£¿ô¤¢¤ë
-¤³¤È¤â¤¢¤ê¤Ş¤¹¤·¡¢¤Ò¤È¤Ä¤Î¥¢¥ë¥´¥ê¥º¥à¤Î¼ÂÁõ¤¬Ê£¿ô¤Î°Û¤ëÌäÂê¤ò²ò¤¯¤Î¤Ë
-ÌòÎ©¤Ä¤³¤È¤â¤¢¤ê¤Ş¤¹¡£¤·¤¿¤¬¤Ã¤Æ¡¢¥â¥¸¥å¡¼¥ë¤ËÌäÂê»Ø¸ş(¤¢¤ë¤¤¤ÏÌÜÅª»Ø
-¸ş)¤ÎÌ¾Á°¤òÉÕ¤±¤ë¤³¤È¤Ïº¤Æñ¤Ç¤¹¡£
+å„ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«åã¯æ¦‚ã­ä½•ã‚’å®Ÿè£…ã—ã¦ã„ã‚‹ã‹ã‚’ç¤ºã™ã‚ˆã†ãªåå‰ã«ãªã£ã¦ã„ã¦ã€
+@emph{ä½•ã®ãŸã‚ã®}å®Ÿè£…ã«ãªã£ã¦ã„ã‚‹ã‹ã¯ç¤ºã—ã¦ã„ã¾ã›ã‚“ã€‚ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒã²ã¨
+ã¤ã®å•é¡Œã‚’è§£ããŸã‚ã«ã‚ã‚‹ã®ãªã‚‰ä¸¡æ–¹ã¯ä¸€è‡´ã—ã¾ã™ãŒã€å•é¡Œã®è§£æ³•ãŒè¤‡æ•°ã‚ã‚‹
+ã“ã¨ã‚‚ã‚ã‚Šã¾ã™ã—ã€ã²ã¨ã¤ã®ã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ ã®å®Ÿè£…ãŒè¤‡æ•°ã®ç•°ã‚‹å•é¡Œã‚’è§£ãã®ã«
+å½¹ç«‹ã¤ã“ã¨ã‚‚ã‚ã‚Šã¾ã™ã€‚ã—ãŸãŒã£ã¦ã€ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«å•é¡ŒæŒ‡å‘(ã‚ã‚‹ã„ã¯ç›®çš„æŒ‡
+å‘)ã®åå‰ã‚’ä»˜ã‘ã‚‹ã“ã¨ã¯å›°é›£ã§ã™ã€‚
 @c COMMON
 
 @c EN
@@ -114,10 +115,10 @@ to Gauche to find an appropriate Gauche module to solve her problem,
 since there may be multiple algorithms to do the job,
 and each algorithm can be implemented in different modules.
 @c JP
-¤È¤¤¤¦¤ï¤±¤Ç¡¢Gauche¤Ë¤Ï¤¸¤á¤Æ¤Õ¤ì¤ë¥×¥í¥°¥é¥Ş¤Ë¤È¤Ã¤ÆÌäÂê¤ò²ò¤¯¤Î¤ËÅ¬
-ÀÚ¤ÊGauche¥â¥¸¥å¡¼¥ë¤ò¸«¤Ä¤±¤ë¤Î¤Ï´ÊÃ±¤Ç¤Ï¤Ê¤¤¤«¤â¤·¤ì¤Ş¤»¤ó¡£¤ä¤ë¤Ù¤­¤³¤È¤ËÂĞ
-±ş¤¹¤ë¥¢¥ë¥´¥ê¥º¥à¤ÏÊ£¿ô¤¢¤ê¤¨¤Ş¤¹¤«¤é¡¢¤½¤ì¤¾¤ì¤Î¥¢¥ë¥´¥ê¥º¥à¤ÏÊÌ¡¹¤Î
-¥â¥¸¥å¡¼¥ë¤Ç¼ÂÁõ¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
+ã¨ã„ã†ã‚ã‘ã§ã€Gaucheã«ã¯ã˜ã‚ã¦ãµã‚Œã‚‹ãƒ—ãƒ­ã‚°ãƒ©ãƒã«ã¨ã£ã¦å•é¡Œã‚’è§£ãã®ã«é©
+åˆ‡ãªGaucheãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’è¦‹ã¤ã‘ã‚‹ã®ã¯ç°¡å˜ã§ã¯ãªã„ã‹ã‚‚ã—ã‚Œã¾ã›ã‚“ã€‚ã‚„ã‚‹ã¹ãã“ã¨ã«å¯¾
+å¿œã™ã‚‹ã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ ã¯è¤‡æ•°ã‚ã‚Šãˆã¾ã™ã‹ã‚‰ã€ãã‚Œãã‚Œã®ã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ ã¯åˆ¥ã€…ã®
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã§å®Ÿè£…ã•ã‚Œã¦ã„ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -131,14 +132,14 @@ interface.  However there are times that you have to break
 the abstraction and to go down to tweak the machinery in
 the basement; then you need to use low-level modules directly.
 @c JP
-¥â¥¸¥å¡¼¥ë¤Ï¤Ş¤¿¡¢¤¤¤¯¤Ä¤â¤ÎÁØ¤Ç¼ÂÁõ¤µ¤ì¤Æ¤¤¤Ş¤¹¡£¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ø¤ÎÄ¾ÀÜ¤Î¥¤¥ó¥¿¥Õ¥§¡¼¥¹
-¤òÄó¶¡¤¹¤ëÄã¥ì¥Ù¥ë¥â¥¸¥å¡¼¥ë¤â¤¢¤ì¤Ğ¡¢Ê£¿ô¤ÎÄã¥ì¥Ù¥ë¥â¥¸¥å¡¼¥ë¤ò»È¤Ã¤Æ
-¹½ÃÛ¤µ¤ì¤¿¡¢¤è¤êÃê¾İ²½¤µ¤ì»È¤¤¤ä¤¹¤¤¹â¥ì¥Ù¥ë¥â¥¸¥å¡¼¥ë¤â¤¢¤ê¤Ş¤¹¡£¤µ¤Æ
-¤É¤ì¤ò»È¤¨¤Ğ¤è¤¤¤Ç¤·¤ç¤¦¡£ÄÌ¾ï¤â¤Ã¤È¤â¹â¥ì¥Ù¥ë¤Î¤â¤Î¤ò»È¤¦¤Î¤¬¤è¤¤¤Ç¤·¤ç
-¤¦¡£¤ä¤µ¤·¤¯»È¤¨¤ëÃê¾İÅÙ¤Î¹â¤¤¥¤¥ó¥¿¥Õ¥§¡¼¥¹¤òÄó¶¡¤¹¤ë¤È¤¤¤¦¤Î¤¬¤Ş¤µ¤Ë
-¥é¥¤¥Ö¥é¥ê¤ÎÌÜÅª¤À¤«¤é¤Ç¤¹¡£¤È¤Ï¤¤¤¦¤â¤Î¤Î¡¢¾ì¹ç¤Ë¤è¤Ã¤Æ¤ÏÃê¾İ¤ÎÊÉ¤ò¤ä
-¤Ö¤Ã¤Æ¤½¤Î²¼¤Ë¤¢¤ë¥á¥«¥Ë¥º¥à¤Ë¿¨¤é¤Ê¤±¤ì¤Ğ½ĞÍè¤Ê¤¤¤³¤È¤â¤¢¤ê¤Ş¤¹¡£¤½
-¤¦¤¤¤¦¤È¤­¤Ë¤ÏÄã¥ì¥Ù¥ë¤Î¥â¥¸¥å¡¼¥ë¤òÄ¾ÀÜ»È¤¦É¬Í×¤¬¤¢¤ê¤Ş¤¹¡£
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯ã¾ãŸã€ã„ãã¤ã‚‚ã®å±¤ã§å®Ÿè£…ã•ã‚Œã¦ã„ã¾ã™ã€‚ã‚·ã‚¹ãƒ†ãƒ ã‚³ãƒ¼ãƒ«ã¸ã®ç›´æ¥ã®ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹
+ã‚’æä¾›ã™ã‚‹ä½ãƒ¬ãƒ™ãƒ«ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚‚ã‚ã‚Œã°ã€è¤‡æ•°ã®ä½ãƒ¬ãƒ™ãƒ«ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ä½¿ã£ã¦
+æ§‹ç¯‰ã•ã‚ŒãŸã€ã‚ˆã‚ŠæŠ½è±¡åŒ–ã•ã‚Œä½¿ã„ã‚„ã™ã„é«˜ãƒ¬ãƒ™ãƒ«ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚‚ã‚ã‚Šã¾ã™ã€‚ã•ã¦
+ã©ã‚Œã‚’ä½¿ãˆã°ã‚ˆã„ã§ã—ã‚‡ã†ã€‚é€šå¸¸ã‚‚ã£ã¨ã‚‚é«˜ãƒ¬ãƒ™ãƒ«ã®ã‚‚ã®ã‚’ä½¿ã†ã®ãŒã‚ˆã„ã§ã—ã‚‡
+ã†ã€‚ã‚„ã•ã—ãä½¿ãˆã‚‹æŠ½è±¡åº¦ã®é«˜ã„ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹ã‚’æä¾›ã™ã‚‹ã¨ã„ã†ã®ãŒã¾ã•ã«
+ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®ç›®çš„ã ã‹ã‚‰ã§ã™ã€‚ã¨ã¯ã„ã†ã‚‚ã®ã®ã€å ´åˆã«ã‚ˆã£ã¦ã¯æŠ½è±¡ã®å£ã‚’ã‚„
+ã¶ã£ã¦ãã®ä¸‹ã«ã‚ã‚‹ãƒ¡ã‚«ãƒ‹ã‚ºãƒ ã«è§¦ã‚‰ãªã‘ã‚Œã°å‡ºæ¥ãªã„ã“ã¨ã‚‚ã‚ã‚Šã¾ã™ã€‚ã
+ã†ã„ã†ã¨ãã«ã¯ä½ãƒ¬ãƒ™ãƒ«ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ç›´æ¥ä½¿ã†å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -146,8 +147,8 @@ The purpose of this section is to group the libraries by
 their purposes.  Each category lists relevant modules with
 brief descriptions.
 @c JP
-¤³¤³¤Ç¤Ï¥é¥¤¥Ö¥é¥ê¤ò¤½¤ÎÌÜÅª¤Ë¤·¤¿¤¬¤Ã¤Æ¥°¥ë¡¼¥×Ê¬¤±¤·¤Ş¤¹¡£³Æ¥«¥Æ¥´¥ê
-¤´¤È¤Ë´ØÏ¢¤¹¤ë¥â¥¸¥å¡¼¥ë¤ò¤¢¤²¡¢´ÊÃ±¤ÊÀâÌÀ¤ò¤·¤Æ¤¤¤Ş¤¹¡£
+ã“ã“ã§ã¯ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã‚’ãã®ç›®çš„ã«ã—ãŸãŒã£ã¦ã‚°ãƒ«ãƒ¼ãƒ—åˆ†ã‘ã—ã¾ã™ã€‚å„ã‚«ãƒ†ã‚´ãƒª
+ã”ã¨ã«é–¢é€£ã™ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’ã‚ã’ã€ç°¡å˜ãªèª¬æ˜ã‚’ã—ã¦ã„ã¾ã™ã€‚
 @c COMMON
 
 @menu
@@ -164,12 +165,12 @@ brief descriptions.
 
 @node Library directory - data containers, Library directory - strings and characters, Finding libraries you need, Finding libraries you need
 @subsection Library directory - data containers
-@c NODE ¥é¥¤¥Ö¥é¥ê¥Ç¥£¥ì¥¯¥È¥ê - ¥Ç¡¼¥¿¥³¥ó¥Æ¥Ê
+@c NODE ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª - ãƒ‡ãƒ¼ã‚¿ã‚³ãƒ³ãƒ†ãƒŠ
 
 @c EN
 @subsubheading Generic container operations
 @c JP
-@subsubheading ¥¸¥§¥Í¥ê¥Ã¥¯¤Ê¥³¥ó¥Æ¥ÊÁàºî
+@subsubheading ã‚¸ã‚§ãƒãƒªãƒƒã‚¯ãªã‚³ãƒ³ãƒ†ãƒŠæ“ä½œ
 @c COMMON
 
 @c EN
@@ -178,17 +179,17 @@ lists, vectors and hash tables can be seen as a collection
 of data.  So it is handy to have generic operators, such
 as applying a procedure to all the elements.
 @c JP
-»÷¤¿¤è¤¦¤ÊÀ­¼Á¤ò¤â¤Ä¥Ç¡¼¥¿¥³¥ó¥Æ¥Ê¤¬¤¢¤ê¤Ş¤¹¡£¤¿¤È¤¨¤Ğ¡¢¥ê¥¹¥È¡¢¥Ù¥¯¥¿¡¢
-¥Ï¥Ã¥·¥å¥Æ¡¼¥Ö¥ë¤Ï¥Ç¡¼¥¿¤Î¥³¥ì¥¯¥·¥ç¥ó¤È¤·¤Æ¸«¤ë¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£¤½¤ì¤æ
-¤¨¡¢¤¹¤Ù¤Æ¤ÎÍ×ÁÇ¤ËÅ¬ÍÑ¤Ç¤­¤ë¤è¤¦¤Ê¥¸¥§¥Í¥ê¥Ã¥¯¤ÊÁàºî¤¬¤¢¤ì¤ĞÊØÍø¤Ç¤¹¡£
+ä¼¼ãŸã‚ˆã†ãªæ€§è³ªã‚’ã‚‚ã¤ãƒ‡ãƒ¼ã‚¿ã‚³ãƒ³ãƒ†ãƒŠãŒã‚ã‚Šã¾ã™ã€‚ãŸã¨ãˆã°ã€ãƒªã‚¹ãƒˆã€ãƒ™ã‚¯ã‚¿ã€
+ãƒãƒƒã‚·ãƒ¥ãƒ†ãƒ¼ãƒ–ãƒ«ã¯ãƒ‡ãƒ¼ã‚¿ã®ã‚³ãƒ¬ã‚¯ã‚·ãƒ§ãƒ³ã¨ã—ã¦è¦‹ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚ãã‚Œã‚†
+ãˆã€ã™ã¹ã¦ã®è¦ç´ ã«é©ç”¨ã§ãã‚‹ã‚ˆã†ãªã‚¸ã‚§ãƒãƒªãƒƒã‚¯ãªæ“ä½œãŒã‚ã‚Œã°ä¾¿åˆ©ã§ã™ã€‚
 @c COMMON
 
 @c EN
 Gauche provides such mechanism to a certain degree, mainly using
 its object system.
 @c JP
-Gauche¤Ç¤Ï¼ç¤Ë¥ª¥Ö¥¸¥§¥¯¥È¥·¥¹¥Æ¥à¤Ç»È¤¦¤¿¤á¤Ë¤³¤Î¤è¤¦¤Êµ¡¹½¤ò¤¢¤ëÄøÅÙ
-ÍÑ°Õ¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
+Gaucheã§ã¯ä¸»ã«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†ãŸã‚ã«ã“ã®ã‚ˆã†ãªæ©Ÿæ§‹ã‚’ã‚ã‚‹ç¨‹åº¦
+ç”¨æ„ã•ã‚Œã¦ã„ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -210,24 +211,24 @@ to construct and traverse collections/sequences in concise code.
 @c JP
 @itemize @bullet
 @item
-@emph{¥³¥ì¥¯¥·¥ç¥ó} - ½ç½øÉÕ¤±¤é¤ì¤Æ¤¤¤Ê¤¤¥Ç¡¼¥¿¤Î½¸¹ç¤ËÂĞ¤¹¤ë¥¸¥§¥Í¥ê¥Ã
-¥¯´Ø¿ô¡£@ref{Collection framework}»²¾È¡£
+@emph{ã‚³ãƒ¬ã‚¯ã‚·ãƒ§ãƒ³} - é †åºä»˜ã‘ã‚‰ã‚Œã¦ã„ãªã„ãƒ‡ãƒ¼ã‚¿ã®é›†åˆã«å¯¾ã™ã‚‹ã‚¸ã‚§ãƒãƒªãƒƒ
+ã‚¯é–¢æ•°ã€‚@ref{Collection framework}å‚ç…§ã€‚
 @item
-@emph{¥·¡¼¥±¥ó¥¹} - ½ç½øÉÕ¤±¤é¤ì¤¿¥Ç¡¼¥¿¤Î½¸¹ç¤ËÂĞ¤¹¤ë¥¸¥§¥Í¥ê¥Ã¥¯´Ø¿ô¡£
-@ref{Sequence framework}»²¾È¡£
+@emph{ã‚·ãƒ¼ã‚±ãƒ³ã‚¹} - é †åºä»˜ã‘ã‚‰ã‚ŒãŸãƒ‡ãƒ¼ã‚¿ã®é›†åˆã«å¯¾ã™ã‚‹ã‚¸ã‚§ãƒãƒªãƒƒã‚¯é–¢æ•°ã€‚
+@ref{Sequence framework}å‚ç…§ã€‚
 @item
-@emph{¥ê¥ì¡¼¥·¥ç¥ó} - (Codd¤ÎÄêµÁ¤Ë¤è¤ë)¥ê¥ì¡¼¥·¥ç¥ó¤ò½èÍı¤¹¤ë¤¿¤á¤Î¥¸¥§
-¥Í¥ê¥Ã¥¯´Ø¿ô¡£@ref{Relation framework}»²¾È¡£
+@emph{ãƒªãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³} - (Coddã®å®šç¾©ã«ã‚ˆã‚‹)ãƒªãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã‚’å‡¦ç†ã™ã‚‹ãŸã‚ã®ã‚¸ã‚§
+ãƒãƒªãƒƒã‚¯é–¢æ•°ã€‚@ref{Relation framework}å‚ç…§ã€‚
 @item
-@emph{ÆâÊñÉ½µ­} - ¥³¥ì¥¯¥·¥ç¥ó¤ä¥·¡¼¥±¥ó¥¹¤Î¹½ÃÛ¤ä¥È¥é¥Ğ¡¼¥¹¤òÃ»¤¯ÊØÍø
-¤Ë½ñ¤¯¤¿¤á¤Î¥Ş¥¯¥í½¸¡£@ref{Eager comprehensions}»²¾È¡£
+@emph{å†…åŒ…è¡¨è¨˜} - ã‚³ãƒ¬ã‚¯ã‚·ãƒ§ãƒ³ã‚„ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ã®æ§‹ç¯‰ã‚„ãƒˆãƒ©ãƒãƒ¼ã‚¹ã‚’çŸ­ãä¾¿åˆ©
+ã«æ›¸ããŸã‚ã®ãƒã‚¯ãƒ­é›†ã€‚@ref{Eager comprehensions}å‚ç…§ã€‚
 @end itemize
 @c COMMON
 
 @c EN
 @subsubheading Container implementations
 @c JP
-@subsubheading ¥³¥ó¥Æ¥Ê¤Î¼ÂÁõ
+@subsubheading ã‚³ãƒ³ãƒ†ãƒŠã®å®Ÿè£…
 @c COMMENT
 
 @c EN
@@ -284,56 +285,56 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 @c JP
 @itemize @bullet
 @item
-@emph{¥ê¥¹¥È} - ¤â¤Ã¤È¤â¤è¤¯»È¤¦¥Ç¡¼¥¿¹½Â¤¡£
-@ref{Pairs and Lists}¡¢@ref{List library}¡¢
-@ref{Additional list library}¤ò¥Á¥§¥Ã¥¯¤·¤Ş¤·¤ç¤¦¡£
+@emph{ãƒªã‚¹ãƒˆ} - ã‚‚ã£ã¨ã‚‚ã‚ˆãä½¿ã†ãƒ‡ãƒ¼ã‚¿æ§‹é€ ã€‚
+@ref{Pairs and Lists}ã€@ref{List library}ã€
+@ref{Additional list library}ã‚’ãƒã‚§ãƒƒã‚¯ã—ã¾ã—ã‚‡ã†ã€‚
 @item
-@emph{¥Ù¥¯¥¿} - Ç¤°Õ¤ÎScheme¤ÎÃÍ¤ò³ÊÇ¼¤¹¤ë°ì¼¡¸µÇÛÎó¡£@ref{Vectors}¤ª
-¤è¤Ó@ref{Vector library}¤ò¸«¤Ş¤·¤ç¤¦¡£
+@emph{ãƒ™ã‚¯ã‚¿} - ä»»æ„ã®Schemeã®å€¤ã‚’æ ¼ç´ã™ã‚‹ä¸€æ¬¡å…ƒé…åˆ—ã€‚@ref{Vectors}ãŠ
+ã‚ˆã³@ref{Vector library}ã‚’è¦‹ã¾ã—ã‚‡ã†ã€‚
 @item
-@emph{¥æ¥Ë¥Õ¥©¡¼¥à¥Ù¥¯¥¿} - À©¸Â¤µ¤ì¤¿·¿¤ÎÃÍ(¤¿¤È¤¨¤Ğ8¥Ó¥Ã¥ÈÀ°¿ô)¤òÊİ
-»ı¤¹¤ëÆÃÊÌ¤Ê¥Ù¥¯¥¿¡£¥°¥é¥Õ¥£¥Ã¥¯¤Ê¤É¥Ñ¥Õ¥©¡¼¥Ş¥ó¥¹¤¬Í×µá¤µ¤ì¤ë¥¢¥×¥ê¥±¡¼
-¥·¥ç¥óÍÑ¡£@ref{Uniform vectors}»²¾È¡£
+@emph{ãƒ¦ãƒ‹ãƒ•ã‚©ãƒ¼ãƒ ãƒ™ã‚¯ã‚¿} - åˆ¶é™ã•ã‚ŒãŸå‹ã®å€¤(ãŸã¨ãˆã°8ãƒ“ãƒƒãƒˆæ•´æ•°)ã‚’ä¿
+æŒã™ã‚‹ç‰¹åˆ¥ãªãƒ™ã‚¯ã‚¿ã€‚ã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯ãªã©ãƒ‘ãƒ•ã‚©ãƒ¼ãƒãƒ³ã‚¹ãŒè¦æ±‚ã•ã‚Œã‚‹ã‚¢ãƒ—ãƒªã‚±ãƒ¼
+ã‚·ãƒ§ãƒ³ç”¨ã€‚@ref{Uniform vectors}å‚ç…§ã€‚
 @item
-@emph{ÇÛÎó} - Ç¤°Õ¤ÎSchemeÃÍ¤òÊİ»ı¤Ç¤­¤ëÂ¿¼¡¸µÇÛÎó¡£@ref{Arrays}»²¾È¡£
+@emph{é…åˆ—} - ä»»æ„ã®Schemeå€¤ã‚’ä¿æŒã§ãã‚‹å¤šæ¬¡å…ƒé…åˆ—ã€‚@ref{Arrays}å‚ç…§ã€‚
 @item
-@emph{¥æ¥Ë¥Õ¥©¡¼¥àÇÛÎó} - À©¸Â¤µ¤ì¤¿·¿¤ÎÃÍ¤òÊİ»ı¤¹¤ëÂ¿¼¡¸µÇÛÎó¡£¤³¤ì¤â
-@ref{Arrays}¤Ç¥µ¥İ¡¼¥È¤µ¤ì¤Æ¤¤¤ë¡£
+@emph{ãƒ¦ãƒ‹ãƒ•ã‚©ãƒ¼ãƒ é…åˆ—} - åˆ¶é™ã•ã‚ŒãŸå‹ã®å€¤ã‚’ä¿æŒã™ã‚‹å¤šæ¬¡å…ƒé…åˆ—ã€‚ã“ã‚Œã‚‚
+@ref{Arrays}ã§ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã‚‹ã€‚
 @item
-@emph{Ê¸»úÎó} - Ê¸»ú¤Î¥·¡¼¥±¥ó¥¹¡£@ref{Strings}¤ª¤è¤Ó
-@ref{String library}»²¾È¡£Gauche¤Ç¤Ï¥Ş¥ë¥Á¥Ğ¥¤¥ÈÊ¸»úÎó¤ò°·¤¨¤Ş¤¹¡£¾ÜºÙ
-¤Ë¤Ä¤¤¤Æ¤Ï@ref{Multibyte Strings}¤ò¸«¤Æ¤¯¤À¤µ¤¤¡£
+@emph{æ–‡å­—åˆ—} - æ–‡å­—ã®ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ã€‚@ref{Strings}ãŠã‚ˆã³
+@ref{String library}å‚ç…§ã€‚Gaucheã§ã¯ãƒãƒ«ãƒãƒã‚¤ãƒˆæ–‡å­—åˆ—ã‚’æ‰±ãˆã¾ã™ã€‚è©³ç´°
+ã«ã¤ã„ã¦ã¯@ref{Multibyte Strings}ã‚’è¦‹ã¦ãã ã•ã„ã€‚
 @item
-@emph{Ê¸»ú½¸¹ç} - Ê¸»ú¤Î½¸¹ç¡£@ref{Character set}¤ª¤è¤Ó
-@ref{Character-set library}»²¾È¡£
+@emph{æ–‡å­—é›†åˆ} - æ–‡å­—ã®é›†åˆã€‚@ref{Character set}ãŠã‚ˆã³
+@ref{Character-set library}å‚ç…§ã€‚
 @item
-@emph{¥Ï¥Ã¥·¥å¥Æ¡¼¥Ö¥ë} - ¥Ï¥Ã¥·¥å¥Æ¡¼¥Ö¥ë¡£ @ref{Hashtables}»²¾È¡£¤¤
-¤¯¤Ä¤«¤ÎÊÑ´¹´Ø¿ô¤Ï@ref{Additional list library}¤Ë¤â¤¢¤ê¤Ş¤¹¡£
+@emph{ãƒãƒƒã‚·ãƒ¥ãƒ†ãƒ¼ãƒ–ãƒ«} - ãƒãƒƒã‚·ãƒ¥ãƒ†ãƒ¼ãƒ–ãƒ«ã€‚ @ref{Hashtables}å‚ç…§ã€‚ã„
+ãã¤ã‹ã®å¤‰æ›é–¢æ•°ã¯@ref{Additional list library}ã«ã‚‚ã‚ã‚Šã¾ã™ã€‚
 @item
-@emph{¥­¥å¡¼} - Ã±½ã¤Ê¥­¥å¡¼¤Ï@ref{Queue}¤ÇÍÑ°Õ¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
+@emph{ã‚­ãƒ¥ãƒ¼} - å˜ç´”ãªã‚­ãƒ¥ãƒ¼ã¯@ref{Queue}ã§ç”¨æ„ã•ã‚Œã¦ã„ã¾ã™ã€‚
 @item
-@emph{¥ì¥³¡¼¥É} - Ã±½ã¤Ê¥Ç¡¼¥¿¹½Â¤¡£Gauche¤Î¥ª¥Ö¥¸¥§¥¯¥È¥·¥¹¥Æ¥à¤ò¤Ä¤«¤Ã
-¤ÆÇ¤°Õ¤Î¥Ç¡¼¥¿¹½Â¤¤òÄêµÁ¤Ç¤­¤Ş¤¹¤¬¡¢@ref{Record types}¤ª¤è¤Ó
-@ref{SLIB-compatible record type}¤ò¸¡Æ¤¤¹¤ë¤Î¤â¤¤¤¤¤Ç¤·¤ç¤¦¡£¤³¤Á¤é¤Î
-Êı¤¬¥İ¡¼¥¿¥Ö¥ë¤Ç¹â¸úÎ¨¤Ç¤¹¡£
+@emph{ãƒ¬ã‚³ãƒ¼ãƒ‰} - å˜ç´”ãªãƒ‡ãƒ¼ã‚¿æ§‹é€ ã€‚Gaucheã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚·ã‚¹ãƒ†ãƒ ã‚’ã¤ã‹ã£
+ã¦ä»»æ„ã®ãƒ‡ãƒ¼ã‚¿æ§‹é€ ã‚’å®šç¾©ã§ãã¾ã™ãŒã€@ref{Record types}ãŠã‚ˆã³
+@ref{SLIB-compatible record type}ã‚’æ¤œè¨ã™ã‚‹ã®ã‚‚ã„ã„ã§ã—ã‚‡ã†ã€‚ã“ã¡ã‚‰ã®
+æ–¹ãŒãƒãƒ¼ã‚¿ãƒ–ãƒ«ã§é«˜åŠ¹ç‡ã§ã™ã€‚
 @item
-@emph{¥¹¥È¥ê¡¼¥à} - ¤³¤ì¤ò»È¤¦¤ÈÃÙ±ä¥¢¥ë¥´¥ê¥º¥à¤ò¥¹¥Ş¡¼¥È¤Ë¼ÂÁõ¤Ç¤­¤Ş
-¤¹¡£@ref{Stream library}»²¾È¡£
+@emph{ã‚¹ãƒˆãƒªãƒ¼ãƒ } - ã“ã‚Œã‚’ä½¿ã†ã¨é…å»¶ã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ ã‚’ã‚¹ãƒãƒ¼ãƒˆã«å®Ÿè£…ã§ãã¾
+ã™ã€‚@ref{Stream library}å‚ç…§ã€‚
 @item
-@emph{Ê¿¹ÕÌÚ} - ÀÖ¹õÌÚ¤¬ÍøÍÑ¤Ç¤­¤Ş¤¹¡£@ref{Red black tree}»²¾È¡£
+@emph{å¹³è¡¡æœ¨} - èµ¤é»’æœ¨ãŒåˆ©ç”¨ã§ãã¾ã™ã€‚@ref{Red black tree}å‚ç…§ã€‚
 @item
-@emph{¥È¥é¥¤} - ¶¦ÄÌÀÜÆ¬¼­¸¡º÷ÍÑ¤Î¸úÎ¨¤Î¤è¤¤ÌÚ¹½Â¤¤Ç¤¹¡£@ref{Trie}»²¾È¡£
+@emph{ãƒˆãƒ©ã‚¤} - å…±é€šæ¥é ­è¾æ¤œç´¢ç”¨ã®åŠ¹ç‡ã®ã‚ˆã„æœ¨æ§‹é€ ã§ã™ã€‚@ref{Trie}å‚ç…§ã€‚
 @item
-@emph{¥Ç¡¼¥¿¥Ù¡¼¥¹¥¤¥ó¥¿¥Õ¥§¡¼¥¹} - dbm¥¤¥ó¥¿¥Õ¥§¡¼¥¹¤¬±ÊÂ³Åª¥Ï¥Ã¥·¥å
-¥Æ¡¼¥Ö¥ë¤È¤·¤ÆÍøÍÑ¤Ç¤­¤Ş¤¹¡£@ref{Generic DBM interface}»²¾È¡£¥¸¥§¥Í¥ê¥Ã
-¥¯¤ÊRDBMS¤Ø¤Î¥¤¥ó¥¿¥Õ¥§¡¼¥¹¤Ë¤Ä¤¤¤Æ¤Ï¡¢
-@ref{Database independent access layer}¤ò¸«¤Æ¤¯¤À¤µ¤¤¡£
+@emph{ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹} - dbmã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹ãŒæ°¸ç¶šçš„ãƒãƒƒã‚·ãƒ¥
+ãƒ†ãƒ¼ãƒ–ãƒ«ã¨ã—ã¦åˆ©ç”¨ã§ãã¾ã™ã€‚@ref{Generic DBM interface}å‚ç…§ã€‚ã‚¸ã‚§ãƒãƒªãƒƒ
+ã‚¯ãªRDBMSã¸ã®ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹ã«ã¤ã„ã¦ã¯ã€
+@ref{Database independent access layer}ã‚’è¦‹ã¦ãã ã•ã„ã€‚
 @end itemize
 @c COMMON
 
 @node Library directory - strings and characters, Library directory - data exchange, Library directory - data containers, Finding libraries you need
 @subsection Library directory - string and character
-@c NODE ¥é¥¤¥Ö¥é¥ê¥Ç¥£¥ì¥¯¥È¥ê - Ê¸»úÎó¤ÈÊ¸»ú
+@c NODE ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª - æ–‡å­—åˆ—ã¨æ–‡å­—
 
 @c EN
 Basic string operations are covered in
@@ -342,19 +343,19 @@ A string is also a sequence of characters, so you can
 apply methods in @ref{Collection framework} and
 @ref{Sequence framework}.
 @c JP
-Ê¸»úÎó¤Î´ğËÜÁàºî¤Ï@ref{Strings}¤ª¤è¤Ó@ref{String library}¤Ç¥«¥Ğ¡¼¤µ¤ì
-¤Æ¤¤¤Ş¤¹¡£Ê¸»úÎó¤ÏÊ¸»ú¤Î¥·¡¼¥±¥ó¥¹¤Ç¤â¤¢¤ê¤Ş¤¹¤Î¤Ç¡¢
-@ref{Collection framework}¤ª¤è¤Ó@ref{Sequence framework}¤Î¥á¥½¥Ã¥É¤òÅ¬
-ÍÑ²ÄÇ½¤Ç¤¹¡£
+æ–‡å­—åˆ—ã®åŸºæœ¬æ“ä½œã¯@ref{Strings}ãŠã‚ˆã³@ref{String library}ã§ã‚«ãƒãƒ¼ã•ã‚Œ
+ã¦ã„ã¾ã™ã€‚æ–‡å­—åˆ—ã¯æ–‡å­—ã®ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ã§ã‚‚ã‚ã‚Šã¾ã™ã®ã§ã€
+@ref{Collection framework}ãŠã‚ˆã³@ref{Sequence framework}ã®ãƒ¡ã‚½ãƒƒãƒ‰ã‚’é©
+ç”¨å¯èƒ½ã§ã™ã€‚
 @c COMMON
 
 @c EN
 Character and character set operations are covered in
 @ref{Characters}, @ref{Character set}, and @ref{Character-set library}.
 @c JP
-Ê¸»ú¤ª¤è¤ÓÊ¸»ú½¸¹ç¤ÎÁàºî¤Ï
-@ref{Characters}¡¢@ref{Character set}¡¢@ref{Character-set library}¤¬¥«
-¥Ğ¡¼¤·¤Æ¤¤¤Ş¤¹¡£
+æ–‡å­—ãŠã‚ˆã³æ–‡å­—é›†åˆã®æ“ä½œã¯
+@ref{Characters}ã€@ref{Character set}ã€@ref{Character-set library}ãŒã‚«
+ãƒãƒ¼ã—ã¦ã„ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -362,17 +363,17 @@ If you scan or build strings sequentially, do not use index
 access.  String ports (see @ref{String ports}) provides more efficient,
 and elegant way.
 @c JP
-Ê¸»úÎó¤òÀèÆ¬¤«¤é½ç¤ËÁàºî¤·¤¿¤ê¹½ÃÛ¤·¤¿¤ê¤¹¤ë¾ì¹ç¤Ë¤Ï¥¤¥ó¥Ç¥Ã¥¯¥¹¤Ë¤è¤ë
-¥¢¥¯¥»¥¹¤Ï¤ª¤³¤Ê¤¤¤Ş¤»¤ó¡£Ê¸»úÎó¥İ¡¼¥È(@ref{String ports}»²¾È)¤Ï¤µ¤é¤Ë
-¸úÎ¨¤Î¤è¤¤¥¨¥ì¥¬¥ó¥È¤ÊÊıË¡¤òÄó¶¡¤·¤Æ¤¤¤Ş¤¹¡£
+æ–‡å­—åˆ—ã‚’å…ˆé ­ã‹ã‚‰é †ã«æ“ä½œã—ãŸã‚Šæ§‹ç¯‰ã—ãŸã‚Šã™ã‚‹å ´åˆã«ã¯ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã«ã‚ˆã‚‹
+ã‚¢ã‚¯ã‚»ã‚¹ã¯ãŠã“ãªã„ã¾ã›ã‚“ã€‚æ–‡å­—åˆ—ãƒãƒ¼ãƒˆ(@ref{String ports}å‚ç…§)ã¯ã•ã‚‰ã«
+åŠ¹ç‡ã®ã‚ˆã„ã‚¨ãƒ¬ã‚¬ãƒ³ãƒˆãªæ–¹æ³•ã‚’æä¾›ã—ã¦ã„ã¾ã™ã€‚
 @c COMMON
 
 @c EN
 You can use regular expressions to search and extract
 character sequences from strings; see @ref{Regular expression}.
 @c JP
-Ê¸»úÎó¤«¤éÊ¸»ú¤Î¤Ê¤é¤Ó¤ò¸¡º÷¤·¤¿¤ê¡¢¤È¤ê¤À¤·¤¿¤ê¤¹¤ë¤Î¤ËÀµµ¬É½¸½¤¬»È¤¨
-¤Ş¤¹¡£@ref{Regular expression}»²¾È¡£
+æ–‡å­—åˆ—ã‹ã‚‰æ–‡å­—ã®ãªã‚‰ã³ã‚’æ¤œç´¢ã—ãŸã‚Šã€ã¨ã‚Šã ã—ãŸã‚Šã™ã‚‹ã®ã«æ­£è¦è¡¨ç¾ãŒä½¿ãˆ
+ã¾ã™ã€‚@ref{Regular expression}å‚ç…§ã€‚
 @c COMMON
 
 @c EN
@@ -380,9 +381,9 @@ If you need to deal with low-level (i.e. byte-level)
 representation of strings, @ref{Uniform vectors} has some
 tools to convert strings and byte vectors back and forth.
 @c JP
-Ê¸»úÎó¤ÎÄã¥ì¥Ù¥ë(¤¿¤È¤¨¤Ğ¥Ğ¥¤¥È¥ì¥Ù¥ë)É½¸½¤ò°·¤¦É¬Í×¤¬¤¢¤ë¤Ê¤é
-@ref{Uniform vectors}¤ËÊ¸»úÎó¤È¥Ğ¥¤¥È¥Ù¥¯¥¿Áê¸ß¤ÎÊÑ´¹¤ò¤ª¤³¤Ê¤¦¥Ä¡¼¥ë
-¤¬¤¢¤ê¤Ş¤¹¡£
+æ–‡å­—åˆ—ã®ä½ãƒ¬ãƒ™ãƒ«(ãŸã¨ãˆã°ãƒã‚¤ãƒˆãƒ¬ãƒ™ãƒ«)è¡¨ç¾ã‚’æ‰±ã†å¿…è¦ãŒã‚ã‚‹ãªã‚‰
+@ref{Uniform vectors}ã«æ–‡å­—åˆ—ã¨ãƒã‚¤ãƒˆãƒ™ã‚¯ã‚¿ç›¸äº’ã®å¤‰æ›ã‚’ãŠã“ãªã†ãƒ„ãƒ¼ãƒ«
+ãŒã‚ã‚Šã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -396,14 +397,14 @@ You can take @code{diff} of two texts; see
 And if you want to construct large text from string fragments,
 do not use @code{string-append}---see @ref{Lazy text construction}.
 @c JP
-Ê¸»ú¤ÎÃ±¤Ê¤ë¥·¡¼¥±¥ó¥¹¤è¤ê¤â¹â¼¡¤Î¹½Â¤¤ò°·¤¤¤¿¤¤¤Î¤Ç¤¹¤«¡£¤½¤ì¤Ê¤é
-@code{text.*}¥â¥¸¥å¡¼¥ë¤ò¸«¤Æ¤¯¤À¤µ¤¤¡£@ref{Parsing input stream}¤Ë¤Ï
-´ğËÜÅª¤Ê¥¹¥­¥ã¥Ê¤Î¼ÂÁõ¤¬ÍÑ°Õ¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
-@ref{Transliterate characters}¤ÏUnix¤Î@code{tr(1)}¤Ë»÷¤¿µ¡Ç½¤ò¼ÂÁõ¤·¤Æ
-¤¤¤Ş¤¹¡£2¤Ä¤Î¥Æ¥­¥¹¥È¤Î@code{diff}¤ò¤È¤ë¤³¤È¤â¤Ç¤­¤Ş¤¹¡£¤³¤ì¤Ë¤Ä¤¤¤Æ¤Ï
-@ref{Calculate difference of text streams}¤ò¸«¤Æ¤¯¤À¤µ¤¤¡£Ê¸»úÎó¤ÎÃÇÊÒ
-¤«¤éÂç¤­¤ÊÊ¸»úÎó¤ò¹½À®¤·¤¿¤¤¤Î¤Ê¤é¡¢@code{string-append}¤ò»È¤Ã¤Æ¤Ï¤¤¤±
-¤Ş¤»¤ó¡£@ref{Lazy text construction}»²¾È¡£
+æ–‡å­—ã®å˜ãªã‚‹ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ã‚ˆã‚Šã‚‚é«˜æ¬¡ã®æ§‹é€ ã‚’æ‰±ã„ãŸã„ã®ã§ã™ã‹ã€‚ãã‚Œãªã‚‰
+@code{text.*}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’è¦‹ã¦ãã ã•ã„ã€‚@ref{Parsing input stream}ã«ã¯
+åŸºæœ¬çš„ãªã‚¹ã‚­ãƒ£ãƒŠã®å®Ÿè£…ãŒç”¨æ„ã•ã‚Œã¦ã„ã¾ã™ã€‚
+@ref{Transliterate characters}ã¯Unixã®@code{tr(1)}ã«ä¼¼ãŸæ©Ÿèƒ½ã‚’å®Ÿè£…ã—ã¦
+ã„ã¾ã™ã€‚2ã¤ã®ãƒ†ã‚­ã‚¹ãƒˆã®@code{diff}ã‚’ã¨ã‚‹ã“ã¨ã‚‚ã§ãã¾ã™ã€‚ã“ã‚Œã«ã¤ã„ã¦ã¯
+@ref{Calculate difference of text streams}ã‚’è¦‹ã¦ãã ã•ã„ã€‚æ–‡å­—åˆ—ã®æ–­ç‰‡
+ã‹ã‚‰å¤§ããªæ–‡å­—åˆ—ã‚’æ§‹æˆã—ãŸã„ã®ãªã‚‰ã€@code{string-append}ã‚’ä½¿ã£ã¦ã¯ã„ã‘
+ã¾ã›ã‚“ã€‚@ref{Lazy text construction}å‚ç…§ã€‚
 @c COMMON
 
 @c EN
@@ -418,21 +419,21 @@ which may contain "encoding" magic comment, see @ref{Coding-aware ports}.
 Gauche also has GNU gettext compatible module (@ref{Localized messages})
 if you need localization.
 @c JP
-Âç»ö¤Ê¤³¤È¤ò¸À¤¤Ëº¤ì¤Ş¤·¤¿¡£Gauche¤Ï¤µ¤Ş¤¶¤Ş¤ÊÊ¸»ú¥¨¥ó¥³¡¼¥Ç¥£¥ó¥°¤ò¥µ
-¥İ¡¼¥È¤·¤Æ¤¤¤Ş¤¹¡£´ğËÜÅª¤Ê´Ø¿ô¤Ë¤Ä¤¤¤Æ¤Ï
-@ref{Character code conversion}¤ò¸«¤Æ¤¯¤À¤µ¤¤¡£@code{open-input-file}
-¤Î¤è¤¦¤Ê¤â¤Ã¤È¤â¹â¼¡¤Î´Ø¿ô¤Î¤Û¤È¤ó¤É¤Ï¡¢@code{:encoding}¥­¡¼¥ï¡¼¥É°ú¿ô
-¤ò¤È¤ê¡¢Ê¸»ú¤ÎÊÑ´¹¤ò°ÅÌÛ¤Ë¤ª¤³¤Ê¤¤¤Ş¤¹¡£ÈóASCIIÊ¸»ú¤ÇScheme¤Î¥×¥í¥°¥é
-¥à¤ò½ñ¤­¤¿¤¤¾ì¹ç¤Ë¤Ï@ref{Multibyte scripts}¤ò¸«¤Æ¤¯¤À¤µ¤¤¡£encoding¤È
-¤¤¤¦¥Ş¥¸¥Ã¥¯¥³¥á¥ó¥È¤ò´Ş¤àGauche¤Î¥½¡¼¥¹¥³¡¼¥É¤ò½èÍı¤·¤¿¤¤¤Ê¤é
-@ref{Coding-aware ports}¤ò¸«¤Æ¤¯¤À¤µ¤¤¡£ÃÏ°è²½¤¬É¬Í×¤Ê¤é¡¢Gaucne¤Ë¤Ï
-GNU gettext¸ß´¹¤Î¥â¥¸¥å¡¼¥ë(@ref{Localized messages})¤â¤¢¤ê¤Ş¤¹¡£
+å¤§äº‹ãªã“ã¨ã‚’è¨€ã„å¿˜ã‚Œã¾ã—ãŸã€‚Gaucheã¯ã•ã¾ã–ã¾ãªæ–‡å­—ã‚¨ãƒ³ã‚³ãƒ¼ãƒ‡ã‚£ãƒ³ã‚°ã‚’ã‚µ
+ãƒãƒ¼ãƒˆã—ã¦ã„ã¾ã™ã€‚åŸºæœ¬çš„ãªé–¢æ•°ã«ã¤ã„ã¦ã¯
+@ref{Character code conversion}ã‚’è¦‹ã¦ãã ã•ã„ã€‚@code{open-input-file}
+ã®ã‚ˆã†ãªã‚‚ã£ã¨ã‚‚é«˜æ¬¡ã®é–¢æ•°ã®ã»ã¨ã‚“ã©ã¯ã€@code{:encoding}ã‚­ãƒ¼ãƒ¯ãƒ¼ãƒ‰å¼•æ•°
+ã‚’ã¨ã‚Šã€æ–‡å­—ã®å¤‰æ›ã‚’æš—é»™ã«ãŠã“ãªã„ã¾ã™ã€‚éASCIIæ–‡å­—ã§Schemeã®ãƒ—ãƒ­ã‚°ãƒ©
+ãƒ ã‚’æ›¸ããŸã„å ´åˆã«ã¯@ref{Multibyte scripts}ã‚’è¦‹ã¦ãã ã•ã„ã€‚encodingã¨
+ã„ã†ãƒã‚¸ãƒƒã‚¯ã‚³ãƒ¡ãƒ³ãƒˆã‚’å«ã‚€Gaucheã®ã‚½ãƒ¼ã‚¹ã‚³ãƒ¼ãƒ‰ã‚’å‡¦ç†ã—ãŸã„ãªã‚‰
+@ref{Coding-aware ports}ã‚’è¦‹ã¦ãã ã•ã„ã€‚åœ°åŸŸåŒ–ãŒå¿…è¦ãªã‚‰ã€Gaucneã«ã¯
+GNU gettextäº’æ›ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«(@ref{Localized messages})ã‚‚ã‚ã‚Šã¾ã™ã€‚
 @c COMMON
 
 
 @node Library directory - data exchange, Library directory - files, Library directory - strings and characters, Finding libraries you need
 @subsection Library directory - data exchange
-@c NODE ¥é¥¤¥Ö¥é¥ê¥Ç¥£¥ì¥¯¥È¥ê - ¥Ç¡¼¥¿¸ò´¹
+@c NODE ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª - ãƒ‡ãƒ¼ã‚¿äº¤æ›
 
 @c EN
 Most useful programs need to communicate with outside world
@@ -440,10 +441,10 @@ Most useful programs need to communicate with outside world
 into your program understanding whatever format the data is in, and
 also writing the data in the format the others can understand.
 @c JP
-¤Û¤È¤ó¤É¤Î¥×¥í¥°¥é¥à¤Ç¤Ï³°³¦(Â¾¤Î¥×¥í¥°¥é¥à¤ä¿Í´Ö)¤È¥³¥ß¥å¥Ë¥±¡¼¥·¥ç¥ó
-¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Ş¤¹¡£¤È¤¤¤¦¤³¤È¤Ï³°Éô¥Ç¡¼¥¿¤òÆÉ¤ß¹ş¤ó¤Ç¤½¤ì¤¬¤É¤Î¤è¤¦¤Ê
-¥Õ¥©¡¼¥Ş¥Ã¥È¤Ç½ñ¤«¤ì¤Æ¤¤¤ë¤«¤òÈ½ÊÌ¤·¤¿¤ê¡¢Â¾¤Î¥×¥í¥°¥é¥à¤¬Íı²ò¤Ç¤­¤ë
-¥Õ¥©¡¼¥Ş¥Ã¥È¤Ç¥Ç¡¼¥¿¤ò½ñ¤­½Ğ¤·¤¿¤ê¤¹¤ë¤È¤¤¤¦¤³¤È¤Ç¤¹¡£
+ã»ã¨ã‚“ã©ã®ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã§ã¯å¤–ç•Œ(ä»–ã®ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚„äººé–“)ã¨ã‚³ãƒŸãƒ¥ãƒ‹ã‚±ãƒ¼ã‚·ãƒ§ãƒ³
+ã™ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚ã¨ã„ã†ã“ã¨ã¯å¤–éƒ¨ãƒ‡ãƒ¼ã‚¿ã‚’èª­ã¿è¾¼ã‚“ã§ãã‚ŒãŒã©ã®ã‚ˆã†ãª
+ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã§æ›¸ã‹ã‚Œã¦ã„ã‚‹ã‹ã‚’åˆ¤åˆ¥ã—ãŸã‚Šã€ä»–ã®ãƒ—ãƒ­ã‚°ãƒ©ãƒ ãŒç†è§£ã§ãã‚‹
+ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã§ãƒ‡ãƒ¼ã‚¿ã‚’æ›¸ãå‡ºã—ãŸã‚Šã™ã‚‹ã¨ã„ã†ã“ã¨ã§ã™ã€‚
 @c COMMON
 
 @c EN
@@ -452,10 +453,10 @@ and there are corresponding @code{rfc.*} module that handle
 some of them.  See @ref{RFC822 message parsing}, for example,
 to handle the pervasive RFC2822 message format.
 @c JP
-¥Í¥Ã¥È¥ï¡¼¥¯¤Ë´ØÏ¢¤¹¤ë³°Éô¥Õ¥©¡¼¥Ş¥Ã¥È¤ÎÂ¿¤¯¤ÏRFC¤Çµ¬Äê¤µ¤ì¤Æ¤ª¤ê¡¢¤½
-¤ì¤é¤Î¤¤¤¯¤Ä¤«¤ËÂĞ±ş¤¹¤ëRFC¥â¥¸¥å¡¼¥ë(@code{rfc.*})¤¬¤¢¤ê¤Ş¤¹¡£¤¿¤È¤¨
-¤Ğ¤è¤¯ÃÎ¤é¤ì¤¿RFC2822¤Î¥á¥Ã¥»¡¼¥¸¥Õ¥©¡¼¥Ş¥Ã¥È¤ò½èÍı¤¹¤ë¤Ë¤Ï
-@ref{RFC822 message parsing}¤ò¸«¤Æ¤¯¤À¤µ¤¤¡£
+ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã«é–¢é€£ã™ã‚‹å¤–éƒ¨ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã®å¤šãã¯RFCã§è¦å®šã•ã‚Œã¦ãŠã‚Šã€ã
+ã‚Œã‚‰ã®ã„ãã¤ã‹ã«å¯¾å¿œã™ã‚‹RFCãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«(@code{rfc.*})ãŒã‚ã‚Šã¾ã™ã€‚ãŸã¨ãˆ
+ã°ã‚ˆãçŸ¥ã‚‰ã‚ŒãŸRFC2822ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã‚’å‡¦ç†ã™ã‚‹ã«ã¯
+@ref{RFC822 message parsing}ã‚’è¦‹ã¦ãã ã•ã„ã€‚
 @c COMMON
 
 @c EN
@@ -464,10 +465,10 @@ may be the plain text, one row per line, and columns are separeted
 by some specific characters (e.g. comma).  See @ref{CSV tables} for
 basic parser/writer for them.
 @c JP
-É½·Á¼°¤Î¥Ç¡¼¥¿¤ò¸ò´¹¤¹¤ë¤Î¤Ë¤â¤Ã¤È¤âÊØÍø¤ÊÊıË¡¤ÏÉ½¤Î°ì¹Ô¤ò¥×¥ì¡¼¥ó¥Æ¥­
-¥¹¥È¤Î°ì¹Ô¤ËÂĞ±ş¤µ¤»¤ë¤³¤È¤Ç¤¹¡£¤½¤·¤Æ¥«¥é¥à¤ÏÆÃÄê¤ÎÊ¸»ú¤Ç¶èÀÚ¤ê¤Ş¤¹¡£
-¤¿¤È¤¨¤Ğ¡¢¥³¥ó¥Ş¤Ç¶èÀÚ¤ê¤Ş¤¹¡£¤³¤ì¤é¤Î²òÀÏ¤È½ñ¤­½Ğ¤·ÍÑ¤Î´ğËÜ¼êÂ³¤Ë¤Ä¤¤
-¤Æ¤Ï@ref{CSV tables}¤ò¸«¤Æ¤¯¤À¤µ¤¤¡£
+è¡¨å½¢å¼ã®ãƒ‡ãƒ¼ã‚¿ã‚’äº¤æ›ã™ã‚‹ã®ã«ã‚‚ã£ã¨ã‚‚ä¾¿åˆ©ãªæ–¹æ³•ã¯è¡¨ã®ä¸€è¡Œã‚’ãƒ—ãƒ¬ãƒ¼ãƒ³ãƒ†ã‚­
+ã‚¹ãƒˆã®ä¸€è¡Œã«å¯¾å¿œã•ã›ã‚‹ã“ã¨ã§ã™ã€‚ãã—ã¦ã‚«ãƒ©ãƒ ã¯ç‰¹å®šã®æ–‡å­—ã§åŒºåˆ‡ã‚Šã¾ã™ã€‚
+ãŸã¨ãˆã°ã€ã‚³ãƒ³ãƒã§åŒºåˆ‡ã‚Šã¾ã™ã€‚ã“ã‚Œã‚‰ã®è§£æã¨æ›¸ãå‡ºã—ç”¨ã®åŸºæœ¬æ‰‹ç¶šã«ã¤ã„
+ã¦ã¯@ref{CSV tables}ã‚’è¦‹ã¦ãã ã•ã„ã€‚
 @c COMMON
 
 @c EN
@@ -484,16 +485,16 @@ SXPath, an XPath counterparts of S-expression (@ref{SXML Query Language}).
 You can output all kinds of XML and HTML using the SXML serializer
 (@ref{Serializing XML and HTML from SXML}).
 @c JP
-º£¤É¤­¤Î¥Ó¥¸¥Í¥¹¥æ¡¼¥¶¤ÏXML¤òÍß¤·¤¬¤ë¤È¤¤¤¦¤Î¤Ç¤¹¤«¡£¤¤¤¤¤Ç¤·¤ç¤¦¡£¤Ş¤¡
-Èà¤é¤¬Íß¤·¤¤¤Î¤ÏÀí¤Ã¤¿³ç¸Ì¤Î¤¨¤é¤¤¾éÄ¹¤ÊS¼°¤Ê¤ó¤Ç¤¹¤«¤é¡¢XML¤òS¼°¤È
-¤·¤ÆÆÉ¤ß¹ş¤ó¤Ç¡¢¼«²ÈäÆÃæ¤Î car ¤È¤« cdr ¤È¤« map ¤Ç¤Á¤ç¤Á¤ç¤¤¤È½èÍı¤·
-¤Æ¤¨¤é¤¤¾éÄ¹¤ÊÀí¤Ã¤¿³ç¸Ì¤Ç½ñ¤­½Ğ¤»¤Ğ¤¤¤¤¤Ç¤¹¤è¤Í¡£
-@code{sxml.ssax}¥â¥¸¥å¡¼¥ë(@ref{Functional XML parser})¤ÏSAX XML¥Ñ¡¼¥¶
-¤Î¼ÂÁõ¤Ç¤¹¡£¤³¤ì¤ò»È¤¨¤Ğ¡¢¤ª¤Æ¤¬¤ë¤ËXML¤ò¥Ñ¡¼¥º¤·¤¿¤ê½èÍı¤·¤¿¤ê¡¢¤¢¤ë
-¤¤¤Ï¤Ş¤¿¡¢SXML(S¼°XML)¤ËÊÑ´¹¤¹¤ë¤³¤È¤â¤Ç¤­¤Ş¤¹¡£SXPath(XPath¤ËÂĞ±ş¤¹¤ë
-S¼°(@ref{SXML Query Language}))¤ò»È¤Ã¤ÆSXML¥¯¥¨¥ê¤òÈ¯¹Ô¤¹¤ë¤³¤È¤â¤Ç¤­
-¤Ş¤¹¡£SXML¥·¥ê¥¢¥é¥¤¥¶¤ò»È¤¨¤Ğ¡¢¤¹¤Ù¤Æ¤Î¼ïÎà¤ÎXML¤äHTML¤ò¤Ï¤­¤À¤¹¤³¤È
-¤â¤Ç¤­¤Ş¤¹(@ref{Serializing XML and HTML from SXML})¡£
+ä»Šã©ãã®ãƒ“ã‚¸ãƒã‚¹ãƒ¦ãƒ¼ã‚¶ã¯XMLã‚’æ¬²ã—ãŒã‚‹ã¨ã„ã†ã®ã§ã™ã‹ã€‚ã„ã„ã§ã—ã‚‡ã†ã€‚ã¾ã
+å½¼ã‚‰ãŒæ¬²ã—ã„ã®ã¯å°–ã£ãŸæ‹¬å¼§ã®ãˆã‚‰ã„å†—é•·ãªSå¼ãªã‚“ã§ã™ã‹ã‚‰ã€XMLã‚’Så¼ã¨
+ã—ã¦èª­ã¿è¾¼ã‚“ã§ã€è‡ªå®¶ç± ä¸­ã® car ã¨ã‹ cdr ã¨ã‹ map ã§ã¡ã‚‡ã¡ã‚‡ã„ã¨å‡¦ç†ã—
+ã¦ãˆã‚‰ã„å†—é•·ãªå°–ã£ãŸæ‹¬å¼§ã§æ›¸ãå‡ºã›ã°ã„ã„ã§ã™ã‚ˆã­ã€‚
+@code{sxml.ssax}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«(@ref{Functional XML parser})ã¯SAX XMLãƒ‘ãƒ¼ã‚¶
+ã®å®Ÿè£…ã§ã™ã€‚ã“ã‚Œã‚’ä½¿ãˆã°ã€ãŠã¦ãŒã‚‹ã«XMLã‚’ãƒ‘ãƒ¼ã‚ºã—ãŸã‚Šå‡¦ç†ã—ãŸã‚Šã€ã‚ã‚‹
+ã„ã¯ã¾ãŸã€SXML(Så¼XML)ã«å¤‰æ›ã™ã‚‹ã“ã¨ã‚‚ã§ãã¾ã™ã€‚SXPath(XPathã«å¯¾å¿œã™ã‚‹
+Så¼(@ref{SXML Query Language}))ã‚’ä½¿ã£ã¦SXMLã‚¯ã‚¨ãƒªã‚’ç™ºè¡Œã™ã‚‹ã“ã¨ã‚‚ã§ã
+ã¾ã™ã€‚SXMLã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚¶ã‚’ä½¿ãˆã°ã€ã™ã¹ã¦ã®ç¨®é¡ã®XMLã‚„HTMLã‚’ã¯ãã ã™ã“ã¨
+ã‚‚ã§ãã¾ã™(@ref{Serializing XML and HTML from SXML})ã€‚
 @c COMMON
 
 @c EN
@@ -501,22 +502,22 @@ It is planned that various file format handling routines would
 be available as @code{file.*} modules, though we have none ready
 yet.  If you plan to write one, please go ahead and let us know!
 @c JP
-¤µ¤Ş¤¶¤Ş¤Ê¥Õ¥¡¥¤¥ë¥Õ¥©¡¼¥Ş¥Ã¥È¤ò½èÍı¤¹¤ë¥ë¡¼¥Á¥ó¤ò@code{file.*}¤È¤¤¤¦
-¥â¥¸¥å¡¼¥ë¤Ç»È¤¨¤ë¤è¤¦¤Ë¤·¤è¤¦¤È¤¤¤¦·×²è¤Ï¤¢¤ë¤Î¤Ç¤¹¤¬¡¢¤Ş¤À¤Ê¤Ë¤â½àÈ÷
-¤Ç¤­¤Æ¤¤¤Ş¤»¤ó¡£¤Ò¤È¤Ä¼«Ê¬¤Ç½ñ¤¤¤Æ¤ä¤í¤¦¤È¤¤¤¦¿Í¤¬¤¤¤¿¤éÀ§Èó¤ª¤Í¤¬¤¤¤·
-¤¿¤¤¤Î¤Ç¡¢¤ª¤·¤é¤»²¼¤µ¤¤¡£
+ã•ã¾ã–ã¾ãªãƒ•ã‚¡ã‚¤ãƒ«ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã‚’å‡¦ç†ã™ã‚‹ãƒ«ãƒ¼ãƒãƒ³ã‚’@code{file.*}ã¨ã„ã†
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã§ä½¿ãˆã‚‹ã‚ˆã†ã«ã—ã‚ˆã†ã¨ã„ã†è¨ˆç”»ã¯ã‚ã‚‹ã®ã§ã™ãŒã€ã¾ã ãªã«ã‚‚æº–å‚™
+ã§ãã¦ã„ã¾ã›ã‚“ã€‚ã²ã¨ã¤è‡ªåˆ†ã§æ›¸ã„ã¦ã‚„ã‚ã†ã¨ã„ã†äººãŒã„ãŸã‚‰æ˜¯éãŠã­ãŒã„ã—
+ãŸã„ã®ã§ã€ãŠã—ã‚‰ã›ä¸‹ã•ã„ã€‚
 @c COMMON
 
 @node Library directory - files, Library directory - processes, Library directory - data exchange, Finding libraries you need
 @subsection Library directory - files
-@c NODE ¥é¥¤¥Ö¥é¥ê¥Ç¥£¥ì¥¯¥È¥ê - ¥Õ¥¡¥¤¥ë
+@c NODE ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª - ãƒ•ã‚¡ã‚¤ãƒ«
 
 @c EN
 Files and directories.  Roughly speaking, there are two places
 you want to look at.
 @c JP
-¥Õ¥¡¥¤¥ë¤ª¤è¤Ó¥Ç¥£¥ì¥¯¥È¥ê¡£¤ª¤ª¤¶¤Ã¤Ñ¤Ë¸À¤¦¤È¸«¤ë¤Ù¤­¤È¤³¤í¤Ï2²Õ½ê¤Ç
-¤¹¡£
+ãƒ•ã‚¡ã‚¤ãƒ«ãŠã‚ˆã³ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã€‚ãŠãŠã–ã£ã±ã«è¨€ã†ã¨è¦‹ã‚‹ã¹ãã¨ã“ã‚ã¯2ç®‡æ‰€ã§
+ã™ã€‚
 @c COMMON
 
 @c EN
@@ -526,10 +527,10 @@ experience with Unix system programming you'll find familiar
 function names there.   The @code{fcntl} functionality is
 splitted to @code{gauche.fcntl} (@ref{Low-level file operations}), FYI.
 @c JP
-@ref{Filesystems}¤Î¥³¥¢ÉôÊ¬¤Ë¤Ï²¼°Ì¤ÎOS¤¬Äó¶¡¤·¤Æ¤¤¤ë¤Ë¶á¤¤¥ë¡¼¥Á¥ó¤¬
-¤¢¤ê¤Ş¤¹¡£Unix¤Î¥·¥¹¥Æ¥à¥×¥í¥°¥é¥ß¥ó¥°¤Î·Ğ¸³¤¬¤¢¤ì¤Ğ¡¢¤è¤¯ÃÎ¤Ã¤Æ¤¤¤ë´Ø
-¿ôÌ¾¤¬¤Ğ¤«¤ê¤À¤È»×¤¦¤Ç¤·¤ç¤¦¡£¤Á¤Ê¤ß¤Ë@code{fcntl}¤Îµ¡Ç½¤Ï
-@code{gauche.fcntl} (@ref{Low-level file operations})¤Ë¤¢¤ê¤Ş¤¹¡£
+@ref{Filesystems}ã®ã‚³ã‚¢éƒ¨åˆ†ã«ã¯ä¸‹ä½ã®OSãŒæä¾›ã—ã¦ã„ã‚‹ã«è¿‘ã„ãƒ«ãƒ¼ãƒãƒ³ãŒ
+ã‚ã‚Šã¾ã™ã€‚Unixã®ã‚·ã‚¹ãƒ†ãƒ ãƒ—ãƒ­ã‚°ãƒ©ãƒŸãƒ³ã‚°ã®çµŒé¨“ãŒã‚ã‚Œã°ã€ã‚ˆãçŸ¥ã£ã¦ã„ã‚‹é–¢
+æ•°åãŒã°ã‹ã‚Šã ã¨æ€ã†ã§ã—ã‚‡ã†ã€‚ã¡ãªã¿ã«@code{fcntl}ã®æ©Ÿèƒ½ã¯
+@code{gauche.fcntl} (@ref{Low-level file operations})ã«ã‚ã‚Šã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -537,19 +538,19 @@ Also you definitely want to look at @code{file.util}
 (@ref{Filesystem utilities}), which implements higher-level
 routines on top of system-level ones.
 @c JP
-¤Ş¤Á¤¬¤¤¤Ê¤¯@code{file.util}(@ref{Filesystem utilities})¤ò»È¤¤¤¿¤¤¤³¤È
-¤Ç¤·¤ç¤¦¡£¤³¤ì¤Ï¥·¥¹¥Æ¥à¥ì¥Ù¥ë¾å¤Ç¼ÂÁõ¤µ¤ì¤¿¹â¼¡¥ì¥Ù¥ë¤Î¥ë¡¼¥Á¥ó·²¤Ç¤¹¡£
+ã¾ã¡ãŒã„ãªã@code{file.util}(@ref{Filesystem utilities})ã‚’ä½¿ã„ãŸã„ã“ã¨
+ã§ã—ã‚‡ã†ã€‚ã“ã‚Œã¯ã‚·ã‚¹ãƒ†ãƒ ãƒ¬ãƒ™ãƒ«ä¸Šã§å®Ÿè£…ã•ã‚ŒãŸé«˜æ¬¡ãƒ¬ãƒ™ãƒ«ã®ãƒ«ãƒ¼ãƒãƒ³ç¾¤ã§ã™ã€‚
 @c COMMON
 
 
 @node Library directory - processes, Library directory - networking, Library directory - files, Finding libraries you need
 @subsection Library directory - processes
-@c NODE ¥é¥¤¥Ö¥é¥ê¥Ç¥£¥ì¥¯¥È¥ê - ¥×¥í¥»¥¹
+@c NODE ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª - ãƒ—ãƒ­ã‚»ã‚¹
 
 @c EN
 Process-related routines also come in two levels.
 @c JP
-¥×¥í¥»¥¹´ØÏ¢¤Î¥ë¡¼¥Á¥ó¤â2¤Ä¤Î¥ì¥Ù¥ë¤ÇÄó¶¡¤µ¤ì¤Ş¤¹¡£
+ãƒ—ãƒ­ã‚»ã‚¹é–¢é€£ã®ãƒ«ãƒ¼ãƒãƒ³ã‚‚2ã¤ã®ãƒ¬ãƒ™ãƒ«ã§æä¾›ã•ã‚Œã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -557,9 +558,9 @@ The @code{gauche.process} module provides
 high-level routines (@ref{High Level Process Interface}); 
 you can pipe the data into and out of child processes easily, for example.
 @c JP
-@code{gauche.process}¥â¥¸¥å¡¼¥ë¤Ï¹â¥ì¥Ù¥ë¤Î¥ë¡¼¥Á¥ó
-(@ref{High Level Process Interface})¤òÄó¶¡¤·¤Æ¤¤¤Ş¤¹¡£¤³¤ì¤ò»È¤¨¤Ğ¡¢¤¿
-¤È¤¨¤Ğ¡¢¥Ç¡¼¥¿¤ò»Ò¥×¥í¥»¥¹¤È¤Î´Ö¤Ç¥Ñ¥¤¥×¤¹¤ë¤³¤È¤¬´ÊÃ±¤Ë¤Ç¤­¤Ş¤¹¡£
+@code{gauche.process}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã¯é«˜ãƒ¬ãƒ™ãƒ«ã®ãƒ«ãƒ¼ãƒãƒ³
+(@ref{High Level Process Interface})ã‚’æä¾›ã—ã¦ã„ã¾ã™ã€‚ã“ã‚Œã‚’ä½¿ãˆã°ã€ãŸ
+ã¨ãˆã°ã€ãƒ‡ãƒ¼ã‚¿ã‚’å­ãƒ—ãƒ­ã‚»ã‚¹ã¨ã®é–“ã§ãƒ‘ã‚¤ãƒ—ã™ã‚‹ã“ã¨ãŒç°¡å˜ã«ã§ãã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -568,15 +569,15 @@ as well as the convenient @code{system} call
 (see @ref{Process management}).  Use them when you want a precise
 control over what you're doing.
 @c JP
-Gauche¥³¥¢¤Ï¥×¥ê¥ß¥Æ¥£¥Ö¤Ê@code{fork}¤ª¤è¤Ó@code{exec}¤Î¥¤¥ó¥¿¥Õ¥§¡¼¥¹
-¤ò¡¢ÊØÍø¤Ê@code{system}¥³¡¼¥ë(@ref{Process management}»²¾È)Æ±ÍÍÄó
-¶¡¤·¤Æ¤¤¤Ş¤¹¡£¤ä¤ê¤¿¤¤¤³¤È¤òºÙ¤«¤¯¥³¥ó¥È¥í¡¼¥ë¤·¤¿¤¤¾ì¹ç¤Ë»È¤¦¤È¤è¤¤¤Ç
-¤·¤ç¤¦¡£
+Gaucheã‚³ã‚¢ã¯ãƒ—ãƒªãƒŸãƒ†ã‚£ãƒ–ãª@code{fork}ãŠã‚ˆã³@code{exec}ã®ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹
+ã‚’ã€ä¾¿åˆ©ãª@code{system}ã‚³ãƒ¼ãƒ«(@ref{Process management}å‚ç…§)åŒæ§˜æ
+ä¾›ã—ã¦ã„ã¾ã™ã€‚ã‚„ã‚ŠãŸã„ã“ã¨ã‚’ç´°ã‹ãã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã—ãŸã„å ´åˆã«ä½¿ã†ã¨ã‚ˆã„ã§
+ã—ã‚‡ã†ã€‚
 @c COMMON
 
 @node Library directory - networking, Library directory - input and output, Library directory - processes, Finding libraries you need
 @subsection Library directory - networking
-@c NODE ¥é¥¤¥Ö¥é¥ê¥Ç¥£¥ì¥¯¥È¥ê - ¥Í¥Ã¥È¥ï¡¼¥¯
+@c NODE ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª - ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯
 
 @c EN
 We have multi-layer abstraction here.  At the bottom, we have
@@ -585,11 +586,11 @@ a convenience library that automates host name lookups, connection
 and shutdown, etc.  On top of them we have several modules that
 handles specific protocols (e.g. http).
 @c JP
-¤³¤ì¤ÏÃê¾İ¤ÎÁØ¤¬Ê£¿ô¤¢¤ê¤Ş¤¹¡£ºÇ²¼ÁØ¤Ç¤Ï¥½¥±¥Ã¥È¥ì¥Ù¥ë¤Î¥·¥¹¥Æ¥à¥³¡¼¥ë
-¤ËÂĞ±ş¤¹¤ëAPI¤¬¤¢¤ê¤Ş¤¹¡£Ãæ´ÖÁØ¤Ç¤Ï¥Û¥¹¥ÈÌ¾¤Î²ò·è¡¢¥³¥Í¥¯¥·¥ç¥ó¡¢¥·¥ã¥Ã
-¥È¥À¥¦¥ó¤Ê¤É¤ò¼«Æ°¤Ç¤ä¤ë¤è¤¦¤ÊÊØÍø¤Ê¥é¥¤¥Ö¥é¥ê¤Ë¤Ê¤Ã¤Æ¤¤¤Ş¤¹¡£ºÇ¾åÁØ¤Ç
-¤Ï¡¢¤¿¤È¤¨¤ĞHTTP¤Î¤è¤¦¤ÊÆÃÄê¤Î¥×¥í¥È¥³¥ë¤ò°·¤¦¤¿¤á¤Î¥â¥¸¥å¡¼¥ë¤¬¤¤¤¯¤Ä
-¤«ÍÑ°Õ¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
+ã“ã‚Œã¯æŠ½è±¡ã®å±¤ãŒè¤‡æ•°ã‚ã‚Šã¾ã™ã€‚æœ€ä¸‹å±¤ã§ã¯ã‚½ã‚±ãƒƒãƒˆãƒ¬ãƒ™ãƒ«ã®ã‚·ã‚¹ãƒ†ãƒ ã‚³ãƒ¼ãƒ«
+ã«å¯¾å¿œã™ã‚‹APIãŒã‚ã‚Šã¾ã™ã€‚ä¸­é–“å±¤ã§ã¯ãƒ›ã‚¹ãƒˆåã®è§£æ±ºã€ã‚³ãƒã‚¯ã‚·ãƒ§ãƒ³ã€ã‚·ãƒ£ãƒƒ
+ãƒˆãƒ€ã‚¦ãƒ³ãªã©ã‚’è‡ªå‹•ã§ã‚„ã‚‹ã‚ˆã†ãªä¾¿åˆ©ãªãƒ©ã‚¤ãƒ–ãƒ©ãƒªã«ãªã£ã¦ã„ã¾ã™ã€‚æœ€ä¸Šå±¤ã§
+ã¯ã€ãŸã¨ãˆã°HTTPã®ã‚ˆã†ãªç‰¹å®šã®ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’æ‰±ã†ãŸã‚ã®ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒã„ãã¤
+ã‹ç”¨æ„ã•ã‚Œã¦ã„ã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -600,13 +601,13 @@ More protocol support is coming (there are @code{rfc.ftp} and
 @code{rfc.imap4} written by users, which are waiting for being
 integrated into Gauche---maybe in next release).
 @c JP
-@code{gauche.net}¥â¥¸¥å¡¼¥ë(@ref{Networking})¤ÏºÇ²¼ÁØ¤ÈÃæ´ÖÁØ¤òÄó¶¡¤·
-¤Æ¤¤¤Ş¤¹¡£ºÇ¾åÁØ¤Ë¤Ä¤¤¤Æ¤Ï@code{rfc.*}¥â¥¸¥å¡¼¥ë¤òÃµ¤·¤Æ¤ß¤Æ²¼¤µ¤¤¡£
-¤¿¤È¤¨¤Ğ @code{rfc.http} (@ref{HTTP})¤Ç¤¹¡£
-¤½¤ÎÂ¾¤Î¥×¥í¥È¥³¥ë¤Ë¤Ä¤¤¤Æ¤â¤Ş¤â¤Ê¤¯¥µ¥İ¡¼¥È¤µ¤ì¤ëÍ½Äê¤Ç¤¹¡£
-@code{rfc.ftp}¤ä@code{rfc.imap4}¤Ï¤¹¤Ç¤Ë¥æ¡¼¥¶¤ÎÊı¡¹¤¬½ñ¤¤¤Æ¤¯¤ì¤Æ¤¤¤Æ¡¢
-Gauche¤Ë¤È¤ê¤³¤Ş¤ì¤ë¤Î¤òÂÔ¤Ã¤Æ¤¤¤ë¾õÂÖ¤Ë¤¢¤ê¤Ş¤¹¡£¤ª¤½¤é¤¯¼¡¤Î¥ê¥ê¡¼¥¹
-¤ÇÅı¹ç¤µ¤ì¤ë¤Ç¤·¤ç¤¦¡£
+@code{gauche.net}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«(@ref{Networking})ã¯æœ€ä¸‹å±¤ã¨ä¸­é–“å±¤ã‚’æä¾›ã—
+ã¦ã„ã¾ã™ã€‚æœ€ä¸Šå±¤ã«ã¤ã„ã¦ã¯@code{rfc.*}ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’æ¢ã—ã¦ã¿ã¦ä¸‹ã•ã„ã€‚
+ãŸã¨ãˆã° @code{rfc.http} (@ref{HTTP})ã§ã™ã€‚
+ãã®ä»–ã®ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã«ã¤ã„ã¦ã‚‚ã¾ã‚‚ãªãã‚µãƒãƒ¼ãƒˆã•ã‚Œã‚‹äºˆå®šã§ã™ã€‚
+@code{rfc.ftp}ã‚„@code{rfc.imap4}ã¯ã™ã§ã«ãƒ¦ãƒ¼ã‚¶ã®æ–¹ã€…ãŒæ›¸ã„ã¦ãã‚Œã¦ã„ã¦ã€
+Gaucheã«ã¨ã‚Šã“ã¾ã‚Œã‚‹ã®ã‚’å¾…ã£ã¦ã„ã‚‹çŠ¶æ…‹ã«ã‚ã‚Šã¾ã™ã€‚ãŠãã‚‰ãæ¬¡ã®ãƒªãƒªãƒ¼ã‚¹
+ã§çµ±åˆã•ã‚Œã‚‹ã§ã—ã‚‡ã†ã€‚
 @c COMMON
 
 @c EN
@@ -615,27 +616,27 @@ There's a plan of even higher level of libraries, under the name
 The planned ones include sending emails, or
 universal resource access by uri.  Code contributions are welcome.
 @c JP
-¤µ¤é¤ËÊ£¿ô¤Î¥×¥í¥È¥³¥ë¤òÃê¾İ²½¤·¤Æ@code{net.*}¤È¤¤¤¦Ì¾Á°¤Î¤µ¤é¤Ë¹â¼¡¥ì
-¥Ù¥ë¤Î¥é¥¤¥Ö¥é¥ê¤Î·×²è¤â¤¢¤ê¤Ş¤¹¡£email¤ÎÁ÷¿®¤¢¤ë¤¤¤ÏURI¤Ë¤è¤ë¥ê¥½¡¼¥¹
-¥¢¥¯¥»¥¹¤Ê¤É¤Î·×²è¤¬¤¢¤ê¤Ş¤¹¡£¥³¡¼¥É¤Î¹×¸¥¤Ï´¿·Ş¤·¤Ş¤¹¡£
+ã•ã‚‰ã«è¤‡æ•°ã®ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’æŠ½è±¡åŒ–ã—ã¦@code{net.*}ã¨ã„ã†åå‰ã®ã•ã‚‰ã«é«˜æ¬¡ãƒ¬
+ãƒ™ãƒ«ã®ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®è¨ˆç”»ã‚‚ã‚ã‚Šã¾ã™ã€‚emailã®é€ä¿¡ã‚ã‚‹ã„ã¯URIã«ã‚ˆã‚‹ãƒªã‚½ãƒ¼ã‚¹
+ã‚¢ã‚¯ã‚»ã‚¹ãªã©ã®è¨ˆç”»ãŒã‚ã‚Šã¾ã™ã€‚ã‚³ãƒ¼ãƒ‰ã®è²¢çŒ®ã¯æ­“è¿ã—ã¾ã™ã€‚
 @c COMMON
 
 @node Library directory - input and output, Library directory - time, Library directory - networking, Finding libraries you need
 @subsection Library directory - input and output
-@c NODE ¥é¥¤¥Ö¥é¥ê¥Ç¥£¥ì¥¯¥È¥ê - Æş½ĞÎÏ
+@c NODE ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª - å…¥å‡ºåŠ›
 
 @node Library directory - time, Library directory - bits and bytes, Library directory - input and output, Finding libraries you need
 @subsection Library directory - time
-@c NODE ¥é¥¤¥Ö¥é¥ê¥Ç¥£¥ì¥¯¥È¥ê - »ş´Ö
+@c NODE ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª - æ™‚é–“
 
 @node Library directory - bits and bytes,  , Library directory - time, Finding libraries you need
 @subsection Library directory - bits and bytes
-@c NODE ¥é¥¤¥Ö¥é¥ê¥Ç¥£¥ì¥¯¥È¥ê - ¥Ó¥Ã¥È¤È¥Ğ¥¤¥È
+@c NODE ãƒ©ã‚¤ãƒ–ãƒ©ãƒªãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª - ãƒ“ãƒƒãƒˆã¨ãƒã‚¤ãƒˆ
 
 @c EN
 @subsubheading Binary I/O
 @c JP
-@subsubheading ¥Ğ¥¤¥Ê¥êÆş½ĞÎÏ
+@subsubheading ãƒã‚¤ãƒŠãƒªå…¥å‡ºåŠ›
 @c COMMON
 
 @c EN
@@ -644,10 +645,10 @@ Gauche includes primitive byte I/O (@code{read-byte}, @code{write-byte})
 as well as block I/O (@code{read-block!}, @code{write-block}) in its core.
 (See @ref{Reading data}, @ref{Output}, and @ref{Uvector block I/O}).
 @c JP
-ºÇ²¼ÁØ¤È¤·¤ÆGauche¤Ï¥³¥¢¤Ë´Ş¤Ş¤ì¤ë¥Ö¥í¥Ã¥¯Æş½ĞÎÏ(@code{read-block!}
-¡¢@code{write-block})¤ÈÆ±ÍÍ¡¢¥Ğ¥¤¥ÈÆş½ĞÎÏ¤Î¥×¥ê¥ß¥Æ¥£¥Ö
-(@code{read-byte}¡¢@code{write-byte})¤â´Ş¤ó¤Ç¤¤¤Ş¤¹
-(@ref{Reading data}¡¢@ref{Output}¡¢@ref{Uvector block I/O}»²¾È)¡£
+æœ€ä¸‹å±¤ã¨ã—ã¦Gaucheã¯ã‚³ã‚¢ã«å«ã¾ã‚Œã‚‹ãƒ–ãƒ­ãƒƒã‚¯å…¥å‡ºåŠ›(@code{read-block!}
+ã€@code{write-block})ã¨åŒæ§˜ã€ãƒã‚¤ãƒˆå…¥å‡ºåŠ›ã®ãƒ—ãƒªãƒŸãƒ†ã‚£ãƒ–
+(@code{read-byte}ã€@code{write-byte})ã‚‚å«ã‚“ã§ã„ã¾ã™
+(@ref{Reading data}ã€@ref{Output}ã€@ref{Uvector block I/O}å‚ç…§)ã€‚
 @c COMMON
 
 @c EN
@@ -655,9 +656,9 @@ As the middle level, the module @code{binary.io}
 (@ref{Binary I/O}) has routines to retrieve specific datatype
 with optional endian specification.
 @c JP
-Ãæ´ÖÁØ¤È¤·¤Æ¤Ï¡¢@code{binary.io}(@ref{Binary I/O})¥â¥¸¥å¡¼¥ë¤Ë¤Ï
-¥ª¥×¥·¥ç¥ó¤Ç¥¨¥ó¥Ç¥£¥¢¥ó¤ò»ØÄê¤Ç¤­¤ëÆÃÄê¤Î¥Ç¡¼¥¿¤ò¼èÆÀ¤¹¤ë¥ë¡¼¥Á¥ó¤¬¤¢
-¤ê¤Ş¤¹¡£
+ä¸­é–“å±¤ã¨ã—ã¦ã¯ã€@code{binary.io}(@ref{Binary I/O})ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«ã¯
+ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã§ã‚¨ãƒ³ãƒ‡ã‚£ã‚¢ãƒ³ã‚’æŒ‡å®šã§ãã‚‹ç‰¹å®šã®ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹ãƒ«ãƒ¼ãƒãƒ³ãŒã‚
+ã‚Šã¾ã™ã€‚
 @c COMMON
 
 @c EN
@@ -665,35 +666,35 @@ And as the top level, the module @code{binary.pack}
 (@ref{Packing Binary Data}) allows packing and unpacking structured
 binary data, a la Perl's @code{pack}/@code{unpack}.
 @c JP
-¤½¤·¤ÆºÇ¾åÁØ¤È¤·¤Æ¤Ï¡¢@code{binary.pack}(@ref{Packing Binary Data})
-¥â¥¸¥å¡¼¥ë¤¬¤¢¤Ã¤Æ¡¢¹½Â¤¤ò¤â¤Ä¥Ğ¥¤¥Ê¥ê¥Ç¡¼¥¿¤Î¥Ñ¥Ã¥¯¡¢¥¢¥ó¥Ñ¥Ã¥¯¤ò²ÄÇ½
-¤Ë¤·¤Æ¤¤¤Ş¤¹¡£Perl¤Ç¤¤¤¦@code{pack}/@code{unpack}¤Ç¤¹¡£
+ãã—ã¦æœ€ä¸Šå±¤ã¨ã—ã¦ã¯ã€@code{binary.pack}(@ref{Packing Binary Data})
+ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒã‚ã£ã¦ã€æ§‹é€ ã‚’ã‚‚ã¤ãƒã‚¤ãƒŠãƒªãƒ‡ãƒ¼ã‚¿ã®ãƒ‘ãƒƒã‚¯ã€ã‚¢ãƒ³ãƒ‘ãƒƒã‚¯ã‚’å¯èƒ½
+ã«ã—ã¦ã„ã¾ã™ã€‚Perlã§ã„ã†@code{pack}/@code{unpack}ã§ã™ã€‚
 @c COMMON
 
 @c EN
 @subsubheading Bit manipulation
 @c JP
-@subsubheading ¥Ó¥Ã¥ÈÁàºî
+@subsubheading ãƒ“ãƒƒãƒˆæ“ä½œ
 @c COMMON
 
 @c EN
 Gauche core provides bitshift and mask operations. 
 See @ref{Bitwise operations}.
 @c JP
-Gauche¥³¥¢¤Ï¥Ó¥Ã¥È¥·¥Õ¥È¤ª¤è¤Ó¥Ş¥¹¥¯Áàºî¤òÄó¶¡¤·¤Æ¤¤¤Ş¤¹¡£ 
-@ref{Bitwise operations}¤ò¸«¤Æ¤¯¤À¤µ¤¤¡£
+Gaucheã‚³ã‚¢ã¯ãƒ“ãƒƒãƒˆã‚·ãƒ•ãƒˆãŠã‚ˆã³ãƒã‚¹ã‚¯æ“ä½œã‚’æä¾›ã—ã¦ã„ã¾ã™ã€‚ 
+@ref{Bitwise operations}ã‚’è¦‹ã¦ãã ã•ã„ã€‚
 @c COMMON
 
 @node Naming convention of libraries, ,Finding libraries you need, Library modules - Overview
 @section Naming convention of libraries
-@c NODE ¥é¥¤¥Ö¥é¥ê¤ÎÌ¿Ì¾µ¬Â§
+@c NODE ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®å‘½åè¦å‰‡
 
 @c EN
 The following table summarizes naming categories of the modules,
 including external ones and planned ones.
 @c JP
-²¼¤ÎÉ½¤Ï¡¢¥â¥¸¥å¡¼¥ë¤ÎÌ¾Á°ÉÕ¤±¤ÎÊ¬Îà¤ò¼¨¤·¤Ş¤¹¡£
-³°Éô¥â¥¸¥å¡¼¥ë¡¢µÚ¤Ó¾­ÍèÍ½Äê¤µ¤ì¤Æ¤¤¤ë¥â¥¸¥å¡¼¥ë¤â´Ş¤ß¤Ş¤¹¡£
+ä¸‹ã®è¡¨ã¯ã€ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã®åå‰ä»˜ã‘ã®åˆ†é¡ã‚’ç¤ºã—ã¾ã™ã€‚
+å¤–éƒ¨ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã€åŠã³å°†æ¥äºˆå®šã•ã‚Œã¦ã„ã‚‹ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚‚å«ã¿ã¾ã™ã€‚
 @c COMMON
 
 @table @code
@@ -701,119 +702,119 @@ including external ones and planned ones.
 @c EN
 Utilities to treat binary data.
 @c JP
-¥Ğ¥¤¥Ê¥ê¥Ç¡¼¥¿¤ò°·¤¦¤¿¤á¤Î¥æ¡¼¥Æ¥£¥ê¥Æ¥£¡£
+ãƒã‚¤ãƒŠãƒªãƒ‡ãƒ¼ã‚¿ã‚’æ‰±ã†ãŸã‚ã®ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ã€‚
 @c COMMON
 
 @item compat.*
 @c EN
 Provides compatibility layers.
 @c JP
-¸ß´¹À­¤Î¤¿¤á¤Î¥ì¥¤¥ä¤òÄó¶¡¡£
+äº’æ›æ€§ã®ãŸã‚ã®ãƒ¬ã‚¤ãƒ¤ã‚’æä¾›ã€‚
 @c COMMON
 
 @item dbi.*, dbd.*
 @c EN
 Database independent interface layer and drivers.
 @c JP
-¥Ç¡¼¥¿¥Ù¡¼¥¹ÆÈÎ©¥¤¥ó¥¿¥Õ¥§¡¼¥¹ÁØ¤È¥É¥é¥¤¥Ğ¡¼¡£
+ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹ç‹¬ç«‹ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹å±¤ã¨ãƒ‰ãƒ©ã‚¤ãƒãƒ¼ã€‚
 @c COMMON
 
 @item dbm.*
 @c EN
 DBM interface
 @c JP
-DBM¥¤¥ó¥¿¥Õ¥§¡¼¥¹
+DBMã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹
 @c COMMON
 
 @item gauche.*
 @c EN
 Stuffs more or less considered as Gauche core features.
 @c JP
-GaucheËÜÂÎ¤Î°ìÉô¤È¤·¤Æ¹Í¤¨¤é¤ì¤Æ¤¤¤ëµ¡Ç½¡£
+Gaucheæœ¬ä½“ã®ä¸€éƒ¨ã¨ã—ã¦è€ƒãˆã‚‰ã‚Œã¦ã„ã‚‹æ©Ÿèƒ½ã€‚
 @c COMMON
 
 @item gl.*
 @c EN
 OpenGL binding and related libraries (external package).
 @c JP
-OpenGL¥Ğ¥¤¥ó¥Ç¥£¥ó¥°¤È´ØÏ¢¤¹¤ë¥é¥¤¥Ö¥é¥ê (³°Éô¥Ñ¥Ã¥±¡¼¥¸)¡£
+OpenGLãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ã¨é–¢é€£ã™ã‚‹ãƒ©ã‚¤ãƒ–ãƒ©ãƒª (å¤–éƒ¨ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸)ã€‚
 @c COMMON
 
 @item gtk.*
 @c EN
 GTk+ binding and related libraries (external package).
 @c JP
-GTk+¥Ğ¥¤¥ó¥Ç¥£¥ó¥°¤È´ØÏ¢¤¹¤ë¥é¥¤¥Ö¥é¥ê (³°Éô¥Ñ¥Ã¥±¡¼¥¸)¡£
+GTk+ãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ã¨é–¢é€£ã™ã‚‹ãƒ©ã‚¤ãƒ–ãƒ©ãƒª (å¤–éƒ¨ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸)ã€‚
 @c COMMON
 
 @item file.*
 @c EN
 Manipulating files and directories.
 @c JP
-¥Õ¥¡¥¤¥ë¤È¥Ç¥£¥ì¥¯¥È¥ê¤ÎÁàºî¡£
+ãƒ•ã‚¡ã‚¤ãƒ«ã¨ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®æ“ä½œã€‚
 @c COMMON
 
 @item lang.*
 @c EN
 Language-related libraries, artificial and/or natural (planned).
 @c JP
-¸À¸ì¤Ë´Ø¤¹¤ë¥é¥¤¥Ö¥é¥ê(¿Í¹©Åª¤Ê¤â¤Î¤â¼«Á³¸À¸ì´ØÏ¢¤â)¡£(Í½Äê)
+è¨€èªã«é–¢ã™ã‚‹ãƒ©ã‚¤ãƒ–ãƒ©ãƒª(äººå·¥çš„ãªã‚‚ã®ã‚‚è‡ªç„¶è¨€èªé–¢é€£ã‚‚)ã€‚(äºˆå®š)
 @c COMMON
 
 @item math.*
 @c EN
 Mathematics.
 @c JP
-¿ô³Ø¡£
+æ•°å­¦ã€‚
 @c COMMON
 
 @item compat.*
 @c EN
 Compatibility libraries
 @c JP
-Â¾¤Î¼ÂÁõ¤È¤Î¥³¥ó¥Ñ¥Á¥Ó¥ê¥Æ¥£¤Ë´Ø¤¹¤ë¥é¥¤¥Ö¥é¥ê¡£ (Í½Äê)
+ä»–ã®å®Ÿè£…ã¨ã®ã‚³ãƒ³ãƒ‘ãƒãƒ“ãƒªãƒ†ã‚£ã«é–¢ã™ã‚‹ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã€‚ (äºˆå®š)
 @c COMMON
 
 @item rfc.*
 @c EN
 Implementations of net protocols defined in RFC's.
 @c JP
-RFC¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤ë¥Ç¡¼¥¿¥Õ¥©¡¼¥Ş¥Ã¥È¤ä¥Í¥Ã¥È¥ï¡¼¥¯¥×¥í¥È¥³¥ë¤Î¼ÂÁõ¡£
+RFCã§å®šç¾©ã•ã‚Œã¦ã„ã‚‹ãƒ‡ãƒ¼ã‚¿ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã‚„ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã®å®Ÿè£…ã€‚
 @c COMMON
 
 @item srfi-*
 @c EN
 SRFI implementations.
 @c JP
-SRFI¤Î¼ÂÁõ
+SRFIã®å®Ÿè£…
 @c COMMON
 
 @item sxml.*
 @c EN
 SXML libraries.
 @c JP
-SXML¥é¥¤¥Ö¥é¥ê¡£
+SXMLãƒ©ã‚¤ãƒ–ãƒ©ãƒªã€‚
 @c COMMON
 
 @item text.*
 @c EN
 Libraries dealing with text data.
 @c JP
-¥Æ¥­¥¹¥È¥Ç¡¼¥¿¤ò°·¤¦¥é¥¤¥Ö¥é¥ê
+ãƒ†ã‚­ã‚¹ãƒˆãƒ‡ãƒ¼ã‚¿ã‚’æ‰±ã†ãƒ©ã‚¤ãƒ–ãƒ©ãƒª
 @c COMMON
 
 @item util.*
 @c EN
 Generic implementations of various algorithms.
 @c JP
-ÈÆÍÑÅª¤Ê¥¢¥ë¥´¥ê¥º¥à¤Î¼ÂÁõ¡£
+æ±ç”¨çš„ãªã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ ã®å®Ÿè£…ã€‚
 @c COMMON
 
 @item www.*
 @c EN
 Implementations of various protocols and formats mainly used in WWW.
 @c JP
-WWW¤Ç¼ç¤È¤·¤Æ»È¤ï¤ì¤ë¥×¥í¥È¥³¥ë¤ä¥Ç¡¼¥¿¥Õ¥©¡¼¥Ş¥Ã¥È¤Î¼ÂÁõ¡£
+WWWã§ä¸»ã¨ã—ã¦ä½¿ã‚ã‚Œã‚‹ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚„ãƒ‡ãƒ¼ã‚¿ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã®å®Ÿè£…ã€‚
 @c COMMON
 @end table
 
