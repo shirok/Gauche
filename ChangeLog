@@ -1,5 +1,7 @@
 2010-02-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/objlib.scm (slot-pop!): Added for the consistency with other
+	  *-push!/pop! API pairs.
 	* src/treemap.c (core_bound), test/treemap.scm: Fixed a bug that
 	  tree-map-pop-min! didn't update num_entries.  Patch from
 	  Masatake YAMATO.

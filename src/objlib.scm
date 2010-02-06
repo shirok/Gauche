@@ -442,10 +442,18 @@
   (format out "#<class ~a>"
           (slot-ref-using-class (current-class-of obj) obj 'name)))
 
-;; convenient routine to push the value to the slot.
+;; convenient routine to push/pop a value to the slot.
 ;; this can be optimized later.
 (define (slot-push! obj slot value)
   (slot-set! obj slot (cons value (slot-ref obj slot))))
+(define (slot-pop! obj slot . default)
+  (if (and (not (null? default))
+	   (or (not (slot-bound? obj slot))
+	       (not (pair? (slot-ref obj slot)))))
+    (car default)
+    (let1 r (slot-ref obj slot)
+      (slot-set! obj slot (cdr r))
+      (car r))))
 
 ;; default unbound slot and missing slot handlers.
 ;; we avoid printing object itself in the error message, for it might
@@ -733,7 +741,7 @@
 (insert-symbols ;define-generic define-method define-class
                 compute-slots compute-get-n-set compute-slot-accessor
                 class-slot-ref class-slot-set! class-slot-bound?
-                slot-push! slot-unbound slot-missing
+                slot-push! slot-pop! slot-unbound slot-missing
                 slot-exists? slot-exists-using-class?
                 change-class
                 apply-generic sort-applicable-methods

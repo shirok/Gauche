@@ -93,6 +93,30 @@
        (let ((sa (class-slot-accessor <y> slot)))
          (and sa (slot-set-using-accessor! x2 sa -1))))
 
+(let ((x3 (make <x>)))
+  (test* "slot-pop! (unbound error)" (test-error)
+         (slot-pop! x3 'a))
+  (test* "slot-pop! (unbound but fallback)" 'ok
+         (slot-pop! x3 'a 'ok))
+  (test* "slot-push!" '(1)
+         (begin (slot-set! x3 'a '())
+                (slot-push! x3 'a 1)
+                (slot-ref x3 'a)))
+  (test* "slot-push!" '(2 1)
+         (begin (slot-push! x3 'a 2)
+                (slot-ref x3 'a)))
+  (test* "slot-pop!" 2 (slot-pop! x3 'a 'empty))
+  (test* "slot-pop!" 1 (slot-pop! x3 'a 'empty))
+  (test* "slot-pop!" 'empty (slot-pop! x3 'a 'empty))
+  (test* "slot-push!" '(1 . z)
+         (begin (slot-set! x3 'a 'z)
+                (slot-push! x3 'a 1)
+                (slot-ref x3 'a)))
+  (test* "slot-pop!" 1 (slot-pop! x3 'a))
+  (test* "slot-pop!" (test-error) (slot-pop! x3 'a))
+  (test* "slot-pop!" 'empty (slot-pop! x3 'a 'empty))
+  )
+
 ;;----------------------------------------------------------------
 (test-section "slot initialization")
 
@@ -1345,6 +1369,7 @@
        (apply app-sp-path-test1 (make <app-sp-path2>) '(a b c)))
 (test* "apply special path (apply->normal)" '(z c b a)
        (app-sp-path-test2 (make <app-sp-path2>) 'a 'b 'c))
+
 
 
 (test-end)
