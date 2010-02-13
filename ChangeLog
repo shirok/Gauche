@@ -1,3 +1,9 @@
+2010-02-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c: Do not treat '\\' as a directory separator on
+	  non-windows platforms (On GAUCHE_WINDOWS, we still treat both
+	  '/' and '\\' as a separator.)
+
 2010-02-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/objlib.scm (slot-pop!): Added for the consistency with other

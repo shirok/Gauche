@@ -261,12 +261,15 @@ const char *Scm_PathDelimiter(void)
 #endif /* GAUCHE_WINDOWS */
 }
 
+/* On Windows, '/' is *allowed* to be an alternative separator. */
 #if defined(GAUCHE_WINDOWS)
 #define SEPARATOR '\\'
 #define ROOTDIR   "\\"
+#define SEPARATOR_P(c)  ((c) == SEPARATOR || (c) == '/')
 #else
 #define SEPARATOR '/'
 #define ROOTDIR   "/"
+#define SEPARATOR_P(c)  ((c) == SEPARATOR)
 #endif
 
 /* Returns the pointer to the first path separator character,
@@ -275,7 +278,7 @@ static const char *get_first_separator(const char *path, const char *end)
 {
     const char *p = path;
     while (p < end) {
-        if (*p == '/' || *p == '\\') return p;
+        if (SEPARATOR_P(*p)) return p;
         p += SCM_CHAR_NFOLLOWS(*p)+1;
     }
     return NULL;
@@ -287,7 +290,7 @@ static const char *get_last_separator(const char *path, const char *end)
 {
     const char *p = path, *last = NULL;
     while (p < end) {
-        if (*p == '/' || *p == '\\') last = p;
+        if (SEPARATOR_P(*p)) last = p;
         p += SCM_CHAR_NFOLLOWS(*p)+1;
     }
     return last;
@@ -296,7 +299,7 @@ static const char *get_last_separator(const char *path, const char *end)
 static const char *skip_separators(const char *p, const char *end)
 {
     while (p < end) {
-        if (*p != '/' && *p != '\\') break;
+        if (!SEPARATOR_P(*p)) break;
         p += SCM_CHAR_NFOLLOWS(*p)+1;
     }
     return p;
@@ -378,7 +381,7 @@ static void put_current_dir(ScmDString *dst)
     }
     dirlen = (int)strlen(p);
     Scm_DStringPutz(dst, p, dirlen);
-    if (p[dirlen-1] != '/' && p[dirlen-1] != '\\') {
+    if (!SEPARATOR_P(p[dirlen-1])) {
         Scm_DStringPutc(dst, SEPARATOR);
     }
 #undef GETCWD_PATH_MAX
@@ -392,7 +395,7 @@ static void copy_win32_path(ScmDString *dst,
 {
     while (srcp < end) {
         ScmChar ch;
-        if (*srcp == '/' || *srcp == '\\') {
+        if (SEPARATOR_P(*srcp)) {
             ch = SEPARATOR;
         } else {
             SCM_CHAR_GET(srcp, ch);
@@ -442,7 +445,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         Scm_DStringPutc(&buf, *srcp++);
         Scm_DStringPutc(&buf, *srcp++);
     }
-    if (endp > srcp && (*srcp == '/' || *srcp == '\\')) {
+    if (endp > srcp && (SEPARATOR_P(*srcp)) {
         if (flags & SCM_PATH_CANONICALIZE) {
             Scm_DStringPutc(&buf, SEPARATOR);
             srcp = skip_separators(srcp, endp);
