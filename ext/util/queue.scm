@@ -380,7 +380,7 @@
                 (let1 xs (pick (%qhead q) '() (cons obj more-objs))
                   (unless (null? xs)
                     (when (and mt? (mtqueue-overflow? q (length xs)))
-                      (error "queue is full: %S"))
+                      (error "queue is full:" q))
                     (let1 xs_ (reverse xs)
                       (%enqueue! q (length xs) xs_ (last-pair xs_))
                       (when mt? (%notify-readers q)))))))
