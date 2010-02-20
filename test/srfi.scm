@@ -188,6 +188,24 @@
 (use srfi-14)
 (test-module 'srfi-14)
 
+;; char-set writer
+(let ()
+  (define (char-set-printer-tester p)
+    (test* "char-set-printer" (car p)
+           (write-to-string (list->char-set (cdr p)))))
+  (for-each char-set-printer-tester
+            '(("#[ace]" #\a #\e #\c)
+              ("#[ab]"  #\a #\b)
+              ("#[a-c]" #\a #\b #\c)
+              ("#[a-d]" #\a #\b #\c #\d)
+              ("#[a-ce]" #\a #\b #\c #\e)
+              ("#[acd]" #\a #\c #\d)
+              ("#[ac-e]" #\a #\c #\d #\e)
+              ("#[ac-e]" #\a #\c #\d #\e)
+              ("#[\\-\\[\\]]" #\[ #\] #\-)
+              ("#[\\^a]" #\^ #\a)
+              ("#[!^]" #\^ #\!))))
+
 ;; Test samples taken from Olin Shivers' test suite,
 ;; http://srfi.schemers.org/srfi-14/srfi-14-tests.scm
 ;; TODO: This doesn't test characters beyond ASCII.  See char-set.euc.scm.

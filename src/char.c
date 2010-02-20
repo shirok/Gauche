@@ -192,9 +192,9 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_CharSetClass,
  * Printer
  */
 
-static void charset_print_ch(ScmPort *out, ScmChar ch)
+static void charset_print_ch(ScmPort *out, ScmChar ch, int firstp)
 {
-    if (ch == '[' || ch == ']' || ch == '-') {
+    if (ch == '[' || ch == ']' || ch == '-' || (ch == '^' && firstp)) {
         Scm_Printf(out, "\\%c", ch);
     } else if (ch < 0x20 || ch == 0x7f) {
         Scm_Printf(out, "\\x%02x", ch);
@@ -209,7 +209,7 @@ static void charset_print_ch(ScmPort *out, ScmChar ch)
 
 static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
-    int prev, code;
+    int prev, code, first = TRUE;
     ScmCharSet *cs = SCM_CHAR_SET(obj);
     ScmTreeIter iter;
     ScmDictEntry *e;
@@ -217,13 +217,14 @@ static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
     Scm_Printf(out, "#[");
     for (prev = -1, code = 0; code < SCM_CHAR_SET_SMALL_CHARS; code++) {
         if (MASK_ISSET(cs, code) && prev < 0) {
-            charset_print_ch(out, code);
+            charset_print_ch(out, code, first);
             prev = code;
+            first = FALSE;
         } 
         else if (!MASK_ISSET(cs, code) && prev >= 0) {
             if (code - prev > 1) {
                 if (code - prev > 2) Scm_Printf(out, "-");
-                charset_print_ch(out, code-1);
+                charset_print_ch(out, code-1, FALSE);
             }
             prev = -1;
         }
@@ -231,15 +232,15 @@ static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
     if (prev >= 0) {
         if (code - prev > 1) {
             if (prev < 0x7e) Scm_Printf(out, "-");
-            charset_print_ch(out, code-1);
+            charset_print_ch(out, code-1, FALSE);
         }
     }
     Scm_TreeIterInit(&iter, &cs->large, NULL);
     while ((e = Scm_TreeIterNext(&iter)) != NULL) {
-        charset_print_ch(out, (int)e->key);
+        charset_print_ch(out, (int)e->key, FALSE);
         if (e->value != e->key) {
             if (e->value - e->key > 2) Scm_Printf(out, "-");
-            charset_print_ch(out, (int)e->value);
+            charset_print_ch(out, (int)e->value, FALSE);
         }
     }
     Scm_Printf(out, "]", obj);
