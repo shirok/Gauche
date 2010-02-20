@@ -1834,7 +1834,7 @@
     (define (calc-ck k) (car (calc-cks k)))
     
     (define (inverse-erf>0 z)
-      (let1 r (* pi z z 1/4) ; (¦Ðz^2)/4
+      (let1 r (* pi z z 1/4) ; (pi*z^2)/4
         (let loop ((k 0) (cks '(1)) (sum 0) (a 1))
           (let1 delta (* a (/ (car cks) (+ k k 1)))
             (if (< delta (* sum *epsilon*))
