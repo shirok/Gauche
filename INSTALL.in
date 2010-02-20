@@ -1,12 +1,13 @@
+@c -*- coding: utf-8 -*-
 @c JP
-                      Gauche�Υ���ѥ���ȥ��󥹥ȡ���
+                      Gaucheのコンパイルとインストール
 @c EN
                       Compiling and Installing Gauche
 @c COMMON
 
 @c JP
-��: Gauche�ϳ�ȯ��Υ����ƥ�ǡ����ˤ˹������Ƥ��ޤ�������URL�Ǻǿ���
-���������ޤ�:
+注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
+情報が得られます:
 @c EN
 Note: The Gauche system is a work in progress and frequently updated.
 Check out the latest information on the site:
@@ -15,7 +16,7 @@ Check out the latest information on the site:
 
 
 @c JP
-��ñ����ˡ
+簡単な方法
 @c EN
 Quick Start
 @c COMMON
@@ -27,17 +28,17 @@ Quick Start
    % make install
 
 @c JP
-����ǡ�Gauche�����ƥब /usr/local/bin, /usr/local/lib/gauche�ڤ�
-/usr/local/share/gauche�ʲ��˥��󥹥ȡ��뤵��ޤ���
+これで、Gaucheシステムが /usr/local/bin, /usr/local/lib/gauche及び
+/usr/local/share/gauche以下にインストールされます。
 @c EN
 Things will be installed under /usr/local/bin, /usr/local/lib/gauche,
 and /usr/local/share/gauche.
 @c COMMON
 
 @c JP
-����Gauche�����󥹥ȡ��뤵��Ƥ��륷���ƥ�ǡ�
-����Ʊ��configuration���ץ����ǿ������С�������Gauche�򥤥󥹥ȡ���
-�����硢'configure' ������˼��Υ��ޥ�ɤ�Ȥ����Ȥ�Ǥ��ޤ���
+既にGaucheがインストールされているシステムで、
+全く同じconfigurationオプションで新しいバージョンのGaucheをインストール
+する場合、'configure' の代わりに次のコマンドを使うこともできます。
 @c EN
 If you have installed Gauche before, and want to install
 new version of Gauche with the same configuration option,
@@ -47,10 +48,10 @@ you can use the following command instead of 'configure'.
     % gauche-config --reconfigure | sh
 
 @c JP
-'--reconfigure' ���ץ����Ϳ������ȡ�gauche-config�ϸ���
-���󥹥ȡ��뤵��Ƥ���Gauche��configure���줿���Υ��ޥ�ɥ饤���
-ɸ����Ϥ˽񤭽Ф��ޤ�������򥷥����ɾ��������С�Ʊ�����ץ�����
-configure���뤳�Ȥ��Ǥ��ޤ���Gauche�򥢥åץǡ��Ȥ�����������Ǥ���
+'--reconfigure' オプションが与えられると、gauche-configは現在
+インストールされているGaucheがconfigureされた時のコマンドラインを
+標準出力に書き出します。それをシェルに評価させれば、同じオプションで
+configureすることができます。Gaucheをアップデートする場合に便利です。
 @c EN
 When the option '--reconfigure' is given, Gauche-config prints out
 the command line when it is configured.   Pass the output to
@@ -60,16 +61,16 @@ convenient way to update Gauche.
 
 
 @c JP
-����åɥ��ݡ���
+スレッドサポート
 @c EN
 Thread Support
 @c COMMON
 ---------------------------------------------------
 
 @c JP
-�ݥԥ�顼��Unix��OS��¿���ǡ�Gauche�ϥͥ��ƥ��֥���åɤ򥵥ݡ��Ȥ��ޤ���
-����åɤ����Ѳ�ǽ���ɤ�����configure���˼�ưȽ�ꤵ��ޤ���
-����åɥ��ݡ��Ȥ�ͭ�����ɤ�����configure������ץȤν��ϤκǸ��ɽ������ޤ���
+ポピュラーなUnix系OSの多くで、Gaucheはネイティブスレッドをサポートします。
+スレッドが使用可能かどうかはconfigure時に自動判定されます。
+スレッドサポートが有効かどうかはconfigureスクリプトの出力の最後に表示されます。
 @c EN
 On most of popular unix variants, Gauche supports native threads.
 The configure script tries to determine automatically whether thread support 
@@ -78,10 +79,10 @@ the support is enabled.
 @c COMMON
 
 @c JP
-���餫����ͳ�ǡ�����åɥ��ݡ��Ȥ���ǽ�ʥץ�åȥե�����Ǥ����̵���ˤ�������硢
-���뤤�������ǽ�Ǥ���Ϥ��ʤΤ�configure������ץȤ�Ƚ���ְ㤨��ͭ���ˤʤäƤ��ʤ�
-���ˤϡ�����configure���ץ����Ƕ���Ū�˥���åɥ��ݡ��Ȥ�ͭ��/̵����
-�ڤ��ؤ��뤳�Ȥ��Ǥ��ޤ���
+何らかの理由で、スレッドサポートが可能なプラットフォームでそれを無効にしたい場合、
+あるいは本来可能であるはずなのにconfigureスクリプトが判定を間違えて有効になっていない
+場合には、次のconfigureオプションで強制的にスレッドサポートの有効/無効を
+切り替えることができます。
 @c EN
 If you want to turn off the thread support even when the platform
 allows it for some reason, or if the configure script misrecognizes the platform
@@ -95,16 +96,16 @@ explicitly.
 
 
 @c JP
-ʸ�����󥳡��ǥ��󥰤�����
+文字エンコーディングの選択
 @c EN
 Choosing Character Encoding
 @c COMMON
 ---------------------------------------------------
 
 @c JP
-�ǥե���ȤǤϡ�Gauche������ʸ�����󥳡��ǥ��󥰤Ȥ���utf-8��Ȥ��ޤ���
---enable-multibyte=ENCODING �Ȥ������ץ�����configure���Ϥ����Ȥǡ�
-����ʸ�����󥳡��ǥ��󥰤��Ѥ��뤳�Ȥ��Ǥ��ޤ���
+デフォルトでは、Gaucheは内部文字エンコーディングとしてutf-8を使います。
+--enable-multibyte=ENCODING というオプションをconfigureに渡すことで、
+内部文字エンコーディングを変えることができます。
 @c EN
 By default, Gauche is compiled with utf-8 as a native character encoding.
 You can give a --enable-multibyte=ENCODING option to switch the native
@@ -120,11 +121,11 @@ Gauche takes such characters as the first byte of multibyte charaters.
 
 
 @c JP
-Gauche����ɽŪ�����ܸ�ʸ�����󥳡��ǥ��󥰤�ǧ�����Ѵ����뤳�Ȥ�
-�Ǥ��ޤ���������ʳ��Υ��󥳡��ǥ��󥰤˴ؤ��Ƥϡ�iconv�����Ѳ�ǽ��
-����Ф�������Ѥ����Ѵ���Ԥ��ޤ���
-iconv��ɸ��ǥ��󥹥ȡ��뤵��Ƥ��ʤ������ƥ�Ǥϡ�
---with-iconv���ץ����ǳ�����iconv�饤�֥������Ѥ��뤳�Ȥ��Ǥ��ޤ���
+Gaucheは代表的な日本語文字エンコーディングを認識し変換することが
+できますが、それ以外のエンコーディングに関しては、iconvが利用可能で
+あればそれを利用して変換を行います。
+iconvが標準でインストールされていないシステムでは、
+--with-iconvオプションで外部のiconvライブラリを利用することができます。
 @c EN
 Gauche can recognize and converts typical japanese character
 encodings, but delegates other conversion work to iconv library
@@ -137,12 +138,12 @@ iconv library by --with-iconv option.
 
 
 @c JP
-�㤨�� --with-iconv=/usr/local �Ȥ���С�Gauche��iconv.h��/usr/local/include
-���顢libiconv��/usr/local/lib����õ���ޤ����⤷���ʤ���iconv�饤�֥�꤬
-libiconv�ʳ���̾�� (libmyconv�Ȥ�) ���ä��Ȥ����顢
---with-iconv-lib=myconv �Ȥ������ץ�������ꤷ�Ʋ�������
+例えば --with-iconv=/usr/local とすれば、Gaucheはiconv.hを/usr/local/include
+から、libiconvを/usr/local/libから探します。もしあなたのiconvライブラリが
+libiconv以外の名前 (libmyconvとか) だったとしたら、
+--with-iconv-lib=myconv というオプションも指定して下さい。
 
-������iconv�饤�֥��Ȥ��Ƥϡ�Bruno Haible���libiconv���ʲ����������ǽ�Ǥ���
+外部のiconvライブラリとしては、Bruno Haible氏のlibiconvが以下から入手可能です。
 @c EN
 For example, if your say --with-iconv=/usr/local, Gauche looks
 for the header iconv.h from /usr/local/include and the library
@@ -157,23 +158,23 @@ http://www.gnu.org/software/libiconv/
 
 
 @c JP
-��������饤�֥��ѥ�
+ローカルライブラリパス
 @c EN
 Local library paths
 @c COMMON
 ---------------------------------------------------
 
 @c JP
-Gauche�Υӥ�ɤˡ�ɸ��Ǥʤ����˥��󥹥ȡ��뤵��Ƥ���饤�֥���
-���Ѥ�������硢���Υ��ץ����Ǥ��ξ�����ꤹ�뤳�Ȥ��Ǥ��ޤ���
+Gaucheのビルドに、標準でない場所にインストールされているライブラリを
+使用したい場合、次のオプションでその場所を指定することができます。
 
   --with-local=PATH:PATH2:...
 
-����ǡ�PATH/include��PATH2/include��... �����󥯥롼�ɥѥ��ˡ�
-PATH/lib��PATH2/lib��... ���饤�֥�ꥵ�����ѥ����ɲä���ޤ���
+これで、PATH/include、PATH2/include、... がインクルードパスに、
+PATH/lib、PATH2/lib、... がライブラリサーチパスに追加されます。
 
-�㤨�С�/usr/local�˥��󥹥ȡ��뤵�줿gdbm�饤�֥�����Ѥ�����
-���ϼ��Τ褦�ˤ��ޤ���
+例えば、/usr/localにインストールされたgdbmライブラリを使用したい
+場合は次のようにします。
 
   --with-local=/usr/local
 @c EN
@@ -194,15 +195,15 @@ you can say:
 
 
 @c JP
-IPv6���ݡ���
+IPv6サポート
 @c EN
 IPv6 support
 @c COMMON
 ---------------------------------------------------
 
 @c JP
-Gauche�ϼ¸�Ū��IPv6�򥵥ݡ��Ȥ��Ƥ��ޤ����ǥե���ȤǤϤ��ε�ǽ��off��
-�ʤäƤ��ޤ���������configure���ץ�����ͭ���ˤ��뤳�Ȥ��Ǥ��ޤ���
+Gaucheは実験的にIPv6をサポートしています。デフォルトではこの機能はoffに
+なっていますが、次のconfigureオプションで有効にすることができます。
 @c EN
 Gauche has experimental support for IPv6.
 It is turned off by default,
@@ -212,9 +213,9 @@ but you can include it by giving the following configure option.
   --enable-ipv6
 
 @c JP
-�������OS��IPv6�����ݡ��Ȥ���Ƥ��ʤ���Фʤ�ޤ���
-���ߤμ�����FreeBSD�����Linux��ǥƥ��Ȥ���Ƥ��ޤ���
-�ܤ�����ǽ�ϥ�ե���󥹥ޥ˥奢���gauche.net�ι�򻲾Ȥ��Ʋ�������
+もちろん、OSでIPv6がサポートされていなければなりません。
+現在の実装はFreeBSDおよびLinux上でテストされています。
+詳しい機能はリファレンスマニュアルのgauche.netの項を参照して下さい。
 @c EN
 Of course your OS has to have the support of IPv6.
 The current implementation is tested on FreeBSD and Linux.
@@ -223,16 +224,16 @@ See the gauche.net section of the reference manual for details.
 
 
 @c JP
-SLIB�ξ��
+SLIBの場所
 @c EN
 Selecting SLIB location
 @c COMMON
 ---------------------------------------------------
 
 @c JP
-SLIB�ϡ��ݡ����֥��Scheme�饤�֥��ǡ��������������ʵ�ǽ��
-������Scheme�ǽ񤫤�Ƥ��ޤ���Gauche��SLIB�����󥹥ȡ��뤵��Ƥ����
-���ε�ǽ�����Ѥ��뤳�Ȥ��Ǥ��ޤ���
+SLIBは、ポータブルなSchemeライブラリで、いろいろ便利な機能が
+完全にSchemeで書かれています。GaucheはSLIBがインストールされていれば
+その機能を利用することができます。
 @c EN
 SLIB is a portable Scheme library containing various useful functions,
 entirely written in Scheme.  Gauche can use SLIB features if you have
@@ -240,9 +241,9 @@ it on your system.
 @c COMMON
 
 @c JP
-configure������ץȤϡ�/usr/local/slib�ʤɤ����Ĥ��δ���Ū�ʥǥ��쥯�ȥ�
-����SLIB��ưŪ��õ���ޤ����⤷���ʤ���SLIB�����ƥबɸ��Ū�ǤϤʤ�����
-���󥹥ȡ��뤵��Ƥ����顢���Υ��ץ����Ǥ��ξ�����ꤷ�Ƥ���������
+configureスクリプトは、/usr/local/slibなどいくつかの基本的なディレクトリ
+からSLIBを自動的に探します。もしあなたのSLIBシステムが標準的ではない場所に
+インストールされていたら、次のオプションでその場所を指定してください。
 @c EN
 The configure script tries to find where SLIB is installed.  It looks
 for some typical directories like /usr/local/slib or /usr/share/slib.
@@ -253,27 +254,27 @@ it to the configure script as follows:
    ./configure --with-slib=PATH
 
 @c JP
-�����ǡ�PATH��SLIB�����󥹥ȡ��뤵�줿�ѥ��Ǥ���
+ここで、PATHはSLIBがインストールされたパスです。
 @c EN
 where PATH is the path you installed your SLIB.
 @c COMMON
 
 @c JP
-Gaucheh��SLIB̵���Ǥ�ư��ޤ���SLIB��Ȥ�ɬ�פ��ʤ���С����Υ��ץ�����
-���ˤ��ʤ��Ƥ褤�Ǥ���
+GauchehはSLIB無しでも動作します。SLIBを使う必要がなければ、このオプションは
+気にしなくてよいです。
 @c EN
 Gauche works without SLIB, anyway.  If you're not interested, you
 don't need to care about this.
 @c COMMON
 
 @c JP
-SLIB�Ϻǽ�˻Ȥ�����Gauche�Υ饤�֥��ǥ��쥯�ȥ�˥��������ե������
-�������ޤ���Gauche�Υ��󥹥ȡ�����˴���SLIB��¸�ߤ���Х��󥹥ȡ���
-������ץȤ����������ե������������ޤ�����Gauche���󥹥ȡ�����SLIB
-�����󥹥ȡ��뤵�줿��硢�ǽ��SLIB��Ȥ����Ȥ��������ǥ��������ե����뤬
-��������ޤ������λ���Gauche���ѼԤ��饤�֥��ǥ��쥯�ȥ�˽񤭹��߸��¤�
-���äƤ��ʤ��ȥ��顼�Ȥʤ�ޤ����񤭹��߸��¤���ĥ桼����gosh��ư����
-�㤨�м��Τ褦�ʼ���ɾ������Х��������ե����뤬����������ޤ���
+SLIBは最初に使う前にGaucheのライブラリディレクトリにカタログファイルを
+作成します。Gaucheのインストール時に既にSLIBが存在すればインストール
+スクリプトがカタログファイルを作成しますが、Gaucheインストール後にSLIB
+がインストールされた場合、最初にSLIBを使おうとした時点でカタログファイルが
+作成されます。この時、Gauche使用者がライブラリディレクトリに書き込み権限を
+持っていないとエラーとなります。書き込み権限を持つユーザがgoshを起動して
+例えば次のような式を評価すればカタログファイルが正しく作られます。
 @c EN
 SLIB needs a catalog file to be created in the Gauche library
 directory before use.  If Gauche finds SLIB during installation,
@@ -290,32 +291,32 @@ and evaluate something like the following will solve the problem.
 
 
 @c JP
-�¹Ի��Υ饤�֥��ѥ�
+実行時のライブラリパス
 @c EN
 Run-time library path
 @c COMMON
 ---------------------------------------------------
 
 @c JP
-���Ф��С��Ķ��Υ���ȥ����뤬�Ǥ��ʤ��ս��Gauche�����餻�ʤ���Фʤ�ʤ�
-��礬����ޤ����㤨��CGI������ץȤ�ISP�Υ����С������餻����ʤɤǤ���
-�⤷��Gauche��ɸ��Ū�Ǥʤ����˥��󥹥ȡ��뤵�줿��ͭ�饤�֥��˰�¸��
-�Ƥ����硢���줬����Ȥʤ�ޤ���
+しばしば、環境のコントロールができない箇所でGaucheを走らせなければならない
+場合があります。例えばCGIスクリプトをISPのサーバーで走らせる場合などです。
+もし、Gaucheが標準的でない場所にインストールされた共有ライブラリに依存し
+ている場合、それが問題となります。
 
-�㤨�С��ǿ���libiconv.so��ʬ�ǥ���ѥ��뤷�� /home/yours/lib ��
-���󥹥ȡ��뤷���Ȥ��ޤ���--with-iconv=/home/yours/lib �Ȥ���configure
-����С�Gauche�Ϥ��ʤ���iconv��Ȥ��褦�˥���ѥ��뤵��ޤ����¹Ի���Ŭ��
-�ʴĶ��ѿ����㤨��LD_LIBRARY_PATH�ʤɤ����ꤷ�Ƥ����С�Gauche��
-���󥿥ץ꥿gosh��libiconv.so���ܤ��Ф����Ȥ��Ǥ��ޤ�����������
-CGI������ץȤ�Web server�ˤ�äƵ�ư���졢Web server��LD_LIBRARY_PATH
-�����ꤷ�Ƥ���ʤ����⤷��ޤ��󡣤��ξ�硢gosh��libiconv.so�����Ĥ���줺��
-��ư�˼��Ԥ��뤫�⤷��ޤ���
+例えば、最新のlibiconv.soを自分でコンパイルして /home/yours/lib に
+インストールしたとします。--with-iconv=/home/yours/lib としてconfigure
+すれば、Gaucheはあなたのiconvを使うようにコンパイルされます。実行時に適切
+な環境変数、例えばLD_LIBRARY_PATHなどを設定しておけば、Gaucheの
+インタプリタgoshはlibiconv.soを捜し出すことができます。しかし、
+CGIスクリプトはWeb serverによって起動され、Web serverはLD_LIBRARY_PATH
+を設定してくれないかもしれません。その場合、goshはlibiconv.soが見つけられずに
+起動に失敗するかもしれません。
 
-����ѥ���ˤ�äƤϡ��ץ�����ब��¸���Ƥ��붦ͭ�饤�֥��Υѥ���ץ������
-���Τ˽񤭹���Ǥ��ޤ��륪�ץ�������äƤ��ޤ���configure�� --with-rpath
-���ץ����Ϥ�������Ѥ��ޤ���--with-rpath=DIR�Ȥ���ȡ��¹Ի���DIR����
-��ͭ�饤�֥���õ���褦������ˤʤ�ޤ������Υ��ץ����Ϻ��ΤȤ���gcc�Ǥ���
-ư��ޤ���
+コンパイラによっては、プログラムが依存している共有ライブラリのパスをプログラム
+本体に書き込んでしまえるオプションを持っています。configureの --with-rpath
+オプションはそれを利用します。--with-rpath=DIRとすると、実行時にDIRから
+共有ライブラリを探すような設定になります。このオプションは今のところgccでしか
+動作しません。
 @c EN
 In some cases, your have to run Gauche under the environment
 you don't have much control.  One of such cases is when you
@@ -341,15 +342,15 @@ are looked from DIR.   This works only on gcc, however.
 
 
 @c JP
-���󥹥ȡ�����λ���
+インストール先の指定
 @c EN
 Customizing install location
 @c COMMON
 ---------------------------------------------------
 
 @c JP
-���Τ褦��configure������ץȤ�ư���뤳�Ȥˤ�ꡢ���󥹥ȡ������
-�ǥ��쥯�ȥ�����Ǥ��ޤ���
+次のようにconfigureスクリプトを起動することにより、インストール先の
+ディレクトリを指定できます。
 @c EN
 Call configure with those parameters to specify where to install.
 @c COMMON
@@ -358,9 +359,9 @@ Call configure with those parameters to specify where to install.
 
 
 @c JP
---prefix ���ץ���󤬻��ꤵ��ʤ���С� /usr/local �����ꤵ�줿��ΤȤߤʤ���ޤ���
---exec-prefix ���ץ���󤬻��ꤵ��ʤ���С�EXEC_PREFIX��PREFIX��Ʊ����Τ�
-�ʤ�ޤ���
+--prefix オプションが指定されなければ、 /usr/local が指定されたものとみなされます。
+--exec-prefix オプションが指定されなければ、EXEC_PREFIXはPREFIXと同じものに
+なります。
 @c EN
 If --prefix option is omitted, /usr/local is assumed as PREFIX.
 If --exec-prefix option is omitted, EXEC_PREFIX is set the same as PREFIX.
@@ -368,49 +369,49 @@ If --exec-prefix option is omitted, EXEC_PREFIX is set the same as PREFIX.
 
 
 @c JP
-���󥹥ȡ��뤵���ե�����������ϰʲ����̤�Ǥ���
+インストールされるファイルの内訳は以下の通りです。
 @c EN
 The files are installed in those locations:
 @c COMMON
 
   $EXEC_PREFIX/bin/*
 @c JP
-     ���󥿥ץ꥿ (gosh) �ȥ���ե����졼����󥹥���ץ� (gauche-config)
+     インタプリタ (gosh) とコンフィグレーションスクリプト (gauche-config)
 @c EN
      The interpreter (gosh) and configuration script (gauche-config).
 @c COMMON
 
   $EXEC_PREFIX/lib/*
 @c JP
-     �饤�֥�� (libgauche.a).
+     ライブラリ (libgauche.a).
 @c EN
      Library (libgauche.a).
 @c COMMON
 
   $PREFIX/share/gauche/VERSION/include/*
 @c JP
-     libgauche���󥯤��륢�ץꥱ��������ɬ�פʥإå����ե�����
+     libgaucheをリンクするアプリケーションに必要なヘッダーファイル
 @c EN
      Header files required to create applications using libgauche.
 @c COMMON
 
   $PREFIX/share/gauche/VERSION/lib/*
 @c JP
-     �ޥ���˰�¸���ʤ�Scheme�ե�����
+     マシンに依存しないSchemeファイル
 @c EN
      Machine-independent Scheme files.
 @c COMMON
 
   $PREFIX/share/info/*
 @c JP
-     info�ե�����
+     infoファイル
 @c EN
      info files.
 @c COMMON
 
   $EXEC_PREFIX/lib/gauche/VERSION/ARCHITECTURE/*
 @c JP
-     �ޥ���˰�¸����ե����� (.so, gosh, gauche-config, libgauche.a)
+     マシンに依存するファイル (.so, gosh, gauche-config, libgauche.a)
 @c EN
      Machine-dependent files (.so files, gosh, gauche-config, and libgauche.a)
 @c COMMON
@@ -418,7 +419,7 @@ The files are installed in those locations:
   $PREFIX/share/gauche/site/lib/*
   $EXEC_PREFIX/lib/gauche/site/VERSION/ARCHITECTURE/*
 @c JP
-     �桼�����ȼ��˥��󥹥ȡ��뤹��ޥ������¸����¸�ե�����Υǥե���Ȥ��֤���ꡣ
+     ユーザが独自にインストールするマシン非依存／依存ファイルのデフォルトの置き場所。
 @c EN
      These are default locations where user installed machine-indenpedent/
      dependent files will go.
@@ -426,7 +427,7 @@ The files are installed in those locations:
 
 
 @c JP
-��Ŭ�����ץ����
+最適化オプション
 @c EN
 Optimization options
 @c COMMON
@@ -434,9 +435,9 @@ Optimization options
 
 
 @c JP
-Make���ˡ�make�ޥ���OPTFLAGS���Ѥ����ɲäΥ���ѥ��륪�ץ�������ꤹ�뤳��
-���Ǥ��ޤ���configure�����ꤹ��OPTFLAGS�ʳ��Υ��ץ�������������
-���Τ褦��make�����餻�Ʋ�������
+Make時に、makeマクロOPTFLAGSを用いて追加のコンパイルオプションを指定すること
+ができます。configureが設定するOPTFLAGS以外のオプションを試したい場合は
+次のようにmakeを走らせて下さい。
 @c EN
 You can pass extra options at make time, using make macro OPTFLAGS.
 'Configure' sets a default, but if you want to explore different
@@ -447,19 +448,19 @@ options, just run 'make' as follows:
 
 
 @c JP
-���󥤥󥹥ȡ���
+アンインストール
 @c EN
 Uninstallation
 @c COMMON
 ---------------------------------------------------
 
 @c JP
-���󥹥ȡ��뤵�줿Gauche���եȥ�������������ˤϡ��������ĥ꡼�Υȥå�
-�ǥ��쥯�ȥ��
+インストールされたGaucheソフトウェアを取り除くには、ソースツリーのトップ
+ディレクトリで
 
   make uninstall
 
-�Ȥ��Ʋ�������
+として下さい。
 @c EN
 You can remove installed Gauche software by running
 
@@ -470,7 +471,7 @@ on top of the source tree.
 
 
 @c JP
-�����¸�ξ���
+機種依存の情報
 @c EN
 Machine-dependent information
 @c COMMON
@@ -478,18 +479,18 @@ Machine-dependent information
 
 
 @c JP
-* MacOS X - 10.2.x�����ΥС������Ǥϡ�dlcompat�饤�֥��(libdl)��
-      ���󥹥ȡ��뤵��Ƥ��뤳�Ȥ�ɬ�פǤ���http://fink.sourceforge.net����
-      ����������ɤǤ��ޤ���10.3�ʹߤǤ�ɬ�פ���ޤ��󡣥����ƥ�ɸ���
-      ���ʳ���dlcompat�饤�֥��򥤥󥹥ȡ��뤷�����ϡ�configure��
-      --with-local���ץ����Ǿ�����ꤷ�Ʋ�������
-      �ޤ���GC��pthreads���׵᤹��褦�ˤʤä��Τǡ�--enable-threads=pthreads
-      ��ɬ�פǤ���
-      (�㡧$HOME/include �� dlfcn.h ���� $HOME/lib �� libdl.a���������
+* MacOS X - 10.2.x以前のバージョンでは、dlcompatライブラリ(libdl)が
+      インストールされていることが必要です。http://fink.sourceforge.netから
+      ダウンロードできます。10.3以降では必要ありません。システム標準の
+      場所以外にdlcompatライブラリをインストールした場合は、configureの
+      --with-localオプションで場所を指定して下さい。
+      また、GCがpthreadsを要求するようになったので、--enable-threads=pthreads
+      も必要です。
+      (例：$HOME/include に dlfcn.h が、 $HOME/lib に libdl.aがある場合は
 
          ./configure --with-local=$HOME --enable-threads=pthreads
 
-       �Ȥ���)
+       とする)
 @c EN
 * MacOS X - For 10.2.x and earlier, you need to install the dlcompat
        library (libdl) from Fink project (http://fink.sourceforge.net)
@@ -506,8 +507,8 @@ Machine-dependent information
 @c COMMON
 
 @c JP
-* IRIX with 64bit binary - �ǥե���Ȥ�32bit ABI�ǤϤʤ�64bit ABI�ǥ���ѥ���
-       ���������ϼ��Τ褦�ˤ��Ʋ�������
+* IRIX with 64bit binary - デフォルトの32bit ABIではなく64bit ABIでコンパイル
+       したい場合は次のようにして下さい。
 
          CC="cc -64" AS="as -64" ./configure
 @c EN
@@ -518,14 +519,14 @@ Machine-dependent information
 @c COMMON
 
 @c JP
-* Linux/Crusoe TM5800 - �Ƕ��Linux�Ǥ� Crusoe TM5800��i686�ߴ��Ȥ����
-       �褦�ˤʤä��褦�Ǥ�����gc���i686��ͭ��prefetch̿���ȤäƤ���Ȥ���
-       �ǥ���ѥ���˼��Ԥ���Ȥ�����𤬤���ޤ������Ȥꤢ������fix�ϡ�
-       configure���gc/Makefile��� 
+* Linux/Crusoe TM5800 - 最近のLinuxでは Crusoe TM5800がi686互換とされる
+       ようになったようですが、gc中でi686特有のprefetch命令を使っているところ
+       でコンパイルに失敗するという報告がありました。とりあえずのfixは、
+       configure後にgc/Makefile中の 
 
          -DUSE_I686_PREFETCH
 
-       �Ȥ������Ҥ�ä��Ƥ���make���Ʋ�������
+       という記述を消してからmakeして下さい。
 
 @c EN
 * Linux/Crusoe TM5800 - It is reported that recent Linux kernel thinks

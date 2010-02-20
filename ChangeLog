@@ -1,3 +1,7 @@
+2010-02-19  Shiro Kawai  <shiro@acm.org>
+
+	* INSTALL.in: switched to utf-8.
+
 2010-02-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c: Do not treat '\\' as a directory separator on
