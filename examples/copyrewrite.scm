@@ -16,7 +16,9 @@
     ((dir author email)
      (directory-fold dir
                      (lambda (path seed)
-                       (when (#/\.(c|h|scm|stub)$/ path)
+                       (when (or (#/\.(c|h|scm|stub|in|texi)$/ path)
+                                 (member (sys-basename path)
+                                         '("COPYING" "genstub" "geninsn")))
                          (check-file path author email)))
                      #f))
     (_ (usage)))
