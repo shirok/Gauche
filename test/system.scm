@@ -575,7 +575,7 @@
 (test-section "signal handling")
 
 (cond-expand
- ((not gauche.os.windows)
+ [(not gauche.os.windows)
 
   (test* "sigalrm1" SIGALRM
          (call/cc
@@ -668,7 +668,8 @@
 
   ;; NB: on cygwin (as of 1.5.25), sigmask doesn't work reliably so
   ;; we skip test for now.
-  (unless (string-contains (gauche-architecture) "-cygwin")
+  (cond-expand
+   [(not gauche.os.cygwin)
     (test* "sigmask" 'hup
            (let ((sig #f)
                  (chld #f)
@@ -736,12 +737,13 @@
                                  (sys-sigset) SIGHUP))
 
       (set-signal-handler! SIGINT #f)
-      )
-    ) ;; !cygwin
+      )]
+   [else]);; !cygwin
 
   ;; sys-sigwait
   (cond-expand
-   (gauche.sys.sigwait
+   [(and gauche.sys.sigwait
+         (not gauche.os.cygwin))
     (let ()
       (define z (lambda (n) (raise 'foo)))
       
@@ -771,10 +773,11 @@
       (test* "sys-sigwait / signal handler restoration" 'foo
              (guard (e (else e))
                (sys-kill (sys-getpid) SIGINT))))
-    )) ;; gauche.sys.sigwait
+    ]
+   [else]) ; (not (and gauche.sys.sigwait (not gauche.os.cygwin)))
 
-  ) ;; (not gauche.os.windows)
- (else))
+  ] 
+ [else]) ; gauche.os.windows
 
 (test-end)
 

@@ -1,5 +1,8 @@
 2010-02-19  Shiro Kawai  <shiro@acm.org>
 
+	* test/system.scm: Exclude sys-wait test on cygwin, since sigmask
+	  doesn't seem to work reliably on cygwin 1.7.
+
 	* INSTALL.in: switched to utf-8.
 
 2010-02-12  Shiro Kawai  <shiro@acm.org>
