@@ -59,7 +59,7 @@ need to handle the empty case specially in Makefile.
 * The directory prefix of files are preserved within the
 destination directory.  This is handy to install subtree of files.
 For example, the following command installs '/usr/share/foo/main',
-'/usr/share/foo/conf/x' and '/usr/share/foo/conf/y' with a
+\&'/usr/share/foo/conf/x' and '/usr/share/foo/conf/y' with a
 single command.
 
   gauche-install -T /usr/share/foo main conf/x conf/y
@@ -67,7 +67,7 @@ single command.
 Giving \fB\-p\fR option suppresses this behavior and
 strips any directory prefix like the second format.  The
 following command line installs '/usr/share/foo/main',
-'/usr/share/foo/x' and '/usr/share/foo/y'.
+\&'/usr/share/foo/x' and '/usr/share/foo/y'.
 
   gauche-install -T /usr/share/foo -p main conf/x conf/y
 .PP
