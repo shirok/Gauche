@@ -975,10 +975,9 @@ returns two lists, the first is the result of filtering elements of
 @var{list} by @var{pred}, and the second is the result of
 removing elements of @var{list} by @var{pred}.
 @c JP
-[SRFI-1] @code{filter} と @code{remove} は同時に、すなわち2つのリストを
-返しますが、一つ目は @var{pred} により @var{list} の要素をフィルタリング
-した結果で、二つ目は @var{pred} により @var{list} の要素を削除した結果
-です。 
+[SRFI-1] @code{filter} と @code{remove} を同時に行い、
+2つのリストを返します。一つ目は @var{pred} により @var{list} の要素をフィルタリング
+した結果で、二つ目は @var{pred} により @var{list} の要素を削除した結果です。 
 @c COMMON
 @example
 (partition odd? '(3 1 4 5 9 2 6))
