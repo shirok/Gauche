@@ -2187,7 +2187,26 @@ If there's no key that matches @var{key}, @var{kv-list} is returned.
 
 @end defun
 
+@defun delete-keywords keys kv-list
+@defunx delete-keywords! keys kv-list
+@c EN
+Similar to @code{delete-keyword} and @code{delete-keyword!}, but
+you can specify a list of objects in @var{keys};
+when a key in @var{kv-list} matches any of @var{keys},
+the key and the following value is removed from @var{kv-list}.
+@c JP
+@code{delete-keyword}や@code{delete-keyword!}と似ていますが、
+@var{keys}にオブジェクトのリストを指定できます。
+@var{kv-list}中のキーが@var{keys}のうちのどれかに一致すれば、
+そのキーと続く値が@var{kv-list}から取り除かれます。
+@c COMMON
 
+@example
+(delete-keywords '(:x :y) '(:x 1 :y 2 :z 3 :y 4))
+ @result{} (:z 3)
+@end example
+
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Identifiers, Characters, Keywords, Core library

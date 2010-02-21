@@ -172,6 +172,29 @@
               ]))))
   )
 
+(define (delete-keywords ks kvlist)
+  (define (rec kvs)
+    (cond [(null? kvs) '()]
+          [(null? (cdr kvs)) (error "incomplete key list" kvlist)]
+          [(memv (car kvs) ks) (rec (cddr kvs))]
+          [else (list* (car kvs) (cadr kvs) (rec (cddr kvs)))]))
+  (rec kvlist))
+
+(define (delete-keywords! ks kvlist)
+  (define (head kvs)
+    (cond [(null? kvs) '()]
+          [(null? (cdr kvs)) (error "incomplete key list" kvlist)]
+          [(memv (car kvs) ks) (head (cddr kvs))]
+          [else (cut-tail! (cddr kvs) kvs) kvs]))
+  (define (cut-tail! kvs prev)
+    (cond [(null? kvs)]
+          [(null? (cdr kvs)) (error "incomplete key list" kvlist)]
+          [(memv (car kvs) ks)
+           (set-cdr! (cdr prev) (cddr kvs))
+           (cut-tail! (cddr kvs) prev)]
+          [else (cut-tail! (cddr kvs) kvs)]))
+  (head kvlist))
+
 ;; Tentative compiler macro.
 ;;
 ;;  (define-compiler-macro <name>
