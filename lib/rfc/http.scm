@@ -366,7 +366,10 @@
     (with-connection
      conn
      (lambda (in out)
-       (send-request out request host uri request-body options)
+       ;; NB: we need better way to sort out keyword options that shouldn't
+       ;; be passed to the request header.
+       (send-request out request host uri request-body
+                     (delete-keywords '(:sink :flusher) options))
        (receive (code headers) (receive-header in)
          (values code
                  headers

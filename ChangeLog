@@ -1,5 +1,8 @@
 2010-02-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/http.scm (request-response): Exclude keyword arguments
+	  for the receiver from request headers.
+
 	* src/scmlib.scm (delete-keywords, delete-keywords!): Added.
 
 2010-02-20  Shiro Kawai  <shiro@acm.org>
