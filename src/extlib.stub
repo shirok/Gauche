@@ -552,8 +552,11 @@
 (define-cproc string->regexp (str::<string> :key (case-fold #f))
   (let* ([flags::int (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)])
     (result (Scm_RegComp str flags))))
-(define-cproc regexp->string (regexp::<regexp>)
-  (result (?: (-> regexp pattern) (SCM_OBJ (-> regexp pattern)) '#f)))
+(define-cproc %regexp-pattern (regexp::<regexp>)
+  (setter (regexp::<regexp> pat::<string>) ::<void>
+          (set! (-> regexp pattern) (SCM_OBJ pat)))
+  (result (-> regexp pattern)))
+(define-cproc regexp-ast (regexp::<regexp>) (result (-> regexp ast)))
 (define-cproc regexp-case-fold? (regexp::<regexp>) ::<boolean>
   (result (logand (-> regexp flags) SCM_REGEXP_CASE_FOLD)))
 

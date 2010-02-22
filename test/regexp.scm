@@ -67,6 +67,34 @@
                    '(0 #f (1 name) (2 name) (alt (backref . 2) (backref . 1))))
 
 ;;-------------------------------------------------------------------------
+(test-section "regexp-unparse")
+
+(define (test-regexp-unparse src)
+  (let ((ast (if (string? src) (regexp-optimize (regexp-parse src)) src)))
+    (test* (format "regexp-unparse ~s" src) ast
+           (regexp-optimize (regexp-parse (regexp-unparse ast)))
+           equal?)))
+
+(for-each test-regexp-unparse
+          '(;; simple ones
+            "" "a" "ab" "a*" "a+" "a?" "ab*" "ab+" "ab?" "a*b" "a+b" "a?b"
+            "a{3}" "a{2,4}" "a{3,}" "a|b" "a|b|c" "^ab" "^a|b" "^a|b$"
+            "." "\\." "\\**" "\\(\\)\\{\\}\\[\\]" "\\bfoo\\B"
+            ;; charset
+            "[a-z]" "[^a-z]" "[a-z]+" "[a^ef-]" "[a]" "[.]" "[\\[]" "[\\^]"
+            ;; grouping
+            "(a)(b)" "(a|b)c(d)" "(a(b(c|d)|e))f"
+            "(?:abc)*" "(ab(?:cd)?e{3,4})" "(?i:ab(?-i:cd)ef)"
+            ;; backref
+            "(a)bc\\1" "ab(?<foo>c)(d)\\k<foo>"
+            ;; once, lookahead, lookbehind
+            "(?>abc)" "(?=a*b*c)" "(?!a*b*c)" "(?<=a[bc])" "(?<!a[bc])"
+            "(a)(?(1)b)" "(a)(?(1)b|c)" "(a)(?(1)|c)"
+            "(?(?=ab)cd|ef)" "(?(?!ab)cd|ef)"
+            "(?(?<=ab)cd|ef)" "(?(?<!ab)cd|ef)" 
+            ))
+
+;;-------------------------------------------------------------------------
 (test-section "regexp-writer")
 
 (define-syntax test-regexp-writer

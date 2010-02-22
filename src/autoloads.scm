@@ -111,7 +111,8 @@
           (:macro guard unwind-protect))
 
 (autoload gauche.regexp
-          (:macro rxmatch-let rxmatch-if rxmatch-cond rxmatch-case))
+          (:macro rxmatch-let rxmatch-if rxmatch-cond rxmatch-case)
+          regexp-unparse)
 
 (autoload gauche.procedure
           compose .$ complement pa$ map$ for-each$ apply$

@@ -192,19 +192,21 @@ enum {
  *                                 ; <n> may be `#f'
  *         | (rep-while <m> <n> . <ast>)
  *                                 ; like rep, but no backtrack
- *         | (<integer> <symbol>. ast)
+ *         | (<integer> <symbol> . <ast>)
  *                                 ; capturing group.  <symbol> may be #f.
  *         | (cpat <condition> <ast> <ast>)
  *                                 ; conditional expression
  *         | (backref . <integer>) ; backreference
  *         | (once . <ast>)        ; standalone pattern.  no backtrack
- *         | (assert . <ast>)      ; positive lookahead assertion
- *         | (nassert . <ast>)     ; negative lookahead assertion
- *         | (lookbehind . <ast>)  ; lookbehind assertion
+ *         | (assert . <asst>)     ; positive lookahead assertion
+ *         | (nassert . <asst>)    ; negative lookahead assertion
  *
  *  <condition> : <integer>     ; (?(1)yes|no) style conditional expression
- *         | (assert . <ast>)   ; (?(?=condition)...) or (?(?<=condition)...)
- *         | (nassert . <ast>)  ; (?(?!condition)...) or (?(?<!condition)...)
+ *         | (assert . <asst>)  ; (?(?=condition)...) or (?(?<=condition)...)
+ *         | (nassert . <asst>) ; (?(?!condition)...) or (?(?<!condition)...)
+ *
+ *  <asst> : <ast>
+ *         | (lookbehind . <ast>)
  *
  * For seq-uncase, items inside <ast> has to be prepared for case-insensitive
  * match, i.e. chars have to be downcased and char-sets have to be
@@ -231,21 +233,41 @@ static ScmRegexp *make_regexp(void)
     rx->grpNames = SCM_NIL;
     rx->mustMatch = NULL;
     rx->flags = 0;
-    rx->pattern = NULL;
+    rx->pattern = SCM_FALSE;
+    rx->ast = SCM_FALSE;
     return rx;
 }
 
 static int regexp_compare(ScmObj x, ScmObj y, int equalp)
 {
+    ScmRegexp *rx, *ry;
+    
     if (!equalp) {
         Scm_Error("cannot compare regexps: %S and %S", x, y);
     }
-    return !(SCM_REGEXP(x)->pattern
-             && SCM_REGEXP(y)->pattern
-             && Scm_StringEqual(SCM_STRING(SCM_REGEXP(x)->pattern),
-                                SCM_STRING(SCM_REGEXP(y)->pattern))
-             && ((SCM_REGEXP(x)->flags&SCM_REGEXP_CASE_FOLD)
-                 == (SCM_REGEXP(y)->flags&SCM_REGEXP_CASE_FOLD)));
+    rx = SCM_REGEXP(x);
+    ry = SCM_REGEXP(y);
+
+    if ((rx->numCodes != ry->numCodes)
+        || (rx->numGroups != ry->numGroups)
+        || (rx->numSets != ry->numSets)
+        || !Scm_EqualP(rx->grpNames, ry->grpNames)
+        || (rx->flags != ry->flags)) {
+        return 1;
+    } else {
+        /* we compare bytecode. */
+        int i;
+        const u_char *px = rx->code, *py = ry->code;
+        
+        for (i=0; i++; i<rx->numCodes) {
+            if (rx->code[i] != ry->code[i]) return 1;
+        }
+        for (i=0; i++; i<rx->numSets) {
+            if (rx->sets[i] == ry->sets[i]) continue;
+            if (!Scm_CharSetEq(rx->sets[i], ry->sets[i])) return 1;
+        }
+    }
+    return 0;
 }
 
 #ifndef CHAR_MAX
@@ -268,7 +290,7 @@ static int regexp_compare(ScmObj x, ScmObj y, int equalp)
 /* compiler state information */
 typedef struct regcomp_ctx_rec {
     ScmRegexp *rx;              /* the building regexp */
-    ScmString *pattern;         /* original pattern */
+    ScmObj pattern;             /* original pattern or AST for diag msg */
     int casefoldp;              /* TRUE if case-folding match */
     int lookbehindp;            /* TRUE if lookbehind assertion match */
     ScmPort *ipat;              /* [pass1] string port for pattern */
@@ -283,11 +305,12 @@ typedef struct regcomp_ctx_rec {
 static void rc_ctx_init(regcomp_ctx *ctx, ScmRegexp *rx)
 {
     ctx->rx = rx;
-    ctx->pattern = rx->pattern;
+    ctx->pattern = (SCM_FALSEP(rx->pattern)? rx->ast : rx->pattern);
     ctx->casefoldp = FALSE;
     ctx->lookbehindp = FALSE;
-    if (rx->pattern) {
-        ctx->ipat = SCM_PORT(Scm_MakeInputStringPort(rx->pattern, FALSE));
+    if (SCM_STRINGP(rx->pattern)) {
+        ctx->ipat = SCM_PORT(Scm_MakeInputStringPort(SCM_STRING(rx->pattern),
+                                                     FALSE));
     } else {
         ctx->ipat = NULL;
     }
@@ -357,6 +380,7 @@ static ScmChar rc1_lex_xdigits(ScmPort *port, int ndigs, int key);
  *         | "(?("cond")"yes-pattern")" ;; conditional pattern
  *
  */
+/* TODO: It'd be nicer to have a dedicated condition to throw a parse error. */
 
 /* Lexer */
 static ScmObj rc1_lex(regcomp_ctx *ctx)
@@ -1693,6 +1717,8 @@ static ScmObj rc3(regcomp_ctx *ctx, ScmObj ast)
     rc3_emit(ctx, RE_SUCCESS);
     ctx->rx->code = ctx->code;
     ctx->rx->numCodes = ctx->codep;
+
+    ctx->rx->ast = ast;
     return SCM_OBJ(ctx->rx);
 }
 
@@ -2013,9 +2039,9 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
     if (SCM_STRING_INCOMPLETE_P(pattern)) {
         Scm_Error("incomplete string is not allowed: %S", pattern);
     }
-    rx->pattern = SCM_STRING(Scm_CopyStringWithFlags(pattern,
-                                                     SCM_STRING_IMMUTABLE,
-                                                     SCM_STRING_IMMUTABLE));
+    rx->pattern = Scm_CopyStringWithFlags(pattern,
+                                          SCM_STRING_IMMUTABLE,
+                                          SCM_STRING_IMMUTABLE);
     rc_ctx_init(&cctx, rx);
     cctx.casefoldp = flags & SCM_REGEXP_CASE_FOLD;
     rx->flags |= (flags & SCM_REGEXP_CASE_FOLD);

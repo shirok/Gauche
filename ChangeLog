@@ -1,3 +1,17 @@
+2010-02-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/regexp.h, src/regexp.c: Added 'ast' field in ScmRegexp
+	  to save parsed AST.
+	* lib/gauche/regexp.scm (regexp-unparse): An utility to reconstruct
+	  string representation of regexp from AST.
+	* src/extlib.stub, src/scmlib.scm (regexp->string): Changed
+	  regexp->string so that if the 'pattern' field of ScmRegexp is
+	  #f (i.e. the regexp is directly created from AST), it uses
+	  regexp-unparse to reconsturct the string representation.  The
+	  constructed string is set to the 'pattern' field so that the
+	  subsequent call of regexp->string will use it.
+	* src/autoloads.scm: Mark regexp-unparse autoload.
+
 2010-02-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (request-response): Exclude keyword arguments

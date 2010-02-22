@@ -698,6 +698,11 @@
           (write-char c)
           (loop (read-char)))))))
 
+(define (regexp->string rx)
+  (or (%regexp-pattern rx)
+      (rlet1 s (regexp-unparse (regexp-ast rx))
+        (set! (%regexp-pattern rx) s))))
+
 (define (rxmatch->string rx str . sel)
   (cond [(null? sel) (rxmatch-substring (rxmatch rx str))]
         [(eq? (car sel) 'after)

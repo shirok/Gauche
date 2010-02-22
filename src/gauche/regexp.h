@@ -38,14 +38,18 @@
 
 struct ScmRegexpRec {
     SCM_HEADER;
-    ScmString *pattern;
-    const unsigned char *code;
-    int numGroups;
-    int numCodes;
-    ScmCharSet **sets;
-    ScmObj grpNames;
-    int numSets;
-    int flags;
+    ScmObj pattern;      /* Source string.  For debugging/introspection.
+                            Can be #f if this regexp is created from AST.
+                            regexp->string will construct the string
+                            representation and fill this slot in such case. */
+    ScmObj ast;          /* Parsed AST. */
+    const u_char *code;  /* byte code vector */
+    int numGroups;       /* # of captured groups */
+    int numCodes;        /* size of byte code vector */
+    ScmCharSet **sets;   /* array of charset literals referred from code */
+    ScmObj grpNames;     /* list of names for named groups. */
+    int numSets;         /* # of charsets in sets */
+    int flags;           /* internal; CASE_FOLD, BOL_ANCHORED etc. */
     ScmString *mustMatch;
 };
 
@@ -67,5 +71,8 @@ struct ScmRegMatchRec {
 
 #define SCM_REG_MATCH_SINGLE_BYTE_P(rm) \
     ((rm)->inputSize == (rm)->inputLen)
+
+/* Note: The structure of ScmRegexp is changed on 0.9.1.  Shuold be safe,
+   for it should never be statically allocated. */
 
 #endif /* GAUCHE_REGEXP_H */
