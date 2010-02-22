@@ -212,7 +212,19 @@
           (case ch
             [(#\*) (element1* (n) ct)]
             [else  (element1 ch ct)]))
-        `(seq bol ,@(element0 (n) '())))))))
+        `(0 #f bol ,@(element0 (n) '())))))))
+
+;; if rx is just test perfect match, e.g. #/^string$/, returns
+;; string portion.
+(define (fixed-regexp? rx)
+  (let ((ast (regexp-ast rx)))
+    (and (> (length ast) 4)
+         (eq? (caddr ast) 'bol)
+         (let loop ((cs (cdddr ast)) (r '()))
+           (cond [(null? (cdr cs))
+                  (and (eq? (car cs) 'eol) (list->string (reverse r)))]
+                 [(char? (car cs)) (loop (cdr cs) (cons (car cs) r))]
+                 [else #f])))))
 
 (define (make-glob-fs-fold :key (root-path #f) (current-path #f))
   (let ((separ (cond-expand
@@ -234,21 +246,33 @@
                      [(#f) (or current-path/ "")]
                      [else (string-append node separ)])
         ;; NB: we can't use filter, for it is not built-in.
-        ;; also we can't use build-path, from the same reason.
-        (if (eq? regexp 'dir?)
-          (proc prefix seed)
-          (fold (lambda (child seed)
-                  (or (and-let* ([ (regexp child) ]
-                                 [full (string-append prefix child)]
-                                 [ (or (not non-leaf?)
-                                       (file-is-directory? full)) ])
-                        (proc full seed))
-                      seed))
-                seed
-                (sys-readdir (case node
-                               [(#t) (or root-path/ "/")]
-                               [(#f) (or current-path/ ".")]
-                               [else node]))))))
+        ;; also we can't use build-path from the same reason.
+        ;; We treat fixed-regexp specially, since it allows
+        ;; us not to search the directory---sometimes the directory
+        ;; has 'x' permission but not 'r' permission, and it would be
+        ;; unreasonable if we fail to go down the path even if we know
+        ;; the exact name.
+        (cond [(eq? regexp 'dir?) (proc prefix seed)]
+              [(fixed-regexp? regexp)
+               => (^s (let1 full (string-append prefix s)
+                        (if (and (file-exists? full)
+                                 (or (not non-leaf?)
+                                     (file-is-directory? full)))
+                          (proc full seed)
+                          seed)))]
+              [else
+               (fold (lambda (child seed)
+                       (or (and-let* ([ (regexp child) ]
+                                      [full (string-append prefix child)]
+                                      [ (or (not non-leaf?)
+                                            (file-is-directory? full)) ])
+                             (proc full seed))
+                           seed))
+                     seed
+                     (sys-readdir (case node
+                                    [(#t) (or root-path/ "/")]
+                                    [(#f) (or current-path/ ".")]
+                                    [else node])))])))
     ))
 
 (define glob-fs-folder (make-glob-fs-fold))

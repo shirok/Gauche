@@ -1,5 +1,9 @@
 2010-02-22  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/fileutil.scm (make-glob-fs-fold): Fixed a bug in glob
+	  that fails if an intermediate directory in the fully-specified
+	  path is searchable but unreadable.
+
 	* src/gauche/regexp.h, src/regexp.c: Added 'ast' field in ScmRegexp
 	  to save parsed AST.
 	* lib/gauche/regexp.scm (regexp-unparse): An utility to reconstruct
