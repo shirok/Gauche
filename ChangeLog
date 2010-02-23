@@ -1,3 +1,8 @@
+2010-02-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/util/queue.scm (with-mtq-mutex-lock): Made mutex locking
+	  cancellation safe.
+
 2010-02-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c (rc1_lex_minmax): Changed to treat re{,M} as re{0,M}

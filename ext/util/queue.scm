@@ -156,9 +156,9 @@
 
  (define-cise-stmt with-mtq-mutex-lock
    [(_ q . body)
-    `(begin (SCM_INTERNAL_MUTEX_LOCK (MTQ_MUTEX ,q))
+    `(begin (SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN (MTQ_MUTEX ,q))
             ,@body
-            (SCM_INTERNAL_MUTEX_UNLOCK (MTQ_MUTEX ,q)))])
+            (SCM_INTERNAL_MUTEX_SAFE_LOCK_END))])
  
  (define-cise-stmt wait-mtq-big-lock    ;to be called while locking mutex
    [(_ q) `(while (big-locked? ,q)
