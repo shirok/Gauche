@@ -409,7 +409,7 @@
  (define-cproc queue-push/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                             (timeout-val #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
-     (.if "defined(HAVR_STRUCT_TIMESPEC)&&defined(GAUCHE_USE_PTHREADS)"
+     (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined(GAUCHE_USE_PTHREADS)"
           (do-with-timeout q retval timeout timeout-val
                            (mtq-overflows q 1) writerWait
                            (begin (queue_push_int (Q q) 1 cell cell)
