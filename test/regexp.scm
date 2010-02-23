@@ -582,7 +582,13 @@
 (test* "a{1,2}" "baaaabaa" (rxmatch-after (#/a{1,2}/ "abaaaabaa")))
 (test* "a{2,3}" "abaa"     (rxmatch-after (#/a{2,3}/ "abaaaabaa")))
 (test* "a{b,c}" "def"      (rxmatch-after (#/a{b,c}/ "za{b,c}def")))
-(test* "a{,2}*" "def"       (rxmatch-after (#/a{,2}*/  "za{,2}}def")))
+;; The following test assumes Perl compatibility.  (See the comment in
+;; rc1_lex_minmax in regexp.c.
+;(test* "a{,2}*" "def"       (rxmatch-after (#/a{,2}*/  "za{,2}}def")))
+;; The above should be written in Oniguruma compatible mode.
+(test* "a\\{,2}*" "def"       (rxmatch-after (#/a\{,2}*/  "za{,2}}def")))
+;; The following test assumes Oniguruma compability.
+(test* "a{,3}"  "baaaab"   (rxmatch-after (#/a{,3}/ "aabaaaab")))
 
 (test* "(ab){2}"   "abba"      (rxmatch-after (#/(ab){2}/ "babbabababba")))
 (test* "(ab){2,2}" "abba"      (rxmatch-after (#/(ab){2,2}/ "babbabababba")))

@@ -1,5 +1,11 @@
 2010-02-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/regexp.c (rc1_lex_minmax): Changed to treat re{,M} as re{0,M}
+	  in the regexp parser, which is compatible to Oniguruma.
+	  This is, strictly speaking, an INCOMPATIBILE CHANGE; the previous
+	  version is compatible to Perl, which makes {,M} to match the
+	  string literally.  It should be written \{,M} now.
+
 	* lib/gauche/fileutil.scm (make-glob-fs-fold): Fixed a bug in glob
 	  that fails if an intermediate directory in the fully-specified
 	  path is searchable but unreadable.
