@@ -438,7 +438,7 @@ routines that does particular optimization.
 @subsection Numerical comparison
 @c NODE 数値の比較
 
-@defun @code{=} z1 z2 z3 @dots{}
+@defun = z1 z2 z3 @dots{}
 [R5RS]
 @c EN
 If all the numbers @var{z} are equal, returns @code{#t}.
@@ -455,10 +455,10 @@ If all the numbers @var{z} are equal, returns @code{#t}.
 @end example
 @end defun
 
-@defun @code{<} x1 x2 x3 @dots{}
-@defunx @code{<=} x1 x2 x3 @dots{}
-@defunx @code{>} x1 x2 x3 @dots{}
-@defunx @code{>=} x1 x2 x3 @dots{}
+@defun < x1 x2 x3 @dots{}
+@defunx <= x1 x2 x3 @dots{}
+@defunx > x1 x2 x3 @dots{}
+@defunx >= x1 x2 x3 @dots{}
 [R5RS]
 @c EN
 Returns @code{#t} If all the real numbers @var{x} are
@@ -494,8 +494,8 @@ Returns a maximum and minimum number in the given real numbers.
 @subsection Arithmetics
 @c NODE 数値の演算
 
-@defun @code{+} z @dots{}
-@defunx @code{*} z @dots{}
+@defun + z @dots{}
+@defunx * z @dots{}
 [R5RS]
 @c EN
 Returns the sum or the product of given numbers, respectively.
@@ -506,8 +506,8 @@ If no argument is given, @code{(+)} yields 0 and @code{(*)} yields 1.
 @c COMMON
 @end defun
 
-@defun @code{-} z1 z2 @dots{}
-@defunx @code{/} z1 z2 @dots{}
+@defun - z1 z2 @dots{}
+@defunx / z1 z2 @dots{}
 [R5RS]
 @c EN
 If only one number @var{z1} is given, returns its
@@ -2360,11 +2360,11 @@ Returns @code{#t} if @var{obj} is a character, @code{#f} otherwise.
 @c COMMON
 @end defun
 
-@defun char@code{=}? char1 char2
-@defunx char@code{<}? char1 char2
-@defunx char@code{<=}? char1 char2
-@defunx char@code{>}? char1 char2
-@defunx char@code{>=}? char1 char2
+@defun char=? char1 char2
+@defunx char<? char1 char2
+@defunx char<=? char1 char2
+@defunx char>? char1 char2
+@defunx char>=? char1 char2
 [R5RS]
 @c EN
 Compares characters.  Character comparison is done in internal
@@ -2374,11 +2374,11 @@ character encoding.
 @c COMMON
 @end defun
 
-@defun char-ci@code{=}? char1 char2
-@defunx char-ci@code{<}? char1 char2
-@defunx char-ci@code{<=}? char1 char2
-@defunx char-ci@code{>}? char1 char2
-@defunx char-ci@code{>=}? char1 char2
+@defun char-ci=? char1 char2
+@defunx char-ci<? char1 char2
+@defunx char-ci<=? char1 char2
+@defunx char-ci>? char1 char2
+@defunx char-ci>=? char1 char2
 [R5RS]
 @c EN
 Compares characters in case-insensitive way.
@@ -3392,18 +3392,18 @@ Return value is undefined.
 @c NODE 文字列の比較
 
 @defun string=? string1 string2
-@defunx string-ci@code{=}? string1 string2
+@defunx string-ci=? string1 string2
 [R5RS]
 @end defun
 
-@defun string@code{<}? string1 string2
-@defunx string@code{<=}? string1 string2
-@defunx string@code{>}? string1 string2
-@defunx string@code{>=}? string1 string2
-@defunx string-ci@code{<}? string1 string2
-@defunx string-ci@code{<=}? string1 string2
-@defunx string-ci@code{>}? string1 string2
-@defunx string-ci@code{>=}? string1 string2
+@defun string<? string1 string2
+@defunx string<=? string1 string2
+@defunx string>? string1 string2
+@defunx string>=? string1 string2
+@defunx string-ci<? string1 string2
+@defunx string-ci<=? string1 string2
+@defunx string-ci>? string1 string2
+@defunx string-ci>=? string1 string2
 [R5RS]
 @end defun
 

@@ -2164,20 +2164,20 @@ the substring of @var{s} is used as the source.
 @end defun
 
 @defun string= s1 s2 &optional start1 end1 start2 end2
-@defunx string@code{<>} s1 s2 &optional start1 end1 start2 end2
-@defunx string@code{<} s1 s2 &optional start1 end1 start2 end2
-@defunx string@code{<=} s1 s2 &optional start1 end1 start2 end2
-@defunx string@code{>} s1 s2 &optional start1 end1 start2 end2
-@defunx string@code{>=} s1 s2 &optional start1 end1 start2 end2
+@defunx string<> s1 s2 &optional start1 end1 start2 end2
+@defunx string< s1 s2 &optional start1 end1 start2 end2
+@defunx string<= s1 s2 &optional start1 end1 start2 end2
+@defunx string> s1 s2 &optional start1 end1 start2 end2
+@defunx string>= s1 s2 &optional start1 end1 start2 end2
 [SRFI-13]
 @end defun
 
-@defun string-ci@code{=} s1 s2 &optional start1 end1 start2 end2
-@defunx string-ci@code{<>} s1 s2 &optional start1 end1 start2 end2
-@defunx string-ci@code{<} s1 s2 &optional start1 end1 start2 end2
-@defunx string-ci@code{<=} s1 s2 &optional start1 end1 start2 end2
-@defunx string-ci@code{>} s1 s2 &optional start1 end1 start2 end2
-@defunx string-ci@code{>=} s1 s2 &optional start1 end1 start2 end2
+@defun string-ci= s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci<> s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci< s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci<= s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci> s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci>= s1 s2 &optional start1 end1 start2 end2
 [SRFI-13]
 @end defun
 
@@ -2637,7 +2637,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @c COMMON
 @end defun
 
-@defun char-set@code{<=} char-set1 @dots{}
+@defun char-set<= char-set1 @dots{}
 [SRFI-14]
 @c EN
 @c JP

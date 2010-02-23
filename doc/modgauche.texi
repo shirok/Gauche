@@ -5073,8 +5073,8 @@ If no address has been associated to the socket, @code{#f} is returned.
 @c COMMON
 @end defun
 
-@defun socket-input-port socket &keyword (buffering @code{:modest})
-@defunx socket-output-port socket &keyword (buffering @code{:line})
+@defun socket-input-port socket &keyword (buffering :modest)
+@defunx socket-output-port socket &keyword (buffering :line)
 @c EN
 Returns an input and output port associated with @var{socket},
 respectively.
