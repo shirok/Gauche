@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gdbm.scm,v 1.15 2008-05-10 13:35:39 shirok Exp $
-;;;
 
 (define-module dbm.gdbm
   (extend dbm)

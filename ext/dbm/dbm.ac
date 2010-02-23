@@ -2,7 +2,6 @@ dnl
 dnl Configure ext/dbm
 dnl This file is included by the toplevel configure.in
 dnl
-dnl $Id: dbm.ac,v 1.4 2007-03-17 00:38:02 shirok Exp $
 
 # ext/dbm -------------------------------------------------
 

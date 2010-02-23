@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: libutil.scm,v 1.7 2008-05-10 13:35:55 shirok Exp $
-;;;
 
 (define-module gauche.libutil
   (use srfi-1)

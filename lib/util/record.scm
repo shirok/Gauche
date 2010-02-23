@@ -12,8 +12,6 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: record.scm,v 1.1 2003-08-06 09:37:27 shirok Exp $
-;;;
 
 ;;; This code is originally written by Alex Shinn as a patch to
 ;;; srfi-9.  Shiro Kawai modified it slightly to be an independent

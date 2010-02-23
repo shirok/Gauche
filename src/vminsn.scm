@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: vminsn.scm,v 1.11 2008-05-10 13:36:24 shirok Exp $
-;;;
 
 ;;; This file is processed by geninsn to produce a couple of C files:
 ;;; gauche/vminsn.h and vminsn.c, which are then included in vm.c.

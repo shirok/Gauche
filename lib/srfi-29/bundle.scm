@@ -3,8 +3,6 @@
 ;;;  
 ;;;  Alex Shinn
 ;;;  
-;;;  $Id: bundle.scm,v 1.1 2004-01-25 11:11:25 shirok Exp $
-;;;
 
 ;; This module provides basic support for srfi-29 API.
 ;;

@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: serializer.scm,v 1.5 2008-05-10 13:35:56 shirok Exp $
-;;;
 
 ;; THIS MODULE IS UNDER DEVELOPMENT.
 ;;  This is a straightforward port from the module I wrote for STk before.

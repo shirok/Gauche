@@ -2,8 +2,6 @@
 ;; Test gauche.version
 ;;
 
-;; $Id: version.scm,v 1.3 2003-01-09 11:45:10 shirok Exp $
-
 (use gauche.test)
 (test-start "gauche.version")
 

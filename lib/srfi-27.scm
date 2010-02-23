@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-27.scm,v 1.7 2008-05-10 13:35:48 shirok Exp $
-;;;
 
 ;; Implements SRFI-27 interface on top of math.mt-random module.
 

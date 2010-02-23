@@ -29,8 +29,6 @@
  *   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *  $Id: portapi.c,v 1.33 2008-05-10 13:36:20 shirok Exp $
  */
 
 /* This file is included _twice_ by port.c to define safe- and unsafe-

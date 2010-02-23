@@ -1,6 +1,5 @@
 ;; -*- coding: utf-8 -*-
 ;; encoding-dependent test data for gettext
-;; $Id: gettext.data.utf-8.scm,v 1.2 2007-03-02 07:20:42 shirok Exp $
 
 (define *tests*
   '(("en"

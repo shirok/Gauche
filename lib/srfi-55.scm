@@ -3,8 +3,6 @@
 ;;;
 ;;; Written by Shiro Kawai
 ;;;
-;;; $Id: srfi-55.scm,v 1.3 2005-10-06 10:11:58 shirok Exp $
-;;;
 
 ;; This file is to be autoloaded
 

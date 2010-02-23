@@ -2,8 +2,6 @@
 ;;; Handy macro expander
 ;;;
 
-;;; $Id: macroutil.scm,v 1.3 2006-04-07 02:04:33 shirok Exp $
-
 ;;
 ;; These routines are handy to check macro expansion process interactively.
 ;;

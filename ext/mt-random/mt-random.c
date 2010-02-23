@@ -10,7 +10,6 @@
  *     the allocated memory for random number generator object.
  *   - changed the names of the functions
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.20 2008-02-03 13:07:43 shirok Exp $
  *
  * The original copyright notice follows.
  */

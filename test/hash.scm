@@ -2,8 +2,6 @@
 ;; Test hash table
 ;;
 
-;; $Id: hash.scm,v 1.13 2008-06-09 08:23:28 shirok Exp $
-
 (use gauche.test)
 (use srfi-1)
 (use srfi-13)

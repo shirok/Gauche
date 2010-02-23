@@ -1,6 +1,6 @@
 ;;
 ;; Test dbi modules
-;;  $Id: dbidbd.scm,v 1.4 2005-09-13 02:45:50 shirok Exp $
+;;
 
 (use gauche.test)
 (use gauche.sequence)

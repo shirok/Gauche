@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.17 2008-05-10 13:36:08 shirok Exp $
-;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME) Part One:
 ;;            Format of Internet Message Bodies

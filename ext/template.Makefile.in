@@ -1,7 +1,3 @@
-#
-# $Id: template.Makefile.in,v 1.8 2008-04-18 12:36:26 shirok Exp $
-#
-
 # General info
 SHELL       = @SHELL@
 prefix      = @prefix@

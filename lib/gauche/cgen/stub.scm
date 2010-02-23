@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: stub.scm,v 1.4 2008-05-28 22:12:26 shirok Exp $
-;;;
 
 (define-module gauche.cgen.stub
   (use srfi-1)

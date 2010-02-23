@@ -5,8 +5,6 @@
 ;;;   Oleg Kiselyov's SXML->HTML.scm.
 ;;;   Public domain.
 ;;;
-;;; $Id: to-html.scm.in,v 1.1 2005-08-25 04:32:54 shirok Exp $
-;;;
 
 (define-module sxml.to-html
   (use text.parse)

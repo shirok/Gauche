@@ -1,6 +1,5 @@
 #!/bin/sh
 # Install Gauche as a framework on MacOSX
-# $Id: framework.sh,v 1.2 2005-11-08 00:16:44 shirok Exp $
 
 # This script installs the Gauche stuff under Gauche.framework.
 # It can be just copied into the application bundle as a private

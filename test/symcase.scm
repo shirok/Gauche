@@ -4,8 +4,6 @@
 ;; -e "(define *case-fold* #f)" 
 ;;
 
-;; $Id: symcase.scm,v 1.2 2003-01-08 03:04:14 shirok Exp $
-
 (use gauche.test)
 
 (if *case-fold*

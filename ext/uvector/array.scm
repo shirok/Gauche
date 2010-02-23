@@ -13,8 +13,6 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.18 2008-02-25 08:42:56 shirok Exp $
-;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
 ;; map n-dimensional indices to an index of the backing storage.

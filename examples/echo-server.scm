@@ -1,5 +1,4 @@
 ;; Example of gauche.selector
-;;  $Id: echo-server.scm,v 1.2 2003-09-28 12:46:04 shirok Exp $
 
 (use gauche.net)
 (use gauche.selector)

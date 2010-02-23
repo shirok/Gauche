@@ -2,8 +2,6 @@
 ;; This is an excerpt of the example in the section
 ;; "Introduction to the object system" in the reference manual.
 ;;
-;; $Id: oointro.scm,v 1.2 2004-07-31 09:15:37 shirok Exp $
-;;
 
 (use srfi-1)
 

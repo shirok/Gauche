@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-14.scm,v 1.15 2008-05-10 13:35:48 shirok Exp $
-;;;
 
 ;; Basic operators are built in the Gauche kernel.  This module
 ;; defines auxiliary procedures.

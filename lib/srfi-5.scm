@@ -2,8 +2,6 @@
 ;; SRFI-5: A compatible let form with signatures and rest arguments
 ;;
 
-;; $Id: srfi-5.scm,v 1.1 2004-01-19 22:30:05 shirok Exp $
-
 ;; This implementation is based on Andy Gaynor's reference implementation.
 
 (define-module srfi-5

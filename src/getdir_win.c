@@ -1,8 +1,6 @@
 /*
  * getdir_win.c - get the library directory at runtime (fow windows)
  *  included from paths.c
- *
- * $Id: getdir_win.c,v 1.6 2007-10-05 20:35:13 shirok Exp $
  */
 
 #include <string.h>

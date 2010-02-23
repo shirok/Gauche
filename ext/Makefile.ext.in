@@ -1,5 +1,4 @@
 ## Common stuff used in Makefiles of extensions  -*-mode: Makefile-*-
-## $Id: Makefile.ext.in,v 1.33 2008-05-08 06:43:17 shirok Exp $
 ## 
 
 SHELL       = @SHELL@

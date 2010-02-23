@@ -30,8 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.148 2008-05-13 05:44:15 shirok Exp $
-;;;
+
 
 
 ;; Main functionalities of genstub is now in gauche.cgen.stub module.

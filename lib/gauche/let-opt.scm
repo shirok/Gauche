@@ -3,8 +3,6 @@
 ;;;  The definition is moved to gauche.procedure.   This file is for
 ;;;  backward compatibility.
 ;;;
-;;;  $Id: let-opt.scm,v 1.4 2005-09-12 03:40:00 shirok Exp $
-;;;
 
 (define-module gauche.let-opt
   (extend gauche.procedure))

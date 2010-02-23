@@ -2,8 +2,6 @@
 ;; test error handlers
 ;;
 
-;;  $Id: error.scm,v 1.13 2007-01-13 00:39:38 shirok Exp $
-
 (use gauche.test)
 (test-start "error and exception handlers")
 

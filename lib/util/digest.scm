@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: digest.scm,v 1.6 2003-10-10 21:52:19 fuyuki Exp $
-;;;
 
 ;; An abstract base- and meta-class of message digest algorithms.
 ;; The concrete implementation is given in modules such as

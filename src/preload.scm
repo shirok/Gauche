@@ -8,9 +8,6 @@
 ;;
 ;;  gosh -l./preload -I./src -I./lib ....
 ;;
-;;
-;; $Id: preload.scm,v 1.4 2007-11-20 12:46:35 shirok Exp $
-;;
 
 (use gauche.collection)
 (use gauche.sequence)

@@ -1,5 +1,4 @@
 ;; test gauche.selector
-;; $Id: selector.scm,v 1.2 2005-07-11 03:33:14 shirok Exp $
 
 
 (unless (global-variable-bound? 'gauche 'sys-select)

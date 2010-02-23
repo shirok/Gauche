@@ -1,8 +1,6 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.53 2008-02-26 16:32:20 shirok Exp $
-;;;
 
 (use srfi-1)
 (use util.list)

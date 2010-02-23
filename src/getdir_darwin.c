@@ -2,8 +2,6 @@
  * getdir_darwin.c - get the library directory at runtime
  *                   for MacOSX Framework build.
  *  included from paths.c
- *
- * $Id: getdir_darwin.c,v 1.1 2005-10-24 01:37:21 shirok Exp $
  */
 
 /* NB: This is used only if --enable-framework is given to the

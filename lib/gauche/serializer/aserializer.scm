@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: aserializer.scm,v 1.5 2008-05-10 13:36:04 shirok Exp $
-;;;
 
 ;; This is a straightforward port from the one I wrote for STk before.
 ;; The original module has been working quite well in the application

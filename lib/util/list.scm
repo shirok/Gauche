@@ -13,8 +13,6 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: list.scm,v 1.13 2008-02-25 08:42:57 shirok Exp $
-;;;
 
 ;; This module adds useful list utility procedures that are not in SRFI-1.
 

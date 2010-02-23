@@ -1,6 +1,4 @@
-;; -*- coding: shift-jis -*-
-
-;; $Id: sjis.scm,v 1.10 2007-03-02 07:20:42 shirok Exp $
+;; -*- coding: shift_jis -*-
 
 (use gauche.test)
 

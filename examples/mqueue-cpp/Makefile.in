@@ -1,7 +1,3 @@
-#
-# $Id: Makefile.in,v 1.2 2005-08-01 12:23:33 shirok Exp $
-#
-
 # NOTE: "gauche-package compile" doesn't handle C++ sources, so
 # we have to write the rules for C++ files separately.
 

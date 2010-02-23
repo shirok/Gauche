@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: defvalues.scm,v 1.4 2008-05-10 13:35:54 shirok Exp $
-;;;
 
 ;; ChezScheme and MzScheme's define-values and set!-values.
 ;; To be autoloaded

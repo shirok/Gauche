@@ -4,7 +4,6 @@
 ;;  This is a port of Sebastian Egner's reference implementation to Gauche.
 ;;  Ported by Alex Shinn.
 ;;
-;;  $Id: srfi-42.scm,v 1.3 2006-06-05 05:11:24 shirok Exp $
 
 ; <PLAINTEXT>
 ; Eager Comprehensions in [outer..inner|expr]-Convention

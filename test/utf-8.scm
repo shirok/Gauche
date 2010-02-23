@@ -1,7 +1,5 @@
 ;; -*- coding: utf-8 -*-
 
-;; $Id: utf-8.scm,v 1.11 2007-03-02 07:20:42 shirok Exp $
-
 (use gauche.test)
 
 (test-start "UTF8")

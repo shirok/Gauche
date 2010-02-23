@@ -1,7 +1,5 @@
 /*
  * win-extern.h - auxiliary header to handle Windows DLL insanity
- *
- * $Id: extern.h,v 1.1 2007-09-10 01:19:51 shirok Exp $
  */
 
 /* This header may be included multiple times.

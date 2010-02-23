@@ -1,6 +1,5 @@
 /*
  * Test the lowest-level numeric routines.
- * $Id: test-arith.c,v 1.9 2007-08-24 23:55:44 shirok Exp $
  */
 
 #include "gauche.h"

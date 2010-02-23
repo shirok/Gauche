@@ -4,8 +4,6 @@
 ;;;   Written by Shiro Kawai (shiro@acm.org)
 ;;;   I put this program in public domain.  Use it as you like.
 ;;;
-;;; $Id: spigotlib.stub,v 1.3 2005-08-01 12:26:30 shirok Exp $
-;;;
 
 "#include \"spigot.h\""
 

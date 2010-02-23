@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: 822.scm,v 1.23 2008-05-10 13:36:06 shirok Exp $
-;;;
 
 ;; Parser and constructor of the message defined in
 ;; RFC2822 Internet Message Format

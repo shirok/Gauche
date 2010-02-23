@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: set.scm,v 1.4 2008-05-10 13:36:10 shirok Exp $
-;;;
 
 ;; Say `(use srfi-14)' and this file is autoloaded on demand.
 

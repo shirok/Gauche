@@ -1,5 +1,4 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.51 2008-02-13 15:32:09 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package

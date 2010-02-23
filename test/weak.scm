@@ -1,6 +1,6 @@
 ;;
 ;; test for weak vector / weak hash table
-;; $Id: weak.scm,v 1.2 2007-06-01 00:53:23 shirok Exp $
+;;
 
 ;; The collection of garbage is affected by lots of factors.
 ;; The following tests make effort to cause the weakly referenced

@@ -1,6 +1,6 @@
 ;;
 ;; SRFI-26
-;;  $Id: srfi-26.scm,v 1.2 2008-05-22 03:22:23 shirok Exp $
+;;
 
 ;; This implementation is taken from http://srfi.schemers.org/srfi-26/
 ;; As shown below, originally written by Al Petrofsky and modified by

@@ -1,7 +1,5 @@
 ;; -*- coding: euc-jp -*-
 
-;; $Id: euc-jp.scm,v 1.23 2007-03-02 07:20:42 shirok Exp $
-
 (use gauche.test)
 
 (test-start "EUC-JP")

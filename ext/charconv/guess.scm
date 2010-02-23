@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: guess.scm,v 1.5 2008-05-10 13:35:37 shirok Exp $
-;;;
 
 (use srfi-1)
 (use gauche.sequence)

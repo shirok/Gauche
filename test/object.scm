@@ -2,8 +2,6 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.40 2008-01-01 08:09:55 shirok Exp $
-
 (use gauche.test)
 
 (test-start "object system")

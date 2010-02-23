@@ -3,8 +3,6 @@
  *
  *  Written by Shiro Kawai (shiro@acm.org)
  *  I put this program in public domain.  Use it as you like.
- *
- *  $Id: spigot.c,v 1.4 2007-11-10 02:52:04 shirok Exp $
  */
 
 #include <gauche.h>

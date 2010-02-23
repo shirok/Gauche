@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgen.scm,v 1.22 2008-05-10 16:43:29 shirok Exp $
-;;;
 
 ;; *EXPERIMENTAL*
 ;; gauche.cgen.* modules are intended to provide a common framework

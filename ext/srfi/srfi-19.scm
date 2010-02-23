@@ -24,7 +24,6 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19-lib.scm,v 1.13 2008-02-25 08:42:56 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)

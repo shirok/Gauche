@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: insn.scm.src,v 1.3 2005-08-23 04:33:56 shirok Exp $
-;;;
 
 ;; This module isn't for public use.  Programs that wants to access
 ;; vm instruction info should use the gauche.vm.insn module, which

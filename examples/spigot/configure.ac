@@ -1,7 +1,6 @@
 dnl
 dnl Configuring spigot
 dnl  process this file with autoconf to generate 'configure'.
-dnl $Id: configure.ac,v 1.1 2005-09-04 09:22:42 shirok Exp $
 dnl
 
 AC_PREREQ(2.54)

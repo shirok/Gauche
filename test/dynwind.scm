@@ -2,8 +2,6 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.21 2006-01-10 10:33:57 shirok Exp $
-
 (use gauche.test)
 
 (test-start "dynamic-wind and call/cc")

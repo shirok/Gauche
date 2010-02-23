@@ -17,8 +17,6 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.31 2008-04-18 11:09:23 shirok Exp $
-
 @iftex
 @finalout
 @parskip 4pt plus 1pt

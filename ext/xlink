@@ -3,9 +3,6 @@
 ;; without installing them.
 ;; Such links are only of developers' interest; they must be cleaned out
 ;; to create a distribution tarball.
-;;
-;; $Id: xlink,v 1.11 2007-09-15 04:00:17 shirok Exp $
-;;
 
 ;; NB: this script is called before all the necessary 'wiring' is
 ;; done during the build, so most useful extension modules are not

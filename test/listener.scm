@@ -1,6 +1,6 @@
 ;;
 ;; test for listener
-;; $Id: listener.scm,v 1.5 2007-08-24 23:56:30 shirok Exp $
+;;
 
 (use gauche.test)
 

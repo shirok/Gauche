@@ -3,8 +3,6 @@
 ;; this test is splitted from io.scm, since this one uses util.isomorph,
 ;; and has to be done after the test of util.* module.
 
-;; $Id: io2.scm,v 1.4 2006-10-08 03:59:42 shirok Exp $
-
 (use gauche.test)
 (use srfi-1)
 (use util.isomorph)

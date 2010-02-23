@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.14 2008-05-11 08:30:53 shirok Exp $
-;;;
 
 ;;; This module provides convenient utility functions to handle
 ;;; files and directories.   Some functions are provided with

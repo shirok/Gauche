@@ -12,8 +12,6 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: extract,v 1.17 2006-11-09 23:47:32 shirok Exp $
-;;;
 
 (use gauche.parseopt)
 (use gauche.charconv)

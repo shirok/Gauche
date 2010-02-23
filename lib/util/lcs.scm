@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: lcs.scm,v 1.7 2003-10-06 09:48:16 shirok Exp $
-;;;
 
 ;;; Created:    <2002-06-21 15:36:46 foof>
 ;;; Time-stamp: <2003-02-15 00:09:55 foof>

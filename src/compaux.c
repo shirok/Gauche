@@ -29,8 +29,6 @@
  *   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *  $Id: compaux.c,v 1.16 2008-05-10 13:36:17 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented

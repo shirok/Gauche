@@ -1,6 +1,5 @@
 ;; test exception handling system 
 ;; this must come after primsyn, error, macro and object tests.
-;; $Id: exception.scm,v 1.12 2007-01-18 10:01:48 shirok Exp $
 
 (use gauche.test)
 (test-start "exceptions")

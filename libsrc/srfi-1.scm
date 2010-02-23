@@ -2,8 +2,6 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.2 2007-08-10 08:48:06 shirok Exp $
-
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
 ;; Copyright (c) 1998, 1999 by Olin Shivers. You may do as you please with

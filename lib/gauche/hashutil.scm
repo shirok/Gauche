@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: hashutil.scm,v 1.4 2008-05-10 13:35:55 shirok Exp $
-;;;
 
 (define-module gauche.hashutil
   (export hash-table hash-table-for-each hash-table-map hash-table-fold)

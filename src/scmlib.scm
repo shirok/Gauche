@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.20 2008-05-13 05:44:15 shirok Exp $
-;;;
 
 ;; This file contains builtin library functions that are easier to be
 ;; written in Scheme instead of as stubs.

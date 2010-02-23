@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: objlib.scm,v 1.11 2008-05-10 13:36:20 shirok Exp $
-;;;
 
 (declare) ;; a dummy form to suppress generation of "sci" file
 

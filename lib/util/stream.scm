@@ -21,7 +21,6 @@
 ;;; makes error message a bit less direct, but cutting edges in such
 ;;; inner loop procedure has a considerable gain.
 ;;;
-;;; $Id: stream.scm,v 1.9 2006-11-08 21:14:51 shirok Exp $
 
 (define-module util.stream
   (use srfi-1)

@@ -4,8 +4,6 @@
 ;;; public domain
 ;;;
 
-;; $Id: const.scm,v 1.4 2004-01-26 09:48:19 shirok Exp $
-
 (define-module math.const
   (export pi e 1/pi 180/pi pi/2 pi/4 pi/180 2pi))
 

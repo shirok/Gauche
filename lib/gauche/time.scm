@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: time.scm,v 1.10 2008-05-10 13:35:56 shirok Exp $
-;;;
 
 (define-module gauche.time
   (use srfi-11)

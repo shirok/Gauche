@@ -1,8 +1,6 @@
 ;;;
 ;;; dbd.null - A database driver that does (almost) nothing
 ;;;
-;;;  $Id: null.scm,v 1.7 2005-09-13 02:45:50 shirok Exp $
-;;;
 
 (define-module dbd.null
   (use dbi)

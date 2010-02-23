@@ -1,7 +1,6 @@
 dnl
 dnl Configuring @@package@@
 dnl  process this file with autoconf to generate 'configure'.
-dnl $Id: template.configure.ac,v 1.4 2008-04-18 12:36:26 shirok Exp $
 dnl
 
 AC_PREREQ(2.54)

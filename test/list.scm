@@ -2,8 +2,6 @@
 ;;; tests for some builtin list operations
 ;;;
 
-;; $Id: list.scm,v 1.5 2003-12-08 08:38:31 shirok Exp $
-
 (use gauche.test)
 
 ;; monotonic-merge is a core function to implement Dylan-style class

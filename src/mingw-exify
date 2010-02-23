@@ -3,7 +3,6 @@
 # Since Windows doesn't understand shebang magic, we make the gauche
 # scripts (e.g. gauche-install) to exe files.
 #
-# $Id: mingw-exify,v 1.2 2007-01-08 09:42:48 shirok Exp $
 
 target=$1
 

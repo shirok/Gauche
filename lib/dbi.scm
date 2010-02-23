@@ -31,12 +31,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.39 2008-02-25 08:42:56 shirok Exp $
-;;;
-
-;;; *EXPERIMENTAL*
-;;; This module provides an abstract interface to various database
-;;; management systems.  
 
 (define-module dbi
   (use text.sql)

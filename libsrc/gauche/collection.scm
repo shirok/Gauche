@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: collection.scm,v 1.9 2008-05-10 13:36:13 shirok Exp $
-;;;
 
 ;; Defines generic operations over collection.   A collection is
 ;; a set of objects, possibly containing infinite objects.

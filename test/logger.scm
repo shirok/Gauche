@@ -2,8 +2,6 @@
 ;; testing gauche.logger
 ;;
 
-;; $Id: logger.scm,v 1.6 2003-02-06 11:47:53 shirok Exp $
-
 (use gauche.test)
 
 ;; NB: logger uses gauche.fcntl.  Before 'make link', it can't be

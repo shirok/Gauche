@@ -1,6 +1,5 @@
 ;; -*- coding: utf-8 -*-
 ;; Auxiliary test for string <-> uvector conversion  (UTF-8)
-;; $Id: test-utf8.scm,v 1.2 2007-03-02 07:20:41 shirok Exp $
 
 (test "mb string->u8vector" '#u8(#xe3 #x81 #x82 #xe3 #x81 #x84 #xe3 #x81 #x86)
       (lambda ()

@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: ndbm.scm,v 1.11 2008-05-10 13:35:39 shirok Exp $
-;;;
 
 (define-module dbm.ndbm
   (extend dbm)

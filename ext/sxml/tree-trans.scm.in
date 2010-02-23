@@ -5,8 +5,6 @@
 ;;;   Oleg Kiselyov's SXML-tree-trans.scm, v 1.5.
 ;;;   Public domain.
 ;;;
-;;; $Id: tree-trans.scm.in,v 1.1 2005-08-25 04:32:54 shirok Exp $
-;;;
 
 (define-module sxml.tree-trans
   (use srfi-11)

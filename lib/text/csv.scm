@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: csv.scm,v 1.10 2008-05-10 13:36:11 shirok Exp $
-;;;
 
 (define-module text.csv
   (use srfi-1)

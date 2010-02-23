@@ -1,6 +1,5 @@
 ;; -*- coding: euc-jp -*-
 ;; encoding-dependent test data for gettext
-;; $Id: gettext.data.euc-jp.scm,v 1.2 2007-03-02 07:20:42 shirok Exp $
 
 (define *tests*
   '(("en"

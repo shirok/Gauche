@@ -1,6 +1,5 @@
 ;; srfi-7 implementation, taken from Richard Kelsey's reference implementation.
 ;; Gauche module stuff added by Alex Shinn.
-;; $Id: srfi-7.scm,v 1.2 2005-05-22 03:27:31 shirok Exp $
 
 ;; Copyright (C) Richard Kelsey (1999). All Rights Reserved.
 

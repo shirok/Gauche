@@ -1,6 +1,5 @@
 /* 
  * Test VM stack sanity
- * $Id: test-vmstack.c,v 1.8 2008-06-02 01:13:13 shirok Exp $
  */
 
 #include <stdio.h>

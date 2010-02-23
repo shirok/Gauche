@@ -1,8 +1,6 @@
 ;;
 ;; Generates uvect.c from uvect.c.tmpl
 ;;
-;; $Id: uvgen.scm,v 1.10 2007-09-13 12:30:26 shirok Exp $
-;;
 
 (use srfi-1)
 (use srfi-13)

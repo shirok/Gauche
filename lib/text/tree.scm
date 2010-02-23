@@ -2,7 +2,6 @@
 ;;; test/tree.scm - lightweight text generation
 ;;;
 ;;;  Public Domain.
-;;;  $Id: tree.scm,v 1.5 2003-07-05 03:29:12 shirok Exp $
 ;;;
 
 (define-module text.tree

@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uvseq.scm,v 1.5 2008-05-10 13:35:45 shirok Exp $
-;;;
 
 (select-module gauche.uvector)
 (use gauche.collection)

@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uri.scm,v 1.21 2008-05-10 13:36:09 shirok Exp $
-;;;
 
 ;; Main reference:
 ;; RFC2396 Uniform Resource Identifiers (URI): Generic Syntax

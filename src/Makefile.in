@@ -1,6 +1,5 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.181 2008-05-30 19:37:50 shirok Exp $
 #
 
 # prelude ---------------------------------------------

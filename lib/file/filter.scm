@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: filter.scm,v 1.8 2008-05-10 13:35:53 shirok Exp $
-;;;
 
 ;;; This module provides utilities for a common pattern in
 ;;; filter-type commands, that is, to take an input, to process

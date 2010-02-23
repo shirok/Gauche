@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: relation.scm,v 1.9 2008-03-04 00:57:32 shirok Exp $
-;;;
 
 ;;; Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
 ;;; such that the first element of a tuple is from S1, the second from

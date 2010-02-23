@@ -13,8 +13,6 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: combinations.scm,v 1.2 2003-02-05 00:55:47 shirok Exp $
-;;;
 
 ;; Initially written by Alex Shinn.
 ;; Modifided by Shiro Kawai

@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: dictionary.scm,v 1.3 2008-05-10 13:35:54 shirok Exp $
-;;;
 
 (define-module gauche.dictionary
   (use gauche.collection)

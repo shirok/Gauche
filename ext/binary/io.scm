@@ -15,8 +15,6 @@
 ;; [SK]: 
 ;;
 
-;; $Id: io.scm,v 1.5 2007-02-20 08:43:19 shirok Exp $
-
 (define-module binary.io
   (use gauche.uvector)
   (use srfi-1)  ;; list library

@@ -1,8 +1,6 @@
 ;;;
 ;;; Generates builtin symbols
 ;;;
-;;; $Id: builtin-syms.scm,v 1.13 2007-09-13 12:30:27 shirok Exp $
-;;;
 
 (use srfi-1)
 (use util.list)

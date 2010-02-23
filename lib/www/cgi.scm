@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.36 2008-05-10 13:36:12 shirok Exp $
-;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
 ;; The most reliable document I found is in <http://CGI-Spec.Golux.Com/>

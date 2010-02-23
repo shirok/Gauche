@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: convaux.scm,v 1.7 2008-05-10 13:35:37 shirok Exp $
-;;;
 
 (select-module gauche.charconv)
 (use srfi-1)

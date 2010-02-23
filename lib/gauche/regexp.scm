@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: regexp.scm,v 1.18 2008-05-10 13:35:56 shirok Exp $
-;;;
 
 ;; NB: refrain from using util.match, for it could cause nasty dependency
 ;; problem.  (Should be resolved once we incorporate match into the core).

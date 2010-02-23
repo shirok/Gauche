@@ -12,8 +12,6 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: reload.scm,v 1.7 2003-09-14 08:43:09 shirok Exp $
-;;;
 
 ;;; Created:    <2002-11-06 16:02:55 foof>
 ;;; Time-stamp: <2002-11-13 10:11:58 foof>

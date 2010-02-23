@@ -5,8 +5,6 @@
 ;;;  Public Domain..  I guess lots of Scheme programmers have already
 ;;;  written similar code.
 ;;;
-;;;  $Id: toposort.scm,v 1.2 2001-10-31 11:22:10 shirok Exp $
-;;;
 
 (define-module util.toposort
   (use srfi-1)

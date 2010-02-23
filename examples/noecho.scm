@@ -1,5 +1,4 @@
 ;; Example of gauche.termios
-;;  $Id: noecho.scm,v 1.1 2003-01-08 02:06:27 shirok Exp $
 
 #!no-fold-case
 

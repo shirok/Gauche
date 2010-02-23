@@ -2,8 +2,6 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.27 2007-12-23 06:58:48 shirok Exp $
-
 (use gauche.test)
 (use srfi-1)
 

@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: debugger.scm,v 1.21 2008-05-10 13:36:04 shirok Exp $
-;;;
 
 (define-module gauche.vm.debugger
   (use srfi-1)

@@ -1,8 +1,7 @@
 ;;;
 ;;; convert the original SSAX.scm into Gauche's preferable format.
 ;;;
-;;; $Id: trans.scm,v 1.4 2003-07-22 11:22:07 shirok Exp $
-;;;
+
 
 (use srfi-13)
 

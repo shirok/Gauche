@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uvector.scm,v 1.10 2008-05-10 13:35:45 shirok Exp $
-;;;
 
 ;; This module defines the superset of SRFI-4, homogeneous numeric vector
 ;; types.   Most of basic operations are defined in the DSO module libuvector.

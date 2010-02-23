@@ -5,8 +5,6 @@
 ;;;  Public Domain..  I guess lots of Scheme programmers have already
 ;;;  written similar code.
 ;;;
-;;;  $Id: tree.scm,v 1.4 2002-06-06 22:33:52 shirok Exp $
-;;;
 
 (define-module util.tree
   (use srfi-1)

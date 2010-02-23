@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: hmac.scm,v 1.6 2007-01-21 14:21:55 rui314159 Exp $
-;;;
 
 ;;; RFC 2104 HMAC: Keyed-Hashing for Message Authentication
 

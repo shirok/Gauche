@@ -1,7 +1,3 @@
-#
-# $Id: Makefile.in,v 1.11 2005-07-17 02:31:39 shirok Exp $
-#
-
 # General info
 SHELL       = @SHELL@
 prefix      = @prefix@

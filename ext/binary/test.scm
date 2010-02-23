@@ -1,6 +1,6 @@
 ;;
 ;; testing binary.io
-;; $Id: test.scm,v 1.4 2007-02-20 20:04:05 shirok Exp $
+;;
 
 (use gauche.test)
 (use gauche.uvector)

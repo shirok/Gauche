@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: geninsn,v 1.4 2007-01-14 09:22:59 shirok Exp $
-;;;
 
 ;; Generate the following VM instruction related files from vminsn.scm
 ;;   vminsn.c

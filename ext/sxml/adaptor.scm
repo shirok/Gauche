@@ -1,8 +1,6 @@
 ;;;
 ;;; Adapt SSAX to Gauche
 ;;;
-;;; $Id: adaptor.scm,v 1.3 2006-11-08 21:14:50 shirok Exp $
-;;;
 
 (define-module sxml.adaptor
   (use srfi-1)

@@ -1,8 +1,6 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.27 2007-03-02 01:49:10 shirok Exp $
-;;;
 
 (define-module srfi-0
   (export cond-expand))

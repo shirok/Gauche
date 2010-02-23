@@ -1,9 +1,5 @@
 ;;; -*- coding: euc-jp -*-
 ;;; This is just a joke.
-;;; You need to compile Gauche in EUC-JP code.
-;;;
-
-;; $Id: japanize-euc.scm,v 1.2 2007-03-02 07:20:41 shirok Exp $
 
 (define-syntax λ
   (syntax-rules () ((_ args body ...) (lambda args body ...))))

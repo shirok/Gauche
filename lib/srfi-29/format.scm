@@ -1,5 +1,4 @@
 ;; srfi-29.format - srfi-29 compatible 'format'.
-;; $Id: format.scm,v 1.1 2004-01-25 11:11:25 shirok Exp $
 
 ;; Taken from srfi-29 reference implementation.
 ;;

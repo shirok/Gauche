@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fetch.scm,v 1.8 2008-05-10 13:36:04 shirok Exp $
-;;;
 
 ;; *EXPERIMENTAL*
 ;; gauche.package.fetch module is intended to automate fetching package

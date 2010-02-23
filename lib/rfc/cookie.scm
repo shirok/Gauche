@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cookie.scm,v 1.13 2008-05-10 13:36:08 shirok Exp $
-;;;
 
 ;; Parser and constructor of http "Cookies" defined in
 ;; RFC 2965 HTTP state managemnet mechanism

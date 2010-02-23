@@ -2,8 +2,6 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.45 2007-04-05 05:56:58 shirok Exp $
-
 (use gauche.test)
 
 (test-start "SRFIs")

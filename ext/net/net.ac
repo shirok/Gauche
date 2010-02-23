@@ -2,7 +2,6 @@ dnl
 dnl Configure ext/net
 dnl This file is included by the toplevel configure.in
 dnl
-dnl $Id: net.ac,v 1.11 2008-02-03 13:07:44 shirok Exp $
 
 # ext/net -------------------------------------------------
 

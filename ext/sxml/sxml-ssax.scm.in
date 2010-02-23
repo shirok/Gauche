@@ -5,8 +5,6 @@
 ;;;   Oleg Kiselyov's SSAX XML parser, SSAX.scm, v4.9.
 ;;;   Public domain.
 ;;;
-;;; $Id: sxml-ssax.scm.in,v 1.2 2007-03-22 21:39:57 shirok Exp $
-;;;
 
 ;; NB: we need to extend several modules since sxml:make-parser inserts
 ;; calls to procedures defined in them.  Eventually we need to update

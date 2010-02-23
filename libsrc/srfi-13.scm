@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-13.scm,v 1.8 2008-05-10 13:36:12 shirok Exp $
-;;;
 
 ;; Natively implemented functions:
 ;;   string? make-string string string->list list->string
