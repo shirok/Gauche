@@ -71,7 +71,7 @@ SCMFILES = srfi-0.scm \
        binary/pack.scm \
        dbi.scm dbd/null.scm dbm.scm dbm/fsdbm.scm \
        math/const.scm \
-       util/isomorph.scm util/toposort.scm util/queue.scm util/tree.scm \
+       util/isomorph.scm util/toposort.scm util/tree.scm \
        util/digest.scm util/combinations.scm util/lcs.scm util/list.scm \
        util/record.scm util/relation.scm util/stream.scm util/trie.scm \
        util/rbtree.scm \
