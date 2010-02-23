@@ -445,7 +445,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         Scm_DStringPutc(&buf, *srcp++);
         Scm_DStringPutc(&buf, *srcp++);
     }
-    if (endp > srcp && (SEPARATOR_P(*srcp)) {
+    if (endp > srcp && (SEPARATOR_P(*srcp))) {
         if (flags & SCM_PATH_CANONICALIZE) {
             Scm_DStringPutc(&buf, SEPARATOR);
             srcp = skip_separators(srcp, endp);
