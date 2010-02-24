@@ -753,7 +753,7 @@
        (begin (Sleep (* seconds 1000)) (result 0))
        (result (sleep seconds))))
 
-(when "defined(HAVE_NANOSLEEP)"
+(when "defined(HAVE_NANOSLEEP) || defined(GAUCHE_WINDOWS)"
   (define-cproc sys-nanosleep (nanoseconds)
     (let* ([spec::(struct timespec)] [rem::(struct timespec)])
       (cond
@@ -779,7 +779,7 @@
         (result '#f)
         (result (Scm_MakeTime '#f (ref rem tv_sec) (ref rem tv_nsec))))))
   (initcode "Scm_AddFeature(\"gauche.sys.nanosleep\", NULL);")
-  ) ; defined(HAVE_NANOSLEEP)
+  ) ; defined(HAVE_NANOSLEEP)||defined(GAUCHE_WINDOWS)
 
 (define-cproc sys-unlink (pathname::<const-cstring>)
   (let* ([r::int])

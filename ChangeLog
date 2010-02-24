@@ -1,5 +1,11 @@
 2010-02-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/win-compat.h (struct timespec), src/system.c (nanosleep):
+	  Added nanosleep emulation on Windows.
+	* src/syslib.stub (sys-nanosleep): Enable on windows as well.
+
+2010-02-23  Shiro Kawai  <shiro@acm.org>
+
 	* most sources: Removed $Id...$ from most of the sources.  We have
 	  moved away from CVS, so it is no longer relevant.  It may even
 	  cause confusion, since it's not updated anymore.  (It is left

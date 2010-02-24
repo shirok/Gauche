@@ -250,6 +250,13 @@ int truncate(const char *path, off_t len);
 int ftruncate(int fd, off_t len);
 unsigned int alarm(unsigned int seconds);
 
+struct timespec {
+    time_t tv_sec;
+    long   tv_nsec;
+};
+
+int nanosleep(const struct timespec *req, struct timespec *rem);
+
 #define WNOHANG   (1L<<0)
 #define WUNTRACED (1L<<1)
 

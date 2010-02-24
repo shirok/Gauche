@@ -42,7 +42,7 @@
 static void *dl_open(const char *path)
 {
     LPTSTR xpath;
-    xpath = SCM_MBS2WCS(path);
+    xpath = (LPTSTR)SCM_MBS2WCS(path);
     return (void*)LoadLibrary(xpath);
 }
 

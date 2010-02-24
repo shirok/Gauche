@@ -2105,13 +2105,13 @@ pid_t Scm_WinProcessPID(ScmObj handle)
 
 static void convert_user(const USER_INFO_2 *wuser, struct passwd *res)
 {
-    res->pw_name    = SCM_WCS2MBS(wuser->usri2_name);
+    res->pw_name    = (const char*)SCM_WCS2MBS(wuser->usri2_name);
     res->pw_passwd  = "*";
     res->pw_uid     = 0;
     res->pw_gid     = 0;
-    res->pw_comment = SCM_WCS2MBS(wuser->usri2_comment);
-    res->pw_gecos   = SCM_WCS2MBS(wuser->usri2_full_name);
-    res->pw_dir     = SCM_WCS2MBS(wuser->usri2_home_dir);
+    res->pw_comment = (const char*)SCM_WCS2MBS(wuser->usri2_comment);
+    res->pw_gecos   = (const char*)SCM_WCS2MBS(wuser->usri2_full_name);
+    res->pw_dir     = (const char*)SCM_WCS2MBS(wuser->usri2_home_dir);
     res->pw_shell   = "";
 }
 
@@ -2121,7 +2121,8 @@ static struct passwd pwbuf = { "dummy" };
 struct passwd *getpwnam(const char *name)
 {
     USER_INFO_2 *res;
-    if (NetUserGetInfo(NULL, SCM_MBS2WCS(name), 2, (LPBYTE*)&res) != NERR_Success) {
+    if (NetUserGetInfo(NULL, (LPCWSTR)SCM_MBS2WCS(name), 2, (LPBYTE*)&res)
+        != NERR_Success) {
 	return NULL;
     }
     convert_user(res, &pwbuf);
@@ -2300,8 +2301,37 @@ int link(const char *existing, const char *newpath)
                                                            CREATEHARDLINK,
                                                            TRUE);
     }
-    r = pCreateHardLink(SCM_MBS2WCS(newpath), SCM_MBS2WCS(existing), NULL);
+    r = pCreateHardLink((LPTSTR)SCM_MBS2WCS(newpath),
+                        (LPTSTR)SCM_MBS2WCS(existing), NULL);
     return r? 0 : -1;
+}
+
+/* nanosleep.  We emulate it with Sleep(). */
+int nanosleep(const struct timespec *req, struct timespec *rem)
+{
+    DWORD msecs = 0;
+    time_t sec;
+    u_long overflow = 0, c;
+    const DWORD MSEC_OVERFLOW = 4294967; /* 4294967*1000 = 0xfffffed8 */
+
+    /* It's very unlikely that we overflow msecs, but just in case... */
+    if (req->tv_sec > 0 || (req->tv_sec == 0 && req->tv_nsec > 0)) {
+        if (req->tv_sec >= MSEC_OVERFLOW) {
+            overflow = req->tv_sec / MSEC_OVERFLOW;
+            sec = req->tv_sec % MSEC_OVERFLOW;
+        } else {
+            sec = req->tv_sec;
+        }
+        msecs = (sec * 1000 + (req->tv_nsec + 999999)/1000000);
+    }
+    Sleep (msecs);
+    for (c = 0; c < overflow; c++) {
+        Sleep(MSEC_OVERFLOW * 1000);
+    }
+    if (rem) {
+        rem->tv_sec = rem->tv_nsec = 0;
+    }
+    return 0;
 }
 
 /* Winsock requires some obscure initialization.
