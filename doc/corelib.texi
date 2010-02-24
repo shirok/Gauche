@@ -16392,6 +16392,15 @@ is interrupted by a signal.
 ;@r{wait for 1.3 sec}
 (sys-nanosleep (make <time> :second 1 :nanosecond 300000000))
 @end example
+
+@c EN
+Note: On Windows native platforms, this function is emulated using
+@code{Sleep}.  The argument is rounded up to millisecond resolution, 
+and it won't be interrupted by a signal.
+@c JP
+Windowsネイティブ環境では、この関数は@code{Sleep}によってエミュレートされます。
+引数はミリ秒の単位に切り上げられます。またシグナルによって中断されることはありません。
+@c COMMON
 @end defun
 
 @defun sys-random
