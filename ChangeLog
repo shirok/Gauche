@@ -1,3 +1,8 @@
+2010-02-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/vm.h, src/vm.c, src/gauche/pthread.h, src/gauche/uthread.h:
+	  Abstract thread handle type as ScmInternalThread.
+
 2010-02-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/win-compat.h (struct timespec), src/system.c (nanosleep):

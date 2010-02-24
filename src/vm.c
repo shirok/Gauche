@@ -221,9 +221,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->profilerRunning = FALSE;
     v->prof = NULL;
 
-#ifdef GAUCHE_USE_PTHREADS
-    v->thread = (pthread_t)NULL;
-#endif /*GAUCHE_USE_PTHREADS*/
+    (void)SCM_INTERNAL_THREAD_INIT(v->thread);
 
     Scm_RegisterFinalizer(SCM_OBJ(v), vm_finalize, NULL);
     return v;
@@ -235,7 +233,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 int Scm_AttachVM(ScmVM *vm)
 {
 #ifdef GAUCHE_USE_PTHREADS
-    if (vm->thread != (pthread_t)NULL) return FALSE;
+    if (SCM_INTERNAL_THREAD_INITIALIZED_P(vm->thread)) return FALSE;
     if (theVM != NULL) return FALSE;
 
     if (pthread_setspecific(Scm_VMKey(), vm) != 0) return FALSE;

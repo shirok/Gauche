@@ -34,6 +34,10 @@
 #ifndef GAUCHE_UTHREAD_H
 #define GAUCHE_UTHREAD_H
 
+typedef int ScmInternalThread;
+#define SCM_INTERNAL_THREAD_INIT(thr)      (0)
+#define SCM_INTERNAL_THREAD_INITIALIZED_P(thr)  TRUE
+
 typedef int ScmInternalSpinlock;
 #define SCM_INTERNAL_SPIN_INIT(spin)       (0)
 #define SCM_INTERNAL_SPIN_LOCK(spin)       (0)

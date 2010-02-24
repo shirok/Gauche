@@ -36,6 +36,11 @@
 
 #include <pthread.h>
 
+/* Thread */
+typedef pthread_t ScmInternalThread;
+#define SCM_INTERNAL_THREAD_INIT(thr)   ((thr) = (pthread_t)NULL)
+#define SCM_INTERNAL_THREAD_INITIALIZED_P(thr)  ((thr) != (pthread_t)NULL)
+
 /* Mutex */
 typedef pthread_mutex_t ScmInternalMutex;
 #define SCM_INTERNAL_MUTEX_INIT(mutex) \

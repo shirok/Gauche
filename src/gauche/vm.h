@@ -362,9 +362,7 @@ typedef struct ScmVMProfilerRec ScmVMProfiler;
 
 struct ScmVMRec {
     SCM_HEADER;
-#ifdef GAUCHE_USE_PTHREADS
-    pthread_t thread;           /* the thread executing this VM. */
-#endif /*!GAUCHE_USE_PTHREADS*/
+    ScmInternalThread thread;   /* the system thread executing this VM. */
     int state;                  /* thread state. PUBLIC. */
     ScmInternalMutex  vmlock;   /* mutex to be used to lock this VM
                                    structure.  PUBLIC. */
