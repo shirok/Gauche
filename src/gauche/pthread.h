@@ -34,6 +34,10 @@
 #ifndef GAUCHE_PTHREAD_H
 #define GAUCHE_PTHREAD_H
 
+/* Abstract thread implementation based on pthreads.
+ * See gauche/uthread.h for the detailed semantics of those macros.
+ */
+
 #include <pthread.h>
 
 /* Thread */
@@ -43,14 +47,11 @@ typedef pthread_t ScmInternalThread;
 
 /* Mutex */
 typedef pthread_mutex_t ScmInternalMutex;
-#define SCM_INTERNAL_MUTEX_INIT(mutex) \
-    pthread_mutex_init(&(mutex), NULL)
-#define SCM_INTERNAL_MUTEX_LOCK(mutex) \
-    pthread_mutex_lock(&(mutex))
-#define SCM_INTERNAL_MUTEX_UNLOCK(mutex) \
-    pthread_mutex_unlock(&(mutex))
-#define SCM_INTERNAL_MUTEX_INITIALIZER \
-    PTHREAD_MUTEX_INITIALIZER
+#define SCM_INTERNAL_MUTEX_INIT(mutex)    pthread_mutex_init(&(mutex), NULL)
+#define SCM_INTERNAL_MUTEX_LOCK(mutex)    pthread_mutex_lock(&(mutex))
+#define SCM_INTERNAL_MUTEX_UNLOCK(mutex)  pthread_mutex_unlock(&(mutex))
+#define SCM_INTERNAL_MUTEX_DESTROY(mutex) pthread_mutex_destroy(&(mutex))
+#define SCM_INTERNAL_MUTEX_INITIALIZER    PTHREAD_MUTEX_INITIALIZER
 
 SCM_EXTERN void Scm__MutexCleanup(void *); /* in core.c */
 
@@ -66,18 +67,12 @@ SCM_EXTERN void Scm__MutexCleanup(void *); /* in core.c */
 
 /* Condition variable */
 typedef pthread_cond_t ScmInternalCond;
-#define SCM_INTERNAL_COND_INIT(cond) \
-    pthread_cond_init(&(cond), NULL)
-#define SCM_INTERNAL_COND_SIGNAL(cond) \
-    pthread_cond_signal(&(cond))
-#define SCM_INTERNAL_COND_BROADCAST(cond) \
-    pthread_cond_broadcast(&(cond))
-#define SCM_INTERNAL_COND_WAIT(cond, mutex) \
-    pthread_cond_wait(&(cond), &(mutex))
-#define SCM_INTERNAL_COND_DESTROY(cond) \
-    pthread_cond_destroy(&(cond))
-#define SCM_INTERNAL_COND_INITIALIZER \
-    PTHREAD_COND_INITIALIZER
+#define SCM_INTERNAL_COND_INIT(cond)        pthread_cond_init(&(cond), NULL)
+#define SCM_INTERNAL_COND_SIGNAL(cond)      pthread_cond_signal(&(cond))
+#define SCM_INTERNAL_COND_BROADCAST(cond)   pthread_cond_broadcast(&(cond))
+#define SCM_INTERNAL_COND_WAIT(cond, mutex) pthread_cond_wait(&(cond), &(mutex))
+#define SCM_INTERNAL_COND_DESTROY(cond)     pthread_cond_destroy(&(cond))
+#define SCM_INTERNAL_COND_INITIALIZER       PTHREAD_COND_INITIALIZER
 
 /* Fast lock */
 #ifdef HAVE_PTHREAD_SPINLOCK_T

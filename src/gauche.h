@@ -118,6 +118,9 @@ SCM_DECL_BEGIN
    gauche/number.h for the details. */
 #define GAUCHE_FFX 1
 
+/* Include appropriate threading interface.  Threading primitives are
+   abstracted with SCM_INTERNAL_* macros and ScmInternal* typedefs.
+   See gauche/uthread.h for the semantics of these primitives. */
 #ifdef GAUCHE_USE_PTHREADS
 # include <gauche/pthread.h>
 #else  /* !GAUCHE_USE_PTHREADS */
