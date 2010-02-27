@@ -32,12 +32,47 @@
 ;;;  
 
 (define-module gauche.threads
-  (export-all))
+  (export gauche-thread-type
+
+          thread? make-thread thread-name thread-specific-set! thread-specific
+          thread-state thread-start! thread-yield! thread-sleep!
+          thread-join! thread-terminate! thread-stop! thread-cont!
+
+          mutex? make-mutex mutex-name mutex-state
+          mutex-specific-set! mutex-specific
+          with-locking-mutex mutex-lock! mutex-unlock!
+
+          condition-variable? make-condition-variable condition-variable-name
+          condition-variable-specific condition-variable-specific-set!
+          condition-variable-signal! condition-variable-broadcast!
+
+          join-timeout-exception? abandoned-mutex-exception?
+          terminated-thread-exception? uncaught-exception?
+          uncaught-exception-reason))
 (select-module gauche.threads)
 
-(dynamic-load "gauche--threads")
+(inline-stub
+ "#include \"threads.h\""
 
+ (declcode
+  "extern void Scm_Init_mutex(ScmModule*);"
+  "extern void Scm_Init_threads(ScmModule*);")
+
+ (initcode
+  "Scm_Init_threads(mod);"
+  "Scm_Init_mutex(mod);"))
+
+;;===============================================================
+;; System query
 ;;
+
+(inline-stub
+ (define-cproc gauche-thread-type ()
+   (.if "defined(GAUCHE_USE_PTHREADS)"
+        (result 'pthread)
+        (result 'none))))
+
+;;===============================================================
 ;; Thread
 ;;
 
@@ -58,7 +93,38 @@
      (slot-ref thread 'specific))
    thread-specific-set!))
 
-;;
+(inline-stub
+ (define-cproc thread-state (vm::<thread>)
+   (case (-> vm state)
+     [(SCM_VM_NEW)       (result 'new)]
+     [(SCM_VM_RUNNABLE)  (result 'runnable)]
+     [(SCM_VM_STOPPED)   (result 'stopped)]
+     [(SCM_VM_TERMINATED)(result 'terminated)]
+     [else (Scm_Error "[internal] thread state has invalid value: %d"
+                      (-> vm state))]))
+
+ (define-cproc make-thread (thunk::<procedure> :optional (name #f))
+   Scm_MakeThread)
+
+ (define-cproc thread-start! (vm::<thread>) Scm_ThreadStart)
+
+ (define-cproc thread-yield! () ::<void> Scm_YieldCPU)
+
+ (define-cproc thread-sleep! (timeout) Scm_ThreadSleep)
+
+ (define-cproc thread-join! (vm::<thread> :optional (timeout #f) timeout-val)
+   Scm_ThreadJoin)
+
+ (define-cproc thread-terminate! (vm::<thread>) Scm_ThreadTerminate)
+
+ (define-cproc thread-stop! (target::<thread>
+                             :optional (timeout #f) (timeout-val #f))
+   Scm_ThreadStop)
+
+ (define-cproc thread-cont! (target::<thread>) Scm_ThreadCont)
+ ) 
+
+;;===============================================================
 ;; Mutex
 ;;
 
@@ -89,7 +155,31 @@
    thunk
    (lambda () (mutex-unlock! mutex))))
 
-;;
+(inline-stub
+ (define-cproc make-mutex (:optional (name #f)) Scm_MakeMutex)
+
+ (define-cise-stmt with-mutex
+   [(_ mutex . form)
+    `(begin
+       (cast void (SCM_INTERNAL_MUTEX_LOCK ,mutex))
+       ,@form
+       (cast void (SCM_INTERNAL_MUTEX_UNLOCK ,mutex)))])
+
+ (define-cproc mutex-lock! (mutex::<mutex> :optional (timeout #f) thread)
+   (let* ([owner::ScmVM* NULL])
+     (cond [(SCM_VMP thread) (set! owner (SCM_VM thread))]
+           [(SCM_UNBOUNDP thread) (set! owner (Scm_VM))]
+           [(not (SCM_FALSEP thread)) (SCM_TYPE_ERROR thread "thread or #f")])
+     (result (Scm_MutexLock mutex timeout owner))))
+ 
+ (define-cproc mutex-unlock! (mutex::<mutex> :optional (cv #f) (timeout #f))
+   (let* ([cond::ScmConditionVariable* NULL])
+     (cond [(SCM_CONDITION_VARIABLE_P cv) (set! cond (SCM_CONDITION_VARIABLE cv))]
+           [(not (SCM_FALSEP cv)) (SCM_TYPE_ERROR cv "condition variale or #f")])
+     (result (Scm_MutexUnlock mutex cond timeout))))
+ )
+
+;;===============================================================
 ;; Condition variable
 ;;
 
@@ -109,8 +199,19 @@
      (check-arg condition-variable? cv)
      (slot-ref cv 'specific))
    condition-variable-specific-set!))
+
+(inline-stub
+  (define-cproc make-condition-variable (:optional (name #f))
+    Scm_MakeConditionVariable)
+
+  (define-cproc condition-variable-signal! (cv::<condition-variable>)
+    Scm_ConditionVariableSignal)
+
+  (define-cproc condition-variable-broadcast! (cv::<condition-variable>)
+    Scm_ConditionVariableBroadcast)
+  )  
      
-;;
+;;===============================================================
 ;; Exceptions
 ;;
 

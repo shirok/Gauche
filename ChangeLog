@@ -1,3 +1,8 @@
+2010-02-27  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/threads.scm, ext/threads/Makefile.in:
+	  Integrated thrlib.stub into threads.scm.
+
 2010-02-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vm.h, src/vm.c, src/gauche/pthread.h, src/gauche/uthread.h:
