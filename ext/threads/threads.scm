@@ -48,7 +48,10 @@
 
           join-timeout-exception? abandoned-mutex-exception?
           terminated-thread-exception? uncaught-exception?
-          uncaught-exception-reason))
+          uncaught-exception-reason
+
+          ;; experimenal
+          atom atom-ref atom-swap!))
 (select-module gauche.threads)
 
 (inline-stub
@@ -231,3 +234,31 @@
   (check-arg uncaught-exception? exc)
   (slot-ref exc 'reason))
 
+;;===============================================================
+;; Atom
+;;
+
+;; EXPERIMENTAL
+(define (atom . vals)
+  (define m (make-mutex))
+  (let-syntax ([with-lock
+                (syntax-rules ()
+                  [(_ timeout . form)
+                   (unwind-protect
+                       (and (mutex-lock! m timeout) . form)
+                     (when (eq? (mutex-state m) (current-thread))
+                       (mutex-unlock! m)))])])
+    (define (atom-internal msg proc timeout)
+      (case msg
+        [(ref)  (with-lock timeout (apply proc vals))]
+        [(swap) (with-lock timeout
+                           (call-with-values (cut apply proc vals)
+                             (^ vs (set! vals vs) (apply values vals))))]
+        [else (error "Unknown message to an atom" msg)]))
+    atom-internal))
+
+(define (atom-ref atom :optional (proc values) (timeout #f))
+  (atom 'ref proc timeout))
+
+(define (atom-swap! atom proc :optional (timeout #f))
+  (atom 'swap proc timeout))
