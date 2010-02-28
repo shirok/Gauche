@@ -52,59 +52,92 @@ VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
 --boundary--
 ")
 
+(define ps2 "--boundary
+Content-Disposition: form-data; name=aaa
+
+111
+--boundary
+Content-Disposition: form-data; name=bbb; filename=x.txt
+Content-Type: text/plain
+
+abc
+def
+ghi
+
+--boundary
+Content-Disposition: form-data; name=ccc ; filename=\"\"
+
+--boundary
+Content-Disposition: form-data;name=ddd; filename=\"ttt\\bbb\"
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+
+VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
+--boundary--
+")
+
 (define pr1 '(("aaa" "111") ("bbb" "abc\ndef\nghi\n") ("ccc" #f) ("ddd" "This is a test sentence.")))
 
 (define pr2 '(("aaa" "111") ("bbb" "x.txt") ("ccc" #f) ("ddd" "ttt\\bbb")))
 
-(test* "cgi-parse-parameters (multipart)" pr1
-       (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "POST")
-                                           ("CONTENT_TYPE" "multipart/form-data; boundary=boundary")
-                                           ("CONTENT_LENGTH" ,(string-size ps1)))))
-         (with-input-from-string ps1
-           (lambda () (cgi-parse-parameters)))))
+(define (multipart-parse-test src)
+  (test* "cgi-parse-parameters (multipart)" pr1
+         (parameterize ((cgi-metavariables
+                         `(("REQUEST_METHOD" "POST")
+                           ("CONTENT_TYPE" "multipart/form-data; boundary=boundary")
+                           ("CONTENT_LENGTH" ,(string-size src)))))
+           (with-input-from-string src
+             (lambda () (cgi-parse-parameters)))))
 
-(test* "cgi-parse-parameters (multipart, custom handler)" pr2
-       (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "POST")
-                                           ("CONTENT_TYPE" "multipart/form-data; boundary=boundary")
-                                           ("CONTENT_LENGTH" ,(string-size ps1)))))
-         (with-input-from-string ps1
-           (lambda ()
-             (cgi-parse-parameters
-              :part-handlers
-              `((#t ,(lambda (name filename info inp)
-                       (let loop ((line (read-line inp)))
-                         (if (eof-object? line)
-                           filename
-                           (loop (read-line inp))))))))))
-         ))
+  (test* "cgi-parse-parameters (multipart, custom handler)" pr2
+         (parameterize ((cgi-metavariables
+                         `(("REQUEST_METHOD" "POST")
+                           ("CONTENT_TYPE" "multipart/form-data; boundary=boundary")
+                           ("CONTENT_LENGTH" ,(string-size src)))))
+           (with-input-from-string src
+             (lambda ()
+               (cgi-parse-parameters
+                :part-handlers
+                `((#t ,(lambda (name filename info inp)
+                         (let loop ((line (read-line inp)))
+                           (if (eof-object? line)
+                             filename
+                             (loop (read-line inp))))))))))
+           ))
 
-(test* "cgi-parse-parameters (multipart, custom handler 2)" "abc\ndef\nghi\n"
-       (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "POST")
-                                           ("CONTENT_TYPE" "multipart/form-data; boundary=boundary")
-                                           ("CONTENT_LENGTH" ,(string-size ps1)))))
-         (let1 r
-             (with-input-from-string ps1
-               (lambda ()
-                 (cgi-parse-parameters
-                  :part-handlers `(("bbb" file :prefix "./bbb")))))
-           (let* ((tmpfile (cgi-get-parameter "bbb" r))
-                  (content (file->string tmpfile)))
-             (sys-unlink tmpfile)
-             content))))
+  (test* "cgi-parse-parameters (multipart, custom handler 2)" "abc\ndef\nghi\n"
+         (parameterize ((cgi-metavariables
+                         `(("REQUEST_METHOD" "POST")
+                           ("CONTENT_TYPE" "multipart/form-data; boundary=boundary")
+                           ("CONTENT_LENGTH" ,(string-size src)))))
+           (let1 r
+               (with-input-from-string src
+                 (lambda ()
+                   (cgi-parse-parameters
+                    :part-handlers `(("bbb" file :prefix "./bbb")))))
+             (let* ((tmpfile (cgi-get-parameter "bbb" r))
+                    (content (file->string tmpfile)))
+               (sys-unlink tmpfile)
+               content))))
 
-(test* "cgi-parse-parameters (multipart, custom handler 3)" "abc\ndef\nghi\n"
-       (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "POST")
-                                           ("CONTENT_TYPE" "multipart/form-data; boundary=boundary")
-                                           ("CONTENT_LENGTH" ,(string-size ps1)))))
-         (let1 r
-             (with-input-from-string ps1
-               (lambda ()
-                 (cgi-parse-parameters
-                  :part-handlers `((#/b{3}/ file :prefix "./bbb")))))
-           (let* ((tmpfile (cgi-get-parameter "bbb" r))
-                  (content (file->string tmpfile)))
-             (sys-unlink tmpfile)
-             content))))
+  (test* "cgi-parse-parameters (multipart, custom handler 3)" "abc\ndef\nghi\n"
+         (parameterize ((cgi-metavariables
+                         `(("REQUEST_METHOD" "POST")
+                           ("CONTENT_TYPE" "multipart/form-data; boundary=boundary")
+                           ("CONTENT_LENGTH" ,(string-size src)))))
+           (let1 r
+               (with-input-from-string src
+                 (lambda ()
+                   (cgi-parse-parameters
+                    :part-handlers `((#/b{3}/ file :prefix "./bbb")))))
+             (let* ((tmpfile (cgi-get-parameter "bbb" r))
+                    (content (file->string tmpfile)))
+               (sys-unlink tmpfile)
+               content))))
+  )
+
+(multipart-parse-test ps1)
+(multipart-parse-test ps2)
 
 (test* "cgi-get-parameter" "foo bar"
        (cgi-get-parameter "a" qr1))

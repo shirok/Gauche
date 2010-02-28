@@ -1,5 +1,8 @@
 2010-02-27  Shiro Kawai  <shiro@acm.org>
 
+	* lib/www/cgi.scm (get-mime-parts): Fixed a bug that didn't parse
+	  option values in content-disposition header are unquoted.
+
 	* ext/threads/threads.scm, ext/threads/Makefile.in:
 	  Integrated thrlib.stub into threads.scm.
 

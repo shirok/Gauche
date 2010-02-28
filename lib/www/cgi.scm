@@ -268,27 +268,27 @@
                              (string=? (x->string (car entry)) part-name)))
                        part-handlers)
       (cond
-       ((or (not clause)
+       [(or (not clause)
             (not (pair? (cdr clause))))
-        (list string-handler)) ;; default action
-       ((and (= (length clause) 3)
+        (list string-handler)] ;; default action
+       [(and (= (length clause) 3)
              (memq (cadr clause) '(file file+name))
              (string? (caddr clause)))
         ;; backward compatibility - will be deleted soon
-        (list (cadr clause) :prefix (caddr clause)))
-       (else (cdr clause)))))
+        (list (cadr clause) :prefix (caddr clause))]
+       [else (cdr clause)])))
                
   (define (get-handler action . opts)
     (cond
-     ((not action) string-handler)
-     ((memq action '(file file+name))
+     [(not action) string-handler]
+     [(memq action '(file file+name))
       (make-file-handler (get-keyword* :prefix opts
                                        (build-path (temporary-directory)
                                                    "gauche-cgi-"))
                          (eq? action 'file+name)
-                         (get-keyword :mode opts #f)))
-     ((eq? action 'ignore) ignore-handler)
-     (else action)))
+                         (get-keyword :mode opts #f))]
+     [(eq? action 'ignore) ignore-handler]
+     [else action]))
 
   ;; The value of content-disposition must be a properly quoted string
   ;; according to RFC2183 and RFC2045.  However, IE sends a pathname including
@@ -300,17 +300,16 @@
     (let1 r (open-output-string :private? #t)
       (define (finish) (get-output-string r))
       (let loop ((c (read-char input)))
-        (cond ((eof-object? c) (finish)) ; tolerate missing closing DQUOTE
-              ((char=? c #\")  (finish)) ; discard ending DQUOTE
-              ((char=? c #\\)
+        (cond [(eof-object? c) (finish)] ; tolerate missing closing DQUOTE
+              [(char=? c #\")  (finish)] ; discard ending DQUOTE
+              [(char=? c #\\)
                (let1 c (read-char input)
-                 (cond ((eof-object? c) (finish)) ;; tolerate stray backslash
-                       (else
-                        (unless (char-set-contains? #[\\\"] c)
-                          (write-char #\\ r))
-                        (write-char c r)
-                        (loop (read-char input))))))
-              (else (write-char c r) (loop (read-char input)))))))
+                 (cond [(eof-object? c) (finish)] ;; tolerate stray backslash
+                       [else (unless (char-set-contains? #[\\\"] c)
+                               (write-char #\\ r))
+                             (write-char c r)
+                             (loop (read-char input))]))]
+              [else (write-char c r) (loop (read-char input))]))))
 
   (define (parse-content-disposition field)
     (if field
@@ -319,47 +318,50 @@
                               (,*rfc822-atext-chars* . ,rfc822-dot-atom)))
       '()))
 
-  (define (handle-part part-info inp)
-    (let* ((cd   (part-ref part-info "content-disposition"))
-           (opts (parse-content-disposition cd))
-           (name (cond ((member "name=" opts) => cadr) (else #f)))
-           (filename (cond ((member "filename=" opts) => cadr) (else #f)))
-           )
-      (cond
-       ((not name)      ;; if no name is given, just ignore this part.
-        (ignore-handler name filename part-info inp)
-        #f)
-       ((not filename)  ;; this is not a file uploading field.
-        (list name (string-handler name filename part-info inp)))
-       ((string-null? filename) ;; file field is empty
-        (list name (ignore-handler name filename part-info inp)))
-       (else
-        (let* ((action&opts (get-action&opts name))
-               (handler (apply get-handler action&opts))
-               (result (handler name filename part-info inp)))
-          (list name result))))))
+  ;; NB: This is not an ideal solution.  There could be a malformed
+  ;; option string (e.g. filename=c:\foo\bar\baz, in which the option
+  ;; value should be quoted but we have to accept those non-conforming
+  ;; clients).
+  (define (get-option optname optregex opts)
+    (cond [(member optname opts) => cadr]
+          [(any (^t (and (string? t) (rxmatch optregex t))) opts)
+           => (cut rxmatch-after <>)]
+          [else #f]))
 
-  (let* ((inp (if (and clength (<= 0 (x->integer clength)))
+  (define (handle-part part-info inp)
+    (let* ([cd   (part-ref part-info "content-disposition")]
+           [opts (parse-content-disposition cd)]
+           [name (get-option "name=" #/^name=/ opts)]
+           [filename (get-option "filename=" #/^filename=/ opts)])
+      (cond
+       [(not name)      ;; if no name is given, just ignore this part.
+        (ignore-handler name filename part-info inp)
+        #f]
+       [(not filename)  ;; this is not a file uploading field.
+        (list name (string-handler name filename part-info inp))]
+       [(string-null? filename) ;; file field is empty
+        (list name (ignore-handler name filename part-info inp))]
+       [else
+        (let* ([action&opts (get-action&opts name)]
+               [handler (apply get-handler action&opts)]
+               [result (handler name filename part-info inp)])
+          (list name result))])))
+
+  (let* ([inp (if (and clength (<= 0 (x->integer clength)))
                 (open-input-limited-length-port inp (x->integer clength))
-                inp))
-         (result (mime-parse-message inp `(("content-type" ,ctype))
-                                     handle-part)))
-    (filter-map (cut ref <> 'content) (ref result 'content)))
-  )
+                inp)]
+         [result (mime-parse-message inp `(("content-type" ,ctype))
+                                     handle-part)])
+    (filter-map (cut ~ <>'content) (~ result'content))))
 
 ;;----------------------------------------------------------------
 ;; API: cgi-get-parameter key params &keyword list default convert
 ;;
-(define (cgi-get-parameter key params . args)
-  (let* ((list?   (get-keyword :list args #f))
-         (default (get-keyword :default args (if list? '() #f)))
-         (convert (get-keyword :convert args identity)))
-    (cond ((assoc key params)
-           => (lambda (p)
-                (if list?
-                    (map convert (cdr p))
-                    (convert (cadr p)))))
-          (else default))))
+(define (cgi-get-parameter key params :key ((:list lis) #f)
+                                           (default (if lis '() #f))
+                                           ((:convert cv) identity))
+  (cond [(assoc key params) => (^p (if lis (map cv (cdr p)) (cv (cadr p))))]
+        [else default]))
 
 ;;----------------------------------------------------------------
 ;; API: cgi-header &keyword content-type cookies location &allow-other-keys
@@ -370,9 +372,9 @@
                     (status       #f)
                     (cookies      '())
                     :allow-other-keys rest)
-  (let ((ct (or content-type
-                (and (not location) "text/html")))
-        (r '()))
+  (let ([ct (or content-type
+                (and (not location) "text/html"))]
+        [r '()])
     (when status   (push! r #`"Status: ,status\r\n"))
     (when ct       (push! r #`"Content-type: ,ct\r\n"))
     (when location (push! r #`"Location: ,location\r\n"))
