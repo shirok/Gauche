@@ -1145,7 +1145,7 @@
    [($CALL) ($call ($*-src iform)
                    (iform-copy ($call-proc iform) lv-alist)
                    (imap (cut iform-copy <> lv-alist) ($call-args iform))
-                   #f)]
+                   ($call-flag iform))]
    [($ASM) ($asm ($*-src iform) ($asm-insn iform)
                  (imap (cut iform-copy <> lv-alist) ($asm-args iform)))]
    [($PROMISE)($promise ($*-src iform)

@@ -1,3 +1,9 @@
+2010-03-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (iform-copy): Fixed a bug that yielded a wrong
+	  optimization when flagged closure is inlined.  Thanks to the
+	  Michael Campbell for the detailed report.
+
 2010-02-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi.scm (get-mime-parts): Fixed a bug that didn't parse

@@ -122,6 +122,25 @@
                  (set-car! (cdr new) '100)
                  orig))))
 
+;; This test exhibits the optimizer bug reported by Michael Campbell.
+(define bug-optimizer-local-inliner
+  (lambda (flag)
+    (define (a . args)
+      (receive x args
+        (cons x x)
+        (apply values x))
+      (apply format args))
+    (define (b bar)
+      (a "~a" bar))
+    (b 1)
+    (cond
+     (flag (b 1))
+     (else (a "~a" 1)))))
+(prim-test "apply local inliner optimizer" "1"
+           (lambda () (bug-optimizer-local-inliner #f)) equal?)
+(prim-test "apply local inliner optimizer" "1"
+           (lambda () (bug-optimizer-local-inliner #t)) equal?)
+
 (prim-test "map" '()         (lambda ()  (map car '())))
 (prim-test "map" '(1 2 3)    (lambda ()  (map car '((1) (2) (3)))))
 (prim-test "map" '(() () ()) (lambda ()  (map cdr '((1) (2) (3)))))
