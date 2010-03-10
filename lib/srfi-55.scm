@@ -26,7 +26,7 @@
            (if (eq? (unwrap-syntax (caar clauses)) 'srfi)
              (require-srfi (cdar clauses) (cdr clauses))
              (error "require-extension: unknown extension identifier:"
-                    (car claues))))
+                    (car clauses))))
           (else
            (error "require-extension: bad clause:" (car clauses)))))
   (define (require-srfi ids rest)
