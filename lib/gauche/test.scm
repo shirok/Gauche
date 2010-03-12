@@ -124,7 +124,7 @@
 
 (define *test-record-file* (sys-getenv "GAUCHE_TEST_RECORD_FILE"))
 
-(define (test-record-file flie) (set! *test-record-file* file)) ;public API
+(define (test-record-file file) (set! *test-record-file* file)) ;public API
 
 ;; List of discrepancies
 (define *discrepancy-list* '())
