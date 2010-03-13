@@ -37,6 +37,7 @@
   (use util.match)
 
   (export <record-meta> <record>
+          <pseudo-record-meta> pseudo-rtd
           record? record-rtd rtd-name rtd-parent
           rtd-field-names rtd-all-field-names rtd-field-mutable?
           make-rtd rtd? rtd-constructor rtd-predicate rtd-accessor rtd-mutator
@@ -58,16 +59,57 @@
 ;;    be recompiled.
 ;;  - The record class must form a single implementation inheritance.
 
+;; Note on pseudo records:
+;;  If <vector>, <list>, uniform vector, or a pseudo record class is
+;;  given to make-rtd as a parent, it creates a pseudo record class,
+;;  or pseudo rtd.  Pseudo rtd is a Gauche class with metaclass
+;;  <pseudo-record-meta>.  Pseudo rtd is used to create pseudo records,
+;;  which are just ordinary Gauche containers like lists or vectors,
+;;  but accessors and constructors are defined so that they can also be
+;;  accessed as if they were record instances.
+;;
+;;  (If you know Common Lisp, it is similar to giving :type option
+;;  to defstruct.)
+;;
+;;  Pseudo records can be used just like records in the code, but at
+;;  runtime you cannot distinguish them from ordinary lists or vectors.
+;;  They have some advantages:
+;;
+;;   - Fast.  Operations on pseudo records can be expanded into operations
+;;     on primitive data structures (e.g. car, vector-ref, etc), which
+;;     will be compiled into efficient VM instructions.
+;;   - Less module interdependency.  You can ask callers to pass in
+;;     the data by a vector or a list, instead of asking them to import your
+;;     record definition.  It is less safe but more flexible, especially
+;;     the caller is a foreign entity.
 
 ;;;
 ;;; Infrastructure
 ;;;
 
 (define-class <record-meta> (<class>)
-  ((field-specs :init-keyword :field-specs)
-   ))
-
+  ((field-specs :init-keyword :field-specs)))
 (define-class <record> () () :metaclass <record-meta>)
+
+(define-class <pseudo-record-meta> (<record-meta>) ())
+(define-class <pseudo-record> () () :metaclass <pseudo-record-meta>)
+
+(define-class <vector-pseudo-record-meta> (<pseudo-record-meta>) ())
+(define-class <vector-pseudo-record> () () :metaclass <vector-pseudo-record-meta>)
+(define-class <list-pseudo-record-meta> (<pseudo-record-meta>) ())
+(define-class <list-pseudo-record> () () :metaclass <list-pseudo-record-meta>)
+
+(define-method pseudo-rtd ((class <vector-meta>))
+  <vector-pseudo-record>)
+(define-method pseudo-rtd ((class <vector-pseudo-record-meta>))
+  <vector-pseudo-record>)
+(define-method pseudo-rtd ((class <list-meta>))
+  <list-pseudo-record>)
+(define-method pseudo-rtd ((class <list-pseudo-record-meta>))
+  <list-pseudo-record>)
+(define-method pseudo-rtd (other)
+  (error "pseudo-rtd requires a class object <vector>, <list>, \
+          or other pseudo-rtd, but got" other))
 
 ;; We just collect ancestor's slots, ignoring duplicate slot names.
 ;; R6RS records require the same name slot merely shadows ancestors' one,
@@ -148,9 +190,7 @@
 ;;;
 
 (define (make-rtd name fieldspecs :optional (parent #f) :rest opts)
-  (when (and parent (not (rtd? parent)))
-    (error "make-rtd: parent must be also a record type:" parent))
-  (make <record-meta>
+  (make (if parent (class-of parent) <record-meta>)
     :name name :field-specs fieldspecs :metaclass <record-meta>
     :supers (list (or parent <record>))
     :slots (fieldspecs->slotspecs fieldspecs
@@ -165,38 +205,43 @@
 
 ;; We dispatch by the number of slots to initialize, for fixed-argument
 ;; lambdas can be optimized more easily.
-(define-macro (define-ctor-generator name body-maker rest-maker)
+(define-macro (define-ctor-generator name 01-maker body-maker rest-maker)
   `(define-macro (,name rtd len)
      (define precalc-args 10)
      (define tmps (map (^_(gensym)) (iota (+ precalc-args 1))))
      `(case ,len
-        [(0) (lambda ()            ((%make) ,rtd))]
-        [(1) (lambda (,(car tmps)) ((%make) ,rtd ,(car tmps)))]
+        [(0) ,(let1 vars '() `(lambda ,vars ,,01-maker))]
+        [(1) ,(let1 vars `(,(car tmps)) `(lambda ,vars ,,01-maker))]
         ,@(map (^n (let1 vars (drop tmps (- precalc-args n -1))
                      `[(,n) (lambda ,vars ,,body-maker)]))
                (iota (- precalc-args 1) 2))
         [else (lambda (,@(cdr tmps) . ,(car tmps))
                 ,,rest-maker)])))
 
-(define-ctor-generator %gen-default-ctor-body
-  `((%make) ,rtd ,@vars)
-  `(apply (%make) ,rtd ,@(cdr tmps) ,(car tmps)))
+(define-macro (define-ctor-generators default-name custom-name
+                make1 make* makev)
+  `(begin
+     (define-ctor-generator ,default-name ,make1 ,make1 ,make*)
+     (define-ctor-generator ,custom-name ,make1
+       (let1 argv (gensym)
+         `(let1 ,argv (make-vector nfields)
+            ,@(map-with-index (^(i v) `(vector-set! ,argv (vector-ref mapvec ,i) ,v))
+                              vars)
+            ,,makev))
+       (let ([argv (gensym)] [i (gensym)] [restvar (car tmps)])
+         `(let1 ,argv (make-vector nfields)
+            ,@(map-with-index (^(i v) `(vector-set! ,argv (vector-ref mapvec ,i) ,v))
+                              (cdr tmps))
+            (do ([,restvar ,restvar (cdr ,restvar)]
+                 [,i ,precalc-args (+ ,i 1)])
+                [(null? ,restvar)]
+              (vector-set! ,argv (vector-ref mapvec ,i) (car ,restvar)))
+            ,,makev)))))
 
-(define-ctor-generator %gen-custom-ctor-body
-  (let1 argv (gensym)
-    `(let1 ,argv (make-vector nfields)
-       ,@(map-with-index (^(i v) `(vector-set! ,argv (vector-ref mapvec ,i) ,v))
-                         vars)
-       ((%makev) ,rtd ,argv)))
-  (let ([argv (gensym)] [i (gensym)] [restvar (car tmps)])
-    `(let1 ,argv (make-vector nfields)
-       ,@(map-with-index (^(i v) `(vector-set! ,argv (vector-ref mapvec ,i) ,v))
-                         (cdr tmps))
-       (do ([,restvar ,restvar (cdr ,restvar)]
-            [,i ,precalc-args (+ ,i 1)])
-           [(null? ,restvar)]
-         (vector-set! ,argv (vector-ref mapvec ,i) (car ,restvar)))
-       ((%makev) ,rtd ,argv))))
+(define-ctor-generators %gen-default-ctor-body %gen-custom-ctor-body
+  `((%make) ,rtd ,@vars)
+  `(apply (%make) ,rtd ,@(cdr tmps) ,(car tmps))
+  `((%makev) ,rtd ,argv))
 
 ;; Returns a vector where V[k] = i means k-th argument of the constructor
 ;; initializes i-th field.
