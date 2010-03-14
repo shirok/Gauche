@@ -519,12 +519,12 @@
 
  (define-cproc %record-ref (klass::<class> obj k::<fixnum>)
    (unless (SCM_ISA obj klass)
-     (Scm_Error "%record-ref: instance of %S expected, got %S" klass obj))
+     (Scm_Error "record-ref: instance of %S expected, got %S" klass obj))
    (result (Scm_InstanceSlotRef obj k)))
 
  (define-cproc %record-set! (klass::<class> obj k::<fixnum> val) ::<void>
    (unless (SCM_ISA obj klass)
-     (Scm_Error "%record-set!: instance of %S expected, got %S" klass obj))
+     (Scm_Error "record-set!: instance of %S expected, got %S" klass obj))
    (Scm_InstanceSlotSet obj k val))
  
  (define-cproc touch-instance! (obj) Scm_VMTouchInstance)
