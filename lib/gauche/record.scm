@@ -238,10 +238,15 @@
               (vector-set! ,argv (vector-ref mapvec ,i) (car ,restvar)))
             ,,makev)))))
 
-(define-ctor-generators %gen-default-ctor-body %gen-custom-ctor-body
+(define-ctor-generators %record-ctor-default %record-ctor-custom
   `((%make) ,rtd ,@vars)
   `(apply (%make) ,rtd ,@(cdr tmps) ,(car tmps))
   `((%makev) ,rtd ,argv))
+
+(define-ctor-generators %vector-ctor-default %vector-ctor-custom
+  `(vector ,@vars)
+  `(apply vector ,@(cdr tmps) ,(car tmps))
+  argv)
 
 ;; Returns a vector where V[k] = i means k-th argument of the constructor
 ;; initializes i-th field.
@@ -252,14 +257,23 @@
     (map-to <vector> (^f (cond [(assq f cat) => cdr] [else (bad f)]))
             fieldspecs)))
 
-(define (rtd-constructor rtd :optional fieldspecs)
+(define-method rtd-constructor ((rtd <record-meta>) . rest)
   (%check-rtd rtd)
-  (if (undefined? fieldspecs)
-    (%gen-default-ctor-body rtd (length (slot-ref rtd'slots)))
+  (if (null? rest)
+    (%record-ctor-default rtd (length (slot-ref rtd'slots)))
     (let1 all-names (rtd-all-field-names rtd)
-      (let ([mapvec  (%calculate-field-mapvec all-names fieldspecs)]
+      (let ([mapvec  (%calculate-field-mapvec all-names (car rest))]
             [nfields (vector-length all-names)])
-        (%gen-custom-ctor-body rtd (vector-length fieldspecs))))))
+        (%record-ctor-custom rtd (vector-length (car rest)))))))
+
+(define-method rtd-constructor ((rtd <vector-pseudo-record-meta>) . rest)
+  (%check-rtd rtd)
+  (if (null? rest)
+    (%vector-ctor-default rtd (length (slot-ref rtd'slots)))
+    (let1 all-names (rtd-all-field-names rtd)
+      (let ([mapvec  (%calculate-field-mapvec all-names (car rest))]
+            [nfields (vector-length all-names)])
+        (%vector-ctor-custom rtd (vector-length (car rest)))))))
 
 (define-inline (rtd-predicate rtd) (^o (is-a? o rtd)))
 
