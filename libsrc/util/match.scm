@@ -159,6 +159,7 @@
   ((with-module gauche.internal make-identifier) sym (current-module) '()))
 
 (define match.         (%match-id 'match))
+(define match-let*.    (%match-id 'match-let*))
 (define match:error.   (%match-id 'match:error))
 (define match-lambda*. (%match-id 'match-lambda*))
 (define match-letrec.  (%match-id 'match-letrec))

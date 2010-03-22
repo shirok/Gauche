@@ -1,3 +1,8 @@
+2010-03-22  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match.scm: Fixed a bug that caused match-let* fail
+	  (required identifiers are not defined).
+
 2010-03-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (iform-copy): Fixed a bug that yielded a wrong
