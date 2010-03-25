@@ -1,3 +1,9 @@
+2010-03-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/record.scm: Added support of vector-backed pseudo record.
+	  The procedure returned by rtd-accessor has a setter if the field
+	  is mutable.
+
 2010-03-22  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/util/match.scm: Fixed a bug that caused match-let* fail

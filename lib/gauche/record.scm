@@ -115,8 +115,8 @@
 ;; R6RS records require the same name slot merely shadows ancestors' one,
 ;; not changing the index of the fields.
 ;; NB: we make the direct slots come first, so that access via
-;; slot-ref/slot-set! finds direct slots with the same name as inherited
-;; slots.
+;; slot-ref/slot-set! prefer direct slots to inherited slots
+;; with the same name.
 (define-method compute-slots ((class <record-meta>))
   (fold (^(c r) (append (slot-ref c'direct-slots) r))
         '() (reverse (slot-ref class'cpl))))
@@ -193,8 +193,8 @@
   (make (if parent (class-of parent) <record-meta>)
     :name name :field-specs fieldspecs :metaclass <record-meta>
     :supers (list (or parent <record>))
-    :slots (fieldspecs->slotspecs fieldspecs
-                                  (if parent (length (class-slots parent)) 0))))
+    :slots (fieldspecs->slotspecs
+            fieldspecs (if parent (length (class-slots parent)) 0))))
 
 (define (rtd? obj) (is-a? obj <record-meta>))
 
@@ -225,12 +225,14 @@
      (define-ctor-generator ,custom-name ,make1
        (let1 argv (gensym)
          `(let1 ,argv (make-vector nfields)
-            ,@(map-with-index (^(i v) `(vector-set! ,argv (vector-ref mapvec ,i) ,v))
+            ,@(map-with-index (^(i v)
+                                `(vector-set! ,argv (vector-ref mapvec ,i) ,v))
                               vars)
             ,,makev))
        (let ([argv (gensym)] [i (gensym)] [restvar (car tmps)])
          `(let1 ,argv (make-vector nfields)
-            ,@(map-with-index (^(i v) `(vector-set! ,argv (vector-ref mapvec ,i) ,v))
+            ,@(map-with-index (^(i v)
+                                `(vector-set! ,argv (vector-ref mapvec ,i) ,v))
                               (cdr tmps))
             (do ([,restvar ,restvar (cdr ,restvar)]
                  [,i ,precalc-args (+ ,i 1)])
@@ -275,23 +277,45 @@
             [nfields (vector-length all-names)])
         (%vector-ctor-custom rtd (vector-length (car rest)))))))
 
-(define-inline (rtd-predicate rtd) (^o (is-a? o rtd)))
+(define-method rtd-predicate ((rtd <record-meta>)) (^o (is-a? o rtd)))
+(define-method rtd-predicate ((rtd <pseudo-record-meta>))
+  (errorf "pseudo record type ~s cannot have a predicate" rtd))
 
+;; returns (index immutable?)
 (define (%get-slot-index rtd field modify?)
   (%check-rtd rtd)
   (cond [(assq field (class-slots rtd))
-         => (^s (when (and modify? (slot-definition-option s :immutable #f))
-                  (errorf "slot ~s of ~s is immutable" field rtd))
-                (slot-definition-option s :index))]
+         => (^s (values (slot-definition-option s :index)
+                        (slot-definition-option s :immutable #f)))]
         [else (errorf "record ~s does not have a slot named ~s" rtd field)]))
 
-(define-inline (rtd-accessor rtd field)
-  (let1 k (%get-slot-index rtd field #f)
-    (^o ((with-module gauche.object %record-ref) rtd o k))))
+(define-method rtd-accessor ((rtd <record-meta>) field)
+  (receive (k immutable?) (%get-slot-index rtd field #f)
+    (if immutable?
+      (^o ((with-module gauche.object %record-ref) rtd o k))
+      (getter-with-setter
+       (^o ((with-module gauche.object %record-ref) rtd o k))
+       (^(o v) ((with-module gauche.object %record-set!) rtd o k v))))))
 
-(define-inline (rtd-mutator rtd field)
-  (let1 k (%get-slot-index rtd field #t)
+(define-method rtd-accessor ((rtd <vector-pseudo-record-meta>) field)
+  (receive (k immutable?) (%get-slot-index rtd field #f)
+    (if immutable?
+      (^o (vector-ref o k))
+      (getter-with-setter
+       (^o (vector-ref o k))
+       (^(o v) (vector-set! o k v))))))
+       
+(define-method rtd-mutator ((rtd <record-meta>) field)
+  (receive (k immutable?) (%get-slot-index rtd field #t)
+    (when immutable?
+      (errorf "slot ~a of record ~s is immutable" field rtd))
     (^(o v) ((with-module gauche.object %record-set!) rtd o k v))))
+
+(define-method rtd-mutator ((rtd <vector-pseudo-record-meta>) field)
+  (receive (k immutable?) (%get-slot-index rtd field #t)
+    (when immutable?
+      (errorf "slot ~a of record ~s is immutable" field rtd))
+    (^(o v) (vector-set! o k v))))
 
 ;;;
 ;;; Syntactic layer
