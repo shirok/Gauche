@@ -1,3 +1,14 @@
+2010-03-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass1/inlinable-lambda, pass1/expand-inliner etc):
+	  Changed inlining info in $LAMBDA node to allow closed lvars
+	  plus future extensions, from a simple vector of packed IForm.
+	  Changed places that uses info, though currently they only deal
+	  with the case that no lvars are closed.
+	  This affects the dumped format of precompilation; the old format
+	  is still recognized and supported, but will be dropped in the
+	  next major release.
+
 2010-03-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/record.scm: Added support of vector-backed pseudo record.

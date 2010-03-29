@@ -674,8 +674,10 @@
    flag             ; Marks some special state of this node.
                     ;   'dissolved: indicates that this lambda has been
                     ;               inline expanded.
-                    ;   <vector>  : indicates that this lambda is the one
-                    ;               declared as inlinable (by define-inline).
+                    ;   <packed-iform>  : inlinable lambda (old format).
+                    ;   (inlinable (<lvar> ...) <packed-iform>) :
+                    ;      inlinable lmabda (new format).  <packed-iform>
+                    ;      is a vector.  (<lvar> ...) is a list of lvars.
    ;; The following slot(s) is/are used temporarily during pass2, and
    ;; need not be saved when packed.
    (calls '())      ; list of call sites
@@ -1346,6 +1348,58 @@
 (define (reset-lvars/rec* iforms labels)
   (ifor-each (lambda (x) (reset-lvars/rec x labels)) iforms))
 
+;; Returns a list of free lvars within the given iform.
+;; NB: $LAMBDA may be able to cache the result in iform.
+(define (free-lvars iform) (free-lvars/rec iform '() '() (make-label-dic)))
+;; bs - list of bound lvars
+;; fs - list of free lvars
+;; ls - label dic for seen labels.
+(define (free-lvars/rec iform bs fs ls)
+  (define (add lvar bs fs)
+    (if (or (memq lvar bs) (memq lvar fs)) fs (cons lvar fs)))
+  (case/unquote
+   (iform-tag iform)
+   [($DEFINE) (free-lvars/rec ($define-expr iform) bs fs ls)]
+   [($LREF)   (add ($lref-lvar iform) bs fs)]
+   [($LSET)   (let1 fs (free-lvars/rec ($lset-expr iform) bs fs ls)
+                (add ($lset-lvar iform) bs fs))]
+   [($GSET)   (free-lvars/rec ($gset-expr iform) bs fs ls)]
+   [($IF)     (let* ([fs (free-lvars/rec ($if-test iform) bs fs ls)]
+                     [fs (free-lvars/rec ($if-then iform) bs fs ls)])
+                (free-lvars/rec ($if-else iform) bs fs ls))]
+   [($LET)    (let* ([bs2 (append ($let-lvars iform) bs)]
+                     [fs (if (eq ($let-type iform) 'rec)
+                           (free-lvars/rec* ($let-inits iform) bs2 fs ls)
+                           (free-lvars/rec* ($let-inits iform) bs fs ls))])
+                (free-lvars/rec ($let-body iform) bs2 fs ls))]
+   [($RECEIVE)(let* ([fs (free-lvars/rec ($receive-expr iform) bs fs ls)]
+                     [bs (append ($receive-lvars iform) bs)])
+                (free-lvars/rec ($receive-body iform) bs fs ls))]
+   [($LAMBDA) (let* ([bs (append ($lambda-lvars iform) bs)])
+                (free-lvars/rec ($lambda-body iform) bs fs ls))]
+   [($LABEL)  (unless (label-seen? ls iform)
+                (label-push! ls iform)
+                (free-lvars/rec ($label-body iform) bs fs ls))]
+   [($SEQ)    (free-lvars/rec* ($seq-body iform) bs fs ls)]
+   [($CALL)   (let1 fs
+                  (cond [(eq? ($call-flag iform) 'jump) fs]
+                        [else (free-lvars/rec ($call-proc iform) bs fs ls)])
+                (free-lvars/rec* ($call-args iform) bs fs ls))]
+   [($ASM)    (free-lvars/rec* ($asm-args iform) bs fs ls)]
+   [($PROMISE)(free-lvars/rec ($promise-expr iform) bs fs ls)]
+   [($CONS $APPEND $MEMV $EQ? $EQV?)
+    (let1 fs (free-lvars/rec ($*-arg0 iform) bs fs ls)
+      (free-lvars/rec ($*-arg1 iform) bs fs ls))]
+   [($VECTOR $LIST $LIST*) (free-lvars/rec* ($*-args iform) bs fs ls)]
+   [($LIST->VECTOR) (free-lvars/rec ($*-arg0 iform) bs fs ls)]
+   [else fs]))
+
+(define (free-lvars/rec* iforms bs fs ls)
+  (let loop ((iforms iforms) (fs fs))
+    (if (null? iforms)
+      fs
+      (loop (cdr iforms) (free-lvars/rec (car iforms) bs fs ls)))))
+
 ;;============================================================
 ;; Entry points
 ;;
@@ -1465,8 +1519,8 @@
   (define (pass1/expand-inliner name proc)
     ;; TODO: for inline asm, check validity of opcode.
     (let1 inliner (%procedure-inliner proc)
-      (cond
-       [(integer? inliner)
+      (match inliner
+       [(? integer?)                    ;VM insn
         (let ([nargs (length (cdr program))]
               [opt?  (slot-ref proc 'optional)])
           (unless (argcount-ok? (cdr program) (slot-ref proc 'required) opt?)
@@ -1474,11 +1528,15 @@
                     (variable-name name) (slot-ref proc 'required) nargs))
           ($asm program (if opt? `(,inliner ,nargs) `(,inliner))
                 (imap (cut pass1 <> cenv) (cdr program))))]
-       [(vector? inliner)
+       [(? vector?)                     ;old packed inlinable lambda
         (expand-inlined-procedure program
                                   (unpack-iform inliner)
                                   (imap (cut pass1 <> cenv) (cdr program)))]
-       [else
+       [('inlinable () (? vector? piform)) ; new packed inlinable lambda
+        (expand-inlined-procedure program  ; TODO: consider lvars
+                                  (unpack-iform piform)
+                                  (imap (cut pass1 <> cenv) (cdr program)))]
+       [_
         (let1 form (inliner program cenv)
           (if (undefined? form)
             (pass1/call program ($gref name) (cdr program) cenv)
@@ -1548,8 +1606,8 @@
   (pass1/body-rec (map list exprs) '() cenv))
 
 ;; Walks exprs and gathers internal definitions into intdefs in the form
-;; of ((var init) ...).  We need to expand macros, begins and includes
-;; that appears in the bone of exprs, for it may insert more internal
+;; of ((var init) ...).  We need to expand macros, 'begin's and 'include's
+;; that appears in the toplevel of exprs, for it may insert more internal
 ;; definitions.
 (define (pass1/body-rec exprs intdefs cenv)
   (match exprs
@@ -1778,16 +1836,19 @@
     (%insert-binding module name dummy-proc)
     (set! (%procedure-inliner dummy-proc)
           (pass1/inliner-procedure ($lambda-flag p)))
-    ;; define the procedure normally.  the packed form of p1 is included
-    ;; in p2, which will eventually be a part of ScmCompiledCode, and
-    ;; when executed, it'll be passed to ScmProcedure's inliner field.
+    ;; define the procedure normally.
     ($define form '(inlinable)
              (make-identifier (unwrap-syntax name) module '()) p)))
 
-(define (pass1/inliner-procedure ivec)
-  (lambda (form cenv)
-    (expand-inlined-procedure form (unpack-iform ivec)
-                              (imap (cut pass1 <> cenv) (cdr form)))))
+(define (pass1/inliner-procedure inline-info)
+  (let1 ivec (match inline-info
+               [(? vector?) inline-info] ;old format
+               [('inlinable lvars ivec) ivec]
+               [_ (error "[internal] pass1/inliner-procedure got invalid info"
+                         inline-info)])
+    (lambda (form cenv)
+      (expand-inlined-procedure form (unpack-iform ivec)
+                                (imap (cut pass1 <> cenv) (cdr form))))))
 
 ;; Toplevel macro definitions
 
@@ -2210,7 +2271,7 @@
                       (pass1/extended-lambda form g kargs body)
                       cenv flag)))))
 
-;; EXPERIMENTAL
+;; EXPERIMENTAL - %inlinable-lambda
 ;; This compiles to the same code as lambda, but keeps the intermediate
 ;; compilation info (a packed IForm) in the resulting procedure.  The info
 ;; can be used later to inline the procedure.   This feature is splitted
@@ -2222,14 +2283,14 @@
 (define-pass1-syntax (%inlinable-lambda form cenv) :gauche
   (match form
     [(_ formals . body) (pass1/inlinable-lambda form formals body cenv)]
-    [_ (error "syntax-error: malformed inlinable lambda:" form)]))
+    [_ (error "syntax-error: malformed %inlinable-lambda:" form)]))
 
 (define (pass1/inlinable-lambda form formals body cenv)
-  (when (not (cenv-toplevel? cenv))
+  (unless (cenv-toplevel? cenv)
     (error "Inlinable-lambda with closed environment is not supported yet:"
            form))
   (rlet1 p1 (pass1/lambda form formals body cenv #f)
-    ($lambda-flag-set! p1 (pack-iform p1))))
+    ($lambda-flag-set! p1 `(inlinable () ,(pack-iform p1)))))
 
 (define-pass1-syntax (receive form cenv) :gauche
   (match form
@@ -3612,8 +3673,8 @@
 (define (pass2p/late-inline call-node gref-node proc labels)
   (let ([inliner (%procedure-inliner proc)]
         [src ($call-src call-node)])
-    (cond
-     [(integer? inliner)
+    (match inliner
+     [(? integer?)                      ; VM instruction
       (let ([nargs (length ($call-args call-node))]
             [opt?  (slot-ref proc 'optional)])
         (unless (argcount-ok? ($call-args call-node)
@@ -3623,10 +3684,13 @@
                   (slot-ref proc 'required) nargs))
         ($asm src (if opt? `(,inliner ,nargs) `(,inliner))
               ($call-args call-node)))]
-     [(vector? inliner)
+     [(? vector?)                       ; old inlinable info
       (pass2p/inline-call call-node (unpack-iform inliner)
                           ($call-args call-node) labels)]
-     [else
+     [('inlinable () (? vector? piform)) ; new inlinable info
+      (pass2p/inline-call call-node (unpack-iform piform)
+                          ($call-args call-node) labels)]
+     [_
       ;; We can't run procedural inliner here, since what we have is no
       ;; longer an S-expr.
       #f])))
@@ -4128,17 +4192,20 @@
   0)
 
 (define (pass3/lambda iform ccb renv)
-  (pass3 ($lambda-body iform)
-         (make-compiled-code-builder ($lambda-reqargs iform)
-                                     ($lambda-optarg iform)
-                                     ($lambda-name iform)
-                                     ccb  ; parent
-                                     (and (vector? ($lambda-flag iform))
-                                          ($lambda-flag iform)))
-         (if (null? ($lambda-lvars iform))
-           renv
-           (cons ($lambda-lvars iform) renv))
-         'tail))
+  (let1 inliner (match ($lambda-flag iform)
+                  [(? vector? ivec) ivec]
+                  [(and ('inlinable () (? vector)) info) info]
+                  [_ #f])
+    (pass3 ($lambda-body iform)
+           (make-compiled-code-builder ($lambda-reqargs iform)
+                                       ($lambda-optarg iform)
+                                       ($lambda-name iform)
+                                       ccb  ; parent
+                                       inliner)
+           (if (null? ($lambda-lvars iform))
+             renv
+             (cons ($lambda-lvars iform) renv))
+           'tail)))
 
 (define (pass3/$LABEL iform ccb renv ctx)
   (let ((label ($label-label iform)))
