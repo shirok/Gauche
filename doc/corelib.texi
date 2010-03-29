@@ -5437,8 +5437,8 @@ only looks up the @var{key} once, thus it's more efficient.
 この手続きは次のコードと同じ動作をしますが、キーの探索が一度しか行われないためより高速です。
 @c COMMON
 @example
-(hash-table-put! ht key
-    (cons value (hash-table-get ht key '())))
+(hash-table-put! @var{ht} @var{key}
+    (cons @var{value} (hash-table-get @var{ht} @var{key} '())))
 @end example
 @end defun
 
@@ -5473,7 +5473,7 @@ except that the lookup of @var{key} is only done once.
 基本的に次のように動作します。
 @c COMMON
 @example
-(let ((tmp (proc (hash-table-get @var{ht} @var{key} @var{default}))))
+(let ((tmp (@var{proc} (hash-table-get @var{ht} @var{key} @var{default}))))
   (hash-table-put! @var{ht} @var{key} tmp)
   tmp)
 @end example
