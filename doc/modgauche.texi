@@ -7900,7 +7900,7 @@ The API is upper compatible to SRFI-9 (Defining Record Types) and
 SRFI-99 (ERR5RS Records).
 @end deftp
 
-@subheadings Introduction
+@subheading Introduction
 
 Gauche provides a general way for users to define new types as new
 classes, using object system (@xref{Object system}), and indeed
@@ -7942,7 +7942,7 @@ record constructors, accessors or modifiers.
 The record API consists of three layers, following
 SRFI-99 and R6RS design.
 
-@subheadings Syntactic layer
+@subheading Syntactic layer
 
 A high-level, convenient API
 
@@ -7950,9 +7950,9 @@ A high-level, convenient API
 @end defmac
 
 
-@subheadings Procedural layer
+@subheading Procedural layer
 
-@subheadings Inspection layer
+@subheading Inspection layer
 
 
 
