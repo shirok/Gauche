@@ -1,3 +1,9 @@
+2010-03-30  Shiro Kawai  <shiro@acm.org>
+
+	* doc/*.texi: Moved 'coding: utf-8' to the end of the file,
+	  since texinfo-multiple-files-update seems to blindly assume
+	  the first line of a file is a node command.
+
 2010-03-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1/inlinable-lambda, pass1/expand-inliner etc):

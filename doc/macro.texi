@@ -1,4 +1,3 @@
-@c -*- mode: texinfo; coding: utf-8; -*-
 @node Macros, Core library, Core syntax, Top
 @chapter Macros
 @c NODE マクロ
@@ -193,3 +192,7 @@ symbols.
 @c COMMON
 @end defun
 
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

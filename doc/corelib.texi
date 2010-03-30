@@ -1,4 +1,3 @@
-@c -*- mode: texinfo; coding: utf-8; -*-
 @node Core library, Object system, Macros, Top
 @chapter Core library
 @c NODE 組み込みライブラリ
@@ -16636,3 +16635,8 @@ rows to be shown.  If it is @code{#f}, all the data is shown.
 この値が @code{#f} であればすべてのデータが表示されます。
 @c COMMON
 @end defun
+
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

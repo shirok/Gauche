@@ -1,4 +1,3 @@
-@c -*- mode: texinfo; coding: utf-8; -*-
 @node Library modules - Utilities, References, Library modules - SRFIs, Top
 @chapter Library modules - Utilities
 @c NODE ライブラリモジュール - ユーティリティ
@@ -15914,9 +15913,11 @@ quasipatternの例です。最初の式では、パターンのうち@code{value
 @mdindex util.queue
 @c EN
 Provides a queue (FIFO).  You can create a simple queue,
-which is lightweight but not thread-safe, or an mtqueue,
-a thread-safe queue.  Basic queue operation procedures works on
-both type of queues.  
+which is lightweight but not thread-safe, or an MTqueue,
+a thread-safe queue.  Basic queue operations work on
+both type of queues.  When an mtqueue is passed to the
+procedures listed in this section, each operation is
+done in atomic way, unless otherwise noted.
 
 There are also a set of procedures for mtqueues that
 can be used for thread synchronization; for example,
@@ -15926,12 +15927,14 @@ of items in the mtqueue reaches a specified limit.
 Using these procedures allows the program to use an mtqueue
 as a @emph{channel}.
 
-The simple queue API is superset of SLIB's queue implementation.
+The simple queue API is a superset of SLIB's queue implementation.
 @c JP
 キュー(FIFO)機能を提供します。
 極めて軽量ですがスレッドセーフでないシンプルなキューと、
 スレッドセーフなmtqueueがあります。基本的なキュー操作手続きは
-どちらのキューに対しても使うことができます。
+どちらのキューに対しても使うことができます。本節で説明されている
+手続きをmtqueueに適用した場合、特に断りが無い限り、操作は
+アトミックに行われます。
 
 また、スレッド間同期に使えるmtqueue用の手続きも用意されています。
 例えばキューが空の時に読み出しスレッドをブロックさせたり
@@ -17151,7 +17154,7 @@ blocks'', you should definitely consider sparse tables.
 
 @menu
 * Sparse vectors::              
-* Sparse tables::          
+* Sparse tables::               
 @end menu
 
 @node Sparse vectors, Sparse tables, Sparse data containers, Sparse data containers
@@ -19414,3 +19417,7 @@ An example:
 @end example
 
 
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

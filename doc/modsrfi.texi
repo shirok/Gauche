@@ -1,4 +1,3 @@
-@c -*- mode: texinfo; coding: utf-8; -*-
 @node Library modules - SRFIs, Library modules - Utilities, Library modules - Gauche extensions, Top
 @chapter Library modules - SRFIs
 @c NODE ライブラリモジュール - SRFI
@@ -5025,3 +5024,7 @@ Roughly correspons to Gauche's @code{use} forms:
 @end example
 @end defmac
 
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

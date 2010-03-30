@@ -1,4 +1,3 @@
-@c -*- mode: texinfo; coding: utf-8; -*-
 @node Object system, Library modules - Overview, Core library, Top
 @chapter Object system
 @c NODE オブジェクトシステム
@@ -3787,3 +3786,8 @@ gosh> (ref foo'v)
 
 @deffn {Generic Function} apply-method gf method build-next args
 @end deffn
+
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

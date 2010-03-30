@@ -1,4 +1,3 @@
-@c -*- mode: texinfo; coding: utf-8; -*-
 @node Programming in Gauche, Core syntax, Concepts, Top
 @chapter  Programming in Gauche
 @c NODE Gaucheでのプログラミング
@@ -1661,3 +1660,8 @@ tarball が展開されるディレクトリ。もし、URL が与えられれ�
 @code{wget} プログラムへのパス
 @end table
 @c COMMON
+
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

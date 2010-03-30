@@ -1,4 +1,3 @@
-@c -*- mode: texinfo; coding: utf-8; -*-
 @node C to Scheme mapping, Function and Syntax Index, References, Top
 @appendix C to Scheme mapping
 @c NODE CとSchemeの関数の対応
@@ -1812,3 +1811,8 @@ R5RS の @code{display} (@xref{Output})。
 @c Appendix : Common Lisp to Scheme mapping
 @c Appendix : Perl to Scheme mapping
 @c Appendix : Python to Scheme mapping?
+
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

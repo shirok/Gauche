@@ -1,4 +1,3 @@
-@c -*- mode: texinfo; coding: utf-8; -*-
 @node Library modules - Overview, Library modules - Gauche extensions, Object system, Top
 @chapter Library modules - Overview
 @c NODE ライブラリモジュール - 概要
@@ -818,3 +817,7 @@ WWWで主として使われるプロトコルやデータフォーマットの�
 @c COMMON
 @end table
 
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

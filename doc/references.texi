@@ -1,4 +1,3 @@
-@c -*- mode: texinfo; coding: utf-8; -*-
 @node References, C to Scheme mapping, Library modules - Utilities, Top
 @appendix References
 @c NODE 参考文献
@@ -231,3 +230,8 @@ Oleg Kiselyov, General ways to traverse collections,,@*
 @url{http://pobox.com/~oleg/ftp/Scheme/enumerators-callcc.html}.
 2000.
 @end table
+
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

@@ -1,6 +1,4 @@
-@c -*- mode: texinfo; coding: utf-8; -*-
 @node Core syntax, Macros, Programming in Gauche, Top
-@chapter Core syntax
 @c NODE 基本的な構文
 
 @c ----------------------------------------------------------------------
@@ -3392,3 +3390,7 @@ all the bindings of @code{gauche} module is imported.
 @c COMMON
 @end deftp
 
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

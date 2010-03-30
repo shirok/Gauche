@@ -1,4 +1,3 @@
-@c -*- mode: texinfo; coding: utf-8; -*-
 @node Library modules - Gauche extensions, Library modules - SRFIs, Library modules - Overview, Top
 @chapter Library modules - Gauche extensions
 @c NODE ライブラリモジュール - Gauche拡張モジュール
@@ -6,7 +5,7 @@
 @c ----------------------------------------------------------------------
 @menu
 * Arrays::                      gauche.array
-* Password hashing::            
+* Password hashing::            gauche.bcrypt
 * Character code conversion::   gauche.charconv
 * Collection framework::        gauche.collection
 * Configuration parameters::    gauche.config
@@ -22,6 +21,7 @@
 * Parameters::                  gauche.parameter
 * Parsing command-line options::  gauche.parseopt
 * High Level Process Interface::  gauche.process
+* Records::                     gauche.record
 * Reloading modules::           gauche.reload
 * Simple dispatcher::           gauche.selector
 * Sequence framework::          gauche.sequence
@@ -7047,7 +7047,7 @@ the procedure is used as if it is the body of @code{else} option clause.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node High Level Process Interface, Reloading modules, Parsing command-line options, Library modules - Gauche extensions
+@node High Level Process Interface, Records, Parsing command-line options, Library modules - Gauche extensions
 @section @code{gauche.process} - High Level Process Interface
 @c NODE 高レベルプロセスインタフェース, @code{gauche.process} - 高レベルプロセスインタフェース
 
@@ -7888,7 +7888,77 @@ Windowsネイティブビルドの場合、この手続きはWindowsの標準C�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Reloading modules, Simple dispatcher, High Level Process Interface, Library modules - Gauche extensions
+@node Records, Reloading modules, High Level Process Interface, Library modules - Gauche extensions
+@section @code{gauche.record} - Records
+@c NODE レコード, @code{gauche.record} - レコード
+
+@deftp {Module} gauche.record
+@mdindex gauche.record
+This module provides a facility to define @emph{record types}, 
+user-defined aggregate types.  
+The API is upper compatible to SRFI-9 (Defining Record Types) and 
+SRFI-99 (ERR5RS Records).
+@end deftp
+
+@subheadings Introduction
+
+Gauche provides a general way for users to define new types as new
+classes, using object system (@xref{Object system}), and indeed
+record types are implemented as Gauche's classes.
+However, using record types instead of classes has several advantages.
+
+@itemize
+@item
+It is portable.  The API conforms two major record SRFIs,
+SRFI-9 and SRFI-99, so the code using record types can run on
+various Scheme systems.
+@item
+It is efficient.  Record types are less flexibile than classes,
+but that allows Gauche to optimize more.  Hence creating records and
+accessing/modifying them are much faster than creating instances
+of general classes and accessing/modifying them.  It makes record
+types preferable choice when you only need a mechanism to bundle
+several related values to carry around, and don't need fancier
+mechanisms such as class redefinitions.
+@end itemize
+
+The disadvantage of record types is that 
+they don't obey Gauche's class redefinition
+protocol (@xref{Class redefinition}).
+That is, if you redefine a record with the same name,
+it creates a new record type unrelated to the old one.
+The record instances created from the old definition
+won't be updated according to the new definition.
+
+More importantly, record constructors, accessors and modifiers
+are tend to be inlined where they are used, to achieve
+better performance.   Since they are inlined, the code
+that uses those procedures are not affected when
+the record type is redefined.
+This means if you redefine a record type, you have to 
+reload (recompile) the sources that uses any of
+record constructors, accessors or modifiers.
+
+The record API consists of three layers, following
+SRFI-99 and R6RS design.
+
+@subheadings Syntactic layer
+
+A high-level, convenient API
+
+@defmac define-record-type type-spec ctor-spec pred-spec field-spec @dots{}
+@end defmac
+
+
+@subheadings Procedural layer
+
+@subheadings Inspection layer
+
+
+
+
+@c ----------------------------------------------------------------------
+@node Reloading modules, Simple dispatcher, Records, Library modules - Gauche extensions
 @section @code{gauche.reload} - Reloading modules
 @c NODE モジュールの再ロード, @code{gauche.reload} - モジュールの再ロード
 
@@ -13875,3 +13945,8 @@ running in a different thread.
 それは別のスレッドで走っていると考えておくべきです。
 @c COMMON
 @end itemize
+
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:
