@@ -8182,8 +8182,143 @@ simpler names (instead of @code{make-<point>} or @code{<point>-x}):
 @node Record types inspection layer, Record types procedural layer, Record types syntactic layer, Record types
 @subsection Inspection layer
 
+This layer provides common procedures that operates on record type
+descriptors and record instances.
+
+Note that a record type descriptor is a class in Gauche, so 
+you can also use operators on classes (e.g. @code{class-name},
+@code{class-slots} etc.) on record type descriptors as well.
+However, these procedures are more portable.
+
+@defun record? obj
+[SRFI-99][R6RS]
+Returns @code{#t} iff @var{obj} is an instance of record type,
+@code{#f} otherwise.
+@end defun
+
+@defun record-rtd record
+[SRFI-99][R6RS]
+Returns the record type descriptor of the record instance.
+@end defun
+
+@defun rtd-name rtd
+[SRFI-99]
+Returns the name of the record type descriptor @var{rtd}.
+@end defun
+
+@defun rtd-parent rtd
+[SRFI-99]
+Returns the parent type of the record type descriptor @var{rtd}.
+If @var{rtd} doesn't have a parent, @code{#f} is returned.
+@end defun
+
+@defun rtd-field-names rtd
+[SRFI-99]
+Returns a vector of symbols, each of which is the names of the direct
+fields of the record represented by @var{rtd}.   The result doesn't
+include inherited fields.
+@end defun
+
+@defun rtd-all-field-names rtd
+[SRFI-99]
+Returns a vector of symbols, each of which is the names of the
+fields of the record represented by @var{rtd}.   The result includes
+all inherited fields.
+@end defun
+
+@defun rtd-field-mutable? rtd field-name
+[SRFI-99]
+Returns @code{#t} iff the field with the name @var{field-name}
+of a record represened by @var{rtd} is mutable.
+@end defun
+
+
 @node Record types procedural layer, Pseudo record types, Record types inspection layer, Record types
 @subsection Procedural layer
+
+These procedures are low-level machinery on top of which
+@code{define-record-type} is implemented.  They can be used
+to create a new record type at runtime.
+
+@defun make-rtd name field-specs &optional parent
+[SRFI-99]
+Creates and returns a new record type descriptor with name @var{name} and
+having fields specified by @var{field-specs}.  If @var{parent}
+is given, it must be a record type descriptor or @code{#f}.
+If it is a record type descriptor, the created record type
+inherits from it.
+
+The @var{field-specs} argument must be a vector, each
+element of which is a @emph{field specifier}.  A field
+specifier can be a symbol, a list @code{(mutable @var{symbol})},
+or a list @code{(immutable @var{symbol})}.  The @var{symbol} names
+the field.  A single symbol or @code{(mutable @var{symbol})} format
+makes the field mutable, and @code{(immutable @var{symbol})} format
+makes the field immutable.
+
+Note: Gauche does not implement the extension suggested in
+SRFI-99 yet, which is @code{sealed}, @code{opaque} and @code{uid}
+arguments.
+@end defun
+
+@defun rtd? obj
+[SRFI-99]
+Returns @code{#t} if @var{obj} is a record type descriptor,
+@code{#f} otherwise.
+@end defun
+
+@defun rtd-constructor rtd &optional field-specs
+[SRFI-99]
+Returns a procedure that creates an instance record of
+the record type represented by @var{rtd}.
+Without @var{field-specs}, it returns the default constructor,
+which takes as many arguments as the number of fields of
+the record to initialize them.  
+
+You can give a vector of symbols as @var{field-specs}.  The @var{n}-th
+symbol specifies which field of the instance should be initialized
+by the @var{n}-th argument.   The @var{field-specs} vector cannot
+contain duplicate names.  If the record type defines a field with
+the same name as the one in the parent record type, the custom constructor
+can only initialize the field of the derived type's instance.
+@end defun
+
+@defun rtd-predicate rtd
+[SRFI-99]
+Returns a predicate to test an object is an instance of @var{rtd}.
+
+If @var{rtd} is a pseudo record type, the predicate merely tests
+the given object is in an appropriate type and has enough size
+to hold the contents.   See @ref{Pseudo record types} for the details.
+@end defun
+
+@defun rtd-accessor rtd field-name
+[SRFI-99]
+Returns a procedure that takes one argument, an instance of @var{rtd},
+and returns the value of the @var{field-name} of the instance.
+
+An error is signalled if the record type doesn't have the field
+of name @var{field-name}.
+
+If @var{rtd} is inherits other record types, and it defines a field
+of the same name as inherited ones, then the accessor returned by
+this procedure retrieves the value of the field of the derived record.
+@end defun
+
+@defun rtd-mutator rtd field-name
+[SRFI-99]
+Returns a procedure that takes two arguments, an instance of @var{rtd}
+and a value, and sets the latter as the value of the @var{field-name}
+of the instance.
+
+An error is signalled if the record type doesn't have the field
+of name @var{field-name}, or the named field is immutable.
+
+Like @code{rtd-accessor}, if the record has a field with the same
+name as inherited one, the modifier returned by this procedure
+only modifies the field of the derived record.
+@end defun
+
 
 
 @node Pseudo record types,  , Record types procedural layer, Record types
