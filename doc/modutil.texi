@@ -15692,12 +15692,12 @@ Wright のコードには、@code{struct} はありませんが、PLT Scheme の
 @c EN
 This is an adaptation of the original feature that can match structures.
 It is useful to match a simple instance that you know the order of
-slots; for example, a simple record created by srfi-9
+slots; for example, a simple record created by @code{define-record-type}
 (@xref{Record types}) would be easy to match by positioned values.
 @c JP
 これはオリジナルの機能を構造(structure)にもマッチするように調整した
 ものです。スロットの順番が予め分るような単純なインスタンスをマッチする
-のに便利です。たとえば、SRFI-9 (@ref{Record types}参照)で作成した
+のに便利です。たとえば、@code{define-record-type} (@ref{Record types}参照)で作成した
 簡単なレコードは簡単に位置指定された値でマッチすることができます。
 @c COMMON
 

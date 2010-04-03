@@ -21,7 +21,7 @@
 * Parameters::                  gauche.parameter
 * Parsing command-line options::  gauche.parseopt
 * High Level Process Interface::  gauche.process
-* Records::                     gauche.record
+* Record types::                gauche.record
 * Reloading modules::           gauche.reload
 * Simple dispatcher::           gauche.selector
 * Sequence framework::          gauche.sequence
@@ -7047,7 +7047,7 @@ the procedure is used as if it is the body of @code{else} option clause.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node High Level Process Interface, Records, Parsing command-line options, Library modules - Gauche extensions
+@node High Level Process Interface, Record types, Parsing command-line options, Library modules - Gauche extensions
 @section @code{gauche.process} - High Level Process Interface
 @c NODE 高レベルプロセスインタフェース, @code{gauche.process} - 高レベルプロセスインタフェース
 
@@ -7888,9 +7888,9 @@ Windowsネイティブビルドの場合、この手続きはWindowsの標準C�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Records, Reloading modules, High Level Process Interface, Library modules - Gauche extensions
-@section @code{gauche.record} - Records
-@c NODE レコード, @code{gauche.record} - レコード
+@node Record types, Reloading modules, High Level Process Interface, Library modules - Gauche extensions
+@section @code{gauche.record} - Record types
+@c NODE レコード型, @code{gauche.record} - レコード型
 
 @deftp {Module} gauche.record
 @mdindex gauche.record
@@ -7900,7 +7900,38 @@ The API is upper compatible to SRFI-9 (Defining Record Types) and
 SRFI-99 (ERR5RS Records).
 @end deftp
 
-@subheading Introduction
+Record types are implemented as Gauche's classes, 
+but have different characteristics from the general classes.
+@xref{Record types introduction}, for when you want to
+use record types.
+
+The record API consists of three layers, following
+SRFI-99 and R6RS design.  
+
+The syntactic layer is the @code{define-record-type} macro
+that conveniently defines a record type and related procedures
+(a constructor, a predictate, accessors and modifiers) all at once
+declaratively.   Knowing this macro alone is sufficient for
+most common usage of records.
+
+The inspection layer defines common procedures
+to query information to the records and record types.
+
+The procedural layer is a low-level machinery to implement
+the syntactic layer; you don't usually need to use them
+in day-to-day programming, but they might be handy to
+create record types on-the-fly at runtime.
+
+@menu
+* Record types introduction::   
+* Record types syntactic layer::  
+* Record types inspection layer::  
+* Record types procedural layer::  
+* Pseudo record types::         
+@end menu
+
+@node Record types introduction, Record types syntactic layer, Record types, Record types
+@subsection Introduction
 
 Gauche provides a general way for users to define new types as new
 classes, using object system (@xref{Object system}), and indeed
@@ -7920,6 +7951,17 @@ of general classes and accessing/modifying them.  It makes record
 types preferable choice when you only need a mechanism to bundle
 several related values to carry around, and don't need fancier
 mechanisms such as class redefinitions.
+@item
+As Gauche's extention, you can define pseudo record types,
+which interpretes ordinary aggregate types such as vectors and lists
+as records.  (For Common Lisp users; it is like the @code{:type}
+option of @code{defstruct}).
+This helps flexibility of interface.  For example, you can ask
+your library's users to pass a point in a vector of three numbers,
+instead of asking users to pack their point data into your
+custom point record type.  Yet inside your library you can
+treat the passed data as if it is your point record type.
+See @ref{Pseudo record types}, for more details.
 @end itemize
 
 The disadvantage of record types is that 
@@ -7939,26 +7981,219 @@ This means if you redefine a record type, you have to
 reload (recompile) the sources that uses any of
 record constructors, accessors or modifiers.
 
-The record API consists of three layers, following
-SRFI-99 and R6RS design.
 
-@subheading Syntactic layer
+@node Record types syntactic layer, Record types inspection layer, Record types introduction, Record types
+@subsection Syntactic Layer
 
-A high-level, convenient API
 
 @defmac define-record-type type-spec ctor-spec pred-spec field-spec @dots{}
+[SRFI-9][SRFI-99+]
+Defines a record type, and optionally defines
+a constructor, a predicate, and field accessors and modifiers.
+
+The @var{type-spec} argument names the record type,
+and optionally specifies the supertype (@var{parent}).
+
+@example
+@var{type-spec} : @var{type-name} | (@var{type-name} @var{parent})
+
+@var{type-name} : @r{identifier}
+@var{parent} : @r{expression}
+@end example
+
+The @var{type-name} identifier will be bound to a
+@emph{record type descriptor}, or rtd,
+which can be used for introspection and reflection.
+See @ref{Record types inspection layer} and @ref{Record types procedural layer}
+for possible operations for record types.
+In Gauche, a record type descriptor is a @code{<class>} with a metaclass
+@code{<record-meta>}.
+
+The @var{parent} expression should evaluate to a record type descriptor.
+If given, the defined record type inherits it; that is, all the
+slots defined in the parent type are available to the @var{type-name}
+as well, and the instance of @var{type-name} answers @code{#t} to the
+predicate of the parent type.
+
+Since a record type is also a class, parent type is also a superclass
+of the defined record type.  However, record types are limited to
+have single inheritance.
+
+You can give a pseudo record base type as @var{parent} to define a
+pseudo record type, which allows you to access ordinary aggregates
+like vectors as records.  See @ref{Pseudo record types} for more details.
+
+The @var{ctor-spec} defines the constructor of the record instance.
+
+@example
+@var{ctor-spec} : #f | #t | @var{ctor-name}
+          | (@var{ctor-name} @var{field-name} @dots{})
+
+@var{ctor-name} : @r{identifier}
+@var{field-name} : @r{identifier}
+@end example
+
+If it is @code{#f}, no constructor is created.
+If it is @code{#t}, a default constructor is created with a name
+@code{make-@var{type-name}}.  If it is a single identifier 
+@var{ctor-name}, a default constructor is created with the name.
+The default constructor takes as many arguments as
+the number of fields of the record, including inherited ones if any.
+When called, it allocates an instance of the record, and initialize its
+fields with the given arguments in the order (inhertied fields comes
+first), and returns the record.
+
+The last variation of @var{ctor-spec} creates a custom
+constructor with the name @var{ctor-name}.  The custom constructor
+takes as many arguments as the given @var{field-name}s, and initializes
+the named fields.  If the inherited record type has a field of the same name
+as the ancestor record type, only the inherited ones are initialized.
+In Gauche, uninitialized fields remains unbound until some value is
+set to it.
+
+The @var{pred-spec} defines the predicate of the record instance,
+which takes one argument and returns @code{#t} iff it is an instance
+of the defined record type or its descendants.
+
+@example
+@var{pred-spec} : #f | #t | @var{pred-name}
+
+@var{pred-name} : @r{identifier}
+@end example
+
+If it is @code{#f}, no predicate is created.
+If it is @code{#t}, a predicate is created with a name
+@code{@var{type-name}?}.  If it is a single identifier,
+a predicate is created with the given name.
+
+The rest of the arguments specify fields (slots) of the record.
+
+@example
+@var{field-spec}
+ : @var{field-name}   ; @r{immutable, with default accessor}
+ | (@var{field-name}) ; @r{mutable, with default accessor/modifier}
+ | (@var{field-name} @var{accessor-name}); @r{immutable}
+
+ | (@var{field-name} @var{accessor-name} @var{modifier-name}); @r{mutable}
+
+@var{field-name}    : @r{identifier}
+@var{accessor-name} : @r{identifier}
+@var{modifier-name} : @r{identifier}
+@end example
+
+The first and the third forms define immutable fields, which can only
+be intialized by the constructor but cannot be modified afterwards
+(thus such fields don't have modifiers).
+The second and the fourth forms define multable fields.
+
+The third and fourth forms explicitly names the accessor and modifier.
+With the first and second forms, the accessor is named as
+@code{@var{type-name}-@var{field-name}}, and the modifier is named
+as @code{@var{type-name}-@var{field-name}-set!}.
 @end defmac
 
+Let's see some examples.  Here's a definition of a record
+type @code{point}.
 
-@subheading Procedural layer
+@example
+(define-record-type point #t #t
+  x y z)
+@end example
 
-@subheading Inspection layer
+The variable @code{point} is bound to a record type descriptor,
+which is just a class.  But you can take its class and see it is
+indeed an instance of @code{<record-meta>} metaclass.
+
+@example
+point            @result{} #<class point>
+(class-of point) @result{} #<class <record-meta>>
+@end example
+
+You can create an instance of @code{point} by the default
+constructor @code{make-point}.  The predicate is given the
+default name @code{point?}, and you can access the fields
+of the created record by @code{point-x} etc.
+
+@example
+(define p (make-point 1 2 3))
+
+(point? p)  @result{} #t
+(point-x p) @result{} 1
+(point-y p) @result{} 2
+(point-z p) @result{} 3
+@end example
+
+Since we defined all fields immutable, we cannot modify 
+the instance @code{p}.
+
+Here's a mutable version of point, @code{mpoint}.
+You can modify its fields by modifier procedures and
+generalized @code{set!}.
+
+@example
+(define-record-type mpoint #t #t
+  (x) (y) (z))
+
+(define p2 (make-mpoint 1 2 3)) ; @r{create an instance}
+
+(mpoint-x p2)  @result{} 1
+
+(mpoint-x-set! p2 4)            ; @r{default modifier}
+(mpoint-x p2)  @result{} 4
+
+(set! (mpoint-x p2) 6)          ; @r{generalized @code{set!} also works} 
+(mpoint-x p2)  @result{} 6
+@end example
+
+Next one is an example of inheritance.  
+Note that the default constructor takes arguments for
+fields of the parent record as well.
+
+@example
+(define-record-type (qpoint mpoint) #t #t
+  (w))
+
+(define p3 (make-qpoint 1 2 3 4))
+
+(qpoint? p3)  @result{} #t      ; @r{p3 is a qpoint}
+(mpoint? p3)  @result{} #t      ; @r{... and also an mpoint}
+
+(mpoint-x p3) @result{} 1       ; @r{accessing inherited field}
+(mpoint-y p3) @result{} 2
+(mpoint-z p3) @result{} 3
+(qpoint-w p3) @result{} 4
+@end example
+
+A small caveat: Accessors and modifiers for inherited fields
+(e.g. @code{qpoint-x} etc.) are not created.
+
+Gauche's convention is to enclose class name by @code{<>}.
+You can follow the convention and still explicitly gives
+simpler names (instead of @code{make-<point>} or @code{<point>-x}):
+
+@example
+(define-record-type <point> make-point point?
+  (x point-x)
+  (y point-y)
+  (z point-z))
+@end example
+
+
+@node Record types inspection layer, Record types procedural layer, Record types syntactic layer, Record types
+@subsection Inspection layer
+
+@node Record types procedural layer, Pseudo record types, Record types inspection layer, Record types
+@subsection Procedural layer
+
+
+@node Pseudo record types,  , Record types procedural layer, Record types
+@subsection Pseudo record types
 
 
 
 
 @c ----------------------------------------------------------------------
-@node Reloading modules, Simple dispatcher, Records, Library modules - Gauche extensions
+@node Reloading modules, Simple dispatcher, Record types, Library modules - Gauche extensions
 @section @code{gauche.reload} - Reloading modules
 @c NODE モジュールの再ロード, @code{gauche.reload} - モジュールの再ロード
 

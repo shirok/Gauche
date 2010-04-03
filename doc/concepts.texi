@@ -168,10 +168,10 @@ Syntax @code{receive} is built-in.  @xref{Binding constructs}.
 
 @c EN
 @item SRFI-9, Defining record types.
-Supported by the module @code{srfi-9}.  @xref{Record types}.
+Supported by the module @code{gauche.record}.  @xref{Record types}.
 @c JP
 @item SRFI-9, レコード型の定義
-モジュール@code{srfi-9}でサポートされます。@ref{Record types}参照。
+モジュール@code{gauche.record}でサポートされます。@ref{Record types}参照。
 @c COMMON
 
 @c EN
@@ -457,6 +457,14 @@ Supported natively.  @xref{Conditionals}.
 @c JP
 @item SRFI-87, case節での@code{=>}
 組込みです。@ref{Conditionals}参照。
+@c COMMON
+
+@c EN
+@item SRFI-99, ERR5RS Records
+Supported by the module @code{gauche.record}.  @xref{Record types}.
+@c JP
+@item SRFI-99, ERR5RS レコード
+モジュール@code{gauche.record}でサポートされます。@ref{Record types}参照。
 @c COMMON
 
 @end table
