@@ -59,18 +59,6 @@
 ;;    be recompiled.
 ;;  - The record class must form a single implementation inheritance.
 
-;; Note on pseudo records:
-;;  If <vector>, <list>, uniform vector, or a pseudo record class is
-;;  given to make-rtd as a parent, it creates a pseudo record class,
-;;  or pseudo rtd.  Pseudo rtd is a Gauche class with metaclass
-;;  <pseudo-record-meta>.  Pseudo rtd is used to create pseudo records,
-;;  which are just ordinary Gauche containers like lists or vectors,
-;;  but accessors and constructors are defined so that they can also be
-;;  accessed as if they were record instances.
-;;
-;;  (If you know Common Lisp, it is similar to giving :type option
-;;  to defstruct.)
-;;
 ;;  Pseudo records can be used just like records in the code, but at
 ;;  runtime you cannot distinguish them from ordinary lists or vectors.
 ;;  They have some advantages:
