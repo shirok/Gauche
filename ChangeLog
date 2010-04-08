@@ -1,3 +1,11 @@
+2010-04-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (save_env): Avoid copying ScmEnvFrame header as an
+	  array of ScmObj*.  Doing so apparently violates the strict
+	  aliasing rule and results unintended compilation on some
+	  architectures (gcc on ia64 confirmed).  Patch contribution
+	  from NIIBE Yutaka.
+
 2010-03-30  Shiro Kawai  <shiro@acm.org>
 
 	* doc/*.texi: Moved 'coding: utf-8' to the end of the file,
