@@ -803,7 +803,7 @@ static inline ScmEnvFrame *save_env(ScmVM *vm, ScmEnvFrame *env_begin)
             SCM_FLONUM_ENSURE_MEM(*s);
             *d++ = *s++;
         }
-        *(ScmEnvFrame*)d = *(ScmEnvFrame*)s; /* copy env header */
+        *(ScmEnvFrame*)d = *e; /* copy env header */
         saved = (ScmEnvFrame*)d;
         if (prev) prev->up = saved;
         if (head == NULL) head = saved;

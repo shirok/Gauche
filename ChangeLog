@@ -1,3 +1,8 @@
+2010-04-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (save_env): Revised the previous fix to make it
+	  clearer, based on the analysis of NIIBE Yutaka.
+
 2010-04-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (save_env): Avoid copying ScmEnvFrame header as an
