@@ -4975,25 +4975,30 @@
          (let ([b (pass1 before tenv)]
                [t (pass1 thunk cenv)]
                [a (pass1 after tenv)]
+               [at (make-lvar 'after)]
+               [bt (make-lvar 'before)]
+               [tt (make-lvar 'thunk)]
                [r (make-lvar 'tmp)])
            (if (constant-lambda? a)
              ;; when after thunk is dummy, we don't bother to call it.
-             ($seq
-              `(,($call before b '())
-                ,($asm form `(,PUSH-HANDLERS) `(,b ,a))
-                ,($call thunk t '())))
+             ($let form 'let `(,at ,bt ,tt) `(,a ,b ,t)
+                   ($seq
+                    `(,($call before ($lref bt) '())
+                      ,($asm form `(,PUSH-HANDLERS) `(,($lref bt) ,($lref at)))
+                      ,($call thunk ($lref tt) '()))))
              ;; normal path
-             ($seq
-              `(,($call before b '())
-                ,($asm form `(,PUSH-HANDLERS) `(,b ,a))
-                ,($receive #f 0 1 (list r)
-                           ($call thunk t '())
-                           ($seq
-                            `(,($asm form `(,POP-HANDLERS) '())
-                              ,($call after a '())
-                              ,($asm #f `(,TAIL-APPLY 2)
-                                     (list ($gref values.) ($lref r))))))
-                )))))]
+             ($let form 'let `(,at ,bt ,tt) `(,a ,b ,t)
+                   ($seq
+                    `(,($call before ($lref bt) '())
+                      ,($asm form `(,PUSH-HANDLERS) `(,($lref bt) ,($lref at)))
+                      ,($receive #f 0 1 (list r)
+                                 ($call thunk ($lref tt) '())
+                                 ($seq
+                                  `(,($asm form `(,POP-HANDLERS) '())
+                                    ,($call after ($lref at) '())
+                                    ,($asm #f `(,TAIL-APPLY 2)
+                                           (list ($gref values.) ($lref r))))))
+                      ))))))]
       [_ (undefined)])))
 
 ;;--------------------------------------------------------

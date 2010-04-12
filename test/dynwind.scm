@@ -280,6 +280,27 @@
                          (lambda (e) (cont #t))
                        (lambda () (car 3))))))
 
+;; test for compiler optimizer propery tracks local procedure usage
+;; (problem reported by SaitoAtsushi)
+
+(test* "compiler optimizer for dynamic-wind" 2
+       (let ((a 1))
+         (let ((lv (lambda () (set! a 2))))
+           (dynamic-wind lv (lambda () 'hoge) lv))
+         a))
+
+;; make sure the evaluation order isn't changed in presense of
+;; dynamic-wind inlining; that is, the arguments should be fully
+;; evaluated before before/after thunks are executed.
+(test* "optimization and inlined dynamic-wind" 2
+       (let ((a 1))
+         (define (make-prepost x) (lambda () (set! a x)))
+         (define (make-thunk) (lambda () a))
+         (dynamic-wind
+             (make-prepost 2)
+             (make-thunk)
+             (make-prepost 3))))
+
 ;;-----------------------------------------------------------------------
 ;; Test for stack overflow handling
 
