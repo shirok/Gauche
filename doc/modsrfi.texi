@@ -31,6 +31,7 @@ of supported SRFIs.
 * Eager comprehensions::        srfi-42
 * Vector library::              srfi-43
 * Requiring extensions::        srfi-55
+* Accessing environment variables::  srfi-98
 @end menu
 
 @node Feature conditional, List library, Library modules - SRFIs, Library modules - SRFIs
@@ -4948,7 +4949,7 @@ Swaps vector @var{vec}'s @code{i}-th and @code{j}-th elements.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Requiring extensions,  , Vector library, Library modules - SRFIs
+@node Requiring extensions, Accessing environment variables, Vector library, Library modules - SRFIs
 @section @code{srfi-55} - Requiring extensions
 @c NODE Requiring extensions, @code{srfi-55} - require の拡張
 
@@ -5022,6 +5023,66 @@ Roughly correspons to Gauche's @code{use} forms:
 (use srfi-14)
 @end example
 @end defmac
+
+@c ----------------------------------------------------------------------
+@node Accessing environment variables,  , Requiring extensions, Library modules - SRFIs
+@section @code{srfi-98} - Accessing environemnt variables
+@c NODE Accessing environment variables, @code{srfi-98} - 環境変数へのアクセス
+
+@deftp {Module} srfi-98
+@mdindex srfi-98
+@c EN
+This srfi defines a portable way to access the underlying system's
+environment variables.  Gauche supports such procedures built-in
+(@xref{Environment Inquiry}),
+but portable programs may want to use srfi API instead.
+@c JP
+このsrfiはシステムの環境変数にアクセスするポータブルな方法を定義しています。
+Gaucheは組み込みで環境変数にアクセスする手続きを持っていますが
+(@ref{Environment Inquiry}参照)、
+ポータブルなコードを書くにはこちらのAPIを使うのが良いでしょう。
+@c COMMON
+@end deftp
+
+@defun get-environment-variable name
+[SRFI-98]
+@c EN
+Returns a string value of an environment variable named by a string @var{name}.
+If the named environment variable doesn't exist, @code{#f} is returned.
+
+This is equivalent to @code{sys-getenv}.
+@c JP
+文字列@var{name}で指定される名前を持つ環境変数の値を文字列で返します。
+そのような環境変数が存在しなければ、@code{#f}が返されます。
+
+この手続きは@code{sys-getenv}と等価です。
+@c COMMON
+@example
+(get-environment-variable "PATH")
+  @result{} "/bin:/usr/sbin:/usr/bin"
+@end example
+@end defun
+
+@defun get-environment-variables
+[SRFI-98]
+@c EN
+Returns an assoc list of the name and the value of each environment
+variable.
+
+This is equivalent to @code{sys-environ->alist} without 
+the optional argument.
+@c JP
+全ての環境変数の名前と値の連想リストを返します。
+
+この手続きは、省略引数を取らない時の@code{sys-environ->alist}と等価です。
+@c COMMON
+@example
+(get-environment-variables)
+  @result{} (("PATH" . "/bin:/usr/sbin:/usr/bin")
+        @dots{})
+@end example
+@end defun
+
 
 @c Local variables:
 @c mode: texinfo

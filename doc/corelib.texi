@@ -12700,6 +12700,7 @@ POSIXのabort()を呼びます。通常、現在のプロセスは終了され�
 @c EN
 Returns the value of the environment variable @var{name} as a string,
 or @code{#f} if the environment variable is not defined.
+(@xref{Accessing environment variables}).
 @c JP
 環境変数@var{name}の値を文字列で返します。もし@var{name}が定義されていなければ、
 @code{#f}が返ります。
@@ -12762,6 +12763,16 @@ this function signals an error.
 putenv(3)をサポートしていない場合はエラーが通知されます。
 @c COMMON
 @end defun
+
+@c EN
+SRFI-98 (@xref{Accessing environment variables}) also defines
+a subset of above procedures to access to the environment variables.
+Portable programs may want to use them instead.
+@c JP
+SRFI-98 (@ref{Accessing environment variables}参照) にも、
+環境変数を読み出すための、上記の手続きのサブセットにあたるものが
+定義されています。ポータブルなコードにしたければそちらも見てみてください。
+@c COMMON
 
 @defun gauche-version
 @defunx gauche-architecture

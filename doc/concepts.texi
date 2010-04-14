@@ -460,6 +460,14 @@ Supported natively.  @xref{Conditionals}.
 @c COMMON
 
 @c EN
+@item SRFI-98, An interface to access environment variables
+Supported by the module @code{srfi-98}.  @xref{Accessing environment variables}.
+@c JP
+@item SRFI-98, 環境変数にアクセスするためのインタフェース
+モジュール@code{srfi-98}でサポートされます。@ref{Accessing environment variables}参照。
+@c COMMON
+
+@c EN
 @item SRFI-99, ERR5RS Records
 Supported by the module @code{gauche.record}.  @xref{Record types}.
 @c JP

@@ -1,3 +1,9 @@
+2010-04-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-98.scm, lib/Makefile.in: Added srfi-98 support.
+	* src/core.c: Made cond-expand aware of srfi-98, srfi-99.
+	* doc/concepts.texi, doc/corelib.texi, doc/modsrfi.texi: srfi-98.
+
 2010-04-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (dynamic-wind): Fixed a bug that leaves lvar's
