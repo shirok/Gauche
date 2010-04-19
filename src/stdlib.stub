@@ -84,34 +84,33 @@
 ;; such as ((if x + *) 2 3).
 
 (define-cise-stmt numcmp
-  [(_ op compar)
+  [(_ compar)
    `(begin
       (result FALSE)
-      (cond [(not (,op (,compar arg0 arg1) 0))]
+      (cond [(not (,compar arg0 arg1))]
             [(== optcnt 0) (result TRUE)]
-            [(not (,op (,compar arg1 (aref oarg 0)) 0))]
+            [(not (,compar arg1 (aref oarg 0)))]
             [(== optcnt 1) (result TRUE)]
-            [(not (,op (,compar (aref oarg 0) (aref oarg 1)) 0))]
+            [(not (,compar (aref oarg 0) (aref oarg 1)))]
             [(== optcnt 2) (result TRUE)]
             [else
              (set! arg0 (aref oarg 1)   arg1 (aref oarg 2))
-             (loop (cond [(not (,op (,compar arg0 arg1) 0)) (break)]
+             (loop (cond [(not (,compar arg0 arg1)) (break)]
                          [(SCM_NULLP args) (result TRUE) (break)]
                          [else (set! arg0 arg1
                                      arg1 (SCM_CAR args)
                                      args (SCM_CDR args))]))]))])
 
 (define-cproc =  (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
-  ;;'+' is a trick to share numcmp macro
-  ::<boolean> :fast-flonum :constant (numcmp +  Scm_NumEq))
+  ::<boolean> :fast-flonum :constant (numcmp Scm_NumEq))
 (define-cproc <  (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
-  ::<boolean> :fast-flonum :constant (numcmp <  Scm_NumCmp))
+  ::<boolean> :fast-flonum :constant (numcmp Scm_NumLT))
 (define-cproc <= (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
-  ::<boolean> :fast-flonum :constant (numcmp <= Scm_NumCmp))
+  ::<boolean> :fast-flonum :constant (numcmp Scm_NumLE))
 (define-cproc >  (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
-  ::<boolean> :fast-flonum :constant (numcmp >  Scm_NumCmp))
+  ::<boolean> :fast-flonum :constant (numcmp Scm_NumGT))
 (define-cproc >= (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
-  ::<boolean> :fast-flonum :constant (numcmp >= Scm_NumCmp))
+  ::<boolean> :fast-flonum :constant (numcmp Scm_NumGE))
 
 (define-cproc zero? (obj::<number>) ::<boolean> :fast-flonum :constant
   (result (and (SCM_REALP obj) (== (Scm_Sign obj) 0))))

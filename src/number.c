@@ -2565,6 +2565,13 @@ DEFINE_DUAL_API2(Scm_Expt, Scm_VMExpt, scm_expt)
  * Comparison
  */
 
+static inline int either_nan_p(ScmObj arg0, ScmObj arg1)
+{
+    if (SCM_FLONUMP(arg0) && SCM_IS_NAN(SCM_FLONUM_VALUE(arg0))) return TRUE;
+    if (SCM_FLONUMP(arg1) && SCM_IS_NAN(SCM_FLONUM_VALUE(arg1))) return TRUE;
+    return FALSE;
+}
+
 int Scm_NumEq(ScmObj arg0, ScmObj arg1)
 {
     if (SCM_COMPNUMP(arg0)) {
@@ -2575,8 +2582,33 @@ int Scm_NumEq(ScmObj arg0, ScmObj arg1)
         return FALSE;
     } else {
         if (SCM_COMPNUMP(arg1)) return FALSE;
+        if (either_nan_p(arg0, arg1)) return FALSE;
         return (Scm_NumCmp(arg0, arg1) == 0);
     }
+}
+
+int Scm_NumLT(ScmObj arg0, ScmObj arg1)
+{
+    if (either_nan_p(arg0, arg1)) return FALSE;
+    return Scm_NumCmp(arg0, arg1) < 0;
+}
+
+int Scm_NumLE(ScmObj arg0, ScmObj arg1)
+{
+    if (either_nan_p(arg0, arg1)) return FALSE;
+    return Scm_NumCmp(arg0, arg1) <= 0;
+}
+
+int Scm_NumGT(ScmObj arg0, ScmObj arg1)
+{
+    if (either_nan_p(arg0, arg1)) return FALSE;
+    return Scm_NumCmp(arg0, arg1) > 0;
+}
+
+int Scm_NumGE(ScmObj arg0, ScmObj arg1)
+{
+    if (either_nan_p(arg0, arg1)) return FALSE;
+    return Scm_NumCmp(arg0, arg1) >= 0;
 }
 
 /* 2-arg comparison.
@@ -2586,6 +2618,10 @@ int Scm_NumEq(ScmObj arg0, ScmObj arg1)
    register flonum will never leak out.   If you make changes here,
    keep in mind that args can be register flonums, and make sure to insert
    SCM_FLONUM_ENSURE_MEM wherever they can leak out.
+
+   Caveat: Scm_NumCmp returns 0 (means equal) when arg0 and/or arg1 is/are NaN.
+   That's because NaN doesn't make any sense in three-way comparison.  The
+   premise is that NaN has already been filtered out before NumCmp is called.
  */
 int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
 {

@@ -264,6 +264,10 @@ SCM_EXTERN ScmObj Scm_Gcd(ScmObj x, ScmObj y);
 SCM_EXTERN ScmObj Scm_Expt(ScmObj x, ScmObj y);
 
 SCM_EXTERN int    Scm_NumEq(ScmObj x, ScmObj y);
+SCM_EXTERN int    Scm_NumLT(ScmObj x, ScmObj y);
+SCM_EXTERN int    Scm_NumLE(ScmObj x, ScmObj y);
+SCM_EXTERN int    Scm_NumGT(ScmObj x, ScmObj y);
+SCM_EXTERN int    Scm_NumGE(ScmObj x, ScmObj y);
 SCM_EXTERN int    Scm_NumCmp(ScmObj x, ScmObj y);
 SCM_EXTERN void   Scm_MinMax(ScmObj arg0, ScmObj args, ScmObj *min, ScmObj *max);
 

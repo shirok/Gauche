@@ -459,6 +459,8 @@ static inline int uint64eqv(ScmUInt64 x, ScmUInt64 y)
 #endif
 }
 
+#define f16eqv(a, b) SCM_HALF_FLOAT_CMP(==, a, b)
+
 DEF_CMP(S8, s8, signed char, common_eqv)
 DEF_CMP(U8, u8, unsigned char, common_eqv)
 DEF_CMP(S16, s16, short, common_eqv)
@@ -467,6 +469,6 @@ DEF_CMP(S32, s32, ScmInt32, common_eqv)
 DEF_CMP(U32, u32, ScmUInt32, common_eqv)
 DEF_CMP(S64, s64, ScmInt64, int64eqv)
 DEF_CMP(U64, u64, ScmUInt64, uint64eqv)
-DEF_CMP(F16, f16, ScmHalfFloat, common_eqv)
+DEF_CMP(F16, f16, ScmHalfFloat, f16eqv)
 DEF_CMP(F32, f32, float, common_eqv)
 DEF_CMP(F64, f64, double, common_eqv)

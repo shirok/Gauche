@@ -249,6 +249,30 @@
                       '(0.0 -1.0 1.0)))
 
 ;;-------------------------------------------------------------------
+(test-section "comparison")
+
+(define (uvcomp-tester list-> samples)
+  (dolist (x samples)
+    (dolist (y samples)
+      (test* #`"equal? ,(list-> x) ,(list-> y)"
+             (and (= (length x) (length y))
+                  (every = x y))
+             (equal? (list-> x) (list-> y))))))
+
+(for-each (cut uvcomp-tester <> '(() (0) (1) (0 0) (0 1)))
+          (list list->s8vector list->u8vector
+                list->s16vector list->u16vector
+                list->s32vector list->u32vector
+                list->s64vector list->u64vector))
+
+(for-each (cut uvcomp-tester <> '(() (0) (1) (0 0) (0 1)
+                                  (+inf.0) (-inf.0) (+nan.0)
+                                  (0 +inf.0) (0 -inf.0) (0 +nan.0)))
+          (list list->f16vector
+                list->f32vector
+                list->f64vector))
+
+;;-------------------------------------------------------------------
 (test-section "copying and filling")
 
 (define (uvcopy-tester copy copy! fill! ->list list-> uvec filler)
@@ -1289,7 +1313,7 @@
       ))
   
   (run-across test-default-endian)
-  (run-across-f test-default-endian)
+  '(run-across-f test-default-endian)   ;avoid involving NaN
   (run-across test-reverse-endian)
   )
 

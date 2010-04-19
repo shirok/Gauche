@@ -1,3 +1,18 @@
+2010-04-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_NumLE, Scm_NumLT, Scm_NumGE, Scm_NumGT):
+	  Added these APIs that handles NaN properly.  Scm_NumCmp alone
+	  is not suitable to handle comparison involving NaNs.
+	* src/number.h: ditto.
+	* src/vminsn.scm ($w/numcmp): Use above APIs to handle NaNs.
+	* src/stdlib.stub (=, <, <=, >, >=): Use above APIs to handle NaNs.
+	* test/number.scm: Added tests of numeric comparison involving NaNs.
+
+	* src/gauche/float.h (SCM_HALF_FLOAT_IS_NAN, SCM_HALF_FLOAT_CMP):
+	  Recognizes and handles NaN bitpattern of ScmHalfFloat.
+	* src/vector.c (compare_f16vector): ditto.
+	* ext/uvector/test.scm: Added tests for uvector comparison.
+
 2010-04-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vector.h (struct ScmVectorRec): The 'size' field

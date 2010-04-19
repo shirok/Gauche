@@ -278,7 +278,7 @@
    `(VMBOX . ,(lambda (dst src) #`",dst = Scm_VMReturnFlonum(Scm_HalfToDouble(,src))"))
    `(NBOX  . ,(lambda (dst src) #`",dst = Scm_MakeFlonum(,src)"))
    `(VMNBOX  . ,(lambda (dst src) #`",dst = Scm_VMReturnFlonum(,src)"))
-   `(EQ    . ,(lambda (x y)     #`"(,x == ,y)"))
+   `(EQ    . ,(lambda (x y)     #`"SCM_HALF_FLOAT_CMP(==,, ,x,, ,y)"))
    `(PRINT . ,(lambda (out elt) #`"Scm_PrintDouble(,out,, Scm_HalfToDouble(,elt),, 0)"))
    (common-rules 'f16)))
 

@@ -239,7 +239,12 @@
 ;;   in r.
 (define-cise-stmt $w/numcmp
   [(_ r op . body)
-   (let ((x (gensym)) (y (gensym)))
+   (let ([x (gensym)] [y (gensym)]
+         [cmp (case op
+                [(=) 'Scm_NumEq]
+                [(<) 'Scm_NumLT] [(<=) 'Scm_NumLE]
+                [(>) 'Scm_NumGT] [(>=) 'Scm_NumGE]
+                [else (error "[internal] invalid op for $w/numcmp" op)])])
      `($w/argp ,x
         (let* ((,y VAL0) (,r :: int))
           (cond [(and (SCM_INTP ,x) (SCM_INTP ,y))
@@ -248,7 +253,7 @@
                 [(and (SCM_FLONUMP ,x) (SCM_FLONUMP ,y))
                  (set! ,r (,op (SCM_FLONUM_VALUE ,x) (SCM_FLONUM_VALUE ,y)))]
                 [else
-                 (set! ,r (,op (Scm_NumCmp ,x ,y) 0))])
+                 (set! ,r (,cmp ,x ,y))])
           ,@body)))])
 
 ;;

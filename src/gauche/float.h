@@ -53,6 +53,12 @@ typedef unsigned short  ScmHalfFloat;
 #define SCM_HALF_FLOAT_SIGN_BIT(hf)  ((hf)&0x8000U)
 #define SCM_HALF_FLOAT_EXPONENT(hf)  (((hf)&0x7c00U)>>10)
 #define SCM_HALF_FLOAT_MANTISSA(hf)  ((hf)&0x03ffU)
+#define SCM_HALF_FLOAT_IS_NAN(hf)                       \
+    ((((~(hf))&0x7c00U) == 0) && (((hf)&0x03ffU) != 0))
+#define SCM_HALF_FLOAT_CMP(op, hf1, hf2)        \
+    (!SCM_HALF_FLOAT_IS_NAN(hf1)                \
+     && !SCM_HALF_FLOAT_IS_NAN(hf2)             \
+     && ((hf1) op (hf2)))
 
 /*
  * Long double support

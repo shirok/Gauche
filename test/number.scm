@@ -678,8 +678,23 @@
 (test* "eqv?" #t (eqv? 20 (inexact->exact 20.0)))
 (test* "eqv?" #f (eqv? 20 20.0))
 
-;; the following tests combine instructions for comparison.
+;; numeric comparison involving nan.  we should test both 
+;; inlined case and applied case
+(define-macro (test-nan-cmp op)
+  `(begin
+     (test* (format "NaN ~a (inlined)" ',op) '(#f #f #f)
+            (list (,op +nan.0 +nan.0) (,op +nan.0 0) (,op 0 +nan.0)))
+     (test* (format "NaN ~a (applied)" ',op) '(#f #f #f)
+            (list (apply ,op '(+nan.0 +nan.0))
+                  (apply ,op '(+nan.0 0))
+                  (apply ,op '(0 +nan.0))))))
+(test-nan-cmp =)
+(test-nan-cmp <)
+(test-nan-cmp <=)
+(test-nan-cmp >)
+(test-nan-cmp >=)
 
+;; the following tests combine instructions for comparison.
 (let ((zz #f))
   (set! zz 3.14)  ;; prevent the compiler from optimizing constants
 
