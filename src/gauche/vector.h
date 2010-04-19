@@ -40,7 +40,7 @@
 
 struct ScmVectorRec {
     SCM_HEADER;
-    int size;
+    ScmWord size;
     ScmObj elements[1];
 };
 
