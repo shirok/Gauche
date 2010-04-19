@@ -35,6 +35,7 @@
   (export make-tree-map tree-map-empty?
           tree-map-min tree-map-max tree-map-pop-min! tree-map-pop-max!
           tree-map-fold tree-map-fold-right
+          tree-map-map tree-map-for-each
           tree-map-keys tree-map-values
           tree-map->alist alist->tree-map)
   )
@@ -68,6 +69,12 @@
 
 (define (tree-map-fold-right tm kons knil)
   (%tree-map-fold tm kons knil #t))
+
+(define (tree-map-map tm proc)
+  (tree-map-fold-right tm (lambda (k v r) (cons (proc k v) r)) '()))
+
+(define (tree-map-for-each tm proc)
+  (tree-map-fold tm (lambda (k v r) (proc k v) r) (undefined)))
 
 (define (tree-map-keys tm)
   (tree-map-fold-right tm (lambda (k v r) (cons k r)) '()))

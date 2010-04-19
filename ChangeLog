@@ -1,5 +1,8 @@
 2010-04-19  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/treeutil.scm (tree-map-map, tree-map-for-each): Added.
+	* src/autoloads.scm, doc/corelib.texi: Modified accordingly.
+
 	* src/Makefile.in: Fix linking gauche-config; patch from Debian build,
 	  by YAEGASHI Takeshi.
 

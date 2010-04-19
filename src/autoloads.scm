@@ -170,6 +170,7 @@
                           tree-map-min tree-map-max
                           tree-map-pop-min! tree-map-pop-max!
                           tree-map-fold tree-map-fold-right
+                          tree-map-map tree-map-for-each
                           tree-map-keys tree-map-values
                           tree-map->alist alist->tree-map)
 

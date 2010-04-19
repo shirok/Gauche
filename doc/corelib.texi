@@ -5793,6 +5793,23 @@ Some examples:
 @end example
 @end defun
 
+@defun tree-map-map tree-map proc
+Applies @var{proc} with each key/value pair in @var{tree-map},
+and collect the results into a list and returns it.  The order
+of results corresponds to the order of keys---that is, the first element
+of the result list is what @var{proc} returns with minimum key and its value,
+and the last element of the result list is what @var{proc} returns
+with the maximum key and its value.
+(Note: Like @code{map}, the order that @var{proc} is actually called
+is unspecified; @var{proc} is better to be side-effect free.)
+@end defun
+
+@defun tree-map-fold tree-map proc
+Applies @var{proc} with each key/value pair in @var{tree-map},
+in the increasing order of the keys.  @var{proc} is called purely
+for side effects; the returned values are discarded.
+@end defun
+
 @defun tree-map-floor tree-map probe &optional fallback-key fallback-value
 @defunx tree-map-ceiling tree-map probe &optional fallback-key fallback-value
 @defunx tree-map-predecessor tree-map probe &optional fallback-key fallback-value
