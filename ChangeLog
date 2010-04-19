@@ -1,5 +1,8 @@
 2010-04-19  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac: Support for arm-unknown-linux-gnueabi and
+	  arm-unknown-linux-gnulp architecture.  Patch from NIIBE Yutaka.
+
 	* src/number.c (Scm_NumLE, Scm_NumLT, Scm_NumGE, Scm_NumGT):
 	  Added these APIs that handles NaN properly.  Scm_NumCmp alone
 	  is not suitable to handle comparison involving NaNs.
