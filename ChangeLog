@@ -1,5 +1,8 @@
 2010-04-19  Shiro Kawai  <shiro@acm.org>
 
+	* src/Makefile.in: Fix linking gauche-config; patch from Debian build,
+	  by YAEGASHI Takeshi.
+
 	* configure.ac: Support for arm-unknown-linux-gnueabi and
 	  arm-unknown-linux-gnulp architecture.  Patch from NIIBE Yutaka.
 
