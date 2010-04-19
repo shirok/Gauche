@@ -1248,16 +1248,19 @@
        [data2 '#u8(1 0 3 2 254 255 252 253 5 4 7 6 250 251 248 249)]
        [data3 '#u8(3 2 1 0 252 253 254 255 7 6 5 4 248 249 250 251)]
        [data4 '#u8(252 253 254 255 3 2 1 0 248 249 250 251 7 6 5 4)]
+
+       [data5 '#u8(3 0 1 3 3 1 0 3 131 0 1 131 131 1 0 131)]
        )
 
   ;; Invaliance:
   ;; w = (uvector-alias T u8v)  <--> w = read-block! T + write-block u8v
-  (define (test-default-endian T maker size)
-    (test* (format "native endian ~a" (class-name T))
-           (uvector-alias T data1)
-           (rlet1 buf (maker size)
-             (call-with-output-file "test.o" (cut write-block data1 <>))
-             (call-with-input-file "test.o" (cut read-block! buf <>)))))
+  (define (test-default-endian data)
+    (lambda (T maker size)
+      (test* (format "native endian ~a" (class-name T))
+             (uvector-alias T data)
+             (rlet1 buf (maker size)
+               (call-with-output-file "test.o" (cut write-block data <>))
+               (call-with-input-file "test.o" (cut read-block! buf <>))))))
 
   (define (test-reverse-endian T maker size)
     (let* ([rev-endian (case (native-endian)
@@ -1306,14 +1309,14 @@
       (fn <s64vector> make-s64vector (/ s 8))
       ))
   (define (run-across-f fn)
-    (let1 s (u8vector-length data1)
+    (let1 s (u8vector-length data5)
       (fn <f16vector> make-f16vector (/ s 2))
       (fn <f32vector> make-f32vector (/ s 4))
       (fn <f64vector> make-f64vector (/ s 8))
       ))
   
-  (run-across test-default-endian)
-  '(run-across-f test-default-endian)   ;avoid involving NaN
+  (run-across (test-default-endian data1))
+  (run-across-f (test-default-endian data5))
   (run-across test-reverse-endian)
   )
 
