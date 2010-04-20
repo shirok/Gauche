@@ -40,6 +40,9 @@
 /* Define to use FreeBSD threads */
 #undef GC_FREEBSD_THREADS
 
+/* Define to use GNU threads */
+#undef GC_GNU_THREADS
+
 /* Define to use NetBSD threads */
 #undef GC_NETBSD_THREADS
 

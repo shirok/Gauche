@@ -1,5 +1,8 @@
 2010-04-19  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, src/gauche/config.h.in: Added GNU/kfreebsd and
+	  GNU/Hurd support.  Patch from NIIBE Yutaka.
+
 	* lib/gauche/treeutil.scm (tree-map-map, tree-map-for-each): Added.
 	* src/autoloads.scm, doc/corelib.texi: Modified accordingly.
 

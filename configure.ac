@@ -166,6 +166,18 @@ case $GAUCHE_THREAD_TYPE in
       THREADLIBS="-pthread"
       GAUCHE_THREAD_TYPE=pthreads
       ;;
+    *-*-kfreebsd*-gnu)
+      AC_DEFINE(GC_FREEBSD_THREADS,1,[Define to use FreeBSD threads])
+      INCLUDES="$INCLUDES -pthread"
+      THREADDLLIBS=-pthread
+      AC_DEFINE(_REENTRANT,1,[Define to use reentrant libc])
+      ;;
+    *-*-gnu*)
+      AC_DEFINE(GC_GNU_THREADS,1,[Define to use GNU threads])
+      AC_DEFINE(_REENTRANT,1,[Define to use reentrant libc])
+      THREADLIBS="-lpthread"
+      GAUCHE_THREAD_TYPE=pthreads
+      ;;
     *-*-netbsd*)
       AC_MSG_WARN("Only on NetBSD 2.0 or later.")
       AC_DEFINE(GC_NETBSD_THREADS,1,[Define to use NetBSD threads])
@@ -501,7 +513,7 @@ case $host in
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
     ;;
-  *-linux-gnu*|*freebsd*|*dragonfly*)
+  *-linux-gnu*|*-*-gnu*|*freebsd*|*dragonfly*)
     SHLIB_SO_CFLAGS="-fPIC"
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
