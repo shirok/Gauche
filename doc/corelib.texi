@@ -5804,7 +5804,7 @@ with the maximum key and its value.
 is unspecified; @var{proc} is better to be side-effect free.)
 @end defun
 
-@defun tree-map-fold tree-map proc
+@defun tree-map-for-each tree-map proc
 Applies @var{proc} with each key/value pair in @var{tree-map},
 in the increasing order of the keys.  @var{proc} is called purely
 for side effects; the returned values are discarded.
