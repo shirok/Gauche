@@ -8073,7 +8073,6 @@ The rest of the arguments specify fields (slots) of the record.
  : @var{field-name}   ; @r{immutable, with default accessor}
  | (@var{field-name}) ; @r{mutable, with default accessor/modifier}
  | (@var{field-name} @var{accessor-name}); @r{immutable}
-
  | (@var{field-name} @var{accessor-name} @var{modifier-name}); @r{mutable}
 
 @var{field-name}    : @r{identifier}
@@ -8086,8 +8085,9 @@ be intialized by the constructor but cannot be modified afterwards
 (thus such fields don't have modifiers).
 The second and the fourth forms define multable fields.
 
-The third and fourth forms explicitly names the accessor and modifier.
-With the first and second forms, the accessor is named as
+The third and fourth forms explicitly name the accessor and modifier.
+With the first and second forms, on the other hand,
+the accessor is named as
 @code{@var{type-name}-@var{field-name}}, and the modifier is named
 as @code{@var{type-name}-@var{field-name}-set!}.
 @end defmac
