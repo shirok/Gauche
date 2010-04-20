@@ -190,7 +190,7 @@ gosh$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_OBJECTS)
 relink :
 	$(RELINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
 	$(RELINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT)  $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
-	$(RELINK) -o gauche-config$(EXEEXT) gauche-config.$(OBJEXT)
+	$(RELINK) -o gauche-config$(EXEEXT) gauche-config.$(OBJEXT) $(LIBS)
 
 $(OBJECTS) : $(HEADERS)
 
@@ -233,7 +233,7 @@ $(LIBGAUCHE).$(SOEXT) : $(libgauche_OBJECTS) $(GCLIB)
 	$(POSTBUILD)
 
 gauche-config$(EXEEXT) : gauche-config.$(OBJEXT)
-	$(LINK) -o gauche-config$(EXEEXT) gauche-config.$(OBJEXT)
+	$(LINK) -o gauche-config$(EXEEXT) gauche-config.$(OBJEXT) $(LIBS)
 
 # for cross build
 $(host)-gauche-config: gauche-config.c
