@@ -1368,7 +1368,7 @@
                      [fs (free-lvars/rec ($if-then iform) bs fs ls)])
                 (free-lvars/rec ($if-else iform) bs fs ls))]
    [($LET)    (let* ([bs2 (append ($let-lvars iform) bs)]
-                     [fs (if (eq ($let-type iform) 'rec)
+                     [fs (if (eq? ($let-type iform) 'rec)
                            (free-lvars/rec* ($let-inits iform) bs2 fs ls)
                            (free-lvars/rec* ($let-inits iform) bs fs ls))])
                 (free-lvars/rec ($let-body iform) bs2 fs ls))]
@@ -1532,8 +1532,8 @@
         (expand-inlined-procedure program
                                   (unpack-iform inliner)
                                   (imap (cut pass1 <> cenv) (cdr program)))]
-       [('inlinable () (? vector? piform)) ; new packed inlinable lambda
-        (expand-inlined-procedure program  ; TODO: consider lvars
+       [('inlinable fvars (? vector? piform)) ; new packed inlinable lambda
+        (expand-inlined-procedure program  ; TODO: consider fvars
                                   (unpack-iform piform)
                                   (imap (cut pass1 <> cenv) (cdr program)))]
        [_
@@ -2286,11 +2286,9 @@
     [_ (error "syntax-error: malformed %inlinable-lambda:" form)]))
 
 (define (pass1/inlinable-lambda form formals body cenv)
-  (unless (cenv-toplevel? cenv)
-    (error "Inlinable-lambda with closed environment is not supported yet:"
-           form))
   (rlet1 p1 (pass1/lambda form formals body cenv #f)
-    ($lambda-flag-set! p1 `(inlinable () ,(pack-iform p1)))))
+    (let1 fvars (free-lvars p1)
+      ($lambda-flag-set! p1 `(inlinable ,fvars ,(pack-iform p1))))))
 
 (define-pass1-syntax (receive form cenv) :gauche
   (match form
@@ -4194,7 +4192,11 @@
 (define (pass3/lambda iform ccb renv)
   (let1 inliner (match ($lambda-flag iform)
                   [(? vector? ivec) ivec]
-                  [(and ('inlinable () (? vector)) info) info]
+                  [(and ('inlinable fvars (? vector?)) info)
+                   (unless (null? fvars)
+                     (warn "[internal] inlinable-lambda with closed \
+                           environment may not work in the current version."))
+                   info]
                   [_ #f])
     (pass3 ($lambda-body iform)
            (make-compiled-code-builder ($lambda-reqargs iform)
@@ -4685,7 +4687,7 @@
                              (SCM_MAKE_INT (- (Scm_Length fp) count)))))
            (pre++ count)))
        (pre++ depth)))
-   (Scm_Error "[internal error] stray local variable:" lvar)
+   (Scm_Error "[internal error] stray local variable: %S" lvar)
    (return SCM_UNDEFINED)) ; dummy
  )
 
