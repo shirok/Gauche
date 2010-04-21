@@ -2,8 +2,8 @@
 (use srfi-13)
 (test-start "bcrypt")
 
-(use gauche.bcrypt)
-(test-module 'gauche.bcrypt)
+(use crypt.bcrypt)
+(test-module 'crypt.bcrypt)
 
 ;; Test data is taken from wrapper.c
 (define (test-hashpw hash pw)

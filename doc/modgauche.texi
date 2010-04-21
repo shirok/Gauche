@@ -5,7 +5,6 @@
 @c ----------------------------------------------------------------------
 @menu
 * Arrays::                      gauche.array
-* Password hashing::            gauche.bcrypt
 * Character code conversion::   gauche.charconv
 * Collection framework::        gauche.collection
 * Configuration parameters::    gauche.config
@@ -35,7 +34,7 @@
 * Virtual ports::               gauche.vport
 @end menu
 
-@node Arrays, Password hashing, Library modules - Gauche extensions, Library modules - Gauche extensions
+@node Arrays, Character code conversion, Library modules - Gauche extensions, Library modules - Gauche extensions
 @section @code{gauche.array} - Arrays
 @c NODE 配列, @code{gauche.array} - 配列
 
@@ -513,139 +512,7 @@ Shapeが@var{shape}であり、与えられた配列@var{array}とバッキン�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Password hashing, Character code conversion, Arrays, Library modules - Gauche extensions
-@section @code{gauche.bcrypt} - Password hashing
-@c NODE パスワードハッシュ, @code{gauche.bcrypt} - パスワードハッシュ
-
-@deftp {Module} gauche.bcrypt
-@mdindex gauche.bcrypt
-@c EN
-This module implements a password hashing algorithm using blowfish,
-and compatible to OpenBSD's bcrypt algorithm (version 2a).
-@c JP
-このモジュールは、blowfishを使ったパスワードハッシュアルゴリズムを実装します。
-OpenBSDのbcryptアルゴリズム(version 2a)と互換です。
-@c COMMON
-
-@c EN
-The typical usage of this module is simple enough.
-To get a new password hash value (e.g. for a new user), pass the
-password string to @code{bcrypt-hashpw} as the only argument:
-@c JP
-典型的な使い方は非常にシンプルです。新しいパスワードハッシュ値を
-得たい場合 (例えば新しいユーザのために、など) は、パスワード文字列を
-唯一の引数として@code{bcrypt-hashpw}を呼び出してください。
-@c COMMON
-
-@example
-(bcrypt-hashpw @var{password})
-  @result{} @r{hashed-string}
-@end example
-
-@c EN
-The routine automatically adds a salt value.  The returned hash
-string can be stored in the user database.  To check if the given
-password matches the stored one, pass the
-hashed string as the second argument of @code{bcrypt-hashpw} to
-check the password.
-@c JP
-このルーチンは自動的にソルト値を付加します。戻り値の文字列はそのままユーザ
-データベースに格納できます。与えられたパスワードがハッシュ値に一致するか
-どうかを調べるには、ハッシュ値そのものを第二引数として@code{bcrypt-hashpw}に
-渡します。
-@c COMMON
-
-@example
-(bcrypt-hashpw @var{password} @var{hashed-string}) 
-  @result{} @r{hashed-string}
-@end example
-
-@c EN
-If the given password is correct, the returned value should
-exactly matches @var{hash-string}.
-@c JP
-パスワードが正しければ、戻り値は@var{hashed-string}と完全に一致するはずです。
-@c COMMON
-@end deftp
-
-@defun bcrypt-hashpw password &optional setting
-@c EN
-Calculates a hash value of @var{password}, using the salt value
-and parameters included in @var{setting}.  If @var{setting} is
-omitted, a suitable default settings and random salt value is
-chosen automatically.
-
-The returned hash value contains the salt value and parameters,
-and can be used as @var{setting}.  So, to check the password
-against existing hash value, just pass the hash value to
-@var{setting}; if the password is correct, the returned hash value
-should match the one you passed in.
-
-The bcrypt algorithm supports up to 72 octets for the password.
-
-To tweak parameters when you calculate a new hash value,
-use @code{bcrypt-gensalt} below to get the initial @var{setting}
-value.
-@c JP
-@var{password}のハッシュ値を計算します。@var{setting}は
-ソルト値とパラメータを指定する文字列です。@var{setting}が
-省略された場合は、適切なデフォルトのパラメータとランダムなソルト値が
-自動的に選択されます。
-
-戻り値のハッシュ値文字列にはソルト値とパラメータが含まれているので、
-それを再び@var{setting}に渡すことができます。したがって、パスワードを
-既存のハッシュ値に一致するかチェックしたい場合は、ハッシュ値を@var{setting}に渡し、
-戻ってきた文字列が渡したハッシュ値と一致するかを見れば良いことになります。
-
-bcryptアルゴリズムは最大72オクテットまでのパスワードを使えます。
-
-新しいハッシュ値を計算する際にパラメータを指定したい場合は、次に説明する
-@code{bcrypt-gensalt}を使うと@var{setting}に使える文字列を得ることができます。
-@c COMMON
-@end defun
-
-@defun bcrypt-gensalt &key prefix count entropy-source
-@c EN
-Returns a string that contains given parameters and suitable to
-pass to the @var{setting} argument of @code{bcrypt-hashpw}.
-
-The @var{prefix} argument specifies the version/scheme of
-password hashing.  Currently only @code{$2a$} is supported,
-which means the blowfish algorithm compatible to bcrypt.
-
-The @var{count} arugment specifies the amount of iterations;
-the larger the value is, the more time is required to calculate
-the hash value.  Note that for the password hashing, taking more
-time is actually a good thing, for it works against the dictionary attack.
-For normal password checking you need to run the hash routine only 
-once per login, so it doesn't matter if the calculation takes a fraction
-of second.
-The bcrypt algorithm iterates @code{(expt 2 @var{count})} times.
-
-The @var{entropy-source} argument is a @code{u8vector} to feed
-a random bytes.  For bcrypt algorithm it must be at least 16 octet long.
-@c JP
-与えられたパラメータを折り込んだ、
-@code{bcrypt-hashpw}の@var{setting}引数に使える文字列を返します。
-
-@var{prefix}引数はハッシュ関数およびそのバージョンを指定する文字列です。
-現在のところ、@code{bcrypt}互換である@code{$2a$}のみがサポートされています。
-
-@var{count}引数はハッシュの繰り返し回数に関係します。大きな値を指定すれば、
-ハッシュ値の計算により長い時間がかかります。パスワードハッシュにおいては、
-時間をかけた方が良いことに注意してください。一回のハッシュの時間が長くなれば
-辞書攻撃への防御になります。一方で、通常のパスワードチェックでは
-ログインの度にたかだか一回しはハッシュ関数を呼ばないので、それがたとえコンマ数秒
-かかったとしてもたいした負荷ではありません。
-bcryptアルゴリズムでは、@code{(expt 2 @var{count})}回ハッシュが繰り返されます。
-
-@var{entropy-source}引数はランダムなバイト列を格納した@code{u8vector}です。
-bcryptアルゴリズムでは少なくとも16バイトの長さが必要です。
-@c COMMON
-@end defun
-
-@c ----------------------------------------------------------------------
-@node Character code conversion, Collection framework, Password hashing, Library modules - Gauche extensions
+@node Character code conversion, Collection framework, Arrays, Library modules - Gauche extensions
 @section @code{gauche.charconv} - Character Code Conversion
 @c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 

@@ -6,11 +6,11 @@
 ;;;  I also put this file in public domain.
 ;;;
 
-(define-module gauche.bcrypt
+(define-module crypt.bcrypt
   (use gauche.uvector)
-  (use math.mt-random) ; Do we want to depend on math.* here?  Not sure.
+  (use math.mt-random)
   (export bcrypt-hashpw bcrypt-gensalt))
-(select-module gauche.bcrypt)
+(select-module crypt.bcrypt)
 
 (inline-stub
  "extern char *crypt_ra(const char *key, const char *setting,

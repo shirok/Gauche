@@ -14101,7 +14101,7 @@ function signals an error.
 This routine is only for the code that needs to check password
 against the system's password database.
 If you are building user database on your own, you @emph{must} use
-@code{gauche.bcrypt} module (@xref{Password hashing}) instead of 
+@code{crypt.bcrypt} module (@xref{Password hashing}) instead of 
 this routine.
 @c JP
 これは、@code{crypt(3)}へのインターフェースです。@var{key}と@var{salt}は
@@ -14110,7 +14110,7 @@ this routine.
 
 このルーチンは、システムのパスワードデータベースを使ってパスワードチェックを
 しなければならない時以外に使うべきではありません。独自のパスワードデータベースを
-新たに作る場合は、@code{gauche.bcrypt}モジュール(@ref{Password hashing})を
+新たに作る場合は、@code{crypt.bcrypt}モジュール(@ref{Password hashing})を
 使ってください。
 @c COMMON
 @end defun
