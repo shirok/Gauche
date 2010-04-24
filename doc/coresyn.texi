@@ -130,7 +130,7 @@ The table below lists sharp-syntaxes.
 @c EN
  @tab [R5RS] Introduces a vector.
 @c JP
- @tab [R5RS] ベクタを先導します。
+ @tab [R5RS] リテラルベクタ表記の開始です。
 @c COMMON
 @item @code{#)}
 @c EN
@@ -154,7 +154,7 @@ The table below lists sharp-syntaxes.
 @c EN
  @tab [SRFI-10] Introduces reader constructor syntax.
 @c JP
- @tab [SRFI-10] リーダ構築子構文を先導します。
+ @tab [SRFI-10] リーダ構築子構文を開始します。
 @c COMMON
 @item @code{#-}, @code{#.}
 @c EN
@@ -525,7 +525,7 @@ Gaucheはまた、@code{lambda}が取る@var{formals}の構文を拡張し、
 The procedure takes a fixed number of arguments.
 The actual arguments are bound to the corresponding variables.
 @c JP
-@code{(@var{variable} @dots{})} : 手続きは決まった数の引数を取ります。
+手続きは決まった数の引数を取ります。
 実引数がそれぞれ対応する@var{variable}に束縛されます。
 @c COMMON
 
@@ -542,7 +542,7 @@ The procedure takes any number of arguments.
 The actual arguments are collected to form a new list and bound to
 the variable.
 @c JP
-@code{@var{variable}} : 手続きは不定個の引数を取ります。
+手続きは不定個の引数を取ります。
 実引数は新しいリストに集められて、そのリストが@var{varible}に束縛されます。
 @c COMMON
 
@@ -558,7 +558,6 @@ up to @var{N} is bound to the corresponding variables.
 If more than @var{N} arguments are given, the rest arguments are
 collected to form a new list and bound to @var{variable_N}.
 @c JP
-@code{(@var{variable_0} @dots{} @var{variable_N-1}. @var{variable_N})} :
 手続きは少なくとも@var{N}個の引数を取ります。@var{N}個までの実引数は対応する@var{variable}
 に束縛されます。@var{N}個を越えた実引数は新しいリストに集められて
 @var{variable_N}に束縛されます。
@@ -1211,8 +1210,8 @@ Perlなら@code{shift}が@code{pop!}の動作に近いです。
 @end defmac
 
 
-@defmac inc! place &optional delta
-@defmacx dec! place &optional delta
+@defmac inc! place :optional delta
+@defmacx dec! place :optional delta
 @c EN
 Evaluates the value of @var{place}.  It should be a number.
 Adds (@code{inc!}) or subtracts (@code{dec!}) @var{delta} to/from it,
@@ -3126,7 +3125,7 @@ If the named module doesn't exist, @code{#f} is returned.
 @c COMMON
 @end defun
 
-@defun make-module name &keyword if-exists
+@defun make-module name :key if-exists
 @c EN
 Creates and returns a module that has symbol @var{name}.
 If the named module already exists, the behavior is specified by
@@ -3279,7 +3278,7 @@ that you are querying module's property.
 @c COMMON
 @end defun
 
-@defun global-variable-ref module symbol &optional default
+@defun global-variable-ref module symbol :optional default
 @c EN
 Returns a value globally bound to the @var{symbol} visible
 from @var{module}.  @var{Module} must be a module object or

@@ -127,10 +127,10 @@ argument has no effect, but is accepted for consistency).
 @subheading ポートを用いたI/O
 @c COMMON
 
-@defun read-u8 &optional port endian
-@defunx read-u16 &optional port endian
-@defunx read-u32 &optional port endian
-@defunx read-u64 &optional port endian
+@defun read-u8 :optional port endian
+@defunx read-u16 :optional port endian
+@defunx read-u32 :optional port endian
+@defunx read-u64 :optional port endian
 @c EN
 Reads 8, 16, 32 or 64 bit unsigned integer from @var{port}
 with specified endian, respectively.  If @var{port} is omitted, 
@@ -144,10 +144,10 @@ a complete integer is read, EOF is returned.
 @c COMMON
 @end defun
 
-@defun read-s8 &optional port endian
-@defunx read-s16 &optional port endian
-@defunx read-s32 &optional port endian
-@defunx read-s64 &optional port endian
+@defun read-s8 :optional port endian
+@defunx read-s16 :optional port endian
+@defunx read-s32 :optional port endian
+@defunx read-s64 :optional port endian
 @c EN
 Reads 8, 16, 32 or 64 bit 2's complement signed integer from @var{port}
 with specified endian, respectively.  If @var{port} is omitted, 
@@ -161,8 +161,8 @@ a complete integer is read, EOF is returned.
 @c COMMON
 @end defun
 
-@defun read-uint size &optional port endian
-@defunx read-sint size &optional port endian
+@defun read-uint size :optional port endian
+@defunx read-sint size :optional port endian
 @c EN
 More flexible version.  Reads @var{size}-octet unsigned
 or signed integer from @var{port} with specified endian.
@@ -176,7 +176,7 @@ EOF is returned.
 @c COMMON
 @end defun
 
-@defun read-ber-integer &optional port
+@defun read-ber-integer :optional port
 @c EN
 Reads BER compressed integer a la X.209.
 A BER compressed integer is an unsigned integer in base 128,
@@ -189,10 +189,10 @@ X.209のBER圧縮形式整数を読み込みます。BER圧縮形式整数は128
 @c COMMON
 @end defun
 
-@defun write-u8 val &optional port endian
-@defunx write-u16 val &optional port endian
-@defunx write-u32 val &optional port endian
-@defunx write-u64 val &optional port endian
+@defun write-u8 val :optional port endian
+@defunx write-u16 val :optional port endian
+@defunx write-u32 val :optional port endian
+@defunx write-u64 val :optional port endian
 @c EN
 Writes a nonnegative integer @var{val} as 8, 16, 32 or 64 bit
 unsigned integer
@@ -207,10 +207,10 @@ When @var{port} is omitted, current output port is used.
 @c COMMON
 @end defun
 
-@defun write-s8 val &optional port endian
-@defunx write-s16 val &optional port endian
-@defunx write-s32 val &optional port endian
-@defunx write-s64 val &optional port endian
+@defun write-s8 val :optional port endian
+@defunx write-s16 val :optional port endian
+@defunx write-s32 val :optional port endian
+@defunx write-s64 val :optional port endian
 @c EN
 Writes an integer @var{val} as 8, 16, 32 or 64 bit
 as 2's complement signed integer to @var{port} with specified endian,
@@ -225,8 +225,8 @@ When @var{port} is omitted, current output port is used.
 @c COMMON
 @end defun
 
-@defun write-uint size val &optional port endian
-@defunx write-sint size val &optional port endian
+@defun write-uint size val :optional port endian
+@defunx write-sint size val :optional port endian
 @c EN
 More flexible version.  Writes an integer @var{val} as unsigned
 or signed integer of @var{size} bytes to @var{port} with
@@ -239,7 +239,7 @@ When @var{port} is omitted, current output port is used.
 @c COMMON
 @end defun
 
-@defun write-ber-integer val &optional port
+@defun write-ber-integer val :optional port
 @c EN
 Writes a nonnegative integer @var{val} in BER compressed integer
 to @var{port}.  See @code{read-ber-integer} above for BER format.
@@ -249,9 +249,9 @@ BER圧縮形式については前述の@code{read-ber-integer}を見てくださ
 @c COMMON
 @end defun
 
-@defun read-f16 &optional port endian
-@defunx read-f32 &optional port endian
-@defunx read-f64 &optional port endian
+@defun read-f16 :optional port endian
+@defunx read-f32 :optional port endian
+@defunx read-f64 :optional port endian
 @c EN
 Reads 16, 32, or 64-bit floating point numbers, respectively.
 32bit is IEEE754 single-precision, and 64bit is
@@ -274,9 +274,9 @@ EOFに到達してしまった場合にはEOFが返ります。
 @c COMMON
 @end defun
 
-@defun write-f16 val &optional port endian
-@defunx write-f32 val &optional port endian
-@defunx write-f64 val &optional port endian
+@defun write-f16 val :optional port endian
+@defunx write-f32 val :optional port endian
+@defunx write-f64 val :optional port endian
 @c EN
 Writes a real number @var{val} to @var{port} in 16, 
 32, or 64-bit floating point number, respectively.
@@ -313,17 +313,17 @@ uvectorの内容を保持するメモリイメージから直接読み込まれ�
 れはユニフォームベクタの要素のサイズにかかわらず、つねにバイト位置です)。
 @c COMMON
 
-@defun get-u8 uv pos &optional endian
-@defunx get-u16 uv pos &optional endian
-@defunx get-u32 uv pos &optional endian
-@defunx get-u64 uv pos &optional endian
-@defunx get-s8 uv pos &optional endian
-@defunx get-s16 uv pos &optional endian
-@defunx get-s32 uv pos &optional endian
-@defunx get-s64 uv pos &optional endian
-@defunx get-f16 uv pos &optional endian
-@defunx get-f32 uv pos &optional endian
-@defunx get-f64 uv pos &optional endian
+@defun get-u8 uv pos :optional endian
+@defunx get-u16 uv pos :optional endian
+@defunx get-u32 uv pos :optional endian
+@defunx get-u64 uv pos :optional endian
+@defunx get-s8 uv pos :optional endian
+@defunx get-s16 uv pos :optional endian
+@defunx get-s32 uv pos :optional endian
+@defunx get-s64 uv pos :optional endian
+@defunx get-f16 uv pos :optional endian
+@defunx get-f32 uv pos :optional endian
+@defunx get-f64 uv pos :optional endian
 @c EN
 Reads a number of a specific format from a uniform vector @var{uv},
 starting at a byte position @var{pos}.  An error is signalled
@@ -368,17 +368,17 @@ handling.
 @c COMMON
 @end defun
 
-@defun put-u8! uv pos val &optional endian
-@defunx put-u16! uv pos val &optional endian
-@defunx put-u32! uv pos val &optional endian
-@defunx put-u64! uv pos val &optional endian
-@defunx put-s8! uv pos val &optional endian
-@defunx put-s16! uv pos val &optional endian
-@defunx put-s32! uv pos val &optional endian
-@defunx put-s64! uv pos val &optional endian
-@defunx put-f16! uv pos val &optional endian
-@defunx put-f32! uv pos val &optional endian
-@defunx put-f64! uv pos val &optional endian
+@defun put-u8! uv pos val :optional endian
+@defunx put-u16! uv pos val :optional endian
+@defunx put-u32! uv pos val :optional endian
+@defunx put-u64! uv pos val :optional endian
+@defunx put-s8! uv pos val :optional endian
+@defunx put-s16! uv pos val :optional endian
+@defunx put-s32! uv pos val :optional endian
+@defunx put-s64! uv pos val :optional endian
+@defunx put-f16! uv pos val :optional endian
+@defunx put-f32! uv pos val :optional endian
+@defunx put-f64! uv pos val :optional endian
 @c EN
 Writes a number @var{val} into a uniform vector @var{uv} in
 a specific format, starting at a byte position @var{pos}.
@@ -483,7 +483,7 @@ re-parsing the template.
 @c individual binary values.
 @end deftp
 
-@defun pack template list &keyword :output :to-string?
+@defun pack template list :key :output :to-string?
 @c EN
 Writes the values in @var{list} to the current output port, according
 to the format specified by the string @var{template}.  The template
@@ -782,7 +782,7 @@ a character sequence.
 @end example
 @end defun
 
-@defun unpack template &keyword :input :from-string
+@defun unpack template :key :input :from-string
 @c EN
 The complement of pack, unpack reads values from the current input
 port assuming they've been packed according to the string template and
@@ -840,7 +840,7 @@ be fixed in the future version.
 @c COMMON
 @end defun
 
-@defun unpack-skip template &keyword :input
+@defun unpack-skip template :key :input
 @c EN
 unpack-skip is the same as unpack except it does not return the
 values.  In some cases, particularly with fixed-size templates, this
@@ -1079,7 +1079,7 @@ exactly matches @var{hash-string}.
 @c COMMON
 @end deftp
 
-@defun bcrypt-hashpw password &optional setting
+@defun bcrypt-hashpw password :optional setting
 @c EN
 Calculates a hash value of @var{password}, using the salt value
 and parameters included in @var{setting}.  If @var{setting} is
@@ -1378,7 +1378,7 @@ be thrown if an invalid SQL statement is passed to @code{dbi-prepare}.
 @subsubheading データベースへの接続
 @c COMMON
 
-@defun dbi-connect dsn &keyword username password
+@defun dbi-connect dsn :key username password
 @c EN
 Connect to a database using a data source specified by @var{dsn}
 (data source name).  @var{Dsn} is a string with the following syntax:
@@ -1530,7 +1530,7 @@ instantiate the driver class and returns it.
 @subsubheading クエリの準備と発行
 @c COMMON
 
-@deffn {Method} dbi-prepare conn sql &keyword pass-through @dots{}
+@deffn {Method} dbi-prepare conn sql :key pass-through @dots{}
 @c EN
 From a string representation of SQL statement @var{sql},
 creates and returns a query object (an instance of @code{<dbi-query>}
@@ -1715,7 +1715,7 @@ or @code{delete}, the return value of the query closure is unspecified.
 @c COMMON
 @end deffn
 
-@deffn {Method} dbi-do conn sql &optional options parameter-value @dots{}
+@deffn {Method} dbi-do conn sql :optional options parameter-value @dots{}
 @c EN
 This is a convenience procedure when you create a query
 and immediately execute it.   It is equivalent to the following
@@ -1927,7 +1927,7 @@ The driver need to implement the following methods.
 ドライバは以下のメソッドを実装しなければなりません。
 @c COMMON
 
-@deffn {Method} dbi-make-connection (d <foo-driver>) (options <string>) (option-alist <list>) &keyword username password @dots{} 
+@deffn {Method} dbi-make-connection (d <foo-driver>) (options <string>) (option-alist <list>) :key username password @dots{} 
 @c EN
 This method is called from @code{dbi-connect}, and responsible to
 connect to the database and to create a connection object.
@@ -2005,7 +2005,7 @@ That's why those are passed via keyword arguments.
 @c COMMON
 @end deffn
 
-@deffn {Method} dbi-prepare (c <foo-connection>) (sql <string>) &keyword pass-through @dots{}
+@deffn {Method} dbi-prepare (c <foo-connection>) (sql <string>) :key pass-through @dots{}
 @c EN
 This method should create and return a prepared query object,
 which is an instance of @code{<dbi-query>} or its subclass.
@@ -2126,7 +2126,7 @@ result which has already been closed.
 @c COMMON
 @end deffn
 
-@deffn {Method} dbi-do (c <foo-connection>) (sql <string>) &optional options parameter-value @dots{}
+@deffn {Method} dbi-do (c <foo-connection>) (sql <string>) :optional options parameter-value @dots{}
 @c EN
 The default method uses @code{dbi-prepare} and @code{dbi-execute}
 to implement the function.  It just works,
@@ -2535,7 +2535,7 @@ Put a @var{value} with @var{key}.
 @c COMMON
 @end deffn
 
-@deffn {Method} dbm-get (dbm @code{<dbm>}) key &optional default
+@deffn {Method} dbm-get (dbm @code{<dbm>}) key :optional default
 @c EN
 Get a value associated with @var{key}.  If no value exists for @var{key}
 and @var{default} is specified, it is returned.  If no value exists for
@@ -2915,7 +2915,7 @@ APIs.
 マニュアルを見て下さい。
 @c COMMON
 
-@defun gdbm-open path &optional size rwmode fmode error-callback
+@defun gdbm-open path :optional size rwmode fmode error-callback
 
 @defvar GDBM_READER
 @end defvar
@@ -2945,7 +2945,7 @@ APIs.
 @defun gdbm-closed? gdbm-object
 @end defun
 
-@defun gdbm-store key value &optional flag
+@defun gdbm-store key value :optional flag
 
 
 @defvar GDBM_INSERT
@@ -3057,7 +3057,7 @@ APIs.
 @defun ndbm-closed? ndbm-object
 @end defun
 
-@defun ndbm-store ndbm-object key content &optional flag
+@defun ndbm-store ndbm-object key content :optional flag
 @end defun
 
 @defun ndbm-fetch ndbm-object key
@@ -3196,7 +3196,7 @@ in the processing.
 @c COMMON
 @end deftp
 
-@defun file-filter proc &keyword input output temporary-file keep-output?
+@defun file-filter proc :key input output temporary-file keep-output?
 @c EN
 Calls @var{proc} with two arguments, an input port and 
 an output port.   Returns the result(s) of @var{proc}.
@@ -3344,7 +3344,7 @@ Gaucheでは@emph{両方の}名前を提供することにしました。
 @subsection Directory utilities
 @c NODE ディレクトリユーティリティ
 
-@defun current-directory &optional new-directory
+@defun current-directory :optional new-directory
 @c EN
 When called with no argument, this returns the pathname of the current
 working directory.  When called with a string argument @var{new-directory},
@@ -3363,7 +3363,7 @@ implementations.
 @c COMMON
 @end defun
 
-@defun home-directory &optional user
+@defun home-directory :optional user
 @c EN
 Returns the home directory of the given @var{user},
 which may be a string user name or an integer user id.
@@ -3392,7 +3392,7 @@ or @file{/tmp} otherwise.
 @c COMMON
 @end deffn
 
-@defun directory-list path &keyword children? add-path? filter filter-add-path?
+@defun directory-list path :key children? add-path? filter filter-add-path?
 @c EN
 Returns a list of entries in the directory @var{path}.
 The result is sorted by dictionary order.
@@ -3446,7 +3446,7 @@ If @var{path} is not a directory, an error is signalled.
 @end example
 @end defun
 
-@defun directory-list2 path &keyword children? add-path? filter follow-link?
+@defun directory-list2 path :key children? add-path? filter follow-link?
 @c EN
 Like @code{directory-list}, but returns two values; the first one is a list
 of subdirectories, and the second one is a list of the rest.
@@ -3473,7 +3473,7 @@ while it will be in the second list if @var{follow-link?} is false.
 @c COMMON
 @end defun
 
-@defun directory-fold path proc seed &keyword lister follow-link?
+@defun directory-fold path proc seed :key lister follow-link?
 @c EN
 A fundamental directory traverser.
 Conceptually it works as follows, in recursive way.
@@ -3587,8 +3587,8 @@ the directory path itself in the result.
 
 @end defun
 
-@defun make-directory* name &optional perm
-@defunx create-directory* name &optional perm
+@defun make-directory* name :optional perm
+@defunx create-directory* name :optional perm
 @c EN
 Creates a directory @var{name}.  If the intermediate path to the
 directory doesn't exist, they are also created
@@ -3617,7 +3617,7 @@ followed.
 @c COMMON
 @end defun
 
-@defun copy-directory* src dst &keyword if-exists backup-suffix safe keep-timestamp keep-mode follow-link?
+@defun copy-directory* src dst :key if-exists backup-suffix safe keep-timestamp keep-mode follow-link?
 @c EN
 If @var{src} is a regular file, copies its content to @var{dst}, just like
 @code{copy-file} does.  If @var{src} is a directory, recursively
@@ -3925,7 +3925,7 @@ If @var{newext} is @code{#f}, it returns @var{path} without extension.
 @end example
 @end defun
 
-@defun find-file-in-paths name &keyword paths pred
+@defun find-file-in-paths name :key paths pred
 @c EN
 Looks for a file that has name @var{name} in the given list of pathnames
 @var{paths} and that satisfies a predicate @var{pred}.  If found,
@@ -3975,19 +3975,19 @@ by default.
 @subsection File attribute utilities
 @c NODE ファイル属性ユーティリティ
 
-@defun file-type path &keyword follow-link?
-@defunx file-perm path &keyword follow-link?
-@defunx file-mode path &keyword follow-link?
-@defunx file-ino path &keyword follow-link?
-@defunx file-dev path &keyword follow-link?
-@defunx file-rdev path &keyword follow-link?
-@defunx file-nlink path &keyword follow-link?
-@defunx file-uid path &keyword follow-link?
-@defunx file-gid path &keyword follow-link?
-@defunx file-size path &keyword follow-link?
-@defunx file-atime path &keyword follow-link?
-@defunx file-mtime path &keyword follow-link?
-@defunx file-ctime path &keyword follow-link?
+@defun file-type path :key follow-link?
+@defunx file-perm path :key follow-link?
+@defunx file-mode path :key follow-link?
+@defunx file-ino path :key follow-link?
+@defunx file-dev path :key follow-link?
+@defunx file-rdev path :key follow-link?
+@defunx file-nlink path :key follow-link?
+@defunx file-uid path :key follow-link?
+@defunx file-gid path :key follow-link?
+@defunx file-size path :key follow-link?
+@defunx file-atime path :key follow-link?
+@defunx file-mtime path :key follow-link?
+@defunx file-ctime path :key follow-link?
 @c EN
 These functions return the attribute of file/directory specified by
 @var{path}.  The attribute name corresponds to the slot name of
@@ -4181,7 +4181,7 @@ See also @code{sys-utime} (@xref{File stats}).
 @c COMMON
 @end defun
 
-@defun copy-file src dst &keyword if-exists backup-suffix safe keep-timestamp keep-mode follow-link?
+@defun copy-file src dst :key if-exists backup-suffix safe keep-timestamp keep-mode follow-link?
 @c EN
 Copies file from @var{src} to @var{dst}.  The source file @var{src} must exist.
 The behavior when the destination @var{dst} exists varies by the keyword
@@ -4293,7 +4293,7 @@ otherwise it becomes @code{#o666} masked by umask settings.
 @c COMMON
 @end defun
 
-@c @defun copy-files files dstdir &keyword if-exists backup-suffix safe keep-timestamp keep-mode follow-link?
+@c @defun copy-files files dstdir :key if-exists backup-suffix safe keep-timestamp keep-mode follow-link?
 @c @c EN
 @c Copies each file in a list @var{files} to the destination @var{dstdir}, which
 @c must be an existing directory.  The keyword arguments are passed
@@ -4305,7 +4305,7 @@ otherwise it becomes @code{#o666} masked by umask settings.
 @c @c COMMON
 @c @end defun
 
-@defun move-file src dst &keyword if-exists backup-suffix
+@defun move-file src dst :key if-exists backup-suffix
 @c EN
 Moves file @var{src} to @var{dst}.   The source @var{src} must exist.
 The behavior when @var{dst} exists varies by the keyword argument
@@ -4365,7 +4365,7 @@ it to @var{dst}, then removes @var{src}.
 @c COMMON
 @end defun
 
-@c @defun move-files files dstdir &keyword if-exists backup-suffix
+@c @defun move-files files dstdir :key if-exists backup-suffix
 @c @c EN
 @c Moves each file in a list @var{files} to @var{dstdir},
 @c which must be an existing directory.  Keyword arguments
@@ -4960,10 +4960,10 @@ faster than getting one by one.
 @c you can explicitly implement a backtrack behavior.
 @c @end defun
 
-@c @defun $many p &optional min max
+@c @defun $many p :optional min max
 @c @end defun
 
-@c @defun $skip-many p &optional min max
+@c @defun $skip-many p :optional min max
 @c @end defun
 
 @c @defun $optional p
@@ -4975,22 +4975,22 @@ faster than getting one by one.
 @c @defun $count p count
 @c @end defun
 
-@c @defun $sep-by p psep &optional min max
+@c @defun $sep-by p psep :optional min max
 @c @end defun
 
 @c @defun $alternate p psep
 @c @end defun
 
-@c @defun $end-by p psep &rest p2 @dots{}
+@c @defun $end-by p psep :rest p2 @dots{}
 @c @end defun
 
-@c @defun $sep-end-by p psep &rest p2 @dots{}
+@c @defun $sep-end-by p psep :rest p2 @dots{}
 @c @end defun
 
 @c @defun $not p
 @c @end defun
 
-@c @defun $many-till p pend &rest p2 @dots{}
+@c @defun $many-till p pend :rest p2 @dots{}
 @c @end defun
 
 @c @defun $chain-left p p-op
@@ -5061,7 +5061,7 @@ faster than getting one by one.
 @c @node PEG stream, PEG performance tips, PEG combinators, Parser combinators for PEG
 @c @subsection PEG stream
 
-@c @defun make-peg-steram generator &optional fini
+@c @defun make-peg-steram generator :optional fini
 @c @end defun
 
 @c @defun string->peg-stream string
@@ -5115,7 +5115,7 @@ In the following document, I also refer to the format as ``RFC822 format''.
 @subheading メッセージヘッダのパーズ
 @c COMMON
 
-@defun rfc822-read-headers iport &keyword strict? reader
+@defun rfc822-read-headers iport :key strict? reader
 @c EN
 Reads RFC822 format message from an input port @var{iport},
 until it reaches the end of the message header.
@@ -5169,7 +5169,7 @@ should be enough for most cases.
 @c COMMON
 @end defun
 
-@defun rfc822-header->list iport &keyword strict? reader
+@defun rfc822-header->list iport :key strict? reader
 @c EN
 This is an old name of @code{rfc822-read-headers}.  This is kept
 for the backward compatibility.  The new code should use
@@ -5182,7 +5182,7 @@ for the backward compatibility.  The new code should use
 @end defun
 
 
-@defun rfc822-header-ref header-list field-name &optional default
+@defun rfc822-header-ref header-list field-name :optional default
 @c EN
 An utility procedure to get a specific field from the parsed
 header list, which is returned by @code{rfc822-read-headers}.
@@ -5253,7 +5253,7 @@ RFC2822メッセージの「構造化」されたヘッダフィールドをパ�
 参照してください。
 @c COMMON
 
-@defun rfc822-next-token iport &optional tokenizer-specs
+@defun rfc822-next-token iport :optional tokenizer-specs
 @c EN
 A basic tokenizer.  First it skips whitespaces and/or
 comments (@code{CFWS}) from @var{iport}, if any.  Then
@@ -5336,7 +5336,7 @@ by this:
 @end example
 @end defun
 
-@defun rfc822-field->tokens field &optional tokenizer-specs
+@defun rfc822-field->tokens field :optional tokenizer-specs
 @c EN
 A convenience procedure.  Creates an input string port for
 a field body @var{field}, and calls @code{rfc822-next-token}
@@ -5449,7 +5449,7 @@ SRFI-19の日付からRFC822形式の日付文字列を作成するには、
 @subheading メッセージの構築
 @c COMMON
 
-@defun rfc822-write-headers headers &keyword output continue check
+@defun rfc822-write-headers headers :key output continue check
 This is a sort of inverse function of @code{rfc822-read-headers}.
 It receives a list of header data, in which each header data
 consists of @code{(<name> <body>)}, and writes them out in RFC822 header
@@ -5554,7 +5554,7 @@ and RFC3548 (@ref{rfc3548, [RFC3548], RFC3548})
 @c COMMON
 @end deftp
 
-@defun base64-encode &keyword line-width
+@defun base64-encode :key line-width
 @c EN
 Reads byte stream from the current input port, encodes it in Base64
 format and writes the result character stream to the current output port.
@@ -5576,7 +5576,7 @@ RFC2045に従い76となっています。@var{line-width}に@code{#f}または@
 @c COMMON
 @end defun
 
-@defun base64-encode-string string &keyword line-width
+@defun base64-encode-string string :key line-width
 @c EN
 Converts contents of @var{string} to Base64 encoded format.
 Input string can be either complete or incomplete string;
@@ -5634,7 +5634,7 @@ RFC 2965 (@ref{rfc2965,,RFC2965}) で定義されている「クッキー」情�
 @c COMMON
 @end deftp
 
-@defun parse-cookie-string string &optional version
+@defun parse-cookie-string string :optional version
 @c EN
 Parse a cookie string @var{string}, which is the value of ``Cookie''
 request header.  Usually, the same information is available to CGI
@@ -5677,7 +5677,7 @@ as a form of keyword-value pair.
 @c COMMON
 @end defun
 
-@defun construct-cookie-string specs &optional version
+@defun construct-cookie-string specs :optional version
 @c EN
 Given list of cookie specs, creates a cookie string suitable for
 @code{Set-cookie2} or @code{Set-cookie} header.
@@ -5849,7 +5849,7 @@ including the status code.
 @c COMMON
 @end deftp
 
-@defun call-with-ftp-connection host proc &keyword passive port username password account log-drain
+@defun call-with-ftp-connection host proc :key passive port username password account log-drain
 @c EN
 A high-level convenience routine to open an ftp connection to
 an ftp server and calls the given procedure.
@@ -5952,7 +5952,7 @@ Returns true iff ftp connection uses passive data retrieval.
 @c COMMON
 @end defun
 
-@defun ftp-login host &keyword passive port username password account log-drain
+@defun ftp-login host :key passive port username password account log-drain
 @c EN
 Connects to the ftp server specified by @var{host}, authenticate the user,
 and returns a newly created @code{<ftp-connection>} instance.
@@ -6005,7 +6005,7 @@ Removes the remote file named by @var{path}.
 @c COMMON
 @end defun
 
-@defun ftp-help conn &optional option @dots{}
+@defun ftp-help conn :optional option @dots{}
 @c EN
 Sends ftp @code{HELP} commands.  @var{Option}s must be strings,
 and will be passed to the @code{HELP} command arguments.
@@ -6055,7 +6055,7 @@ Returns the server reply.
 @c COMMON
 @end defun
 
-@defun ftp-stat conn &optional pathname
+@defun ftp-stat conn :optional pathname
 @c EN
 Sends ftp @code{STAT} command to the server.
 RFC959 defines several different semantics of this command.
@@ -6115,7 +6115,7 @@ code.  Use @code{ftp-mtime} below to obtain a parsed result.
 @c COMMON
 @end defun
 
-@defun ftp-mtime conn path &optional local-time?
+@defun ftp-mtime conn path :optional local-time?
 @c EN
 Queries the modification time of the remote file specified by @var{path},
 and returns the result in a @code{<date>} object 
@@ -6138,7 +6138,7 @@ FTPコマンド@code{NOOP}を送り、サーバーからのリプライを返し
 @c COMMON
 @end defun
 
-@defun ftp-list conn &optional path
+@defun ftp-list conn :optional path
 @c EN
 Returns the information about the files within the remote file 
 or directory specified by @var{path}, or the current remote directory,
@@ -6155,8 +6155,8 @@ format depends on the server.
 @c CoMMON
 @end defun
 
-@defun ftp-name-list conn &optional path
-@defunx ftp-ls conn &optional path
+@defun ftp-name-list conn :optional path
+@defunx ftp-ls conn :optional path
 @c EN
 Return the list of names in the specfied @var{path}, or the current
 remote directory, without any other information.  @code{ftp-ls}
@@ -6176,7 +6176,7 @@ in the remote directory.
 @c COMMON
 @end defun
 
-@defun ftp-get conn path &keyword sink flusher
+@defun ftp-get conn path :key sink flusher
 @c EN
 Retrieves a remote file @var{path}.  The retrieved data is
 sent to an output port given to @var{sink}.  Once all the data
@@ -6204,7 +6204,7 @@ You don't want this behavior if the retrieved file is huge.
 @c COMMON
 @end defun
 
-@defun ftp-put conn from-file &optional to-file
+@defun ftp-put conn from-file :optional to-file
 @c EN
 Sends the local file specified by @var{from-file} to the remote
 server as the name specified by @var{to-file}.  If @var{to-file}
@@ -6328,7 +6328,7 @@ on @var{hmac}.
 @c COMMON
 @end deffn
 
-@deffn {Method} hmac-digest &keyword key hasher
+@deffn {Method} hmac-digest :key key hasher
 @c EN
 Creates an @code{<hmac>} object and hash the data stream
 from the current input port, then returns the hashed result
@@ -6340,7 +6340,7 @@ in an incomplete string.
 @c COMMON
 @end deffn
 
-@deffn {Method} hmac-digest-string string &keyword key hasher
+@deffn {Method} hmac-digest-string string :key key hasher
 @c EN
 Creates an @code{<hmac>} object and hash the data in @var{string},
 then returns the hashed result in an incomplete string.
@@ -6391,11 +6391,11 @@ header fields.  Inherits @code{<error>}.
 @c COMMON
 @end deftp
 
-@defun http-get server request-uri &keyword sink flusher no-redirect @dots{}
-@defunx http-head server request-uri &keyword no-redirect @dots{}
-@defunx http-post server request-uri body &keyword sink flusher no-redirect @dots{}
-@defunx http-put server request-uri body &keyword sink flusher @dots{}
-@defunx http-delete server request-uri &keyword sink flusher @dots{}
+@defun http-get server request-uri :key sink flusher no-redirect @dots{}
+@defunx http-head server request-uri :key no-redirect @dots{}
+@defunx http-post server request-uri body :key sink flusher no-redirect @dots{}
+@defunx http-put server request-uri body :key sink flusher @dots{}
+@defunx http-delete server request-uri :key sink flusher @dots{}
 
 @c EN
 Send http GET, HEAD, POST, PUT and DELETE requests to the http @var{server},
@@ -6742,7 +6742,7 @@ without allocating (potentially very big) string buffer.
 
 The module also provides some utility procedures.
 
-@deffn {Parameter} http-user-agent &optional value
+@deffn {Parameter} http-user-agent :optional value
 @c EN
 The value of this parameter is used as a default value
 to pass to the user-agent header.
@@ -6757,7 +6757,7 @@ user-agentヘッダに渡される値のデフォルト値を指定するパラ�
 @c COMMON
 @end deffn
 
-@defun http-compose-query path params &optional encoding
+@defun http-compose-query path params :optional encoding
 A helper procedure to create a request-uri from
 a list of query parameters.  @var{Encoding} specifies
 the character encodings to be used.
@@ -6768,7 +6768,7 @@ the character encodings to be used.
 @end example
 @end defun
 
-@defun http-compose-form-data params port &optional encoding
+@defun http-compose-form-data params port :optional encoding
 A helper procedure to create @code{multipart/form-data}
 from a list of parameters.  The format of @var{params} argument 
 is the same as the list format of @var{body} argument of
@@ -7174,8 +7174,8 @@ RFC2183に定められたContent-Dispositionヘッダフィールドをパーズ
 @end defun
 
 
-@defun mime-parse-parameters &optional iport
-@defunx mime-compose-parameters params &optional oport &key start-column
+@defun mime-parse-parameters :optional iport
+@defunx mime-compose-parameters params :optional oport &key start-column
 @c EN
 These are low-level utility procedures to parse and compose @emph{parameter}
 part of header fields (as appeared in RFC2045 Section 5.1 etc).
@@ -7311,7 +7311,7 @@ on entire header field for the convenience).
 @c COMMON
 @end defun
 
-@defun mime-encode-word word &keyword charset transfer-encoding
+@defun mime-encode-word word :key charset transfer-encoding
 @c EN
 Encodes @var{word} in the RFC2047 format.  The keyword
 argument @var{charset} specifies the character encoding scheme
@@ -7376,7 +7376,7 @@ RFC文書で使われている``charset''および``transfer-encoding''の用語
 @c COMMON
 @end defun
 
-@defun mime-encode-text text &keyword charset transfer-encoding line-width start-column force
+@defun mime-encode-text text :key charset transfer-encoding line-width start-column force
 @c EN
 Encode @var{text} in RFC2047 format if necessary, and considering
 line foling if the result gets too long.
@@ -7783,7 +7783,7 @@ blocks, instead of all-in-one procedure.
 
 @subheading Message composer
 
-@defun mime-compose-message parts &optional port &key boundary
+@defun mime-compose-message parts :optional port &key boundary
 @defunx mime-compose-message-string parts &key boundary
 Composes a MIME multipart message.  @code{Mime-compose-message}
 emits the result to an output port @var{port}, whose default
@@ -7873,7 +7873,7 @@ defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.7.
 @c COMMON
 @end deftp
 
-@defun quoted-printable-encode &keyword line-width binary
+@defun quoted-printable-encode :key line-width binary
 @c EN
 Reads byte stream from the current input port, encodes it in Quoted-printable
 format and writes the result character stream to the current output port.
@@ -7920,7 +7920,7 @@ for the details.
 @c COMMON
 @end defun
 
-@defun quoted-printable-encode-string string &keyword line-width binary
+@defun quoted-printable-encode-string string :key line-width binary
 @c EN
 Converts contents of @var{string} to Quoted-printable encoded format.
 Input string can be either complete or incomplete string;
@@ -8228,7 +8228,7 @@ It returns @var{userinfo}, @var{host} and @var{port}.
 @end example
 @end defun
 
-@defun uri-compose &keyword scheme userinfo host port authority path path* query fragment specific
+@defun uri-compose :key scheme userinfo host port authority path path* query fragment specific
 @c EN
 Compose a URI from given components.
 There can be various combinations of components to create a valid
@@ -8289,8 +8289,8 @@ Some examples:
 @end example
 @end defun
 
-@defun uri-decode &keyword :cgi-decode
-@defunx uri-decode-string string &keyword :cgi-decode :encoding
+@defun uri-decode :key :cgi-decode
+@defunx uri-decode-string string :key :cgi-decode :encoding
 @c EN
 Decodes ``URI encoding'', i.e. @code{%}-escapes.
 @code{uri-decode} takes input from the current input port,
@@ -8320,8 +8320,8 @@ URI エンコーディング、すなわち、@code{%}でエスケープされ�
 @c COMMON
 @end defun
 
-@defun uri-encode &keyword :noescape
-@defunx uri-encode-string string &keyword :noescape :encoding
+@defun uri-encode :key :noescape
+@defunx uri-encode-string string :key :noescape :encoding
 @c EN
 Encodes unsafe characters by @code{%}-escape.  @code{uri-encode}
 takes input from the current input port and writes the result to
@@ -8501,7 +8501,7 @@ inflating portが読み出す圧縮データが壊れていた場合、読み出
 @end deftp
 
 
-@defun open-deflating-port drain &keyword compression-level buffer-size window-bits memory-level strategy dictionary owner?
+@defun open-deflating-port drain :key compression-level buffer-size window-bits memory-level strategy dictionary owner?
 @c EN
 Creates and returns an instance of @code{<deflating-port>},
 an output port that compresses the output data and sends 
@@ -8726,7 +8726,7 @@ deflating portより先に@var{drain}のファイナライザが呼ばれて
 @c COMMON
 @end defun
 
-@defun open-inflating-port source &keyword buffer-size window-bits dictionary owner?
+@defun open-inflating-port source :key buffer-size window-bits dictionary owner?
 @c EN
 Takes an input port @var{source} from which a compressed data
 can be read, and creates and returns a new instance of
@@ -8811,7 +8811,7 @@ constants:
 
 @end defun
 
-@defun zstream-params-set! deflating-port &keyword compression-level strategy
+@defun zstream-params-set! deflating-port :key compression-level strategy
 @c EN
 Changes compression level and/or strategy during compressing.
 @c JP
@@ -8909,7 +8909,7 @@ GZIPフォーマットを使います。これは
 @c COMMON
 @end defun
 
-@defun crc32 string &optional checksum
+@defun crc32 string :optional checksum
 @c EN
 Returns CRC32 checksum of @var{string}.  If optional @var{checksum}
 is given, the returned checksum is an update of @var{checksum} by
@@ -8921,7 +8921,7 @@ is given, the returned checksum is an update of @var{checksum} by
 @c COMMON
 @end defun
 
-@defun alder32 string &optional checksum
+@defun alder32 string :optional checksum
 @c EN
 Returns Adler32 checksum of @var{string}.  If optional @var{checksum}
 is given, the returned checksum is an update of @var{checksum} by
@@ -12514,7 +12514,7 @@ should be enough for most tasks.
 高レベルの、簡単に使えるシリアライザです。大抵の目的にはこれで十分使えるでしょう。
 @c COMMON
 
-@defun srl:sxml->xml sxml-obj &optional port-or-filename
+@defun srl:sxml->xml sxml-obj :optional port-or-filename
 @c EN
 Serializes the @var{sxml-obj} into XML, with indentation to facilitate
 readability by a human.
@@ -12548,7 +12548,7 @@ is unspecified.
 @c COMMON
 @end defun
 
-@defun srl:sxml->xml-noindent sxml-obj &optional port-or-filename
+@defun srl:sxml->xml-noindent sxml-obj :optional port-or-filename
 @c EN
 Serializes the @var{sxml-obj} into XML, without indentation.
 
@@ -12561,7 +12561,7 @@ Argument @var{port-or-filename} works like described in
 @c COMMON
 @end defun
 
-@defun srl:sxml->html sxml-obj &optional port-or-filename
+@defun srl:sxml->html sxml-obj :optional port-or-filename
 @c EN
 Serializes the @var{sxml-obj} into HTML, with indentation to
 facilitate readability by a human.
@@ -12575,7 +12575,7 @@ Argument @var{port-or-filename} works like described in @code{srl:sxml->xml}.
 @c COMMON
 @end defun
 
-@defun srl:sxml->html-noindent sxml-obj &optional port-or-filename
+@defun srl:sxml->html-noindent sxml-obj :optional port-or-filename
 @c EN
 Serializes the @var{sxml-obj} into HTML, without indentation.
 
@@ -12600,7 +12600,7 @@ the XML serializer.
 します。
 @c COMMON
 
-@defun srl:parameterizable sxml-obj &optional port-or-filename params*
+@defun srl:parameterizable sxml-obj :optional port-or-filename params*
 @c EN
 Generalized serialization procedure, parameterizable with all the
 serialization parameters supported by this implementation.
@@ -12839,7 +12839,7 @@ and automatic conversions.
 より高レベルな機能の提供を計画しています。
 @c COMMON
 
-@defun make-csv-reader separator &optional (quote-char #\")
+@defun make-csv-reader separator :optional (quote-char #\")
 @c EN
 Returns a procedure with one argument, input port.
 When the procedure is called, it reads one record from the port,
@@ -12852,7 +12852,7 @@ If input reaches EOF, it returns EOF.
 @c COMMON
 @end defun
 
-@defun make-csv-writer separator &optional newline (quote-char #\")
+@defun make-csv-writer separator :optional newline (quote-char #\")
 @c EN
 Returns a procedure with two arguments, output port and
 a list of fields.  When the procedure is called, it
@@ -12885,7 +12885,7 @@ using @code{util.lcs} (@xref{The longest common subsequence}).
 @c COMMON
 @end deftp
 
-@defun diff src-a src-b &keyword reader eq-fn
+@defun diff src-a src-b :key reader eq-fn
 @c EN
 Generates an "edit list" from text sources @var{src-a} and @var{src-b}.
 
@@ -12925,7 +12925,7 @@ the detailed explanation of the edit list.
 @end example
 @end defun
 
-@defun diff-report src-a src-b &keyword reader eq-fn writer
+@defun diff-report src-a src-b :key reader eq-fn writer
 @c EN
 A convenience procedure to take the diff of two text sources
 and display the result nicely.  This procedure calls @code{lcs-fold}
@@ -13040,7 +13040,7 @@ SRFI-29 (@ref{Localization}参照) はこれとは別のメッセージの地域
 @subheading gettext-互換の API
 @c COMMON
 
-@defun textdomain domain-name &optional locale dirs cdir cached? lookup-cached?
+@defun textdomain domain-name :optional locale dirs cdir cached? lookup-cached?
 @c EN
 Sets up the default domain and other parameters for
 the application.  The setting affects to the following @code{gettext}
@@ -13148,7 +13148,7 @@ translated message, @var{msg-id} itself is returned.
 @c COMMON
 @end defun
 
-@defun ngettext msg-id &optional msg-id2 num
+@defun ngettext msg-id :optional msg-id2 num
 @c EN
 Similar to @var{gettext}, but it can be used to handle
 plural forms.
@@ -13201,7 +13201,7 @@ the gettext-compatible APIs are written.
 API が書かれています。
 @c COMMON
 
-@defun make-gettext &optional domain locale dirs gettext-cached? lookup-cached?
+@defun make-gettext :optional domain locale dirs gettext-cached? lookup-cached?
 @c EN
 Creates and returns an @emph{accessor procedure}, which encapsulates
 methods to retrieve localized messages.
@@ -13282,7 +13282,7 @@ HTML に含まれる"安全でない"文字をエスケープします。
 @c COMMON
 @end defun
 
-@defun html-doctype &keyword type
+@defun html-doctype :key type
 @c EN
 Returns a doctype declaration for an HTML document.
 @var{type} can be either one of the followings (default is 
@@ -13577,7 +13577,7 @@ Gauche で効果的になるように手続きを再実装しました。特に�
 @c COMMON
 @end deftp
 
-@defun find-string-from-port? str in-port &optional max-no-chars
+@defun find-string-from-port? str in-port :optional max-no-chars
 @c EN
 Looks for a string @var{str} from the input port @var{in-port}.
 The optional argument @var{max-no-chars} limits the maximum number of
@@ -13604,7 +13604,7 @@ it may return non-boolean value, contrary to the Scheme convention.
 @c COMMON
 @end defun
 
-@defun peek-next-char &optional port
+@defun peek-next-char :optional port
 @c EN
 Discards the current character and peeks the next character from @var{port}.
 Useful to look ahead one character.
@@ -13640,7 +13640,7 @@ EOF の条件もまた含まれます。@code{*eof*} が含まれない場合、
 エラーとして扱われます。
 @c COMMON
 
-@defun assert-curr-char char-list string &optional port
+@defun assert-curr-char char-list string :optional port
 @c EN
 Reads a character from @var{port}.  If it is included in @var{char-list},
 returns the character.  Otherwise, signals an error with a message
@@ -13653,7 +13653,7 @@ If @var{port} is omitted, the current input port is used.
 @c COMMON
 @end defun
 
-@defun skip-until char-list/number &optional port
+@defun skip-until char-list/number :optional port
 @c EN
 @var{char-list/number} is either a char-list or a number.
 If it is a number; it reads that many characters and returns @code{#f}.
@@ -13672,7 +13672,7 @@ If @var{port} is omitted, the current input port is used.
 @c COMMON
 @end defun
 
-@defun skip-while char-list &optional port
+@defun skip-while char-list :optional port
 @c EN
 Reads from @var{port} until it sees a character that does not
 belong to @var{char-list}.  The character remains in the stream.
@@ -13694,7 +13694,7 @@ port returns the first non-whitespace character.
 @end example
 @end defun
 
-@defun next-token prefix-char-list break-char-list &optional comment port
+@defun next-token prefix-char-list break-char-list :optional comment port
 @c EN
 Skips any number of characters in @var{prefix-char-list},
 then collects the characters until it sees @var{break-char-list}.
@@ -13715,7 +13715,7 @@ included in the message.
 @c COMMON
 @end defun
 
-@defun next-token-of char-list/pred &optional port
+@defun next-token-of char-list/pred :optional port
 @c EN
 Reads and collects the characters as far as
 it belongs to @var{char-list/pred}, then returns them as a string.
@@ -13736,7 +13736,7 @@ when it returns a true value.
 @c COMMON
 @end defun
 
-@defun read-string n &optional port
+@defun read-string n :optional port
 @c EN
 Reads up to @var{n} characters, collects them into a string, and returns it.
 If the input stream contains less characters, the returns string contains
@@ -13830,7 +13830,7 @@ which packages the progress bar feature in a closure and returns it.
 ます。
 @c COMMON
 
-@defun make-text-progress-bar &keyword header header-width bar-char bar-width num-width num-format time-width info info-width separator-char max-value port
+@defun make-text-progress-bar :key header header-width bar-char bar-width num-width num-format time-width info info-width separator-char max-value port
 
 @c EN
 Returns a procedure that packages operations on the progress bar.
@@ -14177,7 +14177,7 @@ Gaucheの@code{tr}はマルチバイト文字／文字列を正しく扱いま�
 @c COMMON
 @end deftp
 
-@defun tr from-list to-list &keyword :complement :delete :squeeze :table-size :input :output
+@defun tr from-list to-list :key :complement :delete :squeeze :table-size :input :output
 @c EN
 Reads from @var{input} and writes to @var{output},
 with transliterating characters in @var{from-list} to the
@@ -14349,7 +14349,7 @@ inside loop, consider to use @code{build-transliterator} described below.
 @c COMMON
 @end defun
 
-@defun string-tr string from-list to-list &keyword :complement :delete :squeeze :table-size
+@defun string-tr string from-list to-list :key :complement :delete :squeeze :table-size
 @c EN
 Works like @code{tr}, except that input is taken from a string @var{string}.
 @c JP
@@ -14357,7 +14357,7 @@ Works like @code{tr}, except that input is taken from a string @var{string}.
 @c COMMON
 @end defun
 
-@defun build-transliterator from-list to-list &keyword :complement :delete :squeeze :table-size :input :output
+@defun build-transliterator from-list to-list :key :complement :delete :squeeze :table-size :input :output
 @c EN
 Returns a procedure that does the actual transliteration.  This effectively
 ``pre-compiles'' the internal data structure.   If you want to run
@@ -14455,7 +14455,7 @@ of OnceAndOnlyOnce.   Also it's easier if we have a common interface.
 @c COMMON
 @end deftp
 
-@deffn {Generic Function} write-tree tree &optional out
+@deffn {Generic Function} write-tree tree :optional out
 @c EN
 Writes out an @var{tree} as a tree of text, to the output port @var{out}.
 If @var{out} is omitted, the current output port is used.
@@ -14525,7 +14525,7 @@ argument that is used to test equality, which defaults to @code{eqv?}.
 @end deftp
 
 @defun permutations set
-@defunx permutations* set &optional eq
+@defunx permutations* set :optional eq
 @c EN
 Returns a list of all permutations of a list @var{set}.
 @c JP
@@ -14556,7 +14556,7 @@ each permutation at a time, consider @code{permutations-for-each} below.
 @end defun
 
 @defun permutations-for-each proc set
-@defunx permutations*-for-each proc set &optional eq
+@defunx permutations*-for-each proc set :optional eq
 @c EN
 For each permutation of a list @var{set}, calls @var{proc}.
 Returns an undefined value.
@@ -14567,7 +14567,7 @@ Returns an undefined value.
 @end defun
 
 @defun combinations set n
-@defunx combinations* set n &optional eq
+@defunx combinations* set n :optional eq
 @c EN
 Returns a list of all possible combinations of @var{n} elements out
 of a list @var{set}.
@@ -14595,7 +14595,7 @@ Watch out the explosion of combinations when @var{set} is large.
 @end defun
 
 @defun combinations-for-each proc set n
-@defunx combinations*-for-each proc set n &optional eq
+@defunx combinations*-for-each proc set n :optional eq
 @c EN
 Calls @var{proc} for each combination of @var{n} elements out of @var{set}.
 Returns an undefined value.
@@ -14606,7 +14606,7 @@ Returns an undefined value.
 @end defun
 
 @defun power-set set
-@defunx power-set* set &optional eq
+@defunx power-set* set :optional eq
 @c EN
 Returns power set (all subsets) of a list @var{set}.
 @c JP
@@ -14623,7 +14623,7 @@ Returns power set (all subsets) of a list @var{set}.
 @end defun
 
 @defun power-set-for-each proc set
-@defunx power-set*-for-each proc set &optional eq
+@defunx power-set*-for-each proc set :optional eq
 @c EN
 Calls @var{proc} for each subset of @var{set}.
 @c JP
@@ -14788,7 +14788,7 @@ isomorphic.
 @c COMMON
 @end deftp
 
-@defun isomorphic? obj1 obj2 &optional context
+@defun isomorphic? obj1 obj2 :optional context
 @c EN
 Returns @code{#t} if @var{obj1} and @var{obj2} are isomorphic.
 
@@ -14864,7 +14864,7 @@ O(ND)アルゴリズムに基づいています(@ref{myers86,[Myers86],Myers86})
 @c COMMON
 @end deftp
 
-@defun lcs seq-a seq-b &optional eq-fn
+@defun lcs seq-a seq-b :optional eq-fn
 @c EN
 Calculates and returns the longest common sequence of
 two lists, @var{seq-a} and @var{seq-b}.
@@ -14882,7 +14882,7 @@ the comparison predicate; if omitted, @code{equal?} is used.
 @end example
 @end defun
 
-@defun lcs-with-positions seq-a seq-b &optional eq-fn
+@defun lcs-with-positions seq-a seq-b :optional eq-fn
 @c EN
 This is the detailed version of @code{lcs}.
 The arguments are the same.
@@ -14925,7 +14925,7 @@ in @var{seq-a}, then the integer position of the element in @var{seq-b}.
 @end example
 @end defun
 
-@defun lcs-fold a-proc b-proc both-proc seed a b &optional eq-fn
+@defun lcs-fold a-proc b-proc both-proc seed a b :optional eq-fn
 @c EN
 A fundamental iterator over the "edit list" derived from
 two lists @var{a} and @var{b}.
@@ -14969,7 +14969,7 @@ Afterwards, the process is repeated using @var{a''} and @var{b''}.
 @c COMMON
 @end defun
 
-@defun lcs-edit-list a b &optional eq-fn
+@defun lcs-edit-list a b :optional eq-fn
 @c EN
 Calculates 'edit-list' from two lists @var{a} and @var{b}, which is
 the smallest set of commands (additions and deletions) that changes
@@ -15064,7 +15064,7 @@ be used for lists.
 @c COMMON
 @end deftp
 
-@defun take* list k &optional fill? padding
+@defun take* list k :optional fill? padding
 @c EN
 Returns a list that consists of the first @var{k} elements in
 @var{list}, like SRFI-1's @code{take}, except this procedure
@@ -15118,7 +15118,7 @@ an empty list is returned.
 @end example
 @end defun
 
-@defun take-right* list k &optional fill? padding
+@defun take-right* list k :optional fill? padding
 @c EN
 Like @code{take*}, but counts from right of @var{list}.
 If needed, @var{padding} is added on left of the result.
@@ -15136,7 +15136,7 @@ Like @code{drop*}, but counts from right of @var{list}.
 @c COMMON
 @end defun
 
-@defun split-at* list k &optional fill? padding
+@defun split-at* list k :optional fill? padding
 @c EN
 More tolerant version of SRFI-1's @code{split-at}.
 Returns the results of @code{take*} and @var{drop*}.
@@ -15151,7 +15151,7 @@ SRFI-1の@code{split-at}の寛容なバージョンです。
 @end example
 @end defun
 
-@defun slices list k &optional fill? padding
+@defun slices list k :optional fill? padding
 @c EN
 Splits @var{list} into the sublists (slices) where the length of
 each slice is @var{k}.
@@ -15262,7 +15262,7 @@ the resulting list, like unquote-splicing.
 @end example
 @end defmac
 
-@defun alist->hash-table alist &optional cmp
+@defun alist->hash-table alist :optional cmp
 @c EN
 Creates and returns a hash table that has entries of
 each element in alist, using its car as the key and
@@ -15285,7 +15285,7 @@ alistに含まれるそれぞれの要素をエントリとして持つハッシ
 @end example
 @end defun
 
-@defun rassoc key alist &optional eq-fn
+@defun rassoc key alist :optional eq-fn
 @defunx rassq key alist
 @defunx rassv key alist
 @c EN
@@ -15305,9 +15305,9 @@ Handy to realize bidirectional associative list.
 @end defun
 
 
-@defun assoc-ref alist key &optional default eq-fn
-@defunx assq-ref alist key &optional default
-@defunx assv-ref alist key &optional default
+@defun assoc-ref alist key :optional default eq-fn
+@defunx assq-ref alist key :optional default
+@defunx assv-ref alist key :optional default
 @c EN
 These procedures provide the access to the assoc list
 symmetric with other *-ref procedures.
@@ -15339,9 +15339,9 @@ uses @code{eq?} and @code{eqv?}, respectively.
 @c COMMON
 @end defun
 
-@defun rassoc-ref alist key &optional default eq-fn
-@defunx rassq-ref alist key &optional default
-@defunx rassv-ref alist key &optional default
+@defun rassoc-ref alist key :optional default eq-fn
+@defunx rassq-ref alist key :optional default
+@defunx rassv-ref alist key :optional default
 @c EN
 Reverse association version of @code{assoc-ref}.
 @c JP
@@ -15360,7 +15360,7 @@ The meanings of optional arguments are the same as @code{assoc-ref}.
 @c COMMON
 @end defun
 
-@defun assoc-set! alist key val &optional eq-fn
+@defun assoc-set! alist key val :optional eq-fn
 @defunx assq-set! alist key val
 @defunx assv-set! alist key val
 @c EN
@@ -16183,7 +16183,7 @@ Returns a copy of the queue.
 @c COMMON
 @end defun
 
-@defun enqueue! queue obj &optional more-objs @dots{}
+@defun enqueue! queue obj :optional more-objs @dots{}
 @c EN
 Add @var{obj} to the end of @var{queue}.  You may give more than
 one object, and each of them are enqueued in order.
@@ -16210,7 +16210,7 @@ an error is signalled and @var{queue} won't be modified.
 @c COMMON
 @end defun
 
-@defun queue-push! queue obj &optional more-objs @dots{}
+@defun queue-push! queue obj :optional more-objs @dots{}
 @c EN
 Add @var{obj} in front of @var{queue}.  You may give more than
 one object, and each of them are pushed in order.
@@ -16229,8 +16229,8 @@ for the details.
 @c COMMON
 @end defun
 
-@defun enqueue-unique! queue eq-proc obj &optional more-objs @dots{}
-@defunx queue-push-unique! queue eq-proc obj &optional more-objs @dots{}
+@defun enqueue-unique! queue eq-proc obj :optional more-objs @dots{}
+@defunx queue-push-unique! queue eq-proc obj :optional more-objs @dots{}
 @c EN
 Like @code{enqueue!} and @code{queue-push!}, respectively, except that these
 don't modify @var{queue} if it already contains @var{obj}
@@ -16252,8 +16252,8 @@ for the details.
 @c COMMON
 @end defun
 
-@defun dequeue! queue &optional fallback
-@defunx queue-pop! queue &optional fallback
+@defun dequeue! queue :optional fallback
+@defunx queue-pop! queue :optional fallback
 @c EN
 Take one object from the front of the queue @var{queue} and returns it.
 Both function works the same, but @code{queue-pop!} may be used to
@@ -16283,8 +16283,8 @@ See also @code{queue->list} below.
 @c COMMON
 @end defun
 
-@defun queue-front queue &optional fallback
-@defunx queue-rear queue &optional fallback
+@defun queue-front queue :optional fallback
+@defunx queue-rear queue :optional fallback
 @c EN
 Peek the head or the tail of the queue and returns the object, respectively.
 @var{util.queue - Queue} is not modified.  
@@ -16297,7 +16297,7 @@ otherwise an error is signalled.
 @c COMMON
 @end defun
 
-@defun list->queue list &optional class &rest initargs
+@defun list->queue list :optional class :rest initargs
 @c EN
 Returns a new queue whose content is the elements in @var{list},
 in the given order.
@@ -16381,10 +16381,10 @@ Scheme48 compatible way or consistent to SRFI-1 argument order.
 あるいはSRFI-1と一貫性のある方法でも@code{delete-from-queue!}を簡単に書けるでしょう。
 @c COMMON
 
-@defun enqueue/wait! mtqueue obj &optional timeout timeout-val
-@defunx queue-push/wait! mtqueue obj &optional timeout timeout-val
-@defunx dequeue/wait! mtqueue &optional timeout timeout-val
-@defunx queue-pop/wait! mtqueue &optional timeout timeout-val
+@defun enqueue/wait! mtqueue obj :optional timeout timeout-val
+@defunx queue-push/wait! mtqueue obj :optional timeout timeout-val
+@defunx dequeue/wait! mtqueue :optional timeout timeout-val
+@defunx queue-pop/wait! mtqueue :optional timeout timeout-val
 @c EN
 These synchronizing variants work on an mtqueue and
 make the caller thread block when the mtqueue has reached
@@ -16545,7 +16545,7 @@ or @code{#f} otherwise.
 @c COMMON
 @end defun
 
-@defun rbtree-get rbtree key &optional fallback
+@defun rbtree-get rbtree key :optional fallback
 @c EN
 Looks for @var{key} in @var{rbtree}.  If the entry is found,
 returns a value corresponding to the key.  Otherwise, returns
@@ -16582,7 +16582,7 @@ If @var{rbtree} doesn't have such an entry, @code{#f} is returned.
 @c COMMON
 @end defun
 
-@defun rbtree-update! rbtree key proc &optional fallback
+@defun rbtree-update! rbtree key proc :optional fallback
 @c EN
 A generalized version of @code{rbtree-push!} etc.
 It works like the following code, except that searching
@@ -16612,7 +16612,7 @@ and makes @code{(list @var{value})} its value.
 @c COMMON
 @end defun
 
-@defun rbtree-pop! rbtree key &optional fallback
+@defun rbtree-pop! rbtree key :optional fallback
 @c EN
 Looks for an entry with @var{key} in @var{rbtree}.  If it exists
 and its value is a pair, then the procedure updates
@@ -16630,8 +16630,8 @@ otherwise reports an error.
 @c COMMON
 @end defun
 
-@defun rbtree-min rbtree &optional fallback
-@defunx rbtree-max rbtree &optional fallback
+@defun rbtree-min rbtree :optional fallback
+@defunx rbtree-max rbtree :optional fallback
 @c EN
 Returns a pair of a key and its value with the minimum
 or maximum key, respectively.   If @var{rbtree} is empty,
@@ -16644,8 +16644,8 @@ an error.
 @c COMMON
 @end defun
 
-@defun rbtree-extract-min! rbtree &optional fallback
-@defunx rbtree-extract-max! rbtree &optional fallback
+@defun rbtree-extract-min! rbtree :optional fallback
+@defunx rbtree-extract-max! rbtree :optional fallback
 @c EN
 Looks for an entry with minimum or maximum key, respectively,
 then deletes the entry from @var{rbtree} and returns 
@@ -16787,7 +16787,7 @@ created by @code{make-record-type}.
 生成されたクラスです。
 @c COMMON
 
-@defun record-constructor rtd &optional field-names
+@defun record-constructor rtd :optional field-names
 @c EN
 Returns a procedure that constructs an instance
 of the record type of given @var{rtd}.  The returned
@@ -17074,7 +17074,7 @@ returns @code{#f}.
 @c COMMON
 @end deffn
 
-@deffn {Method} relation-ref (r <relation>) row column &optional default
+@deffn {Method} relation-ref (r <relation>) row column :optional default
 @c EN
 @var{Row} is a row from the relation @var{r}.  Returns value of
 the @var{column} in @var{row}.  If @var{column} is not a valid
@@ -17341,7 +17341,7 @@ in @code{gauche.uvector} (@xref{Uniform vectors}).  That is,
 between 0 and 255.
 @end deftp
 
-@defun make-sparse-vector &optional type
+@defun make-sparse-vector :optional type
 Creates an empty sparse vector.  The @var{type} argument can be
 @code{#f} (default), one of subclasses of @code{<sparse-vector-base>},
 or a symbol of either one of @code{s8}, @code{u8},
@@ -17370,7 +17370,7 @@ object is passed.
 Returns a copy of a sparse vector @var{sv}.
 @end defun
  
-@defun sparse-vector-ref sv k &optional default
+@defun sparse-vector-ref sv k :optional default
 Returns @var{k}-th element of a sparse vector @var{sv}, where
 @var{k} must be a nonnegative exact integer.  If @var{k} is
 equal to or greater than the allowed index range, an error
@@ -17408,7 +17408,7 @@ returns @code{#t}.  If @var{sv} didn't have the entry, returns @code{#f}.
 Empties a sparse vector.
 @end defun
 
-@defun sparse-vector-inc! sv k delta &optional (fallback 0)
+@defun sparse-vector-inc! sv k delta :optional (fallback 0)
 This is a shortcut of the following.  It is especially efficient
 for numeric sparse vectors.
 
@@ -17421,9 +17421,9 @@ an error is signalled.  In future we'll allow an option to clamp
 the result value within the range.
 @end defun
 
-@defun sparse-vector-update! sv k proc &optional fallback
+@defun sparse-vector-update! sv k proc :optional fallback
 @defunx sparse-vector-push! sv k val
-@defunx sparse-vector-pop! sv k &optional fallback
+@defunx sparse-vector-pop! sv k :optional fallback
 Convenience routines to fetch-and-update an entry of
 a sparse vector.  Works just like @code{hash-table-update!},
 @code{hash-table-push!} and @code{hash-table-pop!}; 
@@ -17495,7 +17495,7 @@ Returns a copy of a sparse table @var{st}.
 Returns the number of entries in a sparse table @var{st}.
 @end defun
 
-@defun sparse-table-ref st key &optional fallback
+@defun sparse-table-ref st key :optional fallback
 Retrieves a value associated to the @var{key} in @var{st}.
 If no entry with @var{key} exists, @var{fallback} is returned
 when it is provided, or an error is signalled otherwise.
@@ -17520,9 +17520,9 @@ if there hasn't been an entry with @var{key}.
 Empties @var{st}.
 @end defun
 
-@defun sparse-table-update! st key proc &optional fallback
+@defun sparse-table-update! st key proc :optional fallback
 @defunx sparse-table-push! st key val
-@defunx sparse-table-pop! st key &optional fallback
+@defunx sparse-table-pop! st key :optional fallback
 @end defun
 
 @defun sparse-table-fold st proc seed
@@ -17773,7 +17773,7 @@ Creates a new stream which appends @var{elt} @dots{} before @var{stream}.
 @c COMMON
 @end defun
 
-@defun make-stream n &optional init
+@defun make-stream n :optional init
 @c EN
 Creates a new stream of @var{n} elements of @var{init}.
 If @var{init} is omitted, @code{#f} is used.
@@ -17798,7 +17798,7 @@ an infinite stream.
 @c COMMENT
 @end defun
 
-@defun stream-iota count &optional start step
+@defun stream-iota count :optional start step
 @c EN
 Creates a new stream of integers, starting from @var{start}
 and incrementing @var{step}.  The length of stream is @var{count}
@@ -17835,7 +17835,7 @@ all @var{stream} must be characters, or an error is signalled.
 Converts a list to a stream of its elements.
 @end defun
 
-@defun string->stream string &optional stream
+@defun string->stream string :optional stream
 Convers a string to a stream of characters.  If an optional
 @var{stream} is given, it becomes the tail of the resulting
 stream.
@@ -17846,7 +17846,7 @@ stream.
  @result{} (#\a #\b #\c 1 2 3)
 @end defun
 
-@defun port->stream &optional iport reader closer
+@defun port->stream :optional iport reader closer
 Creates a stream, whose elements consist of the items
 read from the input port @var{iport}.
 The default @var{iport} is the current input port.
@@ -17913,7 +17913,7 @@ are the same in terms of @var{elt=}.  This procedure won't terminate
 if any of @var{stream}s is infinite.
 @end defun
 
-@defun stream-prefix= stream prefix &optional elt=
+@defun stream-prefix= stream prefix :optional elt=
 Compares initial elements of @var{stream} against
 a list @var{prefix} by @var{elt=}.  Only as many elements of @var{stream}
 as @var{prefix} has are checked.
@@ -18038,7 +18038,7 @@ inserted between elements of @var{stream}.
 @defun stream-concatenate streams
 @end defun
 
-@defun stream-reverse stream &optional tail-stream
+@defun stream-reverse stream :optional tail-stream
 @end defun
 
 @defun stream-count pred stream @dots{}
@@ -18077,21 +18077,21 @@ inserted between elements of @var{stream}.
 @defun stream-index pred stream @dots{}
 @end defun
 
-@defun stream-member obj stream &optional elt=
+@defun stream-member obj stream :optional elt=
 @defunx stream-memq obj stream
 @defunx stream-memv obj stream
 @end defun
 
-@defun stream-delete obj stream &optional elt=
+@defun stream-delete obj stream :optional elt=
 @end defun
 
-@defun stream-delete-duplicates stream &optional elt=
+@defun stream-delete-duplicates stream :optional elt=
 @end defun
 
 @defun stream-grep re stream
 @end defun
 
-@defun write-stream stream &optional oport writer
+@defun write-stream stream :optional oport writer
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -18178,7 +18178,7 @@ Trieクラス。パブリックなスロットはありません。trieを操作
 @c COMMON
 @end deftp
 
-@defun make-trie &optional tab-make tab-get tab-put! tab-fold
+@defun make-trie :optional tab-make tab-get tab-put! tab-fold
 @c EN
 Creates and returns an empty trie.  The optional four arguments
 are procedures to customize how the nodes of the internal
@@ -18358,7 +18358,7 @@ or returns @code{#f} otherwise.
 @c COMMON
 @end defun
 
-@defun trie-get trie key &optional fallback
+@defun trie-get trie key :optional fallback
 @c EN
 Returns the value associated with @var{key} in @var{trie}, if 
 such an entry exists.  When there's no entry for @var{key},
@@ -18379,7 +18379,7 @@ Puts @var{value} associated to @var{key} into @var{trie}.
 @c COMMON
 @end defun
 
-@defun trie-update! trie key proc &optional fallback
+@defun trie-update! trie key proc :optional fallback
 @c EN
 Works like the following code, except that the
 lookup of entry in @var{trie} is done only once.
@@ -18539,7 +18539,7 @@ Implements topological sort algorithm.
 @c COMMON
 @end deftp
 
-@defun topological-sort graph &optional eqproc
+@defun topological-sort graph :optional eqproc
 @c EN
 @var{Graph} represents a directed acyclic graph (DAG) by a list
 of connections, where each connection is the form
@@ -18606,7 +18606,7 @@ CGIスクリプトを手軽に書くにはこのモジュールの他に、
 @subheading メタ変数
 @c COMMON
 
-@deffn {Parameter} cgi-metavariables &optional metavariables
+@deffn {Parameter} cgi-metavariables :optional metavariables
 @c EN
 Normally, httpd passes a cgi program various information
 via environment variables.
@@ -18673,7 +18673,7 @@ CGIスクリプトは、なるべく@code{sys-getenv}を直接呼ぶのではな
 @subheading パラメータの取得
 @c COMMON
 
-@defun cgi-parse-parameters &keyword :query-string :merge-cookies :part-handlers
+@defun cgi-parse-parameters :key :query-string :merge-cookies :part-handlers
 @c EN
 Parses query string and returns associative list of parameters.
 When a keyword argument @var{query-string} is given, it is used
@@ -18750,7 +18750,7 @@ See the following example:
 @end defun
 
 
-@defun cgi-get-parameter name params &keyword :default :list :convert
+@defun cgi-get-parameter name params :key :default :list :convert
 @c EN
 A convenient function to obtain a value of the parameter @var{name} from
 parsed query string @var{params}, which is the value
@@ -18806,7 +18806,7 @@ is @code{#f} if @var{list} is false, or @code{()} otherwise.
 @c COMMON
 
 
-@defun cgi-header &keyword status content-type location cookies
+@defun cgi-header :key status content-type location cookies
 @c EN
 Creates a text tree (@xref{Lazy text construction}) for the
 HTTP header of the reply message.  The most simple form is
@@ -18853,7 +18853,7 @@ You can also specify the @code{Status:} header by the keyword argument
 
 @end defun
 
-@deffn {Parameter} cgi-output-character-encoding &optional encoding
+@deffn {Parameter} cgi-output-character-encoding :optional encoding
 @c EN
 The value of this parameter specifies the character encoding scheme (CES)
 used for CGI output by @code{cgi-main} defined below.
@@ -18879,7 +18879,7 @@ encoding by @code{gauche.charconv} module
 @subheading 便利な手続き
 @c COMMON
 
-@defun cgi-main proc &keyword on-error merge-cookies output-proc part-handlers
+@defun cgi-main proc :key on-error merge-cookies output-proc part-handlers
 @c EN
 A convenient wrapper function for CGI script.
 This function calls @code{cgi-parse-parameters}, then calls
@@ -19407,7 +19407,7 @@ The following environment variables are set by default.
 @end multitable
 @end defun
 
-@defun call-with-cgi-script script proc &keyword (environment ()) (parameters #f)
+@defun call-with-cgi-script script proc :key (environment ()) (parameters #f)
 @c EN
 Runs a script with given enviornment, and calls @var{proc} with
 one argument, an input port which is connected to the pipe of script's
@@ -19474,7 +19474,7 @@ You can bypass this mechanism and set up enviornment variable
 @c COMMON
 @end defun
 
-@defun run-cgi-script->header&body script reader &keyword environment parameters
+@defun run-cgi-script->header&body script reader :key environment parameters
 @c EN
 A convenient wrapper of @code{call-with-cgi-script}.
 The @var{script}, @var{environment} and @var{parameters} are passed
@@ -19507,7 +19507,7 @@ and the return value of @var{reader}.
 @c COMMON
 @end defun
 
-@defun run-cgi-script->sxml script &keyword environment parameters
+@defun run-cgi-script->sxml script :key environment parameters
 @c EN
 This is a procedure that uses @code{ssax:xml->sxml}
 (@xref{Functional XML parser}) as the @var{reader}
@@ -19523,8 +19523,8 @@ CGIスクリプトをテストする場合に便利です。
 @c COMMON
 @end defun
 
-@defun run-cgi-script->string script &keyword environment parameters
-@defunx run-cgi-script->string-list script &keyword environment parameters
+@defun run-cgi-script->string script :key environment parameters
+@defunx run-cgi-script->string-list script :key environment parameters
 @c EN
 These procedures use @code{port->string} 
 and @code{port->string-list}

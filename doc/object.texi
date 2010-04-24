@@ -1861,7 +1861,7 @@ slot options of @var{slot-def}, respectively.
 @c COMMON
 @end defun
 
-@defun slot-definition-option slot-def option &optional default
+@defun slot-definition-option slot-def option :optional default
 @c EN
 Returns the value of slot option @var{option} of @var{slot-def}.
 If there's no such an option, @var{default} is returned
@@ -2538,7 +2538,7 @@ It can be defined like the following code
 @end example
 @end defun
 
-@defun slot-pop! obj slot &optional fallback
+@defun slot-pop! obj slot :optional fallback
 @c EN
 Reverse operation of @code{slot-push!}.  
 If the value of @var{slot} of @var{obj}
@@ -2593,7 +2593,7 @@ The default method just signals an error.
 @end deffn
 
 @deffn {Generic Function} slot-missing
-@deffnx {Method} slot-missing (class <class>) obj slot &optional value
+@deffnx {Method} slot-missing (class <class>) obj slot :optional value
 @c EN
 This generic function is called when a non-existent slot
 value is retrieved or set.  The return value of this generic
@@ -2915,7 +2915,7 @@ take a look at @code{test/object.scm}.
 @subheading メソッドの定義
 @c COMMON
 
-@defmac define-generic name &keyword class
+@defmac define-generic name :key class
 @c EN
 Creates a generic function and bind it to @var{name}.
 
@@ -3495,7 +3495,7 @@ Scheme 定義のクラスは、@code{scheme} というシンボルを持って�
 @subsubheading @code{<class>} 用の make メソッド
 @c COMMON
 
-@deffn {Method} make (class <class>) &rest initargs
+@deffn {Method} make (class <class>) :rest initargs
 @end deffn
 
 
@@ -3765,7 +3765,7 @@ gosh> (ref foo'v)
 @subsection Method instantiation
 @c NODE メソッドのインスタンシエーション
 
-@deffn {Method} make (class <method>) &rest initargs
+@deffn {Method} make (class <method>) :rest initargs
 @end deffn
 
 @node Customizing method application,  , Method instantiation, Metaobject protocol

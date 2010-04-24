@@ -731,7 +731,7 @@ phrase @code{(inexact->exact (floor x))} etc.
 @c COMMON
 @end defun
 
-@defun clamp x &optional min max
+@defun clamp x :optional min max
 @c EN
 Returns
 @example
@@ -1012,8 +1012,8 @@ you shouldn't count on that.
 @c COMMON
 @end defun
 
-@defun number->string z &optional radix use-upper?
-@defunx string->number string &optional radix
+@defun number->string z :optional radix use-upper?
+@defunx string->number string :optional radix
 [R5RS+]
 @c EN
 These procedures convert a number and its string representation
@@ -1537,7 +1537,7 @@ Useful to put an entry at the head of an associative list.
 @end lisp
 @end defun
 
-@defun make-list len &optional fill
+@defun make-list len :optional fill
 [SRFI-1]
 @c EN
 Makes a proper list of length @var{len}.  If optional argument
@@ -1690,7 +1690,7 @@ See @code{length+} in @ref{SRFI-1 List miscellaneous routines}.
 @c COMMON
 @end defun
 
-@defun list-tail list k &optional fallback
+@defun list-tail list k :optional fallback
 [R5RS]
 @c EN
 Returns @var{k}-th cdr of @var{list}.
@@ -1712,7 +1712,7 @@ Otherwise, an error is signalled.
 @c COMMON
 @end defun
 
-@defun list-ref list k &optional fallback
+@defun list-ref list k :optional fallback
 [R5RS+]
 @c EN
 Returns @var{k}-th element of @var{list}.
@@ -1983,7 +1983,7 @@ Like @code{string->symbol}, but the created symbol is uninterned.
 @end defun
 
 
-@defun gensym &optional prefix
+@defun gensym :optional prefix
 Returns a fresh, uninterned symbol.  The returned symbol can never
 be @code{eq?} to other symbol within the process.
 If @var{prefix} is given, which must be a string, it is used
@@ -2076,7 +2076,7 @@ Returns the name of the keyword @var{keyword}, in a string.
 @end example
 @end defun
 
-@defun get-keyword key kv-list &optional fallback
+@defun get-keyword key kv-list :optional fallback
 @c EN
 A useful procedure to extract a value from key-value list.
 A key-value list @var{kv-list} must contains even number of elements;
@@ -2133,7 +2133,7 @@ This procedure is taken from STk.
 @end example
 @end defun
 
-@defmac get-keyword* key kv-list &optional fallback
+@defmac get-keyword* key kv-list :optional fallback
 @c EN
 Like @code{get-keyword}, but @var{fallback} is evaluated only
 if @var{kv-list} does not have @var{key}.
@@ -2492,7 +2492,7 @@ outside the ASCII character range.
 @c COMMON
 @end defun
 
-@defun digit->integer char &optional (radix 10)
+@defun digit->integer char :optional (radix 10)
 @c EN
 If given character @var{char} is a valid digit character in radix
 @var{radix} number, the corresponding integer is returned.  Otherwise
@@ -2514,7 +2514,7 @@ Common Lispには同様の手続きが@code{digit-char-p}というやや曖昧�
 @c COMMON
 @end defun
 
-@defun integer->digit integer &optional (radix 10)
+@defun integer->digit integer :optional (radix 10)
 @c EN
 Reverse operation of @code{digit->integer}.  Returns a character that
 represents the number @var{integer} in the radix @var{radix} system.
@@ -3050,7 +3050,7 @@ Returns @code{#t} if @var{obj} is an incomplete string, @code{#f} otherwise
 @subsection String Constructors
 @c NODE 文字列の作成
 
-@defun make-string k &optional char
+@defun make-string k :optional char
 [R5RS]
 @c EN
 Returns a string of length @var{k}.  If optional @var{char} is given,
@@ -3092,7 +3092,7 @@ using @code{list->string} is faster than using @code{make-string} and
 @c COMMON
 @end defun
 
-@defun make-byte-string k &optional byte
+@defun make-byte-string k :optional byte
 @c EN
 Creates and returns an incomplete string o size @var{k}.
 If @var{byte} is given,
@@ -3312,7 +3312,7 @@ For incomplete string, its length and its size always match.
 @c COMMON
 @end defun
 
-@defun string-ref cstring k &optional fallback
+@defun string-ref cstring k :optional fallback
 [R5RS+]
 @c EN
 Returns @var{k}-th character of a complete string @var{cstring}.
@@ -3469,7 +3469,7 @@ See also @code{string-concatenate} in @ref{SRFI-13 String reverse & append}.
 @c COMMON
 @end defun
 
-@defun string->list string &optional start end
+@defun string->list string :optional start end
 @defunx list->string list
 [R5RS+][SRFI-13]
 @c EN
@@ -3499,7 +3499,7 @@ may want to use @code{tree->string} in @ref{Lazy text construction}.
 @c COMMON
 @end defun
 
-@defun string-copy string &optional start end
+@defun string-copy string :optional start end
 [R5RS+][SRFI-13]
 @c EN
 Returns a copy of @var{string}.  You can give @var{start} and/or
@@ -3530,7 +3530,7 @@ See @code{substring} above for the condition that @var{start} and
 @c COMMON
 @end defun
 
-@defun string-fill! string char &optional start end
+@defun string-fill! string char :optional start end
 @c EN
 [R5RS+][SRFI-13] Fills @var{string} by @var{char}.  Optional
 @var{start} and @var{end} limits the effective area.
@@ -3547,7 +3547,7 @@ See @code{substring} above for the condition that @var{start} and
 @end example
 @end defun
 
-@defun string-join strs &optional delim grammer
+@defun string-join strs :optional delim grammer
 @c EN
 [SRFI-13] Concatenate strings in the list @var{strs},
 with a string @var{delim} as `glue'.
@@ -3620,7 +3620,7 @@ Use @var{delim} after each string.
 
 @end defun
 
-@defun string-scan string item &optional return
+@defun string-scan string item :optional return
 @c EN
 Scan @var{item} (either a string or a character) in @var{string}.
 The @var{return} argument specifies what value should be returned
@@ -3818,7 +3818,7 @@ procedure:
 変換することができます。
 @c COMMON
 
-@defun string-incomplete->complete str &optional handling
+@defun string-incomplete->complete str :optional handling
 @c EN
 Reinterpret the content of an incomplete string @var{str}
 and returns a newly created complete string from it.
@@ -4269,7 +4269,7 @@ They are the same as (?>@i{re}*), (?>@i{re}+), (?>@i{re}?), respectively.
 
 @end table
 
-@defun string->regexp string &keyword case-fold
+@defun string->regexp string :key case-fold
 @c EN
 Takes @var{string} as a regexp specification, and constructs
 an instance of @code{<regexp>} object.
@@ -4343,9 +4343,9 @@ generic mechanism used to implement this.
 @c COMMON
 @end deftp
 
-@defun rxmatch-start match &optional (i 0)
-@defunx rxmatch-end match &optional (i 0)
-@defunx rxmatch-substring match &optional (i 0)
+@defun rxmatch-start match :optional (i 0)
+@defunx rxmatch-end match :optional (i 0)
+@defunx rxmatch-substring match :optional (i 0)
 @c EN
 @var{Match} is a match object returned by @code{rxmatch}.
 If @var{i} equals to zero, the functions return
@@ -4412,8 +4412,8 @@ if @var{match} is @code{#f}.
 
 @end defun
 
-@defun rxmatch-after match &optional (i 0)
-@defunx rxmatch-before match &optional (i 0)
+@defun rxmatch-after match :optional (i 0)
+@defunx rxmatch-before match :optional (i 0)
 @c EN
 Returns substring of the input string after or before @var{match}.
 If optional argument is given, the @var{i}-th submatch is used
@@ -4435,7 +4435,7 @@ If optional argument is given, the @var{i}-th submatch is used
 @end example
 @end defun
 
-@defun rxmatch->string regexp string &optional selector @dots{}
+@defun rxmatch->string regexp string :optional selector @dots{}
 A convenience procedure to match a string to the given regexp,
 then returns the matched substring, or @code{#f} if it doesn't match.
 
@@ -4462,9 +4462,9 @@ gosh> (rxmatch->string #/(\w+)@@([\w.]+)/ "foo@@example.com" 'before 2)
 @end example
 @end defun
 
-@deftp {Generic application} @var{regmatch} &optional @var{index}
-@deftpx {Generic application} @var{regmatch} @code{'before} &optional @var{index}
-@deftpx {Generic application} @var{regmatch} @code{'after} &optional @var{index}
+@deftp {Generic application} @var{regmatch} :optional @var{index}
+@deftpx {Generic application} @var{regmatch} @code{'before} :optional @var{index}
+@deftpx {Generic application} @var{regmatch} @code{'after} :optional @var{index}
 @c EN
 A regmatch object can be applied directly to the integer index,
 or a symbol @code{before} or @code{after}.
@@ -4965,7 +4965,7 @@ Returns @code{#t} if @var{obj} is a vector, @code{#f} otherwise.
 @c COMMON
 @end defun
 
-@defun make-vector k &optional fill
+@defun make-vector k :optional fill
 [R5RS]
 @c EN
 Creates and returns a vector with length @var{k}.
@@ -5003,7 +5003,7 @@ you can also use a method @code{size-of}.
 @c COMMON
 @end defun
 
-@defun vector-ref vector k &optional fallback
+@defun vector-ref vector k :optional fallback
 [R5RS+]
 @c EN
 Returns @var{k}-th element of vector @var{vector}.
@@ -5045,8 +5045,8 @@ a setter method of @code{ref}.
 @c COMMON
 @end defun
 
-@defun vector->list vector &optional start end
-@defunx list->vector list &optional start end
+@defun vector->list vector :optional start end
+@defunx list->vector list :optional start end
 [R5RS+][SRFI-43+]
 @c EN
 Converts a vector to a list, or vice versa.
@@ -5079,7 +5079,7 @@ With @var{gauche.collection} module, you can use
 @c COMMON
 @end defun
 
-@defun vector-fill! vector fill &optional start end
+@defun vector-fill! vector fill :optional start end
 [R5RS+][SRFI-43]
 @c EN
 Sets all elements in a vector @var{vector} to @var{fill}.
@@ -5100,7 +5100,7 @@ These optional arguments are Gauche's extension.
 @c COMMON
 @end defun
 
-@defun vector-copy vector &optional start end fill
+@defun vector-copy vector :optional start end fill
 [SRFI-43]
 @c EN
 Copies a vector @var{vector}.  Optional @var{start} and @var{end}
@@ -5138,7 +5138,7 @@ Hash table class.  Inherits @code{<collection>} and @code{<dictionary>}.
 @end deftp
 
 
-@defun make-hash-table &optional type
+@defun make-hash-table :optional type
 @c EN
 Creates a hash table.   A symbol @var{type} specifies the type of the table.
 The following types are currently supported.
@@ -5357,7 +5357,7 @@ and its cdr is used as a value.
 @end example
 @end defun
 
-@defun hash-table-get ht key &optional default
+@defun hash-table-get ht key :optional default
 @c EN
 Search @var{key} from a hash table @var{ht}, and returns its value
 if found.  If the key is not found in the table and @var{default} is
@@ -5377,7 +5377,7 @@ Puts a key @var{key} with a value @var{value} to the hash table @var{ht}.
 @c COMMON
 @end defun
 
-@deffn {Method} ref (ht <hash-table>) key &optional default
+@deffn {Method} ref (ht <hash-table>) key :optional default
 @deffnx {Method} {(setter ref)} (ht <hash-table>) key value
 @c EN
 Method versions of @code{hash-table-get} and @code{hash-table-put!}.
@@ -5441,7 +5441,7 @@ only looks up the @var{key} once, thus it's more efficient.
 @end example
 @end defun
 
-@defun hash-table-pop! ht key &optional default
+@defun hash-table-pop! ht key :optional default
 @c EN
 Looks for the value for the key @var{key} in the hash table @var{ht}.
 If found and it is a pair, replaces the value for its cdr and returns
@@ -5461,7 +5461,7 @@ efficiently.
 @c COMMON
 @end defun
 
-@defun hash-table-update! ht key proc &optional default
+@defun hash-table-update! ht key proc :optional default
 @c EN
 A more general version of @code{hash-table-push!} etc.
 It works basically as the following code piece,
@@ -5635,7 +5635,7 @@ or @code{#f} otherwise.
 @c COMMON
 @end defun
 
-@defun tree-map-get tree-map key &optional fallback
+@defun tree-map-get tree-map key :optional fallback
 @c EN
 Looks for @var{key} in @var{tree-map}.  If the entry is found,
 returns a value corresponding to the key.  Otherwise, returns
@@ -5680,7 +5680,7 @@ Removes all entries in @var{tree-map}.
 @c COMMON
 @end defun
 
-@defun tree-map-update! tree-map key proc &optional fallback
+@defun tree-map-update! tree-map key proc :optional fallback
 @c EN
 A generalized version of @code{tree-map-push!} etc.
 It works like the following code, except that searching
@@ -5711,7 +5711,7 @@ and makes @code{(list @var{value})} its value.
 @c COMMON
 @end defun
 
-@defun tree-map-pop! tree-map key &optional fallback
+@defun tree-map-pop! tree-map key :optional fallback
 @c EN
 Looks for an entry with @var{key} in @var{tree-map}.  If it exists
 and its value is a pair, then the procedure updates
@@ -5810,10 +5810,10 @@ in the increasing order of the keys.  @var{proc} is called purely
 for side effects; the returned values are discarded.
 @end defun
 
-@defun tree-map-floor tree-map probe &optional fallback-key fallback-value
-@defunx tree-map-ceiling tree-map probe &optional fallback-key fallback-value
-@defunx tree-map-predecessor tree-map probe &optional fallback-key fallback-value
-@defunx tree-map-successor tree-map probe &optional fallback-key fallback-value
+@defun tree-map-floor tree-map probe :optional fallback-key fallback-value
+@defunx tree-map-ceiling tree-map probe :optional fallback-key fallback-value
+@defunx tree-map-predecessor tree-map probe :optional fallback-key fallback-value
+@defunx tree-map-successor tree-map probe :optional fallback-key fallback-value
 These procedures search the entry which has the closest key
 to the given @var{probe}.  If such an entry is found, returns
 two values, its key and its value.  Otherwise, returns two values,
@@ -6118,7 +6118,7 @@ Internally, a call to @code{~} is implemented by a generic
 function @code{ref}.  See @ref{Object system} for more about
 generic functions.
 
-@deffn {Generic function} ref object key &optional args @dots{}
+@deffn {Generic function} ref object key :optional args @dots{}
 @deffnx {Generic function} {(setter ref)} object key value
 Many aggregate types defines a specialized method of these
 to provide uniform access and mutation.   Meaning of
@@ -6265,10 +6265,10 @@ Partial application versions of @code{apply}, @code{map} and @code{for-each}.
 @end defun
 
 @defun count$ pred
-@defunx fold$ kons &optional knil
-@defunx fold-right$ kons &optional knil
-@defunx reduce$ f &optional ridentity
-@defunx reduce-right$ f &optional ridentity
+@defunx fold$ kons :optional knil
+@defunx fold-right$ kons :optional knil
+@defunx reduce$ f :optional ridentity
+@defunx reduce-right$ f :optional ridentity
 @defunx filter$ pred
 @defunx remove$ pred
 @defunx partition$ pred
@@ -8958,7 +8958,7 @@ argument.
 
 @end defun
 
-@defun read-eval-print-loop &optional reader evaluator printer prompter
+@defun read-eval-print-loop :optional reader evaluator printer prompter
 @c EN
 This exports @code{Gosh}'s default read-eval-print loop to applications.
 Each argument can be @code{#f}, which indicates it to use Gauche's
@@ -9443,7 +9443,7 @@ to the system file I/O.  Returns @code{#f} otherwise.
 @c COMMON
 @end defun
 
-@defun port-seek port offset &optional whence
+@defun port-seek port offset :optional whence
 @c EN
 If the given @var{port} allows random access, this procedure sets
 the read/write pointer of the @var{port} according to the given @var{offset}
@@ -9558,7 +9558,7 @@ Gaucheの名前付け規則を使って@code{sys-seek}と@code{sys-tell}とし�
 これも採用しませんでした。結局、新しい名前を採用することにしました。
 @c COMMON
 
-@defun copy-port src dst &keyword (unit 0) (size #f)
+@defun copy-port src dst :key (unit 0) (size #f)
 @c EN
 Copies data from an input port @var{src} to an output port @var{dst},
 until eof is read from @var{src}.
@@ -9603,8 +9603,8 @@ Otherwise, @var{size} specifies the number of bytes.
 @subsection File ports
 @c NODE ファイルポート
 
-@defun open-input-file filename &keyword if-does-not-exist buffering element-type encoding conversion-buffer-size
-@defunx open-output-file filename &keyword if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
+@defun open-input-file filename :key if-does-not-exist buffering element-type encoding conversion-buffer-size
+@defunx open-output-file filename :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
 [R5RS+]
 @c EN
 Opens a file @var{filename} for input or output, and
@@ -9898,8 +9898,8 @@ Gaucheでは、@code{open-input-file}と@code{open-output-file}は
 @c COMMON
 @end defun
 
-@defun call-with-input-file string proc &keyword if-does-not-exist buffering element-type encoding conversion-buffer-size
-@defunx call-with-output-file string proc &keyword if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
+@defun call-with-input-file string proc :key if-does-not-exist buffering element-type encoding conversion-buffer-size
+@defunx call-with-output-file string proc :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
 [R5RS]
 @c EN
 Opens a file specified by @var{string} for input/output,
@@ -9934,8 +9934,8 @@ Returns the value(s) @code{proc} returned.
 @c COMMON
 @end defun
 
-@defun with-input-from-file string thunk &keyword if-does-not-exist buffering element-type encoding conversion-buffer-size
-@defunx with-output-to-file string thunk &keyword if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
+@defun with-input-from-file string thunk :key if-does-not-exist buffering element-type encoding conversion-buffer-size
+@defunx with-output-to-file string thunk :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
 [R5RS]
 @c EN
 Opens a file specified by @var{string} for input or output
@@ -10016,8 +10016,8 @@ also doesn't ensure closing the port.
 @c COMMON
 
 
-@defun open-input-fd-port fd &keyword buffering name owner?
-@defunx open-output-fd-port fd &keyword buffering name owner?
+@defun open-input-fd-port fd :key buffering name owner?
+@defunx open-output-fd-port fd :key buffering name owner?
 @c EN
 Creates and returns an input or output port on top of the given
 file descriptor.  @var{Buffering} specifies the buffering mode
@@ -10236,8 +10236,8 @@ The interface is parallel to the file port version.
 @end example
 @end defun
 
-@defun write-to-string obj &optional writer
-@defunx read-from-string string &optional start end
+@defun write-to-string obj :optional writer
+@defunx read-from-string string :optional start end
 @c EN
 These convenience functions cover common idioms using string ports.
 @example
@@ -10368,7 +10368,7 @@ an input port, and when omitted, the current input port is assumed.
 @subsubsection Reading data
 @c NODE データの読み込み
 
-@defun read &optional iport
+@defun read :optional iport
 [R5RS]
 @c EN
 Reads an S-expression from @var{iport} and returns it.
@@ -10394,8 +10394,8 @@ GaucheはR5RSに定義されている構文要素に加え、@ref{Lexical struct
 @c COMMON
 @end defun
 
-@defun read-with-shared-structure &optional iport
-@defunx read/ss &optional iport
+@defun read-with-shared-structure :optional iport
+@defunx read/ss :optional iport
 [SRFI-38]
 @c EN
 These procedures are defined in srfi-38 to recognize shared substructure
@@ -10410,7 +10410,7 @@ are only provided for srfi-38 compatibility.
 @c COMMON
 @end defun
 
-@defun read-char &optional iport
+@defun read-char :optional iport
 [R5RS]
 @c EN
 Reads one character from @var{iport} and returns it.
@@ -10428,7 +10428,7 @@ to deal with invalid characters).
 @c COMMON
 @end defun
 
-@defun peek-char &optional iport
+@defun peek-char :optional iport
 [R5RS]
 @c EN
 Reads one character in @var{iport} and returns it, keeping the character
@@ -10445,7 +10445,7 @@ to deal with invalid characters).
 @c COMMON
 @end defun
 
-@defun read-byte &optional iport
+@defun read-byte :optional iport
 @c EN
 Reads one byte from an input port @var{iport}, and returns it as an integer
 in the range between 0 and 255.
@@ -10456,7 +10456,7 @@ If @var{iport} has already reached EOF, an eof object is returned.
 @c COMMON
 @end defun
 
-@defun peek-byte &optional iport
+@defun peek-byte :optional iport
 @c EN
 Peeks one byte at the head of an input port @var{iport}, and returns 
 it as an integer in the range between 0 and 255.
@@ -10467,7 +10467,7 @@ If @var{iport} has already reached EOF, an eof object is returned.
 @c COMMON
 @end defun
 
-@defun read-line &optional iport allow-byte-string?
+@defun read-line :optional iport allow-byte-string?
 @c EN
 Reads one line (a sequence of characters terminated by newline or EOF)
 and returns a string.  The terminating newline is not included.
@@ -10502,7 +10502,7 @@ so that you can then use an appropriate character conversion port.
 @c COMMON
 @end defun
 
-@defun read-block nbytes &optional iport
+@defun read-block nbytes :optional iport
 @c EN
 Reads @var{nbytes} bytes from @var{iport}, and returns an incomplete
 string consisted by those bytes.  The size of returned string may
@@ -10915,8 +10915,8 @@ an output port, and when omitted, the current output port is assumed.
 省略された場合が現在の出力ポートが使われます。
 @c COMMON
 
-@defun write obj &optional port
-@defunx display obj &optional port
+@defun write obj :optional port
+@defunx display obj :optional port
 [R5RS]
 @c EN
 Produces a printable representation of an object @var{obj} to the output port.
@@ -10944,9 +10944,9 @@ See @code{write/ss} below.
 @c COMMON
 @end defun
 
-@defun write-with-shared-structure obj &optional port
-@defunx write/ss obj &optional port
-@defunx write* obj &optional port
+@defun write-with-shared-structure obj :optional port
+@defunx write/ss obj :optional port
+@defunx write* obj :optional port
 [SRFI-38]
 @c EN
 Produces the output like @code{write}, except that they recognize shared
@@ -11022,7 +11022,7 @@ You can customize how the object is printed out by this method.
 @c COMMON
 @end deffn
 
-@defun newline &optional port
+@defun newline :optional port
 [R5RS]
 @c EN
 Writes a newline character to @var{port}
@@ -11031,7 +11031,7 @@ Writes a newline character to @var{port}
 @c COMMON
 @end defun
 
-@defun flush &optional port
+@defun flush :optional port
 @defunx flush-all-ports
 @c EN
 Output the buffered data in @var{port}, or all ports, respectively.
@@ -11051,7 +11051,7 @@ The name @code{flush} is taken from STk and STklos.
 @c COMMON
 @end defun
 
-@defun write-char char &optional port
+@defun write-char char :optional port
 [R5RS]
 @c EN
 Write a single character @var{char} to the output port @var{port}.
@@ -11060,7 +11060,7 @@ Write a single character @var{char} to the output port @var{port}.
 @c COMMON
 @end defun
 
-@defun write-byte byte &optional port
+@defun write-byte byte :optional port
 @c EN
 Write a byte @var{byte} to the port.
 @var{byte} must be an exact integer in range between 0 and 255.
@@ -11436,7 +11436,7 @@ absolute position of the arguments, starting from 0.
 @subsection Loading Scheme file
 @c NODE Schemeファイルのロード
 
-@defun load file &keyword paths (error-if-not-found #t) environment ignore-coding
+@defun load file :key paths (error-if-not-found #t) environment ignore-coding
 [R5RS+]
 @c EN
 Loads @var{file}, that is, read Scheme expressions in @var{file} and
@@ -11526,7 +11526,7 @@ described below, instead.
 @c COMMON
 @end defvar
 
-@defspec add-load-path path &optional (afterp #f)
+@defspec add-load-path path :optional (afterp #f)
 @c EN
 Adds a path @var{path} to the library load path list.
 If a true value is given to @var{afterp}, @var{path} is added
@@ -11660,7 +11660,7 @@ When called outside of @code{load}, these procedures returns
 @subsection Load dynamic library
 @c NODE ダイナミックライブラリのロード
 
-@defun dynamic-load file &keyword init-function export-symbols
+@defun dynamic-load file :key init-function export-symbols
 @c EN
 Loads and links a dynamic loadable library (shared library) @var{file}.
 @var{File} shouldn't contain the suffix (``.so'' on most systems);
@@ -11988,7 +11988,7 @@ You can also use glob-like metacharacters '@code{*}' and
 指定します。これはライブラリサーチパス以下で検索されます。
 @c COMMON
 
-@defun library-fold pattern proc seed &keyword paths strict? allow-duplicates?
+@defun library-fold pattern proc seed :key paths strict? allow-duplicates?
 @c EN
 A basic iterator for library/module files.
 This procedure searches Scheme program files which matches
@@ -12119,8 +12119,8 @@ Here are some examples (the result may differ in your environment).
 @c COMMON
 @end defun
 
-@defun library-map pattern proc &keyword paths allow-duplicates? strict?
-@defunx library-for-each pattern proc &keyword paths allow-duplicates? strict?
+@defun library-map pattern proc :key paths allow-duplicates? strict?
+@defunx library-for-each pattern proc :key paths allow-duplicates? strict?
 @c EN
 @code{Map} and @code{for-each} version of iterator over matched
 libraries/modules.  See @code{library-fold} above for detailed
@@ -12150,7 +12150,7 @@ the results.
 @end example
 @end defun
 
-@defun library-exists? mod/path &keyword paths force-search? strict?
+@defun library-exists? mod/path :key paths force-search? strict?
 @c EN
 Search a library or a module specified by @var{mod/path}, 
 and returns a true value if it finds one.  @var{Paths} and @var{strict?}
@@ -12244,8 +12244,8 @@ for user-defined classes.
 @c COMMON
 @end deffn
 
-@defun sort seq &optional cmpfn
-@defunx sort! seq &optional cmpfn
+@defun sort seq :optional cmpfn
+@defunx sort! seq :optional cmpfn
 @c EN
 Sorts elements in a sequence @var{seq} (a list or a vector) 
 in ascending order and returns the sorted sequence.
@@ -12316,8 +12316,8 @@ add objects one at at time, you can also use treemaps
 @c COMMON
 @end defun
 
-@defun stable-sort seq &optional cmpfn
-@defunx stable-sort! seq &optional cmpfn
+@defun stable-sort seq :optional cmpfn
+@defunx stable-sort! seq :optional cmpfn
 @c EN
 Sort a sequence @var{seq} (a list or a vector), using stable sort algorithm
 (currently they are using merge sort).  
@@ -12333,10 +12333,10 @@ if the first argument strictly precedes the second.
 @c COMMON
 @end defun
 
-@defun sort-by seq key &optional cmpfn
-@defunx sort-by! seq key &optional cmpfn
-@defunx stable-sort-by seq key &optional cmpfn
-@defunx stable-sort-by! seq key &optional cmpfn
+@defun sort-by seq key :optional cmpfn
+@defunx sort-by! seq key :optional cmpfn
+@defunx stable-sort-by seq key :optional cmpfn
+@defunx stable-sort-by! seq key :optional cmpfn
 @c EN
 Sorts @var{seq}, by comparing the key values obtained by
 applying the @var{key} procedure to each element of @var{seq}.
@@ -12475,7 +12475,7 @@ Gaucheは(@code{main}から返る以外に)自分自身を終了させる方法�
 @c COMMON
 
 
-@defun exit &optional (code 0) (fmtstr #f) args @dots{}
+@defun exit :optional (code 0) (fmtstr #f) args @dots{}
 [POSIX]
 @c EN
 Terminates the current process with the exit code @var{code}.
@@ -12654,7 +12654,7 @@ Gaucheではうまくいきませんでした。大きな理由のひとつは�
 @c COMMON
 @end defun
 
-@defun exit-handler &optional new-handler
+@defun exit-handler :optional new-handler
 @c EN
 When called without argument, returns the value of the current exit
 handler.  When called with an argument, sets @var{new-handler} as the
@@ -12743,7 +12743,7 @@ variable.
 @c COMMON
 @end defun
 
-@defun sys-environ->alist &optional envlist
+@defun sys-environ->alist :optional envlist
 @c EN
 A convenience procedure for @code{sys-environ}.  When the list of
 environment strings (like what @code{sys-environ} returns) is given
@@ -12851,8 +12851,8 @@ if @var{path} doesn't exists or is not a directory.
 @c COMMON
 @end defun
 
-@defun glob pattern &keyword separator folder
-@defunx sys-glob pattern &keyword separator folder
+@defun glob pattern :key separator folder
+@defunx sys-glob pattern :key separator folder
 @c EN
 Provides a traditional Unix glob(3) functionality;
 returns a list of pathnames that matches the given @var{pattern}.
@@ -13131,7 +13131,7 @@ the character set, e.g. @code{[!abc]} is the same as @code{[^abc]}.
 @end table
 @end defun
 
-@defun glob-fold pattern proc seed &keyword separator folder
+@defun glob-fold pattern proc seed :key separator folder
 @c EN
 This is actually a low-level construct of the glob function.
 Actually, @var{glob} is simply written like this:
@@ -13168,7 +13168,7 @@ pathnames, @var{proc} is never called and @var{seed} is returned.
 @c COMMON
 @end defun
 
-@defun make-glob-fs-fold &keyword root-path current-path
+@defun make-glob-fs-fold :key root-path current-path
 @c EN
 This is a utility function to generate a procedure suitable to
 pass the @var{folder} keyword argument of @code{glob-fold} and @code{glob}.
@@ -13348,7 +13348,7 @@ in @code{file.util} (@ref{Directory utilities}).
 @c COMMON
 @end defun
 
-@defun sys-umask &optional mode
+@defun sys-umask :optional mode
 [POSIX] 
 @c EN
 Sets umask setting to @var{mode}.  Returns previous umask setting.
@@ -13373,7 +13373,7 @@ See also @ref{Pathname utilities}, for high-level APIs.
 高レベルのAPIに関しては@ref{Pathname utilities}も参照して下さい。
 @c COMMON
 
-@defun sys-normalize-pathname pathname &keyword absolute expand canonicalize
+@defun sys-normalize-pathname pathname :key absolute expand canonicalize
 @c EN
 Converts @var{pathname} according to the way specified by keyword arguments.
 More than one keyword argument can be specified.
@@ -13796,7 +13796,7 @@ If either of them is -1, the corresponding ownership is not changed.
 @c COMMON
 @end defun
 
-@defun sys-utime path &optional atime mtime
+@defun sys-utime path :optional atime mtime
 @c EN
 Change the file's access time and modification time to @var{atime}
 and @var{mtime}, respectively.   If @var{atime} and @var{mtime} is
@@ -13825,7 +13825,7 @@ See also @code{current-directory} (@xref{Directory utilities}).
 @c COMMON
 @end defun
 
-@defun sys-pipe &keyword (buffering :line)
+@defun sys-pipe :key (buffering :line)
 @c EN
 [POSIX] Creates a pipe, and returns two ports.
 The first returned port is an input port and the second is an output port.
@@ -14618,7 +14618,7 @@ Use the following procedures to get/set signal handlers from Scheme.
 Schemeからシグナルハンドラを設定するには以下の手続きを使って下さい。
 @c COMMON
 
-@defun set-signal-handler! signals handler &optional sigmask
+@defun set-signal-handler! signals handler :optional sigmask
 @c EN
 @var{Signals} may be a single signal number or a @code{<sys-sigset>}
 object, and @var{handler} should be either @code{#t}, @code{#f}
@@ -15295,7 +15295,7 @@ This may be just a @code{"/dev/tty"}.   See also @code{sys-ttyname}.
 @end defun
 
 @defun sys-getrlimit resource
-@defunx sys-setrlimit resource current &optional maximum
+@defunx sys-setrlimit resource current :optional maximum
 [POSIX] Get and set resource limits respectively.
 @var{Resource} is an integer constant to specify the resource
 of concern.  The following constants are defined.
@@ -15781,7 +15781,7 @@ Windowsネイティブな環境ではこの手続きは使えません。
 @c COMMON
 @end defun
 
-@defun sys-exec command args &keyword directory iomap sigmask
+@defun sys-exec command args :key directory iomap sigmask
 @c EN
 [POSIX+]
 Execute @var{command} with @var{args}, a list of arguments.
@@ -15910,7 +15910,7 @@ Windowsネイティブ環境では、標準入力、標準出力、標準エラ�
 @c COMMON
 @end defun
 
-@defun sys-fork-and-exec command args &keyword directory iomap sigmask
+@defun sys-fork-and-exec command args :key directory iomap sigmask
 @c EN
 Like @code{sys-exec}, but executes @code{fork(2)} just before
 remapping I/O, altering signal mask and call @code{execvp(2)}.
@@ -15971,7 +15971,7 @@ The status code can be interpreted by the following functions.
 @c COMMON
 @end defun
 
-@defun sys-waitpid pid &keyword nohang untraced
+@defun sys-waitpid pid :key nohang untraced
 @c EN
 [POSIX] This is an interface to @code{waitpid(3)}, an extended version of
 wait.
@@ -16260,8 +16260,8 @@ Returns the maximum file descriptor number in @var{fdset}.
 @c COMMON
 @end defun
 
-@defun sys-select readfds writefds exceptfds &optional timeout
-@defunx sys-select! readfds writefds exceptfds &optional timeout
+@defun sys-select readfds writefds exceptfds :optional timeout
+@defunx sys-select! readfds writefds exceptfds :optional timeout
 @c EN
 Waits for a set of file descriptors to change status.
 @var{readfds}, @var{writefds}, and @var{exceptfds} are @code{<fdset>}
@@ -16638,7 +16638,7 @@ saved sampled data.
 @c COMMON
 @end defun
 
-@defun profiler-show &keyword sort-by max-rows
+@defun profiler-show :key sort-by max-rows
 @c EN
 Show the saved sampled data.  
 @c JP

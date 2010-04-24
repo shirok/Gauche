@@ -84,14 +84,16 @@ recent version on the web:
 @c NODE  Gaucheの概要
 
 @c EN
-Gauche is a script interpreter based on Scheme.
+Gauche is a Scheme script engine; it reads Scheme programs,
+compiles it on-the-fly and executes it on a virtual machine.
 Gauche conforms the language standard
 "Revised^5 Report on the Algorithmic Language Scheme"
 (@ref{r5rs,[R5RS],R5RS}),
 and supports various common libraries defined in SRFIs
 (@uref{http://srfi.schemers.org}).
 @c JP
-GaucheはScheme言語に基づくスクリプトインタプリタです。
+GaucheはScheme言語のスクリプトエンジンです。
+Schemeプログラムを読み込み、直ちにコンパイルして仮想マシンで実行します。
 Scheme言語の標準である、"Revised^5 Report on the Algorithmic Language Scheme"
 (@ref{r5rs,[R5RS],R5RS})に準拠しています。また、SRFI
 (@uref{http://srfi.schemers.org}) に規定されている数多くのライブラリを
@@ -127,16 +129,14 @@ Gaucheが長所とするべく重点を置いているのは次のようなポ�
 One of the situation Gauche is aiming at is in the production
 environment, where you write ten-lines throw-away script that
 may invoked very frequently.  This includes CGI scripts as well.
-Gauche includes a set of most common features in its executable,
-while splits less common stuffs into libraries which are to be loaded
-on demand, to make itself start quickly.
+Gauche provides frequently used common features as a part of rich built-in 
+functions or precompiled Scheme libraries that can be loaded very quickly.
 @c JP
 Gaucheが想定している用途のひとつは、プロダクション環境でちょろっと
 10行スクリプトをでっちあげて、それが非常に頻繁に呼ばれるようなケースです。
 CGIスクリプトなどもそうです。
-Gaucheでは、言語のコアとスクリプトとして良く使いそうな機能に絞って
-実行ファイルにコンパイルインし、使う分野が特定される機能は必要に応じて
-読み込むようにしています。
+Gaucheは頻繁に使われる共通の機能については、豊富な組み込み関数として、
+あるいはプリコンパイルされ素早くロードできるSchemeライブラリとして提供しています。
 @c COMMON
 
 @c EN
@@ -234,7 +234,7 @@ Gaucheはポートオブジェクトを入出力のための統合された抽�
 @c EN
 On the other hand, Gauche is @emph{not} designed for 
 applications such like high-performance number cruncher or
-very large scale database handling.  It is an interpreter, after all.
+very large scale database handling. 
 
 You can still use Gauche as a "glue" language for such applications,
 however.  For example, you can write a performance-critical part 
@@ -342,46 +342,42 @@ Indicates zero or more arguments.
 @c JP
 ゼロ個以上の可変個の引数。
 @c COMMON
-@item &optional x y z
-@itemx &optional (x x-default) (y y-default) z
+@item :optional x y z
+@itemx :optional (x x-default) (y y-default) z
 @c EN
 Indicates it may take up to three optional arguments.
-The second form specifies default values.
-Note that Gauche doesn't really support Common-Lisp style
-@code{&optional} argument specifier in the lambda list.
-I use this notation since it is useful to indicate valid pattern of arguments.
+The second form specifies default values to @var{x} and @var{y}.
+This is Gauche's enhancement to Scheme; see @ref{Making Procedures}
+for the definition of complete argument list syntax.
 @c JP
 省略可能な引数の表記。この例では3つまでの省略可能な引数が取られることを示します。
-2番目の形式では省略された場合の既定値も示しています。
-この表記はCommonLispのスタイルにならっていますが、Gauche自身がラムダリストに
-@code{&optional}のような表記を受け付けるわけではないことに注意してください。
-マニュアルの表記を簡潔にするためにこのような表現を用いているだけです。
+2番目の形式では@var{x}と@var{y}について省略された場合の既定値も示しています。
+この形式の引数表記は、Schemeに対するGaucheの独自拡張です。
+完全な仕様については@ref{Making Procedures}を参照してください。
 @c COMMON
-@item &keyword x y z
-@itemx &keyword (x x-default) (y y-default) z
+@item :key x y z
+@itemx :key (x x-default) (y y-default) z
 @c EN
 Indicates it may take keyword arguments @var{x}, @var{y} and @var{z.}
-Note that Gauche doesn't really support Common-Lisp style
-@code{&keyword} argument specifier in the lambda list.
-I use this notation since it is useful to indicate valid pattern of arguments.
+The second form shows the default values for @var{x} and @var{y}.
+This is also Gauche's enhancement to Scheme; see @ref{Making Procedures}
+for the definition of complete argument list syntax.
 @c JP
 キーワード引数の表記。この例では@var{x}、@var{y}、@var{z}の3つのキーワード引数を
-取ることが示されます。2番目の形式では省略された場合の既定値も示されます。
-この表記はCommonLispのスタイルにならっていますが、Gauche自身がラムダリストに
-@code{&keyword}のような表記を受け付けるわけではないことに注意してください。
-マニュアルの表記を簡潔にするためにこのような表現を用いているだけです。
+取ることが示されます。2番目の形式では@var{x}と@var{y}について省略された場合の
+既定値も示しています。
+この形式の引数表記も、Schemeに対するGaucheの独自拡張です。
+完全な仕様については@ref{Making Procedures}を参照してください。
 @c COMMON
-@item &rest args
+@item :rest args
 @c EN
 Indicates it may take rest arguments.
-Note that Gauche doesn't really support Common-Lisp style
-@code{&rest} argument specifier in the lambda list.
-I use this notation since it is useful to indicate valid pattern of arguments.
+This is also Gauche's enhancement to Scheme; see @ref{Making Procedures}
+for the definition of complete argument list syntax.
 @c JP
 残りの引数全てがリストになって@var{args}に束縛されることを示します。
-この表記はCommonLispのスタイルにならっていますが、Gauche自身がラムダリストに
-@code{&rest}のような表記を受け付けるわけではないことに注意してください。
-マニュアルの表記を簡潔にするためにこのような表現を用いているだけです。
+この形式の引数表記も、Schemeに対するGaucheの独自拡張です。
+完全な仕様については@ref{Making Procedures}を参照してください。
 @c COMMON
 @end table
 

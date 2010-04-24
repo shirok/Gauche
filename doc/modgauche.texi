@@ -237,7 +237,7 @@ It is equivalent to @code{(is-a? obj <array-base>)}.
 @c COMMON
 @end defun
 
-@defun make-array shape &optional init
+@defun make-array shape :optional init
 [SRFI-25]
 @c EN
 Creates an array of shape @var{shape}.
@@ -261,8 +261,8 @@ Shapeが@var{shape}である配列を作成します。
 @end example
 @end defun
 
-@defun make-u8array shape &optional init
-@defunx make-s8array shape &optional init
+@defun make-u8array shape :optional init
+@defunx make-s8array shape :optional init
 @findex make-u16array
 @findex make-s16array
 @findex make-u32array
@@ -271,8 +271,8 @@ Shapeが@var{shape}である配列を作成します。
 @findex make-s64array
 @dots{}
 @end defun
-@defun make-f32array shape &optional init
-@defunx make-f64array shape &optional init
+@defun make-f32array shape :optional init
+@defunx make-f64array shape :optional init
 @c EN
 Like @code{make-array}, but creates and returns an uniform numeric array.
 @c JP
@@ -441,17 +441,17 @@ Shapeが@var{shape}であり、与えられた配列@var{array}とバッキン�
 @c COMMON
 @end defun
 
-@defun array-for-each-index array proc &optional index
+@defun array-for-each-index array proc :optional index
 @end defun
 
-@defun shape-for-each shape proc &optional index
+@defun shape-for-each shape proc :optional index
 @end defun
 
-@defun tabulate-array shape proc &optional index
+@defun tabulate-array shape proc :optional index
 @end defun
 
-@defun array-retabulate! array shape proc &optional index
-@defunx array-retabulate! array proc &optional index
+@defun array-retabulate! array shape proc :optional index
+@defunx array-retabulate! array proc :optional index
 @end defun
 
 @defun array-map! array shape proc array0 array1 @dots{}
@@ -466,20 +466,20 @@ Shapeが@var{shape}であり、与えられた配列@var{array}とバッキン�
 @defunx array->list array
 @end defun
 
-@defun array-concatenate a b &optional dimension
+@defun array-concatenate a b :optional dimension
 @end defun
 
-@defun array-transpose array &optional dim1 dim2
+@defun array-transpose array :optional dim1 dim2
 @end defun
 
-@defun array-rotate-90 array &optional dim1 dim2
+@defun array-rotate-90 array :optional dim1 dim2
 @end defun
 
-@defun array-flip array &optional dimension
-@defunx array-flip! array &optional dimension
+@defun array-flip array :optional dimension
+@defunx array-flip! array :optional dimension
 @end defun
 
-@defun identity-array dimension &optional class
+@defun identity-array dimension :optional class
 @end defun
 
 @defun array-inverse array
@@ -634,7 +634,7 @@ Also there are two useful procedures to deal with CES names.
 また、CESを扱う二つの便利な手続きが用意されています。
 @c COMMON
 
-@defun ces-equivalent? ces-a ces-b &optional unknown-value
+@defun ces-equivalent? ces-a ces-b :optional unknown-value
 @c EN
 Returns true if two CESes @var{ces-a} and @var{ces-b} are equivalent
 to the knowledge of the system.  Returns false if they are not.
@@ -664,7 +664,7 @@ CES名 "none" はワイルドカードのように動作します。それはど
 @end example
 @end defun
 
-@defun ces-upper-compatible? ces-a ces-b &optional unknown-value
+@defun ces-upper-compatible? ces-a ces-b :optional unknown-value
 @c EN
 Returns true if a string encoded in CES @var{ces-b} can also
 be regarded as a string encoded in @var{ces-a} without conversion,
@@ -893,7 +893,7 @@ usually in favor of the native CES.
 @subsection Conversion ports
 @c NODE 変換ポート
 
-@defun open-input-conversion-port source from-code &keyword to-code buffer-size owner?
+@defun open-input-conversion-port source from-code :key to-code buffer-size owner?
 @c EN
 Takes an input port @var{source}, which feeds characters
 encoded in @var{from-code}, and returns another input port,
@@ -980,7 +980,7 @@ For example, the following code copies a file @file{unknown.txt} to a file
 @end defun
 
 
-@defun open-output-conversion-port sink to-code &keyword from-code buffer-size owner?
+@defun open-output-conversion-port sink to-code :key from-code buffer-size owner?
 @c EN
 Creates and returns an output port that converts
 given characters from @var{from-code} to @var{to-code}
@@ -1018,7 +1018,7 @@ and true, however, it closes @var{sink} when it is closed.
 @c COMMON
 @end defun
 
-@defun ces-convert string from-code &optional to-code
+@defun ces-convert string from-code :optional to-code
 @c EN
 Convert @var{string}'s character encoding from @var{from-code}
 to @var{to-code}, and returns the converted string.
@@ -1041,8 +1041,8 @@ assumed.
 @c COMMON
 @end defun
 
-@defun call-with-input-conversion iport proc &keyword encoding conversion-buffer-size
-@defunx call-with-output-conversion oport proc &keyword encoding conversion-buffer-size
+@defun call-with-input-conversion iport proc :key encoding conversion-buffer-size
+@defunx call-with-output-conversion oport proc :key encoding conversion-buffer-size
 @c EN
 These procedures can be used to perform character I/O with
 different encoding temporary from the original port's encoding.
@@ -1121,8 +1121,8 @@ Gauche の内部エンコーディングをもつ文字を書き込むことが�
 @c COMMON
 @end defun
 
-@defun with-input-conversion iport thunk &keyword encoding conversion-buffer-size
-@defunx with-output-conversion oport thunk &keyword encoding conversion-buffer-size
+@defun with-input-conversion iport thunk :key encoding conversion-buffer-size
+@defunx with-output-conversion oport thunk :key encoding conversion-buffer-size
 @c EN
 Similar to @code{call-with-*-conversion},
 but these procedures call @var{thunk} without arguments,
@@ -1137,8 +1137,8 @@ The meaning of keyword arguments are the same as @code{call-with-*-conversion}.
 @c COMMON
 @end defun
 
-@defun wrap-with-input-conversion port from-code &keyword to-code owner? buffer-size
-@defunx wrap-with-output-conversion port to-code &keyword from-code owner? buffer-size
+@defun wrap-with-input-conversion port from-code :key to-code owner? buffer-size
+@defunx wrap-with-output-conversion port to-code :key from-code owner? buffer-size
 @c EN
 Convenient procedures to avoid adding unnecessary conversion port.
 Each procedure works like @code{open-input-conversion-port}
@@ -1729,8 +1729,8 @@ applied in order.  Otherwise the order of application is undefined.
 @end example
 @end deffn
 
-@deffn {Generic function} find-min coll &keyword key compare default
-@deffnx {Generic function} find-max coll &keyword key compare default
+@deffn {Generic function} find-min coll :key key compare default
+@deffnx {Generic function} find-max coll :key key compare default
 @c EN
 Returns a minimum or maximum element in the collection @var{coll}.
 
@@ -1761,7 +1761,7 @@ returned, whose default is @code{#f}.
 @end example
 @end deffn
 
-@deffn {Generic function} find-min&max coll &keyword key compare default default-min default-max
+@deffn {Generic function} find-min&max coll :key key compare default default-min default-max
 @c EN
 Does @code{find-min} and @code{find-max} simultaneously, and returns
 two values, the minimum element and the maximum element.
@@ -1885,7 +1885,7 @@ in the collections of class @var{class}.
 @end example
 @end deffn
 
-@deffn {Generic function} group-collection coll &keyword key test
+@deffn {Generic function} group-collection coll :key key test
 @c EN
 Generalized @code{partition}.  Groups elements in @var{coll}
 into those who has the same key value, and returns the groups as
@@ -2010,7 +2010,7 @@ as fundamental methods are explained at the bottom of this subsection.
 何故このインタフェースを基礎のメソッドとして選んだかについてはこの章の最後に説明します。
 @c COMMON
 
-@deffn {Generic function} call-with-iterator collection proc &keyword start
+@deffn {Generic function} call-with-iterator collection proc :key start
 @c EN
 A fundamental iterator creator.   This creates two procedures
 from @var{collection}, both take no argument, and then call
@@ -2113,7 +2113,7 @@ N-aryのイテレータメソッドを書くのに便利な手続きです。
 @c COMMON
 @end defun
 
-@deffn {Generic function} call-with-builder collection-class proc &keyword size
+@deffn {Generic function} call-with-builder collection-class proc :key size
 @c EN
 A fundamental builder creator.  Builder is a way to construct
 a collection incrementally.  Not all collection classes provide
@@ -2468,7 +2468,7 @@ to provide at least @code{dict-get}, @code{dict-put!}, @code{dict-exists?},
 have default behavior built on top of these.  Of course your can
 implement other methods as well, potentially to gain better performance.
 
-@deffn {Generic function} dict-get (dict @code{<dictionary>}) key &optional default
+@deffn {Generic function} dict-get (dict @code{<dictionary>}) key :optional default
 Returns the value corresponding to the @var{key}.  
 If the dictionary doesn't have an entry with @var{key},
 returns @var{default} when it is provided, or raises an error
@@ -2628,8 +2628,8 @@ to create it like this:
 Returns the left or right map of @var{bimap}, respectively.
 @end defun
 
-@defun bimap-left-get bimap key &optional default
-@defunx bimap-right-get bimap key &optional default
+@defun bimap-left-get bimap key :optional default
+@defunx bimap-right-get bimap key :optional default
 Lookup the value corresponding to the @var{key} in the left or right
 map of @var{bimap}.   If no entry is found for @var{key}, 
 @var{default} is returned if provided, otherwise an error is
@@ -2691,7 +2691,7 @@ advisory file locking.
 @c COMMON
 @end deftp
 
-@defun sys-fcntl port-or-fd operation &optional arg
+@defun sys-fcntl port-or-fd operation :optional arg
 @c EN
 Performs certain operation on the file specified by @var{port-or-fd},
 which should be a port object or an integer
@@ -3078,7 +3078,7 @@ causes all the registered procedure to be invoked.
 @c COMMON
 @end deftp
 
-@defun make-hook &optional (arity 0)
+@defun make-hook :optional (arity 0)
 @c EN
 Creates a new hook object with given arity, which should be a
 non-negative integer.
@@ -3104,7 +3104,7 @@ Returns true if @var{hook}'s procedure list is empty.
 @c COMMON
 @end defun
 
-@deffn {Method} add-hook! (hook <hook>) proc &optional (append? #f)
+@deffn {Method} add-hook! (hook <hook>) proc :optional (append? #f)
 @c EN
 Adds a procedure @var{proc} to @var{hook}.  If @var{append?}
 is given and true, @var{proc} is added at the end of the list.
@@ -3191,7 +3191,7 @@ those functions can be used by default in interactive development.
 @c COMMON
 @end deftp
 
-@defmac apropos pattern &optional module
+@defmac apropos pattern :optional module
 @c EN
 Show a list of defined variables whose name matches @var{pattern}.
 If you give a module or a module name @var{module}, only the variables
@@ -4010,7 +4010,7 @@ are @code{LOG_PID}, @code{LOG_USER} and @code{LOG_INFO}, respectively.
 @end deftp
 
 
-@defun log-open path &keyword prefix program-name
+@defun log-open path :key prefix program-name
 @c EN
 Sets the destination of the default log message to the path @var{path}.
 It can be a string or a boolean, as described above.
@@ -4145,7 +4145,7 @@ fist invocation, and ignored in the subsequent invocation.
 @c COMMON
 @end deftp
 
-@deffn {Method} instance-of (class <singleton-meta>) &rest initargs
+@deffn {Method} instance-of (class <singleton-meta>) :rest initargs
 @c EN
 This method just calls @code{make} with the passed arguments.
 It is more obvious in the program that you're dealing with singleton.
@@ -4549,7 +4549,7 @@ protocol stack.
 @c COMMON
 @end deftp
 
-@defun make-sockaddrs host port &optional proto
+@defun make-sockaddrs host port :optional proto
 @c EN
 This is a higher-level utility procedure to create all possible
 inet domain socket addresses that point to @code{@var{host}:@var{port}}
@@ -4728,7 +4728,7 @@ provide, use low-level interface.
 より細かい制御が必要な場合は低レベルAPIを使用して下さい。
 @c COMMON
 
-@defun make-client-socket &optional address-spec @dots{}
+@defun make-client-socket :optional address-spec @dots{}
 @c EN
 Creates and returns a client socket, connected to the address
 specified by @var{address-spec} @dots{}.
@@ -4805,7 +4805,7 @@ or cannot connect to the specified address.
 @end example
 @end defun
 
-@defun make-server-socket &optional address-spec @dots{}
+@defun make-server-socket :optional address-spec @dots{}
 @c EN
 Creates and returns a server socket, listening the address
 specified by @var{address-spec}.
@@ -4898,7 +4898,7 @@ by an instance of @code{<sockaddr>}.
 @end example
 @end defun
 
-@defun make-server-sockets host port &keyword reuse-addr? sock-init
+@defun make-server-sockets host port :key reuse-addr? sock-init
 @c EN
 Creates one or more sockets that listen at @var{port}
 on all available network interfaces of @var{host}.
@@ -4940,8 +4940,8 @@ If no address has been associated to the socket, @code{#f} is returned.
 @c COMMON
 @end defun
 
-@defun socket-input-port socket &keyword (buffering :modest)
-@defunx socket-output-port socket &keyword (buffering :line)
+@defun socket-input-port socket :key (buffering :modest)
+@defunx socket-output-port socket :key (buffering :line)
 @c EN
 Returns an input and output port associated with @var{socket},
 respectively.
@@ -4982,7 +4982,7 @@ interfering the existing connection.   You can call
 @c COMMON
 @end defun
 
-@defun call-with-client-socket socket proc &keyword input-buffering output-buffering
+@defun call-with-client-socket socket proc :key input-buffering output-buffering
 @c EN
 @var{socket} must be a connected client socket.  @var{proc} is called
 with two arguments, an input port that reads from the socket
@@ -5061,7 +5061,7 @@ the sockets.
 制御できるので、役に立つでしょう。
 @c COMMON
 
-@defun make-socket domain type &optional protocol
+@defun make-socket domain type :optional protocol
 @c EN
 Returns a socket with specified parameters.
 @c JP
@@ -5275,8 +5275,8 @@ Returns a @code{<sockaddr>} instance that is the peer address of
 @c COMMON
 @end defun
 
-@defun socket-send socket msg &optional flags
-@defunx socket-sendto socket msg to-address &optional flags.
+@defun socket-send socket msg :optional flags
+@defunx socket-sendto socket msg to-address :optional flags.
 @c EN
 Interfaces to @code{send(2)} and @code{sendto(2)}, respectively.
 Transmits the content of @var{msg} through @var{socket}.
@@ -5310,7 +5310,7 @@ and @code{sendto(2)} for the details.
 @c COMMON
 @end defun
 
-@defun socket-sendmsg socket msghdr &optional flags
+@defun socket-sendmsg socket msghdr :optional flags
 @c EN
 Sends a packet described by @var{msghdr} through @var{socket}
 using @code{sendmsg(3)}.  The @var{msghdr} argument must be a
@@ -5345,7 +5345,7 @@ availability of this procedure (@xref{Platform-dependent features}).
 @c COMMON
 @end defun
 
-@defun socket-buildmsg addr iov control flags &optional buf
+@defun socket-buildmsg addr iov control flags :optional buf
 @c EN
 Builds a binary representation of @code{struct msghdr} which is
 suitable to be given to @code{socket-sendmsg}.
@@ -5430,7 +5430,7 @@ availability of this procedure (@xref{Platform-dependent features}).
 @c COMMON
 @end defun
 
-@defun socket-recv! socket buf &optional flags
+@defun socket-recv! socket buf :optional flags
 @c EN
 Interface to @code{recv(2)}.  Receives a message from @var{socket},
 and stores it into @var{buf}, which must be a mutable uniform vector.
@@ -5457,7 +5457,7 @@ for the details.
 @c COMMON
 @end defun
 
-@defun socket-recvfrom! socket buf addrs &optional flags
+@defun socket-recvfrom! socket buf addrs :optional flags
 @c EN
 Interface to @code{recvfrom(2)}.  Receives a message from
 @var{socket}, which may be unconnected, and stores it to
@@ -5543,8 +5543,8 @@ for the details.
 @end defun
 
 
-@defun socket-recv socket bytes &optional flags
-@defunx socket-recvfrom socket bytes &optional flags
+@defun socket-recv socket bytes :optional flags
+@defunx socket-recvfrom socket bytes :optional flags
 @c EN
 Like @code{socket-recv!} and @code{socket-recvfrom!}, but
 these returns the received message as a (possibly incomplete)
@@ -6198,7 +6198,7 @@ so that a parameter can be used as if it were a procedure.
 @c COMMON
 @end deftp
 
-@defun make-parameter value &optional filter
+@defun make-parameter value :optional filter
 [SRFI-39]
 @c EN
 Creates a parameter whose initial value is @var{value}.
@@ -6248,7 +6248,7 @@ Some examples:
 (a) @result{} 2
 @end example
 
-@deffn {Method} parameter-observer-add! (p <parameter>) proc &optional when where
+@deffn {Method} parameter-observer-add! (p <parameter>) proc :optional when where
 @c EN
 Adds @var{proc} to "observer" procedures of a parameter @var{p}.
 Observer procedures are called either (1) just before
@@ -6300,7 +6300,7 @@ the observer list is shared by all threads.
 @c COMMON
 @end deffn
 
-@deffn {Method} parameter-observer-delete! (p <parameter>) proc &optional when
+@deffn {Method} parameter-observer-delete! (p <parameter>) proc :optional when
 @c EN
 Deletes @var{proc} from observer procedure list of a parameter @var{p}.
 If @var{proc} is not in the list, nothing happens.
@@ -7015,7 +7015,7 @@ so we treat them as exceptional situations.
 @end deftp
 
 
-@defun run-process cmd/args &keyword input output error @
+@defun run-process cmd/args :key input output error @
                    fork wait directory host sigmask
 @c EN
 Runs a command with arguments given to @var{cmd/args} in a subprocess
@@ -7297,7 +7297,7 @@ to inactive, it is removed from the list @code{process-list} returns.
 @c COMMON
 @end defun
 
-@defun process-wait process &optional nohang error-on-nonzero-status
+@defun process-wait process :optional nohang error-on-nonzero-status
 @c EN
 Obtains the exit status of the subprocess @var{process}, and stores it
 to @var{process}'s status slot.  The status can be obtained by
@@ -7331,7 +7331,7 @@ or @code{#f} otherwise.
 @c COMMON
 @end defun
 
-@defun process-wait-any &optional nohang
+@defun process-wait-any :optional nohang
 @c EN
 Obtains the exit status of any of the subprocesses created by
 @code{run-process}.
@@ -7407,7 +7407,7 @@ Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @node Process ports,  , Process object, High Level Process Interface
 @subsection Process ports
 
-@defun open-input-process-port command &keyword input error encoding conversion-buffer-size
+@defun open-input-process-port command :key input error encoding conversion-buffer-size
 @c EN
 Runs @var{command} asynchronously in a subprocess.  Returns
 two values, an input port which is connected to the stdout of the
@@ -7517,7 +7517,7 @@ you can use one of the following functions.
 @c COMMON
 @end defun
 
-@defun call-with-input-process command proc &keyword input error encoding conversion-buffer-size on-abnormal-exit
+@defun call-with-input-process command proc :key input error encoding conversion-buffer-size on-abnormal-exit
 @c EN
 Runs @var{command} in a subprocess and pipes its stdout
 to an input port, then call @var{proc} with the port as an argument.
@@ -7565,7 +7565,7 @@ as @code{open-input-process-port} above.
 @end example
 @end defun
 
-@defun with-input-from-process command thunk &keyword input error encoding conversion-buffer-size on-abnormal-exit
+@defun with-input-from-process command thunk :key input error encoding conversion-buffer-size on-abnormal-exit
 @c EN
 Runs @var{command} in a subprocess, and calls @var{thunk}
 with its current input port connected to the command's stdout.
@@ -7588,7 +7588,7 @@ as @code{call-with-input-process} above.
 @end example
 @end defun
 
-@defun open-output-process-port command &keyword output error encoding conversion-buffer-size
+@defun open-output-process-port command :key output error encoding conversion-buffer-size
 @c EN
 Runs @code{command} in a subprocess asynchronously.  Returns two values,
 an output port which is connected to the stdin of the subprocess.
@@ -7625,7 +7625,7 @@ at appropriate time.
 @c COMMON
 @end defun
 
-@defun call-with-output-process command proc &keyword output error encoding conversion-buffer-size on-abnormal-exit
+@defun call-with-output-process command proc :key output error encoding conversion-buffer-size on-abnormal-exit
 @c EN
 Runs @code{command} in a subprocess, and calls @var{proc} 
 with an output port which is connected to the stdin of the command.
@@ -7651,7 +7651,7 @@ which is the same as described in @code{call-with-input-process}.
 @end example
 @end defun
 
-@defun with-output-to-process command thunk &keyword output error encoding conversion-buffer-size on-abnormal-exit
+@defun with-output-to-process command thunk :key output error encoding conversion-buffer-size on-abnormal-exit
 @c EN
 Same as @code{call-with-output-process}, except that the
 output port which is connected to the stdin of the command
@@ -7663,7 +7663,7 @@ is set to the current output port while executing @var{thunk}.
 @c COMMON
 @end defun
 
-@defun call-with-process-io command proc &keyword error encoding conversion-buffer-size on-abnormal-exit
+@defun call-with-process-io command proc :key error encoding conversion-buffer-size on-abnormal-exit
 @c EN
 Runs @var{command} in a subprocess, and calls @var{proc}
 with two arguments; the first argument is an input port which
@@ -7686,8 +7686,8 @@ returns or raises an error.
 @c COMMON
 @end defun
 
-@defun process-output->string command &keyword error encoding conversion-buffer-size on-abnormal-exit
-@defunx process-output->string-list command &keyword error encoding conversion-buffer-size on-abnormal-exit
+@defun process-output->string command :key error encoding conversion-buffer-size on-abnormal-exit
+@defunx process-output->string-list command :key error encoding conversion-buffer-size on-abnormal-exit
 @c EN
 Runs @var{command} and collects its output (to stdout) and returns them.
 @code{process-output->string} concatenates all the output from @var{command}
@@ -8107,7 +8107,7 @@ These procedures are low-level machinery on top of which
 @code{define-record-type} is implemented.  They can be used
 to create a new record type at runtime.
 
-@defun make-rtd name field-specs &optional parent
+@defun make-rtd name field-specs :optional parent
 [SRFI-99]
 Creates and returns a new record type descriptor with name @var{name} and
 having fields specified by @var{field-specs}.  If @var{parent}
@@ -8134,7 +8134,7 @@ Returns @code{#t} if @var{obj} is a record type descriptor,
 @code{#f} otherwise.
 @end defun
 
-@defun rtd-constructor rtd &optional field-specs
+@defun rtd-constructor rtd :optional field-specs
 [SRFI-99]
 Returns a procedure that creates an instance record of
 the record type represented by @var{rtd}.
@@ -8308,7 +8308,7 @@ Take a look at the code if you want to know the exact behavior.
 @c COMMON
 @end deftp
 
-@defun reload module-name &optional rule @dots{}
+@defun reload module-name :optional rule @dots{}
 @c EN
 Reloads the specified module.   You can optionally specify
 redefinition rules by @var{rule} @dots{},
@@ -8320,7 +8320,7 @@ where each @var{rule} is the term @code{<rule>} defined above.
 @c COMMON
 @end defun
 
-@defun reload-modified-modules &optional module-rules
+@defun reload-modified-modules :optional module-rules
 @c EN
 Reloads module(s) that have been modified since they are loaded
 last time.  If optional @var{module-rules} is given, it is
@@ -8339,7 +8339,7 @@ rules by @code{module-reload-rules}.
 @c COMMON
 @end defun
 
-@defun module-reload-rules &optional module-rules
+@defun module-reload-rules :optional module-rules
 @c EN
 This is a parameter (@xref{Parameters}) that keeps
 the default module rules for @code{reload-modified-modules}.
@@ -8355,7 +8355,7 @@ current module rules.
 @c COMMON
 @end defun
 
-@defun reload-verbose &optional flag
+@defun reload-verbose :optional flag
 @c EN
 This is a parameter to control verbosity of the reloading procedures.
 If called without arguments, returns the current verbosity flag.
@@ -8476,7 +8476,7 @@ deletes all the handlers waiting for writable condition.
 @end deffn
 
 
-@deffn {Method} selector-select (self <selector>) &optional (timeout #f)
+@deffn {Method} selector-select (self <selector>) :optional (timeout #f)
 @c EN
 Dispatcher body.  Waits for the conditions registered in @var{self},
 and when it occurs, calls the associated handler.
@@ -8604,7 +8604,7 @@ Gauche組み込みクラスのうち、リスト、ベクター、そして文�
 @subsection Fundamental sequence accessors
 @c NODE 基本的なシーケンスのアクセサ
 
-@deffn {Method} ref (seq <sequence>) index &optional fallback
+@deffn {Method} ref (seq <sequence>) index :optional fallback
 @c EN
 Returns @var{index}-th element of the sequence @var{seq}.
 This method enables uniform access for any sequence types.
@@ -8674,7 +8674,7 @@ or deleting elements.
 @subsection Slicing sequence
 @c NODE シーケンスのスライス
 
-@deffn {Method} subseq (seq <sequence>) &optional start end
+@deffn {Method} subseq (seq <sequence>) :optional start end
 @c EN
 Retrieve a subsequence of the sequence @var{seq}, from
 @var{start}-th element (inclusive) to @var{end}-th element (exclusive).
@@ -8880,7 +8880,7 @@ See @ref{Selection and searching in collection}.
 
 @subsubheading Grouping
 
-@deffn {Generic function} group-sequence seq &keyword key test
+@deffn {Generic function} group-sequence seq :key key test
 @c EN
 Groups consecutive elements in a sequence @var{seq} which
 have the common key value.  A key value of an element is
@@ -8931,7 +8931,7 @@ use @code{group-collection}
 
 @subsubheading Permutation and shuffling
 
-@deffn {Generic function} permute (src <sequence>) (permuter <sequence>) &optional fallback
+@deffn {Generic function} permute (src <sequence>) (permuter <sequence>) :optional fallback
 Returns a newly created sequence of the same type as @var{src}, in which
 the elements are permuted from @var{src} according to @var{permuter}.
 
@@ -8964,7 +8964,7 @@ If @var{fallback} is given, what value is used depends on the result of
 @end example
 @end deffn
 
-@deffn {Generic function} permute-to (class <class>) (src <sequence>) (permuter <sequence>) &optional fallback
+@deffn {Generic function} permute-to (class <class>) (src <sequence>) (permuter <sequence>) :optional fallback
 Like @code{permute}, but the result will be an instance of the given @var{class}
 instead of the class of @var{src}.
 
@@ -8975,13 +8975,13 @@ instead of the class of @var{src}.
 @end example
 @end deffn
 
-@deffn {Generic function} permute! (src <sequence>) (permuter <sequence>) &optional fallback
+@deffn {Generic function} permute! (src <sequence>) (permuter <sequence>) :optional fallback
 Also like @code{permute}, but the result is stored back to @var{src}.
 @var{Src} must be a mutable sequence, and the length of @var{src} and
 @var{permuter} must be the same.
 @end deffn
 
-@deffn {Generic function} shuffle (src <sequence>) &optional random-source
+@deffn {Generic function} shuffle (src <sequence>) :optional random-source
 Returns a new sequence of the same type and size as @var{src},
 in which elements are randomly permuted.
 
@@ -8995,12 +8995,12 @@ By default it uses @code{default-random-source}, but you can pass
 an alternative random source by the optional argument.
 @end deffn
 
-@deffn {Generic function} shuffle-to (class <class>) (src <sequence>) &optional random-source
+@deffn {Generic function} shuffle-to (class <class>) (src <sequence>) :optional random-source
 Like @code{shuffle}, except that the result will be an instance of 
 @var{class} instead of the class of @var{src}.
 @end deffn
 
-@deffn {Generic function} shuffle! (src <sequence>) &optional random-source
+@deffn {Generic function} shuffle! (src <sequence>) :optional random-source
 Like @code{shuffle}, but the result is stored back to @var{src}.
 @var{Src} must be a mutable sequence.
 @end deffn
@@ -9483,7 +9483,7 @@ terminate the connection.
 @c COMMON
 @end defun
 
-@defun sys-openpty &optional term
+@defun sys-openpty :optional term
 @c EN
 Opens a pair of pseudo ttys, one for master and the other for slave,
 then returns two integers which are their file descriptors.
@@ -9512,7 +9512,7 @@ This function is available only if the system supports @code{openpty(3)}.
 @c COMMON
 @end defun
 
-@defun sys-forkpty &optional term
+@defun sys-forkpty :optional term
 @c EN
 Opens a pair of pseudo ttys, one for master and the other for slave,
 sets the slave pty suitable for login terminal, then fork(2).
@@ -9552,7 +9552,7 @@ running multiple threads, use @code{sys-forkpty-and-exec} below.
 @c COMMON
 @end defun
 
-@defun sys-forkpty-and-exec command args &keyword iomap term sigmask
+@defun sys-forkpty-and-exec command args :key iomap term sigmask
 @c EN
 Does @code{sys-forkpty}, and lets the child process
 immediately @code{exec}s the specified @var{command}
@@ -10052,7 +10052,7 @@ and this environment variable is ignored.
 @subheading 個々のテスト
 @c COMMON
 
-@defmac test* name expected expr &optional compare
+@defmac test* name expected expr :optional compare
 @c EN
 A convenience macro that wraps @var{expr} by lambda.
 @c JP
@@ -10065,7 +10065,7 @@ A convenience macro that wraps @var{expr} by lambda.
 @end example
 @end defmac
 
-@defun test name expected thunk &optional check
+@defun test name expected thunk :optional check
 @c EN
 Calls @var{thunk}, and checks its result fits @var{expected}
 using a procedure @var{check}, which
@@ -10136,7 +10136,7 @@ of error.  See the entry of @code{test-error} below for the details.
 @subheading 異常系をテストする
 @c COMMON
 
-@defun test-error &optional (condition-type <error>)
+@defun test-error :optional (condition-type <error>)
 @c EN
 Returns a new @code{<test-error>} object that mathes with
 other @code{<test-error>} object with the given @var{condition-type}.
@@ -10223,7 +10223,7 @@ env GAUCHE_TEST_REPORT_ERROR=1 gosh mytest.scm
 @subheading モジュールのテスト
 @c COMMON
 
-@defun test-module module &keyword allow-undefined
+@defun test-module module :key allow-undefined
 @c EN
 @var{Module} must be a symbol module name or a module.
 This procedure performs some heuristic consistency check of
@@ -10647,7 +10647,7 @@ Returns @code{#t} if @var{obj} is a thread, @code{#f} otherwise.
 @c COMMON
 @end defun
 
-@defun make-thread thunk &optional name
+@defun make-thread thunk :optional name
 @c EN
 [SRFI-18], [SRFI-21]
 Creates and returns a new thread to execute @var{thunk}.
@@ -10804,7 +10804,7 @@ immediately.
 @c COMMON
 @end defun
 
-@defun thread-stop! thread &optional timeout timeout-val
+@defun thread-stop! thread :optional timeout timeout-val
 Stops execution of the target @var{thread} temporarily.
 You can resume the execution of the @var{thread} by @code{thread-cont!}.
 
@@ -10895,7 +10895,7 @@ so that you will know the situation.  @xref{Synchronization primitives}.
 @end defun
 
 
-@defun thread-join! thread &optional timeout timeout-val
+@defun thread-join! thread :optional timeout timeout-val
 @c EN
 [SRFI-18], [SRFI-21]
 Waits termination of @var{thread}, or until the timeout is reached
@@ -11024,7 +11024,7 @@ Returns @code{#t} if @var{obj} is a mutex, @code{#f} otherwise.
 @c COMMON
 @end defun
 
-@defun make-mutex &optional name
+@defun make-mutex :optional name
 @c EN
 [SRFI-18], [SRFI-21]
 Creates and returns a new mutex object.
@@ -11091,7 +11091,7 @@ Mutexはunlocked/not-abandoned(ロックされておらず、放棄されてい�
 @end table
 @end defun
 
-@defun mutex-lock! mutex &optional timeout thread
+@defun mutex-lock! mutex :optional timeout thread
 @c EN
 [SRFI-18], [SRFI-21]
 Locks @var{mutex}.  If @var{mutex} is in unlocked/not-abandoned
@@ -11180,7 +11180,7 @@ The following example is taken from SRFI-18 document:
 @end example
 @end defun
 
-@defun mutex-unlock! mutex &optional condition-variable timeout
+@defun mutex-unlock! mutex :optional condition-variable timeout
 @c EN
 [SRFI-18], [SRFI-21]
 Unlocks @var{mutex}.  The state of @var{mutex} becomes unlocked/not-abandoned.
@@ -11349,7 +11349,7 @@ Returns @code{#t} if @var{obj} is a condition variable,
 @c COMMON
 @end defun
 
-@defun make-condition-variable &optional name
+@defun make-condition-variable :optional name
 @c EN
 [SRFI-18], [SRFI-21]
 Returns a new condition variable.  You can give its name by
@@ -12043,7 +12043,7 @@ and in the valid range of the vector.
 @end example
 @end deftp
 
-@deftp {Function} make-@var{TAG}vector @r{@var{len} @var{&optional} @var{fill}}
+@deftp {Function} make-@var{TAG}vector @r{@var{len} @var{:optional} @var{fill}}
 @findex make-s8vector
 @findex make-u8vector
 @findex make-s16vector
@@ -12107,7 +12107,7 @@ if you import @code{gauche.collection}
 @end example
 @end deftp
 
-@deftp {Function} @var{TAG}vector-ref @r{@var{vec} @var{k} &optional @var{fallback}}
+@deftp {Function} @var{TAG}vector-ref @r{@var{vec} @var{k} :optional @var{fallback}}
 @findex s8vector-ref
 @findex u8vector-ref
 @findex s16vector-ref
@@ -12147,7 +12147,7 @@ if you import @code{gauche.collection}.
 @end example
 @end deftp
 
-@deftp {Function} @var{TAG}vector-set! @r{@var{vec} @var{k} @var{n} &optional @var{clamp}}
+@deftp {Function} @var{TAG}vector-set! @r{@var{vec} @var{k} @var{n} :optional @var{clamp}}
 @findex s8vector-set!
 @findex u8vector-set!
 @findex s16vector-set!
@@ -12189,7 +12189,7 @@ if you import @code{gauche.collection}.
 @end example
 @end deftp
 
-@deftp {Function} @var{TAG}vector-fill! @r{@var{vec} @var{fill} &optional @var{start} @var{end}}
+@deftp {Function} @var{TAG}vector-fill! @r{@var{vec} @var{fill} :optional @var{start} @var{end}}
 @findex s8vector-fill!
 @findex u8vector-fill!
 @findex s16vector-fill!
@@ -12211,7 +12211,7 @@ if they are given.
 @c COMMON
 @end deftp
 
-@deftp {Function} @var{TAG}vector-copy @r{@var{vec} &optional @var{start} @var{end}}
+@deftp {Function} @var{TAG}vector-copy @r{@var{vec} :optional @var{start} @var{end}}
 @findex s8vector-copy
 @findex u8vector-copy
 @findex s16vector-copy
@@ -12240,7 +12240,7 @@ If @var{start} and/or @var{end} are given, they limit the range of
 @end example
 @end deftp
 
-@deftp {Function} @var{TAG}vector-copy! @r{@var{target} @var{tstart} @var{source} &optional @var{sstart} @var{send}}
+@deftp {Function} @var{TAG}vector-copy! @r{@var{target} @var{tstart} @var{source} :optional @var{sstart} @var{send}}
 @findex s8vector-copy!
 @findex u8vector-copy!
 @findex s16vector-copy!
@@ -12330,7 +12330,7 @@ various operations on the homogeneous vectors.
 @subsection Uvector conversion operations
 @c NODE ユニフォームベクタの変換
 
-@deftp {Function} @var{TAG}vector->list @r{@var{vec} &optional @var{start} @var{end}}
+@deftp {Function} @var{TAG}vector->list @r{@var{vec} :optional @var{start} @var{end}}
 @findex s8vector->list
 @findex u8vector->list
 @findex s16vector->list
@@ -12366,7 +12366,7 @@ if you import @code{gauche.collection}.
 @end example
 @end deftp
 
-@deftp {Function} @var{TAG}vector->vector @r{@var{vec} &optional @var{start} @var{end}}
+@deftp {Function} @var{TAG}vector->vector @r{@var{vec} :optional @var{start} @var{end}}
 @findex s8vector->vector
 @findex u8vector->vector
 @findex s16vector->vector
@@ -12402,7 +12402,7 @@ if you import @code{gauche.collection}.
 @end example
 @end deftp
 
-@deftp {Function} list->@var{TAG}vector @r{@var{list} &optional @var{clamp}}
+@deftp {Function} list->@var{TAG}vector @r{@var{list} :optional @var{clamp}}
 @findex list->s8vector
 @findex list->u8vector
 @findex list->s16vector
@@ -12438,7 +12438,7 @@ if you import @code{gauche.collection}.
 @end example
 @end deftp
 
-@deftp {Function} vector->@var{TAG}vector @r{@var{vec} &optional @var{start} @var{end} @var{clamp}}
+@deftp {Function} vector->@var{TAG}vector @r{@var{vec} :optional @var{start} @var{end} @var{clamp}}
 @findex vector->s8vector
 @findex vector->u8vector
 @findex vector->s16vector
@@ -12477,8 +12477,8 @@ if you import @code{gauche.collection}.
 @end example
 @end deftp
 
-@defun string->s8vector string &optional start end
-@defunx string->u8vector string &optional start end
+@defun string->s8vector string :optional start end
+@defunx string->u8vector string :optional start end
 @c EN
 Returns an s8vector or u8vector whose byte sequence is the same
 as the internal representation of the given string.
@@ -12507,8 +12507,8 @@ u8vectorを返します。省略可能な範囲引数@var{start}、@var{end}は�
 @end example
 @end defun
 
-@defun string->s8vector! target tstart string &optional start end
-@defunx string->u8vector! target tstart string &optional start end
+@defun string->s8vector! target tstart string :optional start end
+@defunx string->u8vector! target tstart string :optional start end
 @c EN
 @var{Target} must be an s8vector or a u8vector, respectively.
 @var{Target} must be mutable.
@@ -12535,8 +12535,8 @@ Returns @var{target}.
 
 @end defun
 
-@defun s8vector->string vec &optional start end
-@defunx u8vector->string vec &optional start end
+@defun s8vector->string vec :optional start end
+@defunx u8vector->string vec :optional start end
 @c EN
 Converts a byte sequence in s8vector or u8vector to a string that
 has the same byte sequence.  Optional range arguments @var{start} and
@@ -12555,8 +12555,8 @@ of the string.
 @c COMMON
 @end defun
 
-@defun string->s32vector string &optional start end
-@defunx string->u32vector string &optional start end
+@defun string->s32vector string :optional start end
+@defunx string->u32vector string :optional start end
 @c EN
 Returns an s32vector or u32vector whose elements are
 the internal codes of the characters in the string.
@@ -12576,8 +12576,8 @@ s32vectorもしくはu32vectorを返します。
 @c COMMON
 @end defun
 
-@defun s32vector->string vec &optional start end
-@defunx u32vector->string vec &optional start end
+@defun s32vector->string vec :optional start end
+@defunx u32vector->string vec :optional start end
 @c EN
 Without @var{start} and @var{end}, these procedures work like this:
 @c JP
@@ -12596,7 +12596,7 @@ the range of conversion between them.
 @c COMMON
 @end defun
 
-@defun uvector-alias uvector-class vec &optional start end
+@defun uvector-alias uvector-class vec :optional start end
 @c EN
 This procedure creates an uvector of class @var{uvector-class}
 that shares the storage of the given uniform vector @var{vec}.
@@ -12665,12 +12665,12 @@ alignment constraint.
 @subsection Uvector numeric operations
 @c NODE ユニフォームベクタの数値演算
 
-@deftp {Function} @var{TAG}vector-add @r{@var{vec} @var{val} &optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-add! @r{@var{vec} @var{val} &optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-sub @r{@var{vec} @var{val} &optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-sub! @r{@var{vec} @var{val} &optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-mul @r{@var{vec} @var{val} &optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-mul! @r{@var{vec} @var{val} &optional @var{clamp}}
+@deftp {Function} @var{TAG}vector-add @r{@var{vec} @var{val} :optional @var{clamp}}
+@deftpx {Function} @var{TAG}vector-add! @r{@var{vec} @var{val} :optional @var{clamp}}
+@deftpx {Function} @var{TAG}vector-sub @r{@var{vec} @var{val} :optional @var{clamp}}
+@deftpx {Function} @var{TAG}vector-sub! @r{@var{vec} @var{val} :optional @var{clamp}}
+@deftpx {Function} @var{TAG}vector-mul @r{@var{vec} @var{val} :optional @var{clamp}}
+@deftpx {Function} @var{TAG}vector-mul! @r{@var{vec} @var{val} :optional @var{clamp}}
 @findex s8vector-add
 @findex s8vector-add!
 @findex s8vector-sub
@@ -13045,7 +13045,7 @@ So you might want to use it for binary I/O.  Yes, you can do it.
 できます。それなら、それをバイナリI/Oに使えないでしょうか。もちろんできます。
 @c COMMON
 
-@defun read-block! vec &optional iport start end endian
+@defun read-block! vec :optional iport start end endian
 @c EN
 Reads a chunk of data from the given input port @var{iport},
 and stores it to the uniform vector @var{vec}.
@@ -13121,7 +13121,7 @@ s8vectorとu8vector以外のユニフォームベクタを与えた場合は
 @c COMMON
 @end defun
 
-@defun write-block vec &optional oport start end endian
+@defun write-block vec :optional oport start end endian
 @c EN
 Writes out the content of the uniform vector @var{vec} 'as is'
 to the output port @var{oport}.   If @var{oport} is omitted,
