@@ -1992,7 +1992,7 @@
   (unless (vector? inline-info)
     (error "[internal] pass1/inliner-procedure got invalid info" inline-info))
   (lambda (form cenv)
-    (expand-inlined-procedure form (unpack-iform ivec)
+    (expand-inlined-procedure form (unpack-iform inline-info)
                               (imap (cut pass1 <> cenv) (cdr form)))))
 
 ;; Toplevel macro definitions
