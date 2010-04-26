@@ -1,3 +1,14 @@
+2010-04-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass1/define-inline): Revamp inlining mechanism
+	  of lambdas with closed environment.  The new scheme doesn't
+	  require separate form such as %inlinable-lambda.  I check in the
+	  current state, which works on basic cases but needs more refinement
+	  for the practical cases.  This change shouldn't affect the existing
+	  valid code (that is, the path to inline lambdas with no closed
+	  enviornment isn't changed).
+	* src/intlib.stub (%insert-binding): Allow optional flags.
+
 2010-04-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/bcrypt: Change module name from gauche.bcrypt to crypt.bcrypt,

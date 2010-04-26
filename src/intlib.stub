@@ -113,8 +113,15 @@
           [else
            (result (SCM_GLOC_GET g))])))
 
-(define-cproc %insert-binding (mod::<module> name::<symbol> value)
-  Scm_Define)
+(define-cproc %insert-binding (mod::<module> name::<symbol> value
+                               :optional (flags '()))
+  (let* ([z::int 0])
+    (unless (SCM_FALSEP (Scm_Memq 'const flags))
+      (logior= z SCM_BINDING_CONST))
+    (unless (SCM_FALSEP (Scm_Memq 'inlinable flags))
+      (logior= z SCM_BINDING_INLINABLE))
+    (set! SCM_RESULT (SCM_OBJ (Scm_MakeBinding mod name value z)))))
+
 (define-cproc %hide-binding (mod::<module> name::<symbol>) ::<void>
   Scm_HideBinding)
 
