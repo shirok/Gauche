@@ -674,10 +674,7 @@
    flag             ; Marks some special state of this node.
                     ;   'dissolved: indicates that this lambda has been
                     ;               inline expanded.
-                    ;   <packed-iform>  : inlinable lambda (old format).
-                    ;   (inlinable (<lvar> ...) <packed-iform>) :
-                    ;      inlinable lmabda (new format).  <packed-iform>
-                    ;      is a vector.  (<lvar> ...) is a list of lvars.
+                    ;   <packed-iform>  : inlinable lambda
    ;; The following slot(s) is/are used temporarily during pass2, and
    ;; need not be saved when packed.
    (calls '())      ; list of call sites
@@ -1629,13 +1626,9 @@
                     (variable-name name) (slot-ref proc 'required) nargs))
           ($asm program (if opt? `(,inliner ,nargs) `(,inliner))
                 (imap (cut pass1 <> cenv) (cdr program))))]
-       [(? vector?)                     ;old packed inlinable lambda
+       [(? vector?)                     ;inlinable lambda
         (expand-inlined-procedure program
                                   (unpack-iform inliner)
-                                  (imap (cut pass1 <> cenv) (cdr program)))]
-       [('inlinable fvars (? vector? piform)) ; new packed inlinable lambda
-        (expand-inlined-procedure program  ; TODO: consider fvars
-                                  (unpack-iform piform)
                                   (imap (cut pass1 <> cenv) (cdr program)))]
        [_
         (let1 form (inliner program cenv)
@@ -1996,14 +1989,11 @@
              (make-identifier (unwrap-syntax name) module '()) closure)))
 
 (define (pass1/inliner-procedure inline-info)
-  (let1 ivec (match inline-info
-               [(? vector?) inline-info] ;old format
-               [('inlinable lvars ivec) ivec]
-               [_ (error "[internal] pass1/inliner-procedure got invalid info"
-                         inline-info)])
-    (lambda (form cenv)
-      (expand-inlined-procedure form (unpack-iform ivec)
-                                (imap (cut pass1 <> cenv) (cdr form))))))
+  (unless (vector? inline-info)
+    (error "[internal] pass1/inliner-procedure got invalid info" inline-info))
+  (lambda (form cenv)
+    (expand-inlined-procedure form (unpack-iform ivec)
+                              (imap (cut pass1 <> cenv) (cdr form)))))
 
 ;; Toplevel macro definitions
 
@@ -2425,25 +2415,6 @@
         (pass1/lambda form (append args g)
                       (pass1/extended-lambda form g kargs body)
                       cenv flag)))))
-
-;; EXPERIMENTAL - %inlinable-lambda
-;; This compiles to the same code as lambda, but keeps the intermediate
-;; compilation info (a packed IForm) in the resulting procedure.  The info
-;; can be used later to inline the procedure.   This feature is splitted
-;; from pass1/define-inline, since creating inlinable procedure and defining
-;; inlinable binding are different concepts.
-;; Ideally we want make all lambdas implicitly inlinable to maximize the
-;; chance of inlining.  But currently it takes more time and space to
-;; retain extra data, so it's better to be used consciously by the programmer.
-(define-pass1-syntax (%inlinable-lambda form cenv) :gauche
-  (match form
-    [(_ formals . body) (pass1/inlinable-lambda form formals body cenv)]
-    [_ (error "syntax-error: malformed %inlinable-lambda:" form)]))
-
-(define (pass1/inlinable-lambda form formals body cenv)
-  (rlet1 p1 (pass1/lambda form formals body cenv #f)
-    (let1 fvars (free-lvars p1)
-      ($lambda-flag-set! p1 `(inlinable ,fvars ,(pack-iform p1))))))
 
 (define-pass1-syntax (receive form cenv) :gauche
   (match form
@@ -3837,11 +3808,8 @@
                   (slot-ref proc 'required) nargs))
         ($asm src (if opt? `(,inliner ,nargs) `(,inliner))
               ($call-args call-node)))]
-     [(? vector?)                       ; old inlinable info
+     [(? vector?)
       (pass2p/inline-call call-node (unpack-iform inliner)
-                          ($call-args call-node) labels)]
-     [('inlinable () (? vector? piform)) ; new inlinable info
-      (pass2p/inline-call call-node (unpack-iform piform)
                           ($call-args call-node) labels)]
      [_
       ;; We can't run procedural inliner here, since what we have is no
@@ -4345,14 +4313,8 @@
   0)
 
 (define (pass3/lambda iform ccb renv)
-  (let1 inliner (match ($lambda-flag iform)
-                  [(? vector? ivec) ivec]
-                  [(and ('inlinable fvars (? vector?)) info)
-                   (unless (null? fvars)
-                     (warn "[internal] inlinable-lambda with closed \
-                           environment may not work in the current version."))
-                   info]
-                  [_ #f])
+  (let1 inliner (cond [($lambda-flag iform) vector? => values]
+                      [else #f])
     (pass3 ($lambda-body iform)
            (make-compiled-code-builder ($lambda-reqargs iform)
                                        ($lambda-optarg iform)
