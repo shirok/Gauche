@@ -1,3 +1,10 @@
+2010-04-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass1/define, pass1/lambda): Defines R5RS version
+	  and Gauche version of define and lambda separately; Gauche version
+	  supports extended formals, R5RS version not.  For those who want
+	  vanilla versions for whatever reason, say (extend scheme).
+
 2010-04-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1/define-inline): Revamp inlining mechanism

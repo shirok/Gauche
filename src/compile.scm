@@ -1534,7 +1534,7 @@
 ;; that only has CLOSURE instruction.
 (define (compile-toplevel-lambda oform name formals body module)
   (let* ([cenv (make-cenv module '() name)]
-         [iform (pass2 (pass1/lambda oform formals body cenv #f) #f)])
+         [iform (pass2 (pass1/lambda oform formals body cenv #t) #f)])
     (make-toplevel-closure (pass3/lambda iform #f '()))))
   
 ;; For testing
@@ -1853,6 +1853,7 @@
 (define (global-id id) (make-identifier id (find-module 'gauche) '()))
 
 (define lambda. (global-id 'lambda))
+(define r5rs-lambda. (make-identifier 'lambda (find-module 'null) '()))
 (define setter. (global-id 'setter))
 (define lazy.   (global-id 'lazy))
 (define eager.  (global-id 'eager))
@@ -1875,25 +1876,29 @@
 ;;   an inlinable procedure, the procedure's body is inlined.
 
 (define-pass1-syntax (define form cenv) :null
-  (pass1/define form form '() (cenv-module cenv) cenv))
+  (pass1/define form form '() #f (cenv-module cenv) cenv))
+
+(define-pass1-syntax (define form cenv) :gauche
+  (pass1/define form form '() #t (cenv-module cenv) cenv))
 
 (define-pass1-syntax (define-constant form cenv) :gauche
-  (pass1/define form form '(const) (cenv-module cenv) cenv))
+  (pass1/define form form '(const) #t (cenv-module cenv) cenv))
 
 (define-pass1-syntax (define-in-module form cenv) :gauche
   (match form
     [(_ module . rest)
-     (pass1/define `(_ . ,rest) form '()
+     (pass1/define `(_ . ,rest) form '() #t
                    (ensure-module module 'define-in-module #f)
                    cenv)]
     [_ (error "syntax-error: malformed define-in-module:" form)]))
 
-(define (pass1/define form oform flags module cenv)
+(define (pass1/define form oform flags extended? module cenv)
   (check-toplevel oform cenv)
   (match form
     [(_ (name . args) body ...)
-     (pass1/define `(define ,name (,lambda. ,args ,@body))
-                   oform flags module cenv)]
+     (pass1/define `(define ,name
+                      (,(if extended? lambda. r5rs-lambda.) ,args ,@body))
+                   oform flags extended? module cenv)]
     [(_ name expr)
      (unless (variable? name) (error "syntax-error:" oform))
      (let1 cenv (cenv-add-name cenv (variable-name name))
@@ -1921,7 +1926,7 @@
     (receive (closure closed) (pass1/check-inlinable-lambda iform)
       (cond
        [(and (not closure) (not closed)) ; too complex to inline
-        (pass1/define form form '(inlinable) (cenv-module cenv) cenv)]
+        (pass1/define form form '(inlinable) #t (cenv-module cenv) cenv)]
        [(not closed)               ; no closed env
         (pass1/define-inline-finish form name closure cenv)]
        [else ; inlinable lambda has closed env.
@@ -2401,20 +2406,29 @@
     [(_ formals . body) (pass1/lambda form formals body cenv #f)]
     [_ (error "syntax-error: malformed lambda:" form)]))
 
-(define (pass1/lambda form formals body cenv flag)
+(define-pass1-syntax (lambda form cenv) :gauche
+  (match form
+    [(_ formals . body) (pass1/lambda form formals body cenv #t)]
+    [_ (error "syntax-error: malformed lambda:" form)]))
+
+(define (pass1/lambda form formals body cenv extended?)
   (receive (args reqargs optarg kargs) (parse-lambda-args formals)
-    (if (null? kargs)
-      (let* ([lvars (imap make-lvar+ args)]
-             [intform ($lambda form (cenv-exp-name cenv)
-                               reqargs optarg lvars #f flag)]
-             [newenv (cenv-extend/proc cenv (%map-cons args lvars)
-                                       LEXICAL intform)])
-        (vector-set! intform 6 (pass1/body body newenv))
-        intform)
-      (let1 g (gensym)
-        (pass1/lambda form (append args g)
-                      (pass1/extended-lambda form g kargs body)
-                      cenv flag)))))
+    (cond [(null? kargs)
+           (let* ([lvars (imap make-lvar+ args)]
+                  [intform ($lambda form (cenv-exp-name cenv)
+                                    reqargs optarg lvars #f #f)]
+                  [newenv (cenv-extend/proc cenv (%map-cons args lvars)
+                                            LEXICAL intform)])
+             (vector-set! intform 6 (pass1/body body newenv))
+             intform)]
+          [(not extended?)
+           (error "syntax-error: extended formals aren't allowed in R5RS \
+                   lambda:" form)]
+          [else
+           (let1 g (gensym)
+             (pass1/lambda form (append args g)
+                           (pass1/extended-lambda form g kargs body)
+                           cenv #f))])))
 
 (define-pass1-syntax (receive form cenv) :gauche
   (match form
