@@ -1,3 +1,10 @@
+2010-05-01  Shiro Kawai  <shiro@acm.org>
+
+	* doc/modgauche.tex (gauche.mop.propagate): Made it officially
+	  documented.
+	* lib/gauche/mop/propagate.scm: Enable initialization of propagated
+	  slot via init-keyword.
+
 2010-04-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1/define, pass1/lambda): Defines R5RS version

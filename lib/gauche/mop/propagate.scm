@@ -31,10 +31,8 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
 
-;; EXPERIMENTAL.   THE API MAY CHANGE.
-
 (define-module gauche.mop.propagate
-  (use srfi-2)
+  (use srfi-1)
   (use util.match)
   (export <propagate-meta> <propagate-mixin>)
   )
@@ -58,24 +56,25 @@
         [alloc (slot-definition-allocation slot)])
     (if (eq? alloc :propagated)
       (match (or (slot-definition-option slot :propagate #f)
-                     (slot-definition-option slot :propagate-to #f))
+                 (slot-definition-option slot :propagate-to #f))
         [(? symbol? prop)
          `(,(^o (slot-ref (slot-ref-using-class class o prop) name))
            ,(^(o v) (slot-set! (slot-ref-using-class class o prop) name v))
-           ,(^o (slot-bound? (slot-ref-using-class class o prop) name)))]
+           ,(^o (slot-bound? (slot-ref-using-class class o prop) name))
+           #t)]
         [((? symbol? object-slot) (? symbol? real-slot))
          `(,(^o (slot-ref (slot-ref-using-class class o object-slot)
                           real-slot))
            ,(^(o v) (slot-set! (slot-ref-using-class class o object-slot)
                                real-slot v))
            ,(^o (slot-bound? (slot-ref-using-class class o object-slot)
-                             real-slot)))]
+                             real-slot))
+           #t)]
         [other
          (errorf "bad :propagated slot option value ~s for slot ~s of class ~s"
                  other name class)])
       (next-method))))
 
-;; convenient to be used as a mixin
 (define-class <propagate-mixin> ()
   ()
   :metaclass <propagate-meta>)

@@ -31,8 +31,6 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
 
-;; EXPERIMENTAL
-
 (define-module gauche.mop.singleton
   (export <singleton-meta> <singleton-mixin> instance-of))
 (select-module gauche.mop.singleton)

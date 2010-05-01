@@ -14,6 +14,7 @@
 * Interactive session::         gauche.interactive
 * Listener::                    gauche.listener
 * User-level logging::          gauche.logger
+* Propagating slot access::     gauche.mop.propagate
 * Singleton::                   gauche.mop.singleton
 * Slot with validator::         gauche.mop.validator
 * Networking::                  gauche.net
@@ -3776,7 +3777,7 @@ this program on the machine accessible from outside network!)
 @end example
 
 @c ----------------------------------------------------------------------
-@node User-level logging, Singleton, Listener, Library modules - Gauche extensions
+@node User-level logging, Propagating slot access, Listener, Library modules - Gauche extensions
 @section @code{gauche.logger} - User-level logging
 @c NODE ユーザレベルのロギング, @code{gauche.logger} - ユーザレベルのロギング
 
@@ -4099,7 +4100,131 @@ the code runs without logging.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Singleton, Slot with validator, User-level logging, Library modules - Gauche extensions
+@node Propagating slot access, Singleton, User-level logging, Library modules - Gauche extensions
+@section @code{gauche.mop.propagate} - Propagating slot access
+@c NODE スロットアクセスの伝播, @code{gauche.mop.propagate} - スロットアクセスの伝播
+
+@deftp {Module} gauche.mop.propagate
+@mdindex gauche.mop.propagate
+Provides a metaclass to add @code{:propagated} slot allocation option.
+
+When a slot allocation has @code{:propagated}, access
+to the slot is redirected to other object's slot.
+It is handy for composite objects to keep external
+interface simple, for access to the slot of inner objects
+can be disguised as if it is a slot of the parent object.
+@end deftp
+
+An example would work better than explanation.
+Suppose you have a @code{<rect>} class to represent
+generic rectangular area, and you want to use it when you create
+a @code{<viewport>} class by composition, instead of
+inheritance.  A simple way would be as follows:
+
+@example
+(define-class <rect> ()
+  ((width  :init-keyword :width)
+   (height :init-keyword :height)))
+
+(define-class <viewport> ()
+  ((dimension :init-form (make <rect>))
+   ;;   ... other slots ...
+   )) 
+@end example
+
+With this definition, whenever you want to access the viewport's
+width or height, you have to go through @code{<rect>} object, e.g.
+@code{(~ viewport'dimension'width)}.  This is not only cumbersome,
+but the users of viewport class have to know that how the
+viewport is composed (it's not necessarily a bad thing,
+but sometimes you may want to hide it).
+
+Using @code{gauche.mop.propagate}, you can define slots
+@code{width} and @code{height} in @code{<viewport>} class
+that are proxies of @code{<rect>}'s slots.
+
+@example
+(use gauche.mop.propagate)
+
+(define-class <rect> ()
+  ((width  :init-keyword :width)
+   (height :init-keyword :height)))
+
+(define-class <viewport> (<propagate-mixin>)
+  ((dimension :init-form (make <rect>))
+   (width     :allocation :propagated :propagate 'dimension
+              :init-keyword :width)
+   (height    :allocation :propagated :propagate 'dimension
+              :init-keyword :height)))
+@end example
+
+With @code{:propagated} allocation, the slots are not actually
+allocated in @code{<viewport>} instance, and accesses to the
+slots are redirected to the object in the slot specified by 
+@code{:propagate} slot option---in this case, the @code{dimension} slot.
+It is somewhat similar to the virtual slots, but it's more convenient
+for you don't explicitly write procedures to redirect the access.
+
+Now you can treat @code{width} and @code{height} as if they
+are slots of @code{<viewport>}.   You can even make them
+initialize via @code{init-keyword} (but you can't use
+@code{:init-form} or @code{:init-value}; if you want to specify
+default values, give the default values to the actual object).
+
+@example
+gosh> (define vp (make <viewport> :width 640 :height 480))
+vp
+gosh> (d vp)
+#<<viewport> 0xc5a1e0> is an instance of class <viewport>
+slots:
+  dimension : #<<rect> 0xc5a130>
+  width     : 640
+  height    : 480
+gosh> (set! (~ vp'width) 800)
+#<undef>
+gosh> (~ vp'width)
+800
+@end example
+
+Here's two classes that enables this feature.
+Usually all you have to do is to inherit @code{<propagate-mixin>} class.
+
+@deftp {Class} <propagate-meta>
+@clindex propagate-meta
+Adds @code{:propagated} slot allocation.  
+The propagated slot has to have @code{:propagate} slot option
+which specifies the name of the slot that points to an object
+that actually holds the value of the slot.
+If a slot has @code{:propagated} slot allocation but
+does not have @code{:propagate} slot option, an error is signalled.
+
+The @code{:propagate} slot option should have a value
+of either a symbol, or a list of two symbols.
+
+If it is a symbol, it names the slot that contains an
+object, whose slot with the same name of the propagate slot
+holds the value.
+
+If it is a list of two symbols as @code{(X Y)}, then 
+the access to this propagated slot actually works as
+@code{(slot-ref (slot-ref obj X) Y)}.
+
+If you want to make a propagated slot initializable by
+init-keywords, make sure the slot holding the actual object
+comes before the propagated slots.  Slot initialization proceeds
+in the order of appearance by default, and you want the
+actual object is created before setting values.
+@end deftp
+
+@deftp {Class} <propagate-mixin>
+@clindex propagate-mixin
+This is a convenience mixin class.   Instead of giving 
+@code{:metaclass <propagate-meta>}, you can just inherit
+this calss to make propagated slots available.
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node Singleton, Slot with validator, Propagating slot access, Library modules - Gauche extensions
 @section @code{gauche.mop.singleton} - Singleton
 @c NODE シングルトン, @code{gauche.mop.singleton} - シングルトン
 
