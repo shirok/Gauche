@@ -164,9 +164,9 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#/}
 @c EN
- @tab Introduces a literal regular expression.  @xref{Regular expression}.
+ @tab Introduces a literal regular expression.  @xref{Regular expressions}.
 @c JP
- @tab リテラルの正規表現を先導します。@ref{Regular expression}参照。
+ @tab リテラルの正規表現を先導します。@ref{Regular expressions}参照。
 @c COMMON
 @item @code{#0} @dots{} @code{#9}
 @c EN
@@ -607,7 +607,7 @@ The @var{variable} names the formal argument, which is bound to
 the value of the actual argument if given, or the value of
 the expression @var{init-expr} otherwise.   If @var{optspec} is just
 a variable, and the actual argument is not given to it, then 
-@var{variable} will be bound to @code{#<undef>}.
+@var{variable} will be bound to @code{#<undef>} (@xref{Undefined values}).
 
 The expression @var{init-expr} is only evaluated if the actual
 argument for @var{variable} is not given.  The scope in which
@@ -616,7 +616,8 @@ argument for @var{variable} is not given.  The scope in which
 仮引数@var{variable}は、対応する実引数が与えられればその値に、
 与えられなければ@var{init-expr}を評価した値に束縛されます。
 @var{optspec}が@code{@var{variable}}だけである場合は、
-実引数が省略された時の仮引数の値は@code{#<undef>}になります。
+実引数が省略された時の仮引数の値は@code{#<undef>}になります
+(@ref{Undefined values}参照)。
 
 @var{init-expr}は対応する実引数が与えられなかった場合にのみ評価されます。
 @var{init-expr}の評価環境にはこの@var{optspec}に先立つ仮引数が含まれます。

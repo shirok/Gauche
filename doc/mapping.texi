@@ -667,12 +667,12 @@ Not supported.  For general case, you have to write a parser.
 If you can keep the data in S-exp, you can use @code{read}.
 If the syntax is very simple, you may be able to utilize
 @code{string-tokenize} in @code{srfi-14} (@ref{String library}),
-and/or regular expression stuff (@ref{Regular expression}).
+and/or regular expression stuff (@ref{Regular expressions}).
 @c JP
 サポートしていません。一般的にはパーザを書かねばなりません。
 データを S式で保持しているなら、@code{read} が使えます。
 構文がごく単純なら、@code{srfi-14} (@ref{String library}) の
-@code{string-tokenize} や、正規表現 (@ref{Regular expression}) が使えるでしょう。
+@code{string-tokenize} や、正規表現 (@ref{Regular expressions}) が使えるでしょう。
 @c COMMON
 @item fseek
 @c EN
@@ -1264,12 +1264,12 @@ Not supported.  For general case, you have to write a parser.
 If you can keep the data in S-exp, you can use @code{read}.
 If the syntax is very simple, you may be able to utilize
 @code{string-tokenize} in @code{srfi-14} (@ref{String library}),
-and/or regular expression stuff (@ref{Regular expression}).
+and/or regular expression stuff (@ref{Regular expressions}).
 @c JP
 サポートしていません。一般的にはパーザを書かねばなりません。
 データを S式で保持できるなら、@code{read} が使えます。
 構文がごく単純なら、@code{srfi-14} (@ref{String library}) の
-@code{string-tokenize} や、正規表現 (@ref{Regular expression})
+@code{string-tokenize} や、正規表現 (@ref{Regular expressions})
 が使えるでしょう。
 @c COMMON
 @item select
@@ -1447,12 +1447,12 @@ Not supported.  For general case, you have to write a parser.
 If you can keep the data in S-exp, you can use @code{read}.
 If the syntax is very simple, you may be able to utilize
 @code{string-tokenize} in @code{srfi-14} (@ref{String library}),
-and/or regular expression stuff (@ref{Regular expression}).
+and/or regular expression stuff (@ref{Regular expressions}).
 @c JP
 サポートしていません。一般的にはパーザを書かねばなりません。
 データを S式で保持できるなら、@code{read} が使えます。
 構文がごく単純なら、@code{srfi-14} (@ref{String library}) の
-@code{string-tokenize} や、正規表現 (@ref{Regular expression})
+@code{string-tokenize} や、正規表現 (@ref{Regular expressions})
 が使えるでしょう。
 @c COMMON
 @item stat

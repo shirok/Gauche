@@ -1170,7 +1170,7 @@ string ports (see @ref{String ports}) provide a cleaner and
 more efficient way.
 When you search and retrieve a substring, there are various
 higher-level primitives are provided (see @ref{String utilities},
-@ref{Regular expression}, and @ref{String library}, for example).
+@ref{Regular expressions}, and @ref{String library}, for example).
 If you're using strings to represent an octet sequence, use uniform
 vectors (see @ref{Uniform vectors}) instead.
 @c JP
@@ -1181,7 +1181,7 @@ vectors (see @ref{Uniform vectors}) instead.
 (インデックスを使わずに)文字列ポート(@ref{String ports}参照)を使うと
 より明瞭かつ効率的なプログラムとなり、一方サーチして部分文字列をとり出す
 といった操作には、多彩な高レベル関数が用意されています。
-(例えば @ref{String utilities}、@ref{Regular expression}、
+(例えば @ref{String utilities}、@ref{Regular expressions}、
  @ref{String library} 等を参照。)  バイト列を表現するのに
 文字列を使っていたなら、代わりにユニフォームベクタ(@ref{Uniform vectors}
 参照)を使いましょう。

@@ -2460,7 +2460,7 @@
 
 	* ext/dbm/ndbm.stub, ext/dbm/ndbm.scm, ext/dbm/ndbm-makedb.c,
 	  ext/dbm/ndbm-suffixes.scm, ext/dbm/Makefile.in: Since different
-	  ndbm implementations attach different suffixes for the database 
+	  ndbm implementations attach different suffixes for the database
 	  files, we determine the suffixes at the build time by actually
 	  creating the ndbm database.  The extra files (ndbm-makedb.c and
 	  ndbm-suffixes.scm) are used in the build time to create

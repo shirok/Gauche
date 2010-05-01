@@ -369,10 +369,10 @@ and elegant way.
 
 @c EN
 You can use regular expressions to search and extract
-character sequences from strings; see @ref{Regular expression}.
+character sequences from strings; see @ref{Regular expressions}.
 @c JP
 文字列から文字のならびを検索したり、とりだしたりするのに正規表現が使え
-ます。@ref{Regular expression}参照。
+ます。@ref{Regular expressions}参照。
 @c COMMON
 
 @c EN

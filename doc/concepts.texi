@@ -543,12 +543,12 @@ Gaucheでは非常に効率が悪くなります。そのようなアルゴリ�
 
 @c EN
 String search primitives such as @code{string-scan} (@xref{String utilities})
-and regular expression matcher (@xref{Regular expression})
+and regular expression matcher (@xref{Regular expressions})
 can return a matched string directly, without
 using index access at all.
 @c JP
 @code{string-scan} (@ref{String utilities}参照) や正規表現
-(@ref{Regular expression}参照) など文字列を検索するプリミティブは、
+(@ref{Regular expressions}参照) など文字列を検索するプリミティブは、
 インデックスを介さずに一致した文字列を直接返すことができます。
 @c COMMON
 

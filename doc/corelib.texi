@@ -7,6 +7,7 @@
 * Equivalence::                 
 * Numbers::                     
 * Booleans::                    
+* Undefined values::            
 * Pairs and Lists::             
 * Symbols::                     
 * Keywords::                    
@@ -14,7 +15,7 @@
 * Characters::                  
 * Character set::               
 * Strings::                     
-* Regular expression::          
+* Regular expressions::          
 * Vectors::                     
 * Hashtables::                  
 * Treemaps::                    
@@ -76,13 +77,14 @@ Schemeの標準では定められていません。
 @defun eqv? obj1 obj2
 [R5RS]
 @c EN
-When @var{obj1} and @var{obj2} are both exact or both inexact numbers,
+When @var{obj1} and @var{obj2} are both exact or both inexact numbers
+(except NaN),
 @var{eqv?} returns @code{#t} iff @code{(= @var{obj1} @var{obj2})} is true.
 When @var{obj1} and @var{obj2} are both characters,
 @var{eqv?} returns @code{#t} iff @code{(char=? @var{obj1} @var{obj2})} is true.
 Otherwise, @code{eqv?} is the same as @code{eq?} on Gauche.
 @c JP
-@var{obj1}と@var{obj2}がともに正確な数値、もしくはともに不正確な数値である場合、
+@var{obj1}と@var{obj2}がともに正確な数値、もしくはともに(NaN以外の)不正確な数値である場合、
 @code{(= @var{obj1} @var{obj2})}が真であれば@code{#t}が、偽であれば@code{#f}が
 返されます。
 @var{obj1}と@var{obj2}がともに文字である場合、
@@ -101,6 +103,19 @@ Otherwise, @code{eqv?} is the same as @code{eq?} on Gauche.
 (let ((x (list 'a)))
   (eqv? x x))              @result{} #t
 @end example
+
+@c EN
+Note that comparison of NaNs has some peculiarity.
+Any numeric comparison fails if there's at least one NaN in its argument.
+Therefore, @code{(= +nan.0 +nan.0)} is always @code{#f}.   However,
+Gauche @emph{may} return @code{#t} for @code{(eq? +nan.0 +nan.0)}
+or @code{(eqv? +nan.0 +nan.0)}.
+@c JP
+NaNの比較には少々奇妙なところがあります。数値比較は、引数に一つでもNaNが
+含まれていれば失敗します。したがって@code{(= +nan.0 +nan.0)}は常に@code{#f}と
+なります。けれども、@code{(eq? +nan.0 +nan.0)} や 
+@code{(eqv? +nan.0 +nan.0)}は@code{#t}を返すことがあるかもしれません。
+@c COMMON
 @end defun
 
 @defun equal? obj1 obj2
@@ -377,6 +392,7 @@ respectively.  It is an error to pass a non-real number.
 @defun finite? z
 @defunx infinite? z
 @defunx nan? z
+[R6RS]
 @c EN
 For real numbers, returns @code{#f} iff the given number
 is finite, infinite, or NaN, respectively.
@@ -1342,7 +1358,7 @@ Returns a symbol representing the system's endianness.
 
 
 @c ----------------------------------------------------------------------
-@node Booleans, Pairs and Lists, Numbers, Core library
+@node Booleans, Undefined values, Numbers, Core library
 @section Booleans
 @c NODE 論理値
 
@@ -1385,9 +1401,91 @@ otherwise.  Convenient to coerce a value to boolean.
 @c COMMON
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Undefined values, Pairs and Lists, Booleans, Core library
+@section Undefined values
+@c NODE 未定義値
+
+@c EN
+While working with Gauche, sometimes you encounter 
+a value printed as @code{#<undef>}, an @emph{undefined} value.
+@c JP
+Gaucheで作業していると、しばしば未定義値 @code{#<undef>} 
+に出会うことがあるでしょう。
+@c COMMON
+
+@example
+gosh> (if #f #t)
+#<undef>
+@end example
+
+@c EN
+It is a value used as a filler where the actual value doesn't matter,
+or to indicate there's no other suitable value.
+@c JP
+この値は、値そのものに意味が無いこと、あるいは
+とりたててほかにふさわしい値が無いことを意味します。
+@c COMMON
+
+@c EN
+Do not confuse undefined values with unbound variables;
+A variable can be bound to @code{#<undef>}, for it is just 
+an ordinaly first-class value.  On the other hand, an 
+unbound variable means there's no value associated with the variable.
+@c JP
+未定義値と未束縛の変数を混同しないようにしてください。
+@code{#<undef>}は通常の第一級の値であり、変数に束縛しておくこともできます。
+未束縛の変数は文字通り、変数が束縛されていない、すなわち値を持たないことを意味します。
+@c COMMON
+
+@c EN
+However, @code{#<undef>} may be used in certain 
+occasions to indicate that a value is not provided for
+the variable.  For example, an optional procedure parameter
+without default value is bound to @code{#<undef>} if an
+actual argument is not given (@xref{Making Procedures}).
+Note that it cannot be distinguished from the case 
+a value is actually provided, and the value just happens
+to be @code{#<undef>}.  If you get an @code{#<undef>},
+you can say at most is that the value doesn't matter.
+You shouldn't let it carry too much meanings.
+@c JP
+しかし、場合によっては、変数に特定の値が提供されていないことを
+示すのに@code{#<undef>}が使われることもあります。
+例えば、既定値をもたない省略可能引数に実引数が提供されなかった
+場合、引数の値は@code{#<undef>}となります (@ref{Making Procedures}参照)。
+これは実際に@code{#<undef>}が引数として渡された場合と区別がつかない
+ことに注意してください。@code{#<undef>}を受け取ってわかることは、
+せいぜいその値にたいした意味がないということくらいです。
+@code{#<undef>}に大きな意味を持たせすぎないようにしましょう。
+@c COMMON
+
+@c EN
+Being said that, there are a couple of procedures
+to deal with undefined values.
+@c JP
+以上の注意を念頭においた上で、未定義値を扱うには
+次の手続きが利用できます。
+@c COMMON
+
+@defun undefined? obj
+@c EN
+Returns @code{#t} iff @var{obj} is an undefined value.
+@c JP
+@var{obj}が未定義値である場合に限り@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun undefined
+@c EN
+Returns an undefined value.
+@c JP
+未定義値を返します。
+@c COMMON
+@end defun
 
 @c ----------------------------------------------------------------------
-@node Pairs and Lists, Symbols, Booleans, Core library
+@node Pairs and Lists, Symbols, Undefined values, Core library
 @section Pairs and Lists
 @c NODE ペアとリスト
 
@@ -2759,7 +2857,7 @@ Copies a character set @var{char-set}.
 
 
 @c ----------------------------------------------------------------------
-@node Strings, Regular expression, Character set, Core library
+@node Strings, Regular expressions, Character set, Core library
 @section Strings
 @c NODE 文字列
 
@@ -3864,63 +3962,46 @@ If @var{str} is already a complete string, its copy is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Regular expression, Vectors, Strings, Core library
-@section Regular expression
+@node Regular expressions, Vectors, Strings, Core library
+@section Regular expressions
 @c NODE 正規表現
 
 @c EN
 Gauche has a built-in regular expression engine which is mostly
-upper-compatible of POSIX extended regular expression.
-Gauche's regexp also includes some extensions from Perl 5 regexp.
+upper-compatible of POSIX extended regular expression, plus
+some extensions from Perl 5 regexp.
+
+A special syntax is provided for literal regular expressions.
+Also regular expressions are applicable, that is, 
+it works like procedures that match the given string to itself.
+Combining with these two features enables writing some
+string matching idioms compact.
 @c JP
-GaucheはPOSIXの拡張正規表現にほぼ上位互換な正規表現エンジンを
-組込みで持っています。また、Perl 5の正規表現からいくつかの
-拡張機能を採り入れています。
+GaucheはPOSIXの拡張正規表現にほぼ上位互換で、さらに
+Perl 5の正規表現から拡張機能を採り入れた正規表現エンジンを持っています。
+Gaucheはまた、リテラル正規表現用の構文を備えています。
+
+正規表現用のリテラル構文が用意されており、
+また、正規表現オブジェクトは適用可能、つまり文字列に対して
+手続きのように振る舞い、自分自身にマッチするかどうかを判定できるようになっています。
+この二つの機能によって、文字列のマッチをスキャンするようなイディオムを
+簡潔に書けるようになっています。
 @c COMMON
 
-@deftp {Builtin Class} <regexp>
-@clindex regexp
-@c EN
-Regular expression object.  You can construct a regexp object
-from a string by @code{string->regexp} at run time.  Gauche also 
-has a special syntax to denote regexp literals, which construct
-regexp object at loading time.
+@example
+(find #/pattern/ list-of-strings)
+  @result{} @i{match object} or #t
+@end example
 
-Gauche's regexp engine is fully aware of multibyte characters.
-@c JP
-正規表現オブジェクトのクラスです。@code{string->regexp}を使って実行時に
-作成できます。また、Gaucheはリテラルの正規表現を表す構文を持っており、
-ロード時に作成することもできます。
+@menu
+* Regular expression syntax::   
+* Using regular expressions::   
+* Inspecting and assembling regular expressions::  
+@end menu
 
-Gaucheの正規表現エンジンはマルチバイト文字列に対応しています。
-@c COMMON
-@end deftp
-
-@deftp {Builtin Class} <regmatch>
-@clindex regmatch
-@c EN
-Regexp match object.  A regexp matcher @code{rxmatch} returns
-this object if match.  This object contains all the information
-about the match, including submatches.
-
-The advantage of using match object, rather than substrings or
-list of indices is efficiency.  The regmatch object keeps internal
-state of match, and computes indices and/or substrings only when
-requested.  This is particularly effective for mutibyte strings,
-for index access is slow on them.
-@c JP
-正規表現マッチオブジェクトのクラスです。正規表現エンジン@code{rxmatch}は、
-一致した場合にこのオブジェクトを返します。部分一致の情報を含めた
-全てのマッチに関する情報がこのオブジェクトに含まれています。
-
-一致した部分文字列やそのインデックスのリストではなく
-マッチオブジェクトを返すことの利点は効率です。
-regmatchオブジェクトはマッチの内部状態を保持しており、
-要求された時にはじめて該当する部分文字列やインデックスを計算します。
-これは特にマルチバイト文字列に有効です。マルチバイト文字列
-へのインデックスアクセスは遅いからです。
-@c COMMON
-@end deftp
+@node Regular expression syntax, Using regular expressions, Regular expressions, Regular expressions
+@subsection Regular expression syntax
+@c NODE 正規表現の構文
 
 @deftp {Reader Syntax} @code{#/@i{regexp-spec}/}
 @deftpx {Reader Syntax} @code{#/@i{regexp-spec}/i}
@@ -3997,38 +4078,43 @@ Matches zero or one occurrence of @i{re}.
 @c COMMON
 
 @item @i{re}@{@i{n}@}
-@itemx @i{re}@{@i{n},@}
 @itemx @i{re}@{@i{n},@i{m}@}
 @c EN
 Bounded repetition.  @code{@i{re}@{@i{n}@}} matches exactly @i{n}
-occurrences of @i{re}.   @code{@i{re}@{@i{n},@}} matches
-@i{n} or more occurrences of @i{re}.
+occurrences of @i{re}.
 @code{@i{re}@{@i{n},@i{m}@}} matches at least @var{n} and at most
 @var{m} occurrences of @i{re}, where @var{n} <= @var{m}.
+In the latter form, either @var{n} or @var{m} can be omitted; omitted @var{n} 
+is assumed as 0, and omitted @var{m} is assumed infinity.
 @c JP
 回数に範囲のある繰り返しです。
 @code{@i{re}@{@i{n}@}}は@i{re}の@i{n}回の繰り返しにマッチします。
-@code{@i{re}@{@i{n},@}}は@i{re}の@i{n}回以上の繰り返しにマッチします。
 @code{@i{re}@{@i{n},@i{m}@}}は@i{re}の@i{n}回以上、@i{m}回以下の
 繰り返しにマッチします。但し@var{n} <= @var{m}とします。
+2番目の形式では@var{n}か@var{m}のどちらかを省略することが
+できます。@var{n}が省略された場合は0とみなされます。
+@var{m}が省略された場合は無限大とみなされます。
 @c COMMON
 
 @item @i{re}*?
 @itemx @i{re}+?
 @itemx @i{re}??
-@itemx @i{re}@{@i{n},@}?
 @itemx @i{re}@{@i{n},@i{m}@}?
 @c EN
 Same as the above repetition construct, but these syntaxes
 use "non-greedy" or "lazy" match strategy.  That is, they try to match
 the minimum number of occurrences of @i{re} first, then retry
-longer ones only if it fails.  Compare the following examples:
+longer ones only if it fails.  In the last form
+either @var{n} or @var{m} can be omitted.
+Compare the following examples:
 @c JP
 上記の繰り返し構造とほぼ同じですが、これらの構文は「non-greedy」または
 「lazy」と呼ばれるマッチ戦略を用います。すなわち、まず@i{re}がマッチする
 最小の回数を試し、それが失敗したら順に繰り返しの回数を増やしてゆきます。
+最後の形式では@var{n}か@var{m}のどちらかは省略できます。
 次の例を比べてみてください：
 @c COMMON
+
 @example
 (rxmatch-substring (#/<.*>/ "<tag1><tag2><tag3>") 0)
   @result{} "<tag1><tag2><tag3>"
@@ -4043,7 +4129,7 @@ Clustering with capturing.  The regular expression enclosed
 by parenthesis works as a single @i{re}.  Besides, the string
 that matches @i{re} @dots{} is saved as a @emph{submatch}.
 @c JP
-捕捉とクラスタリング。括弧でくくられた正規表現の列がグループとして
+捕捉クラスタリング。括弧でくくられた正規表現の列がグループとして
 扱われ、またそれにマッチした文字列はサブマッチとして保存されます。
 @c COMMON
 
@@ -4113,7 +4199,7 @@ If the @i{n}-th capturing group is in a repetition and has mached
 more than once, the last matched substring is used.
 @c JP
 バックリファレンス。@i{n}は整数です。
-@i{n}番目(1から数える)の補捉カッコに補捉された文字列と一致する場合に、\@i{n}が
+@i{n}番目(1から数える)の捕捉カッコに捕捉された文字列と一致する場合に、\@i{n}が
 マッチします。補足カッコがネストしている場合、開きカッコの順番で数えます。
 @i{n}番目のカッコが繰り返しの中にあり、複数回マッチ
 している場合は、最後にマッチした文字列との比較が行われます。
@@ -4130,10 +4216,10 @@ matching will succeed if the input matches either one of the substrings
 captured by those groups.
 @c JP
 名前によるバックリファレンス。
-名前@i{name}を持つ補捉カッコで補捉された文字列と一致する場合に、
+名前@i{name}を持つ捕捉カッコで捕捉された文字列と一致する場合に、
 \k<@i{name}>がマッチします。参照しているカッコが繰り返しの中にあり、
 複数回マッチしている場合は、最後にマッチした文字列との比較が行わ
-れます。同じ名前@i{name}を持つ補捉カッコが複数ある場合には、
+れます。同じ名前@i{name}を持つ捕捉カッコが複数ある場合には、
 それらのカッコの最後にマッチした文字列のいずれかと一致する場合、
 マッチが成功します。
 @c COMMON
@@ -4232,6 +4318,7 @@ that might be a phone number, except the numbers in Japan
 例えば、次の表現は、電話番号のうち日本の番号("81"から始まるもの)
 を除く文字列にマッチします。
 @c COMMON
+
 @example
 \+(?!81)\d@{9,@}
 @end example
@@ -4240,9 +4327,21 @@ that might be a phone number, except the numbers in Japan
 @itemx (?<!@i{pattern})
 @c EN
 Positive/negative lookbehind assertion.
+If the input string immediately before the current
+input position matches @var{pattern}, this pattern
+succeeds or fails, respectively.   Like lookahead
+assertion, the input position isn't changed.
+
+Internally, this match is tried by reversing
+@var{pattern} and applies it to the backward
+of input character sequence.  So you can
+write any regexp in @var{pattern}, but if the
+submatches depend on the matching order,
+you may get different submatches from when
+you match @var{pattern} from left to right.
 @c JP
-肯定の後読みおよび否定の後読み。
-現在の位置の左側に@i{pattern}にマッチする文字列がある場合に
+肯定および否定の後読み。
+現在の位置の左側に@var{pattern}にマッチする文字列がある場合に
 マッチが成功(あるいは失敗)します。先読みと同様、現在の位置は
 変更しません。
 
@@ -4252,10 +4351,18 @@ Positive/negative lookbehind assertion.
 マッチの順番や長さが重要な場合(例えば2通りにマッチしうる捕捉の
 カッコ)などは、左から右に現在位置が進むときとは異なる場所に
 マッチするかもしれません。
+@c COMMON
 
 @item (?>@i{pattern})
-アトミックなクラスタリング。@i{pattern}がいったんマッチすると、その後
-@i{pattern}の中でバックトラックを行いません。
+@c EN
+Atomic clustering.  Once @i{pattern} matches,
+the match is fixed; even if the following pattern fails,
+the engine won't backtrack to try the
+alternative match in @i{pattern}.
+@c JP
+アトミックなクラスタリング。@i{pattern}がいったんマッチすると、
+そのマッチは確定します。後続のパターンが失敗した場合でも、
+@i{pattern}内にバックトラックして他のマッチが試みられることはありません。
 @c COMMON
 
 @item @i{re}*+
@@ -4267,7 +4374,109 @@ They are the same as (?>@i{re}*), (?>@i{re}+), (?>@i{re}?), respectively.
 それぞれ(?>@i{re}*)、(?>@i{re}+)、(?>@i{re}?)と同じです。
 @c COMMON
 
+@item (?@i{test-pattern} @i{then-pattern})
+@itemx (?@i{test-pattern} @i{then-pattern}|@i{else-pattern})
+@c EN
+Conditional matching.   If @var{test-pattern} counts
+true, @var{then-pattern} is tried; otherwise
+@var{else-pattern} is tried when provided.
+
+@var{test-pattern} can be either one of the following:
+
+@table @code
+@item (@i{integer})
+Backreference.  If @var{integer}-th capturing group has a match,
+this test counts true.
+
+@item (?=@i{pattern})
+@itemx (?!@i{pattern})
+Positive/negative lookahead assertion.  It tries @var{pattern}
+from the current input position without consuming input,
+and if the match succeeds or fails, respectively, this
+test counts true.
+
+@item (?<=@i{pattern})
+@itemx (?<!@i{pattern})
+Positive/negative lookbehind assertion.  It tries @var{pattern}
+backward from the left size of the current input position,
+and if the match succeeds or fails, respectively, this
+test counts true.
 @end table
+@c JP
+条件つきマッチング。@var{test-pattern}が成功すれば
+@var{then-pattern}へと、そうでなければ
+@var{else-pattern}へと(もしあれば)マッチを進めます。
+
+@var{test-pattern}には以下の形式が書けます。
+
+@table @code
+@item (@i{integer})
+バックリファレンス。@var{integer}番目の捕捉クラスタリングのマッチに
+成功していた場合に成功となります。
+
+@item (?=@i{pattern})
+@itemx (?!@i{pattern})
+肯定および否定の先読み。入力の現在位置から、入力を消費することなく
+@var{pattern}のマッチを試み、それがそれぞれ成功もしくは失敗した
+場合に、この@var{test-pattern}を成功とみなします。
+
+@item (?<=@i{pattern})
+@itemx (?<!@i{pattern})
+肯定および否定の後読み。入力の現在位置から左側に向かって、
+@var{pattern}の逆向きにマッチを試みます、
+それがそれぞれ成功もしくは失敗した場合に、
+この@var{test-pattern}を成功とみなします。
+@end table
+@c COMMON
+@end table
+
+@node Using regular expressions, Inspecting and assembling regular expressions, Regular expression syntax, Regular expressions
+@subsection Using regular expressions
+@c NODE 正規表現を使う
+
+@deftp {Builtin Class} <regexp>
+@clindex regexp
+@c EN
+Regular expression object.  You can construct a regexp object
+from a string by @code{string->regexp} at run time.  Gauche also 
+has a special syntax to denote regexp literals, which construct
+regexp object at loading time.
+
+Gauche's regexp engine is fully aware of multibyte characters.
+@c JP
+正規表現オブジェクトのクラスです。@code{string->regexp}を使って実行時に
+作成できます。また、Gaucheはリテラルの正規表現を表す構文を持っており、
+ロード時に作成することもできます。
+
+Gaucheの正規表現エンジンはマルチバイト文字列に対応しています。
+@c COMMON
+@end deftp
+
+@deftp {Builtin Class} <regmatch>
+@clindex regmatch
+@c EN
+Regexp match object.  A regexp matcher @code{rxmatch} returns
+this object if match.  This object contains all the information
+about the match, including submatches.
+
+The advantage of using match object, rather than substrings or
+list of indices, is efficiency.  The regmatch object keeps internal
+state of match, and computes indices and/or substrings only when
+requested.  This is particularly effective for mutibyte strings,
+for index access is slow on them.
+@c JP
+正規表現マッチオブジェクトのクラスです。正規表現エンジン@code{rxmatch}は、
+一致した場合にこのオブジェクトを返します。部分一致の情報を含めた
+全てのマッチに関する情報がこのオブジェクトに含まれています。
+
+一致した部分文字列やそのインデックスのリストではなく
+マッチオブジェクトを返すことの利点は効率です。
+regmatchオブジェクトはマッチの内部状態を保持しており、
+要求された時にはじめて該当する部分文字列やインデックスを計算します。
+これは特にマルチバイト文字列に有効です。マルチバイト文字列
+へのインデックスアクセスは遅いからです。
+@c COMMON
+@end deftp
 
 @defun string->regexp string :key case-fold
 @c EN
@@ -4424,6 +4633,7 @@ If optional argument is given, the @var{i}-th submatch is used
 文字列を返します。シンボルが与えられた場合は、その名前を持つ
 サブマッチの前後の文字列を返します。
 @c COMMON
+
 @example
 (define match (rxmatch #/(\d+)\.(\d+)/ "pi=3.14..."))
 
@@ -4440,6 +4650,7 @@ A convenience procedure to match a string to the given regexp,
 then returns the matched substring, or @code{#f} if it doesn't match.
 
 If no @var{selector} is given, it is the same as this:
+
 @example
 (rxmatch-substring (rxmatch @var{regexp} @var{string}))
 @end example
@@ -4615,6 +4826,7 @@ Returns a string with the characters that are special to regexp escaped.
 @var{string}中で、正規表現において特別な意味を持つ文字を全てエスケープした
 文字列を返します。
 @c COMMON
+
 @example
 (regexp-quote "[2002/10/12] touched foo.h and *.c")
  @result{} "\\[2002/10/12\\] touched foo\\.h and \\*\\.c"
@@ -4816,14 +5028,14 @@ one by one.  A @var{clause} may be one of the following pattern.
 @table @code
 @item (@var{re} (@var{var} @dots{}) @var{form} @dots{})
 @c EN
-@var{Re} must be a literal regexp object (@xref{Regular expression}).
+@var{Re} must be a literal regexp object (@xref{Regular expressions}).
 If the result of @var{string-expr} matches @var{re},
 the match result is bound to @var{var}s
 and @var{form}s are evaluated, and @code{rxmatch-case} returns
 the result of the last @var{form}.
 @c JP
 @var{re}はリテラル正規表現オブジェクトでなければなりません
-(@ref{Regular expression}参照)。@var{string-expr}の結果が文字列であり
+(@ref{Regular expressions}参照)。@var{string-expr}の結果が文字列であり
 @var{re}にマッチした場合は、マッチ文字列が変数@var{var} @dots{}に
 束縛され、@var{form}が評価されます。最後の@var{form}の値が@code{rxmatch-case}
 の値となります。
@@ -4870,7 +5082,7 @@ and its result is returned as the result of @code{rxmatch-case}.
 @c COMMON
 
 @c EN
-If @var{proc} yieds @code{#f}, the interpretation proceeds
+If @var{proc} yields @code{#f}, the interpretation proceeds
 to the next clause.
 @c JP
 @var{proc}が@code{#f}を返した場合は次の@var{clause}へと
@@ -4904,6 +5116,7 @@ The @code{parse-date} example above becomes simpler if you use
 @c JP
 上の@code{parse-date}の例は@code{rxmatch-case}を使うとより単純になります。
 @c COMMON
+
 @example
 (define (parse-date2 str)
   (rxmatch-case str
@@ -4918,9 +5131,113 @@ The @code{parse-date} example above becomes simpler if you use
 @end example
 @end defmac
 
+@node Inspecting and assembling regular expressions,  , Using regular expressions, Regular expressions
+@subsection Inspecting and assembling regular expressions
+@c NODE 正規表現の調査と合成
+
+When Gauche reads regexp from string, first it parses
+string representation and construct an abstract
+syntax tree (AST), perform some optimizations on it,
+then compiles into an instruction sequence to be
+executed by the regexp engine.  
+
+The following procedures expose this process to
+user programs.  It may be easier for programs to
+manipulate AST than string representation.
+
+@defun regexp-parse string :key case-fold
+Parses a string specification of regexp in @var{string}
+and returns its AST, represented in S-expression.
+See below for the spec of AST.
+
+When a true value is given to the keyword argument @var{case-fold},
+returned AST will match case-insensitively.
+(Case insensitive regexp is handled in parser level,
+not by the engine).
+@end defun
+
+@defun regexp-optimize ast
+Performs some rudimental optimization on the regexp AST,
+returning regexp AST.
+
+Currently it only optimizes some obvious cases.  The plan is
+to make it cleverer in future.
+@end defun
+
+@defun regexp-compile ast
+Takes an regexp AST and returns a regexp object.
+Currently the outermost form of @var{ast} must be
+a zero-th capturing group.  It is always added
+by @code{regexp-parse} to capture the entire regexp.
+
+Note: The function does some basic check to see the given AST
+is valid, but it may not reject invalid ASTs.  In such case,
+the returned regexp object doesn't work properly.  It is
+caller's responsibility to provide a properly constructed AST.
+(Even if it rejects an AST, error messages are often
+incomprehensible.)
+@end defun
+
+@defun regexp-ast regexp
+Returns AST used for the regexp object @var{regexp}.
+@end defun
+
+@defun regexp-unparse ast :key (on-error :error)
+From the regexp's @var{ast}, reconstruct the string representation
+of the regexp.  The keyword argument @var{on-error} can be
+a keyword @code{:error} (default) or @code{#f}.  If its the former,
+an error is signalled when @var{ast} isn't valid regexp AST.
+If it's the latter, @code{regexp-unparse} just returns @code{#f}.
+@end defun
+
+This is the structure of AST.  Note that this is originally
+developed only for internal use, and not very convenient to manipulate
+from the code (e.g. if you insert or delete a subtree, you have to 
+renumber capturing groups to make them consitent.)  There's a plan
+to provide a better representation, such as SRE, and a tool
+to convert it to this AST back and forth.   Contributions are welcome.
+
+@example
+<ast> : <clause>   ; special clause
+      | <item>     ; matches <item>
+
+<item> : <char>       ; matches char
+       | <char-set>   ; matches char set
+       | (comp . <char-set>) ; matches complement of char set
+       | any          ; matches any char
+       | bol | eol    ; beginning/end of line assertion
+       | wb | nwb     ; word-boundary/negative word boundary assertion
+
+<clause> : (seq <ast> ...)       ; sequence
+       | (seq-uncase <ast> ...)  ; sequence (case insensitive match)
+       | (seq-case <ast> ...)    ; sequence (case sensitive match)
+       | (alt <ast> ...)         ; alternative
+       | (rep <m> <n> <ast> ...) ; repetition at least <m> up to <n> (greedy)
+                               ; <n> may be `#f'
+       | (rep-min <m> <n> <ast> ...)
+                               ; repetition at least <m> up to <n> (lazy)
+                               ; <n> may be `#f'
+       | (rep-while <m> <n> <ast> ...)
+                               ; like rep, but no backtrack
+       | (<integer> <symbol> <ast> ...)
+                               ; capturing group.  <symbol> may be #f.
+       | (cpat <condition> <ast> <ast>)
+                               ; conditional expression
+       | (backref . <integer>) ; backreference
+       | (once <ast> ...)      ; standalone pattern.  no backtrack
+       | (assert . <asst>)     ; positive lookahead assertion
+       | (nassert . <asst>)    ; negative lookahead assertion
+
+<condition> : <integer>     ; (?(1)yes|no) style conditional expression
+       | (assert . <asst>)  ; (?(?=condition)...) or (?(?<=condition)...)
+       | (nassert . <asst>) ; (?(?!condition)...) or (?(?<!condition)...)
+
+<asst> : <ast> ...
+       | ((lookbehind <ast> ...))
+@end example
 
 @c ----------------------------------------------------------------------
-@node Vectors, Hashtables, Regular expression, Core library
+@node Vectors, Hashtables, Regular expressions, Core library
 @section Vectors
 @c NODE ベクタ
 
@@ -6854,11 +7171,11 @@ This mechanism works on almost all occasions where a procedure is allowed.
 @c EN
 Among Gauche built-in objects, @code{<regexp>} object and
 @code{<regmatch>} object have @code{object-apply} defined.
-@xref{Regular expression}.
+@xref{Regular expressions}.
 @c JP
 Gauche組み込みオブジェクトのうち、@code{<regexp>}オブジェクトと
 @code{<regmatch>}オブジェクトに対しては@code{object-apply}メソッドが定義されて
-います。@ref{Regular expression}を参照して下さい。
+います。@ref{Regular expressions}を参照して下さい。
 @c COMMON
 
 @deffn {Generic Function} {(setter object-apply)} @var{object} @var{arg} @dots{} @var{value}
