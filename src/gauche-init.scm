@@ -51,11 +51,11 @@
 ;; Preferred way
 ;;  (use x.y.z) ==> (require "x/y/z") (import x.y.z)
 
-(define-macro (use module)
+(define-macro (use module . options)
   `(begin
      (with-module gauche
        (require ,(module-name->path module)))
-     (import ,module)))
+     (import (,module ,@options))))
 
 ;; create built-in modules, so that (use srfi-6) won't complain, for example.
 (define-module srfi-2 )

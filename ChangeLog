@@ -1,5 +1,8 @@
 2010-05-01  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-init.scm (use): Allow options that can be passed
+	  to import.
+
 	* doc/modgauche.tex (gauche.mop.propagate): Made it officially
 	  documented.
 	* lib/gauche/mop/propagate.scm: Enable initialization of propagated
