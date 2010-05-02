@@ -1,3 +1,7 @@
+2010-05-02  Shiro Kawai  <shiro@acm.org>
+
+	* ext/util/queue.scm (mtqueue-room): Added.
+
 2010-05-01  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/test.scm: Fix test failure on ipv6 enabled host.

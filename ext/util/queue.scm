@@ -48,7 +48,7 @@
   (use srfi-1)
   (export <queue> <mtqueue>
           make-queue make-mtqueue queue? mtqueue?
-          queue-length mtqueue-max-length
+          queue-length mtqueue-max-length mtqueue-room
           queue-empty? copy-queue
           queue-push! queue-push-unique! enqueue! enqueue-unique!
           queue-pop! dequeue! dequeue-all!
@@ -288,6 +288,15 @@
 (inline-stub
  (define-cproc queue-length (q::<queue>) ::<int> Q_LENGTH)
  (define-cproc mtqueue-max-length (q::<mtqueue>) ::<int> MTQ_MAXLEN)
+
+ (define-cproc mtqueue-room (q::<mtqueue>) ::<number>
+   (let* ([room::int -1])
+     (with-mtq-light-lock q
+       (when (> (MTQ_MAXLEN q) 0)
+         (set! room (- (MTQ_MAXLEN q) (Q_LENGTH q)))))
+     (if (>= room 0)
+       (result (SCM_MAKE_INT room))
+       (result SCM_POSITIVE_INFINITY))))
 
  ;; caller must hold big lock
  (define-cproc %qhead (q::<queue>) (result (Q_HEAD q)))
