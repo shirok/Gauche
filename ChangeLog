@@ -1,5 +1,7 @@
 2010-05-01  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/test.scm: Fix test failure on ipv6 enabled host.
+
 	* src/gauche-init.scm (use): Allow options that can be passed
 	  to import.
 

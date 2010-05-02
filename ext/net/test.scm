@@ -357,7 +357,7 @@
              (display "xyz\n" out) (flush out)
              (list abc (read-line in))))))
 
-(test* "inet client socket" #t
+(test* "inet client socket (host,port)" #t
        (call-with-client-socket (make-client-socket "localhost" *inet-port*)
          (lambda (in out)
            (display (make-string *chunk-size* #\a) out)
@@ -365,32 +365,59 @@
            (flush out)
            (string=? (read-line in) (make-string *chunk-size* #\A)))))
 
-;; On IPv6 system, the loopback may have different name than "localhost".
-;; We apply some heuristics here.
-(test* "inet client socket" #t
-       (and-let* ((sock (any (lambda (name)
-                               (guard (e (else #f))
-                                 (make-client-socket
-                                  (make (cond-expand
-                                         (gauche.net.ipv6 <sockaddr-in6>)
-                                         (else <sockaddr-in>))
-                                    :host name :port *inet-port*))
-                                 ))
-                             '("localhost" "ip6-localhost" "ipv6-localhost"
-                               "::1" "127.0.0.1"))))
-         (call-with-client-socket sock
-           (lambda (in out)
-             (display (make-string *chunk-size* #\a) out)
-             (newline out)
-             (flush out)
-             (string=? (read-line in) (make-string *chunk-size* #\A))))))
+(test* "inet client socket (sockaddr)" #t
+       (call-with-client-socket (make-client-socket
+                                 (make <sockaddr-in>
+                                   :host "localhost" :port *inet-port*))
+         (lambda (in out)
+           (display (make-string *chunk-size* #\a) out)
+           (newline out)
+           (flush out)
+           (string=? (read-line in) (make-string *chunk-size* #\A)))))
 
-(test* "inet client socket" 33
+(test* "inet client socket (termination)" 33
        (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
          (lambda (in out)
            (display "END\n" out) (flush out)
            (receive (pid code) (sys-wait)
              (sys-wait-exit-status code)))))
+
+
+(cond-expand
+ [gauche.net.ipv6
+  (test* "inet server socket (ipv6)" #t
+         (run-simple-server `(make-server-socket
+                              (make <sockaddr-in6>
+                                :host :any :port ,*inet-port*)
+                              :reuse-addr? #t)))
+
+  ;; On IPv6 system, the loopback may have different name than "localhost".
+  ;; We apply some heuristics here.
+  (define (get-ipv6-sock)
+    (any (lambda (name)
+           (guard (e (else #f))
+             (make-client-socket
+              (make <sockaddr-in6> :host name :port *inet-port*))))
+         '("localhost" "ip6-localhost" "ipv6-localhost" "::1")))
+  
+  (test* "inet client socket (ipv6)" #t
+         (and-let* ((sock (get-ipv6-sock)))
+           (call-with-client-socket sock
+             (lambda (in out)
+               (display (make-string *chunk-size* #\a) out)
+               (newline out)
+               (flush out)
+               (string=? (read-line in) (make-string *chunk-size* #\A))))))
+
+  (test* "inet client socket (ipv6, termination)" 33
+         (and-let* ((sock (get-ipv6-sock)))
+           (call-with-client-socket sock
+             (lambda (in out)
+               (display "END\n" out) (flush out)
+               (receive (pid code) (sys-wait)
+                 (sys-wait-exit-status code))))))
+  ]
+ [else])
 
 (test* "socket w/ port error handling" (test-error)
        (let1 s (make-client-socket 'inet "localhost" *inet-port*)
