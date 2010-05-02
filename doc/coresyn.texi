@@ -2481,16 +2481,18 @@ and affects the resolution of global variable reference.
 
 @c EN
 Unlike CommonLisp's packages, which map names to symbols,
-in Gauche symbols are always @code{eq?} if two have the
-same name.  However, Gauche's symbol doesn't have a 'value'
+in Gauche symbols are @code{eq?} in principle if two have the
+same name (except uninterened symbols; @xref{Symbols}).
+However, Gauche's symbol doesn't have a 'value'
 slot in it.  From a given symbol, a module finds its binding that
 keeps a value.
 Different modules can associate different bindings
 to the same symbol, that yield different values.
 @c JP
 CommonLispのパッケージは名前からシンボルへのマッピングを行いますが、
-Gaucheでは同じ名前を持つシンボルは常に@code{eq?}です。しかし、
-Gaucheのシンボルは「値」のスロットを持っていません。
+Gaucheでは同じ名前を持つシンボルは原則として@code{eq?}です
+(例外はインターンされていないシンボルです。@ref{Symbols}参照)。
+しかし、Gaucheのシンボルは「値」のスロットを持っていません。
 モジュールによってシンボルに対応する束縛が見付けられ、値はそこに
 格納されています。
 モジュールが違えば同じシンボルは別々の束縛へとマップされ、違う値を
@@ -2676,6 +2678,16 @@ binding.
 見えることになります。
 @c COMMON
 
+@c EN
+If two modules you want to use exports bindings of the same name
+and you want to access both, you can add prefix to either one
+(or both).  @xref{Using modules}, for the details.
+@c JP
+もし、二つのモジュールが同名の束縛をエクスポートしており、
+その両方にアクセスしたければ、一方もしくは両方の名前にプレフィクスを
+つけることができます。詳しくは@ref{Using modules}を参照してください。
+@c COMMON
+
 @node Modules and libraries, Defining and selecting modules, Module semantics, Modules
 @subsection Modules and libraries
 @c NODE モジュールとライブラリ
@@ -2810,7 +2822,8 @@ Module in Gauche is statically determined at compile time.
 これは手続きではなく特殊形式です。
 Gaucheではモジュールはコンパイル時に静的に決定されます。
 @c COMMON
-@lisp
+
+@example
 (define-module foo
   (export get-current-module)
   (define (get-current-module) (module-name (current-module))))
@@ -2818,7 +2831,7 @@ Gaucheではモジュールはコンパイル時に静的に決定されます�
 (define-module bar
   (import foo)
   (get-current-module)) @result{} foo @r{; not bar}
-@end lisp
+@end example
 @end defspec
 
 
@@ -2845,23 +2858,44 @@ that imports it.
 @c COMMON
 @end defspec
 
-@defspec import module-name @dots{}
+@defspec import import-spec @dots{}
 @c EN
-Makes all exported bindings in the module named @var{module-name}
-available in the current module.   The named modules should exist
-when the compiler sees this special form.
+Makes all or some exported bindings in the module specified by
+@var{import-spec} available in the current module.
+The syntax of @var{import-spec} is as follows.
+@c JP
+@var{import-spec}で指定されるモジュールがexportしている
+束縛のすべてもしくはいくつかを、カレントモジュール中で使えるようにします。
+@var{import-spec}は以下の形式です。
+@c COMMON
 
-Note that imports are not transitive.  The modules that @var{module-name}s
+@example
+<import-spec> : <module-name>
+              | (<module-name> <import-option> ...)
+
+<import-option> : :only (<symbol> ...)
+                | :except (<symbol> ...)
+                | :prefix <symbol>
+
+<module-name> : <symbol>
+@end example
+
+@c EN
+The module named by @var{module-name} should exist
+when the compiler sees this special form.
+@c JP
+@var{module-name}で指定される名前のモジュールは
+このフォームがコンパイルされる時点までに存在していなければなりません。
+@c COMMON
+
+@c EN
+Imports are not transitive.  The modules that @var{module-name}s
 are importing are not automatically imported to the current module.
 This keeps modules' modularity; a library module can import whatever
 modules it needs without worrying about polluting the namespace of
 the user of the module.
 @c JP
-@var{module-name}という名前のモジュールがexportしている束縛を
-カレントモジュール中で使えるようにします。該当するモジュールは
-コンパイル時に存在していなくてはなりません。
-
-モジュールのimportは遷移的でないことに注意してください。
+モジュールのimportは遷移的ではありません。
 つまり@code{module-name}で指定されたモジュールがその内部でimport
 しているモジュールは自動的にカレントモジュールにはimportされてません。
 モジュールの独立性を保つための設計です。この性質により、
@@ -2869,9 +2903,80 @@ the user of the module.
 importしようとも利用者の名前空間を不意に汚染してしまう心配はありません。
 (利用者からはそのモジュールでexportしている名前しか見えないからです。)
 @c COMMON
+
+@c EN
+@var{import-option} can be used to change how the bindings
+are imported.   With @code{:only}, only the bindings with
+the names listed in @code{<symbol> @dots{}} are imported.
+With @code{:except}, the exported bindings except the ones
+with the listed names are imported.
+With @code{:prefix}, the exported bindings are visible with
+the names that are prefixed by the symbol to the original names.
+Without import options, all the exported bindings are imported
+without a prefix.
+@c JP
+@var{import-option}は束縛がどのようにインポートされるかを制御します。
+@code{:only}がある場合、@code{<symbol> @dots{}}に挙げられた名前を
+持つ束縛のみがインポートされます。@code{:except}がある場合は逆に、
+エクスポートされている束縛のうち挙げられた名前を持つもの以外が
+インポートされます。@code{:prefix}があると、元の名前の前に
+指定されるシンボルが付加された名前で束縛が見えるようになります。
+@var{import-option}が指定されなければ、@var{module-name}のすべての
+エクスポートされた束縛がプレフィクス無しでインポートされます。
+@c COMMON
+
+@example
+(define-module M (export x y)
+  (define x 1)
+  (define y 2)
+  (define z 3))
+
+(import M)
+
+x @result{} 1
+@c EN
+z @result{} @r{error.  z is not exported from M}
+@c JP
+z @result{} @r{エラー。 zはMからエクスポートされなていない}
+@c COMMON
+
+(import (M :only (y)))
+
+@c EN
+x @result{} @r{error.  x is not in :only list.}
+@c JP
+x @result{} @r{エラー。xは:onlyリストに含まれない。}
+@c COMMON
+
+(import (M :except (y)))
+
+@c EN
+y @result{} @r{error.  y is excluded by :except.}
+@c JP
+y @result{} @r{エラー。yは:exceptにより除外されている。}
+@c COMMON
+
+(import (M :prefix M:))
+
+x @result{} @r{error}
+M:x @result{} 1
+M:y @result{} 2
+@end example
+
+@c EN
+If more than one import option are given, it is processed
+as the order of appearance.  That is, if @code{:prefix}
+comes first, then @code{:only} or @code{:except} has to
+list the name with prefix.
+@c JP
+一つ以上のインポートオプションが与えられた場合、
+それは出現順に処理されます。すなわち、@code{:prefix}が
+最初に現れた場合、その後に来る@code{:only}や@code{:except}
+はプレフィックスつきの名前を使って指定しなければなりません。
+@c COMMON
 @end defspec
 
-@defmac use name
+@defmac use name :key only except prefix
 @c EN
 A convenience macro that combines module imports and on-demand
 file loading.  Basically, @code{(use foo)} is equivalent
@@ -2896,6 +3001,21 @@ and then import the module
 いなければ)ロードされ、その中で定義されているモジュール@code{foo}をカレントモジュールに
 インポートします。
 @c COMMON
+
+@c EN
+The keyword argument @var{only}, @var{except}, and @var{prefix}
+are passed to @code{import} as the import options.
+@c JP
+キーワード引数@var{only}, @var{except}, @var{prefix}は
+@code{import}にインポートオプションとして渡されます。
+@c COMMON
+
+@example
+(use srfi-1 :only (iota) :prefix srfi-1:)
+
+(srfi-1:iota 3) @result{} (0 1 2)
+@end example
+
 
 @c EN
 Although the files and modules are orthogonal concept,
@@ -3144,8 +3264,9 @@ an error is signalled.  If it is @code{#f}, @code{#f} is returned.
 Note that creating modules on-the-fly isn't usually necessary
 for ordinal scripts, since to execute already written program requires modules
 to be specified by name, i.e. syntax @code{define-module}, @code{import},
-@code{extend}, @code{with-module} all takes module names, not
-modules.  It is because module are inherently compile-time structure.
+@code{extend}, @code{with-module} all take module names, not
+module objects.  
+It is because module are inherently compile-time structures.
 However, there are some cases that dynamically created modules
 are useful, especially the program itself is dynamically created.
 You can pass a module to @code{eval} to compile and

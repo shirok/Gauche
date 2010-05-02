@@ -2763,6 +2763,10 @@
 ;;;       [(:rename ((ss ds) ...) . rest)
 ;;;        (let* ([ss (unwrap-syntax ss)]
 ;;;               [ds (unwrap-syntax ds)]
+;;;               [to-hide (let loop ((ss ss) (hs '()))
+;;;                          (match ss
+;;;                            [() hs]
+;;;                            [
 ;;;               [m1 (process-import:remap
 ;;;                    :rename ss prefix
 ;;;                    (lambda (m sym bare-sym) (%hide-binding m bare-sym)))]
@@ -2780,6 +2784,11 @@
 ;;;          (loop m2 rest #f))]
       [(other . rest) (error "invalid import spec:" args)])))
 
+;; Common work to process new bindings in a trampoline module.
+;; Creates a new anonymous modoule M, and for each symbol in SYMS
+;; calls PROCESS with three args: M, SYM, and bare name of SYM
+;; (if SYM has prefix PREFIX, the name after PREFIX.  Otherwise the
+;; same as SYM)
 (define (process-import:remap who syms prefix process)
   (rlet1 m (make-module #f)
     (dolist [sym syms]
