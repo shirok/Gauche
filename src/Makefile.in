@@ -261,7 +261,8 @@ gauche-cesconv : gauche-cesconv.in
 	@chmod -w gauche-cesconv
 
 # tests -----------------------------------------------
-TESTFILES = `cat ../test/TESTS`
+TESTFILES  = `cat ../test/TESTS`
+TEST2FILES = `cat ../test/TESTS2`
 
 TESTRECORD = $(top_builddir)/test.record
 
@@ -280,6 +281,13 @@ test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT)
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	 ./gosh -ftest -fcase-fold -e "(define *case-fold* #t)" ../test/symcase.scm >> test.log
 	@echo "See test.log for details."
+
+# tests run after ext/* tests
+test2 : gosh$(EXEEXT)
+	@for testfile in $(TEST2FILES); do \
+	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
+	  ./gosh -ftest -I../test $$testfile >> test.log; \
+	done
 
 test-vmstack$(EXEEXT) : test-vmstack.$(OBJEXT) $(LIBGAUCHE).$(SOEXT)
 	$(LINK)	-o test-vmstack$(EXEEXT) test-vmstack.$(OBJEXT) $(gosh_LDADD) $(LIBS)

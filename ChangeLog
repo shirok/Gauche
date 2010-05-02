@@ -1,5 +1,10 @@
 2010-05-02  Shiro Kawai  <shiro@acm.org>
 
+	* lib/control/job.scm, lib/control/thread-pool.scm: Added.
+	* test/TESTS2, Makefile.in, src/Makefile.in: Set up some tests
+	  to be run after ext/* tests.
+	* test/control.scm: Added.
+
 	* ext/util/queue.scm (mtqueue-room): Added.
 
 2010-05-01  Shiro Kawai  <shiro@acm.org>

@@ -41,6 +41,7 @@ test : check
 check: all
 	@rm -f $(TESTRECORD)
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) check); done
+	@cd src; $(MAKE) test2
 	@cat $(TESTRECORD)
 
 install-check:
