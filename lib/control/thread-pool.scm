@@ -106,7 +106,7 @@
   (let loop ((count 0))
     (cond [(>= count size)]
           [(> (mtqueue-room (~ pool'job-queue)) 0)
-           (enqueue! (~ pool'pool) 'over)
+           (enqueue! (~ pool'job-queue) 'over)
            (loop (+ count 1))]
           [else (sys-nanosleep 5e8) (loop count)]))
   ;;
