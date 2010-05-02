@@ -16174,6 +16174,19 @@ Zero indicates unlimited.
 @c COMMON
 @end defun
 
+@defun mtqueue-room mtqueue
+@c EN
+Returns the number of elements the mtqueue can accept at this moment
+before it hits its maximum length.   For example, if the queue
+already has the maximum number of elements, 0 is returned.
+If the queue doesn't have the limit, @code{+inf.0} is returned.
+@c JP
+保持できる最大容量に達するまであといくつ要素を受け入れることができるかを
+示す整数を返します。例えば、既にキューがいっぱいであれば0が返ります。
+キューに最大容量が設定されていなければ@code{+inf.0}が返ります。
+@c COMMON
+@end defun
+
 
 @defun copy-queue queue
 @c EN
