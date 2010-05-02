@@ -69,6 +69,7 @@ SCMFILES = srfi-0.scm \
        gauche/experimental/ref.scm gauche/experimental/lamb.scm \
        gauche/experimental/app.scm \
        binary/pack.scm \
+       control/job.scm control/thread-pool.scm \
        dbi.scm dbd/null.scm dbm.scm dbm/fsdbm.scm \
        math/const.scm \
        util/isomorph.scm util/toposort.scm util/tree.scm \
