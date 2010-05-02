@@ -105,7 +105,7 @@
   ;; Sends threads termination message
   (let loop ((count 0))
     (cond [(>= count size)]
-          [(> (mtqueue-room (~ pool'pool)) 0)
+          [(> (mtqueue-room (~ pool'job-queue)) 0)
            (enqueue! (~ pool'pool) 'over)
            (loop (+ count 1))]
           [else (sys-nanosleep 5e8) (loop count)]))
