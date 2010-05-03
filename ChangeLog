@@ -1,5 +1,8 @@
 2010-05-03  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/common-macros.scm (unwind-protect): Allow multiple
+	  handlers, as in CL.
+
 	* src/module.h (origin, prefix): Added these slots to support
 	  wrapper module with prefix.  Modules are not statically allocated,
 	  so this shouldn't affect ABI.

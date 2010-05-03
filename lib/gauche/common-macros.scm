@@ -369,8 +369,8 @@
 
 (define-syntax unwind-protect
   (syntax-rules ()
-    [(unwind-protect body handler)
-     (letrec ((h (lambda () handler)))
+    [(unwind-protect body handler ...)
+     (let ((h (lambda () handler ...)))
        (receive r (guard (e (else (h) (raise e))) body)
          (h)
          (apply values r)))]
