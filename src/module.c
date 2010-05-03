@@ -34,6 +34,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/builtin-syms.h"
+#include "gauche/class.h"
 
 /*
  * Modules
@@ -72,7 +73,14 @@
 
 static void module_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    Scm_Printf(port, "#<module %A>", SCM_MODULE(obj)->name);
+    if (SCM_MODULEP(SCM_MODULE(obj)->origin)) {
+        Scm_Printf(port, "#<module %A$%A @%p>",
+                   SCM_MODULE(obj)->name,
+                   SCM_MODULE(SCM_MODULE(obj)->origin)->name,
+                   obj);
+    } else {
+        Scm_Printf(port, "#<module %A>", SCM_MODULE(obj)->name);
+    }
 }
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_ModuleClass,
@@ -112,6 +120,7 @@ static void init_module(ScmModule *m, ScmObj name)
     m->parents = defaultParents;
     m->mpl = Scm_Cons(SCM_OBJ(m), defaultMpl);
     m->table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
+    m->origin = m->prefix = SCM_FALSE;
 }
 
 /* Internal */
@@ -171,6 +180,20 @@ ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists)
         }
     }
     return r;
+}
+
+/* internal API to create an anonymous wrapper module */
+ScmObj Scm__MakeWrapperModule(ScmModule *origin, ScmObj prefix)
+{
+    ScmModule *m = SCM_MODULE(make_module(SCM_FALSE));
+    m->parents = SCM_LIST1(SCM_OBJ(origin));
+    m->mpl = Scm_Cons(SCM_OBJ(m), origin->mpl);
+    m->prefix = prefix;
+    while (SCM_MODULEP(origin->origin)) {
+        origin = SCM_MODULE(origin->origin);
+    }
+    m->origin = SCM_OBJ(origin);
+    return SCM_OBJ(m);
 }
 
 /*----------------------------------------------------------------------
@@ -241,19 +264,10 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
         ScmObj elt = SCM_CAR(p);
         ScmModule *mod = NULL;
         ScmObj sym = SCM_OBJ(symbol);
-        if (SCM_MODULEP(elt)) {
-            mod = SCM_MODULE(elt);
-        } else if (SCM_PAIRP(elt) && SCM_SYMBOLP(SCM_CDR(elt))
-                   && SCM_MODULEP(SCM_CAR(elt))) {
-            /* Prefixed import */
-            sym = Scm_SymbolSansPrefix(symbol, SCM_SYMBOL(SCM_CDR(elt)));
-            if (!SCM_SYMBOLP(sym)) continue; /* if symbol doesn't have
-                                                the prefix, never matches.*/
-            mod = SCM_MODULE(SCM_CAR(elt));
-        } else {
-            SCM_ASSERT(!"can't be here: import list of a module corrupted.");
-        }
 
+        SCM_ASSERT(SCM_MODULEP(elt));
+        mod = SCM_MODULE(elt);
+        
         SCM_FOR_EACH(mp, mod->mpl) {
             ScmGloc *g;
                 
@@ -261,6 +275,12 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
 
             if (module_visited_p(&searched, SCM_CAR(mp))) goto skip;
             m = SCM_MODULE(SCM_CAR(mp));
+            if (SCM_SYMBOLP(m->prefix)) {
+                sym = Scm_SymbolSansPrefix(SCM_SYMBOL(sym),
+                                           SCM_SYMBOL(m->prefix));
+                if (!SCM_SYMBOLP(sym)) goto skip;
+            }
+            
             v = Scm_HashTableRef(m->table, SCM_OBJ(sym), SCM_FALSE);
             /* see above comment about the check of gloc->value */
             if (SCM_GLOCP(v)) {
@@ -281,6 +301,11 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
     SCM_FOR_EACH(mp, SCM_CDR(module->mpl)) {
         SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
         m = SCM_MODULE(SCM_CAR(mp));
+        if (SCM_SYMBOLP(m->prefix)) {
+            ScmObj sym = Scm_SymbolSansPrefix(symbol, SCM_SYMBOL(m->prefix));
+            if (!SCM_SYMBOLP(sym)) goto out;
+            symbol = SCM_SYMBOL(sym);
+        }
         v = Scm_HashTableRef(m->table, SCM_OBJ(symbol), SCM_FALSE);
         if (SCM_GLOCP(v)) { gloc = SCM_GLOC(v); goto out; }
     }
@@ -398,6 +423,45 @@ void Scm_HideBinding(ScmModule *module, ScmSymbol *symbol)
 }
 
 /*
+ * Binding aliasing
+ *   This is a special operation to realize :only and :rename import option.
+ *   The name ORIGINNAME is looked up in the module ORIGIN to get a gloc.
+ *   Then the gloc is directly inserted into the module TARGET under the name
+ *   TARGETNAME.
+ *   Since gloc is shared, subsequent changes in the binding are also shared.
+ *
+ *   If the original binding doesn't exist, or isn't exported, noop and
+ *   FALSE is returned.  Otherwise TRUE is returned.
+ *
+ *   CAVEATS:
+ *
+ *   - gloc's module remains the same.
+ *   - autoload won't resolved.
+ *   - TARGETNAME shouldn't be bound in TARGET beforehand.  We don't check
+ *     it and just insert the gloc.  If there is an existing binding,
+ *     it would become orphaned, possibly causing problems.
+ *
+ *   NB: This is the only operation that causes a gloc to be shared between
+ *   more than one modules.  I'm not yet clear on the implication of such
+ *   sharing in general, so this should be used with care.  At least it
+ *   won't cause much trouble if the target module is an implicit anonymous
+ *   module created by :only and :rename import options.
+ */
+int Scm_AliasBinding(ScmModule *target, ScmSymbol *targetName,
+                     ScmModule *origin, ScmSymbol *originName)
+{
+    ScmObj v;
+    ScmGloc *g = Scm_FindBinding(origin, originName, 0);
+
+    if (g == NULL || !(g->exported)) return FALSE;
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(modules.mutex);
+    Scm_HashTableSet(target->table, SCM_OBJ(targetName), SCM_OBJ(g), 0);
+    target->exported = Scm_Cons(SCM_OBJ(targetName), target->exported);
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
+    return TRUE;
+}
+
+/*
  * Import
  */
 ScmObj Scm_ImportModule(ScmModule *module,
@@ -418,12 +482,11 @@ ScmObj Scm_ImportModule(ScmModule *module,
     }
 
     if (SCM_SYMBOLP(prefix)) {
-        p = Scm_Cons(SCM_OBJ(imp), prefix);
-    } else {
-        p = SCM_OBJ(imp);
+        imp = SCM_MODULE(Scm__MakeWrapperModule(imp, prefix));
     }
+
     /* Preallocate a pair, so that we won't call malloc during locking */
-    p = Scm_Cons(p, SCM_NIL);
+    p = Scm_Cons(SCM_OBJ(imp), SCM_NIL);
 
     /* Prepend imported module to module->imported list. */
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
@@ -432,9 +495,10 @@ ScmObj Scm_ImportModule(ScmModule *module,
         SCM_SET_CDR(p, module->imported);
         /* Remove duplicate module, if any. */
         SCM_FOR_EACH(ms, SCM_CDR(p)) {
-            ScmObj m = SCM_CAR(ms);
-            if ((SCM_MODULEP(m) && !SCM_EQ(m, SCM_OBJ(imp)))
-                ||(SCM_PAIRP(m) && !SCM_EQ(SCM_CAR(m), SCM_OBJ(imp)))) {
+            ScmModule *m = SCM_MODULE(SCM_CAR(ms));
+            ScmObj b0 = SCM_MODULEP(m->origin)? m->origin : SCM_OBJ(m);
+            ScmObj b1 = SCM_MODULEP(imp->origin)? imp->origin : SCM_OBJ(imp);
+            if (!SCM_EQ(b0, b1)) {
                 prev = ms;
                 continue;
             }
@@ -453,9 +517,7 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 {
     ScmObj lp;
     SCM_FOR_EACH(lp, list) {
-        ScmObj p = SCM_CAR(lp);
-        if (SCM_PAIRP(p)) Scm_ImportModule(module, SCM_CAR(p), SCM_CDR(p), 0);
-        else              Scm_ImportModule(module, p, SCM_FALSE, 0);
+        Scm_ImportModule(module, SCM_CAR(lp), SCM_FALSE, 0);
     }
     return module->imported;
 }
@@ -655,6 +717,73 @@ ScmObj Scm_PathToModuleName(ScmString *path)
     return SCM_INTERN(buf);
 }
 
+/*----------------------------------------------------------------------
+ * Module introspection
+ */
+
+static ScmObj module_name(ScmObj m)
+{
+    return SCM_MODULE(m)->name;
+}
+
+static ScmObj module_imported(ScmObj m)
+{
+    return SCM_MODULE(m)->imported;
+}
+
+static ScmObj module_exported(ScmObj m)
+{
+    return SCM_MODULE(m)->exported;
+}
+
+static ScmObj module_exportAll(ScmObj m)
+{
+    return SCM_MAKE_BOOL(SCM_MODULE(m)->exportAll);
+}
+
+static ScmObj module_parents(ScmObj m)
+{
+    return SCM_MODULE(m)->parents;
+}
+
+static ScmObj module_mpl(ScmObj m)
+{
+    return SCM_MODULE(m)->mpl;
+}
+
+static ScmObj module_depended(ScmObj m)
+{
+    return SCM_MODULE(m)->depended;
+}
+
+static ScmObj module_table(ScmObj m)
+{
+    return SCM_OBJ(SCM_MODULE(m)->table);
+}
+
+static ScmObj module_origin(ScmObj m)
+{
+    return SCM_MODULE(m)->origin;
+}
+
+static ScmObj module_prefix(ScmObj m)
+{
+    return SCM_MODULE(m)->prefix;
+}
+
+static ScmClassStaticSlotSpec module_slots[] = {
+    SCM_CLASS_SLOT_SPEC("name", module_name, NULL),
+    SCM_CLASS_SLOT_SPEC("mpl", module_mpl, NULL),
+    SCM_CLASS_SLOT_SPEC("parents", module_parents, NULL),
+    SCM_CLASS_SLOT_SPEC("imports", module_imported, NULL),
+    SCM_CLASS_SLOT_SPEC("exports", module_exported, NULL),
+    SCM_CLASS_SLOT_SPEC("export-all", module_exportAll, NULL),
+    SCM_CLASS_SLOT_SPEC("table", module_table, NULL),
+    SCM_CLASS_SLOT_SPEC("depends", module_depended, NULL),
+    SCM_CLASS_SLOT_SPEC("origin", module_origin, NULL),
+    SCM_CLASS_SLOT_SPEC("prefix", module_prefix, NULL),
+    SCM_CLASS_SLOT_SPEC_END()
+};
 
 /*----------------------------------------------------------------------
  * Predefined modules and initialization
@@ -721,4 +850,13 @@ void Scm__InitModule(void)
     /* other modules */
     mpl = defaultMpl;
     INIT_MOD(internalModule, SCM_SYM_GAUCHE_INTERNAL, mpl);
+}
+
+void Scm__InitModulePost(void)
+{
+    Scm_InitStaticClassWithMeta(&Scm_ModuleClass, "<module>", &gaucheModule,
+                                NULL, /* auto-generate meta */
+                                SCM_FALSE, /* calculate supers from cpl */
+                                module_slots,
+                                0);
 }

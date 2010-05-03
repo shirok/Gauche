@@ -2730,10 +2730,11 @@
   ($const-undef))
 
 (define-pass1-syntax (import form cenv) :gauche
+  (define (ensure m) (or (find-module m) (error "unknown module" m)))
   (dolist [f (cdr form)]
     (match f
-      [(m . r) (process-import (cenv-module cenv) m r)]
-      [m       (process-import (cenv-module cenv) m '())]))
+      [(m . r) (process-import (cenv-module cenv) (ensure m) r)]
+      [m       (process-import (cenv-module cenv) (ensure m) '())]))
   ($const-undef))
 
 (define (process-import current imported args)
@@ -2741,61 +2742,63 @@
              [args args]
              [prefix #f])
     (match args
-      [()  (%import-module current imported prefix)]
+      [() (%import-module current imported prefix)]
       [(:prefix p . rest)
        (loop imported rest (if prefix (string->symbol #`",p,prefix") p))]
       [(:only (ss ...) . rest)
        (let1 m (process-import:remap
-                :only (unwrap-syntax ss) prefix
-                (lambda (m sym bare-sym)
-                  (let1 gv (global-variable-ref imported bare-sym)
-                    (%insert-binding m sym gv))
-                  (%export-symbols m (list sym))))
+                :only imported (unwrap-syntax ss) #f prefix
+                (lambda (m sym orig-sym)
+                  (unless (%alias-binding m orig-sym imported orig-sym)
+                    (errorf "during processing :once clause: \
+                             binding of ~a isn't exported from ~a"
+                           orig-sym imported))))
          (%extend-module m '())
          (loop m rest #f))]
       [(:except (ss ...) . rest)
        (let1 m (process-import:remap
-                :except (unwrap-syntax ss) prefix
-                (lambda (m sym bare-sym) (%hide-binding m bare-sym)))
-         (%extend-module m (list (or (find-module imported)
-                                     (error "undefined module" imported))))
-         (loop m rest prefix))]
-;;;       [(:rename ((ss ds) ...) . rest)
-;;;        (let* ([ss (unwrap-syntax ss)]
-;;;               [ds (unwrap-syntax ds)]
-;;;               [to-hide (let loop ((ss ss) (hs '()))
-;;;                          (match ss
-;;;                            [() hs]
-;;;                            [
-;;;               [m1 (process-import:remap
-;;;                    :rename ss prefix
-;;;                    (lambda (m sym bare-sym) (%hide-binding m bare-sym)))]
-;;;               [m2 (rlet1 m2 (make-module #f)
-;;;                     (for-each (lambda (s d)
-;;;                                 (let1 gv (global-variable-ref
-;;;                                           imported
-;;;                                           (process-import:strip-prefix :rename s prefix))
-;;;                                   (%insert-binding m2 d gv))
-;;;                                 (%export-symbols m2 (list d)))
-;;;                               ss ds))])
-;;;          (%extend-module m1 (list (or (find-module imported)
-;;;                                       (error "undefined module" imported))))
-;;;          (%extend-module m2 (list m1))
-;;;          (loop m2 rest #f))]
+                :except imported (unwrap-syntax ss) #f prefix
+                (lambda (m sym orig-sym) (%hide-binding m orig-sym)))
+         (loop m rest #f))]
+      [(:rename ((ss ds) ...) . rest)
+       (let* ([ss (unwrap-syntax ss)]
+              [ds (unwrap-syntax ds)]
+              [m0 (if prefix (%make-wrapper-module imported prefix) imported)]
+              [m (process-import:remap
+                  :rename imported ds ss #f
+                  (lambda (m sym orig-sym)
+                    (unless (%alias-binding m sym imported
+                                            (process-import:strip-prefix :rename
+                                                                         orig-sym
+                                                                         prefix))
+                      (errorf "during processing :rename clause: \
+                               binding of ~a isn't exported from ~a"
+                             (process-import:strip-prefix :rename
+                                                          orig-sym
+                                                          prefix)
+                             imported))))])
+         (dolist [s ss]
+           (unless (find-binding m s #t)
+             (%hide-binding m s)))
+         (%extend-module m (list m0))
+         (loop m rest #f))]
       [(other . rest) (error "invalid import spec:" args)])))
 
 ;; Common work to process new bindings in a trampoline module.
-;; Creates a new anonymous modoule M, and for each symbol in SYMS
-;; calls PROCESS with three args: M, SYM, and bare name of SYM
-;; (if SYM has prefix PREFIX, the name after PREFIX.  Otherwise the
-;; same as SYM)
-(define (process-import:remap who syms prefix process)
-  (rlet1 m (make-module #f)
-    (dolist [sym syms]
-      (unless (symbol? sym)
-        (errorf "~a option of import must take list of symbols, but got: ~s"
-                who syms))
-      (process m sym (process-import:strip-prefix who sym prefix)))))
+;; Creates a new anonymous modoule M.  SYMS are the new names in M,
+;; OSYMS are old names (can be #f except :rename).  Calls PROCESS
+;; on M, SYM, and prefix-stripped OSYM.
+(define (process-import:remap who omod syms osyms prefix process)
+  (define (check s)
+    (unless (symbol? s)
+      (errorf "~a option of import must take list of symbols, but got: ~s"
+              who s)))
+  (rlet1 m (%make-wrapper-module omod prefix)
+    (for-each
+     (lambda (sym osym)
+       (check sym) (check osym)
+       (process m sym (process-import:strip-prefix who osym prefix)))
+     syms (or osyms syms))))
 
 (define (process-import:strip-prefix who sym prefix)
   (if prefix

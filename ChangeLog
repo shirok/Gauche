@@ -1,3 +1,24 @@
+2010-05-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.h (origin, prefix): Added these slots to support
+	  wrapper module with prefix.  Modules are not statically allocated,
+	  so this shouldn't affect ABI.
+	* src/module.c (Scm__MakeWrapperModule): An implicit module inserted
+	  to support prefixed symbols.  This obsoletes the change on
+	  2009-09-23, using module and prefix pair in the import list.
+	  (Scm_FindBinding): Consider prefix from the wrapper module
+	  Dropped support of (#<module> . prefix) in the import list.
+	  (Scm__InitModulePost): Made module information visible as slots.
+	  We should call Scm_InitStatiClassWithMeta in module.c, but
+	  that needs to be done after the class system is initialized.
+	  Scm__InitModule needs to be called before Scm__InitClass,
+	  so we need another initialize function, which is called
+	  after Scm__InitClass.
+	* src/core.c (Scm_Init), src/class.c (Scm__InitClass): Changed
+	  accordingly.
+	* src/compile.scm (process-import): Support :rename.  Rewrote
+	  :only and :except support to use wrapper modules.
+
 2010-05-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/job.scm, lib/control/thread-pool.scm: Added.

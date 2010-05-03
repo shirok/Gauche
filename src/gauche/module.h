@@ -37,13 +37,16 @@
 /*
  * A module keeps "toplevel environment", which maps names of free
  * variables (symbols) to a location (GLOCs).
+ *
+ * Note on anonymous wrapper modules:  Sometimes, the system
+ * implicitly creates an anonymous module to wrap an original
+ * module to manipulate visibility of bindings.
  */
 
 struct ScmModuleRec {
     SCM_HEADER;
     ScmObj name;                /* symbol or #f */
-    ScmObj imported;            /* list of imported modules.  each element
-                                   may be #<module> or (#<module> . prefix) */
+    ScmObj imported;            /* list of imported modules. */
     ScmObj exported;            /* list of exported symbols */
     int    exportAll;           /* TRUE if (export-all) */
     ScmObj parents;             /* direct parent modules */
@@ -51,6 +54,13 @@ struct ScmModuleRec {
     ScmObj depended;            /* list of modules that are depended by this
                                    module for compilation */
     ScmHashTable *table;        /* binding table */
+    ScmObj origin;              /* if this module is an anonymous wrapper
+                                   module, this holds a orginal module.
+                                   this isn't used for resolving bindings,
+                                   but used to avoid duplicating imports. */
+    ScmObj prefix;              /* if symbol, all bindings in this module
+                                   appear to have the prefix.  used in an
+                                   anonymous wrapper modules. */
 };
 
 #define SCM_MODULE(obj)       ((ScmModule*)(obj))
@@ -60,6 +70,9 @@ SCM_CLASS_DECL(Scm_ModuleClass);
 #define SCM_CLASS_MODULE     (&Scm_ModuleClass)
 
 SCM_EXTERN ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists);
+
+/* internal */
+SCM_EXTERN ScmObj Scm__MakeWrapperModule(ScmModule *origin, ScmObj prefix);
 
 /* Flags for Scm_FindBinding (F), MakeBinding (M)
    and Scm_GlobalVariableRef (R)*/
@@ -77,6 +90,8 @@ SCM_EXTERN ScmObj Scm_GlobalVariableRef(ScmModule *module,
                                         ScmSymbol *symbol,
                                         int flags);
 SCM_EXTERN void   Scm_HideBinding(ScmModule *module, ScmSymbol *symbol);
+SCM_EXTERN int    Scm_AliasBinding(ScmModule *target, ScmSymbol *targetName,
+                                   ScmModule *origin, ScmSymbol *originName);
 
 /* Convenience API.  Wrapper of Scm_MakeBinding. */
 SCM_EXTERN ScmObj Scm_Define(ScmModule *module,

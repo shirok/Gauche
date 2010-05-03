@@ -125,6 +125,13 @@
 (define-cproc %hide-binding (mod::<module> name::<symbol>) ::<void>
   Scm_HideBinding)
 
+(define-cproc %alias-binding (target::<module> tname::<symbol>
+                              origin::<module> oname::<symbol>) ::<boolean>
+  Scm_AliasBinding)
+
+(define-cproc %make-wrapper-module (origin::<module> prefix)
+  Scm__MakeWrapperModule)
+
 (define-cproc %export-symbols (mod::<module> names) Scm_ExportSymbols)
 
 (define-cproc %import-module (mod::<module> imported
