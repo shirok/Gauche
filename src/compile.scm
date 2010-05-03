@@ -2746,59 +2746,52 @@
       [(:prefix p . rest)
        (loop imported rest (if prefix (string->symbol #`",p,prefix") p))]
       [(:only (ss ...) . rest)
-       (let1 m (process-import:remap
-                :only imported (unwrap-syntax ss) #f prefix
-                (lambda (m sym orig-sym)
-                  (unless (%alias-binding m orig-sym imported orig-sym)
-                    (errorf "during processing :once clause: \
-                             binding of ~a isn't exported from ~a"
-                           orig-sym imported))))
+       (let1 m (%make-wrapper-module imported prefix)
+         (process-import:mapsym
+          :only (unwrap-syntax ss) #f prefix
+          (lambda (sym orig-sym)
+            (unless (%alias-binding m orig-sym imported orig-sym)
+              (errorf "during processing :once clause: \
+                       binding of ~a isn't exported from ~a"
+                      orig-sym imported))))
          (%extend-module m '())
          (loop m rest #f))]
       [(:except (ss ...) . rest)
-       (let1 m (process-import:remap
-                :except imported (unwrap-syntax ss) #f prefix
-                (lambda (m sym orig-sym) (%hide-binding m orig-sym)))
+       (let1 m (%make-wrapper-module imported prefix)
+         (process-import:mapsym
+          :except (unwrap-syntax ss) #f prefix
+          (lambda (sym orig-sym) (%hide-binding m orig-sym)))
          (loop m rest #f))]
       [(:rename ((ss ds) ...) . rest)
        (let* ([ss (unwrap-syntax ss)]
               [ds (unwrap-syntax ds)]
               [m0 (if prefix (%make-wrapper-module imported prefix) imported)]
-              [m (process-import:remap
-                  :rename imported ds ss #f
-                  (lambda (m sym orig-sym)
-                    (unless (%alias-binding m sym imported
-                                            (process-import:strip-prefix :rename
-                                                                         orig-sym
-                                                                         prefix))
-                      (errorf "during processing :rename clause: \
-                               binding of ~a isn't exported from ~a"
-                             (process-import:strip-prefix :rename
-                                                          orig-sym
-                                                          prefix)
-                             imported))))])
-         (dolist [s ss]
-           (unless (find-binding m s #t)
-             (%hide-binding m s)))
+              [m (%make-wrapper-module imported #f)])
+         (process-import:mapsym
+          :rename ds ss prefix
+          (lambda (sym orig-sym)
+            (unless (%alias-binding m sym imported orig-sym)
+              (errorf "during processing :rename clause: \
+                       binding of ~a isn't exported from ~a"
+                      orig-sym imported))))
+         (dolist [s ss] (unless (find-binding m s #t) (%hide-binding m s)))
          (%extend-module m (list m0))
          (loop m rest #f))]
       [(other . rest) (error "invalid import spec:" args)])))
 
 ;; Common work to process new bindings in a trampoline module.
-;; Creates a new anonymous modoule M.  SYMS are the new names in M,
-;; OSYMS are old names (can be #f except :rename).  Calls PROCESS
-;; on M, SYM, and prefix-stripped OSYM.
-(define (process-import:remap who omod syms osyms prefix process)
+;; Calls PROCESS with each symbols in SYMS and OLD-SYMS, but
+;; symbols in OLD-SYMS are prefix-stripped.  OLD-SYMS can be #f
+;; then we assume it is the same as SYMS.
+(define (process-import:mapsym who syms old-syms prefix process)
   (define (check s)
     (unless (symbol? s)
       (errorf "~a option of import must take list of symbols, but got: ~s"
               who s)))
-  (rlet1 m (%make-wrapper-module omod prefix)
-    (for-each
-     (lambda (sym osym)
-       (check sym) (check osym)
-       (process m sym (process-import:strip-prefix who osym prefix)))
-     syms (or osyms syms))))
+  (for-each (lambda (sym osym)
+              (check sym) (check osym)
+              (process sym (process-import:strip-prefix who osym prefix)))
+            syms (or old-syms syms)))
 
 (define (process-import:strip-prefix who sym prefix)
   (if prefix
