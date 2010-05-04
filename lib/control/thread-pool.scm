@@ -91,6 +91,7 @@
 ;; Returns job if queued, #f if job queue is full
 (define (add-job! pool thunk :optional (need-result #f))
   (let1 job (make-job thunk)
+    (job-acknowledge! job)
     (and (enqueue/wait! (~ pool'job-queue) (cons need-result job) 0 #f)
          job)))
 
