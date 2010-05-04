@@ -2875,6 +2875,7 @@ The syntax of @var{import-spec} is as follows.
 
 <import-option> : :only (<symbol> ...)
                 | :except (<symbol> ...)
+                | :rename ((<symbol> <symbol>) ...)
                 | :prefix <symbol>
 
 <module-name> : <symbol>
@@ -2910,6 +2911,8 @@ are imported.   With @code{:only}, only the bindings with
 the names listed in @code{<symbol> @dots{}} are imported.
 With @code{:except}, the exported bindings except the ones
 with the listed names are imported.
+With @code{:rename}, the binding of each name in the first
+of two-symbol list is renamed to the second of it.
 With @code{:prefix}, the exported bindings are visible with
 the names that are prefixed by the symbol to the original names.
 Without import options, all the exported bindings are imported
@@ -2919,7 +2922,9 @@ without a prefix.
 @code{:only}がある場合、@code{<symbol> @dots{}}に挙げられた名前を
 持つ束縛のみがインポートされます。@code{:except}がある場合は逆に、
 エクスポートされている束縛のうち挙げられた名前を持つもの以外が
-インポートされます。@code{:prefix}があると、元の名前の前に
+インポートされます。@code{:rename}は各2要素のリストの最初の名前
+を持つ束縛が2番目の名前へとリネームされます。
+@code{:prefix}があると、元の名前の前に
 指定されるシンボルが付加された名前で束縛が見えるようになります。
 @var{import-option}が指定されなければ、@var{module-name}のすべての
 エクスポートされた束縛がプレフィクス無しでインポートされます。
@@ -2976,7 +2981,7 @@ list the name with prefix.
 @c COMMON
 @end defspec
 
-@defmac use name :key only except prefix
+@defmac use name :key only except rename prefix
 @c EN
 A convenience macro that combines module imports and on-demand
 file loading.  Basically, @code{(use foo)} is equivalent
