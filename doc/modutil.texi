@@ -16366,6 +16366,36 @@ predicate @var{pred}.  The order of arguments follows
 @c COMMON
 @end defun
 
+@defun any-in-queue pred queue
+@c EN
+Like @code{any} in SRFI-1, apply @var{pred} on each item
+in @var{queue} until it evaluates true, and returns that
+true value (doesn't necessarily be @code{#t}).  If no
+items in the queue satisfies @var{pred}, @code{#f} is returned.
+@c JP
+SRFI-1の@code{any}のように、@var{queue}中の各要素に
+順に@var{pred}を適用し、それが真の値 (@code{#t}である必要はありません) に
+評価されたらその値を返します。@var{pred}を満たす要素が無ければ@code{#f}が
+返ります。
+@c COMMON
+@end defun
+
+@defun every-in-queue pred queue
+@c EN
+Like @code{every} in SRFI-1, apply @var{pred} on each item
+in @var{queue}.  If @var{pred} returns @code{#f}, stops
+iteration and returns @code{#f} immediately.
+Otherwise, returns the result of the application of
+@var{pred} on the last item of the queue.  If the queue
+is empty, @code{#t} is returned.
+@c JP
+SRFI-1の@code{every}のように、@var{queue}中の各要素に
+順に@var{pred}を適用し、それが@code{#f}を返したらすぐ@code{#f}を返します。
+@var{pred}に対し@code{#f}を返す要素が無ければ、最後の要素に@var{pred}を
+適用した結果が返ります。キューが空なら@code{#f}が返ります。
+@c COMMON
+@end defun
+
 @defun remove-from-queue! pred queue
 @c EN
 Removes all items in the queue that satisfies @var{pred}.

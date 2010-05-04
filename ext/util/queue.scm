@@ -55,6 +55,7 @@
           queue-front queue-rear queue-length
           queue->list list->queue
           find-in-queue remove-from-queue!
+          any-in-queue every-in-queue
 
           enqueue/wait! queue-push/wait! dequeue/wait! queue-pop/wait!)
   )
@@ -328,6 +329,8 @@
     (values-ref (queue-peek q (car opt)) 1)))
 (define (queue->list q)         (queue-op q (^_(list-copy (%qhead q)))))
 (define (find-in-queue pred q)  (queue-op q (^_(find pred (%qhead q)))))
+(define (any-in-queue pred q)   (queue-op q (^_(any pred (%qhead q)))))
+(define (every-in-queue pred q) (queue-op q (^_(every pred (%qhead q)))))
 
 ;;;
 ;;; Enqueue/dequeue

@@ -1,5 +1,7 @@
 2010-05-03  Shiro Kawai  <shiro@acm.org>
 
+	* ext/util/queue.scm (any-in-queue, every-in-queue): added.
+
 	* lib/gauche/common-macros.scm (unwind-protect): Allow multiple
 	  handlers, as in CL.
 
