@@ -1,3 +1,9 @@
+2010-05-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c (Scm_CharSetComplement): Fixed to handle complement
+	  correctly for the cases that the range touches the lower bound,
+	  or the range has one-character gap.
+
 2010-05-03  Shiro Kawai  <shiro@acm.org>
 
 	* ext/util/queue.scm (any-in-queue, every-in-queue): added.

@@ -460,18 +460,18 @@ ScmObj Scm_CharSetComplement(ScmCharSet *cs)
 
     Scm_BitsOperate(cs->small, SCM_BIT_NOT1, cs->small, NULL,
                     0, SCM_CHAR_SET_SMALL_CHARS);
-    last = SCM_CHAR_SET_SMALL_CHARS;
+    last = SCM_CHAR_SET_SMALL_CHARS-1;
     /* we can't use treeiter, since we modify the tree while traversing it. */
     while ((e = Scm_TreeCoreNextEntry(&cs->large, last)) != NULL) {
         Scm_TreeCoreSearch(&cs->large, e->key, SCM_DICT_DELETE);
         if (last < e->key-1) {
-            n = Scm_TreeCoreSearch(&cs->large, last, SCM_DICT_CREATE);
+            n = Scm_TreeCoreSearch(&cs->large, last+1, SCM_DICT_CREATE);
             n->value = e->key-1;
         }
-        last = (int)e->value+1;
+        last = (int)e->value;
     }
     if (last < SCM_CHAR_MAX) {
-        n = Scm_TreeCoreSearch(&cs->large, last, SCM_DICT_CREATE);
+        n = Scm_TreeCoreSearch(&cs->large, last+1, SCM_DICT_CREATE);
         n->value = SCM_CHAR_MAX;
     }
     return SCM_OBJ(cs);

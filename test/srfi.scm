@@ -357,6 +357,56 @@
        (char-set-contains? (->char-set "xyz") #\x))
 (test* "char-set-contains?" #f
        (char-set-contains? (->char-set "xyz") #\a))
+(test* "char-set-complement (ascii, nohit)" #f
+       (char-set-contains? (char-set-complement (char-set #\a)) #\a))
+(test* "char-set-complement (ascii, hit)" #t
+       (char-set-contains? (char-set-complement (char-set #\a)) #\b))
+(test* "char-set-complement (~#x80, nohit)" #f
+       (char-set-contains? (char-set-complement (char-set (integer->char #x80)))
+                           (integer->char #x80)))
+(test* "char-set-complement (~#x80, hit)" #t
+       (char-set-contains? (char-set-complement (char-set (integer->char #x80)))
+                           (integer->char #x81)))
+(test* "char-set-complement (~~#x80, hit)" #t
+       (char-set-contains? (char-set-complement
+                            (char-set-complement
+                             (char-set (integer->char #x80))))
+                           (integer->char #x80)))
+(test* "char-set-complement (~~#x80, nohit)" #f
+       (char-set-contains? (char-set-complement
+                            (char-set-complement
+                             (char-set (integer->char #x80))))
+                           (integer->char #x81)))
+(test* "char-set-complement (~#x82, nohit)" #f
+       (char-set-contains? (char-set-complement (char-set (integer->char #x82)))
+                           (integer->char #x82)))
+(test* "char-set-complement (~#x82, hit-upper)" #t
+       (char-set-contains? (char-set-complement (char-set (integer->char #x82)))
+                           (integer->char #x83)))
+(test* "char-set-complement (~#x82, hit-lower)" #t
+       (char-set-contains? (char-set-complement (char-set (integer->char #x82)))
+                           (integer->char #x81)))
+(test* "char-set-complement (~~#x82, hit)" #t
+       (char-set-contains? (char-set-complement
+                            (char-set-complement
+                             (char-set (integer->char #x82))))
+                           (integer->char #x82)))
+(test* "char-set-complement (~~#x82, nohit-upper)" #f
+       (char-set-contains? (char-set-complement
+                            (char-set-complement
+                             (char-set (integer->char #x82))))
+                           (integer->char #x83)))
+(test* "char-set-complement (~~#x82, nohit-lower)" #f
+       (char-set-contains? (char-set-complement
+                            (char-set-complement
+                             (char-set (integer->char #x82))))
+                           (integer->char #x81)))
+(test* "char-set-complement (~empty)" #t
+       (char-set-contains? (char-set-complement (char-set))
+                           (integer->char #x80)))
+(test* "char-set-complement (~~empty)" #f
+       (char-set-contains? (char-set-complement (char-set-complement (char-set)))
+                           (integer->char #x80)))
 (test* "char-set-every" #t
        (char-set-every char-lower-case? (->char-set "abcd")))
 (test* "char-set-every" #f
