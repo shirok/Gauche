@@ -1,4 +1,5 @@
 @node Core syntax, Macros, Programming in Gauche, Top
+@chapter Core syntax
 @c NODE 基本的な構文
 
 @c ----------------------------------------------------------------------
