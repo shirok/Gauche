@@ -1288,7 +1288,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
   restart:
     vm->escapeReason = SCM_VM_ESCAPE_NONE;
     if (sigsetjmp(cstack.jbuf, FALSE) == 0) {
-        run_loop();
+        run_loop();             /* VM loop */
         VAL0 = vm->val0;
         if (vm->cont == cstack.cont) {
             POP_CONT();
@@ -1298,7 +1298,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
         Scm_SetSigmask(&cstack.mask);
         /* An escape situation happened. */
         if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
-             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
+            ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             if (ep->cstack == vm->cstack) {
                 ScmObj handlers = throw_cont_calculate_handlers(ep, vm);
                 /* force popping continuation when restarted */
@@ -2021,7 +2021,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
                                                      to be called */
                               ScmEscapePoint *ep, /* target continuation */
                               ScmObj args)        /* args to pass to the
-                                                     target continuation */ 
+                                                     target continuation */
 {
     void *data[3];
     int nargs, i;
@@ -2082,13 +2082,17 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmObj args = argframe[0];
     ScmVM *vm = theVM;
+    ScmObj handlers_to_call;
 
+    /* Check if the current C stack (vm->cstack) and captured C stack
+       (ep->cstack), and adjust C stack if necessary.
+     */
     if (vm->cstack != ep->cstack) {
-        ScmCStack *cstk;
-        for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
-            if (ep->cstack == cstk) break;
+        ScmCStack *cs;
+        for (cs = vm->cstack; cs; cs = cs->prev) {
+            if (ep->cstack == cs) break;
         }
-        if (cstk == NULL) {
+        if (cs == NULL) {
             Scm_Error("a continuation is thrown outside of it's extent: %p",
                       ep);
         } else {
@@ -2098,11 +2102,10 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
             vm->escapeData[1] = args;
             siglongjmp(vm->cstack->jbuf, 1);
         }
-    } else {
-        ScmObj handlers_to_call = throw_cont_calculate_handlers(ep, vm);
-        return throw_cont_body(handlers_to_call, ep, args);
     }
-    return SCM_UNDEFINED; /*dummy*/
+
+    handlers_to_call = throw_cont_calculate_handlers(ep, vm);
+    return throw_cont_body(handlers_to_call, ep, args);
 }
 
 ScmObj Scm_VMCallCC(ScmObj proc)
