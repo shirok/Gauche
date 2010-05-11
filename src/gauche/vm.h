@@ -236,7 +236,11 @@ typedef struct ScmEscapePointRec {
     ScmObj ehandler;            /* handler closure */
     ScmContFrame *cont;         /* saved continuation */
     ScmObj handlers;            /* saved dynamic handler chain */
-    ScmCStack *cstack;          /* C stack */
+    ScmCStack *cstack;          /* vm->cstack when escape point is created.
+                                   this will be used to rewind cstack.
+                                   this is NULL for partial continuations,
+                                   for they can be executed on anywhere
+                                   w.r.t. cstack. */
     ScmObj xhandler;            /* saved exception handler */
     int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
                                    when this ep is captured.  The flag status

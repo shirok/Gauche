@@ -1293,6 +1293,11 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
         if (vm->cont == cstack.cont) {
             POP_CONT();
             PC = prev_pc;
+        } else if (vm->cont == NULL) {
+            /* we're finished with executing partial continuation.*/
+            vm->cont = cstack.cont;
+            POP_CONT();
+            PC = prev_pc;
         } else {
             /* If we come here, we've been executing a ghost continuation.
                The C world the ghost should return no longer exists, so we
@@ -2051,6 +2056,16 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     }
 
     /*
+     * If the target continuation is a full continuation, we can abandon
+     * the current continuation.  However, if the target continuation is
+     * partial, we must return to the current continuation after executing
+     * the partial continuation.  The returning part is handled by
+     * user_level_inner, but we have to make sure that our current continuation
+     * won't be overwritten by execution of the partial continuation.
+     */
+    if (ep->cstack == NULL) save_cont(vm);
+    
+    /*
      * now, install the target continuation
      */
     vm->pc = PC_TO_RETURN;
@@ -2089,7 +2104,7 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
     ScmVM *vm = theVM;
     ScmObj handlers_to_call;
 
-    if (vm->cstack != ep->cstack) {
+    if (ep->cstack && vm->cstack != ep->cstack) {
         ScmCStack *cs;
         for (cs = vm->cstack; cs; cs = cs->prev) {
             if (ep->cstack == cs) break;
@@ -2128,6 +2143,46 @@ ScmObj Scm_VMCallCC(ScmObj proc)
 
     contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                             SCM_MAKE_STR("continuation"));
+    return Scm_VMApply1(proc, contproc);
+}
+
+/* call with partial continuation.  this corresponds to the 'shift' operator
+   in shift/reset controls (Gasbichler&Sperber, "Final Shift for Call/cc",
+   ICFP02.)   Note that we treat the boundary frame as the bottom of
+   partial continuation. */
+ScmObj Scm_VMCallPC(ScmObj proc)
+{
+    ScmObj contproc;
+    ScmEscapePoint *ep;
+    ScmContFrame *c, *cp;
+    ScmVM *vm = theVM;
+    
+    /* save the continuation.  we only need to save the portion above the
+       latest boundary frame (+environmentns pointed from them), but for now,
+       we save everything to make things easier.  If we want to squeeze
+       performance we'll optimize it later. */
+    save_cont(vm);
+    
+    /* find the latest boundary frame */
+    for (c = vm->cont, cp = NULL;
+         c && !BOUNDARY_FRAME_P(c);
+         cp = c, c = c->prev)
+        /*empty*/;
+
+    if (cp != NULL) cp->prev = NULL; /* cut the dynamic chain */
+    SCM_ASSERT(c != NULL);
+
+    ep = SCM_NEW(ScmEscapePoint);
+    ep->prev = NULL;
+    ep->ehandler = SCM_FALSE;
+    ep->cont = vm->cont;
+    ep->handlers = vm->handlers;
+    ep->cstack = NULL; /* so that the partial continuation can be run
+                          on any cstack state. */
+    contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
+                            SCM_MAKE_STR("partial continuation"));
+    /* Remove the saved continuation chain. */
+    vm->cont = c;
     return Scm_VMApply1(proc, contproc);
 }
 

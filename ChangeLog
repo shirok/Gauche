@@ -1,3 +1,19 @@
+2010-05-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (user_eval_inner, Scm_VMCallPC):
+	  src/intlib.stub (%call/pc):
+	  lib/gauche/partcont.scm: Experimentally added partial (delimited)
+	  continuation support.  A partial continuation is marked by
+	  ep->cstack == NULL.  Its 'root' is cut by %call/pc.  It is
+	  executed on the cstack where it is invoked.  When execution of
+	  a partial continuation ends, popping continuation frame yields
+	  vm->cont == NULL, which caused run_loop() to return to
+	  user_eval_inner, which in turn hands the control over the latest
+	  continuation delimited by reset().   Note that reset() operator
+	  is simply Scm_VMApplyRec0---user_eval_inner implicitly delimits
+	  the continuation.   No partial continuation frames should include
+	  c stack frames in it.
+
 2010-05-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (user_eval_inner, throw_continuation): Allow execution

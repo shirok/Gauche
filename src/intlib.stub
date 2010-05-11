@@ -404,6 +404,9 @@
 (define-cproc vm-set-current-module (mod::<module>) ::<void>
   (set! (-> (Scm_VM) module) mod))
 
+;; for partial continuation
+(define-cproc %call/pc (proc) (result (Scm_VMCallPC proc)))
+
 (define-cproc gc-print-static-roots () ::<void> Scm_PrintStaticRoots)
 
 ;;
