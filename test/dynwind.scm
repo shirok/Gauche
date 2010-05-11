@@ -441,4 +441,34 @@
 (test "Al's call/cc test" 1
       (lambda () (call/cc (lambda (c) (0 (c 1))))))
 
+;;-----------------------------------------------------------------------
+;; Partial continuations
+
+(test-section "partial continuations")
+(use gauche.partcont)
+(test-module 'gauche.partcont)
+
+(test "reset" 6
+      (lambda () (+ 1 (reset (+ 2 3)))))
+(test "reset" '(1 2)
+      (lambda () (cons 1 (reset (cons 2 '())))))
+
+(test "shift, ignoring k" 4
+      (lambda () (+ 1 (reset (+ 2 (shift k 3))))))
+(test "shift, ignoring k" '(1 3)
+      (lambda () (cons 1 (reset (cons 2 (shift k (list 3)))))))
+
+(test "calling pc" 10
+      (lambda () (+ 1 (reset (+ 2 (shift k (+ 3 (k 4))))))))
+(test "calling pc" '(1 3 2 4)
+      (lambda ()
+        (cons 1 (reset (cons 2 (shift k (cons 3 (k (cons 4 '())))))))))
+
+(test "calling pc multi" 14
+      (lambda ()
+        (+ 1 (reset (+ 2 (shift k (+ 3 (k 5) (k 1))))))))
+(test "calling pc multi" '(1 3 2 2 4)
+      (lambda ()
+        (cons 1 (reset (cons 2 (shift k (cons 3 (k (k (cons 4 '()))))))))))
+
 (test-end)
