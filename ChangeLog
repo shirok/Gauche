@@ -1,3 +1,18 @@
+2010-05-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (user_eval_inner, throw_continuation): Allow execution
+	  of "ghost continuations", the continuations whose dynamic extent
+	  of C stack is effectively expired.   For example, if a
+	  continuation is captured within the callback function from C,
+	  and the callback has already returned to C, then the continuation
+	  becomes a ghost.  Ghost continuation cannot return to C at its
+	  bottom, for it is not allowed in C to return from already expired
+	  stack frame.  We used to raise an error when ghost continuation
+	  is invoked.  However, the Scheme portion of a ghost continuation
+	  is still effective and executable.  This change allows a ghost
+	  continuation to be executed on the current C stack.  If the
+	  continuation tries to return to C, an error is signalled.
+
 2010-05-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c (Scm_CharSetComplement): Fixed to handle complement

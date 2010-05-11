@@ -1293,6 +1293,11 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
         if (vm->cont == cstack.cont) {
             POP_CONT();
             PC = prev_pc;
+        } else {
+            /* If we come here, we've been executing a ghost continuation.
+               The C world the ghost should return no longer exists, so we
+               raise an error. */
+            Scm_Error("attempt to return from a ghost continuation.");
         }
     } else {
         Scm_SetSigmask(&cstack.mask);
@@ -2084,19 +2089,18 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
     ScmVM *vm = theVM;
     ScmObj handlers_to_call;
 
-    /* Check if the current C stack (vm->cstack) and captured C stack
-       (ep->cstack), and adjust C stack if necessary.
-     */
     if (vm->cstack != ep->cstack) {
         ScmCStack *cs;
         for (cs = vm->cstack; cs; cs = cs->prev) {
             if (ep->cstack == cs) break;
         }
-        if (cs == NULL) {
-            Scm_Error("a continuation is thrown outside of it's extent: %p",
-                      ep);
-        } else {
-            /* Rewind C stack */
+
+        /* If the continuation captured below the current C stack, we rewind
+           to the captured stack first.  If not, the continuation is 'ghost'.
+           We execute the scheme portion of the continuation on the current
+           C stack (no rewinding), but we'll catch it if it tries to return
+           to the C world.   See user_eval_inner().  */
+        if (cs != NULL) {
             vm->escapeReason = SCM_VM_ESCAPE_CONT;
             vm->escapeData[0] = ep;
             vm->escapeData[1] = args;

@@ -119,6 +119,61 @@
                           1))))))
               11)))
 
+(test "call/cc (ghost continuation)" (test-error)
+      (lambda ()
+        (%apply-rec
+         (lambda (k)
+           (%apply-rec
+            (lambda ()
+              (cons 1 (call-with-current-continuation
+                       (lambda (c) (set! k c) 1)))))
+           (k 2))
+         #f)))
+
+(test "call/cc (ghost continuation, escaping out by call/cc)" '(1 . 2)
+      (lambda ()
+        (call-with-current-continuation
+         (lambda (safe-return)
+           (let ((s values))
+             (%apply-rec
+              (lambda (k)
+                (%apply-rec
+                 (lambda ()
+                   (s (cons 1 (call-with-current-continuation
+                               (lambda (c) (set! k c) 1))))))
+                (set! s safe-return)
+                (k 2))
+              #f))))))
+
+(test "call/cc (ghost continuation, escaping out by error)" '(1 . 2)
+      (lambda ()
+        (with-error-handler values
+          (lambda ()
+            (let ((s values))
+              (%apply-rec
+               (lambda (k)
+                 (%apply-rec
+                  (lambda ()
+                    (s (cons 1 (call-with-current-continuation
+                                (lambda (c) (set! k c) 1))))))
+                 (set! s raise)
+                 (k 2))
+               #f))))))
+
+(test "call/cc (ghost continuation, escaping out by error 2)" '(1 . 2)
+      (lambda ()
+        (guard (e [else e])
+          (let ((s values))
+            (%apply-rec
+             (lambda (k)
+               (%apply-rec
+                (lambda ()
+                  (s (cons 1 (call-with-current-continuation
+                              (lambda (c) (set! k c) 1))))))
+               (set! s raise)
+               (k 2))
+             #f)))))
+
 ;; Paranoia
 
 (test "call/cc & dynwind (cstack)" '(a b c)
