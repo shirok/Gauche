@@ -2170,7 +2170,6 @@ ScmObj Scm_VMCallPC(ScmObj proc)
         /*empty*/;
 
     if (cp != NULL) cp->prev = NULL; /* cut the dynamic chain */
-    SCM_ASSERT(c != NULL);
 
     ep = SCM_NEW(ScmEscapePoint);
     ep->prev = NULL;
@@ -2181,7 +2180,10 @@ ScmObj Scm_VMCallPC(ScmObj proc)
                           on any cstack state. */
     contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                             SCM_MAKE_STR("partial continuation"));
-    /* Remove the saved continuation chain. */
+    /* Remove the saved continuation chain.
+       NB: c can be NULL if we've been executing a partial continuation.
+       It's ok, for a continuation pointed by cstack will be restored
+       in user_eval_inner. */
     vm->cont = c;
     return Scm_VMApply1(proc, contproc);
 }
