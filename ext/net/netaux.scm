@@ -151,8 +151,23 @@
   (apply make-server-socket-from-addr (car (make-sockaddrs #f port)) args))
 
 (define (make-server-sockets host port . args)
-  (map (cut apply make-server-socket <> args)
-       (make-sockaddrs host port)))
+  (let1 ss (make-sockaddrs host port)
+    ;; Heuristics - if we have both v4 and v6 sockets, we *may* need
+    ;; only v6 sockets if the system defaults to dual-stack socket.
+    ;; Unfortunately the behavior is system dependent.  So we try to
+    ;; open both (first v6, then v4) and if the latter fails to bind
+    ;; we assume v6 socket listens both.
+    (let ([v4s (filter (^s (eq? (sockaddr-family s) 'inet)) ss)]
+          [v6s (filter (^s (eq? (sockaddr-family s) 'inet6)) ss)])
+      (if (and (not (null? v4s)) (not (null? v6s)))
+        (fold (^(s ss)
+                (guard (e [(and (<system-error> e)
+                                (eqv? (~ e'errno) EADDRINUSE))
+                           ss])         ;ignore s
+                  (cons (apply make-server-socket s args) ss)))
+              (map (cut apply make-server-socket <> args) v6s)
+              v4s)
+        (map (cut apply make-server-socket <> args) ss)))))
 
 (define (make-sockaddrs host port . maybe-proto)
   (let1 proto (get-optional maybe-proto 'tcp)

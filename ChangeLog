@@ -1,3 +1,12 @@
+2010-05-12  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netaux.scm (make-server-sockets): If the system defaults
+	  v6 sockets to be dual-stack (i.e. IPV6_V6ONLY is off by default),
+	  the current strategy fails since v6 socket tries to bind both
+	  v4 and v6 addresses.  The default is system-dependent, so we
+	  adopt a heuristic: First we bind v6 addresses, and then we try
+	  v4 ones; if v4 one fails with EADDRINUSE, we just ignore it.
+
 2010-05-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (POP_CONT): fixed a bug that refers wrong pointer.
