@@ -1,5 +1,5 @@
 (define-module gauche.partcont
-  (export reset shift))
+  (export reset shift call/pc))
 (select-module gauche.partcont)
 
 (define %reset (with-module gauche.internal %apply-rec0))
