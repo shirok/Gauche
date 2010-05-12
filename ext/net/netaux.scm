@@ -157,17 +157,24 @@
     ;; Unfortunately the behavior is system dependent.  So we try to
     ;; open both (first v6, then v4) and if the latter fails to bind
     ;; we assume v6 socket listens both.
-    (let ([v4s (filter (^s (eq? (sockaddr-family s) 'inet)) ss)]
-          [v6s (filter (^s (eq? (sockaddr-family s) 'inet6)) ss)])
-      (if (and (not (null? v4s)) (not (null? v6s)))
-        (fold (^(s ss)
-                (guard (e [(and (<system-error> e)
-                                (eqv? (~ e'errno) EADDRINUSE))
-                           ss])         ;ignore s
-                  (cons (apply make-server-socket s args) ss)))
-              (map (cut apply make-server-socket <> args) v6s)
-              v4s)
-        (map (cut apply make-server-socket <> args) ss)))))
+    (cond-expand
+     [gauche.os.windows
+      ;; mingw doesn't have EADDRINUSE.  it's likely not to have ipv6 either,
+      ;; so we just use the default.  NB: we can't switch here with
+      ;; gauche.sys.ipv6; see the comment on ipv6-capable definition above.
+      (map (cut apply make-server-socket <> args) ss)]
+     [else
+      (let ([v4s (filter (^s (eq? (sockaddr-family s) 'inet)) ss)]
+            [v6s (filter (^s (eq? (sockaddr-family s) 'inet6)) ss)])
+        (if (and (not (null? v4s)) (not (null? v6s)))
+          (fold (^(s ss)
+                  (guard (e [(and (<system-error> e)
+                                  (eqv? (~ e'errno) EADDRINUSE))
+                             ss])         ;ignore s
+                    (cons (apply make-server-socket s args) ss)))
+                (map (cut apply make-server-socket <> args) v6s)
+                v4s)
+          (map (cut apply make-server-socket <> args) ss)))])))
 
 (define (make-sockaddrs host port . maybe-proto)
   (let1 proto (get-optional maybe-proto 'tcp)
