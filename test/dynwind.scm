@@ -471,4 +471,47 @@
       (lambda ()
         (cons 1 (reset (cons 2 (shift k (cons 3 (k (k (cons 4 '()))))))))))
 
+;; 'amb' example in Gasbichler&Sperber ICFP2002 paper
+(let ()
+  (define (eta x) (list (x)))                    ; unit
+  (define (extend f l) (apply append (map f l))) ; bind
+  (define (reflect meaning) (shift k (extend k meaning)))
+  (define (reify thunk) (reset (eta thunk)))
+  (define (amb* . t)
+    (reflect (apply append (map reify t))))
+  (let-syntax ([amb
+                (syntax-rules () [(amb x ...) (amb* (lambda () x) ...)])])
+    (define (www)
+      (let ((f (lambda (x) (+ x (amb 6 4 2 8) (amb 2 4 5 4 1)))))
+        (reify (lambda () (f (f (amb 0 2 3 4 5 32)))))))
+
+    (define (wwww)
+      (let ((f (lambda (x) (+ x (amb 6 4 2 8) (amb 2 4 5 4 1)))))
+        (reify (lambda () (f (f (f (amb 0 2 3 4 5 32))))))))
+
+    (test "www" 2400 (lambda () (length (www))))
+    (test "wwww" 48000 (lambda () (length (wwww))))
+    ))
+
+;; inversion of iterator
+(let ()
+  (define (inv lis)
+    (define (kk)
+      (reset (for-each (lambda (e) (shift k (set! kk k) e)) lis)
+             (set! kk (lambda () (eof-object)))
+             (eof-object)))
+    (lambda () (kk)))
+  (define iter (inv '(1 2 3 4 5)))
+  (test "inversion" 1 iter)
+  (test "inversion" 2 iter)
+  (test "inversion" 3 iter)
+  (test "inversion" 4 iter)
+  (test "inversion" 5 iter)
+  (test "inversion" (eof-object) iter)
+  (test "inversion" (eof-object) iter))
+
+;; To be written:
+;;  - tests for interactions of dynamic handlers and partial continuaions.
+;;  - tests for interactions of partial and full continuations.
+
 (test-end)
