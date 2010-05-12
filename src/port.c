@@ -707,13 +707,16 @@ static void register_buffered_port(ScmPort *port)
   retry:
     h = i = (int)PORT_HASH(port);
     c = 0;
-    /* search an available entry by quadratic hash */
+    /* search an available entry by quadratic hash
+       used entry may have #<port> or #t.  #t is for transient state
+       during Scm_FlushAllPorts()---see below. */
     (void)SCM_INTERNAL_MUTEX_LOCK(active_buffered_ports.mutex);
-    while (SCM_PORTP(Scm_WeakVectorRef(active_buffered_ports.ports, i, SCM_FALSE))) {
+    while (!SCM_FALSEP(Scm_WeakVectorRef(active_buffered_ports.ports,
+                                         i, SCM_FALSE))) {
         i -= ++c; while (i<0) i+=PORT_VECTOR_SIZE;
         if (i == h) {
-            // Vector entry is full.  We run global GC to try to collect
-            // unused entry.
+            /* Vector entry is full.  We run global GC to try to collect 
+               unused entry. */
             need_gc = TRUE;
             break;
         }
@@ -725,8 +728,8 @@ static void register_buffered_port(ScmPort *port)
 
     if (need_gc) {
         if (tried_gc) {
-            // We should probably try to extend the weak vector.
-            // But for the time being...
+            /* We should probably try to extend the weak vector.
+               But for the time being... */
             Scm_Panic("active buffered port table overflow");
         } else {
             GC_gcollect();

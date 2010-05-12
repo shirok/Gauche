@@ -1,5 +1,8 @@
 2010-05-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c (register_buffered_port): Fixed a race condition
+	  accessing the active port vector.  Pointed by enami.
+
 	* src/vm.c (user_eval_inner, Scm_VMCallPC):
 	  src/intlib.stub (%call/pc):
 	  lib/gauche/partcont.scm: Experimentally added partial (delimited)
