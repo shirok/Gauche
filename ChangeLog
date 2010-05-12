@@ -1,5 +1,7 @@
 2010-05-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c (POP_CONT): fixed a bug that refers wrong pointer.
+
 	* src/port.c (register_buffered_port): Fixed a race condition
 	  accessing the active port vector.  Pointed by enami.
 

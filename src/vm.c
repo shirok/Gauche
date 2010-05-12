@@ -427,8 +427,8 @@ static void vm_finalize(ScmObj obj, void *data)
             ENV = CONT->env;                                            \
             ARGP = SP;                                                  \
             PC = PC_TO_RETURN;                                          \
-            CONT = CONT->prev;                                          \
             BASE = CONT->base;                                          \
+            CONT = CONT->prev;                                          \
             SCM_FLONUM_ENSURE_MEM(v__);                                 \
             VAL0 = CALL_CCONT(after__, v__, data__);                    \
         } else if (IN_STACK_P((ScmObj*)CONT)) {                         \
