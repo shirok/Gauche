@@ -1,3 +1,9 @@
+2010-05-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/objlib.scm (ref, (setter ref)): Added generic slot reference
+	  with fallback, and setter to list, for consistency.
+	  Patch from Masatake YAMATO.
+
 2010-05-12  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/netaux.scm (make-server-sockets): If the system defaults

@@ -657,6 +657,10 @@
 
 (define-method ref ((obj <top>) (slot <symbol>))
   (slot-ref obj slot))
+(define-method ref ((obj <top>) (slot <symbol>) fallback)
+  (if (slot-bound? obj slot)
+    (slot-ref obj slot)
+    fallback))
 (define-method (setter ref) ((obj <top>) (slot <symbol>) value)
   (slot-set! obj slot value))
 
@@ -682,6 +686,8 @@
   (vector-ref obj index))
 (define-method ref ((obj <string>) (index <integer>))
   (string-ref obj index))
+(define-method (setter ref) ((obj <list>) (index <integer>) val)
+  (set-car! (list-tail obj index) val))
 (define-method (setter ref) ((obj <vector>) (index <integer>) val)
   (vector-set! obj index val))
 (define-method (setter ref) ((obj <string>) (index <integer>) val)
