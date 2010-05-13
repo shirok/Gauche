@@ -1,5 +1,10 @@
 2010-05-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c (Scm_MakePortWithFd): Set seeker if the given fd is
+	  seekable.  For example, Scm_SysMkstemp calls this function on
+	  an fd associated to a file, so it is natural to be seekable.
+	  OTOH, sys-pipe passes pipe fd, which isn't seekable.
+
 	* src/objlib.scm (ref, (setter ref)): Added generic slot reference
 	  with fallback, and setter to list, for consistency.
 	  Patch from Masatake YAMATO.

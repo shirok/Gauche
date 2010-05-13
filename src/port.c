@@ -991,8 +991,14 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
     bufrec.closer = file_closer;
     bufrec.ready = file_ready;
     bufrec.filenum = file_filenum;
-    bufrec.seeker = NULL;
     bufrec.data = (void*)(intptr_t)fd;
+
+    /* Check if the given fd is seekable, and set seeker if so. */
+    if (lseek(fd, 0, SEEK_CUR) < 0) {
+        bufrec.seeker = NULL;
+    } else {
+        bufrec.seeker = file_seeker;
+    }
     
     p = Scm_MakeBufferedPort(SCM_CLASS_PORT, name, direction, ownerp, &bufrec);
     return p;
