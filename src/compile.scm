@@ -1502,11 +1502,15 @@
 ;; Entry points
 ;;
 
-;; compile:: Sexpr, Module -> CompiledCode
-(define (compile program module)
-  (let1 cenv (if (module? module)
-               (make-bottom-cenv module)
-               (make-bottom-cenv))
+;; compile:: Sexpr, Env -> CompiledCode
+;;   Env can be:
+;;     #f, #<unbound> - compile on bottom env of the current module
+;;     module - compile on bottom env of the given module
+;;     cenv   - compile on the given cenv
+(define (compile program env)
+  (let1 cenv (cond [(module? env) (make-bottom-cenv env)]
+                   [(vector? env) env] ; assumes env is cenv
+                   [else (make-bottom-cenv)]) ; use default module
     (guard
         (e
          [else
@@ -1648,6 +1652,8 @@
               [(lvar? h) (pass1/call program ($lref h) (cdr program) cenv)]
               [(macro? h) ;; local macro
                (pass1 (call-macro-expander h program (cenv-frames cenv)) cenv)]
+              [(syntax? h);; locally rebound syntax
+               (call-syntax-handler h program cenv)]
               [else (error "[internal] unknown resolution of head:" h)]))]
      [else (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
                        (cdr program) cenv)])]
@@ -1713,8 +1719,10 @@
                      or macro use:" (caar exprs)))
            (cond
             [(lvar? head) (pass1/body-finish intdefs exprs cenv)]
-            [(macro? head)
+            [(macro? head)  ; locally defined macro
              (pass1/body-macro-expand-rec head exprs intdefs cenv)]
+            [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
+             (pass1/body-finish intdefs exprs cenv)]
             [(global-eq? head 'define cenv)
              (let1 def (match args
                          [((name . formals) . body)
@@ -2029,13 +2037,20 @@
   ;; Temporary: we use the old compiler's syntax-rules implementation
   ;; for the time being.
   (match form
-    [(_ name ('syntax-rules (literal ...) rule ...))
-     (let1 transformer
-         (compile-syntax-rules name literal rule
-                               (cenv-module cenv) (cenv-frames cenv))
+    [(_ name expr)
+     (let* ([cenv (cenv-add-name cenv (variable-name name))]
+            [transformer (pass1/eval-macro-rhs 'define-syntax expr cenv)])
        (%insert-binding (cenv-module cenv) name transformer)
        ($const-undef))]
     [_ (error "syntax-error: malformed define-syntax:" form)]))
+
+(define (pass1/eval-macro-rhs who expr cenv)
+  (rlet1 transformer ((make-toplevel-closure (compile expr cenv)))
+    (unless (or (is-a? transformer <syntax>)
+                (is-a? transformer <macro>))
+      (errorf "syntax-error: rhs expression of ~a ~s \
+               doesn't yield a syntactic transformer: ~s"
+              who expr transformer))))
 
 ;; Macros ...........................................
 
@@ -2052,13 +2067,10 @@
 (define-pass1-syntax (let-syntax form cenv) :null
   (match form
     [(_ ((name trans-spec) ...) body ...)
-     (let* ([trans (map (match-lambda*
-                          [(n ('syntax-rules (lit ...) rule ...))
-                           (compile-syntax-rules n lit rule
-                                                 (cenv-module cenv)
-                                                 (cenv-frames cenv))]
-                          [_ (error "syntax-error: malformed transformer-spec:"
-                                    spec)])
+     (let* ([trans (map (lambda (n x)
+                          (pass1/eval-macro-rhs
+                           'let-syntax x
+                           (cenv-add-name cenv (variable-name n))))
                         name trans-spec)]
             [newenv (cenv-extend cenv (%map-cons name trans) SYNTAX)])
        (pass1/body body newenv))]
@@ -2068,17 +2080,22 @@
   (match form
     [(_ ((name trans-spec) ...) body ...)
      (let* ([newenv (cenv-extend cenv (%map-cons name trans-spec) SYNTAX)]
-            [trans (map (match-lambda*
-                          [(n ('syntax-rules (lit ...) rule ...))
-                           (compile-syntax-rules n lit rule
-                                                 (cenv-module cenv)
-                                                 (cenv-frames newenv))]
-                          [_ (error "syntax-error: malformed transformer-spec:"
-                                    spec)])
+            [trans (map (lambda (n x)
+                          (pass1/eval-macro-rhs
+                           'letrec-syntax x
+                           (cenv-add-name newenv (variable-name n))))
                         name trans-spec)])
        (for-each set-cdr! (cdar (cenv-frames newenv)) trans)
        (pass1/body body newenv))]
     [_ (error "syntax-error: malformed letrec-syntax:" form)]))
+
+(define-pass1-syntax (syntax-rules form cenv) :null
+  (match form
+    [(_ (literal ...) rule ...)
+     ($const (compile-syntax-rules (cenv-exp-name cenv) literal rule
+                                   (cenv-module cenv)
+                                   (cenv-frames cenv)))]
+    [_ (error "syntax-error: malformed syntax-rules:" form)]))
 
 ;; If family ........................................
 

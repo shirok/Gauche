@@ -319,6 +319,18 @@
                       (set! y (* y 2)))))
 
 ;;----------------------------------------------------------------------
+;; non-syntax-rule transformers
+
+(test-section "transformers other than syntax-rules")
+
+(define-syntax xif if)
+(test "xif" 'ok (lambda () (xif #f 'ng 'ok)))
+
+(define-syntax fi (syntax-rules () [(_ a b c) (xif a c b)]))
+(define-syntax xfi fi)
+(test "xfi" 'ok (lambda () (xfi #f 'ok 'ng)))
+
+;;----------------------------------------------------------------------
 ;; local syntactic bindings.
 
 (test-section "local syntactic bindings")
@@ -425,6 +437,15 @@
         (define the-procedure
           (let-syntax((l(syntax-rules()((l((x(y ...))...)b ...)(let-syntax((x (syntax-rules()y ...))...) b ...)))))(l('(('(a b ...)(lambda a b ...)))`((`(a b c)(if a b c))(`(a)(car a))),((,(a b)(set! a b))(,(a)(cdr a))),@((,@z(call-with-current-continuation z))))'((ls)('((s)('((i) ('((d)('((j)('((c)('((p)('((l)('(()(l l))))'((k)`((pair?,(p))('((c) ,(p(append,(,(p))(d c)))(k k))(c`(p)`(,(p))c))`(p)))))(cons(d)(map d ls))))'((x y c),@'((-)(s x y null? - s)(j x y c)))))'((x y c)('((q)('((f)(cons`(q)(c((f x)x)((f y)y)c)))'((h)`((eq? q h)'((x),(x)) i)))),@'((-)(s x y'((z)(>=`(z)(sqrt(*`(x)`(y)))))- s))))))list)) '((z)z)))'((x y p k l),@'((-)`((p x)(k y)(l y x'((z)`((p z)-(- #f)))k l)))))))))
         (the-procedure '(5 1 9 3))))
+
+
+(test "let-syntax, rebinding syntax" 'ok
+      (lambda ()
+        (let-syntax ([xif if] [if when]) (xif #f 'ng 'ok))))
+
+(test "let-syntax, rebinding macro" 'ok
+      (lambda ()
+        (let-syntax ([if fi]) (if #f 'ok 'ng))))
 
 ;;----------------------------------------------------------------------
 ;; macro and internal define
@@ -893,5 +914,18 @@
       (lambda () (macroexpand '(foo 1))))
 (test "macroexpand-1" '(bar 1 1)
       (lambda () (macroexpand-1 '(foo 1))))
+
+;;----------------------------------------------------------------------
+;; not allowing first-class macro
+
+(test-section "failure cases")
+
+(define-macro (bad-if a b c) `(,if ,a ,b ,c))
+(test "reject first-class syntax usage" (test-error)
+      (lambda () (bad-if #t 'a 'b)))
+
+(define-macro (bad-fi a b c) `(,fi ,a ,b ,c))
+(test "reject first-class macro usage" (test-error)
+      (lambda () (bad-fi #t 'a 'b)))
 
 (test-end)

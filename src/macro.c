@@ -913,9 +913,6 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj literals, ScmObj rules,
     ScmSyntaxRules *sr;
 
     if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
-    else if (!SCM_SYMBOLP(name)) {
-        Scm_Error("symbol required, but got %S", name);
-    }
     if (!SCM_MODULEP(mod)) Scm_Error("module required, but got %S", mod);
     sr = compile_rules(name, literals, rules, SCM_MODULE(mod), env);
     return Scm_MakeMacro(SCM_SYMBOL(name), synrule_transform, (void*)sr);

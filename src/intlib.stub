@@ -235,6 +235,7 @@
     ))
 
 (define-cproc macro? (obj) ::<boolean> SCM_MACROP)
+(define-cproc syntax? (obj) ::<boolean> SCM_SYNTAXP)
 
 (define-cproc make-toplevel-closure (code::<compiled-code>)
   (result (Scm_MakeClosure (SCM_OBJ code) NULL)))

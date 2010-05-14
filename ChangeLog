@@ -1,5 +1,22 @@
 2010-05-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (define-syntax, let-syntax, letrec-syntax)
+	  (syntax-rules, pass1/eval-macro-rhs): Generalize syntactic
+	  binding as evaluating rhs in compile-time environment.  The
+	  syntactic keyword is bound to the resulting macro transformer.
+	  This is the first step to open up variations of macro
+	  transfomers other than syntax-rules.   Now syntax-rules are
+	  implemented as first-class compile-time syntax, and eventually
+	  will become just one of ordinary macro transformers.
+	  (compile): Enable to take CENV as the second argument.
+	  (pass1): Adjusted to expect resolution of local syntactic
+	  bindings be #<syntax>.  This happens when let-syntax etc.
+	  are used to add aliases, e.g. (let-syntax ((xif if)) (xif ...)).
+	* src/macro.c (Scm_CompileSyntaxRules): allow NAME to be #f
+	  for it may be so when syntax-rules is used stand-alone.
+	* src/intlib.stub (syntax?): Added.  Note: The name syntax? may
+	  be renamed, for it is confusing with syntax-case's use of "syntax".
+
 	* src/port.c (Scm_MakePortWithFd): Set seeker if the given fd is
 	  seekable.  For example, Scm_SysMkstemp calls this function on
 	  an fd associated to a file, so it is natural to be seekable.
