@@ -103,7 +103,7 @@
 (test* "let-args (foo)" 3
        (let-args '("--foo" "3") ((foo "foo=n" 9)) foo))
 
-(test* "let-args (foo)" (test-error)
+(test* "let-args (foo)" (test-error <parseopt-error>)
        (let-args '("--foof" "3") ((foo "foo=n" 9)) foo))
 
 (test* "let-args (foo)" 3
@@ -125,7 +125,7 @@
             (baz "baz=si"))
          baz))
 
-(test* "let-args (baz)" (test-error)
+(test* "let-args (baz)" (test-error <parseopt-error>)
        (let-args '("--foo" "3" "--baz" "4")
            ((foo "foo=n" 9)
             (bar "bar")

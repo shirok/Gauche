@@ -1,3 +1,10 @@
+2010-05-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/parseopt.scm (build-option-parser): Let let-args raise
+	  an error of condition type <parseopt-error> for invalid arguments,
+	  so that the program can capture this particular type of runtime
+	  error.
+
 2010-05-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (define-syntax, let-syntax, letrec-syntax)

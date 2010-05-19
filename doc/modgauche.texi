@@ -6868,6 +6868,38 @@ command line arguments match an option spec @code{"prefix=s"}.
 --prefix=/home/shiro
 @end example
 
+@subheading Error handling
+
+@deftp {Condition Type} <parseopt-error>
+@c EN
+When @code{let-args} encounters an argument that cannot be
+processed as specified by option specs, an error of condition type
+@code{<parseopt-error>} is raised.   The cases include
+when a mandatory option argument is missing, or when
+an option argument has a wrong type.
+@c JP
+@code{let-args}が、@code{option-spec}に従わない引数を見つけた場合は、
+コンディションタイプ@code{<parseopt-error>}のエラーを投げます。
+例えば、必須のオプション引数が与えられていなかったり、異なる型であった
+場合などです。
+@c COMMON
+
+@example
+(let-args '("-a" "foo") ((a "a=i")) ; option a requires integer
+  (list a))
+ @result{} @r{parseopt-error}
+@end example
+
+@c EN
+Note that this condition is about parsing the given @var{args}.
+If an invalid @var{option-spec} is given,
+an ordinary error is thrown.
+@c JP
+このコンディションはあくまで@var{args}に渡された引数をパーズする際に発生するものです。
+@var{option-spec}が不正であった場合は通常のエラーが投げられます。
+@c COMMON
+@end deftp
+
 @subheading Examples
 
 @c EN

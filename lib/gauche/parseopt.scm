@@ -36,8 +36,13 @@
   (use srfi-1)
   (use srfi-2)
   (use srfi-13)
-  (export make-option-parser parse-options let-args))
+  (export make-option-parser parse-options let-args <parseopt-error>))
 (select-module gauche.parseopt)
+
+;; This error is thrown when the given argument doesn't follow the spec.
+;; (An error in the spec itself is thrown as an ordinary error.)
+(define-condition-type <parseopt-error> <error> #f
+  (option-name))
 
 ;; Represents each option info
 (define-class <option-spec> ()
@@ -93,32 +98,37 @@
 (define (get-optargs optspec args)
   (define (get-number arg)
     (or (string->number arg)
-        (errorf "a number is required for option ~a, but got ~a"
-                (ref optspec 'name) arg)))
+        (errorf <parseopt-error> :option-name (~ optspec 'name)
+                "a number is required for option ~a, but got ~a"
+                (~ optspec 'name) arg)))
   (define (get-real arg)
     (or (and-let* ([num (string->number arg)]
                    [ (real? num) ])
           (exact->inexact num))
-        (errorf "a real number is required for option ~a, but got ~a"
-                (ref optspec 'name) arg)))
+        (errorf <parseopt-error> :option-name (~ optspec'name)
+                "a real number is required for option ~a, but got ~a"
+                (~ optspec 'name) arg)))
   (define (get-integer arg)
     (or (and-let* ([num (string->number arg)]
                    [ (exact? num) ])
           num)
-        (errorf "an integer is required for option ~a, but got ~a"
-                (ref optspec 'name) arg)))
+        (errorf <parseopt-error> :option-name (~ optspec'name)
+                "an integer is required for option ~a, but got ~a"
+                (~ optspec 'name) arg)))
   (define (get-sexp arg)
     (guard (e [(<read-error> e)
-               (errorf "the argument for option ~a is not valid sexp: ~s"
-                       (ref optspec 'name) arg)])
+               (errorf <parseopt-error> :option-name (~ optspec'name)
+                       "the argument for option ~a is not valid sexp: ~s"
+                       (~ optspec 'name) arg)])
       (read-from-string arg)))
   (define (process-args)
-    (let loop ((spec (ref optspec 'args))
+    (let loop ((spec (~ optspec 'args))
                (args args)
                (optargs '()))
       (cond [(null? spec) (values (reverse! optargs) args)]
-            [(null? args) (error "running out the arguments for option"
-                                 (ref optspec 'name))]
+            [(null? args) (error <parseopt-error> :option-name (~ optspec'name)
+                                 "running out the arguments for option"
+                                 (~ optspec 'name))]
             [else
              (case (car spec)
                [(#\s) (loop (cdr spec) (cdr args) (cons (car args) optargs))]
@@ -135,10 +145,10 @@
                [else (error "unknown option argument spec:" (car spec))])])
       ))
 
-  (if (ref optspec 'arg-optional?)
+  (if (~ optspec 'arg-optional?)
     (if (or (null? args)
             (#/^-/ (car args)))
-      (values (make-list (length (ref optspec 'args)) #f) args)
+      (values (make-list (length (~ optspec 'args)) #f) args)
       (process-args))
     (process-args))
   )
@@ -148,11 +158,11 @@
   (let loop ((args args))
     (receive (option nextargs) (next-option args)
       (if option
-        (cond [(find (lambda (e) (equal? option (ref e 'name))) speclist)
+        (cond [(find (lambda (e) (equal? option (~ e'name))) speclist)
                => (lambda (entry)
                     (receive (optargs nextargs)
                         (get-optargs entry nextargs)
-                      (apply (ref entry 'handler) optargs)
+                      (apply (~ entry'handler) optargs)
                       (loop nextargs)))]
               [else (fallback option nextargs loop)])
         nextargs))))
@@ -177,7 +187,8 @@
     ((_ () specs)
      (build-option-parser (list . specs)
                           (lambda (option args looper)
-                            (error "unrecognized option:" option))))
+                            (error <parseopt-error> :option-name #f
+                                   "unrecognized option:" option))))
     ((_ ((else args . body)) specs)
      (build-option-parser (list . specs) (lambda args . body)))
     ((_ ((else => proc)) specs)
