@@ -4101,7 +4101,7 @@ the option procedure is called as follows:
 @c JP
 与えられたオプション仕様 @var{options} および、ふたつの手続き
 @var{unrecognized-proc} と @var{operand-proc} とにしたがって、プログラム
-引数 @var{args} を左から右へ処理ます。
+引数 @var{args} を左から右へ処理します。
 
 @var{options} はオプションオブジェクトのリストで以下のようなものです。
 各オプションオブジェクトはオプションの名前、そのオプションが引数を
