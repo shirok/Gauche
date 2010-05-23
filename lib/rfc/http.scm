@@ -186,16 +186,14 @@
     (let1 sink (open-output-string)
       ;; TODO: check headers for encoding
       (lambda (remote size)
-        (if (= size 0)
-          (get-output-string sink)
-          (copy-port remote sink :size size))))))
+        (cond [(= size 0) (get-output-string sink)]
+              [(> size 0) (copy-port remote sink :size size)])))))
 
 (define (http-oport-receiver sink flusher)
   (lambda (code hdrs)
     (lambda (remote size)
-      (if (= size 0)
-        (flusher sink hdrs)
-        (copy-port remote sink :size 0)))))
+      (cond [(= size 0) (flusher sink hdrs)]
+            [(> size 0) (copy-port remote sink :size size)]))))
 
 ;;
 ;; Shortcuts for specific requests.
