@@ -1,3 +1,12 @@
+2010-05-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (http-request): Changed main API of rfc.http.
+	  High-level APIs are consolidated to http-request, instead of
+	  having separate calls for each request method, since method
+	  is often parameterized.  SINK and FLUSHER arguments to handle
+	  response is deprecated and superseded by RECEIVER argument
+	  for flexibility.
+
 2010-05-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/parseopt.scm (build-option-parser): Let let-args raise

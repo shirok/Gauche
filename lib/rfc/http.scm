@@ -57,12 +57,16 @@
   (export <http-error>
           http-user-agent make-http-connection http-compose-query
           http-compose-form-data
+          
+          http-request http-string-receiver http-oport-receiver
+          
           http-get http-head http-post http-put http-delete
           http-default-auth-handler
           )
   )
 (select-module rfc.http)
 
+;; 
 (autoload rfc.mime
           mime-compose-message
           mime-compose-message-string
@@ -92,11 +96,11 @@
 ;;
 
 ;; Higher-level API is for conventional call-return API.
-;; The client program call for request, and gets the response.
-;; This family of APIs takes mandatory server and request-uri
-;; arguments, and optional keyword arguments.
 ;;
-;; The "server" argument maybe a string naming the server (and
+;; The METHOD argument specifies the http request method by a symbol.
+;; GET, HEAD, POST, PUT and DELETE is currently supported.
+;;
+;; The SERVER argument maybe a string naming the server (and
 ;; optionally a port number by the format of "server:port"), or
 ;; an <http-connection> object.  Using a server name is suitable
 ;; for easy one-shot http access; the connection and related states
@@ -105,21 +109,27 @@
 ;; as persistent connection and authentication tokens, suitable for
 ;; a series of communications to a server.
 ;;
-;; The request-uri argument can be a string as specified in RFC2616,
+;; The REQUEST-URI argument can be a string as specified in RFC2616,
 ;; or a list in the form of (<path> (<name> <value>) ...).  In the
 ;; latter form, (<name> <value>) assoc list is converted into a
 ;; url query form as defined in HTML4 (application/x-www-form-urlencoded)
 ;; and appended to <path>.
 ;;
-;; The body argument must be a string representing the request body.
+;; The keyword arguments are handled by various low-level routines,
+;; and here's the summary:
 ;;
-;; The options are handled by various low-level routines, and here's
-;; the summary:
-;;
-;;   sink    - a port where the response body is written to.
-;;   flusher - a procedure called once a response body is fully retrieved
-;;             and written to the sink.  The value returned by flusher
-;;             becomes the return value of http-get and http-post.
+;;   request-body - gives the body.
+;;   receiver - A procedure that handles the response.
+;;              It takes two arguments: response-code and response headers.
+;;              It must return a procedure RETRIEVER that takes two arguments,
+;;              an input port to read the response, and an integer size of
+;;              the available data in the port.  The retriever may be 
+;;              called more than once.  The size is always nonnegative
+;;              except the last call, in which zero size marks the end of
+;;              the response.  If an error occurs during processing the
+;;              response, the retriever is called with negative size value.
+;;              The return value of the call with size=0 will be the
+;;              return value of `http-request'.
 ;;   host    - the host name passed to the 'host' header field.
 ;;   secure  - if true, using secure connection (via external stunnel
 ;;             process).
@@ -132,20 +142,91 @@
 ;;
 ;; Other unrecognized options are passed as request headers.
 
+(define (http-request method server request-uri
+                      :key (host #f)
+                           (no-redirect #f)
+                           auth-handler
+                           auth-user
+                           auth-password
+                           proxy
+                           extra-headers
+                           (user-agent (http-user-agent))
+                           (secure #f)
+                           (request-body #f)
+                           (receiver (http-string-receiver))
+                           (enc :request-encoding (gauche-character-encoding))
+                      :allow-other-keys opts)
+  (let1 conn (ensure-connection server auth-handler auth-user auth-password
+                                proxy secure extra-headers)
+    (receive (body opts) (canonical-body request-body opts enc)
+      (let loop ([history '()]
+                 [host host]
+                 [request-uri (ensure-request-uri request-uri enc)])
+        (receive (code headers body)
+            (request-response method conn host request-uri body receiver
+                              `(:user-agent ,user-agent ,@opts))
+          (or (and-let* ([ (not no-redirect) ]
+                         [ (string-prefix? "3" code) ]
+                         [loc (assoc "location" headers)])
+                (receive (uri proto new-server path*)
+                    (canonical-uri conn (cadr loc) (ref conn'server))
+                  (when (or (member uri history)
+                            (> (length history) 20))
+                    (errorf <http-error> "redirection is looping via ~a" uri))
+                  (loop (cons uri history)
+                        (ref (redirect conn proto new-server)'server)
+                        path*)))
+              (values code headers body)))))))
+
+;;
+;; Pre-defined receivers
+;;
+(define (http-string-receiver)
+  (lambda (code hdrs)
+    (let1 sink (open-output-string)
+      ;; TODO: check headers for encoding
+      (lambda (remote size)
+        (if (= size 0)
+          (get-output-string sink)
+          (copy-port remote sink :size size))))))
+
+(define (http-oport-receiver sink flusher)
+  (lambda (code hdrs)
+    (lambda (remote size)
+      (if (= size 0)
+        (flusher sink hdrs)
+        (copy-port remote sink :size 0)))))
+
+;;
+;; Shortcuts for specific requests.
+;;
 (define (http-get server request-uri . options)
-  (http-generic 'GET server request-uri #f options))
+  (apply %http-request-adaptor 'GET server request-uri #f options))
 
 (define (http-head server request-uri . options)
-  (http-generic 'HEAD server request-uri #f options))
+  (apply %http-request-adaptor 'HEAD server request-uri #f options))
 
 (define (http-post server request-uri body . options)
-  (http-generic 'POST server request-uri body options))
+  (apply %http-request-adaptor 'POST server request-uri body options))
 
 (define (http-put server request-uri body . options)
-  (http-generic 'PUT server request-uri body options))
+  (apply %http-request-adaptor 'PUT server request-uri body options))
 
 (define (http-delete server request-uri . options)
-  (http-generic 'DELETE server request-uri #f options))
+  (apply %http-request-adaptor 'DELETE server request-uri #f options))
+
+;; Adaptor to the new API.  Converts :sink and :flusher arguments,
+;; which are superseded by :receiver arguments.
+(define (%http-request-adaptor method server request-uri body
+                               :key receiver (sink #f) (flusher #f)
+                               :allow-other-keys opts)
+  (define recvr
+    (if (or sink flusher)
+      (http-oport-receiver (or sink (open-output-string))
+                           (or flusher (^(s h) (get-output-string s))))
+      receiver))
+  (apply http-request method server request-uri
+         :request-body body :receiver recvr opts))
 
 ;;==============================================================
 ;; HTTP connection context
@@ -270,40 +351,6 @@
 ;; internal utilities
 ;;
 
-(define (http-generic request server request-uri request-body options)
-  (let-keywords options ([host #f]
-                         [no-redirect #f]
-                         [auth-handler  (undefined)]
-                         [auth-user     (undefined)]
-                         [auth-password (undefined)]
-                         [proxy         (undefined)]
-                         [extra-headers (undefined)]
-                         [user-agent (http-user-agent)]
-                         [secure #f]
-                         [enc :request-encoding (gauche-character-encoding)]
-                         . opts)
-    (let1 conn (ensure-connection server auth-handler auth-user auth-password
-                                  proxy secure extra-headers)
-      (receive (body opts) (canonical-body request-body opts enc)
-        (let loop ([history '()]
-                   [host host]
-                   [request-uri (ensure-request-uri request-uri enc)])
-          (receive (code headers body)
-              (request-response request conn host request-uri body
-                                `(:user-agent ,user-agent ,@opts))
-            (or (and-let* ([ (not no-redirect) ]
-                           [ (string-prefix? "3" code) ]
-                           [loc (assoc "location" headers)])
-                  (receive (uri proto new-server path*)
-                      (canonical-uri conn (cadr loc) (ref conn'server))
-                    (when (or (member uri history)
-                              (> (length history) 20))
-                      (errorf <http-error> "redirection is looping via ~a" uri))
-                    (loop (cons uri history)
-                          (ref (redirect conn proto new-server)'server)
-                          path*)))
-                (values code headers body))))))))
-
 (define (ensure-request-uri request-uri enc)
   (match request-uri
     [(? string?) request-uri]
@@ -357,27 +404,21 @@
                (proc (socket-input-port s) (socket-output-port s))
              (socket-close s)))]))
 
-(define (request-response request conn host request-uri request-body options)
+(define (request-response method conn host request-uri request-body
+                          receiver options)
   (define no-body-replies '("204" "304"))
   (receive (host uri)
       (consider-proxy conn (or host (ref conn'server)) request-uri)
     (with-connection
      conn
      (lambda (in out)
-       ;; NB: we need better way to sort out keyword options that shouldn't
-       ;; be passed to the request header.
-       (send-request out request host uri request-body
-                     (delete-keywords '(:sink :flusher) options))
+       (send-request out method host uri request-body options)
        (receive (code headers) (receive-header in)
          (values code
                  headers
-                 (and (not (eq? request 'HEAD))
+                 (and (not (eq? method 'HEAD))
                       (not (member code no-body-replies))
-                      (let-keywords options
-                          ((sink    (open-output-string))
-                           (flusher (lambda (sink _) (get-output-string sink)))
-                           . #f)
-                        (receive-body in headers sink flusher)))))))))
+                      (receive-body in headers (receiver code headers)))))))))
 
 ;; canonicalize uri for the sake of redirection.
 ;; URI is a request-uri given to the API, or the redirect location specified
@@ -405,10 +446,10 @@
     (values host uri)))
 
 ;; send
-(define (send-request out request host uri body options)
-  (display #`",request ,uri HTTP/1.1\r\n" out)
+(define (send-request out method host uri body options)
+  (display #`",method ,uri HTTP/1.1\r\n" out)
   (display #`"Host: ,|host|\r\n" out)
-  (case request
+  (case method
     ((POST PUT)
      ;; for now, we don't support chunked encoding in POST method.
      (send-request-headers (list* :content-length (string-size body) options)
@@ -440,40 +481,45 @@
         (else
          (error <http-error> "bad reply from server" line))))
 
-(define (receive-body remote headers sink flusher)
-  (cond ((assoc "content-length" headers)
-         => (lambda (p)
-              (receive-body-nochunked (x->integer (cadr p)) remote sink)))
-        ((assoc "transfer-encoding" headers)
-         => (lambda (p)
-              (if (equal? (cadr p) "chunked")
-                  (receive-body-chunked remote sink)
-                  (error <http-error> "unsupported transfer-encoding" (cadr p)))))
-        (else (copy-port remote sink)))
-  (flusher sink headers))
-
-(define (receive-body-nochunked size remote sink)
-  (when (positive? size) (copy-port remote sink :size size)))
+(define (receive-body remote headers receive-handler)
+  (cond [(assoc "content-length" headers)
+         => (^p (let1 size (x->integer (cadr p))
+                  (when (> size 0) (receive-handler remote size))
+                  (receive-handler remote 0)))]
+        [(assoc "transfer-encoding" headers)
+         => (^p (unless (equal? (cadr p) "chunked")
+                  (error <http-error> "unsupported transfer-encoding" (cadr p)))
+                (receive-body-chunked remote receive-handler))]
+        [else
+         ;; length is unknown.  we should gradually read from remote as
+         ;; the data arrives.  but for now, we take a dumb approach---read
+         ;; everything into a string, then call the receiver with a string
+         ;; input port.
+         (let* ([content (port->string remote)]
+                [size (string-size content)]
+                [p (open-input-string content)])
+           (when (> size 0) (receive-handler p size))
+           (receive-handler p 0))]))
 
 ;; NB: chunk extension and trailer are ignored for now.
-(define (receive-body-chunked remote sink)
-  (let loop ((line (read-line remote)))
+(define (receive-body-chunked remote receive-handler)
+  (let loop ([line (read-line remote)])
     (when (eof-object? line)
       (error <http-error> "chunked body ended prematurely"))
     (rxmatch-if (#/^([[:xdigit:]]+)/ line) (#f digits)
       (let1 chunk-size (string->number digits 16)
         (if (zero? chunk-size)
           ;; finish reading trailer
-          (do ((line (read-line remote) (read-line remote)))
-              ((or (eof-object? line) (string-null? line)))
+          (do ([line (read-line remote) (read-line remote)])
+              [(or (eof-object? line) (string-null? line))
+               (receive-handler remote 0)]
             #f)
           (begin
-            (copy-port remote sink :size chunk-size)
+            (receive-handler remote chunk-size)
             (read-line remote) ;skip the following CRLF
             (loop (read-line remote)))))
-      ;; something wrong
-      (error <http-error> "bad line in chunked data:" line))
-    ))
+      ;; something's wrong
+      (error <http-error> "bad line in chunked data:" line))))
 
 ;;==============================================================
 ;; secure agent handling
