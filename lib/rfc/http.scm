@@ -58,7 +58,9 @@
           http-user-agent make-http-connection http-compose-query
           http-compose-form-data
           
-          http-request http-string-receiver http-oport-receiver
+          http-request
+          http-string-receiver http-oport-receiver http-null-receiver
+          http-file-receiver ;http-cond-receiver
           
           http-get http-head http-post http-put http-delete
           http-default-auth-handler
@@ -189,11 +191,53 @@
         (cond [(= size 0) (get-output-string sink)]
               [(> size 0) (copy-port remote sink :size size)])))))
 
+(define (http-null-receiver)
+  (lambda (code hdrs) (lambda (remote size) #f)))
+
 (define (http-oport-receiver sink flusher)
   (lambda (code hdrs)
     (lambda (remote size)
       (cond [(= size 0) (flusher sink hdrs)]
             [(> size 0) (copy-port remote sink :size size)]))))
+
+(define (http-file-receiver filename :key (temporary #f))
+  (lambda (code hdrs)
+    (receive (port tmpname) (sys-mkstemp filename)
+      (lambda (remote size)
+        (cond [(= size 0)
+               (close-output-port port)
+               (if temporary
+                 tmpname
+                 (begin (sys-rename tmpname filename) filename))]
+              [(> size 0) (copy-port remote port :size size)]
+              [else (close-output-port port) (sys-unlink tmpname)])))))
+
+(define-syntax http-cond-receiver
+  (syntax-rules ()
+    [(_ clause ...)
+     (lambda (code hdrs)
+       (http-cond-receiver-helper c h (clause ...)))]))
+
+(define-syntax http-cond-receiver-helper
+  (syntax-rules (else =>)
+    [(_ code hdrs () ) (http-null-receiver)]
+    [(_ code hdrs ((else . expr))) (begin . expr)]
+    [(_ code hdrs ((cc => proc) . rest))
+     (if (match-status-code? cc code)
+       (proc code hdrs)
+       (http-cond-receiver-handler code hdrs rest))]
+    [(_ code hdrs ((cc . expr) . rest))
+     (if (match-status-code? cc code '(cc . expr))
+       (begin . expr)
+       (http-cond-receiver-handler code hdrs rest))]
+    [(_ code hdrs (other . rest))
+     (syntax-error "invalid clause in http-cond-receiver" other)]))
+
+(define (match-status-code? pattern code clause)
+  (cond [(string? pattern) (equal? pattern code)]
+        [(regexp? pattern) (rxmatch pattern code)]
+        [else (error "invalid pattern in a clause of http-cond-receiver"
+                     clause)]))
 
 ;;
 ;; Shortcuts for specific requests.

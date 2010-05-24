@@ -794,7 +794,9 @@ Content-Length: 4349
 (define (alist-equal? alis1 alis2)
   (define (%sort alis)
     (sort alis (lambda (a b) (string<? (car a) (car b)))))
-  (equal? (%sort alis1) (%sort alis2)))
+  (and (list? alis1)
+       (list? alis2)
+       (equal? (%sort alis1) (%sort alis2))))
 
 (define *simple-httpd*
   '(
@@ -868,43 +870,79 @@ Content-Length: 4349
   (read-line (process-output p)) ; handshake
   )
 
-(test* "http-get" `(("method" "GET")
-                    ("request-uri" "/get")
-                    ("request-body" "")
-                    ("host" ,#`"localhost:,*http-port*")
-                    ("user-agent" ,#`"gauche.http/,(gauche-version)")
-                    ("my-header" "foo"))
-       (receive (code headers body)
-           (http-get #`"localhost:,*http-port*" "/get"
-             :my-header "foo")
-         (and (equal? code "200")
-              (equal? headers '(("content-type" "text/plain")))
-              (read-from-string body)))
-       alist-equal?)
+(let1 expected `(("method" "GET")
+                  ("request-uri" "/get")
+                  ("request-body" "")
+                  ("host" ,#`"localhost:,*http-port*")
+                  ("user-agent" ,#`"gauche.http/,(gauche-version)")
+                  ("my-header" "foo"))
+  (test* "http-get, default string receiver" expected
+         (receive (code headers body)
+             (http-request 'GET #`"localhost:,*http-port*" "/get"
+                           :my-header "foo")
+           (and (equal? code "200")
+                (equal? headers '(("content-type" "text/plain")))
+                (read-from-string body)))
+         alist-equal?)
+  (test* "http-get, custom receiver" expected
+         (values-ref 
+          (http-request 'GET #`"localhost:,*http-port*" "/get"
+                        :receiver (let1 result #f
+                                    (lambda (code hdrs)
+                                      (lambda (port size)
+                                        (if (= size 0)
+                                          result
+                                          (set! result (read port))))))
+                        :my-header "foo")
+          2)
+         alist-equal?)
+  (sys-unlink "test.o")
+  (test* "http-get, file receiver" expected
+         (let1 f (values-ref
+                  (http-request 'GET  #`"localhost:,*http-port*" "/get"
+                               :receiver (http-file-receiver "test.o")
+                               :my-header :foo)
+                  2)
+           (and (equal? f "test.o")
+                (with-input-from-file "test.o" read)))
+         alist-equal?)
+  (sys-unlink "test.o")
+  (test* "http-get, file receiver (tmp)" expected
+         (let1 f (values-ref
+                  (http-request 'GET  #`"localhost:,*http-port*" "/get"
+                               :receiver (http-file-receiver "test.o"
+                                                             :temporary #t)
+                               :my-header :foo)
+                  2)
+           (and (not (equal? f "test.o"))
+                (begin0 (with-input-from-file f read)
+                  (sys-unlink f))))
+         alist-equal?)
+  )
 
 (test* "http-get (redirect)" "/redirect02"
        (receive (code headers body)
-           (http-get #`"localhost:,*http-port*" "/redirect01")
+           (http-request 'GET #`"localhost:,*http-port*" "/redirect01")
          (cond ((assoc-ref (read-from-string body) "request-uri")
                 => car))))
 
 (test* "http-get (redirect)" "/redirect12"
        (receive (code headers body)
-           (http-get #`"localhost:,*http-port*" "/redirect11")
+           (http-request 'GET #`"localhost:,*http-port*" "/redirect11")
          (cond ((assoc-ref (read-from-string body) "request-uri")
                 => car))))
 
 (test* "http-get (loop)" (test-error <http-error>)
-       (http-get #`"localhost:,*http-port*" "/loop1"))
+       (http-request 'GET #`"localhost:,*http-port*" "/loop1"))
 
 (test* "http-get (chunked body)" "OK"
        (receive (code headers body)
-           (http-get #`"localhost:,*http-port*" "/chunked")
+           (http-request 'GET #`"localhost:,*http-port*" "/chunked")
          body))
 
 (test* "http-head" #t
        (receive (code headers body)
-           (http-head #`"localhost:,*http-port*" "/")
+           (http-request 'HEAD #`"localhost:,*http-port*" "/")
          (and (equal? code "200")
               (equal? headers '(("content-type" "text/plain")))
               (not body))))
@@ -916,7 +954,8 @@ Content-Length: 4349
                      ("user-agent" ,#`"gauche.http/,(gauche-version)")
                      ("request-body" "data"))
        (receive (code headers body)
-           (http-post #`"localhost:,*http-port*" "/post" "data")
+           (http-request 'POST #`"localhost:,*http-port*" "/post"
+                         :request-body "data")
          (and (equal? code "200")
               (equal? headers '(("content-type" "text/plain")))
               (read-from-string body)))
@@ -924,8 +963,8 @@ Content-Length: 4349
 
 (test* "http-post (multipart/form-data)" '(("a" "b") ("c" "d"))
        (receive (code headers body)
-           (http-post #`"localhost:,*http-port*" "/post"
-                      '(("a" "b") ("c" "d")))
+           (http-request 'POST #`"localhost:,*http-port*" "/post"
+                         :request-body '(("a" "b") ("c" "d")))
          (and-let* ([ (equal? code "200") ]
                     [ (equal? headers '(("content-type" "text/plain"))) ]
                     [r (read-from-string body)]
@@ -946,7 +985,7 @@ Content-Length: 4349
 
 (test* "<http-error>" #t
        (guard (e (else (is-a? e <http-error>)))
-         (http-get #`"localhost:,*http-port*" "/exit")))
+         (http-request 'GET #`"localhost:,*http-port*" "/exit")))
 
 (sys-waitpid -1)
 
