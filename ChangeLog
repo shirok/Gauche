@@ -1,3 +1,9 @@
+2010-05-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (http-request): Reviseed RECEIVER protocol;
+	  now it takes the total response size in the third arg.  It allows
+	  the retriever to track the progress.
+
 2010-05-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-request): Changed main API of rfc.http.

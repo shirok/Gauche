@@ -888,7 +888,7 @@ Content-Length: 4349
          (values-ref 
           (http-request 'GET #`"localhost:,*http-port*" "/get"
                         :receiver (let1 result #f
-                                    (lambda (code hdrs)
+                                    (lambda (code hdrs total)
                                       (lambda (port size)
                                         (if (= size 0)
                                           result

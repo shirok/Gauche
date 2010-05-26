@@ -122,16 +122,17 @@
 ;;
 ;;   request-body - gives the body.
 ;;   receiver - A procedure that handles the response.
-;;              It takes two arguments: response-code and response headers.
-;;              It must return a procedure RETRIEVER that takes two arguments,
-;;              an input port to read the response, and an integer size of
-;;              the available data in the port.  The retriever may be 
-;;              called more than once.  The size is always nonnegative
-;;              except the last call, in which zero size marks the end of
-;;              the response.  If an error occurs during processing the
-;;              response, the retriever is called with negative size value.
-;;              The return value of the call with size=0 will be the
-;;              return value of `http-request'.
+;;             It takes three arguments: response-code, response headers,
+;;             and a total response size if known (#f otherwise).
+;;             It must return a procedure RETRIEVER that takes two arguments,
+;;             an input port to read the response, and an integer size of
+;;             the available data in the port.  The retriever may be 
+;;             called more than once.  The size is always nonnegative
+;;             except the last call, in which zero size marks the end of
+;;             the response.  If an error occurs during processing the
+;;             response, the retriever is called with negative size value.
+;;             The return value of the call with size=0 will be the
+;;             return value of `http-request'.
 ;;   host    - the host name passed to the 'host' header field.
 ;;   secure  - if true, using secure connection (via external stunnel
 ;;             process).
@@ -182,9 +183,12 @@
 
 ;;
 ;; Pre-defined receivers
-;;
+;;  NB: Non-parametric receivers such as string receiver or null receiver
+;;  can skip an extra layer (e.g. (define (http-string-receiver code hdrs) ...))
+;;  but we make them in the same layer as other parametric receivers to avoid
+;;  confusion.
 (define (http-string-receiver)
-  (lambda (code hdrs)
+  (lambda (code hdrs total)
     (let1 sink (open-output-string)
       ;; TODO: check headers for encoding
       (lambda (remote size)
@@ -192,16 +196,16 @@
               [(> size 0) (copy-port remote sink :size size)])))))
 
 (define (http-null-receiver)
-  (lambda (code hdrs) (lambda (remote size) #f)))
+  (lambda (code hdrs total) (lambda (remote size) #f)))
 
 (define (http-oport-receiver sink flusher)
-  (lambda (code hdrs)
+  (lambda (code hdrs total)
     (lambda (remote size)
       (cond [(= size 0) (flusher sink hdrs)]
             [(> size 0) (copy-port remote sink :size size)]))))
 
 (define (http-file-receiver filename :key (temporary #f))
-  (lambda (code hdrs)
+  (lambda (code hdrs total)
     (receive (port tmpname) (sys-mkstemp filename)
       (lambda (remote size)
         (cond [(= size 0)
@@ -215,22 +219,22 @@
 (define-syntax http-cond-receiver
   (syntax-rules ()
     [(_ clause ...)
-     (lambda (code hdrs)
-       (http-cond-receiver-helper c h (clause ...)))]))
+     (lambda (code hdrs total)
+       (http-cond-receiver-helper c h t (clause ...)))]))
 
 (define-syntax http-cond-receiver-helper
   (syntax-rules (else =>)
-    [(_ code hdrs () ) (http-null-receiver)]
-    [(_ code hdrs ((else . expr))) (begin . expr)]
-    [(_ code hdrs ((cc => proc) . rest))
+    [(_ code hdrs total () ) ((http-null-receiver) code hdrs total) ]
+    [(_ code hdrs total ((else . expr))) (begin . expr)]
+    [(_ code hdrs total ((cc => proc) . rest))
      (if (match-status-code? cc code)
-       (proc code hdrs)
-       (http-cond-receiver-handler code hdrs rest))]
-    [(_ code hdrs ((cc . expr) . rest))
+       (proc code hdrs total)
+       (http-cond-receiver-helper code hdrs total rest))]
+    [(_ code hdrs total ((cc . expr) . rest))
      (if (match-status-code? cc code '(cc . expr))
        (begin . expr)
-       (http-cond-receiver-handler code hdrs rest))]
-    [(_ code hdrs (other . rest))
+       (http-cond-receiver-helper code hdrs total rest))]
+    [(_ code hdrs total (other . rest))
      (syntax-error "invalid clause in http-cond-receiver" other)]))
 
 (define (match-status-code? pattern code clause)
@@ -460,7 +464,7 @@
                  headers
                  (and (not (eq? method 'HEAD))
                       (not (member code no-body-replies))
-                      (receive-body in headers (receiver code headers)))))))))
+                      (receive-body in code headers receiver))))))))
 
 ;; canonicalize uri for the sake of redirection.
 ;; URI is a request-uri given to the API, or the redirect location specified
@@ -523,25 +527,28 @@
         (else
          (error <http-error> "bad reply from server" line))))
 
-(define (receive-body remote headers receive-handler)
-  (cond [(assoc "content-length" headers)
-         => (^p (let1 size (x->integer (cadr p))
-                  (when (> size 0) (receive-handler remote size))
-                  (receive-handler remote 0)))]
-        [(assoc "transfer-encoding" headers)
-         => (^p (unless (equal? (cadr p) "chunked")
-                  (error <http-error> "unsupported transfer-encoding" (cadr p)))
-                (receive-body-chunked remote receive-handler))]
-        [else
-         ;; length is unknown.  we should gradually read from remote as
-         ;; the data arrives.  but for now, we take a dumb approach---read
-         ;; everything into a string, then call the receiver with a string
-         ;; input port.
-         (let* ([content (port->string remote)]
-                [size (string-size content)]
-                [p (open-input-string content)])
-           (when (> size 0) (receive-handler p size))
-           (receive-handler p 0))]))
+(define (receive-body remote code headers receiver)
+  (let* ([total   (and-let* ([p (assoc "content-length" headers)])
+                    (x->integer (cadr p)))]
+         [handler (receiver code headers total)])
+    (cond
+     [(assoc "transfer-encoding" headers)
+      => (^p (unless (equal? (cadr p) "chunked")
+               (error <http-error> "unsupported transfer-encoding" (cadr p)))
+             (receive-body-chunked remote handler))]
+     [total
+      (when (> total 0) (handler remote total))
+      (handler remote 0)]
+     [else
+      ;; length is unknown.  we should gradually read from remote as
+      ;; the data arrives.  but for now, we take a dumb approach---read
+      ;; everything into a string, then call the receiver with a string
+      ;; input port.
+      (let* ([content (port->string remote)]
+             [size (string-size content)]
+             [p (open-input-string content)])
+        (when (> size 0) (handler p size))
+        (handler p 0))])))
 
 ;; NB: chunk extension and trailer are ignored for now.
 (define (receive-body-chunked remote receive-handler)
