@@ -205,7 +205,12 @@
 (define-cproc uvector-swap-bytes! (v::<uvector> :optional (type::<symbol>? #f))
   (swap-bytes-common Scm_UVectorSwapBytesX v type))
 
-(define-cproc uvector-size (v::<uvector>) ::<int> Scm_UVectorSizeInBytes)
+(define-cproc uvector-size (v::<uvector>
+                            :optional (start::<int> 0) (end::<int> -1)) ::<int>
+  (let* ([len::int (SCM_UVECTOR_SIZE v)])
+    (SCM_CHECK_START_END start end len)
+    (result (* (- end start)
+               (Scm_UVectorElementSize (Scm_ClassOf (SCM_OBJ v)))))))
 
 (define-cproc read-block! (v::<uvector>
                            :optional (port::<input-port> (current-input-port))

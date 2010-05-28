@@ -1,3 +1,9 @@
+2010-05-28  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvlib.stub.tmpl (uvector-size): Allow start and end
+	  optional arguments, for the consistency with write-block.
+	  Also documented this function.
+
 2010-05-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-request): Reviseed RECEIVER protocol;

@@ -12264,6 +12264,37 @@ if you import @code{gauche.collection}
 @end example
 @end deftp
 
+@defun uvector-size uvector :optional start end
+@c EN
+This function can be applied to any type of uniform vectors, and
+returns the raw size of the @var{uvector} in number of octets.
+
+When @var{start} and/or @var{end} is/are given, the size of data
+between those indices are calculated.  The special value @code{-1}
+for @var{end} indicates the end of the vector.
+The returned value matches the number of octets to be written out
+by @code{(write-block @var{uvector} port @var{start} @var{end})}.
+@c JP
+この手続きは全てのユニフォームベクタに適用することができます。
+@var{uvector}のバイナリデータとしてのサイズをオクテット数で返します。
+
+@var{start}および/または@var{end}が与えられた場合は、
+これらのインデックスの間のデータについてのみサイズが計算されます。
+@var{end}には、ベクタ終端を示すために@code{-1}を与えることもできます。
+返される値は
+@code{(write-block @var{uvector} port @var{start} @var{end})} によって
+出力されるオクテット数と一致します。
+@c COMMON
+
+@example
+(uvector-size '#u8(1 2 3))        @result{} 3
+(uvector-size '#u64(1 2 3))       @result{} 24
+
+(uvector-size '#u32(0 1 2 3) 2)   @result{} 8
+(uvector-size '#u32(0 1 2 3) 0 1) @result{} 4
+@end example
+@end defun
+
 @deftp {Function} @var{TAG}vector-ref @r{@var{vec} @var{k} :optional @var{fallback}}
 @findex s8vector-ref
 @findex u8vector-ref
