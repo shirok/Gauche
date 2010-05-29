@@ -52,6 +52,9 @@
   (use rfc.uri)
   (use gauche.net)
   (use gauche.parameter)
+  (use gauche.charconv)
+  (use gauche.collection)
+  (use gauche.uvector)
   (use util.match)
   (use util.list)
   (export <http-error>
@@ -59,8 +62,10 @@
           http-compose-form-data
           
           http-request
-          http-string-receiver http-oport-receiver http-null-receiver
-          http-file-receiver ;http-cond-receiver
+          http-null-receiver http-string-receiver http-oport-receiver 
+          http-file-receiver http-cond-receiver
+          http-null-sender http-string-sender http-blob-sender
+          http-file-sender http-multipart-sender
           
           http-get http-head http-post http-put http-delete
           http-default-auth-handler
@@ -78,6 +83,8 @@
 (autoload gauche.process
           run-process process-input process-output
           process-wait process-kill)
+
+(autoload file.util file-size)
 
 ;;==============================================================
 ;; Conditions
@@ -133,6 +140,25 @@
 ;;             response, the retriever is called with negative size value.
 ;;             The return value of the call with size=0 will be the
 ;;             return value of `http-request'.
+;;             The default receiver retrieves the response body as a
+;;             string and returns it.
+;;   sender  - A procedure that handles sending the request body.
+;;             It takes one argument: tantative list of headers,
+;;             and the value given to :request-encoding argument.
+;;             It must return two values: The list of headers,
+;;             and a procedure DELIVERER.
+;;             If the sender intends to send the entire content at once,
+;;             it should add Content-Length header.  If the sender intends
+;;             to use chunked transfer, it must add
+;;             ("transfer-encoding" "chunked") header.  If neither headers
+;;             exist in the returned header list, an error is raised
+;;             and request is aborted.  Sender can add other headers,
+;;             e.g. content-type or mime-type.
+;;             DELIVERER takes two arguments, an output port and a procedure
+;;             INITIATOR.  What DELIVERER must do is to call INITIATOR
+;;             with the size of the chunk it's about to send, then feed
+;;             the data to the given port.  DELIVERER must return #t if
+;;             it has more data, or #f when it is done.
 ;;   host    - the host name passed to the 'host' header field.
 ;;   secure  - if true, using secure connection (via external stunnel
 ;;             process).
@@ -155,31 +181,30 @@
                            extra-headers
                            (user-agent (http-user-agent))
                            (secure #f)
-                           (request-body #f)
                            (receiver (http-string-receiver))
+                           (sender #f)
                            (enc :request-encoding (gauche-character-encoding))
                       :allow-other-keys opts)
   (let1 conn (ensure-connection server auth-handler auth-user auth-password
                                 proxy secure extra-headers)
-    (receive (body opts) (canonical-body request-body opts enc)
-      (let loop ([history '()]
-                 [host host]
-                 [request-uri (ensure-request-uri request-uri enc)])
-        (receive (code headers body)
-            (request-response method conn host request-uri body receiver
-                              `(:user-agent ,user-agent ,@opts))
-          (or (and-let* ([ (not no-redirect) ]
-                         [ (string-prefix? "3" code) ]
-                         [loc (assoc "location" headers)])
-                (receive (uri proto new-server path*)
-                    (canonical-uri conn (cadr loc) (ref conn'server))
-                  (when (or (member uri history)
-                            (> (length history) 20))
-                    (errorf <http-error> "redirection is looping via ~a" uri))
-                  (loop (cons uri history)
-                        (ref (redirect conn proto new-server)'server)
-                        path*)))
-              (values code headers body)))))))
+    (let loop ([history '()]
+               [host host]
+               [request-uri (ensure-request-uri request-uri enc)])
+      (receive (code headers body)
+          (request-response method conn host request-uri sender receiver
+                            `(:user-agent ,user-agent ,@opts) enc)
+        (or (and-let* ([ (not no-redirect) ]
+                       [ (string-prefix? "3" code) ]
+                       [loc (assoc "location" headers)])
+              (receive (uri proto new-server path*)
+                  (canonical-uri conn (cadr loc) (ref conn'server))
+                (when (or (member uri history)
+                          (> (length history) 20))
+                  (errorf <http-error> "redirection is looping via ~a" uri))
+                (loop (cons uri history)
+                      (ref (redirect conn proto new-server)'server)
+                      path*)))
+            (values code headers body))))))
 
 ;;
 ;; Pre-defined receivers
@@ -196,7 +221,15 @@
               [(> size 0) (copy-port remote sink :size size)])))))
 
 (define (http-null-receiver)
-  (lambda (code hdrs total) (lambda (remote size) #f)))
+  (lambda (code hdrs total)
+    (let1 sink (open-output-file (cond-expand
+                                  [gauche.os.windows "NUL"]
+                                  [else "/dev/null"]))
+      (lambda (sink)
+        (lambda (remote size)
+          (if (= size 0)
+            (close-output-port sink)
+            (copy-port remote sink :size size)))))))
 
 (define (http-oport-receiver sink flusher)
   (lambda (code hdrs total)
@@ -220,7 +253,7 @@
   (syntax-rules ()
     [(_ clause ...)
      (lambda (code hdrs total)
-       (http-cond-receiver-helper c h t (clause ...)))]))
+       (http-cond-receiver-helper code hdrs total (clause ...)))]))
 
 (define-syntax http-cond-receiver-helper
   (syntax-rules (else =>)
@@ -232,7 +265,7 @@
        (http-cond-receiver-helper code hdrs total rest))]
     [(_ code hdrs total ((cc . expr) . rest))
      (if (match-status-code? cc code '(cc . expr))
-       (begin . expr)
+       ((begin . expr) code hdrs total)
        (http-cond-receiver-helper code hdrs total rest))]
     [(_ code hdrs total (other . rest))
      (syntax-error "invalid clause in http-cond-receiver" other)]))
@@ -242,6 +275,61 @@
         [(regexp? pattern) (rxmatch pattern code)]
         [else (error "invalid pattern in a clause of http-cond-receiver"
                      clause)]))
+
+;;
+;; Senders
+;;
+
+(define (http-null-sender)
+  (lambda (hdrs encoding)
+    (values `(("content-length" "0") ,@hdrs)
+            (lambda (port initiator) (initiator 0) #f))))
+
+(define (http-string-sender string)     ;honors encoding
+  (lambda (hdrs encoding)
+    (let* ([body (if (ces-equivalent? encoding (gauche-character-encoding))
+                   string
+                   (ces-convert string (gauche-character-encoding) encoding))]
+           [size (string-size body)])
+      (values
+       `(("content-length" ,(x->string size)) ,@hdrs)
+       (lambda (port initiator) (initiator size) (display body port) #f)))))
+
+(define (http-blob-sender blob)        ;blob may be a string or uvector
+  (lambda (hdrs encoding)
+    (let1 size (if (string? blob) (string-size blob) (uvector-size blob))
+      (values `(("content-length" ,(x->string size)) ,@hdrs)
+              (lambda (port initiator)
+                (initiator size)
+                (if (string? blob)
+                  (display blob port)
+                  (write-block blob port))
+                #f)))))
+
+;; Send contents directly from the file.  Encoding is ignored.
+;; TODO: The file size may be changed while sending out.  If it gets
+;; bigger, we can just ignore the rest, but what if it gets shorter?
+(define (http-file-sender filename)
+  (lambda (hdrs encoding)
+    (let1 size (file-size filename)
+      (values `(("content-length" ,(x->string size)) ,@hdrs)
+              (lambda (port initiator)
+                (initiator size)
+                (call-with-input-file (cut copy-port <> port :size size))
+                #f)))))
+
+;; See http-compose-form-data definition for params spec.
+;; TODO: support chunked sending, instead of building entire body at once.
+(define (http-multipart-sender params)
+  (lambda (hdrs encoding)
+    (receive (body boundary) (http-compose-form-data params #f encoding)
+      (let1 size (string-size body)
+        (values
+         `(("content-length" ,(x->string size))
+           ("mime-version" "1.0")
+           ("content-type" ,#`"multipart/form-data; boundary=\",boundary\"")
+           ,@(alist-delete "content-type" hdrs equal?))
+         (lambda (port initiator) (initiator size) (display body port) #f))))))
 
 ;;
 ;; Shortcuts for specific requests.
@@ -272,7 +360,10 @@
                            (or flusher (^(s h) (get-output-string s))))
       receiver))
   (apply http-request method server request-uri
-         :request-body body :receiver recvr opts))
+         :sender (cond [(not body) (http-null-sender)]
+                       [(list? body) (http-multipart-sender body)]
+                       [else (http-blob-sender body)])
+         :receiver recvr opts))
 
 ;;==============================================================
 ;; HTTP connection context
@@ -450,15 +541,15 @@
                (proc (socket-input-port s) (socket-output-port s))
              (socket-close s)))]))
 
-(define (request-response method conn host request-uri request-body
-                          receiver options)
+(define (request-response method conn host request-uri
+                          sender receiver options enc)
   (define no-body-replies '("204" "304"))
   (receive (host uri)
-      (consider-proxy conn (or host (ref conn'server)) request-uri)
+      (consider-proxy conn (or host (~ conn'server)) request-uri)
     (with-connection
      conn
      (lambda (in out)
-       (send-request out method host uri request-body options)
+       (send-request out method host uri sender options enc)
        (receive (code headers) (receive-header in)
          (values code
                  headers
@@ -492,27 +583,37 @@
     (values host uri)))
 
 ;; send
-(define (send-request out method host uri body options)
+(define (send-request out method host uri sender options enc)
   (display #`",method ,uri HTTP/1.1\r\n" out)
-  (display #`"Host: ,|host|\r\n" out)
   (case method
-    ((POST PUT)
-     ;; for now, we don't support chunked encoding in POST method.
-     (send-request-headers (list* :content-length (string-size body) options)
-                           out)
-     (display "\r\n" out)
-     (display body out))
-    (else
-     ;; requests w/o body
-     (send-request-headers options out)
-     (display "\r\n" out)))
+    [(POST PUT)
+     (receive (hdrs deliverer)
+         ((or sender (http-null-sender))
+          (options->request-headers `(:host ,host ,@options)) enc)
+      (send-headers hdrs out)
+       (let1 chunked?
+           (equal? (rfc822-header-ref hdrs "transfer-encoding") "chunked")
+         (define initiator (if chunked? (^n (format out "~x\r\n" n)) values))
+         (let loop ([r (deliverer out initiator)])
+           (if r
+             (begin (when chunked? (display "\r\n" out))
+                    (loop (deliverer out initiator)))
+             (when chunked? (display "0\r\n" out)))))
+       (flush out))]
+    [else
+     (send-headers (options->request-headers `(:host ,host ,@options)) out)]))
+
+(define (send-headers hdrs out)
+  (dolist [hdr hdrs] (format out "~a: ~a\r\n" (car hdr) (cadr hdr)))
+  (display "\r\n" out)
   (flush out))
 
-(define (send-request-headers options out)
-  (let loop ((options options))
-    (unless (or (null? options) (null? (cdr options)))
-      (format out "~a: ~a\r\n" (car options) (cadr options))
-      (loop (cddr options)))))
+(define (options->request-headers options)
+  (let loop ([options options] [r '()])
+    (if (or (null? options) (null? (cdr options))) ;be permissive
+      (reverse r)
+      (loop (cddr options)
+            `((,(x->string (car options)) ,(x->string (cadr options))) ,@r)))))
 
 ;; receive
 (define (receive-header remote)

@@ -822,6 +822,9 @@ Content-Length: 4349
         (hash-table-put! ht "/chunked"
                          '("HTTP/1.x 200 OK\nTransfer-Encoding: chunked\n\n"
                            "2\r\nOK\n0\r\n\r\n"))
+        (hash-table-put! ht "/void"
+                         '("HTTP/1.x 404 Not found\nContent-type: text/plain\n"
+                           "Content-length: 9\n\nNot found"))
         ht))
 
     (define (http-server socket)
@@ -870,54 +873,84 @@ Content-Length: 4349
   (read-line (process-output p)) ; handshake
   )
 
-(let1 expected `(("method" "GET")
+(let ([expected `(("method" "GET")
                   ("request-uri" "/get")
                   ("request-body" "")
                   ("host" ,#`"localhost:,*http-port*")
                   ("user-agent" ,#`"gauche.http/,(gauche-version)")
-                  ("my-header" "foo"))
+                  ("my-header" "foo"))]
+      [host #`"localhost:,*http-port*"])
+  (define (req-body . args)
+    (values-ref (apply http-request args) 2))
+
   (test* "http-get, default string receiver" expected
          (receive (code headers body)
-             (http-request 'GET #`"localhost:,*http-port*" "/get"
-                           :my-header "foo")
+             (http-request 'GET host "/get" :my-header "foo")
            (and (equal? code "200")
                 (equal? headers '(("content-type" "text/plain")))
                 (read-from-string body)))
          alist-equal?)
+
   (test* "http-get, custom receiver" expected
-         (values-ref 
-          (http-request 'GET #`"localhost:,*http-port*" "/get"
-                        :receiver (let1 result #f
-                                    (lambda (code hdrs total)
-                                      (lambda (port size)
-                                        (if (= size 0)
-                                          result
-                                          (set! result (read port))))))
-                        :my-header "foo")
-          2)
+         (req-body 'GET host "/get"
+                   :receiver (let1 result #f
+                               (lambda (code hdrs total)
+                                 (lambda (port size)
+                                   (if (= size 0)
+                                     result
+                                     (set! result (read port))))))
+                   :my-header "foo")
          alist-equal?)
+
   (sys-unlink "test.o")
   (test* "http-get, file receiver" expected
-         (let1 f (values-ref
-                  (http-request 'GET  #`"localhost:,*http-port*" "/get"
-                               :receiver (http-file-receiver "test.o")
-                               :my-header :foo)
-                  2)
+         (let1 f (req-body 'GET host "/get"
+                           :receiver (http-file-receiver "test.o")
+                           :my-header :foo)
            (and (equal? f "test.o")
                 (with-input-from-file "test.o" read)))
          alist-equal?)
   (sys-unlink "test.o")
+
   (test* "http-get, file receiver (tmp)" expected
-         (let1 f (values-ref
-                  (http-request 'GET  #`"localhost:,*http-port*" "/get"
-                               :receiver (http-file-receiver "test.o"
-                                                             :temporary #t)
-                               :my-header :foo)
-                  2)
+         (let1 f (req-body 'GET host "/get"
+                           :receiver (http-file-receiver "test.o"
+                                                         :temporary #t)
+                           :my-header :foo)
            (and (not (equal? f "test.o"))
                 (begin0 (with-input-from-file f read)
                   (sys-unlink f))))
          alist-equal?)
+
+  (let ()
+    (define cond-receiver
+      (http-cond-receiver
+       ["404" (lambda (code hdrs total)
+                (let1 sink (open-output-file
+                            (cond-expand
+                             [gauche.os.windows "NUL"]
+                             [else "/dev/null"]))
+                  (lambda (port size)
+                    (if (= size 0)
+                      (begin (close-output-port sink) 404)
+                      (copy-port port sink :size size)))))]
+       ["200" (let1 result #f
+                (lambda (code hdrs total)
+                  (lambda (port size)
+                    (if (= size 0)
+                      result
+                      (set! result (read port))))))]
+       ))
+
+    (test* "http-get, cond-receiver" expected
+           (req-body 'GET host "/get"
+                     :receiver cond-receiver
+                     :my-header :foo))
+
+    (test* "http-get, cond-receiver" 404
+           (req-body 'GET host "/void"
+                     :receiver cond-receiver
+                     :my-header :foo)))
   )
 
 (test* "http-get (redirect)" "/redirect02"
@@ -947,41 +980,63 @@ Content-Length: 4349
               (equal? headers '(("content-type" "text/plain")))
               (not body))))
 
-(test* "http-post" `(("method" "POST")
-                     ("request-uri" "/post")
-                     ("content-length" "4")
-                     ("host" ,#`"localhost:,*http-port*")
-                     ("user-agent" ,#`"gauche.http/,(gauche-version)")
-                     ("request-body" "data"))
-       (receive (code headers body)
-           (http-request 'POST #`"localhost:,*http-port*" "/post"
-                         :request-body "data")
-         (and (equal? code "200")
-              (equal? headers '(("content-type" "text/plain")))
-              (read-from-string body)))
-       alist-equal?)
+(let1 expected `(("method" "POST")
+                 ("request-uri" "/post")
+                 ("content-length" "4")
+                 ("host" ,#`"localhost:,*http-port*")
+                 ("user-agent" ,#`"gauche.http/,(gauche-version)")
+                 ("request-body" "data"))
+  (define (tester msg thunk)
+    (test* #`"http-post ,msg" expected
+           (receive (code headers body) (thunk)
+             (and (equal? code "200")
+                  (equal? headers '(("content-type" "text/plain")))
+                  (read-from-string body)))
+           alist-equal?))
 
-(test* "http-post (multipart/form-data)" '(("a" "b") ("c" "d"))
-       (receive (code headers body)
-           (http-request 'POST #`"localhost:,*http-port*" "/post"
-                         :request-body '(("a" "b") ("c" "d")))
-         (and-let* ([ (equal? code "200") ]
-                    [ (equal? headers '(("content-type" "text/plain"))) ]
-                    [r (read-from-string body)]
-                    [body (assoc "request-body" r)]
-                    [part (call-with-input-string (cadr body)
-                            (cut mime-parse-message <> r mime-body->string))]
-                    [ (is-a? part <mime-part>) ]
-                    [ (list? (ref part'content)) ])
-           (map (lambda (p)
-                  (match (mime-parse-content-disposition
-                          (rfc822-header-ref (ref p'headers)
-                                             "content-disposition"))
-                    [("form-data" ("name" . name))
-                     (list name (ref p'content))]
-                    [else
-                     (list (ref p'headers) (ref p'content))]))
-                (ref part'content)))))
+  (tester "(new API)"
+          (lambda ()
+            (http-request 'POST #`"localhost:,*http-port*" "/post"
+                          :sender (http-string-sender "data"))))
+
+  (tester "(old API)"
+          (lambda ()
+            (http-post #`"localhost:,*http-port*" "/post" "data")))
+  )
+
+(let1 expected '(("a" "b") ("c" "d"))
+  (define (tester msg thunk)
+    (test* #`"http-post (multipart/form-data) ,msg" expected
+           (receive (code headers body) (thunk)
+             
+             (and-let* ([ (equal? code "200") ]
+                        [ (equal? headers '(("content-type" "text/plain"))) ]
+                        [r (read-from-string body)]
+                        [body (assoc "request-body" r)]
+                        [part (call-with-input-string (cadr body)
+                                (cut mime-parse-message <> r mime-body->string))]
+                        [ (is-a? part <mime-part>) ]
+                        [ (list? (ref part'content)) ])
+               (map (lambda (p)
+                      (match (mime-parse-content-disposition
+                              (rfc822-header-ref (ref p'headers)
+                                                 "content-disposition"))
+                        [("form-data" ("name" . name))
+                         (list name (ref p'content))]
+                        [else
+                         (list (ref p'headers) (ref p'content))]))
+                    (ref part'content))))))
+
+  (tester "(new API)"
+          (lambda ()
+            (http-request 'POST #`"localhost:,*http-port*" "/post"
+                          :sender
+                          (http-multipart-sender '(("a" "b") ("c" "d"))))))
+  (tester "(old API)"
+          (lambda ()
+            (http-post #`"localhost:,*http-port*" "/post"
+                       '(("a" "b") ("c" "d")))))
+  )
 
 (test* "<http-error>" #t
        (guard (e (else (is-a? e <http-error>)))

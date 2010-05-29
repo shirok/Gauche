@@ -1,12 +1,16 @@
 2010-05-28  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/http.scm (http-request): Committing tentative SENDER
+	  protocol.  NB: I'm going to try a different protocol,
+	  so take this version with a grain of salt.
+
 	* ext/uvector/uvlib.stub.tmpl (uvector-size): Allow start and end
 	  optional arguments, for the consistency with write-block.
 	  Also documented this function.
 
 2010-05-26  Shiro Kawai  <shiro@acm.org>
 
-	* lib/rfc/http.scm (http-request): Reviseed RECEIVER protocol;
+	* lib/rfc/http.scm (http-request): Revised RECEIVER protocol;
 	  now it takes the total response size in the third arg.  It allows
 	  the retriever to track the progress.
 
