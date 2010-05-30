@@ -1,3 +1,10 @@
+2010-05-29  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match.scm (gen): For certain patterns, this function
+	  can be called exponential times, taking very long for expansion.
+	  This fixes exponential expansion time by avoiding calling gen
+	  on the same patterns.
+
 2010-05-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-request): Committing tentative SENDER
