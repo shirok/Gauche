@@ -1,3 +1,8 @@
+2010-06-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/template.DIST: Exclude .git from being included to distribution
+	  tarball.
+
 2010-05-29  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/util/match.scm (gen): For certain patterns, this function

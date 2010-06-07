@@ -32,7 +32,7 @@ if [ "$tgz" = "yes" ]; then
   echo DIST > DIST_EXCLUDE_X
   echo DIST_EXCLUDE_X >> DIST_EXCLUDE_X
   if [ -f DIST_EXCLUDE ]; then cat DIST_EXCLUDE >> DIST_EXCLUDE_X; fi
-  find . -name CVS -o -name .svn -print -prune >> DIST_EXCLUDE_X
+  find . -name CVS -o -name .svn -o -name .git -print -prune >> DIST_EXCLUDE_X
 
   rm -rf ../$MODULE-$VERSION
 
