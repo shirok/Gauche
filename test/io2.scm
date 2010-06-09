@@ -131,6 +131,9 @@
                 k j i h g f e d c b a)
           write/ss)))
 
+(test* "circular list involving abbrev syntax" "#0=((quote . #0#))"
+       (write-to-string (cdr #0='#0#) write/ss))
+
 (define-class <foo> ()
   ((a :init-keyword :a)
    (b :init-keyword :b)))

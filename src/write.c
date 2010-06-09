@@ -349,8 +349,7 @@ static ScmPort *make_walker_port(void)
 /* pass 1 */
 static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    ScmHashEntry *e;
-    ScmHashTable *ht;
+    ScmHashTable *ht = SCM_HASH_TABLE(SCM_CDR(port->data));
     ScmObj elt;
 
 #define REGISTER(obj)                                           \
@@ -363,8 +362,6 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         Scm_HashTableSet(ht, obj, SCM_FALSE, 0);                \
     } while (0)
     
-    ht = SCM_HASH_TABLE(SCM_CDR(port->data));
-
     for (;;) {
         if (!SCM_PTRP(obj) || SCM_KEYWORDP(obj) || SCM_NUMBERP(obj)
             || (SCM_SYMBOLP(obj) && SCM_SYMBOL_INTERNED(obj))) {
@@ -491,21 +488,24 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
     /* Writes aggregates */
     if (SCM_PAIRP(obj)) {
-        /* special case for quote etc.*/
-        if (SCM_PAIRP(SCM_CDR(obj)) && SCM_NULLP(SCM_CDDR(obj))) {
-            int special = TRUE;
+        /* special case for quote etc.
+           NB: we need to check if we've seen SCM_CDR(obj), otherwise we'll
+           get infinite recursion for the case like (cdr '#1='#1#). */
+        if (SCM_PAIRP(SCM_CDR(obj)) && SCM_NULLP(SCM_CDDR(obj))
+            && (!ht
+                || SCM_FALSEP(Scm_HashTableRef(ht, SCM_CDR(obj), SCM_FALSE)))){
+            const char *prefix = NULL;
             if (SCM_CAR(obj) == SCM_SYM_QUOTE) {
-                Scm_PutcUnsafe('\'', port);
+                prefix = "'";
             } else if (SCM_CAR(obj) == SCM_SYM_QUASIQUOTE) {
-                Scm_PutcUnsafe('`', port);
+                prefix = "`";
             } else if (SCM_CAR(obj) == SCM_SYM_UNQUOTE) {
-                Scm_PutcUnsafe(',', port);
+                prefix = ",";
             } else if (SCM_CAR(obj) == SCM_SYM_UNQUOTE_SPLICING) {
-                Scm_PutzUnsafe(",@", -1, port);
-            } else {
-                special = FALSE;
+                prefix = ",@";
             }
-            if (special) {
+            if (prefix) {
+                Scm_PutzUnsafe(prefix, -1, port);
                 write_ss_rec(SCM_CADR(obj), port, ctx);
                 return;
             }

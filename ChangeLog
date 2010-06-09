@@ -1,3 +1,8 @@
+2010-06-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (write_ss_rec): Fixed an infinite recursion problem
+	  when attempting to print (cdr #1='#1#).
+
 2010-06-07  Shiro Kawai  <shiro@acm.org>
 
 	* ext/template.DIST: Exclude .git from being included to distribution
