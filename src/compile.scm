@@ -3477,8 +3477,12 @@
             [(CDDR)    (pass2/const-cxxr cdr cddr args)]
             [(MEMQ)    (pass2/const-memx memq args)]
             [(MEMV)    (pass2/const-memx memv args)]
-            [(EQ)      (pass2/const-eqx  eq? args)]
-            [(EQV)     (pass2/const-eqx  eqv? args)]
+            [(EQ)      (pass2/const-op2 eq? args)]
+            [(EQV)     (pass2/const-op2 eqv? args)]
+            [(NUMADD2) (pass2/const-numop2 + args)]
+            [(NUMSUB2) (pass2/const-numop2 - args)]
+            [(NUMMUL2) (pass2/const-numop2 * args)]
+            [(NUMDIV2) (pass2/const-numop2 / args)]
             [else #f]))
       (and-let* ([ (pair? args) ]
                  [ (null? (cdr args)) ]
@@ -3512,8 +3516,13 @@
         [lis  ($const-value (cadr args))])
     (and (list? lis) ($const (proc item lis)))))
 
-(define (pass2/const-eqx proc args)
+(define (pass2/const-op2 proc args)
   ($const (proc ($const-value (car args)) ($const-value (cadr args)))))
+
+(define (pass2/const-numop2 proc args)
+  (let ([x ($const-value (car args))]
+        [y ($const-value (cadr args))])
+    (and (number? x) (number? y) ($const (proc x y)))))
 
 (define (initval-never-null? val)
   (and (vector? val)
