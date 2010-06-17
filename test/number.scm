@@ -1802,6 +1802,38 @@
 (test* "/. (many)" 0.1 (/. 1 2 5))
 
 ;;------------------------------------------------------------------
+(test-section "sqrt")
+
+(define (integer-sqrt-tester k)
+  (test* (format "exact-integer-sqrt ~a" k) '(#t #t)
+         (receive (s r) (exact-integer-sqrt k)
+           (list (= k (+ (* s s) r))
+                 (< k (* (+ s 1) (+ s 1)))))))
+
+(integer-sqrt-tester 0)
+(integer-sqrt-tester 1)
+(integer-sqrt-tester 2)
+(integer-sqrt-tester 3)
+(integer-sqrt-tester 4)
+(integer-sqrt-tester 10)
+(integer-sqrt-tester (expt 2 32))
+(integer-sqrt-tester (- (expt 2 53) 1))
+(integer-sqrt-tester (expt 2 53))
+(integer-sqrt-tester (+ (expt 2 53) 1))
+(integer-sqrt-tester 9999999999999999999999999999999999999999999999999999)
+
+(test* "exact-integer-sqrt -1" (test-error) (exact-integer-sqrt -1))
+(test* "exact-integer-sqrt 1.0" (test-error) (exact-integer-sqrt 1.0))
+(test* "exact-integer-sqrt 1/4" (test-error) (exact-integer-sqrt 1/4))
+
+(test* "sqrt, exact" 0 (sqrt 0) eqv?)
+(test* "sqrt, exact" 4 (sqrt 16) eqv?)
+(test* "sqrt, inexact" 4.0 (sqrt 16.0) eqv?)
+(test* "sqrt, inexact" +4.0i (sqrt -16.0) eqv?)
+(test* "sqrt, exact" 1/4 (sqrt 1/16) eqv?)
+(test* "sqrt, inexact" 0.25 (sqrt (exact->inexact 1/16)) eqv?)
+
+;;------------------------------------------------------------------
 (test-section "ffx optimization")
 
 ;; This code is provided by naoya_t to reproduce the FFX bug

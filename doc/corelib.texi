@@ -833,11 +833,47 @@ Hyperbolic trigonometric functions.  Work for complex numbers as well.
 Returns a square root of a complex number @var{z}.
 The branch cut scheme is the same as Common Lisp.
 For real numbers, it returns a positive root.
+
+If @var{z} is the square of an exact real number, the return value
+is also an exact number.
 @c JP
 複素数@var{z}の平方根のひとつを返します。枝刈りの定義はCommon Lispと同じです。
 実数に対しては正の平方根を返します。
+
+@var{z} が正確な実数の平方である場合、戻り値は正確数となります。
 @c COMMON
+
+@example
+(sqrt 2)      @result{} 1.4142135623730951
+(sqrt -2)     @result{} 0.0+1.4142135623730951i
+(sqrt 256)    @result{} 16
+(sqrt 256.0)  @result{} 16.0
+(sqrt 81/169) @result{} 9/13
+@end example
 @end defun
+
+@defun exact-integer-sqrt k
+[R6RS]
+@c EN
+Given an exact nonnegative integer @var{k},
+returns two exact nonnegative integer @var{s} and @var{r}
+that satisfy the following equations:
+@c JP
+非負の正確な整数@var{k}に対し、次の式を満たす
+非負の正確な整数@var{s}と@var{r}を返します。
+@c COMMON
+
+@example
+@var{k} = (+ (* @var{s} @var{s}) @var{r})
+@var{k} < (* (+ @var{s} 1) (+ @var{s} 1))
+@end example
+
+@example
+(exact-integer-sqrt 782763574)
+  @result{} 27977 @r{and} 51045
+@end example
+@end defun
+
 
 @defun expt z1 z2
 [R5RS]

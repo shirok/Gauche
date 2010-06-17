@@ -72,8 +72,8 @@
 
 ;;==========================================================
 (autoload-scheme "gauche/numerical"
-                 exp log sqrt expt cos sin tan asin acos atan
-                 gcd lcm nearly=?)
+                 exp log sqrt exact-integer-sqrt expt cos sin tan asin
+                 acos atan gcd lcm nearly=?)
 
 (autoload "gauche/redefutil"
           redefine-class! class-redefinition

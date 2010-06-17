@@ -107,9 +107,45 @@
     (/ (log z) (log (car base)))))  ; R6RS addition
 
 (define-in-module scheme (sqrt z)
-  (cond [(real? z) (%sqrt z)]
+  (cond [(and (exact? z) (>= z 0))
+         ;; Gauche doesn't have exact complex, so we have real z.
+         (if (integer? z)
+           (receive (s r) (%exact-integer-sqrt z)
+             (if (= r 0) s (%sqrt z)))
+           ;; we have ratnum.  take expensive path.
+           (let ([n (numerator z)]
+                 [d (denominator z)])
+             (receive (ns nr) (%exact-integer-sqrt n)
+               (if (= nr 0)
+                 (receive (ds dr) (%exact-integer-sqrt d)
+                   (if (= dr 0)
+                     (/ ns ds)
+                     (%sqrt z)))
+                 (%sqrt z)))))]
+        [(real? z) (%sqrt z)]
         [(complex? z) (make-polar (%sqrt (magnitude z)) (/ (angle z) 2.0))]
         [else (error "number required, but got" z)]))
+
+;; a la R6RS
+(define (exact-integer-sqrt k)
+  (unless (and (exact? k) (integer? k) (>= k 0))
+    (error "exact nonnegative integer required, but got" k))
+  (%exact-integer-sqrt k))
+
+(define (%exact-integer-sqrt k)
+  (if (< k 9007199254740992)            ;2^53
+    ;; k can be converted to a double without loss.
+    (let1 s (floor->exact (%sqrt k))
+      (values s (- k (* s s))))
+    ;; use Newton-Rhapson
+    (let loop ([s (floor->exact (%sqrt k))])
+      (let1 s2 (* s s)
+        (if (< k s2)
+          (loop (quotient (+ s2 k) (* 2 s)))
+          (let1 s2+ (+ s2 (* 2 s) 1)
+            (if (< k s2+)
+              (values s (- k s2))
+              (loop (quotient (+ s2 k) (* 2 s))))))))))
 
 (define-in-module scheme (expt x y)
   (cond [(real? x)
