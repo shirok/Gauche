@@ -583,6 +583,9 @@
 (test* "rational?" #f (rational? 3+4i))
 (test* "rational?" #t (rational? 3+0i))
 (test* "rational?" #f (rational? #f))
+(test* "rational?" #f (rational? +inf.0))
+(test* "rational?" #f (rational? -inf.0))
+(test* "rational?" #f (rational? +nan.0))
 
 (test* "real?" #t (real? 0))
 (test* "real?" #t (real? 85736847562938475634534245))
@@ -591,6 +594,9 @@
 (test* "real?" #f (real? 3+4i))
 (test* "real?" #f (real? +4.3i))
 (test* "real?" #f (real? '()))
+(test* "real?" #t (real? +inf.0))
+(test* "real?" #t (real? -inf.0))
+(test* "real?" #t (real? +nan.0))
 
 (test* "complex?" #t (complex? 0))
 (test* "complex?" #t (complex? 85736847562938475634534245))

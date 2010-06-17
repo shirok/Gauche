@@ -320,12 +320,14 @@ class.  That is,
 @c EN
 Returns @code{#t} if @var{obj} is a number, a complex number, a real number,
 a rational number or an integer, respectively.   In Gauche, a set of
-numbers is the same as a set of complex numbers, and a set of
-rational numbers is the same as a set of real numbers
+numbers is the same as a set of complex numbers.
+A set of rational numbers is the same as a set of real numbers,
+except @code{+inf.0}, @code{-inf.0} and @code{+nan.0}
 (since we have only limited-precision floating numbers).
 @c JP
 @var{obj}がそれぞれ数、複素数、実数、有理数、整数ならば@code{#t}を返します。
-Gaucheでは、数の集合は複素数の集合と同一であり、有理数の集合は実数の集合と同一
+Gaucheでは、数の集合は複素数の集合と同一であり、有理数の集合は
+@code{+inf.0}, @code{-inf.0}, @code{+nan.0}を除いた実数の集合と同一
 (浮動小数点数が有限精度であるため)です。
 @c COMMON
 
@@ -337,7 +339,54 @@ Gaucheでは、数の集合は複素数の集合と同一であり、有理数�
 (real? #e1e10)    @result{} #t
 (integer? 3+0i)   @result{} #t
 (integer? 3.0)    @result{} #t
+
+(real? +inf.0)     @result{} #t
+(real? +nan.0)     @result{} #t
+(rational? +inf.0) @result{} #f
+(rational? +nan.0) @result{} #f
 @end example
+
+@c EN
+Note: R6RS adopts more strict definition on exactness,
+and notably, it defines a complex number with non-exact zero imaginary
+part is not a real number.   Currently Gauche doesn't have
+exact complex numbers, and automatically coerces complex
+numbers with zero imaginary part to a real number.
+Thus R6RS code that relies on the fact that @code{(real? 1+0.0i)} is
+@code{#f} won't work with Gauche.
+@c JP
+R6RSでは正確性についてより厳密な定義がなされ、特に
+非正確なゼロを虚数部に持つ複素数は実数ではないと規定されています。
+Gaucheは今のところ正確な複素数を持たず、虚部がゼロの複素数は
+自動的に実数に変換されます。従ってR6RSのコードのうち、
+@code{(real? 1+0.0i)}が@code{#f}であることを当てにしているものは
+うまく動かないでしょう。
+@c COMMON
+@end defun
+
+@defun real-valued? obj
+@defunx rational-valued? obj
+@defunx integer-valued? obj
+[R6RS]
+@c EN
+In Gauche these are just an alias of @code{real?}, @code{rational?}
+and @code{integer?}.  They are provided for R6RS compatibility.
+
+The difference of those and non @code{-valued} versions in R6RS is
+that these returns @code{#t} if @var{obj} is a complex number
+with nonexact zero imaginary part.   Since Gauche doesn't distinguish
+complex numbers with zero imaginary part and real numbers, we don't
+have the difference.
+@c JP
+Gaucheではこれらの手続きはそれぞれ@code{real?}、@code{rational?}、
+および@code{integer?}の別名となっています。これらはR6RSコードとの互換性のために
+提供されています。
+
+R6RSで規定されている、これらの手続きと@code{-valued}がついていない手続きの違いは、
+これらの手続きは非正確なゼロの虚部を持つ複素数に対しても@code{#t}を返すという
+ことです。Gaucheではゼロの虚部を持つ複素数は実数とみなしているので、
+この違いは現れません。
+@c COMMON
 @end defun
 
 @defun exact? obj
@@ -1002,18 +1051,19 @@ where @var{x} = @var{fraction} * 2^@var{exponent}, and
 @end example
 @end defun
 
-@defun exact->inexact z
-@defunx inexact->exact z
-[R5RS]
+@defun exact z
+@defunx inexact z
+[R6RS]
 @c EN
-Converts an exact number to an inexact number, or vice versa.
+Returns an exact or an inexact representation of the
+given number @var{z}, respectively.
 
 Since we have finite precision to represent floating numbers,
 it is always possible to convert arbitrary inexact real number
 to an exact rational number.  It may not be what you want, though.
 See the following example:
 @c JP
-正確な数を不正確な数に変換、またその逆を行う手続きです。
+それぞれ数@var{z}の正確な表現および不正確な表現を返します。
 
 浮動小数点数の表現が有限精度であるため、任意の不正確な実数を正確な
 有理数に変換することは常に可能です。しかしそれはあなたの求めるもの
@@ -1021,7 +1071,7 @@ See the following example:
 @c COMMON
 
 @example
-(inexact->exact 3.1415926535879)
+(exact 3.1415926535879)
   @result{} 7074237752024177/2251799813685248
 @end example
 
@@ -1037,30 +1087,53 @@ real number, you have to use one of @code{floor}, @code{ceiling},
 @c COMMON
 
 @example
-(inexact->exact (round 3.1415926535879)) @result{} 3
+(exact (round 3.1415926535879)) @result{} 3
 
-(round->exact 3.1415926535879)           @result{} 3
+(round->exact 3.1415926535879)  @result{} 3
 @end example
 
 @c EN
 Gauche doesn't support exact complex numbers.  Passing an inexact
-complex number with non-zero imaginary part to @code{inexact->exact}
+complex number with non-zero imaginary part to @code{exact}
 causes an error.
 @c JP
 Gaucheは正確な複素数をサポートしません。虚数部がゼロでない不正確な
-複素数を@code{inexact->exact}に渡すとエラーとなります。
+複素数を@code{exact}に渡すとエラーとなります。
 @c COMMON
+@end defun
 
+@defun exact->inexact z
+@defunx inexact->exact z
+[R5RS]
 @c EN
-If you pass an inexact number to @code{exact->inexact} or
-an exact number to @code{inexact->exact}, Gauche returns
-the argument as is, instead of reporting an error.
-This is also an implementation dependent behavior and
-you shouldn't count on that.
+Converts exact number to inexact one, and vice versa.
+
+In fact, @code{exact->inexact} returns the argument as is
+if an inexact number is passed, and @code{inexact->exact}
+returns the argument if an exact number is passed, so
+in Gauche they are equivalent to @code{inexact} and @code{exact},
+respectively.  Note that other R5RS implementation may raise
+an error if passing an inexact number to @code{exact->inexact},
+for example.
+
+Generally @code{exact} and @code{inexact} are preferred,
+for they are more concise, and you don't need to care
+whether the argument is exact or inexact numbers.
+These procedures are for compatibility with R5RS programs.
 @c JP
+それぞれ、正確数を非正確に変換、あるいはその逆を行います。
+
 不正確な数を@code{exact->inexact}に渡したり、または正確な数を
-@code{inexact->exact}に渡した場合、Gaucheでは今のところエラーにならず
-引数がそのまま返されます。これも実装依存の振舞いなのでなるべく避けるようにして下さい。
+@code{inexact->exact}に渡した場合、Gaucheではそれをエラーにせず
+引数をそのまま返します。従ってこれらはGaucheでは
+上の@code{inexact}および@code{exact}とそれぞれ等価です。
+R5RS実装の中には、非正確数を@code{exact->inexact}に渡したりすると
+エラーになるものもあり得るので、ポータブルなコードを書く場合は
+注意してください。
+
+一般的には、@code{exact}および@code{inexact}を使う方が
+簡潔で良いでしょう。こちらの手続きはR5RSプログラムとの互換性の
+ために用意されています。
 @c COMMON
 @end defun
 

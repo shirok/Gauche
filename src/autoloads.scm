@@ -73,7 +73,8 @@
 ;;==========================================================
 (autoload-scheme "gauche/numerical"
                  exp log sqrt exact-integer-sqrt expt cos sin tan asin
-                 acos atan gcd lcm nearly=?)
+                 acos atan gcd lcm inexact exact real-valued?
+                 rational-valued? integer-valued? nearly=?)
 
 (autoload "gauche/redefutil"
           redefine-class! class-redefinition

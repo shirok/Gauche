@@ -62,7 +62,7 @@
 (define-cproc real? (obj)    ::<boolean> :fast-flonum :constant
   (inliner REALP) SCM_REALP)
 (define-cproc rational? (obj)::<boolean> :fast-flonum :constant
-  (inliner REALP) SCM_REALP)
+  (result (and (SCM_REALP obj) (Scm_FiniteP obj))))
 (define-cproc integer? (obj) ::<boolean> :fast-flonum :constant
   (result (and (SCM_NUMBERP obj) (Scm_IntegerP obj))))
 

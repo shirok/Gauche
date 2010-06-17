@@ -263,6 +263,19 @@
   (/ (- (log (+ 1 z)) (log (- 1 z))) 2))
 
 ;;
+;; R6RS compatibiliby
+;;
+(define inexact exact->inexact)
+(define exact   inexact->exact)
+
+;; Since Gauche coerces complex number whose imag part is 0.0i into
+;; real, these procedures has no difference from real?, rational? and
+;; integer?
+(define real-valued?     real?)
+(define rational-valued? rational?)
+(define integer-valued?  integer?)
+
+;;
 ;; Nearly equal comparison
 ;;  (Unofficial yet; see how it works)
 

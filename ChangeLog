@@ -1,5 +1,12 @@
 2010-06-17  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/numerical.scm (inexact, exact, real-valued?)
+	  (rational-valued?, integer-valued?): Added for R6RS compatibiltiy.
+
+	* src/stdlib.stub (rational?): Exclude +inf.0, -inf.0 and +nan.0 from
+	  the set of rational numbers.  These are the only numbers that are
+	  real but not rational.
+
 	* lib/gauche/numerical.scm (exact-integer-sqrt): Added.
 	  (sqrt): Revised so that it returns exact number if the argument
 	  is a square of exact real number.
