@@ -2899,7 +2899,7 @@ or @code{SCM_UNBOUND} iff @code{SCM_DICT_NO_CREATE} is given to the
 @end deftypefun
 
 @deftypefun ScmObj Scm_TreeMapDelete (ScmTreeMap *@var{tm}, ScmObj @var{key})
-Delets the entry that has @var{key}.  If the entry has existed,
+Deletes the entry that has @var{key}.  If the entry has existed,
 returns its value.  Otherwise, returns @code{SCM_UNBOUND}.
 @end deftypefun
 
