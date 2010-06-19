@@ -275,7 +275,52 @@
 (define rational-valued? rational?)
 (define integer-valued?  integer?)
 
-;;
+;; An extension of quotient&remainder to the real domain.  Their results
+;; match with div/mod when divisor is positive.
+(define (%div&mod x y)
+  (define (edom what)
+      (error "real number required for integer division, but got" what))
+  (cond [(= y 0) (error "zero divisor is not allowed in integer division")]
+        [(and (integer? x) (integer? y)) (quotient&remainder x y)]
+        [(and (exact? x) (exact? y))    ;at least one of arg is rational
+         (let1 q (truncate (/ x y)) (values q (- x (* q y))))]
+        [(not (real? x)) (edom x)]
+        [(not (real? y)) (edom y)]
+        [else (receive (r q) (modf (/. x y)) (values q (- x (* q y))))]))
+
+(define (div-and-mod x y)
+  (if (>= x 0)
+    (%div&mod x y)
+    (receive (q r) (%div&mod x y)
+      (if (= r 0)
+        (values q r)
+        (if (> y 0)
+          (values (- q 1) (+ r y))
+          (values (+ q 1) (- r y)))))))
+
+(define (div0-and-mod0 x y)
+  (receive (q r) (%div&mod x y)
+    (if (>= x 0)
+      (if (> y 0)
+        (if (>= (* r 2) y)
+          (values (+ q 1) (- r y))
+          (values q r))
+        (if (>= (* r 2) (- y))
+          (values (- q 1) (+ r y))
+          (values q r)))
+      (if (> y 0)
+        (if (< (* r 2) (- y))
+          (values (- q 1) (+ r y))
+          (values q r))
+        (if (< (* r 2) y)
+          (values (+ q 1) (- r y))
+          (values q r))))))
+
+(define (div x y)  (values-ref (div-and-mod x y) 0))
+(define (mod x y)  (values-ref (div-and-mod x y) 1))
+(define (div0 x y) (values-ref (div0-and-mod0 x y) 0))
+(define (mod0 x y) (values-ref (div0-and-mod0 x y) 1))
+    
 ;; Nearly equal comparison
 ;;  (Unofficial yet; see how it works)
 

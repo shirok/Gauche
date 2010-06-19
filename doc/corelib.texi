@@ -738,6 +738,131 @@ by integer @var{n2} simultaneously, and returns them as two values.
 @c COMMON
 @end defun
 
+@defun div x y
+@defunx mod x y
+@defunx div-and-mod x y
+@defunx div0 x y
+@defunx mod0 x y
+@defunx div0-and-mod0 x y
+[R6RS]
+@c EN
+These are integer division procedures introduced in R6RS.
+Unlike @code{quotient}, @code{modulo} and @code{remainder},
+these procedures can take non-integral values.
+The dividend @var{x} can be an arbitrary real number,
+and the divisor @var{y} can be non-zero real number.
+@c JP
+これらはR6RSで導入された整数除算手続きです。
+@code{quotient}, @code{modulo}, @code{remainder}と違い、
+これらの手続きは整数でない値を取ることもできます。
+被除数@var{x}には任意の実数、除数@var{y}にはゼロ以外の実数が許されます。
+@c COMMON
+
+@c EN
+@code{div} returns an integer @var{n}, and @code{mod} returns
+a real number @var{m}, such that:
+
+@itemize @bullet
+@item
+@var{x} = @var{n} @var{y} + @var{m}, and
+@item
+0 <= @var{m} < |@var{y}|.
+@end itemize
+
+Examples:
+@c JP
+@code{div}は整数@var{n}を、@code{mod}は実数@var{m}を返し、
+それらは以下の関係を満たします。
+
+@itemize @bullet
+@item
+@var{x} = @var{n} @var{y} + @var{m}
+@item
+0 <= @var{m} < |@var{y}|
+@end itemize
+
+例:
+@c COMMON
+@example
+(div 123 10)     @result{} 12
+(mod 123 10)     @result{} 3
+
+(div 123 -10)    @result{} -12
+(mod 123 -10)    @result{} 3
+
+(div -123 10)    @result{} -13
+(mod -123 10)    @result{} 7
+
+(div -123 -10)   @result{} 13
+(mod -123 -10)   @result{} 7
+
+(div 123/7 10/9) @result{} 15
+(mod 123/7 10/9) @result{} 19/21
+;; 123/7 = 10/9 * 15 + 19/21
+
+(div 14.625 3.75) @result{} 3.0
+(mod 14.625 3.75) @result{} 3.375
+;; 14.625 = 3.75 * 3.0 + 3.375
+@end example
+
+@c EN
+For a nonnegative integer @var{x} and an integer @var{y},
+The results of @code{div} and @code{mod} matches
+those of @code{quotient} and @code{remainder}.  If @var{x}
+is negative, they differ, though.
+@c JP
+@var{x}が非負の整数、@var{y}が整数である場合は、
+@code{div}と@code{mod}の結果は@code{quotient}と@code{remainder}
+の結果に一致します。しかし@var{x}が負になると結果は異なります。
+@c COMMON
+
+@c EN
+@code{div-and-mod} calculates both @code{div} and @code{mod}
+and returns their results in two values.
+@c JP
+@code{div-and-mod}は@code{div}と@code{mod}を同時に計算し、
+結果を二つの値で返します。
+@c COMMON
+
+@c EN
+@var{div0} and @var{mod0} are similar, except the range of @var{m}:
+@c JP
+@var{div0}と@var{mod0}は、@code{m}の値域が異なる以外は同じです。
+@c COMMON
+
+@itemize @bullet
+@item
+@var{x} = @var{n} @var{y} + @var{m}
+@item
+-|@var{y}|/2 <= @var{m} < |@var{y}|/2
+@end itemize
+
+@example
+(div0 123 10)   @result{} 12
+(mod0 123 10)   @result{} 3
+
+(div0 127 10)   @result{} 13
+(mod0 127 10)   @result{} -3
+
+(div0 127 -10)  @result{} -13
+(mod0 127 -10)  @result{} -3
+
+(div0 -127 10)  @result{} -13
+(mod0 -127 10)  @result{} 3
+
+(div0 -127 -10) @result{} 13
+(mod0 -127 -10) @result{} 3
+@end example
+
+@c EN
+@code{div0-and-mod0} calculates both @code{div0} and @code{mod0}
+and returns their results in two values.
+@c JP
+@code{div0-and-mod0}は@code{div0}と@code{mod0}を同時に計算し、
+結果を二つの値で返します。
+@c COMMON
+@end defun
+
 @defun gcd n @dots{}
 @defunx lcm n @dots{}
 [R5RS]

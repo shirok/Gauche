@@ -1376,6 +1376,54 @@
        '(#t #t #t #t #t #t #t #t #t #t #t #t #t #t)
        (map mersenne-prime? '(3 5 7 13 17 19 31 61 89 107 127 521 607 1279)))
 
+;;------------------------------------------------------------------
+(test-section "div and mod")
+
+(let ()
+  (define (do-quadrants proc)
+    (lambda (x y =)
+      (proc x y =)
+      (proc (- x) y =)
+      (proc x (- y) =)
+      (proc (- x) (- y) =)))
+
+  (define (test-div x y =)
+    (test* (format "~a div ~a" x y) '(#t #t)
+           (receive (d m) (div-and-mod x y)
+             (let1 z (+ (* d y) m)
+               (list (or (= x z) z)
+                     (or (and (<= 0 m) (< m (abs y))) m))))))
+
+  (define (test-div0 x y =)
+    (test* (format "~a div0 ~a" x y) '(#t #t)
+           (receive (d m) (div0-and-mod0 x y)
+             (let1 z (+ (* d y) m)
+               (list (or (= x z) z)
+                     (or (and (<= (- (abs y)) (* m 2))
+                              (< (* m 2) (abs y)))
+                         m))))))
+
+  ((do-quadrants test-div) 123 10 =)
+  ((do-quadrants test-div) 123.0 10.0 (lambda (a b) (nearly=? 1e-10 a b)))
+  ((do-quadrants test-div) 123/7 10/7 =)
+  ((do-quadrants test-div) 123/7 5 =)
+  ((do-quadrants test-div) 123 5/7 =)
+  ((do-quadrants test-div) 130.75 10.5 =)
+
+  ((do-quadrants test-div0) 123 10 =)
+  ((do-quadrants test-div0) 129 10 =)
+  ((do-quadrants test-div0) 123.0 10.0 (lambda (a b) (nearly=? 1e-10 a b)))
+  ((do-quadrants test-div0) 129.0 10.0 (lambda (a b) (nearly=? 1e-10 a b)))
+  ((do-quadrants test-div0) 123/7 10/7 =)
+  ((do-quadrants test-div0) 129/7 10/7 =)
+  ((do-quadrants test-div0) 121/7 5 =)
+  ((do-quadrants test-div0) 124/7 5 =)
+  ((do-quadrants test-div0) 121 5/7 =)
+  ((do-quadrants test-div0) 124 5/7 =)
+  ((do-quadrants test-div0) 130.75 10.5 =)
+  ((do-quadrants test-div0) 129.75 10.5 =)
+  )
+
 
 ;;------------------------------------------------------------------
 (test-section "rounding")
@@ -1905,7 +1953,6 @@
   ;;
   ;; TEST
   ;;
-  (test-section "ffx optimization")
   (test* "probit(0.025)" -1.959964 (probit 0.025) ~=)
   (test* "probit(0.975)" 1.959964 (probit 0.975) ~=)
   )

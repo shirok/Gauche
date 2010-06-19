@@ -1,3 +1,8 @@
+2010-06-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/numerical.scm (div, mod, div0, mod0, div-and-mod)
+	  (div0-and-mod0): Added R6RS integer divisions.
+
 2010-06-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numerical.scm (inexact, exact, real-valued?)
