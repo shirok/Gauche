@@ -123,21 +123,21 @@
 ;; these more, even adding special VM insns for them.
 (define-cproc +. (:rest args) :constant
   (let* ([a '0.0])
-    (dolist [x args] (set! a (Scm_Add a (Scm_ExactToInexact x))))
+    (dolist [x args] (set! a (Scm_Add a (Scm_Inexact x))))
     (result a)))
 (define-cproc *. (:rest args) :constant
   (let* ([a '1.0])
-    (dolist [x args] (set! a (Scm_Mul a (Scm_ExactToInexact x))))
+    (dolist [x args] (set! a (Scm_Mul a (Scm_Inexact x))))
     (result a)))
 (define-cproc -. (arg1 :rest args) :constant
   (cond
-   [(SCM_NULLP args) (result (Scm_Negate (Scm_ExactToInexact arg1)))]
-   [else (dolist [x args] (set! arg1 (Scm_Sub arg1 (Scm_ExactToInexact x))))
+   [(SCM_NULLP args) (result (Scm_Negate (Scm_Inexact arg1)))]
+   [else (dolist [x args] (set! arg1 (Scm_Sub arg1 (Scm_Inexact x))))
          (result arg1)]))
 (define-cproc /. (arg1 :rest args) :constant
   (cond
-   [(SCM_NULLP args) (result (Scm_Reciprocal (Scm_ExactToInexact arg1)))]
-   [else (dolist [x args] (set! arg1 (Scm_Div arg1 (Scm_ExactToInexact x))))
+   [(SCM_NULLP args) (result (Scm_Reciprocal (Scm_Inexact arg1)))]
+   [else (dolist [x args] (set! arg1 (Scm_Div arg1 (Scm_Inexact x))))
          (result arg1)]))
 
 (define-cproc clamp (x :optional (min #f) (max #f)) :fast-flonum :constant
@@ -154,7 +154,7 @@
            (when (> (Scm_NumCmp x max) 0) (set! r max))]
           [(not (SCM_FALSEP max)) (SCM_TYPE_ERROR max "real number or #f")])
     (if (and (not maybe_exact) (SCM_EXACTP r))
-      (return (Scm_ExactToInexact r))
+      (return (Scm_Inexact r))
       (return r))))
 
 (define-cproc floor->exact (num) :fast-flonum :constant

@@ -248,8 +248,14 @@ SCM_EXTERN int    Scm_Sign(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Negate(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Reciprocal(ScmObj obj);
 SCM_EXTERN ScmObj Scm_ReciprocalInexact(ScmObj obj);
-SCM_EXTERN ScmObj Scm_ExactToInexact(ScmObj obj);
+
+/* TODO: We'll switch to make Scm_Exact/Scm_Inexact official in 1.0
+   and obsolete longer versions.  During 0.9.x we keep the old name
+   for binary compatibility. */
 SCM_EXTERN ScmObj Scm_InexactToExact(ScmObj obj);
+SCM_EXTERN ScmObj Scm_ExactToInexact(ScmObj obj);
+#define Scm_Exact    Scm_InexactToExact
+#define Scm_Inexact  Scm_ExactToInexact
 
 SCM_EXTERN ScmObj Scm_Add(ScmObj arg1, ScmObj arg2);
 SCM_EXTERN ScmObj Scm_Sub(ScmObj arg1, ScmObj arg2);
@@ -313,7 +319,7 @@ SCM_EXTERN void   Scm_SetDefaultEndian(ScmObj endian);
 SCM_EXTERN ScmObj Scm_VMNegate(ScmObj obj);
 SCM_EXTERN ScmObj Scm_VMReciprocal(ScmObj obj);
 SCM_EXTERN ScmObj Scm_VMReciprocalInexact(ScmObj obj);
-SCM_EXTERN ScmObj Scm_VMExactToInexact(ScmObj obj);
+SCM_EXTERN ScmObj Scm_VMInexact(ScmObj obj);
 SCM_EXTERN ScmObj Scm_VMAbs(ScmObj obj);
 SCM_EXTERN ScmObj Scm_VMAdd(ScmObj arg1, ScmObj arg2);
 SCM_EXTERN ScmObj Scm_VMSub(ScmObj arg1, ScmObj arg2);

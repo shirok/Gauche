@@ -245,8 +245,8 @@
 (define-cproc magnitude (z) ::<double> :fast-flonum :constant Scm_Magnitude)
 (define-cproc angle (z)     ::<double> :fast-flonum :constant Scm_Angle)
 
-(define-cproc exact->inexact (obj) :fast-flonum :constant Scm_ExactToInexact)
-(define-cproc inexact->exact (obj) :fast-flonum :constant Scm_InexactToExact)
+(define-cproc exact->inexact (obj) :fast-flonum :constant Scm_Inexact)
+(define-cproc inexact->exact (obj) :fast-flonum :constant Scm_Exact)
 
 (define-cproc number->string
   (obj :optional (radix::<fixnum> 10) (use-upper? #f)) :fast-flonum :constant

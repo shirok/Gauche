@@ -1,5 +1,14 @@
 2010-06-19  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (Scm_Numerator, Scm_Denominator): Bug fix for
+	  inexact arguments.
+	  (Scm_Exact, Scm_Inexact, Scm_VMInexact): We're naming
+	  Scm_InexactToExact etc.; they are more concise without loss
+	  of meaning.  To keep binary compatibility, shorter names are
+	  macros during 0.9.x.  In 1.0 we'll switch macros and instances.
+	* src/write.c, src/number.c, src/vminsn.scm, src/stdlib.stub,
+	  src/extlib.stub: Modified according to the above change.
+
 	* lib/gauche/numerical.scm (div, mod, div0, mod0, div-and-mod)
 	  (div0-and-mod0): Added R6RS integer divisions.
 

@@ -698,7 +698,7 @@ static void format_integer(ScmPort *out, ScmObj arg,
         format_write(arg, out, &ictx, FALSE);
         return;
     }
-    if (SCM_FLONUMP(arg)) arg = Scm_InexactToExact(arg);
+    if (SCM_FLONUMP(arg)) arg = Scm_Exact(arg);
     if (nparams>0 && SCM_INTP(params[0])) mincol = SCM_INT_VALUE(params[0]);
     if (nparams>1 && SCM_CHARP(params[1])) padchar = SCM_CHAR_VALUE(params[1]);
     if (nparams>2 && SCM_CHARP(params[2])) commachar = SCM_CHAR_VALUE(params[2]);

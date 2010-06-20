@@ -578,18 +578,17 @@ ScmObj Scm_MakeRational(ScmObj numer, ScmObj denom)
 ScmObj Scm_Numerator(ScmObj n)
 {
     if (SCM_RATNUMP(n)) return SCM_RATNUM_NUMER(n);
-    if (SCM_NUMBERP(n)) return n;
-    Scm_Error("number required, but got %S", n);
-    return SCM_UNDEFINED;       /* dummy */
+    if (SCM_EXACTP(n)) return n; /* fixnum or bignum */
+    if (!SCM_REALP(n)) SCM_TYPE_ERROR(n, "real number");
+    return Scm_Inexact(Scm_Numerator(Scm_Exact(n)));
 }
 
 ScmObj Scm_Denominator(ScmObj n)
 {
     if (SCM_RATNUMP(n))  return SCM_RATNUM_DENOM(n);
     if (SCM_INTEGERP(n)) return SCM_MAKE_INT(1);
-    if (SCM_NUMBERP(n))  return Scm_MakeFlonum(1.0);
-    Scm_Error("number required, but got %S", n);
-    return SCM_UNDEFINED;       /* dummy */
+    if (!SCM_REALP(n)) SCM_TYPE_ERROR(n, "real number");
+    return Scm_Inexact(Scm_Denominator(Scm_Exact(n)));
 }
 
 ScmObj Scm_ReduceRational(ScmObj rational)
@@ -1056,7 +1055,7 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
         return Scm_BignumToSI64(SCM_BIGNUM(obj), clamp, oor);
     }
     if (SCM_RATNUMP(obj)) {
-        obj = Scm_ExactToInexact(obj);
+        obj = Scm_Inexact(obj);
         /* FALLTHROUGH */
     }
     if (SCM_FLONUMP(obj)) {
@@ -1081,7 +1080,7 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
         return Scm_BignumToSI64(SCM_BIGNUM(obj), clamp, oor);
     }
     if (SCM_RATNUMP(obj)) {
-        obj = Scm_ExactToInexact(obj);
+        obj = Scm_Inexact(obj);
         /* FALLTHROUGH */
     }
     if (SCM_FLONUMP(obj)) {
@@ -1125,7 +1124,7 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
         return Scm_BignumToUI64(SCM_BIGNUM(obj), clamp, oor);
     }
     if (SCM_RATNUMP(obj)) {
-        obj = Scm_ExactToInexact(obj);
+        obj = Scm_Inexact(obj);
         /* FALLTHROUGH */
     }
     if (SCM_FLONUMP(obj)) {
@@ -1157,7 +1156,7 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
         return Scm_BignumToUI64(SCM_BIGNUM(obj), clamp, oor);
     }
     if (SCM_RATNUMP(obj)) {
-        obj = Scm_ExactToInexact(obj);
+        obj = Scm_Inexact(obj);
         /* FALLTHROUGH */
     }
     if (SCM_FLONUMP(obj)) {
@@ -1483,7 +1482,7 @@ DEFINE_DUAL_API1(Scm_ReciprocalInexact, Scm_VMReciprocalInexact, ireciprocal)
  * Conversion operators
  */
 
-static ScmObj exactToInexact(ScmObj obj, int vmp)
+static ScmObj inexact(ScmObj obj, int vmp)
 {
     if (SCM_INTP(obj)) {
         double z = (double)SCM_INT_VALUE(obj);
@@ -1498,10 +1497,10 @@ static ScmObj exactToInexact(ScmObj obj, int vmp)
     }
     return obj;
 }
-DEFINE_DUAL_API1(Scm_ExactToInexact, Scm_VMExactToInexact, exactToInexact)
+DEFINE_DUAL_API1(Scm_Inexact, Scm_VMInexact, inexact)
 
 
-ScmObj Scm_InexactToExact(ScmObj obj)
+ScmObj Scm_Exact(ScmObj obj)
 {
     if (SCM_FLONUMP(obj)) {
         double d = SCM_FLONUM_VALUE(obj);
@@ -2749,14 +2748,14 @@ void Scm_MinMax(ScmObj arg0, ScmObj args, ScmObj *min, ScmObj *max)
         if (SCM_NULLP(args)) {
             if (min) {
                 if (inexact && SCM_EXACTP(mi)) {
-                    *min = Scm_ExactToInexact(mi);
+                    *min = Scm_Inexact(mi);
                 } else {
                     *min = mi;
                 }
             }
             if (max) {
                 if (inexact && SCM_EXACTP(ma)) {
-                    *max = Scm_ExactToInexact(ma);
+                    *max = Scm_Inexact(ma);
                 } else {
                     *max = ma;
                 }
@@ -3651,7 +3650,7 @@ static ScmObj read_real(const char **strp, int *lenp,
         if ((*lenp) <= 0) {
             if (minusp) intpart = Scm_Negate(intpart);
             if (ctx->exactness == INEXACT) {
-                return Scm_ExactToInexact(intpart);
+                return Scm_Inexact(intpart);
             } else {
                 return intpart;
             }
@@ -3680,7 +3679,7 @@ static ScmObj read_real(const char **strp, int *lenp,
             }
             if (minusp) intpart = Scm_Negate(intpart);
             if (ctx->exactness == INEXACT) {
-                return Scm_ExactToInexact(Scm_Div(intpart, denom));
+                return Scm_Inexact(Scm_Div(intpart, denom));
             } else {
                 return Scm_MakeRational(intpart, denom);
             }
