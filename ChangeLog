@@ -1,3 +1,8 @@
+2010-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/numerical.scm (%exact-integer-sqrt): Fixed a bug
+	  when the given arg is too large to coerce to double.
+
 2010-06-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_Numerator, Scm_Denominator): Bug fix for

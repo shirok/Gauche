@@ -1875,6 +1875,7 @@
 (integer-sqrt-tester (expt 2 53))
 (integer-sqrt-tester (+ (expt 2 53) 1))
 (integer-sqrt-tester 9999999999999999999999999999999999999999999999999999)
+(integer-sqrt-tester (+ (expt 10 400) 3141592653589)) ; double range overflow
 
 (test* "exact-integer-sqrt -1" (test-error) (exact-integer-sqrt -1))
 (test* "exact-integer-sqrt 1.0" (test-error) (exact-integer-sqrt 1.0))

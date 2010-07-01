@@ -132,13 +132,20 @@
     (error "exact nonnegative integer required, but got" k))
   (%exact-integer-sqrt k))
 
-(define (%exact-integer-sqrt k)
+(define (%exact-integer-sqrt k)  ; k >= 0
   (if (< k 9007199254740992)            ;2^53
     ;; k can be converted to a double without loss.
     (let1 s (floor->exact (%sqrt k))
       (values s (- k (* s s))))
     ;; use Newton-Rhapson
-    (let loop ([s (floor->exact (%sqrt k))])
+    ;; If k is representable with double, we use (%sqrt k) as the initial
+    ;; estimate, for calculating double sqrt is fast.  If k is too large,
+    ;; we use 2^floor((log2(k)+1)/2) as the initial value.
+    ;; TODO: integer-length can be a lot faster if we make it built-in.
+    (let loop ([s (let1 ik (%sqrt k)
+                    (if (finite? ik)
+                      (floor->exact (%sqrt k))
+                      (ash 1 (quotient (integer-length k) 2))))])
       (let1 s2 (* s s)
         (if (< k s2)
           (loop (quotient (+ s2 k) (* 2 s)))
