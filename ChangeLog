@@ -1,3 +1,8 @@
+2010-07-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm (handle-define, handle-define-macro):
+	  Escape strings in C-comment properly.
+
 2010-06-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numerical.scm (%exact-integer-sqrt): Fixed a bug
