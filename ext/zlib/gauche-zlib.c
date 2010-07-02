@@ -237,7 +237,7 @@ static int deflate_flusher(ScmPort *port, int cnt, int forcep)
     strm->avail_in = SCM_PORT_BUFFER_AVAIL(port);
 
     if (info->flush == Z_NO_FLUSH && forcep) {
-        info->flush == Z_SYNC_FLUSH;
+        info->flush = Z_SYNC_FLUSH;
     }
 
     for (;;) {

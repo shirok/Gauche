@@ -257,10 +257,10 @@ static int regexp_compare(ScmObj x, ScmObj y, int equalp)
         int i;
         const u_char *px = rx->code, *py = ry->code;
         
-        for (i=0; i++; i<rx->numCodes) {
+        for (i=0; i<rx->numCodes; i++) {
             if (rx->code[i] != ry->code[i]) return 1;
         }
-        for (i=0; i++; i<rx->numSets) {
+        for (i=0; i<rx->numSets; i++) {
             if (rx->sets[i] == ry->sets[i]) continue;
             if (!Scm_CharSetEq(rx->sets[i], ry->sets[i])) return 1;
         }

@@ -531,7 +531,7 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
                       || SCM_U8VECTORP(SCM_CAR(SCM_CDDR(c)))))) {
                 Scm_Error("socket-buildmsg: invalid control message spec: %S", c);
             }
-            (void*)get_message_body(SCM_CAR(SCM_CDDR(c)), &clen);
+            (void)get_message_body(SCM_CAR(SCM_CDDR(c)), &clen);
             ctrllen += CMSG_SPACE(clen);
         }
         msg->msg_controllen = ctrllen;

@@ -429,7 +429,7 @@ double Scm_BignumToDouble(ScmBignum *b)
        the special case where maxbit-52==0, maxbit-53==1, and all
        bits below are 0 (round-to-even rule) */
     if (SCM_BITS_TEST(bits, maxbit-53)
-        && (dst[0]&1 == 1
+        && ((dst[0]&1) == 1
             || (Scm_BitsCount1(bits, 0, maxbit-53) > 0))) {
         dst[0]++;
         if (dst[0] >= (1UL<<52)) {
