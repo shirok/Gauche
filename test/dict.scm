@@ -36,6 +36,9 @@
 
 (test-basics (make-bimap (make-hash-table 'eq?) (make-hash-table 'eqv?)))
 
+(use gauche.collection)
+(use srfi-1)
+
 (let1 bm (make-bimap (make-hash-table 'eq?) (make-hash-table 'eqv?))
   (bimap-put! bm 'a 1)
   (bimap-put! bm 'b 2)
@@ -51,6 +54,11 @@
 
   (test* "override by reverse insertion" #f
          (bimap-left-get bm 'a #f)) ; must be overridden by right-put! 1 'd
+
+  ;; collection framework
+  (test* "collection protocol" '((b . 2) (c . 3) (d . 1))
+         (fold cons '() bm)
+         (cut lset= equal? <> <>))
   )
 
 (test-end)

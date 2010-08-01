@@ -154,11 +154,14 @@
 ;;; Bidirectional map
 ;;;
 
+(define-class <bimap-meta> (<class>) ())
+
 ;; Currently we only support strict one-to-one mapping.
 (define-class <bimap> (<dictionary>)
   ((left  :init-keyword :left)    ; x -> y
    (right :init-keyword :right)   ; y -> x
-   ))
+   )
+  :metaclass <bimap-meta>)
 
 (define (make-bimap left right)
   (make <bimap> :left left :right right))
@@ -218,4 +221,7 @@
 (define-method dict-fold ((dict <bimap>) proc seed)
   (dict-fold (bimap-left dict) proc seed))
 
+;; Collection protocol.   We just redirect methods to left map.
+(define-method call-with-iterator ((coll <bimap>) proc . args)
+  (apply call-with-iterator (bimap-left coll) proc args))
 

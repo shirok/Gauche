@@ -1,3 +1,11 @@
+2010-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/dictionary.scm (call-with-iterator): Implemented
+	  minimum collection protocol for bimap.  Need to think more
+	  about bulders and other shortcuts, but this one fills the
+	  needs for the time being.
+	* test/dict.scm: Added bimap collection test.
+
 2010-07-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (handle-define, handle-define-macro):
