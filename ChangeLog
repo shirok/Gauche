@@ -1,3 +1,10 @@
+2010-08-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/mime.scm (<mime-part>): Fixed typo (Patch from
+	  Hayashi Masashi).
+	* lib/rfc/http.scm (http-compose-form-data): Respect content-transfer-
+	  encoding keyword argument.  (Patch from Hayashi Masashi).
+
 2010-08-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/dictionary.scm (call-with-iterator): Implemented

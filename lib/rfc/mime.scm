@@ -443,7 +443,7 @@
    (parent   :init-keyword :parent :init-value #f)
    (index    :init-keyword :index :init-value 0)
    (content  :init-keyword :content :init-value #f)
-   (source   :init-keyword :soruce :init-value #f) ; only used for composing
+   (source   :init-keyword :source :init-value #f) ; only used for composing
    ))
 
 (define (mime-parse-message port headers handler)

@@ -461,7 +461,7 @@
                           [content-transfer-encoding #f] . other-keys)
          `(,(canonical-content-type (mime-parse-content-type content-type)
                                     value file)
-           (("content-transfer-encoding" "binary")
+           (("content-transfer-encoding" ,(or content-transfer-encoding "binary"))
             ("content-disposition" ,(make-content-disposition name file))
             ,@(map (cut map x->string <>) (slices other-keys 2)))
            ,(if file `(file ,file) (x->string value))))]))
