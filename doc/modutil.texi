@@ -3376,6 +3376,13 @@ of the user cannot be determined, @code{#f} is returned.
 与えられたユーザが見付けられないか、ホームディレクトリを決定できなかった場合は
 @code{#f}が返されます。
 @c COMMON
+
+@c EN
+On Windows native platforms, this function is only supported
+to query the current user's directory.
+@c JP
+Windowsネイティブ環境では、この関数はカレントユーザに対してのみ動作します。
+@c COMMON
 @end defun
 
 @deffn {Parameter} temporary-directory
@@ -3970,6 +3977,19 @@ by default.
   :pred  file-is-readable?)
 @end example
 @end defun
+
+@defun null-device
+@c EN
+Returns a name of the @emph{null} device.  
+On unix platforms (including cygwin) it returns @code{"/dev/null"},
+and on Windows native platforms (including mingw) it returns @code{"NUL"}.
+@c JP
+nullデバイス名を返します。cygwinを含むunixプラットフォームでは
+@code{"/dev/null"}、mingwを含むWindowsネイティブプラットフォームでは
+@code{"NUL"}が返されます。
+@c COMMON
+@end defun
+
 
 @node File attribute utilities, File operations, Pathname utilities, Filesystem utilities
 @subsection File attribute utilities

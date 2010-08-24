@@ -67,6 +67,7 @@
           touch-file copy-file move-file 
           ;copy-files move-files
           remove-files delete-files
+          null-device
           file->string file->string-list file->list file->sexp-list
           ))
 (select-module file.util)
@@ -96,13 +97,29 @@
     [_ (error "directory name should be a string" newdir)]))
 
 (define (home-directory :optional (user (sys-getuid)))
-  (and-let* ([ent (cond ((integer? user) (sys-getpwuid user))
-                        ((string? user)  (sys-getpwnam user))
-                        (else (error "bad user" user)))])
-    (slot-ref ent 'dir)))
+  (cond-expand
+   [gauche.os.windows
+    (unless (eqv? user (sys-getuid))
+      (error "On windows native platforms, getting other user's home directory \
+              is not supported (yet)."))
+    ;; NB: I'm not sure if this is a proper way, but it appears to work in
+    ;; typical cases.
+    (or (sys-getenv "HOME")             ; MSYS sets this.
+        (string-append (or (sys-getenv "HOMEDRIVE") "")
+                       (or (sys-getenv "HOMEPATH") "\\")))]
+   [else
+    (and-let* ([ent (cond ((integer? user) (sys-getpwuid user))
+                          ((string? user)  (sys-getpwnam user))
+                          (else (error "bad user" user)))])
+      (slot-ref ent 'dir))]))
 
 (define temporary-directory
   (make-parameter (or (sys-getenv "TMPDIR") "/tmp")))
+
+(define (null-device)
+  (cond-expand
+   [gauche.os.windows "NUL"]
+   [else "/dev/null"]))
 
 ;; utility for directory-list and directory-list2
 (define (%directory-filter dir pred filter-add-path?)
