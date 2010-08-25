@@ -1215,7 +1215,7 @@ Schemeの規格は@code{map}や@code{for-each}などの繰り返し手続きを�
 @item マッピング
 @c COMMON
 @code{fold}, @code{fold2}, @code{fold3}, 
-@code{map}, @code{map-to}, @code{map-accumf, }@code{for-each}
+@code{map}, @code{map-to}, @code{map-accum}, @code{for-each}
 @c EN
 @item Selection and searching
 @c JP
