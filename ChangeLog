@@ -1,5 +1,12 @@
 2010-09-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/signal.c (Scm_SetSignalHandler): Represent the status of
+	  signal handler that "Gauche does not handle the signal" by
+	  #<undef>.  It used to be #f, but it is also used to represent
+	  SIG_DFL and caused an unwanted alteration of signal handlers
+	  by with-signal-handler.   The original fix is provided by
+	  enami.
+
 	* lib/rfc/http.scm: More rubust support of external stunnel handling
 	  for https connection.
 	* lib/gauche/process.scm (run-process): Generalized I/O redirection

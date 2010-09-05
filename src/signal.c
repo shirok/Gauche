@@ -75,7 +75,7 @@ static int sigprocmask_win(int how, const sigset_t *set, sigset_t *oldset);
 
 /* Master signal handler vector. */
 static struct sigHandlersRec {
-    ScmObj handlers[NSIG];      /* Scheme signal handlers.  This is #f on
+    ScmObj handlers[NSIG];      /* Scheme signal handlers.  This is #<undef> on
                                    signals to which Gauche does not install
                                    C-level signal handler (sig_handle). */
     ScmSysSigset *masks[NSIG];  /* Signal masks during executing Scheme
@@ -580,7 +580,7 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
     struct sigaction act;
     struct sigdesc *desc;
     sigset_t sigset;
-    int badproc = FALSE, sigactionfailed = FALSE;
+    int badproc = FALSE, sigactionfailed = FALSE, passthrough = FALSE;
 
     if (SCM_INTP(sigs)) {
         int signum = SCM_INT_VALUE(sigs);
@@ -595,14 +595,10 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
         Scm_Error("bad signal number: must be an integer signal number or a <sys-sigset> object, but got %S", sigs);
     }
 
-    if (mask == NULL) {
-        /* If no mask is specified, block singals in SIGS. */
-        mask = make_sigset();
-        mask->set = sigset;
-    }
-    
     (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
-    if (SCM_TRUEP(handler)) {
+    if (SCM_UNDEFINEDP(handler)) {
+        passthrough = TRUE;
+    } else if (SCM_TRUEP(handler)) {
         act.sa_handler = SIG_DFL;
     } else if (SCM_FALSEP(handler)) {
         act.sa_handler = SIG_IGN;
@@ -612,13 +608,20 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
     } else {
         badproc = TRUE;
     }
+
+    if (mask == NULL && !passthrough) {
+        /* If no mask is specified, block singals in SIGS. */
+        mask = make_sigset();
+        mask->set = sigset;
+    }
+    
     if (!badproc) {
         sigfillset(&act.sa_mask); /* we should block all the signals */
         act.sa_flags = 0;
         for (desc=sigDesc; desc->name; desc++) {
             if (!sigismember(&sigset, desc->num)) continue;
             if (!sigismember(&sigHandlers.masterSigset, desc->num)) continue;
-            if (sigaction(desc->num, &act, NULL) != 0) {
+            if (!passthrough && sigaction(desc->num, &act, NULL) != 0) {
                 sigactionfailed = desc->num;
             } else {
                 sigHandlers.handlers[desc->num] = handler;
@@ -955,7 +958,7 @@ void Scm__InitSignal(void)
 
     (void)SCM_INTERNAL_MUTEX_INIT(sigHandlers.mutex);
     sigemptyset(&sigHandlers.masterSigset);
-    for (i=0; i<NSIG; i++) sigHandlers.handlers[i] = SCM_FALSE;
+    for (i=0; i<NSIG; i++) sigHandlers.handlers[i] = SCM_UNDEFINED;
     
     Scm_InitStaticClass(&Scm_SysSigsetClass, "<sys-sigset>",
                         mod, NULL, 0);
