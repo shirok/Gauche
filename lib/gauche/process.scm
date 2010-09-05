@@ -319,7 +319,12 @@
              (write arg out) (close-output-port out)
              (do-file '< fd nam))])]
         [else (error "unsupported yet" dir)])))
-  ;; process dup-map
+  ;; if we ever redirects, make sure stdios are avaialble in child even
+  ;; it is not explicitly specified.
+  (unless (assv 0 iomap) (push! iomap '(0 . 0)))
+  (unless (assv 1 iomap) (push! iomap '(1 . 1)))
+  (unless (assv 2 iomap) (push! iomap '(2 . 2)))
+  ;; TODO: process dup-map
   (values iomap toclose ipipes opipes))
 
 (define (%ensure-mask mask)
