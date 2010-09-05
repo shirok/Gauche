@@ -15172,8 +15172,8 @@ Schemeからシグナルハンドラを設定するには以下の手続きを�
 @defun set-signal-handler! signals handler :optional sigmask
 @c EN
 @var{Signals} may be a single signal number or a @code{<sys-sigset>}
-object, and @var{handler} should be either @code{#t}, @code{#f}
-or a procedure that takes one argument.
+object, and @var{handler} should be either @code{#t}, @code{#f},
+@code{#<undef>}, or a procedure that takes one argument.
 If @var{handler} is a procedure, it will be called when the process
 receives one of specified signal(s), with the received signal
 number as an argument.
@@ -15196,8 +15196,8 @@ continuations captured inside @var{handler} will be invalid
 once you return from @var{handler}).
 @c JP
 @var{signals}はシグナル番号か@code{<sys-sigset>}オブジェクト、
-@var{handler}は@code{#t}、@code{#f}、一つの引数を取る手続きのいずれか
-でなければなりません。
+@var{handler}は@code{#t}、@code{#f}、@code{#<undef>}、
+一つの引数を取る手続きのいずれかでなければなりません。
 @var{handler}が手続きの場合、プロセスが指定されたシグナル(のうちのいずれか)を
 受けた時に、そのシグナル番号を引数として@var{handler}が呼ばれます。
 
@@ -15227,6 +15227,32 @@ is @code{#f}, the specified signals(s) will be ignored.
 @var{handler}が@code{#t}の場合、指定されたシグナルにはオペレーティングシステムの
 デフォルトの振るまいが設定されます。
 @var{handler}が@code{#f}の場合、指定されたシグナルは無視されます。
+@c COMMON
+
+@c EN
+If @var{handler} is @code{#<undef>} (@xref{Undefined values}),
+it indicates Gauche to leave the current OS's signal handler as it is.
+This value isn't as much use in @code{set-signal-handler!} as
+in @code{get-signal-handler}: If @code{#<undef>} is passed
+to @code{set-signal-handler!}, it immeidately returns without
+modifying anything.   However, if you get @code{#<undef>}
+from @code{get-signal-handler}, you can know that the 
+signal handler behavior hasn't been modified by Gauche.
+(Note that once Gauche ever installs a signal handler,
+there is no way to revert back to make @code{get-signal-handler}
+reutrn @code{#<undef>}).
+@c JP
+@var{handler}が@code{#<undef>}
+(@ref{Undefined values}参照) であった場合は、
+Gaucheはその時点のOSレベルのシグナルハンドラを変更しません。
+この引数は@code{set-signal-handler!}に対してはあまり
+意味を持ちません; 何もせずに返るだけだからです。
+しかし、@code{get-signal-handler}で@code{#<undef>}が
+返った場合、Gaucheがそのシグナルハンドラを一度もいじっていないことを
+示します。
+(一度でもGaucheがシグナルハンドラをインストールした場合、
+@code{get-signal-handler}が@code{#<undef>}を再び
+返すことはありません。)
 @c COMMON
 
 @c EN
