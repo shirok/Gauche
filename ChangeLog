@@ -1,3 +1,10 @@
+2010-09-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm: More rubust support of external stunnel handling
+	  for https connection.
+	* lib/gauche/process.scm (run-process): Generalized I/O redirection
+	  handling to allow more flexible redirection, closer to shell.
+
 2010-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm (home-directory): Added support for Windows.
