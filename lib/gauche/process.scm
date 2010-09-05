@@ -63,14 +63,35 @@
           wrap-with-input-conversion wrap-with-output-conversion)
 
 (define-class <process> ()
-  ((pid       :initform -1 :getter process-pid)
-   (command   :initform #f :getter process-command :init-keyword :command)
-   (status    :initform #f :getter process-exit-status)
-   (input     :initform #f :getter process-input)
-   (output    :initform #f :getter process-output)
-   (error     :initform #f :getter process-error)
+  ((pid       :init-value -1 :getter process-pid)
+   (command   :init-value #f :getter process-command :init-keyword :command)
+   (status    :init-value #f :getter process-exit-status)
+   (in-pipes  :init-value '())          ;((<fd> . #<port>) ...)
+   (out-pipes :init-value '())          ;ditto
+   (input     :allocation :virtual :slot-ref (^o (process-input o 0)))
+   (output    :allocation :virtual :slot-ref (^o (process-output o 1)))
+   (error     :allocation :virtual :slot-ref (^o (process-output o 2)))
+   (extra-inputs  :initform '())
+   (extra-outputs :initform '())
    (processes :allocation :class :initform '())
   ))
+
+;; Process I/O management
+;; 'in-pipes' and 'out-pipes' slots contains an assoc list of
+;; ((<name> . <port>) ...), where <name> is a symbol and <port> is
+;; a pipe port connected to the child's I/O.  The direction of the port
+;; is opposite to the direction of fd (e.g. child's stdin is connected
+;; to an output port).
+;; For the backward compatibility, (process-input p) and (process-output p)
+;; returns pipes connected to child's stdin and stdout, respectively.
+(define (process-input p :optional (name 'stdin))
+  (cond [(assv name (~ p'in-pipes)) => cdr] [else #f]))
+
+(define (process-output p :optional (name 'stdout))
+  (cond [(assv name (~ p'out-pipes)) => cdr] [else #f]))
+
+(define (process-error p) ; for the compatibility
+  (process-output p 'stderr))
 
 ;; When the process exits abnormally, this error is thrown.
 (define-condition-type <process-abnormal-exit> <error> #f (process))
@@ -80,12 +101,11 @@
           (process-pid p)
           (process-command p)
           (if (process-alive? p)
-              "active"
-              "inactive")))
+            "active"
+            "inactive")))
 
-;; null device
-(define *nulldev*
-  (cond-expand (gauche.os.windows "NUL") (else "/dev/null")))
+;; null device (avoid depending on file.util)
+(define *nulldev* (cond-expand (gauche.os.windows "NUL") (else "/dev/null")))
 
 ;; create process and run.
 (define (run-process command . args)
@@ -93,23 +113,69 @@
     (%run-process-old command args) ;; backward compatibility
     (%run-process-new command args)))
 
+;; Note: I/O redirection 
+;;  'Redirects' keyword argument is a generic way to wire child's I/Os.
+;;  It takes a list of <io-spec>s, where each <io-spec> can be one of
+;;  the followings:
+;;
+;;   (< fd source)   Make child's input FD read from SOURCE.
+;;   (<< fd value)   Make child's input FD read from (write-to-string VALUE).
+;;   (<& fd0 fd1)    Make child's input FD0 duplicate of child's input FD1.
+;;   (> fd sink)     Make child's output FD write to SINK.
+;;   (>> fd sink)    Make child's output FD write to SINK in append mode.
+;;   (>& fd0 fd1)    Make child's output FD0 duplicate of child's output FD1.
+;;
+;;  * FD, FD0 and FD1 are nonnegative integers refer to the file
+;;    descriptor in the child process.
+;;  * SOURCE can be either one of the followings:
+;;     a string - SOURCE names a file.  It is opened for reading and the child
+;;                process can reads the file from FD.
+;;     a symbol - A unidirectional pipe is created, whose 'reader' end
+;;                is connected to the child's FD, and whose 'writer' end
+;;                is available as an output port by
+;;                (process-input PROCESS SOURCE).
+;;     :null    - The child's FD is connected to the null device.
+;;     an integer - It should specify a parent's file descriptor opened for
+;;                input.  The child sees the duped file descriptor as FD.
+;;     a file input port - The underlying file descriptor is duped into FD
+;;                in the child process.
+;;  * SINK can be either one of the followings:
+;;     a string - Names a file.  It is opened for reading and the child process
+;;                can writes to it via FD.
+;;     a symbol - A unidirectional pipe is created, whose 'writer' end is
+;;                connected to the child's FD, and whose 'reader' end is
+;;                available as an output port by
+;;                (process-output PROCESS SINK).
+;;     :null    - the child's FD is connected to the null device.
+;;     an integer - It should specify a parent's file descriptor opened for
+;;                output.  The child sees the dupled file descriptor as FD.
+;;     A file output port - The underlying file descriptor is dupled into FD
+;;                in the child process.
+;;
+;;  :input source, :output sink and :error sink keyword arguments
+;;  are a shorthand notation for (< 0 source), (> 1 sink) and (> 2 sink).
+;;  furthermore, source and sink in these arguments can be :pipe, which
+;;  will be equivalent to (< 0 stdin), (> 1 stdout) and (> 2 stderr),
+;;  respectively.
+
 (define (%run-process-new command args)
   (let-keywords* args ((input  #f) (output #f) (error  #f)
-                       (wait   #f) (fork   #t)
+                       (redirects '())
+                       (wait   #f) (fork   #t) 
                        (host   #f)    ;remote execution
                        (sigmask #f) (directory #f))
-    (%check-iokey :input input)
-    (%check-iokey :output output)
-    (%check-iokey :error error)
-    (let* ([argv (map x->string command)]
+    (let* ([redirs (%canon-redirects redirects input output error)]
+           [argv (map x->string command)]
            [proc (make <process> :command (car argv))]
            [argv (if host (%prepare-remote host argv directory) argv)]
            [dir  (if host #f directory)])
       (%check-directory dir)
-      (receive (iomap toclose)
-          (if (or input output error)
-            (%setup-iomap proc input output error)
-            (values #f '()))
+      (receive (iomap toclose ipipes opipes)
+          (if (pair? redirs)
+            (%setup-iomap proc redirs)
+            (values #f '() '() '()))
+        (set! (~ proc'in-pipes) ipipes)
+        (set! (~ proc'out-pipes) opipes)
         (if fork
           (let1 pid (sys-fork-and-exec (car argv) argv
                                        :iomap iomap :directory dir
@@ -129,9 +195,41 @@
                     :iomap iomap :directory dir
                     :sigmask (%ensure-mask sigmask)))))))
 
-(define (%check-iokey key arg)
-  (unless (or (string? arg) (not arg) (eqv? arg :pipe))
-    (errorf "~s key requires a string or :pipe following, but got ~s" key arg)))
+(define (%canon-redirects redirects in out err)
+  (rlet1 redirs
+      `(,@redirects
+        ,@(if in  `((< 0 ,(if (eq? in  :pipe) 'stdin  in))) '())
+        ,@(if out `((> 1 ,(if (eq? out :pipe) 'stdout out))) '())
+        ,@(if err `((> 2 ,(if (eq? err :pipe) 'stderr err))) '()))
+    (for-each %check-redirects redirs)))
+
+(define (%check-redirects arg)
+  (unless (and (pair? arg) (pair? (cdr arg)) (pair? (cddr arg))
+               (null? (cdddr arg))
+               (integer? (cadr arg)))
+    (errorf "invalid redirection entry: ~s" arg))
+  (let1 a2 (caddr arg)
+    (case (car arg)
+      [(<) (unless (or (string? a2) (symbol? a2) (eq? a2 :null) (integer? a2)
+                       (and (input-port? a2) (port-file-number a2)))
+             (errorf "input redirection '<' requires a filename, a symbol, \
+                      :null, integer file descriptor or file input port, \
+                      but got ~s for file descriptor ~s"
+                     a2 (cadr arg)))]
+      [(<<) (unless (string? a2)
+              (errorf "input redirection '<<' requires a string, but got ~s \
+                       for file descriptor ~s" a2 (cadr arg)))]
+      [(> >>)
+       (unless (or (string? a2) (symbol? a2) (eq? a2 :null) (integer? a2)
+                   (and (output-port? a2) (port-file-number a2)))
+         (errorf "output redirection '~a' requires a filename, a symbol, \
+                  :null, integer file descriptor or file input port, \
+                  but got ~s for file descriptor ~s"
+                 (car arg) a2 (cadr arg)))]
+      [(<& >&) (unless (integer? a2)
+                 (errorf "redirection '~a' requires an integer file \
+                          descriptor, but got ~s" a2))]
+      [else (errorf "invalid redirection entry: ~s" arg)])))
 
 (define (%check-directory dir)
   (when dir
@@ -167,38 +265,62 @@
       ,@(if dir `("cd" ,dir ";") '())
       ,@argv)))
 
-(define (%setup-iomap proc input output error)
+;; Build I/O map 
+(define (%setup-iomap proc redirs)
 
-  (define toclose '())
+  (define toclose '())  ;list of ports to be closed in parent
+  (define todup '())    ;list of (>& a b) and (<& a b)
+  (define ipipes '())   ;list of (name . port)
+  (define opipes '())   ;list of (name . port)
+  (define iomap '())    ;list of (fd . port/fd)
+  (define seen '())     ;list of seen fds
 
-  (define (file spec opener)
-    (and (string? spec)
-         (rlet1 p (opener spec) (push! toclose p))))
+  (define (do-file dir fd arg)
+    (let1 p (case dir
+              [(<) (open-input-file arg)]
+              [(>) (open-output-file arg)]
+              [(>>) (open-output-file arg :if-exists :append)])
+      (push! toclose p)
+      (push! iomap `(,fd . ,p))))
 
-  (define (in-pipe spec slot)
-    (and (eqv? spec :pipe)
-         (receive (in out) (sys-pipe)
-           (slot-set! proc slot out)
-           (push! toclose in)
-           in)))
-
-  (define (out-pipe spec slot)
-    (and (eqv? spec :pipe)
-         (receive (in out) (sys-pipe)
-           (slot-set! proc slot in)
-           (push! toclose out)
-           out)))
-
-  (let1 iomap `(,(cons 0 (or (file input open-input-file)
-                             (in-pipe input 'input)
-                             0))
-                ,(cons 1 (or (file output open-output-file)
-                             (out-pipe output 'output)
-                             1))
-                ,(cons 2 (or (file error open-output-file)
-                             (out-pipe error 'error)
-                             2)))
-    (values iomap toclose)))
+  (define (do-pipe fd arg in? child-end parent-end)
+    (push! toclose child-end)
+    (if in?
+      (push! ipipes `(,arg . ,parent-end))
+      (push! opipes `(,arg . ,parent-end)))
+    (push! iomap `(,fd . ,child-end)))
+  
+  (dolist [r redirs]
+    (let ([dir (car r)] [fd  (cadr r)] [arg (caddr r)])
+      (when (memv fd seen)
+        (errorf "duplicates in redirection file descriptor (~a): ~s" fd redirs))      (push! seen fd)
+      (case dir
+        [(< > >>)
+         (cond [(string? arg) (do-file dir fd arg)]
+               [(symbol? arg)
+                (receive (in out) (sys-pipe)
+                  (if (eq? dir '<)
+                    (do-pipe fd arg #t in out)
+                    (do-pipe fd arg #f out in)))]
+               [(eq? arg :null) (do-file dir fd *nulldev*)]
+               [(or (port? arg) (integer? arg)) (push! iomap `(,fd . ,arg))]
+               [else (error "invalid entry in process redirection" r)])]
+        [(<<)
+         (cond-expand
+          [gauche.sys.pthreads
+           (receive (in out) (sys-pipe)
+             (push! iomap `(,fd . ,in))
+             (thread-start!
+              (make-thread (lambda ()
+                             (unwind-protect (write arg out)
+                               (close-output-port out))))))]
+          [else
+           (receive (out nam) (sys-mkstemp "/tmp/gauche")
+             (write arg out) (close-output-port out)
+             (do-file '< fd nam))])]
+        [else (error "unsupported yet" dir)])))
+  ;; process dup-map
+  (values iomap toclose ipipes opipes))
 
 (define (%ensure-mask mask)
   (cond
