@@ -595,10 +595,9 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
         Scm_Error("bad signal number: must be an integer signal number or a <sys-sigset> object, but got %S", sigs);
     }
 
-    (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
-    if (SCM_UNDEFINEDP(handler)) {
-        passthrough = TRUE;
-    } else if (SCM_TRUEP(handler)) {
+    if (SCM_UNDEFINEDP(handler)) return SCM_UNDEFINED;
+
+    if (SCM_TRUEP(handler)) {
         act.sa_handler = SIG_DFL;
     } else if (SCM_FALSEP(handler)) {
         act.sa_handler = SIG_IGN;
@@ -609,19 +608,20 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
         badproc = TRUE;
     }
 
-    if (mask == NULL && !passthrough) {
+    if (mask == NULL) {
         /* If no mask is specified, block singals in SIGS. */
         mask = make_sigset();
         mask->set = sigset;
     }
-    
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
     if (!badproc) {
         sigfillset(&act.sa_mask); /* we should block all the signals */
         act.sa_flags = 0;
         for (desc=sigDesc; desc->name; desc++) {
             if (!sigismember(&sigset, desc->num)) continue;
             if (!sigismember(&sigHandlers.masterSigset, desc->num)) continue;
-            if (!passthrough && sigaction(desc->num, &act, NULL) != 0) {
+            else if (sigaction(desc->num, &act, NULL) != 0) {
                 sigactionfailed = desc->num;
             } else {
                 sigHandlers.handlers[desc->num] = handler;
