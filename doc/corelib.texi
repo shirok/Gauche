@@ -15272,10 +15272,12 @@ for details.
 @defunx get-signal-handler-mask signum
 @c EN
 Returns the handler setting, or signal mask setting, of a signal @var{signum},
-respectively.
+respectively.  See @code{set-signal-handler!} for the meaning of
+the return value of @code{get-signal-handler}.
 @c JP
 シグナル@var{signum}に設定されたハンドラもしくはシグナルマスクを
-それぞれ返します。
+それぞれ返します。@code{get-signal-handler}が返す値の意味については
+@code{set-signal-handler!}を参照してください。
 @c COMMON
 @end defun
 
