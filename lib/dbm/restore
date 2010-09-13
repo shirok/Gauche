@@ -29,7 +29,7 @@
 (define (do-dump name class input)
   (let1 dbm (guard (e [else (exit 1 "couldn't create dbm database: ~a"
                                   (~ e'message))])
-              (dbm-open class :path name :rwmode :create))
+              (dbm-open class :path name :rw-mode :create))
     (file-filter
      (^(in out)
        (port-for-each
