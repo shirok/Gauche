@@ -38,7 +38,8 @@
           dbm-open    dbm-close   dbm-closed? dbm-get
           dbm-put!    dbm-delete! dbm-exists?
           dbm-fold    dbm-for-each  dbm-map
-          dbm-db-exists? dbm-db-remove dbm-db-copy dbm-db-move dbm-db-rename)
+          dbm-db-exists? dbm-db-remove dbm-db-copy dbm-db-move dbm-db-rename
+          dbm-type->class)
   )
 (select-module dbm)
 
@@ -245,3 +246,14 @@
 
 (define dbm-db-rename dbm-db-move) ; backward compatibility
 
+;; Try to dynamically load named dbm module and returns the class.
+;; DBMTYPE must be a symbol like 'gdbm'.
+;; Returns #f if it couldn't retrieve the named dbm module.
+
+(define (dbm-type->class dbmtype)
+  (let ([module-name (string->symbol #`"dbm.,dbmtype")]
+        [class-name (string->symbol #`"<,|dbmtype|>")])
+    (and (library-exists? module-name :strict? #t)
+         (guard (e [else #f])
+           (%require #?=(module-name->path module-name))
+           (global-variable-ref (find-module module-name) class-name)))))

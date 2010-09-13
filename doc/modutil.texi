@@ -2563,6 +2563,37 @@ Delete a value associated with @var{key}.
 @end deffn
 
 
+@defun dbm-type->class dbmtype
+Sometimes you don't know which type of dbm implementation you
+need to use in your application beforehand, but rather determine
+the type according to the information given at run-time.
+This procedure fulfills the need.
+
+The @var{dbmtype} argument is a symbol that names the type
+of dbm implementation; for example, @code{gdbm} for @code{dbm.gdbm},
+and @code{fsdbm} for @code{dbm.fsdbm}.   We assume that the
+dbm implementation of type @code{@var{foo}} is provided as 
+a module @code{dbm.@var{foo}}, and its class is named
+as @code{<@var{foo}>}.
+
+This procedure first checks if the required module has been
+loaded, and if not, it tries to load it.   If the module
+loads successfully, it returns the class object of the
+named dbm implementation.   If it can't load the module,
+or can't find the dbm class, this procedure returns #f.
+
+@example
+(use dbm)
+
+(dbm-type->class 'gdbm)
+  @result{} @code{#<class <gdbm>>}
+
+(dbm-type->class 'nosuchdbm)
+  @result{} @code{#f}
+@end example
+@end defun
+
+
 @node Iterating on a database, Managing dbm database instance, Accessing a dbm database, Generic DBM interface
 @subsection Iterating on a dbm database
 @c NODE DBMデータベース上の繰り返し処理

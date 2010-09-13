@@ -1,3 +1,8 @@
+2010-09-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dbm.scm (dbm-type->class): Added a utility procedure to load
+	  and use specific dbm at run-time.
+
 2010-09-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/signal.c (Scm_SetSignalHandler): Represent the status of
