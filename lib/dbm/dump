@@ -29,7 +29,7 @@
 (define (do-dump name class output)
   (let1 dbm (guard (e [else (exit 1 "couldn't open dbm database: ~a"
                                   (~ e'message))])
-              (dbm-open class :path name))
+              (dbm-open class :path name :rw-mode :read))
     (file-filter
      (^(in out)
        (dbm-for-each dbm (^(k v) (write (cons k v) out) (newline out))))
