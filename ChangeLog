@@ -1,5 +1,6 @@
 2010-09-12  Shiro Kawai  <shiro@acm.org>
 
+	* lib/dbm/dump, lib/dbm/restore: Added utility scripts.
 	* lib/dbm.scm (dbm-type->class): Added a utility procedure to load
 	  and use specific dbm at run-time.
 

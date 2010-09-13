@@ -70,7 +70,7 @@ SCMFILES = srfi-0.scm \
        gauche/experimental/app.scm \
        binary/pack.scm \
        control/job.scm control/thread-pool.scm \
-       dbi.scm dbd/null.scm dbm.scm dbm/fsdbm.scm \
+       dbi.scm dbd/null.scm dbm.scm dbm/fsdbm.scm dbm/dump dbm/restore \
        math/const.scm \
        util/isomorph.scm util/toposort.scm util/tree.scm \
        util/digest.scm util/combinations.scm util/lcs.scm util/list.scm \
