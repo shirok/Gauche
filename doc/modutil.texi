@@ -2322,6 +2322,7 @@ The following code shows a typical usage of the database.
 * Accessing a dbm database::    
 * Iterating on a database::     
 * Managing dbm database instance::  
+* Dumping and restoring dbm database::  
 * Writing a dbm implementation::  
 @end menu
 
@@ -2364,7 +2365,7 @@ Specifies read/write mode.  Can be either one of the following keywords:
 @table @code
 @item :read
 The database will be opened in read-only mode.  The database file must
-exist when @code{dbm-open} is called.  This is the default value.
+exist when @code{dbm-open} is called.
 @item :write
 The database will be opened in Read-write mode.
 If the database file does not exist, @code{dbm-open} creates one.
@@ -2516,6 +2517,36 @@ Returns true if a database @var{dbm} is already closed, false otherwise.
 @c COMMON
 @end deffn
 
+@defun dbm-type->class dbmtype
+Sometimes you don't know which type of dbm implementation you
+need to use in your application beforehand, but rather determine
+the type according to the information given at run-time.
+This procedure fulfills the need.
+
+The @var{dbmtype} argument is a symbol that names the type
+of dbm implementation; for example, @code{gdbm} for @code{dbm.gdbm},
+and @code{fsdbm} for @code{dbm.fsdbm}.   We assume that the
+dbm implementation of type @code{@var{foo}} is provided as 
+a module @code{dbm.@var{foo}}, and its class is named
+as @code{<@var{foo}>}.
+
+This procedure first checks if the required module has been
+loaded, and if not, it tries to load it.   If the module
+loads successfully, it returns the class object of the
+named dbm implementation.   If it can't load the module,
+or can't find the dbm class, this procedure returns #f.
+
+@example
+(use dbm)
+
+(dbm-type->class 'gdbm)
+  @result{} @code{#<class <gdbm>>}
+
+(dbm-type->class 'nosuchdbm)
+  @result{} @code{#f}
+@end example
+@end defun
+
 @node Accessing a dbm database, Iterating on a database, Opening and closing a dbm database, Generic DBM interface
 @subsection Accessing a dbm database
 @c NODE DBMデータベースのアクセス
@@ -2561,38 +2592,6 @@ Delete a value associated with @var{key}.
 キー@var{key}に関連付けられた値を消去します。値が存在しない場合は何もしません。
 @c COMMON
 @end deffn
-
-
-@defun dbm-type->class dbmtype
-Sometimes you don't know which type of dbm implementation you
-need to use in your application beforehand, but rather determine
-the type according to the information given at run-time.
-This procedure fulfills the need.
-
-The @var{dbmtype} argument is a symbol that names the type
-of dbm implementation; for example, @code{gdbm} for @code{dbm.gdbm},
-and @code{fsdbm} for @code{dbm.fsdbm}.   We assume that the
-dbm implementation of type @code{@var{foo}} is provided as 
-a module @code{dbm.@var{foo}}, and its class is named
-as @code{<@var{foo}>}.
-
-This procedure first checks if the required module has been
-loaded, and if not, it tries to load it.   If the module
-loads successfully, it returns the class object of the
-named dbm implementation.   If it can't load the module,
-or can't find the dbm class, this procedure returns #f.
-
-@example
-(use dbm)
-
-(dbm-type->class 'gdbm)
-  @result{} @code{#<class <gdbm>>}
-
-(dbm-type->class 'nosuchdbm)
-  @result{} @code{#f}
-@end example
-@end defun
-
 
 @node Iterating on a database, Managing dbm database instance, Accessing a dbm database, Generic DBM interface
 @subsection Iterating on a dbm database
@@ -2654,7 +2653,7 @@ which is returned as a result of @code{dbm-map}.
 @c COMMON
 @end deffn
 
-@node Managing dbm database instance, Writing a dbm implementation, Iterating on a database, Generic DBM interface
+@node Managing dbm database instance, Dumping and restoring dbm database, Iterating on a database, Generic DBM interface
 @subsection Managing dbm database instance
 @c NODE DBMデータベースインスタンスの管理
 
@@ -2760,11 +2759,66 @@ its content is destroyed.
 @var{class}のdbm実装がロックをサポートしていれば
 データベースの一貫性は保証されます。移動先の@var{to}が既に
 存在していた場合、その元の内容は失われます。
-存在
 @c COMMON
 @end deffn
 
-@node Writing a dbm implementation,  , Managing dbm database instance, Generic DBM interface
+@node Dumping and restoring dbm database, Writing a dbm implementation, Managing dbm database instance, Generic DBM interface
+@subsection Dumping and restoring dbm database
+@c NODE DBMデータベースのダンプとリストア
+
+Most dbm implementations use binary format, and
+some of them are architecture dependent.   
+That makes it difficult to pass around dbm databases
+between different machines.
+A safe way is to write out the content of a dbm database
+into some portable format on the source machine,
+and rebuild another dbm databse from ti on the destination
+machine.
+
+The operation is so common that Gauche provides convenience
+scripts that does the job.  They are installed into the
+standard Gauche library directory, so it can be invoked
+by @code{gosh <scriptname>}.
+
+To write out the content of dbm database named by @var{dbm-name}, 
+you can use @code{dbm/dump} script:
+
+@example
+$ gosh dbm/dump [-o @var{outfile}][-t @var{type}] @var{dbm-name}
+@end example
+
+The @var{outfile} argument names the output file.  If omitted,
+the output is written out to stdout.  The @var{type} argument
+specifies the implementation type of the dbm database; e.g.
+@code{gdbm} ro @code{fsdbm}.  The program calls
+@code{dbm-type->class} (@xref{Opening and closing a dbm database})
+on the @var{type} argument to load the necessary dbm implementation.
+
+The dumped format is simply a series of S-expressions,
+each of which is a dotted pair of string key and string value.
+Character encodings are assumed to be the same as
+@code{gosh}'s native character encoding.
+
+The dumped output may contain S-expressions other than dotted pair
+of strings to include meta information.  For now, programs
+that deals with dumped output should just ignore S-expressions
+other than dotted pairs.
+
+To read back the dumped dbm format, you can use @code{dbm/restore}
+script:
+
+@example
+$ gosh dbm/restore [-i @var{infile}][-t @var{type}] @var{dbm-name}
+@end example
+
+The @var{infile} argument names the dumped file to be read.
+If omitted, it reads from stdin.  The @var{type} argument
+specifies the dbm type, as in @code{dbm/dump} script.
+The @var{dbm-name} argument names the dbm database; if the
+database already exists, its content is cleared, so be careful.
+
+
+@node Writing a dbm implementation,  , Dumping and restoring dbm database, Generic DBM interface
 @subsection Writing a dbm implementation
 @c NODE DBM実装を書く
 
