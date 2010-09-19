@@ -110,7 +110,9 @@
 ;; note they go higher to lower, and end in 1972.
 ;; See srfi-19/read-tai.scm to update this list.
 (define-constant tm:leap-second-table
-  '((915148800 . 32)
+  '((1230768000 . 34)
+    (1136073600 . 33)
+    (915148800 . 32)
     (867715200 . 31)
     (820454400 . 30)
     (773020800 . 29)

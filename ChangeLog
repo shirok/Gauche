@@ -1,3 +1,8 @@
+2010-09-18  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-19.scm (tm:leap-second-table): Updated to reflect
+	  new leap seconds.
+
 2010-09-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/dbm/dump, lib/dbm/restore: Added utility scripts.
