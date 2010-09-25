@@ -1220,13 +1220,15 @@ Adds (@code{inc!}) or subtracts (@code{dec!}) @var{delta} to/from it,
 and then stores the result to @var{place}.  The default value of
 @var{delta} is 1.
 
-This is Common Lisp's @code{incf} and @code{decf}.
+This is like Common Lisp's @code{incf} and @code{decf}, except
+that you can't use the result of @code{inc!} and @code{dec!}.
 @c JP
 @var{place}の値を評価します。それは数値にならなければなりません。
 その値に@var{delta}が加算(@code{inc!})もしくは減算(@code{dec!})され、
 結果が@var{place}に格納されます。@var{delta}の既定値は1です。
 
-Common Lispの@code{incf}と@code{decf}に当たります。
+Common Lispの@code{incf}と@code{decf}に似ていますが、
+戻り値を使うことは出来ません。
 @c COMMON
 @end defmac
 
