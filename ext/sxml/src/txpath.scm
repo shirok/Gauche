@@ -1023,7 +1023,7 @@
                            (func1 nodeset root-node context var-binding)))
                     (str2 (sxml:string
                            (func2 nodeset root-node context var-binding))))
-                (if (substring? str1 str2) #t #f)))  ; must return a boolean
+                (if (substring? str2 str1) #t #f)))  ; must return a boolean
             path
             index-required))))
        ((equal? name "substring-before")  ; it is a SUBSTRING-BEFORE function

@@ -43,7 +43,7 @@
   (use util.list)
   (use gauche.net)
   (use gauche.logger)
-  (export <ftp-connection> call-with-ftp-connection
+  (export <ftp-connection> <ftp-error> call-with-ftp-connection
           ftp-chdir ftp-current-directory ftp-get ftp-size
           ftp-help ftp-list ftp-login ftp-ls ftp-mdtm ftp-mtime
           ftp-mkdir ftp-name-list ftp-noop ftp-passive?  ftp-put

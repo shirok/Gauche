@@ -1,3 +1,12 @@
+2010-10-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/ftp.scm (<ftp-error>): Documented but not exported.
+	  Fix from Masatake YAMATO.
+
+	* ext/sxml/src/txpath.scm (sxml:parse-function-call): Fix txpath's
+	  'contains' operator.  The upstream fix http://ssax.cvs.sourceforge.net/viewvc/ssax/sxml-tools/txpath.scm?r1=1.6&r2=1.7
+	  Fix from teppey.
+
 2010-09-18  Shiro Kawai  <shiro@acm.org>
 
 	* ext/srfi/srfi-19.scm (tm:leap-second-table): Updated to reflect
