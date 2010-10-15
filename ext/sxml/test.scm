@@ -16,6 +16,13 @@
 (test-start "sxpath")
 (use sxml.sxpath)
 (test-module 'sxml.sxpath)
+
+;; regression test for sxpath bug fix
+(let ((sxml '(*TOP* (rss:title "foo")))
+      (ns-alist '((my . "rss"))))
+  (test* "ns-trans" '((rss:title "foo"))
+         ((sxpath "//my:title" ns-alist) sxml)))
+
 (test-end)
 
 ;; sxml.serializer test
