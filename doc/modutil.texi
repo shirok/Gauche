@@ -15741,85 +15741,113 @@ in the original Wright's code.
 
 @c EN
 @example
-pat : patvar                       ;; anything, and binds pattern var
-    | _                            ;; anything
+pat : @var{patvar}                       ;; anything, and binds pattern var
+    | @b{_}                            ;; anything
     | ()                           ;; the empty list
     | #t                           ;; #t
     | #f                           ;; #f
-    | string                       ;; a string
-    | number                       ;; a number
-    | character                    ;; a character
-    | keyword                      ;; a keyword (*)
-    | 'sexp                        ;; an s-expression
-    | 'symbol                      ;; a symbol (special case of s-expr)
-    | (pat1 ... patN)              ;; list of n elements
-    | (pat1 ... patN . patN+1)     ;; list of n or more
-    | (pat1 ... patN patN+1 ooo)   ;; list of n or more, each element
-                                   ;;   of remainder must match patN+1
-    | #(pat1 ... patN)             ;; vector of n elements
-    | #(pat1 ... patN patN+1 ooo)  ;; vector of n or more, each element
-                                   ;;   of remainder must match patN+1
-    | ($ class pat1 ... patN)      ;; an object (patK matches in slot order)
-    | (struct class pat1 ... patN) ;; ditto (*)
-    | (@@ class (slot1 pat1) ...)   ;; an object (using slot names) (*)
-    | (object class (slot1 pat1) ...) ;; ditto (*)
-    | (= proc pat)                 ;; apply proc, match the result to pat
-    | (and pat ...)                ;; if all of pats match
-    | (or pat ...)                 ;; if any of pats match
-    | (not pat ...)                ;; if all pats don't match at all
-    | (? predicate pat ...)        ;; if predicate true and all pats match
-    | (set! patvar)                ;; anything, and binds setter
-    | (get! patvar)                ;; anything, and binds getter
+    | @var{string}                       ;; a string
+    | @var{number}                       ;; a number
+    | @var{character}                    ;; a character
+    | @var{keyword}                      ;; a keyword (*)
+    | '@var{sexp}                        ;; an s-expression
+    | '@var{symbol}                      ;; a symbol (special case of s-expr)
+    | (@var{pat1} ... @var{patN})              ;; list of n elements
+    | (@var{pat1} ... @var{patN} . @var{patN+1})     ;; list of n or more
+    | (@var{pat1} ... @var{patN} @var{patN+1} ooo)   ;; list of n or more, each element
+                                   ;;   of remainder must match @var{patN+1}
+    | #(@var{pat1} ... @var{patN})             ;; vector of n elements
+    | #(@var{pat1} ... @var{patN} @var{patN+1} ooo)  ;; vector of n or more, each element
+                                   ;;   of remainder must match @var{patN+1}
+    | (@b{$} @var{class} @var{pat1} ... @var{patN})      ;; an object (@var{patK} matches in slot order)
+    | (@b{struct} @var{class} @var{pat1} ... @var{patN}) ;; ditto (*)
+    | (@b{@@} @var{class} (@var{slot1} @var{pat1}) ...)   ;; an object (using slot names) (*)
+    | (@b{object} @var{class} (@var{slot1} @var{pat1}) ...) ;; ditto (*)
+    | (@b{=} @var{proc} @var{pat})                 ;; apply proc, match the result to pat
+    | (@b{and} @var{pat} ...)                ;; if all of pats match
+    | (@b{or} @var{pat} ...)                 ;; if any of pats match
+    | (@b{not} @var{pat} ...)                ;; if all pats don't match at all
+    | (@b{?} @var{predicate} @var{pat} ...)        ;; if predicate true and all pats match
+    | (@b{set!} @var{patvar})                ;; anything, and binds setter
+    | (@b{get!} @var{patvar})                ;; anything, and binds getter
     | `qp                          ;; a quasi-pattern
 
-patvar : a symbol except _, quote, $, struct, @@, object, =, and, or,
-         not, ?, set!, get!, quasiquote, ..., ___, ..k, __k.
+patvar : a symbol except @b{_}, @b{quote}, @b{$}, @b{struct}, @b{@@}, @b{object}, @b{=}, @b{and}, @b{or},
+         @b{not}, @b{?}, @b{set!}, @b{get!}, @b{quasiquote}, @b{...}, @b{___}, @b{..@i{k}}, @b{__@i{k}}.
 
+@c @b doesn't work well in pdf version, so we conditionalize...
+@ifnottex
+ooo : @b{...}                          ;; zero or more
+    | @b{___}                          ;; zero or more
+    | @b{..@i{k}}                          ;; @i{k} or more, where @i{k} is an integer.
+                                   ;;   Example: @b{..1}, @b{..2} ...
+    | @b{__@i{k}}                          ;; @i{k} or more, where @i{k} is an integer. 
+                                   ;;   Example: @b{__1}, @b{__2} ...
+@end ifnottex
+@iftex
 ooo : ...                          ;; zero or more
     | ___                          ;; zero or more
-    | ..k                          ;; k or more
-    | __k                          ;; k or more
+    | ..@slanted{k}                          ;; @i{k} or more, where @i{k} is an integer.
+                                   ;;   Example: ..1, ..2 ...
+    | __@slanted{k}                          ;; @i{k} or more, where @i{k} is an integer. 
+                                   ;;   Example: __1, __2 ...
+@end iftex
+
 @end example
 @c JP
 @example
-pat : patvar                       ;; すべて、かつ、パターン変数を束縛
-    | _                            ;; すべて
+pat : @var{patvar}                       ;; 任意のオブジェクトにマッチし、patvarを束縛
+    | @b{_}                            ;; 任意のオブジェクト
     | ()                           ;; 空リスト
     | #t                           ;; #t
     | #f                           ;; #f
-    | string                       ;; 文字列
-    | number                       ;; 数
-    | character                    ;; 文字
-    | keyword                      ;; キーワード (*)
-    | 'sexp                        ;; Ｓ式
-    | 'symbol                      ;; シンボル(Ｓ式の特殊ケース)
-    | (pat1 ... patN)              ;; n 要素のリスト
-    | (pat1 ... patN . patN+1)     ;; n 以上の要素を含むリスト
-    | (pat1 ... patN patN+1 ooo)   ;; n 以上の要素を含むリスト、残りの各要素は
-                                   ;; patN+1 にマッチしなければならない
-    | #(pat1 ... patN)             ;; n 要素のベクタ
-    | #(pat1 ... patN patN+1 ooo)  ;; n 以上の要素を含むベクタ、残りの各要素は
-                                   ;; patN+1 にマッチしなければならない
-    | ($ class pat1 ... patN)      ;; オブジェクト (patK はスロット順でマッチ)
-    | (struct class pat1 ... patN) ;; 同上 (*)
-    | (@@ class (slot1 pat1) ...)  ;; オブジェクト (スロット名を使う) (*)
-    | (object class (slot1 pat1) ...) ;; 同上 (*)
-    | (= proc pat)                 ;; procを適用し、結果を pat にマッチさせる
-    | (and pat ...)                ;; すべての pat にマッチするか
-    | (or pat ...)                 ;; マッチする pat があるか
-    | (not pat ...)                ;; どの pat もマッチしないか
-    | (? predicate pat ...)        ;; predicate が真、かつ、全 pat がマッチ
-    | (set! patvar)                ;; すべて、かつ、セッタを束縛
-    | (get! patvar)                ;; すべて、かつ、ゲッタを束縛
+    | @var{string}                       ;; 文字列
+    | @var{number}                       ;; 数
+    | @var{character}                    ;; 文字
+    | @var{keyword}                      ;; キーワード (*)
+    | '@var{sexp}                        ;; Ｓ式
+    | '@var{symbol}                      ;; シンボル(Ｓ式の特殊ケース)
+    | (@var{pat1} ... @var{patN})              ;; n 要素のリスト
+    | (@var{pat1} ... @var{patN} . @var{patN+1})     ;; n 以上の要素を含むリスト
+    | (@var{pat1} ... @var{patN} @var{patN+1} ooo)   ;; n 以上の要素を含むリスト、残りの各要素は
+                                   ;; @var{patN+1} にマッチしなければならない
+    | #(@var{pat1} ... @var{patN})             ;; n 要素のベクタ
+    | #(@var{pat1} ... @var{patN} @var{patN+1} ooo)  ;; n 以上の要素を含むベクタ、残りの各要素は
+                                   ;; @var{patN+1} にマッチしなければならない
+    | (@b{$} @var{class} @var{pat1} ... @var{patN})      ;; オブジェクト (@var{patK} はスロット順でマッチ)
+    | (@b{struct} @var{class} @var{pat1} ... @var{patN}) ;; 同上 (*)
+    | (@b{@@} @var{class} (@var{slot1} @var{pat1}) ...)  ;; オブジェクト (スロット名を使う) (*)
+    | (@b{object} @var{class} (@var{slot1} @var{pat1}) ...) ;; 同上 (*)
+    | (@b{=} @var{proc} @var{pat})                 ;; procを適用し、結果を pat にマッチさせる
+    | (@b{and} @var{pat} ...)                ;; すべての pat にマッチするか
+    | (@b{or} @var{pat} ...)                 ;; マッチする pat があるか
+    | (@b{not} @var{pat} ...)                ;; どの pat もマッチしないか
+    | (@b{?} @var{predicate} @var{pat} ...)        ;; predicate が真、かつ、全 pat がマッチ
+    | (@b{set!} @var{patvar})                ;; 任意のオブジェクトにマッチし、セッタを束縛
+    | (@b{get!} @var{patvar})                ;; 任意のオブジェクトにマッチし、ゲッタを束縛
     | `qp                          ;; 擬似パターン
 
-patvar : a symbol except _, quote, $, struct, @@, object, =, and, or,
-         not, ?, set!, get!, quasiquote, ..., ___, ..k, __k.
+patvar : a symbol except @b{_}, @b{quote}, @b{$}, @b{struct}, @b{@@}, @b{object}, @b{=}, @b{and}, @b{or},
+         @b{not}, @b{?}, @b{set!}, @b{get!}, @b{quasiquote}, @b{...}, @b{___}, @b{..k}, @b{__k}.
 
+@c @b doesn't work well in pdf version, so we conditionalize...
+@ifnottex
+ooo : @b{...}                          ;; ゼロまたはそれ以上
+    | @b{___}                          ;; ゼロまたはそれ以上
+    | @b{..@i{k}}                          ;; @i{k} またはそれ以上。@i{k}は整数。
+                                   ;;   例: @b{..1}, @b{..2} ...
+    | @b{__@i{k}}                          ;; @i{k} またはそれ以上。@i{k}は整数。
+                                   ;;   例: @b{__1}, @b{__2} ...
+@end ifnottex
+@iftex
 ooo : ...                          ;; ゼロまたはそれ以上
     | ___                          ;; ゼロまたはそれ以上
-    | ..k                          ;; k またはそれ以上
-    | __k                          ;; k またはそれ以上
+    | ..@slanted{k}                          ;; @i{k} またはそれ以上。@i{k}は整数。
+                                   ;;   例: ..1, ..2 ...
+    | __@slanted{k}                          ;; @i{k} またはそれ以上。@i{k}は整数。
+                                   ;;   例: __1, __2 ...
+@end iftex
+
 @end example
 @c COMMON
 
@@ -16047,8 +16075,8 @@ A simple structure decomposition:
 @c COMMON
 @example
 (match '(0 (1 2) (3 4 5))
-  ((a (b c) (d e f))
-   (list a b c d e f)))
+  [(a (b c) (d e f))
+   (list a b c d e f)])
  @result{} (0 1 2 3 4 5)
 @end example
 
@@ -16059,8 +16087,8 @@ Using predicate patterns:
 @c COMMON
 @example
 (match 123
-  ((? string? x) (list 'string x))
-  ((? number? x) (list 'number x)))
+  [(? string? x) (list 'string x)]
+  [(? number? x) (list 'number x)])
  @result{} (number 123)
 @end example
 
@@ -16074,15 +16102,15 @@ Uses repetition and predicate patterns:
 @example
 (define let-analyzer
   (match-lambda
-    (('let (? symbol?)
+    [('let (? symbol?)
            ((var expr) ...)
        body ...)
-     (format "named let, vars=~s exprs=~s" var expr))
-    (('let ((var expr) ...)
+     (format "named let, vars=~s exprs=~s" var expr)]
+    [('let ((var expr) ...)
        body ...)
-     (format "normal let, vars=~s exprs=~s" var expr))
-    (_
-     (format "malformed let"))))
+     (format "normal let, vars=~s exprs=~s" var expr)]
+    [_
+     (format "malformed let")]))
 
 (let-analyzer '(let ((a b) (c d)) e f g))
  @result{} "normal let, vars=(a c) exprs=(b d)"
@@ -16126,18 +16154,18 @@ quasipatternの例です。最初の式では、パターンのうち@code{value
 @c COMMON
 @example
 (match '(the answer is 42)
-  (`(the answer is ,value) value)
-  (else #f))
+  [`(the answer is ,value) value]
+  [else #f])
  @result{} 42
 
 (match '(the answer was 42)
-  (`(the answer is ,value) value)
-  (else #f))
+  [`(the answer is ,value) value]
+  [else #f])
  @result{} #f
 
 (match '(a b c d)
-  ((the answer is value) value)
-  (else #f))
+  [(the answer is value) value]
+  [else #f])
  @result{} d
 @end example
 
