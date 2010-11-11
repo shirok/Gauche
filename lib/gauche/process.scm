@@ -61,6 +61,8 @@
 ;; Delay-load gauche.charconv 
 (autoload gauche.charconv
           wrap-with-input-conversion wrap-with-output-conversion)
+(autoload gauche.uvector
+          write-block)
 
 (define-class <process> ()
   ((pid       :init-value -1 :getter process-pid)
@@ -119,7 +121,8 @@
 ;;  the followings:
 ;;
 ;;   (< fd source)   Make child's input FD read from SOURCE.
-;;   (<< fd value)   Make child's input FD read from (write-to-string VALUE).
+;;   (<< fd value)   Make child's input FD read from string VALUE.
+;;   (<<< fd value)  Make child's input FD read from (write-to-string VALUE).
 ;;   (<& fd0 fd1)    Make child's input FD0 duplicate of child's input FD1.
 ;;   (> fd sink)     Make child's output FD write to SINK.
 ;;   (>> fd sink)    Make child's output FD write to SINK in append mode.
@@ -144,7 +147,7 @@
 ;;                can writes to it via FD.
 ;;     a symbol - A unidirectional pipe is created, whose 'writer' end is
 ;;                connected to the child's FD, and whose 'reader' end is
-;;                available as an output port by
+;;                available as an input port by
 ;;                (process-output PROCESS SINK).
 ;;     :null    - the child's FD is connected to the null device.
 ;;     an integer - It should specify a parent's file descriptor opened for
@@ -219,6 +222,7 @@
       [(<<) (unless (string? a2)
               (errorf "input redirection '<<' requires a string, but got ~s \
                        for file descriptor ~s" a2 (cadr arg)))]
+      [(<<<) #t]                        ;anything is ok
       [(> >>)
        (unless (or (string? a2) (symbol? a2) (eq? a2 :null) (integer? a2)
                    (and (output-port? a2) (port-file-number a2)))
@@ -289,9 +293,31 @@
       (push! ipipes `(,arg . ,parent-end))
       (push! opipes `(,arg . ,parent-end)))
     (push! iomap `(,fd . ,child-end)))
+
+  (define (do-dup dir fd0 fd1)
+    ;; (<& fd0 fd1) or (>& fd0 fd1).  Note that fd0 and fd1 are both
+    ;; child's fds.  fd1 may be remapped from the current process, so
+    ;; we first search iomap.  If it hasn't remapped, we transfer the
+    ;; current process's fd1 to the child.
+    ;; TODO: need to check the direction of 
+    (if-let1 p (assv fd1 iomap)
+      (push! iomap `(,fd0 . ,(cdr p)))
+      (guard (e [(<system-error> e)
+                 (errorf "redirection spec ~s refers to unopened fd ~a"
+                        `(,dir ,fd0 ,fd1) fd1)])
+        ;; See if fd1 is open in the current process.   Note that
+        ;; open-*-fd-port succeeds even the given fd is bogus.  We have to
+        ;; try dup2 it into a dummy port to see if fd1 is valid.
+        ((if (eq? dir '<&) call-with-input-file call-with-output-file)
+         *nulldev*
+         (lambda (dummy-port)
+           (let ((p ((if (eq? dir '<&) open-input-fd-port open-output-fd-port)
+                     fd1)))
+             (port-fd-dup! dummy-port p))))
+        (push! iomap `(,fd0 . ,fd1)))))
   
   (dolist [r redirs]
-    (let ([dir (car r)] [fd  (cadr r)] [arg (caddr r)])
+    (let ([dir (car r)] [fd (cadr r)] [arg (caddr r)])
       (when (memv fd seen)
         (errorf "duplicates in redirection file descriptor (~a): ~s" fd redirs))      (push! seen fd)
       (case dir
@@ -305,26 +331,35 @@
                [(eq? arg :null) (do-file dir fd *nulldev*)]
                [(or (port? arg) (integer? arg)) (push! iomap `(,fd . ,arg))]
                [else (error "invalid entry in process redirection" r)])]
-        [(<<)
+        [(<< <<<)
          (cond-expand
           [gauche.sys.pthreads
            (receive (in out) (sys-pipe)
              (push! iomap `(,fd . ,in))
              (thread-start!
               (make-thread (lambda ()
-                             (unwind-protect (write arg out)
+                             (unwind-protect (if (eq? dir '<<)
+                                               (if (string? arg)
+                                                 (display arg out)
+                                                 (write-block arg out))
+                                               (write arg out))
                                (close-output-port out))))))]
           [else
            (receive (out nam) (sys-mkstemp "/tmp/gauche")
              (write arg out) (close-output-port out)
              (do-file '< fd nam))])]
-        [else (error "unsupported yet" dir)])))
+        [(<& >&) (push! todup r)] ;; process dups later
+        [else (error "invalid redirection" dir)])))
+
+  ;; process dups
+  (for-each (cut apply do-dup <>) todup)
+
   ;; if we ever redirects, make sure stdios are avaialble in child even
   ;; it is not explicitly specified.
   (unless (assv 0 iomap) (push! iomap '(0 . 0)))
   (unless (assv 1 iomap) (push! iomap '(1 . 1)))
   (unless (assv 2 iomap) (push! iomap '(2 . 2)))
-  ;; TODO: process dup-map
+
   (values iomap toclose ipipes opipes))
 
 (define (%ensure-mask mask)

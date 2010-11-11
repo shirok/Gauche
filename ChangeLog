@@ -1,3 +1,9 @@
+2010-11-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (run-process): Added support of '<<<',
+	  '<&' and '>&' in :redirects argument.  Allow uniform vector
+	  for '<<' redirection.
+
 2010-10-15  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml/src/sxpath.scm (sxpath): Reflected sxpath bug fix on
