@@ -1195,7 +1195,7 @@ all worker threads to finish.  It is done by polling the
 pool's status in every @var{check-interval} nanoseconds.
 @end defun
 
-@defun terminate-all! pool :optional force-timeout
+@defun terminate-all! pool :key force-timeout
 Wait for all the queued jobs be finished, then ask all threads
 to terminate.  By default it tries to terminate threads gracefully.
 If you give a timeout value (either @code{<time>} object to

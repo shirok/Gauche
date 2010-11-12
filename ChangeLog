@@ -1,3 +1,9 @@
+2010-11-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/control/thread-pool.scm (terminate-all!): Make force-timeout
+	  keyword arg.  We might add more keyword args to tweak behavior
+	  of termination.
+
 2010-11-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm (run-process): Added support of '<<<',

@@ -101,7 +101,7 @@
             (every (^t (not (thread-specific t))) (~ pool'pool)))]
     (sys-nanosleep check-interval)))
 
-(define (terminate-all! pool :optional (force-timeout #f))
+(define (terminate-all! pool :key (force-timeout #f))
   (define size (~ pool'size))
   ;; Sends threads termination message
   (let loop ((count 0))
