@@ -8,6 +8,8 @@
 * Binary I/O::                  binary.io
 * Packing Binary Data::         binary.pack
 * Rational-less arithmetic::    compat.norational
+* A common job descriptor for control modules::  control.job
+* Thread pools::                control.thread-pool
 * Password hashing::            crypt.bcrypt
 * Database independent access layer::  dbi
 * Generic DBM interface::       dbm
@@ -925,7 +927,7 @@ return #t if the template has variable length elements.
 
 @c ----------------------------------------------------------------------
 
-@node Rational-less arithmetic, Password hashing, Packing Binary Data, Library modules - Utilities
+@node Rational-less arithmetic, A common job descriptor for control modules, Packing Binary Data, Library modules - Utilities
 @section @code{compat.norational} - Rational-less arithmetic
 @c NODE @code{compat.norational} - 有理数のない算術演算
 
@@ -1024,7 +1026,191 @@ gosh> #i1/3
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Password hashing, Database independent access layer, Rational-less arithmetic, Library modules - Utilities
+@node A common job descriptor for control modules, Thread pools, Rational-less arithmetic, Library modules - Utilities
+@section @code{control.job} - A common job descriptor for control modules
+
+@deftp {Module} control.job
+@mdindex control.job
+This module provides a @code{job} record type, a lightweight
+structure to be used in the control flow subsystems
+(@code{control.*} modules).
+Currently the only user is @code{control.thread-pool}, but
+some other modules are planned to use @code{job} records.
+
+A @code{job} record may be returned to an application
+by other @code{control.*} modules so that the application
+can keep track of the job.  It's not meant for
+general use, however.   An application isn't supposed to
+create a new job, or to modify its content; it can just query
+the job's properties.
+
+In this section we only describe procedures an application
+needs to know.  The interface for control subsystems is still
+fluid and may be changed as more subsystems are developed.
+
+Different control flow subsystems may use job structure differently.
+This section only describes the common properties.  Check the
+individual control flow module to know how to handle returned job
+objects.
+@end deftp
+
+@deftp {Record type} job
+A record type denotes the job.  Applications should treat it
+as an opaque structure.
+@end deftp
+
+@defun job? obj
+Returns @code{#t} iff @var{obj} is a job record, @code{#f} otherwise.
+@end defun
+
+@defun job-status job
+Returns the status of the job.  It may be either one of the followings.
+@table @code
+@item #f
+Newborn or orphaned job.  Usually an application won't see a job
+in this status.
+@item acknowledged
+A job is recognized by a control flow library, but haven't yet
+been run.
+@item running
+A job is being processed.
+@item done
+A job is finished.  An application can retrieve its result
+by @code{job-result}.
+@item error
+A job is terminated by an error.  An application can retrieve the
+error causing condition by @code{job-result}.
+@item killed
+A job is killed by external force.  An application can retrieve the
+reason of kill (which is specific to a particular control flow
+subsystem) by @code{job-result}.
+@end table
+@end defun
+
+@defun job-result job
+If the job is in @code{done} status, it returns the result of the job.
+If the job is in @code{error} status, it returns the condition object
+that describes the error.
+If the job is in @code{killed} status, it returns an object describing
+the reason of kill.  The details of the object depends on a particular
+control flow library.
+Calling @code{job-result} on a job in any other status may return
+anything; you can't rely on the result.
+@end defun
+
+@defun job-wait job :optional timeout timeout-val
+Suspends the calling thread until the job becomes either
+@code{done}, @code{error} or @code{killed} status.  If the job
+is already in one of those status, it returns immediately.
+Returns job's status.
+
+If @var{timeout} is given and not @code{#f}, it must be
+a valid timeout spec (a @code{<time>} object that represents
+an absolute time point, or a real number that represents a
+relative time in seconds.)  The meaning of @var{timeout} is
+the same as in @code{mutex-unlock!} (@xref{Synchronization primitives}).
+Once the timeout reaches, @code{job-wait} returns no matter
+how the job's status is, and returns the value specified
+to @var{timeout-val}, which defaults to @code{#f}.
+
+Depending on the control flow subsystem, jobs created by it
+may not be waitable; check out each subsystem's documentation for the details.
+@end defun
+
+@defun job-acknowledge-time job
+@defunx job-start-time job
+@defunx job-finish-time job
+If the control flow subsystem keeps track of timestamps,
+these procedure returns the time (in @code{<time>} objects)
+when the job is acknowledged, started and finished (either normally,
+or abnormally by an error or by being killed).  If the job hasn't
+reached to certain status, @code{#f} is returned instead.
+
+If the subsystem does not trak timestamps, these procedures
+always returns @code{#f}.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Thread pools, Password hashing, A common job descriptor for control modules, Library modules - Utilities
+@section @code{control.thread-pool} - Thread pools
+
+@deftp {Module} control.thread-pool
+@mdindex control.thread-pool
+Provides thread pools.  Only available when Gauche is compiled
+with pthreads support.
+@end deftp
+
+@deftp {Class} <thread-pool>
+@clindex thread-pool
+A thread pool object.   It maintains a set of worker threads, and
+let them work on the jobs you ask to do asynchronously.
+
+Currently the size of pool (number of threads) is fixed
+and you have to specify it when creating a pool.
+In future we might add a feature to grow or shrink the pool.
+
+You can also set maximum backlog of the job queue.  You cannot
+put a job when the queue already reaches the max length (see
+@code{add-job!} below).
+
+@defivar {<thread-pool>} result-queue
+When you put a job to a thread pool, you can specify
+whether you need to check its result or not.  If you say you need
+a result, the terminated job is queued to an @code{<mt-queue>}
+held in this slot.  @xref{Queue}, for the details of @code{<mt-queue>}.
+@end defivar
+@end deftp
+
+@defun make-thread-pool size :optional (max-backlog 0)
+Creates a new thread pool of size @var{size} (the number of
+worker threads).  Optionally you can give a nonnegative integer
+to the maximum backlog; 0 means unlimited.
+@end defun
+
+@defun add-job! pool thunk :optional need-result
+Add a @var{thunk} to be executed in the thread pool @var{pool}.
+Returns a @var{job} record (@xref{A common job descriptor for control modules}).
+
+The returned job record is not waitable; if you need to track
+its result, you have to give a true value to @var{need-result}
+argument.  Then when the job is terminated (either normally or
+abnormally) the job is queued to the @code{result-queue} of
+the pool, and you can check the queue.   If you don't pass
+a true value to @var{need-result}, the job won't be queued
+to @code{result-queue} even it is terminated.
+
+The returned job is timestamped.  You can examine acknowledged
+time, start time and finish time of the job.  It's sometimes
+handy to find out how log the job was waiting in the
+queue and how log it took to run.
+
+If the pool has positive @code{max-backlog} value, and it
+already has that many jobs to be waiting, then @code{add-job!}
+doesn't create a new job and just returns @code{#f}.
+@end defun
+
+@defun wait-all pool :optional (check-interval #e5e8)
+Wait for the job queue to be empty and
+all worker threads to finish.  It is done by polling the
+pool's status in every @var{check-interval} nanoseconds.
+@end defun
+
+@defun terminate-all! pool :optional force-timeout
+Wait for all the queued jobs be finished, then ask all threads
+to terminate.  By default it tries to terminate threads gracefully.
+If you give a timeout value (either @code{<time>} object to
+specify absolute point of time, or a real number indicating
+relative time in seconds), it forcefully terminates the threads
+after timeout reached.  (Note: Even in that case it waits
+for all jobs to be finished before trying termination.
+If any of those jobs goes into infinite loop, we currently don't have
+a way to terminate all threads.
+@end defun
+
+
+
+@c ----------------------------------------------------------------------
+@node Password hashing, Database independent access layer, Thread pools, Library modules - Utilities
 @section @code{crypt.bcrypt} - Password hashing
 @c NODE パスワードハッシュ, @code{crypt.bcrypt} - パスワードハッシュ
 
