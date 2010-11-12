@@ -7140,14 +7140,14 @@ For example, the following expression runs @code{ls -al}.
 @end example
 
 @c EN
-If you run the above expression in REPL, you may notice that
-its return value is displayed before the output of @code{ls}.
+If you run the above expression in REPL, you'll likely to see
+its return value before the output of @code{ls}.
 By default, @code{run-process} does not wait the child process
 to finish, but it rather returns immediately.  If you need to
-synchronize, pass @code{wait} keyword argument.
+synchronize, pass the @code{wait} keyword argument.
 @c JP
-上の式をREPLで実行したなら、戻り値が@code{ls}の出力より先に表示されたのに
-気づかれたかもしれません。デフォルトでは、@code{run-process}は子プロセスの
+上の式をREPLで実行したなら、おそらく戻り値が@code{ls}の出力より先に表示されるでしょう。
+デフォルトでは、@code{run-process}は子プロセスの
 終了を待たずに、直ちに戻ります。子プロセスの終了を待ちたい場合は@code{wait}キーワード
 引数を使います。
 @c COMMON
@@ -7159,7 +7159,7 @@ synchronize, pass @code{wait} keyword argument.
 @c EN
 Alternatively, you can keep the returned @code{<process>} object
 and call @code{process-wait} on it to wait for its termination.
-@xref{Process object}, for details of @code{process-wait}.
+@xref{Process object}, for the details of @code{process-wait}.
 @c JP
 あるいは戻り値の@code{<process>}オブジェクトを保持しておいて、後で
 @code{process-wait}を呼ぶことによって子プロセスの終了を待つこともできます。
@@ -7222,7 +7222,7 @@ subprocess terminates.  Othewise the subprocess runs asynchronously
 and @code{run-process} returns immediately, which is the default behavior.
 
 Note that if the subprocess is running asynchronously, it is the
-caller's responsibility to call @code{process-wait} at certain
+caller's responsibility to call @code{process-wait} at a certain
 timing to collect its exit status.
 @c JP
 @var{flag} が真の場合、@code{run-process} はサブプロセスが終了するまで待ちます。
@@ -7236,7 +7236,7 @@ timing to collect its exit status.
 
 @example
 ;; This returns after wget terminates.
-(define p (run-process "wget http://practical-scheme.net/" :wait #t))
+(define p (run-process '(wget http://practical-scheme.net/) :wait #t))
 
 ;; Check the exit status
 (let1 st (process-exit-status p)
@@ -7289,6 +7289,7 @@ an integer, or an input port.
 
 If it is a string, it names a file opened for read
 and the child process can reads the content of the file from @var{fd}.
+An error is signalled if the file does not exist or cannot open for read.
 
 If it is a symbol, an unidirectional pipe is created, whose reader end
 is connected to the child's @var{fd}, and whose writer end is
@@ -7309,12 +7310,16 @@ associated file descriptor (See @code{port-file-number} in
 @var{source}は文字列、シンボル、キーワード@code{:null}、整数、入力ポートのいずれかです。
 
 文字列の場合、それはファイル名を指定します。そのファイルが読み込み用にオープンされ、
-子プロセスはfdからその内容を読み込みます。
+子プロセスはfdからその内容を読み込みます。指定されたファイルが存在しないか
+読み込み用にオープンできなければエラーが報告されます。
 
 シンボルの場合、一方向のパイプが作られ、その読み出し側の端が子プロセスのfdへと
 接続されます。書き込み側の端は
 @code{(process-input @var{process} @var{source})}
 を呼び出すことで入手できます。
+
+@var{sink}が@code{:null}なら、@var{fd}はシステムのヌルデバイスからの
+読み込みになります。
 
 整数の場合は、現プロセスの読み込み用ファイルディスクリプタを指定します。
 そのファイルディスクリプタの読み込み元が@code{dup}されて、子プロセスからは@var{fd}として
@@ -7355,10 +7360,21 @@ Makes child process's file descriptor @var{fd0} refer to the same input
 as its file descriptor @var{fd1}.  Note the difference from @code{<}; 
 @code{(< 3 0)} makes the parent's stdin (file descriptor 0) be read
 by the child's file descriptor 3, while  @code{(<& 3 0)} makes
-the child's file descriptor 3 refer to the same input as child's stdin.
+the child's file descriptor 3 refer to the same input as child's stdin
+(which may be redirected to a file or something else by another @var{iospec}).
 
 See the note below on the order of processing @code{<&}.
 @c JP
+子プロセスのファイルディスクリプタ@var{fd0}が、
+同じく子プロセスのファイルディスクリプタ@var{fd1}が指しているものと
+同じ入力を参照するようにします。
+@var{<}との違いに注意してください。@code{(< 3 0)}とすると、
+現プロセスのstdin (ファイルディスクリプタ0) が子プロセスからはファイルディスクリプタ3
+として見えるようになります。@code{(<& 3 0)}とすると、子プロセスのファイルディスクリプタ3
+は子プロセスのstdinと同じものを見るようになります (それは他の@var{iospec}によって
+ファイル等にリダイレクトされているかもしれません)。
+
+@code{<&}の処理の順番について、下の方にある註も参照してください。
 @c COMMON
 
 @item (> @var{fd} @var{sink})
@@ -7389,6 +7405,24 @@ as @var{fd}.
 If @var{sink} is an output port, the underlying file descriptor is
 duped into @var{fd} in the child process.
 @c JP
+@var{sink}は文字列、シンボル、キーワード@code{:null}、整数、あるいは
+ファイル出力ポートでなければなりません。
+
+文字列の場合、それはファイル名です。指定されたファイルが書き込み用にオープンされ、
+子プロセスのファイルディスクリプタ@var{fd}からそこに書き込むことができます。
+指定のファイルが既に存在している場合、@code{>}はファイルをまず空にするのに対し、
+@code{>>}はファイルの後に追加します。
+@code{>}と@code{>>}の違いが出るのは@var{sink}がファイルの場合のみです。
+
+@var{sink}が@code{:null}なら、@var{fd}はシステムのヌルデバイスへの
+書き出しになります。
+
+整数の場合、それは現プロセスの書き込み用ファイルディスクリプタを
+指定します。それが@code{dup}されて子プロセスの@var{fd}となります。
+
+出力ポートの場合は、出力先のファイルディスクリプタが@code{dup}されて
+子プロセスの@var{fd}になります。ファイルディスクリプタを持たないポートを渡した
+場合はエラーになります(@ref{Common port operations}の@code{port-file-number}参照)。
 @c COMMON
 
 @item (>& @var{fd0} @var{fd1})
@@ -7397,12 +7431,22 @@ Makes child process's file descriptor @var{fd0} refer to the same output
 as its file descriptor @var{fd1}.  Note the difference from @code{>}; 
 @code{(> 2 1)} makes the child's stderr go to parent's stdout,
 while  @code{(>& 2 1)} makes the child's stderr go to the same
-output as child's stdout.
+output as child's stdout (which may be redirected by another @var{iospec}).
 @c JP
+子プロセスのファイルディスクリプタ@var{fd0}が、子プロセスのファイルディスクリプタ@var{fd1}
+が参照するのと同じ出力先を参照するようにします。
+@var{>}との違いに注意: @code{(> 2 1)}は子プロセスのstderrが現プロセスのstdout
+と同じところに送られるようにするのに対し、@code{(>& 2 1)}は子プロセスのstderr
+が子プロセスのstdoutに送られます (それは別の@var{iospec}によってリダイレクト
+されているかもしれません)。
 @c COMMON
 
 @example
+@c EN
 ;; Read both child's stdout and stderr 
+@c JP
+;; 子プロセスのstdoutとstderrを一緒にして読み込む
+@c COMMON
 (let1 p (run-process '(command arg)
                      :redirects '((>& 2 1) (> 1 out)))
   (begin0 (port->string (process-output p 'out))
@@ -7413,10 +7457,13 @@ output as child's stdout.
 
 @c EN
 Note: I/O redirections are processed @emph{at once}, unlike the way
-unix shell does.  That is, both of the following expression
+unix shell does.  For example, both of the following expression
 works the same way, that is, they redirect
 both stdout and stderr to a file @file{out}.
 @c JP
+註: I/Oリダイレクト指定は、unixのシェルと違って、
+全て@emph{同時に}処理されます。つまり、以下の式はどちらも同じように、
+stdoutとstderrをファイル@file{out}に書き出す処理となります。
 @c COMMON
 
 @example
@@ -7433,6 +7480,13 @@ error messages appear in the parent's stdout.  The second one first
 redirects the child's stdout to a file @file{out}, so at the time
 of processing @code{2>&1}, the child's stderr also goes to the file.
 @c JP
+unixのシェルではリダイレクト指定は@emph{順に}処理されるので、
+次の二つのコマンドラインは異なる動作となります。最初の例では
+子プロセスのstderrが@emph{現時点での}stdout (それは現プロセスのstdoutでもある)
+へと向けられ、次に子プロセスのstdoutがファイル@file{out}に向けられます。
+従ってエラーメッセージは現プロセスのstdoutへと現れます。二番目の例では
+最初に子プロセスのstdoutがファイル@file{out}へ向けられるので、
+@code{2>&1}が処理される時にはstderrの行き先はやはり@file{out}となります。
 @c COMMON
 
 @example
@@ -7447,6 +7501,11 @@ regardless of the order in @var{redirects} argument.
 If you want to redirect child's stderr to parent's stdout,
 you can use @code{>} like the following:
 @c JP
+@code{run-process}は@var{redirects}引数の順番にかかわらず
+常に後者のように動作すると言ってもよいでしょう。
+
+もし前者の例のように子プロセスのstderrだけを親プロセスのstdoutに
+向けたいのであれば、次のように@code{>}を使うことで実現できます。
 @c COMMON
 
 @example
@@ -7464,7 +7523,7 @@ Redirects child's standard i/o.
 @var{source} and @var{sink} may be either a string, a keyword @code{:null},
 a keyword @code{:pipe}, an integer file descriptor or a symbol.
 
-These are really a shorthand notation of @var{redirects} argument:
+These are really shorthand notations of the @var{redirects} argument:
 @c JP
 サブプロセスの標準入出力を制御します。
 @var{source}及び@var{sink}は、文字列、キーワード @code{:pipe}、
@@ -7481,9 +7540,12 @@ These are really a shorthand notation of @var{redirects} argument:
 
 @c EN
 The keyword @code{:pipe} as @var{source} or @var{sink} is supported
-just for backward compatibility.  They work as if a symbol
-@code{stdin}, @code{stdout} or @var{stderr} is given, respectively:
+just for the backward compatibility.  They work as if a symbol
+@code{stdin}, @code{stdout} or @code{stderr} is given, respectively:
 @c JP
+キーワード@code{:pipe}は互換性のためだけにサポートされています。
+それぞれ、シンボル@code{stdin}、@code{stdout}、@code{stderr}が
+指定されたかのように振る舞います。
 @c COMMON
 
 @example
@@ -7493,9 +7555,30 @@ just for backward compatibility.  They work as if a symbol
 @end example
 
 @c EN
+That is, a pipe is created and its one end is connected to the
+child process's stdio, and the other end is available
+by calling @code{(process-input @var{process})},
+@code{(process-output @var{process})} or @code{(process-error @var{process})}.
+(That is because @code{process-input} and @code{process-output}
+uses @code{stdin} and @code{stdout} respectively when @var{name} argument
+is omitted, and @code{(process-error p)} is equivalent
+to @code{(process-output p 'stderr)}.)
+@c JP
+すなわち、パイプが作成され、その一方が子プロセスの標準入出力のいずれかに接続されます。
+もう一方の端は@code{(process-input @var{process})}、
+@code{(process-output @var{process})}および
+@code{(process-error @var{process})}によって得ることができます。
+(@code{process-input}, @code{process-output}は@var{name}引数が
+省略されるとそれぞれ@code{stdin}, @code{stdout}をデフォルトとし、
+また@code{(process-error p)}は@code{(process-output p 'stderr)}と
+等価だからです)
+@c COMMON
+
+@c EN
 See the description of @var{redirects} above for the meanings
 of the argument values.
 @c JP
+引数の意味の詳しい説明については上の@var{redirects}の項を参照してください。
 @c COMMON
 @end deftp
 
@@ -7715,26 +7798,62 @@ Returns the command invoked in the subprocess @var{process}.
 @c COMMON
 @end deffn
 
-@deffn {Method} process-input (process <process>)
-@deffnx {Method} process-output (process <process>)
-@deffnx {Method} process-error (process <process>)
+@deffn {Method} process-input (process <process>) :optional name
+@deffnx {Method} process-output (process <process>) :optional name
 @c EN
-If the process' standard input, output or error is connected to
-a pipe, returns another end of the pipe, i.e. @code{process-input}
-returns an output port that can feed data to @var{process}' stdin,
-@code{process-output} returns an input port that can read data from
-@var{process}' stdout, and @code{process-error} returns an input port that
-can read data from @code{process}' stderr.
-If the corresponding i/o is not connected to the pipe,
-the function returns @code{#f}.
+Retrieves one end of a pipe, whose another end is connected
+to the process's input or output, respectively.
+@var{name} is a symbol given to the @var{redirects} argument
+of @code{run-process} to distinguish the pipe.  See the following
+example:
 @c JP
-プロセスの標準入力、標準出力、標準エラーがパイプに接続されている場合は、
-パイプのもう一方の終端を返します。例えば、@code{process-input} は、
-@var{process} の標準入力へデータを送ることができる出力ポートを返します。
-@code{process-output} は @var{process} の標準出力からデータを読み込むことの
-できる入力ポートを返します。そして、@code{process-error} は、@code{process}
-の標準エラーからデータを読み込むことのできる入力ポートを返します。
-対応する入出力がパイプに接続されていない場合、手続きは @code{#f} を返します。
+プロセスの入力もしくは出力に一方の端がつながれたパイプの、もう一方の端を取り出します。
+@var{name}は@code{run-process}の@var{redirects}引数に与えた
+識別用の名前です。次の例を見てください。
+@c COMMON
+
+@example
+(let1 p (run-process '(command arg)
+                     :redirects '((< 3 aux-in)
+                                  (> 4 aux-out)))
+  (let ([auxin  (process-input p 'aux-in)]
+        [auxout (process-output p 'aux-out)])
+    ;; feed something to the child's input
+    (display 'something auxin)
+    ;; read data from the child's output
+    (read-line auxout)
+    @dots{}
+    )
+  (process-wait p))
+@end example
+
+@c EN
+The symbols @code{aux-in} and @code{aux-out} is used to 
+identify the pipes.  Note that @code{process-input} returns
+@emph{output} port, and @code{process-output} returns
+@emph{input} port.
+@c JP
+シンボル@code{aux-in}と@code{aux-out}がパイプを識別するのに
+使われています。@code{process-input}が返すのは@emph{出力}ポートであり、
+@code{process-output}が返すのは@emph{入力}ポートであることに注意してください。
+@c COMMON
+
+@c EN
+When @var{name} is omitted, @code{stdin} is used for @code{process-input}
+and @code{stdout} is used for @code{process-output}.  These are
+the names used if child's stdin and stdout are redirected by
+@code{:input :pipe} and @code{:output :pipe} arguments, respectively.
+@c JP
+@var{name}が省略された場合、@code{process-input}は@code{stdin}を、
+@code{process-output}は@code{stdout}を使います。これらは
+子プロセスの標準入力/出力をそれぞれ@code{:input :pipe}/@code{:output :pipe}で
+リダイレクトした場合に使われる名前です。
+@c COMMON
+
+@c EN
+If there's no pipe with the given name, @code{#f} is returned.
+@c JP
+名前に対応するパイプが無い場合は@code{#f}が返ります。
 @c COMMON
 
 @example
@@ -7745,6 +7864,15 @@ the function returns @code{#f}.
  @result{} "Fri Jun 22 22:22:22 HST 2001"
 @end example
 @end deffn
+
+@deffn {Method} process-error (process <process>)
+@c EN
+This is equivalent to @code{(process-output @var{process} 'stderr)}.
+@c JP
+これは@code{(process-output @var{process} 'stderr)}と等価です。
+@c COMMON
+@end deffn
+
 
 @defun process-alive? process
 @c EN
