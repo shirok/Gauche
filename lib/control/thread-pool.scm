@@ -101,7 +101,16 @@
             (every (^t (not (thread-specific t))) (~ pool'pool)))]
     (sys-nanosleep check-interval)))
 
-(define (terminate-all! pool :key (force-timeout #f))
+;; For backward compatibility, allow (terminate-all! pool force-timeout)
+;; the proper API is (terminate-all! pool :force-timeout force-timeout)
+;; (as far as I know, only Kahua is affected by this API change).
+;; Rewrite to simplified version once Kahua switches to the new API.
+(define (terminate-all! pool . args)
+  (match args
+    [(val) (%terminate-all! pool :force-timeout val)]
+    [_     (apply %terminate-all! pool args)]))
+
+(define (%terminate-all! pool :key (force-timeout #f))
   (define size (~ pool'size))
   ;; Sends threads termination message
   (let loop ((count 0))
