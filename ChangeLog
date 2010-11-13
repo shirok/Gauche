@@ -1,5 +1,10 @@
 2010-11-12  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/http.scm: Changed receiver and sender interface to make
+	  them simpler and composable.  For receiver we use partial
+	  continuation to make it work like coroutine.  The predefined
+	  receivers and senders are updated.
+
 	* lib/control/thread-pool.scm (terminate-all!): Make force-timeout
 	  keyword arg.  We might add more keyword args to tweak behavior
 	  of termination.

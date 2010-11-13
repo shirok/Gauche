@@ -55,6 +55,7 @@
   (use gauche.charconv)
   (use gauche.collection)
   (use gauche.uvector)
+  (use gauche.partcont)
   (use util.match)
   (use util.list)
   (export <http-error>
@@ -129,36 +130,44 @@
 ;;
 ;;   request-body - gives the body.
 ;;   receiver - A procedure that handles the response.
-;;             It takes three arguments: response-code, response headers,
-;;             and a total response size if known (#f otherwise).
-;;             It must return a procedure RETRIEVER that takes two arguments,
-;;             an input port to read the response, and an integer size of
-;;             the available data in the port.  The retriever may be 
-;;             called more than once.  The size is always nonnegative
-;;             except the last call, in which zero size marks the end of
-;;             the response.  If an error occurs during processing the
-;;             response, the retriever is called with negative size value.
-;;             The return value of the call with size=0 will be the
-;;             return value of `http-request'.
-;;             The default receiver retrieves the response body as a
-;;             string and returns it.
+;;             It takes four arguments: response-code, response headers,
+;;             total response size if known (#f otherwise), and
+;;             a retriever thunk.   The retriever thunk is, when called,
+;;             returns two values: an input port and an integer size.
+;;             The receiver must loop (1) to read as many bytes as
+;;             specified in the size from the input port, and (2)
+;;             call the retriver again, while it returns positive integer.
+;;             The retriever procedure returns zero when body is exhausted.
+;;             In that case the value(s) the receiver returns will be
+;;             the return value of http-request.
+;;             The retriever procedure returns -1 if an error occurs
+;;             during comminucation.  In that case, the receiver can do
+;;             whatever cleanup work.  After the receiver returns, an
+;;             appropriate error is thrown from http-request.
+;;
 ;;   sender  - A procedure that handles sending the request body.
-;;             It takes one argument: tantative list of headers,
-;;             and the value given to :request-encoding argument.
-;;             It must return two values: The list of headers,
-;;             and a procedure DELIVERER.
-;;             If the sender intends to send the entire content at once,
-;;             it should add Content-Length header.  If the sender intends
-;;             to use chunked transfer, it must add
-;;             ("transfer-encoding" "chunked") header.  If neither headers
-;;             exist in the returned header list, an error is raised
-;;             and request is aborted.  Sender can add other headers,
-;;             e.g. content-type or mime-type.
-;;             DELIVERER takes two arguments, an output port and a procedure
-;;             INITIATOR.  What DELIVERER must do is to call INITIATOR
-;;             with the size of the chunk it's about to send, then feed
-;;             the data to the given port.  DELIVERER must return #t if
-;;             it has more data, or #f when it is done.
+;;             It takes three arguments: tantative list of headers,
+;;             the value given to :request-encoding argument,
+;;             and a procedure HEADER-SINK.
+;;
+;;             HEADER-SINK takes one argument, a list of http headers
+;;             in the form of (("field-name" "field-value") ...).
+;;             In general, besides the given tentative headers, the sender
+;;             needs to add either Content-Length header if it sends entire
+;;             contents at once, or ("transfer-encoding" "chunked") if
+;;             it uses chunked transfer.  If neither headers exist in the
+;;             given header list, an error is raised and request is aborted.
+;;             Sender can add other headers, e.g. content-type or mime-type.
+;;             Sender can also remove or modify given tentative headers.
+;;
+;;             HEADER-SINK returns a procedure BODY-SINK on success.
+;;             BODY-SINK takes an integer SIZE argument and returns an
+;;             output PORT.  What the sender needs to do is to call
+;;             BODY-SINK with the size of data chunk, then to write out
+;;             the data into the returned PORT, and repeat it until
+;;             all the data is sent.  To indicate the end of data,
+;;             the sender needs to call BODY-SINK with argument 0.
+;;
 ;;   host    - the host name passed to the 'host' header field.
 ;;   secure  - if true, using secure connection (via external stunnel
 ;;             process).
@@ -208,66 +217,60 @@
 
 ;;
 ;; Pre-defined receivers
-;;  NB: Non-parametric receivers such as string receiver or null receiver
-;;  can skip an extra layer (e.g. (define (http-string-receiver code hdrs) ...))
-;;  but we make them in the same layer as other parametric receivers to avoid
-;;  confusion.
+;;
 (define (http-string-receiver)
-  (lambda (code hdrs total)
-    (let1 sink (open-output-string)
-      ;; TODO: check headers for encoding
-      (lambda (remote size)
+  (lambda (code hdrs total retr)
+    ;; TODO: check headers for encoding
+    (let loop ([sink (open-output-string)])
+      (receive (remote size) (retr)
         (cond [(= size 0) (get-output-string sink)]
-              [(> size 0) (copy-port remote sink :size size)])))))
+              [(> size 0) (copy-port remote sink :size size) (loop sink)])))))
 
 (define (http-null-receiver)
-  (lambda (code hdrs total)
-    (let1 sink (open-output-file (cond-expand
-                                  [gauche.os.windows "NUL"]
-                                  [else "/dev/null"]))
-      (lambda (sink)
-        (lambda (remote size)
-          (if (= size 0)
-            (close-output-port sink)
-            (copy-port remote sink :size size)))))))
+  (lambda (code hdrs total retr)
+    (let loop ([sink (open-output-file (cond-expand [gauche.os.windows "NUL"]
+                                                    [else "/dev/null"]))])
+      (receive (remote size) (retr)
+        (cond [(= size 0) (close-output-port sink)]
+              [else (copy-port remote sink :size size) (loop sink)])))))
 
 (define (http-oport-receiver sink flusher)
-  (lambda (code hdrs total)
-    (lambda (remote size)
-      (cond [(= size 0) (flusher sink hdrs)]
-            [(> size 0) (copy-port remote sink :size size)]))))
+  (lambda (code hdrs total retr)
+    (let loop ()
+      (receive (remote size) (retr)
+        (cond [(= size 0) (flusher sink hdrs)]
+              [(> size 0) (copy-port remote sink :size size) (loop)])))))
 
 (define (http-file-receiver filename :key (temporary #f))
-  (lambda (code hdrs total)
+  (lambda (code hdrs total retr)
     (receive (port tmpname) (sys-mkstemp filename)
-      (lambda (remote size)
-        (cond [(= size 0)
-               (close-output-port port)
-               (if temporary
-                 tmpname
-                 (begin (sys-rename tmpname filename) filename))]
-              [(> size 0) (copy-port remote port :size size)]
-              [else (close-output-port port) (sys-unlink tmpname)])))))
+      (let loop ()
+        (receive (remote size) (retr)
+          (cond [(= size 0)
+                 (close-output-port port)
+                 (if temporary
+                   tmpname
+                   (begin (sys-rename tmpname filename) filename))]
+                [(> size 0) (copy-port remote port :size size) (loop)]
+                [else (close-output-port port) (sys-unlink tmpname)]))))))
 
 (define-syntax http-cond-receiver
-  (syntax-rules ()
-    [(_ clause ...)
-     (lambda (code hdrs total)
-       (http-cond-receiver-helper code hdrs total (clause ...)))]))
-
-(define-syntax http-cond-receiver-helper
   (syntax-rules (else =>)
-    [(_ code hdrs total () ) ((http-null-receiver) code hdrs total) ]
-    [(_ code hdrs total ((else . expr))) (begin . expr)]
-    [(_ code hdrs total ((cc => proc) . rest))
-     (if (match-status-code? cc code)
-       (proc code hdrs total)
-       (http-cond-receiver-helper code hdrs total rest))]
-    [(_ code hdrs total ((cc . expr) . rest))
-     (if (match-status-code? cc code '(cc . expr))
-       ((begin . expr) code hdrs total)
-       (http-cond-receiver-helper code hdrs total rest))]
-    [(_ code hdrs total (other . rest))
+    [(_) (http-null-receiver)]
+    [(_ [else . exprs]) (begin . exprs)]
+    [(_ [cc => proc] . rest)
+     (lambda (code hdrs total retr)
+       ((if (match-status-code? cc code)
+          proc
+          (http-cond-receiver . rest))
+        code hdrs total retr))]
+    [(_ [cc . exprs] . rest)
+     (lambda (code hdrs total retr)
+       ((if (match-status-code? cc code '(cc . exprs))
+          (begin . exprs)
+          (http-cond-receiver . rest))
+        code hdrs total retr))]
+    [(_ other . rest)
      (syntax-error "invalid clause in http-cond-receiver" other)]))
 
 (define (match-status-code? pattern code clause)
@@ -281,55 +284,59 @@
 ;;
 
 (define (http-null-sender)
-  (lambda (hdrs encoding)
-    (values `(("content-length" "0") ,@hdrs)
-            (lambda (port initiator) (initiator 0) #f))))
+  (lambda (hdrs encoding header-sink)
+    (let ((body-sink (header-sink `(("content-length" "0") ,@hdrs))))
+      (body-sink 0))))
 
 (define (http-string-sender string)     ;honors encoding
-  (lambda (hdrs encoding)
+  (lambda (hdrs encoding header-sink)
     (let* ([body (if (ces-equivalent? encoding (gauche-character-encoding))
                    string
                    (ces-convert string (gauche-character-encoding) encoding))]
-           [size (string-size body)])
-      (values
-       `(("content-length" ,(x->string size)) ,@hdrs)
-       (lambda (port initiator) (initiator size) (display body port) #f)))))
+           [size (string-size body)]
+           [body-sink (header-sink `(("content-length" ,(x->string size))
+                                     ,@hdrs))]
+           [oport (body-sink size)])
+      (display body oport)
+      (body-sink 0))))
 
 (define (http-blob-sender blob)        ;blob may be a string or uvector
-  (lambda (hdrs encoding)
-    (let1 size (if (string? blob) (string-size blob) (uvector-size blob))
-      (values `(("content-length" ,(x->string size)) ,@hdrs)
-              (lambda (port initiator)
-                (initiator size)
-                (if (string? blob)
-                  (display blob port)
-                  (write-block blob port))
-                #f)))))
+  (lambda (hdrs encoding header-sink)
+    (let* ([size (if (string? blob) (string-size blob) (uvector-size blob))]
+           [body-sink (header-sink `(("content-length" ,(x->string size))
+                                     ,@hdrs))]
+           [port (body-sink size)])
+      (if (string? blob)
+        (display blob port)
+        (write-block blob port))
+      (body-sink 0))))
 
 ;; Send contents directly from the file.  Encoding is ignored.
 ;; TODO: The file size may be changed while sending out.  If it gets
 ;; bigger, we can just ignore the rest, but what if it gets shorter?
 (define (http-file-sender filename)
-  (lambda (hdrs encoding)
-    (let1 size (file-size filename)
-      (values `(("content-length" ,(x->string size)) ,@hdrs)
-              (lambda (port initiator)
-                (initiator size)
-                (call-with-input-file (cut copy-port <> port :size size))
-                #f)))))
+  (lambda (hdrs encoding header-sink)
+    (let* ([size (file-size filename)]
+           [body-sink (header-sink `(("content-length" ,(x->string size))
+                                     ,@hdrs))]
+           [port (body-sink size)])
+      (call-with-input-file (cut copy-port <> port :size size))
+      (body-sink 0))))
 
 ;; See http-compose-form-data definition for params spec.
 ;; TODO: support chunked sending, instead of building entire body at once.
 (define (http-multipart-sender params)
-  (lambda (hdrs encoding)
+  (lambda (hdrs encoding header-sink)
     (receive (body boundary) (http-compose-form-data params #f encoding)
-      (let1 size (string-size body)
-        (values
-         `(("content-length" ,(x->string size))
-           ("mime-version" "1.0")
-           ("content-type" ,#`"multipart/form-data; boundary=\",boundary\"")
-           ,@(alist-delete "content-type" hdrs equal?))
-         (lambda (port initiator) (initiator size) (display body port) #f))))))
+      (let* ([size (string-size body)]
+             [hdrs `(("content-length" ,(x->string size))
+                     ("mime-version" "1.0")
+                     ("content-type" ,#`"multipart/form-data; boundary=\",boundary\"")
+                     ,@(alist-delete "content-type" hdrs equal?))]
+             [body-sink (header-sink hdrs)]
+             [port (body-sink size)])
+        (display body port)
+        (body-sink 0)))))
 
 ;;
 ;; Shortcuts for specific requests.
@@ -587,19 +594,19 @@
   (display #`",method ,uri HTTP/1.1\r\n" out)
   (case method
     [(POST PUT)
-     (receive (hdrs deliverer)
-         ((or sender (http-null-sender))
-          (options->request-headers `(:host ,host ,@options)) enc)
-      (send-headers hdrs out)
-       (let1 chunked?
-           (equal? (rfc822-header-ref hdrs "transfer-encoding") "chunked")
-         (define initiator (if chunked? (^n (format out "~x\r\n" n)) values))
-         (let loop ([r (deliverer out initiator)])
-           (if r
-             (begin (when chunked? (display "\r\n" out))
-                    (loop (deliverer out initiator)))
-             (when chunked? (display "0\r\n" out)))))
-       (flush out))]
+     (sender (options->request-headers `(:host ,host ,@options)) enc
+             (lambda (hdrs)
+               (send-headers hdrs out)
+               (let ([chunked?
+                      (equal? (rfc822-header-ref hdrs "transfer-encoding")
+                              "chunked")]
+                     [first-time #t])
+                 (lambda (size)
+                   (when chunked?
+                     (unless first-time (display "\r\n" out))
+                     (format out "~x\r\n" size))
+                   (flush out)
+                   out))))]
     [else
      (send-headers (options->request-headers `(:host ,host ,@options)) out)]))
 
@@ -621,24 +628,22 @@
     (values code (rfc822-header->list remote))))
 
 (define (parse-status-line line)
-  (cond ((eof-object? line)
-         (error <http-error> "http reply contains no data"))
-        ((#/\w+\s+(\d\d\d)\s+(.*)/ line)
-         => (lambda (m) (values (m 1) (m 2))))
-        (else
-         (error <http-error> "bad reply from server" line))))
+  (cond [(eof-object? line)
+         (error <http-error> "http reply contains no data")]
+        [(#/\w+\s+(\d\d\d)\s+(.*)/ line) => (^m (values (m 1) (m 2)))]
+        [else (error <http-error> "bad reply from server" line)]))
 
 (define (receive-body remote code headers receiver)
-  (let* ([total   (and-let* ([p (assoc "content-length" headers)])
-                    (x->integer (cadr p)))]
-         [handler (receiver code headers total)])
+  (let* ([total (and-let* ([p (assoc "content-length" headers)])
+                  (x->integer (cadr p)))]
+         [handler (reset (receiver code headers total (^() (shift k k))))])
     (cond
      [(assoc "transfer-encoding" headers)
       => (^p (unless (equal? (cadr p) "chunked")
                (error <http-error> "unsupported transfer-encoding" (cadr p)))
              (receive-body-chunked remote handler))]
      [total
-      (when (> total 0) (handler remote total))
+      (when (> total 0) (set! handler (handler remote total)))
       (handler remote 0)]
      [else
       ;; length is unknown.  we should gradually read from remote as
@@ -648,28 +653,29 @@
       (let* ([content (port->string remote)]
              [size (string-size content)]
              [p (open-input-string content)])
-        (when (> size 0) (handler p size))
+        (when (> size 0) (set! handler (handler p size)))
         (handler p 0))])))
 
 ;; NB: chunk extension and trailer are ignored for now.
-(define (receive-body-chunked remote receive-handler)
-  (let loop ([line (read-line remote)])
-    (when (eof-object? line)
-      (error <http-error> "chunked body ended prematurely"))
-    (rxmatch-if (#/^([[:xdigit:]]+)/ line) (#f digits)
-      (let1 chunk-size (string->number digits 16)
-        (if (zero? chunk-size)
-          ;; finish reading trailer
-          (do ([line (read-line remote) (read-line remote)])
-              [(or (eof-object? line) (string-null? line))
-               (receive-handler remote 0)]
-            #f)
-          (begin
-            (receive-handler remote chunk-size)
-            (read-line remote) ;skip the following CRLF
-            (loop (read-line remote)))))
-      ;; something's wrong
-      (error <http-error> "bad line in chunked data:" line))))
+(define (receive-body-chunked remote handler)
+  (guard (e [else (handler remote -1) (raise e)])
+    (let loop ([line (read-line remote)])
+      (when (eof-object? line)
+        (error <http-error> "chunked body ended prematurely"))
+      (rxmatch-if (#/^([[:xdigit:]]+)/ line) (#f digits)
+        (let1 chunk-size (string->number digits 16)
+          (if (zero? chunk-size)
+            ;; finish reading trailer
+            (do ([line (read-line remote) (read-line remote)])
+                [(or (eof-object? line) (string-null? line))
+                 (handler remote 0)]
+              #f)
+            (begin
+              (set! handler (handler remote chunk-size))
+              (read-line remote) ;skip the following CRLF
+              (loop (read-line remote)))))
+        ;; something's wrong
+        (error <http-error> "bad line in chunked data:" line)))))
 
 ;;==============================================================
 ;; secure agent handling

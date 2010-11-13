@@ -829,32 +829,31 @@ Content-Length: 4349
 
     (define (http-server socket)
       (let loop ()
-        (let* ((client (socket-accept socket))
-               (in  (socket-input-port client))
-               (out (socket-output-port client))
-               (request-line (read-line in)))
+        (let* ([client (socket-accept socket)]
+               [in  (socket-input-port client)]
+               [out (socket-output-port client)]
+               [request-line (read-line in)])
           (rxmatch-if (#/^(\S+) (\S+) HTTP\/1\.1$/ request-line)
               (#f method request-uri)
-            (let* ((headers (rfc822-read-headers in))
-                   (bodylen
-                    (cond ((assoc-ref headers "content-length")
-                           => (lambda (e) (string->number (car e))))
-                          (else 0)))
-                   (body (read-block bodylen in)))
+            (let* ([headers (rfc822-read-headers in)]
+                   [bodylen
+                    (cond [(assoc-ref headers "content-length")
+                           => (lambda (e) (string->number (car e)))]
+                          [else 0])]
+                   [body (read-block bodylen in)])
               (cond
-               ((equal? request-uri "/exit")
+               [(equal? request-uri "/exit")
 		(socket-close client)
-                (sys-exit 0))
-               ((hash-table-get %predefined-contents request-uri #f)
-                => (lambda (contents)
-                     (for-each (cut display <> out) contents)))
-               (else
+                (sys-exit 0)]
+               [(hash-table-get %predefined-contents request-uri #f)
+                => (cut for-each (cut display <> out) <>)]
+               [else
                 (display "HTTP/1.x 200 OK\nContent-Type: text/plain\n\n" out)
                 (write `(("method" ,method)
                          ("request-uri" ,request-uri)
                          ("request-body" ,(string-incomplete->complete body))
                          ,@headers)
-                       out)))
+                       out)])
               (socket-close client)
               (loop))
             (error "malformed request line:" request-line)))))
@@ -893,12 +892,12 @@ Content-Length: 4349
 
   (test* "http-get, custom receiver" expected
          (req-body 'GET host "/get"
-                   :receiver (let1 result #f
-                               (lambda (code hdrs total)
-                                 (lambda (port size)
+                   :receiver (lambda (code hdrs total retr)
+                               (let loop ((result '()))
+                                 (receive (port size) (retr)
                                    (if (= size 0)
                                      result
-                                     (set! result (read port))))))
+                                     (loop (append result (read port)))))))
                    :my-header "foo")
          alist-equal?)
 
@@ -925,21 +924,21 @@ Content-Length: 4349
   (let ()
     (define cond-receiver
       (http-cond-receiver
-       ["404" (lambda (code hdrs total)
+       ["404" (lambda (code hdrs total retr)
                 (let1 sink (open-output-file
                             (cond-expand
                              [gauche.os.windows "NUL"]
                              [else "/dev/null"]))
-                  (lambda (port size)
-                    (if (= size 0)
-                      (begin (close-output-port sink) 404)
-                      (copy-port port sink :size size)))))]
-       ["200" (let1 result #f
-                (lambda (code hdrs total)
-                  (lambda (port size)
+                  (let loop ()
+                    (receive (port size) (retr)
+                      (cond
+                       [(= size 0) (close-output-port sink) 404]
+                       [else (copy-port port sink :size size) (loop)])))))]            ["200" (lambda (code hdrs total retr)
+                (let loop ((result '()))
+                  (receive (port size) (retr)
                     (if (= size 0)
                       result
-                      (set! result (read port))))))]
+                      (loop (append result (read port)))))))]
        ))
 
     (test* "http-get, cond-receiver" expected
