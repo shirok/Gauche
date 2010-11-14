@@ -20,6 +20,7 @@
 * Networking::                  gauche.net
 * Parameters::                  gauche.parameter
 * Parsing command-line options::  gauche.parseopt
+* Partial continuations::       
 * High Level Process Interface::  gauche.process
 * Record types::                gauche.record
 * Reloading modules::           gauche.reload
@@ -6460,7 +6461,7 @@ these hook objects are shared by all threads.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Parsing command-line options, High Level Process Interface, Parameters, Library modules - Gauche extensions
+@node Parsing command-line options, Partial continuations, Parameters, Library modules - Gauche extensions
 @section @code{gauche.parseopt} - Parsing command-line options
 @c NODE コマンドライン引数の解析, @code{gauche.parseopt} - コマンドライン引数の解析
 
@@ -7071,7 +7072,256 @@ the procedure is used as if it is the body of @code{else} option clause.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node High Level Process Interface, Record types, Parsing command-line options, Library modules - Gauche extensions
+@node Partial continuations, High Level Process Interface, Parsing command-line options, Library modules - Gauche extensions
+@section @code{gauche.partcont} - Partial continuatoins
+@c NODE 部分継続, @code{gauche.partcont} - 部分継続
+
+@deftp {Module} gauche.partcont
+@mdindex gauche.partcont
+@c EN
+Gauche internally supports partial continuations
+(a.k.a. delimited continuations) natively.
+This module exposes the feature for genreal use.
+@c JP
+Gaucheは内部的に、部分継続(限定継続と呼ばれることもあります)を
+ネイティブでサポートしています。このモジュールはその機能を
+一般的に使えるように公開するものです。
+@c COMMON
+@end deftp
+
+Note:
+Partial continuations uses two operators, @code{reset} and @code{shift}.
+Those names are introduced in the original papers, and stuck in the
+programming world.  Unfortunately those names are too generic as
+library function names.  We thought giving them more unique names,
+but decided to keep them after all; when you talk about partial
+continuations you can't get away from those names.  If these names
+conflict to other names in your program, you can use @code{:prefix}
+import specifier (@xref{Using modules}), for example as follows:
+
+@example
+;; Add prefix pc: to the 'reset' and 'shift' operators.
+(use gauche.partcont :prefix pc:)
+
+(pc:reset ... (pc:shift k ....) )
+@end example
+
+@defmac reset expr @dots{}
+Save the current continuation, and executes @var{expr} @dots{} with
+a @emph{null continuation} or @emph{empty continuation}.
+The @code{shift} operator captures the continuation from the @code{shift}
+expression to this null continuation.
+@end defmac
+
+@defmac shift var expr @dots{}
+Shift opreator packages continuations from the current null
+continuation marked by the most recent @code{reset} into a procedure,
+bind the procedure to @var{var}, then executes @var{expr} @dots{}
+with the continuation saved by the most reset @code{reset}.
+
+That is, after executing @var{expr} @dots{}, the value is passed
+to the expression waiting for the value of the most @code{reset}.
+When a partial continuation bound to @var{var} is executed, its
+argument is passed to the continuation waiting for the value
+of this @code{shift}.  After the continuation executes until
+the null continuation, it returns from the expression waiting
+for the value of invocation of @var{var}.  OK?
+@end defmac
+
+@defun call/pc proc
+This is a wrapper of @code{shift}.  @code{(shift k expr @dots{})}
+is equivalent to @code{(call/pc (lambda (k) expr @dots{}))}.
+Sometimes this similarity of @code{call/cc} comes handy.
+@end defun
+
+Well, @dots{} I bet you feel like your brain is twisted hard
+unless you are one of those continuation wizard.  Let me break down
+what's happening here.
+
+Suppose a procedur A calls an expression B.   If A expects a return
+value from B and continue processing, we split the part after returning
+from B into a separate chunk A', then we can think of the whole
+control flow as this straight chain:
+
+@example
+A -> B -> A'
+@end example
+
+@code{A -> B} is a procedure call and @code{B -> A'} is a return,
+but we all know procedure call and return is intrinsically the
+same thing, right?
+
+Procedure B may calling another procedure C, and so on.  So when
+you look at an execution of particular piece of code, you can
+think of a control flow something like this:
+
+@example
+... -> A -> B -> C -> .... -> C' -> B' -> A' -> ...
+@end example
+
+Call/cc is a magic procedure that extract the head of the chain
+following its execution (marked as @code{*} in the figure blow),
+and passes it to the given procedure (denoted @code{k} in the figure
+below).
+So, whenever @code{k} is invoked, the control goes through the
+chain from @code{*}.
+
+@example
+... -> A -> B -> (call/cc -> (lambda (k) ... ) ) -> B' -> A' -> ...
+                                      |             ^
+                                      \-----------> *
+@end example
+
+One difficulty with @code{call/cc} is that the chain extracted
+by it is only one-ended---we don't know what is chained on the
+left @dots{} part.  In fact, what will come after that depends
+on the whole program; it's outside of local control.  This global
+attribute of @code{call/cc} makes it difficult to deal with.
+
+The @code{reset} primitive @emph{cuts} this chain of 
+continuation.  The original chain of continuation (the @code{x}-end
+in the following figure) is saved somewhere, and the continuation
+of @code{reset} itself becomes open-ended (the @code{o}-end
+in the following figure).
+
+@example
+... -> A -> B -> (reset ... ) -> o
+
+                                 x -> B ' -> A' -> ...
+@end example
+
+A rule: If control reaches to the @code{o}-end, we pick the
+@code{x}-end @emph{most recently saved}.
+Because of this, @code{reset} alone doesn't show any
+difference in the program behavior.
+
+Now what happens if we insert @code{shift} inside @code{reset}?
+This is a superficial view of inserting @code{shift} into
+somewhere down the chain of reset:
+
+@example
+... -> (reset ... X -> Y -> (shift k ... ) -> Y' -> X' ) -> o
+@end example
+
+What actually happens is as follows.  That is,
+@enumerate
+@item
+@code{shift} packages @emph{the rest of the chain of work} until the
+end of @code{reset}, and bind it to the variable @var{k}.
+@item
+The continuation of @code{shift} is connected to the saved
+end (@code{x}-end) of the original continuation.
+@end enumerate
+
+@example
+... -> (reset ... X -> Y -> (shift k ... ) -> x -> B ' -> A' -> ...
+                                   ^
+                                   \--- @{ -> Y' -> X' ) -> o @}
+@end example
+
+In other words, when you consider @code{reset} form as
+one chunk of task, then @code{shift} in it
+@emph{stashes away} the rest of the task and immediately
+returns from the task.  
+
+Let's see an example.  The argunet @var{walker} is 
+a procedure that takes a procedure and some kind of collection,
+and applies the procedure to the each element in the collection.
+We ignore the return value of @var{walker}.
+
+@example
+(define (inv walker)
+  (lambda (coll)
+    (define (continue)
+      (reset (walker (lambda (e) (shift k (set! continue k) e)) coll)
+             (eof-object)))
+    (lambda () (continue))))
+@end example
+
+A typical example of @var{walker} is @code{for-each}, which takes
+a list and applies the procedure to each element of the list.
+If we pass @code{for-each} to @code{inv}, we get a procedure
+that is inverted @emph{inside-out}.  What does that mean?
+See the following session:
+
+@example
+gosh> (define inv-for-each (inv for-each))
+inv-for-each
+gosh> (define iter (inv-for-each '(1 2 3)))
+iter
+gosh> (iter)
+1
+gosh> (iter)
+2
+gosh> (iter)
+3
+gosh> (iter)
+#<eof>
+@end example
+
+When you pass a list to @code{inv-for-each}, you get an iterator
+that returns each element in the list.  That's because every
+time @code{iter} is called, @code{shift} in @code{inv}
+stashes away the task of @emph{walking the rest of the collection}
+and set it to @code{continue}, then returns the current element @var{e}.
+
+@var{walker} doesn't need to work just on list.  The following
+function @code{for-each-leaf} traverses a tree and
+apply @var{f} on each non-pair element.
+
+@example
+(define (for-each-leaf f tree)
+  (match tree
+   [(x . y) (for-each-leaf f x) (for-each-leaf f y)]
+   [x (f x)]))
+@end example
+
+And you can inverse it just like @code{for-each}.
+
+@example
+gosh> (define iter2 ((inv for-each-leaf) '((1 . 2) . (3 . 4))))
+iter2
+gosh> (iter2)
+1
+gosh> (iter2)
+2
+gosh> (iter2)
+3
+gosh> (iter2)
+4
+gosh> (iter2)
+#<eof>
+@end example
+
+The @code{util.combinations} module (@xref{Combination library})
+provides a procedure that @emph{calls} a given procedure with
+every permutation of the given collection.  If you pass
+it to @code{inv}, you get a procedure that @emph{returns}
+every permutation each time.
+
+@example
+gosh> (define next ((inv permutations-for-each) '(a b c)))
+next
+gosh> (next)
+(a b c)
+gosh> (next)
+(a c b)
+gosh> (next)
+(b a c)
+gosh> (next)
+(b c a)
+gosh> (next)
+(c a b)
+gosh> (next)
+(c b a)
+gosh> (next)
+#<eof>
+@end example
+
+
+
+@c ----------------------------------------------------------------------
+@node High Level Process Interface, Record types, Partial continuations, Library modules - Gauche extensions
 @section @code{gauche.process} - High Level Process Interface
 @c NODE 高レベルプロセスインタフェース, @code{gauche.process} - 高レベルプロセスインタフェース
 
