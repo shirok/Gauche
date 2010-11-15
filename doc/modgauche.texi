@@ -7090,10 +7090,10 @@ Gaucheは内部的に、部分継続(限定継続と呼ばれることもあり�
 @end deftp
 
 Note:
-Partial continuations uses two operators, @code{reset} and @code{shift}.
+Partial continuations use two operators, @code{reset} and @code{shift}.
 Those names are introduced in the original papers, and stuck in the
 programming world.  Unfortunately those names are too generic as
-library function names.  We thought giving them more unique names,
+library function names.  We thought giving them more descriptive names,
 but decided to keep them after all; when you talk about partial
 continuations you can't get away from those names.  If these names
 conflict to other names in your program, you can use @code{:prefix}
@@ -7107,25 +7107,25 @@ import specifier (@xref{Using modules}), for example as follows:
 @end example
 
 @defmac reset expr @dots{}
-Save the current continuation, and executes @var{expr} @dots{} with
+Saves the current continuation, and executes @var{expr} @dots{} with
 a @emph{null continuation} or @emph{empty continuation}.
 The @code{shift} operator captures the continuation from the @code{shift}
 expression to this null continuation.
 @end defmac
 
 @defmac shift var expr @dots{}
-Shift opreator packages continuations from the current null
+Packages the continuation of this expression until the current null
 continuation marked by the most recent @code{reset} into a procedure,
-bind the procedure to @var{var}, then executes @var{expr} @dots{}
-with the continuation saved by the most reset @code{reset}.
+binds the procedure to @var{var}, then executes @var{expr} @dots{}
+with the continuation saved by the most recent @code{reset}.
 
 That is, after executing @var{expr} @dots{}, the value is passed
-to the expression waiting for the value of the most @code{reset}.
+to the expression waiting for the value of the most recent @code{reset}.
 When a partial continuation bound to @var{var} is executed, its
 argument is passed to the continuation waiting for the value
-of this @code{shift}.  After the continuation executes until
-the null continuation, it returns from the expression waiting
-for the value of invocation of @var{var}.  OK?
+of this @code{shift}.   When the execution of the partial continuation 
+reaches its end, it returns from the expression waiting
+for the value of invocation of @var{var}.
 @end defmac
 
 @defun call/pc proc
@@ -7135,10 +7135,10 @@ Sometimes this similarity of @code{call/cc} comes handy.
 @end defun
 
 Well, @dots{} I bet you feel like your brain is twisted hard
-unless you are one of those continuation wizard.  Let me break down
-what's happening here.
+unless you are one of those rare breed from the land of continuation.
+Let me break down what's happening here.
 
-Suppose a procedur A calls an expression B.   If A expects a return
+Suppose a procedure A calls an expression B.   If A expects a return
 value from B and continue processing, we split the part after returning
 from B into a separate chunk A', then we can think of the whole
 control flow as this straight chain:
@@ -7151,15 +7151,15 @@ A -> B -> A'
 but we all know procedure call and return is intrinsically the
 same thing, right?
 
-Procedure B may calling another procedure C, and so on.  So when
+Procedure B may call another procedure C, and so on.  So when
 you look at an execution of particular piece of code, you can
-think of a control flow something like this:
+think of a chain of control flow like this:
 
 @example
 ... -> A -> B -> C -> .... -> C' -> B' -> A' -> ...
 @end example
 
-Call/cc is a magic procedure that extract the head of the chain
+The magic procedure @code{call/cc} extracts the head of the chain
 following its execution (marked as @code{*} in the figure blow),
 and passes it to the given procedure (denoted @code{k} in the figure
 below).
@@ -7172,9 +7172,9 @@ chain from @code{*}.
                                       \-----------> *
 @end example
 
-One difficulty with @code{call/cc} is that the chain extracted
-by it is only one-ended---we don't know what is chained on the
-left @dots{} part.  In fact, what will come after that depends
+One difficulty with @code{call/cc} is that the extracted chain
+is only one-ended---we don't know what is chained to the
+left.  In fact, what will come after that depends
 on the whole program; it's outside of local control.  This global
 attribute of @code{call/cc} makes it difficult to deal with.
 
@@ -7203,7 +7203,8 @@ somewhere down the chain of reset:
 ... -> (reset ... X -> Y -> (shift k ... ) -> Y' -> X' ) -> o
 @end example
 
-What actually happens is as follows.  That is,
+What actually happens is as follows.
+
 @enumerate
 @item
 @code{shift} packages @emph{the rest of the chain of work} until the
@@ -7215,17 +7216,18 @@ end (@code{x}-end) of the original continuation.
 
 @example
 ... -> (reset ... X -> Y -> (shift k ... ) -> x -> B ' -> A' -> ...
-                                   ^
-                                   \--- @{ -> Y' -> X' ) -> o @}
+                                   |
+                                   \--> @{ -> Y' -> X' ) -> o @}
 @end example
 
-In other words, when you consider @code{reset} form as
+In other words, when you consider the @code{reset} form as
 one chunk of task, then @code{shift} in it
 @emph{stashes away} the rest of the task and immediately
 returns from the task.  
 
-Let's see an example.  The argunet @var{walker} is 
-a procedure that takes a procedure and some kind of collection,
+Let's see an example.  The @var{walker} argument in
+the following example is a procedure that takes a procedure
+and some kind of collection,
 and applies the procedure to the each element in the collection.
 We ignore the return value of @var{walker}.
 
