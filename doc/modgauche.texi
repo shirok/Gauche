@@ -20,7 +20,7 @@
 * Networking::                  gauche.net
 * Parameters::                  gauche.parameter
 * Parsing command-line options::  gauche.parseopt
-* Partial continuations::       
+* Partial continuations::       gauche.partcont
 * High Level Process Interface::  gauche.process
 * Record types::                gauche.record
 * Reloading modules::           gauche.reload
@@ -7073,7 +7073,7 @@ the procedure is used as if it is the body of @code{else} option clause.
 
 @c ----------------------------------------------------------------------
 @node Partial continuations, High Level Process Interface, Parsing command-line options, Library modules - Gauche extensions
-@section @code{gauche.partcont} - Partial continuatoins
+@section @code{gauche.partcont} - Partial continuations
 @c NODE 部分継続, @code{gauche.partcont} - 部分継続
 
 @deftp {Module} gauche.partcont
