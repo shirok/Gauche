@@ -7089,6 +7089,7 @@ Gaucheは内部的に、部分継続(限定継続と呼ばれることもあり�
 @c COMMON
 @end deftp
 
+@c EN
 Note:
 Partial continuations use two operators, @code{reset} and @code{shift}.
 Those names are introduced in the original papers, and stuck in the
@@ -7098,6 +7099,12 @@ but decided to keep them after all; when you talk about partial
 continuations you can't get away from those names.  If these names
 conflict to other names in your program, you can use @code{:prefix}
 import specifier (@xref{Using modules}), for example as follows:
+@c JP
+註: 部分継続はふたつのオペレータ、@code{reset}と@code{shift}を使います。
+これらは元の論文で導入された名前ですが、既に用語として定着した感があります。
+ライブラリ関数名としては一般的に過ぎる名前なので、
+
+@c COMMON
 
 @example
 ;; Add prefix pc: to the 'reset' and 'shift' operators.
@@ -7570,7 +7577,7 @@ associated file descriptor (See @code{port-file-number} in
 @code{(process-input @var{process} @var{source})}
 を呼び出すことで入手できます。
 
-@var{sink}が@code{:null}なら、@var{fd}はシステムのヌルデバイスからの
+@code{:null}の場合、@var{fd}はシステムのヌルデバイスからの
 読み込みになります。
 
 整数の場合は、現プロセスの読み込み用ファイルディスクリプタを指定します。
