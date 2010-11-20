@@ -3477,12 +3477,17 @@
             [(CDDR)    (pass2/const-cxxr cdr cddr args)]
             [(MEMQ)    (pass2/const-memx memq args)]
             [(MEMV)    (pass2/const-memx memv args)]
+            [(ASSQ)    (pass2/const-memx assq args)]
+            [(ASSV)    (pass2/const-memx assv args)]
+            [(VEC-REF) (pass2/const-vecref args)]
+            [(VEC-LEN) (pass2/const-veclen args)]
             [(EQ)      (pass2/const-op2 eq? args)]
             [(EQV)     (pass2/const-op2 eqv? args)]
             [(NUMADD2) (pass2/const-numop2 + args)]
             [(NUMSUB2) (pass2/const-numop2 - args)]
             [(NUMMUL2) (pass2/const-numop2 * args)]
             [(NUMDIV2) (pass2/const-numop2 / args)]
+            [(NEGATE)  (pass2/const-numop1 - args)]
             [else #f]))
       (and-let* ([ (pair? args) ]
                  [ (null? (cdr args)) ]
@@ -3519,10 +3524,24 @@
 (define (pass2/const-op2 proc args)
   ($const (proc ($const-value (car args)) ($const-value (cadr args)))))
 
+(define (pass2/const-numop1 proc args)
+  (let1 n ($const-value (car args))
+    (and (number? n) ($const (proc n)))))
+
 (define (pass2/const-numop2 proc args)
   (let ([x ($const-value (car args))]
         [y ($const-value (cadr args))])
     (and (number? x) (number? y) ($const (proc x y)))))
+
+(define (pass2/const-vecref args)       ;args has always 2 elements
+  (let ([v ($const-value (car args))]
+        [i ($const-value (cadr args))])
+    (and (vector? v) (exact? i) (integer? i) (< -1 i (vector-length v))
+         ($const (vector-ref v i)))))
+
+(define (pass2/const-veclen args)
+  (let1 v ($const-value (car args))
+    (and (vector? v) ($const (vector-length v)))))
 
 (define (initval-never-null? val)
   (and (vector? val)

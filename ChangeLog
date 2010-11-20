@@ -1,3 +1,15 @@
+2010-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass2/check-constant-asm): Added constant folding
+	  for $asm nodes with ASSQ, ASSV, VEC-REF, VEC-LEN and NEGATE insns.
+	  If these weren't inlined to VM instructions, constant expression
+	  using these would be precomputed because corresponding SUBRs are
+	  constant function.  However, inlining to VM instructions is done
+	  at pass1, where constant folding with SUBRs are done in pass2, so
+	  the compile failed to fold constant expressions using these
+	  functions.  Eventually we want some means to integrate implementation
+	  of SUBRs and optimization of corresponding $asm nodes.
+
 2010-11-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm: Changed receiver and sender interface to make
