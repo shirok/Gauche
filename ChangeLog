@@ -1,5 +1,9 @@
 2010-11-19  Shiro Kawai  <shiro@acm.org>
 
+	* depcomp, compile, config.guess, config.sub, mkinstalldirs,
+	  missing, install-sh, aclocal.m4: Updated to catch up to the
+	  recent autotools.
+
 	* src/compile.scm (pass2/check-constant-asm): Added constant folding
 	  for $asm nodes with ASSQ, ASSV, VEC-REF, VEC-LEN and NEGATE insns.
 	  If these weren't inlined to VM instructions, constant expression
