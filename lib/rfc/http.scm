@@ -70,6 +70,8 @@
           
           http-get http-head http-post http-put http-delete
           http-default-auth-handler
+
+          http-secure-connection-available?
           )
   )
 (select-module rfc.http)
@@ -748,7 +750,10 @@
                        [else (run-stunnel3 path)])
             (set! result proc)))))))
 
-(define (secure-agent-available?) (probe-stunnel))
+;; for external api
+(define (http-secure-connection-available?)
+  ;; eventually this will check availability of multiple subsystems.
+  (boolean (probe-stunnel)))
   
      
 ;;==============================================================

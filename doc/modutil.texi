@@ -6682,11 +6682,11 @@ header fields.  Inherits @code{<error>}.
 @c COMMON
 @end deftp
 
-@defun http-get server request-uri :key sink flusher no-redirect @dots{}
-@defunx http-head server request-uri :key no-redirect @dots{}
-@defunx http-post server request-uri body :key sink flusher no-redirect @dots{}
-@defunx http-put server request-uri body :key sink flusher @dots{}
-@defunx http-delete server request-uri :key sink flusher @dots{}
+@defun http-get server request-uri :key sink flusher no-redirect secure @dots{}
+@defunx http-head server request-uri :key no-redirect secure @dots{}
+@defunx http-post server request-uri body :key sink flusher no-redirect secure @dots{}
+@defunx http-put server request-uri body :key sink flusher secure @dots{}
+@defunx http-delete server request-uri :key sink flusher secure @dots{}
 
 @c EN
 Send http GET, HEAD, POST, PUT and DELETE requests to the http @var{server},
@@ -6981,6 +6981,16 @@ i.e. the procedures return "3xx" message as is.
 真の値が与えられた場合、リダイレクションには従わなくなります。すなわち、
 手続きは"3xx"のメッセージをそのまま返します。
 @c COMMON
+@item secure
+@c EN
+If a true value is given, use secure connection (https).
+If a secure connection is not available on the running platform,
+an error is signalled.  See the ``Secure connection'' section below.
+@c JP
+真の値が与えられた場合、セキュアな接続(https)を使います。
+セキュアな接続が実行中のプラットフォームで利用できない場合はエラーが投げられます。
+下の「セキュアな接続」の項も参照してください。
+@c COMMON
 @item sink, flusher
 @c EN
 You can customize how the reply message body is handled by these
@@ -7073,6 +7083,37 @@ and the boundary string.
 @var{Encoding} specifies the character encodings to be used.
 @end defun
 
+@c EN
+@subheading Secure connection
+@c JP
+@subheading セキュアな接続
+@c COMMON
+
+When you pass a true value to @code{secure} keyword argument,
+The request-making APIs such as @code{http-get} use a secure
+connection.  That is, it connects with @code{https} instead of
+@code{http}.
+
+Currently Gauche relies on an external program @code{stunnel}
+(either version 3 or 4)
+to handle secure connections.  So when you request a secure
+connection, Gauche looks for @code{stunnel} program in @code{PATH}.
+On some systems a newer version of it is called @code{stunnel4},
+and Gauche looks for it, too.
+If you want to add certificates, for example, you have to
+adjust @code{stunnel} settings.
+
+A plan is to provide the means of secure connections as long as
+@code{stunnel}, including native SSL support, and the higher-level
+library automatically choose whatever is available and best.
+
+Use the following procedure to check if you can use secure
+connections:
+
+@defun http-secure-connection-available?
+Returns @code{#t} if running Gauche can use secure connection,
+@code{#f} otherwise.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node IP packets, ICMP packets, HTTP, Library modules - Utilities

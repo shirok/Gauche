@@ -1,5 +1,9 @@
 2010-11-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/http.scm (http-secure-connection-available?): Exported for
+	  general use.
+	* doc/motutil.texi (rfc.http): Officially document :secure option.
+
 	* ltmain.m4, gc/acinclude.m4, gc/aclocal.m4, gc/libtool.m4: Updated.
 
 2010-11-19  Shiro Kawai  <shiro@acm.org>
