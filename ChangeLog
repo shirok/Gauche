@@ -1,3 +1,7 @@
+2010-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* ltmain.m4, gc/acinclude.m4, gc/aclocal.m4, gc/libtool.m4: Updated.
+
 2010-11-19  Shiro Kawai  <shiro@acm.org>
 
 	* depcomp, compile, config.guess, config.sub, mkinstalldirs,
@@ -10,7 +14,7 @@
 	  using these would be precomputed because corresponding SUBRs are
 	  constant function.  However, inlining to VM instructions is done
 	  at pass1, where constant folding with SUBRs are done in pass2, so
-	  the compile failed to fold constant expressions using these
+	  the compiler failed to fold constant expressions using these
 	  functions.  Eventually we want some means to integrate implementation
 	  of SUBRs and optimization of corresponding $asm nodes.
 
