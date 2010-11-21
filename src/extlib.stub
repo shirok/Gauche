@@ -1563,6 +1563,11 @@
 (define-cproc gauche-site-architecture-directory () Scm_SiteArchitectureDirectory)
 (define-cproc gauche-dso-suffix () ::<const-cstring> (result SHLIB_SO_SUFFIX))
 
+;; Temporary - only usable on Windows(mingw) and Darwin; used to replace
+;; '@' in the paths embedded in gauche.config.
+(define-cproc %gauche-runtime-directory () Scm__RuntimeDirectory)
+  
+
 ;; Other thread stuff is in ext/threads/thrlib.stub
 (define-cproc current-thread () (result (SCM_OBJ (Scm_VM))))
 

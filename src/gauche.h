@@ -1732,6 +1732,7 @@ SCM_EXTERN ScmObj Scm_LibraryDirectory(void);
 SCM_EXTERN ScmObj Scm_ArchitectureDirectory(void);
 SCM_EXTERN ScmObj Scm_SiteLibraryDirectory(void);
 SCM_EXTERN ScmObj Scm_SiteArchitectureDirectory(void);
+SCM_EXTERN ScmObj Scm__RuntimeDirectory(void); /* private */
 
 /* Compare and Sort */
 SCM_EXTERN int Scm_Compare(ScmObj x, ScmObj y);

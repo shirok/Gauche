@@ -545,6 +545,29 @@ ScmObj Scm_SiteArchitectureDirectory(void)
     return dir;
 }
 
+/* Temporary hack - this only works on Windows native and Darwin.
+   Returns a pathname that can be replaced for '@' prefix in various
+   configuration paths.  Note that replacement is already done in
+   the returned values of other Scm_*Directory functions above.
+   This is needed to augument the returned values of gauche.config
+   module.  Some refactorization is needed in future.
+   
+   Aside from the current purpose, it will be useful to have a procedure
+   to obtain the directory of the running executable.  This function
+   can eventually evlove to it.
+ */
+ScmObj Scm__RuntimeDirectory(void)
+{
+    static ScmObj dir = SCM_FALSE;
+    if (SCM_FALSEP(dir)) {
+        char buf[PATH_MAX];
+        Scm_GetRuntimeDirectory(buf, PATH_MAX, Scm_Error);
+        dir = Scm_MakeString(buf, -1, -1,
+                             SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
+    }
+    return dir;
+}
+
 /*=============================================================
  * 'Main'
  */

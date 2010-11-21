@@ -41,3 +41,5 @@ void Scm_GetSiteLibraryDirectory(const char *buf, int buflen,
                                  void (*errfn)(const char *, ...));
 void Scm_GetSiteArchitectureDirectory(const char *buf, int buflen,
                                       void (*errfn)(const char *, ...));
+void Scm_GetRuntimeDirectory(const char *buf, int buflen,
+                             void (*errfn)(const char *, ...));

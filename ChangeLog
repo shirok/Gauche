@@ -1,3 +1,19 @@
+2010-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/paths.c (Scm_GetRuntimeDirectory), src/paths.h
+	  src/core.c (Scm__RuntimeDirectory), src/gauche.h,
+	  src/extlib.stub (%gauche-runtime-directory): A quick hack to
+	  expose runtime directory on limited platforms.  Needed to fix
+	  gauche.config on windows.  Not for general use.
+	* src/genconfig.in (gauche-config): The gauche-config procedure
+	  in gauche.config to replace '@' prefix included in the return
+	  value, on Windows.  The return value now matches what you get
+	  with the command-line version.
+
+	* lib/gauche/package/util.scm (run): Fixed so that the build
+	  commands can be run on Windows (MinGW+MSYS).  Now gauche-package
+	  works on it.
+
 2010-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm (console-device): Added.

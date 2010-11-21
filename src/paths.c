@@ -92,3 +92,13 @@ void Scm_GetSiteArchitectureDirectory(char *buf, int buflen,
     maybe_prepend_install_dir(GAUCHE_SITE_ARCH_DIR, buf, buflen, errfn);
 }
 
+/* On windows and darwin, this returns the runtime's prefix directory
+   that can be replaced with '@'.  Note that it calls errfn on other
+   platforms.  Eventually we want to cover more platforms, for getting
+   directory of the running binary is sometimes useful in general. */
+void Scm_GetRuntimeDirectory(char *buf, int buflen,
+                             void (*errfn)(const char *, ...))
+{
+    get_install_dir(buf, buflen, errfn);
+}
+
