@@ -535,11 +535,11 @@ ScmObj Scm_TmpDir(void)
         r2 = GetTempPath(r, tbuf);
         if (r2 != r) Scm_SysError("GetTempPath failed");
     }
-    return SCM_MAKE_STR(SCM_WCS2MBS(tbuf));
+    return SCM_MAKE_STR_COPYING(SCM_WCS2MBS(tbuf));
 #else  /*!GAUCHE_WINDOWS*/
     const char *s;
-    if ((s = getenv("TMPDIR")) != NULL) return SCM_MAKE_STR(s);
-    if ((s = getenv("TMP")) != NULL) return SCM_MAKE_STR(s);
+    if ((s = getenv("TMPDIR")) != NULL) return SCM_MAKE_STR_COPYING(s);
+    if ((s = getenv("TMP")) != NULL) return SCM_MAKE_STR_COPYING(s);
     else return SCM_MAKE_STR("/tmp"); /* fallback */
 #endif /*!GAUCHE_WINDOWS*/
 }
