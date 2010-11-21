@@ -1,4 +1,7 @@
-2010-11-20  Shiro Kawai  <shiro@acm.org>
+2010-11-20 Shiro Kawai   <shiro@acm.org>
+
+	* src/system.c (Scm_Mkstemp): Fixed PRNG for tmp file name; the lower
+	  bits has low entropy.
 
 	* lib/rfc/http.scm (http-secure-connection-available?): Exported for
 	  general use.
