@@ -621,7 +621,7 @@ int Scm_Mkstemp(char *templat)
         flags = O_CREAT|O_EXCL|O_WRONLY;
 #endif /* !GAUCHE_WINDOWS */
         for (numtry=0; numtry<MKSTEMP_MAX_TRIALS; numtry++) {
-            snprintf(suffix, 7, "%06lx", seed&0xffffff);
+            snprintf(suffix, 7, "%06lx", (seed>>8)&0xffffff);
             memcpy(templat+siz-6, suffix, 7);
             SCM_SYSCALL(fd, open(templat, flags, 0600));
             if (fd >= 0) break;
