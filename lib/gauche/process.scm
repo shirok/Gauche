@@ -342,22 +342,20 @@
                [(or (port? arg) (integer? arg)) (push! iomap `(,fd . ,arg))]
                [else (error "invalid entry in process redirection" r)])]
         [(<< <<<)
-         (cond-expand
-          [gauche.sys.pthreads
-           (receive (in out) (sys-pipe)
-             (push! iomap `(,fd . ,in))
-             (thread-start!
-              (make-thread (lambda ()
-                             (unwind-protect (if (eq? dir '<<)
-                                               (if (string? arg)
-                                                 (display arg out)
-                                                 (write-block arg out))
-                                               (write arg out))
-                               (close-output-port out))))))]
-          [else
-           (receive (out nam) (sys-mkstemp (%temp-path-prefix))
-             (write arg out) (close-output-port out)
-             (do-file '< fd nam))])]
+         (letrec ([write-arg (^o (unwind-protect
+                                     (cond [(eq? dir '<<<) (write arg o)]
+                                           [(string? arg) (display arg o)]
+                                           [else (write-block arg o)])
+                                   (close-output-port o)))])
+           (cond-expand
+            [gauche.sys.pthreads
+             (receive (in out) (sys-pipe)
+               (push! iomap `(,fd . ,in))
+               (thread-start! (make-thread (cut write-arg out))))]
+            [else
+             (receive (out nam) (sys-mkstemp (%temp-path-prefix))
+               (write-arg out)
+               (do-file '< fd nam))]))]
         [(<& >&) (push! todup r)] ;; process dups later
         [else (error "invalid redirection" dir)])))
 
