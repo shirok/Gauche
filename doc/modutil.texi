@@ -4266,6 +4266,23 @@ nullデバイス名を返します。cygwinを含むunixプラットフォーム
 @c COMMON
 @end defun
 
+@defun console-device
+@c EN
+Returns a name of the console device.
+On unix platforms (including cygwin) it returns @code{"/dev/tty"},
+and on Windows native platforms (including mingw) it returns @code{"CON"}.
+
+This function does not guarantee the device is actually available
+to the calling process.
+@c JP
+コンソールデバイス名を返します。cygwinを含むunixプラットフォームでは
+@code{"/dev/tty"}、mingwを含むWindowsネイティブプラットフォームでは
+@code{"CON"}が返されます。
+
+そのデバイスが実際に現在のプロセスから利用可能であるかどうかはチェックされません。
+@c COMMON
+@end defun
+
 
 @node File attribute utilities, File operations, Pathname utilities, Filesystem utilities
 @subsection File attribute utilities
