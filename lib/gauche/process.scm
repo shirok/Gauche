@@ -269,6 +269,16 @@
       ,@(if dir `("cd" ,dir ";") '())
       ,@argv)))
 
+;; Returns a temporary path prefix (suitable for sys-mkstemp).
+;; We don't use temporary-directory to avoid depending on file.util.
+(define %temp-path-prefix
+  (let1 val #f
+    (lambda ()
+      (or val
+          (rlet1 v (sys-normalize-pathname #`",(sys-tmpdir)/gauche"
+                                           :canonicalize #t)
+            (set! val v))))))
+
 ;; Build I/O map 
 (define (%setup-iomap proc redirs)
 
@@ -345,7 +355,7 @@
                                                (write arg out))
                                (close-output-port out))))))]
           [else
-           (receive (out nam) (sys-mkstemp "/tmp/gauche")
+           (receive (out nam) (sys-mkstemp (%temp-path-prefix))
              (write arg out) (close-output-port out)
              (do-file '< fd nam))])]
         [(<& >&) (push! todup r)] ;; process dups later
