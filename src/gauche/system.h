@@ -82,6 +82,7 @@ SCM_EXTERN ScmObj Scm_ReadDirectory(ScmString *pathname);
 #define SCM_PATH_CANONICALIZE   (1L<<2)
 #define SCM_PATH_FOLLOWLINK     (1L<<3) /* not supported yet */
 SCM_EXTERN ScmObj Scm_NormalizePathname(ScmString *pathname, int flags);
+SCM_EXTERN ScmObj Scm_TmpDir(void);
 SCM_EXTERN ScmObj Scm_DirName(ScmString *filename);
 SCM_EXTERN ScmObj Scm_BaseName(ScmString *filename);
 

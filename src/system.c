@@ -518,6 +518,32 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
     return Scm_DStringGet(&buf, 0);        
 }
 
+/* Returns system's temporary directory. */
+ScmObj Scm_TmpDir(void)
+{
+#if defined(GAUCHE_WINDOWS)
+# define TMP_PATH_MAX 1024
+    TCHAR buf[TMP_PATH_MAX+1], *tbuf = buf;
+    DWORD r, r2;
+    /* According to the windows document, this API checks environment
+       variables TMP, TEMP, and USERPROFILE.  Fallback is the Windows
+       directory. */
+    r = GetTempPath(TMP_PATH_MAX, buf);
+    if (r == 0) Scm_SysError("GetTempPath failed");
+    if (r > TMP_PATH_MAX) {
+        tbuf = SCM_NEW_ATOMIC_ARRAY(TCHAR, r+1);
+        r2 = GetTempPath(r, tbuf);
+        if (r2 != r) Scm_SysError("GetTempPath failed");
+    }
+    return SCM_MAKE_STR(SCM_WCS2MBS(tbuf));
+#else  /*!GAUCHE_WINDOWS*/
+    const char *s;
+    if ((s = getenv("TMPDIR")) != NULL) return SCM_MAKE_STR(s);
+    if ((s = getenv("TMP")) != NULL) return SCM_MAKE_STR(s);
+    else return SCM_MAKE_STR("/tmp"); /* fallback */
+#endif /*!GAUCHE_WINDOWS*/
+}
+
 /* Basename and dirname.
    On Win32, we need to treat drive names specially, e.g.:
    (sys-dirname "C:/a") == (sys-dirname "C:/") == (sys-dirname "C:") == "C:\\"
