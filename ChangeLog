@@ -1,5 +1,8 @@
 2010-11-20  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/gauche/parameter.scm (setter): Added generalized setter
+	  for parameters; suggested by KOGURO, Naoki.
+
 	* lib/gauche/process.scm (%setup-iomap): Use sys-tmpdir to decide
 	  the location of temporary file when needed.
 	* libsrc/file/util.scm (temporary-directory): Also uses sys-tmpdir

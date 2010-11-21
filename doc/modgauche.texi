@@ -6324,6 +6324,35 @@ so that a parameter can be used as if it were a procedure.
 パラメータのクラスです。@code{object-apply}メソッドが定義されているので、
 パラメータオブジェクトは普通の手続きと同様に使うことが出来ます。
 @c COMMON
+
+@example
+;; p is a parameter with initial value 2
+(define p (make-parametre 2))
+
+;; calling p with no arguments returns the current value
+(p) @result{} 2
+
+;; modify p's value to 3
+(p 3)
+
+(p) @result{} 3
+
+;; you can also use generalized set (srfi-17)
+(set! (p) 5)
+
+(p) @result{} 5
+
+;; using parameterize dynamically changes p's value.
+
+(define (get-p) (p))
+
+(parameterize ([p 7])
+  (get-p)) @result{} 7
+
+(get-p)    @result{} 5
+@end example
+
+
 @end deftp
 
 @defun make-parameter value :optional filter

@@ -93,6 +93,10 @@
           (error "wrong number of arguments for parameter" maybe-newval))
       ((slot-ref self 'getter))))
 
+;; Allow (set! (parameter) value).  By KOGURO, Naoki
+(define-method (setter object-apply) ((obj <parameter>) value)
+  (obj value))
+
 (define (make-parameter value . maybe-filter)
   (let1 p (make <parameter> :filter (get-optional maybe-filter #f))
     (p value)

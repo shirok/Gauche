@@ -54,6 +54,11 @@
            (if k (k #f)))
          (reverse z)))
 
+(test* "generalized set! for parameters" "foo"
+       (begin (set! (a) "foo") (a)))
+(test* "generalized set! for parameters" 99
+       (begin (set! (b) "99") (b)))
+
 ;;-------------------------------------------------------------------
 (test-section "observers")
 
