@@ -67,7 +67,7 @@
           touch-file copy-file move-file 
           ;copy-files move-files
           remove-files delete-files
-          null-device
+          null-device console-device
           file->string file->string-list file->list file->sexp-list
           ))
 (select-module file.util)
@@ -120,6 +120,11 @@
   (cond-expand
    [gauche.os.windows "NUL"]
    [else "/dev/null"]))
+
+(define (console-device)
+  (cond-expand
+   [gauche.os.windows "CON"]
+   [else "/dev/tty"]))
 
 ;; utility for directory-list and directory-list2
 (define (%directory-filter dir pred filter-add-path?)

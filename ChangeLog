@@ -1,5 +1,7 @@
 2010-11-20  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/file/util.scm (console-device): Added.
+
 	* libsrc/gauche/parameter.scm (setter): Added generalized setter
 	  for parameters; suggested by KOGURO, Naoki.
 
