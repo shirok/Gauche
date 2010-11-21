@@ -2952,13 +2952,13 @@ its content is destroyed.
 @subsection Dumping and restoring dbm database
 @c NODE DBMデータベースのダンプとリストア
 
-Most dbm implementations use binary format, and
+Most dbm implementations use some kind of binary format, and
 some of them are architecture dependent.   
 That makes it difficult to pass around dbm databases
 between different machines.
 A safe way is to write out the content of a dbm database
 into some portable format on the source machine,
-and rebuild another dbm databse from ti on the destination
+and rebuild another dbm databse from it on the destination
 machine.
 
 The operation is so common that Gauche provides convenience
@@ -2966,7 +2966,7 @@ scripts that does the job.  They are installed into the
 standard Gauche library directory, so it can be invoked
 by @code{gosh <scriptname>}.
 
-To write out the content of dbm database named by @var{dbm-name}, 
+To write out the content of a dbm database named by @var{dbm-name}, 
 you can use @code{dbm/dump} script:
 
 @example
@@ -2976,7 +2976,7 @@ $ gosh dbm/dump [-o @var{outfile}][-t @var{type}] @var{dbm-name}
 The @var{outfile} argument names the output file.  If omitted,
 the output is written out to stdout.  The @var{type} argument
 specifies the implementation type of the dbm database; e.g.
-@code{gdbm} ro @code{fsdbm}.  The program calls
+@code{gdbm} or @code{fsdbm}.  The program calls
 @code{dbm-type->class} (@xref{Opening and closing a dbm database})
 on the @var{type} argument to load the necessary dbm implementation.
 

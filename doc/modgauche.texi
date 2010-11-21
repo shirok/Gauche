@@ -2628,6 +2628,8 @@ to create it like this:
 @defun bimap-left bimap
 @defunx bimap-right bimap
 Returns the left or right map of @var{bimap}, respectively.
+Do not mutate the returned map, or you'll break
+the consistency of the bimap.
 @end defun
 
 @defun bimap-left-get bimap key :optional default
