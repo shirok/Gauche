@@ -10906,7 +10906,7 @@ check:
         gosh test1.scm >> test.log
         gosh test2.scm >> test.log
         gosh test3.scm >> test.log
-        @@echo test.record
+        @@cat test.record
 @end example
 
 @c EN
