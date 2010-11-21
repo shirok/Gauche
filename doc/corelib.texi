@@ -14062,6 +14062,45 @@ Gaucheは内部でCランタイムの@code{realpath}を呼ばずに、
 @c COMMON
 @end defun
 
+@defun sys-tmpdir
+@c EN
+Returns the default directory name suitable to put temporary files.
+
+On Unix-like systems, the environment variable @code{TMPDIR} and @code{TMP}
+are first checked, then falls back to @code{/tmp}.
+
+On Windows-native systems, it uses @code{GetTempPath} Windows API.
+It checks environment variables @code{TMP}, @code{TEMP}, and 
+@code{USERPROFILE} in this order, and falls back to Windows system
+directory.
+
+On both platforms, the returned pathname may not exist, or
+may not be writable by the calling process.
+
+In general, user programs and libraries are recommended to use
+@code{temporary-directory} (@xref{Directory utilities}) instead;
+@code{sys-tmpdir} should be used only
+if you now the raw value the platform provides.
+@c JP
+一時ファイルを置くためのデフォルトのディレクトリ名を返します。
+
+Unix系システムでは、環境変数@code{TMPDIR}と@code{TMP}がこの順でチェックされ、
+フォールバックとして@code{/tmp}が返されます。
+
+Windowsネイティブの環境では、@code{GetTempPath} Windows APIを呼びます。
+これは環境変数@code{TMP}、@code{TEMP}、@code{USERPROFILE}を順に調べ、
+いずれも定義されていなければWindowsシステムディレクトリを返します。
+
+いずれのプラットフォームでも、返されたパス名は存在しないかもしれず、
+また書き込み可能ではないかもしれないことに注意してください。
+
+一般的に、ユーザプログラムやライブラリは@code{temporary-directory} 
+(@ref{Directory utilities}参照) の方を利用するのが良いでしょう。
+@code{sys-tmpdir}はプラットフォームが推奨する生の値を知りたい場合に
+限り使ってください。
+@c COMMON
+@end defun
+
 @node File stats, Other file operations, Pathnames, Filesystems
 @subsubsection File stats
 @c NODE ファイルの状態

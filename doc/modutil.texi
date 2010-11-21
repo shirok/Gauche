@@ -3659,14 +3659,19 @@ Windowsネイティブ環境では、この関数はカレントユーザに対�
 @deffn {Parameter} temporary-directory
 @c EN
 A parameter that keeps the name of the directory that can be used
-to create a temporary files. 
-The default value can be specified by
-the environment variable @code{TMPDIR} if it is defined,
-or @file{/tmp} otherwise.
+to create a temporary files.   The default value is
+the one returned from @code{sys-tmpdir} (@xref{Pathnames}).
+The difference of @code{sys-tmpdir} is that, since this is a parameter,
+it can be overridden by application during execution.
+Libraries are recommended to use this instead of @code{sys-tmpdir}
+for greater flexibility.
 @c JP
 一時ファイルを作るのに適したディレクトリ名を保持しているパラメータです。
-デフォルトの値は環境変数@code{TMPDIR}が定義されていればそれを、
-そうでなければ@file{/tmp}が使われます。
+デフォルトの値は@code{sys-tmpdir}の戻り値です (@ref{Pathnames}参照)。
+@code{sys-tmpdir}との違いは、これはパラメータなので
+アプリケーションが実行時に変更できることです。
+ライブラリは柔軟性を高めるためにできるだけ@code{sys-tmpdir}よりは
+こちらを利用するのが良いでしょう。
 @c COMMON
 @end deffn
 

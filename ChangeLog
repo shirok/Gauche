@@ -1,7 +1,9 @@
-2010-11-20  Shiro Kawai   <shiro@acm.org>
+2010-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm (%setup-iomap): Use sys-tmpdir to decide
 	  the location of temporary file when needed.
+	* libsrc/file/util.scm (temporary-directory): Also uses sys-tmpdir
+	  as the default value.
 
 	* src/system.c (Scm_TmpDir), src/syslib.stub (sys-tmpdir): Added
 	  for the consistent treatment of temporary directories across

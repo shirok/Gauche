@@ -114,7 +114,7 @@
       (slot-ref ent 'dir))]))
 
 (define temporary-directory
-  (make-parameter (or (sys-getenv "TMPDIR") "/tmp")))
+  (make-parameter (sys-tmpdir)))
 
 (define (null-device)
   (cond-expand
