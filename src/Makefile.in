@@ -136,6 +136,7 @@ INSTALL_SUBHEADERS = \
 
 INSTALL_LIBS = $(LIBGAUCHE).$(SOEXT)
 INSTALL_BINS = gosh$(EXEEXT)           \
+	       @ALTERNATIVE_GOSH@      \
 	       gauche-config$(EXEEXT)  \
                gauche-install$(EXEEXT) \
 	       gauche-package$(EXEEXT) \
@@ -155,6 +156,7 @@ GCLIB = ../gc/libgc.la
 
 gosh_SOURCES = main.c
 gosh_OBJECTS = main.$(OBJEXT)
+gish_OBJECTS = winmain.$(OBJEXT)
 gosh_LDADD   = -l@LINKGAUCHE@
 gosh_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
 
@@ -187,6 +189,12 @@ gosh$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_OBJECTS)
 	@rm -f gosh$(EXEEXT)
 	$(LINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT) $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 
+gish$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gish_OBJECTS) 
+	@rm -f gish$(EXEEXT)
+	$(LINK) $(gosh_LDFLAGS) -o gish$(EXEEXT) $(gish_OBJECTS) $(gosh_LDADD) $(LIBS) -Wl,--subsystem,windows
+
+# NB: relink target is only relevant where rpath matter.  notably, we don't
+# need to relink gish.exe (windows no-console version).
 relink :
 	$(RELINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
 	$(RELINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT)  $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
@@ -217,6 +225,8 @@ scmlib.c : scmlib.scm precomp vminsn.scm ../lib/gauche/vm/insn.scm
 
 objlib.c : objlib.scm precomp vminsn.scm ../lib/gauche/vm/insn.scm
 	$(BUILD_GOSH) $(PRECOMP) objlib.scm
+
+winmain.$(OBJEXT) : main.c
 
 symbol.$(OBJEXT) : builtin-syms.c
 

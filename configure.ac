@@ -398,10 +398,13 @@ dnl x86-solaris 9 requires this to use isinf
 AC_CHECK_LIB(sunmath, isinf)
 
 dnl For Windows/MinGW, manually adds several libraries
+dnl ALTERNATIVE_GOSH is no-console version of gosh; only built on Windows.
 case "$host" in
-  *mingw*) LIBS="$LIBS -lnetapi32 -lshlwapi";;
-  *) ;;
+  *mingw*) LIBS="$LIBS -lnetapi32 -lshlwapi"
+           ALTERNATIVE_GOSH="gish.exe" ;;
+  *)       ALTERNATIVE_GOSH="" ;;
 esac
+AC_SUBST(ALTERNATIVE_GOSH)
 
 AC_FUNC_ALLOCA
 AC_CHECK_FUNCS(isnan isinf trunc rint)

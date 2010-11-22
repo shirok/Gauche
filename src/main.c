@@ -46,6 +46,11 @@ char *optarg = NULL;
 int getopt(int argc, char **argv, const char *spec);
 #endif /*MSVC*/
 
+#if defined(GAUCHE_WINDOWS)
+static int init_console(void);
+static void win_loop(void);
+#endif /*defined(GAUCHE_WINDOWS)*/
+
 /* options */
 int load_initfile = TRUE;       /* if false, not to load init files */
 int batch_mode = FALSE;         /* force batch mode */
@@ -324,10 +329,7 @@ int main(int argc, char **argv)
     ScmLoadPacket lpak;
 
 #if defined(GAUCHE_WINDOWS)
-    /* This saves so much trouble. */
-    _setmode(_fileno(stdin),  _O_BINARY);
-    _setmode(_fileno(stdout), _O_BINARY);
-    _setmode(_fileno(stderr), _O_BINARY);
+    int consolep = init_console();
 #endif /*GAUCHE_WINDOWS*/
 
     GC_INIT();
@@ -520,9 +522,43 @@ int main(int argc, char **argv)
     }
 
     /* All is done. */
+#if defined(GAUCHE_WINDOWS)
+    if (!consolep) win_loop();
+#endif /*defined(GAUCHE_WINDOWS)*/
     Scm_Exit(exit_code);
     return 0;
 }
+
+#if defined(GAUCHE_WINDOWS)
+static int init_console(void)
+{
+#  if defined(GAUCHE_WINDOWS_NOCONSOLE)
+    close(0);               /* just in case */
+    close(1);               /* ditto */
+    close(2);               /* ditto */
+    open("NUL", O_RDONLY);
+    open("NUL", O_WRONLY);
+    open("NUL", O_WRONLY);
+    return FALSE;
+#  else /*!defined(GAUCHE_WINDOS_NOCONSOLE)*/
+    /* This saves so much trouble */
+    _setmode(_fileno(stdin),  _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+    _setmode(_fileno(stderr), _O_BINARY);
+    return TRUE;
+#  endif /*!defined(GAUCHE_WINDOS_NOCONSOLE)*/
+}
+    
+static void win_loop(void)
+{
+    MSG message;
+    while (GetMessage(&message, NULL, 0, 0)) {
+        TranslateMessage(&message);
+        DispatchMessage(&message);
+    }
+}
+#endif /*defined(GAUCHE_WINDOWS)*/
+
 
 #if defined(MSVC)
 /* getopt emulation.  this is NOT a complete implementation of getopt;

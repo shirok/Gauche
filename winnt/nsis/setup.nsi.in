@@ -94,7 +94,7 @@ Section -post SEC0001
     WriteRegStr HKCR "Scheme.script" "" "Scheme Script"
     WriteRegStr HKCR "Scheme.script\shell" "" "open"
     WriteRegStr HKCR "Scheme.script\DefaultIcon" "" "$INSTDIR\gauche-logo.ico"
-    WriteRegStr HKCR "Scheme.script\shell\open\command" "" '$INSTDIR\bin\gosh.exe "%1"'
+    WriteRegStr HKCR "Scheme.script\shell\open\command" "" '$INSTDIR\bin\gish.exe "%1"'
 SectionEnd
 
 # Macro for selecting uninstaller sections

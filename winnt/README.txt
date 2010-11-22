@@ -2,6 +2,16 @@ This directory contains files to compile Gauche with VisualC++ on Windows.
 As of 0.8.12, the core and several modules work, though we still need to
 tweak a few major modules (notably, gauche.net).
 
+The effort has been more or less stopped, though.  As of 0.9.1,
+a recommended way to compile Windows native Gauche is to use MinGW + MSYS.
+With them, you can compile Gauche with the same way as Unix platforms.
+No extra preprocessing is required.
+
+The following document is for those who want to revive Gauche/VC++
+projects.
+
+=========================
+
 If you get the source tree from the standard tarball (Gauche-x.x.x.tgz)
 or from CVS, you have to preprocess the source tree.  You need a unix-
 compatible environment (such as cygwin) to do that.
