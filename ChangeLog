@@ -1,5 +1,8 @@
 2010-11-22  Shiro Kawai  <shiro@acm.org>
 
+	* winnt/nsis/setup.nsi.in: Adds $INSTDIR\bin to the PATH on
+	  installation.
+
 	* src/main.c (init_console): Adapted to windows non-console mode.
 	* src/winmain.c: A kludge to compile non-console binary for windows.
 	  On windows, we create gosh.exe and gish.exe, where the former
