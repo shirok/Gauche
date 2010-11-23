@@ -1,7 +1,7 @@
 #! /bin/sh
 
 #
-# Generates gauche-config.c and gauche/arch.h
+# Generates gauche-config.c, gauche/arch.h and lib/gauche/config.scm
 #
 
 # TODO: we have almost exactly the same table in gauche-config.c part
@@ -167,8 +167,8 @@ static struct cmd_rec {
     const char *value;
 } cmds[] = {
     { "-V", "$gauche_version" },
-    { "-I", "-I$gauche_incdir" },
-    { "-L", "-L$gauche_archdir $local_libdir" },
+    { "-I", "-I\"$gauche_incdir\"" },
+    { "-L", "-L\"$gauche_archdir\" $local_libdir" },
     { "--ac", "$gauche_aclocaldir" },
     { "-l", "-l$garchabi $gauche_libs" },
     { "--cc", "$cc" },
@@ -386,8 +386,8 @@ cat > ../lib/gauche/config.scm.tmp.$$ <<EOF
 (define *configurations*
   (quote
    (("-V"  "$gauche_version")
-    ("-I"  "-I$gauche_incdir")
-    ("-L"  "-L$gauche_archdir $local_libdir")
+    ("-I"  "-I\"$gauche_incdir\"")
+    ("-L"  "-L\"$gauche_archdir\" $local_libdir")
     ("--ac"  "$gauche_aclocaldir")
     ("-l"  "-l$garchabi $gauche_libs")
     ("--cc"  "$cc")

@@ -1,5 +1,10 @@
 2010-11-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/genconfig.in: Quote pathnames in -I and -L option.  They may
+	  have spaces in them.  Note: For other options that directly returns
+	  pathnames, it's up to the caller to properly quote them, since
+	  the tool doesn't know who is calling it.
+
 	* winnt/nsis/setup.nsi.in: Adds $INSTDIR\bin to the PATH on
 	  installation.
 
