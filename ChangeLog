@@ -1,8 +1,10 @@
-2010-11-22  Shiro Kawai  <shiro@acm.org>
+2010-11-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (standard-*-port), src/port.c (Scm_SetStd*):
 	  Allow standard-input-port etc to be altered by the optional
 	  argument.
+
+2010-11-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/genconfig.in: Quote pathnames in -I and -L option.  They may
 	  have spaces in them.  Note: For other options that directly returns
