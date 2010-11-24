@@ -39,6 +39,10 @@
 
 (dynamic-load "gauche--termios")
 
+(cond-expand
+ [gauche.os.windows (use os.windows)]
+ [else])
+
 ;;
 ;; High-level utilities
 ;;

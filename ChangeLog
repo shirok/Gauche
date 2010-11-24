@@ -1,3 +1,11 @@
+2010-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/windows/*, ext/configure.in, configure.ac: Added os.windows
+	  module to provide Windows specific procedures.  Windows Console
+	  functions previously defined in gauche.termios are also moved here.
+	* ext/termios/termiolib.stub, ext/termios/termios.scm: Moved
+	  Windows Conosle functions to ext/windows/console.stub.
+
 2010-11-23  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, src/Makefile.in: Renamed windows no-console binary

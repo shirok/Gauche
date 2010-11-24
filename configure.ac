@@ -777,6 +777,7 @@ dnl          ext/peg/Makefile
           ext/uvector/Makefile
           ext/vport/Makefile
           ext/zlib/Makefile
+          ext/windows/Makefile
          )
 
 dnl ===========================================================
