@@ -1623,7 +1623,6 @@ ScmObj Scm_SetCurrentErrorPort(ScmPort *port)
     return oldp;
 }
 
-
 /*===============================================================
  * Initialization
  */
@@ -1662,3 +1661,85 @@ void Scm__InitPort(void)
     key_line   = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("line")));
     key_none   = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("none")));
 }
+
+/* Windows specific:
+
+   When we run Windows no-console mode, stdios are bogus (gosh-noconsole
+   wires them to NUL device, but when libgauche is called from other
+   applications, we can't assume that.)   It is too painful to be so,
+   since when Scheme program tries to write to stdout or stderr it just
+   crashes without any information at all.
+
+   So, this function re-wires Scheme standard output and error output
+   to a special port; when an output is made for the first time
+   the port opens up a console by AllocConsole(), and redirects further
+   output to it.
+
+   Unfortunately we can't do this at initialization time, since
+   Scm_Init() doesn't have a way to know whether we're in console mode
+   or not.  Only the application knows, thus it needs to call this API
+   after Scheme system is initialized.
+
+   NB: AllocConsole and port swapping should be mutexed, but currently
+   we don't support threads on native Windows, so no need to worry.
+ */
+#if defined(GAUCHE_WINDOWS)
+static int trapper_flusher(ScmPort *p, int cnt, int forcep)
+{
+    static int consoleCreated = FALSE;
+    size_t nwrote = 0;
+    int size = SCM_PORT_BUFFER_AVAIL(p);
+    char *buf = p->src.buf.buffer;
+    
+    if (!consoleCreated) {
+        AllocConsole();
+        freopen("CONOUT$", "w", stdout);
+        consoleCreated = TRUE;
+    }
+
+    while ((!forcep && nwrote == 0) || (forcep && nwrote < cnt)) {
+        size_t r = fwrite(buf, 1, size, stdout);
+        if (ferror(stdout)) {
+            /* NB: Double fault will be caught in the error handling
+               mechanism, so we don't need to worry it here. */
+            Scm_Error("output to CONOUT$ failed");
+        }
+        nwrote += r;
+        buf += r;
+    }
+    fflush(stdout);
+    return nwrote;
+}
+
+static ScmObj make_trapper_port()
+{
+    ScmPortBuffer bufrec;
+
+    bufrec.mode = SCM_PORT_BUFFER_LINE;
+    bufrec.buffer = NULL;
+    bufrec.size = 0;
+    bufrec.filler = NULL;
+    bufrec.flusher = trapper_flusher;
+    bufrec.closer = NULL;
+    bufrec.ready = NULL;
+    bufrec.filenum = NULL;
+    bufrec.seeker = NULL;
+    bufrec.data = NULL;
+    return Scm_MakeBufferedPort(SCM_CLASS_PORT,
+                                SCM_MAKE_STR("(console output)"),
+                                SCM_PORT_OUTPUT, TRUE, &bufrec);
+}
+
+void Scm__SetupPortsForWindows(int has_console)
+{
+    if (!has_console) {
+        ScmObj trapperPort = make_trapper_port();
+        scm_stdout = trapperPort;
+        scm_stderr = trapperPort;
+        Scm_VM()->curout = SCM_PORT(scm_stdout);
+        Scm_VM()->curerr = SCM_PORT(scm_stderr);
+    }
+}
+#endif /*defined(GAUCHE_WINDOWS)*/
+
+

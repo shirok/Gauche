@@ -46,11 +46,6 @@ char *optarg = NULL;
 int getopt(int argc, char **argv, const char *spec);
 #endif /*MSVC*/
 
-#if defined(GAUCHE_WINDOWS)
-static int init_console(void);
-static void win_loop(void);
-#endif /*defined(GAUCHE_WINDOWS)*/
-
 /* options */
 int load_initfile = TRUE;       /* if false, not to load init files */
 int batch_mode = FALSE;         /* force batch mode */
@@ -255,6 +250,30 @@ static void sig_setup(void)
     Scm_SetMasterSigmask(&set);
 }
 
+/* Path setup.  When we're ran with -ftest flag, add paths to refer
+   to the files in the source tree.  This is called after option processing
+   and before loading init file. */
+void test_paths_setup(void)
+{
+    /* The order of directories is important.  'lib' should
+       be searched first (hence it should come latter), since some
+       extension modules are built from the file in src then linked
+       from lib, and we want to test the one in lib. */
+    if (access("../src/stdlib.stub", R_OK) == 0
+        && access("../libsrc/srfi-1.scm", R_OK) == 0
+        && access("../lib/srfi-0.scm", R_OK) == 0) {
+        Scm_AddLoadPath("../src", FALSE);
+        Scm_AddLoadPath("../libsrc", FALSE);
+        Scm_AddLoadPath("../lib", FALSE);
+    } else if (access("../../src/stdlib.stub", R_OK) == 0
+               && access("../../libsrc/srfi-1.scm", R_OK) == 0
+               && access("../../lib/srfi-0.scm", R_OK) == 0) {
+        Scm_AddLoadPath("../../src", FALSE);
+        Scm_AddLoadPath("../../libsrc", FALSE);
+        Scm_AddLoadPath("../../lib", FALSE);
+    }
+}
+
 /* Load gauche-init.scm */
 void load_gauche_init(void)
 {
@@ -315,6 +334,41 @@ void error_exit(ScmObj c)
     Scm_Exit(1);
 }
 
+/* Returns FALSE if the process doesn't have a console. */
+static int init_console(void)
+{
+#if defined(GAUCHE_WINDOWS)
+#  if defined(GAUCHE_WINDOWS_NOCONSOLE)
+    close(0);               /* just in case */
+    close(1);               /* ditto */
+    close(2);               /* ditto */
+    open("NUL", O_RDONLY);
+    open("NUL", O_WRONLY);
+    open("NUL", O_WRONLY);
+    return FALSE;
+#  else /*!defined(GAUCHE_WINDOS_NOCONSOLE)*/
+    /* This saves so much trouble */
+    _setmode(_fileno(stdin),  _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+    _setmode(_fileno(stderr), _O_BINARY);
+    return TRUE;
+#  endif /*!defined(GAUCHE_WINDOS_NOCONSOLE)*/
+#else  /*!defined(GAUCHE_WINDOWS)*/
+    return TRUE;
+#endif /*!defined(GAUCHE_WINDOWS)*/
+}
+    
+static void event_loop(void)
+{
+#if defined(GAUCHE_WINDOWS)
+    MSG message;
+    while (GetMessage(&message, NULL, 0, 0)) {
+        TranslateMessage(&message);
+        DispatchMessage(&message);
+    }
+#endif /*defined(GAUCHE_WINDOWS)*/
+}
+
 /*-----------------------------------------------------------------
  * MAIN
  */
@@ -327,40 +381,26 @@ int main(int argc, char **argv)
     int exit_code = 0;
     ScmEvalPacket epak;
     ScmLoadPacket lpak;
+    int has_console;
 
-#if defined(GAUCHE_WINDOWS)
-    int consolep = init_console();
-#endif /*GAUCHE_WINDOWS*/
-
+    /* Initial setup. */
+    has_console = init_console();
     GC_INIT();
     Scm_Init(GAUCHE_SIGNATURE);
     sig_setup();
+#if defined(GAUCHE_WINDOWS)
+    /* Ugly... need some abstraction. */
+    Scm__SetupPortsForWindows(has_console);
+#endif /*defined(GAUCHE_WINDOWS)*/
 
+    /* Check command-line options */
     argind = parse_options(argc, argv);
 
     /* If -ftest option is given and we seem to be in the source
        tree, adds build directories to the library path _before_
        loading init file.   This is to help development of Gauche
        itself; normal user should never need this. */
-    if (test_mode) {
-        /* The order of directories is important.  'lib' should
-           be searched first (hence it should come latter), since some
-           extension modules are built from the file in src then linked
-           from lib, and we want to test the one in lib. */
-        if (access("../src/stdlib.stub", R_OK) == 0
-            && access("../libsrc/srfi-1.scm", R_OK) == 0
-            && access("../lib/srfi-0.scm", R_OK) == 0) {
-            Scm_AddLoadPath("../src", FALSE);
-            Scm_AddLoadPath("../libsrc", FALSE);
-            Scm_AddLoadPath("../lib", FALSE);
-        } else if (access("../../src/stdlib.stub", R_OK) == 0
-                   && access("../../libsrc/srfi-1.scm", R_OK) == 0
-                   && access("../../lib/srfi-0.scm", R_OK) == 0) {
-            Scm_AddLoadPath("../../src", FALSE);
-            Scm_AddLoadPath("../../libsrc", FALSE);
-            Scm_AddLoadPath("../../lib", FALSE);
-        }
-    }
+    if (test_mode) test_paths_setup();
 
     /* load init file */
     if (load_initfile) load_gauche_init();
@@ -521,44 +561,12 @@ int main(int argc, char **argv)
         }
     }
 
-    /* All is done. */
-#if defined(GAUCHE_WINDOWS)
-    if (!consolep) win_loop();
-#endif /*defined(GAUCHE_WINDOWS)*/
+    /* All is done.  If this is 'windows' application (i.e. doesn't
+       have console, we enter the event loop) */
+    if (!has_console) event_loop();
     Scm_Exit(exit_code);
-    return 0;
+    return 0;                   /*NOTREACHED*/
 }
-
-#if defined(GAUCHE_WINDOWS)
-static int init_console(void)
-{
-#  if defined(GAUCHE_WINDOWS_NOCONSOLE)
-    close(0);               /* just in case */
-    close(1);               /* ditto */
-    close(2);               /* ditto */
-    open("NUL", O_RDONLY);
-    open("NUL", O_WRONLY);
-    open("NUL", O_WRONLY);
-    return FALSE;
-#  else /*!defined(GAUCHE_WINDOS_NOCONSOLE)*/
-    /* This saves so much trouble */
-    _setmode(_fileno(stdin),  _O_BINARY);
-    _setmode(_fileno(stdout), _O_BINARY);
-    _setmode(_fileno(stderr), _O_BINARY);
-    return TRUE;
-#  endif /*!defined(GAUCHE_WINDOS_NOCONSOLE)*/
-}
-    
-static void win_loop(void)
-{
-    MSG message;
-    while (GetMessage(&message, NULL, 0, 0)) {
-        TranslateMessage(&message);
-        DispatchMessage(&message);
-    }
-}
-#endif /*defined(GAUCHE_WINDOWS)*/
-
 
 #if defined(MSVC)
 /* getopt emulation.  this is NOT a complete implementation of getopt;

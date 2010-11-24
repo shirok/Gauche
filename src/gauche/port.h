@@ -403,6 +403,11 @@ SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
 
 SCM_EXTERN void Scm__InstallCodingAwarePortHook(ScmPort *(*)(ScmPort*, const char*));
 
+/* Windows-specific initialization */
+#if defined(GAUCHE_WINDOWS)
+void Scm__SetupPortsForWindows(int has_console);
+#endif /*defined(GAUCHE_WINDOWS)*/
+
 /*================================================================
  * Locking the ports
  *
