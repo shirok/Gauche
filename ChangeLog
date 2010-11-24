@@ -1,5 +1,16 @@
 2010-11-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c (Scm__SetupPortsForWindows): Added a hack for Windows
+	  no-console application.  If Scheme program attempts to write to
+	  stdout or stderr, a new console is allocated and the output will
+	  be redirected to it.  API should be reconsidered to abstract away
+	  platform-dependence.
+	* src/main.c (main): Refactored away some platform-specific stuff
+	  from main().
+
+	* src/gauche/win-compat.h: Explicitly support Windows 2000 or later
+	  by defining WINVER before including windows.h.
+
 	* src/extlib.stub (standard-*-port), src/port.c (Scm_SetStd*):
 	  Allow standard-input-port etc to be altered by the optional
 	  argument.
