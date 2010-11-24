@@ -1,5 +1,9 @@
 2010-11-23  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, src/Makefile.in: Renamed windows no-console binary
+	  to more descriptive gosh-noconsole.exe.  This is something
+	  users do not type manually, so long name is ok.
+
 	* src/number.c (Scm_IsInf): Added extra volatile to suppress gcc
 	  to be too clever; gcc-4.5.0 on MinGW seems to optimize away
 	  the inifinity check without this.  Won't affect to platforms

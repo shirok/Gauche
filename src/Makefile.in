@@ -156,7 +156,7 @@ GCLIB = ../gc/libgc.la
 
 gosh_SOURCES = main.c
 gosh_OBJECTS = main.$(OBJEXT)
-gish_OBJECTS = winmain.$(OBJEXT)
+gosh_noconsole_OBJECTS = winmain.$(OBJEXT)
 gosh_LDADD   = -l@LINKGAUCHE@
 gosh_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
 
@@ -189,9 +189,9 @@ gosh$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_OBJECTS)
 	@rm -f gosh$(EXEEXT)
 	$(LINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT) $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 
-gish$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gish_OBJECTS) 
-	@rm -f gish$(EXEEXT)
-	$(LINK) $(gosh_LDFLAGS) -o gish$(EXEEXT) $(gish_OBJECTS) $(gosh_LDADD) $(LIBS) -Wl,--subsystem,windows
+gosh-noconsole$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_noconsole_OBJECTS) 
+	@rm -f gosh-noconsole$(EXEEXT)
+	$(LINK) $(gosh_LDFLAGS) -o gosh-noconsole$(EXEEXT) $(gosh_noconsole_OBJECTS) $(gosh_LDADD) $(LIBS) -Wl,--subsystem,windows
 
 # NB: relink target is only relevant where rpath matter.  notably, we don't
 # need to relink gish.exe (windows no-console version).
