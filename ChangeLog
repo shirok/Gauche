@@ -1,5 +1,10 @@
 2010-11-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (Scm_IsInf): Added extra volatile to suppress gcc
+	  to be too clever; gcc-4.5.0 on MinGW seems to optimize away
+	  the inifinity check without this.  Won't affect to platforms
+	  that provides isinf().
+
 	* src/port.c (Scm__SetupPortsForWindows): Added a hack for Windows
 	  no-console application.  If Scheme program attempts to write to
 	  stdout or stderr, a new console is allocated and the output will

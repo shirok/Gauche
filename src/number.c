@@ -69,7 +69,8 @@
    the condition would never be satisfied and optimize it away. */
 int Scm_IsInf(double x)
 {
-    return ((x) != 0 && (x) == (x)/2.0);
+    volatile double xx = x;     /* suppress gcc to be too clever */
+    return ((xx) != 0 && (xx) == (xx)/2.0);
 }
 #endif
 
