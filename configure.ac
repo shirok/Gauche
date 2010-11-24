@@ -401,7 +401,7 @@ dnl For Windows/MinGW, manually adds several libraries
 dnl ALTERNATIVE_GOSH is no-console version of gosh; only built on Windows.
 case "$host" in
   *mingw*) LIBS="$LIBS -lnetapi32 -lshlwapi"
-           ALTERNATIVE_GOSH="gish.exe" ;;
+           ALTERNATIVE_GOSH="gosh-noconsole.exe" ;;
   *)       ALTERNATIVE_GOSH="" ;;
 esac
 AC_SUBST(ALTERNATIVE_GOSH)
