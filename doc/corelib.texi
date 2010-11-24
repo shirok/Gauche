@@ -9875,14 +9875,37 @@ Returns the current output port.
 @c COMMON
 @end defun
 
-@defun standard-input-port
-@defunx standard-output-port
-@defunx standard-error-port
+@defun standard-input-port :optional new-port
+@defunx standard-output-port :optional new-port
+@defunx standard-error-port :optional new-port
 @c EN
-Returns ports that are bound initially to current input, output and
-error port, respectively.
+Without arguments, returns standard i/o ports at the time the program started.
+These ports are the default values
+of @code{current-input-port}, @code{current-output-port}
+and @code{current-error-port}, respectively.
+
+Passing a port (an input port for @code{standard-input-port}
+and an output port for @code{standard-output-port} and
+@code{standard-error-port} changes the standard ports, returning
+the current value.  Note that changing them from Scheme program usually
+has little effect, since @code{current-input-port} etc. are already
+initialized by the original values.  Changing standard ports neither
+affects low-level C libraries that directly access stdio.
+Change them only if you know what you're doing.
 @c JP
-プログラム開始時点の入力、出力、エラーポートをそれぞれ返します。
+引数無しで呼ぶと、プログラム開始時点の標準入出力ポートを返します。これらの値が
+@code{current-input-port}、@code{current-output-port}、
+@code{current-error-port}のデフォルトとなります。
+
+引数にポート(@code{standard-input-port}には入力ポート、
+@code{standard-output-port}と@code{standard-error-port}には
+出力ポート)を渡すことで、これらの手続きが次回から返すポートを変えることができます。
+引数ありで呼ばれた場合、これらの手続きは変更前の、現在の値を返します。
+Schemeプログラムからこれらの値を変更する必要はほとんどないでしょう。
+というのも、これらの値は通常は@code{current-input-port}などを初期化する際にだけ
+使われるからです。また、低レベルのCライブラリが参照している標準入出力を
+これらの手続きで置き換えることもできません。
+どうしても必要がある場合にだけ変更を考えてください。
 @c COMMON
 @end defun
 
