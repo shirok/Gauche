@@ -1583,20 +1583,21 @@ static ScmObj scm_stdin  = SCM_UNBOUND;
 static ScmObj scm_stdout = SCM_UNBOUND;
 static ScmObj scm_stderr = SCM_UNBOUND;
 
-ScmObj Scm_Stdin(void)
-{
-    return scm_stdin;
-}
-
-ScmObj Scm_Stdout(void)
-{
-    return scm_stdout;
-}
-
-ScmObj Scm_Stderr(void)
-{
-    return scm_stderr;
-}
+#define DEFSTDPORT(Name, var)                           \
+    ScmObj SCM_CPP_CAT(Scm_, Name)(void)                \
+    {                                                   \
+        return var;                                     \
+    }                                                   \
+    ScmObj SCM_CPP_CAT(Scm_Set, Name)(ScmPort *port)    \
+    {                                                   \
+        ScmObj oldp = var;                              \
+        var = SCM_OBJ(port);                            \
+        return oldp;                                    \
+    }
+ 
+DEFSTDPORT(Stdin, scm_stdin)
+DEFSTDPORT(Stdout, scm_stdout)
+DEFSTDPORT(Stderr, scm_stderr)
 
 ScmObj Scm_SetCurrentInputPort(ScmPort *port)
 {

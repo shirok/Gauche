@@ -858,9 +858,12 @@
     (result SCM_UNDEFINED)]
    [else (result (SCM_OBJ SCM_CURERR))]))
 
-(define-cproc standard-input-port ()  Scm_Stdin)
-(define-cproc standard-output-port () Scm_Stdout)
-(define-cproc standard-error-port ()  Scm_Stderr)
+(define-cproc standard-input-port (:optional (p::<input-port>? #f))
+  (result (?: p (Scm_SetStdin p) (Scm_Stdin))))
+(define-cproc standard-output-port (:optional (p::<output-port>? #f))
+  (result (?: p (Scm_SetStdout p) (Scm_Stdout))))
+(define-cproc standard-error-port (:optional (p::<output-port>? #f))
+  (result (?: p (Scm_SetStderr p) (Scm_Stderr))))
 
 (define-cproc port-name (port::<port>) Scm_PortName)
 (define-cproc port-current-line (port::<port>) ::<fixnum> Scm_PortLine)
