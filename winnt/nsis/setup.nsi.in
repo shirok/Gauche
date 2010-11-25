@@ -95,7 +95,7 @@ Section -post SEC0001
     WriteRegStr HKCR "Scheme.script" "" "Scheme Script"
     WriteRegStr HKCR "Scheme.script\shell" "" "open"
     WriteRegStr HKCR "Scheme.script\DefaultIcon" "" "$INSTDIR\gauche-logo.ico"
-    WriteRegStr HKCR "Scheme.script\shell\open\command" "" '$INSTDIR\bin\gish.exe "%1"'
+    WriteRegStr HKCR "Scheme.script\shell\open\command" "" '$INSTDIR\bin\gosh-noconsole.exe "%1"'
     ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\bin"
 SectionEnd
 

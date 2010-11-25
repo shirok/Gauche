@@ -183,12 +183,6 @@ fi
 # MinGW specific packager.  As of 0.9.1, Gauche can self build with MinGW+MSYS
 #
 if [ "$mingw" = "yes" ]; then
-  case `gcc --version` in
-    *mingw*) ;;
-    *) echo "gcc isn't for mingw.  make sure you're executing this on MinGW+MSYS."
-       exit 1;;
-  esac
-
   if [ -d ../Gauche-gl ]; then
     echo "Found Gauche-gl."
   else
