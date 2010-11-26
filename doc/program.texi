@@ -341,6 +341,72 @@ The paths are appended before the system default load paths.
 @c COMMON
 @end deftp
 
+@c EN
+@subheading Windows-specific executable
+@c JP
+@subheading Windows特有の実行ファイル
+@c COMMON
+
+@c EN
+On Windows-native platforms (mingw), two interpreter executables are
+installed.  @code{gosh.exe} is compiled as a Windows console
+application and works just like ordinary @code{gosh}; that is,
+it primarily uses standard i/o for communication.
+Another executable, @code{gosh-noconsole.exe}, is compiled 
+as a Windows no-console (GUI) application.  It is not attached
+to a console when it is started.  Its standard input is connected
+to the @code{NUL} device.  Its standard output and standard error
+output are special ports which open a new console when something
+is written to them for the first time.  (NB: This magic only works
+for output via Scheme ports; direct output from low-level C libraries
+will be discarded.)
+@c JP
+Windowsネイティブ環境(mingw)では、インタプリタとしてふたつの
+実行ファイルがインストールされます。
+@code{gosh.exe}はWindowsコンソールアプリケーションとしてコンパイルされ、
+普通の@code{gosh}のように、標準入出力を第一の通信手段とします。
+もう一つの実行ファイル@code{gosh-noconsole.exe}はWindows非コンソールアプリケーション
+としてコンパイルされています。こちらは起動時にコンソールに接続されません。
+標準入力は@code{NUL}デバイスに接続されます。標準出力と標準エラー出力は
+特殊なポートに接続され、最初に書き込みがあった時点で新たなコンソールが作られて
+出力されます。(このトリックはSchemeポート経由の出力のみで動きます。
+低レベルのCライブラリが標準出力や標準エラー出力に直接書き出したデータは捨てられます)。
+@c COMMON
+
+@c EN
+The main purpose of @code{gosh-noconsole.exe} is for Windows
+scripting.   If a Scheme script is associated to @code{gosh.exe}
+and invoked from Explorer, it would always open a new
+console window.
+The console would be of little use, since
+it would dissapear once the script exits, and the user wouldn't
+be likely to have enough time to look at it.
+If you associate Scheme scripts to @code{gosh-noconsole.exe},
+you can avoid this annoying console from popping up.
+@c JP
+@code{gosh-noconsole.exe}の目的は、Windows上でのスクリプティングです。
+Schemeスクリプトがもし@code{gosh.exe}に関連付けられていたとしたら、
+Explorerからそのスクリプトを起動するたびに、必ず新しいコンソールウィンドウが
+開くでしょう。そのコンソールはスクリプト終了時に消えてしまうので、
+多くの場合、ユーザには何が出力されているかを見る機会がなく、
+したがってほとんど役に立ちません。Schemeスクリプトを@code{gosh-noconsole.exe}に
+関連づけておけば、この煩わしいコンソールの出現を抑制できます。
+@c COMMON
+
+@c EN
+If you're using the official Windows installer, Scheme scripts
+(@file{*.scm}) have already associated to @code{gosh-noconsole.exe}
+and you can invoke them by double-clicking on Explorer.
+Check out some examples under @file{C:\Program Files\Gauche\examples}.
+@c JP
+Windows版のオフィシャルのインストーラを使ってGaucheをインストールしたなら、
+Schemeスクリプト(@file{*.scm})は既に@code{gosh-noconsole.exe}に
+関連づけられているので、ExplorerからSchemeスクリプトをダブルクリックすれば
+Schemeプログラムを走らせることができます。
+@file{C:\Program Files\Gauche\examples}の下にいくつかサンプルが
+あります
+@c COMMON
+
 @c ----------------------------------------------------------------------
 @node Interactive development, Writing Scheme scripts, Invoking Gosh, Programming in Gauche
 @section Interactive development
@@ -873,7 +939,7 @@ feature requirements).
 @c COMMON
 
 @c EN
-By definition of @code{srfi-0}, @code{cond-expand} raises an error
+By the definition of @code{srfi-0}, @code{cond-expand} raises an error
 if no feature requirements are satisfied and there's no @code{else}
 clause.  A rule of thumb is to provide @code{else} clause always,
 even it does nothing (like the above example that has empty @code{else}
