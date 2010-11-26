@@ -1,3 +1,8 @@
+2010-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* examples/windows/*: Start adding some crude examples for
+	  windows-specific scripting.
+
 2010-11-24  Shiro Kawai  <shiro@acm.org>
 
 	* ext/windows/*, ext/configure.in, configure.ac: Added os.windows
