@@ -108,7 +108,7 @@
     (when text    (= wtext (SCM_MBS2WCS text)))
     (when caption (= wcaption (SCM_MBS2WCS caption)))
     (= r (MessageBox h wtext wcaption type))
-    (when (= r 0) (Scm_SysError "MessageBox failed"))
+    (when (== r 0) (Scm_SysError "MessageBox failed"))
     (result r)))
 
 
