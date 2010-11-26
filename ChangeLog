@@ -1,3 +1,8 @@
+2010-11-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c: We don't need event_loop here; it is more natural for
+	  Windows script to code event loop within it.
+
 2010-11-25  Shiro Kawai  <shiro@acm.org>
 
 	* examples/windows/*: Start adding some crude examples for

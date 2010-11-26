@@ -358,17 +358,6 @@ static int init_console(void)
 #endif /*!defined(GAUCHE_WINDOWS)*/
 }
     
-static void event_loop(void)
-{
-#if defined(GAUCHE_WINDOWS)
-    MSG message;
-    while (GetMessage(&message, NULL, 0, 0)) {
-        TranslateMessage(&message);
-        DispatchMessage(&message);
-    }
-#endif /*defined(GAUCHE_WINDOWS)*/
-}
-
 /*-----------------------------------------------------------------
  * MAIN
  */
@@ -561,9 +550,7 @@ int main(int argc, char **argv)
         }
     }
 
-    /* All is done.  If this is 'windows' application (i.e. doesn't
-       have console, we enter the event loop) */
-    if (!has_console) event_loop();
+    /* All is done.  */
     Scm_Exit(exit_code);
     return 0;                   /*NOTREACHED*/
 }
