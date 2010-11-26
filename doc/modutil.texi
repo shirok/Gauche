@@ -21,6 +21,7 @@
 * Filesystem utilities::        file.util
 * Mathematic constants::        math.const
 * Mersenne-Twister random number generator::  math.mt-random
+* Windows support::             os.windows
 * RFC822 message parsing::      rfc.822
 * Base64 encoding/decoding::    rfc.base64
 * HTTP cookie handling::        rfc.cookie
@@ -4778,7 +4779,7 @@ e.
 @end defvr
 
 @c ----------------------------------------------------------------------
-@node Mersenne-Twister random number generator, RFC822 message parsing, Mathematic constants, Library modules - Utilities
+@node Mersenne-Twister random number generator, Windows support, Mathematic constants, Library modules - Utilities
 @section @code{math.mt-random} - Mersenne Twister Random number generator
 @c NODE Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
 
@@ -4909,6 +4910,336 @@ faster than getting one by one.
 では、0.0と1.0(含まれない)の間の不正確実数で埋められます。
 @c COMMON
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Windows support, RFC822 message parsing, Mersenne-Twister random number generator, Library modules - Utilities
+@section @code{os.windows} - Windows support
+@c NODE Windowsのサポート, @code{os.windows} - Windowsのサポート
+
+@deftp {Module} os.windows
+@mdindex os.windows
+This module is only available on Windows-native Gauche, and
+provides Windows-specific procedures.
+You can check @code{gauche.os.windows} feature with
+ @code{cond-expand} macro (@xref{Feature conditional})
+to conditionalize windows-specific code.
+
+@example
+(cond-expand
+  [gauche.os.windows
+   (use os.windows)
+   ... Windows-specific code ...]
+  [else
+   ... Unix code ...])
+@end example
+
+Currently there aren't enough procedures provided here, but
+eventually we want to support simple scripting on Windows.
+
+Unless otherwise noted,
+when Windows API returns an error value, a @code{<system-error>} condition
+is thrown.
+@end deftp
+
+@menu
+* Windows dialogs::             
+* Windows console API::         
+@end menu
+
+@node Windows dialogs, Windows console API, Windows support, Windows support
+@subsection Windows dialogs
+
+Currenly we only have MessageBox API.
+
+@defun sys-message-box window message :optional caption flags
+Calls Windows MessageBox API.   The @var{window} argument should
+be a handle for a window, or @code{#f}; at the moment we don't
+provide any API that retrieves window handles, so you should always
+pass @code{#f} here.  The @var{message} argument takes a string
+for the content of the message box.  Optional @var{caption}
+argument takes a string to be used in the window title.
+
+The @var{flags} argument is an integer; it should be @code{logior}
+of values from one or more of the following groups.  See the
+Windows reference manual for the details.
+
+@table @emph
+@item Buttons
+@code{MB_ABORTRETRYIGNORE},
+@code{MB_CANCELTRYCONTINUE},
+@code{MB_HELP},
+@code{MB_OK} (default),
+@code{MB_OKCANCEL},
+@code{MB_RETRYCANCEL},
+@code{MB_YESNO},
+@code{MB_YESNOCANCEL}
+@item Icon
+Default is no icon.  Possible values:
+@code{MB_ICONEXCLAMATION},
+@code{MB_ICONWARNING},
+@code{MB_ICONINFORMATION},
+@code{MB_ICONASTERISK},
+@code{MB_ICONQUESTION},
+@code{MB_ICONSTOP},
+@code{MB_ICONERROR},
+@code{MB_ICONHAND}
+@item Default button
+@code{MB_DEFBUTTON1} (default),
+@code{MB_DEFBUTTON2},
+@code{MB_DEFBUTTON3},
+@code{MB_DEFBUTTON4}
+@item Modality
+@code{MB_APPLMODAL} (default),
+@code{MB_SYSTEMMODAL},
+@code{MB_TASKMODAL}
+@item Other options
+@code{MB_DEFAULT_DESKTOP_ONLY},
+@code{MB_RIGHT},
+@code{MB_RTLREADING},
+@code{MB_SETFOREGROUND},
+@code{MB_TOPMOST},
+@code{MB_SERVICE_NOTIFICATION}
+@end table
+
+Return value is one of the following integer constants,
+indicating which button is pressed:
+@code{IDABORT},
+@code{IDCANCEL},
+@code{IDCONTINUE},
+@code{IDIGNORE},
+@code{IDNO},
+@code{IDOK},
+@code{IDRETRY},
+@code{IDTRYAGAIN}, or
+@code{IDYES}
+@end defun
+
+@node Windows console API,  , Windows dialogs, Windows support
+@subsection Windows console API
+
+Most of these procedures corresponds to Windows Console API one-to-one.
+See the Windows reference for the detail description of what each API does.
+
+@subsubheading Attaching and detaching
+
+@defun sys-alloc-console 
+@defunx sys-free-console 
+[Windows] 
+Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
+@end defun
+
+@defun sys-generate-console-ctrl-event event pgid
+[Windows] 
+@end defun
+
+@defvr {Constant} CTRL_C_EVENT
+@defvrx {Constant} CTRL_BREAK_EVENT
+[Windows] 
+@end defvr
+
+@subsubheading Console codepage
+
+@defun sys-get-console-cp
+@defunx sys-get-console-output-cp
+@defunx sys-set-console-cp codepage
+@defunx sys-set-console-output-cp codepage
+[Windows] 
+@end defun
+
+@defun sys-get-console-cursor-info handle
+@defunx sys-set-console-cursor-info handle size visible
+[Windows] 
+@end defun
+
+@defun sys-set-console-cursor-position handle x y
+[Windows] 
+@end defun
+
+@subsubheading Console mode
+
+@defun sys-get-console-mode handle
+@defunx sys-set-console-mode handle mode
+[Windows] 
+@end defun
+
+@defvr {Constant} ENABLE_LINE_INPUT
+@defvrx {Constant} ENABLE_ECHO_INPUT
+@defvrx {Constant} ENABLE_PROCESSED_INPUT
+@defvrx {Constant} ENABLE_WINDOW_INPUT
+@defvrx {Constant} ENABLE_MOUSE_INPUT
+@defvrx {Constant} ENABLE_PROCESSED_OUTPUT
+@defvrx {Constant} ENABLE_WRAP_AT_EOL_OUTPUT
+[Windows] 
+@end defvr
+
+@subsubheading Screen buffer
+
+@defun sys-create-console-screen-buffer desired-access share-mode inheritable
+[Windows] 
+@end defun
+
+@defvr {Constant} GENERIC_READ
+@defvrx {Constant} GENERIC_WRITE
+[Windows] 
+@end defvr
+
+@defvr {Constant} FILE_SHARE_READ
+@defvrx {Constant} FILE_SHARE_WRITE
+[Windows] 
+@end defvr
+
+@defun sys-set-console-active-screen-buffer handle
+[Windows] 
+@end defun
+
+@defun sys-scroll-console-screen-buffer handle scroll-rectangle clip-rectangle x y fill
+[Windows] 
+@end defun
+
+@deftp {Class} <win:console-screen-buffer-info>
+[Windows] 
+
+@defivar {<win:console-screen-buffer-info>} size.x
+@defivarx {<win:console-screen-buffer-info>} size.y
+@end defivar
+
+@defivar {<win:console-screen-buffer-info>} cursor-position.x
+@defivarx {<win:console-screen-buffer-info>} cursor-position.y
+@end defivar
+
+@defivar {<win:console-screen-buffer-info>} attributes
+@end defivar
+
+@defivar {<win:console-screen-buffer-info>} window.left
+@defivarx {<win:console-screen-buffer-info>} window.top
+@defivarx {<win:console-screen-buffer-info>} window.right
+@defivarx {<win:console-screen-buffer-info>} window.bottom
+@end defivar
+
+@defivar {<win:console-screen-buffer-info>} maximum-window-size.x
+@defivarx {<win:console-screen-buffer-info>} maximum-window-size.y
+@end defivar
+
+@end deftp
+
+@defvr {Constant} FOREGROUND_BLUE
+@defvrx {Constant} FOREGROUND_GREEN
+@defvrx {Constant} FOREGROUND_RED
+@defvrx {Constant} FOREGROUND_INTENSITY
+@defvrx {Constant} BACKGROUND_BLUE
+@defvrx {Constant} BACKGROUND_GREEN
+@defvrx {Constant} BACKGROUND_RED
+@defvrx {Constant} BACKGROUND_INTENSITY
+[Windows] 
+@end defvr
+
+@defun sys-get-console-screen-buffer-info handle
+[Windows] 
+@end defun
+
+@defun sys-get-largest-console-window-size handle
+[Windows] 
+@end defun
+
+@defun sys-set-screen-buffer-size handle x y
+[Windows] 
+@end defun
+
+@subsubheading Console input/output
+
+@deftp {Class} <win:input-record>
+[Windows] 
+
+@defivar {<win:input-record>} event-type
+@end defivar
+
+@defivar {<win:input-record>} key.down
+@defivarx {<win:input-record>} key.repeat-count
+@defivarx {<win:input-record>} key.virtual-key-code
+@defivarx {<win:input-record>} key.unicode-char
+@defivarx {<win:input-record>} key.ascii-char
+@defivarx {<win:input-record>} key.control-key-state
+@end defivar
+
+@defivar {<win:input-record>} mouse.x
+@defivarx {<win:input-record>} mouse.y
+@defivarx {<win:input-record>} mouse.button-state
+@defivarx {<win:input-record>} mouse.event-flags
+@end defivar
+
+@defivar {<win:input-record>} window-buffer-size.x
+@defivarx {<win:input-record>} window-buffer-size.y
+@end defivar
+
+@defivar {<win:input-record>} menu.command-id
+@end defivar
+
+@defivar {<win:input-record>} focus.set-focus
+@end defivar
+
+@end deftp
+
+@defun sys-get-number-of-console-input-events handle
+[Windows] 
+@end defun
+
+@defun sys-get-number-of-console-mouse-buttons
+[Windows] 
+@end defun
+
+@defun sys-peek-console-input handle
+@defunx sys-read-console-input handle
+[Windows] 
+@end defun
+
+@defun sys-read-console handle buf
+[Windows] 
+@end defun
+
+@defun sys-read-console-output handle buf w h x y region
+[Windows] 
+@end defun
+
+@defun sys-read-console-output-attribute handle buf x y
+[Windows] 
+@end defun
+
+@defun sys-read-console-output-character handle len x y
+[Windows] 
+@end defun
+
+@defun sys-set-console-text-attribute handle attr
+[Windows] 
+@end defun
+
+@defun sys-set-console-window-info handle absolute window
+[Windows] 
+@end defun
+
+@defun sys-write-console handle string
+[Windows] 
+@end defun
+
+@defun sys-write-console-output-character handle string x y
+[Windows] 
+@end defun
+
+@defun sys-get-console-title 
+[Windows] 
+@end defun
+
+@subsubheading Standard handles
+
+@defun sys-get-std-handle which
+@defunx sys-set-std-handle which handle
+[Windows] 
+@end defun
+
+@defvr {Constant} STD_INPUT_HANDLE
+@defvrx {Constant} STD_OUTPUT_HANDLE
+@defvrx {Constant} STD_ERROR_HANDLE
+@end defvr
+
 
 @c ----------------------------------------------------------------------
 @c @node Parser combinators for PEG, RFC822 message parsing, Mersenne-Twister random number generator, Library modules - Utilities
@@ -5398,7 +5729,7 @@ faster than getting one by one.
 
 
 @c ----------------------------------------------------------------------
-@node RFC822 message parsing, Base64 encoding/decoding, Mersenne-Twister random number generator, Library modules - Utilities
+@node RFC822 message parsing, Base64 encoding/decoding, Windows support, Library modules - Utilities
 @section @code{rfc.822} - RFC822 message parsing
 @c NODE RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
 

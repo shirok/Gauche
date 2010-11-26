@@ -10069,24 +10069,11 @@ the log level @var{level}.
 @mdindex gauche.termios
 @c EN
 This module provides procedures to control terminals.
-The terminal API is too different between POSIX and Windows
-to provide a unified interface with reasonable resolution.
-Thus we provide different set of low-level APIs for these
-two platforms, and build high-level utility routines that
-can be used on both.
-@c JP
-このモジュールは端末の制御のための手続きを提供します。
-端末制御APIはPOSIXとWindowsであまりに異なり、
-十分に細かい制御ができる統一したインタフェースを作るのは不可能です。
-そこで、これら二つのプラットフォームで異なる低レベルAPIを提供し、
-その上に若干の共通な高レベルAPIを構築しています。
-@c COMMON
-
-@c EN
 On Unix platforms, the low-level API provides POSIX termios interface
 as the module name suggests.  This module also provides
 pseudo tty interface, if the system supports it.
 @c JP
+このモジュールは端末の制御のための手続きを提供します。
 Unix環境では、低レベルAPIはモジュール名からわかるように
 POSIX termiosへのインタフェースを提供しています。
 さらに、このモジュールでは、システムがサポートしている場合には
@@ -10094,20 +10081,28 @@ POSIX termiosへのインタフェースを提供しています。
 @c COMMON
 
 @c EN
-On Windows native platforms, the low-plevel API 
-corresponds to Windows Console API.
+On Windows native platforms, POSIX termios interface is not
+available.  It is too different from Windows console API to
+provide a meaningful emulation.  The low-level Windows console
+API is available in the @code{os.windows} module
+(@xref{Windows support}).   You can still use high-level
+terminal control procedures in this module.
 @c JP
-Windowsネイティブ環境では、低レベルはWindowsコンソールAPIに対応します。
+Windowsネイティブ環境ではPOSIX termiosインタフェースは使えません。
+Windows console APIは大きく違っているので、意味のあるエミュレーションを
+提供するのが難しいためです。低レベルのWindows console APIは
+@code{os.windows}モジュールで使うことができます(@ref{Windows support}参照)。
+ただし、このモジュールの高レベル端末制御手続きは、
+Windowsネイティブ環境でも使うことができます。
 @c COMMON
 @end deftp
 
 @menu
 * Posix termios interface::     
-* Windows console API::         
 * Common high-level terminal control::  
 @end menu
 
-@node Posix termios interface, Windows console API, Terminal control, Terminal control
+@node Posix termios interface, Common high-level terminal control, Terminal control, Terminal control
 @subsection Posix termios interface
 @c NODE POSIX termiosインタフェース
 
@@ -10472,246 +10467,7 @@ the slave pty.
 @c COMMON
 @end defun
 
-@node Windows console API, Common high-level terminal control, Posix termios interface, Terminal control
-@subsection Windows Console API
-@c NODE WindowsコンソールAPI
-
-@c EN
-These procedures are available when the feature identifier
-@code{gauche.os.windows} is defined.   See @code{cond-expand}
-in @ref{Feature conditional} for how to switch code using
-feature identifiers.
-@c JP
-ここに挙げる手続きは、機能シンボル@code{gauche.os.windows}が定義されている
-場合にのみ利用可能です。機能シンボルによってコードを切り替える方法は
-@ref{Feature conditional}の@code{cond-expand}を参照してください。
-@c COMMON
-
-Most of the procedures correspond to Windows Console API one-to-one.
-See the Windows reference for the detail description of what each API does.
-
-@subsubheading Attaching and detaching
-
-@defun sys-alloc-console 
-@defunx sys-free-console 
-[Windows] 
-Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
-@end defun
-
-@defun sys-generate-console-ctrl-event event pgid
-[Windows] 
-@end defun
-
-@defvr {Constant} CTRL_C_EVENT
-@defvrx {Constant} CTRL_BREAK_EVENT
-[Windows] 
-@end defvr
-
-@subsubheading Console codepage
-
-@defun sys-get-console-cp
-@defunx sys-get-console-output-cp
-@defunx sys-set-console-cp codepage
-@defunx sys-set-console-output-cp codepage
-[Windows] 
-@end defun
-
-@defun sys-get-console-cursor-info handle
-@defunx sys-set-console-cursor-info handle size visible
-[Windows] 
-@end defun
-
-@defun sys-set-console-cursor-position handle x y
-[Windows] 
-@end defun
-
-@subsubheading Console mode
-
-@defun sys-get-console-mode handle
-@defunx sys-set-console-mode handle mode
-[Windows] 
-@end defun
-
-@defvr {Constant} ENABLE_LINE_INPUT
-@defvrx {Constant} ENABLE_ECHO_INPUT
-@defvrx {Constant} ENABLE_PROCESSED_INPUT
-@defvrx {Constant} ENABLE_WINDOW_INPUT
-@defvrx {Constant} ENABLE_MOUSE_INPUT
-@defvrx {Constant} ENABLE_PROCESSED_OUTPUT
-@defvrx {Constant} ENABLE_WRAP_AT_EOL_OUTPUT
-[Windows] 
-@end defvr
-
-@subsubheading Screen buffer
-
-@defun sys-create-console-screen-buffer desired-access share-mode inheritable
-[Windows] 
-@end defun
-
-@defvr {Constant} GENERIC_READ
-@defvrx {Constant} GENERIC_WRITE
-[Windows] 
-@end defvr
-
-@defvr {Constant} FILE_SHARE_READ
-@defvrx {Constant} FILE_SHARE_WRITE
-[Windows] 
-@end defvr
-
-@defun sys-set-console-active-screen-buffer handle
-[Windows] 
-@end defun
-
-@defun sys-scroll-console-screen-buffer handle scroll-rectangle clip-rectangle x y fill
-[Windows] 
-@end defun
-
-@deftp {Class} <win:console-screen-buffer-info>
-[Windows] 
-
-@defivar {<win:console-screen-buffer-info>} size.x
-@defivarx {<win:console-screen-buffer-info>} size.y
-@end defivar
-
-@defivar {<win:console-screen-buffer-info>} cursor-position.x
-@defivarx {<win:console-screen-buffer-info>} cursor-position.y
-@end defivar
-
-@defivar {<win:console-screen-buffer-info>} attributes
-@end defivar
-
-@defivar {<win:console-screen-buffer-info>} window.left
-@defivarx {<win:console-screen-buffer-info>} window.top
-@defivarx {<win:console-screen-buffer-info>} window.right
-@defivarx {<win:console-screen-buffer-info>} window.bottom
-@end defivar
-
-@defivar {<win:console-screen-buffer-info>} maximum-window-size.x
-@defivarx {<win:console-screen-buffer-info>} maximum-window-size.y
-@end defivar
-
-@end deftp
-
-@defvr {Constant} FOREGROUND_BLUE
-@defvrx {Constant} FOREGROUND_GREEN
-@defvrx {Constant} FOREGROUND_RED
-@defvrx {Constant} FOREGROUND_INTENSITY
-@defvrx {Constant} BACKGROUND_BLUE
-@defvrx {Constant} BACKGROUND_GREEN
-@defvrx {Constant} BACKGROUND_RED
-@defvrx {Constant} BACKGROUND_INTENSITY
-[Windows] 
-@end defvr
-
-@defun sys-get-console-screen-buffer-info handle
-[Windows] 
-@end defun
-
-@defun sys-get-largest-console-window-size handle
-[Windows] 
-@end defun
-
-@defun sys-set-screen-buffer-size handle x y
-[Windows] 
-@end defun
-
-@subsubheading Console input/output
-
-@deftp {Class} <win:input-record>
-[Windows] 
-
-@defivar {<win:input-record>} event-type
-@end defivar
-
-@defivar {<win:input-record>} key.down
-@defivarx {<win:input-record>} key.repeat-count
-@defivarx {<win:input-record>} key.virtual-key-code
-@defivarx {<win:input-record>} key.unicode-char
-@defivarx {<win:input-record>} key.ascii-char
-@defivarx {<win:input-record>} key.control-key-state
-@end defivar
-
-@defivar {<win:input-record>} mouse.x
-@defivarx {<win:input-record>} mouse.y
-@defivarx {<win:input-record>} mouse.button-state
-@defivarx {<win:input-record>} mouse.event-flags
-@end defivar
-
-@defivar {<win:input-record>} window-buffer-size.x
-@defivarx {<win:input-record>} window-buffer-size.y
-@end defivar
-
-@defivar {<win:input-record>} menu.command-id
-@end defivar
-
-@defivar {<win:input-record>} focus.set-focus
-@end defivar
-
-@end deftp
-
-@defun sys-get-number-of-console-input-events handle
-[Windows] 
-@end defun
-
-@defun sys-get-number-of-console-mouse-buttons
-[Windows] 
-@end defun
-
-@defun sys-peek-console-input handle
-@defunx sys-read-console-input handle
-[Windows] 
-@end defun
-
-@defun sys-read-console handle buf
-[Windows] 
-@end defun
-
-@defun sys-read-console-output handle buf w h x y region
-[Windows] 
-@end defun
-
-@defun sys-read-console-output-attribute handle buf x y
-[Windows] 
-@end defun
-
-@defun sys-read-console-output-character handle len x y
-[Windows] 
-@end defun
-
-@defun sys-set-console-text-attribute handle attr
-[Windows] 
-@end defun
-
-@defun sys-set-console-window-info handle absolute window
-[Windows] 
-@end defun
-
-@defun sys-write-console handle string
-[Windows] 
-@end defun
-
-@defun sys-write-console-output-character handle string x y
-[Windows] 
-@end defun
-
-@defun sys-get-console-title 
-[Windows] 
-@end defun
-
-@subsubheading Standard handles
-
-@defun sys-get-std-handle which
-@defunx sys-set-std-handle which handle
-[Windows] 
-@end defun
-
-@defvr {Constant} STD_INPUT_HANDLE
-@defvrx {Constant} STD_OUTPUT_HANDLE
-@defvrx {Constant} STD_ERROR_HANDLE
-@end defvr
-
-
-@node Common high-level terminal control,  , Windows console API, Terminal control
+@node Common high-level terminal control,  , Posix termios interface, Terminal control
 @subsection Common high-level terminal control
 @c NODE 共通の高レベル端末制御
 
