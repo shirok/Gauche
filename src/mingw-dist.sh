@@ -1,4 +1,5 @@
 # Create MinGW binary distribution.
+# Run this script on topsrcdir
 # You need MinGW and MSYS.  (You no longer need Cygwin.)
 # The compiled binary is installed in ../Gauche-mingw-dist.  You can just
 # zip it and distribute.
@@ -7,12 +8,32 @@
 # Set MINGWDIR if MinGW is installed in different place.
 mingwdir=${MINGWDIR:-/mingw}
 
-# make sure we're going to use Mingw gcc
-case `gcc --version` in
-  *mingw*) ;;
-  *) echo "Set PATH to have MinGW bin directory first"
+# Process Options:
+while [ "$#" -gt 0 ]; do
+  case $1 in
+    --with-gl)   WITH_GL=yes; shift;;
+    --with-installer) INSTALLER=yes; shift;;
+    -*)
+     echo "Options:"
+     echo "  --with-gl: Include Gauche-gl.  Gauche-gl source must be in ../Gauche-gl."
+     echo "  --with-installer:  Creates binary installer using NSIS.  'makensis.exe'"
+     echo "      must be visible in PATH."
      exit 1;;
-esac
+  esac
+done
+
+if [ "$WITH_GL" = yes ]; then
+  if [ -d ../Gauche-gl ]; then echo "Found Gauche-gl source."
+  else echo "--with-gl: Cannot find ../Gauche-gl.  Aborting."; exit 1
+  fi
+fi
+
+if [ "$INSTALLER" = yes ]; then
+  makensis_path=`which makensis.exe 2> /dev/null`
+  if test -e "$makensis_path"; then echo "NSIS compiler found: $makensis_path"
+  else echo "--installer: Cannot find makensis.exe.  Aborting."; exit 1
+  fi
+fi
 
 # build
 if [ -f Makefile ]; then make distclean; fi
@@ -38,6 +59,20 @@ for dll in libcharset-1.dll libiconv-2.dll libz-1.dll; do
     cp $mingwdir/bin/$dll $distdir/Gauche/bin
   fi
 done
+
+# Build GL
+if [ "$WITH_GL" = "yes" ]; then
+  PATH=$distdir/Gauche/bin:$PATH
+  (cd ../Gauche-gl; ./DIST gen; \
+   if test -f Makefile; then make clean; fi; \
+   ./configure --prefix=$distdir/Gauche --with-glut=mingw-static; \
+   make; make install)
+fi
+
+# Build installer
+if [ "$INSTALLER" = "yes" ]; then
+  (cd winnt/nsis; make)
+fi
 
 # 'zip' isn't included in MinGW.
 #VERSION=`cat VERSION`

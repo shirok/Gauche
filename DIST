@@ -183,37 +183,7 @@ fi
 # MinGW specific packager.  As of 0.9.1, Gauche can self build with MinGW+MSYS
 #
 if [ "$mingw" = "yes" ]; then
-  if [ -d ../Gauche-gl ]; then
-    echo "Found Gauche-gl."
-  else
-    echo "Cannot find ../Gauche-gl.  Aborting."
-    exit 1
-  fi
-
-  makensis_path=`which makensis.exe 2> /dev/null`
-  if test -e "$makensis_path"; then
-      echo "NSIS compiler exists: $makensis_path"
-      (cd winnt/nsis; make clean)
-  fi
-  distdir=`pwd`/../Gauche-mingw-dist/Gauche
-  rm -rf $distdir
-  maintainer_clean
-  ./DIST gen
-  ./configure --prefix=$distdir
-  check_version
-  make
-  make install
-  cp COPYING $distdir
-  cp /c/MinGW/bin/mingwm10.dll $distdir/bin
-
-  PATH=$distdir/bin:$PATH
-  (cd ../Gauche-gl; ./DIST gen; ./configure --prefix=$distdir --with-glut=mingw-static; make clean; make; make install)
-
-#  (cd $distdir; zip -r Gauche-mingw-$VERSION.zip Gauche)
-  if test -e "$makensis_path"; then
-     cd winnt/nsis
-     make
-  fi
+  sh src/mingw-dist.sh --with-installer --with-gl
 fi
 
 # Windows/VC preparation

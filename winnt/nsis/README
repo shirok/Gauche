@@ -10,9 +10,8 @@ NSIS installer-script generator for Gauche-mingw.
 
 * requirements
 
-- Cygwin development environment
-- Gauche installation under Cygwin
-- MinGW
+- MinGW+MSYS
+- Gauche built and installed into MSYS path.
 - NSIS compiler ( http://nsis.sourceforge.net/ )
 
 * how to build
@@ -22,7 +21,7 @@ NSIS installer-script generator for Gauche-mingw.
 ex.
  export PATH=/cygdrive/c/Program\ Files/NSIS:$PATH
 
-** build Gauche-mingw
+** build Gauche-mingw into 
 
  ./DIST mingw
 
