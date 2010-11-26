@@ -95,6 +95,13 @@ uninstall:
 	rm -f $(GAUCHE_ACLOCAL_DIR)/aclocal.m4
 	rm -f $(datadir)/aclocal/gauche.m4
 
+# Install selected examples.  We don't usually install examples.  For Windows
+# we distribute binary, so it's useful to include some examples in it.
+install-examples:
+	$(INSTALL) -d "$(DESTDIR)${prefix}/examples"
+	$(INSTALL) -d "$(DESTDIR)${prefix}/examples/windows"
+	$(INSTALL) -m 444 examples/windows/*.scm "$(DESTDIR)${prefix}/examples/windows"
+
 # Cleaning ---------------------------------------------
 #  NB: we don't run maintainer-clean in $(LIBATOMICDIR) to avoid
 #      dealing with automake.
