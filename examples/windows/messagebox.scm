@@ -1,3 +1,5 @@
+;; Public domain
+
 (use os.windows)
 
 (define (main args)
