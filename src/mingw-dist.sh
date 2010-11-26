@@ -51,6 +51,7 @@ make
 # prepare precompiled directory tree.
 make install
 (cd src; make install-mingw)
+make install-examples
 rm -rf $distdir/Gauche/lib/libgauche.dll*
 cp COPYING $distdir/Gauche
 cp $mingwdir/bin/mingwm10.dll $distdir/Gauche/bin
@@ -66,7 +67,7 @@ if [ "$WITH_GL" = "yes" ]; then
   (cd ../Gauche-gl; ./DIST gen; \
    if test -f Makefile; then make clean; fi; \
    ./configure --prefix=$distdir/Gauche --with-glut=mingw-static; \
-   make; make install)
+   make; make install; make install-examples)
 fi
 
 # Build installer
