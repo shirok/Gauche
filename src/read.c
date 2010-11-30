@@ -855,23 +855,26 @@ static ScmObj read_string(ScmPort *port, int incompletep,
 
 static struct char_name {
     const char *name;
+    int size;
     ScmObj ch;
 } char_names[] = {
-    { "space",        SCM_MAKE_CHAR(' ')  },
-    { "newline",      SCM_MAKE_CHAR('\n') },
-    { "nl",           SCM_MAKE_CHAR('\n') },
-    { "lf",           SCM_MAKE_CHAR('\n') },
-    { "return",       SCM_MAKE_CHAR('\r') },
-    { "cr",           SCM_MAKE_CHAR('\r') },
-    { "tab",          SCM_MAKE_CHAR('\t') },
-    { "ht",           SCM_MAKE_CHAR('\t') },
-    { "page",         SCM_MAKE_CHAR('\f') },
-    { "escape",       SCM_MAKE_CHAR(0x1b) },
-    { "esc",          SCM_MAKE_CHAR(0x1b) },
-    { "delete",       SCM_MAKE_CHAR(0x7f) },
-    { "del",          SCM_MAKE_CHAR(0x7f) },
-    { "null",         SCM_MAKE_CHAR(0)    },
-    { NULL, 0 }
+#define DEFCHAR(name, char) \
+    { #name, sizeof(#name)-1, SCM_MAKE_CHAR(char) }
+    DEFCHAR(space,   ' '),
+    DEFCHAR(newline, '\n'),
+    DEFCHAR(nl,      '\n'),
+    DEFCHAR(lf,      '\n'),
+    DEFCHAR(return,  '\r'),
+    DEFCHAR(cr,      '\r'),
+    DEFCHAR(tab,     '\t'),
+    DEFCHAR(ht,      '\t'),
+    DEFCHAR(page,    '\f'),
+    DEFCHAR(escape,  0x1b),
+    DEFCHAR(esc,     0x1b),
+    DEFCHAR(delete,  0x7f),
+    DEFCHAR(del,     0x7f),
+    DEFCHAR(null,    0),
+    { NULL, 0, 0 }
 };
 
 static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
@@ -919,7 +922,10 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         }
 
         while (cntab->name) {
-            if (strncmp(cntab->name, cname, namesize) == 0) return cntab->ch;
+            if (cntab->size == namesize
+                && strncmp(cntab->name, cname, namesize) == 0) {
+                return cntab->ch;
+            }
             cntab++;
         }
       unknown:
