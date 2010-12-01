@@ -239,6 +239,8 @@ and @ref{Additional list library}.
 @item
 @emph{Vector} - a one-dimensional array of arbitrary Scheme values.
 See @ref{Vectors} and @ref{Vector library}.
+If you need a wide range of index, but the actual data
+is sparse, you might want to look at @ref{Sparse vectors}.
 @item
 @emph{Uniform vector} - a special kind of vectors that can hold
 limited types of values (e.g. integers representable in 8bits).
@@ -260,8 +262,11 @@ and @ref{Character-set library}.
 @item
 @emph{Hash table} - hash tables.  See @ref{Hashtables}.  There are
 also some conversion functions in @ref{Additional list library}.
+For very large hash tables (millions of entries), 
+@ref{Sparse tables} may provide better memory footprint.
 @item
-@emph{Queue} - a simple queue is provided in @ref{Queue}.
+@emph{Queue} - both fast and thread-safe queues are provided in
+@ref{Queue}.
 @item
 @emph{Record} - a simple data structure.  Although Gauche's object
 system can be used to define arbitrary data structures, you might
@@ -290,6 +295,8 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 @item
 @emph{ベクタ} - 任意のSchemeの値を格納する一次元配列。@ref{Vectors}お
 よび@ref{Vector library}を見ましょう。
+広い範囲のインデックスが必要で、しかし実際に格納されるデータが疎である場合は
+@ref{Sparse vectors}が使えるかもしれません。
 @item
 @emph{ユニフォームベクタ} - 制限された型の値(たとえば8ビット整数)を保
 持する特別なベクタ。グラフィックなどパフォーマンスが要求されるアプリケー
@@ -309,8 +316,10 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 @item
 @emph{ハッシュテーブル} - ハッシュテーブル。 @ref{Hashtables}参照。い
 くつかの変換関数は@ref{Additional list library}にもあります。
+非常に大きなハッシュテーブル(数百万エントリ)の場合、
+@ref{Sparse tables}の方がメモリ効率が良い可能性もあります。
 @item
-@emph{キュー} - 単純なキューは@ref{Queue}で用意されています。
+@emph{キュー} - 高速なキュー、およびスレッドセーフなキューが@ref{Queue}で用意されています。
 @item
 @emph{レコード} - 単純なデータ構造。Gaucheのオブジェクトシステムをつかっ
 て任意のデータ構造を定義できますが、@ref{Record types}および
