@@ -185,7 +185,8 @@
 
 (define-method call-with-builder ((class <tree-map-meta>) proc . args)
   (let-keywords* args ((key=? =)
-                       (key<? <))
+                       (key<? <)
+                       (size #f))       ;ignored for now.
     (let1 tree (make-tree-map key=? key<?)
       (proc (lambda (item)
               (unless (pair? item)

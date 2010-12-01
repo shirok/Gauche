@@ -1,3 +1,8 @@
+2010-12-01  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/collection.scm (call-with-builder): Fixed <tree-map>
+	  builder that barfed about :size keyword argument.
+
 2010-11-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_char): Fixed a bug that recognized character
