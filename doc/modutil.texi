@@ -6568,10 +6568,10 @@ the server at login time.  The defalut value is a null string @code{""}.
 @c COMMON
 
 @c EN
-The keyword argument @var{log-draion} is set to the created
+The keyword argument @var{log-drain} is set to the created
 ftp connection's @code{log-drain} slot.
 @c JP
-キーワード引数@var{log-draion}が生成したFTPコネクションの
+キーワード引数@var{log-drain}が生成したFTPコネクションの
 @code{log-drain}スロットに設定されます。
 @c COMMON
 @end defun

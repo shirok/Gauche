@@ -14692,7 +14692,7 @@ An instance of this class behaves as an output port.
 It has the following instance slots.
 You have to set at least @code{flush} slot.
 @c JP
-このクラスのインスタンスは出力ポートして振舞います。これは、以下のような
+このクラスのインスタンスは出力ポートとして振舞います。これは、以下のような
 インスタンススロットを持ちます。少くとも @code{flush} は設定しなければ
 なりません。
 @c COMMON
