@@ -1,3 +1,16 @@
+2010-12-03  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac, src/genconfig.in: Reverted -I and -L *not* to quote
+	  the pathnames.  Since quote processing is done before parameter
+	  substitution, we cannot include quoted pathnames for the output
+	  to be used in `command` and $parameter substitutions.  In fact,
+	  there's no way to have pathnames with whitespaces in it to be
+	  used with `gauche-config -I` magic.   Instead, --incdirs and
+	  --archdirs options are added that returns (semi)colon-separated
+          list of directories to be used for -I and -L option.
+	  `gauche-config -I` and `gauche-config -L` are kept for backward
+	  compatibility.
+
 2010-12-01  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/collection.scm (call-with-builder): Fixed <tree-map>

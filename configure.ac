@@ -85,17 +85,30 @@ AC_ARG_WITH(local,
   AC_HELP_STRING([--with-local=PATH:PATH...],
                  [For each PATH, add PATH/include to the include search
 paths and PATH/lib to the library search paths.  Useful if you have some
-libraries installed in non-standard places. ]),
+libraries installed in non-standard places.  On MinGW/MSYS, use ';' as a
+separator instead of ':'.]),
   [
     case $with_local in
       yes|no|"") ;;  #no effect
-      *) paths=`echo $with_local | tr ':' ' '`
-         LOCAL_INC=`for p in $paths; do echo $ECHO_N "-I$p/include $ECHO_C"; done`
-         LOCAL_LIB=`for p in $paths; do echo $ECHO_N "-L$p/lib $ECHO_C"; done`;;
+      *) IFS_save=$IFS
+         case $host in *mingw*) IFS=";" ;; *) IFS=":" ;; esac
+         sep0=""
+         sep1=""
+         for p in $with_local; do
+           LOCAL_INC="${LOCAL_INC}${sep0}-I$p/include"
+           LOCAL_LIB="${LOCAL_LIB}${sep0}-L$p/lib"
+           LOCAL_INCDIRS="${LOCAL_INCDIRS}${sep1}$p/include"
+           LOCAL_LIBDIRS="${LOCAL_LIBDIRS}${sep1}$p/lib"
+           sep0=" "
+           sep1="$IFS"
+         done
+         IFS=$IFS_save ;;
     esac
   ])
 AC_SUBST(LOCAL_INC)
 AC_SUBST(LOCAL_LIB)
+AC_SUBST(LOCAL_INCDIRS)
+AC_SUBST(LOCAL_LIBDIRS)
 dnl need to add here, for it may be used by the tests below.
 INCLUDES="$INCLUDES $LOCAL_INC"
 CPPFLAGS="$CPPFLAGS $LOCAL_INC"
