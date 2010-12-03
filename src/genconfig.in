@@ -406,8 +406,8 @@ cat > ../lib/gauche/config.scm.tmp.$$ <<EOF
 (define *configurations*
   (quote
    (("-V"  "$gauche_version")
-    ("-I"  "-I\"$gauche_incdir\"")
-    ("-L"  "-L\"$gauche_archdir\" $local_lib")
+    ("-I"  "-I$gauche_incdir")
+    ("-L"  "-L$gauche_archdir $local_lib")
     ("--ac"  "$gauche_aclocaldir")
     ("-l"  "-l$garchabi $gauche_libs")
     ("--cc"  "$cc")
