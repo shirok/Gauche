@@ -55,8 +55,8 @@
 
 (define CC       (gauche-config "--cc"))
 (define CFLAGS   (gauche-config "--so-cflags"))
-(define (INCDIR) (filter-dir (gauche-config "--incdirs") "--sysincdir"))
-(define (LIBDIR) (filter-dir (gauche-config "--archdirs") "--sysarchdir"))
+(define (INCDIR) (filter-dir "I" (gauche-config "--incdirs") "--sysincdir"))
+(define (LIBDIR) (filter-dir "L" (gauche-config "--archdirs") "--sysarchdir"))
 (define LIBS     (gauche-config "-l"))
 (define OBJEXT   (gauche-config "--object-suffix"))
 (define SOEXT    (gauche-config "--so-suffix"))
@@ -139,7 +139,7 @@
     (unless (equal? (path-extension f) OBJEXT)
       (sys-unlink (sys-basename (path-swap-extension f OBJEXT))))))
 
-(define (filter-dir olddirs dir-key)
+(define (filter-dir flag olddirs dir-key)
   (define sep (cond-expand [gauche.os.windows ";"][else ":"]))
   (define dirs
     (or (and-let* ([to-dir   (in-place-dir)]
@@ -152,4 +152,4 @@
             #`",|new|,|sep|,|to-dir|/gc/include"
             new))
         olddirs))
-  (string-join (map (^s #`"'-I,|s|'") (string-split dirs sep)) " "))
+  (string-join (map (^s #`"'-,|flag|,|s|'") (string-split dirs sep)) " "))
