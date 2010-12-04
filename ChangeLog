@@ -10,6 +10,9 @@
           list of directories to be used for -I and -L option.
 	  `gauche-config -I` and `gauche-config -L` are kept for backward
 	  compatibility.
+	* lib/gauche/package/compile.scm: Changed to use --incdirs and
+	  --archdirs instead of -I and -L, so that it can handle pathnames
+	  with spaces correctly.
 
 2010-12-01  Shiro Kawai  <shiro@acm.org>
 

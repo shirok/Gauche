@@ -55,8 +55,8 @@
 
 (define CC       (gauche-config "--cc"))
 (define CFLAGS   (gauche-config "--so-cflags"))
-(define (INCDIR) (filter-dir (gauche-config "-I") "--sysincdir"))
-(define (LIBDIR) (filter-dir (gauche-config "-L") "--sysarchdir"))
+(define (INCDIR) (filter-dir (gauche-config "--incdirs") "--sysincdir"))
+(define (LIBDIR) (filter-dir (gauche-config "--archdirs") "--sysarchdir"))
 (define LIBS     (gauche-config "-l"))
 (define OBJEXT   (gauche-config "--object-suffix"))
 (define SOEXT    (gauche-config "--so-suffix"))
@@ -139,15 +139,17 @@
     (unless (equal? (path-extension f) OBJEXT)
       (sys-unlink (sys-basename (path-swap-extension f OBJEXT))))))
 
-(define (filter-dir optstr dir-key)
-  (or (and-let* ([to-dir   (in-place-dir)]
-                 [orig-dir (regexp-quote (gauche-config dir-key))]
-                 ;; NB: we wrap to-dir by closure to for the case if
-                 ;; to-dir includes submatch replacement spec.
-                 [new (regexp-replace-all (string->regexp orig-dir) optstr
-                                          (lambda (m) #`",|to-dir|/src"))])
-        (if (equal? dir-key "--sysincdir")
-          #`",new -I,|to-dir|/gc/include"
-          new))
-      optstr))
-
+(define (filter-dir olddirs dir-key)
+  (define sep (cond-expand [gauche.os.windows ";"][else ":"]))
+  (define dirs
+    (or (and-let* ([to-dir   (in-place-dir)]
+                   [orig-dir (regexp-quote (gauche-config dir-key))]
+                   ;; NB: we wrap to-dir by closure to for the case if
+                   ;; to-dir includes submatch replacement spec.
+                   [new (regexp-replace-all (string->regexp orig-dir) olddirs
+                                            (lambda (m) #`",|to-dir|/src"))])
+          (if (equal? dir-key "--sysincdir")
+            #`",|new|,|sep|,|to-dir|/gc/include"
+            new))
+        olddirs))
+  (string-join (map (^s #`"'-I,|s|'") (string-split dirs sep)) " "))
