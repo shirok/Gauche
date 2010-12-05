@@ -1,5 +1,8 @@
 2010-12-04  Shiro Kawai  <shiro@acm.org>
 
+	* test/scripts.scm, test/TEST, test/TEST2: More tests for utility
+	  scripts.  It uses extension modules, so moved to TEST2.
+
 	* ext/template.configure.ac, ext/template.Makefile.in,
 	  examples/mqueue-cpp/{Makefile.in,configure.ac},
 	  examples/spigot/{Makefile.in,configure.ac}: Take care of the

@@ -2,6 +2,7 @@
 
 (use gauche.test)
 (use gauche.process)
+(use srfi-13)
 (use file.util)
 
 (test-start "utility scripts")
@@ -10,6 +11,27 @@
   (cond-expand
    [gauche.os.windows "NUL"]
    [else "/dev/null"]))
+
+;;=======================================================================
+(test-section "gauche-config")
+
+(define (run-gauche-config . opts)
+  (let1 p (run-process `("./gauche-config" ,@opts) :output :pipe)
+    (begin0 (read-line (process-output p))
+      (process-wait p))))
+
+(use gauche.config)
+(define *config-options*
+  '("-V" "-I" "-L" "-l" "--cc" "--ac" "--reconfigure" "--arch"
+    "--syslibdir" "--sysarchdir" "--sysincdir"
+    "--sitelibdir" "--sitearchdir" "--siteincdir"
+    "--pkglibdir" "--pkgarchdir" "--pkgincdir"
+    "--mandir" "--infodir"
+    "--object-suffix" "--executable-suffix" "--so-suffix" "--so-ldflags"
+    "--so-libs" "--dylib-suffix" "--dylib-ldflags" "--rpath-flag"))
+
+(dolist [opt *config-options*]
+  (test* #`"gauhce-config ,opt" (gauche-config opt) (run-gauche-config opt)))
 
 ;;=======================================================================
 (test-section "gauche-install")
@@ -96,7 +118,24 @@
 
 (remove-files "test.o" "test1.o")
 
+;;=======================================================================
+(test-section "gauche-package")
 
+(define (package-generate-tests)
+  (define (file-check name)
+    (test* #`"checking existence of ,name" #t
+           (file-exists? #`"Test/,name")))
 
+  (run-process
+   `(./gosh -ftest gauche-package.in generate Test test.module)
+   :output :null :error :null)
+
+  (for-each file-check '("DIST" "configure.ac" "Makefile.in"
+                         "test.c" "test.h" "test.scm" "testlib.stub"
+                         "test/module.scm"))
+  )
+  
+(unwind-protect (package-generate-tests)
+  (remove-directory* "Test"))
 
 (test-end)
