@@ -20,9 +20,9 @@ AC_PATH_PROG([GAUCHE_CESCONV], gauche-cesconv)
 
 dnl Usually these parameters are set by AC_PROG_CC, but we'd rather use
 dnl the same one as Gauche has been compiled with.
-SOEXT=`$GAUCHE_CONFIG --so-suffix`
-OBJEXT=`$GAUCHE_CONFIG --object-suffix`
-EXEEXT=`$GAUCHE_CONFIG --executable-suffix`
+SOEXT=`"$GAUCHE_CONFIG" --so-suffix`
+OBJEXT=`"$GAUCHE_CONFIG" --object-suffix`
+EXEEXT=`"$GAUCHE_CONFIG" --executable-suffix`
 AC_SUBST(SOEXT)
 AC_SUBST(OBJEXT)
 AC_SUBST(EXEEXT)
@@ -39,7 +39,7 @@ dnl Add your macro calls to check required libraries, if you have any.
 dnl Creating gpd (gauche package description) file
 GAUCHE_PACKAGE_CONFIGURE_ARGS="`echo ""$ac_configure_args"" | sed 's/[\\""\`\$]/\\\&/g'`"
 AC_MSG_NOTICE([creating ${PACKAGE_NAME}.gpd])
-$GAUCHE_PACKAGE make-gpd "$PACKAGE_NAME" \
+"$GAUCHE_PACKAGE" make-gpd "$PACKAGE_NAME" \
   -version "$PACKAGE_VERSION" \
   -configure "./configure $GAUCHE_PACKAGE_CONFIGURE_ARGS"
 

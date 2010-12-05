@@ -26,6 +26,9 @@ AC_SUBST(LOCAL_PATHS)
 
 dnl Set up gauche related commands.  The commands are set by scanning
 dnl PATH.  You can override them by "GOSH=/my/gosh ./configure" etc.
+dnl These variables may contain spaces in the pathnames (especially on
+dnl Windows); Makefile.ins and other files that refer to those variables
+dnl have to quote them properly.
 AC_PATH_PROG([GOSH], gosh)
 AC_PATH_PROG([GAUCHE_CONFIG], gauche-config)
 AC_PATH_PROG([GAUCHE_PACKAGE], gauche-package)
@@ -34,18 +37,18 @@ AC_PATH_PROG([GAUCHE_CESCONV], gauche-cesconv)
 
 dnl Usually these parameters are set by AC_PROG_CC, but we'd rather use
 dnl the same one as Gauche has been compiled with.
-SOEXT=`$GAUCHE_CONFIG --so-suffix`
-OBJEXT=`$GAUCHE_CONFIG --object-suffix`
-EXEEXT=`$GAUCHE_CONFIG --executable-suffix`
+SOEXT=`"$GAUCHE_CONFIG" --so-suffix`
+OBJEXT=`"$GAUCHE_CONFIG" --object-suffix`
+EXEEXT=`"$GAUCHE_CONFIG" --executable-suffix`
 AC_SUBST(SOEXT)
 AC_SUBST(OBJEXT)
 AC_SUBST(EXEEXT)
 
-ac_default_prefix=`$GAUCHE_CONFIG --prefix`
+ac_default_prefix=`"$GAUCHE_CONFIG" --prefix`
 
-GAUCHE_PKGINCDIR=`$GAUCHE_CONFIG --pkgincdir`
-GAUCHE_PKGLIBDIR=`$GAUCHE_CONFIG --pkglibdir`
-GAUCHE_PKGARCHDIR=`$GAUCHE_CONFIG --pkgarchdir`
+GAUCHE_PKGINCDIR=`"$GAUCHE_CONFIG" --pkgincdir`
+GAUCHE_PKGLIBDIR=`"$GAUCHE_CONFIG" --pkglibdir`
+GAUCHE_PKGARCHDIR=`"$GAUCHE_CONFIG" --pkgarchdir`
 AC_SUBST(GAUCHE_PKGINCDIR)
 AC_SUBST(GAUCHE_PKGLIBDIR)
 AC_SUBST(GAUCHE_PKGARCHDIR)
@@ -62,7 +65,7 @@ dnl Add your macro calls to check required libraries, if you have any.
 dnl Creating gpd (gauche package description) file
 GAUCHE_PACKAGE_CONFIGURE_ARGS="`echo ""$ac_configure_args"" | sed 's/[\\""\`\$]/\\\&/g'`"
 AC_MSG_NOTICE([creating ${PACKAGE_NAME}.gpd])
-$GAUCHE_PACKAGE make-gpd "$PACKAGE_NAME" \
+"$GAUCHE_PACKAGE" make-gpd "$PACKAGE_NAME" \
   -version "$PACKAGE_VERSION" \
   -configure "./configure $GAUCHE_PACKAGE_CONFIGURE_ARGS"
 

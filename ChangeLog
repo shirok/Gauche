@@ -1,3 +1,10 @@
+2010-12-04  Shiro Kawai  <shiro@acm.org>
+
+	* ext/template.configure.ac, ext/template.Makefile.in,
+	  examples/mqueue-cpp/{Makefile.in,configure.ac},
+	  examples/spigot/{Makefile.in,configure.ac}: Take care of the
+	  case when Gauche is installed under pathnames with spaces.
+
 2010-12-03  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, src/genconfig.in: Reverted -I and -L *not* to quote

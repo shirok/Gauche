@@ -8,10 +8,10 @@ VPATH       = $(srcdir)
 
 # These may be overridden by make invocators
 DESTDIR        =
-GOSH           = @GOSH@
-GAUCHE_CONFIG  = @GAUCHE_CONFIG@
-GAUCHE_PACKAGE = @GAUCHE_PACKAGE@
-INSTALL        = @GAUCHE_INSTALL@
+GOSH           = "@GOSH@"
+GAUCHE_CONFIG  = "@GAUCHE_CONFIG@"
+GAUCHE_PACKAGE = "@GAUCHE_PACKAGE@"
+INSTALL        = "@GAUCHE_INSTALL@"
 
 # Other parameters
 SOEXT  = @SOEXT@
@@ -30,9 +30,9 @@ GENERATED =
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 		   configure.lineno autom4te*.cache $(PACKAGE).gpd
 
-HEADER_INSTALL_DIR  = $(DESTDIR)`$(GAUCHE_CONFIG) --siteincdir`
-SCM_INSTALL_DIR     = $(DESTDIR)`$(GAUCHE_CONFIG) --sitelibdir`
-ARCH_INSTALL_DIR    = $(DESTDIR)`$(GAUCHE_CONFIG) --sitearchdir`
+HEADER_INSTALL_DIR  = "$(DESTDIR)`$(GAUCHE_CONFIG) --siteincdir`"
+SCM_INSTALL_DIR     = "$(DESTDIR)`$(GAUCHE_CONFIG) --sitelibdir`"
+ARCH_INSTALL_DIR    = "$(DESTDIR)`$(GAUCHE_CONFIG) --sitearchdir`"
 
 spigot_SRCS = spigot.c spigotlib.stub
 
