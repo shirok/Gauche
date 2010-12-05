@@ -121,21 +121,24 @@
 ;;=======================================================================
 (test-section "gauche-package")
 
+(remove-files "test.o")
+(make-directory* "test.o")
+
 (define (package-generate-tests)
   (define (file-check name)
     (test* #`"checking existence of ,name" #t
-           (file-exists? #`"Test/,name")))
+           (file-exists? #`"test.o/Test/,name")))
 
   (run-process
-   `(./gosh -ftest gauche-package.in generate Test test.module)
-   :output :null :error :null)
+   `(../gosh -ftest ../gauche-package.in generate Test test.module)
+   :output :null :error :null :wait #t :directory "test.o/")
 
   (for-each file-check '("DIST" "configure.ac" "Makefile.in"
                          "test.c" "test.h" "test.scm" "testlib.stub"
                          "test/module.scm"))
   )
-  
+
 (unwind-protect (package-generate-tests)
-  (remove-directory* "Test"))
+  (remove-directory* "test.o"))
 
 (test-end)
