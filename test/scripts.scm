@@ -4,6 +4,8 @@
 (use gauche.process)
 (use srfi-13)
 (use file.util)
+(use file.filter)
+(use gauche.config)
 
 (test-start "utility scripts")
 
@@ -20,7 +22,6 @@
     (begin0 (read-line (process-output p))
       (process-wait p))))
 
-(use gauche.config)
 (define *config-options*
   '("-V" "-I" "-L" "-l" "--cc" "--ac" "--reconfigure" "--arch"
     "--syslibdir" "--sysarchdir" "--sysincdir"
@@ -128,6 +129,7 @@
   (define (file-check name)
     (test* #`"checking existence of ,name" #t
            (file-exists? #`"test.o/Test/,name")))
+  (define pwd (sys-getcwd))
 
   (run-process
    `(../gosh -ftest ../gauche-package.in generate Test test.module)
@@ -136,6 +138,16 @@
   (for-each file-check '("DIST" "configure.ac" "Makefile.in"
                          "test.c" "test.h" "test.scm" "testlib.stub"
                          "test/module.scm"))
+
+  (test* "gauche-package compile" #t
+         (let* ([p (run-process
+                    `(../../gosh -ftest ../../gauche-package.in compile
+                                 --verbose test test.c testlib.stub)
+                    :redirects '((>& 2 1) (> 1 out)) :directory "test.o/Test")]
+                [o (port->string (process-output p 'out))])
+           (process-wait p)
+           ;; if compilation fails, returns the output for better diagnostics.
+           (or (zero? (process-exit-status p)) o)))
   )
 
 (unwind-protect (package-generate-tests)
