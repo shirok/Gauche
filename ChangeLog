@@ -1,5 +1,7 @@
 2010-12-07  Shiro Kawai  <shiro@acm.org>
 
+	* lib/Makefile.in: Install rfc.json.
+
 	* ext/peg/*, ext/Makefile.in, configure.ac: Enabled parser.peg.
 	  It is only to expose rfc.json officially.  The API of parser.peg
 	  is still unofficial, and it is very likely to be changed before

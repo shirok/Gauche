@@ -33,6 +33,10 @@
 
 ;;; http://www.ietf.org/rfc/rfc4627.txt
 
+;; NOTE: This module depends on parser.peg, whose API is not officially
+;; fixed.  Hence do not take this code as an example of parser.peg;
+;; this will likely to be rewritten once parser.peg's API is changed.
+
 (define-module rfc.json
   (use parser.peg)
   (use srfi-13)
