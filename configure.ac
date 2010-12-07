@@ -778,7 +778,7 @@ AC_OUTPUT(Makefile
           ext/gauche/Makefile
           ext/mt-random/Makefile
           ext/net/Makefile
-dnl          ext/peg/Makefile
+          ext/peg/Makefile
           ext/sparse/Makefile
           ext/srfi/Makefile
           ext/sxml/Makefile

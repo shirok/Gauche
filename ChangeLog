@@ -1,3 +1,10 @@
+2010-12-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/*, ext/Makefile.in, configure.ac: Enabled parser.peg.
+	  It is only to expose rfc.json officially.  The API of parser.peg
+	  is still unofficial, and it is very likely to be changed before
+	  the final version.  Do not directly use it.
+
 2010-12-04  Shiro Kawai  <shiro@acm.org>
 
 	* test/scripts.scm, test/TEST, test/TEST2: More tests for utility
