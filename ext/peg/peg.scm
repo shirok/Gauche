@@ -73,8 +73,6 @@
 
 (select-module parser.peg)
 
-(debug-print-width 1024)
-
 ;;;============================================================
 ;;; How is EBNF represented in the PEG library?
 ;;;
