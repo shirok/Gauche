@@ -1,3 +1,8 @@
+2010-12-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/vmcall.c: Detect the attempt to invoke a method directly
+	  without using a generic function, and make it an error.
+
 2010-12-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/Makefile.in: Install rfc.json.
