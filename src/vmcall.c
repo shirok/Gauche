@@ -315,8 +315,8 @@
 #endif /*APPLY_CALL*/
         }
     } else if (proctype == SCM_PROC_METHOD) {
-        Scm_Error("Attempt to call a method %S without using a generic function.",
-                  VAL0);
+        VM_ERR(("Attempt to call a method %S without using a generic function.",
+                VAL0));
     } else {
         Scm_Panic("something's wrong.");
     }
