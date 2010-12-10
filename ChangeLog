@@ -1,5 +1,8 @@
 2010-12-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/scmlib.scm: Modify *load-path* to include pre-0.9.1
+	  directory structure for the backward compatibility.
+
 	* src/makeverslink.in: Create a symlinc from libgauche.so to
 	  libgauche-0.9.so for the backward compatibility; extensions
 	  compiled for 0.9 refers to libgauche.so, and they need to
