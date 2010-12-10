@@ -1,3 +1,8 @@
+2010-12-10  Shiro Kawai  <shiro@acm.org>
+
+	* test/scripts.scm: Kludge to make gauche-package work during
+	  tests without installed Gauche.
+
 2010-12-09  Shiro Kawai  <shiro@acm.org>
 
 	* rfc/json.scm: Renamed API procedures for the consistency:

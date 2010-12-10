@@ -20,7 +20,7 @@ datarootdir = @datarootdir@
 build       = @build@
 host        = @host@
 
-GAUCHE_DATA_DIR = $(datadir)/gauche
+GAUCHE_DATA_DIR = $(datadir)/gauche-@GAUCHE_ABI_VERSION@
 SCM_INSTALL_DIR = $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@/lib
 INSTALL         = @INSTALL@
 MKINSTDIR       = $(top_srcdir)/mkinstalldirs

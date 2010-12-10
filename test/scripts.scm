@@ -131,8 +131,29 @@
            (file-exists? #`"test.o/Test/,name")))
   (define pwd (sys-getcwd))
 
+  ;; We need to fake some directories in order to make this
+  ;; work without installing.
+  (with-output-to-file "test.o/run"
+    (cut for-each write
+         '((use gauche.config)
+           (define prefix (if (equal? (sys-basename (sys-getcwd)) "Test")
+                            "../" ""))
+           (define sep (cond-expand [gauche.os.windows ";"][else ":"]))
+           ;; This is used to copy templates from.
+           (define (gauche-library-directory) #`",|prefix|../../ext/x")
+           ;; Intercept gauche-config to override compiler flags
+           (define gauche-config-orig
+             (with-module gauche.config gauche-config))
+           (define-in-module gauche.config (gauche-config opt)
+             (cond [(equal? opt "--incdirs")
+                    #`",|prefix|../../src,|sep|,|prefix|../../gc/include"]
+                   [(equal? opt "--archdirs")
+                    #`",|prefix|../../src"]
+                   [else (gauche-config-orig opt)]))
+           (load #`",|prefix|../gauche-package.in"))))
+
   (run-process
-   `(../gosh -ftest ../gauche-package.in generate Test test.module)
+   `(../gosh -ftest ./run generate Test test.module)
    :output :null :error :null :wait #t :directory "test.o/")
 
   (for-each file-check '("DIST" "configure.ac" "Makefile.in"
@@ -141,7 +162,9 @@
 
   (test* "gauche-package compile" #t
          (let* ([p (run-process
-                    `(../../gosh -ftest ../../gauche-package.in compile
+                    `(../../gosh -q -I../../../src -I../../../lib
+                                 -lgauche-init.scm
+                                 ../run compile
                                  --verbose test test.c testlib.stub)
                     :redirects '((>& 2 1) (> 1 out)) :directory "test.o/Test")]
                 [o (port->string (process-output p 'out))])

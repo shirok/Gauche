@@ -42,9 +42,9 @@ case "$xhost" in
 esac
 
 datarootdir=@datarootdir@  # for autoconf 2.60 and later.
-gdatadir=@datadir@/gauche
 garchabi=gauche-@GAUCHE_ABI_VERSION@
 garchdir=@libdir@/$garchabi
+gdatadir=@datadir@/$garchabi
 
 mandir=`echo @mandir@ | $pathfix`
 infodir=`echo @infodir@ | $pathfix`
