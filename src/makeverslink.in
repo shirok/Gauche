@@ -34,4 +34,8 @@ rm -f $LIB_V
 ln -s $LIB_VVV $LIB_V
 rm -f $LIB_COMPAT
 ln -s $LIBGAUCHE $LIB_COMPAT
+rm -f $LIB_COMPAT.0
+ln -s $LIB_V $LIB_COMPAT.0
+rm -f $LIB_COMPAT.0.9.0
+ln -s $LIB_VVV $LIB_COMPAT.0.9.0
 
