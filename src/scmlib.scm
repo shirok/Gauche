@@ -848,7 +848,7 @@
 (let* ([libdir (gauche-library-directory)]
        [m (rxmatch #/gauche-0\.9[\/\\]0\.9[^\/\\]*[\/\\]/ libdir)]
        [oldsitedir (string-append (rxmatch-before m)
-                                  "gauche/site/0.9/"
+                                  "gauche/site/"
                                   (rxmatch-after m))]
        [oldlibdir  (string-append (rxmatch-before m)
                                   "gauche/0.9/"
