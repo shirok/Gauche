@@ -1,11 +1,15 @@
 #!/bin/sh
 # Helper script to create a symlink to sharedlib,
-#   like libgauche.so -> libgauche.so.0.1
+#   like libgauche-0.9.so -> libgauche-0.9.so.0.1
 # Assumes $TARGETLIB and $DESTDIR is set by the caller.
 
 # In some occasions, TARGETLIB contains a path like
 # '@executable_path/../Frameworks/Gauche.framework'.
 # We don't need to create links in such case.
+
+# NB: In 0.9.x series, we create a link libgauche.so -> libgauche-0.9.so
+# for the backward comatibility.  This feature should be removed on 1.0
+# release.
 
 case "$TARGETLIB" in 
   "@*") 
@@ -18,6 +22,7 @@ MICRO_VERSION=@GAUCHE_MICRO_VERSION@
 
 LIB_VVV=$LIBGAUCHE.0.$MICRO_VERSION
 LIB_V=$LIBGAUCHE.0
+LIB_COMPAT=libgauche.so
 
 cd $DESTDIR$TARGETLIB
 # avoid re-running mkverslink.
@@ -27,4 +32,6 @@ mv $LIBGAUCHE $LIB_VVV
 ln -s $LIB_VVV $LIBGAUCHE
 rm -f $LIB_V
 ln -s $LIB_VVV $LIB_V
+rm -f $LIB_COMPAT
+ln -s $LIBGAUCHE $LIB_COMPAT
 
