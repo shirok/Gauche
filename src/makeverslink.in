@@ -32,10 +32,18 @@ mv $LIBGAUCHE $LIB_VVV
 ln -s $LIB_VVV $LIBGAUCHE
 rm -f $LIB_V
 ln -s $LIB_VVV $LIB_V
-rm -f $LIB_COMPAT
-ln -s $LIBGAUCHE $LIB_COMPAT
-rm -f $LIB_COMPAT.0
-ln -s $LIB_V $LIB_COMPAT.0
-rm -f $LIB_COMPAT.0.9.0
-ln -s $LIB_VVV $LIB_COMPAT.0.9.0
+
+if [ -f $LIB_COMPAT ]; then
+  rm -f $LIB_COMPAT
+  ln -s $LIBGAUCHE $LIB_COMPAT
+fi
+if [ -f $LIB_COMPAT.0 ]; then
+  rm -f $LIB_COMPAT.0
+  ln -s $LIB_V $LIB_COMPAT.0
+fi
+if [ -f $LIB_COMPAT.0.9.0 ]; then
+  rm -f $LIB_COMPAT.0.9.0
+  ln -s $LIB_VVV $LIB_COMPAT.0.9.0
+fi
+
 
