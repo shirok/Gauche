@@ -30,6 +30,7 @@
 * HTTP::                        rfc.http
 * IP packets::                  rfc.ip
 * ICMP packets::                rfc.icmp
+* JSON parsing and construction::  rfc.json
 * MD5 message digest::          rfc.md5
 * MIME message handling::       rfc.mime
 * Quoted-printable encoding/decoding::  rfc.quoted-printable
@@ -7546,7 +7547,7 @@ in an integer, respectively.
 
 
 @c ----------------------------------------------------------------------
-@node ICMP packets, MD5 message digest, IP packets, Library modules - Utilities
+@node ICMP packets, JSON parsing and construction, IP packets, Library modules - Utilities
 @section @code{rfc.icmp} - ICMP packets
 @c NODE ICMPパケット, @code{rfc.icmp} - ICMPパケット
 
@@ -7662,7 +7663,88 @@ ICMPv4およびICMPv6のタイプとコードの説明テキストを返しま�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node MD5 message digest, MIME message handling, ICMP packets, Library modules - Utilities
+@node JSON parsing and construction, MD5 message digest, ICMP packets, Library modules - Utilities
+@section @code{rfc.json} - JSON parsing and construction
+@c NODE JSONのパーズと構築, @code{rfc.json} - JSONのパーズと構築
+
+@deftp {Module} rfc.json
+@mdindex rfc.json
+@c EN
+Procedures to parse JSON (RFC4627) data to S-expressions,
+and convert S-expressions to JSON representation, are provided.
+@c JP
+RFC4627で規定される、JSON形式をパーズしてS式に直す手続きと、
+S式をJSON形式に変換する手続きが提供されます。
+@c COMMON
+@end deftp
+
+@deftp {Condition type} <json-parse-error>
+The parser @code{parse-json} and @code{parse-json-string} raise
+this condition when they encounter
+invalid JSON syntax.  It inherits @code{<error>}, and adds the following
+slot.
+
+@defivar {<json-parse-error>} position
+The input position, counted in characters, where the error occurred.
+@end defivar
+@end deftp
+
+@defun parse-json :optional input-port
+Reads and parses the JSON representation from @var{input-port} (default is
+the current input port), and returns the result in an S-expression.
+May raise a @code{<json-parse-error>} condition when parse error occurs.
+
+The following table shows how JSON datatypes are
+mapped to Scheme objects.  (In future, we might add
+some mechanism to customize the mapping.)
+
+@table @asis
+@item @code{true}, @code{false}, @code{null}
+Symbols @code{true}, @code{false} and @code{null}.
+@item Arrays
+Scheme vectors.
+@item Objects
+Scheme assoc-lists, in which keys are strings, and values
+are Scheme objects.
+@item Numbers
+Scheme inexact real numbers.
+@item Strings
+Scheme strings.
+@end table
+
+@end defun
+
+@defun parse-json-string str
+Parses the JSON string and resurns the result in an S-expression.
+May raise a @code{<json-parse-error>} condition when parse error occurs.
+
+See @code{parse-json} above for the mappings from JSON datatypes
+to Scheme types.
+@end defun
+
+@deftp {Condition type} <json-construct-error>
+The converters @code{construct-json} and
+@code{construct-json-string} raise this condition
+when they cannot convert given Scheme object to JSON.
+It inherits @code{<error>}, and adds the following slot.
+
+@defivar {<json-construct-error>} object
+The Scheme object that cannot convert to JSON representation.
+@end defivar
+@end deftp
+
+@defun construct-json obj
+@defunx construct-json-string obj
+Creates JSON representation of Scheme object @var{obj}.
+If @var{obj} contains a Scheme object that cannot be mapped
+to JSON representation, a @code{<json-consturct-error>} condition
+is raised.
+See the entry of @code{parse-json} above for the mapping between
+JSON and Scheme.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node MD5 message digest, MIME message handling, JSON parsing and construction, Library modules - Utilities
 @section @code{rfc.md5} - MD5 message digest
 @c NODE MD5メッセージダイジェスト, @code{rfc.md5} - MD5メッセージダイジェスト
 

@@ -42,9 +42,19 @@
   (use srfi-13)
   (use srfi-14)
   (use srfi-43)
-  (export parse-json
-          ->json))
+  (export <json-parse-error> <json-construct-error>
+          parse-json parse-json-string
+          construct-json construct-json-string))
 (select-module rfc.json)
+
+;; NB: We have <json-parse-error> independent from <parse-error> for
+;; now, since parser.peg's interface may be changed later.
+(define-condition-type <json-parse-error> <error> #f
+  (position)                            ;stream position
+  (objects))                            ;offending object(s) or messages
+
+(define-condition-type <json-construct-error> <error> #f
+  (object))                             ;offending object
 
 ;;;============================================================
 ;;; Parser
@@ -126,26 +136,40 @@
 (define %json-text ($or %object %array))
 
 ;; entry point
-(define (parse-json str)
-  (peg-parse-string %json-text str))
+(define (parse-json :optional (port (current-input-port)))
+  (guard (e [(<parse-error> e)
+             ;; not to expose parser.peg's <parse-error>.
+             (error <json-parse-error>
+                    :position (~ e'position) :objects (~ e'objects)
+                    :message (~ e'message))])
+    (peg-parse-port %json-text port)))
+
+(define (parse-json-string str)
+  (call-with-input-string str (cut parse-json <>)))
 
 ;;;============================================================
 ;;; Writer
 ;;;
 
 (define (print-value obj)
-  (cond ((eq? obj 'false) (display "false"))
-        ((eq? obj 'null)  (display "null"))
-        ((eq? obj 'true)  (display "true"))
-        ((pair? obj)      (print-object obj))
-        ((vector? obj)    (print-array obj))
-        ((number? obj)    (print-number obj))
-        ((string? obj)    (print-string obj))
-        (else (error "->json expects list or vector, but got:" obj))))
+  (cond [(eq? obj 'false) (display "false")]
+        [(eq? obj 'null)  (display "null")]
+        [(eq? obj 'true)  (display "true")]
+        [(pair? obj)      (print-object obj)]
+        [(vector? obj)    (print-array obj)]
+        [(number? obj)    (print-number obj)]
+        [(string? obj)    (print-string obj)]
+        [else (error <json-construct-error> :object obj
+                     "construct-json expects list or vector, but got:" obj)]))
 
 (define (print-object obj)
   (display "{")
   (fold (lambda (attr comma)
+          (unless (and (pair? attr)
+                       (string? (car attr)))
+            (error <json-construct-error> :object obj
+                   "construct-json needs an assoc list with all keys being \
+                    string, but got:" obj))
           (display comma)
           (print-string (car attr))
           (display ":")
@@ -164,7 +188,8 @@
 
 (define (print-number num)
   (cond [(or (not (real? num)) (not (finite? num)))
-         (error "real number expected, but got" num)]
+         (error <json-construct-error> :object num
+                "json cannot represent a number" num)]
         [(and (rational? num) (not (integer? num)))
          (write (exact->inexact num))]
         [else (write num)]))
@@ -178,10 +203,12 @@
   (string-for-each print-char str)
   (display "\""))
 
-(define (->json x)
-  (with-output-to-string
-   (lambda ()
-     (cond ((pair? x)   (print-object x))
-           ((vector? x) (print-array x))
-           (else (error "->json expects list or vector, but got" x))))))
+(define (construct-json x)
+  (cond [(pair? x)   (print-object x)]
+        [(vector? x) (print-array x)]
+        [else (error <json-construct-error> :object x
+                     "construct-json expects a list or a vector, but got" x)]))
+
+(define (construct-json-string x)
+  (with-output-to-string (cut construct-json x)))
 

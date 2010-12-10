@@ -35,8 +35,6 @@
 (use srfi-1)
 
 (test-start "parser.peg")
-(debug-print-width 1024)
-;(set! *test-report-error* #t)
 
 (test-section "peg")
 (use parser.peg)
@@ -643,7 +641,8 @@
 (test-module 'rfc.json)
 
 (let ()
-  (define (t str val) (test* "primitive" `(("x" . ,val)) (parse-json str)))
+  (define (t str val)
+    (test* "primitive" `(("x" . ,val)) (parse-json-string str)))
   (t "{\"x\": 100 }" 100)
   (t "{\"x\" : -100}" -100)
   (t "{\"x\":  +100 }" 100)
@@ -660,6 +659,14 @@
      "abc\"\\/\u0008\u000c\u000a\u000d\u0009@abc")
   )
 
+(let ()
+  (define (t str)
+    (test* #`"parse error ,str" (test-error <json-parse-error>)
+           (parse-json-string str)))
+  (t "{\"x\": 100")
+  (t "{x : 100}}")
+  )
+
 (test* "parsing an object"
        '(("Image"
           ("Width"  . 800)
@@ -670,7 +677,7 @@
            ("Height" . 125)
            ("Width"  . "100"))
           ("IDs" . #(116 943 234 38793))))
-       (parse-json "{
+       (parse-json-string "{
    \"Image\": {
        \"Width\":  800,
        \"Height\": 600,
@@ -701,7 +708,7 @@
            ("State"     . "CA")
            ("Zip"       . "94085")
            ("Country"   . "US")))
-       (parse-json "[
+       (parse-json-string "[
    {
       \"precision\": \"zip\",
       \"Latitude\":  37.7668,
@@ -727,7 +734,7 @@
 (let ()
   (define (test-writer name obj)
     (test* name obj
-           (parse-json (->json obj))))
+           (parse-json-string (construct-json-string obj))))
 
   (test-writer "writing an object"
                '(("Image"
@@ -759,6 +766,13 @@
                    ("Country"   . "US"))))
   )
 
-
+(let ()
+  (define (t obj)
+    (test* #`"writer error ,obj" (test-error <json-construct-error>) 
+           (construct-json-string obj)))
+  (t "a")
+  (t '#(1 2 x))
+  (t '(("a" . 2) (3 . "b")))
+  (t '(("a" . 2) 9)))
 
 (test-end)
