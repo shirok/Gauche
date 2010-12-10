@@ -20,8 +20,8 @@ LIBATOMICDIR = gc/libatomic_ops-1.2
 MKINSTDIR = @top_srcdir@/mkinstalldirs
 INSTALL = @INSTALL@
 GAUCHE_VERSION  = @GAUCHE_VERSION@
-GAUCHE_DATA_DIR = $(datadir)/gauche
-GAUCHE_ACLOCAL_DIR = $(datadir)/gauche/$(GAUCHE_VERSION)/
+GAUCHE_DATA_DIR = $(datadir)/gauche-@GAUCHE_ABI_VERSION@
+GAUCHE_ACLOCAL_DIR = $(GAUCHE_DATA_DIR)/$(GAUCHE_VERSION)/
 DESTDIR =
 
 GOSH = gosh

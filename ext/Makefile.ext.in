@@ -49,7 +49,7 @@ INSTALL_TYPE   = sys
 EXT_LIBGAUCHE  = -L$(top_builddir)/src @EXT_LIBGAUCHE@
 
 GAUCHE_INCDIR  = $(DESTDIR)$(libdir)/gauche-$(GAUCHE_ABI_VERSION)/$(GAUCHE_VERSION)/include
-GAUCHE_LIBDIR  = $(DESTDIR)$(datadir)/gauche/$(GAUCHE_VERSION)/lib
+GAUCHE_LIBDIR  = $(DESTDIR)$(datadir)/gauche-$(GAUCHE_ABI_VERSION)/$(GAUCHE_VERSION)/lib
 GAUCHE_ARCHDIR = $(DESTDIR)$(libdir)/gauche-$(GAUCHE_ABI_VERSION)/$(GAUCHE_VERSION)/$(HOST)
 
 LIB_INSTALL_DIR  = @libdir@

@@ -1,6 +1,6 @@
 2010-12-10  Shiro Kawai  <shiro@acm.org>
 
-	* configure.ac, lib/Makefile.in, src/genconfig.in:
+	* configure.ac, */Makefile.in, src/genconfig.in:
 	  Changed library installation directory from ${datadir}/gauche
 	  to ${datadir}/gauche-${ABI_VERSION}.   This is also for the
 	  consistency with architecture-dependent libraries.

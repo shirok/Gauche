@@ -97,7 +97,7 @@ LIB_INSTALL_DIR  = @libdir@
 BIN_INSTALL_DIR  = @bindir@
 DATA_INSTALL_DIR = $(datadir)
 
-GAUCHE_DATA_DIR = $(datadir)/gauche
+GAUCHE_DATA_DIR = $(datadir)/gauche-$(GAUCHE_ABI_VERSION)
 GAUCHE_ARCH_DIR = @libdir@/gauche-$(GAUCHE_ABI_VERSION)
 
 HEADER_INSTALL_DIR    = $(GAUCHE_ARCH_DIR)/$(GAUCHE_VERSION)/include
