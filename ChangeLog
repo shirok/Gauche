@@ -1,3 +1,7 @@
+2010-12-11  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.9.1
+
 2010-12-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_SysExec): Honor the directory argument on
