@@ -1,5 +1,8 @@
 2010-12-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/system.c (Scm_SysExec): Honor the directory argument on
+	  Windows-native code path as well.
+
 	* src/scmlib.scm: Modify *load-path* to include pre-0.9.1
 	  directory structure for the backward compatibility.
 

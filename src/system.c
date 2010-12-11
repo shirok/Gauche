@@ -1466,12 +1466,12 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     argv = Scm_ListToCStringArray(args, TRUE, NULL);
     program = Scm_GetStringConst(file);
 
-    if (dir != NULL) cdir = Scm_GetStringConst(dir);
-
     /* setting up iomap table */
     fds = Scm_SysPrepareFdMap(iomap);
     
 #if !defined(GAUCHE_WINDOWS)
+    if (dir != NULL) cdir = Scm_GetStringConst(dir);
+
     /* When requested, call fork() here. */
     if (forkp) {
         SCM_SYSCALL(pid, fork());
@@ -1501,12 +1501,32 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     /* We come here only when fork is requested. */
     return Scm_MakeInteger(pid);
 #else  /* GAUCHE_WINDOWS */
+    if (dir != NULL) {
+        /* we need full path for CreateProcess. */
+        dir = SCM_STRING(Scm_NormalizePathname(dir, SCM_PATH_ABSOLUTE|SCM_PATH_CANONICALIZE));
+        cdir = Scm_GetStringConst(dir);
+        
+        /* If the program is given in relative pathname,
+           it must be adjusted relative to the specified directory. */
+        if (program[0] != '/' && program[0] != '\\'
+            && !(program[0] && program[1] == ':')) {
+            ScmDString ds;
+            int c = cdir[strlen(cdir)-1];
+            Scm_DStringInit(&ds);
+            Scm_DStringPutz(&ds, cdir, -1);
+            if (c != '/' && c != '\\') Scm_DStringPutc(&ds, SCM_CHAR('/'));
+            Scm_DStringPutz(&ds, program, -1);
+            program = Scm_DStringGetz(&ds);
+        }
+    }
+    
     if (forkp) {
         TCHAR  program_path[MAX_PATH+1], *filepart;
         HANDLE *hs = win_prepare_handles(fds);
         BOOL r, pathlen;
         STARTUPINFO si;
         PROCESS_INFORMATION pi;
+        LPCTSTR curdir = NULL;
 
         pathlen = SearchPath(NULL, SCM_MBS2WCS(program),
                              _T(".exe"), MAX_PATH, program_path,
@@ -1522,6 +1542,8 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
             si.hStdError  = hs[2];
         }
 
+        if (cdir != NULL) curdir = SCM_MBS2WCS(cdir);
+
         r = CreateProcess(program_path,
                           SCM_MBS2WCS(win_create_command_line(args)),
                           NULL, /* process attr */
@@ -1529,7 +1551,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
                           TRUE, /* inherit handles */
                           0,    /* creation flags */
                           NULL, /* nenvironment */
-                          NULL, /* current dir: WRITEME - HONOR CDIR */
+                          curdir, /* current dir */
                           &si,  /* startup info */
                           &pi); /* process info */
         if (r == 0) Scm_SysError("spawning %s failed", program);
@@ -1537,6 +1559,11 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         return win_process_register(Scm_MakeWinProcess(pi.hProcess));
     } else {
         Scm_SysSwapFds(fds);
+        if (cdir != NULL) {
+            if (_chdir(cdir) < 0) {
+                Scm_SysError("Couldn't chdir to %s", cdir);
+            }
+        }
 	execvp(program, (const char *const*)argv);
 	Scm_Panic("exec failed: %s: %s", program, strerror(errno));	
     }
