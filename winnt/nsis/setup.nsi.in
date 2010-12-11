@@ -3,6 +3,8 @@
 
 Name Gauche
 
+SetCompressor /FINAL lzma
+
 # Defines
 !define REGKEY "SOFTWARE\$(^Name)"
 !define VERSION ##(include (*current-version*))
