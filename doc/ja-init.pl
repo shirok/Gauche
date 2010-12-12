@@ -1,5 +1,5 @@
 # -*- mode: perl -*-
 
-$USE_UNICODE = 1;
+$USE_UNICODE = 0;
 
 1;
