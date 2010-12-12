@@ -2707,8 +2707,8 @@ Returns true if a database @var{dbm} is already closed, false otherwise.
 
 @defun dbm-type->class dbmtype
 Sometimes you don't know which type of dbm implementation you
-need to use in your application beforehand, but rather determine
-the type according to the information given at run-time.
+need to use in your application beforehand, but rather you need to
+determine the type according to the information given at run-time.
 This procedure fulfills the need.
 
 The @var{dbmtype} argument is a symbol that names the type

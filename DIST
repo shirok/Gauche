@@ -151,10 +151,10 @@ if [ "$rpmfiles" = "yes" ]; then
   # additional Gauche packages.
   rm -f rpmfiles-common.txt rpmfiles-encoding.txt rpmfiles-gdbm.txt
   check_version
-  find /usr/share/gauche/$VERSION -type f -print | grep -v 'dbm/[ong]dbm' > rpmfiles-common.txt
-  find /usr/share/gauche/$VERSION -type f -print | grep 'dbm/[ong]dbm' > rpmfiles-gdbm.txt
-  find /usr/lib/gauche/$VERSION -type f -print | grep -v '/dbm--[ong]dbm' > rpmfiles-encoding.txt
-  find /usr/lib/gauche/$VERSION -type f -print | grep '/dbm--[ong]dbm' >> rpmfiles-gdbm.txt
+  find /usr/share/gauche-0.9/$VERSION -type f -print | grep -v 'dbm/[ong]dbm' > rpmfiles-common.txt
+  find /usr/share/gauche-0.9/$VERSION -type f -print | grep 'dbm/[ong]dbm' > rpmfiles-gdbm.txt
+  find /usr/lib/gauche-0.9/$VERSION -type f -print | grep -v '/dbm--[ong]dbm' > rpmfiles-encoding.txt
+  find /usr/lib/gauche-0.9/$VERSION -type f -print | grep '/dbm--[ong]dbm' >> rpmfiles-gdbm.txt
 fi
 
 if [ "$rpm" = "yes" ]; then

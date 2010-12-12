@@ -11,7 +11,7 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.9
+%define version  0.9.1
 %define encoding utf8
 %define threads  pthreads
 
@@ -83,8 +83,8 @@ make
 %install
 # These dirs are not cleared after rpm -ba --clean.   To ensure clean
 # install, we remove them.
-rm -rf ${RPM_BUILD_ROOT}/usr/lib/gauche
-rm -rf ${RPM_BUILD_ROOT}/usr/share/gauche
+rm -rf ${RPM_BUILD_ROOT}/usr/lib/gauche-0.9
+rm -rf ${RPM_BUILD_ROOT}/usr/share/gauche-0.9
 rm -rf ${RPM_BUILD_ROOT}/usr/share/man/man1
 mkdir -p ${RPM_BUILD_ROOT}/usr
 make DESTDIR=${RPM_BUILD_ROOT}/ install-pkg
@@ -103,7 +103,7 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 %doc COPYING ChangeLog INSTALL INSTALL.eucjp Gauche.spec
 /usr/share/info/
 /usr/share/man/man1/
-/usr/share/gauche/site
+/usr/share/gauche-0.9/site
 /usr/share/aclocal/gauche.m4
 
 %files %{encoding} -f rpmfiles-encoding.txt
@@ -113,16 +113,18 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 /usr/bin/gauche-cesconv
 /usr/bin/gauche-install
 /usr/bin/gauche-package
-#/usr/lib/libgauche.a
-/usr/lib/libgauche.so
-/usr/lib/libgauche.so.0
-/usr/lib/libgauche.so.%{version}.0
-/usr/lib/gauche/site/
+/usr/lib/libgauche-0.9.so
+/usr/lib/libgauche-0.9.so.0
+/usr/lib/libgauche-0.9.so.0.1
+/usr/lib/gauche-0.9/site/
 
 %files gdbm-%{encoding} -f rpmfiles-gdbm.txt
 %defattr(-,root,root)
 
 %changelog
+* Sat Dec 11 2010 Shiro Kawai
+- Gauche release 0.9.1.
+
 * Mon Jan  4 2010 Shiro Kawai
 - Fix missing micro version of libgauche.so in %files section.
 
