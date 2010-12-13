@@ -1,0 +1,26 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = os
+
+include ../Makefile.ext
+
+LIBFILES = os--windows.$(SOEXT)
+SCMFILES = windows.scm
+
+GENERATED = Makefile
+XCLEANFILES = windows.c console.c
+
+OBJECTS = init.$(OBJEXT) windows.$(OBJEXT) console.$(OBJEXT)
+
+all : $(LIBFILES)
+
+os--windows.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) os--windows.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+windows.c : windows.stub
+console.c : console.stub
+
+install : install-std
+

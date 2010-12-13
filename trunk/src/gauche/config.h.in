@@ -1,0 +1,389 @@
+/* Define to 1 if using `alloca.c'. */
+#undef C_ALLOCA
+
+/* Define if Gauche handles multi-byte character as EUC-JP */
+#undef GAUCHE_CHAR_ENCODING_EUC_JP
+
+/* Define if Gauche handles multi-byte character as Shift JIS */
+#undef GAUCHE_CHAR_ENCODING_SJIS
+
+/* Define if Gauche handles multi-byte character as UTF-8 */
+#undef GAUCHE_CHAR_ENCODING_UTF_8
+
+/* Gauche major version number */
+#undef GAUCHE_MAJOR_VERSION
+
+/* Gauche minor version number */
+#undef GAUCHE_MINOR_VERSION
+
+/* Gauche patch level number */
+#undef GAUCHE_MICRO_VERSION
+
+/* Define if we use pthreads */
+#undef GAUCHE_USE_PTHREADS
+
+/* Gauche ABI version string */
+#undef GAUCHE_ABI_VERSION
+
+/* Gauche version string */
+#undef GAUCHE_VERSION
+
+/* Gauche signature string */
+#undef GAUCHE_SIGNATURE
+
+/* Define if bilding as a framework on MacOSX */
+#undef GAUCHE_MACOSX_FRAMEWORK
+
+/* Define to use Darwin threads */
+#undef GC_DARWIN_THREADS
+
+/* Define to use FreeBSD threads */
+#undef GC_FREEBSD_THREADS
+
+/* Define to use GNU threads */
+#undef GC_GNU_THREADS
+
+/* Define to use NetBSD threads */
+#undef GC_NETBSD_THREADS
+
+/* Define to use HP-UX threads */
+#undef GC_HPUX_THREADS
+
+/* Define to use IRIX threads */
+#undef GC_IRIX_THREADS
+
+/* Define to use Linux threads */
+#undef GC_LINUX_THREADS
+
+/* Define to use Solaris pthreads */
+#undef GC_SOLARIS_PTHREADS
+
+/* Define to use Solaris threads */
+#undef GC_SOLARIS_THREADS
+
+/* Define to use Win32 threads */
+#undef GC_WIN32_THREADS
+
+/* Define number of args gethostbyaddr_r takes */
+#undef GETHOSTBYADDR_R_NUMARGS
+
+/* Define number of args gethostbyname_r takes */
+#undef GETHOSTBYNAME_R_NUMARGS
+
+/* Define number of args getprotobyname_r takes */
+#undef GETPROTOBYNAME_R_NUMARGS
+
+/* Define number of args getprotobynumber_r takes */
+#undef GETPROTOBYNUMBER_R_NUMARGS
+
+/* Define number of args getservbyname_r takes */
+#undef GETSERVBYNAME_R_NUMARGS
+
+/* Define number of args getservbyport_r takes */
+#undef GETSERVBYPORT_R_NUMARGS
+
+/* Define to 1 if you have `alloca', as a function or macro. */
+#undef HAVE_ALLOCA
+
+/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
+   */
+#undef HAVE_ALLOCA_H
+
+/* Define if uses libcrypt */
+#undef HAVE_CRYPT
+
+/* Define to 1 if you have the <crypt.h> header file. */
+#undef HAVE_CRYPT_H
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define if the system has dlopen() */
+#undef HAVE_DLOPEN
+
+/* Define if you have forkpty */
+#undef HAVE_FORKPTY
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#undef HAVE_GETOPT_H
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define to 1 if you have the <glob.h> header file. */
+#undef HAVE_GLOB_H
+
+/* Define if you have iconv.h and want to use it */
+#undef HAVE_ICONV_H
+
+/* Define if you have IPv6 support */
+#undef HAVE_IPV6
+
+/* type to use in place of socklen_t if not defined */
+#undef socklen_t
+
+/* Define to 1 if you have the `isinf' function. */
+#undef HAVE_ISINF
+
+/* Define to 1 if you have the `isnan' function. */
+#undef HAVE_ISNAN
+
+/* Define to 1 if you have the `lchown' function. */
+#undef HAVE_LCHOWN
+
+/* Define to 1 if you have the `m' library (-lm). */
+#undef HAVE_LIBM
+
+/* Define to 1 if you have the <libutil.h> header file. */
+#undef HAVE_LIBUTIL_H
+
+/* Define to 1 if you have the `lrand48' function. */
+#undef HAVE_LRAND48
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `mkstemp' function. */
+#undef HAVE_MKSTEMP
+
+/* Define to 1 if you have the `nanosleep' function. */
+#undef HAVE_NANOSLEEP
+
+/* Define to 1 if you have the <net/if.h> header file. */
+#undef HAVE_NET_IF_H
+
+/* Define if you have openpty */
+#undef HAVE_OPENPTY
+
+/* Define to 1 if you have pthread_spin_init. */
+#undef HAVE_PTHREAD_SPINLOCK_T
+
+/* Define to 1 if you have the <pty.h> header file. */
+#undef HAVE_PTY_H
+
+/* Define to 1 if you have the `random' function. */
+#undef HAVE_RANDOM
+
+/* Define to 1 if you have the `readlink' function. */
+#undef HAVE_READLINK
+
+/* Define to 1 if you have the `realpath' function. */
+#undef HAVE_REALPATH
+
+/* Define to 1 if you have the `rint' function. */
+#undef HAVE_RINT
+
+/* Define to 1 if you have the <rpc/types.h> header file. */
+#undef HAVE_RPC_TYPES_H
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
+
+/* Define to 1 if you have the <sched.h> header file. */
+#undef HAVE_SCHED_H
+
+/* Define if uses librt */
+#undef HAVE_SCHED_YIELD
+
+/* Define to 1 if you have the `select' function. */
+#undef HAVE_SELECT
+
+/* Define to 1 if you have the `setlogmask' function. */
+#undef HAVE_SETLOGMASK
+
+/* Define to 1 if you have the `sigwait' function. */
+#undef HAVE_SIGWAIT
+
+/* Define to 1 if you have the `setpgrp' function. */
+#undef HAVE_SETPGRP
+
+/* Define to 1 if you have the `srand48' function. */
+#undef HAVE_SRAND48
+
+/* Define to 1 if you have the `srandom' function. */
+#undef HAVE_SRANDOM
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define if "struct group" has gr_passwd */
+#undef HAVE_STRUCT_GROUP_GR_PASSWD
+
+/* Define if you have "struct ifreq" */
+#undef HAVE_STRUCT_IFREQ
+
+/* Define if "struct ifreq" have a member ifr_ifindex */
+#undef HAVE_STRUCT_IFREQ_IFR_IFINDEX
+
+/* Define if "struct ifreq" have a member ifr_index */
+#undef HAVE_STRUCT_IFREQ_IFR_INDEX
+
+/* Define if "struct passwd" has pw_class */
+#undef HAVE_STRUCT_PASSWD_PW_CLASS
+
+/* Define if "struct passwd" has pw_gecos */
+#undef HAVE_STRUCT_PASSWD_PW_GECOS
+
+/* Define if "struct passwd" has pw_passwd */
+#undef HAVE_STRUCT_PASSWD_PW_PASSWD
+
+/* Define if struct sockaddr_un has sun_len */
+#undef HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
+
+/* Define if struct sockaddr_in has sin_len */
+#undef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
+
+/* Define if struct sockaddr_in6 has sin6_len */
+#undef HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
+
+/* Define to 1 if the system has the type `struct sockaddr_storage'. */
+#undef HAVE_STRUCT_SOCKADDR_STORAGE
+
+/* Define to 1 if the system has the type `struct timespec'. */
+#undef HAVE_STRUCT_TIMESPEC
+
+/* Define to 1 if the system has sunmath.h (Solaris specific). */
+#undef HAVE_SUNMATH_H
+
+/* Define to 1 if you have the `symlink' function. */
+#undef HAVE_SYMLINK
+
+/* Define to 1 if you have the `syslog' function. */
+#undef HAVE_SYSLOG
+
+/* Define to 1 if you have the <syslog.h> header file. */
+#undef HAVE_SYSLOG_H
+
+/* Define to 1 if you have the <sys/resource.h> header file. */
+#undef HAVE_SYS_RESOURCE_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the `trunc' function. */
+#undef HAVE_TRUNC
+
+/* Define to 1 if the system has these types. */
+#undef HAVE_INT32_T
+#undef HAVE_INT64_T
+#undef HAVE_UINT16_T
+#undef HAVE_UINT32_T
+#undef HAVE_UINT64_T
+#undef HAVE_LONG_DOUBLE
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the `usleep' function. */
+#undef HAVE_USLEEP
+
+/* Define to 1 if you have the <util.h> header file. */
+#undef HAVE_UTIL_H
+
+/* Define if iconv takes const char **input */
+#undef ICONV_CONST_INPUT
+
+/* Define if time_t is typedef'ed to an integral type */
+#undef INTEGRAL_TIME_T
+
+/* Directory where libtool places the compiled libraries */
+#undef SCM_LIBTOOL_OBJDIR
+
+/* Define if uses i386 optimizations */
+#undef SCM_TARGET_I386
+
+/* Define to the suffix of dynamic loadable object */
+#undef SHLIB_SO_SUFFIX
+
+/* The size of a `int', as computed by sizeof. */
+#undef SIZEOF_INT
+
+/* The size of a `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
+/* The size of a `off_t', as computed by sizeof. */
+#undef SIZEOF_OFF_T
+
+/* The size of a `rlim_t', as computed by sizeof. */
+#undef SIZEOF_RLIM_T
+
+/* If using the C implementation of alloca, define if you know the
+   direction of stack growth for your system; otherwise it will be
+   automatically deduced at run-time.
+        STACK_DIRECTION > 0 => grows toward higher addresses
+        STACK_DIRECTION < 0 => grows toward lower addresses
+        STACK_DIRECTION = 0 => direction of growth unknown */
+#undef STACK_DIRECTION
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#undef TIME_WITH_SYS_TIME
+
+/* Define to 1 if your <sys/time.h> declares `struct tm'. */
+#undef TM_IN_SYS_TIME
+
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+#undef WORDS_BIGENDIAN
+
+/* Define if endian of double can be ARM style (each 32bit word is little
+   endian, but the lower 32bit word comes after the upper 32bit word.)
+   ARM processors can be configured with this mixed endian or ordinary
+   consistent endian, so if this is defined, we check the endian at
+   runtime. */
+#undef DOUBLE_ARMENDIAN
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define as `__inline' if that's what the C compiler calls it, or to nothing
+   if it is not supported. */
+#undef inline
+
+/*=========================================================================
+ * NOTE: The definition of the following preprocessor variables may affect
+ * the behavior of the systems libraries.  If you link your code to libgauche,
+ * generally your code needs to be configured as the same flags as defined
+ * here.
+ */
+
+/* Define POSIX C version */
+#undef _POSIX_C_SOURCE
+
+/* Define when using Solaris pthreads to get pthread compatible API. */
+#undef _POSIX_PTHREAD_SEMANTICS
+
+/* Define to use reentrant libc */
+#undef _REENTRANT
+
+/* Define the number of bits in off_t */
+#undef _FILE_OFFSET_BITS
+
+/* Define if this flag is needed for large file support */
+#undef _LARGE_FILES
+
+/*
+ * Local variables:
+ * mode: C
+ * end:
+ */

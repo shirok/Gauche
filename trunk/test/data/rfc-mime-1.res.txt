@@ -1,0 +1,9 @@
+("multipart/alternative" 0
+ ("text/plain" 0
+  "  ... plain text version of message goes here ...\n")
+ ("text/enriched" 1
+  "  ... RFC 1896 text/enriched version of same message
+      goes here ...\n")
+ ("application/x-whatever" 2
+  "  ... fanciest version of same message goes here ...\n")
+)

@@ -1,0 +1,1505 @@
+///; Process this file with uvgen.scm to generate uvect.c
+///; Lines beginning with '///' are directives for ugven.scm.
+
+///;; Prologue ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+///(define *tmpl-prologue* '(
+/*
+ * uvector.c.tmpl - uniform vector support code template
+ *
+ *   Copyright (c) 1999-2007 Shiro Kawai, All rights reserved.
+ * 
+ *   Redistribution and use in source and binary forms, with or without
+ *   modification, are permitted provided that the following conditions
+ *   are met:
+ * 
+ *   1. Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *
+ *   2. Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *
+ *   3. Neither the name of the authors nor the names of its contributors
+ *      may be used to endorse or promote products derived from this
+ *      software without specific prior written permission.
+ *
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+ *   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ *   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ *   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include <stdlib.h>
+#include <math.h>
+#include <limits.h>
+#include <string.h>  /* for memcpy() */
+#include <gauche.h>
+#include <gauche/extend.h>
+#include <gauche/builtin-syms.h>
+#include <gauche/bytes_inline.h> /* for byte swapping stuff */
+#include <gauche/arith.h>
+#include <gauche/scmconst.h>
+#include <gauche/arith.h>
+#include <gauche/scmconst.h>
+
+#define EXTUVECTOR_EXPORTS
+#include "gauche/uvector.h"
+#include "uvectorP.h"
+
+/*
+ * Generic aliasing
+ */
+ScmObj Scm_UVectorAlias(ScmClass *klass, ScmUVector *v, int start, int end)
+{
+    int len = SCM_UVECTOR_SIZE(v), reqalign, srcalign, dstsize;
+
+    SCM_CHECK_START_END(start, end, len);
+    reqalign = Scm_UVectorElementSize(klass);
+    srcalign = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
+    if (reqalign < 0) {
+        Scm_Error("uvector-alias requires uniform vector class, but got %S",
+                  klass);
+    }
+    if ((start*srcalign)%reqalign != 0 || (end*srcalign)%reqalign != 0) {
+        Scm_Error("aliasing %S of range (%d, %d) to %S doesn't satisfy alignemnt requirement.",
+                  Scm_ClassOf(SCM_OBJ(v)), start, end, klass);
+    }
+    if (reqalign >= srcalign) dstsize = (end-start) / (reqalign/srcalign);
+    else dstsize = (end-start) * (srcalign/reqalign);
+    SCM_RETURN(Scm_MakeUVectorFull(klass,
+                                   dstsize,
+                                   (char*)v->elements + start*srcalign,
+                                   SCM_UVECTOR_IMMUTABLE_P(v),
+                                   SCM_UVECTOR_OWNER(v)));
+}
+
+/*===========================================================
+ * Helper functions
+ */
+
+static void size_mismatch(const char *name, ScmObj x, ScmObj y)
+{
+    Scm_Error("%s: argument object sizes do not match: %S vs %S", name, x, y);
+}
+
+/* many numeric op procedures takes either uvector, vector, list or
+   a constant number as the second arg.  this factors out the common
+   code. */
+typedef enum {
+    ARGTYPE_UVECTOR,
+    ARGTYPE_VECTOR,
+    ARGTYPE_LIST,
+    ARGTYPE_CONST
+} ArgType;
+
+static ArgType arg2_check(const char *name, ScmObj x, ScmObj y, int const_ok)
+{
+    int size = SCM_UVECTOR_SIZE(x);
+    if (SCM_UVECTORP(y)) {
+        if (SCM_UVECTOR_SIZE(y) != size) size_mismatch(name, SCM_OBJ(x), y);
+        return ARGTYPE_UVECTOR;
+    } else if (SCM_VECTORP(y)) {
+        if (SCM_VECTOR_SIZE(y) != size) size_mismatch(name, SCM_OBJ(x), y);
+        return ARGTYPE_VECTOR;
+    } else if (SCM_LISTP(y)) {
+        if (Scm_Length(y) != size) size_mismatch(name, SCM_OBJ(x), y);
+        return ARGTYPE_LIST;
+    } else if (!const_ok) {
+        Scm_Error("%s: second operand must be either a matching uvector, a vector, or a list, but got %S", name, y);
+    } else if (!SCM_REALP(y)) {
+        Scm_Error("%s: second operand must be either a matching uvector, a vector, a list or a number, but got %S", name, y);
+    }
+    return ARGTYPE_CONST;
+}
+
+/*--------------------------------------------------------
+ * Comparison and print
+ */
+static inline int int64eqv(ScmInt64 x, ScmInt64 y)
+{
+#if SCM_EMULATE_INT64
+    return (x.hi == y.hi && x.lo == y.lo);
+#else
+    return x == y;
+#endif
+}
+
+static inline int uint64eqv(ScmUInt64 x, ScmUInt64 y)
+{
+#if SCM_EMULATE_INT64
+    return (x.hi == y.hi && x.lo == y.lo);
+#else
+    return x == y;
+#endif
+}
+
+static inline void int64print(ScmPort *out, ScmInt64 v)
+{
+#if SCM_EMULATE_INT64
+    Scm_Printf(out, "%S", Scm_MakeInteger64(v));
+#elif SIZEOF_LONG == 4
+    char buf[50];
+    snprintf(buf, 50, "%lld", v);
+    Scm_Printf(out, "%s", buf);
+#else
+    Scm_Printf(out, "%ld", v);
+#endif
+}
+
+static inline void uint64print(ScmPort *out, ScmUInt64 v)
+{
+#if SCM_EMULATE_INT64
+    Scm_Printf(out, "%S", Scm_MakeIntegerU64(v));
+#elif SIZEOF_LONG == 4
+    char buf[50];
+    snprintf(buf, 50, "%llu", v);
+    Scm_Printf(out, "%s", buf);
+#else
+    Scm_Printf(out, "%lu", v);
+#endif
+}
+
+///)) ;; End prologue
+
+///;; Begin template ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+///;; 
+///;; Straight substitutions
+///;;  ${t}     -> s8, u8, s16, ...
+///;;  ${T}     -> S8, U8, S16, ...
+///;;  ${etype} -> char, u_char, short, ...
+///;;  ${ntype} -> long, long, long, ...  (type big enough to hold element)
+///;;
+///;; Parameterized substitutions
+///;;  ${UNBOX dst src clamp}  where dst::${etype}, src::ScmObj, clamp::int
+///;;     -> C stmt that unboxes src and set it to dst.
+///;;  ${BOX dst src} where dst::ScmObj, src::${etype}
+///;;     -> C stmt that boxes src and set it to dst.
+///;;  ${VMBOX dst src} where dst::ScmObj, src::${etype}
+///;;     -> C stmt that boxes src and set it to dst.
+///;;        (used in Scm_VM* API)
+///;;  ${NBOX dst src} where dst::ScmObj, src::${ntype}
+///;;     -> Like BOX, but the source value is given in ntype.
+///;;        Can be implemented with CAST_N2E and BOX, but some types may
+///;;        have a shortcut.
+///;;  ${REF_NTYPE array i}
+///;;     -> C expr to extract i-th element of etype array *as ntype*.
+///;;  ${CAST_N2E expr}
+///;;     -> convert ntype expr into etype.
+///;;  ${PRINT out elt} where out::ScmPort*, elt::${etype}
+///;;     -> C stmt to print elt
+///;;  ${EQ x y} where x, y ::${etype}
+///;;     -> compare two values
+
+
+///(define *tmpl-body* '(
+
+/*---------------------------------------------------------------
+ * ${T}Vector
+ */
+
+/*
+ * Class stuff
+ */
+
+/*
+ * Converters
+ */
+
+ScmObj Scm_ListTo${T}Vector(ScmObj list, int clamp)
+{
+    int length = Scm_Length(list), i;
+    ScmUVector *vec;
+    ScmObj cp;
+
+    if (length < 0) Scm_Error("improper list not allowed: %S", list);
+    vec = (ScmUVector*)Scm_Make${T}Vector(length, 0);
+    for (i=0, cp=list; i<length; i++, cp = SCM_CDR(cp)) {
+        ${etype} elt;
+        ScmObj obj = SCM_CAR(cp);
+        ${UNBOX elt obj clamp};
+        SCM_${T}VECTOR_ELEMENTS(vec)[i] = elt;
+    }
+    return SCM_OBJ(vec);
+}
+
+ScmObj Scm_ObjArrayTo${T}Vector(ScmObj *arr, int size, int clamp)
+{
+    int i;
+    ScmUVector *vec = (ScmUVector*)Scm_Make${T}Vector(size, 0);
+    for (i=0; i<size; i++) {
+        ${etype} elt;
+        ScmObj obj = arr[i];
+        ${UNBOX elt obj clamp};
+        SCM_${T}VECTOR_ELEMENTS(vec)[i] = elt;
+    }
+    return SCM_OBJ(vec);
+}
+
+ScmObj Scm_VectorTo${T}Vector(ScmVector *ivec, int start, int end, int clamp)
+{
+    int length = SCM_VECTOR_SIZE(ivec), i;
+    SCM_CHECK_START_END(start, end, length);
+    return Scm_ObjArrayTo${T}Vector(SCM_VECTOR_ELEMENTS(ivec)+start,
+                                    end-start, clamp);
+}
+
+/*
+ * Accessors and modifiers
+ */
+
+ScmObj Scm_${T}VectorFill(Scm${T}Vector *vec, ${etype} fill, int start, int end)
+{
+    int i, size = SCM_${T}VECTOR_SIZE(vec);
+    SCM_CHECK_START_END(start, end, size);
+    SCM_UVECTOR_CHECK_MUTABLE(vec);
+    for (i=start; i<end; i++) SCM_${T}VECTOR_ELEMENTS(vec)[i] = fill;
+    return SCM_OBJ(vec);
+}
+
+ScmObj Scm_${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback)
+{
+    ScmObj r;
+    ${etype} elt;
+    if (index < 0 || index >= SCM_${T}VECTOR_SIZE(vec)) {
+        if (SCM_UNBOUNDP(fallback)) 
+            Scm_Error("index out of range: %d", index);
+        return fallback;
+    }
+    elt = SCM_${T}VECTOR_ELEMENTS(vec)[index];
+    ${BOX r elt};
+    return r;
+}
+
+ScmObj Scm_VM${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback)
+{
+    ScmObj r;
+    ${etype} elt;
+    if (index < 0 || index >= SCM_${T}VECTOR_SIZE(vec)) {
+        if (SCM_UNBOUNDP(fallback)) 
+            Scm_Error("index out of range: %d", index);
+        return fallback;
+    }
+    elt = SCM_${T}VECTOR_ELEMENTS(vec)[index];
+    ${VMBOX r elt};
+    return r;
+}
+
+ScmObj Scm_${T}VectorSet(Scm${T}Vector *vec, int index, ScmObj val, int clamp)
+{
+    ${etype} elt;
+    if (index < 0 || index >= SCM_${T}VECTOR_SIZE(vec))
+        Scm_Error("index out of range: %d", index);
+    SCM_UVECTOR_CHECK_MUTABLE(vec);
+    ${UNBOX elt val clamp};
+    SCM_${T}VECTOR_ELEMENTS(vec)[index] = elt;
+    return SCM_OBJ(vec);
+}
+
+ScmObj Scm_${T}VectorToList(Scm${T}Vector *vec, int start, int end)
+{
+    ScmObj head = SCM_NIL, tail = SCM_NIL;
+    int i, size = SCM_${T}VECTOR_SIZE(vec);
+    SCM_CHECK_START_END(start, end, size);
+    for (i=start; i<end; i++) {
+        ScmObj obj;
+        ${etype} elt = SCM_${T}VECTOR_ELEMENTS(vec)[i];
+        ${BOX obj elt};
+        SCM_APPEND1(head, tail, obj);
+    }
+    return head;
+}
+
+ScmObj Scm_${T}VectorToVector(Scm${T}Vector *vec, int start, int end)
+{
+    ScmObj ovec;
+    int i, size = SCM_${T}VECTOR_SIZE(vec);
+    SCM_CHECK_START_END(start, end, size);
+    ovec = Scm_MakeVector(end-start, SCM_UNDEFINED);
+    for (i=start; i<end; i++) {
+        ScmObj obj;
+        ${etype} elt = SCM_${T}VECTOR_ELEMENTS(vec)[i];
+        ${BOX obj elt};
+        SCM_VECTOR_ELEMENT(ovec, i-start) = obj;
+    }
+    return ovec;
+}
+
+ScmObj Scm_${T}VectorCopy(Scm${T}Vector *vec, int start, int end)
+{
+    int size = SCM_${T}VECTOR_SIZE(vec);
+    SCM_CHECK_START_END(start, end, size);
+    return Scm_Make${T}VectorFromArray(end-start,
+                                     SCM_${T}VECTOR_ELEMENTS(vec)+start);
+}
+
+ScmObj Scm_${T}VectorCopyX(Scm${T}Vector *dst,
+                           int dstart,
+                           Scm${T}Vector *src,
+                           int sstart,
+                           int send)
+{
+    int dlen = SCM_${T}VECTOR_SIZE(dst);
+    int slen = SCM_${T}VECTOR_SIZE(src);
+    int size;
+    
+    SCM_UVECTOR_CHECK_MUTABLE(dst);
+    SCM_CHECK_START_END(sstart, send, slen);
+
+    if (dstart < 0 || dstart >= dlen) return SCM_OBJ(dst);
+    if (dlen - dstart > send - sstart)  size = send - sstart;
+    else size = dlen - dstart;
+
+    memcpy(SCM_${T}VECTOR_ELEMENTS(dst) + dstart,
+           SCM_${T}VECTOR_ELEMENTS(src) + sstart,
+           size * sizeof(${etype}));
+    return SCM_OBJ(dst);
+}
+
+///)) ;; end of tmpl-body
+
+///;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+///;; Numeric operator template
+///(append! *tmpl-prologue* '(
+/****** Add, sub, mul and div (f32 and f64 only) *****/
+#define s8s8_add(x, y, clamp)   clamp_s8(x+y, clamp)
+#define s8s8_sub(x, y, clamp)   clamp_s8(x-y, clamp)
+#define s8s8_mul(x, y, clamp)   clamp_s8(x*y, clamp)
+
+static inline long s8g_add(long x, long y, int clamp)
+{
+    if (y > 255)  return range_s8hi(0, clamp);
+    if (y < -256) return range_s8lo(0, clamp);
+    return clamp_s8(x+y, clamp);
+}
+
+static inline long s8g_sub(long x, long y, int clamp)
+{
+    if (y < -255) return range_s8hi(0, clamp);
+    if (y > 256)  return range_s8lo(0, clamp);
+    return clamp_s8(x-y, clamp);
+}
+
+static inline long s8g_mul(long x, long y, int clamp)
+{
+    if (x == 0) return 0;
+    if (y > 128) return (x>0)?range_s8hi(0, clamp):range_s8lo(0, clamp);
+    return clamp_s8(x*y, clamp);
+}
+
+#define u8u8_add(x, y, clamp)   clamp_u8(x+y, clamp)
+#define u8u8_sub(x, y, clamp)   clamp_u8((long)(x-y), clamp)
+#define u8u8_mul(x, y, clamp)   clamp_u8(x*y, clamp)
+
+static inline u_long u8g_add(u_long x, u_long y, int clamp)
+{
+    if (y > 255)  return range_u8hi(0, clamp);
+    return clamp_u8(x+y, clamp);
+}
+
+static inline u_long u8g_sub(u_long x, u_long y, int clamp)
+{
+    if (y > x)   return range_u8lo(0, clamp);
+    return x-y;                 /* never overflows */
+}
+
+static inline u_long u8g_mul(u_long x, u_long y, int clamp)
+{
+    if (x == 0) return 0;
+    if (y > 255) return range_u8hi(0, clamp);
+    return clamp_u8(x*y, clamp);
+}
+
+#define s16s16_add(x, y, clamp)   clamp_s16(x+y, clamp)
+#define s16s16_sub(x, y, clamp)   clamp_s16(x-y, clamp)
+#define s16s16_mul(x, y, clamp)   clamp_s16(x*y, clamp)
+
+static inline long s16g_add(long x, long y, int clamp)
+{
+    if (y > 65535)  return range_s16hi(0, clamp);
+    if (y < -65536) return range_s16lo(0, clamp);
+    return clamp_s16(x+y, clamp);
+}
+
+static inline long s16g_sub(long x, long y, int clamp)
+{
+    if (y < -65535) return range_s16hi(0, clamp);
+    if (y > 65536)  return range_s16lo(0, clamp);
+    return clamp_s16(x-y, clamp);
+}
+
+static inline long s16g_mul(long x, long y, int clamp)
+{
+    if (x == 0) return 0;
+    if (y > 32767) return (x>0)?range_s16hi(0, clamp):range_s16lo(0, clamp);
+    return clamp_s16(x*y, clamp);
+}
+
+#define u16u16_add(x, y, clamp)   clamp_u16(x+y, clamp)
+#define u16u16_sub(x, y, clamp)   clamp_u16((long)(x-y), clamp)
+#define u16u16_mul(x, y, clamp)   clamp_u16(x*y, clamp)
+
+static inline u_long u16g_add(u_long x, u_long y, int clamp)
+{
+    if (y > 65535)  return range_u16hi(0, clamp);
+    return clamp_u16(x+y, clamp);
+}
+
+static inline u_long u16g_sub(u_long x, u_long y, int clamp)
+{
+    if (y > x)   return range_u16lo(0, clamp);
+    return x-y;                 /* never overflows */
+}
+
+static inline u_long u16g_mul(u_long x, u_long y, int clamp)
+{
+    if (x == 0) return 0;
+    if (y > 65535) return range_u16hi(0, clamp);
+    return clamp_u16(x*y, clamp);
+}
+
+#if SIZEOF_LONG == 4
+#define s32s32_add(x, y, clamp)  s32_add_safe(x, y, clamp)
+#define s32s32_sub(x, y, clamp)  s32_sub_safe(x, y, clamp)
+#define s32s32_mul(x, y, clamp)  s32_mul_safe(x, y, clamp)
+#define s32g_add(x, y, clamp)    s32_add_safe(x, y, clamp)
+#define s32g_sub(x, y, clamp)    s32_sub_safe(x, y, clamp)
+#define s32g_mul(x, y, clamp)    s32_mul_safe(x, y, clamp)
+#else  /* SIZEOF_LONG >= 8 */
+#define s32s32_add(x, y, clamp)  clamp_s32(x+y, clamp)
+#define s32s32_sub(x, y, clamp)  clamp_s32(x-y, clamp)
+#define s32s32_mul(x, y, clamp)  clamp_s32(x*y, clamp)
+#define s32g_add(x, y, clamp)    s32_add_safe(x, y, clamp)
+#define s32g_sub(x, y, clamp)    s32_sub_safe(x, y, clamp)
+#define s32g_mul(x, y, clamp)    s32_mul_safe(x, y, clamp)
+#endif /* SIZEOF_LONG >= 8 */
+
+static inline long s32_add_safe(long x, long y, int clamp)
+{
+    long r, v;
+    SADDOV(r, v, x, y);
+    if (v == 0) return clamp_s32(r, clamp);
+    if (v > 0)  return range_s32hi(0, clamp);
+    else        return range_s32lo(0, clamp);
+}
+
+
+static inline long s32_sub_safe(long x, long y, int clamp)
+{
+    long r, v;
+    SSUBOV(r, v, x, y);
+    if (v == 0) return clamp_s32(r, clamp);
+    if (v > 0)  return range_s32hi(0, clamp);
+    else        return range_s32lo(0, clamp);
+}
+
+static inline long s32_mul_safe(long x, long y, int clamp)
+{
+    long r, v;
+    SMULOV(r, v, x, y);
+    if (v == 0) return clamp_s32(r, clamp);
+    if (v > 0)  return range_s32hi(0, clamp);
+    else        return range_s32lo(0, clamp);
+}
+
+#if SIZEOF_LONG == 4
+#define u32u32_add(x, y, clamp)  u32_add_safe(x, y, clamp)
+#define u32u32_sub(x, y, clamp)  u32_sub_safe(x, y, clamp)
+#define u32u32_mul(x, y, clamp)  u32_mul_safe(x, y, clamp)
+#define u32g_add(x, y, clamp)    u32_add_safe(x, y, clamp)
+#define u32g_sub(x, y, clamp)    u32_sub_safe(x, y, clamp)
+#define u32g_mul(x, y, clamp)    u32_mul_safe(x, y, clamp)
+#else  /* SIZEOF_LONG >= 8 */
+#define u32u32_add(x, y, clamp)  clamp_u32(x+y, clamp)
+#define u32u32_sub(x, y, clamp)  u32_sub_safe(x, y, clamp)
+#define u32u32_mul(x, y, clamp)  clamp_u32(x*y, clamp)
+#define u32g_add(x, y, clamp)    u32_add_safe(x, y, clamp)
+#define u32g_sub(x, y, clamp)    u32_sub_safe(x, y, clamp)
+#define u32g_mul(x, y, clamp)    u32_mul_safe(x, y, clamp)
+#endif /* SIZEOF_LONG >= 8 */
+
+static inline u_long u32_add_safe(u_long x, u_long y, int clamp)
+{
+    u_long r, v;
+    UADDOV(r, v, x, y);
+    if (v == 0) return clamp_u32(r, clamp);
+    else        return range_u32hi(0, clamp);
+}
+
+static inline u_long u32_sub_safe(u_long x, u_long y, int clamp)
+{
+    u_long r, v;
+    USUBOV(r, v, x, y);
+    if (v == 0) return clamp_u32(r, clamp);
+    else        return range_u32lo(0, clamp);
+}
+
+static inline u_long u32_mul_safe(u_long x, u_long y, int clamp)
+{
+    u_long r, v;
+    UMULOV(r, v, x, y);
+    if (v == 0) return clamp_u32(r, clamp);
+    else        return range_u32hi(0, clamp);
+}
+
+#define s64s64_add(x, y, clamp)  s64g_add(x, y, clamp)
+#define s64s64_sub(x, y, clamp)  s64g_sub(x, y, clamp)
+#define s64s64_mul(x, y, clamp)  s64g_mul(x, y, clamp)
+
+static inline ScmInt64 s64g_add(ScmInt64 x, ScmInt64 y, int clamp)
+{
+#if SIZEOF_LONG == 4
+    ScmObj xx = Scm_MakeInteger64(x);
+    ScmObj yy = Scm_MakeInteger64(y);
+    ScmObj r = Scm_Add(xx, yy);
+    return Scm_GetInteger64Clamp(r, clamp, NULL);
+#else
+    long r, v;
+    SADDOV(r, v, x, y);
+    if (v == 0) return r;
+    if (v > 0)  return range_s64hi(0, clamp);
+    else        return range_s64lo(0, clamp);
+#endif
+}
+
+static inline ScmInt64 s64g_sub(ScmInt64 x, ScmInt64 y, int clamp)
+{
+#if SIZEOF_LONG == 4
+    ScmObj xx = Scm_MakeInteger64(x);
+    ScmObj yy = Scm_MakeInteger64(y);
+    ScmObj r = Scm_Sub(xx, yy);
+    return Scm_GetInteger64Clamp(r, clamp, NULL);
+#else
+    long r, v;
+    SSUBOV(r, v, x, y);
+    if (v == 0) return r;
+    if (v > 0)  return range_s64hi(0, clamp);
+    else        return range_s64lo(0, clamp);
+#endif
+}
+
+static inline ScmInt64 s64g_mul(ScmInt64 x, ScmInt64 y, int clamp)
+{
+#if SIZEOF_LONG == 4
+    ScmObj xx = Scm_MakeInteger64(x);
+    ScmObj yy = Scm_MakeInteger64(y);
+    ScmObj r = Scm_Mul(xx, yy);
+    return Scm_GetInteger64Clamp(r, clamp, NULL);
+#else
+    long r, v;
+    SMULOV(r, v, x, y);
+    if (v == 0) return r;
+    if (v > 0)  return range_s64hi(0, clamp);
+    else        return range_s64lo(0, clamp);
+#endif
+}
+
+#define u64u64_add(x, y, clamp)  u64g_add(x, y, clamp)
+#define u64u64_sub(x, y, clamp)  u64g_sub(x, y, clamp)
+#define u64u64_mul(x, y, clamp)  u64g_mul(x, y, clamp)
+
+static inline ScmUInt64 u64g_add(ScmUInt64 x, ScmUInt64 y, int clamp)
+{
+#if SIZEOF_LONG == 4
+    ScmObj xx = Scm_MakeIntegerU64(x);
+    ScmObj yy = Scm_MakeIntegerU64(y);
+    ScmObj r = Scm_Add(xx, yy);
+    return Scm_GetIntegerU64Clamp(r, clamp, NULL);
+#else
+    u_long r, v;
+    UADDOV(r, v, x, y);
+    if (v == 0) return r;
+    else        return range_u64hi(0, clamp);
+#endif
+}
+
+static inline ScmUInt64 u64g_sub(ScmUInt64 x, ScmUInt64 y, int clamp)
+{
+#if SIZEOF_LONG == 4
+    ScmObj xx = Scm_MakeIntegerU64(x);
+    ScmObj yy = Scm_MakeIntegerU64(y);
+    ScmObj r = Scm_Sub(xx, yy);
+    return Scm_GetIntegerU64Clamp(r, clamp, NULL);
+#else
+    u_long r, v;
+    USUBOV(r, v, x, y);
+    if (v == 0) return r;
+    else        return range_u64lo(0, clamp);
+#endif
+}
+
+static inline ScmUInt64 u64g_mul(ScmUInt64 x, ScmUInt64 y, int clamp)
+{
+#if SIZEOF_LONG == 4
+    ScmObj xx = Scm_MakeIntegerU64(x);
+    ScmObj yy = Scm_MakeIntegerU64(y);
+    ScmObj r = Scm_Mul(xx, yy);
+    return Scm_GetIntegerU64Clamp(r, clamp, NULL);
+#else
+    u_long r, v;
+    UMULOV(r, v, x, y);
+    if (v == 0) return r;
+    else        return range_u64hi(0, clamp);
+#endif
+}
+
+#define f16f16_add(x, y, clamp)   (x+y)
+#define f16f16_sub(x, y, clamp)   (x-y)
+#define f16f16_mul(x, y, clamp)   (x*y)
+#define f16f16_div(x, y, clamp)   (x/y)
+
+#define f16g_add(x, y, clamp)     (x+y)
+#define f16g_sub(x, y, clamp)     (x-y)
+#define f16g_mul(x, y, clamp)     (x*y)
+#define f16g_div(x, y, clamp)     (x/y)
+
+#define f32f32_add(x, y, clamp)   (x+y)
+#define f32f32_sub(x, y, clamp)   (x-y)
+#define f32f32_mul(x, y, clamp)   (x*y)
+#define f32f32_div(x, y, clamp)   (x/y)
+
+#define f32g_add(x, y, clamp)   (x+y)
+#define f32g_sub(x, y, clamp)   (x-y)
+#define f32g_mul(x, y, clamp)   (x*y)
+#define f32g_div(x, y, clamp)   (x/y)
+
+#define f64f64_add(x, y, clamp)   (x+y)
+#define f64f64_sub(x, y, clamp)   (x-y)
+#define f64f64_mul(x, y, clamp)   (x*y)
+#define f64f64_div(x, y, clamp)   (x/y)
+
+#define f64g_add(x, y, clamp)   (x+y)
+#define f64g_sub(x, y, clamp)   (x-y)
+#define f64g_mul(x, y, clamp)   (x*y)
+#define f64g_div(x, y, clamp)   (x/y)
+
+/****** Number extraction *****/
+/* like unbox, but not as strict.  sets *oor = TRUE if x is out of range. */
+
+static inline long s8num(ScmObj x, int *oor)
+{
+    return Scm_GetIntegerClamp(x, SCM_CLAMP_NONE, oor);
+}
+
+#define s16num(x, oor)           s8num(x, oor)
+#define s32num(x, oor)           s8num(x, oor)
+
+static inline u_long u8num(ScmObj x, int *oor)
+{
+    return Scm_GetIntegerUClamp(x, SCM_CLAMP_NONE, oor);
+}
+
+#define u16num(x, oor)           u8num(x, oor)
+#define u32num(x, oor)           u8num(x, oor)
+
+static inline ScmInt64 s64num(ScmObj x, int *oor)
+{
+    return Scm_GetInteger64Clamp(x, SCM_CLAMP_NONE, oor);
+}
+
+static inline ScmUInt64 u64num(ScmObj x, int *oor)
+{
+    return Scm_GetIntegerU64Clamp(x, SCM_CLAMP_NONE, oor);
+}
+
+#define f16num(x, oor) ((*oor = FALSE), Scm_GetDouble(x))
+#define f32num(x, oor) ((*oor = FALSE),((float)Scm_GetDouble(x)))
+#define f64num(x, oor) ((*oor = FALSE), Scm_GetDouble(x))
+///))
+
+///(define *tmpl-numop* '(
+/* NB: s1 can be register flonum. */
+static void ${t}vector_${opname}(const char *name,
+                                 ScmObj d, ScmObj s0, ScmObj s1, int clamp)
+{
+    int i, size = SCM_${T}VECTOR_SIZE(d), oor;
+    ${ntype} r, v0, v1;
+    ScmObj rr, vv1;
+
+    switch (arg2_check(name, s0, s1, TRUE)) {
+    case ARGTYPE_UVECTOR:
+        for (i=0; i<size; i++) {
+            v0 = ${REF_NTYPE s0 i};
+            v1 = ${REF_NTYPE s1 i};
+            r = ${t}${t}_${opname}(v0, v1, clamp);
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
+        }
+        break;
+    case ARGTYPE_VECTOR:
+        for (i=0; i<size; i++) {
+            v0 = ${REF_NTYPE s0 i};
+            vv1 = SCM_VECTOR_ELEMENTS(s1)[i];
+            v1 = ${t}num(vv1, &oor);
+            if (!oor) {
+                r = ${t}g_${opname}(v0, v1, clamp);
+            } else {
+                ${NBOX rr v0};
+                rr = Scm_${Sopname}(rr, vv1);
+                ${NUNBOX r rr clamp};
+            }
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
+        }
+        break;
+    case ARGTYPE_LIST:
+        for (i=0; i<size; i++) {
+            v0 = ${REF_NTYPE s0 i};
+            vv1 = SCM_CAR(s1); s1 = SCM_CDR(s1);
+            v1 = ${t}num(vv1, &oor);
+            if (!oor) {
+                r = ${t}g_${opname}(v0, v1, clamp);
+            } else {
+                ${NBOX rr v0};
+                rr = Scm_${Sopname}(rr, vv1);
+                ${NUNBOX r rr clamp};
+            }
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
+        }
+        break;
+    case ARGTYPE_CONST:
+        v1 = ${t}num(s1, &oor);
+        for (i=0; i<size; i++) {
+            v0 = ${REF_NTYPE s0 i};
+            if (!oor) {
+                r = ${t}g_${opname}(v0, v1, clamp);
+            } else {
+                ${NBOX rr v0};
+                rr = Scm_${Sopname}(rr, s1);
+                ${NUNBOX r rr clamp};
+            }
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
+        }
+    }
+}
+
+ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *s0, ScmObj s1, int clamp)
+{
+    ScmObj d = Scm_MakeUVector(SCM_CLASS_${T}VECTOR,
+                               SCM_${T}VECTOR_SIZE(s0),
+                               NULL);
+    ${t}vector_${opname}("${t}vector-${opname}", d, SCM_OBJ(s0), s1, clamp);
+    return d;
+}
+
+ScmObj Scm_${T}Vector${Opname}X(Scm${T}Vector *s0, ScmObj s1, int clamp)
+{
+    ${t}vector_${opname}("${t}vector-${opname}!", SCM_OBJ(s0), SCM_OBJ(s0), s1, clamp);
+    return SCM_OBJ(s0);
+}
+
+///)) ;; end of tmpl-numop
+
+///;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+///;; Bitwise operator template
+///;;   very similar to numop, except boundary checks.
+///(append! *tmpl-prologue* '(
+/****** Bit operation *****/
+
+static inline u_long bitext(ScmObj x)
+{
+    if (SCM_INTP(x)) return (u_long)SCM_INT_VALUE(x);
+    if (SCM_BIGNUMP(x)) {
+        if (SCM_BIGNUM_SIGN(x) > 0) {
+            return SCM_BIGNUM(x)->values[0];
+        } else {
+            return ~(SCM_BIGNUM(x)->values[0]) + 1;
+        }
+    }
+    Scm_Error("integer required, but got %S", x);
+    return 0;
+}
+
+static inline ScmUInt64 bitext64(ScmObj x)
+{
+#if SCM_EMULATE_INT64
+    ScmUInt64 r = {0, 0};
+    if (SCM_INTP(x)) r.lo = SCM_INT_VALUE(x);
+    else if (SCM_BIGNUMP(x)) {
+        ScmObj xx = Scm_LogAnd(x, SCM_2_64_MINUS_1);
+        ScmUInt64 ii = Scm_GetIntegerU64(xx);
+        r.lo = ii.lo;
+        r.hi = ii.hi;
+    }
+    else goto type_err;
+#else
+    ScmUInt64 r = 0;
+    if (SCM_INTP(x)) r = SCM_INT_VALUE(x);
+    else if (SCM_BIGNUMP(x)) {
+        ScmObj xx = Scm_LogAnd(x, SCM_2_64_MINUS_1);
+        r = Scm_GetIntegerU64(xx);
+    }
+    else goto type_err;
+#endif
+    return r;
+  type_err:
+    Scm_Error("integer required, but got %S", x);
+    return r;                   /* dummy */
+}
+
+#if SCM_EMULATE_INT64
+#define INT64BITOP(r, x, op, y)  ((r.lo = x.lo op y.lo), (r.hi = x.hi op y.hi))
+#else
+#define INT64BITOP(r, x, op, y)  (r = x op y)
+#endif
+///))
+///(define *tmpl-bitop* '(
+static void ${t}vector_${opname}(const char *name,
+                                 ScmObj d, ScmObj s0, ScmObj s1)
+{
+    int i, size = SCM_${T}VECTOR_SIZE(d);
+    ${ntype} r, v0, v1;
+    ScmObj vv1;
+    
+    switch(arg2_check(name, s0, s1, TRUE)) {
+    case ARGTYPE_UVECTOR:
+        for (i=0; i<size; i++) {
+            v0 = ${REF_NTYPE s0 i};
+            v1 = ${REF_NTYPE s1 i};
+            ${BITOP r v0 v1};
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
+        }
+        break;
+    case ARGTYPE_VECTOR:
+        for (i=0; i<size; i++) {
+            v0 = ${REF_NTYPE s0 i};
+            vv1 = SCM_VECTOR_ELEMENTS(s1)[i];
+            ${BITEXT v1 vv1};
+            ${BITOP r v0 v1};
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
+        }
+        break;
+    case ARGTYPE_LIST:
+        for (i=0; i<size; i++) {
+            v0 = ${REF_NTYPE s0 i};
+            vv1 = SCM_VECTOR_ELEMENTS(s1)[i];
+            ${BITEXT v1 vv1};
+            ${BITOP r v0 v1};
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
+        }
+        break;
+    case ARGTYPE_CONST:
+        ${BITEXT v1 s1};
+        for (i=0; i<size; i++) {
+            v0 = ${REF_NTYPE s0 i};
+            ${BITOP r v0 v1};
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
+        }
+    }
+}
+
+ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *s0, ScmObj s1)
+{
+    ScmObj d = Scm_MakeUVector(SCM_CLASS_${T}VECTOR,
+                               SCM_${T}VECTOR_SIZE(s0),
+                               NULL);
+    ${t}vector_${opname}("${t}vector-${opname}", d, SCM_OBJ(s0), s1);
+    return d;
+}
+
+ScmObj Scm_${T}Vector${Opname}X(Scm${T}Vector *s0, ScmObj s1)
+{
+    ${t}vector_${opname}("${t}vector-${opname}!", SCM_OBJ(s0), SCM_OBJ(s0), s1);
+    return SCM_OBJ(s0);
+}
+///)) ;; end of tmpl-bitop
+
+///;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+///;; Dot operator template
+///(append! *tmpl-prologue* '(
+/****** Multiply-and-add operation. *****/
+
+static inline long s8muladd(long x, long y, long acc, ScmObj *sacc)
+{
+    long k, v, m;
+    m = x * y;
+    SADDOV(k, v, acc, m);
+    if (v) {
+        *sacc = Scm_Add(*sacc, Scm_MakeInteger(acc));
+        return m;
+    } else {
+        return k;
+    }
+}
+
+#define s16muladd(x, y, acc, sacc) s8muladd(x, y, acc, sacc)
+
+static inline long s32muladd(long x, long y, long acc, ScmObj *sacc)
+{
+    long k, v, m;
+    SMULOV(m, v, x, y);
+    if (v) {
+        *sacc = Scm_Add(*sacc, Scm_Mul(Scm_MakeInteger(x),
+                                       Scm_MakeInteger(y)));
+        return acc;
+    } else {
+        SADDOV(k, v, acc, m);
+        if (v) {
+            *sacc = Scm_Add(*sacc, Scm_MakeInteger(acc));
+            return m;
+        } else {
+            return k;
+        }
+    }
+}
+
+#if SIZEOF_LONG == 4
+static inline ScmInt64 s64muladd(ScmInt64 x, ScmInt64 y, ScmInt64 acc, ScmObj *sacc)
+{
+    /* we don't use acc, and operate only on sacc. */
+    *sacc = Scm_Add(*sacc, Scm_Mul(Scm_MakeInteger64(x),
+                                   Scm_MakeInteger64(y)));
+    return acc;
+}
+#else
+#define s64muladd(x, y, acc, sacc) s32muladd(x, y, acc, sacc)
+#endif
+
+static inline u_long u8muladd(u_long x, u_long y, u_long acc, ScmObj *sacc)
+{
+    u_long k, v, m;
+    m = x * y;
+    UADDOV(k, v, acc, m);
+    if (v) {
+        *sacc = Scm_Add(*sacc, Scm_MakeIntegerU(acc));
+        return m;
+    } else {
+        return k;
+    }
+}
+
+#define u16muladd(x, y, acc, sacc) u8muladd(x, y, acc, sacc)
+
+static inline u_long u32muladd(u_long x, u_long y, u_long acc, ScmObj *sacc)
+{
+    u_long k, v, m;
+    UMULOV(m, v, x, y);
+    if (v) {
+        *sacc = Scm_Add(*sacc, Scm_Mul(Scm_MakeIntegerU(x),
+                                              Scm_MakeIntegerU(y)));
+        return acc;
+    } else {
+        UADDOV(k, v, acc, m);
+        if (v) {
+            *sacc = Scm_Add(*sacc, Scm_MakeIntegerU(acc));
+            return m;
+        } else {
+            return k;
+        }
+    }
+}
+
+#if SIZEOF_LONG == 4
+static inline ScmUInt64 u64muladd(ScmUInt64 x, ScmUInt64 y, ScmUInt64 acc, ScmObj *sacc)
+{
+    /* we don't use acc, and operate only on sacc. */
+    *sacc = Scm_Add(*sacc, Scm_Mul(Scm_MakeIntegerU64(x),
+                                          Scm_MakeIntegerU64(y)));
+    return acc;
+}
+#else
+#define u64muladd(x, y, acc, sacc) u32muladd(x, y, acc, sacc)
+#endif
+
+#define f16muladd(x, y, acc, sacc)  (acc + x*y)
+#define f32muladd(x, y, acc, sacc)  (acc + x*y)
+#define f64muladd(x, y, acc, sacc)  (acc + x*y)
+///))
+
+///(define *tmpl-dotop* '(
+static ScmObj ${T}VectorDotProd(Scm${T}Vector *x, ScmObj y, int vmp)
+{
+    int i, size = SCM_${T}VECTOR_SIZE(x), oor;
+    ${ntype} r, vx, vy;
+    ScmObj rr = SCM_MAKE_INT(0), vvy, vvx;
+    
+    ${ZERO r};
+    switch (arg2_check("${t}vector-dot", SCM_OBJ(x), y, FALSE)) {
+    case ARGTYPE_UVECTOR:
+        for (i=0; i<size; i++) {
+            vx = ${REF_NTYPE x i};
+            vy = ${REF_NTYPE y i};
+            r = ${t}muladd(vx, vy, r, &rr);
+        }
+        break;
+    case ARGTYPE_VECTOR:
+        for (i=0; i<size; i++) {
+            vx = ${REF_NTYPE x i};
+            vvy = SCM_VECTOR_ELEMENTS(y)[i];
+            vy = ${t}num(vvy, &oor);
+            if (!oor) {
+                r = ${t}muladd(vx, vy, r, &rr);
+            } else {
+                ${NBOX vvx vx};
+                rr = Scm_Add(rr, Scm_Mul(vvx, vvy));
+            }
+        }
+        break;
+    case ARGTYPE_LIST:
+        for (i=0; i<size; i++) {
+            vx = ${REF_NTYPE x i};
+            vvy = SCM_CAR(y); y = SCM_CDR(y);
+            vy = ${t}num(vvy, &oor);
+            if (!oor) {
+                r = ${t}muladd(vx, vy, r, &rr);
+            } else {
+                ${NBOX vvx vx};
+                rr = Scm_Add(rr, Scm_Mul(vvx, vvy));
+            }
+        }
+        break;
+    case ARGTYPE_CONST:
+        /* this case should've been eliminated by arg2_check. */
+        Scm_Panic("something wrong");
+    }
+
+    /* r may contain a value bigger than the normal element value
+       of ${t}vector, so it needs some care. */
+    if (SCM_EQ(rr, SCM_MAKE_INT(0))) {
+        if (vmp) {
+            ${VMNBOX rr r};
+        } else {
+            ${NBOX rr r};
+        }
+    } else {
+        ScmObj sr;
+        ${NBOX sr r};
+        rr = Scm_Add(rr, sr);
+    }
+    return rr;
+}
+
+ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
+{
+    return ${T}VectorDotProd(x, y, FALSE);
+}
+
+ScmObj Scm_VM${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
+{
+    return ${T}VectorDotProd(x, y, TRUE);
+}
+///)) ;; end of tmpl-dotop
+
+///;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+///;; Range check template
+///(append! *tmpl-prologue* '(
+
+#if SCM_EMULATE_INT64
+#define INT64LT(a, b)  ((a.hi < b.hi) || (a.hi == b.hi) && (a.lo < b.lo))
+#else
+#define INT64LT(a, b)  (a < b)
+#endif
+
+///))
+///(define *tmpl-rangeop* '(
+
+ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
+{
+    int i, size = SCM_${T}VECTOR_SIZE(x);
+    ArgType mintype, maxtype;
+    ${ntype} val, minval, maxval;
+    int mindc = FALSE, maxdc = FALSE;         /* true if "don't care" */
+    ScmObj vv;
+    ${dstdecl};
+
+    ${ZERO minval};             /* make compiler happy */
+    ${ZERO maxval};             /* dittox */
+        
+    /* size check */
+    if (SCM_FALSEP(min)) mintype = ARGTYPE_CONST;
+    else mintype = arg2_check("${t}vector-${opname}", SCM_OBJ(x), min, TRUE);
+
+    if (SCM_FALSEP(max)) maxtype = ARGTYPE_CONST;
+    else maxtype = arg2_check("${t}vector-${opname}", SCM_OBJ(x), max, TRUE);
+
+    if (mintype == ARGTYPE_CONST) {
+        ${GETLIM minval mindc min};
+    }
+    if (maxtype == ARGTYPE_CONST) {
+        ${GETLIM maxval maxdc max};
+    }
+
+    for (i=0; i<size; i++) {
+        val = ${REF_NTYPE x i};
+        switch (mintype) {
+        case ARGTYPE_UVECTOR:
+            minval = ${REF_NTYPE min i}; break;
+        case ARGTYPE_VECTOR:
+            vv = SCM_VECTOR_ELEMENTS(min)[i];
+            ${GETLIM minval mindc vv};
+            break;
+        case ARGTYPE_LIST:
+            vv = SCM_CAR(min); min = SCM_CDR(min);
+            ${GETLIM minval mindc vv};
+            break;
+        case ARGTYPE_CONST:
+            /* alreadh handled above */
+            break;
+        }
+        switch (maxtype) {
+        case ARGTYPE_UVECTOR:
+            maxval = ${REF_NTYPE max i}; break;
+        case ARGTYPE_VECTOR:
+            vv = SCM_VECTOR_ELEMENTS(max)[i];
+            ${GETLIM maxval maxdc vv};
+            break;
+        case ARGTYPE_LIST:
+            vv = SCM_CAR(max); max = SCM_CDR(max);
+            ${GETLIM maxval maxdc vv};
+            break;
+        case ARGTYPE_CONST:
+            /* alreadh handled above */
+            break;
+        }
+
+        if (!mindc && ${LT val minval}) {
+            val = minval;
+            ${action};
+        }
+        if (!maxdc && ${LT maxval val}) {
+            val = maxval;
+            ${action};
+        }
+    }
+    return ${okval};
+}
+///)) ;; end of tmpl-rangeop
+
+///;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+///;; Byte swap template
+///;;
+
+///(append! *tmpl-prologue* '(
+
+static void f64vector_swapb_arm2le(ScmF64Vector *v)
+{
+    int i, len = SCM_UVECTOR_SIZE(v);
+    double *d = SCM_F64VECTOR_ELEMENTS(v);
+    for (i=0; i<len; i++, d++) {
+        swap_f64_t v;
+        v.val = *d;
+        SWAP_ARM2LE(v);
+        *d = v.val;
+    }
+}
+
+static void f64vector_swapb_arm2be(ScmF64Vector *v)
+{
+    int i, len = SCM_UVECTOR_SIZE(v);
+    double *d = SCM_F64VECTOR_ELEMENTS(v);
+    for (i=0; i<len; i++, d++) {
+        swap_f64_t v;
+        v.val = *d;
+        SWAP_ARM2BE(v);
+        *d = v.val;
+    }
+}
+
+ScmObj Scm_F64VectorSwapBytes_ARM2LE(ScmF64Vector *v)
+{
+    ScmObj d = Scm_F64VectorCopy(v, 0, -1);
+    f64vector_swapb_arm2le(SCM_F64VECTOR(d));
+    return d;
+}
+
+ScmObj Scm_F64VectorSwapBytesX_ARM2LE(ScmF64Vector *v)
+{
+    SCM_UVECTOR_CHECK_MUTABLE(v);
+    f64vector_swapb_arm2le(v);
+    return SCM_OBJ(v);
+}
+
+ScmObj Scm_F64VectorSwapBytes_ARM2BE(ScmF64Vector *v)
+{
+    ScmObj d = Scm_F64VectorCopy(v, 0, -1);
+    f64vector_swapb_arm2be(SCM_F64VECTOR(d));
+    return d;
+}
+
+ScmObj Scm_F64VectorSwapBytesX_ARM2BE(ScmF64Vector *v)
+{
+    SCM_UVECTOR_CHECK_MUTABLE(v);
+    f64vector_swapb_arm2be(v);
+    return SCM_OBJ(v);
+}
+
+///))
+
+
+///(define *tmpl-swapb* '(
+
+static void ${t}vector_swapb(Scm${T}Vector *v)
+{
+    int i, len = SCM_UVECTOR_SIZE(v);
+    ${etype} *d = SCM_${T}VECTOR_ELEMENTS(v);
+    for (i=0; i<len; i++, d++) {
+        swap_${t}_t v;
+        v.val = *d;
+        ${SWAPB}(v);
+        *d = v.val;
+    }
+}
+
+ScmObj Scm_${T}VectorSwapBytes(Scm${T}Vector *v)
+{
+    ScmObj d = Scm_${T}VectorCopy(v, 0, -1);
+    ${t}vector_swapb(SCM_${T}VECTOR(d));
+    return d;
+}
+
+ScmObj Scm_${T}VectorSwapBytesX(Scm${T}Vector *v)
+{
+    SCM_UVECTOR_CHECK_MUTABLE(v);
+    ${t}vector_swapb(v);
+    return SCM_OBJ(v);
+}
+
+///))
+
+
+///(define *extra-procedure*  ;; procedurally generates code
+///  (lambda ()
+///    (generate-numop)
+///    (generate-bitop)
+///    (generate-dotop)
+///    (generate-rangeop)
+///    (generate-swapb)
+///)) ;; end of extra-procedure
+
+///(define *tmpl-epilogue* '(
+
+/*==============================================================
+ * Some generic functions
+ */
+
+/*
+ * Generic copy
+ */
+ScmObj Scm_UVectorCopy(ScmUVector *v, int start, int end)
+{
+    switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
+    case SCM_UVECTOR_S8: return Scm_S8VectorCopy(v, start, end);
+    case SCM_UVECTOR_U8: return Scm_U8VectorCopy(v, start, end);
+    case SCM_UVECTOR_S16: return Scm_S16VectorCopy(v, start, end);
+    case SCM_UVECTOR_U16: return Scm_U16VectorCopy(v, start, end);
+    case SCM_UVECTOR_S32: return Scm_S32VectorCopy(v, start, end);
+    case SCM_UVECTOR_U32: return Scm_U32VectorCopy(v, start, end);
+    case SCM_UVECTOR_S64: return Scm_S64VectorCopy(v, start, end);
+    case SCM_UVECTOR_U64: return Scm_U64VectorCopy(v, start, end);
+    case SCM_UVECTOR_F16: return Scm_F16VectorCopy(v, start, end);
+    case SCM_UVECTOR_F32: return Scm_F32VectorCopy(v, start, end);
+    case SCM_UVECTOR_F64: return Scm_F64VectorCopy(v, start, end);
+    default: Scm_Error("uniform vector required, but got %S", v);
+        return SCM_UNDEFINED;
+    }
+}
+
+/*
+ * Generic swapb
+ */
+ScmObj Scm_UVectorSwapBytes(ScmUVector *v, int option)
+{
+    switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
+    case SCM_UVECTOR_S8:  return SCM_OBJ(v);
+    case SCM_UVECTOR_U8:  return SCM_OBJ(v);
+    case SCM_UVECTOR_S16: return Scm_S16VectorSwapBytes(v);
+    case SCM_UVECTOR_U16: return Scm_U16VectorSwapBytes(v);
+    case SCM_UVECTOR_S32: return Scm_S32VectorSwapBytes(v);
+    case SCM_UVECTOR_U32: return Scm_U32VectorSwapBytes(v);
+    case SCM_UVECTOR_S64: return Scm_S64VectorSwapBytes(v);
+    case SCM_UVECTOR_U64: return Scm_U64VectorSwapBytes(v);
+    case SCM_UVECTOR_F16: return Scm_F16VectorSwapBytes(v);
+    case SCM_UVECTOR_F32: return Scm_F32VectorSwapBytes(v);
+    case SCM_UVECTOR_F64:
+        switch (option) {
+        case SWAPB_ARM_LE: return Scm_F64VectorSwapBytes_ARM2LE(v);
+        case SWAPB_ARM_BE: return Scm_F64VectorSwapBytes_ARM2BE(v);
+        default:           return Scm_F64VectorSwapBytes(v);
+        }
+    default: Scm_Error("uniform vector required, but got %S", v);
+        return SCM_UNDEFINED;
+    }
+}
+
+ScmObj Scm_UVectorSwapBytesX(ScmUVector *v, int option)
+{
+    switch (Scm_UVectorType(Scm_ClassOf(SCM_OBJ(v)))) {
+    case SCM_UVECTOR_S8:  return SCM_OBJ(v);
+    case SCM_UVECTOR_U8:  return SCM_OBJ(v);
+    case SCM_UVECTOR_S16: return Scm_S16VectorSwapBytesX(v);
+    case SCM_UVECTOR_U16: return Scm_U16VectorSwapBytesX(v);
+    case SCM_UVECTOR_S32: return Scm_S32VectorSwapBytesX(v);
+    case SCM_UVECTOR_U32: return Scm_U32VectorSwapBytesX(v);
+    case SCM_UVECTOR_S64: return Scm_S64VectorSwapBytesX(v);
+    case SCM_UVECTOR_U64: return Scm_U64VectorSwapBytesX(v);
+    case SCM_UVECTOR_F16: return Scm_F16VectorSwapBytesX(v);
+    case SCM_UVECTOR_F32: return Scm_F32VectorSwapBytesX(v);
+    case SCM_UVECTOR_F64:
+        switch (option) {
+        case SWAPB_ARM_LE: return Scm_F64VectorSwapBytesX_ARM2LE(v);
+        case SWAPB_ARM_BE: return Scm_F64VectorSwapBytesX_ARM2BE(v);
+        default:           return Scm_F64VectorSwapBytesX(v);
+        }
+    default: Scm_Error("uniform vector required, but got %S", v);
+        return SCM_UNDEFINED;
+    }
+}
+
+/*
+ * Block I/O
+ */
+
+ScmObj Scm_ReadBlockX(ScmUVector *v, ScmPort *port,
+                      int start, int end, ScmSymbol *endian)
+{
+    int len = SCM_UVECTOR_SIZE(v), eltsize, r;
+
+    SCM_CHECK_START_END(start, end, len);
+    SCM_UVECTOR_CHECK_MUTABLE(v);
+    CHECK_ENDIAN(endian);
+
+    eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
+    SCM_ASSERT(eltsize >= 1);
+    r = Scm_Getz((char*)v->elements + start*eltsize,
+                 (end-start)*eltsize, port);
+    if (r == EOF) SCM_RETURN(SCM_EOF);
+#ifdef DOUBLE_ARMENDIAN
+    if (SCM_EQ(Scm_NativeEndian(), SCM_SYM_ARM_LITTLE_ENDIAN)) {
+        if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE_ENDIAN)) {
+            /* arm-le and le is equivalent when eltsize <= 4 */
+            if (eltsize == 8) {
+                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_LE);
+            }
+        } else if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG_ENDIAN)) {
+            Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_BE);
+        }
+    } else
+#endif /*!DOUBLE_ARMENDIAN*/
+        {
+#ifdef WORDS_BIGENDIAN
+            if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE_ENDIAN)) {
+                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_STD);
+            } else if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN)) {
+                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_BE);
+            }
+#else  /*!WORDS_BIGENDIAN*/
+            if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG_ENDIAN)) {
+                Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_STD);
+            } else if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN)) {
+                if (eltsize == 8) {
+                    Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_LE);
+                }
+            }
+#endif /*!WORDS_BIGENDIAN*/
+        }
+    SCM_RETURN(Scm_MakeInteger((r+eltsize-1)/eltsize));
+}
+
+ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
+                      int start, int end, ScmSymbol *endian)
+{
+    int len = SCM_UVECTOR_SIZE(v), eltsize, swap_needed = FALSE, swap_type;
+    SCM_CHECK_START_END(start, end, len);
+    CHECK_ENDIAN(endian);
+    
+    eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
+    SCM_ASSERT(eltsize >= 1);
+#ifdef DOUBLE_ARMENDIAN
+    if (SCM_EQ(Scm_NativeEndian(), SCM_SYM_ARM_LITTLE_ENDIAN)) {
+        if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG_ENDIAN)) {
+            swap_needed = TRUE;
+            swap_type = SWAPB_ARM_BE;
+        } else if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE_ENDIAN)
+                   && eltsize == 8) {
+            swap_needed = TRUE;
+            swap_type = SWAPB_ARM_LE;
+        }
+    } else
+#endif /*DOUBLE_ARMENDIAN*/
+        {
+#ifdef WORDS_BIGENDIAN
+            if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE_ENDIAN)) {
+                swap_needed = TRUE;
+                swap_type = SWAPB_STD;
+            } else if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN)) {
+                swap_needed = TRUE;
+                swap_type = SWAPB_ARM_BE;
+            }
+#else /*!WORDS_BIGENDIAN*/
+            if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG_ENDIAN)) {
+                swap_needed = TRUE;
+                swap_type = SWAPB_STD;
+            } else if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN)
+                       && eltsize == 8) {
+                swap_needed = TRUE;
+                swap_type = SWAPB_ARM_LE;
+            }
+#endif  /*!WORDS_BIGENDIAN*/
+        }
+    if (!swap_needed || eltsize == 1) {
+        Scm_Putz((const char*)v->elements + start*eltsize,
+                 (end-start)*eltsize, port);
+    } else {
+        /* ugly */
+        int i;
+        
+        switch (eltsize) {
+        case 2: {
+            swap_u16_t d;
+            for (i=start; i<end; i++) {
+                d.val = ((unsigned short*)v->elements)[i];
+                SWAP_2(d);
+                Scm_Putz((const char*)d.buf, 2, port);
+            }
+            break;
+        }
+        case 4: {
+            swap_u32_t d;
+            for (i=start; i<end; i++) {
+                d.val = ((ScmUInt32*)v->elements)[i];
+                SWAP_4(d);
+                Scm_Putz((const char*)d.buf, 4, port);
+            }
+            break;
+        }
+        case 8:{
+            swap_u64_t d;
+            switch (swap_type) {
+            case SWAPB_STD:
+                for (i=start; i<end; i++) {
+                    d.val = ((ScmUInt64*)v->elements)[i];
+                    SWAP_8(d);
+                    Scm_Putz((const char*)d.buf, 8, port);
+                }
+                break;
+            case SWAPB_ARM_LE:
+                for (i=start; i<end; i++) {
+                    d.val = ((ScmUInt64*)v->elements)[i];
+                    SWAP_ARM2LE(d);
+                    Scm_Putz((const char*)d.buf, 8, port);
+                }
+                break;
+            case SWAPB_ARM_BE:
+                for (i=start; i<end; i++) {
+                    d.val = ((ScmUInt64*)v->elements)[i];
+                    SWAP_ARM2BE(d);
+                    Scm_Putz((const char*)d.buf, 8, port);
+                }
+                break;
+            }
+            break;
+        }
+        }
+    }
+    SCM_RETURN(SCM_UNDEFINED);
+}
+
+///)) ;; end of tmpl-epilogue
+
+///; Local variables:
+///; mode: c
+///; end:

@@ -1,0 +1,23 @@
+;;;
+;;; sxml.to-html - SXML->HTML translator
+;;;
+;;;   This file is mechanically translated for Gauche from
+;;;   Oleg Kiselyov's SXML->HTML.scm.
+;;;   Public domain.
+;;;
+
+(define-module sxml.to-html
+  (use text.parse)
+  (use sxml.adaptor)
+  (use sxml.tree-trans)
+  (export SXML->HTML))
+(select-module sxml.to-html)
+
+;; NB: this is included only for backward compatibility.
+;; Use of sxml.tools is strongly recommended.
+
+;#include-body "src/SXML-to-HTML.scm"
+
+;; Local variables:
+;; mode: scheme
+;; end:

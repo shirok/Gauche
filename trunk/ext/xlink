@@ -1,0 +1,112 @@
+;; A tool to create symlinks from main source tree to extension modules,
+;; or to remove them.  This is useful to test gosh in the source tree,
+;; without installing them.
+;; Such links are only of developers' interest; they must be cleaned out
+;; to create a distribution tarball.
+
+;; NB: this script is called before all the necessary 'wiring' is
+;; done during the build, so most useful extension modules are not
+;; available.  We have to do things in primitive way.
+
+;; When an environemnt variable GAUCHE_PRE_GENERATE_FOR_WINVC is defined,
+;; xlink behaves in peculiar way:
+;;   - it ignores files except *.scm.
+;;   - it copies the files instead of symlinks.
+;; The feature is to pre-generate and place files that are cumbersome
+;; to do during Windows/VC++ build.  Pre-generation itself should be
+;; done on windows.
+
+(define (usage)
+  (print "Usage: gosh xlink [-l|-u][-g group][-b top_builddir][-s top_srcdir] <scm-or-so-file> ...\n"
+         "  -l creates symlinks from the source tree to the given\n"
+         "     files.  If the given file is a Scheme file, the link\n"
+         "     is created in $(top_srcdir)/lib/$(group)/.  If the given\n"
+         "     file is a compiled DSO, the link is created in\n"
+         "     $(top_builddir)/src.\n"
+         "  -u removes symlinks created by -l option.\n"
+         "  -g group - extra category of library path.\n"
+         "  -b top_builddir - $(top_builddir) passed from Makefile.\n"
+         "  -s top_srcdir - $(top_builddir) passed from Makefile."
+         )
+  (exit 1))
+
+(define *link*   #f)
+(define *unlink* #f)
+(define *group*  #f)
+(define *builddir* #f)
+(define *srcdir*   #f)
+
+(define *pre-gen-winvc*
+  (sys-getenv "GAUCHE_PRE_GENERATE_FOR_WINVC"))
+
+(define (main args)
+  (let1 files (parse-args (cdr args))
+    (unless (or *link* *unlink*) (usage))
+    (for-each (lambda (file)
+                (let ((path   (build-path (sys-getcwd) file))
+                      (target (if (or (string-suffix? ".scm" file)
+                                      (string-suffix? ".sci" file))
+                                (build-path *srcdir* "lib" *group* file)
+                                (build-path *builddir* "src" file))))
+                  (if *unlink*
+                    (sys-unlink target)
+                    (make-link path target))))
+              files))
+  0)
+
+(define (make-link file target)
+  (make-directory* (sys-dirname target))
+  (unless (or (link-exists? file target)
+              (and *pre-gen-winvc* (not (string-suffix? ".scm" file))))
+    (sys-unlink target)
+    (print "link "file" <- "target)
+    (if (and (symbol-bound? 'sys-symlink) (not *pre-gen-winvc*))
+      (sys-symlink file target)
+      (sys-system #`"cp ,file ,target"))))
+
+(define (link-exists? file target)
+  (and (global-variable-bound? 'gauche 'sys-lstat)
+       (file-exists? target)
+       (file-is-symlink? target)
+       (equal? file (sys-readlink target))))
+
+(define (parse-args args)
+  (cond ((null? args) '())
+        ((string=? (car args) "-l")
+         (set! *link* #t) (parse-args (cdr args)))
+        ((string=? (car args) "-u")
+         (set! *unlink* #t) (parse-args (cdr args)))
+        ((string=? (car args) "-g")
+         (set! *group* (cadr args)) (parse-args (cddr args)))
+        ((string=? (car args) "-b")
+         (set! *builddir* (cadr args)) (parse-args (cddr args)))
+        ((string=? (car args) "-s")
+         (set! *srcdir* (cadr args)) (parse-args (cddr args)))
+        ((#/^-/ (car args)) (usage))
+        (else args)))
+
+;; simpler versions of file.util procedures
+(define (build-path . args)
+  (string-join args "/" 'infix))
+
+(define (make-directory* dir)
+  (let1 up (sys-dirname dir)
+    (unless (equal? up ".")
+      (make-directory* up)
+      (unless (file-exists? dir)
+        (sys-mkdir dir #o755)))))
+
+(define (file-is-symlink? path)
+  (eq? (ref (sys-lstat path) 'type) 'symlink))
+
+(define (string-suffix? suffix str)
+  (let ((suffix-len (string-length suffix))
+        (str-len    (string-length str)))
+    (and (>= str-len suffix-len)
+         (string=? (substring str (- str-len suffix-len) str-len) suffix))))
+
+    
+
+;; Local variables:
+;; mode: scheme
+;; end:

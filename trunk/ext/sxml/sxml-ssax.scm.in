@@ -1,0 +1,47 @@
+;;;
+;;; sxml-ssax - XML parser
+;;;
+;;;   This file is mechanically translated for Gauche from
+;;;   Oleg Kiselyov's SSAX XML parser, SSAX.scm, v4.9.
+;;;   Public domain.
+;;;
+
+;; NB: we need to extend several modules since sxml:make-parser inserts
+;; calls to procedures defined in them.  Eventually we need to update
+;; ssax source for R5RS macro version and 'extend' should go away.
+
+(define-module sxml.ssax
+  (use srfi-1)
+  (use srfi-13)
+  (use gauche.parameter)
+  (extend srfi-11 sxml.adaptor text.parse)
+  (export-all)
+  )
+(select-module sxml.ssax)
+
+(define ssax:warn-handler (make-parameter #f))
+
+(define (ssax:warn port msg . args)
+  (when (procedure? (ssax:warn-handler))
+    (let ((err (open-output-string)))
+      (display (port-position-prefix port) err)
+      (display "Warning: " err)
+      (if (and (string? msg) (string-prefix? "\n" msg))
+          (display (string-drop msg 1) err)
+          (display msg err))
+      (for-each (lambda (m)
+                  (cond ((equal? m "\n")) ;ignore
+                        ((string? m) (display m err))
+                        (else (write m err))))
+                args)
+      (newline err)
+      ((ssax:warn-handler) (get-output-string err)))))
+
+;; We make this constant so that various parsing routines can be optimized.
+(define-constant ssax:S-chars (map ascii->char '(32 10 9 13)))
+
+;#include-body "src/SSAX.scm"
+
+;; Local variables:
+;; mode: scheme
+;; end:

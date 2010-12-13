@@ -1,0 +1,63 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = gauche
+
+include ../Makefile.ext
+
+LIBFILES = gauche--collection.$(SOEXT) \
+           gauche--sequence.$(SOEXT)   \
+           gauche--parameter.$(SOEXT)  \
+           gauche--hook.$(SOEXT)
+SCMFILES = collection.sci \
+           sequence.sci   \
+           parameter.sci  \
+           hook.sci
+
+GENERATED = Makefile
+XCLEANFILES = *.c $(SCMFILES)
+
+all : $(LIBFILES)
+
+# gauche.collection
+gauche-collection_OBJECTS = gauche--collection.$(OBJEXT)
+
+gauche--collection.$(SOEXT) : $(gauche-collection_OBJECTS) 
+	$(MODLINK) gauche--collection.$(SOEXT) $(gauche-collection_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+gauche--collection.c collection.sci : $(top_srcdir)/libsrc/gauche/collection.scm
+	$(PRECOMP) -e -P -o gauche--collection $(top_srcdir)/libsrc/gauche/collection.scm
+
+
+# gauche.sequence
+gauche-sequence_OBJECTS = gauche--sequence.$(OBJEXT)
+
+gauche--sequence.$(SOEXT) : $(gauche-sequence_OBJECTS) 
+	$(MODLINK) gauche--sequence.$(SOEXT) $(gauche-sequence_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+gauche--sequence.c sequence.sci : $(top_srcdir)/libsrc/gauche/sequence.scm
+	$(PRECOMP) -e -P -o gauche--sequence $(top_srcdir)/libsrc/gauche/sequence.scm
+
+
+# gauche.parameter
+gauche-parameter_OBJECTS = gauche--parameter.$(OBJEXT)
+
+gauche--parameter.$(SOEXT) : $(gauche-parameter_OBJECTS) 
+	$(MODLINK) gauche--parameter.$(SOEXT) $(gauche-parameter_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+gauche--parameter.c parameter.sci : $(top_srcdir)/libsrc/gauche/parameter.scm
+	$(PRECOMP) -M=%parameterize -e -P -o gauche--parameter $(top_srcdir)/libsrc/gauche/parameter.scm
+
+# gauche.hook
+gauche-hook_OBJECTS = gauche--hook.$(OBJEXT)
+
+gauche--hook.$(SOEXT) : $(gauche-hook_OBJECTS) 
+	$(MODLINK) gauche--hook.$(SOEXT) $(gauche-hook_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+gauche--hook.c hook.sci : $(top_srcdir)/libsrc/gauche/hook.scm
+	$(PRECOMP) -e -P -o gauche--hook $(top_srcdir)/libsrc/gauche/hook.scm
+
+
+install : install-std
+

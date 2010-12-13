@@ -1,0 +1,42 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = text
+
+include ../Makefile.ext
+
+LIBFILES = text--gettext.$(SOEXT) text--tr.$(SOEXT)
+SCMFILES = gettext.sci tr.sci
+
+GENERATED = Makefile 
+XCLEANFILES = *.c $(SCMFILES)
+
+all : $(LIBFILES)
+
+install : install-std
+
+#
+# text.gettext
+#
+
+text-gettext_OBJECTS = text--gettext.$(OBJEXT)
+
+text--gettext.$(SOEXT) : $(text-gettext_OBJECTS) 
+	$(MODLINK) text--gettext.$(SOEXT) $(text-gettext_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+text--gettext.c gettext.sci : $(srcdir)/gettext.scm
+	$(PRECOMP) -e -P -o text--gettext $(srcdir)/gettext.scm
+
+#
+# text.tr
+#
+
+text-tr_OBJECTS = text--tr.$(OBJEXT)
+
+text--tr.$(SOEXT) : $(text-tr_OBJECTS) 
+	$(MODLINK) text--tr.$(SOEXT) $(text-tr_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+text--tr.c tr.sci : $(top_srcdir)/libsrc/text/tr.scm
+	$(PRECOMP) -e -P -o text--tr $(top_srcdir)/libsrc/text/tr.scm
+

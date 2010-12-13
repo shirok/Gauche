@@ -1,0 +1,1733 @@
+@node Programming in Gauche, Core syntax, Concepts, Top
+@chapter  Programming in Gauche
+@c NODE Gaucheでのプログラミング
+
+@menu
+* Invoking Gosh::               
+* Interactive development::     
+* Writing Scheme scripts::      
+* Debugging::                   
+* Platform-dependent features::  
+* Profiling and tuning::        
+* Writing Gauche modules::      
+* Using extension packages::    
+@end menu
+
+@node Invoking Gosh, Interactive development, Programming in Gauche, Programming in Gauche
+@section Invoking Gosh
+@c NODE Gaucheを起動する
+
+@c EN
+Gauche can be used either as an independent Scheme interpreter
+or as an embedded Scheme library.   The interpreter
+which comes with Gauche distribution is a program named @code{gosh}.
+@c JP
+Gaucheは独立したSchemeインタプリタとしても、組み込みのSchemeライブラリとしても
+使うことができます。Gaucheのディストリビューションには、@code{gosh}という
+インタプリタが附属しています。
+@c COMMON
+
+@deftp {Program} gosh [options] [scheme-file arg @dots{}]
+@c EN
+Gauche's interpreter.   Without @var{scheme-file}, @code{gosh} works
+interactively, i.e. it reads a Scheme expression from the standard input,
+evaluates it, and prints the result, and repeat that until it reads EOF or
+is terminated.
+@c JP
+Gaucheのインタプリタです。  @var{scheme-file}が与えられなければ、
+@code{gosh}はインタラクティブに動作します。すなわち、標準入力からScheme式を読み込み、
+それを評価して結果をプリントするという動作を、EOFを読むか明示的に終了させられるまで
+続けます。
+@c COMMON
+
+@c EN
+If @code{gosh} is invoked without @var{scheme-file}, but the input
+is not a terminal, it enters read-eval-print loop but not writes
+out a prompt while waiting input form.  This is useful when you
+pipe Scheme program into @code{gosh}.  You can force this behavior
+or suppress this behavior by @code{-b} and @code{-i} options.
+@c JP
+もし@var{scheme-file}が与えられておらず、しかし入力が端末でない場合、
+@code{gosh}はread-eval-printループに入りますが、入力待ちの際にプロンプトを
+表示しません。これはScheme式をパイプで@var{gosh}に処理させる場合に便利です。
+@code{-b}または@code{-i}オプションでこの動作を強制的にonまたはoffできます。
+@c COMMON
+
+@c EN
+If @var{scheme-file} is specified, @code{gosh} runs it as a
+Scheme program and exit.
+@xref{Writing Scheme scripts}, for details.
+@c JP
+@var{scheme-file}が与えられた場合、@code{gosh}はそれをSchemeプログラムとして
+ロードし、終了します。この動作に関しては@ref{Writing Scheme scripts}を参照して
+下さい。
+@c COMMON
+@end deftp
+
+@c EN
+@subheading Command-line options
+@c JP
+@subheading コマンドラインオプション
+@c COMMON
+
+@c EN
+The following command line options are recognized by @code{gosh}.
+The first command line argument which doesn't begin with `@minus{}'
+is recognized as the script file.  If you want to specify a file
+that begins with a minus sign, use a dummy option `@code{--}'.
+@c JP
+@code{gosh}には以下のようなコマンドラインオプションがあります。
+`@minus{}' で始まらない最初のコマンドライン引数がスクリプトファイルと認識されます。
+スクリプトファイル名が `@minus{}' で始まっている可能性がある場合は、ダミーオプション
+`@code{--}' をスクリプトファイル名の前に置いて下さい。
+@c COMMON
+
+@deftp {Command Option} -I path
+@c EN
+Prepends @var{path} to the load path list.
+You can specify this option more than once to add multiple paths.
+@c JP
+@var{path}をロードパスのリストの最初に加えます。このオプションは複数指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -A path
+@c EN
+Appends @var{path} to the tail of the load path list.
+You can specify this option more than once to add multiple paths.
+@c JP
+@var{path}をロードパスのリストの末尾に加えます。このオプションは複数指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -q
+@c EN
+Makes @code{gosh} not to load the default initialization file.
+@c JP
+@code{gosh}が起動時にシステムの初期化ファイルをロードしないようにします。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -V
+@c EN
+Prints the @code{gosh} version and exits.
+@c JP
+@code{gosh}のバージョンを表示して終了します。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -u module
+@c EN
+Use @var{module}.  Before starting execution of @var{scheme-file} or entering
+the read-eval-print loop, the specified module is @var{use}d, i.e.
+it is loaded and imported (@xref{Defining and selecting modules}, for details of @code{use}).
+You can specify this option more than once to use multiple modules.
+@c JP
+起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
+をロードする前に@var{module}を``use''します。つまりそのモジュールがロードされ
+インポートされます。(@code{use}の詳細については@ref{Defining and selecting modules}を参照して下さい。)
+このオプションは複数指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -l file
+@c EN
+Load @var{file} before starting execution of @var{scheme-file} or entering
+the read-eval-print loop.   The file is loaded in the same way as
+@code{load} (@xref{Loading Scheme file}).
+You can specify this option more than once to load multiple files.
+@c JP
+起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
+をロードする前に@var{file}をロードします。ロードの詳細については@ref{Loading Scheme file}
+を参照して下さい。このオプションは複数指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -e scheme-expression
+@c EN
+Evaluate @var{scheme-expression}
+before starting execution of @var{scheme-file} or entering
+the read-eval-print loop.   Evaluation is done in the
+@var{interaction-environment} (@xref{Eval and repl}).
+You can specify this option more than once to evaluate multiple expressions.
+@c JP
+起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
+をロードする前に@var{scheme-expression}を評価します。評価は
+@var{interaction-environment}中で行われます(@ref{Eval and repl}参照)。
+このオプションは複数指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -E scheme-expression
+@c EN
+Same as -e, except the @var{scheme-expression} is read
+as if it is surrounded by parenthesis.  For example:
+@c JP
+オプション-eとほぼ同じですが、@var{scheme-expression}は
+それが括弧で囲まれているかのように読まれます。
+このオプションは複数指定できます。例：
+@c COMMON
+@example
+% gosh -umath.const -E"print (sin (* pi/180 15))" -Eexit
+0.25881904510252074
+@end example
+@end deftp
+
+@deftp {Command Option} -b
+@c EN
+Batch. Does not print prompts even if the input is a terminal.
+@c JP
+バッチ。入力が端末であってもプロンプトを出さないようにします。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -i
+@c EN
+Interactive. Print prompts even if the input is not a terminal.
+@c JP
+インタラクティブ。入力が端末で無くてもプロンプトを出すようにします。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -f compiler-option
+@c EN
+This option controls compiler and runtime behavior.  For now we have
+following options available:
+@table @asis
+@item no-inline
+Prohibits the compiler from inlining procedures and constants. Equivalent to
+no-inline-globals, no-inline-locals and no-inline constants combined.
+@item no-inline-globals
+Prohibits the compiler from inlining global procedures.
+@item no-inline-locals
+Prohibits the compiler from inlining local procedures.
+@item no-inline-constants
+Prohibits the compiler from inlining constants.
+@item load-verbose
+Reports whenever a file is loaded.
+@item no-source-info
+Don't keep source information for debugging.  Consumes less memory.
+@item case-fold
+Ignore case for symbols as specified in R5RS.
+(It is distinguished by default).  @xref{Case-sensitivity}.
+@item test
+Adds "@code{../src}" and "@code{../lib}" to the load path before loading 
+initialization file.  This is useful when you want to test the
+compiled @code{gosh} interpreter inside source tree, without installing it.
+@end table
+@c JP
+このオプションはコンパイラとランタイムの動作に影響を与えます。
+今のところ、次のオプションのみが@var{compiler-option}として有効です。
+@table @asis
+@item no-inline
+一切のインライン展開を行いません。このオプションは以下の no-inline-globals
+no-inline-locals および no-inline-constants を同時に指定したのと等価です。
+@item no-inline-globals
+大域(global)関数のインライン展開を展開を行ないません。
+@item no-inline-locals
+局所(local)関数のインライン展開を展開を行ないません。
+@item no-inline-constants
+定数のインライン展開を行ないません。
+@item no-source-info
+デバッグのためのソースファイル情報を保持しません。メモリの使用量は小さくなります。
+@item load-verbose
+ファイルがロードされる時にそれを報告します。
+@item case-fold
+R5RSに示される通り、シンボルの大文字小文字を区別しません。
+(デフォルトではこれらは区別されます)。 @ref{Case-sensitivity} を参照して下さい。
+@item test
+"@code{../src}" と "@code{../lib}" を、初期化ファイルを読む前に
+ロードパスに加えます。これは、作成された@code{gosh}をインストールせずに
+ソースツリーの中で実行してみるのに便利です。
+@end table
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -p profiler-option
+@c EN
+Turn on the profiler.  The following @var{profiler-option} is recognized:
+@c JP
+プロファイラを有効にします。以下のような@var{profiler-option}が
+今のところサポートされています。
+@c COMMON
+
+@table @code
+@item time
+@c EN
+Records and reports time spent on function calls and number of times
+each function is called.
+@c JP
+関数中で費された時間と、各関数が呼ばれた回数を記録して報告します。
+@c COMMON
+@item load
+@c EN
+Records and reports time spent on loading each modules.
+Useful to tune start-up time of the scripts.
+(Results are in elapsed time).
+@c JP
+各モジュールをロードするのにかかった時間を記録して報告します。
+スクリプトの起動時間をチューンするのに便利です
+(実経過時間が報告されます)。
+@c COMMON
+@end table
+
+@c EN
+See @ref{Using profiler} for the details of the profiler.
+@c JP
+詳しくは@ref{Using profiler}を参照して下さい。
+@c COMMON
+@end deftp
+
+
+@deftp {Command Option} @code{--}
+@c EN
+When @code{gosh} sees this option, it stops processing the options
+and takes next command line argument as a script file.  It is useful
+in case if you have a script file that begins with a minus sign,
+although it is not generally recommended.
+@c JP
+このオプションに出会うと、@code{gosh}はオプションの解析を止めて、その次の引数を
+無条件に@var{scheme-file}であると見倣します。@var{scheme-file}がマイナス記号で
+始まっている場合に必要です。
+@c COMMON
+@end deftp
+
+@c EN
+The options -I, -A, -l, -u, -e and -E are processes in the order
+of appearance.  For example, adding a load path by -I affects the
+-l and -u option after it but not before it.
+@c JP
+オプション-I, -A, -l, -u, -e 及び -E は、それらがコマンドライン引数として
+出現した順に処理されます。例えば、-Iにより追加されるロードパスは
+それ以降の-lや-uオプションに影響を与えますが、それ以前のものには影響を
+与えません。
+@c COMMON
+
+@c EN
+@subheading Environment variables
+@c JP
+@subheading 環境変数
+@c COMMON
+
+@c EN
+The following environment variables are recognized:
+@c JP
+以下の環境変数を認識します。
+@c COMMON
+
+@deftp {Environment variable} GAUCHE_LOAD_PATH
+@c EN
+You can specify additional load paths by this environment
+variable, delimiting the paths by '@code{:}'.
+The paths are appended before the system default load paths.
+@c JP
+この環境変数によって、追加するロードパスを指定できます。
+パスは '@code{:}' で区切ります。
+この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
+連結されます。
+@c COMMON
+@end deftp
+
+@deftp {Environment variable} GAUCHE_DYNLOAD_PATH
+@c EN
+You can specify additional load paths for dynamically loaded
+objects by this environment variable, delimiting the paths by '@code{:}'.
+The paths are appended before the system default load paths.
+@c JP
+この変数によって、動的にロードするオブジェクト用の追加ロードパスを
+指定できます。パスは '@code{:}' で区切ります。
+この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
+連結されます。
+@c COMMON
+@end deftp
+
+@c EN
+@subheading Windows-specific executable
+@c JP
+@subheading Windows特有の実行ファイル
+@c COMMON
+
+@c EN
+On Windows-native platforms (mingw), two interpreter executables are
+installed.  @code{gosh.exe} is compiled as a Windows console
+application and works just like ordinary @code{gosh}; that is,
+it primarily uses standard i/o for communication.
+Another executable, @code{gosh-noconsole.exe}, is compiled 
+as a Windows no-console (GUI) application.  It is not attached
+to a console when it is started.  Its standard input is connected
+to the @code{NUL} device.  Its standard output and standard error
+output are special ports which open a new console when something
+is written to them for the first time.  (NB: This magic only works
+for output via Scheme ports; direct output from low-level C libraries
+will be discarded.)
+@c JP
+Windowsネイティブ環境(mingw)では、インタプリタとしてふたつの
+実行ファイルがインストールされます。
+@code{gosh.exe}はWindowsコンソールアプリケーションとしてコンパイルされ、
+普通の@code{gosh}のように、標準入出力を第一の通信手段とします。
+もう一つの実行ファイル@code{gosh-noconsole.exe}はWindows非コンソールアプリケーション
+としてコンパイルされています。こちらは起動時にコンソールに接続されません。
+標準入力は@code{NUL}デバイスに接続されます。標準出力と標準エラー出力は
+特殊なポートに接続され、最初に書き込みがあった時点で新たなコンソールが作られて
+出力されます。(このトリックはSchemeポート経由の出力のみで動きます。
+低レベルのCライブラリが標準出力や標準エラー出力に直接書き出したデータは捨てられます)。
+@c COMMON
+
+@c EN
+The main purpose of @code{gosh-noconsole.exe} is for Windows
+scripting.   If a Scheme script is associated to @code{gosh.exe}
+and invoked from Explorer, it would always open a new
+console window.
+The console would be of little use, since
+it would dissapear once the script exits, and the user wouldn't
+be likely to have enough time to look at it.
+If you associate Scheme scripts to @code{gosh-noconsole.exe},
+you can avoid this annoying console from popping up.
+@c JP
+@code{gosh-noconsole.exe}の目的は、Windows上でのスクリプティングです。
+Schemeスクリプトがもし@code{gosh.exe}に関連付けられていたとしたら、
+Explorerからそのスクリプトを起動するたびに、必ず新しいコンソールウィンドウが
+開くでしょう。そのコンソールはスクリプト終了時に消えてしまうので、
+多くの場合、ユーザには何が出力されているかを見る機会がなく、
+したがってほとんど役に立ちません。Schemeスクリプトを@code{gosh-noconsole.exe}に
+関連づけておけば、この煩わしいコンソールの出現を抑制できます。
+@c COMMON
+
+@c EN
+If you're using the official Windows installer, Scheme scripts
+(@file{*.scm}) have already associated to @code{gosh-noconsole.exe}
+and you can invoke them by double-clicking on Explorer.
+Check out some examples under @file{C:\Program Files\Gauche\examples}.
+@c JP
+Windows版のオフィシャルのインストーラを使ってGaucheをインストールしたなら、
+Schemeスクリプト(@file{*.scm})は既に@code{gosh-noconsole.exe}に
+関連づけられているので、ExplorerからSchemeスクリプトをダブルクリックすれば
+Schemeプログラムを走らせることができます。
+@file{C:\Program Files\Gauche\examples}の下にいくつかサンプルが
+あります
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Interactive development, Writing Scheme scripts, Invoking Gosh, Programming in Gauche
+@section Interactive development
+@c NODE  インタラクティブな開発
+
+@c EN
+When @code{gosh} is invoked without any script files,
+it goes into interactive read-eval-print loop.
+@c JP
+スクリプトファイルが与えられなかった場合、
+@code{gosh}はインタラクティブなread-eval-printループに入ります。
+@c COMMON
+
+@c EN
+To exit the interpreter, type EOF (usually Control-D in Unix terminals)
+or evaluate @code{(exit)}.
+@c JP
+インタプリタを終了するには、EOF文字(Unix端末では通常Control-D)をタイプするか、
+@code{(exit)}を評価します。
+@c COMMON
+
+@c EN
+In interactive session, @code{gosh} loads @code{gauche.interactive}
+module (@xref{Interactive session}) for the
+convenience.  The module also loads a file @file{.gaucherc} under
+the user's home directory if it exists.
+You may put settings there that would help interactive debugging.
+(As of Gauche release 0.7.3,
+@file{.gaucherc} is no longer loaded when @code{gosh} is run
+in script mode.)
+@c JP
+インタラクティブセッションでは、@code{gosh}は
+@code{gauche.interactive}モジュールをロードします
+(@ref{Interactive session}参照)。
+このモジュールはまた、ユーザーのホームディレクトリに@file{.gaucherc}という
+ファイルがあればをれをロードします。
+インタラクティブデバッグに便利な設定をそこに書いておくことができます。
+(Gauche release 0.7.3から、@file{.gaucherc}はgoshがスクリプトモードで
+起動された時は読まれなくなりました。)
+@c COMMON
+
+@c EN
+I recommend you to run @code{gosh} inside Emacs, for it has
+rich features useful to interact with internal Scheme process.
+Put the following line to your @file{.emacs} file:
+@example
+(setq scheme-program-name "gosh -i")
+@end example
+And you can run @code{gosh} by @key{M-x run-scheme}.
+@c JP
+@code{gosh}をEmacs内部で走らせることをお勧めします。
+EmacsはSchemeサブプロセスを操作するための豊富な機能を持っています。
+次の行を@file{.emacs}に加えておくと、@key{M-x run-scheme} で
+Emacsのバッファ内で@code{gosh}が走ります。
+@example
+(setq scheme-program-name "gosh -i")
+@end example
+@c COMMON
+
+@c EN
+If you want to use multibyte characters in the interaction,
+make sure your terminal's settings is in sync with @code{gosh}'s
+internal character encodings.
+@c JP
+対話環境でマルチバイト文字を使う場合は、端末の文字エンコーディングを@code{gosh}の
+内部エンコーディングと合わせるようにして下さい。
+@c COMMON
+
+@c EN
+Currently @code{gosh} has no fancy features such as
+line-editing or command history.   They'll be added in future.
+@c JP
+今のところ、@code{gosh}は行編集やコマンドヒストリなどの便利な機能を
+備えていません。将来はこのへんも充実してゆくでしょう。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Writing Scheme scripts, Debugging, Interactive development, Programming in Gauche
+@section Writing Scheme scripts
+@c NODE Schemeスクリプトを書く
+
+@c EN
+When a Scheme program file is given to @code{gosh}, it
+bounds a global variable @code{*argv*} to the list of the remaining
+command-line arguments, then loads the Scheme program.
+If the first line of @var{scheme-file} begins with two character
+sequence ``@code{#!}'', the entire line is ignored by @code{gosh}.
+This is useful to write a Scheme program that works as an executable
+script in unix-like systems.
+@c JP
+@code{gosh}のコマンドラインにSchemeプログラムのファイル名が渡された場合、
+@code{gosh}はそれ以降のコマンドライン引数のリストをグローバル変数@code{*argv*}に束縛し、
+Schemeプログラムをロードします。もし@var{scheme-file}の最初の行が``@code{#!}''で始まって
+いたら、その行は無視されます。これにより、Unix系のシステムで実行可能なSchemeスクリプト
+を書くことが出来ます。
+@c COMMON
+
+@c EN
+Typical Gauche script has the first
+line like these
+@example
+#!/usr/local/bin/gosh
+  @r{or,}
+#!/usr/bin/env gosh
+  @r{or,}
+#!/bin/sh
+:; exec gosh -- $0 "$@@"
+@end example
+The second and third form uses a ``shell trampoline'' technique
+so that the script works as far as @code{gosh} is in the PATH.
+The third form is useful when you want to pass extra arguments
+to @code{gosh}, for typically @code{#!}-magic of executable scripts
+has limitations for the number of arguments to pass the interpreter.
+@c JP
+典型的なGaucheスクリプトの最初の行は次のようなものです。
+@example
+#!/usr/local/bin/gosh
+  @r{または,}
+#!/usr/bin/env gosh
+  @r{または,}
+#!/bin/sh
+:; exec gosh -- $0 "$@@"
+@end example
+後の2つは「シェルトランポリン」テクニックを用いて、@code{gosh}がPATHにあるディレクトリの
+どこかにあれば起動できるようにしています。3番目の方法は、
+@code{gosh}にいくつかコマンドラインオプションを渡したい時に便利です。
+@c COMMON
+
+@c EN
+After the file is successfully loaded, @code{gosh} calls a
+procedure named `@code{main}' if it is defined in the user module.
+@code{Main} receives a single argument, a list of command line
+arguments.  Its first element is the script name itself.
+
+When @code{main} returns, and its value is an integer, @code{gosh}
+uses it for exit code of the program.
+Otherwise, @code{gosh} exits with exit code 70 (@code{EX_SOFTWARE}).
+This behavior is compatible with the SRFI-22.
+
+If the @code{main} procedure is not defined, @code{gosh} exits
+after loading the script file.
+@c JP
+ファイルが正常にロードされたら、@code{gosh}は
+userモジュールに `@code{main}' という手続きが定義されているかどうか調べ、
+定義されていればそれを呼びます。@code{main}には、スクリプトへの引数のリストが
+唯一の引数として渡されます。リストの最初の要素はスクリプトファイル名です。
+
+@code{main}が整数の値を返したら、@code{gosh}はその値を終了ステータスとして終了します。
+@code{main}が整数以外の値を返した場合は@code{gosh}は終了ステータス70
+(@code{EX_SOFTWARE})で終了します。このふるまいはSRFI-22と互換です。
+
+@code{main}が定義されていなければ@code{gosh}はロード後にそのままステータス0で
+終了します。
+@c COMMON
+
+@c EN
+Although you can still write the program
+main body as toplevel expressions, like shell scripts or Perl scripts,
+it is much convenient to use this `@code{main}' convention, for
+you can load the script file interactively to debug.
+@c JP
+シェルスクリプトやPerlスクリプトと同じように、スクリプトのボディに直接
+実行される式を書くこともできますが、なるべく `@code{main}' を使った方法を
+使うことをお薦めします。そうすると、スクリプトをインタプリタにインタラクティブに
+ロードしてデバッグすることもできます。
+@c COMMON
+
+
+@defvar *argv*
+@c EN
+The program arguments passed to the Scheme script is bound to this
+variable.  If @code{gosh} is invoked in an interactive mode, this
+variable always contains @code{()}.
+
+STk uses this variable to pass the command line argument as well,
+but other Scheme implementations use different ways.  It is better
+to define @code{main} procedure and uses its argument to receive
+command line arguments, for it is expected to be more portable.
+@c JP
+Schemeスクリプト以降のコマンドライン引数のリストは、スクリプトのロードの前に
+この変数に束縛されます。@code{gosh}がインタラクティブモードで起動された場合は
+この変数は@code{()}となります。
+
+この変数はSTkと互換性がありますが、他のScheme実装は違った方法を使ってコマンドライン
+引数を得ます。ポータブルなスクリプトを書くには、@code{main}手続きを使う方法を
+お薦めします。
+@c COMMON
+@end defvar
+
+@defvar *program-name*
+@c EN
+This variable is bound to the script file name passed to @code{gosh}.
+If @code{gosh} is invoked in the interactive mode, this variable
+contains the pathname of @code{gosh} itself.
+
+STk uses the same variable to access the program/script name.
+Other Scheme implementations use different ways.
+@c JP
+この変数はスクリプトファイル名に束縛されます。インタラクティブモードでは
+この変数は@code{gosh}自身の名前を持っています。
+
+この変数はSTkと互換性がありますが、他の実装は違った方法を使います。
+@c COMMON
+@end defvar
+
+@c EN
+Now I show several simple examples below.
+First, this script works like @code{cat(1)}, without any command-line
+option processing and error handling.
+@c JP
+いくつか簡単な例を示します。最初の例はUnixの@code{cat(1)}コマンドを模するものです。
+エラー処理やコマンドラインオプションの処理は行っていません。
+@c COMMON
+
+@example
+#!/usr/bin/env gosh
+
+(define (main args)   ;@r{entry point}
+  (if (null? (cdr args))
+      (copy-port (current-input-port) (current-output-port))
+      (for-each (lambda (file)
+                  (call-with-input-file file
+                    (lambda (in)
+                      (copy-port in (current-output-port)))))
+                (cdr args)))
+  0)
+@end example
+
+@c EN
+The following script is a simple grep command.
+@c JP
+次のスクリプトは簡単なgrepコマンドです。
+@c COMMON
+
+@example
+#!/usr/bin/env gosh
+
+(define (usage)
+  (format (current-error-port)
+          "Usage: ~a regexp file ...\n" *program-name*)
+  (exit 2))
+
+(define (grep rx port)
+  (with-input-from-port port
+    (lambda ()
+      (port-for-each
+       (lambda (line)
+         (when (rxmatch rx line)
+           (format #t "~a:~a: ~a\n"
+                   (port-name port)
+                   (- (port-current-line port) 1)
+                   line)))
+       read-line))))
+
+(define (main args)
+  (if (null? (cdr args))
+      (usage)
+      (let ((rx (string->regexp (cadr args))))
+        (if (null? (cddr args))
+            (grep rx (current-input-port))
+            (for-each (lambda (f)
+                        (call-with-input-file f
+                          (lambda (p) (grep rx p))))
+                      (cddr args)))))
+  0)
+@end example
+
+@c EN
+See also @ref{Parsing command-line options}, for a convenient way to
+parse command-line options.
+@c JP
+また、@ref{Parsing command-line options}を使うと手軽にコマンドラインオプション
+を処理することができます。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Debugging, Platform-dependent features, Writing Scheme scripts, Programming in Gauche
+@section Debugging
+@c NODE デバッグ
+
+@c EN
+Gauche doesn't have much support for debugging yet.
+The idea of good debugging interfaces are welcome.
+@c JP
+Gaucheにはまだデバッグをサポートする機能があまり実装されていません。
+デバッギングのインタフェースに関して良いアイディアがあればお寄せください。
+@c COMMON
+
+@c EN
+For now, the author uses the classic 'debug print stub' technique
+when necessary.  A special reader syntax @code{#?=@var{expr}} is
+defined, which is read as @code{(debug-print @var{expr})}.
+The macro @code{debug-print} evaluates and returns the result(s),
+printing messages before and after evaluation of @var{expr}.
+@c JP
+今のところ、作者は必要な時は古典的な「プリントスタブ」方式を使っています。
+そのためのリーダーマクロ @code{#?=@var{expr}} が定義されています。
+これは @code{(debug-print @var{expr})} のように読まれ、
+マクロ @code{debug-print} は@var{expr}を評価してその値を返しますが、
+評価前と評価後にメッセージを出力します。
+@c COMMON
+
+@example
+gosh> #?=(+ 2 3)
+#?="(stdin)":1:(+ 2 3)
+#?-    5
+5
+gosh> #?=(begin (print "foo") (values 'a 'b 'c))
+#?="(stdin)":2:(begin (print "foo") (values 'a 'b 'c))
+foo
+#?-    a
+#?+    b
+#?+    c
+a
+b
+c
+gosh> (define (fact n)
+        (if (zero? n)
+            1
+            (* n #?=(fact (- n 1)))))
+fact
+gosh> (fact 5)
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?-    1
+#?-    1
+#?-    2
+#?-    6
+#?-    24
+120
+@end example
+
+@c EN
+You can also use trace/untrace macros in Gauche, written by Shigenobu Kimura:
+@url{http://homepage.mac.com/skimu/ggc/}.
+@c JP
+また、木村栄伸さんがGauche用のtrace/untraceマクロを書いてくれました：
+@url{http://homepage.mac.com/skimu/ggc/}.
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Platform-dependent features, Profiling and tuning, Debugging, Programming in Gauche
+@section Using platform-dependent features
+@c NODE プラットフォーム依存の機能
+
+@c EN
+Gauche tries to provide low-level APIs close to what the underlying
+system provides, but sometimes they vary among systems.  For example,
+POSIX does not require @code{symlink}, so some systems may lack
+@code{sys-symlink} (@xref{Directory manipulation}).  Quite a few
+unix-specific system functions are not available on Windows platform.
+@c JP
+GaucheではOSが提供するAPIに近い低レベルAPIを提供するようにしています。
+しかし、システムごとに扱いの違うものがあります。たとえば、POSIXでは
+@code{symlink}は必須ではありませんので、システムによっては
+@code{sys-symlink} (@ref{Directory manipulation}参照)がありません。
+UNIX系のシステム関数は少なからずWindowsでは使えません。
+
+@c EN
+To allow writing a portable program across those platforms, Gauche
+uses @code{cond-expand} (@xref{Feature conditional}) extensively.
+A set of extended @emph{feature-identifier}s is provided to check
+availability of specific features.  For example, on systems that
+has @code{symlink}, a feature identifier @code{gauche.sys.symlink}
+is defined.   So you can write a code that can switch based on
+the availability of @code{sys-symlink} as follows:
+@c JP
+プラットフォーム間でポータブルなプログラムを書くために、Gaucheでは
+頻繁に@code{cond-expand} を使います(@ref{Feature conditional}参照)。
+拡張された@emph{機能識別子(feature-identifier)}が提供されており、これ
+を使って特定の機能が利用可能かどうかチェックできます。たとえば、
+@code{symlink}があるシステムでは機能識別子@code{gauche.sys.symlink}が
+定義されます。したがって、以下のように@code{sys-symlink}が利用できるか
+どうかによって、コードをスイッチするようなプログラムを書けます。
+@c COMMON
+
+@example
+(cond-expand
+ (gauche.sys.symlink
+   ... code that uses sys-symlink ...)
+ (else
+   ... alternative code ...)
+ )
+@end example
+
+@c EN
+If you're familiar with system programming in C, you can think
+it equivalent to the following C idiom:
+@c JP
+Cのシステムプログラミングに詳しいなら、上のコードは以下のCのイディオム
+と同じだとみなせます。
+@c COMMON
+
+@example
+#if defined(HAVE_SYMLINK)
+... code that uses symlink ...
+#else
+... alternative code ...
+#endif
+@end example
+
+@c EN
+There are quite a few such feature identifiers; each identifier is
+explained in the maunal entry of the procedures that depend on the feature.
+Here we list a few important ones:
+@c JP
+このような機能識別子はたくさんあり、それぞれの識別子についてはこのマニュ
+アル中のその機能に依存した手続きの項目で説明しています。特に重要なもの
+を以下にリストアップしておきます。
+@c COMMON
+
+@table @code
+@item gauche
+@c EN
+This feature identifier is always defined.  It is useful when you
+write Scheme code portable across multiple implementations.
+@c JP
+この機能識別子は常に定義されています。Gauche以外のSchemeの実装とも互換
+性のあるコードを書くときに使えます。
+@c COMMON
+@item gauche.os.windows
+@c EN
+Defined on Windows native platform (currently using MinGW, but we'll
+have VC++ version in future).  Note that cygwin does not define
+this feature identifier (but see below).
+@c JP
+Windowsネイティブプラットフォームで定義されます。(現時点では、MinGWを
+使っていますが、将来VC++版をサポートする予定です。) cygwinでは
+この機能識別子は定義されません (下記も参照)。
+@c COMMON
+@item gauche.os.cygwin
+@c EN
+Defined on Cygwin.
+@c JP
+Cygwin上で定義されます。
+@c COMMON
+@item gauche.sys.pthreads
+@c EN
+Defined if Gauche is compiled with pthread support.
+@c JP
+Gaucheがpthreadをサポートするようにコンパイルされている場合に定義されます。
+@c COMMON
+@item gauche.net.ipv6
+@c EN
+Defined if Gauche is compiled with IPv6 support.
+@c JP
+GaucheがIPv6をサポートするようにコンパイルされている場合に定義されます。
+@c COMMON
+@end table
+
+@c EN
+Because @code{cond-expand} is a macro, the body of clauses
+are expanded into toplevel if @code{cond-expand} itself is in
+toplevel.  That means you can switch toplevel definitions:
+@c JP
+@code{cond-expand}はマクロなので、@code{cond-expand}自身がトップレベル
+にあれば、節の本体はトップレベルで展開されます。これはトップレベルの定
+義をスイッチできるということです。
+@c COMMON
+
+@example
+(cond-expand
+ (gauche.os.windows
+  (define (get-current-user)
+    ... get current username ...))
+ (else
+  (define (get-current-user)
+    (sys-uid->user-name (sys-getuid)))))
+@end example
+
+@c EN
+Or even conditionally "use" the modules:
+@c JP
+あるいは条件によってモジュールを使いわけられます。
+@c COMMON
+
+@example
+(cond-expand
+ (gauche.os.windows
+   (use "my-windows-compatibility-module"))
+ (else))
+@end example
+
+@c EN
+The traditional technique of testing a toplevel binding at runtime
+(using @code{global-variable-bound?}, @xref{Module introspection})
+does not work well, since the test is done in runtime, while
+the @code{use} form takes effect at compile time.  It is strongly
+recommended to use @code{cond-expand} whenever possible.
+@c JP
+実行時にトップレベルの束縛をチェックするような旧いテクニック
+(@code{global-variable-bound?}を使う, @ref{Module introspection}参照)
+は正しく働きません。これはプログラム実行時に実行されますが、@code{use}
+形式はコンパイル時に意味をもちます。可能なかぎり、@code{cond-expand}を
+使うことを推奨します。
+@c COMMON
+
+@c EN
+Currently the set of feature identifiers are fixed at the build
+time of Gauche, so it's less flexible than C preprocessor conditionals.
+We have a plan to extend this feature to enable adding new feature
+identifiers; but such feature can complicate semantics when compilation
+and execution is interleaved, so we're carefully assessing the effects now.
+@c JP
+現時点では機能識別子集合はGaucheのコンパイル時に固定されます。つまり、
+Cのプリプロセッサを使った条件分岐よりも柔軟性に劣ります。この機能を拡
+張してあとから機能識別子を追加できるようにする計画ですが、この機能拡張
+はコンパイルと実行交互におこるときのセマンティクスを複雑にしてしまう可
+能性があり、現在その影響を慎重にみきわめている最中です。
+@c COMMON
+
+@c EN
+A couple of notes:
+@c JP
+いくつか注意事項があります。
+@c COMMON
+
+@c EN
+Feature identifiers are not variables.  They can only be used
+within the @var{feature-requirement} part of @code{cond-expand}
+(see @ref{Feature conditional} for the complete definition of
+feature requirements).
+@c JP
+機能識別子は変数ではありません。@code{cond-expand}の
+@var{feature-requirement}部の内部でのみ利用可能です(機能要求の定義全般
+については@ref{Feature conditional}を見てください)。
+@c COMMON
+
+@c EN
+By the definition of @code{srfi-0}, @code{cond-expand} raises an error
+if no feature requirements are satisfied and there's no @code{else}
+clause.  A rule of thumb is to provide @code{else} clause always,
+even it does nothing (like the above example that has empty @code{else}
+clause).
+@c JP
+@code{srfi-0}の定義により、機能要求が満されず、かつ@code{else}節がない
+場合には@code{cond-expand}はエラーをあげます。常に@code{else}を書いて
+おくのがよいでしょう。 上の例のように、@code{else}節でなにもしないとき
+でも、空の@code{else}節を書くのがよいでしょう。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Profiling and tuning, Writing Gauche modules, Platform-dependent features, Programming in Gauche
+@section Profiling and tuning
+@c NODE プロファイリングとチューニング
+
+@c EN
+If you find your script isn't running fast enough,
+there are several possibilities to improve its performance.
+@c JP
+自分のスクリプトのスピードが十分に出ないというときには、
+性能を改善するポイントとして考えられる点がいくつかあります。
+@c COMMON
+
+@c EN
+It is always a good idea to begin with finding which part
+of the code is consuming the execution time.   Gauche has
+a couple of basic tools to help it.  A built-in sampling profiler,
+explained in the following subsection, can show how much time
+is spent in each procedure, and how many times it is called.
+The @code{gauche.time} module (@ref{Measure timings}) provides
+APIs to measure execution time of specific parts of the code.
+@c JP
+どんなときでも、実行時間を食いつぶしているコード部分を見つけるというの
+を先ず最初にやるのがよいでしょう。Gauche にはこの作業を補助する基本的
+なツールが2つあります。組込のサンプリングプロファイラ(これについては次
+の節で説明します)を使えば各手続きでどれほどの時間がかかり、その手続き
+が何回呼ばれたかを表示できます。@code{gauche.time} モジュール
+(@ref{Measure timings}) ではコードの中の特定の部分の実行にかかる時間を
+測定するためのAPIが提供されています。
+@c COMMON
+
+@c EN
+Optimization is specialization---you look for the most common
+patterns of execution, and put a special path to support those
+patterns efficiently.  Gauche itself is no exception, so there
+are some patterns Gauche can handle very efficiently, while
+some patterns it cannot.  The next subsection, @ref{Performance tips},
+will give you some tips of how to adapt your code to fit
+the patterns Gauche can execute well.
+@c JP
+最適化というのは特殊化ということでもあります。もっともよく使われる
+実行のパターンを探して、そこを効率よく実行する専用のパスを設けることで
+す。Gauche 自身も例外ではありません。したがって、Gaucheが効率よく実行
+できるパターンがいくつかありますし、また一方では効率よく実行できないパ
+ターンもあります。次の節では、@ref{Performance tips} では Gauche が効
+率良く実行できるパターンにコードをあわせるチョットしたコツを教えましょう。
+@c COMMON
+
+@menu
+* Using profiler::              
+* Performance tips::            
+@end menu
+
+@node Using profiler, Performance tips, Profiling and tuning, Profiling and tuning
+@subsection Using profiler
+@c NODE プロファイラを使う
+
+@c EN
+As of 0.8.4, Gauche has a built-in profiler.  It is still experimental
+quality and only be tested on Linux.  It isn't available for all
+platforms.   It works only in single-thread applications for now.
+@c JP
+0.8.4 から Gauche は組込みのプロファイラを備えています。これは
+現時点ではまだ実験的なもので、Linux 上でしかテストしていません。すべてのプ
+ラットフォームで利用できるわけではありませんし、シングルスレッドの
+アプリケーションでしか動きません。
+@c COMMON
+
+@c EN
+To use the profiler non-interactively, give @code{-ptime}
+command-line option to gosh. 
+@c JP
+非対話環境でこのプロファイラを使うには、gosh のコマンドラインオプショ
+ンとして @code{-ptime}を指定してください。
+@c COMMON
+
+@example
+% gosh -ptime your-script.scm
+@end example
+
+@c EN
+After the execution of @file{your-script.scm} is completed, Gauche prints
+out the table of functions with its call count and its consumed time,
+sorted by the total consumed time.
+@c JP
+@file{your-script.scm} の実行完了後、Gauche は各関数についてその呼び出し回数
+および消費時間を示した表を印字します。この表は総消費時間の順でソートさ
+れています。
+@c COMMON
+
+@example
+Profiler statistics (total 1457 samples, 14.57 seconds)
+                                                    num    time/    total
+Name                                                calls  call(ms) samples
+---------------------------------------------------+------+-------+-----------
+combinations*                                       237351  0.0142   337( 23%)
+(lset-difference #f)                               1281837  0.0020   256( 17%)
+(make-anchor make-anchor)                          3950793  0.0005   198( 13%)
+member                                             4627246  0.0004   190( 13%)
+filter                                              273238  0.0030    81(  5%)
+every                                              1315131  0.0004    59(  4%)
+(lset-difference #f #f)                            1281837  0.0004    54(  3%)
+(make-entry make-entry)                             730916  0.0005    40(  2%)
+(clear? #f)                                         730884  0.0005    33(  2%)
+(initialize #f)                                     599292  0.0005    32(  2%)
+fold                                                237307  0.0013    30(  2%)
+acons                                               806406  0.0004    29(  1%)
+clear?                                               33294  0.0084    28(  1%)
+(combinations* #f)                                  805504  0.0002    15(  1%)
+(make-exit make-exit)                               730884  0.0002    15(  1%)
+lset-difference                                     237318  0.0006    15(  1%)
+reverse!                                            475900  0.0001     6(  0%)
+(fold <top> <top> <list>)                           237323  0.0003     6(  0%)
+procedure?                                          238723  0.0002     4(  0%)
+pair?                                               237307  0.0001     3(  0%)
+ :
+ :
+@end example
+
+@c EN
+Note that the time profiler uses statistic sampling.  Every 10ms
+the profiler interrupts the process and records the function that is
+executed then.   Compared to the individual execution time per
+function call, which is the order of nanoseconds, this sampling rate
+is very sparse.  However, if we run the program long enough,
+we can expect the distribution of samples per each function 
+approximately reflects the distribution of time spent in each function.
+@c JP
+時間プロファイラは統計的標本化をおこなっていることに注意してください。
+プロファイラは10ミリ秒ごとにプロセスに割込んで、その時点で実行されてい
+る関数を記録します。ナノ秒オーダの関数呼出しごとの個別の実行時間に比べる
+と、このサンプリングレートはかなり粗いものです。しかしながら、プロ
+グラムの実行時間が長ければ、各関数ごとの標本分布は関数ごとの消費時間を
+ほぼ反映しているだろうと期待できます。
+@c COMMON
+
+@c EN
+Keep in mind that the number is only approximation; the number
+of sample counts for a function may easily vary if the program deals
+with different data sets.   It should also be noted that, for now, GC 
+time is included in the function in which GC is triggered.
+This sometimes causes a less important function to "float up" to
+near-top of the list.  
+To know the general pattern, it is a good custom to run the program
+with several different data sets.
+@c JP
+数字はあくまで近似にすぎないこと
+を心にとめておいてください。ひとつの関数あたりの標本数はプログラムが扱
+うデータが違えば、すぐに変化してしまうことがあります。
+また、今のところGCにかかる時間はGCがトリガされた関数の実行時間に
+算入されてしまっていることに注意して下さい。これによって、あまり
+重要でない関数がリストの上位に浮かびあがってくることがあります。
+一般的なパターンを知るには、プログラムをいろいろなデータで走らせて
+みると良いでしょう。
+@c COMMON
+
+@c EN
+On the other hand, the call count is accurate since Gauche actually
+counts each call.
+@c JP
+一方、関数呼び出し回数のカウントは正確なものです。これは Gauche は
+実際の呼出しごとにカウントしているからです。
+@c COMMON
+
+@c EN
+Because all functions are basically anonymous in Scheme, the 'name' field of
+the profiler result is only a hint.  The functions bound at toplevel
+is generally printed with the global variable name it is bound at
+the first time.  Internal functions are printed as a list of names,
+reflecting the nesting of functions.  Methods are also printed as a
+list of the name and specializers.
+@c JP
+Schemeでは基本的にすべての関数は無名なので、プロファイル結果の'name'
+フィールドはヒントにすぎません。トップレベルで束縛されている関数につい
+ては通常それが最初に束縛されたグローバル変数名が印字されます。内部関数
+については関数の入れ子構造を反映して名前のリストが印字されます。
+メソッドは、名前と特定化子のリストとして印字されます。
+@c COMMON
+
+@c EN
+The profiler has its own overhead; generally the total
+process time will increase 20-30%.
+If you want to turn on the profiler selectively, or you're running
+a non-stop server program and want to obtain the statistics without
+exiting the server, you can call the profiler API from your program;
+see @ref{Profiler API}, for the details.
+@c JP
+プロファイラはそれ自身にオーバヘッドがあります。通常は、処理時間が
+20-30% 増加します。プロファイラを選択的にオンにしたい場合や、
+停止しないサーバプログラムを走らせていて、そのサーバを停止することなく、
+統計を取りたいような場合には、プログラムからプロファイラ APIを呼ぶこと
+ができます。詳細については @ref{Profiler API} を参照してください。
+@c COMMON
+
+@node Performance tips,  , Using profiler, Profiling and tuning
+@subsection Performance tips
+@c NODE パフォーマンスに関するヒント
+
+@c EN
+Don't guess, just benchmark.  It is the first rule of
+performance tuning.  Especially for the higher-level languages 
+like Scheme, what impacts on performance greatly depends on
+the implementation.  Certain operations that are very cheap
+on an implementation may be costly on others.
+Gauche has such implementation-specific characteristics, and
+to know some of them would help to see what to look out in
+the benchmark results.
+@c JP
+「論より run 」これがパフォーマンスチューニングの第一法則です。
+Scheme のような高級言語では、何がパフォーマンスに強い影響を
+与えるかはことのほかその実装に大きく依存し、ある処理系では
+とても安価な操作が別の処理系ではとても高価になり得ます。
+Gauche にもそのようなパフォーマンスに関する実装特有の特徴があり、
+それらのうちのいくつかを知っておくことは、ベンチマークの結果の
+どこに着目すべきかを知るうえで助けになるでしょう。
+@c COMMON
+
+@c EN
+"80% of execution time is spent in 20% of the code" is another
+old saying.  Don't obscure your code by "potential" optimization
+that has little impact on the actual execution.  We describe some
+tips below, but it doesn't mean you need to watch them all the time.
+It is better to keep most of the code clean and easy to understand,
+and only do tricks on the innermost loop.
+@c JP
+「ソースコードの2割が実行時間の8割を消費する」というのも古くから
+言われています。実際の実行時間に大した影響を及ぼさないところを
+下手にいじくってプログラムをわかりづらくすることは避けましょう。
+これからいくつかのヒントを述べますが、これらのことを四六時中気にして
+プログラミングしなければならないということではありません。
+むしろ、出来るだけ明瞭でわかりやすいプログラムを心がけ、ループの一番深いところ
+(もっとも時間を消費するところ)でこれらのトリックを使うのが良いでしょう。
+@c COMMON
+
+@c EN
+@strong{Ports}: To satisfy the specification of SRFI-18 (Threading),
+every call to I/O primitives of Gauche locks the port.
+This overhead may be visible if the application does a lot of I/O
+with smaller units (e.g. every bytes).   The primitives that deals
+with larger unit, such as @code{read} and @code{read-block}, are less
+problematic, since usually they just lock the port once per call and do
+all the low-level I/O without the lock overhead.
+(Note: this doesn't mean those primitives @emph{guarantee}
+to lock the port throughout the execution of the function;
+furthermore, the port locking feature is optimized for the case
+that port accesses rarely collide.  If you know it is possible that
+more than one threads read from or write to the same port, it is
+your responsibility to use mutex explicitly to avoid the collision.)
+@c JP
+@strong{Ports}: SRFI-18 (スレッド) の仕様を満たすために
+Gauche のすべての入出力基本関数はポートをロックします。
+このオーバーヘッドは小単位(例えばバイト毎)の入出力を行なう
+アプリケーションでは無視できないでしょう。
+入出力基本関数は通常呼びだし毎にポートをロックし、そこからの
+下位レベルの入出力はロックのオーバーヘッドの影響を受けずに
+行なわれます。ですから @code{read} や@code{raed-block} 
+などのより大きな単位で入出力を行なう基本関数では問題と
+なることが少なくなります。
+(注意：これらの基本関数が常にポートをロックしつづけることを
+保証するものではないことに注意してください。また、ポートのロックは
+競合がほとんど発生しない場合に最適化されています。
+ポートへのアクセスが複数のスレッドで競合する可能性がある場合は、
+アプリケーション側でmutexを明示的に用いて競合を避けてください。)
+@c COMMON
+
+@c EN
+If you find out the locking is indeed a bottleneck, there are couple
+of things you can consider: (1) Try using the larger-unit primitives,
+instead of calling the smaller-unit ones.  (2) Use @code{with-port-locking}
+(see @ref{Port and threads}) to lock the port in larger context.
+@c JP
+ポートロックが実際に問題となった場合、二つばかり対処策が考えられます。
+(1) より大きな単位で入出力を行なう。(2) @code{with-port-locking}
+(@ref{Port and threads} 参照)を使ってより広範囲でポートをロックする。
+@c COMMON
+
+@c EN
+@strong{Strings}: Because of the multibyte strings, two operations
+are particularly heavy in Gauche: string mutation and indexed string access.
+It is a design choice; we encourage the programming style that
+avoids those operations.  When you sequentially access the string,
+string ports (see @ref{String ports}) provide a cleaner and
+more efficient way.
+When you search and retrieve a substring, there are various
+higher-level primitives are provided (see @ref{String utilities},
+@ref{Regular expressions}, and @ref{String library}, for example).
+If you're using strings to represent an octet sequence, use uniform
+vectors (see @ref{Uniform vectors}) instead.
+@c JP
+@strong{文字列}: 多バイト文字列の取扱いのため、Gauche では文字列の
+変更とインデックスによるアクセスが特に高価な操作となります。
+これは意図的な設計です。 Gauche ではこの二つの操作を避けたプログラミングを
+推奨しています。 文字列の中の文字を順にアクセスするには
+(インデックスを使わずに)文字列ポート(@ref{String ports}参照)を使うと
+より明瞭かつ効率的なプログラムとなり、一方サーチして部分文字列をとり出す
+といった操作には、多彩な高レベル関数が用意されています。
+(例えば @ref{String utilities}、@ref{Regular expressions}、
+ @ref{String library} 等を参照。)  バイト列を表現するのに
+文字列を使っていたなら、代わりにユニフォームベクタ(@ref{Uniform vectors}
+参照)を使いましょう。
+@c COMMON
+
+@c EN
+@strong{Deep recursion}: Gauche's VM uses a stack for efficient
+local frame allocation.  If recursion goes very deep (depending on
+the code, but usually several hundreds to a thousand), the stack
+overflows and Gauche moves the content of the stack into the heap.
+This incurs some overhead.  If you observe a performance degradation
+beyond a certain amount of data, check out this possibility.
+@c JP
+@strong{深い再帰}: Gauche の仮想機械(VM)は効率的な
+ローカルフレーム割り当てのためにスタックを使っています。
+再帰が深くなって(プログラムにもよりますが、大体数百回から千回)
+スタックがオーバーフローするとスタックの内容をヒープに退避するという
+オーバーヘッドが生じます。 あるデータ量を越えたところでパフォーマンスの
+低下が見られたならば、深い再帰がないか調べてみて下さい。
+@c COMMON
+
+@c EN
+@strong{Generic functions}: Because of its dynamic nature, generic
+function calls are slower than procedure calls.  Not only because
+of the runtime dispatch overhead, but also because Gauche's compile-time
+optimizer can't do much optimization for generic function calls.
+You don't need to avoid generic functions because of performance
+reasons in general, but if you do find single function call consuming
+a large part of execution time and it is calling a generic
+function in its inner loop---then it may be worth to modify it.
+@c JP
+@strong{Generic functions}: Generic function の持つ動的な性質の
+ため、これらの呼び出しは通常の手続き呼び出しより遅くなります。
+実行時のディスパッチのオーバヘッドだけでなく、
+VM コードへのコンパイル時にたいして最適化が行えないためです。
+パフォーマンスのために Generic function の利用をどんな場合にも避ける
+という必要はありませんが、もしある一つの関数が実行時間の大部分を
+占めていて、その関数が Generic function を内部で呼び出しているなら
+それを使わないように変更してみる価値はあるでしょう。
+@c COMMON
+
+@c EN
+@strong{Redefining builtin functions}: Gauche inlines some builtin
+functions if they are not redefined.  Although sometimes it is useful
+to redefine basic functions, you may want to limit the effect.
+For example, put redefined functions in a separate module and
+use the module in the code that absolutely needs those functions
+replaced.  
+@c JP
+@strong{組込み関数の再定義}:
+Gauche のコンパイラはいくつかの組込み関数を(それらが再定義されていなければ)
+インライン展開します。 基本関数を再定義するのは時には便利ですが、
+限られた範囲にとどめておいた方がよいでしょう。
+やり方は、再定義をどこか別のモジュールに集めておき、どうしても再定義
+バージョンが必要なときに限ってそのモジュール use するというように
+しておけばよいでしょう。
+@c COMMON
+
+@c EN
+@strong{Closure creation}: When you create a closure, its closing environment
+is copied to the heap.  This overhead is small, but it still may be
+visible when a closure is created within an innermost loop that is
+called millions of times.   If you suspect this is a problem,
+try disassemble the function.   Gauche's compiler uses some basic
+techniques of closure analysis to avoid creating closures for
+typical cases, in which case you see the local function's bodies
+are inlined.  If you see a @code{CLOSURE} instruction, though, it
+means a closure is created.
+@c JP
+@strong{クロージャの作成}: クロージャを作成するとそれが持つ環境がヒープに
+コピーされます。 オーバーヘッドは小さいですが、何百万回も呼ばれるような
+ループの中で作成されれば無視できなくなるでしょう。そんな疑いがあれば
+その関数を逆アセンブルしてみましょう。 Gauche のコンパイラはクロージャの
+簡単な解析を行ない生成をなるべく避けるようになっています。そのような場合
+局所関数の本体はインライン展開されています。逆アセンブルのコードに
+@code{CLOSURE}命令が含まれていれば、残念ながらクロージャが生成されます。
+@c COMMON
+
+@c EN
+This list isn't complete, and may change when Gauche's implementation
+is improved, so don't take this as fixed features.
+We'll adjust it occasionally.
+@c JP
+これらのヒント集は完全でないし、Gauche の改良とともに変わっていくでしょう。
+ですから、固定された特徴だとは思わないで下さい。
+このヒント集は今後、折を見て実装に対応させて更新してゆきます。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Writing Gauche modules, Using extension packages, Profiling and tuning, Programming in Gauche
+@section Writing Gauche modules
+@c NODE Gaucheのモジュールを書く
+
+@c EN
+Gauche's libraries are organized by modules.   Although Gauche
+can load any valid Scheme programs, there is a convention that
+Gauche's libraries follow.    When you write a chunk of Scheme
+code for Gauche, it is convenient to make it a module,
+so that it can be shared and/or reused.
+@c JP
+Gaucheのライブラリはモジュール毎に整理されています。Gaucheはどんな形式でも、
+有効なScheme式が書かれてさえいればロードすることができますが、
+Gaucheのライブラリは一定の形式を保って書かれています。
+Gauche用にまとまったSchemeコードを書いたら、それをモジュール形式にしておくと
+再利用がしやすくなるでしょう。
+@c COMMON
+
+@c EN
+Usually a module is contained in a file, but you can make
+a multi-file module.   
+First I explain the structure of a single-file module.
+The following template is the convention used in Gauche's libraries.
+@c JP
+通常ひとつのファイルで
+ひとつのモジュールを定義しますが、モジュールを複数のファイルに分けることもできます。
+まずひとつのファイルでモジュールを定義する方法を説明します。
+Gaucheのライブラリで使われているテンプレートは次のような形式です。
+@c COMMON
+
+@example
+@c EN
+;; Define the module interface
+@c JP
+;; モジュールのインタフェースの定義
+@c COMMON
+(define-module foo
+  (use xxx)
+  (use yyy)
+  (export foo1 foo2 foo3)
+  )
+@c EN
+;; Enter the module
+@c JP
+;; モジュール本体
+@c COMMON
+(select-module foo)
+
+@dots{} module body @dots{}
+
+@end example
+
+@c EN
+This file must be saved as ``foo.scm'' in some directory in the
+@code{*load-path*}.
+@c JP
+このファイルは``foo.scm''という名で、@code{*load-path*}にあるディレクトリの
+いずれかに置かれなければなりません。
+@c COMMON
+
+@c EN
+The @code{define-module} form creates a module @code{foo}.
+It also loads and imports some other modules by `@code{use}' macros,
+and declares which symbols the @code{foo} module exports, by `@code{export}'
+syntax.
+(See section @ref{Defining and selecting modules}, for detailed specification of those
+syntaxes).
+@c JP
+まず、@code{define-module}フォームがモジュール@code{foo}を作成します。
+@code{define-module}フォーム内で、このモジュールが依存している他のモジュール
+を `@code{use}' マクロを使ってロードし、このモジュールがエクスポートするシンボルを
+`@code{export}' 構文を使って指定します。(これらの構文の詳細は@ref{Defining and selecting modules}を
+参照して下さい)。
+@c COMMON
+
+@c EN
+Those @code{use} forms or @code{export} forms are not required to appear
+in the @code{define-module} form, but it is a good convention to keep
+them in there at the head of the file so that it is visually recognizable
+which modules @code{foo} depends and which symbols it exports.
+@c JP
+これらの@code{use}フォームや@code{export}フォームは必ずしも@code{define-module}
+フォームの先頭に置く必要はありませんが、このようにファイルの最初の方に固めておくことで、
+@code{foo}が依存しているモジュール群や@code{foo}が提供するシンボル等が
+一覧しやすくなります。
+@c COMMON
+
+@c EN
+The second form, `@code{select-module}', 
+specifies the rest of the file is evaluated in the
+module @code{foo} you just defined.   Again, this is just a
+convention; you can write entire module body inside @code{define-module}.
+However, I think it is error-prone, for the closing parenthesis
+can be easily forgotten or the automatic indentation mechanism of
+editor will be confused.
+@c JP
+次の、`@code{select-module}' フォームにより、それ以降のScheme式が
+モジュール@code{foo}の中で評価されます。モジュールの内容を全て@code{define-module}の中に
+書いてしまうことも出来ますが、最後の括弧を閉じ忘れやすいことや、エディタのインデントが
+狂うことなどから、あまりお薦めしません。
+@c COMMON
+
+@c EN
+After @code{select-module} you can write whatever Scheme expression.
+It is evaluated in the selected module, @code{foo}.   Only the bindings
+of the exported symbols will be directly accessible from outside.
+@c JP
+@code{select-module}フォームの後には、モジュールの内容であるScheme式を自由に書けます。
+それらはモジュール@code{foo}の中で評価されます。モジュール内で定義するトップレベルの
+束縛のうち、明示的に`export'で指定されたシンボルのみが、このモジュールをインポートする他の
+モジュールから見えます。
+@c COMMON
+
+@c EN
+So, that's it.   Other programs can use your module by just saying
+`@code{(use foo)}'.   If you want to make your module available on your site,
+you can put it to the site library location, which can be obtained by
+@example
+(gauche-site-library-directory)
+@end example
+in gosh, or
+@example
+gauche-config --sitelibdir
+@end example
+from shell.
+@c JP
+これで、他のプログラムは `@code{(use foo)}' とするだけでこのモジュールの機能が
+利用可能になります。もしモジュールをサイト全体で利用できるようにしたければ、@code{gosh}内で
+@example
+(gauche-site-library-directory)
+@end example
+を評価して得られるディレクトリに@code{foo.scm}を置いて下さい。
+@c COMMON
+
+@c EN
+If you feel like to conserve global module name space, you can organize
+modules hierarchically.   Some Gauche libraries already does so.
+@xref{Library modules - Overview}, for examples.
+For example, @code{text.tr} module is implemented in ``text/tr.scm'' file.
+Note that the pathname separator `/' in the file becomes a period in the
+module name.
+@c JP
+モジュールの名前空間のトップに新たなモジュールを追加するのに気が引ける場合は、
+モジュールを階層的に構成することもできます。Gaucheのモジュールの多くは既に階層的に
+構成されています。具体的なモジュール例は@ref{Library modules - Overview}を参照して下さい。
+例えば、@code{text.tr}モジュールは ``@code{text/tr.scm}'' ファイルに
+実装されています。パス名の区切り文字`/'がモジュール名ではピリオドになることに
+注意して下さい。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Using extension packages,  , Writing Gauche modules, Programming in Gauche
+@section Using extension packages
+@c NODE 拡張パッケージの使用
+
+@c EN
+@subheading Building and installing packages
+@c JP
+@subheading パッケージの構築とインストール
+@c COMMON
+
+@c EN
+Gauche comes with some amount of libraries, but they aren't 
+enough at all to use Gauche in the production environment. 
+There are number of additional libraries available.   We call them 
+@emph{extension packages}, or simply packages.  Each package
+usually provides one or more modules that adds extra
+functionality.   Most of the packages provide
+binding to other C libraries, such as graphics libraries
+or database clients.   If the package has some C code,
+it is likely that you need to compile it on your machine with
+the installed Gauche system.
+@c JP
+Gauche にはまとまったライブラリが付属していますが、
+Gauche をプロダクション環境で利用するのにはとても十分とはいえません。
+利用可能な追加ライブラリもいくつもあります。こうしたライブラリを
+@emph{拡張パッケージ}、あるいは単にパッケージといいます。それぞれの
+パッケージは追加機能を提供するひとつあるいはそれ以上のモジュールを
+提供します。ほとんどのパッケージは別のCのライブラリへのバインディングを
+提供しています。たとえば、グラフィックスライブラリとかデータベース
+クライアントなどです。もし、パッケージがいくぶんでもCのコードを含む
+場合は、利用するマシン上で、既にインストールされている Gauche システムを
+使って、そのコードをコンパイルする必要があります。
+@c COMMON
+
+@c EN
+Usually a package is in the form of compressed tarball, and the standard
+"ungzip + untar + configure + make + make install" sequence does the job.
+Read the package's document, for you may be able to tailor
+the library for your own needs by giving command-line options
+to the @code{configure} script.
+@c JP
+通常、パッケージは圧縮 tarball の形式になっています。標準的には、
+「gzの解凍 + tarの展開 + configure + make + make install」とやればよいように
+なっています。パッケージのドキュメントを読めば、必要に応じて、
+@code{configure} スクリプトに与えるコマンドラインオプションで
+ライブラリを調整できるようになっています。
+@c COMMON
+
+@c EN
+From Gauche 0.8, an utility script called @code{gauche-package} is
+installed for the convenience.  It automates the build and install
+process of packages.
+@c JP
+Gauche 0.8 より、@code{gauche-package} というユーティリティスクリプトが
+インストールされるようになっています。これはパッケージの構築と
+インストールを自動化します。
+@c COMMON
+
+@c EN
+Suppose you have downloaded a package @file{Package-1.0.tar.gz}.
+If the package follows the convention, all you have to do is
+to type this:
+@c JP
+@file{Package-1.0.tar.gz} というパッケージをダウンロードしてきた
+としましょう。もし、このパッケージが慣例に従っていれば、やることは
+@c COMMON
+
+@example
+$ gauche-package install Package-1.0.tar.gz
+@end example
+
+@c EN
+It ungzips and untars the package, @code{cd} into the @file{Package-1.0}
+subdirectory, run configure, make, and make install.
+By default, @code{gauche-package} untars the tarball in the current
+working directory.  You can change it by a customization file; see below.
+@c JP
+とタイプするだけです。
+これで、gzip圧縮ファイルの解凍、tarアーカイブファイルの展開、
+@file{Package-1.0} サブディレクトリへの移動、configure スクリプトの
+実行、make、make install が行われます。デフォルトでは、
+@code{gauche-package} はカレントディレクトリに tarball を展開します。
+これをカスタマイズファイル(後述)で変更することができます。
+@c COMMON
+
+@c EN
+If you need a special priviledge to install the files, you can
+use @code{--install-as} option which runs @code{make install} part via
+the @code{sudo} program.
+@c JP
+ファイルをインストールするのに特別な権限が必要な場合には、
+@code{--install-as} というオプションを使うと、@code{make install} 
+部分が、@code{sudo} を使って実行されます。
+@c COMMON
+
+@example
+$ gauche-package install --install-as=root Package-1.0.tar.gz
+@end example
+
+@c EN
+If it doesn't work for you, you can just build the package
+by @code{gauche-package build Package-1.0.tar.gz}, then
+manually cd to the @file{Package-1.0} directory and run 
+@code{make install}.
+@c JP
+上手くいかない場合には、@code{gauche-package build Package-1.0.tar.gz}
+とやってパッケージの構築だけすることもできます。この場合、手で
+@file{Package-1.0} ディレクトリに移動して、@code{make install} を
+実行します。
+@c COMMON
+
+@c EN
+You can give configuration options via @code{-C} or @code{--configure-options}
+command-line argument, like this:
+@c JP
+設定オプションを @code{-C} あるいは @code{--configure-options}
+というコマンドライン引数で与えられます。たとえば、
+@c COMMON
+
+@example
+$ gauche-package install -C "--prefix=/usr/local" Package-1.0.tar.gz
+@end example
+
+@c EN
+If the package has adopted the new package description file, 
+it can remember the configuration options you have specified, and
+it will automatically reuse them when you install the package
+again.  (If you're a package developer, check out 
+@file{examples/spigot/README} file in the Gauche source tree
+to see how to cooperate with Gauche's package management system.)
+@c JP
+もしパッケージがこの新しい記述ファイルを採用しているなら、
+以前に指定した設定オプションを記憶していて、そのパッケージを
+再度インストールするときには、自動的にそれを再利用します。
+(パッケージ開発者の方は、Gauche のソースツリーにある、
+@file{examples/spigot/README} ファイルをチェックアウトすれば、
+どのように Gauche のパッケージマネージメントシステムがやっているかを
+見られます。)
+@c COMMON
+
+@c EN
+If you don't have a tarball in your local directory, but you know
+the URL where you can download it, you can directly give the URL
+to @code{gauche-package}.  It understands @code{http} and @code{ftp},
+and uses either @code{wget} or @code{ncftpget} to download the tarball,
+then runs configure and make.
+@c JP
+tarball がローカルディレクトリにない場合でも、ダウンロードしてくる
+URL を知っているなら、その URL を直接 @code{gauche-package} に与える
+ことができます。@code{gauche-package} は @code{http} および @code{ftp}
+を理解し、@code{wget} か @code{ncftpget} のどちらかを使って、その
+tarball をダウンロードし、configure および make を実行します。
+@c COMMON
+
+@example
+$ gauche-package install http://www.example.com/download/Package-1.0.tar.gz
+@end example
+
+@c EN
+@subheading Customizing @code{gauche-package}
+@c JP
+@subheading @code{gauche-package} のカスタマイズ
+@c COMMON
+
+@c EN
+The @code{gauche-package} program reads @file{~/.gauche-package} if
+it exists.  It must contain an associative list of parameters.
+It may look like this:
+@c JP
+@code{gauche-package} プログラムは @file{~/.gauche-package} があれば、
+それを読みます。このファイルにはパラメータの連想リストが含まれて
+いなければなりません。こんな感じです。
+@c COMMON
+
+@example
+(
+ (build-dir . "/home/shiro/tmp")
+ (gzip      . "/usr/local/bin/gzip")
+ (bzip2     . "/usr/local/bin/bzip2")
+ (tar       . "/usr/local/bin/gtar")
+)
+@end example
+
+@c EN
+The following is a list of recognized parameters.
+If the program isn't given in the configuration file, @code{gauche-package}
+searches @code{PATH} to find one.
+@c JP
+以下は、認識されるパラメータのリストです。
+設定ファイルにプログラムが与えられていなければ、@code{gauche-package}
+は @code{PATH} を探します。
+@c COMMON
+
+@c EN
+@table @code
+@item build-dir
+A directory where the tarball is extracted.  If URL is given,
+the downloaded file is also placed in this directory.
+@item bzip2
+Path to the program @code{bzip2}.
+@item cat
+Path to the program @code{cat}.
+@item make
+Path to the program @code{make}.
+@item ncftpget
+Path to the program @code{ncftpget}.
+@item rm
+Path to the program @code{rm}.
+@item sudo
+Path to the program @code{sudo}.
+@item tar
+Path to the program @code{tar}.
+@item wget
+Path to the program @code{wget}.
+@end table
+@c JP
+@table @code
+@item build-dir
+tarball が展開されるディレクトリ。もし、URL が与えられれば、
+ダウンロードされたファイルはこのディレクトリに置かれます。
+@item bzip2
+@code{bzip2} プログラムへのパス
+@item cat
+@code{cat} プログラムへのパス
+@item make
+@code{make} プログラムへのパス
+@item ncftpget
+@code{ncftpget} プログラムへのパス
+@item rm
+@code{rm} プログラムへのパス
+@item sudo
+@code{sudo} プログラムへのパス
+@item tar
+@code{tar} プログラムへのパス
+@item wget
+@code{wget} プログラムへのパス
+@end table
+@c COMMON
+
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

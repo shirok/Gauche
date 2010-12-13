@@ -1,0 +1,48 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+GENERATED = Makefile charconv.h eucj2ucs.c ucs2eucj.c guess_tab.c
+XCLEANFILES = convaux.c
+PRE_PACKAGE_FILES = eucj2ucs.c guess_tab.c pre-package-data
+
+include ../Makefile.ext
+
+XCPPFLAGS = @ICONV_CPPFLAGS@
+XLDFLAGS  = @ICONV_LDFLAGS@
+XLIBS     = @ICONV_LIB@
+
+SCM_CATEGORY = gauche
+
+LIBFILES = gauche--charconv.$(SOEXT)
+SCMFILES = charconv.scm
+
+OBJECTS = charconv.$(OBJEXT)      \
+          convaux.$(OBJEXT)       \
+          jconv.$(OBJEXT)         \
+          guess.$(OBJEXT)
+
+all : $(LIBFILES)
+
+gauche--charconv.$(SOEXT) : $(OBJECTS)
+	$(MODLINK) gauche--charconv.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+convaux.c : convaux.scm
+	$(PRECOMP) convaux.scm
+
+jconv.$(OBJEXT) : eucj2ucs.c ucs2eucj.c jconv.c
+
+guess.$(OBJEXT) : guess_tab.c guess.c
+
+eucj2ucs.c ucs2eucj.c : cvt.scm euc-jp-2000-std.txt
+	$(GOSH) cvt.scm
+
+guess_tab.c : guess.scm
+	$(GOSH) guess.scm guess_tab.c
+
+pre-package-data :
+	cd data; $(MAKE) GOSH=$(GOSH)
+
+install : install-std
+
+

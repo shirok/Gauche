@@ -1,0 +1,98 @@
+.\" -*-nroff-*-
+.TH "GAUCHE\-PACKAGE" "1" "" "Gauche @GAUCHE_VERSION@" "Gauche Commands"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+gauche-package \- gauche package builder/manager
+.SH "SYNOPSIS"
+.HP 15
+\fBgauche\-package\fR \fB\fICOMMAND\fR\fR [\fB\fIOPTION\fR\fR...] [\fB\fIARGS\fR\fR...]
+.SH "DESCRIPTION"
+.PP
+This manual page documents briefly the
+\fBgauche\-package\fR
+command\&.
+.PP
+This manual page was written for the Debian distribution because the original program does not have a manual page\&. Instead, it has documentation in the GNU
+\fBinfo\fR(1)
+format; see below\&.
+.PP
+\fBgauche\-package\fR
+is a program to create, download, compile, install and list gauche extension packages\&.
+.SH "COMMANDS"
+.PP
+A summary of commands is included below\&. For a complete description, see the
+\fBinfo\fR(1)
+files and the output of the help command\&.
+.PP
+\fBbuild\fR
+.RS 4
+Fetch and build package\&.
+.RE
+.PP
+\fBcompile\fR
+.RS 4
+Compile and link an extension module from sources\&.
+.RE
+.PP
+\fBgenerate\fR
+.RS 4
+Generate template source tree for a new Gauche extension\&.
+.RE
+.PP
+\fBhelp\fR
+.RS 4
+Show detailed help\&.
+.RE
+.PP
+\fBinstall\fR
+.RS 4
+Fetch, build and install package\&.
+.RE
+.PP
+\fBlist\fR
+.RS 4
+List known installed packages\&.
+.RE
+.PP
+\fBmake\-gpd\fR
+.RS 4
+Make gpd file (called from the configure script)\&.
+.RE
+.PP
+\fBreconfigure\fR
+.RS 4
+Show configure options of package\&.
+.RE
+.SH "DIAGNOSTICS"
+.PP
+\fBgauche\-package\fR
+exits with status 0 on success\&.
+.SH "SEE ALSO"
+.PP
+The program is (will be?) documented fully by the
+Gauche Developers\' Reference
+and the
+rference manual of Gauche
+available via the
+\fBinfo\fR(1)
+system and provides usage information via the help command\&.
+.SH "AUTHORS"
+.PP
+\fBShiro Kawai\fR <\&shiro@acm\&.org\&>
+.sp -1n
+.IP "" 4
+Author.
+.PP
+\fBJens Thiele\fR <\&karme@karme\&.de\&>
+.sp -1n
+.IP "" 4
+Wrote this manpage for the Debian system\&.
+.SH "COPYRIGHT"
+Copyright \(co 2010 Jens Thiele
+.br
+.PP
+Copying and distribution of this file, with or without modification, are permitted in any medium without royalty provided the copyright notice and this notice are preserved\&. This file is offered as\-is, without any warranty\&.
+.sp

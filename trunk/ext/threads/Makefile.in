@@ -1,0 +1,26 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+SCM_CATEGORY = gauche
+
+LIBFILES = gauche--threads.$(SOEXT)
+SCMFILES = threads.sci
+
+OBJECTS = threads.$(OBJEXT) mutex.$(OBJEXT) gauche--threads.$(OBJEXT)
+
+GENERATED = Makefile 
+XCLEANFILES = gauche--threads.c *.sci
+
+all : $(LIBFILES)
+
+gauche--threads.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) gauche--threads.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+threads.sci gauche--threads.c : threads.scm
+	$(PRECOMP) -e -o gauche--threads threads.scm
+
+install : install-std
+

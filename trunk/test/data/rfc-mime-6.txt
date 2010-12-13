@@ -1,0 +1,16 @@
+# multipart/form-data
+# Emulating HTTP POST data
+-----------------------------6578815652962098482130719379
+Content-Disposition: form-data; name="c"
+
+up
+-----------------------------6578815652962098482130719379
+Content-Disposition: form-data; name="f"; filename=""
+Content-Type: application/octet-stream
+
+
+-----------------------------6578815652962098482130719379
+Content-Disposition: form-data; name="submit"
+
+Submit
+-----------------------------6578815652962098482130719379--

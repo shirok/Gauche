@@ -1,0 +1,45 @@
+;;;
+;;; gauche-cesconv - a simple Gauche script to convert CESes
+;;;  
+
+;; iconv-like script.  useful to have during make process.
+
+(use gauche.charconv)
+(use gauche.parseopt)
+(use file.filter)
+
+(define (usage)
+  (print "Usage: gauche-cesconv [options] inputfile")
+  (print "  -f, --from-code=encoding  : input ces.  can be '*jp' to guess.")
+  (print "  -t, --to-code=encoding    : output ces.")
+  (print "  -o, --output=file         : output file (instead of stdout)")
+  (print "When inputfile is omitted, input is taken from stdin.")
+  (print "when input/output ces is omitted, Gauche's native CES is used.")
+  (exit 0))
+
+(define (process iport oport ices oces)
+  (copy-port (wrap-with-input-conversion iport ices)
+             (wrap-with-output-conversion oport oces)
+             :unit 'char))
+
+(define (main args)
+  (let-args (cdr args) ((ices "f|from-code=s" (gauche-character-encoding))
+                        (oces "t|to-code=s" (gauche-character-encoding))
+                        (outfile "o|output=s" #f)
+                        (#f   "h|help" => (cut usage))
+                        . files)
+    (file-filter (lambda (in out)
+                   (let ((inp  (wrap-with-input-conversion in ices))
+                         (outp (wrap-with-output-conversion out oces)))
+                     (copy-port inp outp :unit 'char)
+                     (close-input-port inp)
+                     (close-output-port outp)))
+                 :input  (or (and (pair? files) (car files))
+                             (current-input-port))
+                 :output (or outfile (current-output-port))
+                 )
+    0))
+
+;; Local variables:
+;; mode: scheme
+;; end:

@@ -1,0 +1,49 @@
+;;;
+;;; sxml.sxpath - SXML Query Language
+;;;
+;;;   This file is mechanically translated for Gauche from
+;;;   Oleg Kiselyov's SXPATH SXML query language, with
+;;;   Kirill Lisovsky and Dmitry Lizorkin's improvements.
+;;;   The original files are:
+;;;      sxpathlib.scm,v 3.915
+;;;      sxpath.scm,v 1.1
+;;;      sxpath-ext.scm,v 1.911
+;;;   Public domain.
+;;;
+
+(define-module sxml.sxpath
+  (use srfi-1)
+  (use srfi-2)
+  (use srfi-11)
+  (use srfi-13)
+  (use text.parse)
+  (use sxml.adaptor)
+  (export sxpath nodeset? as-nodeset sxml:element? ntype-names??
+          ntype?? ntype-namespace-id?? sxml:invert node-eq? node-equal?
+          node-pos sxml:filter take-until take-after map-union
+          node-reverse node-trace select-kids node-self node-join
+          node-reduce node-or node-closure
+          if-sxpath if-car-sxpath car-sxpath
+          sxml:id-alist
+          sxml:string sxml:boolean sxml:number sxml:string-value
+          sxml:node? sxml:attr-list sxml:id sxml:equality-cmp
+          sxml:equal? sxml:not-equal? sxml:relational-cmp
+          sxml:attribute sxml:child sxml:parent sxml:ancestor
+          sxml:ancestor-or-self sxml:descendant sxml:descendant-or-self
+          sxml:following sxml:following-sibling sxml:namespace
+          sxml:preceding sxml:preceding-sibling
+          sxml:child-nodes sxml:child-elements
+          ))
+(select-module sxml.sxpath)
+
+;; using autoload to aviod interdependency that gets in way of cross-build.
+(autoload sxml.tools sxml:lookup sxml:attr sxml:ns-list)
+
+;#include-body "src/sxpathlib.scm"
+;#include-body "src/sxpath.scm"
+;#include-body "src/sxpath-ext.scm"
+;#include-body "src/txpath.scm"
+
+;; Local variables:
+;; mode: scheme
+;; end:

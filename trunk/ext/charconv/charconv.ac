@@ -1,0 +1,101 @@
+dnl
+dnl Configure ext/charconv
+dnl This file is included by the toplevel configure.ac
+dnl
+
+# ext/charconv --------------------------------------------
+
+dnl
+dnl process with-iconv, with-iconv-lib
+dnl
+
+dnl Use iconv unless explicitly specified otherwise
+ac_cv_use_iconv=yes
+ICONV_NAME=iconv
+ICONV_LIB=
+ICONV_CPPFLAGS=
+ICONV_LDFLAGS=
+
+AC_ARG_WITH(iconv,
+  AC_HELP_STRING([--with-iconv=PATH],
+                 [Use iconv library installed under PATH. 
+Gauche's charconv module uses iconv if it is available.
+If your system has iconv library in non-trivial location, 
+specify this option.  The include file is looked for in PATH/include,
+and the library file is looked for in PATH/lib.
+If you don't want to use iconv for some reason, say --without-iconv. ]),
+ [
+  case $with_iconv in
+    no)  ac_cv_use_iconv=no;;
+    yes) ;;
+    *)   ICONV_CPPFLAGS="-I$with_iconv/include";
+         ICONV_LDFLAGS="-L$with_iconv/lib";;
+  esac
+ ])
+
+AC_ARG_WITH(iconv-lib,
+  AC_HELP_STRING([--with-iconv-lib=LIB],
+                 [If your system needs to use external library for iconv
+and whose name is not libiconv, specify it.
+For example, if you need -lconv to use iconv, say --with-iconv-lib=conv]),
+ [
+  ICONV_NAME="$with_iconv_lib"; ICONV_LIB="-l$with_iconv_lib" 
+ ])
+
+dnl
+dnl Check iconv.h
+dnl
+
+if test "$ac_cv_use_iconv" != no; then
+  save_cppflags=$CPPFLAGS
+  CPPFLAGS="$CPPFLAGS $ICONV_CPPFLAGS"
+  AC_CHECK_HEADER($ICONV_NAME.h,
+     AC_DEFINE(HAVE_ICONV_H,1,[Define if you have iconv.h and want to use it]),
+     [AC_MSG_WARN("Can't find $ICONV_NAME.h so I turned off using iconv; you may want to use --with-iconv=PATH.")
+      ac_cv_use_iconv=no])
+  CPPFLAGS=$save_cppflags
+fi
+
+dnl
+dnl Check iconv library, if it is not specified by --with-iconv-lib.
+dnl
+
+if test "$ac_cv_use_iconv" = yes; then
+  if test "$ICONV_LIB" = ""; then
+    save_cflags="$CFLAGS"
+    save_ldflags="$LDFLAGS"
+    save_libs="$LIBS"
+    CFLAGS="$CFLAGS $ICONV_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $ICONV_LDFLAGS"
+    AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([#include <$ICONV_NAME.h>],
+                       [[iconv_t r = iconv_open("", "");]])],
+      [dont_need_iconv=yes],
+      [dont_need_iconv=no]
+      )
+    if test "$dont_need_iconv" = no; then
+      LIBS="$LIBS -liconv"
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([#include <$ICONV_NAME.h>],
+                         [[iconv_t r = iconv_open("", "");]])],
+        [ICONV_LIB="-liconv"],
+        [AC_MSG_WARN("Can't find library of iconv_open so I turned off using iconv; you may want to use --with-iconv-lib")
+         ac_cv_use_iconv=no])
+    fi
+    CFLAGS="$save_cflags"
+    LDFLAGS="$save_ldflags"
+    LIBS="$save_libs"
+  fi
+fi
+
+if test "$ac_cv_use_iconv" = yes; then
+  AC_DEFINE(USE_ICONV)
+fi
+AC_SUBST(ICONV_NAME)
+AC_SUBST(ICONV_LIB)
+AC_SUBST(ICONV_CPPFLAGS)
+AC_SUBST(ICONV_LDFLAGS)
+
+dnl Local variables:
+dnl mode: autoconf
+dnl end:

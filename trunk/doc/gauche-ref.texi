@@ -1,0 +1,99 @@
+\input texinfo  @c -*- mode: texinfo; coding: utf-8; -*-
+@comment %**start of header
+@c EN
+@setfilename gauche-refe.info
+@settitle Gauche Users' Reference
+@dircategory The Algorithmic Language Scheme
+@direntry
+* Gauche: (gauche-refe.info).	        An R5RS Scheme implementation.
+@end direntry
+@c JP
+@setfilename gauche-refj.info
+@settitle Gauche ユーザリファレンス
+@dircategory The Algorithmic Language Scheme
+@direntry
+* Gauche (ja): (gauche-refj.info).	An R5RS Scheme implementation.
+@end direntry
+@documentencoding utf-8
+@c COMMON
+@comment %**end of header
+
+@c module and class index
+@defcodeindex md
+@defcodeindex cl
+
+@iftex
+@finalout
+@parskip 4pt plus 1pt
+@end iftex
+
+@titlepage
+@c EN
+@title Gauche Users' Reference
+@subtitle version @VERSION@
+@author Shiro Kawai (shiro@@acm.org)
+@c JP
+@title Gauche ユーザリファレンス
+@subtitle version @VERSION@
+@author Shiro Kawai (shiro@@acm.org)
+@c COMMON
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2001-2010 Shiro Kawai (shiro@@acm.org)
+
+@end titlepage
+
+@node Top, Introduction, (dir), (dir)
+
+@ifnottex
+@c EN
+This is a reference manual of Gauche, an R5RS Scheme implementation.
+This manual is for version @VERSION@.
+@c JP
+本書は、R5RS準拠のScheme処理系、Gaucheのリファレンスマニュアルです。
+Gaucheのバージョン@VERSION@に対応します。
+@c COMMON
+@end ifnottex
+
+@menu
+* Introduction::                
+* Concepts::                    
+* Programming in Gauche::       
+* Core syntax::                 
+* Macros::                      
+* Core library::                
+* Object system::               
+* Library modules - Overview::  
+* Library modules - Gauche extensions::  
+* Library modules - SRFIs::     
+* Library modules - Utilities::  
+* References::                  
+* C to Scheme mapping::         
+* Function and Syntax Index::   
+* Module Index::                
+* Class Index::                 
+* Variable Index::              
+@end menu
+
+@include intro.texi
+@include concepts.texi
+@include program.texi
+@include coresyn.texi
+@include macro.texi
+@include corelib.texi
+@include object.texi
+@include modintro.texi
+@include modgauche.texi
+@include modsrfi.texi
+@include modutil.texi
+@include references.texi
+@include mapping.texi
+@include indexfn.texi
+@include indexmd.texi
+@include indexcl.texi
+@include indexvr.texi
+
+@contents
+@bye
+

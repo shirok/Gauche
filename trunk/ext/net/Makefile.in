@@ -1,0 +1,33 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+SCM_CATEGORY = gauche
+
+LIBFILES = gauche--net.$(SOEXT)
+SCMFILES = net.scm
+
+OBJECTS = net.$(OBJEXT)      \
+          addr.$(OBJEXT)     \
+          netdb.$(OBJEXT)    \
+          netlib.$(OBJEXT)   \
+          netaux.$(OBJEXT)
+
+GENERATED = Makefile 
+XCLEANFILES = netlib.c netaux.c
+
+all : $(LIBFILES)
+
+gauche--net.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) gauche--net.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+netlib.c : netlib.stub
+
+netaux.c : netaux.scm
+	$(PRECOMP) netaux.scm
+
+install : install-std
+
+

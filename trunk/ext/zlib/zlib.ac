@@ -1,0 +1,83 @@
+dnl
+dnl Configure ext/zlib
+dnl This file is included by the toplevel configure.ac
+dnl
+
+dnl
+dnl process with-zlib
+dnl
+
+dnl Use zlib unless explicitly specified otherwise
+ac_cv_use_zlib=yes
+ZLIB_CPPFLAGS=
+ZLIB_LDFLAGS=
+
+AC_ARG_WITH(zlib,
+  AC_HELP_STRING([--with-zlib=PATH],
+                 [Use zlib library installed under PATH.
+The rfc.zlib module uses zlib if it is avilable.  If your system has zlib
+library in non-trivial location, specify this option.
+The include file is looked for in PATH/include,
+and the library file is looked for in PATH/lib.
+If you don't want to use zlib for some reason, say --without-zlib. ]),
+  [
+  case $with_zlib in
+    no)  ac_cv_use_zlib=no;;
+    yes) ;;
+    *)   ZLIB_CPPFLAGS="-I$with_zlib/include";
+         ZLIB_LDFLAGS="-L$with_zlib/lib";;
+  esac
+ ])
+
+dnl
+dnl Check zlib.h
+dnl
+
+if test "$ac_cv_use_zlib" != no; then
+  save_cppflags=$CPPFLAGS
+  CPPFLAGS="$CPPFLAGS $ZLIB_CPPFLAGS"
+  AC_CHECK_HEADER(zlib.h,
+     AC_DEFINE(HAVE_ZLIB_H,1,[Define if you have zlib.h and want to use it]),
+     [AC_MSG_WARN("Can't find zlib.h so I turned off using zlib; you may want to use --with-zlib=PATH.")
+      ac_cv_use_zlib=no])
+  CPPFLAGS=$save_cppflags
+fi
+
+dnl
+dnl Check libz.
+dnl
+
+if test "$ac_cv_use_zlib" = yes; then
+  save_cflags="$CFLAGS"
+  save_ldflags="$LDFLAGS"
+  save_libs="$LIBS"
+  CFLAGS="$CFLAGS $ZLIB_CPPFLAGS"
+  LDFLAGS="$LDFLAGS $ZLIB_LDFLAGS"
+  LIBS="$LIBS -lz"
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([#include <zlib.h>],
+                     [[const char *r = zlibVersion();]])],
+    [ZLIB_LIB="-lz"],
+    [AC_MSG_WARN("Can't find libz so I turned off using zlib; you may want to use --with-zlib=PATH")
+      ac_cv_use_zlib=no])
+  CFLAGS="$save_cflags"
+  LDFLAGS="$save_ldflags"
+  LIBS="$save_libs"
+fi
+
+if test "$ac_cv_use_zlib" = yes; then
+  AC_DEFINE(USE_ZLIB)
+  ZLIB_ARCHFILES=rfc--zlib.$SHLIB_SO_SUFFIX
+  AC_SUBST(ZLIB_ARCHFILES)
+  ZLIB_SCMFILES=zlib.scm
+  AC_SUBST(ZLIB_SCMFILES)
+fi
+AC_SUBST(ZLIB_CPPFLAGS)
+AC_SUBST(ZLIB_LDFLAGS)
+
+
+
+
+dnl Local variables:
+dnl mode: autoconf
+dnl end:

@@ -1,0 +1,28 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+SCM_CATEGORY = util
+
+LIBFILES = util--sparse.$(SOEXT)
+SCMFILES = sparse.sci
+
+OBJECTS = util--sparse.$(OBJEXT) ctrie.$(OBJEXT) spvec.$(OBJEXT) sptab.$(OBJEXT)
+
+GENERATED = Makefile
+XCLEANFILES = util--sparse.c sparse.sci
+
+all : $(LIBFILES) $(SCMFILES)
+
+util--sparse.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) util--sparse.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+$(OBJECTS): ctrie.h spvec.h sptab.h
+
+util--sparse.c sparse.sci : $(srcdir)/sparse.scm
+	$(PRECOMP) -e -P -o util--sparse $(srcdir)/sparse.scm 
+
+install : install-std
+

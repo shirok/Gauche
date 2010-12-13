@@ -1,0 +1,105 @@
+;;;
+;;; precomp - Precompiler
+;;;
+;;;   Copyright (c) 2004-2009 Shiro Kawai, All rights reserved.
+;;;   
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;   
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;  
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;  
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;  
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;  
+
+;;;
+;;; This is a hack to "compile" the Scheme-written compiler into static
+;;; C data structure, so that it can be linked into libgauche.
+;;;
+
+(use gauche.parseopt)
+(use gauche.cgen.precomp)
+(use gauche.experimental.app)
+(use srfi-1)
+(use srfi-13)
+(use file.util)
+(use util.match)
+
+(define (main args)
+  (let1 predef-syms '()
+    (let-args (cdr args)
+        ([keep-private-macro "M|keep-private-macro=s"]
+         [ext-main           "e|ext-main"]
+         [xprefix            "p|strip-prefix=s"]
+         [xprefix-all        "P|strip-prefix-all"]
+         [out.sci            "i|interface=s"]
+         [out.c              "o|output=s"]
+         [subinits           "s|sub-initializers=s"]
+         [dso-name           "d|dso-name=s"]
+         [ext-module         "ext-module=s" #f] ;for backward compatibility
+         [#f "D=s" => (lambda (sym) (push! predef-syms sym))]
+         [else => (lambda _ (usage))]
+         . args)
+      (let ([mtk      (split-to-symbols keep-private-macro)]
+            [subinits (split-to-symbols subinits)]
+            [extini   (or ext-module ext-main)]
+            [prefix   (or xprefix-all xprefix)])
+        (match args
+          [() (usage)]
+          [(src)
+           (cgen-precompile src
+                            :out.c out.c
+                            :out.sci (or out.sci ext-module)
+                            :strip-prefix prefix
+                            :ext-initializer extini
+                            :sub-initializers subinits
+                            :dso-name dso-name
+                            :predef-syms predef-syms
+                            :macros-to-keep mtk)]
+          [(srcs ...)
+           (cgen-precompile-multi srcs
+                                  :ext-initializer extini
+                                  :strip-prefix prefix
+                                  :dso-name dso-name
+                                  :predef-syms predef-syms
+                                  :macros-to-keep mtk)]))))
+  0)
+
+(define (usage)
+  (print "Usage: gosh precomp [options] <file.scm> ...")
+  (print "Options:")
+  (print "  --keep-private-macro=NAME,NAME,...")
+  (print "  -i,--interface=FILE.SCI")
+  (print "  -e,--ext-main")
+  (print "  -o,--output=FILE.C")
+  (print "  -p,--strip-prefix=PREFIX")
+  (print "  -P,--strip-prefix-all")
+  (exit 0))
+
+(define (split-to-symbols arg)
+  (if arg
+    ($ map string->symbol $ string-split arg #\,)
+    '()))
+
+;; Local variables:
+;; mode: scheme
+;; end:

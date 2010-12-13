@@ -1,0 +1,29 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = crypt
+
+include ../Makefile.ext
+
+LIBFILES = crypt--bcrypt.$(SOEXT)
+SCMFILES = bcrypt.sci
+
+GENERATED = Makefile
+XCLEANFILES = crypt--bcrypt.c *.sci
+
+OBJECTS = crypt--bcrypt.$(OBJEXT) \
+          crypt_blowfish.$(OBJEXT) \
+          crypt_gensalt.$(OBJEXT) \
+          wrapper.$(OBJEXT)
+
+all : $(LIBFILES)
+
+crypt--bcrypt.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) crypt--bcrypt.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+bcrypt.sci crypt--bcrypt.c : bcrypt.scm
+	$(PRECOMP) -e -o crypt--bcrypt bcrypt.scm
+
+install : install-std
+

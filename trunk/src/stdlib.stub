@@ -1,0 +1,623 @@
+;;;
+;;; stdlib.stub - r5rs scheme procedures
+;;;  
+;;;   Copyright (c) 2000-2010  Shiro Kawai  <shiro@acm.org>
+;;;   
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;   
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;  
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;  
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;  
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;  
+
+(declcode
+ (.include <gauche/vminsn.h>
+           <stdlib.h>
+           <ctype.h>
+           <math.h>)
+
+ "#ifndef M_PI
+#define M_PI 3.1415926535897932384
+#endif")
+
+;;
+;; 6.1  Equivalence predicates
+;;
+
+(define-cproc eqv? (obj1 obj2) ::<boolean> :fast-flonum :constant
+  (inliner EQV) Scm_EqvP)
+(define-cproc eq? (obj1 obj2)  ::<boolean> :fast-flonum :constant
+  (inliner EQ) SCM_EQ)
+(define-cproc equal? (obj1 obj2) ::<boolean> :fast-flonum Scm_EqualP)
+
+;;
+;; 6.2  Numbers
+;;
+
+(define-cproc number? (obj)  ::<boolean> :fast-flonum :constant
+  (inliner NUMBERP) SCM_NUMBERP)
+(define-cproc complex? (obj) ::<boolean> :fast-flonum :constant
+  (inliner NUMBERP) SCM_NUMBERP)
+(define-cproc real? (obj)    ::<boolean> :fast-flonum :constant
+  (inliner REALP) SCM_REALP)
+(define-cproc rational? (obj)::<boolean> :fast-flonum :constant
+  (result (and (SCM_REALP obj) (Scm_FiniteP obj))))
+(define-cproc integer? (obj) ::<boolean> :fast-flonum :constant
+  (result (and (SCM_NUMBERP obj) (Scm_IntegerP obj))))
+
+(define-cproc exact? (obj)   ::<boolean> :fast-flonum :constant SCM_EXACTP)
+(define-cproc inexact? (obj) ::<boolean> :fast-flonum :constant SCM_INEXACTP)
+
+;; NB: numeric procedures =, <, <=, >, >=, +, -, * and / have inliners
+;; defined in compile.scm.   When one of these operators appears at the
+;; operator position of an expression, it is inlined so that the following
+;; SUBRs won't be called.  N-ary arithmetic operations (N>2) are expanded
+;; to a series of binary arithmetic operations in the compiler.
+;; N-ary comparison operations (N>2) are NOT expanded by the compiler,
+;; and these SUBRs are called.  In order to avoid extra consing for those
+;; N-ary comparison expressions, we use :optarray to receive the first few
+;; arguments on stack.
+;;
+;; SUBRs are always called when those numeric procedures are invoked via
+;; apply, or as a result of expression in the operator position,
+;; such as ((if x + *) 2 3).
+
+(define-cise-stmt numcmp
+  [(_ compar)
+   `(begin
+      (result FALSE)
+      (cond [(not (,compar arg0 arg1))]
+            [(== optcnt 0) (result TRUE)]
+            [(not (,compar arg1 (aref oarg 0)))]
+            [(== optcnt 1) (result TRUE)]
+            [(not (,compar (aref oarg 0) (aref oarg 1)))]
+            [(== optcnt 2) (result TRUE)]
+            [else
+             (set! arg0 (aref oarg 1)   arg1 (aref oarg 2))
+             (loop (cond [(not (,compar arg0 arg1)) (break)]
+                         [(SCM_NULLP args) (result TRUE) (break)]
+                         [else (set! arg0 arg1
+                                     arg1 (SCM_CAR args)
+                                     args (SCM_CDR args))]))]))])
+
+(define-cproc =  (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
+  ::<boolean> :fast-flonum :constant (numcmp Scm_NumEq))
+(define-cproc <  (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
+  ::<boolean> :fast-flonum :constant (numcmp Scm_NumLT))
+(define-cproc <= (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
+  ::<boolean> :fast-flonum :constant (numcmp Scm_NumLE))
+(define-cproc >  (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
+  ::<boolean> :fast-flonum :constant (numcmp Scm_NumGT))
+(define-cproc >= (arg0 arg1 :optarray (oarg optcnt 2) :rest args)
+  ::<boolean> :fast-flonum :constant (numcmp Scm_NumGE))
+
+(define-cproc zero? (obj::<number>) ::<boolean> :fast-flonum :constant
+  (result (and (SCM_REALP obj) (== (Scm_Sign obj) 0))))
+
+(define-cproc positive? (obj) ::<boolean> :fast-flonum :constant
+  (result (> (Scm_Sign obj) 0)))
+(define-cproc negative? (obj) ::<boolean> :fast-flonum :constant
+  (result (< (Scm_Sign obj) 0)))
+(define-cproc odd? (obj)  ::<boolean> :fast-flonum :constant Scm_OddP)
+(define-cproc even? (obj) ::<boolean> :fast-flonum :constant
+  (result (not (Scm_OddP obj))))
+
+(define-cproc max (arg0 :rest args) ::<number> :constant
+  (Scm_MinMax arg0 args NULL (& SCM_RESULT)))
+(define-cproc min (arg0 :rest args) ::<number> :constant
+  (Scm_MinMax arg0 args (& SCM_RESULT) NULL))
+
+(define-cproc * (:rest args) ::<number> :fast-flonum
+  (cond [(not (SCM_PAIRP args)) (result (SCM_MAKE_INT 1))]
+        [else (let* ([r::ScmObj (SCM_CAR args)])
+                (dolist [v (SCM_CDR args)] (set! r (Scm_Mul r v)))
+                (result r))]))
+
+(define-cproc + (:rest args) ::<number> :fast-flonum
+  (cond [(not (SCM_PAIRP args)) (result (SCM_MAKE_INT 0))]
+        [else (let* ([r::ScmObj (SCM_CAR args)])
+                (dolist [v (SCM_CDR args)] (set! r (Scm_Add r v)))
+                (result r))]))
+
+(define-cproc - (arg1 :rest args) ::<number> :fast-flonum
+  (if (SCM_NULLP args)
+    (result (Scm_VMNegate arg1))
+    (begin (dolist [v args] (set! arg1 (Scm_Sub arg1 v)))
+           (result arg1))))
+
+(define-cproc / (arg1 :rest args) ::<number> :fast-flonum
+  (if (SCM_NULLP args)
+    (result (Scm_VMReciprocal arg1))
+    (begin (dolist [v args] (set! arg1 (Scm_Div arg1 v)))
+           (result arg1))))
+
+(define-cproc abs (obj) :fast-flonum :constant Scm_VMAbs)
+
+(define-cproc quotient (n1 n2) :fast-flonum :constant
+  (result (Scm_Quotient n1 n2 NULL)))
+(define-cproc remainder (n1 n2) :fast-flonum :constant
+  (result (Scm_Modulo n1 n2 TRUE)))
+(define-cproc modulo (n1 n2)    :fast-flonum :constant
+  (result (Scm_Modulo n1 n2 FALSE)))
+
+(define-cproc %gcd (n1 n2)    :fast-flonum :constant Scm_Gcd)
+(define-cproc numerator (n)   :fast-flonum :constant Scm_Numerator)
+(define-cproc denominator (n) :fast-flonum :constant Scm_Denominator)
+;; gcd, lcd - in gauche/numerical.scm
+
+(define-cproc floor (v) ::<number> :fast-flonum :constant
+  (result (Scm_Round v SCM_ROUND_FLOOR)))
+(define-cproc ceiling (v) ::<number> :fast-flonum :constant
+  (result (Scm_Round v SCM_ROUND_CEIL)))
+(define-cproc truncate (v) ::<number> :fast-flonum :constant
+  (result (Scm_Round v SCM_ROUND_TRUNC)))
+(define-cproc round (v) ::<number> :fast-flonum :constant
+  (result (Scm_Round v SCM_ROUND_ROUND)))
+
+;; rationalize - not implemented
+
+
+;; Transcedental functions.  Complex numbers are handled in Scheme.
+
+(define-cproc %exp (x::<real>) ::<real> :fast-flonum :constant exp)
+
+(define-cproc %log (x) ::<number> :fast-flonum :constant
+  (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
+  (if (< (Scm_Sign x) 0)
+    (result (Scm_MakeComplex (log (- (Scm_GetDouble x))) M_PI))
+    ;; NB: I intentionally delegate handling of the case x==0.0 to the
+    ;; system log() function.  Most systems should yield NaN or Inf.
+    (result (Scm_VMReturnFlonum (log (Scm_GetDouble x))))))
+
+(define-cproc %sin (x::<real>) ::<real> :fast-flonum :constant sin)
+(define-cproc %cos (x::<real>) ::<real> :fast-flonum :constant cos)
+(define-cproc %tan (x::<real>) ::<real> :fast-flonum :constant tan)
+
+(define-cproc %asin (x::<real>) ::<number> :fast-flonum :constant
+  (cond [(> x 1.0)
+         (result (Scm_MakeComplex (/ M_PI 2.0)
+                                  (- (log (+ x (sqrt (- (* x x) 1.0)))))))]
+        [(< x -1.0)
+         (result (Scm_MakeComplex (/ (- M_PI) 2.0)
+                                  (- (log (- (- x) (sqrt (- (* x x) 1.0)))))))]
+        [else (result (Scm_VMReturnFlonum (asin x)))]))
+
+(define-cproc %acos (x::<real>) ::<number> :fast-flonum :constant
+  (cond [(> x 1.0)
+         (result (Scm_MakeComplex 0 (log (+ x (sqrt (- (* x x) 1.0))))))]
+        [(< x -1.0)
+         (result (Scm_MakeComplex 0 (log (+ x (sqrt (- (* x x) 1.0))))))]
+        [else (result (Scm_VMReturnFlonum (acos x)))]))
+
+(define-cproc %atan (z::<real> :optional x) ::<double> :fast-flonum :constant
+  (cond [(SCM_UNBOUNDP x) (result (atan z))]
+        [else (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
+              (result (atan2 z (Scm_GetDouble x)))]))
+
+(define-cproc %sinh (x::<real>) ::<real> :fast-flonum :constant sinh)
+(define-cproc %cosh (x::<real>) ::<real> :fast-flonum :constant cosh)
+(define-cproc %tanh (x::<real>) ::<real> :fast-flonum :constant tanh)
+;; NB: asinh and acosh are not in POSIX.
+
+(define-cproc %sqrt (x::<real>) :fast-flonum :constant
+  (if (< x 0)
+    (result (Scm_MakeComplex 0.0 (sqrt (- x))))
+    (result (Scm_VMReturnFlonum (sqrt x)))))
+
+(define-cproc %expt (x y) :fast-flonum :constant Scm_Expt)
+
+(define-cproc make-rectangular (a::<real> b::<real>) :constant Scm_MakeComplex)
+(define-cproc make-polar (r::<real> t::<real>) :constant Scm_MakeComplexPolar)
+
+;; we don't use Scm_RealPart and Scm_ImagPart, for preserving exactness
+;; and avoiding extra allocation.
+(define-cproc real-part (z::<number>) :fast-flonum :constant
+  (if (SCM_REALP z)
+    (result z)
+    (result (Scm_VMReturnFlonum (SCM_COMPNUM_REAL z)))))
+
+(define-cproc imag-part (z::<number>) :fast-flonum :constant
+  (cond [(SCM_EXACTP z) (result (SCM_MAKE_INT 0))]
+        [(SCM_REALP z)  (result (Scm_VMReturnFlonum 0.0))]
+        [else (result (Scm_VMReturnFlonum (SCM_COMPNUM_IMAG z)))]))
+
+(define-cproc magnitude (z) ::<double> :fast-flonum :constant Scm_Magnitude)
+(define-cproc angle (z)     ::<double> :fast-flonum :constant Scm_Angle)
+
+(define-cproc exact->inexact (obj) :fast-flonum :constant Scm_Inexact)
+(define-cproc inexact->exact (obj) :fast-flonum :constant Scm_Exact)
+
+(define-cproc number->string
+  (obj :optional (radix::<fixnum> 10) (use-upper? #f)) :fast-flonum :constant
+  (result (Scm_NumberToString obj radix (not (SCM_FALSEP use_upperP)))))
+
+(define-cproc string->number (obj::<string> :optional (radix::<fixnum> 10))
+  (result (Scm_StringToNumber obj radix FALSE)))
+
+;;
+;; 6.3.1  Booleans
+;;
+
+(define-cproc not (obj) ::<boolean> :fast-flonum :constant
+  (inliner NOT) SCM_FALSEP)
+(define-cproc boolean? (obj) ::<boolean> :fast-flonum :constant SCM_BOOLP)
+
+;;
+;; 6.3.2  Pairs and lists
+;;
+
+(define-cproc pair? (obj) ::<boolean> :fast-flonum :constant
+  (inliner PAIRP) SCM_PAIRP)
+(define-cproc cons (obj1 obj2) (inliner CONS) Scm_Cons)
+(define-cproc car (obj::<pair>) :constant
+  (inliner CAR) (setter set-car!) SCM_CAR)
+(define-cproc cdr (obj::<pair>) :constant
+  (inliner CDR) (setter set-cdr!) SCM_CDR)
+(define-cproc set-car! (obj::<pair> value) ::<void> SCM_SET_CAR)
+(define-cproc set-cdr! (obj::<pair> value) ::<void> SCM_SET_CDR)
+
+"#define CXR_SETTER(PRE, pre, tail) \
+  ScmObj cell = Scm_C##tail##r(obj); \
+  if (!SCM_PAIRP(cell)) \
+    Scm_Error(\"can't set c\" #pre #tail \"r of %S\", obj); \
+  SCM_SET_C##PRE##R(cell, value);
+"
+
+(define-cproc caar (obj) :fast-flonum :constant
+  (inliner CAAR) (setter (obj value) ::<void> (CXR_SETTER A a a)) Scm_Caar)
+(define-cproc cadr (obj) :fast-flonum :constant
+  (inliner CADR) (setter (obj value) ::<void> (CXR_SETTER A a d)) Scm_Cadr)
+(define-cproc cdar (obj) :fast-flonum :constant
+  (inliner CDAR) (setter (obj value) ::<void> (CXR_SETTER D d a)) Scm_Cdar)
+(define-cproc cddr (obj) :fast-flonum :constant
+  (inliner CDDR) (setter (obj value) ::<void> (CXR_SETTER D d d)) Scm_Cddr)
+;; NB: caaar ... cddddr are in autoloaded Scheme file now.
+
+(define-cproc null? (obj) ::<boolean> :fast-flonum :constant
+  (inliner NULLP) SCM_NULLP)
+(define-cproc list? (obj) ::<boolean> :fast-flonum :constant
+  SCM_PROPER_LIST_P)
+(define-cproc list (:rest args) (inliner LIST) (result args))
+
+(define-cproc length (list) ::<long> :constant (inliner LENGTH)
+  (let* ([len::long (Scm_Length list)])
+    (when (< len 0) (Scm_Error "bad list: %S" list))
+    (result len)))
+
+(define-cproc length+ (list) :constant ;; srfi-1
+  (let* ([i::int (Scm_Length list)])
+    (if (< i 0) (result SCM_FALSE) (result (Scm_MakeInteger i)))))
+
+(define-cproc append (:rest lists) (inliner APPEND) Scm_Append)
+(define-cproc reverse (list::<list>) (inliner REVERSE) Scm_Reverse)
+
+(define-cproc list-tail (list k::<fixnum> :optional fallback) :constant
+  Scm_ListTail)
+(define-cproc list-ref (list k::<fixnum> :optional fallback) :constant
+  Scm_ListRef)
+
+(define-cproc memq (obj list::<list>) :constant (inliner MEMQ) Scm_Memq)
+(define-cproc memv (obj list::<list>) :constant (inliner MEMV) Scm_Memv)
+(define-cproc member (obj list::<list>)
+  (result (Scm_Member obj list SCM_CMP_EQUAL)))
+
+(define-cproc assq (obj alist::<list>) :constant (inliner ASSQ) Scm_Assq)
+(define-cproc assv (obj alist::<list>) :constant (inliner ASSV) Scm_Assv)
+(define-cproc assoc (obj alist::<list>)
+  (result (Scm_Assoc obj alist SCM_CMP_EQUAL)))
+
+;;
+;; 6.3.3  Symbols
+;;
+
+(define-cproc symbol? (obj) ::<boolean> :fast-flonum :constant
+  (inliner SYMBOLP) SCM_SYMBOLP)
+
+(define-cproc symbol->string (obj::<symbol>) :constant
+  (result (SCM_OBJ (SCM_SYMBOL_NAME obj))))
+
+(define-cproc string->symbol (obj::<string>) :constant Scm_Intern)
+
+;;
+;; 6.3.4  Characters
+;;
+
+(define-cproc char? (obj) ::<boolean> :fast-flonum :constant
+  (inliner CHARP) SCM_CHARP)
+(define-cproc char=? (c1::<char> c2::<char>) ::<boolean> :constant
+  (result (== c1 c2)))
+(define-cproc char<? (c1::<char> c2::<char>) ::<boolean> :constant
+  (result (< c1 c2)))
+(define-cproc char>? (c1::<char> c2::<char>) ::<boolean> :constant
+  (result (> c1 c2)))
+(define-cproc char<=? (c1::<char> c2::<char>)::<boolean> :constant
+  (result (<= c1 c2)))
+(define-cproc char>=? (c1::<char> c2::<char>)::<boolean> :constant
+  (result (>= c1 c2)))
+
+(define-cise-expr char-ci-cmp
+  [(_ op) `(result (,op (SCM_CHAR_UPCASE c1) (SCM_CHAR_UPCASE c2)))])
+
+(define-cproc char-ci=? (c1::<char> c2::<char>) ::<boolean> :constant
+  (char-ci-cmp ==))
+(define-cproc char-ci<? (c1::<char> c2::<char>) ::<boolean> :constant
+  (char-ci-cmp <))
+(define-cproc char-ci>? (c1::<char> c2::<char>) ::<boolean> :constant
+  (char-ci-cmp >))
+(define-cproc char-ci<=? (c1::<char> c2::<char>)::<boolean> :constant
+  (char-ci-cmp <=))
+(define-cproc char-ci>=? (c1::<char> c2::<char>) ::<boolean> :constant
+  (char-ci-cmp >=))
+
+(define-cproc char-alphabetic? (c::<char>) ::<boolean>
+  (result (and (SCM_CHAR_ASCII_P c) (isalpha c))))
+(define-cproc char-numeric? (c::<char>) ::<boolean>
+  (result (and (SCM_CHAR_ASCII_P c) (isdigit c))))
+(define-cproc char-whitespace? (c::<char>) ::<boolean>
+  (result (and (SCM_CHAR_ASCII_P c) (isspace c))))
+(define-cproc char-upper-case? (c::<char>) ::<boolean> SCM_CHAR_UPPER_P)
+(define-cproc char-lower-case? (c::<char>) ::<boolean> SCM_CHAR_LOWER_P)
+
+(define-cproc char->integer (c::<char>) ::<long> :constant
+  (result (cast (signed long) c)))
+(define-cproc integer->char (c::<int>) ::<char> :constant
+  (result (cast ScmChar c)))
+
+(define-cproc char-upcase (c::<char>)   ::<char> SCM_CHAR_UPCASE)
+(define-cproc char-downcase (c::<char>) ::<char> SCM_CHAR_DOWNCASE)
+
+;;
+;; 6.3.5 Strings
+;;
+
+(define-cproc string? (obj) ::<boolean> :fast-flonum :constant
+  (inliner STRINGP) SCM_STRINGP)
+
+(define-cproc make-string (len::<fixnum> :optional (c::<char> #\space))
+  Scm_MakeFillString)
+
+(define-cproc string (:rest chars) Scm_ListToString)
+
+(define-cproc string-length (str::<string>) ::<fixnum> :constant
+  (result (SCM_STRING_BODY_LENGTH (SCM_STRING_BODY str))))
+
+;; NB: string-set! is moved to scmlib.scm, so we can't declare setter here.
+;; It is set in scmlib.scm.
+(define-cproc string-ref (str::<string> k::<fixnum> :optional fallback)
+  :constant
+  (let* ([r::ScmChar (Scm_StringRef str k (SCM_UNBOUNDP fallback))])
+    (result (?: (== r SCM_CHAR_INVALID) fallback (SCM_MAKE_CHAR r)))))
+
+(define-cise-expr strcmp  [(_ op) `(result (,op (Scm_StringCmp s1 s2) 0))])
+(define-cise-expr strcmpi [(_ op) `(result (,op (Scm_StringCiCmp s1 s2) 0))])
+        
+(define-cproc string=? (s1::<string> s2::<string>) ::<boolean> :constant
+  Scm_StringEqual)
+(define-cproc string<? (s1::<string> s2::<string>) ::<boolean> :constant
+  (strcmp <))
+(define-cproc string>? (s1::<string> s2::<string>) ::<boolean> :constant
+  (strcmp >))
+(define-cproc string<=? (s1::<string> s2::<string>)::<boolean> :constant
+  (strcmp <=))
+(define-cproc string>=? (s1::<string> s2::<string>)::<boolean> :constant
+  (strcmp >=))
+
+(define-cproc string-ci=? (s1::<string> s2::<string>)::<boolean> :constant
+  (strcmpi ==))
+(define-cproc string-ci<? (s1::<string> s2::<string>)::<boolean> :constant
+  (strcmpi <))
+(define-cproc string-ci>? (s1::<string> s2::<string>)::<boolean> :constant
+  (strcmpi >))
+(define-cproc string-ci<=? (s1::<string> s2::<string>)::<boolean> :constant
+  (strcmpi <=))
+(define-cproc string-ci>=? (s1::<string> s2::<string>)::<boolean> :constant
+  (strcmpi >=))
+
+(define-cproc substring (str::<string> start::<fixnum> end::<fixnum>)
+  (result (Scm_Substring str start end FALSE)))
+
+(define-cproc string-append (:rest args) Scm_StringAppend)
+
+(define-cproc string->list (str::<string> :optional start end)
+  (result (Scm_StringToList (SCM_STRING (Scm_MaybeSubstring str start end)))))
+
+(define-cproc list->string (list::<list>) Scm_ListToString)
+
+(define-cproc string-copy (str::<string> :optional start end)
+  (result (Scm_CopyString (SCM_STRING (Scm_MaybeSubstring str start end)))))
+
+;;
+;; 6.3.6  Vectors
+;;
+
+(define-cproc vector? (obj) ::<boolean> :fast-flonum :constant
+  (inliner VECTORP) SCM_VECTORP)
+
+(define-cproc make-vector (k::<fixnum> :optional fill) Scm_MakeVector)
+
+(define-cproc vector (:rest args) (inliner VEC)
+  (result (Scm_ListToVector args 0 -1)))
+
+(define-cproc vector-length (vec::<vector>) ::<fixnum> :constant
+  (inliner VEC-LEN) SCM_VECTOR_SIZE)
+
+(define-cproc vector-ref (vec::<vector> k::<integer> :optional fallback)
+  :constant
+  (setter vector-set!)
+  (cond [(or (SCM_BIGNUMP k)
+             (< (SCM_INT_VALUE k) 0)
+             (>= (SCM_INT_VALUE k) (SCM_VECTOR_SIZE vec)))
+         (when (SCM_UNBOUNDP fallback)
+           (Scm_Error "vector-ref index out of range: %S" k))
+         (result fallback)]
+        [else (result (SCM_VECTOR_ELEMENT vec (SCM_INT_VALUE k)))]))
+
+(define-cproc vector-set! (vec::<vector> k::<integer> obj) ::<void>
+  (if (or (SCM_BIGNUMP k)
+          (< (SCM_INT_VALUE k) 0)
+          (>= (SCM_INT_VALUE k) (SCM_VECTOR_SIZE vec)))
+    (Scm_Error "vector-set! index out of range: %S" k)
+    (set! (SCM_VECTOR_ELEMENT vec (SCM_INT_VALUE k)) obj)))
+
+(define-cproc vector->list
+  (vec::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  Scm_VectorToList)
+
+(define-cproc list->vector
+  (list::<list> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  Scm_ListToVector)
+
+(define-cproc vector-fill!
+  (vec::<vector> fill :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  ::<void> Scm_VectorFill)
+
+;;
+;; 6.4  Control Features
+;;
+
+(define-cproc procedure? (obj) ::<boolean> :fast-flonum :constant
+  SCM_PROCEDUREP)
+
+(define-cproc apply (proc arg1 :rest args)
+  (inliner TAIL-APPLY)
+  (let* ([head::ScmObj] [tail::ScmObj])
+    (cond [(SCM_NULLP args) (result (Scm_VMApply proc arg1))]
+          [else (set! head (Scm_Cons arg1 SCM_NIL)
+                      tail head)
+                (dopairs [cp args]
+                  (when (SCM_NULLP (SCM_CDR cp))
+                    (SCM_APPEND head tail (SCM_CAR cp))
+                    (break))
+                  (unless (SCM_PAIRP (SCM_CDR cp))
+                    (Scm_Error "improper list not allowed: %S" (SCM_CDR cp)))
+                  (SCM_APPEND1 head tail (SCM_CAR cp)))
+                (result (Scm_VMApply proc head))])))
+
+(define-cproc map (proc args::<list> :rest moreargs) Scm_Map)
+(define-cproc for-each (proc args::<list> :rest moreargs) Scm_ForEach)
+(define-cproc force (p) Scm_Force)
+(define-cproc call-with-current-continuation (proc) Scm_VMCallCC)
+(define-cproc values (:rest args) :constant (inliner VALUES) Scm_Values)
+(define-cproc dynamic-wind (pre body post) Scm_VMDynamicWind)
+(define-cproc eval (expr env) Scm_VMEval)
+
+;; for now, just return a module.
+(define-cproc null-environment (version::<fixnum>)
+  (when (!= version 5) (Scm_Error "unknown rNrs version: %d" version))
+  (result (SCM_OBJ (Scm_NullModule))))
+(define-cproc scheme-report-environment (version::<fixnum>)
+  (when (!= version 5) (Scm_Error "unknown rNrs version: %d" version))
+  (result (SCM_OBJ (Scm_SchemeModule))))
+(define-cproc interaction-environment () (result (SCM_OBJ (Scm_UserModule))))
+
+;;
+;; 6.6.1  Ports
+;;
+  
+;; open-input-file, open-output-file, and various call-with-* and
+;; with-* are defined in scmlib.scm.
+
+(define-cproc input-port? (obj)  ::<boolean> SCM_IPORTP)
+(define-cproc output-port? (obj) ::<boolean> SCM_OPORTP)
+(define-cproc port? (obj)        ::<boolean> SCM_PORTP)
+
+(define-cproc current-input-port (:optional newport)
+  (cond [(SCM_IPORTP newport)
+         (result (Scm_SetCurrentInputPort (SCM_PORT newport)))]
+        [(not (SCM_UNBOUNDP newport))
+         (Scm_TypeError "current-input-port" "input port" newport)
+         (result SCM_UNDEFINED)]
+        [else (result (SCM_OBJ SCM_CURIN))]))
+
+(define-cproc current-output-port (:optional newport)
+  (cond [(SCM_OPORTP newport)
+         (result (Scm_SetCurrentOutputPort (SCM_PORT newport)))]
+        [(not (SCM_UNBOUNDP newport))
+         (Scm_TypeError "current-output-port" "output port" newport)
+         (result SCM_UNDEFINED)]
+        [else (result (SCM_OBJ SCM_CUROUT))]))
+
+(define-cproc close-input-port (port::<port>)  ::<void> Scm_ClosePort)
+(define-cproc close-output-port (port::<port>) ::<void> Scm_ClosePort)
+
+;;
+;; 6.6.2  Input
+;;
+
+(define-cproc read (:optional (port::<input-port> (current-input-port)))
+  (result (Scm_Read (SCM_OBJ port))))
+
+(define-cproc read-char (:optional (port::<input-port> (current-input-port)))
+  (inliner READ-CHAR)
+  (let* ([ch::int])
+    (SCM_GETC ch port)
+    (result (?: (== ch EOF) SCM_EOF (SCM_MAKE_CHAR ch)))))
+
+(define-cproc peek-char (:optional (port::<input-port> (current-input-port)))
+  (inliner PEEK-CHAR)
+  (let* ([ch::ScmChar (Scm_Peekc port)])
+    (result (?: (== ch SCM_CHAR_INVALID) SCM_EOF (SCM_MAKE_CHAR ch)))))
+
+(define-cproc eof-object? (obj) ::<boolean> :fast-flonum
+  (inliner EOFP) SCM_EOFP)
+
+(define-cproc char-ready? (:optional (port::<input-port> (current-input-port)))
+  ::<boolean> Scm_CharReady)
+
+;;
+;; 6.6.3  Output
+;;
+
+(define-cproc write (obj :optional (port::<output-port> (current-output-port)))
+  ::<void> (Scm_Write obj (SCM_OBJ port) SCM_WRITE_WRITE))
+
+(define-cproc display
+  (obj :optional (port::<output-port> (current-output-port)))
+  ::<void> (Scm_Write obj (SCM_OBJ port) SCM_WRITE_DISPLAY))
+
+(define-cproc newline (:optional (port::<output-port> (current-output-port)))
+  ::<void> (SCM_PUTC #\newline port))
+
+(define-cproc write-char
+  (ch::<char> :optional (port::<output-port> (current-output-port)))
+  ::<void> (inliner WRITE-CHAR) (SCM_PUTC ch port))
+
+;;
+;; 6.6.4  System Interface
+;;
+
+(define-cproc load (file::<string>
+                    :key (paths #f) (error-if-not-found #t)
+                         (environment #f) (ignore-coding #f))
+  (let* ([flags::int
+          (logior (?: (SCM_FALSEP error-if-not-found) SCM_LOAD_QUIET_NOFILE 0)
+                  (?: (SCM_FALSEP ignore-coding) 0 SCM_LOAD_IGNORE_CODING))])
+    (result (Scm_VMLoad file paths environment flags))))
+
+; transcript-on
+; transcript-off
+
+;; Local variables:
+;; mode: scheme
+;; end:

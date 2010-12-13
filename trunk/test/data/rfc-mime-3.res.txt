@@ -1,0 +1,35 @@
+("multipart/mixed" 0
+ ("text/plain" 0
+  "  ... Some text appears here ...
+
+[Note that the blank between the boundary and the start
+ of the text in this part means no header fields were
+ given and this is text in the US-ASCII character set.
+ It could have been done with explicit typing as in the
+ next part.]
+")
+ ("text/plain" 1
+  "This could have been part of the previous part, but
+illustrates explicit versus implicit typing of body
+parts.
+")
+ ("multipart/parallel" 2
+  ("audio/basic" 0
+   "  ... base64-encoded 8000 Hz single-channel
+      mu-law-format audio data goes here ...
+")
+  ("image/jpeg" 1
+   "  ... base64-encoded image data goes here ...
+"))
+ ("text/enriched" 3
+  "This is <bold><italic>enriched.</italic></bold>
+<smaller>as defined in RFC 1896</smaller>
+
+Isn't it
+<bigger><bigger>cool?</bigger></bigger>
+")
+ ("message/rfc822" 4
+  ("text/plain" 0
+   "  ... Additional text in ISO-8859-1 goes here ...
+"))
+)

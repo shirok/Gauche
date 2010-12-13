@@ -1,0 +1,6 @@
+("multipart/form-data" 0
+ ("text/plain" 0 "up")
+ ("application/octet-stream" 1 "")
+ ("text/plain" 2 "Submit")
+ )
+)

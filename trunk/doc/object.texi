@@ -1,0 +1,3793 @@
+@node Object system, Library modules - Overview, Core library, Top
+@chapter Object system
+@c NODE オブジェクトシステム
+
+@c EN
+Gauche's object system design is largely inspired by
+STklos, whose design has come from TinyCLOS.
+It supports multiple inheritance, multimethods,
+and metaobject protocol.
+@c JP
+Gaucheのオブジェクトシステムのデザインは、TinyCLOSから
+派生したSTklosから大きな影響を受けています。
+多重継承、マルチメソッド、メタオブジェクトプトロコルを
+サポートしています。
+@c COMMON
+
+@c EN
+The type system is integrated to the object system,
+that is, a string is an instance of the class @code{<string>},
+and so on.
+@c JP
+型システムは、オブジェクトシステムに統合されています。
+つまり、文字列は@code{<string>}クラスのインスタンスである、などです。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@menu
+* Introduction to the object system::  
+* General Inquiry::             
+* Class::                       
+* Instance::                    
+* Generic function and method::  
+* Metaobject protocol::         
+@end menu
+
+@node Introduction to the object system, General Inquiry, Object system, Object system
+@section  Introduction to the object system
+@c NODE オブジェクトシステムの紹介
+
+@c EN
+This section briefly explains the basic structure of
+Gauche's object system.   It is strongly influenced
+by CLOS (Common-Lisp Object System).
+If you have experience in CLOS or related systems
+such as TinyCLOS, STklos or Guile's object system,
+you may skip to the next section.
+
+Three concepts play the central role in CLOS-like object systems:
+A @emph{class}, a @emph{generic function}, and a @emph{method}.
+
+A @emph{class} specifies a structure of object.
+It also defines a datatype (strictly speaking,
+it's not the same thing as a datatype,
+but let's skip the complicated part for now).
+
+For example, a point in 2D space can be represented by 
+x and y coordinates.
+A point class can be defined using @code{define-class} macro.
+In the shortest form, it can be defined like this:
+
+@c JP
+この節では Gauche のオブジェクトシステムの基本的構造について手短かに
+説明します。Gauche のオブジェクトシステムは CLOS (Common-Listp Object System)
+に強く影響されています。CLOS やそれにかかわりのある TinyCLOS、STklos、
+あるいは Guile のオブジェクトシステムの経験がある方は、この節を飛ばして、
+次の節にいってもよいでしょう。
+
+CLOS 風のオブジェクトシステムでは 3 つの概念が中心的な役割をはたします。
+@emph{クラス}、@emph{ジェネリック関数}、それに@emph{メソッド}です。
+
+@emph{クラス}はオブジェクトの構造を指定します。また、データ型も定義します
+(厳密にいうと、データ型とはちがうものですが、難しいところは今は
+おいておきましょう)。
+
+たとえば、2 次元空間の点は x 座標と y 座標で表現できます。点のクラスは
+@code{define-class} マクロを使って定義できます。もっとも手短かには、
+次のように定義できます。
+
+@c COMMON
+@example
+(define-class <2d-point> () (x y))
+@end example
+
+@c EN
+(You can find the code of definitions in the examples of this section
+in @code{examples/oointro.scm} of Gauche's source distribution.)
+
+The symbol @code{<2d-point>} is the name of the class, and also
+the global variable @code{<2d-point>} is bound to a class object.
+Surrounding a class name by @code{<} and @code{>} is just a
+convention; you can pass any symbol to @code{define-class}.
+
+The second argument of @code{define-class} is a list of
+direct superclasses, which specifies inheritance of the class.
+We'll come back to it later.
+
+The third argument of @code{define-class} is a list of
+@emph{slots}.  A slot is a storage space, usually in each object,
+where you can store a value.  It is something similar to
+what is called a field or an instance variable in other
+object-oriented languages; but slots can be configured more
+than just a per-object storage space.
+
+Now we defined a 2D point class, so we can create an instance
+of a point.  You can pass a class to a generic function @code{make}
+to create an instance.  (Don't worry about what generic function
+is---think it as a special type of function, just for now).
+
+@c JP
+(この節の例の定義コードは Gauche ソース配布物のなかの 
+@code{examples/oointro.scm} にあります。)
+
+シンボル @code{<2d-point>} はクラスの名前です。グローバル変数
+@code{<2d-point>}はクラスオブジェクトに束縛されています。クラス名を
+@code{<} と @code{>} で囲むのは慣習にすぎません。@code{define-class}
+には任意のシンボルを渡すことができます。
+
+@code{define-class}の第二引数は、直接のスーパークラスのリストです。
+これでこのクラスの継承を指定します。これについては後で説明します。
+
+@code{define-class}の第三引数は@emph{スロット}のリストです。
+スロットはなにかを格納しておく場所で、通常は各オブジェクトに対して、値を格納できます。
+これは、他のオジェクト指向言語では、フィールドとかインスタンス変数などと
+呼ばれているものに似たものです。しかし、スロットは単なる各オブジェクト毎の
+格納スペース以上の使い方ができます。
+
+さて、2 次元の点のクラスを定義しましたので、点のインスタンスを生成できます。
+クラスをジェネリック関数 @code{make} に渡してインスタンスを生成します。
+(ジェネリック関数がどんなものであるかは気にしないで下さい。今はある特殊な
+タイプの関数とだけ考えておいてください。)
+
+@c COMMON
+@example
+(define a-point (make <2d-point>))
+
+a-point  @result{} #<<2d-point> 0x8117570>
+@end example
+
+@c EN
+If you are using @code{gosh} interactively, you can use
+a generic function @code{describe} to inspect the internal
+of an instance.
+A short alias, @code{d}, is defined to @code{describe} for
+the convenience.  (See @ref{Interactive session}
+for the details).
+
+@c JP
+対話モードで @code{gosh} を使っているなら、ジェネリック関数 @code{describe} を
+使って、インスタンスの内部を点検できます。
+便利なので、省略形として@code{d}という名前も定義されています。
+(詳細については、@ref{Interactive session}参照)
+
+@c COMMON
+@example
+gosh> (d a-point)
+#<<2d-point> 0x8117570> is an instance of class <2d-point>
+slots:
+  x         : #<unbound>
+  y         : #<unbound>
+@end example
+
+@c EN
+In order to access or modify the value of the slot, you can use
+@code{slot-ref} and @code{slot-set!}, respectively.
+These names are taken from STklos.
+
+@example
+(slot-ref a-point 'x)  ;; access to the slot x of a-point
+  @result{} @r{error, since slot 'x doesn't have a value yet}
+
+(slot-set! a-point 'x 10.0)  ;; set 10.0 to the slot x of a-point
+
+(slot-ref a-point 'x)
+  @result{} 10.0
+@end example
+
+@c JP
+スロットの値にアクセスあるいは値を変更するためには、それぞれ、
+@code{slot-ref} および @code{slot-set!} が使えます。これらの名前は
+STklos からとりました。
+
+@example
+(slot-ref a-point 'x)  ;; a-point のスロット x にアクセス
+  @result{} @r{error, since slot 'x doesn't have a value yet}
+
+(slot-set! a-point 'x 10.0)  ;; a-point のスロット x を 10.0 に設定
+
+(slot-ref a-point 'x)
+  @result{} 10.0
+@end example
+
+@c EN
+Gauche also provides a shorter name, @code{ref}, which can also
+be used in srfi-17's generalized @code{set!} syntax:
+@c JP
+Gauche では、より短かい名前 @code{ref} も使えます。これを使えば
+srfi-17 の一般化された @code{set!} の構文が使えます。
+@c COMMON
+@example
+(ref a-point 'x) @result{} 10.0
+
+(set! (ref a-point 'y) 20.0)
+
+(ref a-point 'y) @result{} 20.0
+@end example
+
+@c EN
+Now you can see slot values are set.
+@c JP
+スロットの値が設定されていることを見てみましょう。
+@c COMMON
+@example
+gosh> (d a-point)
+#<<2d-point> 0x8117570> is an instance of class <2d-point>
+slots:
+  x         : 10.0
+  y         : 20.0
+@end example
+
+@c EN
+In practice, it is usually convenient if you can specify the default
+value for a slot, or give values for slots when you create an instance.
+Such information can be specified by @emph{slot options}.
+Let's modify the definition of @code{<2d-point>} like this:
+
+@c JP
+実際には、スロットにデフォルト値を設定できたり、インスタンス生成時に
+スロットに値を設定できると便利なことが多いです。このような情報は、
+@emph{スロットオプション}で指定できます。@code{<2d-point>}の定義を
+次のように変更してみましょう。
+
+@c COMMON
+@example
+(define-class <2d-point> ()
+  ((x :init-value 0.0 :init-keyword :x :accessor x-of)
+   (y :init-value 0.0 :init-keyword :y :accessor y-of)))
+@end example
+
+@c EN
+Note that each slot specification is now a list, instead of just
+a symbol as in the previous example.
+The list's car now specifies the slot name, and its cdr
+gives various information.   The value after @code{:init-value}
+defines the default value of the slot.  The keyword after @code{:init-keyword}
+defines the keyword argument which can be passed to @code{make} to
+initialize the slot at creation time.
+The name after keyword @code{:accessor} is bound to a generic
+function that can be used to access/modify the slot, instead of
+using @code{slot-ref}/@code{slot-set!}.
+
+Let's see some interactive session.  You create an instance
+of the new @code{<2d-point>} class, and you can see the slots are
+initialized by the default values.
+@c JP
+各スロットの指定は、前の例では一つのシンボルでしたが、こんどはリスト
+であることに注意してください。
+こんどは、リストの car 部分がスロット名の指定で、cdr 部分にいろいろな情報が
+はいります。@code{:init-value} のうしろの値はそのスロットのデフォルト値を
+定義しています。@code{:init-keyword}のうしろのキーワードは、生成時にスロットを
+初期化するために @code{make} に渡すことのできるキーワード引数を定義しています。
+キーワード @code{:accessor} のうしろの名前は、スロットへのアクセス/変更の
+ために使えるジェネリック関数に束縛されます。これは
+@code{slot-ref}/@code{slot-set!} のかわりに使います。
+
+ちょっとした対話セッションをみてみましょう。新しい @code{<2d-point>} クラスの
+インスタンスをつくります。スロットがデフォルト値で初期化されているのがわかり
+ますね。
+@c COMMON
+@example
+gosh> (define a-point (make <2d-point>))
+a-point
+gosh> (d a-point)
+#<<2d-point> 0x8148680> is an instance of class <2d-point>
+slots:
+  x         : 0.0
+  y         : 0.0
+@end example
+
+@c EN
+You create another instance, this time giving initialization values
+by keyword arguments.
+@c JP
+こんどは、キーワード引数で初期値を与えて、別のインスタンスを作ります。
+@c COMMON
+@example
+gosh> (define b-point (make <2d-point> :x 50.0 :y -10.0))
+b-point
+gosh> (d b-point)
+#<<2d-point> 0x8155b80> is an instance of class <2d-point>
+slots:
+  x         : 50.0
+  y         : -10.0
+@end example
+
+@c EN
+Accessors are less verbose than @code{slot-ref}/@code{slot-set!}, thus
+convenient.
+@c JP
+アクセサは @code{slot-ref}/@code{slot-set!} より短かくなって便利に
+なりましたね。
+@c COMMON
+@example
+gosh> (x-of a-point)
+0.0
+gosh> (x-of b-point)
+50.0
+gosh> (set! (y-of a-point) 3.33)
+#<undef>
+gosh> (y-of a-point)
+3.33
+@end example
+
+@c EN
+The full list of available slot options is described in 
+@ref{Defining class}.  At a first grance,
+the declarations of such slot options may look verbose.
+The system might have provide a static way to define
+init-keywords or accessor names automatically; however,
+CLOS-like systems prefer flexibility.
+Using a mechanism called metaobject protocol, you can customize
+how these slot options are interpreted, and you can add
+your own slot options as well.
+See @ref{Metaobject protocol}, for details.
+
+We can also have @code{<2d-vector>} class in similar fashion.
+
+@c JP
+利用可能な全スロットオプションのリストは@ref{Defining class}にあります。
+ちょっと見ると、これらのスロットオプションの宣言は冗長に見えるかもしれません。
+システム側で初期化キーワードやアクセス名を自動的に定義する静的な仕組を
+用意することもできたかもしれません。
+しかしながら、CLOS 風のシステムでは柔軟性の方をより重視します。
+メタオブジェクトプロトコルと呼ばれる機構をもちいて、これらの
+スロットオプションがどのように解釈されるかをカスタマイズすることができます。
+また、自分用のスロットオプションを追加することもできます。
+詳しくは @ref{Metaobject protocol} を見てください。
+
+また、似たような流儀で @code{<2d-vector>} クラスを定義できます。
+
+@c COMMON
+@example
+(define-class <2d-vector> ()
+  ((x :init-value 0.0 :init-keyword :x :accessor x-of)
+   (y :init-value 0.0 :init-keyword :y :accessor y-of)))
+@end example
+
+@c EN
+Yes, we can use the same accessor name like @code{x-of}, and
+it is effectively overloaded.
+
+If you are familiar with mainstream object-oriented languages,
+you may wonder where methods are.  Here they are.
+The following form defines a method @code{move-by!} of
+three arguments, @var{pt}, @var{dx}, @var{dy}, where @var{pt} is
+an instance of @code{<2d-point>}.
+
+@c JP
+そうです。同じアクセサ名を @code{x-of} のように使うことができます。
+これは事実上、多重定義されます。
+
+主流のオブジェクト指向言語に慣れた方は、そろそろ、メソッドはどこにあるのだと
+思い始めているかもしれません。いよいよメソッドの登場です。以下のフォームは、3 つの引数
+@var{pt}、@var{dy}、@var{dy} をとり、
+しかも@var{pt} は @code{<2d-point>} のインスタンスであるような
+メソッド @code{move-by!} を定義するものです。
+
+@c COMMON
+@example
+(define-method move-by! ((pt <2d-point>) dx dy)
+  (inc! (x-of pt) dx)
+  (inc! (y-of pt) dy))
+@end example
+
+@c EN
+The second argument of @code{define-method} macro specifies a
+@emph{method specializer list}.  It indicates the first argument must be
+an instance of @code{<2d-point>}, and the second and third
+can be any type.   The syntax to call a method is just like
+the one to call an ordinary function.
+
+@c JP
+@code{define-method} マクロの第二引数は@emph{メソッド特定化子リスト}を
+指定しています。これは、第一引数が @code{<2d-point>} のインスタンスで
+なければならないことを示し、第二、第三引数は任意の型でよいことを
+示しています。メソッド呼び出しの構文は通常関数の呼び出しと同じです。
+
+@c COMMON
+@example
+gosh> (move-by! b-point 1.4 2.5)
+#<undef>
+gosh> (d b-point)
+#<<2d-point> 0x8155b80> is an instance of class <2d-point>
+slots:
+  x         : 51.4
+  y         : -7.5
+@end example
+
+@c EN
+You can overload the method by different specializers; here
+you can move a point using a vector.
+@c JP
+別の特定化子によりこのメソッドを多重定義することが可能です。以下のように
+ベクタを使って点を動かすこともできます。
+@c COMMON
+@example
+(define-method move-by! ((pt <2d-point>) (delta <2d-vector>))
+  (move-by! pt (x-of delta) (y-of delta)))
+@end example
+
+@c EN
+Specialization isn't limited to a user-defined classes.
+You can also specialize a method using Gauche's built-in type.
+@c JP
+特定化はユーザ定義のクラスにだけ限定されているわけではありません。
+Gauche の組み込み型を使ってメソッドを特定化することもできます。
+
+@c COMMON
+@example
+(define-method move-by! ((pt <2d-point>) (c <complex>))
+  (move-by! pt (real-part c) (imag-part c)))
+@end example
+
+@c EN
+And here's the example session:
+@c JP
+以下はセッション例です。
+@c COMMON
+@example
+gosh> (define d-vector (make <2d-vector> :x -9.0 :y 7.25))
+d-vector
+gosh> (move-by! b-point d-vector)
+#<undef>
+gosh> (d b-point)
+#<<2d-point> 0x8155b80> is an instance of class <2d-point>
+slots:
+  x         : 42.4
+  y         : -0.25
+gosh> (move-by! b-point 3+2i)
+#<undef>
+gosh> (d b-point)
+#<<2d-point> 0x8155b80> is an instance of class <2d-point>
+slots:
+  x         : 45.4
+  y         : -2.25
+@end example
+
+@c EN
+You see that a method is dispatched not only by its primary
+receiver (@code{<2d-point>}), but also other arguments.
+In fact, the first argument is no more special than the rest.
+In CLOS-like system a method does not belong to
+a particular class.
+
+So what is actually a method?  Inspecting @code{move-by!}
+reveals that it is an instance of @code{<generic>}, a generic function.
+(Note that @code{describe} truncates the printed value in @code{methods}
+slot for the sake of readability).
+@c JP
+メソッドがその主レシーバ @code{<2d-point>} によってのみディスパッチされる
+のではなく、その他の引数によってもディスパッチされているのがわかると思います。
+実は、第一引数は残りの引数に比べて何ら特別ではありません。
+CLOS 風のシステムではメソッドは特定のクラスに属するものではないのです。
+
+ではメソッドとはいったいなんでしょう。@code{move-by!} を点検してみると
+それが @code{<generic>} のインスタンスであり、ジェネリック関数であると
+わかります。(@code{describe} は可読性のために @code{methods} スロットの
+値の印字を途中で切っていることに注意してください。)
+
+@c COMMON
+@example
+gosh> move-by!
+#<generic move-by! (3)>
+gosh> (d move-by!)
+#<generic move-by! (3)> is an instance of class <generic>
+slots:
+  name      : move-by!
+  methods   : (#<method (move-by! <2d-point> <complex>)> #<method (move-
+gosh> (ref move-by! 'methods)
+(#<method (move-by! <2d-point> <complex>)>
+ #<method (move-by! <2d-point> <2d-vector>)> 
+ #<method (move-by! <2d-point> <top> <top>)>)
+@end example
+
+@c EN
+I said a generic function is a special type of function.
+It is recognized by Gauche as an applicable object, but
+when applied, it selects appropriate method(s) according to
+its arguments and calls the selected method(s).
+
+What the @code{define-method} macro actually does is (1) to create
+a generic function of the given name if it does not exist yet,
+(2) to create a method object with the given specializers
+and the body, and (3) to add the method object to the generic function.
+
+The accessors are also generic functions, created implicitly by the
+@code{define-class} macro.
+@c JP
+ジェネリック関数は特別なタイプの関数だと言いましたが、Gauche ではこれは
+適用可能オブジェクトとして認識されます。それは、適用されるとその引数に
+対応して適切なメソッドを選択して、その選択されたメソッドを呼び出すという動作を
+行います。
+
+実際 @code{define-method} マクロがやっていることは、(1)もし与えられた
+名前のジェネリック関数がまだ存在していなければ、これを生成し、(2)与えられた
+特定化子と本体とでメソッドオブジェクトを生成し、(3)ジェネリック関数に
+そのメソッドオブジェクトを追加する、ということです。
+
+アクセサも同様にジェネリック関数で、@code{define-class} マクロが暗黙のうちに
+生成します。
+
+@c COMMON
+@example
+gosh> (d x-of)
+#<generic x-of (2)> is an instance of class <generic>
+slots:
+  name      : x-of
+  methods   : (#<method (x-of <2d-vector>)> #<method (x-of <2d-point>)>)
+@end example
+
+@c EN
+In the mainstream dynamic object-oriented languages, a class
+has many roles; it defines a structure and a type, creates a
+namespace for its slots and methods, and is responsible for
+method dispatch.  In Gauche, namespace is managed by modules,
+and method dispatch is handled by generic functions.
+
+The default printed representation of object is not very user-friendly.
+Gauche's @code{write} and @code{display} function call a generic
+function @code{write-object} when they encounter an instance
+they don't know how to print.  You can define its method
+specialized to your class to customize how the instance is
+printed.
+@c JP
+主流の動的オジェクト指向言語では、クラスには多くの役割があります。
+クラスは構造と型を定義し、スロットとメソッドの名前空間を生成し、
+メソッドのディスパッチに責任をもちます。Gaucheでは、名前空間は
+モジュールによって管理し、メソッドのディスパッチはジェネリック関数で
+あつかいます。
+
+オブジェクトの印字表現は、デフォルトでは、あまりユーザにやさしくありません。
+Gauche の @code{write} および @code{display} 関数は、どのように印字して
+よいかわからないインスタンスにであうと、ジェネリック関数 @code{write-object}
+を呼びます。定義したクラスのインスタンスをどのように印字するかを
+カスタマイズするために、そのクラスに特定したメソッドを定義することができます。
+
+@c COMMON
+@example
+(define-method write-object ((pt <2d-point>) port)
+  (format port "[[~a, ~a]]" (x-of pt) (y-of pt)))
+
+(define-method write-object ((vec <2d-vector>) port)
+  (format port "<<~a, ~a>>" (x-of vec) (y-of vec)))
+@end example
+
+@c EN
+And what you'll get is:
+@c JP
+で、どうなったかというと、
+@c COMMON
+@example
+gosh> a-point
+[[0.0, 3.33]]
+gosh> d-vector
+<<-9.0, 7.25>>
+@end example
+
+@c EN
+If you customize the printed representation to conform srfi-10
+format, and define a corresponding read-time constructor,
+you can make your instances to be written-out and read-back
+just like built-in objects.  See @ref{Read-time constructor} for
+the details.
+
+Several built-in functions have similar way to extend their
+functionality for user-defined objects.  For example, if
+you specialize a generic function @code{object-equal?}, 
+you can compare the instances by @code{equal?}:
+@c JP
+srfi-10 のフォーマットを満すように印字表現をカスタマイズし、読み込み時
+構築子を定義すれば、自分の定義したクラスのインスタンスを、組み込み
+オブジェクトと同様に書き出し、読み戻しできます。詳しくは
+@ref{Read-time constructor} を見てください。
+
+いくつかの組み込み関数はユーザ定義オブジェクトに対して同様の方法で
+機能拡張できます。たとえば、@code{object-equal?} を特定化すれば、
+@code{equal?} を使ってインスタンスの比較ができます。
+
+@c COMMON
+@example
+(define-method object-equal? ((a <2d-point>) (b <2d-point>))
+  (and (equal? (x-of a) (x-of b))
+       (equal? (y-of a) (y-of b))))
+
+(equal? (make <2d-point> :x 1 :y 2) (make <2d-point> :x 1 :y 2))
+  @result{} #t
+
+(equal? (make <2d-point> :x 1 :y 2) (make <2d-point> :x 2 :y 1))
+  @result{} #f
+
+(equal? (make <2d-point> :x 1 :y 2) 'a)
+  @result{} #f
+
+(equal? (list (make <2d-point> :x 1 :y 2)
+              (make <2d-point> :x 3 :y 4))
+        (list (make <2d-point> :x 1 :y 2)
+              (make <2d-point> :x 3 :y 4)))
+  @result{} #t
+@end example
+
+@c EN
+Let's proceed to more interesting examples.
+Think of a class @code{<shape>}, 
+which is an entity that can be drawn.
+As a base class, it keeps
+common attributes such as a color and line thickness in its slots.
+@c JP
+もっとおもしろい例を見てみましょう。描画可能な @code{<shape>} というクラス
+を考えます。
+基本クラスとして、色や線の太さといった共通属性をスロットに持たせます。
+
+@c COMMON
+@example
+(define-class <shape> ()
+  ((color     :init-value '(0 0 0) :init-keyword :color)
+   (thickness :init-value 2 init-keyword :thickness)))
+@end example
+
+@c EN
+When an instance is created, @code{make} calls a generic function
+@code{initialize}, which takes care of initializing slots
+such as processing init-keywords and init-values.
+You can customize the initialization behavior by specializing
+the @code{initialize} method.   The @code{initialize} method
+is called with two arguments, one is a newly created instance,
+and another is a list of arguments passed to @code{make}.
+
+We define a @code{initialize} method for @code{<shape>} class,
+so that the created shape will be automatically recorded in a global
+list.   Note that we don't want to replace system's
+@code{initialize} behavior completely,
+since we still need the init-keywords to be handled.
+
+@example
+(define *shapes* '())  ;; global shape list
+
+(define-method initialize ((self <shape>) initargs)
+  (next-method)  ;; let the system to handle slot initialization
+  (push! *shapes* self)) ;; record myself to the global list
+@end example
+@c JP
+インスタンスを生成する際、@code{make} はジェネリック関数 @code{initialize}
+を呼びます。この関数は init-keyword や init-value を処理するようなスロットの
+面倒を見ます。この @code{initialize} メソッドを特定化することによって、初期化
+の振舞いをカスタマイズすることができます。@code{initialize} メソッドは二つの
+引数とともに呼ばれます。ひとつは新しく生成されたインスタンス、もうひとつは
+@code{make} にわたされた引数のリストです。
+
+@code{initialize} メソッドを @code{<shape>} クラス用に定義し、生成された
+shape が自動的にグローバルなリストに登録されるようにしましょう。
+システムのもつ @code{initialize} の振舞いを完全に置き換えたくはないという
+ことに注意してください。init-keyword は相変わらず扱う必要があるからです。
+
+@example
+(define *shapes* '())  ;; グローバルな shape のリスト
+
+(define-method initialize ((self <shape>) initargs)
+  (next-method)  ;; このシステムがスロットの初期化処理をするようにする
+  (push! *shapes* self)) ;; 自分自身をグローバルなリストに登録する
+@end example
+
+@c EN
+The trick is a special method, @code{next-method}.  It can only be
+used inside a method body, and calls @emph{less specific method}
+of the same generic function---typically, it means you call the
+same method of superclass.
+Most object-oriented languages have the concept of calling
+superclass's method.  Because of multiple-argument
+dispatching and multiple inheritance, @code{next-method} is
+a little bit more complicated, but the basic idea is the same.
+
+So, what's the superclass of @code{<shape>}?  In fact, all 
+Scheme-defined class inherits a class called @code{<object>}.
+And it is @code{<object>}'s initialize method which takes care
+of slot initialization.  After calling @code{next-method}
+within your @code{initialize} method, you can assume all
+the slots are properly initialized.  So it is generally the
+first thing in your @code{initialize} method to call @code{next-method}.
+
+Let's inspect the above code.  When you call
+@code{(make <shape> args @dots{})}, the system allocates
+memory for an instance of @code{<shape>}, and calls
+@code{initialize} generic function with the instance and
+@code{args @dots{}}.  It is dispatched to the @code{initialize}
+method you just defined.  In it, you call @code{next-method},
+which in turn calls @code{<object>} class's @code{initialize}
+method.  It initializes the instance with init-values and init-keywords.
+After it returns, you register the new @code{<shape>} instance
+to the global shape list @code{*shapes*}.
+
+The @code{<shape>} class represents just an abstract concept of
+shape.  Now we define some concrete drawable shapes, by
+@emph{subclassing} the @code{<shape>} class.
+@c JP
+仕掛けは、特別なメソッド @code{next-method} にあります。これは
+メソッド本体の中でしか使えません。同じジェネリック関数の
+@emph{特定化の度合がより低いメソッド}を呼びます。これは、典型的には
+スーパークラスの同じメソッドを呼ぶということを意味します。
+ほとんどのオジェクト指向言語には、スーパークラスのメソッドを呼ぶという
+概念があります。多重引数ディスパッチと多重継承のために @code{next-method}
+は少し複雑にはなっていますが、基本的なアイディアは同じです。
+
+さて、では @code{<shape>} のスーパークラスはなんでしょう。実は、
+すべての Scheme で定義されたクラスは @code{<object>} というクラスを
+継承します。スロットのめんどうを見ているのは、@code{<object>} の
+初期化メソッドなのです。自分で定義した @code{initialize} メソッド中で
+@code{next-method} を呼びだしたあとでは、すべてのスロットが
+正しくイニシャライズされたとみなせます。というわけで、自分で定義した
+@code{initialize} のなかで通常、最初にすべきことは @code{next-method}
+を呼ぶことです。
+
+上のコードを点検してみましょう。@code{(make <shape> args @dots{})} を呼ぶと、
+システムは @code{<shape>} のインスタンスのためのメモリを確保し、
+@code{initialize} ジェネリック関数を、そのインスタンスと @code{args @dots{}}
+で呼びます。これは、いま自分で定義した @code{initialize} にディスパッチ
+されます。その中で @code{next-method} よび、それがこんどは @code{<object>}
+クラスの @code{initialize} メソッドをよびます。これでこのインスタンスは
+init-value と init-keyword で初期化されます。@code{next-method} からもどった
+あと、新しい @code{<shape>} インスタンスをグローバルの shape リストに
+@code{*shapes*} に登録します。
+
+この @code{<shape>} クラスは shape の抽象的概念を表現しているにすぎません。
+では、いくつかの具体的な描画可能な shape を @code{<shape>} の
+@emph{サブクラス化}によって定義しましょう。
+
+@c COMMON
+@example
+(define-class <point-shape> (<shape>)
+  ((point  :init-form (make <2d-point>) :init-keyword :point)))
+
+(define-class <polyline-shape> (<shape>)
+  ((points :init-value '() :init-keyword :points)
+   (closed :init-value #f  :init-keyword :closed)))
+@end example
+
+@c EN
+Note the second argument passed to @code{define-class}.
+It indicates that @code{<point-shape>} and @code{<polyline-shape>}
+inherit slots of @code{<shape>} class, and also instances of
+those subclasses can be accepted wherever an instance of 
+@code{<shape>} class is accepted.
+
+The @code{<point-shape>} adds one slot, @code{point}, which
+contains an instance of @code{<2d-point>} defined in the beginning
+of this section.  The @code{<polyline-shape>} class stores
+a list of points, and a flag, which specifies whether the end
+point of the polyline is connected to its starting point or not.
+
+Inheritance is a powerful mechanism that should be used with care,
+or it easily result a code which is untractable
+("Object-oriented programming offers a sustainable way to
+write spaghetti code.", as Paul Graham says in his article
+"The Hundred-Year Language").
+The rule of thumb is to make a subclass when you need a subtype.
+The inheritance of slots is just something that comes with,
+but it shouldn't be the main reason to do subclassing.
+You can always "include" the substructure, as is done in
+@code{<point-shape>} class.
+
+There appeared a new slot option in @code{<point-shape>} class.
+The @code{:init-form} slot option specifies the default value of
+the slot when init-keyword is not given to @code{make} method.
+However, unlike @code{:init-value}, with which the value is
+evaluated at the time the class is defined, 
+the value with @code{:init-form} is evaluated when the system
+actually needs the value.  So, in the @code{<point-shape>} instance,
+the default @code{<2d-point>} instance is only created if the
+@code{<point-shape>} instance is created without having @code{:point}
+init-keyword argument.
+
+A shape may be drawn in different formats for different devices.
+For now, we just consider a PostScript output.  To make the @code{draw}
+method polymorphic, we define a postscript output device class,
+@code{<ps-device>}.
+
+@c JP
+@code{define-class} の第二引数に注目してください。これは
+@code{<point-shape>} および @code{<polyline-shape>} が @code{<shape>}
+クラスのスロットを継承していることを示しています。そして @code{<shape>}
+クラスが受け入れるものはすべて、それらのサブクラスでも受け入れらること
+も示しています。
+
+@code{<point-shape>} には @code{point} というスロットがひとつ追加
+されています。このスロットはこの節の最初で定義した、@code{<2d-point>} の
+インスタンスを持ちます。@code{<polyline-shape>} クラスは点のリスト、
+フラグを格納します。フラグは多角形のラインが終点と始点つないでいるか
+どうかを指定します。
+
+継承はとりあつかいに注意が必要な強力な機構です。うっかりするとすぐに
+追跡不能なコードができあがります。(Paul Graham は『百年の言語』という
+記事のなかで、「オブジェクト指向プログラミングはスパゲッティコードを
+書くための持続的な方法を提供してくれる。」と言っているように。)
+経験則からいうとサブタイプが必要なときにサブクラスを作るのがよいようです。
+スロットの継承は付随するなにかではありますが、サブクラス化のための
+主要な理由にしてはいけません。@code{<point-shape>} クラスでやったように
+サブストラクチャを「インクルード」することは常にできるのです。
+
+@code{<point-shape>} クラスに新しいスロットオプションがあらわれました。
+@code{:init-form} というスロットオプションは、init-keyword が
+@code{make} に与えられなかったときのそのスロットのデフォルト値を指定します。
+しかし、クラス定義時に評価される @code{:init-value} の値とはちがって、
+この @code{:init-form} をともなう値はシステムが実際のその値を必要とした
+ときに評価されます。したがって、@code{<point-shape>} のインスタンス
+では、@code{<point-shape>} インスタンスが @code{:point} キーワード引数を
+わたされずに生成されたときにのみ、デフォルトの @code{<2d-point>} 
+インスタンスが生成されます。
+
+shape は別のデバイスに別の方法で描画され得ます。いまのところは、
+PostScript 出力だけを考慮しましょう。@code{draw} メソッドに多相性を持たせる
+ために、PostScript 出力デバイス @code{<ps-device>} を定義します。
+
+@c COMMON
+@example
+(define-class <ps-device> () ())
+@end example
+
+@c EN
+Then we can write a @code{draw} method, specialized for
+both @code{<shape>} and @code{<ps-device>}.
+@c JP
+こうすると、@code{<shape>} および @code{<ps-device>} の両方に特定化した
+@code{draw} メソッドを書くことができます。
+
+@c COMMON
+@example
+(define-method draw ((self <shape>) (device <ps-device>))
+  (format #t "gsave\n")
+  (draw-path self device)
+  (apply format #t "~a ~a ~a setrgbcolor\n" (ref self 'color))
+  (format #t "~a setlinewidth\n" (ref self 'thickness))
+  (format #t "stroke\n")
+  (format #t "grestore\n"))
+@end example
+
+@c EN
+In this code, the @var{device} argument isn't
+used within the method body.  It is just used for method dispatching.
+If we eventually have different output devices, we can add
+a @code{draw} method that is specialized for such devices.
+
+The above @code{draw} method does the common work, but actual
+drawing must be done in specialized way for each subclasses.
+@c JP
+このコードでは @var{device} 引数はメソッド本体内では使われていません。
+メソッドディスパッチのためのみに使われます。いずれ別の出力デバイス
+を必要になったら、そのデバイスに特定化した @code{draw} メソッドを
+追加することができます。
+
+上の @code{draw} メソッドは共通の仕事をしますが、実際の描画は
+それぞれのサブクラス用に特定化された方法で行わなければなりません。
+
+@c COMMON
+@example
+(define-method draw-path ((self <point-shape>) (device <ps-device>))
+  (apply format #t "newpath ~a ~a 1 0 360 arc closepath\n"
+         (point->list (ref self 'point))))
+
+(define-method draw-path ((self <polyline-shape>) (device <ps-device>))
+  (let ((pts (ref self 'points)))
+    (when (>= (length pts) 2)
+      (format #t "newpath\n")
+      (apply format #t "~a ~a moveto\n" (point->list (car pts)))
+      (for-each (lambda (pt)
+                  (apply format #t "~a ~a lineto\n" (point->list pt)))
+                (cdr pts))
+      (when (ref self 'closed)
+        (apply format #t "~a ~a lineto\n" (point->list (car pts))))
+      (format #t "closepath\n"))))
+
+;; utility method
+(define-method point->list ((pt <2d-point>))
+  (list (x-of pt) (y-of pt)))
+@end example
+
+@c EN
+Finally, we do a little hack.  Let @code{draw} method work on
+the list of shapes, so that we can draw multiple shapes within a page
+in batch.
+@c JP
+最後にもう少しだけ、ハックしましょう。@code{draw} メソッドを
+shape のリストに対しても動作するようにします。こうすれば、
+同一ページ内で複数の shape をひつまとめで描画できます。
+
+@c COMMON
+@example
+(define-method draw ((shapes <list>) (device <ps-device>))
+  (format #t "%%\n")
+  (for-each (cut draw <> device) shapes)
+  (format #t "showpage\n"))
+@end example
+
+@c EN
+Then we can write some simple figures @dots{}.
+@c JP
+これで簡単な図を書けるようになります。
+
+@c COMMON
+@example
+(use srfi-1)      ;; for iota
+(use math.const)  ;; for constant pi
+
+(define (shape-sample)
+
+  ;; creates 5 corner points of pentagon
+  (define (make-corners scale)
+    (map (lambda (i)
+           (let ((pt (make <2d-point>)))
+             (move-by! pt (make-polar scale (* i 2/5 pi)))
+             (move-by! pt 200 200)
+             pt))
+         (iota 5)))
+
+  (set! *shapes* '())  ;; clear the shape list
+  (let* ((corners (make-corners 100)))
+    ;; a pentagon in green
+    (make <polyline-shape>
+      :color '(0 1 0) :closed #t
+      :points corners)
+    ;; a star-shape in red
+    (make <polyline-shape>
+      :color '(1 0 0) :closed #t
+      :points (list (list-ref corners 0)
+                    (list-ref corners 2)
+                    (list-ref corners 4)
+                    (list-ref corners 1)
+                    (list-ref corners 3)))
+    ;; put dots in each corner of the star
+    (for-each (cut make <point-shape> :point <>)
+              (make-corners 90))
+    ;; draw the shapes
+    (draw *shapes* (make <ps-device>)))
+  )
+@end example
+
+@c EN
+The function @code{shape-sample} writes out a PostScript code of
+simple drawing to the current output port.  You can write it out
+to file by the following expression, and then view the result
+by PostScript viewer such as GhostScript.
+@c JP
+関数 @code{shape-sample} は現在の出力ポートに簡単な PostScript の描画コード
+を書き出します。これを以下のような式でファイルに出力し、GhostScriptなどの
+PostScriptビューワで結果を見てください。
+
+@c COMMON
+@example
+(with-output-to-file "oointro.ps" shape-sampe)
+@end example
+
+
+@c ----------------------------------------------------------------------
+@node General Inquiry, Class, Introduction to the object system, Object system
+@section  General Inquiry
+@c NODE 一般的な問い合わせ
+
+@defun class-of obj
+@c EN
+Returns a class metaobject of @var{obj}.
+@c JP
+@var{obj}のクラスを返します。
+@c COMMON
+
+@example
+(class-of 3)         @result{} #<class <integer>>
+(class-of "foo")     @result{} #<class <string>>
+(class-of <integer>) @result{} #<class <class>>
+@end example
+@end defun
+
+@defun is-a? obj class
+@c EN
+Returns true if @var{obj} is an instance of @var{class} or an instance
+of descendants of @var{class}.
+@c JP
+@var{obj}が@var{class}のインスタンスであるか、@var{class}のサブクラスの
+インスタンスである場合に、真を返します。
+@c COMMON
+
+@example
+(is-a? 3 <integer>)   @result{} #t
+(is-a? 3 <real>)      @result{} #t
+(is-a? 5+3i <real>)   @result{} #f
+(is-a? :foo <symbol>) @result{} #f
+@end example
+@end defun
+
+@c EN
+If @var{obj}'s class has been redefined, these procedures
+first updates @var{obj} to change its class to the new class.
+So @code{class-of} always returns the new class.
+This behavior is different from stklos 0.55, in which @code{class-of}
+returns an old class if @var{obj} hasn't been updated.
+If you need to get the old class, you should use @code{current-class-of}
+below.  
+See @ref{Class redefinition} for the details of the semantics
+of redefined class.
+@c JP
+@var{obj}のクラスが再定義されてしまうと、これらの手続きは、最初に
+@var{obj}のクラスを新しいクラスに変更します。したがって、@code{class-of} は
+いつも新しいクラスを返します。この振舞いは stklos 0.55 とは異ります。
+stklos 0.55 では @code{class-of}は、@var{obj}が更新されていなければ、
+旧いクラスを返します。もし、旧いクラスが必要なばあいは、以下の
+@code{current-class-of} を使うべきです。クラス再定義のセマンティクスの
+詳細については @ref{Class redefinition} を見てください。
+@c COMMON
+
+@defun current-class-of obj
+@c EN
+Returns a class metaobject of @var{obj}.  If @var{obj}'s class
+has been redefined, but @var{obj} is not updated for the change,
+then this procedure returns the original class of @var{obj}
+without updating @var{obj}.
+
+You need this procedure in rare occasions, such as within
+@code{change-class} method, in which you don't want to trigger
+updating @var{obj} (which would cause infinite loop).
+@c JP
+@var{obj} のクラスメタオブジェクトを返します。@var{obj} のクラスが
+再定義されてしまった場合でも、@var{obj} がその変更に合せて更新されて
+いない場合には、この手続きは @var{obj} の元のクラスを返します。
+この手続きは、@var{obj} を更新しません。
+
+この手続きはめったに必要にはなりません。必要になるのは @code{change-class}
+メソッド内で、@var{obj} の更新のトリガーを引きたくないような場合
+(無限ループを起す可能性がある場合)です。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Class, Instance, General Inquiry, Object system
+@section Class
+@c NODE クラス
+
+@c EN
+In this section, a class in Gauche is explained in detail.
+@c JP
+この節では、Gauche におけるクラスについて詳しく説明します。
+@c COMMON
+
+@menu
+* Defining class::              
+* Inheritance::                 
+* Class object::                
+* Slot definition object::      
+* Class redefinition::          
+* Class definition examples::   
+@end menu
+
+@node Defining class, Inheritance, Class, Class
+@subsection Defining class
+@c NODE クラスの定義
+
+@c EN
+To define a class, use a macro @code{define-class}.
+@c JP
+クラスを定義するには、@code{define-class} マクロを使います。
+@c COMMON
+
+@defmac define-class name supers (slot-spec @dots{}) option @dots{}
+@c EN
+Creates a class object according to the arguments, and globally
+bind it to a variable @var{name}.   This macro should be used at toplevel.
+
+@var{Supers} is a list of direct superclasses from which this class
+inherits.   You can use multiple inheritance.
+All Scheme-defined classes implicitly inherits @code{<object>}.
+It is implicitly added to the right of @var{supers} list, so you
+don't need to specify it.
+See @ref{Inheritance}, for the details about inheritance.
+
+@var{Slot-spec} is a specification of a "slot", sometimes known as 
+a "field" or an "instance variable" (but you can specify "class variable"
+in @var{slot-spec} as well). 
+The simplest form of @var{slot-spec} is just a symbol, which names
+the slot.  Or you can give a list, whose first element is a symbol
+and whose rest is an interleaved list of keywords and values.
+The list form not only defines a name of the slot but specifies
+behavior of the slot.  It is explained below.
+
+Finally, @var{option} @dots{} is an interleaved list of keywords
+and values, specifies how class object should be created.
+This macro recognizes one keyword, @code{:metaclass}, whose
+corresponding value is used for metaclass (class that instantiates
+another class).   Other options are passed to the @code{make}
+method to create the class object.  @xref{Class instantiation},
+for the usage of metaclass.
+@c JP
+引数によって指定されたクラスオブジェクトを作成し、それを @var{name} に
+グローバルに束縛します。このマクロはトップレベルでのみ使うことができます。
+
+@var{Supers} はそのクラスが継承する直接のスーパークラスのリストです。
+多重継承も使えます。継承の詳細については@ref{Inheritance} を参照して下さい。
+
+@var{Slot-spec} は「スロット」の仕様で、他の言語ではよく
+「フィールド」や「インスタンス変数」と呼ばれるものです 
+(@var{slot-spec} を使って「クラス変数」を指定することもできます)。
+@var{slot-spec} の最も単純なフォームはシンボルそのもので、その名前が
+スロットであるものです。あるいは、最初の要素がシンボルで残りの要素が
+キーワードと値が交互に来るリストを渡すこともできます。
+
+このリストフォームは、スロットの名前を定義するだけでなく、そのスロットの
+振る舞いも定義します。スロットの定義については以下で説明します。
+
+最後に、@var{option} @dots{} は、クラスオブジェクトがどのように
+作られるかを指定する、キーワードと値が交互に来るリストです。
+
+このマクロでは1つのキーワード引数、@code{:metaclass} により、
+メタクラス(他のクラスをインスタンス化するクラス)を指定できます。
+他のオプションはクラスオブジェクトを作成するために、@code{make}
+メソッドに渡されます。メタクラスの使用方法については、
+@ref{Class instantiation}を参照。
+@c COMMON
+@end defmac
+
+@c EN
+If a slot specification is a list, it should be in the following form:
+@c JP
+スロットの指定はリストで、以下のようなフォームであるべきです。
+@c COMMON
+
+@example
+(@var{slot-name} :option1 value1 :option2 value2 @dots{})
+@end example
+
+@c EN
+Each keyword (@code{option1} etc.) gives a @emph{slot option}.
+By default, the following slot options are recognized.
+You can add more slot options by defining metaclass.
+
+@table @code
+
+@item :allocation
+Specifies an allocation type of this slot, which specifies how the
+value for this slot is stored.  The following keyword values are
+recognized by the standard class.  A programmer can define his own
+metaclass to extend the class to recognize other allocation types.
+@table @code
+@item :instance
+A slot is allocated for each instance, so that every instance can have
+distinct value.  This realizes so-called "instance variable" behavior.
+If @code{:allocation} slot option is omitted, this is the default.
+@item :class
+A slot is allocated in this class object, so that every instance will
+share the same value for this slot.  This realizes so-called
+"class variable" behavior.  The slot value is also shared by all
+subclasses (unless a subclass definition shadows the slot).
+@item :each-subclass
+Similar to @code{class} allocation, but a slot is allocated for each
+class; that is, it is shared by every instance of the class, but
+not shared by the instances of its subclasses.
+@item :virtual
+No storage is allocated for this type of slot.  Accessing the slot
+calls procedures given in @code{:slot-ref} and @code{:slot-set!} options
+described below.  In other words, you can make a procedural slot.
+If a slot's allocation is specified as virtual, at least
+@code{:slot-ref} option has to be specified as well, or @code{define-class}
+raises an error.
+@item :builtin
+This type of allocation only appears in built-in classes, and
+you can't specify it in Scheme-defined class.
+@end table
+
+@item :init-keyword
+A keyword value given to this slot option can be used to pass an
+initial value to @code{make} method when an instance is created.
+
+@item :init-value
+Gives an initial value of the slot, if the slot is not initialized
+by the keyword argument at the creation time.   The value is
+evaluated when @code{define-class} is evaluated.
+
+@item :init-form
+Like @code{init-value}, but the value given is wrapped in a thunk,
+and evaluated each time when the value is required.
+If both @code{init-value} and @code{init-form} are given, @code{init-form}
+is ignored.   Actually, @code{:init-form @var{expr}} is converted
+to @code{:init-thunk (lambda () @var{expr})} by @code{define-class} macro.
+
+@item :initform
+A synonym of @code{init-form}.  This is kept for compatibility to
+STk, and shouldn't be used in the new code.
+
+@item :init-thunk
+Gives a thunk, which will be evaluated to obtain an initial value
+of the slot, if the slot is not initialized by the keyword argument
+at the creation time.  To give a value to @code{:init-form}
+is equivalent to give @code{(lambda () value)} to @code{:init-thunk}.
+
+@item :getter
+Takes a symbol, and a getter method is created and bound to the
+generic function of that name.  The getter method takes an instance
+of the class and returns the value of the slot.
+
+@item :setter
+Takes a symbol, and a setter method is created and bound to
+the generic function of that name.  The setter method takes an instance
+of the class and a value, and sets the value to the slot of the instance.
+
+@item :accessor
+Takes a symbol, and create two methods; a getter method and a setter method.
+A getter method is bound to the generic function of the given name,
+and a setter method is added as the @emph{setter} of that generic function
+(see @ref{Assignments} for generic setters).
+
+@item :slot-ref
+Specifies a value that evaluates to a procedure which takes one argument,
+an instance.  This slot option must be specified if the allocation of
+the slot is @code{virtual}.  Whenever a program tries to get the value
+of the slot, either using @code{slot-ref} or the getter method,
+the specified procedure is called, and its result is returned as
+the value of the slot.  The procedure can return an undef value
+(the return value of @code{undefined}) to indicate the slot doesn't
+have a value.
+If the slot allocation is not @code{virtual} this slot option is ignored.
+
+@item :slot-set!
+Specifies a value that evaluates to a procedure which takes two arguments,
+an instance and a value.  Whenever a program tries
+to set the value of the slot, either using @code{slot-set!} or the
+setter method, the specified procedure is called with the value to be set.
+If the slot allocation is not @code{virtual} this slot option is ignored.
+If this option isn't given to a virtual slot, the slot becomes read-only.
+
+@item :slot-bound?
+Specifies a value that evaluates to a procedure which takes one argument,
+an instance.  This slot option is only meaningful when the slot allocation
+is @code{virtual}.  Whenever a program tries to determine whether
+the slot has a value, this procedure is called.  It should return
+a true value if the slot has a value, or @code{#f} otherwise.
+If this slot option is omitted for a virtual slot, the system
+calls the procedure given to @code{slot-ref} instead, and see whether
+its return value is @code{#<undef>} or not.
+@end table
+@c JP
+各キーワード(@code{option1} など) は @emph{slot option} を与えます。
+デフォルトでは、以下のスロットオプションが認識されます。
+メタクラスを定義することで、デフォルト以外のスロットオプションを
+追加できます。
+
+@table @code
+
+@item :allocation
+このスロットのアロケーションタイプを指定します。これは、このスロットが
+どのように値を格納するかを指定します。以下のようなキーワード値が
+標準クラスによって認識されます。プログラマは、自分用のメタクラスを定義し、
+これら以外のアロケーションタイプを認識するように、このクラスを拡張すること
+ができます。
+
+@table @code
+@item :instance
+スロットは各インスタンス毎にアロケートされます。したがって、おのおのの
+インスタンスは別々の値をもてます。これは、いわゆる「インスタンス
+変数」の振舞いを実現します。@code{:allocation} スロットオプションが
+省略された場合、これがデフォルトとなります。
+@item :class
+スロットはクラスオブジェクト自身にアロケートされます。したがって、おのおのの
+インスタンスはこのスロットの同じ値を共有します。これは、いわゆる
+「クラス変数」の振舞いを実現します。このスロットの値は、すべてのサブクラス
+でも共有されます。(ただし、サブクラスの定義がこのスロットをシャドウする
+場合には、そのかぎりではありません。)
+@item :each-subclass
+@code{class} アロケーションと似ていますが、スロットはクラス毎にアロケート
+されます。すなわち、このスロットは、このクラスのすべてのインスタンスで
+共有されますが、サブクラスのインスタンスには共有されません。
+@item :virtual
+このタイプのスロット用には格納領域はアロケートされません。このスロット
+にアクセスすると以下で説明する @code{:slot-ref} および @code{:slot-set!}
+オプションで与えられた手続きが呼ばれます。いいかえれば、手続きスロットを
+作成できるということです。スロットアロケーションが virtual と指定されて
+いる場合、少なくとも @code{:slot-ref} オプションが同時に
+指定されていなければなりません。さもなければ、@code{define-class} は
+エラーを発生させます。
+@item :builtin
+このアロケーションタイプは組み込みクラスの中だけに現れます。
+Scheme 定義のクラスでこのタイプを指定することはできません。
+@end table
+
+@item :init-keyword
+このスロットオプションに与えられたキーワード値は、インスタンスが生成
+される際に @code{make} メソッドに初期値をわたすために使えます。
+
+@item :init-value
+生成時にキーワード引数で初期化されてないスロットの場合、これによって
+スロットの初期値を与えます。その値は @code{define-class} が評価される
+ときに、評価されます。
+
+@item :init-form
+@code{init-value} と似ていますが、与えられた値は thunk で包まれていて、
+その値が必要とされた時に毎回評価されます。@code{init-value} と
+@code{init-form} との両方が与えられた時には @code{init-form} が無視されます。
+実際には、@code{:init-form @var{expr}} は @code{define-class} マクロの
+@code{:init-thunk (lambda () @var{expr})} に変換されます。
+
+@item :initform
+@code{init-form} と同義です。STk との互換性のためにあります。新しくコードを
+書く場合には使うべきではありません。
+
+@item :init-thunk
+thunk を与えます。もし、当該スロットが生成時にキーワード引数によって
+初期化されていなければ、その thunk を評価して当該スロットの初期値とします。
+@code{:init-form} に @code{value} を与えることと、@code{:init-thunk}
+に @code{(lambda () value)} を与えることは同じことです。
+
+@item :getter
+シンボルをとり、getter メソッドを生成し、同じ名前のジェネリック関数に
+束縛します。getter メソッドは当該クラスのインスタンスを引数とし、当該
+スロットの値を返します。
+
+@item :setter
+シンボルをとり、setter メソッドを生成し、同じ名前のジェネリック関数に
+束縛します。setter メソッドは当該クラスのインスタンスと値をひとつ引数
+として、そのインスタンスの当該スロットの値をその値にセットします。
+
+@item :accessor
+シンボルをとり、2 つのメソッド(getter メソッドと setter メソッド)を
+生成します。getter メソッドは与えられた名前のジェネリック関数に
+束縛され、setter メソッドは、与えられた名前のジェネリック
+関数のsetterとして追加されます(setter については @ref{Assignments}
+を参照して下さい)。
+
+@item :slot-ref
+評価すると引数(インスタンス)を一つとる手続きとなる値を指定します。
+このスロットオプションは当該スロットのアロケーションが @code{virtual}
+である場合、必ず指定されていなければなりません。プログラムが
+@code{slot-ref}やgetter メソッドを使って
+当該スロットの値を得ようとすると、
+このオプションに指定された手続きが呼ばれ、その結果が
+当該スロットの値として返されます。手続きは undef 値を返し
+(@code{undefined}の戻り値)、スロットが値をもっていないことを示す
+ことができます。もしスロットのアロケーションが @code{virtual} で
+なければ、このスロットオプションは無視されます。
+
+@item :slot-set!
+評価すると二つの引数(インスタンスと値)をとる手続きとなる値を指定します。
+プログラムが@code{slot-set!} あるいは setter メソッドを使って
+当該スロットに値をセットしようとするときに、
+指定した手続きがインスタンスとセットすべき値を引数として
+呼ばれます。スロットアロケーションが
+@code{virtual}でなければ、このスロットオプションは無視されます。
+このスロットオプションの無いvirtualスロットはリードオンリースロットとなります。
+
+@item :slot-bound?
+評価すると引数(インスタンス)を一つとる手続きとなる値を指定します。
+このスロットオプションは当該スロットのアロケーションが @code{virtual}
+である場合しか意味を持ちません。
+プログラムが当該スロットが値を持っているかどうかを決定しようとしたときに、
+この手続きを呼ばれます。手続きは、スロットが値をもつなら、真の値を、
+そうでなければ@code{#f} を返します。仮想スロットに対して、このスロット
+オプションが省略されると、システムは代りに @code{slot-ref} に与えられ
+た手続きを呼び、それが、@code{#<undef>} を返すかどうか見ます。
+@end table
+@c COMMON
+
+@node Inheritance, Class object, Defining class, Class
+@subsection Inheritance
+@c NODE 継承
+
+@c EN
+Inheritance has two roles.  First, you can @emph{extend} the existing
+class by adding more slots.  Second, you can @emph{specialize} the
+methods related to the existing class so that those methods will
+do a little more specific task than the original methods.
+@c JP
+継承にはふたつの役割があります。第一に、スロットを追加することで
+既存のクラスを@emph{拡張}できます。第二には、既存のクラス
+関連するメソッドを@emph{特定化}して、元々のメソッドよりもすこし
+特定化した仕事をやらせるようにできます。
+@c COMMON
+
+@c EN
+Let's define some terms.  When a class @code{<T>} inherits a 
+class @code{<S>}, we call @code{<T>} a @emph{subclass} of @code{<S>},
+and @code{<S>} a @emph{superclass} of @code{<T>}.  This relation
+is transitive: @code{<T>}'s subclasses are also @code{<S>}'s subclasses,
+and @code{<S>}'s superclasses are also @code{<T>}'s superclasses.
+Specifically, if @code{<T>} directly inherits @code{<S>}, that is,
+@code{<S>} appeared in the superclass list when @code{<T>} is defined,
+then @code{<S>} is a @emph{direct superclass} of @code{<T>}, 
+and @code{<T>} is a @emph{direct subclass} of @code{<S>}.
+@c JP
+いくつかの用語を定義しておきましょう。クラス @code{<T>} がクラス
+@code{<S>}を継承しているとき、@code{<T>} を @code{<S>} の
+@emph{サブクラス}といい、@code{<S>} を @code{<T>} の
+@emph{スーパークラス}といいます。この関係は推移的です。すなわち、
+@code{<T>} のサブクラスは、やはり @code{<S>} のサブクラスであり、
+@code{<S>} のスーパークラスは、やはり @code{<T>} のスーパークラスです。
+特に、@code{<T>} が @code{<S>} を直接継承している場合、すなわち、
+@code{<S>} が @code{<T>} を定義する際のスーパークラスリストに
+現われている場合には @code{<S>} を @code{<T>} の
+@emph{直接スーパークラス}といい、@code{<T>} を @code{<S>} の
+@emph{直接サブクラス}といいます。
+@c COMMON
+
+@c EN
+When a class is defined, it and its superclasses are ordered from
+subclasses to superclasses, and a list of classes is created in such
+order.   It is called @emph{class precedence list}, or CPL.
+Every class has its own CPL.
+A CPL of a class always begins with the class itself, and ends with
+@code{<top>}.
+
+You can query a class's CPL by a procedure @code{class-precedence-list}:
+@c JP
+クラスを定義したとき、そのクラスとそのスーパークラスは、サブクラスから
+スーパークラスという順序になり、クラスのリストがその順で生成されます。
+このリストのことを@emph{クラス順位リスト}、あるいは CPL といいます。
+すべてのクラスはそれぞれ自身の CPL を持っています。
+クラスの CPL は常に自分自身からはじまり、@code{<top>} で終ります。
+
+手続き @code{class-precedence-list} を用いてクラスの CPL を問い合わせ
+ることができます。
+@c COMMON
+
+@example
+gosh> (class-precedence-list <boolean>)
+(#<class <boolean>> #<class <top>>)
+gosh> (class-precedence-list <string>)
+(#<class <string>> #<class <sequence>> #<class <collection>> #<class <top>>)
+@end example
+
+@c EN
+As you see, all classes inherits a class named @code{<top>}.
+Some built-in classes have several abstract classes in its CPL
+between itself and @code{<top>}; the above example shows @code{<string>}
+class inherits @code{<sequence>} and @code{<collection>}.
+That means a string can behave both as a sequence and a collection.
+@c JP
+見るとわかるように、すべてのクラスは @code{<top>} という名前のクラスを
+継承しています。組み込みクラスには、いくつかの抽象クラスを CPL 中で
+自分自身と @code{<top>} の間に連ねているものもあります。上の例では
+@code{<string>} クラスは @code{<sequence>} と @code{<collection>} を
+継承しています。これは、文字列がシーケンスとしても、コレクションとして
+も振舞うことができるということです。
+@c COMMON
+
+@example
+gosh> (is-a? "abc" <string>)
+#t
+gosh> (is-a? "abc" <sequence>)
+#t
+gosh> (is-a? "abc" <collection>)
+#t
+@end example
+
+@c EN
+How about inheritance of Scheme-defined classes?
+If there's only single inheritance, its CPL is straightforward:
+you can just follow the class's super, its super's super, its
+super's super's super, @dots{}, until you reach @code{<top>}.
+See the example:
+@c JP
+Schemeで定義したクラスの継承についてはどうでしょう。
+単一継承なら、CPL は直截的です。そのクラスのスーパークラス、
+スーパークラスのスーパークラス、
+スーパークラスのスーパークラスのスーパークラス、@dots{} と
+@code{<top>} に到達するまで、たどっていけます。例を見てください。
+@c COMMON
+
+@example
+gosh> (define-class <a> () ())
+<a>
+gosh> (define-class <b> (<a>) ())
+<b>
+gosh> (class-precedence-list <b>)
+(#<class <b>> #<class <a>> #<class <object>> #<class <top>>)
+@end example
+
+@c EN
+Scheme-defined class always inherits @code{<object>}.
+It is automatically inserted by the system.
+
+When multiple inheritance is involved, a story becomes a bit
+complicated.  We have to merge multiple CPLs of the superclasses
+into one CPL.  It is called @emph{linearization}, and there are
+several known linealization strategies.  By default, Gauche uses
+an algorithm called @emph{C3 linearization},
+which is consistent with the local precedence order,
+monotonicity, and the extended precedence graph.
+We don't go into the details here; as a general rule,
+the order of superclasses in a class's CPL is always
+consistent to the order of direct superclasses of
+the class, the order of CPL of each superclasses,
+and the order of direct superclasses of each superclass,
+and so on.   See @ref{dylan,[Dylan],Dylan} for the precise
+description.
+
+If a class inherits superclasses in a way that its CPL can't
+be constructed with satisfying consistencies, an error is reported.
+
+Here's a simple example of multiple inheritance.
+@c JP
+Scheme定義のクラスは常に @code{<object>} を継承します。
+システムが自動的に挿入します。
+
+多重継承が使われる場合には話はすこし複雑になります。複数のスーパークラスの
+複数の CPL をひとつの CPL にマージしなければなりません。このことを
+@emph{線形化}といい、いくつかの線形化戦略が知られています。Gauche では
+デフォルトで @emph{C3 線形化}と呼ばれているアルゴリズムを使います。
+このアルゴリズムは局所的な順位、単調性、拡張順位グラフと整合性のとれた
+ものです。ここでは詳細に立ち入りませんが、一般的なルールとして、
+CPL 中のスーパークラスの順序は、つねにそのクラスの直接スーパークラスの
+順序、それぞれのスーパークラスの CPL の順序、および、各スーパークラス
+の直接スーパークラスの順序、などと整合性をもちます。正確な説明について
+は@ref{dylan,[Dylan],Dylan}を参照してください。
+
+もしクラスが、整合性を満した CPL を構築できないようなやり方で
+複数のスーパークラスを継承すると、エラーになります。以下は多重継承の
+単純な例です。
+@c COMMON
+
+@example
+(define-class <grid-layout> () ())
+
+(define-class <horizontal-grid> (<grid-layout>) ())
+
+(define-class <vertical-grid> (<grid-layout>) ())
+
+(define-class <hv-grid> (<horizontal-grid> <vertical-grid>) ())
+
+(map class-name (class-precedence-list <hv-grid>))
+ @result{} (<hv-grid> <horizontal-grid> <vertical-grid> 
+     <grid-layout> <object> <top>)
+@end example
+
+@c EN
+Note that the order of direct superclasses of @code{<hv-grid>}
+(@code{<horizontal-grid>} and @code{<vertical-grid>}) is kept.
+
+The following is a little twisted example:
+@c JP
+@code{<hv-grid>} の直接スーパークラス(@code{<horizontal-grid>}と
+@code{<vertical-grid>})の順序が保存されていることに注意してください。
+
+以下は、すこしひねくれた例です。
+@c COMMON
+
+@example
+(define-class <pane> () ())
+
+(define-class <scrolling-mixin> () ())
+
+(define-class <scrollable-pane> (<pane> <scrolling-mixin>) ())
+
+(define-class <editing-mixin> () ())
+
+(define-class <editable-pane> (<pane> <editing-mixin>) ())
+
+(define-class <editable-scrollable-pane>
+   (<scrollable-pane> <editable-pane>) ())
+
+(map class-name (class-precedence-list <editable-scrollable-pane>))
+ @result{} (<editable-scrollable-pane> <scrollable-pane> 
+     <editable-pane> <pane> <scrolling-mixin> <editing-mixin> 
+     <object> <top>)
+@end example
+
+@c EN
+Once the class precedence order is determined,
+the slots of defined class is calculated as follows:
+the slot definitions are collected in the direction from superclasss
+to subclass in CPL.  If a subclass has a slot definition of the same
+name of the one in superclass, then the slot definition of the subclass
+is taken and superclass's is discarded.    Suppose a class @code{<S>}
+defines slots @code{a}, @code{b}, and @code{c}, a class @code{<T>}
+defines slots @code{c}, @code{d}, and @code{e}, and a class @code{<U>}
+defines slots @code{b} and @code{e}.  When @code{<U>}'s CPL is
+@code{(<U> <T> <S> <object> <top>)}, then @code{<U>}'s slots is
+calculated as the chart below; that is, @code{<U>} gets five slots,
+of which @code{b} and @code{e}'s definitions come from @code{<U>}'s
+definitions, @code{c} and @code{d}'s come from @code{<T>}, and
+@code{a}'s comes from @code{<S>}.
+@c JP
+いったんクラス順位が決まると、定義されたクラスのスロットが以下の手順で
+計算されます。スロットの定義が CPL 中のスーパークラスからサブクラスへの
+順で集められます。サブクラスにスーパークラスと同じ名前のスロット定義が
+あった場合には、サブクラスのそのスロット定義が採用され、スーパークラス
+の方の定義は捨てられます。あるクラス @code{<S>} がスロット @code{a}、
+@code{b}、および @code{c} を定義しており、あるクラス @code{<T>} が
+スロット @code{c}、@code{d}、および @code{e} を定義し、さらに、
+あるクラス @code{<U>} がスロット @code{b} および @code{e} を定義していると
+しよう。@code{<U>} の CPL が @code{(<U> <T> <S> <object> <top>)} と
+なっている場合、@code{<U>} のスロットが下の図のように計算されます。
+すなわち、@code{<U>} は 5 つのスロットをもち、
+@code{b} および @code{e} の定義は @code{<U>} のものを、@code{c}
+および @code{d} の定義は @code{<T>} 由来のものを、そして、@code{a}
+の定義は @code{<S>} 由来のものとなります。
+@c COMMON
+
+@c EN
+@example
+   CPL      | slot definitions
+            |  () indicates shadowed slot
+ -----------+-------------------
+   <top>    |
+   <object> |
+   <S>      | a  (b) (c)
+   <T>      |         c   d  (e)
+   <U>      |     b           e
+ -----------+--------------------
+ <U>'s slots| a   b   c   d   e
+@end example
+@c JP
+@example
+   CPL         | スロットの定義
+               |  () はシャドウされたスロットを表す
+ --------------+-------------------
+   <top>       |
+   <object>    |
+   <S>         | a  (b) (c)
+   <T>         |         c   d  (e)
+   <U>         |     b           e
+ --------------+--------------------
+ <U>のスロット | a   b   c   d   e
+@end example
+@c COMMON
+
+@c EN
+You can get a list of slot definitions of a class object using
+@code{class-slots} function.
+
+Note that the behavior described above is mere a default behavior.
+You can customize how the CPL is computed, or how slot definitions
+are inherited, by defining metaclass.  For example,
+you can write a metaclass that allows you to merge slot options
+of the same slot names, instead of the one shadowing the other.
+Or you can write a metaclass that forbids a subclass shadows
+the superclass's slot.
+@c JP
+@code{class-slots} 関数を使ってクラスオブジェクトのスロット定義の
+リストを得ることができます。
+
+上述の振舞いはデフォルトの振舞いにすぎないことに注意してください。
+CPL の計算方法あるいはスロット定義の継承方法は、メタクラスを
+定義することでカスタマイズ可能です。たとえば、同じスロット名の
+スロットオプションはどれかが他のものをシャドウしますが、これを
+マージすることができるようにメタクラスを書くことができます。
+あるいは、サブクラスがスーパークラスのスロットをシャドウするのを
+禁止するようにメタクラスを書くことができます。
+@c COMMON
+
+@node Class object, Slot definition object, Inheritance, Class
+@subsection Class object
+@c NODE クラスオブジェクト
+
+@c EN
+What is a class?  In Gauche, a class is just an object that implements
+a specific feature: to instantiate an object.
+Because of that, you can introspect the class by just
+looking into the slot values.  There are some procedures provided
+for the convenience of such introspection.
+Note that if those procedures return a list, it belongs to
+the class and you shouldn't modify it.
+@c JP
+クラスとは何か。Gauche ではクラスはオブジェクトをインスタンス化して
+ある特定の機能を実装するようなオブジェクトにすぎません。
+そうなので、スロットの値を見るだけで、クラス内部を覗けます。
+このように内部を覗くのに便利な手続きがいくつか用意されています。
+これらの手続きがリストを返す場合、それはクラスに所属するもので、
+変更してはいけないということに注意してください。
+@c COMMON
+
+@defun class-name class
+@c EN
+Returns the name of @var{class}.
+@c JP
+@var{class} の名前を返します。
+@c COMMON
+
+@example
+(class-name <string>) @result{} <string>
+@end example
+@end defun
+
+@defun class-precedence-list class
+@c EN
+Returns the class precedence list of @var{class}.
+@c JP
+@var{class} のクラス順位リストを返します。
+@c COMMON
+
+@example
+(class-precedence-list <string>)
+  @result{} (#<class <string>>
+      #<class <sequence>>
+      #<class <collection>>
+      #<class <top>>)
+@end example
+@end defun
+
+@defun class-direct-supers class
+@c EN
+Returns a list of direct superclasses of @var{class}.
+A direct superclass is a class from which
+@var{class} inherits directly.
+@c JP
+@var{class} の直接スーパークラスのリストを返します。
+直接スーパークラスは @var{class} が直接継承しているクラスです。
+@c COMMON
+
+@example
+(class-direct-supers <string>)
+  @result{} (#<class <sequence>>)
+@end example
+@end defun
+
+@defun class-direct-subclasses class
+@c EN
+Returns a list of direct subclasses of @var{class}.
+A direct subclass is a class that directly inherits
+@var{class}.  If @code{<T>} is a direct subclass of @code{<S>},
+then @code{<S>} is a direct superclass of @code{<T>}.
+@c JP
+@var{class} の直接サブクラスのリストを返します。
+直接サブクラスは @var{class} を直接継承しているクラスです。
+@code{<T>} が @code{<S>} の直接サブクラスであれば、
+@code{<S>} は @code{<T>} の直接スーパークラスです。
+@c COMMON
+@end defun
+
+@defun class-slots class
+@c EN
+Returns a list of @emph{slot definitions} of @var{class}.
+A slot definition is a list whose car is the name of the slot
+and whose cdr is a keyword-value list that specifies slot options.
+You can further inspect a slot definition to know what characteristics
+the slot has.  See @ref{Slot definition object} for the details.
+
+The standard way to get a list of slot names of a given class
+is @code{(map slot-definition-name (class-slots class))}.
+@c JP
+@var{class} の @emph{スロット定義} のリストを返します。スロット定義は
+リストで、その car 部はスロット名、cdr 部はスロットオプションを指定する
+キーワード値のリストです。スロット定義内部を覗いてスロットのもつ性格を
+知ることができます。詳しくは @ref{Slot definition object} を
+参照してください。
+
+与えられたクラスのスロット名のリストを得るための標準的な方法は、
+@code{(map slot-definition-name (class-slots class))} です。
+@c COMMON
+@end defun
+
+@defun class-slot-definition class slot-name
+@c EN
+Returns a slot definition of a slot specified by @var{slot-name} in
+a class @var{class}.  If @var{class} doesn't have a named slot,
+@code{#f} is returned.
+@c JP
+クラス @var{class} 中の @var{slot-name} で指定されたスロットの
+スロット定義を返します。@var{class} が指定した名前のスロットを
+持たなければ @code{#f} が返ります。
+@c COMMON
+@end defun
+
+@defun class-direct-slots class
+@c EN
+Returns a list of slot definitions that are directly defined
+in this class (i.e. not inherited from superclasses).
+This information is used to calculate slot inheritance
+during class initialization.
+@c JP
+当該クラスで直接定義されている(つまりスーパークラスから継承された
+ものではない)スロット定義のリストを返します。この情報は、クラスの
+初期化の際にスロットの継承を処理するために利用されます。
+@c COMMON
+@end defun
+
+@defun class-direct-methods class
+@c EN
+Returns a list of methods that has @var{class} in its specializer.
+@c JP
+@var{class}を特定化子中にもつメソッドのリストを返します。
+@c COMMON
+@end defun
+
+@defun class-slot-accessor class slot-name
+@c EN
+Returns a slot accessor object of the slot specified by @var{slot-name}
+in @var{class}.
+A slot accessor object is an internal object that encapsulates
+the information how to access, modify, and initialize the given slot.
+
+You don't usually need to deal with slot accessor objects unless
+you are defining some special slots using metaobject protocol.
+@c JP
+@var{class} で @var{slot-name} で指定したスロットの
+スロットアクセサオブジェクトを返します。
+スロットアクセサオブジェクトは内部オブジェクトで与えられたスロットへの
+アクセス方法、変更方法、初期化の方法という情報をカプセル化しています。
+
+メタオブジェクトプロトコルを使って特別なスロットを定義するのでなければ、
+通常スロットアクセサオブジェクトを扱う必要はありません。
+@c COMMON
+@end defun
+
+@node Slot definition object, Class redefinition, Class object, Class
+@subsection Slot definition object
+@c NODE スロット定義オブジェクト
+
+@c EN
+A slot definition object, returned by @code{class-slots},
+@code{class-direct-slots} and @code{class-slot-definition},
+keeps information about a slot.
+Currently Gauche uses a list to represent the slot definition,
+as STklos and TinyCLOS do.  However, it is not guaranteed that
+Gauche keeps such a structure in future; you should use the
+following dedicated accessor methods to obtain information
+of a slot definition object.
+@c JP
+@code{class-slots} が返すスロットの定義オブジェクト
+@code{class-direct-slots} および @code{class-slot-definition}
+はスロットに関する情報を保持しています。
+現時点では Gauche はスロット定義を表現するのにリストを使っています。これは
+STklos や TinyCLOS と同じです。しかし、Gauche が将来にわたって、この構造を
+保持するかどうかは保証のかぎりではありません。スロット定義オブジェクトの
+情報を得るには以下のそれ専用のアクセサメソッドを使うべきです。
+@c COMMON
+
+@defun slot-definition-name slot-def
+@c EN
+Returns the name of a slot given by a slot definition object @var{slot-def}.
+@c JP
+スロット定義オブジェクト @var{slot-def} で与えられたスロットの名前を
+返します。
+@c COMMON
+@end defun
+
+@defun slot-definition-options slot-def
+@c EN
+Returns a keyword-value list of slot options of @var{slot-def}.
+@c JP
+@var{slot-def} のスロットオプションのキーワード値リストを返します。
+@c COMMON
+@end defun
+
+@defun slot-definition-allocation slot-def
+@c EN
+Returns the value of @code{:allocation} option of @var{slot-def}.
+@c JP
+@var{slot-def} の @code{:allocation} オプションの値を返します。
+@c COMMON
+@end defun
+
+@defun slot-definition-getter slot-def
+@defunx slot-definition-setter slot-def
+@defunx slot-definition-accessor slot-def
+@c EN
+Returns the value of @code{:getter}, @code{:setter} and @code{:accessor}
+slot options of @var{slot-def}, respectively.
+@c JP
+それぞれ、@var{slot-def} の @code{:getter}、@code{:setter} および
+@code{:accessor} スロットオプションの値を返します。
+@c COMMON
+@end defun
+
+@defun slot-definition-option slot-def option :optional default
+@c EN
+Returns the value of slot option @var{option} of @var{slot-def}.
+If there's no such an option, @var{default} is returned
+if given, or an error is signalled otherwise.
+@c JP
+@var{slot-def} のスロットオプション @var{option} の値を返します。
+そのようなオプションがない場合には、@var{default} が与えられていれば
+それを返し、さもなければ、エラーシグナルがあがります。
+@c COMMON
+@end defun
+
+@node Class redefinition, Class definition examples, Slot definition object, Class
+@subsection Class redefinition
+@c NODE クラスの再定義
+
+@c EN
+If the specified class name is bound to a class when @code{define-class}
+is used, it is regarded as @emph{redefinition} of the original class.
+
+Redefinition of a class means the following operations:
+@c JP
+@code{define-class} を使うとき、指定したクラス名がすでにあるクラスに束縛
+されている場合、これは元々のクラスの@emph{再定義}と看倣されます。
+
+クラスの再定義は以下の操作を意味します。
+@c COMMON
+@c EN
+@itemize @bullet
+@item
+A new class object is created based on the new definition,
+and bound to the variable given to @code{define-class}.
+
+@item 
+Methods defined on the original class (i.e. methods that have
+the original class in their specializers) are changed so that
+they are defined on the new class.
+
+@item
+The direct-subclasses link of the direct superclasses of the
+original class is modified so that they will point to the new class.
+
+@item
+All the subclasses of the original class are redefined recursively
+so that they reflect the changes of the class.
+Each class remembers its initialization arguments, and
+each redefined subclass gets the same initialization arguments
+as the original subclass. 
+
+@item
+The original class is marked @emph{redefined}.
+@end itemize
+@c JP
+@itemize @bullet
+@item
+新しいクラスオブジェクトは新しい定義にもとづいて生成され、
+@code{define-class} に与えられた変数に束縛されます。
+
+@item 
+元々のクラスに対して定義されたメソッド(すなわち、特定化子の中に
+元々のクラスを持つメソッド)は新しいクラス上で定義されたように
+変更されます。
+
+@item
+元々のクラスの直接スーパークラスの直接サブクラスリンクは、
+新しいクラスを指すように変更されます。
+
+@item
+元々のクラスのすべてのサブクラスはそのクラスの変更を反映するように
+再帰的に再定義されます。各クラスはその初期化引数を覚えており、
+再定義されたサブクラスは元々のサブクラスと同じ初期化引数を受けとります。
+
+@item
+元々のクラスには@emph{再定義}マークが付きます。
+@end itemize
+@c COMMON
+
+@c EN
+Note that the original class and the new class are different objects.
+The original class object remembers which variable in which module
+it is originally bound, and replaces the binding to a new class.
+If you keep the direct reference to the original class somewhere else,
+it still refers to the original class; you might want to take extra
+care.  You can customize class redefinition behavior by
+defining the @code{class-redefinition} method; see 
+@ref{Metaobject protocol} for the details.
+@c JP
+元々のクラスと新しいクラスは別のオブジェクトであることに注意してください。
+元々のクラスオブジェクトは元々どのモジュールでどの変数に束縛されていたかを
+覚えており、この束縛を新しいクラスに置き換えます。どこかで、元々のクラスへ
+の直接参照を持っていれば、その参照は元々クラスへの参照のままです。この点
+については特に注意してください。@code{class-redefinition} メソッドを
+定義することによりクラス再定義の振舞いをカスタマイズできます。
+詳しくは @ref{Metaobject protocol}を参照してください。
+@c COMMON
+
+@c EN
+If there are instances of the original class, such instances
+are automatically @emph{updated} when it is about to be accessed or modified
+via @code{class-of}, @code{is-a?}, @code{slot-ref},
+@code{slot-set!}, @code{ref}, a getter method, or a setter method.  
+@c JP
+元々のクラスのインスタンスが存在している場合、それらのインスタンスは
+以下のようなメソッドでアクセスあるいは変更しようとしたときに自動的に
+更新されます。@code{class-of}、@code{is-a?}、@code{slot-ref}、
+@code{slot-set!}、@code{ref}、getterメソッド、setterメソッド。
+@c COMMON
+
+@c EN
+Updating an instance means that the class of the instance
+is changed (from the old class to the new class).
+By default, the values of the slots that are common in the original
+class and the new class are carried over, and the slots added
+by the new class are initialized according to the slot specification
+of the new class, and the values of the slots that are
+removed from the original class are discarded.
+You can customize this behavior by writing the @code{change-class} method.
+See @ref{Changing classes}, for the details.
+@c JP
+インスタンスの更新とは、インスタンスのクラスを(旧いクラスから新しいクラスへ)
+変更するということです。デフォルトでは、元々のクラスと新しいクラスで
+共通のスロットの値はそのまま引き継がれます。新しいクラスで追加された
+スロットは新しいクラスでのそのスロットの仕様にしたがって初期化されます。
+元々のクラスから削除されたスロットの値は破棄されます。この振舞いは、
+@code{change-class} メソッドを書くことでカスタマイズできます。詳しくは
+@ref{Changing classes} を参照してください。
+@c COMMON
+
+@c EN
+@subsubheading Notes on thread safety
+
+Class redefinition process is non-local operation with full of side-effects.
+It is difficult to guarantee that two threads safely run
+class redefinition protocol simultaneously.   So Gauche uses
+a process-wide lock to limit only one thread to enter the
+class redefinition protocol at a time.  
+@c JP
+@subsubheading スレッド安全性について
+
+クラス再定義処理はローカルな処理ではなく、多くの副作用を行います。
+複数のスレッドが同時にクラス再定義プロトコルを走らせた場合の
+安全性を保証するのは困難です。そこでGauche では、一度にひとつのスレッドしか
+クラス再定義プロトコルに入らないように、プロセスレベルのロックを使用します。
+@c COMMON
+
+@c EN
+If a thread tries to redefine a class while another thread is in
+the redefinition protocol, the thread is blocked, even if
+it is redefining a class different from the one that are
+being redefined; because redefinition affects all the
+subclasses, and all the methods and generic functions that
+are related to the class and subclasses, it is not trivial
+to determine two classes are completely independent or not.
+@c JP
+スレッドが、別のスレッドが再定義プロトコルにいる最中にクラスを
+再定義しようとした場合、たとえ、別々のクラスを再定義しようとしている
+場合でも、そのスレッドはブロックされます。このようにするのは、
+再定義がそのすべてのサブクラス、そのクラスとそのサブクラスに
+関わるすべてのメソッドおよびジェネリック関数に影響するからで、
+ふたつのクラスが完全に独立であるかどうかを決定するのは、自明では
+ないからです。
+@c COMMON
+
+@c EN
+If a thread tries to access an instance whose class
+is being redefined by another thread, also the thread
+is blocked until the redefinition is finished.
+@c JP
+スレッドが他のスレッドが再定義しようとしているクラスのインスタンスに
+アクセスしようとした場合にも、このスレッドは再定義が完了するまで、
+ブロックされます。
+@c COMMON
+
+@c EN
+Note that the instance update protocol isn't serialized.
+If two threads try to access an instance whose
+class has been redefined, both trigger the instance
+update protocol, which would cause an undesired race condition.
+It is the application's responsibility to ensure
+such a case won't happen.  It is natural since the
+instance access isn't serialized by the system anyway.
+However, an extra care is required to have mutex within
+an instance; just accessing the mutex in it may trigger
+the instance update protocol.
+@c JP
+インスタンス更新プロトコルは直列化されません。ふたつのスレッドが
+再定義されたクラスのインスタンスにアクセスしようとすると、両方の
+スレッドが更新プロトコルを起動します。これは好ましくない競合状態を
+生じる可能性があります。このような場合がおきないようにするのは
+アプリケーションの責任です。インスタンスへのアクセスはどのみち
+システムが直列化するわけではないので、これは自然なことです。
+インスタンス内に mutex を持たせる場合は特に注意が必要です。
+インスタンス中のmutexにアクセスするだけでインスタンス更新プロトコルを
+起動することになる可能性があるからです。
+@c COMMON
+
+@c EN
+@subsubheading Notes on compatibility
+
+Class redefinition protocols subtlety differ among CLOS-like
+Scheme systems.   Gauche's is very similar to STklos's, except
+that STklos 0.56 doesn't replace bindings of redefined subclasses,
+and also it doesn't remember initialization arguments so the
+redefined subclass may lose some of the information that the original
+subclass has.  Guile's object system swaps identities of the original
+class and the redefined class at the end of class redefinition
+protocol, so the reference to the original class object
+will turn to the redefined class.
+As far as the author knows, class redefinition is not thread-safe
+in both STklos 0.56 and Guile 1.6.4.
+@c JP
+@subsubheading 互換性に関して
+
+クラス再定義プロトコルは CLOS風の Scheme システムとは微妙に違います。
+Gauche のものは STklos のものによく似ていますが、STklos 0.56 は再定義
+サブクラスの束縛を置き換えず、初期化引数を覚えたりはしないので、
+再定義されたサブクラスは、元々のサブクラスが持っていた情報のなにがしかを
+失ってしまう可能性があるという点にちがいがあります。Guile のオブジェクト
+システムはクラス再定義プロトコルの最後で、元々のクラスのアイデンティティと
+再定義されたクラスをアイデンティティを入れ替えてしまします。それゆえ、
+元々のクラスへの参照は、再定義されたクラスへの参照となります。筆者が
+知るかぎり、クラス再定義は、STklos 0.56 においても、Guile 1.6.4 においても
+スレッド安全ではありません。
+@c COMMON
+
+@node Class definition examples,  , Class redefinition, Class
+@subsection Class definition examples
+@c NODE クラスの定義例
+
+@c EN
+Let's see some examples.  Suppose you are defining a graphical
+toolkit.  A @code{<window>} is a rectangle region on
+the screen, so it has width and height.  It can be organized
+hierarchically, i.e. a window can be placed within another window;
+so it has a pointer to the parent window.  And we specify the
+window's position, x, y, by the coordinate relative to its
+parent window.  Finally, we create a "root" window that
+covers entire screen.  It also serves the default parent window.
+So far, what we get is something like this:
+@c JP
+いくつかの例をみましょう。グラフィカルツールキットを定義しているところ
+だということにしましょう。@code{<window>} はスクリーン上の矩形領域で、
+幅と高さを持ちます。これを階層構造に構成することが可能です。すなわち、
+ある window は別の window 中に置くことができ、親 window へのポインタを
+もっているものとします。window の位置は、親ウィンドウの位置からの
+相対座標、x と y で指定します。スクリーン全体を覆う「ルート」window 
+を作り、これがデフォルトの親 window にもなります。ここまでで、次のように
+なります。
+@c COMMON
+
+@example
+;; The first version
+(define-class <window> ()
+  (;; Pointer to the parent window.
+   (parent      :init-keyword :parent :init-form *root-window*)
+   ;; Sizes of the window
+   (width       :init-keyword :width  :init-value 1)
+   (height      :init-keyword :height :init-value 1)
+   ;; Position of the window relative to the parent.
+   (x           :init-keyword :x :init-value 0)
+   (y           :init-keyword :y :init-value 0)
+   ))
+
+(define *screen-width* 1280)
+(define *screen-height* 1024)
+
+(define *root-window*
+  (make <window> :parent #f :width *screen-width* :height *screen-height*))
+@end example
+
+@c EN
+Note the usage of @code{:init-value} and @code{:init-form}.
+When the @code{<window>} class is defined, we haven't bound
+@code{*root-window*} yet, so we can't use @code{:init-value} here.
+@c JP
+@code{:init-value} および @code{:init-form} の使い方に注意してください。
+@code{<window>} クラスが定義されたとき、@code{*root-window*} はまだ束縛
+されていませんので、ここでは @code{:init-value} は使えません。
+@c COMMON
+
+@example
+gosh> *root-window*
+#<<window> 0x80db1d0>
+gosh> (define window-a (make <window> :width 100 :height 100))
+window-a
+gosh> (d window-a)
+#<<window> 0x80db1b0> is an instance of class <window>
+slots:
+  parent    : #<<window> 0x80db1d0>
+  width     : 100
+  height    : 100
+  x         : 0
+  y         : 0
+gosh> (define window-b
+        (make <window> :parent window-a :width 50 :height 20 :x 10 :y 5))
+window-b
+gosh> (d window-b)
+#<<window> 0x80db140> is an instance of class <window>
+slots:
+  parent    : #<<window> 0x80db1b0>
+  width     : 50
+  height    : 20
+  x         : 10
+  y         : 5
+@end example
+
+@c EN
+If you're like me, you don't want to expose a global variable
+such as @code{*root-window*} for users of your toolkit.
+One way to encapsulate it (to certain extent) is to keep
+the pointer to the root window in a class variable.
+Add the following slot option to the definition of @code{<window>},
+and the slot @code{root-window} of the @code{<window>} class
+refers to the same storage space.
+@c JP
+筆者と同じ感覚の持ち主なら、@code{*root-window*} のようなグローバル
+変数をツールキットのユーザに見せたいとは思わないでしょう。これを
+カプセル化するひとつの方法は、ルート window へのポインタをクラス変数に
+保持させることです。@code{<window>} の定義に以下のようなスロットオプションを
+追加すると @code{<window>} クラスの @code{root-window} スロットは同じ
+格納領域を参照するようになります。
+@c COMMON
+
+@example
+(define-class <window> ()
+  (...
+   ...
+   (root-window :allocation :class)
+   ...))
+@end example
+
+@c EN
+You can use @code{slot-ref} and @code{slot-set!} on an instance
+of @code{<window>},
+or use @code{class-slot-ref} and @code{class-slot-set!} on the
+@code{<window>} class itself,
+to get/set the value of the @code{root-window} slot.
+
+The users of the toolkit may want to get the absolute position
+of the window (the coordinates in the root window) instead of
+the relative position.  You may provide virtual slots that
+returns the absolute positions, like the following:
+@c JP
+@code{<window>} のインスタンスに対して、@code{slot-ref} および
+@code{slot-set!} を、また、@code{<window>} クラスそのものに対しては、
+@code{class-slot-ref} や @code{class-slot-set!} を使って
+@code{root-window} スロットの値を取得したり、セットしたりできます。
+
+ツールキットのユーザは window の相対座標のかわりに絶対座標(ルートウィンドウ
+中の座標)が欲しいと思うことがあるでしょう。以下のようにして、絶対座標を
+返す仮想スロットを提供することができます。
+@c COMMON
+
+@example
+(define-class <window> ()
+  (...
+   ...
+   (root-x :allocation :virtual
+           :slot-ref  (lambda (o)
+                        (if (ref o 'parent)
+                            (+ (ref (ref o 'parent) 'root-x)
+                               (ref o 'x))
+                            (ref o 'x)))
+           :slot-set! (lambda (o v)
+                        (set! (ref o 'x)
+                              (if (ref o 'parent)
+                                  (- v (ref (ref o 'parent) 'root-x))
+                                  v)))
+            )
+    ...))
+@end example
+
+@c EN
+Whether providing such interface via methods or virtual slots is
+somewhat a matter of taste.   Using virtual slots has an advantage
+of being able to hide the change of implementation, i.e. you can
+change to keep @code{root-x} in a real slot and make @code{x} a virtual
+slot later without breaking the code using @code{<window>}.
+(In the mainstream object-oriented languages,
+such kind of "hiding implementation" is usually achieved
+by hiding instance variables and exposing methods.  In Gauche
+and other CLOS-like systems, slots are always visible to the
+users, so the situation is a bit different.
+@c JP
+メソッドあるいは仮想スロット経由のこのようなインタフェースを供給することは
+いくぶんか趣味の問題です。仮想スロットは実装の変更を隠すことができるという
+利点があります。つまり、@code{root-x} を実スロットに保持するように変更し、
+@code{x} をあとで仮想スロットに変更するということを @code{<window>}を
+使うコードをだめにすることなくおこなえます。オブジェクト指向の主流の言語
+では、通常このような「実装変更の隠蔽」はインスタンス変数を隠し、メソッドを
+公開するということでおこなわれています。Gauche やその他の CLOS 風システムでは
+スロットは常にユーザから見えており状況はすこし違うのです。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Instance, Generic function and method, Class, Object system
+@section Instance
+@c NODE インスタンス
+
+@c EN
+In this section, we explain how to create and use an instance.
+@c JP
+この節では、インスタンスの生成のしかたと使い方について説明します。
+@c COMMON
+
+@menu
+* Creating instance::           
+* Accessing instance::          
+* Changing classes::            
+@end menu
+
+@node Creating instance, Accessing instance, Instance, Instance
+@subsection Creating instance
+@c NODE インスタンスの作成
+
+@c EN
+Using class object, you can create an instance of the class
+by a generic function @code{make}.
+A specialized method for standard @code{<class>} is defined:
+@c JP
+クラスオブジェクトをつかうと、ジェネリック関数 @code{make} でその
+クラスのインスタンスを生成できます。標準の @code{<class>} に対して
+特定化されたメソッドは以下のとおり定義されています。
+@c COMMON
+
+@deffn {Generic Function} make
+@deffnx {Method} make (class <class>) arg @dots{}
+@c EN
+Creates an instance of @var{class} and returns it.
+@var{Arg} @dots{} is typically a keyword-value list
+to initialize the instance.
+@c JP
+@var{class} のインスタンスを生成し、それを返します。@var{arg} @dots{} は
+典型的な場合には、そのインスタンスを初期化するためのキーワード値のリストです。
+@c COMMON
+@end deffn
+
+@c EN
+Conceptually, the default @code{make} method is defined
+as follows:
+@c JP
+概念としては、デフォルトの @code{make} メソッドは以下のように定義されて
+います。
+@c COMMON
+
+@example
+(define-method make ((class <class>) . initargs)
+  (let ((obj (allocate-instance class initargs)))
+    (initialize obj initargs)
+    obj))
+@end example
+
+@c EN
+That is, first it allocates memory for @var{class}'s instance,
+then initialize it with the @code{initialize} method.
+@c JP
+すなわち、最初、@code{class} のインスタンス用にメモリをアロケートし、
+それから、@code{initialize} メソッドを用いてそれを初期化します。
+@c COMMON
+
+@deffn {Generic Function} allocate-instance
+@deffnx {Method} allocate-instance (class <class>) initargs
+@c EN
+Returns a newly-allocated uninitialized instance of @var{class}.
+@c JP
+@var{class}の新規にアロケートされた、初期化されていないインスタンスを返します。
+@c COMMON
+@end deffn
+
+@deffn {Generic Function} initialize
+@deffnx {Method} initialize (obj <object>) initargs
+@c EN
+The default initialize method for @code{<object>} works as follows:
+@c JP
+@code{<object>} に対するデフォルトの初期化メソッドは以下のように働きます。
+@c COMMON
+
+@c EN
+@itemize @bullet
+@item
+For each initializable slot of the class
+@itemize @bullet
+@item
+If (the slot has the :init-keyword slot option
+AND the keyword appears in @var{initargs}):
+Then the corresponding value is used to initialize the slot
+@item
+Else if the slot has :init-value slot option:
+Then the value given to the slot option is used to initialize the slot
+@item
+Else if the slot has :init-thunk slot option:
+Then the thunk is called, and the returned value is used to initialize
+the slot.
+@item
+Else: The slot is left unbound.
+@end itemize
+@end itemize
+@c JP
+@itemize @bullet
+@item
+そのクラスの初期化可能なスロットのそれぞれに対して、
+@itemize @bullet
+@item
+もし (そのスロットが :init-keyword スロットオプションを持ち、「かつ」
+そのキーワードが @var{initargs} 中にある)
+そのときは、対応する値がそのスロットを初期化するのに使われます。
+@item
+そうではないとき、もし、そのスロットが、:init-value スロットオプションを
+持てば、そのオプションに与えられた値がそのスロットを初期化するのに使われます。
+@item
+そうでもないとき、もし、そのスロットが、:init-thunk スロットオプションを
+持てば、その thunk が呼ばれその返り値が、そのスロットを初期化するのに
+使われます。
+@item
+さらにどれでもなければ、そのスロットは未束縛のままです。
+@end itemize
+@end itemize
+@c COMMON
+
+@c EN
+Among the default slot allocation classes, only
+instance-allocated slots are initializable and are handled by
+the above sequence.   Class-allocated slots (e.g. its
+slot allocation is either @code{:class} or @code{:each-subclass})
+are initialized when the class object is created, if
+@code{:init-value} or @code{:init-form} slot option is given.
+Virtual slots aren't initialized at all.
+@c JP
+デフォルトのスロットアロケーションクラスのなかで、インスタンスアロケート
+スロットだけが初期化可能で、上の流れで処理されます。クラスアロケート
+スロット(すなわち、スロットアロケーションが @code{:class} あるいは
+@code{:each-subclass} のどちらかの場合)は、@code{:init-value} あるいは
+@code{:init-form} スロットオプションが与えられていれば、クラスオブジェクト
+生成時に初期化されます。仮想スロットが、初期化されることはありません。
+@c COMMON
+
+@c EN
+An user-defined allocation class can be
+configured either initializable or not initializable; see
+@ref{Metaobject protocol} for the details.
+@c JP
+ユーザ定義アロケーションクラスは、初期化可能にも不可能にも設定することが
+できます。詳しくは @ref{Metaobject protocol} を参照してください。
+@c COMMON
+
+@c EN
+If you specialize @code{initialize} method, make sure to call
+@code{next-method} so that the slots are properly initialized
+by the default sequence, before accessing any slot of the
+newly created instance.
+@c JP
+@code{initialize} メソッドを特定化する場合には @code{next-method} が
+確実に呼ばれるようにして、新しく生成されたインスタンスのすべての
+スロットにアクセスする前にデフォルトの流れで、そのスロットが正しく
+初期化されるようにしてください。
+@c COMMON
+@end deffn
+
+@c EN
+Typically you specialize @code{initialize} method for
+your class to customize how the instance is initialized.
+
+It is not common to specialize @code{allocate-instance} method.
+However, knowing that how @code{make} works, you can specialize
+@code{make} itself to avoid allocation of instance in
+some circumstances (e.g. using pre-allocated instances).
+@c JP
+定義したクラスに対応する @code{initialize} メソッドを特定化して
+インスタンスの初期化の方法をカスタマイズするというのが、典型的な
+やりかたです。
+
+@code{allocate-instance} メソッドを特定化するというのは一般的な方法では
+ありません。しかしながら、@code{make} がどのように働くかを知っているなら、
+@code{make} そのものを特定化して、なんらかの状況(たとえば、あらかじめ
+アロケートしてあるインスタンスを使うというような状況)でインスタンスの
+アロケーションを回避できます。
+@c COMMON
+
+@node Accessing instance, Changing classes, Creating instance, Instance
+@subsection Accessing instance
+@c NODE インスタンスへのアクセス
+
+@c EN
+@subsubheading Standard accessors
+@c JP
+@subsubheading 標準アクセサ
+@c COMMON
+
+@defun slot-ref obj slot
+@c EN
+Returns a value of the slot @var{slot} of object @var{obj}.
+
+If the specified slot is not bound to any value, a generic function
+@code{slot-unbound} is called with three arguments, @var{obj}'s class,
+@var{obj}, and @var{slot}.  The default behavior of @code{slot-unbound}
+is to signal an error.
+
+If the object doesn't have the specified slot,
+a generic function @code{slot-missing} is called with three
+arguments, @var{obj}'s class,
+@var{obj}, and @var{slot}.  The default behavior of @code{slot-missing}
+is to signal an error.
+@c JP
+オブジェクト@var{obj}のスロット@var{slot}の値を返します。
+
+指定したスロットが値に束縛されていない場合、ジェネリック関数
+@code{slot-unbound}が3つの引数、@var{obj}のクラス、@var{obj}、@var{slot}
+を伴って呼び出されます。@code{slot-unbound}のデフォルトの振る舞いは、
+エラーの通知です。
+
+オブジェクトが指定されたスロットを持っていない場合は、ジェネリック関数
+@code{slot-missing}が3つの引数、@var{obj}のクラス、@var{obj}、@var{slot}を
+伴って呼び出されます。@code{slot-missing}のデフォルトの振る舞いは、
+エラーの通知です。
+@c COMMON
+@end defun
+
+@defun slot-set! obj slot value
+@c EN
+Alters the value of the slot @var{slot} of object @var{obj} to
+the value @var{value}.
+
+If the object doesn't have the specified slot, a generic function
+@code{slot-missing} is called with four arguments,
+@var{obj}'s class, @var{obj}, @var{slot}, @var{value}.
+@c JP
+オブジェクト@var{obj}のスロット@var{slot}の値を、@var{value}に
+セットします。
+
+オブジェクトが指定したスロットを持っていない場合は、ジェネリック関数
+@code{slot-missing}が4つの引数、@var{obj}のクラス、@var{obj}、
+@var{slot}、@var{value}を伴って呼び出されます。
+@c COMMON
+@end defun
+
+@defun slot-bound? obj slot
+@c EN
+Returns true if object @var{obj}'s slot @var{slot} is bound, 
+otherwise returns false.
+
+If the object doesn't have the specified slot, a generic function
+@code{slot-missing} is called with three arguments,
+@var{obj}'s class, @var{obj}, @var{slot}.
+@c JP
+オブジェクト@var{obj}のスロット@var{slot}が束縛されていれば真を、
+そうでなければ偽を返します。
+
+オブジェクトが指定したスロットを持っていない場合は、ジェネリック関数
+@code{slot-missing}が3つの引数、@var{obj}のクラス、@var{obj}、
+@var{slot}を伴って呼び出されます。
+@c COMMON
+@end defun
+
+@defun slot-exists? obj slot
+@c EN
+Returns true if @var{obj} has the slot named @var{slot}.
+@c JP
+@var{obj}が@var{slot}を持っていれば真を返します。
+@c COMMON
+@end defun
+
+@defun slot-push! obj slot value
+@c EN
+This function implements the common idiom.
+It can be defined like the following code
+(but it may be optimized in the future versions).
+@c JP
+この関数は、一般的なイディオムの実装です。
+これは以下のようなコードで定義できます(が、将来のバージョンでは
+最適化されるでしょう)。
+@c COMMON
+@example
+(define (slot-push! obj slot value)
+  (slot-set! obj slot (cons value (slot-ref obj slot))))
+@end example
+@end defun
+
+@defun slot-pop! obj slot :optional fallback
+@c EN
+Reverse operation of @code{slot-push!}.  
+If the value of @var{slot} of @var{obj}
+is a pair, removes its car and returns the removed item.
+
+When the value of @var{slot} is not a pair, or the @var{slot} is unbound,
+@var{fallback} is returned if it is provided, otherwise an error is
+signalled.
+@c JP
+@code{slot-push!}と逆の操作です。@var{obj}の@var{slot}の値が
+ペアの場合、そのcarを@var{slot}の値から取り除き、取り除かれた値を返します。
+
+@var{slot}の値がペアでない、あるいは@var{slot}が未束縛の場合、
+@var{fallback}が与えられていればそれが返され、そうでなければエラーが報告されます。
+@c COMMON
+@end defun
+
+@deffn {Method} ref (obj <object>) (slot <symbol>)
+@deffnx {Method} {(setter ref)} (obj <object>) (slot <symbol>) value
+@c EN
+These methods just calls @code{slot-ref} and @code{slot-set!}, respectively.
+They are slightly less efficient than directly calling @code{slot-ref}
+and @code{slot-set!}, but more compact in the program code.
+@c JP
+これらのメソッドはそれぞれ、単に @code{slot-ref} および @code{slot-set!}
+を呼ぶだけです。直接 @code{slot-ref} や @code{slot-set!} を呼ぶよりも
+効率はすこし悪いですが、プログラムコードはコンパクトになります。
+@c COMMON
+@end deffn
+
+@c EN
+@subsubheading Fallback methods
+@c JP
+@subsubheading フォールバックメソッド
+@c COMMON
+
+@deffn {Generic Function} slot-unbound
+@deffnx {Method} slot-unbound (class <class>) obj slot
+@c EN
+This generic function is called when an unbound slot value is
+retrieved.  The return value of this generic function will be
+returned to the caller that tried to get the value.
+
+The default method just signals an error.
+@c JP
+このジェネリック関数は束縛されていないスロットの値を取り出そうとしたときに
+呼び出されます。このジェネリック関数の返り値は値を得ようとした呼出しもとに
+返されます。
+
+デフォルトのメソッドは単にエラーのシグナルをあげるだけです。
+@c COMMON
+@end deffn
+
+@deffn {Generic Function} slot-missing
+@deffnx {Method} slot-missing (class <class>) obj slot :optional value
+@c EN
+This generic function is called when a non-existent slot
+value is retrieved or set.  The return value of this generic
+function will be returned to the caller that tried to get the value.
+
+The default method just signals an error.
+@c JP
+このジェネリック関数は存在しないスロットの値を取り出そうとしたとき、あるいは
+設定しようとしたときに呼びだされます。このジェネリック関数の返り値は、
+値を得ようとした呼出しもとに返されます。
+
+デフォルトのメソッドは単にエラーのシグナルをあげるだけです。
+@c COMMON
+@end deffn
+
+@c EN
+@subsubheading Special accessors
+@c JP
+@subsubheading 特殊アクセサ
+@c COMMON
+
+@defun class-slot-ref class slot-name
+@defunx class-slot-set! class slot-name obj
+@defunx class-slot-bound? class slot-name obj
+@c EN
+When slot's @code{:allocation} option is either @code{:class}
+or @code{:each-subclass}, these procedures allow you to
+get/set the value of the slot without having an instance.
+@c JP
+スロットの@code{:allocation}オプションが@code{:class}もしくは
+@code{:each-subclass}である場合、これらの手続きを使って、
+インスタンス無しでそれらのスロットの値を取得/設定できます。
+@c COMMON
+@end defun
+
+@deffn {Method} slot-ref-using-class (class <class>) (obj <object>) slot-name
+@deffnx {Method} slot-set-using-class! (class <class>) (obj <object>) slot-name value
+@deffnx {Method} slot-bound-using-class? (class <class>) (obj <object>) slot-name
+@c EN
+Generic function version of @code{slot-ref}, @code{slot-set!} and
+@code{slot-bound?}.   @var{Class} must be the class of @var{obj}.
+
+Besides being generic, these functions are different from
+their procedural versions that they don't trigger class
+redefinition when @var{obj}'s class has been redefined
+(i.e. in which case, @var{class} should be the original class
+of @var{obj}).
+@c JP
+@code{slot-ref}、@code{slot-set!}、@code{slot-bound?} のジェネリック
+関数版です。@var{class} は @var{object} のクラスでなければなりません。
+
+これらの関数は、ジェネリックであることに加えて、
+@var{obj} のクラスが再定義されてもクラスの再定義を起動しない
+(そのような場合、@var{class}は @var{obj} の元々のクラスで
+なければならない)という点で手続き版とは違います。
+@c COMMON
+
+@c EN
+Note: Unlike CLOS, @code{slot-ref} etc. don't call the generic
+function version in it, so you can't customize the behavior
+of @code{slot-ref} by specializing @code{slot-ref-using-class}.
+So the primary purpose of those generic functions are to be
+used within @code{change-class} method; especially, @code{slot-ref} etc.
+can't be used during @var{obj}'s being redefined, since they
+trigger class redefinition again (see @ref{Changing classes} for details).
+@c JP
+覚書: CLOS とはちがい、@code{slot-ref} などは、その中でジェネリック
+関数版を呼ぶことはありません。それゆえ、@code{slot-ref-using-class} を
+特定化することによって、@code{slot-ref} をカスタマイズすることはできません。
+つまり、これらのジェネリック関数の主たる目的は @code{change-class} 
+メソッドの内部で使われることです。とくに、@code{slot-ref} などは
+クラス再定義を再度起動する(詳細については @ref{Changing classes} を
+参照)ので、@var{obj} の再定義中には使えません。
+@c COMMON
+@end deffn
+
+@node Changing classes,  , Accessing instance, Instance
+@subsection Changing classes
+@c NODE クラスの変更
+
+@c EN
+@subsubheading Class change protocol
+
+An unique feature of CLOS-family object system is that
+you can change classes of an existing instance.  The two
+classes doesn't need to be related; you can change a sewing
+machine into an umbrella, if you like.
+@c JP
+@subsubheading クラス変更プロトコル
+
+CLOS系のオブジェクトシステムのユニークな機能は既存のインスタンスの
+クラスを変更できるということです。新旧二つのクラスに関連性がある必要は
+ありません。おのぞみなら、ミシンを雨がさに変更することもできます。
+@c COMMON
+
+@deffn {Generic Function} change-class
+@deffnx {Method} change-class (obj <object>) (new-class <class>)
+@c EN
+Changes an object @var{obj}'s class to @var{new-class}.
+The default method just calls @code{change-object-class} procedure.
+@c JP
+オブジェクト @var{obj} のクラスを @var{new-class} に変更します。
+デフォルトのメソッドは単に @code{change-object-class} 手続きを呼ぶだけです。
+@c COMMON
+@end deffn
+
+@defun change-object-class obj orig-class new-class
+@c EN
+Changes an object @var{obj}'s class from @var{orig-class} to
+@var{new-class}.  This isn't a generic function---changing object's
+class needs some secret magic, and this procedure encapsulates it.
+
+The precise steps of changing class are as follow:
+
+@enumerate
+@item
+A new instance of @var{new-class} is allocated by @code{allocate-instance}.
+
+@item
+For each slot of @var{new-class}:
+@enumerate
+@item
+If the slot also exists in @var{old-class}, and is bound in @var{obj},
+the value is retrieved from @var{obj} and set to the new instance.
+(The slot is @emph{carried over}).
+@item
+Otherwise, the slot of the new instance is initialized by standard
+slot initialization protocol, as described in @ref{Creating instance}.
+@end enumerate
+
+@item
+Finally, the content of the new instance is @emph{transplanted} to
+the @var{obj}---that is, @var{obj} becomes the instance of @var{new-class}
+without changing its identity.
+@end enumerate
+
+Note that @code{initialize} method of @var{new-class} 
+isn't called on @var{obj}.
+If you desire, you can call it by your own @code{change-class} method.
+
+@code{Change-object-class} returns @var{obj}.
+@c JP
+オブジェクト @var{obj} のクラスを @var{orig-class} から @var{new-class}
+に変更します。これはジェネリック関数ではありません。
+オブジェクトのクラスを変更するにはちょっとした秘密の内部的操作が必要で、
+この手続きはそれを隠蔽しています。
+
+クラスを変更する正確なステップは以下のようになっています。
+
+@enumerate
+@item
+@var{new-class} の新しいインスタンスが @code{allocate-instance} によって
+アロケートされる。
+
+@item
+@var{new-class}の各スロットに対して、
+@enumerate
+@item
+もし、そのスロットが @var{old-class} に存在し、@var{obj} で束縛されていれば、
+その値は @var{obj} から取り出され、新しいインスタンスにセットされる。
+(そのスロットは@emph{持ち越され}ます。)
+@item
+そうでなければ、新しいインスタンスのスロットは、@ref{Creating instance} で
+説明された手順で、標準のスロット初期化プロトコルによって初期化されます。
+@end enumerate
+
+@item
+最後に、新しいインスタンスの内容が @var{obj} に@emph{移植}されます。すなわち、
+@var{obj} がアイデンティティを変えることなく @var{new-class} のインスタンス
+となります。
+@end enumerate
+
+@var{obj}に対して@var{new-class}の@code{initilize} メソッドは呼ばれないことに
+注意してください。必要なら、独自の @code{change-class} メソッドを
+定義して@code{intialize}を呼ぶようにすることができます。
+
+@code{change-object-class} は @var{obj} を返します。
+@c COMMON
+@end defun
+
+@c EN
+Usually a user is not supposed to call @code{change-object-class} directly.
+Instead, she can define a specialized @code{change-class}.  For example,
+if she wants to carry over the slot @code{x} of old class to the
+slot @code{y} of new class, she may write something like this:
+@c JP
+ユーザは大抵の場合、@code{change-object-class}を直接呼ぶ必要は無いでしょう。
+そのかわり、特定化した @code{change-class} を定義するべきです。
+たとえば、旧いクラスのスロット @code{x} を
+新しいクラスのスロット @code{y} へ持ち越すことは、
+こんな風に書けば可能です。
+@c COMMON
+
+@example
+(define-method change-class ((obj <old-class>) <new-class>)
+  (let ((old-val (slot-ref obj 'x)))
+    (next-method)               ;; calls default change-class
+    (slot-set! obj 'y old-val)  ;; here, obj's class is already <new-class>.
+    obj))
+@end example
+
+@c EN
+@subsubheading Customizing instance update
+
+Updating an instance for a redefined class is also handled
+as class change.  When an object is accessed via normal
+slot accessor/modifier, its class is checked whether
+it has been redefined.  And if it has indeed been redefined,
+@code{change-class} is called with the
+redefined class as @var{new-class}; that is, updating
+an instance is regarded as changing object's class from
+the original one to the redefined one.
+
+By specializing @code{change-class}, you can customize the
+way an instance is updated for a redefined class.
+However, you need a special care to write @code{change-class}
+for class redefinition.
+
+First, the redefinition changes global binding of the class object.
+So you need to keep the reference to the old class before
+redefining the class, and use the old class to specialize 
+@code{change-class} method:
+@c JP
+@subsubheading インスタンス更新のカスタマイズ
+
+再定義されたクラスのインスタンスが更新される場合は、それもクラス変更として
+扱われます。オブジェクトは通常のスロットアクセサ/モディファイア
+経由でアクセスされるときに、そのクラスが再定義されたかどうかを
+チェックされます。もし再定義が行われていれば、
+再定義されたクラスを@var{new-class}として
+@code{change-class}が呼ばれます。
+すなわち、インスタンスの更新はオブジェクトの
+クラスを元々のものから再定義されたものへ変更することと看倣されます。
+
+@code{change-class} を特定化することで、インスタンスを再定義された
+クラス用に更新する方法をカスタマイズできます。しかし、クラス再定義
+用の @code{change-class} を書くには特別な注意が必要です。
+
+まず、再定義はクラスオブジェクトのグローバルな束縛を変更してしまいます。
+それゆえ、クラス再定義がおこる前の旧いクラスへの参照を保持しておく
+必要があり、@code{change-class} メソッドの特定化をするには、この旧い
+クラスを使う必要があります。
+@c COMMON
+
+@example
+;; save old <myclass>
+(define <old-myclass> <myclass>)
+
+;; redefine <myclass>
+(define-class <myclass> ()
+  ...)
+
+;; define customized change-class method
+(define-method change-class ((obj <old-myclass>) <myclass>)
+  ...
+  (next-method)
+  ...)
+@end example
+
+@c EN
+Next, note that the above @code{change-class} method may be
+triggered implicitly when you access to @var{obj} via
+@code{slot-ref}, @code{slot-set!}, @code{class-of}, etc.
+If you use such procedures like @code{slot-ref} on @var{obj}
+again within @code{change-class}, it would trigger the
+instance update protocol recursively, which would cause
+an infinite loop.
+You can only use the methods that doesn't trigger
+instance update, that is, @code{slot-ref-using-class},
+@code{slot-set-using-class!}, @code{slot-bound-using-class?}
+and @code{current-class-of}.
+
+If you want to carry over a slot whose value is calculated
+procedurally, such as a virtual slot, then @code{slot-ref} etc.
+might be called implicitly on @var{obj} during calculating the
+slot value.  Actually @code{change-object-class} has a
+special protection to detect such a recursion.  If that
+happens, @code{change-object-class} gives up to retrieve
+the slot value and just initializes the slot of the new instance
+as if the old slot were unbound.
+
+Customizing instance update is highly tricky business,
+although very powerful.   You can find some nontrivial
+cases in the test program of Gauche source code;
+take a look at @code{test/object.scm}.
+@c JP
+次に、上の @code{change-class} メソッドは、@code{slot-ref}、@code{slot-set!}、
+@code{class-of} などを経由して、暗黙のうちに起動される得ることに
+注意してください。もし、@code{change-class} 内で、@var{obj} に対して
+再度 @code{slot-ref} のような手続き使うと、インスタンス更新プロトコルが
+再帰的に起動され、無限ループをひきおこすことになります。インスタンス
+更新を起動しないようなメソッドしか使えません。すなわち、
+@code{slot-ref-using-class}、@code{slot-set-using-class!}、
+@code{slot-bound-using-class?}、@code{current-class-of} しか使えません。
+
+仮想スロットのように、手続きによって計算される値をもつスロットを
+持ち越したいのであれば、@code{slot-ref} その他が、そのスロットの値を
+計算している最中に、暗黙裏に @var{obj} に対して呼ばれることがありえます。
+実際のところは、@code{change-object-class} はこのような再帰を検出する
+保護機構をもっています。もし、このようなことが起これば、
+@code{change-object-class} はそのスロットの値を取り出すのを諦め、
+新しいインスタンスのスロットを旧いスロットが未束縛であるとして、
+初期化します。
+
+インスタンス更新をカスタマイズするのは非常に強力ですがたいへん
+トリッキーな仕事です。Gauche のソース中のテストプログラム
+には自明ではないいくつかのケースが含まれています。@code{test/object.scm}
+見てみてください。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Generic function and method, Metaobject protocol, Instance, Object system
+@section Generic function and method
+@c NODE ジェネリックファンクションとメソッド
+
+@c EN
+@subheading Defining methods
+@c JP
+@subheading メソッドの定義
+@c COMMON
+
+@defmac define-generic name :key class
+@c EN
+Creates a generic function and bind it to @var{name}.
+
+You don't usually need to use this, since the @code{define-method}
+macro implicitly creates a generic function if it doesn't exist yet.
+
+You can pass a subclass of @code{<generic>} to the @var{class}
+keyword argument so that the created generic function will be the
+instance of the passed class, instead of the default @code{<generic>} class.
+It is useful when you defined a subclass of @code{<generic>} to customize
+generic function application behavior.
+@c JP
+ジェネリック関数を生成し、@var{name} に束縛します。
+
+通常は、これを使う必要はありません。もし、まだ存在していなければ、
+@code{define-method} マクロが暗黙裏にジェネリック関数を生成してくれるからです。
+
+キーワード引数@code{class}に、@code{<generic>}のサブクラスを渡すことで、
+作られるジェネリック関数をデフォルトの@code{<generic>}クラスのインスタンスでは
+なく指定のクラスのインスタンスにすることができます。@code{<generic>}の
+サブクラスを定義してメソッド適用をカスタマイズする場合に便利です。
+@c COMMON
+@end defmac
+
+@defmac define-method name specs body
+@c EN
+Defines a method whose name is @var{name}.  If there's already
+a generic function object globally bound to @var{name}, the created
+method is added to the generic function.  If @var{name} is unbound,
+or bound to an object except a generic function, then a new generic
+function is created, bound to @var{name}, then a new method is
+added to it.
+
+@var{Specs} specifies the arguments and their types for this method.
+It's like the argument list of lambda form, except you can specify
+the type of each argument.
+@c JP
+@var{name} という名前のメソッドを定義します。すでにグローバルに @var{name}
+に束縛されているジェネリック関数オブジェクトが存在していれば、生成された
+メソッドはそのジェネリック関数に追加されます。@var{name} が未束縛であるか
+またはジェネリック関数以外に束縛されているなら、新しいジェネリック関数が
+生成され、@var{name} に束縛されて、新しいメソッドがそれに追加されます。
+
+@var{specs} はこのメソッドに対応する引数とその型を指定します。これは
+lambda 形式の引数リストに似ていますが、それぞれの引数の型を指定できる
+ところが違います。
+@c COMMON
+
+@example
+@i{specs} : ( @i{arg} @dots{} )
+      | ( @i{arg} @dots{} . @i{symbol} )
+      | @i{symbol}
+
+@i{arg}   : ( @i{symbol} @i{class} )
+      | @i{symbol}
+@end example
+
+@c EN
+@i{Class} specifies the class that the argument has to belong to.
+If @code{@i{arg}} is just a symbol, it is equivalent to 
+@code{(@i{arg} <top>)}.  You can't specify the type for
+the "rest" argument, for it is always bound to a list.
+
+The list of classes of the argument list is called
+@emph{method specializer list}, based on which the generic
+function will select appropriate methods(s).
+Here are some examples of @var{specs} and the corresponding 
+specializer list:
+@c JP
+@i{class} は引数が所属すべきクラスを指定します。@code{@i{arg}} が単に
+シンボルであれば、@code{(@i{arg} <top>)} と同じです。rest 引数の
+型を指定することはできません。それは常にリストに束縛されるからです。
+
+引数リストのクラスのリストは@emph{メソッド特定化子リスト}といい、
+これを基に、ジェネリック関数は適切なメソッドを選択します。@var{specs} と
+それに対応する特定化子リストの例をあげておきます。
+@c COMMON
+
+@example
+specs:        ((self <myclass>) (index <integer>) value)
+specializers: (<myclas> <integer> <top>)
+
+specs:        ((self <myclass>) obj . options)
+specializers: (<myclas> <top> . <top>)
+
+specs:        (obj (attr <string>))
+specializers: (<top> <string>)
+
+specs:        args
+specializers: <top>
+@end example
+
+@c EN
+If you define a method on @var{name} whose specializer list matches with
+one in the generic function's methods, then the existing method is
+replaced by the newly defined one.
+@c JP
+その特定化子リストがジェネリック関数の中のメソッドの一つに一致するような
+@var{name} 上のメソッドを定義すると、既存のメソッドは新しく定義された
+メソッドに置き換えられます。
+@c COMMON
+@end defmac
+
+@c EN
+@subheading Applying generic function
+@c JP
+@subheading ジェネリック関数の適用
+@c COMMON
+
+@c EN
+When a generic function is applied, first it selects
+methods whose specializer list matches the given arguments.
+For example, suppose a generic function @code{foo} has
+three methods, whose specializer lists are 
+@code{(<string> <top>)}, @code{(<string> <string>)}, 
+and @code{(<top> <top>)}, respectively.
+When @code{foo} is applied like @code{(foo "abc" 3)},
+the first and the third method will be selected.
+
+Then the selected methods are sorted from the most
+@emph{specific} method to the least specific method.
+It is calculated as follows:
+@c JP
+ジェネリック関数は適用されると、まず、与えられた引数に適合する
+特定化子リストを持つメソッドを選択します。たとえば、ジェネリック関数 
+@code{foo} が 3つのメソッドを持っており、それらの特定化子リストが
+それぞれ、@code{(<string> <top>)}、@code{(<string> <string>)}、
+@code{(<top> <top>)} であるとします。@code{foo} が @code{(foo "abc" 3)} の
+ように適用されたとき、最初と 3番目のメソッドが選択されます。
+
+選択されたメソッドは、もっとも@emph{特定化された}ものから、もっとも一般的なものへ
+の順でソートされます。これは以下のように計算されます。
+@c COMMON
+
+@itemize
+@c EN
+@item
+Suppose we have a method @code{a} that has 
+specializers @code{(A1 A2 @dots{})}, and
+a method @code{b} that has @code{(B1 B2 @dots{})}.
+
+@item
+Find the minimum @var{n} where the classes @code{An} and @code{Bn}
+differ.   Then the class of @var{n}-th argument is taken,
+and its class precedence list is checked.
+If @code{An} comes before @code{Bn} in the CPL, then
+method @code{a} is more specific than @code{b}.
+Otherwise, @code{b} is more specific than @code{a}.
+
+@item
+If all the specializers of @code{a} and @code{b} are the same,
+except that one has an improper tail ("rest" argument)
+and another doesn't, then the method that doesn't have an improper
+tail is more specific than the one that has.
+@c JP
+@item
+@code{(A1 A2 @dots{})} という特定化子リストをもつメソッド @code{a} と
+@code{(B1 B2 @dots{})} という特定化子リストをもつメソッド @code{b} とが
+あるとします。
+
+@item
+@code{An} と @code{Bn} とが異る最小の @var{n} を見つけます。@var{n} 番目の
+引数のクラスをとり、そのクラスの順位リストをチェックします。もし、
+その CPL の中で、@code{An} が @code{Bn} より先にくれば、method @code{a} は
+メソッド @code{b} より特定化されているということにし、さもなければ、
+@code{b} が @code{a} がより特定化されているということにします。
+
+@item
+もし、@code{a} および @code{b} のすべての特定化子が、一方は rest 引数
+をもち、もう一方はもたないという以外同じであれば、rest 引数をもたない
+メソッドのほうがそうでないものより特定化されているとします。
+@c COMMON
+@end itemize
+
+@c EN
+Once methods are sorted, the body of the first method is
+called with the actual argument.
+
+Within the method body, a special local variable @code{next-method}
+is bound implicitly.
+@c JP
+メソッドがソートされたら、最初のメソッドの本体が実引数で呼ばれます。
+
+メソッド本体内部では、特別なローカル変数 @code{next-method}が暗黙裏に
+束縛されます。
+@c COMMON
+
+@deffn {Next method} next-method 
+@deffnx {Next method} next-method args @dots{}
+@c EN
+This variable is bound within a method body
+to a special object that encapsulates
+the next method in the sorted method list.
+
+Calling without arguments invokes the next method with
+the same arguments as this method is called with.
+Passing @var{args} @dots{} explicitly invokes the next method
+with the passed arguments.
+
+If @code{next-method} is called in the least specific method,
+i.e. there's no "next method", an error is signalled.
+@c JP
+この変数は、メソッド本体内部で、ソートされたメソッドリストで次のメソッド
+をカプセル化した特別なオブジェクトに束縛されます。
+
+引数なしで呼ぶと、次のメソッドがこのメソッドよばれたときとと同じ引数で
+起動されます。@var{args} @dots{} を明示的にわたすと、次のメソッドがその
+渡された引数で起動されます。
+
+@code{next-method} がもっとも特定化されていないメソッドで呼ばれた場合、
+すなわち、「次のメソッド」がない場合、エラーシグナルがあがります。
+@c COMMON
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node Metaobject protocol,  , Generic function and method, Object system
+@section Metaobject protocol
+@c NODE メタオブジェクトプロトコル
+
+@c EN
+In CLOS-like object systems, the object system is built on
+top of itself---that is, things such as the structure of the class,
+how a class is created, how an instance is created and initialized,
+and how a method is dispatched and called, are all defined in terms
+of the object system.  For example, a class is just an instance of
+the class @code{<class>} that defines a generic structure and behavior 
+of standard classes.  If you subclass @code{<class>}, then you can
+create your own set of classes that behaves differently than the
+default behavior; in effect, you are creating your own object system.
+
+@emph{Metaobject protocols} are the definitions of APIs concerning
+about how the object systems are built---building-block classes,
+and the names and orders of generic functions to be called
+during operations of the object system.  Subclassing these classes
+and specializing these methods are the means of customizing object
+system behaviors.
+@c JP
+CLOS 風のオブジェクトシステムでは、オブジェクトシステムがそれ自身の上に
+構築されます。すなわち、クラス構造のようなもの、クラスをどのように
+生成するか、インスタンスをどのように生成し初期化するか、メソッドをどのように
+ディスパッチし呼び出すか、これらはすべてオブジェクトシステムによって、
+定義されます。たとえば、クラスはジェネリックな構造と標準的クラスの
+振舞いを定義する @code{<class>} クラスのインスタンスです。@code{<class>}
+をサブクラス化すると、デフォルトのものとは違う振舞いをする、独自の
+クラス集合をつくることができます。これは結局、独自のオブジェクトシステムを
+つくることになります。
+
+@emph{メタオブジェクトプロトコル}は、どのようにオブジェクトシステムを
+構築するかに関連する API 群の定義です。ブロック構築のクラス、オブジェクト
+システムを操作するあいだに呼ばれるジェネリック関数の名前と順序などです。
+これらのクラスをサブクラス化し、これらのメソッドを特定化することは、
+オブジェクトシステムの振舞いをカスタマイズすることを意味します。
+@c COMMON
+
+@menu
+* Class instantiation::         
+* Customizing slot access::     
+* Method instantiation::        
+* Customizing method application::  
+@end menu
+
+
+@node Class instantiation, Customizing slot access, Metaobject protocol, Metaobject protocol
+@subsection Class instantiation
+@c NODE クラスのインスタンシエーション
+
+@c EN
+Every class is an instance of a group of special classes.
+A class that can be a class of another class is called @emph{metaclass}.
+In Gauche, only the @code{<class>} class or its subclasses
+can be a metaclass.
+
+@subsubheading Expansion of @code{define-class}
+
+The @code{define-class} macro is basically a wrapper of
+the code that creates an instance of @code{<class>} 
+(or specified metaclass) and bind it to the given name.
+Suppose you have the following @code{define-class} form.
+@c JP
+すべてのクラスはある特殊なクラスのグループのインスタンスになっています。
+他のクラスのクラスになれるようなクラスのことを @emph{メタクラス} と呼びます。
+Gauche では @code{<class>} クラスおよびそのサブクラスのみがメタクラスに
+なれます。
+
+@subsubheading @code{define-class} の展開
+
+@code{define-class} マクロは基本的には @code{<class>} (あるいは指定された
+メタクラス)のインスタンスを生成するコードのラッパーで、それを与えられた
+名前に束縛します。以下のような @code{define-class} 形式を前提とします。
+
+@c COMMON
+@example
+(define-class @var{name} (@var{supers})
+  @var{slot-specs}
+  @var{options} @dots{})
+@end example
+
+@c EN
+It is expanded into a form like this (you can see the exact form 
+by looking at the definition of @code{define-class} macro in
+@file{`gauche-config --syslibdir`/gauche/object.scm}).
+@c JP
+これを次のように展開します。
+(@file{`gauche-config --syslibdir`/gauche/object.scm} の @code{define-class}
+マクロの定義をみれば展開形式を見ることができます。)
+@c COMMON
+@example
+(define @var{name}
+  (let ((tmp1 (make @var{metaclass} 
+                 :name '@var{name} :supers (list @var{supers})
+                 :slots (map @var{process-slot-definitions}
+                             @var{slot-specs})
+                 :defined-modules (list (current-module))
+                 @var{options} @dots{})))
+    @dots{} @var{check class redefinition} @dots{}
+    @dots{} @var{registering accessor methods} @dots{}
+    tmp1))
+@end example
+
+@c EN
+The created class's class, i.e. @var{metaclass}, 
+is determined by the following rules.
+@c JP
+生成されるクラスのクラス、つまり、@var{metaclass} は以下のルールで
+決定されます。
+@c COMMON
+
+@enumerate
+@c EN
+@item
+If @code{:metaclass} option is given to the @code{define-class}
+macro, its value is used.  The value must be the @code{<class>}
+class or its descendants.
+@item
+Otherwise, the metaclasses of the classes in the class precedence list
+is examined.
+@itemize @bullet
+@item
+If all the metaclasses are @code{<class>}, then
+the created class's metaclass is also @code{<class>}. 
+@item
+If all the metaclasses are either @code{<class>} or another metaclass
+@code{A}, then the created class' metaclass is @code{A}.
+@item
+If the set of metaclasses contains more than one metaclass
+(@code{A}, @code{B}, @code{C} @dots{}) other than @code{<class>},
+then the created class' metaclass
+is a metaclass that inherits all of those metaclasses
+@code{A}, @code{B}, @code{C} @dots{}.
+@end itemize
+@c JP
+@item
+もし、@code{:metaclass} オプションが @code{define-class} マクロに
+与えられていれば、その値を使います。その値は、@code{<class>} クラスか
+あるいはその子孫でなければなりません。
+@item
+さもなければ、クラス順位リスト中のクラスのメタクラスが試されます。
+@itemize @bullet
+@item
+もし、すべてのメタクラスが @code{<class>} であるなら、生成される
+クラスのメタクラスも @code{<class>} になります。
+@item
+もし、すべてのメタクラスが @code{<class>} かあるいは別のメタクラス
+@code{A} のどちらかであれば、生成されるクラスのメタクラスは、@code{A} に
+なります。
+@item
+もしメタクラスの集合が @code{<class>} 以外の 2つ以上のメタクラス
+(@code{A}, @code{B}, @code{C} @dots{})を含む場合、生成されるクラスの
+メタクラスはこれらのメタクラス @code{A}, @code{B}, @code{C} @dots{} すべてを
+継承したメタクラスになります。
+@end itemize
+@c COMMON
+@end enumerate
+
+@c EN
+The class's name, superclasses, and slot definitions are passed
+as the initialization arguments to the @code{make} generic function,
+with other arguments passed to @code{define-class}.
+The initialization argument @code{defined-modules} is passed to
+remember which module the class is defined, for the redefinition of
+this class.
+
+The slot specifications @var{slot-specs} are processed
+by internal method @var{process-slot-definitions}
+(which can't be directly called) to be turned
+into slot definitions.  Specifically, an @code{:init-form} slot
+option is turned into an @code{:init-thunk} option, and
+@code{:getter}, @code{:setter} and @code{:accessor} slot
+options are quoted.
+
+After the class (an instance of @var{metaclass}) is created,
+the global binding of @var{name} is checked.  If it is bound
+to a class, then the class redefinition protocol is invoked
+(see @ref{Class redefinition}).
+
+Then, the methods given to @code{:getter}, @code{:setter} 
+and @code{:accessor} slot options in @var{slot-spec} are
+collected and registered to the corresponding generic functions.
+@c JP
+クラスの名前、スーパークラス、スロットの定義は初期化引数として
+ジェネリック関数 @code{make} に引き渡され、それ以外の引数は
+@code{define-class} に引き渡されます。初期化引数 @code{define-modules} は
+どのモジュールでそのクラスが定義されたかを覚えておくために引き渡されます。
+これはこのクラスの再定義のとき用です。
+
+スロットの仕様 @var{slot-specs} は内部メソッド @var{process-slot-definitions}
+(これは直接呼び出すことはできません)で処理され、スロット定義になります。
+厳密には、@code{:init-form} スロットオプションは、@code{:init-thunk} オプション
+になり、@code{:getter}、@code{:setter}、@code{:accessor} のスロットオプションは
+引用されます。
+
+クラス(@var{metaclass} のインスタンス)が生成された後、@var{name} のグローバル
+な束縛がチェックされます。それが、クラスに束縛されていれば、クラスの再定義
+プロトコルが起動されます(@ref{Class redefinition} 参照)。
+
+その後、@var{slot-specs} 中で、@code{:getter}、@code{:setter}、
+@code{:accessor} スロットオプションに与えられたメソッドが集められ、対応する
+ジェネリック関数に登録されます。
+@c COMMON
+
+@c EN
+@subsubheading Class structure
+@c JP
+@subsubheading クラス構造
+@c COMMON
+
+@deftp {Class} <class>
+@clindex class
+@c EN
+The base class of all metaclasses, @code{<class>}, has
+the following slots.  Note that these slots are for internal management,
+and users shouldn't change their values after
+the class is initialized.  It is recommended to obtain information
+about a class by procedures described in @ref{Class object}, instead
+of directly accessing those slots.
+@c JP
+すべてのメタクラスのベースクラスである @code{<class>} は以下のような
+スロットを持っています。これらのスロットは内部的な管理のためにあるので
+クラスが初期化された後に、これらの値を変更すべきではないということに
+注意してください。クラスの情報を得るには、これらのスロットに直接
+アクセスするのではなく、@ref{Class object} にある手続きを使うことをおすすめ
+します。
+@c COMMON
+
+@defivar <class> name
+@c EN
+The name of the class; the symbol given to @code{define-class} macro.
+@code{class-name} returns this value.
+@c JP
+クラスの名前、@code{define-class} マクロに与えられたシンボルです。
+@code{class-name} はこの値を返します。
+@c COMMON
+@end defivar
+
+@defivar <class> cpl
+@c EN
+Class precedence list.  @code{class-precedence-list} returns this value.
+@c JP
+クラス順位リストです。@code{class-precedence-list} はこの値を返します。
+@c COMMON
+@end defivar
+
+@defivar <class> direct-supers
+@c EN
+The list of direct superclasses.
+@code{class-direct-supers} returns this value.
+@c JP
+直接スーパークラスのリストです。
+@code{class-direct-supers} はこの値を返します。
+@c COMMON
+@end defivar
+
+@defivar <class> accessors
+@c EN
+An assoc list of slot accessors---it encapsulates how each slot
+should be accessed.
+@c JP
+スロットアクセサの連想リストです。これは各スロットがどのようにアクセスされる
+べきかをカプセル化しています。
+@c COMMON
+@end defivar
+
+@defivar <class> slots
+@c EN
+A list of slot definitions.  @code{class-slots} returns this value.
+See @ref{Slot definition object}, for the details of slot definitions.
+@c JP
+スロット定義のリストです。@code{class-slots} はこの値を返します。
+スロット定義についての詳細は、@ref{Slot definition object} を参照してください。
+@c COMMON
+@end defivar
+
+@defivar <class> direct-slots
+@c EN
+A list of slot definitions that is directly specified in this
+class definition (i.e. not inherited).
+@code{class-direct-slots} returns this value.
+@c JP
+このクラスの定義で直接指定された(つまり継承したものではない)スロット定義の
+リストです。@code{class-direct-slots} はこの値を返します。
+@c COMMON
+@end defivar
+
+@defivar <class> num-instance-slots
+@c EN
+The number of instance allocated slots.
+@c JP
+インスタンスにアロケートされるスロットの数です。
+@c COMMON
+@end defivar
+
+@defivar <class> direct-subclasses
+@c EN
+A list of classes that directly inherits this class.
+@code{class-direct-subclasses} returns this value.
+@c JP
+このクラスを直接継承しているクラスのリストです。
+@code{class-direct-subclasses} はこの値を返します。
+@c COMMON
+@end defivar
+
+@defivar <class> direct-methods
+@c EN
+A list of methods that has this class in its specializer list.
+@code{class-direct-methods} returns this value.
+@c JP
+このクラスを特定化子リスト中にもつメソッドのリストです。
+@code{class-direct-methods} はこの値を返します。
+@c COMMON
+@end defivar
+
+@defivar <class> initargs
+@c EN
+The initialization argument list when this class is created.
+The information is used to initialize redefined class
+(see @ref{Class redefinition}).
+@c JP
+このクラスが生成されるときの初期化引数リストです。この情報は
+再定義されたクラスを初期化するのに使います(@ref{Class redefinition} 参照)。
+@c COMMON
+@end defivar
+
+@defivar <class> defined-modules
+@c EN
+A list of modules where this class has a global binding.
+@c JP
+このクラスがグローバル束縛をもつモジュールのリストです。
+@c COMMON
+@end defivar
+
+@defivar <class> redefined
+@c EN
+If this class has been redefined, this slot contains a reference
+to the new class.  Otherwise, this slot has @code{#f}.
+@c JP
+このクラスが再定義された場合、このスロットは新しいクラスへの参照を含みます。
+そうでない場合にはこのスロットは @code{#f} をもっています。
+@c COMMON
+@end defivar
+
+@defivar <class> category
+@c EN
+The value of this slot indicates how this class is created.
+Scheme defined class has a symbol @code{scheme}.  Other values
+are for internal use.
+@c JP
+このスロットの値は、このクラスがどのように生成されたかを示しています。
+Scheme 定義のクラスは、@code{scheme} というシンボルを持っています。それ以外の
+値は内部的に使用するだけです。
+@c COMMON
+@end defivar
+@end deftp
+
+@c EN
+@subsubheading The make method for @code{<class>}
+@c JP
+@subsubheading @code{<class>} 用の make メソッド
+@c COMMON
+
+@deffn {Method} make (class <class>) :rest initargs
+@end deffn
+
+
+@node Customizing slot access, Method instantiation, Class instantiation, Metaobject protocol
+@subsection Customizing slot access
+@c NODE スロットアクセスのカスタマイズ
+
+
+@deffn {Generic Function} compute-slots
+@deffnx {Generic Function} compute-get-n-set
+These two generic functions are responsible to determine
+what slots a class has, and how each slot is accessed.
+
+In the @code{initialize} method of a class,
+@code{compute-slots} is called after the class's
+@code{direct-supers}, @code{cpl} and @code{direct-slots} are set.
+It must decide what slots the class should have, and what
+slot options each slot should have, based on those three piece
+of information.  The returned value should have the following
+form, and it is used as the value of the @code{slots} slot of the class.
+
+@example
+<slots> : (<slot-definition> ...)
+<slot-definition> : (<slot-name> . <slot-options>)
+<slot-name> : symbol
+<slot-options> : keyword-value alternating list.
+@end example
+
+After the @code{slots} slot of the class is set by the returned
+value from @code{compute-slots},
+@code{compute-get-n-set} is called for each slot
+to calculate how to access and modify the slot.
+The class and the slot definition are the arguments.
+It must return either one of the followings:
+
+@table @asis
+@item an integer @var{n}
+This slot becomes @var{n}-th instance slot.  This is the only way to
+allocate a slot per instance.
+
+The base method of @var{compute-get-n-set} keeps track of the current
+number of allocated instance slots in the class's @code{num-instance-slots}
+slot.  It is not recommended for other specialized methods to use or
+change the value of this slot, unless you know a very good reason to
+override the object system behavior in deep down.  Usually it is suffice
+to call @code{next-method} to let the base method reserve an instnace
+slot for you.
+
+See the examples below for modifying instance slot access behaviors.
+
+@item a list @code{(@var{get-proc} @var{set-proc} @var{bound?-proc} @var{initializable})}
+The @var{get-proc}, @var{set-proc} and @var{bound?-proc} elements are procedures
+invoked when this slot of an instance is accessed (either via 
+@code{slot-ref}/@code{slot-set!}/@code{slot-bound?}, 
+or an accessor method specified by @code{:getter}/@code{:setter} slot options).
+The value other than @var{get-proc} may be @code{#f}, and can be omitted
+if all the values after it is also @code{#f}.  That is, the simplest
+form of this type of return value is a list of one element,
+@var{get-proc}.
+
+@itemize @bullet
+@item
+When this slot is about to be read, @var{get-proc} is called with
+an argument, the instance.  The returned value of @var{get-proc} is
+the value of the slot.
+
+The procedure may return @code{#<undef>} to indicate the slot is 
+unbound.  It triggers the @code{slot-unbound} generic function.
+(That is, this type of slot cannot have @code{#<undef>} as its value.)   
+
+@item
+When this slot is about to be written, @var{set-proc} is called
+with two arguments, the instance and the new value.  It is called
+purely for the side effect; the procedure may change the value
+of other slot of the instance, for example.
+
+If this element is @code{#f} or omitted, the slot becomes read-only; 
+any attempt to write to the slot will raise an error.
+
+@item
+When @code{slot-bound?} is called to check whether the slot of
+an instance is bound, @var{bound?-proc} is called with
+an argument, the instance.  It should return a boolean value
+which will be the result of @code{slot-bound?}.
+
+If this element is @code{#f} or omitted, @code{slot-bound?} will
+call @var{get-proc} and returns true if it returns
+@code{#<undef>}.
+
+@item
+The last element, @var{initializable}, is a flag that indicates
+whether this slot should be initialized when @code{:init-value}
+or @code{:init-form}.  
+@end itemize
+
+@item A @code{<slot-accessor>} object
+Access to this slot is redirected through the returned
+slot-accessor object.   See below for more on @code{<slot-accessor>}.
+@end table
+
+The value returned by @code{compute-get-n-set} is immediately passed
+to @code{compute-slot-accessor} to create a @emph{slot accessor} object,
+which encapsulates how to access and modify the slot.
+
+After all slot definitions are processed by @code{compute-get-n-set}
+and @code{compute-slot-accessor}, an assoc list of 
+slot names and @code{<slot-accessor>} objects are stored in the
+class's @code{accessors} slot.
+@end deffn
+
+@deffn {Generic Function} compute-slot-accessor
+@deffnx {Method} compute-slot-accessor (class <class>) slot access-specifier
+@var{Access-specifier} is a value returned from
+@code{compute-get-n-set}.  The base method creates an instance
+of @code{<slot-accessor>} that encapsulates how to 
+access the given slot.
+
+Created slot accessor objects are stored (as an assoc list using
+slot names as keys) in the class's @code{accessors} slot.
+Standard slot accessors and mutators, such as @code{slot-ref},
+@code{slot-set!}, @code{slot-bound?}, and the slot accessor
+methods specified in @code{:getter}, @code{:setter} and @code{:accessor}
+slot options, all go through slot accessor object eventually.
+Specifically, those functions and methods first looks up
+the slot accessor object of the desired slot, then calls
+@code{slot-ref-using-accessor} etc.
+@end deffn
+
+@deffn {Method} compute-slots (class <class>)
+The standard method walks CPL of @var{class} and gathers
+all direct slots.  If slots with the same name are found,
+the one of a class closer to @var{class} in CPL takes precedence.
+@end deffn
+
+@deffn {Method} compute-get-n-set (class <class>) slot
+The standard processes the slot definition with the following
+slot allocations: @code{:instance}, @code{:class},
+@code{each-subclass} and @code{:virtual}.
+@end deffn
+
+@defun slot-ref-using-accessor obj slot-accessor
+@defunx slot-set-using-accessor! obj slot-accessor value
+@defunx slot-bound-using-accessor? obj slot-accessor
+@defunx slot-initialize-using-accessor! obj slot-accessor initargs
+The low-level slot accessing mechanism.  Every function or
+method that needs to read or write to a slot eventually comes
+down to one of these functions.
+
+Ordinary programs need not call these functions directly.  
+If you ever need to call them, you have to be careful not 
+to grab the reference to @var{slot-accessor} too long; if
+@var{obj}'s class is changed or redefined, @var{slot-accessor}
+can no longer be used.
+@end defun
+
+Here we show a couple of small examples to illustrate how slot access
+protocol can be customized.  You can also look at @code{gauche.mop.*}
+modules (in the source tree, look under @code{lib/gauche/mop/})
+for more examples.
+
+The first example implements the same functionality of
+@code{:virtual} slot allocation.  We add @code{:procedural}
+slot allocation, which adds @code{:ref}, @code{:set!} and @code{:bound?}
+slot options.
+
+@example
+(define-class <procedural-slot-meta> (<class>) ())
+
+(define-method compute-get-n-set ((class <procedural-slot-meta>) slot)
+  (if (eqv? (slot-definition-allocation slot) :procedural)
+    (let ([get-proc   (slot-definition-option slot :ref)]
+          [set-proc   (slot-definition-option slot :set!)]
+          [bound-proc (slot-definition-option slot :bound?)])
+      (list get-proc set-proc bound-proc))
+    (next-method)))
+@end example
+
+A specialized @code{compute-get-n-set} is defined on a metaclass
+@code{<procedural-slot-meta>}.  It checks the slot allocation,
+handles it if it is @code{:procedural}, and delegates other
+slot allocation cases to @code{next-method}.  This is a typical
+way to add new slot allocation by layering.
+
+To use this @code{:procedural} slot, give @code{<procedural-slot-meta>}
+to a @code{:metaclass} argument of @code{define-class}:
+
+@example
+(define-class <temp> ()
+  ((temp-c :init-keyword :temp-c :init-value 0)
+   (temp-f :allocation :procedural
+           :ref   (lambda (o) (+ (*. (ref o 'temp-c) 9/5) 32))
+           :set!  (lambda (o v) 
+                    (set! (ref o 'temp-c) (*. (- v 32) 5/9)))
+           :bound? (lambda (o) (slot-bound? o 'temp-c))))
+  :metaclass <procedural-slot-meta>)
+@end example
+
+An instance of @code{<temp>} keeps a temperature in both
+Celsius and Fahrenheit.  Here's an example interaction.
+
+@example
+gosh> (define T (make <temp>))
+T
+gosh> (d T)
+#<<temp> 0xb6b5c0> is an instance of class <temp>
+slots:
+  temp-c    : 0
+  temp-f    : 32.0
+gosh> (set! (ref T 'temp-c) 100)
+#<undef>
+gosh> (d T)
+#<<temp> 0xb6b5c0> is an instance of class <temp>
+slots:
+  temp-c    : 100
+  temp-f    : 212.0
+gosh> (set! (ref T 'temp-f) 450)
+#<undef>
+gosh> (d T)
+#<<temp> 0xb6b5c0> is an instance of class <temp>
+slots:
+  temp-c    : 232.22222222222223
+  temp-f    : 450.0
+@end example
+
+Our next example is a simpler version of @code{gauche.mop.validator}.
+We add a slot option @code{:filter}, which takes a procedure
+that is applied to a value to be set to the slot.
+
+@example
+(define-class <filter-meta> (<class>) ())
+
+(define-method compute-get-n-set ((class <filter-meta>) slot)
+  (cond [(slot-definition-option slot :filter #f)
+         => (lambda (f)
+              (let1 acc (compute-slot-accessor class slot (next-method))
+                (list (lambda (o) (slot-ref-using-accessor o acc))
+                      (lambda (o v) (slot-set-using-accessor! o acc (f v)))
+                      (lambda (o) (slot-bound-using-accessor? o acc))
+                      #t)))]
+        [else (next-method)]))
+@end example
+
+The trick here is to call @code{next-method} and
+@code{compute-slot-accessor} to calculate the slot accessor
+and wrap it.  See how this metaclass works:
+
+@example
+(define-class <foo> ()
+  ((v :init-value 0 :filter x->number))
+  :metaclass <filter-meta>)
+
+gosh> (define foo (make <foo>))
+foo
+gosh> (ref foo'v)
+0
+gosh> (set! (ref foo'v) "123")
+#<undef>
+gosh> (ref foo'v)
+123
+@end example
+
+
+
+
+
+@node Method instantiation, Customizing method application, Customizing slot access, Metaobject protocol
+@subsection Method instantiation
+@c NODE メソッドのインスタンシエーション
+
+@deffn {Method} make (class <method>) :rest initargs
+@end deffn
+
+@node Customizing method application,  , Method instantiation, Metaobject protocol
+@subsection Customizing method application
+@c NODE メソッド適用のカスタマイズ
+
+@deffn {Generic Function} apply-generic gf args
+@end deffn
+
+@deffn {Generic Function} sort-applicable-methods gf methods args
+@end deffn
+
+@deffn {Generic Function} method-more-specific? method1 method2 classes
+@end deffn
+
+@deffn {Generic Function} apply-methods gf methods args
+@end deffn
+
+@deffn {Generic Function} apply-method gf method build-next args
+@end deffn
+
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

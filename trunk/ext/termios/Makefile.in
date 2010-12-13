@@ -1,0 +1,25 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+SCM_CATEGORY = gauche
+
+LIBFILES = gauche--termios.$(SOEXT)
+SCMFILES = termios.scm
+
+OBJECTS = termios.$(OBJEXT) termiolib.$(OBJEXT)
+
+GENERATED = Makefile
+XCLEANFILES =  termiolib.c
+
+all : $(LIBFILES)
+
+gauche--termios.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) gauche--termios.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+termiolib.c : termiolib.stub
+
+install : install-std
+

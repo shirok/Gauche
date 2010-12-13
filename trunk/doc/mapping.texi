@@ -1,0 +1,1818 @@
+@node C to Scheme mapping, Function and Syntax Index, References, Top
+@appendix C to Scheme mapping
+@c NODE CとSchemeの関数の対応
+
+@c EN
+For the convenience of the programmers familiar to C, 
+I composed a simple table of C operators and library functions with
+the corresponding Scheme functions.
+@c JP
+Cに馴染んだプログラマのために、Cのオペレータとライブラリ関数から
+Schemeの関数への対応表を示しておきます。
+@c COMMON
+
+@table @code
+@item +
+@c EN
+R5RS arithmetic procedure @code{+}.   @xref{Arithmetics}.
+@c JP
+R5RS の算術演算手続き @code{+}。@ref{Arithmetics}参照。
+@c COMMON
+@item +=
+@c EN
+Gauche @code{inc!} macro.  @xref{Assignments}.
+@c JP
+Gauche の @code{inc!} マクロ。@ref{Assignments}参照。
+@c COMMON
+@item -
+@c EN
+R5RS arithmetic procedure @code{-}.   @xref{Arithmetics}.
+@c JP
+R5RS の算術演算手続き @code{-}。@ref{Arithmetics}参照。
+@c COMMON
+@item -=
+@c EN
+Gauche @code{dec!} macro.  @xref{Assignments}.
+@c JP
+Gauche の @code{dec!} マクロ。@ref{Assignments}参照。
+@c COMMON
+@item ->
+@c EN
+Gauche @code{slot-ref} is something close to this.  @xref{Accessing instance}.
+@c JP
+Gauche の @code{slot-ref} が近いものです。@ref{Accessing instance}参照。
+@c COMMON
+@c EN
+@item * (binary)
+R5RS arithmetic procedure @code{*}.   @xref{Arithmetics}.
+@c JP
+@item * (二項演算子)
+R5RS の算術演算手続き @code{*}。@ref{Arithmetics}参照。
+@c COMMON
+@c EN
+@item * (unary)
+No equivalent procedure.  Scheme doesn't have explicit notation of
+pointers.
+@c JP
+@item * (単項演算子)
+同等の手続きはありません。Scheme には明示的ポインタ表記はありません。
+@c COMMON
+@item *=
+@c EN
+No equivalent procedure.
+@c JP
+同等の手続きはありません。
+@c COMMON
+@item /
+@c EN
+R5RS arithmetic procedure @code{/}.   @xref{Arithmetics}.
+@c JP
+R5RS の算術演算手続き @code{/}。@ref{Arithmetics}参照。
+@c COMMON
+@item /=
+@c EN
+No equivalent procedure.
+@c JP
+同等の手続きはありません。
+@c COMMON
+@c EN
+@item & (binary)
+Gauche @code{logand}.  @xref{Bitwise operations}.
+@c JP
+@item & (二項演算子)
+Gauche の @code{logand}。@ref{Bitwise operations}参照。
+@c COMMON
+@c EN
+@item & (unary)
+No equivalent procedure.  Scheme doesn't have explicit notation of
+pointers.
+@c JP
+@item & (単項演算子)
+同等の手続きはありません。Scheme には明示的ポインタ表記はありません。
+@c COMMON
+@item &&
+@c EN
+R5RS syntax @code{and}.  @xref{Conditionals}.
+@c JP
+R5RS の構文 @code{and}。@ref{Conditionals}参照。
+@c COMMON
+@item &=
+@c EN
+No equivalent procedure.
+@c JP
+同等の手続きはありません。
+@c COMMON
+@item |
+@c EN
+Gauche @code{logior}.  @xref{Bitwise operations}.
+@c JP
+Gauche の @code{logior}。@ref{Bitwise operations}参照。
+@c COMMON
+@item ||
+@c EN
+R5RS syntax @code{or}.  @xref{Conditionals}.
+@c JP
+R5RS の構文 @code{or}。@ref{Conditionals}参照。
+@c COMMON
+@item |=
+@c EN
+No equivalent procedure.
+@c JP
+同等の手続きはありません。
+@c COMMON
+@item ^
+@c EN
+Gauche @code{logxor}.  @xref{Bitwise operations}.
+@c JP
+Gauche の @code{logxor}。@ref{Bitwise operations}参照。
+@c COMMON
+@item =
+@c EN
+R5RS syntax @code{set!}.  @xref{Assignments}.
+@c JP
+R5RS の構文 @code{set!}。@ref{Assignments}参照。
+@c COMMON
+@item ==
+@c EN
+R5RS equivalence procedure, @code{eq?}, @code{eqv?} and @code{equal?}.
+@xref{Equivalence}.
+@c JP
+R5RS の同等性手続き @code{eq?}、@code{eqv?} および @code{equal?}。
+@ref{Equivalence}参照。
+@c COMMON
+@item <
+@itemx <=
+@c EN
+R5RS arithmetic procedure @code{<} and @code{<=}.
+@xref{Numerical comparison}.  Unlike C operator, Scheme version
+is transitive.
+@c JP
+R5RS の算術演算手続き @code{<} および @code{<=}。
+@ref{Numerical comparison}参照。C の演算子とちがい、Scheme のものは
+推移的なものです。
+@c COMMON
+@item <<
+@c EN
+Gauche @code{ash}.  @xref{Bitwise operations}.
+@c JP
+Gauche の @code{ash}。@ref{Bitwise operations}参照。
+@c COMMON
+@item <<=
+@c EN
+No equivalent procedure.
+@c JP
+同等の手続きはありません。
+@c COMMON
+@item >
+@itemx >=
+@c EN
+R5RS arithmetic procedure @code{>} and @code{>=}.
+@xref{Numerical comparison}.  Unlike C operator, Scheme version
+is transitive.
+@c JP
+R5RS の算術演算手続き @code{<} および @code{<=}。
+@ref{Numerical comparison}参照。C の演算子とちがい、Scheme のものは
+推移的なものです。
+@c COMMON
+@item >>
+@c EN
+Gauche @code{ash}.  @xref{Bitwise operations}.
+@c JP
+Gauche の @code{ash}。@ref{Bitwise operations}参照。
+@c COMMON
+@item >>=
+@c EN
+No equivalent procedure.
+@c JP
+同等の手続きはありません。
+@c COMMON
+@item %
+@c EN
+R5RS operator @code{modulo} and @code{remainder}.  @xref{Arithmetics}.
+@c JP
+R5RS の演算子 @code{modulo} および @code{remainder}。@ref{Arithmetics}参照。
+@c COMMON
+@item %=
+@c EN
+No equivalent procedure.
+@c JP
+同等の手続きはありません。
+@c COMMON
+@item []
+@c EN
+R5RS @code{vector-ref} (@xref{Vectors}) is something close.
+Or you can use Gauche's generic function @code{ref} (@xref{Sequence framework})
+for arbitrary sequences.
+@c JP
+R5RS の @code{vector-ref} (@ref{Vectors}参照) が近いものです。あるいは、
+Gauche のジェネリック関数 @code{ref} (@ref{Sequence framework}参照)が、
+任意の並び用になっています。
+@c COMMON
+@item .
+@c EN
+Gauche @code{slot-ref} is something close to this.  @xref{Accessing instance}.
+@c JP
+Gauche の @code{slot-ref} がこれに近いものです。@ref{Accessing instance}参照。
+@c COMMON
+@item ~
+@c EN
+Gauche @code{lognot}.  @xref{Bitwise operations}.
+@c JP
+Gauche の @code{lognot}。@ref{Bitwise operations}参照。
+@c COMMON
+@item ~=
+@c EN
+No equivalent procedure.
+@c JP
+同等の手続きはありません。
+@c COMMON
+@item !
+@c EN
+R5RS procedure @code{not}.  @xref{Booleans}.
+@c JP
+R5RS の手続き @code{not}。@ref{Booleans}参照。
+@c COMMON
+@item !=
+@c EN
+No equivalent procedure.
+@c JP
+同等の手続きはありません。
+@c COMMON
+@item abort
+@c EN
+Gauche @code{sys-abort}.   @xref{Program termination}.
+@c JP
+Gauche の @code{sys-abort}。@ref{Program termination}参照。
+@c COMMON
+@item abs
+@c EN
+R5RS @code{abs}.  @xref{Arithmetics}.
+@c JP
+R5RS の @code{abs}。@ref{Arithmetics}参照。
+@c COMMON
+@item access
+@c EN
+Gauche @code{sys-access}.  @xref{File stats}.
+@c JP
+Gauche の @code{sys-access}。@ref{File stats}参照。
+@c COMMON
+@item acos
+@c EN
+R5RS @code{acos}.  @xref{Arithmetics}.
+@c JP
+R5RS の @code{acos}。@ref{Arithmetics}参照。
+@c COMMON
+@item alarm
+@c EN
+Gauche @code{sys-alarm}.   @xref{Miscellaneous system calls}.
+@c JP
+Gauche の @code{sys-alarm}。@ref{Miscellaneous system calls}参照。
+@c COMMON
+@item asctime
+@c EN
+Gauche @code{sys-asctime}.  @xref{Time}.
+@c JP
+Gauche の @code{sys-asctime}。@ref{Time}参照。
+@c COMMON
+@item asin
+@c EN
+R5RS @code{asin}.  @xref{Arithmetics}.
+@c JP
+R5RS の @code{asin}。@ref{Arithmetics}参照。
+@c COMMON
+@item assert
+@c EN
+No equivalent function in Gauche.
+@c JP
+Gauche には同等の関数はありません。
+@c COMMON
+@item atan
+@itemx atan2
+@c EN
+R5RS @code{atan}.  @xref{Arithmetics}.
+@c JP
+R5RS の @code{atan}。@ref{Arithmetics}参照。
+@c COMMON
+@item atexit
+@c EN
+No equivalent function in Gauche, but the "after" thunk of active
+dynamic handlers are called when @code{exit} is called.
+@xref{Program termination}, and @xref{Continuation}.
+@c JP
+Gauche には同等の関数はありませんが、@code{exit} が呼ばれたとき
+アクティブな動的ハンドラの「事後」サンクが呼ばれます。
+@ref{Program termination} および @ref{Continuation} 参照。
+@c COMMON
+@item atof
+@itemx atoi
+@itemx atol
+@c EN
+You can use @code{string->number}.  @xref{Numerical conversions}.
+@c JP
+@code{string->number} が使えます。@ref{Numerical conversions}参照。
+@c COMMON
+@item bsearch
+@c EN
+You can use SRFI-43's @code{vector-binary-search}.
+@xref{Vector library}.
+@c JP
+SRFI-43の@code{vector-binary-search}が使えます。
+@ref{Vector library}参照。
+@c COMMON
+@item calloc
+@c EN
+Allocation is handled automatically in Scheme.
+@c JP
+Scheme ではメモリ割当は自動的に処理されます。
+@c COMMON
+@item ceil
+@c EN
+R5RS @code{ceiling}.  @xref{Arithmetics}.
+@c JP
+R5RS の @code{ceiling}。@ref{Arithmetics}参照。
+@c COMMON
+@item cfgetispeed
+@itemx cfgetospeed
+@itemx cfsetispeed
+@itemx cfsetospeed
+@c EN
+Gauche's @code{sys-cfgetispeed}, @code{sys-cfgetospeed},
+@code{sys-cfsetispeed}, @code{sys-cfsetospeed}.  @xref{Terminal control}.
+@c JP
+Gauche の @code{sys-cfgetispeed}、@code{sys-cfgetospeed}、
+@code{sys-cfsetispeed}、@code{sys-cfsetospeed}。@ref{Terminal control}参照。
+@c COMMON
+@item chdir
+@c EN
+Gauche's @code{sys-chdir}.   @xref{Other file operations}.
+@c JP
+Gauche の @code{sys-chdir}。@ref{Other file operations}参照。
+@c COMMON
+@item chmod
+@c EN
+Gauche's @code{sys-chmod}.   @xref{File stats}.
+@c JP
+Gauche の @code{sys-chmod}。@ref{File stats}参照。
+@c COMMON
+@item chown
+@c EN
+Gauche's @code{sys-chown}.   @xref{File stats}.
+@c JP
+Gauche の @code{sys-chown}。@ref{File stats}参照。
+@c COMMON
+@item clearerr
+@c EN
+Not supported yet.
+@c JP
+未サポート。
+@c COMMON
+@item clock
+@c EN
+No equivalent function in Gauche.  You can use @code{sys-times}
+to get information about CPU time.
+@c JP
+Gauche には同等の関数はありません。@code{sys-times} を使って、
+CPUタイムに情報を得ることができます。
+@c COMMON
+@item close
+@c EN
+You can't directly close the file descriptor, but when you use
+@code{close-input-port} or @code{close-output-port}, underlying
+file is closed.  Some port-related functions, such as
+@code{call-with-output-file}, automatically closes the file
+when operation is finished.  The file is also closed when
+its governing port is garbage collected.
+@xref{Common port operations}.
+@c JP
+ファイルディスクリプタを直接クローズすることはできませんが、
+@code{close-input-port} あるいは @code{close-output-port} を使うと、
+元になるファイルはクローズされます。
+いくつかのポートに関連する関数、たとえば、@code{call-with-output-file}
+などは、操作終了時に自動的にファイルをクローズします。
+また、それを支配しているポートがGCされたときにクローズされます。
+@ref{Common port operations}参照。
+@c COMMON
+@item closedir
+@c EN
+No equivalent function in Gauche.  You can use
+@code{sys-readdir} to read the directory entries at once.
+@xref{Directories}.
+@c JP
+Gauche には同等の関数はありません。@code{sys-readdir} を使うと
+ディレクトリの内容を一度に読むことができます。
+@ref{Directories} 参照。
+@c COMMON
+@item cos
+@itemx cosh
+@c EN
+@code{cos} and @code{cosh}.  @xref{Arithmetics}.
+@c JP
+@code{cos} および @code{cosh}。@ref{Arithmetics} 参照。
+@c COMMON
+@item creat
+@c EN
+A file is implictly created by default when you open it for writing.
+See @ref{File ports} for more control over the creation of files.
+@c JP
+デフォルトでは、書き込みのためにファイルをオープンしたときに、暗黙のうちに
+ファイルが作成されます。ファイル作成のより詳しい制御については 
+@ref{File ports} を参照してください。
+@c COMMON
+@item ctermid
+@c EN
+Gauche @code{sys-ctermid}.  @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-ctermid}。@ref{System inquiry} 参照。
+@c COMMON
+@item ctime
+@c EN
+Gauche @code{sys-ctime}.  @xref{Time}.
+@c JP
+Gauche の @code{sys-ctime}。@ref{Time} 参照。
+@c COMMON
+@item cuserid
+@c EN
+No equivalent function.  This is removed from the newer POSIX.
+You can use alternative functions, such as @code{sys-getlogin} or
+@code{sys-getpwuid} with @code{sys-getuid}.
+@c JP
+同等の関数はありません。これは新しい POSIX からは削除されています。
+別法として、@code{sys-getuid} といっしょに、@code{sys-getlogin}
+あるいは @code{sys-getpwuid} などの関数が使えます。
+@c COMMON
+@item difftime
+@c EN
+Gauche @code{sys-difftime}.  @xref{Time}.
+@c JP
+Gauche の @code{sys-difftime}。@ref{Time} 参照。
+@c COMMON
+@item div
+@c EN
+You can use R5RS @code{quotient} and @code{remainder}.
+@xref{Arithmetics}.
+@c JP
+R5RS の @code{quotient} および @code{remainder} を使えます。
+@ref{Arithmetics} 参照。
+@c COMMON
+@item dup
+@itemx dup2
+@c EN
+Not directly supported, but you can use @code{port-fd-dup!}.
+@c JP
+直接はサポートされていませんが、@code{port-fd-dup!} が使えます。
+@c COMMON
+@item execl
+@itemx execle
+@itemx execlp
+@itemx execv
+@itemx execve
+@itemx execvp
+@c EN
+Gauche @code{sys-exec}.  @xref{Process management}.
+For higher level interface, @ref{High Level Process Interface}.
+@c JP
+Gauche の @code{sys-exec}。@ref{Process management} 参照。
+より高水準のインタフェースについては @ref{High Level Process Interface} 参照。
+@c COMMON
+@item exit
+@item _exit
+@c EN
+Use @code{exit} or @code{sys-exit}, depends on what you need.
+@xref{Program termination}.
+@c JP
+必要なことに応じて、@code{exit} あるいは @code{sys-exit} を使いましょう。
+@ref{Program termination} 参照。
+@c COMMON
+@item exp
+@c EN
+R5RS @code{exp}.  @xref{Arithmetics}.
+@c JP
+R5RS の @code{exp}。@ref{Arithmetics} 参照。
+@c COMMON
+@item fabs
+@c EN
+R5RS @code{abs}.  @xref{Arithmetics}.
+@c JP
+R5RS の @code{abs}。@ref{Arithmetics} 参照。
+@c COMMON
+@item fclose
+@c EN
+You can't directly close the file stream, but when you use
+@code{close-input-port} or @code{close-output-port}, underlying
+file is closed.  Some port-related functions, such as
+@code{call-with-output-file}, automatically closes the file
+when operation is finished.  The file is also closed when
+its governing port is garbage collected.
+@c JP
+ファイルストリームを直接クローズすることはできませんが、
+@code{close-input-port} あるいは @code{close-output-port} を使うと、
+元になるファイルはクローズされます。
+いくつかのポートに関連する関数、たとえば、@code{call-with-output-file}
+などは、操作終了時に自動的にファイルをクローズします。
+また、それを支配しているポートがGCされたときにクローズされます。
+@ref{Common port operations}参照。
+@c COMMON
+@item fcntl
+@c EN
+Implemented as @code{sys-fcntl} in @code{gauche.fcntl} module.
+@xref{Low-level file operations}.
+@c JP
+@code{gauche.fcntl} モジュールで、@code{sys-fcntl} として実装されています。
+@ref{Low-level file operations} 参照。
+@c COMMON
+@item fdopen
+@c EN
+Gauche's @code{open-input-fd-port} or @code{open-output-fd-port}.
+@xref{File ports}.
+@c JP
+Gauche の @code{open-input-fd-port} あるいは @code{open-output-fd-port}。
+@ref{File ports} 参照。
+@c COMMON
+@item feof
+@c EN
+Not supported yet.
+@c JP
+未サポート。
+@c COMMON
+@item ferror
+@c EN
+Not supported yet.
+@c JP
+未サポート。
+@c COMMON
+@item fflush
+@c EN
+Gauche's @code{flush}.   @xref{Output}.
+@c JP
+Gauche の @code{flush}。@ref{Output} 参照。
+@c COMMON
+@item fgetc
+@c EN
+Use @code{read-char} or @code{read-byte}.  @xref{Input}.
+@c JP
+@code{read-char} あるいは @code{read-byte} を使いましょう。@ref{Input} 参照。
+@c COMMON
+@item fgetpos
+@c EN
+Use Gauche's @code{port-tell} (@xref{Common port operations})
+@c JP
+Gauche の @code{port-tell} を使いましょう。(@ref{Common port operations}参照。)
+@c COMMON
+@item fgets
+@c EN
+Use @code{read-line} or @code{read-block}.    @xref{Input}.
+@c JP
+@code{read-line} あるいは @code{read-block} を使いましょう。@ref{Input} 参照。
+@c COMMON
+@item fileno
+@c EN
+@code{port-file-numer}.   @xref{Common port operations}.
+@c JP
+@code{port-file-numer}。@ref{Common port operations} 参照。
+@c COMMON
+@item floor
+@c EN
+R5RS @code{floor}.   @xref{Arithmetics}.
+@c JP
+R5RS の @code{floor}。@ref{Arithmetics} 参照。
+@c COMMON
+@item fmod
+@c EN
+Gauche's @code{fmod}.
+@c JP
+Gauche の @code{fmod}。
+@c COMMON
+@item fopen
+@c EN
+R5RS @code{open-input-file} or @code{open-output-file}
+corresponds to this operation.  @xref{File ports}.
+@c JP
+この操作に対応するのは、R5RS の @code{open-input-file} あるいは 
+@code{open-output-file} です。@ref{File ports} 参照。
+@c COMMON
+@item fork
+@c EN
+Gauche's @code{sys-fork}.   @xref{Process management}.
+@c JP
+Gauche の @code{sys-fork}。@ref{Process management} 参照。
+@c COMMON
+@item forkpty
+@c EN
+Use @code{sys-forkpty}.  @xref{Terminal control}.
+@c JP
+@code{sys-forkpty} を使いましょう。@ref{Terminal control} 参照。
+@c COMMON
+@item fpathconf
+@c EN
+Not supported.
+@c JP
+未サポート。
+@c COMMON
+@item fprintf
+@c EN
+Not directly supported, but Gauche's @code{format}
+provides similar functionality.  @xref{Output}.
+SLIB has @code{printf} implementation.
+@c JP
+直接はサポートされていませんが、Gauche の @code{format} は
+似たような機能を提供しています。@ref{Output}参照。
+SLIB は @code{printf} の実装を持っています。
+@c COMMON
+@item fputc
+@c EN
+Use @code{write-char} or @code{write-byte}.  @xref{Output}.
+@c JP
+@code{write-char} あるいは @code{write-byte}を使いましょう。@ref{Output}参照。
+@c COMMON
+@item fputs
+@c EN
+Use @code{display}.  @xref{Output}.
+@c JP
+@code{display}を使いましょう。@ref{Output} 参照。
+@c COMMON
+@item fread
+@c EN
+Not directly supported.  
+To read binary numbers, see @ref{Binary I/O}.
+If you want to read a chunk of bytes, you may be 
+able to use @code{read-block!}.
+@xref{Uvector block I/O}.
+@c JP
+直接はサポートされていません。
+バイナリの数値を読む場合は@ref{Binary I/O}を参照のこと。
+バイトのチャンクで読みたければ、
+@code{read-block!} が使えるでしょう (@ref{Uvector block I/O}参照)。
+@c COMMON
+@item free
+@c EN
+You don't need this in Scheme.
+@c JP
+Scheme では必要がありません。
+@c COMMON
+@item freopen
+@c EN
+Not supported.
+@c JP
+未サポート。
+@c COMMON
+@item frexp
+@c EN
+Gauche's @code{frexp}
+@c JP
+Gauche の @code{frexp}。
+@c COMMON
+@item fscanf
+@c EN
+Not supported.  For general case, you have to write a parser.
+If you can keep the data in S-exp, you can use @code{read}.
+If the syntax is very simple, you may be able to utilize
+@code{string-tokenize} in @code{srfi-14} (@ref{String library}),
+and/or regular expression stuff (@ref{Regular expressions}).
+@c JP
+サポートしていません。一般的にはパーザを書かねばなりません。
+データを S式で保持しているなら、@code{read} が使えます。
+構文がごく単純なら、@code{srfi-14} (@ref{String library}) の
+@code{string-tokenize} や、正規表現 (@ref{Regular expressions}) が使えるでしょう。
+@c COMMON
+@item fseek
+@c EN
+Use Gauche's @code{port-seek} (@xref{Common port operations})
+@c JP
+Gauche の @code{port-seek}(@ref{Common port operations}参照)を使いましょう。
+@c COMMON
+@item fsetpos
+@c EN
+Use Gauche's @code{port-seek} (@xref{Common port operations})
+@c JP
+Gauche の @code{port-seek}(@ref{Common port operations}参照)を使いましょう。
+@c COMMON
+@item fstat
+@c EN
+Gauche's @code{sys-stat}.  @xref{File stats}.
+@c JP
+Gauche の @code{sys-stat}。@ref{File stats} 参照。
+@c COMMON
+@item ftell
+@c EN
+Use Gauche's @code{port-tell} (@xref{Common port operations})
+@c JP
+Gauche の @code{port-tell}(@xref{Common port operations}参照)を使いましょう。
+@c COMMON
+@item fwrite
+@c EN
+Not directly supported.  
+To write binary numbers, see @ref{Binary I/O}.
+If you want to write a chunk of bytes,
+you can simply use @code{display} or @code{write-block}
+(@xref{Uvector block I/O}).
+@c JP
+直接はサポートされていません。
+バイナリの数値を書き出すのなら、@ref{Binary I/O}参照のこと。
+バイト列のチャンクを書き出しすなら、
+単に @code{display} を使うか、@code{write-block} が使えます
+(@ref{Uvector block I/O}参照)。
+@c COMMON
+@item getc
+@itemx getchar
+@c EN
+Use @code{read-char} or @code{read-byte}.  @xref{Input}.
+@c JP
+@code{read-char} あるいは @code{read-byte}を使いましょう。@ref{Input}参照。
+@c COMMON
+@item getcwd
+@c EN
+Gauche's @code{sys-getcwd}.   @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-getcwd}。@ref{System inquiry} 参照。
+@c COMMON
+@item getdomainname
+@c EN
+Gauche's @code{sys-getdomainname}.  @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-getdomainname}。@ref{System inquiry} 参照。
+@c COMMON
+@item getegid
+@c EN
+Gauche's @code{sys-getegid}.   @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-getegid}。@ref{System inquiry} 参照。
+@c COMMON
+@item getenv
+@c EN
+Gauche's @code{sys-getenv}.   @xref{Environment Inquiry}.
+@c JP
+Gauche の @code{sys-getenv}。@ref{Environment Inquiry} 参照。
+@c COMMON
+@item geteuid
+@c EN
+Gauche's @code{sys-geteuid}.   @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-geteuid}。@ref{System inquiry} 参照。
+@c COMMON
+@item gethostname
+@c EN
+Gauche's @code{sys-gethostname}.  @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-gethostname}。@ref{System inquiry} 参照。
+@c COMMON
+@item getgid
+@c EN
+Gauche's @code{sys-getgid}.   @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-getgid}。@ref{System inquiry} 参照。
+@c COMMON
+@item getgrgid
+@itemx getgrnam
+@c EN
+Gauche's @code{sys-getgrgid} and @code{sys-getgrnam}.  @xref{Unix groups and users}.
+@c JP
+Gauche の @code{sys-getgrgid} および @code{sys-getgrnam}。
+@ref{Unix groups and users} 参照。
+@c COMMON
+@item getgroups
+@c EN
+Gauche's @code{sys-getgroups}.   @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-getgroups}。@ref{System inquiry}参照。
+@c COMMON
+@item getlogin
+@c EN
+Gauche's @code{sys-getlogin}.  @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-getlogin}。@ref{System inquiry}参照。
+@c COMMON
+@item getpgrp
+@c EN
+Gauche's @code{sys-getpgrp}.   @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-getpgrp}。@ref{System inquiry} 参照。
+@c COMMON
+@item getpid
+@itemx getppid
+@c EN
+Gauche's @code{sys-getpid}.   @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-getpid}。@ref{System inquiry} 参照。
+@c COMMON
+@item getpwnam
+@itemx getpwuid
+@c EN
+Gauche's @code{sys-getpwnam} and @code{sys-getpwuid}.  @xref{Unix groups and users}.
+@c JP
+Gauche の @code{sys-getpwnam} および @code{sys-getpwuid}。
+@ref{Unix groups and users} 参照。
+@c COMMON
+@item gets
+@c EN
+Use @code{read-line} or @code{read-block}.  @xref{Input}.
+@c JP
+@code{read-line} または @code{read-block}を使いましょう。@ref{Input}参照。
+@c COMMON
+@item gettimeofday
+@c EN
+Gauche's @code{sys-gettimeofday}.   @xref{Time}.
+@c JP
+Gauche の @code{sys-gettimeofday}。@ref{Time} 参照。
+@c COMMON
+@item getuid
+@c EN
+Gauche's @code{sys-getuid}.  @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-getuid}。@ref{System inquiry} 参照。
+@c COMMON
+@item gmtime
+@c EN
+Gauche's @code{sys-gmtime}.   @xref{Time}.
+@c JP
+Gauche の @code{sys-gmtime}。@ref{Time} 参照。
+@c COMMON
+@item isalnum
+@c EN
+Not directly supported, but you can use R5RS @code{char-alphabetic?} and
+@code{char-numeric?}.  @xref{Characters}.   You can also use
+character set.  @xref{Character set}, also @ref{Character-set library}.
+@c JP
+直接はサポートされていませんが、R5RS の @code{char-alphabetic?} および
+@code{char-numeric?} が使えます。@ref{Characters} 参照。また、文字集合も
+使えます。@ref{Character set}、@ref{Character-set library} 参照。
+@c COMMON
+@item isalpha
+@c EN
+R5RS @code{char-alphabetic?}.  @xref{Characters}.  See also
+@ref{Character set} and @ref{Character-set library}.
+@c JP
+R5RS の @code{char-alphabetic?}。@ref{Characters} 参照。また、
+@ref{Character set} および @ref{Character-set library} も参照してください。
+@c COMMON
+@item isatty
+@c EN
+Gauche's @code{sys-isatty}.   @xref{Other file operations}.
+@c JP
+Gauche の @code{sys-isatty}。@ref{Other file operations} 参照。
+@c COMMON
+@item iscntrl
+@c EN
+Not directly supported, but you can use
+@code{(char-set-contains? char-set:iso-control c)} with @code{srfi-14}.
+@xref{Character-set library}.
+@c JP
+直接はサポートされていませんが、@code{srfi-14} で
+@code{(char-set-contains? char-set:iso-control c)} が使えます。
+@ref{Character-set library} 参照。
+@c COMMON
+@item isdigit
+@c EN
+R5RS @code{char-numeric?}.  @xref{Characters}. 
+You can also use @code{(char-set-contains? char-set:digit c)}
+with @code{srfi-14}.   @xref{Character-set library}.
+@c JP
+R5RS の @code{char-numeric?}。@ref{Characters} 参照。
+@code{srfi-14} で、@code{(char-set-contains? char-set:digit c)} も
+使えます。@ref{Character-set library} 参照。
+@c COMMON
+@item isgraph
+@c EN
+Not directly supported, but you can use
+@code{(char-set-contains? char-set:graphic c)} with @code{srfi-14}.
+@xref{Character-set library}.
+@c JP
+直接はサポートされていませんが、@code{srfi-14} で
+@code{(char-set-contains? char-set:graphic c)} が使えます。
+@ref{Character-set library} 参照。
+@c COMMON
+@item islower
+@c EN
+R5RS @code{char-lower-case?}.  @xref{Characters}.
+You can also use @code{(char-set-contains? char-set:lower-case c)}
+with @code{srfi-14}.   @xref{Character-set library}.
+@c JP
+R5RS の @code{char-lower-case?}。@ref{Characters} 参照。
+@code{srfi-14} で @code{(char-set-contains? char-set:lower-case c)}
+も使えます。@ref{Character-set library} 参照。
+@c COMMON
+@item isprint
+@c EN
+Not directly supported, but you can use
+@code{(char-set-contains? char-set:printing c)} with @code{srfi-14}.
+@xref{Character-set library}.
+@c JP
+直接はサポートされていませんが、@code{srfi-14} で
+@code{(char-set-contains? char-set:printing c)} が使えます。
+@ref{Character-set library} 参照。
+@c COMMON
+@item ispunct
+@c EN
+Not directly supported, but you can use
+@code{(char-set-contains? char-set:punctuation c)} with @code{srfi-14}.
+@xref{Character-set library}.
+@c JP
+直接はサポートされていませんが、@code{srfi-14} で
+@code{(char-set-contains? char-set:punctuation c)} が使えます。
+@ref{Character-set library} 参照。
+@c COMMON
+@item isspace
+@c EN
+R5RS @code{char-whitespace?}.  @xref{Characters}.
+You can also use @code{(char-set-contains? char-set:whitespace c)}
+with @code{srfi-14}.   @xref{Character-set library}.
+@c JP
+R5RS の @code{char-whitespace?}。@ref{Characters} 参照。
+@code{srfi-14} で @code{(char-set-contains? char-set:whitespace c)}
+も使えます。@ref{Character-set library} 参照。
+@c COMMON
+@item isupper
+@c EN
+R5RS @code{char-upper-case?}.  @xref{Characters}.
+You can also use @code{(char-set-contains? char-set:upper-case c)}
+with @code{srfi-14}.   @xref{Character-set library}.
+@c JP
+R5RS の @code{char-upper-case?}。@ref{Characters} 参照。
+@code{srfi-14} で @code{(char-set-contains? char-set:upper-case c)}
+も使えます。@ref{Character-set library} 参照。
+@c COMMON
+@item isxdigit
+@c EN
+Not directly supported, but you can use
+@code{(char-set-contains? char-set:hex-digit c)} with @code{srfi-14}.
+@xref{Character-set library}.
+@c JP
+直接はサポートされていませんが、@code{srfi-14} で
+@code{(char-set-contains? char-set:hex-digit c)} が使えます。
+@ref{Character-set library} 参照。
+@c COMMON
+@item kill
+@c EN
+Gauche's @code{sys-kill}.  @xref{Signal}.
+@c JP
+Gauche の @code{sys-kill}。@ref{Signal} 参照。
+@c COMMON
+@item labs
+@c EN
+R5RS @code{abs}.  @xref{Arithmetics}.
+@c JP
+R5RS の @code{abs}。@ref{Arithmetics} 参照。
+@c COMMON
+@item ldexp
+@c EN
+Gauche's @code{ldexp}.
+@c JP
+Gauche の @code{ldexp}。
+@c COMMON
+@item ldiv
+@c EN
+Use R5RS @code{quotient} and @code{remainder}.
+@xref{Arithmetics}.
+@c JP
+R5RS の @code{quotient} および @code{remainder} を使いましょう。
+@ref{Arithmetics}参照。
+@c COMMON
+@item link
+@c EN
+Gauche's @code{sys-link}.  @xref{Directory manipulation}.
+@c JP
+Gauche の @code{sys-link}。@ref{Directory manipulation}参照。
+@c COMMON
+@item localeconv
+@c EN
+Gauche's @code{sys-localeconv}. @xref{Locale}.
+@c JP
+Gauche の @code{sys-localeconv}。@ref{Locale} 参照。
+@c COMMON
+@item localtime
+@c EN
+Gauche's @code{sys-localtime}.  @xref{Time}.
+@c JP
+Gauche の @code{sys-localtime}。@ref{Time} 参照。
+@c COMMON
+@item log
+@c EN
+R5RS @code{log}.  @xref{Arithmetics}.
+@c JP
+R5RS の @code{log}。@ref{Arithmetics} 参照。
+@c COMMON
+@item log10
+@c EN
+Not directly supported.  @code{log10(z)} @equiv{} @code{(/ (log z) (log 10))}.
+@c JP
+直接はサポートされていません。
+@code{log10(z)} @equiv{} @code{(/ (log z) (log 10))} です。
+@c COMMON
+@item longjmp
+@c EN
+R5RS @code{call/cc} provides similar (superior) mechanism.
+@xref{Continuation}.
+@c JP
+R5RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
+@ref{Continuation} 参照。
+@c COMMON
+@item lseek
+@c EN
+Use Gauche's @code{port-seek} (@xref{Common port operations})
+@c JP
+Gauche の @code{port-seek} (@ref{Common port operations}参照) を使いましょう。
+@c COMMON
+@item malloc
+@c EN
+Not necessary in Scheme.
+@c JP
+Scheme では必要ありません。
+@c COMMON
+@item mblen
+@itemx mbstowcs
+@itemx mbtowc
+@c EN
+Gauche handles multibyte strings internally, so generally you don't 
+need to care about multibyte-ness of the string.   @code{string-length}
+always returns a number of characters for a string in supported
+encoding.   If you want to convert the character encoding,
+see @ref{Character code conversion}.
+@c JP
+Gauche ではマルチバイト文字列を内部的に処理しますので、一般的には
+文字列がマルチバイトであるかどうかを気にする必要はありません。
+@code{string-length} は常に、サポートされているエンコーディングの
+文字列に対して、文字数を返します。文字のエンコーディング変換を
+したいのであれば、@ref{Character code conversion} を参照してください。
+@c COMMON
+@item memcmp
+@itemx memcpy
+@itemx memmove
+@itemx memset
+@c EN
+No equivalent functions.
+@c JP
+同等の関数はありません。
+@c COMMON
+@item mkdir
+@c EN
+Gauche's @code{sys-mkdir}.  @xref{Directory manipulation}.
+@c JP
+Gauche の @code{sys-mkdir}。@ref{Directory manipulation} 参照。
+@c COMMON
+@item mkfifo
+@c EN
+Gauche's @code{sys-mkfifo}.
+@c JP
+Gauche の @code{sys-mkfifo}。
+@c COMMON
+@item mkstemp
+@c EN
+Gauche's @code{sys-mkstemp}.   @xref{Directory manipulation}.
+Use this instead of tmpnam.
+@c JP
+Gauche の @code{sys-mkstemp}。@ref{Directory manipulation} 参照。
+tmpnam の代りにこちらを使いましょう。
+@c COMMON
+@item mktime
+@c EN
+Gauche's @code{sys-mktime}.  @xref{Time}.
+@c JP
+Gauche の @code{sys-mktime}。@ref{Time} 参照。
+@c COMMON
+@item modf
+@c EN
+Gauche's @code{modf}.
+@c JP
+Gauche の @code{modf}。
+@c COMMON
+@item open
+@c EN
+Not directly supported.
+R5RS @code{open-input-file} or @code{open-output-file}
+corresponds to this operation.  @xref{File ports}.
+@c JP
+直接はサポートされていません。この操作に対応するのな
+R5RS の @code{open-input-file} または @code{open-output-file} です。
+@ref{File ports} 参照。
+@c COMMON
+@item opendir
+@c EN
+Not directly supported.
+You can use @code{sys-readdir} to read the directory entries at once.
+@xref{Directories}.
+@c JP
+直接はサポートされていません。
+ディレクトリのエントリをいちどに読むには @code{sys-readdir}
+が使えます。@ref{Directories} 参照。
+@c COMMON
+@item openpty
+@c EN
+Use @code{sys-openpty}.  @xref{Terminal control}.
+@c JP
+@code{sys-openpty} を使いましょう。@ref{Terminal control} 参照。
+@c COMMON
+@item pathconf
+@c EN
+Not supported.
+@c JP
+サポートしません。
+@c COMMON
+@item pause
+@c EN
+Gauche's @code{sys-pause}.  @xref{Miscellaneous system calls}.
+@c JP
+Gauche の @code{sys-pause}。@ref{Miscellaneous system calls} 参照。
+@c COMMON
+@item perror
+@c EN
+No equivalent function in Gauche.  System calls generally throws an
+error (@code{<system-error>}), including the description of the reason
+of failure.
+@c JP
+Gauche には同等の関数はありません。システムコールは一般的には error
+(@code{<system-error>}) を投げます。これには、失敗した理由の説明が含まれて
+います。
+@c COMMON
+@item pipe
+@c EN
+Gauche's @code{sys-pipe}.  @xref{Other file operations}.
+@c JP
+Gauche の @code{sys-pipe}。@ref{Other file operations} 参照。
+@c COMMON
+@item pow
+@c EN
+R5RS @code{expt}.  @xref{Arithmetics}.
+@c JP
+R5RS の @code{expt}。@ref{Arithmetics} 参照。
+@c COMMON
+@item printf
+@c EN
+Not directly supported, but Gauche's @code{format}
+provides similar functionality.  @xref{Output}.
+SLIB has @code{printf} implementation.
+@c JP
+直接はサポートされていませんが、Gauche の @code{format} は類似の機能を
+提供しています。@ref{Output} 参照。SLIB には @code{printf} の実装があります。
+@c COMMON
+@item putc
+@itemx putchar
+@c EN
+Use @code{write-char} or @code{write-byte}.  @xref{Output}.
+@c JP
+@code{write-char} または @code{write-byte} を使いましょう。@ref{Output} 参照。
+@c COMMON
+@item puts
+@c EN
+Use @code{display}.   @xref{Output}.
+@c JP
+@code{display} を使いましょう。@ref{Output} 参照。
+@c COMMON
+@item qsort
+@c EN
+Gauche's @code{sort} and @code{sort!} provides a convenient way to sort
+list of items.  @xref{Comparison and sorting}.
+@c JP
+Gauche の @code{sort} および @code{sort!} はリストをソートする便利な方法を
+提供しています。@ref{Comparison and sorting} 参照。
+@c COMMON
+@item raise
+@c EN
+No equivalent function in Gauche.  Scheme function @code{raise} (SRFI-18)
+is to raise an exception.   You can use @code{(sys-kill (sys-getpid) SIG)}
+to send a signal @code{SIG} to the current process.
+@c JP
+Gauche には同等の関数はありません。Scheme の関数 @code{raise} (SRFI-18)
+は例外を発生させます。シグナル @code{SIG} を現在のプロセスに送るには
+@code{(sys-kill (sys-getpid) SIG)} が使えます。
+@c COMMON
+@item rand
+@c EN
+Not supported directly, but on most platforms a better RNG is available
+as @code{sys-random}.  @xref{Miscellaneous system calls}.
+@c JP
+直接はサポートされていませんが、多くのプラットフォーム上で、@code{sys-random}
+のような、よりよい RNG が利用可能です。@ref{Miscellaneous system calls} 参照。
+@c COMMON
+@item read
+@c EN
+Not supported directly, but you may be able to use
+@code{read-block} (@xref{Input}) or
+@code{read-block!} (@xref{Uvector block I/O}).
+@c JP
+直接はサポートされていませんが、
+@code{read-block} (@ref{Input}参照) あるいは
+@code{read-block!} (@ref{Uvector block I/O}参照)が使えます。
+@c COMMON
+@item readdir
+@c EN
+Not supported directly.   Gauche's @code{sys-readdir} reads
+the directory at once.  @xref{Directories}.
+@c JP
+直接はサポートされていません。Gauche の @code{sys-readdir} は
+指定のディレクトリを一度に読みます。@ref{Directories} 参照。
+@c COMMON
+@item readlink
+@c EN
+Gauche's @code{sys-readlink}.  @xref{Directory manipulation}.
+This function is available on systems that support symbolink links.
+@c JP
+Gauche の @code{sys-readlink}。@ref{Directory manipulation} 参照。
+この関数はシンボリックリンクをサポートしているシステム上で利用可能です。
+@c COMMON
+@item realloc
+@c EN
+Not necessary in Scheme.
+@c JP
+Scheme では必要ありません。
+@c COMMON
+@item realpath
+@c EN
+Gauche's @code{sys-normalize-pathname} or @code{sys-realpath}.
+@xref{Pathnames}.
+@c JP
+Gauche の @code{sys-normalize-pathname} あるいは @code{sys-realpath}。
+@ref{Pathnames}参照。
+@c COMMON
+@item remove
+@c EN
+Gauche's @code{sys-remove}.  @xref{Directory manipulation}.
+@c JP
+Gauche の @code{sys-remove}。@ref{Directory manipulation}参照。
+@c COMMON
+@item rename
+@c EN
+Gauche's @code{sys-rename}.  @xref{Directory manipulation}.
+@c JP
+Gauche の @code{sys-rename}。@ref{Directory manipulation}参照。
+@c COMMON
+@item rewind
+@c EN
+Not directly supported, but you can use @code{port-seek} instead.
+@xref{Common port operations}.
+@c JP
+直接はサポートされませんが、@code{port-seek}が代わりに使えます。
+@ref{Common port operations}参照。
+@c COMMON
+@item rewinddir
+@c EN
+Not supported directly.
+You can use @code{sys-readdir} to read the directory entries at once.
+@xref{Directories}.
+@c JP
+直接はサポートされていません。
+ディレクトリエントリを一度に読むには @code{sys-readdir} が使えます。
+@ref{Directories}参照。
+@c COMMON
+@item rmdir
+@c EN
+Gauche's @code{sys-rmdir}.  @xref{Directory manipulation}.
+@c JP
+Gauche の @code{sys-rmdir}。@ref{Directory manipulation}参照。
+@c COMMON
+@item scanf
+@c EN
+Not supported.  For general case, you have to write a parser.
+If you can keep the data in S-exp, you can use @code{read}.
+If the syntax is very simple, you may be able to utilize
+@code{string-tokenize} in @code{srfi-14} (@ref{String library}),
+and/or regular expression stuff (@ref{Regular expressions}).
+@c JP
+サポートしていません。一般的にはパーザを書かねばなりません。
+データを S式で保持できるなら、@code{read} が使えます。
+構文がごく単純なら、@code{srfi-14} (@ref{String library}) の
+@code{string-tokenize} や、正規表現 (@ref{Regular expressions})
+が使えるでしょう。
+@c COMMON
+@item select
+@c EN
+Gauche's @code{sys-select}.  @xref{I/O multiplexing}.
+@c JP
+Gauche の @code{sys-select}。@ref{I/O multiplexing}参照。
+@c COMMON
+@item setbuf
+@c EN
+Not necessary.
+@c JP
+必要ありません。
+@c COMMON
+@item setgid
+@c EN
+Gauche's @code{sys-setgid}.
+@c JP
+Gauche の @code{sys-getgid}。
+@c COMMON
+@item setjmp
+@c EN
+R5RS @code{call/cc} provides similar (superior) mechanism.
+@xref{Continuation}.
+@c JP
+R5RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
+@ref{Continuation} 参照。
+@c COMMON
+@item setlocale
+@c EN
+Gauche's @code{sys-setlocale}.  @xref{Locale}.
+@c JP
+Gauche の @code{sys-setlocale}。@ref{Locale}参照。
+@c COMMON
+@item setpgid
+@c EN
+Gauche's @code{sys-setpgid}.  @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-setpgid}。@ref{System inquiry}参照。
+@c COMMON
+@item setsid
+@c EN
+Gauche's @code{sys-setsid}.  @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-setsid}。@ref{System inquiry}参照。
+@c COMMON
+@item setuid
+@c EN
+Gauche's @code{sys-setuid}.  @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-setuid}。@ref{System inquiry}参照。
+@c COMMON
+@item setvbuf
+@c EN
+Not necessary.
+@c JP
+必要ありません。
+@c COMMON
+@item sigaction
+@c EN
+You can use @code{set-signal-handler!} to install signal handlers.
+@xref{Handling signals}.
+@c JP
+シグナルハンドラを設定するには、@code{set-signal-handler!} が使えます。
+@ref{Handling signals}参照。
+@c COMMON
+@item sigaddset
+@itemx sigdelset
+@itemx sigemptyset
+@itemx sigfillset
+@c EN
+Gauche's @code{sys-sigset-add!} and @code{sys-sigset-delete!}.
+@xref{Signals and signal sets}.
+@c JP
+Gauche の @code{sys-sigset-add!} および @code{sys-sigset-delete!}。
+@ref{Signals and signal sets}参照。
+@c COMMON
+@item sigismember
+@c EN
+Not supported yet.
+@c JP
+未サポート。
+@c COMMON
+@item siglongjmp
+@c EN
+R5RS @code{call/cc} provides similar (superior) mechanism.
+@xref{Continuation}.
+@c JP
+R5RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
+@ref{Continuation} 参照。
+@c COMMON
+@item signal
+@c EN
+You can use @code{with-signal-handlers} to install signal handlers.
+@xref{Handling signals}.
+@c JP
+シグナルハンドラを設定するのには、@code{with-signal-handlers} が使えます。
+@ref{Handling signals} 参照。
+@c COMMON
+@item sigpending
+@c EN
+Not supported yet.
+@c JP
+未サポート
+@c COMMON
+@item sigprocmask
+@c EN
+Signal mask is handled internally.  @xref{Handling signals}.
+@c JP
+シグナルマスクは内部的に処理されます。@ref{Handling signals}参照。
+@c COMMON
+@item sigsetjmp
+@c EN
+R5RS @code{call/cc} provides similar (superior) mechanism.
+@xref{Continuation}.
+@c JP
+R5RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
+@ref{Continuation} 参照。
+@c COMMON
+@item sigsuspend
+@c EN
+Gauche's @code{sys-sigsuspend}.  @xref{Masking and waiting signals}.
+@c JP
+Gauche の @code{sys-sigsuspend}。@ref{Masking and waiting signals}参照。
+@c COMMON
+@item sigwait
+@c EN
+Gauche's @code{sys-sigwait}.  @xref{Masking and waiting signals}.
+@c JP
+Gauche の @code{sys-sigwait}。@ref{Masking and waiting signals}参照。
+@c COMMON
+@item sin
+@itemx sinh
+@c EN
+Use @code{sin} and @code{sinh}.   @xref{Arithmetics}.
+@c JP
+@code{sin} および @code{sinh} を使いましょう。@ref{Arithmetics}参照。
+@c COMMON
+@item sleep
+@c EN
+Gauche's @code{sys-sleep}.  @xref{Miscellaneous system calls}.
+@c JP
+Gauche の @code{sys-sleep}。@ref{Miscellaneous system calls}参照。
+@c COMMON
+@item sprintf
+@c EN
+Not directly supported, but Gauche's @code{format}
+provides similar functionality.  @xref{Output}.
+SLIB has @code{printf} implementation.
+@c JP
+直接はサポートされていませんが、Gauche の @code{format} は類似の機能を
+提供しています。@ref{Output} 参照。SLIB には @code{printf} の実装があります。
+@c COMMON
+@item sqrt
+@c EN
+R5RS @code{sqrt}.  @xref{Arithmetics}.
+@c JP
+R5RS の @code{sqrt}。@ref{Arithmetics}参照。
+@c COMMON
+@item srand
+@c EN
+Not supported directly, but on most platforms a better RNG is available
+as @code{sys-srandom} (@xref{Miscellaneous system calls}).
+The @code{math.mt-random} module provides much superior RNG
+(@xref{Mersenne-Twister random number generator}).
+@c JP
+直接はサポートされていませんが、多くのプラットフォーム上で、@code{sys-random}
+のような、よりよい RNG が利用可能です。@ref{Miscellaneous system calls} 参照。
+また、@code{math.mt-random}はさらに優れたRNGを提供します
+(@ref{Mersenne-Twister random number generator}参照)。
+@c COMMON
+@item sscanf
+@c EN
+Not supported.  For general case, you have to write a parser.
+If you can keep the data in S-exp, you can use @code{read}.
+If the syntax is very simple, you may be able to utilize
+@code{string-tokenize} in @code{srfi-14} (@ref{String library}),
+and/or regular expression stuff (@ref{Regular expressions}).
+@c JP
+サポートしていません。一般的にはパーザを書かねばなりません。
+データを S式で保持できるなら、@code{read} が使えます。
+構文がごく単純なら、@code{srfi-14} (@ref{String library}) の
+@code{string-tokenize} や、正規表現 (@ref{Regular expressions})
+が使えるでしょう。
+@c COMMON
+@item stat
+@c EN
+Gauche's @code{sys-stat}.  @xref{File stats}.
+@c JP
+Gauche の @code{sys-stat}。@ref{File stats}参照。
+@c COMMON
+@item strcasecmp
+@c EN
+R5RS @code{string-ci=?} and other comparison functions.
+@xref{String Comparison}.
+@c JP
+R5RS の @code{string-ci=?} および、その他の比較関数。
+@ref{String Comparison}参照。
+@c COMMON
+@item strcat
+@c EN
+R5RS @code{string-append}.  @xref{String utilities}.
+@c JP
+R5RS の @code{string-append}。@ref{String utilities}参照。
+@c COMMON
+@item strchr
+@c EN
+SRFI-13 @code{string-index}.  @xref{SRFI-13 String searching}.
+@c JP
+SRFI-13 の @code{string-index}。  @ref{SRFI-13 String searching}参照。
+@c COMMON
+@item strcmp
+@c EN
+R5RS @code{string=?} and other comparison functions.
+@xref{String Comparison}.
+@c JP
+R5RS の @code{string=?} および、その他の比較関数。
+@ref{String Comparison}参照。
+@c COMMON
+@item strcoll
+@c EN
+Not supported yet.
+@c JP
+未サポート。
+@c COMMON
+@item strcpy
+@c EN
+R5RS @code{string-copy}.    @xref{String utilities}.
+@c JP
+R5RS の @code{string-copy}。@ref{String utilities}参照。
+@c COMMON
+@item strcspn
+@c EN
+Not directly supported, but you can use SRFI-13 @code{string-skip}
+with a character set.  @xref{SRFI-13 String searching}.
+@c JP
+直接はサポートされていませんが、文字集合とともに、SRFI-13 の
+@code{string-skip} が使えます。@ref{SRFI-13 String searching}参照。
+@c COMMON
+@item strerror
+@c EN
+Gauche's @code{sys-strerror}.  @xref{System inquiry}.
+@c JP
+Gaucheの@code{sys-strerror}。  @ref{System inquiry}参照。
+@c COMMON
+@item strftime
+@c EN
+Gauche's @code{sys-strftime}.  @xref{Time}.
+@c JP
+Gauche の @code{sys-strftime}。@ref{Time}参照。
+@c COMMON
+@item strlen
+@c EN
+R5RS @code{string-length}.  @xref{String Accessors & Modifiers}.
+@c JP
+R5RS の @code{string-length}。@ref{String Accessors & Modifiers}参照。
+@c COMMON
+@item strncat
+@c EN
+Not directly supported, but you can use @code{string-append} and
+@code{substring}.
+@c JP
+直接はサポートされていませんが、@code{string-append} および
+@code{substring} が使えます。
+@c COMMON
+@item strncasecmp
+@c EN
+SRFI-13 @code{string-compare-ci} provides the most flexible
+(but a bit difficult to use) functionality.
+@xref{SRFI-13 String Comparison}.
+If what you want is just to check the fixed-length prefixes of two
+string matches, you can use SRFI-13 @code{string-prefix-ci?}.
+@c JP
+SRFI-13 の @code{string-compare-ci} は非常に柔軟な(しかし、使うのは
+多少難しい)機能を提供しています。@ref{SRFI-13 String Comparison}参照。
+ふたつの文字列の固定長の接頭辞が一致しているかどうかをチェックしたい
+だけなら、SRFI-13 の @code{string-prefix-ci?} が使えます。
+@c COMMON
+@item strncmp
+@c EN
+SRFI-13 @code{string-compare} provides the most flexible
+(but a bit difficult to use) functionality.
+@xref{SRFI-13 String Comparison}.
+If what you want is just to check the fixed-length prefixes of two
+string matches, you can use SRFI-13 @code{string-prefix?}.
+@xref{SRFI-13 String Prefixes & Suffixes}.
+@c JP
+SRFI-13 の @code{string-compare-ci} は非常に柔軟な(しかし、使うのは
+多少難しい)機能を提供しています。@ref{SRFI-13 String Comparison}参照。
+ふたつの文字列の固定長の接頭辞が一致しているかどうかをチェックしたい
+だけなら、SRFI-13 の @code{string-prefix-ci?} が使えます。
+@ref{SRFI-13 String Prefixes & Suffixes}参照。
+@c COMMON
+@item strncpy
+@c EN
+SRFI-13 @code{substring}.  @xref{String utilities}.
+@c JP
+SRFI-13 の @code{substring}。@ref{String utilities}参照。
+@c COMMON
+@item strpbrk
+@c EN
+Not directly supported, but you can use SRFI-13 @code{string-skip}
+with a character set.  @xref{SRFI-13 String searching}.
+@c JP
+直接はサポートされていませんが、文字集合と SRFI-13 の @code{string-skip}
+が使えます。@ref{SRFI-13 String searching}参照。
+@c COMMON
+@item strrchr
+@c EN
+SRFI-13 @code{string-index-right}.  @xref{SRFI-13 String searching}.
+@c JP
+SRFI-13 の @code{string-index-right}。@ref{SRFI-13 String searching}参照。
+@c COMMON
+@item strspn
+@c EN
+Not directly supported, but you can use SRFI-13 @code{string-index}
+with a character set.  @xref{SRFI-13 String searching}.
+@c JP
+直接はサポートされていませんが、文字集合と SRFI-13 の @code{string-index}
+が使えます。@ref{SRFI-13 String searching}参照。
+@c COMMON
+@item strstr
+@c EN
+SRFI-13 @code{string-contains}.  @xref{SRFI-13 String searching}.
+@c JP
+SRFI-13 の @code{string-contains}。@ref{SRFI-13 String searching}参照。
+@c COMMON
+@item strtod
+@c EN
+You can use R5RS @code{string->number}.   @xref{Numerical conversions}.
+@c JP
+R5RS の @code{string->number}が使えます。@ref{Numerical conversions}参照。
+@c COMMON
+@item strtok
+@c EN
+SRFI-13 @code{string-tokenize}.  @xref{SRFI-13 other string operations}.
+@c JP
+SRFI-13 の @code{string-tokenize}。@ref{SRFI-13 other string operations}参照。
+@c COMMON
+@item strtol
+@itemx strtoul
+@c EN
+You can use R5RS @code{string->number}.   @xref{Numerical conversions}.
+@c JP
+R5RS の @code{string->number}が使えます。@ref{Numerical conversions}参照。
+@c COMMON
+@item strxfrm
+@c EN
+Not supported yet.
+@c JP
+未サポート。
+@c COMMON
+@item symlink
+@c EN
+Gauche's @code{sys-symlink}.  @xref{Directory manipulation}.
+This function is available on systems that support symbolink links.
+@c JP
+Gauche の @code{sys-symlink}。@ref{Directory manipulation}参照。
+この関数は、シンボリックリンクをサポートしているシステム上で利用可能です。
+@c COMMON
+@item sysconf
+@c EN
+Not supported yet.
+@c JP
+未サポート。
+@c COMMON
+@item system
+@c EN
+Gauche's @code{sys-system}.   @xref{Process management}.
+It is generally recommended to use the process library
+(@ref{High Level Process Interface}).
+@c JP
+Gauche の @code{sys-system}。@ref{Process management}参照。
+一般的にはプロセスライブラリ(@ref{High Level Process Interface})
+を使うことを推奨します。
+@c COMMON
+@item tan
+@itemx tanh
+@c EN
+R5RS @code{tan} and Gauche @code{tanh}.  @xref{Arithmetics}.
+@c JP
+R5RS の @code{tan} および Gauche の @code{tanh}。@ref{Arithmetics}参照。
+@c COMMON
+@item tcdrain
+@item tcflow
+@item tcflush
+@item tcgetattr
+@item tcgetpgrp
+@item tcsendbreak
+@item tcsetattr
+@item tcsetpgrp
+@c EN
+Corresponding functions are: @code{sys-tcdrain}, @code{sys-tcflow},
+@code{sys-tcflush}, @code{sys-tcgetattr}, @code{sys-tcgetpgrp},
+@code{sys-tcsendbreak}, @code{sys-tcsetattr}, @code{sys-tcsetpgrp}.
+@xref{Terminal control}
+@c JP
+対応する関数はそれぞれ、@code{sys-tcdrain}、@code{sys-tcflow}、
+@code{sys-tcflush}、@code{sys-tcgetattr}、@code{sys-tcgetpgrp}、
+@code{sys-tcsendbreak}、@code{sys-tcsetattr}、@code{sys-tcsetpgrp} です。
+@ref{Terminal control}参照。
+@c COMMON
+@item time
+@c EN
+Gauche's @code{sys-time}.  @xref{Time}.
+@c JP
+Gauche の @code{sys-time}。  @ref{Time}参照。
+@c COMMON
+@item times
+@c EN
+Gauche's @code{sys-times}.  @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-times}。@ref{System inquiry}参照。
+@c COMMON
+@item tmpfile
+@c EN
+Not exactly supported.
+@c JP
+厳密には、サポートしません。
+@c COMMON
+@item tmpnam
+@c EN
+Gauche's @code{sys-tmpnam}.
+This function is provided since it is in POSIX, but its use is
+discouraged for the potential security risk.  Use @code{sys-mkstemp}
+instead.   @xref{Directory manipulation}.
+@c JP
+Gauche の @code{sys-tmpnam}。この関数は POSIX にあるので提供されていますが、
+潜在的なセキュリティリスクがあるため、利用はおすすめできません。
+代りに @code{sys-mkstemp} を使いましょう。@ref{Directory manipulation}参照。
+@c COMMON
+@item tolower
+@itemx toupper
+@c EN
+R5RS @code{char-upcase} and @code{char-downcase}.   @xref{Characters}.
+@c JP
+R5RS の @code{char-upcase} および @code{char-downcase}。@ref{Characters}参照。
+@c COMMON
+@item ttyname
+@c EN
+Gauche's @code{sys-ttyname}.  @xref{Other file operations}.
+@c JP
+Gauche の @code{sys-ttyname}。@ref{Other file operations}参照。
+@c COMMON
+@item tzset
+@c EN
+Not supported yet.
+@c JP
+未サポート。
+@c COMMON
+@item umask
+@c EN
+Gauche's @code{sys-umask}.  @xref{Directory manipulation}.
+@c JP
+Gauche の @code{sys-umask}。@ref{Directory manipulation}参照。
+@c COMMON
+@item uname
+@c EN
+Gauche's @code{sys-uname}.  @xref{System inquiry}.
+@c JP
+Gauche の @code{sys-uname}。@ref{System inquiry}参照。
+@c COMMON
+@item ungetc
+@c EN
+Not directly supported.  You can use @code{peek-char} to look
+one character ahead, instead of pushing back.
+@c JP
+直接はサポートされません。プッシュしなおす代りに、@code{peek-char} をつかって
+先読みしましょう。
+@c COMMON
+@item unlink
+@c EN
+Gauche's @code{sys-unlink}.  @xref{Directory manipulation}.
+@c JP
+Gauche の @code{sys-unlink}。@ref{Directory manipulation}参照。
+@c COMMON
+@item utime
+@c EN
+Gauche's @code{sys-utime}. @xref{File stats}.
+@c JP
+Gauche の @code{sys-utime}。@ref{File stats}参照。
+@c COMMON
+@item va_arg
+@itemx va_end
+@itemx va_start
+@c EN
+Not necessary, for Scheme handles variable number of arguments naturally.
+@c JP
+Scheme は可変長引数を自然に処理できますので、必要ありません。
+@c COMMON
+@item vfprintf
+@itemx vprintf
+@itemx vsprintf
+@c EN
+Not directly supported, but Gauche's @code{format}
+provides similar functionality.  @xref{Output}.
+SLIB has @code{printf} implementation.
+@c JP
+直接はサポートされていませんが、Gauche の @code{format} は類似の機能を
+提供しています。@ref{Output} 参照。SLIB には @code{printf} の実装があります。
+@c COMMON
+@item wait
+@c EN
+Gauche's @code{sys-wait}.  @xref{Process management}.
+@c JP
+Gauche の @code{sys-wait}。@ref{Process management}参照。
+@c COMMON
+@item waitpid
+@c EN
+Gauche's @code{sys-waitpid}.  @xref{Process management}.
+@c JP
+Gauche の @code{sys-waitpid}。@ref{Process management}参照。
+@c COMMON
+@item wcstombs
+@itemx wctomb
+@c EN
+Gauche handles multibyte strings internally, so generally you don't 
+need to care about multibyte-ness of the string.   @code{string-length}
+always returns a number of characters for a string in supported
+encoding.   If you want to convert the character encoding,
+see @ref{Character code conversion}.
+@c JP
+Gauche はマルチバイト文字列を内部的に処理します。それゆえ、一般的には
+文字列がマルチバイトであるかどうかを気にする必要はありません。
+@code{string-length} は常にサポートされているエンコーディングでの文字列の
+文字数を返します。文字エンコーディングを変換したければ、
+@ref{Character code conversion}を参照してください。
+@c COMMON
+@item write
+@c EN
+R5RS @code{display} (@xref{Output}).
+Or @code{write-block} (@xref{Uvector block I/O}).
+@c JP
+R5RS の @code{display} (@xref{Output})。
+あるいは @code{write-block} (@ref{Uvector block I/O}参照)。
+@c COMMON
+@end table
+
+@c Appendix : Common Lisp to Scheme mapping
+@c Appendix : Perl to Scheme mapping
+@c Appendix : Python to Scheme mapping?
+
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

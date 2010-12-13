@@ -1,0 +1,5 @@
+;; testing source-code encoding
+;; coding: shift_jis
+
+(define *the-string* "‚±‚ñ‚É‚¿‚ÍA¢ŠE")
+

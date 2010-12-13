@@ -1,0 +1,26 @@
+This directory contains a source of texinfo document of Gauche
+reference manual.   The info file is not built by default.
+
+The source file, gauche-ref.texi,  contains English and Japanese
+version in one document.  The ``extract'' script generates
+monolingual versions.   Once you built and installed Gauche,
+
+  make texi
+
+generates both English and Japanese version of texinfo file, and
+
+  make html
+
+generates English and Japanese version of HTML documents.
+
+
+You can also browse HTML version of document on-line at
+
+ http://practical-scheme.net/gauche/man/gauche-refe.html (English)
+ http://practical-scheme.net/gauche/man/gauche-refj.html (Japanese)
+
+
+
+
+
+

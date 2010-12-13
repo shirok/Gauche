@@ -1,0 +1,25 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+SCM_CATEGORY = gauche
+
+LIBFILES = gauche--fcntl.$(SOEXT)
+SCMFILES = fcntl.scm
+
+OBJECTS = fcntl.$(OBJEXT) fcntlib.$(OBJEXT)
+
+GENERATED = Makefile
+XCLEANFILES = fcntlib.c
+
+all : $(LIBFILES)
+
+gauche--fcntl.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) gauche--fcntl.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+fcntlib.c : fcntlib.stub
+
+install : install-std
+

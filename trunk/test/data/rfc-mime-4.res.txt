@@ -1,0 +1,14 @@
+("multipart/mixed" 0
+ ("text/plain" 0
+  "  ...Introductory text or table of contents...\n")
+ ("multipart/digest" 1
+  ("message/rfc822" 0
+   ("text/plain" 0
+    "  ...body goes here ...\n"))
+  ("message/rfc822" 1
+   ("text/plain" 0
+    ""))
+ )
+ ("text/plain" 2
+  "The previous part has been chopped.")
+)
