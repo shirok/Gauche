@@ -76,7 +76,8 @@ if [ "$doc" = "yes" ]; then
   (cd doc; make texi)
   for lang in j e; do
     rm -rf $DOC_DEST/gauche-ref$lang
-    (cd doc; make gauche-ref${lang}_toc.html; mv gauche-ref${lang} $DOC_DEST)
+    mkdir $DOC_DEST/gauche-ref$lang
+    (cd doc; make gauche-ref${lang}_toc.html; mv gauche-ref${lang}*.html $DOC_DEST/gauche-ref$lang)
   done
 fi
 

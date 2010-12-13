@@ -7177,10 +7177,9 @@ not given to the @var{restarg}.
 @c COMMON
 
 @c EN
-If you use the first form, @code{let-keyword} regards it an error
+If you use the first form, @code{let-keyword} throws an error
 when @code{restarg} contains a keyword argument that is not listed
-in @var{var-spec}s.  For the backward compatibility it only issues
-warning now, but in future releases it will raise an error.
+in @var{var-spec}s.
 When you want to allow keyword arguments other than listed in
 @var{var-spec}s, use the second form.
 
@@ -7190,9 +7189,8 @@ that are not processed by @var{var-spec}s.  If it is @code{#f},
 such keyword arguments are just ignored.
 @c JP
 1番目のフォームでは、@var{var-spec}にないキーワード引数が@var{restarg}に
-現れるのはエラーです。以前のバージョンとの互換性のために、現在は警告を
-表示するだけですが、将来はエラーを通知するよう動作が変わるでしょう。
-警告を表示したくない場合は次の2番目のフォームを使ってください。
+現れるとエラーとなります。
+他のキーワード引数を許したい場合は次の2番目のフォームを使ってください。
 
 2番目のフォームでは、@var{restvar}はシンボルか@code{#f}でなければなりません。
 シンボルのときは、@var{var-spec}に束縛されなかった@var{restargs}のキーワード

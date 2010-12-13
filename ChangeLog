@@ -1,3 +1,16 @@
+2010-12-12  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.9.1 (repackaging): The gauche-config bug will be
+	  huge annoyance, so we repackage 0.9.1.
+
+	* src/genconfig.in: The directory structure change wasn't reflected
+	  in gauche-config --pkg{inc|lib}dir.
+
+	* DIST (doc): Needs some tweaking.  Maybe texi2html has changed.
+	* doc/ja-init.pl: Turned off USE_UNICODE.  Somehow the original
+	  code started produce incorrect encoding in the titles only
+	  I don't know if this is a correct fix, but it seems working.
+
 2010-12-11  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.9.1

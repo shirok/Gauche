@@ -1,9 +1,0 @@
-@node Variable Index, , Class Index, Top
-@appendix Variable Index
-@c NODE Index - 変数索引
-@printindex vr
-
-@c Local variables:
-@c mode: texinfo
-@c coding: utf-8
-@c end:

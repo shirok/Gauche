@@ -1,2 +1,0 @@
-#!/bin/sh
-../../src/gosh -ftest ./bench.scm $1 $2

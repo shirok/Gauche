@@ -1,4 +1,0 @@
-(define *xyz* "coding: utf-8")
-;; coding: Shift_JIS
-(define *the-string*
-  "‚±‚ñ‚É‚¿‚ÍA¢ŠE")

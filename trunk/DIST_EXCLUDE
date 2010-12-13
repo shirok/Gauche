@@ -1,8 +1,0 @@
-AUTOCONF
-DIST
-DIST_EXCLUDE
-DIST_EXCLUDE_X
-TEST
-INSTALL.in
-autom4te.cache
-lib/net

@@ -1,9 +1,0 @@
-@node Function and Syntax Index, Module Index, C to Scheme mapping, Top
-@appendix Function and Syntax Index
-@c NODE Index - 手続きと構文索引
-@printindex fn
-
-@c Local variables:
-@c mode: texinfo
-@c coding: utf-8
-@c end:
