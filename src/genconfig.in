@@ -56,8 +56,8 @@ gauche_archdir=`echo "$garchdir/$gauche_version/$host" | $pathfix`
 gauche_siteincdir=`echo "$garchdir/site/include" | $pathfix`
 gauche_sitelibdir=`echo "$gdatadir/site/lib" | $pathfix`
 gauche_sitearchdir=`echo "$garchdir/site/$host" | $pathfix`
-gauche_pkgincdir=`echo '${libdir}'"/gauche/site/include" | $pathfix`
-gauche_pkglibdir=`echo '${datadir}'"/gauche/site/lib" | $pathfix`
+gauche_pkgincdir=`echo '${libdir}'"/$garchabi/site/include" | $pathfix`
+gauche_pkglibdir=`echo '${datadir}'"/$garchabi/site/lib" | $pathfix`
 gauche_pkgarchdir=`echo '${libdir}'"/$garchabi/site/$host" | $pathfix`
 
 gauche_libs="@LIBS@"
