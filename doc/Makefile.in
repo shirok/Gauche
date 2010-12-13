@@ -117,7 +117,7 @@ gauche-refj.html : gauche-refj.texi
 
 gauche-refj_toc.html : gauche-refj.texi
 	texi2html --init-file=ja-init.pl --split section --number gauche-refj.texi
-	for f in gauche-refj/gauche-refj*.html; do \
+	for f in gauche-refj*.html; do \
 	  sed 's/^<body lang="en"/<body lang="ja"/' $$f > $$f.t && mv $$f.t $$f; \
 	done
 

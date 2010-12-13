@@ -2,11 +2,11 @@
 # TODO: once we implement scsh-ish process utility, rewrite 
 # this as Gauche script!
 
-TGZ_DEST="$HOME/shiro.dreamhost.com/scheme/vault/"
+TGZ_DEST="$HOME/src/practical-scheme.net/vault/"
 MAN_DEST="$HOME/src/practical-scheme.net/gauche/man/"
 DOC_DEST="$HOME/src/test"
 RPMDIR="$HOME/rpm"
-CHANGELOG_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/ChangeLog.txt"
+CHANGELOG_DEST="$HOME/practical-scheme.net/gauche/ChangeLog.txt"
 XTRA_TEST_DIR="$HOME/src/test"
 
 maintainer_clean () {
