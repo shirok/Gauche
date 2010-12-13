@@ -7149,18 +7149,30 @@ import specifier (@xref{Using modules}), for example as follows:
 @end example
 
 @defmac reset expr @dots{}
+@c EN
 Saves the current continuation, and executes @var{expr} @dots{} with
 a @emph{null continuation} or @emph{empty continuation}.
 The @code{shift} operator captures the continuation from the @code{shift}
 expression to this null continuation.
+@c JP
+現在の継続を保存し、@var{expr} @dots{} を@emph{空の継続}を伴って実行します。
+空の継続は@code{shift}オペレータが捕捉する継続の終端になります。
+@c COMMON
 @end defmac
 
 @defmac shift var expr @dots{}
+@c EN
 Packages the continuation of this expression until the current null
 continuation marked by the most recent @code{reset} into a procedure,
 binds the procedure to @var{var}, then executes @var{expr} @dots{}
 with the continuation saved by the most recent @code{reset}.
+@c JP
+この式からもっとも最近の@code{reset}により切り取られた空の継続までの継続を
+手続きに包み、それを@var{var}に束縛ます。
+そしてもっとも最近の@var{reset}式の継続を伴って@var{expr} @dots{}を実行します。
+@c COMMON
 
+@c EN
 That is, after executing @var{expr} @dots{}, the value is passed
 to the expression waiting for the value of the most recent @code{reset}.
 When a partial continuation bound to @var{var} is executed, its
@@ -7168,17 +7180,38 @@ argument is passed to the continuation waiting for the value
 of this @code{shift}.   When the execution of the partial continuation 
 reaches its end, it returns from the expression waiting
 for the value of invocation of @var{var}.
+@c JP
+すなわち、@var{expr} @dots{}を実行後、その結果の値はもっとも最近の@code{reset}
+の戻り値を待っている式に直ちに渡されます。
+@var{var}に束縛されている部分継続が実行されると、それに渡された値は
+@code{shift}の戻り値を待っている継続に直ちに渡されます。
+その部分継続の実行が終了すると、その結果の値は@var{var}を呼び出した式の
+戻り値となります。
+@c COMMON
 @end defmac
 
 @defun call/pc proc
+@c EN
 This is a wrapper of @code{shift}.  @code{(shift k expr @dots{})}
 is equivalent to @code{(call/pc (lambda (k) expr @dots{}))}.
 Sometimes this similarity of @code{call/cc} comes handy.
+@c JP
+これは@code{shift}のラッパーです。
+@code{(shift k expr @dots{})}は@code{(call/pc (lambda (k) expr @dots{}))}
+等価です。@code{call/cc}と似た形の呼び出し形式の方が便利な場合があるので
+用意しました。
+@c COMMON
 @end defun
 
+@c EN
 Well, @dots{} I bet you feel like your brain is twisted hard
 unless you are one of those rare breed from the land of continuation.
 Let me break down what's happening here.
+@c JP
+さてと… もしあなたが、継続の国の血を引く珍しい種族の一員でなければ、
+たぶんここまで読んできて、脳みそがこんがらがっていることでしょう。
+何が起きているか、説明を試みてみます。
+@c COMMON
 
 Suppose a procedure A calls an expression B.   If A expects a return
 value from B and continue processing, we split the part after returning
