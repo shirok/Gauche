@@ -1,3 +1,8 @@
+2010-12-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/regexp.scm (rxmatch-case): Allow (else => proc) form,
+	  just like 'case'.
+
 2010-12-12  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.9.1 (repackaging): The gauche-config bug will be

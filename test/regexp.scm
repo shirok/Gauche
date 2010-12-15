@@ -979,13 +979,20 @@
         (map string->number (list yyyy mm dd)))
     (#/^\d+\/\d+\/\d+$/  (#f) (error "ambiguous:" str))
     (else (error "bogus:" str))))
-
 (test* "rxmatch-case" '(2001 2 3)
        (test-parse-date2 "2001/2/3"))
 (test* "rxmatch-case" '(1999 12 25)
        (test-parse-date2 "1999/12/25"))
 (test* "rxmatch-case" #f
        (test-parse-date2 'abc))
+
+(define (test-parse-date3 str)
+  (rxmatch-case str
+    (#/^(\d\d\d\d)\/(\d\d?)\/(\d\d?)$/ (#f yyyy mm dd)
+        (map string->number (list yyyy mm dd)))
+    (else => (cut format "bogus: ~a" <>))))
+(test* "rxmatch-case (else)" "bogus: 100/2/3"
+       (test-parse-date3 "100/2/3"))
 
 (test* "regexp-replace" "abc|def|ghi"
        (regexp-replace #/def|DEF/ "abcdefghi" "|\\0|"))

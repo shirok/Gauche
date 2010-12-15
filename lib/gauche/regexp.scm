@@ -77,6 +77,8 @@
 (define-syntax rxmatch-case
   (syntax-rules (test else =>)
     [(rxmatch-case #t ?temp ?strp) #f]
+    [(rxmatch-case #t ?temp ?strp (else => ?proc))
+     (?proc ?temp)]
     [(rxmatch-case #t ?temp ?strp (else ?form ...))
      (begin ?form ...)]
     [(rxmatch-case #t ?temp ?strp (test ?proc => ?obj) ?clause ...)

@@ -5334,6 +5334,22 @@ and the result of the last @var{form} becomes the result of
 他の全ての@var{clause}が失敗した場合に、@var{form}が順に評価され、最後の@var{form}の
 値が@code{rxmatch-case}の値として返されます。
 @c COMMON
+
+@item (else => @var{proc})
+@c EN
+This form must appear at the end of @var{clause}s, if any.
+If other clauses fail, @var{proc} is evaluated, which should
+yield a procedure taking one arugment.  The value of @var{string-expr}
+is passed to @var{proc}, and its return values become the
+return values of @code{rxmatch-case}.
+@code{rx}
+@c JP
+このフォームは、与えられる場合は最後の@var{clause}でなければなりません。
+他の全ての@var{clause}が失敗した場合に、@var{proc}が評価されます。
+その値は一引数の手続きにならなければなりません。
+その手続きが、@var{string-expr}の値を引数として呼ばれます。
+@var{proc}の結果が@code{rxmatch-case}の値となります。
+@c COMMON
 @end table
 
 @c EN
