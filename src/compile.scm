@@ -1878,7 +1878,7 @@
 ;;   a constant binding, it replaces the reference to the value itself
 ;;   at pass 1.  Define-inline can bind a variable to a value that is
 ;;   calculated at runtime.  The compiler does not replace the variable
-;;   references with values, but it freely rearranges the rerences within
+;;   references with values, but it freely rearranges the references within
 ;;   the source code.  If an inlinable binding is used at the head position,
 ;;   the compiler looks at its value, and if it is known to be bound to
 ;;   an inlinable procedure, the procedure's body is inlined.
