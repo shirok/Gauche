@@ -1,4 +1,30 @@
+2010-12-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass3/optimize-call): Fixed an optimizer bug
+	  that caused reset-lvars to be called on the same set of lvars
+	  more than once, screwing up lvar counts.  See the added test
+	  in test/primsyn.scm.
+
+2010-12-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm: Allow toplevel closure to be a
+	  compile-time literal.
+
+	* src/vm.c (Scm_VMEval): Fixed a bug that made "eval"-ed expression
+	  to be executed under the caller's local environment, instead of
+	  toplevel environment.  Compilation was done in toplevel env, so
+	  it didn't affect meaning of the program; however, closures created
+	  at runtime got unnecessary environment.
+
+	* src/compile.scm: Renamed Pass 3 to Pass 4, and Pass 2p to Pass 3,
+	  since Pass 2p was actually a separate pass.
+
 2010-12-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (ScmBox), src/vminsn.scm (BOX), src/box.c: Added 'box'
+	  object for mutable local variable optimization.
+	* src/compile.scm, src/vminsn.scm: Changed pass3 to use boxes for
+	  mutable local variables.
 
 	* lib/gauche/regexp.scm (rxmatch-case): Allow (else => proc) form,
 	  just like 'case'.

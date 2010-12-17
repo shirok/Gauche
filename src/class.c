@@ -3086,6 +3086,9 @@ void Scm__InitClass(void)
 
 #define CINIT(cl, nam) \
     Scm_InitStaticClassWithMeta(cl, nam, mod, NULL, SCM_FALSE, NULL, 0)
+
+    /* box.c */
+    CINIT(SCM_CLASS_BOX,    "<%box>");
     
     /* class.c */
     BINIT(SCM_CLASS_CLASS,  "<class>", class_slots);

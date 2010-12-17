@@ -1191,7 +1191,7 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
     if (restore_module) {
         /* if we swap the module, we need to make sure it is recovered
            after eval */
-        ScmObj body = Scm_MakeClosure(v, get_env(vm));
+        ScmObj body = Scm_MakeClosure(v, NULL);
         ScmObj before = Scm_MakeSubr(eval_restore_env, SCM_MODULE(e),
                                      0, 0, SCM_SYM_EVAL_BEFORE);
         ScmObj after = Scm_MakeSubr(eval_restore_env, (void*)vm->module,

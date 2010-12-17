@@ -350,6 +350,17 @@
            (lambda ()
              (let ((f (lambda (i) (set! i 0) i))) (f (f 1)))))
 
+;; this caused an internal compiler error in 0.9.1
+(define (zero) 0)
+(prim-test "pass3 inlining with pass3/$call optimization" #t
+           (lambda ()
+             (eval '((letrec ((f (lambda (a b)
+                                   (do ((x a (+ x 1)))
+                                       ((>= x b))))))
+                       f)
+                     (zero) (zero))
+                   (interaction-environment))))
+
 ;;----------------------------------------------------------------
 (test-section "lazy, delay & force")
 

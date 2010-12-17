@@ -811,3 +811,20 @@
   (static (self) #f)
   )
 
+;; We allow literal closures if it doens't close environment.
+;; Closures do not have its own class, so we define cgen-literal class
+;; for <procedure>.
+(define-cgen-literal <cgen-closure> <procedure>
+  ([code :init-keyword :code])  ; <cgen-scheme-code>
+  (make (value)
+    (unless (toplevel-closure? value)
+      (error "a procedure (except top-level closure) cannot be \
+              a compile-time constant:" value))
+    (make <cgen-closure>
+      :value value :c-name (cgen-allocate-static-datum)
+      :code (cgen-literal (closure-code value))))
+  (init (self)
+    (format #t "  ~a = Scm_MakeClosure(~a, NULL); /* ~a */\n"
+            (cgen-cexpr self) (cgen-cexpr (~ self'code))
+            (cgen-safe-comment (write-to-string (~ self'value)))))
+  (static (self) #f))

@@ -107,6 +107,15 @@
               `(let* ([,r :: double ,expr])
                  ($result (Scm_VMReturnFlonum ,r))))])
 
+;; Extract local value.  If it is boxed, we need dereference.
+(define-cise-stmt $lref!
+  [(_ var env off)
+   (let1 v (gensym)
+     `(let* ([,v (ENV-DATA ,env ,off)])
+        (if (SCM_BOXP ,v)
+          (set! ,var (SCM_BOX_VALUE ,v))
+          (set! ,var ,v))))])
+
 ;;
 ;; ($w/argr <val> <expr> ...)
 ;; ($w/argp <val> <expr> ...)
@@ -131,15 +140,16 @@
                        [(3) (set! ,e (-> ,e up))]
                        [(2) (set! ,e (-> ,e up))]
                        [(1) (set! ,e (-> ,e up))]
-                       [(0) (set! ,val (ENV-DATA ,e ,off)) (break)]
+                       [(0) ($lref! ,val ,e ,off) (break)]
                        [else (while (> (post-- ,dep) 0) (set! ,e (-> ,e up)))
-                             (set! ,val (ENV-DATA ,e ,off)) (break)])
+                             ($lref! ,val ,e ,off) (break)])
                      ,@body))]
      [('lref d o) `(let* ((,val (ENV-DATA ,(let loop ((d d))
                                              (if (zero? d)
                                                'ENV
                                                `(-> ,(loop (- d 1)) up)))
                                           ,o)))
+                     (if (SCM_BOXP ,val) (set! ,val (SCM_BOX_VALUE ,val)))
                      ,@body)])])
 
 (define-cise-stmt $w/argr               ; use VAL0 default
@@ -272,11 +282,16 @@
 ;;
 (define-cise-stmt $lrefNN
   [(_ depth offset)
-   `($result (ENV_DATA ,(let loop ((d depth))
-                          (case d
-                            [(0) 'ENV]
-                            [else `(-> ,(loop (- d 1)) up)]))
-                       ,offset))])
+   ;; TODO 0.9.2: Extra check for backward compatibility
+   (let1 v (gensym)
+     `(let* ([,v :: ScmObj (ENV_DATA ,(let loop ((d depth))
+                                        (case d
+                                          [(0) 'ENV]
+                                          [else `(-> ,(loop (- d 1)) up)]))
+                                     ,offset)])
+        (if (SCM_BOXP ,v)
+          ($result (SCM_BOX_VALUE ,v))
+          ($result ,v))))])
 
 ;;
 ;; ($values)
@@ -585,7 +600,7 @@
 ;; Compare LREF(n,m) and VAL0 and branch.  This is not a simple combination
 ;; of LREF + BNLT etc. (which would compare stack top and LREF).  These insns
 ;; save one stack operation.  The compiler recognizes the pattern and
-;; emits these.  See pass3/if-numcmp and pass3/if-numeq.
+;; emits these.  See pass4/if-numcmp and pass4/if-numeq.
 (define-insn LREF-VAL0-BNUMNE 2 addr #f ($arg-source lref ($insn-body BNUMNE))) 
 (define-insn LREF-VAL0-BNLT 2 addr #f ($arg-source lref ($insn-body BNLT)))
 (define-insn LREF-VAL0-BNLE 2 addr #f ($arg-source lref ($insn-body BNLE)))
@@ -726,7 +741,11 @@
     (VM-ASSERT (!= e NULL))
     (VM-ASSERT (> (-> e size) off))
     (SCM_FLONUM_ENSURE_MEM VAL0)
-    (set! (ENV-DATA e off) VAL0)
+    ;; TODO 0.9.2 : Extra check to maintain compatibility
+    (let* ([box::ScmObj (ENV-DATA e off)])
+      (if (SCM_BOXP box)
+        (SCM_BOX_SET box VAL0)
+        (set! (ENV-DATA e off) VAL0)))
     NEXT1))
 
 ;; GSET <location>
@@ -777,7 +796,11 @@
          (set! e (-> e up)))
     (VM-ASSERT (!= e NULL))
     (VM-ASSERT (> (-> e size) off))
-    ($result (ENV-DATA e off))))
+    ;; TODO 0.9.2: Extra test to keep compatiblity
+    (let* ((v::ScmObj (ENV-DATA e off)))
+      (if (SCM_BOXP v)
+        ($result (SCM_BOX_VALUE v))
+        ($result v)))))
 
 ;; Shortcut for the frequent depth/offset.
 ;; From statistics, we found that the following depth/offset combinations
@@ -962,7 +985,7 @@
 (define-insn TAIL-APPLY  1 none #f
   ;; Inlined apply.  Assumes the call is at the tail position.
   ;; NB: As of 0.9, all 'apply' call is expanded into this instruction.
-  ;; If the code is not at the tail position, compiler pass 3 inserts
+  ;; If the code is not at the tail position, compiler pass4 inserts
   ;; PRE-CALL instruction so that the call of apply becomes a tail call.
   ;;
   ;; Here, the stack should have the following layout.
@@ -1348,3 +1371,12 @@
 ;;
 
 (define-insn-lref* LREF-RET 0 none (LREF RET))
+
+(define-insn BOX 0 none #f              ; replace VAL0 with box(VAL0)
+  (begin
+    (SCM_FLONUM_ENSURE_MEM VAL0)
+    (let* ((b::ScmBox* (Scm_MakeBox VAL0)))
+      (set! VAL0 (SCM_OBJ b)))
+    NEXT))
+
+

@@ -592,6 +592,22 @@ SCM_EXTERN ScmObj Scm_VMGetResult(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetStackLite(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetStack(ScmVM *vm);
 
+/* A box is to keep a reference.  It is mainly used for mutable local variables.
+ */
+
+typedef struct ScmBoxRec {
+    SCM_HEADER;
+    ScmObj value;
+} ScmBox;
+
+SCM_CLASS_DECL(Scm_BoxClass);
+#define SCM_CLASS_BOX            (&Scm_BoxClass)
+#define SCM_BOX(obj)             ((ScmBox*)(obj))
+#define SCM_BOXP(obj)            (SCM_XTYPEP(obj, SCM_CLASS_BOX))
+#define SCM_BOX_VALUE(obj)       (SCM_BOX(obj)->value)
+#define SCM_BOX_SET(obj, val)    (SCM_BOX(obj)->value = (val))
+
+SCM_EXTERN ScmBox *Scm_MakeBox(ScmObj value);
 
 /*---------------------------------------------------------
  * CLASS
