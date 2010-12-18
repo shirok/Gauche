@@ -3980,7 +3980,11 @@
 ;;
 ;; Each IForm node handler generates the code by side-effects.  Besides
 ;; the code generation, each handler returns the maximum stack depth.
-
+;;
+;; The return value of pass4 entry is a <compiled-code>.
+;; The pass4 main entry may be called recursively from $LAMBDA node;
+;; the CLOSURE instruction takes <compiled-code> of the body of the lambda
+;; as an operand.
 
 ;; predicates
 (define-inline (normal-context? ctx)
@@ -3997,10 +4001,8 @@
 ;; context switch 
 (define-inline (normal-context prev-ctx)
   (if (bottom-context? prev-ctx) 'normal/bottom 'normal/top))
-
 (define-inline (stmt-context prev-ctx)
   (if (bottom-context? prev-ctx) 'stmt/bottom 'stmt/top))
-
 (define-inline (tail-context prev-ctx) 'tail)
 
 ;; Dispatch pass4 handler.
@@ -4010,7 +4012,7 @@
    iform ccb renv ctx))
 
 ;;
-;; Pass 4 main entry
+;; Pass 4 main entry.  Returns <compiled-code>
 ;;
 (define (pass4 iform ccb initial-renv ctx)
   (let1 maxstack (pass4/rec iform ccb initial-renv ctx)
@@ -4267,8 +4269,8 @@
           (compiled-code-set-label! ccb elselabel)
           (imax (pass4/rec ($if-else iform) ccb renv ctx) depth))])]
      [else
-      (let ((elselabel  (compiled-code-new-label ccb))
-            (mergelabel (compiled-code-new-label ccb)))
+      (let ([elselabel  (compiled-code-new-label ccb)]
+            [mergelabel (compiled-code-new-label ccb)])
         (if (memv code .branch-insn-extra-operand.)
           (compiled-code-emit0oi! ccb code (list arg0/opr elselabel) info)
           (compiled-code-emit1oi! ccb code arg0/opr elselabel info))
@@ -4296,13 +4298,13 @@
 ;;
 
 (define (pass4/$LET iform ccb renv ctx)
-  (let ((info ($*-src iform))
-        (lvars ($let-lvars iform))
-        (inits ($let-inits iform))
-        (body  ($let-body iform))
-        (merge-label (if (bottom-context? ctx)
+  (let ([info ($*-src iform)]
+        [lvars ($let-lvars iform)]
+        [inits ($let-inits iform)]
+        [body  ($let-body iform)]
+        [merge-label (if (bottom-context? ctx)
                        #f
-                       (compiled-code-new-label ccb))))
+                       (compiled-code-new-label ccb))])
     (let1 nlocals (length lvars)
       (case ($let-type iform)
         [(let)
@@ -4380,11 +4382,11 @@
                          (imax depth d)))))
 
 (define (pass4/$RECEIVE iform ccb renv ctx)
-  (let ((nargs  ($receive-reqargs iform))
-        (optarg ($receive-optarg iform))
-        (lvars  ($receive-lvars iform))
-        (expr   ($receive-expr iform))
-        (body   ($receive-body iform)))
+  (let ([nargs  ($receive-reqargs iform)]
+        [optarg ($receive-optarg iform)]
+        [lvars  ($receive-lvars iform)]
+        [expr   ($receive-expr iform)]
+        [body   ($receive-body iform)])
     (cond
      [(bottom-context? ctx)
       (let1 dinit (pass4/rec expr ccb renv (normal-context ctx))
@@ -4394,8 +4396,8 @@
             (compiled-code-emit0! ccb POP-LOCAL-ENV))
           (imax dinit (+ nargs optarg ENV_HEADER_SIZE dbody))))]
      [else
-      (let ((merge-label (compiled-code-new-label ccb))
-            (dinit (pass4/rec expr ccb renv (normal-context ctx))))
+      (let ([merge-label (compiled-code-new-label ccb)]
+            [dinit (pass4/rec expr ccb renv (normal-context ctx))])
         (compiled-code-emit2oi! ccb RECEIVE nargs optarg
                                 merge-label ($*-src iform))
         (let1 dbody (pass4/rec body ccb (cons lvars renv) 'tail)
@@ -4424,7 +4426,7 @@
            'tail)))
 
 (define (pass4/$LABEL iform ccb renv ctx)
-  (let ((label ($label-label iform)))
+  (let1 label ($label-label iform)
     ;; NB: $LABEL node in the PROC position of $CALL node is handled by $CALL.
     (cond
      [label (compiled-code-emit0oi! ccb JUMP label ($*-src iform))
@@ -4438,7 +4440,7 @@
      [(null? exprs) 0]
      [(null? (cdr exprs)) (pass4/rec (car exprs) ccb renv ctx)]
      [else
-      (let loop ((exprs exprs) (depth 0))
+      (let loop ([exprs exprs] [depth 0])
         (if (null? (cdr exprs))
           (imax (pass4/rec (car exprs) ccb renv ctx) depth)
           (loop (cdr exprs)
@@ -4513,8 +4515,8 @@
 ;; Local call
 ;;   PROC is always $LREF.
 (define (pass4/local-call iform ccb renv ctx)
-  (let* ((args ($call-args iform))
-         (nargs (length args)))
+  (let* ([args ($call-args iform)]
+         [nargs (length args)])
     (if (tail-context? ctx)
       (let1 dinit (pass4/prepare-args args #f ccb renv ctx)
         (pass4/rec ($call-proc iform) ccb renv 'normal/top)
@@ -4535,14 +4537,14 @@
 ;;   We also record the RENV to the current node, so that the jump calls
 ;;   to the inlined body can adjust env frame properly.
 (define (pass4/embed-call iform ccb renv ctx)
-  (let* ((proc ($call-proc iform))
-         (args ($call-args iform))
-         (nargs (length args))
-         (label ($lambda-body proc))
-         (newenv (if (= nargs 0)
+  (let* ([proc ($call-proc iform)]
+         [args ($call-args iform)]
+         [nargs (length args)]
+         [label ($lambda-body proc)]
+         [newenv (if (= nargs 0)
                    renv
-                   (cons ($lambda-lvars proc) renv)))
-         (merge-label (compiled-code-new-label ccb)))
+                   (cons ($lambda-lvars proc) renv))]
+         [merge-label (compiled-code-new-label ccb)])
     ($call-renv-set! iform (reverse renv))
     (unless (tail-context? ctx)
       (compiled-code-emit1o! ccb PRE-CALL nargs merge-label))
@@ -4564,12 +4566,12 @@
 ;;   node, whose proc slot has $label node.
 ;; NB: we're not sure whether we'll have non-tail jump call yet.
 (define (pass4/jump-call iform ccb renv ctx)
-  (let ((args ($call-args iform))
-        (embed-node ($call-proc iform)))
-    (let ((nargs (length args))
-          (label ($lambda-body ($call-proc embed-node)))
-          (renv-diff (list-remove-prefix ($call-renv embed-node)
-                                         (reverse renv))))
+  (let ([args ($call-args iform)]
+        [embed-node ($call-proc iform)])
+    (let ([nargs (length args)]
+          [label ($lambda-body ($call-proc embed-node))]
+          [renv-diff (list-remove-prefix ($call-renv embed-node)
+                                         (reverse renv))])
       (unless renv-diff
         (errorf "[internal error] $call[jump] appeared out of context of related $call[embed] (~s vs ~s)"
                 ($call-renv embed-node) renv))
@@ -4593,19 +4595,19 @@
 
 ;; Head-heavy call
 (define (pass4/head-heavy-call iform ccb renv ctx)
-  (let* ((args ($call-args iform))
-         (nargs (length args)))
+  (let* ([args ($call-args iform)]
+         [nargs (length args)])
     (if (tail-context? ctx)
-      (let* ((dproc (pass4/rec ($call-proc iform)
-                               ccb renv (normal-context ctx)))
-             (dinit (pass4/prepare-args args #f ccb renv 'normal/top)))
+      (let* ([dproc (pass4/rec ($call-proc iform)
+                               ccb renv (normal-context ctx))]
+             [dinit (pass4/prepare-args args #f ccb renv 'normal/top)])
         (compiled-code-emit1i! ccb TAIL-CALL nargs ($*-src iform))
         (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1o! ccb PRE-CALL nargs merge-label)
-        (let* ((dproc (pass4/rec ($call-proc iform)
-                                 ccb renv (normal-context ctx)))
-               (dinit (pass4/prepare-args args #f ccb renv 'normal/top)))
+        (let* ([dproc (pass4/rec ($call-proc iform)
+                                 ccb renv (normal-context ctx))]
+               [dinit (pass4/prepare-args args #f ccb renv 'normal/top)])
           (compiled-code-emit1i! ccb CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
           (+ CONT_FRAME_SIZE (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))))
@@ -4613,17 +4615,17 @@
 
 ;; Normal call
 (define (pass4/normal-call iform ccb renv ctx)
-  (let* ((args ($call-args iform))
-         (nargs (length args)))
+  (let* ([args ($call-args iform)]
+         [nargs (length args)])
     (if (tail-context? ctx)
-      (let* ((dinit (pass4/prepare-args args #f ccb renv ctx))
-             (dproc (pass4/rec ($call-proc iform) ccb renv 'normal/top)))
+      (let* ([dinit (pass4/prepare-args args #f ccb renv ctx)]
+             [dproc (pass4/rec ($call-proc iform) ccb renv 'normal/top)])
         (compiled-code-emit1i! ccb TAIL-CALL nargs ($*-src iform))
         (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1o! ccb PRE-CALL nargs merge-label)
-        (let* ((dinit (pass4/prepare-args args #f ccb renv ctx))
-               (dproc (pass4/rec ($call-proc iform) ccb renv 'normal/top)))
+        (let* ([dinit (pass4/prepare-args args #f ccb renv ctx)]
+               [dproc (pass4/rec ($call-proc iform) ccb renv 'normal/top)])
           (compiled-code-emit1i! ccb CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
           (+ CONT_FRAME_SIZE (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))))
@@ -4657,9 +4659,9 @@
 ;; depending on its arguments.
 
 (define (pass4/$ASM iform ccb renv ctx)
-  (let ((info ($*-src iform))
-        (insn ($asm-insn iform))
-        (args ($asm-args iform)))
+  (let ([info ($*-src iform)]
+        [insn ($asm-insn iform)]
+        [args ($asm-args iform)])
     (case/unquote
      (car insn)
      [(EQ)
@@ -4711,7 +4713,7 @@
          (pass4/emit-asm! ccb insn info)
          (imax d0 (+ d1 1))))]
     [else
-     (let loop ((args args) (depth 0) (cnt 0))
+     (let loop ([args args] [depth 0] [cnt 0])
        (cond [(null? (cdr args))
               (let1 d (pass4/rec (car args) ccb renv 'normal/top)
                 (pass4/emit-asm! ccb insn info)
@@ -4728,7 +4730,7 @@
     [(code arg0)      (compiled-code-emit1i! ccb code arg0 info)]
     [(code arg0 arg1) (compiled-code-emit2i! ccb code arg0 arg1 info)]))
 
-;; Utility macros.  Assumes ccb, renv, and ctx are visible.
+;; Utility macros.  Assumes ccb, renv and ctx are visible.
 
 (define-macro (pass4/builtin-twoargs info code param arg0 arg1)
   (let ((d0 (gensym))
@@ -4752,7 +4754,7 @@
 (define (%pass4/builtin-nargs ccb info code args ccb renv)
   (if (null? args)
     (begin (compiled-code-emit1i! ccb code 0 info) 0)
-    (let loop ((as args) (depth 0) (cnt 0))
+    (let loop ([as args] [depth 0] [cnt 0])
       (cond [(null? (cdr as))
              (let1 d (pass4/rec (car as) ccb renv 'normal/top)
                (compiled-code-emit1i! ccb code (length args) info)
@@ -4767,8 +4769,7 @@
                          CONS 0 ($*-arg0 iform) ($*-arg1 iform)))
 
 (define (pass4/$APPEND iform ccb renv ctx)
-  (pass4/builtin-twoargs ($*-src iform)
-                         APPEND 2 ($*-arg0 iform) ($*-arg1 iform)))
+  (pass4/builtin-twoargs ($*-src iform) APPEND 2 ($*-arg0 iform) ($*-arg1 iform)))
 
 (define (pass4/$LIST iform ccb renv ctx)
   (pass4/builtin-nargs ($*-src iform) LIST ($*-args iform)))
@@ -4783,16 +4784,13 @@
   (pass4/builtin-onearg ($*-src iform) LIST2VEC 0 ($*-arg0 iform)))
 
 (define (pass4/$MEMV iform ccb renv ctx)
-  (pass4/builtin-twoargs ($*-src iform)
-                         MEMV 0 ($*-arg0 iform) ($*-arg1 iform)))
+  (pass4/builtin-twoargs ($*-src iform) MEMV 0 ($*-arg0 iform) ($*-arg1 iform)))
 
 (define (pass4/$EQ? iform ccb renv ctx)
-  (pass4/asm-eq ($*-src iform) ($*-arg0 iform) ($*-arg1 iform)
-                ccb renv ctx))
+  (pass4/asm-eq ($*-src iform) ($*-arg0 iform) ($*-arg1 iform) ccb renv ctx))
 
 (define (pass4/$EQV? iform ccb renv ctx)
-  (pass4/asm-eqv ($*-src iform) ($*-arg0 iform) ($*-arg1 iform)
-                 ccb renv ctx))
+  (pass4/asm-eqv ($*-src iform) ($*-arg0 iform) ($*-arg1 iform) ccb renv ctx))
 
 ;; handlers to emit specialized instruction when applicable
 
@@ -4916,10 +4914,10 @@
       (when (and lvars (> (lvar-set-count (car lvars)) 0))
         (compiled-code-emit0! ccb BOX))
       (compiled-code-emit0! ccb PUSH)
-      (let loop ((args  (cdr args))
-                 (lvars (and lvars (cdr lvars)))
-                 (depth (+ d 1))
-                 (cnt  1))
+      (let loop ([args  (cdr args)]
+                 [lvars (and lvars (cdr lvars))]
+                 [depth (+ d 1)]
+                 [cnt  1])
         (if (null? args)
           depth
           (let1 d (pass4/rec (car args) ccb renv 'normal/top)
