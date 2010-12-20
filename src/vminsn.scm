@@ -455,14 +455,16 @@
          NEXT))
 
 ;; LOCAL-ENV-CLOSURES(nlocals) <codelist>
-;;  Used for letrec.
+;;  A special instruction for efficient handling of letrec.
 ;;  Similar to LOCAL-ENV, but this doesn't use the current arg frame.
-;;  The operand contains a literal list of compiled codes.  This instruction
-;;  creates a frame of NLOCALS size, then creates closures
-;;  with the new environment and the given compiled codes, and fills the
-;;  new frame with the created closures.   CODELIST can have 'holes', i.e.
-;;  if it has #<undef> instead of a compiled code, the corresponding frame entry
-;;  is left undefined.
+;;  The operand contains a literal list of <compiled-code>s or <closure>s.
+;;  This instruction creates a frame of NLOCALS size and initializes each
+;;  slot with each element of <codelist>.   If the element is a
+;;  <compiled-code>, a new closure is created with the environment
+;;  including the frame just created.   If the element is a <closure>,
+;;  it is just used (such <closure> does not refer to the outside environment).
+;;  CODELIST can have 'holes', i.e. if it has #<undef>,
+;;  the corresponding frame entry is left undefined.
 ;;  This instruction also leaves the last closure in VAL0.
 (define-insn LOCAL-ENV-CLOSURES 1 codes #f
   (let* ([nlocals::int (SCM_VM_INSN_ARG code)]
@@ -475,9 +477,10 @@
     (set! e (get_env vm))
     (set! z (- (cast ScmObj* e) nlocals))
     (dolist [c cp]
-      (if (SCM_COMPILED_CODE_P c)
-        (set! (* (post++ z)) (set! clo (Scm_MakeClosure c e)))
-        (set! (* (post++ z)) c)))
+      (cond [(SCM_COMPILED_CODE_P c)
+             (set! (* (post++ z)) (set! clo (Scm_MakeClosure c e)))]
+            [(SCM_PROCEDUREP c) (set! (* (post++ z)) c) (set! clo c)]
+            [else (set! (* (post++ z)) c)]))
     ($result clo)))
 
 ;; POP-LOCAL-ENV
@@ -600,7 +603,7 @@
 ;; Compare LREF(n,m) and VAL0 and branch.  This is not a simple combination
 ;; of LREF + BNLT etc. (which would compare stack top and LREF).  These insns
 ;; save one stack operation.  The compiler recognizes the pattern and
-;; emits these.  See pass4/if-numcmp and pass4/if-numeq.
+;; emits these.  See pass5/if-numcmp and pass5/if-numeq.
 (define-insn LREF-VAL0-BNUMNE 2 addr #f ($arg-source lref ($insn-body BNUMNE))) 
 (define-insn LREF-VAL0-BNLT 2 addr #f ($arg-source lref ($insn-body BNLT)))
 (define-insn LREF-VAL0-BNLE 2 addr #f ($arg-source lref ($insn-body BNLE)))
@@ -985,7 +988,7 @@
 (define-insn TAIL-APPLY  1 none #f
   ;; Inlined apply.  Assumes the call is at the tail position.
   ;; NB: As of 0.9, all 'apply' call is expanded into this instruction.
-  ;; If the code is not at the tail position, compiler pass4 inserts
+  ;; If the code is not at the tail position, compiler pass5 inserts
   ;; PRE-CALL instruction so that the call of apply becomes a tail call.
   ;;
   ;; Here, the stack should have the following layout.

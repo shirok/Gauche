@@ -1,3 +1,11 @@
+2010-12-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm: Renamed pass4 -> pass5, and created pass4 for
+	  free variable scanning for lambda lifting.  free-lvars procedure
+	  is removed.  (The transition isn't completed yet.)
+	* src/vminsn.scm (LOCAL-ENV-CLOSURES): Allow literal closure
+	  to appear in the operand.
+
 2010-12-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass3/optimize-call): Fixed an optimizer bug
