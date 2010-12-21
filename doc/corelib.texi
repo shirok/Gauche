@@ -17117,7 +17117,7 @@ analysis, use Mersenne Twister RNG in @code{math.mt-random}
 module (@xref{Mersenne-Twister random number generator}).
 @c JP
 これらの関数の意図は、乱数ジェネレータ(RNG; random number generator)の
-品質や速度を気にしないアプリケーションに、完成された便利なRNGを提供することです。
+品質や速度を気にしないアプリケーションに、簡便なRNGを提供することです。
 本格的な統計分析には、@code{math.mt-random}モジュールのMersenne Twister RNGを
 使って下さい(@ref{Mersenne-Twister random number generator}参照)。
 @c COMMON
