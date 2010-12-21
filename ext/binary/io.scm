@@ -12,8 +12,9 @@
 ;; employments.
 ;;          -- from "Gulliver's Travels" by Jonathan Swift
 
-;; [SK]: 
-;;
+;; This module was originally written by Alex Shinn, in pure Scheme.
+;; Shiro Kawai rewrote primitive routines in C for the better performance,
+;; renamed them for shorter names, and added uvector access routines.
 
 (define-module binary.io
   (use gauche.uvector)
@@ -60,8 +61,9 @@
 
 (dynamic-load "binary--io")
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; config
+;;;
+;;; config
+;;;
 
 (define-constant *bit-size* 2)   ;; hey, you never know :)
 (define-constant *byte-size* 8)
@@ -69,8 +71,9 @@
 (define-constant *byte-mask* (- *byte-magnitude* 1))
 (define-constant *byte-right-shift* (* -1 *byte-size*))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; basic reading
+;;;
+;;; basic reading
+;;;
 
 ;; mind-numblingly slow, consider a uvector approach but it doesn't
 ;; handle endianess
@@ -118,8 +121,9 @@
     [(8) (read-s64 port endian)]
     [else (uint->sint (read-uint size port endian) size)]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; basic writing
+;;;
+;;; basic writing
+;;;
 
 (define (write-uint size int :optional
                     (port (current-output-port))
@@ -151,9 +155,9 @@
     [(8) (write-s64 int port endian)]
     [else (write-uint size (sint->uint int size) port endian)]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; compatibility
-;;
+;;;
+;;; compatibility
+;;;
 
 ;; These are used in binary.pack for the (unofficial) features to
 ;; read/write integers in "native" width of C system on the platform.
@@ -196,8 +200,9 @@
 (define write-binary-float  write-f32)
 (define write-binary-double write-f64)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; bignum encodings -- Basic Encoding Rules (BER) from X.209
+;;;
+;;; bignum encodings -- Basic Encoding Rules (BER) from X.209
+;;;
 
 ;; A BER compressed integer is an unsigned integer in base 128, most
 ;; significant digit first, where the high bit is set on all but the
