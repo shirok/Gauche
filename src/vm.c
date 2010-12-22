@@ -157,7 +157,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->result = SCM_UNDEFINED;
     v->resultException = SCM_UNDEFINED;
     v->module = proto ? proto->module : Scm_SchemeModule();
-    v->cstack = proto ? proto->cstack : NULL;
+    v->cstack = NULL;
     
     v->curin  = proto? proto->curin  : SCM_PORT(Scm_Stdin());
     v->curout = proto? proto->curout : SCM_PORT(Scm_Stdout());

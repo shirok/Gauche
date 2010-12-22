@@ -1,3 +1,8 @@
+2010-12-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_NewVM): Fixed not to copy vm->cstack from proto
+	  vm; they may contain a bogus stack value from a different thread.
+
 2010-12-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/util/queue.scm (list->queue): Fixed a bug that prevented
