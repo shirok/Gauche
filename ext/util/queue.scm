@@ -257,7 +257,7 @@
            (Q_LENGTH q) len)))
  )
 
-(define (list->queue lis :optional (class <queue>) :rest (initargs '()))
+(define (list->queue lis :optional (class <queue>) :rest initargs)
   (rlet1 q (apply make class initargs)
     (%queue-set-content! q (list-copy lis))))
 

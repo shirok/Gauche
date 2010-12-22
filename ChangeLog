@@ -1,3 +1,10 @@
+2010-12-21  Shiro Kawai  <shiro@acm.org>
+
+	* ext/util/queue.scm (list->queue): Fixed a bug that prevented
+	  list->queue from working for any arguments.  :rest arguments
+	  shouldn't have default value, since its default value is ()
+	  by definition.  (But it should be reported as syntax error.)
+
 2010-12-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm: Renamed pass4 -> pass5, and created pass4 for
