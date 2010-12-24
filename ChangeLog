@@ -1,5 +1,9 @@
 2010-12-24  Shiro Kawai  <shiro@acm.org>
 
+	* ext/binary/io.scm, ext/binary/binarylib.scm: Experimentally
+	  adding foreign struct infrastructure.  API is still fluid,
+	  so do not count on the current state.
+
 	* lib/gauche/record.scm (compute-get-n-set): Fixed a bug that
 	  the slot index was calculated incorrectly when inheritance was
 	  used.  It didn't affect if you only uses record accessors, but

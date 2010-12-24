@@ -18,8 +18,9 @@
 
 (define-module binary.io
   (use gauche.uvector)
-  (use srfi-1)  ;; list library
-  (use srfi-13) ;; string library
+  (use gauche.record)
+  (use srfi-1)
+  (use srfi-13)
   (export read-uint read-u8 read-u16 read-u32 read-u64
           read-sint read-s8 read-s16 read-s32 read-s64
           read-ber-integer read-f16 read-f32 read-f64
@@ -36,6 +37,16 @@
           put-u16be! put-u16le! put-u32be! put-u32le! put-u64be! put-u64le!
           put-s16be! put-s16le! put-s32be! put-s32le! put-s64be! put-s64le!
           put-f16be! put-f16le! put-f32be! put-f32le! put-f64be! put-f64le!
+
+          ;; ftype stuff
+          ftype:schar ftype:uchar ftype:short ftype:ushort ftype:int ftype:uint
+          ftype:long ftype:ulong ftype:longlong ftype:ulonglong
+          ftype:float ftype:double
+          
+          make-fstruct-type make-fstruct fstruct-copy
+
+          get-fobject put-fobject!
+          fstruct-ref fstruct-set! fstruct-ref/uv fstruct-set!/uv
           
           ;; old names
           read-binary-uint
@@ -233,4 +244,277 @@
                (loop (ash n -7)) ;; write high bytes first
                (write-u8 (logior (logand n #b01111111) #b10000000))])))
     (write-u8 final)))
+
+;;;
+;;;  Foreign types (EXPERIMENTAL)
+;;;
+
+;; Metainformation of foreign type.
+(define-record-type ftype-descriptor #t #t
+  name              ; for diagnostics
+  size              ; size in bytes
+  alignment         ; natrual alignment of this type.  can be overridden.
+  endian            ; #f to obey context.  symbol to enfoce specific endian.
+  get               ; uvector pos endian -> value       ; pos is aligned
+  put!              ; uvector pos value endian -> void  ; pos is aligned
+  )
+
+(define-record-type (fstruct-descriptor ftype-descriptor)
+  %make-fstruct-descriptor #t
+  slots             ; a list of assoc list of name and fstruct-slot.
+  )
+
+;; NB: this may not be needed if we have standard printer for structs.
+(define-method write-object ((ftd ftype-descriptor) port)
+  (format port "#<ftype-descriptor ~a>" (ftype-descriptor-name ftd)))
+
+(define-record-type fstruct-slot #t #t
+  name              ; slot name
+  type              ; ftd, fstruct-bitfields or fstruct-array
+  position          ; byte offset
+  )
+
+;; Bitfields are aggregated to this type.
+(define-record-type fstruct-bitfields #t #t
+  width             ; total # of octets (including padding) used
+  fields            ; list of (name ftd bit-width)
+  )
+
+;; Array
+(define-record-type fstruct-array #t #t
+  length            ; # of entries.
+  element-type      ; ftd, fstruct-bitfields or fstruct-array
+  )
+
+;; An instance of fstruct.  
+(define-record-type fstruct %make-fstruct fstruct?
+  type              ; fstruct-type-descrptor
+  storage           ; u8vector.  NB: The storage may be shared.
+  offset            ; byte offset within <storage>
+  endian            ; overridden endian, or #f.
+  )
+
+;; NB: this may not be needed if we have standard printer for structs.
+(define-method write-object ((fst fstruct) port)
+  (format port "#<fstruct ~a>"
+          (ftype-descriptor-name (fstruct-type fst))))
+
+;; Primitive ftypes.
+(define *%primtype-info* (%primitive-type-info))
+(define (%primtype-size  prim-name) (cadr (assq prim-name *%primtype-info*)))
+(define (%primtype-align prim-name) (caddr (assq prim-name *%primtype-info*)))
+
+(define (%primtype name get put!)
+  (let* ([sname (x->string name)]
+         [prim-name (cond [(string-prefix? "u" sname)
+                           (string->symbol (string-drop sname 1))]
+                          [(eq? 'schar name) 'char] ;special case
+                          [else name])])
+    (make-ftype-descriptor name
+                           (%primtype-size prim-name)
+                           (%primtype-align prim-name)
+                           #f get put!)))
+
+(define (%intproc name n)
+  (let1 procs  `((1  ,get-s8  ,get-u8  ,put-s8!  ,put-u8!)
+                 (2 ,get-s16 ,get-u16 ,put-s16! ,put-u16!)
+                 (4 ,get-s32 ,get-u32 ,put-s32! ,put-u32!)
+                 (8 ,get-s64 ,get-u64 ,put-s64! ,put-u64!))
+    (list-ref (assq (%primtype-size name) procs) n)))
+
+(define get-schar     get-s8)
+(define get-uchar     get-u8)
+(define get-short     (%intproc 'short 1))
+(define get-ushort    (%intproc 'short 2))
+(define get-int       (%intproc 'int 1))
+(define get-uint      (%intproc 'int 2))
+(define get-long      (%intproc 'long 1))
+(define get-ulong     (%intproc 'long 2))
+(define get-longlong  (%intproc 'longlong 1))
+(define get-ulonglong (%intproc 'longlong 2))
+(define get-float     get-f32)
+(define get-double    get-f64)
+
+(define put-schar!    put-s8!)
+(define put-uchar!    put-u8!)
+(define put-short!    (%intproc 'short 3))
+(define put-ushort!   (%intproc 'short 4))
+(define put-int!      (%intproc 'int 3))
+(define put-uint!     (%intproc 'int 4))
+(define put-long!     (%intproc 'long 3))
+(define put-ulong!    (%intproc 'long 4))
+(define put-longlong! (%intproc 'longlong 3))
+(define put-ulonglong!(%intproc 'longlong 4))
+(define put-float!    put-f32!)
+(define put-double!   put-f64!)
+
+(define ftype:schar     (%primtype 'schar     get-schar     put-schar!))
+(define ftype:uchar     (%primtype 'uchar     get-uchar     put-uchar!))
+(define ftype:short     (%primtype 'short     get-short     put-short!))
+(define ftype:ushort    (%primtype 'ushort    get-ushort    put-ushort!))
+(define ftype:int       (%primtype 'int       get-int       put-int!))
+(define ftype:uint      (%primtype 'uint      get-uint      put-uint!))
+(define ftype:long      (%primtype 'long      get-long      put-long!))
+(define ftype:ulong     (%primtype 'ulong     get-ulong     put-ulong!))
+(define ftype:longlong  (%primtype 'longlong  get-longlong  put-longlong!))
+(define ftype:ulonglong (%primtype 'ulonglong get-ulonglong put-ulonglong!))
+(define ftype:float     (%primtype 'float     get-float     put-float!))
+(define ftype:double    (%primtype 'double    get-double    put-double!))
+(define ftype:int8      (%primtype 'int8      get-s8        put-s8!))
+(define ftype:uint8     (%primtype 'uint8     get-u8        put-u8!))
+(define ftype:int16     (%primtype 'int16     get-s16       put-s16!))
+(define ftype:uint16    (%primtype 'uint16    get-u16       put-u16!))
+(define ftype:int32     (%primtype 'int32     get-s32       put-s32!))
+(define ftype:uint32    (%primtype 'uint32    get-u32       put-u32!))
+(define ftype:int64     (%primtype 'int64     get-s64       put-s64!))
+(define ftype:uint64    (%primtype 'uint64    get-u64       put-u64!))
+
+;;
+;; Utilities
+;;
+
+(define-inline (%round val align)       ;assumes align is power of 2.
+  (if (or (= val 0) (= align 0))
+    val
+    (logand (+ val (- align 1)) (lognot (- align 1)))))
+
+(define (%check-size ftype uvector pos)
+  (when (< (- (uvector-size uvector) pos) (ftype-descriptor-size ftype))
+    (errorf "source uvector too short to extract fstruct of type ~s" ftype)))
+
+(define (%adjust-pos ftype uvector pos alignment)
+  (let1 align (or alignment (ftype-descriptor-alignment ftype))
+    (rlet1 pos (%round pos align)
+      (%check-size ftype uvector pos))))
+
+(define (%get-slot-desc ftd slot)
+  (let1 s (assq slot (fstruct-descriptor-slots ftd))
+    (unless s (errorf "fstruct type ~a does't have such slot: ~s" ftd slot))
+    (cdr s)))
+
+;;
+;; fstruct building blocks
+;;
+
+;; slots :: ((name type) ...)
+(define (make-fstruct-type name slots endian alignment)
+  (receive (size slot-descriptors) (compute-fstruct-slots slots alignment)
+    (rec ftype
+      (%make-fstruct-descriptor name size
+                                (or alignment (compute-fstruct-alignment slots))
+                                endian
+                                (rec (fstruct-get uv pos endian)
+                                  (%check-size ftype uv pos)
+                                  (%make-fstruct ftype uv pos endian))
+                                (rec (fstruct-put! uv pos val endian)
+                                  (%check-size ftype uv pos)
+                                  (let1 off (fstruct-offset val)
+                                    (uvector-copy! uv pos
+                                                   (fstruct-storage val)
+                                                   off
+                                                   (+ off size))))
+                                slot-descriptors))))
+
+(define (compute-fstruct-alignment slots)
+  (apply max (map (^p (ftype-descriptor-alignment (cadr p))) slots)))
+
+(define (compute-fstruct-slots slots alignment)
+  (let loop ([slots slots]
+             [pos 0]
+             [descs '()])
+    (if (null? slots)
+      (values pos (reverse descs))
+      (let* ([name (caar slots)]
+             [type (cadar slots)]
+             [align (if alignment
+                      (min alignment (ftype-descriptor-alignment type))
+                      (ftype-descriptor-alignment type))])
+        (loop (cdr slots)
+              (+ (%round pos align) (ftype-descriptor-size type))
+              (acons name (make-fstruct-slot name type pos) descs))))))
+
+;;
+;; Generic accessors.
+;;
+
+(define (get-fobject ftype uvector pos :optional (endian #f) (alignment #f))
+  (let1 pos (%adjust-pos ftype uvector pos alignment)
+    ((ftype-descriptor-get ftype)
+     uvector pos (or endian (ftype-descriptor-endian ftype)))))
+
+(define (put-fobject! ftype uvector pos val
+                      :optional (endian #f) (alignment #f))
+  (let1 pos (%adjust-pos ftype uvector pos alignment)
+    ((ftype-descriptor-put! ftype)
+     uvector pos val (or endian (ftype-descriptor-endian ftype)))))
+
+;; NB: support endian switch
+(define (fstruct-ref/uv ftd slot uvector pos)
+  (let1 s (%get-slot-desc ftd slot)
+    ((ftype-descriptor-get (fstruct-slot-type s))
+     uvector (+ pos (fstruct-slot-position s)))))
+
+(define (fstruct-set!/uv ftd slot uvector pos val)
+  (let1 s (%get-slot-desc ftd slot)
+    ((ftype-descriptor-put! (fstruct-slot-type s))
+     uvector (+ pos (fstruct-slot-position s)) val)))
+
+(define (fstruct-ref fstruct slot)
+  (fstruct-ref/uv (fstruct-type fstruct) slot
+                  (fstruct-storage fstruct) (fstruct-offset fstruct)))
+
+(define (fstruct-set! fstruct slot val)
+  (fstruct-ref/uv (fstruct-type fstruct) slot
+                  (fstruct-storage fstruct) val (fstruct-offset fstruct)))
+
+(define (make-fstruct ftype . initargs)
+  (let1 v (make-u8vector (ftype-descriptor-size ftype) 0)
+    (let loop ([args initargs])
+      (cond [(null? args) (%make-fstruct ftype v 0 #f)] ;TODO: endian?
+            [(null? (cdr args)) (error "odd number of initargs:" initargs)]
+            [(not (keyword? (car args)))
+             (error "keyword required for initarg, but got:" (car args))]
+            [else (let1 slot (string->symbol (keyword->string (car args)))
+                    (fstruct-set!/uv ftype slot v 0 (cadr args)))
+                  (loop (cddr args))]))))
+
+(define (fstruct-copy fstruct)
+  (let ([type (fstruct-type fstruct)]
+        [off (fstruct-offset fstruct)])
+    (%make-fstruct type
+                   (u8vector-copy (fstruct-storage fstruct)
+                                  off (+ off (ftype-descriptor-size type)))
+                   off
+                   (fstruct-endian fstruct))))
+
+;; TODO: fstruct-copy!
+;;  Should it be a bytewise copy, or should adjust endian, padding etc?
+;;  Should it check types, or just blindly copy the vector?
+
+
+;;
+;; High-level macro
+;;
+;; define-fstruct-type name ctor-spec (slot-spec ...) options ...
+;;   Creates fstruct-descriptor, and defines the following procedures.
+;;
+;;  Constructor
+;;
+;;   make-NAME . initargs => fstruct
+;;
+;;  Basic I/O
+;;
+;;   get-NAME uvector pos :optional endian => fstruct
+;;   put-NAME! uvector pos fstruct :optional endian
+;;   read-NAME :optional port endian => fstruct
+;;   write-NAME fstruct :optional port endian
+;;   read-NAME!/uv uvector pos :optional port endian => nbytes
+;;   write-NAME/uv uvector pos :optional port endian
+;;
+;;  Accessors and modifiers
+;;
+;;   NAME-SLOT fstruct  => object
+;;   NAME-SLOT-set! fstruct val => void
+;;   NAME-SLOT/uv ftype uvector pos :optional endian => object
+;;   NAME-SLOT-set!/uv ftype uvector pos val :optional endian
 

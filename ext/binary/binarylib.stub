@@ -36,6 +36,10 @@
 
 (define-type <uvector> "ScmUVector*")
 
+;;;
+;;; Primitive accessors
+;;;
+
 (define-cproc read-u8
   (:optional (port::<input-port>? #f) (endian::<symbol>? #f))
   Scm_ReadBinaryU8)
@@ -259,6 +263,78 @@
   (Scm_PutBinaryF64 v off val (SCM_SYMBOL SCM_SYM_BIG_ENDIAN)))
 (define-cproc put-f64le! (v::<uvector> off::<uint> val) ::<void>
   (Scm_PutBinaryF64 v off val (SCM_SYMBOL SCM_SYM_LITTLE_ENDIAN)))
+
+;;;
+;;; Machine-dependent binary parameters
+;;;
+
+"struct { char b; short s; }    short_align;"
+"struct { char b; int s; }      int_align;"
+"struct { char b; long s; }     long_align;"
+"struct { char b; float s; }    float_align;"
+"struct { char b; double s; }   double_align;"
+"struct { char b; int8_t s; }   int8_align;"
+"struct { char b; int16_t s; }  int16_align;"
+"struct { char b; ScmInt32 s; } int32_align;"
+"struct { char b; ScmInt64 s; } int64_align;"
+
+"#ifdef HAVE_LONG_LONG"
+"typedef long long long_long_;"
+"struct { char b; long long s; } long_long_align;"
+"#else"
+"typedef long long_long_;"
+"struct { char b; long s; }      long_long_align;"
+"#endif"
+
+"#define alignof(str) ((intptr_t)&((str).s) - (intptr_t)&((str).b))"
+
+;; Workaround CiSE defects on sizeof(type) where type is a reserved word.
+"typedef char   char_;"
+"typedef short  short_;"
+"typedef int    int_;"
+"typedef long   long_;"
+"typedef float  float_;"
+"typedef double double_;"
+
+(define-cproc %primitive-type-info ()
+  (result
+   (Scm_List
+    (SCM_LIST3 'char
+               (SCM_MAKE_INT (sizeof char_))
+               (SCM_MAKE_INT 1))
+    (SCM_LIST3 'short
+               (SCM_MAKE_INT (sizeof short_))
+               (SCM_MAKE_INT (alignof short_align)))
+    (SCM_LIST3 'int
+               (SCM_MAKE_INT (sizeof int_))
+               (SCM_MAKE_INT (alignof int_align)))
+    (SCM_LIST3 'long
+               (SCM_MAKE_INT (sizeof long_))
+               (SCM_MAKE_INT (alignof long_align)))
+    (SCM_LIST3 'longlong
+               (SCM_MAKE_INT (sizeof long_long_))
+               (SCM_MAKE_INT (alignof long_long_align)))
+    (SCM_LIST3 'float
+               (SCM_MAKE_INT (sizeof float_))
+               (SCM_MAKE_INT (alignof float_align)))
+    (SCM_LIST3 'double
+               (SCM_MAKE_INT (sizeof double_))
+               (SCM_MAKE_INT (alignof double_align)))
+    (SCM_LIST3 'int8
+               (SCM_MAKE_INT (sizeof int8_t))
+               (SCM_MAKE_INT (alignof int8_align)))
+    (SCM_LIST3 'int16
+               (SCM_MAKE_INT (sizeof int16_t))
+               (SCM_MAKE_INT (alignof int16_align)))
+    (SCM_LIST3 'int32
+               (SCM_MAKE_INT (sizeof ScmInt32))
+               (SCM_MAKE_INT (alignof int32_align)))
+    (SCM_LIST3 'int64
+               (SCM_MAKE_INT (sizeof ScmInt64))
+               (SCM_MAKE_INT (alignof int64_align)))
+    NULL)))
+            
+
 
 ;; Local variables:
 ;; mode: scheme
