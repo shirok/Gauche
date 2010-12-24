@@ -110,7 +110,11 @@
         '() (reverse (slot-ref class'cpl))))
 
 (define-method compute-get-n-set ((class <record-meta>) slot)
-  (let1 s (compute-slot-accessor class slot (next-method))
+  ;; trick: we let (next-method) adjust the instance slot count, but
+  ;; we uses :index option of the slot to determine the actual slot number.
+  (next-method)
+  (let1 s
+      (compute-slot-accessor class slot (slot-definition-option slot :index))
     (if (slot-definition-option slot :immutable #f)
       `(,(^o (slot-ref-using-accessor o s))
         ,(^(o v) (errorf "slot ~a of ~a is immutable"

@@ -1,3 +1,12 @@
+2010-12-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/record.scm (compute-get-n-set): Fixed a bug that
+	  the slot index was calculated incorrectly when inheritance was
+	  used.  It didn't affect if you only uses record accessors, but
+	  it became visible when you tried to access the record with
+	  slot-ref and slot-set!.   See the added tests in
+	  ext/gauche/test-record.scm.
+
 2010-12-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvlib.stub.tmpl (uvector-copy!): Added generic copy

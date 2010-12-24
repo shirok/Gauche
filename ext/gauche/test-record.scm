@@ -233,6 +233,17 @@
        (let ((k (xkons 2 1)))
          (cons (xpare-head k) (xpare-tail k))))
 
+;; record with parents.
+(define-record-type (triple pare) %triple #t z)
+
+(test* "triple" '(1 2 3)
+       (let1 t (%triple 1 2 3)
+         (list (kar t) (kdr t) (triple-z t))))
+
+(test* "triple" '(1 2 3) ;this failed in 0.9.1 because of a bug.
+       (let1 t (%triple 1 2 3)
+         (map (cut slot-ref t <>) '(x y z))))
+
 ;;--------------------------------------------------------------------
 (test-section "pseudo record")
 
