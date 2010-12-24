@@ -288,6 +288,7 @@
 #undef HAVE_UINT32_T
 #undef HAVE_UINT64_T
 #undef HAVE_LONG_DOUBLE
+#undef HAVE_LONG_LONG
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

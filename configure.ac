@@ -363,7 +363,7 @@ AC_STRUCT_TM
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(off_t)
-AC_CHECK_TYPES([uint16_t, int32_t, uint32_t, int64_t, uint64_t, long double])
+AC_CHECK_TYPES([uint16_t, int32_t, uint32_t, int64_t, uint64_t, long long, long double])
 AC_CHECK_TYPES([struct timespec])
 
 if test "$GAUCHE_THREAD_TYPE" = pthreads; then
