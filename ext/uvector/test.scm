@@ -379,6 +379,19 @@
 (uvcopy!-newapi-test "f32vector-copy! newapi" f32vector f32vector-copy!)
 (uvcopy!-newapi-test "f64vector-copy! newapi" f64vector f64vector-copy!)
 
+(test* "uvector-copy! (generic)" '#u16(0 0 1 2 65535 0)
+       (rlet1 v (make-u16vector 6 0)
+         (uvector-copy! v 2 '#s16(1 2 -1))))
+(test* "uvector-copy! (generic, start)" '#u16(0 0 1 2 65535 0)
+       (rlet1 v (make-u16vector 6 0)
+         (uvector-copy! v 2 '#s16(0 1 2 -1) 1)))
+(test* "uvector-copy! (generic, start+end)" '#u16(0 0 1 2 65535 0)
+       (rlet1 v (make-u16vector 6 0)
+         (uvector-copy! v 2 '#s16(0 1 2 -1 -2) 1 4)))
+(test* "uvector-copy! (generic, different size)" '#u16(0 0 257 0)
+       (rlet1 v (make-u16vector 4 0)
+         (uvector-copy! v 2 '#u8(1 1))))
+
 ;;-------------------------------------------------------------------
 (test-section "swapping bytes")
 

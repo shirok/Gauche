@@ -1,5 +1,8 @@
 2010-12-23  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvlib.stub.tmpl (uvector-copy!): Added generic copy
+	  procedure.
+
 	* configure.ac, src/gauche/config.h.in (HAVE_LONG_LONG): Added check
 	  for long long.
 

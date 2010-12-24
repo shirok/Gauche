@@ -13044,6 +13044,39 @@ various operations on the homogeneous vectors.
 @end example
 
 
+@defun uvector-copy! target tstart source :optional sstart send
+@c EN
+This is a generic version of @code{@i{TAG}vector-copy!}.  
+The destination @var{target} and the source @var{source} can be
+any type of uniform vectors, and they don't need to match.
+The copy is done bit-by-bit.  So if you copy to a different type
+of uvector, the result depends on how the numbers are represented
+internally.  This is mainly to manipulate binary data.
+
+@var{Tstart} is interpreted according to the type of @var{target},
+and @var{sstart} and @var{send} are interpreted according to the
+type of @var{source}.
+@c JP
+これは@code{@i{TAG}vector-copy!}の汎用バージョンです。
+コピー元@var{source}とコピー先@var{target}はユニフォームベクタであれば
+どの型でも許され、また両者の型が異なっていても構いません。
+ビット表現がそのままコピーされます。従って異なる型のユニフォームベクタ間で
+コピーした場合は、結果は数値の内部表現に依存します。
+そのような用法は、バイナリデータを扱う時には便利でしょう。
+
+@var{tstart}は@var{target}の型によって解釈され、
+@var{sstart}と@var{send}は@var{source}の型によって解釈されます。
+@c COMMON
+
+@example
+(rlet1 v (make-u8vector 6 0)
+  (uvector-copy! v 1 '#u32(0 #x01020304 0) 1 2))
+ @result{} #u8(0 1 2 3 4 0) or #u8(0 4 3 2 1 0)
+@end example
+@end defun
+
+
+
 @node Uvector conversion operations, Uvector numeric operations, Uvector basic operations, Uniform vectors
 @subsection Uvector conversion operations
 @c NODE ユニフォームベクタの変換

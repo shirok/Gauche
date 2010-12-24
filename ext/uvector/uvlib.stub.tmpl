@@ -226,6 +226,21 @@
                                      (endian::<symbol>? #f))
   Scm_WriteBlock)
 
+(define-cproc uvector-copy! (dest::<uvector> dstart::<int> src::<uvector>
+                                             :optional (sstart::<int> 0)
+                                                       (send::<int> -1))
+  ::<void>
+  (SCM_UVECTOR_CHECK_MUTABLE dest)
+  (SCM_CHECK_START_END sstart send (SCM_UVECTOR_SIZE src))
+  (let* ([deltsize::int (Scm_UVectorElementSize (Scm_ClassOf (SCM_OBJ dest)))]
+         [doff::int (* dstart deltsize)]
+         [seltsize::int (Scm_UVectorElementSize (Scm_ClassOf (SCM_OBJ src)))]
+         [soff::int (* sstart seltsize)]
+         [size::int (- (* send seltsize) soff)])
+    (memmove (+ (cast char* (SCM_UVECTOR_ELEMENTS dest)) doff)
+             (+ (cast (const char*) (SCM_UVECTOR_ELEMENTS src)) soff)
+             size)))
+
 ;;; String operations 
 
 (define-cfn string->bytevector
