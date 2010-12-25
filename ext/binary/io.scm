@@ -1,4 +1,4 @@
-;;;; binary.io -- serializing binary data
+;;; binary.io -- serializing binary data
 
 ;;; Created:    <2003-01-20 23:25:06 foof>
 ;;; Time-stamp: <2003-01-29 20:53:45 foof>
@@ -46,6 +46,7 @@
           make-fstruct-type make-fstruct fstruct-copy
 
           get-fobject put-fobject!
+          read-fobject!/uv read-fobject write-fobject/uv write-fobject
           fstruct-ref fstruct-set! fstruct-ref/uv fstruct-set!/uv
           
           ;; old names
@@ -378,14 +379,19 @@
     val
     (logand (+ val (- align 1)) (lognot (- align 1)))))
 
-(define (%check-size ftype uvector pos)
+(define (%check-size ftype uvector pos which)
   (when (< (- (uvector-size uvector) pos) (ftype-descriptor-size ftype))
-    (errorf "source uvector too short to extract fstruct of type ~s" ftype)))
+    (case which
+      [(src)  (errorf "source uvector too short to extract \
+                       fstruct of type ~s" ftype)]
+      [(dest) (errorf "destination uvector too small to put \
+                       fstruct of type ~s" ftype)]
+      [else   (error "[internal] invalid which argument:" which)])))
 
 (define (%adjust-pos ftype uvector pos alignment)
   (let1 align (or alignment (ftype-descriptor-alignment ftype))
     (rlet1 pos (%round pos align)
-      (%check-size ftype uvector pos))))
+      (%check-size ftype uvector pos 'src))))
 
 (define (%get-slot-desc ftd slot)
   (let1 s (assq slot (fstruct-descriptor-slots ftd))
@@ -404,10 +410,10 @@
                                 (or alignment (compute-fstruct-alignment slots))
                                 endian
                                 (rec (fstruct-get uv pos endian)
-                                  (%check-size ftype uv pos)
+                                  (%check-size ftype uv pos 'src)
                                   (%make-fstruct ftype uv pos endian))
                                 (rec (fstruct-put! uv pos val endian)
-                                  (%check-size ftype uv pos)
+                                  (%check-size ftype uv pos 'dest)
                                   (let1 off (fstruct-offset val)
                                     (uvector-copy! uv pos
                                                    (fstruct-storage val)
@@ -447,6 +453,40 @@
   (let1 pos (%adjust-pos ftype uvector pos alignment)
     ((ftype-descriptor-put! ftype)
      uvector pos val (or endian (ftype-descriptor-endian ftype)))))
+
+;; NB: If we allow variable fields, we need to interpret the content.
+;; It may also be an option to allow specifying endian and/or alignment
+;; which is different from the internal representation, and let this
+;; procedure to do the conversion.  Still not sure if it is worth.
+(define (read-fobject!/uv ftype uvector pos
+                          :optional (port (current-input-port)))
+  (check-arg u8vector? uvector)
+  (%check-size ftype uvector pos 'dest)
+  (let* ([size (ftype-descriptor-size ftype)]
+         [end (+ pos size)])
+    (let loop ([pos pos]
+               [nread 0])
+      (let1 nread (+ nread (read-block! uvector port pos end))
+        (if (< nread size)
+          (loop (+ pos nread) nread)
+          nread)))))
+
+(define (read-fobject ftype :optional (port (current-input-port)))
+  (let1 v (make-u8vector (ftype-descriptor-size ftype) 0)
+    (read-fobject!/uv ftype v 0 port)
+    (get-fobject ftype v 0)))
+
+(define (write-fobject/uv ftype uvector pos
+                          :optional (port (current-output-port)))
+  (check-arg u8vector? uvector)
+  (%check-size ftype uvector pos 'src)
+  (write-block uvector port pos (+ pos (ftype-descriptor-size ftype))))
+
+(define (write-fobject fobject :optional (port (current-output-port)))
+  (write-fobject/uv (fstruct-type fobject)
+                    (fstruct-storage fobject)
+                    (fstruct-offset fobject)
+                    port))
 
 ;; NB: support endian switch
 (define (fstruct-ref/uv ftd slot uvector pos)
