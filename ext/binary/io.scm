@@ -43,11 +43,16 @@
           ftype:long ftype:ulong ftype:longlong ftype:ulonglong
           ftype:float ftype:double
           
-          make-fstruct-type make-fstruct fstruct-copy
+          make-fstruct-type make-fstruct
+          fstruct-copy fstruct-copy!/uv fstruct-copy!
 
           get-fobject put-fobject!
           read-fobject!/uv read-fobject write-fobject/uv write-fobject
           fstruct-ref fstruct-set! fstruct-ref/uv fstruct-set!/uv
+
+          define-fstruct-type
+
+          describe-fstruct-descriptor
           
           ;; old names
           read-binary-uint
@@ -434,9 +439,10 @@
              [type (cadar slots)]
              [align (if alignment
                       (min alignment (ftype-descriptor-alignment type))
-                      (ftype-descriptor-alignment type))])
+                      (ftype-descriptor-alignment type))]
+             [pos (%round pos align)])
         (loop (cdr slots)
-              (+ (%round pos align) (ftype-descriptor-size type))
+              (+ pos (ftype-descriptor-size type))
               (acons name (make-fstruct-slot name type pos) descs))))))
 
 ;;
@@ -507,16 +513,19 @@
   (fstruct-ref/uv (fstruct-type fstruct) slot
                   (fstruct-storage fstruct) val (fstruct-offset fstruct)))
 
+(define (init-fstruct! ftype v pos . initargs)
+  (let loop ([args initargs])
+    (cond [(null? args) (%make-fstruct ftype v 0 #f)] ;TODO: endian?
+          [(null? (cdr args)) (error "odd number of initargs:" initargs)]
+          [(not (keyword? (car args)))
+           (error "keyword required for initarg, but got:" (car args))]
+          [else (let1 slot (string->symbol (keyword->string (car args)))
+                  (fstruct-set!/uv ftype slot v pos (cadr args)))
+                (loop (cddr args))])))
+
 (define (make-fstruct ftype . initargs)
   (let1 v (make-u8vector (ftype-descriptor-size ftype) 0)
-    (let loop ([args initargs])
-      (cond [(null? args) (%make-fstruct ftype v 0 #f)] ;TODO: endian?
-            [(null? (cdr args)) (error "odd number of initargs:" initargs)]
-            [(not (keyword? (car args)))
-             (error "keyword required for initarg, but got:" (car args))]
-            [else (let1 slot (string->symbol (keyword->string (car args)))
-                    (fstruct-set!/uv ftype slot v 0 (cadr args)))
-                  (loop (cddr args))]))))
+    (apply init-fstruct! ftype v 0 initargs)))
 
 (define (fstruct-copy fstruct)
   (let ([type (fstruct-type fstruct)]
@@ -527,34 +536,90 @@
                    off
                    (fstruct-endian fstruct))))
 
-;; TODO: fstruct-copy!
-;;  Should it be a bytewise copy, or should adjust endian, padding etc?
-;;  Should it check types, or just blindly copy the vector?
+;; TODO: Should it be a bytewise copy, or should adjust endian, padding etc?
+;; Should it check types, or just blindly copy the vector?
 
+(define (fstruct-copy!/uv dest-uvector pos src-fstruct)
+  (%check-size (fstruct-type src-fstruct) dest-uvector pos 'dest)
+  (uvector-copy! dest-uvector pos
+                 (fstruct-storage src-fstruct)
+                 (fstruct-offset src-fstruct)))
+
+(define (fstruct-copy! dest-fstruct src-fstruct)
+  ;; TODO: check type compatibility?
+  (let ([dest (fstruct-storage dest-fstruct)]
+        [dest-off (fstruct-offset dest-fstruct)])
+    (%check-size (fstruct-type src-fstruct) dest dest-off 'dest)
+    (uvector-copy! dest dest-off
+                   (fstruct-storage src-fstruct)
+                   (fstruct-offset src-fstruct))))
 
 ;;
 ;; High-level macro
 ;;
-;; define-fstruct-type name ctor-spec (slot-spec ...) options ...
+;; define-fstruct-type name (slot-spec ...) options ...
 ;;   Creates fstruct-descriptor, and defines the following procedures.
 ;;
-;;  Constructor
+;;  Constructor & filler
 ;;
 ;;   make-NAME . initargs => fstruct
-;;
-;;  Basic I/O
-;;
-;;   get-NAME uvector pos :optional endian => fstruct
-;;   put-NAME! uvector pos fstruct :optional endian
-;;   read-NAME :optional port endian => fstruct
-;;   write-NAME fstruct :optional port endian
-;;   read-NAME!/uv uvector pos :optional port endian => nbytes
-;;   write-NAME/uv uvector pos :optional port endian
+;;   init-NAME! uvector pos . initargs
 ;;
 ;;  Accessors and modifiers
 ;;
 ;;   NAME-SLOT fstruct  => object
 ;;   NAME-SLOT-set! fstruct val => void
-;;   NAME-SLOT/uv ftype uvector pos :optional endian => object
-;;   NAME-SLOT-set!/uv ftype uvector pos val :optional endian
+;;   get-NAME-SLOT  uvector pos :optional endian => object
+;;   put-NAME-SLOT! uvector pos val :optional endian
+;;
+;;  NAME is bound to a newly created fstruct-descriptor.
+;;
+;;  <slot-spec> := (slot-name ftype-expr)    ;FTYPE-EXPR is evaluated.
+;;
+
+(define-macro (define-fstruct-type name slots . options)
+  (let* ([yname (unwrap-syntax name)]
+         [maker (string->symbol #`"make-,yname")]
+         [initializer (string->symbol #`"init-,|yname|!")])
+    ;; Kludge to get hygienity
+    (define (->id x) ((with-module gauche.internal make-identifier) x
+                      (find-module 'binary.io) '()))
+    (define (make-slot-procs sname type)
+      (let ([.ref  (string->symbol #`",|yname|-,|sname|")]
+            [.set! (string->symbol #`",|yname|-,|sname|-set!")]
+            [.get  (string->symbol #`"get-,|yname|-,|sname|")]
+            [.put! (string->symbol #`"put-,|yname|-,|sname|!")])
+        `(begin
+           (define (,.ref obj)
+             (,(->id 'fstruct-ref) obj ',sname))
+           (define (,.set! obj val)
+             (,(->id 'fstruct-set!) obj ',sname val))
+           (define (,.get vec pos)
+             (,(->id 'fstruct-ref/uv) ,name ',sname vec pos))
+           (define (,.put! vec pos val)
+             (,(->id 'fstruct-set!/uv) ,name ',sname vec pos val)))))
+
+    `(begin
+       (define ,name (,(->id 'make-fstruct-type) ',yname
+                      (list
+                       ,@(map (^s `(list ',(unwrap-syntax (car s)) ,(cadr s)))
+                              slots))
+                      #f #f))
+       (define (,maker . initargs)
+         (apply ,(->id 'make-fstruct) ,name initargs))
+       (define (,initializer v pos . initargs)
+         (apply ,(->id 'init-fstruct!) ,name v pos initargs))
+       ,@(map (^s (make-slot-procs (unwrap-syntax (car s)) (cadr s))) slots)
+       )))
+
+;;
+;; Debugging aid
+;;
+(define (describe-fstruct-descriptor fd)
+  (print "fstruct slots:")
+  (dolist [slot (fstruct-descriptor-slots fd)]
+    (format #t " ~3d ~10a::~a~%"
+            (fstruct-slot-position (cdr slot))
+            (car slot)
+            (ftype-descriptor-name (fstruct-slot-type (cdr slot))))))
 
