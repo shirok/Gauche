@@ -81,11 +81,15 @@
 ;;;     - Look into $CALL nodes for further optimization; the above
 ;;;       optimizations may allow further inlining.
 ;;;
-;;;   Pass 4 (Free variable classification)
+;;;   Pass 4 (Lambda lifting)
 ;;;     - At this point, remaining $LAMBDA nodes are the ones we absolutely
 ;;;       needed.  For every $LAMBDA node we find free local variables;
 ;;;       the lvars introduced outside of the $LAMBDA.  The result is set
-;;;       in $lambda-free-lvars slot, and will be used in pass5.
+;;;       in $lambda-free-lvars slot.  Then we determine $LAMBDA nodes
+;;;       that does not need to form a closure.  They are assigned to
+;;;       fresh global identifier ($lambda-lifted-gvar is set to it).
+;;;       References to this $lambda node through local variables are
+;;;       substituted to the reference of this global identifier.
 ;;;
 ;;;   Pass 5 (Code generation):
 ;;;     - Traverses IForm and generate VM instructions.
@@ -695,10 +699,13 @@
                     ;   'dissolved: indicates that this lambda has been
                     ;               inline expanded.
                     ;   <packed-iform>  : inlinable lambda
-   ;; The following slot(s) is/are used temporarily during pass2, and
+   ;; The following slot(s) is/are used temporarily during pass2-5, and
    ;; need not be saved when packed.
    (calls '())      ; list of call sites
    (free-lvars '()) ; list of free local variables
+   (lifted-gvar #f) ; if this $LAMBDA is lifted to the toplevel, this slot
+                    ; contains an identifier to which the toplevel closure
+                    ; is to be bound.  See pass 4.
    ))
 
 ;; $label <src> <label> <body>
@@ -1289,7 +1296,7 @@
 ;; reference.  We have to be careful not to diverge.
 ;; TODO: we lift transparent?/rec manually to avoid closure allocation
 ;; because of the unsophisticated compiler.  Fix this in future.
-(define (transparent? iform) (transparent?/rec iform (make-label-dic)))
+(define (transparent? iform) (transparent?/rec iform (make-label-dic #f)))
 (define (transparent?/rec iform labels)
   (case/unquote
    (iform-tag iform)
@@ -1328,7 +1335,7 @@
 
 ;; Reset lvar reference count.  This is called in pass3,
 ;; when a subgraph of IForm is eliminated.
-(define (reset-lvars iform) (reset-lvars/rec iform (make-label-dic)) iform)
+(define (reset-lvars iform) (reset-lvars/rec iform (make-label-dic #f)) iform)
 (define (reset-lvars/rec iform labels)
   (case/unquote
    (iform-tag iform)
@@ -3577,7 +3584,7 @@
     iform
     (let loop ([iform iform] [count 0])
       (when show? (pass3-dump iform count))
-      (let* ([label-dic (make-label-dic)]
+      (let* ([label-dic (make-label-dic #f)]
              [iform. (pass3/rec (reset-lvars iform) label-dic)])
         (if (label-dic-info label-dic)
           (loop iform. (+ count 1))
@@ -3915,7 +3922,27 @@
 ;; Pass 4.  Lambda lifting
 ;;
 
-;; Each pass4 handler is called with these arguments.
+;; First we traverse down the IForm and find free local variables
+;; for each lambda node.  Within this traversal, found $lambda nodes
+;; are chained into the first element of label-dic.
+;;
+;; Once all free lvars are sorted out, we look at the list of $lambda
+;; nodes and determine the ones that doesn't need to form a closure.
+;; They are to be bound to a freshly created global identifier.  If other
+;; $lambda nodes have a reference to the lifted lambda node through
+;; local variables, they are substituted to the reference to this global
+;; identifier.
+;;
+;; Note for the reader of this code: The term "lambda lifting" usually
+;; includes a transformation that substitutes closed variables for
+;; arguments.  We don't do such transformation so far.  It trades the
+;; cost of closure allocation for pushing extra arguments.  It may be
+;; a win if the closure is allocated lots of times.  OTOH, if the closure
+;; is created only a few times, but called lots of times, the overhead of
+;; extra arguments may exceed the gain by not allocating the closure.
+;;
+;; Free variable scanning is done in the recursive call for pass4
+;; handlers.  Each pass4 handler is called with these arguments.
 ;;  - IForm
 ;;  - a list of lvars bound in the current $LAMBDA.
 ;;  - a list of free lvars found so far in the current $LAMBDA.
@@ -3940,7 +3967,16 @@
       (loop (cdr iforms) (pass4/rec (car iforms) bound free labels)))))
 
 ;; Pass 4 entry point.  Returns IForm.
-(define (pass4 iform) (pass4/rec iform '() '() (make-label-dic)) iform)
+(define (pass4 iform)
+  (let1 dic (make-label-dic '())
+    (pass4/rec iform '() '() dic)
+    ;; TODO: Now we go over $lambda node in (label-dic-info dic) to sort
+    ;; out closures to lift.  After lifting, we have to run alpha-conversion
+    ;; to replace LREFs of lifted closures for GREFs.
+    ;; We need some extra mechanism to initialize those global variables
+    ;; for lifted closures.  For the time being, we don't lift closures
+    ;; and returns iform unmodified.
+    iform))
 
 ;;
 ;; Pass 4 handlers
@@ -3954,7 +3990,7 @@
 
 (define (pass4/$LSET iform bound free labels)
   (let1 free. (pass4/rec ($lset-expr iform) bound free labels)
-    (pass4/add-lvar ($lset-lvar iform) bound free)))
+    (pass4/add-lvar ($lset-lvar iform) bound free.)))
 
 (define (pass4/$GREF iform bound free labels) free)
 (define (pass4/$GSET iform bound free labels)
@@ -3982,11 +4018,12 @@
   (let1 inner-free
       (pass4/rec ($lambda-body iform) ($lambda-lvars iform) '() labels)
     ($lambda-free-lvars-set! iform inner-free)
-    (let loop ([inner-free inner-free]
-               [free free])
+    (label-dic-info-push! labels iform) ;save the lambda node
+    (let loop ([inner-free inner-free] [free free])
       (if (null? inner-free)
         free
-        (pass4/add-lvar (car inner-free) bound free)))))
+        (loop (cdr inner-free)
+              (pass4/add-lvar (car inner-free) bound free))))))
 
 (define (pass4/$LABEL iform bound free labels)
   (cond [(label-seen? labels iform) free]
@@ -5349,11 +5386,12 @@
 ;; is only done when we hit $LABEL node, so the performance is not so critical.
 ;; The CAR of label-dic isn't used to keep label info, and may be used by
 ;; the caller to keep extra info.
-(define (make-label-dic) (list #f))
+(define (make-label-dic init) (list init))
 (define (label-seen? label-dic label-node) (memq label-node (cdr label-dic)))
 (define (label-push! label-dic label-node) (push! (cdr label-dic) label-node))
 (define (label-dic-info label-dic) (car label-dic))
 (define (label-dic-info-set! label-dic val) (set-car! label-dic val))
+(define (label-dic-info-push! label-dic val) (push! (car label-dic) val))
 
 ;; see if the immediate integer value fits in the insn arg.
 (define (integer-fits-insn-arg? obj)

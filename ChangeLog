@@ -1,3 +1,9 @@
+2010-12-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass4): Some more preparation of lambda
+	  lifting.  The feature is not completed yet, so pass4 is basicaly
+	  no-op for the time being.
+
 2010-12-24  Shiro Kawai  <shiro@acm.org>
 
 	* ext/binary/io.scm, ext/binary/binarylib.scm: Experimentally
