@@ -609,10 +609,13 @@
 
 (define-cproc load (file::<string>
                     :key (paths #f) (error-if-not-found #t)
-                         (environment #f) (ignore-coding #f))
+                         (environment #f) (ignore-coding #f)
+                         (main-script #f))
   (let* ([flags::int
           (logior (?: (SCM_FALSEP error-if-not-found) SCM_LOAD_QUIET_NOFILE 0)
-                  (?: (SCM_FALSEP ignore-coding) 0 SCM_LOAD_IGNORE_CODING))])
+                  (logior
+                   (?: (SCM_FALSEP ignore-coding) 0 SCM_LOAD_IGNORE_CODING)
+                   (?: (SCM_FALSEP main-script) 0 SCM_LOAD_MAIN_SCRIPT)))])
     (result (Scm_VMLoad file paths environment flags))))
 
 ; transcript-on

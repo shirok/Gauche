@@ -206,9 +206,6 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->escapeData[1] = NULL;
     v->defaultEscapeHandler = SCM_FALSE;
 
-    v->load_history = SCM_NIL;
-    v->load_next = SCM_NIL;
-    v->load_port = SCM_FALSE;
     v->evalSituation = SCM_VM_EXECUTING;
 
     sigemptyset(&v->sigMask);

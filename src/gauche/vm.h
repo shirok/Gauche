@@ -456,9 +456,9 @@ struct ScmVMRec {
     ScmObj defaultEscapeHandler;
 
     /* Program information */
-    ScmObj load_next;           /* list of the directories to be searched */
-    ScmObj load_history;        /* history of the nested load */
-    ScmObj load_port;           /* current port from which we are loading */
+    ScmObj dummy0;              /* for the ABI compatibility.  remove on 1.0. */
+    ScmObj dummy1;              /* ditto */
+    ScmObj dummy2;              /* ditto */
     int    evalSituation;       /* eval situation (related to eval-when) */
 
     /* Signal information */

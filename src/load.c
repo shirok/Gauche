@@ -65,6 +65,17 @@ static struct {
     ScmInternalMutex prov_mutex;
     ScmInternalCond  prov_cv;
 
+    /* Dynamic enviornments kept during specific `load'.  They are
+       thread-specific, and we use ScmParameter mechanism. */
+    ScmParameterLoc load_history;      /* history of the nested load */
+    ScmParameterLoc load_next;         /* list of the directories to be
+                                          searched. */
+    ScmParameterLoc load_port;         /* current port from which we are
+                                          loading */
+    ScmParameterLoc load_main_script;  /* yields #t during loading main script.
+                                          see SCM_LOAD_MAIN_SCRIPT flag
+                                          in load.h. */
+    
     /* Dynamic linking */
     ScmObj dso_suffixes;
     dlobj *dso_list;              /* List of dynamically loaded objects. */
@@ -75,6 +86,10 @@ static struct {
 static ScmObj key_error_if_not_found = SCM_UNBOUND;
 static ScmObj key_macro              = SCM_UNBOUND;
 static ScmObj key_ignore_coding      = SCM_UNBOUND;
+static ScmObj key_main_script        = SCM_UNBOUND;
+
+#define PARAM_REF(vm, loc)      Scm_ParameterRef(vm, &ldinfo.loc)
+#define PARAM_SET(vm, loc, val) Scm_ParameterSet(vm, &ldinfo.loc, val)
 
 /*
  * ScmLoadPacket is the way to communicate to Scm_Load facility.
@@ -139,6 +154,7 @@ struct load_info {
     ScmObj prev_port;
     ScmObj prev_history;
     ScmObj prev_next;
+    ScmObj prev_main_script;
     int    prev_situation;
 };
 
@@ -161,9 +177,10 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
     Scm_ClosePort(p->port);
     PORT_UNLOCK(p->port);
     Scm_SelectModule(p->prev_module);
-    vm->load_port = p->prev_port;
-    vm->load_history = p->prev_history;
-    vm->load_next = p->prev_next;
+    PARAM_SET(vm, load_port, p->prev_port);
+    PARAM_SET(vm, load_history, p->prev_history);
+    PARAM_SET(vm, load_next, p->prev_next);
+    PARAM_SET(vm, load_main_script, p->prev_main_script);
     vm->evalSituation = p->prev_situation;
     return SCM_UNDEFINED;
 }
@@ -210,17 +227,19 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
 
     p = SCM_NEW(struct load_info);
     p->port = port;
-    p->prev_module = vm->module;
-    p->prev_port = vm->load_port;
-    p->prev_history = vm->load_history;
-    p->prev_next = vm->load_next;
+    p->prev_module    = vm->module;
+    p->prev_port      = PARAM_REF(vm, load_port);
+    p->prev_history   = PARAM_REF(vm, load_history);
+    p->prev_next      = PARAM_REF(vm, load_next);
+    p->prev_main_script = PARAM_REF(vm, load_main_script);
     p->prev_situation = vm->evalSituation;
 
     p->ctx = Scm_MakeReadContext(NULL);
     p->ctx->flags = SCM_READ_LITERAL_IMMUTABLE | SCM_READ_SOURCE_INFO;
-    
-    vm->load_next = next_paths;
-    vm->load_port = SCM_OBJ(port);
+
+    PARAM_SET(vm, load_next, next_paths);
+    PARAM_SET(vm, load_port, SCM_OBJ(port));
+    PARAM_SET(vm, load_main_script, SCM_MAKE_BOOL(flags&SCM_LOAD_MAIN_SCRIPT));
     vm->module = module;
     vm->evalSituation = SCM_VM_LOADING;
     if (SCM_PORTP(p->prev_port)) {
@@ -229,7 +248,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     } else {
         port_info = SCM_LIST1(SCM_FALSE);
     }
-    vm->load_history = Scm_Cons(port_info, vm->load_history);
+    PARAM_SET(vm,load_history, Scm_Cons(port_info, PARAM_REF(vm,load_history)));
 
     PORT_LOCK(port, vm);
     return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
@@ -239,6 +258,7 @@ int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
 {
     static ScmObj load_from_port = SCM_UNDEFINED;
     ScmEvalPacket eresult;
+    ScmObj args = SCM_NIL;
     int r;
 
     if (SCM_UNDEFINEDP(load_from_port)) {
@@ -251,12 +271,19 @@ int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
     }
 
     load_packet_prepare(packet);
+
+    if (flags&SCM_LOAD_MAIN_SCRIPT) {
+        args = Scm_Cons(key_main_script, Scm_Cons(SCM_TRUE, args));
+    }
+
+    args = Scm_Cons(SCM_OBJ(port), args);
+    
     if (flags&SCM_LOAD_PROPAGATE_ERROR) {
-        Scm_ApplyRec(load_from_port, SCM_LIST1(SCM_OBJ(port)));
+        Scm_ApplyRec(load_from_port, args);
         if (packet) packet->loaded = TRUE;
         return 0;
     } else {
-        r = Scm_Apply(load_from_port, SCM_LIST1(SCM_OBJ(port)), &eresult);
+        r = Scm_Apply(load_from_port, args, &eresult);
         if (packet) {
             packet->exception = eresult.exception;
             packet->loaded = (r >= 0);
@@ -370,8 +397,7 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
  *               is used.
  *  env        - a module where the forms are evaluated, or #f.
  *               If #f, the current module is used.
- *  flags      - combination of bit flags
- *               SCM_LOAD_QUIET_NOFILE, SCM_LOAD_IGNORE_CODING
+ *  flags      - combination of ScmLoadFlags.
  */
 
 ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
@@ -398,7 +424,7 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
     }
 #endif /*HAVE_GETTIMEOFDAY*/
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
-        int len = Scm_Length(vm->load_history);
+        int len = Scm_Length(PARAM_REF(vm, load_history));
         SCM_PUTZ(";;", 2, SCM_CURERR);
         while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
         Scm_Printf(SCM_CURERR, "Loading %A...\n", truename);
@@ -437,6 +463,10 @@ int Scm_Load(const char *cpath, u_long flags, ScmLoadPacket *packet)
     }
     if (flags&SCM_LOAD_IGNORE_CODING) {
         options = Scm_Cons(key_ignore_coding,
+                           Scm_Cons(SCM_TRUE, options));
+    }
+    if (flags&SCM_LOAD_MAIN_SCRIPT) {
+        options = Scm_Cons(key_main_script,
                            Scm_Cons(SCM_TRUE, options));
     }
 
@@ -772,7 +802,7 @@ static void load_dlo(dlobj *dlo)
 {
     ScmVM *vm = Scm_VM();
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
-        int len = Scm_Length(vm->load_history);
+        int len = Scm_Length(PARAM_REF(vm, load_history));
         SCM_PUTZ(";;", 2, SCM_CURERR);
         while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
         Scm_Printf(SCM_CURERR, "Dynamically Loading %s...\n", dlo->path);
@@ -1220,6 +1250,14 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
 }
 
 /*------------------------------------------------------------------
+ * Dynamic parameter access
+ */
+ScmObj Scm_CurrentLoadHistory() { PARAM_REF(Scm_VM(), load_history); }
+ScmObj Scm_CurrentLoadNext()    { PARAM_REF(Scm_VM(), load_next); }
+ScmObj Scm_CurrentLoadPort()    { PARAM_REF(Scm_VM(), load_port); }
+ScmObj Scm_LoadMainScript()     { PARAM_REF(Scm_VM(), load_main_script); }
+
+/*------------------------------------------------------------------
  * Compatibility stuff
  */
 
@@ -1247,6 +1285,7 @@ ScmObj Scm__RequireCompat(ScmObj feature)
 void Scm__InitLoad(void)
 {
     ScmModule *m = Scm_SchemeModule();
+    ScmVM *vm = Scm_VM();
     ScmObj init_load_path, init_dynload_path, init_load_suffixes, t;
 
     init_load_path = t = SCM_NIL;
@@ -1271,6 +1310,7 @@ void Scm__InitLoad(void)
     key_error_if_not_found = SCM_MAKE_KEYWORD("error-if-not-found");
     key_macro = SCM_MAKE_KEYWORD("macro");
     key_ignore_coding = SCM_MAKE_KEYWORD("ignore-coding");
+    key_main_script = SCM_MAKE_KEYWORD("main-script");
     
 #define DEF(rec, sym, val) \
     rec = SCM_GLOC(Scm_Define(m, SCM_SYMBOL(sym), val))
@@ -1291,4 +1331,15 @@ void Scm__InitLoad(void)
     ldinfo.dso_suffixes = SCM_LIST2(SCM_MAKE_STR(".la"),
                                     SCM_MAKE_STR("." SHLIB_SO_SUFFIX));
     ldinfo.dso_list = NULL;
+
+#define PARAM_INIT(name, val)                           \
+    do {                                                \
+        Scm_MakeParameterSlot(vm, &ldinfo.name);        \
+        PARAM_SET(vm, name, val);                       \
+    } while (0)
+
+    PARAM_INIT(load_history, SCM_NIL);
+    PARAM_INIT(load_next, SCM_NIL);
+    PARAM_INIT(load_port, SCM_FALSE);
+    PARAM_INIT(load_main_script, SCM_FALSE);
 }

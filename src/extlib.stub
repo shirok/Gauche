@@ -1023,8 +1023,9 @@
   (result (Scm_AddLoadPath path (not (SCM_FALSEP afterp)))))
 
 (define-cproc load-from-port (port::<input-port>
-                              :key (paths #f) (environment #f))
-  (result (Scm_VMLoadFromPort port paths environment 0)))
+                              :key (paths #f) (environment #f) (main-script #f))
+  (let* ([flags::int (?: (SCM_FALSEP main-script) 0 SCM_LOAD_MAIN_SCRIPT)])
+      (result (Scm_VMLoadFromPort port paths environment flags))))
 
 (define-cproc dynamic-load (file::<string>
                             :key (init-function #f)
@@ -1530,9 +1531,9 @@
     (SCM_TYPE_ERROR handler "a procedure or #f"))
   (set! (-> vm defaultEscapeHandler) handler))
 
-(define-cproc current-load-history () (result (-> (Scm_VM) load_history)))
-(define-cproc current-load-next ()    (result (-> (Scm_VM) load_next)))
-(define-cproc current-load-port ()    (result (-> (Scm_VM) load_port)))
+(define-cproc current-load-history () Scm_CurrentLoadHistory)
+(define-cproc current-load-next ()    Scm_CurrentLoadNext)
+(define-cproc current-load-port ()    Scm_CurrentLoadPort)
 
 ;; parameter
 (define-cproc %vm-make-parameter-slot () ::(<int> <int>)

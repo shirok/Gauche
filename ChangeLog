@@ -1,5 +1,23 @@
 2011-01-02  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/load.h, src/gauche/vm.h, src/load.c, src/vm.c:
+	  Moved load-time dynamic environment stuff (load_history, load_next,
+	  load_port out of ScmVM structure, and manage them by the parameter
+	  slots.  It is inconvenient to have these thread-specific dynamic
+	  enviornment within ScmVM, since we can't change them freely because
+	  of the binary compatibility.  (We keep dummy slots in place of
+	  these slots of ScmVM during 0.9.x series for binary compatibility,
+	  though.)
+	  New APIs in load.h: Scm_CurrentLoadHistory(), Scm_CurrentLoadNext(),
+	  Scm_CurrentLoadPort(), to access these dynamic values.
+	  Also start adding SCM_LOAD_MAIN_SCRIPT flag support (not functional
+	  yet.)
+	* src/stdlib.stub (load), src/extlib.stub (load-from-port,
+	  current-load-history, current-load-next, current-load-port):
+          Changed accordingly.  A new keyword argument :main-script is
+	  added to load and load-from-port to turn on SCM_LOAD_MAIN_SCRIPT
+	  flag during loading.
+
 	* src/module.c (Scm_FindBinding): Fixed a mpl search bug reported
 	  by Ryo Akagi.  This is a quick fix, and may have negative
 	  impact on Scm_FindBinding performance.  Need to come back later

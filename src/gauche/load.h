@@ -40,15 +40,20 @@
  * Loading Scheme files
  */
 
-/* Flags for Scm_VMLoad, Scm_Load, amd Scm_Require. (not for Scm_VMLoadPort) */
+/* Flags for Scm_VMLoad, Scm_Load, Scm_Require, and Scm_VMLoadPort.
+   NB: Scm_VMLoadPort ignores all flags except SCM_LOAD_MAIN_SCRIPT.
+ */
 typedef enum {
     SCM_LOAD_QUIET_NOFILE = (1L<<0),  /* do not signal an error if the file
                                          does not exist; just return #f. */
     SCM_LOAD_IGNORE_CODING = (1L<<1), /* do not use coding-aware port to honor
                                          'coding' magic comment */
-    SCM_LOAD_PROPAGATE_ERROR = (1L<<2) /* do not capture an error; let the
+    SCM_LOAD_PROPAGATE_ERROR = (1L<<2),/* do not capture an error; let the
                                          caller handle it.  Not effective
                                          for Scm_VMLoad. */
+    SCM_LOAD_MAIN_SCRIPT = (1L<<3)    /* indicates we're loading the file
+                                         as a "main script"---a script file
+                                         given to gosh to load. */
 } ScmLoadFlags;
 
 /* A structure to obtain a detailed result of loading. */
@@ -72,6 +77,14 @@ SCM_EXTERN int Scm_Load(const char *file, u_long flags, ScmLoadPacket *p);
 SCM_EXTERN void Scm__LoadFromPortCompat(ScmPort *port, int flags);
 SCM_EXTERN int  Scm__LoadCompat(const char *file, int flags);
 #endif /*!GAUCHE_API_PRE_0_9*/
+
+/*=================================================================
+ * Dynamic state access
+ */
+SCM_EXTERN ScmObj Scm_CurrentLoadHistory(void);
+SCM_EXTERN ScmObj Scm_CurrentLoadNext(void);
+SCM_EXTERN ScmObj Scm_CurrentLoadPort(void);
+SCM_EXTERN ScmObj Scm_LoadMainScript(void);
 
 /*=================================================================
  * Load path management
