@@ -1,3 +1,11 @@
+2011-01-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (Scm_FindBinding): Fixed a mpl search bug reported
+	  by Ryo Akagi.  This is a quick fix, and may have negative
+	  impact on Scm_FindBinding performance.  Need to come back later
+	  to evaluate it.
+	* test/module.scm: Added regression tests for the above bug.
+
 2010-12-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass4): Some more preparation of lambda

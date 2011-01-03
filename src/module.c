@@ -273,7 +273,7 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
                 
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
 
-            if (module_visited_p(&searched, SCM_CAR(mp))) goto skip;
+            if (module_visited_p(&searched, SCM_CAR(mp))) continue;
             m = SCM_MODULE(SCM_CAR(mp));
             if (SCM_SYMBOLP(m->prefix)) {
                 sym = Scm_SymbolSansPrefix(SCM_SYMBOL(sym),

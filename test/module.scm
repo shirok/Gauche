@@ -395,4 +395,28 @@
           (eval '(define x 13) m0)
           (eval 'x m1))))
 
+;;------------------------------------------------------------------
+;; mpl search bug in 0.9.1 reported by Ryo Akagi
+;; http://sourceforge.jp/projects/gauche/lists/archive/devel-jp/2010-December/001909.html
+
+(define-module mplbug-x (export x) (define x 0))
+(define-module mplbug-a (export a) (define a 1))
+(define-module mplbug-b (export b) (define b 2))
+(define-module mplbug-A (extend mplbug-x mplbug-a))
+(define-module mplbug-B (extend mplbug-x mplbug-b))
+
+(define-module mplbug-user1 (import mplbug-A) (import mplbug-B))
+(define-module mplbug-user2 (import mplbug-B) (import mplbug-A))
+
+(define (mplbug-test mod var)
+  (test* #`"mpl search (,mod,,,var)" #t
+         (global-variable-bound? (find-module mod) var)))
+
+(mplbug-test 'mplbug-user1 'a)
+(mplbug-test 'mplbug-user1 'b)
+(mplbug-test 'mplbug-user1 'x)
+(mplbug-test 'mplbug-user2 'a)
+(mplbug-test 'mplbug-user2 'b)
+(mplbug-test 'mplbug-user2 'x)
+
 (test-end)
