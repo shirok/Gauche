@@ -48,6 +48,7 @@
    (filter :init-keyword :filter :init-value #f)
    (setter)
    (getter)
+   (restorer)                           ;used to restore previous value
    (pre-observers)
    (post-observers)
    ))
@@ -55,71 +56,76 @@
 (define-method initialize ((self <parameter>) initargs)
   (next-method)
   (receive (index id) (%vm-make-parameter-slot)
-    (let ((filter (slot-ref self 'filter))
-          (pre-hook #f)
-          (post-hook #f))
-      (slot-set! self 'getter (lambda () (%vm-parameter-ref index id)))
+    (let ([filter (slot-ref self 'filter)]
+          [pre-hook #f]
+          [post-hook #f])
+      (slot-set! self 'getter (^() (%vm-parameter-ref index id)))
       (slot-set! self 'setter
                  (if filter
-                   (lambda (val)
-                     (let ((new (filter val))
-                           (old (%vm-parameter-ref index id)))
-                       (when pre-hook (run-hook pre-hook old new))
-                       (%vm-parameter-set! index id new)
-                       (when post-hook (run-hook post-hook old new))
-                       old))
-                   (lambda (val)
-                     (let ((old (%vm-parameter-ref index id)))
-                       (when pre-hook (run-hook pre-hook old val))
-                       (%vm-parameter-set! index id val)
-                       (when post-hook (run-hook post-hook old val))
-                       old))))
-      (let-syntax ((hook-ref
+                   (^(val) (let1 new (filter val)
+                             (rlet1 old (%vm-parameter-ref index id)
+                               (when pre-hook (run-hook pre-hook old new))
+                               (%vm-parameter-set! index id new)
+                               (when post-hook (run-hook post-hook old new)))))
+                   (^(val) (rlet1 old (%vm-parameter-ref index id)
+                             (when pre-hook (run-hook pre-hook old val))
+                             (%vm-parameter-set! index id val)
+                             (when post-hook (run-hook post-hook old val))))))
+      (slot-set! self 'restorer          ;bypass filter proc
+                 (^(val) (rlet1 old (%vm-parameter-ref index id)
+                           (when pre-hook (run-hook pre-hook old val))
+                           (%vm-parameter-set! index id val)
+                           (when post-hook (run-hook post-hook old val)))))
+      (let-syntax ([hook-ref
                     (syntax-rules ()
-                      ((_ var)
-                       (lambda ()
-                         (or var
-                             (let ((h (make-hook 2)))
-                               (set! var h)
-                               h)))))))
+                      [(_ var) (^() (or var (rlet1 h (make-hook 2)
+                                              (set! var h))))])])
         (slot-set! self 'pre-observers (hook-ref pre-hook))
         (slot-set! self 'post-observers (hook-ref post-hook)))
       )))
 
 (define-method object-apply ((self <parameter>) . maybe-newval)
   (if (pair? maybe-newval)
-      (if (null? (cdr maybe-newval))
-          ((slot-ref self 'setter) (car maybe-newval))
-          (error "wrong number of arguments for parameter" maybe-newval))
-      ((slot-ref self 'getter))))
+    (if (null? (cdr maybe-newval))
+      ((slot-ref self 'setter) (car maybe-newval))
+      (error "wrong number of arguments for parameter" maybe-newval))
+    ((slot-ref self 'getter))))
 
 ;; Allow (set! (parameter) value).  By KOGURO, Naoki
 (define-method (setter object-apply) ((obj <parameter>) value)
   (obj value))
 
-(define (make-parameter value . maybe-filter)
-  (let1 p (make <parameter> :filter (get-optional maybe-filter #f))
-    (p value)
-    p))
+(define (make-parameter value :optional (filter #f))
+  (rlet1 p (make <parameter> :filter filter)
+    (p value)))
+
+;; restore parameter value after parameterize body.  we need to bypass
+;; the filter procedure (fix for the bug reported by Joo ChurlSoo.
+;; NB: For historical reasons, PARAMETERIZE may be used with paremeter-like
+;; procedures.  
+(define (%restore-parameter param prev-val)
+  (if (is-a? param <parameter>)
+    ((slot-ref param'restorer) prev-val)
+    (param prev-val)))
 
 (define-syntax parameterize
   (syntax-rules ()
-    ((_ (binds ...) . body)
-     (%parameterize () () () () (binds ...) body))))
+    [(_ (binds ...) . body)
+     (%parameterize () () () () (binds ...) body)]))
 
 (define-syntax %parameterize
   (syntax-rules ()
-    ((_ (param ...) (val ...) (tmp1 ...) (tmp2 ...) () body)
+    [(_ (param ...) (val ...) (tmp1 ...) (tmp2 ...) () body)
      (let ((tmp1 val) ... (tmp2 #f) ...)
        (dynamic-wind
-        (lambda () (set! tmp2 (param tmp1)) ...)
-        (lambda () . body)
-        (lambda () (param tmp2) ...))))
-    ((_ (param ...) (val ...) (tmp1 ...) (tmp2 ...) ((p v) . more) body)
-     (%parameterize (param ... p) (val ... v) (tmp1 ... tmp1a) (tmp2 ... tmp2a) more body))
-    ((_ params vals vars other body)
-     (syntax-error "malformed binding list for parameterize" other))
-    ))
+        (^() (set! tmp2 (param tmp1)) ...)
+        (^() . body)
+        (^() (%restore-parameter param tmp2) ...)))]
+    [(_ (param ...) (val ...) (tmp1 ...) (tmp2 ...) ((p v) . more) body)
+     (%parameterize (param ... p) (val ... v) (tmp1 ... tmp1a) (tmp2 ... tmp2a)
+                    more body)]
+    [(_ params vals vars other body)
+     (syntax-error "malformed binding list for parameterize" other)]))
 
 ;; hooks
 

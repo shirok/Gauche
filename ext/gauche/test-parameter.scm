@@ -99,5 +99,32 @@
          (p 4)
          (reverse r)))
 
+;;-------------------------------------------------------------------
+(test-section "filter proc and restoration")
+
+(let ()
+  (define (dotest param)
+    (let* ([a1 (param)]
+           [a2 (parameterize ([param 4]) (param))]
+           [a3 (param)])
+      (list a1 a2 a3)))   
+
+  (test* "check filter proc isn't called on restoration" '("2" "4" "2")
+         (dotest (make-parameter 2 number->string)))
+
+  (test* "parameter-like procedure" '(0 4 0)
+         (dotest (let1 v 0
+                   (^(:optional new)
+                     (if (undefined? new) v (begin0 v (set! v new)))))))
+
+  (test* "filter and observer"
+         '((post "4" "2") (pre "4" "2") (post "2" "4") (pre "2" "4"))
+         (let ([a (make-parameter 2 number->string)]
+               [r '()])
+           (parameter-observer-add! a (^(o v) (push! r `(pre ,o ,v))) 'before)
+           (parameter-observer-add! a (^(o v) (push! r `(post ,o ,v))) 'after)
+           (dotest a)
+           r))
+  )
 
 (test-end)
