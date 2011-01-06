@@ -100,8 +100,9 @@
          (reverse r)))
 
 ;;-------------------------------------------------------------------
-(test-section "filter proc and restoration")
+(test-section "correct restoration semantics")
 
+;; Make sure restoring values bypasses filter procedure
 (let ()
   (define (dotest param)
     (let* ([a1 (param)]
@@ -126,5 +127,25 @@
            (dotest a)
            r))
   )
+
+;; The dynamic environment needs to work on locations, not the values.
+;; In the following code, when the continuation is invoked, the value of
+;; f should be restored to c, not b.
+;; Test code by Joo ChurlSoo.
+
+(test* "call/cc and side effect" '(a b c d c c d)
+       (let ((f (make-parameter 'a))
+             (path '())
+             (c #f))
+         (let ((add (lambda () (set! path (cons (f) path)))))
+           (add)
+           (parameterize ((f 'b))
+             (call-with-current-continuation (lambda (c0) (set! c c0)))
+             (add) (f 'c) (add))
+           (f 'd)
+           (add)
+           (if (< (length path) 5)
+             (c 'end)
+             (reverse path)))))
 
 (test-end)

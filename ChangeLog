@@ -3,6 +3,8 @@
 	* libsrc/gauche/parameter.scm: Fixed a bug that the filter procedure
 	  was called unintentionally when the old value was restored upon
 	  exitting parameterize.
+	  Also fixed another bug that appear when the parameterize body is
+	  reentered.  See the added test in ext/gauche/test-parameter.scm.
 
 2011-01-02  Shiro Kawai  <shiro@acm.org>
 

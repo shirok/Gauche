@@ -120,7 +120,7 @@
        (dynamic-wind
         (^() (set! tmp2 (param tmp1)) ...)
         (^() . body)
-        (^() (%restore-parameter param tmp2) ...)))]
+        (^() (set! tmp1 (%restore-parameter param tmp2)) ...)))]
     [(_ (param ...) (val ...) (tmp1 ...) (tmp2 ...) ((p v) . more) body)
      (%parameterize (param ... p) (val ... v) (tmp1 ... tmp1a) (tmp2 ... tmp2a)
                     more body)]
