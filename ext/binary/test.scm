@@ -806,4 +806,20 @@
 (test* "unpack twice @" '("a" "m" "n" "z")
   (unpack "a1@4a1a1@9a1" :from-string "a\0\0\0mn\0\0\0z"))
 
+;; These two fail in 0.9.1.  Reported by ryoakg.
+(test* "V*; a bug of peeking 1"
+       (unfold (pa$ <= 16) (^_`(,(* 16 _))) (pa$ + 1) 0 (^_'()))
+       (map (.$ (cute unpack "V*" :from-string <>)
+                u8vector->string
+                (cute u8vector <> 0 0 0))
+            (iota 16 0 16)))
+(test* "V*: a bug of peeking 2"
+       '(#x01010101 #x01010101 #x000000d0 #x01010101 #x01010101)
+       (unpack "V*" :from-string
+               #*"\x01\x01\x01\x01\
+                  \x01\x01\x01\x01\
+                  \xd0\x00\x00\x00\
+                  \x01\x01\x01\x01\
+                  \x01\x01\x01\x01"))
+
 (test-end)

@@ -1,5 +1,11 @@
 2011-01-06  Shiro Kawai  <shiro@acm.org>
 
+	* lib/binary/pack.scm (make-number-pack-dispatcher): Fixed a bug
+	  that used peek-char to see if input reached at end.  As of 0.9.1,
+	  the return value of peek-char is unspecified if the next input is
+	  an invalid char, and the current impelemntation happened to
+	  return #<eof> in such case.
+
 	* libsrc/gauche/parameter.scm: Fixed a bug that the filter procedure
 	  was called unintentionally when the old value was restored upon
 	  exitting parameterize.
