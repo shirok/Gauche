@@ -75,7 +75,26 @@
                   (wait-all pool 1e7)
                   (map (cut job-result <>)
                        (queue->list (~ pool'result-queue)))))
-    )]
+    )
+
+  ;; Testing max backlog and timeout
+  (let ([pool (make-thread-pool 1 :max-backlog 1)]
+        [gate #f])
+    (define (work) (do [] [gate] (sys-nanosleep #e1e8)))
+
+    (add-job! pool work)
+
+    (test* "add-job! backlog" #t
+           (job? (add-job! pool work)))
+
+    (test* "add-job! timeout" #f
+           (add-job! pool work #f 0.1))
+
+    (set! gate #t)
+    (test* "add-job! backlog" #t
+           (job? (add-job! pool work)))
+    )
+  ]
  [else])
 
 (test-end)

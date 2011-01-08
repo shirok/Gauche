@@ -1135,16 +1135,23 @@ always returns @code{#f}.
 @c ----------------------------------------------------------------------
 @node Thread pools, Password hashing, A common job descriptor for control modules, Library modules - Utilities
 @section @code{control.thread-pool} - Thread pools
+@c NODE スレッドプール, @code{control.thread-pool} - スレッドプール
 
 @deftp {Module} control.thread-pool
 @mdindex control.thread-pool
+@c EN
 Provides thread pools.  Only available when Gauche is compiled
 with pthreads support.
+@c JP
+スレッドプールを提供します。Gaucheがpthreadサポート付きでコンパイルされている
+場合にのみ利用可能です。
+@c COMMON
 @end deftp
 
 @deftp {Class} <thread-pool>
 @clindex thread-pool
-A thread pool object.   It maintains a set of worker threads, and
+@c EN
+A class for thread pool objects.   It maintains a set of worker threads, and
 let them work on the jobs you ask to do asynchronously.
 
 Currently the size of pool (number of threads) is fixed
@@ -1154,25 +1161,57 @@ In future we might add a feature to grow or shrink the pool.
 You can also set maximum backlog of the job queue.  You cannot
 put a job when the queue already reaches the max length (see
 @code{add-job!} below).
+@c JP
+スレッドプールオブジェクトのクラスです。ワーカースレッドのセットを保持し、
+投入されたジョブを非同期に実行します。
+
+現在の実装では、プールのサイズ (スレッド数) は固定で、プール作成時に
+指定しなければなりません。いずれスレッド数を動的に増減させる機能を
+追加する予定です。
+
+また、ジョブのキューの最大長を指定することもできます。ジョブのキューが
+一杯になると、空きができるまでは新たなジョブを投入することができなくなります
+(下記の@code{add-job!}参照)。
+@c COMMON
 
 @defivar {<thread-pool>} result-queue
+@c EN
 When you put a job to a thread pool, you can specify
 whether you need to check its result or not.  If you say you need
 a result, the terminated job is queued to an @code{<mt-queue>}
 held in this slot.  @xref{Queue}, for the details of @code{<mt-queue>}.
+@c JP
+ジョブをスレッドプールに投入する際に、ジョブの結果を知る必要があるかどうかを
+指定することができます。結果を要求した場合は、終了したジョブレコードが
+このスロットに保持されるキュー(@code{<mt-queue>})にプッシュされます。
+@code{<mt-queue>}の詳細については@ref{Queue}を参照してください。
+@c COMMON
 @end defivar
 @end deftp
 
-@defun make-thread-pool size :optional (max-backlog 0)
+@defun make-thread-pool size :key (max-backlog 0)
+@c EN
 Creates a new thread pool of size @var{size} (the number of
 worker threads).  Optionally you can give a nonnegative integer
 to the maximum backlog; 0 means unlimited.
+@c JP
+大きさ(ワーカースレッド数)@var{size}のスレッドプールを作成して返します。
+省略可能引数@var{max-backlog}によってジョブのバックログの最大値を
+指定することもできます。0を与えた場合(デフォルト)は無制限です。
+@c COMMON
 @end defun
 
-@defun add-job! pool thunk :optional need-result
+@defun add-job! pool thunk :optional (need-result #f) (timeout #f)
+@c EN
 Add a @var{thunk} to be executed in the thread pool @var{pool}.
-Returns a @var{job} record (@xref{A common job descriptor for control modules}).
+Returns a @code{job} record (@xref{A common job descriptor for control modules}).
+@c JP
+@var{thunk}がスレッドプール@var{pool}のスレッドにより実行されるように設定します。
+@code{job}レコードを返します。
+(@ref{A common job descriptor for control modules}参照)。
+@c COMMON
 
+@c EN
 The returned job record is not waitable; if you need to track
 its result, you have to give a true value to @var{need-result}
 argument.  Then when the job is terminated (either normally or
@@ -1180,15 +1219,63 @@ abnormally) the job is queued to the @code{result-queue} of
 the pool, and you can check the queue.   If you don't pass
 a true value to @var{need-result}, the job won't be queued
 to @code{result-queue} even it is terminated.
+@c JP
+返される@code{job}レコードはwaitableにはなっていません。結果を知る必要が
+ある場合は、省略可能引数@var{need-result}に真の値を渡してください。
+そうするとジョブが終了した時点 (正常終了でも異常終了でも) で、
+@code{job}レコードがスレッドプールの@code{result-queue}に
+入るので、そのキューから結果を受け取ることができます。
+@var{need-result}を省略したり偽値を渡した場合は、ジョブが終了しても
+@code{job}レコードは@code{result-queue}に入れられません。
+@c COMMON
 
+@c EN
 The returned job is timestamped.  You can examine acknowledged
-time, start time and finish time of the job.  It's sometimes
+time, start time and finish time of the job (if the job hasn't
+been started and/or finished, the corresponding timestamp fields
+are @code{#f}.)  It's sometimes
 handy to find out how log the job was waiting in the
 queue and how log it took to run.
+@c JP
+返される@code{job}レコードにはタイムスタンプが付加され、
+受付時間、実行開始時間、実行終了時間が記録されます。
+(ジョブがまだ実行されていなかったり、終了されていない場合は、対応する
+タイムスタンプは@code{#f}になっています)。
+ジョブがどのくらいキューの中で待たされ、どのくらい実行にかかったかを
+知るのに便利でしょう。
+@c COMMON
 
+@c EN
 If the pool has positive @code{max-backlog} value, and it
 already has that many jobs to be waiting, then @code{add-job!}
-doesn't create a new job and just returns @code{#f}.
+blocks until some jobs are start being executed.
+You can give a real number in seconds, or a @code{<time>} object
+as an absolute point of time, to the @var{timeout} argument 
+to set the time limit of blocking.  If timeout is reached,
+@code{add-job!} returns @code{#f} without creating any job.
+Omitting @var{timeout}
+or giving @code{#f} to it sets no timeout.
+@c JP
+スレッドプールが非負の@code{max-backlog}値を持ち、
+既にその数だけジョブが待ち行列に入っている場合は、
+@code{add-job!}は待ち行列に空きができるまでブロックします。
+@var{timeout}引数に、実数値の秒数、あるいは絶対時間を指定する@code{<time>}
+オブジェクトを渡すことでタイムアウトを指定できます。タイムアウトに
+達した場合は、@code{add-job!}はジョブを作らずに@code{#f}を返します。
+@var{timeout}引数を省略するか、@code{#f}を渡した場合はタイムアウトが設定されません。
+@c COMMON
+
+@c EN
+(Note: This behavior is different from 0.9.1, in which @code{add-job!}
+didn't take the timeout argument and always behaved as if zero 
+timeout value was given.  To achieve the same behavior, you have
+to give 0 to the @var{timeout} argument explicitly.)
+@c JP
+(註: この動作は0.9.1から変更されました。0.9.1では、@code{add-job!}は
+タイムアウト引数を取らず、常にタイムアウトに0秒が指定されたかのように
+振る舞っていました。現在のバージョンで同じ動作をさせるには、@var{timeout}引数
+に0を明示的に渡します。)
+@c COMMON
 @end defun
 
 @defun wait-all pool :optional (check-interval #e5e8)

@@ -1,3 +1,9 @@
+2011-01-07  Shiro Kawai  <shiro@acm.org>
+
+	* lib/control/thread-pool.scm (add-job!): Added timeout optional
+	  argument, and made the default timeout behavior from returning
+	  immediately to wait indefinitely.  THIS IS AN INCOMPATIBLE CHANGE.
+
 2011-01-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/binary/pack.scm (make-number-pack-dispatcher): Fixed a bug

@@ -89,10 +89,10 @@
     [_ #t]))                            ; no more jobs
 
 ;; Returns job if queued, #f if job queue is full
-(define (add-job! pool thunk :optional (need-result #f))
+(define (add-job! pool thunk :optional (need-result #f) (timeout #f))
   (let1 job (make-job thunk)
     (job-acknowledge! job)
-    (and (enqueue/wait! (~ pool'job-queue) (cons need-result job) 0 #f)
+    (and (enqueue/wait! (~ pool'job-queue) (cons need-result job) timeout #f)
          job)))
 
 (define (wait-all pool :optional (check-interval #e5e8))

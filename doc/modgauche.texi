@@ -11084,12 +11084,15 @@ for fine-grained calculation.
 @c EN
 The recommended usage is the technique so called "thread pool",
 that you create a set of threads and keep them around for
-long time and dispatch jobs to them as needed.
+long time and dispatch jobs to them as needed.  Gauche provides
+a thread pool implementation in @code{control.thread-pool} module
+(@xref{Thread pools}).
 @c JP
 推奨される使用方法は、いわゆる``スレッドプール''と呼ばれる
 テクニックです。つまり、スレッドの集合を作って長時間それを
 保持し、必要になったときにジョブをそこへディスパッチする
-というものです。
+というものです。Gaucheは@code{control.thread-pool}モジュール
+(@ref{Thread pools}参照) でスレッドプールの実装を提供しています。
 @c COMMON
 
 @c EN
