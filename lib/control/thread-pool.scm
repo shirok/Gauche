@@ -43,14 +43,11 @@
   (use gauche.threads)
   (use gauche.record)
   (use gauche.mop.propagate)
-  (use gauche.experimental.app)
   (use control.job)
   (export <thread-pool>
           <thread-pool-shut-down>
 	  make-thread-pool thread-pool-results thread-pool-shut-down?
-          add-job!
-	  wait-all
-	  terminate-all!))
+          add-job! wait-all terminate-all!))
 (select-module control.thread-pool)
 
 ;; - Thread job is queued in job queue.
