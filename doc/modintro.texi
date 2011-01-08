@@ -155,7 +155,7 @@ brief descriptions.
 * Library directory - strings and characters::  
 * Library directory - data exchange::  
 * Library directory - files::   
-* Library directory - processes::  
+* Library directory - processes and threads::  
 * Library directory - networking::  
 * Library directory - input and output::  
 * Library directory - time::    
@@ -460,6 +460,7 @@ Lots of network-related external formats are defined in RFC,
 and there are corresponding @code{rfc.*} module that handle 
 some of them.  See @ref{RFC822 message parsing}, for example,
 to handle the pervasive RFC2822 message format.
+Or, JSON can be handled by @ref{JSON parsing and construction}.
 @c JP
 ネットワークに関連する外部フォーマットの多くはRFCで規定されており、そ
 れらのいくつかに対応するRFCモジュール(@code{rfc.*})があります。たとえ
@@ -506,6 +507,16 @@ S式(@ref{SXML Query Language}))を使ってSXMLクエリを発行すること�
 @c COMMON
 
 @c EN
+(But you know most web services nowadays also talks JSON,
+and that's much lighter and handier than XML.
+See @ref{JSON parsing and construction}).
+@c JP
+(でもいまどきのwebサービスならたいていはJSONも話しますし、そっちの方が
+手軽だっていうなら、@ref{JSON parsing and construction}を見てみると良いかも
+しれません。)
+@c COMMON
+
+@c EN
 It is planned that various file format handling routines would
 be available as @code{file.*} modules, though we have none ready
 yet.  If you plan to write one, please go ahead and let us know!
@@ -516,7 +527,7 @@ yet.  If you plan to write one, please go ahead and let us know!
 たいので、おしらせ下さい。
 @c COMMON
 
-@node Library directory - files, Library directory - processes, Library directory - data exchange, Finding libraries you need
+@node Library directory - files, Library directory - processes and threads, Library directory - data exchange, Finding libraries you need
 @subsection Library directory - files
 @c NODE ライブラリディレクトリ - ファイル
 
@@ -551,9 +562,9 @@ routines on top of system-level ones.
 @c COMMON
 
 
-@node Library directory - processes, Library directory - networking, Library directory - files, Finding libraries you need
-@subsection Library directory - processes
-@c NODE ライブラリディレクトリ - プロセス
+@node Library directory - processes and threads, Library directory - networking, Library directory - files, Finding libraries you need
+@subsection Library directory - processes and threads
+@c NODE ライブラリディレクトリ - プロセスとスレッド
 
 @c EN
 Process-related routines also come in two levels.
@@ -583,7 +594,23 @@ Gaucheコアはプリミティブな@code{fork}および@code{exec}のインタ�
 しょう。
 @c COMMON
 
-@node Library directory - networking, Library directory - input and output, Library directory - processes, Finding libraries you need
+@c EN
+Gauche has preemptive threads on most Unix platforms including OSX.
+Check out @ref{Threads} for the basic thread support, including
+primitive mutexes.  The @code{util.queue} module (@xref{Queue})
+provides thread-safe queue that can also be handy for synchronization.
+Thread pool is available in @code{control.thread-pool} (@xref{Thread pools}).
+@c JP
+GaucheはOSXを含む多くのUnixプラットフォームでプリエンプティブなスレッドを
+サポートしています。低レベルの排他制御を含む基本的なスレッドのサポートについては
+@ref{Threads}を参照してください。@code{util.queue}モジュール
+(@ref{Queue}参照)では、スレッド間同期にも使えるスレッドセーフなキューを
+提供しています。スレッドプールは@code{control.thread-pool} (@ref{Thread pools}参照)
+によって提供されます。
+@c COMMON
+
+
+@node Library directory - networking, Library directory - input and output, Library directory - processes and threads, Finding libraries you need
 @subsection Library directory - networking
 @c NODE ライブラリディレクトリ - ネットワーク
 
@@ -693,7 +720,7 @@ Gaucheコアはビットシフトおよびマスク操作を提供していま�
 @ref{Bitwise operations}を見てください。
 @c COMMON
 
-@node Naming convention of libraries, ,Finding libraries you need, Library modules - Overview
+@node Naming convention of libraries,  , Finding libraries you need, Library modules - Overview
 @section Naming convention of libraries
 @c NODE ライブラリの命名規則
 
