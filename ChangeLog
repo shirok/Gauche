@@ -1,5 +1,8 @@
 2011-01-08  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/json.scm (construct-json): Allow optional output port,
+	  for the consistency.
+
 	* lib/control/thread-pool.scm: (<thread-pool>): Added shut-down slot.
 	  (<thread-pool-shut-down>): A new condition raised by add-job!.
 	  (thread-pool-results, thread-pool-shut-down?): External API.

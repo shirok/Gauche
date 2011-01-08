@@ -203,12 +203,15 @@
   (string-for-each print-char str)
   (display "\""))
 
-(define (construct-json x)
-  (cond [(pair? x)   (print-object x)]
-        [(vector? x) (print-array x)]
-        [else (error <json-construct-error> :object x
-                     "construct-json expects a list or a vector, but got" x)]))
+(define (construct-json x :optional (oport (current-output-port)))
+  (with-output-to-port oport
+    (^()
+      (cond [(pair? x)   (print-object x)]
+            [(vector? x) (print-array x)]
+            [else (error <json-construct-error> :object x
+                         "construct-json expects a list or a vector, \
+                          but got" x)]))))
 
 (define (construct-json-string x)
-  (with-output-to-string (cut construct-json x)))
+  (call-with-output-string (cut construct-json x <>)))
 
