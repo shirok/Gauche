@@ -37,11 +37,13 @@
 
 (define-module control.thread-pool
   (use srfi-1)
+  (use srfi-19)
   (use util.queue)
   (use util.match)
   (use gauche.threads)
   (use gauche.record)
   (use gauche.mop.propagate)
+  (use gauche.experimental.app)
   (use control.job)
   (export <thread-pool>
 	  make-thread-pool
@@ -95,11 +97,33 @@
     (and (enqueue/wait! (~ pool'job-queue) (cons need-result job) timeout #f)
          job)))
 
-(define (wait-all pool :optional (check-interval #e5e8))
-  (do []
-      [(and (queue-empty? (~ pool'job-queue))
-            (every (^t (not (thread-specific t))) (~ pool'pool)))]
-    (sys-nanosleep check-interval)))
+;; Note: The signature has been changed from 0.9.1, in which wait-all
+;; only takes check-interval optional argument.  It is impossible to detect
+;; the old usage, since integer is a valid argument as timeout.  However,
+;; I hope it does little harm; for example, the old code (wait-all pool #e2e9)
+;; to expect check-interval in 2 seconds is now interpreted as the default
+;; check-interval and extremely long timeout---about 60 years---which virtually
+;; the same as saying "forever", so all you get is slighly off check-interval.
+;; Smaller check-interval may be a bit serious, since it may delay response
+;; in some situation.  But the default 0.5 seconds isn't really bad, I guess.
+(define (wait-all pool :optional (timeout #f) (check-interval #e5e8))
+  (define abstime
+    (cond [(is-a? timeout <time>) timeout]
+          [(real? timeout)
+           (receive (subsec sec) (modf timeout)
+             (add-duration (current-time)
+                           (make-time time-duration
+                                      (round->exact (* subsec 1e9))
+                                      sec)))]
+          [(not timeout) #f]
+          [else (error "timeout must be either a real number, a <time> object, \
+                        or #f, but got:" timeout)]))
+  (let loop ([now (and abstime (current-time))])
+    (cond [(and (queue-empty? (~ pool'job-queue))
+                (every (^t (not (thread-specific t))) (~ pool'pool)))]
+          [(and abstime (time>=? now abstime)) #f] ;timeout
+          [else (sys-nanosleep check-interval)
+                (loop (and abstime (current-time)))])))
 
 ;; For backward compatibility, allow (terminate-all! pool force-timeout)
 ;; the proper API is (terminate-all! pool :force-timeout force-timeout)

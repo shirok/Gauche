@@ -2,7 +2,10 @@
 
 	* lib/control/thread-pool.scm (add-job!): Added timeout optional
 	  argument, and made the default timeout behavior from returning
-	  immediately to wait indefinitely.  THIS IS AN INCOMPATIBLE CHANGE.
+	  immediately to wait indefinitely.
+	  (wait-all): Added timeout optional argument before check-interval
+	  optional argument.
+	  THESE ARE INCOMPATIBLE CHANGES.
 
 2011-01-06  Shiro Kawai  <shiro@acm.org>
 

@@ -1259,7 +1259,7 @@ or giving @code{#f} to it sets no timeout.
 スレッドプールが非負の@code{max-backlog}値を持ち、
 既にその数だけジョブが待ち行列に入っている場合は、
 @code{add-job!}は待ち行列に空きができるまでブロックします。
-@var{timeout}引数に、実数値の秒数、あるいは絶対時間を指定する@code{<time>}
+@var{timeout}引数に、実数値の秒数、あるいは絶対時刻を指定する@code{<time>}
 オブジェクトを渡すことでタイムアウトを指定できます。タイムアウトに
 達した場合は、@code{add-job!}はジョブを作らずに@code{#f}を返します。
 @var{timeout}引数を省略するか、@code{#f}を渡した場合はタイムアウトが設定されません。
@@ -1278,10 +1278,25 @@ to give 0 to the @var{timeout} argument explicitly.)
 @c COMMON
 @end defun
 
-@defun wait-all pool :optional (check-interval #e5e8)
+@defun wait-all pool :optional (timeout #f) (check-interval #e5e8)
+@c EN
 Wait for the job queue to be empty and
 all worker threads to finish.  It is done by polling the
 pool's status in every @var{check-interval} nanoseconds.
+Returns @code{#t} if all jobs are finished.
+
+You can give a real number in seconds, or a @code{<time>} object
+as an absolute point of time, in @var{timeout} optional argument.
+When timeout is reached, @code{wait-all} returns @code{#f}.
+@c JP
+ジョブ待ち行列が空になり、すべての実行中のジョブも終了するまで待ちます。
+終了待ちは@var{check-interval}にナノ秒で指定される間隔でスレッドプールを
+ポールすることで行われます。すべてのジョブが終了したら@code{#t}を返します。
+
+秒数を表す実数か、絶対時刻を表す@code{<time>}オブジェクトを@var{timeout}
+引数に渡すことで、タイムアウトを指定できます。タイムアウトに達した場合は、
+@code{wait-all}は@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun terminate-all! pool :key force-timeout

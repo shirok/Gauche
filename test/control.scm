@@ -49,8 +49,8 @@
   (use control.thread-pool)
   (test-module 'control.thread-pool)
 
-  (let ((pool (make-thread-pool 5))
-        (rvec (make-vector 10 #f)))
+  (let ([pool (make-thread-pool 5)]
+        [rvec (make-vector 10 #f)])
     (test* "pool" '(5 #t 5 0)
            (list (length (~ pool'pool))
                  (every thread? (~ pool'pool))
@@ -62,8 +62,7 @@
                     (add-job! pool (lambda ()
                                      (sys-nanosleep 1e7)
                                      (vector-set! rvec k k))))
-                  (wait-all pool 1e7)
-                  rvec))
+                  (and (wait-all pool #f 1e7) rvec)))
 
     (test* "error results" '(ng ng ng ng ng)
            (begin (dotimes [k 5]
@@ -72,9 +71,9 @@
                                      (raise 'ng)
                                      (vector-set! rvec k k))
                               #t))
-                  (wait-all pool 1e7)
-                  (map (cut job-result <>)
-                       (queue->list (~ pool'result-queue)))))
+                  (and (wait-all pool #f 1e7)
+                       (map (cut job-result <>)
+                            (queue->list (~ pool'result-queue))))))
     )
 
   ;; Testing max backlog and timeout
@@ -93,6 +92,11 @@
     (set! gate #t)
     (test* "add-job! backlog" #t
            (job? (add-job! pool work)))
+
+    (set! gate #f)
+    (test* "wait-all timeout" #f
+           (begin (add-job! pool work)
+                  (wait-all pool 0.1 #e1e7)))
     )
   ]
  [else])
