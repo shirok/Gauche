@@ -1173,18 +1173,25 @@ put a job when the queue already reaches the max length (see
 一杯になると、空きができるまでは新たなジョブを投入することができなくなります
 (下記の@code{add-job!}参照)。
 @c COMMON
+@end deftp
 
-@defivar {<thread-pool>} result-queue
+
+@deftp {Condition type} <thread-pool-shut-down>
 @c EN
-When you put a job to a thread pool, you can specify
-whether you need to check its result or not.  If you say you need
-a result, the terminated job is queued to an @code{<mt-queue>}
-held in this slot.  @xref{Queue}, for the details of @code{<mt-queue>}.
+A condition indicating that a thread pool is already shut down
+by @code{terminate-all!} and no longer accepting new jobs.
+Inherits @code{<error>}.  The following slot is provided.
 @c JP
-ジョブをスレッドプールに投入する際に、ジョブの結果を知る必要があるかどうかを
-指定することができます。結果を要求した場合は、終了したジョブレコードが
-このスロットに保持されるキュー(@code{<mt-queue>})にプッシュされます。
-@code{<mt-queue>}の詳細については@ref{Queue}を参照してください。
+スレッドプールが@code{terminate-all!}によって停止され、
+新規のジョブを受け付けていないことを示すコンディションです。
+@code{<error>}を継承します。次のスロットが提供されます。
+@c COMMON
+
+@defivar <thread-pool-shut-down> pool
+@c EN
+The thread pool object that caused the condition.
+@c JP
+例外の原因となったスレッドプールオブジェクト
 @c COMMON
 @end defivar
 @end deftp
@@ -1198,6 +1205,33 @@ to the maximum backlog; 0 means unlimited.
 大きさ(ワーカースレッド数)@var{size}のスレッドプールを作成して返します。
 省略可能引数@var{max-backlog}によってジョブのバックログの最大値を
 指定することもできます。0を与えた場合(デフォルト)は無制限です。
+@c COMMON
+@end defun
+
+@defun thread-pool-results pool
+@c EN
+When you put a job to a thread pool, you can specify
+whether you need to check its result or not.  If you say you need
+a result, the terminated job is queued to a @emph{result queue},
+an @code{<mt-queue>} object, in the pool.
+This procedure returns the pool's result queue.
+@xref{Queue}, for the details of @code{<mt-queue>}.
+@c JP
+ジョブをスレッドプールに投入する際に、ジョブの結果を知る必要があるかどうかを
+指定することができます。結果を要求した場合は、終了したジョブレコードが
+プール中の結果キュー(@code{<mt-queue>}オブジェクト)にエンキューされます。
+この手続きは、プールの結果キューを返します。
+@code{<mt-queue>}の詳細については@ref{Queue}を参照してください。
+@c COMMON
+@end defun
+
+@defun thread-pool-shut-down? pool
+@c EN
+Returns @code{#t} if the thread pool is shut down and no longer
+accepting new jobs, or @code{#f} otherwise.
+@c JP
+スレッドプールが停止され、新規のジョブを受け付けていない場合に@code{#t}を、
+そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
 
@@ -1276,6 +1310,14 @@ to give 0 to the @var{timeout} argument explicitly.)
 振る舞っていました。現在のバージョンで同じ動作をさせるには、@var{timeout}引数
 に0を明示的に渡します。)
 @c COMMON
+
+@c EN
+If the thread pool is shut down, this procedure
+raises @code{<thread-pool-shut-down>} condition.
+@c JP
+スレッドプールが停止していた場合、この手続きは
+@code{<thread-pool-shut-down>}コンディションを投げます。
+@c COMMON
 @end defun
 
 @defun wait-all pool :optional (timeout #f) (check-interval #e5e8)
@@ -1299,19 +1341,58 @@ When timeout is reached, @code{wait-all} returns @code{#f}.
 @c COMMON
 @end defun
 
-@defun terminate-all! pool :key force-timeout
-Wait for all the queued jobs be finished, then ask all threads
-to terminate.  By default it tries to terminate threads gracefully.
-If you give a timeout value (either @code{<time>} object to
+@defun terminate-all! pool :key (force-timeout #f) (cancel-queued-jobs #f)
+@c EN
+Wait for all the queued jobs to be finished, then ask all threads
+to terminate.  After calling this procedure, the pool no longer
+accepts new jobs.  Calling @code{add-job!} on this module would
+raise a @code{<thread-pool-shut-down>} condition.
+This is intended to be called when shutting down the application.
+
+By default, this procedure first waits for all queued jobs
+to be handled, then tries to terminate threads gracefully.
+
+Giving a true value to the @var{cancel-queued-jobs} argument
+immediately cancels queued but not started jobs; the status
+of such jobs is set @code{killed}.
+It does not cancels already started jobs, though.
+
+If you want to cancel already started jobs, 
+you can give a timeout value (either @code{<time>} object to
 specify absolute point of time, or a real number indicating
-relative time in seconds), it forcefully terminates the threads
-after timeout reached.  (Note: Even in that case it waits
-for all jobs to be finished before trying termination.
-If any of those jobs goes into infinite loop, we currently don't have
-a way to terminate all threads.
+relative time in seconds) to the @var{force-timeout} argument.
+Once timeout is reached, it forcefully terminates the threads
+and the jobs handled at that time are also killed.
+
+Forcing termination of threads is an extreme measure; the terminated
+thread may not have a chance to clean up properly.  So it is usually
+better to give some time for the thread to finish the executing jobs.
+@c JP
+投入されたジョブがすべて終了するのを待ち、すべてのスレッドを終了させます。
+ひとたびこの手続きを呼ぶと、スレッドプール@var{pool}は新規のジョブを受けつけ
+ません。この状態のスレッドプールに対して@code{add-job!}を呼ぶと
+@code{<thread-pool-shut-down>}コンディションが投げられます。
+この手続きはアプリケーションのシャットダウン時などに呼ばれることを意図しています。
+
+デフォルトでは、この手続きはまずキューに既に投入されたジョブが全て処理されるのを
+待ち、それからスレッドを穏やかに終了させます。
+
+真の値を@var{cancel-queued-jobs}引数に与えると、キューに入っているが
+まだ開始されていないジョブは直ちにキャンセルされます。それらのジョブの
+ステータスには@code{killed}がセットされます。
+ただし、既に開始されたジョブについてはキャンセルされません。
+
+既に開始されたジョブも中断したい場合は、
+タイムアウト値(秒数を表す実数か、絶対時刻を表す@code{<time>}オブジェクト)を
+@var{force-timeout}引数に渡します。
+タイムアウトに達した時点で残っているスレッドは強制終了され、実行中のジョブも
+キャンセルされます。
+
+スレッドの強制終了は極端な処置です。終了されるスレッドは、適切なクリーンアップを
+行う機会も与えられないかもしれません。したがって通常は、
+スレッドが処理中のジョブを終わらせるための適切な時間的猶予を与えるのが良いでしょう。
+@c COMMON
 @end defun
-
-
 
 @c ----------------------------------------------------------------------
 @node Password hashing, Database independent access layer, Thread pools, Library modules - Utilities

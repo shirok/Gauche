@@ -2,7 +2,7 @@
 ;;; control.thread-pool - thread pool
 ;;;
 ;;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
-;;;  Copyright (c) 2010 Shiro Kawai
+;;;  Copyright (c) 2010-2011 Shiro Kawai
 ;;;
 ;;;  Redistribution and use in source and binary forms, with or without
 ;;;  modification, are permitted provided that the following conditions
@@ -46,7 +46,8 @@
   (use gauche.experimental.app)
   (use control.job)
   (export <thread-pool>
-	  make-thread-pool
+          <thread-pool-shut-down>
+	  make-thread-pool thread-pool-results thread-pool-shut-down?
           add-job!
 	  wait-all
 	  terminate-all!))
@@ -55,17 +56,19 @@
 ;; - Thread job is queued in job queue.
 ;; - add-job! returns a job record, with which the client can track results.
 ;; - optionally, the client can ask to queue the finished job to result-queue.
-;; - while exeuting the job, thread keeps job record in its specific slot.
+;; - while exeuting the job, thread keeps job record in its 'specific' slot.
 ;; - graceful termination is requested by 'over in the job queue.
 
 (define-class <thread-pool> ()
-  ((pool         :init-keyword :pool :init-value '()) ; [Thread]
+  ((result-queue :init-form (make-mtqueue)) ; Queue Job
+   ;; the rest of slots are private
+   (pool         :init-keyword :pool :init-value '()) ; [Thread]
    (size         :init-keyword :size :init-value 2)
-   (job-queue    :init-form (make-mtqueue)) ; Queue Job
-   (result-queue :init-form (make-mtqueue)) ; Queue Job
+   (job-queue    :init-form (make-mtqueue)) ; Queue (Bool . Job)
    (max-backlog  :allocation :propagated
                  :propagate '(job-queue max-length)
                  :init-keyword :max-backlog)
+   (shut-down    :init-value #f)       ; #t if the pool is shut down
    )
   :metaclass <propagate-meta>)
 
@@ -78,6 +81,15 @@
         (list-tabulate (~ pool'size)
                        (lambda (_)
                          (thread-start! (make-thread (cut worker pool)))))))
+
+(define (thread-pool-results pool)    (~ pool'result-queue))
+(define (thread-pool-shut-down? pool) (~ pool'shut-down))
+
+;; This condition is raised by add-job! when the pool is
+;; shutting down.
+(define-condition-type <thread-pool-shut-down> <error> (pool #f))
+(define (%shut-down pool)
+  (error <thread-pool-shut-down> :pool pool "Thread pool has shut down"))
 
 (define (worker pool)
   (define self (current-thread))
@@ -92,10 +104,13 @@
 
 ;; Returns job if queued, #f if job queue is full
 (define (add-job! pool thunk :optional (need-result #f) (timeout #f))
+  (when (~ pool'shut-down) (%shut-down pool))
   (let1 job (make-job thunk)
     (job-acknowledge! job)
     (and (enqueue/wait! (~ pool'job-queue) (cons need-result job) timeout #f)
-         job)))
+         (if (~ pool'shut-down)
+           (%shut-down pool)
+           job))))
 
 ;; Note: The signature has been changed from 0.9.1, in which wait-all
 ;; only takes check-interval optional argument.  It is impossible to detect
@@ -134,8 +149,18 @@
     [(val) (%terminate-all! pool :force-timeout val)]
     [_     (apply %terminate-all! pool args)]))
 
-(define (%terminate-all! pool :key (force-timeout #f))
+(define (%terminate-all! pool :key (force-timeout #f) (cancel-queued-jobs #f))
   (define size (~ pool'size))
+
+  ;; First, make sure no more jobs are put into the queue.
+  (set! (~ pool'shut-down) #t)
+
+  ;; If requested, cancel jobs already queued but not being executing.
+  (when cancel-queued-jobs
+    (dolist [job (dequeue-all! (~ pool'job-queue))]
+      (job-mark-killed! (cdr job) "thread pool has shut down")
+      (enqueue! (~ pool'result-queue) (cdr job))))
+
   ;; Sends threads termination message
   (let loop ((count 0))
     (cond [(>= count size)]
@@ -143,7 +168,10 @@
            (enqueue! (~ pool'job-queue) 'over)
            (loop (+ count 1))]
           [else (sys-nanosleep 5e8) (loop count)]))
-  ;;
+
+  ;; Wait for termination of threads.
   (dolist [t (~ pool'pool)]
     (unless (thread-join! t force-timeout #f)
+      (and-let* ([job (thread-specific t)])
+        (job-mark-killed! job "thread pool has shut down"))
       (thread-terminate! t))))

@@ -91,13 +91,60 @@
 
     (set! gate #t)
     (test* "add-job! backlog" #t
-           (job? (add-job! pool work)))
+           (job? (add-job! pool work #t)))
+
+    ;; synchronize
+    (dequeue/wait! (thread-pool-results pool))
 
     (set! gate #f)
     (test* "wait-all timeout" #f
            (begin (add-job! pool work)
                   (wait-all pool 0.1 #e1e7)))
+
+    ;; fill the queue.  
+    (add-job! pool work #t)
+    
+    (test* "shutdown - raising <thread-pool-shutting-down>"
+           (test-error <thread-pool-shut-down>)
+           ;; subtle arrangement: The timing of thread execution isn't
+           ;; guaranteed, but we hope to run the following events in
+           ;; sequence:
+           ;;  - add-job!  - this will block because queue is full
+           ;;  - terminate-all! - this causes the pending add-job! to raise
+           ;;                     an exception.  this call blocks.
+           ;;  - setting gate to #f - this causes the remaining thread to
+           ;;                     run, and the blocking terminate-all! to
+           ;;                     unblock.
+           (let ([t1 (make-thread (lambda ()
+                                    (sys-nanosleep #e1e8)
+                                    (terminate-all! pool
+                                                    :cancel-queued-jobs #t)
+                                    (set! gate 'finished)))]
+                 [t2 (make-thread (lambda ()
+                                    (sys-nanosleep #e2e8)
+                                    (set! gate #t)))])
+             (thread-start! t1)
+             (thread-start! t2)
+             (add-job! pool work)))
+
+    (test* "shutdown - killing a job in the queue"
+           'killed
+           (job-status (dequeue/wait! (thread-pool-results pool))))
+    (test* "shutdown check" 'finished
+           (let retry ([n 0])
+             (cond [(= n 10) #f]
+                   [(symbol? gate) gate]
+                   [else (sys-nanosleep #e1e8) (retry (+ n 1))])))
     )
+
+  ;; now, test forcible termination
+  (let ([pool (make-thread-pool 1)]
+        [gate #f])
+    (define (work) (do [] [gate] (sys-nanosleep #e1e8)))
+    (test* "forced shutdown" 'killed
+           (let1 xjob (add-job! pool work)
+             (terminate-all! pool :force-timeout 0.05)
+             (job-status xjob))))
   ]
  [else])
 

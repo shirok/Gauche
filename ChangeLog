@@ -1,3 +1,12 @@
+2011-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/control/thread-pool.scm: (<thread-pool>): Added shut-down slot.
+	  (<thread-pool-shut-down>): A new condition raised by add-job!.
+	  (thread-pool-results, thread-pool-shut-down?): External API.
+	  (add-job!): Raises <thread-pool-shut-down> if the pool is shut down.
+	  (termiante-all): Added cancel-queued-jobs keyword argument.
+	  marks executing jobs to be killed when terminating threads forcibly.
+
 2011-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/thread-pool.scm (add-job!): Added timeout optional
