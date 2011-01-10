@@ -1,3 +1,10 @@
+2011-01-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_NormalizePathname): Support '~' expansion on
+	  Windows native platform.
+	* libsrc/file/util.scm (home-directory): Use the above feature to
+	  obtain the home directory.
+
 2011-01-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/json.scm (construct-json): Allow optional output port,

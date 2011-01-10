@@ -102,15 +102,12 @@
     (unless (eqv? user (sys-getuid))
       (error "On windows native platforms, getting other user's home directory \
               is not supported (yet)."))
-    ;; NB: I'm not sure if this is a proper way, but it appears to work in
-    ;; typical cases.
-    (or (sys-getenv "HOME")             ; MSYS sets this.
-        (string-append (or (sys-getenv "HOMEDRIVE") "")
-                       (or (sys-getenv "HOMEPATH") "\\")))]
+    ;; See src/system.c for the way to determine the home directory.
+    (sys-normalize-pathname "~" :expand #t)]
    [else
-    (and-let* ([ent (cond ((integer? user) (sys-getpwuid user))
-                          ((string? user)  (sys-getpwnam user))
-                          (else (error "bad user" user)))])
+    (and-let* ([ent (cond [(integer? user) (sys-getpwuid user)]
+                          [(string? user)  (sys-getpwnam user)]
+                          [else (error "bad user" user)])])
       (slot-ref ent 'dir))]))
 
 (define temporary-directory

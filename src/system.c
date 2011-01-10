@@ -438,7 +438,24 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 	return Scm_DStringGet(&buf, 0);
     }
 #else /* GAUCHE_WINDOWS */
-    if (endp > srcp+1 && isalpha(*srcp) && *(srcp+1) == ':') {
+    if ((flags & SCM_PATH_EXPAND) && size >= 1 && *str == '~') {
+        const char *home;
+        if (size >= 2 && strchr("/\\", str[1]) == NULL) {
+            Scm_Error("On windows native platforms, getting other user's home "
+                      "directory is not supported (yet): %S",
+                      SCM_OBJ(pathname));
+        }
+        srcp++;
+        if ((home = getenv("HOME")) != NULL) { /* MSYS */
+            Scm_DStringPutz(&buf, home, -1);
+        } else if ((home = getenv("HOMEDRIVE")) != NULL) { /* cmd.exe */
+            Scm_DStringPutz(&buf, home, -1);
+            if ((home = getenv("HOMEPATH")) != NULL) {
+                Scm_DStringPutz(&buf, home, -1);
+            }
+        }
+        /*FALLTHROUGH - if no env is set we use root dir. */
+    } else if (endp > srcp+1 && isalpha(*srcp) && *(srcp+1) == ':') {
         /* We first process the Evil Drive Letter */
         Scm_DStringPutc(&buf, *srcp++);
         Scm_DStringPutc(&buf, *srcp++);
