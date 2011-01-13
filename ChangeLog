@@ -1,5 +1,10 @@
 2011-01-12  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/gauche/parameter.scm (%parameterize): Fixed another bug
+	  that appear when the outer binding of a parameter object (not the
+	  value of the parameter object) is altered during execution of
+	  the body.
+
 	* lib/gauche/portutil.scm (port->string, port->string-list): Fixes
 	  a bug that these procs return prematurely if the input contains
 	  an illegal octed sequence for the internal encoding.  Now they

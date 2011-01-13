@@ -148,4 +148,21 @@
              (c 'end)
              (reverse path)))))
 
+;; Another bug reported by Joo ChurlSoo.
+
+(test* "reassignment of global variable holding a parameter"
+       '((10 20) (10 200) (1000 2000) (1 2000))
+       (let* ((init '())
+              (add-init (lambda (x) (set! init (cons x init))))
+              (a (make-parameter 1))
+              (b (make-parameter 2)))
+         (parameterize ((a 10) (b 20))
+           (add-init (list (a) (b)))
+           (set! b (make-parameter 200))
+           (add-init (list (a) (b)))
+           (a 1000) (b 2000)
+           (add-init (list (a) (b))))
+         (add-init (list (a) (b)))
+         (reverse init)))
+
 (test-end)

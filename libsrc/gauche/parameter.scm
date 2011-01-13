@@ -111,20 +111,25 @@
 (define-syntax parameterize
   (syntax-rules ()
     [(_ (binds ...) . body)
-     (%parameterize () () () () (binds ...) body)]))
+     (%parameterize () () () (binds ...) body)]))
 
 (define-syntax %parameterize
   (syntax-rules ()
-    [(_ (param ...) (val ...) (tmp1 ...) (tmp2 ...) () body)
-     (let ((tmp1 val) ... (tmp2 #f) ...)
+    ;; temporaries
+    ;;   P - keeps the parameter object, for the variable param may be
+    ;;       reassigned during execution of body.
+    ;;   L - keeps "local" value during dynamic enviornment of body.
+    ;;   S - keeps "saved" value outside of parameterize.
+    [(_ (param ...) (val ...) ((P L S) ...) () body)
+     (let ((P param) ... (L val) ... (S #f) ...)
        (dynamic-wind
-        (^() (set! tmp2 (param tmp1)) ...)
+        (^() (set! S (P L)) ...)
         (^() . body)
-        (^() (set! tmp1 (%restore-parameter param tmp2)) ...)))]
-    [(_ (param ...) (val ...) (tmp1 ...) (tmp2 ...) ((p v) . more) body)
-     (%parameterize (param ... p) (val ... v) (tmp1 ... tmp1a) (tmp2 ... tmp2a)
-                    more body)]
-    [(_ params vals vars other body)
+        (^() (set! L (%restore-parameter P S)) ...)))]
+    [(_ (param ...) (val ...) (tmps ...)
+        ((p v) . more) body)
+     (%parameterize (param ... p) (val ... v) (tmps ... (P L S)) more body)]
+    [(_ params vals tmps other body)
      (syntax-error "malformed binding list for parameterize" other)]))
 
 ;; hooks
