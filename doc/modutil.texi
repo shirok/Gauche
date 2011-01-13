@@ -9944,7 +9944,7 @@ is given, the returned checksum is an update of @var{checksum} by
 @c COMMON
 @end defun
 
-@defun alder32 string :optional checksum
+@defun adler32 string :optional checksum
 @c EN
 Returns Adler32 checksum of @var{string}.  If optional @var{checksum}
 is given, the returned checksum is an update of @var{checksum} by
