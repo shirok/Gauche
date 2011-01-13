@@ -1,3 +1,8 @@
+2011-01-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/stdlib.stub (numcmp): Fixed a bug that handles more than four
+	  arguments incorrectly.
+
 2011-01-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_NormalizePathname): Support '~' expansion on

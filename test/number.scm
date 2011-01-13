@@ -768,6 +768,42 @@
 (numcmp-test "ratnum vs flonum ne" #f 8/9 0.6)
 (numcmp-test "ratnum vs bignum ne" #f (/ (+ (expt 2 64) 1) 2) (expt 2 63))
 
+;; This tests variable number of arguments.  The current stub code accepts
+;; up to 4 args in stack and the rest by list, so we want to test the
+;; boundary case.
+(define (numcmp-multiarg-test lis eq lt le gt ge)
+  (test* #`"=,lis" eq (apply = lis))
+  (test* #`"<,lis" lt (apply < lis))
+  (test* #`"<=,lis" le (apply <= lis))
+  (test* #`">,lis" gt (apply > lis))
+  (test* #`">=,lis" ge (apply >= lis)))
+
+;;                                      =  <  <= >  >=
+(numcmp-multiarg-test '(1 2 3 4)        #f #t #t #f #f)
+(numcmp-multiarg-test '(1 2 3 3)        #f #f #t #f #f)
+(numcmp-multiarg-test '(1 2 3 2)        #f #f #f #f #f)
+(numcmp-multiarg-test '(1 2 3 4 5)      #f #t #t #f #f)
+(numcmp-multiarg-test '(1 2 3 4 4)      #f #f #t #f #f)
+(numcmp-multiarg-test '(1 2 3 4 3)      #f #f #f #f #f)
+(numcmp-multiarg-test '(1 2 3 4 5 6)    #f #t #t #f #f)
+(numcmp-multiarg-test '(1 2 3 4 5 5)    #f #f #t #f #f)
+(numcmp-multiarg-test '(1 2 3 4 5 4)    #f #f #f #f #f)
+(numcmp-multiarg-test '(4 3 2 1)        #f #f #f #t #t)
+(numcmp-multiarg-test '(4 3 2 2)        #f #f #f #f #t)
+(numcmp-multiarg-test '(4 3 2 3)        #f #f #f #f #f)
+(numcmp-multiarg-test '(5 4 3 2 1)      #f #f #f #t #t)
+(numcmp-multiarg-test '(5 4 3 2 2)      #f #f #f #f #t)
+(numcmp-multiarg-test '(5 4 3 2 3)      #f #f #f #f #f)
+(numcmp-multiarg-test '(6 5 4 3 2 1)    #f #f #f #t #t)
+(numcmp-multiarg-test '(6 5 4 3 2 2)    #f #f #f #f #t)
+(numcmp-multiarg-test '(6 5 4 3 2 3)    #f #f #f #f #f)
+(numcmp-multiarg-test '(1 1 1 1 1)      #t #f #t #f #t)
+(numcmp-multiarg-test '(1 1 1 1 2)      #f #f #t #f #f)
+(numcmp-multiarg-test '(1 1 1 1 0)      #f #f #f #f #t)
+(numcmp-multiarg-test '(1 1 1 1 1 1)    #t #f #t #f #t)
+(numcmp-multiarg-test '(1 1 1 1 1 2)    #f #f #t #f #f)
+(numcmp-multiarg-test '(1 1 1 1 1 0)    #f #f #f #f #t)
+
 ;; This is from the bug report from Bill Schottsteadt.  Before 0.8.10
 ;; this yielded #t because of the precision loss in fixnum vs ratnum
 ;; comparison.

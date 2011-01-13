@@ -92,9 +92,11 @@
             [(not (,compar arg1 (aref oarg 0)))]
             [(== optcnt 1) (result TRUE)]
             [(not (,compar (aref oarg 0) (aref oarg 1)))]
-            [(== optcnt 2) (result TRUE)]
+            [(and (== optcnt 2) (SCM_NULLP args)) (result TRUE)]
             [else
-             (set! arg0 (aref oarg 1)   arg1 (aref oarg 2))
+             (set! arg0 (aref oarg 1)
+                   arg1 (SCM_CAR args)
+                   args (SCM_CDR args))
              (loop (cond [(not (,compar arg0 arg1)) (break)]
                          [(SCM_NULLP args) (result TRUE) (break)]
                          [else (set! arg0 arg1
