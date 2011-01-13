@@ -43,13 +43,8 @@
 ;;   TODO: allow caller to specify reading units
 (define (port->string port)
   (let1 out (open-output-string :private? #t)
-    (with-port-locking port
-      (lambda ()
-        (let loop ((ch (read-char port)))
-          (unless (eof-object? ch)
-            (write-char ch out)
-            (loop (read-char port))))
-        (get-output-string out)))))
+    (copy-port port out :unit 'byte)
+    (get-output-string out)))
 
 (define (port->list reader port)
   (with-port-locking port
@@ -60,7 +55,7 @@
           (reverse! result)
           (loop (reader port) (cons obj result)))))))
 
-(define (port->string-list port) (port->list read-line port))
+(define (port->string-list port) (port->list (cut read-line <> #t) port))
 (define (port->sexp-list port)   (port->list read port))
 
 ;;-----------------------------------------------------

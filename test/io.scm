@@ -722,6 +722,33 @@
               *counter*))
 
 ;;-------------------------------------------------------------------
+(test-section "port->* basic")
+
+;; testing port->string etc.
+
+(define (%test-port->* name proc data writer)
+  (test* (format "~a ~s" name data) data
+         (begin
+           (sys-unlink "tmp2.o")
+           (with-output-to-file "tmp2.o" (cut writer data))
+           (call-with-input-file "tmp2.o" proc))))
+(define-syntax test-port->*
+  (syntax-rules ()
+    [(_ proc data writer) (%test-port->* 'proc proc data writer)]))
+
+(test-port->* port->string "" display)
+(test-port->* port->string "abc" display)
+(test-port->* port->string "abc\ndef\n" display)
+(test-port->* port->string #*"\x00\x80\xc0\xd0\xff\xfe\xef" display)
+
+(test-port->* port->string-list '("abc") (cut for-each print <>))
+(test-port->* port->string-list '("abc" "def") (cut for-each print <>))
+(test-port->* port->string-list '(#*"\x00\x80\xc0\xd0\xff\xfe\xef" "abc")
+              (cut for-each (^z (display z) (newline)) <>))
+
+(test-port->* port->sexp-list '(abc) (cut for-each print <>))
+
+;;-------------------------------------------------------------------
 (test-section "coding-aware-port basic")
 
 ;; Testing source port _without_ any conversion.  Basically, these

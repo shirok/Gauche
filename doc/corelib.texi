@@ -11418,19 +11418,27 @@ until EOF and returns the accumulated data as a string.
 蓄積されたリストを返します。
 @c COMMON
 
-@code{(port->string-list port)} @equiv{}
-@code{(port->list read-line port)}
 @c EN
-, and
+@code{port->string-list} is a @code{port->list} specialized
+by @code{read-line}, and 
+@code{port->sexp-list} is a @code{port->list} specialized
+by @code{read}.
 @c JP
-であり、
+@code{port->string-list}は@code{port->list}を
+@code{read-line}で特定化したもので、
+@code{port->sexp-list}は@code{port->list}を
+@code{read}で特定化したものです。
 @c COMMON
-@code{(port->sexp-list port)} @equiv{}
-@code{(port->list read port)}
+
 @c EN
-.
+If the input contains an octet sequence that's not form a valid
+character in the Gauche's native character encoding,
+@code{port->string} and @code{port->string-list} may return
+incomplete string(s).
 @c JP
-です。
+もし入力にGaucheの内部エンコーディングにおいて有効な文字をつくらない
+バイト列が含まれていた場合、@code{port->string}と@code{port->string-list}
+の返り値には不完全な文字列が含まれている可能性があります。
 @c COMMON
 @end defun
 

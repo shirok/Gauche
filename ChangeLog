@@ -1,5 +1,10 @@
 2011-01-12  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/portutil.scm (port->string, port->string-list): Fixes
+	  a bug that these procs return prematurely if the input contains
+	  an illegal octed sequence for the internal encoding.  Now they
+	  return incomplete string(s).
+
 	* src/stdlib.stub (numcmp): Fixed a bug that handles more than four
 	  arguments incorrectly.
 
