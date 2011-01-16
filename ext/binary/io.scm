@@ -42,6 +42,15 @@
           ftype:schar ftype:uchar ftype:short ftype:ushort ftype:int ftype:uint
           ftype:long ftype:ulong ftype:longlong ftype:ulonglong
           ftype:float ftype:double
+
+          ftype-descriptor ftype-descriptor-name ftype-descriptor-size
+          ftype-descriptor-alignment ftype-descriptor-endian
+          ftype-descriptor-get ftype-descriptor-put!
+          fstruct-descriptor fstruct-descriptor-slots
+          fstruct-slot fstruct-slot-name fstruct-slot-type fstruct-slot-position
+
+          fstruct fstruct? fstruct-type fstruct-storage
+          fstruct-offset fstruct-endian
           
           make-fstruct-type make-fstruct
           fstruct-copy fstruct-copy!/uv fstruct-copy!
@@ -557,7 +566,7 @@
 ;;
 ;; High-level macro
 ;;
-;; define-fstruct-type name (slot-spec ...) options ...
+;; define-fstruct-type name ctor-name pred-name (slot-spec ...) options ...
 ;;   Creates fstruct-descriptor, and defines the following procedures.
 ;;
 ;;  Constructor & filler
@@ -577,9 +586,23 @@
 ;;  <slot-spec> := (slot-name ftype-expr)    ;FTYPE-EXPR is evaluated.
 ;;
 
-(define-macro (define-fstruct-type name slots . options)
+(define-macro (define-fstruct-type name ctor-name pred-name slots . options)
   (let* ([yname (unwrap-syntax name)]
-         [maker (string->symbol #`"make-,yname")]
+         [maker (cond
+                 [(or (symbol? ctor-name) (identifier? ctor-name)) ctor-name]
+                 [(eq? ctor-name #t) (string->symbol #`"make-,yname")]
+                 [(eq? ctor-name #f) #f]
+                 ;; TODO: support inheritance like define-record-type
+                 [else (error "invalid define-fstruct-type: ctor-name \
+                               must be a symbol or a boolean, but got:"
+                              ctor-name)])]
+         [pred  (cond
+                 [(or (symbol? pred-name) (identifier? pred-name)) pred-name]
+                 [(eq? pred-name #t) (string->symbol #`",|yname|?")]
+                 [(eq? pred-name #f) #f]
+                 [else (error "invalid define-fstruct-type: pred-name \
+                               must be a symbol or a boolean, but got:"
+                              pred-name)])]
          [initializer (string->symbol #`"init-,|yname|!")])
     ;; Kludge to get hygienity
     (define (->id x) ((with-module gauche.internal make-identifier) x
@@ -605,8 +628,15 @@
                        ,@(map (^s `(list ',(unwrap-syntax (car s)) ,(cadr s)))
                               slots))
                       #f #f))
-       (define (,maker . initargs)
-         (apply ,(->id 'make-fstruct) ,name initargs))
+       ,(if maker
+          `(define (,maker . initargs)
+             (apply ,(->id 'make-fstruct) ,name initargs))
+          '(begin))
+       ,(if pred
+          `(define (,pred obj)
+             (and (fstruct? obj)
+                  (eq? (fstruct-type obj) ,name)))
+          '(begin))
        (define (,initializer v pos . initargs)
          (apply ,(->id 'init-fstruct!) ,name v pos initargs))
        ,@(map (^s (make-slot-procs (unwrap-syntax (car s)) (cadr s))) slots)

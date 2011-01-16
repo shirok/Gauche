@@ -535,6 +535,124 @@
          v))
 
 ;;----------------------------------------------------------
+(test-section "binary.io fstruct")
+
+(define *fstruct-storage*
+  '#u8(#x80 #x01 #x02 #x03 #x04 #x05 #x06 #x07
+       #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
+       #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
+       #x18 #x19 #x1a #x1b #x1c #x1d #x1e #x1f
+       #x20 #x21 #x22 #x23 #x24 #x25 #x26 #x27
+       #x28 #x29 #x2a #x2b #x2c #x2d #x2e #x2f
+       #x30 #x31 #x32 #x33 #x34 #x35 #x36 #x37
+       #x38 #x39 #x3a #x3b #x3c #x3d #x3e #x3f
+       ))
+
+;; procedural interface
+(let ([ft1 (make-fstruct-type 'ft1
+                              `((a ,ftype:schar)
+                                (b ,ftype:uchar)
+                                (c ,ftype:short)
+                                (d ,ftype:schar)
+                                (e ,ftype:short)
+                                (f ,ftype:schar)
+                                (g ,ftype:int)
+                                (h ,ftype:schar)
+                                (i ,ftype:long))
+                              #f #f)]
+      [ft2 (make-fstruct-type 'ft2      ;fully packed
+                              `((a ,ftype:schar)
+                                (b ,ftype:uchar)
+                                (c ,ftype:short)
+                                (d ,ftype:schar)
+                                (e ,ftype:short)
+                                (f ,ftype:schar)
+                                (g ,ftype:int)
+                                (h ,ftype:schar)
+                                (i ,ftype:long))
+                              #f 0)])
+  (define (read-all-slots ft endian :optional (off 0))
+    (parameterize ([default-endian endian])
+      (map (cut fstruct-ref/uv ft <> *fstruct-storage* off)
+           '(a b c d e f g h i))))
+  
+  (test* "big endian, natural alignment"
+         `(-128 1 #x0203 4 #x0607 8 #x0c0d0e0f #x10
+                ,(case (ftype-descriptor-size ftype:long)
+                   [(4) #x14151617]
+                   [(8) #x18191a1b1c1d1e1f]))
+         (read-all-slots ft1 'big-endian))
+  (test* "little endian, natural alignment"
+         `(-128 1 #x0302 4 #x0706 8 #x0f0e0d0c #x10
+                ,(case (ftype-descriptor-size ftype:long)
+                   [(4) #x17161514]
+                   [(8) #x1f1e1d1c1b1a1918]))
+         (read-all-slots ft1 'little-endian))
+  (test* "with offset"
+         `(8 9 #x0a0b 12 #x0e0f 16 #x14151617 24
+             ,(case (ftype-descriptor-size ftype:long)
+                [(4) #x1c1d1e1f]
+                [(8) #x2021222324252627]))
+         (read-all-slots ft1 'big-endian 8))
+
+  (test* "big endian, packed"
+         `(-128 1 #x0203 4 #x0506 7 #x08090a0b #x0c 
+                ,(case (ftype-descriptor-size ftype:long)
+                   [(4) #x0d0e0f10]
+                   [(8) #x0d0e0f1011121314]))
+         (read-all-slots ft2 'big-endian))
+  (test* "little endian, packed"
+         `(-128 1 #x0302 4 #x0605 7 #x0b0a0908 #x0c 
+                ,(case (ftype-descriptor-size ftype:long)
+                   [(4) #x100f0e0d]
+                   [(8) #x14131211100f0e0d]))
+         (read-all-slots ft2 'little-endian))
+  )
+
+;; define-fstruct-type macro
+(define-fstruct-type ft3 #t #t
+  ((a ftype:schar)
+   (b ftype:uchar)
+   (c ftype:short)
+   (d ftype:schar)
+   (e ftype:short)
+   (f ftype:schar)
+   (g ftype:int)
+   (h ftype:schar)
+   (i ftype:long)))
+
+(let ([fs #f])
+  (test* "ft3 ctor and pred" #t
+         (begin
+           (set! fs (make-ft3 :a -1 :b 2 :c #x0304 :d 5
+                              :e -1 :f 6 :g #x0708090a
+                              :h 7 :i #x0b0c0d0e))
+           (ft3? fs)))
+  (test* "ft3 store"
+         (case (default-endian)
+           [(big-endian)
+            (case (ftype-descriptor-size ftype:long)
+              [(4) '#u8(#xff 2 3 4 5 0 #xff #xff 6 0 0 0 7 8 9 10
+                        7 0 0 0 11 12 13 14)]
+              [(8) '#u8(#xff 2 3 4 5 0 #xff #xff 6 0 0 0 7 8 9 10
+                        7 0 0 0 0 0 0 0 0 0 0 0 11 12 13 14)])]
+           [(little-endian arm-little-endian)
+            (case (ftype-descriptor-size ftype:long)
+              [(4) '#u8(#xff 2 4 3 5 0 #xff #xff 6 0 0 0 10 9 8 7
+                        7 0 0 0 14 13 12 11)]
+              [(8) '#u8(#xff 2 4 3 5 0 #xff #xff 6 0 0 0 10 9 8 7
+                        7 0 0 0 0 0 0 0 14 13 12 11 0 0 0 0)])])
+         (fstruct-storage fs))
+  (test* "ft3 init w/offset" (fstruct-storage fs)
+         (let1 v (make-u8vector (+ 5 (ftype-descriptor-size ft3)))
+           (init-ft3! v 5
+                      :a -1 :b 2 :c #x0304 :d 5
+                      :e -1 :f 6 :g #x0708090a
+                      :h 7 :i #x0b0c0d0e)
+           (uvector-alias <u8vector> v 5)))
+  )
+
+;;----------------------------------------------------------
 (test-section "binary.pack")
 
 (use binary.pack)
