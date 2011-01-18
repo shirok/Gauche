@@ -68,7 +68,7 @@ SCMFILES = srfi-0.scm \
        gauche/package/util.scm gauche/package/compile.scm \
        gauche/experimental/ref.scm gauche/experimental/lamb.scm \
        gauche/experimental/app.scm \
-       binary/pack.scm \
+       binary/ftype.scm binary/pack.scm \
        control/job.scm control/thread-pool.scm \
        dbi.scm dbd/null.scm dbm.scm dbm/fsdbm.scm dbm/dump dbm/restore \
        math/const.scm \
