@@ -554,20 +554,76 @@ The following example creates an identity matrix of the given shape:
 @end example
 @end defun
 
-@defun array-retabulate! array shape proc :optional index
-@defunx array-retabulate! array proc :optional index
+@defun array-retabulate! array proc :optional index
+@defunx array-retabulate! array shape proc :optional index
+@c EN
+Calls @var{proc} over each index of the given @var{array}, and
+modifies the array's element by the returned value of @var{proc}.
+The optional index object can be used in
+the same way as @code{array-for-each-index}.
+The second form takes a shape; it must match
+the @var{array}'s shape.  It is redundant, but may allow some
+optimization in future in case @var{shape} is a literal.
+Returns an unspecified value.
+@c JP
+配列@var{array}の各インデックスに対して@var{proc}を呼び、その戻り値で
+@var{array}の要素を置き換えます。
+省略可能なインデックスオブジェクトの用途は
+@code{array-for-each-index}と同じです。
+二番目の呼び出し形式は第二引数にシェイプを取ります。
+それは@var{array}のシェイプと一致しなければなりません。
+意味的には冗長ですが、@var{shape}がリテラルである場合、
+何らかの最適化がなされる可能性があります。
+戻り値は未定義です。
+@c COMMON
 @end defun
 
-@defun array-map! array shape proc array0 array1 @dots{}
-@defunx array-map! array proc array0 array1 @dots{}
+@defun array-map proc array0 array1 @dots{}
+@defunx array-map shape proc array0 array1 @dots{}
+@c EN
+The arguments @var{array0}, @var{array1}, @dots{} must be arrays
+with the same shape.  For each set of corresponding elements of
+the input arrays, @var{proc} is called, and a new array of the
+same shape is created by the returned values.
+The second form takes a shape argument, which must match the
+shape of input array(s).  It is redundant, but may allow some
+optimization in future in case @var{shape} is a literal.
+@c JP
+引数@var{array0}, @var{array1}, @dots{}は同じシェイプを持つ
+配列でなければなりません。各入力配列の対応する要素について、
+それらを引数として@var{proc}が呼ばれ、その戻り値から
+新たな配列が作られて返されます。
+二番目の呼び出し形式は第二引数にシェイプを取ります。
+それは入力配列のシェイプと一致しなければなりません。
+意味的には冗長ですが、@var{shape}がリテラルである場合、
+何らかの最適化がなされる可能性があります。
+@c COMMON
+
+@example
+(array-map - (array (shape 0 2 0 2) 1 2 3 4))
+  @result{} #,(<array> (0 2 0 2) -1 -2 -3 -4)
+@end example
 @end defun
 
-@defun array-map shape proc array0 array1 @dots{}
-@defunx array-map proc array0 array1 @dots{}
+@defun array-map! array proc array0 array1 @dots{}
+@defunx array-map! array shape proc array0 array1 @dots{}
+@c EN
+Like @code{array-map}, but the results of @var{proc} are stored by the
+given @var{array}, whose shape must match the shape of input array(s).
+Returns unspecified value.
+@c JP
+@code{array-map}と似ていますが、@var{proc}の結果は
+与えられた@var{array}に格納されます。@var{array}のシェイプは
+入力配列のシェイプと同じでなければなりません。
+戻り値は未定義です。
+@c COMMON
 @end defun
 
 @defun array->vector array
 @defunx array->list array
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun array-concatenate a b :optional dimension
@@ -587,6 +643,19 @@ The following example creates an identity matrix of the given shape:
 @end defun
 
 @defun array-inverse array
+@c EN
+Regards the @var{array} as a matrix, and returns its inverse matrix;
+@var{array} must be 2-dimensional, and must have square shape.  If
+@var{array} doesn't satisfy these conditions, an error is thrown.
+
+If @var{array} isn't a regular matrix, @code{#f} is returned.
+@c JP
+@var{array}を行列とみなし、その逆行列を返します。
+@var{array}は2次元で、正方行列となるシェイプを持っていなければなりません。
+そうでない場合はエラーが投げられます。
+
+@var{array}が正則行列でない場合は@code{#f}が返されます。
+@c COMMON
 @end defun
 
 @defun determinant array
