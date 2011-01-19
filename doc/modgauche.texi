@@ -444,12 +444,114 @@ Shapeが@var{shape}であり、与えられた配列@var{array}とバッキン�
 @end defun
 
 @defun array-for-each-index array proc :optional index
+@c EN
+Calls @var{proc} with every index of @var{array}.
+If no @var{index} argument is provided, @var{proc} is called
+as @code{(@var{proc} @var{i} @var{j} @var{k} @dots{})}, in which
+(@var{i}, @var{j},@var{k},@dots{}) walks over the index.
+@c JP
+@var{array}の各インデックスに対して@var{proc}を呼びます。
+@var{index}引数が省略された場合は、
+@var{proc}はインデックス (@var{i}, @var{j},@var{k},@dots{}) に対して
+@code{(@var{proc} @var{i} @var{j} @var{k} @dots{})} のように呼ばれます。
+@c COMMON
+
+@example
+gosh> (define a (array (shape 0 2 0 2) 1 2 3 4))
+a
+gosh> a
+#,(<array> (0 2 0 2) 1 2 3 4)
+gosh> (array-for-each-index a (^(i j) (print i","j))) 
+0,0
+0,1
+1,0
+1,1
+@end example
+
+@c EN
+This form of passing indexes is simple but not very efficient, though.
+For better performance,
+you can pass an index object to an optional
+argument @var{index},
+which is modified for each index and passed to @var{proc}.
+The index object must be mutable, and
+either a vector, an one-dimensional array, an s8vector, an s16vector
+or an s32vector.  The length of the index object must match the
+rank of the array.  Using index object is efficient since the loop
+won't allocate.  Don't forget that the index object is destructively
+modified within the loop.
+@c JP
+この形式の呼び出しは簡単なのですが、あまり効率が良くありません。
+インデックスオブジェクトを省略可能引数@var{index}に渡すことで、
+より良い性能を引き出すことができます。
+インデックスオブジェクトはループの度に、各インデックスを表す値に書き換えられます。
+インデックスオブジェクトに使えるのは、変更可能な、ベクタ・1次元の配列・
+s8vector・s16vectorあるいはs32vectorで、その長さは配列@var{array}の
+ランクと一致していなければなりません。インデックスオブジェクトを使うと、
+ループ中に一切アロケーションが行われないため速度的に有利です。
+ただし、ループの度にインデックスオブジェクトの内容が書き換えられることに
+注意する必要があります。
+@c COMMON
+
+@example
+gosh> (array-for-each-index a (cut format #t "~s\n" <>) (vector 0 0))
+#(0 0)
+#(0 1)
+#(1 0)
+#(1 1)
+
+gosh> (array-for-each-index a (cut format #t "~s\n" <>) (s8vector 0 0))
+#s8(0 0)
+#s8(0 1)
+#s8(1 0)
+#s8(1 1)
+@end example
+
+@c EN
+The procedure returns an unspecified value.
+@c JP
+戻り値は未定義です。
+@c COMMON
 @end defun
 
 @defun shape-for-each shape proc :optional index
+@c EN
+Calls @var{proc} with all possible indexes represented by the shape
+@var{shape}.
+The optional @var{index} argument works the same
+way as @code{array-for-each-index}.  Returns an unspecified value.
+@c JP
+シェイプ@var{shape}が表現する全ての可能なインデックスに対して@var{proc}を呼びます。
+省略可能な@var{index}引数の動作は@code{array-for-each-index}と同様です。
+戻り値は未定義です。
+@c COMMON
+
+@example
+gosh> (shape-for-each (shape 0 2 0 2) (^(i j) (print i","j)))
+0,0
+0,1
+1,0
+1,1
+@end example
 @end defun
 
 @defun tabulate-array shape proc :optional index
+@c EN
+Calls @var{proc} over each index represented by the shape @var{shape},
+and creates an array from the result of @var{proc}.  The optional
+index object can be used in the same way as @code{array-for-each-index}.
+The following example creates an identity matrix of the given shape:
+@c JP
+@var{shape}が表現する各インデックスについて@var{proc}を呼び出し、
+その戻り値から配列を構築して返します。省略可能なインデックスオブジェクトの用途は
+@code{array-for-each-index}と同じです。
+次の例は与えられたシェイプに対する単位行列を生成します:
+@c COMMON
+
+@example
+(tabulate-array (shape 0 3 0 3) (^(i j) (if (= i j) 1 0)))
+  @result{} #,(<array> (0 3 0 3) 1 0 0 0 1 0 0 0 1)
+@end example
 @end defun
 
 @defun array-retabulate! array shape proc :optional index
