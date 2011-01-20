@@ -7412,7 +7412,7 @@ binds the procedure to @var{var}, then executes @var{expr} @dots{}
 with the continuation saved by the most recent @code{reset}.
 @c JP
 この式からもっとも最近の@code{reset}により切り取られた空の継続までの継続を
-手続きに包み、それを@var{var}に束縛ます。
+手続きに包み、それを@var{var}に束縛します。
 そしてもっとも最近の@var{reset}式の継続を伴って@var{expr} @dots{}を実行します。
 @c COMMON
 
@@ -7450,40 +7450,64 @@ Sometimes this similarity of @code{call/cc} comes handy.
 @c EN
 Well, @dots{} I bet you feel like your brain is twisted hard
 unless you are one of those rare breed from the land of continuation.
-Let me break down what's happening here.
+Let me break down what's happening here informally and intuitively.
 @c JP
 さてと… もしあなたが、継続の国の血を引く珍しい種族の一員でなければ、
 たぶんここまで読んできて、脳みそがこんがらがっていることでしょう。
-何が起きているか、説明を試みてみます。
+何が起きているか、厳密ではないが直感的な説明を試みてみます。
 @c COMMON
 
+@c EN
 Suppose a procedure A calls an expression B.   If A expects a return
 value from B and continue processing, we split the part after returning
 from B into a separate chunk A', then we can think of the whole
 control flow as this straight chain:
+@c JP
+手続きAが式Bを呼び出すとします。AがBの戻り値を受け取ってさらに計算を続ける場合、
+Bが戻ってからの残りの計算部分をA'として分離することにすれば、全体の制御の流れは
+次のように一本の鎖で表現できるでしょう。
+@c COMMON
 
 @example
 A -> B -> A'
 @end example
 
+@c EN
 @code{A -> B} is a procedure call and @code{B -> A'} is a return,
 but we all know procedure call and return is intrinsically the
 same thing, right?
+@c JP
+@code{A -> B}は手続き呼び出しで、@code{B -> A'}は手続きからのリターンですが、
+手続き呼び出しとリターンは本質的には同じものでしたね。
+@c COMMON
 
+@c EN
 Procedure B may call another procedure C, and so on.  So when
 you look at an execution of particular piece of code, you can
 think of a chain of control flow like this:
+@c JP
+Bはその中から別の手続きCをさらに呼び出しているかもしれません。
+コードのある部分に着目した場合、そこにある制御の鎖を
+次のようにイメージすることができるでしょう。
+@c COMMON
 
 @example
 ... -> A -> B -> C -> .... -> C' -> B' -> A' -> ...
 @end example
 
-The magic procedure @code{call/cc} extracts the head of the chain
+@c EN
+The magic procedure @code{call/cc} picks the head of the chain
 following its execution (marked as @code{*} in the figure blow),
 and passes it to the given procedure (denoted @code{k} in the figure
 below).
 So, whenever @code{k} is invoked, the control goes through the
 chain from @code{*}.
+@c JP
+魔法の手続き@code{call/cc}は、そのフォームの直後に来る鎖の先頭
+(下の図で@code{*}で示されている部分)を取り上げて、それを
+与えられた手続きに引数として渡すものです (下の図の@code{k})。
+従って、@code{k}が呼び出されると、制御は直ちに@code{*}へとジャンプします。
+@c COMMON
 
 @example
 ... -> A -> B -> (call/cc -> (lambda (k) ... ) ) -> B' -> A' -> ...
@@ -7491,17 +7515,30 @@ chain from @code{*}.
                                       \-----------> *
 @end example
 
+@c EN
 One difficulty with @code{call/cc} is that the extracted chain
 is only one-ended---we don't know what is chained to the
-left.  In fact, what will come after that depends
+right.  In fact, what will come after that depends
 on the whole program; it's outside of local control.  This global
 attribute of @code{call/cc} makes it difficult to deal with.
+@c JP
+@code{call/cc}で難しいのは、制御の鎖の片方しか取り出せないことです。
+もう一方、鎖の右側がどこにつながっているのか、コードは知ることができません。
+そもそも、鎖の右側に何が来るかは、プログラム全体を知らないとわからないのです。
+この、グローバルな性質が、@code{call/cc}を扱い辛いものにしています。
+@c COMMON
 
+@c EN
 The @code{reset} primitive @emph{cuts} this chain of 
 continuation.  The original chain of continuation (the @code{x}-end
 in the following figure) is saved somewhere, and the continuation
 of @code{reset} itself becomes open-ended (the @code{o}-end
 in the following figure).
+@c JP
+@code{reset}プリミティブはこの継続の鎖を@emph{切断}します。
+元の鎖 (下の図の@code{x}で示される端) は保存され、
+@code{reset}式の継続自体は宙ぶらりんになります (下の図の@code{o}で示される端)。
+@c COMMON
 
 @example
 ... -> A -> B -> (reset ... ) -> o
@@ -7509,28 +7546,53 @@ in the following figure).
                                  x -> B ' -> A' -> ...
 @end example
 
+@c EN
 A rule: If control reaches to the @code{o}-end, we pick the
 @code{x}-end @emph{most recently saved}.
 Because of this, @code{reset} alone doesn't show any
 difference in the program behavior.
+@c JP
+ここでひとつ規則を導入します。制御が@code{o}の端に達した場合、
+もっとも最近保存された@code{x}の端から制御を再開するとします。
+従って、単に@code{reset}を挿入するだけでは、目に見える違いは生じません。
+@c COMMON
 
+@c EN
 Now what happens if we insert @code{shift} inside @code{reset}?
 This is a superficial view of inserting @code{shift} into
 somewhere down the chain of reset:
+@c JP
+@code{reset}の中に@code{shift}を挿入したらどうなるでしょう。
+resetの内部の鎖に@code{shift}を形式的に挿入してみるとこうなります。
+@c COMMON
 
 @example
 ... -> (reset ... X -> Y -> (shift k ... ) -> Y' -> X' ) -> o
 @end example
 
+@c EN
 What actually happens is as follows.
+@c JP
+実際には次のような動作となります。
+@c COMMON
 
 @enumerate
 @item
+@c EN
 @code{shift} packages @emph{the rest of the chain of work} until the
 end of @code{reset}, and bind it to the variable @var{k}.
+@c JP
+@code{shift}は、@code{reset}の終端までの@emph{仕事の残りの部分}を取り出し、
+それを変数@var{k}に束縛します。
+@c COMMON
 @item
+@c EN
 The continuation of @code{shift} is connected to the saved
 end (@code{x}-end) of the original continuation.
+@c JP
+@code{shift}自身の継続は、保存されていた元の継続の端 (@code{x}の端) へと
+接続されます。
+@c COMMON
 @end enumerate
 
 @example
@@ -7539,16 +7601,29 @@ end (@code{x}-end) of the original continuation.
                                    \--> @{ -> Y' -> X' ) -> o @}
 @end example
 
+@c EN
 In other words, when you consider the @code{reset} form as
 one chunk of task, then @code{shift} in it
 @emph{stashes away} the rest of the task and immediately
 returns from the task.  
+@c JP
+別の言い方をすれば、@code{reset}フォームをひとつの仕事の単位とすれば、
+その中の@code{shift}は、その仕事の残りの部分を@emph{一時保存}して
+仕事を中断して戻ってくるのです。
+@c COMMON
 
+@c EN
 Let's see an example.  The @var{walker} argument in
 the following example is a procedure that takes a procedure
 and some kind of collection,
 and applies the procedure to the each element in the collection.
 We ignore the return value of @var{walker}.
+@c JP
+例を見てみます。次に示す@var{walker}引数は、
+「手続きと何らかのコレクションを取り、手続きをコレクションの各要素に
+適用してゆく」という手続きとします。
+@var{walker}の戻り値は無視します。
+@c COMMON
 
 @example
 (define (inv walker)
@@ -7559,11 +7634,19 @@ We ignore the return value of @var{walker}.
     (lambda () (continue))))
 @end example
 
+@c EN
 A typical example of @var{walker} is @code{for-each}, which takes
 a list and applies the procedure to each element of the list.
 If we pass @code{for-each} to @code{inv}, we get a procedure
 that is inverted @emph{inside-out}.  What does that mean?
 See the following session:
+@c JP
+@var{walker}の典型的な例は@code{for-each}です。手続きとリストを取り、
+リストの各要素に手続きを適用するからです。
+@code{for-each}を上の@code{inv}に渡すと、@code{for-each}を
+@emph{裏返した}手続きが得られます。どういうことでしょう?
+下のやりとりを見てみましょう。
+@c COMMON
 
 @example
 gosh> (define inv-for-each (inv for-each))
@@ -7580,15 +7663,27 @@ gosh> (iter)
 #<eof>
 @end example
 
+@c EN
 When you pass a list to @code{inv-for-each}, you get an iterator
-that returns each element in the list.  That's because every
+that returns each element in the list for each call.  That's because every
 time @code{iter} is called, @code{shift} in @code{inv}
 stashes away the task of @emph{walking the rest of the collection}
 and set it to @code{continue}, then returns the current element @var{e}.
+@c JP
+リストを@code{inv-for-each}に渡すと、呼ばれる度にリストの各要素を順に返す
+イテレータ手続きが得られます。というのも、@code{iter}が呼ばれる度に、
+@code{inv}の中で作られた@code{shift}は@emph{リストの残りの部分をたどって行く}
+という仕事の残りを@code{countine}に束縛して、現在の要素@var{e}を返すからです。
+@c COMMON
 
+@c EN
 @var{walker} doesn't need to work just on list.  The following
 function @code{for-each-leaf} traverses a tree and
 apply @var{f} on each non-pair element.
+@c JP
+@var{walkre}はリストを取る必要はありません。次に示す@code{for-each-leaf}は
+木を取って、@var{f}をペアでない要素に適用してゆく手続きです。
+@c COMMON
 
 @example
 (define (for-each-leaf f tree)
@@ -7597,7 +7692,11 @@ apply @var{f} on each non-pair element.
    [x (f x)]))
 @end example
 
+@c EN
 And you can inverse it just like @code{for-each}.
+@c JP
+これも@code{for-each}と同じように裏返すことができます。
+@c COMMON
 
 @example
 gosh> (define iter2 ((inv for-each-leaf) '((1 . 2) . (3 . 4))))
@@ -7614,11 +7713,17 @@ gosh> (iter2)
 #<eof>
 @end example
 
+@c EN
 The @code{util.combinations} module (@xref{Combination library})
 provides a procedure that @emph{calls} a given procedure with
 every permutation of the given collection.  If you pass
 it to @code{inv}, you get a procedure that @emph{returns}
 every permutation each time.
+@c JP
+@code{util.combinations}モジュール (@ref{Combination library}参照) には、
+コレクションの全ての並べ替えに対して与えられた手続きを@emph{呼び出す}手続きがあります。
+それを@code{inv}に渡せば、呼ばれる度に並べ替えを@emph{返す}手続きが得られます。
+@c COMMON
 
 @example
 gosh> (define next ((inv permutations-for-each) '(a b c)))
