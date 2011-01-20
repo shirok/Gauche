@@ -622,14 +622,70 @@ Returns unspecified value.
 @defun array->vector array
 @defunx array->list array
 @c EN
+Returns a fresh vector or a fresh list of all elements in @var{array}.
 @c JP
+@var{array}の全要素を並べたベクタもしくはリストを作って返します。
 @c COMMON
+
+@example
+(array->vector
+ (tabulate-array (shape 1 3 1 4)
+                 (^(i j) (+ (* 10 i) j))))
+ @result{} #(11 12 13 21 22 23)
+@end example
 @end defun
 
 @defun array-concatenate a b :optional dimension
+@c EN
+Concatenates arrays at the specified dimension.  The sizes of the 
+specified dimension of two arrays must match, although the shapes
+can be different.   Arrays can be of any ranks, but two ranks must
+match.
+@c JP
+指定の次元で配列を結合します。指定の次元の大きさは一致していなければなりません。
+それ以外のシェイプは異なっていても構いません。配列のランクはいくつであっても
+構いませんが、両配列のランクは同じでなければなりません。
+@c COMMON
+
+@example
+;;  [a b]              [a b]
+;;  [c d] (+)       => [c d]
+;;            [e f]    [e f]
+(array-concatenate
+ (array (shape 0 2 0 2) 'a 'b 'c 'd)
+ (array (shape 0 1 0 2) 'e 'f))
+ @result{} #,(<array> (0 3 0 2) a b c d e f)
+
+;;  [a b]     [e]    [a b e]
+;;  [c d] (+) [f] => [c d f]
+(array-concatenate
+ (array (shape 0 2 0 2) 'a 'b 'c 'd)
+ (array (shape 0 2 0 1) 'e 'f)
+ 1)
+ @result{} #,(<array> (0 2 0 3) a b e c d f)
+
+@c EN
+;; The index range can differ, as far as the sizes match
+@c JP
+;; 結合次元の大きさが同じであればインデックスの範囲は異なっていてもよい
+@c COMMON
+(array-concatenate
+ (array (shape 0 2 0 2) 'a 'b 'c 'd) 
+ (array (shape 1 3 0 1) 'e 'f) 1)
+ @result{} #,(<array> (0 2 0 3) a b e c d f)
+@end example
 @end defun
 
 @defun array-transpose array :optional dim1 dim2
+@c EN
+The given array must have a rank greater than or equal to 2.
+Transpos the array's @var{dim1}-th dimension and
+@var{dim2}-th dimension.  The default is 0 and 1.
+@c JP
+@var{array}はランク2以上の配列でなければなりません。
+配列の@var{dim1}番目の次元と@var{dim2}番目の次元を転置します。
+デフォルトは0番目と1番目です。
+@c COMMON
 @end defun
 
 @defun array-rotate-90 array :optional dim1 dim2
@@ -660,6 +716,23 @@ If @var{array} isn't a regular matrix, @code{#f} is returned.
 
 @defun determinant array
 @defunx determinant! array
+@c EN
+Regards the @var{array} as a matrix, and calculates its determinant;
+@var{array} must be 2-dimensional, and must have square shape.  If
+@var{array} doesn't satisfy these conditions, an error is thrown.
+
+@code{determinant!} destructively modifies the given array during
+calculation.  It is faster than @code{determinant}, which copies
+@var{array} before calculation to preserve it.
+@c JP
+@var{array}を行列とみなし、その行列式を計算します。
+@var{array}は2次元で、正方行列となるシェイプを持っていなければなりません。
+そうでない場合はエラーが投げられます。
+
+また、@code{determinant!}は計算過程で@var{array}の内容を破壊します。
+@code{determinant}は計算の前に@var{array}をコピーするオーバヘッドが
+ありますが、@var{array}は変更されません。
+@c COMMON
 @end defun
 
 @defun array-mul a b
