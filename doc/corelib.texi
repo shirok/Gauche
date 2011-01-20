@@ -1573,21 +1573,41 @@ it is written as @code{#x04 #x03 #x02 #x01 #x08 #x07 #x06 #x05}.
 @c COMMON
 @end table
 
+@c EN
 When the @var{endian} argument is omitted, those procedures
 use the parameter @code{default-endian}:
+@c JP
+@var{endian}引数が省略された場合は、これらの手続きはパラメータ@code{default-endian}の
+値を使います。
+@c COMMON
 
 @deffn {Parameter} default-endian
+@c EN
 This is a dynamic parameter (@xref{Parameters}) to specify
 the endianness the binary I/O routines use when its @var{endian}
-argument is omitted.  The default value of this parameter is
+argument is omitted.  The initial value of this parameter is
 the system's native endianness.
+@c JP
+これは、バイナリ入出力ルーチンで@var{endian}指定が省略された場合に
+共通して使われるエンディアンを指定する動的パラメータです
+(@ref{Parameters}参照)。
+このパラメータの初期値はシステムのネイティブエンディアンです。
+@c COMMON
 @end deffn
 
+@c EN
 The system's native endianness can be queried with the following
 procedure:
+@c JP
+システムのネイティブエンディアンは次の手続きで得られます。
+@c COMMON
 
 @defun native-endian
+@c EN
 Returns a symbol representing the system's endianness.
+@c JP
+システムのエンディアンを示すシンボルを返します。
+@c COMMON
 @end defun
 
 
@@ -2227,21 +2247,38 @@ R5RSのシンボルの定義では許されていない文字を使った妙な�
 @end deftp
 
 @deftp {Reader Syntax} @code{#:@i{name}}
-Denotes uninterned symbol.  Uninterned symbols can be created
+@c EN
+Denotes @emph{uninterned} symbol.  Uninterned symbols can be created
 by @code{gensym} or @code{string->uninterned-symbol}.
+@c JP
+「インターンされていない」シンボルを表記します。インターンされていないシンボルは
+@code{gensym}か@code{string->uninterned-symbol}で作ることができます。
+@c COMMON
 
+@c EN
 Uninterned symbols are mainly for legacy macros to avoid
 variable conflicts.   They are not registered in the internal
 dictionary, so such symbols with the same name can't be @code{eq?}.
+@c JP
+インターンされていないシンボルは、良く伝統的なマクロで
+変数衝突を避けるために使われます。インターンされていないシンボルは
+内部のシンボルのテーブルに登録されないため、同じ名前のシンボルでも
+@code{eq?}になりません。
+@c COMMON
 
 @example
 (eq? '#:foo '#:foo) @result{} #f
 (eq? '#:foo 'foo) @result{} #f
 @end example
 
+@c EN
 When an S-expression including uninterned symbols are printed,
 the srfi-38 syntax is used to indicate which uninterened symbol
 is the same (@code{eq?}) to which.
+@c JP
+インターンされていないシンボルが含まれるS式を、シンボルの同一性を保って
+表記するには、@code{srfi-38}記法が使えます。
+@c COMMON
 
 @example
 (let1 s '#:foo) (list s s))
@@ -2270,9 +2307,14 @@ Returns true if and only if @var{obj} is a symbol.
 @end defun
 
 @defun symbol-interned? symbol
+@c EN
 Returns @code{#t} if @var{symbol} is an interned symbol,
 @code{#f} if it is an uninterned symbol.   An error is signalled
 if @var{symbol} is not a symbol.
+@c JP
+シンボル@var{symbol}がインターンされていらば@code{#t}を、
+そうでなければ@code{#f}を返します。シンボルでないものが渡された場合はエラーとなります。
+@c COMMON
 @end defun
 
 
@@ -2307,7 +2349,11 @@ Returns a symbol whose name is a string @var{string}.
 @end defun
 
 @defun string->uninterned-symbol string
+@c EN
 Like @code{string->symbol}, but the created symbol is uninterned.
+@c JP
+@code{string->symbol}と似ていますが、作られたシンボルはインターンされません。
+@c COMMON
 
 @example
 (string->uninterned-symbol "a") @result{} #:a
@@ -2316,19 +2362,34 @@ Like @code{string->symbol}, but the created symbol is uninterned.
 
 
 @defun gensym :optional prefix
+@c EN
 Returns a fresh, uninterned symbol.  The returned symbol can never
 be @code{eq?} to other symbol within the process.
 If @var{prefix} is given, which must be a string, it is used
 as a prefix of the name of the generated symbol.  It is mainly for
 the convenience of debugging.
+@c JP
+インターンされてない、新しいシンボルを作って返します。
+返されるるシンボルは、他のシンボルとは決死絵@code{eq?}にならないことが保証されます。
+@var{prefix}が与えられた場合は、それは文字列でなければならず、
+それが作られるシンボルのプレフィクスに使われます。これは主としてデバッグを
+容易にするためのものです。
+@c COMMON
 @end defun
 
 @defun symbol-sans-prefix symbol prefix
+@c EN
 Both @var{symbol} and @var{prefix} must be symbols.
 If the name of @var{prefix} matches the beginning part of the
 name of @var{symbol}, this procedure returns a symbol whose
 name is the name of @var{symbol} without the mached prefix.
 Otherwise, it returns @code{#f}.
+@c JP
+@var{symbol}と@var{prefix}は共にシンボルでなければなりません。
+@var{prefix}が@var{symbol}の先頭部分にマッチした場合、
+@var{symbol}からマッチ部分を取り除いた名前を持つシンボルを返します。
+マッチしない場合は@code{#f}を返します。
+@c COMMON
 
 @example
 (symbol-sans-prefix 'foo:bar 'foo:) @result{} bar
