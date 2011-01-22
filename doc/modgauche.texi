@@ -7402,6 +7402,62 @@ expression to this null continuation.
 現在の継続を保存し、@var{expr} @dots{} を@emph{空の継続}を伴って実行します。
 空の継続は@code{shift}オペレータが捕捉する継続の終端になります。
 @c COMMON
+
+@c EN
+Note on @emph{implicit delimited continuations}:
+There's an occasion Gauche effectively calls @code{reset} internally:
+When C routine calls back to Scheme in non-CPS manner.
+(If you know C API, it is @code{Scm_EvalRec()}, @code{Scm_ApplyRec*()}, 
+@code{Scm_Eval()} and @code{Scm_Apply()} family of functions.)  The callers
+of such routines expect the result is returned at most once, which won't
+work well with Scheme's continuations that have unlimited extent.
+Such calls create delimited continuations implicitly.
+
+For example, the @code{main} routine of @code{gosh} calls Scheme REPL by
+@code{Scm_Eval()}, which means the entire REPL is effectively surrounded
+by a @code{reset}.  So, if you call @code{shift} without corresponding
+@code{reset}, the continuation of @code{shift} becomes the continuation
+of the entire REPL---which is to exit from @code{gosh}.  
+This may be surprising if you don't know about the implicit delimited
+continuation.
+
+Other places the implicit delimited continuations are created 
+are the handlers virtual ports (@xref{Virtual ports}), 
+@code{object-apply} methods called from @code{write} and @code{display},
+and GUI callbacks such as the one registered by @code{glut-display-func}
+(See the document of Gauche-gl for the details), to name a few.
+
+In general you don't need to worry about it too much, since most
+built-in and extension routines written in C calls back Scheme in CPS manner,
+and works with both full and delimited continuations.
+@c JP
+@emph{暗黙の限定継続}について:
+Gaucheは内部的に、@code{reset}相当の操作を行う場合があります。
+CルーチンがSchemeを継続渡し形式でない方法で呼び出す場合です。
+(C APIをご存知の方へ: @code{Scm_EvalRec()}, @code{Scm_Apply*Rec()},
+@code{Scm_Eval()}、および@code{Scm_Apply()}が相当する関数です。)
+これらの関数はCの呼び出し側へ、値をたかだか1度だけ返すことが期待されています。
+Schemeの継続は無限エクステントを持ち、一度返ったルーチンから再び返ることが
+あり得るため、こういったC関数とは相性が良くありません。
+これらの関数を呼び出す時に、Gaucheは限定継続を自動的に作成します。
+
+例えば、@code{gosh}の@code{main}関数はSchemeのREPLを
+@code{Scm_Eval()}を通じて呼び出します。ということは、
+REPL全体が@code{reset}で囲まれているということです。
+従って@code{reset}の外側で@code{shift}を呼び出すと、その@code{shift}の
+継続はREPL全体の継続と同じになります。すなわち、@code{gosh}が終了するということです。
+暗黙の限定継続に気づかないと、この振る舞いにはびっくりするかもしれません。
+
+他に暗黙の限定継続が作られる例をいくつかあげます。
+仮想ポートのハンドラ (@ref{Virtual ports}参照)、
+@code{write}や@code{display}から呼ばれる@code{object-apply}メソッド、
+@code{glut-display-func}により登録されたGUIコールバック
+(詳しくはGauche-glのマニュアル参照)などです。
+
+そのような暗黙の限定継続を心配する必要は滅多にありません。Cで実装された
+組み込み関数や拡張関数のほとんどは継続渡し形式でSchemeを呼んでいるため、
+通常継続も限定継続も制限なく使うことができます。
+@c COMMON
 @end defmac
 
 @defmac shift var expr @dots{}
@@ -7587,16 +7643,17 @@ end of @code{reset}, and bind it to the variable @var{k}.
 @c COMMON
 @item
 @c EN
-The continuation of @code{shift} is connected to the saved
-end (@code{x}-end) of the original continuation.
+The continuation of @code{shift} becoms a null continuation as well,
+so after @code{shift} returns, the control skips the rest of
+operations until the corresponding @code{reset}.
 @c JP
-@code{shift}自身の継続は、保存されていた元の継続の端 (@code{x}の端) へと
-接続されます。
+@code{shift}自身の継続は、空の継続となります。したがって@code{shift}から抜けると、
+@code{shift}以降対応する@code{reset}までの操作はスキップされます。
 @c COMMON
 @end enumerate
 
 @example
-... -> (reset ... X -> Y -> (shift k ... ) -> x -> B ' -> A' -> ...
+... -> (reset ... X -> Y -> (shift k ... ) -> o
                                    |
                                    \--> @{ -> Y' -> X' ) -> o @}
 @end example
