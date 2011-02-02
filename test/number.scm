@@ -270,6 +270,12 @@
 (test* "flonum reader (minimum denormalized number -5.0e-324)" #t
        (let1 x (- (expt 2.0 -1074))
          (= x (string->number (number->string x)))))
+
+;; This hanged in 0.9.1.  See Jens Thiele's message in gauche-devel
+;; in Feb. 2011.
+(test* "flonum reader (minimum normalized number)" #t
+       (= (expt 2.0 (- 52 1074))
+          (string->number "2.2250738585072012e-308")))
        
 
 (test* "padding" '(10.0 #t) (flonum-test '1#))

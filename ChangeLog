@@ -1,3 +1,9 @@
+2011-02-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (algorithmR): Correct error estimation at the
+	  normalized/denormalized boundary.  This avoids the infinite loop
+	  while reading 2.2250738585072012e-308.
+
 2011-01-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/binary/ftype.scm, ext/binary/io.scm, ext/binary/test.scm:

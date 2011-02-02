@@ -3543,6 +3543,7 @@ static double algorithmR(ScmObj f, int e, double z)
         case -1: /* d2 < y */
             if (Scm_NumCmp(m, SCM_2_52) == 0
                 && sign_d < 0
+                && k > -1074
                 && Scm_NumCmp(Scm_Ash(d2, 1), y) > 0) {
                 goto prevfloat;
             } else {
