@@ -1,3 +1,8 @@
+2011-02-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-42.scm (%replace-keywords): Made it hygiene.  The previous
+	  versions failed when the inserted srfi-42-* symbols were not imported.
+
 2011-02-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (algorithmR): Correct error estimation at the
