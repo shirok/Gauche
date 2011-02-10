@@ -1,3 +1,12 @@
+2011-02-10  Shiro Kawai  <shiro@acm.org>
+
+	* rfc/http.scm (with-connection, reset-http-connection): Added tentative
+	  support of persistent connection.  Currently it doesn't handle the
+	  case when the server abandons the connection---we should detect it
+	  and retry.   Besides, the connection should be reset if an error
+	  occurs during handling the communication.  Use with care, and do
+	  not assume this is the final behavior.
+
 2011-02-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-42.scm (%replace-keywords): Made it hygiene.  The previous

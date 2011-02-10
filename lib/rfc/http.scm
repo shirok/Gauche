@@ -59,8 +59,8 @@
   (use util.match)
   (use util.list)
   (export <http-error>
-          http-user-agent make-http-connection http-compose-query
-          http-compose-form-data
+          http-user-agent make-http-connection reset-http-connection
+          http-compose-query http-compose-form-data
           
           http-request
           http-null-receiver http-string-receiver http-oport-receiver 
@@ -385,7 +385,7 @@
 ;; the rfc.http APIs create a temporary connection under the hood.)
 
 (define-class <http-connection> ()
-  ;; All the slots are private.
+  ;; All slots are private.
   ((server :init-keyword :server)       ; server[:port]
    (socket :init-value #f)              ; A <socket> for persistent connection.
                                         ; If it is shutdown by the server,
@@ -393,21 +393,24 @@
    (secure-agent  :init-value #f)       ; When using secure connection via
                                         ; external process, this slot holds
                                         ; its handle.
+   (persistent    :init-keyword :persistent)   ; true for persistent connection.
    (auth-handler  :init-keyword :auth-handler) ; unused yet
    (auth-user     :init-keyword :auth-user)    ; unused yet
    (auth-password :init-keyword :auth-password); unused yet
    (proxy         :init-keyword :proxy)
    (extra-headers :init-keyword :extra-headers)
-   (secure        :init-keyword :secure)
+   (secure        :init-keyword :secure) ; boolean
    ))
 
 (define (make-http-connection server :key
+                              (persistent #t)
                               (auth-handler  http-default-auth-handler)
                               (auth-user     #f)
                               (auth-password #f)
                               (proxy #f)
                               (extra-headers '()))
   (make <http-connection>
+    :persistent persistent
     :server server :auth-handler auth-handler :auth-user auth-user
     :auth-password auth-password :proxy proxy
     :extra-headers extra-headers))
@@ -518,9 +521,11 @@
 ;; Always returns a connection object.
 (define (ensure-connection server auth-handler auth-user auth-password
                            proxy secure extra-headers)
-  (rlet1 conn (cond [(is-a? server <http-connection>) server]
-                    [(string? server) (make-http-connection server)]
-                    [else (error "bad type of argument for server: must be an <http-connection> object or a string of the server's name, but got:" server)])
+  (rlet1 conn (cond
+               [(is-a? server <http-connection>) server]
+               [(string? server) (make-http-connection server :persistent #f)]
+               [else (error "bad type of argument for server: must be an <http-connection> object or a string of the server's name, but got:" server)])
+    ;; TODO: Might need to reset connections if parameters are changed
     (let-syntax ([check-override
                   (syntax-rules ()
                     [(_ id)
@@ -532,39 +537,62 @@
       (check-override extra-headers)
       (check-override secure))))
 
-(define (server->socket server)
-  (cond [(#/([^:]+):(\d+)/ server)
-         => (^m (make-client-socket (m 1) (x->integer (m 2))))]
-        [else (make-client-socket server 80)]))
+(define (reset-http-connection conn)
+  (shutdown-socket-connection conn)
+  (shutdown-secure-agent conn))
+
+(define (start-socket-connection conn)
+  (let1 server (or (~ conn'proxy) (~ conn'server))
+    (set! (~ conn'socket)
+          (cond [(#/([^:]+):(\d+)/ server)
+                 => (^m (make-client-socket (m 1) (x->integer (m 2))))]
+                [else (make-client-socket server 80)]))))
+
+(define (shutdown-socket-connection conn)
+  (when (~ conn'socket)
+    (guard (e [(<system-error> e) #f])
+      (socket-shutdown (~ conn'socket)))
+    (socket-close (~ conn'socket))
+    (set! (~ conn'socket) #f)))
 
 (define (with-connection conn proc)
   (cond [(~ conn'secure)
-         (start-secure-agent conn)
+         (unless (and (~ conn'persistent) (~ conn'secure-agent))
+           (start-secure-agent conn))
          (unwind-protect
              (proc (process-output (~ conn'secure-agent))
                    (process-input (~ conn'secure-agent)))
-           (shutdown-secure-agent conn))]
+           (unless (~ conn'persistent)
+             (shutdown-secure-agent conn)))]
         [else
-         (let1 s (server->socket (or (ref conn'proxy) (ref conn'server)))
-           (unwind-protect
-               (proc (socket-input-port s) (socket-output-port s))
-             (socket-close s)))]))
+         (unless (and (~ conn'persistent) (~ conn'socket))
+           (start-socket-connection conn))
+         (unwind-protect
+             (proc (socket-input-port (~ conn'socket))
+                   (socket-output-port (~ conn'socket)))
+           (unless (~ conn'persistent)
+             (shutdown-socket-connection conn)))]))
 
 (define (request-response method conn host request-uri
                           sender receiver options enc)
   (define no-body-replies '("204" "304"))
-  (receive (host uri)
-      (consider-proxy conn (or host (~ conn'server)) request-uri)
-    (with-connection
-     conn
-     (lambda (in out)
-       (send-request out method host uri sender options enc)
-       (receive (code headers) (receive-header in)
-         (values code
-                 headers
-                 (and (not (eq? method 'HEAD))
-                      (not (member code no-body-replies))
-                      (receive-body in code headers receiver))))))))
+  (receive (host uri) (consider-proxy conn (or host (~ conn'server)) request-uri)
+    (let1 req-headers `(,@(if (~ conn'persistent)
+                            (if (~ conn'proxy)
+                              '(:proxy-connection keep-alive)
+                              '(:connection keep-alive))
+                            '())
+                        :host ,host ,@options)
+      (with-connection
+       conn
+       (lambda (in out)
+         (send-request out method uri sender req-headers enc)
+         (receive (code rep-headers) (receive-header in)
+           (values code
+                   rep-headers
+                   (and (not (eq? method 'HEAD))
+                        (not (member code no-body-replies))
+                        (receive-body in code rep-headers receiver)))))))))
 
 ;; canonicalize uri for the sake of redirection.
 ;; URI is a request-uri given to the API, or the redirect location specified
@@ -592,11 +620,11 @@
     (values host uri)))
 
 ;; send
-(define (send-request out method host uri sender options enc)
+(define (send-request out method uri sender headers enc)
   (display #`",method ,uri HTTP/1.1\r\n" out)
   (case method
     [(POST PUT)
-     (sender (options->request-headers `(:host ,host ,@options)) enc
+     (sender (options->request-headers headers) enc
              (lambda (hdrs)
                (send-headers hdrs out)
                (let ([chunked?
@@ -610,13 +638,14 @@
                    (flush out)
                    out))))]
     [else
-     (send-headers (options->request-headers `(:host ,host ,@options)) out)]))
+     (send-headers (options->request-headers headers) out)]))
 
 (define (send-headers hdrs out)
   (dolist [hdr hdrs] (format out "~a: ~a\r\n" (car hdr) (cadr hdr)))
   (display "\r\n" out)
   (flush out))
 
+;; convert key-value list to (("key" "value") ...)
 (define (options->request-headers options)
   (let loop ([options options] [r '()])
     (if (or (null? options) (null? (cdr options))) ;be permissive
