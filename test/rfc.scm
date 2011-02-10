@@ -895,7 +895,7 @@ Content-Length: 4349
                    :receiver (lambda (code hdrs total retr)
                                (let loop ((result '()))
                                  (receive (port size) (retr)
-                                   (if (= size 0)
+                                   (if (and size (= size 0))
                                      result
                                      (loop (append result (read port)))))))
                    :my-header "foo")
@@ -932,11 +932,11 @@ Content-Length: 4349
                   (let loop ()
                     (receive (port size) (retr)
                       (cond
-                       [(= size 0) (close-output-port sink) 404]
+                       [(and size (= size 0)) (close-output-port sink) 404]
                        [else (copy-port port sink :size size) (loop)])))))]            ["200" (lambda (code hdrs total retr)
                 (let loop ((result '()))
                   (receive (port size) (retr)
-                    (if (= size 0)
+                    (if (and size (= size 0))
                       result
                       (loop (append result (read port)))))))]
        ))

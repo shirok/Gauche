@@ -6,6 +6,11 @@
 	  and retry.   Besides, the connection should be reset if an error
 	  occurs during handling the communication.  Use with care, and do
 	  not assume this is the final behavior.
+	  (receive-body): Changed the handling of the case when response size
+	  is unknown.  Now we pass the receive handler #f in that case.  The
+	  receive handler should read as much data as it want and need to call
+	  the retriever thunk again.  The predefined *-receivers are adjusted
+	  accordingly.
 
 2011-02-05  Shiro Kawai  <shiro@acm.org>
 

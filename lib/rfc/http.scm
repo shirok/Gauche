@@ -142,6 +142,11 @@
 ;;             The retriever procedure returns zero when body is exhausted.
 ;;             In that case the value(s) the receiver returns will be
 ;;             the return value of http-request.
+;;             The retriever thunk can return #f as size, if we don't know the
+;;             chunk of response size.  In that case, the receiver may read
+;;             up to EOF, or as much data as it wants, then call the
+;;             retriever.  The second time the retriever returns size=0,
+;;             so you can do cleanup work.
 ;;             The retriever procedure returns -1 if an error occurs
 ;;             during comminucation.  In that case, the receiver can do
 ;;             whatever cleanup work.  After the receiver returns, an
@@ -225,35 +230,37 @@
     ;; TODO: check headers for encoding
     (let loop ([sink (open-output-string)])
       (receive (remote size) (retr)
-        (cond [(= size 0) (get-output-string sink)]
-              [(> size 0) (copy-port remote sink :size size) (loop sink)])))))
+        (cond [(eqv? size 0) (get-output-string sink)]
+              [(or (not size) (> size 0))
+               (copy-port remote sink :size size) (loop sink)])))))
 
 (define (http-null-receiver)
   (lambda (code hdrs total retr)
     (let loop ([sink (open-output-file (cond-expand [gauche.os.windows "NUL"]
                                                     [else "/dev/null"]))])
       (receive (remote size) (retr)
-        (cond [(= size 0) (close-output-port sink)]
+        (cond [(and size (<= size 0)) (close-output-port sink)]
               [else (copy-port remote sink :size size) (loop sink)])))))
 
 (define (http-oport-receiver sink flusher)
   (lambda (code hdrs total retr)
     (let loop ()
       (receive (remote size) (retr)
-        (cond [(= size 0) (flusher sink hdrs)]
-              [(> size 0) (copy-port remote sink :size size) (loop)])))))
+        (cond [(and size (<= size 0)) (flusher sink hdrs)]
+              [else (copy-port remote sink :size size) (loop)])))))
 
 (define (http-file-receiver filename :key (temporary #f))
   (lambda (code hdrs total retr)
     (receive (port tmpname) (sys-mkstemp filename)
       (let loop ()
         (receive (remote size) (retr)
-          (cond [(= size 0)
+          (cond [(or (not size) (> size 0))
+                 (copy-port remote port :size size) (loop)]
+                [(= size 0)
                  (close-output-port port)
                  (if temporary
                    tmpname
                    (begin (sys-rename tmpname filename) filename))]
-                [(> size 0) (copy-port remote port :size size) (loop)]
                 [else (close-output-port port) (sys-unlink tmpname)]))))))
 
 (define-syntax http-cond-receiver
@@ -676,16 +683,9 @@
      [total
       (when (> total 0) (set! handler (handler remote total)))
       (handler remote 0)]
-     [else
-      ;; length is unknown.  we should gradually read from remote as
-      ;; the data arrives.  but for now, we take a dumb approach---read
-      ;; everything into a string, then call the receiver with a string
-      ;; input port.
-      (let* ([content (port->string remote)]
-             [size (string-size content)]
-             [p (open-input-string content)])
-        (when (> size 0) (set! handler (handler p size)))
-        (handler p 0))])))
+     [else      ; length is unknown.  we call the handler with size=#f.
+      (set! handler (handler remote #f))
+      (handler remote 0)])))
 
 ;; NB: chunk extension and trailer are ignored for now.
 (define (receive-body-chunked remote handler)
