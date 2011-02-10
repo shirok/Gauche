@@ -533,9 +533,9 @@
       (check-override secure))))
 
 (define (server->socket server)
-  (cond ((#/([^:]+):(\d+)/ server)
-         => (lambda (m) (make-client-socket (m 1) (x->integer (m 2)))))
-        (else (make-client-socket server 80))))
+  (cond [(#/([^:]+):(\d+)/ server)
+         => (^m (make-client-socket (m 1) (x->integer (m 2))))]
+        [else (make-client-socket server 80)]))
 
 (define (with-connection conn proc)
   (cond [(~ conn'secure)
