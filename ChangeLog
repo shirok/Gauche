@@ -1,11 +1,15 @@
 2011-02-10  Shiro Kawai  <shiro@acm.org>
 
-	* rfc/http.scm (with-connection, reset-http-connection): Added tentative
-	  support of persistent connection.  Currently it doesn't handle the
-	  case when the server abandons the connection---we should detect it
-	  and retry.   Besides, the connection should be reset if an error
-	  occurs during handling the communication.  Use with care, and do
-	  not assume this is the final behavior.
+	* lib/util/combinations.scm (combinations): Substituted for an
+	  optimized version written by Teranishi-san
+	  ( http://practical-scheme.net/wiliki/wiliki.cgi/teranishi ).
+
+	* rfc/http.scm (with-connection, reset-http-connection): Added
+	  tentative support of persistent connection.  Currently it doesn't
+	  handle the case when the server abandons the connection---we
+	  should detect it and retry.   Besides, the connection should be
+	  reset if an error occurs during handling the communication.
+	  Use with care, and do not assume this is the final behavior.
 	  (receive-body): Changed the handling of the case when response size
 	  is unknown.  Now we pass the receive handler #f in that case.  The
 	  receive handler should read as much data as it want and need to call

@@ -141,15 +141,15 @@
 ;;
 
 (define (combinations set n)
-  (if (not (positive? n))
-    (list '())
-    (pair-fold-right
-     (lambda (pr acc)
-       (fold-right (cut acons (car pr) <> <>)
-                   acc
-                   (combinations (cdr pr) (- n 1))))
-     '()
-     set)))
+  (define (rec set tail)
+    (cond [(null? tail) (list set)]
+          [(eq? (cdr set) tail) (map list set)]
+          [else (fold-right (cut acons (car set) <> <>)
+                            (rec (cdr set) (cdr tail))
+                            (rec (cdr set) tail))]))
+  (cond [(not (positive? n)) (list '())]
+        [(list-tail set n #f) => (cut rec set <>)]
+        [else '()]))
 
 (define (combinations* set n :optional (eq eqv?))
   (define (rec set n)
