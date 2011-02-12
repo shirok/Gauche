@@ -7653,9 +7653,9 @@ operations until the corresponding @code{reset}.
 @end enumerate
 
 @example
-... -> (reset ... X -> Y -> (shift k ... ) -> o
+... -> (reset ... X -> Y -> (shift k ... ) ---------> ) -> o
                                    |
-                                   \--> @{ -> Y' -> X' ) -> o @}
+                                   \-------> Y' -> X' ) -> o
 @end example
 
 @c EN
@@ -13382,17 +13382,17 @@ If @var{start} and/or @var{end} are given, they limit the range of
 @c EN
 Both @var{target} and @var{source} must be @i{TAG}vectors, and
 @var{target} must be mutable.
-This procedure copies the elements of @var{start}, beginning from index
+This procedure copies the elements of @var{source}, beginning from index
 @var{sstart} (inclusive) and up to @var{send}, into @var{target},
-beginning from index @var{tstart}.  @var{Sstart} and @var{tstart}
+beginning from index @var{tstart}.  @var{sstart} and @var{send}
 may be omitted, and in that case 0 and the length of @var{source}
 are assumed, respectively.
 @c JP
 @var{target} および @var{source} はともに @i{TAG}vector でなければ
 なりません。さらに、@var{target} は変更可能でなければなりません。
-この手続きは、@var{start}の要素を、インデックス@var{sstart}から(これを含み)
+この手続きは、@var{source}の要素を、インデックス@var{sstart}から(これを含み)
 @var{send} までを、@var{target} へインデックス @var{tstart}からコピーします。
-@var{sstart}および@var{tstart}は省略可能で、その場合には、それぞれ、
+@var{sstart}および@var{send}は省略可能で、その場合には、それぞれ、
 0 および @var{source}の長さが仮定されます。
 @c COMMON
 
