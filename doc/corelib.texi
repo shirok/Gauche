@@ -2370,7 +2370,7 @@ as a prefix of the name of the generated symbol.  It is mainly for
 the convenience of debugging.
 @c JP
 インターンされてない、新しいシンボルを作って返します。
-返されるるシンボルは、他のシンボルとは決死絵@code{eq?}にならないことが保証されます。
+返されるシンボルは、他のシンボルとは決して@code{eq?}にならないことが保証されます。
 @var{prefix}が与えられた場合は、それは文字列でなければならず、
 それが作られるシンボルのプレフィクスに使われます。これは主としてデバッグを
 容易にするためのものです。
@@ -7519,77 +7519,52 @@ When @var{proc} returns, its value becomes @code{call/cc}'s value.
 When the continuation procedure is invoked with zero or more arguments
 somewhere, the further calculation is abandoned and @code{call/cc} returns
 with the arguments given to the continuation procedure.
-
-First class continuation is one of the most distinct feature of Scheme, but
-this margin is too small to contain explanation.
-Please consult to the appropriate documents.
 @c JP
 現在の継続を手続き (継続手続き) にパッケージ化して、それを引数として
 @var{proc}を呼び出します。@var{proc}が戻ったら、その返り値が@code{call/cc}の
 値となります。作成された継続手続きがどこかで0個または複数個の引数を伴って呼ばれたら、
 あたかも@code{call/cc}から戻ったかのように実行が継続されます。その場合、
-@code{call/cc}は、継続手続きに与えられた引数を複数の値として返します。
+@code{call/cc}は、継続手続きに与えられた引数を複数の値として返します。  
+@c COMMON
 
+@c EN
+First class continuation is one of the most distinct feature of Scheme, but
+this margin is too small to contain explanation.
+Please consult to the appropriate documents.
+@c JP
 ファーストクラスの継続はSchemeの最も特徴的な機能のひとつですが、それを
 十分に説明するにはこの本の余白は狭すぎます。適切なドキュメントを参照してください。
 @c COMMON
 
 @c EN
-Gauche supports full continuation, with a few limitations in rare
-cases.   Normally a continuation has an unlimited extent.  However,
-if a continuation is created during ``callback'' from C code---
-that is, you call some C-implemented function that calls Scheme
-code again---the continuation's extent is limited until the Scheme
-evaluation returns to the C code.   If you try to invoke the continuation
-from out of its extent, Gauche detects it and signals an error.
-This is a fundamental limitation and not likely to be addressed.
+Gauche also supports partial continuations (or delimited conitnuations)
+as well as full continuations.  @xref{Partial continuations}.
 @c JP
-Gaucheはわずかの例外を除いて、完全な継続をサポートしています。つまり継続は通常
-無制限のエクステントを持ちます。しかし、継続がCコードからの「コールバック」
----SchemeがCで書かれたコードを呼び出し、それが再びSchemeコードを呼び出した場合---
-で作られたら、その継続のエクステントはコールバックが呼び出したCコードに戻るまでと
-なります。エクステントの切れた継続を呼ぼうとするとGaucheはエラーを報告します。
-これは根本的な制限であり、おそらく解決されないでしょう。
+Gaucheはフルの継続に加えて部分継続(限定継続)も使うことができます。
+@ref{Partial continuations}を参照してください。
 @c COMMON
 
 @c EN
-Note that it is still allowed to invoke a continuation from
-such callbacks.
-Also, the typical higher-order functions such as @code{map}, @code{for-each}
-or @code{apply} are not using callbacks, and not affected by this limitation
+It is often said that capturing a continuation is like taking a snapshot
+of computation, which can be later restarted from the exact moment.
+Although it is correct if you're concerning pure computations,
+it doesn't apply to external resources: For example, a file port
+may be open when a continuation is captured may be closed before
+the continuation is invoked later.   In other words, a continuation
+has an unlimited extent, while the resources referred from it might not.
+Usulally, it is the job of specific constructs built on top of
+@code{call/cc} to provide a sane semantics.
 @c JP
-なお、コールバックコードから有効な継続を呼ぶことは常に可能です。また、
-高階関数を使う@code{map}や@code{for-each}、@code{apply}といった手続きは
-Cからのコールバックを使っておらず、この制限の影響を受けません。
 @c COMMON
 
 @c EN
-Fortunately, there are not much cases that you need to create an
-unlimited extent continuation in such callbacks.
-So far, the following code is executed in such callbacks.  Besides them,
-typical callback functions from external C libraries, like GUI toolkit,
-obeys the same limitation.
-@itemize @bullet
-@item
-A @code{write-object} method that is invoked from @code{write},
-@code{display} or @code{format} (@xref{Output}).
-@item
-A filler and a flusher callbacks of buffered ports
-(@xref{Virtual ports}).
-@end itemize
+One of non-trivial cases of such limited-extent resource is callbacks
+from C functions.  
+In certain occasions, a Scheme code is executed on top of C functions
+(If you know C API, it is via functions such as @code{Scm_Eval()} or
+@code{Scm_EvalRec()}).   That is, a C function is waiting the result
+from Scheme code.   If 
 @c JP
-おそらく、そのようなコールバック内で無制限のエクステントを持つ継続を作る必要というのは
-あまり無いでしょう。Gauche組み込みの機能では、以下のようなコードがCからのコールバックで
-呼び出されます。さらに、外部のCライブラリを使った場合、例えばGUIツールキットからの
-コールバックなどはこの制限を受けるでしょう。
-@itemize @bullet
-@item
-@code{write}、@code{display}、@code{format}から呼び出される
-@code{write-object}メソッド (@ref{Output}参照)。
-@item
-バッファードポートから呼び出されるfillerとflusher手続き。
-(@ref{Virtual ports}参照)。
-@end itemize
 @c COMMON
 
 @end defun
@@ -7607,7 +7582,6 @@ The API is taken from PLT Scheme.
 APIはPLT Schemeから取りました。
 @c COMMON
 @end defmac
-
 
 
 @defun dynamic-wind before thunk after
