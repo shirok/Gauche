@@ -679,7 +679,7 @@ match.
 @defun array-transpose array :optional dim1 dim2
 @c EN
 The given array must have a rank greater than or equal to 2.
-Transpos the array's @var{dim1}-th dimension and
+Transpose the array's @var{dim1}-th dimension and
 @var{dim2}-th dimension.  The default is 0 and 1.
 @c JP
 @var{array}はランク2以上の配列でなければなりません。
@@ -689,13 +689,80 @@ Transpos the array's @var{dim1}-th dimension and
 @end defun
 
 @defun array-rotate-90 array :optional dim1 dim2
+@c EN
+The given array must have a rank greater than or equal to 2.
+We regard the array as a matrix with @var{dim1}-th dimension
+as rows and @var{dim2}-th dimension as columns, and returns
+a fresh array whose content is filled by @emph{rotating}
+@var{array} 90 degree clockwise.   The defaults of 
+@var{dim1} and @var{dim2} are 0 and 1, respectively.
+@c JP
+@var{array}はランク2以上の配列でなければなりません。
+配列の@var{dim1}番目の次元と@var{dim2}番目の次元をそれぞれ行と列とみなした行列を
+考え、その行列を時計まわりに90度回転した新たな配列を作って返します。
+@c COMMON
+
+@example
+;; [1 2 3]      [4 1]
+;; [4 5 6]  =>  [5 2]
+;;              [6 3]
+(array-rotate-90 (array (shape 0 2 0 3) 1 2 3 4 5 6))
+ @result{} #,(<array> (0 3 0 2) 4 1 5 2 6 3)
+@end example
+
+@c EN
+If @var{array} has a rank greater than 2, the array is
+treated as a matrix of subarrays.
+@c JP
+@var{array}のランクが2より大きい場合は、@var{array}は「部分配列の行列」
+と考えられます。
+@c COMMON
 @end defun
 
 @defun array-flip array :optional dimension
 @defunx array-flip! array :optional dimension
+@c EN
+Flips the content of the array across the @var{dimension}-th dimension.
+(default is 0).   @code{array-flip!} modifies the content of @var{array}
+and return it.  @code{array-flip} doesn't modify @var{array} but creates
+a fresh array with the flipped content and returns it.
+@c JP
+配列の内容を、指定番目の次元 (デフォルトは0) で裏返しにします。
+@code{array-flip!}は@var{array}を直接変更してそれを返します。
+@code{array-flip}は@var{array}には触らず、裏返した内容で新たな配列を作って返します。
+@c COMMON
+
+@example
+;; [1 2 3]  =>  [4 5 6]
+;; [4 5 6]      [1 2 3]
+(array-flip (array (shape 0 2 0 3) 1 2 3 4 5 6))
+ @result{} #,(<array> (0 2 0 3) 4 5 6 1 2 3)
+
+;; [1 2 3]  =>  [3 2 1]
+;; [4 5 6]      [6 5 4]
+(array-flip (array (shape 0 2 0 3) 1 2 3 4 5 6) 1)
+ @result{} #,(<array> (0 2 0 3) 3 2 1 6 5 4)
+@end example
 @end defun
 
 @defun identity-array dimension :optional class
+@c EN
+Returns a fresh identity array of rank 2, with the given dimension.
+You can pass one of array classes to @var{class} to make the result
+the instance of the class; the default class is @code{<array>}.
+@c JP
+ランク2で行列ともに@var{dimension}である単位行列を作って返します。
+配列のクラスを@var{class}に渡せば、結果はそのインスタンスになります。
+デフォルトは@code{<array>}クラスです。
+@c COMMON
+
+@example
+(identity-array 3)
+ @result{} #,(<array> (0 3 0 3) 1 0 0 0 1 0 0 0 1)
+
+(identity-array 3 <f32array>)
+ @result{} #,(<f32array> (0 3 0 3) 1.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 1.0)
+@end example
 @end defun
 
 @defun array-inverse array
@@ -736,6 +803,25 @@ calculation.  It is faster than @code{determinant}, which copies
 @end defun
 
 @defun array-mul a b
+@c EN
+Arrays @var{a} and @var{b} must be rank 2.   Regarding them
+as matrices, multiply them together.  The number of rows of @var{a}
+and the number of columns of @var{b} must match.
+@c JP
+配列@var{a}と@var{b}はともに2次元でなければなりません。
+それらを行列とみなして乗算を行います。@var{a}の行数と@var{b}の列数は
+一致していなければなりません。
+@c COMMON
+
+@example
+;;           [6 5]
+;; [1 2 3] x [4 3] => [20 14]
+;; [4 5 6]   [2 1]    [56 41]
+
+(array-mul (array (shape 0 2 0 3) 1 2 3 4 5 6)
+           (array (shape 0 3 0 2) 6 5 4 3 2 1))
+ @result{} #,(<array> (0 2 0 2) 20 14 56 41)
+@end example
 @end defun
 
 @defun array-expt array pow
