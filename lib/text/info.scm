@@ -62,25 +62,27 @@
 
 ;; Find gunzip location
 (define gunzip (find-file-in-paths "gunzip"))
+(define bzip2  (find-file-in-paths "bzip2"))
 
 ;; Read an info file FILE, and returns a list of strings splitted by ^_ (#\x1f)
-;; If FILE is not found, look for gzipped one (FILE.gz) and decompress it.
+;; If FILE is not found, look for compressed one.
 (define (read-info-file-split file opts)
   (define (with-input-from-info thunk)
-    (cond ((file-exists? file)
-           (with-input-from-file file thunk))
-          ((file-exists? #`",|file|.gz")
-           (with-input-from-process #`",gunzip -c ,file" thunk))
-          (else
-           (error "can't find info file" file))))
+    (cond [(file-exists? file)
+           (with-input-from-file file thunk)]
+          [(and gunzip (file-exists? #`",|file|.gz"))
+           (with-input-from-process #`",gunzip -c ,file" thunk)]
+          [(and bzip2 (file-exists? #`",|file|.bz2"))
+           (with-input-from-process #`",bzip2 -c -d ,|file|.bz2" thunk)]
+          [else (error "can't find info file" file)]))
   (with-input-from-info
    (lambda ()
-     (let loop ((c (skip-while (char-set-complement #[\x1f])))
-                (r '()))
+     (let loop ([c (skip-while (char-set-complement #[\x1f]))]
+                [r '()])
        (if (eof-object? c)
          (reverse! r)
-         (let* ((head (next-token #[\x1f\n] '(#[\x1f\n] *eof*)))
-                (body (next-token #[\n] '(#[\x1f] *eof*))))
+         (let* ([head (next-token #[\x1f\n] '(#[\x1f\n] *eof*))]
+                [body (next-token #[\n] '(#[\x1f] *eof*))])
            (loop (read-char) (acons head body r)))))))
   )
 

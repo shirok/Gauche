@@ -83,7 +83,8 @@
                             :paths paths
                             :pred (lambda (p)
                                     (or (file-is-readable? p)
-                                        (file-is-readable? #`",|p|.gz"))))
+                                        (file-is-readable? #`",|p|.gz")
+                                        (file-is-readable? #`",|p|.bz2"))))
         (errorf "couldn't find info file ~s in paths: ~s" *info-file* paths))
     ))
 

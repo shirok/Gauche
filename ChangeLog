@@ -1,3 +1,8 @@
+2011-02-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/info.scm, lib/text/info.scm: Support
+	  bzip2-ed info files.
+
 2011-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/combinations.scm (combinations): Substituted for an
