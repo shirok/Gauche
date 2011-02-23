@@ -337,6 +337,10 @@ AC_CHECK_HEADERS(pty.h util.h libutil.h sys/loadavg.h sys/resource.h)
 
 dnl solaris specific
 AC_CHECK_HEADERS(sunmath.h)
+case $host in
+  *-pc-solaris2.*)
+    CFLAGS="$CFLAGS -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1 -D__EXTENSIONS__" ;;
+esac
 
 dnl ===========================================================
 dnl Checks processor type, for processor-specific stuff

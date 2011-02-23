@@ -1,3 +1,8 @@
+2011-02-22  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac: Added special handling of CFLAGS on Solaris.  See
+	  http://practical-scheme.net/chaton/gauche/a/2011/02/22#entry-4d6439f9-a10fb
+
 2011-02-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/info.scm, lib/text/info.scm: Support
