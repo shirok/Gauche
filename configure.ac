@@ -307,7 +307,8 @@ dnl ==========================================================
 dnl Checks for programs.
 
 dnl Kludge for Solaris.  We need this setup before start checking with
-dnl the compiler.
+dnl the compiler.   NB: These flags do not coexist with -std=gnu99 flag.
+dnl Be careful when we start using C99 features.
 case $host in
   *-pc-solaris2.*)
     CFLAGS="$CFLAGS -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1 -D__EXTENSIONS__" ;;
