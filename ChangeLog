@@ -1,3 +1,13 @@
+2011-02-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (test-one-of, test-check): Added 'one-of' type
+	  test result match.  Also add optional arg to test-check so that one
+	  can customize fallback comparison procedure.
+	* test/process.scm: Use test-one-of in checking exit status of "cat",
+	  for it differs on Solaris.  Also make sure we execute the same
+	  commands of ls, cat and grep to compare the results, by finding
+	  absolute paths for them.
+
 2011-02-22  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: Added special handling of CFLAGS on Solaris.  See

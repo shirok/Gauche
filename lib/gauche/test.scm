@@ -83,7 +83,8 @@
 
 (define-module gauche.test
   (export test test* test-start test-end test-section
-          test-module test-error test-check test-record-file
+          test-module test-error test-one-of
+          test-check test-record-file
           *test-error* *test-report-error* test-error? prim-test))
 (select-module gauche.test)
 
@@ -108,7 +109,16 @@
 (define (test-error . maybe-class)
   (make <test-error> :class (and (pair? maybe-class) (car maybe-class))))
 
-(define (test-check expected result)
+;; An object to represet any one of
+(define-class <test-one-of> ()
+  ((choices :init-keyword :choices)))
+
+(define-method write-object ((obj <test-one-of>) out)
+  (format out "#<test-one-of: any one of ~s>" (slot-ref obj'choices)))
+
+(define (test-one-of . choices) (make <test-one-of> :choices choices))
+
+(define (test-check expected result :optional (fallback equal?))
   (cond [(test-error? expected)
          (and (test-error? result)
               (let ([ex (slot-ref expected'class)]
@@ -116,7 +126,13 @@
                 (or (not ex)
                     (memq (slot-ref expected'class)
                           (class-precedence-list (slot-ref result'class))))))]
-        [else (equal? expected result)]))
+        [(is-a? expected <test-one-of>)
+         ;; NB: not using srfi-1's any to avoid dependency
+         (let loop ([choices (slot-ref expected 'choices)])
+           (cond [(null? choices) #f]
+                 [(test-check (car choices) result fallback)]
+                 [else (loop (cdr choices))]))]
+        [else (fallback expected result)]))
 
 (define *test-error* (make <test-error>)) ;DEPRECATED
 
