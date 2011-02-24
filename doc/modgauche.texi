@@ -11043,6 +11043,7 @@ A test script will look like this:
 テストスクリプトを書くための手続きを提供します。
 テストスクリプトは次のような形になります。
 @c COMMON
+
 @lisp
 (use gauche.test)
 (test-start "my feature")
@@ -11231,7 +11232,7 @@ and this environment variable is ignored.
 @subheading 個々のテスト
 @c COMMON
 
-@defmac test* name expected expr :optional compare
+@defmac test* name expected expr :optional check
 @c EN
 A convenience macro that wraps @var{expr} by lambda.
 @c JP
@@ -11254,10 +11255,11 @@ is called as follows:
 @end example
 It should return @code{#t} if the given result agrees with the 
 expected value, or @code{#f} otherwise.
-The default check procedure is @code{test-check} explained
+The default check procedure is @code{test-check}, explained
 below.  It compares @var{expected} and @var{result-of-thunk}
-with @code{equal?}, except when @var{expected} is a special
-@code{<test-error>} object.  (See ``testing abnormal cases''
+with @code{equal?}, except when @var{expected} is some
+of special case test objects.  (See ``testing ambiguous results''
+and ``testing abnormal cases''
 paragraphs below for this special treatment.)
 
 One typical usage of the custom check
@@ -11270,12 +11272,13 @@ procedure is to compare inexact numbers tolerating small error.
 @end example
 この手続きは、渡された結果が期待する値と合致する場合に@code{#t}を、
 そうでなければ@code{#f}を返さなければなりません。
-デフォルトの@var{check}手続きは下で述べる@code{test-error}です。
-これは、@var{expected}が特殊な@code{<test-error>}オブジェクトである
-場合を除いては、@var{expected}と@var{result-of-thunk}が@code{equal?}
+デフォルトの@var{check}手続きは下で述べる@code{test-check}です。
+これは、@var{expected}がいくつかの特殊なテストオブジェクトである場合をのぞき、
+@var{expected}と@var{result-of-thunk}が@code{equal?}
 である場合に@code{#t}を返します。すなわち、通常はテスト式の結果が
 期待するものと@code{equal?}であればテストは成功である、ということです。
-(特別な場合については下の ``異常系をテストする'' の項を見てください)。
+(特別な場合については下の ``曖昧な結果をテストする'' および
+``異常系をテストする'' の項を見てください)。
 
 特別な比較手続きのひとつの用法は、不正確な数値を、多少の誤差を許して
 比較するような場合です。
@@ -11307,6 +11310,65 @@ of error.  See the entry of @code{test-error} below for the details.
 オブジェクトと比較することにより、エラーが期待されたものであるか、
 また適切な例外が上がっているかをテストすることができます。
 @c COMMON
+@end defun
+
+@defun test-check expected result :optional fallback
+@c EN
+The default procedure @code{test} and @code{test*} use
+to check the result of the test expression conforms the
+expected value.  By default, @code{test-check} just compares
+@var{expected} and @var{result} with a procedure @var{fallback},
+which is defaulted to @code{equal?}.   @code{test-check} behaves
+differently if @var{expected} is one of special test objects
+described below.
+@c JP
+テスト式の結果が期待された値に合致していることをチェックするために
+@code{test}と@code{test*}が使うデフォルトの手続きです。
+基本的に、@code{test-check}は@var{expected}と@var{result}を
+@var{fallback}に渡された手続きで比較するだけです。@var{fallback}の
+デフォルト値は@code{equal?}です。
+ただし、以下に述べるとおり、@var{expected}が特殊なテストオブジェクト
+だった場合には特別な振る舞いをします。
+@c COMMON
+@end defun
+
+@c EN
+@subheading Testing ambiguous results
+@c JP
+@subheading 曖昧な結果をテストする
+@c COMMON
+
+@defun test-one-of choice @dots{}
+@c EN
+Sometimes the result of test expression depends on various
+external environment, and you cannot put an exact expected value.
+This procedure supports to write such tests conveniently.
+@c JP
+時々、テスト式@var{expr}の結果が外部の環境に左右されるため、
+ひとつの確定した値を期待値@code{expected}として書いておけない場合があります。
+この手続きはそのようなテストを簡単に書けるようにします。
+@c COMMON
+
+@c EN
+Returns a special object represents @emph{either one of choices}.
+The default check procedure, @code{test-check}, recognizes the object
+when it is passed in the @var{expected} argument, and returns true
+if any one of @var{choice} @dots{} passes the check against the result.
+
+For example, the following test passes if @code{proc} returns either
+1 or 2.
+@c JP
+@emph{@var{choice} @dots{} のいずれか} を表現する特別なオブジェクトを返します。
+デフォルトの検査手続きである@code{test-check}は、@var{expected}引数に
+そのオブジェクトが渡ってきた場合には、テスト結果と@var{choice} @dots{}を
+ひとつづつ照合し、どれかがマッチすれば真を返します。
+
+例えば次のテストは、@code{proc}が1か2を返せば成功となります。
+@c COMMON
+
+@example
+(test* "proc returns either 1 or 2" (test-one-of 1 2) (proc))
+@end example
 @end defun
 
 @c EN
