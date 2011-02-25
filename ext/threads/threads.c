@@ -255,11 +255,12 @@ ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     struct timespec ts, *pts;
     ScmVM *vm = Scm_VM();
     ScmVM *taker = NULL;
-    int timedout = FALSE;
+    int timedout;
     int invalid_state = FALSE;
     pts = Scm_GetTimeSpec(timeout, &ts);
 
  retry:
+    timedout = FALSE;
     pthread_mutex_lock(&target->vmlock);
     if (target->state != SCM_VM_RUNNABLE
         && target->state != SCM_VM_STOPPED) {
