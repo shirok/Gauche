@@ -279,7 +279,7 @@ ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
             target->stopRequest = TRUE;
             target->attentionRequest = TRUE;
         }
-        while (target->state != SCM_VM_STOPPED) {
+        while (target->state != SCM_VM_STOPPED && !timedout) {
             if (pts) {
                 timedout = pthread_cond_timedwait(&target->cond,
                                                   &target->vmlock,

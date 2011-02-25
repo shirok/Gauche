@@ -1,3 +1,8 @@
+2011-02-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/threads.c (Scm_ThreadStop): Fixed a bug that prevented
+	  timeout from working.
+
 2011-02-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm (test-one-of, test-check): Added 'one-of' type
