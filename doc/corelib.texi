@@ -7537,36 +7537,90 @@ Please consult to the appropriate documents.
 @c COMMON
 
 @c EN
-Gauche also supports partial continuations (or delimited conitnuations)
-as well as full continuations.  @xref{Partial continuations}.
+There's a nontrivial interaction between C language runtime and
+Scheme continuation.   Suppose the following scenario:
 @c JP
-Gaucheはフルの継続に加えて部分継続(限定継続)も使うことができます。
+Schemeの継続とC言語の実行環境との間に、ちょっとわかりずらい干渉が生じることがあります。
+次のシナリオを考えます。
+@c COMMON
+
+@enumerate
+@item
+@c EN
+An application's C runtime calls back a Scheme routine.  For example,
+GUI framework calls back a draw routine written in Scheme.
+@c JP
+アプリケーションのCランタイムがSchemeで書かれた手続きをコールバックします。
+例えば、GUIフレームワークがSchemeで書かれた描画ルーチンを呼ぶ、というようなケースを考えてください。
+@c COMMON
+@item
+@c EN
+A continuation is captured in the Scheme routine.
+@c JP
+そのSchemeルーチンで継続が捕捉される。
+@c COMMON
+@item
+@c EN
+The Scheme routine returns to the C runtime.
+@c JP
+Schemeルーチンが終了してCランタイムに制御を戻す。
+@c COMMON
+@item
+@c EN
+The continuation captured in 2 is invoked.
+@c JP
+2で捕捉した継続が起動される。
+@c COMMON
+@end enumerate
+
+@c EN
+It is no problem to invoke the continuation, but if the control
+is about to return to the Scheme routine to the C runtime (that is,
+to execute step 3 again), an error is signalled as follows.
+@c JP
+継続を起動すること自体には問題は無いのですが、
+制御がSchemeからCへと再び戻ろうとすると (つまり、step 3が再び実行されようとすると)
+次のようなエラーが投げられます。
+@c COMMON
+
+@example
+*** ERROR: attempt to return from a ghost continuation.
+@end example
+
+@c EN
+This is because C routines don't expect the calling function to return 
+more than once.  The C stack frame on which the Scheme callbak was 
+originally called
+is likely to be deallocated or modified at the time the continuation
+is invoked.
+
+If you think of a continuation as a chain of control
+frames, growing from root towards upward,
+you can imagine that, once a control returns to the C world, the chain is
+cut at the boundary.  You can still execute such rootless
+continuations, but you have to move the control away from it before it tries
+to return to its root that no longer exists.
+You can call another continuation, or raise an exception, for example.
+@c JP
+これは、Cの世界では関数が1回より多く戻ってくることを想定していないからです。
+最初にSchemeのコールバックが呼ばれた時のCのスタックフレームは、
+継続が再び呼ばれた時には状態が変わっているか、捨てられてしまっているでしょう。
+
+継続を、根から上へ向かって成長する制御フレームの連鎖のようにイメージした場合、
+Cの世界へ戻った時点でその連鎖が断ち切られる、と考えることができます。
+そのような根無しの継続も実行することはできますが、既に失った根に戻る前に
+別の箇所へと制御を移さねばなりません。他の箇所で捕まえた継続を呼んだり、
+例外を投げるといったことが考えられます。
+@c COMMON
+
+@c EN
+Using partial continuations (or delimited continuations) is another
+way to avoid such complications.
+@xref{Partial continuations}.
+@c JP
+部分継続(限定継続)を使うのも手です。
 @ref{Partial continuations}を参照してください。
 @c COMMON
-
-@c EN
-It is often said that capturing a continuation is like taking a snapshot
-of computation, which can be later restarted from the exact moment.
-Although it is correct if you're concerning pure computations,
-it doesn't apply to external resources: For example, a file port
-may be open when a continuation is captured may be closed before
-the continuation is invoked later.   In other words, a continuation
-has an unlimited extent, while the resources referred from it might not.
-Usulally, it is the job of specific constructs built on top of
-@code{call/cc} to provide a sane semantics.
-@c JP
-@c COMMON
-
-@c EN
-One of non-trivial cases of such limited-extent resource is callbacks
-from C functions.  
-In certain occasions, a Scheme code is executed on top of C functions
-(If you know C API, it is via functions such as @code{Scm_Eval()} or
-@code{Scm_EvalRec()}).   That is, a C function is waiting the result
-from Scheme code.   If 
-@c JP
-@c COMMON
-
 @end defun
 
 @defmac let/cc var body @dots{}
@@ -8601,7 +8655,8 @@ current i/o ports, parameters, etc.
 called whenever any of those control flow transition occurs.
 On the other hand, @code{unwind-protect} only cares about
 the Gauche's exception system.  @code{unwind-protect}'s @var{cleanup}
-is called only when @var{body} throws Gauche's exception.
+is called only when @var{body} exits normally or
+throws Gauche's exception.
 In the above example, if control escapes from @code{drill-a-hole} 
 by calling a continuation captured outside of @code{unwind-protect},
 @var{cleanup} is not called; because the control may return to
@@ -8615,8 +8670,8 @@ system is implemented by @code{call/cc}, for example.
 @code{dynamic-wind}の@var{before}および@var{after}のサンクは
 対応する制御フローの遷移が起きたときに必ず呼ばれます。
 一方、@code{unwind-protect}はGaucheの例外システムの面倒しか見ません。
-@code{unwind-protect}の@var{cleanup}は@var{body}がGaucheの例外を投げた
-ときにのみ呼びだされます。上述の例で、@code{unwind-protect}の外側で
+@code{unwind-protect}の@var{cleanup}は@var{body}が正常終了するか
+Gaucheの例外を投げたときにのみ呼びだされます。上述の例で、@code{unwind-protect}の外側で
 補足された継続が呼ばれ、制御が@code{drill-a-hole}を抜けると、
 @var{cleanup}は呼ばれません。制御が再び@code{drill-a-hole}に戻る可能性
 があるからです。たとえば、ユーザレベルのスレッドシステムが
@@ -8630,8 +8685,7 @@ systems have similar macros in different names, such as
 @code{try-finally}.
 @c JP
 このフォームの名前はCommon Lispから取りました。同様のマクロに
-@code{try-finally}というような別の名前を使っているSchemeの処理系もあり
-ます。
+@code{try-finally}というような別の名前を使っているSchemeの処理系もあります。
 @c COMMON
 @end defmac
 
