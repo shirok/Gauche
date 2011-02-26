@@ -1,3 +1,8 @@
+2011-02-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/package.scm (get-all-version-paths): Fixed a bug that
+	  caused an error if *load-path* contains a nonexistent path.
+
 2011-02-24  Shiro Kawai  <shiro@acm.org>
 
 	* ext/threads/threads.c (Scm_ThreadStop): Fixed a bug that prevented

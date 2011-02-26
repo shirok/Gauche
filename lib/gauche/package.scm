@@ -145,24 +145,18 @@
 
 ;; scan the directory to find older verison of Gauche library directories.
 (define (get-all-version-paths)
-  (let ((xpaths '()))
-    (dolist (path *load-path*)
-      (cond ((#/\/\d+(\.\d+)*[^\/]*\/lib\/?$/ path)
-             => (lambda (m)
-                  (let* ((base (m 'before))
-                         (dirs (directory-list base
+  (apply append
+         *load-path*
+         (filter-map
+          (^p (and-let* ([m (#/\/\d+(\.\d+)*[^\/]*\/lib\/?$/ p)]
+                         [base (m 'before)]
+                         [ (file-is-directory? base) ]
+                         [dirs (directory-list base
                                                :children? #t :add-path? #t
-                                               :filter #/^\d+(\.\d+)*[^\/]*$/))
-                         (pdirs (map (cut string-append <> "/lib") dirs))
-                         )
-                    (set! xpaths
-                          (append (sort (delete path pdirs)
-                                        (lambda (a b)
-                                          (version>? (sys-basename a)
-                                                     (sys-basename b))))
-                                  xpaths)))))
-            ))
-    (append *load-path* xpaths)))
+                                               :filter #/^\d+(\.\d+)*[^\/]*$/)]
+                         [pdirs (map (cut string-append <> "/lib") dirs)])
+                (sort-by (delete p pdirs) sys-basename version>?)))
+          *load-path*)))
 
 ;; Iterator protocol
 (define-method call-with-iterator ((gpd <gauche-package-description-paths>)
