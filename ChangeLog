@@ -1,5 +1,9 @@
 2011-02-27  Shiro Kawai  <shiro@acm.org>
 
+	* src/string.c (Scm_StringCmp): It is supposed to return either
+	  -1, 0 or 1 if we want to use the value for generic compare,
+	  but it could return values as if only its sign matters.
+
 	* src/gauche/number.h (Scm_VMExactToInexact): Fixed a bug introduced
 	  on 2010-06-19 that breaks the binary compatibility from 0.9.
 

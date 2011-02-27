@@ -406,8 +406,15 @@ int Scm_StringCmp(ScmString *x, ScmString *y)
     sizy = SCM_STRING_BODY_SIZE(yb);
     siz = (sizx < sizy)? sizx : sizy;
     r = memcmp(SCM_STRING_BODY_START(xb), SCM_STRING_BODY_START(yb), siz);
-    if (r == 0) return (sizx - sizy);
-    else return r;
+    if (r == 0) {
+        if (sizx == sizy) return 0;
+        if (sizx < sizy)  return -1;
+        else              return 1;
+    } else if (r < 0) {
+        return -1;
+    } else {
+        return 1;
+    }
 }
 
 /* single-byte case insensitive comparison */
