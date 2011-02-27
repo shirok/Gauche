@@ -319,7 +319,8 @@ SCM_EXTERN void   Scm_SetDefaultEndian(ScmObj endian);
 SCM_EXTERN ScmObj Scm_VMNegate(ScmObj obj);
 SCM_EXTERN ScmObj Scm_VMReciprocal(ScmObj obj);
 SCM_EXTERN ScmObj Scm_VMReciprocalInexact(ScmObj obj);
-SCM_EXTERN ScmObj Scm_VMInexact(ScmObj obj);
+SCM_EXTERN ScmObj Scm_VMExactToInexact(ScmObj obj); /* during 0.9 for backward compatibility */
+#define Scm_VMInexact Scm_VMExactToInexact          /* on 1.0, shorter name will be a real name */
 SCM_EXTERN ScmObj Scm_VMAbs(ScmObj obj);
 SCM_EXTERN ScmObj Scm_VMAdd(ScmObj arg1, ScmObj arg2);
 SCM_EXTERN ScmObj Scm_VMSub(ScmObj arg1, ScmObj arg2);

@@ -1,3 +1,8 @@
+2011-02-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/number.h (Scm_VMExactToInexact): Fixed a bug introduced
+	  on 2010-06-19 that breaks the binary compatibility from 0.9.
+
 2011-02-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package.scm (get-all-version-paths): Fixed a bug that
