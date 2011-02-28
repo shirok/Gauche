@@ -3617,7 +3617,7 @@ character, such as @code{~@@a}.
 @c   implementation.  I'm wondering whether I should change string->date
 @c   to make usable, or introduce another procedure, like string->date*,
 @c   which fixes the problem.
-@
+@c
 @c Both procedures parse a string representation of date in @var{string},
 @c according to the format given in @var{template-string}.
 
