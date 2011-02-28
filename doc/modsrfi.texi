@@ -4854,19 +4854,44 @@ default is proided by @var{knil}.
 @end defun
 
 @defun vector-map f vec1 vec2 @dots{}
+@defunx vector-map! f vec1 vec2 @dots{}
+@defunx vector-for-each f vec1 vec2 @dots{}
+@defunx vector-count f vec1 vec2 @dots{}
 [SRFI-43]
-@end defun
+The argument @var{f} is a procedure that takes @var{n}+1 arguments where
+@var{n} is the number of given vectors.   These procedures call @var{f}
+for each element of the given vectors as
+@code{(@var{f} @var{i} @var{e_1i} @var{e_2i} @dots{})},
+where @var{i} is the index, and @var{e_ni} is the @var{i}-th element
+of the vector @var{n}.   If the lengths of vectors differ, iteration
+only covers the shortest vector.
 
-@defun vector-map! f vec1 vec2 @dots{}
-[SRFI-43]
-@end defun
+@code{vector-map} creates a fresh vector out of the result of applications
+of @var{f} and returns it.
+@code{vector-map!} reuses @var{vec1} to
+store the result and returns @var{vec1}; hence @var{vec1} must be mutable.
 
-@defun vector-for-each f vec1 vec2 @dots{}
-[SRFI-43]
-@end defun
+@code{vector-for-each} is for side-effects.  It discards the result of
+@var{f}.
 
-@defun vector-count pred vec1 vec2 @dots{}
-[SRFI-43]
+@code{vector-count} counts the number of times @var{f} returned a true value.
+
+@example
+(vector-map list '#(a b c))
+ @result{} #((0 a) (1 b) (2 c))
+(vector-map list '#(a b c) '#(d e f g))
+ @result{} #((0 a d) (1 b e) (2 c f))
+(vector-count = '#(0 2 2 4 4))
+ @result{} 3
+@end example
+
+Note: The generic @code{map} and @code{for-each}
+in @code{gauche.collection} can be used
+on vectors, but the procedure is called without index, and the result
+is returned as a list.
+@code{(vector-map f vec1 vec2 @dots{})} is operationally equivalent to
+@code{(map-to-with-index <vector> f vec1 vec2 @dots{})}.
+See @ref{Collection framework} and @ref{Sequence framework}.
 @end defun
 
 @c EN
