@@ -2718,44 +2718,69 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @defun char-set-size char-set
 [SRFI-14]
 @c EN
+Returns a number of characters in the given charset.
 @c JP
+文字セットに含まれる文字数を返します。
 @c COMMON
+
+@example
+gosh> (char-set-size #[])
+0
+gosh> (char-set-size #[[:alnum:]])
+62
+@end example
 @end defun
 
-@defun char-set-count pred char-set
+@defun char-set-every pred char-set
+@defunx char-set-any pred char-set
+@defunx char-set-count pred char-set
 [SRFI-14]
 @c EN
+These procedures apply @var{pred} to each character in @var{char-set}.
+
+@code{char-set-every} returns @code{#f} as soon as @var{pred} returns
+@code{#f}.  Otherwise, it returns the result of the last application of
+@var{pred}.
+
+@code{char-set-any} returns as soon as @var{pred} returns a true value,
+and the return value is the one @var{pred} returns.
+If @var{pred} returns @code{#f} for all characters, @code{#f} is returned.
+
+@code{char-set-count} returns the number of times
+@var{pred} returns a true value.
+
+Note that @var{char-set} can be huge (e.g. a complement of small char-set),
+which can make these procedures take very long.
 @c JP
+これらの手続きは、@var{pred}を@var{char-set}に含まれる各文字に適用します。
+
+@code{char-set-every}は@var{pred}が@code{#f}を返したら直ちに@code{#f}を返します。
+@var{pred}が最後まで@code{#f}を返さなかった場合は、最後の@var{pred}の返り値が
+@code{char-set-every}の返り値となります。
+
+@code{char-set-any}は@var{pred}が真の値を返した場合に直ちにその値を返します。
+@var{pred}が最後まで@code{#f}を返した場合には@code{#f}を返します。
+
+@code{char-set-count}は@var{pred}が真の値を返した回数を返します。
+
+@var{char-set}は非常に大きくなる可能性があり (例えばごく小さな文字セットの補集合)、
+その場合、これらの手続きは非常に長くかかり得ることに注意してください。
 @c COMMON
 @end defun
 
 @defun char-set->list char-set
+@defunx char-set->string char-set
 [SRFI-14]
 @c EN
+Returns a list of each character, or a string consisting of 
+each character, in @var{char-set}, respectively.
+Be careful to apply this on a large char set.
 @c JP
+@var{char-set}に含まれる文字をリストあるいは文字列にして返します。
+大きな文字セットに適用する場合は注意してください。
 @c COMMON
 @end defun
 
-@defun char-set->string char-set
-[SRFI-14]
-@c EN
-@c JP
-@c COMMON
-@end defun
-
-@defun char-set-every pred char-set
-[SRFI-14]
-@c EN
-@c JP
-@c COMMON
-@end defun
-
-@defun char-set-any pred char-set
-[SRFI-14]
-@c EN
-@c JP
-@c COMMON
-@end defun
 
 @node SRFI-14 Character-set algebra, SRFI-14 Predefined character-set, SRFI-14 Character-set query, Character-set library
 @subsection Character-set algebra
