@@ -1,3 +1,8 @@
+2011-02-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (time_print): Fixed display when time-second is
+	  negative.
+
 2011-02-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (Scm_StringCmp): It is supposed to return either

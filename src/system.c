@@ -807,7 +807,16 @@ static ScmObj time_allocate(ScmClass *klass, ScmObj initargs)
 static void time_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmTime *t = SCM_TIME(obj);
-    Scm_Printf(port, "#<%S %S.%09lu>", t->type, Scm_MakeInteger64(t->sec), t->nsec);
+    ScmObj sec = Scm_MakeInteger64(t->sec);
+    long nsec = t->nsec;
+    /* t->sec can be negative for time-difference. */
+    if (Scm_Sign(sec) < 0 && t->nsec > 0) {
+        sec = Scm_Abs(Scm_Add(sec, SCM_MAKE_INT(1)));
+        nsec = 1000000000L - nsec;
+        Scm_Printf(port, "#<%S -%S.%09lu>", t->type, sec, nsec);
+    } else {
+        Scm_Printf(port, "#<%S %S.%09lu>", t->type, sec, nsec);
+    }
 }
 
 static int time_compare(ScmObj x, ScmObj y, int equalp)
