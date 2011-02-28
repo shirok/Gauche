@@ -1,5 +1,7 @@
 2011-02-28  Shiro Kawai  <shiro@acm.org>
 
+	* Repository moved to git.
+
 	* src/system.c (time_print): Fixed display when time-second is
 	  negative.
 
