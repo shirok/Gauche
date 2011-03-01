@@ -4844,13 +4844,29 @@ return @code{#t} iff two are the same.
 
 @defun vector-fold kons knil vec1 vec2 @dots{}
 [SRFI-43]
-@var{Kons} is iterated over each corresponding elements of
-the given vectors, with passing around the seed value, whose
-default is proided by @var{knil}.
+@var{Kons} is a procedure that takes @var{n}+2 arguments, where
+@var{n} is the number of given vectors.  For each element of the
+given vectors, @var{kons} is called as
+@code{(@var{kons} @var{i} @var{seed} @var{e_1i} @var{e_2i} @dots{})},
+where @var{i} is the index, and @var{e_ni} is the @var{i}-th element
+of the vector @var{n}.  If the lengths of the vectors differ,
+iteration stops when the shortest vector is exhausted.
+
+The initial value of @var{seed} is @var{knil}, and the return value
+from @var{kons} is used as the next seed value.  The last return value
+of @var{kons} is returned from @code{vector-fold}.
+
+The iteration is strictly left to right.
+
+Note that the seed value precedes elements, which is opposite to
+@code{fold} (@xref{Mapping over collection}).  It's an unfortunate
+historical glitch; @code{vector-fold-left} would be more consistent
+name.
 @end defun
 
 @defun vector-fold-right kons knil vec1 vec2 @dots{}
 [SRFI-43]
+Like @code{vector-fold}, but iterates right to left.
 @end defun
 
 @defun vector-map f vec1 vec2 @dots{}
@@ -4863,7 +4879,7 @@ The argument @var{f} is a procedure that takes @var{n}+1 arguments where
 for each element of the given vectors as
 @code{(@var{f} @var{i} @var{e_1i} @var{e_2i} @dots{})},
 where @var{i} is the index, and @var{e_ni} is the @var{i}-th element
-of the vector @var{n}.   If the lengths of vectors differ, iteration
+of the vector @var{n}.   If the lengths of the vectors differ, iteration
 only covers the shortest vector.
 
 @code{vector-map} creates a fresh vector out of the result of applications
