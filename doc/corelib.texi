@@ -5508,7 +5508,7 @@ renumber capturing groups to make them consitent.)  There's a plan
 to provide a better representation, such as SRE, and a tool
 to convert it to this AST back and forth.   Contributions are welcome.
 
-@example
+@smallexample
 <ast> : <clause>   ; special clause
       | <item>     ; matches <item>
 
@@ -5545,7 +5545,7 @@ to convert it to this AST back and forth.   Contributions are welcome.
 
 <asst> : <ast> ...
        | ((lookbehind <ast> ...))
-@end example
+@end smallexample
 
 @c ----------------------------------------------------------------------
 @node Vectors, Hashtables, Regular expressions, Core library
@@ -7988,8 +7988,9 @@ looks like this:
 
 @example
 (guard (exc
-        ((condition-has-type? exc <read-error>) (format #t "read error!")
-                                                'read-error)
+        ((condition-has-type? exc <read-error>)
+         (format #t "read error!")
+         'read-error)
         (else 'other-error))
   (read-from-string "(abc"))
 @end example

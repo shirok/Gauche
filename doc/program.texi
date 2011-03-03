@@ -1041,7 +1041,7 @@ sorted by the total consumed time.
 れています。
 @c COMMON
 
-@example
+@smallexample
 Profiler statistics (total 1457 samples, 14.57 seconds)
                                                     num    time/    total
 Name                                                calls  call(ms) samples
@@ -1068,7 +1068,7 @@ procedure?                                          238723  0.0002     4(  0%)
 pair?                                               237307  0.0001     3(  0%)
  :
  :
-@end example
+@end smallexample
 
 @c EN
 Note that the time profiler uses statistic sampling.  Every 10ms
@@ -1643,7 +1643,7 @@ tarball をダウンロードし、configure および make を実行します�
 @c COMMON
 
 @example
-$ gauche-package install http://www.example.com/download/Package-1.0.tar.gz
+$ gauche-package install http://www.example.com/Package-1.0.tar.gz
 @end example
 
 @c EN

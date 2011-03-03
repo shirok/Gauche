@@ -12836,14 +12836,15 @@ CPU時間は10ms単位で、経過時間はそれより細かいことが多い�
 秒単位になります。
 @c COMMON
 
-@example
-gosh> (time (length (sort (call-with-input-file "/usr/share/dict/words" port->string-list))))
+@smallexample
+gosh> (time (length (sort (call-with-input-file "/usr/share/dict/words"
+                                                port->string-list))))
 ;(time (length (sort (call-with-input-file "/usr/share/dict/words" port- ...
 ; real   0.357
 ; user   0.350
 ; sys    0.000
 45427
-@end example
+@end smallexample
 @end defmac
 
 @deftp {Class} <time-counter>

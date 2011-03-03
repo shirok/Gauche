@@ -6236,7 +6236,8 @@ Takes RFC-822 type date string, and returns eight values:
 RFC822 形式の日付文字列を取り、8つの値を返します。
 @c COMMON
 @example
-year, month, day-of-month, hour, minutes, seconds, timezone, day-of-week.
+year, month, day-of-month, hour, minutes, seconds, timezone,
+day-of-week.
 @end example
 
 @c EN

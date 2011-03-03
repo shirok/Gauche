@@ -3,6 +3,7 @@
 @c EN
 @setfilename gauche-refe.info
 @settitle Gauche Users' Reference
+@afourpaper
 @dircategory The Algorithmic Language Scheme
 @direntry
 * Gauche: (gauche-refe.info).	        An R5RS Scheme implementation.
@@ -10,6 +11,7 @@
 @c JP
 @setfilename gauche-refj.info
 @settitle Gauche ユーザリファレンス
+@afourpaper
 @dircategory The Algorithmic Language Scheme
 @direntry
 * Gauche (ja): (gauche-refj.info).	An R5RS Scheme implementation.
