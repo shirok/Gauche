@@ -29,7 +29,7 @@ Schemeに触れるのが初めての読者は、何らかのチュートリア�
 This manual only deals with Scheme side of things.  Gauche has
 another face, a C interface.   Details of it will be discussed
 in a separate document to be written.
-Those who wants to use Gauche as an embedded language, or wants
+Those who want to use Gauche as an embedded language, or want
 to write an extension, need that volume.
 @c JP
 このマニュアルでは、GaucheのScheme言語としての面のみを扱います。
@@ -269,7 +269,7 @@ In this manual, each entry is represented like this:
 
 @c EN
 @var{Category} denotes the category of the entry @b{foo}.
-The following category will appear in this manual:
+The following categories will appear in this manual:
 @c JP
 @var{カテゴリ} は項目@b{foo}の種別を示します。
 次のようなカテゴリがあります。
@@ -327,7 +327,7 @@ The following category will appear in this manual:
 @end multitable
 
 @c EN
-For functions, special forms and macros, the entry may followed
+For functions, special forms and macros, the entry may be followed
 by one or more arguments.  In the argument list, the following notations
 may appear:
 @c JP

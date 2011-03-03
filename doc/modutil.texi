@@ -1268,8 +1268,8 @@ The returned job is timestamped.  You can examine acknowledged
 time, start time and finish time of the job (if the job hasn't
 been started and/or finished, the corresponding timestamp fields
 are @code{#f}.)  It's sometimes
-handy to find out how log the job was waiting in the
-queue and how log it took to run.
+handy to find out how long the job was waiting in the
+queue and how long it took to run.
 @c JP
 返される@code{job}レコードにはタイムスタンプが付加され、
 受付時間、実行開始時間、実行終了時間が記録されます。
@@ -7981,7 +7981,7 @@ so @var{obj} must be a Scheme object that can be mapped to
 either a JSON object or a JSON array.
 
 If @var{obj} contains a Scheme object that cannot be mapped
-to JSON representation, a @code{<json-consturct-error>} condition
+to JSON representation, a @code{<json-construct-error>} condition
 is raised.
 See the entry of @code{parse-json} above for the mapping between
 JSON and Scheme.

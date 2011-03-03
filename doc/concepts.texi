@@ -57,7 +57,7 @@ C routine) have limited extent (@xref{Continuation}, for details).
 @item
 @c EN
 Full numeric tower (integer, rational, real and complex numbers) are supported,
-but ratinals are only exact, and complex numbers are always inexact.
+but rationals are only exact, and complex numbers are always inexact.
 The reader can recognize '@code{#}' as insignificant digits.
 @c JP
 完全なNumeric tower(整数、有理数、実数、複素数)がサポートされますが、
@@ -497,7 +497,7 @@ Gaucheにおいては、そうではありません。
 Gauche supports @emph{multibyte string} natively,
 which means characters are represented by variable number of bytes
 in a string.   Gauche retains semantic compatibility of
-Scheme string, so such details can be hidden, but it'll helpful
+Scheme string, so such details can be hidden, but it'll be helpful
 if you know a few points.
 @c JP
 Gaucheは内部的に@emph{マルチバイト文字列}をサポートします。
@@ -622,7 +622,7 @@ explained in the next section.
 
 @c EN
 You can use characters other than @code{us-ascii} not only in
-literal strings and characters, but in in commens, symbol names,
+literal strings and characters, but in comments, symbol names,
 literal regular expressions, and so on.
 @c JP
 リテラル文字列や文字以外にも、コメント、シンボル名、
