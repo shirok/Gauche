@@ -87,7 +87,7 @@
 ;;;       the lvars introduced outside of the $LAMBDA.  The result is set
 ;;;       in $lambda-free-lvars slot.  Then we determine $LAMBDA nodes
 ;;;       that does not need to form a closure.  They are assigned to
-;;;       fresh global identifier ($lambda-lifted-gvar is set to it).
+;;;       fresh global identifier ($lambda-lifted-var is set to it).
 ;;;       References to this $lambda node through local variables are
 ;;;       substituted to the reference of this global identifier.
 ;;;
@@ -703,8 +703,8 @@
    ;; need not be saved when packed.
    (calls '())      ; list of call sites
    (free-lvars '()) ; list of free local variables
-   (lifted-gvar #f) ; if this $LAMBDA is lifted to the toplevel, this slot
-                    ; contains an identifier to which the toplevel closure
+   (lifted-var #f)  ; if this $LAMBDA is lifted to the toplevel, this slot
+                    ; contains an lvar to which the toplevel closure
                     ; is to be bound.  See pass 4.
    ))
 
@@ -1474,7 +1474,7 @@
           (imap (cut subst-lvars <> mapping) ($*-args iform))))
 
 ;; Some inline stuff
-(define-inline (pass2-4 iform) (pass4 (pass3 (pass2 iform) #f)))
+(define-inline (pass2-4 iform module) (pass4 (pass3 (pass2 iform) #f) module))
 
 ;;============================================================
 ;; Entry points
@@ -1501,7 +1501,7 @@
                       (slot-ref e 'message) (car srcinfo)
                       (cadr srcinfo) program)
               (errorf "Compile Error: ~a\n" (slot-ref e 'message))))])
-      (pass5 (pass2-4 (pass1 program cenv))
+      (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
              (make-compiled-code-builder 0 0 '%toplevel #f #f)
              '() 'tail))))
 
@@ -1514,7 +1514,8 @@
 ;; that only has CLOSURE instruction.
 (define (compile-toplevel-lambda oform name formals body module)
   (let* ([cenv (make-cenv module '() name)]
-         [iform (pass2-4 (pass1/lambda oform formals body cenv #t))])
+         [iform (pass2-4 (pass1/lambda oform formals body cenv #t)
+                         (cenv-module cenv))])
     (make-toplevel-closure (pass5/lambda iform #f '()))))
   
 ;; For testing
@@ -1528,12 +1529,14 @@
   (pp-iform (pass3 (pass2 (pass1 program (make-bottom-cenv))) show?)))
 
 (define (compile-p4 program)
-  (pp-iform (pass2-4 (pass1 program (make-bottom-cenv)))))
+  (let1 cenv (make-bottom-cenv)
+    (pp-iform (pass2-4 (pass1 program cenv) (cenv-module cenv)))))
 
 (define (compile-p5 program)
-  (vm-dump-code (pass5 (pass2-4 (pass1 program (make-bottom-cenv)))
-                       (make-compiled-code-builder 0 0 '%toplevel #f #f)
-                       '() 'tail)))
+  (let1 cenv (make-bottom-cenv)
+    (vm-dump-code (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
+                         (make-compiled-code-builder 0 0 '%toplevel #f #f)
+                         '() 'tail))))
 
 ;;===============================================================
 ;; Pass 1
@@ -2002,8 +2005,7 @@
     [(_ (name . formals) body ...)
      (let1 trans
          (make-macro-transformer name
-                                 (compile-toplevel-lambda form name formals
-                                                          body module))
+                                 (eval `(,lambda. ,formals ,@body) module))
        (%insert-binding module name trans)
        ($const-undef))]
     [(_ name expr)
@@ -3941,130 +3943,199 @@
 ;; is created only a few times, but called lots of times, the overhead of
 ;; extra arguments may exceed the gain by not allocating the closure.
 ;;
-;; Free variable scanning is done in the recursive call for pass4
-;; handlers.  Each pass4 handler is called with these arguments.
-;;  - IForm
-;;  - a list of lvars bound in the current $LAMBDA.
-;;  - a list of free lvars found so far in the current $LAMBDA.
-;;  - label-dic.
-;; Each handler returns a list of free lvars.
-;;
-;; If $LAMBDA node doesn't have free lvars, or only lvars that are
-;; to be constant, it can be a constant closure.  The tricky part is
-;; the recursive definition.  At this moment we only detect recursive
-;; calls introduced in the same scope.
+;; Pass4 is done in three steps.
+;; The first step, pass4/scan, recursively descents the IForm and determine
+;; a set of free variables for each $LAMBDA nodes.k  It returns a list of
+;; The second step, pass4/lift, takes a set of $LAMBDA nodes in the IForm
+;; and finds which $LAMBDA nodes can be lifted.
+;; The third step, pass4/subst, walks the IForm again, and replaces the
+;; occurence of $LAMBDA nodes to be lifted for $LREFs.
 
-(define-inline (pass4/rec iform bound free labels)
-  ((vector-ref *pass4-dispatch-table* (iform-tag iform))
-   iform bound free labels))
 (define-inline (pass4/add-lvar lvar bound free)
   (if (or (memq lvar bound) (memq lvar free)) free (cons lvar free)))
 
-(define (pass4/rec* iforms bound free labels)
-  (let loop ([iforms iforms] [free free])
-    (if (null? iforms)
-      free
-      (loop (cdr iforms) (pass4/rec (car iforms) bound free labels)))))
-
-;; Pass 4 entry point.  Returns IForm.
-(define (pass4 iform)
+;; Pass 4 entry point.  Returns IForm and list of lifted lvars
+(define (pass4 iform module)
   (let1 dic (make-label-dic '())
-    (pass4/rec iform '() '() dic)
-    ;; TODO: Now we go over $lambda node in (label-dic-info dic) to sort
-    ;; out closures to lift.  After lifting, we have to run alpha-conversion
-    ;; to replace LREFs of lifted closures for GREFs.
-    ;; We need some extra mechanism to initialize those global variables
-    ;; for lifted closures.  For the time being, we don't lift closures
-    ;; and returns iform unmodified.
-    iform))
+    (pass4/scan iform '() '() #t dic) ; Mark free variables
+    (let1 lambda-nodes (label-dic-info dic)
+      (if (null? lambda-nodes)
+        iform                           ;shortcut
+        (let1 lifted (pass4/lift lambda-nodes module)
+          (if (null? lifted)
+            iform                       ;shortcut
+            (let1 iform. (pass4/subst iform (make-label-dic '()))
+              ($seq `(,@(map pass4/lifted-define lifted) ,iform.)))))))))
 
+(define (pass4/lifted-define lambda-node)
+  ($define ($lambda-src lambda-node) '(const)
+           ($lambda-lifted-var lambda-node)
+           lambda-node))
+          
+;; Pass4 step1 - scan
+;;   bs - List of lvars whose binding is introduced in the current scope.
+;;   fs - List of free lvars found so far in the current scope.
+;;   t? - #t if we're in the top level, #f otherwise.
+;;   labels - label-dic.  the info field is used to hold $LAMBDA nodes.
+;; Eacl call returns a list of free lvars.
+(define (pass4/scan iform bs fs t? labels)
+  (case/unquote
+   (iform-tag iform)
+   [($DEFINE) (unless t? (error "[internal] pass4 $DEFINE in non-toplevel"))
+              (pass4/scan ($define-expr iform) bs fs #t labels)]
+   [($LREF)   (pass4/add-lvar ($lref-lvar iform) bs fs)]
+   [($LSET)   (let1 fs (pass4/scan ($lset-expr iform) bs fs #f labels)
+                (pass4/add-lvar ($lset-lvar iform) bs fs))]
+   [($GSET)   (pass4/scan ($gset-expr iform) bs fs t? labels)]
+   [($IF)     (let* ([fs (pass4/scan ($if-test iform) bs fs t? labels)]
+                     [fs (pass4/scan ($if-then iform) bs fs t? labels)])
+                (pass4/scan ($if-else iform) bs fs t? labels))]
+   [($LET)    (let* ([new-bs (append ($let-lvars iform) bs)]
+                     [bs (if (eq? ($let-type iform) 'rec) new-bs bs)]
+                     [fs (pass4/scan* ($let-inits iform) bs fs t? labels)])
+                (pass4/scan ($let-body iform) new-bs fs #f labels))]
+   [($RECEIVE)(let ([fs (pass4/scan ($receive-expr iform) bs fs t? labels)]
+                    [bs (append ($receive-lvars iform) bs)])
+                (pass4/scan ($receive-body iform) bs fs #f labels))]
+   [($LAMBDA) (let1 inner-fs (pass4/scan ($lambda-body iform)
+                                         ($lambda-lvars iform) '() #f labels)
+                (cond
+                 [t? '()]
+                 [else
+                  ($lambda-free-lvars-set! iform inner-fs)
+                  (unless (eq? ($lambda-flag iform) 'dissolved)
+                    (label-dic-info-push! labels iform)) ;save the lambda node
+                  (let loop ([inner-fs inner-fs] [fs fs])
+                    (if (null? inner-fs)
+                      fs
+                      (loop (cdr inner-fs)
+                            (pass4/add-lvar (car inner-fs) bs fs))))]))]
+   [($LABEL)  (cond [(label-seen? labels iform) fs]
+                    [else (label-push! labels iform)
+                          (pass4/scan ($label-body iform) bs fs #f labels)])]
+   [($SEQ)    (pass4/scan* ($seq-body iform) bs fs t? labels)]
+   [($CALL)   (let1 fs (if (eq? ($call-flag iform) 'jump)
+                         fs
+                         (pass4/scan ($call-proc iform) bs fs t? labels))
+                (pass4/scan* ($call-args iform) bs fs t? labels))]
+   [($ASM)    (pass4/scan* ($asm-args iform) bs fs t? labels)]
+   [($PROMISE)(pass4/scan ($promise-expr iform) bs fs t? labels)]
+   [($CONS $APPEND $MEMV $EQ? $EQV?) (pass4/scan2 iform bs fs t? labels)]
+   [($VECTOR $LIST $LIST*) (pass4/scan* ($*-args iform) bs fs t? labels)]
+   [($LIST->VECTOR) (pass4/scan ($*-arg0 iform) bs fs t? labels)]
+   [else fs]))
+
+(define (pass4/scan* iforms bs fs t? labels)
+  (let loop ([iforms iforms] [fs fs])
+    (if (null? iforms)
+      fs
+      (loop (cdr iforms) (pass4/scan (car iforms) bs fs t? labels)))))
+
+(define (pass4/scan2 iform bs fs t? labels)
+  (let1 fs (pass4/scan ($*-arg0 iform) bs fs t? labels)
+    (pass4/scan ($*-arg1 iform) bs fs t? labels)))
+
+;; Sort out the liftable lambda nodes.
+;; Returns a list of lambda nodes, in each of which $lambda-lifted-var
+;; contains an identifier.
 ;;
-;; Pass 4 handlers
+;; At this moment, we only detect closures without free variables,
+;; or self-recursive closures.
+;;
+;; Eventually we want to detect mutual recursive case like this:
+;;
+;;  (define (foo ...)
+;;    (define (a x)  ... (b ...) ...)
+;;    (define (b y)  ... (a ...) ...)
+;;    ...)
+;;
+;; If a's only free variable is b, and b's only free variable is a,
+;; then we can lift both nodes to the toplevel.
+;;
+;; Tentative algorithm:
+;;  - Create a directed graph consists of free lvars and lambda nodes.
+;;    An edge from an lvar to a lambda node if the lvar is free in
+;;    the lambda node.  An edge from lambda node to an lvar if the lambda
+;;    node is bound to the lvar.
+;;  - Find lvars without incoming edge, and remove them and all reachable
+;;    nodes from them.
+;;  - The lambda nodes in the remaining graph are the ones we can lift.
 ;;
 
-(define (pass4/$DEFINE iform bound free labels)
-  (pass4/rec ($define-expr iform) bound free labels))
+(define (pass4/lift lambda-nodes module)
+  (rlet1 lms '()
+    (dolist [lm lambda-nodes]
+      (let1 fvs ($lambda-free-lvars lm)
+        (when (or (null? fvs)
+                  (and (null? (cdr fvs))
+                       (zero? (lvar-set-count (car fvs)))
+                       (eq? (lvar-initval (car fvs)) lm)))
+          (let1 gvar (make-identifier (gensym) module '())
+            ($lambda-lifted-var-set! lm gvar)
+            (push! lms lm)))))))
 
-(define (pass4/$LREF iform bound free labels)
-  (pass4/add-lvar ($lref-lvar iform) bound free))
+;; Final touch of pass4 - replace lifted lambda nodes to $GREFs.
+;; Returns (possibly modified) IForm.
+(define-macro (pass4/subst! access-form labels)
+  (match-let1 (accessor expr) access-form
+    (let ([orig (gensym)]
+          [result (gensym)]
+          [setter (string->symbol #`",|accessor|-set!")])
+      `(let* ([,orig (,accessor ,expr)]
+              [,result (pass4/subst ,orig ,labels)])
+         (unless (eq? ,orig ,result)
+           (,setter ,expr ,result))
+         ,expr))))
 
-(define (pass4/$LSET iform bound free labels)
-  (let1 free. (pass4/rec ($lset-expr iform) bound free labels)
-    (pass4/add-lvar ($lset-lvar iform) bound free.)))
+(define (pass4/subst iform labels)
+  (case/unquote
+   (iform-tag iform)
+   [($DEFINE) (pass4/subst! ($define-expr iform) labels)]
+   [($LREF)   (or (and-let* ([ (= (lvar-set-count ($lref-lvar iform)) 0) ]
+                             [init (lvar-initval ($lref-lvar iform))]
+                             [ (vector? init) ]
+                             [ (has-tag? init $LAMBDA) ]
+                             [id ($lambda-lifted-var init)])
+                    (lvar-ref--! ($lref-lvar iform))
+                    ;; Modifies $LREF to $GREF
+                    (vector-set! iform 0 $GREF)
+                    ($gref-id-set! iform id)
+                    iform)
+                  iform)]
+   [($LSET)   (pass4/subst! ($lset-lvar iform) labels)]
+   [($GSET)   (pass4/subst! ($gset-expr iform) labels)]
+   [($IF)     (pass4/subst! ($if-test iform) labels)
+              (pass4/subst! ($if-then iform) labels)
+              (pass4/subst! ($if-else iform) labels)]
+   [($LET)    (pass4/subst*! ($let-inits iform) labels)
+              (pass4/subst! ($let-body iform) labels)]
+   [($RECEIVE)(pass4/subst! ($receive-expr iform) labels)
+              (pass4/subst! ($receive-body iform) labels)]
+   [($LAMBDA) (pass4/subst! ($lambda-body iform) labels)
+              (or (and-let* ([id ($lambda-lifted-var iform)])
+                    ($gref id))
+                  iform)]
+   [($LABEL)  (unless (label-seen? labels iform)
+                (label-push! labels iform)
+                (pass4/subst! ($label-body iform) labels))
+              iform]
+   [($SEQ)    (pass4/subst*! ($seq-body iform) labels) iform]
+   [($CALL)   (pass4/subst*! ($call-args iform) labels)
+              (pass4/subst! ($call-proc iform) labels)]
+   [($ASM)    (pass4/subst*! ($asm-args iform) labels) iform]
+   [($PROMISE)(pass4/subst! ($promise-expr iform) labels)]
+   [($CONS $APPEND $MEMV $EQ? $EQV?) (pass4/subst! ($*-arg0 iform) labels)
+                                     (pass4/subst! ($*-arg1 iform) labels)]
+   [($VECTOR $LIST $LIST*) (pass4/subst*! ($*-args iform) labels) iform]
+   [($LIST->VECTOR) (pass4/subst! ($*-arg0 iform) labels)]
+   [else iform]))
 
-(define (pass4/$GREF iform bound free labels) free)
-(define (pass4/$GSET iform bound free labels)
-  (pass4/rec ($gset-expr iform) bound free labels))
-(define (pass4/$CONST iform bound free labels) free)
-(define (pass4/$IT iform bound free labels) free)
-
-(define (pass4/$IF iform bound free labels)
-  (let* ([free (pass4/rec ($if-test iform) bound free labels)]
-         [free (pass4/rec ($if-then iform) bound free labels)])
-    (pass4/rec ($if-else iform) bound free labels)))
-
-(define (pass4/$LET iform bound free labels)
-  (let* ([new-bound (append ($let-lvars iform) bound)]
-         [bound.    (if (eq? ($let-type iform) 'rec) new-bound bound)]
-         [free.     (pass4/rec* ($let-inits iform) bound. free labels)])
-    (pass4/rec ($let-body iform) new-bound free. labels)))
-
-(define (pass4/$RECEIVE iform bound free labels)
-  (let ([free   (pass4/rec ($receive-expr iform) bound free labels)]
-        [bound. (append ($receive-lvars iform) bound)])
-    (pass4/rec ($receive-body iform) bound. free labels)))
-
-(define (pass4/$LAMBDA iform bound free labels)
-  (let1 inner-free
-      (pass4/rec ($lambda-body iform) ($lambda-lvars iform) '() labels)
-    ($lambda-free-lvars-set! iform inner-free)
-    (label-dic-info-push! labels iform) ;save the lambda node
-    (let loop ([inner-free inner-free] [free free])
-      (if (null? inner-free)
-        free
-        (loop (cdr inner-free)
-              (pass4/add-lvar (car inner-free) bound free))))))
-
-(define (pass4/$LABEL iform bound free labels)
-  (cond [(label-seen? labels iform) free]
-        [else (label-push! labels iform)
-              (pass4/rec ($label-body iform) bound free labels)]))
-    
-(define (pass4/$PROMISE iform bound free labels)
-  (pass4/rec ($promise-expr iform) bound free labels))
-
-(define (pass4/$SEQ iform bound free labels)
-  (pass4/rec* ($seq-body iform) bound free labels))
-
-(define (pass4/$CALL iform bound free labels)
-  (let1 free. (if (eq? ($call-flag iform) 'jump)
-                free
-                (pass4/rec ($call-proc iform) bound free labels))
-    (pass4/rec* ($call-args iform) bound free. labels)))
-
-(define (pass4/$ASM iform bound free labels)
-  (pass4/rec* ($asm-args iform) bound free labels))
-
-(define (pass4/twoargs iform bound free labels)
-  (let1 free. (pass4/rec ($*-arg0 iform) bound free labels)
-    (pass4/rec ($*-arg1 iform) bound free. labels)))
-(define pass4/$CONS   pass4/twoargs)
-(define pass4/$APPEND pass4/twoargs)
-(define pass4/$MEMV   pass4/twoargs)
-(define pass4/$EQ?    pass4/twoargs)
-(define pass4/$EQV?   pass4/twoargs)
-
-(define (pass4/nargs iform bound free labels)
-  (pass4/rec* ($*-args iform) bound free labels))
-(define pass4/$VECTOR pass4/nargs)
-(define pass4/$LIST   pass4/nargs)
-(define pass4/$LIST*  pass4/nargs)
-
-(define (pass4/$LIST->VECTOR iform bound free labels)
-  (pass4/rec ($*-arg0 iform) bound free labels))
-
-;; Dispatch table.
-(define *pass4-dispatch-table* (generate-dispatch-table pass4))
+(define (pass4/subst*! iforms labels)
+  (define car-set! set-car!)            ;hack to make pass4/subst! work
+  (let loop ([iforms iforms])
+    (unless (null? iforms)
+      (pass4/subst! (car iforms) labels)
+      (loop (cdr iforms)))))
 
 ;;===============================================================
 ;; Pass 5.  Code generation
@@ -4135,7 +4206,7 @@
 ;;
 
 (define (pass5/$DEFINE iform ccb renv ctx)
-  (let ([d (pass5/rec ($define-expr iform) ccb '() 'normal/bottom)]
+  (let ([d (pass5/rec ($define-expr iform) ccb renv 'normal/bottom)]
         [f (cond [(memq 'const ($define-flags iform)) SCM_BINDING_CONST]
                  [(memq 'inlinable ($define-flags iform)) SCM_BINDING_INLINABLE]
                  [else 0])])
