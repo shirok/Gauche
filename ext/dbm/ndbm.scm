@@ -63,7 +63,7 @@
   (unless (slot-bound? self 'path)
     (error "path must be set to open ndbm database"))
   (when (ndbm-file-of self)
-    (errorf "ndbm ~S already opened" gdbm))
+    (errorf "ndbm ~S already opened" self))
   (let* ((path   (slot-ref self 'path))
          (rwmode (slot-ref self 'rw-mode))
          (rwopt  (case rwmode

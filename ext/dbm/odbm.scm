@@ -86,7 +86,7 @@
       ((:create)
        ;; a trick: remove dir and pag file first if :create
        (when exists?
-         (posix-unlink dirfile) (posix-unlink pagfile))
+         (sys-unlink dirfile) (sys-unlink pagfile))
        (create)))
     (odbm-init path)
     ;; adjust mode properly

@@ -69,7 +69,7 @@
   (unless (slot-bound? self 'path)
     (error "path must be set to open gdbm database"))
   (when (gdbm-file-of self)
-    (errorf "gdbm ~S already opened" gdbm))
+    (errorf "gdbm ~S already opened" self))
   (let* ((path   (slot-ref self 'path))
          (rwmode (slot-ref self 'rw-mode))
          (sync   (slot-ref self 'sync))
