@@ -1,5 +1,13 @@
 2011-03-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass4): Revised pass4 to lift closures for
+	  obvious cases (independent, and self-recursive calls).
+	  We no longer have compile-toplevel-lambda, since a single toplevel
+	  lambda can be compiled into multiple definitions because of lifted
+	  lambdas.
+	* src/precomp.scm (handle-define-macro): Changed not to use
+	  compile-toplevel-lambda.
+
 	* lib/gauche/listener.scm (listener-read-handler): Fixed a bug
 	  that referenced undefined variable.
 	* lib/gauche/cgen/stub.scm (process-body-spec): ditto.

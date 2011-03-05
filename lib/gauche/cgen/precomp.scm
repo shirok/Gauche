@@ -272,8 +272,6 @@
   
 ;; compatibility kludge
 (define compile       (with-module gauche.internal compile))
-(define compile-toplevel-lambda
-  (with-module gauche.internal compile-toplevel-lambda))
 (define %procedure-inliner
   (with-module gauche.internal %procedure-inliner))
 (define vm-code->list (with-module gauche.internal vm-code->list))
@@ -565,7 +563,9 @@
   (define (do-handle name expr)
     (if (or (symbol-exported? name)
             (memq name (private-macros-to-keep)))
-      `(,%define ,name (,%macro ',name ,expr))
+      `(,%begin
+        (,%define ,name (,%macro ',name ,expr))
+        ((with-module gauche define-macro) ,name ,expr))
       `((with-module gauche define-macro) ,name ,expr)))
 
   (match form
@@ -583,22 +583,6 @@
        (write-ext-module `(define-syntax . ,form)))]
     [_ #f])
   (cons '(with-module gauche define-syntax) form))  
-
-;; (define (handle-define form)
-;;   (match form
-;;     [((name . args) . body)
-;;      (handle-define `(,name (lambda ,args ,@body)))]
-;;     [((? symbol? name) ((? =lambda?) args . body))
-;;      (let* ([closure
-;;              (compile-toplevel-lambda form name args body (compile-module))]
-;;             [code (cgen-literal (closure-code closure))]
-;;             [var  (cgen-literal name)])
-;;        (cgen-init
-;;         (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeClosure(~a, NULL)); /* ~s */"
-;;                 (cgen-cexpr var) (cgen-cexpr code) (cgen-safe-comment name))))
-;;      (undefined)]
-;;     [_
-;;      (cons '(with-module gauche define) form)]))
 
 (define (handle-define-constant form)
   (match form

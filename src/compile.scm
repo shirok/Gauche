@@ -1509,15 +1509,6 @@
 (define (compile-partial program module) #f)
 (define (compile-finish cc) #f)
 
-;; Returns a compiled toplevel closure.  This is a shortcut of
-;; evaluating lambda expression---it skips extra code segment
-;; that only has CLOSURE instruction.
-(define (compile-toplevel-lambda oform name formals body module)
-  (let* ([cenv (make-cenv module '() name)]
-         [iform (pass2-4 (pass1/lambda oform formals body cenv #t)
-                         (cenv-module cenv))])
-    (make-toplevel-closure (pass5/lambda iform #f '()))))
-  
 ;; For testing
 (define (compile-p1 program)
   (pp-iform (pass1 program (make-bottom-cenv))))
