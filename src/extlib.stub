@@ -1619,6 +1619,11 @@
   (result (and (SCM_CLOSUREP obj) (== (-> (SCM_CLOSURE obj) env) NULL))))
 
 (define-cproc closure-code (clo::<closure>) (result (-> clo code)))
+(define-cproc method-code (m::<method>)
+  (if (-> m func)
+    ;; code is not available for C-defined method
+    (result SCM_FALSE)
+    (result (SCM_OBJ (-> m data)))))
 
 (define-cproc procedure-info (proc::<procedure>)
   (result (SCM_PROCEDURE_INFO proc)))

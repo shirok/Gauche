@@ -255,6 +255,16 @@
     
   (cond
    [(closure? proc) (print "CLOSURE " proc) (dump (closure-code proc))]
+   [(is-a? proc <method>)
+    (print "METHOD " proc)
+    (cond [(method-code proc) => dump]
+          [else (print "(defined in C)")])]
+   [(is-a? proc <generic>)
+    (print "GENERIC FUNCTION " proc)
+    (dolist [m (~ proc'methods)]
+      (print ">> method " m)
+    (cond [(method-code m) => dump]
+          [else (print "(defined in C)")]))]
    [(and (subr? proc)
          (let1 info (procedure-info proc)
            ;; NB: Detect case-lamdba.  The format of procedure-info of
