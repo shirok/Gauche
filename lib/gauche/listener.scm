@@ -157,9 +157,8 @@
                            (set! (ref self 'rbuf)
                                  (get-remaining-input-string
                                   (current-input-port))))))
-                     (or (listener-show-prompt self) (abort e))
-                     (loop)))))))
-      ))
+                     (and (listener-show-prompt self)
+                          (loop))))))))))
 
   ;; Capture std ports when the handler is created
   (set! (ref self 'original-input-port)  (current-input-port))

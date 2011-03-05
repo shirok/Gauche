@@ -803,6 +803,7 @@
     [else (err)]))
 
 (define-method process-body-spec ((cproc <procstub>) form)
+  (define (err) (error <cgen-stub-error> "malformed 'body' spec:" form))
   (match form
     [((? symbol? rettype) . stmts)
      (process-body-inner cproc rettype stmts)]

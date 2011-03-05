@@ -1,5 +1,9 @@
 2011-03-05  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/listener.scm (listener-read-handler): Fixed a bug
+	  that referenced undefined variable.
+	* lib/gauche/cgen/stub.scm (process-body-spec): ditto.
+
 	* src/extlib.stub (method-code), lib/gauche/procedure.scm (disasm):
 	  Support disassembling generic functions and methods.
 
