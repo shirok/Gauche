@@ -3,6 +3,8 @@
 	* lib/gauche/listener.scm (listener-read-handler): Fixed a bug
 	  that referenced undefined variable.
 	* lib/gauche/cgen/stub.scm (process-body-spec): ditto.
+	* ext/dbm/gdbm.scm (dbm-open), ext/dbm/ndbm.scm (dbm-open),
+	  ext/dbm/odbm.scm (dbm-open): ditto.
 
 	* src/extlib.stub (method-code), lib/gauche/procedure.scm (disasm):
 	  Support disassembling generic functions and methods.
