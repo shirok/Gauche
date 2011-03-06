@@ -1,5 +1,8 @@
 2011-03-05  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/vm/profiler.scm (entry-name): Workaround a problem when
+	  case-lambda generates an output that can't be read back.
+
 	* src/gauche/vm.h, src/intlib.stub, src/main.c: Added a compiler flag
 	  -fno-lambda-lifting-pass (SCM_COMPILE_NO_LIFTING) to turn off
 	  pass4 for troubleshooting.  Also renamed SCM_COMPILE_NO_PASS2OPT to

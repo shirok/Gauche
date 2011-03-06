@@ -182,13 +182,19 @@
 (define (entry-name obj)
   (cond
    [(and (procedure? obj) (subr? obj))
-    (ref obj 'info)]
+    (match (~ obj'info)
+      ;; Kludge: case-lambda-dispatcher contains #<closure> in its dispatch
+      ;; vector.   It is unprintable, so we omit it.  The format of info
+      ;; in case-lambda is not fixed yet; see make-case-lambda-dispatcher
+      ;; in intlib.stub, and keep this in sync.
+      [('case-lambda-dispatcher min-req vec) `(case-lambda ,min-req)]
+      [other other])]
    [(is-a? obj <compiled-code>)
-    (ref obj 'full-name)]
+    (~ obj'full-name)]
    [(is-a? obj <generic>)
-    `(GF ,(ref obj 'name))]
+    `(GF ,(~ obj'name))]
    [(is-a? obj <method>)
-    `(METHOD ,(ref (ref obj 'generic) 'name)
-             ,(map class-name (ref obj 'specializers)))]
+    `(METHOD ,(~ obj'generic'name)
+             ,(map class-name (~ obj'specializers)))]
    [else (write-to-string obj)]))
 
