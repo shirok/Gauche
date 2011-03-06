@@ -1,3 +1,10 @@
+2011-03-06  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match.scm (inline-let, gen): Removed inline-let, since
+	  it does the duplicate work with Gauche's compiler.  Also made
+	  length>= as a global definition instead of local, since Gauche can
+	  inline it anyway.
+
 2011-03-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/profiler.scm (entry-name): Workaround a problem when
