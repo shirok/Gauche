@@ -1375,22 +1375,26 @@
 ;; Reset lvar reference count.  This is called in pass3,
 ;; when a subgraph of IForm is eliminated.
 (define (reset-lvars iform) (reset-lvars/rec iform (make-label-dic #f)) iform)
+
+(define-macro (reset-lvars/rec* iforms labels)
+  `(ifor-each (lambda (x) (reset-lvars/rec x ,labels)) ,iforms))
+
 (define/case (reset-lvars/rec iform labels)
   (iform-tag iform)
   [($DEFINE) (reset-lvars/rec ($define-expr iform) labels)]
   [($LREF)   (lvar-ref++! ($lref-lvar iform))]
   [($LSET)   (lvar-set++! ($lset-lvar iform))
-   (reset-lvars/rec ($lset-expr iform) labels)]
+             (reset-lvars/rec ($lset-expr iform) labels)]
   [($GSET)   (reset-lvars/rec ($gset-expr iform) labels)]
   [($IF)     (reset-lvars/rec ($if-test iform) labels)
-   (reset-lvars/rec ($if-then iform) labels)
-   (reset-lvars/rec ($if-else iform) labels)]
+             (reset-lvars/rec ($if-then iform) labels)
+             (reset-lvars/rec ($if-else iform) labels)]
   [($LET)    (for-each lvar-reset ($let-lvars iform))
-   (reset-lvars/rec* ($let-inits iform) labels)
-   (reset-lvars/rec ($let-body iform) labels)]
+             (reset-lvars/rec* ($let-inits iform) labels)
+             (reset-lvars/rec ($let-body iform) labels)]
   [($RECEIVE)(for-each lvar-reset ($receive-lvars iform))
-   (reset-lvars/rec ($receive-expr iform) labels)
-   (reset-lvars/rec ($receive-body iform) labels)]
+             (reset-lvars/rec ($receive-expr iform) labels)
+             (reset-lvars/rec ($receive-body iform) labels)]
   [($LAMBDA) (for-each lvar-reset ($lambda-lvars iform))
    (reset-lvars/rec ($lambda-body iform) labels)]
   [($LABEL)  (unless (label-seen? labels iform)
@@ -1399,17 +1403,15 @@
   [($SEQ)    (reset-lvars/rec* ($seq-body iform) labels)]
   [($CALL)   (unless (eq? ($call-flag iform) 'jump)
                (reset-lvars/rec ($call-proc iform) labels))
-   (reset-lvars/rec* ($call-args iform) labels)]
+             (reset-lvars/rec* ($call-args iform) labels)]
   [($ASM)    (reset-lvars/rec* ($asm-args iform) labels)]
   [($PROMISE)(reset-lvars/rec ($promise-expr iform) labels)]
   [($CONS $APPEND $MEMV $EQ? $EQV?)
-   (reset-lvars/rec ($*-arg0 iform) labels)
-   (reset-lvars/rec ($*-arg1 iform) labels)]
+             (reset-lvars/rec ($*-arg0 iform) labels)
+             (reset-lvars/rec ($*-arg1 iform) labels)]
   [($VECTOR $LIST $LIST*) (reset-lvars/rec* ($*-args iform) labels)]
   [($LIST->VECTOR) (reset-lvars/rec ($*-arg0 iform) labels)]
   [else #f])
-(define (reset-lvars/rec* iforms labels)
-  (ifor-each (lambda (x) (reset-lvars/rec x labels)) iforms))
 
 ;; Replaces $LREF of matching lvar with given expression.
 ;; Used in the transformation of inlined procedure with closed environment.
@@ -4010,6 +4012,20 @@
 ;;   t? - #t if we're in the top level, #f otherwise.
 ;;   labels - label-dic.  the info field is used to hold $LAMBDA nodes.
 ;; Eacl call returns a list of free lvars.
+
+(define-macro (pass4/scan* iforms bs fs t? labels)
+  (let1 iforms. (gensym)
+    `(let1 ,iforms. ,iforms
+       (cond [(null? ,iforms.) ,fs]
+             [(null? (cdr ,iforms.))
+              (pass4/scan (car ,iforms.) ,bs ,fs ,t? ,labels)]
+             [else
+              (let loop ([,iforms. ,iforms.] [,fs ,fs])
+                (if (null? ,iforms.)
+                  ,fs
+                  (loop (cdr ,iforms.)
+                        (pass4/scan (car ,iforms.) ,bs ,fs ,t? ,labels))))]))))
+
 (define/case (pass4/scan iform bs fs t? labels)
   (iform-tag iform)
   [($DEFINE) (unless t? (error "[internal] pass4 $DEFINE in non-toplevel"))
@@ -4055,12 +4071,6 @@
   [($VECTOR $LIST $LIST*) (pass4/scan* ($*-args iform) bs fs t? labels)]
   [($LIST->VECTOR) (pass4/scan ($*-arg0 iform) bs fs t? labels)]
   [else fs])
-
-(define (pass4/scan* iforms bs fs t? labels)
-  (let loop ([iforms iforms] [fs fs])
-    (if (null? iforms)
-      fs
-      (loop (cdr iforms) (pass4/scan (car iforms) bs fs t? labels)))))
 
 (define (pass4/scan2 iform bs fs t? labels)
   (let1 fs (pass4/scan ($*-arg0 iform) bs fs t? labels)
@@ -4111,12 +4121,25 @@
   (match-let1 (accessor expr) access-form
     (let ([orig (gensym)]
           [result (gensym)]
-          [setter (string->symbol #`",|accessor|-set!")])
+          [setter (if (eq? accessor 'car)
+                    'set-car! 
+                    (string->symbol #`",|accessor|-set!"))])
       `(let* ([,orig (,accessor ,expr)]
               [,result (pass4/subst ,orig ,labels)])
          (unless (eq? ,orig ,result)
            (,setter ,expr ,result))
          ,expr))))
+
+(define-macro (pass4/subst*! iforms labels)
+  (let1 iforms. (gensym)
+    `(let1 ,iforms. ,iforms
+       (cond [(null? ,iforms.)]
+             [(null? (cdr ,iforms.)) (pass4/subst! (car ,iforms.) ,labels)]
+             [else
+              (let loop ([,iforms. ,iforms.])
+                (unless (null? ,iforms.)
+                  (pass4/subst! (car ,iforms.) ,labels)
+                  (loop (cdr ,iforms.))))]))))
 
 (define/case (pass4/subst iform labels)
   (iform-tag iform)
@@ -4135,37 +4158,30 @@
   [($LSET)   (pass4/subst! ($lset-expr iform) labels)]
   [($GSET)   (pass4/subst! ($gset-expr iform) labels)]
   [($IF)     (pass4/subst! ($if-test iform) labels)
-   (pass4/subst! ($if-then iform) labels)
-   (pass4/subst! ($if-else iform) labels)]
+             (pass4/subst! ($if-then iform) labels)
+             (pass4/subst! ($if-else iform) labels)]
   [($LET)    (pass4/subst*! ($let-inits iform) labels)
-   (pass4/subst! ($let-body iform) labels)]
+             (pass4/subst! ($let-body iform) labels)]
   [($RECEIVE)(pass4/subst! ($receive-expr iform) labels)
-   (pass4/subst! ($receive-body iform) labels)]
+             (pass4/subst! ($receive-body iform) labels)]
   [($LAMBDA) (pass4/subst! ($lambda-body iform) labels)
-   (or (and-let* ([id ($lambda-lifted-var iform)])
-         ($gref id))
-       iform)]
+             (or (and-let* ([id ($lambda-lifted-var iform)])
+                   ($gref id))
+                 iform)]
   [($LABEL)  (unless (label-seen? labels iform)
                (label-push! labels iform)
                (pass4/subst! ($label-body iform) labels))
-   iform]
+             iform]
   [($SEQ)    (pass4/subst*! ($seq-body iform) labels) iform]
   [($CALL)   (pass4/subst*! ($call-args iform) labels)
-   (pass4/subst! ($call-proc iform) labels)]
+             (pass4/subst! ($call-proc iform) labels)]
   [($ASM)    (pass4/subst*! ($asm-args iform) labels) iform]
   [($PROMISE)(pass4/subst! ($promise-expr iform) labels)]
   [($CONS $APPEND $MEMV $EQ? $EQV?) (pass4/subst! ($*-arg0 iform) labels)
-   (pass4/subst! ($*-arg1 iform) labels)]
+             (pass4/subst! ($*-arg1 iform) labels)]
   [($VECTOR $LIST $LIST*) (pass4/subst*! ($*-args iform) labels) iform]
   [($LIST->VECTOR) (pass4/subst! ($*-arg0 iform) labels)]
   [else iform])
-
-(define (pass4/subst*! iforms labels)
-  (define car-set! set-car!)            ;hack to make pass4/subst! work
-  (let loop ([iforms iforms])
-    (unless (null? iforms)
-      (pass4/subst! (car iforms) labels)
-      (loop (cdr iforms)))))
 
 ;;===============================================================
 ;; Pass 5.  Code generation
