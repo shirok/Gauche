@@ -1,5 +1,11 @@
 2011-03-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/vm.h, src/intlib.stub, src/main.c: Added a compiler flag
+	  -fno-lambda-lifting-pass (SCM_COMPILE_NO_LIFTING) to turn off
+	  pass4 for troubleshooting.  Also renamed SCM_COMPILE_NO_PASS2OPT to
+	  SCM_COMPILE_NO_POST_INLINE_OPT, for the pass numbers can be changed
+	  (and indeed they were changed).
+
 	* src/compile.scm (pass4): Revised pass4 to lift closures for
 	  obvious cases (independent, and self-recursive calls).
 	  We no longer have compile-toplevel-lambda, since a single toplevel

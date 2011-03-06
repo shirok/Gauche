@@ -3573,7 +3573,7 @@
 ;; We repeat the pass then.
 
 (define (pass3 iform show?)
-  (if (vm-compiler-flag-no-pass2-post?)
+  (if (vm-compiler-flag-no-post-inline?)
     iform
     (let loop ([iform iform] [count 0])
       (when show? (pass3-dump iform count))
@@ -3947,16 +3947,18 @@
 
 ;; Pass 4 entry point.  Returns IForm and list of lifted lvars
 (define (pass4 iform module)
-  (let1 dic (make-label-dic '())
-    (pass4/scan iform '() '() #t dic) ; Mark free variables
-    (let1 lambda-nodes (label-dic-info dic)
-      (if (null? lambda-nodes)
-        iform                           ;shortcut
-        (let1 lifted (pass4/lift lambda-nodes module)
-          (if (null? lifted)
-            iform                       ;shortcut
-            (let1 iform. (pass4/subst iform (make-label-dic '()))
-              ($seq `(,@(map pass4/lifted-define lifted) ,iform.)))))))))
+  (if (vm-compiler-flag-no-lifting?)
+    iform
+    (let1 dic (make-label-dic '())
+      (pass4/scan iform '() '() #t dic) ; Mark free variables
+      (let1 lambda-nodes (label-dic-info dic)
+        (if (null? lambda-nodes)
+          iform                           ;shortcut
+          (let1 lifted (pass4/lift lambda-nodes module)
+            (if (null? lifted)
+              iform                       ;shortcut
+              (let1 iform. (pass4/subst iform (make-label-dic '()))
+                ($seq `(,@(map pass4/lifted-define lifted) ,iform.))))))))))
 
 (define (pass4/lifted-define lambda-node)
   ($define ($lambda-src lambda-node) '(const)
