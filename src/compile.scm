@@ -112,7 +112,7 @@
 ;; used by pass5/$DEFINE.
 ;; This should match the values in src/gauche/module.h.  We intentionally
 ;; avoid referring to the C value,
-;; using (inline-stub (define-enum SCM_BINDING_CONST) ...), since doing so
+;; via (inline-stub (define-enum SCM_BINDING_CONST) ...), since doing so
 ;; would complicate the compilation process in case we need to change those
 ;; constants.  (Compile.scm is compiled by the host gauche which refers to
 ;; the old value.)
@@ -204,8 +204,8 @@
     `(let ((,tmp ,obj))
        (cond ,@(map expand-clause clauses)))))
 
-;; Similar to case/unquote, but we can turn each clause into a
-;; toplevel procedure and use jump vector.
+;; Similar to case/unquote, but this turns each clause into a
+;; toplevel procedure and use jump vector, which is more efficient.
 ;; TODO: In future, we might want to compile case into jump vector
 ;; if the range of values are close together.  Once we have it,
 ;; we may no longer need this hack.
@@ -301,14 +301,10 @@
 ;; Data structures
 ;;
 
-;; NB: for the time being, we use a simple vector and manually
-;; defined accessors/modifiers.  Partly because we can't use
-;; define-class stuff here until we can compile gauche/object.scm
-;; into C, and partly because using inlined vector-{ref|set!} is
-;; pretty fast compared to the generic class access.  Probably we
-;; should provide a common way to define a simple structure which
-;; allows the compiler to inline accessors for performance, trading
-;; off the runtime flexibility.
+;; We use a simple vector and manually defined accessors/modifiers,
+;; since vector-{ref|set!} is very fast in Gauche.  We will rewrite
+;; the simple-minded define-simple-struct macro with gauche.record
+;; once we can compile vector-backed record efficiently.
 
 ;; Macro define-simple-struct creates a bunch of functions and macros
 ;; to emulate a structure by a vector.
@@ -563,11 +559,6 @@
 (define-inline (cenv-swap-source cenv source)
   (cenv-copy-except cenv :source-path source))
 
-;; toplevel environment == cenv has only syntactic frames
-;; moved to C
-;(define (cenv-toplevel? cenv)
-;  (not (any (lambda (frame) (eqv? (car frame) LEXICAL)) (cenv-frames cenv))))
-
 ;; Intermediate tree form (IForm)
 ;;
 ;;   We first convert the program into an intermediate tree form (IForm),
@@ -618,8 +609,8 @@
 ;;      relevant source code, or #f if there's no relevant code.
 ;;
 ;;  NB: the actual value of the first element is an integer instead of
-;;      a symbol, which allows pass5/rec to use vector dispatch instead
-;;      of case statement.
+;;      a symbol, which allows us to use vector dispatch instead
+;;      of case expressions.
 ;;
 ;;  NB: The nodes are destructively modified during compilation, in order
 ;;      to keep allocations minimal.   Nodes shouldn't be shared, for
