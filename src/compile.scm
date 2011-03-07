@@ -4234,7 +4234,7 @@
 ;;
 (define (pass5 iform ccb initial-renv ctx)
   (let1 maxstack (pass5/rec iform ccb initial-renv ctx)
-    (compiled-code-emit0! ccb RET)
+    (compiled-code-emit-RET! ccb)
     (compiled-code-finish-builder ccb maxstack)
     ccb))
 
@@ -4360,7 +4360,7 @@
                                 0 info ccb renv ctx)]
    [else
     (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
-      (compiled-code-emit0! ccb PUSH)
+      (compiled-code-emit-PUSH! ccb)
       (pass5/if-final iform #f BNEQ 0
                       (imax (pass5/rec y ccb renv 'normal/top) depth)
                       info ccb renv ctx))]))
@@ -4373,7 +4373,7 @@
                                 0 info ccb renv ctx)]
    [else
     (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
-      (compiled-code-emit0! ccb PUSH)
+      (compiled-code-emit-PUSH! ccb)
       (pass5/if-final iform #f BNEQV 0
                       (imax (pass5/rec y ccb renv 'normal/top) depth)
                       info ccb renv ctx))]))
@@ -4400,7 +4400,7 @@
                            (pass5/rec x ccb renv (normal-context ctx))
                            info ccb renv ctx))
       (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
-        (compiled-code-emit0! ccb PUSH)
+        (compiled-code-emit-PUSH! ccb)
         (pass5/if-final iform #f BNUMNE 0
                         (imax (pass5/rec y ccb renv 'normal/top) depth)
                         info ccb renv ctx))))
@@ -4421,7 +4421,7 @@
                            (pass5/rec x ccb renv (normal-context ctx))
                            info ccb renv ctx))
       (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
-        (compiled-code-emit0! ccb PUSH)
+        (compiled-code-emit-PUSH! ccb)
         (pass5/if-final iform #f insn 0
                         (imax (pass5/rec y ccb renv 'normal/top) depth)
                         info ccb renv ctx))))
@@ -4483,7 +4483,7 @@
             (compiled-code-emit0oi! ccb code (list arg0/opr elselabel) info)
             (compiled-code-emit1oi! ccb code arg0/opr elselabel info))
           (set! depth (imax (pass5/rec ($if-then iform) ccb renv ctx) depth))
-          (compiled-code-emit0! ccb RET)
+          (compiled-code-emit-RET! ccb)
           (compiled-code-set-label! ccb elselabel)
           (imax (pass5/rec ($if-else iform) ccb renv ctx) depth))])]
      [else
@@ -4539,7 +4539,7 @@
            (let1 dinit (pass5/prepare-args inits lvars ccb renv ctx)
              (compiled-code-emit1i! ccb LOCAL-ENV nlocals info)
              (let1 dbody (pass5/rec body ccb (cons lvars renv) 'tail)
-               (compiled-code-emit0! ccb RET)
+               (compiled-code-emit-RET! ccb)
                (compiled-code-set-label! ccb merge-label)
                (imax dinit
                     (+ dbody CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals))))])]
@@ -4563,7 +4563,7 @@
              (let* ((dinit (emit-letrec-inits others nlocals ccb
                                               (cons lvars renv) 0))
                     (dbody (pass5/rec body ccb (cons lvars renv) 'tail)))
-               (compiled-code-emit0! ccb RET)
+               (compiled-code-emit-RET! ccb)
                (compiled-code-set-label! ccb merge-label)
                (+ CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals
                   (imax dinit dbody)))]))]
@@ -4618,7 +4618,7 @@
         (compiled-code-emit2oi! ccb RECEIVE nargs optarg
                                 merge-label ($*-src iform))
         (let1 dbody (pass5/rec body ccb (cons lvars renv) 'tail)
-          (compiled-code-emit0! ccb RET)
+          (compiled-code-emit-RET! ccb)
           (compiled-code-set-label! ccb merge-label)
           (imax dinit (+ nargs optarg CONT_FRAME_SIZE ENV_HEADER_SIZE dbody))))]
      )))
@@ -4772,7 +4772,7 @@
                   0)
       (compiled-code-set-label! ccb (pass5/ensure-label ccb label))
       (let1 dbody (pass5/rec ($label-body label) ccb newenv 'tail)
-        (compiled-code-emit0! ccb RET)
+        (compiled-code-emit-RET! ccb)
         (compiled-code-set-label! ccb merge-label)
         (if (= nargs 0)
           (+ CONT_FRAME_SIZE dbody)
@@ -4926,7 +4926,7 @@
        (pass5/emit-asm! ccb insn info))]
     [(2)
      (let1 d0 (pass5/rec (car args) ccb renv 'normal/top)
-       (compiled-code-emit0! ccb PUSH)
+       (compiled-code-emit-PUSH! ccb)
        (let1 d1 (pass5/rec (cadr args) ccb renv 'normal/top)
          (pass5/emit-asm! ccb insn info)
          (imax d0 (+ d1 1))))]
@@ -4938,7 +4938,7 @@
                 (imax depth (+ cnt d)))]
              [else
               (let1 d (pass5/rec (car args) ccb renv 'normal/top)
-                (compiled-code-emit0! ccb PUSH)
+                (compiled-code-emit-PUSH! ccb)
                 (loop (cdr args) (imax depth (+ d cnt)) (+ cnt 1)))]))]
     ))
 
@@ -4954,7 +4954,7 @@
   (let ((d0 (gensym))
         (d1 (gensym)))
     `(let1 ,d0 (pass5/rec ,arg0 ccb renv (normal-context ctx))
-       (compiled-code-emit0! ccb PUSH)
+       (compiled-code-emit-PUSH! ccb)
        (let1 ,d1 (pass5/rec ,arg1 ccb renv 'normal/top)
          (compiled-code-emit1i! ccb ,code ,param ,info)
          (imax ,d0 (+ ,d1 1))))
@@ -4979,7 +4979,7 @@
                (imax (+ d cnt) depth))]
             [else
              (let1 d (pass5/rec (car as) ccb renv 'normal/top)
-               (compiled-code-emit0! ccb PUSH)
+               (compiled-code-emit-PUSH! ccb)
                (loop (cdr as) (imax (+ d cnt) depth) (+ cnt 1)))]))))
 
 (define (pass5/$CONS iform ccb renv ctx)
@@ -5070,9 +5070,9 @@
          (pass5/builtin-twoargs info VEC-SETI ($const-value k) vec obj)]
         [else
          (let1 d0 (pass5/rec vec ccb renv (normal-context ctx))
-           (compiled-code-emit0! ccb PUSH)
+           (compiled-code-emit-PUSH! ccb)
            (let1 d1 (pass5/rec k   ccb renv 'normal/top)
-             (compiled-code-emit0! ccb PUSH)
+             (compiled-code-emit-PUSH! ccb)
              (let1 d2 (pass5/rec obj ccb renv 'normal/top)
                (compiled-code-emit0i! ccb VEC-SET info)
                (imax d0 (+ d1 1) (+ d2 2)))))]))
@@ -5087,15 +5087,15 @@
 (define (pass5/asm-slot-set info obj slot val ccb renv ctx)
   (cond [($const? slot)
          (let1 d0 (pass5/rec obj ccb renv (normal-context ctx))
-           (compiled-code-emit0! ccb PUSH)
+           (compiled-code-emit-PUSH! ccb)
            (let1 d1 (pass5/rec val ccb renv 'normal/top)
              (compiled-code-emit0oi! ccb SLOT-SETC ($const-value slot) info)
              (imax d0 (+ d1 1))))]
         [else
          (let1 d0 (pass5/rec obj ccb renv (normal-context ctx))
-           (compiled-code-emit0! ccb PUSH)
+           (compiled-code-emit-PUSH! ccb)
            (let1 d1 (pass5/rec slot ccb renv 'normal/top)
-             (compiled-code-emit0! ccb PUSH)
+             (compiled-code-emit-PUSH! ccb)
              (let1 d2 (pass5/rec val ccb renv 'normal/top)
                (compiled-code-emit0i! ccb SLOT-SET info)
                (imax d0 (+ d1 1) (+ d2 2)))))]))
@@ -5131,7 +5131,7 @@
     (let1 d (pass5/rec (car args) ccb renv (normal-context ctx))
       (when (and lvars (> (lvar-set-count (car lvars)) 0))
         (compiled-code-emit0! ccb BOX))
-      (compiled-code-emit0! ccb PUSH)
+      (compiled-code-emit-PUSH! ccb)
       ;; NB: We check termination condition here.  This routine is called
       ;; lots of times, and (length args) is usually small (<=2 covers almost
       ;; half of the cases, and <=3 covers over 80%).  Check termination
@@ -5146,7 +5146,7 @@
           (let1 d (pass5/rec (car args) ccb renv 'normal/top)
             (when (and lvars (> (lvar-set-count (car lvars)) 0))
               (compiled-code-emit0! ccb BOX))
-            (compiled-code-emit0! ccb PUSH)
+            (compiled-code-emit-PUSH! ccb)
             (if (null? (cdr args))
               d
               (loop (cdr args) (and lvars (cdr lvars))

@@ -298,6 +298,14 @@
   (cc::<compiled-code> code::<int>) ::<void>
   (Scm_CompiledCodeEmit cc code 0 0 '#f '#f))
 
+(define-cproc compiled-code-emit-PUSH!
+  (cc::<compiled-code>) ::<void>
+  (Scm_CompiledCodeEmit cc SCM_VM_PUSH 0 0 '#f '#f))
+
+(define-cproc compiled-code-emit-RET!
+  (cc::<compiled-code>) ::<void>
+  (Scm_CompiledCodeEmit cc SCM_VM_RET 0 0 '#f '#f))
+
 (define-cproc compiled-code-emit0o!
   (cc::<compiled-code> code::<int> operand) ::<void>
   (Scm_CompiledCodeEmit cc code 0 0 operand '#f))
