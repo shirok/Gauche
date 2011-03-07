@@ -665,13 +665,13 @@
   (lvar-set++! lvar) (vector $LSET lvar expr))
 
 ;; $gref <id>
-;;   Gloval variable reference.
+;;   Global variable reference.
 (define-simple-struct $gref $GREF $gref
   (id        ; identifier
    ))
 
 ;; $gset <id> <iform>
-;;   Glocal variable assignment.
+;;   Global variable assignment.
 (define-simple-struct $gset $GSET $gset
   (id        ; identifier
    expr      ; IForm
