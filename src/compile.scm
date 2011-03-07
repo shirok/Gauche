@@ -5529,10 +5529,19 @@
 
 ;; Returns GLOC if id is bound to one, or #f.  If GLOC is returned,
 ;; it is always bound.
-(define (id->bound-gloc id)
-  (and-let* ([gloc (find-binding (identifier-module id) (identifier-name id) #f)]
-             [ (gloc-bound? gloc) ])
-    gloc))
+
+(inline-stub
+ (define-cproc id->bound-gloc (id::<identifier>)
+   (let* ([gloc::ScmGloc* (Scm_FindBinding (-> id module) (-> id name) 0)])
+     (if (and gloc (not (SCM_UNBOUNDP (SCM_GLOC_GET gloc))))
+       (result (SCM_OBJ gloc))
+       (result SCM_FALSE))))
+ )
+
+;; (define (id->bound-gloc id)
+;;   (and-let* ([gloc (find-binding (identifier-module id) (identifier-name id) #f)]
+;;              [ (gloc-bound? gloc) ])
+;;     gloc))
 
 (define (global-eq? var sym cenv)  ; like free-identifier=?, used in pass1.
   (and (variable? var)
