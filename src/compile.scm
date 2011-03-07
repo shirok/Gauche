@@ -5132,18 +5132,25 @@
       (when (and lvars (> (lvar-set-count (car lvars)) 0))
         (compiled-code-emit0! ccb BOX))
       (compiled-code-emit0! ccb PUSH)
-      (let loop ([args  (cdr args)]
-                 [lvars (and lvars (cdr lvars))]
-                 [depth (+ d 1)]
-                 [cnt  1])
-        (if (null? args)
-          depth
+      ;; NB: We check termination condition here.  This routine is called
+      ;; lots of times, and (length args) is usually small (<=2 covers almost
+      ;; half of the cases, and <=3 covers over 80%).  Check termination
+      ;; condition before entering loop saves extra calculation of loop
+      ;; arguments, and it is not negligible in this case.
+      (if (null? (cdr args))
+        d
+        (let loop ([args  (cdr args)]
+                   [lvars (and lvars (cdr lvars))]
+                   [depth (+ d 1)]
+                   [cnt  1])
           (let1 d (pass5/rec (car args) ccb renv 'normal/top)
             (when (and lvars (> (lvar-set-count (car lvars)) 0))
               (compiled-code-emit0! ccb BOX))
             (compiled-code-emit0! ccb PUSH)
-            (loop (cdr args) (and lvars (cdr lvars))
-                  (imax depth (+ d cnt 1)) (+ cnt 1))))))))
+            (if (null? (cdr args))
+              d
+              (loop (cdr args) (and lvars (cdr lvars))
+                    (imax depth (+ d cnt 1)) (+ cnt 1)))))))))
 
 ;;============================================================
 ;; Inliners of builtin procedures
