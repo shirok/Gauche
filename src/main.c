@@ -296,7 +296,7 @@ void cleanup_main(void *data)
     if (profiling_mode) {
         Scm_ProfilerStop();
         Scm_EvalCString("(profiler-show)",
-                        SCM_OBJ(SCM_FIND_MODULE("gauche.vm.profiler", 0)),
+                        SCM_OBJ(Scm_GaucheModule()),
                         NULL); /* ignore errors */
     }
     
@@ -320,7 +320,7 @@ void cleanup_main(void *data)
         Scm_Eval(SCM_LIST2(SCM_INTERN("profiler-show-load-stats"),
                            SCM_LIST2(SCM_INTERN("quote"),
                                      vm->stat.loadStat)),
-                 SCM_OBJ(SCM_FIND_MODULE("gauche.vm.profiler", 0)),
+                 SCM_OBJ(Scm_GaucheModule()),
                  NULL);    /* ignore errors */
     }
 }

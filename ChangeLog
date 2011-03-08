@@ -1,3 +1,10 @@
+2011-03-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (cleanup_main): Fixed -pload option; the original code
+	  failed if gauche.vm.profile wasn't loaded.  Since we autoload
+	  profiler-show-load-stats, we can evaluate it in the gauche module
+	  and we don't need FIND_MODULE(gauche.vm.profile).
+
 2011-03-06  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/util/match.scm (inline-let, gen): Removed inline-let, since
