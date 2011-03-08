@@ -128,7 +128,10 @@ void further_options(const char *optarg)
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_CONSTS);
     }
     else if (strcmp(optarg, "no-post-inline-pass") == 0) {
-        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NO_PASS2POST);
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NO_POST_INLINE_OPT);
+    }
+    else if (strcmp(optarg, "no-lambda-lifting-pass") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NO_LIFTING);
     }
     else if (strcmp(optarg, "no-source-info") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOSOURCE);
@@ -161,7 +164,7 @@ void further_options(const char *optarg)
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fcase-fold or -fload-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-source-info, -ftest\n");
+        fprintf(stderr, "supported options are: -fcase-fold or -fload-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-source-info, -fno-post-inline-pass, -fno-lambda-lifting-pass, -ftest\n");
         exit(1);
     }
 }

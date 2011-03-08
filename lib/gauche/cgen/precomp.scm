@@ -272,14 +272,13 @@
   
 ;; compatibility kludge
 (define compile       (with-module gauche.internal compile))
-(define compile-toplevel-lambda
-  (with-module gauche.internal compile-toplevel-lambda))
 (define %procedure-inliner
   (with-module gauche.internal %procedure-inliner))
 (define vm-code->list (with-module gauche.internal vm-code->list))
 (define vm-eval-situation
   (with-module gauche.internal vm-eval-situation))
 (define global-eq?? (with-module gauche.internal global-eq??))
+(define make-identifier (with-module gauche.internal make-identifier))
 
 (define-constant SCM_VM_COMPILING 2) ;; must match with vm.h
 
@@ -533,8 +532,8 @@
                    (unwrap-syntax s)))
                 forms)
       (undefined))
-    (define-macro (define . f)
-      ((with-module gauche.cgen.precomp handle-define) f))
+    ;; (define-macro (define . f)
+    ;;   ((with-module gauche.cgen.precomp handle-define) f))
     (define-macro (define-constant . f)
       ((with-module gauche.cgen.precomp handle-define-constant) f))
     (define-macro (define-syntax . f)
@@ -547,28 +546,34 @@
   (dolist [form *special-handlers*]
     (eval form mod)))
 
+;; Macros are "consumed" by the Gauche's compiler---that is, it is
+;; executed inside the compiler and won't appear in the compiled output.
+;; For exported macros, we should include the macro itself in the compiled
+;; file, so we intercept define-macro and define-syntax.
+
 ;; For the time being, we only compile the legacy macros into C file.
 ;; R5RS macros are put in ext-module file as is.
 (define (handle-define-macro form)
+  (define %define (make-identifier 'define (find-module 'gauche) '()))
+  (define %define-syntax (make-identifier 'define-syntax (find-module 'gauche) '()))
+  (define %lambda (make-identifier 'lambda (find-module 'gauche) '()))
+  (define %begin (make-identifier 'begin (find-module 'gauche) '()))
+  (define %macro (make-identifier 'make-macro-transformer
+                                  (find-module 'gauche.internal) '()))
+  (define (do-handle name expr)
+    (if (or (symbol-exported? name)
+            (memq name (private-macros-to-keep)))
+      `(,%begin
+        (,%define ,name (,%macro ',name ,expr))
+        ((with-module gauche define-macro) ,name ,expr))
+      `((with-module gauche define-macro) ,name ,expr)))
+
   (match form
     [((name . formals) . body)
-     (when (or (symbol-exported? name)
-               (memq name (private-macros-to-keep)))
-       (let* ([body-closure (compile-toplevel-lambda form name formals
-                                                     body (compile-module))]
-              [code (cgen-literal (closure-code body-closure))]
-              [var  (cgen-literal name)])
-         (cgen-init
-          (format "  Scm_Define(mod, SCM_SYMBOL(~a), \
-                             Scm_MakeMacroTransformerOld(SCM_SYMBOL(~a),\
-                                 SCM_PROCEDURE(Scm_MakeClosure(~a, NULL)))); /* ~s */"
-                  (cgen-cexpr var) (cgen-cexpr var)
-                  (cgen-cexpr code) (cgen-safe-comment name)))))]
-    [(name . expr)
-     (when (symbol-exported? name)
-       (write-ext-module `(define-macro . ,form)))]
-    [_ #f])
-  (cons '(with-module gauche define-macro) form))
+     (handle-define-macro `(,name
+                            (,%lambda ,formals ,@body)))]
+    [(name expr) (do-handle name expr)]
+    [_ (error "Malformed define-macro" form)]))
 
 (define (handle-define-syntax form)
   (match form
@@ -578,22 +583,6 @@
        (write-ext-module `(define-syntax . ,form)))]
     [_ #f])
   (cons '(with-module gauche define-syntax) form))  
-
-(define (handle-define form)
-  (match form
-    [((name . args) . body)
-     (handle-define `(,name (lambda ,args ,@body)))]
-    [((? symbol? name) ((? =lambda?) args . body))
-     (let* ([closure
-             (compile-toplevel-lambda form name args body (compile-module))]
-            [code (cgen-literal (closure-code closure))]
-            [var  (cgen-literal name)])
-       (cgen-init
-        (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeClosure(~a, NULL)); /* ~s */"
-                (cgen-cexpr var) (cgen-cexpr code) (cgen-safe-comment name))))
-     (undefined)]
-    [_
-     (cons '(with-module gauche define) form)]))
 
 (define (handle-define-constant form)
   (match form

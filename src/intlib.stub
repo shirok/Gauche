@@ -88,6 +88,12 @@
 
 (define-cproc make-identifier (name::<symbol> mod::<module> env::<list>)
   Scm_MakeIdentifier)
+(define-cproc identifier-module (id::<identifier>)
+  (result (SCM_OBJ (-> id module))))
+(define-cproc identifier-name (id::<identifier>)
+  (result (SCM_OBJ (-> id name))))
+(define-cproc identifier-env (id::<identifier>)
+  (result (-> id env)))
 
 ;;
 ;; Symbol table
@@ -292,6 +298,14 @@
   (cc::<compiled-code> code::<int>) ::<void>
   (Scm_CompiledCodeEmit cc code 0 0 '#f '#f))
 
+(define-cproc compiled-code-emit-PUSH!
+  (cc::<compiled-code>) ::<void>
+  (Scm_CompiledCodeEmit cc SCM_VM_PUSH 0 0 '#f '#f))
+
+(define-cproc compiled-code-emit-RET!
+  (cc::<compiled-code>) ::<void>
+  (Scm_CompiledCodeEmit cc SCM_VM_RET 0 0 '#f '#f))
+
 (define-cproc compiled-code-emit0o!
   (cc::<compiled-code> code::<int> operand) ::<void>
   (Scm_CompiledCodeEmit cc code 0 0 operand '#f))
@@ -389,8 +403,10 @@
 
 (define-cproc vm-compiler-flag-noinline-locals? () ::<boolean>
   (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NOINLINE_LOCALS)))
-(define-cproc vm-compiler-flag-no-pass2-post? () ::<boolean>
-  (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NO_PASS2POST)))
+(define-cproc vm-compiler-flag-no-post-inline? () ::<boolean>
+  (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NO_POST_INLINE_OPT)))
+(define-cproc vm-compiler-flag-no-lifting? () ::<boolean>
+  (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NO_LIFTING)))
 
 (define-enum SCM_COMPILE_NOINLINE_GLOBALS)
 (define-enum SCM_COMPILE_NOINLINE_LOCALS)
@@ -398,7 +414,8 @@
 (define-enum SCM_COMPILE_NOSOURCE)
 (define-enum SCM_COMPILE_SHOWRESULT)
 (define-enum SCM_COMPILE_NOCOMBINE)
-(define-enum SCM_COMPILE_NO_PASS2POST)
+(define-enum SCM_COMPILE_NO_POST_INLINE_OPT)
+(define-enum SCM_COMPILE_NO_LIFTING)
 
 ;; Set/get VM's current module info. (temporary)
 (define-cproc vm-current-module () (result (SCM_OBJ (-> (Scm_VM) module))))

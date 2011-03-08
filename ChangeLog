@@ -1,4 +1,28 @@
+2011-03-06  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match.scm (inline-let, gen): Removed inline-let, since
+	  it does the duplicate work with Gauche's compiler.  Also made
+	  length>= as a global definition instead of local, since Gauche can
+	  inline it anyway.
+
 2011-03-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/profiler.scm (entry-name): Workaround a problem when
+	  case-lambda generates an output that can't be read back.
+
+	* src/gauche/vm.h, src/intlib.stub, src/main.c: Added a compiler flag
+	  -fno-lambda-lifting-pass (SCM_COMPILE_NO_LIFTING) to turn off
+	  pass4 for troubleshooting.  Also renamed SCM_COMPILE_NO_PASS2OPT to
+	  SCM_COMPILE_NO_POST_INLINE_OPT, for the pass numbers can be changed
+	  (and indeed they were changed).
+
+	* src/compile.scm (pass4): Revised pass4 to lift closures for
+	  obvious cases (independent, and self-recursive calls).
+	  We no longer have compile-toplevel-lambda, since a single toplevel
+	  lambda can be compiled into multiple definitions because of lifted
+	  lambdas.
+	* src/precomp.scm (handle-define-macro): Changed not to use
+	  compile-toplevel-lambda.
 
 	* lib/gauche/listener.scm (listener-read-handler): Fixed a bug
 	  that referenced undefined variable.

@@ -630,7 +630,10 @@ enum {
     SCM_COMPILE_SHOWRESULT = (1L<<4),      /* Display each result of
                                               compilation */
     SCM_COMPILE_NOCOMBINE = (1L<<5),       /* Do not combine instructions */
-    SCM_COMPILE_NO_PASS2POST = (1L<<6)     /* Do not run pass2-post. */
+    SCM_COMPILE_NO_POST_INLINE_OPT = (1L<<6), /* Do not run post-inline
+                                                 optimization (pass3). */
+    SCM_COMPILE_NO_LIFTING = (1L<<7)       /* Do not run lambda lifting pass
+                                              (pass4). */
 };
 
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))

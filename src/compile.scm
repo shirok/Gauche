@@ -87,7 +87,7 @@
 ;;;       the lvars introduced outside of the $LAMBDA.  The result is set
 ;;;       in $lambda-free-lvars slot.  Then we determine $LAMBDA nodes
 ;;;       that does not need to form a closure.  They are assigned to
-;;;       fresh global identifier ($lambda-lifted-gvar is set to it).
+;;;       fresh global identifier ($lambda-lifted-var is set to it).
 ;;;       References to this $lambda node through local variables are
 ;;;       substituted to the reference of this global identifier.
 ;;;
@@ -112,7 +112,7 @@
 ;; used by pass5/$DEFINE.
 ;; This should match the values in src/gauche/module.h.  We intentionally
 ;; avoid referring to the C value,
-;; using (inline-stub (define-enum SCM_BINDING_CONST) ...), since doing so
+;; via (inline-stub (define-enum SCM_BINDING_CONST) ...), since doing so
 ;; would complicate the compilation process in case we need to change those
 ;; constants.  (Compile.scm is compiled by the host gauche which refers to
 ;; the old value.)
@@ -204,6 +204,45 @@
     `(let ((,tmp ,obj))
        (cond ,@(map expand-clause clauses)))))
 
+;; Similar to case/unquote, but this turns each clause into a
+;; toplevel procedure and use jump vector, which is more efficient.
+;; TODO: In future, we might want to compile case into jump vector
+;; if the range of values are close together.  Once we have it,
+;; we may no longer need this hack.
+;;
+;; ex. (define/case (foo iform y z)
+;;       (iform-tag iform)
+;;       [($DEFINE) expr ...]
+;;       ...)
+;;  =>
+;;     (define-inline (foo iform y z)
+;;       ((vector-ref *foo-dispatch-table* (iform-tag iform)) iform y z))
+;;
+;;     (define (foo/$DEFINE iform y z) expr ...)
+;;     ...
+;;     (define *foo-dispatch-table* (generate-dispatch-table foo))
+(define-macro (define/case proc dispatch-expr . clauses)
+  (define (generate-handler key clause)
+    (let1 name (string->symbol #`",(car proc)/,key")
+      `(define (,name ,@(cdr proc)) ,@clause)))
+  (define (find-clause key)
+    (if-let1 c (find (^c (memq key (car c))) clauses)
+      (cdr c)
+      (if-let1 c (assq 'else clauses)
+        (cdr c)
+        (errorf "No dispatch clause for ~a found during expanding ~a"
+                key proc))))
+  (define dispatch-table (string->symbol #`"*,(car proc)-dispatch-table*"))
+
+  `(begin
+     (define-inline ,proc
+       ((vector-ref ,dispatch-table ,dispatch-expr) ,@(cdr proc)))
+     ,@(map (^t (generate-handler (car t) (find-clause (car t))))
+            .intermediate-tags.)
+     (define ,dispatch-table
+       (vector ,@(map (^t (string->symbol #`",(car proc)/,(car t)"))
+                      .intermediate-tags.)))))
+
 ;; Inlining map.  Combined with closure optimization, we can avoid
 ;; closure creation if we inline map call.
 ;; We once tried inlining map calls automatically, and found the
@@ -262,14 +301,10 @@
 ;; Data structures
 ;;
 
-;; NB: for the time being, we use a simple vector and manually
-;; defined accessors/modifiers.  Partly because we can't use
-;; define-class stuff here until we can compile gauche/object.scm
-;; into C, and partly because using inlined vector-{ref|set!} is
-;; pretty fast compared to the generic class access.  Probably we
-;; should provide a common way to define a simple structure which
-;; allows the compiler to inline accessors for performance, trading
-;; off the runtime flexibility.
+;; We use a simple vector and manually defined accessors/modifiers,
+;; since vector-{ref|set!} is very fast in Gauche.  We will rewrite
+;; the simple-minded define-simple-struct macro with gauche.record
+;; once we can compile vector-backed record efficiently.
 
 ;; Macro define-simple-struct creates a bunch of functions and macros
 ;; to emulate a structure by a vector.
@@ -524,11 +559,6 @@
 (define-inline (cenv-swap-source cenv source)
   (cenv-copy-except cenv :source-path source))
 
-;; toplevel environment == cenv has only syntactic frames
-;; moved to C
-;(define (cenv-toplevel? cenv)
-;  (not (any (lambda (frame) (eqv? (car frame) LEXICAL)) (cenv-frames cenv))))
-
 ;; Intermediate tree form (IForm)
 ;;
 ;;   We first convert the program into an intermediate tree form (IForm),
@@ -579,8 +609,8 @@
 ;;      relevant source code, or #f if there's no relevant code.
 ;;
 ;;  NB: the actual value of the first element is an integer instead of
-;;      a symbol, which allows pass5/rec to use vector dispatch instead
-;;      of case statement.
+;;      a symbol, which allows us to use vector dispatch instead
+;;      of case expressions.
 ;;
 ;;  NB: The nodes are destructively modified during compilation, in order
 ;;      to keep allocations minimal.   Nodes shouldn't be shared, for
@@ -626,13 +656,13 @@
   (lvar-set++! lvar) (vector $LSET lvar expr))
 
 ;; $gref <id>
-;;   Gloval variable reference.
+;;   Global variable reference.
 (define-simple-struct $gref $GREF $gref
   (id        ; identifier
    ))
 
 ;; $gset <id> <iform>
-;;   Glocal variable assignment.
+;;   Global variable assignment.
 (define-simple-struct $gset $GSET $gset
   (id        ; identifier
    expr      ; IForm
@@ -703,8 +733,8 @@
    ;; need not be saved when packed.
    (calls '())      ; list of call sites
    (free-lvars '()) ; list of free local variables
-   (lifted-gvar #f) ; if this $LAMBDA is lifted to the toplevel, this slot
-                    ; contains an identifier to which the toplevel closure
+   (lifted-var #f)  ; if this $LAMBDA is lifted to the toplevel, this slot
+                    ; contains an lvar to which the toplevel closure
                     ; is to be bound.  See pass 4.
    ))
 
@@ -1336,41 +1366,43 @@
 ;; Reset lvar reference count.  This is called in pass3,
 ;; when a subgraph of IForm is eliminated.
 (define (reset-lvars iform) (reset-lvars/rec iform (make-label-dic #f)) iform)
-(define (reset-lvars/rec iform labels)
-  (case/unquote
-   (iform-tag iform)
-   [($DEFINE) (reset-lvars/rec ($define-expr iform) labels)]
-   [($LREF)   (lvar-ref++! ($lref-lvar iform))]
-   [($LSET)   (lvar-set++! ($lset-lvar iform))
-              (reset-lvars/rec ($lset-expr iform) labels)]
-   [($GSET)   (reset-lvars/rec ($gset-expr iform) labels)]
-   [($IF)     (reset-lvars/rec ($if-test iform) labels)
-              (reset-lvars/rec ($if-then iform) labels)
-              (reset-lvars/rec ($if-else iform) labels)]
-   [($LET)    (for-each lvar-reset ($let-lvars iform))
-              (reset-lvars/rec* ($let-inits iform) labels)
-              (reset-lvars/rec ($let-body iform) labels)]
-   [($RECEIVE)(for-each lvar-reset ($receive-lvars iform))
-              (reset-lvars/rec ($receive-expr iform) labels)
-              (reset-lvars/rec ($receive-body iform) labels)]
-   [($LAMBDA) (for-each lvar-reset ($lambda-lvars iform))
-              (reset-lvars/rec ($lambda-body iform) labels)]
-   [($LABEL)  (unless (label-seen? labels iform)
-                (label-push! labels iform)
-                (reset-lvars/rec ($label-body iform) labels))]
-   [($SEQ)    (reset-lvars/rec* ($seq-body iform) labels)]
-   [($CALL)   (unless (eq? ($call-flag iform) 'jump)
-                (reset-lvars/rec ($call-proc iform) labels))
-              (reset-lvars/rec* ($call-args iform) labels)]
-   [($ASM)    (reset-lvars/rec* ($asm-args iform) labels)]
-   [($PROMISE)(reset-lvars/rec ($promise-expr iform) labels)]
-   [($CONS $APPEND $MEMV $EQ? $EQV?)
-    (reset-lvars/rec ($*-arg0 iform) labels)
-    (reset-lvars/rec ($*-arg1 iform) labels)]
-   [($VECTOR $LIST $LIST*) (reset-lvars/rec* ($*-args iform) labels)]
-   [($LIST->VECTOR) (reset-lvars/rec ($*-arg0 iform) labels)]))
-(define (reset-lvars/rec* iforms labels)
-  (ifor-each (lambda (x) (reset-lvars/rec x labels)) iforms))
+
+(define-macro (reset-lvars/rec* iforms labels)
+  `(ifor-each (lambda (x) (reset-lvars/rec x ,labels)) ,iforms))
+
+(define/case (reset-lvars/rec iform labels)
+  (iform-tag iform)
+  [($DEFINE) (reset-lvars/rec ($define-expr iform) labels)]
+  [($LREF)   (lvar-ref++! ($lref-lvar iform))]
+  [($LSET)   (lvar-set++! ($lset-lvar iform))
+             (reset-lvars/rec ($lset-expr iform) labels)]
+  [($GSET)   (reset-lvars/rec ($gset-expr iform) labels)]
+  [($IF)     (reset-lvars/rec ($if-test iform) labels)
+             (reset-lvars/rec ($if-then iform) labels)
+             (reset-lvars/rec ($if-else iform) labels)]
+  [($LET)    (for-each lvar-reset ($let-lvars iform))
+             (reset-lvars/rec* ($let-inits iform) labels)
+             (reset-lvars/rec ($let-body iform) labels)]
+  [($RECEIVE)(for-each lvar-reset ($receive-lvars iform))
+             (reset-lvars/rec ($receive-expr iform) labels)
+             (reset-lvars/rec ($receive-body iform) labels)]
+  [($LAMBDA) (for-each lvar-reset ($lambda-lvars iform))
+   (reset-lvars/rec ($lambda-body iform) labels)]
+  [($LABEL)  (unless (label-seen? labels iform)
+               (label-push! labels iform)
+               (reset-lvars/rec ($label-body iform) labels))]
+  [($SEQ)    (reset-lvars/rec* ($seq-body iform) labels)]
+  [($CALL)   (unless (eq? ($call-flag iform) 'jump)
+               (reset-lvars/rec ($call-proc iform) labels))
+             (reset-lvars/rec* ($call-args iform) labels)]
+  [($ASM)    (reset-lvars/rec* ($asm-args iform) labels)]
+  [($PROMISE)(reset-lvars/rec ($promise-expr iform) labels)]
+  [($CONS $APPEND $MEMV $EQ? $EQV?)
+             (reset-lvars/rec ($*-arg0 iform) labels)
+             (reset-lvars/rec ($*-arg1 iform) labels)]
+  [($VECTOR $LIST $LIST*) (reset-lvars/rec* ($*-args iform) labels)]
+  [($LIST->VECTOR) (reset-lvars/rec ($*-arg0 iform) labels)]
+  [else #f])
 
 ;; Replaces $LREF of matching lvar with given expression.
 ;; Used in the transformation of inlined procedure with closed environment.
@@ -1474,7 +1506,7 @@
           (imap (cut subst-lvars <> mapping) ($*-args iform))))
 
 ;; Some inline stuff
-(define-inline (pass2-4 iform) (pass4 (pass3 (pass2 iform) #f)))
+(define-inline (pass2-4 iform module) (pass4 (pass3 (pass2 iform) #f) module))
 
 ;;============================================================
 ;; Entry points
@@ -1501,7 +1533,7 @@
                       (slot-ref e 'message) (car srcinfo)
                       (cadr srcinfo) program)
               (errorf "Compile Error: ~a\n" (slot-ref e 'message))))])
-      (pass5 (pass2-4 (pass1 program cenv))
+      (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
              (make-compiled-code-builder 0 0 '%toplevel #f #f)
              '() 'tail))))
 
@@ -1509,14 +1541,6 @@
 (define (compile-partial program module) #f)
 (define (compile-finish cc) #f)
 
-;; Returns a compiled toplevel closure.  This is a shortcut of
-;; evaluating lambda expression---it skips extra code segment
-;; that only has CLOSURE instruction.
-(define (compile-toplevel-lambda oform name formals body module)
-  (let* ([cenv (make-cenv module '() name)]
-         [iform (pass2-4 (pass1/lambda oform formals body cenv #t))])
-    (make-toplevel-closure (pass5/lambda iform #f '()))))
-  
 ;; For testing
 (define (compile-p1 program)
   (pp-iform (pass1 program (make-bottom-cenv))))
@@ -1528,12 +1552,14 @@
   (pp-iform (pass3 (pass2 (pass1 program (make-bottom-cenv))) show?)))
 
 (define (compile-p4 program)
-  (pp-iform (pass2-4 (pass1 program (make-bottom-cenv)))))
+  (let1 cenv (make-bottom-cenv)
+    (pp-iform (pass2-4 (pass1 program cenv) (cenv-module cenv)))))
 
 (define (compile-p5 program)
-  (vm-dump-code (pass5 (pass2-4 (pass1 program (make-bottom-cenv)))
-                       (make-compiled-code-builder 0 0 '%toplevel #f #f)
-                       '() 'tail)))
+  (let1 cenv (make-bottom-cenv)
+    (vm-dump-code (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
+                         (make-compiled-code-builder 0 0 '%toplevel #f #f)
+                         '() 'tail))))
 
 ;;===============================================================
 ;; Pass 1
@@ -2002,8 +2028,7 @@
     [(_ (name . formals) body ...)
      (let1 trans
          (make-macro-transformer name
-                                 (compile-toplevel-lambda form name formals
-                                                          body module))
+                                 (eval `(,lambda. ,formals ,@body) module))
        (%insert-binding module name trans)
        ($const-undef))]
     [(_ name expr)
@@ -3580,7 +3605,7 @@
 ;; We repeat the pass then.
 
 (define (pass3 iform show?)
-  (if (vm-compiler-flag-no-pass2-post?)
+  (if (vm-compiler-flag-no-post-inline?)
     iform
     (let loop ([iform iform] [count 0])
       (when show? (pass3-dump iform count))
@@ -3941,130 +3966,213 @@
 ;; is created only a few times, but called lots of times, the overhead of
 ;; extra arguments may exceed the gain by not allocating the closure.
 ;;
-;; Free variable scanning is done in the recursive call for pass4
-;; handlers.  Each pass4 handler is called with these arguments.
-;;  - IForm
-;;  - a list of lvars bound in the current $LAMBDA.
-;;  - a list of free lvars found so far in the current $LAMBDA.
-;;  - label-dic.
-;; Each handler returns a list of free lvars.
-;;
-;; If $LAMBDA node doesn't have free lvars, or only lvars that are
-;; to be constant, it can be a constant closure.  The tricky part is
-;; the recursive definition.  At this moment we only detect recursive
-;; calls introduced in the same scope.
+;; Pass4 is done in three steps.
+;; The first step, pass4/scan, recursively descents the IForm and determine
+;; a set of free variables for each $LAMBDA nodes.k  It returns a list of
+;; The second step, pass4/lift, takes a set of $LAMBDA nodes in the IForm
+;; and finds which $LAMBDA nodes can be lifted.
+;; The third step, pass4/subst, walks the IForm again, and replaces the
+;; occurence of $LAMBDA nodes to be lifted for $LREFs.
 
-(define-inline (pass4/rec iform bound free labels)
-  ((vector-ref *pass4-dispatch-table* (iform-tag iform))
-   iform bound free labels))
 (define-inline (pass4/add-lvar lvar bound free)
   (if (or (memq lvar bound) (memq lvar free)) free (cons lvar free)))
 
-(define (pass4/rec* iforms bound free labels)
-  (let loop ([iforms iforms] [free free])
-    (if (null? iforms)
-      free
-      (loop (cdr iforms) (pass4/rec (car iforms) bound free labels)))))
+;; Pass 4 entry point.  Returns IForm and list of lifted lvars
+(define (pass4 iform module)
+  (if (vm-compiler-flag-no-lifting?)
+    iform
+    (let1 dic (make-label-dic '())
+      (pass4/scan iform '() '() #t dic) ; Mark free variables
+      (let1 lambda-nodes (label-dic-info dic)
+        (if (null? lambda-nodes)
+          iform                           ;shortcut
+          (let1 lifted (pass4/lift lambda-nodes module)
+            (if (null? lifted)
+              iform                       ;shortcut
+              (let1 iform. (pass4/subst iform (make-label-dic '()))
+                ($seq `(,@(map pass4/lifted-define lifted) ,iform.))))))))))
 
-;; Pass 4 entry point.  Returns IForm.
-(define (pass4 iform)
-  (let1 dic (make-label-dic '())
-    (pass4/rec iform '() '() dic)
-    ;; TODO: Now we go over $lambda node in (label-dic-info dic) to sort
-    ;; out closures to lift.  After lifting, we have to run alpha-conversion
-    ;; to replace LREFs of lifted closures for GREFs.
-    ;; We need some extra mechanism to initialize those global variables
-    ;; for lifted closures.  For the time being, we don't lift closures
-    ;; and returns iform unmodified.
-    iform))
+(define (pass4/lifted-define lambda-node)
+  ($define ($lambda-src lambda-node) '(const)
+           ($lambda-lifted-var lambda-node)
+           lambda-node))
+          
+;; Pass4 step1 - scan
+;;   bs - List of lvars whose binding is introduced in the current scope.
+;;   fs - List of free lvars found so far in the current scope.
+;;   t? - #t if we're in the top level, #f otherwise.
+;;   labels - label-dic.  the info field is used to hold $LAMBDA nodes.
+;; Eacl call returns a list of free lvars.
 
+(define-macro (pass4/scan* iforms bs fs t? labels)
+  (let1 iforms. (gensym)
+    `(let1 ,iforms. ,iforms
+       (cond [(null? ,iforms.) ,fs]
+             [(null? (cdr ,iforms.))
+              (pass4/scan (car ,iforms.) ,bs ,fs ,t? ,labels)]
+             [else
+              (let loop ([,iforms. ,iforms.] [,fs ,fs])
+                (if (null? ,iforms.)
+                  ,fs
+                  (loop (cdr ,iforms.)
+                        (pass4/scan (car ,iforms.) ,bs ,fs ,t? ,labels))))]))))
+
+(define/case (pass4/scan iform bs fs t? labels)
+  (iform-tag iform)
+  [($DEFINE) (unless t? (error "[internal] pass4 $DEFINE in non-toplevel"))
+   (pass4/scan ($define-expr iform) bs fs #t labels)]
+  [($LREF)   (pass4/add-lvar ($lref-lvar iform) bs fs)]
+  [($LSET)   (let1 fs (pass4/scan ($lset-expr iform) bs fs #f labels)
+               (pass4/add-lvar ($lset-lvar iform) bs fs))]
+  [($GSET)   (pass4/scan ($gset-expr iform) bs fs t? labels)]
+  [($IF)     (let* ([fs (pass4/scan ($if-test iform) bs fs t? labels)]
+                    [fs (pass4/scan ($if-then iform) bs fs t? labels)])
+               (pass4/scan ($if-else iform) bs fs t? labels))]
+  [($LET)    (let* ([new-bs (append ($let-lvars iform) bs)]
+                    [bs (if (eq? ($let-type iform) 'rec) new-bs bs)]
+                    [fs (pass4/scan* ($let-inits iform) bs fs t? labels)])
+               (pass4/scan ($let-body iform) new-bs fs #f labels))]
+  [($RECEIVE)(let ([fs (pass4/scan ($receive-expr iform) bs fs t? labels)]
+                   [bs (append ($receive-lvars iform) bs)])
+               (pass4/scan ($receive-body iform) bs fs #f labels))]
+  [($LAMBDA) (let1 inner-fs (pass4/scan ($lambda-body iform)
+                                        ($lambda-lvars iform) '() #f labels)
+               (cond
+                [t? '()]
+                [else
+                 ($lambda-free-lvars-set! iform inner-fs)
+                 (unless (eq? ($lambda-flag iform) 'dissolved)
+                   (label-dic-info-push! labels iform)) ;save the lambda node
+                 (let loop ([inner-fs inner-fs] [fs fs])
+                   (if (null? inner-fs)
+                     fs
+                     (loop (cdr inner-fs)
+                           (pass4/add-lvar (car inner-fs) bs fs))))]))]
+  [($LABEL)  (cond [(label-seen? labels iform) fs]
+                   [else (label-push! labels iform)
+                         (pass4/scan ($label-body iform) bs fs #f labels)])]
+  [($SEQ)    (pass4/scan* ($seq-body iform) bs fs t? labels)]
+  [($CALL)   (let1 fs (if (eq? ($call-flag iform) 'jump)
+                        fs
+                        (pass4/scan ($call-proc iform) bs fs t? labels))
+               (pass4/scan* ($call-args iform) bs fs t? labels))]
+  [($ASM)    (pass4/scan* ($asm-args iform) bs fs t? labels)]
+  [($PROMISE)(pass4/scan ($promise-expr iform) bs fs t? labels)]
+  [($CONS $APPEND $MEMV $EQ? $EQV?) (pass4/scan2 iform bs fs t? labels)]
+  [($VECTOR $LIST $LIST*) (pass4/scan* ($*-args iform) bs fs t? labels)]
+  [($LIST->VECTOR) (pass4/scan ($*-arg0 iform) bs fs t? labels)]
+  [else fs])
+
+(define (pass4/scan2 iform bs fs t? labels)
+  (let1 fs (pass4/scan ($*-arg0 iform) bs fs t? labels)
+    (pass4/scan ($*-arg1 iform) bs fs t? labels)))
+
+;; Sort out the liftable lambda nodes.
+;; Returns a list of lambda nodes, in each of which $lambda-lifted-var
+;; contains an identifier.
 ;;
-;; Pass 4 handlers
+;; At this moment, we only detect closures without free variables,
+;; or self-recursive closures.
+;;
+;; Eventually we want to detect mutual recursive case like this:
+;;
+;;  (define (foo ...)
+;;    (define (a x)  ... (b ...) ...)
+;;    (define (b y)  ... (a ...) ...)
+;;    ...)
+;;
+;; If a's only free variable is b, and b's only free variable is a,
+;; then we can lift both nodes to the toplevel.
+;;
+;; Tentative algorithm:
+;;  - Create a directed graph consists of free lvars and lambda nodes.
+;;    An edge from an lvar to a lambda node if the lvar is free in
+;;    the lambda node.  An edge from lambda node to an lvar if the lambda
+;;    node is bound to the lvar.
+;;  - Find lvars without incoming edge, and remove them and all reachable
+;;    nodes from them.
+;;  - The lambda nodes in the remaining graph are the ones we can lift.
 ;;
 
-(define (pass4/$DEFINE iform bound free labels)
-  (pass4/rec ($define-expr iform) bound free labels))
+(define (pass4/lift lambda-nodes module)
+  (rlet1 lms '()
+    (dolist [lm lambda-nodes]
+      (let1 fvs ($lambda-free-lvars lm)
+        (when (or (null? fvs)
+                  (and (null? (cdr fvs))
+                       (zero? (lvar-set-count (car fvs)))
+                       (eq? (lvar-initval (car fvs)) lm)))
+          (let1 gvar (make-identifier (gensym) module '())
+            ($lambda-lifted-var-set! lm gvar)
+            (push! lms lm)))))))
 
-(define (pass4/$LREF iform bound free labels)
-  (pass4/add-lvar ($lref-lvar iform) bound free))
+;; Final touch of pass4 - replace lifted lambda nodes to $GREFs.
+;; Returns (possibly modified) IForm.
+(define-macro (pass4/subst! access-form labels)
+  (match-let1 (accessor expr) access-form
+    (let ([orig (gensym)]
+          [result (gensym)]
+          [setter (if (eq? accessor 'car)
+                    'set-car! 
+                    (string->symbol #`",|accessor|-set!"))])
+      `(let* ([,orig (,accessor ,expr)]
+              [,result (pass4/subst ,orig ,labels)])
+         (unless (eq? ,orig ,result)
+           (,setter ,expr ,result))
+         ,expr))))
 
-(define (pass4/$LSET iform bound free labels)
-  (let1 free. (pass4/rec ($lset-expr iform) bound free labels)
-    (pass4/add-lvar ($lset-lvar iform) bound free.)))
+(define-macro (pass4/subst*! iforms labels)
+  (let1 iforms. (gensym)
+    `(let1 ,iforms. ,iforms
+       (cond [(null? ,iforms.)]
+             [(null? (cdr ,iforms.)) (pass4/subst! (car ,iforms.) ,labels)]
+             [else
+              (let loop ([,iforms. ,iforms.])
+                (unless (null? ,iforms.)
+                  (pass4/subst! (car ,iforms.) ,labels)
+                  (loop (cdr ,iforms.))))]))))
 
-(define (pass4/$GREF iform bound free labels) free)
-(define (pass4/$GSET iform bound free labels)
-  (pass4/rec ($gset-expr iform) bound free labels))
-(define (pass4/$CONST iform bound free labels) free)
-(define (pass4/$IT iform bound free labels) free)
-
-(define (pass4/$IF iform bound free labels)
-  (let* ([free (pass4/rec ($if-test iform) bound free labels)]
-         [free (pass4/rec ($if-then iform) bound free labels)])
-    (pass4/rec ($if-else iform) bound free labels)))
-
-(define (pass4/$LET iform bound free labels)
-  (let* ([new-bound (append ($let-lvars iform) bound)]
-         [bound.    (if (eq? ($let-type iform) 'rec) new-bound bound)]
-         [free.     (pass4/rec* ($let-inits iform) bound. free labels)])
-    (pass4/rec ($let-body iform) new-bound free. labels)))
-
-(define (pass4/$RECEIVE iform bound free labels)
-  (let ([free   (pass4/rec ($receive-expr iform) bound free labels)]
-        [bound. (append ($receive-lvars iform) bound)])
-    (pass4/rec ($receive-body iform) bound. free labels)))
-
-(define (pass4/$LAMBDA iform bound free labels)
-  (let1 inner-free
-      (pass4/rec ($lambda-body iform) ($lambda-lvars iform) '() labels)
-    ($lambda-free-lvars-set! iform inner-free)
-    (label-dic-info-push! labels iform) ;save the lambda node
-    (let loop ([inner-free inner-free] [free free])
-      (if (null? inner-free)
-        free
-        (loop (cdr inner-free)
-              (pass4/add-lvar (car inner-free) bound free))))))
-
-(define (pass4/$LABEL iform bound free labels)
-  (cond [(label-seen? labels iform) free]
-        [else (label-push! labels iform)
-              (pass4/rec ($label-body iform) bound free labels)]))
-    
-(define (pass4/$PROMISE iform bound free labels)
-  (pass4/rec ($promise-expr iform) bound free labels))
-
-(define (pass4/$SEQ iform bound free labels)
-  (pass4/rec* ($seq-body iform) bound free labels))
-
-(define (pass4/$CALL iform bound free labels)
-  (let1 free. (if (eq? ($call-flag iform) 'jump)
-                free
-                (pass4/rec ($call-proc iform) bound free labels))
-    (pass4/rec* ($call-args iform) bound free. labels)))
-
-(define (pass4/$ASM iform bound free labels)
-  (pass4/rec* ($asm-args iform) bound free labels))
-
-(define (pass4/twoargs iform bound free labels)
-  (let1 free. (pass4/rec ($*-arg0 iform) bound free labels)
-    (pass4/rec ($*-arg1 iform) bound free. labels)))
-(define pass4/$CONS   pass4/twoargs)
-(define pass4/$APPEND pass4/twoargs)
-(define pass4/$MEMV   pass4/twoargs)
-(define pass4/$EQ?    pass4/twoargs)
-(define pass4/$EQV?   pass4/twoargs)
-
-(define (pass4/nargs iform bound free labels)
-  (pass4/rec* ($*-args iform) bound free labels))
-(define pass4/$VECTOR pass4/nargs)
-(define pass4/$LIST   pass4/nargs)
-(define pass4/$LIST*  pass4/nargs)
-
-(define (pass4/$LIST->VECTOR iform bound free labels)
-  (pass4/rec ($*-arg0 iform) bound free labels))
-
-;; Dispatch table.
-(define *pass4-dispatch-table* (generate-dispatch-table pass4))
+(define/case (pass4/subst iform labels)
+  (iform-tag iform)
+  [($DEFINE) (pass4/subst! ($define-expr iform) labels)]
+  [($LREF)   (or (and-let* ([ (= (lvar-set-count ($lref-lvar iform)) 0) ]
+                            [init (lvar-initval ($lref-lvar iform))]
+                            [ (vector? init) ]
+                            [ (has-tag? init $LAMBDA) ]
+                            [id ($lambda-lifted-var init)])
+                   (lvar-ref--! ($lref-lvar iform))
+                   ;; Modifies $LREF to $GREF
+                   (vector-set! iform 0 $GREF)
+                   ($gref-id-set! iform id)
+                   iform)
+                 iform)]
+  [($LSET)   (pass4/subst! ($lset-expr iform) labels)]
+  [($GSET)   (pass4/subst! ($gset-expr iform) labels)]
+  [($IF)     (pass4/subst! ($if-test iform) labels)
+             (pass4/subst! ($if-then iform) labels)
+             (pass4/subst! ($if-else iform) labels)]
+  [($LET)    (pass4/subst*! ($let-inits iform) labels)
+             (pass4/subst! ($let-body iform) labels)]
+  [($RECEIVE)(pass4/subst! ($receive-expr iform) labels)
+             (pass4/subst! ($receive-body iform) labels)]
+  [($LAMBDA) (pass4/subst! ($lambda-body iform) labels)
+             (or (and-let* ([id ($lambda-lifted-var iform)])
+                   ($gref id))
+                 iform)]
+  [($LABEL)  (unless (label-seen? labels iform)
+               (label-push! labels iform)
+               (pass4/subst! ($label-body iform) labels))
+             iform]
+  [($SEQ)    (pass4/subst*! ($seq-body iform) labels) iform]
+  [($CALL)   (pass4/subst*! ($call-args iform) labels)
+             (pass4/subst! ($call-proc iform) labels)]
+  [($ASM)    (pass4/subst*! ($asm-args iform) labels) iform]
+  [($PROMISE)(pass4/subst! ($promise-expr iform) labels)]
+  [($CONS $APPEND $MEMV $EQ? $EQV?) (pass4/subst! ($*-arg0 iform) labels)
+             (pass4/subst! ($*-arg1 iform) labels)]
+  [($VECTOR $LIST $LIST*) (pass4/subst*! ($*-args iform) labels) iform]
+  [($LIST->VECTOR) (pass4/subst! ($*-arg0 iform) labels)]
+  [else iform])
 
 ;;===============================================================
 ;; Pass 5.  Code generation
@@ -4126,7 +4234,7 @@
 ;;
 (define (pass5 iform ccb initial-renv ctx)
   (let1 maxstack (pass5/rec iform ccb initial-renv ctx)
-    (compiled-code-emit0! ccb RET)
+    (compiled-code-emit-RET! ccb)
     (compiled-code-finish-builder ccb maxstack)
     ccb))
 
@@ -4135,7 +4243,7 @@
 ;;
 
 (define (pass5/$DEFINE iform ccb renv ctx)
-  (let ([d (pass5/rec ($define-expr iform) ccb '() 'normal/bottom)]
+  (let ([d (pass5/rec ($define-expr iform) ccb renv 'normal/bottom)]
         [f (cond [(memq 'const ($define-flags iform)) SCM_BINDING_CONST]
                  [(memq 'inlinable ($define-flags iform)) SCM_BINDING_INLINABLE]
                  [else 0])])
@@ -4252,7 +4360,7 @@
                                 0 info ccb renv ctx)]
    [else
     (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
-      (compiled-code-emit0! ccb PUSH)
+      (compiled-code-emit-PUSH! ccb)
       (pass5/if-final iform #f BNEQ 0
                       (imax (pass5/rec y ccb renv 'normal/top) depth)
                       info ccb renv ctx))]))
@@ -4265,7 +4373,7 @@
                                 0 info ccb renv ctx)]
    [else
     (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
-      (compiled-code-emit0! ccb PUSH)
+      (compiled-code-emit-PUSH! ccb)
       (pass5/if-final iform #f BNEQV 0
                       (imax (pass5/rec y ccb renv 'normal/top) depth)
                       info ccb renv ctx))]))
@@ -4292,7 +4400,7 @@
                            (pass5/rec x ccb renv (normal-context ctx))
                            info ccb renv ctx))
       (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
-        (compiled-code-emit0! ccb PUSH)
+        (compiled-code-emit-PUSH! ccb)
         (pass5/if-final iform #f BNUMNE 0
                         (imax (pass5/rec y ccb renv 'normal/top) depth)
                         info ccb renv ctx))))
@@ -4313,7 +4421,7 @@
                            (pass5/rec x ccb renv (normal-context ctx))
                            info ccb renv ctx))
       (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
-        (compiled-code-emit0! ccb PUSH)
+        (compiled-code-emit-PUSH! ccb)
         (pass5/if-final iform #f insn 0
                         (imax (pass5/rec y ccb renv 'normal/top) depth)
                         info ccb renv ctx))))
@@ -4375,7 +4483,7 @@
             (compiled-code-emit0oi! ccb code (list arg0/opr elselabel) info)
             (compiled-code-emit1oi! ccb code arg0/opr elselabel info))
           (set! depth (imax (pass5/rec ($if-then iform) ccb renv ctx) depth))
-          (compiled-code-emit0! ccb RET)
+          (compiled-code-emit-RET! ccb)
           (compiled-code-set-label! ccb elselabel)
           (imax (pass5/rec ($if-else iform) ccb renv ctx) depth))])]
      [else
@@ -4431,7 +4539,7 @@
            (let1 dinit (pass5/prepare-args inits lvars ccb renv ctx)
              (compiled-code-emit1i! ccb LOCAL-ENV nlocals info)
              (let1 dbody (pass5/rec body ccb (cons lvars renv) 'tail)
-               (compiled-code-emit0! ccb RET)
+               (compiled-code-emit-RET! ccb)
                (compiled-code-set-label! ccb merge-label)
                (imax dinit
                     (+ dbody CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals))))])]
@@ -4455,7 +4563,7 @@
              (let* ((dinit (emit-letrec-inits others nlocals ccb
                                               (cons lvars renv) 0))
                     (dbody (pass5/rec body ccb (cons lvars renv) 'tail)))
-               (compiled-code-emit0! ccb RET)
+               (compiled-code-emit-RET! ccb)
                (compiled-code-set-label! ccb merge-label)
                (+ CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals
                   (imax dinit dbody)))]))]
@@ -4510,7 +4618,7 @@
         (compiled-code-emit2oi! ccb RECEIVE nargs optarg
                                 merge-label ($*-src iform))
         (let1 dbody (pass5/rec body ccb (cons lvars renv) 'tail)
-          (compiled-code-emit0! ccb RET)
+          (compiled-code-emit-RET! ccb)
           (compiled-code-set-label! ccb merge-label)
           (imax dinit (+ nargs optarg CONT_FRAME_SIZE ENV_HEADER_SIZE dbody))))]
      )))
@@ -4664,7 +4772,7 @@
                   0)
       (compiled-code-set-label! ccb (pass5/ensure-label ccb label))
       (let1 dbody (pass5/rec ($label-body label) ccb newenv 'tail)
-        (compiled-code-emit0! ccb RET)
+        (compiled-code-emit-RET! ccb)
         (compiled-code-set-label! ccb merge-label)
         (if (= nargs 0)
           (+ CONT_FRAME_SIZE dbody)
@@ -4818,7 +4926,7 @@
        (pass5/emit-asm! ccb insn info))]
     [(2)
      (let1 d0 (pass5/rec (car args) ccb renv 'normal/top)
-       (compiled-code-emit0! ccb PUSH)
+       (compiled-code-emit-PUSH! ccb)
        (let1 d1 (pass5/rec (cadr args) ccb renv 'normal/top)
          (pass5/emit-asm! ccb insn info)
          (imax d0 (+ d1 1))))]
@@ -4830,7 +4938,7 @@
                 (imax depth (+ cnt d)))]
              [else
               (let1 d (pass5/rec (car args) ccb renv 'normal/top)
-                (compiled-code-emit0! ccb PUSH)
+                (compiled-code-emit-PUSH! ccb)
                 (loop (cdr args) (imax depth (+ d cnt)) (+ cnt 1)))]))]
     ))
 
@@ -4846,7 +4954,7 @@
   (let ((d0 (gensym))
         (d1 (gensym)))
     `(let1 ,d0 (pass5/rec ,arg0 ccb renv (normal-context ctx))
-       (compiled-code-emit0! ccb PUSH)
+       (compiled-code-emit-PUSH! ccb)
        (let1 ,d1 (pass5/rec ,arg1 ccb renv 'normal/top)
          (compiled-code-emit1i! ccb ,code ,param ,info)
          (imax ,d0 (+ ,d1 1))))
@@ -4871,7 +4979,7 @@
                (imax (+ d cnt) depth))]
             [else
              (let1 d (pass5/rec (car as) ccb renv 'normal/top)
-               (compiled-code-emit0! ccb PUSH)
+               (compiled-code-emit-PUSH! ccb)
                (loop (cdr as) (imax (+ d cnt) depth) (+ cnt 1)))]))))
 
 (define (pass5/$CONS iform ccb renv ctx)
@@ -4962,9 +5070,9 @@
          (pass5/builtin-twoargs info VEC-SETI ($const-value k) vec obj)]
         [else
          (let1 d0 (pass5/rec vec ccb renv (normal-context ctx))
-           (compiled-code-emit0! ccb PUSH)
+           (compiled-code-emit-PUSH! ccb)
            (let1 d1 (pass5/rec k   ccb renv 'normal/top)
-             (compiled-code-emit0! ccb PUSH)
+             (compiled-code-emit-PUSH! ccb)
              (let1 d2 (pass5/rec obj ccb renv 'normal/top)
                (compiled-code-emit0i! ccb VEC-SET info)
                (imax d0 (+ d1 1) (+ d2 2)))))]))
@@ -4979,15 +5087,15 @@
 (define (pass5/asm-slot-set info obj slot val ccb renv ctx)
   (cond [($const? slot)
          (let1 d0 (pass5/rec obj ccb renv (normal-context ctx))
-           (compiled-code-emit0! ccb PUSH)
+           (compiled-code-emit-PUSH! ccb)
            (let1 d1 (pass5/rec val ccb renv 'normal/top)
              (compiled-code-emit0oi! ccb SLOT-SETC ($const-value slot) info)
              (imax d0 (+ d1 1))))]
         [else
          (let1 d0 (pass5/rec obj ccb renv (normal-context ctx))
-           (compiled-code-emit0! ccb PUSH)
+           (compiled-code-emit-PUSH! ccb)
            (let1 d1 (pass5/rec slot ccb renv 'normal/top)
-             (compiled-code-emit0! ccb PUSH)
+             (compiled-code-emit-PUSH! ccb)
              (let1 d2 (pass5/rec val ccb renv 'normal/top)
                (compiled-code-emit0i! ccb SLOT-SET info)
                (imax d0 (+ d1 1) (+ d2 2)))))]))
@@ -5023,19 +5131,26 @@
     (let1 d (pass5/rec (car args) ccb renv (normal-context ctx))
       (when (and lvars (> (lvar-set-count (car lvars)) 0))
         (compiled-code-emit0! ccb BOX))
-      (compiled-code-emit0! ccb PUSH)
-      (let loop ([args  (cdr args)]
-                 [lvars (and lvars (cdr lvars))]
-                 [depth (+ d 1)]
-                 [cnt  1])
-        (if (null? args)
-          depth
+      (compiled-code-emit-PUSH! ccb)
+      ;; NB: We check termination condition here.  This routine is called
+      ;; lots of times, and (length args) is usually small (<=2 covers almost
+      ;; half of the cases, and <=3 covers over 80%).  Check termination
+      ;; condition before entering loop saves extra calculation of loop
+      ;; arguments, and it is not negligible in this case.
+      (if (null? (cdr args))
+        d
+        (let loop ([args  (cdr args)]
+                   [lvars (and lvars (cdr lvars))]
+                   [depth (+ d 1)]
+                   [cnt  1])
           (let1 d (pass5/rec (car args) ccb renv 'normal/top)
             (when (and lvars (> (lvar-set-count (car lvars)) 0))
               (compiled-code-emit0! ccb BOX))
-            (compiled-code-emit0! ccb PUSH)
-            (loop (cdr args) (and lvars (cdr lvars))
-                  (imax depth (+ d cnt 1)) (+ cnt 1))))))))
+            (compiled-code-emit-PUSH! ccb)
+            (if (null? (cdr args))
+              d
+              (loop (cdr args) (and lvars (cdr lvars))
+                    (imax depth (+ d cnt 1)) (+ cnt 1)))))))))
 
 ;;============================================================
 ;; Inliners of builtin procedures
@@ -5412,17 +5527,26 @@
 
 ;; Returns GLOC if id is bound to one, or #f.  If GLOC is returned,
 ;; it is always bound.
-(define (id->bound-gloc id)
-  (and-let* ([gloc (find-binding (slot-ref id'module) (slot-ref id'name) #f)]
-             [ (gloc-bound? gloc) ])
-    gloc))
+
+(inline-stub
+ (define-cproc id->bound-gloc (id::<identifier>)
+   (let* ([gloc::ScmGloc* (Scm_FindBinding (-> id module) (-> id name) 0)])
+     (if (and gloc (not (SCM_UNBOUNDP (SCM_GLOC_GET gloc))))
+       (result (SCM_OBJ gloc))
+       (result SCM_FALSE))))
+ )
+
+;; (define (id->bound-gloc id)
+;;   (and-let* ([gloc (find-binding (identifier-module id) (identifier-name id) #f)]
+;;              [ (gloc-bound? gloc) ])
+;;     gloc))
 
 (define (global-eq? var sym cenv)  ; like free-identifier=?, used in pass1.
   (and (variable? var)
        (let1 v (cenv-lookup cenv var LEXICAL)
          (and (identifier? v)
-              (eq? (slot-ref v 'name) sym)
-              (null? (slot-ref v 'env))))))
+              (eq? (identifier-name v) sym)
+              (null? (identifier-env v))))))
 
 (define (bound-id=? id1 id2) ; like bound-identifier=? but only for toplevel
   (let ([g1 (id->bound-gloc id1)]

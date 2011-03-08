@@ -164,6 +164,13 @@
 (define match-lambda*. (%match-id 'match-lambda*))
 (define match-letrec.  (%match-id 'match-letrec))
 (define match-define.  (%match-id 'match-define))
+(define match:length>=?. (%match-id 'match:length>=?))
+
+;; In the original code, length>= is introduced as a local binding
+;; so that optimizer can inline the call.   In Gauche we can use
+;; define-inline, so we don't need to bother introducing the local
+;; bindings.
+(define-inline (match:length>=? n) (lambda (l) (>= (length l) n)))
 
 ;;; [SK] End of black magic
 
@@ -209,8 +216,7 @@
             (slot-set! obj (slot-definition-name slot) val))))))
 
 (define (genmatch x clauses match-expr)
-  (let* ((length>= (gensym))
-         (eb-errf (error-maker match-expr))
+  (let* ((eb-errf (error-maker match-expr))
          (blist (car eb-errf))
          (plist (map (lambda (c)
                        (let* ((x (bound (validate-pattern (car c))))
@@ -233,18 +239,13 @@
                                      (append bindings blist)))
                          (list p code bv (and fail (gensym)) #f)))
                      clauses))
-         (code (gen x '() plist (cdr eb-errf) length>= (gensym))))
+         (code (gen x '() plist (cdr eb-errf) (gensym))))
     (unreachable plist match-expr)
-    (inline-let
-     `(let ((,length>= (lambda (n)
-                         (lambda (l)
-                           (>= (length l) n))))
-            ,@blist)
-        ,code))))
+    `(let ,blist
+       ,code)))
 
 (define (genletrec pat exp body match-expr)
-  (let* ((length>= (gensym))
-         (eb-errf (error-maker match-expr))
+  (let* ((eb-errf (error-maker match-expr))
          (x (bound (validate-pattern pat)))
          (p (car x))
          (bv (cadr x))
@@ -252,13 +253,10 @@
          (code (gensym))
          (plist (list (list p code bv #f #f)))
          (x (gensym))
-         (m (gen x '() plist (cdr eb-errf) length>= (gensym)))
+         (m (gen x '() plist (cdr eb-errf) (gensym)))
          (gs (map (lambda (_) (gensym)) bv)))
     (unreachable plist match-expr)
-    `(letrec ((,length>= (lambda (n)
-                           (lambda (l)
-                             (>= (length l) n))))
-              ,@(map (lambda (v) `(,v #f)) bv)
+    `(letrec (,@(map (lambda (v) `(,v #f)) bv)
               (,x ,exp)
               (,code (lambda ,gs
                        ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)
@@ -268,8 +266,7 @@
        ,m)))
 
 (define (gendefine pat exp match-expr)
-  (let* ((length>= (gensym))
-         (eb-errf (error-maker match-expr))
+  (let* ((eb-errf (error-maker match-expr))
          (x (bound (validate-pattern pat)))
          (p (car x))
          (bv (cadr x))
@@ -277,21 +274,17 @@
          (code (gensym))
          (plist (list (list p code bv #f #f)))
          (x (gensym))
-         (m (gen x '() plist (cdr eb-errf) length>= (gensym)))
+         (m (gen x '() plist (cdr eb-errf) (gensym)))
          (gs (map (lambda (_) (gensym)) bv)))
     (unreachable plist match-expr)
     `(begin ,@(map (lambda (v) `(define ,v #f)) bv)
-            ,(inline-let
-              `(let ((,length>= (lambda (n)
-                                  (lambda (l)
-                                    (>= (length l) n))))
-                     (,x ,exp)
-                     (,code (lambda ,gs
-                              ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)
-                              (cond (#f #f))))
-                     ,@bindings
-                     ,@(car eb-errf))
-                 ,m)))))
+            `(let ((,x ,exp)
+                   (,code (lambda ,gs
+                            ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)
+                            (cond (#f #f))))
+                   ,@bindings
+                   ,@(car eb-errf))
+               ,m))))
 
 (define (pattern-var? x)
   (and-let* ([x (cond [(symbol? x) x]
@@ -606,70 +599,7 @@
          '()
          (lambda (p a) (list p (reverse a) pred-bodies))))
 
-(define (inline-let let-exp)
-  (letrec ((occ (lambda (x e)
-                  (let loop ((e e))
-                    (cond
-                     ((pair? e)
-                      (+ (loop (car e)) (loop (cdr e))))
-                     ((eq? x e) 1)
-                     (else 0)))))
-           (subst (lambda (e old new)
-                    (let loop ((e e))
-                      (cond
-                       ((pair? e)
-                        (cons (loop (car e)) (loop (cdr e))))
-                       ((eq? old e) new)
-                       (else e)))))
-           (const? (lambda (sexp)
-                     (or (symid? sexp)
-                         (boolean? sexp)
-                         (string? sexp)
-                         (char? sexp)
-                         (number? sexp)
-                         (null? sexp)
-                         (and (pair? sexp)
-                              (eq? (car sexp) 'quote)
-                              (pair? (cdr sexp))
-                              (symid? (cadr sexp))
-                              (null? (cddr sexp))))))
-           (isval? (lambda (sexp)
-                     (or (const? sexp)
-                         (and (pair? sexp)
-                              (memq (car sexp)
-                                    '(lambda quote
-                                       match-lambda
-                                       match-lambda*))))))
-           (small? (lambda (sexp)
-                     (or (const? sexp)
-                         (and (pair? sexp)
-                              (eq? (car sexp) 'lambda)
-                              (pair? (cdr sexp))
-                              (pair? (cddr sexp))
-                              (const? (caddr sexp))
-                              (null? (cdddr sexp)))))))
-    (let loop ((b (cadr let-exp))
-               (new-b '())
-               (e (caddr let-exp)))
-      (cond
-       ((null? b)
-        (if (null? new-b)
-          e
-          `(let ,(reverse new-b) ,e)))
-       ((isval? (cadr (car b)))
-        (let* ((x (caar b))
-               (n (occ x e)))
-          (cond
-           ((= 0 n) (loop (cdr b) new-b e))
-           ((or (= 1 n)
-                (small?
-                 (cadr (car b))))
-            (loop (cdr b) new-b (subst e x (cadr (car b)))))
-           (else
-            (loop (cdr b) (cons (car b) new-b) e)))))
-       (else (loop (cdr b) (cons (car b) new-b) e))))))
-
-(define (gen x sf plist erract length>= eta)
+(define (gen x sf plist erract eta)
   (define (gen-rec plist memo)
     (if (null? plist)
       (erract x)
@@ -831,7 +761,7 @@
                       (case k
                         ((0) (ks sf))
                         ((1) (emit `(pair? ,e) sf kf ks))
-                        (else (emit `((,length>= ,k) ,e) sf kf ks)))))))
+                        (else (emit `((,match:length>=?. ,k) ,e) sf kf ks)))))))
            ((pair? p) (emit `(pair? ,e)
                             sf
                             kf
