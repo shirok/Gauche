@@ -3967,7 +3967,7 @@
 ;; extra arguments may exceed the gain by not allocating the closure.
 ;;
 ;; Pass4 is done in three steps.
-;; The first step, pass4/scan, recursively descents the IForm and determine
+;; The first step, pass4/scan, recursively descends the IForm and determine
 ;; a set of free variables for each $LAMBDA nodes.k  It returns a list of
 ;; The second step, pass4/lift, takes a set of $LAMBDA nodes in the IForm
 ;; and finds which $LAMBDA nodes can be lifted.
@@ -3984,7 +3984,9 @@
     (let1 dic (make-label-dic '())
       (pass4/scan iform '() '() #t dic) ; Mark free variables
       (let1 lambda-nodes (label-dic-info dic)
-        (if (null? lambda-nodes)
+        (if (or (null? lambda-nodes)
+                (and (null? (cdr lambda-nodes)) ; iform has only a toplevel lambda
+                     ($lambda-lifted-var (car lambda-nodes))))
           iform                           ;shortcut
           (let1 lifted (pass4/lift lambda-nodes module)
             (if (null? lifted)
@@ -4020,9 +4022,9 @@
 (define/case (pass4/scan iform bs fs t? labels)
   (iform-tag iform)
   [($DEFINE) (unless t? (error "[internal] pass4 $DEFINE in non-toplevel"))
-   (pass4/scan ($define-expr iform) bs fs #t labels)]
+             (pass4/scan ($define-expr iform) bs fs #t labels)]
   [($LREF)   (pass4/add-lvar ($lref-lvar iform) bs fs)]
-  [($LSET)   (let1 fs (pass4/scan ($lset-expr iform) bs fs #f labels)
+  [($LSET)   (let1 fs (pass4/scan ($lset-expr iform) bs fs t? labels)
                (pass4/add-lvar ($lset-lvar iform) bs fs))]
   [($GSET)   (pass4/scan ($gset-expr iform) bs fs t? labels)]
   [($IF)     (let* ([fs (pass4/scan ($if-test iform) bs fs t? labels)]
@@ -4037,17 +4039,21 @@
                (pass4/scan ($receive-body iform) bs fs #f labels))]
   [($LAMBDA) (let1 inner-fs (pass4/scan ($lambda-body iform)
                                         ($lambda-lvars iform) '() #f labels)
-               (cond
-                [t? '()]
-                [else
-                 ($lambda-free-lvars-set! iform inner-fs)
-                 (unless (eq? ($lambda-flag iform) 'dissolved)
-                   (label-dic-info-push! labels iform)) ;save the lambda node
-                 (let loop ([inner-fs inner-fs] [fs fs])
-                   (if (null? inner-fs)
-                     fs
-                     (loop (cdr inner-fs)
-                           (pass4/add-lvar (car inner-fs) bs fs))))]))]
+               (unless (eq? ($lambda-flag iform) 'dissolved)
+                 (label-dic-info-push! labels iform)) ;save the lambda node
+               ;; If this $LAMBDA is outermost in the original expression,
+               ;; we don't need to lift it, nor need to set free-lvars.
+               ;; We just mark it by setting lifted-var to #t so that
+               ;; pass4/lift phase can treat it specially.
+               (if t?
+                 ($lambda-lifted-var-set! iform #t) ;mark this is toplevel
+                 (begin
+                   ($lambda-free-lvars-set! iform inner-fs)
+                   (let loop ([inner-fs inner-fs] [fs fs])
+                     (if (null? inner-fs)
+                       fs
+                       (loop (cdr inner-fs)
+                             (pass4/add-lvar (car inner-fs) bs fs)))))))]
   [($LABEL)  (cond [(label-seen? labels iform) fs]
                    [else (label-push! labels iform)
                          (pass4/scan ($label-body iform) bs fs #f labels)])]
@@ -4095,16 +4101,37 @@
 ;;
 
 (define (pass4/lift lambda-nodes module)
-  (rlet1 lms '()
-    (dolist [lm lambda-nodes]
-      (let1 fvs ($lambda-free-lvars lm)
-        (when (or (null? fvs)
-                  (and (null? (cdr fvs))
-                       (zero? (lvar-set-count (car fvs)))
-                       (eq? (lvar-initval (car fvs)) lm)))
-          (let1 gvar (make-identifier (gensym) module '())
-            ($lambda-lifted-var-set! lm gvar)
-            (push! lms lm)))))))
+  (let1 top-name #f
+    ;; Find a toplevel $lambda node (marked by #t in lifted-var).
+    ;; Its name can be used to generate names for lifted lambdas.
+    (let loop ([lms lambda-nodes])
+      (when (pair? lms)
+        (or (and-let* ([ ($lambda-lifted-var (car lms)) ]
+                       [n ($lambda-name (car lms))])
+              (set! top-name (if (identifier? n)
+                               (identifier-name n)
+                               n)))
+            (loop (cdr lms)))))
+    (rlet1 results '()
+      (let loop ([lms lambda-nodes])
+        (cond [(null? lms)]
+              [($lambda-lifted-var (car lms))
+               ($lambda-lifted-var-set! (car lms) #f)
+               (loop (cdr lms))]
+              [else
+               (let* ([lm (car lms)]
+                      [fvs ($lambda-free-lvars lm)])
+                 (when (or (null? fvs)
+                           (and (null? (cdr fvs))
+                                (zero? (lvar-set-count (car fvs)))
+                                (eq? (lvar-initval (car fvs)) lm)))
+                   (let1 gvar (make-identifier (gensym) module '())
+                     ($lambda-name-set! lm (list top-name
+                                                 (or ($lambda-name lm)
+                                                     (identifier-name gvar))))
+                     ($lambda-lifted-var-set! lm gvar)
+                     (push! results lm)))
+                 (loop (cdr lms)))])))))
 
 ;; Final touch of pass4 - replace lifted lambda nodes to $GREFs.
 ;; Returns (possibly modified) IForm.

@@ -1,5 +1,13 @@
 2011-03-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass4/lift): Set lifted $lambda name
+	  comprehensively as possible.  Since lifted lambdas don't have a
+	  link to parent code, the scheme of deriving hierarchical name
+	  in Scm_CompiledCodeFullName doesn't work.   Instead we give
+	  the list (<toplevel-name> <name>) in each lifted $lambda node,
+	  where <name> is the node's original name if any, or gensym'ed
+	  name.
+
 	* src/main.c (cleanup_main): Fixed -pload option; the original code
 	  failed if gauche.vm.profile wasn't loaded.  Since we autoload
 	  profiler-show-load-stats, we can evaluate it in the gauche module
