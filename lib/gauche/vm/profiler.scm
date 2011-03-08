@@ -50,12 +50,11 @@
 ;; Returns a portable representation of the current profiler result
 ;;
 (define (profiler-get-result)
-  (cond
-   ;; NB: this part depends on the result object of profiler-raw-result,
-   ;; which may be changed later.  Keep this in sync with src/prof.c.
-   [(profiler-raw-result)
-    => (cut hash-table-map <> (lambda (k v) (cons (entry-name k) v)))]
-   [else #f]))
+  ;; NB: this part depends on the result object of profiler-raw-result,
+  ;; which may be changed later.  Keep this in sync with src/prof.c.
+  (if-let1 r (profiler-raw-result)
+    (hash-table-map r (^(k v) (cons (entry-name k) v)))
+    #f))
 
 ;;
 ;; Show the profiler result.
@@ -69,9 +68,9 @@
 (define (profiler-show :key (results #f) (sort-by 'time) (max-rows 50))
   (if (not results)
     ;; use the current result
-    (cond
-     [(profiler-get-result) => (cut show-stats <> sort-by max-rows)]
-     [else (print "No profiling data has been gathered.")])
+    (if-let1 r (profiler-get-result)
+      (show-stats r sort-by max-rows)
+      (print "No profiling data has been gathered."))
     ;; gather all the results
     (let1 ht (make-hash-table 'equal?)
       ;; gather stats
@@ -90,7 +89,7 @@
 ;; accumulated load stats info; see load.c for th exact format.
 ;; This routine should be in sync of it.
 (define (profiler-show-load-stats stats)
-  (let ((results '())) ;; [(<filename> . <time>)]
+  (let1 results '() ; [(<filename> . <time>)]
     (let/cc return
       (define (start stats)
         (match stats
@@ -107,16 +106,14 @@
            (receive (time-spent rest) (cumulate f t more)
              (cumulate filename (+ start-time time-spent) rest))]
           [(t . more)
-           (set! results
-                 (cons (cons filename (- t start-time)) results))
+           (set! results (cons (cons filename (- t start-time)) results))
            (values (- t start-time) more)]))
       (define (show-results)
         (print "Load statistics:")
         (print "Time(us)    File")
         (print "--------+-------------------------------------------------------------------")
-        (for-each (lambda (p)
-                    (format #t "~8d ~a\n" (cdr p) (car p)))
-                  (sort results (lambda (a b) (> (cdr a) (cdr b)))))
+        (for-each (^p (format #t "~8d ~a\n" (cdr p) (car p)))
+                  (sort-by results cdr >))
         (return #f))
       (start (reverse stats)))))
 
@@ -126,46 +123,37 @@
 
 ;; Show the result in a comprehensive way
 (define (show-stats stat sort-by max-rows)
-  (let* ((num-samples (fold (lambda (entry cnt) (+ (cddr entry) cnt)) 0 stat))
-         (sum-time (* num-samples 0.01))
-         (sorter (case sort-by
+  (let* ([num-samples (fold (^(entry cnt) (+ (cddr entry) cnt)) 0 stat)]
+         [sum-time (* num-samples 0.01)]
+         [sorter (case sort-by
                    [(time)
-                    (lambda (a b)
-                      (or (> (cddr a) (cddr b))
-                          (and (= (cddr a) (cddr b))
-                               (> (cadr a) (cadr b)))))]
+                    (^(a b) (or (> (cddr a) (cddr b))
+                                (and (= (cddr a) (cddr b))
+                                     (> (cadr a) (cadr b)))))]
                    [(count)
-                    (lambda (a b)
-                      (or (> (cadr a) (cadr b))
-                          (and (= (cadr a) (cadr b))
-                               (> (cddr a) (cddr b)))))]
+                    (^(a b) (or (> (cadr a) (cadr b))
+                                (and (= (cadr a) (cadr b))
+                                     (> (cddr a) (cddr b)))))]
                    [(time-per-call)
-                    (lambda (a b)
-                      (> (/ (cddr a) (cadr a)) (/ (cddr b) (cadr b))))]
+                    (^(a b) (> (/ (cddr a) (cadr a)) (/ (cddr b) (cadr b))))]
                    [else
-                    (error "profiler-show: sort-by argument must be either one of time, count, or time-per-call, but got:" sort-by)]))
-         (sorted (sort stat sorter)))
+                    (error "profiler-show: sort-by argument must be either one of time, count, or time-per-call, but got:" sort-by)])]
+         [sorted (sort stat sorter)])
 
     (print "Profiler statistics (total "num-samples" samples, "
            sum-time " seconds)")
     (print "                                                    num    time/    total")
     (print "Name                                                calls  call(ms) samples")
     (print "---------------------------------------------------+------+-------+-----------")
-    (for-each
-     (lambda (e)
-       (let* ((name (car e))
-              (samples (cddr e))
-              (ncalls  (cadr e))
-              )
-         (format #t "~50a ~7d ~5a ~5d(~3d%)\n"
-                 name ncalls (time/call samples ncalls) samples
-                 (if (zero? num-samples)
-                   0
-                   (inexact->exact (round (* 100 (/ samples num-samples))))))))
-     (if (integer? max-rows)
-       (take* sorted max-rows)
-       sorted)))
-  )
+    (dolist [e (if (integer? max-rows) (take* sorted max-rows) sorted)]
+      (match-let1 (name ncalls . samples) e
+        (format #t "~50a ~7d ~5a ~5d(~3d%)\n"
+                name ncalls (time/call samples ncalls) samples
+                (if (zero? num-samples)
+                  0
+                  (exact (round (* 100 (/ samples num-samples))))))))
+    ))
+
 
 ;; Get a fixed-decimal notation of time/call (in us)
 ;; If the time is under 100ms:  ##.####
@@ -174,7 +162,7 @@
 (define (time/call samples ncalls)
   (let1 time (* 10.0 (/ samples ncalls)) ;; in ms
     (receive (frac int) (modf (* time 10000))
-      (let1 val (inexact->exact (if (>= frac 0.5) (+ int 1) int))
+      (let1 val (exact (if (>= frac 0.5) (+ int 1) int))
         (receive (q r) (quotient&remainder val 10000)
           (format "~2d.~4,'0d" q r))))))
 
