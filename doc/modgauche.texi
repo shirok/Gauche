@@ -12819,6 +12819,16 @@ error port, much like the bourne shell's time command.
 @c COMMON
 
 @c EN
+This macro is intended for interactive use on REPL prompt.
+To get the measurement results programmatically, use @code{with-times}
+procedure below.
+@c JP
+このマクロはREPLプロンプトから対話的に実行されることを意図しています。
+計測結果をプログラムで受け取って処理したい場合は、下の@code{with-times}を
+使うと良いでしょう。
+@c COMMON
+
+@c EN
 The current version uses @code{sys-gettimeofday} (@xref{Time}) to
 calculate the elapsed time, and @code{sys-times} (@xref{System inquiry})
 to calculate user and system CPU times.  So the resolution of these numbers
@@ -12846,6 +12856,50 @@ gosh> (time (length (sort (call-with-input-file "/usr/share/dict/words"
 45427
 @end smallexample
 @end defmac
+
+@defun with-times thunk
+@c EN
+Calls @var{thunk} with no arguments and measures the time
+took to execute it.
+Returns an assoc list
+containing the the list of results of @var{thunk}, 
+the real (elapsed) time, the user time and the system time.
+Times are in seconds.
+@c JP
+@var{thunk}を引数無しで呼び出し、かかった時間を計測します。
+戻り値は、@var{thunk}の結果のリスト(@code{results})、
+経過時間(@code{real})、ユーザ時間(@code{user})、
+システム時間(@code{sys})を連想リストにしたものです。
+@c COMMON
+
+@example
+(with-times (lambda () (sys-sleep 3) (values "done" 'ok)))
+  @result{} ((results "done" ok)
+      (real . 3.0000739097595215)
+      (user . 0.0)
+      (sys . 0.0))
+@end example
+
+@c EN
+The order of elements in the returned list may be changed,
+and more information may be added in the future.  The caller
+should use @code{assq} (@xref{Other list procedures})
+or @code{assq-ref} (@xref{Additional list library}) to extract
+the desired information.
+@c JP
+結果のリストの順序は変わるかもしれず、また将来情報が追加されるかもしれません。
+情報を取り出すには@code{assq} (@ref{Other list procedures}参照) や
+@code{assq-ref} (@ref{Additional list library}参照) を使ってください。
+@c COMMON
+
+@c EN
+For measuring execution times interactively, the @code{time} macro
+described above is more convenient.
+@c JP
+インタラクティブに実行時間を測るには、@code{time}マクロの方が便利です。
+@c COMMON
+@end defun
+
 
 @deftp {Class} <time-counter>
 @clindex time-counter

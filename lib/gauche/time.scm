@@ -34,7 +34,7 @@
 (define-module gauche.time
   (use srfi-11)
   (use gauche.parameter)
-  (export time
+  (export with-times time
           <time-counter> <real-time-counter> <user-time-counter>
           <system-time-counter> <process-time-counter>
           time-counter-start! time-counter-stop! time-counter-reset!
@@ -50,30 +50,43 @@
                 ((ignore ifrac) (modf (+ (*. frac 1000) 0.5))))
     (format #f "~3d.~3,'0d" (inexact->exact sec) (inexact->exact ifrac))))
 
+(define-syntax %with-times
+  (syntax-rules ()
+    [(_ expr exprs do-result)
+     (let*-values ([(stimes) (sys-times)]
+                   [(sreal-sec sreal-msec) (sys-gettimeofday)]
+                   [r (begin expr . exprs)]
+                   [(etimes) (sys-times)]
+                   [(ereal-sec ereal-msec) (sys-gettimeofday)])
+       (let ([real (- (+ ereal-sec (/. ereal-msec 1000000))
+                      (+ sreal-sec (/. sreal-msec 1000000)))]
+             [user (/. (- (list-ref etimes 0) (list-ref stimes 0))
+                       (list-ref stimes 4))]
+             [sys  (/. (- (list-ref etimes 1) (list-ref stimes 1))
+                       (list-ref stimes 4))])
+         (do-result r real user sys)))]))
+
+(define (with-times thunk)
+  (%with-times (thunk) () (^(r real user sys)
+                            `((results ,@r)
+                              (real . ,real)
+                              (user . ,user)
+                              (sys  . ,sys)))))
+
 (define-syntax time
   (syntax-rules ()
-    ((_ expr . exprs)
-     (let*-values (((stimes) (sys-times))
-                   ((sreal-sec sreal-msec) (sys-gettimeofday))
-                   (r (begin expr . exprs))
-                   ((etimes) (sys-times))
-                   ((ereal-sec ereal-msec) (sys-gettimeofday)))
-       (format (current-error-port)
-               ";~,,,,75:s\n; real ~a\n; user ~a\n; sys  ~a\n"
-               '(time expr . exprs)
-               (format-delta-time
-                (- (+ ereal-sec (/. ereal-msec 1000000))
-                   (+ sreal-sec (/. sreal-msec 1000000))))
-               (format-delta-time
-                (/. (- (list-ref etimes 0) (list-ref stimes 0))
-                    (list-ref stimes 4)))
-               (format-delta-time
-                (/. (- (list-ref etimes 1) (list-ref stimes 1))
-                    (list-ref stimes 4))))
-       (apply values r)))
-    ((_)
-     (syntax-error "usage: (time expr expr2 ...); or you meant sys-time?"))
-    ))
+    [(_ expr . exprs)
+     (%with-times expr exprs
+                  (^(r real user sys)
+                    (format (current-error-port)
+                            ";~,,,,75:s\n; real ~a\n; user ~a\n; sys  ~a\n"
+                            '(time expr . exprs)
+                            (format-delta-time real)
+                            (format-delta-time user)
+                            (format-delta-time sys))
+                    (apply values r)))]
+    [(_)
+     (syntax-error "usage: (time expr expr2 ...); or you meant sys-time?")]))
 
 ;; Timers ---------------------------------------------
 

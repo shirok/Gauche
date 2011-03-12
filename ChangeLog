@@ -1,3 +1,8 @@
+2011-03-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/time.scm (with-times): Added a new procedure to treat
+	  the result of 'time' macro programatically.
+
 2011-03-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass4/lift): Set lifted $lambda name
