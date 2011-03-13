@@ -34,7 +34,10 @@
 (define-module gauche.time
   (use srfi-11)
   (use gauche.parameter)
-  (export with-times time
+  (use gauche.record)
+  (use util.match)
+  (export time time-this time-these report-time-results time-these/report
+          <time-result> time-result+ time-result-
           <time-counter> <real-time-counter> <user-time-counter>
           <system-time-counter> <process-time-counter>
           time-counter-start! time-counter-stop! time-counter-reset!
@@ -45,11 +48,15 @@
 
 ;; Time, a simple measurement ------------------------------
 
-(define (format-delta-time delta)
-  (let*-values (((frac sec) (modf delta))
-                ((ignore ifrac) (modf (+ (*. frac 1000) 0.5))))
-    (format #f "~3d.~3,'0d" (inexact->exact sec) (inexact->exact ifrac))))
+;; TODO: Drop these once we support sane formatting of flonums in format.
+(define (format-flonum val mincol digs)
+  (let* ([scale (expt 10 digs)]
+         [n (round->exact (* val scale))])
+    (format "~vd.~v,'0d" mincol (div n scale) digs (mod n scale))))
+         
+(define (format-delta-time delta) (format-flonum delta 3 3))
 
+;; common stuff for 'time' macro and benchmarking
 (define-syntax %with-times
   (syntax-rules ()
     [(_ expr exprs do-result)
@@ -66,13 +73,6 @@
                        (list-ref stimes 4))])
          (do-result r real user sys)))]))
 
-(define (with-times thunk)
-  (%with-times (thunk) () (^(r real user sys)
-                            `((results ,@r)
-                              (real . ,real)
-                              (user . ,user)
-                              (sys  . ,sys)))))
-
 (define-syntax time
   (syntax-rules ()
     [(_ expr . exprs)
@@ -88,6 +88,146 @@
     [(_)
      (syntax-error "usage: (time expr expr2 ...); or you meant sys-time?")]))
 
+;; Benchmarking ---------------------------------------
+
+(define-record-type <time-result> make-time-result time-result?
+  (count time-result-count)
+  (real  time-result-real)
+  (user  time-result-user)
+  (sys   time-result-sys))
+
+(define-method write-object ((obj <time-result>) port)
+  (format port "#<time-result ~a times/~a real/~a user/~a sys>"
+          (~ obj'count)
+          (format-delta-time (~ obj'real))
+          (format-delta-time (~ obj'user))
+          (format-delta-time (~ obj'sys))))
+
+(define (%time-result-op op t1 t2 with-count)
+  (make-time-result (if with-count
+                      (op (time-result-count t1) (time-result-count t2))
+                      (time-result-count t1))
+                    (op (time-result-real t1) (time-result-real t2))
+                    (op (time-result-user t1) (time-result-user t2))
+                    (op (time-result-sys  t1) (time-result-sys  t2))))
+
+(define (time-result+ t1 t2 :key (with-count #f))
+  (%time-result-op + t1 t2 with-count))
+
+(define (time-result- t1 t2 :key (with-count #f))
+  (%time-result-op - t1 t2 with-count))
+
+;; one sample.
+;; config := <integer>     ; number of repetition
+;;        |  (cpu <real>)  ; at least <real> seconds in cpu time
+(define (time-this config thunk)
+  (define (with-times count thunk)
+    (%with-times (thunk) ()
+                 (^(_ real user sys) (make-time-result count real user sys))))
+  (define (run count)
+    (let* ([body (with-times count (^() (dotimes [n count] (thunk))))]
+           [skin (with-times count (^() (dotimes [n count] #f)))])
+      (time-result- body skin)))
+  (define (cputime result)
+    (+ (time-result-user result) (time-result-sys result)))
+
+  ;; Determine the unit repetition count which takes at least 0.3 cpu secs.
+  (define (estimate rep)
+    (let* ([result (run rep)]
+           [t      (cputime result)])
+      (cond [(< t 0.01) (estimate (* rep 50))]
+            [(< t 0.05) (estimate (* rep 10))]
+            [else (ceiling->exact (* (/. rep t) 0.3))])))
+
+  (match config
+    [(? integer?) (run config)]
+    [('cpu (? real? secs))
+     (when (< secs 1.0)
+       (error "Benchmark duration (cpu time) should be greater than 1.0 for \
+               reliable measurement.  We got:" config))
+     (let1 unit (estimate 1)
+       (let loop ([cumu 0] [r #f])
+         (if (>= cumu secs)
+           r
+           (let1 r1 (run unit)
+             (loop (+ cumu (cputime r1))
+                   (if r
+                     (time-result+ r r1 :with-count #t)
+                     r1))))))]))
+
+;; multiple samples.
+;; samples : ((key . thunk) ...)
+;; returns : (config (key . result) ...)
+(define (time-these config samples)
+  (cons config
+        (map (^s (cons (car s) (time-this config (cdr s)))) samples)))
+
+(define (time-these/report config samples)
+  (report-time-results (time-these config samples)))
+
+;; Show the result of time-these nicely.
+(define (report-time-results result)
+  ;; returns list of formatted strings and maximum width
+  (define (fmt+w formatter vals)
+    (let1 fs (map formatter vals)
+      (values fs (apply max (map string-length fs)))))
+  (define (ff val dig) (format-flonum val 0 dig))
+  (define (realtime result) (~ result'real))
+  (define (usertime result) (~ result'user))
+  (define (systime result)  (~ result'sys))
+  (define (cputime result)  (+ (usertime result) (systime result)))
+  (define (rate result)     (/. (~ result'count) (cputime result)))
+  ;; compare rates.  x, y :: <time-result>
+  (define (ratio x y) (ff (/ (rate x) (rate y)) 3))
+  ;; show the report
+  (define (show)
+    (match-let1 (config . alist) result
+      ;; header
+      (format #t "Benchmark: ran ~a, each for ~a.\n"
+              (string-join (map (.$ x->string car) alist) ", ")
+              (match config
+                [('cpu secs) (format "at least ~a cpu seconds" secs)]
+                [count       (format "~a times" count)]))
+      ;; individual results
+      (let*-values
+          ([(ts) (map cdr alist)] ;<time-result>s
+           [(ks kw) (fmt+w (.$ x->string car) alist)]    ;key
+           [(rs rw) (fmt+w (^t (ff (realtime t) 3)) ts)]  ;real time
+           [(ps pw) (fmt+w (^t (ff (cputime  t)  3)) ts)] ;cpu time
+           [(us uw) (fmt+w (^t (ff (usertime t) 3)) ts)]  ;user time
+           [(ss sw) (fmt+w (^t (ff (systime  t) 3)) ts)]  ;sys time
+           [(cs cw) (fmt+w (^t (ff (rate t) 2)) ts)]      ;count/s
+           )
+        (for-each
+         (^(k r p u s c n)
+           (format #t
+                   "  ~v@a: ~v@a real, ~v@a cpu (~v@a user + ~v@a sys)@~v@a/s n=~a\n"
+                   kw k rw r pw p uw u sw s cw c n))
+         ks rs ps us ss cs (map (cut ref <> 'count) ts))
+        ;; matrix
+        (let1 mat (map (^y (map (^x (if (eq? x y) "--" (ratio y x))) ts)) ts)
+          (receive (Cs Cw) (fmt+w (.$ x->string x->integer rate) ts)
+            (format #t "\n  ~v@a ~v@a" kw "" (max (+ Cw 2) 4) "Rate")
+            (let1 col-widths (map (pa$ apply max)
+                                  (map (pa$ map string-length)
+                                       (map cons ks (apply map list mat))))
+              (for-each (^(key col-width) (format #t " ~v@a" col-width key))
+                        ks col-widths)
+              (for-each (^(key row C)
+                          (format #t "\n  ~v@a ~v@a/s" kw key Cw C)
+                          (for-each (^(col col-width)
+                                      (format #t " ~v@a" col-width col))
+                                    row col-widths))
+                        ks mat Cs)))))
+      (newline)))
+  ;; check valid format of the alist part
+  (define (valid-alist? alist)
+    (and (every pair? alist) (every (.$ time-result? cdr) alist)))
+  
+  (match result
+    [((? integer?) . (? valid-alist? alist))     (show)]
+    [(('cpu (? real?)) . (? valid-alist? alist)) (show)]
+    [else (error "the argument doesn't seem like a time-these result:" result)]))
 ;; Timers ---------------------------------------------
 
 (define-class <time-counter> ()

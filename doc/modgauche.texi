@@ -12793,16 +12793,34 @@ SRFI-18との互換性のために提供されています。
 @deftp {Module} gauche.time
 @mdindex gauche.time
 @c EN
-Provides two simple ways to measure execution time of Scheme code.
+Provides three ways to measure execution time of Scheme code.
 A macro @code{time}, which is convenient for interactive use,
+a set of procedures for benchmarking,
 and @code{<time-counter>} objects which are useful to be embedded
 in the program.
 @c JP
-Schemeコードの実行時間を測る2つの単純な方法を提供します。
-インタラクティブな使用に便利な@code{time}マクロ及び、
+Schemeコードの実行時間を測る3つの方法を提供します。
+インタラクティブな使用に便利な@code{time}マクロ、
+ベンチマークのための手続きのセット、
 プログラム中に埋め込んで使える@code{<time-counter>}オブジェクトです。
 @c COMMON
 @end deftp
+
+@c EN
+@subheading Interactive measurement of execution time
+@c JP
+@subheading インタラクティブな実行時間の計測
+@c COMMON
+
+@c EN
+Note: The @code{time} macro is pre-defined to autoload @code{gauche.time}
+for the convenience; you don't need to say @code{(use gauche.time)}
+to use the @code{time} macro.
+@c JP
+註: @code{time}マクロは@code{gauche.time}モジュールをオートロードする
+ようにあらかじめ定義されているので、@code{time}マクロを使うだけなら
+@code{(use gauche.time)}としておく必要はありません。
+@c COMMON
 
 @defmac time expr expr2 @dots{}
 @c EN
@@ -12816,16 +12834,6 @@ error port, much like the bourne shell's time command.
 結果が返される前に、全ての式の評価にかかった実(経過)時間および
 ユーザースペース、カーネルスペースで費されたCPU時間がカレントエラーポートに
 報告されます。
-@c COMMON
-
-@c EN
-This macro is intended for interactive use on REPL prompt.
-To get the measurement results programmatically, use @code{with-times}
-procedure below.
-@c JP
-このマクロはREPLプロンプトから対話的に実行されることを意図しています。
-計測結果をプログラムで受け取って処理したい場合は、下の@code{with-times}を
-使うと良いでしょう。
 @c COMMON
 
 @c EN
@@ -12857,49 +12865,168 @@ gosh> (time (length (sort (call-with-input-file "/usr/share/dict/words"
 @end smallexample
 @end defmac
 
-@defun with-times thunk
 @c EN
-Calls @var{thunk} with no arguments and measures the time
-took to execute it.
-Returns an assoc list
-containing the the list of results of @var{thunk}, 
-the real (elapsed) time, the user time and the system time.
-Times are in seconds.
+@subheading Benchmarking
 @c JP
-@var{thunk}を引数無しで呼び出し、かかった時間を計測します。
-戻り値は、@var{thunk}の結果のリスト(@code{results})、
-経過時間(@code{real})、ユーザ時間(@code{user})、
-システム時間(@code{sys})を連想リストにしたものです。
+@subheading ベンチマーク
 @c COMMON
 
-@example
-(with-times (lambda () (sys-sleep 3) (values "done" 'ok)))
-  @result{} ((results "done" ok)
-      (real . 3.0000739097595215)
-      (user . 0.0)
-      (sys . 0.0))
-@end example
+It is not unusual that the routine you want to measure takes only
+a fraction of second, so you have to run it many times for better
+measurement.  It is also common that you want to compare results
+of measurement of two or more implementation strategies.
+Here are useful procedures to do so.
 
-@c EN
-The order of elements in the returned list may be changed,
-and more information may be added in the future.  The caller
-should use @code{assq} (@xref{Other list procedures})
-or @code{assq-ref} (@xref{Additional list library}) to extract
-the desired information.
-@c JP
-結果のリストの順序は変わるかもしれず、また将来情報が追加されるかもしれません。
-情報を取り出すには@code{assq} (@ref{Other list procedures}参照) や
-@code{assq-ref} (@ref{Additional list library}参照) を使ってください。
-@c COMMON
+The name and behavior of those benchmarking routines are inspired
+by Perl's Benchmark module.
 
-@c EN
-For measuring execution times interactively, the @code{time} macro
-described above is more convenient.
-@c JP
-インタラクティブに実行時間を測るには、@code{time}マクロの方が便利です。
-@c COMMON
+@defun time-this how thunk
+Calls @var{thunk} many times and measure its execution time.
+The argument @var{how} can be one of the following forms.
+
+@table @code
+@item @var{integer}
+It calls @var{thunk} as many times as the given number.
+@item (cpu @var{real})
+It calls @var{thunk} as many times as the total cpu time exceeds
+the given number of seconds.
+@end table
+
+It also runs an empty loop as the same times and subtract the
+time took for the empty loop from the measured time, to get
+more accurate result.
+
+The result is returned in a @code{<time-result>} record, described below.
+Here are some examples:
+@smallexample
+;; Run the thunk 1,000,000 times
+(time-this 1000000 (lambda () (expt 100 30)))
+  @result{} #<time-result 1000000 times/  1.030 real/  1.040 user/  0.000 sys>
+
+;; Run the thunk at least 5.0 cpu seconds
+(time-this '(cpu 5.0) (lambda () (expt 100 30)))
+  @result{} #<time-result 4903854 times/  5.090 real/  5.050 user/  0.010 sys>
+@end smallexample
 @end defun
 
+@deftp {Record} <time-result>
+A record to hold the benchmark result.
+Following slots are defined.
+
+@defivar {<time-result>} count
+@fnindex time-result-count
+The number of times the thunk was run.   This slot is also
+accessed by a procedure @code{time-result-count}.
+@end defivar
+
+@defivar {<time-result>} real
+@fnindex time-result-real
+The total real (elapsed) time running the thunk took.
+This slot is also accessed by a procedure @code{time-result-real}.
+@end defivar
+
+@defivar {<time-result>} user
+@fnindex time-result-user
+The total user cpu time running the thunk took.
+This slot is also accessed by a procedure @code{time-result-user}.
+@end defivar
+
+@defivar {<time-result>} sys
+@fnindex time-result-sys
+The total system cpu time running the thunk took.
+This slot is also accessed by a procedure @code{time-result-sys}.
+@end defivar
+@end deftp
+
+@defun make-time-result count real user sys
+The constructor of @code{<time-result>} records.
+@end defun
+
+@defun time-result? obj
+The predicate of @code{<time-result>} records.
+@end defun
+
+@defun time-result+ t1 t2 :key (with-count #f)
+@defunx time-result- t1 t2 :key (with-count #f)
+Add or subtract two @code{<time-result>} records and returns a new record.
+
+If @var{with-count} is false,
+only the real, user and sys slots are added or subtracted,
+and the result's count slot is set to the same as @var{t1}'s count slot.
+It is supposed to be used to calculate on measurement
+from different chunk of code.
+
+If @var{with-count} is true,
+then the values of count slot is also added or subtracted.
+It is supposed to calculate on
+multiple benchmark results of the same code.
+@end defun
+
+@defun time-these how alist
+@defunx time-these/report how alist
+These procedures benchmarks multiple chunks of code to compare.
+
+The @var{alist} argument must be the form of
+@code{((key . thunk) @dots{})}, where @code{key} is a symbol
+and @var{thunk} is a procedure taking no arguments.
+
+The @var{how} argument is the same as @code{time-this}; that is,
+either an integer for number of iterations, or a list
+@code{(cpu @var{x})} to indicate @var{x} seconds of cpu time.
+
+@code{time-these} runs benchmarks for each thunk in @var{alist}
+using @code{time-this}, and returns the result in a list of
+the form
+@code{(@var{how} (@var{key1} . @var{result1}) (@var{key2} . @var{result2}) @dots{})},
+where each @var{result} is a @code{<time-result>} object.
+
+@code{time-these/report} outputs the benchmark results and
+comparison matrix in human readable way to the current output port.
+
+@smallexample
+gosh> (time-these/report '(cpu 3.0)
+        `((real1 . ,(cut expt 100 20))
+          (real2 . ,(cut %expt 100 20))
+          (imag  . ,(cut expt +100i 20))))
+Benchmark: ran real1, real2, imag, each for at least 3.0 cpu seconds.
+  real1: 3.312 real, 3.320 cpu (3.320 user + 0.000 sys)@@ 1694277.11/s n=5625000
+  real2: 2.996 real, 3.010 cpu (3.010 user + 0.000 sys)@@35595634.55/s n=107142860
+   imag: 3.213 real, 3.190 cpu (3.190 user + 0.000 sys)@@  862068.97/s n=2750000
+
+              Rate  real1 real2   imag
+  real1  1694277/s     -- 0.048  1.965
+  real2 35595635/s 21.009    -- 41.291
+   imag   862069/s  0.509 0.024     --
+@end smallexample
+
+The first part of the report shows, for each thunks,
+the real (elapsed) time,
+the cpu time used (and its breakdown of user and system time),
+the rate of iteration per second, and the total number of iterations.
+
+The second part compares the speed between each pair of the benchmarks.
+For example, its first row tells that the benchmark @code{real1} is
+0.048 times faster than @code{real2} and 1.965 times faster than
+@code{imag}.
+@end defun
+
+@defun report-time-results result
+This is a utility procedure to create a report from
+the result of @code{time-these}.  Actually, @code{time-these/report}
+is just a combination of @code{time-these} and this procedure:
+
+@example
+(define (time-these/report how samples)
+  (report-time-results (time-these how samples)))
+@end example
+@end defun
+
+
+@c EN
+@subheading Finer measurement
+@c JP
+@subheading より細かい計測
+@c COMMON
 
 @deftp {Class} <time-counter>
 @clindex time-counter

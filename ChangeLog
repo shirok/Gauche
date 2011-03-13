@@ -1,3 +1,9 @@
+2011-03-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/time.scm (time-this, time-these, time-these/report):
+	  Dropped with-times introduced blow, and instead added comprehensive
+	  benchmarking utilities inspired by Perl's Benchmark module.
+
 2011-03-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1/define-inline-finish): Fixed a bug that

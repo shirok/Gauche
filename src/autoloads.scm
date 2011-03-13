@@ -126,7 +126,7 @@
           <arity-at-least> arity-at-least? arity-at-least-value disasm
           (:macro case-lambda) ~ ref*)
 
-(autoload gauche.time (:macro time) with-times)
+(autoload gauche.time (:macro time))
 
 (autoload gauche.vm.debugger (:macro debug-print)
                              debug-print-width debug-source-info)
