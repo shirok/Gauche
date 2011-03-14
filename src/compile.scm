@@ -1998,7 +1998,12 @@
 
 (define (pass1/define-inline-finish form name closure cenv)
   (let* ([module  (cenv-module cenv)]
-         [dummy-proc (lambda _ (undefined))]
+         ;; Dummy-proc is only a placeholder to record the inliner info
+         ;; to be used during compilation of the current compiler unit.
+         ;; Its body doesn't matter, but we need to make sure every dummy-proc
+         ;; is a different instance.  If we make it a constant procedure,
+         ;; Gauche's compiler optimized it to refer to the singleton instance.
+         [dummy-proc (lambda _ name)]
          [packed (pack-iform closure)])
     ($lambda-flag-set! closure packed)
     ;; record inliner function for compiler.  this is used only when

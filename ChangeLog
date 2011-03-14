@@ -1,3 +1,11 @@
+2011-03-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass1/define-inline-finish): Fixed a bug that
+	  affects inline expansion during precompilation.  See the comment
+	  for the details.   The code since commit d6f23ad1 (2011-03-05)
+	  until this fix should not be used to compile Gauche itself, since
+	  it yields a corrupt compiler.
+
 2011-03-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/time.scm (with-times): Added a new procedure to treat
