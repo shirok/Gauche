@@ -1,3 +1,11 @@
+2011-03-15  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match.scm (gen): Reverting the change in 2010-05-29 to
+	  avoid exponential growth of expansion time.  It turned out that
+	  the change can introduce exponential growth of compilation time
+	  in certain patterns.  (We still keep the change of 2011-03-06,
+	  though).
+
 2011-03-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/time.scm (time-this, time-these, time-these/report):
