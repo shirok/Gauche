@@ -13940,13 +13940,13 @@ security risk.  Use @code{sys-mkstemp} below if possible.
 @c EN
 Creates and opens a file that has unique name, and returns two values;
 opened port and the created filename.  The file is created exclusively,
-avoiding race conditions.   @var{tmpname} is used as the prefix
+avoiding race conditions.   @var{template} is used as the prefix
 of the file.  Unlike Unix's mkstemp, you don't need padding characters.
 The file is opened for writing, and its permission is set to 600.
 @c JP
 ユニークな名前を持つファイルを作成してオープンし、オープンされたポートとファイル名の
 二つの値を返します。ファイルは排他的に作成されるため、レースコンディションは起こりません。
-@var{tmpname}はファイル名のプレフィックスに使われます。Unixのmkstempと違って、
+@var{template}はファイル名のプレフィックスに使われます。Unixのmkstempと違って、
 パディングキャラクタをつける必要はありません。ファイルは書き込み用としてオープンされ、
 パーミッションは600にセットされます。
 @c COMMON
