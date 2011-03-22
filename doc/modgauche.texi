@@ -8019,7 +8019,7 @@ to STk.  This is still supported but deprecated.
 
 @c EN
 Large number of keyword arguments can be passed to @code{run-process}
-to control execution of the child process.  We describe them in
+to control execution of the child process.  We describe them by
 categories.
 @c JP
 子プロセスの実行を細かく制御するために、@code{run-process}はたくさんの
@@ -8034,7 +8034,7 @@ categories.
 @subsubheading 同期
 @c COMMON
 
-@deftp {run-process argument} wait flag
+@deftp {run-process argument} wait @var{flag}
 @c EN
 If @var{flag} is true, @code{run-process} waits until the
 subprocess terminates.  Othewise the subprocess runs asynchronously
@@ -8068,7 +8068,7 @@ timing to collect its exit status.
 @end example
 @end deftp
 
-@deftp {run-process argument} fork flag
+@deftp {run-process argument} fork @var{flag}
 @c EN
 If @var{flag} is true, @code{run-process} forks to run
 the subprocess, which is the default behavior.  If @var{flag} is
@@ -8087,7 +8087,7 @@ it never returns.
 @subsubheading I/Oリダイレクト
 @c COMMON
 
-@deftp {run-process argument} redirects (iospec @dots{})
+@deftp {run-process argument} redirects (@var{iospec} @dots{})
 @c EN
 Specifies how to redirect child process's I/Os.  
 Each @var{iospec}
@@ -8209,7 +8209,7 @@ content, whlie @code{>>} appends to the existing content.
 
 For other arguments, @code{>} and @code{>>} works the same.
 
-If @var{sink} is a symbol, a unidirectional pipe is created
+If @var{sink} is a symbol, an unidirectional pipe is created
 whose writer end is connected to the child's @var{fd}, and whose
 reader end is available as an input port returned by 
 @code{(process-output @var{process} @var{sink})}.
@@ -8408,7 +8408,7 @@ of the argument values.
 @subsubheading 実行環境
 @c COMMON
 
-@deftp {run-process argument} directory directory
+@deftp {run-process argument} directory @var{directory}
 @c EN
 If a string is given to @var{directory},
 the process starts with @var{directory} as its working directory.
@@ -8446,7 +8446,7 @@ exitします。頑健なプログラムを書く場合、そのようなケー�
 @end deftp
 
 
-@deftp {run-process argument} sigmask mask
+@deftp {run-process argument} sigmask @var{mask}
 @c EN
 @var{Mask} must be either an instance of @code{<sys-sigset>},
 a list of integers, or 
@@ -8471,6 +8471,21 @@ merely sets the signal mask of the local process (@code{ssh}).
 
 @var{host}キーワード引数が与えられている場合は、この引数は
 ローカル側のプロセス(@code{ssh})のみのシグナルマスクをセットします。
+@c COMMON
+@end deftp
+
+@deftp {run-process argument} detached @var{flag}
+@c EN
+When a true value is given, the new process is detached from
+the parent's process group and belongs to its own group.
+It is useful when you run a daemon process.
+See @code{sys-fork-and-exec} (@xref{Process management}), for
+the detailed description of @var{detached} argument.
+@c JP
+真の値が渡されると、作られるプロセスは親プロセスのプロセスグループから
+切り離され、独自のプロセスグループを作ります。
+デーモンプロセスを作る際に便利です。@var{detached}引数の詳しい動作については、
+@code{sys-fork-and-exec} を見てください (@ref{Process management}参照)。
 @c COMMON
 @end deftp
 

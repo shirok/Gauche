@@ -16690,25 +16690,6 @@ so it's pretty safe in the multithreaded environment.
 @c COMMON
 
 @c EN
-When a true value is given to the @var{detached} keyword argument,
-the executed process is detached from the current process group;
-that is, it won't be affected to the signal sent to the process group
-the caller process currently belongs to.
-On unix platforms, the executed process's parent becomes the @code{init}
-process (pid=1), and it gets its own session.  On Windows native platforms,
-the executed process will belong to a fresh process group.
-This is a part of the common idioms to start a daemon process.
-@c JP
-@var{detached}キーワード引数に真の値が与えられた場合、
-実行されるプロセスは現在のプロセスグループからは切り離されます。
-つまり、現在のプロセスグループに送られるシグナルを、子プロセスは受け取りません。
-Unixでは、実行されるプロセスの親が@code{init}プロセス (pid=1) になり、
-また独自のセッションを作ります。Windowsネイティブ環境では、
-実行されるプロセスが新たに作られたプロセスグループに属します。
-この動作はデーモンプロセスを作る際の標準的な手順のひとつです。
-@c COMMON
-
-@c EN
 On Windows native platforms, this procedure returns a
 Windows handle object (@code{<win:handle>}) of the created
 process instead of an integer process ID.  See below for
@@ -16724,6 +16705,46 @@ Windowsネイティブ環境では、この手続きはプロセスIDではな�
 
 また、@code{sys-exec}同様、Windowsネイティブ環境では、標準入力、標準出力、標準エラー出力に
 関するリダイレクションのみが処理されます。
+@c COMMON
+
+@c EN
+When a true value is given to the @var{detached} keyword argument,
+the executed process is detached from the current process group
+and belongs to its own group.
+That is, it won't be affected to the signal sent to the process group
+the caller process currently belongs to.
+It is a part of the common idioms to start a daemon process.
+
+On Unix platforms, besides the executed process gets its own session
+by @code{setsid(2)}, it performs extra @code{fork(3)} to make its
+parent be the @code{init} process (pid=1).
+(Note: It means the running process is actually a grandchild of the
+calling process, although that relationship isn't preserved.
+The returned pid is the running process's one,
+not the intermediate process that exits immediately.)
+
+On Windows native platforms,
+this flag causes the new process to be
+created with the @code{CREATE_NEW_PROCESS_GROUP} creation flag.
+@c JP
+@var{detached}キーワード引数に真の値が与えられた場合、
+実行されるプロセスは現在のプロセスグループからは切り離されます。
+つまり、現在のプロセスグループに送られるシグナルを、新しいプロセスは受け取りません。
+この動作はデーモンプロセスを作る際の標準的な手順のひとつです。
+
+Unixでは、実行されるプロセスが@code{setsid(2)}を呼んで
+独自のセッションを作るだけでなく、余分な@code{fork(2)}
+を実行することで親を@code{init}プロセス (pid=1) に切り替えます。
+(つまり、実行されるプロセスは実は呼び出すプロセスの孫にあたります。
+親子関係はなくなりますが。返されるpidは実際に走っているこのプロセスのもので、
+すぐに終了する中間プロセスのものではありません。)
+
+実行されるプロセスの親が
+また。Windowsネイティブ環境では、
+実行されるプロセスが新たに作られたプロセスグループに属します。
+
+Windowsネイティブ環境では、このフラグがあると
+プロセス作成時に@code{CREATE_NEW_PROCESS_GROUP}フラグが使われます。
 @c COMMON
 @end defun
 
