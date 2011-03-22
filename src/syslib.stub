@@ -637,9 +637,9 @@
   (initcode "Scm_AddFeature(\"gauche.sys.lchown\", NULL);")
   )
 
-;; NB: we force GC just befor fork().  It appeares necessary on some
-;; platform to synchronize page dirty bit information, so that incremental
-;; GC works properly.
+;; NB: we force GC just before fork().  It appears necessary on some
+;; platform to synchronize the page dirty bit information, so that incremental
+;; GC can work properly.
 (define-cproc sys-fork () ::<int>
   (let* ([pid::pid_t])
     (GC_gcollect)
@@ -670,15 +670,21 @@
 (define-cproc sys-exec (command::<string>
                         args::<list>
                         :key (iomap ()) (sigmask::<sys-sigset>? #f)
-                             (directory::<string>? #f)) ::<void>
-  (Scm_SysExec command args iomap sigmask directory 0))
+                             (directory::<string>? #f)
+                             (detached::<boolean> #f))
+  ::<void>
+  (let* ([flags::u_int (?: detached SCM_EXEC_DETACHED 0)])
+    (Scm_SysExec command args iomap sigmask directory flags)))
 
 (define-cproc sys-fork-and-exec (command::<string>
                                  args::<list>
                                  :key (iomap ()) (sigmask::<sys-sigset>? #f)
-                                      (directory::<string>? #f))
-  (result
-   (Scm_SysExec command args iomap sigmask directory SCM_EXEC_WITH_FORK)))
+                                      (directory::<string>? #f)
+                                      (detached::<boolean> #f))
+  (let* ([flags::u_int SCM_EXEC_WITH_FORK])
+    (when detached
+      (set! flags (logior flags SCM_EXEC_DETACHED)))
+    (result (Scm_SysExec command args iomap sigmask directory flags))))
 
 (define-cproc sys-getcwd () ::<const-cstring>
   (let* ([p::(.array char [1024])]) ; TODO: size needs to be configured

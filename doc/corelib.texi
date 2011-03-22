@@ -16663,7 +16663,7 @@ Windowsネイティブ環境では、標準入力、標準出力、標準エラ�
 @c COMMON
 @end defun
 
-@defun sys-fork-and-exec command args :key directory iomap sigmask
+@defun sys-fork-and-exec command args :key directory iomap sigmask detached
 @c EN
 Like @code{sys-exec}, but executes @code{fork(2)} just before
 remapping I/O, altering signal mask and call @code{execvp(2)}.
@@ -16687,6 +16687,25 @@ so it's pretty safe in the multithreaded environment.
 この手続き中では、@code{fork(2)}と@code{execvp(2)}の間で
 メモリアロケーションもロックの獲得も行われないため、
 マルチスレッド環境で実行しても安全になっています。
+@c COMMON
+
+@c EN
+When a true value is given to the @var{detached} keyword argument,
+the executed process is detached from the current process group;
+that is, it won't be affected to the signal sent to the process group
+the caller process currently belongs to.
+On unix platforms, the executed process's parent becomes the @code{init}
+process (pid=1), and it gets its own session.  On Windows native platforms,
+the executed process will belong to a fresh process group.
+This is a part of the common idioms to start a daemon process.
+@c JP
+@var{detached}キーワード引数に真の値が与えられた場合、
+実行されるプロセスは現在のプロセスグループからは切り離されます。
+つまり、現在のプロセスグループに送られるシグナルを、子プロセスは受け取りません。
+Unixでは、実行されるプロセスの親が@code{init}プロセス (pid=1) になり、
+また独自のセッションを作ります。Windowsネイティブ環境では、
+実行されるプロセスが新たに作られたプロセスグループに属します。
+この動作はデーモンプロセスを作る際の標準的な手順のひとつです。
 @c COMMON
 
 @c EN

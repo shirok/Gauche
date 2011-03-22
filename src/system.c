@@ -1482,6 +1482,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     const char *program, *cdir = NULL;
     pid_t pid = 0;
     int forkp = flags & SCM_EXEC_WITH_FORK;
+    int detachp = flags & SCM_EXEC_DETACHED;
     int *fds;
 
     if (argc < 1) {
@@ -1495,7 +1496,13 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     /* setting up iomap table */
     fds = Scm_SysPrepareFdMap(iomap);
     
+    /*
+     * From now on, we have totally different code for Unix and Windows.
+     */
 #if !defined(GAUCHE_WINDOWS)
+    /*
+     * Unix path
+     */
     if (dir != NULL) cdir = Scm_GetStringConst(dir);
 
     /* When requested, call fork() here. */
@@ -1504,8 +1511,18 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         if (pid < 0) Scm_SysError("fork failed");
     }
 
-    /* Now we swap file descriptors and exec(). */
-    if (!forkp || pid == 0) {
+    if (!forkp || pid == 0) {   /* possibly the child process */
+
+        /* If we're running the daemon, we fork again to detach the parent,
+           and also reset the session id. */
+        if (detachp) {
+            SCM_SYSCALL(pid, fork());
+            if (pid < 0) Scm_SysError("fork failed");
+            if (pid > 0) exit(0);   /* not Scm_Exit(), for we don't want to
+                                       run the cleanup stuff. */
+            setsid();
+        }
+
         if (cdir != NULL) {
             if (chdir(cdir) < 0) {
                 Scm_Panic("chdir to %s failed before executing %s: %s",
@@ -1527,6 +1544,9 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     /* We come here only when fork is requested. */
     return Scm_MakeInteger(pid);
 #else  /* GAUCHE_WINDOWS */
+    /*
+     * Windows path
+     */
     if (dir != NULL) {
         /* we need full path for CreateProcess. */
         dir = SCM_STRING(Scm_NormalizePathname(dir, SCM_PATH_ABSOLUTE|SCM_PATH_CANONICALIZE));
@@ -1553,6 +1573,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         STARTUPINFO si;
         PROCESS_INFORMATION pi;
         LPCTSTR curdir = NULL;
+        DWORD creation_flags = 0;
 
         pathlen = SearchPath(NULL, SCM_MBS2WCS(program),
                              _T(".exe"), MAX_PATH, program_path,
@@ -1570,12 +1591,16 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
 
         if (cdir != NULL) curdir = SCM_MBS2WCS(cdir);
 
+        if (detachp) {
+            creation_flags |= CREATE_NEW_PROCESS_GROUP;
+        }
+
         r = CreateProcess(program_path,
                           SCM_MBS2WCS(win_create_command_line(args)),
                           NULL, /* process attr */
                           NULL, /* thread addr */
                           TRUE, /* inherit handles */
-                          0,    /* creation flags */
+                          creation_flags, /* creation flags */
                           NULL, /* nenvironment */
                           curdir, /* current dir */
                           &si,  /* startup info */
@@ -1590,6 +1615,8 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
                 Scm_SysError("Couldn't chdir to %s", cdir);
             }
         }
+        /* TODO: We should probably use Windows API to handle various
+           options consistently with fork-and-exec case above. */
 	execvp(program, (const char *const*)argv);
 	Scm_Panic("exec failed: %s: %s", program, strerror(errno));	
     }

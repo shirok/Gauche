@@ -1,3 +1,13 @@
+2011-03-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_SysExec): Support SCM_EXEC_DETACHED flag to
+	  detach the exec'ed process from the parent's process group.  Useful
+	  for starting a daemon process.
+	* src/syslib.stub (sys-exec, sys-fork-and-exec),
+	  lib/gauche/process.scm (run-process): Support :detached keyword
+	  argument.
+	* test/system.scm: Added tests for :detached #t.
+
 2011-03-15  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/util/match.scm (gen): Reverting the change in 2010-05-29 to

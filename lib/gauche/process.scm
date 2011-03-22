@@ -166,7 +166,7 @@
                        (redirects '())
                        (wait   #f) (fork   #t) 
                        (host   #f)    ;remote execution
-                       (sigmask #f) (directory #f))
+                       (sigmask #f) (directory #f) (detached #f))
     (let* ([redirs (%canon-redirects redirects input output error)]
            [argv (map x->string command)]
            [proc (make <process> :command (car argv))]
@@ -182,21 +182,23 @@
         (if fork
           (let1 pid (sys-fork-and-exec (car argv) argv
                                        :iomap iomap :directory dir
-                                       :sigmask (%ensure-mask sigmask))
+                                       :sigmask (%ensure-mask sigmask)
+                                       :detached detached)
             (push! (ref proc 'processes) proc)
             (set!  (ref proc 'pid) pid)
             (dolist (p toclose)
               (if (input-port? p)
                 (close-input-port p)
                 (close-output-port p)))
-            (when wait
+            (when (and wait (not detached))
               ;; the following expr waits until the child exits
               (set! (ref proc 'status) (values-ref (sys-waitpid pid) 1))
               (update! (ref proc 'processes) (cut delete proc <>)))
             proc)
           (sys-exec (car argv) argv
                     :iomap iomap :directory dir
-                    :sigmask (%ensure-mask sigmask)))))))
+                    :sigmask (%ensure-mask sigmask)
+                    :detached detached))))))
 
 (define (%canon-redirects redirects in out err)
   (rlet1 redirs

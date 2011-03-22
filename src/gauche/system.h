@@ -209,7 +209,9 @@ SCM_EXTERN int    Scm_IsSugid(void);
 
 /* flags for Scm_SysExec */
 enum {
-    SCM_EXEC_WITH_FORK = (1L<<0)
+    SCM_EXEC_WITH_FORK = (1L<<0), /* fork() before exec(), i.e. spawn(). */
+    SCM_EXEC_DETACHED = (1L<<1)   /* try to detach from process group.
+                                     good for daemoninzing. */
 };
 
 SCM_EXTERN ScmObj Scm_SysExec(ScmString *file, ScmObj args,

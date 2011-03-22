@@ -494,6 +494,31 @@
                  (sys-sigmask SIG_SETMASK omask)
                  (sys-waitpid pid)
                  #t)))))
+
+  ;; Testing fork&exec and detached process
+  ;; NB: these tests assume we're running the testing gosh in the
+  ;; current directory.
+  (cmd-rmrf "test.out")
+  (with-output-to-file "test.out"
+    (lambda ()
+      (write '(write (list (sys-getpid) (sys-getppid) (sys-getpgrp))))))
+  (receive (in out) (sys-pipe :buffering :none)
+    (define (run-and-read detached)
+      (let1 pid (sys-fork-and-exec "./gosh"
+                                   `("./gosh" "./test.out")
+                                   :iomap `((1 . ,out))
+                                   :detached detached)
+        (begin0 (read in) (sys-waitpid pid))))
+    (test* "fork, exec and detached process (not detached)"
+           `(parent ,(sys-getpid) pgrp ,(sys-getpgrp))
+           (let1 r (run-and-read #f)
+             `(parent ,(cadr r) pgrp ,(caddr r))))
+    (test* "fork, exec and detached process (detached)"
+           `(parent 1 pgrp #t)
+           (let1 r (run-and-read #t)
+             `(parent ,(cadr r) pgrp ,(= (car r) (caddr r)))))
+    )
+  (cmd-rmrf "test.out")
   ) ; !gauche.os.windows
  (else))
 
