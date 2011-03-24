@@ -1,3 +1,8 @@
+2011-03-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/thread.scm (atom, atomic, atomic-update!, atom-ref):
+	  Added atom, a convenience wrapper for thread-safety.
+
 2011-03-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_SysExec): Support SCM_EXEC_DETACHED flag to

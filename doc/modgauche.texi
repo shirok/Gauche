@@ -12211,6 +12211,8 @@ if given, or raises @code{<join-timeout-exception>}.
 @subsection Synchronization primitives
 @c NODE 同期プリミティブ
 
+@subsubheading Mutex
+
 @deftp {Builtin Class} <mutex>
 @clindex mutex
 @c EN
@@ -12520,6 +12522,12 @@ follows.
 @end example
 @end defun
 
+@c EN
+@subsubheading Condition variable
+@c JP
+@subsubheading 条件変数
+@c COMMON
+
 @deftp {Builtin Class} <condition-variable>
 @clindex condition-variable
 @c EN
@@ -12662,6 +12670,108 @@ Unblocks all the threads waiting on @var{cv}.
 @var{cv}で待機している全てのスレッドのブロックを解除します。
 @c COMMON
 @end defun
+
+@c EN
+@subsubheading Atom
+@c JP
+@subsubheading アトム
+@c COMMON
+
+An atom is a convenient wrapper to make operations on a
+given set of objects thread-safe.  Instead of defining
+thread-safe counterparts of every structure, you can easily
+wrap an existing data structures to make it thread-safe.
+
+@defun atom val @dots{}
+Creates and returns an atom object with @var{val} @dots{} as the
+initial values.
+@end defun
+
+The following procedures can be used to @emph{atomically} 
+access and update the content of an atom.   They commonly
+takes optional @var{timeout} and @var{timeout-val} arguments,
+both are defaulted to @code{#f}, which causes those procedures
+to block until they acquire a lock.
+
+Those arguments can be used to modify the behavior when
+the lock cannot be acquired in timely manner.
+@var{timeout} may be a @code{<time>} object (@xref{Time})
+to specify an absolute point of time, or a real number
+to specify the relative time in seconds.  If timeout is
+expired, those procedures give up acquiring the lock,
+and the value given to @var{timeout-val} is returned.
+
+@defun atom-ref atom :optional index timeout timeout-val
+Returns @var{index}-th value of @var{atom}.
+See above for @var{timeout} and @var{timeout-val} arguments.
+
+@example
+(define a (atom 'a 'b))
+
+(atom-ref a 0) @result{} a
+(atom-ref a 1) @result{} b
+@end example
+@end defun
+
+@defun atomic atom proc :optional timeout timeout-val
+Calls @var{proc} with the current values in @var{atom},
+while locking @var{atom}.  @var{proc} must take
+as many arguments as the number of values @var{atom} has.
+
+The returned value(s) of @var{proc} is the result of
+@code{atomic}, unless timeout occurs.
+See above for @var{timeout} and @var{timeout-val} arguments.
+
+For example, the @code{ref/count} procedure
+in the following example counts the number of times
+the hashtable is referenced in thread-safe way.
+
+@example
+(define a (atom (make-hash-table 'eq?) (list 0)))
+
+(define (ref/count a key)
+  (atomic a
+   (lambda (ht count-cell)
+     (inc! (car count-cell))
+     (hash-table-get h key))))
+@end example
+@end defun
+
+@defun atomic-update! atom proc :optional 
+Calls @var{proc} with the current values in @var{atom}
+while locking @var{atom}, and updates the values in @var{atom}
+by the returned values from @var{proc}.
+@var{proc} must take as many arguments as the number of
+values @var{atom} has, and must return the same number of
+values.
+
+The returned value(s) of @var{proc} is the result of
+@code{atomic}, unless timeout occurs.
+See above for @var{timeout} and @var{timeout-val} arguments.
+
+The following example shows a thread-safe counter.
+
+@example
+(define a (atom 0))
+
+(atomic-update! a (cut + 1 <>))
+@end example
+@end defun
+
+
+Note: The term @emph{atom} in historical Lisps
+meant objects that are not a cons cell (pair).  Back then 
+cons cells were the only aggregated datatype and there were
+few other datatypes (numbers and symbols), so having a
+complementary term to cells made sense.
+
+Although it still appears in introductory Lisp tutorials,
+modern Lisps, including Scheme, has so many datatypes and it makes
+little sense to have a specific term for non-aggregate types.
+
+Clojure adopted the term @emph{atom} for thread-safe (atomic)
+primitive data, and we followed it.
+
 
 @node Thread exceptions,  , Synchronization primitives, Threads
 @subsection Thread exceptions

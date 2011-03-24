@@ -479,6 +479,20 @@
               (local)))))))
 
 ;;---------------------------------------------------------------------
+(test-section "atoms")
+
+(test* "atomic counting" 1000
+       (let ([a (atom 0)] [ts '()])
+         (dotimes [n 100]
+           (push! ts
+                  (thread-start! (make-thread 
+                                  (^()
+                                    (dotimes [m 10]
+                                      (atomic-update! a (pa$ + 1))))))))
+         (for-each thread-join! ts)
+         (atom-ref a)))
+
+;;---------------------------------------------------------------------
 (test-section "synchrnization by queues")
 
 ;; These are actually for testing mtqueue, but put here since they

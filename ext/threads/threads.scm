@@ -32,6 +32,7 @@
 ;;;  
 
 (define-module gauche.threads
+  (use gauche.record)
   (export gauche-thread-type
 
           thread? make-thread thread-name thread-specific-set! thread-specific
@@ -50,8 +51,7 @@
           terminated-thread-exception? uncaught-exception?
           uncaught-exception-reason
 
-          ;; experimenal
-          atom atom-ref atom-swap!))
+          atom atom-ref atomic atomic-update!))
 (select-module gauche.threads)
 
 (inline-stub
@@ -238,27 +238,39 @@
 ;; Atom
 ;;
 
-;; EXPERIMENTAL
 (define (atom . vals)
   (define m (make-mutex))
   (let-syntax ([with-lock
                 (syntax-rules ()
-                  [(_ timeout . form)
+                  [(_ timeout timeout-val . form)
                    (unwind-protect
-                       (and (mutex-lock! m timeout) . form)
+                       (if (mutex-lock! m timeout)
+                         (begin . form)
+                         timeout-val)
                      (when (eq? (mutex-state m) (current-thread))
                        (mutex-unlock! m)))])])
-    (define (atom-internal msg proc timeout)
+    (define (atom-internal msg proc timeout timeout-val)
       (case msg
-        [(ref)  (with-lock timeout (apply proc vals))]
-        [(swap) (with-lock timeout
-                           (call-with-values (cut apply proc vals)
-                             (^ vs (set! vals vs) (apply values vals))))]
+        [(apply)
+         (with-lock timeout timeout-val (apply proc vals))]
+        [(update)
+         (with-lock timeout timeout-val
+                    (call-with-values (cut apply proc vals)
+                      (^ vs
+                        (unless (= (length vs) (length vals))
+                          (errorf "atomic-update!: procedure returned wrong \
+                                   number of values (~a, while ~a expected)"
+                                  (length vs) (length vals)))
+                        (set! vals vs)
+                        (apply values vals))))]
         [else (error "Unknown message to an atom" msg)]))
     atom-internal))
 
-(define (atom-ref atom :optional (proc values) (timeout #f))
-  (atom 'ref proc timeout))
+(define (atomic atom proc :optional (timeout #f) (timeout-val #f))
+  (atom 'apply proc timeout timeout-val))
 
-(define (atom-swap! atom proc :optional (timeout #f))
-  (atom 'swap proc timeout))
+(define (atomic-update! atom proc :optional (timeout #f) (timeout-val #f))
+  (atom 'update proc timeout timeout-val))
+
+(define (atom-ref atom :optional (index 0) (timeout #f) (timeout-val #f))
+  (atom 'apply (^ xs (list-ref xs index)) timeout timeout-val))
