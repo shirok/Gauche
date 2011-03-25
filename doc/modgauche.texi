@@ -12687,6 +12687,10 @@ Creates and returns an atom object with @var{val} @dots{} as the
 initial values.
 @end defun
 
+@defun atom? obj
+Returns @code{#t} iff @var{obj} is an atom.
+@end defun
+
 The following procedures can be used to @emph{atomically} 
 access and update the content of an atom.   They commonly
 takes optional @var{timeout} and @var{timeout-val} arguments,
@@ -12772,6 +12776,11 @@ little sense to have a specific term for non-aggregate types.
 Clojure adopted the term @emph{atom} for thread-safe (atomic)
 primitive data, and we followed it.
 
+Note: The constructor of atom is not @code{make-atom}
+but @code{atom}, following the convention of @code{list}/@code{make-list},
+@code{vector}/@code{make-vector}, and @code{string}/@code{make-string}; 
+that is, the name without @code{make-} takes its elements as
+variable number of arguments.
 
 @node Thread exceptions,  , Synchronization primitives, Threads
 @subsection Thread exceptions

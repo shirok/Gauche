@@ -51,7 +51,7 @@
           terminated-thread-exception? uncaught-exception?
           uncaught-exception-reason
 
-          atom atom-ref atomic atomic-update!))
+          atom atom? atom-ref atomic atomic-update!))
 (select-module gauche.threads)
 
 (inline-stub
@@ -238,6 +238,10 @@
 ;; Atom
 ;;
 
+(define-record-type <atom> %make-atom atom?
+  (applier atom-applier)
+  (updater atom-updater))
+
 (define (atom . vals)
   (define m (make-mutex))
   (let-syntax ([with-lock
@@ -249,28 +253,30 @@
                          timeout-val)
                      (when (eq? (mutex-state m) (current-thread))
                        (mutex-unlock! m)))])])
-    (define (atom-internal msg proc timeout timeout-val)
-      (case msg
-        [(apply)
-         (with-lock timeout timeout-val (apply proc vals))]
-        [(update)
-         (with-lock timeout timeout-val
-                    (call-with-values (cut apply proc vals)
-                      (^ vs
-                        (unless (= (length vs) (length vals))
-                          (errorf "atomic-update!: procedure returned wrong \
+    ;; TODO: we may expand special cases like vals is 1 to 3 elements long,
+    ;; avoiding creation of lists every time updater is called.
+    (%make-atom
+     (lambda (proc timeout timeout-val)
+       (with-lock timeout timeout-val (apply proc vals)))
+     (lambda (proc timeout timeout-val)
+       (with-lock timeout timeout-val
+                  (call-with-values (cut apply proc vals)
+                    (^ vs
+                      (unless (= (length vs) (length vals))
+                        (errorf "atomic-update!: procedure returned wrong \
                                    number of values (~a, while ~a expected)"
-                                  (length vs) (length vals)))
-                        (set! vals vs)
-                        (apply values vals))))]
-        [else (error "Unknown message to an atom" msg)]))
-    atom-internal))
+                                (length vs) (length vals)))
+                      (set! vals vs)
+                      (apply values vals))))))))
 
 (define (atomic atom proc :optional (timeout #f) (timeout-val #f))
-  (atom 'apply proc timeout timeout-val))
+  (unless (atom? atom) (error "atom required, but got:" atom))
+  ((atom-applier atom) proc timeout timeout-val))
 
 (define (atomic-update! atom proc :optional (timeout #f) (timeout-val #f))
-  (atom 'update proc timeout timeout-val))
+  (unless (atom? atom) (error "atom required, but got:" atom))
+  ((atom-updater atom) proc timeout timeout-val))
 
 (define (atom-ref atom :optional (index 0) (timeout #f) (timeout-val #f))
-  (atom 'apply (^ xs (list-ref xs index)) timeout timeout-val))
+  (unless (atom? atom) (error "atom required, but got:" atom))
+  ((atom-applier atom) (^ xs (list-ref xs index)) timeout timeout-val))

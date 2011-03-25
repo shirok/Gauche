@@ -481,6 +481,8 @@
 ;;---------------------------------------------------------------------
 (test-section "atoms")
 
+(test* "atom" #t (atom? (atom 0 1 2)))
+
 (test* "atomic counting" 1000
        (let ([a (atom 0)] [ts '()])
          (dotimes [n 100]
