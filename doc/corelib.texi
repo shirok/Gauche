@@ -13747,7 +13747,7 @@ string optionally begins with, and/or ends with a separator character.
 @c COMMON
 
 @c EN
-A glob pattern is also consists of components and separator
+A glob pattern also consists of components and separator
 characters.  In a component, following characters/syntax have special
 meanings.
 @c JP
