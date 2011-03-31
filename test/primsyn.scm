@@ -361,6 +361,28 @@
                      (zero) (zero))
                    (interaction-environment))))
 
+;; This caused internal error in 0.9.1, and infinite loop in dev version
+;; after it.
+(prim-test "pass3/$call inlining problem" #t
+           (lambda ()
+             (procedure?
+              (eval '(lambda (n p t)
+                       (define (y a r s f)
+                         (let loop ([e 0])
+                           (cond [(a n) (unwind-protect (s) (r n))]
+                                 [(< e 10) (loop (+ 1 e))]
+                                 [else (f)])))
+                       (define (l0 a r)
+                         (y a r (^() (r n)) (^() (error "oo"))))
+                       ;; Main locker
+                       (define (l1 a r)
+                         (y a r p (^() (if (and-let* ([ t ]
+                                                      [m (file-mtime n)])
+                                             (< (+ m t) 10))
+                                         (begin (l0 a r) (l1 a r))))))
+                       (error "zz"))
+                    (interaction-environment)))))
+
 ;;----------------------------------------------------------------
 (test-section "lazy, delay & force")
 

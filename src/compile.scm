@@ -3285,9 +3285,6 @@
 
 ;; Called when the local function (lambda-node) doesn't have recursive
 ;; calls, can be inlined, and called from multiple places.
-;; NB: This inlining would introduce quite a few redundant $LETs and
-;; we want to run LREF beta-conversion again.  It means one more pass.
-;; Maybe we'd do that in the future version.
 ;; NB: Here we destructively modify $call node to change it to $seq,
 ;; in order to hold the $LET node.  It breaks the invariance that $seq
 ;; contains zero or two or more nodes---this may prevent Pass 5 from
@@ -3593,8 +3590,8 @@
 
 ;; Closure optimization can introduce superfluous $LET, which can
 ;; be optimized further.  (In fact, pass2 and pass3 can be repeated
-;; until no further optimization can be possible  However, compilation
-;; speed is also important for Gauche, so we just run this post pass once.)
+;; until no further optimization can be possible.  However, compilation
+;; speed is also important for Gauche, so we just run this pass once.)
 
 ;; Dispatch pass3 handler.
 ;; Each handler is called with IForm and a list of label nodes.
@@ -3770,7 +3767,7 @@
 ;; $CALL classifications needs to be done by the surrounding $LET.
 ;; That is:
 ;;   pass2 root -> leaf  : gather call sites
-;;   pass2 leaf -> root  : classify calls and lift closures
+;;   pass2 leaf -> root  : classify calls and dissolve some closures
 ;;   pass3 root -> leaf  : call optimization; *we are here*
 
 (define (pass3/$CALL iform labels)
@@ -3815,20 +3812,21 @@
                              (car args))])
              (pass3/deduce-predicate-result proc val))]
           [;; Like above, but we follow $LREFs.
-           ;; We expand $lambda iff lvar's count is 1, in which case we know
-           ;; for sure there's no recursive call in $lambda.
+           ;; NB: We tempted to inline calles if the $lref is bound to $lambda
+           ;; node and it has reference count 1---in a non-redundant program,
+           ;; it means the $lambda is no recursive call.  Unfortunately it
+           ;; breaks when $lambda does have recursive call to itself, and
+           ;; the whole $lambda node isn't referenced from anywhere else.
+           ;; Such unused $lambda node would be removed later, but it
+           ;; introduces loop in the graph which confuses this pass.
            (and-let* ([ ($lref? proc) ]
                       [lvar ($lref-lvar proc)]
-                      [val (lvar-const-value ($lref-lvar proc))])
-             (or (and-let* ([ (has-tag? val $GREF) ]
-                            [p (gref-inlinable-proc val)]
-                            [ (%procedure-inliner p) ])
-                   (rlet1 iform. (pass3/late-inline iform val p labels)
-                     (when iform. (lvar-ref--! lvar))))
-                 (and-let* ([ (has-tag? val $LAMBDA) ]
-                            [ (= (lvar-ref-count lvar) 1) ])
-                   (lvar-ref--! lvar)
-                   (pass3/inline-call iform val args labels))))]
+                      [val (lvar-const-value ($lref-lvar proc))]
+                      [ (has-tag? val $GREF) ]
+                      [p (gref-inlinable-proc val)]
+                      [ (%procedure-inliner p) ])
+             (rlet1 iform. (pass3/late-inline iform val p labels)
+               (when iform. (lvar-ref--! lvar))))]
           [else ($call-proc-set! iform proc) iform])))
 
 ;; Returns GLOC if gref refers to an inlinable binding
