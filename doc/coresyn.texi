@@ -2062,21 +2062,32 @@ The syntax @code{`x} is read as @code{(quasiquote x)}.
 @c COMMON
 @end deftp
 
-@defspec unquote datum
-@defspecx unquote-splicing datum
-[R5RS]
+@defspec unquote datum @dots{}
+@defspecx unquote-splicing datum @dots{}
+[R5RS+][R6RS]
 @c EN
 These syntaxes have meaning only when they appear in the @var{template}
-of quasiquoted form.  The standard says nothing about these syntaxes
+of quasiquoted form.  R5RS says nothing about these syntaxes
 appear outside of quasiquote.  Gauche signals an error in such case,
 for it usually indicates you forget quasiquote somewhere.
-See the explanation below for the meaning of these.
 @c JP
 これらの構文は準クォートされた@var{template}内にあるときにだけ意味を持ち
-ます。標準仕様ではこれらの構文が準クォートの外側で現われたときの意味に
-ついては何も言及していません。Gaucheではそのような場合には通常どこかで
-準クォート忘れがあることを示すエラーが発生します。これらの意味について
-は以下の説明を参照してください。
+ます。R5RSではこれらの構文が準クォートの外側で現われたときの意味に
+ついては何も言及していません。Gaucheではそのような場合にはエラーを通知します。
+そのような@code{unquote}や@code{unquote-splicing}が現れるのは、
+通常どこかで準クォートを忘れているからです。
+@c COMMON
+
+@c EN
+R5RS only allows @code{unquote} and @code{unquote-splicing} to take
+a single argument; it is undefined if you have @code{(unquote)} or
+@code{(unquote x y)} inside quasiquoted form.  R6RS allows zero
+or multi-arguments, and Gauche follows that.
+@c JP
+R5RSは@code{unquote}と@code{unquote-splicing}に一つだけ引数を取ることを
+許しています。@code{(unquote)}や@code{(unquote x y)}のようなフォームが
+準クオートの中に現れた場合の動作は定義されていません。
+R6RSではこれらの場合も定義されており、Gaucheもそれに倣っています。
 @c COMMON
 @end defspec
 
@@ -2235,9 +2246,70 @@ also works within a vector.
 @c COMMON
 
 @c EN
-@subheading Some edge cases
+@subheading Multi-argument unquotes
 @c JP
-@subheading 極端なケース
+@subheading 複数の引数を取るunquote
+@c COMMON
+
+@c EN
+If @code{unquote} or @code{unquote-splicing} takes multiple arguments,
+they are interpreted as if each of its arguments are unquoted
+or unquote-spliced.
+@c JP
+@code{unquote}や@code{unquote-splicing}が複数の引数を取る場合は、
+あたかも各引数がそれぞれ@code{unquote}または@code{unquote-splicing}されている
+かのように解釈されます。
+@c COMMON
+
+@smallexample
+;; This is the same result as `(,(+ 1 2) ,(+ 2 3) ,(+ 3 4))
+`((unquote (+ 1 2) (+ 2 3) (+ 3 4)))
+  @result{} (3 5 7)
+
+;; This is the same result as
+;;   `(,@@(list 1 2) ,@@(list 2 3) ,@@(list 3 4))
+`((unquote-splicing (list 1 2) (list 2 3) (list 3 4)))
+  @result{} (1 2 2 3 3 4)
+
+;; Edge cases
+`((unquote))          @result{} ()
+`((unquote-splicing)) @result{} ()
+@end smallexample
+
+@c EN
+It is an error for zero or multiple argument 
+@code{unquote}/@code{unquote-splicing} forms appear
+which you cannot splice multiple forms into.
+@c JP
+複数のフォームをスプライスできない位置に現れた
+ゼロ個もしくは複数の引数を取る@code{unquote}/@code{unquote-splicing}フォームは
+エラーとなります。
+@c COMMON
+
+@smallexample
+;; Multiple arguments unquotes are error in non-splicing context
+`(unquote 1 2)          @result{} @r{error}
+`(unquote-splicing 1 2) @result{} @r{error}
+@end smallexample
+
+@c EN
+Note that the abbreviated notations @code{,x} and @code{,@@x} are
+only for single-argument forms.  You have to write @code{unquote}
+or @code{unquote-splicing} explicitly for zero or multiple argument
+forms; thus you don't usually need to use them.  These forms 
+are supported mainly to make the nested unquoting forms such
+as @code{,,@@} and @code{,@@,@@}---R5RS cannot handle
+the case the inner unquote-splicing
+form expands into zero or multiple forms.
+@c JP
+省略記法の@code{,x}と@code{,@@x}は単一引数のフォームとしてしか使えないので、
+ゼロ個もしくは複数の引数を取る場合は
+@code{unquote}や@code{unquote-splicing}を陽に表記しなければなりません。
+わざわざそんなコーディングをする必要はまず無いでしょう。
+この機能は、ネストしたアンクオートしているフォーム、
+@code{,,@@}や@code{,@@,@@}をサポートするためにあります。
+R5RSの仕様では、これらのフォームで、内側のunquote-splicingがゼロ個もしくは複数個の
+フォームへと展開された場合を処理できません。
 @c COMMON
 
 @c EN

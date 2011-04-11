@@ -2305,111 +2305,94 @@
   ;; Current code generates constants not only the obvious constant
   ;; case, e.g. `(a b c), but also folds constant variable references,
   ;; e.g. (define-constant x 3) then `(,x) generate a constant list '(3).
-  ;; This extends as far as the constant folding goes, so `(,(+ x 1)) also
-  ;; becomes '(4).
+  ;; This extends as far as the pass-1 constant folding goes, so `(,(+ x 1))
+  ;; also becomes '(4).
+  ;; NB: The current code allocates lots of intermediate $const node.
+  ;; We used to track 
 
-  ;; The internal functions returns two values, of which the first value
-  ;; indicates whether the subtree is constant or not.   The second value
-  ;; is a constant object (if the subtree is constant), or an IForm (if
-  ;; the subtree is non-constant).
-
-  (define (wrap const? tree)
-    (if const? ($const tree) tree))
-
+  ;; In the context where there's no outer list to which we intersperse to.
   (define (quasi obj level)
     (match obj
       [('quasiquote x)
-       (receive (c? r) (quasi x (+ level 1))
-         (if c?
-           (values #t (list 'quasiquote r))
-           (values #f ($list obj (list ($const 'quasiquote) r)))))]
-      [('unquote x)
+       (let1 xx (quasi x (+ level 1))
+         (if ($const? xx)
+           ($const (list 'quasiquote ($const-value xx)))
+           ($list obj (list ($const 'quasiquote) xx))))]
+      [((and (or 'unquote 'unquote-splicing) op) . xs)
        (if (zero? level)
-         (let1 r (pass1 x cenv)
-           (if ($const? r)
-             (values #t ($const-value r))
-             (values #f r)))
-         (receive (xc? xx) (quasi x (- level 1))
-           (if xc?
-             (values #t (list 'unquote xx))
-             (values #f ($list obj (list ($const 'unquote) xx))))))]
-      [(x 'unquote-splicing y)            ;; `(x . ,@y)
-       (if (zero? level)
-         (error "unquote-splicing appeared in invalid context:" obj)
-         (receive (xc? xx) (quasi x level)
-           (receive (yc? yy) (quasi y level)
-             (if (and xc? yc?)
-               (values #t (list xx 'unquote-splicing yy))
-               (values #f ($list obj (list xx ($const 'unquote-splicing) yy)))))))]
-      [(('unquote-splicing x))            ;; `(,@x)
-       (if (zero? level)
-         (let1 r (pass1 x cenv)
-           (if ($const? r)
-             (values #t ($const-value r))
-             (values #f r)))
-         (receive (xc? xx) (quasi x (- level 1))
-           (if xc?
-             (values #t (list (list 'unquote-splicing xx)))
-             (values #f ($list obj
-                               (list ($list (car obj)
-                                            (list ($const 'unquote-splicing)
-                                                  xx))))))))]
-      [(('unquote-splicing x) . y)        ;; `(,@x . rest)
-       (receive (yc? yy) (quasi y level)
-         (if (zero? level)
-           (let1 r (pass1 x cenv)
-             (if (and yc? ($const? r))
-               (values #t (append ($const-value r) yy))
-               (values #f ($append obj r (wrap yc? yy)))))
-           (receive (xc? xx) (quasi x (- level 1))
-             (if (and xc? yc?)
-               (values #t (cons (list 'unquote-splicing xx) yy))
-               (values #f ($cons obj
-                                 ($list (car obj)
-                                        (list ($const 'unquote-splicing)
-                                              (wrap xc? xx)))
-                                 (wrap yc? yy)))))))]
-      [(x 'unquote y)                     ;; `(x . ,y)
-       (receive (xc? xx) (quasi x level)
-         (if (zero? level)
-           (let1 r (pass1 y cenv)
-             (if (and xc? ($const? r))
-               (values #t (cons xx ($const-value r)))
-               (values #f ($cons obj (wrap xc? xx) r))))
-           (receive (yc? yy) (quasi y level)
-             (if (and xc? yc?)
-               (values #t (list xx 'unquote yy))
-               (values #f ($list obj (list (wrap xc? xx)
-                                           ($const 'unquote)
-                                           (wrap yc? yy))))))))]
-      [(x . y)                            ;; general case of pair
-       (receive (xc? xx) (quasi x level)
-         (receive (yc? yy) (quasi y level)
-           (if (and xc? yc?)
-             (values #t (cons xx yy))
-             (values #f ($cons obj (wrap xc? xx) (wrap yc? yy))))))]
-      [(? vector?) (quasi-vector obj level)]
-      [(? identifier?)
-       (values #t (slot-ref obj 'name))] ;; unwrap syntax
-      [_ (values #t obj)]))
+         (if (and (global-eq? op 'unquote cenv)
+                  (pair? xs) (null? (cdr xs)))
+           (pass1 (car xs) cenv)
+           (errorf "invalid ~a form in this context: ~s" op obj))
+         (let1 xx (quasi* xs (- level 1))
+           (if ($const? xx)
+             ($const (cons op ($const-value xx)))
+             ($cons obj ($const op) xx))))]
+      [(? pair?)       (quasi* obj level)]
+      [(? vector?)     (quasi-vector obj level)]
+      [(? identifier?) ($const (identifier-name obj))] ;; unwrap syntax
+      [() ($const-nil)]
+      [_  ($const obj)]))
 
+  ;; In the spliceable context.  objs is always a list.
+  (define (quasi* objs level)
+    ;; NB: we already excluded toplevel quasiquote and unquote
+    (match objs
+      [(((and (or 'unquote 'unquote-splicing) op) . xs) . ys)
+       (let1 yy (quasi* ys level)
+         (if (zero? level)
+           ((if (global-eq? op 'unquote cenv) build build@)
+            (imap (cut pass1 <> cenv) xs) yy)
+           (let1 xx (quasi* xs (- level 1))
+             (if (and ($const? xx) ($const? yy))
+               ($const (acons op ($const-value xx) ($const-value yy)))
+               ($cons objs ($cons (car objs) ($const op) xx) yy)))))]
+      [((or 'unquote 'unquote-splicing) . _) ; `(... . ,xs) `(... . ,@xs)
+       (quasi objs level)]
+      [((? vector? x) . ys) (quasi-cons objs quasi-vector x ys level)]
+      [(x . ys)             (quasi-cons objs quasi x ys level)]
+      [_                    (quasi objs level)]))
+
+  ;; iforms :: [IForm]
+  ;; rest   :: IForm
+  (define (build iforms rest)
+    (match iforms
+      [() rest]
+      [(x . xs) (let1 xx (build xs rest)
+                  (if (and ($const? x) ($const? xx))
+                    ($const (cons ($const-value x) ($const-value xx)))
+                    ($cons #f x xx)))]))
+  
+  (define (build@ iforms rest)
+    (match iforms
+      [() rest]
+      [(x . xs) (let1 xx (build@ xs rest)
+                  (if ($const? xx)
+                    (cond [(null? ($const-value xx)) x]
+                          [($const? x) ($const (append ($const-value x)
+                                                       ($const-value xx)))]
+                          [else ($append #f x xx)])
+                    ($append #f x xx)))]))
+
+  (define (quasi-cons src quasi-car x ys level)
+    (let ([xx (quasi-car x level)]
+          [yy (quasi* ys level)])
+      (if (and ($const? xx) ($const? yy))
+        ($const (cons ($const-value xx) ($const-value yy)))
+        ($cons src xx yy))))
+  
   (define (quasi-vector obj level)
     (if (vector-has-splicing? obj)
-      (receive (c? r) (quasi (vector->list obj) level)
-        (values #f ($list->vector obj (wrap c? r))))
+      ($list->vector obj (quasi (vector->list obj) level))
       (let* ([need-construct? #f]
              [elts (map (lambda (elt)
-                          (receive (c? tree) (quasi elt level)
-                            (if c?
-                              ($const tree)
-                              (begin
-                                (set! need-construct? #t)
-                                tree))))
+                          (rlet1 ee (quasi elt level)
+                            (unless ($const? ee)
+                              (set! need-construct? #t))))
                         (vector->list obj))])
         (if need-construct?
-          (values #f ($vector obj elts))
-          (values #t (list->vector (map (lambda (e) ($const-value e)) elts))))
-        )))
+          ($vector obj elts)
+          ($const (list->vector (map (lambda (e) ($const-value e)) elts)))))))
 
   (define (vector-has-splicing? obj)
     (let loop ((i 0))
@@ -2419,7 +2402,7 @@
             [else (loop (+ i 1))])))
   
   (match form
-    [(_ obj) (receive (c? r) (quasi obj 0) (wrap c? r))]
+    [(_ obj) (quasi obj 0)]
     [_ (error "syntax-error: malformed quasiquote:" form)]))
 
 (define-pass1-syntax (unquote form cenv) :null
