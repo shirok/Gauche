@@ -45,8 +45,6 @@
   (use util.list)
   (use util.match)
   (use gauche.parameter)
-  (use gauche.experimental.lamb)
-  (use gauche.experimental.ref)
   (export current-directory directory-list directory-list2 directory-fold
           home-directory temporary-directory
           make-directory* create-directory* remove-directory* delete-directory*
@@ -69,6 +67,7 @@
           remove-files delete-files
           null-device console-device
           file->string file->string-list file->list file->sexp-list
+          <lock-file-failure> with-lock-file
           ))
 (select-module file.util)
 
@@ -612,6 +611,7 @@
 
 ;;;=============================================================
 ;;; File operation
+;;;
 
 (define (touch-file pathname)
   (if (sys-access pathname F_OK)
@@ -800,3 +800,126 @@
 (define (file->sexp-list file . opts)
   (apply call-with-input-file file (%maybe (cut port->list read <>)) opts))
 
+;;;=============================================================
+;;; File locking
+;;;
+
+;; fcntl lock is unreliable in MT environment (It's process-wide lock,
+;; so we need mutex to avoid inter-thread races.  However, it is not
+;; trivial to provide a mutex per arbitrary file to be locked.)
+;; So we just provide file/directory based locks.
+;;
+;; The drawback is that if a process holding the lock dies, the lock file
+;; may remain, blocking all other processes.  We support 'stealing' the
+;; lock: If the existing lock file is too old to be possibly held by the
+;; application, the attempted locker can grab the lock.
+;;
+;; Stealing makes things a bit complicated, since there can be a race
+;; if more than two processes tries to steal the lock at the same time.
+;; We use a secondary lock file to avoid the race.
+
+;; TODO: If we find the lock is held for a certain time,
+;; we want to check if the process is actually alive---using (sys-kill pid 0)
+;; or something.   If there's no process, we can steal the lock right away,
+;; not waiting for abandon-timeout.   This doesn't work for the lock for
+;; a resource that can be shared between multiple machines, so the feature
+;; should be optional.
+
+(define-condition-type <lock-file-failure> <error> #f
+  (lock-file-name #f))
+
+(define (with-lock-file lock-name proc
+                        :key (type 'file)
+                             (retry-interval 1)
+                             (retry-limit 10)
+                             (abandon-timeout 600)
+                             (secondary-lock-name #`",|lock-name|.2")
+                             (retry2-interval 1)
+                             (retry2-limit 10)
+                             (perms (if (eq? type 'directory)
+                                      #o755
+                                      #o644)))
+  ;; returns #t on success, #f of failure
+  (define (acquire path)
+    (case type
+      [(file)
+       (with-output-to-file path
+         (^() (print (sys-getpid)) (sys-chmod path perms))
+         :if-exists #f)]
+      [(directory)
+       (guard (e [(and (<system-error> e) (eqv? (~ e'errno) EEXIST)) #f])
+         (sys-mkdir path perms) #t)]))
+
+  ;; the simplest way is (remove-files path); but it will eradicate anything
+  ;; under PATH, which is a bit too radical.
+  (define (release path)
+    (guard (e [(<system-error> e)
+               (unless (eq? (~ e'errno) ENOENT)
+                 (errorf <lock-file-failure> :lock-file-name lock-name
+                         "couldn't remove lock file ~s: ~a"
+                         lock-name (sys-strerror (~ e'errno))))])
+      (case type
+        [(file) (sys-unlink path)]
+        [(directory) (sys-rmdir path)])))
+
+  ;; Common retry logic
+  ;;  interval and timeout should be in nanosecs
+  (define (try acquirer releaser interval timeout success failure)
+    (let loop ([elapsed 0])
+      (cond [(acquirer) (unwind-protect (success) (releaser))]
+            [(< elapsed timeout)
+             (let wait ([w interval])
+               (if-let1 w1 (sys-nanosleep w)
+                 (wait w1)))
+             (loop (+ interval elapsed))]
+            [else (failure)])))
+
+  ;; scale seconds to nanoseconds
+  (define (nsec secs) (* secs 1e9))
+
+  (define (primary-lock)
+    (try (cut acquire secondary-lock-name)
+         (cut release secondary-lock-name)
+         (nsec retry2-interval) (nsec retry2-limit)
+         (cut acquire lock-name)
+         secondary-lock-failure))
+
+  (define (primary-unlock)
+    (try (cut acquire secondary-lock-name)
+         (cut release secondary-lock-name)
+         (nsec retry2-interval) (nsec retry2-limit)
+         (cut release lock-name)
+         secondary-lock-failure))
+
+  (define (secondary-lock-failure)
+    (errorf <lock-file-failure> :lock-file-name lock-name
+            "with-lock-file: secondary lock cannot be acquired (~a).  \
+             If no process is locking it, remove it and try again."
+            secondary-lock-name))
+
+  (define primary-lock-failure
+    (if abandon-timeout
+      (lambda ()
+        (if (and-let* ([m (file-mtime lock-name)])
+              (< (+ m abandon-timeout) (time->seconds (current-time))))
+          (begin   ; steal lock
+            (primary-unlock)
+            (do-primary-lock))
+          (do-primary-lock)))
+      (lambda ()
+        (errorf <lock-file-failure> :lock-file-name lock-name
+                "with-lock-file: couldn't acquire lock file (~a).  \
+                 If no process is locking it, remove it and try again."
+                lock-name))))
+
+  ;; main locker
+  (define (do-primary-lock)
+    (try primary-lock
+         primary-unlock
+         (nsec retry-interval) (nsec retry-limit)
+         proc
+         primary-lock-failure))
+
+  (unless (memq type '(file directory))
+    (error "unsupported lockfile type:" type))
+  (do-primary-lock))

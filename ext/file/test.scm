@@ -615,4 +615,68 @@
 
 (remove-files "test.out" "test2.out")
 
+;;
+;; with-lock-file
+;;
+
+(define (test-lock-file type)
+  (remove-files "test.out" "test.out.2")
+
+  (test* #`"with-lock-file (,type) just lock&release" '(#t #f)
+         (let1 r (with-lock-file "test.out"
+                                 (^() (file-exists? "test.out"))
+                                 :type type)
+           (list r (file-exists? "test.out"))))
+
+  (remove-files "test.out" "test.out.2")
+
+  (test* #`"with-lock-file (,type) lock giveup" `((,<lock-file-failure> #t) #f)
+         (let1 r
+             (with-lock-file "test.out"
+                             (^()
+                               (let1 r2
+                                   (guard (e (else (class-of e)))
+                                     (with-lock-file "test.out"
+                                                     (^() 'boo!)
+                                                     :type type
+                                                     :abandon-timeout #f
+                                                     :retry-interval 0.1
+                                                     :retry-limit 0.5))
+                                 (list r2 (file-exists? "test.out"))))
+                             :type type)
+           (list r (file-exists? "test.out"))))
+
+  (remove-files "test.out" "test.out.2")
+
+  (test* #`"with-lock-file (,type) stealing" 'got
+         (begin
+           (case type
+             [(file) (touch-file "test.out")]
+             [(directory) (make-directory* "test.out")])
+           (with-lock-file "test.out"
+                           (^() 'got)
+                           :type type
+                           :retry-interval 0.1
+                           :retry-limit 0.5
+                           :abandon-timeout 1)))
+  (remove-files "test.out" "test.out.2")
+
+  (test* #`"with-lock-file (,type) stealing failure"
+         (test-error <lock-file-failure>)
+         (begin
+           (case type
+             [(file) (make-directory* "test.out")]
+             [(directory) (touch-file "test.out")])
+           (with-lock-file "test.out"
+                           (^() 'got)
+                           :type type
+                           :retry-interval 0.1
+                           :retry-limit 0.5
+                           :abandon-timeout 1)))
+  (remove-files "test.out" "test.out.2")
+  )
+
+(test-lock-file 'file)
+(test-lock-file 'directory)
+
 (test-end)

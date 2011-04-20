@@ -3794,6 +3794,7 @@ Gaucheでは@emph{両方の}名前を提供することにしました。
 * Pathname utilities::          
 * File attribute utilities::    
 * File operations::             
+* Lock files::                  
 @end menu
 
 @node Directory utilities, Pathname utilities, Filesystem utilities, Filesystem utilities
@@ -4660,7 +4661,7 @@ defined.
 @c COMMON
 @end deffn
 
-@node File operations,  , File attribute utilities, Filesystem utilities
+@node File operations, Lock files, File attribute utilities, Filesystem utilities
 @subsection File operations
 @c NODE ファイル操作
 
@@ -4929,6 +4930,167 @@ if it is @code{:error}, and @code{#f} is returned if the argument is
 @code{#f}なら@code{#f}が返されます。
 @c COMMON
 @end defun
+
+@node Lock files,  , File operations, Filesystem utilities
+@subsection Lock files
+@c NODE ロックファイル
+
+Exclusive creation of files or directories is often used
+for inter-process locking.   The following procedure provides
+a packaged interface for it.
+
+@defun with-lock-file lock-name thunk :key type retry-interval @
+                      retry-limit secondary-lock-name retry2-interval @
+                      retry2-limit perms abandon-timeout
+
+Exclusively creates a file or a directory (@emph{lock file})
+with @var{lock-name}, then executes @var{thunk}.
+After @var{thunk} returns, or an error is thrown in it,
+the lock file is removed.  When @var{thunk} returns normally,
+its return values become the return values of @code{with-lock-file}.
+
+If the lock file already exists, @code{with-lock-file} waits and retries
+getting the lock until timeout reaches.  It can be configured by
+the keyword arguments.
+
+There's a chance that @code{with-lock-file} leaves the lock file
+when it gets a serious error situation and doesn't have the opportunity
+to clean up.  You can allow @code{with-lock-file} to @emph{steal}
+the lock if its timestamp is too old; say, if you know that the
+applications usually locks just for seconds, and you find the lock
+file is 10 minutes old, then it's likely that the previous
+process was terminated abruptly and couldn't clean it up.
+You can also configure this behavior by the keyword arguments.
+
+Internally, @emph{two} lock files are used to implement this
+stealing behavior safely.  The creation and removal of the primary
+lock file (named by @var{lock-name} argument) are guarded by
+the secondary lock file (named by @var{secondary-lock-file} argument,
+defaulted by @code{.2} suffix attached to @var{lock-name}).
+The secondary lock is aquired for a very short period so there's
+much less chance to be left behind by abnormal terminations.
+If it happens, however, we just give up; we don't steal the
+secondary lock.
+
+If @code{with-lock-file} couldn't get a lock before timeout,
+a @code{<lock-file-failure>} condition is thrown.
+
+Here's a list of keyword arguments.
+
+@table @var
+@item type
+
+It can be either one of the symbols @code{file} or @code{directory}.
+
+If it is @code{file}, we use a lock file, relying on the @code{O_EXCL}
+exclusive creation flag of @code{open(2)}.  It works for most platforms;
+however, some NFS implementation may not implement the exclusive
+semantics properly.   This is the default value.
+
+If it is @code{directory}, we use a lock directory, relying on the
+atomicity of @code{mkdir(2)}.  It should work for any platforms,
+but it may be slower than @code{file}.
+
+@item retry-interval
+@itemx retry-limit
+
+Accepts a nonnegative real number that specifies either
+the interval to attempt to acquire the primary lock, or the maximum
+time we should keep retrying, respecively, in seconds.
+The default value is 1 second interval and 10 second limit.
+To prevent retrying, give 0 to @var{retry-limit}.
+
+@item secondary-lock-name
+
+The name of the secondary lock file (or directory).  If omitted,
+@var{lock-name} with a suffix @code{.2} attached is used.
+
+@item retry2-interval
+@itemx retry2-limit
+
+Like @var{retry-interval} and @var{retry-limit}, but these specify
+interval and timeout for the secondary lock file.  The possibility
+of secondary lock file collision is usually pretty low, so
+you would hardly need to tweak these.  The default values are
+1 second interval and 10 second limit.
+
+@item perms
+
+Specify the permission bitmask of the lock file or directory,
+in a nonnegative exact integer.  The default is @code{#o644} for
+a lock file and @code{#o755} for a lock directory.
+
+Note that to control who can acquire/release/steal the lock,
+what matters is
+the permission of the directory in which the lock file/directory,
+not the permission of the lock file/directory itself.
+
+@item abandon-timeout
+
+Specifies the period in seconds.  If the primary lock file is
+older than that, @code{with-lock-file} steals the lock.
+To prevent stealing, give @code{#f} to this argument.
+The default value is 600 seconds.
+
+@end table
+
+@end defun
+
+@deftp {Condition type} <lock-file-failure>
+A condition indicating that @code{with-lock-file} couldn't
+obtain the lock.  Inherits @code{<error>}.
+
+@defivar <lock-file-failure> lock-file-name
+The primary lock file name.
+@end defivar
+@end deftp
+
+Gauche also provides OS-supported file locking feature,
+@code{fcntl} lock, via @code{gauche.fcntl} module.
+Whether you want to use @code{fcntl} lock or @code{with-lock-file}
+will depend on your application.
+
+There are the advantages of the @code{fcntl} lock:
+
+@itemize
+@item
+The lock is removed when the process dies without explicitly unlocking it.
+@item
+You can directly lock the file you're touching.
+@item
+You can lock a part of a file.
+@item
+You can have shared and exclusive locks.
+@end itemize
+
+In common situations, probably the most handy property is the
+first one; you don't need to worry about leaving lock behind
+unexpected process termination.
+
+However, there are a couple of shortcomings in @code{fcntl} locks.
+
+@itemize
+@item
+It is not guaranteed to work across different platforms, 
+and/or NFS-mounted filesystems.
+@item
+The lock is per-process, per-file.  If you have a lock in a file,
+then calls a library that also locks the file, the lock always
+succeeds.  Worse, if the library unlocks the file, 
+the lock is completely removed, while the caller doesn't know
+about it.  It also means that, in order to prevent multiple threads
+in a process from accessing the same file, you have to use
+mutex along the fcntl lock.
+@end itemize
+
+Especially because of the second point, it is very difficult
+to use @code{fcntl} lock unless you have total control over and knowledge
+of the entire application.
+It is ok to use the @code{fcntl} lock by the application code to lock
+the application-specific file.  
+Library developers have difficulty, however, to make sure any potential
+user of the library won't try to lock the same file as the library tries
+to lock (usually it can't be done).
 
 
 @c ----------------------------------------------------------------------

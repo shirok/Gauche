@@ -3275,6 +3275,23 @@ POSIX のアドバイザリレコードロックを表わす構造体です。�
 期待されています。
 @c COMMON
 
+@c EN
+Note that @code{fcntl} lock is per-process, per-file.  If you try
+to lock the same file more than once within the same process, it always
+succeeds.  But it's not a recursive lock, so the process loses
+any locks to the file as soon as any of such lock is released,
+or any of such file is closed.   It makes @code{fcntl} lock difficult
+to use in libraries.  See @code{with-lock-file} (@xref{Lock files}) for
+an alternative way to realize inter-process locks.
+@c JP
+@code{fcntl}によるロックは、プロセスごと、ファイルごとであることに注意してください。
+同一プロセス内で同じファイルを複数回ロックすることはできますが、再帰ロックではないので
+いずれかのロックがアンロックされるか、どこかでそのファイルがクローズされるかすると
+プロセスはそのファイルに対するロックを失います。これは、@code{fcntl}ロックを
+ライブラリで使うことを難しくします。プロセス間排他制御を実現する別の方法として
+@code{with-lock-file} (@ref{Lock files}参照) があります。
+@c COMMON
+
 @defivar {<sys-flock>} type
 @c EN
 An integer represents lock type.  Following variables are predefined
