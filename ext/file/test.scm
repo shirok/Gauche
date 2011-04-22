@@ -657,7 +657,7 @@
                            (^() 'got)
                            :type type
                            :retry-interval 0.1
-                           :retry-limit 0.5
+                           :retry-limit 5
                            :abandon-timeout 1)))
   (remove-files "test.out" "test.out.2")
 

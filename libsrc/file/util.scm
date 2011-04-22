@@ -864,13 +864,14 @@
 
   ;; Common retry logic
   ;;  interval and timeout should be in nanosecs
-  (define (try acquirer releaser interval timeout success failure)
+  (define (try acquirer releaser interval timeout check success failure)
     (let loop ([elapsed 0])
       (cond [(acquirer) (unwind-protect (success) (releaser))]
             [(< elapsed timeout)
              (let wait ([w interval])
                (if-let1 w1 (sys-nanosleep w)
                  (wait w1)))
+             (check)
              (loop (+ interval elapsed))]
             [else (failure)])))
 
@@ -881,6 +882,7 @@
     (try (cut acquire secondary-lock-name)
          (cut release secondary-lock-name)
          (nsec retry2-interval) (nsec retry2-limit)
+         values
          (cut acquire lock-name)
          secondary-lock-failure))
 
@@ -888,6 +890,7 @@
     (try (cut acquire secondary-lock-name)
          (cut release secondary-lock-name)
          (nsec retry2-interval) (nsec retry2-limit)
+         values
          (cut release lock-name)
          secondary-lock-failure))
 
@@ -897,29 +900,26 @@
              If no process is locking it, remove it and try again."
             secondary-lock-name))
 
-  (define primary-lock-failure
+  (define (primary-lock-failure)
+    (errorf <lock-file-failure> :lock-file-name lock-name
+            "with-lock-file: couldn't acquire lock file (~a).  \
+             If no process is locking it, remove the file and try again."
+            lock-name))
+
+  (define primary-lock-steal
     (if abandon-timeout
       (lambda ()
         (if (and-let* ([m (file-mtime lock-name)])
               (< (+ m abandon-timeout) (time->seconds (current-time))))
-          (begin   ; steal lock
-            (primary-unlock)
-            (do-primary-lock))
-          (do-primary-lock)))
-      (lambda ()
-        (errorf <lock-file-failure> :lock-file-name lock-name
-                "with-lock-file: couldn't acquire lock file (~a).  \
-                 If no process is locking it, remove it and try again."
-                lock-name))))
-
-  ;; main locker
-  (define (do-primary-lock)
-    (try primary-lock
-         primary-unlock
-         (nsec retry-interval) (nsec retry-limit)
-         proc
-         primary-lock-failure))
+          (primary-unlock)))
+      values))
 
   (unless (memq type '(file directory))
     (error "unsupported lockfile type:" type))
-  (do-primary-lock))
+  ;; main locker
+  (try primary-lock
+       primary-unlock
+       (nsec retry-interval) (nsec retry-limit)
+       primary-lock-steal
+       proc
+       primary-lock-failure))

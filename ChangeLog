@@ -1,3 +1,13 @@
+2011-04-21  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (with-lock-file): Fixed stealing logic.
+
+2011-04-19  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (with-lock-file): Added file-based
+	  inter-process locking utility.
+	* ext/file/test.scm: Added test for with-lock-file.
+
 2011-04-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (quasiquote): Added support for zero or multi-
