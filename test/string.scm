@@ -224,6 +224,14 @@
          (string-byte-set! s 2 (char->integer #\Q))
          s))
 
+;; In 0.9.1 this gets an error
+(unless (eq? (gauche-character-encoding) 'none)
+  (test* "string-byte-set!" (case (gauche-character-encoding)
+                              [(utf-8)  #*"\x01\x81\x82"]
+                              [(euc-jp) #*"\x01\xa2"]
+                              [(sjis)   #*"\x01\xa0"])
+         (string-byte-set! (string-copy "\u3042") 0 1)))
+
 (test* "substring" #*"ab"
        (substring #*"abcde" 0 2))
 

@@ -1,3 +1,8 @@
+2011-04-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (substring): Fixed a bug that the range check
+	  didn't take byterange into account.
+
 2011-04-21  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm (with-lock-file): Fixed stealing logic.

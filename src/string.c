@@ -770,7 +770,7 @@ ScmObj Scm_StringReplaceBody(ScmString *str, const ScmStringBody *newbody)
 static ScmObj substring(const ScmStringBody *xb, int start, int end,
                         int byterange)
 {
-    int len = SCM_STRING_BODY_LENGTH(xb);
+    int len = byterange? SCM_STRING_BODY_SIZE(xb) : SCM_STRING_BODY_LENGTH(xb);
     int flags = SCM_STRING_BODY_FLAGS(xb) & ~SCM_STRING_IMMUTABLE;
     SCM_CHECK_START_END(start, end, len);
 
