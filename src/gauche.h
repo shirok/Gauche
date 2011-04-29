@@ -1060,6 +1060,8 @@ SCM_EXTERN ScmObj Scm_Append2(ScmObj list, ScmObj obj);
 SCM_EXTERN ScmObj Scm_Append(ScmObj args);
 SCM_EXTERN ScmObj Scm_ReverseX(ScmObj list);
 SCM_EXTERN ScmObj Scm_Reverse(ScmObj list);
+SCM_EXTERN ScmObj Scm_Reverse2X(ScmObj list, ScmObj tail);
+SCM_EXTERN ScmObj Scm_Reverse2(ScmObj list, ScmObj tail);
 SCM_EXTERN ScmObj Scm_ListTail(ScmObj list, int i, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_ListRef(ScmObj list, int i, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_LastPair(ScmObj list);

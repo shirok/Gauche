@@ -291,19 +291,8 @@
 ;;; Concatenators of SRFI-1
 ;;;
 
-(define (append-reverse rev-head tail)
-  (let lp ((rev-head rev-head) (tail tail))
-    (if (null-list? rev-head)
-      tail
-      (lp (cdr rev-head) (cons (car rev-head) tail)))))
-
-(define (append-reverse! rev-head tail)
-  (let lp ((rev-head rev-head) (tail tail))
-    (if (null-list? rev-head)
-      tail
-      (let ((next-rev (cdr rev-head)))
-        (set-cdr! rev-head tail)
-        (lp next-rev rev-head)))))
+(define (append-reverse list tail)  (reverse list tail))
+(define (append-reverse! list tail) (reverse! list tail))
 
 (define (concatenate  lists) (reduce-right append  '() lists))
 (define (concatenate! lists) (reduce-right append! '() lists))

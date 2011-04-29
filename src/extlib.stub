@@ -257,7 +257,7 @@
       (SCM_APPEND h t (SCM_CAR cp)))
     (result h)))
 
-(define-cproc reverse! (list) Scm_ReverseX)
+(define-cproc reverse! (list :optional (tail ())) Scm_Reverse2X)
 
 ;; Scheme version of 'sort' handles the case when comparison function
 ;; is given.

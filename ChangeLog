@@ -1,9 +1,22 @@
 2011-04-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/list.c (Scm_Reverse, Scm_ReverseX), src/stdlib.stub (reverse),
+	  src/extlib.stub (reverse!): Experimentally added 2-argument reverse.
+	  The rationale: If we consider (reverse xs) == (fold cons '() xs),
+	  then definining (reverse xs tail) == (fold cons tail xs) looks
+	  a natural extension.
+
+	* libsrc/srfi-1.scm (append-reverse, append-reverse!): These are
+	  effectively the same as 2-arg reverse and reverse!, so define them
+	  accordingly.
+
 	* src/list.c (Scm_MonotonicMerge1), src/extlib.stub (monotonic-merge):
 	  Cleaned up API of Scm_MonotonicMerge, and monotonic-merge (the Scheme
 	  proc is undocumented; the C API is kept during 0.9.x for the ABI
 	  compatibility.)
+
+	* test/list.scm, test/TESTS: Added more tests to list.scm and included
+	  it in the standard tests.
 
 	* src/objlib.scm (%expand-define-method): Support extended argument
 	  specifications (:optional etc.) in define-method.

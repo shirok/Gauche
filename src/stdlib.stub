@@ -312,7 +312,7 @@
     (if (< i 0) (result SCM_FALSE) (result (Scm_MakeInteger i)))))
 
 (define-cproc append (:rest lists) (inliner APPEND) Scm_Append)
-(define-cproc reverse (list::<list>) (inliner REVERSE) Scm_Reverse)
+(define-cproc reverse (list::<list> :optional (tail ())) Scm_Reverse2)
 
 (define-cproc list-tail (list k::<fixnum> :optional fallback) :constant
   Scm_ListTail)

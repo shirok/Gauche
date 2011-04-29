@@ -326,21 +326,24 @@ ScmObj Scm_Append(ScmObj args)
     return start;
 }
 
-/* Scm_Reverse(list)
- *    Reverse LIST.  If LIST is not a pair, return LIST itself.
- *    If LIST is improper list, cdr of the last pair is ignored.
+/* Scm_Reverse2(list, tail)
+ *    Reverse LIST, and append TAIL to the result.
+ *    If LIST is an improper list, cdr of the last pair is ignored.
+ *    If LIST is not a pair, TAIL is returned.
+ * Scm_Reverse(list)
+ *    Scm_Reverse2(list, SCM_NIL).  Just for the backward compatibility.
  */
 
-ScmObj Scm_Reverse(ScmObj list)
+ScmObj Scm_Reverse2(ScmObj list, ScmObj tail)
 {
     ScmObj cp, result;
     ScmPair *p;
 
-    if (!SCM_PAIRP(list)) return list;
+    if (!SCM_PAIRP(list)) return tail;
 
     p = SCM_NEW(ScmPair);
     SCM_SET_CAR(p, SCM_NIL);
-    SCM_SET_CDR(p, SCM_NIL);
+    SCM_SET_CDR(p, tail);
     result = SCM_OBJ(p);
     SCM_FOR_EACH(cp, list) {
 	SCM_SET_CAR(result, SCM_CAR(cp));
@@ -352,23 +355,34 @@ ScmObj Scm_Reverse(ScmObj list)
     return SCM_CDR(result);
 }
 
+ScmObj Scm_Reverse(ScmObj list)
+{
+    return Scm_Reverse2(list, SCM_NIL);
+}
+
     
-/* Scm_ReverseX(list)
+/* Scm_Reverse2X(list, tail)
  *   Return reversed list of LIST.  Pairs in previous LIST is used to
- *   create new list.  If LIST is not a pair, return LIST itself.
+ *   create new list.  TAIL is appended to the result.
+ *   If LIST is not a pair, returns TAIL.
  *   If LIST is an improper list, cdr of the last cell is ignored.
  */
 
-ScmObj Scm_ReverseX(ScmObj list)
+ScmObj Scm_Reverse2X(ScmObj list, ScmObj tail)
 {
-    ScmObj first, next, result = SCM_NIL;
-    if (!SCM_PAIRP(list)) return list;
+    ScmObj first, next, result = tail;
+    if (!SCM_PAIRP(list)) return result;
     for (first = list; SCM_PAIRP(first); first = next) {
         next = SCM_CDR(first);
         SCM_SET_CDR(first, result);
         result = first;
     }
     return result;
+}
+
+ScmObj Scm_ReverseX(ScmObj list)
+{
+    return Scm_Reverse2X(list, SCM_NIL);
 }
 
 /* Scm_ListTail(list, i, fallback)
