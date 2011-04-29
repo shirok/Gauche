@@ -5411,6 +5411,12 @@
                              ,(pass1 c cenv)))]
       [else (error "wrong number of arguments for acons:" form)])))
 
+(define-builtin-inliner reverse
+  (lambda (form cenv)
+    (match form
+      [(_ a) ($asm form `(,REVERSE) `(,(pass1 a cenv)))]
+      [else (undefined)])))
+
 (define-builtin-inliner current-input-port
   (lambda (form cenv)
     (match form
