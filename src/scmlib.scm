@@ -355,6 +355,25 @@
           (apply kons (append! cars (list (rec cdrs))))
           knil)))))
 
+(with-module gauche.internal
+  ;; Internal recursive procedures of map* to avoid closure allocation
+  ;; in 0.9.1 compiler and before.  We want to rewrite these with
+  ;; tail-recursive form later.
+  (define (%map*-1 fn tail-fn lis)
+    (if (pair? lis)
+      (cons (fn (car lis)) (%map*-1 fn tail-fn (cdr lis)))
+      (tail-fn lis)))
+  (define (%map*-n fn tail-fn liss)
+    (if (every pair? liss)
+      (receive (cars cdrs) (%zip-nary-args liss)
+        (cons (apply fn cars) (%map*-n fn tail-fn cdrs)))
+      (apply tail-fn liss))))
+
+(define (map* fn tail-fn lis . more)
+  (if (null? more)
+    ((with-module gauche.internal %map*-1) fn tail-fn lis)
+    ((with-module gauche.internal %map*-n) fn tail-fn (cons lis more))))
+
 (define (find pred lis)
   (let loop ((lis lis))
     (cond [(not (pair? lis)) #f]

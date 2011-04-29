@@ -194,6 +194,32 @@
        )
 |#
 
+;;-----------------------------------------------------------------------
+;; procedures in src/scmlib.scm
+
+(test-section "scmlib builtins")
+
+(test* "map* 1 arg" '(-1 -2 -3 . 1/4)
+       (map* - / '(1 2 3 . 4)))
+
+(test* "map* 1 arg" '(-1 -2 -3 . #t)
+       (map* - null? '(1 2 3)))
+
+(test* "map* 1 arg" #f
+       (map* - null? 1))
+
+(test* "map* n arg same elements" '(6 9 12 . 120)
+       (map* + * '(1 2 3 . 4) '(2 3 4 . 5) '(3 4 5 . 6)))
+
+(test* "map* n arg uneven elements" '(6 9 12 4 () (6))
+       (map* + list '(1 2 3 . 4) '(2 3 4) '(3 4 5 6)))
+
+(test* "map* n arg uneven elements" '((1 2 3 . 4) () (3 4 5 6))
+       (map* + list '(1 2 3 . 4) '() '(3 4 5 6)))
+
+(test* "map* n arg uneven elements" '((1 2 3 . 4) 0 (3 4 5 6))
+       (map* + list '(1 2 3 . 4) 0 '(3 4 5 6)))
+
 ;;-------------------------------------------------------------------
 (test-section "optional arguments")
 

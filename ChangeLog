@@ -1,3 +1,8 @@
+2011-04-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/scmlib.scm (map*): Added.
+	* test/procedure.scm: Added tests for map*.
+
 2011-04-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (substring): Fixed a bug that the range check

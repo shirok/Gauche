@@ -6815,6 +6815,59 @@ extends @code{map} to work on any type of collection.
 @c COMMON
 @end defun
 
+@defun map* proc tail-proc list1 list2 @dots{}
+@c EN
+Like @code{map}, except that @var{tail-proc} is applied to the @code{cdr}
+of the last pair in the argument(s) to get the @code{cdr} of
+the last pair of the result list.  This procedure allows improper
+list to appear in the arguments.   If a single list is given,
+@var{tail-proc} always receives non-pair object.
+@c JP
+@code{map}とほぼ同じですが、引数の最後のペアの@code{cdr}に@var{tail-proc}が
+適用され、その返り値が結果のリストの最後のペアの@code{cdr}になります。
+この手続きは正規でないリストを引数に取ることができます。
+引数のリストがひとつだけの場合、@var{tail-proc}の引数は必ずペアでないオブジェクトです。
+@c COMMON
+
+@example
+(map* - / '(1 2 3 . 4)) @result{} (-1 -2 -3 . 1/4)
+
+(define (proper lis)
+  (map* values
+        (lambda (p) (if (null? p) '() (list p)))
+        lis))
+
+(proper '(1 2 3))     @result{} (1 2 3)
+(proper '(1 2 3 . 4)) @result{} (1 2 3)
+@end example
+
+@c EN
+If more than one list are given, the shortest one determines
+how @var{tail-proc} is called.  When @code{map*} reaches the
+last pair of the shortest list, @var{tail-proc} is called with
+cdrs of the current pairs.
+@c JP
+二つ以上のリストが与えられた場合は、最も短いリストが@var{tail-proc}の呼び出しを
+決めます。@code{map*}が最も短いリストの最後のペアに達した時点で、
+その時のそれぞれのペアのcdrが@var{tail-proc}へと渡されます。
+@c COMMON
+
+@example
+(map* + vector '(1 2 3 4) '(1 2 . 3))
+  @result{} (3 6 #((3 4) 3))
+@end example
+
+@c EN
+Note: The name @code{map*} is along the line of
+@code{list*}/@code{cons*} that can produce improper list
+(@xref{List constructors}, @xref{SRFI-1 List constructors}).
+@c JP
+註: @code{map*}という名前は、正規でないリストを作り得る@code{list*}/@code{cons*}からの
+連想でつけられました
+(@ref{List constructors}、@ref{SRFI-1 List constructors}参照)。
+@c COMMON
+@end defun
+
 @defun for-each proc list1 list2 @dots{}
 [R5RS]
 @c EN
