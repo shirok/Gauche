@@ -356,9 +356,6 @@
           knil)))))
 
 (with-module gauche.internal
-  ;; Internal recursive procedures of map* to avoid closure allocation
-  ;; in 0.9.1 compiler and before.  We want to rewrite these with
-  ;; tail-recursive form later.
   (define (%map*-1 fn tail-fn lis)
     (if (pair? lis)
       (cons (fn (car lis)) (%map*-1 fn tail-fn (cdr lis)))
@@ -373,6 +370,24 @@
   (if (null? more)
     ((with-module gauche.internal %map*-1) fn tail-fn lis)
     ((with-module gauche.internal %map*-n) fn tail-fn (cons lis more))))
+
+;; TODO: The definition of map* can be as simple as follows if we use
+;; 2-argument reverse to be in 0.9.2.  Since scmlib.scm needs to be compiled
+;; with 0.9.1 compiler which inlines reverse, we need to postpone rewriting
+;; after 0.9.2 release.
+;;
+;; (define (map* fn tail-fn lis . more)
+;;   (if (null? more)
+;;     (let rec ((xs lis) (rs '()))
+;;       (if (pair? xs)
+;;         (rec (cdr xs) (cons (fn (car xs)) rs))
+;;         (reverse rs (tail-fn xs))))
+;;     (let rec ((xss (cons lis more)) (rs '()))
+;;       (if (every pair? xss)
+;;         (receive (cars cdrs) ((with-module gauche.internal %zip-nary-args xss))
+;;           (rec cdrs (cons (apply fn cars) rs)))
+;;         (reverse rs (apply tail-fn xss))))))
+
 
 (define (find pred lis)
   (let loop ((lis lis))
