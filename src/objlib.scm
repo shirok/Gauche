@@ -109,36 +109,42 @@
 ;  (%expand-define-macro name specs body))
 
 (define (%expand-define-method name specs body)
-  (receive (specializers lambda-list body-args)
-      (let loop ([ss specs])
-        (cond [(null? ss)       (values '() '() (list 'next-method))]
-              [(not (pair? ss)) (values '() ss (list ss 'next-method))]
-              [(pair? (car ss))
-               (receive result (loop (cdr ss))
-                 (apply values (map cons
-                                    (list (car (cdar ss)) (caar ss) (caar ss))
-                                    result)))]
-              [else
-               (receive result (loop (cdr ss))
-                 (apply values (map cons
-                                    (list '<top> (car ss) (car ss))
-                                    result)))]
-              ))
-    (receive (true-name getter-name) (%check-setter-name name)
-      (let1 gf (gensym)
-        `(let ((,gf (%ensure-generic-function ',true-name (current-module))))
-           (add-method! ,gf
-                        (make <method>
-                          :generic ,gf
-                          :specializers (list ,@specializers)
-                          :lambda-list ',lambda-list
-                          :body (lambda ,body-args ,@body)))
-           ,@(if getter-name
-               `((unless (has-setter? ,getter-name)
-                   (set! (setter ,getter-name) ,gf)))
-               '())
-           ,gf)))
-    ))
+  ;; classify arguments to required, rest, and optionals
+  ;;  ((a <x>) b (c <y>))   => r:((a <x>) b (c <y>)) r:#f o:#f
+  ;;  ((a <x>) b . c)       => r:((a <x>) b) r:c o:#f
+  ;;  ((a <x>) b :optional x :key y)
+  ;;                        => r:((a <x>) b) r:#:G01 o:(:optional x :key y))
+  (receive (reqs rest opts)
+      (let loop ([ss specs] [rs '()])
+        (cond [(null? ss)          (values (reverse rs) #f #f)]
+              [(not (pair? ss))    (values (reverse rs) ss #f)]
+              [(keyword? (car ss)) (values (reverse rs) (gensym) ss)]
+              [else (loop (cdr ss) (cons (car ss) rs))]))
+    (let* ([specializers (map (^s (if (pair? s) (cadr s) '<top>)) reqs)]
+           [reqargs      (map (^s (if (pair? s) (car s) s)) reqs)]
+           [lambda-list  (if rest `(,@reqargs . ,rest) reqargs)]
+           [real-args    (if rest
+                           `(,@reqargs ,rest next-method)
+                           `(,@reqargs next-method))]
+           [real-body (if opts
+                        `(lambda ,real-args
+                           (apply (lambda ,opts ,@body) ,rest))
+                        `(lambda ,real-args ,@body))])
+      (receive (true-name getter-name) (%check-setter-name name)
+        (let1 gf (gensym)
+          `(let ((,gf (%ensure-generic-function ',true-name (current-module))))
+             (add-method! ,gf
+                          (make <method>
+                            :generic ,gf
+                            :specializers (list ,@specializers)
+                            :lambda-list ',lambda-list
+                            :body ,real-body))
+             ,@(if getter-name
+                 `((unless (has-setter? ,getter-name)
+                     (set! (setter ,getter-name) ,gf)))
+                 '())
+             ,gf)))
+      )))
 
 (inline-stub
  ;; internal for %ensure-generic-function

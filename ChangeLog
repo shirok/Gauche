@@ -1,3 +1,8 @@
+2011-04-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/objlib.scm (%expand-define-method): Support extended argument
+	  specifications (:optional etc.) in define-method.
+
 2011-04-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/scmlib.scm (map*): Added.

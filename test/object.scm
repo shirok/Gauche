@@ -308,6 +308,18 @@
          (list i j)))
 
 ;;----------------------------------------------------------------
+(test-section "method optional arguments")
+
+(define-method optarg ((a <x>)) 'x)
+(define-method optarg ((a <y>) :optional (x 0) (y 1) :key (z 2) :rest r)
+  (list x y z r))
+
+(test* "method optarg (no optarg)" 'x (optarg (make <x>)))
+(test* "method optarg (optarg)" '(0 1 2 ()) (optarg (make <y>)))
+(test* "method optarg (optarg)" '(a b 2 ()) (optarg (make <y>) 'a 'b))
+(test* "method optarg (optarg)" '(a b 4 (:z 4)) (optarg (make <y>) 'a 'b :z 4))
+
+;;----------------------------------------------------------------
 (test-section "module and accessor")
 
 ;; This test is a contrived example of the case where the

@@ -2967,6 +2967,7 @@ lambda 形式の引数リストに似ていますが、それぞれの引数の�
 @example
 @i{specs} : ( @i{arg} @dots{} )
       | ( @i{arg} @dots{} . @i{symbol} )
+      | ( @i{arg} @dots{} @i{extended-spec} @dots{})
       | @i{symbol}
 
 @i{arg}   : ( @i{symbol} @i{class} )
@@ -2977,7 +2978,15 @@ lambda 形式の引数リストに似ていますが、それぞれの引数の�
 @i{Class} specifies the class that the argument has to belong to.
 If @code{@i{arg}} is just a symbol, it is equivalent to 
 @code{(@i{arg} <top>)}.  You can't specify the type for
-the "rest" argument, for it is always bound to a list.
+the ``rest'' argument, for it is always bound to a list.
+
+You can use extended argument specifications such as
+@code{:optional}, @code{:key} and @code{:rest} as well.
+(@xref{Making Procedures}, for the explanation of extended
+argument specifications).  Those extended arguments are treated
+as if a single ``rest'' argument in terms of dispatching; they
+aren't used for method dispatch, and you can't specify classes for
+these optional and keyword arguments.
 
 The list of classes of the argument list is called
 @emph{method specializer list}, based on which the generic
@@ -2988,6 +2997,11 @@ specializer list:
 @i{class} は引数が所属すべきクラスを指定します。@code{@i{arg}} が単に
 シンボルであれば、@code{(@i{arg} <top>)} と同じです。rest 引数の
 型を指定することはできません。それは常にリストに束縛されるからです。
+
+@code{:optional}、@code{:key}、@code{:rest}等の拡張引数指定を使うことも
+できます。(拡張引数指定については@ref{Making Procedures}を参照してください)。
+拡張引数指定は、メソッドディスパッチに関しては rest引数と同様に扱われます。
+すなわち、省略可能引数やキーワード引数にクラスを指定することはできません。
 
 引数リストのクラスのリストは@emph{メソッド特定化子リスト}といい、
 これを基に、ジェネリック関数は適切なメソッドを選択します。@var{specs} と
@@ -3006,6 +3020,9 @@ specializers: (<top> <string>)
 
 specs:        args
 specializers: <top>
+
+specs:        ((self <myclass>) obj :optional (a 0) (b 1) :key (c 2))
+specializers: (<myclas> <top> . <top>)
 @end example
 
 @c EN
