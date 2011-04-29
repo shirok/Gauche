@@ -1,5 +1,10 @@
 2011-04-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/list.c (Scm_MonotonicMerge1), src/extlib.stub (monotonic-merge):
+	  Cleaned up API of Scm_MonotonicMerge, and monotonic-merge (the Scheme
+	  proc is undocumented; the C API is kept during 0.9.x for the ABI
+	  compatibility.)
+
 	* src/objlib.scm (%expand-define-method): Support extended argument
 	  specifications (:optional etc.) in define-method.
 

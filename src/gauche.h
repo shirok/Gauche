@@ -1080,6 +1080,7 @@ SCM_EXTERN ScmObj Scm_DeleteDuplicates(ScmObj list, int cmpmode);
 SCM_EXTERN ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode);
 
 SCM_EXTERN ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences);
+SCM_EXTERN ScmObj Scm_MonotonicMerge1(ScmObj sequences);
 SCM_EXTERN ScmObj Scm_Union(ScmObj list1, ScmObj list2);
 SCM_EXTERN ScmObj Scm_Intersection(ScmObj list1, ScmObj list2);
 

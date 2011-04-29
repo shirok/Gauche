@@ -278,7 +278,7 @@
         [else (SCM_TYPE_ERROR seq "proper list or vector")
               (result SCM_UNDEFINED)]))
 
-(define-cproc monotonic-merge (start sequences::<list>) Scm_MonotonicMerge)
+(define-cproc monotonic-merge (sequences::<list>) Scm_MonotonicMerge1)
 
 ;;
 ;; 6.3.3  Symbols

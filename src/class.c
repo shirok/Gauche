@@ -884,11 +884,11 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
 
     SCM_APPEND1(seqh, seqt, ds);
     
-    result = Scm_MonotonicMerge(SCM_OBJ(klass), seqh);
+    result = Scm_MonotonicMerge1(seqh);
     if (SCM_FALSEP(result))
         Scm_Error("discrepancy found in class precedence lists of the superclasses: %S",
                   klass->directSupers);
-    return result;
+    return Scm_Cons(SCM_OBJ(klass), result);
 }
 
 /*

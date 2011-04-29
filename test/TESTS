@@ -6,6 +6,7 @@ number.scm
 string.scm
 symkey.scm
 hash.scm
+list.scm
 treemap.scm
 io.scm
 procedure.scm

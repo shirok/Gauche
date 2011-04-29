@@ -619,12 +619,12 @@ ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers)
     }
     SCM_APPEND1(seqh, seqt, supers);
     module->parents = supers;
-    mpl = Scm_MonotonicMerge(SCM_OBJ(module), seqh);
+    mpl = Scm_MonotonicMerge1(seqh);
     if (SCM_FALSEP(mpl)) {
         Scm_Error("can't extend those modules simultaneously because of inconsistent precedence lists: %S", supers);
     }
-    module->mpl = mpl;
-    return mpl;
+    module->mpl = Scm_Cons(SCM_OBJ(module), mpl);
+    return module->mpl;
 }
 
 /*----------------------------------------------------------------------
