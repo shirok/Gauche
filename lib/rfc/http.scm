@@ -199,7 +199,7 @@
                            (secure #f)
                            (receiver (http-string-receiver))
                            (sender #f)
-                           (enc :request-encoding (gauche-character-encoding))
+                           ((:request-encoding enc) (gauche-character-encoding))
                       :allow-other-keys opts)
   (let1 conn (ensure-connection server auth-handler auth-user auth-password
                                 proxy secure extra-headers)

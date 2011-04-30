@@ -1,5 +1,13 @@
 2011-04-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass1/extended-lambda): Dropped the support of
+	  obsoleted keyword argument spec (var keyword init), in favor of
+	  formally supported ((keyword var) init).   The former spec was never
+	  supported officially, and the latter is supported officially since
+	  0.9, so this change shouldn't affect the user code.
+	* lib/gauche/cgen/precomp.scm (cgen-precompile),
+	  lib/rfc/http.scm (http-request): Changed accordingly.
+
 	* src/list.c (Scm_Reverse, Scm_ReverseX), src/stdlib.stub (reverse),
 	  src/extlib.stub (reverse!): Experimentally added 2-argument reverse.
 	  The rationale: If we consider (reverse xs) == (fold cons '() xs),

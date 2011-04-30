@@ -2526,7 +2526,6 @@
                         [[? symbol? o] o]
                         [[? identifier? o] o]
                         [(([? keyword? key] o) init) `(,o ,key ,init)]
-                        [(o [? keyword? key] init) `(,o ,key ,init)] ; FOR BACKWARD COMATIBILITY - TO BE REMOVED AFTER 0.9 RELEASE
                         [(o init) `(,o ,init)]
                         [_ (error "illegal keyword argument spec in " kargs)])
                       ks)
