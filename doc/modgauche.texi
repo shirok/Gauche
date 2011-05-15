@@ -12758,7 +12758,7 @@ the hashtable is referenced in thread-safe way.
 @end example
 @end defun
 
-@defun atomic-update! atom proc :optional 
+@defun atomic-update! atom proc :optional timeout timeout-val
 Calls @var{proc} with the current values in @var{atom}
 while locking @var{atom}, and updates the values in @var{atom}
 by the returned values from @var{proc}.
