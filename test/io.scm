@@ -669,6 +669,20 @@
        (format #f "~123"))
 
 ;;-------------------------------------------------------------------
+(test-section "some corner cases in list reader")
+
+(define (dot-reader-tester str expect)
+  (test* (format "dot ~a" str) expect (read-from-string str)))
+
+(dot-reader-tester "(().())"  '(()))
+(dot-reader-tester "([].[])"  '(()))
+(dot-reader-tester "(x .,y)"  '(x unquote y))
+(dot-reader-tester "(x .,@y)" '(x unquote-splicing y))
+(dot-reader-tester "(().)"    (test-error <read-error>))
+(dot-reader-tester "((). .)"  (test-error <read-error>))
+
+
+;;-------------------------------------------------------------------
 (test-section "nested multi-line comments")
 
 (test* "#|...|#" '(foo bar baz)

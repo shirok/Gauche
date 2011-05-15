@@ -1,3 +1,8 @@
+2011-05-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (read_list_int): Fixed a bug regarding a dot followed
+	  by non-space delimiting characters.
+
 2011-04-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1/extended-lambda): Dropped the support of

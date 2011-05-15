@@ -619,9 +619,10 @@ static ScmObj read_list_int(ScmPort *port, ScmChar closer,
                 goto baddot;
             } else if (c2 == EOF) {
                 goto eoferr;
-            } else if (isspace(c2)) {
-                /* dot pair at the end */
+            } else if (!char_word_constituent(c2)) {
+                /* can be a dot pair at the end */
                 if (start == SCM_NIL) goto baddot;
+                Scm_UngetcUnsafe(c2, port);
                 item = read_item(port, ctx);
                 if (SCM_READ_REFERENCE_P(item)) ref_seen = TRUE;
                 SCM_SET_CDR(last, item);
