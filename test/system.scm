@@ -505,7 +505,7 @@
   (receive (in out) (sys-pipe :buffering :none)
     (define (run-and-read detached)
       (let1 pid (sys-fork-and-exec "./gosh"
-                                   `("./gosh" "./test.out")
+                                   `("./gosh" "-ftest" "./test.out")
                                    :iomap `((1 . ,out))
                                    :detached detached)
         (begin0 (read in) (sys-waitpid pid))))
