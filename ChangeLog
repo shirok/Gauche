@@ -1,3 +1,8 @@
+2011-05-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/uri.scm (uri-parse): Added a procedure to resolve relative
+	  URI.  Originally written by teppey.
+
 2011-05-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_list_int): Fixed a bug regarding a dot followed

@@ -49,7 +49,7 @@
   (use gauche.charconv)
   (export uri-scheme&specific uri-decompose-hierarchical
           uri-decompose-authority uri-parse
-          uri-compose
+          uri-merge uri-compose
           uri-decode uri-decode-string
           uri-encode uri-encode-string
           *rfc2396-unreserved-char-set*
@@ -146,6 +146,79 @@
 ;; Relative -> Absolute
 ;;
 
+;; This function is originally implemented by teppey
+;; (from http://d.hatena.ne.jp/teppey/20110517/1305613493).
+;; By the author's permission I took it and modified to include here.
+;; NB: CL has (merge-pathname <path> <base>).  I always felt it
+;; counterintuitive, since if <path> is likely to be concatenated
+;; after (some part of) <base>, unless <path> fully specifies all components.
+;; Here we reverse the arguments, so that we can merge multiple fragments
+;; of uris.
+(define (uri-merge base-uri rel-uri . more)
+  (define (rec base-uri rel-uri more initial?)
+    (if (null? more)
+      (uri-merge-1 base-uri rel-uri initial?)
+      (rec (uri-merge-1 base-uri rel-uri initial?) (car more) (cdr more) #f)))
+  (rec base-uri rel-uri more #t))
+
+(define (uri-merge-1 base-uri rel-uri pre-normalize?)
+  (define (split uri)
+    (receive (scheme specific)
+        (uri-scheme&specific uri)
+      (receive (authority path query fragment)
+          (uri-decompose-hierarchical specific)
+        (values scheme authority path query fragment))))
+
+  ;; RFC3986, Section 5.2.3
+  (define (merge base-path rel-path base-authority)
+    (if (and base-authority (not base-path))
+      (string-append "/" rel-path)
+      (if-let1 m (#/^(.*)\/[^\/]*$/ base-path)
+        (string-append (m 1) "/" rel-path)
+        rel-path)))
+
+  ;; RFC3986, Section 5.2.4
+  (define (canonicalize path)
+    (let loop ([input path] [output '()])
+      (cond [(not input) (string-concatenate (reverse! output))]
+            ;; RFC3986, Section 5.2.4, 2A
+            [(#/^\.{1,2}\/(.*)$/ input) => (^m (loop (m 1) output))]
+            ;; RFC3986, Section 5.2.4, 2B
+            [(#/^(?:\/\.\/(.*)|\/\.)$/ input)
+             => (^m (loop (string-append "/" (or (m 1) "")) output))]
+            ;; RFC3986, Section 5.2.4, 2C
+            [(#/^(?:\/\.\.\/(.*)|\/\.\.)$/ input)
+             => (^m (loop (string-append "/" (or (m 1) ""))
+                          (if (not (null? output)) (cdr output) output)))]
+            ;; RFC3986, Section 5.2.4, 2D
+            [(#/^\.{1,2}$/ input) (loop #f output)]
+            ;; RFC3986, Section 5.2.4, 2E
+            [(#/^(\/?[^\/]+)(\/.*)?$/ input)
+             => (^m (loop (m 2) (cons (m 1) output)))]
+            [else (loop #f (cons input output))])))
+
+  ;; RFC3986, Section 5.3
+  (define (recompose scheme authority path query fragment)
+    (with-output-to-string
+      (lambda ()
+        (when scheme    (display scheme) (display ":"))
+        (when authority (display "//") (display authority))
+        (display path)
+        (when query     (display "?") (display query))
+        (when fragment  (display "#") (display fragment)))))
+
+  (receive (b.scheme b.authority b.path b.query b.fragment) (split base-uri)
+    (when pre-normalize?
+      (set! b.path (canonicalize b.path))) ;pre-normalization (section 5.2.1)
+    (receive (r.scheme r.authority r.path r.query r.fragment) (split rel-uri)
+      (recompose (or r.scheme b.scheme)
+                 (if r.scheme r.authority (or r.authority b.authority))
+                 (cond [(or r.scheme r.authority) (canonicalize r.path)]
+                       [(not r.path) b.path]
+                       [(string-prefix? "/" r.path) (canonicalize r.path)]
+                       [else (canonicalize (merge b.path r.path b.authority))])
+                 (if (or r.scheme r.authority r.path r.query) r.query b.query)
+                 r.fragment))))
 
 ;;==============================================================
 ;; Encoding & decoding

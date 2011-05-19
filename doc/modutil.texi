@@ -9475,6 +9475,44 @@ Some examples:
 @end example
 @end defun
 
+
+@defun uri-merge base-uri relative-uri relative-uri2 @dots{}
+@c EN
+Arguments are strings representing
+full or part of URIs.  This procedure resolves @var{relative-uri}
+in relative to @var{base-uri}, as defined in RFC3986 Section 5.2. 
+``Relative Resolution''.
+
+If more @var{realtive-uri2}s are given, first @var{relative-uri}
+is merged to @var{base-uri}, then the next argument is merged
+to the resulting uri, and so on.
+@c JP
+引数は、完全な、あるいは部分的なURIを表す文字列です。
+この手続きは、RFC3986 Section 5.2. ``Relative Resolution'' に
+示されるアルゴリズムに従い、@var{relative-uri}を@var{base-uri}からの相対
+として解決します。
+
+@var{relative-uri2} @dots{} が与えられた場合は、まず@var{relative-uri}
+が@var{base-uri}を基準に解決され、その結果を新たな基準として次の
+@var{relative-uri2}を解決し、以下同様に続けます。
+@c COMMON
+
+@example
+(uri-merge "http://example.com/foo/index.html" "a/b/c")
+ @result{} "http://example.com/foo/a/b/c"
+
+(uri-merge "http://example.com/foo/search?q=abc" "../about#me")
+ @result{} "http://example.com/about#me"
+
+(uri-merge "http://example.com/foo" "http://example.net/bar")
+ @result{} "http://example.net/bar"
+
+(uri-merge "http://example.com/foo/" "q" "?xyz")
+ @result{} "http://example.com/foo/q?xyz"
+@end example
+@end defun
+
+
 @defun uri-decode :key :cgi-decode
 @defunx uri-decode-string string :key :cgi-decode :encoding
 @c EN
