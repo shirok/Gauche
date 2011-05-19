@@ -150,7 +150,7 @@
 ;; (from http://d.hatena.ne.jp/teppey/20110517/1305613493).
 ;; By the author's permission I took it and modified to include here.
 ;; NB: CL has (merge-pathname <path> <base>).  I always felt it
-;; counterintuitive, since if <path> is likely to be concatenated
+;; counterintuitive, since <path> is likely to be concatenated
 ;; after (some part of) <base>, unless <path> fully specifies all components.
 ;; Here we reverse the arguments, so that we can merge multiple fragments
 ;; of uris.
