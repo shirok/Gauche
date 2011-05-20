@@ -11566,10 +11566,42 @@ supported, many thread-related procedures simply signals a
 @end deftp
 
 @c EN
-To check if threads are available in the running Gauche program,
-use the following procedure.
+If you want to switch code depending on whether pthreads are
+available or not, you can use a feature identifier @code{gauche.sys.pthreads}
+with @code{cond-expand} form (@xref{Feature conditional}).
+
+@example
+(cond-expand
+ [gauche.sys.pthreads
+   ;; Code that uses thread API (@code{gauche.threads} is automatically
+   ;; loaded at this moment).
+  ]
+ [else
+   ;; Code that doesn't use thread API
+  ])
+@end example
 @c JP
-動作中のGaucheプログラムの中でスレッドが有効かどうかをチェックするためには、
+pthreadが使えるかどうかによって実行するコードを切り替えたい場合は、
+@code{cond-expand}フォームで@code{gauche.sys.pthreads}という
+feature identifierを使うことができます (@ref{Feature conditional}参照)。
+
+@example
+(cond-expand
+ [gauche.sys.pthreads
+   ;; Thread APIを使うコード (@code{gauche.threads}はこの時点で
+   ;; 自動的にロードされます).
+  ]
+ [else
+   ;; Thread APIを使わないコード
+  ])
+@end example
+@c COMMON
+
+@c EN
+To check if threads are available at runtime,
+instead of compile time, use the following procedure.
+@c JP
+コンパイル時ではなく実行時にスレッドが有効かどうかをチェックするためには、
 次の手続きを使います。
 @c COMMON
 
