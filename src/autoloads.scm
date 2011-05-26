@@ -108,6 +108,7 @@
           (:macro let1 if-let1 rlet1)
           (:macro let/cc) (:macro begin0) (:macro fluid-let)
           (:macro values-ref)
+          (:macro ecase)
           (:macro dotimes dolist while until)
           (:macro guard unwind-protect))
 

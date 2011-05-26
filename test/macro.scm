@@ -902,6 +902,13 @@
 (test "if-let1" 'bar
       (lambda () (if-let1 it (memq 'a '(b c d)) 'boo 'bar)))
 
+(test "ecase" 'b
+      (lambda () (ecase 3 ((1) 'a) ((2 3) 'b) ((4) 'c))))
+(test "ecase" (test-error)
+      (lambda () (ecase 5 ((1) 'a) ((2 3) 'b) ((4) 'c))))
+(test "ecase" 'd
+      (lambda () (ecase 5 ((1) 'a) ((2 3) 'b) ((4) 'c) (else 'd))))
+
 ;;----------------------------------------------------------------------
 ;; macro-expand
 

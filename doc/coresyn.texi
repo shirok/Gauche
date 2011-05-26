@@ -1441,6 +1441,32 @@ otherwise the result of the case expression is undefined.
 @end defspec
 
 
+@defmac ecase key clause1 clause2 @dots{}
+@c EN
+This works exactly like @code{case}, except when there's
+no @code{else} clause and the value of @var{key} expression
+doesn't match any of @var{datum}s provided in @var{clause}s.
+While @code{case} form returns undefined value for such case,
+@var{ecase} raises an error.
+
+It is taken from Common Lisp.  It's a convenient form when
+you want to detect when unexpected value is passed just in case.
+@c JP
+このフォームはほぼ@code{case}と同等ですが、@code{else}節が与えられず、
+@var{key}の値が@var{clause}中のどの@var{datum}とも一致しなかった場合の
+動作だけが異なります。@code{case}ではそのような場合は未定義値が返されますが、
+@code{ecase}はエラーを報告します。
+
+このマクロはCommon Lispから採られました。想定外の値が渡されることを
+念のために検出したい、という場合に便利です。
+@c COMMON
+
+@smallexample
+(ecase 5 ((1) 'a) ((2 3) 'b) ((4) 'c))
+ @result{} ERROR: ecase test fell through: got 5, expecting one of (1 2 3 4)
+@end smallexample
+@end defmac
+
 @defspec and test @dots{}
 [R5RS] 
 @c EN

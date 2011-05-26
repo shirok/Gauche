@@ -1,3 +1,8 @@
+2011-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm (ecase): Added CL's ecase.
+	* src/autoloads.scm: set ecase to be autoloaded.
+
 2011-05-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uri.scm (uri-parse): Added a procedure to resolve relative
