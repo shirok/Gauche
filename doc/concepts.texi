@@ -436,11 +436,22 @@ Supported as an autoloaded macro.
 @c COMMON
 
 @c EN
+@item SRFI-60, Integers as bits
+Most procedures are built-in: @xref{Bitwise operations}.
+The complete support is in @code{srfi-60} module: @xref{Integers as bits}.
+@c JP
+@item SRFI-60, 整数に対するビット操作
+ほとんどの手続きは組み込みになっています。@ref{Bitwise operations}参照。
+完全なサポートは@code{srfi-60}モジュールで提供されます。
+@ref{Integers as bits}参照。
+@c COMMON
+
+@c EN
 @item SRFI-61, A more general @code{cond} clause
 Supported natively.  @xref{Conditionals}.
 @c JP
 @item SRFI-61, より汎用的な@code{cond}節
-組込みです。@ref{Conditionals}参照。
+組み込みです。@ref{Conditionals}参照。
 @c COMMON
 
 @c EN

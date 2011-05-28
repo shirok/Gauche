@@ -1,3 +1,12 @@
+2011-05-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-60.scm: Added srfi-60 support.  Most of APIs are just
+	  aliases or re-exports of Gauche's builtin bitwise operators.
+	  There are also several new APIs.
+	* doc/concepts.texi, doc/corelib.texi, doc/modsrfi.texi: Adjusted
+	  accordingly.
+	* test/srfi.scm: Tests for srfi-60 additional procedures.
+
 2011-05-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (logand, logior, logxor): Allows zero and one

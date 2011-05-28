@@ -1343,12 +1343,30 @@ it is regarded in 2's complement form, and infinite number of
 @c COMMON
 
 @c EN
-The API is consistent to SLIB's ``logical'' module.
+In regard to the names of those operations, there are two groups
+in the Scheme world; Gauche follows the names of the 
+original SLIB's ``logical'' module, which was rooted in CL.
+Another group uses a bit long but descriptive name such as
+@code{arithmetic-shift}.
 @c JP
-APIはSLIBの``logical''モジュールに合わせてあります。
+これらの操作の名前に関しては、Scheme界には大きく二つの流儀があります。
+GaucheはSLIBの元々の``logical''モジュールに合わせました。
+その起源はCommon Lispです。
+もう一つの流儀では、@code{arithmetic-shift}といった、より長く記述的な名前を使います。
+@c COMMON
+
+@c EN
+SRFI-60 (@xref{Integers as bits}) defines both names, and also
+some additional procedures.  If you're porting libraries written
+for other Scheme, you might want to check it.
+@c JP
+SRFI-60 (@xref{Integers as bits}) は両方の流儀の名前を定義しており、
+さらにいくつかの追加の手続きも用意しています。他のScheme向けに書かれた
+コードをGaucheに移植する際には有用でしょう。
 @c COMMON
 
 @defun ash n count
+[SRFI-60]
 @c EN
 Shifts integer @var{n} left with @var{count} bits.
 If @var{count} is negative, @code{ash} shifts @var{n} right with
@@ -1371,6 +1389,7 @@ If @var{count} is negative, @code{ash} shifts @var{n} right with
 @defun logand n1 @dots{}
 @defunx logior n1 @dots{}
 @defunx logxor n1 @dots{}
+[SRFI-60]
 @c EN
 Returns bitwise and, bitwise inclusive or and bitwise exclusive or
 of integers @var{n1} @dots{}.   If no arguments are given, @code{logand}
@@ -1384,6 +1403,7 @@ returns @code{-1}, and @code{logior} and @code{logxor} returns @code{0}.
 @end defun
 
 @defun lognot n
+[SRFI-60]
 @c EN
 Returns bitwise not of an integer @var{n}.
 @c JP
@@ -1392,10 +1412,12 @@ Returns bitwise not of an integer @var{n}.
 @end defun
 
 @defun logtest n1 n2 @dots{}
+[SRFI-60]
 @equiv{} @code{(not (zero? (logand @var{n1} @var{n2} @dots{})))}
 @end defun
 
 @defun logbit? index n
+[SRFI-60]
 @c EN
 Returns @code{#t} if @var{index}-th bit of integer @var{n} is 1, 
 @var{#f} otherwise.
@@ -1406,6 +1428,7 @@ Returns @code{#t} if @var{index}-th bit of integer @var{n} is 1,
 @end defun
 
 @defun bit-field n start end
+[SRFI-60]
 @c EN
 Extracts @var{start}-th bit (inclusive) to @var{end}-th bit (exclusive) from
 an exact integer @var{n}, where @var{start} < @var{end}.
@@ -1416,6 +1439,7 @@ an exact integer @var{n}, where @var{start} < @var{end}.
 @end defun
 
 @defun copy-bit index n bit
+[SRFI-60]
 @c EN
 If @var{bit} is true, sets @var{index}-th bit of an exact integer @var{n}.
 If @var{bit} is false, resets @var{index}-th bit of an exact integer @var{n}.
@@ -1428,6 +1452,7 @@ If @var{bit} is false, resets @var{index}-th bit of an exact integer @var{n}.
 @end defun
 
 @defun copy-bit-field n start end from
+[SRFI-60]
 @c EN
 Returns an exact integer, each bit of which is the same as
 @var{n} except the @var{start}-th bit (inclusive) to @var{end}-th
@@ -1451,6 +1476,7 @@ integer @var{from}.
 @end defun
 
 @defun logcount n
+[SRFI-60]
 @c EN
 If @var{n} is positive, returns the number of @code{1}'s in the
 bits of @var{n}.  If @var{n} is negative, 
@@ -1489,6 +1515,7 @@ representation of @var{n}.
 @end defun
 
 @defun integer-length n
+[SRFI-60]
 @c EN
 Returns the minimum number of bits required to represent an
 exact integer @var{n}.  Negative integer is assumed to be in

@@ -31,6 +31,7 @@ of supported SRFIs.
 * Eager comprehensions::        srfi-42
 * Vector library::              srfi-43
 * Requiring extensions::        srfi-55
+* Integers as bits::            srfi-60
 * Accessing environment variables::  srfi-98
 @end menu
 
@@ -5015,7 +5016,7 @@ Swaps vector @var{vec}'s @code{i}-th and @code{j}-th elements.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Requiring extensions, Accessing environment variables, Vector library, Library modules - SRFIs
+@node Requiring extensions, Integers as bits, Vector library, Library modules - SRFIs
 @section @code{srfi-55} - Requiring extensions
 @c NODE Requiring extensions, @code{srfi-55} - require の拡張
 
@@ -5091,9 +5092,171 @@ Roughly correspons to Gauche's @code{use} forms:
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Accessing environment variables,  , Requiring extensions, Library modules - SRFIs
+@node Integers as bits, Accessing environment variables, Requiring extensions, Library modules - SRFIs
+@section @code{srfi-60} - Integers as bits
+@c NODE 整数に対するビット操作, @code{srfi-60} - 整数に対するビット操作
+
+@deftp {Module} srfi-60
+@mdindex srfi-60
+This srfi provides bit operations on integers, regarding them
+as 2's complement representation.
+
+Most of the funcionalities in this module are already provided
+as builtin procedures (@xref{Bitwise operations}).  This srfi
+defines popular aliases for many of those procedures, thus
+has better portability.  There are also several additional
+procedures than Gauche's builtin bitwise operations.
+@end deftp
+
+@subsection Bitwise operators
+
+@defun lognot n
+@defunx bitwise-not n
+Same as builtin @code{lognot} (@xref{Bitwise operations}).
+@end defun
+
+@defun logand n @dots{}
+@defunx bitwise-and n @dots{}
+Same as builtin @code{logand} (@xref{Bitwise operations}).
+@end defun
+
+@defun logior n @dots{}
+@defunx bitwise-ior n @dots{}
+Same as builtin @code{logior} (@xref{Bitwise operations}).
+@end defun
+
+@defun logxor n @dots{}
+@defunx bitwise-xor n @dots{}
+Same as builtin @code{logxor} (@xref{Bitwise operations}).
+@end defun
+
+@defun bitwise-if mask n0 n1
+Returns integer, whose @var{n}-th bit is taken as follows:
+If the @var{n}-th bit of @var{mask} is 1, the @var{n}-th bit of @var{n0};
+otherwise, the @var{n}-th bit of @var{n1}.
+
+@example
+(bitwise-if #b10101100 #b00110101 #b11001010)
+ @result{} #b01100110
+@end example
+@end defun
+
+@defun logtest mask n
+@defunx any-bits-set? mask n
+Same as builtin @code{logtest} (@xref{Bitwise operations}).
+@end defun
+
+@subsection Integer properties
+
+@defun logcount n
+@defunx bit-count n
+Same as builtin @code{logcount} (@xref{Bitwise operations}).
+@end defun
+
+@defun integer-length n
+Same as builtin @code{integer-length} (@xref{Bitwise operations}).
+@end defun
+
+@defun log2-binary-factors n
+@defunx first-set-bit n
+Returns the number of factors of two of integer @var{n}; that is,
+returns a maximum @var{k} such that @code{(expt 2 k)} divides
+@var{n} without a remainder.
+It is the same as the index of the least significant @code{1} in @var{n},
+hence the alias @code{first-set-bit}.
+
+@example
+(log2-binary-factors 0) @result{} -1   ; @r{edge case}
+(log2-binary-factors 1) @result{} 0
+(log2-binary-factors 2) @result{} 1
+(log2-binary-factors 15) @result{} 0
+(log2-binary-factors 16) @result{} 4
+@end example
+@end defun
+
+@subsection Bit within word
+
+@defun logbit? index n
+@defunx bit-set? index n
+Same as builtin @code{logbit?} (@xref{Bitwise operations}).
+@end defun
+
+@defun copy-bit index n bit
+Same as builtin @code{copy-bit} (@xref{Bitwise operations}).
+@end defun
+
+@subsection Field of bits
+
+@defun bit-field n start end
+Same as builtin @code{bit-field} (@xref{Bitwise operations}).
+@end defun
+
+@defun copy-bit-field to from start end
+Same as builtin @code{copy-bit-field} (@xref{Bitwise operations}).
+@end defun
+
+@defun ash n count
+@defunx arithmetic-shift n count
+Same as builtin @code{ash} (@xref{Bitwise operations}).
+@end defun
+
+@defun rotate-bit-field n count start end
+Rotate the region of @var{n} between @var{start}-th bit (inclusive) and
+@var{end}-th bit (exclusive) by @var{count} bits.
+
+@example
+(rotate-bit-field #b110100100010000 -1 5 9)
+ @result{} 26768 ; #b110100010010000
+
+(rotate-bit-field #b110100100010000 1 5 9)
+ @result{} 26672 ; #b110100000110000
+@end example
+@end defun
+
+@defun reverse-bit-field n start end
+Reverse the order of bits of @var{n} between @var{start}-th bit
+(inclusive) and @var{end}-th bit (exclusive).
+
+@example
+(reverse-bit-field #b10100111 0 8)
+ @result{} 229 ; #b11100101
+@end example
+
+@end defun
+
+@subsection Bit as booleans
+
+@defun integer->list n :optional len
+Breaks @var{n} to each bits, representing @code{1} as @code{#t} and
+@code{0} as @code{#f}, LSB last, and returns a list of them.
+If a nonnegative integer @var{len} is given, it specifies the length
+of the result.   If it is omitted, @code{(integer-length n)} is used.
+
+@example
+(integer->list 9)   @result{} (#t #f #f #t)
+(integer->list 9 6) @result{} (#f #f #t #f #f #t)
+@end example
+@end defun
+
+@defun list->integer lis
+Takes a list of boolean values, replaces the true value for @code{1}
+and the false value for @code{0}, and compose an integer regarding
+each value as a binary digit.  If @var{n} is nonnegative integer,
+@code{(eqv? (list->integer (integer->list n)) n)} is true.
+
+@example
+(list->integer '(#f #t #f #f #t)) @result{} 9
+@end example
+@end defun
+
+@defun booleans->integer bool @dots{}
+@equiv{} @code{(list->integer (list @var{bool} @dots{}))}
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Accessing environment variables,  , Integers as bits, Library modules - SRFIs
 @section @code{srfi-98} - Accessing environemnt variables
-@c NODE Accessing environment variables, @code{srfi-98} - 環境変数へのアクセス
+@c NODE 環境変数へのアクセス, @code{srfi-98} - 環境変数へのアクセス
 
 @deftp {Module} srfi-98
 @mdindex srfi-98
