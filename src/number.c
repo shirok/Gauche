@@ -2962,7 +2962,7 @@ ScmObj Scm_Ash(ScmObj x, int cnt)
 
 ScmObj Scm_LogNot(ScmObj x)
 {
-    if (!SCM_EXACTP(x)) Scm_Error("exact integer required, but got %S", x);
+    if (!SCM_INTEGERP(x)) Scm_Error("exact integer required, but got %S", x);
     if (SCM_INTP(x)) {
         /* this won't cause an overflow */
         return SCM_MAKE_INT(~SCM_INT_VALUE(x));
@@ -2973,8 +2973,8 @@ ScmObj Scm_LogNot(ScmObj x)
 
 ScmObj Scm_LogAnd(ScmObj x, ScmObj y)
 {
-    if (!SCM_EXACTP(x)) Scm_Error("exact integer required, but got %S", x);
-    if (!SCM_EXACTP(y)) Scm_Error("exact integer required, but got %S", y);
+    if (!SCM_INTEGERP(x)) Scm_Error("exact integer required, but got %S", x);
+    if (!SCM_INTEGERP(y)) Scm_Error("exact integer required, but got %S", y);
     if (SCM_INTP(x)) {
         if (SCM_INTP(y)) {
             return SCM_MAKE_INT(SCM_INT_VALUE(x) & SCM_INT_VALUE(y));
@@ -2993,8 +2993,8 @@ ScmObj Scm_LogAnd(ScmObj x, ScmObj y)
 
 ScmObj Scm_LogIor(ScmObj x, ScmObj y)
 {
-    if (!SCM_EXACTP(x)) Scm_Error("exact integer required, but got %S", x);
-    if (!SCM_EXACTP(y)) Scm_Error("exact integer required, but got %S", y);
+    if (!SCM_INTEGERP(x)) Scm_Error("exact integer required, but got %S", x);
+    if (!SCM_INTEGERP(y)) Scm_Error("exact integer required, but got %S", y);
     if (SCM_INTP(x)) {
         if (SCM_INTP(y))
             return SCM_MAKE_INT(SCM_INT_VALUE(x) | SCM_INT_VALUE(y));
@@ -3009,8 +3009,8 @@ ScmObj Scm_LogIor(ScmObj x, ScmObj y)
 
 ScmObj Scm_LogXor(ScmObj x, ScmObj y)
 {
-    if (!SCM_EXACTP(x)) Scm_Error("exact integer required, but got %S", x);
-    if (!SCM_EXACTP(y)) Scm_Error("exact integer required, but got %S", y);
+    if (!SCM_INTEGERP(x)) Scm_Error("exact integer required, but got %S", x);
+    if (!SCM_INTEGERP(y)) Scm_Error("exact integer required, but got %S", y);
     if (SCM_INTP(x)) {
         if (SCM_INTP(y))
             return SCM_MAKE_INT(SCM_INT_VALUE(x) ^ SCM_INT_VALUE(y));

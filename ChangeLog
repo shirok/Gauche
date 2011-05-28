@@ -1,3 +1,10 @@
+2011-05-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_LogNot, Scm_LogAnd, Scm_LogIor, Scm_LogXor):
+	  The argument check was incorrect (probably a leftover from
+	  the time we didn't have rationals), allowing rational numbers
+	  to passed to bignum routines, causing crash.
+
 2011-05-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm (ecase): Added CL's ecase.

@@ -1811,6 +1811,12 @@
 (test* "logior (-big | -big)" #x-103454301aacca9
       (logior #x-123456789abcdef #x-fedcba987654321fedcba987654321fedcba))
 
+;; regression test for incorrect check till 0.9.1
+(test* "lognot (error)" (test-error) (lognot 1/2))
+(test* "logand (error)" (test-error) (logand 3 1/2))
+(test* "logior (error)" (test-error) (logior 3 1/2))
+(test* "logxor (error)" (test-error) (logxor 3 1/2))
+
 (test* "logtest" #t
       (logtest #xfeedbabe #x10000000))
 (test* "logtest" #f
