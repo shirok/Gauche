@@ -99,6 +99,20 @@
         [(SCM_BIGNUMP n) (result (Scm_BignumLogCount (SCM_BIGNUM n)))]
         [else (SCM_TYPE_ERROR n "exact integer") (result 0)]))
 
+(define-cproc integer-length (n) ::<int> :constant
+  (cond [(SCM_INTP n)
+         (let* ([z::ScmBits (cast ScmBits (cast long (SCM_INT_VALUE n)))])
+           (if (>= (SCM_INT_VALUE n) 0)
+             (result (+ (Scm_BitsHighest1 (& z) 0 SCM_WORD_BITS) 1))
+             (result (+ (Scm_BitsHighest0 (& z) 0 SCM_WORD_BITS) 1))))]
+        [(SCM_BIGNUMP n)
+         (when (< (SCM_BIGNUM_SIGN n) 0)
+           (set! n (Scm_Sub n (SCM_MAKE_INT 1))))
+         (let* ([z::ScmBits* (cast ScmBits* (-> (SCM_BIGNUM n) values))]
+                [k::int (SCM_BIGNUM_SIZE n)])
+           (result (+ (Scm_BitsHighest1 z 0 (* k SCM_WORD_BITS)) 1)))]
+        [else (SCM_TYPE_ERROR n "exact integer") (result 0)]))
+
 ;; fixnum? and bignum? is not :constant, since it is platform-dependent.
 (define-cproc fixnum? (x) ::<boolean> :fast-flonum SCM_INTP)
 (define-cproc bignum? (x) ::<boolean> :fast-flonum SCM_BIGNUMP)

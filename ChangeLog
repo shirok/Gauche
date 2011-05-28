@@ -2,6 +2,9 @@
 
 	* src/extlib.stub (logand, logior, logxor): Allows zero and one
 	  argument a la SRFI-60.
+	  (integer-length): Moved here, for we now have Scm_BitsHighest*
+	  API and we can efficiently implement integer-length.
+	* src/autoload.scm, lib/gauche/logical.scm: Removed integer-length.
 
 	* src/number.c (Scm_LogNot, Scm_LogAnd, Scm_LogIor, Scm_LogXor):
 	  The argument check was incorrect (probably a leftover from

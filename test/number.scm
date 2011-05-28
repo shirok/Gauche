@@ -1868,10 +1868,22 @@
 (test* "copy-bit-field" #b1111111111101010
       (copy-bit-field #b1101101010 5 16 -1))
 
-(test* "integer-length" 8
-      (integer-length #b10101010))
-(test* "integer-length" 4
-      (integer-length #b1111))
+(test* "integer-length" 8 (integer-length #b10101010))
+(test* "integer-length" 4 (integer-length #b1111))
+(test* "integer-length" 0 (integer-length 0))
+(test* "integer-length" 0 (integer-length -1))
+(test* "integer-length" 1 (integer-length 1))
+(test* "integer-length" 1 (integer-length -2))
+(test* "integer-length" 29 (integer-length (- (expt 2 29) 1)))
+(test* "integer-length" 30 (integer-length (expt 2 29)))
+(test* "integer-length" 61 (integer-length (- (expt 2 61) 1)))
+(test* "integer-length" 62 (integer-length (expt 2 61)))
+(test* "integer-length" 29 (integer-length (- (expt 2 29))))
+(test* "integer-length" 30 (integer-length (- (- (expt 2 29)) 1)))
+(test* "integer-length" 61 (integer-length (- (expt 2 61))))
+(test* "integer-length" 62 (integer-length (- (- (expt 2 61)) 1)))
+(test* "integer-length" 1025 (integer-length (expt 2 1024)))
+
 
 ;;------------------------------------------------------------------
 (test-section "inexact arithmetics")

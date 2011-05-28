@@ -96,8 +96,7 @@
 (autoload "gauche/numerical" sinh cosh tanh asinh acosh atanh)
 
 (autoload "gauche/logical"
-          logtest logbit? copy-bit bit-field copy-bit-field
-          integer-length)
+          logtest logbit? copy-bit bit-field copy-bit-field)
 
 (autoload "gauche/common-macros"
           (:macro syntax-error syntax-errorf)
