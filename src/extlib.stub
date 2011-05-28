@@ -71,14 +71,23 @@
 (define-cproc lognot (x) :constant Scm_LogNot)
 
 (define-cise-stmt logop
-  [(_ fn)
-   `(let* ((r (,fn x y)))
-      (for-each (lambda (v) (set! r (,fn r v))) args)
-      (result r))])
+  [(_ fn ident)
+   `(cond [(== optcnt 0) (result ,ident)]
+          [(== optcnt 1)
+           (unless (SCM_INTEGERP (aref arg2 0))
+             (Scm_Error "Exact integer required, but got %S" (aref arg2 0)))
+           (result (aref arg2 0))]
+          [else
+           (let* ([r (,fn (aref arg2 0) (aref arg2 1))])
+             (for-each (lambda (v) (set! r (,fn r v))) args)
+             (result r))])])
 
-(define-cproc logand (x y :rest args) :constant (logop Scm_LogAnd))
-(define-cproc logior (x y :rest args) :constant (logop Scm_LogIor))
-(define-cproc logxor (x y :rest args) :constant (logop Scm_LogXor))
+(define-cproc logand (:optarray (arg2 optcnt 2) :rest args) :constant
+  (logop Scm_LogAnd (SCM_MAKE_INT -1)))
+(define-cproc logior (:optarray (arg2 optcnt 2) :rest args) :constant
+  (logop Scm_LogIor (SCM_MAKE_INT 0)))
+(define-cproc logxor (:optarray (arg2 optcnt 2) :rest args) :constant
+  (logop Scm_LogXor (SCM_MAKE_INT 0)))
 
 (define-cproc logcount (n) ::<int> :constant 
   (cond [(SCM_EQ n (SCM_MAKE_INT 0)) (result 0)]

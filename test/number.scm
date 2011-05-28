@@ -1817,6 +1817,17 @@
 (test* "logior (error)" (test-error) (logior 3 1/2))
 (test* "logxor (error)" (test-error) (logxor 3 1/2))
 
+;; zero and one-argument bitops a la srfi-60
+(test* "logand (0arg)" -1 (logand))
+(test* "logand (1arg)" 1 (logand 1))
+(test* "logand (1arg)" (test-error) (logand 3.14))
+(test* "logior (0arg)" 0 (logior))
+(test* "logior (1arg)" 1 (logior 1))
+(test* "logior (1arg)" (test-error) (logior 3.14))
+(test* "logxor (0arg)" 0 (logxor))
+(test* "logxor (1arg)" 1 (logxor 1))
+(test* "logxor (1arg)" (test-error) (logxor 3.14))
+
 (test* "logtest" #t
       (logtest #xfeedbabe #x10000000))
 (test* "logtest" #f

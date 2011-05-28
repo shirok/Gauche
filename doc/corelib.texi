@@ -1368,15 +1368,18 @@ If @var{count} is negative, @code{ash} shifts @var{n} right with
 @end example
 @end defun
         
-@defun logand n1 n2 @dots{}
-@defunx logior n1 n2 @dots{}
-@defunx logxor n1 n2 @dots{}
+@defun logand n1 @dots{}
+@defunx logior n1 @dots{}
+@defunx logxor n1 @dots{}
 @c EN
 Returns bitwise and, bitwise inclusive or and bitwise exclusive or
-of two or more integers @var{n1}, @var{n2} @dots{}.
+of integers @var{n1} @dots{}.   If no arguments are given, @code{logand}
+returns @code{-1}, and @code{logior} and @code{logxor} returns @code{0}.
 @c JP
-2つ以上の整数@var{n1}, @var{n2} @dots{}の、それぞれビット論理積、
+整数@var{n1} @dots{}の、それぞれビット論理積、
 ビット論理和、ビット排他的論理積を返します。
+ゼロ個の引数が与えられた場合は、@code{logand}は@code{-1}を、
+@code{logior}と@code{logxor}は@code{0}を返します。
 @c COMMON
 @end defun
 

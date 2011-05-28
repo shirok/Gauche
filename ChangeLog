@@ -1,5 +1,8 @@
 2011-05-27  Shiro Kawai  <shiro@acm.org>
 
+	* src/extlib.stub (logand, logior, logxor): Allows zero and one
+	  argument a la SRFI-60.
+
 	* src/number.c (Scm_LogNot, Scm_LogAnd, Scm_LogIor, Scm_LogXor):
 	  The argument check was incorrect (probably a leftover from
 	  the time we didn't have rationals), allowing rational numbers
