@@ -1,5 +1,9 @@
 2011-05-30  Shiro Kawai  <shiro@acm.org>
 
+	* lib/control/thread-pool.scm (worker): Fixed a hazard that the
+	  worker flagged it was done before queueing the result.
+	  Thanks to enami for spotting this.
+
 	* lib/rfc/json.scm (print-string): Fixed a bug that generates
 	  incorrect json string if it contains double-quotes.
 
@@ -1071,7 +1075,7 @@
 2010-03-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (iform-copy): Fixed a bug that yielded a wrong
-	  optimization when flagged closure is inlined.  Thanks to the
+	  optimization when flagged closure is inlined.  Thanks to
 	  Michael Campbell for the detailed report.
 
 2010-02-27  Shiro Kawai  <shiro@acm.org>

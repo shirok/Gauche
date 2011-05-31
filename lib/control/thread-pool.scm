@@ -94,8 +94,8 @@
     [(need-result . job)
      (thread-specific-set! self job)
      (job-run! job)                     ; captures errors
-     (thread-specific-set! self #f)
      (when need-result (enqueue! (~ pool'result-queue) job))
+     (thread-specific-set! self #f)
      (worker pool)]
     [_ #t]))                            ; no more jobs
 
