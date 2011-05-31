@@ -196,9 +196,9 @@
 
 (define (print-string str)
   (define (print-char c)
-    (if (char-set-contains? char-set:ascii c)
-      (write-char c)
-      (format #t "\\u~4,0x" (char->ucs c))))
+    (cond [(eqv? c #\") (write-char #\\) (write-char c)]
+          [(char-set-contains? char-set:ascii c) (write-char c)]
+          [else (format #t "\\u~4,0x" (char->ucs c))]))
   (display "\"")
   (string-for-each print-char str)
   (display "\""))

@@ -740,7 +740,7 @@
                '(("Image"
                   ("Width"  . 800)
                   ("Height" . 600)
-                  ("Title"  . "View from 15th Floor")
+                  ("Title"  . "View from 15th Floor \"magnificent\"")
                   ("Thumbnail"
                    ("Url"    . "http://www.example.com/image/481989943")
                    ("Height" . 125)

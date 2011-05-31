@@ -1,3 +1,8 @@
+2011-05-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/json.scm (print-string): Fixed a bug that generates
+	  incorrect json string if it contains double-quotes.
+
 2011-05-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-60.scm: Added srfi-60 support.  Most of APIs are just
