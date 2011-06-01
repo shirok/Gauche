@@ -312,7 +312,7 @@
                    [else sys-chown]))
     (define (walk dir node do-file do-dir)
       (match node
-        [[? name?] (do-file (mkpath dir node))]
+        [[? name?] (do-file (mkpath dir node) #f)]
         [([? name? n] . args)
          (receive (opts content) (collect-options args)
            (if (list? content)

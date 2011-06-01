@@ -144,13 +144,15 @@
            (test7.o ,(make-string 100 #\o))
            (test2.d :mode #o777
 		    ((test10.o ,(make-string 100 #\o))
-		     (test11.o ,(make-string 100 #\o)))))])
+		     (test11.o ,(make-string 100 #\o))
+                     test12.o)))])
      (test.d ((test10.o ,(make-string 100 #\o))
               ,(cond-expand
                 [gauche.sys.symlink
                  '(test11.o :symlink "../test1.o")]
                 [else
-                 `(test11.o ,(make-string 100 #\o))])))
+                 `(test11.o ,(make-string 100 #\o))])
+              test12.o))
      )))
 
 (cmd-rmrf "test.out")
@@ -164,41 +166,12 @@
                    (file-is-regular? "test.out/test4.o")
                    (file-is-regular? "test.out/test5.o")
                    (file-is-directory? "test.out/test.d")
-                   (file-is-regular? "test.out/test.d/test10.o"))))
+                   (file-is-regular? "test.out/test.d/test10.o")
+                   (file-is-regular? "test.out/test.d/test12.o"))))
 
 (test* "check-directory-tree" #t
        (check-directory-tree "." *test-tree*))
            
-;; (sys-system "rm -rf test.out test2.out")
-;; (sys-system "mkdir test.out")
-;; (with-output-to-file "test.out/test1.o" (cut display (make-string 100 #\o)))
-;; (with-output-to-file "test.out/test2.o" (cut display (make-string 100 #\o)))
-;; (with-output-to-file "test.out/test3.o" (cut display (make-string 100 #\i)))
-;; (with-output-to-file "test.out/test4.o" (cut display (make-string 20000 #\i)))
-;; (with-output-to-file "test.out/test5.o" (cut display (make-string 20000 #\i)))
-
-;; (cond-expand
-;;  [gauche.sys.symlink
-;;   (sys-symlink "test1.o" "test.out/test6.o")
-;;   (sys-symlink "test6.o" "test.out/test7.o")
-;;   (sys-symlink "test.d" "test.out/test2.d")]
-;;  [else
-;;   (with-output-to-file "test.out/test6.o" (cut newline))
-;;   (with-output-to-file "test.out/test7.o" (cut newline))
-;;   (sys-mkdir "test.out/test2.d" #o777)])
-
-;; (sys-system "mkdir test.out/test.d")
-;; (with-output-to-file "test.out/test.d/test10.o"
-;;   (cut display (make-string 100 #\o)))
-
-;; (cond-expand
-;;  [gauche.sys.symlink
-;;   (sys-symlink "../test1.o" "test.out/test.d/test11.o")
-;;   (test* "file-is-symlink?" #t
-;;          (file-is-symlink? "test.out/test.d/test11.o"))]
-;;  [else
-;;   (with-output-to-file "test.out/test.d/test11.o" (cut newline))])
-
 (test* "directory-list"
        '("." ".." "test.d" "test1.o" "test2.d" "test2.o"
          "test3.o" "test4.o" "test5.o" "test6.o" "test7.o" )
@@ -288,11 +261,14 @@
 (test* "directory-fold"
        (n "test.out"
           "test.out/test.d"
-          "test.out/test.d/test10.o" "test.out/test.d/test11.o"
+          "test.out/test.d/test10.o"
+          "test.out/test.d/test11.o"
+          "test.out/test.d/test12.o"
           "test.out/test1.o"
           "test.out/test2.d"
           "test.out/test2.d/test10.o"
           "test.out/test2.d/test11.o"
+          "test.out/test2.d/test12.o"
           "test.out/test2.o" "test.out/test3.o"
           "test.out/test4.o" "test.out/test5.o"
           "test.out/test6.o" "test.out/test7.o")
@@ -309,7 +285,8 @@
 (cond-expand
  [gauche.sys.symlink
   (test* "directory-fold :follow-link? #f"
-         (n "test.out/test.d/test10.o" "test.out/test.d/test11.o"
+         (n "test.out/test.d/test10.o"
+            "test.out/test.d/test11.o"
             "test.out/test1.o"
             "test.out/test2.o" "test.out/test3.o"
             "test.out/test6.o" "test.out/test7.o")
@@ -325,8 +302,10 @@
   (sys-symlink "foo" "test.out/test.dangling")
   (test* "directory-fold :follow-link? #t; dangling link"
          (n "test.out/test.d/test10.o" "test.out/test.d/test11.o"
+            "test.out/test.d/test12.o"
             "test.out/test.dangling" "test.out/test1.o"
             "test.out/test2.d/test10.o" "test.out/test2.d/test11.o"
+            "test.out/test2.d/test12.o"
             "test.out/test2.o" "test.out/test3.o" "test.out/test4.o"
             "test.out/test5.o" "test.out/test6.o" "test.out/test7.o")
          (sort (directory-fold "test.out" cons '())))
@@ -337,10 +316,13 @@
        (cond-expand
         [gauche.sys.symlink
          (n "test.out/test.d/test10.o" "test.out/test.d/test11.o"
+            "test.out/test.d/test12.o"
             "test.out/test1.o")]
         [else
          (n "test.out/test.d/test10.o" "test.out/test.d/test11.o"
+            "test.out/test.d/test12.o"
             "test.out/test2.d/test10.o" "test.out/test2.d/test11.o"
+            "test.out/test2.d/test12.o"
             "test.out/test1.o")])
        (reverse
         (directory-fold "test.out" cons '()

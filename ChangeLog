@@ -1,3 +1,8 @@
+2011-05-31  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (create-directory-tree): Fixed a bug
+	  to treat content-less file spec.  Thanks to teppey for the fix.
+
 2011-05-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/thread-pool.scm (worker): Fixed a hazard that the
