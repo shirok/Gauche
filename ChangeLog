@@ -1,3 +1,9 @@
+2011-06-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (coding_port_recognize_encoding): Fixed a bug in the
+	  state machine of encoding magic comment; the lines weren't counted
+	  correctly for \r-only or \r\c line endings.
+
 2011-06-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (integer-length): Fixed a bug in the edge

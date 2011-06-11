@@ -1326,8 +1326,12 @@ static void coding_port_recognize_encoding(ScmPort *port,
         }
         SCM_DSTRING_PUTB(&ds, c);
         if (c == '\r') {   /* for the source that only uses '\r' */
+            if (++num_newlines >= CODING_MAGIC_COMMENT_LINES) {
+                break;
+            }
             cr_seen = TRUE;
         } else if (c == '\n' || cr_seen) {
+            cr_seen = FALSE;
             if (++num_newlines >= CODING_MAGIC_COMMENT_LINES) {
                 break;
             }
