@@ -1,3 +1,8 @@
+2011-06-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (integer-length): Fixed a bug in the edge
+	  case on the boundary of fixnum/bignum switch.
+
 2011-05-31  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm (create-directory-tree): Fixed a bug
