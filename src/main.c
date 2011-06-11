@@ -349,7 +349,7 @@ static int init_console(void)
     open("NUL", O_WRONLY);
     open("NUL", O_WRONLY);
     return FALSE;
-#  else /*!defined(GAUCHE_WINDOS_NOCONSOLE)*/
+#  else /*!defined(GAUCHE_WINDOWS_NOCONSOLE)*/
     /* This saves so much trouble */
     _setmode(_fileno(stdin),  _O_BINARY);
     _setmode(_fileno(stdout), _O_BINARY);
