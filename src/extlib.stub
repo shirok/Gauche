@@ -726,11 +726,19 @@
              (== errno ENXIO)
              (== errno ENOTDIR)))])
 
+;; NB: On MinGW, if we try to create a file and a directory with the
+;; same name exists, open(2) throws EACCES.  Weird, eh?  We don't want
+;; to catch EACCES on other platforms, hence this dirty trick.
+(if "defined(GAUCHE_WINDOWS)"
+  "#define DIRECTORY_GETS_IN_WAY(x) ((x)==EACCES)"
+  "#define DIRECTORY_GETS_IN_WAY(x) FALSE")
+
 (define-cise-expr %open/allow-exist?
   [(_ if-exists-is-false)
    `(and ,if-exists-is-false
          (or (== errno EEXIST)
-             (== errno ENOTDIR)))])
+             (== errno ENOTDIR)
+             (DIRECTORY_GETS_IN_WAY errno)))])
 
 (define-cproc %open-input-file (path::<string>
                                 :key (if-does-not-exist :error)
