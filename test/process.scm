@@ -94,8 +94,10 @@
 (define grep (find-executable "grep"))
 
 ;; Avoid locale specific behavior of client programs
-(when (global-variable-bound? 'gauche 'sys-putenv)
-  (sys-putenv "LANG" "C"))
+(cond-expand
+ [gauche.sys.setenv
+  (sys-putenv "LANG" "C")]
+ [else])
 
 ;;-------------------------------
 (test-section "process object")
