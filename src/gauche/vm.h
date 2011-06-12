@@ -286,7 +286,7 @@ typedef struct ScmEscapePointRec {
  *  is invoked only once.
  *
  *  The C-level signal handler does count each signal until it is cleared
- *  by VM loop.  If one kind of signal arraives more than a certain limit
+ *  by VM loop.  If one kind of signal arrives more than a certain limit
  *  (set/get by Scm_{Set|Get}SignalPendingLimit), Gauche thinks something
  *  went wrong and bail out.   It is useful, for example, to interrupt
  *  unresponsive program from the terminal.
