@@ -1316,7 +1316,7 @@ static void coding_port_recognize_encoding(ScmPort *port,
     /* Prefetch up to CODING_MAGIC_COMMENT_LINES lines or the first NUL
        character.   data->pbuf ends up holding NUL terminated string. */
     Scm_DStringInit(&ds);
-    for (;;) {
+    for (;num_newlines < CODING_MAGIC_COMMENT_LINES;) {
         c = Scm_GetbUnsafe(data->source);
         if (c == EOF) break;
         if (c == 0) {
@@ -1326,15 +1326,11 @@ static void coding_port_recognize_encoding(ScmPort *port,
         }
         SCM_DSTRING_PUTB(&ds, c);
         if (c == '\r') {   /* for the source that only uses '\r' */
-            if (++num_newlines >= CODING_MAGIC_COMMENT_LINES) {
-                break;
-            }
+            if (cr_seen) num_newlines++; 
             cr_seen = TRUE;
         } else if (c == '\n' || cr_seen) {
+            num_newlines++;
             cr_seen = FALSE;
-            if (++num_newlines >= CODING_MAGIC_COMMENT_LINES) {
-                break;
-            }
         } else {
             cr_seen = FALSE;
         }
