@@ -6851,7 +6851,7 @@ Like @code{map}, except that @var{tail-proc} is applied to the @code{cdr}
 of the last pair in the argument(s) to get the @code{cdr} of
 the last pair of the result list.  This procedure allows improper
 list to appear in the arguments.   If a single list is given,
-@var{tail-proc} always receives non-pair object.
+@var{tail-proc} always receives a non-pair object.
 @c JP
 @code{map}とほぼ同じですが、引数の最後のペアの@code{cdr}に@var{tail-proc}が
 適用され、その返り値が結果のリストの最後のペアの@code{cdr}になります。
@@ -6868,7 +6868,7 @@ list to appear in the arguments.   If a single list is given,
         lis))
 
 (proper '(1 2 3))     @result{} (1 2 3)
-(proper '(1 2 3 . 4)) @result{} (1 2 3)
+(proper '(1 2 3 . 4)) @result{} (1 2 3 4)
 @end example
 
 @c EN
@@ -6884,7 +6884,7 @@ cdrs of the current pairs.
 
 @example
 (map* + vector '(1 2 3 4) '(1 2 . 3))
-  @result{} (3 6 #((3 4) 3))
+  @result{} (3 6 . #((3 4) 3))
 @end example
 
 @c EN
