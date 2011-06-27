@@ -169,8 +169,8 @@
   (define pred (char-list-predicate char-list))
   (rlet1 c (read-char port)
     (unless (pred char-list c)
-      (errorf "~awrong character c ~a. ~s expected."
-              (ppp port) string char-list))))
+      (errorf "~awrong character ~s ~a. ~s expected."
+              (ppp port) c string char-list))))
 
 (define-compiler-macro assert-curr-char (er-transformer prefold-macro-1))
 
