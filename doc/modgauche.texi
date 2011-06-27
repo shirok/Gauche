@@ -6548,12 +6548,12 @@ The following slots are provided.
 
 @defun sys-getaddrinfo nodename servname hints
 @c EN
-Returns @code{<sys-addrinfo>} instance from the given @var{nodename},
+Returns a list of @code{<sys-addrinfo>} instances from the given @var{nodename},
 @var{servname} and @var{hints}.
 This is only available if gauche is compiled with --enable-ipv6 option.
 @c JP
 与えられた @var{nodename}、@var{servname} および @var{hints} から
-@code{<sys-addrinfo>} のインスタンスを返します。
+@code{<sys-addrinfo>} のインスタンスのリストを返します。
 これは gauche が --enable-ipv6 オプションで設定され、
 ビルドされた場合にのみ利用可能です。
 @c COMMON
