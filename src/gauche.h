@@ -738,13 +738,23 @@ enum {
 
     /* A special flag that only be used for "natively applicable"
        objects, which basically inherits ScmProcedure. */
-    SCM_CLASS_APPLICABLE = 0x04
+    SCM_CLASS_APPLICABLE = 0x04,
+
+    /* If this flag is set, important slots such as class-precedence-list
+       or class-slots becomes settable.
+       We reset this flag at the end of class initialization, so that
+       we can avoid the behavior of a class from being accidentally
+       chnaged.  The flag may be set during updating a class metaobject
+       triggered by metaclass change (see lib/gauche/redefutil.scm).
+     */
+    SCM_CLASS_MALLEABLE = 0x08
 };
 
-#define SCM_CLASS_FLAGS(obj)     (SCM_CLASS(obj)->flags)
+#define SCM_CLASS_FLAGS(obj)        (SCM_CLASS(obj)->flags)
 #define SCM_CLASS_APPLICABLE_P(obj) (SCM_CLASS_FLAGS(obj)&SCM_CLASS_APPLICABLE)
 
-#define SCM_CLASS_CATEGORY(obj)  (SCM_CLASS_FLAGS(obj)&3)
+#define SCM_CLASS_CATEGORY(obj)     (SCM_CLASS_FLAGS(obj)&3)
+#define SCM_CLASS_MALLEABLE_P(obj)  (SCM_CLASS_FLAGS(obj)&SCM_CLASS_MALLEABLE)
 
 SCM_EXTERN void Scm_InitStaticClass(ScmClass *klass, const char *name,
                                     ScmModule *mod,
@@ -775,9 +785,12 @@ SCM_EXTERN int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 SCM_EXTERN int Scm_TypeP(ScmObj obj, ScmClass *type);
 SCM_EXTERN ScmClass *Scm_BaseClassOf(ScmClass *klass);
 
+SCM_EXTERN void   Scm_ClassMalleableSet(ScmClass *klass, int flag);
+
 SCM_EXTERN ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp);
 SCM_EXTERN ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj value);
 SCM_EXTERN ScmObj Scm_VMSlotBoundP(ScmObj obj, ScmObj slot);
+
 
 /* built-in classes */
 SCM_CLASS_DECL(Scm_TopClass);

@@ -853,12 +853,20 @@
 ;;----------------------------------------------------------------
 (test-section "metaclass redefintiion")
 
-;; NB: semantics of metaclass redefinition isn't really fixed yet.
-;; Should we allow it at all?  The problem is that the classes created
-;; by the original metaclass is semantically redefined, but what happens
-;; is that they are just updated (via change-class), so that instances
-;; of those classes won't be aware that their classes are changed.
-;; It works for trival cases, so we just allow it and see what happens.
+;; Create and save the instances with the original classes
+(define *docu*
+  (rlet1 obj (make <xxx>)
+    (slot-set! obj 'a 'a)
+    (slot-set! obj 'b 'B)
+    (slot-set! obj 'c 'c)))
+(define *docu-sub*
+  (rlet1 obj (make <xxx-sub>)
+    (slot-set! obj 'a 'A)
+    (slot-set! obj 'b 'b)
+    (slot-set! obj 'c 'C)
+    (slot-set! obj 'x 'x)
+    (slot-set! obj 'y 'Y)
+    (slot-set! obj 'z 'z)))
 
 (define-class <docu-meta> (<class>)
   ((doc  :init-keyword :doc :initform #t)
@@ -876,6 +884,13 @@
        (list (slot-ref <xxx-sub> 'doc)
              (slot-ref <xxx-sub> 'sub)
              (slot-ref <xxx-sub> 'xtra)))
+
+(test* "redefinition of metaclass and existing instance"
+       '(a B c)
+       (map (cut slot-ref *docu* <>) '(a b c)))
+(test* "redefinition of metaclass and existing instance"
+       '(A b C x Y z)
+       (map (cut slot-ref *docu-sub* <>) '(a b c x y z)))
 
 ;;----------------------------------------------------------------
 (test-section "metaclass/singleton")

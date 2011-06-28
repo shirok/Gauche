@@ -108,10 +108,31 @@
 ;; Instance update protocol
 ;;
 
-;; By default, only the instance-allocated slots in the old class
-;; are carried over.
-;; If the user wants to keep other slot values, (s)he needs to
-;; overload change-class method.
+;; By default, the following slots of the new class are carried over:
+;;  - it is instance allocated.
+;;  - its allocation is either class or each-subclass, without having
+;;    the default value.
+;;  - it is a builtin slot and settable in the new class.
+;;
+;; If you want to carry over other slots, the first thing you'd want
+;; to try is to customize change-class method.  Save the old slots before
+;; calling next-method and set the new slots afterwards.  It can also be
+;; used to carry over a value when the name of the slot is changed.
+;; If you want to prevent some slots from being carried over by the
+;; base change-class method, you can override
+;; change-object-class-carry-over-slot? method to do so.
+
+(define-generic change-object-class-carry-over-slot?)
+(define-method change-object-class-carry-over-slot? ((obj <object>)
+                                                     old-class new-class slot)
+  (let ([slot-name (slot-definition-name slot)]
+        [alloc     (slot-definition-allocation slot)])
+    (or (eq? alloc :instance)
+        (and (memq alloc '(:class :each-subclass))
+             (not (class-slot-bound? new-class slot-name)))
+        (and-let* ([ (eq? alloc :builtin) ]
+                   [sa (slot-definition-option slot :slot-accessor #f)])
+          (slot-ref sa 'settable)))))
 
 ;; A dynamic stack that keeps change-class invocation.  We need
 ;; this to prevent inadvertent infinit recursive call of change-class.
@@ -121,43 +142,64 @@
 ;; Change class.
 (define (change-object-class obj old-class new-class)
 
-  (define (default-carry-over-slot? slot)
-    (let ((slot-name (slot-definition-name slot))
-          (alloc     (slot-definition-allocation slot)))
-      (and (or (eq? alloc :instance)
-               (and (memq alloc '(:class :each-subclass))
-                    (not (class-slot-bound? new-class slot-name))))
-           (cons slot-name slot))))
-
-  (let ((new (allocate-instance new-class '()))
-        (new-slots (filter default-carry-over-slot? (class-slots new-class)))
-        )
-    (cond
-     ((assq obj (instance-changing-class-stack))
+  (let ([new (allocate-instance new-class '())]
+        [new-slots (filter (^s (change-object-class-carry-over-slot?
+                                obj old-class new-class s))
+                           (class-slots new-class))])
+    (if-let1 p (assq obj (instance-changing-class-stack))
       ;; change-class is called recursively.  abort change-class protocol.
-      => (lambda (p) ((cdr p) #f)))
-     (else
+      ((cdr p) #f)
+      ;; normal course of action 
       (dolist (slot new-slots)
-        (let ((slot-name (slot-definition-name slot)))
+        (let1 slot-name (slot-definition-name slot)
           (or (and
                (slot-exists-using-class? old-class obj slot-name)
-               (call/cc
-                (lambda (cont)
-                  (parameterize
-                      ((instance-changing-class-stack
-                        (acons obj cont (instance-changing-class-stack))))
-                    (and (slot-bound-using-class? old-class obj slot-name)
-                         (let1 val
-                             (slot-ref-using-class old-class obj slot-name)
-                           (slot-set-using-class! new-class new slot-name val)
-                           #t))))))
-              (let ((acc (class-slot-accessor new-class slot-name)))
-                (slot-initialize-using-accessor! new acc '())))))
-      ))
+               (let/cc cont
+                 (parameterize
+                     ([instance-changing-class-stack
+                       (acons obj cont (instance-changing-class-stack))])
+                   (and (slot-bound-using-class? old-class obj slot-name)
+                        (let1 val
+                            (slot-ref-using-class old-class obj slot-name)
+                          (slot-set-using-class! new-class new slot-name val)
+                          #t)))))
+              (let1 acc (class-slot-accessor new-class slot-name)
+                (slot-initialize-using-accessor! new acc '()))))))
+    ;; overwrite original obj's content with the new one.
     (%transplant-instance! new obj)
     obj))
 
+;; Intercept metaclass change; that is, we're about to replace the
+;; class C's metaclass by NEW-META.
+;; We have to prevent the cpl slot from being carried over by default,
+;; for it has extra consistency check that interferes with our purpose.
+;;
+;; NB: At this moment it is impossible that changing metaclass
+;; affects the structure of the instance, since (initialize <new-metaclass>)
+;; isn't called,   Initialize is the only place where the structure
+;; of the instance can be determined.  This fact is important, since
+;; the instance update protocol won't run on instances whose class's
+;; metaclass is changed (we can't, since the class maintains its identity
+;; before and after metaclass change.)   If the updated class changed
+;; instance structure, accessing old instances would cause bad things.
+;; In future we may introduce reinitialize method which is called
+;; right after change-object is done; in such case we need extra safety
+;; mechanism to ensure instance structure isn't changed by metaclass
+;; change.
 
+(define-method change-class ((c <class>) (new-meta <class>))
+  (let* ([old-meta (current-class-of c)]
+         [old-cpl (slot-ref-using-class old-meta c 'cpl)]
+         [old-nis (slot-ref-using-class old-meta c 'num-instance-slots)])
+    (next-method)
+    (slot-set-using-class! new-meta c 'cpl old-cpl)
+    (%finish-class-initialization! c) ; seal the class
+    c))
+
+(define-method change-object-class-carry-over-slot?
+    ((c <class>) old-meta new-meta slot)
+  (and (not (eq? (slot-definition-name slot) 'cpl))
+       (next-method)))
 
 ;; inject definitions into gauche module
 (define-in-module gauche redefine-class! redefine-class!)

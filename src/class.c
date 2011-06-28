@@ -173,6 +173,14 @@ static struct {
                                              to ensure this sturcture is
                                              placed in the data area */
 
+/* Imporant slots in <class> metaboject can be modified only when the
+   class is in 'malleable' state.   Here's the check. */
+#define CHECK_MALLEABLE(k, who)                         \
+    if (!SCM_CLASS_MALLEABLE_P(k)) {                    \
+        Scm_Error("%s: class is not malleable: %S",     \
+                  who, SCM_OBJ(k));                     \
+    }
+
 /*=====================================================================
  * Auxiliary utilities
  */
@@ -371,7 +379,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance->cpa = NULL;
     instance->numInstanceSlots = 0; /* will be adjusted in class init */
     instance->coreSize = 0;     /* will be set when CPL is set */
-    instance->flags = SCM_CLASS_SCHEME; /* default */
+    instance->flags = SCM_CLASS_SCHEME|SCM_CLASS_MALLEABLE; /* default */
     instance->name = SCM_FALSE;
     instance->directSupers = SCM_NIL;
     instance->accessors = SCM_NIL;
@@ -408,6 +416,7 @@ static void class_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 static ScmObj allocate(ScmNextMethod *nm, ScmObj *argv, int argc, void *d)
 {
     ScmClass *c = SCM_CLASS(argv[0]);
+    ScmObj z;
     if (c->allocate == NULL) {
         Scm_Error("built-in class can't be allocated via allocate-instance: %S",
                   SCM_OBJ(c));
@@ -512,9 +521,25 @@ ScmObj Scm_VMIsA(ScmObj obj, ScmClass *klass)
     return SCM_MAKE_BOOL(Scm_TypeP(obj, klass));
 }
 
+/*
+ * Setting/resetting SCM_CLASS_MALLEABLE flag
+ */
+void Scm_ClassMalleableSet(ScmClass *klass, int flag)
+{
+    if (SCM_CLASS_CATEGORY(klass) != SCM_CLASS_SCHEME) {
+        Scm_Error("You cannot modify malleable flag of a class not defined in Scheme: %S", SCM_OBJ(klass));
+    }
+    if (flag) {
+        klass->flags |= SCM_CLASS_MALLEABLE;
+    } else {
+        klass->flags &= ~SCM_CLASS_MALLEABLE;
+    }
+}
+
 /*--------------------------------------------------------------
  * Metainformation accessors
  */
+
 /* TODO: disable modification of system-builtin classes */
 
 static ScmObj class_name(ScmClass *klass)
@@ -524,6 +549,7 @@ static ScmObj class_name(ScmClass *klass)
 
 static void class_name_set(ScmClass *klass, ScmObj val)
 {
+    CHECK_MALLEABLE(klass, "(setter name)");
     klass->name = val;
 }
 
@@ -599,9 +625,11 @@ static void find_core_allocator(ScmClass *klass)
 
 static void class_cpl_set(ScmClass *klass, ScmObj val)
 {
-    /* have to make sure things are consistent */
     int len;
     ScmObj cp;
+    CHECK_MALLEABLE(klass, "(setter cpl)");
+
+    /* We make sure things are consistent. */
     if (!SCM_PAIRP(val)) goto err;
     /* check if the CPL begins with the class itself. */
     if (SCM_CAR(val) != SCM_OBJ(klass)) goto err;
@@ -629,6 +657,7 @@ static ScmObj class_direct_supers(ScmClass *klass)
 static void class_direct_supers_set(ScmClass *klass, ScmObj val)
 {
     ScmObj vp;
+    CHECK_MALLEABLE(klass, "(setter direct-supers)")
     SCM_FOR_EACH(vp, val) {
         if (!Scm_TypeP(SCM_CAR(vp), SCM_CLASS_CLASS))
             Scm_Error("non-class object found in direct superclass list: %S",
@@ -645,6 +674,7 @@ static ScmObj class_direct_slots(ScmClass *klass)
 static void class_direct_slots_set(ScmClass *klass, ScmObj val)
 {
     ScmObj vp;
+    CHECK_MALLEABLE(klass, "(setter direct-slots)");
     SCM_FOR_EACH(vp, val) {
         if (!SCM_PAIRP(SCM_CAR(vp)))
             Scm_Error("bad slot spec found in direct slot list: %S",
@@ -661,6 +691,7 @@ static ScmObj class_slots_ref(ScmClass *klass)
 static void class_slots_set(ScmClass *klass, ScmObj val)
 {
     ScmObj vp;
+    CHECK_MALLEABLE(klass, "(setter slots)");
     SCM_FOR_EACH(vp, val) {
         if (!SCM_PAIRP(SCM_CAR(vp)))
             Scm_Error("bad slot spec found in slot list: %S",
@@ -677,6 +708,7 @@ static ScmObj class_accessors(ScmClass *klass)
 static void class_accessors_set(ScmClass *klass, ScmObj val)
 {
     ScmObj vp;
+    CHECK_MALLEABLE(klass, "(setter accessors)");
     SCM_FOR_EACH(vp, val) {
         if (!SCM_PAIRP(SCM_CAR(vp))
             || !SCM_SLOT_ACCESSOR_P(SCM_CDAR(vp)))
@@ -694,6 +726,7 @@ static ScmObj class_numislots(ScmClass *klass)
 static void class_numislots_set(ScmClass *klass, ScmObj snf)
 {
     int nf = 0;
+    CHECK_MALLEABLE(klass, "(setter num-instance-slots)");
     if (!SCM_INTP(snf) || (nf = SCM_INT_VALUE(snf)) < 0) {
         Scm_Error("invalid argument: %S", snf);
         /*NOTREACHED*/
@@ -719,6 +752,7 @@ static ScmObj class_initargs(ScmClass *klass)
 static void class_initargs_set(ScmClass *klass, ScmObj val)
 {
     int len = Scm_Length(val);
+    CHECK_MALLEABLE(klass, "(setter initargs)");
     if (len < 0 || len%2 != 0) {
         Scm_Error("class-initargs must be a list of even number of elements, but got %S", val);
     }
@@ -733,6 +767,7 @@ static ScmObj class_defined_modules(ScmClass *klass)
 static void class_defined_modules_set(ScmClass *klass, ScmObj val)
 {
     ScmObj cp;
+    CHECK_MALLEABLE(klass, "(setter defined-modules)");
     SCM_FOR_EACH(cp, val) {
         if (!SCM_MODULEP(SCM_CAR(cp))) goto err;
     }
@@ -960,6 +995,9 @@ void Scm_StartClassRedefinition(ScmClass *klass)
         unlock_class_redefinition(vm);
         Scm_Error("class %S seems abandoned during class redefinition", klass);
     }
+
+    /* Allow modification of important slots */
+    Scm_ClassMalleableSet(klass, TRUE);
 }
 
 /* %commit-class-redefinition klass newklass */
@@ -982,6 +1020,7 @@ void Scm_CommitClassRedefinition(ScmClass *klass, ScmObj newklass)
        obscure state. */
     (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
     if (SCM_EQ(klass->redefined, SCM_OBJ(vm))) {
+        Scm_ClassMalleableSet(klass, FALSE); /* disable modification */
         klass->redefined = newklass;
         (void)SCM_INTERNAL_COND_BROADCAST(klass->cv);
     }
@@ -1043,7 +1082,8 @@ void Scm_DeleteDirectSubclass(ScmClass *super, ScmClass *sub)
     }
 }
 
-/* %add-direct-method! super sub */
+/* %add-direct-method! super method
+   method can be added or deleted freely, so we don't check malleablility. */
 void Scm_AddDirectMethod(ScmClass *super, ScmMethod *m)
 {
     if (SCM_CLASS_CATEGORY(super) == SCM_CLASS_SCHEME) {
@@ -1058,7 +1098,8 @@ void Scm_AddDirectMethod(ScmClass *super, ScmMethod *m)
     }
 }
 
-/* %delete-direct-method! super sub */
+/* %delete-direct-method! super method
+   method can be added or deleted freely, so we don't check malleablility. */
 void Scm_DeleteDirectMethod(ScmClass *super, ScmMethod *m)
 {
     if (SCM_CLASS_CATEGORY(super) == SCM_CLASS_SCHEME) {
@@ -1495,6 +1536,21 @@ ScmObj slot_set_using_accessor(ScmObj obj,
     return SCM_UNDEFINED;
 }
 
+/* (internal) SLOT-ACCESSOR-SETTABLE
+ * must be in sync with slot_set_using_accessor.
+ * this won't detect the case when slot mutation is rejected by
+ * the setter procedure.
+ */
+static int slot_accessor_settable_p(ScmSlotAccessor *sa)
+{
+    if (sa->setter
+        || sa->slotNumber >= 0
+        || SCM_PROCEDUREP(sa->schemeSetter))
+        return TRUE;
+    else
+        return FALSE;
+}
+
 /* SLOT-SET!
  *
  * (define (slot-set! obj slot val)
@@ -1799,6 +1855,11 @@ static ScmObj slot_accessor_initializable(ScmSlotAccessor *sa)
 static void slot_accessor_initializable_set(ScmSlotAccessor *sa, ScmObj v)
 {
     sa->initializable = SCM_FALSEP(v)? FALSE : TRUE;
+}
+
+static ScmObj slot_accessor_settable(ScmSlotAccessor *sa)
+{
+    return SCM_MAKE_BOOL(slot_accessor_settable_p(sa));
 }
 
 static ScmObj slot_accessor_scheme_getter(ScmSlotAccessor *sa)
@@ -2828,6 +2889,8 @@ static ScmClassStaticSlotSpec slot_accessor_slots[] = {
                         slot_accessor_init_thunk_set),
     SCM_CLASS_SLOT_SPEC("initializable", slot_accessor_initializable,
                         slot_accessor_initializable_set),
+    SCM_CLASS_SLOT_SPEC("settable", slot_accessor_settable,
+                        NULL),
     SCM_CLASS_SLOT_SPEC("slot-number", slot_accessor_slot_number,
                         slot_accessor_slot_number_set),
     SCM_CLASS_SLOT_SPEC("getter", slot_accessor_scheme_getter,

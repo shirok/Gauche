@@ -298,6 +298,8 @@
     ;; bookkeeping for class redefinition
     (slot-set! class 'initargs initargs)
     (dolist [super supers] (%add-direct-subclass! super class))
+    ;; seal the class
+    (%finish-class-initialization! class)
     ))
 
 (define (%make-accessor class slot module)
@@ -509,6 +511,12 @@
  (define-cproc instance-slot-set (obj num::<fixnum> value) ::<void>
    Scm_InstanceSlotSet)
 
+ (define-cproc %finish-class-initialization! (klass::<class>) ::<void>
+   (Scm_ClassMalleableSet klass FALSE))
+
+ ;;
+ ;; Record related builtins
+ ;;
  (define-cproc %make-record (klass::<class>
                              :optarray (inits numinits 10)
                              :rest rinits)
@@ -544,10 +552,6 @@
 ;(autoload "gauche/redefutil"
 ;          redefine-class! class-redefinition
 ;          update-direct-subclass! change-object-class)
-;(with-module gauche
-;  (autoload "gauche/redefutil"
-;            redefine-class! class-redefinition
-;            update-direct-subclass! change-object-class))
 
 ;; change-class gf is defined in C, so we can't use autoload for it.
 (define-method change-class ((obj <object>) (new-class <class>))

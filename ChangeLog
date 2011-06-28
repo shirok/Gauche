@@ -1,3 +1,13 @@
+2011-06-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/redefutil.scm, test/object.scm: Fixed change-class
+	  on class metaobjects to work.
+	* src/class.c, src/gauche.h, src/objlib.scm: Added a mechanism to
+	  'seal' the core slots of class metaobjects that are essential
+	  for object system to work; for example, changing num-instance-slots
+	  after some instances are created would cause disaster.  Now these
+	  core slots can only be set during class initialization.
+
 2011-06-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c (coding_port_recognize_encoding): Fixed a bug in the
