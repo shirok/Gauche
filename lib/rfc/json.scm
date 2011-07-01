@@ -155,7 +155,7 @@
   (cond [(eq? obj 'false) (display "false")]
         [(eq? obj 'null)  (display "null")]
         [(eq? obj 'true)  (display "true")]
-        [(pair? obj)      (print-object obj)]
+        [(list? obj)      (print-object obj)]
         [(vector? obj)    (print-array obj)]
         [(number? obj)    (print-number obj)]
         [(string? obj)    (print-string obj)]
@@ -206,7 +206,7 @@
 (define (construct-json x :optional (oport (current-output-port)))
   (with-output-to-port oport
     (^()
-      (cond [(pair? x)   (print-object x)]
+      (cond [(list? x)   (print-object x)]
             [(vector? x) (print-array x)]
             [else (error <json-construct-error> :object x
                          "construct-json expects a list or a vector, \

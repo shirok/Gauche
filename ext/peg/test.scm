@@ -745,7 +745,8 @@
                    ("Url"    . "http://www.example.com/image/481989943")
                    ("Height" . 125)
                    ("Width"  . "100"))
-                  ("IDs" . #(116 943 234 38793)))))
+                  ("IDs" . #(116 943 234 38793))
+                  ("Misc" . ()))))
 
   (test-writer "writing an array containing two objects"
                '#((("precision" . "zip")

@@ -1,3 +1,8 @@
+2011-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/json.scm (print-value, construct-json): Should handle with
+	  empty list.  Patch from leque.
+
 2011-06-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/redefutil.scm, test/object.scm: Fixed change-class
