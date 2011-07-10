@@ -552,8 +552,8 @@
 ;;     (lambda (x y) a)  
 ;;     (lambda (x . y) c))
 ;;
-;; In the last example, 2 argument case matches the first procedure
-;; first, so 
+;; In the last example, 2 argument case matches the first procedure,
+;; for it has precedence.
 
 "typedef struct case_lambda_packet_rec {
     ScmVector *dispatch_vector;
