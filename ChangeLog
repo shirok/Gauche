@@ -4,6 +4,9 @@
 	  Moved case-lambda handling into the core.  This is the initial
 	  step towards aggresive inlining of case-lambda.
 	* src/autoloads.scm: changed accordingly.
+	* lib/util/queue.scm: changed to use case-lambda; we couldn't use
+	  it because of inter-module dependency.  now case-lambda is in
+	  core and we can use it here.
 
 2011-06-30  Shiro Kawai  <shiro@acm.org>
 

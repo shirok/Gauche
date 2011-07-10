@@ -316,15 +316,14 @@
            [else (result fallback fallback)])))
  )
 
-;; refrain from case-lambda to avoid dependency complication
-(define (queue-front q . opt)
-  (if (null? opt)
-    (values-ref (queue-peek q) 0)
-    (values-ref (queue-peek q (car opt)) 0)))
-(define (queue-rear q . opt)
-  (if (null? opt)
-    (values-ref (queue-peek q) 1)
-    (values-ref (queue-peek q (car opt)) 1)))
+(define queue-front
+  (case-lambda
+    [(q)         (values-ref (queue-peek q) 0)]
+    [(q default) (values-ref (queue-peek q default) 0)]))
+(define queue-rear
+  (case-lambda
+    [(q)         (values-ref (queue-peek q) 1)]
+    [(q default) (values-ref (queue-peek q default) 1)]))
 (define (queue->list q)         (queue-op q (^_(list-copy (%qhead q)))))
 (define (find-in-queue pred q)  (queue-op q (^_(find pred (%qhead q)))))
 (define (any-in-queue pred q)   (queue-op q (^_(any pred (%qhead q)))))
