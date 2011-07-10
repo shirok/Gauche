@@ -2584,7 +2584,9 @@
     [(_) (error "syntax-error: malformed case-lambda:" form)]
     [(_ (formals . body) ...)
      (receive (min-req max-req) (find-argcount-minmax formals)
-       (pass1 `(make-case-lambda
+       (pass1 `(,(make-identifier 'make-case-lambda
+                                  (find-module 'gauche.internal)
+                                  '())
                 ,min-req ,max-req ',formals
                 (list ,@(map (^(f b) `(,lambda. ,f ,@b)) formals body)))
               cenv))]

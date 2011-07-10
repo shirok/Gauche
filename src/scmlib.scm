@@ -859,8 +859,8 @@
     info))
 
 ;; Auxiliary procedures for case-lambda.
-;; TODO: move this to gauche.internal
-(define (make-case-lambda minarg maxarg formals closures)
+(define-in-module gauche.internal (make-case-lambda minarg maxarg
+                                                    formals closures)
 
   (define (fill-dispatch-vector! v formals closure)
     (define (%set n)
