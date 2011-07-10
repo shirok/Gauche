@@ -168,11 +168,10 @@
 
 ;; ~, ref*  ----------------------------------------------------
 ;;  (~ a b c d) => (ref (ref (ref a b) c) d)
-;;  NB: TEMPORARY BEING HERE: This is better to be in src/objlib.scm,
-;;  but we need to depend on case-lambda, so this should be defined
-;;  after case-lambda (& related helper procedures) to be loaded.
-;;  The way to go is to integrate case-lambda in the core first, then
-;;  move this to objlib.scm.
+;;  TODO: This is here because case-lambda used to be here as well.
+;;  This should really belong to src/objlib.scm.  However, we can't
+;;  do that in 0.9.2, since src/objlib.scm needs to be complied with
+;;  0.9.1.  Move this after 0.9.2 release.
 (define ~
   (getter-with-setter
    (case-lambda
