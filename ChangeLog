@@ -1,3 +1,10 @@
+2011-07-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/procedure.scm, src/compile.scm, src/scmlib.scm:
+	  Moved case-lambda handling into the core.  This is the initial
+	  step towards aggresive inlining of case-lambda.
+	* src/autoloads.scm: changed accordingly.
+
 2011-06-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/json.scm (print-value, construct-json): Should handle with

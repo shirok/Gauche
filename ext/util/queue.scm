@@ -61,8 +61,6 @@
   )
 (select-module util.queue)
 
-(autoload gauche.procedure make-dispatcher)
-
 ;;;
 ;;;  Data structures
 ;;;

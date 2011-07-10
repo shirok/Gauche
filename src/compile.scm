@@ -2575,6 +2575,29 @@
 
   (parse-kargs kargs '() '() #f #f))
 
+;; case-lambda (srfi-16)
+;;   we recognize it here so that we can do aggressive inlining.
+(define-pass1-syntax (case-lambda form cenv) :gauche
+  (match form
+    [(_ (formals . body)) ; special case
+     (pass1 `(,lambda. ,formals ,@body) cenv)]
+    [(_) (error "syntax-error: malformed case-lambda:" form)]
+    [(_ (formals . body) ...)
+     (receive (min-req max-req) (find-argcount-minmax formals)
+       (pass1 `(make-case-lambda
+                ,min-req ,max-req ',formals
+                (list ,@(map (^(f b) `(,lambda. ,f ,@b)) formals body)))
+              cenv))]
+    [_ (error "syntax-error: malformed case-lambda:" form)]))
+
+(define (find-argcount-minmax formals)
+  (define (length. xs k)
+    (if (pair? xs) (length. (cdr xs) (+ k 1)) k))
+  (let loop ([formals formals] [min-req #f] [max-req 0])
+    (if (null? formals)
+      (values min-req max-req)
+      (let1 k (length. (car formals) 0)
+        (loop (cdr formals) (if min-req (min min-req k) k) (max max-req k))))))
 
 (define-pass1-syntax (let form cenv) :null
   (match form

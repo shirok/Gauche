@@ -166,58 +166,6 @@
       (any check a)
       (check a))))
 
-;; case-lambda (srfi-16) ---------------------------------------
-
-(define-syntax case-lambda
-  (syntax-rules ()
-    [(case-lambda (arg . body)) (lambda arg . body)] ; special case
-    [(case-lambda (arg . body) ...)
-     (make-dispatcher (list (lambda arg . body) ...))]
-    [(case-lambda . _)
-     (syntax-error "malformed case-lambda" (case-lambda . _))]))
-
-(define (make-dispatcher closures)
-  (let1 arities (map arity closures)
-    (receive (min-req max-req) (%find-minmax arities)
-      (let1 v (make-vector (+ (- max-req min-req) 2) #f)
-        (for-each (cut %fill-dispatch-vector! v min-req <> <>) arities closures)
-        (%build-case-lambda v min-req max-req)))))
-
-(define (%find-minmax arities)
-  (let loop ([as arities] [min-req +inf.0] [max-req 0])
-    (cond [(null? as) (values (inexact->exact min-req) max-req)]
-          [(integer? (car as))
-           (loop (cdr as) (min (car as) min-req) (max (car as) max-req))]
-          [(list? (car as))
-           (receive (min-req2 max-req2) (%find-minmax (car as))
-             (loop (cdr as) (min min-req min-req2) (max max-req max-req2)))]
-          [(is-a? (car as) <arity-at-least>)
-           (let1 m (ref (car as) 'value)
-             (loop (cdr as) (min m min-req) (max (+ m 1) max-req)))]
-          [else (error "[internal] unsupported arity:" (car as))])))
-
-(define (%fill-dispatch-vector! v min-req arity closure)
-  (define (%set n)
-    (let1 i (- n min-req)
-      (unless (vector-ref v i) (vector-set! v i closure))))
-  (cond [(integer? arity) (%set arity)]
-        [(list? arity)
-         (for-each (cut %fill-dispatch-vector v min-req <> closure) arity)]
-        [(is-a? arity <arity-at-least>)
-         (let loop ([n (+ (vector-length v) min-req -1)])
-           (when (>= n min-req) (%set n) (loop (- n 1))))]))
-
-(define (%build-case-lambda v min-req max-req)
-  (rlet1 p ((with-module gauche.internal make-case-lambda-dispatcher) v min-req)
-    ((with-module gauche.internal %attach-inline-er-transformer)
-     p
-     (lambda (form r c)
-       (let1 nargs (- (length form) 1)
-         (if (and (<= min-req nargs max-req)
-                  (vector-ref v (- nargs min-req)))
-           (cons (vector-ref v (- nargs min-req)) (cdr form))
-           form))))))
-
 ;; ~, ref*  ----------------------------------------------------
 ;;  (~ a b c d) => (ref (ref (ref a b) c) d)
 ;;  NB: TEMPORARY BEING HERE: This is better to be in src/objlib.scm,

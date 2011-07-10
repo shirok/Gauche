@@ -124,7 +124,7 @@
           ;;(:macro curry-lambda) (:macro define-curry)
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value disasm
-          (:macro case-lambda) ~ ref*)
+          ~ ref*)
 
 (autoload gauche.time (:macro time))
 

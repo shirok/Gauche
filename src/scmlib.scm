@@ -858,6 +858,24 @@
              [ (not (#/^\(.*\)$/ info)) ])
     info))
 
+;; Auxiliary procedures for case-lambda.
+;; TODO: move this to gauche.internal
+(define (make-case-lambda minarg maxarg formals closures)
+
+  (define (fill-dispatch-vector! v formals closure)
+    (define (%set n)
+      (let1 i (- n minarg)
+        (unless (vector-ref v i) (vector-set! v i closure))))
+    (let loop ([formals formals] [n 0])
+      (cond [(> n (+ maxarg 1))]
+            [(null? formals) (%set n)]
+            [(pair? formals) (loop (cdr formals) (+ n 1))]
+            [else (%set n) (loop formals (+ n 1))])))
+  
+  (let1 v (make-vector (+ (- maxarg minarg) 2) #f)
+    (for-each (cut fill-dispatch-vector! v <> <>) formals closures)
+    ((with-module gauche.internal make-case-lambda-dispatcher) v minarg)))
+
 ;;; TEMPORARY for 0.9.x series
 ;;; Remove this after 1.0 release!!!
 ;;;
