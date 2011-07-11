@@ -5050,7 +5050,7 @@ Gauche also provides OS-supported file locking feature,
 Whether you want to use @code{fcntl} lock or @code{with-lock-file}
 will depend on your application.
 
-There are the advantages of the @code{fcntl} lock:
+These are the advantages of the @code{fcntl} lock:
 
 @itemize
 @item
@@ -5121,7 +5121,7 @@ Bound to pi, pi/2, pi/4, pi/180, 1/pi and 180/pi, respectively.
 @end defvr
 
 @defvr {Constant} e
-e.
+Napier's constant.
 @end defvr
 
 @c ----------------------------------------------------------------------
