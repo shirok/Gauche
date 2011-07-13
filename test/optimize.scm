@@ -41,9 +41,14 @@
 (test* "inlining add4 + constant folding" '(((CONSTI 9)) ((RET)))
        (proc->insn/split (lambda () (+ (add4 2) 3))))
 
+(test-section "lambda lifting")
 
-
-
+;; bug reported by teppey
+(test* "pass4 lambda marking bug" #t
+       (begin ((with-module gauche.internal compile)
+               '(let loop () (values (lambda () #f)) (loop))
+               (current-module))
+              #t))
 
 (test-end)
 

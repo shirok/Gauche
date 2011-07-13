@@ -1,3 +1,8 @@
+2011-07-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass4/scan): Fixed a bug that unnecessarily
+	  marked dissolved lambda in pass4, confusing the later passes.
+
 2011-07-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/procedure.scm, src/compile.scm, src/scmlib.scm:

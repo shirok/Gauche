@@ -4089,21 +4089,21 @@
                (pass4/scan ($receive-body iform) bs fs #f labels))]
   [($LAMBDA) (let1 inner-fs (pass4/scan ($lambda-body iform)
                                         ($lambda-lvars iform) '() #f labels)
-               (unless (eq? ($lambda-flag iform) 'dissolved)
-                 (label-dic-info-push! labels iform)) ;save the lambda node
                ;; If this $LAMBDA is outermost in the original expression,
                ;; we don't need to lift it, nor need to set free-lvars.
                ;; We just mark it by setting lifted-var to #t so that
                ;; pass4/lift phase can treat it specially.
-               (if t?
-                 ($lambda-lifted-var-set! iform #t) ;mark this is toplevel
-                 (begin
-                   ($lambda-free-lvars-set! iform inner-fs)
-                   (let loop ([inner-fs inner-fs] [fs fs])
-                     (if (null? inner-fs)
-                       fs
-                       (loop (cdr inner-fs)
-                             (pass4/add-lvar (car inner-fs) bs fs)))))))]
+               (unless (eq? ($lambda-flag iform) 'dissolved)
+                 (label-dic-info-push! labels iform) ;save the lambda node
+                 (when t?                            ;mark this is toplevel
+                   ($lambda-lifted-var-set! iform #t)))
+               (cond [t? '()]
+                     [else ($lambda-free-lvars-set! iform inner-fs)
+                           (let loop ([inner-fs inner-fs] [fs fs])
+                             (if (null? inner-fs)
+                               fs
+                               (loop (cdr inner-fs)
+                                     (pass4/add-lvar (car inner-fs) bs fs))))]))]
   [($LABEL)  (cond [(label-seen? labels iform) fs]
                    [else (label-push! labels iform)
                          (pass4/scan ($label-body iform) bs fs #f labels)])]
