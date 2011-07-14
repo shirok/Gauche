@@ -50,5 +50,19 @@
                (current-module))
               #t))
 
+;; See if constant lambda won't make closures.
+;; The internal (^k (* k k)) should be lifted to the toplevel, so that
+;; there shouldn't be CLOSURE instruction.
+(test* "lifting constant lambda" '()
+       (filter-insn (^(xs) (map (^k (* k k)) xs)) 'CLOSURE))
+
+;; See if constant lambda keeps identity.
+;; NB: This isn't a guaranteed behavior, but it holds in the
+;; current compiler, and there's no reason to lose it.
+(define (make-constant-closure) (lambda () #t))
+
+(test* "constant closure identity" #t
+       (eq? (make-constant-closure) (make-constant-closure)))
+
 (test-end)
 
