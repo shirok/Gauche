@@ -37,7 +37,8 @@
            <gauche/class.h>
            <gauche/vminsn.h>
            <gauche/regexp.h>
-           <gauche/bignum.h>))
+           <gauche/bignum.h>
+           <gauche/char_attr.h>))
 
 ;;
 ;; Macros
@@ -378,6 +379,44 @@
 
 (define-cproc supported-character-encoding? (encoding::<const-cstring>)
   ::<boolean> Scm_SupportedCharacterEncodingP)
+
+(define-cproc char-title-case? (c::<char>)
+  ::<boolean> :constant Scm_CharTitlecaseP)
+(define-cproc char-titlecase (c::<char>) ::<char> Scm_CharTitlecase)
+(define-cproc char-foldcase (c::<char>) ::<char> Scm_CharFoldcase)
+
+(define-cproc char-general-category (c::<char>) :constant
+  (case (Scm_CharGeneralCategory c)
+    [(SCM_CHAR_CATEGORY_Lu) (result 'Lu)]
+    [(SCM_CHAR_CATEGORY_Ll) (result 'Ll)]
+    [(SCM_CHAR_CATEGORY_Lt) (result 'Lt)]
+    [(SCM_CHAR_CATEGORY_Lm) (result 'Lm)]
+    [(SCM_CHAR_CATEGORY_Lo) (result 'Lo)]
+    [(SCM_CHAR_CATEGORY_Mn) (result 'Mn)]
+    [(SCM_CHAR_CATEGORY_Mc) (result 'Mc)]
+    [(SCM_CHAR_CATEGORY_Me) (result 'Me)]
+    [(SCM_CHAR_CATEGORY_Nd) (result 'Nd)]
+    [(SCM_CHAR_CATEGORY_Nl) (result 'Nl)]
+    [(SCM_CHAR_CATEGORY_No) (result 'No)]
+    [(SCM_CHAR_CATEGORY_Pc) (result 'Pc)]
+    [(SCM_CHAR_CATEGORY_Pd) (result 'Pd)]
+    [(SCM_CHAR_CATEGORY_Ps) (result 'Ps)]
+    [(SCM_CHAR_CATEGORY_Pe) (result 'Pe)]
+    [(SCM_CHAR_CATEGORY_Pi) (result 'Pi)]
+    [(SCM_CHAR_CATEGORY_Pf) (result 'Pf)]
+    [(SCM_CHAR_CATEGORY_Po) (result 'Po)]
+    [(SCM_CHAR_CATEGORY_Sm) (result 'Sm)]
+    [(SCM_CHAR_CATEGORY_Sc) (result 'Sc)]
+    [(SCM_CHAR_CATEGORY_Sk) (result 'Sk)]
+    [(SCM_CHAR_CATEGORY_So) (result 'So)]
+    [(SCM_CHAR_CATEGORY_Zs) (result 'Zs)]
+    [(SCM_CHAR_CATEGORY_Zl) (result 'Zl)]
+    [(SCM_CHAR_CATEGORY_Zp) (result 'Zp)]
+    [(SCM_CHAR_CATEGORY_Cc) (result 'Cc)]
+    [(SCM_CHAR_CATEGORY_Cf) (result 'Cf)]
+    [(SCM_CHAR_CATEGORY_Cs) (result 'Cs)]
+    [(SCM_CHAR_CATEGORY_Co) (result 'Co)]
+    [(SCM_CHAR_CATEGORY_Cn) (result 'Cn)]))
 
 ;; character sets (SRFI-14)
 ;;   not all of srfi-14 functions are defined in C.  you need to load

@@ -34,6 +34,9 @@
 #include <ctype.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/char_attr.h"
+
+#include "char_attr.c"          /* generated tables */
 
 /*=======================================================================
  * Character functions
@@ -796,6 +799,198 @@ ScmObj read_predef_charset(ScmPort *input, ScmObj *chars, int error_p)
         Scm_Error("invalid or unsupported POSIX charset '[%s]'", name);
     }
     return SCM_FALSE;
+}
+
+/*-----------------------------------------------------------------
+ * Character attributes
+ */
+
+int Scm_CharGeneralCategory(ScmChar ch)
+{
+    return (int)(Scm__LookupCharCategory(ch) & SCM_CHAR_CATEGORY_MASK);
+}
+
+int Scm_CharAlphabeticP(ScmChar ch)
+{
+    return (SCM_CHAR_ALPHA_MASK & Scm__LookupCharCategory(ch)) != 0;
+}
+
+int Scm_CharUppercaseP(ScmChar ch)
+{
+    return ((SCM_CHAR_ALPHA_MASK & Scm__LookupCharCategory(ch))
+            == SCM_CHAR_UPPERCASE_BITS);
+}
+
+int Scm_CharLowercaseP(ScmChar ch)
+{
+    return ((SCM_CHAR_ALPHA_MASK & Scm__LookupCharCategory(ch))
+            == SCM_CHAR_LOWERCASE_BITS);
+}
+
+int Scm_CharTitlecaseP(ScmChar ch)
+{
+    return (Scm_CharGeneralCategory(ch) == SCM_CHAR_CATEGORY_Lt);
+}
+
+int Scm_CharNumericP(ScmChar ch)
+{
+    return (Scm_CharGeneralCategory(ch) == SCM_CHAR_CATEGORY_Nd);
+}
+
+/* An internal entry to extract case mapping info.
+ * Internal table is compressed, so the caller must provide
+ * the buffer for ScmCharCaseMap.
+ * The function returns either the pointer to the given buffer
+ * with information filled, or a pointer to a static read-only
+ * data structure in the internal table.
+ */
+static const ScmCharCaseMap casemap_identity = {
+    0, 0, 0, {-1}, {-1}, {-1}
+};
+
+const ScmCharCaseMap *Scm__CharCaseMap(ScmChar ch,
+                                       ScmCharCaseMap *buf,
+                                       int full)
+{
+    if (ch < 0x10000) {
+        int subtable = casemap_000[(ch >> 8) & 0xff];
+        unsigned short cmap;
+        
+        if (subtable == 255) return &casemap_identity;
+
+        cmap = casemap_subtable[subtable][(unsigned char)(ch & 0xff)];
+        if (cmap == SCM_CHAR_NO_CASE_MAPPING) return &casemap_identity;
+        if (cmap & 0x8000) {
+            /* mapping is extended. */
+            return &(extended_casemaps[cmap & 0x7fff]);
+        } else {
+            /* mapping is simple */
+            int off = (cmap & 0x2000)? (signed int)(cmap|~0x1fff) : cmap&0x1fff;
+            if (cmap & 0x4000) {
+                buf->to_upper_simple = off;
+                buf->to_lower_simple = 0;
+                buf->to_title_simple = off;
+            } else {
+                buf->to_upper_simple = 0;
+                buf->to_lower_simple = off;
+                buf->to_title_simple = 0;
+            }
+            if (full) {
+                /* indicate no special mappings */
+                buf->to_upper_full[0] = -1;
+                buf->to_lower_full[0] = -1;
+                buf->to_title_full[0] = -1;
+            }
+            return buf;
+        }
+    } else {
+        /* TODO: 104xx*/
+        return &casemap_identity;
+    }
+}
+
+/*
+ * Case conversion API.  For the time being, CharCaseMap works on Unicode
+ * codepoints, so we have to convert from/to ScmChar if the internal encoding
+ * is either EUC-JP or SJIS.
+ */
+#define SIMPLE_CASE(code, buf, field) \
+    (ScmChar)((code) + Scm__CharCaseMap((code), (buf), FALSE)->SCM_CPP_CAT3(to_, field, _simple))
+
+#define SIMPLE_CASE_CV(code, buf, field)    \
+    ((code) = (ScmChar)Scm_CharToUcs((int)(code)), \
+     (code) = SIMPLE_CASE(code, buf, field),       \
+     Scm_UcsToChar((int)(code)))
+
+ScmChar Scm_CharUpcase(ScmChar ch)
+{
+    ScmCharCaseMap cm;
+#if defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
+    if (ch < 0x80) return SIMPLE_CASE(ch, &cm, upper);
+    else if (Scm__CharInUnicodeP(ch)) return SIMPLE_CASE_CV(ch, &cm, upper);
+    else           return ch;
+#elif defined(GAUCHE_CHAR_ENCODING_UTF_8)
+    return SIMPLE_CASE(ch, &cm, upper);
+#else
+    /* Latin-1 mapping and Unicode mapping differ in U+00B5 (MICRO SIGN)
+       and U+00FF (LATIN SMALL LETTER Y WITH DIAERESIS).  In Unicode
+       they map to U+039C and U+0178, respectively.  In Latin-1 we don't
+       have those characters, so we leave them alone. */
+    if (ch == 0xb5 || ch == 0xff) return ch;
+    else return SIMPLE_CASE(ch, &cm, upper);
+#endif
+}
+
+ScmChar Scm_CharDowncase(ScmChar ch)
+{
+    ScmCharCaseMap cm;
+#if defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
+    if (ch < 0x80) return SIMPLE_CASE(ch, &cm, lower);
+    else if (Scm__CharInUnicodeP(ch)) return SIMPLE_CASE_CV(ch, &cm, lower);
+    else           return ch;
+#else
+    return SIMPLE_CASE(ch, &cm, lower);
+#endif
+}
+
+ScmChar Scm_CharTitlecase(ScmChar ch)
+{
+    ScmCharCaseMap cm;
+#if defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
+    if (ch < 0x80) return SIMPLE_CASE(ch, &cm, title);
+    else if (Scm__CharInUnicodeP(ch)) return SIMPLE_CASE_CV(ch, &cm, title);
+    else           return ch;
+#elif defined(GAUCHE_CHAR_ENCODING_UTF_8)
+    return SIMPLE_CASE(ch, &cm, title);
+#else
+    /* In Latin-1, titlecase is the same as upcase. */
+    return Scm_CharUpcase(ch);
+#endif
+}
+
+ScmChar Scm_CharFoldcase(ScmChar ch)
+{
+    ScmCharCaseMap cm;
+    const ScmCharCaseMap *pcm;
+#if defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
+    if (Scm__CharInUnicodeP(ch)) {
+        ScmChar ucs = (ScmChar)Scm_CharToUcs(ch);
+        pcm = Scm__CharCaseMap(ucs, &cm, FALSE);
+        if (pcm->to_lower_simple == 0 && pcm->to_upper_simple == 0) {
+            /* we don't have case folding */
+            return ch;
+        }
+        /* Otherwise, we do (char-downcase (char-upcase ch)) */
+        if (pcm->to_upper_simple != 0) {
+            ucs += pcm->to_upper_simple;
+            pcm = Scm__CharCaseMap(ucs, &cm, FALSE);
+        }
+        return Scm_UcsToChar((int)(ucs + pcm->to_lower_simple));
+    } else {
+        return ch;
+    }
+#elif defined(GAUCHE_CHAR_ENCODING_UTF_8)
+    if (ch == 0x130 || ch == 0x131) {
+        /* char-foldcase is identity for
+           U+0130 Turkish I (LATIN CAPITAL LETTER I WITH DOT ABOVE) and
+           U+0131 Turkish i (LATIN SMALL LETTER DOTLESS I) */
+        return ch;
+    }
+    pcm = Scm__CharCaseMap(ch, &cm, FALSE);
+    if (pcm->to_lower_simple == 0 && pcm->to_upper_simple == 0) {
+        /* we don't have case folding */
+        return ch;
+    }
+    /* Otherwise, we do (char-downcase (char-upcase ch)) */
+    if (pcm->to_upper_simple != 0) {
+        ch += pcm->to_upper_simple;
+        pcm = Scm__CharCaseMap(ch, &cm, FALSE);
+    }
+    return ch + pcm->to_lower_simple;
+#else
+    /* In Latin-1 range, foldcase is the same as donwcase. */
+    return SIMPLE_CASE(ch, &cm, lower);
+#endif
 }
 
 /*-----------------------------------------------------------------

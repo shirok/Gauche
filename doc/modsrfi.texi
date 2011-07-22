@@ -2295,18 +2295,35 @@ See also the Gauche built-in procedure @code{string-scan}
 
 @defun string-titlecase s :optional start end
 @defunx string-titlecase! s :optional start end
-[SRFI-13]
-@end defun
-
-@defun string-upcase s :optional start end
+@defunx string-upcase s :optional start end
 @defunx string-upcase! s :optional start end
-[SRFI-13]
-@end defun
-
-@defun string-downcase s :optional start end
+@defunx string-downcase s :optional start end
 @defunx string-downcase! s :optional start end
 [SRFI-13]
+Converts a string @var{s} to titlecase, upcase or downcase,
+respectively.  These operations uses character-by-character
+mapping provided by @code{char-upcase} etc.  That is, @code{string-upcase}
+and @code{string-downcase} can be understood as follow:
+
+@example
+(string-upcase s)
+  @equiv{} (string-map char-upcase s)
+(string-downcase s)
+  @equiv{} (string-map char-downcase s)
+@end example
+
+If you need full case mapping that handles the case when
+a character is mapped to more than one characters, use
+the procedures with the same name in @code{text.unicode} module
+(@xref{Full string case conversion}).
+
+The linear-update version @code{string-titelcase!}, @code{string-upcase!}
+and @code{string-downcase!} destroys @var{s} to store the result.
+Note that in Gauche, using those procedures doesn't save anything,
+since string mutation is expensive by design.  They are provided merely
+for completeness.
 @end defun
+
 
 @node SRFI-13 String reverse & append, SRFI-13 String mapping, SRFI-13 String case mapping, String library
 @subsection String reverse & append

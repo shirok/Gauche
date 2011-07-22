@@ -17,7 +17,7 @@ object.scm
 exception.scm
 regexp.scm
 sort.scm
-mb-chars
+chars-strings.scm
 system.scm
 load2.scm
 rfc.scm

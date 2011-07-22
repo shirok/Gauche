@@ -324,10 +324,12 @@ typedef struct ScmFlonumRec {
 #define SCM_CHAR_MAX            (0xffffff)
 
 #define SCM_CHAR_ASCII_P(ch)    ((ch) < 0x80)
-#define SCM_CHAR_UPPER_P(ch)    (('A' <= (ch)) && ((ch) <= 'Z'))
-#define SCM_CHAR_LOWER_P(ch)    (('a' <= (ch)) && ((ch) <= 'z'))
-#define SCM_CHAR_UPCASE(ch)     (SCM_CHAR_LOWER_P(ch)?((ch)-('a'-'A')):(ch))
-#define SCM_CHAR_DOWNCASE(ch)   (SCM_CHAR_UPPER_P(ch)?((ch)+('a'-'A')):(ch))
+
+/* The following four macros are obsoleted; use API version instead.*/
+#define SCM_CHAR_UPPER_P(ch)    Scm_CharUppercaseP(ch)
+#define SCM_CHAR_LOWER_P(ch)    Scm_CharLowercaseP(ch)
+#define SCM_CHAR_UPCASE(ch)     Scm_CharUpcase(ch)
+#define SCM_CHAR_DOWNCASE(ch)   Scm_CharDowncase(ch)
 
 SCM_EXTERN int Scm_DigitToInt(ScmChar ch, int radix);
 SCM_EXTERN ScmChar Scm_IntToDigit(int n, int radix);
@@ -336,6 +338,18 @@ SCM_EXTERN ScmChar Scm_UcsToChar(int ucs);
 SCM_EXTERN ScmObj Scm_CharEncodingName(void);
 SCM_EXTERN const char **Scm_SupportedCharacterEncodings(void);
 SCM_EXTERN int Scm_SupportedCharacterEncodingP(const char *encoding);
+
+SCM_EXTERN int Scm_CharGeneralCategory(ScmChar ch);
+SCM_EXTERN int Scm_CharAlphabeticP(ScmChar ch);
+SCM_EXTERN int Scm_CharUppercaseP(ScmChar ch);
+SCM_EXTERN int Scm_CharLowercaseP(ScmChar ch);
+SCM_EXTERN int Scm_CharTitlecaseP(ScmChar ch);
+SCM_EXTERN int Scm_CharNumericP(ScmChar ch);
+
+SCM_EXTERN ScmChar Scm_CharUpcase(ScmChar ch);
+SCM_EXTERN ScmChar Scm_CharDowncase(ScmChar ch);
+SCM_EXTERN ScmChar Scm_CharTitlecase(ScmChar ch);
+SCM_EXTERN ScmChar Scm_CharFoldcase(ScmChar ch);
 
 SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
                                           int (*c2u)(ScmChar));

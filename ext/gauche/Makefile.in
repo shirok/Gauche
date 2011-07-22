@@ -58,6 +58,5 @@ gauche--hook.$(SOEXT) : $(gauche-hook_OBJECTS)
 gauche--hook.c hook.sci : $(top_srcdir)/libsrc/gauche/hook.scm
 	$(PRECOMP) -e -P -o gauche--hook $(top_srcdir)/libsrc/gauche/hook.scm
 
-
 install : install-std
 

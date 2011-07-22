@@ -1,3 +1,39 @@
+2011-07-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c, src/char_attr.c, src/gauche/char_attr.h: Added
+	  character category and case mapping tables according to Unicode
+	  character database.  New/revised APIs: Scm_CharGeneralCategory,
+	  Scm_CharAlphabeticP, Scm_CharUppercaseP, Scm_CharLowercaseP,
+	  Scm_CharTitlecaseP, Scm_CharNumericP, Scm_CharUpcase,
+	  Scm_CharDowncase, scm_CharTitlecase, Scm_CharFoldcase.
+	* src/gauche/char_utf_8.h, src/gauche/char_euc_jp.h,
+	  src/gauche/char_sjis.h, src/gauche/char_none.h: Some new encoding-
+	  specific routines to handle the above functionality.
+	* src/stdlib.stub: Changed char-alphabetic?, char-numeric?,
+	  char-upper-case?, char-lower-case?, char-upcase and char-downcase
+	  to use the new APIs.
+	* src/extlib.stub: Added char-title-case?, char-titlecase,
+	  char-foldcase, char-general-category.
+	* src/gen-unicode.scm: A script to generate character attribute
+	  tables from Unicode character database.  The generated files are
+	  checked in to repos, so developers don't need to run this script
+	  regularly.  Tables need to be regenerated only when Unicode is
+	  updated.  To run this script, go down to src/ and do 'make char-data'
+	  and follow the instructions.
+
+	* ext/text/unicode.scm, ext/text/unicode_attr.h: text.unicode
+	  module provides unicode-defined operations, including unicode
+	  encoding conversions, grapheme-cluster and word segmentation,
+	  and string-upcase, string-downcase, string-titlecase and
+	  string-foldcase.
+
+	* doc/corelib.texi, doc/modsrfi.texi, doc/modutil.texi: Added
+	  description of new case handling scheme, text.unicode module,
+	  and relation to srfi-13 string-upcase etc.
+
+	* test/chars-strings.scm: Renamed from test/mb-chars.scm and added
+	  more tests.
+
 2011-07-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass4/scan): Fixed a bug that unnecessarily

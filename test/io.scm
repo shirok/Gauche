@@ -753,11 +753,13 @@
 (test-port->* port->string "" display)
 (test-port->* port->string "abc" display)
 (test-port->* port->string "abc\ndef\n" display)
-(test-port->* port->string #*"\x00\x80\xc0\xd0\xff\xfe\xef" display)
+(test-port->* (.$ string-complete->incomplete port->string)
+              #*"\x00\x80\xc0\xd0\xff\xfe\xef" display)
 
 (test-port->* port->string-list '("abc") (cut for-each print <>))
 (test-port->* port->string-list '("abc" "def") (cut for-each print <>))
-(test-port->* port->string-list '(#*"\x00\x80\xc0\xd0\xff\xfe\xef" "abc")
+(test-port->* (.$ (cut map string-complete->incomplete <>) port->string-list)
+              '(#*"\x00\x80\xc0\xd0\xff\xfe\xef" #*"abc")
               (cut for-each (^z (display z) (newline)) <>))
 
 (test-port->* port->sexp-list '(abc) (cut for-each print <>))

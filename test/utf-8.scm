@@ -1,8 +1,6 @@
 ;; -*- coding: utf-8 -*-
 
-(use gauche.test)
-
-(test-start "UTF8")
+(test-section "UTF8")
 (use srfi-1)
 
 ;;-------------------------------------------------------------------
@@ -619,4 +617,3 @@
          (rxmatch-after m) ;; memoizes start and length
          (list (rxmatch-before m) (rxmatch-substring m))))
 
-(test-end)

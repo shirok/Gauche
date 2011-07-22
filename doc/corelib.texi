@@ -2898,20 +2898,52 @@ Gaucheの内部文字エンコーディングがUTF-8でない場合、
 
 @defun char-upcase char
 @defunx char-downcase char
-[R5RS]
+@defunx char-titlecase char
+@defunx char-foldcase char
+[R5RS+]
 @c EN
-Returns the upper case and lower case of @var{char}, respectively.
-If @var{char} doesn't have such distinction of upper or lower case,
-@code{char} itself is returned.
+Returns the upper case, lower case, title case and folded case of
+@var{char}, respectively.  R5RS doesn't have
+@code{char-titlecase} and @code{char-foldcase}.
+Foldcase is the same as apply upcase, then downcase.
 
-In the current version, character cases are not well defined
-outside the ASCII character range.
+The mapping is done according to Unicode-defined character-by-character
+case mapping whenever possible.  If the native encoding doesn't support
+the mapped character defined in Unicode, the operation becomes no-op.
+If the native encoding is 'none', we treat the characters as if they
+are Latin-1 (ISO-8859-1) characters.  So, upcasing Latin-1 character
+small y with diaresis (U+00ff) maps to capital y with diaresis
+(U+039c) if the internal encoding is utf-8, but it is no-op if
+the internal encoding is none.
 @c JP
-@var{char}の大文字と小文字をそれぞれ返します。@var{char}に大文字小文字の区別が
-無ければ@var{char}がそのまま返されます。
+@var{char}の大文字、小文字、titlecase、foldcaseを
+それぞれ返します。foldcaseは最初に大文字にしてそれから小文字にするのと同じ操作です。
 
-現在のバージョンではASCII文字の範囲外における大文字小文字の扱いが
-きちんと定義されていないことに注意して下さい。
+変換は原則としてUnicodeで定義された文字対文字のマッピングに従います。
+Unicodeに従って変換する先の文字が内部エンコーディングでサポートされていない
+場合は、変換は行いません。内部エンコーディングが'none'の場合は、
+文字をLatin-1 (ISO-8859-1) であるとみなします。Latin-1の
+small y with diaresis (U+00ff) をupcaseすると、
+内部エンコーディングがutf-8の場合はcapital y with diaresis (U+039c)にマップされますが、
+内部エンコーディングがnoneであれば元の文字がそのまま返されます。
+@c COMMON
+
+@c EN
+The character-by-character case mapping doesn't consider a character
+that may map to more than one characters; a notable example is
+eszett (latin small letter sharp S, U+00df), which is
+is mapped to two capital S's in string context,
+but @code{char-upcase #\ß} returns #\ß.  To get a full mapping,
+use @code{string-upcase} etc. in @code{text.unicode} module
+(@xref{Full string case conversion}).
+@c JP
+文字対文字のマッピングでは、一文字が複数文字に展開されるようなケースマッピングは
+扱いません。有名な例はeszett (latin small letter sharp S, U+00df)で、
+文字列のコンテキストでは二つの大文字のSへとマップされますが、
+@code{char-upcase #\ß} は単に #\ß を返します。
+完全なマッピングが必要なら、@code{text.unicode}モジュールの
+@code{string-upcase}等が利用できます
+(@ref{Full string case conversion}参照)。
 @c COMMON
 @end defun
 

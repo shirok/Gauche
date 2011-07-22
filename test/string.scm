@@ -4,7 +4,7 @@
 
 (use gauche.test)
 
-(test-start "string")
+(test-start "strings (basic)")
 
 ;;-------------------------------------------------------------------
 (test-section "builtins")

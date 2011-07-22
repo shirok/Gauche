@@ -372,22 +372,21 @@
 (define-cproc char-ci>=? (c1::<char> c2::<char>) ::<boolean> :constant
   (char-ci-cmp >=))
 
-(define-cproc char-alphabetic? (c::<char>) ::<boolean>
-  (result (and (SCM_CHAR_ASCII_P c) (isalpha c))))
-(define-cproc char-numeric? (c::<char>) ::<boolean>
-  (result (and (SCM_CHAR_ASCII_P c) (isdigit c))))
+(define-cproc char-alphabetic? (c::<char>) ::<boolean> Scm_CharAlphabeticP)
+(define-cproc char-numeric? (c::<char>) ::<boolean> Scm_CharNumericP)
 (define-cproc char-whitespace? (c::<char>) ::<boolean>
-  (result (and (SCM_CHAR_ASCII_P c) (isspace c))))
-(define-cproc char-upper-case? (c::<char>) ::<boolean> SCM_CHAR_UPPER_P)
-(define-cproc char-lower-case? (c::<char>) ::<boolean> SCM_CHAR_LOWER_P)
+  (result (or (and (SCM_CHAR_ASCII_P c) (isspace c))
+              (SCM_CHAR_EXTRA_WHITESPACE c))))
+(define-cproc char-upper-case? (c::<char>) ::<boolean> Scm_CharUppercaseP)
+(define-cproc char-lower-case? (c::<char>) ::<boolean> Scm_CharLowercaseP)
 
 (define-cproc char->integer (c::<char>) ::<long> :constant
   (result (cast (signed long) c)))
 (define-cproc integer->char (c::<int>) ::<char> :constant
   (result (cast ScmChar c)))
 
-(define-cproc char-upcase (c::<char>)   ::<char> SCM_CHAR_UPCASE)
-(define-cproc char-downcase (c::<char>) ::<char> SCM_CHAR_DOWNCASE)
+(define-cproc char-upcase (c::<char>)   ::<char> Scm_CharUpcase)
+(define-cproc char-downcase (c::<char>) ::<char> Scm_CharDowncase)
 
 ;;
 ;; 6.3.5 Strings
