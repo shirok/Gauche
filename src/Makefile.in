@@ -401,4 +401,4 @@ pre-package : $(GENERATED)
 
 install-mingw:
 	$(INSTALL) -m 444 $(INSTALL_MINGWHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche
-
+	$(INSTALL) -m 444 gauche-install.exe.manifest $(DESTDIR)$(BIN_INSTALL_DIR)
