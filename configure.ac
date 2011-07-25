@@ -573,7 +573,7 @@ case $host in
     fi
     SHLIB_DYLIB_SUFFIX="dylib"
     SHLIB_LIBS_FOR_EXT=""
-    SHLIB_MAIN_LDFLAGS=""
+    SHLIB_MAIN_LDFLAGS="-Wl,-no_pie"
     SHLIB_OK=ok
     LINK_HELPER='./link-dylib'
     ext_use_libgauche=no

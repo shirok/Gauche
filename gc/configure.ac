@@ -333,9 +333,11 @@ AM_CONDITIONAL(AVOID_CPP_LIB,test $avoid_cpp_lib = yes)
 case "${host}" in
   *-*-darwin*)
     extra_ldflags_libgc=-Wl,-single_module
+    extra_ldflags_test=-Wl,-no_pie
     ;;
 esac
 AC_SUBST(extra_ldflags_libgc)
+AC_SUBST(extra_ldflags_test)
 
 AC_SUBST(EXTRA_TEST_LIBS)
 
