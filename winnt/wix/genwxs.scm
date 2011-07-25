@@ -25,7 +25,8 @@
          (Manufacturer "Shiro Kawai")
          (InstallerVersion "200")
          (Compressed "yes")))
-     
+
+     (UIRef (@ (Id "WixUI_InstallDir")))
      (Property (@ (Id "WIXUI_INSTALLDIR") (Value "INSTALLDIR")))
      (WixVariable (@ (Id "WixUILicenseRtf") (Value "Gauche\\COPYING.rtf")))
      (Media (@ (Id "1") (Cabinet "gauche.cab") (EmbedCab "yes")))
