@@ -7,7 +7,7 @@ stamp.0 : genwxs.scm Gauche $(MORE_CONTENT)
 	rm -f gauche.wxs *.msi
 	../../src/gosh -ftest ./genwxs.scm gauche.wxs
 	candle gauche.wxs
-	light -ext WixUIExtension gauche.wixobj
+	light -ext WixUIExtension -sice:ICE61 gauche.wixobj
 	mv gauche.msi Gauche-mingw-`Gauche/bin/gauche-config -V`.msi
 	touch stamp.0
 

@@ -13,7 +13,7 @@
   `(Wix
     (@ (xmlns ,*wix-ns*))
     (Product
-     (@ (Id "83a47ff2-a9a0-4e1a-8043-716f3e2c30be")
+     (@ (Id "*")
         (Name "Gauche")
         (Language "1033")
         (Version ,version)
@@ -121,6 +121,9 @@
               (ComponentRef (@ (Id "DesktopShortcut")))
               )
 
+     (MajorUpgrade
+      (@ (DowngradeErrorMessage "Newer version of Gauche is already installed.")
+         (AllowSameVersionUpgrades "yes")))
      )))
 
 ;; vals :: Val | (name Val)
