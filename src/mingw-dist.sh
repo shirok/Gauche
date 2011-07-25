@@ -16,8 +16,8 @@ while [ "$#" -gt 0 ]; do
     -*)
      echo "Options:"
      echo "  --with-gl: Include Gauche-gl.  Gauche-gl source must be in ../Gauche-gl."
-     echo "  --with-installer:  Creates binary installer using NSIS.  'makensis.exe'"
-     echo "      must be visible in PATH."
+     echo "  --with-installer:  Creates binary installer using Wix.  'candle.exe' and"
+     echo "      'light.exe' must be visible in PATH."
      exit 1;;
   esac
 done
@@ -29,9 +29,9 @@ if [ "$WITH_GL" = yes ]; then
 fi
 
 if [ "$INSTALLER" = yes ]; then
-  makensis_path=`which makensis.exe 2> /dev/null`
-  if test -e "$makensis_path"; then echo "NSIS compiler found: $makensis_path"
-  else echo "--installer: Cannot find makensis.exe.  Aborting."; exit 1
+  wix_path=`which candle.exe 2> /dev/null`
+  if test -e "$wix_path"; then echo "Wix SDK found: $wix_path"
+  else echo "--installer: Cannot find Wix SDK.  Aborting."; exit 1
   fi
 fi
 
@@ -43,36 +43,40 @@ fi
 if [ -f examples/mqueue-cpp/Makefile ]; then 
   (cd examples/mqueue-cpp; make maintainer-clean);
 fi
-distdir=`pwd`/../Gauche-mingw-dist
+
+if [ "$INSTALLER" = yes ]; then
+  distdir=`pwd`/winnt/wix/Gauche
+else
+  distdir=`pwd`/../Gauche-mingw-dist/Gauche
+fi  
 rm -rf $distdir
-./configure --enable-multibyte=utf8 --prefix=$distdir/Gauche
+./configure --enable-multibyte=utf8 --prefix=$distdir
 make
 
 # prepare precompiled directory tree.
 make install
 (cd src; make install-mingw)
 make install-examples
-rm -rf $distdir/Gauche/lib/libgauche.dll*
-cp COPYING $distdir/Gauche
-cp $mingwdir/bin/mingwm10.dll $distdir/Gauche/bin
+rm -rf $distdir/lib/libgauche.dll*
+cp $mingwdir/bin/mingwm10.dll $distdir/bin
 for dll in libcharset-1.dll libiconv-2.dll libz-1.dll; do
   if [ -f $mingwdir/bin/$dll ]; then
-    cp $mingwdir/bin/$dll $distdir/Gauche/bin
+    cp $mingwdir/bin/$dll $distdir/bin
   fi
 done
 
 # Build GL
 if [ "$WITH_GL" = "yes" ]; then
-  PATH=$distdir/Gauche/bin:$PATH
+  PATH=$distdir/bin:$PATH
   (cd ../Gauche-gl; ./DIST gen; \
    if test -f Makefile; then make clean; fi; \
-   ./configure --prefix=$distdir/Gauche --with-glut=mingw-static; \
+   ./configure --prefix=$distdir --with-glut=mingw-static; \
    make; make install; make install-examples)
 fi
 
 # Build installer
 if [ "$INSTALLER" = "yes" ]; then
-  (cd winnt/nsis; make)
+  (cd winnt/wix; make)
 fi
 
 # 'zip' isn't included in MinGW.

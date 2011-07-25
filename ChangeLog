@@ -1,3 +1,10 @@
+2011-07-24  Shiro Kawai  <shiro@acm.org>
+
+	* winnt/wix/* : Support Windows installer based on WiX.  This will
+	  replace NSIS-based installer.
+	* src/mingw-dist.sh: Changed to make wix installer instead of nsis
+	  installer.
+
 2011-07-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c, src/char_attr.c, src/gauche/char_attr.h: Added
