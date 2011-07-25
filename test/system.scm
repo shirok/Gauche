@@ -501,7 +501,9 @@
   (cmd-rmrf "test.out")
   (with-output-to-file "test.out"
     (lambda ()
-      (write '(write (list (sys-getpid) (sys-getppid) (sys-getpgrp))))))
+      (write '(begin
+                (sys-nanosleep #e2e8)
+                (write (list (sys-getpid) (sys-getppid) (sys-getpgrp)))))))
   (receive (in out) (sys-pipe :buffering :none)
     (define (run-and-read detached)
       (let1 pid (sys-fork-and-exec "./gosh"
