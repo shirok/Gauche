@@ -1,5 +1,8 @@
 2011-07-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/write.c (format_proc): Allow ~* to position at the next to
+	  the last argument.  (patch from leque.)
+
 	* gc/libatomic_ops-1.2/src/atomic_ops/sysdeps/gcc/x86_64.h,
 	  gc/configure.ac, gc/Makefile.in, configure.ac: Fix for MacOSX Lion
 	  (patch from KOGURO Naoki).

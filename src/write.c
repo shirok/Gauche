@@ -875,7 +875,7 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
                     } else {
                         backtracked = TRUE;
                     }
-                    if (argindex < 0 || argindex >= arglen) {
+                    if (argindex < 0 || argindex > arglen) {
                         Scm_Error("'~*' format directive refers outside of argument list in %S", fmt);
                     }
                     argcnt = argindex;

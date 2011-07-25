@@ -668,6 +668,9 @@
 (test* "format incomplete tilde sequence" (test-error)
        (format #f "~123"))
 
+(test* "format skip to the end" "||"
+       (format #f "|~*|" 1))
+
 ;;-------------------------------------------------------------------
 (test-section "some corner cases in list reader")
 
