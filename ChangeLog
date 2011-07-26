@@ -1,3 +1,9 @@
+2011-07-26  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac (ipv6): Turn on --enable-ipv6 by default.  To compile
+	  on a platform that doesn't have getaddrinfo etc, say --disable-ipv6
+	  explicitly.
+
 2011-07-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm, lib/gauche/cgen/stub.scm,
