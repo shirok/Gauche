@@ -10,6 +10,9 @@
 /* Define to 1 if the system has unsetenv */
 #undef HAVE_UNSETENV
 
+/* Define to 1 if the system has clearenv */
+#undef HAVE_CLEARENV
+
 /* Define to 1 if the system has putenv */
 #undef HAVE_PUTENV
 

@@ -13571,16 +13571,57 @@ to get the current environment variables.
 @end defun
 
 
-@defun sys-putenv name value
-@c EN
-Add environment variable @var{name} with @var{value} to the current
-process's environment.  If the system doesn't support putenv(3),
-this function signals an error.
-@c JP
-プロセスの環境変数@var{name}に値@var{value}をセットします。システムが
-putenv(3)をサポートしていない場合はエラーが通知されます。
-@c COMMON
+@defun sys-setenv name value &optional overwrite
+@defunx sys-putenv name=value
+@var{sys-setenv} inserts an environment variable @var{name} with
+the value @var{value}.
+Both @var{name} and @var{value} must be a string.
+If the optional argument @var{overwrite} is @code{#f} (default),
+the enviornment is untouched if a variable with @var{name} already
+exists.   If @var{overwrite} is @code{#t}, the variable is overwritten.
+
+Fir @code{sys-putenv}, you have to give a single string
+with the form of @code{NAME=VALUE}, that is, concatenating @var{name}
+and @var{value} with @code{#\=}.  If the enviornmet variable with
+the same name exists, it will be overwritten.
+
+These API reflects POSIX @code{setenv(3)} and @code{putenv(3)}.
+However, unlike @code{putenv(3)}, modifying the string passed
+to @code{sys-putenv} afterwards won't affect the environment.
+
+These procedures are only available when a feature identifier
+@code{gauche.sys.setenv} exists.  Use @code{cond-expand}
+(@xref{Feature conditional}) to check their availability.
+
+@example
+(cond-expand
+ [gauche.sys.setenv 
+   ... use sys-setenv or sys-putenv ... ]
+ [else
+   ... fallback code ...])
+@end example
 @end defun
+
+@defun sys-unsetenv name
+@defunx sys-clearenv
+Remove the environment variable with @var{name} (@code{sys-unsetenv}),
+or all enviornment variables.  @code{sys-clearenv} is handy
+when you need to run subprocess, but you cannot trust the inherited
+environment.
+
+These procedures are only available when a feature identifier
+@code{gauche.sys.unsetenv} exists.  Use @code{cond-expand}
+(@xref{Feature conditional}) to check their availability.
+
+@example
+(cond-expand
+ [gauche.sys.unsetenv 
+   ... use sys-unsetenv or sys-clearenv ... ]
+ [else
+   ... fallback code ...])
+@end example
+@end defun
+
 
 @c EN
 SRFI-98 (@xref{Accessing environment variables}) also defines
@@ -13591,6 +13632,7 @@ SRFI-98 (@ref{Accessing environment variables}参照) にも、
 環境変数を読み出すための、上記の手続きのサブセットにあたるものが
 定義されています。ポータブルなコードにしたければそちらも見てみてください。
 @c COMMON
+
 
 @defun gauche-version
 @defunx gauche-architecture

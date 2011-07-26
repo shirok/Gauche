@@ -432,7 +432,7 @@ AC_FUNC_ALLOCA
 AC_CHECK_FUNCS(isnan isinf trunc rint)
 AC_CHECK_FUNCS(symlink readlink lchown mkstemp realpath nanosleep usleep)
 AC_CHECK_FUNCS(random srandom lrand48 srand48)
-AC_CHECK_FUNCS(putenv setenv unsetenv getpgid)
+AC_CHECK_FUNCS(putenv setenv unsetenv clearenv getpgid)
 AC_CHECK_FUNCS(gethostname sethostname getdomainname setdomainname)
 AC_CHECK_FUNCS(gettimeofday getloadavg)
 AC_CHECK_FUNCS(syslog setlogmask)

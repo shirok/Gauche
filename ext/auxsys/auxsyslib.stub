@@ -248,7 +248,7 @@ extern ScmObj Scm_Environ(void);
 (when "defined(HAVE_PUTENV) || defined(HAVE_SETENV)"
   (define-cproc sys-setenv (name::<const-cstring>
                             value::<const-cstring>
-                            :optional overwrite::<boolean>)
+                            :optional (overwrite::<boolean> #f))
     ::<void> Scm_SetEnv)
   (initcode "Scm_AddFeature(\"gauche.sys.setenv\", NULL);")
   )
@@ -256,6 +256,11 @@ extern ScmObj Scm_Environ(void);
 (when "defined HAVE_UNSETENV"
   (define-cproc sys-unsetenv (name::<const-cstring>) ::<void> unsetenv)
   (initcode "Scm_AddFeature(\"gauche.sys.unsetenv\", NULL);")
+  )
+
+(when "defined HAVE_CLEARENV"
+  (define-cproc sys-clearenv () ::<void> clearenv)
+  (initcode "Scm_AddFeature(\"gauche.sys.clearenv\", NULL);")
   )
 
 ;; ctermid

@@ -148,7 +148,8 @@
           sys-setgid sys-setpgid sys-getpgid sys-getpgrp
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname
-          sys-putenv sys-setenv sys-unsetenv sys-environ sys-environ->alist
+          sys-putenv sys-setenv sys-unsetenv sys-clearenv sys-environ
+          sys-environ->alist
           sys-utime
           sys-getgroups sys-getlogin sys-localeconv
           sys-getloadavg)
