@@ -1,5 +1,8 @@
 2011-07-25  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac (multibyte): If --enable-multibyte is given without
+	  ENCODING, assume utf-8 instead of euc-jp.
+
 	* ext/net/addr.c: Allow comparing socket addresses based on the
 	  content; that is, (equal? x y) => #t if x and y represents the
 	  same address, even they are different instances.

@@ -25,8 +25,8 @@ Following encodings are currently recognized:
 or 'none' (No multibyte support)]),
   [
    case $enable_multibyte in
-     euc-jp|eucjp|yes)  GAUCHE_CHAR_ENCODING=eucjp;;
-     utf-8|utf8)        GAUCHE_CHAR_ENCODING=utf8;;
+     euc-jp|eucjp)      GAUCHE_CHAR_ENCODING=eucjp;;
+     utf-8|utf8|yes)    GAUCHE_CHAR_ENCODING=utf8;;
      sjis|shift-jis)    GAUCHE_CHAR_ENCODING=sjis;;
      no|none)           GAUCHE_CHAR_ENCODING=none;;
      *) echo "unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options"
