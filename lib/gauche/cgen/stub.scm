@@ -46,8 +46,7 @@
   (use gauche.cgen.unit)
   (use gauche.cgen.literal)
   (use gauche.cgen.cise)
-  (use gauche.experimental.ref)
-  (use gauche.experimental.lamb)
+  (use gauche.cgen.tmodule)
   (export <cgen-stub-unit> <cgen-stub-error>
           cgen-genstub
           cgen-stub-parser cgen-stub-parse-form)
@@ -442,7 +441,8 @@
         (initval (make-literal init)))
     (when c-name
       (cgen-decl #`"#define ,c-name (,(cgen-cexpr symbol))"))
-    (cgen-init (format "  Scm_MakeBinding(mod, SCM_SYMBOL(~a), ~a, ~a);\n"
+    (cgen-init (format "  Scm_MakeBinding(SCM_MODULE(~a), SCM_SYMBOL(~a), ~a, ~a);\n"
+                       (current-tmodule-cname)
                        (cgen-cexpr symbol)
                        (cgen-cexpr initval)
                        (if const? "SCM_BINDING_CONST" "0")))
@@ -972,7 +972,8 @@
 
 (define-method cgen-emit-init ((cproc <cproc>))
   (when (symbol? (~ cproc'scheme-name))
-    (f "  Scm_MakeBinding(mod, SCM_SYMBOL(SCM_INTERN(~s)), SCM_OBJ(&~a), ~a);"
+    (f "  Scm_MakeBinding(SCM_MODULE(~a), SCM_SYMBOL(SCM_INTERN(~s)), SCM_OBJ(&~a), ~a);"
+       (current-tmodule-cname)
        (symbol->string (~ cproc'scheme-name))
        (c-stub-name cproc)
        (if (or (~ cproc'inline-insn) (memq :constant (~ cproc'flags)))
@@ -1087,19 +1088,21 @@
   (p))
 
 (define-method cgen-emit-init ((self <cgeneric>))
-  (f "  Scm_InitBuiltinGeneric(&~a, ~s, mod);"
-     (~ self'c-name) (symbol->string (~ self'scheme-name)))
+  (f "  Scm_InitBuiltinGeneric(&~a, ~s, SCM_MODULE(~a));"
+     (~ self'c-name) (symbol->string (~ self'scheme-name))
+     (current-tmodule-cname))
   (next-method))
 
 (define-form-parser define-cgeneric (scheme-name c-name . body)
   (check-arg symbol? scheme-name)
   (check-arg string? c-name)
   (let ((gf (make <cgeneric> :scheme-name scheme-name :c-name c-name)))
-    (for-each (^.[('extern) (set! [~ gf'extern?] #t)]
-                 [('fallback (? string? fallback))
-                  (set! (~ gf'fallback) (cadr form))]
-                 [('setter . spec) (process-setter gf spec)]
-                 [form (error <cgen-stub-error> "bad gf form:" form)])
+    (for-each (match-lambda
+                [('extern) (set! [~ gf'extern?] #t)]
+                [('fallback (? string? fallback))
+                 (set! (~ gf'fallback) (cadr form))]
+                [('setter . spec) (process-setter gf spec)]
+                [form (error <cgen-stub-error> "bad gf form:" form)])
               body)
     (cgen-add! gf)))
 
@@ -1398,7 +1401,7 @@
   )
 
 (define-method cgen-emit-init ((self <cclass>))
-  (p "  Scm_InitBuiltinClass(&"(~ self'c-name)", \""(~ self'scheme-name)"\", "(c-slot-spec-name self)", TRUE, mod);")
+  (p "  Scm_InitBuiltinClass(&"(~ self'c-name)", \""(~ self'scheme-name)"\", "(c-slot-spec-name self)", TRUE, SCM_MODULE("(current-tmodule-cname)"));")
   ;; adjust direct-supers if necessary
   (let1 ds (~ self'direct-supers)
     (when (not (null? ds))

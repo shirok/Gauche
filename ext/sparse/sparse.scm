@@ -119,7 +119,7 @@
 ;;
 
 (inline-stub
- (initcode "Scm_Init_sptab(mod);")
+ (initcode "Scm_Init_sptab(Scm_CurrentModule());")
 
  (define-type <sparse-table> "SparseTable*" "sparse table"
    "SPARSE_TABLE_P" "SPARSE_TABLE")
@@ -185,7 +185,7 @@
 ;; Sparse vectors
 ;;
 (inline-stub
- (initcode "Scm_Init_spvec(mod);")
+ (initcode "Scm_Init_spvec(Scm_CurrentModule());")
 
  (define-type <sparse-vector> "SparseVector*" "sparse vector"
    "SPARSE_VECTOR_BASE_P" "SPARSE_VECTOR")

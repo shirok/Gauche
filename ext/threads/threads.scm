@@ -62,8 +62,8 @@
   "extern void Scm_Init_threads(ScmModule*);")
 
  (initcode
-  "Scm_Init_threads(mod);"
-  "Scm_Init_mutex(mod);"))
+  "Scm_Init_threads(Scm_CurrentModule());"
+  "Scm_Init_mutex(Scm_CurrentModule());"))
 
 ;;===============================================================
 ;; System query

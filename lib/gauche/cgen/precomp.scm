@@ -39,12 +39,12 @@
   (use srfi-13)
   (use gauche.cgen)
   (use gauche.cgen.stub)
+  (use gauche.cgen.tmodule)
   (use gauche.vm.insn)
   (use gauche.parameter)
   (use gauche.sequence)
-  (use gauche.experimental.app)
-  (use gauche.experimental.ref)
   (use gauche.experimental.lamb)
+  (use gauche.experimental.app)
   (use file.util)
   (use util.match)
   (use util.list)
@@ -169,14 +169,15 @@
     ;; see PARAMETERS section below
     (parameterize ([cgen-current-unit (get-unit src out.c predef-syms
                                                 ext-initializer)]
-                   [compile-module    (make-module #f)]
                    [dso-name (cons
                               (or dso
                                   (and ext-initializer
                                        (basename-sans-extension out.c)))
                               initializer-name)]
                    [vm-eval-situation SCM_VM_COMPILING]
-                   [private-macros-to-keep macros-to-keep])
+                   [private-macros-to-keep macros-to-keep]
+                   [current-tmodule-class <ptmodule>])
+      (select-tmodule 'gauche)
       (cond [out.sci
              (make-directory* (sys-dirname out.sci))
              (call-with-output-file out.sci
@@ -226,16 +227,30 @@
     ))
 
 ;;================================================================
-;; Parameters
+;; Transient modules
 ;;
 
-;; we compile things within an anonymous module to avoid interference.
-(define compile-module (make-parameter #f))
+;; To avoid interference between the host compiler and the target code,
+;; the compiler creates a temporary anonymous module and works in it.
+;; The basic mechanism is provided by gauche.cgen.tmodule.  We augument
+;; it with adding special bindings.
 
-;; keep the (supposed) name of the current module.  (current-module) syntax
-;; is compiled into (find-module ...) expression to lookup this name at
-;; runtime.
-(define compile-module-name (make-parameter #f))
+(define-class <ptmodule> (<tmodule>) ())
+
+(define-method initialize ((m <ptmodule>) initargs)
+  (next-method)
+  ;; redefine several toplevel syntaxes precompiler needs to recognize
+  (for-each (^f (eval f (~ m'module))) *special-handlers*))
+
+(define (eval-in-current-tmodule expr)
+  (eval expr (~ (current-tmodule)'module)))
+
+(define (compile-in-current-tmodule expr)
+  (compile expr (~ (current-tmodule)'module)))
+
+;;================================================================
+;; Parameters
+;;
 
 ;; A pair of the name of the generated DSO (w/o extension) and the name
 ;; of the initializer function.  
@@ -287,7 +302,7 @@
       :name base :c-name-prefix safe-name
       :preamble `(,#`"/* Generated automatically from ,|src|.  DO NOT EDIT */")
       :pre-decl (map (lambda (s) #`"#define ,s") predef-syms)
-      :init-prologue (format "~avoid Scm_Init_~a() { ScmModule *mod;"
+      :init-prologue (format "~avoid Scm_Init_~a() {"
                              (if ext-init? "SCM_EXTENSION_ENTRY " "")
                              safe-name)
       )))
@@ -325,7 +340,7 @@
   (match (first-form src)
     [('define-module modname . forms)
      (list modname src
-           (filter-map (^(x)(match x [('use mod . _) mod] [_ #f])) forms))]
+           (filter-map (^x(match x [('use mod . _) mod] [_ #f])) forms))]
     [_ #f]))
 
 ;; Sort the given list of source files so that each file only depends on
@@ -362,8 +377,6 @@
                 (cgen-init #`"SCM_INIT_EXTENSION(,safe-extname);")))])
   (dolist [init subinits]
     (cgen-decl #`"extern void Scm_Init_,init(void);"))
-
-  (setup-compiler-environment (compile-module))
   )
 
 (define (finalize subinits)
@@ -411,7 +424,8 @@
 (define-syntax define-global-pred
   (syntax-rules ()
     [(_ name sym)
-     (define name (global-eq?? 'sym 'gauche compile-module))]))
+     (define name
+       (global-eq?? 'sym 'gauche (^()(~(current-tmodule)'module))))]))
 (define-global-pred =define-module?   define-module)
 (define-global-pred =select-module?   select-module)
 (define-global-pred =use?             use)
@@ -433,7 +447,7 @@
       ;; Module related stuff
       [((? =define-module?) mod . body)
        (write-ext-module form)
-       (parameterize ([compile-module-name mod])
+       (with-tmodule mod
          (fold compile-toplevel-form seed body))]
       [((? =select-module?) mod)
        (write-ext-module form)
@@ -443,37 +457,30 @@
          [(name . initfn)
           (write-ext-module `(dynamic-load ,name :init-function ,initfn))]
          [_ #f])
-       (let1 sym (cgen-literal mod)
-         (cgen-init
-          (format "  mod = Scm_FindModule(SCM_SYMBOL(~a),\
-                                          SCM_FIND_MODULE_CREATE);"
-                  (cgen-cexpr sym))
-          ;; force the current module to be mod
-          "  Scm_SelectModule(mod);"))
-       (compile-module-name mod)
+       (select-tmodule mod)
        seed]
       [((? =use?) mod)
-       (eval `(use ,mod) (compile-module)) seed]
+       (eval-in-current-tmodule `(use ,mod)) seed]
       [((? =export?) . syms)
        (when (list? (compile-module-exports))
          (compile-module-exports
           (lset-union eq? syms (compile-module-exports))))
-       (eval `(export ,@syms) (compile-module)) seed]
+       (eval-in-current-tmodule `(export ,@syms)) seed]
       [((? =export-all?)) (compile-module-exports #t)]
       [((? =export-if-defined?) . _) (write-ext-module form) seed]
       [((? =provide?) arg) (write-ext-module form) seed]
       ;; TODO - we need more general framework supporting various declarations.
       ;; for the time being, this ad-hoc solution suffice our needs.
       [((? =declare?) decls ...)
-       (for-each (^.[('keep-private-macro . macros)
-                     (private-macros-to-keep (append (private-macros-to-keep)
-                                                     macros))]
-                    [other (error "Unknown declaration:" other)])
-                 decls)
+       (dolist [x decls]
+         (match x
+           [('keep-private-macro . macros)
+            (private-macros-to-keep (append (private-macros-to-keep) macros))]
+           [other (error "Unknown declaration:" other)]))
        seed]
       ;; Finally, ordinary expressions.
       [else
-       (let1 compiled-code (compile form (compile-module))
+       (let1 compiled-code (compile-in-current-tmodule form)
          ;; We exclude a compiled code with only CONSTU-RET, which appears
          ;; as the result of macro expansion sometimes.
          (if (toplevel-constu-ret-code? compiled-code)
@@ -519,12 +526,11 @@
 (define *special-handlers*
   '((define-macro (current-module)
       `(find-module ',(with-module gauche.cgen.precomp
-                        (compile-module-name))))
+                        (~(current-tmodule)'name))))
     (define-macro (inline-stub . forms)
-      (for-each (lambda (s)
-                  ((with-module gauche.cgen.stub cgen-stub-parse-form)
-                   (unwrap-syntax s)))
-                forms)
+      (dolist [s forms]
+        ((with-module gauche.cgen.stub cgen-stub-parse-form)
+         (unwrap-syntax s)))
       (undefined))
     ;; (define-macro (define . f)
     ;;   ((with-module gauche.cgen.precomp handle-define) f))
@@ -535,10 +541,6 @@
     (define-macro (define-macro . f)
       ((with-module gauche.cgen.precomp handle-define-macro) f))
     ))
-
-(define (setup-compiler-environment mod)
-  (dolist [form *special-handlers*]
-    (eval form mod)))
 
 ;; Macros are "consumed" by the Gauche's compiler---that is, it is
 ;; executed inside the compiler and won't appear in the compiled output.
@@ -581,7 +583,8 @@
 (define (handle-define-constant form)
   (match form
     [((? symbol? name) expr)
-     (eval `((with-module gauche define-constant) ,@form) (compile-module))]
+     (eval-in-current-tmodule
+      `((with-module gauche define-constant) ,@form))]
     [_ #f])
   (cons '(with-module gauche define-constant) form))
 
@@ -758,10 +761,21 @@
     (let ([name (cgen-cexpr (~ self'id-name))]
           [cname (~ self'c-name)])
       (or (and-let* ([modnam (~ self'mod-name)])
-            (print "  "cname" = Scm_MakeIdentifier(SCM_SYMBOL("name"), "
-                   "Scm_FindModule(SCM_SYMBOL("(cgen-cexpr modnam)"), SCM_FIND_MODULE_CREATE),"
-                   "SCM_NIL);"))
-          (print "  "cname" = Scm_MakeIdentifier(SCM_SYMBOL("name"), mod, SCM_NIL);"))))
+            (format #t "  ~a = Scm_MakeIdentifier(SCM_SYMBOL(~a), \
+                                  Scm_FindModule(SCM_SYMBOL(~a), \
+                                                 SCM_FIND_MODULE_CREATE),
+                                  SCM_NIL); /* ~a#~a */\n"
+                    cname name (cgen-cexpr modnam)
+                    (cgen-safe-comment (~ self'mod-name'value))
+                    (cgen-safe-comment (~ self'id-name'value)))
+            #t)
+          (let1 mod-cname (current-tmodule-cname)
+            (format #t "  ~a = Scm_MakeIdentifier(SCM_SYMBOL(~a), \
+                                                  SCM_MODULE(~a), \
+                                                  SCM_NIL); /* ~a#~a */\n"
+                    cname name mod-cname
+                    (cgen-safe-comment (~(current-tmodule)'name))
+                    (cgen-safe-comment (~ self'id-name'value)))))))
   (static (self) #f)
   )
 
@@ -789,8 +803,10 @@
       :c-name  (cgen-allocate-static-datum)
       :gf-name (cgen-literal (ref value 'name))))
   (init (self)
-    (format #t "  ~a = Scm_SymbolValue(mod, SCM_SYMBOL(~a));\n"
-            (~ self'c-name) (~ self'gf-name'c-name)))
+    (format #t "  ~a = Scm_SymbolValue(~a, SCM_SYMBOL(~a));\n"
+            (~ self'c-name)
+            (current-tmodule-cname)
+            (~ self'gf-name'c-name)))
   (static (self) #f)
   )
 

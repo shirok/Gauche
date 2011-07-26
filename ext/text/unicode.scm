@@ -363,8 +363,8 @@
 (inline-stub
  "#include \"unicode_attr.h\""
 
- (initcode "init_GB_symbols(mod);")
- (initcode "init_WB_symbols(mod);")
+ (initcode "init_GB_symbols(Scm_CurrentModule());")
+ (initcode "init_WB_symbols(Scm_CurrentModule());")
 
  (define-cise-stmt get-arg
    [(_ var arg)

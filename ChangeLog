@@ -1,5 +1,17 @@
 2011-07-25  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/precomp.scm, lib/gauche/cgen/stub.scm,
+	  lib/gauche/cgen/tmodule.scm: Dropped the dependency on an implicitly
+	  defined local variable 'mod' in the init function.  In the precomp-
+	  generated C source, a local variable ScmModule *mod used to be
+	  defined to hold the module of the compiled source.  It's ugly
+	  to depend on such implicit names, and also it was awkward to
+	  handle the situation when multiple modules are defined in the
+	  precompiled source.  Now, if you want to refer to the module
+	  inside init functin, you can call Scm_CurrentModule().
+	* ext/sparse/sparse.scm, ext/threads/threads.scm, ext/text/unicode.scm:
+	  Changed accordingly.
+
 	* configure.ac (multibyte): If --enable-multibyte is given without
 	  ENCODING, assume utf-8 instead of euc-jp.
 

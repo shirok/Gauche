@@ -229,7 +229,8 @@
   (warn "The inline-stub form can only be used for Scheme source \
          to be pre-compiled.  Since you're loading the file without \
          pre-compilation, the definitions and expressions in the \
-         inline-stub form are ignored."))
+         inline-stub form are ignored.  (Current module=~s)"
+        (current-module)))
 
 ;; The form (declare ...) may be used in wider purpose.  For the time
 ;; being we use it in limited purposes for compilers.  In interpreter
