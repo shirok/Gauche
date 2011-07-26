@@ -130,11 +130,6 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
  * Unix domain socket
  */
 
-static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs);
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrUnClass, sockaddr_print,
-                         NULL, NULL, sockaddr_un_allocate, Scm_SockAddrCPL);
-
 static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmObj path = Scm_GetKeyword(key_path, initargs, SCM_FALSE);
@@ -164,14 +159,27 @@ static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(addr);
 }
 
+static int sockaddr_un_compare(ScmObj x, ScmObj y, int equalp)
+{
+    ScmSockAddrUn *xx = (ScmSockAddrUn*)x;
+    ScmSockAddrUn *yy = (ScmSockAddrUn*)y;
+    if (!equalp) Scm_Error("object %S and %S can't be ordered", x, y);
+    
+    if (xx->addrlen == yy->addrlen
+        && memcmp(xx->addr.sun_path, yy->addr.sun_path, xx->addrlen) == 0) {
+        return 0;               /* (equal? x y) => #t */
+    } else {
+        return -1;              /* (equal? x y) => #f */
+    }
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrUnClass, sockaddr_print,
+                         sockaddr_un_compare, NULL,
+                         sockaddr_un_allocate, Scm_SockAddrCPL);
+
 /*==================================================================
  * Inet domain socket
  */
-
-static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs);
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrInClass, sockaddr_print,
-                         NULL, NULL, sockaddr_in_allocate, Scm_SockAddrCPL);
 
 static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
 {
@@ -237,16 +245,31 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(addr);
 }
 
+static int sockaddr_in_compare(ScmObj x, ScmObj y, int equalp)
+{
+    ScmSockAddrIn *xx = (ScmSockAddrIn*)x;
+    ScmSockAddrIn *yy = (ScmSockAddrIn*)y;
+    if (!equalp) Scm_Error("object %S and %S can't be ordered", x, y);
+
+    if (xx->addrlen == yy->addrlen
+        && xx->addr.sin_family == yy->addr.sin_family
+        && xx->addr.sin_port == yy->addr.sin_port
+        && xx->addr.sin_addr.s_addr == yy->addr.sin_addr.s_addr) {
+        return 0;               /* (equal? x y) => #t */
+    } else {
+        return -1;              /* (equal? x y) => #f */
+    }
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrInClass, sockaddr_print,
+                         sockaddr_in_compare, NULL,
+                         sockaddr_in_allocate, Scm_SockAddrCPL);
+
 /*==================================================================
  * Inet6 domain socket
  */
 
 #ifdef HAVE_IPV6
-
-static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs);
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrIn6Class, sockaddr_print,
-                         NULL, NULL, sockaddr_in6_allocate, Scm_SockAddrCPL);
 
 static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
 {
@@ -305,6 +328,27 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
     addr->addrlen = sizeof(struct sockaddr_in6);
     return SCM_OBJ(addr);
 }
+
+static int sockaddr_in6_compare(ScmObj x, ScmObj y, int equalp)
+{
+    ScmSockAddrIn6 *xx = (ScmSockAddrIn6*)x;
+    ScmSockAddrIn6 *yy = (ScmSockAddrIn6*)y;
+    if (!equalp) Scm_Error("object %S and %S can't be ordered", x, y);
+    
+    if (xx->addrlen == yy->addrlen
+        && xx->addr.sin6_family == yy->addr.sin6_family
+        && xx->addr.sin6_port == yy->addr.sin6_port
+        && (memcmp(&xx->addr.sin6_addr, &yy->addr.sin6_addr,
+                   sizeof(xx->addr.sin6_addr)) == 0)) {
+        return 0;               /* (equal? x y) => #t */
+    } else {
+        return -1;              /* (equal? x y) => #f */
+    }
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrIn6Class, sockaddr_print,
+                         sockaddr_in6_compare, NULL,
+                         sockaddr_in6_allocate, Scm_SockAddrCPL);
 
 #endif /* HAVE_IPV6 */
 

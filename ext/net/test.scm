@@ -19,13 +19,13 @@
 ;;-----------------------------------------------------------------
 (test-section "socket address")
 
-'(test* "sockaddr_un" #t
+(test* "sockaddr_un" #t
         (let ((addr (make <sockaddr-un> :path "/tmp/xxx")))
           (and (eq? (sockaddr-family addr) 'unix)
                (equal? (sockaddr-name addr) "/tmp/xxx")
                #t)))
 
-'(test* "sockaddr_in" #t
+(test* "sockaddr_in" #t
         (let ((addr (make <sockaddr-in> :host "127.0.0.1" :port 80)))
           (and (eq? (sockaddr-family addr) 'inet)
                (equal? (sockaddr-name addr) "127.0.0.1:80")
@@ -63,8 +63,26 @@
               (equal? (sockaddr-name addr) "255.255.255.255:0")
               #t)))
 
+(let ([un1 (make <sockaddr-un> :path "/tmp/a")]
+      [un2 (make <sockaddr-un> :path "/tmp/aa")]
+      [un3 (make <sockaddr-un> :path "/tmp/a")]
+      [in1 (make <sockaddr-in> :host "127.0.0.1" :port 2030)]
+      [in2 (make <sockaddr-in> :host "127.0.0.2" :port 2030)]
+      [in3 (make <sockaddr-in> :host "127.0.0.1" :port 2031)]
+      [in4 (make <sockaddr-in> :host "127.0.0.1" :port 2030)])
+  (let-syntax ([t (syntax-rules ()
+                    [(_ exp a b)
+                     (test* (format "sockaddr equal? ~s" '(equal? a b))
+                            exp (equal? a b))])])
+    (t #f un1 un2)
+    (t #t un1 un3)
+    (t #f in1 in2)
+    (t #f in1 in3)
+    (t #t in1 in4)
+    (t #f un1 in1)))
+
 (cond-expand
- (gauche.net.ipv6
+ [gauche.net.ipv6
   (test* "sockaddr_in6" #t
          (let ((addr (make <sockaddr-in6> :host "2001:200::8002:203:47ff:fea5:3085" :port 23)))
            (and (eq? (sockaddr-family addr) 'inet6)
@@ -76,8 +94,19 @@
          (sockaddr-name (make <sockaddr-in6> :host 1)))
   (test* "sockaddr_in6" "[1:2:3:4:5:6:7:8]:0"
          (sockaddr-name (make <sockaddr-in6> :host '#u8(0 1 0 2 0 3 0 4 0 5 0 6 0 7 0 8))))
-  )
- (else #f))
+
+  (let ([4n1 (make <sockaddr-in6> :host 1 :port 80)]
+        [4n2 (make <sockaddr-in6> :host 1 :port 81)]
+        [4n3 (make <sockaddr-in6> :host "1:2::8" :port 80)]
+        [4n4 (make <sockaddr-in6> :host 1 :port 80)])
+    (let-syntax ([t (syntax-rules ()
+                      [(_ exp a b)
+                       (test* (format "sockaddr equal? ~s" '(equal? a b))
+                              exp (equal? a b))])])
+      (t #f 4n1 4n2)
+      (t #f 4n1 4n3)
+      (t #t 4n1 4n4)))]
+ [else])
 
 (let ()
   (define (addr-test desc input exp-val exp-vers)
@@ -103,7 +132,7 @@
   (addr-test "v4-err3" "172.256.4.2" #f #f)
 
   (cond-expand
-   (gauche.net.ipv6
+   [gauche.net.ipv6
     (addr-test "v6-1" "1:2:3:4:fffc:fffd:fffe:ffff"
                #x0001000200030004fffcfffdfffeffff AF_INET6)
     (addr-test "v6-2" "::1"
@@ -126,8 +155,8 @@
                #x000000000000000000000000c0a80102 AF_INET6)
     (addr-test "v6-9" "1::2:0:0:192.168.1.2"
                #x000100000000000200000000c0a80102 AF_INET6)
-    )
-   (else #f))
+    ]
+   [else])
   )
 
 (let ()
@@ -148,7 +177,7 @@
   (addr-test "v4-3" #xfffffc00 AF_INET "255.255.252.0")
 
   (cond-expand
-   (gauche.net.ipv6
+   [gauche.net.ipv6
     (addr-test "v6-1" #x0001000200030004fffcfffdfffeffff AF_INET6
                "1:2:3:4:fffc:fffd:fffe:ffff")
     (addr-test "v6-2" #x00000000000000000000000000000001 AF_INET6
@@ -171,8 +200,8 @@
                "ffe0:0:0:223::4")
     (addr-test "v6-11" #xffe00000000000000001000000000004 AF_INET6
                "ffe0::1:0:0:4")
-    )
-   (else #f))
+    ]
+   [else])
   )
 
 
