@@ -6619,9 +6619,9 @@ Base64 でエンコードされた文字として適当でない文字は沈黙�
 @mdindex rfc.cookie
 @c EN
 Defines a set of functions to parse and construct a ``cookie'' information
-defined in RFC 2965 (@ref{rfc2965,,RFC2965}).
+defined in RFC 6265.
 @c JP
-RFC 2965 (@ref{rfc2965,,RFC2965}) で定義されている「クッキー」情報を
+RFC 6265で定義されている「クッキー」情報を
 パースしたり構築したりするための手続きを定義しています。
 @c COMMON
 @end deftp
@@ -6694,7 +6694,7 @@ RFC2965 スタイルのフォーマットです。省略された場合、1 が�
 (<name> <value> [:comment <comment>] [:comment-url <url>]
                 [:discard <bool>] [:domain <domain>]
                 [:max-age <age>] [:path <path>]
-                [:port <port-list>] [:secure <bool>]
+                [:port <port-list>] [:secure <bool>] [:http-only <bool>]
                 [:version <version>] [:expires <date>])
 @end example
 @c EN
@@ -6741,7 +6741,7 @@ Return value is a list of cookie strings, each of which stands for
 each cookie.  For old-style protocol (using @code{Set-cookie} header)
 you must send each of them by individual header.  For new-style
 protocol (using @code{Set-cookie2} header), you can join them
-with comma and send it at once.  See RFC2965 for further details.
+with comma and send it at once.  See RFC6265 for further details.
 
 Some examples:
 @c JP
@@ -6752,7 +6752,7 @@ Some examples:
 戻り値はそれぞれのクッキー文字列のリストです。(@code{Set-cookie} を使う)
 古いスタイルのプロトコルでは、それぞれを独立したヘッダとして送らなければ
 なりません。(@code{Set-cookie2} ヘッダを使う)新しいプロトコルでは、
-それらをカンマで繋ぎ、一度に送ることができます。詳細は RFC2965 を見て下さい。
+それらをカンマで繋ぎ、一度に送ることができます。詳細は RFC6265 を見て下さい。
 
 いくつかの例を示します。
 @c COMMON

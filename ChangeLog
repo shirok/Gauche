@@ -1,5 +1,8 @@
 2011-07-25  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/cookie.scm (construct-cookie-string): Recognize :http-only
+	  cookie attribute introduced in RFC6265.
+
 	* src/write.c (format_proc): Allow ~* to position at the next to
 	  the last argument.  (patch from leque.)
 

@@ -32,8 +32,8 @@
 ;;;  
 
 ;; Parser and constructor of http "Cookies" defined in
-;; RFC 2965 HTTP state managemnet mechanism
-;;   <ftp://ftp.isi.edu/in-notes/rfc2965.txt>
+;; RFC 6265 HTTP state managemnet mechanism
+;;   http://tools.ietf.org/html/rfc6265
 ;; See also
 ;; RFC 2964 Use of HTTP state management
 ;;   <ftp://ftp.isi.edu/in-notes/rfc2964.txt>
@@ -158,7 +158,7 @@
 ;; specs is the following format.
 ;;
 ;;   ((<name> <value> [:comment <comment>] [:comment-url <comment-url>]
-;;                    [:discard <bool>] [:domain <domain>]
+;;                    [:discard <bool>] [:domain <domain>] [:http-only <bool>]
 ;;                    [:max-age <age>] [:path <value>] [:port <port-list>]
 ;;                    [:secure <bool>] [:version <version>] [:expires <date>]
 ;;    ) ...)
@@ -214,6 +214,8 @@
           (ignore)))
        ((eqv? :secure (car attr))
         (if (cadr attr) (next "Secure") (ignore)))
+       ((eqv? :http-only (car attr))
+        (if (cadr attr) (next "HttpOnly") (ignore)))
        ((eqv? :version (car attr))
         (if (> ver 0)
           (next (format #f "Version=~a" (cadr attr)))
