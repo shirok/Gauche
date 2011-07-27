@@ -288,29 +288,36 @@
 
 (use gauche.process)
 
+;; sockargs is an expression that yields to a list of server sockets
 (define (run-simple-server sockargs)
   (with-output-to-file "testserv.o"
     (lambda ()
       (write '(use gauche.net))
+      (write '(use gauche.selector))
       (write '(use srfi-13))
-      (write '(define (simple-server socket)
+      (write '(define (simple-server sockets)
+                (define (handler fd flag)
+                  (let loop ((clnt (socket-accept
+                                    (find (^s (eq? (socket-fd s) fd)) sockets))))
+                    (let ((in   (socket-input-port clnt))
+                          (out  (socket-output-port clnt)))
+                      (let loop2 ((line (read-line in)))
+                        (cond ((eof-object? line)
+                               (socket-close clnt))
+                              ((string=? line "END")
+                               (socket-close clnt)
+                               (for-each socket-close sockets)
+                               (sys-exit 33))
+                              (else
+                               (display (string-upcase line) out)
+                               (newline out)
+                               (flush out)
+                               (loop2 (read-line in))))))))
                 (newline) (flush) ;; handshake
-                (let loop ((clnt (socket-accept socket)))
-                  (let ((in   (socket-input-port clnt))
-                        (out  (socket-output-port clnt)))
-                    (let loop2 ((line (read-line in)))
-                      (cond ((eof-object? line)
-                             (socket-close clnt)
-                             (loop (socket-accept socket)))
-                            ((string=? line "END")
-                             (socket-close clnt)
-                             (socket-close socket)
-                             (sys-exit 33))
-                            (else
-                             (display (string-upcase line) out)
-                             (newline out)
-                             (flush out)
-                             (loop2 (read-line in)))))))))
+                (let ((sel (make <selector>)))
+                  (dolist (s sockets)
+                    (selector-add! sel (socket-fd s) handler '(r)))
+                  (do () (#f) (selector-select sel)))))
       (write `(define (main args)
                 (simple-server ,sockargs)
                 0)))
@@ -336,7 +343,7 @@
  [else
   (test* "unix server socket" #f
 	 (begin
-	   (run-simple-server '(make-server-socket 'unix "sock.o"))
+	   (run-simple-server '(list (make-server-socket 'unix "sock.o")))
 	   (let1 stat (sys-stat "sock.o")
 		 (not (memq (sys-stat->file-type stat) '(socket fifo))))))
 
@@ -376,7 +383,7 @@
 (sys-unlink "sock.o")
 
 (test* "inet server socket" #t
-       (run-simple-server `(make-server-socket 'inet ,*inet-port* :reuse-addr? #t)))
+       (run-simple-server `(make-server-sockets #f ,*inet-port* :reuse-addr? #t)))
 
 (test* "inet client socket" '("ABC" "XYZ")
        (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
@@ -415,10 +422,10 @@
 (cond-expand
  [gauche.net.ipv6
   (test* "inet server socket (ipv6)" #t
-         (run-simple-server `(make-server-socket
-                              (make <sockaddr-in6>
-                                :host :any :port ,*inet-port*)
-                              :reuse-addr? #t)))
+         (run-simple-server `(list (make-server-socket
+                                    (make <sockaddr-in6>
+                                      :host :any :port ,*inet-port*)
+                                    :reuse-addr? #t))))
 
   ;; On IPv6 system, the loopback may have different name than "localhost".
   ;; We apply some heuristics here.
