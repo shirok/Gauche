@@ -1,3 +1,10 @@
+2011-07-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/symbol.h (ScmSymbolRec), src/symbol.c (make_sym): Changed
+	  'interned' field to 'flags' field for future extension.  See the
+	  comment in symbol.h about the binary compatibility.
+	* src/builtin-syms.scm: Changed accordingly.
+
 2011-07-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen.scm: Include gauche.cgen.cise too.
