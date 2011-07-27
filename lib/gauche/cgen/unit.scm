@@ -38,8 +38,6 @@
   (use util.match)
   (use gauche.parameter)
   (use gauche.sequence)
-  (use gauche.experimental.ref)
-  (use gauche.experimental.lamb)
   (export <cgen-unit> cgen-current-unit
           cgen-unit-c-file cgen-unit-init-name cgen-unit-h-file
           cgen-unit-toplevel-nodes cgen-add!

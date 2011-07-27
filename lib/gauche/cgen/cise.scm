@@ -38,7 +38,6 @@
   (use gauche.parameter)
   (use gauche.cgen.unit)
   (use gauche.cgen.literal)
-  (use gauche.experimental.ref)
   (use gauche.experimental.app)
   (use gauche.experimental.lamb)
   (use util.match)

@@ -41,7 +41,8 @@
 ;; any extension modules.  Keep this in mind if you make modifications here.
 
 (define-module gauche.cgen
-  (extend gauche.cgen.unit gauche.cgen.literal gauche.cgen.type)
+  (extend gauche.cgen.unit gauche.cgen.literal gauche.cgen.type
+          gauche.cgen.cise)
   )
 (select-module gauche.cgen)
 

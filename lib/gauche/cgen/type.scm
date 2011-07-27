@@ -35,7 +35,6 @@
   (use srfi-13)
   (use text.tr)
   (use gauche.mop.instance-pool)
-  (use gauche.experimental.ref)
   (export <cgen-type> cgen-type-from-name make-cgen-type
           cgen-box-expr cgen-unbox-expr cgen-pred-expr cgen-return-stmt)
   )
