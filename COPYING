@@ -1,17 +1,12 @@
-In short, Gauche is distributed under so called "BSD license",
-that is, as far as you retain the copyrignt notice and disclaimer below,
-you can use, copy, modify and redistribute your modification freely.
-The formal term is specified in each copyright notices.
-
-A few files associated to autoconf and libtool in the distribution are
-covered by GPL, but they have an exception so that I (and you) can
-distribute them under BSD license.  See each file for the detailed term.
+You can use, modify, and redistribute Gauche under revised BSD license.
+See below for the actual copyright holder and the exact terms of license
+for various parts of the software.
 
 
 Copyright and condition of use of main portion of the source:
 -----------------------------------------------------------------------------
 
-  Copyright (c) 2000-2010  Shiro Kawai  <shiro@acm.org>
+  Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
