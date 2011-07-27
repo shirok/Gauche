@@ -33,7 +33,6 @@
 
 (define-module gauche.parseopt
   (use gauche.regexp)
-  (use gauche.experimental.ref) ; remove this after 0.9.1 release
   (use srfi-1)
   (use srfi-2)
   (use srfi-13)
