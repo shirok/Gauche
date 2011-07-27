@@ -47,7 +47,7 @@ static ScmSymbol *make_sym(ScmObj name, int interned)
     ScmSymbol *sym = SCM_NEW(ScmSymbol);
     SCM_SET_CLASS(sym, SCM_CLASS_SYMBOL);
     sym->name = SCM_STRING(name);
-    sym->interned = interned;
+    sym->flags = interned? SCM_SYMBOL_FLAG_INTERNED : 0;
     return sym;
 }
 

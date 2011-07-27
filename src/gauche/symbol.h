@@ -39,16 +39,32 @@
 struct ScmSymbolRec {
     SCM_HEADER;
     ScmString *name;
-    int        interned;
+    int        flags;
 };
 
 SCM_CLASS_DECL(Scm_SymbolClass);
 #define SCM_CLASS_SYMBOL       (&Scm_SymbolClass)
 
+enum {
+    SCM_SYMBOL_FLAG_INTERNED = 1L<<0
+} ScmSymbolFlags;
+
 #define SCM_SYMBOL(obj)          ((ScmSymbol*)(obj))
 #define SCM_SYMBOLP(obj)         SCM_XTYPEP(obj, SCM_CLASS_SYMBOL)
 #define SCM_SYMBOL_NAME(obj)     (SCM_SYMBOL(obj)->name)
-#define SCM_SYMBOL_INTERNED(obj) (SCM_SYMBOL(obj)->interned)
+#define SCM_SYMBOL_INTERNED(obj) \
+    (SCM_SYMBOL(obj)->flags&SCM_SYMBOL_FLAG_INTERNED)
+
+/* Compatibility note: The 'flags' slot in ScmSymbol used to be an
+ * 'interned', just to keep whether the symbol is interned or not.
+ * We changed it in 0.9.2 to allow future extensions.
+ * All statically defined ScmSymbol has initialized this slot by
+ * either 0 or 1, so we can make use of the rest of bits; however,
+ * the existing code checks SCM_SYMBOL_INTERNED without the mask,
+ * so, in order to keep the binary compatibility, we can set other
+ * bits of flags only if the symbol is interened.   This restriction
+ * can be removed upon 1.0 release.
+ */
 
 SCM_EXTERN ScmObj Scm_MakeSymbol(ScmString *name, int interned);
 SCM_EXTERN ScmObj Scm_Gensym(ScmString *prefix);

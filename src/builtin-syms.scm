@@ -11,7 +11,7 @@
 (define *unit*
   (make <cgen-unit>
     :name "builtin-syms"
-    :preamble "/* Generated from builtin-syms.scm $Revision: 1.13 $.  DO NOT EDIT */"
+    :preamble "/* Generated from builtin-syms.scm.  DO NOT EDIT */"
     :pre-decl "#define LIBGAUCHE_BODY"
     :c-file "builtin-syms.c"
     :h-file "gauche/builtin-syms.h"
@@ -26,7 +26,7 @@
     (cgen-body "ScmSymbol Scm_BuiltinSymbols[] = {")
     (cgen-body "#define ENTRY(s) \
                   {{ SCM_CLASS_STATIC_TAG(Scm_SymbolClass) }, \
-                   SCM_STRING(s), TRUE }")
+                   SCM_STRING(s), SCM_SYMBOL_FLAG_INTERNED }")
     (cgen-init "#define INTERN(s, i) \
                   Scm_HashTableSet(obtable, s, SCM_OBJ(&Scm_BuiltinSymbols[i]), 0)")
     
