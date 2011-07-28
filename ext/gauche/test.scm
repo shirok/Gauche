@@ -2,3 +2,4 @@
 (load "./test-hook.scm")
 (load "./test-parameter.scm")
 (load "./test-record.scm")
+(load "./test-generator.scm")

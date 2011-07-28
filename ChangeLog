@@ -1,5 +1,9 @@
 2011-07-27  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/generator.scm: Added gauche.generator experimentally.
+	  API may change later.
+	* ext/gauche/test-generator.scm: Tests for gauche.generator.
+
 	* src/gauche/symbol.h (ScmSymbolRec), src/symbol.c (make_sym): Changed
 	  'interned' field to 'flags' field for future extension.  See the
 	  comment in symbol.h about the binary compatibility.
