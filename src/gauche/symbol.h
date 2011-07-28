@@ -45,7 +45,7 @@ struct ScmSymbolRec {
 SCM_CLASS_DECL(Scm_SymbolClass);
 #define SCM_CLASS_SYMBOL       (&Scm_SymbolClass)
 
-enum {
+typedef enum {
     SCM_SYMBOL_FLAG_INTERNED = 1L<<0
 } ScmSymbolFlags;
 
