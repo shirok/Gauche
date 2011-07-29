@@ -5759,7 +5759,7 @@ Transmits the content of @var{msg} through @var{socket}.
 binary packets, uniform vectors are recommended.
 
 When @code{socket-send} is used, @var{socket} must already be connected.
-On the other hand, @code{socket-setdto} can be used for non-connected
+On the other hand, @code{socket-sendto} can be used for non-connected
 socket, and the destination address is specified by 
 a @code{<sockaddr>} instance @var{to-address}.
 @c JP
@@ -5769,7 +5769,7 @@ a @code{<sockaddr>} instance @var{to-address}.
 バイナリパケットを送る場合はユニフォームベクタの使用を推奨します。
 
 @code{socket-send} を使うときには、@var{socket} は既に接続されて
-いなければなりません。他方、@code{socket-setdto} は未接続の
+いなければなりません。他方、@code{socket-sendto} は未接続の
 ソケットに対して使用でき、送出先アドレスは @code{<sockaddr>} のインスタンス
 @var{to-address} で指定します。
 @c COMMON
