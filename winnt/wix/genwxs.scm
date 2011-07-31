@@ -144,7 +144,11 @@
         (srl:sxml->xml (wix-template version file-tree) p))))
 
 (define (get-version)
-  (process-output->string '("Gauche/bin/gauche-config" "-V")))
+  (regexp-replace
+   #/^(\d+\.\d+(?:\.\d+)).*$/
+   (process-output->string '("Gauche/bin/gauche-config" "-V"))
+   "\\1"))
+  
 
 ;; Generate an XML Directory node of teh installation tree.
 ;; Currently we rely on the 'heat.exe' that comes with Wix SDK.
