@@ -224,7 +224,8 @@
            => (^(cppc) (cond [(method-overridden? gf)
                               (for-each (cut print "#if " <>) cppc)
                               (gf node)
-                              (for-each (cut print "#endif /* "<>" */") cppc)]
+                              (for-each (cut print "#endif /* "<>" */")
+                                        (reverse cppc))]
                              [else (gf node)]))]
           [else (gf node)]))
   (case part

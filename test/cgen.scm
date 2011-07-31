@@ -29,8 +29,8 @@ init_foo_bar();
 #if ((>= BAR_VERSION 3))&&((== FOO_VERSION 2))
 #if ((defined FOO))||((defined BAR))
 some_trick();
-#endif /* ((>= BAR_VERSION 3))&&((== FOO_VERSION 2)) */
 #endif /* ((defined FOO))||((defined BAR)) */
+#endif /* ((>= BAR_VERSION 3))&&((== FOO_VERSION 2)) */
 }
 "
        (parameterize ([cgen-current-unit (make <cgen-unit> :name "tmp.o")])
