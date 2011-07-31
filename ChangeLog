@@ -1,3 +1,9 @@
+2011-07-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/type.scm: Some integer stub types used SCM_EXACTP for
+	  checking exact integers; that's an old convention.  After we have
+	  ratnums, it must be checked with SCM_INTEGERP.  Fixed.
+
 2011-07-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm: Added gauche.generator experimentally.
