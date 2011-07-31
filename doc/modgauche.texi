@@ -1713,7 +1713,7 @@ After running this code you'll get @code{my-cfile.c} and
 (parameterize ([cgen-current-unit *unit*])
   (cgen-decl "#include <stdio.h>")
   (cgen-init "printf(stderr, \"initialization function\\n\");")
-  (cgen-body "void foo(int n) @{ printf(stderr, \"got %d\\n\"); @}")
+  (cgen-body "void foo(int n) @{ printf(stderr, \"got %d\\n\", n); @}")
   (cgen-extern "void foo(int n);")
   )
 
@@ -1914,8 +1914,9 @@ the literal value @code{(a b c)}, created by @code{cgen-literal}.
 (define *unit* (make <cgen-unit> :name "foo"))
 (parameterize ((cgen-current-unit *unit*))
   (let1 lit (cgen-literal '(a b c))
-    (cgen-body (format "void printabc() @{ Scm_Printf(SCM_CUROUT, ~a); @}"
-                       (cgen-c-name lit)))))
+    (cgen-body 
+     (format "void printabc() @{ Scm_Printf(SCM_CUROUT, \"%S\", lit); @}"
+             (cgen-c-name lit)))))
 (cgen-emit-c *unit*)
 @end example
 
