@@ -12,7 +12,6 @@
   (make <cgen-unit>
     :name "builtin-syms"
     :preamble "/* Generated from builtin-syms.scm.  DO NOT EDIT */"
-    :pre-decl "#define LIBGAUCHE_BODY"
     :c-file "builtin-syms.c"
     :h-file "gauche/builtin-syms.h"
     :init-prologue "static void init_builtin_syms(void)\n{"
@@ -21,7 +20,9 @@
 
 (define (main args)
   (parameterize ([cgen-current-unit *unit*])
-
+    (cgen-decl "#define LIBGAUCHE_BODY"
+               "#include <gauche.h>")
+    
     (cgen-extern "SCM_EXTERN ScmSymbol Scm_BuiltinSymbols[];")
     (cgen-body "ScmSymbol Scm_BuiltinSymbols[] = {")
     (cgen-body "#define ENTRY(s) \

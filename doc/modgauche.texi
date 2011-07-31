@@ -6,6 +6,7 @@
 @menu
 * Arrays::                      gauche.array
 * Character code conversion::   gauche.charconv
+* Generating C code::           gauche.cgen
 * Collection framework::        gauche.collection
 * Configuration parameters::    gauche.config
 * Dictionary framework::        gauche.dictionary
@@ -825,6 +826,13 @@ and the number of columns of @var{b} must match.
 @end defun
 
 @defun array-expt array pow
+@c EN
+Raises @var{array} to the power of @var{pow}; @var{array} must be
+a square matrix, and @var{pow} must be a nonnegative exact integer.
+@c JP
+@var{array}の@var{pow}乗を返します。@var{array}は正方行列、
+@var{pow}は非負の正確な整数でなければなりません。
+@c COMMON
 @end defun
 
 @defun array-div-left a b
@@ -844,7 +852,7 @@ and the number of columns of @var{b} must match.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Character code conversion, Collection framework, Arrays, Library modules - Gauche extensions
+@node Character code conversion, Generating C code, Arrays, Library modules - Gauche extensions
 @section @code{gauche.charconv} - Character Code Conversion
 @c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 
@@ -1508,7 +1516,594 @@ the @code{open-*-conversion-port}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Collection framework, Configuration parameters, Character code conversion, Library modules - Gauche extensions
+@node Generating C code, Collection framework, Character code conversion, Library modules - Gauche extensions
+@section @code{gauche.cgen} - Generating C code
+@c NODE Cコードの生成, @code{gauche.cgen} - Cコードの生成
+
+Significant part of Gauche is written in Gauche or S-expression
+based DSL.  During the building process, they are converted
+into C sources and then compiled by C compiler.
+The @code{gauche.cgen} module and its submodules expose
+the functionality Gauche build process is using to the general use.
+
+Required features for a C code generator differ greatly among
+applications, and too much scaffolding could be a constraint
+for the module users.  So, instead of providing a single
+solid framework, we provide a set of loosely coupled modules
+so that you can combine necessary features freely.  In fact,
+some of Gauche build process only use @code{gauche.cgen.unit}
+and @code{gauche.cgen.literal} (see @file{src/builtin-syms.scm},
+for example).
+
+@deftp {Module} gauche.cgen
+@mdindex gauche.cgen
+This is a convenience module that extends
+@code{gauche.cgen.unit}, @code{gauche.cgen.literal},
+@code{gauche.cgen.type} and @code{gauche.cgen.cise} together.
+@end deftp
+
+Usually you can just use @code{gauche.cgen} and don't need
+to think about individual submodules.
+The following subsections are organized by submodules
+only for the convenience of explanation.
+
+@menu
+* Generating C source files::   gauche.cgen.unit
+* Generating Scheme literals::  gauche.cgen.literals
+* Conversions between Scheme and C::  gauche.cgen.type
+* C in S expression::           gauche.cgen.cise
+@end menu
+
+@node Generating C source files, Generating Scheme literals, Generating C code, Generating C code
+@subsection Generating C source files
+
+One of the tricky issues about generating C source is that
+you have to put several fragments of code in different
+parts of the source file, even you want to say just one thing---that is,
+sometimes you have to put declaration before the actual definition,
+plus some setup code that needs to be run at initialization time.
+
+@subsubheading Creating a frame
+
+@deftp {Class} <cgen-unit>
+@clindex cgen-unit
+A @emph{cgen-unit} is a unit of C source generation.
+It corresponds to one .c file, and optionally one .h file.
+During the processing, a "current unit" is kept in a parameter
+@code{cgen-current-unit}, and most cgen APIs implicitly work to it.
+
+The following slot are for public use.  They are used to tailor
+the output.  Usually you set those slots at initializatoin time.
+The effect is undefined if you change them in the middle of
+code geneartion process.
+
+@defivar {<cgen-unit>} name
+A string to name this unit.  This is used for the default name
+of the generated files (@file{@var{name}.c} and @file{@var{name}.h})
+and the suffix of the default name of initialization function.
+Other cgen modules may use this to generate names.  Avoid using
+characters that are valid for C identifiers.
+
+You can override those default names by setting the other slots.
+@end defivar
+
+@defivar {<cgen-unit>} c-file
+@defivarx {<cgen-unit>} h-file
+The name of the C source file and header file, in strings.
+If they are @code{#f} (by default), the value of name slot
+is used as the file name, with extension @code{.c} or @code{.h}
+is attached, respectively.
+
+To get the file names to be generated, use @code{cgen-unit-c-file}
+and @code{cugen-unit-h-file} generic functions, instead of reading
+these slots.
+@end defivar
+
+@defivar {<cgen-unit>} preamble
+A list of strings to be inserted at the top of the generated sources.
+The default value is @code{("/* Generated by gauche.cgen */")}.
+Each string appears in its
+own line.  Usually you don't need anything
+@end defivar
+
+@defivar {<cgen-unit>} init-prologue
+@defivarx {<cgen-init>} init-epilogue
+A string to start or to end the initialization function, respectively.
+The default value of @code{init-prologue} is
+@code{"void Scm_Init_NAME(void) @{"} where @code{NAME} is the
+value of the @code{name} slot.  The default value of @code{init-epilogue}
+is just @code{"@}"}.  Each appears in its own line.
+
+To get the default initialization function name, use @code{cgen-unit-init-name}
+generic function.
+
+To customize initialization function name, arguments and/or return type,
+set @code{init-prologue}.
+
+The content of initialization function is filled by the code
+fragments registered by @code{cgen-init}.
+@end defivar
+@end deftp
+
+@deffn {Parameter} cgen-current-unit
+A parameter to keep the current cgen-unit.
+@end deffn
+
+A typical flow of generating C code is as follows:
+
+@enumerate
+@item
+Create a @code{<cgen-unit>} and make it the current unit.
+@item
+Call code insertion APIs with code fragments.  Fragments are accumulated
+in the current unit.
+@item
+Call @emph{emit} method on the unit, which generates a C file
+and optionally a header file.
+@end enumerate
+
+@deffn {Generic Function} cgen-emit-c cgen-unit
+@deffnx {Generic Function} cgen-emit-h cgen-unit
+Write the accumulated code fragments in @var{cgen-unit} to a
+C source file and C header file.  The name of the files are
+determined by calling @code{cgen-unit-c-file} and @code{cgen-unit-h-file},
+respectively.  If the files already exist, its content is overwritten;
+you can't gradually write to the files.
+So, usually these procedures are called at the last step of the code
+generation.
+
+We'll explain the details of how each file is organized under
+``Filling the content'' section below.
+@end deffn
+
+@deffn {Generic Function} cgen-unit-c-file cgen-unit
+@deffnx {Generic Function} cgen-unit-h-file cgen-unit
+Returns a string that names C source and header file for
+@var{cgen-unit}, respectively.  The default method first
+looks at @code{c-file} or @code{h-file} slot of the
+@var{cgen-unit}, and if it is @code{#f}, use the value of @code{name}
+slot and appends an extension @code{.c} or @code{.h}.
+@end deffn
+
+@deffn {Generic Function} cgen-unit-init-name cgen-unit
+Returns a string that names the initialization function
+generated to C.  It is used to create the default
+@code{init-prologue} value. 
+@end deffn
+
+@subsubheading Filling the content
+
+There are four parts to which you can add C code
+fragment.  Within each part, code fragments are rendered in the
+same order as added.
+
+@table @asis
+@item extern
+This part is put into the header file, if exists.
+@item decl
+Placed at the beginning of the C source, after the standard
+prologue.
+@item body
+Placed in the C source, following the 'decl' part.
+@item init
+Placed inside the initialization function, which appears at
+the end of the C source.
+@end table
+
+The following procedures are the simple way to put a souce
+code fragments in an appropriate part:
+
+@defun cgen-extern code @dots{}
+@defunx cgen-decl code @dots{}
+@defunx cgen-body code @dots{}
+@defunx cgen-init code @dots{}
+Put code fragments @var{code} @dots{} to the appropriate parts.
+Each fragment must be a string.
+@end defun
+
+This is an almost minimal example to show the typical usage.  
+After running this code you'll get @code{my-cfile.c} and 
+@code{my-cfile.h} in the current directory.
+
+@example
+(use gauche.cgen)
+
+(define *unit* (make <cgen-unit> :name "my-cfile"))
+
+(parameterize ([cgen-current-unit *unit*])
+  (cgen-decl "#include <stdio.h>")
+  (cgen-init "printf(stderr, \"initialization function\\n\");")
+  (cgen-body "void foo(int n) @{ printf(stderr, \"got %d\\n\"); @}")
+  (cgen-extern "void foo(int n);")
+  )
+
+(cgen-emit-c *unit*)
+(cgen-emit-h *unit*)
+@end example
+
+These are handy escaping procedures; they are useful even
+if you don't use other parts of the @code{cgen} modules.
+
+@defun cgen-safe-name string
+@defunx cgen-safe-name-friendly string
+@defunx cgen-safe-comment string
+Escapes characters invalid in C identifiers or C comments.
+
+With @code{cgen-safe-name}, characters other than ASCII alphabets
+and digits are converted to a form @code{_XX}, where @code{XX} is
+hexadecimal notation of the character code.  (Note that the character
+@code{_} is also converted.)  So the returned string can be used
+safely as a C identifier.  The mapping is injective, that is,
+if the source strings differ, the result string always differ.
+
+On the other hand, @code{cgen-safe-name-friendly} convers
+the input string into more readable C identifier.  @code{->} becomes
+@code{_TO} (e.g. @code{char->integer} becomes @code{char_TOinteger}),
+other @code{-} and @code{_} become @code{_},
+@code{?} becomes @code{P} (e.g. @code{char?} becomes @code{charP}),
+@code{!} becomes @code{X} (e.g. @code{set!} becomes @code{setX}),
+@code{<} and @code{>} become @code{_LT} and @code{_GT} respectively.
+Other special characters except @code{_} are converted to @code{_XX}
+as in @code{cgen-safe-name}.  The mapping is not injective; e.g.
+both @code{read-line} and @code{read_line} map to @code{read_line}.
+Use this only when you think some human needs to read the generated
+C code (which is not recommended, by the way.)
+
+Much simpler is @code{c-safe-comment}, which just converts
+@code{/*} and @code{*/} into @code{/ *} and @code{* /} (a space
+between those two characters), so that it won't terminate the
+comment inadvertently.  (Technically, escaping only @code{*/} suffice,
+but some simple-minded C parser might be confused by @code{/*} in the
+comments).   The conversion isn't injective as well.
+@end defun
+
+If you want to conditionalize a fragment by C preprocessor
+@code{#ifdef}s, use the following macro:
+
+@defmac cgen-with-cpp-condition cpp-expr body @dots{}
+Code fragments submitted in @var{body} @dots{} are protected
+by @code{#if @var{cpp-expr}} and @code{#endif}.
+
+If @var{cpp-expr} is a string, it is emitted literally:
+
+@example
+(cgen-with-cpp-condition "defined(FOO)"
+  (cgen-init "foo();"))
+
+;; will generate:
+#if defined(FOO)
+foo();
+#endif /* defined(FOO) */
+@end example
+
+You can also construct @var{cpp-expr} by S-expr.
+
+@example
+<cpp-expr> : <string>
+           | (defined <cpp-expr>)
+           | (not <cpp-expr>)
+           | (<n-ary-op> <cpp-expr> <cpp-expr> ...)
+           | (<binary-op> <cpp-expr> <cpp-expr>)
+
+<n-ary-op> : and | or | + | * | - | /
+
+<binary-op> : > | >= | == | < | <= | !=
+            | logand | logior | lognot | >> | <<
+@end example
+
+Example:
+
+@example
+(cgen-with-cpp-condition '(and (defined FOO)
+                               (defined BAR))
+  (cgen-init "foo();"))
+
+;; will generate:
+#if ((defined FOO)&&(defined BAR))
+foo();
+#endif /* ((defined FOO)&&(defined BAR)) */
+@end example
+
+You can nest @code{cgen-with-cpp-condition}.
+@end defmac
+
+@subsubheading Submitting code fragments for more than one parts
+
+When you try to abstract code generation process,
+calling individual procedures for each parts (e.g. @code{cgen-body}
+or @code{cgen-init}) becomes tedious, since such higher-level
+constructs are likely to require generating code fragments
+to various parts.  Instead, you can create a customized class
+that handles submission of fragments to appropriate parts.
+
+@deftp {Class} <cgen-node>
+@clindex cgen-node
+A base class to represent a set of code fragments.
+
+The state of C preprocessor condition (set by @code{with-cgen-cpp-condition})
+is captured when an instance of the subclass of this class is
+created, so generating appropriate @code{#if}s and @code{#endif}s are
+automatically handled.
+@end deftp
+
+You subclass @code{<cgen-node>}, then define method(s) to
+one or more of the following generic functions:
+
+@deffn {Generic Function} cgen-emit-xtrn cgen-node
+@deffnx {Generic Function} cgen-emit-decl cgen-node
+@deffnx {Generic Function} cgen-emit-body cgen-node
+@deffnx {Generic Function} cgen-emit-init cgen-node
+These generic functions are called during writing out
+the C source within @code{cgen-emit-c} and @code{cgen-emit-h}.
+Inside these methods, anything written out to the
+current output port goes into the output file.
+
+While generating @code{.h} file by @code{cgen-emit-h}, 
+@code{cgen-emit-xtrn} method for all submitted nodes are
+called in order of submission.
+
+While generating @code{.c} file by @code{cgen-emit-c},
+@code{cgen-emit-decl} method for all submitted nodes are
+called first, then @code{cgen-emit-body} method, then
+@code{cgen-emit-init} method.
+
+If you don't specialize any one of these method, it doesn't
+generate code in that part.
+@end deffn
+
+Once you define your subclass and create an instace,
+you can submit it to the current cgen unit by this procedure:
+
+@defun cgen-add! cgen-node
+Submit @var{cgen-node} to the current cgen unit.
+If the current unit is not set, @var{cgen-node} is simply ignored.
+@end defun
+
+In fact, the procedures @code{cgen-extern}, @code{cgen-decl},
+@code{cgen-body} and @code{cgen-init} are just a convenience
+wrapper to create an internal subclass specialized to generate
+code fragment only to the designated part.
+
+
+@node Generating Scheme literals, Conversions between Scheme and C, Generating C source files, Generating C code
+@subsection Generating Scheme literals
+
+Sometimes you want to refer to a Scheme constant value in C code.
+It is trivial if the value is a simple thing like Scheme boolean
+(@code{SCM_TRUE}, @code{SCM_FALSE}), characters (@code{SCM_MAKE_CHAR(code)}),
+small integers (@code{SCM_MAKE_INT(value)}), etc.  You can directly
+write it in C code.  However, once you step outside of these simple
+values, it gets tedious quickly, involving static data declarations
+and/or runtime initialization code.  
+
+For example, to get a Scheme value of a list of symbols @code{(a b c)}, 
+you have to (1) create @code{ScmString}s for the names of the symbols,
+(2) pass them to @code{Scm_Intern} to get Scheme symbols, then
+(3) call @code{Scm_Cons}es (or a convenience macro @code{SCM_LIST3}) to
+build a list.
+
+With @code{gauche.cgen}, those code can be generated automatically.
+
+NOTE: If you use @code{cgen-literal}, make sure you call
+@code{(cgen-decl "#include <gauche.h>")} to include @file{gauche.h}
+before the first call of @code{cgen-literal}, which may insert
+declarations that ness @file{gauche.h}.
+
+@defun cgen-literal obj
+Returns an @code{<cgen-literal>} object for a Scheme object @var{obj},
+and submit necessary declarations and initialization code to the
+current cgen unit.
+@end defun
+
+For the above example, you can just call @code{(cgen-literal '(a b c))}
+and the C code to set up the Scheme literal of the list of three
+symbols will be generated.
+
+The result of @code{cgen-literal} is an instance of @code{<cgen-literal>};
+the detail of the class isn't for public use, but you can use it
+to refer the created literal in C code.
+
+@deffn {Generic Function} cgen-cexpr cgen-literal
+Returns a C code expression fragment of type @code{ScmObj},
+which represents the Scheme literal value.
+
+The following example creates a C function @code{printabc} that prints
+the literal value @code{(a b c)}, created by @code{cgen-literal}.
+
+@example
+(define *unit* (make <cgen-unit> :name "foo"))
+(parameterize ((cgen-current-unit *unit*))
+  (let1 lit (cgen-literal '(a b c))
+    (cgen-body (format "void printabc() @{ Scm_Printf(SCM_CUROUT, ~a); @}"
+                       (cgen-c-name lit)))))
+(cgen-emit-c *unit*)
+@end example
+
+If you examine the generated file @file{foo.c}, you'll get a
+general idea of how it is handled.
+@end deffn
+
+One advantage of @code{cgen-literal} is that it tries to share
+the same literal whenever possible.  If you call
+@code{(cgen-literal '(a b c))} twice in the same cgen unit,
+you'll get one instance of cgen-literal.  If you call
+@code{(cgen-literal '(b c))} then, it will share the tail
+of the original list @code{(a b c)}.  So you can just use
+@code{cgen-literal} whenever you need to have Scheme literal
+values, without worrying about generating excessive amount of
+duplicated code.
+
+Certain Scheme objects cannot be generated as a literal; for example,
+an opened port can't, since it carries lots of runtime information.
+
+(There's a machinery to allow programmers to extend the cgen-literal
+behavior for new types.  The API isn't fixed yet, though.)
+
+
+@node Conversions between Scheme and C, C in S expression, Generating Scheme literals, Generating C code
+@subsection Conversions between Scheme and C
+
+In the C world, any Scheme object is uniformly of type @code{ScmObj}.
+But it is often the case that you need to narrow down to the
+specific type and convert it to a C value.  Gauche maintains
+a database of how to typecheck and map Scheme value to C value and
+vice versa.
+
+Note that the mapping isn't one-to-one: Scheme @code{<integer>}
+can be mapped to C's @code{short}, @code{long}, @code{unsigned int},
+or even just @code{ScmObj} if the C routine wants to cover bignums.
+So each mapping has its own name.  For historical reasons, each
+mapping is called @emph{stub type}.  The names of stub types look
+like Scheme type but its semantics differ from Scheme type.
+Remember: Each stub type represents a specific mapping between a
+Scheme type and a C type.
+
+Each stub type has a @emph{C-predicate},
+a @emph{boxer} and an @emph{unboxer}, each of them is a Scheme
+string for the name of a C function or C macro.
+A C-predicate takes @var{ScmObj} object and returns C boolean
+value that if the given object has a valid type and range for the
+stub type.
+A boxer takes C object and converts it to a Scheme object; it
+usually involves wrapping or @emph{boxing} the C value in a
+tagged pointer or object, hence the name.
+An unboxer does the opposite: takes a Scheme object and convert
+it to a C value.  The Scheme object must be checked by the C-predicate
+before being passed to the unboxer.
+
+The following table shows the predefined stub types.
+Note that the most of aggregate types has one to one mappings.
+The difficult ones are numeric types and strings.
+Scheme numbers can represent much wider range of numbers
+than C, so you have to narrow down according to the capability
+of C routine.  Scheme strings have byte size and character length,
+and the body may not be NULL-terminated; so the @code{<string>}
+stub type maps Scheme string to @code{ScmString*}.  For the convenience,
+you can use @code{<const-cstring>}, which creates NUL-terminated
+C string; beware that it may incur some copying cost.
+
+@example
+Stub type    Scheme       C           Notes
+-----------------------------------------------------------------
+<fixnum>     <integer>    int         Integers within fixnum range
+<integer>    <integer>    ScmObj      Any exact integers
+<real>       <real>       double      Value converted to double
+<number>     <number>     ScmObj      Any numbers
+
+<int>        <integer>    int         Integers representable in C
+<int8>       <integer>    int
+<int16>      <integer>    int
+<int32>      <integer>    int
+<short>      <integer>    short
+<long>       <integer>    long
+<uint>       <integer>    uint        Integers representable in C
+<uint8>      <integer>    uint
+<uint16>     <integer>    uint
+<uint32>     <integer>    uint
+<ushort>     <integer>    ushort
+<ulong>      <integer>    ulong
+<float>      <real>       float       Unboxed value casted to float
+<double>     <real>       double      Alias of <real>
+
+<boolean>    <boolean>    int         Boolean value
+<char>       <char>       ScmChar     Note: not a C char
+
+<void>       -            void        (Used only as a return type.
+                                        Scheme function returns #<undef>)
+
+<string>     <string>     ScmString*  Note: not a C string
+
+<const-cstring> <string>  const char* For arguments, string is unboxed
+                                      by Scm_GetStringConst.
+                                      For return values, C string is boxed
+                                      by SCM_MAKE_STR_COPYING.
+
+<pair>       <pair>       ScmPair*
+<list>       <list>       ScmObj
+<string>     <string>     ScmString*
+<symbol>     <symbol>     ScmSymbol*
+<keyword>    <keyword>    ScmKeyword*
+<vector>     <vector>     ScmVector*
+<uvector>    <uvector>    ScmUVector*
+<s8vector>   <s8vector>   ScmS8Vector*
+<u8vector>   <u8vector>   ScmU8Vector*
+<s16vector>  <s16vector>  ScmS16Vector*
+<u16vector>  <u16vector>  ScmU16Vector*
+<s32vector>  <s32vector>  ScmS32Vector*
+<u32vector>  <u32vector>  ScmU32Vector*
+<s64vector>  <s64vector>  ScmS64Vector*
+<u64vector>  <u64vector>  ScmU64Vector*
+<f16vector>  <f16vector>  ScmF16Vector*
+<f32vector>  <f32vector>  ScmF32Vector*
+<f64vector>  <f64vector>  ScmF64Vector*
+
+<hash-table> <hash-table> ScmHashTable*
+<tree-map>   <tree-map>   ScmTreeMap*
+
+<char-set>   <char-set>   ScmCharSet*
+<regexp>     <regexp>     ScmRegexp*
+<regmatch>   <regmatch>   ScmRegMatch*
+<port>       <port>       ScmPort*
+<input-port>  <input-port> ScmPort*
+<output-port> <output-port> ScmPort*
+<procedure>  <procedure>  ScmProcedure*
+<closure>    <closure>    ScmClosure*
+<promise>    <promise>    ScmPromise*
+
+<class>      <class>      ScmClass*
+<method>     <method>     ScmMethod*
+<module>     <module>     ScmModule*
+<thread>     <thread>     ScmVM*
+<mutex>      <mutex>      ScmMutex*
+<condition-variable> <condition-variable> ScmConditionVariable*
+@end example
+
+A stub type can have a @emph{maybe} variation, denoted by
+@code{?} suffix; e.g. @code{<string>?}.  It is a union type of
+the base type and boolean false (for @code{<string>?}, it
+can be either @code{<string>} or @code{#f}.)   In the C world,
+boolean false is mapped to @code{NULL} pointer.  It is convenient
+to pass a C value that allowed to be NULL back and forth---if
+you pass @code{#f} from the Scheme world it comes out @code{NULL} to
+the C world, and vice versa.   The maybe variation is only
+meaningful when the C type is a pointer type.
+
+@deftp {Class} <cgen-type>
+An instance of this class represents a stub type.
+It can be looked up by name such as @code{<const-cstring>} by
+@code{cgen-type-from-name}.
+@end deftp
+
+@defun cgen-type-from-name name
+Returns an instance of @code{<cgen-type>} that has @var{name}.
+If the name is unknown, @code{#f} is returned.
+@end defun
+
+@defun cgen-box-expr cgen-type c-expr
+@defunx cgen-unbox-expr cgen-type c-expr
+@defunx cgen-pred-expr cgen-type c-expr
+@var{c-expr} is a string denotes a C expression.
+Returns a string of C expression that boxes, unboxes, or
+typechecks the @var{c-expr} according to the @var{cgen-type}.
+
+@example
+@end example
+;; suppose foo() returns char*
+(cgen-box-expr
+ (cgen-type-from-name '<const-cstring>)
+ "foo()")
+ @result{} "SCM_MAKE_STR_COPYING(foo())"
+@end defun
+
+
+@node C in S expression,  , Conversions between Scheme and C, Generating C code
+@subsection CiSE - C in S expression
+
+
+
+
+@c ----------------------------------------------------------------------
+@node Collection framework, Configuration parameters, Generating C code, Library modules - Gauche extensions
 @section @code{gauche.collection} - Collection framework
 @c NODE コレクションフレームワーク, @code{gauche.collection} - コレクションフレームワーク
 

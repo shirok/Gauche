@@ -12,8 +12,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.53 $.  DO NOT EDIT */"
-   :pre-decl '("#define LIBGAUCHE_BODY")
+   :preamble "/* Generated from autoloads.scm.  DO NOT EDIT */"
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
 
@@ -28,6 +27,8 @@
 
 ;; Emit code
 (define (main args)
+  (cgen-decl "#define LIBGAUCHE_BODY"
+             "#include <gauche.h>")
   ;; init
   (cgen-init "  ScmModule *scheme = Scm_SchemeModule();"
              "  ScmModule *gauche = Scm_GaucheModule();"

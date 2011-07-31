@@ -1,5 +1,15 @@
 2011-07-30  Shiro Kawai  <shiro@acm.org>
 
+	* doc/modgauche.texi: Documented gauche.cgen; now the API for
+	  cgen.unit, cgen.literal and cgen.type are official.
+
+	* lib/gauche/cgen/unit.scm: Dropped :pre-decl and automatic insertion
+	  of "#include <gauche.h>".  If we let the module user to insert
+	  "#include <gauche.h>", then we don't need pre-decl stuff and it's
+	  conceptually simpler.
+	* lib/gauche/cgen/stub.scm, lib/gauche/cgen/precomp.scm,
+	  src/autoloads.scm, src/builtin-syms.scm: Changed accordingly.
+
 	* lib/gauche/type.scm: Some integer stub types used SCM_EXACTP for
 	  checking exact integers; that's an old convention.  After we have
 	  ratnums, it must be checked with SCM_INTEGERP.  Fixed.

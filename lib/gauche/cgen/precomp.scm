@@ -298,14 +298,16 @@
 (define (get-unit src out.c predef-syms ext-init?)
   (let* ([base (basename-sans-extension out.c)]
          [safe-name (string-tr base "-+" "__")])
-    (make <cgen-stub-unit>
-      :name base :c-name-prefix safe-name
-      :preamble `(,#`"/* Generated automatically from ,|src|.  DO NOT EDIT */")
-      :pre-decl (map (lambda (s) #`"#define ,s") predef-syms)
-      :init-prologue (format "~avoid Scm_Init_~a() {"
-                             (if ext-init? "SCM_EXTENSION_ENTRY " "")
-                             safe-name)
-      )))
+    (rlet1 u (make <cgen-stub-unit>
+               :name base :c-name-prefix safe-name
+               :preamble `(,#`"/* Generated automatically from ,|src|.  DO NOT EDIT */")
+               :init-prologue (format "~avoid Scm_Init_~a() {"
+                                      (if ext-init? "SCM_EXTENSION_ENTRY " "")
+                                      safe-name)
+               )
+      (parameterize ([cgen-current-unit u])
+        (for-each cgen-define predef-syms)
+        (cgen-include "<gauche.h>")))))
 
 (define (strip-prefix path prefix)
   (cond

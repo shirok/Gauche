@@ -90,7 +90,7 @@
    (c-type :init-keyword :c-type)  ; symbol for C type, e.g. 'ScmObj
    (c-member-name :init-form (gensym "d")) ; member name in the C structure
    (count  :init-value 0)          ; # of allocated objs.
-   (cpp-condition :init-form (cgen-cpp-condition)) ; cpp condition
+   (cpp-conditions :init-form (cgen-cpp-conditions)) ; cpp condition
    (init-thunks :init-value '())   ; thunks to generate initializers
                                    ;  constructed in rev order.
    ))
@@ -107,10 +107,10 @@
 
   (define (ensure-static-data-list category c-type)
     (and-let* ([unit (cgen-current-unit)])
-      (let* ([cppc (cgen-cpp-condition)]
+      (let* ([cppc (cgen-cpp-conditions)]
              [dl   (find (^(dl) (and (eq? (~ dl'c-type) c-type)
                                      (eq? (~ dl'category) category)
-                                     (equal? (~ dl'cpp-condition) cppc)))
+                                     (equal? (~ dl'cpp-conditions) cppc)))
                          (~ unit'static-data-list))])
         (or dl
             (rlet1 new (make <cgen-static-data-list>
@@ -155,21 +155,21 @@
               (if (eq? category 'constant) "SCM_CGEN_CONST " "")
               name)
       (dolist [dl dls]
-        (cond [(~ dl'cpp-condition) => (cut print "#if "<>)])
+        (for-each (cut print "#if "<>) (~ dl'cpp-conditions))
         (format #t "  ~a ~a[~a];\n" (~ dl'c-type) (~ dl'c-member-name)
                 (~ dl'count))
-        (cond [(~ dl'cpp-condition) => (cut print "#endif /*"<>"*/")]))
+        (for-each (cut print "#endif /*"<>"*/") (~ dl'cpp-conditions)))
       (format #t "} ~a = " name)))
 
   (define (emit-initializers dl)
-    (cond [(~ dl'cpp-condition) => (cut print "#if "<>)])
+    (for-each (cut print "#if "<>) (~ dl'cpp-conditions))
     (print "  {   /* "(~ dl'c-type)" "(~ dl'c-member-name)" */")
     (dolist [thunk (reverse (~ dl'init-thunks))]
       (if (string? thunk)
         (format #t "    ~a,\n" thunk)
         (begin (format #t "    ") (thunk) (print ","))))
     (print "  },")
-    (cond [(~ dl'cpp-condition) => (cut print "#endif /*"<>"*/")]))
+    (for-each (cut print "#endif /*"<>"*/") (~ dl'cpp-conditions)))
 
   (and-let* ([dls (~ unit'static-data-list)])
     (unless (null? dls)
@@ -396,7 +396,7 @@
 
 (define (register-literal-value unit literal-obj)
   (let ([lh   (ensure-literal-hash unit)]
-        [cppc (~ literal-obj'cpp-condition)]
+        [cppc (~ literal-obj'cpp-conditions)]
         [h    (literal-value-hash (~ literal-obj'value))])
     (or (and-let* ([entry (find (^(e) (and (equal? (caar e) cppc)
                                            (literal-value=? (~ literal-obj'value)
@@ -407,7 +407,7 @@
 
 (define (lookup-literal-value unit val)
   (let ([lh (ensure-literal-hash unit)]
-        [cppc (cgen-cpp-condition)])
+        [cppc (cgen-cpp-conditions)])
     (and-let* ([entry (find (^(e) (and (equal? (caar e) cppc)
                                        (literal-value=? val (cdar e))))
                             (vector-ref lh (literal-value-hash val)))])
