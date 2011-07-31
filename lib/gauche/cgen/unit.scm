@@ -303,7 +303,7 @@
 
 (define-method cgen-emit-xtrn ((node <cgen-cpp-define>))
   (cpp-define-common node))
-(define-method cgen-emit-init ((node <cgen-cpp-define>))
+(define-method cgen-emit-decl ((node <cgen-cpp-define>))
   (cpp-define-common node))
 
 (define (cgen-define name . maybe-value)
