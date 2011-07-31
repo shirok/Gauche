@@ -1915,7 +1915,7 @@ the literal value @code{(a b c)}, created by @code{cgen-literal}.
 (parameterize ((cgen-current-unit *unit*))
   (let1 lit (cgen-literal '(a b c))
     (cgen-body 
-     (format "void printabc() @{ Scm_Printf(SCM_CUROUT, \"%S\", lit); @}"
+     (format "void printabc() @{ Scm_Printf(SCM_CUROUT, \"%S\", ~a); @}"
              (cgen-c-name lit)))))
 (cgen-emit-c *unit*)
 @end example
