@@ -1,5 +1,9 @@
 2011-07-31  Shiro Kawai  <shiro@acm.org>
 
+	* test/multibyte.scm, test/char.scm: Splitted multibyte tests
+	  and char-only tests.  Character case mappings can be tested
+	  separately, and we need more tests focused on characters anyway.
+
 	* src/stdlib.stub (char-ci-cmp): Use foldcase to compare
 	  case-insensitive character comparison.
 

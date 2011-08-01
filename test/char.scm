@@ -1,15 +1,12 @@
 ;;
-;; Test for characters and strings, involving case mapping and
-;; multibytes
+;; Test for characters
 ;;
 
 (use gauche.test)
 
-(add-load-path "../test")
+(test-start "characters")
 
-(test-start "case mappings and multibytes")
-
-(test-section "char cases")
+(test-section "case mappings and properties")
 
 (let ()
   ;; Case stuff
@@ -149,14 +146,4 @@
     ))
 
 (test-end)
-
-;; Encode-specific stuff
-(case (gauche-character-encoding)
-  [(euc-jp) (load "euc-jp")]
-  [(sjis)   (load "sjis")]
-  [(utf-8)  (load "utf-8")]
-  [(none)   #f]
-  [else (format #t "No test provided for the character encoding ~s"
-                (gauche-character-encoding))])
-
 

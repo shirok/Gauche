@@ -3,6 +3,7 @@ error.scm
 module.scm
 macro.scm
 number.scm
+char.scm
 string.scm
 symkey.scm
 hash.scm
@@ -17,7 +18,7 @@ object.scm
 exception.scm
 regexp.scm
 sort.scm
-chars-strings.scm
+multibyte.scm
 system.scm
 load2.scm
 rfc.scm
