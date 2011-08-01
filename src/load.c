@@ -1252,10 +1252,10 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
 /*------------------------------------------------------------------
  * Dynamic parameter access
  */
-ScmObj Scm_CurrentLoadHistory() { PARAM_REF(Scm_VM(), load_history); }
-ScmObj Scm_CurrentLoadNext()    { PARAM_REF(Scm_VM(), load_next); }
-ScmObj Scm_CurrentLoadPort()    { PARAM_REF(Scm_VM(), load_port); }
-ScmObj Scm_LoadMainScript()     { PARAM_REF(Scm_VM(), load_main_script); }
+ScmObj Scm_CurrentLoadHistory() { return PARAM_REF(Scm_VM(), load_history); }
+ScmObj Scm_CurrentLoadNext()    { return PARAM_REF(Scm_VM(), load_next); }
+ScmObj Scm_CurrentLoadPort()    { return PARAM_REF(Scm_VM(), load_port); }
+ScmObj Scm_LoadMainScript()     { return PARAM_REF(Scm_VM(), load_main_script); }
 
 /*------------------------------------------------------------------
  * Compatibility stuff
