@@ -2,7 +2,7 @@
 
 (use gauche.test)
 
-(test-start "EUC-JP")
+(test-start "multibyte (euc-jp)")
 (use srfi-1)
 
 ;;-------------------------------------------------------------------

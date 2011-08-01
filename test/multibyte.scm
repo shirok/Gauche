@@ -1,8 +1,5 @@
 ;; Encode-specific character/string tests
-(use gauche.test)
 (add-load-path "../test")
-
-(test-start "multibyte operations")
 
 (case (gauche-character-encoding)
   [(euc-jp) (load "euc-jp")]
@@ -11,5 +8,3 @@
   [(none)   #f]
   [else (format #t "No test provided for the character encoding ~s"
                 (gauche-character-encoding))])
-
-(test-end)

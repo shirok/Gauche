@@ -2,7 +2,7 @@
 
 (use gauche.test)
 
-(test-start "SJIS")
+(test-start "multibyte (sjis)")
 (use srfi-1)
 
 ;;-------------------------------------------------------------------
