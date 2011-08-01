@@ -14284,7 +14284,7 @@ You can alo pass multiple domains to @var{domain-name}.
 @file{.po} ファイル名)を C の gettext と同じように指定します。
 @code{#f} を @var{domain-name} として渡すと、デフォルトのドメインアクセサ
 手続きが得られます。また、複数のドメインを @var{domain-name}にあたえる
-ことができあす。
+ことができます。
 @c COMMON
 @example
 (textdomain '("myapp" "gimp"))  ; search 1st myapp, then gimp
