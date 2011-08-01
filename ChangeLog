@@ -5,7 +5,9 @@
 	  separately, and we need more tests focused on characters anyway.
 
 	* src/stdlib.stub (char-ci-cmp): Use foldcase to compare
-	  case-insensitive character comparison.
+	  case-insensitive character comparison, and support more than
+	  2 arguments a la r6rs.
+	  (char-cmp): support more than 2 args.
 
 2011-07-30  Shiro Kawai  <shiro@acm.org>
 

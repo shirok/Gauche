@@ -347,30 +347,57 @@
 
 (define-cproc char? (obj) ::<boolean> :fast-flonum :constant
   (inliner CHARP) SCM_CHARP)
-(define-cproc char=? (c1::<char> c2::<char>) ::<boolean> :constant
-  (result (== c1 c2)))
-(define-cproc char<? (c1::<char> c2::<char>) ::<boolean> :constant
-  (result (< c1 c2)))
-(define-cproc char>? (c1::<char> c2::<char>) ::<boolean> :constant
-  (result (> c1 c2)))
-(define-cproc char<=? (c1::<char> c2::<char>)::<boolean> :constant
-  (result (<= c1 c2)))
-(define-cproc char>=? (c1::<char> c2::<char>)::<boolean> :constant
-  (result (>= c1 c2)))
+
+(define-cise-expr char-cmp
+  ;; Assumes local variables c1, c2, chars
+  [(_ op)
+   `(while 1
+      (cond [(not (SCM_PAIRP chars)) (result (,op c1 c2)) (break)]
+            [(,op c1 c2) (unless (SCM_CHARP (SCM_CAR chars))
+                           (Scm_TypeError "char" "character" (SCM_CAR chars)))
+                         (set! c1 c2)
+                         (set! c2 (SCM_CHAR_VALUE (SCM_CAR chars)))
+                         (set! chars (SCM_CDR chars))]
+            [else (result FALSE) (break)]))])
+
+(define-cproc char=? (c1::<char> c2::<char> :rest chars)
+  ::<boolean> :constant (char-cmp ==))
+(define-cproc char<? (c1::<char> c2::<char> :rest chars)
+  ::<boolean> :constant (char-cmp <))
+(define-cproc char>? (c1::<char> c2::<char> :rest chars)
+  ::<boolean> :constant (char-cmp >))
+(define-cproc char<=? (c1::<char> c2::<char> :rest chars)
+  ::<boolean> :constant (char-cmp <=))
+(define-cproc char>=? (c1::<char> c2::<char> :rest chars)
+  ::<boolean> :constant (char-cmp >=))
+
 
 (define-cise-expr char-ci-cmp
-  [(_ op) `(result (,op (Scm_CharFoldcase c1) (Scm_CharFoldcase c2)))])
+  ;; Assumes local variables c1, c2, chars
+  [(_ op)
+   `(begin
+      (set! c1 (Scm_CharFoldcase c1))
+      (set! c2 (Scm_CharFoldcase c2))
+      (while 1
+        (cond [(not (SCM_PAIRP chars)) (result (,op c1 c2)) (break)]
+              [(,op c1 c2) (unless (SCM_CHARP (SCM_CAR chars))
+                           (Scm_TypeError "char" "character" (SCM_CAR chars)))
+                           (set! c1 c2)
+                           (set! c2 (Scm_CharFoldcase
+                                     (SCM_CHAR_VALUE (SCM_CAR chars))))
+                           (set! chars (SCM_CDR chars))]
+              [else (result FALSE) (break)])))])
 
-(define-cproc char-ci=? (c1::<char> c2::<char>) ::<boolean> :constant
-  (char-ci-cmp ==))
-(define-cproc char-ci<? (c1::<char> c2::<char>) ::<boolean> :constant
-  (char-ci-cmp <))
-(define-cproc char-ci>? (c1::<char> c2::<char>) ::<boolean> :constant
-  (char-ci-cmp >))
-(define-cproc char-ci<=? (c1::<char> c2::<char>)::<boolean> :constant
-  (char-ci-cmp <=))
-(define-cproc char-ci>=? (c1::<char> c2::<char>) ::<boolean> :constant
-  (char-ci-cmp >=))
+(define-cproc char-ci=? (c1::<char> c2::<char> :rest chars)
+  ::<boolean> :constant (char-ci-cmp ==))
+(define-cproc char-ci<? (c1::<char> c2::<char> :rest chars)
+  ::<boolean> :constant (char-ci-cmp <))
+(define-cproc char-ci>? (c1::<char> c2::<char> :rest chars)
+  ::<boolean> :constant (char-ci-cmp >))
+(define-cproc char-ci<=? (c1::<char> c2::<char> :rest chars)
+  ::<boolean> :constant (char-ci-cmp <=))
+(define-cproc char-ci>=? (c1::<char> c2::<char> :rest chars)
+  ::<boolean> :constant (char-ci-cmp >=))
 
 (define-cproc char-alphabetic? (c::<char>) ::<boolean> Scm_CharAlphabeticP)
 (define-cproc char-numeric? (c::<char>) ::<boolean> Scm_CharNumericP)

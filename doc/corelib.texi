@@ -2782,12 +2782,12 @@ Returns @code{#t} if @var{obj} is a character, @code{#f} otherwise.
 @c COMMON
 @end defun
 
-@defun char=? char1 char2
-@defunx char<? char1 char2
-@defunx char<=? char1 char2
-@defunx char>? char1 char2
-@defunx char>=? char1 char2
-[R5RS]
+@defun char=? char1 char2 char3 @dots{}
+@defunx char<? char1 char2 char3 @dots{}
+@defunx char<=? char1 char2 char3 @dots{}
+@defunx char>? char1 char2 char3 @dots{}
+@defunx char>=? char1 char2 char3 @dots{}
+[R5RS,R6RS]
 @c EN
 Compares characters.  Character comparison is done in internal
 character encoding.
@@ -2796,20 +2796,20 @@ character encoding.
 @c COMMON
 @end defun
 
-@defun char-ci=? char1 char2
-@defunx char-ci<? char1 char2
-@defunx char-ci<=? char1 char2
-@defunx char-ci>? char1 char2
-@defunx char-ci>=? char1 char2
-[R5RS]
+@defun char-ci=? char1 char2 char3 @dots{}
+@defunx char-ci<? char1 char2 char3 @dots{}
+@defunx char-ci<=? char1 char2 char3 @dots{}
+@defunx char-ci>? char1 char2 char3 @dots{}
+@defunx char-ci>=? char1 char2 char3 @dots{}
+[R5RS,R6RS]
 @c EN
 Compares characters in case-insensitive way.
-In the current version, character cases are not well defined
-outside the ASCII character range.
+The comparison is done in the internal character code
+of the foldcase of the each character; see @code{char-foldcase} below.
 @c JP
 文字を、大文字小文字を区別せずに比較します。
-現在のバージョンではASCII文字の範囲外における大文字小文字の扱いが
-きちんと定義されていないことに注意して下さい。
+比較はそれぞれの文字のfoldcaseの内部文字エンコーディングに基づいて行われます。
+foldcaseについては下の@code{char-foldcase}を参照してください。
 @c COMMON
 @end defun
 

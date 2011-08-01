@@ -6,6 +6,61 @@
 
 (test-start "characters")
 
+(test-section "basic comparison")
+
+;; n-ary comparison
+;; ops is a list of comparison procedures
+;; data is a list (args = < <= > >=)
+(define (char-cmp-matrix ops data)
+  (for-each (^d (let1 args (car d)
+                  (for-each (^(op k) (test* (format "~a ~s" op args)
+                                            (~ d k)
+                                            (apply op args)))
+                            ops
+                            '(1 2 3 4 5))))
+            data))
+
+(char-cmp-matrix
+ (list char=? char<? char<=? char>? char>=?)
+ ;;  args              =   <   <=  >   >=
+ '(((#\a #\a)          #t  #f  #t  #f  #t)
+   ((#\a #\a #\a)      #t  #f  #t  #f  #t)
+   ((#\a #\a #\a #\a)  #t  #f  #t  #f  #t)
+   ((#\a #\b)          #f  #t  #t  #f  #f)
+   ((#\a #\b #\b)      #f  #f  #t  #f  #f)
+   ((#\a #\b #\b #\c)  #f  #f  #t  #f  #f)
+   ((#\a #\b #\b #\a)  #f  #f  #f  #f  #f)
+   ((#\a #\b #\c)      #f  #t  #t  #f  #f)
+   ((#\a #\b #\c #\d)  #f  #t  #t  #f  #f)
+   ((#\a #\b #\c #\b)  #f  #f  #f  #f  #f)
+   ((#\c #\b)          #f  #f  #f  #t  #t)
+   ((#\c #\b #\b)      #f  #f  #f  #f  #t)
+   ((#\c #\b #\b #\a)  #f  #f  #f  #f  #t)
+   ((#\c #\b #\b #\c)  #f  #f  #f  #f  #f)
+   ((#\d #\c #\b #\a)  #f  #f  #f  #t  #t)
+   ((#\d #\c #\b #\c)  #f  #f  #f  #f  #f)
+   ))
+
+(char-cmp-matrix
+ (list char-ci=? char-ci<? char-ci<=? char-ci>? char-ci>=?)
+ ;;  args              =   <   <=  >   >=
+ '(((#\A #\a)          #t  #f  #t  #f  #t)
+   ((#\a #\A #\a)      #t  #f  #t  #f  #t)
+   ((#\a #\A #\A #\a)  #t  #f  #t  #f  #t)
+   ((#\a #\B)          #f  #t  #t  #f  #f)
+   ((#\a #\B #\b)      #f  #f  #t  #f  #f)
+   ((#\a #\B #\b #\C)  #f  #f  #t  #f  #f)
+   ((#\a #\B #\b #\A)  #f  #f  #f  #f  #f)
+   ((#\A #\b #\C)      #f  #t  #t  #f  #f)
+   ((#\a #\B #\c #\D)  #f  #t  #t  #f  #f)
+   ((#\a #\B #\c #\b)  #f  #f  #f  #f  #f)
+   ((#\C #\b)          #f  #f  #f  #t  #t)
+   ((#\C #\b #\B)      #f  #f  #f  #f  #t)
+   ((#\C #\b #\B #\a)  #f  #f  #f  #f  #t)
+   ((#\C #\b #\B #\c)  #f  #f  #f  #f  #f)
+   ((#\D #\c #\B #\a)  #f  #f  #f  #t  #t)
+   ((#\D #\c #\B #\c)  #f  #f  #f  #f  #f)
+   ))
 (test-section "case mappings and properties")
 
 (let ()
@@ -88,6 +143,7 @@
     (test2 char-ci=? #\z #\a #f)
     (test2 char-ci=? #\z #\Z #t)
     (test2 char-ci=? #\u03c2 #\u03c3 #t)   ; downcase sigma
+    (test2 char-ci=? #\u03b9 #\u0345 #t)   ; downcase iota vs subsctipt iota
     (test2 char-ci>? #\z #\Z #f)
     (test2 char-ci>? #\Z #\z #f)
     (test2 char-ci>? #\a #\Z #f)
