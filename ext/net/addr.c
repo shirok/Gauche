@@ -166,7 +166,8 @@ static int sockaddr_un_compare(ScmObj x, ScmObj y, int equalp)
     if (!equalp) Scm_Error("object %S and %S can't be ordered", x, y);
     
     if (xx->addrlen == yy->addrlen
-        && memcmp(xx->addr.sun_path, yy->addr.sun_path, xx->addrlen) == 0) {
+        && memcmp(xx->addr.sun_path, yy->addr.sun_path,
+                  sizeof(xx->addr.sun_path)) == 0) {
         return 0;               /* (equal? x y) => #t */
     } else {
         return -1;              /* (equal? x y) => #f */
