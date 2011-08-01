@@ -359,7 +359,7 @@
   (result (>= c1 c2)))
 
 (define-cise-expr char-ci-cmp
-  [(_ op) `(result (,op (SCM_CHAR_UPCASE c1) (SCM_CHAR_UPCASE c2)))])
+  [(_ op) `(result (,op (Scm_CharFoldcase c1) (Scm_CharFoldcase c2)))])
 
 (define-cproc char-ci=? (c1::<char> c2::<char>) ::<boolean> :constant
   (char-ci-cmp ==))

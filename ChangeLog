@@ -1,3 +1,8 @@
+2011-07-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/stdlib.stub (char-ci-cmp): Use foldcase to compare
+	  case-insensitive character comparison.
+
 2011-07-30  Shiro Kawai  <shiro@acm.org>
 
 	* doc/modgauche.texi: Documented gauche.cgen; now the API for
