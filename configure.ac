@@ -352,9 +352,11 @@ dnl Checks processor type, for processor-specific stuff
 case $host in
   i?86-apple-darwin*)
     AC_CHECK_DEFINED(i386,
-      AC_DEFINE(SCM_TARGET_I386,1,[Define if uses i386 optimizations])) ;;
+      AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations])) ;;
   i?86-*)
-    AC_DEFINE(SCM_TARGET_I386,1,[Define if uses i386 optimizations]) ;;
+    AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations]) ;;
+  x86_64-*)
+    AC_DEFINE(SCM_TARGET_X86_64,1,[Define to use x86_64 optimizations]) ;;
   alpha*)
     CFLAGS="$CFLAGS -mieee" ;;
   arm*)

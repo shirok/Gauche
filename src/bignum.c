@@ -538,7 +538,7 @@ int Scm_BignumCmp3U(ScmBignum *bx, ScmBignum *off, ScmBignum *by)
         /* fallthrough */
     } else {
         /* xsize == ysize */
-        u_long w; int c = 0;
+        u_long w, c = 0;
         if (osize > ysize) return 1;
         if (bx->values[xsize-1] > by->values[ysize-1]) return 1;
         if (osize < xsize) {
@@ -590,7 +590,8 @@ static int bignum_safe_size_for_add(ScmBignum *x, ScmBignum *y)
 static ScmBignum *bignum_2scmpl(ScmBignum *br)
 {
     int rsize = SCM_BIGNUM_SIZE(br);
-    int i, c;
+    int i;
+    u_long c;
     for (i=0, c=1; i<rsize; i++) {
         unsigned long x = ~br->values[i];
         UADD(br->values[i], c, x, 0);
@@ -611,8 +612,8 @@ static ScmBignum *bignum_add_int(ScmBignum *br, ScmBignum *bx, ScmBignum *by)
     int rsize = SCM_BIGNUM_SIZE(br);
     int xsize = SCM_BIGNUM_SIZE(bx);
     int ysize = SCM_BIGNUM_SIZE(by);
-    int i, c;
-    u_long x, y;
+    int i;
+    u_long c, x, y;
 
     for (i=0, c=0; i<rsize; i++, xsize--, ysize--) {
         if (xsize <= 0) {
@@ -643,8 +644,8 @@ static ScmBignum *bignum_sub_int(ScmBignum *br, ScmBignum *bx, ScmBignum *by)
     int rsize = SCM_BIGNUM_SIZE(br);
     int xsize = SCM_BIGNUM_SIZE(bx);
     int ysize = SCM_BIGNUM_SIZE(by);
-    int i, c;
-    u_long x, y;
+    int i;
+    u_long c, x, y;
 
     for (i=0, c=0; i<rsize; i++, xsize--, ysize--) {
         if (xsize <= 0) {

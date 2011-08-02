@@ -64,6 +64,8 @@
 /* Include processor-specific macros */
 #if defined(SCM_TARGET_I386)
 #include "arith_i386.h"
+#elif defined(SCM_TARGET_X86_64)
+#include "arith_x86_64.h"
 #endif
 
 /*-----------------------------------------------------------------

@@ -1,5 +1,11 @@
 2011-08-01  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, src/gauche/arith_x86_64.h: Added inline assembly
+	  of fullword numberic operations for x86_64.
+	* src/bignum.c: Some routines used incorrect type (long vs int) as
+	  the argument for arith macros.  On ILP32 machines it didn't matter,
+	  but on LP64 it does.
+
 	* src/number.c (scm_mul): The previous version of overflow detection
 	  of multiplying two longs depended on C's undefined behavior.
 	  clang-llvm does certain optimizations as if the calculation never

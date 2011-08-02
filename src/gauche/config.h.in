@@ -308,8 +308,11 @@
 /* Directory where libtool places the compiled libraries */
 #undef SCM_LIBTOOL_OBJDIR
 
-/* Define if uses i386 optimizations */
+/* Define to use i386 optimizations */
 #undef SCM_TARGET_I386
+
+/* Define to use x86_64 optimizations */
+#undef SCM_TARGET_X86_64
 
 /* Define to the suffix of dynamic loadable object */
 #undef SHLIB_SO_SUFFIX
