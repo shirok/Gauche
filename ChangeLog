@@ -1,3 +1,13 @@
+2011-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (scm_mul): The previous version of overflow detection
+	  of multiplying two longs depended on C's undefined behavior.
+	  clang-llvm does certain optimizations as if the calculation never
+	  overflows, and that's valid, since once calculation overflows the
+	  result can be anything.  Fixed to use SMULOV macro in gauche/arith.h
+	  which detects overflow reliably (but the portable fallback is
+	  expensive).
+
 2011-07-31  Shiro Kawai  <shiro@acm.org>
 
 	* test/multibyte.scm, test/char.scm: Splitted multibyte tests

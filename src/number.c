@@ -37,6 +37,7 @@
 #include "gauche/scmconst.h"
 #include "gauche/bits.h"
 #include "gauche/builtin-syms.h"
+#include "gauche/arith.h"
 
 #include <limits.h>
 #include <float.h>
@@ -1810,9 +1811,11 @@ static ScmObj scm_mul(ScmObj arg0, ScmObj arg1, int vmp)
         if (SCM_INTP(arg1)) {
             long v0 = SCM_INT_VALUE(arg0);
             long v1 = SCM_INT_VALUE(arg1);
-            long k = v0 * v1;
-            /* TODO: need a better way to check overflow */
-            if ((v1 != 0 && k/v1 != v0) || !SCM_SMALL_INT_FITS(k)) {
+            long k;
+            int ov;
+            /* Using SMULOV to detect overflow portably. */
+            SMULOV(k, ov, v0, v1);
+            if (ov || !SCM_SMALL_INT_FITS(k)) {
                 ScmObj big = Scm_MakeBignumFromSI(v0);
                 return Scm_BignumMulSI(SCM_BIGNUM(big), v1);
             } else {
