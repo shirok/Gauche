@@ -170,8 +170,9 @@
         (values scheme authority path query fragment))))
 
   ;; RFC3986, Section 5.2.3
+  ;;  we do prenormalize base-path, so it never be #f.
   (define (merge base-path rel-path base-authority)
-    (if (and base-authority (not base-path))
+    (if (and base-authority (string-null? base-path))
       (string-append "/" rel-path)
       (if-let1 m (#/^(.*)\/[^\/]*$/ base-path)
         (string-append (m 1) "/" rel-path)

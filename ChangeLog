@@ -1,3 +1,8 @@
+2011-08-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/uri.scm (uri-merge): Fix a bug when base-path is empty
+	  and rel-path is relative.
+
 2011-08-01  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, src/gauche/arith_x86_64.h: Added inline assembly

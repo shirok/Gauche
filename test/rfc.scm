@@ -830,6 +830,11 @@ Content-Length: 4349
   ;; of the base URI (RFC3986 5.2.1), which is optional.
   (t "http://example.com/foo/.." "./" "http://example.com/")
   (t "http://example.com/" "./foo/bar/.." "http://example.com/foo/")
+
+  ;; empty base-path case
+  (t "http://example.com"  "foo" "http://example.com/foo")
+  (t "http://example.com"  "./foo" "http://example.com/foo")
+  (t "http://example.com"  "../foo" "http://example.com/foo")
   )
 
 ;;--------------------------------------------------------------------
