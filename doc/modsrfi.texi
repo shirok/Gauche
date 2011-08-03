@@ -4218,11 +4218,11 @@ arguments of next invocation of those procedures.  The values
 returned from the last call to the procedures are returned
 from @code{args-fold}.
 @c JP
-@var{option-proc} は @var{seed} と同じ数だけ
+@var{operand-proc} は @var{seed} と同じ数だけ
 値を返さなければなりません。
 
 呼出し側の状態は明示的にシード引数で渡され、戻されます。初期のシード値は
-@code{args-fold} に与えた @var{seed} にです。この値は、オプション手続き
+@code{args-fold} に与えた @var{seed} です。この値は、オプション手続き
 @var{unrecognized-proc} と @var{operand-proc} によって戻され、
 次にこれらのオプション手続きの呼出し時にシード引数として使われます。
 これらの手続きの最後の呼出しから返されたこの値は @code{args-fold} によって
@@ -4262,7 +4262,7 @@ as '@code{-d}' with argument '@code{foo}'.
 @c JP
 渡されたプロパティでオプションオブジェクトを作成します。
 
-@var{name} は文字と(あるいは)文字列のリストです。文字はショートオプションに
+@var{names} は文字と(あるいは)文字列のリストです。文字はショートオプションに
 使い、文字列はロングオプションに使います。
 
 ふたつのフラグ @var{require-arg?} と @var{optional-arg?} はオプションが
