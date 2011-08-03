@@ -36,7 +36,13 @@
           lset<= lset= lset-adjoin lset-union lset-union!
           lset-intersection lset-intersection! lset-difference
           lset-difference! lset-xor lset-xor!
-          lset-diff+intersection lset-diff+intersection!))
+          lset-diff+intersection lset-diff+intersection!
+
+          ;; These are defined in gauche module, but they're not exported.
+          ;; We need to export them here so that (use srfi-1 :only (fold))
+          ;; will work.
+          null-list? any every fold fold-right find split-at
+          ))
 (select-module srfi-1)
 
 (define (xcons a b) (cons b a))
@@ -44,6 +50,13 @@
 
 (define-inline (not-pair? x) (not (pair? x)))
 
+(define null-list? (with-module gauche null-list?))
+(define any        (with-module gauche any))
+(define every      (with-module gauche every))
+(define fold       (with-module gauche fold))
+(define fold-right (with-module gauche fold-right))
+(define find       (with-module gauche find))
+(define split-at   (with-module gauche split-at))
 
 ;;;
 ;;; List generators of SRFI-1

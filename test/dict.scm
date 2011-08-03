@@ -37,7 +37,6 @@
 (test-basics (make-bimap (make-hash-table 'eq?) (make-hash-table 'eqv?)))
 
 (use gauche.collection)
-(use srfi-1)
 
 (let1 bm (make-bimap (make-hash-table 'eq?) (make-hash-table 'eqv?))
   (bimap-put! bm 'a 1)

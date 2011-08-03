@@ -1,5 +1,9 @@
 2011-08-02  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/srfi-1.scm: Export procedures that are defined in the gauche
+	  core.  They are not exported from the gauche module, but they should
+	  be exported from srfi-1.
+
 	* lib/rfc/uri.scm (uri-merge): Fix a bug when base-path is empty
 	  and rel-path is relative.
 
