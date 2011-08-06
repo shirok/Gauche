@@ -1,3 +1,7 @@
+2011-08-05  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.9.2.
+
 2011-08-02  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/srfi-1.scm: Export procedures that are defined in the gauche
