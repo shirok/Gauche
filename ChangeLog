@@ -94,7 +94,7 @@
 	* ext/auxsys/auxsyslib.stub, ext/auxsys/auxsys.scm (sys-clearenv):
 	  Support clearenv(3).  If we don't have it but have sys-unsetenv,
 	  we define sys-clearenv using it.  To check availability, use
-	  (or gauche.sys.clearenv gauche.sys-unsetenv) in cond-expand.
+	  (or gauche.sys.clearenv gauche.sys.unsetenv) in cond-expand.
 	  (sys-setenv): Fixed a bug that you couldn't omit the overwrite
 	  optional argument.
 	* src/autoloads.scm: Changed accordingly.
