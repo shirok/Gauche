@@ -1419,6 +1419,25 @@
        (map mersenne-prime? '(3 5 7 13 17 19 31 61 89 107 127 521 607 1279)))
 
 ;;------------------------------------------------------------------
+(test-section "quotient&remainder")
+
+(let ()
+  (define (check x y)
+    (test* (format "quotient&remainder ~s ~s" x y)
+           (list (quotient x y) (remainder x y))
+           (receive (q r) (quotient&remainder x y) (list q r))))
+  (define (do-quadrants p)
+    (lambda (x y) (p x y) (p (- x) y) (p x (- y)) (p (- x) (- y))))
+  (define do-exactness
+    (let1 p (do-quadrants check)
+      (lambda (x y) (p x y) (p (inexact x) y) (p x (inexact y)))))
+
+  (do-exactness 3 2)
+  (do-exactness 7 3)
+  (do-exactness 7 9)
+  )
+
+;;------------------------------------------------------------------
 (test-section "div and mod")
 
 (let ()
@@ -1445,6 +1464,8 @@
                               (< (* m 2) (abs y)))
                          m))))))
 
+  ((do-quadrants test-div) 3 2 =)
+  ((do-quadrants test-div) 3.0 2 (lambda (a b) (nearly=? 1e-10 a b)))
   ((do-quadrants test-div) 123 10 =)
   ((do-quadrants test-div) 123.0 10.0 (lambda (a b) (nearly=? 1e-10 a b)))
   ((do-quadrants test-div) 123/7 10/7 =)

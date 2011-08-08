@@ -2236,7 +2236,7 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y, ScmObj *rem)
         {
             double q;
             if (ry == 0.0) goto DIVBYZERO;
-            q = roundeven(rx/ry);
+            q = (rx*ry > 0)? floor(rx/ry) : ceil(rx/ry);
             if (rem) {
                 double rr = roundeven(rx - q*ry);
                 *rem = Scm_MakeFlonum(rr);
