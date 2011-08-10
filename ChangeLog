@@ -1,5 +1,10 @@
 2011-08-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (lazy): Directly generates $ASM node, eliminating
+	  the need of $PROMISE IFrom node.  We have to keep $PROMISE node
+	  throughout 0.9.x series for the compatibility of precompiled
+	  files in earlier 0.9.x versions, but it will go away in 1.0.
+
 	* lib/gauche/cgen/literal.scm (<cgen-scheme-symbol>): Handle
 	  unintered symbols.
 

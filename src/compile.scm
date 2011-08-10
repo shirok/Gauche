@@ -785,7 +785,9 @@
    ))
 
 ;; $promise <src> <expr>
-;;    Promise.
+;;    OBSOLETED.  We keep $promise during 0.9.x releases since it
+;;    can appear in the packed IForm of the inlined procedures.
+;;    Will go in 1.0.
 (define-simple-struct $promise $PROMISE $promise
   (src       ; original source for debugging
    expr      ; IForm
@@ -2748,7 +2750,8 @@
 
 (define-pass1-syntax (lazy form cenv) :gauche
   (match form
-    [(_ expr) ($promise form (pass1 `(,lambda. () ,expr) cenv))]
+    [(_ expr) ($asm form `(,PROMISE)
+                    (list (pass1 `(,lambda. () ,expr) cenv)))]
     [_ (error "syntax-error: malformed lazy:" form)]))
 
 (define-pass1-syntax (delay form cenv) :null
