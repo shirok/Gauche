@@ -121,18 +121,18 @@ static ScmObj execute_toplevels(ScmObj *args, int nargs, void *cv)
 /*----------------------------------------------------------------------
  * Disassembler
  */
+static ScmObj check_lifted_closure(ScmWord *p, ScmObj lifted);
+static void print_header(const char *prefix, ScmObj name, ScmCompiledCode *cc);
+
 void Scm_CompiledCodeDump(ScmCompiledCode *cc)
 {
     int i;
     ScmWord *p;
-    ScmObj closures = SCM_NIL, cp;
-    int clonum = 0;
+    ScmObj closures = SCM_NIL, lifted = SCM_NIL, cp;
+    int clonum = 0, more = FALSE;
 
-    Scm_Printf(SCM_CUROUT, "main_code (name=%S, code=%p, size=%d, const=%d, stack=%d):\n",
-               cc->name, cc->code, cc->codeSize, cc->constantSize,
-               cc->maxstack);
+    print_header("main_code", SCM_MAKE_STR(""), cc);
     do {
-      loop:
         p = cc->code;
         Scm_Printf(SCM_CUROUT, "args: %S\n", cc->argInfo);
         for (i=0; i < cc->codeSize; i++) {
@@ -165,6 +165,8 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
                 i++;
                 break;
             case SCM_VM_OPERAND_OBJ:
+                /* Check if we're referring to a lifted closure. */
+                lifted = check_lifted_closure(p+i, lifted);
                 Scm_Printf(out, "%S", p[i+1]);
                 i++;
                 break;
@@ -220,15 +222,72 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
                 }
             }
         }
+        more = FALSE;
         if (!SCM_NULLP(closures)) {
             cc = SCM_COMPILED_CODE(SCM_CAAR(closures));
-            Scm_Printf(SCM_CUROUT, "internal_closure_%S (name=%S, code=%p, size=%d, const=%d stack=%d):\n",
-                       SCM_CDAR(closures), cc->name, cc->code,
-                       cc->codeSize, cc->constantSize, cc->maxstack);
+            print_header("closure:", SCM_CDAR(closures), cc);
             closures = SCM_CDR(closures);
-            goto loop;
+            more = TRUE;
+        } else if (!SCM_NULLP(lifted)) {
+            cc = SCM_COMPILED_CODE(SCM_CAAR(lifted));
+            print_header("lifted:", SCM_CDAR(lifted), cc);
+            lifted = SCM_CDR(lifted);
+            more = TRUE;
         }
-    } while (0);
+    } while (more);
+}
+
+void print_header(const char *prefix, ScmObj name, ScmCompiledCode *cc)
+{
+    Scm_Printf(SCM_CUROUT, "=== %s%A (name=%S, code=%p, size=%d, const=%d stack=%d):\n",
+               prefix, name, cc->name, cc->code,
+               cc->codeSize, cc->constantSize, cc->maxstack);
+}
+
+/* The compiler may have lifted an internal closure to a global procedure.
+   We can tel so if the opcode is GREF_x, and the operand is an identifier,
+   whose name is an uninterned symbol and it is globally bound to a procedure.
+
+   If we indeed have a lifted closure, we chain the closure's code and
+   the identifier into the lifted list, returns the updated list.
+   Otherwise, we return lifted list as is.
+ */
+ScmObj check_lifted_closure(ScmWord *p, ScmObj lifted)
+{
+    ScmIdentifier *id;
+    ScmObj g;
+    ScmWord code = SCM_VM_INSN_CODE(p[0]);
+    int i;
+    static ScmWord gref_insns[] = {
+        SCM_VM_GREF,
+        SCM_VM_GREF_PUSH,
+        SCM_VM_GREF_CALL,
+        SCM_VM_GREF_TAIL_CALL,
+        SCM_VM_PUSH_GREF,
+        SCM_VM_PUSH_GREF_CALL,
+        SCM_VM_PUSH_GREF_TAIL_CALL
+    };
+    
+    if (!SCM_IDENTIFIERP(p[1])) return lifted;
+    id = SCM_IDENTIFIER(p[1]);
+    if (SCM_SYMBOL_INTERNED(id->name)) return lifted;
+
+    for (i=0; i < sizeof(gref_insns)/sizeof(ScmWord); i++) {
+        if (code == gref_insns[i]) {
+            g = Scm_GlobalVariableRef(id->module, id->name,
+                                      SCM_BINDING_STAY_IN_MODULE);
+            if (SCM_CLOSUREP(g)) {
+                if (SCM_FALSEP(Scm_Assq(SCM_CLOSURE(g)->code, lifted))) {
+                    return Scm_Acons(SCM_CLOSURE(g)->code,
+                                     SCM_OBJ(id->name),
+                                     lifted);
+                } else {
+                    return lifted;
+                }
+            }
+        }
+    }
+    return lifted;
 }
 
 /*------------------------------------------------------------------
