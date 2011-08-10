@@ -1,5 +1,8 @@
 2011-08-10  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/literal.scm (<cgen-scheme-symbol>): Handle
+	  unintered symbols.
+
 	* src/code.c (Scm_CompiledCodeDump): The disassembler now shows
 	  the closures lifted to the toplevel procedures.
 

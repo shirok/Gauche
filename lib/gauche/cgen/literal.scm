@@ -495,9 +495,10 @@
           :symbol-name (cgen-literal (symbol->string value))))
   (init (self)
     (print "  " (cgen-c-name self)
-           " = Scm_Intern(SCM_STRING("
+           " = Scm_MakeSymbol(SCM_STRING("
            (cgen-cexpr (~ self'symbol-name))
-           ")); /* "(cgen-safe-comment (~ self'value))" */"))
+           ")," (if (symbol-interned? (~ self'value)) "TRUE" "FALSE")");"
+           " /* "(cgen-safe-comment (~ self'value))" */"))
   (static (self) #f)
   )
 
