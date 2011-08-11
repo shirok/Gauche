@@ -172,7 +172,7 @@ libgauche_OBJECTS = \
 	gloc.$(OBJEXT) compare.$(OBJEXT) regexp.$(OBJEXT) signal.$(OBJEXT) \
 	parameter.$(OBJEXT) module.$(OBJEXT) proc.$(OBJEXT) \
 	number.$(OBJEXT) bignum.$(OBJEXT) load.$(OBJEXT) paths.$(OBJEXT) \
-	promise.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) \
+	lazy.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) \
 	system.$(OBJEXT) stdlib.$(OBJEXT) extlib.$(OBJEXT) exclib.$(OBJEXT) \
 	syslib.$(OBJEXT) intlib.$(OBJEXT) compile.$(OBJEXT) \
 	scmlib.$(OBJEXT) objlib.$(OBJEXT)

@@ -59,7 +59,9 @@
  *
  * Gauche experimentally tries to address this problem by allowing the
  * program to add a specific KIND object to a promise instance.
- * 
+ *
+ * Thread safety: It is safe that more than one thread force a promise
+ * simultaneously.  Only one thread does calculation.
  */
 
 /*
@@ -67,7 +69,10 @@
  */
 typedef struct ScmPromiseContentRec {
     int forced;                 /* TRUE if code has a thunk */
-    ScmObj code;
+    ScmObj code;                /* thunk or value */
+    ScmInternalMutex mutex;
+    ScmVM *owner;               /* who is working on this? */
+    int count;                  /* count for recursive lock */
 } ScmPromiseContent;
 
 /*
@@ -96,6 +101,9 @@ ScmObj Scm_MakePromise(int forced, ScmObj code)
     ScmPromise *p = SCM_NEW(ScmPromise);
     ScmPromiseContent *c = SCM_NEW(ScmPromiseContent);
     SCM_SET_CLASS(p, SCM_CLASS_PROMISE);
+    SCM_INTERNAL_MUTEX_INIT(c->mutex);
+    c->owner = NULL;
+    c->count = 0;
     c->forced = forced;
     c->code = code;
     p->content = c;
@@ -106,6 +114,24 @@ ScmObj Scm_MakePromise(int forced, ScmObj code)
 /*
  * force
  */
+
+static ScmObj release_promise(ScmObj *args, int nargs, void *data)
+{
+    ScmPromise *p = SCM_PROMISE(data);
+    p->content->owner = NULL;
+    SCM_INTERNAL_MUTEX_UNLOCK(p->content->mutex);
+}
+
+static void install_release_thunk(ScmVM *vm, ScmObj promise)
+{
+    /* TODO: the before thunk must be something that 
+       prevents restarting the execution process. */
+    vm->handlers = Scm_Acons(Scm_NullProc(),
+                             Scm_MakeSubr(release_promise,
+                                          (void*)promise, 0, 0,
+                                          SCM_MAKE_STR("promise_release")),
+                             vm->handlers);
+}
 
 static ScmObj force_cc(ScmObj result, void **data)
 {
@@ -128,6 +154,10 @@ static ScmObj force_cc(ScmObj result, void **data)
             p->content->code = result;
         }
     }
+    if (--p->content->count == 0) {
+        p->content->owner = NULL;
+        SCM_INTERNAL_MUTEX_UNLOCK(p->content->mutex);
+    }
     SCM_RETURN(Scm_Force(SCM_OBJ(p)));
 }
 
@@ -136,15 +166,35 @@ ScmObj Scm_Force(ScmObj obj)
     if (!SCM_PROMISEP(obj)) {
         SCM_RETURN(obj);
     } else {
-        ScmPromise *p = (ScmPromise*)obj;
-        if (p->content->forced) SCM_RETURN(p->content->code);
+        ScmPromiseContent *c = SCM_PROMISE(obj)->content;
+
+        if (c->forced) SCM_RETURN(c->code);
         else {
+            ScmVM *vm = Scm_VM();
             void *data[1];
-            data[0] = p;
-            Scm_VMPushCC(force_cc, data, 1);
-            SCM_RETURN(Scm_VMApply0(p->content->code));
+            data[0] = obj;
+
+            if (c->owner == vm) {
+                /* we already have the lock and evaluating this promise. */
+                c->count++;
+                Scm_VMPushCC(force_cc, data, 1);
+                SCM_RETURN(Scm_VMApply0(c->code));
+            } else {
+                /* TODO: check if the executing thread terminates
+                   prematurely */
+                SCM_INTERNAL_MUTEX_LOCK(c->mutex);
+                if (c->forced) {
+                    SCM_INTERNAL_MUTEX_UNLOCK(c->mutex);
+                    SCM_RETURN(c->code);
+                }
+                SCM_ASSERT(c->owner == NULL);
+                c->owner = vm;
+                install_release_thunk(vm, obj);
+                c->count++;
+                /* mutex is unlocked by force_cc. */
+                Scm_VMPushCC(force_cc, data, 1);
+                SCM_RETURN(Scm_VMApply0(c->code));
+            }
         }
     }
 }
-
-

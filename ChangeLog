@@ -1,3 +1,10 @@
+2011-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/promise.c: Renamed to lazy.c
+	* src/lazy.c (Scm_Force): Made force thread-safe.  Now more than
+	  one thread can call force simultaneously.
+	* ext/threads/test.scm: Added tests for thread-safe force.
+
 2011-08-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (lazy): Directly generates $ASM node, eliminating

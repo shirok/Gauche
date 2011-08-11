@@ -495,6 +495,31 @@
          (atom-ref a)))
 
 ;;---------------------------------------------------------------------
+(test-section "threads and promise")
+
+(use srfi-1)
+
+(letrec ((x 0)
+         (z (delay (begin (sys-nanosleep 100000) (inc! x) 'ok))))
+  (test* "concurrent forcing" 1
+         (let ([ts (map (^_ (make-thread (^() (force z)))) (iota 10))])
+           (for-each thread-start! ts)
+           (for-each thread-join! ts)
+           x)))
+
+(letrec ((count 0)
+         (x 5)
+         (z (delay (begin (set! count (+ count 1))
+                          (if (> count x)
+                            count
+                            (force p))))))
+  (test* "concurrent forcing w/ recursive force" 1
+         (let ([ts (map (^_ (make-thread (^() (force z)))) (iota 10))])
+           (for-each thread-start! ts)
+           (for-each thread-join! ts)
+           count)))
+
+;;---------------------------------------------------------------------
 (test-section "synchrnization by queues")
 
 ;; These are actually for testing mtqueue, but put here since they
