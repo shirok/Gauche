@@ -194,11 +194,20 @@ Options:
                            (string<= (ref a 'name) (ref b 'name)))))
         (if (version=? (gauche-version) (ref gpd 'gauche-version))
           (format #t " ~19a ~8a~%" (ref gpd 'name) (ref gpd 'version))
-          (when all?
-            (format #t "(~19a ~8a for Gauche ~a)~%"
+          (when (or all?
+                    (abi-version=? (gauche-version) (ref gpd 'gauche-version)))
+            (format #t " ~19a ~8a (@ Gauche ~a)~%"
                     (ref gpd 'name) (ref gpd 'version)
                     (ref gpd 'gauche-version))))
         ))))
+
+;; Since 0.9, we keep ABI compatibility across all micro versions in
+;; principle, so we only need to compare major and minor versions.
+;; Eventually it would be better to have an interface to obatin abi-version
+;; of running Gauche, and also to record abi version in .gpd file.
+(define (abi-version=? v0 v1)
+  (equal? (take* (string-split v0 #[.]) 2 #f)
+          (take* (string-split v1 #[.]) 2 #f)))
 
 ;;------------------------------------------------------
 ;; make-gpd
