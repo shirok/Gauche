@@ -909,6 +909,30 @@
 (test "ecase" 'd
       (lambda () (ecase 5 ((1) 'a) ((2 3) 'b) ((4) 'c) (else 'd))))
 
+(test "$" '(0 1)
+      (lambda () ($ list 0 1)))
+(test "$" '(0 1 (2 3 (4 5 (6 7))))
+      (lambda () ($ list 0 1 $ list 2 3 $ list 4 5 $ list 6 7)))
+(test "$ - $*" '(0 1 (2 3 4 5 6 7))
+      (lambda () ($ list 0 1 $ list 2 3 $* list 4 5 $* list 6 7)))
+(test "$ - $*" '(0 1 2 3 (4 5 6 7))
+      (lambda () ($ list 0 1 $* list 2 3 $ list 4 5 $* list 6 7)))
+(test "$ - $*" '(0 1 2 3 4 5 (6 7))
+      (lambda () ($ list 0 1 $* list 2 3 $* list 4 5 $ list 6 7)))
+(test "$ - partial" '(0 1 (2 3 (4 5 a)))
+      (lambda () (($ list 0 1 $ list 2 3 $ list 4 5 $) 'a)))
+(test "$ - $* - partial" '(0 1 2 3 4 5 a)
+      (lambda () (($ list 0 1 $* list 2 3 $* list 4 5 $) 'a)))
+(test "$ - $* - partial" '(0 1 (2 3 (4 5 a b)))
+      (lambda () (($ list 0 1 $ list 2 3 $ list 4 5 $*) 'a 'b)))
+
+(test "$ - hygienty" `(0 1 a ,list 2 3 b ,list 4 5)
+      (lambda ()
+        (let-syntax ([$$ (syntax-rules ()
+                           [($$ . xs) ($ . xs)])])
+          (let ([$ 'a] [$* 'b])
+            ($$ list 0 1 $ list 2 3 $* list 4 5)))))
+
 ;;----------------------------------------------------------------------
 ;; macro-expand
 

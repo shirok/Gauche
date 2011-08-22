@@ -1,3 +1,12 @@
+2011-08-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm ($): Incorporated the chained apply
+	  macro into the core.  Note that the semantics is slightly changed;
+	  we drop $* macro, and the $ and $* delimiters determines whether
+	  apply to be used for the procedure *before* the delimiter.
+	* src/autoloads.scm: Changed accordingly.
+	* lib/gauche/experimental/app.scm: Now this is just a placeholder.
+
 2011-08-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in ("list"): "gauche-package list" now displays

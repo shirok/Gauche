@@ -920,12 +920,128 @@ before creating the procedure.
 @end example
 
 @c EN
-Gauche also has a built-in procedure @code{pa$} for partial application
-(@xref{Combinators}).
+Gauche provides a couple of different ways to write partial
+applications concisely; see the @code{$} macro below, and also
+the @code{pa$} procedure (@xref{Combinators})。
 @c JP
-Gaucheはまた、部分適用を行う@code{pa$}という組み込み手続きを持っています
-(@xref{Combinators}参照)。
+Gaucheには他にも二つほど、部分適用を簡潔に書く方法があります。
+下の@code{$}マクロ、及び組み込み手続きを@code{pa$}です
+(@ref{Combinators}参照)。
 @c COMMON
+@end defmac
+
+@defmac $ arg @dots{}
+@c EN
+A macro to chain applications, hinted from Haskell's @code{$} operator
+(although the meaning is different).
+Within the macro arguments @var{arg} @dots{}, @code{$} delimits
+the last argument.  For example, the following code makes
+the last argument for the procedure @code{f} to be @code{(g c d @dots{})}
+@c JP
+関数適用をチェインするマクロです。Haskellの@code{$}にヒントを得ました
+(意味は異なりますが)。
+マクロ引数@var{arg} @dots{}中に@code{$}が出現すると、それが
+関数の最後の引数の区切りとなります。例えば次のコードでは、
+関数@code{f}の最後の引数が@code{(g c d @dots{})}となります。
+@c COMMON
+@example
+  ($ f a b $ g c d ...)
+  @equiv{} (f a b (g c d ...))
+@end example
+
+@c EN
+The @code{$} notation can be chained.
+@c JP
+@code{$}はチェインすることができます。
+@c COMMON
+
+@example
+  ($ f a b $ g c d $ h e f ...)
+  @equiv{} (f a b (g c d (h e f ...)))
+@end example
+
+@c EN
+If @code{$*} appears in the argument list instead of @code{$},
+it fills the rest of the argument, instead of the last argument.
+@c JP
+@code{$}のかわりに@code{$*}が現れた場合は、最後の引数のかわりに
+「残りの引数全部」を示します。
+@c COMMON
+
+@example
+  ($ f a b $* g c d ...)
+  @equiv{} (apply f a b (g c d ...))
+
+  ($ f a b $* g $ h $* hh ...)
+  @equiv{} (apply f a b (g (h (apply (hh ...)))))
+@end example
+
+@c EN
+Furthermore, if the argument list ends with @code{$} or @code{$*},
+the whole expression becomes a procedure expecting the last argument(s).
+@c JP
+さらに、もし引数リストが@code{$}または@code{$*}で終わっていた場合は、
+式全体が「残りの引数(リスト)」を受け取ることを期待する手続きとなります。
+@c COMMON
+
+@example
+  ($ f a b $ g c d $ h e f $)
+  @equiv{} (lambda (arg) (f a b (g c d (h e f arg))))
+  @equiv{} (.$ (cut f a b <>) (cut g c d <>) (cut h e f <>))
+
+  ($ f a b $ g c d $ h e f $*)
+  @equiv{} (lambda args (f a b (g c d (apply h e f args))))
+  @equiv{} (.$ (cut f a b <>) (cut g c d <>) (cut h e f <...>))
+@end example
+
+@c EN
+The more functional the code gets, the more you
+tempted to write it as a chain of nested function calls.
+The Scheme syntax can get awkward in such code.  Close
+parentheses tend to clutter at the end of expressions.
+Inner applications tends to pushed toward right columns
+with the standard indentention rules.  Compare the
+following two code functionally equivalent to each other:
+@c JP
+関数的にコードを書いていると、関数呼び出しが深くネストすることが多くなります。
+しかしSchemeの構文はそのようなネストとあまり相性が良くありません。
+閉じ括弧が式の最後にずらずらと積み重なりますし、また通常のインデントルールでは
+コードが右のカラムにどんどん伸びていってしまいます。次の同等な二つの式を比べてみてください。
+@c COMMON
+
+@example
+(intersperse ":"
+             (map transform-it
+                  (delete-duplicates (map cdr
+                                          (group-sequence input)))))
+
+($ intersperse ":"
+   $ map transform-it
+   $ delete-duplicates
+   $ map cdr $ group-sequence input)
+@end example
+
+@c EN
+It is purely a matter of taste, and aldo this kind of syntax sugars
+can be easily abused.  Use with care, but it may work well if used
+sparingly, like spices.
+@c JP
+これはあくまで好みの問題ですし、こういった構文糖衣は濫用されがちなので
+気をつけてください。けれどもスパイスのように、控えめな隠し味として使うと、
+しばしばとても有用です。
+@c COMMON
+
+@c EN
+As a corner case, if neither @code{$} nor @code{$*} appear in the
+argument list, it is just calls the function.
+@c JP
+コーナーケースとして、引数リストに@code{$}も@code{$*}も現れなかった場合は、
+単なる関数呼び出しになります。
+@c COMMON
+
+@example
+  ($ f a b c) @equiv{} (f a b c)
+@end example
 @end defmac
 
 @defmac case-lambda clause @dots{}
