@@ -1,3 +1,8 @@
+2011-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass2/shrink-let-frame): A small optimization
+	  possibly replaces let to nested function call.
+
 2011-08-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm ($): Incorporated the chained apply

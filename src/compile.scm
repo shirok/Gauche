@@ -257,7 +257,7 @@
     [('cut p '<> c)      `(%map1c ,p ,lis ,c)]
     [('cut p '<> c1 c2)  `(%map1cc ,p ,lis ,c1 ,c2)]
     ['make-lvar+         `(%map-make-lvar ,lis)]
-    [('lambda . _)
+    [((or 'lambda '^). _)
      (let ([p (gensym)] [r (gensym)] [loop (gensym)])
        `(let ,loop ((,r '()) (,p ,lis))
           (if (null? ,p)
@@ -3136,6 +3136,16 @@
 ;;   the lvars introduced by this let are eliminated, and we can change
 ;;   this iform into a simple $seq.
 ;;
+;;  -- Special case: If the lvars are immediately "consumed" as the
+;;     arguments to a function callss in the first expression of let,
+;;     we can eliminate lvars.  This case often occurs after macro
+;;     expansion.
+;;       (let ([p (f a)] [q (g b)]) (h p q) (foo))
+;;         => (begin (h (f a) (g b)) (foo))
+;;     NB: If the first call (call to 'h') contains other side-effecting
+;;     expressions in its arguments we can't do this optimization, for
+;;     it changes the semantics.
+;;
 ;; - Closure optimization: when an lvar is bound to a $LAMBDA node, we
 ;;   may be able to optimize the calls to it.  It is done here since
 ;;   we need to run pass2 for all the call sites of the lvar to analyze
@@ -3148,11 +3158,12 @@
     (let1 obody (pass2/rec ($let-body iform) penv tail?)
       ;; NB: We have to run optimize-closure after pass2 of body.
       (for-each pass2/optimize-closure lvars inits)
-      (pass2/shrink-let-frame iform lvars inits obody))))
+      (pass2/shrink-let-frame iform lvars obody))))
 
-(define (pass2/shrink-let-frame iform lvars inits obody)
+(define (pass2/shrink-let-frame iform lvars obody)
+  (pass2/intermediate-lref-removal lvars obody)
   (receive (new-lvars new-inits removed-inits)
-      (pass2/remove-unused-lvars lvars inits)
+      (pass2/remove-unused-lvars lvars)
     (cond [(null? new-lvars)
            (if (null? removed-inits)
              obody
@@ -3169,21 +3180,51 @@
                                ($seq (append removed-inits (list obody))))))
            iform])))
 
-(define (pass2/remove-unused-lvars lvars inits)
-  (let loop ([lvars lvars] [inits inits] [rl '()] [ri '()] [rr '()])
+;; handle the special case in the above comment
+;; NB: This doesn't eliminate outer let in this case (yet):
+;;   (let1 p (f x) (let1 q (g p) (h q)))
+(define (pass2/intermediate-lref-removal lvars obody)
+  (let1 first-expr (if (has-tag? obody $SEQ)
+                     (car ($seq-body obody))
+                     obody)
+    (when (and (has-tag? first-expr $CALL)
+               ;; We can't allow $GREF, for it may raise unbound variable
+               ;; error, so the order matters.
+               (everyc (^(arg lvs) (or ($const? arg)
+                                       (and ($lref? arg)
+                                            (let1 lv ($lref-lvar arg)
+                                              (and (= (lvar-ref-count lv) 1)
+                                                   (= (lvar-set-count lv) 0)
+                                                   (memq lv lvs))))))
+                       ($call-args first-expr)
+                       lvars))
+      ($call-args-set! first-expr
+                       (map (^(arg) (if ($lref? arg)
+                                      (rlet1 v (lvar-initval ($lref-lvar arg))
+                                        (lvar-ref--! ($lref-lvar arg))
+                                        (lvar-initval-set! ($lref-lvar arg)
+                                                           ($const-undef)))
+                                      arg))
+                            ($call-args first-expr))))))
+
+(define (pass2/remove-unused-lvars lvars)
+  (let loop ([lvars lvars] [rl '()] [ri '()] [rr '()])
     (cond [(null? lvars)
            (values (reverse rl) (reverse ri) (reverse rr))]
           [(and (zero? (lvar-ref-count (car lvars)))
                 (zero? (lvar-set-count (car lvars))))
-           (loop (cdr lvars) (cdr inits) rl ri
-                 (cond [($lref? (car inits))
-                        (lvar-ref--! ($lref-lvar (car inits)))
-                        rr]
-                       [(transparent? (car inits)) rr]
-                       [else (cons (car inits) rr)]))]
+           (loop (cdr lvars) rl ri
+                 (let1 init (lvar-initval (car lvars))
+                   (cond [($lref? init)
+                          (lvar-ref--! ($lref-lvar init))
+                          rr]
+                         [(transparent? init) rr]
+                         [else (cons init rr)])))]
           [else
-           (loop (cdr lvars) (cdr inits)
-                 (cons (car lvars) rl) (cons (car inits) ri) rr)])))
+           (loop (cdr lvars)
+                 (cons (car lvars) rl)
+                 (cons (lvar-initval (car lvars)) ri)
+                 rr)])))
 
 ;; Closure optimization (called from pass2/$LET)
 ;;
@@ -3774,8 +3815,7 @@
   (let ([lvars ($let-lvars iform)]
         [inits (imap (cut pass3/rec <> labels) ($let-inits iform))])
     (ifor-each2 (lambda (lv in) (lvar-initval-set! lv in)) lvars inits)
-    (pass2/shrink-let-frame iform lvars inits
-                            (pass3/rec ($let-body iform) labels))))
+    (pass2/shrink-let-frame iform lvars (pass3/rec ($let-body iform) labels))))
 
 (define (pass3/$RECEIVE iform labels)
   ($receive-expr-set! iform (pass3/rec ($receive-expr iform) labels))
