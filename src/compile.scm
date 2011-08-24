@@ -776,6 +776,8 @@
               ;   in Pass 5.
    ))
 
+(define-inline ($call? iform) (has-tag? iform $CALL))
+
 ;; $asm <src> <insn> <args>
 ;;    Inlined assembly code.
 (define-simple-struct $asm $ASM $asm
@@ -3142,9 +3144,6 @@
 ;;     expansion.
 ;;       (let ([p (f a)] [q (g b)]) (h p q) (foo))
 ;;         => (begin (h (f a) (g b)) (foo))
-;;     NB: If the first call (call to 'h') contains other side-effecting
-;;     expressions in its arguments we can't do this optimization, for
-;;     it changes the semantics.
 ;;
 ;; - Closure optimization: when an lvar is bound to a $LAMBDA node, we
 ;;   may be able to optimize the calls to it.  It is done here since
@@ -3181,31 +3180,44 @@
            iform])))
 
 ;; handle the special case in the above comment
-;; NB: This doesn't eliminate outer let in this case (yet):
-;;   (let1 p (f x) (let1 q (g p) (h q)))
-(define (pass2/intermediate-lref-removal lvars obody)
-  (let1 first-expr (if (has-tag? obody $SEQ)
-                     (car ($seq-body obody))
-                     obody)
-    (when (and (has-tag? first-expr $CALL)
-               ;; We can't allow $GREF, for it may raise unbound variable
-               ;; error, so the order matters.
-               (everyc (^(arg lvs) (or ($const? arg)
-                                       (and ($lref? arg)
-                                            (let1 lv ($lref-lvar arg)
-                                              (and (= (lvar-ref-count lv) 1)
-                                                   (= (lvar-set-count lv) 0)
-                                                   (memq lv lvs))))))
-                       ($call-args first-expr)
-                       lvars))
-      ($call-args-set! first-expr
-                       (map (^(arg) (if ($lref? arg)
-                                      (rlet1 v (lvar-initval ($lref-lvar arg))
-                                        (lvar-ref--! ($lref-lvar arg))
-                                        (lvar-initval-set! ($lref-lvar arg)
-                                                           ($const-undef)))
-                                      arg))
-                            ($call-args first-expr))))))
+(define (pass2/intermediate-lref-removal lvars body)
+  ;; returns the call node who has replacable intermediate lrefs, or #f if
+  ;; we can't do this transformation.
+  (define (intermediate-lrefs node lvars)
+    (let loop ([args ($call-args node)] [ilrefs '()] [subcall-node #f])
+      (match args
+        [() (if subcall-node
+              (and (null? ilrefs) (intermediate-lrefs subcall-node lvars))
+              (and (not (null? ilrefs)) node))]
+        [((? $const? n) . args) (loop args ilrefs subcall-node)]
+        [((? $lref? n) . args)
+         (let1 lv ($lref-lvar n)
+           (if (memq lv lvars)
+             (and (= (lvar-ref-count lv) 1)
+                  (= (lvar-set-count lv) 0)
+                  (loop args (cons n ilrefs) subcall-node))
+             (loop args ilrefs subcall-node)))]
+        [((? $call? n) . args) (if subcall-node
+                                 #f
+                                 (loop args ilrefs n))]
+        [_ #f])))
+
+  (and-let* ([first-expr (if (has-tag? body $SEQ)
+                           (and (not (null? ($seq-body body)))
+                                (car ($seq-body body)))
+                           body)]
+             [ (has-tag? first-expr $CALL) ]
+             [node (intermediate-lrefs first-expr lvars)])
+    ($call-args-set! node
+                     (imap (lambda (arg)
+                             (if (and ($lref? arg)
+                                      (memq ($lref-lvar arg) lvars))
+                               (rlet1 v (lvar-initval ($lref-lvar arg))
+                                 (lvar-ref--! ($lref-lvar arg))
+                                 (lvar-initval-set! ($lref-lvar arg)
+                                                    ($const-undef)))
+                               arg))
+                           ($call-args node)))))
 
 (define (pass2/remove-unused-lvars lvars)
   (let loop ([lvars lvars] [rl '()] [ri '()] [rr '()])

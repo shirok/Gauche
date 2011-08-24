@@ -64,5 +64,30 @@
 (test* "constant closure identity" #t
        (eq? (make-constant-closure) (make-constant-closure)))
 
+(test-section "transformation")
+
+;; pass2 intermediate lref elimination
+(test* "intermediate lref elimination 1" '()
+       (filter-insn (^(x) (let1 p (f a) (g x p 0))) 'PUSH-LOCAL-ENV))
+(test* "intermediate lref elimination 2" '()
+       (filter-insn (^(x) (let ([p (f x a)] [q (g x b)]) (h p x q)))
+                    'PUSH-LOCAL-ENV))
+(test* "intermediate lref elimination 3" '(((PUSH-LOCAL-ENV 1)))
+       (filter-insn (^(x) (let1 p (f a) (g z p 0))) 'PUSH-LOCAL-ENV))
+(test* "intermediate lref elimination 4" '(((PUSH-LOCAL-ENV 1)))
+       (filter-insn (^(x) (let1 p (f a) (g p (z) 0))) 'PUSH-LOCAL-ENV))
+(test* "intermediate lref elimination 5" '(((PUSH-LOCAL-ENV 2)))
+       (filter-insn (^(x) (let ([p (f x a)] [q (g x b)]) (h p (r q))))
+                    'PUSH-LOCAL-ENV))
+(test* "intermediate lref elimination 6" '()
+       (filter-insn (^(x) (let* ([p (f x a)] [q (g x p)]) (h x q)))
+                    'PUSH-LOCAL-ENV))
+(test* "intermediate lref elimination 7" '(((PUSH-LOCAL-ENV 1)))
+       (filter-insn (^(x) (let* ([p (f x a)] [q (g x p)]) (h p q)))
+                    'PUSH-LOCAL-ENV))
+(test* "intermediate lref elimination 8" '()
+       (filter-insn (^(x) (let* ([p (f x a)] [q (g x p)] [r (h x q)]) (y r)))
+                    'PUSH-LOCAL-ENV))
+
 (test-end)
 
