@@ -4,6 +4,8 @@
 
 (use gauche.test)
 (use gauche.sequence)
+(use gauche.time)
+(use srfi-19)
 (add-load-path ".")
 
 (test-start "threads")
@@ -56,25 +58,23 @@
     (thread-join! (ref threads (- n 1)))))
 (test* "thread-join!" 1346269 (mt-fib 31))
 
-;; NB: the result of the following test is not guaranteed.
-;; There can be indefinite delay between thread-start! and the execution
-;; of the thunk, so the execution of t1 may be delayed and the result can
-;; be '(a b c). 
-'(test "thread-sleep!" '(b a c)
-      (lambda ()
-        (let* ((l '())
-               (t0 (make-thread (lambda ()
-                                  (thread-sleep! 0.1)
-                                  (push! l 'a))))
-               (t1 (make-thread (lambda ()
-                                  (push! l 'b)
-                                  (thread-sleep! 0.15)
-                                  (push! l 'c)))))
-          (thread-start! t0)
-          (thread-start! t1)
-          (thread-join! t0)
-          (thread-join! t1)
-          (reverse l))))
+(let ()
+  (define (thread-sleep-test x)
+    (test* (format "thread-sleep! ~s" x) #t
+           (let1 c (make <real-time-counter>)
+             (with-time-counter c (thread-sleep! x))
+             (> (time-counter-value c)
+                (- (if (is-a? x <time>)
+                     (time->seconds (time-difference (current-time) x))
+                     x)
+                   0.01)))))
+
+  (thread-sleep-test 0.02)
+  (thread-sleep-test 1/50)
+  (thread-sleep-test (add-duration (current-time)
+                                   (make-time time-duration #e2e7 0)))
+  )
+
 
 ;; thread stop and cont
 (let1 t1 (make-thread (lambda () (while #t (sys-nanosleep #e5e8))))

@@ -1071,9 +1071,11 @@ struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec)
         spec->tv_sec = ct->sec;
 #endif /*!SCM_EMULATE_INT64*/
         spec->tv_nsec = ct->nsec;
-        if (SCM_EXACTP(t)) {
+        if (SCM_INTP(t)) {
             spec->tv_sec += Scm_GetUInteger(t);
-        } else if (SCM_FLONUMP(t)) {
+        } else if (!SCM_REALP(t)) {
+            Scm_Panic("implementation error: Scm_GetTimeSpec: something wrong");
+        } else {
             double s;
             spec->tv_nsec += (unsigned long)(modf(Scm_GetDouble(t), &s)*1.0e9);
             spec->tv_sec += (unsigned long)s;
@@ -1081,8 +1083,6 @@ struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec)
                 spec->tv_nsec -= 1000000000;
                 spec->tv_sec += 1;
             }
-        } else {
-            Scm_Panic("implementation error: Scm_GetTimeSpec: something wrong");
         }
     }
     return spec;

@@ -1,3 +1,11 @@
+2011-08-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_GetTimeSpec): Fixed a bug that didn't handles
+	  exact rationals properly (it was rounded down to the nearest
+	  integer).
+	* ext/threads/test.scm: Improved thread-sleep! test.  Thread-sleep!
+	  was affected by the above bug.
+
 2011-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass2/shrink-let-frame): A small optimization
