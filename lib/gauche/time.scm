@@ -60,18 +60,20 @@
 (define-syntax %with-times
   (syntax-rules ()
     [(_ expr exprs do-result)
-     (let*-values ([(stimes) (sys-times)]
-                   [(sreal-sec sreal-msec) (sys-gettimeofday)]
-                   [r (begin expr . exprs)]
-                   [(etimes) (sys-times)]
-                   [(ereal-sec ereal-msec) (sys-gettimeofday)])
-       (let ([real (- (+ ereal-sec (/. ereal-msec 1000000))
-                      (+ sreal-sec (/. sreal-msec 1000000)))]
-             [user (/. (- (list-ref etimes 0) (list-ref stimes 0))
-                       (list-ref stimes 4))]
-             [sys  (/. (- (list-ref etimes 1) (list-ref stimes 1))
-                       (list-ref stimes 4))])
-         (do-result r real user sys)))]))
+     (begin
+       (gc)
+       (let*-values ([(stimes) (sys-times)]
+                     [(sreal-sec sreal-msec) (sys-gettimeofday)]
+                     [r (begin expr . exprs)]
+                     [(etimes) (sys-times)]
+                     [(ereal-sec ereal-msec) (sys-gettimeofday)])
+         (let ([real (- (+ ereal-sec (/. ereal-msec 1000000))
+                        (+ sreal-sec (/. sreal-msec 1000000)))]
+               [user (/. (- (list-ref etimes 0) (list-ref stimes 0))
+                         (list-ref stimes 4))]
+               [sys  (/. (- (list-ref etimes 1) (list-ref stimes 1))
+                         (list-ref stimes 4))])
+           (do-result r real user sys))))]))
 
 (define-syntax time
   (syntax-rules ()
