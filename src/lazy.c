@@ -417,36 +417,39 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
     struct timespec rem;
     ScmVM *vm = Scm_VM();
 
-    if (AO_compare_and_swap_full(&lp->owner, 0, SCM_WORD(vm))) {
-        /* Here we own the lazy pair. */
-        ScmObj item = lp->item;
-        /* Calling generator might change VM state, so we protect
-           incomplete stack frame if there's any. */
-        Scm__VMProtectStack(vm);
-        SCM_UNWIND_PROTECT {
-            ScmObj val = Scm_ApplyRec0(lp->generator);
-            if (SCM_EOFP(val)) {
-                lp->item = SCM_NIL;
-                lp->generator = SCM_NIL;
-            } else {
-                ScmObj newlp = Scm_MakeLazyPair(val, lp->generator);
-                lp->item = newlp;
-                lp->generator = SCM_NIL;
-            }
-            AO_nop_full();
-            SCM_SET_CAR(lp, item);
-            /* We don't need barrier here. */
-            lp->owner = (AO_t)1;
-        } SCM_WHEN_ERROR {
-            lp->owner = (AO_t)0;
-            SCM_NEXT_HANDLER;
-        } SCM_END_PROTECT;
-        return SCM_OBJ(lp); /* lp is now an (extended) pair */
-    }
-    /* Somebody's already working on forcing.  Let's wait for it to finish. */
-    while (SCM_HTAG(lp) == 7) {
-        nanosleep(&req, &rem);
-    }
+    do {
+        if (AO_compare_and_swap_full(&lp->owner, 0, SCM_WORD(vm))) {
+            /* Here we own the lazy pair. */
+            ScmObj item = lp->item;
+            /* Calling generator might change VM state, so we protect
+               incomplete stack frame if there's any. */
+            Scm__VMProtectStack(vm);
+            SCM_UNWIND_PROTECT {
+                ScmObj val = Scm_ApplyRec0(lp->generator);
+                if (SCM_EOFP(val)) {
+                    lp->item = SCM_NIL;
+                    lp->generator = SCM_NIL;
+                } else {
+                    ScmObj newlp = Scm_MakeLazyPair(val, lp->generator);
+                    lp->item = newlp;
+                    lp->generator = SCM_NIL;
+                }
+                AO_nop_full();
+                SCM_SET_CAR(lp, item);
+                /* We don't need barrier here. */
+                lp->owner = (AO_t)1;
+            } SCM_WHEN_ERROR {
+                lp->owner = (AO_t)0;
+                SCM_NEXT_HANDLER;
+            } SCM_END_PROTECT;
+            return SCM_OBJ(lp); /* lp is now an (extended) pair */
+        }
+        /* Somebody's already working on forcing.  Let's wait for it
+           to finish, or to abort. */
+        while (SCM_HTAG(lp) == 7 && lp->owner != 0) {
+            nanosleep(&req, &rem);
+        }
+    } while (lp->owner == 0); /* we retry if the previous owner abandoned. */
     return SCM_OBJ(lp);
 }
 

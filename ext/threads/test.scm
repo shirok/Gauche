@@ -520,6 +520,29 @@
            count)))
 
 ;;---------------------------------------------------------------------
+(test-section "threads and lazy sequences")
+
+(let1 k 0
+  (define (weird-generator)
+    (inc! k)
+    (case k
+      [(1) 0]
+      [(2) (sys-nanosleep #e1e7) (raise "boo")]
+      [(3) 1]
+      [else (eof-object)]))
+  (define (task seq)
+    (guard (e [else e])
+      (let1 k (length seq) seq)))
+  (let* ([seq (lseq weird-generator)]
+         [t0  (make-thread (^() (task seq)))]
+         [t1  (make-thread (^() (task seq)))])
+    (test* "accessing the same lazy sequence"
+           (test-one-of '("boo" (0 1)) '((0 1) "boo"))
+           (begin (thread-start! t0)
+                  (thread-start! t1)
+                  (list (thread-join! t0) (thread-join! t1))))))
+
+;;---------------------------------------------------------------------
 (test-section "synchrnization by queues")
 
 ;; These are actually for testing mtqueue, but put here since they
