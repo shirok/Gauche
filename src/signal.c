@@ -751,6 +751,11 @@ void Scm_SetMasterSigmask(sigset_t *set)
 
 /*
  * Convenience routines hiding platform-dependent stuff
+ *
+ * NB: These used to be used in vm.c, but no longer.  As of 0.9.3 these
+ * aren't used anywhere.  We keep these for a while just in case if
+ * we find them useful in some day, but if no such case arises, we may
+ * drop them eventually.
  */
 void Scm_GetSigmask(sigset_t *mask)
 {
@@ -765,7 +770,6 @@ void Scm_SetSigmask(sigset_t *mask)
         Scm_SysError("sigprocmask failed");
     }
 }
-
 
 /*
  * set signal mask

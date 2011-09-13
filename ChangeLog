@@ -1,3 +1,13 @@
+2011-09-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (user_eval_inner): We no longer save the signal mask and
+	  restore it in case of the error.  We don't see any reason to restore
+	  the mask.  From the commit logs, this mask manipulation was
+	  originally kept in 2004-03-15 change; it says, without restoring
+	  the mask, a hang occurred on cygwin.  We can no longer reproduce
+	  the hang, so we decided to drop this code.  It has now become
+	  a major slowdown factor.
+
 2011-08-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_GetTimeSpec): Fixed a bug that didn't handles

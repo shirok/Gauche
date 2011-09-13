@@ -1280,7 +1280,6 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
     cstack.prev = vm->cstack;
     cstack.cont = vm->cont;
     vm->cstack = &cstack;
-    Scm_GetSigmask(&cstack.mask);
     
   restart:
     vm->escapeReason = SCM_VM_ESCAPE_NONE;
@@ -1302,7 +1301,6 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
             Scm_Error("attempt to return from a ghost continuation.");
         }
     } else {
-        Scm_SetSigmask(&cstack.mask);
         /* An escape situation happened. */
         if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
