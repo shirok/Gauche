@@ -958,14 +958,19 @@
 (define-insn EQV  0 none #f ($w/argp v ($result:b (Scm_EqvP v VAL0))))
 
 (define-insn APPEND      1 none #f
-  (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [arg])
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [args SCM_NIL] [a])
     (when (> nargs 0)
       (SCM_FLONUM_ENSURE_MEM VAL0)
       (set! cp VAL0)
+      ;; We want to pop all args before doing works, for Scm_Length may cause
+      ;; forcing lazy-pair.
       (while (> (pre-- nargs) 0)
-        (POP-ARG arg)
-        (when (< (Scm_Length arg) 0) ($vm-err "list required, but got %S" arg))
-        (set! cp (Scm_Append2 arg cp))))
+        (POP-ARG a)
+        (set! args (Scm_Cons a args)))
+      ;; Now it' safe to work on args (note that we work from tail to head).
+      (dolist [a (Scm_ReverseX args)]
+        (when (< (Scm_Length a) 0) ($vm-err "list required, but got %S" a))
+        (set! cp (Scm_Append2 a cp))))
     ($result cp)))
 
 (define-insn NOT      0 none #f ($w/argr v ($result:b (SCM_FALSEP v))))
@@ -1012,10 +1017,11 @@
   ;;        |   :  |
   ;;   ARGP>| arg0 |        VAL0=proc
   ;;
-  (let* ([rargc::int (Scm_Length VAL0)]
+  (let* ([rest VAL0]
+         [rargc::int (check_arglist_tail_for_apply vm rest)]
          [nargc::int (- (SCM_VM_INSN_ARG code) 2)]
          [proc (* (- SP nargc 1))])
-    (when (< rargc 0) ($vm-err "improper list not allowed: %S" VAL0))
+    (when (< rargc 0) ($vm-err "improper list not allowed: %S" rest))
     (while (> nargc 0)
       (set! (* (- SP nargc 1)) (* (- SP nargc)))
       (post-- nargc))
@@ -1026,7 +1032,7 @@
       (set! VAL0 proc)
       ($goto-insn TAIL-CALL))
     ;; normal path
-    (set! (* (- SP 1)) VAL0)
+    (set! (* (- SP 1)) rest)
     (set! VAL0 proc)
     (DISCARD-ENV)
     (goto tail_apply_entry)))
@@ -1037,9 +1043,7 @@
     (let* ([c::ScmClass* (SCM_CLASS VAL0)])
       ;; be careful to handle class redifinition case
       (cond [(not (SCM_FALSEP (-> (Scm_ClassOf obj) redefined)))
-             (CHECK-STACK CONT_FRAME_SIZE)
-             (PUSH_CONT PC)
-             (set! PC PC_TO_RETURN)
+             (Scm__VMProtectStack vm)
              ($result (Scm_VMIsA obj c))]
             [else ($result:b (SCM_ISA obj c))]))))
 
@@ -1077,16 +1081,17 @@
   ($w/argr v ($result (Scm_ListToVector v 0 -1))))
 
 (define-insn APP-VEC     1 none #f      ; (compose list->vector append)
-  (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [arg])
+  (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [args SCM_NIL] [a])
     (when (> nargs 0)
       (SCM_FLONUM_ENSURE_MEM VAL0)
       (set! cp VAL0)
       (while (> (pre-- nargs) 0)
-        (POP-ARG arg)
-        (when (< (Scm_Length arg) 0)
-          ($vm-err "list required, but got %S" arg))
-        (set! cp (Scm_Append2 arg cp)))
-      ($result (Scm_ListToVector cp 0 -1)))))
+        (POP-ARG a)
+        (set! args (Scm_Cons a args)))
+      (dolist [a (Scm_ReverseX args)]
+        (when (< (Scm_Length a) 0) ($vm-err "list required, but got %S" a))
+        (set! cp (Scm_Append2 a cp))))
+    ($result (Scm_ListToVector cp 0 -1))))
 
 (define-insn VEC-LEN     0 none #f      ; vector-length
   ($w/argr v

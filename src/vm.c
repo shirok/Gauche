@@ -107,6 +107,7 @@ static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *, ScmVM *);
 static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
 static void   process_queued_requests(ScmVM *vm);
 static void   vm_finalize(ScmObj vm, void *data);
+static int    check_arglist_tail_for_apply(ScmVM *vm, ScmObj restargs);
 
 static ScmEnvFrame *get_env(ScmVM *vm);
 
@@ -946,6 +947,23 @@ static ScmEnvFrame *get_env(ScmVM *vm)
     return e;
 }
 
+/* When VM stack has incomplete stack frame (that is, SP != ARGP or
+ * *PC != SCM_VM_RET), and we need to run something on VM, we should
+ * preserve this incomplete frame.  Pushing an extra continuation
+ * frame does the job.  We set the PC to point to RET instruction,
+ * so the next time the control returns to the calling VM loop,
+ * the first thing it would do is to pop this extra continuation
+ * frame (unless other thigs are pushed onto the VM stack by VMPushCC).
+ */
+void Scm__VMProtectStack(ScmVM *vm)
+{
+    if (vm->sp != vm->argp || *vm->pc != SCM_VM_INSN(SCM_VM_RET)) {
+        CHECK_STACK(CONT_FRAME_SIZE);
+        PUSH_CONT(PC);
+        vm->pc = PC_TO_RETURN;
+    }
+}
+
 #if GAUCHE_FFX
 /* Move all the FLONUM_REGs to heap and clear the fpstack.
    We cache small number of visited env frames to avoid duplicate scanning
@@ -1564,6 +1582,53 @@ int Scm_Apply(ScmObj proc, ScmObj args, ScmEvalPacket *packet)
 {
     return safe_eval_wrap(SAFE_APPLY, proc, args, NULL, SCM_FALSE, packet);
 }
+
+#if GAUCHE_LAZY_PAIR
+/*
+ * A subroutine to be called while executing apply instruction.
+ * Apply needs to check the argument tail is a valid list.  However,
+ * naively using ordinary procedures can trigger forcing of lazy
+ * pair, which breaks VM state.
+ *
+ * When called, we know vm->sp[-1] contains the tail list of arguments.
+ * It may be a lazy pair.  If so, we should force it in the safe environment.
+ * Returns the length of the tail list.
+ *
+ * Currently, we force the lazy argument tail in very inefficient way,
+ * assuming that such case is very rare.
+ */
+
+int check_arglist_tail_for_apply(ScmVM *vm, ScmObj z)
+{
+    int count = 0;
+    for (;;) {
+        if (SCM_NULLP(z)) {
+            return count;
+        } else if (SCM_LAZY_PAIR_P(z)) {
+            ScmEvalPacket result;
+            ScmObj proc = Scm_GlobalVariableRef(Scm_GaucheModule(),
+                                                SCM_SYMBOL(SCM_INTERN("length")),
+                                                0);
+            int nres = Scm_Apply(proc, SCM_LIST1(z), &result);
+            if (nres == -1) Scm_Raise(result.exception);
+            SCM_ASSERT(nres == 1);
+            SCM_ASSERT(SCM_INTP(result.results[0]));
+            count += SCM_INT_VALUE(result.results[0]);
+            return count;
+        } else if (!SCM_PAIRP(z)) {
+            return -1;
+        } else {
+            z = SCM_CDR(z);
+            count++;
+        }
+    }
+}
+#else  /* !GAUCHE_LAZY_PAIR */
+int check_arglist_tail_for_apply(ScmVM *vm, ScmObj z)
+{
+    return Scm_Length(z);
+}
+#endif /* !GAUCHE_LAZY_PAIR */
 
 
 /*=================================================================

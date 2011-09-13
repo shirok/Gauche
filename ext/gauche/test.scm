@@ -3,3 +3,4 @@
 (load "./test-parameter.scm")
 (load "./test-record.scm")
 (load "./test-generator.scm")
+(load "./test-lazy.scm")

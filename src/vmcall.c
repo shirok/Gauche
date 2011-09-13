@@ -72,7 +72,7 @@
 #define ADJUST_ARGUMENT_FRAME(proc, argc)                               \
     do {                                                                \
         int reqargs, optargs;                                           \
-        int rargc = Scm_Length(*(SP-1)), c;                             \
+        int c, rargc = check_arglist_tail_for_apply(vm, *(vm->sp - 1)); \
         ScmObj p, a;                                                    \
         reqargs = SCM_PROCEDURE_REQUIRED(proc);                         \
         optargs = SCM_PROCEDURE_OPTIONAL(proc);                         \

@@ -1703,6 +1703,17 @@
 (define-cproc procedure-info (proc::<procedure>)
   (result (SCM_PROCEDURE_INFO proc)))
 
+(define-cproc %lazy-cons (item generator) Scm_MakeLazyPair)
+
+(define-cproc %force-lazy-pair (lp)
+  (if (SCM_LAZY_PAIR_P lp)
+    (result (Scm_ForceLazyPair (SCM_LAZY_PAIR lp)))
+    (result lp)))
+
+(define-cproc %inspect (item) ::<void>
+  (Scm_Printf SCM_CUROUT "%p\n" (SCM_CAR item))
+  (Scm_Printf SCM_CUROUT "%p\n" (SCM_CDR item)))
+
 ;; Local variables:
 ;; mode: scheme
 ;; end:

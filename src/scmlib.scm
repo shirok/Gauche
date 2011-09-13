@@ -402,6 +402,45 @@
           [(null? rest) (error "given list is too short:" lis)]
           [else (loop (- i 1) (cdr rest) (cons (car rest) r))])))
 
+;; lazy sequence primitives
+;;   These are so fundamental that they deserve to be in core.
+;;   Auxiliary utilities are provided in gauche.lazy module.
+
+;; Fundamental constructor
+;; lseq generator
+;; lseq item ... generator
+(define (lseq item . args)
+  (if (null? args)
+    (let ([r (item)]) ; item is a generator
+      (if (eof-object? r)
+        '()
+        (%lazy-cons r item)))
+    (let rec ([item item] [args args])
+      (if (null? (cdr args))
+        (%lazy-cons item (car args))
+        (cons item (rec (car args) (cdr args)))))))
+
+;; For convenience.
+(define (lrange start :optional (end +inf.0) (step 1))
+  ;; Exact numbers.  Fast way.
+  (define (gen-exacts)
+    (set! start (+ start step))
+    (if (< start end)
+      start
+      (eof-object)))
+  ;; Inexact numbers.  We use multiplication to avoid accumulating errors 
+  (define c 0)
+  (define (gen-inexacts)
+    (set! c (+ c 1))
+    (let1 r (+ start (* c step))
+      (if (< r end)
+        r
+        (eof-object))))
+
+  (cond [(>= start end) '()]
+        [(and (exact? start) (exact? step)) (lseq start gen-exacts)]
+        [else (lseq (inexact start) gen-inexacts)]))
+
 ;;;=======================================================
 ;;; string stuff
 ;;;

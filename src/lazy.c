@@ -1,5 +1,5 @@
 /*
- * promise.c - promise object
+ * lazy.c - lazy evaluation constructs
  *
  *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
  * 
@@ -33,6 +33,11 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "atomic_ops.h"
+
+/*==================================================================
+ * Promise
+ */
 
 /* NB: We adopted the semantics described in srfi-45.
  *     http://srfi.schemers.org/srfi-45/srfi-45.html
@@ -59,7 +64,7 @@
  *
  * Gauche experimentally tries to address this problem by allowing the
  * program to add a specific KIND object to a promise instance.
- *
+ * 
  * Thread safety: It is safe that more than one thread force a promise
  * simultaneously.  Only one thread does calculation.
  */
@@ -198,3 +203,261 @@ ScmObj Scm_Force(ScmObj obj)
         }
     }
 }
+
+#if GAUCHE_LAZY_PAIR
+/*=================================================================
+ * Lazy pairs
+ *
+ *  Lazy pair is a lazy structure that can turn into a normal pair.
+ *  If you check whether the object is pair or not by SCM_PAIRP,
+ *  it is 'forced' to become a pair.  The forcing is
+ *  identity-preserving; that is, once a lazy pair is forced, the pointer
+ *  now becomes a pair.  It is a critical attribute to make the
+ *  forcing implicit---we can't do it for general values.
+ *  Since the forcing is implicit, majority of the code won't see
+ *  ScmLazyPair.
+ *
+ *  The identity-preserving property requires us to generate
+ *  one item ahead from the generator, for we can't replace lazypair
+ *  to (), which is an immediate value.
+ */
+
+/*
+
+  (0) Initial state
+
+  +---------------+
+  |  LazyPair tag |
+  +---------------+
+  |  ScmObj item  |
+  +---------------+
+  |    ScmObj     | ----> generator
+  +---------------+
+  |   (AO_t)0     |
+  +---------------+
+
+
+  (1) The first one (owner) grabs the packet, then evaluates the generator.
+  The grabbing is done by CAS to make it atomic.
+
+  +---------------+
+  |  LazyPair tag |
+  +---------------+
+  |  ScmObj item  |
+  +---------------+
+  |    ScmObj     | ----> generator
+  +---------------+
+  |  (AO_t)owner  |
+  +---------------+
+
+
+  (2) If generator yields a non-nil value, owner first creates a
+      new LazyPair...
+
+  +---------------+
+  |  LazyPair tag |
+  +---------------+
+  |  ScmObj item  |
+  +---------------+
+  |    ScmObj     | ------------------------+-> generator
+  +---------------+                         |
+  |  (AO_t)owner  |                         |
+  +---------------+                         |
+                                            |
+                         +---------------+  |
+                         |  LazyPair tag |  |
+                         +---------------+  |
+                         | ScmObj newitem|  |
+                         +---------------+  |
+                         |    ScmObj     | -/
+                         +---------------+
+                         |    (AO_t)0    |
+                         +---------------+
+
+  (3) then it replaces the cdr pointer with the new LazyPair, and clear
+      the third slot.
+
+  +---------------+
+  |  LazyPair tag |
+  +---------------+   
+  |     ScmObj    | -\
+  +---------------+  |
+  |      NIL      |  |
+  +---------------+  |
+  |  (AO_t)owner  |  |                      
+  +---------------+  |
+                     |
+                     |   +---------------+
+                     \-> |  LazyPair tag |
+                         +---------------+
+                         | ScmObj newitem|
+                         +---------------+
+                         |    ScmObj     | ---> generator
+                         +---------------+
+                         |    (AO_t)0    |
+                         +---------------+
+
+
+  (4) and replaces the car pointer with the lookahead value, which makes
+      the original object an (extended) pair,
+
+  +---------------+
+  |  ScmObj item  |
+  +---------------+   
+  |     ScmObj    | -\
+  +---------------+  |
+  |      NIL      |  |
+  +---------------+  |
+  |  (AO_t)owner  |  |                      
+  +---------------+  |
+                     |
+                     |   +---------------+
+                     \-> |  LazyPair tag |
+                         +---------------+
+                         | ScmObj newitem|
+                         +---------------+
+                         |    ScmObj     | ---> generator
+                         +---------------+
+                         |    (AO_t)0    |
+                         +---------------+
+
+  (5) finally set the fourth slot with 1, just not to grab the pointer
+      to the owner thread so that the owner thread won't be retained
+      unnecessarily.
+
+  +---------------+
+  |  ScmObj item  |
+  +---------------+   
+  |     ScmObj    | -\
+  +---------------+  |
+  |      NIL      |  |
+  +---------------+  |
+  |    (AO_t)1    |  |                      
+  +---------------+  |
+                     |
+                     |   +---------------+
+                     \-> |  LazyPair tag |
+                         +---------------+
+                         | ScmObj newitem|
+                         +---------------+
+                         |    ScmObj     | ---> generator
+                         +---------------+
+                         |    (AO_t)0    |
+                         +---------------+
+
+
+  (2') If generator yields EOF, we don't create a new lazy pair.
+  We first replace the second and third slot by NIL,
+
+  +---------------+
+  | LazyPair tag  |
+  +---------------+
+  |      NIL      |
+  +---------------+
+  |      NIL      |
+  +---------------+
+  |  (AO_t)owner  |
+  +---------------+
+
+  (3') then replace the car part by the cached value, which turns
+  the object to an (extended) pair,
+
+  +---------------+
+  |  ScmObj item  |
+  +---------------+
+  |      NIL      |
+  +---------------+
+  |      NIL      |
+  +---------------+
+  |  (AO_t)owner  |
+  +---------------+
+                   
+
+  (4') then clear the fourth slot to be GC-friendly.
+
+  +---------------+
+  |  ScmObj item  |
+  +---------------+
+  |      NIL      |
+  +---------------+
+  |      NIL      |
+  +---------------+
+  |    (AO_t)1    |
+  +---------------+
+                   
+
+  Each step of the state transitions (0)->(1)->(2)->(3)->(4)->(5) and
+  (0)->(1)->(2')->(3')->(4') are atomic, so the observer see either
+  one of those states.
+ */
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_LazyPairClass, NULL);
+
+/* The order is important - must correspond to ScmExtendedPair. */
+struct ScmLazyPairRec {
+    SCM_HEADER;
+    ScmObj item;
+    ScmObj generator;
+    AO_t owner;
+};
+
+ScmObj Scm_MakeLazyPair(ScmObj item, ScmObj generator)
+{
+    ScmLazyPair *z = SCM_NEW(ScmLazyPair);
+    z->owner = (AO_t)0;
+    SCM_SET_CLASS(z, SCM_CLASS_LAZY_PAIR);
+    z->generator = generator;
+    z->item = item;
+    return SCM_OBJ(z);
+}
+
+ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
+{
+    static const struct timespec req = {0, 1000000};
+    struct timespec rem;
+    ScmVM *vm = Scm_VM();
+
+    if (AO_compare_and_swap_full(&lp->owner, 0, SCM_WORD(vm))) {
+        /* Here we own the lazy pair. */
+        ScmObj item = lp->item;
+        /* Calling generator might change VM state, so we protect
+           incomplete stack frame if there's any. */
+        Scm__VMProtectStack(vm);
+        SCM_UNWIND_PROTECT {
+            ScmObj val = Scm_ApplyRec0(lp->generator);
+            if (SCM_EOFP(val)) {
+                lp->item = SCM_NIL;
+                lp->generator = SCM_NIL;
+            } else {
+                ScmObj newlp = Scm_MakeLazyPair(val, lp->generator);
+                lp->item = newlp;
+                lp->generator = SCM_NIL;
+            }
+            AO_nop_full();
+            SCM_SET_CAR(lp, item);
+            /* We don't need barrier here. */
+            lp->owner = (AO_t)1;
+        } SCM_WHEN_ERROR {
+            lp->owner = (AO_t)0;
+            SCM_NEXT_HANDLER;
+        } SCM_END_PROTECT;
+        return SCM_OBJ(lp); /* lp is now an (extended) pair */
+    }
+    /* Somebody's already working on forcing.  Let's wait for it to finish. */
+    while (SCM_HTAG(lp) == 7) {
+        nanosleep(&req, &rem);
+    }
+    return SCM_OBJ(lp);
+}
+
+int Scm_PairP(ScmObj x)
+{
+    if (SCM_LAZY_PAIR_P(x)) {
+        Scm_ForceLazyPair(SCM_LAZY_PAIR(x));
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+#endif /* GAUCHE_LAZY_PAIR */

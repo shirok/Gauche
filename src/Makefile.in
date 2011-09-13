@@ -54,7 +54,7 @@ LDFLAGS  = @LDFLAGS@
 # These are set by configure
 DEFS     = @DEFS@
 OPTFLAGS = @OPTFLAGS@
-INCLUDES = -I$(srcdir) -I$(srcdir)/../gc/include @LOCAL_INC@
+INCLUDES = -I$(srcdir) -I$(srcdir)/../gc/include -I$(srcdir)/../gc/libatomic_ops/src @LOCAL_INC@
 OBJEXT   = @OBJEXT@
 EXEEXT   = @EXEEXT@
 LIBGAUCHE = @LIBGAUCHE@
@@ -78,6 +78,13 @@ POSTBUILD = TARGETLIB=`pwd` $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
 POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
 
 PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY
+
+# List files that may affect stub generation.  If any of these files are
+# touched, stub files in src/ need to be regenerated.  (NB: Regeneration of
+# those files requires installed Gauche.  So only list files that absolutely
+# require regeneration.)
+GENSTUB_DEPENDENCY = genstub \
+		     $(top_srcdir)/lib/gauche/cgen/stub.scm
 
 # for cross build
 BUILD_CC     = @BUILD_CC@
@@ -202,11 +209,11 @@ relink :
 
 $(OBJECTS) : $(HEADERS)
 
-stdlib.c : stdlib.stub genstub 
-extlib.c : extlib.stub genstub
-exclib.c : exclib.stub genstub
-syslib.c : syslib.stub genstub
-intlib.c : intlib.stub genstub
+stdlib.c : stdlib.stub $(GENSTUB_DEPENDENCY)
+extlib.c : extlib.stub $(GENSTUB_DEPENDENCY)
+exclib.c : exclib.stub $(GENSTUB_DEPENDENCY)
+syslib.c : syslib.stub $(GENSTUB_DEPENDENCY)
+intlib.c : intlib.stub $(GENSTUB_DEPENDENCY)
 
 autoloads.c : autoloads.scm
 	$(BUILD_GOSH) ./autoloads.scm

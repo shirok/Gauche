@@ -16,6 +16,7 @@ load.scm
 srfi.scm
 object.scm
 exception.scm
+lazy.scm
 regexp.scm
 sort.scm
 multibyte.scm

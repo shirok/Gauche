@@ -118,6 +118,9 @@ SCM_DECL_BEGIN
    gauche/number.h for the details. */
 #define GAUCHE_FFX 1
 
+/* Define this to 0 to turn off lazy-pair feature. */
+#define GAUCHE_LAZY_PAIR 1
+
 /* Include appropriate threading interface.  Threading primitives are
    abstracted with SCM_INTERNAL_* macros and ScmInternal* typedefs.
    See gauche/uthread.h for the semantics of these primitives. */
@@ -468,6 +471,7 @@ SCM_EXTERN void Scm_UnregisterFinalizer(ScmObj z);
 typedef struct ScmVMRec        ScmVM;
 typedef struct ScmPairRec      ScmPair;
 typedef struct ScmExtendedPairRec ScmExtendedPair;
+typedef struct ScmLazyPairRec  ScmLazyPair;
 typedef struct ScmCharSetRec   ScmCharSet;
 typedef struct ScmStringRec    ScmString;
 typedef struct ScmDStringRec   ScmDString;
@@ -989,7 +993,12 @@ struct ScmExtendedPairRec {
     ScmObj attributes;          /* should be accessed via API func. */
 };
 
-#define SCM_PAIRP(obj)          (SCM_HPTRP(obj)&&SCM_HTAG(obj)!=7)
+#if GAUCHE_LAZY_PAIR
+#define SCM_PAIRP(obj)  \
+    (SCM_HPTRP(obj)&&(SCM_HTAG(obj)!=7||Scm_PairP(SCM_OBJ(obj))))
+#else  /*!GAUCHE_LAZY_PAIR*/
+#define SCM_PAIRP(obj)          (SCM_HPTRP(obj)&&(SCM_HTAG(obj)!=7))
+#endif /*!GAUCHE_LAZY_PAIR*/
 
 #define SCM_PAIR(obj)           ((ScmPair*)(obj))
 #define SCM_CAR(obj)            (SCM_PAIR(obj)->car)
@@ -1588,8 +1597,21 @@ SCM_CLASS_DECL(Scm_PromiseClass);
 SCM_EXTERN ScmObj Scm_MakePromise(int forced, ScmObj code);
 SCM_EXTERN ScmObj Scm_Force(ScmObj p);
 
+/* Lazy pair structur is opaque to public.  Whenever you apply to an
+   ScmObj SCM_PAIRP, a lazy pair morphs itself to a pair, so the normal
+   code never see lazy pairs. */
+
+SCM_CLASS_DECL(Scm_LazyPairClass);
+#define SCM_CLASS_LAZY_PAIR        (&Scm_LazyPairClass)
+#define SCM_LAZY_PAIR(obj)         ((ScmLazyPair*)(obj))
+#define SCM_LAZY_PAIR_P(obj)       SCM_XTYPEP(obj, SCM_CLASS_LAZY_PAIR)
+
+SCM_EXTERN ScmObj Scm_MakeLazyPair(ScmObj item, ScmObj generator);
+SCM_EXTERN ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp);
+SCM_EXTERN int Scm_PairP(ScmObj x);
+
 /*--------------------------------------------------------
- * CONDITION
+ * condition
  */
 
 /* Condition classes are defined in a separate file */

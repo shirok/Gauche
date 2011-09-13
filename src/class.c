@@ -463,7 +463,8 @@ ScmClass *Scm_ClassOf(ScmObj obj)
         else return SCM_CLASS_UNKNOWN;
     }
     if (SCM_FLONUMP(obj)) return SCM_CLASS_REAL;
-    if (SCM_PAIRP(obj))   return SCM_CLASS_PAIR;
+    /* check lazy pair first, so that we won't trigger forcing. */
+    if (SCM_LAZY_PAIR_P(obj)||SCM_PAIRP(obj)) return SCM_CLASS_PAIR;
     return SCM_CLASS_OF(obj);
 }
 
@@ -3220,6 +3221,7 @@ void Scm__InitClass(void)
 
     /* promise.c */
     CINIT(SCM_CLASS_PROMISE,          "<promise>");
+    CINIT(SCM_CLASS_LAZY_PAIR,        "<lazy-pair>");
 
     /* read.c */
     BINIT(SCM_CLASS_READ_CONTEXT,     "<read-context>", NULL);
