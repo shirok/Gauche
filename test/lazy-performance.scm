@@ -63,22 +63,26 @@
 ;; Reading file
 
 (define (file f)
-  (define (eager)
+  (define (basic)
     (with-input-from-file f
       (^()
-        (let1 cs (port-map identity read-char)
-          (length cs)))))
+        (let loop ([c (read-char)] [cnt 0])
+          (cond [(eof-object? c) cnt]
+                [(char-whitespace? c) (loop (read-char) cnt)]
+                [else (loop (read-char) (+ cnt 1))])))))
+  (define (eager)
+    (call-with-input-file f
+      (^p (count char-whitespace? (port->list read-char p)))))
   (define (lazy)
     (with-input-from-file f
-      (^()
-        (let1 cs (lseq read-char)
-          (length cs)))))
-
-  (file->string-list f) ;; to fill the file buffer
+      (cut count char-whitespace? (lseq read-char))))
+  
+  (with-input-from-file f (cut port-for-each identity read-char)) ;fill buffer
   (time-these/report
    '(cpu 5)
    `((lazy-seq   . ,lazy)
-     (eager      . ,eager))))
+     (eager      . ,eager)
+     (basic      . ,basic))))
 
 #|
 (file "./compile.c")
