@@ -247,5 +247,39 @@
          (cons 'z (make-seq)))
   )
 
+;; lcons
+(let ()
+  (define (take xs n) ; avoid depending srfi-1
+    (if (= n 0)
+      '()
+      (cons (car xs) (take (cdr xs) (- n 1)))))
+  (define (fib a b)
+    (let1 n (+ a b)
+      (lcons n (fib b n))))
+  (define (weird-fib a b) ; generates ordinary pairs as well
+    (let1 n (+ a b)
+      (if (odd? n)
+        (lcons n (weird-fib b n))
+        (cons n (weird-fib b n)))))
+  (define (lim-fib a b k)
+    (if (= k 0)
+      'yay                 ;returning any non-pair terminates the sequence
+      (let1 n (+ a b)
+        (lcons n (lim-fib b n (- k 1))))))
+
+  (test* "corecursion with lcons"
+         '(1 2 3 5 8 13 21 34 55 89 144 233 377 610 987)
+         (take (fib 0 1) 15))
+
+  (test* "corecursion with lcons, mixed"
+         '(1 2 3 5 8 13 21 34 55 89 144 233 377 610 987)
+         (take (weird-fib 0 1) 15))
+
+  ;; NB: we may make this an error in the future versions.
+  (test* "corecursion doesn't allow dotted list"
+         '(1 2 3 5 8 13 21 34 55 89)
+         (lim-fib 0 1 10))
+  )
+
 (test-end)
 

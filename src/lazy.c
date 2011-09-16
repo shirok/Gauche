@@ -426,11 +426,13 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
             Scm__VMProtectStack(vm);
             SCM_UNWIND_PROTECT {
                 ScmObj val = Scm_ApplyRec0(lp->generator);
+                ScmObj newgen = (vm->numVals == 1)? lp->generator : vm->vals[0];
+
                 if (SCM_EOFP(val)) {
                     lp->item = SCM_NIL;
                     lp->generator = SCM_NIL;
                 } else {
-                    ScmObj newlp = Scm_MakeLazyPair(val, lp->generator);
+                    ScmObj newlp = Scm_MakeLazyPair(val, newgen);
                     lp->item = newlp;
                     lp->generator = SCM_NIL;
                 }
@@ -451,6 +453,63 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
         }
     } while (lp->owner == 0); /* we retry if the previous owner abandoned. */
     return SCM_OBJ(lp);
+}
+
+/* Extract item and generator from lazy pair OBJ, without forcing it.
+   If OBJ is a lazy pair, item and generator is filled and TRUE is returned.
+   If OBJ is an ordinary pair (including the case that it was a lazy pair
+   but forced during execution of Scm_DecomposeLazyPair), returns its CAR
+   and a generator that returns its CDR.
+   Otherwise, returns FALSE.  */
+static ScmObj dummy_gen(ScmObj *args, int nargs, void *data)
+{
+    ScmObj item;
+    ScmObj generator;
+    if (Scm_DecomposeLazyPair(SCM_OBJ(data), &item, &generator)) {
+        return Scm_Values2(item, generator);
+    } else {
+        return Scm_Values2(SCM_EOF, SCM_FALSE);
+    }
+}
+
+int Scm_DecomposeLazyPair(ScmObj obj, ScmObj *item, ScmObj *generator)
+{
+    if (SCM_LAZY_PAIR_P(obj)) {
+        volatile ScmLazyPair *lp = SCM_LAZY_PAIR(obj);
+        static const struct timespec req = {0, 1000000};
+        struct timespec rem;
+        ScmVM *vm = Scm_VM();
+        
+        for (;;) {
+            if (AO_compare_and_swap_full(&lp->owner, 0, SCM_WORD(vm))) {
+                *item = lp->item;
+                *generator = lp->generator;
+                AO_nop_full();
+                lp->owner = 0;
+                return TRUE;
+            }
+            if (lp->owner == (AO_t)1) {
+                /* Somebody else has forced OBJ.  In the typical cases
+                   where we call this funtion for co-recursive lazy
+                   algorithms, this situation rarely happens.   We fallthrough
+                   to the SCM_PAIRP check below to return appropriate
+                   values. */
+                SCM_ASSERT(SCM_HTAG(lp) != 7);
+                break;
+            }
+            nanosleep(&req, &rem);
+        }
+        /*FALLTHROUGH*/
+    }
+    if (SCM_PAIRP(obj)) {
+        ScmObj next;
+        *item = SCM_CAR(obj);
+        next = SCM_NULLP(SCM_CDR(obj)) ? SCM_EOF : SCM_CDR(obj);
+        *generator = Scm_MakeSubr(dummy_gen, (void*)next, 0, 0, SCM_FALSE);
+        return TRUE;
+    } else {
+        return FALSE;
+    }
 }
 
 int Scm_PairP(ScmObj x)

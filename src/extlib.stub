@@ -1704,6 +1704,13 @@
   (result (SCM_PROCEDURE_INFO proc)))
 
 (define-cproc %lazy-cons (item generator) Scm_MakeLazyPair)
+(define-cproc %lazy-snoc (obj) :: (<top> <top>)
+  (let* ([item] [generator])
+    (let* ([r::int (Scm_DecomposeLazyPair obj (& item) (& generator))])
+      (cond [r (result item generator)]
+            ;; NB: there's a possibility that obj has been forced by
+            ;; some other thread; handle it.
+            [else (result SCM_EOF SCM_FALSE)]))))
 
 (define-cproc %force-lazy-pair (lp)
   (if (SCM_LAZY_PAIR_P lp)

@@ -292,6 +292,14 @@
     ))
 
 ;;;-------------------------------------------------------------
+;;; lazy sequence
+
+;; For corecursion
+(define-syntax lcons
+  (syntax-rules ()
+    [(_ a b) (%lcons a (^() b))]))
+
+;;;-------------------------------------------------------------
 ;;; useful argument utility
 
 (define-syntax check-arg

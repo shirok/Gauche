@@ -1,3 +1,9 @@
+2011-09-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/lazy.c (Scm_DecomposeLazyPair), src/extlib.stub (%lazy-snoc),
+	  src/scmlib.scm (%lcons), lib/gauche/common-macros.scm (lcons):
+	  Added support of lcons, a primitive to write corecursive code.
+
 2011-09-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (SCM_PAIRP),

@@ -420,6 +420,11 @@
         (%lazy-cons item (car args))
         (cons item (rec (car args) (cdr args)))))))
 
+;; A primitive for corecursion.
+;; See lib/gauche/common-macros.scm for the lcons macro.
+(define (%lcons item thunk)
+  (%lazy-cons item (^() (%lazy-snoc (thunk)))))
+
 ;; For convenience.
 (define (lrange start :optional (end +inf.0) (step 1))
   ;; Exact numbers.  Fast way.
