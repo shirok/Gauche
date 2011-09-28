@@ -41,7 +41,7 @@
           file->line-generator file->byte-generator
           
           generator->list null-generator gcons gappend
-          circular-generator gunfold giota
+          circular-generator gunfold giota grange
           gmap gtake gdrop gtake-while gdrop-while gfilter
           )
   )
@@ -143,6 +143,12 @@
     (^() (if (<= num 0)
            (eof-object)
            (%begin0 val (inc! val step) (dec! num))))))
+
+(define (grange :optional (start 0) (end +inf.0) (step 1))
+  (let1 val start
+    (^() (if (>= val end)
+           (eof-object)
+           (%begin0 val (inc! val step))))))
 
 ;; gcons :: (a, () -> a) -> (() -> a)
 (define (gcons item gen)

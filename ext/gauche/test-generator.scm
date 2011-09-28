@@ -25,6 +25,13 @@
 (test* "giota + generator->list(n)" '(0 1 2 3 4)
        (generator->list (giota 5) 10))
 
+(test* "grange + generator->list" '(0 1 2 3 4)
+       (generator->list (grange 0 5)))
+(test* "grange + generator->list" '(2 3 4 5)
+       (generator->list (grange 2 6)))
+(test* "grange + generator->list" '(2 5 8 11)
+       (generator->list (grange 2 14 3)))
+
 ;; converters
 (let-syntax ((t (syntax-rules ()
                   [(t fn cv data)
