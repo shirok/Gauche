@@ -1,5 +1,7 @@
 2011-09-28  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/lazy.scm (lfilter): Added for the convenience.
+
 	* lib/gauche/generator.scm (grange): Added grange for the convenience.
 
 2011-09-16  Shiro Kawai  <shiro@acm.org>

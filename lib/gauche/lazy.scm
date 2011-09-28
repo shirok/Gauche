@@ -35,7 +35,7 @@
 
 (define-module gauche.lazy
   (use gauche.generator)
-  (export lmap))
+  (export lmap lfilter))
 (select-module gauche.lazy)
 
 (define lmap
@@ -56,3 +56,9 @@
                (eof-object)))
            (eof-object)))
        (lseq g))]))
+
+;; NB: Should we define all l* variations corresponds to g* variations?
+;; The list->generator portion smells bad.  Maybe g* variation should
+;; coerce input sequences into generators automatically.
+(define (lfilter fn seq) (lseq (gfilter fn (list->generator seq))))
+
