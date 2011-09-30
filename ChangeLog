@@ -1,3 +1,8 @@
+2011-09-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/lazy.c (Scm_ForceLazyPair): Added check of recursive forcing
+	  to prevent self-deadlock.
+
 2011-09-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/lazy.scm (lfilter): Added for the convenience.

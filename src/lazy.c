@@ -411,6 +411,14 @@ ScmObj Scm_MakeLazyPair(ScmObj item, ScmObj generator)
     return SCM_OBJ(z);
 }
 
+/* Force a lazy pair.
+   NB: When an error occurs during forcing, we release the lock of the
+   pair, so that the pair can be forced again.  However, the generator
+   has already caused some side-effect before the error, so the next
+   forcing may not yield a correct next value.  Another plausible option
+   is to mark the pair 'unforcible' permanently, by lp->owner == (AO_t)2,
+   and let subsequent attempt of forcing the pair fail.
+ */
 ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
 {
     static const struct timespec req = {0, 1000000};
@@ -441,10 +449,19 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
                 /* We don't need barrier here. */
                 lp->owner = (AO_t)1;
             } SCM_WHEN_ERROR {
-                lp->owner = (AO_t)0;
+                lp->owner = (AO_t)0; /*NB: See above about error handling*/
                 SCM_NEXT_HANDLER;
             } SCM_END_PROTECT;
             return SCM_OBJ(lp); /* lp is now an (extended) pair */
+        }
+        /* Check if we're already working on forcing this pair.  Unlike
+           force/delay, We don't allow recursive forcing of lazy pair.
+           Since generators are supposed to be called every time to yield
+           a new value, so it is ambiguous what value should be returned
+           if a generator calls itself recursively. */
+        if (lp->owner == SCM_WORD(vm)) {
+            lp->owner = (AO_t)0; /*NB: See above about error handling*/
+            Scm_Error("Attempt to recursively force a lazy pair.");
         }
         /* Somebody's already working on forcing.  Let's wait for it
            to finish, or to abort. */

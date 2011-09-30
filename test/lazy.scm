@@ -281,5 +281,19 @@
          (lim-fib 0 1 10))
   )
 
+;; preventing recursive forcing
+(let ()
+  (define (lmap+ fn a b) ; we haven't tested gauche.lazy, so roll our own.
+    (lcons (fn (car a) (car b))
+           (lmap+ fn (cdr a) (cdr b))))
+  (define fib-bad (cons 1 (lcons 1 (lmap+ + fib-bad (cdr fib-bad)))))
+
+  (test* "catch recursive forcing a lazy-pair" #t
+         (guard (e [(#/Attempt to recursively force a lazy pair/ (~ e'message))
+                    => boolean]
+                   [else e])
+           (cadr fib-bad)))
+  )
+
 (test-end)
 
