@@ -460,7 +460,8 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
            a new value, so it is ambiguous what value should be returned
            if a generator calls itself recursively. */
         if (lp->owner == SCM_WORD(vm)) {
-            lp->owner = (AO_t)0; /*NB: See above about error handling*/
+            /* NB: lp->owner will be reset by the original caller of
+               the generator. */
             Scm_Error("Attempt to recursively force a lazy pair.");
         }
         /* Somebody's already working on forcing.  Let's wait for it
