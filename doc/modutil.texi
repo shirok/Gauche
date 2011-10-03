@@ -8418,7 +8418,7 @@ part via @var{start-column} argument.
 
 @c EN
 We plan to make these procedures handle RFC2231's parameter value
-extension transparentlyk in future.
+extension transparently in future.
 @c JP
 将来は、これらの手続きにRFC2231のパラメータ値拡張を透過的に処理させる予定です。
 @c COMMON
