@@ -195,10 +195,15 @@
         [else (write num)]))
 
 (define (print-string str)
+  (define specials
+    '((#\" . #\") (#\\ . #\\) (#\x08 . #\b) (#\page . #\f)
+      (#\newline . #\n) (#\return . #\r) (#\tab . #\t)))
   (define (print-char c)
-    (cond [(eqv? c #\") (write-char #\\) (write-char c)]
-          [(char-set-contains? char-set:ascii c) (write-char c)]
-          [else (format #t "\\u~4,0x" (char->ucs c))]))
+    (cond [(assv c specials) => (^p (write-char #\\) (write-char (cdr p)))]
+          [(and (char-set-contains? char-set:ascii c)
+                (not (eq? (char-general-category c) 'Cc)))
+           (write-char c)]
+          [else (format #t "\\u~4,'0x" (char->ucs c))]))
   (display "\"")
   (string-for-each print-char str)
   (display "\""))

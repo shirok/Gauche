@@ -745,6 +745,7 @@
                    ("Url"    . "http://www.example.com/image/481989943")
                    ("Height" . 125)
                    ("Width"  . "100"))
+                  ("Description" . "Foo\nbackslash \\and tab\t and \u00a1")
                   ("IDs" . #(116 943 234 38793))
                   ("Misc" . ()))))
 
