@@ -159,7 +159,7 @@
 
   (define (unparse-assert-like op . asst)
     (let ((ch (if (eq? op 'assert) "=" "!")))
-      (if (and (pair? (car asst)) (eq? (caar asst) 'lookbehind))
+      (if (and (pair? asst) (pair? (car asst)) (eq? (caar asst) 'lookbehind))
         (if (null? (cdr asst))
           (between (format "(?<~a" ch) (cdar asst) ")")
           (err "invalid AST within assert or nassert" asst))
@@ -193,7 +193,10 @@
                   [(seq)  (seq (cdr n))]
                   [(seq-uncase) (between "(?i:" (cdr n) ")")]
                   [(seq-case)   (between "(?-i:" (cdr n) ")")]
-                  [(alt)        (intersp (cdr n) "|")]
+                  [(alt)
+                   ;; empty alt always fails, and we represent it by
+                   ;; empty negative lookahead assertion.
+                   (if (null? (cdr n)) (disp "(?!)") (intersp (cdr n) "|"))]
                   [(rep rep-min rep-while) (apply unparse-rep n)]
                   [(cpat) (apply unparse-cpat (cdr n))]
                   [(backref)

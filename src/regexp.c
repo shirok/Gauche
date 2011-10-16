@@ -1522,26 +1522,34 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
         ScmObj jumps = SCM_NIL;
         int patchp;
 
-        for (clause = SCM_CDR(ast);
-             SCM_PAIRP(SCM_CDR(clause));
-             clause = SCM_CDR(clause)) {
-            rc3_emit(ctx, RE_TRY);
-            patchp = ctx->codep;
-            rc3_emit_offset(ctx, 0); /* will be patched */
-            rc3_rec(ctx, SCM_CAR(clause), lastp);
-            rc3_emit(ctx, RE_JUMP);
-            if (ctx->emitp) {
-                jumps = Scm_Cons(SCM_MAKE_INT(ctx->codep), jumps);
-            }
-            rc3_emit_offset(ctx, 0); /* will be patched */
-            rc3_fill_offset(ctx, patchp, ctx->codep);
-        }
-        rc3_rec(ctx, SCM_CAR(clause), lastp);
-        if (ctx->emitp) {
-            SCM_FOR_EACH(jumps, jumps) {
-                patchp = SCM_INT_VALUE(SCM_CAR(jumps));
+        if (SCM_PAIRP(SCM_CDR(ast))) {
+            for (clause = SCM_CDR(ast);
+                 SCM_PAIRP(SCM_CDR(clause));
+                 clause = SCM_CDR(clause)) {
+                rc3_emit(ctx, RE_TRY);
+                patchp = ctx->codep;
+                rc3_emit_offset(ctx, 0); /* will be patched */
+                rc3_rec(ctx, SCM_CAR(clause), lastp);
+                rc3_emit(ctx, RE_JUMP);
+                if (ctx->emitp) {
+                    jumps = Scm_Cons(SCM_MAKE_INT(ctx->codep), jumps);
+                }
+                rc3_emit_offset(ctx, 0); /* will be patched */
                 rc3_fill_offset(ctx, patchp, ctx->codep);
             }
+            rc3_rec(ctx, SCM_CAR(clause), lastp);
+            if (ctx->emitp) {
+                SCM_FOR_EACH(jumps, jumps) {
+                    patchp = SCM_INT_VALUE(SCM_CAR(jumps));
+                    rc3_fill_offset(ctx, patchp, ctx->codep);
+                }
+            }
+        } else {
+            /* NB: alternation without any choices won't appear from the
+               parsed AST, but the caller can pass in a programatically
+               constructed AST.  It fails unconditionally, since we have
+               no possible choice. */
+            rc3_emit(ctx, RE_FAIL);
         }
         return;
     }

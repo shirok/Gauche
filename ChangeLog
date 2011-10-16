@@ -1,3 +1,15 @@
+2011-10-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (rc3_rec): Fixed the bug that (regexp-compile '(alt))
+	  gets Bus Error.  Now we allow empty altenation.  Although such
+	  AST never happens as a result of parsing string regexp, it may
+	  be produced in programmatically generated AST.  An empty alternation
+	  always fails.
+	* lib/gauche/regexp.scm (regexp-unparse): When converting empty
+	  alternation to a string, we use negative lookahead assertion (?!),
+	  since such alternation can't be represented using '|' operator.
+	  Also fixed a bug when converting empty assert/nassert nodes.
+
 2011-10-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/json.scm (print-string): Fixed string writer bug that didn't

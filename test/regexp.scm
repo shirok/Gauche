@@ -1152,4 +1152,26 @@
 (test* "equal #/abc/i #/abc/i" #t
        (equal? #/abc/i #/abc/i))
 
+;;-------------------------------------------------------------------------
+(test-section "regexp from AST")
+
+;; A trivial cases are already covered by the preceding tests.
+;; We test some edge cases.
+
+;; empty alt clause always fails.
+(test* "empty alt" #f
+       (rxmatch (regexp-compile '(alt)) "a"))
+
+;; empty alt clause can't be represented by '|' operator.  When unparsed,
+;; we use negative lookahead assertion to represent "always fail" op.
+(test* "empty alt unparse" "ab(?!)cd"
+       (regexp->string (regexp-compile '(seq #\a #\b (alt) #\c #\d))))
+
+;; a bit twisted way to test "always fail" pattern.  The first branch
+;; matches to "abc" but fails at the empty alt, so the second branch is tried.
+(test* "empty alt" "ab"
+       (rxmatch->string (regexp-compile '(alt (seq #\a #\b #\c (alt))
+                                              (seq #\a #\b)))
+                        "abc"))
+
 (test-end)
