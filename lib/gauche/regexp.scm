@@ -176,9 +176,10 @@
 
   (define (unparse n)
     (cond [(char? n)     (cond [(memv n '(#\. #\^ #\$ #\( #\) #\{ #\} #\[ #\]
-                                          #\\ #\* #\+ #\?))
+                                          #\\ #\* #\+ #\? #\|))
                                 (disp "\\") (disp n)]
-                               ;; TODO: nonprintable chars.
+                               [(eq? (char-general-category n) 'Cc)
+                                (disp (format "\\u~4,'0x" (char->ucs n)))]
                                [else (disp n)])]
           [(char-set? n) (disp (substring (write-to-string n) 1 -1))]
           [(eq? n 'any)  (disp #\.)]
