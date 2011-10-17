@@ -218,7 +218,6 @@
            ;; case-lambda is tentative, and may be changed in future.
            ;; See the comment of make-case-lambda-dispatcher in intlib.stub.
            (and (pair? info)
-                (eq? (car info) 'case-lambda-dispatcher)
                 (pair? (cdr info))
                 (integer? (cadr info))
                 (pair? (cddr info))

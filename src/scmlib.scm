@@ -905,7 +905,8 @@
 
 ;; Auxiliary procedures for case-lambda.
 (define-in-module gauche.internal (make-case-lambda minarg maxarg
-                                                    formals closures)
+                                                    formals closures
+                                                    :optional (name #f))
 
   (define (fill-dispatch-vector! v formals closure)
     (define (%set n)
@@ -919,7 +920,7 @@
   
   (let1 v (make-vector (+ (- maxarg minarg) 2) #f)
     (for-each (cut fill-dispatch-vector! v <> <>) formals closures)
-    ((with-module gauche.internal make-case-lambda-dispatcher) v minarg)))
+    ((with-module gauche.internal make-case-lambda-dispatcher) v minarg name)))
 
 ;;; TEMPORARY for 0.9.x series
 ;;; Remove this after 1.0 release!!!

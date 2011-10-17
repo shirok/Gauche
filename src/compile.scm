@@ -2592,7 +2592,8 @@
                                   (find-module 'gauche.internal)
                                   '())
                 ,min-req ,max-req ',formals
-                (list ,@(map (^(f b) `(,lambda. ,f ,@b)) formals body)))
+                (list ,@(map (^(f b) `(,lambda. ,f ,@b)) formals body))
+                ',(cenv-exp-name cenv))
               cenv))]
     [_ (error "syntax-error: malformed case-lambda:" form)]))
 

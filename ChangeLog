@@ -1,3 +1,15 @@
+2011-10-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/scmlib.scm (make-case-lambda),
+	  src/intlib.stub (make-case-lambda-dispatcher),
+	  src/compile.scm (case-lambda): Changed case-lambda info vector
+	  for better diagnostics; the first element now contains the
+	  procedure name if available.
+	  NB: Eventually we intend to change case-lambda to be a special
+	  object instead of the current hack with subr.  The current way
+	  of using info slot is temporary.
+	* lib/gauche/procedure.scm (disasm): Adapted to the above change.
+
 2011-10-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/regexp.scm (regexp-unparse): Handles '|' and control

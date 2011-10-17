@@ -594,7 +594,8 @@
 ;; the procedure info here is tentative; it may be changed later.
 ;; Routines that depends on this info must be aware of that.
 (define-cproc make-case-lambda-dispatcher (dispatch-vector::<vector>
-                                           min-reqargs::<int>)
+                                           min-reqargs::<int>
+                                           name)
   (let* ([max-optargs::int (SCM_VECTOR_SIZE dispatch-vector)]
          [packet::case_lambda_packet* (SCM_NEW case_lambda_packet)])
     (set! (-> packet min_reqargs) min-reqargs
@@ -602,7 +603,9 @@
           (-> packet dispatch_vector) dispatch-vector)
     (result (Scm_MakeSubr case_lambda_dispatch packet
                           min_reqargs max_optargs
-                          (SCM_LIST3 'case-lambda-dispatcher
+                          (SCM_LIST3 (?: (SCM_FALSEP name)
+                                         'case-lambda-dispatcher
+                                         name)
                                      (SCM_MAKE_INT min-reqargs)
                                      (SCM_OBJ dispatch-vector))))))
 
