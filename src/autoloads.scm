@@ -19,7 +19,7 @@
 (define (register-autoload target path entries)
   (push! *autoloads*
          (list target path
-               (fold (lambda (entry r)
+               (fold (^[entry r]
                        (match entry
                          [(:macro . syms) (fold (cut acons <> #t <>) r syms)]
                          [sym (acons sym #f r)]))

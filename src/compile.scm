@@ -167,10 +167,10 @@
   (use gauche.vm.insn)
   (define-macro (define-insn-constants)
     (let1 name&codes
-        (map (lambda (insn) (cons (car insn) (ref (cdr insn)'code)))
+        (map (^[insn] (cons (car insn) (ref (cdr insn)'code)))
              (class-slot-ref <vm-insn-info> 'all-insns))
       `(begin
-         ,@(map (lambda (n&c) `(define-constant ,(car n&c) ,(cdr n&c)))
+         ,@(map (^[n&c] `(define-constant ,(car n&c) ,(cdr n&c)))
                 name&codes)
          (define-constant .insn-alist. ',name&codes)
          )))
@@ -294,7 +294,7 @@
 
 ;; Generate dispatch table
 (define-macro (generate-dispatch-table prefix)
-  `(vector ,@(map (lambda (p) (string->symbol #`",|prefix|/,(car p)"))
+  `(vector ,@(map (^[p] (string->symbol #`",|prefix|/,(car p)"))
                   .intermediate-tags.)))
 
 ;;============================================================
@@ -336,8 +336,8 @@
   (define (make-constructor)
     (let ([args (gensym)]
           [num-slots  (length slot-defs)]
-          [slot-names (map (lambda (s) (if (symbol? s) s (car s))) slot-defs)]
-          [init-vals  (map (lambda (s) (if (symbol? s) #f (cadr s))) slot-defs)])
+          [slot-names (map (^[s] (if (symbol? s) s (car s))) slot-defs)]
+          [init-vals  (map (^[s] (if (symbol? s) #f (cadr s))) slot-defs)])
       `(define-macro (,constructor . ,args)
          (match ,args
            ,@(let loop ((n 0)
@@ -675,10 +675,10 @@
    ))
 (define-inline ($const? x) (has-tag? x $CONST))
 ;; common cases
-(define $const-undef (let1 x ($const (undefined)) (lambda () x)))
-(define $const-nil   (let1 x ($const '()) (lambda () x)))
-(define $const-f     (let1 x ($const #f) (lambda () x)))
-(define $const-t     (let1 x ($const #t) (lambda () x)))
+(define $const-undef (let1 x ($const (undefined)) (^[] x)))
+(define $const-nil   (let1 x ($const '()) (^[] x)))
+(define $const-f     (let1 x ($const #f) (^[] x)))
+(define $const-t     (let1 x ($const #t) (^[] x)))
 
 ;; $if <src> <test> <then> <else>
 ;;   Conditional.
@@ -797,7 +797,7 @@
 
 ;; $it
 ;;   A special node.  See the explanation of $if above.
-(define $it (let ((c `#(,$IT))) (lambda () c)))
+(define $it (let ((c `#(,$IT))) (^[] c)))
 (define-inline ($it? x) (has-tag? x $IT))
 
 ;; The followings are builtin version of standard procedures.
@@ -893,7 +893,7 @@
              [xind (+ ind (string-length hdr))]
              [first #t])
         (display hdr)
-        (for-each (lambda (var init)
+        (for-each (^[var init]
                     (if first (set! first #f) (nl xind))
                     (let1 z (format "[~a " (lvar->string var))
                       (display z)
@@ -1241,9 +1241,7 @@
     (values new-lvars (fold-right acons lv-alist orig-lvars new-lvars))))
 
 (define (iform-copy-lvar lvar lv-alist)
-  ;; NB: using extra lambda after => is a kludge for the current optimizer
-  ;; to work better.  Should be gone later.
-  (cond [(assq lvar lv-alist) => (lambda (p) (cdr p))]
+  (cond [(assq lvar lv-alist) => cdr]
         [else lvar]))
 
 ;; Translate instruction code embedded in $ASM node.  This isn't directly
@@ -1372,7 +1370,7 @@
 (define (reset-lvars iform) (reset-lvars/rec iform (make-label-dic #f)) iform)
 
 (define-macro (reset-lvars/rec* iforms labels)
-  `(ifor-each (lambda (x) (reset-lvars/rec x ,labels)) ,iforms))
+  `(ifor-each (^[x] (reset-lvars/rec x ,labels)) ,iforms))
 
 (define/case (reset-lvars/rec iform labels)
   (iform-tag iform)
@@ -1448,12 +1446,11 @@
    [($LREF)   (cond [(assq ($lref-lvar iform) mapping) => cdr]
                     [else iform])]
    [($LSET)   (cond [(assq ($lref-lvar iform) mapping) =>
-                     (lambda (p)
-                       (unless (has-tag? $GREF (cdr p))
-                         (error "[internal] subst-lvars: $LSET can only subst\
-                                 with $GREF but got: ~a" (cdr p)))
-                       ($gset ($gref-id (cdr p))
-                              (subst-lvars ($lset-expr iform) mapping)))]
+                     (^p (unless (has-tag? $GREF (cdr p))
+                           (error "[internal] subst-lvars: $LSET can only subst\
+                                   with $GREF but got: ~a" (cdr p)))
+                         ($gset ($gref-id (cdr p))
+                                (subst-lvars ($lset-expr iform) mapping)))]
                     [else iform])]
    [($GSET)   (let1 z (subst-lvars ($gset-expr iform) mapping)
                 (if (eq? z ($gset-expr iform))
@@ -1844,7 +1841,7 @@
   (let ([lvars ($lambda-lvars iform)]
         [args  (adjust-arglist ($lambda-reqargs iform) ($lambda-optarg iform)
                                iargs ($lambda-name iform))])
-    (for-each (lambda (lv a) (lvar-initval-set! lv a)) lvars args)
+    (for-each (^[lv a] (lvar-initval-set! lv a)) lvars args)
     ($let src 'let lvars args ($lambda-body iform))))
 
 ;; Adjust argument list according to reqargs and optarg count.
@@ -1866,7 +1863,7 @@
   (let ([mod (case module ((:null) 'null) ((:gauche) 'gauche))]
         ;; a trick to assign comprehensive name to body:
         [name (string->symbol #`"syntax/,(car formals)")])
-    `(let ((,name (lambda ,(cdr formals) ,@body)))
+    `(let ((,name (^ ,(cdr formals) ,@body)))
        (%insert-binding (find-module ',mod) ',(car formals)
                         (make-syntax ',(car formals) ,name)))))
 
@@ -2033,7 +2030,7 @@
 
 ;; gvars :: [(identifier . iform)]
 (define (pass1/define-inline-gen-closed-env gvars cenv)
-  (imap (lambda (gv) ($define #f '(inlinable) (car gv) (cdr gv))) gvars))
+  (imap (^[gv] ($define #f '(inlinable) (car gv) (cdr gv))) gvars))
 
 ;; set up $LAMBDA node (closure) to be inlinable.  If NAME is given,
 ;; this also inserts the binding to the current compiling environment
@@ -2045,7 +2042,7 @@
          ;; Its body doesn't matter, but we need to make sure every dummy-proc
          ;; is a different instance.  If we make it a constant procedure,
          ;; Gauche's compiler optimized it to refer to the singleton instance.
-         [dummy-proc (lambda _ name)]
+         [dummy-proc (^ _ name)]
          [packed (pack-iform closure)])
     ($lambda-flag-set! closure packed)
     (when name
@@ -2061,7 +2058,7 @@
 (define (pass1/inliner-procedure inline-info)
   (unless (vector? inline-info)
     (error "[internal] pass1/inliner-procedure got invalid info" inline-info))
-  (lambda (form cenv)
+  (^[form cenv]
     (expand-inlined-procedure form (unpack-iform inline-info)
                               (imap (cut pass1 <> cenv) (cdr form)))))
 
@@ -2123,10 +2120,9 @@
 (define-pass1-syntax (let-syntax form cenv) :null
   (match form
     [(_ ((name trans-spec) ...) body ...)
-     (let* ([trans (map (lambda (n x)
-                          (pass1/eval-macro-rhs
-                           'let-syntax x
-                           (cenv-add-name cenv (variable-name n))))
+     (let* ([trans (map (^[n x] (pass1/eval-macro-rhs
+                                 'let-syntax x
+                                 (cenv-add-name cenv (variable-name n))))
                         name trans-spec)]
             [newenv (cenv-extend cenv (%map-cons name trans) SYNTAX)])
        (pass1/body body newenv))]
@@ -2136,10 +2132,9 @@
   (match form
     [(_ ((name trans-spec) ...) body ...)
      (let* ([newenv (cenv-extend cenv (%map-cons name trans-spec) SYNTAX)]
-            [trans (map (lambda (n x)
-                          (pass1/eval-macro-rhs
-                           'letrec-syntax x
-                           (cenv-add-name newenv (variable-name n))))
+            [trans (map (^[n x] (pass1/eval-macro-rhs
+                                 'letrec-syntax x
+                                 (cenv-add-name newenv (variable-name n))))
                         name trans-spec)])
        (for-each set-cdr! (cdar (cenv-frames newenv)) trans)
        (pass1/body body newenv))]
@@ -2429,14 +2424,13 @@
     (if (vector-has-splicing? obj)
       ($list->vector obj (quasi (vector->list obj) level))
       (let* ([need-construct? #f]
-             [elts (map (lambda (elt)
-                          (rlet1 ee (quasi elt level)
-                            (unless ($const? ee)
-                              (set! need-construct? #t))))
+             [elts (map (^[elt] (rlet1 ee (quasi elt level)
+                                  (unless ($const? ee)
+                                    (set! need-construct? #t))))
                         (vector->list obj))])
         (if need-construct?
           ($vector obj elts)
-          ($const (list->vector (map (lambda (e) ($const-value e)) elts)))))))
+          ($const (list->vector (map (^[e] ($const-value e)) elts)))))))
 
   (define (vector-has-splicing? obj)
     (let loop ((i 0))
@@ -2614,7 +2608,7 @@
      (let* ([lvars (imap make-lvar+ var)]
             [newenv (cenv-extend cenv (%map-cons var lvars) LEXICAL)])
        ($let form 'let lvars
-             (map (lambda (init lvar)
+             (map (^[init lvar]
                     (rlet1 iexpr
                         (pass1 init (cenv-add-name cenv (lvar-name lvar)))
                       (lvar-initval-set! lvar iexpr)))
@@ -2680,7 +2674,7 @@
      (let* ([lvars (imap make-lvar+ var)]
             [newenv (cenv-extend cenv (%map-cons var lvars) LEXICAL)])
        ($let form 'rec lvars
-             (map (lambda (lv init)
+             (map (^[lv init]
                     (rlet1 iexpr
                         (pass1 init (cenv-add-name newenv (lvar-name lv)))
                       (lvar-initval-set! lv iexpr)))
@@ -2831,18 +2825,17 @@
        (let1 m (%make-wrapper-module imported prefix)
          (process-import:mapsym
           :only (unwrap-syntax ss) #f prefix
-          (lambda (sym orig-sym)
-            (unless (%alias-binding m orig-sym imported orig-sym)
-              (errorf "during processing :once clause: \
-                       binding of ~a isn't exported from ~a"
-                      orig-sym imported))))
+          (^[sym orig-sym] (unless (%alias-binding m orig-sym imported orig-sym)
+                             (errorf "during processing :once clause: \
+                                      binding of ~a isn't exported from ~a"
+                                     orig-sym imported))))
          (%extend-module m '())
          (loop m rest #f))]
       [(:except (ss ...) . rest)
        (let1 m (%make-wrapper-module imported prefix)
          (process-import:mapsym
           :except (unwrap-syntax ss) #f prefix
-          (lambda (sym orig-sym) (%hide-binding m orig-sym)))
+          (^[sym orig-sym] (%hide-binding m orig-sym)))
          (loop m rest #f))]
       [(:rename ((ss ds) ...) . rest)
        (let* ([ss (unwrap-syntax ss)]
@@ -2851,11 +2844,10 @@
               [m (%make-wrapper-module imported #f)])
          (process-import:mapsym
           :rename ds ss prefix
-          (lambda (sym orig-sym)
-            (unless (%alias-binding m sym imported orig-sym)
-              (errorf "during processing :rename clause: \
-                       binding of ~a isn't exported from ~a"
-                      orig-sym imported))))
+          (^[sym orig-sym] (unless (%alias-binding m sym imported orig-sym)
+                             (errorf "during processing :rename clause: \
+                                      binding of ~a isn't exported from ~a"
+                                     orig-sym imported))))
          (dolist [s ss] (unless (find-binding m s #t) (%hide-binding m s)))
          (%extend-module m (list m0))
          (loop m rest #f))]
@@ -2870,7 +2862,7 @@
     (unless (symbol? s)
       (errorf "~a option of import must take list of symbols, but got: ~s"
               who s)))
-  (for-each (lambda (sym osym)
+  (for-each (^[sym osym]
               (check sym) (check osym)
               (process sym (process-import:strip-prefix who osym prefix)))
             syms (or old-syms syms)))
@@ -2883,12 +2875,11 @@
 
 (define-pass1-syntax (extend form cenv) :gauche
   (%extend-module (cenv-module cenv)
-                  (imap (lambda (m)
-                          (or (find-module m)
-                              (begin
-                                (%require (module-name->path m))
-                                (find-module m))
-                              (error "undefined module" m)))
+                  (imap (^[m] (or (find-module m)
+                                  (begin
+                                    (%require (module-name->path m))
+                                    (find-module m))
+                                  (error "undefined module" m)))
                         (cdr form)))
   ($const-undef))
 
@@ -3154,7 +3145,7 @@
 (define (pass2/$LET iform penv tail?)
   (let ([lvars ($let-lvars iform)]
         [inits (imap (cut pass2/rec <> penv #f) ($let-inits iform))])
-    (ifor-each2 (lambda (lv in) (lvar-initval-set! lv in)) lvars inits)
+    (ifor-each2 (^[lv in] (lvar-initval-set! lv in)) lvars inits)
     (let1 obody (pass2/rec ($let-body iform) penv tail?)
       ;; NB: We have to run optimize-closure after pass2 of body.
       (for-each pass2/optimize-closure lvars inits)
@@ -3210,14 +3201,13 @@
              [ (has-tag? first-expr $CALL) ]
              [node (intermediate-lrefs first-expr lvars)])
     ($call-args-set! node
-                     (imap (lambda (arg)
-                             (if (and ($lref? arg)
-                                      (memq ($lref-lvar arg) lvars))
-                               (rlet1 v (lvar-initval ($lref-lvar arg))
-                                 (lvar-ref--! ($lref-lvar arg))
-                                 (lvar-initval-set! ($lref-lvar arg)
-                                                    ($const-undef)))
-                               arg))
+                     (imap (^[arg] (if (and ($lref? arg)
+                                            (memq ($lref-lvar arg) lvars))
+                                     (rlet1 v (lvar-initval ($lref-lvar arg))
+                                       (lvar-ref--! ($lref-lvar arg))
+                                       (lvar-initval-set! ($lref-lvar arg)
+                                                          ($const-undef)))
+                                     arg))
                            ($call-args node)))))
 
 (define (pass2/remove-unused-lvars lvars)
@@ -3494,7 +3484,7 @@
                    penv tail?)]
        [(and ($lref? proc)
              (pass2/head-lref proc penv tail?))
-        => (lambda (result)
+        => (^[result]
              (cond
               [(vector? result)
                ;; Directly inlinable case.  NB: this only happens if the $LREF
@@ -3827,7 +3817,7 @@
 (define (pass3/$LET iform labels)
   (let ([lvars ($let-lvars iform)]
         [inits (imap (cut pass3/rec <> labels) ($let-inits iform))])
-    (ifor-each2 (lambda (lv in) (lvar-initval-set! lv in)) lvars inits)
+    (ifor-each2 (^[lv in] (lvar-initval-set! lv in)) lvars inits)
     (pass2/shrink-let-frame iform lvars (pass3/rec ($let-body iform) labels))))
 
 (define (pass3/$RECEIVE iform labels)
@@ -4014,7 +4004,7 @@
 ;; optimization and let the runtime fail.
 (define (pass3/precompute-constant proc arg-nodes)
   (guard (e [else #f])                  ; give up optimization
-    (receive r (apply proc (imap (lambda (a) ($const-value a)) arg-nodes))
+    (receive r (apply proc (imap (^[a] ($const-value a)) arg-nodes))
       (match r
         [()  ($const-undef)]
         [(r) ($const r)]
@@ -5318,7 +5308,7 @@
   ($asm form insn (list (pass1 x cenv) (pass1 y cenv))))
 
 (define (gen-inliner-arg2 insn)
-  (lambda (form cenv)
+  (^[form cenv]
     (match form
       [(_ x y) (asm-arg2 form (list insn) x y cenv)]
       [else (undefined)])))
@@ -5354,9 +5344,9 @@
 
 (define-macro (define-builtin-inliner-+ op insn const)
   `(define-builtin-inliner ,op
-     (lambda (form cenv)
+     (^[form cenv]
        (define (fold-+ asm rest)
-         (fold (lambda (arg asm)
+         (fold (^[arg asm]
                  (receive (val tree) (check-numeric-constant arg cenv)
                    ($asm form (list ,insn) (list asm (or tree (,const val))))))
                asm rest))
@@ -5385,10 +5375,10 @@
 
 (define-macro (define-builtin-inliner-- op insn const)
   `(define-builtin-inliner ,op
-     (lambda (form cenv)
+     (^[form cenv]
        (define (fold-- asm rest)
-         (fold (lambda (arg asm)
-                 (receive (val tree) (check-numeric-constant arg cenv)
+         (fold (^[arg asm]
+                 (receive [val tree] (check-numeric-constant arg cenv)
                    ($asm form (list ,insn) (list asm (or tree (,const val))))))
                asm rest))
        (let inline ((args (cdr form)))
@@ -5423,7 +5413,7 @@
 
 (define-macro (define-builtin-inliner-* op insn const)
   `(define-builtin-inliner ,op
-     (lambda (form cenv)
+     (^[form cenv]
        (let inline ((args (cdr form)))
          (match args
            [()  (,const 1)]
@@ -5437,7 +5427,7 @@
               (receive (yval ytree) (check-numeric-constant y cenv)
                 (if (and xval yval)
                   (inline (cons (,op xval yval) more))
-                  (fold (lambda (arg asm)
+                  (fold (^[arg asm]
                           ($asm form (list ,insn) (list asm (pass1 arg cenv))))
                         ($asm form (list ,insn)
                               (list (or xtree (,const xval))
@@ -5450,7 +5440,7 @@
 
 (define-macro (define-builtin-inliner-/ op insn const)
   `(define-builtin-inliner ,op
-     (lambda (form cenv)
+     (^[form cenv]
        (let inline ((args (cdr form)))
          (match args
            [()
@@ -5467,7 +5457,7 @@
                   (if (null? more)
                     ($const (,op xval yval))
                     (inline (cons (,op xval yval) more)))
-                  (fold (lambda (arg asm)
+                  (fold (^[arg asm]
                           ($asm form (list ,insn) (list asm (pass1 arg cenv))))
                         ($asm form (list ,insn)
                               (list (or xtree (,const xval))
@@ -5489,14 +5479,14 @@
 ;;
 
 (define-builtin-inliner vector-ref
-  (lambda (form cenv)
+  (^[form cenv]
     (match form
       [(_ vec ind)
        (asm-arg2 form `(,VEC-REF) vec ind cenv)]
       [else (undefined)])))
 
 (define-builtin-inliner vector-set!
-  (lambda (form cenv)
+  (^[form cenv]
     (match form
       [(_ vec ind val)
        ($asm form `(,VEC-SET) `(,(pass1 vec cenv)
@@ -5505,7 +5495,7 @@
       [else (error "wrong number of arguments for vector-set!:" form)])))
 
 (define-builtin-inliner %uvector-ref
-  (lambda (form cenv)
+  (^[form cenv]
     (match form
       [(_ vec (? integer? type) ind)
 ;; not enough evidence yet to support this is worth (see also vminsn.scm)
@@ -5516,14 +5506,14 @@
       [else (undefined)])))
 
 (define-builtin-inliner zero?
-  (lambda (form cenv)
+  (^[form cenv]
     (match form
       [(_ arg)
        ($asm form `(,NUMEQ2) `(,(pass1 arg cenv) ,($const 0)))]
       [else (error "wrong number of arguments for zero?:" form)])))
 
 (define-builtin-inliner acons
-  (lambda (form cenv)
+  (^[form cenv]
     (match form
       [(_ a b c)
        ($asm form `(,CONS) `(,($asm #f `(,CONS) `(,(pass1 a cenv)
@@ -5532,31 +5522,31 @@
       [else (error "wrong number of arguments for acons:" form)])))
 
 (define-builtin-inliner reverse
-  (lambda (form cenv)
+  (^[form cenv]
     (match form
       [(_ a) ($asm form `(,REVERSE) `(,(pass1 a cenv)))]
       [else (undefined)])))
 
 (define-builtin-inliner current-input-port
-  (lambda (form cenv)
+  (^[form cenv]
     (match form
       [(_) ($asm form `(,CURIN) '())]
       [else (undefined)])))
 
 (define-builtin-inliner current-output-port
-  (lambda (form cenv)
+  (^[form cenv]
     (match form
       [(_) ($asm form `(,CUROUT) '())]
       [else (undefined)])))
 
 (define-builtin-inliner current-error-port
-  (lambda (form cenv)
+  (^[form cenv]
     (match form
       [(_) ($asm form `(,CURERR) '())]
       [else (undefined)])))
 
 (define-builtin-inliner dynamic-wind
-  (lambda (form cenv)
+  (^[form cenv]
     (match form
       [(_ before thunk after)
        (let ([tenv (cenv-sans-name cenv)])
@@ -5613,7 +5603,7 @@
       (warn "Attaching a compiler macro to ~a clobbers previously attached \
              inline transformers." proc))
     (set! (%procedure-inliner proc)
-          (lambda (form cenv)
+          (^[form cenv]
             (let1 r
                 ;; Call the transformer with rename and compare procedure,
                 ;; just like explicit renaming macro.  However, THE CURRENT
@@ -5621,7 +5611,7 @@
                 ;; placeholders for experiment.
                 (xformer form
                          (cut ensure-identifier <> cenv)
-                         (lambda (a b) ; this is just a placeholder!
+                         (^[a b] ; this is just a placeholder!
                            (eq? (identifier->symbol a) (identifier->symbol b))))
               (cond [(eq? form r) ; no inline operation is triggered.
                      (if (vector? orig-inliner)
@@ -5713,11 +5703,10 @@
 ;; This is used in precomp.
 (define (global-eq?? sym srcmod modgen)
   (let1 id-gloc (find-binding (find-module srcmod) sym #f)
-    (lambda (var)
-      (eq? id-gloc
-           (if (identifier? var)
-             (find-binding (slot-ref var'module) (slot-ref var'name) #f)
-             (find-binding (modgen) var #f))))))
+    (^[var] (eq? id-gloc
+                 (if (identifier? var)
+                   (find-binding (slot-ref var'module) (slot-ref var'name) #f)
+                   (find-binding (modgen) var #f))))))
 
 ;;============================================================
 ;; Initialization

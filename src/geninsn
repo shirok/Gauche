@@ -98,7 +98,7 @@
     (format #t "  :combined '~s\n" (~ insn'combined))
     (format #t "  :body '~s)\n\n" (~ insn'body)))
   (with-output-to-file "../lib/gauche/vm/insn.scm"
-    (lambda ()
+    (^[]
       (write-header)
       (for-each write-insn insns)
       (newline))
@@ -333,12 +333,12 @@
                  $ regexp-replace #/\bLREF\b/ (x->string symbol)
                  $ x->string lrefx)]))
   (define (generate-lrefx insn nparams operand comb seed)
-    (fold (lambda (lrefx seed)
+    (fold (^[lrefx seed]
             `((define-insn ,(lref-replace insn lrefx) ,nparams ,operand
                 ,(lref-replace comb lrefx))
               ,@seed))
           seed .lrefx.))
-  (fold (lambda (form seed)
+  (fold (^[form seed]
           (match form
             [('define-insn . _) (cons form seed)]
             ;; Special expansion for LREF shortcuts.

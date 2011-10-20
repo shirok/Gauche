@@ -32,7 +32,7 @@
                   Scm_HashTableSet(obtable, s, SCM_OBJ(&Scm_BuiltinSymbols[i]), 0)")
     
     (for-each-with-index
-     (lambda (index entry)
+     (^[index entry]
        (let* ([str (cgen-literal (symbol->string (car entry)))]
               [strref (cgen-cexpr str)]
               [macro-name (cadr entry)])

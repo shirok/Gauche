@@ -45,7 +45,7 @@
 
 (define (main args)
   (let1 syms '()
-    (let-args (cdr args) ([#f "D=s" => (lambda (sym) (push! syms sym))]
+    (let-args (cdr args) ([#f "D=s" => (^[sym] (push! syms sym))]
                           [else _ (usage)]
                           . args)
       (match args

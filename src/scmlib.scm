@@ -75,13 +75,13 @@
             ,@(rec g (cdr vars&inits) rest))))]))
   (let1 g (gensym)
     `(let ((,g ,arg))
-       ,@(rec g (map (lambda (s)
-                       (cond [(and (pair? s) (pair? (cdr s)) (null? (cddr s)))
-                              (cons (car s) (cadr s))]
-                             [(or (symbol? s) (identifier? s))
-                              (cons s '(undefined))]
-                             [else (error "malformed let-optionals* bindings:"
-                                          specs)]))
+       ,@(rec g (map (^s (cond
+                          [(and (pair? s) (pair? (cdr s)) (null? (cddr s)))
+                           (cons (car s) (cadr s))]
+                          [(or (symbol? s) (identifier? s))
+                           (cons s '(undefined))]
+                          [else (error "malformed let-optionals* bindings:"
+                                       specs)]))
                      specs)
               (cdr (last-pair specs))))))
               
@@ -135,7 +135,7 @@
                    ,@(map (cut list <> (undefined)) tmps))
             (cond
              [(null? ,argvar)
-              (,%let ,(map (lambda (var tmp default)
+              (,%let ,(map (^[var tmp default]
                              `(,var (if (undefined? ,tmp) ,default ,tmp)))
                            vars tmps defaults)
                      ,@body)]
@@ -143,17 +143,15 @@
               (error "keyword list not even" ,argvar)]
              [else
               (case (car ,argvar)
-                ,@(map (lambda (key)
-                         `((,key)
-                           (,loop (cddr ,argvar)
-                                  ,@(if (boolean? restvar)
-                                      '()
-                                      `(,restvar))
-                                  ,@(map (lambda (k t)
-                                           (if (eq? key k)
-                                             `(cadr ,argvar)
-                                             t))
-                                         keys tmps))))
+                ,@(map (^[key] `((,key)
+                                 (,loop (cddr ,argvar)
+                                        ,@(if (boolean? restvar)
+                                            '()
+                                            `(,restvar))
+                                        ,@(map (^[k t] (if (eq? key k)
+                                                         `(cadr ,argvar)
+                                                         t))
+                                               keys tmps))))
                        keys)
                 (else
                  ,(cond [(eq? restvar #t)
@@ -253,7 +251,7 @@
      (begin
        (define-inline (name x) (a (b x)))
        (define-in-module scheme name name)
-       (set! (setter name) (lambda (x v) (set! (a (b x)) v)))))))
+       (set! (setter name) (^[x v] (set! (a (b x)) v)))))))
 
 (%define-cxr caaar  car  caar)
 (%define-cxr caadr  car  cadr)
@@ -501,7 +499,7 @@
                                             (substring str end len))))))
 
 (define-reader-ctor 'string-interpolate
-  (lambda (s) (string-interpolate s))) ;;lambda is required to delay loading
+  (^s (string-interpolate s))) ;;lambda is required to delay loading
 
 ;;;=======================================================
 ;;; call/cc alias
@@ -558,11 +556,11 @@
   (receive (index id) (%vm-make-parameter-slot)
     ;; set default exit handler
     (%vm-parameter-set! index id
-                        (lambda (code fmt args)
+                        (^[code fmt args]
                           (when fmt
                             (apply format (standard-error-port) fmt args)
                             (newline (standard-error-port)))))
-    (lambda maybe-arg
+    (^ maybe-arg
       (rlet1 old (%vm-parameter-ref index id)
         (when (pair? maybe-arg)
           (%vm-parameter-set! index id (car maybe-arg)))))))
@@ -570,7 +568,7 @@
 (define (exit . args)
   (let-optionals* args ([code 0] [fmt #f] . args)
     (cond [(exit-handler)
-           => (lambda (h) (guard (e [(<error> e) #f]) (h code fmt args)))])
+           => (^h (guard (e [(<error> e) #f]) (h code fmt args)))])
     (%exit code)))
 
 ;;;=======================================================
@@ -619,19 +617,19 @@
 ;;;
 
 (define-reader-directive 'r6rs
-  (lambda (sym port ctx)
+  (^[sym port ctx]
     (warn "Reading R6RS source file.  Note that Gauche is not R6RS compliant.")
     ;; TODO: we could do some adjustments, such as switching the semantics of
     ;; '#,' from srfi-10 to r6rs 'unsyntax'.
     (values)))
 
 (define-reader-directive 'fold-case
-  (lambda (sym port ctx)
+  (^[sym port ctx]
     (port-case-fold-set! port #t)
     (values)))
 
 (define-reader-directive 'no-fold-case
-  (lambda (sym port ctx)
+  (^[sym port ctx]
     (port-case-fold-set! port #f)
     (values)))
 
@@ -639,7 +637,7 @@
 ;;; srfi-17
 ;;;
 (define (getter-with-setter get set)
-  (rlet1 proc (lambda x (apply get x))
+  (rlet1 proc (^ x (apply get x))
     (set! (setter proc) set)))
 
 ;;;=======================================================
@@ -661,7 +659,7 @@
 
 (define-values (format format/ss)
   (letrec ((format-int
-            (lambda (port fmt args shared?)
+            (^[port fmt args shared?]
               (cond [(eqv? port #f)
                      (let ((out (open-output-string :private? #t)))
                        (%format out fmt args shared?)
@@ -670,12 +668,12 @@
                      (%format (current-output-port) fmt args shared?)]
                     [else (%format port fmt args shared?)])))
            (format
-            (lambda (fmt . args)
+            (^[fmt . args]
               (if (string? fmt)
                 (format-int #f fmt args #f) ;; srfi-28 compatible behavior
                 (format-int fmt (car args) (cdr args) #f))))
            (format/ss
-            (lambda (fmt . args)
+            (^[fmt . args]
               (if (string? fmt)
                 (format-int #f fmt args #t) ;; srfi-28 compatible behavior
                 (format-int fmt (car args) (cdr args) #t))))
@@ -695,15 +693,15 @@
        [(string? sub)
         (let loop ((sub sub) (r '()))
           (cond [(rxmatch #/\\(?:(\d+)|k<([^>]+)>|(.))/ sub)
-                 => (lambda (m)
-                      (define (loop2 elem)
-                        (loop (rxmatch-after m)
-                              (list* elem (rxmatch-before m) r)))
-                      (cond [(rxmatch-substring m 1)
-                             => (lambda (d) (loop2 (string->number d)))]
-                            [(rxmatch-substring m 2)
-                             => (lambda (s) (loop2 (string->symbol s)))]
-                            [else (loop2 (rxmatch-substring m 3))]))]
+                 => (^m
+                     (define (loop2 elem)
+                       (loop (rxmatch-after m)
+                             (list* elem (rxmatch-before m) r)))
+                     (cond [(rxmatch-substring m 1)
+                            => (^d (loop2 (string->number d)))]
+                           [(rxmatch-substring m 2)
+                            => (^s (loop2 (string->symbol s)))]
+                           [else (loop2 (rxmatch-substring m 3))]))]
                 [else (reverse (cons sub r))]))]
        [(procedure? sub) sub]
        [else (error "string or procedure required, but got" sub)]))
@@ -733,11 +731,11 @@
             [match  (rxmatch rx string)])
         (if match
           (with-output-to-string
-            (lambda ()
+            (^[]
               (define (loop str)
                 (unless (equal? str "")
                   (cond [(rxmatch rx str)
-                         => (lambda (match)
+                         => (^[match]
                               (when (= (rxmatch-start match) (rxmatch-end match))
                                 (error "regexp-replace-all: matching zero-length string causes infinite loop:" rx))
                               (regexp-replace-rec match subpat loop))]
@@ -750,7 +748,7 @@
 (define-values (regexp-replace* regexp-replace-all*)
   (let ()
     (define (regexp-replace-driver name func-1)
-      (lambda (string rx sub . more)
+      (^[string rx sub . more]
         (cond [(null? more) (func-1 rx string sub)]
               [else
                (unless (zero? (modulo (length more) 2))
@@ -768,12 +766,11 @@
 ;; Contributed from Alex Shinn; modified a bit by shiro
 (define (regexp-quote str)
   (with-string-io str
-    (lambda ()
-      (let loop ((c (read-char)))
-        (unless (eof-object? c)
-          (when (char-set-contains? #[\\|\[\](){}.*+?^$] c) (write-char #\\))
-          (write-char c)
-          (loop (read-char)))))))
+    (^[] (let loop ((c (read-char)))
+           (unless (eof-object? c)
+             (when (char-set-contains? #[\\|\[\](){}.*+?^$] c) (write-char #\\))
+             (write-char c)
+             (loop (read-char)))))))
 
 (define (regexp->string rx)
   (or (%regexp-pattern rx)
@@ -871,9 +868,9 @@
     [(_ "tmp" (tmp ...) () (port ...) (param ...) thunk)
      (let ((tmp #f) ...)
        (dynamic-wind
-           (lambda () (when port (set! tmp (param port))) ...)
+           (^[] (when port (set! tmp (param port))) ...)
            thunk
-           (lambda () (when tmp (param tmp)) ...)))]
+           (^[] (when tmp (param tmp)) ...)))]
     [(_ "tmp" tmps (port . more) ports params thunk)
      (%with-ports "tmp" (tmp . tmps) more ports params thunk)]
     [(_ ((param port) ...) thunk)

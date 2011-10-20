@@ -381,7 +381,7 @@
 (define (unicode-data-1 db)
   (define table  (unichar-db-table db))
   (define ranges (unichar-db-ranges db))
-  (lambda (entry state)
+  (^[entry state]
     (match-let ([(scode name scat _ _ _ _ _ _ _ _ _ sup slo sti) entry]
                 [(prev-code prev-cat range?) state])
       (let* ([code (parse-code scode)]

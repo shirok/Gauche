@@ -49,10 +49,10 @@
 ;;   However, we can't say (make <method> ...) before we have a make method.
 ;;   So we have to "hard wire" the method creation.
 
-(let ([%make (lambda (class . initargs)
+(let ([%make (^[class . initargs]
                (rlet1 obj (allocate-instance class initargs)
                  (initialize obj initargs)))]
-      [body  (lambda (class initargs next-method)
+      [body  (^[class initargs next-method]
                (rlet1 obj (allocate-instance class initargs)
                  (initialize obj initargs)))])
   (add-method! make
@@ -214,7 +214,7 @@
                        ,@options)))
          (when (%check-class-binding ',name (current-module))
            (redefine-class! ,name ,class))
-         (for-each (lambda (,slot)
+         (for-each (^[,slot]
                      (,(make-identifier '%make-accessor (current-module) '())
                       ,class ,slot (current-module)))
                    (class-slots ,class))
@@ -230,7 +230,7 @@
             [else
              (case (car opts)
                [(:initform :init-form)
-                (loop (cddr opts) `((lambda () ,(cadr opts)) :init-thunk ,@r))]
+                (loop (cddr opts) `((^[] ,(cadr opts)) :init-thunk ,@r))]
                [(:getter :setter :accessor)
                 (loop (cddr opts) `(',(cadr opts) ,(car opts) ,@r))]
                [else (loop (cddr opts) (list* (cadr opts) (car opts) r))])]))
@@ -243,20 +243,19 @@
 (define %get-default-metaclass
   (let1 generated-metas '()
     (define (find-metaclass metasupers)
-      (cond [(assoc metasupers generated-metas) => (lambda (got) (cdr got))]
+      (cond [(assoc metasupers generated-metas) => cdr]
             [else (make-metaclass metasupers)]))
     (define (make-metaclass metasupers)
       (rlet1 meta (make <class>
                    :supers metasupers :name (gensym "metaclass") :slots '())
         (set! generated-metas (acons metasupers meta generated-metas))))
 
-    (lambda (supers)
+    (^[supers]
       (if (null? supers)
         <class>
         (let* ([all-metas (map class-of supers)]
                [all-cpls  (apply append
-                                 (map (lambda (m)
-                                        (cdr (class-precedence-list m)))
+                                 (map (^m (cdr (class-precedence-list m)))
                                       all-metas))]
                [needed '()])
           (dolist [m all-metas]
@@ -282,17 +281,16 @@
     (slot-set! class 'direct-supers supers)
     (slot-set! class 'cpl (compute-cpl class))
     (slot-set! class 'direct-slots
-               (map (lambda (s) (if (pair? s) s (list s))) slots))
+               (map (^s (if (pair? s) s (list s))) slots))
     ;; note: num-instance-slots is set up during compute-get-n-set.
     (let1 slots (compute-slots class)
       (slot-set! class 'slots slots)
       (slot-set! class 'accessors
-                 (map (lambda (s)
-                        ;; returns (name . #<slot-accessor>)
-                        (cons (car s)
-                              (compute-slot-accessor
-                               class s
-                               (compute-get-n-set class s))))
+                 (map (^s ;; returns (name . #<slot-accessor>)
+                       (cons (car s)
+                             (compute-slot-accessor
+                              class s
+                              (compute-get-n-set class s))))
                       slots))
       )
     ;; bookkeeping for class redefinition
@@ -314,7 +312,7 @@
                    (make <accessor-method>
                      :generic gf :specializers (list class)
                      :slot-accessor sa :lambda-list '(obj)
-                     :body (lambda (obj next-method) #f) ;; dummy
+                     :body (^[obj next-method] #f) ;; dummy
                      )))
 
     (define (make-setter gf)
@@ -322,7 +320,7 @@
                    (make <accessor-method>
                      :generic gf :specializers (list class <top>)
                      :slot-accessor sa :lambda-list '(obj val)
-                     :body (lambda (obj val next-method) #f) ;; dummy
+                     :body (^[obj val next-method] #f) ;; dummy
                      )))
 
     (when %getter
@@ -395,9 +393,9 @@
       [else (error "unsupported slot allocation:" alloc)])))
 
 (define (%make-class-slot cell)
-  (list (lambda (o)   cell)
-        (lambda (o v) (set! cell v))
-        (lambda (o)   (not (undefined? cell)))))
+  (list (^[o]   cell)
+        (^[o v] (set! cell v))
+        (^[o]   (not (undefined? cell)))))
 
 ;; METHOD COMPUTE-SLOT-ACCESSOR (class <class>) g-n-s
 ;;  this method doesn't have equivalent one in STklos.
@@ -421,7 +419,7 @@
 ;; access class allocated slot.  API compatible with Goops.
 (define (%class-slot-gns class slot-name acc-type)
   (cond [(class-slot-definition class slot-name)
-         => (lambda (slot)
+         => (^[slot]
               (if (memv (slot-definition-allocation slot)
                         '(:class :each-subclass))
                 (slot-ref (class-slot-accessor class slot-name) acc-type)
@@ -434,7 +432,7 @@
 
 (define class-slot-ref
   (getter-with-setter
-   (lambda (class slot-name)
+   (^[class slot-name]
      (let1 val (apply (%class-slot-gns class slot-name 'getter) '(#f))
        (if (undefined? val) (slot-unbound class slot-name) val)))
    class-slot-set!))
@@ -600,7 +598,7 @@
 
 (define-method sort-applicable-methods ((gf <generic>) methods args)
   (let1 types (map class-of args)
-    (sort methods (lambda (x y) (method-more-specific? x y types)))))
+    (sort methods (^[x y] (method-more-specific? x y types)))))
 
 (define-method apply-methods ((gf <generic>) methods args)
   (apply-method gf methods %make-next-method args))
@@ -736,13 +734,12 @@
 ;; regexp-compile), hence we have complete read/write invariance.
 (define-method write-object ((obj <regexp>) out)
   (cond [(regexp->string obj)
-         => (lambda (s)
-              (format out "#/~a/~a"
-                      (regexp-replace-all*
-                       s #/\// "\\\\/" #/[\x00-\x1f\x7f]/
-                       (lambda (m)
-                         (format "\\x~2,'0x" (char->integer (string-ref (m 0) 0)))))
-                      (if (regexp-case-fold? obj) "i" "")))]
+         => (^s (format out "#/~a/~a"
+                        (regexp-replace-all*
+                         s #/\// "\\\\/" #/[\x00-\x1f\x7f]/
+                         (lambda (m)
+                           (format "\\x~2,'0x" (char->integer (string-ref (m 0) 0)))))
+                        (if (regexp-case-fold? obj) "i" "")))]
         [else (format out "#<regexp>")]))
 
 ;;;
@@ -750,7 +747,7 @@
 ;;;
 
 (define-macro (insert-symbols . syms)
-  `(begin ,@(map (lambda (s) `(define-in-module gauche ,s ,s)) syms)))
+  `(begin ,@(map (^[s] `(define-in-module gauche ,s ,s)) syms)))
 
 (insert-symbols ;define-generic define-method define-class
                 compute-slots compute-get-n-set compute-slot-accessor
