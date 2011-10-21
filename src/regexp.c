@@ -1169,7 +1169,7 @@ ScmObj Scm_RegOptimizeAST(ScmObj ast)
 
 static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp);
 
-/* Util function for pass2, to get an index of the charset vector
+/* Util function for pass3, to get an index of the charset vector
  * for the given charset.
  */
 static int rc3_charset_index(ScmRegexp *rx, ScmObj cs)
