@@ -161,7 +161,11 @@ enum {
 #define MAX_LIMITED_REPEAT 255
 
 /* internal regexp flag. */
-#define SCM_REGEXP_BOL_ANCHORED   (1L<<2)
+#define SCM_REGEXP_BOL_ANCHORED   (1L<<2) /* The regexp beginning is anchored
+                                             by ^.*/
+#define SCM_REGEXP_SIMPLE_PREFIX  (1L<<3) /* The regexp begins with a repeating
+                                             character or charset, e.g. #/a+b/.
+                                             See is_simple_prefixed() below. */
 
 /* AST - the first pass of regexp compiler creates intermediate AST.
  * Alternatively, you can provide AST directly to the regexp compiler,
@@ -1696,8 +1700,12 @@ static int is_bol_anchored(ScmObj ast)
         else return FALSE;
     }
     type = SCM_CAR(ast);
-    if (SCM_INTP(type) || SCM_EQ(type, SCM_SYM_SEQ)
-        || SCM_EQ(type, SCM_SYM_SEQ_UNCASE) || SCM_EQ(type, SCM_SYM_SEQ_CASE)) {
+    if (SCM_INTP(type)) {
+        if (!SCM_PAIRP(SCM_CDDR(ast))) return FALSE;
+        return is_bol_anchored(SCM_CAR(SCM_CDDR(ast)));
+    } else if (SCM_EQ(type, SCM_SYM_SEQ)
+               || SCM_EQ(type, SCM_SYM_SEQ_UNCASE)
+               || SCM_EQ(type, SCM_SYM_SEQ_CASE)) {
         if (!SCM_PAIRP(SCM_CDR(ast))) return FALSE;
         return is_bol_anchored(SCM_CADR(ast));
     }
@@ -1711,11 +1719,133 @@ static int is_bol_anchored(ScmObj ast)
     return FALSE;
 }
 
+/* Aux function for is_simple_prefixed.
+   Returns TRUE if AST is <char>, <char-set>, or (comp . <char-set>)*/
+static int is_char_or_charset(ScmObj ast)
+{
+    if (SCM_CHARP(ast) || SCM_CHAR_SET_P(ast)
+        || (SCM_PAIRP(ast)
+            && SCM_EQ(SCM_CAR(ast), SCM_SYM_COMP)
+            && SCM_CHAR_SET_P(SCM_CDR(ast)))) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+/* Returns TRUE iff ast has a form #/A+B/ where A is a char or charset,
+   and B begins with distinct charset from A (B may be empty).
+   After optimization, the AST begins with (rep-while 1 #f A).
+   If so, we can greatly optimize the failure case.
+   Suppose if we try input s against #/A+B/ and find it fail.  Then
+   we can skip prefix of s as far as it matches #/A/. */
+static int is_simple_prefixed(ScmObj ast)
+{
+    ScmObj car;
+    
+    if (!SCM_PAIRP(ast)) return FALSE;
+    car = SCM_CAR(ast);
+    if (SCM_EQ(car, SCM_SYM_REP_WHILE)) {
+        if (SCM_EQ(SCM_CADR(ast), SCM_MAKE_INT(1))
+            && SCM_FALSEP(SCM_CAR(SCM_CDDR(ast)))) {
+            ScmObj body = SCM_CDR(SCM_CDDR(ast));
+            if (SCM_PAIRP(body) && SCM_NULLP(SCM_CDR(body))) {
+                return is_char_or_charset(SCM_CAR(body));
+            }
+        }
+        return FALSE;
+    } else if (SCM_EQ(car, SCM_SYM_SEQ)) { /* TODO: handle uncase */
+        if (SCM_PAIRP(SCM_CDR(ast))) {
+            return is_simple_prefixed(SCM_CADR(ast));
+        }
+        return FALSE;
+    } else if (SCM_INTP(car)) {
+        ScmObj s = SCM_CDDR(ast);
+        if (SCM_PAIRP(s)) return is_simple_prefixed(SCM_CAR(s));
+    }
+    return FALSE;
+}
+
+
+/* returns lookahead set.  modifies the first arg.  */
+static ScmObj merge_laset(ScmObj la1, ScmObj la2)
+{
+    if (SCM_CHAR_SET_P(la1) && SCM_CHAR_SET_P(la2)) {
+        return Scm_CharSetAdd(SCM_CHAR_SET(la1),
+                              SCM_CHAR_SET(la2));
+    } else {
+        return SCM_FALSE;
+    }
+}
+
+static ScmObj calculate_lasetn(ScmObj ast);
+
+/* returns lookahead set.  returned charset is fresh.
+   TODO: We can also take advantage of wb and nwb condition to
+   skip the input. */
+static ScmObj calculate_laset(ScmObj head, ScmObj rest)
+{
+    ScmObj head_car, cs;
+
+    if (!SCM_PAIRP(head)) {
+        if (SCM_CHARP(head)) {
+            return Scm_CharSetAddRange(SCM_CHAR_SET(Scm_MakeEmptyCharSet()),
+                                       SCM_CHAR_VALUE(head),
+                                       SCM_CHAR_VALUE(head));
+        } else if (SCM_CHAR_SET_P(head)) {
+            return Scm_CharSetCopy(SCM_CHAR_SET(head));
+        }
+        return SCM_FALSE;
+    }
+    head_car = SCM_CAR(head);
+    
+    if (SCM_EQ(head_car, SCM_SYM_COMP)) {
+        SCM_ASSERT(SCM_CHAR_SET_P(SCM_CDR(head)));
+        cs = Scm_CharSetCopy(SCM_CHAR_SET(SCM_CDR(head)));
+        return Scm_CharSetComplement(SCM_CHAR_SET(cs));
+    } else if (SCM_EQ(head_car, SCM_SYM_SEQ)||SCM_EQ(head_car, SCM_SYM_ONCE)) {
+        return calculate_lasetn(SCM_CDR(head));
+    } else if (SCM_EQ(head_car, SCM_SYM_ALT)) {
+        ScmObj choices = SCM_CDR(head), r;
+        if (!SCM_PAIRP(choices)) return SCM_FALSE;
+        r = calculate_laset(SCM_CAR(choices), SCM_NIL);
+        choices = SCM_CDR(choices);
+        while (!SCM_FALSEP(r) && SCM_PAIRP(choices)) {
+            r = merge_laset(r, calculate_laset(SCM_CAR(choices), SCM_NIL));
+            choices = SCM_CDR(choices);
+        }
+        return r;
+    } else if (SCM_EQ(head_car, SCM_SYM_REP)
+               || SCM_EQ(head_car, SCM_SYM_REP_WHILE)
+               || SCM_EQ(head_car, SCM_SYM_REP_MIN)) {
+        SCM_ASSERT(SCM_PAIRP(SCM_CDR(head)) && SCM_PAIRP(SCM_CDDR(head)));
+        if (SCM_EQ(SCM_CADR(head), SCM_MAKE_INT(0))) {
+            return merge_laset(calculate_lasetn(SCM_CDR(SCM_CDDR(head))),
+                               calculate_lasetn(rest));
+        } else {
+            return calculate_lasetn(SCM_CDR(SCM_CDDR(head)));
+        }
+    } else if (SCM_INTP(head_car)) {
+        SCM_ASSERT(SCM_PAIRP(SCM_CDR(head)));
+        return calculate_lasetn(SCM_CDDR(head));
+    } else {
+        return SCM_FALSE;
+    }
+}
+
+static ScmObj calculate_lasetn(ScmObj ast)
+{
+    if (!SCM_PAIRP(ast)) return SCM_FALSE;
+    else return calculate_laset(SCM_CAR(ast), SCM_CDR(ast));
+}
+
 /* pass 3 */
 static ScmObj rc3(regcomp_ctx *ctx, ScmObj ast)
 {
-    /* check if ast is bol-anchored */
+    /* set flags and laset */
     if (is_bol_anchored(ast)) ctx->rx->flags |= SCM_REGEXP_BOL_ANCHORED;
+    else if (is_simple_prefixed(ast)) ctx->rx->flags |= SCM_REGEXP_SIMPLE_PREFIX;
+    ctx->rx->laset = calculate_laset(ast, SCM_NIL);
 
     /* pass 3-1 : count # of insns */
     ctx->codemax = 1;
@@ -1740,7 +1870,13 @@ void Scm_RegDump(ScmRegexp *rx)
 {
     int end = rx->numCodes, codep;
 
-    Scm_Printf(SCM_CUROUT, "Regexp %p: (flags=%08x)\n", rx, rx->flags);
+    Scm_Printf(SCM_CUROUT, "Regexp %p: (flags=%08x", rx, rx->flags);
+    if (rx->flags&SCM_REGEXP_BOL_ANCHORED)
+        Scm_Printf(SCM_CUROUT, ",BOL_ANCHORED");
+    if (rx->flags&SCM_REGEXP_SIMPLE_PREFIX)
+        Scm_Printf(SCM_CUROUT, ",SIMPLE_PREFIX");
+    Scm_Printf(SCM_CUROUT, ")\n");
+    Scm_Printf(SCM_CUROUT, " laset = %S\n", rx->laset);
     Scm_Printf(SCM_CUROUT, "  must = ");
     if (rx->mustMatch) {
         Scm_Printf(SCM_CUROUT, "%S\n", rx->mustMatch);
@@ -2600,6 +2736,24 @@ static ScmObj rex(ScmRegexp *rx, ScmString *orig,
     return make_match(rx, orig, &ctx);
 }
 
+/* advance start pointer while the character matches (skip_match=TRUE) or does
+   not match (skip_match=FALSE), until start pointer hits limit. */
+static inline const char *skip_input(const char *start, const char *limit,
+                                     ScmObj laset, int skip_match)
+{
+    while (start <= limit) {
+        ScmChar ch;
+        SCM_CHAR_GET(start, ch);
+        if (Scm_CharSetContains(SCM_CHAR_SET(laset), ch)) {
+            if (!skip_match) return start;
+        } else {
+            if (skip_match) return start;
+        }
+        start += SCM_CHAR_NFOLLOWS(*start)+1;
+    }
+    return limit;
+}
+
 /*----------------------------------------------------------------------
  * entry point
  */
@@ -2610,6 +2764,7 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
     const char *end = start + SCM_STRING_BODY_SIZE(b);
     const ScmStringBody *mb = rx->mustMatch? SCM_STRING_BODY(rx->mustMatch) : NULL;
     int mustMatchLen = mb? SCM_STRING_BODY_SIZE(mb) : 0;
+    const char *start_limit = end - mustMatchLen;
 
     if (SCM_STRING_INCOMPLETE_P(str)) {
         Scm_Error("incomplete string is not allowed: %S", str);
@@ -2633,8 +2788,33 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
     if (rx->flags & SCM_REGEXP_BOL_ANCHORED) {
         return rex(rx, str, start, end);
     }
+
+    /* if we have lookahead-set, we may be able to skip input efficiently. */
+    if (!SCM_FALSEP(rx->laset)) {
+        ScmObj r;
+        const char *next;
+        
+        if (rx->flags & SCM_REGEXP_SIMPLE_PREFIX) {
+            while (start <= start_limit) {
+                r = rex(rx, str, start, end);
+                if (!SCM_FALSEP(r)) return r;
+                next = skip_input(start, start_limit, rx->laset, TRUE);
+                if (start != next) start = next;
+                else start = next + SCM_CHAR_NFOLLOWS(*start) + 1;
+            }
+        } else {
+            while (start <= start_limit) {
+                start = skip_input(start, start_limit, rx->laset, FALSE);
+                r = rex(rx, str, start, end);
+                if (!SCM_FALSEP(r)) return r;
+                start += SCM_CHAR_NFOLLOWS(*start)+1;
+            }
+        }
+        return SCM_FALSE;
+    }
+
     /* normal matching */
-    while (start <= end-mustMatchLen) {
+    while (start <= start_limit) {
         ScmObj r = rex(rx, str, start, end);
         if (!SCM_FALSEP(r)) return r;
         start += SCM_CHAR_NFOLLOWS(*start)+1;

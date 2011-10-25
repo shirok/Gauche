@@ -49,6 +49,11 @@ struct ScmRegexpRec {
     int numSets;         /* # of charsets in sets */
     int flags;           /* internal; CASE_FOLD, BOL_ANCHORED etc. */
     ScmString *mustMatch;
+    ScmObj laset;        /* lookahead set (char-set) or #f.
+                            If not #f, it represents the condition that can
+                            match at the beginning of the regexp.  It can be
+                            used to skip input start position when regexp
+                            isn't BOL_ANCHORED. */
 };
 
 struct ScmRegMatchRec {

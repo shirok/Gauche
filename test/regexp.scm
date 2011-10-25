@@ -4,6 +4,7 @@
 
 (use gauche.test)
 (use srfi-1)
+(use srfi-14)
 
 (test-start "regexp")
 
@@ -96,7 +97,7 @@
 (test-section "regexp-writer")
 
 (define-syntax test-regexp-writer
-  (syntax-rules ()
+   (syntax-rules ()
     ((_ exp pat)
      (test* exp exp (write-to-string (string->regexp pat))))))
 
@@ -157,6 +158,21 @@
 (test-regexp-compile "()\\1")
 (test-regexp-compile "(?<name>)\\k<name>")
 (test-regexp-compile "(?<name>)(?<name>)\\k<name>")
+
+(define-syntax test-regexp-laset
+  (syntax-rules ()
+    ((_ pat exp)
+     (test* #`"regexp-laset \",|pat|\"" exp
+            (%regexp-laset (regexp-compile (regexp-parse pat)))))))
+
+(test-regexp-laset "abc" #[a])
+(test-regexp-laset "(abc)" #[a])
+(test-regexp-laset "a|b|c" #[a-c])
+(test-regexp-laset "(a|b)|c" #[a-c])
+(test-regexp-laset "a*b" #[ab])
+(test-regexp-laset "a+b" #[a])
+(test-regexp-laset "(abc)*(bcd)*ef" #[abe])
+(test-regexp-laset "([^\"]|\"\")+" (char-set-complement #[]))
 
 ;;-------------------------------------------------------------------------
 (test-section "boundary")
@@ -428,6 +444,17 @@
 (test* "a.*c" #f
        (match&list #/a.*c/ "abaaaabababbadbabdba"))
 
+;; Tests for input skipping using laset
+(test* "a+b+" '("aaabb")
+       (match&list #/a+b+/ "aaaacccccccbaaabbccc"))
+(test* "a*b+" '("b")
+       (match&list #/a*b+/ "aaaacccccccbaaabbccc"))
+
+(test* "a+@a+\.a+" #f
+       (match&list #/a+@a+\.a+/ "aaaaaaaaaaa@aaaaaaaa@@a.aaaaa@aaaaa"))
+(test* "a+@a+\.a+" '("aaaaa@aaaaa.a")
+       (match&list #/a+@a+\.a+/ "aaaaaaaaaaa@aaaaaaaa@@a.aaaaa@aaaaa.a"))
+ 
 ;;-------------------------------------------------------------------------
 (test-section "repetitions (non-greedy)")
 

@@ -1,3 +1,18 @@
+2011-10-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.h (ScmRegexpRec), src/regexp.c (rc3, Scm_RegExec):
+	  Improved unanchored regexp search by skipping the input.  We
+	  calculate a set of characters that can possibly match at the
+	  beginning of the regex (lookahead set, or laset).  When we
+	  advance the input pointer, we check the character and if it
+	  isn't in the laset we can skip matching from that position.
+	  We also adopt a strategy that when /A+B/ fails to match, where
+	  A is a char or charset, and A and B has distinct laset,
+	  then we can skip the input as long as it matches A.  These
+	  strategy improves the performance greatly in commonly occurring
+	  patterns, especially when the input is long.
+	* test/regexp.scm, src/extlib.stub: Added some tests.
+
 2011-10-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/scmlib.scm (make-case-lambda),

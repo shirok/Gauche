@@ -633,6 +633,9 @@
 (define-cproc regexp-compile (ast)  Scm_RegCompFromAST)
 (define-cproc regexp-optimize (ast) Scm_RegOptimizeAST)
 
+(define-cproc %regexp-laset (regexp::<regexp>) ; for testing
+  (result (-> regexp laset)))
+
 (define-cproc rxmatch (regexp str::<string>)
   (let* ([rx::ScmRegexp* NULL])
     (cond [(SCM_STRINGP regexp) (set! rx (SCM_REGEXP (Scm_RegComp
