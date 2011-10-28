@@ -7695,10 +7695,12 @@ to ensure desired character encodings are used.
 @item proxy
 @c EN
 Specify http proxy server in a string of a form @code{hostname} or
-@code{hostname:port}.
+@code{hostname:port}.  If omitted, the value of the parameter
+@code{http-proxy} is used.
 @c JP
 httpプロキシサーバを、@code{hostname}または@code{hostname:port}形式の
-文字列で指定します。
+文字列で指定します。省略された場合、パラメータ@code{http-proxy}の値が
+使われます。
 @c COMMON
 @item no-redirect
 @c EN
@@ -7782,6 +7784,16 @@ user-agentヘッダに渡される値のデフォルト値を指定するパラ�
 デフォルトの値は@code{gauche.http/*} (@code{*}部分はGaucheのバージョン)
 になっています。
 各アプリケーションは適切な値を設定するようにしてください。
+@c COMMON
+@end deffn
+
+@deffn {Parameter} http-proxy :optional value
+@c EN
+This value is used as the default http proxy name by @code{http-get} etc.
+The default value is @code{#f} (no proxy).
+@c JP
+このパラメータの値が@code{http-get}等のhttpプロキシのデフォルトの値として
+使われます。デフォルトの値は@code{#f} (プロキシを使用しない) です。
 @c COMMON
 @end deffn
 

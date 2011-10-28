@@ -1,5 +1,8 @@
 2011-10-28  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/http.scm (http-proxy): Added a parameter to specify the
+	  default http proxy.
+
 	* libsrc/file/util.scm (touch-file, touch-files): Extended to
 	  take :time, :type and :create options; these are similar switches
 	  the touch(1) command has.  Also, touch-files hasn't been exported

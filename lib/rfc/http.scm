@@ -62,7 +62,7 @@
           http-user-agent make-http-connection reset-http-connection
           http-compose-query http-compose-form-data
           
-          http-request
+          http-proxy http-request
           http-null-receiver http-string-receiver http-oport-receiver 
           http-file-receiver http-cond-receiver
           http-null-sender http-string-sender http-blob-sender
@@ -102,6 +102,10 @@
 ;; default string to be used for user-agent.  
 (define http-user-agent
   (make-parameter #`"gauche.http/,(gauche-version)"))
+
+;; global proxy settings.  can be overridden by :proxy keyword
+;; argument.
+(define http-proxy (make-parameter #f))
 
 ;;==============================================================
 ;; Higher-level API
@@ -193,7 +197,7 @@
                            auth-handler
                            auth-user
                            auth-password
-                           proxy
+                           (proxy (http-proxy))
                            extra-headers
                            (user-agent (http-user-agent))
                            (secure #f)
