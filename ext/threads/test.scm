@@ -582,6 +582,9 @@
                         (make-mtqueue :max-length 5)
                         100 3)
 
+(test-producer-consumer "(zero-length queue)"
+                        (make-mtqueue :max-length 0)
+                        100 3)
 
 (test* "dequeue/wait! timeout" "timed out!"
        (dequeue/wait! (make-mtqueue) 0.01 "timed out!"))
@@ -593,6 +596,49 @@
        (let1 q (make-mtqueue :max-length 1)
          (enqueue! q 'a)
          (queue-push/wait! q 'b 0.01 "timed out!")))
+
+(test* "zero-length-queue handshaking" '(5 4 3 2 1 0)
+       (let ([r '()]
+             [q0 (make-mtqueue :max-length 0)]
+             [q1 (make-mtqueue :max-length 0)])
+         (let1 t (thread-start!
+                  (make-thread (^[]
+                                 (push! r 0)
+                                 (dequeue/wait! q0)
+                                 (enqueue/wait! q1 'b)
+                                 (push! r 2)
+                                 (dequeue/wait! q0)
+                                 (enqueue/wait! q1 'd)
+                                 (push! r 4)
+                                 (dequeue/wait! q0))))
+           (enqueue/wait! q0 'a)
+           (push! r 1)
+           (dequeue/wait! q1)
+           (enqueue/wait! q0 'c)
+           (push! r 3)
+           (dequeue/wait! q1)
+           (enqueue/wait! q0 'e)
+           (push! r 5))
+         r))
+
+(test* "zero-length-queue multiple reader" '(a a b b)
+       (let ([r0 #f] [r1 #f]
+             [q  (make-mtqueue :max-length 0)]
+             [qq (make-mtqueue :max-length 0)])
+         (let ([t0 (thread-start!
+                    (make-thread (^[] (enqueue/wait! qq #t)
+                                      (set! r0 (dequeue/wait! q))
+                                      (enqueue/wait! qq 'b))))]
+               [t1 (thread-start!
+                    (make-thread (^[] (enqueue/wait! qq #t)
+                                      (set! r1 (dequeue/wait! q))
+                                      (enqueue/wait! qq 'b))))])
+           (dequeue/wait! qq)
+           (dequeue/wait! qq)
+           (enqueue/wait! q 'a)
+           (enqueue/wait! q 'a)
+           (let1 r (list (dequeue/wait! qq) (dequeue/wait! qq))
+             (list* r0 r1 r)))))
 
 (test-end)
 

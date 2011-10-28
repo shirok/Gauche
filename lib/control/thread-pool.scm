@@ -69,7 +69,7 @@
    )
   :metaclass <propagate-meta>)
 
-(define (make-thread-pool size :key (max-backlog 0))
+(define (make-thread-pool size :key (max-backlog #f))
   (make <thread-pool> :size size :max-backlog max-backlog))
 
 (define-method initialize ((pool <thread-pool>) initargs)

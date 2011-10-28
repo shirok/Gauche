@@ -17680,10 +17680,20 @@ mtqueueのクラスです。@code{<queue>}を継承しています。
 
 @defivar {<mtqueue>} max-length
 @c EN
-If positive integer, this slot sets the upper bound of the number of
-items in the queue.
+The upper bound of the number of items in the queue.
 @c JP
-正の整数の場合、このスロットの値はキュー中の要素数の上限を示します。
+キュー中の要素数の上限を示します。
+@c COMMON
+
+@c EN
+If this slot is zero, the queue cannot hold any items, but
+works as a synchrization device.  
+A writer will block until a reader appears to take the item; 
+a reader will block until a writer appears to give the item.
+@c JP
+このスロットが0の場合、キューは要素を中に持つことはできませんが、同期デバイスとして動作します。
+書き込みスレッドは、その要素を受け取る読み出しスレッドが現れるまでブロックし、
+読み出しスレッドは、要素を渡してくれる書き込みスレッドが現れるまでブロックします。
 @c COMMON
 @end defivar
 @end deftp
@@ -17788,6 +17798,8 @@ Besides, if the value of its @code{max-length} slot
 is positive, and adding @var{obj}s makes the number of
 elements in @var{queue} exceeds @code{max-length}, 
 an error is signalled and @var{queue} won't be modified.
+(If @code{max-length} is zero, this procedure always fail.
+Use @code{enqueue/wait!} below.)
 @c JP
 @var{queue}がmtqueueの場合、渡されたオブジェクト全ての追加は
 アトミックに行われます。すなわち、途中に別スレッドが要素を挿入する
@@ -17795,6 +17807,8 @@ an error is signalled and @var{queue} won't be modified.
 持っており、この@code{enqueue!}の実行によってキューの要素数が
 @code{max-length}を越えることになる場合は、@var{queue}は
 変更されずエラーとなります。
+(@code{max-length}がゼロの場合、この手続きは常にエラーとなります。
+下に説明する@code{enqueue/wait!}を使ってください。)
 @c COMMON
 @end defun
 
@@ -17849,6 +17863,10 @@ emphasize it works with @code{queue-push!}.
 
 If @var{queue} is empty, @var{fallback} is returned if given,
 otherwise an error is signalled.
+
+If @var{queue} is an mtqueue and its @code{max-length} is zero,
+the queue is always empty.  Use @code{dequeue/wait!} to use
+such a queue as an synchronization device.
 @c JP
 キュー@var{queue}の先頭からひとつ要素を取って返します。
 二つの手続きは全く同じ動作をします。@code{queue-pop!}は@code{queue-push!}と
@@ -17856,6 +17874,10 @@ otherwise an error is signalled.
 
 キューが空の場合は、@var{fallback}が与えられていればそれが返され、
 そうでなければエラーが報告されます。
+
+キューがmtqueueでその@code{max-length}がゼロの場合、
+キューは常に空であるとみなされます。ゼロ長のキューを同期デバイスとして
+使う場合は@code{dequeue/wait!}を使ってください。
 @c COMMON
 @end defun
 
@@ -18020,6 +18042,9 @@ they wait until the absolute point of time the argument specifies.
 
 In case the call is blocked then timed out, the value of 
 @var{timeout-val} is returned, which defaults to @code{#f}.
+
+When @code{enqueue/wait!} and @code{queue-push/wait!} succeeds
+without hitting timeout, they return @code{#t}.
 @c JP
 これらの手続きは@var{mtqueue}に対して使うことができ、
 スレッド間同期を実現できます。
@@ -18038,6 +18063,9 @@ In case the call is blocked then timed out, the value of
  
 タイムアウトによりブロックが解かれた場合は、@var{timeout-val}で
 指定した値が返されます。@var{timeout-val}の省略時値は@code{#f}です。
+
+@code{enqueue/wait!}と@code{queue-push/wait!}は、
+タイムアウトせずに操作が成功した場合は@code{#t}を返します。
 @c COMMON
 @end defun
 

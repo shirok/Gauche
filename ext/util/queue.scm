@@ -32,7 +32,7 @@
 ;;;
 
 ;; This replaces pure Scheme implementation of util.queue.
-;; The motivation of rewrite is to support mt-safe queue efficiently,
+;; The motivation of rewriting is to support mt-safe queues efficiently,
 ;; for such a queue turned out to be a crucial component of concurrent
 ;; programming.
 ;;
@@ -104,12 +104,13 @@
  ;;
  "typedef struct MtQueueReq {"
  "  Queue q;"
- "  u_int maxlen;"
+ "  int maxlen;"     ;negative if unlimited
  "  ScmInternalMutex mutex;"
  "  ScmObj locker;"  ;thread holding the lock.  see the comment above.
  "  ScmInternalCond lockWait;"
  "  ScmInternalCond readerWait;"
  "  ScmInternalCond writerWait;"
+ "  int readerSem;" ;used by zero-length queue.  # of waiting reader
  "} MtQueue;"
 
  "SCM_CLASS_DECL(MtQueueClass);"
@@ -122,28 +123,40 @@
  "#define MTQ_LOCK(q)   (SCM_INTERNAL_MUTEX_LOCK (MTQ_MUTEX q))"
  "#define MTQ_UNLOCK(q) (SCM_INTERNAL_MUTEX_UNLOCK (MTQ_MUTEX q))"
  "#define MTQ_CV(q, kind) (MTQ(q)->kind)"
+ "#define MTQ_READER_SEM(q) (MTQ(q)->readerSem)"
 
 
- (define-cfn makemtq (klass::ScmClass* maxlen::u_int)
+ (define-cfn makemtq (klass::ScmClass* maxlen::int)
    (let* ([z::MtQueue*
            (cast MtQueue* (Scm_AllocateInstance klass (sizeof MtQueue)))])
      (SCM_SET_CLASS z klass)
      (set! (Q_LENGTH z) 0 (Q_HEAD z) SCM_NIL (Q_TAIL z) SCM_NIL
            (MTQ_MAXLEN z) maxlen
-           (MTQ_LOCKER z) SCM_FALSE)
+           (MTQ_LOCKER z) SCM_FALSE
+           (MTQ_READER_SEM z) 0)
      (SCM_INTERNAL_MUTEX_INIT (MTQ_MUTEX z))
      (SCM_INTERNAL_COND_INIT (MTQ_CV z lockWait))
      (SCM_INTERNAL_COND_INIT (MTQ_CV z readerWait))
      (SCM_INTERNAL_COND_INIT (MTQ_CV z writerWait))
      (return (SCM_OBJ z))))
+
+ (define-cfn mtq-maxlen-get (mtq::MtQueue*)
+   (let* ([ml::int (MTQ_MAXLEN mtq)])
+     (if (< ml 0) (return '#f) (return (SCM_MAKE_INT ml)))))
+
+ (define-cfn mtq-maxlen-set (mtq::MtQueue* maxlen) ::void
+   (cond [(SCM_UINTP maxlen) (set! (MTQ_MAXLEN mtq) (SCM_INT_VALUE maxlen))]
+         [(SCM_FALSEP maxlen) (set! (MTQ_MAXLEN mtq) -1)]
+         [else (SCM_TYPE_ERROR maxlen "non-negative fixnum or #f")]))
  
  (define-type <mtqueue> "MtQueue*" "mt-queue" "MTQP" "MTQ")
  (define-cclass <mtqueue>
    "MtQueue*" "MtQueueClass" ("QueueClass")
-   ((max-length :type <uint> :c-name "maxlen"))
+   ((max-length :getter "return mtq_maxlen_get(obj);"
+                :setter "mtq_maxlen_set(obj, value);"))
    (allocator 
     (let* ([ml (Scm_GetKeyword ':max-length initargs SCM_FALSE)])
-      (return (makemtq klass (?: (SCM_INTP ml) (SCM_INT_VALUE ml) 0)))))
+      (return (makemtq klass (?: (SCM_INTP ml) (SCM_INT_VALUE ml) -1)))))
    (printer 
     (Scm_Printf port "#<mt-queue %d @%p>" (Q_LENGTH obj) obj)))
 
@@ -183,6 +196,12 @@
 
  "#define CW_TIMEDOUT 1"
  "#define CW_INTR     2"
+ ;; (wait-cv Q SLOT PTIMESPEC STATUS)
+ ;;   Wait on Q's condition variable in SLOT.  PTIMESPEC is a pointer
+ ;;   to struct timespec or NULL, specifies timeout.  Must be called
+ ;;   while MTQ_MUTEX(Q) is held.  When returns, MTQ_MUTEX(Q) is held,
+ ;;   and status contains either 0 (condition met), CW_TIMEOUT (timed out),
+ ;;   or CW_INTR (interrupted).
  (define-cise-stmt wait-cv
    [(_ q slot ptimespec status)
     (let1 r (gensym)
@@ -197,13 +216,21 @@
              [else (pthread_cond_wait (& (-> ,q ,slot)) (& (MTQ_MUTEX ,q)))
                    (set! ,status 0)]))])
 
+ ;; (do-with-timeout Q RETVAL TIMEOUT TIMEOUT-VAL CVAR INIT WAIT-CHECK DO-OK)
+ ;;   Lock Q and execute INIT, and wait while WAIT-CHECK satisfies.  Once
+ ;;   WAIT-CHECK returns false, execute a statement DO-OK.  CVAR is a
+ ;;   condition variable (-> Q CVAR) to be waited on.
+ ;;   If TIMEOUT isn't NULL and waiting times out, RETVAL is set with
+ ;;   TIMEOUT-VAL.  (DO-OK is supposed to set RETVAL in it).
  (define-cise-stmt do-with-timeout
-   [(_ q retval timeout timeout-val wait-check cv-slot do-ok)
-    (let ([ts (gensym)] [pts (gensym)] [status (gensym)])
+   [(_ q retval timeout timeout-val cv-slot init wait-check do-ok)
+    (let ([ts (gensym)] [pts (gensym)] [status (gensym)] [inited (gensym)])
       `(let* ([,ts :: (struct timespec)] [,status :: int 0]
-              [,pts :: (struct timespec*) (Scm_GetTimeSpec ,timeout (& ,ts))])
+              [,pts :: (struct timespec*) (Scm_GetTimeSpec ,timeout (& ,ts))]
+              [,inited :: int FALSE])
          (while TRUE
            (with-mtq-mutex-lock ,q
+             (unless ,inited ,init (set! ,inited TRUE))
              (while TRUE
                (wait-mtq-big-lock ,q)
                (cond [,wait-check (wait-cv ,q ,cv-slot ,pts ,status)
@@ -221,7 +248,7 @@
  (define-cproc %unlock-mtq (q::<mtqueue>) ::<void> (release-mtq-big-lock q))
  (define-cproc %notify-writers (q::<mtqueue>) ::<void> (notify-writers q))
  (define-cproc %notify-readers (q::<mtqueue>) ::<void> (notify-readers q))
-)
+ )
 
 ;; A common pattern
 (define-syntax queue-op
@@ -232,20 +259,18 @@
       [(queue? q)   (proc #f)]
       [else (error "queue required, but got" q)])]))
 
-;; caller must hold lock
-(define (mtqueue-overflow? mtq cnt)
-  (let1 m (mtqueue-max-length mtq)
-    (and (> m 0) (< m (+ cnt (queue-length mtq))))))
-
 ;;;
 ;;; Constructors
 ;;;
 (inline-stub
  (define-cproc make-queue ()
    (result (makeq (& QueueClass))))
- (define-cproc make-mtqueue (:key (max-length::<int> 0))
-   (result (makemtq (& MtQueueClass) max-length)))
-
+ (define-cproc make-mtqueue (:key (max-length #f))
+   (result (makemtq (& MtQueueClass)
+                    (?: (SCM_UINTP max-length)
+                        (SCM_INT_VALUE max-length)
+                        -1))))
+ 
  ;; caller must hold lock
  (define-cproc %queue-set-content! (q::<queue> list) ::<void>
    (let* ([len::int (Scm_Length list)])
@@ -285,13 +310,25 @@
 ;;; Queries
 ;;;
 (inline-stub
- (define-cproc queue-length (q::<queue>) ::<int> Q_LENGTH)
- (define-cproc mtqueue-max-length (q::<mtqueue>) ::<int> MTQ_MAXLEN)
+ (define-cise-expr mtq-overflows        ;true if adding CNT elts overflows Q.
+   [(_ q cnt)
+    `(and (>= (MTQ_MAXLEN ,q) 0)
+          (> (+ ,cnt (Q_LENGTH ,q)) (MTQ_MAXLEN ,q)))])
 
+ ;; API
+ (define-cproc queue-length (q::<queue>) ::<int> Q_LENGTH)
+ (define-cproc mtqueue-max-length (q::<mtqueue>)
+   (result (?: (>= (MTQ_MAXLEN q) 0) (SCM_MAKE_INT (MTQ_MAXLEN q)) '#f)))
+
+ ;; caller must hold lock
+ (define-cproc %mtqueue-overflow? (q::<mtqueue> cnt::<int>) ::<boolean>
+   (SCM_MAKE_BOOL (mtq-overflows q cnt)))
+
+ ;; API
  (define-cproc mtqueue-room (q::<mtqueue>) ::<number>
    (let* ([room::int -1])
      (with-mtq-light-lock q
-       (when (> (MTQ_MAXLEN q) 0)
+       (when (>= (MTQ_MAXLEN q) 0)
          (set! room (- (MTQ_MAXLEN q) (Q_LENGTH q)))))
      (if (>= room 0)
        (result (SCM_MAKE_INT room))
@@ -306,7 +343,7 @@
          (* pt) (SCM_CAR (Q_TAIL q)))
    (return TRUE))
 
- (define-cproc queue-peek (q::<queue> :optional fallback) ::(<top> <top>)
+ (define-cproc %queue-peek (q::<queue> :optional fallback) ::(<top> <top>)
    (let* ([ok::int FALSE] [h] [t])
      (if (not (MTQP q))
        (set! ok (queue-peek-both-int q (& h) (& t)))
@@ -316,14 +353,15 @@
            [else (result fallback fallback)])))
  )
 
+;; APIs
 (define queue-front
   (case-lambda
-    [(q)         (values-ref (queue-peek q) 0)]
-    [(q default) (values-ref (queue-peek q default) 0)]))
+    [(q)         (values-ref (%queue-peek q) 0)]
+    [(q default) (values-ref (%queue-peek q default) 0)]))
 (define queue-rear
   (case-lambda
-    [(q)         (values-ref (queue-peek q) 1)]
-    [(q default) (values-ref (queue-peek q default) 1)]))
+    [(q)         (values-ref (%queue-peek q) 1)]
+    [(q default) (values-ref (%queue-peek q default) 1)]))
 (define (queue->list q)         (queue-op q (^_(list-copy (%qhead q)))))
 (define (find-in-queue pred q)  (queue-op q (^_(find pred (%qhead q)))))
 (define (any-in-queue pred q)   (queue-op q (^_(any pred (%qhead q)))))
@@ -333,47 +371,54 @@
 ;;; Enqueue/dequeue
 ;;;
 
-;; enqueue! - add item(s) to the tail
 (inline-stub
+ ;; internal enqueue - lock must be held.
  (define-cfn enqueue_int (q::Queue* cnt::u_int head tail) ::void
    (set! (Q_LENGTH q) (+ (Q_LENGTH q) cnt))
    (cond [(Q_EMPTY_P q) (set! (Q_HEAD q) head (Q_TAIL q) tail)]
          [else          (SCM_SET_CDR (Q_TAIL q) head)
                         (set! (Q_TAIL q) tail)]))
 
+ ;; to call internal enqueue from Scheme.  lock must be held.
  (define-cproc %enqueue! (q::<queue> cnt::<uint> head tail) ::<void>
    (enqueue_int q cnt head tail))
 
- (define-cise-expr mtq-overflows        ;true if adding CNT elts overflows Q.
-   [(_ q cnt)
-    `(and (> (MTQ_MAXLEN ,q) 0)
-          (> (+ ,cnt (Q_LENGTH ,q)) (MTQ_MAXLEN ,q)))])
-
- (define-cise-stmt mtq-write-op
+ ;; (q-write-op OP Q CNT HEAD TAIL)
+ ;;   If Q isn't mtq, simply call (OP Q CNT HEAD TAIL).
+ ;;   If Q is mtq, lock Q, and if queue isn't full, execute
+ ;;   (OP Q CNT HEAD TAIL) then notify waiting readers.
+ ;;   If queue is full, signals an error.
+ (define-cise-stmt q-write-op
    [(_ op q cnt head tail)
-    `(let* ([ovf::int FALSE])
-       (with-mtq-light-lock ,q
-         (cond [(mtq-overflows ,q ,cnt) (set! ovf TRUE)]
-               [else (,op ,q ,cnt ,head ,tail) (notify-readers ,q)]))
-       (when ovf (Scm_Error "queue is full: %S" ,q)))])
- 
+    `(if (MTQP ,q)
+       (let* ([ovf::int FALSE])
+         (with-mtq-light-lock ,q
+           (cond [(mtq-overflows ,q ,cnt) (set! ovf TRUE)]
+                 [else (,op ,q ,cnt ,head ,tail) (notify-readers ,q)]))
+         (when ovf (Scm_Error "queue is full: %S" ,q)))
+       (,op ,q ,cnt ,head ,tail))])
+
+ ;; API
  (define-cproc enqueue! (q::<queue> obj :rest more-objs)
    (let* ([head (Scm_Cons obj more-objs)] [tail] [cnt::u_int])
      (if (SCM_NULLP more-objs)
        (set! tail head cnt 1)
        (set! tail (Scm_LastPair more-objs) cnt (Scm_Length head)))
-     (if (not (MTQP q))
-       (enqueue_int q cnt head tail)
-       (mtq-write-op enqueue_int q cnt head tail))
+     (q-write-op enqueue_int q cnt head tail)
      (result (SCM_OBJ q))))
 
+ ;; API
  (define-cproc enqueue/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                          (timeout-val #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
      (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined (GAUCHE_USE_PTHREADS)"
-          (do-with-timeout q retval timeout timeout-val
-                           (mtq-overflows q 1) writerWait
+          (do-with-timeout q retval timeout timeout-val writerWait
+                           (begin)
+                           (?: (!= (MTQ_MAXLEN q) 0)
+                               (mtq-overflows q 1)
+                               (== (MTQ_READER_SEM q) 0))
                            (begin (enqueue_int (Q q) 1 cell cell)
+                                  (set! retval '#t)
                                   (notify-readers (Q q))))
           (enqueue_int (Q q) 1 cell cell))
      (result retval)))
@@ -388,7 +433,7 @@
   (queue-op q (^(mt?)
                 (let1 xs (pick (%qhead q) '() (cons obj more-objs))
                   (unless (null? xs)
-                    (when (and mt? (mtqueue-overflow? q (length xs)))
+                    (when (and mt? (%mtqueue-overflow? q (length xs)))
                       (error "queue is full:" q))
                     (let1 xs_ (reverse xs)
                       (%enqueue! q (length xs) xs_ (last-pair xs_))
@@ -410,17 +455,18 @@
        (set! head (Scm_ReverseX objs)
              tail (Scm_LastPair head)
              cnt  (Scm_Length head)))
-     (if (not (MTQP q))
-       (queue-push-int q cnt head tail)
-       (mtq-write-op queue-push-int q cnt head tail))
+     (q-write-op queue-push-int q cnt head tail)
      (result (SCM_OBJ q))))
 
  (define-cproc queue-push/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                             (timeout-val #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
      (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined(GAUCHE_USE_PTHREADS)"
-          (do-with-timeout q retval timeout timeout-val
-                           (mtq-overflows q 1) writerWait
+          (do-with-timeout q retval timeout timeout-val writerWait
+                           (begin)
+                           (?: (!= (MTQ_MAXLEN q) 0)
+                               (mtq-overflows q 1)
+                               (== (MTQ_READER_SEM q) 0))
                            (begin (queue_push_int (Q q) 1 cell cell)
                                   (notify-readers (Q q))))
           (queue_push_int (Q q) 1 cell cell))
@@ -436,7 +482,7 @@
                 (let* ([h (%qhead q)]
                        [xs (pick h (cons obj more-objs))])
                   (unless (eq? xs h)
-                    (when (and mt? (mtqueue-overflow? q (- (length xs) (length h))))
+                    (when (and mt? (%mtqueue-overflow? q (- (length xs) (length h))))
                       (error "queue is full" q))
                     (%queue-set-content! q xs)
                     (when mt? (%notify-readers q))))))
@@ -467,10 +513,14 @@
                                                      (timeout-val #f))
    (let* ([retval SCM_UNDEFINED])
      (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined (GAUCHE_USE_PTHREADS)"
-          (do-with-timeout q retval timeout timeout-val
-                           (Q_EMPTY_P q) readerWait
-                           (begin (dequeue_int (Q q) (& retval))
+          (do-with-timeout q retval timeout timeout-val readerWait
+                           (begin (post++ (MTQ_READER_SEM q))
+                                  (notify-writers (Q q)))
+                           (Q_EMPTY_P q)
+                           (begin (pre-- (MTQ_READER_SEM q))
+                                  (dequeue_int (Q q) (& retval))
                                   (notify-writers (Q q))))
+          ;; no threads
           (dequeue_int (Q q) (& retval)))
      (result retval)))
 

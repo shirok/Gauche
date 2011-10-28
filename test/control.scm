@@ -51,7 +51,7 @@
 
   (let ([pool (make-thread-pool 5)]
         [rvec (make-vector 10 #f)])
-    (test* "pool" '(5 #t 5 0)
+    (test* "pool" '(5 #t 5 #f)
            (list (length (~ pool'pool))
                  (every thread? (~ pool'pool))
                  (~ pool'size)

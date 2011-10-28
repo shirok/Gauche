@@ -1,5 +1,15 @@
 2011-10-28  Shiro Kawai  <shiro@acm.org>
 
+	* ext/util/queue.scm (make-mtqueue, enqueue/wait!, dequeue/wait!):
+	  Added support of zero-length mt-queue.  Zero-length queue cannot
+	  hold any values, bu t cna be used to synchronize producers
+	  and consumers---a thread can directly hand a value to another
+	  thread.  THIS IS AN INCOMPATIBLE CHANGE: It used to be that
+	  zero max-length meant to be unlimited length.  Now you have to
+	  give #f to max-length to make the mtqueue unlimited length.
+	* ext/threads/test.scm: Tests added for zero-length queue.
+	* lib/control/thread-pool.scm: Changed accordingly.
+
 	* lib/rfc/http.scm (http-proxy): Added a parameter to specify the
 	  default http proxy.
 
