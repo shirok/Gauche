@@ -14681,13 +14681,13 @@ If either of them is -1, the corresponding ownership is not changed.
 @defun sys-utime path :optional atime mtime
 @c EN
 Change the file's access time and modification time to @var{atime}
-and @var{mtime}, respectively.   If @var{atime} and @var{mtime} is
-omitted, they are set to the current time.
+and @var{mtime}, respectively.   If @var{atime} and/or @var{mtime}
+are omitted or @code{#f}, they are set to the current time.
 See also @code{touch-file} (@xref{File operations}).
 @c JP
 ファイルのアクセスタイムと変更タイムを@var{atime}と@var{mtime}が示す
-値にセットします。@var{atime}と@var{mtime}が省略された場合は現在の時刻が
-使われます。
+値にセットします。@var{atime}と@var{mtime}が省略された場合もしくは
+@code{#f}の場合は現在の時刻が使われます。
 @ref{File operations}の@code{touch-file}も参照して下さい。
 @c COMMON
 @end defun

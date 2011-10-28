@@ -62,7 +62,7 @@
           file-mtime=? file-mtime<? file-mtime<=? file-mtime>? file-mtime>=?
           file-atime=? file-atime<? file-atime<=? file-atime>? file-atime>=?
           file-ctime=? file-ctime<? file-ctime<=? file-ctime>? file-ctime>=?
-          touch-file copy-file move-file 
+          touch-file touch-files copy-file move-file 
           ;copy-files move-files
           remove-files delete-files
           null-device console-device
@@ -613,14 +613,28 @@
 ;;; File operation
 ;;;
 
-(define (touch-file pathname)
-  (if (sys-access pathname F_OK)
-    (sys-utime pathname)
-    (close-output-port (open-output-file pathname)))
+(define (touch-file pathname :key (time #f) (type #f) (create #t))
+  (unless (or (not time) (and (real? time) (not (negative? time))))
+    (error "bad value for time: #f or nonnegative real is expected, got:" time))
+  (cond
+   [(sys-access pathname F_OK)
+    (case type
+      [(#f) (sys-utime pathname time time)]
+      [(mtime) (let1 s (sys-stat pathname)
+                 (sys-utime pathname (~ s'atime) time))]
+      [(atime) (let1 s (sys-stat pathname)
+                 (sys-utime pathname time (~ s'mtime)))]
+      [else (error "bad value for type: #f, 'atime, or 'mtime is expected, got:"
+                   type)])]
+   [create
+    (close-output-port (open-output-file pathname))
+    (when time (touch-file pathname :time time :type type))])
   (values))
 
-(define (touch-files pathnames)
-  (for-each touch-file pathnames))
+(define (touch-files pathnames :key (time (undefined))
+                                    (type (undefined))
+                                    (create (undefined)))
+  (for-each (cut touch-file <> :time time :type type :create create) pathnames))
 
 ;; copy-file
 ;;  if-exists     - :error :supersede :backup #f

@@ -1,3 +1,11 @@
+2011-10-28  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (touch-file, touch-files): Extended to
+	  take :time, :type and :create options; these are similar switches
+	  the touch(1) command has.  Also, touch-files hasn't been exported
+	  although the manual has its entry.
+	* ext/file/test.scm: Added tests accordingly.
+
 2011-10-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.h (ScmRegexpRec), src/regexp.c (rc3, Scm_RegExec):

@@ -402,10 +402,31 @@
 (test* "file-equal?" #t
        (file-equal? "test.out/test4.o" "test.out/test5.o"))
 
-(test* "touch-file" #t
-       (and (not (file-exists? "test.out/touched"))
-            (begin (touch-file "test.out/touched")
-                   (file-exists? "test.out/touched"))))
+(let1 touched "test.out/touched"
+  (define (times file)
+    (let1 s (sys-stat file)
+      (list (~ s'atime) (~ s'mtime))))
+  (test* "touch-file :create #f" #t
+         (and (not (file-exists? touched))
+              (begin (touch-file touched :create #f)
+                     (not (file-exists? touched)))))
+  (test* "touch-file" #t
+         (and (not (file-exists? touched))
+              (begin (touch-file touched)
+                     (file-exists? touched))))
+  (test* "touch-file :time" '(1 1)
+         (begin (touch-file touched :time 1) (times touched)))
+  (test* "touch-file :time :type" '(10 1)
+         (begin (touch-file touched :time 10 :type 'atime) (times touched)))
+  (test* "touch-file :time :type" '(10 20)
+         (begin (touch-file touched :time 20 :type 'mtime) (times touched)))
+
+  (test* "touch-files" '("test.out/touched" "test.out/touched1"
+                         "test.out/touched2" "test.out/touched3")
+         (begin (touch-files '("test.out/touched" "test.out/touched1"
+                               "test.out/touched2" "test.out/touched3"))
+                (sort (glob "test.out/touched*"))))
+  )
 
 (test* "copy-file (normal)" #t
        (and (copy-file "test.out/test5.o" "test.out/test.copy")

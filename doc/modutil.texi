@@ -4666,18 +4666,44 @@ defined.
 @subsection File operations
 @c NODE ファイル操作
 
-@defun touch-file path
-@defunx touch-files paths
+@defun touch-file path :key (time #f) (type #f) (create #t)
+@defunx touch-files paths :key (time #f) (type #f) (create #t)
 @c EN
 Updates timestamp of @var{path}, or each path in the list @var{paths},
 to the current time.  If the specified path
-doesn't exist, a new file with size zero is created.
-See also @code{sys-utime} (@xref{File stats}).
+doesn't exist, a new file with size zero is created, unless
+the keyword argument @var{create} is @code{#f}.
+
+If the keyword argument @var{time} is given and not @code{#f}, it
+must be a nonnegative real number.  It is used as the timestamp value
+instead of the current time.
+
+The keyword argument @var{type} can be @code{#f} (default), a symbol
+@code{atime} or @code{mtime}.  If it is a symbol, only the access time
+or modification time is updated.
+
+Note: @code{touch-files} processes one file at a time, so the timestamp
+of each file may not be exactly the same.
+
+These procedures are built on top of the system call
+@code{sys-utime} (@xref{File stats}).
 @c JP
 @var{path}もしくはリスト@var{paths}中の各パスの
 タイムスタンプを現在の時刻に更新します。
-指定されたパスが存在しなかった場合はその名前で大きさゼロのファイルが作成されます。
-@ref{File stats}の@code{sys-utime}も参照して下さい。
+指定されたパスが存在しなかった場合、キーワード引数@var{create}が@code{#f}でなければ、
+その名前で大きさゼロのファイルが作成されます。
+
+キーワード引数@var{time}が与えられて@code{#f}でない場合、それは
+非負の実数でなければなりません。現在の時刻のかわりにその値がタイムスタンプとして使われます。
+
+キーワード引数@var{type}は@code{#f}(デフォルト)か、シンボル@code{atime}もしくは
+@code{mtime}です。シンボルの場合は、それぞれアクセス時刻か変更時刻のみが更新されます。
+
+註：@code{touch-files}はファイルをひとつづつ処理するので、各ファイルの
+タイムスタンプが完全に同一にはならない可能性があります。
+
+これらの手続きはシステムコール@code{sys-utime}を使って作られています
+(@ref{File stats}参照)。
 @c COMMON
 @end defun
 
