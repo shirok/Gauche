@@ -435,7 +435,8 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
             SCM_UNWIND_PROTECT {
                 ScmObj val = Scm_ApplyRec0(lp->generator);
                 ScmObj newgen = (vm->numVals == 1)? lp->generator : vm->vals[0];
-
+                vm->numVals = 1; /* make sure the extra val won't leak out */
+                
                 if (SCM_EOFP(val)) {
                     lp->item = SCM_NIL;
                     lp->generator = SCM_NIL;

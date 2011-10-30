@@ -1,3 +1,8 @@
+2011-10-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/lazy.c (Scm_ForceLazyPair): Fixed a bug that the second value
+	  from the generator could have leaked out.
+
 2011-10-28  Shiro Kawai  <shiro@acm.org>
 
 	* ext/util/queue.scm (make-mtqueue, enqueue/wait!, dequeue/wait!):

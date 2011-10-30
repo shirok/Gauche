@@ -279,6 +279,11 @@
   (test* "corecursion doesn't allow dotted list"
          '(1 2 3 5 8 13 21 34 55 89)
          (lim-fib 0 1 10))
+
+  ;; See Scm_ForceLazyPair(); internally used second return value from
+  ;; the generator shouldn't be leaked out.
+  (test* "make sure internal stuff won't leak out" '(3)
+         (receive x (list-ref (fib 0 1) 2) x))
   )
 
 ;; preventing recursive forcing
