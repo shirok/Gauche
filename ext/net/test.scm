@@ -117,10 +117,10 @@
                (u8vector-set! uvresult dig (logand val #xff))
                (loop (ash val -8) (- dig 1)))))
       (test* #`"inet-string->address  (,desc)" `(,exp-val ,exp-vers)
-             (receive r (inet-string->address input) r))
+             (values->list (inet-string->address input)))
       (test* #`"inet-string->address! (,desc)" `(,uvresult ,exp-vers)
-             (let* ((buf (make-u8vector 16 0))
-                    (ver (inet-string->address! input buf)))
+             (let* ([buf (make-u8vector 16 0)]
+                    [ver (inet-string->address! input buf)])
                (list buf ver)))))
 
   (addr-test "v4-1" "127.0.0.1" #x7f000001 AF_INET)

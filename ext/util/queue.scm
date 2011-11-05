@@ -478,7 +478,7 @@
     (cond [(null? ins) lis]
           [(member (car ins) lis cmp) (pick lis (cdr ins))]
           [else (pick (cons (car ins) lis) (cdr ins))]))
-  (queue-op q (^(mt?)
+  (queue-op q (^[mt?]
                 (let* ([h (%qhead q)]
                        [xs (pick h (cons obj more-objs))])
                   (unless (eq? xs h)
@@ -543,7 +543,7 @@
 
 (define (remove-from-queue! pred q)
   (rlet1 removed? #f
-    (queue-op q (^(mt?)
+    (queue-op q (^[mt?]
                   (let loop ([rs '()] [xs (%qhead q)] [hit #f])
                     (cond [(null? xs)
                            (when hit 

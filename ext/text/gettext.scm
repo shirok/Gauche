@@ -117,18 +117,18 @@
     (else (gauche-character-encoding))))
 
 (define (gettext-file-update-properties! f)
-  (let ((filename (filename-of f))
-        (encoding (gettext-file-guess-encoding f))
-        (properties '()))
+  (let ([filename (filename-of f)]
+        [encoding (gettext-file-guess-encoding f)]
+        [properties '()])
     (set! (type-of f) (if (string-suffix? ".mo" filename) 'mo 'po))
     ;;(warn "gettext: file: ~S guess-encoding: ~S" filename encoding)
     (when (file-is-readable? filename)
-      (and-let* ((property-msg (lookup-message f "" #f encoding)))
+      (and-let* ([property-msg (lookup-message f "" #f encoding)])
         (set! properties
               (call-with-input-string property-msg rfc822-header->list))
-        (and-let* ((type-ls (assoc "content-type" properties))
-                   (type (cadr type-ls))
-                   (m (#/charset=([^\s]+)/ type)))
+        (and-let* ([type-ls (assoc "content-type" properties)]
+                   [type (cadr type-ls)]
+                   [m (#/charset=([^\s]+)/ type)])
           ;;(warn "gettext: found encoding: ~S" (rxmatch-substring m 1))
           (set! encoding (rxmatch-substring m 1)))
         ;;(warn "gettext: file: ~S encoding: ~S" filename encoding)
@@ -138,17 +138,17 @@
 
 (define (get-plural-index! gfile)
   (or
-   (and-let* ((properties (properties-of gfile))
-              (plural-forms0 (assoc-ref properties "plural-forms"))
-              (plural-forms (if (pair? plural-forms0)
+   (and-let* ([properties (properties-of gfile)]
+              [plural-forms0 (assoc-ref properties "plural-forms")]
+              [plural-forms (if (pair? plural-forms0)
                               (string-join plural-forms0)
-                              plural-forms0))
-              (m (#/\bplural=([^\;]*)\;/i plural-forms))
-              (f (C->Scheme (m 1))))
+                              plural-forms0)]
+              [m (#/\bplural=([^\;]*)\;/i plural-forms)]
+              [f (C->Scheme (m 1))])
      ;;(warn "gettext: found plural-form: ~S" (m 1))
      (set! (plural-index-of gfile) f)
      f)
-   (lambda (n) 0)))
+   (^n 0)))
 
 ;; take a list or a single argument which is interpretted as a one
 ;; element list
@@ -179,9 +179,8 @@
 
 ;; bind the default domain
 (define (textdomain domain . opt)
-  (let ((accessor (apply make-gettext domain opt)))
-    (set! default-accessor accessor)
-    accessor))
+  (rlet1 accessor (apply make-gettext domain opt)
+    (set! default-accessor accessor)))
 
 (define (bindtextdomain domain dirs)
   (hash-table-put! domain-message-paths domain (listify dirs)))
@@ -199,103 +198,100 @@
   ;; read a sequence of lines in "" starting w/ an initial string.
   ;; doesn't affect trailing lines.
   (define (read-str str)
-    (let reader ((res (list str)))
-      (or (and-let* ((ch (peek-char))
-                     ((not (eof-object? ch)))
-                     ((eqv? ch #\"))
-                     (line (read-line))
-                     ((#/^\s*".*"/ line)))
+    (let reader ([res (list str)])
+      (or (and-let* ([ch (peek-char)]
+                     [(not (eof-object? ch))]
+                     [(eqv? ch #\")]
+                     [line (read-line)]
+                     [(#/^\s*".*"/ line)])
             (reader (cons (call-with-input-string line read) res)))
           (string-concatenate-reverse res))))
 
   (define (read-plural default)
-    (let reader ((res (list default)))
-      (cond ((and-let* (((eqv? (peek-char) #\m))
-                        (line (read-line))
-                        (m (#/^msgstr\[(\d+)\]\s+(.*)/i line)))
-               m)
-             => (lambda (m)
-                  (reader (cons (cons (string->number (m 1))
-                                      (read-str (call-with-input-string
-                                                    (m 2) read)))
-                                res))))
-            (else (reverse res)))))
+    (let reader ([res (list default)])
+      (cond [(and-let* ([(eqv? (peek-char) #\m)]
+                        [line (read-line)])
+               (#/^msgstr\[(\d+)\]\s+(.*)/i line))
+             => (^m (reader (cons (cons (string->number (m 1))
+                                        (read-str (call-with-input-string
+                                                      (m 2) read)))
+                                  res)))]
+            [else (reverse res)])))
 
   ;; read from the file if it exists
   ;;(warn "(lookup-po-message ~S ~S ~S)" file msg encoding)
   (and
    (file-is-readable? file)
-   (guard (err (else (warn "error reading from file ~S: ~S" file err) #f))
+   (guard (err [else (warn "error reading from file ~S: ~S" file err) #f])
      (with-input-from-file file
-       (lambda ()
+       (^[]
          ;;(warn "reading: ~S" file)
-         (let loop ((line (read-line)))
-           (cond ((eof-object? line) #f)
-                 ((string-prefix? "msgid " line)
-                  (let ((msgid (read-str (tail-str line))))
+         (let loop ([line (read-line)])
+           (cond [(eof-object? line) #f]
+                 [(string-prefix? "msgid " line)
+                  (let1 msgid (read-str (tail-str line))
                     ;;(warn "msgid: ~S\n" msgid)
-                    (cond ((string=? msgid msg)
-                           (let loop2 ((line (read-line)))
-                             (cond ((eof-object? line) #f)
-                                   ((string-prefix? "msgid_plural " line)
-                                    (read-plural (read-str (tail-str line))))
-                                   ((string-prefix? "msgstr " line)
-                                    (read-str (tail-str line)))
-                                   (else (loop2 (read-line))))))
-                          (else (loop (read-line))))))
-                 (else (loop (read-line))))))
+                    (cond [(string=? msgid msg)
+                           (let loop2 ([line (read-line)])
+                             (cond [(eof-object? line) #f]
+                                   [(string-prefix? "msgid_plural " line)
+                                    (read-plural (read-str (tail-str line)))]
+                                   [(string-prefix? "msgstr " line)
+                                    (read-str (tail-str line))]
+                                   [else (loop2 (read-line))]))]
+                          [else (loop (read-line))]))]
+                 [else (loop (read-line))])))
        :encoding encoding))))
 
 (define (lookup-mo-message file msg msg2 encoding)
   ;;(warn "(lookup-mo-message ~S ~S ~S)" file msg encoding)
   (and
    (file-is-readable? file)
-   (guard (err (else (warn "error reading from file ~S: ~S" file err) #f))
+   (guard (err [else (warn "error reading from file ~S: ~S" file err) #f])
      (with-input-from-file file
-       (lambda ()
+       (^[]
          (define (search read-int)
-           (let* ((key (if msg2 (string-append msg "\0" msg2) msg))
-                  (format (read-int))
-                  (count (read-int))
-                  (src-offset (read-int))
-                  (trans-offset (read-int))
-                  (hash-size (read-int))
-                  (hash-offset (read-int))
-                  (diff (- trans-offset src-offset))
-                  (end (+ src-offset (* (- count 1) 8))))
+           (let* ([key (if msg2 (string-append msg "\0" msg2) msg)]
+                  [format (read-int)]
+                  [count (read-int)]
+                  [src-offset (read-int)]
+                  [trans-offset (read-int)]
+                  [hash-size (read-int)]
+                  [hash-offset (read-int)]
+                  [diff (- trans-offset src-offset)]
+                  [end (+ src-offset (* (- count 1) 8))])
              (define (string-at pos)
                (port-seek (current-input-port) pos)
-               (let* ((len (read-int))
-                      (off (read-int)))
+               (let* ([len (read-int)]
+                      [off (read-int)])
                  (port-seek (current-input-port) off)
                  ;;(warn "string-at: pos: ~S => len: ~S off: ~S" pos len off)
                  (ces-convert (read-block len) encoding)))
              ;;(warn "search ~S ~S ~S ~S ~S" format count src-offset trans-offset end)
              (cond ;; check endpoints
-              ((string=? key (string-at src-offset))
-               (string-at (+ src-offset diff)))
-              ((and (> end src-offset) (string=? key (string-at end)))
-               (string-at (+ end diff)))
+              [(string=? key (string-at src-offset))
+               (string-at (+ src-offset diff))]
+              [(and (> end src-offset) (string=? key (string-at end)))
+               (string-at (+ end diff))]
               (else ;; binary search
-               (let loop ((lo 0) (hi (- count 1)))
+               (let loop ([lo 0] [hi (- count 1)])
                  ;;(warn "(loop ~S ~S)" lo hi)
                  (if (>= lo hi)
                    #f
-                   (let* ((mid (+ lo (quotient (- hi lo) 2)))
-                          (pos (+ src-offset (* mid 8)))
-                          (str (string-at pos)))
-                     (cond
-                      ((string<? key str)
-                       (if (>= mid hi) #f (loop lo mid)))
-                      ((string>? key str)
-                       (if (<= mid lo) #f (loop mid hi)))
-                      (else ;; match
-                       (string-at (+ pos diff)))))))))))
-         (let ((magic (read-binary-uint32 (current-input-port) 'big-endian)))
+                   (let* ([mid (+ lo (quotient (- hi lo) 2))]
+                          [pos (+ src-offset (* mid 8))]
+                          [str (string-at pos)])
+                     (cond [(string<? key str)
+                            (if (>= mid hi) #f (loop lo mid))]
+                           [(string>? key str)
+                            (if (<= mid lo) #f (loop mid hi))]
+                           [else ;; match
+                            (string-at (+ pos diff))]))))))))
+         (let1 magic (read-binary-uint32 (current-input-port) 'big-endian)
            (case magic
-             ((#xde120495) (search (cut read-binary-uint32 #f 'little-endian)))
-             ((#x950412de) (search (cut read-binary-uint32 #f 'big-endian)))
-             (else (warn "invalid magic: ~S" magic) #f))))))))
+             [(#xde120495) (search (cut read-binary-uint32 #f 'little-endian))]
+             [(#x950412de) (search (cut read-binary-uint32 #f 'big-endian))]
+             [else (warn "invalid magic: ~S" magic) #f])))))))
 
 (define (lookup-message gfile msg msg2 . opt)
   ((if (eq? (type-of gfile) 'mo) lookup-mo-message lookup-po-message)
@@ -306,114 +302,110 @@
 
 (define (C->Scheme str)
   (define (read-number c)
-    (let loop ((ls (list c)))
-      (let ((c2 (peek-char)))
-        (cond ((and (not (eof-object? c2)) (char-numeric? c2))
-               (read-char) (loop (cons c2 ls)))
-              (else (string->number (list->string (reverse ls))))))))
+    (let loop ([ls (list c)])
+      (let1 c2 (peek-char)
+        (cond [(and (not (eof-object? c2)) (char-numeric? c2))
+               (read-char) (loop (cons c2 ls))]
+              [else (string->number (list->string (reverse ls)))]))))
   (define (read-comment)
     (read-char)
-    (let loop ((c (read-char)))
+    (let loop ([c (read-char)])
       (if (eof-object? c)
         c ;; maybe signal error
         (if (eqv? c #\*)
-          (let ((c2 (read-char)))
+          (let1 c2 (read-char)
             (if (eqv? c2 #\/) #f (loop c2)))
           (loop (read-char))))))
   (define (next-token)
-    (let ((c (read-char)))
+    (let1 c (read-char)
       (if (eof-object? c)
         c
         (case c
-          ((#\() 'open)
-          ((#\)) 'close)
-          ((#\/) (if (eqv? (peek-char) #\*) (read-comment) '/))
-          ((#\- #\+ #\* #\% #\? #\:)
-           (string->symbol (string c)))
-          ((#\&) (if (eqv? (peek-char) c) (begin (read-char) 'and) 'logand))
-          ((#\|) (if (eqv? (peek-char) c) (begin (read-char) 'or) 'logior))
-          ((#\! #\> #\<)
-           (cond ((eqv? (peek-char) #\=)
-                  (read-char) (string->symbol (string c #\=)))
-                 (else (string->symbol (string c)))))
-          ((#\=)
-           (cond ((eqv? (peek-char) #\=) (read-char) '==)
-                 (else (warn "invalid assignment in C code") #f)))
-          ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)
-           (read-number c))
-          ((#\n) 'n)
-          ((#\space #\newline) (next-token))
-          (else (warn "invalid character in C code: ~S" c) #f)))))
+          [(#\() 'open]
+          [(#\)) 'close]
+          [(#\/) (if (eqv? (peek-char) #\*) (read-comment) '/)]
+          [(#\- #\+ #\* #\% #\? #\:)
+           (string->symbol (string c))]
+          [(#\&) (if (eqv? (peek-char) c) (begin (read-char) 'and) 'logand)]
+          [(#\|) (if (eqv? (peek-char) c) (begin (read-char) 'or) 'logior)]
+          [(#\! #\> #\<)
+           (cond [(eqv? (peek-char) #\=)
+                  (read-char) (string->symbol (string c #\=))]
+                 [else (string->symbol (string c))])]
+          [(#\=)
+           (cond [(eqv? (peek-char) #\=) (read-char) '==]
+                 [else (warn "invalid assignment in C code") #f])]
+          [(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)
+           (read-number c)]
+          [(#\n) 'n]
+          [(#\space #\newline) (next-token)]
+          [else (warn "invalid character in C code: ~S" c) #f]))))
   (define (C-parse str)
     (define (precedence x) ;; lower value is higher precedence
       (case x
-        ((**) 10)           ((&) 70)
-        ((! ~) 20)          ((^ logand logior) 80)
-        ((* / %) 30)        ((and) 90)
-        ((+ -) 40)          ((or) 100)
-        ((< > <= >=) 50)    ((?) 110)
-        ((== != <=>) 60)    (else 120)))
+        [(**) 10]           [(&) 70]
+        [(! ~) 20]          [(^ logand logior) 80]
+        [(* / %) 30]        [(and) 90]
+        [(+ -) 40]          [(or) 100]
+        [(< > <= >=) 50]    [(?) 110]
+        [(== != <=>) 60]    [else 120]))
     (define (parse1)
-      (let ((x (next-token)))
-        (cond ((not x) (parse1))
-              ((eof-object? x) 'eof)
-              ((eq? x 'open) (parse-until 'close))
-              ((memq x '(! ~)) `(,x ,(parse1)))
-              (else x))))
+      (let1 x (next-token)
+        (cond [(not x) (parse1)]
+              [(eof-object? x) 'eof]
+              [(eq? x 'open) (parse-until 'close)]
+              [(memq x '(! ~)) `(,x ,(parse1))]
+              [else x])))
     (define (parse-until end)
       (define (group op left right)
-        (cond
-          ((or (eq? right end) (eq? right 'eof))
-           (warn "expected 2nd argument to: ~S" op)
-           `(op ,left))
-          ((eq? op 'and)
-           `(if (zero? ,left) 0 ,right))
-          ((eq? op 'or)
-           `(if (zero? ,left) ,right 1))
-          (else
-           `(,op ,left ,right))))
+        (cond [(or (eq? right end) (eq? right 'eof))
+               (warn "expected 2nd argument to: ~S" op)
+               `(op ,left)]
+              [(eq? op 'and) `(if (zero? ,left) 0 ,right)]
+              [(eq? op 'or)  `(if (zero? ,left) ,right 1)]
+              [else          `(,op ,left ,right)]))
       (define (join x stack)
         (if (null? stack)
           x
           (join (group (car stack) (cadr stack) x) (cddr stack))))
-      (let ((init (parse1)))
+      (let1 init (parse1)
         (if (equal? init end)
           '()
-          (let loop ((left init) (op (parse1)) (stack '()))
+          (let loop ([left init] [op (parse1)] [stack '()])
             (cond
-              ((eq? op end) (join left stack))
-              ((eq? op 'eof)
-               (warn "unexpected #<eof>")
-               (join left stack))
-              ((eq? op '?) ;; trinary ? : (right-assoc)
-               (let* ((pass (parse-until '|:|))
-                      (fail (parse1))
-                      (op2 (parse1)))
-                 (cond
-                   ((or (eq? op2 end) (eq? op2 'eof))
-                    `(if (zero? ,left) ,fail ,pass))
-                   ((< (precedence op) (precedence op2))
-                    (loop `(if (zero? ,left) ,fail ,pass) op2 stack))
-                   (else
-                    (join `(if (zero? ,left) ,(loop fail op2 '()) ,pass) stack)))))
-              (else ;; assume a (left-assoc) binary operator
-               (let* ((right (parse1))
-                      (op2 (parse1)))
-                 (cond
-                   ((or (eq? op2 end) (eq? op2 'eof))
-                    (join (group op left right) stack))
-                   ((<= (precedence op) (precedence op2))
-                    ;; op2 has less than or equal precedence, group
-                    (let loop2 ((x (group op left right)) (s stack))
-                      (if (and (pair? s)
-                               (< (precedence (car s)) (precedence op2)))
-                        (loop2 (group (car s) (cadr s) x) (cddr s))
-                        (loop x op2 s))))
-                   (else
-                    ;; op2 has higher precedence, push on the stack
-                    (loop right op2 (cons op (cons left stack))))))))))))
+             [(eq? op end) (join left stack)]
+             [(eq? op 'eof)
+              (warn "unexpected #<eof>")
+              (join left stack)]
+             [(eq? op '?) ;; trinary ? : (right-assoc)
+              (let* ([pass (parse-until '|:|)]
+                     [fail (parse1)]
+                     [op2 (parse1)])
+                (cond [(or (eq? op2 end) (eq? op2 'eof))
+                       `(if (zero? ,left) ,fail ,pass)]
+                      [(< (precedence op) (precedence op2))
+                       (loop `(if (zero? ,left) ,fail ,pass) op2 stack)]
+                      [else
+                       (join `(if (zero? ,left) ,(loop fail op2 '()) ,pass)
+                             stack)]))]
+             [else ;; assume a (left-assoc) binary operator
+              (let* ([right (parse1)]
+                     [op2 (parse1)])
+                (cond
+                 [(or (eq? op2 end) (eq? op2 'eof))
+                  (join (group op left right) stack)]
+                 [(<= (precedence op) (precedence op2))
+                  ;; op2 has less than or equal precedence, group
+                  (let loop2 ([x (group op left right)] (s stack))
+                    (if (and (pair? s)
+                             (< (precedence (car s)) (precedence op2)))
+                      (loop2 (group (car s) (cadr s) x) (cddr s))
+                      (loop x op2 s)))]
+                 [else
+                  ;; op2 has higher precedence, push on the stack
+                  (loop right op2 (cons op (cons left stack)))]))])))))
     (with-input-from-string str
-      (lambda () (parse-until 'eof))))
+      (^[] (parse-until 'eof))))
   (define (map-C-names x)
     ;; C routines avoid boolean results
     (define (C:! a)    (if (zero? a) 1 0))
@@ -424,18 +416,15 @@
     (define (C:>= a b) (if (>= a b) 1 0))
     (define (C:<= a b) (if (<= a b) 1 0))
     (define (C:>> a b) (ash a (- b)))
-    (cond
-      ((symbol? x)
-       (case x ;; map symbols directly to procs
-         ((/) quotient) ((%) modulo) ((**) expt) ((!) C:!)
-         ((^) logxor)   ((<<) ash)   ((>>) C:>>)
-         ((==) C:==)    ((!=) C:!=)  ((>) C:>)
-         ((<) C:<)      ((>=) C:>=)  ((<=) C:<=)
-         (else x)))
-      ((pair? x)
-       (cons (map-C-names (car x)) (map-C-names (cdr x))))
-      (else x)))
-  (let ((body (map-C-names (C-parse str))))
+    (cond [(symbol? x) (case x ;; map symbols directly to procs
+                         [(/) quotient] [(%) modulo] [(**) expt] [(!) C:!]
+                         [(^) logxor]   [(<<) ash]   [(>>) C:>>]
+                         [(==) C:==]    [(!=) C:!=]  [(>) C:>]
+                         [(<) C:<]      [(>=) C:>=]  [(<=) C:<=]
+                         [else x])]
+          [(pair? x) (cons (map-C-names (car x)) (map-C-names (cdr x)))]
+          [else x]))
+  (let1 body (map-C-names (C-parse str))
     ;; could build from chained closures w/o using eval but this is
     ;; faster at runtime
     ;;(warn "code: ~S" (C-parse str))
@@ -445,12 +434,10 @@
 ;; internal routines for building/caching files and lookups
 
 (define (split-langs lang)
-  (let ((res (list lang)))
-    (for-each
-     (lambda (sep)
-       (and-let* ((i (string-index lang sep)))
-         (push! res (substring lang 0 i))))
-     '(#\. #\_))
+  (let1 res (list lang)
+    (for-each (^[sep] (and-let* ([i (string-index lang sep)])
+                        (push! res (substring lang 0 i))))
+              '(#\. #\_))
     (reverse res)))
 
 ;; (make-gettext-interal domain locale dirs cdir cached?)
@@ -462,52 +449,49 @@
     (define suffixes '(".mo" ".po"))
     (reverse
      (filter
-      (lambda (f) (file-is-readable? (filename-of f)))
+      (^f (file-is-readable? (filename-of f)))
       (map
-       (lambda (x)
-         (make-gettext-file
-          (string-append (caddr x) "/" (car x) "/" cdir "/" (cadr x) (cadddr x))
-          (car x)))
+       (^x (make-gettext-file
+            (string-append (caddr x) "/" (car x) "/" cdir "/" (cadr x) (cadddr x))
+            (car x)))
        (cartesian-product (list (append-map split-langs locale)
                                 domain dirs suffixes))))))
 
-  (let ((files (make-file-list))
-        (cache (make-cache)))
+  (let ([files (make-file-list)]
+        [cache (make-cache)])
 
-    (define (search msg . opt)
+    (define (search msg :optional (msg2 #f) (n #f))
       (if (and cached? (hash-table-exists? cache msg))
         (hash-table-get cache msg #f)
-        (let-optionals* opt ((msg2 #f) (n #f))
-          (let ((split? (number? n)))
-            (any
-             (lambda (f)
-               (unless (properties-of f)
-                 (gettext-file-update-properties! f))
-               (and-let* ((x0 (lookup-message f msg msg2))
-                          (x (if (and split? (eq? (type-of f) 'mo))
-                               (cons (or msg2 msg)
-                                     (let ((l (string-split x0 #\null)))
-                                       (map cons (iota (length l)) l)))
-                               x0))
-                          (res (cons x f)))
-                 (if cached? (hash-table-put! cache msg res))
-                 res))
-             files)))))
+        (let1 split? (number? n)
+          (any (^f (unless (properties-of f)
+                     (gettext-file-update-properties! f))
+                   (and-let* ([x0 (lookup-message f msg msg2)]
+                              [x (if (and split? (eq? (type-of f) 'mo))
+                                   (cons (or msg2 msg)
+                                         (let1 l (string-split x0 #\null)
+                                           (map cons (iota (length l)) l)))
+                                   x0)]
+                              [res (cons x f)])
+                     (if cached? (hash-table-put! cache msg res))
+                     res))
+               files))))
 
     (define (get msg)
-      (let ((res (search msg)))
-        (if res (if (pair? (car res)) (caar res) (car res)) msg)))
+      (if-let1 res (search msg)
+        (if (pair? (car res)) (caar res) (car res))
+        msg))
 
     (define (nget msg . opt) ;; [msg2] [n]
-      (let ((msg2 #f) (n #f))
+      (let ([msg2 #f] [n #f])
         ;; option parsing, both optional
         (when (pair? opt)
-          (let ((x (car opt))) (if (number? x) (set! n x) (set! msg2 x)))
+          (let1 x (car opt) (if (number? x) (set! n x) (set! msg2 x)))
           (when (pair? (cdr opt))
-            (let ((x (cadr opt))) (if (number? x) (set! n x) (set! msg2 x)))))
-        (let ((res (search msg msg2 n)))
+            (let1 x (cadr opt) (if (number? x) (set! n x) (set! msg2 x)))))
+        (let1 res (search msg msg2 n)
           (if (pair? res)
-            (let ((plural-index (get-plural-index! (cdr res))))
+            (let1 plural-index (get-plural-index! (cdr res))
               (or (assv-ref (cdar res) (plural-index (or n 1)))
                   (if (eqv? n 1) msg (caar res))))
             (if (or (eqv? n 1) (not msg2)) msg msg2)))))
@@ -519,24 +503,24 @@
       (set! cache (make-cache)))
 
     ;; return the dispatcher
-    (lambda (dispatch . args)
+    (^[dispatch . args]
       (case dispatch
-        ((searcher) search)
-        ((getter) get)
-        ((ngetter) nget)
-        ((setter) set)
-        ((search) (apply search args))
-        ((get) (apply get args))
-        ((nget) (apply nget args))
-        ((set!) (apply set args))
-        ((locale) locale)
-        ((domain) domain)
-        ((dirs) dirs)
-        ((set-locale!) (set! locale (listify (car args))) (reset!))
-        ((set-domain!) (set! domain (listify (car args))) (reset!))
-        ((set-dirs!) (set! dirs (listify (car args))) (reset!))
-        ((use-cache) (set! cached? (car args)))
-        ((clear) (set! cache (make-cache)))
+        [(searcher) search]
+        [(getter) get]
+        [(ngetter) nget]
+        [(setter) set]
+        [(search) (apply search args)]
+        [(get) (apply get args)]
+        [(nget) (apply nget args)]
+        [(set!) (apply set args)]
+        [(locale) locale]
+        [(domain) domain]
+        [(dirs) dirs]
+        [(set-locale!) (set! locale (listify (car args))) (reset!)]
+        [(set-domain!) (set! domain (listify (car args))) (reset!)]
+        [(set-dirs!) (set! dirs (listify (car args))) (reset!)]
+        [(use-cache) (set! cached? (car args))]
+        [(clear) (set! cache (make-cache))]
         ))))
 
 ;; cache the lookups and provide a more friendly interface.  should this

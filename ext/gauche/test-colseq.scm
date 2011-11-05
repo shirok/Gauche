@@ -71,33 +71,29 @@
        (fold list* '() "abc" (sseq 'a 'b 'c) '(a b c)))
 
 (test* "fold2" '(21 (6 5 4 3 2 1))
-       (receive r
-           (fold2 (^[n s m] (values (+ n s) (cons n m)))
-                  0 '() '(1 2 3 4 5 6))
-         r))
+       (values->list
+        (fold2 (^[n s m] (values (+ n s) (cons n m)))
+               0 '() '(1 2 3 4 5 6))))
 (test* "fold2 (n-ary)" '(195 (5 15 25 4 14 24 3 13 23 2 12 22 1 11 21))
-       (receive r
-           (fold2 (^[n0 n1 n2 s m]
-                    (values (+ n0 n1 n2 s)
-                            (list* n0 n1 n2 m)))
-                  0 '() '(1 2 3 4 5 6) '(11 12 13 14 15) '(21 22 23 24 25 26))
-         r))
+       (values->list
+        (fold2 (^[n0 n1 n2 s m]
+                 (values (+ n0 n1 n2 s)
+                         (list* n0 n1 n2 m)))
+               0 '() '(1 2 3 4 5 6) '(11 12 13 14 15) '(21 22 23 24 25 26))))
 
 (test* "fold3" '(21 720 (6 5 4 3 2 1))
-       (receive r
-           (fold3 (^[n s m l] (values (+ n s) (* n m) (cons n l)))
-                  0 1 '() '(1 2 3 4 5 6))
-         r))
+       (values->list
+        (fold3 (^[n s m l] (values (+ n s) (* n m) (cons n l)))
+               0 1 '() '(1 2 3 4 5 6))))
 (test* "fold3 (n-ary)" '(195 275701345920000
                          (5 15 25 4 14 24 3 13 23 2 12 22 1 11 21))
-       (receive r
-           (fold3 (^[n0 n1 n2 s m l]
-                    (values (+ n0 n1 n2 s)
-                            (* n0 n1 n2 m)
-                            (list* n0 n1 n2 l)))
-                  0 1 '()
-                  '(1 2 3 4 5 6) '(11 12 13 14 15) '(21 22 23 24 25 26))
-         r))
+       (values->list
+        (fold3 (^[n0 n1 n2 s m l]
+                 (values (+ n0 n1 n2 s)
+                         (* n0 n1 n2 m)
+                         (list* n0 n1 n2 l)))
+               0 1 '()
+               '(1 2 3 4 5 6) '(11 12 13 14 15) '(21 22 23 24 25 26))))
 
 (test* "map (list)" '(2 4 6 8 10)
        (map (^x (* x 2)) '(1 2 3 4 5)))
@@ -148,21 +144,17 @@
        (map-to <vector> + '(1 2 3 4 5) '#(2 3 4 5)))
 
 (test* "map-accum" '((45 30 15) 5)
-       (receive r 
-           (map-accum (^[elt seed] (values (* elt seed) seed))
-                      5 '(9 6 3))
-         r))
+       (values->list 
+        (map-accum (^[elt seed] (values (* elt seed) seed))
+                   5 '(9 6 3))))
 (test* "map-accum" '((10 28 88) 19)
-       (receive r
-           (map-accum (^[elt seed] (values (* elt seed) (+ elt seed)))
-                      5 '(2 4 8))
-         r))
+       (values->list
+        (map-accum (^[elt seed] (values (* elt seed) (+ elt seed)))
+                   5 '(2 4 8))))
 (test* "map-accum (nary)" '((10 11 16) 15)
-       (receive r
-           (map-accum (^[x y seed] (values (+ x y seed) (+ x seed)))
-                      1 '(2 4 8) '(7 4 1))
-         r))
-
+       (values->list
+        (map-accum (^[x y seed] (values (+ x y seed) (+ x seed)))
+                   1 '(2 4 8) '(7 4 1))))
 
 (test* "for-each (list)" '(5 4 3 2 1)
        (rlet1 p '()
@@ -201,7 +193,7 @@
   (test* #`"find-min (,|msg|)" ex-min (apply find-min coll args))
   (test* #`"find-max (,|msg|)" ex-max (apply find-max coll args))
   (test* #`"find-min&max (,|msg|)" (list ex-min ex-max)
-         (receive r (apply find-min&max coll args) r)))
+         (values->list (apply find-min&max coll args))))
 
 
 (test-find-minmax "list 0" -1 9
@@ -288,22 +280,17 @@
         'strings))
 
 (test* "partition (list)" '((2 4 6) (1 3 5 7))
-       (receive r (partition even? '(1 2 3 4 5 6 7))
-         r))
+       (values->list (partition even? '(1 2 3 4 5 6 7))))
 (test* "partition (vector)" '((2 4 6) (1 3 5 7))
-       (receive r (partition even? '#(1 2 3 4 5 6 7))
-         r))
+       (values->list (partition even? '#(1 2 3 4 5 6 7))))
 (test* "partition (custom)" '(("2" "4" "6") ("1" "3" "5" "7"))
-       (receive r (partition (^e (even? (string->number e)))
-                             (sseq 1 2 3 4 5 6 7))
-         r))
+       (values->list (partition (^e (even? (string->number e)))
+                                (sseq 1 2 3 4 5 6 7))))
 
 (test* "partition-to (string)" '("ACE" "bdf")
-       (receive r (partition-to <string> char-upper-case? "AbCdEf")
-         r))
+       (values->list (partition-to <string> char-upper-case? "AbCdEf")))
 (test* "partition-to (vector)" '(#(2 4 6) #(1 3 5 7))
-       (receive r (partition-to <vector> even? '#(1 2 3 4 5 6 7))
-         r))
+       (values->list (partition-to <vector> even? '#(1 2 3 4 5 6 7))))
 
 (test-section "miscellaneous")
 
@@ -507,27 +494,27 @@
        (fold-with-index acons '() (sseq) '() '#()))
 
 (test* "find-with-index (list)" '(2 c)
-       (receive r (find-with-index (cut eq? 'c <>) '(a b c d e)) r))
+       (values->list (find-with-index (cut eq? 'c <>) '(a b c d e))))
 (test* "find-with-index (list)" '(#f #f)
-       (receive r (find-with-index (cut eq? 'f <>) '(a b c d e)) r))
+       (values->list (find-with-index (cut eq? 'f <>) '(a b c d e))))
 (test* "find-with-index (vector)" '(2 c)
-       (receive r (find-with-index (cut eq? 'c <>) '#(a b c d e)) r))
+       (values->list (find-with-index (cut eq? 'c <>) '#(a b c d e))))
 (test* "find-with-index (vector)" '(#f #f)
-       (receive r (find-with-index (cut eq? 'f <>) '#(a b c d e)) r))
+       (values->list (find-with-index (cut eq? 'f <>) '#(a b c d e))))
 (test* "find-with-index (string)" '(2 #\c)
-       (receive r (find-with-index (cut eqv? #\c <>) "abcde") r))
+       (values->list (find-with-index (cut eqv? #\c <>) "abcde")))
 (test* "find-with-index (string)" '(#f #f)
-       (receive r (find-with-index (cut eqv? #\f <>) "abcde") r))
+       (values->list (find-with-index (cut eqv? #\f <>) "abcde")))
 (test* "find-with-index (custom)" '(2 "c")
-       (receive r (find-with-index (cut equal? "c" <>) (sseq 'a 'b 'c 'd 'e)) r))
+       (values->list (find-with-index (cut equal? "c" <>) (sseq 'a 'b 'c 'd 'e))))
 (test* "find-with-index (custom)" '(#f #f)
-       (receive r (find-with-index (cut equal? "f" <>) (sseq 'a 'b 'c 'd 'e)) r))
+       (values->list (find-with-index (cut equal? "f" <>) (sseq 'a 'b 'c 'd 'e))))
 (test* "find-with-index (boundary)" '(#f #f)
-       (receive r (find-with-index (cut eq? 'c <>) '()) r))
+       (values->list (find-with-index (cut eq? 'c <>) '())))
 (test* "find-with-index (boundary)" '(#f #f)
-       (receive r (find-with-index (cut eq? 'c <>) '#()) r))
+       (values->list (find-with-index (cut eq? 'c <>) '#())))
 (test* "find-with-index (boundary)" '(#f #f)
-       (receive r (find-with-index (cut eq? 'c <>) (sseq)) r))
+       (values->list (find-with-index (cut eq? 'c <>) (sseq))))
 
 (test* "find-index (list)" 2
        (find-index (cut eq? 'c <>) '(a b c d e)))

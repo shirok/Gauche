@@ -414,7 +414,7 @@
 ;; These should be eventually in the coming gauche.generator module.
 (define (generator->list gen) (port-map identity gen))
 (define (gen-map f gen)
-  (^() (let1 v (gen) (if (eof-object? v) v (f v)))))
+  (^[] (let1 v (gen) (if (eof-object? v) v (f v)))))
 
 ;; Given breaker generator, returns a generator that returns a cluster
 ;; (grapheme cluster or word) at a time.
@@ -422,34 +422,33 @@
 ;; generator :: () -> Item
 ;; return    :: [Item] -> a
 (define (make-cluster-reader-maker breaker-maker)
-  (lambda (generator return)
+  (^[generator return]
     (define lookahead #f)
     (define breaker (breaker-maker generator))
     (receive (ch break?) (breaker)
       (set! lookahead ch))
-    (lambda ()
-      (if (eof-object? lookahead)
-        lookahead
-        (let loop ([acc (list lookahead)])
-          (receive (ch break?) (breaker)
-            (if break?
-              (begin (set! lookahead ch) (return (reverse acc)))
-              (loop (cons ch acc)))))))))
+    (^[] (if (eof-object? lookahead)
+           lookahead
+           (let loop ([acc (list lookahead)])
+             (receive (ch break?) (breaker)
+               (if break?
+                 (begin (set! lookahead ch) (return (reverse acc)))
+                 (loop (cons ch acc)))))))))
 
 ;; NB: These may be refactored once we have the generator framework.
 (define (make-string-splitter cluster-reader-maker)
   (case (gauche-character-encoding)
     [(utf-8 none)  ;NB: we treat 'none' as latin-1
-     (^(str)
+     (^[str]
        (with-input-from-string str
          (cut generator->list
               (cluster-reader-maker read-char list->string))))]
     [else
-     (^(str)
+     (^[str]
        (with-input-from-string str
          (cut generator->list
               (cluster-reader-maker (gen-map char->ucs read-char)
-                                    (^(cs) (map-to <string> ucs->char cs))))))]
+                                    (^[cs] (map-to <string> ucs->char cs))))))]
     ))
 
 (define (get-sequence-generator seq)
@@ -459,7 +458,7 @@
                    (cond [(pred seq)
                           (let ([len (size-of seq)]
                                 [i 0])
-                            (^() (if (= i len)
+                            (^[] (if (= i len)
                                    eof
                                    (begin0 (ref seq i) (inc! i)))))]
                          ...)])])
@@ -477,7 +476,7 @@
        [identity   ref]))))
 
 (define (make-sequence-splitter cluster-reader-maker)
-  (lambda (seq)
+  (^[seq]
     (let1 gen (get-sequence-generator seq)
       (generator->list (cluster-reader-maker gen identity)))))
 
@@ -662,7 +661,7 @@
 (define (make-word-breaker generator)
   (define current-state (vector-ref *word-break-fa* 0))
   (define q (make-queue))  ;characters looked ahead.
-  (lambda ()
+  (^[]
     (let1 ch (if (queue-empty? q) (generator) (dequeue! q))
       (if (eof-object? ch)
         (values ch #t) ; WB2
@@ -862,7 +861,7 @@
 ;; indicating grapheme cluster breaks before the character.
 (define (make-grapheme-cluster-breaker generator)
   (define current-state (vector-ref *grapheme-break-fa* 0))
-  (lambda ()
+  (^[]
     (let1 ch (generator)
       (if (eof-object? ch)
         (values ch #t) ; GB2
@@ -950,7 +949,7 @@
 
 (define (%upcase generator sink char?)
   (let1 buf (make-vector SCM_CHAR_FULL_CASE_MAPPING_SIZE)
-    (port-for-each (^(ch) (%tr ch buf CHAR_UPCASE sink char?)) generator)))
+    (port-for-each (^[ch] (%tr ch buf CHAR_UPCASE sink char?)) generator)))
 
 ;; Greek capital sigma U+03a3 needs context-sensitive conversion.
 (define (%downcase generator sink char?)
@@ -985,7 +984,7 @@
 (define (%foldcase generator sink char?)
   (let ([buf1 (make-vector SCM_CHAR_FULL_CASE_MAPPING_SIZE)]
         [buf2 (make-vector SCM_CHAR_FULL_CASE_MAPPING_SIZE)])
-    (port-for-each (^(ch)
+    (port-for-each (^[ch]
                      (let1 c (%char-xcase-extended ch buf1 CHAR_UPCASE char?)
                        (sink (append-ec
                               (: i c)
@@ -1000,16 +999,16 @@
 (define string-xcase
   (case (gauche-character-encoding)
     [(utf-8)
-     (^(str doer) (with-string-io str
-                    (^() (doer read-char (^(cs alt) (map display cs)) #t))))]
+     (^[str doer] (with-string-io str
+                    (^[] (doer read-char (^[cs alt] (map display cs)) #t))))]
     [else
-     (^(str doer) (with-string-io str
-                    (^() (doer (gen-map char->ucs read-char)
-                               (^(cs alt)
+     (^[str doer] (with-string-io str
+                    (^[] (doer (gen-map char->ucs read-char)
+                               (^[cs alt]
                                  (let1 cs_ (map ucs->char cs)
                                    (if (every char? cs_)
-                                       (for-each display cs_)
-                                       (display alt))))
+                                     (for-each display cs_)
+                                     (display alt))))
                                #f))))]))
 
 (define (codepoints-xcase seq doer)

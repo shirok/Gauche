@@ -257,13 +257,13 @@
      (()          (=> next) (values #f #f '()))))
 
 (test* "failure continuation #1" '(1 2 (3))
-       (receive r (test-match '(1 2 3)) r))
+       (values->list (test-match '(1 2 3))))
 
 (test* "failure continuation #2" '(#f 1 ())
-       (receive r (test-match '(1)) r))
+       (values->list (test-match '(1))))
 
 (test* "failure continuation #2" '(#f #f ())
-       (receive r (test-match '()) r))
+       (values->list (test-match '())))
 
 (test* "failure continuation #2" (test-error)
        (test-match 1))

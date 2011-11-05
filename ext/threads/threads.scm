@@ -91,7 +91,7 @@
 
 (define thread-specific
   (getter-with-setter
-   (lambda (thread)
+   (^[thread]
      (check-arg thread? thread)
      (slot-ref thread 'specific))
    thread-specific-set!))
@@ -147,16 +147,16 @@
 
 (define mutex-specific
   (getter-with-setter
-   (lambda (mutex)
+   (^[mutex]
      (check-arg mutex? mutex)
      (slot-ref mutex 'specific))
    mutex-specific-set!))
 
 (define (with-locking-mutex mutex thunk)
   (dynamic-wind
-   (lambda () (mutex-lock! mutex))
+   (^[] (mutex-lock! mutex))
    thunk
-   (lambda () (mutex-unlock! mutex))))
+   (^[] (mutex-unlock! mutex))))
 
 (inline-stub
  (define-cproc make-mutex (:optional (name #f)) Scm_MakeMutex)
@@ -256,9 +256,9 @@
     ;; TODO: we may expand special cases like vals is 1 to 3 elements long,
     ;; avoiding creation of lists every time updater is called.
     (%make-atom
-     (lambda (proc timeout timeout-val)
+     (^[proc timeout timeout-val]
        (with-lock timeout timeout-val (apply proc vals)))
-     (lambda (proc timeout timeout-val)
+     (^[proc timeout timeout-val]
        (with-lock timeout timeout-val
                   (call-with-values (cut apply proc vals)
                     (^ vs

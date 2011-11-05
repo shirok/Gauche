@@ -41,47 +41,47 @@
 
 (test* "#s8()" "#s8(0 1 2 3 4)"
        (with-output-to-string
-         (lambda () (write (apply s8vector (iota 5))))))
+         (^[] (write (apply s8vector (iota 5))))))
 (test* "#u8()" "#u8(0 1 2 3 4)"
        (with-output-to-string
-         (lambda () (write (apply u8vector (iota 5))))))
+         (^[] (write (apply u8vector (iota 5))))))
 (test* "#s16()" "#s16(0 1 2 3 4)"
        (with-output-to-string
-         (lambda () (write (apply s16vector (iota 5))))))
+         (^[] (write (apply s16vector (iota 5))))))
 (test* "#u16()" "#u16(0 1 2 3 4)"
        (with-output-to-string
-         (lambda () (write (apply u16vector (iota 5))))))
+         (^[] (write (apply u16vector (iota 5))))))
 (test* "#s32()" "#s32(0 1 2 3 4)"
        (with-output-to-string
-         (lambda () (write (apply s32vector (iota 5))))))
+         (^[] (write (apply s32vector (iota 5))))))
 (test* "#u32()" "#u32(0 1 2 3 4)"
        (with-output-to-string
-         (lambda () (write (apply u32vector (iota 5))))))
+         (^[] (write (apply u32vector (iota 5))))))
 (test* "#s64()" "#s64(0 1 2 3 4)"
        (with-output-to-string
-         (lambda () (write (apply s64vector (iota 5))))))
+         (^[] (write (apply s64vector (iota 5))))))
 (test* "#u64()" "#u64(0 1 2 3 4)"
        (with-output-to-string
-         (lambda () (write (apply u64vector (iota 5))))))
+         (^[] (write (apply u64vector (iota 5))))))
 (test* "#f16()" "#f16()"
        (with-output-to-string
-         (lambda () (write (f16vector)))))
+         (^[] (write (f16vector)))))
 (test* "#f32()" "#f32()"
        (with-output-to-string
-         (lambda () (write (f32vector)))))
+         (^[] (write (f32vector)))))
 (test* "#f64()" "#f64()"
        (with-output-to-string
-         (lambda () (write (f64vector)))))
+         (^[] (write (f64vector)))))
 
 ;;-------------------------------------------------------------------
 (test-section "ref and set")
 
 (define (uvrefset-tester make ref set numlist expvec)
-  (let ((vec (make (length numlist)))
-        (seq (iota (length numlist))))
-    (for-each (lambda (n i) (set vec i n)) numlist seq)
+  (let ([vec (make (length numlist))]
+        [seq (iota (length numlist))])
+    (for-each (^[n i] (set vec i n)) numlist seq)
     (and (equal? expvec vec)
-         (equal? numlist (map (lambda (i) (ref vec i)) seq)))))
+         (equal? numlist (map (^i (ref vec i)) seq)))))
 
 (test* "s8vector-ref|set!" #t
        (uvrefset-tester make-s8vector s8vector-ref s8vector-set!
@@ -129,19 +129,15 @@
                         '#f64(0.0 -1.0 1.0)))
 
 (define (uvset-clamp-tester make ref set value)
-  (let ((v (make 1)))
-    (list (with-error-handler
-              (lambda (e) 'error)
-            (lambda () (set v 0 value) (ref v 0)))
-          (with-error-handler
-              (lambda (e) 'error)
-            (lambda () (set v 0 value 'low) (ref v 0)))
-          (with-error-handler
-              (lambda (e) 'error)
-            (lambda () (set v 0 value 'high) (ref v 0)))
-          (with-error-handler
-              (lambda (e) 'error)
-            (lambda () (set v 0 value 'both) (ref v 0))))))
+  (let1 v (make 1)
+    (list (with-error-handler (^e 'error)
+            (^[] (set v 0 value) (ref v 0)))
+          (with-error-handler (^e 'error)
+            (^[] (set v 0 value 'low) (ref v 0)))
+          (with-error-handler (^e 'error)
+            (^[] (set v 0 value 'high) (ref v 0)))
+          (with-error-handler (^e 'error)
+            (^[] (set v 0 value 'both) (ref v 0))))))
 
 (test* "s8vector-set! clamp" '(error -128 error -128)
        (uvset-clamp-tester make-s8vector s8vector-ref s8vector-set! -129))
@@ -187,10 +183,10 @@
 (test-section "conversions")
 
 (define (uvconv-tester ->list list-> ->vec vec-> uvec nums)
-  (let* ((lis (->list uvec))
-         (uv2 (list-> lis))
-         (vec (->vec  uvec))
-         (uv3 (vec->  vec)))
+  (let* ([lis (->list uvec)]
+         [uv2 (list-> lis)]
+         [vec (->vec  uvec)]
+         [uv3 (vec->  vec)])
     (and (equal? lis nums)
          (equal? uv2 uvec)
          (equal? vec (list->vector nums))
@@ -252,8 +248,8 @@
 (test-section "comparison")
 
 (define (uvcomp-tester list-> samples)
-  (dolist (x samples)
-    (dolist (y samples)
+  (dolist [x samples]
+    (dolist [y samples]
       (test* #`"equal? ,(list-> x) ,(list-> y)"
              (and (= (length x) (length y))
                   (every = x y))
@@ -276,12 +272,12 @@
 (test-section "copying and filling")
 
 (define (uvcopy-tester copy copy! fill! ->list list-> uvec filler)
-  (let* ((c0 (list-> (->list uvec)))
-         (c1 (copy uvec)))
+  (let* ([c0 (list-> (->list uvec))]
+         [c1 (copy uvec)])
     (and (equal? c1 uvec)
          (begin (fill! c1 filler)
                 (and (equal? c0 uvec)
-                     (every (lambda (n) (= n filler))  (->list c1))
+                     (every (^n (= n filler))  (->list c1))
                      (begin (copy! c1 uvec)
                             (equal? c1 c0)))))))
 
@@ -423,12 +419,12 @@
 (use gauche.sequence)
 
 (define (num-equal? l1 l2)
-  (cond ((pair? l1)
+  (cond [(pair? l1)
          (if (pair? l2)
              (and (num-equal? (car l1) (car l2))
                   (num-equal? (cdr l1) (cdr l2)))
-             #f))
-        ((vector? l1)
+             #f)]
+        [(vector? l1)
          (if (vector? l2)
              (with-iterator (l1 end1 next1)
                (with-iterator (l2 end2 next2)
@@ -436,17 +432,17 @@
                    (if (end1)
                        (if (end2) #t #f)
                        (and (num-equal? (next1) (next2))
-                            (loop))))))))
-        ((number? l1)
+                            (loop)))))))]
+        [(number? l1)
          (if (number? l2)
              (= l1 l2)
-             #f))
-        (else (equal? l1 l2))))
+             #f)]
+        [else (equal? l1 l2)]))
 
 (define (collection-tester class vec)
   (and (=      (fold + 0 vec) 10)
        (num-equal? (map identity vec) '(1 2 3 4))
-       (=      (find (lambda (e) (= e 2)) vec) 2)
+       (=      (find (^e (= e 2)) vec) 2)
        (equal? (coerce-to class '(1 2 3 4)) vec)
        (=      (ref vec 2) 3)
        (num-equal? (begin (set! (ref vec 1) 0)
@@ -537,14 +533,12 @@
 
   (define (gen-tester op v0 v1)
     (define (safe-test clamp-flag)
-      (with-error-handler
-          (lambda (e) 'error)
-        (lambda () (op v0 v1 clamp-flag))))
-    (lambda ()
-      (list (safe-test #f)
-            (safe-test 'high)
-            (safe-test 'low)
-            (safe-test 'both))))
+      (with-error-handler (^e 'error)
+        (^[] (op v0 v1 clamp-flag))))
+    (^[] (list (safe-test #f)
+               (safe-test 'high)
+               (safe-test 'low)
+               (safe-test 'both))))
 
   (define (result-normal v) (list v v v v))
   (define (result-hi-ok  v) (list 'error v 'error v))
@@ -567,15 +561,15 @@
         (gen-tester add v0 (- min 1)))
   (test (format #f "~avector-add (v+b)" tag)
         (case tag
-          ((s64 u64)
-           (result-normal (make big32 (+ big32 1) (+ big32 2) (+ big32 3))))
-          (else (result-hi-ok vmax)))
+          [(s64 u64)
+           (result-normal (make big32 (+ big32 1) (+ big32 2) (+ big32 3)))]
+          [else (result-hi-ok vmax)])
         (gen-tester add v0 big32))
   (test (format #f "~avector-add (v+b)" tag)
         (case tag
-          ((s64)
-           (result-normal (make (- big32) (- 1 big32) (- 2 big32) (- 3 big32))))
-          (else (result-lo-ok vmin)))
+          [(s64)
+           (result-normal (make (- big32) (- 1 big32) (- 2 big32) (- 3 big32)))]
+          [else (result-lo-ok vmin)])
         (gen-tester add v0 (- big32)))
   (test (format #f "~avector-add (v+b)" tag) (result-hi-ok vmax)
         (gen-tester add v0 big64))
@@ -597,14 +591,14 @@
         (gen-tester sub v0 (- (- min 1))))
   (test (format #f "~avector-sub (v-b)" tag)
         (case tag
-          ((s64) (result-normal (make (- big32) (- 1 big32) (- 2 big32) (- 3 big32))))
-          (else  (result-lo-ok vmin)))
+          [(s64) (result-normal (make (- big32) (- 1 big32) (- 2 big32) (- 3 big32)))]
+          [else  (result-lo-ok vmin)])
         (gen-tester sub v0 big32))
   (test (format #f "~avector-sub (v-b)" tag)
         (case tag
-          ((s64 u64)
-           (result-normal (make big32 (+ big32 1) (+ big32 2) (+ big32 3))))
-          (else (result-hi-ok vmax)))
+          [(s64 u64)
+           (result-normal (make big32 (+ big32 1) (+ big32 2) (+ big32 3)))]
+          [else (result-hi-ok vmax)])
         (gen-tester sub v0 (- big32)))
   (test (format #f "~avector-sub (v-b)" tag) (result-lo-ok vmin)
         (gen-tester sub v0 big64))
@@ -627,27 +621,27 @@
         (gen-tester mul v0 2))
   (test (format #f "~avector-mul (v*s)" tag)
         (if (memq tag '(s8 s16 s32 s64))
-            (result-normal (make 0 -2 -4 -6))
-            (result-lo-ok  vmin))
+          (result-normal (make 0 -2 -4 -6))
+          (result-lo-ok  vmin))
         (gen-tester mul v0 -2))
   (test (format #f "~avector-mul (v*s)" tag)
         (result-hi-ok (make 0 (- max 1) max max))
         (gen-tester mul v0 (- max 1)))
   (test (format #f "~avector-mul (v*s)" tag)
         (case tag
-          ((s8 s16 s32 s64) (result-lo-ok (make 0 (- (- max 1)) min min)))
-          (else (result-lo-ok  vmin)))
+          [(s8 s16 s32 s64) (result-lo-ok (make 0 (- (- max 1)) min min))]
+          [else (result-lo-ok  vmin)])
         (gen-tester mul v0 (- (- max 1))))
   (test (format #f "~avector-mul (v*b)" tag)
         (case tag
-          ((s64 u64) (result-normal (make 0 big32 (* big32 2) (* big32 3))))
-          (else (result-hi-ok  (make 0 max max max))))
+          [(s64 u64) (result-normal (make 0 big32 (* big32 2) (* big32 3)))]
+          [else (result-hi-ok  (make 0 max max max))])
         (gen-tester mul v0 big32))
   (test (format #f "~avector-mul (v*b)" tag)
         (case tag
-          ((s64)
-           (result-normal (make 0 (- big32) (- (* big32 2))  (- (* big32 3)))))
-          (else (result-lo-ok  (make 0 min min min))))
+          [(s64)
+           (result-normal (make 0 (- big32) (- (* big32 2))  (- (* big32 3))))]
+          [else (result-lo-ok  (make 0 min min min))])
         (gen-tester mul v0 (- big32)))
   )
 
@@ -776,8 +770,7 @@
 (test-section "dot product")
 
 (define (dotprod-test tag v0 v1 dot)
-  (let1 result (fold (lambda (e0 e1 sum)
-                       (+ sum (* e0 e1)))
+  (let1 result (fold (^[e0 e1 sum] (+ sum (* e0 e1)))
                      0
                      (coerce-to <list> v0)
                      (coerce-to <list> v1))
@@ -952,7 +945,7 @@
 
 (define-macro (range-test-generate tag v min max result)
   `(test (format #f "~svector-range-check" ',tag) ,result
-         (lambda ()
+         (^[]
            (,(string->symbol #`",|tag|vector-range-check") ',v ',min ',max)))
   )
 
@@ -1090,18 +1083,17 @@
 (define (clamp-test tag class tagvector? tagvector-ref tagvector-length
                     clamp v minv maxv)
   (define (clamp-min index v)
-    (cond ((tagvector? minv)
-           (max v (tagvector-ref minv index) (tag->min tag)))
-          ((not minv) (max v (tag->min tag)))
-          (else (max v minv (tag->min tag)))))
+    (cond [(tagvector? minv)
+           (max v (tagvector-ref minv index) (tag->min tag))]
+          [(not minv) (max v (tag->min tag))]
+          [else (max v minv (tag->min tag))]))
   (define (clamp-max index v)
-    (cond ((tagvector? maxv)
-           (min v (tagvector-ref maxv index) (tag->max tag)))
-          ((not maxv) (min v (tag->max tag)))
-          (else (min v maxv (tag->max tag)))))
+    (cond [(tagvector? maxv)
+           (min v (tagvector-ref maxv index) (tag->max tag))]
+          [(not maxv) (min v (tag->max tag))]
+          [else (min v maxv (tag->max tag))]))
   (let1 result (map-to class
-                       (lambda (i)
-                         (clamp-min i (clamp-max i (tagvector-ref v i))))
+                       (^i (clamp-min i (clamp-max i (tagvector-ref v i))))
                        (iota (tagvector-length v)))
     (test* (format #f "~svector-clamp" tag)
            result
@@ -1268,7 +1260,7 @@
   ;; Invaliance:
   ;; w = (uvector-alias T u8v)  <--> w = read-block! T + write-block u8v
   (define (test-default-endian data)
-    (lambda (T maker size)
+    (^[T maker size]
       (test* (format "native endian ~a" (class-name T))
              (uvector-alias T data)
              (rlet1 buf (maker size)
@@ -1294,7 +1286,7 @@
              (uvector-alias T rev-vec)
              (rlet1 buf (maker size)
                (call-with-output-file "test.o" (cut write-block data1 <>))
-               (parameterize ((default-endian rev-endian))
+               (parameterize ([default-endian rev-endian])
                  (call-with-input-file "test.o" (cut read-block! buf <>)))))
       (test* (format "writing ~a ~a" rev-endian (class-name T))
              (uvector-alias T data1)
@@ -1305,7 +1297,7 @@
       (test* (format "writing ~a ~a, parameter" rev-endian (class-name T))
              (uvector-alias T data1)
              (rlet1 buf (maker size)
-               (parameterize ((default-endian rev-endian))
+               (parameterize ([default-endian rev-endian])
                  (call-with-output-file "test.o"
                    (cut write-block (uvector-alias T rev-vec) <>)))
                (call-with-input-file "test.o" (cut read-block! buf <>))))))
@@ -1348,25 +1340,25 @@
        (string->u8vector "abcde" 2 6))
 
 (test* "string->u8vector!" '#u8(64 65 66 67 68)
-       (let ((v (u8vector 0 1 2 3 4)))
+       (let1 v (u8vector 0 1 2 3 4)
          (string->u8vector! v 0 "@ABCD")))
 (test* "string->u8vector!" '#u8(64 65 66 67 68)
-       (let ((v (u8vector 0 1 2 3 4)))
+       (let1 v (u8vector 0 1 2 3 4)
          (string->u8vector! v 0 "@ABCDEFGHIJKLMNOPQRTSUVWXYZ")))
 (test* "string->u8vector!" '#u8(64 65 66 3 4)
-       (let ((v (u8vector 0 1 2 3 4)))
+       (let1 v (u8vector 0 1 2 3 4)
          (string->u8vector! v 0 "@AB")))
 (test* "string->u8vector!" '#u8(0 64 65 66 4)
-       (let ((v (u8vector 0 1 2 3 4)))
+       (let1 v (u8vector 0 1 2 3 4)
          (string->u8vector! v 1 "@AB")))
 (test* "string->u8vector!" '#u8(0 1 2 3 65)
-       (let ((v (u8vector 0 1 2 3 4)))
+       (let1 v (u8vector 0 1 2 3 4)
          (string->u8vector! v 4 "@ABCDE" 1)))
 (test* "string->u8vector!" '#u8(0 1 2 3 4)
-       (let ((v (u8vector 0 1 2 3 4)))
+       (let1 v (u8vector 0 1 2 3 4)
          (string->u8vector! v 8 "@ABCDE" 1)))
 (test* "string->u8vector!" '#u8(0 1 2 3 4)
-       (let ((v (u8vector 0 1 2 3 4)))
+       (let1 v (u8vector 0 1 2 3 4)
          (string->u8vector! v -1 "@ABCDE" 1)))
 
 (test* "u8vector->string" "@ABCD"
@@ -1392,25 +1384,25 @@
        (string->s8vector "abcde" 2 6))
 
 (test* "string->s8vector!" '#s8(64 65 66 67 68)
-       (let ((v (s8vector 0 1 2 3 4)))
+       (let1 v (s8vector 0 1 2 3 4)
          (string->s8vector! v 0 "@ABCD")))
 (test* "string->s8vector!" '#s8(64 65 66 67 68)
-       (let ((v (s8vector 0 1 2 3 4)))
+       (let1 v (s8vector 0 1 2 3 4)
          (string->s8vector! v 0 "@ABCDEFGHIJKLMNOPQRTSUVWXYZ")))
 (test* "string->s8vector!" '#s8(64 65 66 3 4)
-       (let ((v (s8vector 0 1 2 3 4)))
+       (let1 v (s8vector 0 1 2 3 4)
          (string->s8vector! v 0 "@AB")))
 (test* "string->s8vector!" '#s8(0 64 65 66 4)
-       (let ((v (s8vector 0 1 2 3 4)))
+       (let1 v (s8vector 0 1 2 3 4)
          (string->s8vector! v 1 "@AB")))
 (test* "string->s8vector!" '#s8(0 1 2 3 65)
-       (let ((v (s8vector 0 1 2 3 4)))
+       (let1 v (s8vector 0 1 2 3 4)
          (string->s8vector! v 4 "@ABCDE" 1)))
 (test* "string->s8vector!" '#s8(0 1 2 3 4)
-       (let ((v (s8vector 0 1 2 3 4)))
+       (let1 v (s8vector 0 1 2 3 4)
          (string->s8vector! v 8 "@ABCDE" 1)))
 (test* "string->s8vector!" '#s8(0 1 2 3 4)
-       (let ((v (s8vector 0 1 2 3 4)))
+       (let1 v (s8vector 0 1 2 3 4)
          (string->s8vector! v -1 "@ABCDE" 1)))
 
 (test* "s8vector->string" "@ABCD"
@@ -1470,42 +1462,42 @@
 
 ;; test for multibyte chars
 (case (gauche-character-encoding)
-  ((euc-jp) (load "./test-eucjp"))
-  ((utf-8)  (load "./test-utf8"))
-  ((sjis)   (load "./test-sjis"))
-  (else #f))
+  [(euc-jp) (load "./test-eucjp")]
+  [(utf-8)  (load "./test-utf8")]
+  [(sjis)   (load "./test-sjis")]
+  [else #f])
 
 ;;-------------------------------------------------------------------
 (test-section "uvector alias")
 
 (test* "alias u8 u8" #u8(0 1 2 3)
-       (let* ((src (u8vector 0 1 2 0))
-              (dst (uvector-alias <u8vector> src)))
+       (let* ([src (u8vector 0 1 2 0)]
+              [dst (uvector-alias <u8vector> src)])
          (u8vector-set! src 3 3)
          dst))
 (test* "alias u8 u8 (range)" #u8(1 2)
-       (let* ((src (u8vector 0 1 0 1))
-              (dst (uvector-alias <u8vector> src 1 3)))
+       (let* ([src (u8vector 0 1 0 1)]
+              [dst (uvector-alias <u8vector> src 1 3)])
          (u8vector-set! src 2 2)
          dst))
 (test* "alias s8 u8" #s8(1 -1)
-       (let* ((src (u8vector 0 0 0 0))
-              (dst (uvector-alias <s8vector> src 1 3)))
+       (let* ([src (u8vector 0 0 0 0)]
+              [dst (uvector-alias <s8vector> src 1 3)])
          (s8vector-set! dst 0 1)
          (u8vector-set! src 2 255)
          dst))
 ;; the following test cases avoid endian complexity
 (test* "alias s8 u16" '(#s8(#x11 #x11 #x22 #x22) #x1111)
-       (let* ((src (u16vector 0 0 0))
-              (dst (uvector-alias <s8vector> src 1)))
+       (let* ([src (u16vector 0 0 0)]
+              [dst (uvector-alias <s8vector> src 1)])
          (u16vector-set! src 2 #x2222)
          (s8vector-set! dst 0 #x11)
          (s8vector-set! dst 1 #x11)
          (list dst (u16vector-ref src 1))))
 (test* "alias u32 u8" #u32(#xaaaaaaaa #xbbbbbbbb)
-       (let* ((src (make-u8vector 8 #xaa))
-              (ali (uvector-alias <u8vector> src 4))
-              (dst (uvector-alias <u32vector> src)))
+       (let* ([src (make-u8vector 8 #xaa)]
+              [ali (uvector-alias <u8vector> src 4)]
+              [dst (uvector-alias <u32vector> src)])
          (u8vector-fill! ali #xbb)
          dst))
 
@@ -1526,22 +1518,22 @@
 
 ;; test alignment check
 (test* "alias u32 u8 (alignment violation)" (test-error)
-       (let* ((src (make-u8vector 9))
-              (dst (uvector-alias <u32vector>)))
+       (let* ([src (make-u8vector 9)]
+              [dst (uvector-alias <u32vector>)])
          dst))
 (test* "alias u32 u8 (alignment violation)" (test-error)
-       (let* ((src (make-u8vector 32))
-              (dst (uvector-alias <u32vector> 2)))
+       (let* ([src (make-u8vector 32)]
+              [dst (uvector-alias <u32vector> 2)])
          dst))
 (test* "alias u32 u8 (alignment violation)" (test-error)
-       (let* ((src (make-u8vector 32))
-              (dst (uvector-alias <u32vector> 4 5)))
+       (let* ([src (make-u8vector 32)]
+              [dst (uvector-alias <u32vector> 4 5)])
          dst))
 
 ;; test if immutable property propagates
 (test* "immutability violation" (test-error)
-       (let* ((src '#u8(0 1 2 3))
-              (dst (uvector-alias <u8vector> src)))
+       (let* ([src '#u8(0 1 2 3)]
+              [dst (uvector-alias <u8vector> src)])
          (u8vector-set! dst 0 1)))
 
 ;;-------------------------------------------------------------------
@@ -1670,12 +1662,11 @@
 
 (test-section "array-ref")
 (for-each
- (lambda (ls)
-   (let ((a (car ls)))
+ (^[ls]
+   (let1 a (car ls)
      (for-each
-      (lambda (t)
-        (test* (format "array-ref ~S:" (cdr t)) (car t)
-          (apply array-ref a (cdr t))))
+      (^t (test* (format "array-ref ~S:" (cdr t)) (car t)
+                 (apply array-ref a (cdr t))))
       (cdr ls))))
  '((#,(<array> () a) (a))
    (#,(<array> (-1 1) a b) (a -1) (b 0))
@@ -1702,13 +1693,12 @@
 
 (test-section "array-set!")
 (for-each
- (lambda (ls)
-   (let ((a (car ls)))
+ (^[ls]
+   (let1 a (car ls)
      (for-each
-      (lambda (t)
-        (test* (format "array-set! ~S:" (cdr t)) (car t)
-          (begin (apply array-set! a (append (cdr t) (list (car t))))
-                 (apply array-ref a (cdr t)))))
+      (^t (test* (format "array-set! ~S:" (cdr t)) (car t)
+                 (begin (apply array-set! a (append (cdr t) (list (car t))))
+                        (apply array-ref a (cdr t)))))
       (cdr ls))))
  '((#,(<array> () a) (x))
    (#,(<array> (-1 1) a b) (y -1) (z 0))
@@ -1783,37 +1773,28 @@
 
 (test-section "shared change")
 
-(let* ((org (array (shape 6 9 0 2) 'a 'b 'c 'd 'e 'f))
-       (brk (share-array
-             org
-             (shape 2 4 1 3)
-             (lambda (r k)
-               (values
-                (+ 6 (* 2 (- r 2)))
-                (- k 1)))))
-       (swp (share-array
-             org
-             (shape 3 5 5 7)
-             (lambda (r k)
-               (values
-                (+ 7 (- r 3))
-                (- 1 (- k 5))))))
-       (box (share-array
-             swp
-             (shape 0 1 2 3 4 5 6 7 8 9)
-             (lambda _ (values 4 6))))
-       (org-contents (lambda ()
-                       (list (array-ref org 6 0) (array-ref org 6 1)
-                             (array-ref org 7 0) (array-ref org 7 1)
-                             (array-ref org 8 0) (array-ref org 8 1))))
-       (brk-contents (lambda ()
-                       (list (array-ref brk 2 1) (array-ref brk 2 2)
-                             (array-ref brk 3 1) (array-ref brk 3 2))))
-       (swp-contents (lambda ()
-                       (list (array-ref swp 3 5) (array-ref swp 3 6)
-                             (array-ref swp 4 5) (array-ref swp 4 6))))
-       (box-contents (lambda ()
-                       (list (array-ref box 0 2 4 6 8)))))
+(let* ([org (array (shape 6 9 0 2) 'a 'b 'c 'd 'e 'f)]
+       [brk (share-array org
+                         (shape 2 4 1 3)
+                         (^[r k] (values
+                                  (+ 6 (* 2 (- r 2)))
+                                  (- k 1))))]
+       [swp (share-array org
+                         (shape 3 5 5 7)
+                         (^[r k] (values
+                                  (+ 7 (- r 3))
+                                  (- 1 (- k 5)))))]
+       [box (share-array swp
+                         (shape 0 1 2 3 4 5 6 7 8 9)
+                         (^ _ (values 4 6)))]
+       [org-contents (^[] (list (array-ref org 6 0) (array-ref org 6 1)
+                                (array-ref org 7 0) (array-ref org 7 1)
+                                (array-ref org 8 0) (array-ref org 8 1)))]
+       [brk-contents (^[] (list (array-ref brk 2 1) (array-ref brk 2 2)
+                                (array-ref brk 3 1) (array-ref brk 3 2)))]
+       [swp-contents (^[] (list (array-ref swp 3 5) (array-ref swp 3 6)
+                                (array-ref swp 4 5) (array-ref swp 4 6)))]
+       [box-contents (^[] (list (array-ref box 0 2 4 6 8)))])
   (test "org-contents" '(a b c d e f) org-contents)
   (test "brk-contents" '(a b e f) brk-contents)
   (test "swp-contents" '(d c f e) swp-contents)
@@ -1844,10 +1825,10 @@
 
 (test-section "array-set! of shape")
 
-(let ((shp (shape 10 12)))
-  (let ((arr (make-array shp))
-        (ars (array shp * *))
-        (art (share-array (make-array shp) shp (lambda (k) k))))
+(let1 shp (shape 10 12)
+  (let ([arr (make-array shp)]
+        [ars (array shp * *)]
+        [art (share-array (make-array shp) shp identity)])
     (array-set! shp 0 0 '?)
     (array-set! shp 0 1 '!)
     (test* "modifying array shape"
@@ -1877,35 +1858,25 @@
 ;;; 5 sw se   1 5 4
 
 (test-section "array access with sharing index array")
-(let ((arr (array (shape 4 6 5 7) 'nw 'ne 'sw 'se))
-      (ixn (array (shape 0 2 0 2) 4 6 5 4)))
-  (let ((col0 (share-array
-               ixn
-               (shape 0 2)
-               (lambda (k)
-                 (values k 0))))
-        (row0 (share-array
-               ixn
-               (shape 0 2)
-               (lambda (k)
-                 (values 0 k))))
-        (wor1 (share-array
-               ixn
-               (shape 0 2)
-               (lambda (k)
-                 (values 1 (- 1 k)))))
-        (cod (share-array
-              ixn
-              (shape 0 2)
-              (lambda (k)
-                (case k
-                  ((0) (values 1 0))
-                  ((1) (values 0 1))))))
-        (box (share-array
-              ixn
-              (shape 0 2)
-              (lambda (k)
-                (values 1 0)))))
+(let ([arr (array (shape 4 6 5 7) 'nw 'ne 'sw 'se)]
+      [ixn (array (shape 0 2 0 2) 4 6 5 4)])
+  (let ([col0 (share-array ixn
+                           (shape 0 2)
+                           (^k (values k 0)))]
+        [row0 (share-array ixn
+                           (shape 0 2)
+                           (^k (values 0 k)))]
+        [wor1 (share-array ixn
+                           (shape 0 2)
+                           (^k (values 1 (- 1 k))))]
+        [cod (share-array ixn
+                          (shape 0 2)
+                          (^k (case k
+                                [(0) (values 1 0)]
+                                [(1) (values 0 1)])))]
+        [box (share-array ixn
+                          (shape 0 2)
+                          (^k (values 1 0)))])
     (test* "array-ref before change"
            '(nw ne nw se sw)
            (list (array-ref arr col0)
@@ -1938,27 +1909,19 @@
 ;;;                                     3 13 20
 
 (test-section "sharing shape array")
-(let ((arr (array (shape 1 3 1 5) 10 12 16 20 10 11 12 13)))
-  (let ((shp (share-array
-              arr
-              (shape 0 2 0 2)
-              (lambda (r k)
-                (values (+ r 1) (+ k 1)))))
-        (shq (share-array
-              arr
-              (shape 0 2 0 2)
-              (lambda (r k)
-                (values (+ r 1) (* 2 (+ 1 k))))))
-        (shr (share-array
-              arr
-              (shape 0 4 0 2)
-              (lambda (r k)
-                (values (- 2 k) (+ r 1)))))
-        (shs (share-array
-              arr
-              (shape 0 2 0 2)
-              (lambda (r k)
-                (values 2 3)))))
+(let1 arr (array (shape 1 3 1 5) 10 12 16 20 10 11 12 13)
+  (let ([shp (share-array arr
+                          (shape 0 2 0 2)
+                          (^[r k] (values (+ r 1) (+ k 1))))]
+        [shq (share-array arr
+                          (shape 0 2 0 2)
+                          (^[r k] (values (+ r 1) (* 2 (+ 1 k)))))]
+        [shr (share-array arr
+                          (shape 0 4 0 2)
+                          (^[r k] (values (- 2 k) (+ r 1))))]
+        [shs (share-array arr
+                          (shape 0 2 0 2)
+                          (^[r k] (values 2 3)))])
     (test* "using make-array shp"
            '(2 10 12 10 11)
            (let ((arr-p (make-array shp)))
@@ -1969,7 +1932,7 @@
                    (array-end arr-p 1))))
     (test* "using array shq"
            '(2 12 20 11 13)
-           (let ((arr-q (array shq * * * *  * * * *  * * * *  * * * *)))
+           (let1 arr-q (array shq * * * *  * * * *  * * * *  * * * *)
              (list (array-rank arr-q)
                    (array-start arr-q 0)
                    (array-end arr-q 0)
@@ -1977,10 +1940,9 @@
                    (array-end arr-q 1))))
     (test* "using share-array"
            '(4 10 10 11 12 12 16 13 20)
-           (let ((arr-r (share-array
-                         (array (shape) *)
-                         shr
-                         (lambda _ (values)))))
+           (let1 arr-r (share-array (array (shape) *)
+                                    shr
+                                    (^ _ (values)))
              (list (array-rank arr-r)
                    (array-start arr-r 0)
                    (array-end arr-r 0)
@@ -1992,7 +1954,7 @@
                    (array-end arr-r 3))))
     (test* "using make-array shs"
            '(2 12 12 12 12)
-           (let ((arr-s (make-array shs)))
+           (let1 arr-s (make-array shs)
              (list (array-rank arr-s)
                    (array-start arr-s 0)
                    (array-end arr-s 0)
@@ -2001,18 +1963,16 @@
     ))
 
 (test-section "sharing with sharing subshape")
-(let ((super (array (shape 4 7 4 7)
+(let ([super (array (shape 4 7 4 7)
                     1 * *
                     * 2 *
-                    * * 3))
-      (subshape (share-array
-                 (array (shape 0 2 0 3)
-                        * 4 *
-                        * 7 *)
-                 (shape 0 1 0 2)
-                 (lambda (r k)
-                   (values k 1)))))
-  (let ((sub (share-array super subshape (lambda (k) (values k k)))))
+                    * * 3)]
+      [subshape (share-array (array (shape 0 2 0 3)
+                                    * 4 *
+                                    * 7 *)
+                             (shape 0 1 0 2)
+                             (^[r k] (values k 1)))])
+  (let1 sub (share-array super subshape (^k (values k k)))
     (test* "subshape check" #t
            (equal? subshape (shape 4 7)))
     (test* "sharing subshape" '(2 0 1 0 2 4 7)
@@ -2035,12 +1995,12 @@
     ))
 
 (test-section "subarray")
-(let ((super (array (shape 0 3 0 3)
+(let ([super (array (shape 0 3 0 3)
                     1 * *
                     * 2 *
-                    * * 3))
-      (subshape (shape 1 3 1 3)))
-  (let ((sub (subarray super subshape)))
+                    * * 3)]
+      [subshape (shape 1 3 1 3)])
+  (let1 sub (subarray super subshape)
     (test* "sub check" #t
            (equal? sub (array (shape 0 2 0 2) 2 * * 3)))
     (test* "sharing with sharing subshape" (list 2 0 2 2 * * 3)
@@ -2057,104 +2017,97 @@
 (test-section "array-iteration")
 
 (test* "array-for-each-index (list)" '((0 0) (0 1) (1 0) (1 1))
-  (let ((ar (make-array (shape 0 2 0 2)))
-        (ls '()))
-    (array-for-each-index ar (lambda (a b) (push! ls (list a b))))
+  (let ([ar (make-array (shape 0 2 0 2))]
+        [ls '()])
+    (array-for-each-index ar (^[a b] (push! ls (list a b))))
     (reverse ls)))
 
 (test* "array-for-each-index (vector)" '(#(0 0) #(0 1) #(1 0) #(1 1))
-  (let ((ar (make-array (shape 0 2 0 2)))
-        (ls '())
-        (vec (make-vector 2)))
-    (array-for-each-index ar (lambda (v) (push! ls (vector-copy v))) vec)
+  (let ([ar (make-array (shape 0 2 0 2))]
+        [ls '()]
+        [vec (make-vector 2)])
+    (array-for-each-index ar (^v (push! ls (vector-copy v))) vec)
     (reverse ls)))
 
 (test* "array-for-each-index (array)" '(#(0 0) #(0 1) #(1 0) #(1 1))
-  (let ((ar (make-array (shape 0 2 0 2)))
-        (ls '())
-        (ind (make-array (shape 0 2))))
-    (array-for-each-index ar (lambda (a) (push! ls (array->vector a))) ind)
+  (let ([ar (make-array (shape 0 2 0 2))]
+        [ls '()]
+        [ind (make-array (shape 0 2))])
+    (array-for-each-index ar (^a (push! ls (array->vector a))) ind)
     (reverse ls)))
 
 (test* "array-for-each-index-by-dimension (list)" '(0 1)
-  (let ((ar (make-array (shape 0 2 5 7)))
-        (ls '()))
-    (array-for-each-index-by-dimension
-     ar '(0)
-     (lambda (a b) (push! ls a)))
+  (let ([ar (make-array (shape 0 2 5 7))]
+        [ls '()])
+    (array-for-each-index-by-dimension ar '(0) (^[a b] (push! ls a)))
     (reverse ls)))
 
 (test* "array-for-each-index-by-dimension (vector)" '(#(3 5) #(3 6) #(3 7))
-  (let ((ar (make-array (shape 0 2 5 8)))
-        (ls '()))
+  (let ([ar (make-array (shape 0 2 5 8))]
+        [ls '()])
     (array-for-each-index-by-dimension
-     ar '(1)
-     (lambda (v) (push! ls (vector-copy v)))
-     (vector 3 4))
+     ar '(1) (^v (push! ls (vector-copy v))) (vector 3 4))
     (reverse ls)))
 
 (test* "array-for-each-index-by-dimension (array)" '(#(5) #(6) #(7))
-  (let ((ar (make-array (shape 5 8 0 2)))
-        (ls '()))
+  (let ([ar (make-array (shape 5 8 0 2))]
+        [ls '()])
     (array-for-each-index-by-dimension
-     ar '(0)
-     (lambda (a) (push! ls (array->vector a)))
-     (make-array (shape 0 1)))
+     ar '(0) (^a (push! ls (array->vector a))) (make-array (shape 0 1)))
     (reverse ls)))
 
 (test* "shape-for-each (list)" '((0 0) (0 1) (1 0) (1 1))
-  (let ((sh (shape 0 2 0 2))
-        (ls '()))
-    (shape-for-each sh (lambda (a b) (push! ls (list a b))))
+  (let ([sh (shape 0 2 0 2)]
+        [ls '()])
+    (shape-for-each sh (^[a b] (push! ls (list a b))))
     (reverse ls)))
 
 (test* "shape-for-each (vector)" '(#(0 0) #(0 1) #(1 0) #(1 1))
-  (let ((sh (shape 0 2 0 2))
-        (ls '())
-        (vec (make-vector 2)))
-    (shape-for-each sh (lambda (v) (push! ls (vector-copy v))) vec)
+  (let ([sh (shape 0 2 0 2)]
+        [ls '()]
+        [vec (make-vector 2)])
+    (shape-for-each sh (^v (push! ls (vector-copy v))) vec)
     (reverse ls)))
 
 (test* "shape-for-each (array)" '(#(0 0) #(0 1) #(1 0) #(1 1))
-  (let ((sh (shape 0 2 0 2))
-        (ls '())
-        (ind (make-array (shape 0 2))))
-    (shape-for-each sh (lambda (a) (push! ls (array->vector a))) ind)
+  (let ([sh (shape 0 2 0 2)]
+        [ls '()]
+        [ind (make-array (shape 0 2))])
+    (shape-for-each sh (^a (push! ls (array->vector a))) ind)
     (reverse ls)))
 
 (test* "tabulate-array (list)" #,(<array> (1 3 1 3) 11 12 21 22)
-  (tabulate-array (shape 1 3 1 3) (lambda (a b) (+ (* a 10) b))))
+  (tabulate-array (shape 1 3 1 3) (^[a b] (+ (* a 10) b))))
 
 (test* "tabulate-array (vector)" #,(<array> (2 4 2 4) 12 31 17 36)
-  (let ((vec (make-vector 2))
-        (square (lambda (x) (* x x)))
-        (cube (lambda (x) (* x x x))))
-    (tabulate-array (shape 2 4 2 4) (lambda (v) (+ (square (ref v 0))
-                                                   (cube (ref v 1))))
+  (let ([vec (make-vector 2)]
+        [square (^x (* x x))]
+        [cube (^x (* x x x))])
+    (tabulate-array (shape 2 4 2 4) (^v (+ (square (ref v 0))
+                                           (cube (ref v 1))))
                     vec)))
 
 (test* "array-retabulate! (list)" #,(<array> (0 2 0 2) 1.0 0.5 0.25 0.125)
-  (let ((ar #,(<array> (0 2 0 2) 1 2 4 8)))
-    (array-retabulate! ar (lambda (i j) (/ 1.0 (array-ref ar i j))))
-    ar))
+  (rlet1 ar #,(<array> (0 2 0 2) 1 2 4 8)
+    (array-retabulate! ar (^[i j] (/ 1.0 (array-ref ar i j))))))
 
 (test* "array-retabulate! (vector)" #,(<array> (0 2 0 2) 1.0 0.5 0.25 0.125)
-  (let ((ar #,(<array> (0 2 0 2) 1 2 4 8))
-        (vec (make-vector 2)))
-    (array-retabulate! ar (lambda (v) (/ 1.0 (array-ref ar v))) vec)
+  (let ([ar #,(<array> (0 2 0 2) 1 2 4 8)]
+        [vec (make-vector 2)])
+    (array-retabulate! ar (^v (/ 1.0 (array-ref ar v))) vec)
     ar))
 
 (test* "array-retabulate! (uniform)" #,(<f64array> (0 2 0 2) 1.0 0.5 0.25 0.125)
-  (let ((ar #,(<f64array> (0 2 0 2) 1 2 4 8))
-        (vec (make-vector 2)))
-    (array-retabulate! ar (lambda (v) (/ 1.0 (array-ref ar v))) vec)
+  (let ([ar #,(<f64array> (0 2 0 2) 1 2 4 8)]
+        [vec (make-vector 2)])
+    (array-retabulate! ar (^v (/ 1.0 (array-ref ar v))) vec)
     ar))
 
 (test* "array-map-1" #,(<array> (0 2 0 2) 1 4 9 16)
-  (array-map (lambda (x) (* x x)) #,(<array> (0 2 0 2) 1 2 3 4)))
+  (array-map (^x (* x x)) #,(<array> (0 2 0 2) 1 2 3 4)))
 
 (test* "array-map-2" #,(<array> (0 2 0 2) 11 22 33 44)
-  (array-map (lambda (a b) (+ a b))
+  (array-map (^[a b] (+ a b))
              #,(<array> (0 2 0 2) 1 2 3 4)
              #,(<array> (0 2 0 2) 10 20 30 40)))
 
@@ -2216,20 +2169,19 @@
 (define (array-approx-equal? a b)
   (or (eq? a b) (array-equal? a b approx-equal?)))
 
-(let ((i 0))
+(let1 i 0
   (for-each
-   (lambda (t)
-     (let-optionals* t (ar (inv #f) (det 0))
-       (test* (format "array-inverse-~D" (inc! i)) inv
-         (array-inverse ar)
-         array-approx-equal?)
-       (when inv
-         (test* (format "array-inverse-~D" (inc! i)) (array-normalize ar)
-           (array-inverse inv)
-           array-approx-equal?))
-       (test* (format "determinant-~D" (inc! i)) det
-         (determinant ar)
-         approx-equal?)))
+   (^t (let-optionals* t (ar (inv #f) (det 0))
+         (test* (format "array-inverse-~D" (inc! i)) inv
+                (array-inverse ar)
+                array-approx-equal?)
+         (when inv
+           (test* (format "array-inverse-~D" (inc! i)) (array-normalize ar)
+                  (array-inverse inv)
+                  array-approx-equal?))
+         (test* (format "determinant-~D" (inc! i)) det
+                (determinant ar)
+                approx-equal?)))
    '((#,(<array> (0 2 0 2) 1 2 3 4)
       #,(<array> (0 2 0 2) -2.0 1.0 1.5 -0.5)
       -2)
@@ -2253,11 +2205,10 @@
 
 (let ((i 0))
   (for-each
-   (lambda (t)
-     (let-optionals* t (a b c)
-       (test* (format "array-mul-~D" (inc! i)) c
-         (array-mul a b)
-         array-approx-equal?)))
+   (^t (let-optionals* t (a b c)
+         (test* (format "array-mul-~D" (inc! i)) c
+                (array-mul a b)
+                array-approx-equal?)))
    '((#,(<array> (0 2 0 2) 1 2 3 4)
       #,(<array> (0 2 0 2) 4 3 2 1)
       #,(<array> (0 2 0 2) 8 5 20 13))
@@ -2281,33 +2232,22 @@
 (define s (make-string 10000 #\z))
 
 (test* "copy-port (default)" #t
-       (equal? s
-               (call-with-string-io s
-                 (lambda (in out)
-                   (copy-port in out)))))
+       (equal? s (call-with-string-io s (^[in out] (copy-port in out)))))
 
 (test* "copy-port (unit byte)" #t
-       (equal? s
-               (call-with-string-io s
-                 (lambda (in out)
-                   (copy-port in out :unit 'byte)))))
+       (equal? s (call-with-string-io s (^[in out]
+                                          (copy-port in out :unit 'byte)))))
 
 (test* "copy-port (unit char)" #t
-       (equal? s
-               (call-with-string-io s
-                 (lambda (in out)
-                   (copy-port in out :unit 'char)))))
+       (equal? s (call-with-string-io s (^[in out]
+                                          (copy-port in out :unit 'char)))))
 
 (test* "copy-port (unit 10)" #t
-       (equal? s
-               (call-with-string-io s
-                 (lambda (in out)
-                   (copy-port in out :unit 10)))))
+       (equal? s (call-with-string-io s (^[in out]
+                                          (copy-port in out :unit 10)))))
 
 (test* "copy-port (unit 100000)" #t
-       (equal? s
-               (call-with-string-io s
-                 (lambda (in out)
-                   (copy-port in out :unit 100000)))))
+       (equal? s (call-with-string-io s (^[in out]
+                                          (copy-port in out :unit 100000)))))
 
 (test-end)

@@ -47,21 +47,21 @@
 (test* "build-path" (n "foo") (build-path "" "foo" ""))
 
 (test* "decompose-path" '("/a/b/c" "d" "e")
-       (receive r (decompose-path "/a/b/c/d.e") r))
+       (values->list (decompose-path "/a/b/c/d.e")))
 (test* "decompose-path" '("." "d" "e")
-       (receive r (decompose-path "d.e") r))
+       (values->list (decompose-path "d.e")))
 (test* "decompose-path" '("." "d" "")
-       (receive r (decompose-path "d.") r))
+       (values->list (decompose-path "d.")))
 (test* "decompose-path" '("." "d" #f)
-       (receive r (decompose-path "d") r))
+       (values->list (decompose-path "d")))
 (test* "decompose-path" '("/a.b" "c" #f)
-       (receive r (decompose-path "/a.b/c") r))
+       (values->list (decompose-path "/a.b/c")))
 (test* "decompose-path" '("/a.b" #f #f)
-       (receive r (decompose-path "/a.b/") r))
+       (values->list (decompose-path "/a.b/")))
 (test* "decompose-path" '("/a.b" "c.c" "d")
-       (receive r (decompose-path "/a.b/c.c.d") r))
+       (values->list (decompose-path "/a.b/c.c.d")))
 (test* "decompose-path" '("/a.b" ".d" #f)
-       (receive r (decompose-path "/a.b/.d") r))
+       (values->list (decompose-path "/a.b/.d")))
 
 (test* "path-extension" "c" (path-extension "/a.b/c.d/e.c"))
 (test* "path-extension" "" (path-extension "/a.b/c.d/e.c."))
@@ -206,30 +206,29 @@
        '(("." ".." "test.d" "test2.d")
          ("test1.o" "test2.o" "test3.o" "test4.o"
           "test5.o" "test6.o" "test7.o" ))
-       (receive x (directory-list2 "test.out") x))
+       (values->list (directory-list2 "test.out")))
 
 (test* "directory-list2 :add-path"
        `(,(n "test.out/." "test.out/.." "test.out/test.d" "test.out/test2.d")
          ,(n "test.out/test1.o" "test.out/test2.o"  "test.out/test3.o"
              "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
              "test.out/test7.o"))
-       (receive x (directory-list2 "test.out" :add-path? #t) x))
+       (values->list (directory-list2 "test.out" :add-path? #t)))
 
 (test* "directory-list2 :children"
        `(,(n "test.out/test.d" "test.out/test2.d")
          ,(n "test.out/test1.o" "test.out/test2.o"  "test.out/test3.o"
              "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
          "test.out/test7.o"))
-       (receive x (directory-list2 "test.out" :add-path? #t :children? #t) x))
+       (values->list (directory-list2 "test.out" :add-path? #t :children? #t)))
 
 (test* "directory-list2 :filter"
        '(("test.d" "test2.d")
          ("test1.o" "test2.o" "test3.o" "test4.o"
           "test5.o" "test6.o" "test7.o" ))
-       (receive x 
-           (directory-list2 "test.out"
-                            :filter (^p (string-contains p "test")))
-         x))
+       (values->list 
+        (directory-list2 "test.out"
+                         :filter (^p (string-contains p "test")))))
 
 (cond-expand
  [gauche.sys.symlink
@@ -237,9 +236,8 @@
          '(("test.d")
            ("test1.o" "test2.d" "test2.o" "test3.o" "test4.o"
             "test5.o" "test6.o" "test7.o" ))
-         (receive x (directory-list2 "test.out" :follow-link? #f :children? #t)
-           x)
-         )]
+         (values->list
+          (directory-list2 "test.out" :follow-link? #f :children? #t)))]
  [else])
 
 (test* "directory-fold"
@@ -252,8 +250,8 @@
         (directory-fold "test.out"
                         (^[path result]
                           (if (= (file-size path) 100)
-                              (cons path result)
-                              result))
+                            (cons path result)
+                            result))
                         '()))
        )
 
