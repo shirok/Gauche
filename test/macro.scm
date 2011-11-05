@@ -890,6 +890,13 @@
             (values-ref (values 'a 'b 'c 'd 'e) 4 3 2 1 0)
           r)))
 
+(test "values->list" '(3 1)
+      (lambda () (values->list (quotient&remainder 10 3))))
+(test "values->list" '(1)
+      (lambda () (values->list 1)))
+(test "values->list" '()
+      (lambda () (values->list (values))))
+
 (test "let1" '(2 2 2)
       (lambda () (let1 x (+ 1 1) (list x x x))))
 (test "let1" '(2 4)

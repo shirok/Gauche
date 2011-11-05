@@ -7867,6 +7867,23 @@ Scheme の他の@code{*-ref} 手続きと合わせるためです。
 @c COMMON
 @end defmac
 
+@defmac values->list mv-expr
+@c EN
+Evaluates @var{mv-expr}, puts all the results into a list
+and returns it.   It is called @code{multiple-value-list} in
+Common Lisp.
+@c JP
+@var{mv-expr}を評価し、結果の値をリストにして返します。Common Lispで
+@code{multiple-value-list}と呼ばれているものです。
+@c COMMON
+
+@example
+(values->list (div-and-mod 10 3)) @result{} (3 1)
+
+(values->list 1) @result{} (1)
+@end example
+@end defmac
+
 @node Delayed evaluation,  , Multiple values, Control features
 @subsection  Delayed evaluation
 @c NODE 遅延評価

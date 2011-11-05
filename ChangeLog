@@ -1,3 +1,9 @@
+2011-11-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm (values->list): Support a common
+	  pattern.  CL's multiple-value-list.
+	* src/autoloads.scm (values->list): changed accordingly.
+
 2011-10-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/lazy.c (Scm_ForceLazyPair): Fixed a bug that the second value

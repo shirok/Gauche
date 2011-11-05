@@ -107,7 +107,7 @@
                   ^r ^s ^t ^u ^v ^w ^x ^y ^z $ lcons)
           (:macro let1 if-let1 rlet1)
           (:macro let/cc) (:macro begin0) (:macro fluid-let)
-          (:macro values-ref)
+          (:macro values-ref values->list)
           (:macro ecase)
           (:macro dotimes dolist while until)
           (:macro guard unwind-protect))

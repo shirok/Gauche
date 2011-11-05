@@ -217,6 +217,10 @@
               (map (lambda (i) (list-ref v i)) (list n m l k ...))))]
     ))
 
+(define-syntax values->list             ;multilple-value-list in CL
+  (syntax-rules ()
+    [(_ mv-expr) (receive x mv-expr x)]))
+
 ;; fluid-let written by Dorai Sitaram
 ;; NB: all threads shares the state of fluid global vers.
 ;; this is mainly for the comatibility of existing third-party code.
