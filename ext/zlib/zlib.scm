@@ -63,14 +63,14 @@
 (export-if-defined Z_TEXT Z_FIXED)
 
 ;; body
-(define (open-deflating-port source :key
-                             (compression-level Z_DEFAULT_COMPRESSION)
-                             (window-bits 15)
-                             (memory-level 8)
-                             (strategy Z_DEFAULT_STRATEGY)
-                             (dictionary #f)
-                             (buffer-size 0)
-                             (owner? #f))
+(define (open-deflating-port source
+                             :key (compression-level Z_DEFAULT_COMPRESSION)
+                                  (window-bits 15)
+                                  (memory-level 8)
+                                  (strategy Z_DEFAULT_STRATEGY)
+                                  (dictionary #f)
+                                  (buffer-size 0)
+                                  (owner? #f))
   (%open-deflating-port source compression-level
                         window-bits memory-level
                         strategy dictionary
@@ -79,30 +79,21 @@
 ;; utility procedures
 (define (deflate-string str . args)
   (call-with-output-string
-    (lambda (p)
-      (let1 p2 (apply open-deflating-port p args)
-        (display str p2)
-        (close-output-port p2)))))
+    (^p (let1 p2 (apply open-deflating-port p args)
+          (display str p2)
+          (close-output-port p2)))))
 
 (define (inflate-string str . args)
-  (port->string
-   (apply open-inflating-port
-          (open-input-string str)
-          args)))
+  (port->string (apply open-inflating-port (open-input-string str) args)))
 
 (define (gzip-encode-string str . args)
   (call-with-output-string
-    (lambda (p)
-      (let1 p2 (apply open-deflating-port p
-                      :window-bits (+ 15 16)
-                      args)
-        (display str p2)
-        (close-output-port p2)))))
+    (^p (let1 p2 (apply open-deflating-port p :window-bits (+ 15 16) args)
+          (display str p2)
+          (close-output-port p2)))))
 
 (define (gzip-decode-string str . args)
-  (port->string
-   (apply open-inflating-port
-          (open-input-string str)
-          :window-bits (+ 15 16)
-          args)))
-
+  (port->string (apply open-inflating-port
+                       (open-input-string str)
+                       :window-bits (+ 15 16)
+                       args)))

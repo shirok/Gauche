@@ -102,16 +102,15 @@
 ;;=====================================================================
 (test-section "directories")
 
-(test "current-directory" (list (n "/") (n "/") #t #t)
-      (lambda ()
-        (let* ((cur   (sys-getcwd))
-               (root  (begin (current-directory "/")
-                             (n (sys-getcwd))))
-               (root* (n (current-directory)))
-               (cur*  (begin (current-directory cur)
-                             (sys-getcwd)))
-               (cur** (current-directory)))
-          (list root root* (string=? cur cur*) (string=? cur* cur**)))))
+(test* "current-directory" (list (n "/") (n "/") #t #t)
+       (let* ([cur   (sys-getcwd)]
+              [root  (begin (current-directory "/")
+                            (n (sys-getcwd)))]
+              [root* (n (current-directory))]
+              [cur*  (begin (current-directory cur)
+                            (sys-getcwd))]
+              [cur** (current-directory)])
+         (list root root* (string=? cur cur*) (string=? cur* cur**))))
 
 ;; rm -rf
 (define (cmd-rmrf dir)
@@ -194,7 +193,7 @@
           "test.out/test2.o"  "test.out/test3.o" "test.out/test4.o"
           "test.out/test5.o" "test.out/test6.o" "test.out/test7.o" )
        (directory-list "test.out" :add-path? #t
-                       :filter (lambda (p) (string-suffix? "o" p))))
+                       :filter (^p (string-suffix? "o" p))))
 
 (test* "directory-list :filter"
        (n "test.out/test1.o"
@@ -219,7 +218,7 @@
 (test* "directory-list2 :children"
        `(,(n "test.out/test.d" "test.out/test2.d")
          ,(n "test.out/test1.o" "test.out/test2.o"  "test.out/test3.o"
-          "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
+             "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
          "test.out/test7.o"))
        (receive x (directory-list2 "test.out" :add-path? #t :children? #t) x))
 
@@ -229,7 +228,7 @@
           "test5.o" "test6.o" "test7.o" ))
        (receive x 
            (directory-list2 "test.out"
-                            :filter (lambda (p) (string-contains p "test")))
+                            :filter (^p (string-contains p "test")))
          x))
 
 (cond-expand
@@ -251,7 +250,7 @@
           "test.out/test6.o" "test.out/test7.o")
        (reverse
         (directory-fold "test.out"
-                        (lambda (path result)
+                        (^[path result]
                           (if (= (file-size path) 100)
                               (cons path result)
                               result))
@@ -274,7 +273,7 @@
           "test.out/test6.o" "test.out/test7.o")
        (reverse
         (directory-fold "test.out" cons '()
-                        :lister (lambda (path seed)
+                        :lister (^[path seed]
                                   (values
                                    (directory-list path
                                                    :add-path? #t
@@ -292,7 +291,7 @@
             "test.out/test6.o" "test.out/test7.o")
          (reverse 
           (directory-fold "test.out"
-                          (lambda (path result)
+                          (^[path result]
                             (if (= (file-size path) 100)
                                 (cons path result)
                                 result))
@@ -327,7 +326,7 @@
        (reverse
         (directory-fold "test.out" cons '()
                         :follow-link? #f
-                        :lister (lambda (dir knil)
+                        :lister (^[dir knil]
                                   (receive (dirs files)
                                       (directory-list2 dir :add-path? #t :children? #t :follow-link? #f)
                                     (append dirs
@@ -627,7 +626,7 @@
 
   (test* #`"with-lock-file (,type) just lock&release" '(#t #f)
          (let1 r (with-lock-file "test.out"
-                                 (^() (file-exists? "test.out"))
+                                 (^[] (file-exists? "test.out"))
                                  :type type)
            (list r (file-exists? "test.out"))))
 
@@ -636,11 +635,11 @@
   (test* #`"with-lock-file (,type) lock giveup" `((,<lock-file-failure> #t) #f)
          (let1 r
              (with-lock-file "test.out"
-                             (^()
+                             (^[]
                                (let1 r2
                                    (guard (e (else (class-of e)))
                                      (with-lock-file "test.out"
-                                                     (^() 'boo!)
+                                                     (^[] 'boo!)
                                                      :type type
                                                      :abandon-timeout #f
                                                      :retry-interval 0.1
@@ -657,7 +656,7 @@
              [(file) (touch-file "test.out")]
              [(directory) (make-directory* "test.out")])
            (with-lock-file "test.out"
-                           (^() 'got)
+                           (^[] 'got)
                            :type type
                            :retry-interval 0.1
                            :retry-limit 5
@@ -671,7 +670,7 @@
              [(file) (make-directory* "test.out")]
              [(directory) (touch-file "test.out")])
            (with-lock-file "test.out"
-                           (^() 'got)
+                           (^[] 'got)
                            :type type
                            :retry-interval 0.1
                            :retry-limit 0.5

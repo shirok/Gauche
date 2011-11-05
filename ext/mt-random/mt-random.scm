@@ -49,21 +49,21 @@
 (dynamic-load "math--mt-random")
 
 (define (%get-nword-random-int mt n)
-  (let loop ((i 0) (r (%mt-random-uint32 mt)))
+  (let loop ([i 0] [r (%mt-random-uint32 mt)])
     (if (= i n)
-        r
-        (loop (+ i 1)
-              (+ (ash r 32) (%mt-random-uint32 mt))))))
+      r
+      (loop (+ i 1)
+            (+ (ash r 32) (%mt-random-uint32 mt))))))
 
 (define (mt-random-integer mt n)
   (when (not (positive? n)) (error "invalid range" n))
   (if (<= n #x100000000)
-      (%mt-random-integer mt n)
-      (let* ((siz (ash (integer-length n) -5))
-             (q   (quotient (ash 1 (* 32 (+ siz 1))) n))
-             (qn  (* q n)))
-        (let loop ((r (%get-nword-random-int mt siz)))
-          (if (< r qn)
-              (quotient r q)
-              (loop (%get-nword-random-int mt siz)))))))
+    (%mt-random-integer mt n)
+    (let* ([siz (ash (integer-length n) -5)]
+           [q   (quotient (ash 1 (* 32 (+ siz 1))) n)]
+           [qn  (* q n)])
+      (let loop ([r (%get-nword-random-int mt siz)])
+        (if (< r qn)
+          (quotient r q)
+          (loop (%get-nword-random-int mt siz)))))))
 

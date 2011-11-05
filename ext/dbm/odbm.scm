@@ -67,27 +67,27 @@
   (next-method)
   (unless (slot-bound? self 'path)
     (error "path must be set to open odbm database"))
-  (let* ((path   (slot-ref self 'path))
-         (rwmode (slot-ref self 'rw-mode))
-         (fmode  (slot-ref self 'file-mode))
-         (dirfile (string-append path ".dir"))
-         (pagfile (string-append path ".pag"))
-         (exists? (and (file-exists? dirfile) (file-exists? pagfile)))
-         (create  (lambda ()
-                    (with-output-to-file dirfile (lambda () #f))
-                    (with-output-to-file pagfile (lambda () #f)))))
+  (let* ([path   (slot-ref self 'path)]
+         [rwmode (slot-ref self 'rw-mode)]
+         [fmode  (slot-ref self 'file-mode)]
+         [dirfile (string-append path ".dir")]
+         [pagfile (string-append path ".pag")]
+         [exists? (and (file-exists? dirfile) (file-exists? pagfile))]
+         [create  (^[]
+                    (with-output-to-file dirfile (^[] #f))
+                    (with-output-to-file pagfile (^[] #f)))])
     (case rwmode
-      ((:read)
+      [(:read)
        (unless exists?
-         (errorf "dbm-open: no database file ~s.dir or ~s.pag" path path)))
-      ((:write)
+         (errorf "dbm-open: no database file ~s.dir or ~s.pag" path path))]
+      [(:write)
        ;; dir and pag files must exist
-       (unless exists? (create)))
-      ((:create)
+       (unless exists? (create))]
+      [(:create)
        ;; a trick: remove dir and pag file first if :create
        (when exists?
          (sys-unlink dirfile) (sys-unlink pagfile))
-       (create)))
+       (create)])
     (odbm-init path)
     ;; adjust mode properly
     (sys-chmod dirfile fmode)
@@ -115,11 +115,9 @@
 
 (define-method dbm-get ((self <odbm>) key . args)
   (next-method)
-  (cond ((odbm-fetch (%dbm-k2s self key))
-         => (lambda (v) (%dbm-s2v self v)))
-        ((pair? args) (car args))     ;fall-back value
-        (else  (errorf "odbm: no data for key ~s in database ~s"
-                       key self))))
+  (cond [(odbm-fetch (%dbm-k2s self key)) => (cut %dbm-s2v self <>)]
+        [(pair? args) (car args)]     ;fall-back value
+        [else  (errorf "odbm: no data for key ~s in database ~s" key self)]))
 
 (define-method dbm-exists? ((self <odbm>) key)
   (next-method)
@@ -132,13 +130,12 @@
 
 (define-method dbm-fold ((self <odbm>) proc knil)
   (next-method)
-  (let loop ((key (odbm-firstkey))
-             (r   '()))
+  (let loop ([key (odbm-firstkey)] [r '()])
     (if key
-        (let ((val (odbm-fetch key)))
-          (loop (odbm-nextkey key)
-                (proc (%dbm-s2k self key) (%dbm-s2v self val) r)))
-        r)))
+      (let1 val (odbm-fetch key)
+        (loop (odbm-nextkey key)
+              (proc (%dbm-s2k self key) (%dbm-s2v self val) r)))
+      r)))
 
 
 (define (odbm-files name)

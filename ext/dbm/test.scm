@@ -57,24 +57,20 @@
 
 ;; put everything to the database
 (define (test:put! dataset)
-  (hash-table-for-each
-   dataset
-   (lambda (k v)
-     (dbm-put! *current-dbm* k v)))
+  (hash-table-for-each dataset
+                       (^[k v] (dbm-put! *current-dbm* k v)))
   #t)
 
 ;; does database has all of them?
 (define (test:get dataset)
-  (call/cc
-   (lambda (return)
-     (hash-table-for-each
-      dataset
-      (lambda (k v)
-        (unless (dbm-exists? *current-dbm* k)
-          (return #f))
-        (unless (equal? v (dbm-get *current-dbm* k))
-          (return #f))))
-     #t)))
+  (let/cc return
+    (hash-table-for-each dataset
+                         (^[k v]
+                           (unless (dbm-exists? *current-dbm* k)
+                             (return #f))
+                           (unless (equal? v (dbm-get *current-dbm* k))
+                             (return #f))))
+    #t))
 
 ;; does database properly deal with exceptional case?
 (define (test:get-exceptional)
@@ -89,7 +85,7 @@
   (let/cc break
     (let1 r '()
       (dbm-for-each *current-dbm*
-                    (lambda (k v)
+                    (^[k v]
                       (unless (equal? v (hash-table-get dataset k #f))
                         (break #f))
                       (set! r (cons v r))))
@@ -98,7 +94,7 @@
 ;; does collection framework work?
 (define (test:collection-read dataset)
   (let/cc break
-    (for-each (lambda (entry)
+    (for-each (^[entry]
                 (unless (equal? (hash-table-get dataset (car entry))
                                 (cdr entry))
                   (break #f)))
@@ -109,13 +105,13 @@
 (define (test:dict-for-each dataset)
   (let/cc break
     (dict-for-each *current-dbm*
-                   (lambda (k v)
+                   (^[k v]
                      (unless (equal? (hash-table-get dataset k) v)
                        (break #f))))
     #t))
 
 (define (test:dict-map dataset)
-  (every (lambda (p) (equal? (hash-table-get dataset (car p)) (cdr p)))
+  (every (^p (equal? (hash-table-get dataset (car p)) (cdr p)))
          (dict-map *current-dbm* cons)))
 
 (define (test:dict-keys dataset)
@@ -128,16 +124,15 @@
 
 ;; does delete work?
 (define (test:delete dataset)
-  (call/cc
-   (lambda (return)
-     (hash-table-for-each
-      dataset
-      (lambda (k v)
-        (unless (and (dbm-exists? *current-dbm* k)
-                     (begin (dbm-delete! *current-dbm* k)
-                            (not (dbm-exists? *current-dbm* k))))
-          (return #f))))
-     #t)))
+  (let/cc return
+    (hash-table-for-each
+     dataset
+     (^[k v]
+       (unless (and (dbm-exists? *current-dbm* k)
+                    (begin (dbm-delete! *current-dbm* k)
+                           (not (dbm-exists? *current-dbm* k))))
+         (return #f))))
+    #t))
 
 ;; does read-only work?
 (define (test:read-only)
@@ -148,13 +143,13 @@
 ;; does copy work?
 (define (test:copy class from to)
   (dbm-db-copy class from to)
-  (let ((f (dbm-open class :path from :rw-mode :read))
-        (tab (make-hash-table 'equal?)))
+  (let ([f (dbm-open class :path from :rw-mode :read)]
+        [tab (make-hash-table 'equal?)])
     (dbm-for-each f (cut hash-table-put! tab <> <>))
     (dbm-close f)
     (let1 t (dbm-open class :path to :rw-mode :read)
       (begin0
-       (every (lambda (k) (equal? (dbm-get tab k) (dbm-get t k)))
+       (every (^k (equal? (dbm-get tab k) (dbm-get t k)))
               (dict-keys tab))
        (dbm-close t)))))
 
@@ -167,8 +162,8 @@
        (catch (dbm-exists? *current-dbm* ""))
        (catch (dbm-put! *current-dbm* "" ""))
        (catch (dbm-delete! *current-dbm* ""))
-       (catch (dbm-for-each *current-dbm* (lambda _ #f)))
-       (catch (dbm-map *current-dbm* (lambda _ #f)))))
+       (catch (dbm-for-each *current-dbm* (^ _ #f)))
+       (catch (dbm-map *current-dbm* (^ _ #f)))))
 
 ;; does db-remove work?
 (define (test:db-remove class name)
@@ -189,7 +184,7 @@
   (define (tag msg) (format #f "~s ~a" class msg))
   (dynamic-wind
    clean-up
-   (lambda ()
+   (^[]
      ;; create read/write db
      (test* (tag "db-exists? (pre)") #f (test:db-exists? class))
      (test* (tag "make") #t (test:make class :create serializer))

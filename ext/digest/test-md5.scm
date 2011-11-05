@@ -8,11 +8,11 @@
 (test-module 'rfc.md5)
 
 (for-each
- (lambda (args)
-   (test "md5-digest-string" (car args)
-	 (lambda () (digest-hexify (apply md5-digest-string (cdr args)))))
-   (test "digest-string" (car args)
- 	 (lambda () (digest-hexify (apply digest-string <md5> (cdr args))))))
+ (^[args]
+   (test* "md5-digest-string" (car args)
+          (digest-hexify (apply md5-digest-string (cdr args))))
+   (test* "digest-string" (car args)
+          (digest-hexify (apply digest-string <md5> (cdr args)))))
  '(("d41d8cd98f00b204e9800998ecf8427e" "")
    ("0cc175b9c0f1b6a831c399e269772661" "a")
    ("900150983cd24fb0d6963f7d28e17f72" "abc")

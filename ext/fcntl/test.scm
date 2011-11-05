@@ -19,27 +19,22 @@
 
   (sys-unlink "test.o")
 
-  (test "F_GETFL" O_WRONLY
-        (lambda ()
-          (call-with-output-file "test.o"
-            (lambda (p) (logand (sys-fcntl p F_GETFL) O_ACCMODE)))))
+  (test* "F_GETFL" O_WRONLY
+         (call-with-output-file "test.o"
+           (^p (logand (sys-fcntl p F_GETFL) O_ACCMODE))))
 
-  (test "F_GETFL" O_RDONLY
-        (lambda ()
-          (call-with-input-file "test.o"
-            (lambda (p) (logand (sys-fcntl p F_GETFL) O_ACCMODE)))))
+  (test* "F_GETFL" O_RDONLY
+         (call-with-input-file "test.o"
+           (^p (logand (sys-fcntl p F_GETFL) O_ACCMODE))))
 
-  (test "F_GETFL" #t
-        (lambda ()
-          (call-with-input-file "test.o"
-            (lambda (p)
-              (zero? (logand (sys-fcntl p F_GETFL) O_APPEND))))))
+  (test* "F_GETFL" #t
+         (call-with-input-file "test.o"
+           (^p (zero? (logand (sys-fcntl p F_GETFL) O_APPEND)))))
 
-  (test "F_GETFL" #f
-        (lambda ()
-          (call-with-output-file "test.o"
-            (lambda (p) (zero? (logand (sys-fcntl p F_GETFL) O_APPEND)))
-            :if-exists :append)))
+  (test* "F_GETFL" #f
+         (call-with-output-file "test.o"
+           (^p (zero? (logand (sys-fcntl p F_GETFL) O_APPEND)))
+           :if-exists :append))
 
   (sys-unlink "test.o")
 

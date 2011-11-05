@@ -45,15 +45,12 @@
 ;; is not yet built.  So we use a bit of kludge here.
 (define ipv6-capable (global-variable-bound? 'gauche.net 'sys-getaddrinfo))
 
-(define (make-sys-addrinfo . args)
+(define (make-sys-addrinfo :key (flags 0) (family AF_UNSPEC)
+                                (socktype 0) (protocol 0))
   (if ipv6-capable
-    (let-keywords args ((flags    0)
-                        (family   AF_UNSPEC)
-                        (socktype 0)
-                        (protocol 0))
-      (make <sys-addrinfo>
-        :flags (if (list? flags) (apply logior flags) flags)
-        :family family :socktype socktype :protocol protocol))
+    (make <sys-addrinfo>
+      :flags (if (list? flags) (apply logior flags) flags)
+      :family family :socktype socktype :protocol protocol)
     (error "make-sys-addrinfo is available on IPv6-enabled platform")))
 
 ;; Utility
@@ -68,12 +65,12 @@
 
 (define (make-client-socket proto . args)
   (cond [(eq? proto 'unix)
-         (let-optionals* args ((path #f))
+         (let-optionals* args ([path #f])
            (unless (string? path)
              (error "unix socket requires pathname, but got" path))
            (make-client-socket-unix path))]
         [(eq? proto 'inet)
-         (let-optionals* args ((host #f) (port #f))
+         (let-optionals* args ([host #f] [port #f])
            (unless (and (string? host) (or (integer? port) (string? port)))
              (errorf "inet socket requires host name and port, but got ~s and ~s"
                      host port))
@@ -93,7 +90,6 @@
   (rlet1 socket (make-socket (address->protocol-family addr) SOCK_STREAM)
     (socket-connect socket addr)))
 
-
 (define (make-client-socket-unix path)
   (rlet1 socket (make-socket PF_UNIX SOCK_STREAM)
     (socket-connect socket (make <sockaddr-un> :path path))))
@@ -101,7 +97,7 @@
 (define (make-client-socket-inet host port)
   (let1 err #f
     (define (try-connect address)
-      (guard (e (else (set! err e) #f))
+      (guard (e [else (set! err e) #f])
         (rlet1 socket (make-socket (address->protocol-family address)
                                   SOCK_STREAM)
           (socket-connect socket address))))
@@ -128,24 +124,22 @@
         [else
          (error "unsupported protocol:" proto)]))
 
-(define (make-server-socket-from-addr addr . args)
-  (let-keywords args ((reuse-addr? #f)
-                      (sock-init #f)
-                      (backlog DEFAULT_BACKLOG))
-    (rlet1 socket (make-socket (address->protocol-family addr) SOCK_STREAM)
-      (when (procedure? sock-init)
-	(sock-init socket addr))
-      (when reuse-addr?
-	(socket-setsockopt socket SOL_SOCKET SO_REUSEADDR 1))
-      (socket-bind socket addr)
-      (socket-listen socket backlog))))
+(define (make-server-socket-from-addr addr :key (reuse-addr? #f)
+                                                (sock-init #f)
+                                                (backlog DEFAULT_BACKLOG))
+  (rlet1 socket (make-socket (address->protocol-family addr) SOCK_STREAM)
+    (when (procedure? sock-init)
+      (sock-init socket addr))
+    (when reuse-addr?
+      (socket-setsockopt socket SOL_SOCKET SO_REUSEADDR 1))
+    (socket-bind socket addr)
+    (socket-listen socket backlog)))
 
 
-(define (make-server-socket-unix path . args)
-  (let-keywords args ((backlog DEFAULT_BACKLOG))
-    (rlet1 socket (make-socket PF_UNIX SOCK_STREAM)
-      (socket-bind socket (make <sockaddr-un> :path path))
-      (socket-listen socket backlog))))
+(define (make-server-socket-unix path :key (backlog DEFAULT_BACKLOG))
+  (rlet1 socket (make-socket PF_UNIX SOCK_STREAM)
+    (socket-bind socket (make <sockaddr-un> :path path))
+    (socket-listen socket backlog)))
 
 (define (make-server-socket-inet port . args)
   (apply make-server-socket-from-addr (car (make-sockaddrs #f port)) args))
@@ -176,28 +170,26 @@
                 v4s)
           (map (cut apply make-server-socket <> args) ss)))])))
 
-(define (make-sockaddrs host port . maybe-proto)
-  (let1 proto (get-optional maybe-proto 'tcp)
-    (if ipv6-capable
-      (let* ((socktype (case proto
-                         [(tcp) SOCK_STREAM]
-                         [(udp) SOCK_DGRAM]
-                         [else (error "unsupported protocol:" proto)]))
-             (port (x->string port))
-             (hints (make-sys-addrinfo :flags AI_PASSIVE :socktype socktype))
-             )
-        (map (cut slot-ref <> 'addr) (sys-getaddrinfo host port hints)))
-      (let1 port (cond [(number? port) port]
-                       [(sys-getservbyname port (symbol->string proto))
-                        => (cut slot-ref <> 'port)]
-                       [else
-                        (error "couldn't find a port number of service:" port)])
-        (if host
-          (let1 hh (sys-gethostbyname host)
-            (unless hh (error "couldn't find host: " host))
-            (map (cut make <sockaddr-in> :host <> :port port)
-                 (slot-ref hh 'addresses)))
-          (list (make <sockaddr-in> :host :any :port port)))))))
+(define (make-sockaddrs host port :optional (proto 'tcp))
+  (if ipv6-capable
+    (let* ([socktype (case proto
+                       [(tcp) SOCK_STREAM]
+                       [(udp) SOCK_DGRAM]
+                       [else (error "unsupported protocol:" proto)])]
+           [port (x->string port)]
+           [hints (make-sys-addrinfo :flags AI_PASSIVE :socktype socktype)])
+      (map (cut slot-ref <> 'addr) (sys-getaddrinfo host port hints)))
+    (let1 port (cond [(number? port) port]
+                     [(sys-getservbyname port (symbol->string proto))
+                      => (cut slot-ref <> 'port)]
+                     [else
+                      (error "couldn't find a port number of service:" port)])
+      (if host
+        (let1 hh (sys-gethostbyname host)
+          (unless hh (error "couldn't find host: " host))
+          (map (cut make <sockaddr-in> :host <> :port port)
+               (slot-ref hh 'addresses)))
+        (list (make <sockaddr-in> :host :any :port port))))))
 
 (define (call-with-client-socket socket proc
                                  :key (input-buffering #f) (output-buffering #f))

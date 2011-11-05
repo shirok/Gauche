@@ -456,16 +456,16 @@
       (Scm_Error "uniform vector buffer too short: %S" buf))
     (for [() (> size 0) (-= size 2)]
          (when (== size 1)
-           (|#if| "WORDS_BIGENDIAN"
-                  (+= sum (<< (* (cast u_char* wp)) 8))
-                  (+= sum (* (cast u_char* wp))))
+           (.if "WORDS_BIGENDIAN"
+                (+= sum (<< (* (cast u_char* wp)) 8))
+                (+= sum (* (cast u_char* wp))))
            (break))
          (+= sum (* (post++ wp))))
     (set! sum (+ (>> sum 16) (logand sum #xffff)))
     (+= sum (>> sum 16))
     (set! result (cast uint16_t (lognot sum)))  ;truncate to 16bit
-    (|#if| "!WORDS_BIGENDIAN"
-           (set! result (logior (>> result 8) (<< result 8))))
+    (.if "!WORDS_BIGENDIAN"
+         (set! result (logior (>> result 8) (<< result 8))))
     (result result)))
 
 ;; socket addresses

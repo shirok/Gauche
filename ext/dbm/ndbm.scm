@@ -64,15 +64,15 @@
     (error "path must be set to open ndbm database"))
   (when (ndbm-file-of self)
     (errorf "ndbm ~S already opened" self))
-  (let* ((path   (slot-ref self 'path))
-         (rwmode (slot-ref self 'rw-mode))
-         (rwopt  (case rwmode
-                   ((:read)   O_RDONLY)
-                   ((:write)  (+ O_RDWR O_CREAT))
-                   ((:create) (+ O_RDWR O_CREAT O_TRUNC))))
-         (fp     (ndbm-open path
+  (let* ([path   (slot-ref self 'path)]
+         [rwmode (slot-ref self 'rw-mode)]
+         [rwopt  (case rwmode
+                   [(:read)   O_RDONLY]
+                   [(:write)  (+ O_RDWR O_CREAT)]
+                   [(:create) (+ O_RDWR O_CREAT O_TRUNC)])]
+         [fp     (ndbm-open path
                             rwopt
-                            (slot-ref self 'file-mode))))
+                            (slot-ref self 'file-mode))])
     (slot-set! self 'ndbm-file fp)
     self))
 
@@ -81,11 +81,11 @@
 ;;
 
 (define-method dbm-close ((self <ndbm>))
-  (let ((ndbm (ndbm-file-of self)))
+  (let1 ndbm (ndbm-file-of self)
     (and ndbm (ndbm-close ndbm))))
 
 (define-method dbm-closed? ((self <ndbm>))
-  (let ((ndbm (ndbm-file-of self)))
+  (let1 ndbm (ndbm-file-of self)
     (or (not ndbm) (ndbm-closed? ndbm))))
 
 ;;
@@ -102,11 +102,11 @@
 
 (define-method dbm-get ((self <ndbm>) key . args)
   (next-method)
-  (cond ((ndbm-fetch (ndbm-file-of self) (%dbm-k2s self key))
-         => (lambda (v) (%dbm-s2v self v)))
-        ((pair? args) (car args))     ;fall-back value
-        (else  (errorf "ndbm: no data for key ~s in database ~s"
-                       key (ndbm-file-of self)))))
+  (cond [(ndbm-fetch (ndbm-file-of self) (%dbm-k2s self key))
+         => (cut %dbm-s2v self <>)]
+        [(pair? args) (car args)]     ;fall-back value
+        [else  (errorf "ndbm: no data for key ~s in database ~s"
+                       key (ndbm-file-of self))]))
 
 (define-method dbm-exists? ((self <ndbm>) key)
   (next-method)
@@ -118,15 +118,13 @@
     (errorf "dbm-delete!: deleteting key ~s from ~s failed" key self)))
 
 (define-method dbm-fold ((self <ndbm>) proc knil)
-  (let ((ndbm (ndbm-file-of self)))
-    (let loop ((key (ndbm-firstkey ndbm))
-               (r   knil))
+  (let1 ndbm (ndbm-file-of self)
+    (let loop ([key (ndbm-firstkey ndbm)] [r knil])
       (if key
-          (let ((val (ndbm-fetch ndbm key)))
-            (loop (ndbm-nextkey ndbm)
-                  (proc (%dbm-s2k self key) (%dbm-s2v self val) r)))
-          r))
-    ))
+        (let1 val (ndbm-fetch ndbm key)
+          (loop (ndbm-nextkey ndbm)
+                (proc (%dbm-s2k self key) (%dbm-s2v self val) r)))
+        r))))
 
 ;; *ndbm-suffixes* is defined in the stub file.
 (define (ndbm-files name)

@@ -19,7 +19,7 @@
          (let1 sfxs (map (cut rxmatch->string #/\.[^\.]+$/ <>)
                          (glob #`",|tname|.*"))
            (with-output-to-file file
-             (lambda ()
+             (^[]
                (print "static const char *ndbm_suffixes[] = {")
                (for-each (cut format #t "  ~s,\n" <>) sfxs)
                (print "  NULL")

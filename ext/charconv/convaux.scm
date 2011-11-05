@@ -85,84 +85,84 @@
 
     ;; find ces entry
     (define (find-entry ces)
-      (find (lambda (e) (memq ces (car e))) ces-compatibility-table))
+      (find (^e (memq ces (car e))) ces-compatibility-table))
 
     (define (ces-equivalent? a b . unknown-fallback)
-      (let* ((ces-a   (canon-name a))
-             (ces-b   (canon-name b))
-             (entry-a (find-entry ces-a))
-             (entry-b (find-entry ces-b)))
-        (cond ((or (eq? ces-a 'none) (eq? ces-b 'none)) #t)
-              ((or (not entry-a) (not entry-b))
-               (get-optional unknown-fallback #f))
-              (else (eq? entry-a entry-b)))))
+      (let* ([ces-a   (canon-name a)]
+             [ces-b   (canon-name b)]
+             [entry-a (find-entry ces-a)]
+             [entry-b (find-entry ces-b)])
+        (cond [(or (eq? ces-a 'none) (eq? ces-b 'none)) #t]
+              [(or (not entry-a) (not entry-b))
+               (get-optional unknown-fallback #f)]
+              [else (eq? entry-a entry-b)])))
 
     (define (ces-upper-compatible? a b . unknown-fallback)
-      (let* ((ces-a   (canon-name a))
-             (ces-b   (canon-name b))
-             (entry-a (find-entry ces-a)))
-        (cond ((or (eq? ces-a 'none) (eq? ces-b 'none)) #t)
-              ((or (not entry-a) (not (find-entry ces-b)))
-               (get-optional unknown-fallback #f))
-              (else 
-               (let loop ((entry entry-a))
-                 (if (memq ces-b (car entry))
-                     #t
-                     (any loop (map find-entry (cdr entry)))))))))
+      (let* ([ces-a   (canon-name a)]
+             [ces-b   (canon-name b)]
+             [entry-a (find-entry ces-a)])
+        (cond [(or (eq? ces-a 'none) (eq? ces-b 'none)) #t]
+              [(or (not entry-a) (not (find-entry ces-b)))
+               (get-optional unknown-fallback #f)]
+              [else (let loop ([entry entry-a])
+                      (or (boolean (memq ces-b (car entry)))
+                          (any loop (map find-entry (cdr entry)))))])))
     
     (values ces-equivalent? ces-upper-compatible?)))
 
 ;; Convert string
-(define (ces-convert string fromcode . args)
-  (let-optionals* args ((tocode #f))
-    (let ((out (open-output-string :private? #t))
-          (in  (open-input-conversion-port
-                (open-input-string string :private? #t)
-                fromcode
-                :to-code tocode :buffer-size (string-size string) :owner? #t)))
-      (copy-port in out :unit 'byte)
-      (close-input-port in)
-      (begin0
-       (get-output-string out)
-       (close-output-port out)))))
+(define (ces-convert string fromcode :optional (tocode #f))
+  (let ([out (open-output-string :private? #t)]
+        [in  (open-input-conversion-port
+              (open-input-string string :private? #t)
+              fromcode
+              :to-code tocode :buffer-size (string-size string) :owner? #t)])
+    (copy-port in out :unit 'byte)
+    (close-input-port in)
+    (begin0 (get-output-string out)
+      (close-output-port out))))
 
 ;; "Wrap" the given port for convering to/from native encoding if needed.
 ;; Unlike open-*-conversion-port, these return port itself if the conversion
 ;; is not required.
-(define (wrap-with-input-conversion port from-code . opts)
-  (let1 to-code (get-keyword :to-code opts (gauche-character-encoding))
-    (if (ces-upper-compatible? to-code from-code)
-      port
-      (apply open-input-conversion-port port from-code :owner? #t opts))))
+(define (wrap-with-input-conversion port from-code
+                                    :key (to-code (gauche-character-encoding))
+                                    :allow-other-keys
+                                    :rest opts)
+  (if (ces-upper-compatible? to-code from-code)
+    port
+    (apply open-input-conversion-port port from-code :owner? #t opts)))
 
-(define (wrap-with-output-conversion port to-code . opts)
-  (let1 from-code (get-keyword :from-code opts (gauche-character-encoding))
-    (if (ces-upper-compatible? from-code to-code)
-      port
-      (apply open-output-conversion-port port to-code :owner? #t opts))))
+(define (wrap-with-output-conversion port to-code
+                                     :key (from-code (gauche-character-encoding))
+                                     :allow-other-keys
+                                     :rest opts)
+  (if (ces-upper-compatible? from-code to-code)
+    port
+    (apply open-output-conversion-port port to-code :owner? #t opts)))
 
 ;; Call with conversion port
-(define (call-with-input-conversion port proc . opts)
-  (let-keywords opts ((from-code :encoding (gauche-character-encoding))
-                      (bufsiz    :conversion-buffer-size 0))
-    (if (ces-upper-compatible? (gauche-character-encoding) from-code)
-      (proc port)
-      (let1 cvp (open-input-conversion-port port from-code
-                                            :owner? #f :buffer-size bufsiz)
-        (unwind-protect
-            (proc cvp)
-          (close-input-port cvp))))))
+(define (call-with-input-conversion port proc
+                                    :key ((:encoding from-code)
+                                          (gauche-character-encoding))
+                                         ((:conversion-buffer-size bufsiz) 0))
+  (if (ces-upper-compatible? (gauche-character-encoding) from-code)
+    (proc port)
+    (let1 cvp (open-input-conversion-port port from-code
+                                          :owner? #f :buffer-size bufsiz)
+      (unwind-protect (proc cvp)
+        (close-input-port cvp)))))
 
-(define (call-with-output-conversion port proc . opts)
-  (let-keywords opts ((to-code :encoding (gauche-character-encoding))
-                      (bufsiz  :conversion-buffer-size 0))
-    (if (ces-upper-compatible? (gauche-character-encoding) to-code)
-      (proc port)
-      (let1 cvp (open-output-conversion-port port to-code
-                                             :owner? #f :buffer-size bufsiz)
-        (unwind-protect
-            (proc cvp)
-          (close-output-port cvp))))))
+(define (call-with-output-conversion port proc
+                                     :key ((:encoding to-code)
+                                           (gauche-character-encoding))
+                                          ((:conversion-buffer-size bufsiz) 0))
+  (if (ces-upper-compatible? (gauche-character-encoding) to-code)
+    (proc port)
+    (let1 cvp (open-output-conversion-port port to-code
+                                           :owner? #f :buffer-size bufsiz)
+      (unwind-protect (proc cvp)
+        (close-output-port cvp)))))
 
 (define (with-input-conversion port thunk . opts)
   (apply call-with-input-conversion port
@@ -176,23 +176,19 @@
 
 ;; Inserts conversion port.  These are called from system's
 ;; open-{input|output}-port when :encoding argument is given.
-(define (%open-input-file/conv name . args)
-  (let-keywords args ((encoding #f)
-                      (bufsiz :conversion-buffer-size 0)
-                      . rest)
-    (and-let* ((port (apply %open-input-file name rest)))
-      (wrap-with-input-conversion port encoding
-       :buffer-size bufsiz
-       :owner? #t))))
+(define (%open-input-file/conv name :key (encoding #f)
+                                         ((:conversion-buffer-size bufsiz) 0)
+                                    :allow-other-keys rest)
+  (and-let* ([port (apply %open-input-file name rest)])
+    (wrap-with-input-conversion port encoding
+                                :buffer-size bufsiz :owner? #t)))
 
-(define (%open-output-file/conv name . args)
-  (let-keywords args ((encoding #f)
-                      (bufsiz :conversion-buffer-size 0)
-                      . rest)
-    (and-let* ((port (apply %open-output-file name rest)))
-      (wrap-with-output-conversion port encoding
-       :buffer-size bufsiz
-       :owner? #t))))
+(define (%open-output-file/conv name :key (encoding #f)
+                                          ((:conversion-buffer-size bufsiz) 0)
+                                     :allow-other-keys rest)
+  (and-let* ([port (apply %open-output-file name rest)])
+    (wrap-with-output-conversion port encoding
+                                 :buffer-size bufsiz :owner? #t)))
 
 ;;
 ;; Low-level API

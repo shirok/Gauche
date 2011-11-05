@@ -17,13 +17,13 @@
   ;; POSIX version
   ;;
   (define (list-if-bound . cans)
-    (let loop ((cans cans)
-               (syms '())
-               (str ""))
+    (let loop ([cans cans]
+               [syms '()]
+               [str ""])
       (if (null? cans)
         (map cons
              syms
-             (let ((p (open-input-string (string-append "(list " str ")"))))
+             (let1 p (open-input-string (string-append "(list " str ")"))
                (eval (read p) (interaction-environment))))
         (if (global-variable-bound? 'gauche.termios (car cans))
           (loop (cdr cans)
@@ -66,13 +66,13 @@
   (define oterm #f)
 
   (test "termios-tcgetattr" #t
-        (lambda ()
+        (^[]
           (set! iterm (sys-tcgetattr iport))
           (set! oterm (sys-tcgetattr oport))
           #t))
 
   (test "termios-tcflush" #t
-        (lambda ()
+        (^[]
           (sys-tcflush iport TCIFLUSH)
           (sys-tcflush oport TCOFLUSH)
           #t))
@@ -80,66 +80,59 @@
   ;; NB: on cygwin (as of 1.5.25) tcdrain and tcflow does not seem to work.
   (unless (string-contains (gauche-architecture) "-cygwin")
     (test "termios-tcdrain" #t
-          (lambda ()
+          (^[]
             (sys-tcdrain oport)
             #t))
 
     (test "termios-tcflow" (make-list 4 (if #f #f))
-          (lambda ()
-            (map
-             (cut sys-tcflow oport <>)
-             (list TCOOFF TCOON TCIOFF TCION))))
+          (^[] (map (cut sys-tcflow oport <>)
+                    (list TCOOFF TCOON TCIOFF TCION))))
     ) ;!cygwin
 
   (test "termios-tcsetattr" (make-list 3 (if #f #f))
-        (lambda ()
-          (map
-           (cut sys-tcsetattr iport <> iterm)
-           (list TCSANOW TCSADRAIN TCSAFLUSH))))
+        (^[] (map (cut sys-tcsetattr iport <> iterm)
+                  (list TCSANOW TCSADRAIN TCSAFLUSH))))
 
   ;; exclude B0 from this test, since it doesn't really set the baudrate
   ;; (and some architecture such as Solaris does not set the value to
   ;; termios structure).
-  (let ((slist (remove zero? (map cdr speeds)))
-        (orig-ispeed (sys-cfgetispeed iterm))
-        (orig-ospeed (sys-cfgetospeed oterm)))
-    (test* "termios-set-n-get-speed" (map (lambda (x) (cons x x)) slist)
+  (let ([slist (remove zero? (map cdr speeds))]
+        [orig-ispeed (sys-cfgetispeed iterm)]
+        [orig-ospeed (sys-cfgetospeed oterm)])
+    (test* "termios-set-n-get-speed" (map (^x (cons x x)) slist)
            (with-error-handler
-               (lambda (e)
+               (^e
                  (sys-cfsetispeed iterm orig-ispeed)
                  (sys-cfsetospeed oterm orig-ospeed)
                  (raise e))
-             (lambda ()
-               (map
-                (lambda (speed)
-                  (sys-cfsetispeed iterm speed)
-                  (sys-cfsetospeed oterm speed)
-                  (cons (sys-cfgetispeed iterm)
-                        (sys-cfgetospeed oterm)))
-                slist)))))
+             (^[] (map (^[speed]
+                         (sys-cfsetispeed iterm speed)
+                         (sys-cfsetospeed oterm speed)
+                         (cons (sys-cfgetispeed iterm)
+                               (sys-cfgetospeed oterm)))
+                       slist)))))
 
   (test "termios-cc" (make-list (length ccs) #t)
-        (lambda ()
+        (^[]
           (define test-char #x01)
           (map
-           (lambda (ss-pair)
-             (let* ((ss (cdr ss-pair))
-                    (orig-cc (slot-ref iterm 'cc))
-                    (cc (u8vector-copy orig-cc)))
+           (^[ss-pair]
+             (let* ([ss (cdr ss-pair)]
+                    [orig-cc (slot-ref iterm 'cc)]
+                    [cc (u8vector-copy orig-cc)])
                (dynamic-wind
-                   (lambda ()
-                     (slot-set! iterm 'cc cc))
-                   (lambda ()
+                   (^[] (slot-set! iterm 'cc cc))
+                   (^[]
                      (u8vector-set! cc ss test-char)
                      (slot-set! iterm 'cc cc)
                      (sys-tcsetattr iport TCSANOW iterm)
-                     (let ((char (u8vector-ref
-                                  (slot-ref (sys-tcgetattr iport) 'cc)
-                                  ss)))
+                     (let1 char (u8vector-ref
+                                 (slot-ref (sys-tcgetattr iport) 'cc)
+                                 ss)
                        (if (eqv? char (u8vector-ref cc ss))
                          #t
                          (format "~a of cc cannot change" (car ss-pair)))))
-                   (lambda ()
+                   (^[]
                      (slot-set! iterm 'cc orig-cc)
                      (sys-tcsetattr iport TCSANOW iterm))
                  )))

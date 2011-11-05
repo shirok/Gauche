@@ -75,17 +75,16 @@
 ;; mind-numblingly slow, consider a uvector approach but it doesn't
 ;; handle endianess
 (define (read-uint size :optional (port (current-input-port))
-                   (endian (default-endian)))
+                                  (endian (default-endian)))
   (case size
     [(1) (read-u8 port endian)]
     [(2) (read-u16 port endian)]
     [(4) (read-u32 port endian)]
     [(8) (read-u64 port endian)]
     [else
-     (let loop ((ls '())
-                (cnt 0))
+     (let loop ([ls '()] [cnt 0])
        (if (= cnt size)
-         (fold (lambda (a b) (+ a (* b *byte-magnitude*)))
+         (fold (^[a b] (+ a (* b *byte-magnitude*)))
                0
                (if (eq? endian 'big-endian) (reverse ls) ls))
          (let1 byte (read-byte port)
@@ -98,7 +97,7 @@
   (logand (lognot int) (- (expt *bit-size* (* *byte-size* bytes)) 1)))
 
 (define (uint->sint int bytes)
-  (let ((highbit (- (* *byte-size* bytes) 1)))
+  (let1 highbit (- (* *byte-size* bytes) 1)
     (if (logbit? highbit int)
       (* -1 (+ 1 (lognot-small int bytes)))
       int)))
@@ -108,9 +107,8 @@
     (+ 1 (lognot-small (abs int) bytes))
     int))
 
-(define (read-sint size :optional
-                   (port (current-input-port))
-                   (endian (default-endian)))
+(define (read-sint size :optional (port (current-input-port))
+                                  (endian (default-endian)))
   (case size
     [(1) (read-s8 port endian)]
     [(2) (read-s16 port endian)]
@@ -122,18 +120,17 @@
 ;;; basic writing
 ;;;
 
-(define (write-uint size int :optional
-                    (port (current-output-port))
-                    (endian (default-endian)))
+(define (write-uint size int :optional (port (current-output-port))
+                                       (endian (default-endian)))
   (case size
     [(1) (write-u8 int port endian)]
     [(2) (write-u16 int port endian)]
     [(4) (write-u32 int port endian)]
     [(8) (write-u64 int port endian)]
     [else
-     (let ((ls '()))
+     (let ([ls '()])
        ;; build a list of bytes
-       (dotimes (i size)
+       (dotimes [i size]
          (push! ls (logand int *byte-mask*))
          (set! int (ash int *byte-right-shift*)))
        ;; reverse if big-endian
@@ -142,9 +139,8 @@
        ;; write the list
        (for-each (cut write-byte <> port) ls))]))
 
-(define (write-sint size int :optional
-                    (port (current-output-port))
-                    (endian (default-endian)))
+(define (write-sint size int :optional (port (current-output-port))
+                                       (endian (default-endian)))
   (case size
     [(1) (write-s8 int port endian)]
     [(2) (write-s16 int port endian)]
@@ -209,25 +205,22 @@
 
 (define (read-ber-integer :optional (port (current-input-port)))
   (let1 first (read-byte port)
-    (if (eof-object? first)
-      first ;; stop on eof
-      (if (< first 128)
-        first
-        (let loop ((res (ash (logand first #b01111111) 7))
-                   (byte (read-u8 port)))
-          (if (< byte 128)
-            (+ res byte) ;; final byte
-            (loop (ash (+ res (logand byte #b01111111)) 7)
-                  (read-u8 port))))))))
+    (cond [(eof-object? first) first] ;; stop on eof
+          [(< first 128) first]
+          [else (let loop ([res (ash (logand first #b01111111) 7)]
+                           [byte (read-u8 port)])
+                  (if (< byte 128)
+                    (+ res byte) ;; final byte
+                    (loop (ash (+ res (logand byte #b01111111)) 7)
+                          (read-u8 port))))])))
 
 (define (write-ber-integer number :optional (port (current-output-port)))
-  (let ((final (logand number #b01111111))
-        (start (ash number -7)))
+  (let ([final (logand number #b01111111)]
+        [start (ash number -7)])
     (unless (zero? start)
-      (let loop ((n start))
+      (let loop ([n start])
         (cond [(< n 128) (write-u8 (logior n #b10000000))]
-              [else
-               (loop (ash n -7)) ;; write high bytes first
-               (write-u8 (logior (logand n #b01111111) #b10000000))])))
+              [else (loop (ash n -7)) ;; write high bytes first
+                    (write-u8 (logior (logand n #b01111111) #b10000000))])))
     (write-u8 final)))
 

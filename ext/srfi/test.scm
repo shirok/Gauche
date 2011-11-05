@@ -23,8 +23,8 @@
 (test* "make-list" '(m m m m m) (make-list 5 'm))
 (test* "list-tabulate" '(0 1 2 3 4) (list-tabulate 5 values))
 (test* "list-tabulate" '(#\0 #\1 #\2 #\3 #\4)
-       (list-tabulate 5 (lambda (i) (integer->char (+ i 48)))))
-(test* "list-tabulate" '(0 2 4 6) (list-tabulate 4 (lambda (i) (* i 2))))
+       (list-tabulate 5 (^i (integer->char (+ i 48)))))
+(test* "list-tabulate" '(0 2 4 6) (list-tabulate 4 (^i (* i 2))))
 (test* "list-copy" '(1 2 3) (list-copy '(1 2 3)))
 (test* "list-copy" '() (list-copy '()))
 (test* "list-copy" '(1 . 2) (list-copy '(1 . 2)))
@@ -82,7 +82,7 @@
 (test* "ninth"  9 (ninth '(1 2 3 4 5 6 7 8 9 10)))
 (test* "tenth"  10 (tenth '(1 2 3 4 5 6 7 8 9 10)))
 (test* "car+cdr" '(a (b c))
-       (call-with-values (lambda () (car+cdr '(a b c))) list))
+       (call-with-values (^[] (car+cdr '(a b c))) list))
 (test* "take" '(a b)   (take '(a b c d e) 2))
 (test* "drop" '(c d e) (drop '(a b c d e) 2))
 (test* "take" '(1 2)   (take '(1 2 3 . d) 2))
@@ -98,12 +98,11 @@
 (test* "take!"      '(1 2)     (take! '(1 2 3 . d) 2))
 (test* "drop-right!" '(1 2)    (drop-right! '(1 2 3 . d) 1))
 (test* "split-at" '((a b c) (d e f g h))
-       (call-with-values
-           (lambda () (split-at '(a b c d e f g h) 3))
+       (call-with-values (^[] (split-at '(a b c d e f g h) 3))
          list))
 (test* "split-at!" '((a b c) (d e f g h))
        (call-with-values
-           (lambda () (split-at! (list 'a 'b 'c 'd 'e 'f 'g 'h) 3))
+           (^[] (split-at! (list 'a 'b 'c 'd 'e 'f 'g 'h) 3))
          list))
 (test* "last" 'c (last '(a b c)))
 (test* "last-pair" '(c) (last-pair '(a b c)))
@@ -139,21 +138,21 @@
                      ("a" "b" "c" "d" "e")))
 (test* "unzip1" '(1 a #\a "a") (unzip1 unzip-data))
 (test* "unzip2" '((1 a #\a "a") (2 b #\b "b"))
-       (call-with-values (lambda () (unzip2 unzip-data)) list))
+       (call-with-values (^[] (unzip2 unzip-data)) list))
 (test* "unzip3" '((1 a #\a "a") (2 b #\b "b") (3 c #\c "c"))
-       (call-with-values (lambda () (unzip3 unzip-data)) list))
+       (call-with-values (^[] (unzip3 unzip-data)) list))
 (test* "unzip4" '((1 a #\a "a") (2 b #\b "b") (3 c #\c "c") (4 d #\d "d"))
-       (call-with-values (lambda () (unzip4 unzip-data)) list))
+       (call-with-values (^[] (unzip4 unzip-data)) list))
 (test* "unzip5"
        '((1 a #\a "a") (2 b #\b "b") (3 c #\c "c") (4 d #\d "d") (5 e #\e "e"))
-       (call-with-values (lambda () (unzip5 unzip-data)) list))
+       (call-with-values (^[] (unzip5 unzip-data)) list))
 (test* "count" 3 (count even? '(3 1 4 1 5 9 2 6 5)))
 (test* "count" 3
        (count < '(1 2 4 8) '(2 4 6 8 10 12 14 16)))
 (test* "count" 2
        (count < '(3 1 4 1) (circular-list 1 10)))
 (test* "pair-fold" '(5 4 3 2 1)
-       (pair-fold (lambda (p t) (set-cdr! p t) p) '()
+       (pair-fold (^[p t] (set-cdr! p t) p) '()
                   (list 1 2 3 4 5)))
 (test* "pair-fold-right" '((a b c) (b c) (c))
        (pair-fold-right cons '() '(a b c)))
@@ -161,43 +160,39 @@
 (test* "reduce-right" '(1 2 3 4 5 6 7 8 9 . 10)
        (reduce-right cons 0 (iota 10 1)))
 (test* "unfold" '(1 4 9 16 25 36 49 64 81 100)
-       (unfold (lambda (x) (> x 10))
-               (lambda (x) (* x x))
-               (lambda (x) (+ x 1))
+       (unfold (^x (> x 10))
+               (^x (* x x))
+               (^x (+ x 1))
                1))
 (test* "unfold-right" '(1 4 9 16 25 36 49 64 81 100)
        (unfold-right zero?
-                     (lambda (x) (* x x))
-                     (lambda (x) (- x 1))
+                     (^x (* x x))
+                     (^x (- x 1))
                      10))
 (test* "map" '(4 1 5 1)
        (map + '(3 1 4 1) (circular-list 1 0)))
 (test* "for-each" '#(0 2 2 4 4)
-       (let ((v (make-vector 5)))
-         (for-each (lambda (i n)
-                     (vector-set! v i (+ i n)))
+       (rlet1 v (make-vector 5)
+         (for-each (^[i n] (vector-set! v i (+ i n)))
                    '(0 1 2 3 4)
-                   (circular-list 0 1))
-         v))
+                   (circular-list 0 1))))
 (test* "append-map" '(1 -1 3 -3 5 -5)
-       (append-map (lambda (x) (list x (- x))) '(1 3 5)))
+       (append-map (^x (list x (- x))) '(1 3 5)))
 (test* "append-map" '(1 -2 3 -4 5 -6)
-       (append-map (lambda (x y) (list x (- y)))
+       (append-map (^[x y] (list x (- y)))
                    '(1 3 5) '(2 4 6 8)))
 (test* "append-map!" '(1 -2 3 -4 5 -6)
-       (append-map! (lambda (x y) (list x (- y)))
+       (append-map! (^[x y] (list x (- y)))
                     '(1 3 5) '(2 4 6 8)))
 (test* "map!" '(4 1 5 1)
        (map! + '(3 1 4 1) (circular-list 1 0)))
 (test* "map-in-order"  '(4 1 5 1)
        (map-in-order + '(3 1 4 1) (circular-list 1 0)))
 (test* "pair-for-each" '((c) (b c) (a b c))
-       (let ((r '()))
-         (pair-for-each (lambda (l) (set! r (cons l r)))
-                        '(a b c))
-         r))
+       (rlet1 r '()
+         (pair-for-each (^l (set! r (cons l r))) '(a b c))))
 (test* "filter-map" '(1 9 49)
-       (filter-map (lambda (x) (and (number? x) (* x x)))
+       (filter-map (^x (and (number? x) (* x x)))
                    '(a 1 b 3 c 7)))
 (test* "filter" '(0 8 8 -4)
        (filter even? '(0 7 8 8 9 -4)))
@@ -340,8 +335,8 @@
 (test* "assoc" '("a") (assoc "A" '(("c") ("b") ("a")) string-ci=?))
 (test* "alist-cons" '((1 . 2) . 3) (alist-cons 1 2 3))
 (test* "alist-copy" '((a 1) (a 2))
-       (let* ((x '((b 2) (a 1)))
-              (y (alist-copy x)))
+       (let* ([x '((b 2) (a 1))]
+              [y (alist-copy x)])
          (set-cdr! (assq 'a y) (list 2))
          (list (assq 'a x) (assq 'a y))))
 (test* "alist-delete" '((a 1) (b 2) (c 3))
@@ -353,9 +348,8 @@
 (test* "alist-delete" '((a 1) (b 2))
        (alist-delete 'c '((a 1) (b 2) (c 3))))
 (test* "alist-delete!" '((a 1) (b 2) (c 3))
-       (let ((l (alist-copy '((a 1) (b 2) (c 3)))))
-         (alist-delete! 'x l)
-         l))
+       (rlet1 l (alist-copy '((a 1) (b 2) (c 3)))
+         (alist-delete! 'x l)))
 (test* "alist-delete!" '((b 2) (c 3))
        (alist-delete! 'a (alist-copy '((a 1) (b 2) (c 3)))))
 (test* "alist-delete!" '(z (b 2) (c 3))
@@ -363,13 +357,11 @@
 (test* "alist-delete!" '(z (b 2) (c 3))
        (alist-delete! 'a (list-copy '((a 1) z (b 2) (c 3)))))
 (test* "alist-delete!" '((a 1) (c 3))
-       (let ((l (alist-copy '((a 1) (b 2) (c 3)))))
-         (alist-delete! 'b l)
-         l))
+       (rlet1 l (alist-copy '((a 1) (b 2) (c 3)))
+         (alist-delete! 'b l)))
 (test* "alist-delete!" '((a 1) (b 2))
-       (let ((l (alist-copy '((a 1) (b 2) (c 3)))))
-         (alist-delete! 'c l)
-         l))
+       (rlet1 l (alist-copy '((a 1) (b 2) (c 3)))
+         (alist-delete! 'c l)))
 
 ;; TODO: lset stuff
 
@@ -389,30 +381,28 @@
 (test* "string-every" #t (string-every #[a-z] "aaba"))
 (test* "string-every" #f (string-every #[a-z] "aAba"))
 (test* "string-every" #t (string-every #[a-z] ""))
-(test* "string-every" #t (string-every (lambda (x) (char-ci=? x #\a)) "aAaA"))
-(test* "string-every" #f (string-every (lambda (x) (char-ci=? x #\a)) "aAbA"))
+(test* "string-every" #t (string-every (^x (char-ci=? x #\a)) "aAaA"))
+(test* "string-every" #f (string-every (^x (char-ci=? x #\a)) "aAbA"))
 (test* "string-every" (char->integer #\A)
-       (string-every (lambda (x) (char->integer x)) "aAbA"))
+       (string-every (^x (char->integer x)) "aAbA"))
 (test* "string-every" #t
-       (string-every (lambda (x) (error "hoge")) ""))
+       (string-every (^x (error "hoge")) ""))
 (test* "string-any" #t (string-any #\a "aaaa"))
 (test* "string-any" #f (string-any #\a "Abcd"))
 (test* "string-any" #f (string-any #\a ""))
 (test* "string-any" #t (string-any #[a-z] "ABcD"))
 (test* "string-any" #f (string-any #[a-z] "ABCD"))
 (test* "string-any" #f (string-any #[a-z] ""))
-(test* "string-any" #t (string-any (lambda (x) (char-ci=? x #\a)) "CAaA"))
-(test* "string-any" #f (string-any (lambda (x) (char-ci=? x #\a)) "ZBRC"))
-(test* "string-any" #f (string-any (lambda (x) (char-ci=? x #\a)) ""))
+(test* "string-any" #t (string-any (^x (char-ci=? x #\a)) "CAaA"))
+(test* "string-any" #f (string-any (^x (char-ci=? x #\a)) "ZBRC"))
+(test* "string-any" #f (string-any (^x (char-ci=? x #\a)) ""))
 (test* "string-any" (char->integer #\a)
-       (string-any (lambda (x) (char->integer x)) "aAbA"))
+       (string-any (^x (char->integer x)) "aAbA"))
 (test* "string-tabulate" "0123456789"
-       (string-tabulate (lambda (code)
-                          (integer->char (+ code (char->integer #\0))))
+       (string-tabulate (^[code] (integer->char (+ code (char->integer #\0))))
                         10))
 (test* "string-tabulate" ""
-       (string-tabulate (lambda (code)
-                          (integer->char (+ code (char->integer #\0))))
+       (string-tabulate (^[code] (integer->char (+ code (char->integer #\0))))
                         0))
 (test* "reverse-list->string" "cBa"
        (reverse-list->string '(#\a #\B #\c)))
@@ -422,21 +412,17 @@
 (test* "substring/shared" "cde" (substring/shared "abcde" 2))
 (test* "substring/shared" "cd"  (substring/shared "abcde" 2 4))
 (test* "string-copy!" "abCDEfg"
-       (let ((x (string-copy "abcdefg")))
-         (string-copy! x 2 "CDE")
-         x))
+       (rlet1 x (string-copy "abcdefg")
+         (string-copy! x 2 "CDE")))
 (test* "string-copy!" "abCDEfg"
-       (let ((x (string-copy "abcdefg")))
-         (string-copy! x 2 "ZABCDE" 3)
-         x))
+       (rlet1 x (string-copy "abcdefg")
+         (string-copy! x 2 "ZABCDE" 3)))
 (test* "string-copy!" "abCDEfg"
-       (let ((x (string-copy "abcdefg")))
-         (string-copy! x 2 "ZABCDEFG" 3 6)
-         x))
+       (rlet1 x (string-copy "abcdefg")
+         (string-copy! x 2 "ZABCDEFG" 3 6)))
 (test* "string-copy!" "CDEFGfg"
-       (let ((x (string-copy "abcdefg")))
-         (string-copy! x 0 "ZABCDEFG" 3)
-         x))
+       (rlet1 x (string-copy "abcdefg")
+         (string-copy! x 0 "ZABCDEFG" 3)))
 (test* "string-take" "Pete S"  (string-take "Pete Szilagyi" 6))
 (test* "string-take" ""        (string-take "Pete Szilagyi" 0))
 (test* "string-take" "Pete Szilagyi" (string-take "Pete Szilagyi" 13))
@@ -579,35 +565,30 @@
 (test* "string-titlecase" "3Com Makes Routers."
        (string-titlecase "3com makes routers."))
 (test* "string-titlecase!" "alSo Whatever"
-       (let ((s (string-copy "also whatever")))
-         (string-titlecase! s 2 9)
-         s))
+       (rlet1 s (string-copy "also whatever")
+         (string-titlecase! s 2 9)))
 
 (test* "string-upcase" "SPEAK LOUDLY"
        (string-upcase "speak loudly"))
 (test* "string-upcase" "PEAK"
        (string-upcase "speak loudly" 1 5))
 (test* "string-upcase!" "sPEAK loudly"
-       (let ((s (string-copy "speak loudly")))
-         (string-upcase! s 1 5)
-         s))
+       (rlet1 s (string-copy "speak loudly")
+         (string-upcase! s 1 5)))
 
 (test* "string-downcase" "speak softly"
        (string-downcase "SPEAK SOFTLY"))
 (test* "string-downcase" "peak"
        (string-downcase "SPEAK SOFTLY" 1 5))
 (test* "string-downcase!" "speak softly"
-       (let ((s (string-copy "SPEAK SOFTLY")))
-         (string-downcase! s)
-         s))
+       (rlet1 s (string-copy "SPEAK SOFTLY")
+         (string-downcase! s)))
 (test* "string-downcase!" "Speak softly"
-       (let ((s (string-copy "SPEAK SOFTLY")))
-         (string-downcase! s 1)
-         s))
+       (rlet1 s (string-copy "SPEAK SOFTLY")
+         (string-downcase! s 1)))
 (test* "string-downcase!" "Speak SOFTLY"
-       (let ((s (string-copy "SPEAK SOFTLY")))
-         (string-downcase! s 1 5)
-         s))
+       (rlet1 s (string-copy "SPEAK SOFTLY")
+         (string-downcase! s 1 5)))
 
 (test* "string-reverse" "nomel on nolem on"
        (string-reverse "no melon no lemon"))
@@ -616,20 +597,20 @@
 (test* "string-reverse" "on"
        (string-reverse "no melon no lemon" 9 11))
 (test* "string-reverse!" "nomel on nolem on"
-       (let ((s (string-copy "no melon no lemon")))
-         (string-reverse! s) s))
+       (rlet1 s (string-copy "no melon no lemon")
+         (string-reverse! s)))
 (test* "string-reverse!" "no melon nomel on"
-       (let ((s (string-copy "no melon no lemon")))
-         (string-reverse! s 9) s))
+       (rlet1 s (string-copy "no melon no lemon")
+         (string-reverse! s 9)))
 (test* "string-reverse!" "no melon on lemon"
-       (let ((s (string-copy "no melon no lemon")))
-         (string-reverse! s 9 11) s))
+       (rlet1 s (string-copy "no melon no lemon")
+         (string-reverse! s 9 11)))
 
 (test* "string-append" #f
-       (let ((s "test")) (eq? s (string-append s))))
+       (let1 s "test" (eq? s (string-append s))))
 (test* "string-concatenate" "" (string-concatenate '()))
 (test* "string-concatenate" #f
-       (let ((s "test")) (eq? s (string-concatenate (list s)))))
+       (let1 s "test" (eq? s (string-concatenate (list s)))))
 (test* "string-concatenate" "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
        (string-concatenate
         '("A" "B" "C" "D" "E" "F" "G" "H"
@@ -658,7 +639,7 @@
           "i" "j" "k" "l" "m" "n" "o" "p"
           "q" "r" "s" "t" "u" "v" "w" "x" "y" "z")))
 (test* "string-concatenate-reverse" #f
-       (let ((s "test"))
+       (let1 s "test"
          (eq? s (string-concatenate-reverse (list s)))))
 (test* "string-concatenate-reverse (optarg)"
        "Hello, I must be going.XXXXX"
@@ -677,35 +658,26 @@
           "q" "r" "s" "t" "u" "v" "w" "x" "y" "z")))
 
 (test* "string-map" "svool"
-       (string-map (lambda (c)
-                     (integer->char (- 219 (char->integer c))))
+       (string-map (^c (integer->char (- 219 (char->integer c))))
                    "hello"))
 (test* "string-map" "vool"
-       (string-map (lambda (c)
-                     (integer->char (- 219 (char->integer c))))
+       (string-map (^c (integer->char (- 219 (char->integer c))))
                    "hello" 1))
 (test* "string-map" "vo"
-       (string-map (lambda (c)
-                     (integer->char (- 219 (char->integer c))))
+       (string-map (^c (integer->char (- 219 (char->integer c))))
                    "hello" 1 3))
 (test* "string-map!" "svool"
-       (let ((s (string-copy "hello")))
-         (string-map! (lambda (c)
-                        (integer->char (- 219 (char->integer c))))
-                      s)
-         s))
+       (rlet1 s (string-copy "hello")
+         (string-map! (^c (integer->char (- 219 (char->integer c))))
+                      s)))
 (test* "string-map!" "hvool"
-       (let ((s (string-copy "hello")))
-         (string-map! (lambda (c)
-                        (integer->char (- 219 (char->integer c))))
-                      s 1)
-         s))
+       (rlet1 s (string-copy "hello")
+         (string-map! (^c (integer->char (- 219 (char->integer c))))
+                      s 1)))
 (test* "string-map!" "hvolo"
-       (let ((s (string-copy "hello")))
-         (string-map! (lambda (c)
-                        (integer->char (- 219 (char->integer c))))
-                      s 1 3)
-         s))
+       (rlet1 s (string-copy "hello")
+         (string-map! (^c (integer->char (- 219 (char->integer c))))
+                      s 1 3)))
 
 (test* "string-fold" '(#\o #\l #\l #\e #\h . #t)
        (string-fold cons #t "hello"))
@@ -723,7 +695,7 @@
 (test* "string-unfold" "hi hello ho"
        (string-unfold null? car cdr
                       '(#\h #\e #\l #\l #\o) "hi "
-                      (lambda (x) " ho")))
+                      (^x " ho")))
 
 (test* "string-unfold-right" "olleh"
        (string-unfold-right null? car cdr '(#\h #\e #\l #\l #\o)))
@@ -732,51 +704,44 @@
 (test* "string-unfold-right" "ho olleh hi"
        (string-unfold-right null? car cdr
                             '(#\h #\e #\l #\l #\o) " hi"
-                            (lambda (x) "ho ")))
+                            (^x "ho ")))
 
 (test* "string-for-each" "CLtL"
-       (let ((out (open-output-string))
-             (prev #f))
-         (string-for-each (lambda (c)
-                            (if (or (not prev)
-                                    (char-whitespace? prev))
+       (let ([out (open-output-string)]
+             [prev #f])
+         (string-for-each (^c (when (or (not prev)
+                                        (char-whitespace? prev))
                                 (write-char c out))
-                            (set! prev c))
+                              (set! prev c))
                           "Common Lisp, the Language")
-
          (get-output-string out)))
 (test* "string-for-each" "oLtL"
-       (let ((out (open-output-string))
-             (prev #f))
-         (string-for-each (lambda (c)
-                            (if (or (not prev)
-                                    (char-whitespace? prev))
+       (let ([out (open-output-string)]
+             [prev #f])
+         (string-for-each (^c (when (or (not prev)
+                                        (char-whitespace? prev))
                                 (write-char c out))
-                            (set! prev c))
+                              (set! prev c))
                           "Common Lisp, the Language" 1)
          (get-output-string out)))
 (test* "string-for-each" "oL"
-       (let ((out (open-output-string))
-             (prev #f))
-         (string-for-each (lambda (c)
-                            (if (or (not prev)
-                                    (char-whitespace? prev))
+       (let ([out (open-output-string)]
+             [prev #f])
+         (string-for-each (^c (when (or (not prev)
+                                        (char-whitespace? prev))
                                 (write-char c out))
-                            (set! prev c))
+                              (set! prev c))
                           "Common Lisp, the Language" 1 10)
          (get-output-string out)))
 (test* "string-for-each-index" '(4 3 2 1 0)
-       (let ((r '()))
-         (string-for-each-index (lambda (i) (set! r (cons i r))) "hello")
-         r))
+       (rlet1 r '()
+         (string-for-each-index (^i (set! r (cons i r))) "hello")))
 (test* "string-for-each-index" '(4 3 2 1)
-       (let ((r '()))
-         (string-for-each-index (lambda (i) (set! r (cons i r))) "hello" 1)
-         r))
+       (rlet1 r '()
+         (string-for-each-index (^i (set! r (cons i r))) "hello" 1)))
 (test* "string-for-each-index" '(2 1)
-       (let ((r '()))
-         (string-for-each-index (lambda (i) (set! r (cons i r))) "hello" 1 3)
-         r))
+       (rlet1 r '()
+         (string-for-each-index (^i (set! r (cons i r))) "hello" 1 3)))
 
 (test* "xsubstring" "cdefab"
        (xsubstring "abcdef" 2))
@@ -794,13 +759,11 @@
        (xsubstring "abcdefg" 9 9 3 6))
 
 (test* "string-xcopy!" "ZZcdefabZZ"
-       (let ((s (make-string 10 #\Z)))
-         (string-xcopy! s 2 "abcdef" 2)
-         s))
+       (rlet1 s (make-string 10 #\Z)
+         (string-xcopy! s 2 "abcdef" 2)))
 (test* "string-xcopy!" "ZZdefdefZZ"
-       (let ((s (make-string 10 #\Z)))
-         (string-xcopy! s 2 "abcdef" 0 6 3)
-         s))
+       (rlet1 s (make-string 10 #\Z)
+         (string-xcopy! s 2 "abcdef" 0 6 3)))
 
 (test* "string-replace" "abcdXYZghi"
        (string-replace "abcdefghi" "XYZ" 4 6))
@@ -832,9 +795,9 @@
                       #[a-zA-Z]))
 (test* "string-filter" "programsrunrun"
        (string-filter "Help make programs run, run, RUN!"
-                      (lambda (c) (char-lower-case? c)) 10))
+                      (^c (char-lower-case? c)) 10))
 (test* "string-filter" ""
-       (string-filter "" (lambda (c) (char-lower-case? c))))
+       (string-filter "" (^c (char-lower-case? c))))
 (test* "string-delete" "Help make pogams un, un, RUN!"
        (string-delete "Help make programs run, run, RUN!" #\r))
 (test* "string-delete" "   , , !"
@@ -842,9 +805,9 @@
                       #[a-zA-Z]))
 (test* "string-delete" " , , RUN!"
        (string-delete "Help make programs run, run, RUN!"
-                      (lambda (c) (char-lower-case? c)) 10))
+                      (^c (char-lower-case? c)) 10))
 (test* "string-delete" ""
-       (string-delete "" (lambda (c) (char-lower-case? c))))
+       (string-delete "" (^c (char-lower-case? c))))
 
 ;;
 ;; testing srfi-19
@@ -872,9 +835,9 @@
             #t #f #t #f #t
             #f #t #f #t #f
             #f #t #f #t #t)
-       (let ((t0 (make-time time-tai 345676543 23456))
-             (t1 (make-time time-tai 293892851 93853))
-             (t2 (make-time time-tai 893892851 93853)))
+       (let ([t0 (make-time time-tai 345676543 23456)]
+             [t1 (make-time time-tai 293892851 93853)]
+             [t2 (make-time time-tai 893892851 93853)])
          (list (time=?  t0 t0)
                (time=?  t0 t1)
                (time=?  t1 t2)
@@ -899,35 +862,35 @@
                (time>=? t2 t1)
                (time>=? t0 t0))))
 (test* "time difference" '(#t #t #t #t #t #t)
-       (let* ((t0 (current-time))
-              (t1 (make-time time-utc 333333333 1000000000))
-              (dt (time-difference t1 t0))
-              (r0 (eq? (time-type dt) time-duration))
-              (t2 (add-duration t0 dt))
-              (r1 (eq? (time-type t2) (time-type t0)))
-              (r2 (time=? t1 t2))
-              (r3 (begin (subtract-duration! t2 dt)
-                         (time=? t2 t0)))
-              (r4 (begin (add-duration! t0 dt)
-                         (time=? t1 t0)))
-              (r5 (begin (time-difference! t0 t2)
-                         (time=? t0 dt))))
+       (let* ([t0 (current-time)]
+              [t1 (make-time time-utc 333333333 1000000000)]
+              [dt (time-difference t1 t0)]
+              [r0 (eq? (time-type dt) time-duration)]
+              [t2 (add-duration t0 dt)]
+              [r1 (eq? (time-type t2) (time-type t0))]
+              [r2 (time=? t1 t2)]
+              [r3 (begin (subtract-duration! t2 dt)
+                         (time=? t2 t0))]
+              [r4 (begin (add-duration! t0 dt)
+                         (time=? t1 t0))]
+              [r5 (begin (time-difference! t0 t2)
+                         (time=? t0 dt))])
          (list r0 r1 r2 r3 r4 r5)))
 (test* "time conversion" '(#t #t)
-       (let* ((t0 (current-time))
-              (ta (time-utc->time-tai t0))
-              (tb (time-tai->time-utc ta))
-              (r0 (time=? t0 tb))
-              (r1 (time=? ta (begin (time-utc->time-tai! t0) t0))))
+       (let* ([t0 (current-time)]
+              [ta (time-utc->time-tai t0)]
+              [tb (time-tai->time-utc ta)]
+              [r0 (time=? t0 tb)]
+              [r1 (time=? ta (begin (time-utc->time-tai! t0) t0))])
          (list r0 r1)))
 (test* "time conversion" '(#t #t)
-       (let* ((t0 (current-time))
-              (ta (time-utc->time-monotonic t0))
-              (tb (time-monotonic->time-utc ta))
-              (r0 (time=? t0 tb))
-              (r1 (time=? ta (begin (time-utc->time-monotonic! t0) t0))))
+       (let* ([t0 (current-time)]
+              [ta (time-utc->time-monotonic t0)]
+              [tb (time-monotonic->time-utc ta)]
+              [r0 (time=? t0 tb)]
+              [r1 (time=? ta (begin (time-utc->time-monotonic! t0) t0))])
          (list r0 r1)))
-(let ((now (current-time)))
+(let ([now (current-time)])
   (test* "make-date"
          (let1 d1 (sys-localtime (time-second now))
            (list (+ (slot-ref d1 'year) 1900)
@@ -952,10 +915,10 @@
          ))
 (test* "date conversion"
        '(#t #t #t #t)
-       (let* ((t0 (make-time 'time-utc 0 0))
-              (t1 (make-time 'time-utc 48375295 1022191954))
-              (t2 (make-time 'time-tai 0 0))
-              (t3 (make-time 'time-tai 48375295 1022191954)))
+       (let* ([t0 (make-time 'time-utc 0 0)]
+              [t1 (make-time 'time-utc 48375295 1022191954)]
+              [t2 (make-time 'time-tai 0 0)]
+              [t3 (make-time 'time-tai 48375295 1022191954)])
          (list (time=? t0 (date->time-utc (time-utc->date t0)))
                (time=? t1 (date->time-utc (time-utc->date t1)))
                (time=? t2 (date->time-tai (time-tai->date t2)))
@@ -971,7 +934,7 @@
 ;; can't be guaranteed because of the limited precision of julian-day
 ;; calcularion.   We round the nanosecond range.
 (define (round-to-seconds time)
-  (let ((n (time-nanosecond time)))
+  (let1 n (time-nanosecond time)
     (set! (ref time 'nanosecond) 0)
     (when (> n 500000000)
       (add-duration! time (make-time 'time-duration 0 1)))
@@ -980,21 +943,19 @@
 (let1 t0 (make-time time-utc 0 1022191954)
   (test "julian day number, via time-utc"
         t0
-        (lambda ()
-          (round-to-seconds (julian-day->time-utc (time-utc->julian-day t0))))
+        (^[] ($ round-to-seconds
+                $ julian-day->time-utc $ time-utc->julian-day t0))
         time=?))
 (let1 jd 2453311
   (test "julian day number, via date"
         jd
-        (lambda ()
-          (date->julian-day (julian-day->date jd)))
+        (^[] (date->julian-day (julian-day->date jd)))
         =))
 (let1 t0 (make-time time-utc 0 1022191954)
   (test "modified julian day number"
         t0
-        (lambda ()
-          (round-to-seconds
-           (modified-julian-day->time-utc (time-utc->modified-julian-day t0))))
+        (^[] ($ round-to-seconds $ modified-julian-day->time-utc
+                $ time-utc->modified-julian-day t0))
         time=?))
 
 
@@ -1040,13 +1001,13 @@
 
 (define-syntax assert-equal
   (syntax-rules ()
-    ((_ msg expr expected)
-     (test* msg expected expr))))
+    [(_ msg expr expected)
+     (test* msg expected expr)]))
 
 (define-syntax assert-error
   (syntax-rules ()
-    ((_ msg expr)
-     (test* msg (test-error) expr))))
+    [(_ msg expr)
+     (test* msg (test-error) expr)]))
 
 (assert-equal "make-vector 0"
               (vector-length (make-vector 5))
@@ -1074,8 +1035,7 @@
               '#(1 2 3 4 5))
 
 (assert-equal "vector-unfold 0"
-              (vector-unfold (lambda (i x) (values x (- x 1)))
-                             10 0)
+              (vector-unfold (^[i x] (values x (- x 1))) 10 0)
               '#(0 -1 -2 -3 -4 -5 -6 -7 -8 -9))
 (assert-equal "vector-unfold 1"
               (vector-unfold values 10)
@@ -1087,12 +1047,12 @@
               (vector-unfold values -1))
 
 (assert-equal "vector-unfold-right 0"
-              (vector-unfold-right (lambda (i x) (values x (+ x 1))) 10 0)
+              (vector-unfold-right (^[i x] (values x (+ x 1))) 10 0)
               '#(9 8 7 6 5 4 3 2 1 0))
 (assert-equal "vector-unfold-right 1"
               (let ((vector '#(a b c d e)))
                 (vector-unfold-right
-                 (lambda (i x) (values (vector-ref vector x) (+ x 1)))
+                 (^[i x] (values (vector-ref vector x) (+ x 1)))
                  (vector-length vector)
                  0))
               '#(e d c b a))
@@ -1226,33 +1186,33 @@
 ;;;
 
 (assert-equal "vector-fold 0"
-              (vector-fold (lambda (i seed val) (+ seed val))
+              (vector-fold (^[i seed val] (+ seed val))
                            0
                            '#(0 1 2 3 4))
               10)
 (assert-equal "vector-fold 1"
-              (vector-fold (lambda (i seed val) (+ seed val))
+              (vector-fold (^[i seed val] (+ seed val))
                            'a
                            '#())
               'a)
 (assert-equal "vector-fold 2"
-              (vector-fold (lambda (i seed val) (+ seed (* i val)))
+              (vector-fold (^[i seed val] (+ seed (* i val)))
                            0
                            '#(0 1 2 3 4))
               30)
 (assert-equal "vector-fold 3"
-              (vector-fold (lambda (i seed x y) (cons (- x y) seed))
+              (vector-fold (^[i seed x y] (cons (- x y) seed))
                            '()
                            '#(6 1 2 3 4) '#(7 0 9 2))
               '(1 -7 1 -1))
 
 (assert-equal "vector-fold-right 0"
-              (vector-fold-right (lambda (i seed val) (cons (cons i val) seed))
+              (vector-fold-right (^[i seed val] (cons (cons i val) seed))
                                  '()
                                  '#(a b c d e))
               '((0 . a) (1 . b) (2 . c) (3 . d) (4 . e)))
 (assert-equal "vector-fold-right 1"
-              (vector-fold-right (lambda (i seed x y) (cons (- x y) seed))
+              (vector-fold-right (^[i seed x y] (cons (- x y) seed))
                                  '()
                                  '#(6 1 2 3 7) '#(7 0 9 2))
               '(-1 1 -7 1))
@@ -1268,44 +1228,37 @@
               '#(5 8 11 14))
 
 (assert-equal "vector-map! 0"
-              (let ((v (vector 0 1 2 3 4)))
-                (vector-map! * v)
-                v)
+              (rlet1 v (vector 0 1 2 3 4)
+                (vector-map! * v))
               '#(0 1 4 9 16))
 (assert-equal "vector-map! 1"
-              (let ((v (vector)))
-                (vector-map! * v)
-                v)
+              (rlet1 v (vector)
+                (vector-map! * v))
               '#())
 (assert-equal "vector-map! 2"
-              (let ((v (vector 0 1 2 3 4)))
-                (vector-map! + v '#(5 6 7 8))
-                v)
+              (rlet1 v (vector 0 1 2 3 4)
+                (vector-map! + v '#(5 6 7 8)))
               '#(5 8 11 14 4))
 
 (assert-equal "vector-for-each 0"
-              (let ((sum 0))
-                (vector-for-each (lambda (i x)
-                                   (set! sum (+ sum (* i x))))
-                                 '#(0 1 2 3 4))
-                sum)
+              (rlet1 sum 0
+                (vector-for-each (^[i x] (set! sum (+ sum (* i x))))
+                                 '#(0 1 2 3 4)))
               30)
 (assert-equal "vector-for-each 1"
-              (let ((sum 0))
-                (vector-for-each (lambda (i x)
-                                   (set! sum (+ sum (* i x))))
-                                 '#())
-                sum)
+              (rlet1 sum 0
+                (vector-for-each (^[i x] (set! sum (+ sum (* i x))))
+                                 '#()))
               0)
 
 (assert-equal "vector-count 0"
-              (vector-count (lambda (i x) (even? x)) '#(0 1 2 3 4 5 6))
+              (vector-count (^[i x] (even? x)) '#(0 1 2 3 4 5 6))
               4)
 (assert-equal "vector-count 1"
               (vector-count values '#())
               0)
 (assert-equal "vector-count 2"
-              (vector-count (lambda (i x y) (< x y))
+              (vector-count (^[i x y] (< x y))
                             '#(8 2 7 4 9 1 0)
                             '#(7 6 8 3 1 1 9))
               3)
@@ -1364,9 +1317,9 @@
               #f)
 
 (define (char-cmp c1 c2)
-  (cond ((char<? c1 c2) -1)
-        ((char=? c1 c2) 0)
-        (else 1)))
+  (cond [(char<? c1 c2) -1]
+        [(char=? c1 c2) 0]
+        [else 1]))
 
 (assert-equal "vector-binary-search 0"
               (vector-binary-search
@@ -1455,52 +1408,44 @@
 ;;;
 
 (assert-equal "vector-set! 0"
-              (let ((v (vector 0 1 2)))
-                (vector-set! v 1 'a)
-                v)
+              (rlet1 v (vector 0 1 2)
+                (vector-set! v 1 'a))
               '#(0 a 2))
 (assert-error "vector-set! 1" (vector-set! (vector 0 1 2) 3 'a))
 (assert-error "vector-set! 2" (vector-set! (vector 0 1 2) -1 'a))
 (assert-error "vector-set! 3" (vector-set! (vector) 0 'a))
 
 (assert-equal "vector-swap! 0"
-              (let ((v (vector 'a 'b 'c)))
-                (vector-swap! v 0 1)
-                v)
+              (rlet1 v (vector 'a 'b 'c)
+                (vector-swap! v 0 1))
               '#(b a c))
 (assert-equal "vector-swap! 1"
-              (let ((v (vector 'a 'b 'c)))
-                (vector-swap! v 1 1)
-                v)
+              (rlet1 v (vector 'a 'b 'c)
+                (vector-swap! v 1 1))
               '#(a b c))
 (assert-error "vector-swap! e0" (vector-swap! (vector 'a 'b 'c) 0 3))
 (assert-error "vector-swap! e1" (vector-swap! (vector 'a 'b 'c) -1 1))
 (assert-error "vector-swap! e2" (vector-swap! (vector) 0 0))
 
 (assert-equal "vector-fill! 0"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-fill! v 'z)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-fill! v 'z))
               '#(z z z z z))
 (assert-equal "vector-fill! 1"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-fill! v 'z 2)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-fill! v 'z 2))
               '#(a b z z z))
 (assert-equal "vector-fill! 2"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-fill! v 'z 1 3)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-fill! v 'z 1 3))
               '#(a z z d e))
 (assert-equal "vector-fill! 3"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-fill! v 'z 0 5)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-fill! v 'z 0 5))
               '#(z z z z z))
 (assert-equal "vector-fill! 4"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-fill! v 'z 2 2)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-fill! v 'z 2 2))
               '#(a b c d e))
 (assert-error "vector-fill! e0" (vector-fill! (vector 'a 'b 'c) 'z 0 4))
 (assert-error "vector-fill! e1" (vector-fill! (vector 'a 'b 'c) 'z 2 1))
@@ -1508,29 +1453,24 @@
 ;(assert-error "vector-fill! e3" (vector-fill! (vector) 'z 0 0))
 
 (assert-equal "vector-reverse! 0"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-reverse! v)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-reverse! v))
               '#(e d c b a))
 (assert-equal "vector-reverse! 1"
-              (let ((v (vector 'a 'b 'c 'd 'e 'f)))
-                (vector-reverse! v 1 4)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e 'f)
+                (vector-reverse! v 1 4))
               '#(a d c b e f))
 (assert-equal "vector-reverse! 2"
-              (let ((v (vector 'a 'b 'c 'd 'e 'f)))
-                (vector-reverse! v 3 3)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e 'f)
+                (vector-reverse! v 3 3))
               '#(a b c d e f))
 (assert-equal "vector-reverse! 3"
-              (let ((v (vector 'a 'b 'c 'd 'e 'f)))
-                (vector-reverse! v 3 4)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e 'f)
+                (vector-reverse! v 3 4))
               '#(a b c d e f))
 (assert-equal "vector-reverse! 4"
-              (let ((v (vector)))
-                (vector-reverse! v)
-                v)
+              (rlet1 v (vector)
+                (vector-reverse! v))
               '#())
 (assert-error "vector-reverse! e0" (vector-reverse! (vector 'a 'b) 0 3))
 (assert-error "vector-reverse! e1" (vector-reverse! (vector 'a 'b) 2 1))
@@ -1538,83 +1478,68 @@
 (assert-error "vector-reverse! e3" (vector-reverse! (vector) 0 0))
 
 (assert-equal "vector-copy! 0"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-copy! v 0 '#(1 2 3))
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-copy! v 0 '#(1 2 3)))
               '#(1 2 3 d e))
 (assert-equal "vector-copy! 1"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-copy! v 2 '#(1 2 3))
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-copy! v 2 '#(1 2 3)))
               '#(a b 1 2 3))
 (assert-equal "vector-copy! 2"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-copy! v 2 '#(1 2 3) 1)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-copy! v 2 '#(1 2 3) 1))
               '#(a b 2 3 e))
 (assert-equal "vector-copy! 3"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-copy! v 2 '#(1 2 3 4 5) 2 5)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-copy! v 2 '#(1 2 3 4 5) 2 5))
               '#(a b 3 4 5))
 (assert-equal "vector-copy! 4"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-copy! v 2 '#(1 2 3) 1 1)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-copy! v 2 '#(1 2 3) 1 1))
               '#(a b c d e))
 (assert-equal "vector-copy! self0"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-copy! v 0 v 1 3)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-copy! v 0 v 1 3))
               '#(b c c d e))
 (assert-equal "vector-copy! self1"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-copy! v 2 v 1 4)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-copy! v 2 v 1 4))
               '#(a b b c d))
 (assert-equal "vector-copy! self2"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-copy! v 0 v 0)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-copy! v 0 v 0))
               '#(a b c d e))
 (assert-error "vector-copy! e0" (vector-copy! (vector 1 2) 3 '#(1 2 3)))
 (assert-error "vector-copy! e1" (vector-copy! (vector 1 2) 0 '#(1 2 3)))
 (assert-error "vector-copy! e2" (vector-copy! (vector 1 2) 1 '#(1 2 3) 1))
 
 (assert-equal "vector-reverse-copy! 0"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-reverse-copy! v 0 '#(1 2 3))
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-reverse-copy! v 0 '#(1 2 3)))
               '#(3 2 1 d e))
 (assert-equal "vector-reverse-copy! 1"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-reverse-copy! v 2 '#(1 2 3))
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-reverse-copy! v 2 '#(1 2 3)))
               '#(a b 3 2 1))
 (assert-equal "vector-reverse-copy! 2"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-reverse-copy! v 2 '#(1 2 3) 1)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-reverse-copy! v 2 '#(1 2 3) 1))
               '#(a b 3 2 e))
 (assert-equal "vector-reverse-copy! 3"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-reverse-copy! v 2 '#(1 2 3 4 5) 1 4)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-reverse-copy! v 2 '#(1 2 3 4 5) 1 4))
               '#(a b 4 3 2))
 (assert-equal "vector-reverse-copy! 4"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-reverse-copy! v 2 '#(1 2 3 4 5) 2 2)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-reverse-copy! v 2 '#(1 2 3 4 5) 2 2))
               '#(a b c d e))
 (assert-equal "vector-reverse-copy! self0"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-reverse-copy! v 0 v)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-reverse-copy! v 0 v))
               '#(e d c b a))
 (assert-equal "vector-reverse-copy! self1"
-              (let ((v (vector 'a 'b 'c 'd 'e)))
-                (vector-reverse-copy! v 0 v 0 2)
-                v)
+              (rlet1 v (vector 'a 'b 'c 'd 'e)
+                (vector-reverse-copy! v 0 v 0 2))
               '#(b a c d e))
 (assert-error "vector-reverse-copy! e0"
               (vector-reverse-copy! (vector 'a 'b) 2 '#(a b)))

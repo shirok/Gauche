@@ -52,20 +52,17 @@
 (define-constant *sha-unit-len* 4096)
 
 (define (gen-digest init update end)
-  (lambda ()
-    (let ((ctx (make <sha-context>))
-          (buf  (make-u8vector *sha-unit-len*)))
-      (init ctx)
-      (port-for-each
-       (lambda (x) (update ctx x))
-       (lambda ()
-         (let1 count (read-block! buf)
-           (if (eof-object? count)
-             count
-             (if (< count *sha-unit-len*)
-               (uvector-alias <u8vector> buf 0 count)
-               buf)))))
-      (end ctx))))
+  (^[] (let ([ctx (make <sha-context>)]
+             [buf (make-u8vector *sha-unit-len*)])
+         (init ctx)
+         (port-for-each
+          (^x (update ctx x))
+          (^[] (let1 count (read-block! buf)
+                 (cond [(eof-object? count) count]
+                       [(< count *sha-unit-len*)
+                        (uvector-alias <u8vector> buf 0 count)]
+                       [else buf]))))
+         (end ctx))))
 
 (define sha1-digest   (gen-digest %sha1-init   %sha1-update   %sha1-final))
 (define sha224-digest (gen-digest %sha224-init %sha224-update %sha224-final))
@@ -84,12 +81,12 @@
 ;;;
 
 (define-macro (define-framework n)
-  (let ((meta   (string->symbol #`"<sha,|n|-meta>"))
-        (cls    (string->symbol #`"<sha,|n|>"))
-        (init   (string->symbol #`"%sha,|n|-init"))
-        (update (string->symbol #`"%sha,|n|-update"))
-        (final  (string->symbol #`"%sha,|n|-final"))
-        (digest (string->symbol #`"sha,|n|-digest")))
+  (let ([meta   (string->symbol #`"<sha,|n|-meta>")]
+        [cls    (string->symbol #`"<sha,|n|>")]
+        [init   (string->symbol #`"%sha,|n|-init")]
+        [update (string->symbol #`"%sha,|n|-update")]
+        [final  (string->symbol #`"%sha,|n|-final")]
+        [digest (string->symbol #`"sha,|n|-digest")])
     `(begin
        (define-class ,meta (<message-digest-algorithm-meta>) ())
        (define-class ,cls (<message-digest-algorithm>)

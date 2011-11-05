@@ -43,10 +43,9 @@
 (define-macro (set-reference-inliner ref type)
   `(define-compiler-macro ,ref
      (er-transformer
-      (lambda (x r c)
-        (if (= (length x) 3)
-          (list '%uvector-ref (cadr x) ,type (caddr x))
-          x)))))
+      (^[x r c] (if (= (length x) 3)
+                  (list '%uvector-ref (cadr x) ,type (caddr x))
+                  x)))))
 
 (set-reference-inliner s8vector-ref 0)
 (set-reference-inliner u8vector-ref 1)
@@ -65,52 +64,41 @@
 ;;
 
 (define-macro (%define-srfi-4-collection-interface tag)
-  (let* ((tagvector (string->symbol #`",|tag|vector"))
-         (class     (string->symbol #`"<,|tagvector|>"))
-         (meta      (string->symbol #`"<,|tagvector|-meta>"))
-         (len       (string->symbol #`",|tagvector|-length"))
-         (ref       (string->symbol #`",|tagvector|-ref"))
-         (set       (string->symbol #`",|tagvector|-set!"))
-         (copy      (string->symbol #`",|tagvector|-copy"))
-         (->list    (string->symbol #`",|tagvector|->list"))
-         (list->    (string->symbol #`"list->,|tagvector|"))
-         (->vec     (string->symbol #`",|tagvector|->vector"))
-         (vec->     (string->symbol #`"vector->,|tagvector|"))
-         (make      (string->symbol #`"make-,|tagvector|"))
-         )
+  (let* ([tagvector (string->symbol #`",|tag|vector")]
+         [class     (string->symbol #`"<,|tagvector|>")]
+         [meta      (string->symbol #`"<,|tagvector|-meta>")]
+         [len       (string->symbol #`",|tagvector|-length")]
+         [ref       (string->symbol #`",|tagvector|-ref")]
+         [set       (string->symbol #`",|tagvector|-set!")]
+         [copy      (string->symbol #`",|tagvector|-copy")]
+         [->list    (string->symbol #`",|tagvector|->list")]
+         [list->    (string->symbol #`"list->,|tagvector|")]
+         [->vec     (string->symbol #`",|tagvector|->vector")]
+         [vec->     (string->symbol #`"vector->,|tagvector|")]
+         [make      (string->symbol #`"make-,|tagvector|")])
     `(begin
-       (define-method call-with-iterator ((v ,class) proc . opts)
-         (let-keywords opts ((start #f))
-           (let* ((len   (,len v))
-                  (i     (or start 0)))
-             (proc (lambda () (>= i len))
-                   (lambda () (let ((r (,ref v i))) (inc! i) r))))))
-       (define-method call-with-builder ((c ,meta) proc . opts)
-         (let-keywords opts ((size #f))
-           (if size
-               (let ((v (,make size))
-                     (i 0))
-                 (proc (lambda (item) (,set v i item) (inc! i))
-                       (lambda () v)))
-               (let ((q (make-queue)))
-                 (proc (lambda (item) (enqueue! q item))
-                       (lambda () (,list-> (dequeue-all! q)))))
-               )))
+       (define-method call-with-iterator ((v ,class) proc :key (start #f))
+         (let* ([len (,len v)] [i (or start 0)])
+           (proc (^[] (>= i len))
+                 (^[] (rlet1 r (,ref v i) (inc! i))))))
+       (define-method call-with-builder ((c ,meta) proc :key (size #f))
+         (if size
+           (let ([v (,make size)] [i 0])
+             (proc (^[item] (,set v i item) (inc! i))
+                   (^[] v)))
+           (let1 q (make-queue)
+             (proc (^[item] (enqueue! q item))
+                   (^[] (,list-> (dequeue-all! q)))))
+           ))
        (define-method referencer ((v ,class)) ,ref)
        (define-method modifier   ((v ,class)) ,set)
        (define-method size-of ((v ,class)) (,len v))
-       (define-method coerce-to ((c <list-meta>) (v ,class))
-         (,->list v))
-       (define-method coerce-to ((c ,meta) (v <list>))
-         (,list-> v))
-       (define-method coerce-to ((c <vector-meta>) (v ,class))
-         (,->vec v))
-       (define-method coerce-to ((c ,meta) (v <vector>))
-         (,vec-> v))
-       (define-method coerce-to ((c ,meta) (v ,class))
-         (,copy v))
-       (define-method subseq ((v ,class) . args)
-         (apply ,copy v args))
+       (define-method coerce-to ((c <list-meta>) (v ,class)) (,->list v))
+       (define-method coerce-to ((c ,meta) (v <list>)) (,list-> v))
+       (define-method coerce-to ((c <vector-meta>) (v ,class)) (,->vec v))
+       (define-method coerce-to ((c ,meta) (v <vector>)) (,vec-> v))
+       (define-method coerce-to ((c ,meta) (v ,class)) (,copy v))
+       (define-method subseq ((v ,class) . args) (apply ,copy v args))
        )))
 
 (%define-srfi-4-collection-interface s8)

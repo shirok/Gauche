@@ -6,7 +6,6 @@
 
 (use gauche.test)
 (use gauche.uvector)
-(use gauche.experimental.app)
 (use srfi-1)
 (use srfi-13)
 (test-start "net")
@@ -20,13 +19,13 @@
 (test-section "socket address")
 
 (test* "sockaddr_un" #t
-        (let ((addr (make <sockaddr-un> :path "/tmp/xxx")))
+        (let1 addr (make <sockaddr-un> :path "/tmp/xxx")
           (and (eq? (sockaddr-family addr) 'unix)
                (equal? (sockaddr-name addr) "/tmp/xxx")
                #t)))
 
 (test* "sockaddr_in" #t
-        (let ((addr (make <sockaddr-in> :host "127.0.0.1" :port 80)))
+        (let1 addr (make <sockaddr-in> :host "127.0.0.1" :port 80)
           (and (eq? (sockaddr-family addr) 'inet)
                (equal? (sockaddr-name addr) "127.0.0.1:80")
                (= (sockaddr-addr addr) #x7f000001)
@@ -34,31 +33,31 @@
                #t)))
 
 (test* "sockaddr_in" #t
-       (let ((addr (make <sockaddr-in> :host "localhost" :port 23)))
+       (let1 addr (make <sockaddr-in> :host "localhost" :port 23)
          (and (eq? (sockaddr-family addr) 'inet)
               (equal? (sockaddr-name addr) "127.0.0.1:23")
               #t)))
 
 (test* "sockaddr_in" #t
-       (let ((addr (make <sockaddr-in> :host #x7f000001 :port 23)))
+       (let1 addr (make <sockaddr-in> :host #x7f000001 :port 23)
          (and (eq? (sockaddr-family addr) 'inet)
               (equal? (sockaddr-name addr) "127.0.0.1:23")
               #t)))
 
 (test* "sockaddr_in" #t
-       (let ((addr (make <sockaddr-in> :host '#u8(127 0 0 1) :port 23)))
+       (let1 addr (make <sockaddr-in> :host '#u8(127 0 0 1) :port 23)
          (and (eq? (sockaddr-family addr) 'inet)
               (equal? (sockaddr-name addr) "127.0.0.1:23")
               #t)))
 
 (test* "sockaddr_in" #t
-       (let ((addr (make <sockaddr-in> :host :any :port 7777)))
+       (let1 addr (make <sockaddr-in> :host :any :port 7777)
          (and (eq? (sockaddr-family addr) 'inet)
               (equal? (sockaddr-name addr) "0.0.0.0:7777")
               #t)))
 
 (test* "sockaddr_in" #t
-       (let ((addr (make <sockaddr-in> :host :broadcast)))
+       (let1 addr (make <sockaddr-in> :host :broadcast)
          (and (eq? (sockaddr-family addr) 'inet)
               (equal? (sockaddr-name addr) "255.255.255.255:0")
               #t)))
@@ -84,7 +83,7 @@
 (cond-expand
  [gauche.net.ipv6
   (test* "sockaddr_in6" #t
-         (let ((addr (make <sockaddr-in6> :host "2001:200::8002:203:47ff:fea5:3085" :port 23)))
+         (let1 addr (make <sockaddr-in6> :host "2001:200::8002:203:47ff:fea5:3085" :port 23)
            (and (eq? (sockaddr-family addr) 'inet6)
                 (#/\[2001:200:0?:8002:203:47ff:fea5:3085\]:23/ (sockaddr-name addr))
                 (= (sockaddr-addr addr) #x2001020000008002020347fffea53085)
@@ -110,10 +109,10 @@
 
 (let ()
   (define (addr-test desc input exp-val exp-vers)
-    (let ((uvresult (make-u8vector 16 0)))
+    (let1 uvresult (make-u8vector 16 0)
       (and exp-vers
-           (let loop ((val exp-val)
-                      (dig (if (= exp-vers AF_INET) 3 15)))
+           (let loop ([val exp-val]
+                      [dig (if (= exp-vers AF_INET) 3 15)])
              (when (>= dig 0)
                (u8vector-set! uvresult dig (logand val #xff))
                (loop (ash val -8) (- dig 1)))))
@@ -161,11 +160,11 @@
 
 (let ()
   (define (addr-test desc input vers expected)
-    (let* ((size (cond ((= vers AF_INET) 4) ((= vers AF_INET6) 16)))
-           (uv (make-u8vector size 0)))
-      (do ((k (- size 1) (- k 1))
-           (val input (ash val -8)))
-          ((< k 0))
+    (let* ([size (cond [(= vers AF_INET) 4] [(= vers AF_INET6) 16])]
+           [uv (make-u8vector size 0)])
+      (do ([k (- size 1) (- k 1)]
+           [val input (ash val -8)])
+          [(< k 0)]
         (u8vector-set! uv k (logand val #xff)))
       (test* #`"inet-address->string (,desc,, int)" expected
              (inet-address->string input vers))
@@ -209,7 +208,7 @@
 (test-section "netdb")
 
 (test* "gethostbyname" #t
-       (let ((host (sys-gethostbyname "localhost")))
+       (let1 host (sys-gethostbyname "localhost")
          (and host
               (or (equal? (slot-ref host 'name) "localhost")
                   (member "localhost" (slot-ref host 'aliases))
@@ -222,7 +221,7 @@
               #t)))
 
 (test* "gethostbyaddr" #t
-       (let ((host (sys-gethostbyaddr "127.0.0.1" AF_INET)))
+       (let1 host (sys-gethostbyaddr "127.0.0.1" AF_INET)
          (and host
               (or (equal? (slot-ref host 'name) "localhost")
                   (member "localhost" (slot-ref host 'aliases))
@@ -235,36 +234,30 @@
               #t)))
 
 (test* "getprotobyname" '(("icmp" 1) ("tcp" 6) ("udp" 17))
-       (let ((tcp (sys-getprotobyname "tcp"))
-             (udp (sys-getprotobyname "udp"))
-             (icmp (sys-getprotobyname "icmp")))
-         (map (lambda (proto)
-                (list (slot-ref proto 'name)
-                      (slot-ref proto 'proto)))
+       (let ([tcp (sys-getprotobyname "tcp")]
+             [udp (sys-getprotobyname "udp")]
+             [icmp (sys-getprotobyname "icmp")])
+         (map (^[proto] (list (slot-ref proto 'name)
+                              (slot-ref proto 'proto)))
               (list icmp tcp udp))))
 
 (test* "getprotobynumber" '(#t #t #t)
-       (map (lambda (proto name)
-              (or (member name (slot-ref proto 'aliases))
-                  (equal? name (slot-ref proto 'name))))
+       (map (^[proto name] (or (member name (slot-ref proto 'aliases))
+                               (equal? name (slot-ref proto 'name))))
             (map sys-getprotobynumber '(1 6 17))
             '("icmp" "tcp" "udp")))
 
 (test* "getservbyname" '(("telnet" 23 "tcp") ("ftp" 21 "tcp"))
-       (map (lambda (name proto)
-              (let ((x (sys-getservbyname name proto)))
-                (and x
-                     (map (lambda (s) (slot-ref x s))
-                          '(name port proto)))))
+       (map (^[name proto]
+              (let1 x (sys-getservbyname name proto)
+                (and x (map (^s (slot-ref x s)) '(name port proto)))))
             '("telnet" "ftp")
             '("tcp"    "tcp")))
 
 (test* "getservbyport" '(("telnet" 23 "tcp") ("ftp" 21 "tcp"))
-       (map (lambda (port proto)
-              (let ((x (sys-getservbyport port proto)))
-                (and x
-                     (map (lambda (s) (slot-ref x s))
-                          '(name port proto)))))
+       (map (^[port proto]
+              (let1 x (sys-getservbyport port proto)
+                (and x (map (^s (slot-ref x s)) '(name port proto)))))
             '(23       21)
             '("tcp"    "tcp")))
 
@@ -291,33 +284,33 @@
 ;; sockargs is an expression that yields to a list of server sockets
 (define (run-simple-server sockargs)
   (with-output-to-file "testserv.o"
-    (lambda ()
+    (^[]
       (write '(use gauche.net))
       (write '(use gauche.selector))
       (write '(use srfi-13))
       (write '(define (simple-server sockets)
                 (define (handler fd flag)
-                  (let loop ((clnt (socket-accept
-                                    (find (^s (eq? (socket-fd s) fd)) sockets))))
-                    (let ((in   (socket-input-port clnt))
-                          (out  (socket-output-port clnt)))
-                      (let loop2 ((line (read-line in)))
-                        (cond ((eof-object? line)
-                               (socket-close clnt))
-                              ((string=? line "END")
+                  (let loop ([clnt (socket-accept
+                                    (find (^s (eq? (socket-fd s) fd)) sockets))])
+                    (let ([in  (socket-input-port clnt)]
+                          [out (socket-output-port clnt)])
+                      (let loop2 ([line (read-line in)])
+                        (cond [(eof-object? line)
+                               (socket-close clnt)]
+                              [(string=? line "END")
                                (socket-close clnt)
                                (for-each socket-close sockets)
-                               (sys-exit 33))
-                              (else
+                               (sys-exit 33)]
+                              [else
                                (display (string-upcase line) out)
                                (newline out)
                                (flush out)
-                               (loop2 (read-line in))))))))
+                               (loop2 (read-line in))])))))
                 (newline) (flush) ;; handshake
-                (let ((sel (make <selector>)))
-                  (dolist (s sockets)
+                (let1 sel (make <selector>)
+                  (dolist [s sockets]
                     (selector-add! sel (socket-fd s) handler '(r)))
-                  (do () (#f) (selector-select sel)))))
+                  (do () [#f] (selector-select sel)))))
       (write `(define (main args)
                 (simple-server ,sockargs)
                 0)))
@@ -345,19 +338,19 @@
 	 (begin
 	   (run-simple-server '(list (make-server-socket 'unix "sock.o")))
 	   (let1 stat (sys-stat "sock.o")
-		 (not (memq (sys-stat->file-type stat) '(socket fifo))))))
+             (not (memq (sys-stat->file-type stat) '(socket fifo))))))
 
   (test* "unix client socket" '("ABC" "XYZ")
          (call-with-client-socket (make-client-socket 'unix "sock.o")
-           (lambda (in out)
+           (^[in out]
              (display "abc\n" out) (flush out)
-             (let ((abc (read-line in)))
+             (let1 abc (read-line in)
                (display "xyz\n" out) (flush out)
                (list abc (read-line in))))))
 
   (test* "unix client socket" #t
          (call-with-client-socket (make-client-socket 'unix "sock.o")
-           (lambda (in out)
+           (^[in out]
              (display (make-string *chunk-size* #\a) out)
              (newline out)
              (flush out)
@@ -366,7 +359,7 @@
   (test* "unix client socket" #t
          (call-with-client-socket
           (make-client-socket (make <sockaddr-un> :path "sock.o"))
-          (lambda (in out)
+          (^[in out]
             (display (make-string *chunk-size* #\a) out)
             (newline out)
             (flush out)
@@ -374,10 +367,10 @@
 
   (test* "unix client socket" 33
          (call-with-client-socket (make-client-socket 'unix "sock.o")
-           (lambda (in out)
+           (^[in out]
              (display "END\n" out) (flush out)
              (receive (pid code) (sys-wait)
-                      (sys-wait-exit-status code)))))
+               (sys-wait-exit-status code)))))
   ])
 
 (sys-unlink "sock.o")
@@ -387,15 +380,15 @@
 
 (test* "inet client socket" '("ABC" "XYZ")
        (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
-         (lambda (in out)
+         (^[in out]
            (display "abc\n" out) (flush out)
-           (let ((abc (read-line in)))
+           (let1 abc (read-line in)
              (display "xyz\n" out) (flush out)
              (list abc (read-line in))))))
 
 (test* "inet client socket (host,port)" #t
        (call-with-client-socket (make-client-socket "localhost" *inet-port*)
-         (lambda (in out)
+         (^[in out]
            (display (make-string *chunk-size* #\a) out)
            (newline out)
            (flush out)
@@ -405,7 +398,7 @@
        (call-with-client-socket (make-client-socket
                                  (make <sockaddr-in>
                                    :host "localhost" :port *inet-port*))
-         (lambda (in out)
+         (^[in out]
            (display (make-string *chunk-size* #\a) out)
            (newline out)
            (flush out)
@@ -413,7 +406,7 @@
 
 (test* "inet client socket (termination)" 33
        (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
-         (lambda (in out)
+         (^[in out]
            (display "END\n" out) (flush out)
            (receive (pid code) (sys-wait)
              (sys-wait-exit-status code)))))
@@ -430,25 +423,25 @@
   ;; On IPv6 system, the loopback may have different name than "localhost".
   ;; We apply some heuristics here.
   (define (get-ipv6-sock)
-    (any (lambda (name)
-           (guard (e (else #f))
+    (any (^[name]
+           (guard (e [else #f])
              (make-client-socket
               (make <sockaddr-in6> :host name :port *inet-port*))))
          '("localhost" "ip6-localhost" "ipv6-localhost" "::1")))
   
   (test* "inet client socket (ipv6)" #t
-         (and-let* ((sock (get-ipv6-sock)))
+         (and-let* ([sock (get-ipv6-sock)])
            (call-with-client-socket sock
-             (lambda (in out)
+             (^[in out]
                (display (make-string *chunk-size* #\a) out)
                (newline out)
                (flush out)
                (string=? (read-line in) (make-string *chunk-size* #\A))))))
 
   (test* "inet client socket (ipv6, termination)" 33
-         (and-let* ((sock (get-ipv6-sock)))
+         (and-let* ([sock (get-ipv6-sock)])
            (call-with-client-socket sock
-             (lambda (in out)
+             (^[in out]
                (display "END\n" out) (flush out)
                (receive (pid code) (sys-wait)
                  (sys-wait-exit-status code))))))
@@ -466,10 +459,10 @@
          (socket-output-port s)))
 
 (test* "getsockname/getpeername" #t
-       (let* ((addr (make <sockaddr-in> :host :loopback :port *inet-port*))
-              (serv (make-server-socket addr :reuse-addr? #t))
-              (clnt (make-client-socket addr)))
-         (begin0 (every (lambda (addr)
+       (let* ([addr (make <sockaddr-in> :host :loopback :port *inet-port*)]
+              [serv (make-server-socket addr :reuse-addr? #t)]
+              [clnt (make-client-socket addr)])
+         (begin0 (every (^[addr]
                           (and (= (sockaddr-addr addr) #x7f000001)
                                (= (sockaddr-port addr) *inet-port*)))
                         (list (socket-getsockname serv)
@@ -480,13 +473,13 @@
 (test* "udp server socket" #t
        (begin
          (with-output-to-file "testserv.o"
-           (lambda ()
+           (^[]
              (write '(use gauche.net))
              (write '(use srfi-13))
              (write
               `(define (main args)
-                 (let ((sock (make-socket PF_INET SOCK_DGRAM))
-                       (addr (make <sockaddr-in> :host :any :port ,*inet-port*)))
+                 (let ([sock (make-socket PF_INET SOCK_DGRAM)]
+                       [addr (make <sockaddr-in> :host :any :port ,*inet-port*)])
                    (socket-setsockopt sock SOL_SOCKET SO_REUSEADDR 1)
                    (socket-bind sock addr)
                    (newline) (flush) ;; handshake
@@ -500,8 +493,8 @@
            #t)))
 
 (test* "udp client socket" "ABC"
-       (let ((sock (make-socket PF_INET SOCK_DGRAM))
-             (addr (make <sockaddr-in> :host :loopback :port *inet-port*)))
+       (let ([sock (make-socket PF_INET SOCK_DGRAM)]
+             [addr (make <sockaddr-in> :host :loopback :port *inet-port*)])
          ;; NB: Cygwin weirdness... Somehow the first udp packet
          ;; is always dropped on CYGWIN_NT-5.1 1.5.25(0.156/4/2) on XP SP3,
          ;; so we send it twice.  Curiously such symptom does not appear
@@ -519,10 +512,10 @@
            (sys-wait))))
 
 (define (with-sr-udp proc)
-  (let ((s-sock (make-socket PF_INET SOCK_DGRAM))
-        (r-sock (make-socket PF_INET SOCK_DGRAM))
-        (s-addr (make <sockaddr-in> :host :loopback :port *inet-port*))
-        (r-addr (make <sockaddr-in> :host :any :port *inet-port*)))
+  (let ([s-sock (make-socket PF_INET SOCK_DGRAM)]
+        [r-sock (make-socket PF_INET SOCK_DGRAM)]
+        [s-addr (make <sockaddr-in> :host :loopback :port *inet-port*)]
+        [r-addr (make <sockaddr-in> :host :any :port *inet-port*)])
     (socket-setsockopt r-sock SOL_SOCKET SO_REUSEADDR 1)
     (socket-bind r-sock r-addr)
     (unwind-protect
@@ -531,7 +524,7 @@
              (socket-close s-sock)))))
 
 (with-sr-udp
- (lambda (s-sock s-addr r-sock r-addr)
+ (^[s-sock s-addr r-sock r-addr]
    (let ([from (make <sockaddr-in>)]
          [data (make-u8vector 1024 #x3c)]
          [buf  (make-u8vector 1024 #xa5)])
@@ -548,7 +541,7 @@
  [(and (not gauche.os.cygwin)
        (not gauche.os.windows))
   (with-sr-udp
-   (lambda (s-sock s-addr r-sock r-addr)
+   (^[s-sock s-addr r-sock r-addr]
      (let ([from   (make <sockaddr-in>)]
 	   [data   `#(,(make-string 255 #\a) ,(make-u8vector 255 48))]
 	   [sbuf   (make-u8vector 1024)]
@@ -557,15 +550,14 @@
        (define (xtest sbuf)
 	 (socket-sendmsg s-sock (socket-buildmsg r-addr data '() 0 sbuf))
 	 (receive (size f-addr) (socket-recvfrom! r-sock rbuf (list from))
-		  (list (eq? f-addr from)
-			(equal? (uvector-alias <u8vector> rbuf 0 size)
-				($ string->u8vector
-				   $ string-concatenate
-				   $ map (lambda (z)
-					   (if (string? z)
-					       z
-					       (u8vector->string z)))
-				   $ vector->list data)))))
+           (list (eq? f-addr from)
+                 (equal? (uvector-alias <u8vector> rbuf 0 size)
+                         ($ string->u8vector
+                            $ string-concatenate
+                            $ map (^z (if (string? z)
+                                        z
+                                        (u8vector->string z)))
+                            $ vector->list data)))))
        
        (test* "udp sendmsg w/sendbuf" '(#t #t) (xtest sbuf))
        (test* "udp sendmsg w/o sendbuf" '(#t #t) (xtest #f)))))]

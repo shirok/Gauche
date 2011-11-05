@@ -36,7 +36,7 @@
 ;;--------------------------------------------------------------------
 (test-section "instances")
 
-(let ((r1a #f) (r1b #f) (r2 #f))
+(let ([r1a #f] [r1b #f] [r2 #f])
   (test* "rtd-constructor" rtd1
          (begin (set! r1a ((rtd-constructor rtd1) 1 2 3))
                 (and (record? r1a) (record-rtd r1a))))
@@ -95,21 +95,17 @@
     (make-rtd 'rtd3 '#((immutable x5) (immutable x6)) rtd2))
 
   (define protocol1
-    (lambda (p)
-      (lambda (a b c)
-        (p (+ a b) (+ b c)))))
+    (^p (^[a b c] (p (+ a b) (+ b c)))))
 
   (define protocol2
-    (lambda (n)
-      (lambda (a b c d e f)
-        (let ((p (n a b c)))
-          (p (+ d e) (+ e f))))))
+    (^n (^[a b c d e f]
+          (let1 p (n a b c)
+            (p (+ d e) (+ e f))))))
 
   (define protocol3
-    (lambda (n)
-      (lambda (a b c d e f g h i)
-        (let ((p (n a b c d e f)))
-          (p (+ g h) (+ h i))))))
+    (^n (^[a b c d e f g h i]
+          (let1 p (n a b c d e f)
+            (p (+ g h) (+ h i))))))
 
   (define make-rtd1
     (protocol1 (rtd-constructor rtd1)))
@@ -118,8 +114,8 @@
     (let ((maker2 (rtd-constructor rtd2)))
       (protocol2
        (protocol1
-        (lambda (x1 x2)
-          (lambda (x3 x4)
+        (^[x1 x2]
+          (^[x3 x4]
             (maker2 x1 x2 x3 x4)))))))
 
   (define make-rtd3
@@ -127,14 +123,14 @@
       (protocol3
        (protocol2
         (protocol1
-         (lambda (x1 x2)
-           (lambda (x3 x4)
-             (lambda (x5 x6)
+         (^[x1 x2]
+           (^[x3 x4]
+             (^[x5 x6]
                (maker3 x1 x2 x3 x4 x5 x6)))))))))
 
   (test* "srfi-99 example 1" '(3 5 9 11 15 17)
          (let1 r (make-rtd3 1 2 3 4 5 6 7 8 9)
-           (map (lambda (f) ((rtd-accessor rtd3 f) r))
+           (map (^f ((rtd-accessor rtd3 f) r))
                 '(x1 x2 x3 x4 x5 x6))))
   )
 
@@ -176,9 +172,8 @@
 
   (let ()
     (define make-point/abs
-      (let ((maker (rtd-constructor point)))
-        (lambda (x y)
-          (maker (abs x) (abs y)))))
+      (let1 maker (rtd-constructor point)
+        (^[x y] (maker (abs x) (abs y)))))
 
     (test* "point-x make-point/abs" 1 (point-x (make-point/abs -1 -2)))
     (test* "point-y make-point/abs" 2 (point-y (make-point/abs -1 -2)))
@@ -189,14 +184,12 @@
       (make-rtd 'cpoint '#((mutable rgb)) point))
 
     (define make-cpoint
-      (let ((maker (rtd-constructor cpoint)))
-        (lambda (x y c)
-          (maker x y (color->rgb c)))))
+      (let1 maker (rtd-constructor cpoint)
+        (^[x y c] (maker x y (color->rgb c)))))
 
     (define make-cpoint/abs
-      (let ((maker (rtd-constructor cpoint)))
-        (lambda (x y c)
-          (maker (abs x) (abs y) (color->rgb c)))))
+      (let1 maker (rtd-constructor cpoint)
+        (^[x y c] (maker (abs x) (abs y) (color->rgb c)))))
 
     (define cpoint-rgb
       (rtd-accessor cpoint 'rgb))
@@ -225,12 +218,12 @@
 (test* "pare kons" #f (pare? (cons 1 2)))
 (test* "pare kar" 1 (kar (kons 1 2)))
 (test* "pare kdr" 2 (kdr (kons 1 2)))
-(test* "pare set-kar!" 3 (let ((k (kons 1 2))) (set-kar! k 3) (kar k)))
+(test* "pare set-kar!" 3 (let1 k (kons 1 2) (set-kar! k 3) (kar k)))
 
 (define-record-type xpare (xkons tail head) #t head tail)
 
 (test* "xpare kons" '(1 . 2)
-       (let ((k (xkons 2 1)))
+       (let1 k (xkons 2 1)
          (cons (xpare-head k) (xpare-tail k))))
 
 ;; record with parents.
@@ -248,7 +241,7 @@
 (test-section "pseudo record")
 
 (define-record-type (vec-rec1 (pseudo-rtd <vector>)) #t #f x y z)
-(let ((v #f))
+(let1 v #f
   (test* "vector record ctor" '#(1 2 3)
          (begin (set! v (make-vec-rec1 1 2 3)) v))
   (test* "accessor" '(1 2 3)
@@ -257,7 +250,7 @@
          (set! (vec-rec1-x v) 10)))
 
 (define-record-type (vec-rec2 (pseudo-rtd <vector>)) #t #f (x) (y) (z))
-(let ((v #f))
+(let1 v #f
   (test* "vector record ctor" '#(1 2 3)
          (begin (set! v (make-vec-rec2 1 2 3)) v))
   (test* "accessor" '(1 2 3)

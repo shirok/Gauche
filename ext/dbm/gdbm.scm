@@ -70,22 +70,22 @@
     (error "path must be set to open gdbm database"))
   (when (gdbm-file-of self)
     (errorf "gdbm ~S already opened" self))
-  (let* ((path   (slot-ref self 'path))
-         (rwmode (slot-ref self 'rw-mode))
-         (sync   (slot-ref self 'sync))
-         (nolock (slot-ref self 'nolock))
-         (rwopt  (case rwmode
-                   ((:read) GDBM_READER)
-                   ((:write) (+ GDBM_WRCREAT
+  (let* ([path   (slot-ref self 'path)]
+         [rwmode (slot-ref self 'rw-mode)]
+         [sync   (slot-ref self 'sync)]
+         [nolock (slot-ref self 'nolock)]
+         [rwopt  (case rwmode
+                   [(:read) GDBM_READER]
+                   [(:write) (+ GDBM_WRCREAT
                                  (if sync GDBM_SYNC 0)
-                                 (if nolock GDBM_NOLOCK 0)))
-                   ((:create) (+ GDBM_NEWDB
+                                 (if nolock GDBM_NOLOCK 0))]
+                   [(:create) (+ GDBM_NEWDB
                                  (if sync GDBM_SYNC 0)
-                                 (if nolock GDBM_NOLOCK 0)))))
-         (fp     (gdbm-open path
+                                 (if nolock GDBM_NOLOCK 0))])]
+         [fp     (gdbm-open path
                             (slot-ref self 'bsize)
                             rwopt
-                            (slot-ref self 'file-mode))))
+                            (slot-ref self 'file-mode))])
     (slot-set! self 'gdbm-file fp)
     self))
 
@@ -94,11 +94,11 @@
 ;;
 
 (define-method dbm-close ((self <gdbm>))
-  (let ((gdbm (gdbm-file-of self)))
+  (let1 gdbm (gdbm-file-of self)
     (and gdbm (gdbm-close gdbm))))
 
 (define-method dbm-closed? ((self <gdbm>))
-  (let ((gdbm (gdbm-file-of self)))
+  (let1 gdbm (gdbm-file-of self)
     (or (not gdbm) (gdbm-closed? gdbm))))
 
 ;;
@@ -115,11 +115,11 @@
 
 (define-method dbm-get ((self <gdbm>) key . args)
   (next-method)
-  (cond ((gdbm-fetch (gdbm-file-of self) (%dbm-k2s self key))
-         => (lambda (v) (%dbm-s2v self v)))
-        ((pair? args) (car args))     ;fall-back value
-        (else  (errorf "gdbm: no data for key ~s in database ~s"
-                       key (gdbm-file-of self)))))
+  (cond [(gdbm-fetch (gdbm-file-of self) (%dbm-k2s self key))
+         => (cut %dbm-s2v self <>)]
+        [(pair? args) (car args)]     ;fall-back value
+        [else  (errorf "gdbm: no data for key ~s in database ~s"
+                       key (gdbm-file-of self))]))
 
 (define-method dbm-exists? ((self <gdbm>) key)
   (next-method)
@@ -135,14 +135,13 @@
 ;;
 
 (define-method dbm-fold ((self <gdbm>) proc knil)
-  (let ((gdbm (gdbm-file-of self)))
-    (let loop ((key (gdbm-firstkey gdbm))
-               (r   knil))
+  (let1 gdbm (gdbm-file-of self)
+    (let loop ([key (gdbm-firstkey gdbm)] [r knil])
       (if key
-          (let ((val (gdbm-fetch gdbm key)))
-            (loop (gdbm-nextkey gdbm key)
-                  (proc (%dbm-s2k self key) (%dbm-s2v self val) r)))
-          r))))
+        (let1 val (gdbm-fetch gdbm key)
+          (loop (gdbm-nextkey gdbm key)
+                (proc (%dbm-s2k self key) (%dbm-s2v self val) r)))
+        r))))
 
 ;;
 ;; Metaoperations
@@ -162,11 +161,11 @@
 
 (define-method dbm-db-copy ((class <gdbm-meta>) from to . keys)
   (%with-gdbm-locking from
-   (lambda () (apply copy-file from to :safe #t keys))))
+   (^[] (apply copy-file from to :safe #t keys))))
 
 (define-method dbm-db-move ((class <gdbm-meta>) from to . keys)
   (%with-gdbm-locking from
-   (lambda () (apply move-file from to :safe #t keys))))
+   (^[] (apply move-file from to :safe #t keys))))
 
 ;;;
 ;;; Low-level bindings
