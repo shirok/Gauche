@@ -108,7 +108,7 @@
   (define (ensure-static-data-list category c-type)
     (and-let* ([unit (cgen-current-unit)])
       (let* ([cppc (cgen-cpp-conditions)]
-             [dl   (find (^(dl) (and (eq? (~ dl'c-type) c-type)
+             [dl   (find (^[dl] (and (eq? (~ dl'c-type) c-type)
                                      (eq? (~ dl'category) category)
                                      (equal? (~ dl'cpp-conditions) cppc)))
                          (~ unit'static-data-list))])
@@ -134,7 +134,7 @@
                 count)))))
 
 (define (cgen-allocate-static-array category c-type init-thunks)
-  (fold (lambda (init-thunk seed)
+  (fold (^[init-thunk seed]
           (let1 cexpr (cgen-allocate-static-datum category c-type init-thunk)
             (or seed cexpr)))
         #f init-thunks))
@@ -142,11 +142,11 @@
 (define-method cgen-emit-static-data ((unit <cgen-unit>))
 
   (define (emit-one-category category dls)
-    (let1 dls (filter (^(dl) (eq? (~ dl'category) category)) dls)
+    (let1 dls (filter (^[dl] (eq? (~ dl'category) category)) dls)
       (unless (null? dls)
         (emit-struct-def category dls)
         (print "{")
-        (dolist (dl dls) (emit-initializers dl))
+        (dolist [dl dls] (emit-initializers dl))
         (print "};"))))
 
   (define (emit-struct-def category dls)
@@ -335,7 +335,7 @@
 ;; object-equal? that returns #t with different class's instances.
 
 (define (cgen-literal value)
-  (or (and-let* ((unit (cgen-current-unit)))
+  (or (and-let* ([unit (cgen-current-unit)])
         (lookup-literal-value unit value))
       (cgen-make-literal value)))
 
@@ -398,9 +398,9 @@
   (let ([lh   (ensure-literal-hash unit)]
         [cppc (~ literal-obj'cpp-conditions)]
         [h    (literal-value-hash (~ literal-obj'value))])
-    (or (and-let* ([entry (find (^(e) (and (equal? (caar e) cppc)
-                                           (literal-value=? (~ literal-obj'value)
-                                                            (cdar e))))
+    (or (and-let* ([entry (find (^e (and (equal? (caar e) cppc)
+                                         (literal-value=? (~ literal-obj'value)
+                                                          (cdar e))))
                                 (vector-ref lh h))])
           (set-cdr! entry literal-obj))
         (push! (vector-ref lh h) (acons cppc (~ literal-obj'value) literal-obj)))))
@@ -408,8 +408,8 @@
 (define (lookup-literal-value unit val)
   (let ([lh (ensure-literal-hash unit)]
         [cppc (cgen-cpp-conditions)])
-    (and-let* ([entry (find (^(e) (and (equal? (caar e) cppc)
-                                       (literal-value=? val (cdar e))))
+    (and-let* ([entry (find (^e (and (equal? (caar e) cppc)
+                                     (literal-value=? val (cdar e))))
                             (vector-ref lh (literal-value-hash val)))])
       (cdr entry))))
 
@@ -476,12 +476,11 @@
   (with-string-io value
     (lambda ()
       (display "\"")
-      (port-for-each (lambda (b)
-                       (if (or (= #x20 b) (= #x21 b) ; #x22 = #\"
-                               (<= #x23 b #x5b)      ; #x5c = #\\
-                               (<= #x5d b #x7e))
-                         (write-byte b)
-                         (format #t "\\~3,'0o" b)))
+      (port-for-each (^b (if (or (= #x20 b) (= #x21 b) ; #x22 = #\"
+                                 (<= #x23 b #x5b)      ; #x5c = #\\
+                                 (<= #x5d b #x7e))
+                           (write-byte b)
+                           (format #t "\\~3,'0o" b)))
                      read-byte)
       (display "\""))))
 
@@ -634,7 +633,7 @@
                   (list*
                    "SCM_OBJ(SCM_CLASS_STATIC_TAG(Scm_VectorClass)) /* <vector> */"
                    (format "SCM_OBJ(~a)" (length literals))
-                   (map (^(lit) (if (cgen-literal-static? lit)
+                   (map (^[lit] (if (cgen-literal-static? lit)
                                   (cgen-cexpr lit)
                                   "SCM_UNDEFINED"))
                         literals)))])
@@ -644,7 +643,7 @@
         :literals literals)))
   (init (self)
     (for-each-with-index
-     (lambda (ind elt)
+     (^[ind elt]
        (unless (cgen-literal-static? elt)
          (print "  ((ScmObj*)"(cgen-c-name self)")["(+ ind 2)"] = "(cgen-cexpr elt)";")))
      (~ self'literals)))
@@ -825,6 +824,5 @@
 
 (define cgen-unique-name
   (let1 counter 0
-    (lambda () (format "~5,'0d" (inc! counter)))))
-
+    (^[] (format "~5,'0d" (inc! counter)))))
 

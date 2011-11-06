@@ -296,7 +296,7 @@
 
 (define (cgen-stub-parser key)
   (cond [(find (^p (eq? key (~ p'name))) (instance-pool->list <form-parser>))
-         => (lambda (parser) (cut invoke parser <>))]
+         => (^[parser] (cut invoke parser <>))]
         [else #f]))
 
 (define (cgen-stub-parse-form form)
@@ -438,9 +438,9 @@
 ;; (define-enum name) - a special case of define-constant
 
 (define (variable-parser-common const? name init opts)
-  (let ((c-name  (get-keyword :c-name opts #f))
-        (symbol  (make-literal name))
-        (initval (make-literal init)))
+  (let ([c-name  (get-keyword :c-name opts #f)]
+        [symbol  (make-literal name)]
+        [initval (make-literal init)])
     (when c-name
       (cgen-decl #`"#define ,c-name (,(cgen-cexpr symbol))"))
     (cgen-init (format "  Scm_MakeBinding(SCM_MODULE(~a), SCM_SYMBOL(~a), ~a, ~a);\n"
@@ -763,16 +763,16 @@
     (receive (args keyargs nreqs nopts rest? other-keys?)
         (process-cproc-args (ref cproc'proc-name) (car decl))
       (receive (body rettype) (extract-rettype (cdr decl))
-        (let ((setter (make <cproc>
-                        :scheme-name `(setter ,(~ cproc'scheme-name))
-                        :c-name #`",(~ cproc'c-name)_SETTER"
-                        :proc-name (make-literal (x->string `(setter ,(~ cproc'scheme-name))))
-                        :args args :return-type rettype
-                        :keyword-args keyargs
-                        :num-reqargs nreqs
-                        :num-optargs nopts
-                        :have-rest-arg? rest?
-                        :allow-other-keys? other-keys?)))
+        (let1 setter (make <cproc>
+                       :scheme-name `(setter ,(~ cproc'scheme-name))
+                       :c-name #`",(~ cproc'c-name)_SETTER"
+                       :proc-name (make-literal (x->string `(setter ,(~ cproc'scheme-name))))
+                       :args args :return-type rettype
+                       :keyword-args keyargs
+                       :num-reqargs nreqs
+                       :num-optargs nopts
+                       :have-rest-arg? rest?
+                       :allow-other-keys? other-keys?)
           (set! (~ cproc'setter) #`",(~ setter'c-name)__STUB")
           (process-body setter body)
           (cgen-add! setter))))]))
@@ -816,8 +816,9 @@
 
 (define-method process-expr-spec ((cproc <procstub>) form)
   (define (typed-result rettype expr)
-    (let1 expr (if (string? expr) expr
-                   (call-with-output-string (cut cise-render expr <> 'expr)))
+    (let1 expr (if (string? expr)
+                 expr
+                 (call-with-output-string (cut cise-render expr <> 'expr)))
       (push-stmt! cproc "{")
       (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
       (push-stmt! cproc #`" SCM_RESULT = (,expr);")
@@ -870,15 +871,14 @@
   (define (typed-results rettypes stmts)
     (let1 nrets (length rettypes)
       (for-each-with-index
-       (lambda (i rettype)
-         (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT,i;"))
+       (^[i rettype] (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT,i;"))
        rettypes)
       (push-stmt! cproc "{")
       (for-each expand-stmt stmts)
       (push-stmt! cproc "}")
       (let1 results
           (string-join
-           (map-with-index (lambda (i rettype)
+           (map-with-index (^[i rettype]
                              (cgen-box-expr rettype #`"SCM_RESULT,i"))
                            rettypes)
            ",")
@@ -1063,15 +1063,14 @@
     (p "    Scm_Error(\"keyword list not even: %S\", SCM_OPTARGS);")
     (p "  while (!SCM_NULLP(SCM_OPTARGS)) {")
     (pair-for-each
-     (lambda (args)
-       (let ([arg (car args)]
-             [tail? (null? (cdr args))])
-         (f "    if (SCM_EQ(SCM_CAR(SCM_OPTARGS), ~a)) {"
-            (cgen-c-name (~ arg'keyword)))
-         (f "      ~a = SCM_CADR(SCM_OPTARGS);" (~ arg'scm-name))
-         (if tail?
-           (p "    }")
-           (p "    } else "))))
+     (^[args] (let ([arg (car args)]
+                    [tail? (null? (cdr args))])
+                (f "    if (SCM_EQ(SCM_CAR(SCM_OPTARGS), ~a)) {"
+                   (cgen-c-name (~ arg'keyword)))
+                (f "      ~a = SCM_CADR(SCM_OPTARGS);" (~ arg'scm-name))
+                (if tail?
+                  (p "    }")
+                  (p "    } else "))))
      args)
     (unless other-keys?
       (p "    else Scm_Warn(\"unknown keyword %S\", SCM_CAR(SCM_OPTARGS));"))
@@ -1110,7 +1109,7 @@
 (define-form-parser define-cgeneric (scheme-name c-name . body)
   (check-arg symbol? scheme-name)
   (check-arg string? c-name)
-  (let ((gf (make <cgeneric> :scheme-name scheme-name :c-name c-name)))
+  (let1 gf (make <cgeneric> :scheme-name scheme-name :c-name c-name)
     (for-each (match-lambda
                 [('extern) (set! [~ gf'extern?] #t)]
                 [('fallback (? string? fallback))
@@ -1149,17 +1148,17 @@
   (receive (args specializers numargs have-optarg?)
       (parse-specialized-args argspec)
     (receive (body rettype) (extract-rettype body)
-      (let ([method (make <cmethod>
-                      :scheme-name scheme-name
-                      :c-name (get-c-name (~(cgen-current-unit)'c-name-prefix)
-                                          (gensym (x->string scheme-name)))
-                      :return-type rettype
-                      :specializers specializers
-                      :num-reqargs numargs
-                      :args args
-                      :have-rest-arg? have-optarg?
-                      )])
-        (let loop ((body body))
+      (let1 method (make <cmethod>
+                     :scheme-name scheme-name
+                     :c-name (get-c-name (~(cgen-current-unit)'c-name-prefix)
+                                         (gensym (x->string scheme-name)))
+                     :return-type rettype
+                     :specializers specializers
+                     :num-reqargs numargs
+                     :args args
+                     :have-rest-arg? have-optarg?
+                     )
+        (let loop ([body body])
           (match body
             [() #f]
             [([? string?] . r) (push-stmt! method stmt) (loop r)]
@@ -1219,7 +1218,7 @@
   (p "}")
   (p "")
   (p "static ScmClass *"(~ method'c-name)"__SPEC[] = { ")
-  (for-each (lambda (spec) (p "SCM_CLASS_STATIC_PTR("spec"), "))
+  (for-each (^[spec] (p "SCM_CLASS_STATIC_PTR("spec"), "))
             (reverse (~ method'specializers)))
   (p "};")
   (f "static SCM_DEFINE_METHOD(~a__STUB, &~a, ~a, ~a, ~a__SPEC, ~:*~a, NULL);"
@@ -1235,9 +1234,9 @@
 ;; returns four values: args, specializers, numreqargs, have-optarg?
 (define (parse-specialized-args arglist)
   (define (badlist) (error <cgen-stub-error> "malformed arglist:" arglist))
-  (let loop ((arglist arglist)
-             (args    '())
-             (specs   '()))
+  (let loop ([arglist arglist]
+             [args    '()]
+             [specs   '()])
     (cond [(null? arglist)
            (values (reverse args) specs (length args) #f)]
           [(symbol? arglist)
@@ -1354,14 +1353,14 @@
        (check-arg string? c-name)
        (check-arg list? cpa)
        (check-arg list? slot-spec)
-       (let* ((allocator (cond ((assq 'allocator more) => cadr) (else #f)))
-              (printer   (cond ((assq 'printer more) => cadr) (else #f)))
-              (dsupers   (cond ((assq 'direct-supers more) => cdr) (else '())))
-              (cclass (make <cclass>
+       (let* ([allocator (cond [(assq 'allocator more) => cadr] [else #f])]
+              [printer   (cond [(assq 'printer more) => cadr] [else #f])]
+              [dsupers   (cond [(assq 'direct-supers more) => cdr] [else '()])]
+              [cclass (make <cclass>
                         :scheme-name scm-name :c-type c-type :c-name c-name
                         :qualifiers quals
                         :cpa cpa :direct-supers dsupers
-                        :allocator allocator :printer printer)))
+                        :allocator allocator :printer printer)])
          (set! (~ cclass'slot-spec) (process-cclass-slots cclass slot-spec))
          (cgen-add! cclass))])))
 
@@ -1383,7 +1382,7 @@
     #`",(~ self'c-name)__SLOTS"))
 
 (define (cclass-emit-standard-decls self)
-  (let ((type (cgen-type-from-name (~ self'scheme-name))))
+  (let1 type (cgen-type-from-name (~ self'scheme-name))
     (p "SCM_CLASS_DECL("(~ self'c-name)");")
     (p "#define "(~ type'unboxer)"(obj) (("(~ self'c-type)")obj)")
     (p "#define "(~ type'c-predicate)"(obj) SCM_XTYPEP(obj, (&"(~ self'c-name)"))")
@@ -1428,7 +1427,7 @@
   (let1 ds (~ self'direct-supers)
     (when (not (null? ds))
       (p "  "(~ self'c-name)".directSupers = Scm_List(")
-      (for-each (lambda (s) (p "SCM_OBJ(&"s"), ")) ds)
+      (for-each (^s (p "SCM_OBJ(&"s"), ")) ds)
       (p " NULL);")
       (p))))
 
@@ -1444,7 +1443,7 @@
   (let1 cpa (~ self'cpa)
     (unless (or (null? cpa) (c-literal? cpa))
       (p "static ScmClass *"(~ self'c-name)"_CPL[] = {")
-      (for-each (lambda (class) (p "  SCM_CLASS_STATIC_PTR("class"),")) cpa)
+      (for-each (^[class] (p "  SCM_CLASS_STATIC_PTR("class"),")) cpa)
       (unless (equal? (car (last-pair cpa)) "Scm_TopClass")
         (p "  SCM_CLASS_STATIC_PTR(Scm_TopClass),"))
       (p "  NULL")
@@ -1453,14 +1452,14 @@
 ;; slot ---------
 
 (define (process-cclass-slots cclass slot-spec)
-  (map (lambda (spec)
+  (map (^[spec]
          (unless (list? spec) (error <cgen-stub-error> "bad slot spec" spec))
-         (let* ((name (car spec))
-                (type   (get-keyword :type (cdr spec) '<top>))
-                (c-name (get-keyword :c-name (cdr spec) (get-c-name "" name)))
-                (c-spec (get-keyword :c-spec (cdr spec) #f))
-                (getter (get-keyword :getter (cdr spec) #t))
-                (setter (get-keyword :setter (cdr spec) #t)))
+         (let* ([name (car spec)]
+                [type   (get-keyword :type (cdr spec) '<top>)]
+                [c-name (get-keyword :c-name (cdr spec) (get-c-name "" name))]
+                [c-spec (get-keyword :c-spec (cdr spec) #f)]
+                [getter (get-keyword :getter (cdr spec) #t)]
+                [setter (get-keyword :setter (cdr spec) #t)])
            (make <cslot>
              :cclass cclass :scheme-name name :c-name c-name
              :c-spec c-spec :type (name->type type)
@@ -1615,7 +1614,7 @@
     ;; TODO: search path
     (error <cgen-stub-error> "couldn't find include file: " file))
   (with-input-from-file file
-    (lambda () (port-for-each cgen-stub-parse-form read)))
+    (^[] (port-for-each cgen-stub-parse-form read)))
   )
 
 (define-form-parser initcode codes
@@ -1635,7 +1634,7 @@
 
 (define-form-parser eval* exprs
   (let* ([m (~ (cgen-current-unit)'temporary-module)]
-         [r (fold (lambda (f r) (eval f m)) #f exprs)])
+         [r (fold (^[f r] (eval f m)) #f exprs)])
     (when (or (pair? r) (string? r))
       (cgen-stub-parse-form r))))
 

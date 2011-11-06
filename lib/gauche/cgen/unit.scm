@@ -121,14 +121,14 @@
 (define-method cgen-emit-h ((unit <cgen-unit>))
   (and-let* ([h-file (cgen-unit-h-file unit)])
     (cgen-with-output-file h-file
-      (lambda ()
+      (^[]
         (cond [(~ unit'preamble) => emit-raw])
         (cgen-emit-part unit 'extern)))))
 
 ;; API
 (define-method cgen-emit-c ((unit <cgen-unit>))
   (cgen-with-output-file (cgen-unit-c-file unit)
-    (lambda ()
+    (^[]
       (cond [(~ unit'preamble) => emit-raw])
       (cgen-emit-part unit 'decl)
       (cgen-emit-static-data unit)
@@ -207,8 +207,8 @@
 (define-method cgen-node-traverse ((node <cgen-node>) walker)
   (do-ec (: slot (map slot-definition-name (class-slots (class-of node))))
          (if (slot-bound? node slot))
-         (and-let* ((var (slot-ref node slot))
-                    ( (is-a? var <cgen-node>) ))
+         (and-let* ([var (slot-ref node slot)]
+                    [ (is-a? var <cgen-node>) ])
            (walker var))))
 
 (define-method cgen-emit ((node <cgen-node>) part)
@@ -221,7 +221,7 @@
         [_ #t])))
   (define (with-cpp-condition gf)
     (cond [(~ node'cpp-conditions)
-           => (^(cppc) (cond [(method-overridden? gf)
+           => (^[cppc] (cond [(method-overridden? gf)
                               (for-each (cut print "#if " <>) cppc)
                               (gf node)
                               (for-each (cut print "#endif /* "<>" */")
@@ -317,10 +317,10 @@
 
 (define (cgen-with-output-file file thunk)
   (receive (port tmpfile) (sys-mkstemp file)
-    (guard (e (else 
+    (guard (e [else 
                (close-output-port port)
                (sys-unlink tmpfile)
-               (raise e)))
+               (raise e)])
       (with-output-to-port port thunk)
       (close-output-port port)
       (sys-rename tmpfile file))))
@@ -333,15 +333,14 @@
 ;; Creates a C-safe name from Scheme string str
 (define (cgen-safe-name str)
   (with-string-io str
-    (lambda ()
-      (let loop ((b (read-byte)))
-        (cond ((eof-object? b))
-              ((or (<= 48 b 57)
-                   (<= 65 b 90)
-                   (<= 97 b 122))
-               (write-byte b) (loop (read-byte)))
-              (else
-               (format #t "_~2,'0x" b) (loop (read-byte))))))))
+    (^[] (let loop ((b (read-byte)))
+           (cond [(eof-object? b)]
+                 [(or (<= 48 b 57)
+                      (<= 65 b 90)
+                      (<= 97 b 122))
+                  (write-byte b) (loop (read-byte))]
+                 [else
+                  (format #t "_~2,'0x" b) (loop (read-byte))])))))
 
 ;; Like cgen-safe-name, but using more 'friendly' transliteration.
 ;; Used in genstub, since the transliterated name may be referred from
@@ -350,23 +349,22 @@
 ;; chance of name conflict.
 (define (cgen-safe-name-friendly str)
   (with-string-io str
-    (lambda ()
-      (let loop ((c (read-char)))
-        (unless (eof-object? c)
-          (case c
-            ((#\-) (let ((d (read-char)))
-                     (cond ((eqv? d #\>) (display "_TO") (loop (read-char)))
-                           (else         (display #\_) (loop d)))))
-            ((#\?) (display #\P) (loop (read-char)))
-            ((#\!) (display #\X) (loop (read-char)))
-            ((#\<) (display "_LT") (loop (read-char)))
-            ((#\>) (display "_GT") (loop (read-char)))
-            ((#\* #\> #\@ #\$ #\% #\^ #\& #\* #\+ #\= #\: #\. #\/ #\~)
-             (display #\_)
-             (display (number->string (char->integer c) 16))
-             (loop (read-char)))
-            (else (display c) (loop (read-char)))
-            ))))))
+    (^[] (let loop ([c (read-char)])
+           (unless (eof-object? c)
+             (case c
+               [(#\-) (let1 d (read-char)
+                        (cond [(eqv? d #\>) (display "_TO") (loop (read-char))]
+                              [else         (display #\_) (loop d)]))]
+               [(#\?) (display #\P) (loop (read-char))]
+               [(#\!) (display #\X) (loop (read-char))]
+               [(#\<) (display "_LT") (loop (read-char))]
+               [(#\>) (display "_GT") (loop (read-char))]
+               [(#\* #\> #\@ #\$ #\% #\^ #\& #\* #\+ #\= #\: #\. #\/ #\~)
+                (display #\_)
+                (display (number->string (char->integer c) 16))
+                (loop (read-char))]
+               [else (display c) (loop (read-char))]
+               ))))))
 
 ;; Escape  '*/' so that str can be inserted safely within a comment.
 (define (cgen-safe-comment str)

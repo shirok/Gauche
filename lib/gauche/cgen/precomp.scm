@@ -355,9 +355,9 @@
 (define (order-files-by-dependency srcs)
   (let* ([deps (filter-map get-module-dependency srcs)]
          [sorted (topological-sort (map (^.[(n _ ns) (cons n ns)]) deps))]
-         [sorted-srcs (filter-map (^(s) (cond [(assq s deps) => cadr]
-                                               [else #f]))
-                                   sorted)]
+         [sorted-srcs (filter-map (^s (cond [(assq s deps) => cadr]
+                                            [else #f]))
+                                  sorted)]
          [unsorted-srcs (lset-difference string=? srcs sorted-srcs)])
     (append sorted-srcs unsorted-srcs)))
 
@@ -376,7 +376,7 @@
   (cgen-decl "#include <gauche/code.h>")
   (cgen-decl "#include <gauche/macro.h>") ; for MakeMacroTransformerOld. temporary.
   (cond [(and ext-init? (ext-module-file))
-         => (lambda (extm)
+         => (^[extm]
               (cgen-decl "#include <gauche/extend.h>")
               (let* ([extname ($ path-sans-extension
                                  $ sys-basename $ port-name extm)]
@@ -432,7 +432,7 @@
   (syntax-rules ()
     [(_ name sym)
      (define name
-       (global-eq?? 'sym 'gauche (^()(~(current-tmodule)'module))))]))
+       (global-eq?? 'sym 'gauche (^[](~(current-tmodule)'module))))]))
 (define-global-pred =define-module?   define-module)
 (define-global-pred =select-module?   select-module)
 (define-global-pred =use?             use)
@@ -609,13 +609,12 @@
    (literals    :init-keyword :literals)
    )
   (make (value)
-    (let* ((cv  (vm-code->list value))
-           (lv  (extract-literals cv))
-           (cvn (allocate-code-vector cv lv (~ value'full-name)))
-           (code-name (cgen-literal (~ value'name)))
-           (arg-info (cgen-literal (~ value'arg-info)))
-           (inliner (check-packed-inliner value))
-           )
+    (let* ([cv  (vm-code->list value)]
+           [lv  (extract-literals cv)]
+           [cvn (allocate-code-vector cv lv (~ value'full-name))]
+           [code-name (cgen-literal (~ value'name))]
+           [arg-info (cgen-literal (~ value'arg-info))]
+           [inliner (check-packed-inliner value)])
       (define (init-thunk)
         (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
                 (cgen-safe-comment (~ value'name)))
@@ -641,10 +640,10 @@
             :code-name code-name
             :literals lv)))
   (init (self)
-    (unless (cgen-literal-static? [~ self'code-name])
-      (print "  SCM_COMPILED_CODE("[~ self'c-name]")->name = "
-             (cgen-cexpr [~ self'code-name])";"
-             "/* "(cgen-safe-comment [~ self'value'full-name])" */"))
+    (unless (cgen-literal-static? (~ self'code-name))
+      (print "  SCM_COMPILED_CODE("(~ self'c-name)")->name = "
+             (cgen-cexpr (~ self'code-name))";"
+             "/* "(cgen-safe-comment (~ self'value'full-name))" */"))
     (fill-code self))
   (static (self) #t)
   )
@@ -653,8 +652,8 @@
 ;; <cgen-literal>s corresponding to the literal values in CODE.
 ;; #f is filled in the places that don't have corresponding litaral value.
 (define (extract-literals code)
-  (let loop ((code code)
-             (lits '()))
+  (let loop ([code code]
+             [lits '()])
     (if (null? code)
       (reverse lits)
       (let* ([insn (car code)]
@@ -734,12 +733,10 @@
   (let ([cvn  (~ code'code-vector-c-name)]
         [lv   (~ code'literals)])
     (for-each-with-index
-     (lambda (index lit)
-       (when (and lit (not (cgen-literal-static? lit)))
-         (format #t "  ((ScmWord*)~a)[~a] = SCM_WORD(~a);\n"
-                 cvn index (cgen-cexpr lit))))
-     lv)
-    ))
+     (^[index lit] (when (and lit (not (cgen-literal-static? lit)))
+                     (format #t "  ((ScmWord*)~a)[~a] = SCM_WORD(~a);\n"
+                             cvn index (cgen-cexpr lit))))
+     lv)))
 
 ;; If the compiled-code has packed IForm for inliner, translate it for
 ;; the target VM insns and returns the packed IForm.

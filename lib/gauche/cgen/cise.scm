@@ -310,9 +310,8 @@
   (match form
     [([? symbol? key] . args)
      (cond [(cise-lookup-macro key)
-            => (lambda (expander)
-                 `(,@(source-info form env)
-                   ,@(render-rec (expander form env) env)))]
+            => (^[expander] `(,@(source-info form env)
+                              ,@(render-rec (expander form env) env)))]
            [(or (type-decl-initial? key)
                 (any type-decl-subsequent? args))
             (cise-render-typed-var form "" env)]
@@ -369,7 +368,7 @@
   (eval '(use gauche.cgen.cise) environment)
   (eval '(use util.match) environment)
   (parameterize ([cise-context context])
-    (let loop ((toutp outp))
+    (let loop ([toutp outp])
       (match (read inp)
         [(? eof-object?) (finish toutp)]
         [('.raw-c-code . cs)
@@ -465,7 +464,7 @@
        [((var . spec) ...)
         (let1 eenv (expr-env env)
           `(begin
-             ,@(map (lambda (var spec)
+             ,@(map (^[var spec]
                       (receive (type has-init? init)
                           (match spec
                             [()         (values 'ScmObj #f #f)]
@@ -511,7 +510,7 @@
       `("(" ,(render-rec test eenv) ")" ,(render-rec `(begin ,@rest) env)))
     (match form
       [(_ (test . rest) ...)
-       (fold-right (lambda (test rest r)
+       (fold-right (^[test rest r]
                      (cond
                       [(and (null? r) (eq? test 'else))
                        `(" else ",(render-rec `(begin ,@rest) env))]
@@ -531,11 +530,11 @@
     (match form
       [(_ expr (literalss . clauses) ...)
        `("switch (",(render-rec expr eenv)") {"
-         ,@(map (lambda (literals clause)
+         ,@(map (^[literals clause]
                   `(,@(source-info literals env)
                     ,@(if (eq? literals 'else)
                         '("default: ")
-                        (map (lambda (literal)
+                        (map (^[literal]
                                `("case ",(render-rec literal eenv)" : "))
                              literals))
                     ,@(render-rec `(begin ,@clause
@@ -591,8 +590,8 @@
 ;;   The lambda form is a fake; you don't really create a closure.
 (define-cise-macro (for-each form env)
   (ensure-stmt-ctx form env)
-  (let ((eenv (expr-env env))
-        (tmp  (gensym "cise__")))
+  (let ([eenv (expr-env env)]
+        [tmp  (gensym "cise__")])
     (match form
       [(_ ('lambda (var) . body) list-expr)
        (env-decl-add! env `(,tmp ScmObj))
@@ -605,7 +604,7 @@
 ;; [cise stmt] dolist [VAR EXPR] STMT ...
 (define-cise-macro (dolist form env)
   (ensure-stmt-ctx form env)
-  (let ((eenv (expr-env env)))
+  (let1 eenv (expr-env env)
     (match form
       [(_ (var expr) . body)
        `(for-each (lambda (,var) ,@body) ,expr)])))
@@ -615,7 +614,7 @@
 ;;   each element of the list.
 (define-cise-macro (pair-for-each form env)
   (ensure-stmt-ctx form env)
-  (let ((eenv (expr-env env)))
+  (let1 eenv (expr-env env)
     (match form
       [(_ ('lambda (var) . body) list-expr)
        (env-decl-add! env `(,var ScmObj))
@@ -627,7 +626,7 @@
 ;; [cise stmt] dopairs [VAR EXPR] STMT ...
 (define-cise-macro (dopairs form env)
   (ensure-stmt-ctx form env)
-  (let ((eenv (expr-env env)))
+  (let1 eenv (expr-env env)
     (match form
       [(_ (var expr) . body)
        `(pair-for-each (lambda (,var) ,@body) ,expr)])))
@@ -637,8 +636,8 @@
 ;;   to (N-1).
 (define-cise-macro (dotimes form env)
   (ensure-stmt-ctx form env)
-  (let ((eenv (expr-env env))
-        (n    (gensym "cise__")))
+  (let ([eenv (expr-env env)]
+        [n    (gensym "cise__")])
     (match form
       [(_ (var expr) . body)
        `(let* ((,var :: int 0) (,n :: int ,expr))
@@ -710,12 +709,11 @@
   (ensure-stmt-or-toplevel-ctx form env)
   (match form
     [(_ item ...)
-     (map (lambda (f)
-            `("#include "
-              ,(cond [(string? f) (write-to-string f)]
-                     [(symbol? f) (x->string f)]
-                     [else (error "bad argument to .include:" f)])
-              "\n" |#reset-line|))
+     (map (^f `("#include "
+                ,(cond [(string? f) (write-to-string f)]
+                       [(symbol? f) (x->string f)]
+                       [else (error "bad argument to .include:" f)])
+                "\n" |#reset-line|))
           item)]
     [(_ . other) (error "malformed .include:" form)]))
 
@@ -904,7 +902,7 @@
      (match form
        [(_ a b ...)
         `("(",(render-rec a eenv)")"
-          ,(append-map (lambda (ind) `("[",(render-rec ind eenv)"]")) b))])
+          ,(append-map (^[ind] `("[",(render-rec ind eenv)"]")) b))])
      env)))
 
 (define-cise-macro (?: form env)
@@ -974,7 +972,7 @@
   [(_ a b c)     `(Scm_Values3 ,a ,b ,c)]
   [(_ a b c d)   `(Scm_Values4 ,a ,b ,c ,d)]
   [(_ a b c d e) `(Scm_Values5 ,a ,b ,c ,d ,e)]
-  [(_ x ...)   `(Scm_Values ,(fold (lambda (elt r) `(Scm_cons ,elt ,r)) '() x))]
+  [(_ x ...)     `(Scm_Values ,(fold (^[elt r] `(Scm_cons ,elt ,r)) '() x))]
   )
 ;; Using quote is a convenient way to embed Scheme constant in C code.
 (define-cise-expr quote
