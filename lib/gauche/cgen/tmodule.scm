@@ -45,7 +45,8 @@
   (use gauche.parameter)
   (export <tmodule> current-tmodule-class
           current-tmodule tmodule-cname current-tmodule-cname
-          all-tmodules find-tmodule select-tmodule with-tmodule)
+          all-tmodules find-tmodule select-tmodule
+          with-tmodule with-tmodule-recording)
   )
 (select-module gauche.cgen.tmodule)
 
@@ -55,11 +56,11 @@
    [module  :init-form (make-module #f)]
    [cname   :init-value #f]   ; C variable name holding the module in init fn
                               ;  initialized on-demand
-   [modules :allocation :class :init-value '()]))
+   ))
 
 (define-method initialize ((m <tmodule>) initargs)
   (next-method)
-  (push! (class-slot-ref <tmodule> 'modules) m))
+  (push! (%all-tmodules) m))
 
 (define (tmodule-cname m)
   (or (~ m'cname)
@@ -77,6 +78,11 @@
 
 (define (current-tmodule) (%current-tmodule)) ;read-only api
 
+;; record the tmodules created during a session.
+(define %all-tmodules (make-parameter '()))
+
+(define (all-tmodules) (%all-tmodules))
+
 ;; whenever current-tmodule is switched, we need to emit a piece
 ;; of code in init function.
 (define (%emit-select-module tm)
@@ -93,9 +99,6 @@
   (cond [(current-tmodule) => tmodule-cname]
         [else "mod"])) ; for the backward compatibility of genstub
 
-(define (all-tmodules)
-  (class-slot-ref <tmodule> 'modules))
-
 (define (find-tmodule name)
   (or (find (^m (eq? name (~ m'name))) (all-tmodules))
       (make (current-tmodule-class) :name name)))
@@ -111,6 +114,11 @@
      (let ([prev-tm (%current-tmodule)]
            [new-tm  (find-tmodule name)])
        (dynamic-wind
-           (^() (%emit-select-module new-tm))
-           (^() (parameterize ((%current-tmodule new-tm)) . body))
-           (^() (%emit-select-module prev-tm))))]))
+           (^[] (%emit-select-module new-tm))
+           (^[] (parameterize ((%current-tmodule new-tm)) . body))
+           (^[] (%emit-select-module prev-tm))))]))
+
+(define-syntax with-tmodule-recording
+  (syntax-rules ()
+    [(_ . body)
+     (parameterize ([%all-tmodules '()]) . body)]))

@@ -1,3 +1,13 @@
+2011-11-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/tmodule.scm (<tmodule>, all-tmodules): Use a
+	  parameter instead of a class slot to record tmodules encountered
+	  during precompilatoin.  Class slots are global and fragile for
+	  multiple invocation of cgen-precompile and/or MT.
+	  (with-tmodule-recording): A macro to initialize the module list.
+	* lib/gauche/cgen/precomp.scm, lib/gauche/cgen/stub.scm: Changed
+	  accordingly.
+
 2011-11-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm (values->list): Support a common

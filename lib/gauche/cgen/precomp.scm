@@ -151,44 +151,9 @@
 ;;      hygienic public macros expands to a call of private macros, and
 ;;      gauche.cgen.precomp cannot detect such dependencies yet.
 
-(define (cgen-precompile src
-                         :key (out.c #f)
-                              (out.sci #f)
-                              ((:strip-prefix prefix) #f)
-                              (ext-initializer #f)
-                              ((:dso-name dso) #f)
-                              (initializer-name #f)
-                              (sub-initializers '())
-                              (predef-syms '())
-                              (macros-to-keep '()))
-  (let ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
-        [out.sci (or out.sci
-                     (and (check-first-form-is-define-module src)
-                          (strip-prefix (path-swap-extension src "sci")
-                                        prefix)))])
-    ;; see PARAMETERS section below
-    (parameterize ([cgen-current-unit (get-unit src out.c predef-syms
-                                                ext-initializer)]
-                   [dso-name (cons
-                              (or dso
-                                  (and ext-initializer
-                                       (basename-sans-extension out.c)))
-                              initializer-name)]
-                   [vm-eval-situation SCM_VM_COMPILING]
-                   [private-macros-to-keep macros-to-keep]
-                   [current-tmodule-class <ptmodule>])
-      (select-tmodule 'gauche)
-      (cond [out.sci
-             (make-directory* (sys-dirname out.sci))
-             (call-with-output-file out.sci
-               (lambda (p)
-                 (display ";; generated automatically.  DO NOT EDIT\n" p)
-                 (display "#!no-fold-case\n" p)
-                 (parameterize ([ext-module-file p])
-                   (do-it src ext-initializer sub-initializers))))]
-            [else
-             (parameterize ([ext-module-file #f])
-               (do-it src ext-initializer sub-initializers))]))))
+(define (cgen-precompile src . keys)
+  (with-tmodule-recording
+   (apply %cgen-precompile src keys)))
 
 (define (do-it src ext-initializer sub-initializers)
   (setup ext-initializer sub-initializers)
@@ -211,20 +176,60 @@
     [() #f]
     [(main . subs)
      (clean-output-files srcs prefix)
-     (dolist [src (order-files-by-dependency srcs)]
-       (let* ([out.c ($ xlate-cfilename
-                        $ strip-prefix (path-swap-extension src "c") prefix)]
-              [initname (string-tr (path-sans-extension out.c) "-+." "___")])
-         (cgen-precompile src
-                          :out.c out.c
-                          :dso-name (or dso (basename-sans-extension main))
-                          :predef-syms predef-syms
-                          :strip-prefix prefix
-                          :macros-to-keep macros-to-keep
-                          :ext-initializer (and (equal? src main)
-                                                ext-initializer)
-                          :initializer-name #`"Scm_Init_,initname")))]
+     (with-tmodule-recording
+      (dolist [src (order-files-by-dependency srcs)]
+        (let* ([out.c ($ xlate-cfilename
+                         $ strip-prefix (path-swap-extension src "c") prefix)]
+               [initname (string-tr (path-sans-extension out.c) "-+." "___")])
+          (%cgen-precompile src
+                            :out.c out.c
+                            :dso-name (or dso (basename-sans-extension main))
+                            :predef-syms predef-syms
+                            :strip-prefix prefix
+                            :macros-to-keep macros-to-keep
+                            :ext-initializer (and (equal? src main)
+                                                  ext-initializer)
+                            :initializer-name #`"Scm_Init_,initname"))))]
     ))
+
+;; Common stuff -- process single source
+(define (%cgen-precompile src
+                          :key (out.c #f)
+                               (out.sci #f)
+                               ((:strip-prefix prefix) #f)
+                               (ext-initializer #f)
+                               ((:dso-name dso) #f)
+                               (initializer-name #f)
+                               (sub-initializers '())
+                               (predef-syms '())
+                               (macros-to-keep '()))
+  (let ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
+        [out.sci (or out.sci
+                     (and (check-first-form-is-define-module src)
+                          (strip-prefix (path-swap-extension src "sci")
+                                        prefix)))])
+    ;; see PARAMETERS section below
+    (parameterize ([cgen-current-unit (get-unit src out.c predef-syms
+                                                ext-initializer)]
+                   [dso-name (cons
+                              (or dso
+                                  (and ext-initializer
+                                       (basename-sans-extension out.c)))
+                              initializer-name)]
+                   [vm-eval-situation SCM_VM_COMPILING]
+                   [private-macros-to-keep macros-to-keep]
+                   [current-tmodule-class <ptmodule>])
+      (select-tmodule 'gauche)
+      (cond [out.sci
+             (make-directory* (sys-dirname out.sci))
+             (call-with-output-file out.sci
+               (^p (display ";; generated automatically.  DO NOT EDIT\n" p)
+                   (display "#!no-fold-case\n" p)
+                   (parameterize ([ext-module-file p])
+                     (do-it src ext-initializer sub-initializers))))]
+            [else
+             (parameterize ([ext-module-file #f])
+               (do-it src ext-initializer sub-initializers))]))))
 
 ;;================================================================
 ;; Transient modules
