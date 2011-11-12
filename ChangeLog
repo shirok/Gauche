@@ -1,3 +1,12 @@
+2011-11-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/debugger.scm, src/autoloads.scm: Export
+	  debug-print-(pre|post) and set them to be autoloaded.  These
+	  symbols are inserted by debug-print macro.  If such a source
+	  is pre-compiled, gauche.vm.debugger won't be autoloaded at
+	  execute time unless we make debuf-print-(pre|post) autoloaded too.
+	  This is not an ideal solution, for those procs are internal.
+
 2011-11-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/tmodule.scm (<tmodule>, all-tmodules): Use a

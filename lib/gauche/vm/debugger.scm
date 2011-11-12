@@ -35,16 +35,16 @@
   (use srfi-1)
   (use srfi-13)
   (use gauche.parameter)
-  (export debug-print debug-print-width debug-source-info)
-  )
+  (export debug-print debug-print-width debug-source-info
+          debug-print-pre debug-print-post))
 (select-module gauche.vm.debugger)
 
 (define (debug-source-info obj)
-  (and-let* (( (pair? obj) )
-             (info ((with-module gauche.internal pair-attribute-get)
-                    obj 'source-info #f))
-             ( (pair? info) )
-             ( (pair? (cdr info)) ))
+  (and-let* ([ (pair? obj) ]
+             [info ((with-module gauche.internal pair-attribute-get)
+                    obj 'source-info #f)]
+             [ (pair? info) ]
+             [ (pair? (cdr info)) ])
     info))
 
 (define debug-print-width (make-parameter 65))
@@ -53,22 +53,22 @@
 ;; (this is temporary implementation)
 (define-syntax debug-print
   (syntax-rules ()
-    ((_ ?form)
+    [(_ ?form)
      (begin
        (debug-print-pre '?form)
        (receive vals ?form
-         (debug-print-post vals))))))
+         (debug-print-post vals)))]))
 
-;; Non-exported routines
-
+;; These are internal APIs, but we need to export them in order to
+;; autoload gauche.vm.debug from precompiled code works.
 (define (debug-print-pre form)
-  (cond ((debug-source-info form)
-         => (lambda (info)
+  (cond [(debug-source-info form)
+         => (^[info]
               (format/ss (current-error-port) "#?=~s:~a:~,,,,v:s\n"
-                         (car info) (cadr info) (debug-print-width) form)))
-        (else
+                         (car info) (cadr info) (debug-print-width) form))]
+        [else
          (format/ss (current-error-port) "#?=~,,,,v:s\n"
-                    (debug-print-width) form))))
+                    (debug-print-width) form)]))
 
 (define (debug-print-post vals)
   (if (null? vals)
@@ -76,7 +76,7 @@
     (begin
       (format/ss (current-error-port) "#?-    ~,,,,v:s\n"
                  (debug-print-width) (car vals))
-      (for-each (lambda (elt)
+      (for-each (^[elt]
                   (format/ss (current-error-port)
                              "#?+    ~,,,,v:s\n"
                              (debug-print-width) elt))
