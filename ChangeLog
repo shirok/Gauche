@@ -1,3 +1,15 @@
+2011-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (rc1_parse, rc3_rec): Fixed regexp parser and code
+	  generateor to recognize BOL/EOL assertions within (?=...),
+	  (?!...), (?<=...), (?<!...) and (?>...).  For '^' and '$, we
+	  should parse these constructs as if they are stand-alone, no
+	  matter where they appear.  That is, '^' appearing at the
+	  beginning of these constructs are BOL assertions and '$' at
+	  the end are EOL.  This is consistent to Perl and Oniguruma.
+	  NB: The code that counted on the previous (buggy) behavior
+	  may break by this change.
+
 2011-11-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/debugger.scm, src/autoloads.scm: Export

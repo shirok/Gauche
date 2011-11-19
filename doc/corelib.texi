@@ -4631,6 +4631,29 @@ when appears at the beginning or end of the pattern.
 文字列の最初か最後にマッチします。
 @c COMMON
 
+@c EN
+These characters loses special meanings and matches the characters
+themselves if they appear in the position
+other than the beginning of the pattern (for @code{^}) or the end
+(for @code{$}).  For the sake of recognizing those characters,
+lookahead/lookbehind
+assertions (@code{(?=...)}, @code{(?!...)}, @code{(?<=...)},
+@code{(?<!...)}) and atomic clustering (@code{(?>...)}) are
+treated as if they are a whole pattern.  That is, @code{^} at the
+beginning of those groupings are beginning-of-string assertion
+no matter where these group appear in the containing regexp.
+So as @code{$} at the end of these groupings.
+@c JP
+これらの文字は、パターンの最初(@code{^}の場合)か最後(@code{$}の場合)に
+現れた時のみ特別な意味を持ち、それ以外の場所ではこれらの文字自身にマッチします。
+これらの文字を特殊文字と認識する段階では、肯定および否定の先読み
+(@code{(?=...)}, @code{(?!...)}, @code{(?<=...)}, @code{(?<!...)})と
+アトミックなクラスタリング(@code{(?>...)})はあたかもそれが独立した
+パターンであるかのように扱われます。つまり、@code{^}がこれらの構造の先頭に現れた
+場合は、これらの構造が全体の正規表現中のどこにあるかには関わらず、文字列先頭への
+マッチとみなされます。@code{$}がこれらの構造の末尾に現れたば場合も同様です。
+@c COMMON
+
 @item \b, \B
 @c EN
 Word boundary and non word boundary assertion, respectively.

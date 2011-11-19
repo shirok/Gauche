@@ -817,20 +817,22 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
             continue;
         }
         if (SCM_EQ(token, SCM_SYM_ONCE)) {
-            item = rc1_parse(ctx, bolp, FALSE, level);
+            /* (?>re) can have BOL/EOL.*/
+            item = rc1_parse(ctx, TRUE, FALSE, level);
             PUSH(Scm_Cons(SCM_SYM_ONCE, item));
             bolp = FALSE;
             continue;
         }
         if (SCM_EQ(token, SCM_SYM_ASSERT) || SCM_EQ(token, SCM_SYM_NASSERT)) {
-            item = rc1_parse(ctx, bolp, FALSE, level);
+            /* (?=re) and (?!re) can have BOL/EOL.*/
+            item = rc1_parse(ctx, TRUE, FALSE, level);
             PUSH(Scm_Cons(token, item));
             continue;
         }
         if (SCM_EQ(token, SCM_SYM_LOOKBEHIND) || SCM_EQ(token, SCM_SYM_NLOOKBEHIND)) {
             /* "(?<=a)" => (assert (lookbehind a))
                "(?<!a)" => (nassert (lookbehind a)) */
-            item = rc1_parse(ctx, bolp, FALSE, level);
+            item = rc1_parse(ctx, TRUE, FALSE, level);
             PUSH(SCM_LIST2(SCM_EQ(token, SCM_SYM_LOOKBEHIND)? SCM_SYM_ASSERT : SCM_SYM_NASSERT,
                            Scm_Cons(SCM_SYM_LOOKBEHIND, item)));
             continue;
@@ -1504,7 +1506,10 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
                  SCM_EQ(type, SCM_SYM_NASSERT) ? RE_NASSERT : RE_ONCE;
         rc3_emit(ctx, op);
         rc3_emit_offset(ctx, 0); /* will be patched */
-        rc3_seq(ctx, SCM_CDR(ast), lastp);
+        /* Assertions can check EOF even other regexps follow, so '$'
+           in the last pos of this group should be treated as EOL.
+           (?>$) as well.  It is consistent with Perl and Oniguruma. */
+        rc3_seq(ctx, SCM_CDR(ast), TRUE); 
         rc3_emit(ctx, RE_SUCCESS);
         rc3_fill_offset(ctx, ocodep+1, ctx->codep);
         return;
