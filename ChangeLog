@@ -1,5 +1,9 @@
 2011-11-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/stub.scm (<stub>): Fix the problem that cproc's
+	  binding isn't inserted into the tmodule at the time of define-cproc,
+	  but at the time of the final rendering.
+
 	* src/scmlib.scm (generator->lseq): Renamed from lseq to make
 	  it more descriptive, since it turned out this function wouldn't
 	  be used frequent enough to demand a short name.

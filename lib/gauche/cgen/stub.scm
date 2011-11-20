@@ -341,11 +341,22 @@
 
 (define-class <stub> (<cgen-node>)
   ((scheme-name :init-keyword :scheme-name :init-form #f)
+      ;; Scheme name (symbol) of the object this stub represents.
+      ;; Can be #f if the object is anonymous.
    (c-name      :init-keyword :c-name)
+      ;; C expression of type ScmObj to refer to the object in C program.
+   (tmodule     :init-form (current-tmodule))
+      ;; The current transient module when this stub is parsed.
+      ;; Can be #f.  See stub-tmodule-cname below
    ))
 
 (define (get-stubs class)
   (filter (cut is-a? <> class) (cgen-unit-toplevel-nodes (cgen-current-unit))))
+
+;; convenience routine.
+(define (stub-tmodule-cname stub)
+  (cond [(~ stub'tmodule) => (cut ~ <> 'cname)]
+        [else (current-tmodule-cname)]))
 
 ;;===================================================================
 ;; Literals
@@ -987,7 +998,7 @@
 (define-method cgen-emit-init ((cproc <cproc>))
   (when (symbol? (~ cproc'scheme-name))
     (f "  Scm_MakeBinding(SCM_MODULE(~a), SCM_SYMBOL(SCM_INTERN(~s)), SCM_OBJ(&~a), ~a);"
-       (current-tmodule-cname)
+       (stub-tmodule-cname cproc)
        (symbol->string (~ cproc'scheme-name))
        (c-stub-name cproc)
        (if (or (~ cproc'inline-insn) (memq :constant (~ cproc'flags)))
@@ -1103,7 +1114,7 @@
 (define-method cgen-emit-init ((self <cgeneric>))
   (f "  Scm_InitBuiltinGeneric(&~a, ~s, SCM_MODULE(~a));"
      (~ self'c-name) (symbol->string (~ self'scheme-name))
-     (current-tmodule-cname))
+     (stub-tmodule-cname self))
   (next-method))
 
 (define-form-parser define-cgeneric (scheme-name c-name . body)
@@ -1422,7 +1433,7 @@
   )
 
 (define-method cgen-emit-init ((self <cclass>))
-  (p "  Scm_InitBuiltinClass(&"(~ self'c-name)", \""(~ self'scheme-name)"\", "(c-slot-spec-name self)", TRUE, SCM_MODULE("(current-tmodule-cname)"));")
+  (p "  Scm_InitBuiltinClass(&"(~ self'c-name)", \""(~ self'scheme-name)"\", "(c-slot-spec-name self)", TRUE, SCM_MODULE("(stub-tmodule-cname self)"));")
   ;; adjust direct-supers if necessary
   (let1 ds (~ self'direct-supers)
     (when (not (null? ds))
