@@ -246,7 +246,7 @@
          (cut port-fold
               ;; We treat the initial raw strings specially---they will be
               ;; in decl part.  The flag decl-strings? tracks that.
-              (lambda (form decl-strings?)
+              (^[form decl-strings?]
                 (cond [(and decl-strings? (string? form)) (cgen-decl form) #t]
                       [else (cgen-stub-parse-form form) #f]))
               #t read))
@@ -278,7 +278,7 @@
    (handler :init-keyword :handler)))
 
 (define-macro (define-form-parser name args . body)
-  `(make <form-parser> :name ',name :args ',args :handler (lambda ,args ,@body)))
+  `(make <form-parser> :name ',name :args ',args :handler (^ ,args ,@body)))
 
 (define-method invoke ((self <form-parser>) form)
   (define (badform)
@@ -734,7 +734,7 @@
       [(('body . spec) . r) (process-body-spec cproc spec) (loop r)]
       [(('expr . spec) . r) (process-expr-spec cproc spec) (loop r)]
       [(('catch . spec) . r) (process-catch-spec cproc spec) (loop r)]
-      [(('code . stmts) . r) (dolist (s stmts) (push-stmt! cproc s)) (loop r)]
+      [(('code . stmts) . r) (dolist [s stmts] (push-stmt! cproc s)) (loop r)]
       [([? symbol? s]) ; 'call' convention
        ;; If the named C routine returns multiple values, we don't need to
        ;; call Scm_Values*() by ourselves.  We generate an appropriate cise
@@ -963,7 +963,7 @@
   (p "  }")
   (unless (null? (~ cproc'c++-handlers))
     (p "}")
-    (dolist (h (~ cproc'c++-handlers))
+    (dolist [h (~ cproc'c++-handlers)]
       (f "catch (~a) {" (car h))
       (for-each p (cdr h))
       (p "}")))
@@ -1013,7 +1013,7 @@
   (match (~ cproc'setter)
     [(? string? x) (emit x)]
     [(? symbol? x)
-     (or (and-let* ([setter (find (lambda (z) (eq? (~ z'scheme-name) x))
+     (or (and-let* ([setter (find (^z (eq? (~ z'scheme-name) x))
                                   (get-stubs <stub>))])
            (emit (c-stub-name setter)))
          (errorf <cgen-stub-error>
@@ -1629,13 +1629,13 @@
   )
 
 (define-form-parser initcode codes
-  (dolist (c codes)
+  (dolist [c codes]
     (if (string? c)
       (cgen-init c)
       (cgen-init (call-with-output-string (cut cise-render c <>))))))
 
 (define-form-parser declcode codes
-  (dolist (c codes)
+  (dolist [c codes]
     (if (string? c)
       (cgen-decl c)
       (cgen-decl (call-with-output-string (cut cise-render c <>))))))
