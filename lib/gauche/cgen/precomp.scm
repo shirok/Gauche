@@ -759,8 +759,10 @@
     (make <cgen-scheme-identifier> :value value
           :c-name (cgen-allocate-static-datum)
           :id-name (cgen-literal (~ value'name))
-          :mod-name (and-let* ([modnam (module-name-fix (~ value'module))])
-                      (cgen-literal modnam))))
+          :mod-name (cond [(module-name-fix (~ value'module))
+                           => cgen-literal]
+                          [(current-tmodule) => (^m (cgen-literal (~ m'name)))]
+                          [else #f])))
   (init (self)
     (let ([name (cgen-cexpr (~ self'id-name))]
           [cname (~ self'c-name)])
