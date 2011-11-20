@@ -43,7 +43,7 @@
     [(proc arg)
      (define (g)
        (if (null? arg) (eof-object) (proc (pop! arg))))
-     (lseq g)]
+     (generator->lseq g)]
     [(proc arg . more)
      (let1 args (cons arg more)
        (define (g)
@@ -55,10 +55,10 @@
                (apply proc cars)
                (eof-object)))
            (eof-object)))
-       (lseq g))]))
+       (generator->lseq g))]))
 
 ;; NB: Should we define all l* variations corresponds to g* variations?
 ;; The list->generator portion smells bad.  Maybe g* variation should
 ;; coerce input sequences into generators automatically.
-(define (lfilter fn seq) (lseq (gfilter fn (list->generator seq))))
+(define (lfilter fn seq) (generator->lseq (gfilter fn (list->generator seq))))
 

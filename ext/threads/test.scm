@@ -502,7 +502,7 @@
   (define (task seq)
     (guard (e [else e])
       (let1 k (length seq) seq)))
-  (let* ([seq (lseq weird-generator)]
+  (let* ([seq (generator->lseq weird-generator)]
          [t0  (make-thread (^[] (task seq)))]
          [t1  (make-thread (^[] (task seq)))])
     (test* "accessing the same lazy sequence"

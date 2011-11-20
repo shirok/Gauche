@@ -1,3 +1,9 @@
+2011-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/scmlib.scm (generator->lseq): Renamed from lseq to make
+	  it more descriptive, since it turned out this function wouldn't
+	  be used frequent enough to demand a short name.
+
 2011-11-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c (rc1_parse, rc3_rec): Fixed regexp parser and code

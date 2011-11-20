@@ -1706,8 +1706,8 @@
 (define-cproc procedure-info (proc::<procedure>)
   (result (SCM_PROCEDURE_INFO proc)))
 
-(define-cproc %lazy-cons (item generator) Scm_MakeLazyPair)
-(define-cproc %lazy-snoc (obj) :: (<top> <top>)
+(define-cproc %make-lazy-pair (item generator) Scm_MakeLazyPair)
+(define-cproc %decompose-lazy-pair (obj) :: (<top> <top>)
   (let* ([item] [generator])
     (let* ([r::int (Scm_DecomposeLazyPair obj (& item) (& generator))])
       (cond [r (result item generator)]

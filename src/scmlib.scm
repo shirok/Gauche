@@ -405,23 +405,23 @@
 ;;   Auxiliary utilities are provided in gauche.lazy module.
 
 ;; Fundamental constructor
-;; lseq generator
-;; lseq item ... generator
-(define (lseq item . args)
+;; generator->lseq generator
+;; generator->lseq item ... generator
+(define (generator->lseq item . args)
   (if (null? args)
     (let ([r (item)]) ; item is a generator
       (if (eof-object? r)
         '()
-        (%lazy-cons r item)))
+        (%make-lazy-pair r item)))
     (let rec ([item item] [args args])
       (if (null? (cdr args))
-        (%lazy-cons item (car args))
+        (%make-lazy-pair item (car args))
         (cons item (rec (car args) (cdr args)))))))
 
 ;; A primitive for corecursion.
 ;; See lib/gauche/common-macros.scm for the lcons macro.
 (define (%lcons item thunk)
-  (%lazy-cons item (^() (%lazy-snoc (thunk)))))
+  (%make-lazy-pair item (^[] (%decompose-lazy-pair (thunk)))))
 
 ;; For convenience.
 (define (lrange start :optional (end +inf.0) (step 1))
@@ -441,8 +441,8 @@
         (eof-object))))
 
   (cond [(>= start end) '()]
-        [(and (exact? start) (exact? step)) (lseq start gen-exacts)]
-        [else (lseq (inexact start) gen-inexacts)]))
+        [(and (exact? start) (exact? step)) (generator->lseq start gen-exacts)]
+        [else (generator->lseq (inexact start) gen-inexacts)]))
 
 ;;;=======================================================
 ;;; string stuff
