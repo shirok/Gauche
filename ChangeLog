@@ -1,5 +1,9 @@
 2011-11-20  Shiro Kawai  <shiro@acm.org>
 
+	* src/genconfig (gauche-config): Emit usage message to stderr instead
+	  of stdout.  By this, feeding gauche-config output to sh wouldn't
+	  confuse sh if you give incorrect option.
+
 	* lib/gauche/cgen/stub.scm (<stub>): Fix the problem that cproc's
 	  binding isn't inserted into the tmodule at the time of define-cproc,
 	  but at the time of the final rendering.

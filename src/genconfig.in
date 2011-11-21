@@ -118,7 +118,7 @@ cat > gauche-config.c.tmp.$$ <<EOF
 #include <ctype.h>
 
 static void usage (void) {
-   puts("Usage: gauche-config [option]\\n"
+  fputs("Usage: gauche-config [option]\\n"
         "\\n"
         "General parameter\\n"
         "  -V   the current gauche version\\n"
@@ -178,8 +178,8 @@ static void usage (void) {
         "       module's name, and has to match the name given to the\\n"
         "       SCM_INIT_EXTENSION macro in the extension initialization code. \\n"
         "       If MODULE is omitted, FILE is used as the module's name.\\n"
-        );
-    exit(1);
+        ,stderr);
+  exit(1);
 }
 
 static struct cmd_rec {
