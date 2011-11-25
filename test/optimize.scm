@@ -89,5 +89,19 @@
        (filter-insn (^(x) (let* ([p (f x a)] [q (g x p)] [r (h x q)]) (y r)))
                     'PUSH-LOCAL-ENV))
 
+;; Tests for optimizer bug fixed in 2546f82
+(define-inline (foo p xs . xss)
+  (if (null? xss)
+    (let loop ([xs xs])
+      (unless (null? xs) (p (car xs)) (loop (cdr xs))))
+    (let loop ([xss (cons xs xss)])
+      (receive (cars cdrs) (extract-cars+cdrs xss)
+        (when cars
+          (apply p cars)
+          (loop cdrs))))))
+
+(test* "make sure define-inline'd procs be optimized" '()
+       (filter-insn foo 'LOCAL-ENV-CLOSURES))
+
 (test-end)
 
