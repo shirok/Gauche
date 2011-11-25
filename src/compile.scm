@@ -907,8 +907,9 @@
       (nl (+ ind 4))
       (rec (+ ind 4) ($receive-expr iform)) (nl (+ ind 2))
       (rec (+ ind 2) ($receive-body iform)) (display ")")]
-     [($LAMBDA) (format #t "($lambda[~a.~a] ~a" ($lambda-name iform)
+     [($LAMBDA) (format #t "($lambda[~a.~a~a] ~a" ($lambda-name iform)
                         (length ($lambda-calls iform))
+                        (if (vector? ($lambda-flag iform)) " inlinable" "")
                         (map lvar->string ($lambda-lvars iform)))
                 (nl (+ ind 2))
                 (rec (+ ind 2) ($lambda-body iform)) (display ")")]
@@ -1441,70 +1442,76 @@
 ;; NB: We assume this happens in pass1; that is, IForm is a tree, not a DG.
 
 (define (subst-lvars iform mapping)
-  (case/unquote
-   (iform-tag iform)
-   [($LREF)   (cond [(assq ($lref-lvar iform) mapping) => cdr]
-                    [else iform])]
-   [($LSET)   (cond [(assq ($lref-lvar iform) mapping) =>
-                     (^p (unless (has-tag? $GREF (cdr p))
-                           (error "[internal] subst-lvars: $LSET can only subst\
-                                   with $GREF but got: ~a" (cdr p)))
-                         ($gset ($gref-id (cdr p))
-                                (subst-lvars ($lset-expr iform) mapping)))]
-                    [else iform])]
-   [($GSET)   (let1 z (subst-lvars ($gset-expr iform) mapping)
-                (if (eq? z ($gset-expr iform))
-                  iform
-                  ($gset ($gset-id iform) z)))]
-   [($IF)     (let ([test (subst-lvars ($if-test iform) mapping)]
-                    [then (subst-lvars ($if-then iform) mapping)]
-                    [else (subst-lvars ($if-else iform) mapping)])
-                (if (and (eq? test ($if-test iform))
-                         (eq? then ($if-then iform))
-                         (eq? else ($if-else iform)))
-                  iform
-                  ($if ($*-src iform) test then else)))]
-   [($LET)    (let ([i (imap (cut subst-lvars <> mapping) ($let-inits iform))]
-                    [b (subst-lvars ($let-body iform) mapping)])
-                ($let ($*-src iform) ($let-type iform) ($let-lvars iform) i b))]
-   [($RECEIVE)(let ([x (subst-lvars ($receive-expr iform) mapping)]
-                    [b (subst-lvars ($receive-body iform) mapping)])
-                (if (and (eq? x ($receive-expr iform))
-                         (eq? b ($receive-body iform)))
-                  iform
-                  ($receive ($*-src iform)
-                            ($receive-reqargs iform)
-                            ($receive-optarg iform)
-                            ($receive-lvars iform) x b)))]
-   [($LAMBDA) (let1 b (subst-lvars ($lambda-body iform) mapping)
-                (if (eq? b ($lambda-body iform))
-                  iform
-                  ($lambda ($*-src iform) ($lambda-name iform)
-                           ($lambda-reqargs iform) ($lambda-optarg iform)
-                           ($lambda-lvars iform) b ($lambda-flag iform))))]
-   [($SEQ)    ($seq (imap (cut subst-lvars <> mapping) ($seq-body iform)))]
-   [($CALL)   ($call ($*-src iform)
-                     (subst-lvars ($call-proc iform) mapping)
-                     (imap (cut subst-lvars <> mapping) ($call-args iform))
-                     ($call-flag iform))]
-   [($ASM)    ($asm ($*-src iform) ($asm-insn iform)
-                    (imap (cut subst-lvars <> mapping) ($asm-args iform)))]
-   [($PROMISE)($promise ($*-src iform)
-                        (subst-lvars ($promise-expr iform) mapping))]
-   [($CONS $APPEND $MEMV $EQ? $EQV?) (subst-lvars/2 iform mapping)]
-   [($VECTOR $LIST $LIST*) (subst-lvars/* iform mapping)]
-   [($LIST->VECTOR) ($list->vector ($*-src iform)
-                                   (subst-lvars ($*-arg0 iform) mapping))]
-   [else iform]))
-
-(define (subst-lvars/2 iform mapping)
-  (vector (vector-ref iform 0) ($*-src iform)
-          (subst-lvars ($*-arg0 iform) mapping)
-          (subst-lvars ($*-arg1 iform) mapping)))
-
-(define (subst-lvars/* iform mapping)
-  (vector (vector-ref iform 0) ($*-src iform)
-          (imap (cut subst-lvars <> mapping) ($*-args iform))))
+  (define (subst iform mapping dict)
+    (or (hash-table-get dict iform #f)
+        (rlet1 r (subst-body iform mapping dict)
+          (unless (eq? iform r) (hash-table-put! dict iform r)))))
+  (define (subst-body iform mapping dict)
+    (case/unquote
+     (iform-tag iform)
+     [($LREF)   (cond [(assq ($lref-lvar iform) mapping) => cdr]
+                      [else iform])]
+     [($LSET)   (cond [(assq ($lref-lvar iform) mapping) =>
+                       (^p (unless (has-tag? $GREF (cdr p))
+                             (error "[internal] subst-lvars: $LSET can only \
+                                     subst with $GREF but got: ~a" (cdr p)))
+                           ($gset ($gref-id (cdr p))
+                                  (subst ($lset-expr iform) mapping dict)))]
+                      [else iform])]
+     [($GSET)   (let1 z (subst ($gset-expr iform) mapping dict)
+                  (if (eq? z ($gset-expr iform))
+                    iform
+                    ($gset ($gset-id iform) z)))]
+     [($IF)     (let ([test (subst ($if-test iform) mapping dict)]
+                      [then (subst ($if-then iform) mapping dict)]
+                      [else (subst ($if-else iform) mapping dict)])
+                  (if (and (eq? test ($if-test iform))
+                           (eq? then ($if-then iform))
+                           (eq? else ($if-else iform)))
+                    iform
+                    ($if ($*-src iform) test then else)))]
+     [($LET)    (let ([is (imap (cut subst <> mapping dict) ($let-inits iform))]
+                      [vs ($let-lvars iform)]
+                      [b (subst ($let-body iform) mapping dict)])
+                  (ifor-each2 (^[v i] (lvar-initval-set! v i)) vs is)
+                  ($let ($*-src iform) ($let-type iform) vs is b))]
+     [($RECEIVE)(let ([x (subst ($receive-expr iform) mapping dict)]
+                      [b (subst ($receive-body iform) mapping dict)])
+                  (if (and (eq? x ($receive-expr iform))
+                           (eq? b ($receive-body iform)))
+                    iform
+                    ($receive ($*-src iform)
+                              ($receive-reqargs iform)
+                              ($receive-optarg iform)
+                              ($receive-lvars iform) x b)))]
+     [($LAMBDA) (let1 b (subst ($lambda-body iform) mapping dict)
+                  (if (eq? b ($lambda-body iform))
+                    iform
+                    ($lambda ($*-src iform) ($lambda-name iform)
+                             ($lambda-reqargs iform) ($lambda-optarg iform)
+                             ($lambda-lvars iform) b ($lambda-flag iform))))]
+     [($SEQ)    ($seq (imap (cut subst <> mapping dict) ($seq-body iform)))]
+     [($CALL)   ($call ($*-src iform)
+                       (subst ($call-proc iform) mapping dict)
+                       (imap (cut subst <> mapping dict) ($call-args iform))
+                       ($call-flag iform))]
+     [($ASM)    ($asm ($*-src iform) ($asm-insn iform)
+                      (imap (cut subst <> mapping dict) ($asm-args iform)))]
+     [($PROMISE)($promise ($*-src iform)
+                          (subst ($promise-expr iform) mapping dict))]
+     [($CONS $APPEND $MEMV $EQ? $EQV?) (subst/2 iform mapping dict)]
+     [($VECTOR $LIST $LIST*) (subst/* iform mapping dict)]
+     [($LIST->VECTOR) ($list->vector ($*-src iform)
+                                     (subst ($*-arg0 iform) mapping dict))]
+     [else iform]))
+  (define (subst/2 iform mapping dict)
+    (vector (vector-ref iform 0) ($*-src iform)
+            (subst ($*-arg0 iform) mapping dict)
+            (subst ($*-arg1 iform) mapping dict)))
+  (define (subst/* iform mapping dict)
+    (vector (vector-ref iform 0) ($*-src iform)
+            (imap (cut subst <> mapping dict) ($*-args iform))))
+  (subst iform mapping (make-hash-table 'eq?)))
 
 ;; Some inline stuff
 (define-inline (pass2-4 iform module) (pass4 (pass3 (pass2 iform) #f) module))
@@ -1972,7 +1979,7 @@
       (cond
        [(and (not closure) (not closed)) ; too complex to inline
         (pass1/make-inlinable-binding form name iform cenv)]
-       [(not closed)               ; no closed env
+       [(null? closed)               ; no closed env
         (pass1/mark-closure-inlinable! closure name cenv)
         (pass1/make-inlinable-binding form name closure cenv)]
        [else ; inlinable lambda has closed env.
@@ -2041,7 +2048,7 @@
          ;; to be used during compilation of the current compiler unit.
          ;; Its body doesn't matter, but we need to make sure every dummy-proc
          ;; is a different instance.  If we make it a constant procedure,
-         ;; Gauche's compiler optimized it to refer to the singleton instance.
+         ;; Gauche's compiler optimizes it to refer to the singleton instance.
          [dummy-proc (^ _ name)]
          [packed (pack-iform closure)])
     ($lambda-flag-set! closure packed)

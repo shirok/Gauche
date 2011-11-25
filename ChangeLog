@@ -1,3 +1,14 @@
+2011-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (subst-lvars): The traversal of $LET didn't update
+	  lvar-initval, causing the following passes to fail to do some
+	  closure elimination.
+	  (pass1/define-inline): Wrong check of `closed' value caused
+	  all define-inline'd procedures to go through the slower pass.
+	  The above to bugs prevented the procedures defined in define-inline
+	  from being optimized enough.  Notably, local tail-calls didn't
+	  get optimized to loops.
+
 2011-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/genconfig (gauche-config): Emit usage message to stderr instead
