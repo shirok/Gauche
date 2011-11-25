@@ -33,20 +33,20 @@
 ;; Simple inlining
 (define-inline (const4) 4)
 (test* "inlining const4 + constant folding" '(((CONSTI 8)) ((RET)))
-       (proc->insn/split (lambda () (+ (const4) (const4)))))
+       (proc->insn/split (^[] (+ (const4) (const4)))))
 
 ;; Combinatorial
 (define-inline (make-adder n) (lambda (m) (+ n m)))
 (define-inline add4 (make-adder 4))
 (test* "inlining add4 + constant folding" '(((CONSTI 9)) ((RET)))
-       (proc->insn/split (lambda () (+ (add4 2) 3))))
+       (proc->insn/split (^[] (+ (add4 2) 3))))
 
 (test-section "lambda lifting")
 
 ;; bug reported by teppey
 (test* "pass4 lambda marking bug" #t
        (begin ((with-module gauche.internal compile)
-               '(let loop () (values (lambda () #f)) (loop))
+               '(let loop () (values (^[] #f)) (loop))
                (current-module))
               #t))
 
@@ -59,7 +59,7 @@
 ;; See if constant lambda keeps identity.
 ;; NB: This isn't a guaranteed behavior, but it holds in the
 ;; current compiler, and there's no reason to lose it.
-(define (make-constant-closure) (lambda () #t))
+(define (make-constant-closure) (^[] #t))
 
 (test* "constant closure identity" #t
        (eq? (make-constant-closure) (make-constant-closure)))
@@ -68,22 +68,22 @@
 
 ;; pass2 intermediate lref elimination
 (test* "intermediate lref elimination 1" '()
-       (filter-insn (^(x) (let1 p (f a) (g x p 0))) 'PUSH-LOCAL-ENV))
+       (filter-insn (^[x] (let1 p (f a) (g x p 0))) 'PUSH-LOCAL-ENV))
 (test* "intermediate lref elimination 2" '()
-       (filter-insn (^(x) (let ([p (f x a)] [q (g x b)]) (h p x q)))
+       (filter-insn (^[x] (let ([p (f x a)] [q (g x b)]) (h p x q)))
                     'PUSH-LOCAL-ENV))
 (test* "intermediate lref elimination 3" '(((PUSH-LOCAL-ENV 1)))
-       (filter-insn (^(x) (let1 p (f a) (g z p 0))) 'PUSH-LOCAL-ENV))
+       (filter-insn (^[x] (let1 p (f a) (g z p 0))) 'PUSH-LOCAL-ENV))
 (test* "intermediate lref elimination 4" '(((PUSH-LOCAL-ENV 1)))
-       (filter-insn (^(x) (let1 p (f a) (g p (z) 0))) 'PUSH-LOCAL-ENV))
+       (filter-insn (^[x] (let1 p (f a) (g p (z) 0))) 'PUSH-LOCAL-ENV))
 (test* "intermediate lref elimination 5" '(((PUSH-LOCAL-ENV 2)))
-       (filter-insn (^(x) (let ([p (f x a)] [q (g x b)]) (h p (r q))))
+       (filter-insn (^[x] (let ([p (f x a)] [q (g x b)]) (h p (r q))))
                     'PUSH-LOCAL-ENV))
 (test* "intermediate lref elimination 6" '()
-       (filter-insn (^(x) (let* ([p (f x a)] [q (g x p)]) (h x q)))
+       (filter-insn (^[x] (let* ([p (f x a)] [q (g x p)]) (h x q)))
                     'PUSH-LOCAL-ENV))
 (test* "intermediate lref elimination 7" '(((PUSH-LOCAL-ENV 1)))
-       (filter-insn (^(x) (let* ([p (f x a)] [q (g x p)]) (h p q)))
+       (filter-insn (^[x] (let* ([p (f x a)] [q (g x p)]) (h p q)))
                     'PUSH-LOCAL-ENV))
 (test* "intermediate lref elimination 8" '()
        (filter-insn (^(x) (let* ([p (f x a)] [q (g x p)] [r (h x q)]) (y r)))
