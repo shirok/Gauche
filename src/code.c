@@ -128,7 +128,7 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
 {
     int i;
     ScmWord *p;
-    ScmObj closures = SCM_NIL, lifted = SCM_NIL, cp;
+    ScmObj closures = SCM_NIL, lifted = SCM_NIL, shown_lifted = SCM_NIL, cp;
     int clonum = 0, more = FALSE;
 
     print_header("main_code", SCM_MAKE_STR(""), cc);
@@ -229,10 +229,19 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
             closures = SCM_CDR(closures);
             more = TRUE;
         } else if (!SCM_NULLP(lifted)) {
-            cc = SCM_COMPILED_CODE(SCM_CAAR(lifted));
-            print_header("lifted:", SCM_CDAR(lifted), cc);
-            lifted = SCM_CDR(lifted);
-            more = TRUE;
+            while (!SCM_NULLP(lifted)) {
+                if (SCM_FALSEP(Scm_Memq(SCM_CAAR(lifted), shown_lifted))) {
+                    cc = SCM_COMPILED_CODE(SCM_CAAR(lifted));
+                    print_header("lifted:", SCM_CDAR(lifted), cc);
+                    shown_lifted = Scm_Cons(SCM_CAAR(lifted), shown_lifted);
+                    lifted = SCM_CDR(lifted);
+                    more = TRUE;
+                    break;
+                } else {
+                    lifted = SCM_CDR(lifted);
+                    continue;
+                }
+            }
         }
     } while (more);
 }

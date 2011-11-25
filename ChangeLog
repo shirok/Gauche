@@ -1,5 +1,8 @@
 2011-11-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/code.c (Scm_CompiledCodeDump): Fixed a bug that can cause
+	  infinite loop when printing lifted procedures.
+
 	* src/compile.scm (subst-lvars): The traversal of $LET didn't update
 	  lvar-initval, causing the following passes to fail to do some
 	  closure elimination.
