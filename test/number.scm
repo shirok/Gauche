@@ -1981,6 +1981,25 @@
 (test* "sqrt, inexact" 0.25 (sqrt (exact->inexact 1/16)) eqv?)
 
 ;;------------------------------------------------------------------
+(test-section "posix math functions")
+
+(test* "fmod" 0.25 (fmod 5.25 1) (^[x y] (nearly=? 1e-6 x y)))
+(test* "fmod" 2.3  (fmod 8.3 3)  (^[x y] (nearly=? 1e-6 x y)))
+(test* "fmod" 8.3  (fmod 8.3 33) (^[x y] (nearly=? 1e-6 x y)))
+
+(test* "frexp" '(0.785 2)
+       (values->list (frexp 3.14))
+       (^[x y] (and (nearly=? 1e-6 (car x) (car y))
+                    (nearly=? 1e-6 (cadr x) (cadr y)))))
+
+(test* "ldexp" 3.14 (ldexp 0.785 2) (^[x y] (nearly=? 1e-6 x y)))
+
+(test* "modf" '(0.14 3.0)
+       (values->list (modf 3.14))
+       (^[x y] (and (nearly=? 1e-6 (car x) (car y))
+                    (nearly=? 1e-6 (cadr x) (cadr y)))))
+
+;;------------------------------------------------------------------
 (test-section "ffx optimization")
 
 ;; This code is provided by naoya_t to reproduce the FFX bug

@@ -136,12 +136,10 @@ extern void  CompactTrieIterInit(CompactTrieIter *it, CompactTrie *ct);
 extern Leaf *CompactTrieIterNext(CompactTrieIter *it);
 
 /* For debug */
-#if SCM_DEBUG_HELPER
 extern void CompactTrieDump(ScmPort *out, const CompactTrie *ct,
                             void (*dumper)(ScmPort *, Leaf*, int, void*),
                             void *data);
 extern void CompactTrieCheck(const CompactTrie *ct, ScmObj obj,
                              void (*checker)(Leaf*, ScmObj));
-#endif /*SCM_DEBUG_HELPER*/
 
 #endif /*GAUCHE_CTRIE_H*/

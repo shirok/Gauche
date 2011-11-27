@@ -17956,10 +17956,10 @@ Gaucheでは@code{queue->list}は新しいリストをアロケートしてキ�
 @c EN
 Returns the first item in @var{queue} that satisfies a
 predicate @var{pred}.  The order of arguments follows
-@code{find} in SRFI-1 (@xref{SRFI-1 Searching}).
+@code{find} (@xref{Other list procedures}).
 @c JP
 キュー内の要素のうち述語@var{pred}を満たす最初の要素を返します。
-引数の順序はSRFI-1の@code{find}に揃えました (@ref{SRFI-1 Searching}参照)。
+引数の順序は@code{find}に揃えました (@ref{Other list procedures}参照)。
 @c COMMON
 @end defun
 
@@ -17998,11 +17998,11 @@ SRFI-1の@code{every}のように、@var{queue}中の各要素に
 Removes all items in the queue that satisfies @var{pred}.
 Returns @code{#t} if any item is removed.  Otherwise returns @code{#f}.
 The order of arguments follows
-@code{remove} in SRFI-1 (@xref{SRFI-1 Filtering & Partitioning}).
+@code{remove} in SRFI-1 (@xref{SRFI-1 List utilities}).
 @c JP
 キューから、述語@var{pred}を満たす要素を全て取り除きます。
 要素が削除された場合は@code{#t}が、そうでなければ@code{#f}が返されます。
-引数の順序はSRFI-1の@code{remove}に揃えました (@ref{SRFI-1 Filtering & Partitioning}参照)。
+引数の順序はSRFI-1の@code{remove}に揃えました (@ref{SRFI-1 List utilities}参照)。
 @c COMMON
 @end defun
 

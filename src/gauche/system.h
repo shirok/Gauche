@@ -257,6 +257,10 @@ typedef struct ScmHeaderRec ScmSysFdset;
 
 SCM_EXTERN int    Scm_Mkstemp(char *tmpl);
 SCM_EXTERN ScmObj Scm_SysMkstemp(ScmString *tmpl);
+SCM_EXTERN ScmObj Scm_Environ(void);
+SCM_EXTERN void Scm_SetEnv(const char *name, const char *value, int overwrite);
+SCM_EXTERN void Scm_UnsetEnv(const char *name);
+SCM_EXTERN void Scm_ClearEnv(void);
 
 /*==============================================================
  * Windows-specific utility functions

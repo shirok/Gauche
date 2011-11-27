@@ -171,6 +171,7 @@
 (test-regexp-compile "(?<name>)\\k<name>")
 (test-regexp-compile "(?<name>)(?<name>)\\k<name>")
 
+(define %regexp-laset (with-module gauche.internal %regexp-laset))
 (define-syntax test-regexp-laset
   (syntax-rules ()
     [(_ pat exp)

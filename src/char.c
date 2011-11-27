@@ -543,7 +543,6 @@ ScmObj Scm_CharSetRanges(ScmCharSet *cs)
     return h;
 }
 
-#if SCM_DEBUG_HELPER
 void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
 {
     int i;
@@ -559,7 +558,6 @@ void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
     Scm_TreeCoreDump(&cs->large, port);
     Scm_Printf(port, "\n");
 }
-#endif /* SCM_DEBUG_HELPER */
 
 /*-----------------------------------------------------------------
  * Reader

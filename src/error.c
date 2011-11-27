@@ -943,8 +943,6 @@ void Scm_ReportError(ScmObj e)
 /*
  * Initialization
  */
-extern void Scm_Init_exclib(ScmModule *module);
-
 void Scm__InitExceptions(void)
 {
     ScmModule *mod = Scm_GaucheModule();
@@ -1017,7 +1015,5 @@ void Scm__InitExceptions(void)
                                 "<serious-compound-condition>",
                                 mod, cond_meta, com_ser_supers,
                                 compound_slots, 0);
-
-    Scm_Init_exclib(mod);
 }
 

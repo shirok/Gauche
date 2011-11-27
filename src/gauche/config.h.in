@@ -89,6 +89,9 @@
    */
 #undef HAVE_ALLOCA_H
 
+/* Define to 1 if the system has clearenv */
+#undef HAVE_CLEARENV
+
 /* Define if uses libcrypt */
 #undef HAVE_CRYPT
 
@@ -104,8 +107,20 @@
 /* Define if you have forkpty */
 #undef HAVE_FORKPTY
 
+/* Define to 1 if the system has getdomainname */
+#undef HAVE_GETDOMAINNAME
+
+/* Define to 1 if the system has gethostname */
+#undef HAVE_GETHOSTNAME
+
+/* Define to 1 if you have getloadavg function. */
+#undef HAVE_GETLOADAVG
+
 /* Define to 1 if you have the <getopt.h> header file. */
 #undef HAVE_GETOPT_H
+
+/* Define to 1 if the systen has getpgid */
+#undef HAVE_GETPGID
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
@@ -161,6 +176,9 @@
 /* Define to 1 if you have the <pty.h> header file. */
 #undef HAVE_PTY_H
 
+/* Define to 1 if the system has putenv */
+#undef HAVE_PUTENV
+
 /* Define to 1 if you have the `random' function. */
 #undef HAVE_RANDOM
 
@@ -187,6 +205,15 @@
 
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
+
+/* Define to 1 if the system has setdomainname */
+#undef HAVE_SETDOMAINNAME
+
+/* Define to 1 if the system has setenv */
+#undef HAVE_SETENV
+
+/* Define to 1 if the system has sethostname */
+#undef HAVE_SETHOSTNAME
 
 /* Define to 1 if you have the `setlogmask' function. */
 #undef HAVE_SETLOGMASK
@@ -266,6 +293,9 @@
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
 
+/* Define to 1 if you have sys/loadavg.h */
+#undef HAVE_SYS_LOADAVG_H
+
 /* Define to 1 if you have the <sys/resource.h> header file. */
 #undef HAVE_SYS_RESOURCE_H
 
@@ -292,6 +322,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if the system has unsetenv */
+#undef HAVE_UNSETENV
 
 /* Define to 1 if you have the `usleep' function. */
 #undef HAVE_USLEEP

@@ -104,7 +104,7 @@
           (:macro push! pop! inc! dec! update!)
           (:macro check-arg get-optional get-keyword*)
           (:macro ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n ^o ^p ^q
-                  ^r ^s ^t ^u ^v ^w ^x ^y ^z $ lcons)
+                  ^r ^s ^t ^u ^v ^w ^x ^y ^z $)
           (:macro let1 if-let1 rlet1)
           (:macro let/cc) (:macro begin0) (:macro fluid-let)
           (:macro values-ref values->list)
@@ -144,18 +144,8 @@
 
 (autoload gauche.interpolate string-interpolate)
 
-(autoload gauche.auxsys
-          fmod frexp modf ldexp
-          sys-abort sys-realpath sys-mkfifo
-          sys-fdset list->sys-fdset sys-fdset->list
-          sys-setgid sys-setpgid sys-getpgid sys-getpgrp
-          sys-setsid sys-setuid sys-times sys-uname sys-ctermid
-          sys-gethostname sys-getdomainname
-          sys-putenv sys-setenv sys-unsetenv sys-clearenv sys-environ
-          sys-environ->alist
-          sys-utime
-          sys-getgroups sys-getlogin sys-localeconv
-          sys-getloadavg)
+(autoload "gauche/sysutil"
+          sys-realpath sys-fdset list->sys-fdset sys-fdset->list)
 
 (autoload gauche.defvalues (:macro define-values set!-values))
 

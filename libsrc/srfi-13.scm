@@ -90,6 +90,10 @@
 
 (define (%char-pred/pred c/s/p x) (c/s/p x))
 
+(define %maybe-substring (with-module gauche.internal %maybe-substring))
+(define %hash-string (with-module gauche.internal %hash-string))
+(define %string-replace-body! (with-module gauche.internal %string-replace-body!))
+
 ;;;
 ;;; Predicates
 ;;;

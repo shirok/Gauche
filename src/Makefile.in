@@ -8,7 +8,7 @@
 	clean distclean maintainer-clean install-check char-data
 
 .SUFFIXES:
-.SUFFIXES: .S .c .o .obj .s .stub .in .exe
+.SUFFIXES: .S .c .o .obj .s .scm .stub .in .exe
 
 .c.obj:
 	$(COMPILE) -c `cygpath -w $<`
@@ -24,6 +24,9 @@
 
 .stub.c:
 	$(BUILD_GOSH) ./genstub -D LIBGAUCHE_BODY $<
+
+.scm.c:
+	$(BUILD_GOSH) $(PRECOMP) $<
 
 SHELL       = @SHELL@
 prefix      = @prefix@
@@ -85,6 +88,8 @@ PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY
 # require regeneration.)
 GENSTUB_DEPENDENCY = genstub \
 		     $(top_srcdir)/lib/gauche/cgen/stub.scm
+PRECOMP_DEPENDENCY = precomp vminsn.scm ../lib/gauche/vm/insn.scm \
+		     $(GENSTUB_DEPENDENCY)
 
 # for cross build
 BUILD_CC     = @BUILD_CC@
@@ -179,10 +184,15 @@ libgauche_OBJECTS = \
 	gloc.$(OBJEXT) compare.$(OBJEXT) regexp.$(OBJEXT) signal.$(OBJEXT) \
 	parameter.$(OBJEXT) module.$(OBJEXT) proc.$(OBJEXT) \
 	number.$(OBJEXT) bignum.$(OBJEXT) load.$(OBJEXT) paths.$(OBJEXT) \
-	lazy.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) \
-	system.$(OBJEXT) stdlib.$(OBJEXT) extlib.$(OBJEXT) exclib.$(OBJEXT) \
-	syslib.$(OBJEXT) intlib.$(OBJEXT) compile.$(OBJEXT) \
-	scmlib.$(OBJEXT) objlib.$(OBJEXT)
+	lazy.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) system.$(OBJEXT) \
+	compile.$(OBJEXT) \
+	libalpha.$(OBJEXT) libbool.$(OBJEXT) libchar.$(OBJEXT) \
+	libdict.$(OBJEXT) libeval.$(OBJEXT) libexc.$(OBJEXT) \
+	libio.$(OBJEXT) liblazy.$(OBJEXT) liblist.$(OBJEXT) \
+	libmisc.$(OBJEXT) libmod.$(OBJEXT) libnum.$(OBJEXT) \
+	libobj.$(OBJEXT) libomega.$(OBJEXT) libproc.$(OBJEXT) \
+	librx.$(OBJEXT) libstr.$(OBJEXT) libsym.$(OBJEXT) \
+	libsys.$(OBJEXT) libvec.$(OBJEXT)
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
 HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
@@ -209,12 +219,6 @@ relink :
 
 $(OBJECTS) : $(HEADERS)
 
-stdlib.c : stdlib.stub $(GENSTUB_DEPENDENCY)
-extlib.c : extlib.stub $(GENSTUB_DEPENDENCY)
-exclib.c : exclib.stub $(GENSTUB_DEPENDENCY)
-syslib.c : syslib.stub $(GENSTUB_DEPENDENCY)
-intlib.c : intlib.stub $(GENSTUB_DEPENDENCY)
-
 autoloads.c : autoloads.scm
 	$(BUILD_GOSH) ./autoloads.scm
 
@@ -224,14 +228,27 @@ builtin-syms.c gauche/builtin-syms.h : builtin-syms.scm
 vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
 	$(BUILD_GOSH) ./geninsn
 
-compile.c : compile.scm precomp vminsn.scm ../lib/gauche/vm/insn.scm
-	$(BUILD_GOSH) $(PRECOMP) compile.scm
-
-scmlib.c : scmlib.scm precomp vminsn.scm ../lib/gauche/vm/insn.scm
-	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=inline-stub,declare scmlib.scm
-
-objlib.c : objlib.scm precomp vminsn.scm ../lib/gauche/vm/insn.scm
-	$(BUILD_GOSH) $(PRECOMP) objlib.scm
+compile.c  : compile.scm compile-0.scm $(PRECOMP_DEPENDENCY)
+libalpha.c : libalpha.scm $(PRECOMP_DEPENDENCY)
+libbool.c  : libbool.scm $(PRECOMP_DEPENDENCY)
+libchar.c  : libchar.scm $(PRECOMP_DEPENDENCY)
+libdict.c  : libdict.scm $(PRECOMP_DEPENDENCY)
+libeval.c  : libeval.scm $(PRECOMP_DEPENDENCY)
+libexc.c   : libexc.scm $(PRECOMP_DEPENDENCY)
+libio.c    : libio.scm $(PRECOMP_DEPENDENCY)
+liblazy.c  : liblazy.scm $(PRECOMP_DEPENDENCY)
+liblist.c  : liblist.scm $(PRECOMP_DEPENDENCY)
+libmisc.c  : libmisc.scm $(PRECOMP_DEPENDENCY)
+libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
+libnum.c   : libnum.scm $(PRECOMP_DEPENDENCY)
+libobj.c   : libobj.scm $(PRECOMP_DEPENDENCY)
+libomega.c : libomega.scm $(PRECOMP_DEPENDENCY)
+libproc.c  : libproc.scm $(PRECOMP_DEPENDENCY)
+librx.c    : librx.scm $(PRECOMP_DEPENDENCY)
+libstr.c   : libstr.scm $(PRECOMP_DEPENDENCY)
+libsym.c   : libsym.scm $(PRECOMP_DEPENDENCY)
+libsys.c   : libsys.scm $(PRECOMP_DEPENDENCY)
+libvec.c   : libvec.scm $(PRECOMP_DEPENDENCY)
 
 # char_attr.c and ext/text/unicode_attr.h are automatically generated
 # by gen-unicode.scm, from Unicode character database.  They need to
@@ -342,10 +359,13 @@ install-check :
 	done
 
 # clean ------------------------------------------------
-GENERATED = stdlib.c extlib.c exclib.c syslib.c intlib.c scmlib.c \
-	    objlib.c compile.c autoloads.c builtin-syms.c \
+GENERATED = compile.c autoloads.c builtin-syms.c \
 	    gauche/builtin-syms.h vminsn.c gauche/vminsn.h \
-            ../lib/gauche/vm/insn.scm
+            ../lib/gauche/vm/insn.scm \
+	    libalpha.c libbool.c libchar.c libdict.c libeval.c libexc.c \
+	    libio.c liblazy.c liblist.c libmisc.c libmod.c libnum.c \
+	    libobj.c libproc.c librx.c libstr.c libsym.c libsys.c \
+	    libvec.c libomega.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h
 
 clean :

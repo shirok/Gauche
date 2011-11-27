@@ -1,6 +1,6 @@
 ;;;
-;;; gauche-init.scm - initialize standard environment
-;;;
+;;; libbool.scm - builtin boolean/comparison procedures
+;;;  
 ;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
@@ -31,29 +31,43 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
 
+(select-module gauche.internal)
+
+(inline-stub
+ (declcode (.include <gauche/vminsn.h>))
+ )
+
+;;
+;; Equivalence predicates
+;;
+
+(select-module scheme)
+(define-cproc eqv? (obj1 obj2) ::<boolean> :fast-flonum :constant
+  (inliner EQV) Scm_EqvP)
+(define-cproc eq? (obj1 obj2)  ::<boolean> :fast-flonum :constant
+  (inliner EQ) SCM_EQ)
+(define-cproc equal? (obj1 obj2) ::<boolean> :fast-flonum Scm_EqualP)
+
+;;
+;; Booleans
+;;
+
+(select-module scheme)
+(define-cproc not (obj) ::<boolean> :fast-flonum :constant
+  (inliner NOT) SCM_FALSEP)
+(define-cproc boolean? (obj) ::<boolean> :fast-flonum :constant SCM_BOOLP)
+
 (select-module gauche)
+;; a convenient coercer
+(define-cproc boolean (obj) ::<boolean> :constant
+  (result (not (SCM_FALSEP obj))))
 
 ;;
-;; Loading, require and provide
+;; Generic comparison
 ;;
 
+(select-module gauche)
+(define-cproc compare (x y) ::<fixnum> Scm_Compare)
 
-;; Preferred way
-;;  (use x.y.z) ==> (require "x/y/z") (import x.y.z)
-
-(define-macro (use module . options)
-  `(begin
-     (with-module gauche
-       (require ,(module-name->path module)))
-     (import (,module ,@options))))
-
-;; create built-in modules, so that (use srfi-6) won't complain, for example.
-(define-module srfi-2 )
-(define-module srfi-6 )
-(define-module srfi-8 )
-(define-module srfi-10 )
-(define-module srfi-17 )
-
-;; for backward compatibility
-(define-module gauche.vm.debugger )
+ 
 

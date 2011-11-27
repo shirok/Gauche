@@ -88,6 +88,62 @@
 (test* "getcwd" (get-pwd-via-pwd)
        (sys-getcwd))
 
+;; putenv
+
+(cond-expand
+ [gauche.sys.setenv
+  (test* "sys-putenv" "foo"
+         (begin
+           (sys-putenv "ZZGGGBBB=foo")
+           (sys-getenv "ZZGGGBBB")))
+  (test* "sys-putenv" "foo"
+         (begin
+           (sys-putenv "ZZGGGBBB" "foo")  ;;old API
+           (sys-getenv "ZZGGGBBB")))]
+ [else])
+
+;; setenv
+
+(cond-expand
+ [gauche.sys.setenv
+  (test* "sys-setenv" "foo"
+         (begin
+           (sys-setenv "ZZGGGBBB" "foo" #t)
+           (sys-getenv "ZZGGGBBB")))
+  (test* "sys-setenv" "foo"
+         (begin
+           (sys-setenv "ZZGGGBBB" "bar" #f)
+           (sys-getenv "ZZGGGBBB")))]
+ [else])
+
+;; unsetenv
+
+(cond-expand
+ [gauche.sys.unsetenv
+  (test* "sys-unsetenv" #f
+         (begin
+           (sys-setenv "ZZGGGBBB" "foo" #t)
+           (sys-unsetenv "ZZGGGBBB")
+           (sys-getenv "ZZGGGBBB")))]
+ [else])
+
+;; environ
+(test* "sys-environ->alist" '(("A" . "B") ("A" . "") ("" . "B") ("A" . "B=C"))
+       (sys-environ->alist '("A=B" "A=" "=B" "A=B=C")))
+
+(let ([envs (sys-environ)])
+  (define (env-test var)
+    (test* #`"sys-environ (,var)" #t
+           (cond [(sys-getenv var)
+                  => (^[val] (boolean (member #`",|var|=,|val|" envs)))]
+                 [else #t])))
+  (env-test "HOME")
+  (env-test "USER")
+  (env-test "LANG")
+  (env-test "PWD")
+  (env-test "TERM")
+  (env-test "SHELL"))
+
 ;;-------------------------------------------------------------------
 (test-section "pathnames")
 
@@ -262,6 +318,61 @@
          (sys-unlink "test.dir/zzZzz")
          (sys-rmdir "test.dir")
          (sys-access "test.dir" F_OK)))
+
+;; sys-realpath
+
+(define (expected-path p)
+  (let1 pp (sys-normalize-pathname p :absolute #t :canonicalize #t)
+    (if (eqv? (string-ref pp (- (string-length pp) 1)) #\/)
+      (substring pp 0 (- (string-length pp) 1))
+      pp)))
+
+(test* "sys-realpath (/)" (sys-normalize-pathname "/") (sys-realpath "/"))
+(test* "sys-realpath (.)" (expected-path ".") (sys-realpath "."))
+
+(cond-expand
+ [gauche.sys.symlink
+  (sys-unlink "test1.o")
+  (sys-unlink "test2.o")
+  (with-output-to-file "test1.o" (cut print))
+
+  (sys-symlink "test1.o" "test2.o")
+  (test* "sys-realpath (symlink)"
+         (expected-path "./test1.o")
+         (sys-realpath "./test2.o"))
+  (sys-unlink "test2.o")
+
+  (sys-symlink "./test1.o" "test2.o")
+  (test* "sys-realpath (symlink)"
+         (expected-path "./test1.o")
+         (sys-realpath "./test2.o"))
+  (sys-unlink "test2.o")
+
+  (sys-symlink "../src/test1.o" "test2.o")
+  (test* "sys-realpath (symlink)"
+         (expected-path "./test1.o")
+         (sys-realpath "./test2.o"))
+
+  (sys-unlink "test1.o")
+  (test* "sys-realpath (dangling)"
+         (test-error)
+         (sys-realpath "./test2.o"))
+
+  (sys-mkdir "test1.o" #o777)
+  (with-output-to-file "test1.o/test.o" (cut print))
+  (test* "sys-realpath (symlink to dir)"
+         (expected-path "./test1.o/test.o")
+         (sys-realpath "./test2.o/test.o"))
+
+  (sys-unlink "test1.o/test.o")
+  (sys-rmdir "test1.o")
+  (sys-unlink "test2.o")
+
+  (test* "sys-realpath (NOENT)"
+         (test-error <system-error>)
+         (sys-realpath "./test2.o/test.o"))
+  ]
+ [else])
 
 ;;-------------------------------------------------------------------
 (test-section "time")

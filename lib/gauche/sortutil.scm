@@ -17,6 +17,9 @@
           ))
 (select-module gauche.sortutil)
 
+(define %sort  (with-module gauche.internal %sort))
+(define %sort! (with-module gauche.internal %sort!))
+
 (define (default-less? x y)
   (< (compare x y) 0))
 

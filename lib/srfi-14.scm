@@ -44,9 +44,9 @@
 
 ;; Functions supported by the core interpreter:
 ;;    char-set char-set? char-set-contains? char-set-copy
+;;    char-set-complement char-set-complement!
 ;;    %char-set-equal? %char-set-add-chars! %char-set-add-range!
-;;    %char-set-add! %char-set-complement!
-;;    %char-set-ranges
+;;    %char-set-add! %char-set-ranges
 ;; Functions not in SRFI but defined here
 ;;    integer-range->char-set integer-range->char-set!
 
@@ -77,6 +77,18 @@
           char-set:empty char-set:full)
   )
 (select-module srfi-14)
+
+;; some built-in support
+(define %char-set-equal? (with-module gauche.internal %char-set-equal?))
+(define %char-set<=? (with-module gauche.internal %char-set<=?))
+(define %char-set-add-chars! (with-module gauche.internal %char-set-add-chars!))
+(define %char-set-add-range! (with-module gauche.internal %char-set-add-range!))
+(define %char-set-add! (with-module gauche.internal %char-set-add!))
+(define %char-set-ranges (with-module gauche.internal %char-set-ranges))
+(define %char-set-predefined (with-module gauche.internal %char-set-predefined))
+
+(define char-set-complement  (with-module gauche char-set-complement))
+(define char-set-complement! (with-module gauche char-set-complement!))
 
 ;;-------------------------------------------------------------------
 ;; Comparison
@@ -281,7 +293,6 @@
 
 (autoload "srfi-14/set"   char-set-adjoin char-set-adjoin!
                           char-set-delete char-set-delete!
-                          char-set-complement char-set-complement!
                           char-set-union char-set-union!
                           char-set-intersection char-set-intersection!
                           char-set-difference char-set-difference!
@@ -313,5 +324,5 @@
 (define char-set:symbol      (string->char-set "$+<=>^`|~"))
 (define char-set:ascii       (integer-range->char-set 0 128))
 (define char-set:empty       (char-set))
-(define char-set:full        (%char-set-complement! (char-set)))
+(define char-set:full        (char-set-complement! (char-set)))
 

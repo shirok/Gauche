@@ -153,6 +153,7 @@
 
 (define (cgen-precompile src . keys)
   (with-tmodule-recording
+   <ptmodule>
    (apply %cgen-precompile src keys)))
 
 (define (do-it src ext-initializer sub-initializers)
@@ -177,6 +178,7 @@
     [(main . subs)
      (clean-output-files srcs prefix)
      (with-tmodule-recording
+      <ptmodule>
       (dolist [src (order-files-by-dependency srcs)]
         (let* ([out.c ($ xlate-cfilename
                          $ strip-prefix (path-swap-extension src "c") prefix)]
@@ -217,8 +219,7 @@
                                        (basename-sans-extension out.c)))
                               initializer-name)]
                    [vm-eval-situation SCM_VM_COMPILING]
-                   [private-macros-to-keep macros-to-keep]
-                   [current-tmodule-class <ptmodule>])
+                   [private-macros-to-keep macros-to-keep])
       (select-tmodule 'gauche)
       (cond [out.sci
              (make-directory* (sys-dirname out.sci))
@@ -538,6 +539,10 @@
       (dolist [s forms]
         ((with-module gauche.cgen.stub cgen-stub-parse-form)
          (unwrap-syntax s)))
+      (undefined))
+    (define-macro (define-cproc . args)
+      ((with-module gauche.cgen.stub cgen-stub-parse-form)
+       (unwrap-syntax (cons 'define-cproc args)))
       (undefined))
     ;; (define-macro (define . f)
     ;;   ((with-module gauche.cgen.precomp handle-define) f))

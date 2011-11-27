@@ -162,12 +162,10 @@ ScmObj SparseVectorInc(SparseVector *sv, u_long index,
     }
 }
 
-#if SCM_DEBUG_HELPER
 void SparseVectorDump(SparseVector *sv)
 {
     CompactTrieDump(SCM_CUROUT, &sv->trie, sv->desc->dump, sv->desc);
 }
-#endif /*SCM_DEBUG_HELPER*/
 
 /*===================================================================
  * Individual vector types
@@ -236,7 +234,6 @@ static ScmObj g_iter(Leaf *leaf, int *index)
     return SCM_UNBOUND;
 }
 
-#if SCM_DEBUG_HELPER
 static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
 {
     int i;
@@ -247,9 +244,6 @@ static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
         }
     }
 }
-#else
-#define g_dump NULL
-#endif /*SCM_DEBUG_HELPER*/
 
 static SparseVectorDescriptor g_desc = {
     g_ref, g_set, g_allocate, g_delete, g_clear, g_copy, g_iter, g_dump, 1

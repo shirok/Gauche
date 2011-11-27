@@ -255,5 +255,6 @@
         [class-name (string->symbol #`"<,|dbmtype|>")])
     (and (library-exists? module-name :strict? #t)
          (guard (e [else #f])
-           (%require (module-name->path module-name))
+           ((with-module gauche.internal %require)
+            (module-name->path module-name))
            (global-variable-ref (find-module module-name) class-name)))))

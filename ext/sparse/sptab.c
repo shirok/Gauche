@@ -346,7 +346,6 @@ ScmObj SparseTableIterNext(SparseTableIter *it)
  * Miscellaneous
  */
 
-#if SCM_DEBUG_HELPER
 static void leaf_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
 {
     TLeaf *z = (TLeaf*)leaf;
@@ -377,7 +376,6 @@ void SparseTableCheck(SparseTable *st)
 {
     CompactTrieCheck(&st->trie, SCM_OBJ(st), NULL);
 }
-#endif /*SCM_DEBUG_HELPER*/
 
 /*===================================================================
  * Initialization

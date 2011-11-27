@@ -448,7 +448,6 @@ Leaf *CompactTrieIterNext(CompactTrieIter *it)
 /*
  * Debug dump
  */
-#if SCM_DEBUG_HELPER
 static char digit32(u_int n)
 {
     return (n < 10)? (char)(n+'0') : (char)(n-10+'a');
@@ -549,4 +548,3 @@ void CompactTrieCheck(const CompactTrie *ct, ScmObj obj,
         }
     }
 }
-#endif /*SCM_DEBUG_HELPER*/

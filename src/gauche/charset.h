@@ -83,10 +83,7 @@ SCM_EXTERN ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
 				  int error_p, int bracket_syntax);
 
 SCM_EXTERN int    Scm_CharSetContains(ScmCharSet *cs, ScmChar c);
-
-#if SCM_DEBUG_HELPER
 SCM_EXTERN void   Scm_CharSetDump(ScmCharSet *cs, ScmPort *port);
-#endif
 
 /* predefined character set API */
 enum {

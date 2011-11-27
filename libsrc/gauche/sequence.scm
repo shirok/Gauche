@@ -342,7 +342,7 @@
 (define-method permute! ((seq <string>) (ord <sequence>))
   ;; for string, this one is faster.
   (%permute!-arg-check seq ord)
-  (%string-replace-body! seq (permute seq ord)))
+  ((with-module gauche.internal %string-replace-body!) seq (permute seq ord)))
 
 (define (%permute!-arg-check seq ord)
   (unless (= (size-of seq) (size-of ord))
@@ -386,5 +386,6 @@
 
 (define-method shuffle! ((seq <string>) . args)
   ;; string-set! is super-slow, so we provide the alternative.
-  (%string-replace-body! seq (apply shuffle seq args)))
+  ((with-module gauche.internal %string-replace-body!)
+   seq (apply shuffle seq args)))
 

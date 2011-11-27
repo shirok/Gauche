@@ -1,5 +1,5 @@
 ;;;
-;;; auxsys - Auxiliary system interface
+;;; sysutil - Auxiliary system interface, autoloaded
 ;;;  
 ;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
 ;;;   
@@ -31,51 +31,12 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
 
-(define-module gauche.auxsys
-  (export fmod frexp modf ldexp
-          sys-abort sys-realpath sys-mkfifo
-          sys-fdset list->sys-fdset sys-fdset->list
-          sys-setgid sys-setpgid sys-getpgid sys-getpgrp
-          sys-setsid sys-setuid sys-times sys-uname sys-ctermid
-          sys-gethostname sys-getdomainname
-          sys-putenv sys-setenv sys-unsetenv sys-clearenv sys-environ
-          sys-environ->alist
-          sys-utime
-          sys-getgroups sys-getlogin sys-localeconv
-          sys-getloadavg)
-  )
-(select-module gauche.auxsys)
+(select-module gauche)
 
-(dynamic-load "gauche--auxsys")
-
-;; define alternatives if the platform doesn't support...
-
-(cond-expand
- [gauche.os.windows
-  (define sys-mkfifo #f)
-  (define sys-setgid #f)
-  (define sys-setpgid #f)
-  (define sys-getpgid #f)
-  (define sys-getpgrp #f)
-  (define sys-setsid #f)
-  (define sys-setuid #f)
-  (define sys-getgroups #f)
-  (define sys-uname #f)
-  ]
- [else])
-
-(define sys-gethostname
-  (if (global-variable-bound? 'gauche.auxsys '%sys-gethostname)
-    %sys-gethostname
-    (lambda ()
-      (cond-expand
-       [(not gauche.os.windows) (cadr (sys-uname))] ; nodename
-       [else "localhost"]))))   ; need better fallback
-
-(define sys-getdomainname
-  (if (global-variable-bound? 'gauche.auxsys '%sys-getdomainname)
-    %sys-getdomainname
-    (lambda () "localdomain"))) ; need better fallback
+;; These are spilled out from src/libsys.scm, because we need
+;; to expand cond-expand form on the running machine.
+;; Src/libsys.scm is pre-compiled at the time of distribution,
+;; so we cannot have platform-dependent cond-expand in it.
 
 ;; These are better to be in src/scmlib.scm, but right now we don't have
 ;; a nice way to make cond-expand work (when compiling src/scmlib.scm
@@ -106,58 +67,6 @@
   (define sys-fdset->list #f)
   (define list->sys-fdset #f)
   ])
-
-;; We support sys-setenv natively if the system has either
-;; setenv(3) or putenv(3).  The feature symbol is gauche.sys.setenv.
-
-(cond-expand
- [gauche.sys.setenv
-  ;; We emulate putenv.  Somehow the old API was (sys-putenv name value),
-  ;; which we support for backward compatibility.
-  (define (sys-putenv name=value . other)
-    (cond
-     [(null? other)
-      (check-arg string? name=value)
-      (receive (name value) (string-scan name=value #\= 'both)
-        (unless name
-          (error "sys-putenv: argument doesn't contain '=':" name=value))
-        (sys-setenv name value #t))]
-     [else (sys-setenv name=value (car other) #t)]))
-  ]
- [else
-  ;; make autoload happy
-  (define sys-putenv #t)
-  (define sys-setenv #t)])
-
-(cond-expand
- [(not gauche.sys.unsetenv) (define sys-unsetenv #f)] ; make autoload happy
- [else])
-
-(cond-expand
- [gauche.sys.clearenv]
- [gauche.sys.unsetenv
-  (define (sys-clearenv)
-    (for-each sys-unsetenv (map car (sys-environ->alist))))]
- [else (define sys-clearenv #f)])       ;make autoload happy
-
-(define (sys-environ->alist . envlist)
-  (map (lambda (envstr)
-         (receive (pre post) (string-scan envstr #\= 'both)
-           (if pre (cons pre post) (cons envstr ""))))
-       (get-optional envlist (sys-environ))))
-
-(define sys-setpgrp
-  (if (global-variable-bound? 'gauche.auxsys '%sys-setpgrp)
-    %sys-setpgrp
-    (lambda () (sys-setpgid 0 0))))
-
-(cond-expand
- [(not gauche.sys.getpgid) (define sys-getpgid #f)] ;make autoload happy
- [else])
-
-(cond-expand
- [(not gauche.sys.getloadavg) (define sys-getloadavg #f)] ;make autoload happy
- [else])
 
 ;; Realpath implementation.
 ;; POSIX realpath(3) is flawed in a sense that there's no way to get
@@ -203,4 +112,3 @@
                      
     (resolve '() (append! (if (absolute? path) '() (decompose (sys-getcwd)))
                           (decompose path))))])
-

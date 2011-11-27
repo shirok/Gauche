@@ -672,7 +672,8 @@
       (print (uvector-class->c-type-name class)" "(~ self'elements)"[] = {")
       (dotimes [i (uvector-length value)]
         ($ uvector-class-emit-elt class
-           $ %uvector-ref value (uvector-class->type-enum class) i))
+           $ (with-module gauche.internal %uvector-ref)
+             value (uvector-class->type-enum class) i))
       (print  "};"))]
   [static (self) #f]
   )
@@ -748,7 +749,8 @@
   (init (self)
     (print "  {")
     (print "     ScmCharSet *cs = SCM_CHARSET(Scm_MakeEmptyCharSet());")
-    (dolist (range (%char-set-ranges (~ self'value)))
+    (dolist [range ((with-module gauche.internal %char-set-ranges)
+                    (~ self'value))]
       (format #t "     Scm_CharSetAddRange(cs, SCM_CHAR(~a), SCM_CHAR(~a));\n"
               (car range) (cdr range)))
     (print "     "(cgen-c-name self)" = SCM_OBJ(cs);")

@@ -201,7 +201,7 @@
                    ;; we have to treat [!...] as [^...]
                    [(#\!) (n)
                     (let1 cs (read-char-set (current-input-port))
-                      (cons (%char-set-complement! cs) (element1 (n) ct)))]
+                      (cons (char-set-complement! cs) (element1 (n) ct)))]
                    [else
                     (let1 cs (read-char-set (current-input-port))
                       (cons cs (element1 (n) ct)))])]

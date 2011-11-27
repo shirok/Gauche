@@ -34,10 +34,17 @@
 (declare) ;; a dummy form to suppress generation of "sci" file
 
 (define-module gauche.internal
-  (use gauche.experimental.lamb)
   (use util.match)
   )
 (select-module gauche.internal)
+
+(inline-stub
+ (declcode
+  (.include <gauche/class.h>
+            <gauche/code.h>
+            <gauche/vminsn.h>
+            <gauche/macro.h>
+            <gauche/builtin-syms.h>)))
 
 ;;; THE COMPILER
 ;;;
@@ -99,6 +106,8 @@
 ;;;     - NB: This pass modifies $LABEL node while traversing IForm:
 ;;;       $label-label is set to the label number.
 
+(include "compile-0")
+
 ;;=====================================================================
 ;; Compile-time constants
 ;;
@@ -118,18 +127,6 @@
 ;; the old value.)
 (define-constant SCM_BINDING_CONST 2)
 (define-constant SCM_BINDING_INLINABLE 4)
-
-(define-macro (define-enum name . syms)
-  (let1 alist '()
-    `(eval-when (:compile-toplevel)
-       ,@(let loop ((syms syms) (i 0))
-           (if (null? syms)
-             '()
-             (begin
-               (push! alist (cons (car syms) i))
-               (cons `(define-constant ,(car syms) ,i)
-                     (loop (cdr syms) (+ i 1))))))
-       (define-constant ,name ',(reverse alist)))))
 
 ;; IForm tags
 (define-enum .intermediate-tags.
@@ -180,203 +177,11 @@
 ;; Maximum size of $LAMBDA node we allow to duplicate and inline.
 (define-constant SMALL_LAMBDA_SIZE 12)
 
-;;;============================================================
-;;; Utility macros
-;;;
-
-;; We use integers, instead of symbols, as tags, for it allows
-;; us to use jump table rather than 'case'.   
-;; This macro allows us to use symbolic constants instead of
-;; the actual integers.
-
-(define-macro (case/unquote obj . clauses)
-  (let1 tmp (gensym)
-    (define (expand-clause clause)
-      (match clause
-        [((item) . body)
-         `((eqv? ,tmp ,item) ,@body)]
-        [((item ...) . body)
-         (let1 ilist (list 'quasiquote
-                           (map (cut list 'unquote <>) item))
-           `((memv ,tmp ,ilist) ,@body))]
-        [('else . body)
-         `(else ,@body)]))
-    `(let ((,tmp ,obj))
-       (cond ,@(map expand-clause clauses)))))
-
-;; Similar to case/unquote, but this turns each clause into a
-;; toplevel procedure and use jump vector, which is more efficient.
-;; TODO: In future, we might want to compile case into jump vector
-;; if the range of values are close together.  Once we have it,
-;; we may no longer need this hack.
-;;
-;; ex. (define/case (foo iform y z)
-;;       (iform-tag iform)
-;;       [($DEFINE) expr ...]
-;;       ...)
-;;  =>
-;;     (define-inline (foo iform y z)
-;;       ((vector-ref *foo-dispatch-table* (iform-tag iform)) iform y z))
-;;
-;;     (define (foo/$DEFINE iform y z) expr ...)
-;;     ...
-;;     (define *foo-dispatch-table* (generate-dispatch-table foo))
-(define-macro (define/case proc dispatch-expr . clauses)
-  (define (generate-handler key clause)
-    (let1 name (string->symbol #`",(car proc)/,key")
-      `(define (,name ,@(cdr proc)) ,@clause)))
-  (define (find-clause key)
-    (if-let1 c (find (^c (memq key (car c))) clauses)
-      (cdr c)
-      (if-let1 c (assq 'else clauses)
-        (cdr c)
-        (errorf "No dispatch clause for ~a found during expanding ~a"
-                key proc))))
-  (define dispatch-table (string->symbol #`"*,(car proc)-dispatch-table*"))
-
-  `(begin
-     (define-inline ,proc
-       ((vector-ref ,dispatch-table ,dispatch-expr) ,@(cdr proc)))
-     ,@(map (^t (generate-handler (car t) (find-clause (car t))))
-            .intermediate-tags.)
-     (define ,dispatch-table
-       (vector ,@(map (^t (string->symbol #`",(car proc)/,(car t)"))
-                      .intermediate-tags.)))))
-
-;; Inlining map.  Combined with closure optimization, we can avoid
-;; closure creation if we inline map call.
-;; We once tried inlining map calls automatically, and found the
-;; performance gain in general wasn't significant to justify the
-;; amount of increase of the code.
-;; However, it is worth to do in performance critical path.
-;; NB: proc is evaluated every iteration.  Intended it to be a lambda form,
-;; so that its call is inlined.
-
-(define-macro (imap proc lis)
-  (match proc
-    [('cut p '<> c)      `(%map1c ,p ,lis ,c)]
-    [('cut p '<> c1 c2)  `(%map1cc ,p ,lis ,c1 ,c2)]
-    ['make-lvar+         `(%map-make-lvar ,lis)]
-    [((or 'lambda '^). _)
-     (let ([p (gensym)] [r (gensym)] [loop (gensym)])
-       `(let ,loop ((,r '()) (,p ,lis))
-          (if (null? ,p)
-            (reverse ,r)
-            (,loop (cons (,proc (car ,p)) ,r) (cdr ,p)))))]
-    [else `(map ,proc ,lis)]))
-
-(define-macro (imap2 proc lis1 lis2)
-  (let ([p1 (gensym)] [p2 (gensym)] [r (gensym)] [loop (gensym)])
-    `(let ,loop ((,r '()) (,p1 ,lis1) (,p2 ,lis2))
-       (if (null? ,p1)
-         (reverse ,r)
-         (,loop (cons (,proc (car ,p1) (car ,p2)) ,r) (cdr ,p1) (cdr ,p2))))))
-
-(define-macro (ifor-each proc lis)
-  (let ([p (gensym)] [loop (gensym)])
-    `(let ,loop ((,p ,lis))
-       (unless (null? ,p) (,proc (car ,p)) (,loop (cdr ,p))))))
-
-(define-macro (ifor-each2 proc lis1 lis2)
-  (let ([p1 (gensym)] [p2 (gensym)] [loop (gensym)])
-    `(let ,loop ((,p1 ,lis1) (,p2 ,lis2))
-       (unless (null? ,p1)
-         (,proc (car ,p1) (car ,p2))
-         (,loop (cdr ,p1) (cdr ,p2))))))
-
-;; Inlining max
-;; We only compare unsigned integers (in Pass 5), so we use the specialized
-;; version of max.
-(define-macro (imax x y . more)
-  (if (null? more)
-    `(%imax ,x ,y)
-    `(%imax ,x (imax ,y ,@more))))
-
-;; Generate dispatch table
-(define-macro (generate-dispatch-table prefix)
-  `(vector ,@(map (^[p] (string->symbol #`",|prefix|/,(car p)"))
-                  .intermediate-tags.)))
+(define-inline (variable? arg) (or (symbol? arg) (identifier? arg)))
 
 ;;============================================================
 ;; Data structures
 ;;
-
-;; We use a simple vector and manually defined accessors/modifiers,
-;; since vector-{ref|set!} is very fast in Gauche.  We will rewrite
-;; the simple-minded define-simple-struct macro with gauche.record
-;; once we can compile vector-backed record efficiently.
-
-;; Macro define-simple-struct creates a bunch of functions and macros
-;; to emulate a structure by a vector.
-;; NAME is a symbol to name the structure type.  TAG is some value
-;; (usually a symbol or an integer) to indicate the type of the
-;; structure.
-;;
-;; (define-simple-struct <name> <tag> <constructor> [(<slot-spec>*)])
-;;
-;; <constructor> : <symbol> | #f
-;; <slot-spec>   : <slot-name> | (<slot-name> [<init-value>])
-;;
-;; For each <slot-spec>, the following accessor/modifier are automatially
-;; generated.  
-;;
-;;   NAME-SLOT      - accessor (macro)
-;;   NAME-SLOT-set! - modifier (macro)
-;;
-;; If a symbol is given as <constructor>, it becomes a macro to construct
-;; the structure.  It can take zero to as many arguments as the # of slots.
-;; The arguments to the constructor initializes the slots in the order of
-;; their appearance in define-simple-struct.  If not enough arguments are
-;; given to the constructor, the rest of slots are initialized by each
-;; <init-value> (or #f if <init-value> is omitted).
-
-(define-macro (define-simple-struct name tag constructor :optional (slot-defs '()))
-  (define (take l n) ; we can't use srfi-1 take, so here it is.
-    (if (zero? n) '() (cons (car l) (take (cdr l) (- n 1)))))
-  (define (make-constructor)
-    (let ([args (gensym)]
-          [num-slots  (length slot-defs)]
-          [slot-names (map (^[s] (if (symbol? s) s (car s))) slot-defs)]
-          [init-vals  (map (^[s] (if (symbol? s) #f (cadr s))) slot-defs)])
-      `(define-macro (,constructor . ,args)
-         (match ,args
-           ,@(let loop ((n 0)
-                        (r '()))
-               (if (> n num-slots)
-                 r
-                 (let1 carg (take slot-names n)
-                   (loop (+ n 1)
-                         (cons
-                          `(,carg
-                            (list 'vector
-                                  ,@(if tag `(',tag) '())
-                                  ,@carg
-                                  ,@(map (cut list 'quote <>)
-                                         (list-tail init-vals n))))
-                          r)))
-                 ))))
-      ))
-  `(begin
-     ,@(if constructor
-         `(,(make-constructor))
-         '())
-     ,@(let loop ((s slot-defs) (i (if tag 1 0)) (r '()))
-         (if (null? s)
-           (reverse r)
-           (let* ([slot-name (if (pair? (car s)) (caar s) (car s))]
-                  [acc (string->symbol #`",|name|-,|slot-name|")]
-                  [mod (string->symbol #`",|name|-,|slot-name|-set!")])
-             (loop (cdr s)
-                   (+ i 1)
-                   (list*
-                    `(define-macro (,acc obj)
-                       `(vector-ref ,obj ,,i))
-                    `(define-macro (,mod obj val)
-                       `(vector-set! ,obj ,,i ,val))
-                    r))))))
-  )
-
-(define-inline (variable? arg) (or (symbol? arg) (identifier? arg)))
 
 ;; Local variables (lvar)
 ;;
@@ -1451,7 +1256,7 @@
      (iform-tag iform)
      [($LREF)   (cond [(assq ($lref-lvar iform) mapping) => cdr]
                       [else iform])]
-     [($LSET)   (cond [(assq ($lref-lvar iform) mapping) =>
+     [($LSET)   (cond [(assq ($lset-lvar iform) mapping) =>
                        (^p (unless (has-tag? $GREF (cdr p))
                              (error "[internal] subst-lvars: $LSET can only \
                                      subst with $GREF but got: ~a" (cdr p)))
@@ -2111,6 +1916,11 @@
       (errorf "syntax-error: rhs expression of ~a ~s \
                doesn't yield a syntactic transformer: ~s"
               who expr transformer))))
+
+(inline-stub
+ (define-cproc make-toplevel-closure (code::<compiled-code>)
+  (result (Scm_MakeClosure (SCM_OBJ code) NULL)))
+ )
 
 ;; Macros ...........................................
 
@@ -3921,7 +3731,7 @@
            ;; introduces loop in the graph which confuses this pass.
            (and-let* ([ ($lref? proc) ]
                       [lvar ($lref-lvar proc)]
-                      [val (lvar-const-value ($lref-lvar proc))]
+                      [val (lvar-const-value lvar)]
                       [ (has-tag? val $GREF) ]
                       [p (gref-inlinable-proc val)]
                       [ (%procedure-inliner p) ])
@@ -5304,7 +5114,7 @@
   (let1 debug-name (string->symbol #`"inliner/,name")
     `(let1 ,debug-name ,proc
        (set! (%procedure-inliner ,name) ,debug-name)
-       (%mark-binding-inlinable! (find-module 'gauche) ',name))))
+       (%mark-binding-inlinable! (find-module 'gauche.internal) ',name))))
 
 ;; Some useful utilities
 ;;
@@ -5319,6 +5129,21 @@
     (match form
       [(_ x y) (asm-arg2 form (list insn) x y cenv)]
       [else (undefined)])))
+
+(inline-stub
+ (define-cproc %procedure-inliner (proc::<procedure>)
+   (setter (proc::<procedure> inliner) ::<void>
+           (set! (-> proc inliner) inliner))
+   (result (?: (-> proc inliner) (-> proc inliner) '#f)))
+
+ (define-cproc %mark-binding-inlinable! (mod::<module> name::<symbol>) ::<void>
+   (let* ([g::ScmGloc* (Scm_FindBinding mod name 0)])
+     (unless g
+       (Scm_Error "[internal] %%mark-binding-inlinable!: \
+                   no such binding for %S in %S"
+                  (SCM_OBJ name) (SCM_OBJ mod)))
+     (Scm_GlocMark g SCM_BINDING_INLINABLE)))
+ )
 
 ;;--------------------------------------------------------
 ;; Inlining numeric operators
@@ -5501,6 +5326,8 @@
                                 ,(pass1 val cenv)))]
       [else (error "wrong number of arguments for vector-set!:" form)])))
 
+;; NB: %uvector-ref isn't public, and should be in the gauche.internal
+;; module.  We don't have a convenience mechansi
 (define-builtin-inliner %uvector-ref
   (^[form cenv]
     (match form
@@ -5672,6 +5499,82 @@
        (result SCM_FALSE))))
  )
 
+;; GLOBAL-CALL-TYPE
+;;
+;;   This is an aux call to dispatch the function call with global variable
+;;   reference in its first position (in pass1/global-call).  It checks
+;;   up the binding of global identifier, and returns two values.
+;;
+;;   The first value is #f if this global call would be a simple call.
+;;   Otherwise, the first value is a bound value of the global variable,
+;;   and the second value is one of the symbols 'macro, 'syntax or 'inline.
+;;
+;;   We write this in C because it is in critical path of the compiler.
+;;
+;;   {Experimental}
+;;   If RECORD_DEPENDED_MODULES is defined, this proc also records
+;;   modules from which macro/syntax identifiers come.  It will be used
+;;   in test-module to detect unnecessarily 'use'd modules.  For normal
+;;   procedure we can scan identifier/glocs embedded in the VM code
+;;   vector, but for the case of macros/syntaxes/inlined procedures
+;;   the original identifier is lost during expansion, so we need to
+;;   record it at compile time.
+;;   Although global-call-type is in critical path, my benchmark showed
+;;   little impact from this addition.
+;;   I still don't feel "right" about having this hack here, though.
+;;   Just keep it for now, for the record.
+(inline-stub
+ (if "defined(RECORD_DEPENDED_MODULES)"
+   (begin
+     "static ScmModule *stdmods[3];"
+
+     (initcode
+      "stdmods[0] = Scm_NullModule();"
+      "stdmods[1] = Scm_SchemeModule();"
+      "stdmods[2] = Scm_GaucheModule();")))
+
+ (define-cproc global-call-type (id cenv) ::(<top> <top>)
+   (let* ([mod::ScmModule* (-> (SCM_IDENTIFIER id) module)]
+          [gloc::ScmGloc* (Scm_FindBinding mod (-> (SCM_IDENTIFIER id) name) 0)]
+          )
+     (set! SCM_RESULT0 '#f SCM_RESULT1 '#f)
+     (when gloc
+       (let* ([gval (SCM_GLOC_GET gloc)])
+         (cond [(SCM_MACROP gval)
+                (set! SCM_RESULT0 gval SCM_RESULT1 'macro)]
+               [(SCM_SYNTAXP gval)
+                (set! SCM_RESULT0 gval SCM_RESULT1 'syntax)]
+               [(and (SCM_PROCEDUREP gval)
+                     (SCM_PROCEDURE_INLINER gval) ; inliner may be NULL
+                     (not (SCM_FALSEP (SCM_PROCEDURE_INLINER gval)))
+                     ;; Remainder: Enable the following check after 0.9.1 release.
+                     ;; This check is required to suppress inadvertent
+                     ;; inlining of some special constructs such as case-lambda.
+                     ;; However, 0.9's runtime does not have 'inlinable' bindings,
+                     ;; thus enabling this prevents some built-in procedures
+                     ;; from being inlined.
+                     ;;(Scm_GlocInlinableP gloc)
+                     (not (SCM_VM_COMPILER_FLAG_IS_SET
+                           (Scm_VM) SCM_COMPILE_NOINLINE_GLOBALS)))
+                (set! SCM_RESULT0 gval SCM_RESULT1 'inline)]
+               [else (goto normal)])
+         (.if "defined(RECORD_DEPENDED_MODULES)"
+              (begin
+                (dotimes [i 3]
+                  (when (SCM_EQ mod (aref stdmods i)) (goto normal)))
+                (let* ([curmod (SCM_VECTOR_ELEMENT cenv 0)])
+                  (SCM_ASSERT (SCM_MODULEP curmod))
+                  (when (SCM_FALSEP
+                         (Scm_Memq (SCM_OBJ mod)
+                                   (-> (SCM_MODULE curmod) depended)))
+                    (set! (-> (SCM_MODULE curmod) depended)
+                          (Scm_Cons (SCM_OBJ mod)
+                                    (-> (SCM_MODULE curmod) depended)))))))
+         ))
+     (label normal)
+     ))
+ )
+
 ;; (define (id->bound-gloc id)
 ;;   (and-let* ([gloc (find-binding (identifier-module id) (identifier-name id) #f)]
 ;;              [ (gloc-bound? gloc) ])
@@ -5715,6 +5618,219 @@
                    (find-binding (slot-ref var'module) (slot-ref var'name) #f)
                    (find-binding (modgen) var #f))))))
 
+;; Some C routines called from the expanded macro result.
+;; These procedures are originally implemented in Scheme, but moved
+;; here for efficiency.
+;; Some procedures depend on the structure defined in compile.scm,
+;; and need to be adjusted if the structure is changed.
+;; In future, precomp should be extended so that these routines can
+;; be written in compile.scm as "inlined C" code.
+(inline-stub
+ ;; %imax - max for unsigned integer only, unsafe.
+ (define-cproc %imax (x y)
+   (if (> (SCM_WORD x) (SCM_WORD y)) (result x) (result y)))
+
+ ;; (%map1c proc lis c) = (map (cut proc <> c) lis)
+ (define-cfn map1c_cc (result data::void**) :static
+   (let* ([proc (SCM_OBJ (aref data 0))]
+          [r    (SCM_OBJ (aref data 1))]
+          [lis  (SCM_OBJ (aref data 2))]
+          [c    (SCM_OBJ (aref data 3))])
+     (cond [(SCM_NULLP lis) (return (Scm_ReverseX (Scm_Cons result r)))]
+           [else
+            (set! (aref data 1) (Scm_Cons result r)
+                  (aref data 2) (SCM_CDR lis))
+            (Scm_VMPushCC map1c_cc data 4)
+            (return (Scm_VMApply2 proc (SCM_CAR lis) c))])))
+
+ (define-cproc %map1c (proc lis c)
+   (let* ([data::(.array void* [4])])
+     (cond [(SCM_NULLP lis) (result SCM_NIL)]
+           [else
+            (set! (aref data 0) proc
+                  (aref data 1) SCM_NIL
+                  (aref data 2) (SCM_CDR lis)
+                  (aref data 3) c)
+            (Scm_VMPushCC map1c_cc data 4)
+            (result (Scm_VMApply2 proc (SCM_CAR lis) c))])))
+
+ ;; (%map1cc proc lis c1 c2) = (map (cut proc <> c1 c2) lis)
+ (define-cfn map1cc-cc (result (data :: void**)) :static
+   (let* ([proc (SCM_OBJ (aref data 0))]
+          [r    (SCM_OBJ (aref data 1))]
+          [lis  (SCM_OBJ (aref data 2))]
+          [c1   (SCM_OBJ (aref data 3))]
+          [c2   (SCM_OBJ (aref data 4))])
+     (cond [(SCM_NULLP lis) (return (Scm_ReverseX (Scm_Cons result r)))]
+           [else
+            (set! (aref data 1) (Scm_Cons result r)
+                  (aref data 2) (SCM_CDR lis))
+            (Scm_VMPushCC map1cc-cc data 5)
+            (return (Scm_VMApply3 proc (SCM_CAR lis) c1 c2))])))
+
+ (define-cproc %map1cc (proc lis c1 c2)
+   (if (SCM_NULLP lis)
+     (result SCM_NIL)
+     (let* ([data::(.array void* [5])])
+       (set! (aref data 0) proc
+             (aref data 1) SCM_NIL
+             (aref data 2) (SCM_CDR lis)
+             (aref data 3) c1
+             (aref data 4) c2)
+       (Scm_VMPushCC map1cc-cc data 5)
+       (result (Scm_VMApply3 proc (SCM_CAR lis) c1 c2)))))
+
+ ;; (%map-cons lis1 lis2) = (map cons lis1 lis2)
+ (define-cproc %map-cons (lis1 lis2)
+   (let* ([h SCM_NIL] [t SCM_NIL])
+     (while (and (SCM_PAIRP lis1) (SCM_PAIRP lis2))
+       (SCM_APPEND1 h t (Scm_Cons (SCM_CAR lis1) (SCM_CAR lis2)))
+       (set! lis1 (SCM_CDR lis1) lis2 (SCM_CDR lis2)))
+     (result h)))
+ )
+
+;;============================================================
+;; Compiled code builder interface
+;;
+
+(inline-stub
+ (define-cproc make-compiled-code-builder (reqargs::<uint16> optargs::<uint16>
+                                                             name parent intform)
+   Scm_MakeCompiledCodeBuilder)
+
+ ;; CompiledCodeEmit is performance critical.  To reduce the overhead of
+ ;;  argument passing, we prepare variations for specific code patterns.
+ (define-cproc compiled-code-emit0!
+   (cc::<compiled-code> code::<int>) ::<void>
+   (Scm_CompiledCodeEmit cc code 0 0 '#f '#f))
+
+ (define-cproc compiled-code-emit-PUSH!
+   (cc::<compiled-code>) ::<void>
+   (Scm_CompiledCodeEmit cc SCM_VM_PUSH 0 0 '#f '#f))
+
+ (define-cproc compiled-code-emit-RET!
+   (cc::<compiled-code>) ::<void>
+   (Scm_CompiledCodeEmit cc SCM_VM_RET 0 0 '#f '#f))
+
+ (define-cproc compiled-code-emit0o!
+   (cc::<compiled-code> code::<int> operand) ::<void>
+   (Scm_CompiledCodeEmit cc code 0 0 operand '#f))
+
+ (define-cproc compiled-code-emit0i!
+   (cc::<compiled-code> code::<int> info) ::<void>
+   (Scm_CompiledCodeEmit cc code 0 0 '#f info))
+
+ (define-cproc compiled-code-emit0oi!
+   (cc::<compiled-code> code::<int> operand info) ::<void>
+   (Scm_CompiledCodeEmit cc code 0 0 operand info))
+
+ (define-cproc compiled-code-emit1!
+   (cc::<compiled-code> code::<int> arg0::<int>) ::<void>
+   (Scm_CompiledCodeEmit cc code arg0 0 '#f '#f))
+
+ (define-cproc compiled-code-emit1o!
+   (cc::<compiled-code> code::<int> arg0::<int> operand) ::<void>
+   (Scm_CompiledCodeEmit cc code arg0 0 operand '#f))
+
+ (define-cproc compiled-code-emit1i!
+   (cc::<compiled-code> code::<int> arg0::<int> info) ::<void>
+   (Scm_CompiledCodeEmit cc code arg0 0 '#f info))
+
+ (define-cproc compiled-code-emit1oi!
+   (cc::<compiled-code> code::<int> arg0::<int> operand info) ::<void>
+   (Scm_CompiledCodeEmit cc code arg0 0 operand info))
+
+ (define-cproc compiled-code-emit2!
+   (cc::<compiled-code> code::<int> arg0::<int> arg1::<int>) ::<void>
+   (Scm_CompiledCodeEmit cc code arg0 arg1 '#f '#f))
+
+ (define-cproc compiled-code-emit2o!
+   (cc::<compiled-code> code::<int> arg0::<int> arg1::<int> operand) ::<void>
+   (Scm_CompiledCodeEmit cc code arg0 arg1 operand '#f))
+
+ (define-cproc compiled-code-emit2i!
+   (cc::<compiled-code> code::<int> arg0::<int> arg1::<int> info) ::<void>
+   (Scm_CompiledCodeEmit cc code arg0 arg1 '#f info))
+
+ (define-cproc compiled-code-emit2oi!
+   (cc::<compiled-code> code::<int> arg0::<int> arg1::<int> operand info)::<void>
+   (Scm_CompiledCodeEmit cc code arg0 arg1 operand info))
+
+ (define-cproc compiled-code-new-label (cc::<compiled-code>)
+   Scm_CompiledCodeNewLabel)
+
+ (define-cproc compiled-code-set-label! (cc::<compiled-code> label)
+   ::<void> Scm_CompiledCodeSetLabel)
+
+ (define-cproc compiled-code-finish-builder (cc::<compiled-code>
+                                             maxstack::<int>)
+   ::<void> Scm_CompiledCodeFinishBuilder)
+ )
+
+;;============================================================
+;; VM introspection
+;;
+
+(inline-stub
+ ;; standard
+ (define-constant ENV_HEADER_SIZE  (c "SCM_MAKE_INT(ENV_SIZE(0))"))
+ (define-constant CONT_FRAME_SIZE (c "SCM_MAKE_INT(CONT_FRAME_SIZE)"))
+
+ (define-cproc vm-dump-code (code::<compiled-code>) ::<void>
+   Scm_CompiledCodeDump)
+ (define-cproc vm-code->list (code::<compiled-code>)
+   Scm_CompiledCodeToList)
+ (define-cproc vm-insn-build (insn) ::<ulong>
+   (result (cast u_long (Scm_VMInsnBuild insn))))
+ (define-cproc vm-insn-code->name (opcode::<uint>)
+   (result (SCM_INTERN (Scm_VMInsnName opcode))))
+ (define-cproc vm-insn-name->code (insn-name) ::<int>
+   Scm_VMInsnNameToCode)
+
+ ;; Eval situation flag (for eval-when constrcut)
+ (define-cproc vm-eval-situation (:optional val) ::<int>
+   (let* ([vm::ScmVM* (Scm_VM)])
+     (cond [(SCM_UNBOUNDP val) (result (-> vm evalSituation))]
+           [else
+            (unless (SCM_INTP val) (SCM_TYPE_ERROR val "integer"))
+            (let* ([prev::int (-> vm evalSituation)])
+              (set! (-> vm evalSituation) (SCM_INT_VALUE val))
+              (result prev))])))
+
+ (define-enum SCM_VM_EXECUTING)
+ (define-enum SCM_VM_LOADING)
+ (define-enum SCM_VM_COMPILING)
+
+ ;; Compiler flags
+ (define-cproc vm-compiler-flag-is-set? (flag::<uint>) ::<boolean>
+   (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) flag)))
+ (define-cproc vm-compiler-flag-set! (flag::<uint>) ::<void>
+   (SCM_VM_COMPILER_FLAG_SET (Scm_VM) flag))
+ (define-cproc vm-compiler-flag-clear! (flag::<uint>) ::<void>
+   (SCM_VM_COMPILER_FLAG_CLEAR (Scm_VM) flag))
+
+ (define-cproc vm-compiler-flag-noinline-locals? () ::<boolean>
+   (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NOINLINE_LOCALS)))
+ (define-cproc vm-compiler-flag-no-post-inline? () ::<boolean>
+   (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NO_POST_INLINE_OPT)))
+ (define-cproc vm-compiler-flag-no-lifting? () ::<boolean>
+   (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NO_LIFTING)))
+
+ (define-enum SCM_COMPILE_NOINLINE_GLOBALS)
+ (define-enum SCM_COMPILE_NOINLINE_LOCALS)
+ (define-enum SCM_COMPILE_NOINLINE_CONSTS)
+ (define-enum SCM_COMPILE_NOSOURCE)
+ (define-enum SCM_COMPILE_SHOWRESULT)
+ (define-enum SCM_COMPILE_NOCOMBINE)
+ (define-enum SCM_COMPILE_NO_POST_INLINE_OPT)
+ (define-enum SCM_COMPILE_NO_LIFTING)
+
+ ;; Set/get VM's current module info. (temporary)
+ (define-cproc vm-current-module () (result (SCM_OBJ (-> (Scm_VM) module))))
+ (define-cproc vm-set-current-module (mod::<module>) ::<void>
+   (set! (-> (Scm_VM) module) mod))
+ )
+
 ;;============================================================
 ;; Initialization
 ;;
@@ -5723,3 +5839,34 @@
   #f
   )
   
+;;============================================================
+;; Dummy macros
+;;
+
+(select-module gauche)
+
+(declare (keep-private-macro inline-stub define-cproc declare))
+ 
+;; The form (inline-stub ...) allows genstub directives embedded
+;; within a Scheme source.  It is only valid when the source is
+;; pre-compiled into C.  Technically we can kick C compiler at
+;; runtime, but it'll need some more work, so we signal an error
+;; when inline-stub form is evaluated at runtime.  The precompiler
+;; (precomp) handles this form specially.
+(define-macro (inline-stub . _)
+  (warn "The inline-stub form can only be used for Scheme sources \
+         to be pre-compiled.  Since you're loading the file without \
+         pre-compilation, the definitions and expressions in the \
+         inline-stub form are ignored.  (Current module=~s)"
+        (current-module)))
+
+;; So as define-cproc.
+(define-macro (define-cproc . _)
+  (warn "The define-cproc form can only be used for Scheme sources \
+         to be pre-compiled.  Since you're loading the file without \
+         pre-compilation, the definition is ignored."))
+
+;; The form (declare ...) may be used in wider purpose.  For the time
+;; being we use it in limited purposes for compilers.  In interpreter
+;; we just ignore it.
+(define-macro (declare . _) #f)

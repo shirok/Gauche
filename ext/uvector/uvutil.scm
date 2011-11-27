@@ -40,11 +40,13 @@
 ;; Experimental - compile-time inlining *-ref
 ;; The TYPE constant must be in sync with ScmUVectorType in gauche/vector.h
 
+(define %uvector-ref (with-module gauche.internal %uvector-ref))
+
 (define-macro (set-reference-inliner ref type)
   `(define-compiler-macro ,ref
      (er-transformer
       (^[x r c] (if (= (length x) 3)
-                  (list '%uvector-ref (cadr x) ,type (caddr x))
+                  (list (r '%uvector-ref) (cadr x) ,type (caddr x))
                   x)))))
 
 (set-reference-inliner s8vector-ref 0)

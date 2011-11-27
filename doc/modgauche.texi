@@ -2275,9 +2275,9 @@ as well as elements.
 
 @deffn {Generic function} fold proc knil coll coll2 @dots{}
 @c EN
-This is a natural extension of @var{fold} in SRFI-1 (@xref{SRFI-1 Fold}).
+This is a natural extension of @var{fold} (@xref{Other list procedures}).
 @c JP
-SRFI-1で定義される@var{fold} (@ref{SRFI-1 Fold}参照) の自然な拡張です。
+@var{fold} (@ref{Other list procedures}参照) の自然な拡張です。
 @c COMMON
 
 @c EN
@@ -10868,9 +10868,9 @@ If no element in @var{seq} satisfies @var{pred}, @code{#f} is returned.
 @end example
 
 @c EN
-See also @code{list-index} in SRFI-1 (@xref{SRFI-1 Searching}).
+See also @code{list-index} in SRFI-1 (@xref{SRFI-1 List utilities}).
 @c JP
-SRFI-1 (@ref{SRFI-1 Searching}参照)の@code{list-index}も見て下さい。
+SRFI-1 (@ref{SRFI-1 List utilities}参照)の@code{list-index}も見て下さい。
 @c COMMON
 @end deffn
 

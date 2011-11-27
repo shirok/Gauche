@@ -179,14 +179,16 @@
 (define (%open-input-file/conv name :key (encoding #f)
                                          ((:conversion-buffer-size bufsiz) 0)
                                     :allow-other-keys rest)
-  (and-let* ([port (apply %open-input-file name rest)])
+  (and-let* ([port (apply (with-module gauche.internal %open-input-file)
+                          name rest)])
     (wrap-with-input-conversion port encoding
                                 :buffer-size bufsiz :owner? #t)))
 
 (define (%open-output-file/conv name :key (encoding #f)
                                           ((:conversion-buffer-size bufsiz) 0)
                                      :allow-other-keys rest)
-  (and-let* ([port (apply %open-output-file name rest)])
+  (and-let* ([port (apply (with-module gauche.internal %open-output-file)
+                          name rest)])
     (wrap-with-output-conversion port encoding
                                  :buffer-size bufsiz :owner? #t)))
 

@@ -109,11 +109,6 @@ SCM_DECL_BEGIN
 #define TRUE (!FALSE)
 #endif
 
-/* This defines several auxiliary routines that are useful for debugging */
-#ifndef SCM_DEBUG_HELPER
-#define SCM_DEBUG_HELPER      TRUE
-#endif
-
 /* Define this to 0 to turn off fast flonum extension.  See the comment in
    gauche/number.h for the details. */
 #define GAUCHE_FFX 1

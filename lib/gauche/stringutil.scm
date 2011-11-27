@@ -39,6 +39,9 @@
 ;; trick to delay loading of srfi-13 until needed
 (autoload srfi-13 string-tokenize)
 
+(define %string-split-by-char
+  (with-module gauche.internal %string-split-by-char))
+
 ;; Generic string-split
 ;;   splitter can be a character, a char-set, a string, or a regexp.
 (define (string-split string splitter)

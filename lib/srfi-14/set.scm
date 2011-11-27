@@ -96,11 +96,6 @@
 
 (define char-set-delete! char-set-delete)
 
-(define (char-set-complement cs)
-  (%char-set-complement! (char-set-copy cs)))
-
-(define (char-set-complement! cs) (%char-set-complement! cs))
-
 (define (char-set-union . charsets)
   (if (null? charsets)
       char-set:empty

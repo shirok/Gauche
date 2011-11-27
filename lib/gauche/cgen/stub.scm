@@ -240,6 +240,7 @@
                       :init-prologue (format "void Scm_Init_~a(ScmModule *mod)\
                                               {\n" prefix))])
       (with-tmodule-recording
+       <tmodule>
        (for-each cgen-define predef-syms)
        (cgen-include "<gauche.h>")
        (with-input-from-file stubfile

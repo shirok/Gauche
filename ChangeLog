@@ -1,3 +1,27 @@
+2011-11-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/*, ext/auxsys, lib/*, doc/*, libsrc/*: Code reorganization:
+	  src/*.stub and src/*.scm files are merged, and then splitted
+	  accodring to each function's feature instead of the module it
+	  belongs.  This keeps related code together and eases maintenance.
+	  The new sources are named as src/lib*.scm.
+	    By this change, we hide some internal routines into gauche.internal;
+	  which we couldn't do before, since each *.stub file could be
+	  associated to one module.  Now we can switch the modules inside
+	  precompiled scm files as we like.
+	    We also merged ext/auxsys into core (mostly in libsys.scm), for
+	  we no longer need them to be in an extension module.
+	    We've already moved some list utilities from srfi-1 into core;
+	  by this commit we do so more, and updated the document accordingly.
+	    We also removed SCM_DEBUG_HELPER conditional; we've never had it
+	  turned off, so we can just always keep those debug routines.  NB:
+	  Those debug dump routines (%*-dump) are now in gauche.internal
+	  module.
+	* lib/gauche/cgen/precomp.scm: *Experimental*: Allow define-cproc
+	  to appear as the toplevel form.  It is easier to read than always
+	  putting them in inline-stub.  I might change my mind later, for
+	  it may be confusing as well.
+
 2011-11-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/code.c (Scm_CompiledCodeDump): Fixed a bug that can cause

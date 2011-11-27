@@ -1271,7 +1271,6 @@ ScmObj Scm_BignumToString(ScmBignum *b, int radix, int use_upper)
     return Scm_ListToString(Scm_ReverseX(h));
 }
 
-#if SCM_DEBUG_HELPER
 int Scm_DumpBignum(ScmBignum *b, ScmPort *out)
 {
     int i;
@@ -1283,7 +1282,6 @@ int Scm_DumpBignum(ScmBignum *b, ScmPort *out)
     SCM_PUTC('>', out);
     return 0;
 }
-#endif
 
 /*-----------------------------------------------------------------------
  * Denormalized bignum API

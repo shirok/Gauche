@@ -88,14 +88,27 @@ extern void Scm__InitRepl(void);
 extern void Scm__InitAutoloads(void);
 extern void Scm__InitCollection(void);
 
-extern void Scm_Init_stdlib(ScmModule *);
-extern void Scm_Init_extlib(ScmModule *);
-extern void Scm_Init_syslib(ScmModule *);
-extern void Scm_Init_intlib(ScmModule *);
-
-extern void Scm_Init_scmlib(void);
+extern void Scm_Init_libalpha(void);
+extern void Scm_Init_libbool(void);
+extern void Scm_Init_libchar(void);
+extern void Scm_Init_libdict(void);
+extern void Scm_Init_libeval(void);
+extern void Scm_Init_libexc(void);
+extern void Scm_Init_libio(void);
+extern void Scm_Init_liblazy(void);
+extern void Scm_Init_liblist(void);
+extern void Scm_Init_libmisc(void);
+extern void Scm_Init_libmod(void);
+extern void Scm_Init_libnum(void);
+extern void Scm_Init_libobj(void);
+extern void Scm_Init_libproc(void);
+extern void Scm_Init_librx(void);
+extern void Scm_Init_libstr(void);
+extern void Scm_Init_libsym(void);
+extern void Scm_Init_libsys(void);
+extern void Scm_Init_libvec(void);
 extern void Scm_Init_compile(void);
-extern void Scm_Init_objlib(void);
+extern void Scm_Init_libomega(void);
 
 static void finalizable(void);
 static void init_cond_features(void);
@@ -153,15 +166,28 @@ void Scm_Init(const char *signature)
     Scm__InitSystem();
     Scm__InitRepl();
 
-    Scm_Init_stdlib(Scm_SchemeModule());
-    Scm_Init_extlib(Scm_GaucheModule());
-    Scm_Init_syslib(Scm_GaucheModule());
-    Scm_Init_intlib(Scm_GaucheInternalModule());
-
-    Scm_Init_scmlib();
+    Scm_Init_libalpha();
+    Scm_Init_libbool();
+    Scm_Init_libchar();
+    Scm_Init_libdict();
+    Scm_Init_libeval();
+    Scm_Init_libexc();
+    Scm_Init_libio();
+    Scm_Init_liblazy();
+    Scm_Init_liblist();
+    Scm_Init_libmisc();
+    Scm_Init_libmod();
+    Scm_Init_libnum();
+    Scm_Init_libobj();
+    Scm_Init_libproc();
+    Scm_Init_librx();
+    Scm_Init_libstr();
+    Scm_Init_libsym();
+    Scm_Init_libsys();
+    Scm_Init_libvec();
     Scm_Init_compile();
-    Scm_Init_objlib();
-
+    Scm_Init_libomega();
+    
     Scm__InitCompaux();
 
     Scm_SelectModule(Scm_GaucheModule());

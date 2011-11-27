@@ -76,7 +76,6 @@ static ScmStringBody *make_str_body(int len, int siz, const char *p, int flags)
 #define DUMP_LENGTH   50
 
 /* for debug */
-#if SCM_DEBUG_HELPER
 void Scm_StringDump(FILE *out, ScmObj str)
 {
     int i;
@@ -97,7 +96,6 @@ void Scm_StringDump(FILE *out, ScmObj str)
         fputs("\"\n", out);
     }       
 }
-#endif /*SCM_DEBUG_HELPER*/
 
 /*
  * Multibyte length calculation
@@ -1347,7 +1345,6 @@ ScmObj Scm_StringPointerCopy(ScmStringPointer *sp1)
 
 /* Dump string pointer info for debugging.
    Thanks to Alex Shinn (foof@synthcode.com) */
-#if SCM_DEBUG_HELPER
 void Scm_StringPointerDump(ScmStringPointer *sp1)
 {
     Scm_Printf(SCM_CUROUT,
@@ -1355,7 +1352,6 @@ void Scm_StringPointerDump(ScmStringPointer *sp1)
                sp1, sp1->length, sp1->size, sp1->start, sp1->index,
                sp1->current);
 }
-#endif /*SCM_DEBUG_HELPER*/
 
 /*==================================================================
  *
@@ -1541,7 +1537,6 @@ void Scm_DStringPutc(ScmDString *ds, ScmChar ch)
 
 
 /* for debug */
-#if SCM_DEBUG_HELPER
 void Scm_DStringDump(FILE *out, ScmDString *dstr)
 {
     fprintf(out, "DString %p\n", dstr);
@@ -1563,5 +1558,3 @@ void Scm_DStringDump(FILE *out, ScmDString *dstr)
         fprintf(out, "\"\n");
     }
 }
-#endif /*SCM_DEBUG_HELPER*/
-

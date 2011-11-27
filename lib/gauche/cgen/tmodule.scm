@@ -54,7 +54,8 @@
 (define-class <tmodule> ()
   ([name    :init-keyword :name]
    [module  :init-form (make-module #f)]
-   [cname   :init-value #f]   ; C variable name holding the module in init fn
+   [cname   :init-keyword :cname
+            :init-value #f]   ; C variable name holding the module in init fn
                               ;  initialized on-demand
    ))
 
@@ -120,5 +121,20 @@
 
 (define-syntax with-tmodule-recording
   (syntax-rules ()
-    [(_ . body)
-     (parameterize ([%all-tmodules '()]) . body)]))
+    [(_ tmodclass . body)
+     (parameterize ([current-tmodule-class tmodclass]
+                    [%all-tmodules '()])
+       (%setup-builtin-tmodules)
+       . body)]))
+
+;; NB: We pre-allocate some built-in modules.  This saves redundant
+;; initialization at the runtime for precompiled sources of Gauche core.
+(define (%setup-builtin-tmodules)
+  (define (builtin name c-api)
+    (make (current-tmodule-class) :name name :cname #`"SCM_OBJ(,c-api())"))
+  (builtin 'null            "Scm_NullModule")
+  (builtin 'scheme          "Scm_SchemeModule")
+  (builtin 'gauche          "Scm_GaucheModule")
+  (builtin 'gauche.internal "Scm_GaucheInternalModule")
+  )
+

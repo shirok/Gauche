@@ -195,7 +195,11 @@
 ;(define-macro (define-class name supers slots . options)
 ;  (%expand-define-class name supers slots options))
 
-(define make-identifier (with-module gauche.internal make-identifier))
+;; kludge to import make-identifier.  At the time libobj is initialized,
+;; libmod isn't initialized yet, so we can't say
+;; (define make-identifier (with-module gauche.internal make-identifier).
+(define-macro (make-identifier name mod local)
+  `((with-module gauche.internal make-identifier) ,name ,mod ,local))
 
 (define (%expand-define-class name supers slots options)
   (let* ([metaclass (or (get-keyword :metaclass options #f)
@@ -474,73 +478,71 @@
 (define-method slot-exists-using-class? (class obj slot)
   (not (not (assq slot (class-slots class)))))
 
-(inline-stub
- (define-cproc %check-class-binding (name module::<module>) Scm_CheckClassBinding)
- (define-cproc class-of (obj) Scm_VMClassOf)
+(define-cproc %check-class-binding (name module::<module>) Scm_CheckClassBinding)
+(define-cproc class-of (obj) Scm_VMClassOf)
 
- ;; current-class-of doesn't updates OBJ, and returns possibly the old class
- ;; which has been redefined.  Should only be used in class redefinition
- ;; routines.
- (define-cproc current-class-of (obj) (result (SCM_OBJ (Scm_ClassOf obj))))
- (define-cproc is-a? (obj klass::<class>) (inliner IS-A) Scm_VMIsA)
+;; current-class-of doesn't updates OBJ, and returns possibly the old class
+;; which has been redefined.  Should only be used in class redefinition
+;; routines.
+(define-cproc current-class-of (obj) (result (SCM_OBJ (Scm_ClassOf obj))))
+(define-cproc is-a? (obj klass::<class>) (inliner IS-A) Scm_VMIsA)
 
- (define-cproc slot-ref (obj slot)
-   (inliner SLOT-REF) (setter slot-set!)
-   (result (Scm_VMSlotRef obj slot FALSE)))
+(define-cproc slot-ref (obj slot)
+  (inliner SLOT-REF) (setter slot-set!)
+  (result (Scm_VMSlotRef obj slot FALSE)))
 
- (define-cproc slot-set! (obj slot value) (inliner SLOT-SET) Scm_VMSlotSet)
+(define-cproc slot-set! (obj slot value) (inliner SLOT-SET) Scm_VMSlotSet)
 
- (define-cproc slot-bound? (obj slot) Scm_VMSlotBoundP)
+(define-cproc slot-bound? (obj slot) Scm_VMSlotBoundP)
 
- (define-cproc slot-ref-using-accessor (obj accessor::<slot-accessor>)
-   (result (Scm_VMSlotRefUsingAccessor obj accessor FALSE)))
+(define-cproc slot-ref-using-accessor (obj accessor::<slot-accessor>)
+  (result (Scm_VMSlotRefUsingAccessor obj accessor FALSE)))
 
- (define-cproc slot-bound-using-accessor? (obj accessor::<slot-accessor>)
-   (result (Scm_VMSlotRefUsingAccessor obj accessor TRUE)))
+(define-cproc slot-bound-using-accessor? (obj accessor::<slot-accessor>)
+  (result (Scm_VMSlotRefUsingAccessor obj accessor TRUE)))
 
- (define-cproc slot-set-using-accessor! (obj accessor::<slot-accessor> value)
-   Scm_VMSlotSetUsingAccessor)
+(define-cproc slot-set-using-accessor! (obj accessor::<slot-accessor> value)
+  Scm_VMSlotSetUsingAccessor)
 
- (define-cproc slot-initialize-using-accessor! (obj accessor::<slot-accessor>
-                                                    initargs)
-   Scm_VMSlotInitializeUsingAccessor)
+(define-cproc slot-initialize-using-accessor! (obj accessor::<slot-accessor>
+                                                   initargs)
+  Scm_VMSlotInitializeUsingAccessor)
 
- (define-cproc instance-slot-ref (obj num::<fixnum>) Scm_InstanceSlotRef)
- (define-cproc instance-slot-set (obj num::<fixnum> value) ::<void>
-   Scm_InstanceSlotSet)
+(define-cproc instance-slot-ref (obj num::<fixnum>) Scm_InstanceSlotRef)
+(define-cproc instance-slot-set (obj num::<fixnum> value) ::<void>
+  Scm_InstanceSlotSet)
 
- (define-cproc %finish-class-initialization! (klass::<class>) ::<void>
-   (Scm_ClassMalleableSet klass FALSE))
+(define-cproc %finish-class-initialization! (klass::<class>) ::<void>
+  (Scm_ClassMalleableSet klass FALSE))
 
- ;;
- ;; Record related builtins
- ;;
- (define-cproc %make-record (klass::<class>
-                             :optarray (inits numinits 10)
-                             :rest rinits)
-   (let* ([obj (Scm__AllocateAndInitializeInstance klass inits numinits 0)])
-     (when (== numinits 10)
-       (let* ([i::int 10])
-         (dolist [init rinits] (Scm_InstanceSlotSet obj (post++ i) init))))
-     (result obj)))
+;;
+;; Record related builtins
+;;
+(define-cproc %make-record (klass::<class>
+                            :optarray (inits numinits 10)
+                            :rest rinits)
+  (let* ([obj (Scm__AllocateAndInitializeInstance klass inits numinits 0)])
+    (when (== numinits 10)
+      (let* ([i::int 10])
+        (dolist [init rinits] (Scm_InstanceSlotSet obj (post++ i) init))))
+    (result obj)))
 
- (define-cproc %make-recordv (klass::<class> argv::<vector>)
-   (let* ([v::ScmObj* (SCM_VECTOR_ELEMENTS argv)]
-          [n::int     (SCM_VECTOR_SIZE argv)])
-     (result (Scm__AllocateAndInitializeInstance klass v n 0))))
+(define-cproc %make-recordv (klass::<class> argv::<vector>)
+  (let* ([v::ScmObj* (SCM_VECTOR_ELEMENTS argv)]
+         [n::int     (SCM_VECTOR_SIZE argv)])
+    (result (Scm__AllocateAndInitializeInstance klass v n 0))))
 
- (define-cproc %record-ref (klass::<class> obj k::<fixnum>)
-   (unless (SCM_ISA obj klass)
-     (Scm_Error "record-ref: instance of %S expected, got %S" klass obj))
-   (result (Scm_InstanceSlotRef obj k)))
+(define-cproc %record-ref (klass::<class> obj k::<fixnum>)
+  (unless (SCM_ISA obj klass)
+    (Scm_Error "record-ref: instance of %S expected, got %S" klass obj))
+  (result (Scm_InstanceSlotRef obj k)))
 
- (define-cproc %record-set! (klass::<class> obj k::<fixnum> val) ::<void>
-   (unless (SCM_ISA obj klass)
-     (Scm_Error "record-set!: instance of %S expected, got %S" klass obj))
-   (Scm_InstanceSlotSet obj k val))
- 
- (define-cproc touch-instance! (obj) Scm_VMTouchInstance)
- )
+(define-cproc %record-set! (klass::<class> obj k::<fixnum> val) ::<void>
+  (unless (SCM_ISA obj klass)
+    (Scm_Error "record-set!: instance of %S expected, got %S" klass obj))
+  (Scm_InstanceSlotSet obj k val))
+
+(define-cproc touch-instance! (obj) Scm_VMTouchInstance)
 
 ;;----------------------------------------------------------------
 ;; Class Redefinition
@@ -555,25 +557,23 @@
 (define-method change-class ((obj <object>) (new-class <class>))
   (change-object-class obj (current-class-of obj) new-class))
 
-(inline-stub
- ;; C bindings used by class redefinition routine.
- (define-cproc %start-class-redefinition! (k::<class>) ::<void>
-   Scm_StartClassRedefinition)
- (define-cproc %commit-class-redefinition! (k::<class> newk) ::<void>
-   Scm_CommitClassRedefinition)
- (define-cproc %replace-class-binding! (k::<class> newk::<class>) ::<void>
-   Scm_ReplaceClassBinding)
- (define-cproc %add-direct-subclass! (super::<class> sub::<class>) ::<void>
-   Scm_AddDirectSubclass)
- (define-cproc %delete-direct-subclass! (super::<class> sub::<class>) ::<void>
-   Scm_DeleteDirectSubclass)
- (define-cproc %add-direct-method! (super::<class> m::<method>) ::<void>
-   Scm_AddDirectMethod)
- (define-cproc %delete-direct-method! (super::<class> m::<method>) ::<void>
-   Scm_DeleteDirectMethod)
- (define-cproc %transplant-instance! (src dst) ::<void>
-   Scm_TransplantInstance)
- )
+;; C bindings used by class redefinition routine.
+(define-cproc %start-class-redefinition! (k::<class>) ::<void>
+  Scm_StartClassRedefinition)
+(define-cproc %commit-class-redefinition! (k::<class> newk) ::<void>
+  Scm_CommitClassRedefinition)
+(define-cproc %replace-class-binding! (k::<class> newk::<class>) ::<void>
+  Scm_ReplaceClassBinding)
+(define-cproc %add-direct-subclass! (super::<class> sub::<class>) ::<void>
+  Scm_AddDirectSubclass)
+(define-cproc %delete-direct-subclass! (super::<class> sub::<class>) ::<void>
+  Scm_DeleteDirectSubclass)
+(define-cproc %add-direct-method! (super::<class> m::<method>) ::<void>
+  Scm_AddDirectMethod)
+(define-cproc %delete-direct-method! (super::<class> m::<method>) ::<void>
+  Scm_DeleteDirectMethod)
+(define-cproc %transplant-instance! (src dst) ::<void>
+  Scm_TransplantInstance)
 
 ;;----------------------------------------------------------------
 ;; Method Application

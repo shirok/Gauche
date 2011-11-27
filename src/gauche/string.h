@@ -358,10 +358,7 @@ SCM_EXTERN ScmObj Scm_StringPointerPrev(ScmStringPointer *sp);
 SCM_EXTERN ScmObj Scm_StringPointerSet(ScmStringPointer *sp, int index);
 SCM_EXTERN ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int beforep);
 SCM_EXTERN ScmObj Scm_StringPointerCopy(ScmStringPointer *sp);
-
-#ifdef SCM_DEBUG_HELPER
 SCM_EXTERN void   Scm_StringPointerDump(ScmStringPointer *sp);
-#endif
 
 #endif /* GAUCHE_STRING_H */
 

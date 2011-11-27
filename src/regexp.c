@@ -1870,7 +1870,6 @@ static ScmObj rc3(regcomp_ctx *ctx, ScmObj ast)
 }
 
 /* For debug */
-#if SCM_DEBUG_HELPER
 void Scm_RegDump(ScmRegexp *rx)
 {
     int end = rx->numCodes, codep;
@@ -2064,7 +2063,6 @@ void Scm_RegDump(ScmRegexp *rx)
         }
     }
 }
-#endif /* SCM_DEBUG_HELPER */
 
 /* Helper routine to be used for compilation from AST.
    Traverses AST to reorder groups and collect charsets.
@@ -2990,7 +2988,6 @@ ScmObj Scm_RegMatchAfter(ScmRegMatch *rm, ScmObj obj)
 }
 
 /* for debug */
-#if SCM_DEBUG_HELPER
 void Scm_RegMatchDump(ScmRegMatch *rm)
 {
     int i;
@@ -3012,7 +3009,6 @@ void Scm_RegMatchDump(ScmRegMatch *rm)
         }
     }
 }
-#endif /*SCM_DEBUG_HELPER*/
 
 /*=======================================================================
  * Initializing stuff

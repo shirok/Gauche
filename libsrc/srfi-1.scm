@@ -16,23 +16,22 @@
 ;; which is autoloaded.  The user doesn't need to see this change.
 
 (define-module srfi-1
-  (export xcons cons* list-tabulate circular-list iota
+  (export xcons list-tabulate circular-list
           not-pair?
           list=
           first second third fourth fifth sixth seventh eighth
-          ninth tenth car+cdr take drop take-right drop-right
-          take! drop-right! split-at! last
+          ninth tenth car+cdr take-right drop-right
+          take! drop-right!
           concatenate concatenate!
           append-reverse append-reverse!
           zip unzip1 unzip2 unzip3 unzip4 unzip5
           count unfold pair-fold reduce unfold-right
           pair-fold-right reduce-right append-map append-map!
           map! pair-for-each filter-map map-in-order
-          filter partition remove filter! partition! remove!
-          member find-tail list-index
+          partition remove partition! remove!
+          list-index
           take-while drop-while take-while! span break span! break!
-          delete delete-duplicates delete! delete-duplicates!
-          assoc alist-cons alist-copy alist-delete alist-delete!
+          alist-cons
           lset<= lset= lset-adjoin lset-union lset-union!
           lset-intersection lset-intersection! lset-difference
           lset-difference! lset-xor lset-xor!
@@ -41,22 +40,26 @@
           ;; These are defined in gauche module, but they're not exported.
           ;; We need to export them here so that (use srfi-1 :only (fold))
           ;; will work.
-          null-list? any every fold fold-right find split-at
+          null-list? cons* last member take drop 
+          delete delete! delete-duplicates delete-duplicates!
+          assoc alist-copy alist-delete alist-delete!
+          any every filter filter! fold fold-right find find-tail
+          split-at split-at! iota
           ))
 (select-module srfi-1)
 
 (define (xcons a b) (cons b a))
-(define cons* list*)
 
 (define-inline (not-pair? x) (not (pair? x)))
 
-(define null-list? (with-module gauche null-list?))
-(define any        (with-module gauche any))
-(define every      (with-module gauche every))
-(define fold       (with-module gauche fold))
-(define fold-right (with-module gauche fold-right))
-(define find       (with-module gauche find))
-(define split-at   (with-module gauche split-at))
+(define-macro (re-export . syms)
+  `(begin ,@(map (^s `(define ,s (with-module gauche ,s))) syms)))
+
+(re-export null-list? cons* last member
+           delete delete! delete-duplicates delete-duplicates!
+           assoc alist-copy alist-delete alist-delete!
+           any every filter filter! fold fold-right find find-tail
+           split-at split-at! iota)
 
 ;;;
 ;;; List generators of SRFI-1
@@ -69,20 +72,6 @@
        (ans '() (cons (proc i) ans)))
       ((< i 0) ans)))
 
-;;; IOTA count [start step]	(start start+step ... start+(count-1)*step)
-
-(define (iota count . args)
-  (if (< count 0) (error "Negative step count" iota count))
-  (let ((start (if (pair? args) (car args) 0))
-        (step  (if (and (pair? args) (pair? (cdr args))) (cadr args) 1)))
-    (check-arg number? start)
-    (check-arg number? step)
-    (let ((last-val (+ start (* (- count 1) step))))
-      (do ((count count (- count 1))
-	   (val last-val (- val step))
-	   (ans '() (cons val ans)))
-	  ((<= count 0)  ans)))))
-	  
 (define (circular-list val1 . vals)
   (let ((ans (cons val1 vals)))
     (set-cdr! (last-pair ans) ans)
@@ -177,16 +166,6 @@
 ;;;
 ;;; take & drop
 
-(define (take lis k)
-  (check-arg integer? k)
-  (let recur ((lis lis) (k k))
-    (if (zero? k)
-      '()
-      (cons (car lis)
-            (recur (cdr lis) (- k 1))))))
-
-(define drop list-tail)  ; Gauche has list-tail
-
 (define (take! lis k)
   (check-arg integer? k)
   (if (zero? k)
@@ -226,17 +205,6 @@
                  lis)))
 
       '())))	; Special case dropping everything -- no cons to side-effect.
-
-(define (split-at! x k)
-  (check-arg integer? k)
-  (if (zero? k)
-    (values '() x)
-    (let* ((prev (drop x (- k 1)))
-           (suffix (cdr prev)))
-      (set-cdr! prev '())
-      (values x suffix))))
-
-(define (last lis) (car (last-pair lis)))
 
 ;;;
 ;;; Utility functions for n-ary operation in SRFI-1
@@ -471,45 +439,6 @@
 ;;; Filters of SRFI-1
 ;;;
 
-(define (filter pred lis)
-  (let loop ((lis lis) (r '()))
-    (cond
-     ((null-list? lis) (reverse! r))
-     ((pred (car lis))
-      (loop (cdr lis) (cons (car lis) r)))
-     (else
-      (loop (cdr lis) r)))))
-
-(define (filter! pred lis)
-  (let lp ((ans lis))
-    (cond ((null-list? ans) ans)			; Scan looking for
-	  ((not (pred (car ans))) (lp (cdr ans)))	; first cons of result.
-
-	  ;; ANS is the eventual answer.
-	  ;; SCAN-IN: (CDR PREV) = LIS and (CAR PREV) satisfies PRED.
-	  ;;          Scan over a contiguous segment of the list that
-	  ;;          satisfies PRED.
-	  ;; SCAN-OUT: (CAR PREV) satisfies PRED. Scan over a contiguous
-	  ;;           segment of the list that *doesn't* satisfy PRED.
-	  ;;           When the segment ends, patch in a link from PREV
-	  ;;           to the start of the next good segment, and jump to
-	  ;;           SCAN-IN.
-	  (else (letrec ((scan-in (lambda (prev lis)
-				    (if (pair? lis)
-                                      (if (pred (car lis))
-                                        (scan-in lis (cdr lis))
-                                        (scan-out prev (cdr lis))))))
-			 (scan-out (lambda (prev lis)
-				     (let lp ((lis lis))
-				       (if (pair? lis)
-                                         (if (pred (car lis))
-                                           (begin (set-cdr! prev lis)
-                                                  (scan-in lis (cdr lis)))
-                                           (lp (cdr lis)))
-                                         (set-cdr! prev lis))))))
-		  (scan-in ans (cdr ans))
-		  ans)))))
-
 ;; Avoid non-tail recursion.
 (define (partition pred lis)
   (let recur ((lis lis)
@@ -570,13 +499,6 @@
 ;;;
 ;;; Find and alike of SRFI-1
 ;;;
-
-(define (find-tail pred list)
-  (let lp ((list list))
-    (and (not (null-list? list))
-	 (if (pred (car list))
-           list
-           (lp (cdr list))))))
 
 ;; use tail-recursion
 (define (take-while pred lis)
@@ -825,91 +747,5 @@
 
 (define map-in-order map) ; Gauche's map is already in order
 
-;; In the common case, these procs uses Gauche native, even not loading
-;; the generic filter routine.
-
-(define-syntax %case-by-cmp
-  (syntax-rules ()
-    ((_ args = eq-case eqv-case equal-case default-case)
-     (let ((= (if (pair? args) (car args) equal?)))
-       (cond ((eq? = eq?)    eq-case)
-             ((eq? = eqv?)   eqv-case)
-             ((eq? = equal?) equal-case)
-             (else default-case))))))
-
-(define (delete x lis . args)
-  (%case-by-cmp args =
-                (%delete x lis 'eq?)
-                (%delete x lis 'eqv?)
-                (%delete x lis 'equal?)
-                (filter (lambda (y) (not (= x y))) lis)))
-
-(define (delete! x lis . args)
-  (%case-by-cmp args =
-                (%delete! x lis 'eq?)
-                (%delete! x lis 'eqv?)
-                (%delete! x lis 'equal?)
-                (filter! (lambda (y) (not (= x y))) lis)))
-
-;;; Extended from R4RS to take an optional comparison argument.
-(define (member x lis . args)
-  (let ((%member (with-module scheme member))) ;save original func
-    (%case-by-cmp args =
-                  (memq x lis)
-                  (memv x lis)
-                  (%member x lis)
-                  (find-tail (lambda (y) (= x y)) lis))))
-
-(define (delete-duplicates lis . args)
-  (%case-by-cmp args =
-                (%delete-duplicates lis 'eq?)
-                (%delete-duplicates lis 'eqv?)
-                (%delete-duplicates lis 'equal?)
-                (let recur ((lis lis))
-                  (if (null-list? lis) lis
-                      (let* ((x (car lis))
-                             (tail (cdr lis))
-                             (new-tail (recur (delete x tail =))))
-                        (if (eq? tail new-tail) lis (cons x new-tail)))))))
-
-(define (delete-duplicates! lis . args)
-  (%case-by-cmp args =
-                (%delete-duplicates! lis 'eq?)
-                (%delete-duplicates! lis 'eqv?)
-                (%delete-duplicates! lis 'equal?)
-                (let recur ((lis lis))
-                  (if (null-list? lis) lis
-                      (let* ((x (car lis))
-                             (tail (cdr lis))
-                             (new-tail (recur (delete! x tail =))))
-                        (if (eq? tail new-tail) lis (cons x new-tail)))))))
-
-;;; Extended from R4RS to take an optional comparison argument.
-(define (assoc x lis . args)
-  (let ((%assoc (with-module scheme assoc)))
-    (%case-by-cmp args =
-                  (assq x lis)
-                  (assv x lis)
-                  (%assoc x lis)
-                  (find (lambda (entry) (= x (car entry))) lis))))
-
 (define alist-cons acons)
-
-(define (alist-copy alist)
-  (map (lambda (elt) (cons (car elt) (cdr elt)))
-       alist))
-
-(define (alist-delete key alist . args)
-  (%case-by-cmp args =
-                (%alist-delete key alist 'eq?)
-                (%alist-delete key alist 'eqv?)
-                (%alist-delete key alist 'equal?)
-                (filter (lambda (elt) (not (= key (car elt)))) alist)))
-
-(define (alist-delete! key alist . args)
-  (%case-by-cmp args =
-                (%alist-delete! key alist 'eq?)
-                (%alist-delete! key alist 'eqv?)
-                (%alist-delete! key alist 'equal?)
-                (filter! (lambda (elt) (not (= key (car elt)))) alist)))
 

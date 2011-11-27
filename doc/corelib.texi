@@ -15,7 +15,7 @@
 * Characters::                  
 * Character set::               
 * Strings::                     
-* Regular expressions::          
+* Regular expressions::         
 * Vectors::                     
 * Hashtables::                  
 * Treemaps::                    
@@ -1802,7 +1802,9 @@ Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実�
 * List predicates::             
 * List constructors::           
 * List accessors and modifiers::  
+* Walking over lists::          
 * Other list procedures::       
+* Association lists::           
 @end menu
 
 @node Pair and null class, List predicates, Pairs and Lists, Pairs and Lists
@@ -1872,6 +1874,24 @@ Returns @code{#t} if @var{obj} is an empty list, @code{#f} otherwise.
 @c COMMON
 @end defun
 
+@defun null-list? obj
+[SRFI-1]
+@c EN
+Returns @code{#t} if @var{obj} is an empty list,
+@var{#f} if @code{obj} is a pair.  If @var{obj} is neither
+a pair nor an empty list, an error is signaled.
+
+This can be used instead of @code{null?} to check the end-of-list
+condition when you want to be more picky about non-proper lists.
+@c JP
+@var{obj} が空リストなら@code{#t}を、ペアなら@code{#f}を返し、
+それ以外のときはエラーを報告します。
+
+リスト終了条件を検査する時に、正しいリスト以外を除外したい場合に
+@code{null?}の代わりに使えます。
+@c COMMON
+@end defun
+
 @defun list? obj
 [R5RS]
 @c EN
@@ -1879,16 +1899,46 @@ Returns @code{#t} if @var{obj} is a proper list, @code{#f} otherwise.
 This function returns @code{#f} if @var{obj} is a dotted or circular list.
 
 See also @code{proper-list?}, @code{circular-list?} and
-@code{dotted-list?} in @ref{SRFI-1 List predicates}.
+@code{dotted-list?} below.
 @c JP
 @var{obj}が正しいリストなら@code{#t}を、そうでなければ@code{#f}を返します。
 この手続きは@var{obj}がドットリストや循環リストなら@var{#f}を返します。
 
-SRFI-1(@ref{SRFI-1 List predicates})には更に、
+下に説明する、
 @code{proper-list?}、@code{circular-list?}、@code{dotted-list?}
-といった手続きが定義されています。
+といった手続きも参照してください。
 @c COMMON
 @end defun
+
+
+@defun proper-list? x
+@c EN
+[SRFI-1] Returns @code{#t} if x is a proper list.
+@c JP
+[SRFI-1] @var{x} が真性リストであれば @code{#t} を返します。
+@c COMMON
+@end defun
+
+@defun circular-list? x
+@c EN
+[SRFI-1] Returns @code{#t} if x is a circular list.
+@c JP
+[SRFI-1] @var{x} が循環リストであれば @code{#t} を返します。
+@c COMMON
+@end defun
+
+@defun dotted-list? x
+@c EN
+[SRFI-1] Returns @code{#t} if x is a finite, non-nil-terminated list.
+This includes non-pair, non-() values (e.g. symbols, numbers),
+which are considered to be dotted lists of length 0.
+@c JP
+[SRFI-1] @var{x} が有限の大きさで、空リストで終端していないリストなら
+@code{#t} を返します。これには、ペアではなく、空リストもない値(たとえば
+シンボルや数値)のような長さ0のドットリストと考えられるものを含みます。
+@c COMMON
+@end defun
+
 
 @node List constructors, List accessors and modifiers, List predicates, Pairs and Lists
 @subsection List constructors
@@ -1906,19 +1956,6 @@ Constructs a pair of @var{obj1} and @var{obj2} and returns it.
 @end lisp
 @end defun
 
-@defun acons obj1 obj2 obj3
-@c EN
-Returns @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})}.
-Useful to put an entry at the head of an associative list.
-@c JP
-@code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})} を返します。
-連想リストの先頭に新しいエントリを加えるのに便利です。
-@c COMMON
-@lisp
-(acons 'a 'b '((c . d))) @result{} ((a . b) (c . d))
-@end lisp
-@end defun
-
 @defun make-list len :optional fill
 [SRFI-1]
 @c EN
@@ -1929,6 +1966,7 @@ each element is undefined.
 長さ@var{len}の正規のリストを返します。引数@var{fill}が与えられていれば、各要素は
 @var{fill}になります。そうでなければ各要素の値は不定です。
 @c COMMON
+
 @lisp
 (make-list 5 #t) @result{} (#t #t #t #t #t)
 @end lisp
@@ -1948,12 +1986,16 @@ Makes a list, whose elements are @var{obj} @dots{}.
 @end defun
 
 @defun list* obj1 obj2 @dots{}
+@defunx cons* obj1 obj2 @dots{}
+[SRFI-1]
 @c EN
 Like @code{list}, but the last argument becomes cdr of the last pair.
-SRFI-1 defines the same function with the name @code{cons*}.
+Two procedures are exactly the same.  Gauche originally had @code{list*},
+and SRFI-1 defins @code{cons*}.
 @c JP
 @code{list}とほぼ同じですが、最後の引数が作成されるリストの最後のペアのcdrになります。
-SRFI-1ではこの手続きが@code{cons*}という名で定義されています。
+二つの手続きは全く同じです。Gaucheはもともと@code{list*}を持っていましたが、
+SRFI-1が@code{cons*}という名前を定義しました。
 @c COMMON
 @lisp
 (list* 1 2 3) @result{} (1 2 . 3)
@@ -1972,8 +2014,22 @@ this function diverges.
 @c COMMON
 @end defun
 
+@defun iota count :optional (start 0) (step 1)
+[SRFI-1] 
+@c EN
+Returns a list of numbers, starting from @var{start},
+increasing by @var{step}.
+@c JP
+@var{start}から始まり、@var{step}ずつ増加する、
+@var{count} 個の要素からなる数値のリストを返します。
+@c COMMON
+@example
+(iota 5) @result{} (0 1 2 3 4)
+(iota 5 0 -0.1) @result{} (0 -0.1 -0.2 -0.3 -0.4)
+@end example
+@end defun
 
-@node List accessors and modifiers, Other list procedures, List constructors, Pairs and Lists
+@node List accessors and modifiers, Walking over lists, List constructors, Pairs and Lists
 @subsection List accessors and modifiers
 @c NODE リストへのアクセスと変更
 
@@ -2059,16 +2115,74 @@ The corresponding setters are also defined.
 Returns the length of a proper list @var{list}.
 If @var{list} is a dotted list, an error is signalled.
 If @var{list} is a circular list, this function diverges.
-
-If you want to handle circular lists as well, 
-See @code{length+} in @ref{SRFI-1 List miscellaneous routines}.
 @c JP
 正規のリスト@var{list}の長さを返します。
 @var{list}がドットリストならばエラーが起きます。
 @var{list}が循環リストの場合、この関数は無限ループします。
+@c COMMON
+@end defun
 
-循環リストも取り扱う場合は、SRFI-1の@code{length+}を使って下さい
-(@ref{SRFI-1 List miscellaneous routines}参照)。
+@defun length+ x
+[SRFI-1] 
+@c EN
+If @var{x} is a proper list, returns its length.
+For all other @var{x}, including a circular list,
+it returns @code{#f}.
+@c JP
+@var{x} が真性リストなら、その長さを返します。
+@var{x} がそうでなければ(たとえ循環リストであっても)
+@code{#f} を返します。
+@c COMMON
+@end defun
+
+@defun take x i
+@defunx drop x i
+[SRFI-1]
+@c EN
+@code{take} returns the first i elements of list x.
+@code{drop} returns all but the first i elements of list x. 
+@c JP
+@code{take} はリスト @var{x} の最初のi個の要素を返します。
+@code{drop} はリスト @var{x} の最初のi個の要素を除いたリストを返します。
+@c COMMON
+@example
+(take '(a b c d e) 2) => (a b)
+(drop '(a b c d e) 2) => (c d e)
+@end example
+@c EN
+@var{x} may be any value:
+@c JP
+@var{x} はあらゆる値をとりえます。
+@c COMMON
+@example
+(take '(1 2 3 . d) 2) => (1 2)
+(drop '(1 2 3 . d) 2) => (3 . d)
+(drop '(1 2 3 . d) 3) => d
+@end example
+@c EN
+@code{drop} is exactly equivalent to performing @var{i} cdr operations
+on @var{x}.  The returned value shares a common tail with @var{x}.
+On the other hand, take always allocates a new list 
+for result if the argument is a list of non-zero length.
+
+An error is signalled if @var{i} is past the end of list @var{x}.
+@xref{Additional list library}, for more tolerant version
+of @code{take} and @code{drop}.
+
+For generic subsequence extraction from any sequence, see @code{subseq}
+in @ref{Slicing sequence}.
+@c JP
+@code{drop} は @var{x} に @var{i} 回 cdr 操作をおこなうのと全く
+同じです。返される値は、@var{x} と共通の末尾を共有します。一方、
+take は、引数のリストが長さ0でないリストなら必ず新しいリストの
+領域を確保します。
+
+@var{i} がリスト @var{x} の終端を超えたらエラーが発生します。
+より寛容なバージョンの @code{take} と @code{drop} については、
+@xref{Additional list library} を参照してください。
+
+あらゆる並びからの部分並びを抽出する汎用的な方法に関しては、
+@ref{Slicing sequence} にある @code{subseq} を参照してください。
 @c COMMON
 @end defun
 
@@ -2123,9 +2237,256 @@ Returns the last pair of @var{list}.
 @var{list}の最後のペアを返します。@var{list}は
 正規のリストかドットリストです。
 @c COMMON
+
+@example
+(last-pair '(1 2 3))   @result{} (3)
+(last-pair '(1 2 . 3)) @result{} (2 . 3)
+(last-pair 1)          @result{} @i{error}
+@end example
 @end defun
 
-@node Other list procedures,  , List accessors and modifiers, Pairs and Lists
+@defun last pair
+[SRFI-1]
+@c EN
+Returns the last element of the non-empty, finite list @var{pair}.
+It is equivalent to @code{(car (last-pair pair))}.
+@c JP
+空ではない有限リスト @var{pair} の最後の要素を返します。
+これは、@code{(car (last-pair pair))} と同等です。
+@c COMMON
+
+@example
+(last '(1 2 3))        @result{} 3
+(last-pair '(1 2 . 3)) @result{} 2
+@end example
+@end defun
+
+
+@defun split-at x i
+@defunx split-at! x i
+[SRFI-1]
+@c EN
+@code{split-at} splits the list @var{x} at index @var{i},
+returning a list of the first @var{i} elements, and the remaining tail.
+@c JP
+@code{split-at} はリスト @var{x} をインデックス @var{i} の
+位置で分割し、最初の @var{i} 個の要素からなるリストと、残りの末尾とを
+返します。
+@c COMMON
+@example
+(split-at '(a b c d e) 2) @result{} (a b) (c d e)
+@end example
+@c EN
+@code{split-at!} is the linear-update variant. It may destructively
+modifies @var{x} to produce the result. 
+@c JP
+@code{split-at!} はその場で更新されるバージョンです。
+これは @var{x} を破壊的に更新するかもしれません。
+@c COMMON
+@end defun
+
+@node Walking over lists, Other list procedures, List accessors and modifiers, Pairs and Lists
+@subsection Walking over lists
+@c NODE リストをたどる手続き
+
+@defun fold kons knil clist1 clist2 @dots{}
+[SRFI-1]
+@c EN
+The fundamental list iterator.
+When it is given a single list
+@var{clist1} = (@var{e1} @var{e2} @dots{} @var{en}),
+then this procedure returns
+@c JP
+基本的なリスト反復演算子です。単一のリスト
+@var{clist1} = (@var{e1} @var{e2} @dots{} @var{en}) 
+を与えられたときには、以下を返します。
+@c COMMON
+@example
+(@var{kons} @var{en} @dots{} (@var{kons} @var{e2} (@var{kons} @var{e1} @var{knil})) @dots{} ) 
+@end example
+
+@c EN
+If @var{n} list arguments are provided, then the @var{kons}
+function must take @var{n}+1 parameters: one element from each list, and
+the "seed" or fold state, which is initially @var{knil}.
+The fold operation terminates when the shortest list runs out of values.
+At least one of the list arguments must be finite. 
+
+Examples:
+@c JP
+@var{n} 本のリストが与えられた場合には、@var{kons} 関数は @var{n}+1 個の引数
+をとる関数でなければなりません。それぞれのリストから要素をひとつずつと、
+初期値 @var{knil} である「種」あるいは畳み込み状態とよばれるものです。
+この畳み込み演算は、もっとも短いリストの要素がなくなったところで終了します。
+与えられるリストの少くともひとつは有限でなければなりません。
+
+例:
+@c COMMON
+@example
+(fold + 0 '(3 1 4 1 5 9)) @result{} 23 ;@r{sum up the elements}
+(fold cons '() '(a b c d e)) @result{} (e d c b a) ;@r{reverse}
+(fold cons* '() '(a b c) '(1 2 3 4 5))
+    @result{} (c 3 b 2 a 1) ;@r{n-ary case}
+@end example
+@end defun
+
+@defun fold-right kons knil clist1 clist2 @dots{}
+[SRFI-1]
+@c EN
+The fundamental list recursion operator.
+When it is given a single list
+@var{clist1} = (@var{e1} @var{e2} @dots{} @var{en}),
+then this procedure returns
+@c JP
+基本的な再帰演算子です。単一のリスト
+@var{clist1} = (@var{e1} @var{e2} @dots{} @var{en}) 
+を与えられたときには、以下を返します。
+@c COMMON
+@example
+(@var{kons} @var{e1} (@var{kons} @var{e2} @dots{} (@var{kons} @var{en} @var{knil})))
+@end example
+
+@c EN
+If @var{n} list arguments are provided, then the @var{kons} function
+must take @var{n}+1 parameters: one element from each list, and
+the "seed" or fold state, which is initially @var{knil}.
+The fold operation terminates when the shortest list runs out of values.
+At least one of the list arguments must be finite. 
+
+Examples: 
+@c JP
+@var{n} 本のリストが与えられた場合には、@var{kons} 関数は @var{n}+1 個の引数
+をとる関数でなければなりません。それぞれのリストから要素をひとつずつと、
+初期値 @var{knil} である「種」あるいは畳み込み状態とよばれものです。
+この畳み込み演算は、もっとも短いリストの要素がなくなったところで終了します。
+与えられるリストの少くともひとつは有限でなければなりません。
+
+例:
+@c COMMON
+@example
+(fold-right cons '() '(a b c d e))
+   @result{} (a b c d e) ;@r{copy list}
+(fold-right cons* '() '(a b c) '(1 2 3 4 5))
+   @result{} (a 1 b 2 c 3) ;@r{n-ary case}
+@end example
+@end defun
+
+@defun filter pred list
+@defunx filter! pred list
+[SRFI-1]
+@c EN
+A procedure @var{pred} is applied on each element of @var{list},
+and a list of elements that @var{pred} returned true on it is returned.
+@c JP
+手続き @var{pred} が @var{list} の各要素に適用され、
+@var{pred} が真を返す要素のリストが返されます。
+@c COMMON
+@example
+(filter odd? '(3 1 4 5 9 2 6)) @result{} (3 1 5 9)
+@end example
+@c EN
+@code{filter!} is the linear-update variant.  It may destructively
+modifies @var{list} to produce the result.
+@c JP
+@code{filter!} はその場で更新されるバージョンです。結果を生成するために
+@var{list} を破壊的に変更するかもしれません。
+@c COMMON
+@end defun
+
+@defun find pred clist
+[SRFI-1]
+@c EN
+Applies @var{pred} for each element of @var{clist}, from 
+left to right, and returns the first element that @var{pred} returns
+true on.  If no element satisfies @var{pred}, @code{#f} is returned.
+@c JP
+@var{clist} の各要素に対して左から右に @var{pred} を適用し、
+@var{pred} が真を返す最初の要素を返します。@var{pred}を満たす要素が
+無い場合は@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun find-tail pred clist
+[SRFI-1]
+@c EN
+Applies @var{pred} for each element of @var{clist}, from left to right,
+and when @var{pred} returns a true value, returns the pair whose car
+is the element.  If no element satisfies @var{pred}, @code{#f} is returned.
+@c JP
+@var{clist} の各要素に対して左から右に @var{pred} を適用し、@var{pred} が
+真を返す場合、その car がその要素であるペアを返します。
+@var{pred}を満たす要素が無い場合は@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun any pred clist1 clist2 @dots{}
+[SRFI-1]
+@c EN
+Applies @var{pred} across each element of @var{clist}s, and
+returns as soon as @var{pred} returns a non-false value.
+The return value of @code{any} is the non-false value @var{pred} returned.
+If @var{clist}s are exhausted before @var{pred} returns a non-false
+value, @code{#f} is returned.
+@c JP
+@var{clist} の各要素に @var{pred} を適用し、@var{pred}が偽でない
+値を返したら直ちにその値を返します。
+@var{pred}が偽でない値を返す前にリストの要素を使いきってしまったら
+@code{#f}が返ります。
+@c COMMON
+@end defun
+
+@defun every pred clist1 clist2 @dots{}
+[SRFI-1]
+@c EN
+Applies @var{pred} across each element of @var{clist}s, and
+returns @code{#f} as soon as @var{pred} returns @code{#f}.
+If all application of @var{pred} return a non-false value, 
+@code{every} returns the last result of the applications.
+@c JP
+@var{clist} の各要素に @var{pred} を順に適用し、@var{pred}が
+偽を返した場合、直ちに偽を返します。全ての@var{pred}の適用が
+偽でない値を返した場合は、最後に返された値が返されます。
+@c COMMON
+@end defun
+
+@defun delete x list :optional elt=
+@defunx delete! x list :optional elt=
+[SRFI-1]
+@c EN
+Equivalent to
+@c JP
+以下と同等です。
+@c COMMON
+@example
+  (remove (lambda (y) (elt= x y)) list)
+  (remove! (lambda (y) (elt= x y)) list)
+@end example
+@c EN
+The comparison procedure, @var{elt=}, defaults to @code{equal?}.
+@c JP
+比較手続き @var{elt=} はデフォルトでは @code{equal?} です。
+@c COMMON
+@end defun
+
+@defun delete-duplicates list :optional elt=
+@defunx delete-duplicates! list :optional elt=
+[SRFI-1]
+@c EN
+Removes duplicate elements from @var{list}.
+If there are multiple equal elements in @var{list},
+the result list only contains the first or leftmost of these
+elements in the result. The order of these surviving elements
+is the same as in the original list.
+The comparison procedure, @var{elt=}, defaults to @code{equal?}.
+@c JP
+@var{list} から重複した要素を取り除きます。@var{list} 中に等しい要素が
+複数ある場合、一番左がわにある最初のものだけが残ります。これらの
+生き残った要素間の順番は最初のリストの順番が保存されます。
+比較手続き @var{elt=} のデフォルト値は、@code{equal?} です。
+@c COMMON
+@end defun
+
+@node Other list procedures, Association lists, Walking over lists, Pairs and Lists
 @subsection Other list procedures
 @c NODE 他のリスト手続き
 
@@ -2158,32 +2519,60 @@ any object.
 @c COMMON
 @end defun
 
-
-@defun reverse list
-[R5RS]
+@defun reverse list :optional (tail '())
+@defunx reverse! list :optional (tail '())
+[R5RS+, SRFI-1+]
 @c EN
-Returns a newly allocated list consisting of the elements of @var{list}
-in reverse order.
-@c JP
-@var{list}の各要素を逆順に持つリストを新しく作成して返します。
-@c COMMON
-@end defun
+Returns a list consisting of the elements of @var{list}
+in the reverse order.
+While @code{reverse} always returns
+a newly allocated list, @code{reverse!} may reuse the cells
+of @var{list}.  Even @var{list} is destructively modified
+by @code{reverse!}, you should use its return value, for
+the first cell of @var{list} may not be the first cell
+of the returned list.
 
-@defun reverse! list
-[SRFI-1]
-@c EN
-Returns a list consisting of the elements of @var{list} in reverse order.
-The cells of @var{list} may be reused to construct the returned list.
+If an optional argument @var{tail} is given, it becomes
+the tail of the returned list (@var{tail} isn't copied).
+It is useful in the idiom to prepend the processed results
+on top of already existing results.
 @c JP
-@var{list}の各要素を逆順に持つリストを返します。結果を作成するために、
-@var{list}のセルは再利用されるかもしれません。
+@var{list}の要素を逆順に並べたリストを返します。
+@code{reverse}は常に新たにリストをアロケートしますが、
+@var{reverse!}は結果を作るために@var{list}のセルを再利用するかもしれません。
+但し、@var{list}の先頭のセルが@var{reverse!}の結果でも先頭になるとは
+限らないので、@var{list}が変更されることを当てにするのではなく、
+@var{reverse!}の戻り値を利用する必要があります。
+
+省略可能引数@var{tail}が与えられた場合、それは結果のリストの末尾に
+付け足されます (@var{tail}部分はコピーされません)。
+これは、既にある結果のリストに新たに作った結果を付け足すイディオムで
+便利です。
 @c COMMON
+
+@example
+(reverse '(1 2 3 4 5)) @result{} (5 4 3 2 1)
+(reverse '(1 2 3) '(a b)) @result{} (3 2 1 a b)
+@end example
+
+@c EN
+The @var{tail} argument isn't in the traditional Scheme's @code{reverse}.
+The rationale is the following correspondence:
+@c JP
+@var{tail}引数は伝統的なSchemeの@code{reverse}にはありませんが、
+次の対応を考えると、そう不自然なことではありません。
+@c COMMON
+
+@example
+(reverse xs)      @equiv{} (fold cons xs '())
+(reverse xs tail) @equiv{} (fold cons xs tail)
+@end example
 @end defun
 
 @defun memq obj list
 @defunx memv obj list
-@defunx member obj list
-[R5RS]
+@defunx member obj list :optional obj=
+[R5RS][SRFI-1]
 @c EN
 Searches @var{obj} in the @var{list}.  If @code{n}-th element of
 @var{list} equals to @var{obj} (in the sense of @code{eq?} for @code{memq},
@@ -2199,11 +2588,13 @@ Otherwise, @code{#f} is returned.
 @c COMMON
 
 @c EN
-If you use SRFI-1 (@xref{List library}), @code{member} is extended
-to take optional argument for a equality procedure.
+The optional @var{obj=} argument of @code{member} is SRFI-1's
+extension to R5RS.  If given, it is used as a equivalence predicate
+instead of @code{equal?}.
 @c JP
-SRFI-1 (@ref{List library}) を使うと、@code{member}は
-オプショナルな同一性判定手続きを取るように拡張されます。
+@code{member}の省略可能引数@var{obj=}はSRFI-1によるR5RSからの拡張です。
+与えられた場合、その手続きが@code{equal?}のかわりに@var{obj}と要素を
+比較するのに使われます。
 @c COMMON
 @example
 (memq 'a '(a b c))          @result{} (a b c)
@@ -2214,10 +2605,56 @@ SRFI-1 (@ref{List library}) を使うと、@code{member}は
 @end example
 @end defun
 
+@node Association lists,  , Other list procedures, Pairs and Lists
+@subsection Association lists
+@c NODE 連想リスト
+
+@defun acons obj1 obj2 obj3
+@c EN
+Returns @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})}.
+Useful to put an entry at the head of an associative list.
+
+(This procedure is defined in SRFI-1 as @code{alist-cons}; @xref{List library}).
+@c JP
+@code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})} を返します。
+連想リストの先頭に新しいエントリを加えるのに便利です。
+
+(この手続きはSRFI-1では@code{alist-cons}という名前で定義されています。
+@ref{List library}参照)。
+@c COMMON
+
+@lisp
+(acons 'a 'b '((c . d))) @result{} ((a . b) (c . d))
+@end lisp
+@end defun
+
+@defun alist-copy alist
+[SRFI-1]
+@c EN
+Returns a fresh copy of @var{alist}.
+The spine of @var{alist} and each cell that points a key and a value
+is copied.
+@c JP
+@var{alist} の新しい複製を返します。@var{alist} の背骨の部分、
+およびキーと値を指す各セルは複製されます。
+@c COMMON
+@example
+(define a (list (cons 'a 'b) (cons 'c 'd)))
+a @result{} ((a . b) (c . d))
+
+(define b (alist-copy a))
+b @result{} ((a . b) (c . d))
+
+(set-cdr! (car a) 'z)
+a @result{} ((a . z) (c . d))
+b @result{} ((a . b) (c . d))
+@end example
+@end defun
+
 @defun assq obj list
 @defunx assv obj list
-@defunx assoc obj list
-[R5RS]
+@defunx assoc obj list :optional key=
+[R5RS][SRFI-1]
 @c EN
 Each element in @var{list} must be a pair.
 These procedures search a pair whose car matches @var{obj}
@@ -2235,13 +2672,34 @@ If no pair matches, these return @code{#f}.
 @c COMMON
 
 @c EN
-If you use SRFI-1 (@xref{List library}), @code{assoc} is extended
-to take optional argument for a equality procedure.
+The optional argument of @code{ascoc} is an extension defined
+in SRFI-1.  If given, it is called instead of @code{equal?}
+to check the equivalence of @var{obj} and each key.
 @c JP
-SRFI-1 (@ref{List library}) を使うと、@code{assoc}は
-オプショナルな同一性判定手続きを取るように拡張されます。
+@code{assoc}の省略可能引数はSRFI-1で定義された拡張です。
+与えられた場合、その手続きが@code{equal?}のかわりに、
+@var{obj}と各キーとの同一性判定に使われます。
 @c COMMON
 @end defun
+
+@defun alist-delete key alist :optional key=
+@defunx alist-delete! key alist :optional key=
+[SRFI-1]
+@c EN
+Deletes all cells in @var{alist} whose key is the same as @var{key}.
+Comparison is done by a procedure @var{key=}.  The default is @code{eqv?}.
+
+The linear-update version @code{alist-delete!} may or may not modify
+@var{alist}.
+@c JP
+@var{alist} から @var{key}と同じキーをもつすべてのセルを削除します。
+比較は @var{key=} で行います。これのデフォルト値は @code{eqv?} です。
+
+その場で更新を行うバージョン @code{alist-delete!} は元の
+@var{alist} を変更してしまうことがあります。
+@c COMMON
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Symbols, Keywords, Pairs and Lists, Core library
@@ -3209,6 +3667,18 @@ Creates a character set that contains @var{char} @dots{}.
 Copies a character set @var{char-set}.
 @c JP
 @var{char-set}のコピーを作って返します。
+@c COMMON
+@end defun
+
+@defun char-set-complement char-set
+@defunx char-set-complement! char-set
+[SRFI-14]
+@c EN
+Returns a complement set of @var{char-set}.  The former always
+returns a new set, while the latter may reuse the given charset.
+@c JP
+@var{char-set}の補集合を返します。上の手続きは常に新たな集合を作って返しますが、
+下の手続きは引数を変更して返す可能性があります。
 @c COMMON
 @end defun
 
@@ -6945,11 +7415,11 @@ cdrs of the current pairs.
 @c EN
 Note: The name @code{map*} is along the line of
 @code{list*}/@code{cons*} that can produce improper list
-(@xref{List constructors}, @xref{SRFI-1 List constructors}).
+(@xref{List constructors}, @xref{SRFI-1 List utilities}).
 @c JP
 註: @code{map*}という名前は、正規でないリストを作り得る@code{list*}/@code{cons*}からの
 連想でつけられました
-(@ref{List constructors}、@ref{SRFI-1 List constructors}参照)。
+(@ref{List constructors}、@ref{SRFI-1 List utilities}参照)。
 @c COMMON
 @end defun
 

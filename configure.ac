@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.9.2, shiro@acm.org)
 AC_CANONICAL_SYSTEM
-AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
+AC_CONFIG_HEADER(src/gauche/config.h)
 
 # ABI_VERSION is set to major.minor of Gauche version by default.
 # It can be overridden by uncommenting the following line.
@@ -778,7 +778,6 @@ AC_OUTPUT(Makefile
           doc/gosh.1 doc/gauche-config.1 doc/gauche-cesconv.1
           doc/gauche-install.1 doc/gauche-package.1 doc/Makefile
           ext/Makefile ext/Makefile.ext
-          ext/auxsys/Makefile
           ext/bcrypt/Makefile
           ext/binary/Makefile
           ext/charconv/Makefile ext/charconv/charconv.h
