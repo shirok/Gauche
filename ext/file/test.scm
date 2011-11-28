@@ -411,17 +411,21 @@
          (and (not (file-exists? touched))
               (begin (touch-file touched)
                      (file-exists? touched))))
-  (test* "touch-file :time" '(1 1)
-         (begin (touch-file touched :time 1) (times touched)))
-  (test* "touch-file :time :type" '(10 1)
-         (begin (touch-file touched :time 10 :type 'atime) (times touched)))
-  (test* "touch-file :time :type" '(10 20)
-         (begin (touch-file touched :time 20 :type 'mtime) (times touched)))
+  ;; NB: win32 has a problem of reading file's timestamp which can be
+  ;; before 1970/1/1 _on_local_time_.  For example, if it is 100 in UTC
+  ;; and we call _stat() in the timezone UTC-8, we get UINT_MAX.  Here
+  ;; we use a timestamp value large enough to avoid the problem.
+  (test* "touch-file :time" '(50001 50001)
+         (begin (touch-file touched :time 50001) (times touched)))
+  (test* "touch-file :time :type" '(60000 50001)
+         (begin (touch-file touched :time 60000 :type 'atime) (times touched)))
+  (test* "touch-file :time :type" '(60000 70000)
+         (begin (touch-file touched :time 70000 :type 'mtime) (times touched)))
 
-  (test* "touch-files" '("test.out/touched" "test.out/touched1"
-                         "test.out/touched2" "test.out/touched3")
-         (begin (touch-files '("test.out/touched" "test.out/touched1"
-                               "test.out/touched2" "test.out/touched3"))
+  (test* "touch-files" (n "test.out/touched" "test.out/touched1"
+                          "test.out/touched2" "test.out/touched3")
+         (begin (touch-files (n "test.out/touched" "test.out/touched1"
+                                "test.out/touched2" "test.out/touched3"))
                 (sort (glob "test.out/touched*"))))
   )
 
