@@ -50,7 +50,7 @@
   (.if "HAVE_UNISTD_H"       (.include <unistd.h>))
 
   (.if "defined(GAUCHE_WINDOWS)"
-       (.undef "_SC_CLK_TCK")) ;; avoid undefined reference to sysconf
+       (.undef _SC_CLK_TCK)) ;; avoid undefined reference to sysconf
   (.if "defined(_MSC_VER)"
        ;; This is a kludge to workaround the configure misdetection
        (begin
@@ -518,7 +518,7 @@
                  (let* ([n (Scm_MakeFlonum (aref samples i))])
                    (SCM_APPEND1 h t n)))
                (result h)))))
-       (error "sys-getloadavg isn't supported on this platform")))
+       (Scm_Error "sys-getloadavg isn't supported on this platform")))
 
 (inline-stub
  (initcode (.if "defined HAVE_GETLOADAVG"
@@ -1214,7 +1214,8 @@
    
    (declcode "static ScmClass *WinHandleClass = NULL;")
    (initcode (= WinHandleClass (Scm_MakeForeignPointerClass
-                                mod "<win:handle>" handle-print handle-cleanup
+                                (Scm_CurrentModule)
+                                "<win:handle>" handle-print handle-cleanup
                                 SCM_FOREIGN_POINTER_KEEP_IDENTITY)))
 
    (define-cfn Scm_MakeWinHandle (wh::HANDLE type)

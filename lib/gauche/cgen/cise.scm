@@ -705,6 +705,11 @@
                      '("#endif\n" |#reset-line|)
                      condition stmts))]))
 
+(define-cise-macro (.undef form env)
+  (ensure-stmt-or-toplevel-ctx form env)
+  (match form
+    [(_ name) `("#undef " ,(x->string name) "\n" |#reset-line|)]))
+
 (define-cise-macro (.include form env)
   (ensure-stmt-or-toplevel-ctx form env)
   (match form
