@@ -283,7 +283,7 @@ void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
    SCM_FD_UNKNOWN. */
 int Scm_FdReady(int fd, int dir)
 {
-#ifdef HAVE_SELECT
+#ifdef defined(HAVE_SELECT) && !defined(GAUCHE_WINDOWS)
     fd_set fds;
     int r;
     struct timeval tm;
@@ -303,6 +303,7 @@ int Scm_FdReady(int fd, int dir)
     if (r > 0) return SCM_FD_READY;
     else       return SCM_FD_WOULDBLOCK;
 #elif  defined(GAUCHE_WINDOWS)
+    /* Windows have select(), but it can only be used on sockets.*/
     if (dir == SCM_PORT_OUTPUT) {
         /* We assume it is always ok */
         return SCM_FD_READY;

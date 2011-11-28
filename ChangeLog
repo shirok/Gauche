@@ -3,6 +3,10 @@
 	* lib/gauche/cgen/cise.scm: Added .undef macro
 	* src/libsys.scm: Fix for mingw.
 
+	* configure.ac: Enable HAVE_SELECT on Windows/mingw, altohugh on it
+	  select() can only be used on sockets.
+	* src/system.c, src/port.c: Changed accordingly.
+
 2011-11-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/*, ext/auxsys, lib/*, doc/*, libsrc/*: Code reorganization:

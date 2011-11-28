@@ -424,7 +424,7 @@ AC_CHECK_LIB(sunmath, isinf)
 dnl For Windows/MinGW, manually adds several libraries
 dnl ALTERNATIVE_GOSH is no-console version of gosh; only built on Windows.
 case "$host" in
-  *mingw*) LIBS="$LIBS -lnetapi32 -lshlwapi"
+  *mingw*) LIBS="$LIBS -lnetapi32 -lshlwapi -lws2_32"
            ALTERNATIVE_GOSH="gosh-noconsole.exe" ;;
   *)       ALTERNATIVE_GOSH="" ;;
 esac
@@ -440,10 +440,10 @@ AC_CHECK_FUNCS(gettimeofday getloadavg)
 AC_CHECK_FUNCS(syslog setlogmask)
 AC_CHECK_FUNCS(sigwait)
 
-dnl Check for select().  HP-UX doesn't like the way configure tests
-dnl select() existence, so we skip the test on it.
+dnl Check for select().  HP-UX and MinGW doesn't like the way configure tests
+dnl select() existence and we know they have one, so we skip the test on them.
 case "$host" in
-  *-hpux*)
+  *-hpux*|*mingw*)
     AC_DEFINE(HAVE_SELECT, 1, [Define if you have select]) ;;
   *)
     AC_CHECK_FUNCS(select);;

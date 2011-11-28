@@ -639,7 +639,7 @@
 (test-section "select")
 
 (cond-expand
- (gauche.sys.select
+ [gauche.sys.select
   (test* "fdset" '(3 #t #f #t #t #f)
          (let ((fdset (make <sys-fdset>)))
            (set! (sys-fdset-ref fdset (current-input-port)) #t)
@@ -683,31 +683,37 @@
   (test* "sys-fdset-clear!" '()
          (sys-fdset->list (sys-fdset-clear! (sys-fdset 1 2 3))))
 
-  (test* "select" '(0 #f #f #f #f 1 #t #f #f #t #\x)
-         (let*-values (((in out) (sys-pipe))
-                       ((pid) (sys-fork)))
-           (if (= pid 0)
-             (begin (sys-select #f #f #f 100000)
-                    (display "x" out)
-                    (close-output-port out)
-                    (sys-exit 0))
-             (let ((rfds (make <sys-fdset>)))
-               (sys-fdset-set! rfds in #t)
-               (receive (an ar aw ae)
-                   (sys-select rfds #f #f 0)
-                 (receive (bn br bw be)
-                     (sys-select! rfds #f #f #f)
-                   (begin0
-                    (list an (eq? ar rfds) aw ae
-                          (sys-fdset-ref ar in)
-                          bn (eq? br rfds) bw be
-                          (sys-fdset-ref rfds in)
-                          (read-char in))
-                    (sys-waitpid pid)))))
-             ))
-         )
-  )
- (else)) ; cond-expand gauche.sys.select
+  ;; NB: Windows' select() can't select on non-socket fds, so we skip
+  ;; this test.
+
+  (cond-expand
+   [(not gauche.os.windows)
+    (test* "select" '(0 #f #f #f #f 1 #t #f #f #t #\x)
+           (let*-values (((in out) (sys-pipe))
+                         ((pid) (sys-fork)))
+             (if (= pid 0)
+               (begin (sys-select #f #f #f 100000)
+                      (display "x" out)
+                      (close-output-port out)
+                      (sys-exit 0))
+               (let ((rfds (make <sys-fdset>)))
+                 (sys-fdset-set! rfds in #t)
+                 (receive (an ar aw ae)
+                     (sys-select rfds #f #f 0)
+                   (receive (bn br bw be)
+                       (sys-select! rfds #f #f #f)
+                     (begin0
+                         (list an (eq? ar rfds) aw ae
+                               (sys-fdset-ref ar in)
+                               bn (eq? br rfds) bw be
+                               (sys-fdset-ref rfds in)
+                               (read-char in))
+                       (sys-waitpid pid)))))
+               ))
+           )]
+   [else]) ; cond-expand (not gauche.os.windows)
+  ]
+ [else]) ; cond-expand gauche.sys.select
 
 ;;-------------------------------------------------------------------
 (test-section "signal handling")

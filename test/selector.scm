@@ -1,9 +1,12 @@
 ;; test gauche.selector
 
-
-(unless (global-variable-bound? 'gauche 'sys-select)
-  ;; they don't work on the platform that doesn't have sys-select.
-  (exit 0))
+(cond-expand
+ [(or (not gauche.sys.select) gauche.os.windows)
+  ;; gauche.selector doesn't work unless sys-select is supported.
+  ;; Besides, on windows, sys-select only works for socket fds, so
+  ;; the tests here won't work.  We skip in those cases.
+  (exit 0)]
+ [else])
 
 (use gauche.test)
 

@@ -1183,13 +1183,14 @@ Scm_YieldCPU(void)
     spec.tv_sec = 0;
     spec.tv_nsec = 1;
     nanosleep(&spec, NULL);
+#elif defined(GAUCHE_WINDOWS)
+    /* Windows have select(), but it doesn't allow all fds are NULL. */
+    Sleep(10);
 #elif defined(HAVE_SELECT)
     struct timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 1;
     select(0, NULL, NULL, NULL, &tv);
-#elif defined(GAUCHE_WINDOWS)
-    Sleep(10);
 #else /* the last resort */
     sleep(1);
 #endif
