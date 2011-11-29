@@ -92,6 +92,9 @@
 /* Define to 1 if the system has clearenv */
 #undef HAVE_CLEARENV
 
+/* Define to 1 if the system has crt_extern.h */
+#undef HAVE_CRT_EXTERNS_H
+
 /* Define if uses libcrypt */
 #undef HAVE_CRYPT
 

@@ -62,9 +62,16 @@
 #include <pwd.h>
 #include <sys/times.h>
 #include <sys/wait.h>
+
+# if !defined(HAVE_CRT_EXTERNS_H)
 /* POSIX defines environ, and ISO C defines __environ.
    Modern C seems to have the latter declared in unistd.h */
 extern char **environ;
+# else  /* HAVE_CRT_EXTERNS_H */
+/* On newer OSX, we can't directly access global 'environ' variable.
+   We need to use _NSGetEnviron(), and this header defines it. */
+#include <crt_externs.h>
+# endif /* HAVE_CRT_EXTERNS_H */
 #else   /* GAUCHE_WINDOWS */
 #include <lm.h>
 #include <tlhelp32.h>
@@ -2162,6 +2169,9 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
 ScmObj Scm_Environ(void)
 {
 #if !defined(GAUCHE_WINDOWS)
+#  if defined(HAVE_CRT_EXTERNS_H)
+    char **environ = *_NSGetEnviron(); /* OSX Hack */
+#  endif /*HAVE_CRT_EXTERNS_H*/    
     if (environ == NULL) return SCM_NIL;
     else return Scm_CStringArrayToList((const char**)environ, -1,
                                        SCM_STRING_COPYING);

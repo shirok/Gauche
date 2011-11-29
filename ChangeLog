@@ -1,5 +1,9 @@
 2011-11-28  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, src/gauche/config.h.in (HAVE_CRT_EXTERNS_H),
+	  src/system.c (Scm_Environ): Newer OSX doesn't allow to access
+	  global environ variable directly; we should use _NSGetEnviron().
+
 	* lib/gauche/cgen/cise.scm: Added .undef macro
 	* src/libsys.scm: Fix for mingw.
 

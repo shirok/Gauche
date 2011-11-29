@@ -347,6 +347,10 @@ AC_CHECK_HEADERS(pty.h util.h libutil.h sys/loadavg.h sys/resource.h)
 dnl solaris specific
 AC_CHECK_HEADERS(sunmath.h)
 
+dnl OSX specific.  If this header exists, we assume that extern char **environ
+dnl isn't available and we should use _NSGetEnviron().
+AC_CHECK_HEADERS(crt_externs.h)
+
 dnl ===========================================================
 dnl Checks processor type, for processor-specific stuff
 case $host in
