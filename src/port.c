@@ -283,7 +283,7 @@ void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
    SCM_FD_UNKNOWN. */
 int Scm_FdReady(int fd, int dir)
 {
-#ifdef defined(HAVE_SELECT) && !defined(GAUCHE_WINDOWS)
+#if defined(HAVE_SELECT) && !defined(GAUCHE_WINDOWS)
     fd_set fds;
     int r;
     struct timeval tm;
