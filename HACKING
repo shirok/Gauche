@@ -8,43 +8,77 @@ compile from the distribution, you don't need to read any further.
 On Unix platforms
 -----------------
 
-In order to build Gauche from the svn sources, instead of from
+In order to build Gauche from the git sources, instead of from
 the distribution, you need to have autoconf 2.54 or higher.
 The author using autoconf 2.57.
 
 You also need to have the *latest* release of Gauche installed
 on your machine, for it is required to generate some C files.
 
-The svn source tree doesn't include "configure" scripts.
+The git source tree doesn't include "configure" scripts.
 You can use the DIST script like the following to generate them.
 
   % ./DIST gen
 
-Note for seasoned libtool/automake users: the svn source tree
+Note for seasoned libtool/automake users: the git source tree
 includes files that are usually generated automatically by
 autotools, such as aclocal.m4, ltmain.sh, src/gauche/config.h.in,
 etc.  Be careful not to clobber these files.  First, if your
 autotools version doesn't match mine, it tends to break.
-Second, those files are likely to be edited after generated,
-in order to fix some build problem on certain platform.
+Second, those files may be edited after generated,
+in order to fix some build problem on certain platforms.
 
 
-On Windows/VisualC
-------------------
+On Windows
+----------
 
-Gauche build process largely relies on the code generation
-during building, and it is lots of pain to adapt it for VC.
-So we chose a hybrid approach; the source tree needs to be
-preprocessed on the Unix platform (or Cygwin) with pre-installed
-Gauche so that the machine-generated files are already there
-when VC tries to compile.
-To preprocess the source tree, run 'DIST' command as the following:
+The recommended way to build Gauche on Windows is MinGW/MSYS.
+If you install MSYS enviornment and MinGW, you can build
+Gauche just as on Unix; that is, run "./DIST gen" to generate
+configure scripts, run "./configure", then make.
 
-  % ./DIST winvc
+Alternatively, you can use src/mingw-dist.sh script.  Just run
+it on MSYS shell:
 
-Once preparation is done, look for the VC solution file under
-winnt/ subdirectory.  
+  % sh src/mingw-dist.sh
 
+The shell script assumes MinGW is installed in /mingw.  If not,
+you need to tell the place by setting MINGWDIR environment variable.
+
+You also want to have MinGW libiconv and zlib libraries, for they
+enable full-functional gauche.charconv and rfc.zlib build.  (You
+can build Gauche without them, but then those modules won't
+work fully.)  Put the dlls in $MINGWDIR.
+
+The mingw-dist.sh script builds Gauche binary and installs it
+in ../Gauche-mingw-dist/Gauche.  It also copies MinGW runtime and
+other dlls, so the directory becomes self-contained.  You can copy
+the Gauche directory to anywhere and run Gauche/bin/gosh.
+
+If you have WiX SDK, you can build Windows installer as well.
+The easiest way is to use src/mingw-dist.sh script.
+Make sure the WiX tools (candle.exe and light.exe) in your PATH,
+and run this command on MSYS shell.
+
+  % sh src/mingw-dist.sh --with-installer
+
+Then you'll find MSI file under winnt/wix.
+
+You can build Gauche with cygwin; do it just like on Unix.
+
+Some effort was made to build Gauche with MSVC.  You can find
+project files under winnt.  Unfortunatley though, it is so
+much pain to make it work and keep it updated with newer Gauche
+source tree, and now they are quite obsolete.
+
+
+[CROSS COMPILATION]
+
+In a normal compilation, extension modules (ext/*) are build
+using the new gosh just built in src/.  However, we can't
+run src/gosh when we're cross compiling.  So you need to install
+*this version of Gauche* compiled on your platform beforehand.
+Then, configure with the ordinary cross-compiling options.
 
 
 [DEPENDENCIES]
@@ -55,7 +89,9 @@ dependency issues.  If you modify files listed below, be careful
 not to introduce undesirable dependencies.
 
 - The compiler (compile.scm) shouldn't depend on anything that
-  are not compiled into the libgauche core.
+  are not compiled into the libgauche core.   An exception is
+  util.match; it's ok since it is just a macro and all 'match'
+  forms are expanded fully in precompilation.
 
 - gencomp, genstub, geninsn shouldn't depend on the extension
   modules except the 'pre-loaded' ones in HOSTGOSH.  
