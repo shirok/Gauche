@@ -31,6 +31,6 @@
                      [(('with-module 'gauche.internal '%apply-rec) fn 'x) fn]
                      [((? symbol? fn) 'x) fn]
                      [_ #f])
-                   (call/cc (lambda (x) (ra x) #f))))
+                   (call/cc (^x (ra x) #f))))
 
 (test-end)

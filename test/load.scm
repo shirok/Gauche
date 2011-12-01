@@ -27,7 +27,7 @@
 (rmrf "test.o")
 (sys-mkdir "test.o" #o777)
 (with-output-to-file "test.o/a.scm"
-  (lambda ()
+  (^[]
     (write '(provide "test.o/a"))
     (newline)))
 
@@ -42,12 +42,12 @@
 (rmrf "test.o")
 (sys-mkdir "test.o" #o777)
 (with-output-to-file "test.o/b.scm"
-  (lambda ()
+  (^[]
     (write '(require "test.o/c"))
     (write '(provide "test.o/b"))
     (newline)))
 (with-output-to-file "test.o/c.scm"
-  (lambda ()
+  (^[]
     (write '(require "test.o/b"))
     (write '(provide "test.o/c"))
     (newline)))
@@ -59,19 +59,18 @@
 (rmrf "test.o")
 (sys-mkdir "test.o" #o777)
 (with-output-to-file "test.o/d.scm"
-  (lambda ()
+  (^[]
     (display "(define z 0)(")
     (newline)))
 
 (test "reload after error"
       1
-      (lambda ()
+      (^[]
         (with-error-handler
-         (lambda (e) #t)
-         (lambda ()
-           (eval '(require "test.o/d") (interaction-environment))))
+         (^e #t)
+         (^[] (eval '(require "test.o/d") (interaction-environment))))
         (with-output-to-file "test.o/d.scm"
-          (lambda ()
+          (^[]
             (write '(define z 1))
             (write '(provide "tset.o/d"))))
         (eval '(require "test.o/d") (interaction-environment))
@@ -81,8 +80,7 @@
 (test-section "load environment")
 
 (with-output-to-file "test.o/d.scm"
-  (lambda ()
-    (display "(define foo 3)")))
+  (^[] (display "(define foo 3)")))
 (define-module load.test )
 (define foo 8)
 
@@ -96,8 +94,7 @@
 ;; this is actually testing code in Scm_VMEval, but I put it here
 ;; since the 'eval' test is done before i/o.
 (with-output-to-file "test.o/d.scm"
-  (lambda ()
-    (display "(define foo 6)")))
+  (^[] (display "(define foo 6)")))
 
 (test* "eval & load & environment" 6
        (begin
@@ -108,7 +105,7 @@
 (test-section "current-load-* info")
 
 (with-output-to-file "test.o/c1.scm"
-  (lambda ()
+  (^[]
     (write '(print (current-load-history)))
     (write '(print (current-load-next)))
     (write '(print (current-load-port)))
@@ -120,17 +117,17 @@
     (write '(print (current-load-path)))))
 
 (with-output-to-file "test.o/c2.scm"
-  (lambda ()
+  (^[]
     (write '(print (current-load-history)))
     (write '(print (current-load-next)))
     (write '(print (current-load-port)))
     (write '(print (current-load-path)))))
 
 (with-output-to-file "test.o/c.out"
-  (lambda () (load "./test.o/c1.scm")))
+  (^[] (load "./test.o/c1.scm")))
 
 (with-input-from-file "test.o/c.out"
-  (lambda ()
+  (^[]
     (test* "current-load-history (1)" #/^\(\(#<iport [.\/]*test\/load\.scm/
            (read-line) rxmatch)
     (test* "current-load-next (1)" "()" (read-line))
@@ -161,17 +158,17 @@
 (test-section "include")
 
 (with-output-to-file "test.o/inc0.scm"
-  (lambda ()
+  (^[]
     (write '(define inc-var 4))
     (write 'inc-var)))
 (with-output-to-file "test.o/inc1.scm"
-  (lambda ()
+  (^[]
     (write '(define inc-var 10))
     (write '(let ((x inc-var))
               (include "inc0.scm")
               (+ x inc-var)))))
 (with-output-to-file "test.o/inc2.scm"
-  (lambda ()
+  (^[]
     (write '(define inc-var2 (let () (include "inc0"))))))
 
 (define (include-into-toplevel filename)
@@ -199,24 +196,21 @@
 (test-section "autoload")
 
 (with-output-to-file "test.o/l0.scm"
-  (lambda ()
-    (write '(define foo 0))))
+  (^[] (write '(define foo 0))))
 (autoload "test.o/l0" foo)
 (test* "autoload (file)" 0 foo)
 
 (with-output-to-file "test.o/l1.scm"
-  (lambda ()
-    (write '(define foo 0))))
+  (^[] (write '(define foo 0))))
 (autoload "test.o/l1" foo1)
 (test* "autoload (file/error)" (test-error) foo1)
 
 (with-output-to-file "test.o/l0.scm"
-  (lambda ()
+  (^[]
     (write '(define-module foo (extend scheme)))
     (write '(load "./test.o/l1.scm" :environment (find-module 'foo)))))
 (with-output-to-file "test.o/l1.scm"
-  (lambda ()
-    (write '(expt 2 3))))
+  (^[] (write '(expt 2 3))))
 
 (test* "autoload environment" #t
        (load "./test.o/l0.scm"))
@@ -232,31 +226,31 @@
 (sys-system #`"mkdir ,(P \"test.o/_tset\")")
 
 (with-output-to-file "test.o/_test.scm"
-  (lambda ()
+  (^[]
     (write '(define-module _test ))
     (write '(provide "_test"))))
 
 (with-output-to-file "test.o/_test/_test.scm"
-  (lambda ()
+  (^[]
     (write '(define-module _test._test ))
     (write '(provide "_test/_test"))))
 
 (with-output-to-file "test.o/_test/_test1.scm"
-  (lambda ()
+  (^[]
     (write '(define-module _test._test1 ))
     (write '(provide "_test/_test2"))))
 
 (with-output-to-file "test.o/_tset/_test.scm"
-  (lambda ()
+  (^[]
     (write '(define-module _tset._test ))
     (write '(provide "_tset/_test"))))
 
 (with-output-to-file "test.o/_tset/_test1"
-  (lambda ()
+  (^[]
     (write '(define-module dummy ))))
 
 (with-output-to-file "test.o/_tset/_test2.scm"
-  (lambda ()
+  (^[]
     (write '(provide "_tset/_test2"))))
 
 (test* "library-fold _test" `((_test . ,(P "test.o/_test.scm")))

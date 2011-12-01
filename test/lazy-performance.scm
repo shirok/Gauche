@@ -33,10 +33,10 @@
 
   (time-these/report
    '(cpu 5)
-   `((lazy-seq    . ,(lambda () (length (laz n))))
-     (generator   . ,(lambda () (length (genr n))))
-     (list-ec     . ,(lambda () (length (ec n))))
-     (simple-loop . ,(lambda () (length (simple n))))))
+   `((lazy-seq    . ,(^[] (length (laz n))))
+     (generator   . ,(^[] (length (genr n))))
+     (list-ec     . ,(^[] (length (ec n))))
+     (simple-loop . ,(^[] (length (simple n))))))
   )
 
 #|
@@ -53,8 +53,8 @@
     (fold + 0 (lrange 0 n)))
   (time-these/report
    '(cpu 10)
-   `((lazy-seq     . ,(lambda () (lazy n)))
-     (eager-iota   . ,(lambda () (eager n))))))
+   `((lazy-seq     . ,(^[] (lazy n)))
+     (eager-iota   . ,(^[] (eager n))))))
 
 #|
 (folding1 10000000)
@@ -65,11 +65,10 @@
 (define (file f)
   (define (basic)
     (with-input-from-file f
-      (^()
-        (let loop ([c (read-char)] [cnt 0])
-          (cond [(eof-object? c) cnt]
-                [(char-whitespace? c) (loop (read-char) cnt)]
-                [else (loop (read-char) (+ cnt 1))])))))
+      (^[] (let loop ([c (read-char)] [cnt 0])
+             (cond [(eof-object? c) cnt]
+                   [(char-whitespace? c) (loop (read-char) cnt)]
+                   [else (loop (read-char) (+ cnt 1))])))))
   (define (eager)
     (call-with-input-file f
       (^p (count char-whitespace? (port->list read-char p)))))

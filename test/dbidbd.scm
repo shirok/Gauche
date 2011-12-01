@@ -74,8 +74,8 @@
 (test-section "testing conditions")
 
 (test* "<dbi-nonexistent-driver-error>" "nosuchdriver"
-       (guard (e ((<dbi-nonexistent-driver-error> e)
-                  (ref e 'driver-name)))
+       (guard (e [(<dbi-nonexistent-driver-error> e)
+                  (ref e 'driver-name)])
          (dbi-connect "dbi:nosuchdriver")))
 
 

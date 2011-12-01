@@ -72,7 +72,7 @@
            (delay (begin
                     (set! count (+ count 1))
                     (cons 1 (ones)))))
-         (let ((s (ones)))
+         (let1 s (ones)
            (car (force (stream-drop s 4)))
            (car (force (stream-drop s 4)))
            count)))
@@ -80,7 +80,7 @@
 (test* "reentrancy 1" 'second       ;; see srfi-40 post-discussion
        (let ()
          (define f
-           (let ((first? #t))
+           (let1 first? #t
              (delay
                (if first?
                  (begin
@@ -92,7 +92,7 @@
 (test* "reentrancy 2" '(5 0 10) ;; (John Shutt)
        (let ()
          (define q
-           (let ((count 5))
+           (let1 count 5
              (define (get-count) count)
              (define p (delay (if (<= count 0)
                                 count
@@ -101,11 +101,11 @@
                                        (set! count (+ count 2))
                                        count))))
              (list get-count p)))
-         (let* ((get-count (car q))
-                (p (cadr q))
-                (a (get-count))
-                (b (force p))
-                (c (get-count)))
+         (let* ([get-count (car q)]
+                [p (cadr q)]
+                [a (get-count)]
+                [b (force p)]
+                [c (get-count)])
            (list a b c))))
 
 ;; This leak test takes long time, so we exclude it by default.
@@ -115,17 +115,17 @@
        (let ()
          (define (stream-filter p? s)
            (lazy
-            (let ((lis (force s)))
+            (let1 lis (force s)
               (if (null? lis)
                 (delay '())
-                (let ((h (car lis))
-                      (t (cdr lis)))
+                (let ([h (car lis)]
+                      [t (cdr lis)])
                   (if (p? h)
                     (delay (cons h (stream-filter p? t)))
                     (stream-filter p? t)))))))
          (define (from n)
            (delay (cons n (from (+ n 1)))))
-         (car (force (stream-filter (lambda (n) (= n 10000000))
+         (car (force (stream-filter (^n (= n 10000000))
                                     (from 0))))))
 
 ;;----------------------------------------------------------------
@@ -140,13 +140,13 @@
 
 (define (giota n)
   (let1 cnt 0
-    (^() (if (< cnt n)
+    (^[] (if (< cnt n)
            (begin0 cnt (inc! cnt))
            (eof-object)))))
 
 (define (gerr n) ;; raise an error after generating n items
   (let1 cnt 0
-    (^() (if (< cnt n)
+    (^[] (if (< cnt n)
            (begin0 cnt (inc! cnt))
            (error "oof")))))
 
@@ -232,15 +232,14 @@
 (let ()
   (define (inv lis)
     (define (kk)
-      (reset (for-each (lambda (e) (shift k (set! kk k) e)) lis)
-             (set! kk (lambda () (eof-object)))
+      (reset (for-each (^e (shift k (set! kk k) e)) lis)
+             (set! kk (^[] (eof-object)))
              (eof-object)))
-    (lambda () (kk)))
+    (^[] (kk)))
   (define (mux g0 g1)
     (define flag #t)
-    (lambda ()
-      (begin0 (if flag (g0) (g1))
-        (set! flag (not flag)))))
+    (^[] (begin0 (if flag (g0) (g1))
+           (set! flag (not flag)))))
   (define (make-seq)
     (generator->lseq 0 (mux (inv '(a b c d e)) (inv '(1 2 3 4 5)))))
   (test* "interference with partcont" '(z 0 a 1 b 2 c 3 d 4 e 5)

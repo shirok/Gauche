@@ -13,10 +13,10 @@
 
 (define-syntax sexp-tester
   (syntax-rules ()
-    ((_ result str)
+    [(_ result str)
      (test* (format #f "complete-sexp? ~,,,,40:a" str)
             result
-            (complete-sexp? str)))
+            (complete-sexp? str))]
     ))
 
 (sexp-tester #t "")
@@ -98,7 +98,7 @@
     :input-port ipipe-in
     :output-port opipe-out
     :error-port epipe-out
-    :prompter (lambda () (display "<<<\n"))
+    :prompter (^[] (display "<<<\n"))
     :fatal-handler fatal))
 
 (define handler (listener-read-handler listener))
@@ -112,8 +112,8 @@
   (display expr ipipe-out) (flush ipipe-out))
 
 (define (read-results)
-  (let loop ((l (read-line opipe-in))
-             (r '()))
+  (let loop ([l (read-line opipe-in)]
+             [r '()])
     (if (equal? l "<<<")
         (reverse r)
         (loop (read-line opipe-in) (cons l r)))))
@@ -140,8 +140,8 @@
        (begin
          (send-expr "1 2\n")
          (handler)
-         (let* ((r0 (read-results))
-                (r1 (read-results)))
+         (let* ([r0 (read-results)]
+                [r1 (read-results)])
            (list r0 r1))))
 
 (test* "listener" '("3")
@@ -162,8 +162,8 @@
          (handler)
          (send-expr " 1 2)")
          (handler)
-         (let* ((r0 (read-results))
-                (r1 (read-results)))
+         (let* ([r0 (read-results)]
+                [r1 (read-results)])
            (list r0 r1))))
 
 ;(test* "listener (error)" "*** ERROR: unbound variable: zzz"

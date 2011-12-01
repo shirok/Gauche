@@ -29,8 +29,8 @@
 
 (test-section "tree-map as dictionary")
 
-(test-basics (make-tree-map eq? (lambda (a b)
-                                  (string<? (x->string a) (x->string b)))))
+(test-basics
+ (make-tree-map eq? (^[a b] (string<? (x->string a) (x->string b)))))
 
 (test-section "bimap")
 
