@@ -1,3 +1,10 @@
+2011-12-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/control/job.scm (job-wait): fixed a bug that it looked result
+	  where it should've looked status.
+	  (job-run!, job-mark-killed!): Called condition-variable-broadcast!
+	  with a wrong argument.  Patch for this and above bugs are from ayatoy.
+
 2011-11-28  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, src/gauche/config.h.in (HAVE_CRT_EXTERNS_H),

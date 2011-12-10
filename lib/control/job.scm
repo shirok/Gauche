@@ -69,8 +69,8 @@
     (unless (and mutex cv) (error "job is not waitable" job))
     (let loop ()
       (mutex-lock! mutex)
-      (let1 r (job-result job)
-        (cond [(memq r '(done error killed)) (mutex-unlock! mutex) r]
+      (let1 s (job-status job)
+        (cond [(memq s '(done error killed)) (mutex-unlock! mutex) s]
               [(mutex-unlock! mutex cv timeout) (loop)]
               [else timeout-val])))))
 
@@ -91,7 +91,7 @@
     (job-result-set! job result)
     (job-status-set! job status) ; no hazard. I'm the only writer.
     (if-let1 cv (job-waiter-cv job)
-      (condition-variable-broadcast! job)))
+      (condition-variable-broadcast! cv)))
   (job-status-set! job 'running)
   (job-touch! job :start)
   (guard (e [else (finish 'error e)])
@@ -105,4 +105,4 @@
   (job-result-set! job reason)
   (job-status-set! job 'killed)
   (if-let1 cv (job-waiter-cv job)
-    (condition-variable-broadcast! job)))
+    (condition-variable-broadcast! cv)))

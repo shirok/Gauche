@@ -7,6 +7,9 @@
 
 (test-start "control")
 
+;;--------------------------------------------------------------------
+;; control.job
+;;
 (test-section "control.job")
 (use control.job)
 (test-module 'control.job)
@@ -42,6 +45,28 @@
          (begin (job-mark-killed! j 'test)
                 (list (job-status j) (job-result j))))
   )
+
+(cond-expand
+ [gauche.sys.pthreads
+  (test* "job-wait, job-kill" '(killed foo)
+         (let* ([job (make-job (^[] (sys-sleep 10)) :waitable #t)]
+                [t1 (thread-start! (make-thread (^[] (job-run! job))))]
+                [t2 (thread-start! (make-thread (^[] (job-wait job))))])
+           (job-mark-killed! job 'foo)
+           (list (thread-join! t2) (job-result job))))
+
+  (test* "job-wait and error" '(error "bang")
+         (let* ([job (make-job (^[] (error "bang")) :waitable #t)]
+                [t1 (thread-start! (make-thread (^[] (job-wait job))))])
+           (job-run! job)
+           (list (thread-join! t1) (and (<error> (job-result job))
+                                        (~ (job-result job)'message)))))
+  ]
+ [else])
+
+;;--------------------------------------------------------------------
+;; control.thread-pool
+;;
 
 (cond-expand
  [gauche.sys.pthreads
