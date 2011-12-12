@@ -49,9 +49,12 @@
 (cond-expand
  [gauche.sys.pthreads
   (test* "job-wait, job-kill" '(killed foo)
-         (let* ([job (make-job (^[] (sys-sleep 10)) :waitable #t)]
+         (let* ([gate (make-mtqueue :max-length 0)]
+                [job (make-job (^[] (enqueue/wait! gate #t) (sys-sleep 10))
+                               :waitable #t)]
                 [t1 (thread-start! (make-thread (^[] (job-run! job))))]
                 [t2 (thread-start! (make-thread (^[] (job-wait job))))])
+           (dequeue/wait! gate)
            (job-mark-killed! job 'foo)
            (list (thread-join! t2) (job-result job))))
 
