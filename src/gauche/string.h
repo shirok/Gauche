@@ -249,7 +249,8 @@ enum {
 SCM_EXTERN int     Scm_MBLen(const char *str, const char *stop);
 
 /* INTERNAL */
-SCM_EXTERN const char *Scm_StringPosition(ScmString *str, int k);
+SCM_EXTERN const char *Scm_StringPosition(ScmString *str, int k); /*DEPRECATED*/
+SCM_EXTERN const char *Scm_StringBodyPosition(const ScmStringBody *str, int k);
 SCM_EXTERN ScmObj  Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end);
 
 /*

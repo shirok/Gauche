@@ -1,3 +1,9 @@
+2011-12-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (Scm_StringBodyPosition): Deprecate Scm_StringPosition
+	  since it is difficult to use in MT-safe way.  Introduced safer
+	  Scm_StringBodyPosition.
+
 2011-12-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/job.scm (job-wait): fixed a bug that it looked result

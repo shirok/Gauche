@@ -670,11 +670,11 @@ static void format_sexp(ScmPort *out, ScmObj arg,
     if (maxcol > 0 && nwritten < 0) {
         const char *s = Scm_GetStringContent(tmpstr, NULL, NULL, NULL), *e;
         if (dots && maxcol > 4) {
-            e = Scm_StringPosition(tmpstr, maxcol-4);
+            e = Scm_StringBodyPosition(SCM_STRING_BODY(tmpstr), maxcol-4);
             Scm_PutzUnsafe(s, (int)(e-s), out);
             Scm_PutzUnsafe(" ...", 4, out);
         } else {
-            e = Scm_StringPosition(tmpstr, maxcol);
+            e = Scm_StringBodyPosition(SCM_STRING_BODY(tmpstr), maxcol);
             Scm_PutzUnsafe(s, (int)(e-s), out);
         }
     } else {

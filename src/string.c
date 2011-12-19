@@ -547,9 +547,8 @@ int Scm_StringByteRef(ScmString *str, int offset, int range_error)
    case, the return value points the location past the string body,
    but it is necessary sometimes to do a pointer arithmetic with the
    returned values. */
-const char *Scm_StringPosition(ScmString *str, int offset)
+const char *Scm_StringBodyPosition(const ScmStringBody *b, int offset)
 {
-    const ScmStringBody *b = SCM_STRING_BODY(str);
     if (offset < 0 || offset > (int)SCM_STRING_BODY_LENGTH(b)) {
         Scm_Error("argument out of range: %d", offset);
     }
@@ -558,6 +557,14 @@ const char *Scm_StringPosition(ScmString *str, int offset)
     } else {
         return (forward_pos(SCM_STRING_BODY_START(b), offset));
     }
+}
+
+/* This is old API and now DEPRECATED.  It's difficult to use this safely,
+   since you don't have a way to get the string length consistent at the
+   moment you call this function.   Use Scm_StringBodyPosition instead. */
+const char *Scm_StringPosition(ScmString *str, int offset)
+{
+    return Scm_StringBodyPosition(SCM_STRING_BODY(str), offset);
 }
 
 /*----------------------------------------------------------------
