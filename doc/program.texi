@@ -143,6 +143,18 @@ You can specify this option more than once to load multiple files.
 @c COMMON
 @end deftp
 
+@deftp {Command Option} -L file
+@c EN
+Load @var{file} like @code{-l}, but if @var{file} does not exist, 
+this silently ignores it instead of reporting an error.
+This option can also be specified multiple times.
+@c JP
+@code{-l}オプションと同様に@var{file}をロードしますが、
+@var{file}が見つからなかった場合はエラーを報告せずに黙って無視します。
+このオプションも複数指定できます。
+@c COMMON
+@end deftp
+
 @deftp {Command Option} -e scheme-expression
 @c EN
 Evaluate @var{scheme-expression}
@@ -186,6 +198,30 @@ Batch. Does not print prompts even if the input is a terminal.
 Interactive. Print prompts even if the input is not a terminal.
 @c JP
 インタラクティブ。入力が端末で無くてもプロンプトを出すようにします。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -m module
+@c EN
+When a script file is given,
+this option makes the module named @var{module} in which
+the @code{main} procedure is looked for, instead of the @code{user} module.
+See @ref{Writing Scheme scripts} for the details of executing scripts.
+
+If the named module doesn't exist after loading the script,
+an error is signalled.
+
+This is useful to write a Scheme module that can also be executed
+as a script.
+@c JP
+スクリプトファイルが与えられた場合に、@code{main}手続きを
+探すモジュールを指定します。デフォルトでは@code{user}モジュールが探されます。
+スクリプトの実行について詳しくは@ref{Writing Scheme scripts}を見てください。
+
+@var{module}で指定されたモジュールが、スクリプトファイルのロード後にも
+存在しない場合は、エラーが報告されます。
+
+このオプションは、スクリプトとしても使えるようなSchemeモジュールを書く際に便利です。
 @c COMMON
 @end deftp
 
@@ -490,15 +526,17 @@ line-editing or command history.   They'll be added in future.
 
 @c EN
 When a Scheme program file is given to @code{gosh}, it
-bounds a global variable @code{*argv*} to the list of the remaining
-command-line arguments, then loads the Scheme program.
+makes the @code{user} module as the current module,
+binds a global variable @code{*argv*} to the list of the remaining
+command-line arguments, and then loads the Scheme program.
 If the first line of @var{scheme-file} begins with two character
 sequence ``@code{#!}'', the entire line is ignored by @code{gosh}.
 This is useful to write a Scheme program that works as an executable
 script in unix-like systems.
 @c JP
 @code{gosh}のコマンドラインにSchemeプログラムのファイル名が渡された場合、
-@code{gosh}はそれ以降のコマンドライン引数のリストをグローバル変数@code{*argv*}に束縛し、
+@code{gosh}は@code{user}モジュールをカレントモジュールとし、
+それ以降のコマンドライン引数のリストをグローバル変数@code{*argv*}に束縛して、
 Schemeプログラムをロードします。もし@var{scheme-file}の最初の行が``@code{#!}''で始まって
 いたら、その行は無視されます。これにより、Unix系のシステムで実行可能なSchemeスクリプト
 を書くことが出来ます。
@@ -574,6 +612,35 @@ you can load the script file interactively to debug.
 ロードしてデバッグすることもできます。
 @c COMMON
 
+@c EN
+Using @code{-m} command-line option, you can make @code{gosh} call
+@code{main} procedure defined in a module other than the @code{user}
+module.  It is sometimes handy to write a Scheme module that can
+also be executed as a script.
+
+For example, you write a Scheme module @code{foo}
+and @emph{within it}, you define the @code{main} procedure.
+You don't need to export it.  If the file is loaded as a module,
+the @code{main} procedure doesn't do anything.  But if you
+specify @code{-m foo} option and give the file as a Scheme script
+to @code{gosh}, then
+the @code{main} procedure is invoked after loading the script.
+You can code tests or small example application in such an
+alternate main procedure.
+@c JP
+@code{-m}コマンドラインオプションを使えば、@code{user}モジュール以外の
+モジュールで定義された@code{main}手続きをスクリプトのメイン関数として
+呼ぶことができます。Schemeモジュールを、Schemeスクリプトとしても使えるように
+したい場合に便利です。
+
+例えば、@code{foo}というSchemeモジュールを書いて、@emph{その中で}
+@code{main}関数を定義しておきます。この@code{main}関数はexportしないでおきます。
+このファイルがモジュールとしてロードされた場合、この@code{main}関数は
+外からは見えないので何もしません。しかし、@code{gosh}に@code{-m foo}オプションを
+与えて、このファイルをスクリプトファイルとして指定すれば、ファイルをロードした後に
+@code{main}手続きが呼ばれます。その中には、
+テストだとかモジュールのサンプルアプリケーションを書いておくことができるでしょう。
+@c COMMON
 
 @defvar *argv*
 @c EN

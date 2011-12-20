@@ -1,3 +1,10 @@
+2011-12-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c: Added '-m module' option to specify the module where
+	  the 'main' procedure is looked for when a script is loaded.
+	* test/scripts.scm: Added a test for the above.  Eventually we can
+	  add more tests for command-line options of gosh.
+
 2011-12-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (Scm_StringBodyPosition): Deprecate Scm_StringPosition

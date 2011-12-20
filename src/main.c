@@ -59,10 +59,14 @@ ScmObj pre_cmds = SCM_NIL;      /* assoc list of commands that needs to be
                                    Each car has either #\I, #\A, #\u, #\l
                                    or #\e, according to the given cmdargs. */
 
+ScmObj main_module = SCM_FALSE; /* The name of the module where we
+                                   look for 'main'.  If #f, 'user' module
+                                   is used. */
+
 void usage(void)
 {
     fprintf(stderr,
-            "Usage: gosh [-biqV][-I<path>][-A<path>][-u<module>][-l<file>][-L<file>][-e<expr>][-E<expr>][-p<type>][-F<feature>][-f<flag>][--] [file]\n"
+            "Usage: gosh [-biqV][-I<path>][-A<path>][-u<module>][-m<module>][-l<file>][-L<file>][-e<expr>][-E<expr>][-p<type>][-F<feature>][-f<flag>][--] [file]\n"
             "options:\n"
             "  -V       Prints version and exits.\n"
             "  -b       Batch mode.  Doesn't print prompts.  Supersedes -i.\n"
@@ -78,6 +82,11 @@ void usage(void)
             "           the script file or entering repl.\n"
             "  -E<expr> Similar to -e, but reads <expr> as if it is surrounded\n"
             "           by parenthesis.\n"
+            "  -m<module> When the script file is given, this option specifies the\n"
+            "           name of the module in which the 'main' procedure is defined.\n"
+            "           By default, the 'main' procedure in the user module is called\n"
+            "           after loading the script (srfi-22).  This option allows to call\n"
+            "           a main procedure in the different module\n"
             "  -p<type> Turns on the profiler.  Currently <type> can only be\n"
             "           'time'.\n"
             "  -F<feature> Makes <feature> available in cond-expand forms\n"
@@ -193,7 +202,7 @@ void feature_options(const char *optarg)
 int parse_options(int argc, char *argv[])
 {
     int c;
-    while ((c = getopt(argc, argv, "+be:E:ip:ql:L:u:VF:f:I:A:-")) >= 0) {
+    while ((c = getopt(argc, argv, "+be:E:ip:ql:L:m:u:VF:f:I:A:-")) >= 0) {
         switch (c) {
         case 'b': batch_mode = TRUE; break;
         case 'i': interactive_mode = TRUE; break;
@@ -202,6 +211,9 @@ int parse_options(int argc, char *argv[])
         case 'f': further_options(optarg); break;
         case 'p': profiler_options(optarg); break;
         case 'F': feature_options(optarg); break;
+        case 'm':
+            main_module = Scm_Intern(SCM_STRING(SCM_MAKE_STR_COPYING(optarg)));
+            break;
         case 'u': /*FALLTHROUGH*/;
         case 'l': /*FALLTHROUGH*/;
         case 'L': /*FALLTHROUGH*/;
@@ -502,17 +514,23 @@ int main(int argc, char **argv)
 
     if (scriptfile != NULL) {
         /* If script file is specified, load it. */
-        ScmObj mainproc;
+        ScmModule *mainmod;
+        ScmObj mainproc = SCM_FALSE;
         ScmEvalPacket epak;
 
         if (Scm_Load(scriptfile, 0, &lpak) < 0) {
             error_exit(lpak.exception);
         }
 
-        /* if symbol 'main is bound to a procedure in the user module,
-           call it.  (SRFI-22) */
-        mainproc = Scm_SymbolValue(Scm_UserModule(),
-                                   SCM_SYMBOL(SCM_INTERN("main")));
+        /* If symbol 'main is bound, call it (SRFI-22).   */
+        mainmod = (SCM_SYMBOLP(main_module)
+                   ? Scm_FindModule(SCM_SYMBOL(main_module), 0)
+                   : Scm_UserModule());
+        if (mainmod) {
+            mainproc = Scm_GlobalVariableRef(mainmod,
+                                             SCM_SYMBOL(SCM_INTERN("main")),
+                                             SCM_BINDING_STAY_IN_MODULE);
+        }
         if (SCM_PROCEDUREP(mainproc)) {
 #if 0 /* Temporarily turned off due to the bug that loses stack traces. */
             int r = Scm_Apply(mainproc, SCM_LIST1(av), &epak);

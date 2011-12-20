@@ -15,6 +15,22 @@
    [else "/dev/null"]))
 
 ;;=======================================================================
+(test-section "gosh")
+
+(test* "'main' in an alternative module" "foo"
+         (unwind-protect
+             (begin
+               (delete-files "test.o")
+               (with-output-to-file "test.o"
+                 (^[]
+                   (write
+                    '(define-module foo (define (main args) (print "foo") 0)))
+                   (write
+                    '(define (main args) (print "bar") 0))))
+               (process-output->string '("./gosh" "-mfoo" "test.o")))
+           (delete-files "test.o")))
+
+;;=======================================================================
 (test-section "gauche-config")
 
 (define (run-gauche-config . opts)
