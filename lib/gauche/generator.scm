@@ -34,6 +34,7 @@
 (define-module gauche.generator
   (use srfi-1)
   (use gauche.sequence)
+  (use gauche.partcont)
   (export list->generator vector->generator reverse-vector->generator
           string->generator
           bits->generator reverse-bits->generator
@@ -43,6 +44,7 @@
           generator->list null-generator gcons gappend
           circular-generator gunfold giota grange
           gmap gtake gdrop gtake-while gdrop-while gfilter
+          generate
           )
   )
 (select-module gauche.generator)
@@ -65,34 +67,34 @@
 
 ;; Some useful converters
 (define (list->generator lis)
-  (^() (if (null? lis) (eof-object) (pop! lis))))
+  (^[] (if (null? lis) (eof-object) (pop! lis))))
 
 (define (vector->generator vec)
   (let ([i 0] [len (vector-length vec)])
-    (^() (if (>= i len) (eof-object) (%begin0 (vector-ref vec i) (inc! i))))))
+    (^[] (if (>= i len) (eof-object) (%begin0 (vector-ref vec i) (inc! i))))))
 
 (define (reverse-vector->generator vec)
   (let ([i (- (vector-length vec) 1)])
-    (^() (if (< i 0) (eof-object) (%begin0 (vector-ref vec i) (dec! i))))))
+    (^[] (if (< i 0) (eof-object) (%begin0 (vector-ref vec i) (dec! i))))))
 
 (define (string->generator str)
   (let1 p (open-input-string str)
-    (^() (read-char p))))
+    (^[] (read-char p))))
 
 (define (bits->generator n)
   (let1 k (- (integer-length n) 1)
-    (^() (if (< k 0) (eof-object) (%begin0 (logbit? k n) (dec! k))))))
+    (^[] (if (< k 0) (eof-object) (%begin0 (logbit? k n) (dec! k))))))
 
 (define (reverse-bits->generator n)
   (if (>= n 0)
-    (^() (if (= n 0)  (eof-object) (%begin0 (odd? n) (set! n (ash n -1)))))
-    (^() (if (= n -1) (eof-object) (%begin0 (odd? n) (set! n (ash n -1)))))))
+    (^[] (if (= n 0)  (eof-object) (%begin0 (odd? n) (set! n (ash n -1)))))
+    (^[] (if (= n -1) (eof-object) (%begin0 (odd? n) (set! n (ash n -1)))))))
 
 (define (file->generator filename reader . open-args)
   ;; If the generator is abanboned before reaching EOF, we have to rely
   ;; on the GC to close the file.
   (let1 p (apply open-input-file filename open-args)
-    (^() (if (not p)
+    (^[] (if (not p)
            (eof-object)
            (rlet1 v (reader p)
              (when (eof-object? v)
@@ -127,37 +129,37 @@
   (if (null? args)
     (error "circular-generator requires at least one argument")
     (let1 p args
-      (^() (when (null? p) (set! p args)) (pop! p)))))
+      (^[] (when (null? p) (set! p args)) (pop! p)))))
 
 ;; trivial, but for completeness
 (define (null-generator) (eof-object))
 
 (define (gunfold p f g seed :optional (tail-gen eof-object))
   (let1 end? #f
-    (^() (cond [end? (tail-gen)]
+    (^[] (cond [end? (tail-gen)]
                [(p seed) (set! end? #t) (tail-gen)]
                [else (%begin0 (f seed) (set! seed (g seed)))]))))
 
 (define (giota num :optional (start 0) (step 1))
   (let1 val start
-    (^() (if (<= num 0)
+    (^[] (if (<= num 0)
            (eof-object)
            (%begin0 val (inc! val step) (dec! num))))))
 
 (define (grange :optional (start 0) (end +inf.0) (step 1))
   (let1 val start
-    (^() (if (>= val end)
+    (^[] (if (>= val end)
            (eof-object)
            (%begin0 val (inc! val step))))))
 
 ;; gcons :: (a, () -> a) -> (() -> a)
 (define (gcons item gen)
   (let1 done #f
-    (^() (if done (gen) (%begin0 item (set! done #t))))))
+    (^[] (if done (gen) (begin (set! done #t) item)))))
 
 ;; gappend :: [() -> a] -> (() -> a)
 (define (gappend . gens)
-  (^() (let rec ()
+  (^[] (let rec ()
          (if (null? gens)
            (eof-object)
            (let1 v ((car gens))
@@ -167,15 +169,15 @@
 ;; gmap :: (a -> b, () -> a) -> (() -> b)
 (define gmap
   (case-lambda
-    [(fn gen) (^() (let1 v (gen) (if (eof-object? v) v (fn v))))]
+    [(fn gen) (^[] (let1 v (gen) (if (eof-object? v) v (fn v))))]
     [(fn gen . more)
      (let1 gens (cons gen more)
-       (^() (let1 vs (map (^f (f)) gens)
+       (^[] (let1 vs (map (^f (f)) gens)
               (if (any eof-object? vs) (eof-object) (apply fn vs)))))]))
 
 ;; gfilter :: (a -> Bool, () -> a) -> (() -> a)
 (define (gfilter pred gen)
-  (^() (let loop ([v (gen)])
+  (^[] (let loop ([v (gen)])
          (cond [(eof-object? v) v]
                [(pred v) v]
                [else (loop (gen))]))))
@@ -189,16 +191,16 @@
 ;;     separately.
 (define (gtake gen n)
   (let1 k 0
-    (^() (if (< k n) (begin (inc! k) (gen)) (eof-object)))))
+    (^[] (if (< k n) (begin (inc! k) (gen)) (eof-object)))))
 (define (gdrop gen n)
   (let1 k 0
-    (^() (when (< k n) (dotimes [i n] (inc! k) (gen))) (gen))))
+    (^[] (when (< k n) (dotimes [i n] (inc! k) (gen))) (gen))))
 
 ;; gtake-while :: (a -> Bool, () -> a) -> (() -> a)
 ;; gdrop-while :: (a -> Bool, () -> a) -> (() -> a)
 (define (gtake-while pred gen)
   (let1 end? #f
-    (^() (if end?
+    (^[] (if end?
            (eof-object)
            (let1 v (gen)
              (if (or (eof-object? v) (not (pred v)))
@@ -206,20 +208,25 @@
                v))))))
 (define (gdrop-while pred gen)
   (let1 found? #f
-    (^() (if found?
+    (^[] (if found?
            (gen)
            (let loop ([v (gen)])
              (cond [(eof-object? v) v]
                    [(pred v) (loop (gen))]
                    [else (set! found? #t) v]))))))
 
+;; generate :: ((a -> ()) -> ()) -> (() -> a)
+(define (generate proc)
+  (define (cont)
+    (reset (proc (^[value] (shift k (set! cont k) value)))
+           (set! cont null-generator)
+           (eof-object)))
+  (^[] (cont)))
+
 ;; TODO:
 ;;  (->generator OBJ)
 ;;    a convenence coercer.  call appropriate x->generate function
 ;;    based on OBJ's type.
-;;  (generator .... (yield value) ...)
-;;    a macro to use "inversion of iterator" idiom to turn any loop
-;;    construct to a generator.  The name and syntax is TBD.
 ;;  (gen-ec (: i ...) ...)
 ;;    srfi-42-ish macro to create generator.  it's not "eager", so
 ;;    the name needs to be reconsidered.

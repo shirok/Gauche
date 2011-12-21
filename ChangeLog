@@ -1,3 +1,9 @@
+2011-12-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/generator.scm (generate): Added coroutine-based
+	  generator.
+	* doc/modgauche.texi: Start adding generator documents.
+
 2011-12-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c: Added '-m module' option to specify the module where

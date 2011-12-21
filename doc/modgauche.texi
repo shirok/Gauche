@@ -11,6 +11,7 @@
 * Configuration parameters::    gauche.config
 * Dictionary framework::        gauche.dictionary
 * Low-level file operations::   gauche.fcntl
+* Generators::                  gauche.generator
 * Hooks::                       gauche.hook
 * Interactive session::         gauche.interactive
 * Listener::                    gauche.listener
@@ -3606,7 +3607,7 @@ If there's no relations with given key, these are noop.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Low-level file operations, Hooks, Dictionary framework, Library modules - Gauche extensions
+@node Low-level file operations, Generators, Dictionary framework, Library modules - Gauche extensions
 @section @code{gauche.fcntl} - Low-level file operations
 @c NODE 低レベルファイル操作, @code{gauche.fcntl} - 低レベルファイル操作
 
@@ -3959,7 +3960,120 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Hooks, Interactive session, Low-level file operations, Library modules - Gauche extensions
+@node Generators, Hooks, Low-level file operations, Library modules - Gauche extensions
+@section @code{gauche.generator} - Generators
+@c NODE ジェネレータ, @code{gauche.generator} - ジェネレータ
+
+@deftp {Module} gauche.generator
+@mdindex gauche.generator
+A generator is merely a procedure with no arguments and works
+as a source of a series of values.  Every time it is called,
+it yeilds a value.  The EOF value indicates the generator is exhausted.
+For example, @code{read-char} is a generator.
+
+It is common practice to abstract the source of values in such a way,
+so it is useful to define utility procedures that work on the
+generators.  This module provides them.
+@end deftp
+
+@c Note: generators are also closely related to the lazy sequences.
+@c @xref{Lazy sequences}, for more details.
+@c Especially, you can ``plug'' generators into a
+@c list-expecting procedures via lazy sequences.
+@c ... examples ...
+
+@menu
+* Generator constructors::      
+* Generator operations::        
+@end menu
+
+@node Generator constructors, Generator operations, Generators, Generators
+@subsection Generator constructors
+
+@defun null-generator
+An empty generator.  Returns just an EOF object when called.
+@end defun
+
+@defun circular-generator arg @dots{}
+Returns an infinite generator that repeats the given arguments.
+
+@example
+(generator->list (gtake (circular-generator 1 2 3) 10))
+ @result{} (1 2 3 1 2 3 1 2 3 1)
+@end example
+@end defun
+
+@defun giota count :optional (start 0) (step 1)
+Like @code{iota} (@xref{List constructors}), creates a generator
+of a series of @var{count} numbers, starting from @var{start}
+and increased by @var{step}.
+
+@example
+(generator->list (giota 10 3 2))
+ @result{} (3 5 7 9 11 13 15 17 19 21)
+@end example
+@end defun
+
+@defun grange start :optional (end +inf.0) (step 1)
+Similar to @code{giota}, creates a generator of a series of
+numbers.  The series begins with @var{start}, increased by @var{step},
+and continues while the number is below @var{end}.
+
+@example
+(generator->list (grange 3 8))
+ @result{} (3 4 5 6 7)
+@end example
+@end defun
+
+@defun generate proc
+Creates a generator from coroutine.
+
+The @var{proc} argument is a procedure that takes one argument,
+@var{yield}.   When called, @code{generate} immediately returns
+a generator @var{G}.  When @var{G} is called, the @var{proc} runs
+until it calls @var{yield}.  Calling @var{yield} causes to suspend
+the execution of @var{proc} and @var{G} returns the value passed
+to @var{yield}.
+
+Once @var{proc} returns, it is the end of the series---@var{G} returns
+eof object from then on.  The return value of @var{proc} is ignored.
+
+The following code creates a generator that produces a series
+0, 1, and 2 (effectively the same as @code{(giota 3)} and binds
+it to @code{g}.
+@example
+(define g
+  (generate
+   (^[yield] (let loop ([i 0])
+               (when (< i 3) (yield i) (loop (+ i 1)))))))
+@end example
+
+See @code{g} works as a generator:
+
+@example
+gosh> (g)
+0
+gosh> (g)
+1
+gosh> (g)
+2
+gosh> (g)
+#<eof>
+@end example
+
+@c TODO: write an infinite generator of primes
+
+@end defun
+
+
+@node Generator operations,  , Generator constructors, Generators
+@subsection Generator operations
+
+
+
+
+@c ----------------------------------------------------------------------
+@node Hooks, Interactive session, Generators, Library modules - Gauche extensions
 @section @code{gauche.hook} - Hooks
 @c NODE フック, @code{gauche.hook} - フック
 
