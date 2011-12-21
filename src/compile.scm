@@ -660,113 +660,115 @@
           [else (loop (cdr p))])))
 
 ;; prettyprinter of intermediate form
-(define (pp-iform iform)
-
-  (define labels '()) ;; alist of label node and count
-  (define (indent count) (dotimes (i count) (write-char #\space)))
-  (define (nl ind) (newline) (indent ind))
-  (define (id->string id)
-    (format "~a#~a" (module-name (slot-ref id'module)) (slot-ref id'name)))
-  (define (lvar->string lvar)
-    (format "~a.~a~a" (variable-name (lvar-name lvar))
-            (lvar-ref-count lvar)
-            (make-string (lvar-set-count lvar) #\!)))
-  
-  (let rec ([ind 0] [iform iform])
-    (case/unquote
-     (iform-tag iform)
-     [($DEFINE) (format #t "($define ~a ~a" ($define-flags iform)
-                        (id->string ($define-id iform)))
-                (nl (+ ind 2))
-                (rec (+ ind 2) ($define-expr iform)) (display ")")]
-     [($LREF)   (format #t "($lref ~a)" (lvar->string ($lref-lvar iform)))]
-     [($LSET)   (format #t "($lset ~a"  (lvar->string ($lset-lvar iform)))
-                (nl (+ ind 2))
-                (rec (+ ind 2) ($lset-expr iform)) (display ")")]
-     [($GREF)   (format #t "($gref ~a)" (id->string ($gref-id iform)))]
-     [($GSET)   (format #t "($gset ~a" (id->string ($gset-id iform)))
-                (nl (+ ind 2))
-                (rec (+ ind 2) ($gset-expr iform)) (display ")")]
-     [($CONST)  (format #t "($const ~s)" ($const-value iform))]
-     [($IF)     (display "($if ")
-                (rec (+ ind 5) ($if-test iform)) (nl (+ ind 2))
-                (rec (+ ind 2) ($if-then iform)) (nl (+ ind 2))
-                (rec (+ ind 2) ($if-else iform)) (display ")")]
-     [($LET)
-      (let* ([hdr  (format "($let~a (" (case ($let-type iform)
-                                         ((let) "") ((rec) "rec")))]
-             [xind (+ ind (string-length hdr))]
-             [first #t])
-        (display hdr)
-        (for-each (^[var init]
-                    (if first (set! first #f) (nl xind))
-                    (let1 z (format "[~a " (lvar->string var))
-                      (display z)
-                      (rec (+ xind  (string-length z)) init)
-                      (display "]")))
-                  ($let-lvars iform) ($let-inits iform))
-        (display ")") (nl (+ ind 2))
-        (rec (+ ind 2) ($let-body iform)) (display ")"))]
-     [($RECEIVE)
-      (format #t "($receive ~a" (map lvar->string ($receive-lvars iform)))
-      (nl (+ ind 4))
-      (rec (+ ind 4) ($receive-expr iform)) (nl (+ ind 2))
-      (rec (+ ind 2) ($receive-body iform)) (display ")")]
-     [($LAMBDA) (format #t "($lambda[~a.~a~a] ~a" ($lambda-name iform)
-                        (length ($lambda-calls iform))
-                        (if (vector? ($lambda-flag iform)) " inlinable" "")
-                        (map lvar->string ($lambda-lvars iform)))
-                (nl (+ ind 2))
-                (rec (+ ind 2) ($lambda-body iform)) (display ")")]
-     [($LABEL) (cond [(assq iform labels) => (^p (format #t "label#~a" (cdr p)))]
-                     [else
-                      (let1 num (length labels)
-                        (push! labels (cons iform num))
-                        (format #t "($label #~a" num)
-                        (nl (+ ind 2))
-                        (rec (+ ind 2) ($label-body iform)) (display ")"))])]
-     [($SEQ)   (format #t "($seq")
-               (for-each (^n (nl (+ ind 2)) (rec (+ ind 2) n)) ($seq-body iform))
-               (display ")")]
-     [($CALL)  (let1 pre
-                   (cond [($call-flag iform) => (cut format "($call[~a] " <>)]
-                         [else "($call "])
-                 (format #t pre)
-                 (rec (+ ind (string-length pre)) ($call-proc iform))
-                 (for-each (^n (nl (+ ind 2)) (rec (+ ind 2) n))
-                           ($call-args iform))
-                 (display ")"))]
-     [($ASM)
-      (let* ([insn ($asm-insn iform)]
-             [args ($asm-args iform)]
-             [hdr  (format "($asm ~a" (cons (insn-name (car insn)) (cdr insn)))])
-        (display hdr)
-        (case (length args)
-          [(0)]
-          [(1) (display " ") (rec (+ ind (string-length hdr) 1) (car args))]
-          [else (for-each (^n (nl (+ ind 2)) (rec (+ ind 2) n))
-                          ($asm-args iform))])
-        (display ")"))]
-     [($PROMISE) (display "($promise ")
-                 (rec (+ ind 10) ($promise-expr iform))
-                 (display ")")]
-     [($IT)      (display "($it)")]
-     [($CONS $APPEND $MEMV $EQ? $EQV?)
-      (let* ([s (format "(~a " (iform-tag-name (iform-tag iform)))]
-             [ind (+ ind (string-length s))])
-        (display s)
-        (rec ind (vector-ref iform 2)) (nl ind)
-        (rec ind (vector-ref iform 3)) (display ")"))]
-     [($LIST $LIST* $VECTOR)
-      (display (format "(~a " (iform-tag-name (iform-tag iform))))
-      (dolist [elt (vector-ref iform 2)] (nl (+ ind 2)) (rec (+ ind 2) elt))
-      (display ")")]
-     [($LIST->VECTOR)
-      (display "($LIST->VECTOR ")
-      (rec (+ ind 14) (vector-ref iform 2))
-      (display ")")]
-     [else (error "pp-iform: unknown tag:" (iform-tag iform))]))
-  (newline))
+(define (pp-iform iform :optional (lines +inf.0))
+  (let/cc return
+    (define labels '()) ;; alist of label node and count
+    (define (indent count) (dotimes (i count) (write-char #\space)))
+    (define (id->string id)
+      (format "~a#~a" (module-name (slot-ref id'module)) (slot-ref id'name)))
+    (define (lvar->string lvar)
+      (format "~a.~a~a" (variable-name (lvar-name lvar))
+              (lvar-ref-count lvar)
+              (make-string (lvar-set-count lvar) #\!)))
+    (define (nl ind)
+      (newline) (dec! lines) (when (zero? lines) (return)) (indent ind))
+    
+    (let rec ([ind 0] [iform iform])
+      (case/unquote
+       (iform-tag iform)
+       [($DEFINE) (format #t "($define ~a ~a" ($define-flags iform)
+                          (id->string ($define-id iform)))
+        (nl (+ ind 2))
+        (rec (+ ind 2) ($define-expr iform)) (display ")")]
+       [($LREF)   (format #t "($lref ~a)" (lvar->string ($lref-lvar iform)))]
+       [($LSET)   (format #t "($lset ~a"  (lvar->string ($lset-lvar iform)))
+        (nl (+ ind 2))
+        (rec (+ ind 2) ($lset-expr iform)) (display ")")]
+       [($GREF)   (format #t "($gref ~a)" (id->string ($gref-id iform)))]
+       [($GSET)   (format #t "($gset ~a" (id->string ($gset-id iform)))
+        (nl (+ ind 2))
+        (rec (+ ind 2) ($gset-expr iform)) (display ")")]
+       [($CONST)  (format #t "($const ~s)" ($const-value iform))]
+       [($IF)     (display "($if ")
+        (rec (+ ind 5) ($if-test iform)) (nl (+ ind 2))
+        (rec (+ ind 2) ($if-then iform)) (nl (+ ind 2))
+        (rec (+ ind 2) ($if-else iform)) (display ")")]
+       [($LET)
+        (let* ([hdr  (format "($let~a (" (case ($let-type iform)
+                                           ((let) "") ((rec) "rec")))]
+               [xind (+ ind (string-length hdr))]
+               [first #t])
+          (display hdr)
+          (for-each (^[var init]
+                      (if first (set! first #f) (nl xind))
+                      (let1 z (format "[~a " (lvar->string var))
+                        (display z)
+                        (rec (+ xind  (string-length z)) init)
+                        (display "]")))
+                    ($let-lvars iform) ($let-inits iform))
+          (display ")") (nl (+ ind 2))
+          (rec (+ ind 2) ($let-body iform)) (display ")"))]
+       [($RECEIVE)
+        (format #t "($receive ~a" (map lvar->string ($receive-lvars iform)))
+        (nl (+ ind 4))
+        (rec (+ ind 4) ($receive-expr iform)) (nl (+ ind 2))
+        (rec (+ ind 2) ($receive-body iform)) (display ")")]
+       [($LAMBDA) (format #t "($lambda[~a.~a~a] ~a" ($lambda-name iform)
+                          (length ($lambda-calls iform))
+                          (if (vector? ($lambda-flag iform)) " inlinable" "")
+                          (map lvar->string ($lambda-lvars iform)))
+        (nl (+ ind 2))
+        (rec (+ ind 2) ($lambda-body iform)) (display ")")]
+       [($LABEL) (if-let1 p (assq iform labels)
+                   (format #t "label#~a" (cdr p))
+                   (let1 num (length labels)
+                     (push! labels (cons iform num))
+                     (format #t "($label #~a" num)
+                     (nl (+ ind 2))
+                     (rec (+ ind 2) ($label-body iform)) (display ")")))]
+       [($SEQ)   (format #t "($seq")
+        (for-each (^n (nl (+ ind 2)) (rec (+ ind 2) n)) ($seq-body iform))
+        (display ")")]
+       [($CALL)  (let1 pre (if-let1 flag ($call-flag iform)
+                             (format "($call[~a] " flag)
+                             "($call ")
+                   (format #t pre)
+                   (rec (+ ind (string-length pre)) ($call-proc iform))
+                   (for-each (^n (nl (+ ind 2)) (rec (+ ind 2) n))
+                             ($call-args iform))
+                   (display ")"))]
+       [($ASM)
+        (let* ([insn ($asm-insn iform)]
+               [args ($asm-args iform)]
+               [hdr  (format "($asm ~a" (cons (insn-name (car insn))
+                                              (cdr insn)))])
+          (display hdr)
+          (case (length args)
+            [(0)]
+            [(1) (display " ") (rec (+ ind (string-length hdr) 1) (car args))]
+            [else (for-each (^n (nl (+ ind 2)) (rec (+ ind 2) n))
+                            ($asm-args iform))])
+          (display ")"))]
+       [($PROMISE) (display "($promise ")
+        (rec (+ ind 10) ($promise-expr iform))
+        (display ")")]
+       [($IT)      (display "($it)")]
+       [($CONS $APPEND $MEMV $EQ? $EQV?)
+        (let* ([s (format "(~a " (iform-tag-name (iform-tag iform)))]
+               [ind (+ ind (string-length s))])
+          (display s)
+          (rec ind (vector-ref iform 2)) (nl ind)
+          (rec ind (vector-ref iform 3)) (display ")"))]
+       [($LIST $LIST* $VECTOR)
+        (display (format "(~a " (iform-tag-name (iform-tag iform))))
+        (dolist [elt (vector-ref iform 2)] (nl (+ ind 2)) (rec (+ ind 2) elt))
+        (display ")")]
+       [($LIST->VECTOR)
+        (display "($LIST->VECTOR ")
+        (rec (+ ind 14) (vector-ref iform 2))
+        (display ")")]
+       [else (error "pp-iform: unknown tag:" (iform-tag iform))]))
+    (newline)))
 
 ;; Sometimes we need to save IForm for later use (e.g. procedure inlining)
 ;; We pack an IForm into a vector, instead of keeping it as is, since:
