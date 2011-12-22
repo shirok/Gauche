@@ -812,7 +812,7 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
 {
     int istart, iend;
     const ScmStringBody *xb = SCM_STRING_BODY(x);
-    if (SCM_UNBOUNDP(start) || SCM_UNDEFINEDP(start)) {
+    if (SCM_UNBOUNDP(start) || SCM_UNDEFINEDP(start) || SCM_FALSEP(start)) {
         istart = 0;
     } else {
         if (!SCM_INTP(start))
@@ -820,7 +820,7 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
         istart = SCM_INT_VALUE(start);
     }
 
-    if (SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end)) {
+    if (SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end) || SCM_FALSEP(end)) {
         if (istart == 0) return SCM_OBJ(x);
         iend = SCM_STRING_BODY_LENGTH(xb);
     } else {

@@ -1,5 +1,8 @@
 2011-12-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/string.c (Scm_MaybeSubstring): Allow #f as start or end arguments,
+	  for the convenience.
+
 	* src/liblist.scm, libsrc/srfi-1.scm, lib/util/list.scm: Moved
 	  take-right, drop-right, take!, drop-right!, take*, drop*,
 	  take-right*, drop-right* and split-at* to the core.
