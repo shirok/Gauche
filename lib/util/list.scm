@@ -18,57 +18,24 @@
 
 (define-module util.list
   (use srfi-1)
-  (export take* drop* take-right* drop-right* split-at*
-          slices intersperse cond-list
+  (export slices intersperse cond-list
           alist->hash-table hash-table->alist
           rassq rassv rassoc
           assq-ref assv-ref assoc-ref
           rassq-ref rassv-ref rassoc-ref
-          assq-set! assv-set! assoc-set!)
-  )
+          assq-set! assv-set! assoc-set!
+
+          ;; The following procs are moved to the core, but kept exported
+          ;; here for the backward compatibility.
+          take* drop* take-right* drop-right* split-at*
+          ))
 (select-module util.list)
 
-;;-----------------------------------------------------------------
-;; permissive take and drop - if the length of given list is shorter
-;; than index, returns shorter list or fills the rest.
-
-(define (split-at* lis k :optional (fill? #f) (filler #f))
-  (when (or (not (integer? k)) (negative? k))
-    (error "index must be non-negative integer" k))
-  (let loop ((i 0)
-             (lis lis)
-             (r '()))
-    (cond [(= i k) (values (reverse! r) lis)]
-          [(null? lis)
-           (values (if fill?
-                     (append! (reverse! r) (make-list (- k i) filler))
-                     (reverse! r))
-                   lis)]
-          [else (loop (+ i 1) (cdr lis) (cons (car lis) r))])))
-
-(define (take* lis k . args)
-  (receive (h t) (apply split-at* lis k args) h))
-
-(define (drop* lis k)
-  (when (or (not (integer? k)) (negative? k))
-    (error "index must be non-negative integer" k))
-  (let loop ((i 0)
-             (lis lis))
-    (cond [(= i k) lis]
-          [(null? lis) '()]
-          [else (loop (+ i 1) (cdr lis))])))
-
-(define (take-right* lis k :optional (fill? #f) (filler #f))
-  (when (or (not (integer? k)) (negative? k))
-    (error "index must be non-negative integer" k))
-  (let1 len (length lis)
-    (cond [(<= k len) (drop lis (- len k))]
-          [fill? (append! (make-list (- k len) filler) lis)]
-          [else lis])))
-
-(define (drop-right* lis k)
-  (let1 len (length lis)
-    (if (<= k len) (take lis (- len k)) '())))
+(define take*       (with-module gauche take*))
+(define drop*       (with-module gauche drop*))
+(define take-right* (with-module gauche take-right*))
+(define drop-right* (with-module gauche drop-right*))
+(define split-at*   (with-module gauche split-at*))
 
 ;;-----------------------------------------------------------------
 ;; slices - split a list to a bunch of sublists of length k

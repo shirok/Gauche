@@ -1,3 +1,9 @@
+2011-12-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm, libsrc/srfi-1.scm, lib/util/list.scm: Moved
+	  take-right, drop-right, take!, drop-right!, take*, drop*,
+	  take-right*, drop-right* and split-at* to the core.
+
 2011-12-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm (generate): Added coroutine-based

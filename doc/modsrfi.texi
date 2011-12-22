@@ -220,9 +220,11 @@ GaucheはSRFI-1の手続きの多くを組み込みで提供しています。
 @c COMMON
 
 @example
-null-list? cons* take drop last member delete delete!
-delete-duplicates delete-duplicates!  assoc alist-copy alist-delete
-alist-delete! any every filter filter!  fold fold-right find find-tail
+null-list? cons* last member
+take drop take-right drop-right take! drop-right!
+delete delete! delete-duplicates delete-duplicates!
+assoc alist-copy alist-delete alist-delete!
+any every filter filter! fold fold-right find find-tail
 split-at split-at! iota
 @end example
 @end deftp
@@ -334,70 +336,6 @@ The equality procedure must be consistent with @code{eq?}, i.e.
 [SRFI-1] Returns two values, @code{(car pair)} and @code{(cdr pair)}.
 @c JP
 [SRFI-1] @code{(car pair)} および @code{(cdr pair)} の二つの値を返します。
-@c COMMON
-@end defun
-
-@defun take-right flist i
-@defunx drop-right flist i
-@c EN
-[SRFI-1] @code{take-right} returns the last @var{i} elements of @var{flist}.
-@code{drop-right} returns all but the last @var{i} elements of @var{flist}. 
-@c JP
-[SRFI-1] @code{take-right} は @var{flist} の最後の @var{i}個の要素
-からなるリストを返します。
-@code{drop-right} は @var{flist} の最後の @var{i}個の要素を
-除いたリスト返します。
-@c COMMON
-@example
-(take-right '(a b c d e) 2) => (d e)
-(drop-right '(a b c d e) 2) => (a b c)
-@end example
-@c EN
-@var{flist} may be any finite list.
-@c JP
-@var{flist} は有限リストであればOKです。
-@c COMMON
-@example
-(take-right '(1 2 3 . d) 2) => (2 3 . d)
-(drop-right '(1 2 3 . d) 2) => (1)
-(take-right '(1 2 3 . d) 0) => d
-(drop-right '(1 2 3 . d) 0) => (1 2 3)
-@end example
-@c EN
-@code{take-right}'s return value always shares a common
-tail with @var{flist}.
-@code{drop-right} always allocates a new list
-if the argument is a list of non-zero length.
-
-An error is signalled if @var{i} is larger than the length of @var{flist}.
-@xref{Additional list library}, for more tolerant version
-of @code{take-right} and @code{drop-right}.
-@c JP
-@code{take-right} の返す値はいつでも @var{first} の共通の末尾を共有します。
-@code{drop-right} は、引数が長さが0でないリストなら、必ず新しいリストの
-領域を確保します。
-
-@var{i} がリスト @var{flist} の長さより大きければエラーが発生します。
-より寛容なバージョンの @code{take-right} と @code{drop-right} については、
-@xref{Additional list library} を参照してください。
-@c COMMON
-@end defun
-
-@defun take! x i
-@defunx drop-right! x i
-@c EN
-[SRFI-1]  Linear update variants of @var{take} and @var{drop-right}.
-Those procedures may destructively modifies @var{x}.
-
-If @var{x} is circular, @code{take!} may return a list
-shorter than expected.
-@c JP
-[SRFI-1] @var{take} および @var{drop-right} の
-その場で更新されるバージョンです。これらの
-手続きは @var{x} を破壊的に変更するかもしれません。
-
-@var{x} が循環リストなら、@code{take!} は期待されるものより短いリストを返す
-可能性があります。
 @c COMMON
 @end defun
 

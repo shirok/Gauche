@@ -40,7 +40,8 @@
           ;; These are defined in gauche module, but they're not exported.
           ;; We need to export them here so that (use srfi-1 :only (fold))
           ;; will work.
-          null-list? cons* last member take drop 
+          null-list? cons* last member
+          take drop take-right drop-right take! drop-right!
           delete delete! delete-duplicates delete-duplicates!
           assoc alist-copy alist-delete alist-delete!
           any every filter filter! fold fold-right find find-tail
@@ -56,6 +57,7 @@
   `(begin ,@(map (^s `(define ,s (with-module gauche ,s))) syms)))
 
 (re-export null-list? cons* last member
+          take drop take-right drop-right take! drop-right!
            delete delete! delete-duplicates delete-duplicates!
            assoc alist-copy alist-delete alist-delete!
            any every filter filter! fold fold-right find find-tail
@@ -160,51 +162,6 @@
 (define (eighth  x) (cadddr (cddddr x)))
 (define (ninth   x) (car  (cddddr (cddddr x))))
 (define (tenth   x) (cadr (cddddr (cddddr x))))
-
-;;;
-;;; Selectors of SRFI-1
-;;;
-;;; take & drop
-
-(define (take! lis k)
-  (check-arg integer? k)
-  (if (zero? k)
-    '()
-    (begin (set-cdr! (drop lis (- k 1)) '())
-           lis)))
-
-;;; TAKE-RIGHT and DROP-RIGHT work by getting two pointers into the list, 
-;;; off by K, then chasing down the list until the lead pointer falls off
-;;; the end.
-
-(define (take-right lis k)
-  (check-arg integer? k)
-  (let lp ((lag lis)  (lead (drop lis k)))
-    (if (pair? lead)
-      (lp (cdr lag) (cdr lead))
-      lag)))
-
-(define (drop-right lis k)
-  (check-arg integer? k)
-  (let recur ((lag lis) (lead (drop lis k)))
-    (if (pair? lead)
-      (cons (car lag) (recur (cdr lag) (cdr lead)))
-      '())))
-
-;;; In this function, LEAD is actually K+1 ahead of LAG. This lets
-;;; us stop LAG one step early, in time to smash its cdr to ().
-(define (drop-right! lis k)
-  (check-arg integer? k)
-  (let ((lead (drop lis k)))
-    (if (pair? lead)
-
-      (let lp ((lag lis)  (lead (cdr lead)))	; Standard case
-        (if (pair? lead)
-          (lp (cdr lag) (cdr lead))
-          (begin (set-cdr! lag '())
-                 lis)))
-
-      '())))	; Special case dropping everything -- no cons to side-effect.
 
 ;;;
 ;;; Utility functions for n-ary operation in SRFI-1

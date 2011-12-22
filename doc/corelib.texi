@@ -2166,8 +2166,7 @@ On the other hand, take always allocates a new list
 for result if the argument is a list of non-zero length.
 
 An error is signalled if @var{i} is past the end of list @var{x}.
-@xref{Additional list library}, for more tolerant version
-of @code{take} and @code{drop}.
+See @code{take*} and @code{drop*} below for more tolerant version.
 
 For generic subsequence extraction from any sequence, see @code{subseq}
 in @ref{Slicing sequence}.
@@ -2178,11 +2177,140 @@ take は、引数のリストが長さ0でないリストなら必ず新しい�
 領域を確保します。
 
 @var{i} がリスト @var{x} の終端を超えたらエラーが発生します。
-より寛容なバージョンの @code{take} と @code{drop} については、
-@xref{Additional list library} を参照してください。
+より寛容な手続きについては、下の@code{take*}と@code{drop*}を見てください。
 
 あらゆる並びからの部分並びを抽出する汎用的な方法に関しては、
 @ref{Slicing sequence} にある @code{subseq} を参照してください。
+@c COMMON
+@end defun
+
+@defun take* list k :optional (fill? #f) (padding #f)
+@defunx drop* list k
+@c EN
+More tolerant version of @code{take} and @code{drop}.
+They won't raise an error even if @var{k} is larger than the size
+of the given list.
+
+If the list is shorter than @var{k} elements,
+@code{take*} returns a copy of @var{list}
+by default.   If @var{fill?} is true, @var{padding} is added
+to the result to make its length @var{k}.
+
+On the other hand, @code{drop*} just returns an empty list
+when the input list is shorter than @var{k} elements.
+@c JP
+@code{take}と@code{drop}のより寛容なバージョンです。
+これらの手続きは、リストが@code{k}より短くてもエラーを通知しません。
+
+その場合、@code{take*}はデフォルトでは@var{list}のコピーを
+返します。もし@var{fill?}が真であれば、足りない要素の部分に
+@var{padding}を追加して@var{k}要素にしたリストを返します。
+
+一方、@code{drop*}はリストの長さが不足する場合は単に空リストを返します。
+@c COMMON
+
+@example
+(take* '(a b c d) 3)       @result{} (a b c)
+(take* '(a b c d) 6)       @result{} (a b c d)
+(take* '(a b c d) 6 #t)    @result{} (a b c d #f #f)
+(take* '(a b c d) 6 #t 'z) @result{} (a b c d z z)
+(drop* '(a b c d) 3)       @result{} (d)
+(drop* '(a b c d) 5)       @result{} ()
+@end example
+
+@c EN
+Note: For generic subsequence extraction from any sequence, 
+see @code{subseq} in @ref{Slicing sequence}.
+@c JP
+注意: 一般的な、いかなるシーケンスからのサブシーケンスの抽出については、
+@ref{Slicing sequence}の@code{subseq}を見て下さい。
+@c COMMON
+@end defun
+
+@defun take-right lis k
+@defunx drop-right lis k
+[SRFI-1]
+@c EN
+@code{take-right} returns the last @var{k} elements of @var{lis}.
+@code{drop-right} returns all but the last @var{k} elements of @var{lis}. 
+@c JP
+@code{take-right} は @var{lis} の最後の @var{k}個の要素
+からなるリストを返します。
+@code{drop-right} は @var{lis} の最後の @var{k}個の要素を
+除いたリスト返します。
+@c COMMON
+@example
+(take-right '(a b c d e) 2) => (d e)
+(drop-right '(a b c d e) 2) => (a b c)
+@end example
+@c EN
+@var{lis} may be any finite list.
+@c JP
+@var{lis} は有限リストであればOKです。
+@c COMMON
+@example
+(take-right '(1 2 3 . d) 2) => (2 3 . d)
+(drop-right '(1 2 3 . d) 2) => (1)
+(take-right '(1 2 3 . d) 0) => d
+(drop-right '(1 2 3 . d) 0) => (1 2 3)
+@end example
+@c EN
+@code{take-right}'s return value always shares a common
+tail with @var{lis}.
+@code{drop-right} always allocates a new list
+if the argument is a list of non-zero length.
+
+An error is signalled if @var{k} is larger than the length of @var{lis}.
+See @code{take-right*} and @code{drop-right*} below, for more tolerant
+version.
+@c JP
+@code{take-right} の返す値はいつでも @var{lis} の共通の末尾を共有します。
+@code{drop-right} は、引数が長さが0でないリストなら、必ず新しいリストの
+領域を確保します。
+
+@var{k} がリスト @var{lis} の長さより大きければエラーが発生します。
+より寛容なバージョンについては下の@code{take-right*}, @code{drop-right*}を
+参照してください。
+@c COMMON
+@end defun
+
+@defun take-right* list k :optional (fill? #f) (padding #f)
+@defunx drop-right* list k
+@c EN
+Like @code{take*} and @code{drop*}, but counts from right of @var{list}.
+If @var{list} is shorter than @var{k} elements, they won't raise
+an error.  Instead, @code{drop-right*} just returns an empty list,
+and @code{take-right*} returns @var{list} itself by default.
+If @var{fill?} is true for @code{take-right*},
+@var{padding} is added on the left of the result to make its length @var{k}.
+The result still shares the @var{list}.
+@c JP
+@code{take*}及び@code{drop*}と同じですが、@var{list}の右端からカウントします。
+これらは@var{list}が@var{k}要素より短い場合にもエラーを通知しません。
+@code{drop-right*}はその場合は単に空リストを返します。
+@code{take-right*}はその場合はデフォルトで@var{list}そのものを
+返しますが、@var{fill?}が真であれば@var{list}の右側に
+足りない分だけ@var{padding}を足したものを返します。その場合でも
+結果の尾部は@var{list}と共有されます。
+@c COMMON
+@end defun
+
+@defun take! lis k
+@defunx drop-right! lis k
+[SRFI-1]
+@c EN
+Linear update variants of @var{take} and @var{drop-right}.
+Those procedures may destructively modifies @var{lis}.
+
+If @var{lis} is circular, @code{take!} may return a list
+shorter than expected.
+@c JP
+[SRFI-1] @var{take} および @var{drop-right} の
+その場で更新されるバージョンです。これらの
+手続きは @var{lis} を破壊的に変更するかもしれません。
+
+@var{lis} が循環リストなら、@code{take!} は期待されるものより短いリストを返す
+可能性があります。
 @c COMMON
 @end defun
 
@@ -2284,6 +2412,23 @@ modifies @var{x} to produce the result.
 これは @var{x} を破壊的に更新するかもしれません。
 @c COMMON
 @end defun
+
+@defun split-at* list k :optional (fill? #f) (padding #f)
+@c EN
+More tolerant version of @code{split-at}.
+Returns the results of @code{take*} and @var{drop*}.
+@c JP
+SRFI-1の@code{split-at}の寛容なバージョンです。
+@code{take*}と@var{drop*}の結果を返します。
+@c COMMON
+
+@example
+(split-at* '(a b c d) 6 #t 'z)
+  @result{} (a b c d z z) @r{and} ()
+@end example
+@end defun
+
+
 
 @node Walking over lists, Other list procedures, List accessors and modifiers, Pairs and Lists
 @subsection Walking over lists

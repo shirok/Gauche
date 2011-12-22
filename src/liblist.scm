@@ -454,6 +454,67 @@
 
 (define drop list-tail)  ; srfi-1
 
+(define (take-right lis k)
+  (let loop ([p0 (list-tail lis k)] [p1 lis])
+    (if (pair? p0) (loop (cdr p0) (cdr p1)) p1)))
+
+(define (drop-right lis k)
+  (let rec ([p0 (list-tail lis k)] [p1 lis])
+    (if (pair? p0) (cons (car p1) (rec (cdr p0) (cdr p1))) '())))
+
+(define (take! lis k)
+  (cond [(zero? k) '()]
+        [else (set-cdr! (list-tail lis (- k 1)) '()) lis]))
+
+(define (drop-right! lis k)
+  (let1 p0 (list-tail lis k)
+    (if (pair? p0)
+      (let loop ([p0 (cdr p0)] [p1 lis])
+        (if (pair? p0)
+          (loop (cdr p0) (cdr p1))
+          (begin (set-cdr! p1 '()) lis)))
+      '())))
+
+;; Permissive versions
+(define (split-at* lis k :optional (fill? #f) (filler #f))
+  (when (or (not (integer? k)) (negative? k))
+    (error "index must be non-negative integer" k))
+  (let loop ((i 0)
+             (lis lis)
+             (r '()))
+    (cond [(= i k) (values (reverse! r) lis)]
+          [(null? lis)
+           (values (if fill?
+                     (append! (reverse! r) (make-list (- k i) filler))
+                     (reverse! r))
+                   lis)]
+          [else (loop (+ i 1) (cdr lis) (cons (car lis) r))])))
+
+(define (take* lis k . args)
+  (receive (h t) (apply split-at* lis k args) h))
+
+(define (drop* lis k)
+  (when (or (not (integer? k)) (negative? k))
+    (error "index must be non-negative integer" k))
+  (let loop ((i 0)
+             (lis lis))
+    (cond [(= i k) lis]
+          [(null? lis) '()]
+          [else (loop (+ i 1) (cdr lis))])))
+
+(define (take-right* lis k :optional (fill? #f) (filler #f))
+  (when (or (not (integer? k)) (negative? k))
+    (error "index must be non-negative integer" k))
+  (let1 len (length lis)
+    (cond [(<= k len) (drop lis (- len k))]
+          [fill? (append! (make-list (- k len) filler) lis)]
+          [else lis])))
+
+(define (drop-right* lis k)
+  (let1 len (length lis)
+    (if (<= k len) (take lis (- len k)) '())))
+
+
 ;;;
 ;;; Extended pairs
 ;;;
