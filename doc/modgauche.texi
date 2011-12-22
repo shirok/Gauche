@@ -3990,6 +3990,11 @@ generators.  This module provides them.
 @node Generator constructors, Generator operations, Generators, Generators
 @subsection Generator constructors
 
+The result of generator constructors is merely a procedure,
+and printing it doesn't show much.  In the examples in this section
+we use @code{generator->list} to convert the generator to the list.
+See @ref{Generator operations} for the description of @code{generator->list}.
+
 @defun null-generator
 An empty generator.  Returns just an EOF object when called.
 @end defun
@@ -3998,9 +4003,12 @@ An empty generator.  Returns just an EOF object when called.
 Returns an infinite generator that repeats the given arguments.
 
 @example
-(generator->list (gtake (circular-generator 1 2 3) 10))
- @result{} (1 2 3 1 2 3 1 2 3 1)
+(generator->list (circular-generator 1 2 3) 10)
+  @result{} (1 2 3 1 2 3 1 2 3 1)
 @end example
+
+Note that the above example limits the length of list by 10; otherwise
+@code{generator->list} won't return.
 @end defun
 
 @defun giota count :optional (start 0) (step 1)
@@ -4010,7 +4018,7 @@ and increased by @var{step}.
 
 @example
 (generator->list (giota 10 3 2))
- @result{} (3 5 7 9 11 13 15 17 19 21)
+  @result{} (3 5 7 9 11 13 15 17 19 21)
 @end example
 @end defun
 
@@ -4021,7 +4029,7 @@ and continues while the number is below @var{end}.
 
 @example
 (generator->list (grange 3 8))
- @result{} (3 4 5 6 7)
+  @result{} (3 4 5 6 7)
 @end example
 @end defun
 
@@ -4046,31 +4054,86 @@ it to @code{g}.
   (generate
    (^[yield] (let loop ([i 0])
                (when (< i 3) (yield i) (loop (+ i 1)))))))
-@end example
 
-See @code{g} works as a generator:
-
-@example
-gosh> (g)
-0
-gosh> (g)
-1
-gosh> (g)
-2
-gosh> (g)
-#<eof>
+(generator->list g) @result{} (0 1 2)
 @end example
 
 @c TODO: write an infinite generator of primes
 
 @end defun
 
+@defun file->generator filename reader . open-args
+Opens a file @var{filename}, and returns a generator 
+that reads items from the file
+by a procedure @var{reader}, which takes one argument, an input port.
+The arguments @var{open-args} are passed to @code{open-input-file}
+(@xref{File ports}).
+
+The file is closed when the generator is exhausted.  If a generator
+is abandoned before being read to the end, then the file is kept
+open until the generator is garbage-collected.  If you want to
+make sure the file is closed by a certain point of time, you might want
+to use a reader procedure as a generator within the dynamic extent
+of @code{with-input-from-file} etc.
+@end defun
+
+@defun file->sexp-generator filename . open-args
+@defunx file->char-generator filename . open-args
+@defunx file->line-generator filename . open-args
+@defunx file->byte-generator filename . open-args
+Returns a generator that reads a series
+of sexps, characters, lines and bytes from a file @var{filename},
+respectively.  These are versions
+of @code{file->generator} specialized by @code{read},
+@code{read-char}, @code{read-line} and @code{read-byte} as the
+@var{reader} argument.
+
+Like @code{file->generator}, @var{open-args}
+are passed to @code{open-input-file} (@xref{File ports}).
+The file is closed when the generator is exhausted.
+@end defun
+
 
 @node Generator operations,  , Generator constructors, Generators
 @subsection Generator operations
 
+@defun generator->list generator :optional k
+Reads items from @var{generator} and returns a list of them.
+By default, this reads until the generator is exhausted.  If
+an optional argument @var{k} is given, it must be a nonnegative
+integer, and the list ends either @var{k} items are read,
+or the generator is exhausted.
 
+Be careful not to pass an infinite generator to this without
+specifying @var{k}---this procedure won't return but hogs
+all the memory before crash.
+@end defun
 
+@defun gcons item generator
+Returns a generator that adds @var{item} in front of @var{generator}.
+That is, the returned generator will first yield @var{item}, then
+yield the items from the original generator.
+@end defun
+
+@defun gappend generator @dots{}
+Appends the given generators.
+
+@example
+(generator->list (gappend (giota 3) (giota 2)))
+ @result{} (0 1 2 0 1)
+@end example
+@end defun
+
+@defun gmap proc generator genenator2 @dots{}
+@end defun
+
+@defun gtake generator k
+@defunx gdrop generator k
+@end defun
+
+@defun gtake-while pred generator
+@defunx gdrop-while pred generator
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Hooks, Interactive session, Generators, Library modules - Gauche extensions
