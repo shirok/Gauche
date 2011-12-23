@@ -1568,6 +1568,9 @@ of accessing a database by @code{dbi} module:
 @c COMMON
 
 @example
+(use dbi)
+(use gauche.collection) ; to make 'map' work on the query result
+
 (guard (e ((<dbi-error> e)
            ;; handle error
            ))
