@@ -1,3 +1,9 @@
+2011-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (Scm_FdReady),
+	  src/libsys.scm (sys-fdset-ref, sys-fdset-set!): Check if fd is
+	  in the valid range.
+
 2011-12-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (Scm_MaybeSubstring): Allow #f as start or end arguments,

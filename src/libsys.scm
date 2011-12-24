@@ -1149,14 +1149,27 @@
  (define-type <sys-fdset> "ScmSysFdset*")
 
  (when "defined(HAVE_SELECT)"
+   (define-cise-stmt check-fd-range
+     [(_ fd)
+      (let1 fd_ (gensym)
+        `(let* ((,fd_ :: int ,fd))
+           (when (or (< ,fd_ 0) (>= ,fd_ FD_SETSIZE))
+             (Scm_Error "File descriptor value is out of range: %d \
+                         (must be between 0 and %d, inclusive)"
+                        ,fd_ FD_SETSIZE))))])
+   
    (define-cproc sys-fdset-ref (fdset::<sys-fdset> pf) ::<boolean>
      (setter sys-fdset-set!)
      (let* ([fd::int (Scm_GetPortFd pf FALSE)])
-       (result (?: (< fd 0) TRUE (FD_ISSET fd (& (-> fdset fdset)))))))
+       (if (< fd 0)
+         (result TRUE)
+         (begin (check-fd-range fd)
+                (result (FD_ISSET fd (& (-> fdset fdset))))))))
    
    (define-cproc sys-fdset-set! (fdset::<sys-fdset> pf flag::<boolean>) ::<void>
      (let* ([fd::int (Scm_GetPortFd pf FALSE)])
        (when (>= fd 0)
+         (check-fd-range fd)
          (cond [flag (FD_SET fd (& (-> fdset fdset)))
                      (when (< (-> fdset maxfd) fd) (set! (-> fdset maxfd) fd))]
                [else (FD_CLR fd (& (-> fdset fdset)))

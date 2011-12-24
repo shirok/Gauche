@@ -290,6 +290,7 @@ int Scm_FdReady(int fd, int dir)
 
     /* In case if this is called on non-file ports.*/
     if (fd < 0) return SCM_FD_READY;
+    if (fd >= FD_SETSIZE) Scm_Error("Scm_FdReady: fd out of range: %d", fd);
 
     FD_ZERO(&fds);
     FD_SET(fd, &fds);
