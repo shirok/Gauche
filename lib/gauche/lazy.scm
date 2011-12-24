@@ -60,5 +60,5 @@
 ;; NB: Should we define all l* variations corresponds to g* variations?
 ;; The list->generator portion smells bad.  Maybe g* variation should
 ;; coerce input sequences into generators automatically.
-(define (lfilter fn seq) (generator->lseq (gfilter fn (list->generator seq))))
+(define (lfilter fn seq) (generator->lseq (gfilter fn (x->generator seq))))
 

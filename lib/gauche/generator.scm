@@ -40,24 +40,23 @@
           bits->generator reverse-bits->generator
           file->generator file->sexp-generator file->char-generator
           file->line-generator file->byte-generator
+          x->generator generate
           
           generator->list null-generator gcons gappend
           circular-generator gunfold giota grange
-          gmap gtake gdrop gtake-while gdrop-while gfilter
-          generate
-          )
-  )
+          gmap gmap-accum gfilter gfilter-map gstate-filter
+          gtake gdrop gtake-while gdrop-while 
+          ))
 (select-module gauche.generator)
-
-;; EXPERIMENTAL - API may change.
 
 ;; GENERATOR is a thunk, that generates a value one at a time
 ;; for every invocation.  #<eof> is used to indicate the end
 ;; of the stream.  Standard input procedures like read or
 ;; read-char are generators as well.
 ;;
-;; A generator can return more than one values; it is useful
-;; to generate auxiliary information without consing.
+;; Possible future extension: a generator may return more than
+;; one values; it is useful to generate auxiliary information
+;; without consing.
 
 ;; The generic begin0 has the overhead of dealing with multiple
 ;; values, so we use faster version if possible.
@@ -66,29 +65,40 @@
     [(_ exp body ...) (rlet1 tmp exp body ...)]))
 
 ;; Some useful converters
-(define (list->generator lis)
-  (^[] (if (null? lis) (eof-object) (pop! lis))))
+(define (list->generator lis :optional (start #f) (end #f))
+  (let1 start (or start 0)
+    (cond [(> start 0)
+           (list->generator (drop* lis start) 0 (and end (- end start)))]
+          [end  (^[] (if (or (null? lis) (<= end 0))
+                       (eof-object)
+                       (begin (dec! end) (pop! lis))))]
+          [else (^[] (if (null? lis) (eof-object) (pop! lis)))])))
 
-(define (vector->generator vec)
-  (let ([i 0] [len (vector-length vec)])
+(define (vector->generator vec :optional (start #f) (end #f))
+  (let ([i (or start 0)] [len (or end (vector-length vec))])
     (^[] (if (>= i len) (eof-object) (%begin0 (vector-ref vec i) (inc! i))))))
 
-(define (reverse-vector->generator vec)
-  (let ([i (- (vector-length vec) 1)])
-    (^[] (if (< i 0) (eof-object) (%begin0 (vector-ref vec i) (dec! i))))))
+(define (reverse-vector->generator vec :optional (start #f) (end #f))
+  (let ([start (or start 0)]
+        [i (- (or end (vector-length vec)) 1)])
+    (^[] (if (< i start) (eof-object) (%begin0 (vector-ref vec i) (dec! i))))))
 
-(define (string->generator str)
-  (let1 p (open-input-string str)
+(define (string->generator str :optional (start #f) (end #f))
+  (let1 p (open-input-string
+           ((with-module gauche.internal %maybe-substring) str start end))
     (^[] (read-char p))))
 
-(define (bits->generator n)
-  (let1 k (- (integer-length n) 1)
-    (^[] (if (< k 0) (eof-object) (%begin0 (logbit? k n) (dec! k))))))
+(define (bits->generator n :optional (start #f) (end #f))
+  (let* ([len-1 (- (integer-length n) 1)]
+         [k     (- len-1 (or start 0))]
+         [end   (if end (- len-1 end) -1)])
+    (^[] (if (<= k end) (eof-object) (%begin0 (logbit? k n) (dec! k))))))
 
-(define (reverse-bits->generator n)
-  (if (>= n 0)
-    (^[] (if (= n 0)  (eof-object) (%begin0 (odd? n) (set! n (ash n -1)))))
-    (^[] (if (= n -1) (eof-object) (%begin0 (odd? n) (set! n (ash n -1)))))))
+(define (reverse-bits->generator n :optional (start #f) (end #f))
+  (let* ([len-1 (- (integer-length n) 1)]
+         [start (- len-1 (or start 0))]
+         [k     (if end (- len-1 end -1) 0)])
+    (^[] (if (> k start) (eof-object) (%begin0 (logbit? k n) (inc! k))))))
 
 (define (file->generator filename reader . open-args)
   ;; If the generator is abanboned before reaching EOF, we have to rely
@@ -110,6 +120,15 @@
 (define (file->byte-generator filename . open-args)
   (apply file->generator filename read-byte open-args))
 
+;; generic version
+(define-method x->generator ((obj <list>))   (list->generator obj))
+(define-method x->generator ((obj <vector>)) (vector->generator obj))
+(define-method x->generator ((obj <string>)) (string->generator obj))
+(define-method x->generator ((obj <integer>)) (bits->generator obj))
+
+(define-method x->generator ((obj <collection>))
+  (generate (^[yield] (call-with-iterator obj (^v (yield v))))))
+
 (define (generator->list gen :optional (n #f))
   (if (integer? n)
     (let loop ([k 0] [r '()])
@@ -125,6 +144,7 @@
           (reverse r)
           (loop (cons v r)))))))
 
+;; Other constructors
 (define (circular-generator . args)
   (if (null? args)
     (error "circular-generator requires at least one argument")
@@ -175,6 +195,31 @@
        (^[] (let1 vs (map (^f (f)) gens)
               (if (any eof-object? vs) (eof-object) (apply fn vs)))))]))
 
+;; gmap-accum :: ((a,b) -> (c,b), b, () -> a) -> (() -> c)
+(define gmap-accum
+  (case-lambda
+    [(fn seed gen)
+     (^[] (let1 v (gen)
+            (if (eof-object? v)
+              v
+              (receive (v_ seed_) (fn v seed)
+                (set! seed seed_)
+                v_))))]
+    [(fn seed gen . more)
+     (let1 gens (cons gen more)
+       (^[] (let1 vs (fold-right (^[g s] (if (eof-object? s)
+                                           s
+                                           (let1 v (g)
+                                             (if (eof-object? v)
+                                               v
+                                               (cons v s)))))
+                                 (list seed) gens)
+              (if (eof-object? vs)
+                (eof-object)
+                (receive (v_ seed_) (apply fn vs)
+                  (set! seed seed_)
+                  v_)))))]))
+
 ;; gfilter :: (a -> Bool, () -> a) -> (() -> a)
 (define (gfilter pred gen)
   (^[] (let loop ([v (gen)])
@@ -182,16 +227,41 @@
                [(pred v) v]
                [else (loop (gen))]))))
 
+;; gfilter-map :: (a -> b, () -> a) -> (() -> b)
+(define gfilter-map
+  (case-lambda
+    [(fn gen) (^[] (let loop ([v (gen)])
+                     (cond [(eof-object? v) v]
+                           [(fn v)]
+                           [else (loop (gen))])))]
+    [(fn gen . more)
+     (let1 gens (cons gen more)
+       (^[] (let loop ()
+              (let1 vs (map (^f (f)) gens)
+                (cond [(any eof-object? vs) (eof-object)]
+                      [(apply fn vs)]
+                      [else (loop)])))))]))
+
+;; gstate-filter :: ((a,b) -> (Bool,b), b, () -> a) -> (() -> a)
+(define (gstate-filter proc seed gen)
+  (^[] (let loop ([v (gen)])
+         (if (eof-object? v)
+           v
+           (receive (flag seed1) (proc v seed)
+             (set! seed seed1)
+             (if flag v (loop (gen))))))))
+
 ;; gtake :: (() -> a, Int) -> (() -> a)
 ;; gdrop :: (() -> a, Int) -> (() -> a)
-;; TODO: what if the input generator is shorter than N?
-;;   - work like take*/drop*.  In which case, what about fill? and padding
-;;     arguments?
-;;   - be consistent with srfi-1 take/drop, and to have gtake*/gdrop*
-;;     separately.
-(define (gtake gen n)
+(define (gtake gen n :optional (fill? #f) (padding #f))
   (let1 k 0
-    (^[] (if (< k n) (begin (inc! k) (gen)) (eof-object)))))
+    (if fill?
+      (^[] (if (< k n)
+             (let1 v (gen)
+               (inc! k)
+               (if (eof-object? v) padding v))
+             (eof-object)))
+      (^[] (if (< k n) (begin (inc! k) (gen)) (eof-object))))))
 (define (gdrop gen n)
   (let1 k 0
     (^[] (when (< k n) (dotimes [i n] (inc! k) (gen))) (gen))))
@@ -224,9 +294,6 @@
   (^[] (cont)))
 
 ;; TODO:
-;;  (->generator OBJ)
-;;    a convenence coercer.  call appropriate x->generate function
-;;    based on OBJ's type.
 ;;  (gen-ec (: i ...) ...)
 ;;    srfi-42-ish macro to create generator.  it's not "eager", so
 ;;    the name needs to be reconsidered.
@@ -235,6 +302,4 @@
 ;;  multi-valued generators
 ;;    take a generator and creates a multi-valued generator which
 ;;    returns auxiliary info in extra values, e.g. item count.
-;;  segmentation
-;;    takes a predicate, and make {x ...} into {(x ...) ...}.
-;;    e.g. character generator -> line generator, etc.
+;;  gsegment :: ((a,b) -> (a,Bool), a) -> (() -> [b])

@@ -3976,7 +3976,11 @@ so it is useful to define utility procedures that work on the
 generators.  This module provides them.
 @end deftp
 
-@c Note: generators are also closely related to the lazy sequences.
+A generator is very lightweight, and handy to implement simple
+on-demand calculations.  However, keep in mind that it is 
+side-effecting construct; you can't safely backtrack, for example.
+For more functional on-demand calculation, Gauche provides lazy
+sequences, which is actually built on top of generators.
 @c @xref{Lazy sequences}, for more details.
 @c Especially, you can ``plug'' generators into a
 @c list-expecting procedures via lazy sequences.
@@ -3989,6 +3993,15 @@ generators.  This module provides them.
 
 @node Generator constructors, Generator operations, Generators, Generators
 @subsection Generator constructors
+
+A generator isn't a special datatype but just an ordinary procedure,
+so you can make a generator with lambdas.  This module provides
+some common generator constructors for the convenience.
+
+If you want to use your procedure as a generator, note that a
+generator can be invoked many times even after it returns EOF once.
+You have to code it so that once it returns EOF, it keeps returning
+EOF for the subsequent calls.
 
 The result of generator constructors is merely a procedure,
 and printing it doesn't show much.  In the examples in this section
@@ -4057,10 +4070,71 @@ it to @code{g}.
 
 (generator->list g) @result{} (0 1 2)
 @end example
-
-@c TODO: write an infinite generator of primes
-
 @end defun
+
+@defun list->generator lis :optional start end
+@defunx vector->generator vec :optional start end
+@defunx reverse-vector->generator vec :optional start end
+@defunx string->generator str :optioanl start end
+@defunx bits->generator n :optional start end
+@defunx reverse-bits->generator n :optional start end
+Returns a generator that yields each item in the given argument.
+A generator returned from @code{reverse-*} procedures runs in
+reverse order.
+
+@example
+(generator->list (list->generator '(1 2 3 4 5)))
+  @result{} (1 2 3 4 5)
+(generator->list (vector->generator '#(1 2 3 4 5)))
+  @result{} (1 2 3 4 5)
+(generator->list (reverse-vector->generator '#(1 2 3 4 5)))
+  @result{} (5 4 3 2 1)
+(generator->list (string->generator "abcde"))
+  @result{} (#\a #\b #\c #\d #\e)
+@end example
+
+By default the generator is exhausted once all items are retrieved;
+the optional @var{start} and @var{end} arguments can limit the range
+the generator walks across; @var{start} specifies the left bound
+and @var{end} specifies the right bound.
+
+For forward generators, the first value the generator yields
+is @var{start}-th element, and it ends right before @var{end}-th element.
+For reverse generators, the first value is the item right next
+to the @var{end}-th element, and the last value is the @var{start}-th
+element.
+at the last element, and reverse generators ends at the first element.
+
+@example
+(generator->list (vector->generator '#(a b c d e) 2))
+  @result{} (c d e)
+(generator->list (vector->generator '#(a b c d e) 2 4))
+  @result{} (c d)
+(generator->list (reverse-vector->generator '#(a b c d e) 2))
+  @result{} (e d c b)
+(generator->list (reverse-vector->generator '#(a b c d e) 2 4))
+  @result{} (d c)
+(generator->list (reverse-vector->generator '#(a b c d e) #f 2))
+  @result{} (b a)
+@end example
+
+@code{bits->generator} and @code{reverse-bits->geneator} takes
+an exact integer and treat it as a sequence of boolean values
+(0 for false and 1 for true), as @code{integer->list} does
+(@xref{Integers as bits}). 
+
+@example
+(generator->list (bits->generator #b10110)
+ @result{} (#t #f #t #t #f)
+(generator->list (reverse-bits->generator #b10110)
+ @result{} (#f #t #t #f #t)
+@end example
+@end defun
+
+@deffn {Generic function} x->generator obj
+A generic version to convert any collection @var{obj} to a generator
+that walks across the @var{obj}.
+@end deffn
 
 @defun file->generator filename reader . open-args
 Opens a file @var{filename}, and returns a generator 
@@ -4093,6 +4167,27 @@ are passed to @code{open-input-file} (@xref{File ports}).
 The file is closed when the generator is exhausted.
 @end defun
 
+@defun gunfold p f g seed :optional tail-gen
+A generator constructor similar to @var{unfold} (@xref{SRFI-1 List utilities}).
+
+@var{P} is a predicate that takes a seed value and determines
+where to stop.  @var{F} is a procedure that calculates a value
+from a seed value.  @var{G} is a procedure that calculates the
+next seed value from the current seed value.  @var{Tail-gen}
+is a generator that generates the tail, and its default is
+@code{null-generator}.
+
+For each call of the resulting generator, @var{p} is called with
+the current seed value.  If it returns a true, then we see we've
+done, and passes the control to @code{tail-gen}.  Otherwise,
+we apply @var{f} on the current seed value to get the value to
+generate, and use @var{g} to update the seed value.
+
+@example
+(generator->list (gunfold (^s (> s 5)) (^s (* s 2)) (^s (+ s 1)) 0))
+  @result{} '(0 2 4 6 8 10)
+@end example
+@end defun
 
 @node Generator operations,  , Generator constructors, Generators
 @subsection Generator operations
@@ -4109,30 +4204,99 @@ specifying @var{k}---this procedure won't return but hogs
 all the memory before crash.
 @end defun
 
-@defun gcons item generator
-Returns a generator that adds @var{item} in front of @var{generator}.
+The following procedures take generators (noted as @var{gen} and
+@var{gen2}) and return a generator.
+
+@defun gcons item gen
+Returns a generator that adds @var{item} in front of @var{gen}.
 That is, the returned generator will first yield @var{item}, then
 yield the items from the original generator.
 @end defun
 
-@defun gappend generator @dots{}
-Appends the given generators.
+@defun gappend gen @dots{}
+Returns a generator that yields the items from the first given
+generator, and once it is exhausted, use the second generator, and so on.
 
 @example
 (generator->list (gappend (giota 3) (giota 2)))
  @result{} (0 1 2 0 1)
+
+(generator->list (gappend)
+ @result{} ()
 @end example
 @end defun
 
-@defun gmap proc generator genenator2 @dots{}
+@defun gmap proc gen gen2 @dots{}
+Returns a generator that yields a value returned by @var{proc}
+applied on the values from given generators.  The returned generator
+terminates when any of the given generator is exhausted.
 @end defun
 
-@defun gtake generator k
-@defunx gdrop generator k
+@defun gmap-accum proc seed gen gen2 @dots{}
+A generator version of @code{map-accum} (@xref{Mapping over collection}),
+mapping with states.
+
+The @var{proc} argument is a procedure that takes as many arguments
+as the input generators plus one.  It is called as
+@code{(proc v v2 @dots{} seed)} where @code{v}, @code{v2}, @dots{} are
+the values yielded from the input generators, and @var{seed} is the
+current seed value.  It must return two values, the yielding value
+and the next seed.
 @end defun
 
-@defun gtake-while pred generator
-@defunx gdrop-while pred generator
+@defun gfilter pred gen
+Returns a generator that yield the items from the source generator,
+except those who makes @var{pred} answers false.
+@end defun
+
+@defun gfilter-map proc gen gen2 @dots{}
+Works the same as @code{(gfilter values (gmap proc gen gen2 @dots{}))},
+only slightly efficiently.
+@end defun
+
+@defun gstate-filter proc seed gen
+This allows stateful filtering of a series.  The @var{proc} argument
+must be a procedure that takes a value @var{V} from the source generator and
+a seed value.  It should return two values, a boolean flag and the next
+seed value.  If it returns true for the boolean flag, the generator
+yields @var{V}.  Otherwise, the generator keeps calling @var{proc},
+with updating the seed value, until it sees the true flag value
+or the source generator is exhausted.
+
+The following example takes a generator of oscillating values
+and yields only values that are greater than their previous value.
+
+@example
+(generator->list
+ (gstate-filter (^[v s] (values (< s v) v)) 0
+                (list->generator '(1 2 3 2 1 0 1 2 3 2 1 0 1 2 3))))
+ @result{} (1 2 3 1 2 3 1 2 3)
+@end example
+@end defun
+
+@defun gtake gen k :optional (fill? #f) (padding #f)
+@defunx gdrop gen k
+The generator version of
+@code{take*} and @code{drop*} (@xref{List accessors and modifiers});
+@code{gtake} returns a generator that yields (at most) first @var{k} items
+of the source generator, while @code{gdrop} returns a generator
+that skips the first @var{k} items of the source generator.
+
+Those won't complain if the source generator is exhausted before generating
+@var{k} items.  By default, the generator returned by @code{gtake}
+terminates as the source ends, but if you give a true value to @code{fill?},
+then the returned generator does yield @var{k} items, using the
+@var{padding} value to fill the rest.
+@end defun
+
+@defun gtake-while pred gen
+@defunx gdrop-while pred gen
+The generator version of @code{take-while} and @code{drop-while}
+(@xref{List accessors and modifiers}).  The generator returned
+from @code{gtake-while} yields items from the source generator
+as far as @var{pred} returns true for each.  The generator returned
+from @code{gdrop-while} first reads items from the source generator
+while @var{pred} returns true for them, then start yielding items.
 @end defun
 
 @c ----------------------------------------------------------------------

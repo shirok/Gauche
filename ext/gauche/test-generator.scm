@@ -7,7 +7,6 @@
 (use srfi-60)
 (test-start "generators")
 
-
 (use gauche.generator)
 (test-module 'gauche.generator)
 
@@ -34,25 +33,50 @@
 
 ;; converters
 (let-syntax ((t (syntax-rules ()
-                  [(t fn cv data)
-                   (test* (format "~a" 'fn) (cv data)
-                          (generator->list (fn data)))])))
-
-  (t list->generator identity '(a b c d e))
-  (t vector->generator vector->list '#(a b c d e))
-  (t reverse-vector->generator (.$ reverse vector->list) '#(a b c d e))
-  (t string->generator string->list "abcde")
-  (t bits->generator integer->list 4395928592485)
-  (t reverse-bits->generator (.$ reverse integer->list) 4395928592485)
+                  [(t dir fn cv data)
+                   (let1 expect (^ args
+                                  (if (eq? 'dir 'r)
+                                    (reverse (apply subseq (cv data) args))
+                                    (apply subseq (cv data) args)))
+                     (test* (format "~a" 'fn) (expect)
+                            (generator->list (fn data)))
+                     (test* (format "~a (1,_)" 'fn) (expect 1)
+                            (generator->list (fn data 1)))
+                     (test* (format "~a (1,3)" 'fn) (expect 1 3)
+                            (generator->list (fn data 1 3)))
+                     )])))
+  (t f list->generator identity '(a b c d e))
+  (t f vector->generator vector->list '#(a b c d e))
+  (t r reverse-vector->generator vector->list '#(a b c d e))
+  (t f string->generator string->list "abcde")
+  (t f bits->generator integer->list 26)
+  (t r reverse-bits->generator integer->list 26)
+  (t f bits->generator integer->list 4395928592485)
+  (t r reverse-bits->generator integer->list 4395928592485)
   )
+
+;; file generators
+(let-syntax ((t (syntax-rules ()
+                  [(t fn expect data)
+                   (unwind-protect
+                       (begin
+                         (with-output-to-file "test.o" (cut display data))
+                         (test* (format "~a" 'fn) expect
+                                (generator->list (fn "test.o"))))
+                     (sys-unlink "test.o"))])))
+  (t file->sexp-generator '((a) (b) (c) (d) (e))
+     "(a)\n(b)\n(c)\n(d) (e)")
+  (t file->char-generator '(#\a #\b #\c #\d #\e #\newline) "abcde\n")
+  (t file->line-generator '("ab" "cd" "ef") "ab\ncd\nef")
+  (t file->byte-generator '(97 98 99 100 101) "abcde"))
 
 (test* "circular-generator" '(0 1 2 0 1 2 0 1 2 0)
        (generator->list (circular-generator 0 1 2) 10))
 
 (test* "gappend" '(0 1 2 3 a b c d A B C D)
-       (generator->list (gappend (giota 4)
-                                 (list->generator '(a b c d))
-                                 (list->generator '(A B C D)))))
+       (generator->list (gappend (giota 4) 
+                                 (x->generator '(a b c d))
+                                 (x->generator '(A B C D)))))
 
 (test* "gunfold" (unfold (^s (>= s 10))
                          (^s (* s 2))
@@ -70,23 +94,53 @@
     [(_  gfn lfn src ...)
      (dolist [s (list src ...)]
        (test* (format "~s" 'gfn) (lfn s)
-              (generator->list (gfn (list->generator s)))))]))
+              (generator->list (gfn (x->generator s)))))]))
+
+(define-syntax test-list-like*
+  (syntax-rules ()
+    [(_  gfn lfn src ...)
+     (dolist [s (list src ...)]
+       (test* (format "~s" 'gfn) (apply lfn s)
+              (generator->list (apply gfn (map x->generator s)))))]))
 
 (test-list-like (cut gmap (^x (* x 2)) <>)
                 (cut map (^x (* x 2)) <>)
                 '(1 2 3 4 5) '())
 
+(test-list-like* (cut gmap (^[x y] (* x y)) <...>)
+                 (cut map (^[x y] (* x y)) <...>)
+                 '((1 2 3 4 5) (2 3 4 5)) '(() ()))
+
+(test-list-like (cut gmap-accum (^[x s] (values (+ x s) x)) 0 <>)
+                (^[l]
+                  (values-ref (map-accum (^[x s] (values (+ x s) x)) 0 l) 0))
+                '(1 2 3 4 5) '())
+
+(test-list-like* (cut gmap-accum (^[x y s] (values (+ x y s) x)) 0 <...>)
+                 (^[l m]
+                   (values-ref (map-accum (^[x y s] (values (+ x y s) x)) 0 l m)
+                               0))
+                '((1 2 3 4) (8 9 0 1 2)) '(() ()))
+
 (test-list-like (cut gfilter odd? <>)
                 (cut filter odd? <>)
                 '(1 2 3 4 5) '())
 
+(test-list-like (cut gfilter-map (^[n] (and (odd? n) (* n 2))) <>)
+                (cut filter-map (^[n] (and (odd? n) (* n 2))) <>)
+                '(1 2 3 4 5) '())
+
 (test-list-like (cut gtake <> 3)
-                (cut take <> 3)
-                '(1 2 3 4 5 6))
+                (cut take* <> 3)
+                '(1 2 3 4 5 6) '(1 2))
+
+(test-list-like (cut gtake <> 3 #t 'a)
+                (cut take* <> 3 #t 'a)
+                '(1 2 3 4 5 6) '(1 2))
 
 (test-list-like (cut gdrop <> 3)
-                (cut drop <> 3)
-                '(1 2 3 4 5 6))
+                (cut drop* <> 3)
+                '(1 2 3 4 5 6) '(1 2))
 
 (test-list-like (cut gtake-while even? <>)
                 (cut take-while even? <>)
@@ -95,6 +149,12 @@
 (test-list-like (cut gdrop-while even? <>)
                 (cut drop-while even? <>)
                 '(2 4 0 1 3) '(1 2 4 4 8) '() '(2 2) '(3 5))
+
+(test* "gstate-filter"
+       '(1 2 3 1 2 3 1 2 3)
+       (generator->list
+        (gstate-filter (^[v s] (values (< s v) v)) 0
+                       (list->generator '(1 2 3 2 1 0 1 2 3 2 1 0 1 2 3)))))
 
 (test-end)
 
