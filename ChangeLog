@@ -1,5 +1,8 @@
 2011-12-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (quasiquote): Fixed to recognize unquote and
+	  unquote-splicing hygienically.
+
 	* lib/control/job.scm: Added 'cancellable' job flavor, which may not
 	  be waitable but job-mark-killed! can be used on.  We need mutex
 	  if we allow threads other than the job runner to change the job

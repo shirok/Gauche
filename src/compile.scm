@@ -2168,15 +2168,19 @@
   ;; NB: The current code allocates lots of intermediate $const node.
   ;; We used to track 
 
+  (define (quasiquote? v)       (global-eq? v 'quasiquote cenv))
+  (define (unquote? v)          (global-eq? v 'unquote cenv))
+  (define (unquote-splicing? v) (global-eq? v 'unquote-splicing cenv))
+           
   ;; In the context where there's no outer list to which we intersperse to.
   (define (quasi obj level)
     (match obj
-      [('quasiquote x)
+      [((? quasiquote?) x)
        (let1 xx (quasi x (+ level 1))
          (if ($const? xx)
            ($const (list 'quasiquote ($const-value xx)))
            ($list obj (list ($const 'quasiquote) xx))))]
-      [((and (or 'unquote 'unquote-splicing) op) . xs)
+      [((and (or (? unquote?) (? unquote-splicing?)) op) . xs)
        (if (zero? level)
          (if (and (global-eq? op 'unquote cenv)
                   (pair? xs) (null? (cdr xs)))
@@ -2196,16 +2200,16 @@
   (define (quasi* objs level)
     ;; NB: we already excluded toplevel quasiquote and unquote
     (match objs
-      [(((and (or 'unquote 'unquote-splicing) op) . xs) . ys)
+      [(((and (or (? unquote?) (? unquote-splicing?)) op) . xs) . ys)
        (let1 yy (quasi* ys level)
          (if (zero? level)
-           ((if (global-eq? op 'unquote cenv) build build@)
+           ((if (unquote? op) build build@)
             (imap (cut pass1 <> cenv) xs) yy)
            (let1 xx (quasi* xs (- level 1))
              (if (and ($const? xx) ($const? yy))
                ($const (acons op ($const-value xx) ($const-value yy)))
                ($cons objs ($cons (car objs) ($const op) xx) yy)))))]
-      [((or 'unquote 'unquote-splicing) . _) ; `(... . ,xs) `(... . ,@xs)
+      [((or (? unquote?) (? unquote-splicing?)) . _) ;`(... . ,xs) `(... . ,@xs)
        (quasi objs level)]
       [((? vector? x) . ys) (quasi-cons objs quasi-vector x ys level)]
       [(x . ys)             (quasi-cons objs quasi x ys level)]
@@ -3803,7 +3807,7 @@
         (unless (argcount-ok? ($call-args call-node)
                               (slot-ref proc 'required) opt?)
           (errorf "wrong number of arguments: ~a requires ~a, but got ~a"
-                  (variable-name ($gref-id gref))
+                  (variable-name ($gref-id gref-node))
                   (slot-ref proc 'required) nargs))
         ($asm src (if opt? `(,inliner ,nargs) `(,inliner))
               ($call-args call-node)))]

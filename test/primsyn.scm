@@ -285,6 +285,13 @@
 (prim-test "qqq#"  '(1 `#(1 ,(a b x) ,(y c d)))
            (lambda () `(1 `#(1 ,(,@quasi2 x) ,(y ,@quasi3)))))
 
+(prim-test "qq-hygiene 0" '(2 1)
+           (lambda () (let ((quasiquote reverse)) `(list 1 2))))
+(prim-test "qq-hygiene 1" '(,(+ 1 2))
+           (lambda () (let ((unquote 3)) `(,(+ 1 2)))))
+(prim-test "qq-hygiene 2" '(,@(+ 1 2))
+           (lambda () (let ((unquote-splicing 3)) `(,@(+ 1 2)))))
+
 ;;----------------------------------------------------------------
 (test-section "multiple values")
 
