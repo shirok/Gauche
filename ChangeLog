@@ -1,3 +1,11 @@
+2011-12-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/mutex.c, ext/threads/threads.scm:
+	  (mutex-locker, mutex-unlocker): Added.
+	  (with-locking-mutex): rewrite using above, and made it inline.
+	  This change prevents with-locking-mutex from making closures
+	  at runtime.
+
 2011-12-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm: Extended API

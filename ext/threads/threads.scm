@@ -42,6 +42,7 @@
           mutex? make-mutex mutex-name mutex-state
           mutex-specific-set! mutex-specific
           with-locking-mutex mutex-lock! mutex-unlock!
+          mutex-locker mutex-unlocker
 
           condition-variable? make-condition-variable condition-variable-name
           condition-variable-specific condition-variable-specific-set!
@@ -152,11 +153,11 @@
      (slot-ref mutex 'specific))
    mutex-specific-set!))
 
-(define (with-locking-mutex mutex thunk)
+(define-inline (with-locking-mutex mutex thunk)
   (dynamic-wind
-   (^[] (mutex-lock! mutex))
-   thunk
-   (^[] (mutex-unlock! mutex))))
+      (mutex-locker mutex)
+      thunk
+      (mutex-unlocker mutex)))
 
 (inline-stub
  (define-cproc make-mutex (:optional (name #f)) Scm_MakeMutex)
@@ -180,6 +181,9 @@
      (cond [(SCM_CONDITION_VARIABLE_P cv) (set! cond (SCM_CONDITION_VARIABLE cv))]
            [(not (SCM_FALSEP cv)) (SCM_TYPE_ERROR cv "condition variale or #f")])
      (result (Scm_MutexUnlock mutex cond timeout))))
+
+ (define-cproc mutex-locker (mutex::<mutex>) Scm_MutexLocker)
+ (define-cproc mutex-unlocker (mutex::<mutex>) Scm_MutexUnlocker)
  )
 
 ;;===============================================================

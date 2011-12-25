@@ -78,6 +78,7 @@ static ScmObj mutex_allocate(ScmClass *klass, ScmObj initargs)
     mutex->specific = SCM_UNDEFINED;
     mutex->locked = FALSE;
     mutex->owner = NULL;
+    mutex->locker_proc = mutex->unlocker_proc = SCM_FALSE;
     return SCM_OBJ(mutex);
 }
 
@@ -253,6 +254,39 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout
     if (intr) Scm_SigCheck(Scm_VM());
 #endif /* GAUCHE_USE_PTHREADS */
     return r;
+}
+
+static ScmObj mutex_locker(ScmObj *args, int argc, void *mutex)
+{
+    return Scm_MutexLock((ScmMutex*)mutex, SCM_FALSE, Scm_VM());
+}
+
+
+ScmObj Scm_MutexLocker(ScmMutex *mutex)
+{
+    ScmObj p = mutex->locker_proc;
+    if (SCM_FALSEP(p)) {
+        /* safe; race is ok here */
+        p = Scm_MakeSubr(mutex_locker, (void*)mutex, 0, 0, SCM_FALSE);
+        mutex->locker_proc = p;
+    }
+    return p;
+}
+
+static ScmObj mutex_unlocker(ScmObj *args, int argc, void *mutex)
+{
+    return Scm_MutexUnlock((ScmMutex*)mutex, NULL, SCM_FALSE);
+}
+
+ScmObj Scm_MutexUnlocker(ScmMutex *mutex)
+{
+    ScmObj p = mutex->unlocker_proc;
+    if (SCM_FALSEP(p)) {
+        /* safe; race is ok here */
+        p = Scm_MakeSubr(mutex_unlocker, (void*)mutex, 0, 0, SCM_FALSE);
+        mutex->unlocker_proc = p;
+    }
+    return p;
 }
 
 /*=====================================================

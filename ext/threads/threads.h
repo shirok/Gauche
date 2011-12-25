@@ -93,6 +93,8 @@ typedef struct ScmMutexRec {
     ScmObj specific;
     int   locked;
     ScmVM *owner;              /* the thread who owns this lock; may be NULL */
+    ScmObj locker_proc;        /* subr thunk to lock this mutex */
+    ScmObj unlocker_proc;      /* subr thunk to unlock this mutex */
 } ScmMutex;
 
 SCM_CLASS_DECL(Scm_MutexClass);
@@ -103,6 +105,8 @@ SCM_CLASS_DECL(Scm_MutexClass);
 ScmObj Scm_MakeMutex(ScmObj name);
 ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner);
 ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout);
+ScmObj Scm_MutexLocker(ScmMutex *mutex);
+ScmObj Scm_MutexUnlocker(ScmMutex *mutex);
 
 /*
  * Scheme reader/writer lock.

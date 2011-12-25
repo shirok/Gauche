@@ -13492,6 +13492,22 @@ because of timeout, and @code{#t} otherwise.
 @c COMMON
 @end defun
 
+@defun mutex-locker mutex
+@defunx mutex-unlocker mutex
+@c EN
+Returns @code{(lambda () (mutex-lock! mutex))} and 
+@code{(lambda () (mutex-unlock! mutex))}, respectively.
+Each closure is created at most once per @var{mutex},
+thus it is lighter than using literal lambda forms in a tight loop.
+@c JP
+それぞれ@code{(lambda () (mutex-lock! mutex))} と
+@code{(lambda () (mutex-unlock! mutex))} を返します。
+これらのクロージャは、各@var{mutex}につきひとつづつしか作られないため、
+タイトなループの中ではこれらの形のリテラルなラムダ式を使うよりも軽量です。
+@c COMMON
+@end defun
+
+
 @defun with-locking-mutex mutex thunk
 @c EN
 Calls @var{thunk} with locking a mutex @var{mutex}.  This is defined as
@@ -13502,9 +13518,9 @@ follows.
 @example
 (define (with-locking-mutex mutex thunk)
   (dynamic-wind
-   (lambda () (mutex-lock! mutex))
+   (mutex-locker mutex)
    thunk
-   (lambda () (mutex-unlock! mutex))))
+   (mutex-unlocker mutex)))
 @end example
 @end defun
 
