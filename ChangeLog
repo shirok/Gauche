@@ -1,5 +1,12 @@
 2011-12-25  Shiro Kawai  <shiro@acm.org>
 
+	* lib/control/job.scm: Added 'cancellable' job flavor, which may not
+	  be waitable but job-mark-killed! can be used on.  We need mutex
+	  if we allow threads other than the job runner to change the job
+	  status.  See the comment for the details.
+	* lib/control/thread-pool.scm: Use cancellable jobs, for we might
+	  want to kill them.
+
 	* ext/threads/mutex.c, ext/threads/threads.scm:
 	  (mutex-locker, mutex-unlocker): Added.
 	  (with-locking-mutex): rewrite using above, and made it inline.

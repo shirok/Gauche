@@ -102,7 +102,7 @@
 ;; Returns job if queued, #f if job queue is full
 (define (add-job! pool thunk :optional (need-result #f) (timeout #f))
   (when (~ pool'shut-down) (%shut-down pool))
-  (let1 job (make-job thunk)
+  (let1 job (make-job thunk :cancellable #t)
     (job-acknowledge! job)
     (and (enqueue/wait! (~ pool'job-queue) (cons need-result job) timeout #f)
          (if (~ pool'shut-down)

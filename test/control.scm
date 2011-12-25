@@ -40,7 +40,7 @@
          (begin (job-run! j)
                 (list (job-status j) (job-result j))))
 
-  (set! j (make-job (^[] #f)))
+  (set! j (make-job (^[] #f) :cancellable #t))
   (test* "job-run! killed" '(killed test)
          (begin (job-mark-killed! j 'test)
                 (list (job-status j) (job-result j))))
