@@ -186,7 +186,7 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
 /* Thread join */
 ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 {
-#ifdef GAUCHE_USE_PTHREADS
+#ifdef GAUCHE_HAS_THREADS
     struct timespec ts, *pts;
     ScmObj result = SCM_FALSE, resultx = SCM_FALSE;
     int intr = FALSE, tout = FALSE;
@@ -195,11 +195,11 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(target->vmlock);
     while (target->state != SCM_VM_TERMINATED) {
         if (pts) {
-            int tr = pthread_cond_timedwait(&(target->cond), &(target->vmlock), pts);
-            if (tr == ETIMEDOUT) { tout = TRUE; break; }
-            else if (tr == EINTR) { intr = TRUE; break; }
+            int tr = SCM_INTERNAL_COND_TIMEDWAIT(target->cond, target->vmlock, pts);
+            if (tr == SCM_INTERNAL_COND_TIMEDOUT) { tout = TRUE; break; }
+            else if (tr == SCM_INTERNAL_COND_INTR) { intr = TRUE; break; }
         } else {
-            pthread_cond_wait(&(target->cond), &(target->vmlock));
+            SCM_INTERNAL_COND_WAIT(target->cond, target->vmlock);
         }
     }
     if (!tout) {
@@ -219,10 +219,10 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
         result = Scm_Raise(resultx);
     }
     return result;
-#else  /*!GAUCHE_USE_PTHREADS*/
+#else  /*!GAUCHE_HAS_THREADS*/
     Scm_Error("not implemented!\n");
     return SCM_UNDEFINED;
-#endif /*!GAUCHE_USE_PTHREADS*/
+#endif /*!GAUCHE_HAS_THREADS*/
 }
 
 /* Attempt to stop other thread.   See process_queued_requests() in vm.c
@@ -251,7 +251,7 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 
 ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 {
-#ifdef GAUCHE_USE_PTHREADS
+#ifdef GAUCHE_HAS_THREADS
     struct timespec ts, *pts;
     ScmVM *vm = Scm_VM();
     ScmVM *taker = NULL;
@@ -261,7 +261,7 @@ ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 
  retry:
     timedout = FALSE;
-    pthread_mutex_lock(&target->vmlock);
+    SCM_INTERNAL_MUTEX_LOCK(target->vmlock);
     if (target->state != SCM_VM_RUNNABLE
         && target->state != SCM_VM_STOPPED) {
         invalid_state = TRUE;
@@ -282,15 +282,15 @@ ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
         }
         while (target->state != SCM_VM_STOPPED && !timedout) {
             if (pts) {
-                timedout = pthread_cond_timedwait(&target->cond,
-                                                  &target->vmlock,
-                                                  pts);
+                timedout = SCM_INTERNAL_COND_TIMEDWAIT(target->cond,
+                                                       target->vmlock,
+                                                       pts);
             } else {
-                pthread_cond_wait(&target->cond, &target->vmlock);
+                SCM_INTERNAL_COND_WAIT(target->cond, target->vmlock);
             }
         }
     }
-    pthread_mutex_unlock(&target->vmlock);
+    SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
 
     if (invalid_state) {
         Scm_Error("cannot stop a thread %S since it is in neither runnable nor stopped state",
@@ -300,24 +300,24 @@ ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
         Scm_Error("target %S is already under inspection by %S", target, taker);
     }
 
-    if (timedout == EINTR) { Scm_SigCheck(vm); goto retry; }
-    if (timedout == ETIMEDOUT) return timeoutval;
+    if (timedout == SCM_INTERNAL_COND_INTR) { Scm_SigCheck(vm); goto retry; }
+    if (timedout == SCM_INTERNAL_COND_TIMEDOUT) return timeoutval;
     return SCM_OBJ(target);
-#else  /*!GAUCHE_USE_PTHREADS*/
+#else  /*!GAUCHE_HAS_THREADS*/
     Scm_Error("not implemented!\n");
     return SCM_UNDEFINED;
-#endif /*!GAUCHE_USE_PTHREADS*/
+#endif /*!GAUCHE_HAS_THREADS*/
 }
 
 
 /* Release inspected thread */
 ScmObj Scm_ThreadCont(ScmVM *target)
 {
-#ifdef GAUCHE_USE_PTHREADS
+#ifdef GAUCHE_HAS_THREADS
     int not_stopped = FALSE;
     ScmVM *stopped_by_other = NULL;
 
-    pthread_mutex_lock(&target->vmlock);
+    SCM_INTERNAL_MUTEX_LOCK(target->vmlock);
     if (target->inspector == NULL) {
         not_stopped = TRUE;
     } else if (target->inspector != Scm_VM()
@@ -327,38 +327,41 @@ ScmObj Scm_ThreadCont(ScmVM *target)
         target->inspector = NULL;
         target->state = SCM_VM_RUNNABLE;
         target->stopRequest = FALSE;
-        pthread_cond_broadcast(&target->cond);
+        SCM_INTERNAL_COND_BROADCAST(target->cond);
     }
-    pthread_mutex_unlock(&target->vmlock);
+    SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
     if (not_stopped) Scm_Error("target %S is not stopped", target);
     if (stopped_by_other) Scm_Error("target %S is stopped by other thread %S",
                                     target, stopped_by_other);
     return SCM_OBJ(target);
-#else  /*!GAUCHE_USE_PTHREADS*/
+#else  /*!GAUCHE_HAS_THREADS*/
     Scm_Error("not implemented!\n");
     return SCM_UNDEFINED;
-#endif /*!GAUCHE_USE_PTHREADS*/
+#endif /*!GAUCHE_HAS_THREADS*/
 }
 
 /* Thread sleep */
 ScmObj Scm_ThreadSleep(ScmObj timeout)
 {
-#ifdef GAUCHE_USE_PTHREADS
+#ifdef GAUCHE_HAS_THREADS
     struct timespec ts, *pts;
-    ScmInternalCond dummyc = PTHREAD_COND_INITIALIZER;
-    ScmInternalMutex dummym = PTHREAD_MUTEX_INITIALIZER;
+    ScmInternalCond dummyc;
+    ScmInternalMutex dummym;
     int intr = FALSE;
+
+    SCM_INTERNAL_COND_INIT(dummyc);
+    SCM_INTERNAL_MUTEX_INIT(dummym);
     pts = Scm_GetTimeSpec(timeout, &ts);
     if (pts == NULL) Scm_Error("thread-sleep! can't take #f as a timeout value");
-    pthread_mutex_lock(&dummym);
-    if (pthread_cond_timedwait(&dummyc, &dummym, pts) == EINTR) {
+    SCM_INTERNAL_MUTEX_LOCK(dummym);
+    if (SCM_INTERNAL_COND_TIMEDWAIT(dummyc, dummym, pts) == SCM_INTERNAL_COND_INTR) {
         intr = TRUE;
     }
-    pthread_mutex_unlock(&dummym);
+    SCM_INTERNAL_MUTEX_UNLOCK(dummym);
     if (intr) Scm_SigCheck(Scm_VM());
-#else  /*!GAUCHE_USE_PTHREADS*/
+#else  /*!GAUCHE_HAS_THREADS*/
     Scm_Error("not implemented!\n");
-#endif /*!GAUCHE_USE_PTHREADS*/
+#endif /*!GAUCHE_HAS_THREADS*/
     return SCM_UNDEFINED;
 }
 

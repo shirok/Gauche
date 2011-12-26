@@ -48,10 +48,17 @@
    The variable of type ScmInternalThread must be initialized by
    SCM_INTERNAL_THREAD_INIT.  You can check if the variable is
    initialized or not by SCM_INTERNAL_THREAD_INITIALIZED_P.
+
+   SCM_INTERNAL_THREAD_GETCURRENT() should return the current thread.
+   SCM_INTERNAL_THREAD_SETSPECIFIC(key, val) sets the value to the
+   thread-local storage identified by key.  It should evaluate
+   to TRUE on success, FALSE on error.
  */
 typedef int ScmInternalThread;
 #define SCM_INTERNAL_THREAD_INIT(thr)      (0)
 #define SCM_INTERNAL_THREAD_INITIALIZED_P(thr)  TRUE
+#define SCM_INTERNAL_THRAED_GETCURRENT()   (0)
+#define SCM_INTERNAL_THREAD_SETSPECIFIC(key, val) TRUE
 
 /* ScmInternalMutex - a mutex structure.
 
@@ -104,14 +111,19 @@ typedef int ScmInternalFastlock;
  *  Pthreads-style condition variables.  SCM_INTERNAL_COND_INITIALIZER
  *  may be used for the placeholder of static variables (but the
  *  variable still needs to be initialized by SCM_INTERNAL_COND_INIT.
+ *
+ *  SCM_INTERNAL_COND_TIMEDWAIT should return either 0 (signalled),
+ *  SCM_INTERNAL_COND_TIMEDOUT, or SCM_INTERNAL_COND_INTR.
  */
 typedef int ScmInternalCond;
 #define SCM_INTERNAL_COND_INIT(cond)       (0)
 #define SCM_INTERNAL_COND_SIGNAL(cond)     (0)
 #define SCM_INTERNAL_COND_BROADCAST(cond)  (0)
 #define SCM_INTERNAL_COND_WAIT(cond, mutex) (0)
+#define SCM_INTERNAL_COND_TIMEDWAIT(cond, mutex, timespec) (0)
 #define SCM_INTERNAL_COND_DESTROY(cond)    (0)
 #define SCM_INTERNAL_COND_INITIALIZER      (0)
-
+#define SCM_INTERNAL_COND_TIMEDOUT         (0)
+#define SCM_INTERNAL_COND_INTR             (0)
 
 #endif /* GAUCHE_UTHREAD_H */

@@ -260,6 +260,9 @@ case "$THREADS" in
       AC_DEFINE(THREAD_LOCAL_ALLOC)
     fi
     win32_threads=true
+    dnl [SK] Without this, config.h isn't configured properly.
+    AC_DEFINE(GC_WIN32_THREADS, 1)
+    dnl [/SK]
     AC_DEFINE([EMPTY_GETENV_RESULTS], [1],
               [Wine getenv may not return NULL for missing entry.])
     ;;

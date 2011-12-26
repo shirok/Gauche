@@ -40,10 +40,15 @@
 
 #include <pthread.h>
 
+#define GAUCHE_HAS_THREADS 1
+
 /* Thread */
 typedef pthread_t ScmInternalThread;
 #define SCM_INTERNAL_THREAD_INIT(thr)   ((thr) = (pthread_t)NULL)
 #define SCM_INTERNAL_THREAD_INITIALIZED_P(thr)  ((thr) != (pthread_t)NULL)
+#define SCM_INTERNAL_THREAD_GETCURRENT()  pthread_self()
+#define SCM_INTERNAL_THREAD_SETSPECIFIC(key, val) \
+    (pthread_setspecific((key), (val)) == 0)
 
 /* Mutex */
 typedef pthread_mutex_t ScmInternalMutex;
@@ -71,8 +76,12 @@ typedef pthread_cond_t ScmInternalCond;
 #define SCM_INTERNAL_COND_SIGNAL(cond)      pthread_cond_signal(&(cond))
 #define SCM_INTERNAL_COND_BROADCAST(cond)   pthread_cond_broadcast(&(cond))
 #define SCM_INTERNAL_COND_WAIT(cond, mutex) pthread_cond_wait(&(cond), &(mutex))
+#define SCM_INTERNAL_COND_TIMEDWAIT(cond, mutex, ptimespec) \
+    pthread_cond_timedwait(&(cond), &(mutex), (ptimespec))
 #define SCM_INTERNAL_COND_DESTROY(cond)     pthread_cond_destroy(&(cond))
 #define SCM_INTERNAL_COND_INITIALIZER       PTHREAD_COND_INITIALIZER
+#define SCM_INTERNAL_COND_TIMEDOUT          ETIMEDOUT
+#define SCM_INTERNAL_COND_INTR              EINTR
 
 /* Fast lock */
 #ifdef HAVE_PTHREAD_SPINLOCK_T

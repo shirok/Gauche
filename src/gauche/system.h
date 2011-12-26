@@ -138,9 +138,14 @@ SCM_EXTERN ScmObj Scm_IntSecondsToTime(long sec);
 SCM_EXTERN ScmObj Scm_Int64SecondsToTime(ScmInt64 sec);
 SCM_EXTERN ScmObj Scm_RealSecondsToTime(double sec);
 SCM_EXTERN ScmObj Scm_TimeToSeconds(ScmTime *t);
-#if defined(HAVE_STRUCT_TIMESPEC) || defined(GAUCHE_USE_PTHREADS)
+
+#if !defined(HAVE_STRUCT_TIMESPEC)
+struct timespec {
+    time_t tv_sec;
+    long   tv_usec;
+};
+#endif /*!HAVE_STRUCT_TIMESPEC*/
 SCM_EXTERN struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec);
-#endif /*HAVE_STRUCT_TIMESPEC||GAUCHE_USE_PTHREADS*/
 
 /* sched_yield */
 SCM_EXTERN void   Scm_YieldCPU(void);
@@ -158,6 +163,7 @@ SCM_CLASS_DECL(Scm_SysTmClass);
 #define SCM_SYS_TM_TM(obj)    SCM_SYS_TM(obj)->tm
 
 SCM_EXTERN ScmObj Scm_MakeSysTm(struct tm *);
+
 
 /*==============================================================
  * Groups and users

@@ -107,15 +107,17 @@ void usage(void)
 }
 
 #ifdef GAUCHE_USE_PTHREADS
-#define PTHREAD_OPT ",pthreads"
+#define THREAD_OPT ",pthreads"
+#elif  GAUCHE_USE_WTHREADS
+#define THREAD_OPT ",wthreads"
 #else
-#define PTHREAD_OPT ""
+#define THREAD_OPT ""
 #endif
 
 void version(void)
 {
     printf("Gauche scheme shell, version %s [%s%s], %s\n",
-           GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, PTHREAD_OPT, GAUCHE_ARCH);
+           GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, THREAD_OPT, GAUCHE_ARCH);
     exit(0);
 }
 

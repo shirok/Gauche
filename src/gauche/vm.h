@@ -485,8 +485,10 @@ SCM_EXTERN void   Scm_VMSetResult(ScmObj obj);
 SCM_CLASS_DECL(Scm_VMClass);
 #define SCM_CLASS_VM              (&Scm_VMClass)
 
-#ifdef GAUCHE_USE_PTHREADS
+#if   defined(GAUCHE_USE_PTHREADS)
 SCM_EXTERN pthread_key_t Scm_VMKey(void);
+#elif defined(GAUCHE_USE_WTHREADS)
+SCM_EXTERN DWORD Scm_VMKey(void);
 #endif
 
 /* Value of vm->state */

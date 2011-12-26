@@ -95,9 +95,12 @@ static ScmVM *rootVM = NULL;         /* VM for primodial thread */
 #ifdef GAUCHE_USE_PTHREADS
 static pthread_key_t vm_key;
 #define theVM   ((ScmVM*)pthread_getspecific(vm_key))
-#else
+#elif  GAUCHE_USE_WTHREADS
+static DWORD vm_key;
+#define theVM   ((ScmVM*)TlsGetValue(vm_key))
+#else  /* !GAUCHE_USE_PTHREADS && !GAUCHE_USE_WTHREADS */
 static ScmVM *theVM;
-#endif  /* !GAUCHE_USE_PTHREADS */
+#endif /* !GAUCHE_USE_PTHREADS */
 
 static void save_stack(ScmVM *vm);
 
@@ -230,18 +233,18 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
    Returns TRUE on success, FALSE on failure. */
 int Scm_AttachVM(ScmVM *vm)
 {
-#ifdef GAUCHE_USE_PTHREADS
+#ifdef GAUCHE_HAS_THREADS
     if (SCM_INTERNAL_THREAD_INITIALIZED_P(vm->thread)) return FALSE;
     if (theVM != NULL) return FALSE;
 
-    if (pthread_setspecific(Scm_VMKey(), vm) != 0) return FALSE;
+    if (!SCM_INTERNAL_THREAD_SETSPECIFIC(Scm_VMKey(), vm)) return FALSE;
 
-    vm->thread = pthread_self();
+    vm->thread = SCM_INTERNAL_THREAD_GETCURRENT();
     vm->state = SCM_VM_RUNNABLE;
     return TRUE;
-#else  /*!GAUCHE_USE_PTHREADS*/
+#else  /* no threads */
     return FALSE;
-#endif /*!GAUCHE_USE_PTHREADS*/
+#endif /* no threads */
 }
 
 int Scm_VMGetNumResults(ScmVM *vm)
@@ -283,12 +286,17 @@ ScmVM *Scm_VM(void)
 /*
  * Get VM key
  */
-#ifdef GAUCHE_USE_PTHREADS
+#if   defined(GAUCHE_USE_PTHREADS)
 pthread_key_t Scm_VMKey(void)
 {
     return vm_key;
 }
-#endif /*GAUCHE_USE_PTHREADS*/
+#elif defined(GAUCHE_USE_WTHREADS)
+DWORD Scm_VMKey(void)
+{
+    return vm_key;
+}
+#endif /*GAUCHE_USE_WTHREADS*/
 
 /* Warn if VM is terminated by uncaught exception, and GC-ed without
    joining.  It is cleary an unexpected case and worth reporting. */
@@ -2698,19 +2706,28 @@ void Scm__InitVM(void)
 #endif /*USE_CUSTOM_STACK_MARKER*/
 
     /* Create root VM */
+    rootVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));
+    rootVM->state = SCM_VM_RUNNABLE;
 #ifdef GAUCHE_USE_PTHREADS
     if (pthread_key_create(&vm_key, NULL) != 0) {
         Scm_Panic("pthread_key_create failed.");
     }
-    rootVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));
     if (pthread_setspecific(vm_key, rootVM) != 0) {
         Scm_Panic("pthread_setspecific failed.");
     }
     rootVM->thread = pthread_self();
-#else   /* !GAUCHE_USE_PTHREADS */
-    rootVM = theVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));
-#endif  /* !GAUCHE_USE_PTHREADS */
-    rootVM->state = SCM_VM_RUNNABLE;
+#elif  GAUCHE_USE_WTHREADS
+    vm_key = TlsAlloc();
+    if (vm_key == TLS_OUT_OF_INDEXES) {
+        Scm_Panic("TlsAlloc failed");
+    }
+    if (!TlsSetValue(vm_key, (LPVOID)rootVM)) {
+        Scm_Panic("TlsSetValue failed");
+    }
+    rootVM->thread = GetCurrentThread();
+#else   /* no threads */
+    theVM = rootVM;
+#endif  /* no threads */
 
 #ifdef COUNT_INSN_FREQUENCY
     Scm_AddCleanupHandler(dump_insn_frequency, NULL);

@@ -464,7 +464,12 @@ init_cond_features()
         { "gauche.os.cygwin", NULL },
 #endif
 #ifdef GAUCHE_USE_PTHREADS
+        { "gauche.sys.threads", "gauche.threads" },
         { "gauche.sys.pthreads", "gauche.threads" },
+#endif
+#ifdef GAUCHE_USE_WTHREADS
+        { "gauche.sys.threads", "gauche.threads" },
+        { "gauche.sys.wthreads", "gauche.threads" },
 #endif
         { "srfi-0", NULL },         /* autoloaded */
         { "srfi-1", "srfi-1" },

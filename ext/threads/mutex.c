@@ -52,28 +52,22 @@ SCM_DEFINE_BASE_CLASS(Scm_MutexClass, ScmMutex,
                       mutex_print, NULL, NULL, mutex_allocate,
                       default_cpl);
 
-#ifdef GAUCHE_USE_PTHREADS
+#ifdef GAUCHE_HAS_THREADS
 static void mutex_finalize(ScmObj obj, void* data)
 {
     ScmMutex *mutex = SCM_MUTEX(obj);
-    pthread_mutex_destroy(&(mutex->mutex));
-    pthread_cond_destroy(&(mutex->cv));
+    SCM_INTERNAL_MUTEX_DESTROY(mutex->mutex);
+    SCM_INTERNAL_COND_DESTROY(mutex->cv);
 }
-#endif /* GAUCHE_USE_PTHREADS */
+#endif /* GAUCHE_HAS_THREADS */
 
 static ScmObj mutex_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmMutex *mutex = SCM_ALLOCATE(ScmMutex, klass);
     SCM_SET_CLASS(mutex, klass);
-#ifdef GAUCHE_USE_PTHREADS
-    {
-        pthread_mutex_init(&(mutex->mutex), NULL);
-        pthread_cond_init(&(mutex->cv), NULL);
-        Scm_RegisterFinalizer(SCM_OBJ(mutex), mutex_finalize, NULL);
-    }
-#else  /*!GAUCHE_USE_PTHREADS*/
-    (void)SCM_INTERNAL_MUTEX_INIT(mutex->mutex);
-#endif /*!GAUCHE_USE_PTHREADS*/
+    SCM_INTERNAL_MUTEX_INIT(mutex->mutex);
+    SCM_INTERNAL_COND_INIT(mutex->cv);
+    Scm_RegisterFinalizer(SCM_OBJ(mutex), mutex_finalize, NULL);
     mutex->name = SCM_FALSE;
     mutex->specific = SCM_UNDEFINED;
     mutex->locked = FALSE;
@@ -180,15 +174,14 @@ ScmObj Scm_MakeMutex(ScmObj name)
 
 ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
 {
-#ifdef GAUCHE_USE_PTHREADS
+#ifdef GAUCHE_HAS_THREADS
     struct timespec ts, *pts;
     ScmObj r = SCM_TRUE;
     ScmVM *abandoned = NULL;
     int intr = FALSE;
     
     pts = Scm_GetTimeSpec(timeout, &ts);
-    pthread_cleanup_push((void (*)(void*))pthread_mutex_unlock,
-                         (void *)&(mutex->mutex));
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex->mutex);
     if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
         Scm_Error("mutex-lock!: failed to lock");
     }
@@ -199,19 +192,18 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
             break;
         }
         if (pts) {
-            int tr = pthread_cond_timedwait(&(mutex->cv), &(mutex->mutex), pts);
-            if (tr == ETIMEDOUT) { r = SCM_FALSE; break; }
-            else if (tr == EINTR) { intr = TRUE; break; }
+            int tr = SCM_INTERNAL_COND_TIMEDWAIT(mutex->cv, mutex->mutex, pts);
+            if (tr == SCM_INTERNAL_COND_TIMEDOUT) { r = SCM_FALSE; break; }
+            else if (tr == SCM_INTERNAL_COND_INTR) { intr = TRUE; break; }
         } else {
-            pthread_cond_wait(&(mutex->cv), &(mutex->mutex));
+            SCM_INTERNAL_COND_WAIT(mutex->cv, mutex->mutex);
         }
     }
     if (SCM_TRUEP(r)) {
         mutex->locked = TRUE;
         mutex->owner = owner;
     }
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
-    pthread_cleanup_pop(0);
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
     if (intr) Scm_SigCheck(Scm_VM());
     if (abandoned) {
         ScmObj exc = Scm_MakeThreadException(SCM_CLASS_ABANDONED_MUTEX_EXCEPTION, abandoned);
@@ -219,40 +211,38 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
         r = Scm_Raise(exc);
     }
     return r;
-#else  /* !GAUCHE_USE_PTHREADS */
+#else  /* !GAUCHE_HAS_THREADS */
     return SCM_TRUE;            /* dummy */
-#endif /* !GAUCHE_USE_PTHREADS */
+#endif /* !GAUCHE_HAS_THREADS */
 }
 
 ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout)
 {
     ScmObj r = SCM_TRUE;
-#ifdef GAUCHE_USE_PTHREADS
+#ifdef GAUCHE_HAS_THREADS
     struct timespec ts, *pts;
     int intr = FALSE;
     
     pts = Scm_GetTimeSpec(timeout, &ts);
-    pthread_cleanup_push((void (*)(void*))pthread_mutex_unlock,
-                         (void *)&(mutex->mutex));
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex->mutex);
     if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
         Scm_Error("mutex-unlock!: failed to lock");
     }
     mutex->locked = FALSE;
     mutex->owner = NULL;
-    pthread_cond_signal(&(mutex->cv));
+    SCM_INTERNAL_COND_SIGNAL(mutex->cv);
     if (cv) {
         if (pts) {
-            int tr = pthread_cond_timedwait(&(cv->cv), &(mutex->mutex), pts);
-            if (tr == ETIMEDOUT)  { r = SCM_FALSE; }
-            else if (tr == EINTR) { intr = TRUE; }
+            int tr = SCM_INTERNAL_COND_TIMEDWAIT(cv->cv, mutex->mutex, pts);
+            if (tr == SCM_INTERNAL_COND_TIMEDOUT)  { r = SCM_FALSE; }
+            else if (tr == SCM_INTERNAL_COND_INTR) { intr = TRUE; }
         } else {
-            pthread_cond_wait(&(cv->cv), &(mutex->mutex));
+            SCM_INTERNAL_COND_WAIT(cv->cv, mutex->mutex);
         }
     }
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
-    pthread_cleanup_pop(0);
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
     if (intr) Scm_SigCheck(Scm_VM());
-#endif /* GAUCHE_USE_PTHREADS */
+#endif /* GAUCHE_HAS_THREADS */
     return r;
 }
 
@@ -300,26 +290,20 @@ SCM_DEFINE_BASE_CLASS(Scm_ConditionVariableClass, ScmConditionVariable,
                       cv_print, NULL, NULL, cv_allocate,
                       default_cpl);
 
-#ifdef GAUCHE_USE_PTHREADS
+#ifdef GAUCHE_HAS_THREADS
 static void cv_finalize(ScmObj obj, void *data)
 {
     ScmConditionVariable *cv = SCM_CONDITION_VARIABLE(obj);
-    pthread_cond_destroy(&(cv->cv));
+    SCM_INTERNAL_COND_DESTROY(cv->cv);
 }
-#endif /* GAUCHE_USE_PTHREADS */
+#endif /* GAUCHE_HAS_THREADS */
 
 static ScmObj cv_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmConditionVariable *cv = SCM_ALLOCATE(ScmConditionVariable, klass);
     SCM_SET_CLASS(cv, klass);
-#ifdef GAUCHE_USE_PTHREADS
-    {
-        pthread_cond_init(&(cv->cv), NULL);
-        Scm_RegisterFinalizer(SCM_OBJ(cv), cv_finalize, NULL);
-    }
-#else  /*!GAUCHE_USE_PTHREADS*/
-    (void)SCM_INTERNAL_COND_INIT(cv->cv);
-#endif /*!GAUCHE_USE_PTHREADS*/
+    SCM_INTERNAL_COND_INIT(cv->cv);
+    Scm_RegisterFinalizer(SCM_OBJ(cv), cv_finalize, NULL);
     cv->name = SCM_FALSE;
     cv->specific = SCM_UNDEFINED;
     return SCM_OBJ(cv);
@@ -375,17 +359,13 @@ ScmObj Scm_MakeConditionVariable(ScmObj name)
 
 ScmObj Scm_ConditionVariableSignal(ScmConditionVariable *cond)
 {
-#ifdef GAUCHE_USE_PTHREADS
-    pthread_cond_signal(&(cond->cv));
-#endif
+    SCM_INTERNAL_COND_SIGNAL(cond->cv);
     return SCM_UNDEFINED;
 }
 
 ScmObj Scm_ConditionVariableBroadcast(ScmConditionVariable *cond)
 {
-#ifdef GAUCHE_USE_PTHREADS
-    pthread_cond_broadcast(&(cond->cv));
-#endif
+    SCM_INTERNAL_COND_BROADCAST(cond->cv);
     return SCM_UNDEFINED;
 }
 

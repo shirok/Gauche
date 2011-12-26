@@ -43,7 +43,7 @@
 /* WARNING: duplicated code - see signal.c; we should integrate them later */
 #ifdef GAUCHE_USE_PTHREADS
 #define SIGPROCMASK pthread_sigmask
-#else
+#else  /* windows doesn't care signals, so we don't check WTHREADS. */
 #define SIGPROCMASK sigprocmask
 #endif
 

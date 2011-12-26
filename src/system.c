@@ -1062,8 +1062,7 @@ ScmObj Scm_TimeToSeconds(ScmTime *t)
     }
 }
 
-#if defined(HAVE_STRUCT_TIMESPEC) || defined (GAUCHE_USE_PTHREADS)
-/* Scheme time -> timespec conversion, used by pthread routines.*/
+/* Scheme time -> timespec conversion */
 struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec)
 {
     if (SCM_FALSEP(t)) return NULL;
@@ -1107,7 +1106,6 @@ struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec)
     }
     return spec;
 }
-#endif /* defined(HAVE_STRUCT_TIMESPEC) || defined (GAUCHE_USE_PTHREADS) */
 
 /* <sys-tm> object */
 
@@ -2633,8 +2631,173 @@ static void fini_winsock(void *data)
     (void)WSACleanup();
 }
 
-#endif /* GAUCHE_WINDOWS */
+/* Win32 thread support.  See also gauche/wthread.h */
+HANDLE Scm__WinCreateMutex()
+{
+    HANDLE m = CreateMutex(NULL, FALSE, NULL);
+    if (m == NULL) Scm_SysError("couldn't create a mutex");
+    return m;
+}
 
+int Scm__WinMutexLock(HANDLE mutex)
+{
+    DWORD r = WaitForSingleObject(mutex, INFINITE);
+    if (r == WAIT_OBJECT_0) return 0;
+    else return 1;              /* TODO: proper error handling */
+}
+
+/* Win32 conditional variable emulation.
+   Native condition variable support is only available on Windows Vista
+   and later.  We don't want to drop XP support (yet), so we avoid using
+   it.  Instead we emulate posix condition variable semantics.
+   We follow the SignalObjectAndWait solution shown in
+   <http://www1.cse.wustl.edu/~schmidt/win32-cv-1.html>
+ */
+void Scm__InternalCondInit(ScmInternalCond *cond)
+{
+    cond->numWaiters = 0;
+    cond->broadcast = FALSE;
+    cond->sem = CreateSemaphore(NULL,          /* no security */
+                                0, 0x7fffffff, /* initial and max val */
+                                NULL);         /* name */
+    if (cond->sem == NULL) {
+        Scm_SysError("couldn't create semaphore for a condition variable");
+    }
+    cond->done = CreateEvent(NULL,  /* no security */
+                             FALSE, /* auto-reset */
+                             FALSE, /* initially non-signalled */
+                             NULL); /* name */
+    if (cond->done == NULL) {
+        DWORD err = GetLastError();
+        CloseHandle(cond->sem);
+        SetLastError(err);
+        Scm_SysError("couldn't create event for a condition variable");
+    }
+    InitializeCriticalSection(&cond->numWaitersLock);
+}
+
+int Scm__InternalCondWait(ScmInternalCond *cond, ScmInternalMutex *mutex,
+                          struct timespec *pts)
+{
+    DWORD r;
+    DWORD timeout_msec;
+    int lastWaiter;
+
+    if (pts) {
+        u_long now_sec, now_usec;
+        u_long target_sec, target_usec;
+        Scm_GetTimeOfDay(&now_sec, &now_usec);
+        target_sec = pts->tv_sec;
+        target_usec = pts->tv_nsec / 1000;
+
+        if (target_sec <= now_sec
+            || (target_sec == now_sec && target_usec <= now_usec)) {
+            timeout_msec = 0;
+        } else if (target_usec >= now_usec) {
+            timeout_msec = ((target_sec - now_sec) * 1000
+                            + (target_usec - now_usec) / 1000);
+        } else {
+            timeout_msec = ((target_sec - now_sec - 1) * 1000
+                            + (1000000 + target_usec - now_usec) / 1000);
+        }
+    } else {
+        timeout_msec = INFINITE;
+    }
+    
+    EnterCriticalSection(&cond->numWaitersLock);
+    cond->numWaiters++;
+    LeaveCriticalSection(&cond->numWaitersLock);
+
+    /* signals mutex and atomically waits on the semaphore */
+    r = SignalObjectAndWait(*mutex, cond->sem, timeout_msec, FALSE);
+    if (r == WAIT_TIMEOUT) {
+        EnterCriticalSection(&cond->numWaitersLock);
+        cond->numWaiters--;
+        LeaveCriticalSection(&cond->numWaitersLock);
+        return SCM_INTERNAL_COND_TIMEDOUT;
+    }
+    if (r != WAIT_OBJECT_0) {
+        DWORD err = GetLastError();
+        EnterCriticalSection(&cond->numWaitersLock);
+        cond->numWaiters--;
+        LeaveCriticalSection(&cond->numWaitersLock);
+        SetLastError(err);
+        return -1;
+    }
+
+    /* ok, we're woken up.  the flag lastWaiter is TRUE if we're the
+       last waiter after the broadcast. */
+    EnterCriticalSection(&cond->numWaitersLock);
+    cond->numWaiters--;
+    lastWaiter = cond->broadcast && cond->numWaiters == 0;
+    LeaveCriticalSection(&cond->numWaitersLock);
+
+    if (lastWaiter) {
+        /* tell the broadcaster that all the waiters have gained control,
+           and wait to aquire mutex. */
+        r = SignalObjectAndWait(cond->done, *mutex, INFINITE, FALSE);
+    } else {
+        /* Aquire mutex */
+        r = WaitForSingleObject(*mutex, INFINITE);
+    }
+    if (r != WAIT_OBJECT_0) return -1;
+    return 0;
+}
+
+int Scm__InternalCondSignal(ScmInternalCond *cond)
+{
+    int haveWaiters;
+
+    EnterCriticalSection(&cond->numWaitersLock);
+    haveWaiters = (cond->numWaiters > 0);
+    LeaveCriticalSection(&cond->numWaitersLock);
+
+    if (haveWaiters) {
+        BOOL r = ReleaseSemaphore(cond->sem, 1, 0);
+        if (!r) return -1;
+    }
+    return 0;
+}
+
+int Scm__InternalCondBroadcast(ScmInternalCond *cond)
+{
+    int haveWaiters;
+    DWORD err = 0;
+
+    EnterCriticalSection(&cond->numWaitersLock);
+    cond->broadcast = haveWaiters = (cond->numWaiters > 0);
+
+    if (haveWaiters) {
+        BOOL r = ReleaseSemaphore(cond->sem, cond->numWaiters, 0);
+        if (!r) err = GetLastError();
+        LeaveCriticalSection(&cond->numWaitersLock);
+
+        if (!r) {
+            SetLastError(err);
+            return -1;
+        }
+        
+        /* Each waiter aquires mutex in turn, until the last waiter
+           who will signal on 'done'. */
+        r = WaitForSingleObject(cond->done, INFINITE);
+        cond->broadcast = FALSE; /* safe; nobody will check this */
+        if (!r) return -1;
+        return 0;
+    } else {
+        /* nobody's waiting */
+        LeaveCriticalSection(&cond->numWaitersLock);
+        return 0;
+    }
+}
+
+void Scm__InternalCondDestroy(ScmInternalCond *cond)
+{
+    CloseHandle(cond->sem);
+    cond->sem = NULL;
+    CloseHandle(cond->done);
+    cond->done = NULL;
+}
+#endif /* GAUCHE_WINDOWS */
 
 /*===============================================================
  * Initialization

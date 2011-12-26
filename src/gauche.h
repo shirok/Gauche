@@ -121,6 +121,8 @@ SCM_DECL_BEGIN
    See gauche/uthread.h for the semantics of these primitives. */
 #ifdef GAUCHE_USE_PTHREADS
 # include <gauche/pthread.h>
+#elif  GAUCHE_USE_WTHREADS
+# include <gauche/wthread.h>
 #else  /* !GAUCHE_USE_PTHREADS */
 # include <gauche/uthread.h>
 #endif /* !GAUCHE_USE_PTHREADS */
