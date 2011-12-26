@@ -50,8 +50,7 @@ if [ "$gen" = "yes" ]; then
   rm -rf configure gc/configure
   autoconf
   (cd gc; autoconf)
-  (cd gc/libatomic_ops-*; autoconf)
-#  patch -u -p0 < doc/mingw-memo.txt
+  (cd gc/libatomic_ops; autoconf)
 fi
 
 if [ "$tgz" = "yes" ]; then
