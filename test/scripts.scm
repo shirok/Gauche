@@ -27,7 +27,7 @@
                     '(define-module foo (define (main args) (print "foo") 0)))
                    (write
                     '(define (main args) (print "bar") 0))))
-               (process-output->string '("./gosh" "-mfoo" "test.o")))
+               (process-output->string '("./gosh" "-ftest" "-mfoo" "test.o")))
            (delete-files "test.o")))
 
 ;;=======================================================================
