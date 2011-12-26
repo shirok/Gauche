@@ -2653,6 +2653,7 @@ void Scm__InitSystem(void)
 
 #ifdef GAUCHE_WINDOWS
     init_winsock();
+    SCM_INTERNAL_MUTEX_INIT(process_mgr.mutex);
     Scm_AddCleanupHandler(fini_winsock, NULL);
     Scm_AddCleanupHandler(win_process_cleanup, NULL);
 #endif

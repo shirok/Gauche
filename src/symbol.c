@@ -238,6 +238,7 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 void Scm__InitSymbol(void)
 {
+    SCM_INTERNAL_MUTEX_INIT(obtable_mutex);
     obtable = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING, 4096));
     init_builtin_syms();
 }

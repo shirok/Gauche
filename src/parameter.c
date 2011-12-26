@@ -188,3 +188,9 @@ void Scm_DefinePrimitiveParameter(ScmModule *mod,
     Scm_Define(mod, SCM_SYMBOL(Scm_Intern(SCM_STRING(sname))), subr);
     *location = pd->loc;
 }
+
+void Scm__InitParameter(void)
+{
+    SCM_INTERNAL_MUTEX_INIT(parameter_mutex);
+}
+
