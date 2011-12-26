@@ -562,11 +562,15 @@ case $host in
     # -no-cpp-precomp is not related to shared library, but needed to
     # get src/{vm.c,char.c} compiled -skimu
     # [Shiro] Darwin 1.3 and later needs different flags 
+    CPPFLAGS="$CPPFLAGS -no-cpp-precomp"
     case $host_os in
       darwin1.[[012]]) FLAT_NAMESPACE="" ;;
       *)               FLAT_NAMESPACE="-flat_namespace" ;;
     esac
-    CPPFLAGS="$CPPFLAGS -no-cpp-precomp"
+    case $host_os in
+      darwin9.8.*) ;;           dnl Leopard doesn't like -no_pie
+      *)           SHLIB_MAIN_LDFLAGS="-Wl,-no_pie";;
+    esac
     SHLIB_SO_CFLAGS="-no-cpp-precomp -fPIC -fno-common"
     SHLIB_SO_LDFLAGS="-bundle $FLAT_NAMESPACE -undefined suppress -o"
     SHLIB_SO_SUFFIX="so"
@@ -579,7 +583,6 @@ case $host in
     fi
     SHLIB_DYLIB_SUFFIX="dylib"
     SHLIB_LIBS_FOR_EXT=""
-    SHLIB_MAIN_LDFLAGS="-Wl,-no_pie"
     SHLIB_OK=ok
     LINK_HELPER='./link-dylib'
     ext_use_libgauche=no
