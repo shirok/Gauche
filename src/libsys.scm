@@ -1149,15 +1149,19 @@
  (define-type <sys-fdset> "ScmSysFdset*")
 
  (when "defined(HAVE_SELECT)"
+   ;; NB: On Windows, FD_SETSIZE merely indicates the maximum # of socket
+   ;; descriptors fd_set can contain, and unrelated to the actual value
+   ;; of the descriptor.  This check is thus only valid on unixen.
    (define-cise-stmt check-fd-range
      [(_ fd)
       (let1 fd_ (gensym)
-        `(let* ((,fd_ :: int ,fd))
-           (when (or (< ,fd_ 0) (>= ,fd_ FD_SETSIZE))
-             (Scm_Error "File descriptor value is out of range: %d \
+        `(.if "!defined(GAUCHE_WINDOWS)"
+              (let* ((,fd_ :: int ,fd))
+                (when (or (< ,fd_ 0) (>= ,fd_ FD_SETSIZE))
+                  (Scm_Error "File descriptor value is out of range: %d \
                          (must be between 0 and %d, inclusive)"
-                        ,fd_ (- FD_SETSIZE 1)))))])
-   
+                             ,fd_ (- FD_SETSIZE 1))))))])
+
    (define-cproc sys-fdset-ref (fdset::<sys-fdset> pf) ::<boolean>
      (setter sys-fdset-set!)
      (let* ([fd::int (Scm_GetPortFd pf FALSE)])

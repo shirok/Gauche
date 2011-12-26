@@ -1,5 +1,10 @@
 2011-12-25  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/cise.scm (.if): Make sure '#if' stars from the
+	  fresh line.
+	* src/libsys.scm: The fd range check added recently was invalid on
+	  Windows/MinGW (see the comment).  Conditionalized.
+
 	* gc/*: Updated to gc7.2-alpha6.
 
 	* src/compile.scm (quasiquote): Fixed to recognize unquote and

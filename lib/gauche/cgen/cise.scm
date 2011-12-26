@@ -681,11 +681,13 @@
   (ensure-stmt-or-toplevel-ctx form env)
   (match form
     [(_ condition stmt1)
-     `("#if " ,(x->string condition) "\n" |#reset-line|
+     `("\n" |#reset-line|               ;make sure we start from the fresh line
+       "#if " ,(x->string condition) "\n" |#reset-line|
        ,(render-rec stmt1 env) "\n"
        "#endif /* " ,(x->string condition) " */\n" |#reset-line|)]
     [(_ condition stmt1 stmt2)
-     `("#if " ,(x->string condition) "\n" |#reset-line|
+     `("\n" |#reset-line|               ;make sure we start from the fresh line
+       "#if " ,(x->string condition) "\n" |#reset-line|
        ,(render-rec stmt1 env) "\n"
        "#else  /* !",(x->string condition) " */\n" |#reset-line|
        ,(render-rec stmt2 env) "\n"
@@ -695,7 +697,7 @@
   (ensure-stmt-or-toplevel-ctx form env)
   (match form
     [(_ (condition . stmts) ...)
-     `("#if 0 /*dummy*/\n"
+     `("\n#if 0 /*dummy*/\n" |#reset-line|
        ,@(fold-right (lambda (c ss seed)
                        `(,(cond [(eq? c 'else) '("#else")]
                                 [else `("#elif " ,(x->string c))])
