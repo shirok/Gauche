@@ -1156,7 +1156,7 @@
            (when (or (< ,fd_ 0) (>= ,fd_ FD_SETSIZE))
              (Scm_Error "File descriptor value is out of range: %d \
                          (must be between 0 and %d, inclusive)"
-                        ,fd_ FD_SETSIZE))))])
+                        ,fd_ (- FD_SETSIZE 1)))))])
    
    (define-cproc sys-fdset-ref (fdset::<sys-fdset> pf) ::<boolean>
      (setter sys-fdset-set!)
