@@ -2460,11 +2460,14 @@ static void process_queued_requests(ScmVM *vm)
             break;
         case SCM_VM_REQUEST_TERMINATE:
             vm->state = SCM_VM_TERMINATED;
-            (void)SCM_INTERNAL_COND_BROADCAST(vm->cond);
+            break;
+        default:
+            Scm_Panic("Unkown value in vm->stopRequest (%d).  Aborting.",
+                      vm->stopRequest);
         }
         SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
         if (vm->state == SCM_VM_TERMINATED) {
-            SCM_INTERNAL_THREAD_EXIT();
+            SCM_INTERNAL_THREAD_EXIT(); /* this'll notify vm->cond. */
         }
     }
 }

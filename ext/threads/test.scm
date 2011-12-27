@@ -91,6 +91,14 @@
                     (thread-state t1)])
            (thread-join! t1))))
 
+;; thread termination via stopRequest
+(let1 t1 (thread-start! (make-thread (^[] (let loop () (loop))))) ; busy loop
+  (test* "thread termination via stopRequest" 'terminated
+         (guard (e [(<terminated-thread-exception> e)
+                    (thread-state t1)])
+           (thread-terminate! t1)
+           (thread-join! t1))))
+
 ;;---------------------------------------------------------------------
 (test-section "thread and error")
 
