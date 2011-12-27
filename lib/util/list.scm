@@ -14,138 +14,41 @@
 ;;;  for any damages arising out of the use of this software.
 ;;;
 
-;; This module adds useful list utility procedures that are not in SRFI-1.
-
+;; This module is obsoleted - the functions are supported in the core.
+;; We keep this module just fore the backward compatibility.
 (define-module util.list
-  (use srfi-1)
-  (export slices intersperse cond-list
+  (export take* drop* take-right* drop-right* split-at*
+          slices intersperse cond-list
           alist->hash-table hash-table->alist
+
           rassq rassv rassoc
           assq-ref assv-ref assoc-ref
           rassq-ref rassv-ref rassoc-ref
           assq-set! assv-set! assoc-set!
-
-          ;; The following procs are moved to the core, but kept exported
-          ;; here for the backward compatibility.
-          take* drop* take-right* drop-right* split-at*
           ))
 (select-module util.list)
 
-(define take*       (with-module gauche take*))
-(define drop*       (with-module gauche drop*))
-(define take-right* (with-module gauche take-right*))
-(define drop-right* (with-module gauche drop-right*))
-(define split-at*   (with-module gauche split-at*))
+(define take*       (with-module gauche take*))       ;liblist
+(define drop*       (with-module gauche drop*))       ;liblist
+(define take-right* (with-module gauche take-right*)) ;liblist
+(define drop-right* (with-module gauche drop-right*)) ;liblist
+(define split-at*   (with-module gauche split-at*))   ;liblist
+(define slices      (with-module gauche slices))      ;liblist
+(define intersperse (with-module gauche intersperse)) ;liblist
+(define-syntax cond-list (with-module gauche cond-list)) ;common-macros
 
-;;-----------------------------------------------------------------
-;; slices - split a list to a bunch of sublists of length k
-;;
+(define rassoc      (with-module gauche rassoc))      ;liblist
+(define rassq       (with-module gauche rassq))       ;liblist
+(define rassv       (with-module gauche rassv))       ;liblist
+(define assoc-ref   (with-module gauche assoc-ref))   ;liblist
+(define assq-ref    (with-module gauche assq-ref))    ;liblist
+(define assv-ref    (with-module gauche assv-ref))    ;liblist
+(define rassoc-ref  (with-module gauche rassoc-ref))  ;liblist
+(define rassq-ref   (with-module gauche rassq-ref))   ;liblist
+(define rassv-ref   (with-module gauche rassv-ref))   ;liblist
+(define assoc-set!  (with-module gauche assoc-set!))  ;liblist
+(define assq-set!   (with-module gauche assoc-set!))  ;liblist
+(define assv-set!   (with-module gauche assoc-set!))  ;liblist
 
-(define (slices lis k . args)
-  (unless (and (integer? k) (positive? k))
-    (error "index must be positive integer" k))
-  (let loop ((lis lis)
-             (r '()))
-    (if (null? lis)
-        (reverse! r)
-        (receive (h t) (apply split-at* lis k args)
-          (loop t (cons h r))))))
-
-;;-----------------------------------------------------------------
-;; intersperse - insert ITEM between elements in the list.
-;; (the order of arguments is taken from Haskell's intersperse)
-
-(define (intersperse item lis)
-  (define (rec l r)
-    (if (null? l)
-        (reverse! r)
-        (rec (cdr l) (list* (car l) item r))))
-  (if (null? lis)
-      '()
-      (rec (cdr lis) (list (car lis)))))
-
-;;-----------------------------------------------------------------
-;; cond-list - a syntax to construct a list
-;;
-;;   (cond-list clause clause2 ...)
-;;
-;;   clause : (test expr ...)
-;;          | (test => proc)
-;;          | (test @ expr ...) ;; intersperse
-;;          | (test => @ proc)  ;; intersperse
-
-(define-syntax cond-list
-  (syntax-rules (=> @)
-    ((_) '())
-    ((_ (test) . rest)
-     (let* ((tmp test)
-            (r (cond-list . rest)))
-       (if tmp (cons tmp r) r)))
-    ((_ (test => proc) . rest)
-     (let* ((tmp test)
-            (r (cond-list . rest)))
-       (if tmp (cons (proc tmp) r) r)))
-    ((_ (test => @ proc) . rest)
-     (let* ((tmp test)
-            (r (cond-list . rest)))
-       (if tmp (append (proc tmp) r) r)))
-    ((_ (test @ . expr) . rest)
-     (let* ((tmp test)
-            (r (cond-list . rest)))
-       (if tmp (append (begin . expr) r) r)))
-    ((_ (test . expr) . rest)
-     (let* ((tmp test)
-            (r (cond-list . rest)))
-       (if tmp (cons (begin . expr) r) r)))
-    ))
-
-;;-----------------------------------------------------------------
-;; Associative list library - based on Alex Shinn's implementation
-;;
-
-;; conversion to/from hash-table
-(define (alist->hash-table a . opt-eq)
-  (let ((tb (apply make-hash-table opt-eq)))
-    (for-each (lambda (x) (hash-table-put! tb (car x) (cdr x))) a)
-    tb))
-
-(define (hash-table->alist h)
-  (hash-table-map h cons))
-
-;; `reverse' alist search fn
-(define (rassoc key alist :optional (eq equal?))
-  (find (lambda (elt) (and (pair? elt) (eq (cdr elt) key))) alist))
-
-(define rassq (cut rassoc <> <> eq?))
-(define rassv (cut rassoc <> <> eqv?))
-
-;; 'assoc-ref', a shortcut of value retrieval w/ default value
-;; Default parameter comes first, following the convention of
-;; other *-ref functions.
-(define (assoc-ref alist key :optional (default #f) (eq equal?))
-  (cond [(assoc key alist eq) => cdr]
-        [else default]))
-
-(define (assq-ref alist key . opts)
-  (assoc-ref alist key (get-optional opts #f) eq?))
-(define (assv-ref alist key . opts)
-  (assoc-ref alist key (get-optional opts #f) eqv?))
-
-(define (rassoc-ref alist key :optional (default #f) (eq equal?))
-  (cond [(rassoc key alist eq) => car]
-        [else default]))
-
-(define (rassq-ref alist key . opts)
-  (rassoc-ref alist key (get-optional opts #f) eq?))
-(define (rassv-ref alist key . opts)
-  (rassoc-ref alist key (get-optional opts #f) eqv?))
-
-;; 'assoc-set!'
-(define (assoc-set! alist key val :optional (eq equal?))
-  (cond [(assoc key alist eq)
-         => (lambda (p) (set-cdr! p val) alist)]
-        [else (acons key val alist)]))
-
-(define assq-set!  (cut assoc-set! <> <> <> eq?))
-(define assv-set!  (cut assoc-set! <> <> <> eqv?))
-
+(define alist->hash-table (with-module gauche alist->hash-table)) ;libdict
+(define hash-table->alist (with-module gauche hash-table->alist)) ;libdict

@@ -192,6 +192,14 @@
 (define-cproc hash-table-values (hash::<hash-table>) Scm_HashTableValues)
 (define-cproc hash-table-stat (hash::<hash-table>)   Scm_HashTableStat)
 
+;; conversion to/from hash-table
+(define (alist->hash-table a . opt-eq)
+  (rlet1 tb (apply make-hash-table opt-eq)
+    (for-each (^x (hash-table-put! tb (car x) (cdr x))) a)))
+
+(define (hash-table->alist h)
+  (hash-table-map h cons))
+
 ;;;
 ;;; TreeMap
 ;;;

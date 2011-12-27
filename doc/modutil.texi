@@ -56,7 +56,6 @@
 * Message digester framework::  util.digest
 * Determine isomorphism::       util.isomorph
 * The longest common subsequence::  util.lcs
-* Additional list library::     util.list
 * Pattern matching::            util.match
 * Queue::                       util.queue
 * Red black tree::              util.rbtree
@@ -15797,7 +15796,7 @@ fully, no matter what the running Gauche's native encoding is.
 @menu
 * Unicode transfer encodings::  
 * Unicode text segmentation::   
-* Full string case conversion::      
+* Full string case conversion::  
 @end menu
 
 @node Unicode transfer encodings, Unicode text segmentation, Unicode utilities, Unicode utilities
@@ -16390,7 +16389,7 @@ equal (in the sense of @code{equal?}).
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node The longest common subsequence, Additional list library, Determine isomorphism, Library modules - Utilities
+@node The longest common subsequence, Pattern matching, Determine isomorphism, Library modules - Utilities
 @section @code{util.lcs} - The longest common subsequence
 @c NODE 最長共通サブシーケンス, @code{util.lcs} - 最長共通サブシーケンス
 
@@ -16590,270 +16589,7 @@ returns.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Additional list library, Pattern matching, The longest common subsequence, Library modules - Utilities
-@section @code{util.list} - Additional list library
-@c NODE その他のリストライブラリ, @code{util.list} - その他のリストライブラリ
-
-@deftp {Module} util.list
-@mdindex util.list
-@c EN
-This module provides list utility functions which are not in srfi-1
-(@xref{List library}) but generally useful.
-
-See also @ref{Collection framework}
-and @ref{Sequence framework}, for
-these modules also defines useful generic functions that can
-be used for lists.
-@c JP
-このモジュールは、srfi-1 (@ref{List library}参照)にはないが、
-一般的に便利なリストユーティリティ関数を提供します。
-
-リストに対して用いることができる便利なジェネリック関数を定義している
-@ref{Collection framework}と@ref{Sequence framework}も
-見て下さい。
-@c COMMON
-@end deftp
-
-@defun slices list k :optional fill? padding
-@c EN
-Splits @var{list} into the sublists (slices) where the length of
-each slice is @var{k}.
-If the length of @var{list} is not a multiple of @var{k},
-the last slice is dealt in the same way as @code{take*}; that is,
-it is shorter than @var{k} by default, or added @var{padding} if
-@var{fill?} is true.
-@c JP
-@var{list}を、それぞれの長さが@var{k}であるようなサブリスト(スライス)に
-分割します。
-@var{list}の長さが@var{k}の整数倍でない場合は、最後のスライスは
-@code{take*}と同じ方法で扱われます。つまり、デフォルトでは@var{k}より
-短いもの、あるいは@var{fill?}が真ならば@var{padding}が追加されます。
-@c COMMON
-
-@example
-(slices '(a b c d e f g) 3)
-  @result{} ((a b c) (d e f) (g))
-(slices '(a b c d e f g) 3 #t 'z)
-  @result{} ((a b c) (d e f) (g z z))
-@end example
-@end defun
-
-@defun intersperse item list
-@c EN
-Inserts @var{item} between elements in the @var{list}.
-(The order of arguments is taken from Haskell's intersperse).
-@c JP
-@var{list}の要素の間に@var{item}を挿入します。
-(引数の順番は、Haskellのintersperseと同じです。)
-@c COMMON
-
-@example
-(intersperse '+ '(1 2 3))  @result{} (1 + 2 + 3)
-(intersperse '+ '(1))      @result{} (1)
-(intersperse '+ '())       @result{} ()
-@end example
-@end defun
-
-@defmac cond-list clause @dots{}
-@c EN
-Construct a list by conditionally adding entries.
-Each @var{clause} has a test and expressions.  When its test
-yields true, the result of associated expression is used to
-construct the resulting list.  When the
-test yields false, nothing is inserted.
-@c JP
-条件によりエントリを追加することによりリストを構築します。
-それぞれの@var{clause}は条件と式を持ちます。
-条件が真であれば、関連する式の結果が結果のリストの構築に使われます。
-条件が偽であれば、何も挿入されません。
-@c COMMON
-
-@c EN
-@var{Clause} must be either one of the following form:
-@table @code
-@item (@var{test} @var{expr} @dots{})
-@var{Test} is evaluated, and when it is true,
-@var{expr} @dots{} are evaluated, and the return value
-becomes a part of the result.  If no @var{expr} is given,
-the result of @var{test} is used if it is not false.
-@item (@var{test} => @var{proc})
-@var{Test} is evaluated, and when it is true,
-@var{proc} is called with the value, and the return
-value is used to construct the result.
-@item (@var{test} @@ @var{expr} @dots{})
-Like @code{(test expr @dots{})}, except that the result of
-the last @var{expr} must be a list, and it is spliced into
-the resulting list, like unquote-splicing.
-@item (@var{test} => @@ @var{proc})
-Like @code{(test => proc)}, except that the result of
-@var{proc} must be a list, and and it is spliced into
-the resulting list, like unquote-splicing.
-@end table
-@c JP
-@var{clause}は、以下のフォームのうちの1つでなければなりません。
-@table @code
-@item (@var{test} @var{expr} @dots{})
-@var{test}が評価され、それが真ならば@var{expr} @dots{}が評価され、
-戻り値が結果の一部となります。@var{expr}が与えられなければ、
-@var{test}の結果が偽でなければその結果が使われます。
-@item (@var{test} => @var{proc})
-@var{test}が評価され、それが真ならば@var{proc}がその値とともに
-呼ばれ、その戻り値が結果を構築するために使われます。
-@item (@var{test} @@ @var{expr} @dots{})
-@code{(test expr @dots{})}のように動作しますが、最後の@var{expr}の
-値はリストでなければならず、それは結果のリストに(unquote-splicingのように)
-スプライスされます。
-@item (@var{test} => @@ @var{proc})
-@code{(test => proc)}のように動作しますが、@var{proc}の戻り値
-はリストでなければならず、それは結果のリストに(unquote-splicingのように)
-スプライスされます。
-@end table
-@c COMMON
-
-@example
-(let ((alist '((x 3) (y -1) (z 6))))
- (cond-list ((assoc 'x alist) 'have-x)
-            ((assoc 'w alist) 'have-w)
-            ((assoc 'z alist) => cadr)))
-  @result{} (have-x 6)
-
-(let ((x 2) (y #f) (z 5))
-  (cond-list (x @@ `(:x ,x))
-             (y @@ `(:y ,y))
-             (z @@ `(:z ,z))))
-  @result{} (:x 2 :z 5)
-@end example
-@end defmac
-
-@defun alist->hash-table alist :optional cmp
-@c EN
-Creates and returns a hash table that has entries of
-each element in alist, using its car as the key and
-its cdr as the value.  @var{Cmp} is a symbol specifying
-the comparison function of the created hash table;
-currently @code{eq?}, @code{eqv?}, @code{equal?} and @code{string=?}
-are supported.
-@c JP
-alistに含まれるそれぞれの要素をエントリとして持つハッシュテーブルを
-作成して返します。その時、要素のcarがキーとして、要素のcdrが値として
-使われます。@var{cmp}は作成されたハッシュテーブルの比較関数を
-指定するシンボルで、現在は@code{eq?}、@code{eqv?}、@code{equal?}、
-@code{string=?}がサポートされています。
-@c COMMON
-@end defun
-
-@defun hash-table->alist hash-table
-@example
-  (hash-table-map h cons)
-@end example
-@end defun
-
-@defun rassoc key alist :optional eq-fn
-@defunx rassq key alist
-@defunx rassv key alist
-@c EN
-Reverse associations---given @var{key} is matched to the @emph{cdr}
-of each element in @var{alist}, instead of the @emph{car}.
-Handy to realize bidirectional associative list.
-@code{Rassoc} takes an optional comparison function, whose default is
-@code{equal?}.  @code{Rassq} and @code{rassv} uses @var{eq?} and @var{eqv?}.
-@c JP
-与えられる@var{key}が@var{alist}のそれぞれの要素で、@emph{car}の代わりに
-@emph{cdr}にマッチするような逆になった連想リストです。
-両方向の連想リストと理解すると簡単です。
-@code{rassoc}は、そのデフォルトが@code{equal?}である、オプションの
-比較関数を取ります。@code{rassq}は@var{eq?}、@code{rassv}は@var{eqv?}を
-使います。
-@c COMMON
-@end defun
-
-
-@defun assoc-ref alist key :optional default eq-fn
-@defunx assq-ref alist key :optional default
-@defunx assv-ref alist key :optional default
-@c EN
-These procedures provide the access to the assoc list
-symmetric with other *-ref procedures.
-This captures the common pattern of alist access:
-@c JP
-これらの手続きは、他の*-ref手続きと対照的な連想リストへの
-アクセスを提供します。これは、一般的な連想リストアクセスのパターン
-です。
-@c COMMON
-@example
-(assoc-ref alist key default eq-fn)
- @equiv{}
-  (cond ((assoc key alist eq-fn) => cdr)
-        (else default))))
-@end example
-
-@c EN
-If @var{default} is omitted, @code{#f} is used.
-
-@code{Assoc-ref} takes an optional comparison function @var{eq-fn},
-whose default is @code{equal?}.  @code{Assq-ref} and @code{assv-ref}
-uses @code{eq?} and @code{eqv?}, respectively.
-@c JP
-@var{default}が省略されると、@code{#f}が使われます。
-
-@code{assoc-ref}は、そのデフォルトが@code{equal?}である、オプションの
-比較関数@var{eq-fn}を取ります。@code{assq-ref}は@code{eq?}を、
-@code{assv-ref}は@code{eqv?}をそれぞれ使います。
-@c COMMON
-@end defun
-
-@defun rassoc-ref alist key :optional default eq-fn
-@defunx rassq-ref alist key :optional default
-@defunx rassv-ref alist key :optional default
-@c EN
-Reverse association version of @code{assoc-ref}.
-@c JP
-@code{assoc-ref}の逆連想リストバージョンです。
-@c COMMON
-@example
-(rassoc-ref alist key default eq-fn)
- @equiv{}
-  (cond ((rassoc key alist eq-fn) => car)
-        (else default))))
-@end example
-@c EN
-The meanings of optional arguments are the same as @code{assoc-ref}.
-@c JP
-オプショナル引数の意味は、@code{assoc-ref}と同じです。
-@c COMMON
-@end defun
-
-@defun assoc-set! alist key val :optional eq-fn
-@defunx assq-set! alist key val
-@defunx assv-set! alist key val
-@c EN
-Returns an alist who has @code{(key . val)} pair added to the @code{alist}.
-If @code{alist} already has an element with @var{key}, the element's
-@emph{cdr} is destructively modified for @var{val}.
-If @var{alist} doesn't have an element with @var{key}, a new pair
-is created and appended in front of @var{alist}; so you should use
-the return value to guarantee @var{key}-@var{val} pair is added.
-
-@code{Assoc-set!} takes optional comparison function @var{eq-fn},
-whose default is @code{equal?}.  @code{Assq-set!} and @code{assv-set!}
-uses @code{eq?} and @code{eqv?}, respectively.
-@c JP
-@code{alist}に@code{(key . val)}のペアが追加された連想リストを返します。
-@code{alist}がすでに@var{key}をキーとする要素を持っている場合、
-その要素の@emph{cdr}は破壊的に@var{val}に変更されます。
-@var{alist}が@var{key}をキーとする要素を持っていない場合は、
-新しいペアが作成され、@var{alist}の一番前に追加されます。
-したがって、@var{key}-@var{val}ペアが追加されたことを保証するために
-その戻り値を使うべきです。
-
-@code{assoc-set!}は、そのデフォルトが@code{equal?}である、オプションの
-比較関数@var{eq-fn}を取ります。@code{assq-set!}は@code{eq?}を、
-@code{assv-set!}は@code{eqv?}を、それぞれ使います。
-@c COMMON
-@end defun
-
-@c ----------------------------------------------------------------------
-@node Pattern matching, Queue, Additional list library, Library modules - Utilities
+@node Pattern matching, Queue, The longest common subsequence, Library modules - Utilities
 @section @code{util.match} - Pattern matching
 @c NODE パターンマッチング, @code{util.match} - パターンマッチング
 

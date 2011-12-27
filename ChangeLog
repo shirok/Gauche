@@ -1,3 +1,11 @@
+2011-12-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/list.scm, src/liblist.scm, src/libdict.scm,
+	  lib/gauche/common-macros.scm, src/autoloads.scm: Obsoleted
+	  util.list; entries are moved to liblist, libdict and common-macros.
+	  The module is kept for the backward compatibility, but its officially
+	  removed from the document.
+
 2011-12-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/wthread.h, src/gauche/vm.h, src/vm.c, src/signal.c,

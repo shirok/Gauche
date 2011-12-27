@@ -118,6 +118,76 @@
 (test* "drop-right* (past)" '()         (drop-right* '(a b c d) 7))
 
 ;;--------------------------------------------------------------------------
+;; slice and intercept
+
+(test* "slices (normal)" '((0 1 2 3) (4 5 6 7) (8 9 10 11) (12 13 14 15))
+       (slices (iota 16) 4))
+(test* "slices (boundary)" '()
+       (slices '() 4))
+(test* "slices (short)" '((0 1 2 3) (4 5 6 7) (8 9 10 11) (12))
+       (slices (iota 13) 4))
+(test* "slices (short)" '((0 1))
+       (slices (iota 2) 4))
+(test* "slices (fill)" '((0 1 2 3) (4 5 6 7) (8 9 10 11) (12 #f #f #f))
+       (slices (iota 13) 4 #t))
+(test* "slices (fill)" '((0 1 2 3) (4 5 6 7) (8 9 10 11) (12 -1 -1 -1))
+       (slices (iota 13) 4 #t -1))
+
+(test* "intersperse" '(1 + 2 + 3) (intersperse '+ '(1 2 3)))
+(test* "intersperse" '(1 + 2) (intersperse '+ '(1 2)))
+(test* "intersperse" '(1) (intersperse '+ '(1)))
+(test* "intersperse" '() (intersperse '+ '()))
+
+;;--------------------------------------------------------------------------
+;; associative lists
+
+(test* "rassoc" '(5 . "b")
+       (rassoc "b" '((3 . "a") (5 . "b"))))
+(test* "rassq" '(5 . b)
+       (rassq 'b '((3 . a) (5 . b))))
+(test* "rassv" '("b" . 5)
+       (rassoc 5 '(("a" . 3) ("b" . 5))))
+
+(test* "assoc-ref" 5
+       (assoc-ref '(("a" . 3) ("b" . 5)) "b"))
+(test* "assoc-ref" 7
+       (assoc-ref '(("a" . 3) ("b" . 5)) "c" 7))
+(test* "assq-ref" 5
+       (assq-ref '((a . 3) (b . 5)) 'b))
+(test* "assq-ref" 7
+       (assq-ref '((a . 3) (b . 5)) 'c 7))
+(test* "assv-ref" 'b
+       (assv-ref '((3 . a) (5 . b)) 5))
+(test* "assv-ref" 'c
+       (assv-ref '((3 . a) (5 . b)) 7 'c))
+
+(test* "rassoc-ref" 5
+       (rassoc-ref '((3 . "a") (5 . "b")) "b"))
+(test* "rassoc-ref" 7
+       (rassoc-ref '((3 . "a") (5 . "b")) "c" 7))
+(test* "rassq-ref" 5
+       (rassq-ref '((3 . a) (5 . b)) 'b))
+(test* "rassq-ref" #f
+       (rassq-ref '((3 . a) (5 . b)) 'c))
+(test* "rassv-ref" 'b
+       (rassv-ref '((a . 3) (b . 5)) 5))
+(test* "rassv-ref" #f
+       (rassv-ref '((a . 3) (b . 5)) 7))
+
+(test* "assoc-set!" '(("a" . 3) ("b" . 9))
+       (assoc-set! (list (cons "a" 3) (cons "b" 5)) "b" 9))
+(test* "assoc-set!" '(("c" . 9) ("a" . 3) ("b" . 5))
+       (assoc-set! (list (cons "a" 3) (cons "b" 5)) "c" 9))
+(test* "assq-set!" '((a . 3) (b . 9))
+       (assq-set! (list (cons 'a 3) (cons 'b 5)) 'b 9))
+(test* "assq-set!" '((c . 9) (a . 3) (b . 5))
+       (assq-set! (list (cons 'a 3) (cons 'b 5)) 'c 9))
+(test* "assv-set!" '((3 . a) (5 . c))
+       (assv-set! (list (cons 3 'a) (cons 5 'b)) 5 'c))
+(test* "assv-set!" '((9 . c) (3 . a) (5 . b))
+       (assv-set! (list (cons 3 'a) (cons 5 'b)) 9 'c))
+
+;;--------------------------------------------------------------------------
 
 (test-section "monotonic-merge")
 

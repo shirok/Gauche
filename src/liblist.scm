@@ -305,30 +305,6 @@
                              (new-tail (recur (delete! x tail =))))
                         (if (eq? tail new-tail) lis (cons x new-tail)))))))
 
-(define-in-module scheme (assoc x lis . args)
-  (%case-by-cmp args =
-                (assq x lis)
-                (assv x lis)
-                (%assoc x lis)
-                (find (^[entry] (= x (car entry))) lis)))
-
-(define-in-module gauche (alist-copy alist)
-  (map (^[elt] (cons (car elt) (cdr elt))) alist))
-
-(define-in-module gauche (alist-delete key alist . args)
-  (%case-by-cmp args =
-                (%alist-delete key alist 'eq?)
-                (%alist-delete key alist 'eqv?)
-                (%alist-delete key alist 'equal?)
-                (filter (^[elt] (not (= key (car elt)))) alist)))
-
-(define-in-module gauche (alist-delete! key alist . args)
-  (%case-by-cmp args =
-                (%alist-delete! key alist 'eq?)
-                (%alist-delete! key alist 'eqv?)
-                (%alist-delete! key alist 'equal?)
-                (filter! (^[elt] (not (= key (car elt)))) alist)))
-
 ;;
 ;; Higher-order stuff
 ;;
@@ -514,6 +490,93 @@
   (let1 len (length lis)
     (if (<= k len) (take lis (- len k)) '())))
 
+;; slices - split a list to a bunch of sublists of length k
+(define (slices lis k . args)
+  (unless (and (integer? k) (positive? k))
+    (error "index must be positive integer" k))
+  (let loop ((lis lis)
+             (r '()))
+    (if (null? lis)
+        (reverse! r)
+        (receive (h t) (apply split-at* lis k args)
+          (loop t (cons h r))))))
+
+;; intersperse - insert ITEM between elements in the list.
+;; (the order of arguments is taken from Haskell's intersperse)
+(define (intersperse item lis)
+  (define (rec l r)
+    (if (null? l)
+        (reverse! r)
+        (rec (cdr l) (list* (car l) item r))))
+  (if (null? lis)
+      '()
+      (rec (cdr lis) (list (car lis)))))
+
+;;
+;; Assoc lists
+;;
+
+(select-module gauche.internal)
+(define-in-module scheme (assoc x lis . args)
+  (%case-by-cmp args =
+                (assq x lis)
+                (assv x lis)
+                (%assoc x lis)
+                (find (^[entry] (= x (car entry))) lis)))
+
+(define-in-module gauche (alist-copy alist)
+  (map (^[elt] (cons (car elt) (cdr elt))) alist))
+
+(define-in-module gauche (alist-delete key alist . args)
+  (%case-by-cmp args =
+                (%alist-delete key alist 'eq?)
+                (%alist-delete key alist 'eqv?)
+                (%alist-delete key alist 'equal?)
+                (filter (^[elt] (not (= key (car elt)))) alist)))
+
+(define-in-module gauche (alist-delete! key alist . args)
+  (%case-by-cmp args =
+                (%alist-delete! key alist 'eq?)
+                (%alist-delete! key alist 'eqv?)
+                (%alist-delete! key alist 'equal?)
+                (filter! (^[elt] (not (= key (car elt)))) alist)))
+
+(select-module gauche)
+;; `reverse' alist search fn
+(define (rassoc key alist :optional (eq equal?))
+  (find (^[elt] (and (pair? elt) (eq (cdr elt) key))) alist))
+
+(define rassq (cut rassoc <> <> eq?))
+(define rassv (cut rassoc <> <> eqv?))
+
+;; 'assoc-ref', a shortcut of value retrieval w/ default value
+;; Default parameter comes first, following the convention of
+;; other *-ref functions.
+(define (assoc-ref alist key :optional (default #f) (eq equal?))
+  (cond [(assoc key alist eq) => cdr]
+        [else default]))
+
+(define (assq-ref alist key . opts)
+  (assoc-ref alist key (get-optional opts #f) eq?))
+(define (assv-ref alist key . opts)
+  (assoc-ref alist key (get-optional opts #f) eqv?))
+
+(define (rassoc-ref alist key :optional (default #f) (eq equal?))
+  (cond [(rassoc key alist eq) => car]
+        [else default]))
+
+(define (rassq-ref alist key . opts)
+  (rassoc-ref alist key (get-optional opts #f) eq?))
+(define (rassv-ref alist key . opts)
+  (rassoc-ref alist key (get-optional opts #f) eqv?))
+
+;; 'assoc-set!'
+(define (assoc-set! alist key val :optional (eq equal?))
+  (cond [(assoc key alist eq) => (^p (set-cdr! p val) alist)]
+        [else (acons key val alist)]))
+
+(define assq-set!  (cut assoc-set! <> <> <> eq?))
+(define assv-set!  (cut assoc-set! <> <> <> eqv?))
 
 ;;;
 ;;; Extended pairs

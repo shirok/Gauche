@@ -234,8 +234,7 @@ to construct and traverse collections/sequences in concise code.
 @itemize @bullet
 @item
 @emph{List} - the universal data structure.  You want to check
-@ref{Pairs and Lists}, @ref{List library}, 
-and @ref{Additional list library}.
+@ref{Pairs and Lists} and @ref{List library}
 @item
 @emph{Vector} - a one-dimensional array of arbitrary Scheme values.
 See @ref{Vectors} and @ref{Vector library}.
@@ -260,8 +259,7 @@ see @ref{Multibyte Strings} for the defatils.
 @emph{Character set} - a set of characters.  See @ref{Character set}
 and @ref{Character-set library}.
 @item
-@emph{Hash table} - hash tables.  See @ref{Hashtables}.  There are
-also some conversion functions in @ref{Additional list library}.
+@emph{Hash table} - hash tables.  See @ref{Hashtables}.
 For very large hash tables (millions of entries), 
 @ref{Sparse tables} may provide better memory footprint.
 @item
@@ -290,8 +288,7 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 @itemize @bullet
 @item
 @emph{リスト} - もっともよく使うデータ構造。
-@ref{Pairs and Lists}、@ref{List library}、
-@ref{Additional list library}をチェックしましょう。
+@ref{Pairs and Lists}と@ref{List library}をチェックしましょう。
 @item
 @emph{ベクタ} - 任意のSchemeの値を格納する一次元配列。@ref{Vectors}お
 よび@ref{Vector library}を見ましょう。
@@ -314,8 +311,7 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 @emph{文字集合} - 文字の集合。@ref{Character set}および
 @ref{Character-set library}参照。
 @item
-@emph{ハッシュテーブル} - ハッシュテーブル。 @ref{Hashtables}参照。い
-くつかの変換関数は@ref{Additional list library}にもあります。
+@emph{ハッシュテーブル} - ハッシュテーブル。 @ref{Hashtables}参照。
 非常に大きなハッシュテーブル(数百万エントリ)の場合、
 @ref{Sparse tables}の方がメモリ効率が良い可能性もあります。
 @item

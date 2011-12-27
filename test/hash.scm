@@ -54,13 +54,13 @@
 (test* "e => 10" 10
        (begin
          (hash-table-put! h-eq 'e 8)
-         (hash-table-update! h-eq 'e (lambda (x) (+ x 1)))
-         (hash-table-update! h-eq 'e (lambda (x) (+ x 1)))
+         (hash-table-update! h-eq 'e (^x (+ x 1)))
+         (hash-table-update! h-eq 'e (^x (+ x 1)))
          (hash-table-get h-eq 'e)))
 
 (test* "f => 1" 3
        (begin
-         (hash-table-update! h-eq 'f (lambda (x) (+ x 1)) 2)
+         (hash-table-update! h-eq 'f (^x (+ x 1)) 2)
          (hash-table-get h-eq 'f)))
 
 (test* "eq? test" 7
@@ -208,7 +208,7 @@
 (test* "e => \"e\"" "E"
        (begin
          (hash-table-put! h-equal 'e "e")
-         (hash-table-update! h-equal 'e (lambda (x) (string-upcase x)))
+         (hash-table-update! h-equal 'e (^x (string-upcase x)))
          (hash-table-get h-equal 'e)))
 
 (test* "equal? test" 6
@@ -273,7 +273,7 @@
 (test* "\"e\" => 9" 9
        (begin
          (hash-table-put! h-string "e" 8)
-         (hash-table-update! h-string "e" (lambda (x) (+ x 1)))
+         (hash-table-update! h-string "e" (^x (+ x 1)))
          (hash-table-get h-string "e")))
 
 (test* "hash-table-values(4)" #t
@@ -296,24 +296,34 @@
 (test* "hash-table"
        '(a b c d)
        (hash-table-keys h-it)
-       (lambda (a b) (lset= equal? a b)))
+       (^[a b] (lset= equal? a b)))
 
 (test* "hash-table-map"
        '((a . 3) (b . 4) (c . 8) (d . 10))
        (hash-table-map h-it cons)
-       (lambda (a b) (lset= equal? a b)))
+       (^[a b] (lset= equal? a b)))
 
 (test* "hash-table-for-each"
        '((a . 3) (b . 4) (c . 8) (d . 10))
        (let ((r '()))
-         (hash-table-for-each h-it (lambda (k v) (push! r (cons k v))))
+         (hash-table-for-each h-it (^[k v] (push! r (cons k v))))
          r)
-       (lambda (a b) (lset= equal? a b)))
+       (^[a b] (lset= equal? a b)))
 
 (test* "hash-table-fold"
        '((a . 3) (b . 4) (c . 8) (d . 10))
        (hash-table-fold h-it acons '())
-       (lambda (a b) (lset= equal? a b)))
+       (^[a b] (lset= equal? a b)))
+
+(test* "alist->hash-table" '(a b)
+       (let1 ht (alist->hash-table '((5 . b) (3 . a)) 'eqv?)
+         (list (hash-table-get ht 3)
+               (hash-table-get ht 5))))
+(test* "hash-table->alist" '(("a" . 3) ("b" . 5))
+       (let1 a (hash-table->alist
+                (hash-table 'equal? '("a" . 3) '("b" . 5)))
+         (list (assoc "a" a)
+               (assoc "b" a))))
 
 (test-module 'gauche.hashutil) ; autoloaded module
 

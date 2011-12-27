@@ -940,6 +940,16 @@
           (let ([$ 'a] [$* 'b])
             ($$ list 0 1 $ list 2 3 $* list 4 5)))))
 
+(test* "cond-list" '() (cond-list))
+(test* "cond-list" '(a) (cond-list ('a)))
+(test* "cond-list" '(a) (cond-list (#t 'a) (#f 'b)))
+(test* "cond-list" '(b) (cond-list (#f 'a) (#t 'b)))
+(test* "cond-list" '(a b d) (cond-list (#t 'a) (#t 'b) (#f 'c) (#t 'd)))
+(test* "cond-list" '((b)) (cond-list (#f 'a) ('b => list)))
+(test* "cond-list" '(a b c d x)
+       (cond-list (#t @ '(a b)) (#t @ '(c d)) (#f @ '(e f))
+                  ('x => @ list)))
+
 ;;----------------------------------------------------------------------
 ;; macro-expand
 
