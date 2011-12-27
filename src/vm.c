@@ -2448,16 +2448,24 @@ static void process_queued_requests(ScmVM *vm)
         SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(vm->vmlock);
         /* Double check, since stopRequest can be canceled between the above
            two lines. */
-        if (vm->stopRequest) {
-            vm->stopRequest = FALSE;
+        switch (vm->stopRequest) {
+        case SCM_VM_REQUEST_SUSPEND:
+            vm->stopRequest = 0;
             vm->state = SCM_VM_STOPPED;
             (void)SCM_INTERNAL_COND_BROADCAST(vm->cond);
             while (vm->state == SCM_VM_STOPPED) {
                 /* Here the inspector thread examines VM state */
                 (void)SCM_INTERNAL_COND_WAIT(vm->cond, vm->vmlock);
             }
+            break;
+        case SCM_VM_REQUEST_TERMINATE:
+            vm->state = SCM_VM_TERMINATED;
+            (void)SCM_INTERNAL_COND_BROADCAST(vm->cond);
         }
         SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
+        if (vm->state == SCM_VM_TERMINATED) {
+            SCM_INTERNAL_THREAD_EXIT();
+        }
     }
 }
 

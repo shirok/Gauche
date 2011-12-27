@@ -1,3 +1,14 @@
+2011-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/wthread.h, src/gauche/vm.h, src/vm.c, src/signal.c,
+	  ext/threads/mutex.c, ext/threads/threads.c, configure.ac:
+	  Start adding Windows thread support on Gauche/MinGW, and improved
+	  thread-terminate! semantics.  On POSIX, if real-time signal is
+	  available, we reserve one signal (GAUCHE_PTHREAD_SIGNAL) to notify
+	  termination request.  With the signal, the terminated thread can
+	  shut itself down gracefully.  We also use vm->stopRequest mechanism
+	  to terminate the thread.
+
 2011-12-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (.if): Make sure '#if' stars from the

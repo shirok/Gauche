@@ -49,6 +49,13 @@ typedef pthread_t ScmInternalThread;
 #define SCM_INTERNAL_THREAD_GETCURRENT()  pthread_self()
 #define SCM_INTERNAL_THREAD_SETSPECIFIC(key, val) \
     (pthread_setspecific((key), (val)) == 0)
+#define SCM_INTERNAL_THREAD_EXIT()        pthread_exit(NULL)
+
+/* On POSIX systems, when avaialble, we reserve one signal to notify
+   other threads to terminate. */
+#if defined(SIGRTMIN) && !defined(GAUCHE_PTHREAD_SIGNAL)
+#define GAUCHE_PTHREAD_SIGNAL (SIGRTMIN+5)
+#endif /*defined(SIGRTMIN) && !defined(GAUCHE_PTHREAD_SIGNAL)*/
 
 /* Mutex */
 typedef pthread_mutex_t ScmInternalMutex;

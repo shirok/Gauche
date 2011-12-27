@@ -401,7 +401,10 @@ struct ScmVMRec {
                                    and turned off by Scm_VMFinalizerRun(),
                                    both in core.c */
     intptr_t stopRequest;       /* Flag if there is a pending stop request.
-                                   Turned on by Scm_ThreadStop() in
+                                   See enum ScmThreadStopRequest below
+                                   for the possible values.
+                                   Turned on by Scm_ThreadStop() or
+                                   Scm_ThreadTerminate in
                                    ext/threads/threads.c, and turned off by
                                    process_queued_requests() in vm.c */
 
@@ -511,6 +514,11 @@ enum {
     SCM_VM_COMPILING            /* we're batch-compiling the forms */
 };
 
+/* Value of vm->stopRequest.  Zero means no request. */
+typedef enum {
+    SCM_VM_REQUEST_SUSPEND = 1L,   /* Set by Scm_ThreadStop */
+    SCM_VM_REQUEST_TERMINATE = 2L, /* Set by Scm_ThreadTerminate */
+} ScmVMStopRequest;
 
 /*
  * C stack rewinding

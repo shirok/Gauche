@@ -82,7 +82,7 @@ static struct sigHandlersRec {
                                    handlers.  Can be NULL, which means
                                    the handling signal(s) are blocked. */
     sigset_t masterSigset;      /* The signals Gauche is _allowed_ to handle.
-                                   set by Scm_SetMasterSigset.
+                                   set by Scm_SetMasterSigmask.
                                    For some signals in this set Gauche sets
                                    the default signal handlers; for other
                                    signals in this set Gauche leaves them
@@ -97,10 +97,10 @@ static struct sigHandlersRec {
    long-running C-routine and do not returns to VM.
    The actual limit can be changed at runtime by Scm_SetSignalPendingLimit().
    If signalPendingLimit is 0, the number of pending signals is unlimited. */
-#define SIGNAL_PENDING_LIMIT_DEFALT 3
+#define SIGNAL_PENDING_LIMIT_DEFAULT 3
 #define SIGNAL_PENDING_LIMIT_MAX 255
 
-static unsigned int signalPendingLimit = SIGNAL_PENDING_LIMIT_DEFALT;
+static unsigned int signalPendingLimit = SIGNAL_PENDING_LIMIT_DEFAULT;
 
 
 /* Table of signals and its initial behavior. */
@@ -411,6 +411,16 @@ void Scm_SigCheck(ScmVM *vm)
     Scm_SignalQueueClear(&vm->sigq);
     vm->signalPending = FALSE;
     SIGPROCMASK(SIG_SETMASK, &omask, NULL);
+
+#if defined(GAUCHE_USE_PTHREADS) && defined(GAUCHE_PTHREAD_SIGNAL)
+    /* We may use GAUCHE_PTHREAD_SIGNAL signal to terminate a thread
+       gracefully.  See Scm_ThreadTerminate in ext/threads/threads.c */
+    if (sigcounts[GAUCHE_PTHREAD_SIGNAL] > 0) {
+        vm->state = SCM_VM_TERMINATED;
+        SCM_INTERNAL_THREAD_EXIT();
+        /* NOTREACHED */
+    }
+#endif  /* defined(GAUCHE_USE_PTHREADS) && defined(GAUCHE_PTHREAD_SIGNAL) */
 
     /* Now, prepare queued signal handlers
        If an error is thrown in this loop, the queued signals will be
@@ -741,6 +751,17 @@ void Scm_SetMasterSigmask(sigset_t *set)
             }
         }
     }
+#ifdef GAUCHE_PTHREAD_SIGNAL
+    /* On pthread and when available, we reserve one signal for inter-thread
+       communication.  See gauche/pthread.h for the definition of
+       GAUCHE_PTHREAD_SIGNAL.  In sigHandlers we set DEFAULT_SIGHANDLER,
+       but this signal is intercepted in Scm_SigCheck() so a you can't
+       set Scheme handler for this signal. */
+    if (sigaction(GAUCHE_PTHREAD_SIGNAL, &acton, NULL) != 0) {
+        Scm_SysError("sigaction on %d failed", GAUCHE_PTHREAD_SIGNAL);
+    }
+    sigHandlers.handlers[GAUCHE_PTHREAD_SIGNAL] = DEFAULT_SIGHANDLER;
+#endif  /* GAUCHE_PTHREAD_SIGNAL */
     sigHandlers.masterSigset = *set;
     Scm_VM()->sigMask = sigHandlers.masterSigset;
 }

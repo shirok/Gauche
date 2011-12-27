@@ -43,6 +43,8 @@
 
 /* Abstract thread API */
 
+#undef GAUCHE_HAS_THREADS  /*define this if the system supports real threads*/
+
 /* ScmInternalThread - a handle to the system's thread.
    
    The variable of type ScmInternalThread must be initialized by
@@ -59,6 +61,7 @@ typedef int ScmInternalThread;
 #define SCM_INTERNAL_THREAD_INITIALIZED_P(thr)  TRUE
 #define SCM_INTERNAL_THRAED_GETCURRENT()   (0)
 #define SCM_INTERNAL_THREAD_SETSPECIFIC(key, val) TRUE
+#define SCM_INTERNAL_THREAD_EXIT()         _exit(0)
 
 /* ScmInternalMutex - a mutex structure.
 

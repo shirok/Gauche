@@ -182,9 +182,6 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
     
     pts = Scm_GetTimeSpec(timeout, &ts);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex->mutex);
-    if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
-        Scm_Error("mutex-lock!: failed to lock");
-    }
     while (mutex->locked) {
         if (mutex->owner && mutex->owner->state == SCM_VM_TERMINATED) {
             abandoned = mutex->owner;
@@ -225,9 +222,6 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout
     
     pts = Scm_GetTimeSpec(timeout, &ts);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex->mutex);
-    if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
-        Scm_Error("mutex-unlock!: failed to lock");
-    }
     mutex->locked = FALSE;
     mutex->owner = NULL;
     SCM_INTERNAL_COND_SIGNAL(mutex->cv);

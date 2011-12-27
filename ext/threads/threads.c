@@ -75,41 +75,36 @@ ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
     return SCM_OBJ(vm);
 }
 
-/* Start a thread.  If the VM is in "NEW" state, create a new thread and
-   make it run.
-
-   With pthread, the real thread is started as "detached" mode; i.e. once
-   the thread exits, the resources allocated for the thread by the system
-   is collected, including the result of the thread.  During this
-   deconstruction phase, the handler thread_cleanup() runs and saves the
-   thread result to the ScmVM structure.  If nobody cares about the
-   result of the thread, ScmVM structure will eventually be GCed.
-   This is to prevent exitted thread's system resources from being
-   uncollected.
- */
-
-#ifdef GAUCHE_USE_PTHREADS
-static void thread_cleanup(void *data)
+/* Common routine for proper shutdown of a thread.  Usually this is called
+   by the thread owning VM, via pthread_cleanup mechanism.  However, in the
+   emergency shutdown, the canceller thread may call this
+   (see Scm_ThreadTerminate below).
+   Caller must hold vm->vmlock */
+static void thread_cleanup_inner(ScmVM *vm)
 {
-    ScmVM *vm = SCM_VM(data);
-    ScmObj exc;
-    
+    ScmObj e;
     /* Change this VM state to TERMINATED, and signals the change
        to the waiting threads. */
-    if (pthread_mutex_lock(&vm->vmlock) == EDEADLK) {
-        Scm_Panic("dead lock in vm_cleanup.");
-    }
     vm->state = SCM_VM_TERMINATED;
     if (vm->canceller) {
         /* This thread is cancelled. */
-        exc = Scm_MakeThreadException(SCM_CLASS_TERMINATED_THREAD_EXCEPTION, vm);
-        SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(vm->canceller);
-        vm->resultException = exc;
+        e = Scm_MakeThreadException(SCM_CLASS_TERMINATED_THREAD_EXCEPTION, vm);
+        SCM_THREAD_EXCEPTION(e)->data = SCM_OBJ(vm->canceller);
+        vm->resultException = e;
     }
-    pthread_cond_broadcast(&vm->cond);
-    pthread_mutex_unlock(&vm->vmlock);
+    SCM_INTERNAL_COND_BROADCAST(vm->cond);
 }
 
+/* Called by pthread_cleanup mechanism.  */
+static void thread_cleanup(void *data)
+{
+    ScmVM *vm = SCM_VM(data);
+    SCM_INTERNAL_MUTEX_LOCK(vm->vmlock);
+    thread_cleanup_inner(vm);
+    SCM_INTERNAL_MUTEX_UNLOCK(vm->vmlock);
+}
+
+#ifdef GAUCHE_USE_PTHREADS
 static void *thread_entry(void *data)
 {
     ScmVM *vm = SCM_VM(data);
@@ -151,6 +146,18 @@ static struct threadRec {
 } threadrec = { 0 };
 #endif /* GAUCHE_USE_PTHREADS */
 
+/* Start a thread.  If the VM is in "NEW" state, create a new thread and
+   make it run.
+
+   With pthread, the real thread is started as "detached" mode; i.e. once
+   the thread exits, the resources allocated for the thread by the system
+   is collected, including the result of the thread.  During this
+   deconstruction phase, the handler thread_cleanup() runs and saves the
+   thread result to the ScmVM structure.  If nobody cares about the
+   result of the thread, ScmVM structure will eventually be GCed.
+   This is to prevent exitted thread's system resources from being
+   uncollected.
+ */
 ScmObj Scm_ThreadStart(ScmVM *vm)
 {
 #ifdef GAUCHE_USE_PTHREADS
@@ -277,7 +284,7 @@ ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
            the target thread hasn't seen the flag and it's still ON. */
         if (target->inspector != vm) {
             target->inspector = vm;
-            target->stopRequest = TRUE;
+            target->stopRequest = SCM_VM_REQUEST_SUSPEND;
             target->attentionRequest = TRUE;
         }
         while (target->state != SCM_VM_STOPPED && !timedout) {
@@ -326,7 +333,7 @@ ScmObj Scm_ThreadCont(ScmVM *target)
     } else {
         target->inspector = NULL;
         target->state = SCM_VM_RUNNABLE;
-        target->stopRequest = FALSE;
+        target->stopRequest = 0;
         SCM_INTERNAL_COND_BROADCAST(target->cond);
     }
     SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
@@ -365,10 +372,31 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
     return SCM_UNDEFINED;
 }
 
-/* Thread terminate */
+/* Thread termination
+
+   We try to terminate the thread gracefully as possible.
+   First, we use vm->stopRequest mechanism.  If the target thread is
+   in VM loop, it responds to the flag and terminates itself.
+   If that fails, then we use more agressive means.
+
+   TODO: We should probably make it configurable whether to use the
+   forcible termination---it is too dangerous.
+ */
+
+/* Caller must hold target->vmlock.  return TRUE if the target terminates
+   gracefully. */
+static int wait_for_termination(ScmVM *target)
+{
+    struct timespec ts;
+    int r;
+    ScmObj t = Scm_MakeFlonum(0.001); /* 1ms. somewhat arbitrary */
+    Scm_GetTimeSpec(t, &ts);
+    r = SCM_INTERNAL_COND_TIMEDWAIT(target->cond, target->vmlock, &ts);
+    return (r == 0);
+}
+
 ScmObj Scm_ThreadTerminate(ScmVM *target)
 {
-#ifdef GAUCHE_USE_PTHREADS
     ScmVM *vm = Scm_VM();
     if (target == vm) {
         /* self termination */
@@ -379,20 +407,42 @@ ScmObj Scm_ThreadTerminate(ScmVM *target)
         (void)SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
         /* Need to unlock before calling pthread_exit(), or the cleanup
            routine can't obtain the lock */
-        pthread_exit(NULL);
-    } else {
-        (void)SCM_INTERNAL_MUTEX_LOCK(target->vmlock);
+        SCM_INTERNAL_THREAD_EXIT();
+        /*NOTREACHED*/
+    }
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(target->vmlock);
+    do {
         /* This ensures only the first call of thread-terminate! on a thread
            is in effect. */
         if (target->canceller == NULL) {
             target->canceller = vm;
+
+            /* First try */
+            target->stopRequest = SCM_VM_REQUEST_TERMINATE;
+            target->attentionRequest = TRUE;
+            if (wait_for_termination(target)) break;
+
+            /* Second try */
+#if defined(GAUCHE_USE_PTHREADS)
+# if defined(GAUCHE_PTHREAD_SIGNAL)
+            pthread_kill(target->thread, GAUCHE_PTHREAD_SIGNAL);
+# endif /*defined(GAUCHE_PTHREAD_SIGNAL)*/
+#elif defined(GAUCHE_USE_WTHREADS)
+            /* TODO: implement signal mechanism using an event */
+#endif  /* defined(GAUCHE_USE_WTHREADS) */
+            if (wait_for_termination(target)) break;
+
+            /* Last resort */
+            thread_cleanup_inner(target);
+#if defined(GAUCHE_USE_PTHREADS)
             pthread_cancel(target->thread);
+#elif defined(GAUCHE_USE_WTHREADS)
+            TerminateThread(target->thread, 0);
+#endif
         }
-        (void)SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
-    }
-#else  /*!GAUCHE_USE_PTHREADS*/
-    Scm_Error("not implemented!\n");
-#endif /*!GAUCHE_USE_PTHREADS*/
+    } while (0);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
     return SCM_UNDEFINED;
 }
 
@@ -403,6 +453,8 @@ void Scm_Init_threads(ScmModule *mod)
 {
 #ifdef GAUCHE_USE_PTHREADS
     sigfillset(&threadrec.defaultSigmask);
+# if defined(GAUCHE_PTHREAD_SIGNAL)
+    sigdelset(&threadrec.defaultSigmask, GAUCHE_PTHREAD_SIGNAL);
+# endif /*defined(GAUCHE_PTHRAD_SIGNAL)*/
 #endif /*GAUCHE_USE_PTHREADS*/
 }
-
