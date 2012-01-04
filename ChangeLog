@@ -1,3 +1,9 @@
+2012-01-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/generator.scm: Allows generator operations to take
+	  collections, which are implicitly coerced to generators, for
+	  the convenience.
+
 2011-12-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/list.scm, src/liblist.scm, src/libdict.scm,

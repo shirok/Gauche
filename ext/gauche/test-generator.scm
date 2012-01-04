@@ -94,14 +94,18 @@
     [(_  gfn lfn src ...)
      (dolist [s (list src ...)]
        (test* (format "~s" 'gfn) (lfn s)
-              (generator->list (gfn (x->generator s)))))]))
-
+              (generator->list (gfn (x->generator s))))
+       (test* (format "~s (autoconvert)" 'gfn) (lfn s)
+              (generator->list (gfn s))))]))
+       
 (define-syntax test-list-like*
   (syntax-rules ()
     [(_  gfn lfn src ...)
      (dolist [s (list src ...)]
        (test* (format "~s" 'gfn) (apply lfn s)
-              (generator->list (apply gfn (map x->generator s)))))]))
+              (generator->list (apply gfn (map x->generator s))))
+       (test* (format "~s (autoconvert)" 'gfn) (apply lfn s)
+              (generator->list (apply gfn s))))]))
 
 (test-list-like (cut gmap (^x (* x 2)) <>)
                 (cut map (^x (* x 2)) <>)

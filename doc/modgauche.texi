@@ -3966,21 +3966,42 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 
 @deftp {Module} gauche.generator
 @mdindex gauche.generator
+@c EN
 A generator is merely a procedure with no arguments and works
 as a source of a series of values.  Every time it is called,
 it yeilds a value.  The EOF value indicates the generator is exhausted.
-For example, @code{read-char} is a generator.
+For example, @code{read-char} can be seen as a generator that
+generates characters from the current input port.
 
 It is common practice to abstract the source of values in such a way,
 so it is useful to define utility procedures that work on the
 generators.  This module provides them.
+@c JP
+ジェネレータは、値の列の生成器となるような、引数を取らない手続きです。
+呼ばれる度に列の次の値を返します。列の終端に達した場合はEOFが返されます。
+例えば、@code{read-char}は、現在の入力ポートからの入力を一文字づつ返す
+ジェネレータと考えることができます。
+
+値の列の生成源を手続きによってジェネレータとして抽象化するのは広く使われるテクニックなので、
+このようなジェネレータに共通して使えるユーティリティがあると便利です。
+このモジュールはそのために作られました。
+@c COMMON
 @end deftp
 
+@c EN
 A generator is very lightweight, and handy to implement simple
 on-demand calculations.  However, keep in mind that it is 
 side-effecting construct; you can't safely backtrack, for example.
 For more functional on-demand calculation, Gauche provides lazy
 sequences, which is actually built on top of generators.
+@c JP
+ジェネレータは、必要になったら計算を行うようなシステムを簡単に実現でき、
+効率も極めて良いですが、副作用に頼った抽象化であることには注意が必要です。
+例えば、途中まで列を生成した後に、最初にもどってやり直す、といったことはできません。
+より関数的にオンデマンドの計算を行うために、Gaucheには遅延シーケンスも
+備わっています。実のところ、Gaucheの遅延シーケンスはジェネレータを使って
+構築されています。
+@c COMMON
 @c @xref{Lazy sequences}, for more details.
 @c Especially, you can ``plug'' generators into a
 @c list-expecting procedures via lazy sequences.
@@ -4205,7 +4226,10 @@ all the memory before crash.
 @end defun
 
 The following procedures take generators (noted as @var{gen} and
-@var{gen2}) and return a generator.
+@var{gen2}) and return a generator.  For the convenience, they
+also accept any collection to @var{gen} and @var{gen2} parameters;
+if a collection is passed where a generator is expected,
+it is implicitly coerced into a generator.
 
 @defun gcons item gen
 Returns a generator that adds @var{item} in front of @var{gen}.

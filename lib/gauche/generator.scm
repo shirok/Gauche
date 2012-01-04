@@ -64,6 +64,10 @@
   (syntax-rules ()
     [(_ exp body ...) (rlet1 tmp exp body ...)]))
 
+;;;
+;;; Converters and constructors
+;;;
+
 ;; Some useful converters
 (define (list->generator lis :optional (start #f) (end #f))
   (let1 start (or start 0)
@@ -129,6 +133,27 @@
 (define-method x->generator ((obj <collection>))
   (generate (^[yield] (call-with-iterator obj (^v (yield v))))))
 
+;; Many generator-filters can take collections as input and
+;; implicitly coerce it to a generator.  This is to avoid generic
+;; function dispatch for common objects.
+(define (%ensure-gen x)
+  (cond [(procedure? x) x]
+        [(pair? x)   (list->generator x)]
+        [(vector? x) (vector->generator x)]
+        [(string? x) (string->generator x)]
+        [(is-a? x <collection>) (x->generator x)]
+        [else x]))
+
+(define (%ensure-gens gens)
+  (define (rec gens)
+    (if (null? (cdr gens))
+      (if (procedure? (car gens)) gens (list (%ensure-gen (car gens))))
+      (let1 tail (rec (cdr gens))
+        (if (and (eq? tail (cdr gens)) (procedure? (car gens)))
+          gens
+          (cons (%ensure-gen (car gens)) tail)))))
+  (if (null? gens) '() (rec gens)))
+
 (define (generator->list gen :optional (n #f))
   (if (integer? n)
     (let loop ([k 0] [r '()])
@@ -154,6 +179,7 @@
 ;; trivial, but for completeness
 (define (null-generator) (eof-object))
 
+;; procedural generation
 (define (gunfold p f g seed :optional (tail-gen eof-object))
   (let1 end? #f
     (^[] (cond [end? (tail-gen)]
@@ -172,26 +198,35 @@
            (eof-object)
            (%begin0 val (inc! val step))))))
 
+;;;
+;;; Generator operations
+;;;
+
+
 ;; gcons :: (a, () -> a) -> (() -> a)
 (define (gcons item gen)
-  (let1 done #f
+  (let ([gen (%ensure-gen gen)]
+        [done #f])
     (^[] (if done (gen) (begin (set! done #t) item)))))
 
 ;; gappend :: [() -> a] -> (() -> a)
 (define (gappend . gens)
-  (^[] (let rec ()
-         (if (null? gens)
-           (eof-object)
-           (let1 v ((car gens))
-             (cond [(eof-object? v) (pop! gens) (rec)]
-                   [else v]))))))
+  (let1 gens (%ensure-gens gens)
+    (^[] (let rec ()
+           (if (null? gens)
+             (eof-object)
+             (let1 v ((car gens))
+               (cond [(eof-object? v) (pop! gens) (rec)]
+                     [else v])))))))
 
 ;; gmap :: (a -> b, () -> a) -> (() -> b)
 (define gmap
   (case-lambda
-    [(fn gen) (^[] (let1 v (gen) (if (eof-object? v) v (fn v))))]
+    [(fn gen)
+     (let1 gen (%ensure-gen gen)
+       (^[] (let1 v (gen) (if (eof-object? v) v (fn v)))))]
     [(fn gen . more)
-     (let1 gens (cons gen more)
+     (let1 gens (%ensure-gens (cons gen more))
        (^[] (let1 vs (map (^f (f)) gens)
               (if (any eof-object? vs) (eof-object) (apply fn vs)))))]))
 
@@ -199,14 +234,15 @@
 (define gmap-accum
   (case-lambda
     [(fn seed gen)
-     (^[] (let1 v (gen)
-            (if (eof-object? v)
-              v
-              (receive (v_ seed_) (fn v seed)
-                (set! seed seed_)
-                v_))))]
+     (let1 gen (%ensure-gen gen)
+       (^[] (let1 v (gen)
+              (if (eof-object? v)
+                v
+                (receive (v_ seed_) (fn v seed)
+                  (set! seed seed_)
+                  v_)))))]
     [(fn seed gen . more)
-     (let1 gens (cons gen more)
+     (let1 gens (%ensure-gens (cons gen more))
        (^[] (let1 vs (fold-right (^[g s] (if (eof-object? s)
                                            s
                                            (let1 v (g)
@@ -222,20 +258,23 @@
 
 ;; gfilter :: (a -> Bool, () -> a) -> (() -> a)
 (define (gfilter pred gen)
-  (^[] (let loop ([v (gen)])
-         (cond [(eof-object? v) v]
-               [(pred v) v]
-               [else (loop (gen))]))))
+  (let1 gen (%ensure-gen gen)
+    (^[] (let loop ([v (gen)])
+           (cond [(eof-object? v) v]
+                 [(pred v) v]
+                 [else (loop (gen))])))))
 
 ;; gfilter-map :: (a -> b, () -> a) -> (() -> b)
 (define gfilter-map
   (case-lambda
-    [(fn gen) (^[] (let loop ([v (gen)])
-                     (cond [(eof-object? v) v]
-                           [(fn v)]
-                           [else (loop (gen))])))]
+    [(fn gen)
+     (let1 gen (%ensure-gen gen)
+       (^[] (let loop ([v (gen)])
+              (cond [(eof-object? v) v]
+                    [(fn v)]
+                    [else (loop (gen))]))))]
     [(fn gen . more)
-     (let1 gens (cons gen more)
+     (let1 gens (%ensure-gens (cons gen more))
        (^[] (let loop ()
               (let1 vs (map (^f (f)) gens)
                 (cond [(any eof-object? vs) (eof-object)]
@@ -244,17 +283,18 @@
 
 ;; gstate-filter :: ((a,b) -> (Bool,b), b, () -> a) -> (() -> a)
 (define (gstate-filter proc seed gen)
-  (^[] (let loop ([v (gen)])
-         (if (eof-object? v)
-           v
-           (receive (flag seed1) (proc v seed)
-             (set! seed seed1)
-             (if flag v (loop (gen))))))))
+  (let1 gen (%ensure-gen gen)
+    (^[] (let loop ([v (gen)])
+           (if (eof-object? v)
+             v
+             (receive (flag seed1) (proc v seed)
+               (set! seed seed1)
+               (if flag v (loop (gen)))))))))
 
 ;; gtake :: (() -> a, Int) -> (() -> a)
 ;; gdrop :: (() -> a, Int) -> (() -> a)
 (define (gtake gen n :optional (fill? #f) (padding #f))
-  (let1 k 0
+  (let ([k 0] [gen (%ensure-gen gen)])
     (if fill?
       (^[] (if (< k n)
              (let1 v (gen)
@@ -263,13 +303,13 @@
              (eof-object)))
       (^[] (if (< k n) (begin (inc! k) (gen)) (eof-object))))))
 (define (gdrop gen n)
-  (let1 k 0
+  (let ([k 0] [gen (%ensure-gen gen)])
     (^[] (when (< k n) (dotimes [i n] (inc! k) (gen))) (gen))))
 
 ;; gtake-while :: (a -> Bool, () -> a) -> (() -> a)
 ;; gdrop-while :: (a -> Bool, () -> a) -> (() -> a)
 (define (gtake-while pred gen)
-  (let1 end? #f
+  (let ([end? #f] [gen (%ensure-gen gen)])
     (^[] (if end?
            (eof-object)
            (let1 v (gen)
@@ -277,7 +317,7 @@
                (begin (set! end? #t) (eof-object))
                v))))))
 (define (gdrop-while pred gen)
-  (let1 found? #f
+  (let ([found? #f] [gen (%ensure-gen gen)])
     (^[] (if found?
            (gen)
            (let loop ([v (gen)])
