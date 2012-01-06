@@ -2182,7 +2182,10 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
                 if (xs[i] == *acpl) return TRUE;
                 if (ys[i] == *acpl) return FALSE;
             }
-            Scm_Panic("internal error: couldn't determine more specific method.");
+            /* If we're here, two methods are not orderable. */
+            Scm_Error("Couldn't determine which method is more specific:"
+                      " %S and %S: Check if compute-applicable-methods is "
+                      "working properly.", SCM_OBJ(x), SCM_OBJ(y));
         }
     }
     if (xreq > yreq) return TRUE;

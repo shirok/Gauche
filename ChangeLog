@@ -1,3 +1,10 @@
+2012-01-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (method_more_specific): Don't panic if
+	  method-more-specific? gets two methods that can't be ordered;
+	  It may be just an erroneous MOP code.  Now we throws an error
+	  with descriptive messages.
+
 2012-01-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm: Allows generator operations to take
