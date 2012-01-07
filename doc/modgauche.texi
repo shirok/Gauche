@@ -4231,10 +4231,13 @@ also accept any collection to @var{gen} and @var{gen2} parameters;
 if a collection is passed where a generator is expected,
 it is implicitly coerced into a generator.
 
-@defun gcons item gen
-Returns a generator that adds @var{item} in front of @var{gen}.
-That is, the returned generator will first yield @var{item}, then
-yield the items from the original generator.
+@defun gcons* item @dots{} gen
+Returns a generator that adds @var{item}s in front of @var{gen}.
+
+@example
+(generator->list (gcons* 'a 'b (giota 2)))
+ @result{} (a b 0 1)
+@end example
 @end defun
 
 @defun gappend gen @dots{}

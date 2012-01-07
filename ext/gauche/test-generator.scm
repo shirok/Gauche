@@ -3,6 +3,7 @@
 ;;  so we test it here.
 
 (use gauche.test)
+(use gauche.sequence)
 (use srfi-1)
 (use srfi-60)
 (test-start "generators")
@@ -72,6 +73,17 @@
 
 (test* "circular-generator" '(0 1 2 0 1 2 0 1 2 0)
        (generator->list (circular-generator 0 1 2) 10))
+
+(let ()
+  (define (test-gcons xs tail)
+    (test* (format "gcons* ~s + ~s" xs tail)
+           (apply cons* (append xs `(,tail)))
+           (generator->list (apply gcons*
+                                   (append xs `(,(list->generator tail)))))))
+  (test-gcons '() '(x y z))
+  (test-gcons '(a) '(x y z))
+  (test-gcons '(a b) '(x y z))
+  (test-gcons '(a b c) '(x y z)))
 
 (test* "gappend" '(0 1 2 3 a b c d A B C D)
        (generator->list (gappend (giota 4) 
