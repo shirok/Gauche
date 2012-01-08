@@ -40,12 +40,13 @@
           bits->generator reverse-bits->generator
           file->generator file->sexp-generator file->char-generator
           file->line-generator file->byte-generator
+          port->char-generator port->byte-generator
           x->generator generate
           
           generator->list null-generator gcons* gappend
           circular-generator gunfold giota grange
           gmap gmap-accum gfilter gfilter-map gstate-filter
-          gtake gdrop gtake-while gdrop-while 
+          gtake gdrop gtake-while gdrop-while grxmatch
           ))
 (select-module gauche.generator)
 
@@ -124,6 +125,10 @@
 (define (file->byte-generator filename . open-args)
   (apply file->generator filename read-byte open-args))
 
+;; simple, but useful
+(define (port->char-generator port) (cut read-char port))
+(define (port->byte-generator port) (cut read-byte port))
+
 ;; generic version
 (define-method x->generator ((obj <list>))   (list->generator obj))
 (define-method x->generator ((obj <vector>)) (vector->generator obj))
@@ -132,6 +137,12 @@
 
 (define-method x->generator ((obj <collection>))
   (generate (^[yield] (call-with-iterator obj (^v (yield v))))))
+
+;; debatable - can we assume char-generator?
+(define-method x->generator ((obj <port>))
+  (unless (input-port? obj)
+    (error "output port cannot be coerced to a generator" obj))
+  (port->char-generator obj))
 
 ;; Many generator-filters can take collections as input and
 ;; implicitly coerce it to a generator.  This is to avoid generic
@@ -142,7 +153,7 @@
         [(vector? x) (vector->generator x)]
         [(string? x) (string->generator x)]
         [(is-a? x <collection>) (x->generator x)]
-        [(not x)     null-generator] ; avoid returning #f not to confuse %ensure-gen!
+        [(port? x)   (port->char-generator x)]
         [else x]))
 
 (define (%->gens gens)
@@ -342,12 +353,52 @@
            (eof-object)))
   (^[] (cont)))
 
+;; grxmatch :: (Regexp, (() -> char)) -> (() -> RegMatch)
+;;          |  (Regexp, String) -> (() -> RegMatch)
+(define (grxmatch rx gen)
+  (if (string? gen)
+    (let1 str gen
+      (^[] (if str
+             (if-let1 m (rxmatch rx str)
+               (begin (set! str (rxmatch-after m)) m)
+               (begin (set! str #f) (eof-object)))
+             (eof-object))))
+    ;; We buffer 1000 characters at a time from the generator,
+    ;; to avoid matching too many times.
+    (let ([p (open-output-string)]
+          [g (%->gen gen)])
+      (rec (f)
+        (define (expand-buffer last-match)
+          (let loop ([n 0] [ch (g)])
+            (cond
+             [(eof-object? ch)
+              (if (= n 0)
+                (begin (set! p #f) (or last-match (eof-object)))
+                (f))]
+             [(not (char? ch))
+              (error "grxmatch: generator returned non-character object" ch)]
+             [(= n 1000) (display ch p) (f)]
+             [else (display ch p) (loop (+ n 1) (g))])))
+        (if p
+          (let1 s (get-output-string p)
+            (if-let1 m (rxmatch rx s)
+              ;; NB: if rxmatch-end is equal to the end of s,
+              ;; the match can be longer, so we try rematch.
+              (if (= (rxmatch-end m) (string-length s))
+                (expand-buffer m)
+                (begin (set! p (open-output-string))
+                       (display (rxmatch-after m) p)
+                       m))
+              (expand-buffer #f)))
+          (eof-object))))))
+
 ;; TODO:
 ;;  (gen-ec (: i ...) ...)
 ;;    srfi-42-ish macro to create generator.  it's not "eager", so
 ;;    the name needs to be reconsidered.
 ;;  (gflip-flop pred1 pred2 gen)
 ;;    flip-flop operator to extract a range from the input generator.
+;;  grxmatch variation to return "the rest of match" as well.
 ;;  multi-valued generators
 ;;    take a generator and creates a multi-valued generator which
 ;;    returns auxiliary info in extra values, e.g. item count.

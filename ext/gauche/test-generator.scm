@@ -172,5 +172,58 @@
         (gstate-filter (^[v s] (values (< s v) v)) 0
                        (list->generator '(1 2 3 2 1 0 1 2 3 2 1 0 1 2 3)))))
 
+(test* "grxmatch (string)" '("ab" "cde" "fgh" "jkl")
+       (map rxmatch-substring
+            (generator->list (grxmatch #/\w{2,}/ " ab x y.cde\nfgh/j/jkl "))))
+(test* "grxmatch (string/nomatch)" '()
+       (map rxmatch-substring
+            (generator->list (grxmatch #/\w{2,}/ " a x c e\n.f/g/j "))))
+(test* "grxmatch (generator 1)" '("ab" "cde" "fgh" "jkl")
+       ($ map rxmatch-substring
+          $ generator->list
+          $ grxmatch #/\w{2,}/
+          $ string->generator " ab x y.cde\nfgh/j/jkl "))
+(test* "grxmatch (generator 2)" '()
+       ($ map rxmatch-substring
+          $ generator->list
+          $ grxmatch #/\w{2,}/
+          $ string->generator " a x c e\n.f/g/j "))
+(test* "grxmatch (generator 2)" '("ab" "cde" "fgh" "jkl")
+       ($ map rxmatch-substring
+          $ generator->list
+          $ grxmatch #/\w{2,}/
+          $ port->char-generator
+          $ open-input-string " ab x y.cde\nfgh/j/jkl "))
+(test* "grxmatch (generator 1000 chars)" '(500 499)
+       ($ map (.$ string-length rxmatch-substring)
+          $ generator->list
+          $ grxmatch #/\w+/
+          $ gappend (make-string 500 #\a) " " (make-string 499 #\a)))
+(test* "grxmatch (generator 1001 chars)" '(500 500)
+       ($ map (.$ string-length rxmatch-substring)
+          $ generator->list
+          $ grxmatch #/\w+/
+          $ gappend (make-string 500 #\a) " " (make-string 500 #\a)))
+(test* "grxmatch (generator 1002 chars)" '(501 500)
+       ($ map (.$ string-length rxmatch-substring)
+          $ generator->list
+          $ grxmatch #/\w+/
+          $ gappend (make-string 501 #\a) " " (make-string 500 #\a)))
+(test* "grxmatch (generator 1001 chars)" '(2)
+       ($ map (.$ string-length rxmatch-substring)
+          $ generator->list
+          $ grxmatch #/\w+/
+          $ gappend (make-string 999 #\space) "aa"))
+(test* "grxmatch (generator 1002 chars)" '(2)
+       ($ map (.$ string-length rxmatch-substring)
+          $ generator->list
+          $ grxmatch #/\w+/
+          $ gappend (make-string 1000 #\space) "aa"))
+(test* "grxmatch (generator 2003 chars)" '(1999)
+       ($ map (.$ string-length rxmatch-substring)
+          $ generator->list
+          $ grxmatch #/\w+/
+          $ gappend "    " (make-string 1999 #\a)))
+
 (test-end)
 

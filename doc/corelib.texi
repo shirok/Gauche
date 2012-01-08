@@ -5748,6 +5748,17 @@ in some other Scheme implementations.
 @code{match}、@code{regexp-search}、@code{string-match}など
 様々な名で呼ばれています。
 @c COMMON
+
+@c EN
+To apply the match repeatedly on the input string, or to match
+from the input stream (such as the data from the port),
+you may want to check @code{grxmatch} in @code{gauche.generator}
+(@xref{Generator operations}).
+@c JP
+入力から複数のマッチを取り出したり、あるいはストリーム入力 (ポートから読み出すデータなど)
+にマッチをかけたい場合は、@code{gauche.generator}モジュールの@code{grxmatch}
+も使えるかもしれません (@ref{Generator operations}参照)。
+@c COMMON
 @end defun
 
 @deftp {Generic application} @var{regexp} @var{string}
@@ -5858,22 +5869,40 @@ If optional argument is given, the @var{i}-th submatch is used
 @end defun
 
 @defun rxmatch->string regexp string :optional selector @dots{}
+@c EN
 A convenience procedure to match a string to the given regexp,
 then returns the matched substring, or @code{#f} if it doesn't match.
 
 If no @var{selector} is given, it is the same as this:
+@c JP
+文字列に正規表現でマッチをかけ、マッチした文字列を得る、便利な関数です。
+マッチしなかった場合は@code{#f}が帰ります。
+
+@var{selector}が与えられなかった場合、この手続きは次の式と同じです。
+@c COMMON
 
 @example
 (rxmatch-substring (rxmatch @var{regexp} @var{string}))
 @end example
 
+@c EN
 If an integer is given as a selector, it returns the subtring
 of the numbered submatch.
+@c JP
+@var{selector}に整数が与えられた場合は、
+それで指定されるサブマッチの文字列が返されます。
+@c COMMON
 
+@c EN
 If a symbol @code{after} or @code{before} is given, it returns
 the substring after or before the match.  You can give these symbols
 and an integer to extract a substring before or after the numbered
 submatch.
+@c JP
+@var{selector}にはシンボル@code{after}か@code{before}を与えることも出来ます。
+その場合は、マッチした文字列の前や後の文字列が返されます。これらのシンボルの後に
+さらにサブマッチを指定する整数を与えることもできます。
+@c COMMON
 
 @example
 gosh> (rxmatch->string #/\d+/ "foo314bar")

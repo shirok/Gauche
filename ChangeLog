@@ -1,3 +1,10 @@
+2012-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/generator.scm (grxmatch, port->char-generator)
+	  (port->byte-generator): Added stream regexp match generator
+	  grxmatch, and a couple of convenience procedures to read
+	  from an input port.
+
 2012-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm (gcons*, gappend): Changed gcons -> gcons*,
