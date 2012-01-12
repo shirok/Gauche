@@ -77,6 +77,8 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #endif
 
 #if defined(NETBSD)
+#   include <sys/param.h>
+#   include <dlfcn.h>
 #   include <machine/elf_machdep.h>
 #   define ELFSIZE ARCH_ELFSIZE
 #endif
@@ -646,6 +648,15 @@ GC_FirstDLOpenedLinkMap(void)
         return(0);
     }
     if( cachedResult == 0 ) {
+#if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
+        struct link_map *lm = NULL;
+        int rv = dlinfo(RTLD_SELF, RTLD_DI_LINKMAP, &lm); 
+        if (rv != 0)
+            return (0);
+        if (lm == NULL)
+            return (0);
+        cachedResult = lm;
+#else  /* !(defined(NETBSD) && defined(RTLD_DI_LINKMAP)) */
         int tag;
         for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
             if( tag == DT_DEBUG ) {
@@ -655,6 +666,7 @@ GC_FirstDLOpenedLinkMap(void)
                 break;
             }
         }
+#endif /* !(defined(NETBSD) && __NetBSD_Version__ >= 599001900) */
     }
     return cachedResult;
 }
