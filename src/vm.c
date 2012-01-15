@@ -224,6 +224,10 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 
     (void)SCM_INTERNAL_THREAD_INIT(v->thread);
 
+#if defined(GAUCHE_USE_WTHREADS)
+    v->winCleanup = NULL;
+#endif /*defined(GAUCHE_USE_WTHREADS)*/
+
     Scm_RegisterFinalizer(SCM_OBJ(v), vm_finalize, NULL);
     return v;
 }

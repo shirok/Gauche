@@ -51,6 +51,14 @@ typedef pthread_t ScmInternalThread;
     (pthread_setspecific((key), (val)) == 0)
 #define SCM_INTERNAL_THREAD_EXIT()        pthread_exit(NULL)
 
+#define SCM_INTERNAL_THREAD_CLEANUP_PUSH(fn, data) \
+    pthread_cleanup_push(fn, data)
+#define SCM_INTERNAL_THREAD_CLEANUP_POP() \
+    pthread_cleanup_pop(1)
+
+#define SCM_INTERNAL_THREAD_PROC_RETTYPE   void*
+#define SCM_INTERNAL_THREAD_PROC_RETVAL    NULL
+
 /* On POSIX systems, when avaialble, we reserve one signal to notify
    other threads to terminate. */
 #if defined(SIGRTMIN) && !defined(GAUCHE_PTHREAD_SIGNAL)

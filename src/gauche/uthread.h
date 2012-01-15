@@ -55,6 +55,13 @@
    SCM_INTERNAL_THREAD_SETSPECIFIC(key, val) sets the value to the
    thread-local storage identified by key.  It should evaluate
    to TRUE on success, FALSE on error.
+
+   SCM_INTERNAL_THREAD_CLEANUP_{PUSH|POP} is an abstraction similar
+   to pthread_cleanup_{push|pop}.  We assume no Scheme error is
+   signalled between these macros.
+
+   SCM_INTERNAL_THREAD_PROC_RET{TYPE|VAL} specify return type and value
+   of the thread entry procedure.  See ext/threads/threads.c.
  */
 typedef int ScmInternalThread;
 #define SCM_INTERNAL_THREAD_INIT(thr)      (0)
@@ -62,6 +69,12 @@ typedef int ScmInternalThread;
 #define SCM_INTERNAL_THRAED_GETCURRENT()   (0)
 #define SCM_INTERNAL_THREAD_SETSPECIFIC(key, val) TRUE
 #define SCM_INTERNAL_THREAD_EXIT()         _exit(0)
+
+#define SCM_INTERNAL_THREAD_CLEANUP_PUSH(fn, data) {
+#define SCM_INTERNAL_THREAD_CLEANUP_POP()          }
+
+#define SCM_INTERNAL_THREAD_PROC_RETTYPE   void*
+#define SCM_INTERNAL_THREAD_PROC_RETVAL    NULL
 
 /* ScmInternalMutex - a mutex structure.
 

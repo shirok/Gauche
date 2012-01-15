@@ -104,39 +104,35 @@ static void thread_cleanup(void *data)
     SCM_INTERNAL_MUTEX_UNLOCK(vm->vmlock);
 }
 
-#ifdef GAUCHE_USE_PTHREADS
-static void *thread_entry(void *data)
+#if defined(GAUCHE_HAS_THREADS)
+static SCM_INTERNAL_THREAD_PROC_RETTYPE thread_entry(void *data)
 {
     ScmVM *vm = SCM_VM(data);
-    pthread_cleanup_push(thread_cleanup, vm);
-    if (pthread_setspecific(Scm_VMKey(), vm) != 0) {
-        /* NB: at this point, theVM is not set and we can't use Scm_Error. */
-        vm->resultException =
-            Scm_MakeError(SCM_MAKE_STR("pthread_setspecific failed"));
-    } else {
-        SCM_UNWIND_PROTECT {
-            vm->result = Scm_ApplyRec(SCM_OBJ(vm->thunk), SCM_NIL);
-        } SCM_WHEN_ERROR {
-            ScmObj exc;
-            switch (vm->escapeReason) {
-            case SCM_VM_ESCAPE_CONT:
-                /*TODO: better message*/
-                vm->resultException =
-                    Scm_MakeError(SCM_MAKE_STR("stale continuation thrown"));
-                break;
-            default:
-                Scm_Panic("unknown escape");
-            case SCM_VM_ESCAPE_ERROR:
-                exc = Scm_MakeThreadException(SCM_CLASS_UNCAUGHT_EXCEPTION, vm);
-                SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(vm->escapeData[1]);
-                vm->resultException = exc;
-                Scm_ReportError(SCM_OBJ(vm->escapeData[1]));
-                break;
-            }
-        } SCM_END_PROTECT;
-    }
-    pthread_cleanup_pop(TRUE);
-    return NULL;
+
+    SCM_INTERNAL_THREAD_SETSPECIFIC(Scm_VMKey(), vm);
+    SCM_INTERNAL_THREAD_CLEANUP_PUSH(thread_cleanup, vm);
+    SCM_UNWIND_PROTECT {
+        vm->result = Scm_ApplyRec(SCM_OBJ(vm->thunk), SCM_NIL);
+    } SCM_WHEN_ERROR {
+        ScmObj exc;
+        switch (vm->escapeReason) {
+        case SCM_VM_ESCAPE_CONT:
+            /*TODO: better message*/
+            vm->resultException =
+                Scm_MakeError(SCM_MAKE_STR("stale continuation thrown"));
+            break;
+        default:
+            Scm_Panic("unknown escape");
+        case SCM_VM_ESCAPE_ERROR:
+            exc = Scm_MakeThreadException(SCM_CLASS_UNCAUGHT_EXCEPTION, vm);
+            SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(vm->escapeData[1]);
+            vm->resultException = exc;
+            Scm_ReportError(SCM_OBJ(vm->escapeData[1]));
+            break;
+        }
+    } SCM_END_PROTECT;
+    SCM_INTERNAL_THREAD_CLEANUP_POP();
+    return SCM_INTERNAL_THREAD_PROC_RETVAL;
 }
 
 /* The default signal mask on the thread creation */
@@ -144,7 +140,7 @@ static struct threadRec {
     int dummy;                  /* required to place this in data area */
     sigset_t defaultSigmask;
 } threadrec = { 0 };
-#endif /* GAUCHE_USE_PTHREADS */
+#endif /* defined(GAUCHE_HAS_THREADS) */
 
 /* Start a thread.  If the VM is in "NEW" state, create a new thread and
    make it run.
@@ -160,10 +156,7 @@ static struct threadRec {
  */
 ScmObj Scm_ThreadStart(ScmVM *vm)
 {
-#ifdef GAUCHE_USE_PTHREADS
     int err_state = FALSE, err_create = FALSE;
-    pthread_attr_t thattr;
-    sigset_t omask;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(vm->vmlock);
     if (vm->state != SCM_VM_NEW) {
@@ -171,22 +164,42 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
     } else {
         SCM_ASSERT(vm->thunk);
         vm->state = SCM_VM_RUNNABLE;
-        pthread_attr_init(&thattr);
-        pthread_attr_setdetachstate(&thattr, PTHREAD_CREATE_DETACHED);
-        pthread_sigmask(SIG_SETMASK, &threadrec.defaultSigmask, &omask);
-        if (pthread_create(&vm->thread, &thattr, thread_entry, vm) != 0) {
-            vm->state = SCM_VM_NEW;
-            err_create = TRUE;
+#if defined(GAUCHE_USE_PTHREADS)
+        {
+            pthread_attr_t thattr;
+            sigset_t omask;
+            pthread_attr_init(&thattr);
+            pthread_attr_setdetachstate(&thattr, PTHREAD_CREATE_DETACHED);
+            pthread_sigmask(SIG_SETMASK, &threadrec.defaultSigmask, &omask);
+            if (pthread_create(&vm->thread, &thattr, thread_entry, vm) != 0) {
+                vm->state = SCM_VM_NEW;
+                err_create = TRUE;
+            }
+            pthread_sigmask(SIG_SETMASK, &omask, NULL);
+            pthread_attr_destroy(&thattr);
         }
-        pthread_sigmask(SIG_SETMASK, &omask, NULL);
-        pthread_attr_destroy(&thattr);
+#elif defined(GAUCHE_USE_WTHREADS)
+        {
+            HANDLE h = GC_CreateThread(NULL, /* security */
+                                       0,    /* default stack size */
+                                       thread_entry, /* start proc */
+                                       vm,           /* parameter */
+                                       0,            /* flags */
+                                       NULL);        /* thread id receiver */
+            if (h != NULL) {
+                vm->thread = h;
+            } else {
+                vm->state = SCM_VM_NEW;
+                err_create = TRUE;
+            }
+        }
+#else  /* no threads */
+        Scm_Error("Thread is not available."); 
+#endif
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(vm->vmlock);
     if (err_state) Scm_Error("attempt to start an already-started thread: %S", vm);
     if (err_create) Scm_Error("couldn't start a new thread: %S", vm);
-#else  /*!GAUCHE_USE_PTHREADS*/
-    Scm_Error("not implemented!\n");
-#endif /*GAUCHE_USE_PTHREADS*/
     return SCM_OBJ(vm);
 }
 

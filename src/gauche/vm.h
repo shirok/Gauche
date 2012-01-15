@@ -474,6 +474,10 @@ struct ScmVMRec {
     ScmVMStat stat;
     int profilerRunning;
     ScmVMProfiler *prof;
+
+#if defined(GAUCHE_USE_WTHREADS)
+    ScmWinCleanup *winCleanup; /* mimic pthread_cleanup_* */
+#endif /*defined(GAUCHE_USE_WTHREADS)*/
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name);

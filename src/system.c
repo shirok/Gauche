@@ -2632,6 +2632,9 @@ static void fini_winsock(void *data)
 }
 
 /* Win32 thread support.  See also gauche/wthread.h */
+
+#if defined(GAUCHE_USE_WTHREADS)
+
 HANDLE Scm__WinCreateMutex()
 {
     HANDLE m = CreateMutex(NULL, FALSE, NULL);
@@ -2657,11 +2660,19 @@ void Scm__InternalCondInit(ScmInternalCond *cond)
 {
     cond->numWaiters = 0;
     cond->broadcast = FALSE;
+    cond->mutex = CreateMutex(NULL, FALSE, NULL);
+    if (cond->mutex == NULL) {
+        Scm_SysError("couldn't create a mutex for a condition variable");
+    }
+    
     cond->sem = CreateSemaphore(NULL,          /* no security */
                                 0, 0x7fffffff, /* initial and max val */
                                 NULL);         /* name */
     if (cond->sem == NULL) {
-        Scm_SysError("couldn't create semaphore for a condition variable");
+        DWORD err = GetLastError();
+        CloseHandle(cond->mutex);
+        SetLastError(err);
+        Scm_SysError("couldn't create a semaphore for a condition variable");
     }
     cond->done = CreateEvent(NULL,  /* no security */
                              FALSE, /* auto-reset */
@@ -2669,6 +2680,7 @@ void Scm__InternalCondInit(ScmInternalCond *cond)
                              NULL); /* name */
     if (cond->done == NULL) {
         DWORD err = GetLastError();
+        CloseHandle(cond->mutex);
         CloseHandle(cond->sem);
         SetLastError(err);
         Scm_SysError("couldn't create event for a condition variable");
@@ -2679,7 +2691,7 @@ void Scm__InternalCondInit(ScmInternalCond *cond)
 int Scm__InternalCondWait(ScmInternalCond *cond, ScmInternalMutex *mutex,
                           struct timespec *pts)
 {
-    DWORD r;
+    DWORD r0, r1;
     DWORD timeout_msec;
     int lastWaiter;
 
@@ -2689,73 +2701,69 @@ int Scm__InternalCondWait(ScmInternalCond *cond, ScmInternalMutex *mutex,
         Scm_GetTimeOfDay(&now_sec, &now_usec);
         target_sec = pts->tv_sec;
         target_usec = pts->tv_nsec / 1000;
-
-        if (target_sec <= now_sec
+        if (target_sec < now_sec
             || (target_sec == now_sec && target_usec <= now_usec)) {
             timeout_msec = 0;
         } else if (target_usec >= now_usec) {
-            timeout_msec = ((target_sec - now_sec) * 1000
-                            + (target_usec - now_usec) / 1000);
+            timeout_msec = ceil((target_sec - now_sec) * 1000
+                                + (target_usec - now_usec)/1000.0);
         } else {
-            timeout_msec = ((target_sec - now_sec - 1) * 1000
-                            + (1000000 + target_usec - now_usec) / 1000);
+            timeout_msec = ceil((target_sec - now_sec - 1) * 1000
+                                + (1.0e6 + target_usec - now_usec)/1000.0);
         }
     } else {
         timeout_msec = INFINITE;
     }
-    
+
     EnterCriticalSection(&cond->numWaitersLock);
     cond->numWaiters++;
     LeaveCriticalSection(&cond->numWaitersLock);
 
     /* signals mutex and atomically waits on the semaphore */
-    r = SignalObjectAndWait(*mutex, cond->sem, timeout_msec, FALSE);
-    if (r == WAIT_TIMEOUT) {
+    r0 = SignalObjectAndWait(*mutex, cond->sem, timeout_msec, FALSE);
+    if (r0 != WAIT_OBJECT_0) {
         EnterCriticalSection(&cond->numWaitersLock);
         cond->numWaiters--;
         LeaveCriticalSection(&cond->numWaitersLock);
-        return SCM_INTERNAL_COND_TIMEDOUT;
-    }
-    if (r != WAIT_OBJECT_0) {
-        DWORD err = GetLastError();
-        EnterCriticalSection(&cond->numWaitersLock);
-        cond->numWaiters--;
-        LeaveCriticalSection(&cond->numWaitersLock);
-        SetLastError(err);
-        return -1;
-    }
-
-    /* ok, we're woken up.  the flag lastWaiter is TRUE if we're the
-       last waiter after the broadcast. */
-    EnterCriticalSection(&cond->numWaitersLock);
-    cond->numWaiters--;
-    lastWaiter = cond->broadcast && cond->numWaiters == 0;
-    LeaveCriticalSection(&cond->numWaitersLock);
-
-    if (lastWaiter) {
-        /* tell the broadcaster that all the waiters have gained control,
-           and wait to aquire mutex. */
-        r = SignalObjectAndWait(cond->done, *mutex, INFINITE, FALSE);
     } else {
-        /* Aquire mutex */
-        r = WaitForSingleObject(*mutex, INFINITE);
+        /* ok, we're woken up.  the flag lastWaiter is TRUE if we're the
+           last waiter after the broadcast. */
+        EnterCriticalSection(&cond->numWaitersLock);
+        cond->numWaiters--;
+        lastWaiter = cond->broadcast && cond->numWaiters == 0;
+        LeaveCriticalSection(&cond->numWaitersLock);
+
+        if (lastWaiter) {
+            /* tell the broadcaster that all the waiters have gained
+               control, and wait to aquire mutex. */
+            r1 = SignalObjectAndWait(cond->done, *mutex, INFINITE, FALSE);
+        } else {
+            /* Aquire mutex */
+            r1 = WaitForSingleObject(*mutex, INFINITE);
+        }
     }
-    if (r != WAIT_OBJECT_0) return -1;
+    if (r0 == WAIT_TIMEOUT) return SCM_INTERNAL_COND_TIMEDOUT;
+    if (r0 != WAIT_OBJECT_0 || r1 != WAIT_OBJECT_0) return -1;
     return 0;
 }
 
 int Scm__InternalCondSignal(ScmInternalCond *cond)
 {
     int haveWaiters;
+    BOOL r = TRUE;
+
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(cond->mutex);
 
     EnterCriticalSection(&cond->numWaitersLock);
     haveWaiters = (cond->numWaiters > 0);
     LeaveCriticalSection(&cond->numWaitersLock);
 
     if (haveWaiters) {
-        BOOL r = ReleaseSemaphore(cond->sem, 1, 0);
-        if (!r) return -1;
+        r = ReleaseSemaphore(cond->sem, 1, 0);
     }
+
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
+    if (!r) return -1;
     return 0;
 }
 
@@ -2763,31 +2771,35 @@ int Scm__InternalCondBroadcast(ScmInternalCond *cond)
 {
     int haveWaiters;
     DWORD err = 0;
+    BOOL r0 = TRUE;
+    DWORD r1 = WAIT_OBJECT_0;
+
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(cond->mutex);
 
     EnterCriticalSection(&cond->numWaitersLock);
     cond->broadcast = haveWaiters = (cond->numWaiters > 0);
 
     if (haveWaiters) {
-        BOOL r = ReleaseSemaphore(cond->sem, cond->numWaiters, 0);
-        if (!r) err = GetLastError();
+        r0 = ReleaseSemaphore(cond->sem, cond->numWaiters, 0);
+        if (!r0) err = GetLastError();
         LeaveCriticalSection(&cond->numWaitersLock);
 
-        if (!r) {
-            SetLastError(err);
-            return -1;
+        if (r0) {
+            /* Each waiter aquires mutex in turn, until the last waiter
+               who will signal on 'done'. */
+            r1 = WaitForSingleObject(cond->done, INFINITE);
+            cond->broadcast = FALSE; /* safe; nobody will check this */
         }
-        
-        /* Each waiter aquires mutex in turn, until the last waiter
-           who will signal on 'done'. */
-        r = WaitForSingleObject(cond->done, INFINITE);
-        cond->broadcast = FALSE; /* safe; nobody will check this */
-        if (!r) return -1;
-        return 0;
     } else {
         /* nobody's waiting */
         LeaveCriticalSection(&cond->numWaitersLock);
-        return 0;
     }
+
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
+
+    if (!r0) { SetLastError(err); return -1; }
+    if (r1 != WAIT_OBJECT_0) return -1;
+    return 0;
 }
 
 void Scm__InternalCondDestroy(ScmInternalCond *cond)
@@ -2797,6 +2809,20 @@ void Scm__InternalCondDestroy(ScmInternalCond *cond)
     CloseHandle(cond->done);
     cond->done = NULL;
 }
+
+void Scm__WinThreadExit()
+{
+    ScmVM *vm = Scm_VM();
+    ScmWinCleanup *cup = vm->winCleanup;
+    while (cup) {
+        cup->cleanup(cup->data);
+        cup = cup->prev;
+    }
+    GC_ExitThread(0);
+}
+
+#endif /* GAUCHE_USE_WTHREADS */
+
 #endif /* GAUCHE_WINDOWS */
 
 /*===============================================================

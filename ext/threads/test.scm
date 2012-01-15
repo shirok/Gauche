@@ -13,10 +13,12 @@
 (use gauche.threads)
 (test-module 'gauche.threads)
 
-(unless (eq? (gauche-thread-type) 'pthread)
+(cond-expand
+ [(not gauche.sys.threads)
   (format #t "thread not supported\n")
   (test-end)
-  (exit 0))
+  (exit 0)]
+ [else])
 
 ;;---------------------------------------------------------------------
 (test-section "basic thread API")
@@ -72,7 +74,6 @@
   (thread-sleep-test (add-duration (current-time)
                                    (make-time time-duration #e2e7 0)))
   )
-
 
 ;; thread stop and cont
 (let1 t1 (make-thread (^[] (while #t (sys-nanosleep #e5e8))))

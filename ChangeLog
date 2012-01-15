@@ -1,5 +1,11 @@
 2012-01-20  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, src/gauche/wthread.h, src/system.c, src/vm.c,
+	  src/core.c, ext/threads/*, ext/util/queue.scm: Added support of
+	  Windows thread on MinGW.  Run ./configure --enable-threads=win32
+	  to enable the support.  Unit tests pass, but needs more test
+	  with actual applications.
+
 	* src/load.c (Scm_Require): Fix a hazard in parallel require case;
 	  the loop around condition variable wait wasn't actually looped
 	  due to the bug.  Thanks to Kirill Zorin for tracking this down.

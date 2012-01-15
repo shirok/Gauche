@@ -207,13 +207,15 @@
     (let1 r (gensym)
       `(cond [,ptimespec
               (let* ([,r :: int
-                      (pthread_cond_timedwait (& (-> ,q ,slot))
-                                              (& (MTQ_MUTEX ,q))
-                                              ,ptimespec)])
-                (cond [(== ,r ETIMEDOUT) (set! ,status CW_TIMEDOUT)]
-                      [(== ,r EINTR)     (set! ,status CW_INTR)]
-                      [else              (set! ,status 0)]))]
-             [else (pthread_cond_wait (& (-> ,q ,slot)) (& (MTQ_MUTEX ,q)))
+                      (SCM_INTERNAL_COND_TIMEDWAIT (-> ,q ,slot)
+                                                   (MTQ_MUTEX ,q)
+                                                   ,ptimespec)])
+                (cond [(== ,r SCM_INTERNAL_COND_TIMEDOUT)
+                       (set! ,status CW_TIMEDOUT)]
+                      [(== ,r SCM_INTERNAL_COND_INTR)
+                       (set! ,status CW_INTR)]
+                      [else (set! ,status 0)]))]
+             [else (SCM_INTERNAL_COND_WAIT (-> ,q ,slot) (MTQ_MUTEX ,q))
                    (set! ,status 0)]))])
 
  ;; (do-with-timeout Q RETVAL TIMEOUT TIMEOUT-VAL CVAR INIT WAIT-CHECK DO-OK)
@@ -411,7 +413,7 @@
  (define-cproc enqueue/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                          (timeout-val #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
-     (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined (GAUCHE_USE_PTHREADS)"
+     (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined (GAUCHE_HAS_THREADS)"
           (do-with-timeout q retval timeout timeout-val writerWait
                            (begin)
                            (?: (!= (MTQ_MAXLEN q) 0)
@@ -461,7 +463,7 @@
  (define-cproc queue-push/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                             (timeout-val #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
-     (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined(GAUCHE_USE_PTHREADS)"
+     (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined(GAUCHE_HAS_THREADS)"
           (do-with-timeout q retval timeout timeout-val writerWait
                            (begin)
                            (?: (!= (MTQ_MAXLEN q) 0)
@@ -512,7 +514,7 @@
  (define-cproc dequeue/wait! (q::<mtqueue> :optional (timeout #f)
                                                      (timeout-val #f))
    (let* ([retval SCM_UNDEFINED])
-     (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined (GAUCHE_USE_PTHREADS)"
+     (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined (GAUCHE_HAS_THREADS)"
           (do-with-timeout q retval timeout timeout-val readerWait
                            (begin (post++ (MTQ_READER_SEM q))
                                   (notify-writers (Q q)))

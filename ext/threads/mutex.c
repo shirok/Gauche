@@ -52,14 +52,12 @@ SCM_DEFINE_BASE_CLASS(Scm_MutexClass, ScmMutex,
                       mutex_print, NULL, NULL, mutex_allocate,
                       default_cpl);
 
-#ifdef GAUCHE_HAS_THREADS
 static void mutex_finalize(ScmObj obj, void* data)
 {
     ScmMutex *mutex = SCM_MUTEX(obj);
     SCM_INTERNAL_MUTEX_DESTROY(mutex->mutex);
     SCM_INTERNAL_COND_DESTROY(mutex->cv);
 }
-#endif /* GAUCHE_HAS_THREADS */
 
 static ScmObj mutex_allocate(ScmClass *klass, ScmObj initargs)
 {
@@ -284,13 +282,11 @@ SCM_DEFINE_BASE_CLASS(Scm_ConditionVariableClass, ScmConditionVariable,
                       cv_print, NULL, NULL, cv_allocate,
                       default_cpl);
 
-#ifdef GAUCHE_HAS_THREADS
 static void cv_finalize(ScmObj obj, void *data)
 {
     ScmConditionVariable *cv = SCM_CONDITION_VARIABLE(obj);
     SCM_INTERNAL_COND_DESTROY(cv->cv);
 }
-#endif /* GAUCHE_HAS_THREADS */
 
 static ScmObj cv_allocate(ScmClass *klass, ScmObj initargs)
 {

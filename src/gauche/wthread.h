@@ -45,7 +45,32 @@ typedef HANDLE ScmInternalThread;
     ((thr) != INVALID_HANDLE_VALUE)
 #define SCM_INTERNAL_THREAD_GETCURRENT()  GetCurrentThread()
 #define SCM_INTERNAL_THREAD_SETSPECIFIC(key, val) TlsSetValue(key, val)
-#define SCM_INTERNAL_THREAD_EXIT()        ExitThread(0)
+#define SCM_INTERNAL_THREAD_EXIT()        Scm__WinThreadExit()
+
+SCM_EXTERN void Scm__WinThreadExit(void);
+
+/* to mimic pthread_cleanup things */
+typedef struct ScmWinCleanupRec {
+    void (*cleanup)(void *data);
+    void *data;
+    struct ScmWinCleanupRec *prev;
+} ScmWinCleanup;
+
+#define SCM_INTERNAL_THREAD_CLEANUP_PUSH(fn_, data_) \
+    do { ScmWinCleanup cup__;                     \
+         ScmVM *vm__ = Scm_VM();                  \
+         cup__.cleanup = (fn_);                   \
+         cup__.data = (data_);                    \
+         cup__.prev = vm__->winCleanup;           \
+         vm__->winCleanup = &cup__
+
+#define SCM_INTERNAL_THREAD_CLEANUP_POP() \
+        vm__->winCleanup = cup__.prev;    \
+        cup__.cleanup(cup__.data);        \
+    } while (0)
+
+#define SCM_INTERNAL_THREAD_PROC_RETTYPE   DWORD WINAPI
+#define SCM_INTERNAL_THREAD_PROC_RETVAL    0
 
 /* Mutex */
 typedef HANDLE ScmInternalMutex;
@@ -59,13 +84,16 @@ typedef HANDLE ScmInternalMutex;
 SCM_EXTERN HANDLE Scm__WinCreateMutex(void);
 SCM_EXTERN int Scm__WinMutexLock(HANDLE);
 
+SCM_EXTERN void Scm__MutexCleanup(void *); /* in core.c */
+
 /* TODO: We need to implement the safe cancel mechanism
    and then handle this safe lock stuff.  For now, just a placeholder. */
 #define SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex) \
-    do { ScmInternalMutex mutex___ = (mutex); \
-         SCM_INTERNAL_MUTEX_LOCK(mutex___)
+    SCM_INTERNAL_MUTEX_LOCK(mutex);               \
+    SCM_INTERNAL_THREAD_CLEANUP_PUSH(Scm__MutexCleanup, &mutex)
+         
 #define SCM_INTERNAL_MUTEX_SAFE_LOCK_END() \
-    ; SCM_INTERNAL_MUTEX_UNLOCK(mutex___); } while (0)
+    SCM_INTERNAL_THREAD_CLEANUP_POP()
 
 /* Condition variable
 
@@ -78,6 +106,7 @@ SCM_EXTERN int Scm__WinMutexLock(HANDLE);
 typedef struct ScmInternalCondRec {
    int numWaiters;                  /* # of waiting threads */
    CRITICAL_SECTION numWaitersLock; /* protect numWaiters */
+   HANDLE mutex;                    /* protect cond operations */
    HANDLE sem;                      /* to queue waiting threads */
    HANDLE done;                     /* an auto-reset event for a waiter
                                        threads to tell CV that it's

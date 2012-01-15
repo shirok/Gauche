@@ -18,8 +18,6 @@
 /* A common symbol, used throughout the Gauche source */
 #define GAUCHE_WINDOWS 1
 
-#define GAUCHE_USE_WTHREADS 1
-
 /* Preparation.
    Note: for MSVC, we already have these in config.h.
 */

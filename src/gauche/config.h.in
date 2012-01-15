@@ -37,36 +37,6 @@
 /* Define if bilding as a framework on MacOSX */
 #undef GAUCHE_MACOSX_FRAMEWORK
 
-/* Define to use Darwin threads */
-#undef GC_DARWIN_THREADS
-
-/* Define to use FreeBSD threads */
-#undef GC_FREEBSD_THREADS
-
-/* Define to use GNU threads */
-#undef GC_GNU_THREADS
-
-/* Define to use NetBSD threads */
-#undef GC_NETBSD_THREADS
-
-/* Define to use HP-UX threads */
-#undef GC_HPUX_THREADS
-
-/* Define to use IRIX threads */
-#undef GC_IRIX_THREADS
-
-/* Define to use Linux threads */
-#undef GC_LINUX_THREADS
-
-/* Define to use Solaris pthreads */
-#undef GC_SOLARIS_PTHREADS
-
-/* Define to use Solaris threads */
-#undef GC_SOLARIS_THREADS
-
-/* Define to use Win32 threads */
-#undef GC_WIN32_THREADS
-
 /* Define number of args gethostbyaddr_r takes */
 #undef GETHOSTBYADDR_R_NUMARGS
 
