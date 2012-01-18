@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
-#include <string.h>  /* for memcpy() */
+#include <string.h>  /* for memmove() */
 #include <gauche.h>
 #include <gauche/extend.h>
 #include <gauche/builtin-syms.h>
@@ -356,9 +356,9 @@ ScmObj Scm_${T}VectorCopyX(Scm${T}Vector *dst,
     if (dlen - dstart > send - sstart)  size = send - sstart;
     else size = dlen - dstart;
 
-    memcpy(SCM_${T}VECTOR_ELEMENTS(dst) + dstart,
-           SCM_${T}VECTOR_ELEMENTS(src) + sstart,
-           size * sizeof(${etype}));
+    memmove(SCM_${T}VECTOR_ELEMENTS(dst) + dstart,
+            SCM_${T}VECTOR_ELEMENTS(src) + sstart,
+            size * sizeof(${etype}));
     return SCM_OBJ(dst);
 }
 
