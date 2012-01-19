@@ -20,7 +20,8 @@
 * Hashtables::                  
 * Treemaps::                    
 * Weak pointers::               
-* Control features::            
+* Procedures and continuations::  
+* Lazy evaluation::             
 * Exceptions::                  
 * Eval and repl::               
 * Input and output::            
@@ -1989,7 +1990,7 @@ Makes a list, whose elements are @var{obj} @dots{}.
 @c EN
 Like @code{list}, but the last argument becomes cdr of the last pair.
 Two procedures are exactly the same.  Gauche originally had @code{list*},
-and SRFI-1 defins @code{cons*}.
+and SRFI-1 defines @code{cons*}.
 @c JP
 @code{list}とほぼ同じですが、最後の引数が作成されるリストの最後のペアのcdrになります。
 二つの手続きは全く同じです。Gaucheはもともと@code{list*}を持っていましたが、
@@ -2540,6 +2541,114 @@ Inserts @var{item} between elements in the @var{list}.
 @node Walking over lists, Other list procedures, List accessors and modifiers, Pairs and Lists
 @subsection Walking over lists
 @c NODE リストをたどる手続き
+
+@defun map proc list1 list2 @dots{}
+[R5RS+]
+@c EN
+Applies @var{proc} for each element(s) of given list(s),
+and returns a list of the results.  R5RS doesn't specify
+the application order of @code{map}, but Gauche guarantees
+@var{proc} is always applied in order of the list(s).
+Gauche's @code{map} also terminates as soon as one of
+the list is exhausted.
+@c JP
+与えられたリストの各要素に対して@var{proc}を適用し、その結果をリストにして
+返します。R5RSでは@var{proc}の適用順序が定められていませんが、Gaucheでは
+常に@var{proc}はリスト内の順番で呼ばれます。
+複数のリストが与えられた場合、最も短いリストが終了した時点で@var{proc}の適用を
+打ち切ります。
+@c COMMON
+
+@example
+(map car '((a b) (c d) (e f))) @result{} (a c e)
+
+(map cons '(a b c) '(d e f))
+  @result{} ((a . d) (b . e) (c . f))
+@end example
+
+@c EN
+Note that the @code{gauche.collection} module (@xref{Collection framework})
+extends @code{map} to work on any type of collection.
+@c JP
+@code{gauche.collection}モジュール(@ref{Collection framework}参照)
+を使うと、@code{map}がリスト以外のコレクション型に対しても動作するようになります。
+@c COMMON
+@end defun
+
+@defun map* proc tail-proc list1 list2 @dots{}
+@c EN
+Like @code{map}, except that @var{tail-proc} is applied to the @code{cdr}
+of the last pair in the argument(s) to get the @code{cdr} of
+the last pair of the result list.  This procedure allows improper
+list to appear in the arguments.   If a single list is given,
+@var{tail-proc} always receives a non-pair object.
+@c JP
+@code{map}とほぼ同じですが、引数の最後のペアの@code{cdr}に@var{tail-proc}が
+適用され、その返り値が結果のリストの最後のペアの@code{cdr}になります。
+この手続きは正規でないリストを引数に取ることができます。
+引数のリストがひとつだけの場合、@var{tail-proc}の引数は必ずペアでないオブジェクトです。
+@c COMMON
+
+@example
+(map* - / '(1 2 3 . 4)) @result{} (-1 -2 -3 . 1/4)
+
+(define (proper lis)
+  (map* values
+        (lambda (p) (if (null? p) '() (list p)))
+        lis))
+
+(proper '(1 2 3))     @result{} (1 2 3)
+(proper '(1 2 3 . 4)) @result{} (1 2 3 4)
+@end example
+
+@c EN
+If more than one list are given, the shortest one determines
+how @var{tail-proc} is called.  When @code{map*} reaches the
+last pair of the shortest list, @var{tail-proc} is called with
+cdrs of the current pairs.
+@c JP
+二つ以上のリストが与えられた場合は、最も短いリストが@var{tail-proc}の呼び出しを
+決めます。@code{map*}が最も短いリストの最後のペアに達した時点で、
+その時のそれぞれのペアのcdrが@var{tail-proc}へと渡されます。
+@c COMMON
+
+@example
+(map* + vector '(1 2 3 4) '(1 2 . 3))
+  @result{} (3 6 . #((3 4) 3))
+@end example
+
+@c EN
+Note: The name @code{map*} is along the line of
+@code{list*}/@code{cons*} that can produce improper list
+(@xref{List constructors}, @xref{SRFI-1 List utilities}).
+@c JP
+註: @code{map*}という名前は、正規でないリストを作り得る@code{list*}/@code{cons*}からの
+連想でつけられました
+(@ref{List constructors}、@ref{SRFI-1 List utilities}参照)。
+@c COMMON
+@end defun
+
+@defun for-each proc list1 list2 @dots{}
+[R5RS]
+@c EN
+Applies @var{proc} for each element(s) of given list(s) in order.
+The results of @var{proc} are discarded.  The return value of
+@code{for-each} is undefined.  When more than one list is given,
+@code{for-each} terminates as soon as one of the list is exhausted.
+@c JP
+手続き@var{proc}をリストの各エレメントに対して順に適用します。
+@var{proc}の結果は捨てられます。@code{for-each}の戻り値は定義されていません。
+複数のリストが与えられた場合、一番短いリストが終了した時点で@code{for-each}は終了します。
+@c COMMON
+
+@c EN
+Note that the @code{gauche.collection} module (@xref{Collection framework})
+extends @code{for-each} to work on any type of collection.
+@c JP
+@code{gauche.collection}モジュール(@ref{Collection framework}参照)
+を使うと、@code{for-each}がリスト以外のコレクション型に対しても動作するようになります。
+@c COMMON
+@end defun
 
 @defun fold kons knil clist1 clist2 @dots{}
 [SRFI-1]
@@ -7470,7 +7579,7 @@ created tree map.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Weak pointers, Control features, Treemaps, Core library
+@node Weak pointers, Procedures and continuations, Treemaps, Core library
 @section Weak pointers
 @c NODE Weak ポインタ
 
@@ -7582,21 +7691,17 @@ weak ベクタ @var{wvec}の@var{k}番目の要素を@var{obj}に変更します
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Control features, Exceptions, Weak pointers, Core library
-@section Control features
-@c NODE 制御
+@node Procedures and continuations, Lazy evaluation, Weak pointers, Core library
+@section Procedures and continuations
+@c NODE 手続きと継続
 
-@menu
-* Procedures::                  
-* Applicable objects::          
-* Continuation::                
-* Multiple values::             
-* Delayed evaluation::          
-@end menu
+In Scheme, @emph{procedures} are fundamental blocks to build
+a program.  A procedure represents a certain computation,
+possibly parameterized, and can be @emph{applied} to the actual
+arguments to execute the computation.  Scheme even allows you to
+capture 
 
-@node Procedures, Applicable objects, Control features, Control features
-@subsection Procedures
-@c NODE 手続き
+Gauche extends 
 
 @deftp {Builtin Class} <procedure>
 @clindex procedure
@@ -7633,14 +7738,17 @@ Returns (a) value(s) @var{proc} returns.
 
 @menu
 * Universal accessor::          
-* Mapping::                     
 * Combinators::                 
 * Optional argument parsing::   
 * Procedure arity::             
+* Applicable objects::          
+* Continuations::               
+* Multiple values::             
 @end menu
 
-@node Universal accessor, Mapping, Procedures, Procedures
-@subsubsection Universal accessor
+
+@node Universal accessor, Combinators, Procedures and continuations, Procedures and continuations
+@subsection Universal accessor
 @c NODE 万能アクセサ
 
 @defun ~ obj key keys @dots{}
@@ -7739,122 +7847,8 @@ Conceptually, @code{~} can be understood as follows:
 (Gauche may use some short-cut for optimization, though,
 so this code may not reflect the actual implementation.)
 
-
-@node Mapping, Combinators, Universal accessor, Procedures
-@subsubsection Mapping
-@c NODE マッピング
-
-@defun map proc list1 list2 @dots{}
-[R5RS+]
-@c EN
-Applies @var{proc} for each element(s) of given list(s),
-and returns a list of the results.  R5RS doesn't specify
-the application order of @code{map}, but Gauche guarantees
-@var{proc} is always applied in order of the list(s).
-Gauche's @code{map} also terminates as soon as one of
-the list is exhausted.
-@c JP
-与えられたリストの各要素に対して@var{proc}を適用し、その結果をリストにして
-返します。R5RSでは@var{proc}の適用順序が定められていませんが、Gaucheでは
-常に@var{proc}はリスト内の順番で呼ばれます。
-複数のリストが与えられた場合、最も短いリストが終了した時点で@var{proc}の適用を
-打ち切ります。
-@c COMMON
-
-@example
-(map car '((a b) (c d) (e f))) @result{} (a c e)
-
-(map cons '(a b c) '(d e f))
-  @result{} ((a . d) (b . e) (c . f))
-@end example
-
-@c EN
-Note that the @code{gauche.collection} module (@xref{Collection framework})
-extends @code{map} to work on any type of collection.
-@c JP
-@code{gauche.collection}モジュール(@ref{Collection framework}参照)
-を使うと、@code{map}がリスト以外のコレクション型に対しても動作するようになります。
-@c COMMON
-@end defun
-
-@defun map* proc tail-proc list1 list2 @dots{}
-@c EN
-Like @code{map}, except that @var{tail-proc} is applied to the @code{cdr}
-of the last pair in the argument(s) to get the @code{cdr} of
-the last pair of the result list.  This procedure allows improper
-list to appear in the arguments.   If a single list is given,
-@var{tail-proc} always receives a non-pair object.
-@c JP
-@code{map}とほぼ同じですが、引数の最後のペアの@code{cdr}に@var{tail-proc}が
-適用され、その返り値が結果のリストの最後のペアの@code{cdr}になります。
-この手続きは正規でないリストを引数に取ることができます。
-引数のリストがひとつだけの場合、@var{tail-proc}の引数は必ずペアでないオブジェクトです。
-@c COMMON
-
-@example
-(map* - / '(1 2 3 . 4)) @result{} (-1 -2 -3 . 1/4)
-
-(define (proper lis)
-  (map* values
-        (lambda (p) (if (null? p) '() (list p)))
-        lis))
-
-(proper '(1 2 3))     @result{} (1 2 3)
-(proper '(1 2 3 . 4)) @result{} (1 2 3 4)
-@end example
-
-@c EN
-If more than one list are given, the shortest one determines
-how @var{tail-proc} is called.  When @code{map*} reaches the
-last pair of the shortest list, @var{tail-proc} is called with
-cdrs of the current pairs.
-@c JP
-二つ以上のリストが与えられた場合は、最も短いリストが@var{tail-proc}の呼び出しを
-決めます。@code{map*}が最も短いリストの最後のペアに達した時点で、
-その時のそれぞれのペアのcdrが@var{tail-proc}へと渡されます。
-@c COMMON
-
-@example
-(map* + vector '(1 2 3 4) '(1 2 . 3))
-  @result{} (3 6 . #((3 4) 3))
-@end example
-
-@c EN
-Note: The name @code{map*} is along the line of
-@code{list*}/@code{cons*} that can produce improper list
-(@xref{List constructors}, @xref{SRFI-1 List utilities}).
-@c JP
-註: @code{map*}という名前は、正規でないリストを作り得る@code{list*}/@code{cons*}からの
-連想でつけられました
-(@ref{List constructors}、@ref{SRFI-1 List utilities}参照)。
-@c COMMON
-@end defun
-
-@defun for-each proc list1 list2 @dots{}
-[R5RS]
-@c EN
-Applies @var{proc} for each element(s) of given list(s) in order.
-The results of @var{proc} are discarded.  The return value of
-@code{for-each} is undefined.  When more than one list is given,
-@code{for-each} terminates as soon as one of the list is exhausted.
-@c JP
-手続き@var{proc}をリストの各エレメントに対して順に適用します。
-@var{proc}の結果は捨てられます。@code{for-each}の戻り値は定義されていません。
-複数のリストが与えられた場合、一番短いリストが終了した時点で@code{for-each}は終了します。
-@c COMMON
-
-@c EN
-Note that the @code{gauche.collection} module (@xref{Collection framework})
-extends @code{for-each} to work on any type of collection.
-@c JP
-@code{gauche.collection}モジュール(@ref{Collection framework}参照)
-を使うと、@code{for-each}がリスト以外のコレクション型に対しても動作するようになります。
-@c COMMON
-@end defun
-
-
-@node Combinators, Optional argument parsing, Mapping, Procedures
-@subsubsection Combinators
+@node Combinators, Optional argument parsing, Universal accessor, Procedures and continuations
+@subsection Combinators
 @c NODE コンビネータ
 
 @c EN
@@ -8067,8 +8061,8 @@ returns @code{#f} without calling further @var{pred}s.
 @end example
 @end defun
 
-@node Optional argument parsing, Procedure arity, Combinators, Procedures
-@subsubsection Optional argument parsing
+@node Optional argument parsing, Procedure arity, Combinators, Procedures and continuations
+@subsection Optional argument parsing
 @c NODE 省略可能引数のパージング
 
 @c EN
@@ -8318,8 +8312,8 @@ preceding @var{var-spec}s.
 @c COMMON
 @end defmac
 
-@node Procedure arity,  , Optional argument parsing, Procedures
-@subsubsection Procedure arity
+@node Procedure arity, Applicable objects, Optional argument parsing, Procedures and continuations
+@subsection Procedure arity
 @c NODE 手続きのアリティ
 
 @c EN
@@ -8402,7 +8396,7 @@ Otherwise returns @code{#f}.
 @end defun
 
 
-@node Applicable objects, Continuation, Procedures, Control features
+@node Applicable objects, Continuations, Procedure arity, Procedures and continuations
 @subsection Applicable objects
 @c NODE 適用可能なオブジェクト
 
@@ -8519,8 +8513,8 @@ of @code{set!} form, this method is called, that is:
 
 
 
-@node Continuation, Multiple values, Applicable objects, Control features
-@subsection Continuation
+@node Continuations, Multiple values, Applicable objects, Procedures and continuations
+@subsection Continuations
 @c NODE 継続
 
 
@@ -8700,7 +8694,7 @@ scope of @code{dynamic-wind}, @var{before} is called.
 @end defun
 
 
-@node Multiple values, Delayed evaluation, Continuation, Control features
+@node Multiple values,  , Continuations, Procedures and continuations
 @subsection Multiple values
 @c NODE 多値
 
@@ -8784,33 +8778,76 @@ Common Lisp.
 @end example
 @end defmac
 
-@node Delayed evaluation,  , Multiple values, Control features
-@subsection  Delayed evaluation
+@c ------------------------------------------------------------
+@node Lazy evaluation, Exceptions, Procedures and continuations, Core library
+@section  Lazy evaluation
 @c NODE 遅延評価
 
 @c EN
-Gauche provides an extended lazy evaluation mechanism according
-to srfi-45.  Instead of two primitives as R5RS, we have three:
-@code{lazy}, @code{delay}, and @code{force}.
+Gauche has two primitive lazy evaluation mechanisms.
 @c JP
-GaucheではSRFI-45による拡張された遅延評価機構を用意しています。R5RSの
-ふたつのプリミティブではなく、@code{lazy}、@code{delay}、@code{force}
-の3つのプリミティブがあります。
+Gaucheには、ふたつの組み込みの遅延評価メカニズムがあります。
 @c COMMON
 
 @c EN
-It is found that the traditional mechanism that uses only
-@code{delay} and @code{force} didn't mix well with tail-recursive
+The first one is an explicit mechanism, defined in the Scheme
+standard: You mark
+an expression to be evaluated lazily by @code{delay},
+and you use @code{force} to make the evaluation happen when
+needed.  Gauche also support another primitive @code{lazy},
+as defined in srfi-45, for space-efficient tail-recursive
+lazy algorithms.
+@c JP
+ひとつめはScheme標準で定められている、明示的なメカニズムです。遅延評価したい式を
+@code{delay}構文でマークし、値が必要になったところで@code{force}により
+評価を強制します。Gaucheはさらに、srfi-45で導入された、
+末尾再帰アルゴリズムでメモリを効率的に利用するための@code{lazy}というプリミティブも
+サポートしています。
+@c COMMON
+
+@c EN
+The second one is a lazy sequence, in which evaluation happens
+implicitly.  From a Scheme program, a lazy sequence just looks
+as a list---you can take its @code{car} and @code{cdr}, and
+you can apply @code{map} or other list procedures on it.  However,
+internally, its element isn't calculated until it is required.
+@c JP
+もうひとつは遅延シーケンスです。こちらは評価を@code{force}で明示する必要が
+ありません。Schemeプログラムからは、遅延シーケンスは通常のリストと全く
+同じに見えます。@code{car}や@code{cdr}を使ったり、@code{map}を始めとする
+様々なリスト手続きをそのまま適用することができます。けれども内部的には、
+遅延シーケンスの要素は必要になるまで計算されません。
+@c COMMON
+
+@menu
+* Delay force and lazy::        
+* Lazy sequences::              
+@end menu
+
+
+@node Delay force and lazy, Lazy sequences, Lazy evaluation, Lazy evaluation
+@subsection  Delay, force and lazy
+@c NODE Delayとforceとlazy
+
+@c EN
+Scheme has traditionally provided an explicit delayed evaluation mechanism
+using @code{delay} and @code{force}.  After R5RS, however,
+it is found that it didn't mix well with tail-recursive
 algorithms: It required unbound memory, despite that the
 body of the algorithm could be expressed in iterative manner.
+Srfi-45 showed that introducing another primitive syntax @code{lazy}
+addresses the issue.
 For the detailed explanation please look at the srfi-45 document.
 Here we explain how to use those primitives.
 @c JP
-伝統的な@code{delay}および@code{force}だけを使ったのでは末尾再帰的なア
-ルゴリズムとの相性がよくないことがわかっています。末尾再帰的なアルゴリ
-ズムの本体が反復的に表現できるにもかかわらず、メモリを際限なく要求して
-しまいます。詳しい説明はSRFI-45のドキュメントを見てください。ここでは3
-つのプリミティブの使い方を説明します。
+Schemeは伝統的に、@code{delay}と@code{force}を使った
+明示的な遅延評価メカニズムを提供してきました。しかし、R5RSの後で、
+それが末尾再帰的なアルゴリズムとの相性がよくないことがわかりました。
+末尾再帰的なアルゴリズムの本体が反復的に表現できるにもかかわらず、
+メモリを際限なく要求してしまうのです。SRFI-45によって、
+新たなプリミティブ構文@code{lazy}を使えばその問題が回避できることが示されました。
+詳しい議論はSRFI-45のドキュメントを見てください。
+ここでは3つのプリミティブの使い方を説明します。
 @c COMMON
 
 @defspec lazy expression
@@ -8831,9 +8868,9 @@ If @var{expression} itself is expected to yield a promise,
 you should use @code{lazy}.  Othewise, you should use @code{delay}.
 If you can think in types, the difference may be clearer.
 @c JP
-@var{expression}自身がプロミスを評価するようになっている場合には、
-@code{lazy}を使うべきです。そうでなければ、@code{delay}を使うべきです。
-型で考えればその違いは明白でしょう。
+@var{expression}自身がプロミスを返す式なら@code{lazy}を、
+そうでなければ、@code{delay}を使います。
+型で考えるとわかりやすいでしょう。
 @c COMMON
 
 @example
@@ -8847,9 +8884,9 @@ The programmer has to choose appropriate one from the context.
 Generally, @code{lazy} appearers only to surround the entire
 body of function that express a lazy algorithm.
 @c JP
-Schemeでは静的な型付けをしないので、この使い分けを強制することができま
-せん。文脈にしたがってプログラマが適切に選択する必要があります。一般的
-には@code{lazy}は遅延アルゴリズムを表現している関数本体全体を囲む場合
+Schemeでは静的な型付けをしないので、この使い分けを強制することができません。
+文脈にしたがってプログラマが適切に選択する必要があります。
+一般的には@code{lazy}は遅延アルゴリズムを表現している関数本体全体を囲む場合
 にのみ出現します。
 @c COMMON
 
@@ -8894,57 +8931,165 @@ Returns @code{#t} iff @var{obj} is a promise object.
 @c COMMON
 @end defun
 
-@c EN
-The following example represents Fibonacci numbers by
-a lazy list.   The list @code{fib} is calculated by
-adding @code{fib} itself shifted one element.
-Since it uses cached result of previous elements, calculation
-of n-th Fibonacci number can be done in O(n).
-@c JP
-以下の例は遅延リストによるFibonacci数です。リスト@code{fib}は
-@code{fib}自身に1要素シフトして@code{fib}を足し合せることで計算されま
-す。直前の要素をキャッシュとして使っているので、n番目のFibonacci数の計
-算はO(n)ですみます。
-@c COMMON
+@c TODO example - use lazy tarai function
+
+@node Lazy sequences,  , Delay force and lazy, Lazy evaluation
+@subsection  Lazy sequences
+@c NODE 遅延シーケンス
+
+@subsubheading Introduction
+
+A lazy sequence is a list-like structure
+whose elements are calculated lazily.
+Internally we have a special type of pairs, whose @code{cdr}
+is evaluated on demand.
+However, in Scheme level, you'll never see a distinct
+``lazy-pair'' type.   As soon as you try to access the
+lazy pair, Gauche automaticlaly @emph{force} the delayed
+calculation, and the lazy pair turns into an ordinary pair.
+
+It means you can pass lazy sequences to ordinary list-processing
+procedures such as @code{car}, @code{cdr} or @code{map}.
+
+Look at the following example; @code{generator->lseq}
+takes a procedure that generates one value at a time, and
+returns a lazy sequence consists of those values.
 
 @example
-(define (lcar lis)   ;; lazy car
-  (car (force lis)))
-
-(define (lcdr lis)   ;; lazy cdr
-  (cdr (force lis)))
-
-(define (ltake lis n)  ;; lazy take
-  (if (<= n 0) '() (cons (lcar lis) (ltake (lcdr lis) (- n 1)))))
-
-(define (lmap proc l1 l2)  ;; lazy map
-  (if (null? l1)
-    '()
-    (cons (proc (lcar l1) (lcar l2))
-          (delay (lmap proc (lcdr l1) (lcdr l2))))))
-
-;; lazy list of fibonacci numbers
-(define fibs (list* 1 1 (delay (lmap + fibs (cdr fibs)))))
-
-;; take a look
-(ltake fibs 20)
-  @result{} (1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 
-      987 1597 2584 4181 6765)
+(with-input-from-file "file"
+  (^[] (let loop ([cs (generator->lseq read-char)] [i 0])
+         (match cs
+           [() #f]
+           [(#\c (or #\a #\d) #\r . _) i]
+           [(c . cs) (loop cs (+ i 1))]))))
 @end example
 
-@c EN
-Note that, although it is elegant, it also requires O(n) storage
-even when you only need n-th Fibonacci number.  That's because
-the @code{delay} expression in the tail of @code{fibs} is grabbing
-the head of @code{fibs} list and never releases it.
-@c JP
-これはエレガントな例ですが、n番目のFibonacci数を求めるのにO(n)の空間が
-必要になるということに注意してください。これは、@code{fibs}の末尾にあ
-る@code{delay}式が@code{fibs}リストの先頭を掴んだまま離さないからです。
-@c COMMON
+It returns the position of the first occurrence of
+character sequence ``car'' or ``cdr''.
+Characters are read as needed, so once the sequence is
+found, the rest of the files won't be read.  If we do
+it eagerly, we would have to read entire file first no matter how
+big it is, or give up using the mighty @code{match} macro and code
+to check characters one at a time.
+
+Other than implicit forcing, Gauche's lazy sequences are
+slightly different than the typical lazy stream implementations
+in the following ways:
+
+@enumerate
+@item
+When you construct a lazy sequence in an iterative lazy algorithm,
+only @code{cdr} side of the lazy pair is lazily evaluated;
+the @code{car} side is evaluated immediately.  On the other hand, with
+@code{stream-cons} in @code{util.stream} (@xref{Stream library}),
+both @code{car} and @code{cdr} sides won't be evaluated until
+it is absolutely needed.
+@item
+Gauche's lazy sequence evaluates @emph{one item ahead}.
+Once you get a lazy pair, its @code{car} part is already
+calculated, even if you don't use it.  In most cases
+you don't need to care, for calculating one item more
+is a negligible overhead.  However, when you create
+a self-referential lazy structure, in which the earlier
+elements of a sequence is used to caculate the latter
+elements of itself, a bit of caution is needed;
+a valid code for fully lazy circular structure may not
+terminate in Gauche's lazy sequences.  We'll show a
+concrete example later.  This bit of eagerness
+is also visible when side effects are involved.
+@end enumerate
+
+@subsubheading Primitives
+
+@defun generator->lseq generator
+@defunx generator->lseq item @dots{} generator
+Creates a lazy sequence that consists of items produced
+by @var{generator}, which is just a procedure with zero arguments that yields
+an item at a time; for example, @code{read-char} can work as a generator.
+Gauche has a set of convenient utilities to deal with generators
+(@xref{Generators}).
+
+In the second form, the returned lazy sequence is prepended by
+@var{item} @dots{}.  Since there's no way to distinguish lazy
+pairs and ordinary pairs, you can write it as
+@code{(cons* item @dots{} (generator->lseq generator))},
+but that's more verbose.
+
+Internally, Gauche's lazy sequence is optimized to be built
+on top of generators, so this procedure is the most efficient
+way to build lazy sequences.
+@end defun
+
+@defmac lcons car cdr
+Returns a lazy pair consists of @var{car} and @var{cdr}.
+The expression @var{car} is evaluated at the call of @code{lcons}, 
+but evaluation of @var{cdr} is delayed.
+
+You can't distinguish a lazy pair from an ordinary pair.  If you
+access either its @code{car} or @code{cdr}, or even you ask @code{pair?}
+to it, its cdr part is implicitly forced and you get an ordinary pair.
+
+Unlike @code{cons}, @var{cdr} should be an expression that yields
+a (lazy or ordinary) list, including an empty list.
+In other words, lazy sequences can always be a null-terminated list
+when entirely forced; there are no ``improper lazy sequences''.
+(Since Scheme isn't statically typed, we can't force the @var{cdr}
+expression to be a proper list before actually evaluating it.
+Currently if @var{cdr} expression yields non-list, we just ignore
+it and treat as if it yielded an empty list.)
+
+@example
+(define z (lcons (begin (print 1) 'a) (begin (print 2) '())))
+ @result{} ; prints '1', since the car part is evaluated eagerly.
+
+(cdr z) @result{} () ;; and prints '2'
+
+;; This also prints '2', for accessing car of a lazy pair forces
+;; its cdr, even the cdr part isn't used.
+(car (lcons 'a (begin (print 2) '()))) @result{} a
+
+;; So as this; asking pair? to a lazy pair causes forcing its cdr.
+(pair? (lcons 'a (begin (print 2) '()))) @result{} #t
+
+;; To clarify: This doesn't print '2', because the second lazy
+;; pair never be accessed, so its cdr isn't evaluated.
+(pair? (lcons 'a (lcons 'b (begin (print 2) '())))) @result{} #t
+@end example
+
+Many lazy algorithms are defined in terms of fully-lazy cons
+at the bottom.  When you port such algorithms to Gauche using @code{lcons},
+keep this bit of eagerness in mind.
+
+Note also that @code{lcons} needs to create a thunk to delay
+the evaluation.  So the algorithm to construct lazy list using
+@code{lcons} has an overhead of making closure for each item.
+For performance-critical part,
+you want to use @code{generator->lseq} whenever possible.
+@end defmac
+
+@defun lrange start :optional end step
+Creates a lazy sequence of numbers starting from @var{start},
+increasing by @var{step} (default 1), to the maximum value that doesn't
+exceed @var{end}.  The default of @var{end} is @code{+inf.0},
+so it creates an infinite list.  (Don't type just
+@code{(lrange 0)} in REPL, or it won't terminate!)
+
+@example
+(take (lrange -1) 3) @result{} (-1 0 1)
+@end example
+@end defun
+
+See also @ref{Lazy sequence utilities}, for more utility procedures
+that returns lazy sequences.
+
+@subsubheading Examples
+
+
+
+
 
 @c ----------------------------------------------------------------------
-@node Exceptions, Eval and repl, Control features, Core library
+@node Exceptions, Eval and repl, Lazy evaluation, Core library
 @section Exceptions
 @c NODE 例外
 

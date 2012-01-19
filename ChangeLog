@@ -1,3 +1,9 @@
+2012-01-18  Shiro Kawai  <shiro@acm.org>
+
+	* doc/*: Documented basic lazy sequence operations.
+	* lib/gauche/lazy.scm (lappend): Added.  Will add more lazy
+	  sequence utilities.
+
 2012-01-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm (grxmatch, port->char-generator)

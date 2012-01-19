@@ -297,11 +297,11 @@ R5RS の @code{atan}。@ref{Arithmetics}参照。
 @c EN
 No equivalent function in Gauche, but the "after" thunk of active
 dynamic handlers are called when @code{exit} is called.
-@xref{Program termination}, and @xref{Continuation}.
+@xref{Program termination}, and @xref{Continuations}.
 @c JP
 Gauche には同等の関数はありませんが、@code{exit} が呼ばれたとき
 アクティブな動的ハンドラの「事後」サンクが呼ばれます。
-@ref{Program termination} および @ref{Continuation} 参照。
+@ref{Program termination} および @ref{Continuations} 参照。
 @c COMMON
 @item atof
 @itemx atoi
@@ -1000,10 +1000,10 @@ Not directly supported.  @code{log10(z)} @equiv{} @code{(/ (log z) (log 10))}.
 @item longjmp
 @c EN
 R5RS @code{call/cc} provides similar (superior) mechanism.
-@xref{Continuation}.
+@xref{Continuations}.
 @c JP
 R5RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
-@ref{Continuation} 参照。
+@ref{Continuations} 参照。
 @c COMMON
 @item lseek
 @c EN
@@ -1293,10 +1293,10 @@ Gauche の @code{sys-getgid}。
 @item setjmp
 @c EN
 R5RS @code{call/cc} provides similar (superior) mechanism.
-@xref{Continuation}.
+@xref{Continuations}.
 @c JP
 R5RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
-@ref{Continuation} 参照。
+@ref{Continuations} 参照。
 @c COMMON
 @item setlocale
 @c EN
@@ -1356,10 +1356,10 @@ Not supported yet.
 @item siglongjmp
 @c EN
 R5RS @code{call/cc} provides similar (superior) mechanism.
-@xref{Continuation}.
+@xref{Continuations}.
 @c JP
 R5RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
-@ref{Continuation} 参照。
+@ref{Continuations} 参照。
 @c COMMON
 @item signal
 @c EN
@@ -1384,10 +1384,10 @@ Signal mask is handled internally.  @xref{Handling signals}.
 @item sigsetjmp
 @c EN
 R5RS @code{call/cc} provides similar (superior) mechanism.
-@xref{Continuation}.
+@xref{Continuations}.
 @c JP
 R5RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
-@ref{Continuation} 参照。
+@ref{Continuations} 参照。
 @c COMMON
 @item sigsuspend
 @c EN

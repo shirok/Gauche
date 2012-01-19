@@ -31,21 +31,37 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
 
-;; The primivites lseq and lrange are in src/scmlib.scm.
+;; The primivites generator->lseq, lrange and lcons are supported in
+;; the core.  See src/liblazy.scm.
+
+;; The tests of this module is in ext/gauche, for this depends on
+;; gauche.generator, which depends on modules built in ext/gauche.
 
 (define-module gauche.lazy
   (use gauche.generator)
-  (export lmap lfilter))
+  (export x->lseq lmap lappend lfilter))
 (select-module gauche.lazy)
+
+;; Universal coercer.
+;; This does not force OBJ if it is alreay an lseq.
+;; NB: Putting specialized paths for vectors and strings may be a good idea
+;; for performance.  We'll see.
+(define-in-module gauche (x->lseq obj)
+  (cond [(null? obj) '()]
+        [(eq? (class-of obj) <pair>) obj]
+        [else
+         (let1 g (x->generator obj)
+           (if (procedure? g)
+             (generator->lseq g)
+             (error "cannot coerce the argument to a lazy sequence" obj)))]))
 
 (define lmap
   (case-lambda
     [(proc arg)
-     (define (g)
-       (if (null? arg) (eof-object) (proc (pop! arg))))
-     (generator->lseq g)]
+     (let1 arg (x->lseq arg)
+       (generator->lseq (^[](if (null? arg) (eof-object) (proc (pop! arg))))))]
     [(proc arg . more)
-     (let1 args (cons arg more)
+     (let1 args (map x->lseq (cons arg more))
        (define (g)
          (if args
            (receive (cars cdrs)
@@ -57,8 +73,17 @@
            (eof-object)))
        (generator->lseq g))]))
 
-;; NB: Should we define all l* variations corresponds to g* variations?
-;; The list->generator portion smells bad.  Maybe g* variation should
-;; coerce input sequences into generators automatically.
-(define (lfilter fn seq) (generator->lseq (gfilter fn (x->generator seq))))
+(define lappend
+  (case-lambda
+    [() '()]
+    [(arg) (x->lseq arg)]
+    [args
+     (generator->lseq
+      (rec (g)
+        (cond [(null? args) (eof-object)]
+              [(null? (car args)) (pop! args) (g)]
+              [else (pop! (car args))])))]))
 
+;; NB: Should we define all l* variations corresponds to g* variations?
+
+(define (lfilter fn seq) (generator->lseq (gfilter fn seq)))

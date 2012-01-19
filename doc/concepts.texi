@@ -48,11 +48,11 @@ option or special reader directive
 @c EN
 Continuations created in a certain situation
 (specifically, inside a Scheme code that is called from external
-C routine) have limited extent (@xref{Continuation}, for details).
+C routine) have limited extent (@xref{Continuations}, for details).
 @c JP
 ある条件下で作られた継続は限られたエクステントを持ちます
 (具体的には、Cのコードからコールバックとして呼ばれるSchemeコード内で作られる継続
-がこれにあたります)。詳しくは@ref{Continuation}を参照して下さい。
+がこれにあたります)。詳しくは@ref{Continuations}を参照して下さい。
 @c COMMON
 @item
 @c EN
@@ -418,11 +418,11 @@ Supported by the module @code{srfi-43}.
 @c EN
 @item SRFI-45, Primitives for Expressing Iterative Lazy Algorithms
 Built-in.
-@xref{Delayed evaluation}.
+@xref{Lazy evaluation}.
 @c JP
 @item SRFI-45, 反復的 Lazy アルゴリズムのための基本関数
 組み込みです。
-@xref{Delayed evaluation}.
+@xref{Lazy evaluation}.
 @c COMMON
 
 @c EN

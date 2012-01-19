@@ -14,6 +14,7 @@
 * Generators::                  gauche.generator
 * Hooks::                       gauche.hook
 * Interactive session::         gauche.interactive
+* Lazy sequence utilities::     gauche.lazy
 * Listener::                    gauche.listener
 * User-level logging::          gauche.logger
 * Propagating slot access::     gauche.mop.propagate
@@ -2400,11 +2401,11 @@ See also @code{map-accum} below.
 
 @deffn {Generic function} map proc coll coll2 @dots{}
 @c EN
-This extends the built-in @code{map} (@xref{Procedures}).
+This extends the built-in @code{map} (@xref{Walking over lists}).
 Apply @var{proc} for each element in the collection @var{coll}, and
 returns a list of the results.
 @c JP
-組み込み手続き@code{map} (@ref{Procedures}参照) を拡張します。
+組み込み手続き@code{map} (@ref{Walking over lists}参照) を拡張します。
 コレクション@var{coll}の各要素に手続き@var{proc}を適用し、その結果をリストにして
 返します。
 @c COMMON
@@ -2534,12 +2535,12 @@ reversed.
 
 @deffn {Generic function} for-each proc coll coll2 @dots{}
 @c EN
-Extension of built-in @code{for-each} (@xref{Procedures}).
+Extension of built-in @code{for-each} (@xref{Walking over lists}).
 Applies @var{proc} for each elements in the collection(s).
 The result of @var{proc} is discarded.  The return value of
 @code{for-each} is undefined.
 @c JP
-組み込み手続き@code{for-each} (@ref{Procedures}参照) を拡張します。
+組み込み手続き@code{for-each} (@ref{Walking over lists}参照) を拡張します。
 コレクション@var{coll}の各要素に手続き@var{proc}を適用します。
 @var{proc}の結果は捨てられます。@code{for-each}の結果は未定義です。
 @c COMMON
@@ -4517,7 +4518,7 @@ The number of arguments must match the arity given at @code{make-hook}.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Interactive session, Listener, Hooks, Library modules - Gauche extensions
+@node Interactive session, Lazy sequence utilities, Hooks, Library modules - Gauche extensions
 @section @code{gauche.interactive} - Utilities for interactive session
 @c NODE インタラクティブセッション, @code{gauche.interactive} - インタラクティブセッション
 
@@ -4655,7 +4656,41 @@ to parse the info file.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Listener, User-level logging, Interactive session, Library modules - Gauche extensions
+@node Lazy sequence utilities, Listener, Interactive session, Library modules - Gauche extensions
+@section @code{gauche.lazy} - Lazy sequence utilities
+@c NODE 遅延シーケンスユーティリティ, @code{gauche.lazy} - 遅延シーケンスユーティリティ
+
+This module provides utiltiy procedures that yields lazy sequences.
+For the details of lazy sequences, see @ref{Lazy sequences}.
+
+Since lazy sequences are forced implicitly and indistinguishable
+from ordinary lists, we don't need a separate set of procedures
+for @emph{taking} lists and lazy sequences; we can use @code{map}
+to map across both ordinary lists and lazy sequences (you can even
+mix them!)   However, we do need a separate set of procedures
+for @emph{returning} either lists or lazy sequences.  For example,
+@var{lmap} can take any kind of sequences, and
+returns lazy sequence (and calls the procedure on demand).
+
+@defun lmap proc seq seq2 @dots{}
+Returns a lazy sequence consists of values calculated
+by applying @var{proc} to every first element of @var{seq} @code{seq2}
+@dots{}, every second element of them, etc., until any of
+the input is exhausted.
+@end defun
+
+@defun lappend seq @dots{}
+Returns a lazy sequence consists of elements in @var{seq} @dots{}.
+@end defun
+
+@defun lfilter proc seq
+Returns a lazy sequence that consists of non-false values calculated
+by applying @var{proc} on every elements in @var{seq}.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Listener, User-level logging, Lazy sequence utilities, Library modules - Gauche extensions
 @section @code{gauche.listener} - Listener
 @c NODE リスナー, @code{gauche.listener} - リスナー
 
