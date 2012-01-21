@@ -2,7 +2,7 @@
 
 	* src/load.c (Scm_Require): Fix a hazard in parallel require case;
 	  the loop around condition variable wait wasn't actually looped
-	  due to the bug.  Thanks for Kirill Zorin to tracking this down.
+	  due to the bug.  Thanks to Kirill Zorin for tracking this down.
 
 	* src/core.c (finalizable): Fix to protect in the case that GC
 	  is run before Gauche is fully bootstrapped.
