@@ -272,12 +272,14 @@ void Scm_UnregisterFinalizer(ScmObj z)
                                    &ofn, &ocd);
 }
 
-/* GC calls this back when finalizers are queued */
+/* GC calls this back when finalizers are queued. */
 void finalizable(void)
 {
     ScmVM *vm = Scm_VM();
-    vm->finalizerPending = TRUE;
-    vm->attentionRequest = TRUE;
+    if (vm != NULL) {
+        vm->finalizerPending = TRUE;
+        vm->attentionRequest = TRUE;
+    }
 }
 
 /* Called from VM loop.  Queue is not empty. */

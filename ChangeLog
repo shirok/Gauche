@@ -1,3 +1,8 @@
+2012-01-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (finalizable): Fix to protect in the case that GC
+	  is run before Gauche is fully bootstrapped.
+
 2012-01-18  Shiro Kawai  <shiro@acm.org>
 
 	* doc/*: Documented basic lazy sequence operations.
