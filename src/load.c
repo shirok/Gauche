@@ -966,7 +966,7 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
 
     /* Check provided, providing and waiting list.  See the comment above. */
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
-    do {
+    for (;;) {
         provided = Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL);
         if (!SCM_FALSEP(provided)) break;
         providing = Scm_Assoc(feature, ldinfo.providing, SCM_CMP_EQUAL);
@@ -989,8 +989,7 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
         ldinfo.waiting = Scm_Acons(SCM_OBJ(vm), feature, ldinfo.waiting);
         (void)SCM_INTERNAL_COND_WAIT(ldinfo.prov_cv, ldinfo.prov_mutex);
         ldinfo.waiting = Scm_AssocDeleteX(SCM_OBJ(vm), ldinfo.waiting, SCM_CMP_EQ);
-        continue;
-    } while (0);
+    }
     if (!loop && SCM_FALSEP(provided)) {
         ldinfo.providing =
             Scm_Acons(feature, SCM_LIST1(SCM_OBJ(vm)), ldinfo.providing);
