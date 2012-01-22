@@ -53,6 +53,11 @@ rm -rf $distdir
 ./configure --enable-multibyte=utf8 --prefix=$distdir
 make
 
+if [ $? -ne 0 ]; then
+  echo "Build failed.  Aborting packaging."
+  exit 1
+fi
+
 # prepare precompiled directory tree.
 make install
 (cd src; make install-mingw)

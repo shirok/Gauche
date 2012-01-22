@@ -1,3 +1,8 @@
+2012-01-21  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/threads.scm (gauche-thread-type): Returns 'win32
+	  on Windows/MinGW threads support.
+
 2012-01-20  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, src/gauche/wthread.h, src/system.c, src/vm.c,

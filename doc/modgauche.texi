@@ -12583,10 +12583,10 @@ keyword argument; the test will excludes them from the check.
 
 @c EN
 If enabled at compilation time, Gauche can use threads
-built on top of POSIX threads (pthreads).
+built on top of either POSIX threads (pthreads) or Windows threads.
 @c JP
-Gaucheでは、コンパイル時に有効にしていれば、POSIXスレッド(pthreads)の
-上に構築されるスレッドを使うことができます。
+Gaucheでは、コンパイル時に有効にしていれば、POSIXスレッド(pthreads)か
+Windowsスレッド上に構築されるスレッドを使うことができます。
 @c COMMON
 
 @deftp {Module} gauche.threads
@@ -12606,12 +12606,12 @@ supported, many thread-related procedures simply signals a
 
 @c EN
 If you want to switch code depending on whether pthreads are
-available or not, you can use a feature identifier @code{gauche.sys.pthreads}
+available or not, you can use a feature identifier @code{gauche.sys.threads}
 with @code{cond-expand} form (@xref{Feature conditional}).
 
 @example
 (cond-expand
- [gauche.sys.pthreads
+ [gauche.sys.threads
    ;; Code that uses thread API (@code{gauche.threads} is automatically
    ;; loaded at this moment).
   ]
@@ -12621,12 +12621,12 @@ with @code{cond-expand} form (@xref{Feature conditional}).
 @end example
 @c JP
 pthreadが使えるかどうかによって実行するコードを切り替えたい場合は、
-@code{cond-expand}フォームで@code{gauche.sys.pthreads}という
+@code{cond-expand}フォームで@code{gauche.sys.threads}という
 feature identifierを使うことができます (@ref{Feature conditional}参照)。
 
 @example
 (cond-expand
- [gauche.sys.pthreads
+ [gauche.sys.threads
    ;; Thread APIを使うコード (@code{gauche.threads}はこの時点で
    ;; 自動的にロードされます).
   ]
@@ -12634,6 +12634,23 @@ feature identifierを使うことができます (@ref{Feature conditional}参�
    ;; Thread APIを使わないコード
   ])
 @end example
+@c COMMON
+
+@c EN
+There are also feature identifiers @code{gauche.sys.pthreads} and
+@code{gauche.sys.wthreads} defined for pthreads and Windows threads
+platforms, respectively.
+In Scheme level, however, you hardly need to distinguish
+the underlying implementations.  It is recommended to use
+@code{gauche.sys.threads} to switch the code according to
+thread availability.
+@c JP
+また、pthreadプラットフォームとWindowsスレッドプラットフォームで
+それぞれ、@code{gauche.sys.pthreads}と@code{gauche.sys.wthreads}
+というfeature identifierも定義されています。
+ただ、Schemeレベルではこれら下位の実装の違いを意識する必要は
+ほとんど無いでしょう。スレッドサポートの有無によりコードを切り替える時は、
+@code{gauche.sys.threads}を使うのが良いでしょう。
 @c COMMON
 
 @c EN
@@ -12647,14 +12664,44 @@ instead of compile time, use the following procedure.
 @defun gauche-thread-type
 @c EN
 Returns a symbol that indicates the supported thread type.
-In the current version, the return value may be @code{pthread}
-when threads on top of POSIX threads are available, or
-@code{none} when threads are not available.
+It can be one of the following symbols.
 @c JP
 サポートされているスレッドのタイプを表すシンボルを返します。
-現在のバージョンでは、POSIXスレッドの上に構築されるスレッドが
-有効な場合は@code{pthread}を返し、スレッドが有効でない場合は
-@code{none}を返します。
+以下のいずれかのシンボルが返されます。
+@c COMMON
+
+@table @code
+@item none
+@c EN
+Threads are not supported.
+@c JP
+スレッドはサポートされていません。
+@c COMMON
+@item pthread
+@c EN
+Threads are built on top of POSIX pthreads.
+@c JP
+スレッドはPOSIXのpthreadsを使って実装されています。
+@c COMMON
+@item win32
+@c EN
+Threads are built on top of Win32 threads.
+@c JP
+スレッドはWin32スレッドを使って実装されています。
+@c COMMON
+@end table
+
+@c EN
+(Note: On pthreads plaforms, it should return @code{pthreads} instead
+of @code{pthread}; then the returned symbol would correspond to the 
+value given to @code{--enable-threads} option at configuration time.
+It's a historical overlook, stuck for the backward compatibility.)
+@c JP
+(註：pthreadプラットフォームではシンボル@code{pthread}ではなく
+@code{pthreads}を返すべきでした。そうすれば、
+@code{gauche-thread-type}の返り値はコンフィグレーション時に
+@code{--enable-threads}に与えた値と対応するものになっていたでしょう。
+互換性のために、残念ながらこの見過ごしは修正されないでしょう。
 @c COMMON
 @end defun
 

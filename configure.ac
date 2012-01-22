@@ -142,7 +142,7 @@ AC_ARG_ENABLE(threads,
       pthreads) 
        GAUCHE_THREAD_TYPE=pthreads;;
       win32)
-       GAUCHE_THREAD_TYPE=win32;;       
+       GAUCHE_THREAD_TYPE=win32;;
       no|none)
        GAUCHE_THREAD_TYPE=none;;
       default)

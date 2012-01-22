@@ -70,11 +70,13 @@
 ;; System query
 ;;
 
+;; TODO: for the consistency of ./configure --enable-threads,
+;; it should return 'pthreads' instead of 'pthread' on pthreads platform.
 (inline-stub
  (define-cproc gauche-thread-type ()
-   (.if "defined(GAUCHE_USE_PTHREADS)"
-        (result 'pthread)
-        (result 'none))))
+   (.cond ["defined(GAUCHE_USE_PTHREADS)" (result 'pthread)]
+          ["defined(GAUCHE_USE_WTHREADS)" (result 'win32)]
+          [else (result 'none)])))
 
 ;;===============================================================
 ;; Thread
