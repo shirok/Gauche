@@ -1681,23 +1681,25 @@ void Scm__InitPort(void)
    Scm_Init() doesn't have a way to know whether we're in console mode
    or not.  Only the application knows, thus it needs to call this API
    after Scheme system is initialized.
-
-   NB: AllocConsole and port swapping should be mutexed, but currently
-   we don't support threads on native Windows, so no need to worry.
  */
 #if defined(GAUCHE_WINDOWS)
+
+static ScmInternalMutex win_console_mutex;
+static int win_console_created = FALSE;
+
 static int trapper_flusher(ScmPort *p, int cnt, int forcep)
 {
-    static int consoleCreated = FALSE;
     size_t nwrote = 0;
     int size = SCM_PORT_BUFFER_AVAIL(p);
     char *buf = p->src.buf.buffer;
-    
-    if (!consoleCreated) {
+
+    SCM_INTERNAL_MUTEX_LOCK(win_console_mutex);
+    if (!win_console_created) {
         AllocConsole();
         freopen("CONOUT$", "w", stdout);
-        consoleCreated = TRUE;
+        win_console_created = TRUE;
     }
+    SCM_INTERNAL_MUTEX_UNLOCK(win_console_mutex);
 
     while ((!forcep && nwrote == 0) || (forcep && nwrote < cnt)) {
         size_t r = fwrite(buf, 1, size, stdout);
@@ -1732,10 +1734,13 @@ static ScmObj make_trapper_port()
                                 SCM_PORT_OUTPUT, TRUE, &bufrec);
 }
 
+/* This is supposed to be called from application main(), before any
+   threads are created.  We don't mutex here. */
 void Scm__SetupPortsForWindows(int has_console)
 {
     if (!has_console) {
         ScmObj trapperPort = make_trapper_port();
+        SCM_INTERNAL_MUTEX_INIT(win_console_mutex);
         scm_stdout = trapperPort;
         scm_stderr = trapperPort;
         Scm_VM()->curout = SCM_PORT(scm_stdout);

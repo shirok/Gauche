@@ -1,5 +1,9 @@
 2012-01-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c (Scm__SetupPortsForWindows): Made implicit 
+	  AllocConsole() thread-safe for gosh-noconsole.
+	* test/win-noconsole-threads.scm: Manual test for the above feature.
+
 	* ext/threads/threads.scm (gauche-thread-type): Returns 'win32
 	  on Windows/MinGW threads support.
 
