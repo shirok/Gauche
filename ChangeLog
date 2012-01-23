@@ -1,5 +1,8 @@
 2012-01-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/Makefile.in: Exclude unnecessary object files in gc/ to be
+	  linked to libgauche.so.
+
 	* configure.ac, src/Makefile.in, src/gauche.h: The previous trick,
 	  committed for Win32 thread support, to extract GC thread config
 	  settings and adding it to gauche/config.h, doesn't work.  The extra

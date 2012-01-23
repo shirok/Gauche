@@ -195,6 +195,8 @@ libgauche_OBJECTS = \
 	libsys.$(OBJEXT) libvec.$(OBJEXT)
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
+libgc_OBJECTS = `ls -1 $(top_builddir)/gc/.libs/*.$(OBJEXT) | grep -v '/cord' | grep -v '/staticrootslib'`
+
 HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
 OBJECTS = $(libgauche_OBJECTS) $(gosh_OBJECTS)
@@ -213,7 +215,7 @@ gosh-noconsole$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_noconsole_OBJECTS)
 # NB: relink target is only relevant where rpath matter.  notably, we don't
 # need to relink gish.exe (windows no-console version).
 relink :
-	$(RELINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
+	$(RELINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_OBJECTS) $(LIBS)
 	$(RELINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT)  $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 	$(RELINK) -o gauche-config$(EXEEXT) gauche-config.$(OBJEXT) $(LIBS)
 
@@ -284,7 +286,7 @@ load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
 paths.$(OBJEXT) : getdir_win.c getdir_dummy.c getdir_darwin.c
 
 $(LIBGAUCHE).$(SOEXT) : $(libgauche_OBJECTS) $(GCLIB)
-	$(LINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
+	$(LINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_OBJECTS) $(LIBS)
 	$(POSTBUILD)
 
 gauche-config$(EXEEXT) : gauche-config.$(OBJEXT)
@@ -298,7 +300,7 @@ $(host)-gauche-config: gauche-config.c
 gauche/config_threads.h : $(top_srcdir)/gc/include/private/config.h
 	rm -f gauche/config_threads.h
 	echo "/* Generated automatically from gc config header; do not edit. */" > gauche/config_threads.h
-	grep '^#define GC_[0-9A-Z_]*THREADS' $(top_srcdir)/gc/include/private/config.h >> gauche/config_threads.h
+	grep '^#define GC_[0-9A-Z_]*THREADS' $(top_srcdir)/gc/include/private/config.h >> gauche/config_threads.h || :
 
 gauche-config.c gauche/arch.h ../lib/gauche/config.scm : genconfig
 	$(SHELL) ./genconfig
