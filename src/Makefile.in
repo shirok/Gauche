@@ -135,10 +135,10 @@ INSTALL_SUBHEADERS = \
 	gauche/char_euc_jp.h gauche/char_none.h \
 	gauche/char_sjis.h gauche/char_utf_8.h gauche/charset.h \
 	gauche/class.h gauche/code.h gauche/collection.h \
-	gauche/config.h gauche/exception.h gauche/extend.h \
-	gauche/extern.h gauche/float.h gauche/gloc.h gauche/hash.h \
-	gauche/int64.h gauche/keyword.h gauche/load.h gauche/macro.h \
-	gauche/module.h gauche/number.h gauche/parameter.h \
+	gauche/config.h gauche/config_threads.h gauche/exception.h \
+	gauche/extend.h gauche/extern.h gauche/float.h gauche/gloc.h \
+	gauche/hash.h gauche/int64.h gauche/keyword.h gauche/load.h \
+	gauche/macro.h gauche/module.h gauche/number.h gauche/parameter.h \
 	gauche/paths.h gauche/port.h gauche/prof.h gauche/pthread.h \
 	gauche/reader.h gauche/regexp.h gauche/scmconst.h \
 	gauche/string.h gauche/symbol.h gauche/system.h \
@@ -294,6 +294,12 @@ gauche-config$(EXEEXT) : gauche-config.$(OBJEXT)
 $(host)-gauche-config: gauche-config.c
 	$(BUILD_CC) $(BUILD_CFLAGS) $(DEFS) -o $@ gauche-config.c
 
+# we need thread settings in sync with gc.
+gauche/config_threads.h : $(top_srcdir)/gc/include/private/config.h
+	rm -f gauche/config_threads.h
+	echo "/* Generated automatically from gc config header; do not edit. */" > gauche/config_threads.h
+	grep '^#define GC_[0-9A-Z_]*THREADS' $(top_srcdir)/gc/include/private/config.h >> gauche/config_threads.h
+
 gauche-config.c gauche/arch.h ../lib/gauche/config.scm : genconfig
 	$(SHELL) ./genconfig
 
@@ -374,7 +380,7 @@ clean :
 	       $(GENERATED_SCRIPTS) gauche-config.c \
 	       $(LIBGAUCHE).$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe \
 	       test.log test.dir so_locations gauche/*~ gauche/arch.h \
-	       gauche-config.in.c \
+	       gauche/config_threads.h gauche-config.in.c \
 	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \
 	       $(host)-gauche-config.c $(host)-gauche-config
 

@@ -1,6 +1,15 @@
+2012-01-23  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac, src/Makefile.in, src/gauche.h: The previous trick,
+	  committed for Win32 thread support, to extract GC thread config
+	  settings and adding it to gauche/config.h, doesn't work.  The extra
+	  code won't be executed by running ./config.status.  So we changed
+	  the strategy---at build time, we generate gauche/config_threads.h
+	  from the GC's thread configuration.
+
 2012-01-21  Shiro Kawai  <shiro@acm.org>
 
-	* src/port.c (Scm__SetupPortsForWindows): Made implicit 
+	* src/port.c (Scm__SetupPortsForWindows): Made implicit
 	  AllocConsole() thread-safe for gosh-noconsole.
 	* test/win-noconsole-threads.scm: Manual test for the above feature.
 

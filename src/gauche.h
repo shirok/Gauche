@@ -40,6 +40,7 @@
    get pthread-compatible sigwait()---but we may encounter more of such
    instances. */
 #include <gauche/config.h>
+#include <gauche/config_threads.h>
 
 #include <stdio.h>
 #include <stdlib.h>

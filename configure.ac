@@ -812,13 +812,6 @@ AC_OUTPUT(Makefile
           ext/windows/Makefile
          )
 
-dnl Import GC thread configurations into our config.h, so that we'll be
-dnl in sync.  (We can't do this before AC_OUTPUT, since subdir configure
-dnl runs _after_ main config.h is generated.
-echo '/* GC thread settings */' >> src/gauche/config.h
-grep '^#define GC_[0-9A-Z_]*THREADS' gc/include/private/config.h >> src/gauche/config.h
-
-
 dnl ===========================================================
 dnl Show some of the configuration results, for developer's
 dnl convenience.
