@@ -1,5 +1,9 @@
 2012-01-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/pthread.h: Fix for cygwin pthread: Real-time signals
+	  are not available on cygwin, so we use SIGPWR for inter-thread
+	  communication.  Nees to be documented.
+
 	* src/Makefile.in: Exclude unnecessary object files in gc/ to be
 	  linked to libgauche.so.
 

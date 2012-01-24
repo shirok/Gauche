@@ -60,9 +60,17 @@ typedef pthread_t ScmInternalThread;
 #define SCM_INTERNAL_THREAD_PROC_RETVAL    NULL
 
 /* On POSIX systems, when avaialble, we reserve one signal to notify
-   other threads to terminate. */
+   other threads to terminate.
+   NB: POSIX requires at least 8 realtime signals, but cygwin doesn't
+   provide them (on cygwin, SIGRTMIN == SIGRTMAX).   We use SIGPWR
+   instead.
+*/
 #if defined(SIGRTMIN) && !defined(GAUCHE_PTHREAD_SIGNAL)
-#define GAUCHE_PTHREAD_SIGNAL (SIGRTMIN+5)
+#  if (SIGRTMIN + 5) < SIGRTMAX
+#    define GAUCHE_PTHREAD_SIGNAL (SIGRTMIN+5)
+#  else
+#    define GAUCHE_PTHREAD_SIGNAL SIGPWR
+#  endif
 #endif /*defined(SIGRTMIN) && !defined(GAUCHE_PTHREAD_SIGNAL)*/
 
 /* Mutex */
