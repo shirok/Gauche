@@ -66,7 +66,7 @@ typedef pthread_t ScmInternalThread;
    instead.
 */
 #if defined(SIGRTMIN) && !defined(GAUCHE_PTHREAD_SIGNAL)
-#  if (SIGRTMIN + 5) < SIGRTMAX
+#  if !defined(__CYGWIN__)
 #    define GAUCHE_PTHREAD_SIGNAL (SIGRTMIN+5)
 #  else
 #    define GAUCHE_PTHREAD_SIGNAL SIGPWR
