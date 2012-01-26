@@ -605,6 +605,20 @@
 
 (define-method apply-method ((gf <generic>) methods build-next args)
   (apply (build-next gf methods args) args))
+
+;; internal, but useful to expose
+(define-cproc method-applicable-for-classes? (m::<method> :rest classes)
+  ::<boolean>
+  (let* ([argc::int (Scm_Length classes)]
+         [cp::ScmClass** (SCM_NEW_ARRAY (ScmClass*) argc)]
+         [n::int 0])
+    (for-each (lambda (c)
+                (unless (SCM_CLASSP c)
+                  (Scm_Error "class required, but got %S" c))
+                (set! (aref cp n) (SCM_CLASS c))
+                (post++ n))
+              classes)
+    (result (Scm_MethodApplicableForClasses m cp argc))))
       
 ;;----------------------------------------------------------------
 ;; Introspection routines

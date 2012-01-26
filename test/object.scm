@@ -1395,7 +1395,33 @@
 (test* "apply special path (apply->normal)" '(z c b a)
        (app-sp-path-test2 (make <app-sp-path2>) 'a 'b 'c))
 
+;;----------------------------------------------------------------
+(test-section "applicable?")
 
+;; The procedure applicable? is in lib/gauche/procedure.scm and
+;; it's supposed to be tested in ./procedure.scm, but internally
+;; it depends on libobj's method-applicable-for-clases, so we test
+;; it here.
+
+(define-syntax atest*
+  (syntax-rules (=>)
+    [(_ fn (args => expected) ...)
+     (begin (test* (format "applicable? ~a~s" 'fn 'args)
+                   expected (applicable? fn . args))
+            ...)]))
+
+(atest* cons [() => #f] [(<top>) => #f] [(<top> <top>) => #t]
+        [(<top> <top> <top>) => #f])
+(atest* list [() => #t] [(<top>) => #t] [(<top> <top>) => #t])
+(atest* apply [() => #f] [(<top>) => #f] [(<top> <top>) => #t])
+
+(atest* ref [() => #f] [(<boolean>) => #f] [(<boolean> <top>) => #f]
+        [(<top>) => #f] [(<top> <symbol>) => #t] [(<top> <symbol> <top>) => #t]
+        [(<vector>) => #f] [(<vector> <integer>) => #t]
+        [(<vector> <integer> <integer>) => #f]
+        [(<vector> <integer> <top>) => #f])
+
+(atest* #/a/ [() => #f] [(<string>) => #t] [(<integer>) => #f])
 
 (test-end)
 

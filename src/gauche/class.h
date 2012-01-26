@@ -112,6 +112,9 @@ SCM_EXTERN ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
                                                      int numInits,
                                                      u_long flags);
 SCM_EXTERN ScmObj Scm_ComputeCPL(ScmClass *klass);
+SCM_EXTERN int    Scm_MethodApplicableForClasses(ScmMethod *m,
+                                                 ScmClass *types[],
+                                                 int nargs);
 SCM_EXTERN ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf,
                                                ScmObj *argv,
                                                int argc,

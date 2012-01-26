@@ -2099,6 +2099,24 @@ ScmObj Scm_InvalidApply(ScmObj *argv, int argc, ScmGeneric *gf)
     return SCM_UNDEFINED;
 }
 
+/* method-appliable-for-classes?
+   NB: This may need to be redesigned once we support eqv specializer.
+ */
+int Scm_MethodApplicableForClasses(ScmMethod *m, ScmClass *types[], int nargs)
+{
+    if (nargs < m->common.required
+        || (!m->common.optional && nargs != m->common.required)) {
+        return FALSE;
+    } else {
+        ScmClass **sp = m->specializers;
+        int n = 0;
+        for (; n < m->common.required; n++) {
+            if (!Scm_SubtypeP(types[n], sp[n])) return FALSE;
+        }
+    }
+    return TRUE;
+}
+
 /* compute-applicable-methods */
 ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *argv, int argc,
                                     int applyargs)
@@ -2126,18 +2144,11 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *argv, int argc,
     }
 
     SCM_FOR_EACH(mp, methods) {
-        ScmMethod *m = SCM_METHOD(SCM_CAR(mp));
-        ScmClass **tp, **sp;
-        int n;
-        
-        if (argc < m->common.required) continue;
-        if (!m->common.optional && argc > m->common.required) continue;
-        for (tp = typev, sp = m->specializers, n = 0;
-             n < m->common.required;
-             tp++, sp++, n++) {
-            if (!Scm_SubtypeP(*tp, *sp)) break;
+        ScmObj m = SCM_CAR(mp);
+        SCM_ASSERT(SCM_METHODP(m));
+        if (Scm_MethodApplicableForClasses(SCM_METHOD(m), typev, argc)) {
+            SCM_APPEND1(h, t, SCM_OBJ(m));
         }
-        if (n == m->common.required) SCM_APPEND1(h, t, SCM_OBJ(m));
     }
     return h;
 }

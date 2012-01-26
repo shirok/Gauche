@@ -7696,24 +7696,62 @@ weak ベクタ @var{wvec}の@var{k}番目の要素を@var{obj}に変更します
 @c NODE 手続きと継続
 
 In Scheme, @emph{procedures} are fundamental blocks to build
-a program.  A procedure represents a certain computation,
+a program (@xref{Making Procedures}).
+A procedure represents a certain computation,
 possibly parameterized, and can be @emph{applied} to the actual
-arguments to execute the computation.  Scheme even allows you to
-capture 
+arguments to execute the computation.  Scheme also provides
+the means to extract the continuation of the current computation
+and wraps it in a procedure (@xref{Continuations}).
 
-Gauche extends 
+Gauche extends the concept of procedure application, allowing
+you to apply any object; for example, you can set up Gauche to
+accept @code{("abc" 2)} can be a valid application syntax.
+@xref{Applicable objects}, for the details.
+
+@menu
+* Procedure class and applicability::  
+* Universal accessor::          
+* Combinators::                 
+* Optional argument parsing::   
+* Procedure arity::             
+* Applicable objects::          
+* Continuations::               
+* Multiple values::             
+@end menu
+
+@node Procedure class and applicability, Universal accessor, Procedures and continuations, Procedures and continuations
+@subsection Procedure class and applicability
 
 @deftp {Builtin Class} <procedure>
 @clindex procedure
+@c EN
+Represents a procedure.  Ordinary Scheme procedures created by @code{lambda}
+is an instance of this class, as well as built-in primitive procedures
+written in C.  Note that, in Gauche, other type of objects can behave
+as a procedure; so checking whether an object is a procedure or not doesn't
+mean much unless you want to mess around with Gauche internals.
+@c JP
+手続きのクラスです。@code{lambda}で作られた手続きや
+組み込みのプリミティブ手続きはこのクラスのインスタンスです。
+Gaucheではどんな型のオブジェクトも適用可能にできるので、あるオブジェクトが
+@code{<procedure>}クラスのインスタンスであるかとうかということは
+あまり気にする必要はありません。Gaucheの中身をいじってみる時以外は。
+@c COMMON
 @end deftp
 
 @defun procedure? obj
 [R5RS]
-@c EN
-Returns @code{#t} if @var{obj} is a procedure, @code{#f} otherwise.
-@c JP
-@var{obj}が手続きなら@code{#t}を、そうでなければ@code{#f}を返します。
-@c COMMON
+Returns @code{#t} if @var{obj} is @emph{inherently} applicable
+objects, @code{#f} otherwise.  By @emph{inherently} applicable
+we mean Gauche unconditionally understands that @var{obj} can be called
+as a procedure; an instance of @code{<procedure>} is so,
+as well as generic functions (@code{<generic>}) and methods (@code{<method>}).
+@xref{Generic function and method}, for the details.
+
+Since you can make any type of objects applicable at any time
+(@xref{Applicable objects}), the fact that @code{procedure?} returned
+@code{#f} doesn't mean that the object cannot be applied.
+To check if an object can be applied or not, use @code{applicable?} below.
 @end defun
 
 @defun apply proc arg1 @dots{} args
@@ -7735,19 +7773,31 @@ Returns (a) value(s) @var{proc} returns.
 @end example
 @end defun
 
+@defun applicable? obj class @dots{}
+Checks if @var{obj} can be called with the types of arguments
+listed in @var{class} @dots{}.  That is, 
+when @code{(applicable? foo <string> <integer>)} returns @code{#t},
+then you can call @code{foo} as @code{(foo "x" -2)}, for example.
+(It doesn't mean you won't get an error; @code{foo} may be accept
+only nonnegative integers, which you cannot tell from the result of
+@code{applicable?}.  But if @code{applicable?} returns @code{#t},
+Gauche won't complain ``foo is not applicable'' when you call @code{foo}.
 
-@menu
-* Universal accessor::          
-* Combinators::                 
-* Optional argument parsing::   
-* Procedure arity::             
-* Applicable objects::          
-* Continuations::               
-* Multiple values::             
-@end menu
+This procedure takes applicable objects into account.  So, for example,
+@code{(applicable? #/a/ <string>)} returns @code{#t}, for the regular
+expressions are applicable to a string (@xref{Regular expressions}).
 
+Traditional Scheme procedures (such as ones created by @code{lambda})
+only cares the number of arguments but not their types; to check
+applicablity of such procedures, just pass @code{<top>} as the argument
+type.
 
-@node Universal accessor, Combinators, Procedures and continuations, Procedures and continuations
+@example
+(applicable? cons <top> <top>) @result{} #t
+@end example
+@end defun
+
+@node Universal accessor, Combinators, Procedure class and applicability, Procedures and continuations
 @subsection Universal accessor
 @c NODE 万能アクセサ
 

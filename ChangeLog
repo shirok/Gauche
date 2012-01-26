@@ -10,6 +10,13 @@
 	  any directory and it should build and install with make &
 	  make install.
 
+2012-01-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (Scm_MethodApplicableForClasses),
+	  lib/gauche/procedure.scm (applicable?): Added applicable?.
+	* src/autoloads.scm, doc/corelib.texi, test/object.scm: Changed
+	  accordingly.
+
 2012-01-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/pthread.h: Fix for cygwin pthread: Real-time signals
