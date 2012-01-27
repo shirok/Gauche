@@ -21,7 +21,7 @@ util--sparse.$(SOEXT) : $(OBJECTS)
 
 $(OBJECTS): ctrie.h spvec.h sptab.h
 
-util--sparse.c sparse.sci : $(srcdir)/sparse.scm
+util--sparse.c sparse.sci : sparse.scm
 	$(PRECOMP) -e -P -o util--sparse $(srcdir)/sparse.scm 
 
 install : install-std

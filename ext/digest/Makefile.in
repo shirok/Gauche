@@ -20,7 +20,7 @@ rfc--md5.$(SOEXT) : $(md5_OBJECTS)
 	$(MODLINK) rfc--md5.$(SOEXT) $(md5_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 md5.sci rfc--md5.c : md5.scm
-	$(PRECOMP) -e -o rfc--md5 md5.scm
+	$(PRECOMP) -e -P -o rfc--md5 $(srcdir)/md5.scm
 
 sha_OBJECTS = rfc--sha.$(OBJEXT) sha2.$(OBJEXT)
 
@@ -30,7 +30,7 @@ rfc--sha.$(SOEXT) : $(sha_OBJECTS)
 	$(MODLINK) rfc--sha.$(SOEXT) $(sha_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 sha.sci rfc--sha.c : sha.scm
-	$(PRECOMP) -e -o rfc--sha sha.scm
+	$(PRECOMP) -e -P -o rfc--sha $(srcdir)/sha.scm
 
 install : install-std
 

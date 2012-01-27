@@ -1,3 +1,11 @@
+2012-01-27  Shiro Kawai  <shiro@acm.org>
+
+	* Makefile.in, wirebuildlibs, configure.ac, gc/configure.ac,
+	  */Makefile.in, ext/xlink, */tset.scm, src/main.c: Re-enable
+	  out-of-source-tree build.  Just call top configure from
+	  any directory and it should build and install with make &
+	  make install.
+
 2012-01-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/pthread.h: Fix for cygwin pthread: Real-time signals

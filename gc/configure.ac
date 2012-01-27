@@ -51,7 +51,9 @@ dnl [SK] Original Boehm GC checks gcc for the default thread support.
 dnl In our case we need the thread config in sync with the main Gauche
 dnl source tree.  The Gauche's configure leaves its thread settings in
 dnl 'config.threads' so we just read it.
-THREADS=`cat ${srcdir}/../config.threads`
+dnl config.threads is created in the build directory instead of $srcdir,
+dnl so we directly refer it.
+THREADS=`cat ../config.threads`
 dnl AC_ARG_ENABLE(threads,
 dnl   [AC_HELP_STRING([--enable-threads=TYPE], [choose threading package])],
 dnl   THREADS=$enableval,

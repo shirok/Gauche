@@ -176,14 +176,15 @@
 
 (let ()
   (define (test-biport file size)
-    (let* ((src (open-input-file file))
+    (let* ((ifile #`",(sys-dirname (current-load-path))/,file")
+           (src (open-input-file ifile))
            (p (apply make <buffered-input-port>
                      :fill  (lambda (buf) (read-block! buf src))
                      :close (lambda () (close-input-port src))
                      (if size
                        (list :buffer-size size)
                        '())))
-           (a (file->string-list file))
+           (a (file->string-list ifile))
            (b (port->string-list p)))
       (close-input-port p)
       (list (equal? a b) (port-closed? src))))
@@ -233,7 +234,8 @@
 
 (let ()
   (define (test-boport file size)
-    (let* ((src  (file->string file))
+    (let* ((ifile #`",(sys-dirname (current-load-path))/,file")
+           (src  (file->string ifile))
            (sink (open-output-string))
            (closed? #f)
            (p (apply make <buffered-output-port>

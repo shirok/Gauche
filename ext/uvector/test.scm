@@ -1461,11 +1461,11 @@
        (s32vector->string '#s32(64 65 66 67 68) 0 8))
 
 ;; test for multibyte chars
-(case (gauche-character-encoding)
-  [(euc-jp) (load "./test-eucjp")]
-  [(utf-8)  (load "./test-utf8")]
-  [(sjis)   (load "./test-sjis")]
-  [else #f])
+(cond-expand
+ [gauche.ces.eucjp (include "./test-eucjp")]
+ [gauche.ces.utf8  (include "./test-utf8")]
+ [gauche.ces.sjis  (include "./test-sjis")]
+ [else])
 
 ;;-------------------------------------------------------------------
 (test-section "uvector alias")
@@ -1539,10 +1539,7 @@
 ;;-------------------------------------------------------------------
 ; (use gauche.array)
 (test-section "gauche.array")
-(if (member "." *load-path*) ;; trick to allow in-place test
-  (load "array")
-  (load "gauche/array"))
-(import gauche.array)
+(use gauche.array)
 (test-module 'gauche.array)
 
 (test-section "simple array op")

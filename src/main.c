@@ -276,13 +276,13 @@ void test_paths_setup(void)
        be searched first (hence it should come latter), since some
        extension modules are built from the file in src then linked
        from lib, and we want to test the one in lib. */
-    if (access("../src/libalpha.scm", R_OK) == 0
+    if (access("../src/gauche-init.scm", R_OK) == 0
         && access("../libsrc/srfi-1.scm", R_OK) == 0
         && access("../lib/srfi-0.scm", R_OK) == 0) {
         Scm_AddLoadPath("../src", FALSE);
         Scm_AddLoadPath("../libsrc", FALSE);
         Scm_AddLoadPath("../lib", FALSE);
-    } else if (access("../../src/libalpha.scm", R_OK) == 0
+    } else if (access("../../src/gauche-init.scm", R_OK) == 0
                && access("../../libsrc/srfi-1.scm", R_OK) == 0
                && access("../../lib/srfi-0.scm", R_OK) == 0) {
         Scm_AddLoadPath("../../src", FALSE);

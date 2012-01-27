@@ -31,7 +31,8 @@
 
 ;; file translation toplevel
 (define (process tmpl-file rules)
-  (let1 c-file (regexp-replace #/\.tmpl$/ tmpl-file "")
+  ;; we take basename, for the input file may be prefixed by $srcdir.
+  (let1 c-file (sys-basename (regexp-replace #/\.tmpl$/ tmpl-file ""))
     (load-template tmpl-file)
     (with-output-to-file c-file
       (^[]

@@ -28,17 +28,17 @@ gauche--charconv.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--charconv.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 convaux.c : convaux.scm
-	$(PRECOMP) convaux.scm
+	$(PRECOMP) $(srcdir)/convaux.scm
 
 jconv.$(OBJEXT) : eucj2ucs.c ucs2eucj.c jconv.c
 
 guess.$(OBJEXT) : guess_tab.c guess.c
 
 eucj2ucs.c ucs2eucj.c : cvt.scm euc-jp-2000-std.txt
-	$(GOSH) cvt.scm
+	$(GOSH) $(srcdir)/cvt.scm $(srcdir)/euc-jp-2000-std.txt
 
 guess_tab.c : guess.scm
-	$(GOSH) guess.scm guess_tab.c
+	$(GOSH) $(srcdir)/guess.scm guess_tab.c
 
 pre-package-data :
 	cd data; $(MAKE) GOSH=$(GOSH)

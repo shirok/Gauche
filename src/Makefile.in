@@ -57,7 +57,7 @@ LDFLAGS  = @LDFLAGS@
 # These are set by configure
 DEFS     = @DEFS@
 OPTFLAGS = @OPTFLAGS@
-INCLUDES = -I$(srcdir) -I$(srcdir)/../gc/include -I$(srcdir)/../gc/libatomic_ops/src @LOCAL_INC@
+INCLUDES = -I$(srcdir) -I. -I$(srcdir)/../gc/include -I../gc/include -I$(srcdir)/../gc/libatomic_ops/src -I../gc/libatomic_ops/src @LOCAL_INC@
 OBJEXT   = @OBJEXT@
 EXEEXT   = @EXEEXT@
 LIBGAUCHE = @LIBGAUCHE@
@@ -102,7 +102,7 @@ BUILD_CFLAGS = -O2
 # when building from tarball.)
 # We clear GAUCHE_LOAD_PATH to make sure we won't read nonstandard stuff.
 BUILD_GOSH  = GAUCHE_LOAD_PATH="" GAUCHE_DYNLOAD_PATH="" \
-	    gosh -l./preload -I$(top_srcdir)/src -I$(top_srcdir)/lib
+	    gosh -l$(srcdir)/preload -I$(top_srcdir)/src -I$(top_srcdir)/lib
 
 LIB_INSTALL_DIR  = @libdir@
 BIN_INSTALL_DIR  = @bindir@
@@ -222,13 +222,13 @@ relink :
 $(OBJECTS) : $(HEADERS)
 
 autoloads.c : autoloads.scm
-	$(BUILD_GOSH) ./autoloads.scm
+	$(BUILD_GOSH) autoloads.scm
 
 builtin-syms.c gauche/builtin-syms.h : builtin-syms.scm
-	$(BUILD_GOSH) ./builtin-syms.scm
+	$(BUILD_GOSH) builtin-syms.scm
 
 vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
-	$(BUILD_GOSH) ./geninsn
+	$(BUILD_GOSH) geninsn $(srcdir)/vminsn.scm
 
 compile.c  : compile.scm compile-0.scm $(PRECOMP_DEPENDENCY)
 libalpha.c : libalpha.scm $(PRECOMP_DEPENDENCY)
@@ -297,10 +297,10 @@ $(host)-gauche-config: gauche-config.c
 	$(BUILD_CC) $(BUILD_CFLAGS) $(DEFS) -o $@ gauche-config.c
 
 # we need thread settings in sync with gc.
-gauche/config_threads.h : $(top_srcdir)/gc/include/private/config.h
+gauche/config_threads.h : $(top_builddir)/gc/include/private/config.h
 	rm -f gauche/config_threads.h
 	echo "/* Generated automatically from gc config header; do not edit. */" > gauche/config_threads.h
-	grep '^#define GC_[0-9A-Z_]*THREADS' $(top_srcdir)/gc/include/private/config.h >> gauche/config_threads.h || :
+	grep '^#define GC_[0-9A-Z_]*THREADS' $(top_builddir)/gc/include/private/config.h >> gauche/config_threads.h || :
 
 gauche-config.c gauche/arch.h ../lib/gauche/config.scm : genconfig
 	$(SHELL) ./genconfig
@@ -308,20 +308,20 @@ gauche-config.c gauche/arch.h ../lib/gauche/config.scm : genconfig
 gauche-install : gauche-install.in
 	@rm -f gauche-install
 	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-install && \
-	cat gauche-install.in >> gauche-install
-	@chmod -w gauche-install
+	cat $(srcdir)/gauche-install.in >> gauche-install
+	@chmod -w+x gauche-install
 
 gauche-package : gauche-package.in
 	@rm -f gauche-package
 	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-package && \
-	cat gauche-package.in >> gauche-package
-	@chmod -w gauche-package
+	cat $(srcdir)/gauche-package.in >> gauche-package
+	@chmod -w+x gauche-package
 
 gauche-cesconv : gauche-cesconv.in
 	@rm -f gauche-cesconv
 	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-cesconv && \
-	cat gauche-cesconv.in >> gauche-cesconv 
-	@chmod -w gauche-cesconv
+	cat $(srcdir)/gauche-cesconv.in >> gauche-cesconv 
+	@chmod -w+x gauche-cesconv
 
 # tests -----------------------------------------------
 TESTFILES  = `cat ../test/TESTS`
@@ -337,19 +337,23 @@ test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT)
 	./test-arith >> test.log
 	@for testfile in $(TESTFILES); do \
 	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
-	  ./gosh -ftest -I../test $$testfile >> test.log; \
+          top_srcdir=$(top_srcdir) \
+	  ./gosh -ftest -I$(top_srcdir)/test $$testfile >> test.log; \
 	done
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
-	 ./gosh -ftest -e "(define *case-fold* #f)" ../test/symcase.scm >> test.log
+          top_srcdir=$(top_srcdir) \
+	 ./gosh -ftest -e "(define *case-fold* #f)" $(top_srcdir)/test/symcase.scm >> test.log
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
-	 ./gosh -ftest -fcase-fold -e "(define *case-fold* #t)" ../test/symcase.scm >> test.log
+          top_srcdir=$(top_srcdir) \
+	 ./gosh -ftest -fcase-fold -e "(define *case-fold* #t)" $(top_srcdir)/test/symcase.scm >> test.log
 	@echo "See test.log for details."
 
 # tests run after ext/* tests
 test2 : gosh$(EXEEXT)
 	@for testfile in $(TEST2FILES); do \
 	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
-	  ./gosh -ftest -I../test $$testfile >> test.log; \
+          top_srcdir=$(top_srcdir) \
+	  ./gosh -ftest -I$(top_srcdir)/test $$testfile >> test.log; \
 	done
 
 test-vmstack$(EXEEXT) : test-vmstack.$(OBJEXT) $(LIBGAUCHE).$(SOEXT)
@@ -403,19 +407,21 @@ INSTALL_DIRS = $(DESTDIR)$(HEADER_INSTALL_DIR) \
 	       $(DESTDIR)$(SITE_ARCH_DIR)
 @CROSS_COMPILING_no@GAUCHE_CONFIG = ./gauche-config
 @CROSS_COMPILING_yes@GAUCHE_CONFIG = ./$(host)-gauche-config
+@CROSS_COMPILING_no@GAUCHE_INSTALL = ./gauche-install
+@CROSS_COMPILING_yes@GAUCHE_INSTALL = gosh $(srcdir)/gauche-install.in
 
 install : all relink
 	$(MKINSTDIR) $(INSTALL_DIRS)
-	$(INSTALL) -m 444 $(INSTALL_HEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)
-	$(INSTALL) -m 444 $(INSTALL_SUBHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche
 	$(INSTALL)        $(INSTALL_LIBS) $(DESTDIR)$(LIB_INSTALL_DIR)
 	$(INSTALL)        $(INSTALL_LIBS) $(DESTDIR)$(ARCH_INSTALL_DIR)
 	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(BIN_INSTALL_DIR)
 	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(ARCH_INSTALL_DIR)
-	$(INSTALL) -m 444 $(INSTALL_SCMS) $(DESTDIR)$(SCM_INSTALL_DIR)
 	@case `$(GAUCHE_CONFIG) --arch` in *-cygwin*|*-mingw*) \
 	  $(INSTALL) $(INSTALL_LIBS) $(DESTDIR)$(BIN_INSTALL_DIR);;\
 	esac
+	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_HEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)
+	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_SUBHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche
+	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_SCMS) $(DESTDIR)$(SCM_INSTALL_DIR)
 	$(POSTINSTALL)
 
 uninstall :

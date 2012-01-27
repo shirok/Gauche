@@ -23,7 +23,7 @@ crypt--bcrypt.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) crypt--bcrypt.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 bcrypt.sci crypt--bcrypt.c : bcrypt.scm
-	$(PRECOMP) -e -o crypt--bcrypt bcrypt.scm
+	$(PRECOMP) -e -P -o crypt--bcrypt $(srcdir)/bcrypt.scm
 
 install : install-std
 

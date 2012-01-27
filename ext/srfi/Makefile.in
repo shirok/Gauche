@@ -56,7 +56,7 @@ srfi-19.$(SOEXT) : $(srfi_19_OBJECTS)
 	$(MODLINK) srfi-19.$(SOEXT) $(srfi_19_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 srfi-19.c srfi-19.sci : srfi-19.scm
-	$(PRECOMP) -e $(srcdir)/srfi-19.scm
+	$(PRECOMP) -e -P $(srcdir)/srfi-19.scm
 
 #
 # srfi-43
@@ -68,5 +68,5 @@ srfi-43.$(SOEXT) : $(srfi_43_OBJECTS)
 	$(MODLINK) srfi-43.$(SOEXT) $(srfi_43_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 srfi-43.c srfi-43.sci : srfi-43.scm
-	$(PRECOMP) -e $(srcdir)/srfi-43.scm
+	$(PRECOMP) -e -P $(srcdir)/srfi-43.scm
 

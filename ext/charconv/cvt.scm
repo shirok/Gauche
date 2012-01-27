@@ -311,7 +311,7 @@
 ;;
 
 (define (main args)
-  (let1 data (with-input-from-file "euc-jp-2000-std.txt" parse)
+  (let1 data (with-input-from-file (cadr args) parse)
     (with-output-to-file "eucj2ucs.c"
       (lambda () (generate-eucj->ucs data)))
     (with-output-to-file "ucs2eucj.c"

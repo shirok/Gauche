@@ -6,9 +6,9 @@ SCM_CATEGORY = sxml
 
 include ../Makefile.ext
 
-SCMCOMPILE = $(GOSH) -I. -ladaptor -E "import sxml.adaptor" \
+SCMCOMPILE = $(GOSH) -l$(srcdir)/adaptor -E "import sxml.adaptor" \
                  -E 'provide "sxml/adaptor"' $(top_srcdir)/src/precomp
-SCMTRANS   = $(GOSH) ./trans.scm
+SCMTRANS   = $(GOSH) $(srcdir)/trans.scm
 
 GENERATED_TARGET = tree-trans.scm to-html.scm \
                    ssax.sci tools.sci sxpath.sci \
@@ -37,7 +37,7 @@ sxml--ssax.$(SOEXT) : $(ssax_OBJECTS)
 
 sxml--ssax.c ssax.sci : sxml-ssax.scm.in src/SSAX.scm 
 	$(SCMTRANS) $(srcdir)/sxml-ssax.scm.in
-	$(SCMCOMPILE) -e -i ssax.sci -o sxml--ssax sxml-ssax.scm
+	$(SCMCOMPILE) -e -i ssax.sci -o sxml--ssax $(srcdir)/sxml-ssax.scm
 
 ### sxml-sxpath
 
@@ -48,7 +48,7 @@ sxml--sxpath.$(SOEXT) : $(sxpath_OBJECTS)
 
 sxml--sxpath.c sxpath.sci : sxml-sxpath.scm.in src/sxpath.scm src/sxpathlib.scm src/sxpath-ext.scm tools.sci
 	$(SCMTRANS) $(srcdir)/sxml-sxpath.scm.in
-	$(SCMCOMPILE) -e -i sxpath.sci -o sxml--sxpath sxml-sxpath.scm
+	$(SCMCOMPILE) -e -i sxpath.sci -o sxml--sxpath $(srcdir)/sxml-sxpath.scm
 
 ### sxml-tools
 
@@ -59,7 +59,7 @@ sxml--tools.$(SOEXT) : $(tools_OBJECTS)
 
 sxml--tools.c tools.sci : sxml-tools.scm.in src/sxml-tools.scm
 	$(SCMTRANS) $(srcdir)/sxml-tools.scm.in
-	$(SCMCOMPILE) -e -i tools.sci -o sxml--tools sxml-tools.scm
+	$(SCMCOMPILE) -e -i tools.sci -o sxml--tools $(srcdir)/sxml-tools.scm
 
 ### sxml-serializer
 
@@ -70,24 +70,24 @@ sxml--serializer.$(SOEXT) : $(serializer_OBJECTS)
 
 sxml--serializer.c serializer.sci : sxml-serializer.scm.in src/serializer.scm
 	$(SCMTRANS) $(srcdir)/sxml-serializer.scm.in
-	$(SCMCOMPILE) -e -i serializer.sci -o sxml--serializer sxml-serializer.scm
+	$(SCMCOMPILE) -e -i serializer.sci -o sxml--serializer $(srcdir)/sxml-serializer.scm
 
 ### miscellaneous
 tree-trans.scm : src/SXML-tree-trans.scm tree-trans.scm.in
-	$(GOSH) ./trans.scm tree-trans.scm.in
+	$(SCMTRANS) $(srcdir)/tree-trans.scm.in
 
 to-html.scm : src/SXML-to-HTML.scm to-html.scm.in
-	$(GOSH) ./trans.scm to-html.scm.in
+	$(SCMTRANS) $(srcdir)/to-html.scm.in
 
 ### tests
 ssax-test.scm: ssax-test.scm.in
-	$(GOSH) ./trans.scm ssax-test.scm.in
+	$(SCMTRANS) $(srcdir)/ssax-test.scm.in
 
 tree-trans-test.scm: tree-trans-test.scm.in
-	$(GOSH) ./trans.scm tree-trans-test.scm.in
+	$(SCMTRANS) $(srcdir)/tree-trans-test.scm.in
 
 to-html-test.scm: to-html-test.scm.in
-	$(GOSH) ./trans.scm to-html-test.scm.in
+	$(SCMTRANS) $(srcdir)/to-html-test.scm.in
 
 check : $(GENERATED_TEST)
 

@@ -26,7 +26,7 @@ gauche--net.$(SOEXT) : $(OBJECTS)
 netlib.c : netlib.stub
 
 netaux.c : netaux.scm
-	$(PRECOMP) netaux.scm
+	$(PRECOMP) $(srcdir)/netaux.scm
 
 install : install-std
 

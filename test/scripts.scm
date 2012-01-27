@@ -54,8 +54,10 @@
 (test-section "gauche-install")
 
 (define (run-install . args)
-  (run-process `("./gosh" "-ftest" "gauche-install.in" ,@args)
-               :output *nulldev* :wait #t))
+  (let1 gauche-install
+      (build-path (or (sys-getenv "top_srcdir") "..") "src" "gauche-install.in")
+    (run-process `("./gosh" "-ftest" ,gauche-install ,@args)
+                 :output *nulldev* :wait #t)))
 
 (remove-files "test.o" "test1.o")
 
@@ -146,27 +148,31 @@
     (test* #`"checking existence of ,name" #t
            (file-exists? #`"test.o/Test/,name")))
   (define pwd (sys-getcwd))
+  (define top-srcdir (sys-normalize-pathname
+                      (or (sys-getenv "top_srcdir") "..")
+                      :absolute #t :canonicalize #t))
 
   ;; We need to fake some directories in order to make this
   ;; work without installing.
   (with-output-to-file "test.o/run"
     (cut for-each write
-         '((use gauche.config)
+         `((use gauche.config)
            (define prefix (if (equal? (sys-basename (sys-getcwd)) "Test")
                             "../" ""))
            (define sep (cond-expand [gauche.os.windows ";"][else ":"]))
+           (define top-srcdir ,top-srcdir)
            ;; This is used to copy templates from.
-           (define (gauche-library-directory) #`",|prefix|../../ext/x")
+           (define (gauche-library-directory) #`",|top-srcdir|/ext/x")
            ;; Intercept gauche-config to override compiler flags
            (define gauche-config-orig
              (with-module gauche.config gauche-config))
            (define-in-module gauche.config (gauche-config opt)
              (cond [(equal? opt "--incdirs")
-                    #`",|prefix|../../src,|sep|,|prefix|../../gc/include"]
+                    #`",|top-srcdir|/src,|sep|,|prefix|../../src/,|sep|,|top-srcdir|/gc/include"]
                    [(equal? opt "--archdirs")
                     #`",|prefix|../../src"]
                    [else (gauche-config-orig opt)]))
-           (load #`",|prefix|../gauche-package.in"))))
+           (load #`",|top-srcdir|/src/gauche-package.in"))))
 
   (run-process
    `(../gosh -ftest ./run generate Test test.module)

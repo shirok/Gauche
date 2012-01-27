@@ -19,8 +19,8 @@ all : $(LIBFILES)
 parser--peg.$(SOEXT) : $(OBJECTS) 
 	$(MODLINK) parser--peg.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-parser--peg.c peg.sci : $(srcdir)/peg.scm
-	$(PRECOMP) --e -P -o parser--peg \
+parser--peg.c peg.sci : peg.scm
+	$(PRECOMP) -e -P -o parser--peg \
 	           --keep-private-macro=return-failure/compound,return-failure/expect,return-result \
 	           $(srcdir)/peg.scm
 

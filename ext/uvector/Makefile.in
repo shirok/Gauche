@@ -27,22 +27,22 @@ libgauche-uvector.$(SOEXT) : $(uvector_OBJECTS)
 gauche/uvector.h : uvector.h.tmpl uvgen.scm
 	if test ! -d gauche; then mkdir gauche; fi
 	rm -rf gauche/uvector.h
-	$(GOSH) ./uvgen.scm uvector.h.tmpl && mv uvector.h gauche/uvector.h
+	$(GOSH) $(srcdir)/uvgen.scm $(srcdir)/uvector.h.tmpl && mv uvector.h gauche/uvector.h
 
 uvector.$(OBJEXT) uvlib.$(OBJEXT) uvinit.$(OBJEXT) : gauche/uvector.h uvectorP.h
 
 uvector.c : uvector.c.tmpl uvgen.scm
 	rm -rf uvector.c
-	$(GOSH) ./uvgen.scm uvector.c.tmpl
+	$(GOSH) $(srcdir)/uvgen.scm $(srcdir)/uvector.c.tmpl
 
 uvlib.c : uvlib.stub
 
 uvlib.stub : uvlib.stub.tmpl
 	rm -rf uvlib.stub
-	$(GOSH) ./uvgen.scm uvlib.stub.tmpl
+	$(GOSH) $(srcdir)/uvgen.scm $(srcdir)/uvlib.stub.tmpl
 
 uvutil.c : uvutil.scm
-	$(PRECOMP) uvutil.scm
+	$(PRECOMP) $(srcdir)/uvutil.scm
 
 install : install-std
 

@@ -1,0 +1,50 @@
+#!/bin/sh
+# This script is called when building Gauche in a different directory
+# than srcdir.  The first argument is srcdir, and the second is the
+# value of LN_S set by AC_PROG_LN_S.
+
+if [ $# -ne 2 ]; then
+  echo 'Usage: wirebuildlibs "$top_srcdir" "$LN_S"'
+  echo 'Run this script in top_builddir to create links necessary to run'
+  echo 'gosh in place. (e.g. cd src; ./gosh -ftest).'
+  exit 1
+fi
+
+top_srcdir=$1
+LN_S=$2
+
+# Sanity check
+if [ -z "$top_srcdir" ]; then
+  echo 'wirebuildlibs: $top_srcdir cannot be empty.'
+  exit 1
+fi
+if [ -z "$LN_S" ]; then
+  echo 'wirebuildlibs: $LN_S cannot be empty.'
+  exit 1
+fi
+
+echo "Wiring necessary library files..."
+
+# We want top_srcdir be an absolute path to avoid complications of
+# making links to deep directories.
+echo $top_srcdir | grep '^/' > /dev/null || top_srcdir=`pwd`/$top_srcdir
+
+# Older autoconf sets LN_S to "cp -p" when "ln -s" isn't available,
+# but that doesn't handle directories.
+if [ "$LN_S" = "cp -p" ]; then
+  LN_S="cp -pR"
+fi
+
+rm -f libsrc
+$LN_S $top_srcdir/libsrc libsrc
+for f in `(cd $top_srcdir; find lib -name '*.scm' -print)`; do
+  if [ $f != "lib/gauche/config.scm" -a $f != "slib.scm" ]; then
+    mkdir -p `dirname $f`
+    rm -f $f
+    $LN_S $top_srcdir/$f $f
+  fi
+done
+rm -f src/gauche-init.scm
+$LN_S $top_srcdir/src/gauche-init.scm src/gauche-init.scm
+rm -f test
+$LN_S $top_srcdir/test test

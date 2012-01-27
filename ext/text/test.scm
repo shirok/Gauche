@@ -1,3 +1,3 @@
-(load "./test-gettext.scm")
-(load "./test-tr.scm")
-(load "./test-unicode.scm")
+(include "./test-gettext.scm")
+(include "./test-tr.scm")
+(include "./test-unicode.scm")

@@ -3,7 +3,7 @@
 ;;
 
 ;; ssax test is derived from the original SSAX source.
-(load "./ssax-test.scm")
+(include "./ssax-test.scm")
 
 ;(load "./tree-trans-test.scm")
 ;(load "./to-html-test.scm")

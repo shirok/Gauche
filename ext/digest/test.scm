@@ -1,8 +1,8 @@
 (use gauche.test)
 (test-start "digest framework")
 
-(load "./test-md5")
-(load "./test-sha")
-(load "./test-hmac")
+(include "./test-md5")
+(include "./test-sha")
+(include "./test-hmac")
 
 (test-end)

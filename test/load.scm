@@ -128,27 +128,27 @@
 
 (with-input-from-file "test.o/c.out"
   (^[]
-    (test* "current-load-history (1)" #/^\(\(#<iport [.\/]*test\/load\.scm/
+    (test* "current-load-history (1)" #/^\(\(#<iport [^>]*test\/load\.scm/
            (read-line) rxmatch)
     (test* "current-load-next (1)" "()" (read-line))
-    (test* "current-load-port (1)" #/^#<iport \.\/test\.o\/c1\.scm/
+    (test* "current-load-port (1)" #/^#<iport [^>]*\/test\.o\/c1\.scm/
            (read-line) rxmatch)
     (test* "current-load-path (1)" "./test.o/c1.scm"
            (read-line) rxmatch)
 
     (test* "current-load-history (2)"
-           #/^\(\(#<iport [.\/]*test\.o\/c1\.scm [^\)]*\) \(#<iport [.\/]*test\/load\.scm [^\)]*\)/
+           #/^\(\(#<iport [^>]*test\.o\/c1\.scm [^\)]*\) \(#<iport [^>]*test\/load\.scm [^\)]*\)/
            (read-line) rxmatch)
     (test* "current-load-next (2)" "()" (read-line))
-    (test* "current-load-port (2)" #/^#<iport \.\/test\.o\/c2\.scm/
+    (test* "current-load-port (2)" #/^#<iport [^>]*\/test\.o\/c2\.scm/
            (read-line) rxmatch)
     (test* "current-load-path (2)" "./test.o/c2.scm"
            (read-line) rxmatch)
 
-    (test* "current-load-history (3)" #/^\(\(#<iport [.\/]*test\/load\.scm/
+    (test* "current-load-history (3)" #/^\(\(#<iport [^>]*test\/load\.scm/
            (read-line) rxmatch)
     (test* "current-load-next (3)" "()" (read-line))
-    (test* "current-load-port (3)" #/^#<iport \.\/test\.o\/c1\.scm/
+    (test* "current-load-port (3)" #/^#<iport [^>]*\/test\.o\/c1\.scm/
            (read-line) rxmatch)
     (test* "current-load-path (3)" "./test.o/c1.scm"
            (read-line) rxmatch)

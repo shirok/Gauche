@@ -31,9 +31,10 @@
                    (begin (writer data cv) (loop (reader in))))))))))))
 
 (define (map-test tester file from-codes to-codes)
-  (for-each (lambda (from)
-              (for-each (lambda (to) (tester file from to)) to-codes))
-            from-codes))
+  (let1 srcdir (sys-dirname (current-load-path))
+    (dolist [from from-codes]
+      (dolist [to to-codes]
+        (tester #`",|srcdir|/,|file|" from to)))))
 
 ;;--------------------------------------------------------------------
 (test-section "ces-equivalent? and ces-upper-compatible?")
@@ -360,7 +361,7 @@
 
 (dolist (file '("data/jp1" "data/jp2" "data/jp3" "data/jp4"))
   (dolist (code '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
-    (test-call-with file code)))
+    (test-call-with #`",(sys-dirname (current-load-path))/,|file|" code)))
 
 ;;--------------------------------------------------------------------
 (test-section "ucs <-> char")
@@ -422,7 +423,9 @@
   (when (ces-conversion-supported? (gauche-character-encoding) encoding)
     (test* (format "program source port reading from jpsrc~a.~a" num encoding)
            *target-string*
-           (call-with-input-file (format "data/jpsrc~a.~a.scm" num encoding)
+           (call-with-input-file (format "~a/data/jpsrc~a.~a.scm"
+                                         (sys-dirname (current-load-path))
+                                         num encoding)
              (lambda (in)
                (let ((src (open-coding-aware-port in)))
                  (let loop ((x (read src)))

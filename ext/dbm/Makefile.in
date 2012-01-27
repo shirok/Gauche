@@ -23,7 +23,7 @@ dbm--gdbm.$(SOEXT) : $(gdbm_OBJECTS)
 	$(MODLINK) dbm--gdbm.$(SOEXT) $(gdbm_OBJECTS) $(EXT_LIBGAUCHE) @GDBMLIB@ $(LIBS)
 
 gdbm.sci dbm--gdbm.c : gdbm.scm
-	$(PRECOMP) -e -o dbm--gdbm gdbm.scm
+	$(PRECOMP) -e -P -o dbm--gdbm $(srcdir)/gdbm.scm
 
 ndbm_OBJECTS   = dbm--ndbm.$(OBJEXT)
 
@@ -31,7 +31,7 @@ dbm--ndbm.$(SOEXT) : $(ndbm_OBJECTS)
 	$(MODLINK) dbm--ndbm.$(SOEXT) $(ndbm_OBJECTS) $(EXT_LIBGAUCHE) @NDBMLIB@ $(LIBS)
 
 ndbm.sci dbm--ndbm.c : ndbm.scm
-	$(PRECOMP) -e -o dbm--ndbm ndbm.scm
+	$(PRECOMP) -e -P -o dbm--ndbm $(srcdir)/ndbm.scm
 
 dbm--ndbm.$(OBJEXT): dbm--ndbm.c ndbm-suffixes.h
 
@@ -41,16 +41,16 @@ dbm--odbm.$(SOEXT) : $(odbm_OBJECTS)
 	$(MODLINK) dbm--odbm.$(SOEXT) $(odbm_OBJECTS) $(EXT_LIBGAUCHE) @ODBMLIB@ $(LIBS)
 
 odbm.sci dbm--odbm.c : odbm.scm
-	$(PRECOMP) -e -o dbm--odbm odbm.scm
+	$(PRECOMP) -e -P -o dbm--odbm $(srcdir)/odbm.scm
 
 
 # auxiliary stuff to find out the extension of ndbm file(s).
 ndbm-makedb : ndbm-makedb.c
 	$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) -o ndbm-makedb \
-	  ndbm-makedb.c $(LOCAL_LFLAGS) $(XLDFLAGS) @NDBMLIB@ $(LIBS)
+	  $(srcdir)/ndbm-makedb.c $(LOCAL_LFLAGS) $(XLDFLAGS) @NDBMLIB@ $(LIBS)
 
 ndbm-suffixes.h : ndbm-makedb ndbm-suffixes.scm
-	$(GOSH) ./ndbm-suffixes.scm ndbm-suffixes.h
+	$(GOSH) $(srcdir)/ndbm-suffixes.scm ndbm-suffixes.h
 
 install : install-std
 

@@ -19,7 +19,9 @@ top_srcdir   = @top_srcdir@
 GAUCHE_VERSION = @GAUCHE_VERSION@
 DESTDIR     =
 
-INSTALL = @INSTALL@
+@CROSS_COMPILING_no@GOSH           = $(top_builddir)/src/gosh -ftest
+@CROSS_COMPILING_yes@GOSH           = gosh
+GAUCHE_INSTALL = $(GOSH) $(top_srcdir)/src/gauche-install.in -C
 TEMPLATE_INST_DIR = $(datadir)/gauche-@GAUCHE_ABI_VERSION@/$(GAUCHE_VERSION)
 
 TEMPLATES = template.Makefile.in template.configure.ac \
@@ -37,7 +39,7 @@ check:
 
 install:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) install); done
-	$(INSTALL) -m 444 $(TEMPLATES) $(DESTDIR)$(TEMPLATE_INST_DIR)
+	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(TEMPLATES) $(DESTDIR)$(TEMPLATE_INST_DIR)
 
 uninstall:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) uninstall); done

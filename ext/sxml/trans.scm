@@ -90,6 +90,9 @@
                              (write sexp)
                              (newline))))))
 
+(define (adjpath templ file)
+  #`",(sys-dirname templ)/,file")
+
 ;; entry point
 (define (main args)
   (unless (= (length args) 2)
@@ -105,9 +108,9 @@
             (port-for-each (lambda (line)
                              (rxmatch-case line
                                (#/^;#include-body "(.*)"/ (#f file)
-                                (process-body file))
+                                (process-body (adjpath templ file)))
                                (#/^;#include-test "(.*)"/ (#f file)
-                                (process-test file))
+                                (process-test (adjpath templ file)))
                                (else (display line) (newline))))
                            read-line)))))
     0))
