@@ -587,7 +587,7 @@ case $host in
     SHLIB_DYLIB_SUFFIX="dylib"
     SHLIB_LIBS_FOR_EXT=""
     SHLIB_OK=ok
-    LINK_HELPER='./link-dylib'
+    LINK_HELPER='$(srcdir)/link-dylib'
     ext_use_libgauche=no
     libgauche_version_link=no
     ;;
@@ -625,7 +625,7 @@ case $host in
     SHLIB_SO_SUFFIX="sl"
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
-    LINK_HELPER='./link-hpux'
+    LINK_HELPER='$(srcdir)/link-hpux'
     ;;
   *cygwin*)
     SHLIB_SO_CFLAGS=""
