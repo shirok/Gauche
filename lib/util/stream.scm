@@ -513,10 +513,10 @@
 
 (define (stream-count pred . strs)
   (let loop ((times 0) (s strs))
-    (if (any stream-null? strs)
+    (if (any stream-null? s)
       times
-      (loop (+ times (if (apply pred (map stream-car strs)) 1 0))
-            (map stream-cdr strs)))))
+      (loop (+ times (if (apply pred (map stream-car s)) 1 0))
+            (map stream-cdr s)))))
 
 ;;; Filtering & Partitioning
 

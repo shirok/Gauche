@@ -797,6 +797,9 @@
 (test* "stream-remove" '(0 2 4 6)
        (stream->list (stream-remove odd? (stream-iota 8))))
 
+(test* "stream-count" 4
+       (stream-count odd? (stream-iota 8)))
+
 ;;-----------------------------------------------
 (test-section "util.toposort")
 (use util.toposort)

@@ -1,3 +1,7 @@
+2012-01-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/stream.scm (stream-count): Bug fix (thanks to KOGURO Naoki).
+
 2012-01-27  Shiro Kawai  <shiro@acm.org>
 
 	* Makefile.in, wirebuildlibs, configure.ac, gc/configure.ac,
