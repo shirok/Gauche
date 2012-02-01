@@ -99,7 +99,7 @@
                                  (^s (* s 2))
                                  (^s (+ s 1))
                                  0
-                                 (giota 10))))
+                                 (^s (giota 10)))))
 
 (define-syntax test-list-like
   (syntax-rules ()

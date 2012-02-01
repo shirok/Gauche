@@ -39,21 +39,26 @@
 
 (define-module gauche.lazy
   (use gauche.generator)
-  (export x->lseq lmap lappend lfilter))
+  (export x->lseq lunfold lmap lmap-accum lappend lfilter
+          lfilter-map lstate-filter ltake ltake-while lrxmatch))
 (select-module gauche.lazy)
 
 ;; Universal coercer.
 ;; This does not force OBJ if it is alreay an lseq.
 ;; NB: Putting specialized paths for vectors and strings may be a good idea
 ;; for performance.  We'll see.
-(define-in-module gauche (x->lseq obj)
+(define (x->lseq obj)
   (cond [(null? obj) '()]
         [(eq? (class-of obj) <pair>) obj]
         [else
          (let1 g (x->generator obj)
-           (if (procedure? g)
+           (if (applicable? g)
              (generator->lseq g)
              (error "cannot coerce the argument to a lazy sequence" obj)))]))
+
+(define (lunfold p f g seed :optional (tail #f))
+  ($ generator->lseq
+     $ gunfold p f g seed (if tail (^s (list->generator (tail s))) #f)))
 
 (define lmap
   (case-lambda
@@ -85,5 +90,22 @@
               [else (pop! (car args))])))]))
 
 ;; NB: Should we define all l* variations corresponds to g* variations?
-
+(define (lmap-accum fn seed seq . args)
+  (generator->lseq (apply gmap-accum fn seed seq args)))
 (define (lfilter fn seq) (generator->lseq (gfilter fn seq)))
+(define (lfilter-map fn seq . args)
+  (generator->lseq (apply gfilter-map fn seq args)))
+(define (lstate-filter fn seed seq)
+  (generator->lseq (gstate-filter fn seed seq)))
+(define (ltake seq n :optional (fill? #f) (padding #f))
+  (generator->lseq (gtake seq n fill? padding)))
+;; ldrop is unnecessary
+(define (ltake-while pred seq)
+  (generator->lseq (gtake-while pred seq)))
+;; ldrop-while is uncessary
+(define (lrxmatch rx seq)
+  (generator->lseq (grxmatch rx seq)))
+
+        
+  
+

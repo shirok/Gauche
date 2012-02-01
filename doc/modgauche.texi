@@ -4204,12 +4204,13 @@ A generator constructor similar to @var{unfold} (@xref{SRFI-1 List utilities}).
 where to stop.  @var{F} is a procedure that calculates a value
 from a seed value.  @var{G} is a procedure that calculates the
 next seed value from the current seed value.  @var{Tail-gen}
-is a generator that generates the tail, and its default is
-@code{null-generator}.
+is a procedure that takes the last seed value and returns a generator
+that generates the tail.
 
 For each call of the resulting generator, @var{p} is called with
 the current seed value.  If it returns a true, then we see we've
-done, and passes the control to @code{tail-gen}.  Otherwise,
+done, and @code{tail-gen} is called (if it is given) to get a
+generator for the tail.  Otherwise,
 we apply @var{f} on the current seed value to get the value to
 generate, and use @var{g} to update the seed value.
 
@@ -4665,18 +4666,74 @@ For the details of lazy sequences, see @ref{Lazy sequences}.
 
 Since lazy sequences are forced implicitly and indistinguishable
 from ordinary lists, we don't need a separate set of procedures
-for @emph{taking} lists and lazy sequences; we can use @code{map}
-to map across both ordinary lists and lazy sequences (you can even
-mix them!)   However, we do need a separate set of procedures
+for @emph{taking} lists and lazy sequences; we can use @code{find}
+to search in both ordinary lists and lazy sequences.
+
+However, we do need a separate set of procedures
 for @emph{returning} either lists or lazy sequences.  For example,
 @var{lmap} can take any kind of sequences, and
 returns lazy sequence (and calls the procedure on demand).
+
+This distinction is subtle, so I reiterate it.  You can use
+both @code{map} and @code{lmap} on lazy sequences.  If you want
+the result list at once, use @code{map}; it doesn't have
+overhead of delayed calculation.  If you don't know you'll use
+the entire result, or you know the result will get very large
+list and don't want to waste space for an intermediate list,
+you want to use @code{lmap}.
+
+@defun x->lseq obj
+A convenience function to coerce @var{obj} to (possibly lazy) list.
+If @var{obj} is a list, it is returned as it is.  If @var{obj} is
+other type of collection, the return value is a lazy sequence
+that iterates over the collection.
+
+If you try @code{x->lseq} in REPL, it looks as if it just
+converts the input collection to a list.
+@example
+(x->lseq '#(a b c)) @result{} (a b c)
+@end example
+
+But that's because the lazy sequence is forced by the output
+routine of the REPL.
+@end defun
+
+@defun lunfold p f g seed :optional tail-gen
+A lazy version of @code{unfold} (@xref{SRFI-1 List utilities}).
+The arguments @var{p}, @var{f} and @var{g} are procedures,
+each of which take one argument, the current seed value.
+The predicate @var{p} determines when to stop, @var{f} creates
+each element, and @var{g} generates the next seed value.
+The @var{seed} argument gives the initial seed value.
+If @var{tail-gen} is given, it should also be a procedure
+that takes one argument, the last seed value (that is, the
+seed value @code{(p seed)} returned @code{#f}).  It must return
+a (possibly lazy) list, that forms the tail of the resulting sequence.
+
+@example
+(lunfold ($ = 10 $) ($ * 2 $) ($ + 1 $) 0 (^_ '(end)))
+  @result{} (0 2 4 6 8 10 12 14 16 18 end)
+@end example
+@end defun
 
 @defun lmap proc seq seq2 @dots{}
 Returns a lazy sequence consists of values calculated
 by applying @var{proc} to every first element of @var{seq} @code{seq2}
 @dots{}, every second element of them, etc., until any of
 the input is exhausted.
+@end defun
+
+@defun lmap-accum proc seed seq seq2 @dots{}
+The procedure @var{proc} takes one element each from
+@var{seq} @var{seq2} @dots{}, plus the current seed value.
+It must return two values, a result value and the next seed value.
+The result of @code{lmap-accum} is a lazy sequence consists
+of the first values returned by each invocation of @var{proc}.
+
+This is a lazy version of @code{map-accum} (@xref{Mapping over collection}),
+but @code{lmap-accum} does not return the final seed value.  We only
+know the final seed value when we have the result sequence to the
+end, so it can't be calculated lazily.
 @end defun
 
 @defun lappend seq @dots{}
@@ -4688,6 +4745,41 @@ Returns a lazy sequence that consists of non-false values calculated
 by applying @var{proc} on every elements in @var{seq}.
 @end defun
 
+@defun lfilter-map proc seq seq2 @dots{}
+Lazy version of @code{filter-map}.
+@end defun
+
+@defun lstate-filter proc seed seq
+Lazy version of @code{state-filter}.
+@end defun
+
+@defun ltake seq n :optional fill? padding
+@defunx ltake-while pred seq
+Lazy versions of @code{take*} and @code{take-while}
+(@xref{List accessors and modifiers}).   Note that
+@code{ltake} works rather like @code{take*} than @code{take},
+that is, it won't complain if the input sequence has less than @var{n}
+elements.  Because of the lazy nature of @code{ltake}, it can't know
+whether input is too short or not before returning the sequence.
+
+There are no @code{ldrop} and @code{ldrop-while}; if you apply
+@code{drop} and @code{drop-while} on lazy sequence, they return
+lazy sequence.
+@end defun
+
+@defun lrxmatch rx seq
+This is a lazy sequence version of @code{grxmatch} 
+(@xref{Generator operations}).
+
+The @var{seq} argument must be a sequence of characters.
+The return value is a lazy sequence of @var{<rxmatch>} objects,
+each representing strings matching to the regular expression @var{rx}.
+
+This procedure is convenient to scan character sequences from
+lazy character sequences, but it may be slow if you're looking for
+rarely matching string from very large input.  Unless @var{seq}
+is a string, @code{lrxmatch} buffers certain
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Listener, User-level logging, Lazy sequence utilities, Library modules - Gauche extensions

@@ -149,7 +149,7 @@
 ;; function dispatch for common objects.
 (define (%->gen x)
   (cond [(procedure? x) x]
-        [(pair? x)   (list->generator x)]
+        [(is-a? x <pair>) (list->generator x)] ;avoid pair? not to force lazy pairs
         [(vector? x) (vector->generator x)]
         [(string? x) (string->generator x)]
         [(is-a? x <collection>) (x->generator x)]
@@ -192,10 +192,13 @@
 (define (null-generator) (eof-object))
 
 ;; procedural generation
-(define (gunfold p f g seed :optional (tail-gen eof-object))
-  (let1 end? #f
-    (^[] (cond [end? (tail-gen)]
-               [(p seed) (set! end? #t) (tail-gen)]
+(define (gunfold p f g seed :optional (tail-gen #f))
+  (let ([seed seed] [end? #f] [tail #f])
+    (^[] (cond [end? (tail)]
+               [(p seed)
+                (set! end? #t)
+                (set! tail (if tail-gen (tail-gen seed) eof-object))
+                (tail)]
                [else (%begin0 (f seed) (set! seed (g seed)))]))))
 
 (define (giota num :optional (start 0) (step 1))
