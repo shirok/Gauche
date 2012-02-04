@@ -273,7 +273,7 @@ char-data : gen-unicode.scm
 
 char.$(OBJEXT) : char.c char_attr.c
 
-winmain.$(OBJEXT) : main.c
+winmain.$(OBJEXT) : main.c $(HEADERS)
 
 symbol.$(OBJEXT) : builtin-syms.c
 
@@ -439,6 +439,10 @@ pre-package : $(GENERATED)
 	$(SHELL) mingw-exify $< > $<.c
 	$(COMPILE) -c -o $<.o $<.c
 	$(LINK) $(gosh_LDFLAGS) -o $@ $<.o $(gosh_LDADD) $(LIBS)
+
+gauche-install.exe : $(LIBGAUCHE).$(SOEXT)
+gauche-package.exe : $(LIBGAUCHE).$(SOEXT)
+gauche-cesconv.exe : $(LIBGAUCHE).$(SOEXT)
 
 install-mingw:
 	$(INSTALL) -m 444 $(INSTALL_MINGWHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche

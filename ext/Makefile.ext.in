@@ -118,7 +118,7 @@ install-std : all
 
 uninstall :
 
-link :
+link : all
 	-$(GOSH) $(top_srcdir)/ext/xlink -l -g "$(SCM_CATEGORY)" \
 	  -b $(top_builddir) -s $(srcdir) $(LIBFILES) $(SCMFILES)
 
