@@ -104,7 +104,17 @@ ScmSocket *make_socket(Socket fd, int type)
 ScmObj Scm_MakeSocket(int domain, int type, int protocol)
 {
     intptr_t sock; 
+#if GAUCHE_WINDOWS
+    /* On Windows, sockets created by socket() call sets
+       WSA_FLAG_OVERLAPPED flag.  When used in threads other than
+       primordial thread, I/O to/from such socket fails, since it
+       requires extra OVERLAPPED struct in win32 call (which can't
+       be done with POSIX calls).   Directly using WSASocket allows
+       us to not set WSA_FLAG_OVERLAPPED flag. */
+    SCM_SYSCALL(sock, WSASocket(domain, type, protocol, NULL, 0, 0));
+#else  /*!GAUCHE_WINDOWS*/
     SCM_SYSCALL(sock, socket(domain, type, protocol));
+#endif /*!GAUCHE_WINDOWS*/
     if (SOCKET_INVALID(sock)) Scm_SysError("couldn't create socket");
     return SCM_OBJ(make_socket((Socket)sock, type));
 }

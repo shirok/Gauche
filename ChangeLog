@@ -1,3 +1,9 @@
+2012-02-05  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/net.c (Scm_MakeSocket): Fix Windows/MinGW problem that
+	  sockets can't be used with threads.  Thanks to SAITO Atsushi for
+	  tracking this down.
+
 2012-02-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (iota): Fixed a bug in the case of inexact
