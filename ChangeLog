@@ -1,3 +1,8 @@
+2012-02-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_AttachVM, Scm_DetachVM): Protect active VMs explicitly
+	  from GC.  Thread-specific area may not be scanned by GC.
+
 2012-02-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/net.c (Scm_MakeSocket): Fix Windows/MinGW problem that

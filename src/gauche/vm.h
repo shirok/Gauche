@@ -482,6 +482,7 @@ struct ScmVMRec {
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name);
 SCM_EXTERN int    Scm_AttachVM(ScmVM *vm);
+SCM_EXTERN void   Scm_DetachVM(ScmVM *vm);
 SCM_EXTERN void   Scm_VMDump(ScmVM *vm);
 SCM_EXTERN void   Scm_VMDefaultExceptionHandler(ScmObj exc);
 SCM_EXTERN ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exc);

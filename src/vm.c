@@ -91,6 +91,12 @@ static ScmCompiledCode internal_apply_compiled_code =
  */
 
 static ScmVM *rootVM = NULL;         /* VM for primodial thread */
+static ScmHashCore vm_table;         /* VMs other than primordial one is
+                                        registered to this hashtalbe, in order
+                                        to avoid being GC-ed. */
+static ScmInternalMutex vm_table_mutex;
+static void vm_register(ScmVM *vm);
+static void vm_unregister(ScmVM *vm);
 
 #ifdef GAUCHE_USE_PTHREADS
 static pthread_key_t vm_key;
@@ -238,17 +244,35 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 int Scm_AttachVM(ScmVM *vm)
 {
 #ifdef GAUCHE_HAS_THREADS
-    if (SCM_INTERNAL_THREAD_INITIALIZED_P(vm->thread)) return FALSE;
+    if (SCM_INTERNAL_THREAD_INITIALIZED_P(vm->thread) &&
+        vm->thread != SCM_INTERNAL_THREAD_GETCURRENT()) {
+        return FALSE;
+    }
     if (theVM != NULL) return FALSE;
 
     if (!SCM_INTERNAL_THREAD_SETSPECIFIC(Scm_VMKey(), vm)) return FALSE;
 
     vm->thread = SCM_INTERNAL_THREAD_GETCURRENT();
     vm->state = SCM_VM_RUNNABLE;
+    vm_register(vm);
     return TRUE;
 #else  /* no threads */
     return FALSE;
 #endif /* no threads */
+}
+
+/* If the current VM is attached by Scm_AttachVM() rather than Scheme
+   creating a thread, this needs to be called once you've done with the
+   VM (typically just before the thread terminates).
+ */
+void Scm_DetachVM(ScmVM *vm)
+{
+#ifdef GAUCHE_HAS_THREADS
+    if (vm != NULL) {
+        SCM_INTERNAL_THREAD_SETSPECIFIC(Scm_VMKey(), NULL);
+        vm_unregister(vm);
+    }
+#endif /* GAUCHE_HAS_THREADS */
 }
 
 int Scm_VMGetNumResults(ScmVM *vm)
@@ -313,6 +337,24 @@ static void vm_finalize(ScmObj obj, void *data)
         Scm_Warn("A thread %S died a lonely death with uncaught exception %S.",
                  vm->name, SCM_THREAD_EXCEPTION(re)->data);
     }
+}
+
+/* Thread specific storage may not be scanned by GC.  We keep pointer
+   to the live VM in the global hashtable. */
+static void vm_register(ScmVM *vm)
+{
+    ScmDictEntry *e;
+    SCM_INTERNAL_MUTEX_LOCK(vm_table_mutex);
+    e = Scm_HashCoreSearch(&vm_table, (intptr_t)vm, SCM_DICT_CREATE);
+    SCM_DICT_SET_VALUE(e, SCM_TRUE);
+    SCM_INTERNAL_MUTEX_UNLOCK(vm_table_mutex);
+}
+
+static void vm_unregister(ScmVM *vm)
+{
+    SCM_INTERNAL_MUTEX_LOCK(vm_table_mutex);
+    (void)Scm_HashCoreSearch(&vm_table, (intptr_t)vm, SCM_DICT_DELETE);
+    SCM_INTERNAL_MUTEX_UNLOCK(vm_table_mutex);
 }
 
 /*====================================================================
@@ -2719,6 +2761,9 @@ void Scm__InitVM(void)
                                 GC_MAKE_PROC(vm_stack_mark_proc, 0),
                                 0, 0);
 #endif /*USE_CUSTOM_STACK_MARKER*/
+
+    Scm_HashCoreInitSimple(&vm_table, SCM_HASH_EQ, 8, NULL);
+    SCM_INTERNAL_MUTEX_INIT(vm_table_mutex);
 
     /* Create root VM */
     rootVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));

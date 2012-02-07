@@ -92,6 +92,7 @@ static void thread_cleanup_inner(ScmVM *vm)
         SCM_THREAD_EXCEPTION(e)->data = SCM_OBJ(vm->canceller);
         vm->resultException = e;
     }
+    Scm_DetachVM(vm);
     SCM_INTERNAL_COND_BROADCAST(vm->cond);
 }
 
@@ -109,29 +110,34 @@ static SCM_INTERNAL_THREAD_PROC_RETTYPE thread_entry(void *data)
 {
     ScmVM *vm = SCM_VM(data);
 
-    SCM_INTERNAL_THREAD_SETSPECIFIC(Scm_VMKey(), vm);
-    SCM_INTERNAL_THREAD_CLEANUP_PUSH(thread_cleanup, vm);
-    SCM_UNWIND_PROTECT {
-        vm->result = Scm_ApplyRec(SCM_OBJ(vm->thunk), SCM_NIL);
-    } SCM_WHEN_ERROR {
-        ScmObj exc;
-        switch (vm->escapeReason) {
-        case SCM_VM_ESCAPE_CONT:
-            /*TODO: better message*/
-            vm->resultException =
-                Scm_MakeError(SCM_MAKE_STR("stale continuation thrown"));
-            break;
-        default:
-            Scm_Panic("unknown escape");
-        case SCM_VM_ESCAPE_ERROR:
-            exc = Scm_MakeThreadException(SCM_CLASS_UNCAUGHT_EXCEPTION, vm);
-            SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(vm->escapeData[1]);
-            vm->resultException = exc;
-            Scm_ReportError(SCM_OBJ(vm->escapeData[1]));
-            break;
-        }
-    } SCM_END_PROTECT;
-    SCM_INTERNAL_THREAD_CLEANUP_POP();
+    if (!Scm_AttachVM(vm)) {
+        vm->resultException =
+            Scm_MakeError(SCM_MAKE_STR("attaching VM to thread failed"));
+        thread_cleanup(vm);
+    } else {
+        SCM_INTERNAL_THREAD_CLEANUP_PUSH(thread_cleanup, vm);
+        SCM_UNWIND_PROTECT {
+            vm->result = Scm_ApplyRec(SCM_OBJ(vm->thunk), SCM_NIL);
+        } SCM_WHEN_ERROR {
+            ScmObj exc;
+            switch (vm->escapeReason) {
+            case SCM_VM_ESCAPE_CONT:
+                /*TODO: better message*/
+                vm->resultException =
+                    Scm_MakeError(SCM_MAKE_STR("stale continuation thrown"));
+                break;
+            default:
+                Scm_Panic("unknown escape");
+            case SCM_VM_ESCAPE_ERROR:
+                exc = Scm_MakeThreadException(SCM_CLASS_UNCAUGHT_EXCEPTION, vm);
+                SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(vm->escapeData[1]);
+                vm->resultException = exc;
+                Scm_ReportError(SCM_OBJ(vm->escapeData[1]));
+                break;
+            }
+        } SCM_END_PROTECT;
+        SCM_INTERNAL_THREAD_CLEANUP_POP();
+    }
     return SCM_INTERNAL_THREAD_PROC_RETVAL;
 }
 
