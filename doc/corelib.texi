@@ -11700,10 +11700,14 @@ are opened in binary mode.  It doesn't make difference in the Unix platforms.}
 @item :encoding
 @c EN
 This argument specifies character encoding of the file.   The argument
-must be a string or a symbol that names a character encoding scheme (CES).
+is a string or a symbol that names a character encoding scheme (CES).
+
 For @code{open-input-file}, it can be a wildcard CES (e.g. @code{*jp})
 to guess the file's encoding heuristically
-(@xref{Autodetecting the encoding scheme}).
+(@xref{Autodetecting the encoding scheme}), 
+or @code{#t}, in which case we assume the input file itself has magic
+encoding comment and use @code{open-coding-aware-port} 
+(@xref{Coding-aware ports}).
 
 If this argument is given, Gauche automatically loads 
 @code{gauche.charconv} module and converts the input/output characters
@@ -11712,10 +11716,14 @@ See @ref{Supported character encoding schemes}, for the details of
 character encoding schemes.
 @c JP
 この引数はファイルの文字エンコーディングを指定します。引数は文字列かシンボルで、
-文字エンコーディングスキーム(CES)の名前でなければなりません。
+文字エンコーディングスキーム(CES)の名前を渡します。
+
 @code{open-input-file}では、ここにワイルドカードCES (例: @code{*jp}) を
 渡して、入力ファイルのエンコーディングを推測させることもできます
 (@ref{Autodetecting the encoding scheme}参照)。
+また、ここに@code{#t}を渡すと、入力ポートはCoding aware portでラップされます
+(@ref{Coding-aware ports}参照)。入力ファイルがエンコーディング指定の
+マジックコメントを持っていることが期待できる場合に便利です。
 
 この引数が与えられた場合、Gaucheは自動的に@code{gauche.charconv}モジュールを
 ロードし、ポートの入出力時に文字コード変換を行います。

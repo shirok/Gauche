@@ -1,3 +1,9 @@
+2012-02-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (open-input-file): Allow ":encoding #t" to make
+	  open-input-file wrap the iport with a coding-aware port.  It's
+	  convenient to process source files that may have coding comment.
+
 2012-02-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm_AttachVM, Scm_DetachVM): Protect active VMs explicitly

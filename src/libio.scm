@@ -548,10 +548,13 @@
 ;; %open-{input|output}-file/conv are autoloaded.
 
 (define-in-module scheme (open-input-file filename . args)
-  (if (get-keyword :encoding args #f)
-    (apply %open-input-file/conv filename args)
-    (apply %open-input-file filename args)))
-
+  (let1 e (get-keyword :encoding args #f)
+    (cond [(eq? e #f) (apply %open-input-file filename args)]
+          [(eq? e #t)                   ;using coding-aware port
+           (open-coding-aware-port
+            (apply %open-input-file filename (delete-keyword :encoding args)))]
+          [else (apply %open-input-file/conv filename args)])))
+    
 (define-in-module scheme (open-output-file filename . args)
   (if (get-keyword :encoding args #f)
     (apply %open-output-file/conv filename args)
