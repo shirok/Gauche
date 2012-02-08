@@ -551,8 +551,9 @@
   (let1 e (get-keyword :encoding args #f)
     (cond [(eq? e #f) (apply %open-input-file filename args)]
           [(eq? e #t)                   ;using coding-aware port
-           (open-coding-aware-port
-            (apply %open-input-file filename (delete-keyword :encoding args)))]
+           (and-let* ([p (apply %open-input-file filename
+                                (delete-keyword :encoding args))])
+             (open-coding-aware-port p))]
           [else (apply %open-input-file/conv filename args)])))
     
 (define-in-module scheme (open-output-file filename . args)
