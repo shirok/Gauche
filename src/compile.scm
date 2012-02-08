@@ -2726,11 +2726,13 @@
 
 (define (pass1/do-include filename includer-path)
   (let1 iport (pass1/open-include-file filename includer-path)
+    (pass1/report-include iport #t)
     (unwind-protect
         (let loop ([r (read iport)] [forms '()])
           (if (eof-object? r)
             `((begin ,@(reverse forms)) . ,(port-name iport))
             (loop (read iport) (cons r forms))))
+      (pass1/report-include iport #f)
       (close-input-port iport))))
 
 ;; If filename is relative, we try to resolve it with the source file
@@ -2745,7 +2747,7 @@
   (define (build-path path file)
     (if windows? #`",|path|\\,file" #`",|path|/,file"))
   (define (check path)
-    (any (^s (open-input-file #`",|path|,s" :if-does-not-exist #f))
+    (any (^s (open-input-file #`",|path|,s" :if-does-not-exist #f :encoding #t))
          (cons "" *load-suffixes*)))
   (define (bad) (error "include file is not readable:" path))
   
@@ -2754,6 +2756,12 @@
               (check (build-path (sys-dirname includer-path) path)))]
         [(check path)]
         [else (bad)]))
+
+;; Report including.
+(define (pass1/report-include iport open?)
+  (when (vm-compiler-flag-is-set? SCM_COMPILE_INCLUDE_VERBOSE)
+    (format (current-error-port) ";;~a including ~s\n"
+            (if open? "Begin" "End") (port-name iport))))
 
 ;; Class stuff ........................................
 
@@ -5830,6 +5838,7 @@
  (define-enum SCM_COMPILE_NOCOMBINE)
  (define-enum SCM_COMPILE_NO_POST_INLINE_OPT)
  (define-enum SCM_COMPILE_NO_LIFTING)
+ (define-enum SCM_COMPILE_INCLUDE_VERBOSE)
 
  ;; Set/get VM's current module info. (temporary)
  (define-cproc vm-current-module () (result (SCM_OBJ (-> (Scm_VM) module))))

@@ -649,8 +649,9 @@ enum {
     SCM_COMPILE_NOCOMBINE = (1L<<5),       /* Do not combine instructions */
     SCM_COMPILE_NO_POST_INLINE_OPT = (1L<<6), /* Do not run post-inline
                                                  optimization (pass3). */
-    SCM_COMPILE_NO_LIFTING = (1L<<7)       /* Do not run lambda lifting pass
+    SCM_COMPILE_NO_LIFTING = (1L<<7),      /* Do not run lambda lifting pass
                                               (pass4). */
+    SCM_COMPILE_INCLUDE_VERBOSE = (1L<<8)  /* Report expansion of 'include' */
 };
 
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))

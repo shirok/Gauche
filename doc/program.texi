@@ -241,6 +241,9 @@ Prohibits the compiler from inlining local procedures.
 Prohibits the compiler from inlining constants.
 @item load-verbose
 Reports whenever a file is loaded.
+@c Uncomment this after documenting 'include' form.
+@c @item include-verbose
+@c Reports whenever a file is included.
 @item no-source-info
 Don't keep source information for debugging.  Consumes less memory.
 @item case-fold
@@ -268,6 +271,9 @@ no-inline-locals および no-inline-constants を同時に指定したのと等
 デバッグのためのソースファイル情報を保持しません。メモリの使用量は小さくなります。
 @item load-verbose
 ファイルがロードされる時にそれを報告します。
+@c Uncomment this after documenting 'include' form.
+@c @item include-verbose
+@c ファイルがincludeされる時にそれを報告します。
 @item case-fold
 R5RSに示される通り、シンボルの大文字小文字を区別しません。
 (デフォルトではこれらは区別されます)。 @ref{Case-sensitivity} を参照して下さい。

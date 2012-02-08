@@ -1,5 +1,12 @@
 2012-02-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass1/open-include-file),
+	  src/gauche/vm.h (SCM_COMPILE_INCLUDE_VERBOSE),
+	  src/main.c (-finclude-verbose): Add a new compile-time flag to
+	  report 'include' operation to stderr.  It is separated from
+	  -fload-verbose, since 'include' works in compile-time and
+	  'load' works in runtime (although typically they are interleaved).
+
 	* src/libio.scm (open-input-file): Allow ":encoding #t" to make
 	  open-input-file wrap the iport with a coding-aware port.  It's
 	  convenient to process source files that may have coding comment.

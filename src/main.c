@@ -150,6 +150,9 @@ void further_options(const char *optarg)
     else if (strcmp(optarg, "load-verbose") == 0) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_LOAD_VERBOSE);
     }
+    else if (strcmp(optarg, "include-verbose") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_INCLUDE_VERBOSE);
+    }
     else if (strcmp(optarg, "case-fold") == 0) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_CASE_FOLD);
     }
