@@ -1,5 +1,8 @@
 2012-02-07  Shiro Kawai  <shiro@acm.org>
 
+	* ext/sxml/*: Fixed a problem that out-of-source-tree build generated
+	  some Scheme files into srcdir instead of builddir.
+
 	* src/compile.scm (pass1/open-include-file),
 	  src/gauche/vm.h (SCM_COMPILE_INCLUDE_VERBOSE),
 	  src/main.c (-finclude-verbose): Add a new compile-time flag to

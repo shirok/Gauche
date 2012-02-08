@@ -11,7 +11,7 @@
 (use srfi-0)
 (use sxml.ssax)
 (select-module sxml.ssax)
-(include "./test-common")
+;#include-body "test-common.scm"
 ;#include-test "src/SSAX.scm"
 
 (select-module user)

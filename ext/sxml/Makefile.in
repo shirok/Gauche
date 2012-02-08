@@ -37,7 +37,7 @@ sxml--ssax.$(SOEXT) : $(ssax_OBJECTS)
 
 sxml--ssax.c ssax.sci : sxml-ssax.scm.in src/SSAX.scm 
 	$(SCMTRANS) $(srcdir)/sxml-ssax.scm.in
-	$(SCMCOMPILE) -e -i ssax.sci -o sxml--ssax $(srcdir)/sxml-ssax.scm
+	$(SCMCOMPILE) -e -i ssax.sci -o sxml--ssax sxml-ssax.scm
 
 ### sxml-sxpath
 
@@ -48,7 +48,7 @@ sxml--sxpath.$(SOEXT) : $(sxpath_OBJECTS)
 
 sxml--sxpath.c sxpath.sci : sxml-sxpath.scm.in src/sxpath.scm src/sxpathlib.scm src/sxpath-ext.scm tools.sci
 	$(SCMTRANS) $(srcdir)/sxml-sxpath.scm.in
-	$(SCMCOMPILE) -e -i sxpath.sci -o sxml--sxpath $(srcdir)/sxml-sxpath.scm
+	$(SCMCOMPILE) -e -i sxpath.sci -o sxml--sxpath sxml-sxpath.scm
 
 ### sxml-tools
 
@@ -59,7 +59,7 @@ sxml--tools.$(SOEXT) : $(tools_OBJECTS)
 
 sxml--tools.c tools.sci : sxml-tools.scm.in src/sxml-tools.scm
 	$(SCMTRANS) $(srcdir)/sxml-tools.scm.in
-	$(SCMCOMPILE) -e -i tools.sci -o sxml--tools $(srcdir)/sxml-tools.scm
+	$(SCMCOMPILE) -e -i tools.sci -o sxml--tools sxml-tools.scm
 
 ### sxml-serializer
 
@@ -70,7 +70,7 @@ sxml--serializer.$(SOEXT) : $(serializer_OBJECTS)
 
 sxml--serializer.c serializer.sci : sxml-serializer.scm.in src/serializer.scm
 	$(SCMTRANS) $(srcdir)/sxml-serializer.scm.in
-	$(SCMCOMPILE) -e -i serializer.sci -o sxml--serializer $(srcdir)/sxml-serializer.scm
+	$(SCMCOMPILE) -e -i serializer.sci -o sxml--serializer sxml-serializer.scm
 
 ### miscellaneous
 tree-trans.scm : src/SXML-tree-trans.scm tree-trans.scm.in

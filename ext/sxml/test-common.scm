@@ -52,7 +52,9 @@
 
 ;; Excerpt from SSAX.scm --------------------------------------
 
-(define-macro run-test
+;; Kludge - trans.scm removes run-test definition.  We use different
+;; name to prevent this from removed.
+(define-macro %run-test
   (lambda body
     (define (re-write body)
       (cond
