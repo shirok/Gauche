@@ -92,17 +92,18 @@ static void thread_cleanup_inner(ScmVM *vm)
         SCM_THREAD_EXCEPTION(e)->data = SCM_OBJ(vm->canceller);
         vm->resultException = e;
     }
-    Scm_DetachVM(vm);
     SCM_INTERNAL_COND_BROADCAST(vm->cond);
 }
 
-/* Called by pthread_cleanup mechanism.  */
+/* Called by pthread_cleanup mechanism.   After this, Scm_VM() won't return
+   a valid VM pointer.  */
 static void thread_cleanup(void *data)
 {
     ScmVM *vm = SCM_VM(data);
     SCM_INTERNAL_MUTEX_LOCK(vm->vmlock);
     thread_cleanup_inner(vm);
     SCM_INTERNAL_MUTEX_UNLOCK(vm->vmlock);
+    Scm_DetachVM(vm);
 }
 
 #if defined(GAUCHE_HAS_THREADS)

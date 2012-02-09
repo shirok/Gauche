@@ -244,15 +244,35 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 int Scm_AttachVM(ScmVM *vm)
 {
 #ifdef GAUCHE_HAS_THREADS
-    if (SCM_INTERNAL_THREAD_INITIALIZED_P(vm->thread) &&
-        vm->thread != SCM_INTERNAL_THREAD_GETCURRENT()) {
+    if (theVM != NULL) {
+        /* The current thread already has another VM attached. */
         return FALSE;
     }
-    if (theVM != NULL) return FALSE;
+    /* NB: We want to check if this VM has already attached to another
+       thread or not. */
 
     if (!SCM_INTERNAL_THREAD_SETSPECIFIC(Scm_VMKey(), vm)) return FALSE;
 
-    vm->thread = SCM_INTERNAL_THREAD_GETCURRENT();
+    if (!SCM_INTERNAL_THREAD_INITIALIZED_P(vm->thread)) {
+#ifdef GAUCHE_USE_WTHREADS
+        /* GetCurrentThread() on Windows returns a pseudo handle
+           indicating 'myself', which can't be usable from other thread.
+           We need a special care.  The resulting HANDLE should be closed,
+           which is done in the finalizer. */
+        HANDLE t;
+        BOOL r = DuplicateHandle(GetCurrentProcess(), /* source process */
+                                 GetCurrentThread(),  /* source handle */
+                                 GetCurrentProcess(), /* target process */
+                                 &t,
+                                 0, FALSE, DUPLICATE_SAME_ACCESS);
+        if (!r) {
+            Scm_SysError("Getting current thread handle failed");
+        }
+        vm->thread = t;
+#else  /* GAUCHE_USE_PTHREADS */
+        vm->thread = SCM_INTERNAL_THREAD_GETCURRENT();
+#endif /* GAUCHE_USE_PTHREADS */
+    }
     vm->state = SCM_VM_RUNNABLE;
     vm_register(vm);
     return TRUE;
@@ -337,6 +357,12 @@ static void vm_finalize(ScmObj obj, void *data)
         Scm_Warn("A thread %S died a lonely death with uncaught exception %S.",
                  vm->name, SCM_THREAD_EXCEPTION(re)->data);
     }
+#ifdef GAUCHE_USE_WTHREADS
+    if (vm->thread != INVALID_HANDLE_VALUE) {
+        CloseHandle(vm->thread);
+        vm->thread = INVALID_HANDLE_VALUE;
+    }
+#endif /*GAUCHE_USE_WTHREADS*/
 }
 
 /* Thread specific storage may not be scanned by GC.  We keep pointer
