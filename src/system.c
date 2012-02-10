@@ -2653,25 +2653,19 @@ int Scm__WinMutexLock(HANDLE mutex)
    Native condition variable support is only available on Windows Vista
    and later.  We don't want to drop XP support (yet), so we avoid using
    it.  Instead we emulate posix condition variable semantics.
-   We follow the SignalObjectAndWait solution shown in
+   We enhanced the implementation described as the SignalObjectAndWait
+   solution shown in
    <http://www1.cse.wustl.edu/~schmidt/win32-cv-1.html>
  */
 void Scm__InternalCondInit(ScmInternalCond *cond)
 {
     cond->numWaiters = 0;
     cond->broadcast = FALSE;
-    cond->mutex = CreateMutex(NULL, FALSE, NULL);
-    if (cond->mutex == NULL) {
-        Scm_SysError("couldn't create a mutex for a condition variable");
-    }
-    
+    cond->mutex = NULL;         /* set by the first CondWait */
     cond->sem = CreateSemaphore(NULL,          /* no security */
                                 0, 0x7fffffff, /* initial and max val */
                                 NULL);         /* name */
     if (cond->sem == NULL) {
-        DWORD err = GetLastError();
-        CloseHandle(cond->mutex);
-        SetLastError(err);
         Scm_SysError("couldn't create a semaphore for a condition variable");
     }
     cond->done = CreateEvent(NULL,  /* no security */
@@ -2680,7 +2674,6 @@ void Scm__InternalCondInit(ScmInternalCond *cond)
                              NULL); /* name */
     if (cond->done == NULL) {
         DWORD err = GetLastError();
-        CloseHandle(cond->mutex);
         CloseHandle(cond->sem);
         SetLastError(err);
         Scm_SysError("couldn't create event for a condition variable");
@@ -2693,7 +2686,7 @@ int Scm__InternalCondWait(ScmInternalCond *cond, ScmInternalMutex *mutex,
 {
     DWORD r0, r1;
     DWORD timeout_msec;
-    int lastWaiter;
+    int badMutex = FALSE, lastWaiter;
 
     if (pts) {
         u_long now_sec, now_usec;
@@ -2716,31 +2709,41 @@ int Scm__InternalCondWait(ScmInternalCond *cond, ScmInternalMutex *mutex,
     }
 
     EnterCriticalSection(&cond->numWaitersLock);
-    cond->numWaiters++;
+    /* If we're the first one to wait on this cond var, set cond->mutex.
+       We don't allow to use multiple mutexes together with single cond var.
+     */
+    if (cond->mutex != NULL && cond->mutex != mutex) {
+        badMutex = TRUE;
+    } else {
+        cond->numWaiters++;
+        if (cond->mutex == NULL) cond->mutex = mutex;
+    }
     LeaveCriticalSection(&cond->numWaitersLock);
 
-    /* signals mutex and atomically waits on the semaphore */
-    r0 = SignalObjectAndWait(*mutex, cond->sem, timeout_msec, FALSE);
-    if (r0 != WAIT_OBJECT_0) {
-        EnterCriticalSection(&cond->numWaitersLock);
-        cond->numWaiters--;
-        LeaveCriticalSection(&cond->numWaitersLock);
-    } else {
-        /* ok, we're woken up.  the flag lastWaiter is TRUE if we're the
-           last waiter after the broadcast. */
-        EnterCriticalSection(&cond->numWaitersLock);
-        cond->numWaiters--;
-        lastWaiter = cond->broadcast && cond->numWaiters == 0;
-        LeaveCriticalSection(&cond->numWaitersLock);
+    if (badMutex) {
+        Scm_Error("Attempt to wait on condition variable %p with different"
+                  " mutex %p\n", cond, mutex);
+    }
 
-        if (lastWaiter) {
-            /* tell the broadcaster that all the waiters have gained
-               control, and wait to aquire mutex. */
-            r1 = SignalObjectAndWait(cond->done, *mutex, INFINITE, FALSE);
-        } else {
-            /* Aquire mutex */
-            r1 = WaitForSingleObject(*mutex, INFINITE);
-        }
+    /* Signals mutex and atomically waits on the semaphore */
+    r0 = SignalObjectAndWait(*mutex, cond->sem, timeout_msec, FALSE);
+
+    /* We're signaled, or timed out.   There can be a case that cond is
+       broadcasted between the timeout of SignalObjectAndWait and the
+       following EnterCriticalSection.  So we should check lastWaiter
+       anyway. */
+    EnterCriticalSection(&cond->numWaitersLock);
+    cond->numWaiters--;
+    lastWaiter = cond->broadcast && cond->numWaiters == 0;
+    LeaveCriticalSection(&cond->numWaitersLock);
+
+    if (lastWaiter) {
+        /* tell the broadcaster that all the waiters have gained
+           control, and wait to aquire mutex. */
+        r1 = SignalObjectAndWait(cond->done, *mutex, INFINITE, FALSE);
+    } else {
+        /* Aquire mutex */
+        r1 = WaitForSingleObject(*mutex, INFINITE);
     }
     if (r0 == WAIT_TIMEOUT) return SCM_INTERNAL_COND_TIMEDOUT;
     if (r0 != WAIT_OBJECT_0 || r1 != WAIT_OBJECT_0) return -1;
@@ -2751,6 +2754,8 @@ int Scm__InternalCondSignal(ScmInternalCond *cond)
 {
     int haveWaiters;
     BOOL r = TRUE;
+
+    if (!cond->mutex) return 0; /* nobody ever waited on this cond var. */
 
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(cond->mutex);
 
@@ -2773,6 +2778,8 @@ int Scm__InternalCondBroadcast(ScmInternalCond *cond)
     DWORD err = 0;
     BOOL r0 = TRUE;
     DWORD r1 = WAIT_OBJECT_0;
+
+    if (!cond->mutex) return 0; /* nobody ever waited on this cond var. */
 
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(cond->mutex);
 
