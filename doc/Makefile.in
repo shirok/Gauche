@@ -113,10 +113,10 @@ gauche-refe.info.gz : gauche-refe.texi
 	fi
 
 gauche-refj.html : gauche-refj.texi
-	texi2html --init-file=ja-init.pl --number gauche-refj.texi
+	texi2html --init-file=$(srcdir)/ja-init.pl --number gauche-refj.texi
 
 gauche-refj_toc.html : gauche-refj.texi
-	texi2html --init-file=ja-init.pl --split section --number gauche-refj.texi
+	texi2html --init-file=$(srcdir)/ja-init.pl --split section --number gauche-refj.texi
 	for f in gauche-refj*.html; do \
 	  sed 's/^<body lang="en"/<body lang="ja"/' $$f > $$f.t && mv $$f.t $$f; \
 	done
@@ -138,7 +138,7 @@ gauche-refj.info.gz : gauche-refj.texi
 	fi
 
 gauche-deve.texi : gauche-dev.texi extract
-	$(GOSH) $(extract)/extract -en -o gauche-deve.texi gauche-dev.texi
+	$(GOSH) $(srcdir)/extract -en -o gauche-deve.texi gauche-dev.texi
 
 gauche-deve.html : gauche-deve.texi
 	texi2html --number gauche-deve.texi
