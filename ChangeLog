@@ -1,3 +1,13 @@
+2012-02-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (SCM_BIND_PROC): Introduced a macro to capture the
+	  common pattern in calling a Scheme procedure from C.  The macro
+	  can be used to ensure a C variable is initialized by the value
+	  of the named Scheme variable (so it isn't restricted to 'PROC',
+	  but in practice using it for something other than procedure doesn't
+	  make much sense.)
+	* src/load.c, src/vm.c, src/system.c: Changed accordingly.
+
 2012-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm__InternalCondWait): Fixed a hazard when timeout

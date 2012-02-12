@@ -1533,6 +1533,35 @@ SCM_CLASS_DECL(Scm_NextMethodClass);
 #define SCM_NEXT_METHODP(obj)      SCM_XTYPEP(obj, SCM_CLASS_NEXT_METHOD)
 #define SCM_NEXT_METHOD(obj)       ((ScmNextMethod*)obj)
 
+/* Calling a Scheme function from C
+ *
+ *  static ScmObj proc = SCM_UNDEFINED;
+ *
+ *  SCM_BIND_PROC(proc, "scheme-proc-name", module);
+ *
+ *  Scm_ApplyRec(proc, args);
+ *   or
+ *  Scm_Apply(proc, args, &result);
+ *
+ * SCM_BIND_PROC macro initializes the C variable proc to the value of
+ * the global Scheme variable scheme-proc-name in the module.
+ * It is idempotent operation, so it's MT-safe.
+ */
+#define SCM_BIND_PROC(var, name, module)                                \
+    do {                                                                \
+        if (SCM_UNDEFINEDP(var)) {                                      \
+            ScmObj v__ =                                                \
+                Scm_GlobalVariableRef(module,                           \
+                                      SCM_SYMBOL(SCM_INTERN(name)),     \
+                                      0);                               \
+            if (SCM_UNBOUNDP(v__)) {                                    \
+                Scm_Error("Procedure %s is unbound", name);             \
+            }                                                           \
+            var = v__;                                                  \
+        }                                                               \
+    } while (0)
+
+
 /* Other APIs */
 SCM_EXTERN ScmObj Scm_ForEach1(ScmObj proc, ScmObj args);
 SCM_EXTERN ScmObj Scm_ForEach(ScmObj proc, ScmObj arg1, ScmObj args);

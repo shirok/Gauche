@@ -1681,15 +1681,14 @@ int Scm_Apply(ScmObj proc, ScmObj args, ScmEvalPacket *packet)
 int check_arglist_tail_for_apply(ScmVM *vm, ScmObj z)
 {
     int count = 0;
+    static ScmObj length_proc = SCM_UNDEFINED;
     for (;;) {
         if (SCM_NULLP(z)) {
             return count;
         } else if (SCM_LAZY_PAIR_P(z)) {
             ScmEvalPacket result;
-            ScmObj proc = Scm_GlobalVariableRef(Scm_GaucheModule(),
-                                                SCM_SYMBOL(SCM_INTERN("length")),
-                                                0);
-            int nres = Scm_Apply(proc, SCM_LIST1(z), &result);
+            SCM_BIND_PROC(length_proc, "length", Scm_GaucheModule());
+            int nres = Scm_Apply(length_proc, SCM_LIST1(z), &result);
             if (nres == -1) Scm_Raise(result.exception);
             SCM_ASSERT(nres == 1);
             SCM_ASSERT(SCM_INTP(result.results[0]));

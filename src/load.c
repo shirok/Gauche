@@ -260,16 +260,7 @@ int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
     ScmEvalPacket eresult;
     ScmObj args = SCM_NIL;
     int r;
-
-    if (SCM_UNDEFINEDP(load_from_port)) {
-        /* This should be an idempotent operation, so we don't need to
-           worry about MT-safety. */
-        load_from_port =
-            Scm_GlobalVariableRef(Scm_GaucheModule(),
-                                  SCM_SYMBOL(SCM_INTERN("load-from-port")),
-                                  0);
-    }
-
+    SCM_BIND_PROC(load_from_port, "load-from-port", Scm_GaucheModule());
     load_packet_prepare(packet);
 
     if (flags&SCM_LOAD_MAIN_SCRIPT) {
@@ -448,14 +439,7 @@ int Scm_Load(const char *cpath, u_long flags, ScmLoadPacket *packet)
     ScmObj f = SCM_MAKE_STR_COPYING(cpath);
     ScmObj options = SCM_NIL;
     ScmEvalPacket eresult;
-
-    if (load_stub == SCM_UNDEFINED) {
-        /* This should be an idempotent operation, so we don't need to
-           worry about MT-safety. */
-        load_stub = Scm_GlobalVariableRef(Scm_SchemeModule(),
-                                          SCM_SYMBOL(SCM_INTERN("load")),
-                                          0);
-    }
+    SCM_BIND_PROC(load_stub, "load", Scm_SchemeModule());
     
     if (flags&SCM_LOAD_QUIET_NOFILE) {
         options = Scm_Cons(key_error_if_not_found,
