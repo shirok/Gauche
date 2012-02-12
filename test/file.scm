@@ -18,7 +18,7 @@
 (define (mf p) (with-output-to-file p (cut display "z")))
 (define (rmrf p) (sys-system #`"rm -rf ,p"))
 
-(and file-exists? (test-module 'gauche.fileutil)) ;; trigger autoload
+(and glob (test-module 'gauche.fileutil)) ;; trigger autoload
 
 (rmrf "tmp1.o")
 

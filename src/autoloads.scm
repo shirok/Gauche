@@ -153,7 +153,6 @@
 (autoload gauche.stringutil string-split)
 
 (autoload gauche.fileutil
-          file-exists? file-is-regular? file-is-directory?
           glob glob-fold sys-glob glob-component->regexp make-glob-fs-fold
           sys-stat->file-type sys-stat->mode sys-stat->ino
           sys-stat->dev sys-stat->rdev sys-stat->nlink

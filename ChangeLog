@@ -1,3 +1,10 @@
+2012-02-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsys.scm, lib/gauche/fileutil.scm (file-exists?),
+	  (file-is-regular?, file-is-directory?): Moved these from fileutil
+	  to libsys.scmk because of the dependency.
+	* src/autoloads.scm: Changed accordingly.
+
 2012-02-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (SCM_BIND_PROC): Introduced a macro to capture the

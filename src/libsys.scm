@@ -655,6 +655,30 @@
                 (when (< r 0) (Scm_SysError "fstat failed for %d" fd))
                 (result (SCM_OBJ s))])))
 
+(define-cproc file-exists? (path::<const-cstring>) ::<boolean>
+  (let* ([r::int])
+    (SCM_SYSCALL r (access path F_OK))
+    (result (== r 0))))
+
+(inline-stub
+ (define-cise-stmt file-check-common
+   [(_ checker)
+    `(let* ([r::int] [s::(struct stat)]
+            [p::(const char*) (check-trailing-separator path)])
+       (SCM_SYSCALL r (access p F_OK))
+       (if (== r 0)
+         (begin (SCM_SYSCALL r (stat p (& s)))
+                (when (< r 0)
+                  (Scm_SysError "stat failed for %s" path))
+                (result (,checker (ref s st_mode))))
+         (result FALSE)))])
+
+ (define-cproc file-is-regular? (path::<const-cstring>) ::<boolean>
+   (file-check-common S_ISREG))
+ (define-cproc file-is-directory? (path::<const-cstring>) ::<boolean>
+   (file-check-common S_ISDIR))
+ )
+
 ;; utime.h
 (define-cproc sys-utime
   (path::<const-cstring> :optional (atime #f) (mtime #f)) ::<void>

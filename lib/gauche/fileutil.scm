@@ -34,8 +34,7 @@
 #!no-fold-case
 
 (define-module gauche.fileutil
-  (export file-exists? file-is-regular? file-is-directory?
-          glob glob-fold glob-component->regexp make-glob-fs-fold
+  (export glob glob-fold glob-component->regexp make-glob-fs-fold
           sys-stat->file-type sys-stat->mode sys-stat->ino
           sys-stat->dev sys-stat->rdev sys-stat->nlink
           sys-stat->size sys-stat->uid sys-stat->gid
@@ -43,16 +42,6 @@
           sys-tm->alist)
   )
 (select-module gauche.fileutil)
-
-(define (file-exists? path)
-  (sys-access path F_OK))
-(define (file-is-regular? path)
-  (and (sys-access path F_OK)
-       (eq? (slot-ref (sys-stat path) 'type) 'regular)))
-(define (file-is-directory? path)
-  (and (sys-access path F_OK)
-       (eq? (slot-ref (sys-stat path) 'type) 'directory)))
-
 
 ;; system object accessors (for backward compatibility)
 (define (sys-stat->file-type s)  (slot-ref s 'type))
