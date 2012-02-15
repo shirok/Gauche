@@ -31,9 +31,6 @@
                 (string-append str " " (symbol->string (car cans))))
           (loop (cdr cans) syms str)))))
 
-  (define iport (open-input-file (sys-ctermid)))
-  (define oport (open-output-file (sys-ctermid)))
-
   (define speeds
     (list-if-bound 'B0 'B50 'B75 'B110 'B134 'B150 'B200 'B300 'B600 'B1200
                    'B1800 'B2400 'B4800 'B9600 'B19200 'B38400 'B57600
@@ -64,6 +61,21 @@
 
   (define iterm #f)
   (define oterm #f)
+
+  (define iport #f)
+  (define oport #f)
+
+  ;; If tests are run by a daemon, /dev/tty may not be available.
+  ;; Pty can be used in such situation if the system supports it.
+  (cond-expand
+   [gauche.sys.openpty
+    (receive (master slave) (sys-openpty)
+      (set! iport (open-input-fd-port slave))
+      (set! oport (open-output-fd-port slave)))]
+   [else
+    (let1 term (sys-ctermid)
+      (set! iport (open-input-file term))
+      (set! oport (open-output-file term)))])
 
   (test "termios-tcgetattr" #t
         (^[]
