@@ -62,18 +62,33 @@
 ;;; Load
 ;;;
 
-(select-module scheme)
+(select-module gauche.internal)
 
-(define-cproc load (file::<string>
-                    :key (paths #f) (error-if-not-found #t)
-                    (environment #f) (ignore-coding #f)
-                    (main-script #f))
-  (let* ([flags::int
-          (logior (?: (SCM_FALSEP error-if-not-found) SCM_LOAD_QUIET_NOFILE 0)
-                  (logior
-                   (?: (SCM_FALSEP ignore-coding) 0 SCM_LOAD_IGNORE_CODING)
-                   (?: (SCM_FALSEP main-script) 0 SCM_LOAD_MAIN_SCRIPT)))])
-    (result (Scm_VMLoad file paths environment flags))))
+(define-cproc %record-load-start (path) ::<void>
+  Scm__RecordLoadStart)
+
+;; Main entry of `load'
+(define-in-module scheme (load file :key (paths *load-path*)
+                                         (suffixes *load-suffixes*)
+                                         (error-if-not-found #t)
+                                         (environment #f)
+                                         (ignore-coding #f)
+                                         (main-script #f))
+  ;; NB: 'File not found' error is handled in find-load-file.
+  (and-let* ([r (find-load-file file paths suffixes error-if-not-found #t)])
+    (let* ([path (car r)]
+           [remaining-paths (cadr r)]
+           [opener (if (pair? (cddr r)) (caddr r) open-input-file)]
+           [port (guard (e [else e]) (opener path))])
+      (%record-load-start path)
+      (if (not (input-port? port))
+        (and error-if-not-found (raise e))
+        (load-from-port (if ignore-coding
+                          port
+                          (open-coding-aware-port port))
+                        :environment environment
+                        :paths remaining-paths
+                        :main-script main-script)))))
 
 (select-module gauche)
 
@@ -128,6 +143,90 @@
 (select-module gauche)
 (define-macro (add-load-path path . args)
   `',(apply (with-module gauche.internal %add-load-path) path args))
+
+;; Load path hooks
+(select-module gauche.internal)
+(define-cproc %add-load-path-hook! (proc :optional (after?::<boolean> #f))
+  ::<void> Scm_AddLoadPathHook)
+(define-cproc %delete-load-path-hook! (proc)
+  ::<void> Scm_DeleteLoadPathHook)
+
+;; find-load-file
+;;
+;;   Core function to search specified file from the search path *PATH.
+;;   Search rules are:
+;;   
+;;    (1) If given filename begins with "/", "./" or "../", the file is
+;;        searched.
+;;    (2) If given filename begins with "~", unix-style username
+;;        expansion is done, then the resulting file is searched.
+;;    (3) Otherwise, the file is searched for each directory in PATHs.
+;;
+;;   If the named file is found, a list of the actual filename, and the
+;;   remaining paths is returned.  The remaining paths can be used again
+;;   to find next matching filename.
+;;   (The returned list may have the third element, if load-path-hooks is
+;;   used.  See below).
+;;
+;;   If SUFFIXES is given, after the filename is tested, names with
+;;   each element in SUFFIXES list appended are tried.
+;;   The element in SUFFIXES is directly appended to the FILENAME;
+;;   so usually it begins with dot.
+;;
+;;   PATHs may contain a regular file.  In which case, procedures chained
+;;   to *load-path-hooks* are called in turn.  It receives three arguments;
+;;   the regular filename in PATHs, the (partial) filename given to the
+;;   find-load-file, and the list of suffixes.  The hook is mainly intended
+;;   to allow loading from archive files.   If the hook procedure "finds"
+;;   the searched file in the archive file, it should return a pair of
+;;   the canonical filename (given filename plus suffix if applicable), and
+;;   a thunk that opens and returns a port to read the file.  If the hook
+;;   procedure doesn't find the searched file, it should return #f.
+;;
+;;   NB: find-file-in-paths in file.util is similar to this, but this one
+;;   captures the exact behavior of `load'.
+
+(select-module gauche.internal)
+(define (find-load-file filename paths suffixes
+                        :optional (error-if-not-found #f)
+                                  (allow-archive #f))
+  (define (try-suffixes stem)
+    (cond [(file-is-regular? stem) stem]
+          [else (any (^s (let1 file (string-append stem s)
+                           (and (file-is-regular? file) file)))
+                     suffixes)]))
+  (define (do-absolute stem)
+    (if-let1 found (try-suffixes stem)
+      (list found '())
+      (and error-if-not-found
+           (errorf "cannot find ~s to load" stem))))
+  (define (do-relative ps)
+    (cond
+     [(null? ps)
+      (and error-if-not-found
+           (errorf "cannot find ~s in ~s" filename paths))]
+     [(file-is-directory? (car ps))
+      (if-let1 found (try-suffixes (string-append (car ps) "/" filename))
+        (list found (cdr ps))
+        (do-relative (cdr ps)))]
+     [(and allow-archive (file-is-regular? (car ps)))
+      (if-let1 r (any (^p (p (car ps) filename suffixes)) *load-path-hooks*)
+        (list (car r) (cdr ps) (cdr r))
+        (do-relative (cdr ps)))]
+     [else (do-relative (cdr ps))]))
+
+  (when (equal? filename "")
+    (error "bad filename to load" filename))
+  (cond [(char=? (string-ref filename 0) #\~)
+         (do-absolute (sys-normalize-pathname filename :expand #t))]
+        [(rxmatch #/^\.{0,2}\// filename) (do-absolute filename)]
+        ;; we can't use cond-expand here, for this file is precompiled
+        ;; on a system different from the final target.
+        [(and (or (assq 'gauche.os.windows (cond-features))
+                  (assq 'gauche.os.cygwin (cond-features)))
+              (rxmatch #/^[a-zA-Z]:/ filename)) ; the wicked drive-letter
+         (do-absolute filenaem)]
+        [else (do-relative paths)]))
 
 ;;;
 ;;; Macros

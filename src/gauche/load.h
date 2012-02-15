@@ -40,20 +40,28 @@
  * Loading Scheme files
  */
 
-/* Flags for Scm_VMLoad, Scm_Load, Scm_Require, and Scm_VMLoadPort.
-   NB: Scm_VMLoadPort ignores all flags except SCM_LOAD_MAIN_SCRIPT.
+/* Flags for Scm_VMLoad (V), Scm_Load (L), Scm_Require (R), Scm_VMLoadPort (P),
+ * and Scm_FindFile (F).
  */
 typedef enum {
-    SCM_LOAD_QUIET_NOFILE = (1L<<0),  /* do not signal an error if the file
-                                         does not exist; just return #f. */
-    SCM_LOAD_IGNORE_CODING = (1L<<1), /* do not use coding-aware port to honor
-                                         'coding' magic comment */
-    SCM_LOAD_PROPAGATE_ERROR = (1L<<2),/* do not capture an error; let the
-                                         caller handle it.  Not effective
-                                         for Scm_VMLoad. */
-    SCM_LOAD_MAIN_SCRIPT = (1L<<3)    /* indicates we're loading the file
-                                         as a "main script"---a script file
-                                         given to gosh to load. */
+    SCM_LOAD_QUIET_NOFILE = (1L<<0),
+    /* [L,V,F] do not signal an error if the file does not exist;
+       just return #f. */
+    
+    SCM_LOAD_IGNORE_CODING = (1L<<1),
+    /* [L,V] do not use coding-aware port to honor 'coding' magic comment */
+
+    SCM_LOAD_PROPAGATE_ERROR = (1L<<2),
+    /* [L,R] do not capture an error; let the caller handle it.  */
+    
+    SCM_LOAD_MAIN_SCRIPT = (1L<<3),
+    /* [L,V,P] indicates we're loading the file as a "main script"
+       ---a script file given to gosh to load. */
+    
+    SCM_LOAD_SEARCH_ARCHIVE = (1L<<4)
+    /* [F] Search a file to load from archive file, using the hook of
+       Scm_FindFile.  This is mainly for internal use---Scm_VMLoad etc calls
+       Scm_FindFile with this flag on. */
 } ScmLoadFlags;
 
 /* A structure to obtain a detailed result of loading. */
@@ -78,6 +86,9 @@ SCM_EXTERN void Scm__LoadFromPortCompat(ScmPort *port, int flags);
 SCM_EXTERN int  Scm__LoadCompat(const char *file, int flags);
 #endif /*!GAUCHE_API_PRE_0_9*/
 
+/* Inernal */
+SCM_EXTERN void   Scm__RecordLoadStart(ScmObj path);
+
 /*=================================================================
  * Dynamic state access
  */
@@ -92,6 +103,8 @@ SCM_EXTERN ScmObj Scm_LoadMainScript(void);
 
 SCM_EXTERN ScmObj Scm_GetLoadPath(void);
 SCM_EXTERN ScmObj Scm_AddLoadPath(const char *cpath, int afterp);
+SCM_EXTERN void   Scm_AddLoadPathHook(ScmObj proc, int afterp);
+SCM_EXTERN void   Scm_DeleteLoadPathHook(ScmObj proc);
 
 /*=================================================================
  * Dynamic Loading

@@ -122,6 +122,7 @@
     (*load-history*            SCM_SYM_LOAD_HISTORY)
     (*load-port*               SCM_SYM_LOAD_PORT)
     (*load-suffixes*           SCM_SYM_LOAD_SUFFIXES)
+    (*load-path-hooks*         SCM_SYM_LOAD_PATH_HOOKS)
     (*dynamic-load-path*       SCM_SYM_DYNAMIC_LOAD_PATH)
 
     ;; reader, compiler, vm

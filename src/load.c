@@ -50,9 +50,10 @@ typedef struct dlobj_initfn_rec dlobj_initfn;
 /* Static parameters */
 static struct {
     /* Load path list */
-    ScmGloc *load_path_rec;     /* *load-path*         */
-    ScmGloc *dynload_path_rec;  /* *dynamic-load-path* */
-    ScmGloc *load_suffixes_rec; /* *load-suffixes*     */
+    ScmGloc *load_path_rec;      /* *load-path*         */
+    ScmGloc *dynload_path_rec;   /* *dynamic-load-path* */
+    ScmGloc *load_suffixes_rec;  /* *load-suffixes*     */
+    ScmGloc *load_path_hooks_rec; /* *load-path-hooks*   */
     ScmInternalMutex path_mutex;
 
     /* Provided features */
@@ -87,6 +88,8 @@ static ScmObj key_error_if_not_found = SCM_UNBOUND;
 static ScmObj key_macro              = SCM_UNBOUND;
 static ScmObj key_ignore_coding      = SCM_UNBOUND;
 static ScmObj key_main_script        = SCM_UNBOUND;
+static ScmObj key_paths              = SCM_UNBOUND;
+static ScmObj key_environment        = SCM_UNBOUND;
 
 #define PARAM_REF(vm, loc)      Scm_ParameterRef(vm, &ldinfo.loc)
 #define PARAM_SET(vm, loc, val) Scm_ParameterSet(vm, &ldinfo.loc, val)
@@ -284,100 +287,6 @@ int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
 }
 
 /*---------------------------------------------------------------------
- * Scm_FindFile
- *
- *   Core function to search specified file from the search path *PATH.
- *   Search rules are:
- *   
- *    (1) If given filename begins with "/", "./" or "../", the file is
- *        searched.
- *    (2) If given filename begins with "~", unix-style username
- *        expansion is done, then the resulting file is searched.
- *    (3) Otherwise, the file is searched for each directory in
- *        *load-path*.
- *
- *   If a file is found, it's pathname is returned.  *PATH is modified
- *   to contain the remains of *load-path*, which can be used again to
- *   find next matching filename.
- *   If SUFFIXES is given, filename is assumed not to have suffix,
- *   and suffixes listed in SUFFIXES are tried one by one.
- *   The element in SUFFIXES is directly appended to the FILENAME;
- *   so usually it begins with dot.
- */
-
-static int regfilep(ScmObj path)
-{
-    struct stat statbuf;
-    int r = stat(Scm_GetStringConst(SCM_STRING(path)), &statbuf);
-    if (r < 0) return FALSE;
-    return S_ISREG(statbuf.st_mode);
-}
-
-static ScmObj try_suffixes(ScmObj base, ScmObj suffixes)
-{
-    ScmObj sp, fpath;
-    if (regfilep(base)) return base;
-    SCM_FOR_EACH(sp, suffixes) {
-        fpath = Scm_StringAppend2(SCM_STRING(base), SCM_STRING(SCM_CAR(sp)));
-        if (regfilep(fpath)) return fpath;
-    }
-    return SCM_FALSE;
-}
-
-ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
-                    ScmObj suffixes, int flags)
-{
-    u_int size;
-    const char *ptr = Scm_GetStringContent(filename, &size, NULL, NULL);
-    int use_load_paths = TRUE;
-    ScmObj file = SCM_OBJ(filename), fpath = SCM_FALSE;
-
-    if (size == 0) Scm_Error("bad filename to load: \"\"");
-    if (*ptr == '~') {
-        file = Scm_NormalizePathname(filename, SCM_PATH_EXPAND);
-        use_load_paths = FALSE;
-    } else if (*ptr == '/'
-               || (*ptr == '.' && *(ptr+1) == '/')
-               || (*ptr == '.' && *(ptr+1) == '.' && *(ptr+2) == '/')
-#if defined(__CYGWIN__) || defined(GAUCHE_WINDOWS)
-	       /* support for wicked legacy DOS drive letter */
-	       || (isalpha(*ptr) && *(ptr+1) == ':')
-#endif /* __CYGWIN__ || GAUCHE_WINDOWS */
-	       ) {
-        use_load_paths = FALSE;
-    }
-
-    if (use_load_paths) {
-        ScmObj lpath;
-        SCM_FOR_EACH(lpath, *paths) {
-            if (!SCM_STRINGP(SCM_CAR(lpath))) {
-                Scm_Warn("*load-path* contains invalid element: %S", *paths);
-            }
-            fpath = Scm_StringAppendC(SCM_STRING(SCM_CAR(lpath)), "/", 1, 1);
-            fpath = Scm_StringAppend2(SCM_STRING(fpath), SCM_STRING(file));
-            fpath = try_suffixes(fpath, suffixes);
-            if (!SCM_FALSEP(fpath)) break;
-        }
-        if (SCM_PAIRP(lpath)) {
-            *paths = SCM_CDR(lpath);
-            return SCM_OBJ(fpath);
-        } else if (!(flags&SCM_LOAD_QUIET_NOFILE)) {
-            Scm_Error("cannot find file %S in *load-path* %S", file, *paths);
-        } else {
-            *paths = SCM_NIL;
-        }
-    } else {
-        *paths = SCM_NIL;
-        fpath = try_suffixes(file, suffixes);
-        if (!SCM_FALSEP(fpath)) return fpath;
-        if (!(flags&SCM_LOAD_QUIET_NOFILE)) {
-            Scm_Error("cannot find file %S to load", file);
-        }
-    }
-    return SCM_FALSE;
-}
-
-/*---------------------------------------------------------------------
  * Scm_Load
  * Scm_VMLoad
  *
@@ -391,25 +300,16 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
  *  flags      - combination of ScmLoadFlags.
  */
 
-ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
-                  ScmObj env, int flags)
+/* internal auxiliary function called from Scheme `load' */
+void Scm__RecordLoadStart(ScmObj load_file_path)
 {
-    ScmObj port, truename, suffixes;
     ScmVM *vm = Scm_VM();
-    int errorp = !(flags&SCM_LOAD_QUIET_NOFILE);
-    int ignore_coding = flags&SCM_LOAD_IGNORE_CODING;
-
-    suffixes = SCM_GLOC_GET(ldinfo.load_suffixes_rec);
-    if (!SCM_PAIRP(load_paths)) load_paths = Scm_GetLoadPath();
-    truename = Scm_FindFile(filename, &load_paths, suffixes, flags);
-    if (SCM_FALSEP(truename)) return SCM_FALSE;
-
 #ifdef HAVE_GETTIMEOFDAY
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_LOAD_STATS)) {
         struct timeval t0;
         gettimeofday(&t0, NULL);
         vm->stat.loadStat =
-            Scm_Acons(truename,
+            Scm_Acons(load_file_path,
                       Scm_MakeIntegerU(t0.tv_sec*1000000+t0.tv_usec),
                       vm->stat.loadStat);
     }
@@ -418,51 +318,63 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
         int len = Scm_Length(PARAM_REF(vm, load_history));
         SCM_PUTZ(";;", 2, SCM_CURERR);
         while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
-        Scm_Printf(SCM_CURERR, "Loading %A...\n", truename);
+        Scm_Printf(SCM_CURERR, "Loading %A...\n", load_file_path);
     }
+}
 
-    port = Scm_OpenFilePort(Scm_GetStringConst(SCM_STRING(truename)),
-                            O_RDONLY, SCM_PORT_BUFFER_FULL, 0);
-    if (SCM_FALSEP(port)) {
-        if (errorp) Scm_Error("file %S exists, but couldn't open.", truename);
-        else        return SCM_FALSE;
+/* The real `load' function is moved to Scheme.  This is a C stub to
+   call it. */
+ScmObj Scm_VMLoad(ScmString *filename, ScmObj paths, ScmObj env, int flags)
+{
+    ScmObj opts = SCM_NIL;
+    static ScmObj load_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(load_proc, "load", Scm_SchemeModule());
+
+    if (flags&SCM_LOAD_QUIET_NOFILE) {
+        opts = Scm_Cons(key_error_if_not_found, Scm_Cons(SCM_FALSE, opts));
     }
-    if (!ignore_coding) {
-        port = Scm_MakeCodingAwarePort(SCM_PORT(port));
+    if (flags&SCM_LOAD_IGNORE_CODING) {
+        opts = Scm_Cons(key_ignore_coding, Scm_Cons(SCM_TRUE, opts));
     }
-    return Scm_VMLoadFromPort(SCM_PORT(port), load_paths, env, flags);
+    if (flags&SCM_LOAD_MAIN_SCRIPT) {
+        opts = Scm_Cons(key_main_script, Scm_Cons(SCM_TRUE, opts));
+    }
+    if (SCM_NULLP(paths) || SCM_PAIRP(paths)) {
+        opts = Scm_Cons(key_paths, Scm_Cons(paths, opts));
+    }
+    if (!SCM_FALSEP(env)) {
+        opts = Scm_Cons(key_environment, Scm_Cons(env, opts));
+    }
+    return Scm_VMApply(load_proc, Scm_Cons(SCM_OBJ(filename), opts));
 }
 
 int Scm_Load(const char *cpath, u_long flags, ScmLoadPacket *packet)
 {
-    static ScmObj load_stub = SCM_UNDEFINED;
+    static ScmObj load_proc = SCM_UNDEFINED;
     ScmObj f = SCM_MAKE_STR_COPYING(cpath);
-    ScmObj options = SCM_NIL;
+    ScmObj opts = SCM_NIL;
     ScmEvalPacket eresult;
-    SCM_BIND_PROC(load_stub, "load", Scm_SchemeModule());
+    SCM_BIND_PROC(load_proc, "load", Scm_SchemeModule());
     
     if (flags&SCM_LOAD_QUIET_NOFILE) {
-        options = Scm_Cons(key_error_if_not_found,
-                           Scm_Cons(SCM_FALSE, options));
+        opts = Scm_Cons(key_error_if_not_found, Scm_Cons(SCM_FALSE, opts));
     }
     if (flags&SCM_LOAD_IGNORE_CODING) {
-        options = Scm_Cons(key_ignore_coding,
-                           Scm_Cons(SCM_TRUE, options));
+        opts = Scm_Cons(key_ignore_coding, Scm_Cons(SCM_TRUE, opts));
     }
     if (flags&SCM_LOAD_MAIN_SCRIPT) {
-        options = Scm_Cons(key_main_script,
-                           Scm_Cons(SCM_TRUE, options));
+        opts = Scm_Cons(key_main_script, Scm_Cons(SCM_TRUE, opts));
     }
 
     load_packet_prepare(packet);
     if (flags&SCM_LOAD_PROPAGATE_ERROR) {
-        ScmObj r = Scm_ApplyRec(load_stub, Scm_Cons(f, options));
+        ScmObj r = Scm_ApplyRec(load_proc, Scm_Cons(f, opts));
         if (packet) {
             packet->loaded = !SCM_FALSEP(r);
         }
         return 0;
     } else {
-        int r = Scm_Apply(load_stub, Scm_Cons(f, options), &eresult);
+        int r = Scm_Apply(load_proc, Scm_Cons(f, opts), &eresult);
         if (packet) {
             packet->exception = eresult.exception;
             packet->loaded = (r > 0 && !SCM_FALSEP(eresult.results[0]));
@@ -513,6 +425,17 @@ static ScmObj break_env_paths(const char *envname)
     }
 }
 
+static ScmObj add_list_item(ScmObj orig, ScmObj item, int afterp)
+{
+    if (afterp) {
+        return Scm_Append2(orig, SCM_LIST1(item));
+    } else {
+        return Scm_Cons(item, orig);
+    }
+}
+#define ADD_LIST_ITEM(list, item, afterp) \
+    list = add_list_item(list, item, afterp)
+
 /* Add CPATH to the current list of load path.  The path is
  * added before the current list, unless AFTERP is true.
  * The existence of CPATH is not checked.
@@ -543,28 +466,29 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
     }
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
-    if (!SCM_PAIRP(ldinfo.load_path_rec->value)) {
-        ldinfo.load_path_rec->value = SCM_LIST1(spath);
-    } else if (afterp) {
-        ldinfo.load_path_rec->value =
-            Scm_Append2(ldinfo.load_path_rec->value, SCM_LIST1(spath));
-    } else {
-        ldinfo.load_path_rec->value = Scm_Cons(spath, ldinfo.load_path_rec->value);
-    }
+    ADD_LIST_ITEM(ldinfo.load_path_rec->value, spath, afterp);
+    ADD_LIST_ITEM(ldinfo.dynload_path_rec->value, dpath, afterp);
     r = ldinfo.load_path_rec->value;
-
-    if (!SCM_PAIRP(ldinfo.dynload_path_rec->value)) {
-        ldinfo.dynload_path_rec->value = SCM_LIST1(dpath);
-    } else if (afterp) {
-        ldinfo.dynload_path_rec->value =
-            Scm_Append2(ldinfo.dynload_path_rec->value, SCM_LIST1(dpath));
-    } else {
-        ldinfo.dynload_path_rec->value =
-            Scm_Cons(dpath, ldinfo.dynload_path_rec->value);
-    }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
     
     return r;
+}
+
+void Scm_AddLoadPathHook(ScmObj proc, int afterp)
+{
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
+    ADD_LIST_ITEM(ldinfo.load_path_hooks_rec->value, proc, afterp);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
+}
+
+void Scm_DeleteLoadPathHook(ScmObj proc)
+{
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
+    /* we should use Scm_Delete, instead of Scm_DeleteX,
+       to avoid race with reader of the list */
+    ldinfo.load_path_hooks_rec->value
+        = Scm_Delete(proc, ldinfo.load_path_hooks_rec->value, SCM_CMP_EQ);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
 }
 
 /*------------------------------------------------------------------
@@ -759,12 +683,17 @@ static dlobj_initfn *find_initfn(dlobj *dlo, const char *name)
 /* From the given DSO name, find out the path of the actual DSO */
 static const char *find_dso_path(ScmString *dsoname)
 {
-    ScmObj lpaths = Scm_GetDynLoadPath();
-    ScmObj spath = Scm_FindFile(dsoname, &lpaths, ldinfo.dso_suffixes, TRUE);
+    ScmObj spath;
+    static ScmObj find_file = SCM_UNDEFINED;
+    SCM_BIND_PROC(find_file, "find-load-file", Scm_GaucheInternalModule());
+
+    spath = Scm_ApplyRec5(find_file, SCM_OBJ(dsoname), Scm_GetDynLoadPath(),
+                          ldinfo.dso_suffixes, SCM_FALSE, SCM_FALSE);
     if (SCM_FALSEP(spath)) {
         Scm_Error("can't find dlopen-able module %S", dsoname);
     }
-    return Scm_GetStringConst(SCM_STRING(spath));
+    SCM_ASSERT(SCM_STRINGP(SCM_CAR(spath)));
+    return Scm_GetStringConst(SCM_STRING(SCM_CAR(spath)));
 }
 
 /* Obtain the initializer function name (with '_' prepended) */
@@ -1294,6 +1223,8 @@ void Scm__InitLoad(void)
     key_macro = SCM_MAKE_KEYWORD("macro");
     key_ignore_coding = SCM_MAKE_KEYWORD("ignore-coding");
     key_main_script = SCM_MAKE_KEYWORD("main-script");
+    key_paths = SCM_MAKE_KEYWORD("paths");
+    key_environment = SCM_MAKE_KEYWORD("environment");
     
 #define DEF(rec, sym, val) \
     rec = SCM_GLOC(Scm_Define(m, SCM_SYMBOL(sym), val))
@@ -1301,6 +1232,7 @@ void Scm__InitLoad(void)
     DEF(ldinfo.load_path_rec,    SCM_SYM_LOAD_PATH, init_load_path);
     DEF(ldinfo.dynload_path_rec, SCM_SYM_DYNAMIC_LOAD_PATH, init_dynload_path);
     DEF(ldinfo.load_suffixes_rec, SCM_SYM_LOAD_SUFFIXES, init_load_suffixes);
+    DEF(ldinfo.load_path_hooks_rec, SCM_SYM_LOAD_PATH_HOOKS, SCM_NIL);
 
     ldinfo.provided =
         SCM_LIST5(SCM_MAKE_STR("srfi-2"), /* and-let* */

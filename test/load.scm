@@ -389,4 +389,29 @@
 
 (rmrf "test.o")
 
+;; Load-path hook -----------------------------------
+
+(test-section "load-path hook")
+
+(define (dummy-load-path-hook archive relpath suffixes)
+  (and (equal? (sys-basename archive) "test.o")
+       (member ".scm" suffixes)
+       (cons #`",|archive|/,|relpath|.scm"
+             (^[path]
+               (open-input-string
+                (format "(define *path* ~s)" path))))))
+
+(test* "dummy-load-path-hook" #`",(sys-getcwd)/test.o/non/existent/file.scm"
+       (unwind-protect
+           (begin
+             ((with-module gauche.internal %add-load-path-hook!)
+              dummy-load-path-hook)
+             ;; just create a dummy file - content doesn't matter.
+             (with-output-to-file "test.o"
+               (^[] (print)))
+             (load "non/existent/file" :paths `(,#`",(sys-getcwd)/test.o"))
+             (global-variable-ref (current-module) '*path*))
+         ((with-module gauche.internal %delete-load-path-hook!)
+          dummy-load-path-hook)))
+
 (test-end)

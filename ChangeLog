@@ -1,8 +1,20 @@
+2012-02-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c, src/libeval.scm (load, find-load-file): Moved Scm_VMLoad
+	  and Scm_FindFile functions from C to Scheme.  C API Scm_VMLoad()
+	  remains for the backward compatibility.  Scm_FindFile() is deleted,
+	  for it was never made public.
+	  (%add-load-path-hook!, %delete-load-path-hook!): *EXPERIMENTAL*
+	  Added a mechanism to trigger a hook function when *load-path* includes
+	  a regular file instead of a directory.  The hook function allows
+	  the application to load files from archive files (e.g. zip fie).
+	  See libeval.scm for the details.
+
 2012-02-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsys.scm, lib/gauche/fileutil.scm (file-exists?),
 	  (file-is-regular?, file-is-directory?): Moved these from fileutil
-	  to libsys.scmk because of the dependency.
+	  to libsys.scm because of the dependency.
 	* src/autoloads.scm: Changed accordingly.
 
 2012-02-11  Shiro Kawai  <shiro@acm.org>
