@@ -1,3 +1,9 @@
+2012-02-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/generator.scm (glet*, glet1): Added convenience macors
+	  that captures the monadic pattern frequently appear in generator
+	  code.
+
 2012-02-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c, src/libeval.scm (load, find-load-file): Moved Scm_VMLoad

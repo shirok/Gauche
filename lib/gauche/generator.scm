@@ -46,7 +46,7 @@
           generator->list null-generator gcons* gappend
           circular-generator gunfold giota grange
           gmap gmap-accum gfilter gfilter-map gstate-filter
-          gtake gdrop gtake-while gdrop-while grxmatch
+          gtake gdrop gtake-while gdrop-while grxmatch glet* glet1
           ))
 (select-module gauche.generator)
 
@@ -217,6 +217,28 @@
 ;;; Generator operations
 ;;;
 
+;; A monadic syntax sugar
+(define-syntax glet*
+  (syntax-rules ()
+    [(_ () body body2 ...) (begin body body2 ...)]
+    [(_ ((var gen-expr) more-bindings ...) . body)
+     (let1 var gen-expr
+       (if (eof-object? var)
+         var
+         (glet* (more-bindings ...) . body)))]
+    [(_ (( gen-expr ) more-bindings ...) . body)
+     (let1 var gen-expr
+       (if (eof-object? var)
+         var
+         (glet* (more-bindings ...) . body)))]))
+
+(define-syntax glet1
+  (syntax-rules ()
+    [(_ var gen-expr body body2 ...)
+     (let1 var gen-expr
+       (if (eof-object? var)
+         var
+         (begin body body2 ...)))]))
 
 ;; gcons* :: (a, ..., () -> a) -> (() -> a)
 (define gcons*
@@ -258,26 +280,19 @@
   (case-lambda
     [(fn seed gen)
      (let1 g (%->gen gen)
-       (^[] (let1 v (g)
-              (if (eof-object? v)
-                v
-                (receive (v_ seed_) (fn v seed)
-                  (set! seed seed_)
-                  v_)))))]
+       (^[] (glet1 v (g)
+              (receive (v_ seed_) (fn v seed)
+                (set! seed seed_)
+                v_))))]
     [(fn seed gen . more)
      (let1 gs (%->gens (cons gen more))
-       (^[] (let1 vs (fold-right (^[g s] (if (eof-object? s)
-                                           s
-                                           (let1 v (g)
-                                             (if (eof-object? v)
-                                               v
-                                               (cons v s)))))
-                                 (list seed) gs)
-              (if (eof-object? vs)
-                (eof-object)
-                (receive (v_ seed_) (apply fn vs)
-                  (set! seed seed_)
-                  v_)))))]))
+       (^[] (glet1 vs (fold-right (^[g s] (glet* ([ s ]
+                                                  [v (g)])
+                                            (cons v s)))
+                                  (list seed) gs)
+              (receive (v_ seed_) (apply fn vs)
+                (set! seed seed_)
+                v_))))]))
 
 ;; gfilter :: (a -> Bool, () -> a) -> (() -> a)
 (define (gfilter pred gen)
@@ -292,10 +307,9 @@
   (case-lambda
     [(fn gen)
      (let1 gen (%->gen gen)
-       (^[] (let loop ([v (gen)])
-              (cond [(eof-object? v) v]
-                    [(fn v)]
-                    [else (loop (gen))]))))]
+       (^[] (let loop ()
+              (glet1 v (gen)
+                (or (fn v) (loop))))))]
     [(fn gen . more)
      (let1 gens (%->gens (cons gen more))
        (^[] (let loop ()
@@ -307,12 +321,11 @@
 ;; gstate-filter :: ((a,b) -> (Bool,b), b, () -> a) -> (() -> a)
 (define (gstate-filter proc seed gen)
   (let1 gen (%->gen gen)
-    (^[] (let loop ([v (gen)])
-           (if (eof-object? v)
-             v
+    (^[] (let loop ()
+           (glet1 v (gen)
              (receive (flag seed1) (proc v seed)
                (set! seed seed1)
-               (if flag v (loop (gen)))))))))
+               (if flag v (loop))))))))
 
 ;; gtake :: (() -> a, Int) -> (() -> a)
 ;; gdrop :: (() -> a, Int) -> (() -> a)
@@ -343,10 +356,11 @@
   (let ([found? #f] [gen (%->gen gen)])
     (^[] (if found?
            (gen)
-           (let loop ([v (gen)])
-             (cond [(eof-object? v) v]
-                   [(pred v) (loop (gen))]
-                   [else (set! found? #t) v]))))))
+           (let loop ()
+             (glet1 v (gen)
+               (if (pred v)
+                 (loop)
+                 (begin (set! found? #t) v))))))))
 
 ;; generate :: ((a -> ()) -> ()) -> (() -> a)
 (define (generate proc)

@@ -4235,6 +4235,37 @@ specifying @var{k}---this procedure won't return but hogs
 all the memory before crash.
 @end defun
 
+@defmac glet* (binding @dots{}) body body2 @dots{}
+This captures a monadic pattern frequently appears in the generator
+code.  It is in a similar spirit of @code{and-let*}, but returns
+as soon as the evaluating expression returns EOF, instead of @code{#f}
+as @code{and-let*} does.
+
+The @var{binding} part can be either @code{(var expr)} or @code{( expr )}.
+The actual definition will explain this syntax clearly.
+
+@example
+(define-syntax glet*
+  (syntax-rules ()
+    [(_ () body body2 ...) (begin body body2 ...)]
+    [(_ ([var gen-expr] more-bindings ...) . body)
+     (let1 var gen-expr
+       (if (eof-object? var)
+         var
+         (glet* (more-bindings ...) . body)))]
+    [(_ ([ gen-expr ] more-bindings ...) . body)
+     (let1 var gen-expr
+       (if (eof-object? var)
+         var
+         (glet* (more-bindings ...) . body)))]))
+@end example
+@end defmac
+
+@defmac glet1 var expr body body2 @dots{}
+This is to @code{glet*} as @code{let1} is to @code{let*}.  In other words,
+it is @code{(glet* ([var expr]) body body2 @dots{})}.
+@end defmac
+
 The following procedures take generators (noted as @var{gen} and
 @var{gen2}) and return a generator.  For the convenience, they
 also accept any collection to @var{gen} and @var{gen2} parameters;
