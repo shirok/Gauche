@@ -1,3 +1,7 @@
+2012-02-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/generator.scm (consume): Added.
+
 2012-02-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (map, for-each), src/proc.c (Scm_Map, Scm_ForEach):

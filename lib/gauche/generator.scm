@@ -41,7 +41,7 @@
           file->generator file->sexp-generator file->char-generator
           file->line-generator file->byte-generator
           port->char-generator port->byte-generator
-          x->generator generate
+          x->generator generate consume
           
           generator->list null-generator gcons* gappend
           circular-generator gunfold giota grange
@@ -409,13 +409,29 @@
               (expand-buffer #f)))
           (eof-object))))))
 
+;; A generic sink
+;; The same effect can be achieved by
+;;   (for-each proc (generator->lseq gen))
+;; but this doesn't bother creating lazy seq.
+(define (consume proc gen . more)
+  (if (null? more)
+    (let loop ()
+      (glet1 v (gen)
+        (proc v)
+        (loop)))
+    (let1 gens (cons gen more)
+      (let loop ()
+        (let1 vs (map (^g (g)) gens)
+          (unless (any eof-object? vs)
+            (apply proc vs)
+            (loop)))))))
+
 ;; TODO:
 ;;  (gen-ec (: i ...) ...)
 ;;    srfi-42-ish macro to create generator.  it's not "eager", so
 ;;    the name needs to be reconsidered.
 ;;  (gflip-flop pred1 pred2 gen)
 ;;    flip-flop operator to extract a range from the input generator.
-;;  grxmatch variation to return "the rest of match" as well.
 ;;  multi-valued generators
 ;;    take a generator and creates a multi-valued generator which
 ;;    returns auxiliary info in extra values, e.g. item count.

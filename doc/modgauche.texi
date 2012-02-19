@@ -4266,6 +4266,28 @@ This is to @code{glet*} as @code{let1} is to @code{let*}.  In other words,
 it is @code{(glet* ([var expr]) body body2 @dots{})}.
 @end defmac
 
+@defun consume proc gen gen2 @dots{}
+Calls @var{proc} on the values generated from the given generators
+@var{gen}, @var{gen2} @dots{}, until any of the generators is
+exhausted.  The return value of @var{proc} is ignored.
+
+This is to generators what @code{for-each} is to the sequences.
+Actually, this can be implemented trivially by @code{for-each} and
+lazy sequences along this line:
+
+@example
+(for-each proc (generator->lseq gen))
+@end example
+
+We provide this procedure since it is useful as the ``terminator''
+of a chain of generators.  Also, the name @code{comsume} pairs
+with the @code{generate} procedure.
+(This is somewhat special; 
+we don't provide procedures corresponding to other sequence-related
+procedures; if you want to @code{fold} on generators, you can just
+combine @code{fold} and @code{generator->lseq}.)
+@end defun
+
 The following procedures take generators (noted as @var{gen} and
 @var{gen2}) and return a generator.  For the convenience, they
 also accept any collection to @var{gen} and @var{gen2} parameters;
@@ -4395,7 +4417,7 @@ on very large input.
 Note also that, when @var{gen} is not a string, @var{rxmatch} is applied
 on some buffered partial input.  So @code{rxmatch-after} of the returned
 match does not represents the whole ``rest of input'' after the match,
-but merely a rest of strings within the buffer.
+but merely the rest of strings within the buffer.
 @end defun
 
 

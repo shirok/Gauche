@@ -85,6 +85,30 @@
   (test-gcons '(a b) '(x y z))
   (test-gcons '(a b c) '(x y z)))
 
+(let ()
+  (define (test-generate expect gen)
+    (test* "generate" expect (generator->list gen 10)))
+
+  (test-generate '() (generate (^[yield] #f)))
+  (test-generate '(0) (generate (^[yield] (yield 0) 3)))
+  (test-generate '(0 1) (generate (^[yield] (yield 0) (yield 1))))
+
+  (test-generate '(0 1 2 3 4 5 6 7 8 9)
+                 (generate
+                  (^[yield] (let loop ([i 0]) (yield i) (loop (+ i 1))))))
+  )
+
+(let ()
+  (define (test-consume expect . gens)
+    (test* "consume" expect
+           (reverse (rlet1 r '()
+                      (apply consume (^ xs (push! r xs)) gens)))))
+
+  (test-consume '() null-generator)
+  (test-consume '((0) (1) (2) (3) (4)) (giota 5))
+  (test-consume '((0 #\a) (1 #\b) (2 #\c)) (giota 5) (x->generator "abc"))
+  )
+
 (test* "gappend" '(0 1 2 3 a b c d A B C D)
        (generator->list (gappend (giota 4) 
                                  (x->generator '(a b c d))
@@ -224,6 +248,7 @@
           $ generator->list
           $ grxmatch #/\w+/
           $ gappend "    " (make-string 1999 #\a)))
+
 
 (test-end)
 
