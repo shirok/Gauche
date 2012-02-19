@@ -185,9 +185,30 @@
 
 (define-cproc monotonic-merge (sequences::<list>) Scm_MonotonicMerge1)
 
-(define-cproc map (proc arg1 :rest args) Scm_Map)
-(define-cproc for-each (proc arg1 :rest args) Scm_ForEach)
-
+(select-module gauche.internal)
+(define-in-module scheme (map proc lis . more)
+  (if (null? more)
+    (let loop ([xs lis] [r '()])
+      (cond [(pair? xs) (loop (cdr xs) (cons (proc (car xs)) r))]
+            [(null? xs) (reverse r)]
+            [else (error "improper list not allowed:" lis)]))
+    (let loop ([xss (cons lis more)] [r '()])
+      (receive (cars cdrs) (%zip-nary-args xss)
+        (if (not cars)
+          (reverse r)
+          (loop cdrs (cons (apply proc cars) r)))))))
+  
+(define-in-module scheme (for-each proc lis . more)
+  (if (null? more)
+    (let loop ([xs lis])
+      (cond [(pair? xs) (proc (car xs)) (loop (cdr xs))]
+            [(null? xs) (undefined)]
+            [else (error "improper list not allowed:" lis)]))
+    (let loop ([xss (cons lis more)])
+      (receive (cars cdrs) (%zip-nary-args xss)
+        (unless (not cars)
+          (apply proc cars)
+          (loop cdrs))))))  
 
 (select-module gauche)
 (define-inline (null-list? l)           ;srfi-1

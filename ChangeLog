@@ -1,3 +1,9 @@
+2012-02-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (map, for-each), src/proc.c (Scm_Map, Scm_ForEach):
+	  Define these in Scheme.  The C API is obsoleted; they are just
+	  calling Scheme version now, and will be gone in 1.0.
+
 2012-02-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm (glet*, glet1): Added convenience macors

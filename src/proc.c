@@ -249,179 +249,33 @@ ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given, int ngiven, int foldlen)
 
 /*=================================================================
  * Mapper family
+ * OBSOLETED - map and for-each is defiend in Scheme now (liblist.scm)
+ * These are just kept for the backward compatibility.  Will be gone
+ * in 1.0.
  */
-
-/*
- * One argument version of for-each, map and fold.
- */
-static ScmObj foreach1_cc(ScmObj result, void **data)
-{
-    ScmObj args = SCM_OBJ(data[1]);
-    if (SCM_PAIRP(args)) {
-        ScmObj proc = SCM_OBJ(data[0]);
-        void *data[2];
-        data[0] = proc;
-        data[1] = SCM_CDR(args);
-        Scm_VMPushCC(foreach1_cc, data, 2);
-        return Scm_VMApply1(proc, SCM_CAR(args));
-    } else {
-        return SCM_UNDEFINED;
-    }
-}
 
 ScmObj Scm_ForEach1(ScmObj proc, ScmObj args)
 {
-    if (!SCM_NULLP(args)) {
-        void *data[2];
-        data[0] = proc;
-        data[1] = SCM_CDR(args);
-        Scm_VMPushCC(foreach1_cc, data, 2);
-        return Scm_VMApply1(SCM_OBJ(proc), SCM_CAR(args));
-    } else {
-        return SCM_UNDEFINED;
-    }
-}
-
-static ScmObj map1_cc(ScmObj result, void **data)
-{
-    ScmObj args = SCM_OBJ(data[1]);
-    ScmObj head = SCM_OBJ(data[2]);
-    ScmObj tail = SCM_OBJ(data[3]);
-
-    SCM_APPEND1(head, tail, result);
-    
-    if (SCM_PAIRP(args)) {
-        ScmObj proc  = SCM_OBJ(data[0]);
-        void *data[4];
-        data[0] = proc;
-        data[1] = SCM_CDR(args);
-        data[2] = head;
-        data[3] = tail;
-        Scm_VMPushCC(map1_cc, data, 4);
-        return Scm_VMApply1(proc, SCM_CAR(args));
-    } else {
-        return head;
-    }
+    return Scm_ForEach(proc, args, SCM_NIL);
 }
 
 ScmObj Scm_Map1(ScmObj proc, ScmObj args)
 {
-    if (!SCM_NULLP(args)) {
-        void *data[4];
-        data[0] = proc;
-        data[1] = SCM_CDR(args);
-        data[2] = SCM_NIL;
-        data[3] = SCM_NIL;
-        Scm_VMPushCC(map1_cc, data, 4);
-        return Scm_VMApply1(SCM_OBJ(proc), SCM_CAR(args));
-    } else {
-        return SCM_NIL;
-    }
-}
-
-/*
- * General case
- */
-
-/* gather CAR's and CDR's of given arglist.  returns 1 if at least
-   one of the arglist reaches the end. */
-static int mapper_collect_args(ScmObj argslist,
-                               ScmObj *thisargs, ScmObj *moreargs)
-{
-    ScmObj arg = SCM_NIL, argtail = SCM_NIL;
-    ScmObj more = SCM_NIL, moretail = SCM_NIL;
-    ScmObj cp;
-    
-    SCM_FOR_EACH(cp, argslist) {
-        ScmObj argsN = SCM_CAR(cp);
-        if (!SCM_PAIRP(argsN)) {
-            /* ran out the argument. */
-            return 1;
-        }
-        SCM_APPEND1(arg, argtail, SCM_CAR(argsN));
-        SCM_APPEND1(more, moretail, SCM_CDR(argsN));
-    }
-    *thisargs = arg;
-    *moreargs = more;
-    return 0;
-}
-
-
-static ScmObj foreachN_cc(ScmObj result, void **data)
-{
-    ScmObj proc;
-    ScmObj args_list = SCM_OBJ(data[1]);
-    ScmObj args, moreargs;
-    void *d[2];
-
-    if (mapper_collect_args(args_list, &args, &moreargs)) {
-        SCM_RETURN(SCM_UNDEFINED);
-    }
-    
-    proc = SCM_OBJ(data[0]);
-    d[0] = proc;
-    d[1] = moreargs;
-    Scm_VMPushCC(foreachN_cc, d, 2);
-    return Scm_VMApply(proc, args);
+    return Scm_Map(proc, args, SCM_NIL);
 }
 
 ScmObj Scm_ForEach(ScmObj proc, ScmObj arg1, ScmObj args)
 {
-    if (SCM_NULLP(args)) {
-        SCM_RETURN(Scm_ForEach1(proc, arg1)); /* shortcut */
-    } else {
-        void *data[2];
-        data[0] = proc;
-        data[1] = Scm_Cons(arg1, args);
-        SCM_RETURN(foreachN_cc(SCM_UNDEFINED, data));
-    }
-}
-
-static ScmObj mapN_cc(ScmObj result, void **data)
-{
-    ScmObj proc;
-    ScmObj args_list = SCM_OBJ(data[1]);
-    ScmObj head = SCM_OBJ(data[2]);
-    ScmObj tail = SCM_OBJ(data[3]);
-    ScmObj args, moreargs;
-    void *d[4];
-
-    SCM_APPEND1(head, tail, result);
-
-    if (mapper_collect_args(args_list, &args, &moreargs)) {
-        SCM_RETURN(head);
-    }
-
-    proc = SCM_OBJ(data[0]);
-    d[0] = proc;
-    d[1] = moreargs;
-    d[2] = head;
-    d[3] = tail;
-    Scm_VMPushCC(mapN_cc, d, 4);
-    return Scm_VMApply(proc, args);
+    static ScmObj stub = SCM_UNDEFINED;
+    SCM_BIND_PROC(stub, "for-each", Scm_SchemeModule());
+    return Scm_VMApply(stub, Scm_Cons(proc, Scm_Cons(arg1, args)));
 }
 
 ScmObj Scm_Map(ScmObj proc, ScmObj arg1, ScmObj args)
 {
-    if (SCM_NULLP(args)) {
-        SCM_RETURN(Scm_Map1(proc, arg1)); /* shortcut */
-    } else {
-        ScmObj thisargs, moreargs;
-        void *data[4];
-
-        if (mapper_collect_args(Scm_Cons(arg1, args),
-                                &thisargs, &moreargs)) {
-            /* one of the arglist is already nil. */
-            SCM_RETURN(SCM_NIL);
-        }
-        
-        data[0] = proc;
-        data[1] = moreargs;
-        data[2] = SCM_NIL;
-        data[3] = SCM_NIL;
-        Scm_VMPushCC(mapN_cc, data, 4);
-        SCM_RETURN(Scm_VMApply(SCM_OBJ(proc), thisargs));
-    }
+    static ScmObj stub = SCM_UNDEFINED;
+    SCM_BIND_PROC(stub, "map", Scm_SchemeModule());
+    return Scm_VMApply(stub, Scm_Cons(proc, Scm_Cons(arg1, args)));
 }
 
 /*=================================================================

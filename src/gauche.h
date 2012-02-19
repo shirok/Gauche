@@ -1562,7 +1562,7 @@ SCM_CLASS_DECL(Scm_NextMethodClass);
     } while (0)
 
 
-/* Other APIs */
+/* OBSOLETED - These are defined in Scheme now. */
 SCM_EXTERN ScmObj Scm_ForEach1(ScmObj proc, ScmObj args);
 SCM_EXTERN ScmObj Scm_ForEach(ScmObj proc, ScmObj arg1, ScmObj args);
 SCM_EXTERN ScmObj Scm_Map1(ScmObj proc, ScmObj args);
