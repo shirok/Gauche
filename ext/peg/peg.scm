@@ -37,20 +37,15 @@
   (use srfi-13)
   (use srfi-14)
   (use gauche.collection)
+  (use gauche.generator)
   (use util.list)
   (use util.match)
-  (export make-peg-stream
-          string->peg-stream
-          port->peg-stream
-          list->peg-stream
-          peg-stream-peek!
-          peg-stream-position
-          <parse-error>
+  (export <parse-error>
           make-peg-parse-error
 
           peg-run-parser peg-parse-string peg-parse-port
           $return $fail $expect 
-          $do $do* $<< $try $seq $or $fold-parsers $fold-parsers-right
+          $do $<< $try $seq $or $fold-parsers $fold-parsers-right
           $many $many1 $skip-many
           $repeat $optional
           $alternate
@@ -97,6 +92,46 @@
 ;;;     => (define a ($optional b))
 ;;;
 
+;;;  In this module, we provide various consturctors of PARSERs,
+;;;  and a DRIVER procedure.
+;;;
+;;;  A PARSER is merely a closure that takes a list of input (most
+;;;  likely it's a lazy sequence of characters, but it can be a
+;;;  list of anything), and returns three results:
+;;;
+;;;    Status: #f if parse is successful, or a symbol to indicate
+;;;            a kind of error.
+;;;    Value: parsed value, or error message.
+;;;    Next: a list of next input.
+;;;
+;;;  That is,
+;;;    Parser :: [a] -> (Status, Value, [a])
+;;;
+;;;  Error status and value
+;;;
+;;;    status           value
+;;;    ------------------------------------------------
+;;;    fail-message     string (message)
+;;;    fail-expect      string (message), char, char-set
+;;;    fail-unexpect    string (message)
+;;;    fail-compound    ((Status . Value) ...)
+;;;
+;;;  A DRIVER is a wrapper to take a parser and an input.
+;;;  DRIVER applies the parser on the input, and on success, it returns the
+;;;  value and the rest of the input.  On failure, it translates the error
+;;;  status into <parser-error> object and raises it.
+;;;
+
+;; NB: Currently we're in the transition process of reimplementing this
+;; module for better performance *and* cleaner API.  You may see some
+;; code that doesn't make sense below, which may be just a remaining
+;; of the old code and waiting to be removed.  The whole module is not
+;; 'official' yet---do not rely on the the current behavior unless you
+;; are experimenting.
+;; The rfc.json module is built on top of this module and is serving as
+;; one of the benchmark/testbed.  The API of rfc.json is official; though
+;; its implementation may be changed as parser.peg is changed.
+
 ;;;============================================================
 ;;; Parse result types
 ;;;
@@ -106,12 +141,12 @@
   (objects))                            ;offending object(s) or messages
 
 (define-method write-object ((o <parse-error>) out)
-  (format out "#<<parse-error> ~S>" (ref o 'message)))
+  (format out "#<<parse-error> ~S>" (~ o 'message)))
 
 (define-inline (parse-success? x) (not x))
 
-(define-macro (return-result value stream)
-  `(values #f ,value ,stream))
+(define-macro (return-result value s)
+  `(values #f ,value ,s))
 
 (define-macro (return-failure/message m s)
   `(values 'fail-message ,m ,s))
@@ -122,13 +157,13 @@
 (define-macro (return-failure/compound m s)
   `(values 'fail-compound ,m ,s))
 
-(define (make-peg-parse-error type objs stream)
+(define (make-peg-parse-error type objs pos seq)
   (define (analyze-compound-error objs pos)
-    (let1 grps (map (lambda (g) (cons (caar g) (map cdr g)))
+    (let1 grps (map (^g (cons (caar g) (map cdr g)))
                     (group-collection objs :key car))
-      (let ((msgs (assoc-ref grps 'fail-message))
-            (exps (assoc-ref grps 'fail-expect))
-            (unexps (assoc-ref grps 'fail-unexpect)))
+      (let ([msgs (assoc-ref grps 'fail-message)]
+            [exps (assoc-ref grps 'fail-expect)]
+            [unexps (assoc-ref grps 'fail-unexpect)])
         (string-concatenate
          (or-concat (cond-list
                      [exps (compound-exps exps)]
@@ -162,23 +197,27 @@
       [(fail-compound) (analyze-compound-error objs pos)]
       [else (format "unknown parser error at ~a: ~a" pos objs)]  ;for safety
       ))
-  (let ((pos (peg-stream-position stream))
-        (nexttok (begin (peg-stream-peek! stream) (car stream))))
+  (let1 nexttok (if (pair? seq) (car seq) (eof-object))
     (make-condition <parse-error>
                     'position pos 'objects objs
                     'message (message pos nexttok))))
 
-(define (peg-run-parser parser stream)
-  (receive (r v s) (parser stream)
+(define (peg-run-parser parser s)
+  (receive (r v s1) (parser s)
     (if (parse-success? r)
       (rope-finalize v)
-      (raise (make-peg-parse-error r v s)))))
+      (raise (make-peg-parse-error r v
+                                   (let loop ([c 0] [s s])
+                                     (cond [(eq? s1 s) c]
+                                           [(null? s) 0] ;!!
+                                           [else (loop (+ c 1) (cdr s))]))
+                                   s1)))))
 
 ;; entry points
 (define (peg-parse-string parser str)
-  (peg-run-parser parser (string->peg-stream str)))
+  (peg-run-parser parser (generator->lseq (string->generator str))))
 (define (peg-parse-port parser port)
-  (peg-run-parser parser (port->peg-stream port)))
+  (peg-run-parser parser (generator->lseq (cut read-char port))))
 
 ;;;============================================================
 ;;; Lazily-constructed string
@@ -191,7 +230,7 @@
   (and (pair? obj) (eq? (car obj) 'rope)))
 
 (inline-stub
- (define-cfn rope2string_int (obj p) :: void :static
+ (define-cfn rope2string_int (obj p) ::void :static
    (label restart)
    (cond [(SCM_STRINGP obj) (SCM_PUTS obj p)]
          [(SCM_CHARP obj) (SCM_PUTC (SCM_CHAR_VALUE obj) p)]
@@ -208,214 +247,65 @@
 
  (define-cproc rope->string (obj)
    (body <top>
-         (let* ((p (Scm_MakeOutputStringPort TRUE)))
+         (let* ([p (Scm_MakeOutputStringPort TRUE)])
            (rope2string_int obj p)
            (result (Scm_GetOutputString (SCM_PORT p) 0)))))
  )
 
 ;;;============================================================
-;;; Input Stream
-;;;
-
-;; For our purpose, generic stream (like util.stream) is too heavy.
-;; We use a simpler mechanism.  A peg-stream is a list of tokens,
-;; terminated by a special terminator.
-;;
-;; <peg-stream> : <terminator> | (<token> . <peg-stream>)
-;;
-;; <terminator> itself is a pair, but its content should be treated
-;; as an opaque object.  <terminator> includes a generator that produces
-;; a series of tokens.
-;;
-;; There's no way for users to check whether the given <peg-stream> has
-;; a token in its car or not.  However, calling peg-stream-peek! on a
-;; peg stream *guarantees* that, after its call, the car of <peg-stream>
-;; is a token.  Of course, its cdr is a <peg-stream>.
-;; 
-;; peg-stream-peek! returns #t if the current token is not #<eof>, and
-;; #f if it is.
-;;
-;; To create a peg-stream you should provide at least a generator procedure.
-;; It is called on demand by peg-stream-peek! to produce a token at a time.
-;; In string parser a token can just be a character.  Or you can use
-;; a separate tokenizer, or even use a general Scheme objects as tokens.
-;; A generator must return #<eof> if it reaches the end of the stream.
-;;
-
-(inline-stub
- (define-cfn peg_stream_fini_cc (result (data :: void**)) :static
-   (return SCM_FALSE))
-
- (define-cfn peg_stream_cc (result (data :: void**)) :static
-   (let* ([s (SCM_OBJ (aref data 0))]
-          [p (SCM_CAR s)]
-          [tokcnt :: int (SCM_INT_VALUE (SCM_CDR s))])
-     (SCM_SET_CAR s result)
-     (SCM_SET_CDR s (Scm_Cons p (SCM_MAKE_INT (+ 1 tokcnt))))
-     (cond [(and (SCM_EOFP result) (not (SCM_FALSEP (SCM_CDR p))))
-            (Scm_VMPushCC peg_stream_fini_cc NULL 0)
-            (return (Scm_VMApply0 (SCM_CDR p)))]
-           [else
-            (return (SCM_MAKE_BOOL (not (SCM_EOFP result))))])))
-
- (define-cproc peg-stream-peek! (s)
-   (body <top>
-         (cond
-          [(not (SCM_PAIRP s))
-           (Scm_Error "peg-stream required, but got: %S" s)]
-          [(not (SCM_INTP (SCM_CDR s)))
-           (result (SCM_MAKE_BOOL (not (SCM_EOFP (SCM_CAR s)))))]
-          [else
-           (let* ((|data[1]| :: void*))
-             (set! (aref data 0) s)
-             (Scm_VMPushCC peg_stream_cc data 1)
-             (result (Scm_VMApply0 (SCM_CAAR s))))])))
- )
-
-;; Create a peg-stream from the given generator.
-;; "Args" part and the dispatch is a performance hack to avoid
-;; extra closure invocation.
-(define (make-peg-stream generator :optional (fini #f))
-  `((,generator . ,fini) . 0))
-
-(define (string->peg-stream str)
-  (let1 p (open-input-string str :private? #t)
-    (make-peg-stream (cut read-char p) (cut close-input-port p))))
-
-;; NB: should we have an option to leave the port open?
-(define (port->peg-stream iport :key (reader read-char))
-  (make-peg-stream (cut reader iport) (cut close-input-port iport)))
-
-(define (list->peg-stream lis)
-  (make-peg-stream (lambda ()
-                     (if (pair? lis)
-                       (rlet1 v (car lis) (set! lis (cdr lis)))
-                       (eof-object)))))
-
-(define (peg-stream-position s)
-  (let loop ((s s) (n 0))
-    (if (pair? (cdr s))
-      (loop (cdr s) (+ n 1))
-      (- (cdr s) n))))
-
-;;;============================================================
 ;;; Primitives
 ;;;
-(define-inline ($return val)
-  (lambda (s) (return-result val s)))
 
-(define ($fail msg)
-  (lambda (s)
-    (return-failure/message msg s)))
+(define-inline ($return val) (^s (return-result val s)))
 
+(define ($fail msg) (^s (return-failure/message msg s)))
+
+;; return a parser that tries PARSE.  On success, returns what it
+;; returned.  On failure, returns 'fail-expect with MSG.
 (define ($expect parse msg)
-  (lambda (s)
-    (receive (r v ss) (parse s)
-      (if (parse-success? r)
-        (values r v ss)
-        (return-failure/expect msg s)))))
+  (^s (receive (r v ss) (parse s)
+        (if (parse-success? r)
+          (values r v ss)
+          (return-failure/expect msg s)))))
 
-(define ($unexpect msg s)
-  (lambda (s1)
-    (return-failure/unexpect msg s)))
+;; a parser that merely returns 'fail-unexpect with MSG.
+(define ($unexpect msg s) (^_ (return-failure/unexpect msg s)))
+
+
+;; A convenience utility to check the upper bound, allowing unlimited
+;; upper bound by #f.
+(define-inline (>=? count max) (and max (>= count max)))
 
 ;;;============================================================
 ;;; Combinators
 ;;;
 
-;; $do  [: args] clause ... body
-;; $do* [: args] clause ... body
+;; p :: Parser
+;; f :: Value -> Parser
+;; $bind :: Parser, (Value -> Parser) -> Parser
+
+(define-inline ($bind p f)
+  (^s (receive [r v s1] (p s)
+        (if (parse-success? r)
+          ((f v) s1)
+          (values r v s1)))))
+
+;; $do clause ... body
 ;;   where
 ;;     clause := (var parser)
 ;;            |  (parser)
 ;;            |  parser
-;;
-(define-macro (%gen-do-common)
-  '(begin
-     ;; an ad-hoc optimization to eliminate a closure in typical cases.
-     ;; TODO: instead of literal symbol, we should compare identifiers.
-     (define (%gen-body body s)
-       (match body
-         [('$return x) `(values #f ,x ,s)]
-         [_ `(,body ,s)]))))
 
-(define-macro ($do . clauses)
-
-  (define (finish-body s pre-binds var&parsers body)
-    `(let ,pre-binds
-       (lambda (,s)
-         ,(let loop ((s s) (var&parsers var&parsers))
-            (match var&parsers
-              [() (%gen-body body s)]
-              [((var parser) . rest)
-               (let ((r1 (gensym)) (s1 (gensym)))
-                 `(receive (,r1 ,var ,s1) (,parser ,s)
-                    (if ,r1
-                      (values ,r1 ,var ,s1)
-                      ,(loop s1 rest))))]
-              [(parser . rest)
-               (let ((r1 (gensym)) (v1 (gensym)) (s1 (gensym)))
-                 `(receive (,r1 ,v1 ,s1) (,parser ,s)
-                    (if ,r1
-                      (values ,r1 ,v1 ,s1)
-                      ,(loop s1 rest))))])))))
-
-  (define (parse-do clauses)
-    (let loop ((pre-binds   '())
-               (var&parsers '())
-               (clauses clauses))
-      (match clauses
-        [(body)
-         (finish-body (gensym) (reverse pre-binds) (reverse var&parsers)
-                      body)]
-        [(clause . rest)
-         (match clause
-           [(var parser)
-            (if (or (symbol? parser) (identifier? parser))
-              (loop pre-binds `((,var ,parser) . ,var&parsers) rest)
-              (let1 tmp (gensym)
-                (loop `((,tmp ,parser) . ,pre-binds)
-                      `((,var ,tmp) . ,var&parsers)
-                      rest)))]
-           [(or (parser) parser)
-            (if (or (symbol? parser) (identifier? parser))
-              (loop pre-binds `(,parser . ,var&parsers) rest)
-              (let1 tmp (gensym)
-                (loop `((,tmp ,parser) . ,pre-binds)
-                      `(,tmp . ,var&parsers) rest)))])])))  
-
-  (%gen-do-common)
-
-  (when (null? clauses)
-    (error "Malformed $do: at least one clause is required."))
-  (parse-do clauses))
-
-(define-macro ($do* . clauses)
-
-  (%gen-do-common)
-
-  (when (null? clauses)
-    (error "Malformed $do*: at least one clause is required."))
-  (let1 s (gensym)
-    `(lambda (,s)
-       ,(let loop ((s s) (clauses clauses))
-          (match clauses
-            [(body) (%gen-body body s)]
-            [(clause . rest)
-             (match clause
-               [(var parser)
-                (let ((r1 (gensym)) (s1 (gensym)))
-                  `(receive (,r1 ,var ,s1) (,parser ,s)
-                     (if ,r1
-                       (values ,r1 ,var ,s1)
-                       ,(loop s1 rest))))]
-               [(or (parser) parser)
-                (let ((r1 (gensym)) (v1 (gensym)) (s1 (gensym)))
-                  `(receive (,r1 ,v1 ,s1) (,parser ,s)
-                     (if ,r1
-                       (values ,r1 ,v1 ,s1)
-                       ,(loop s1 rest))))])]))))
-  )
+(define-syntax $do
+  (syntax-rules ()
+    [(_ body) body]
+    [(_ [var parser] clause . rest)
+     ($bind parser (^[var] ($do clause . rest)))]
+    [(_ [parser] clause . rest)
+     ($bind parser (^_ ($do clause . rest)))]
+    [(_ parser clause . rest)
+     ($bind parser (^_ ($do clause . rest)))]
+    [(_  . other) (syntax-error "malformed $do" ($do . other))]))
 
 ;; $<< proc parser ...
 ;;   == ($do [tmp parser] ... ($return (proc tmp ...)))
@@ -425,38 +315,23 @@
 
 ;; $or p1 p2 ...
 ;;   Ordered choice.
-(define-macro ($or . parsers)
-
-  (define (parse-or parsers ps binds)
-    (match parsers
-      [() `(let ,binds ,(finish-or (reverse ps) (reverse binds)))] 
-      [((x ...) . parsers)
-       (let1 p (gensym)
-         (parse-or parsers `(,p ,@ps) `((,p ,x) ,@binds)))]
-      [(p . parsers)
-       (parse-or parsers `(,p ,@ps) binds)]))
-
-  (define (finish-or ps binds)
-    (let ((s0  (gensym))
-          (rvss0 (map (lambda (_) `(,(gensym) ,(gensym) ,(gensym))) ps)))
-      `(lambda (,s0)
-         ,(let loop ((ps ps) (rvss rvss0))
-            (match-let1 ((and rvs (r v s)) . rvss) rvss
-              `(receive ,rvs (,(car ps) ,s0)
-                 (if (and ,r (eq? ,s0 ,s))
-                   ,(if (null? (cdr ps))
-                      (compose-failure rvss0 s0)
-                      (loop (cdr ps) rvss))
-                   (values ,r ,v ,s))))))))
-
-  (define (compose-failure rvss0 s0)
-    `(values 'fail-compound
-             (list ,@(map (match-lambda [(r v s) `(cons ,r ,v)]) rvss0))
-             ,s0))
-
-  (if (null? parsers)
-    `(cut values #f #t <>)
-    (parse-or parsers '() '())))
+(define ($or . parsers)
+  (define (fail vs s)
+    (match vs
+      [((r v s)) (values r v s)] ;; no need to create compound error
+      [vs        (return-failure/compound (reverse vs) s)]))
+  (match parsers
+    [()  (^s (return-failure/message "empty $or" s))]
+    [(p) p]
+    [(ps ...)
+     (^s (let loop ([vs '()] [ps ps])
+           (if (null? ps)
+             (fail vs s)
+             (receive (r v s1) ((car ps) s)
+               (cond [(parse-success? r) (values r v s1)]
+                     [(eq? s s1) (loop (acons r v vs) (cdr ps))]
+                     [(null? vs) (values r v s1)]
+                     [else (fail (acons r v vs) s1)])))))]))
 
 ;; $fold-parsers proc seed parsers
 ;; $fold-parsers-right proc seed parsers
@@ -500,12 +375,12 @@
 ;;         ($try b)
 ;;         ...)
 ;;   would try a, b, ... even some of them consumes the input.
-(define ($try p)
+(define-inline ($try p)
   (lambda (s0)
     (receive (r v s) (p s0)
       (if (not r)
         (return-result v s)
-        (return-failure/expect v s0)))))
+        (values r v s0)))))
 
 (define-syntax $lazy
   (syntax-rules ()
@@ -526,141 +401,29 @@
             (and max (> min max)))
     (error "invalid argument:" min max)))
 
-;; $loop [var parser] ([v0 init0] ...)
-;;       :while expr
-;;       :until expr
-;;       :update expr
-;;       :updates [expr ...]
-;;       :finish expr
-;;
-;;   A low-level construct to apply PARSER repeatedly on the input,
-;;   updating state values V0 ....
-;;   One or more of the keyword args may be omitted.  If provided:
-;;     WHILE is evaluated every iteration before applying the parser.
-;;        If it returns #f, $loop returns success.
-;;     UNTIL is evaluated when the parser fails without consuming
-;;        input.  If it returns #t, $loop returns success.
-;;        Othewise $loop fails (passing the last failure situation
-;;        of the parser).
-;;     UPDATE is evaluated every time the parser succeeds.  It must
-;;        yield as many results as the state variables, which will be
-;;        bound to V0 ... in the next iteration.
-;;     UPDATES are like update, but each expr is evaluated separately
-;;        to yield the state values.  It's more efficient than UPDATE.
-;;     FINISH is called when $loop returns successfully.  Its value
-;;        will be the semantic value of $loop.
-;;
-(define-syntax $loop
-  (syntax-rules ()
-    [(_ (v parser) ((var init) ...) . xs)
-     ($loop%gather xs ($loop $loop%body (v parser) ((var init) ...)))]
-    [(_ . other)
-     (syntax-error "Malformed $loop: " ($loop . other))]))
-
-(define-syntax $loop%body
-  (syntax-rules ()
-    [(_ [(v parser) ((var init) ...)] ?update ?while ?until ?finish)
-     (lambda (s0)
-       (let loop ((s0 s0) (var init) ...)
-         (if ?while
-           (receive (r v s) (parser s0)
-             (cond [(parse-success? r)
-                    ($loop%update ?update loop s var ...)]
-                   [($loop%until s0 s ?until)
-                    (return-result ?finish s)]
-                   [else (values r v s)]))
-           (return-result ?finish s0))))]))
-
-;; (define-syntax $loop/pred
-;;   (syntax-rules ()
-;;     [(_ ((var init) ...) pred . xs)
-;;      ($loop%gather xs ($loop-pred $loop-pred%body ((var init) ...) pred))]
-;;     [(_ . other)
-;;      (syntax-error "Malformed $loop-pred: " ($loop-pred . other))]))
-
-;; (define-syntax $loop/pred%body
-;;   (syntax-rules ()
-;;     [(_ ((var init) ...) tok pred expect ?update ?while ?until ?finish)
-;;      (lambda (s0)
-;;        (let loop ((s s0) (var init) ...)
-;;          (if ?while
-;;            (if (peg-stream-peek! s0)
-;;              (let1 tok (car s0)
-;;                (if pred
-;;                  ($loop%update ?update loop s var ...)
-;;                    [($loop%until s0 s ?until)
-;;                     (return-result ?finish s)]
-;;                    [else (values r v s)]))
-;;            (return-result ?finish s0))))]))
-
-;; aux macro
-
-;; ($loop%gather restargs (name body parser vars)) 
-(define-syntax $loop%gather
-  (syntax-rules ()
-    [(_ () (name body . fixpart) ?update ?while ?until ?finish)
-     (body fixpart ?update ?while ?until ?finish)]
-    [(_ (:update u . xs) fix _ w t f)
-     ($loop%gather xs fix (#t . u) w t f)]
-    [(_ (:updates (u ...) . xs) fix _ w t f)
-     ($loop%gather xs fix (#f u ...) w t f)]
-    [(_ (:while w . xs) fix u _ t f)
-     ($loop%gather xs fix u w t f)]
-    [(_ (:until t . xs) fix u w _ f)
-     ($loop%gather xs fix u w t f)]
-    [(_ (:finish f . xs) fix u w t _)
-     ($loop%gather xs fix u w t f)]
-    [(_ (other . _) (name . x) u w t f)
-     (syntax-errorf "Invalid keyword in ~a: ~s" name other)]
-    [(_ xs fix)
-     ($loop%gather xs fix #t #t #t #t)]
-    ))
-
-(define-syntax $loop%update
-  (syntax-rules ()
-    [(_ #t loop s . vs)            (loop s . vs)]
-    [(_ (#f . us) loop s . vs)     (loop s . us)]
-    [(_ (#t . #f) loop s . vs)     (loop s . vs)]
-    [(_ (#t . update) loop s)      (begin update (loop s))]
-    [(_ (#t . update) loop s v1)   (loop s update)]
-    [(_ (#t . update) loop s . vs) (receive vs update (loop s . vs))]
-    ))
-
-(define-syntax $loop%until
-  (syntax-rules ()
-    [(_ s0 s #t)     (eq? s0 s)]
-    [(_ s0 s #f)     #f]
-    [(_ s0 s expr)   (and (eq? s0 s) expr)]))
-
 ;; $count p n
 ;;   Exactly n times of p.  Returns the list.
 (define ($count parse n)
-  ($loop [v parse] ([vs '()] [cnt 0])
-         :while  (< cnt n)
-         :updates [(cons v vs) (+ cnt 1)]
-         :until  #f
-         :finish (reverse! vs)))
+  ($many parse n n))
 
 (define ($skip-count parse n)
-  ($loop [v parse] ([cnt 0])
-         :while (< cnt n)
-         :update (+ cnt 1)
-         :until #f))
+  (if (= n 1)
+    parse
+    ($do parse ($skip-count parse (- n 1)))))
 
 ;; $many p &optional min max
 ;; $many1 p &optional max
-(define ($many parse :optional (min 0) (max #f))
+(define-inline ($many parse :optional (min 0) (max #f))
   (%check-min-max min max)
-  (if (= min 0)
-    (if (not max)
-      ($loop [v parse] ([vs '()]) :update (cons v vs) :finish (reverse! vs))
-      ($loop [v parse] ([vs '()] [cnt 0])
-             :while (< cnt max)
-             :updates [(cons v vs) (+ cnt 1)]
-             :finish (reverse! vs)))
-    ($do [xs ($count parse min)]
-         [ys ($many parse 0 (and max (- max min)))]
-         ($return (append xs ys)))))
+  (lambda (s)
+    (let loop ([vs '()] [s s] [count 0])
+      (if (>=? count max)
+        (return-result (reverse! vs) s)
+        (receive (r v s1) (parse s)
+          (cond [(parse-success? r) (loop (cons v vs) s1 (+ count 1))]
+                [(and (eq? s s1) (<= min count))
+                 (return-result (reverse! vs) s1)]
+                [else (values r v s1)]))))))
 
 (define ($many1 parse :optional (max #f))
   (if max
@@ -668,13 +431,12 @@
     ($do [v parse] [vs ($many parse)] ($return (cons v vs)))))
 
 ;; $skip-many p &optional min max
-;;   Like $many, but does not keep the results.
+;;   Like $many, but does not keep the results. Always returns #f.
 (define ($skip-many parse :optional (min 0) (max #f))
   (%check-min-max min max)
   (if (= min 0)
-    (if (not max)
-      ($loop [v parse] ())
-      ($loop [v parse] ([cnt 0]) :while (< cnt max) :update (+ cnt 1)))
+    ($do [($many parse min max)]
+         ($return #f))
     ($do [($skip-count parse min)]
          [($skip-many parse 0 (and max (- max min)))]
          ($return #f))))
@@ -712,40 +474,22 @@
   (apply $many ($do [v parse] sep ($return v)) args))
 
 ;; $sep-end-by
-;;
-;;   An unbounded version can be defined pretty concisely:
-;;
-;;   (define ($sep-end-by parse sep)
-;;     (define rec
-;;       ($lazy ($or ($do [v0 parse]
-;;                        [vs ($or ($seq sep rec) ($return '()))]
-;;                        ($return (cons v0 vs)))
-;;                   ($return '())))))
-;;     rec)
-;;
-;;   But it can't be easily extended to the bounded version wihtout
-;;   sacrificing performance.  
-
 (define ($sep-end-by parse sep :optional (min 0) (max #f))
-  (define (bound max)
-    ($loop [s&v ($do [v parse]
-                     [s ($optional ($do sep ($return #t)))]
-                     ($return (cons s v)))]
-           ([vs '()] [cont? #t] [cnt 0])
-           :while  (and cont? (if max (< cnt max) #t))
-           :updates [(cons (cdr s&v) vs)
-                     (car s&v)
-                     (+ cnt 1)]
-           :finish (reverse! vs)))
-  
   (%check-min-max min max)
-  ;; The fact that the last 'sep' is optional makes things complicated.
-  (if (= min 0)
-    (bound max)
-    ($do [xs ($count ($do [a parse] sep ($return a)) (- min 1))]
-         [x  parse]
-         [ys ($optional ($seq sep (bound (and max (- max min -1)))) '())]
-         ($return (append xs (list x) ys)))))
+  (^s (let loop ([vs '()] [s s] [count 0])
+        (if (>=? count max)
+          (return-result (reverse vs) s)
+          (receive (r v s.) (parse s)
+            (cond [(parse-success? r)
+                   (receive (r. v. s..) (sep s.)
+                     (cond [(parse-success? r.)
+                            (loop (cons v vs) s.. (+ count 1))]
+                           [(and (eq? s.. s.) (<= min (+ count 1)))
+                            (return-result (reverse (cons v vs)) s.)]
+                           [else (values r. v. s..)]))]
+                  [(and (eq? s s.) (<= min count))
+                   (return-result (reverse vs) s)]
+                  [else (values r v s.)]))))))
 
 (define ($between open parse close)
   ($do open [v parse] close ($return v)))
@@ -764,8 +508,8 @@
   (lambda (st)
     (receive (r v s) (parse st)
       (if (parse-success? r)
-        (let loop ((r1 r) (v1 v) (s1 s))
-          (receive (r2 v2 s2) (($do (proc op) (v parse)
+        (let loop ([r1 r] [v1 v] [s1 s])
+          (receive (r2 v2 s2) (($do [proc op] [v parse]
                                     ($return (proc v1 v)))
                                s1)
             (if (parse-success? r2)
@@ -786,15 +530,13 @@
   (syntax-rules (cut <>)
     [(_ (cut p x <>) expect)            ;TODO: hygiene!
      (lambda (s)
-       (if (and (peg-stream-peek! s) (p x (car s)))
+       (if (and (pair? s) (p x (car s)))
          (return-result (car s) (cdr s))
          (return-failure/expect expect s)))]
     [(_ pred expect)
      (lambda (s)
-       (if (peg-stream-peek! s)
-         (if (pred (car s))
-           (return-result (car s) (cdr s))
-           (return-failure/expect expect s))
+       (if (and (pair? s) (pred (car s)))
+         (return-result (car s) (cdr s))
          (return-failure/expect expect s)))]))
 
 ;;;============================================================
@@ -806,8 +548,8 @@
 ;;;
 
 (define ($->rope parser)   ($<< make-rope parser))
-(define ($->string parser) ($<< (.$ rope->string make-rope) parser))
-(define ($->symbol parser) ($<< (.$ string->symbol rope->string make-rope) parser))
+(define ($->string parser) ($<< ($ rope->string $ make-rope $) parser))
+(define ($->symbol parser) ($<< ($ string->symbol $ rope->string $ make-rope $) parser))
 
 (define (rope-finalize obj)
   (cond [(rope? obj) (rope->string obj)]
@@ -830,7 +572,7 @@
                  (let loop ((r '()) (s s0) (lis lis))
                    (if (null? lis)
                      (return-result (make-rope (reverse! r)) s)
-                     (if (and (peg-stream-peek! s)
+                     (if (and (pair? s)
                               (char= (car s) (car lis)))
                        (loop (cons (car s) r) (cdr s) (cdr lis))
                        (return-failure/expect str s0)))))))))])
@@ -867,7 +609,7 @@
   ($one-of (char-set-complement charset)))
 
 (define (anychar s)
-  (if (peg-stream-peek! s)
+  (if (pair? s)
     (return-result (car s) (cdr s))
     (return-failure/expect "character" s)))
 
@@ -890,7 +632,7 @@
 (define spaces ($<< make-rope ($many space)))
 
 (define (eof s)
-  (if (peg-stream-peek! s)
+  (if (pair? s)
     (return-failure/expect "end of input" s)
-    (return-result #t (cdr s))))
+    (return-result #t s)))
 

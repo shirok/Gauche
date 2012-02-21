@@ -1,3 +1,13 @@
+2012-02-21  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm: Rewrote using lazy sequences instead of
+	  specialized streams for input.  Also simplified API (e.g. dropped
+	  $do* and $do distinction, for they are more a performance hack
+	  rather than a benefit for users.)  This may degrade the performance.
+	  We rely on future compiler improvements to address the performance
+	  issue.  Do not count on the current API; they're still subject to
+	  change.
+
 2012-02-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/Makefile.in: Fixed install process to call makeverslink

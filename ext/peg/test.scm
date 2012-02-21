@@ -50,28 +50,28 @@
 
 (define-syntax test-succ
   (syntax-rules ()
-    ((_ label expect parse input)
+    [(_ label expect parse input)
      (test* #`",label (success)" expect
-            (peg-parse-string parse input)))))
+            (peg-parse-string parse input))]))
 
 (define-syntax test-fail
   (syntax-rules ()
-    ((_ label expect parse input)
+    [(_ label expect parse input)
      (test* #`",label (failure)" expect
-            (guard (e ((<parse-error> e)
-                       (list (ref e 'position) (ref e 'objects)))
-                      (else e))
+            (guard (e [(<parse-error> e)
+                       (list (ref e 'position) (ref e 'objects))]
+                      [else e])
               (peg-parse-string parse input)
-              (error "test-fail failed"))))))
+              (error "test-fail failed")))]))
 
 ;;;============================================================
 ;;; Ropes
 ;;;
 (receive (make-rope rope->string)
     (with-module parser.peg (values make-rope rope->string))
-  (let* ((rope1 (make-rope "abc"))
-         (rope2 (make-rope `("012" ,rope1 #\X)))
-         (rope3 (make-rope 'foo)))
+  (let* ([rope1 (make-rope "abc")]
+         [rope2 (make-rope `("012" ,rope1 #\X))]
+         [rope3 (make-rope 'foo)])
     (test* "rope->string" "abc"        (rope->string rope1))
     (test* "rope->string" "012abcX"    (rope->string rope2))
     (test* "rope->string" (test-error) (rope->string rope3))))
@@ -328,7 +328,7 @@
            "a,b,")
 
 ;; $sep-end-by
-(let ((p ($sep-end-by ($seq ($one-of #[a-z]) ($one-of #[a-z])) ($string ","))))
+(let1 p ($sep-end-by ($seq ($one-of #[a-z]) ($one-of #[a-z])) ($string ","))
   (define (succ in exp) (test-succ "$sep-end-by" exp p in))
   (define (fail in exp) (test-fail "$sep-end-by" exp p in))
 
@@ -414,12 +414,12 @@
            "cbad")
 
 ;; $chain-left
-(let ((integer
-       ($do (v ($many digit 1))
-            ($return (string->number (apply string v)))))
-      (op
-       ($or ($do (($char #\*)) ($return *))
-            ($do (($char #\+)) ($return +)))))
+(let ([integer
+       ($do [v ($many digit 1)]
+            ($return (string->number (apply string v))))]
+      [op
+       ($or ($do [($char #\*)] ($return *))
+            ($do [($char #\+)] ($return +)))])
   (test-succ "$chain-left" 9
              ($chain-left integer op)
              "1+2*3")
@@ -431,12 +431,12 @@
              "abc"))
 
 ;; $chain-right
-(let ((integer
-       ($do (v ($many digit 1))
-            ($return (string->number (apply string v)))))
-      (op
-       ($or ($do (($char #\*)) ($return *))
-            ($do (($char #\+)) ($return +)))))
+(let ([integer
+       ($do [v ($many digit 1)]
+            ($return (string->number (apply string v))))]
+      [op
+       ($or ($do [($char #\*)] ($return *))
+            ($do [($char #\+)] ($return +)))])
   (test-succ "$chain-right" 7
              ($chain-right integer op)
              "1+2*3")
@@ -607,10 +607,10 @@
                                    [t text]
                                    ($return (list e t))))]
                     ($return `(,t ,@(apply append r)))))
-         (element ($do* [tagname ($try open-tag)]
-                        [body body]
-                        [ (close-tag (rope-finalize tagname)) ]
-                        ($return (cons tagname body)))))
+         (element ($do [tagname ($try open-tag)]
+                       [body body]
+                       [ (close-tag (rope-finalize tagname)) ]
+                       ($return (cons tagname body)))))
   (test-succ "tag element" '("a" "")
              element "<a></a>")
   (test-succ "tag element" '("a" "foo" ("b" "bar") "baz")

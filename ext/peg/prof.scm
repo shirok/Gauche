@@ -1,15 +1,17 @@
 (use gauche.vm.profiler)
 (use parser.peg)
+(use text.csv)
 
 (define data
-  (call-with-input-file "data/13tokyo.csv"
-    port->string
-    :encoding 'utf8))
+  (let1 d (call-with-input-file "data/13tokyo.csv"
+            port->string
+            :encoding 'utf8)
+    (string-append d d d d d)))
 
 (define csv-parser
   (let* ((spaces  ($many ($one-of #[ \t])))
-         (spaces_ ($many_ ($one-of #[ \t])))
-         (comma ($seq spaces_ ($char #\,) spaces_))
+         (skip-spaces ($skip-many ($one-of #[ \t])))
+         (comma ($seq skip-spaces ($char #\,) skip-spaces))
          (dquote ($char #\"))
          (double-dquote ($do (($string "\"\"")) ($return #\")))
          (quoted-body ($many ($or ($one-of #[^\"]) double-dquote)))
@@ -20,9 +22,16 @@
     ($sep-by record newline)))
 
 (profiler-start)
-(parse-string csv-parser data)
+(peg-parse-string csv-parser data)
 (profiler-stop)
+(profiler-show)
+(profiler-reset)
 
+(define reader (make-csv-reader #\,))
+
+(profiler-start)
+(call-with-input-string data (^p (port-for-each identity (cut reader p))))
+(profiler-stop)
 (profiler-show)
 
 
