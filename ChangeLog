@@ -1,3 +1,9 @@
+2012-02-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in: Fixed install process to call makeverslink
+	  before using gauche-install; the latter depends on the installed
+	  libgauche.so to be properly symlinked.
+
 2012-02-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm (consume): Added.

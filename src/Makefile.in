@@ -4,7 +4,7 @@
 
 # prelude ---------------------------------------------
 
-.PHONY: all test check pre-package install uninstall \
+.PHONY: all test check pre-package install install-core install-aux uninstall \
 	clean distclean maintainer-clean install-check char-data
 
 .SUFFIXES:
@@ -152,7 +152,7 @@ INSTALL_BINS = gosh$(EXEEXT)           \
                gauche-install$(EXEEXT) \
 	       gauche-package$(EXEEXT) \
 	       gauche-cesconv$(EXEEXT)
-INSTALL_SCMS = gauche-init.scm genstub precomp gencomp cesconv
+INSTALL_SCMS = genstub precomp gencomp cesconv
 
 GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
 
@@ -410,7 +410,9 @@ INSTALL_DIRS = $(DESTDIR)$(HEADER_INSTALL_DIR) \
 @CROSS_COMPILING_no@GAUCHE_INSTALL = ./gauche-install
 @CROSS_COMPILING_yes@GAUCHE_INSTALL = gosh $(srcdir)/gauche-install.in
 
-install : all relink
+install : install-core install-aux
+
+install-core : all relink
 	$(MKINSTDIR) $(INSTALL_DIRS)
 	$(INSTALL)        $(INSTALL_LIBS) $(DESTDIR)$(LIB_INSTALL_DIR)
 	$(INSTALL)        $(INSTALL_LIBS) $(DESTDIR)$(ARCH_INSTALL_DIR)
@@ -419,10 +421,13 @@ install : all relink
 	@case `$(GAUCHE_CONFIG) --arch` in *-cygwin*|*-mingw*) \
 	  $(INSTALL) $(INSTALL_LIBS) $(DESTDIR)$(BIN_INSTALL_DIR);;\
 	esac
+	$(INSTALL) $(srcdir)/gauche-init.scm $(DESTDIR)$(SCM_INSTALL_DIR)
+	$(POSTINSTALL)
+
+install-aux : install-core
 	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_HEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)
 	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_SUBHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche
 	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_SCMS) $(DESTDIR)$(SCM_INSTALL_DIR)
-	$(POSTINSTALL)
 
 uninstall :
 	for f in $(INSTALL_BINS); do rm -f $(BIN_INSTALL_DIR)/$$f; done
