@@ -65,8 +65,6 @@
   (define iport #f)
   (define oport #f)
 
-  (define pty-used #f)
-
   ;; If tests are run by a daemon, /dev/tty may not be available.
   ;; We try /dev/tty first, then using pty for fallback.
   (guard (e [(<system-error> e)
@@ -74,8 +72,7 @@
               [gauche.sys.openpty
                (receive (master slave) (sys-openpty)
                  (set! iport (open-input-fd-port slave))
-                 (set! oport (open-output-fd-port slave))
-                 (set! pty-used #t))]
+                 (set! oport (open-output-fd-port slave)))]
               [else
                ;; we can't continue the tests.
                (test-end)
@@ -90,12 +87,6 @@
           (set! oterm (sys-tcgetattr oport))
           #t))
 
-  (test "termios-tcflush" #t
-        (^[]
-          (sys-tcflush iport TCIFLUSH)
-          (sys-tcflush oport TCOFLUSH)
-          #t))
-
   ;; NB: on cygwin (as of 1.5.25) tcdrain and tcflow does not seem to work.
   (unless (string-contains (gauche-architecture) "-cygwin")
     (test "termios-tcdrain" #t
@@ -108,13 +99,15 @@
                     (list TCOOFF TCOON TCIOFF TCION))))
     ) ;!cygwin
 
-  ;; Some systems may block by tcsetattr with TCSADRAIN or TCSAFLUSH
-  ;; on pty until an action in master side; so we exclude them if pty is used.
+  (test "termios-tcflush" #t
+        (^[]
+          (sys-tcflush iport TCIFLUSH)
+          (sys-tcflush oport TCOFLUSH)
+          #t))
+
   (test "termios-tcsetattr" (make-list 3 (undefined))
         (^[] (map (cut sys-tcsetattr iport <> iterm)
-                  (if pty-used
-                    (list TCSANOW TCSANOW TCSANOW)
-                    (list TCSANOW TCSADRAIN TCSAFLUSH)))))
+                  (list TCSANOW TCSADRAIN TCSAFLUSH))))
 
   ;; exclude B0 from this test, since it doesn't really set the baudrate
   ;; (and some architecture such as Solaris does not set the value to
