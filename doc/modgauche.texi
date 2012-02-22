@@ -7858,7 +7858,7 @@ so that a parameter can be used as if it were a procedure.
 
 @example
 ;; p is a parameter with initial value 2
-(define p (make-parametre 2))
+(define p (make-parameter 2))
 
 ;; calling p with no arguments returns the current value
 (p) @result{} 2
