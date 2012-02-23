@@ -225,7 +225,7 @@
         [(and (or (assq 'gauche.os.windows (cond-features))
                   (assq 'gauche.os.cygwin (cond-features)))
               (rxmatch #/^[a-zA-Z]:/ filename)) ; the wicked drive-letter
-         (do-absolute filenaem)]
+         (do-absolute filename)]
         [else (do-relative paths)]))
 
 ;;;
