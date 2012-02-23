@@ -721,9 +721,9 @@
 
 ;; for external api
 (define (http-secure-connection-available?)
-  ;; eventually this will check availability of multiple subsystems.
-  #t)
-  
+  (cond-expand
+   [gauche.net.tls #t]
+   [else #f]))
      
 ;;==============================================================
 ;; authentication handling

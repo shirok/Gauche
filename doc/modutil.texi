@@ -7835,19 +7835,7 @@ The request-making APIs such as @code{http-get} use a secure
 connection.  That is, it connects with @code{https} instead of
 @code{http}.
 
-Currently Gauche relies on an external program @code{stunnel}
-(either version 3 or 4)
-to handle secure connections.  So when you request a secure
-connection, Gauche looks for @code{stunnel} program in @code{PATH}.
-On some systems a newer version of it is called @code{stunnel4},
-and Gauche looks for it, too.
-If you want to add certificates, for example, you have to
-adjust @code{stunnel} settings.
-
-A plan is to provide the means of secure connections as long as
-@code{stunnel}, including native SSL support, and the higher-level
-library automatically choose whatever is available and best.
-
+The secure connection may not available on some platforms.
 Use the following procedure to check if you can use secure
 connections:
 
