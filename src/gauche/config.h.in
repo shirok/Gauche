@@ -25,6 +25,12 @@
 /* Define if we use win32 threads */
 #undef GAUCHE_USE_WTHREADS
 
+/* Define if you use axTLS for TLS/SSL*/
+#undef GAUCHE_USE_AXTLS
+
+/* Define if you use openssl for TLS/SSL*/
+#undef GAUCHE_USE_OPENSSL
+
 /* Gauche ABI version string */
 #undef GAUCHE_ABI_VERSION
 

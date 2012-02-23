@@ -1,6 +1,6 @@
 dnl
 dnl Configure ext/net
-dnl This file is included by the toplevel configure.in
+dnl This file is included by the toplevel configure.ac
 dnl
 
 # ext/net -------------------------------------------------

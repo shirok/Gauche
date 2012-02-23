@@ -1,0 +1,20 @@
+This module contains a modified source files of axTLS.
+Here's how to incorporate a new version of axTLS.
+
+Suppose $(AXTLS) as the new axTLS source tree.
+
+(1) Copy the following files/directories into axTLS/
+   $(AXTLS)/Makefile
+   $(AXTLS)/ssl/
+   $(AXTLS)/crypto/
+
+(2) Apply the patch axtls.diff.  You man need to tweak some
+    files (esp. axTLS/config/config.h)
+
+     patch -p0 < axtls.diff
+
+(3) Compile and run tests.  Tweak the source if needed.
+
+(4) Regenerate axtls.diff by the following command:
+
+     gosh ./axtls-diff.scm $(AXTLS) > axtls.diff

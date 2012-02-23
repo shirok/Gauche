@@ -1,0 +1,67 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+SCM_CATEGORY = rfc
+
+EXTRA_INCLUDES = -I$(srcdir)/axTLS/crypto -I$(srcdir)/axTLS/ssl -I$(srcdir)/axTLS/config
+
+LIBFILES = rfc--tls.$(SOEXT)
+SCMFILES = tls.sci
+
+OBJECTS = rfc--tls.$(OBJEXT) \
+          tls.$(OBJEXT)      \
+	  $(AXTLS_OBJECTS)
+
+AXTLS_OBJECTS = axTLS/ssl/asn1.$(OBJEXT)		\
+		axTLS/ssl/gen_cert.$(OBJEXT)		\
+		axTLS/ssl/loader.$(OBJEXT)		\
+		axTLS/ssl/openssl.$(OBJEXT)		\
+		axTLS/ssl/os_port.$(OBJEXT)		\
+		axTLS/ssl/p12.$(OBJEXT)			\
+		axTLS/ssl/tls1.$(OBJEXT)		\
+		axTLS/ssl/tls1_clnt.$(OBJEXT)		\
+		axTLS/ssl/tls1_svr.$(OBJEXT)		\
+		axTLS/ssl/x509.$(OBJEXT)		\
+		axTLS/crypto/aes.$(OBJEXT)		\
+		axTLS/crypto/bigint.$(OBJEXT)		\
+		axTLS/crypto/crypto_misc.$(OBJEXT)	\
+		axTLS/crypto/hmac.$(OBJEXT)		\
+		axTLS/crypto/md2.$(OBJEXT)		\
+		axTLS/crypto/md5.$(OBJEXT)		\
+		axTLS/crypto/rc4.$(OBJEXT)		\
+		axTLS/crypto/rsa.$(OBJEXT)		\
+		axTLS/crypto/sha1.$(OBJEXT)
+
+SSLTEST = axTLS/ssl/ssltest$(EXEEXT)
+SSLTEST_GENERATED = axTLS/ssl/test/ssltest.mod.c
+SSLTEST_OBJECTS = axTLS/ssl/test/ssltest.mod.$(OBJEXT)
+
+GENERATED = Makefile
+XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GENERATED) $(SSLTEST) ssltest.log
+
+all : axtls_dirs $(LIBFILES) $(SSLTEST)
+
+rfc--tls.$(SOEXT) : $(OBJECTS)
+	$(MODLINK) rfc--tls.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+tls.sci rfc--tls.c : tls.scm
+	$(PRECOMP) -e -P -o rfc--tls $(srcdir)/tls.scm
+
+# For out-of-source-tree build
+axtls_dirs :
+	mkdir -p axTLS/ssl axTLS/ssl/test axTLS/crypto
+
+# We build the test executable (ssltest) at the build time
+$(SSLTEST): $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS)
+	$(CCLD) $(LOCAL_LFLAGS) $(XLDFLAGS) -o $(SSLTEST) $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS) $(LIBS)
+
+# The 'system' macro hack is to suppress "ignoring result" warning
+$(SSLTEST_GENERATED) : axTLS/ssl/test/ssltest.c
+	rm -f $(SSLTEST_GENERATED)
+	echo "#define SYSTEM(x)  do{if(system(x)){0;}}while(0)" > $(SSLTEST_GENERATED)
+	sed -e "s@\.\./ssl/@../../$(srcdir)/axTLS/ssl/@g" -e "s/system/SYSTEM/" $(srcdir)/axTLS/ssl/test/ssltest.c >> $(SSLTEST_GENERATED)
+
+install : install-std

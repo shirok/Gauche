@@ -56,6 +56,7 @@
   (use gauche.collection)
   (use gauche.uvector)
   (use gauche.partcont)
+  (use rfc.tls)
   (use util.match)
   (use util.list)
   (export <http-error>
@@ -82,10 +83,6 @@
           mime-compose-message-string
           mime-compose-parameters
           mime-parse-content-type)
-
-(autoload gauche.process
-          run-process process-input process-output process-error
-          process-wait process-kill)
 
 (autoload file.util file-size find-file-in-paths null-device)
 
@@ -180,8 +177,7 @@
 ;;             the sender needs to call BODY-SINK with argument 0.
 ;;
 ;;   host    - the host name passed to the 'host' header field.
-;;   secure  - if true, using secure connection (via external stunnel
-;;             process).
+;;   secure  - if true, using secure connection (via gauche.tls).
 ;;   no-redirect - if true, the procedures won't attempt to issue
 ;;             the request specified by 3xx response headers.
 ;;   auth-user, auth-password, auth-handler - authentication parameters.
@@ -402,8 +398,7 @@
                                         ; If it is shutdown by the server,
                                         ; the APIs attempt to reconnect.
    (secure-agent  :init-value #f)       ; When using secure connection via
-                                        ; external process, this slot holds
-                                        ; its handle.
+                                        ; tls, this slot holds its handle.
    (persistent    :init-keyword :persistent)   ; true for persistent connection.
    (auth-handler  :init-keyword :auth-handler) ; unused yet
    (auth-user     :init-keyword :auth-user)    ; unused yet
@@ -557,7 +552,8 @@
     (set! (~ conn'socket)
           (cond [(#/([^:]+):(\d+)/ server)
                  => (^m (make-client-socket (m 1) (x->integer (m 2))))]
-                [else (make-client-socket server 80)]))))
+                [else
+                 (make-client-socket server (if (~ conn'secure) 443 80))]))))
 
 (define (shutdown-socket-connection conn)
   (when (~ conn'socket)
@@ -567,22 +563,18 @@
     (set! (~ conn'socket) #f)))
 
 (define (with-connection conn proc)
-  (cond [(~ conn'secure)
-         (unless (and (~ conn'persistent) (~ conn'secure-agent))
-           (start-secure-agent conn))
-         (unwind-protect
-             (proc (process-output (~ conn'secure-agent))
-                   (process-input (~ conn'secure-agent)))
            (unless (~ conn'persistent)
-             (shutdown-secure-agent conn)))]
-        [else
-         (unless (and (~ conn'persistent) (~ conn'socket))
-           (start-socket-connection conn))
+    (unless (~ conn'socket) (start-socket-connection conn))
+    (when (~ conn'secure) (start-secure-agent conn)))
          (unwind-protect
-             (proc (socket-input-port (~ conn'socket))
-                   (socket-output-port (~ conn'socket)))
+   (apply proc (if (~ conn'secure)
+                   `(,(tls-input-port (~ conn'secure-agent))
+                     ,(tls-output-port (~ conn'secure-agent)))
+                   `(,(socket-input-port (~ conn'socket))
+                     ,(socket-output-port (~ conn'socket)))))
            (unless (~ conn'persistent)
-             (shutdown-socket-connection conn)))]))
+     (when (~ conn'secure) (shutdown-secure-agent conn))
+     (shutdown-socket-connection conn))))
 
 (define (request-response method conn host request-uri
                           sender receiver options enc)
@@ -716,77 +708,21 @@
 ;; secure agent handling
 ;;
 
-;; NB: In future, this part should be splitted into an individual
-;; module so that it can be used as an infrastructure for
-;; secure connection.  It should allow selection and customization
-;; of various subsystems.   For now, we just assumes stunnel version
-;; 4 or 3, and use some heuristics to find out which is available.
-
 (define (shutdown-secure-agent conn)
   (when (~ conn'secure-agent)
-    (close-output-port (process-input (~ conn'secure-agent)))
-    (or (process-wait (~ conn'secure-agent) #t)
-        (begin (sys-nanosleep #e1e8)    ;0.1s
-               (process-wait (~ conn'secure-agent) #t))
-        (begin (sys-nanosleep #e1e8)    ;0.1s
-               (process-kill (~ conn'secure-agent))))
+    (tls-close (~ conn'secure-agent))
     (set! (~ conn'secure-agent) #f)))
 
 (define (start-secure-agent conn)
   (when (~ conn'secure-agent) (shutdown-secure-agent conn))
-  (let* ([rhost      (or (~ conn'proxy) (~ conn'server))]
-         [rhost:port (if (string-index rhost #\:) rhost #`",|rhost|:https")]
-         [proc (probe-stunnel)])
-    (unless proc
-      ;; NB: It's better to raise more descriptive condition, but <http-error>
-      ;; isn't appropriate.  Some kind of network-layer error is good.  Let's
-      ;; wait til we have condition hierarchy in gauche.net.
-      (error "secure connection isn't available on this system."))
-    (set! (~ conn'secure-agent) (proc rhost:port))))
-
-;; Returns a closure to run the process.
-(define probe-stunnel
-  (let1 result #f
-    (define (run-stunnel3 path)
-      (lambda (host:port)
-        (run-process `(,path "-c" "-r" ,host:port) :input :pipe :output :pipe
-                     :error :null :wait #f)))
-    (define (run-stunnel4 path)
-      (lambda (host:port)
-        (receive (in out) (sys-pipe)
-          (rlet1 p (run-process `(,path "-fd" 3)
-                                :redirects `((< 0 stdin)
-                                             (> 1 stdout)
-                                             (> 2 :null)
-                                             (< 3 ,(port-file-number in)))
-                                :wait #f)
-            (format out "client = yes\n")
-            (format out "connect = ~a" host:port)
-            (close-output-port out)))))
-
-    (lambda (:key (force #f))
-      (if (and result (not force))
-        result
-        (and-let* ([path (or (find-file-in-paths "stunnel4") ;ubuntu has this
-                             (find-file-in-paths "stunnel"))]
-                   [p (run-process `(,path "-version")
-                                   :error :pipe :output :pipe)]
-                   [vers (read-line (process-error p))])
-          (process-wait p)
-          (rlet1 proc (cond
-                       [(eof-object? vers) (run-stunnel3 path)]
-                       [(#/stunnel (\d+)\.\d+/ vers)
-                        => (^m (if (>= (x->integer (m 1)) 4)
-                                 (run-stunnel4 path)
-                                 (run-stunnel3 path)))]
-                       [(#/exec failed/i vers) #f]
-                       [else (run-stunnel3 path)])
-            (set! result proc)))))))
+  (let1 tls (make-tls)
+    (tls-connect tls (socket-fd (~ conn'socket)))
+    (set! (~ conn'secure-agent) tls)))
 
 ;; for external api
 (define (http-secure-connection-available?)
   ;; eventually this will check availability of multiple subsystems.
-  (boolean (probe-stunnel)))
+  #t)
   
      
 ;;==============================================================
@@ -795,4 +731,3 @@
 
 ;; dummy - to be written
 (define (http-default-auth-handler . _) #f)
-

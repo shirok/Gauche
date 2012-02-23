@@ -457,21 +457,35 @@ init_cond_features()
         const char *module;
     } init_features[] = {
         { "gauche", NULL },
-#ifdef GAUCHE_WINDOWS
+
+        /* Platform */
+#if   defined(GAUCHE_WINDOWS)
         { "gauche.os.windows", NULL },
         { "gauche-windows", NULL }, /* for backward compatibility */
-#endif
-#ifdef __CYGWIN__              /* cygwin is different enough to deserve this */
+#elif defined(__CYGWIN__)  /* cygwin is different enough to deserve this */
         { "gauche.os.cygwin", NULL },
 #endif
-#ifdef GAUCHE_USE_PTHREADS
+
+        /* Threads */
+#if   defined(GAUCHE_USE_PTHREADS)
         { "gauche.sys.threads", "gauche.threads" },
         { "gauche.sys.pthreads", "gauche.threads" },
-#endif
-#ifdef GAUCHE_USE_WTHREADS
+#elif defined(GAUCHE_USE_WTHREADS)
         { "gauche.sys.threads", "gauche.threads" },
         { "gauche.sys.wthreads", "gauche.threads" },
 #endif
+
+        /* TLS/SSL.  This nees to be in the core in order to switch
+           code _before_ loading rfc.tls */
+#if defined(GAUCHE_USE_AXTLS)
+        { "gauche.net.tls", "rfc.tls" },
+        { "gauche.net.tls.axtls", "rfc.tls" },
+#elif defined(GAUCHE_USE_OPENSSL)
+        { "gauche.net.tls", "rfc.tls" },
+        { "gauche.net.tls.openssl", "rfc.tls" },
+#endif
+
+        /* SRFIs */
         { "srfi-0", NULL },         /* autoloaded */
         { "srfi-1", "srfi-1" },
         { "srfi-2", NULL },         /* builtin */

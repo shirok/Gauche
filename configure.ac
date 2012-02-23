@@ -760,6 +760,7 @@ m4_include([ext/charconv/charconv.ac])
 m4_include([ext/dbm/dbm.ac])
 m4_include([ext/net/net.ac])
 m4_include([ext/zlib/zlib.ac])
+m4_include([ext/tls/tls.ac])
 
 dnl ===========================================================
 dnl Cross compiling
@@ -803,6 +804,7 @@ AC_OUTPUT(Makefile
           ext/srfi/Makefile
           ext/sxml/Makefile
           ext/syslog/Makefile
+          ext/tls/Makefile
           ext/termios/Makefile
           ext/text/Makefile
           ext/threads/Makefile
@@ -827,5 +829,6 @@ This Gauche has been configured with the following parameters:
          multibyte: $GAUCHE_CHAR_ENCODING
               slib: $SLIB_DIR
             thread: $GAUCHE_THREAD_TYPE
+           tls/ssl: $GAUCHE_TLS_TYPE
   optional modules: $OPTDBMS$OPTZLIB
 ])

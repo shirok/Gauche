@@ -1,3 +1,12 @@
+2012-02-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Added TLS/SSL support module based on Cameron Rich's axTLS.
+	  The binding is originally written by Kirill Zorin.  If building
+	  of axTLS fails, configure with --enable-tls=none to suppress
+	  building it.
+	* lib/rfc/http.scm: Repleaced TLS/SSL support with ext/tls, from
+	  the previous ad-hoc stunnel-based one.
+
 2012-02-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm: Rewrote using lazy sequences instead of

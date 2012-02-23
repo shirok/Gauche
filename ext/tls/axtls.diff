@@ -1,0 +1,434 @@
+*** ../../../axTLS-1.4.5/ssl/tls1.c	Fri May  6 14:12:41 2011
+--- axTLS/ssl/tls1.c	Wed Feb 22 23:36:15 2012
+***************
+*** 2162,2168 ****
+  EXP_FUNC SSL * STDCALL ssl_client_new(SSL_CTX *ssl_ctx, int client_fd, const
+          uint8_t *session_id, uint8_t sess_id_size)
+  {
+!     printf(unsupported_str);
+      return NULL;
+  }
+  #endif
+--- 2162,2168 ----
+  EXP_FUNC SSL * STDCALL ssl_client_new(SSL_CTX *ssl_ctx, int client_fd, const
+          uint8_t *session_id, uint8_t sess_id_size)
+  {
+!     printf("%s", unsupported_str);
+      return NULL;
+  }
+  #endif
+***************
+*** 2170,2189 ****
+  #if !defined(CONFIG_SSL_CERT_VERIFICATION)
+  EXP_FUNC int STDCALL ssl_verify_cert(const SSL *ssl)
+  {
+!     printf(unsupported_str);
+      return -1;
+  }
+  
+  
+  EXP_FUNC const char * STDCALL ssl_get_cert_dn(const SSL *ssl, int component)
+  {
+!     printf(unsupported_str);
+      return NULL;
+  }
+  
+  EXP_FUNC const char * STDCALL ssl_get_cert_subject_alt_dnsname(const SSL *ssl, int index)
+  {
+!     printf(unsupported_str);
+      return NULL;
+  }
+  
+--- 2170,2189 ----
+  #if !defined(CONFIG_SSL_CERT_VERIFICATION)
+  EXP_FUNC int STDCALL ssl_verify_cert(const SSL *ssl)
+  {
+!     printf("%s", unsupported_str);
+      return -1;
+  }
+  
+  
+  EXP_FUNC const char * STDCALL ssl_get_cert_dn(const SSL *ssl, int component)
+  {
+!     printf("%s", unsupported_str);
+      return NULL;
+  }
+  
+  EXP_FUNC const char * STDCALL ssl_get_cert_subject_alt_dnsname(const SSL *ssl, int index)
+  {
+!     printf("%s", unsupported_str);
+      return NULL;
+  }
+  
+*** ../../../axTLS-1.4.5/ssl/test/ssltest.c	Fri Jun 24 03:13:05 2011
+--- axTLS/ssl/test/ssltest.c	Wed Feb 22 23:36:15 2012
+***************
+*** 1261,1266 ****
+--- 1261,1267 ----
+                  NULL, "abcd", DEFAULT_SVR_OPTION)))
+          goto cleanup;
+  
++ #if 0
+      /* 
+       * GNUTLS
+       */
+***************
+*** 1270,1275 ****
+--- 1271,1277 ----
+                      "../ssl/test/axTLS.key_1024",
+                      NULL, NULL, DEFAULT_SVR_OPTION)))
+          goto cleanup;
++ #endif
+      ret = 0;
+  
+  cleanup:
+***************
+*** 1632,1644 ****
+  
+      printf("SSL client test \"Invalid certificate type\" passed\n");
+  
+      if ((ret = SSL_client_test("GNUTLS client", 
+                      &ssl_ctx,
+                      "--x509certfile ../ssl/test/axTLS.x509_1024.pem "
+                      "--x509keyfile ../ssl/test/axTLS.key_1024.pem -q", NULL,
+                      DEFAULT_CLNT_OPTION, NULL, NULL, NULL)))
+          goto cleanup;
+! 
+      ret = 0;
+  
+  cleanup:
+--- 1634,1647 ----
+  
+      printf("SSL client test \"Invalid certificate type\" passed\n");
+  
++ #if 0
+      if ((ret = SSL_client_test("GNUTLS client", 
+                      &ssl_ctx,
+                      "--x509certfile ../ssl/test/axTLS.x509_1024.pem "
+                      "--x509keyfile ../ssl/test/axTLS.key_1024.pem -q", NULL,
+                      DEFAULT_CLNT_OPTION, NULL, NULL, NULL)))
+          goto cleanup;
+! #endif
+      ret = 0;
+  
+  cleanup:
+***************
+*** 2121,2126 ****
+--- 2124,2132 ----
+      int ret = 1;
+      BI_CTX *bi_ctx;
+      int fd;
++     /*<SK>*/
++     int have_openssl = 0;
++     /*</SK>*/
+  
+  #ifdef WIN32
+      WSADATA wsaData;
+***************
+*** 2134,2139 ****
+--- 2140,2151 ----
+      dup2(fd, 2);
+  #endif
+  
++     /*<SK>*/
++     if (argc == 2 && strcmp(argv[1], "--exttest") == 0) {
++         have_openssl = 1;
++     }
++     /*</SK>*/
++ 
+      /* can't do testing in this mode */
+  #if defined CONFIG_SSL_GENERATE_X509_CERT
+      printf("Error: Must compile with default key/certificates\n");
+***************
+*** 2215,2220 ****
+--- 2227,2236 ----
+  
+      system("sh ../ssl/test/killopenssl.sh");
+  
++     /*<SK>*/
++     if (have_openssl) {
++     /*</SK>*/
++ 
+      if (SSL_client_tests())
+          goto cleanup;
+  
+***************
+*** 2226,2236 ****
+--- 2242,2258 ----
+  
+      system("sh ../ssl/test/killopenssl.sh");
+  
++     /*<SK>*/
++     } /*have_openssl*/
++     /*</SK>*/
++ 
++ #if 0
+      if (header_issue())
+      {
+          printf("Header tests failed\n"); TTY_FLUSH();
+          goto cleanup;
+      }
++ #endif
+  
+      ret = 0;        /* all ok */
+      printf("**** ALL TESTS PASSED ****\n"); TTY_FLUSH();
+*** ../../../axTLS-1.4.5/ssl/os_port.h	Fri Jan 14 13:13:14 2011
+--- axTLS/ssl/os_port.h	Wed Feb 22 23:36:15 2012
+***************
+*** 58,63 ****
+--- 58,65 ----
+  
+  #ifdef WIN32
+  
++ #include <windows.h>
++ 
+  /* Windows CE stuff */
+  #if defined(_WIN32_WCE)
+  #include <basetsd.h>
+***************
+*** 114,119 ****
+--- 116,122 ----
+  #pragma comment(lib, "WS2_32.lib")
+  #pragma comment(lib, "AdvAPI32.lib")
+  
++ #ifndef __MINGW32__
+  typedef UINT8 uint8_t;
+  typedef INT8 int8_t;
+  typedef UINT16 uint16_t;
+***************
+*** 122,132 ****
+  typedef INT32 int32_t;
+  typedef UINT64 uint64_t;
+  typedef INT64 int64_t;
+- typedef int socklen_t;
+  
+- EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
+  EXP_FUNC int STDCALL strcasecmp(const char *s1, const char *s2);
+  EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
+  
+  #else   /* Not Win32 */
+  
+--- 125,140 ----
+  typedef INT32 int32_t;
+  typedef UINT64 uint64_t;
+  typedef INT64 int64_t;
+  
+  EXP_FUNC int STDCALL strcasecmp(const char *s1, const char *s2);
+  EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
++ #else  /* __MINGW32__ */
++ #include <inttypes.h>
++ #include <malloc.h>
++ #endif /* __MINGW32__ */
++ 
++ typedef int socklen_t;
++ EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
+  
+  #else   /* Not Win32 */
+  
+*** ../../../axTLS-1.4.5/ssl/os_port.c	Sat Jan  1 21:49:03 2011
+--- axTLS/ssl/os_port.c	Wed Feb 22 23:36:15 2012
+***************
+*** 56,61 ****
+--- 56,62 ----
+  #endif
+  }
+  
++ #ifndef __MINGW32__
+  /**
+   * strcasecmp() not in Win32
+   */
+***************
+*** 88,93 ****
+--- 89,95 ----
+      RegCloseKey(hKey);
+      return 0; 
+  }
++ #endif /*__MINGW32__*/
+  #endif
+  
+  #undef malloc
+*** ../../../axTLS-1.4.5/ssl/loader.c	Sat Feb 11 01:34:56 2012
+--- axTLS/ssl/loader.c	Wed Feb 22 23:36:15 2012
+***************
+*** 82,88 ****
+  #ifdef CONFIG_SSL_HAS_PEM
+          ret = ssl_obj_PEM_load(ssl_ctx, obj_type, ssl_obj, password);
+  #else
+!         printf(unsupported_str);
+          ret = SSL_ERROR_NOT_SUPPORTED;
+  #endif
+      }
+--- 82,88 ----
+  #ifdef CONFIG_SSL_HAS_PEM
+          ret = ssl_obj_PEM_load(ssl_ctx, obj_type, ssl_obj, password);
+  #else
+!         printf("%s", unsupported_str);
+          ret = SSL_ERROR_NOT_SUPPORTED;
+  #endif
+      }
+***************
+*** 93,99 ****
+      ssl_obj_free(ssl_obj);
+      return ret;
+  #else
+!     printf(unsupported_str);
+      return SSL_ERROR_NOT_SUPPORTED;
+  #endif /* CONFIG_SSL_SKELETON_MODE */
+  }
+--- 93,99 ----
+      ssl_obj_free(ssl_obj);
+      return ret;
+  #else
+!     printf("%s", unsupported_str);
+      return SSL_ERROR_NOT_SUPPORTED;
+  #endif /* CONFIG_SSL_SKELETON_MODE */
+  }
+***************
+*** 150,156 ****
+              break;
+  #endif
+          default:
+!             printf(unsupported_str);
+              ret = SSL_ERROR_NOT_SUPPORTED;
+              break;
+      }
+--- 150,156 ----
+              break;
+  #endif
+          default:
+!             printf("%s", unsupported_str);
+              ret = SSL_ERROR_NOT_SUPPORTED;
+              break;
+      }
+*** ../../../axTLS-1.4.5/crypto/bigint_impl.h	Sat Jan  1 21:45:25 2011
+--- axTLS/crypto/bigint_impl.h	Wed Feb 22 23:36:15 2012
+***************
+*** 61,67 ****
+  typedef uint32_t long_comp;     /**< A double precision component. */
+  typedef int32_t slong_comp;     /**< A signed double precision component. */
+  #else /* regular 32 bit */
+! #ifdef WIN32
+  #define COMP_RADIX          4294967296i64         
+  #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
+  #else
+--- 61,67 ----
+  typedef uint32_t long_comp;     /**< A double precision component. */
+  typedef int32_t slong_comp;     /**< A signed double precision component. */
+  #else /* regular 32 bit */
+! #if defined(WIN32) && !defined(__MINGW32__)
+  #define COMP_RADIX          4294967296i64         
+  #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
+  #else
+*** ../../../axTLS-1.4.5/config/config.h	Wed Dec 31 14:00:00 1969
+--- axTLS/config/config.h	Wed Feb 22 23:38:18 2012
+***************
+*** 0 ****
+--- 1,108 ----
++ /*
++  * In original axTLS, this file is automatically generated.
++  * To include in Gauche, we hand-edited this file, so be careful
++  * not to clobber this file.
++  */
++ 
++ /*
++  * General Configuration
++  */
++ #define CONFIG_DEBUG 1
++ 
++ /*
++  * SSL Library
++  */
++ #undef CONFIG_SSL_SERVER_ONLY
++ #undef CONFIG_SSL_CERT_VERIFICATION
++ #undef CONFIG_SSL_ENABLE_CLIENT
++ #define CONFIG_SSL_FULL_MODE 1
++ #undef CONFIG_SSL_SKELETON_MODE
++ #undef CONFIG_SSL_PROT_LOW
++ #define CONFIG_SSL_PROT_MEDIUM 1
++ #undef CONFIG_SSL_PROT_HIGH
++ #define CONFIG_SSL_USE_DEFAULT_KEY 1
++ #define CONFIG_SSL_PRIVATE_KEY_LOCATION ""
++ #define CONFIG_SSL_PRIVATE_KEY_PASSWORD ""
++ #define CONFIG_SSL_X509_CERT_LOCATION ""
++ #undef CONFIG_SSL_GENERATE_X509_CERT
++ #define CONFIG_SSL_X509_COMMON_NAME ""
++ #define CONFIG_SSL_X509_ORGANIZATION_NAME ""
++ #define CONFIG_SSL_X509_ORGANIZATION_UNIT_NAME ""
++ #undef CONFIG_SSL_ENABLE_V23_HANDSHAKE
++ #define CONFIG_SSL_HAS_PEM 1
++ #define CONFIG_SSL_USE_PKCS12 1
++ #define CONFIG_SSL_EXPIRY_TIME 24
++ #define CONFIG_X509_MAX_CA_CERTS 150
++ #define CONFIG_SSL_MAX_CERTS 3
++ #undef CONFIG_SSL_CTX_MUTEXING
++ #define CONFIG_USE_DEV_URANDOM 1
++ #ifdef WIN32
++ #define CONFIG_WIN32_USE_CRYPTO_LIB 1
++ #endif /*WIN32*/
++ #undef CONFIG_OPENSSL_COMPATIBLE
++ #undef CONFIG_PERFORMANCE_TESTING
++ #undef CONFIG_SSL_TEST
++ #undef CONFIG_AXTLSWRAP
++ #undef CONFIG_AXHTTPD
++ #undef CONFIG_HTTP_STATIC_BUILD
++ #define CONFIG_HTTP_PORT 
++ #define CONFIG_HTTP_HTTPS_PORT 
++ #define CONFIG_HTTP_SESSION_CACHE_SIZE 
++ #define CONFIG_HTTP_WEBROOT ""
++ #define CONFIG_HTTP_TIMEOUT 
++ #undef CONFIG_HTTP_HAS_CGI
++ #define CONFIG_HTTP_CGI_EXTENSIONS ""
++ #undef CONFIG_HTTP_ENABLE_LUA
++ #define CONFIG_HTTP_LUA_PREFIX ""
++ #define CONFIG_HTTP_LUA_CGI_LAUNCHER ""
++ #undef CONFIG_HTTP_BUILD_LUA
++ #undef CONFIG_HTTP_DIRECTORIES
++ #undef CONFIG_HTTP_HAS_AUTHORIZATION
++ #undef CONFIG_HTTP_HAS_IPV6
++ #undef CONFIG_HTTP_ENABLE_DIFFERENT_USER
++ #define CONFIG_HTTP_USER ""
++ #undef CONFIG_HTTP_VERBOSE
++ #undef CONFIG_HTTP_IS_DAEMON
++ 
++ /*
++  * Language Bindings
++  */
++ #undef CONFIG_BINDINGS
++ #undef CONFIG_CSHARP_BINDINGS
++ #undef CONFIG_VBNET_BINDINGS
++ #define CONFIG_DOT_NET_FRAMEWORK_BASE ""
++ #undef CONFIG_JAVA_BINDINGS
++ #define CONFIG_JAVA_HOME ""
++ #undef CONFIG_PERL_BINDINGS
++ #define CONFIG_PERL_CORE ""
++ #define CONFIG_PERL_LIB ""
++ #undef CONFIG_LUA_BINDINGS
++ #define CONFIG_LUA_CORE ""
++ 
++ /*
++  * Samples
++  */
++ #define CONFIG_SAMPLES 1
++ #define CONFIG_C_SAMPLES 1
++ #undef CONFIG_CSHARP_SAMPLES
++ #undef CONFIG_VBNET_SAMPLES
++ #undef CONFIG_JAVA_SAMPLES
++ #undef CONFIG_PERL_SAMPLES
++ #undef CONFIG_LUA_SAMPLES
++ 
++ /*
++  * BigInt Options
++  */
++ #undef CONFIG_BIGINT_CLASSICAL
++ #undef CONFIG_BIGINT_MONTGOMERY
++ #define CONFIG_BIGINT_BARRETT 1
++ #define CONFIG_BIGINT_CRT 1
++ #undef CONFIG_BIGINT_KARATSUBA
++ #define MUL_KARATSUBA_THRESH 
++ #define SQU_KARATSUBA_THRESH 
++ #define CONFIG_BIGINT_SLIDING_WINDOW 1
++ #define CONFIG_BIGINT_SQUARE 1
++ #define CONFIG_BIGINT_CHECK_ON 1
++ #define CONFIG_INTEGER_32BIT 1
++ #undef CONFIG_INTEGER_16BIT
++ #undef CONFIG_INTEGER_8BIT

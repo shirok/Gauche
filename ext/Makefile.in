@@ -1,7 +1,7 @@
 @SET_MAKE@
 SUBDIRS= gauche util srfi threads uvector charconv binary net termios \
          fcntl file sxml syslog dbm mt-random bcrypt digest vport \
-         text zlib sparse peg windows
+         text zlib sparse peg windows tls
 
 CONFIG_GENERATED = Makefile Makefile.ext
 

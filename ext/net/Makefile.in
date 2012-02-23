@@ -9,10 +9,10 @@ SCM_CATEGORY = gauche
 LIBFILES = gauche--net.$(SOEXT)
 SCMFILES = net.scm
 
-OBJECTS = net.$(OBJEXT)      \
-          addr.$(OBJEXT)     \
-          netdb.$(OBJEXT)    \
-          netlib.$(OBJEXT)   \
+OBJECTS = net.$(OBJEXT)				\
+          addr.$(OBJEXT) 			\
+          netdb.$(OBJEXT)			\
+          netlib.$(OBJEXT)			\
           netaux.$(OBJEXT)
 
 GENERATED = Makefile 
@@ -20,7 +20,7 @@ XCLEANFILES = netlib.c netaux.c
 
 all : $(LIBFILES)
 
-gauche--net.$(SOEXT) : $(OBJECTS) 
+gauche--net.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--net.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 netlib.c : netlib.stub

@@ -68,10 +68,10 @@ TESTRECORD = $(top_builddir)/test.record
 	pre-package pre-package-ext
 
 .c.obj:
-	$(COMPILE) -c `cygpath -w $<`
+	$(COMPILE) -o `cygpath -w $@` -c `cygpath -w $<`
 
 .c.o:
-	$(COMPILE) -c $<
+	$(COMPILE) -o $@ -c $<
 
 .s.o:
 	$(COMPILE) -c $<
