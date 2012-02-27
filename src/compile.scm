@@ -2166,7 +2166,6 @@
   ;; This extends as far as the pass-1 constant folding goes, so `(,(+ x 1))
   ;; also becomes '(4).
   ;; NB: The current code allocates lots of intermediate $const node.
-  ;; We used to track 
 
   (define (quasiquote? v)       (global-eq? v 'quasiquote cenv))
   (define (unquote? v)          (global-eq? v 'unquote cenv))
