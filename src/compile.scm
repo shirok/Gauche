@@ -2182,7 +2182,7 @@
            ($list obj (list ($const 'quasiquote) xx))))]
       [((and (or (? unquote?) (? unquote-splicing?)) op) . xs)
        (if (zero? level)
-         (if (and (global-eq? op 'unquote cenv)
+         (if (and (unquote? op)
                   (pair? xs) (null? (cdr xs)))
            (pass1 (car xs) cenv)
            (errorf "invalid ~a form in this context: ~s" op obj))
@@ -2245,7 +2245,7 @@
   
   (define (quasi-vector obj level)
     (if (vector-has-splicing? obj)
-      ($list->vector obj (quasi (vector->list obj) level))
+      ($list->vector obj (quasi* (vector->list obj) level))
       (let* ([need-construct? #f]
              [elts (map (^[elt] (rlet1 ee (quasi elt level)
                                   (unless ($const? ee)
@@ -2259,7 +2259,7 @@
     (let loop ((i 0))
       (cond [(= i (vector-length obj)) #f]
             [(and (pair? (vector-ref obj i))
-                  (eq? (car (vector-ref obj i)) 'unquote-splicing))]
+                  (unquote-splicing? (car (vector-ref obj i))))]
             [else (loop (+ i 1))])))
   
   (match form

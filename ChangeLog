@@ -1,5 +1,8 @@
 2012-02-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (quasiquote): Fixed a broken hygienity bug in
+	  unquote-splicing handling used within hygiene macros.
+
 	* src/vminsn.scm (NUMIDIV2), src/libnum.scm (/.),
 	  src/number.c (scm_div):  There was an overflow issue in NUMIDIV2 and
 	  /. when both the dividend and the divisor are too big to be coerced

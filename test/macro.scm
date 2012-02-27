@@ -175,6 +175,15 @@
 (test "unwrap1" '(a 4) (lambda () (let ((a 4)) (unwrap1 a))) 
       (lambda (x y) (and (eq? (car x) (car y)) (eq? (cadr x) (cadr y)))))
 
+;; regression check for quasiquote hygienty handling code
+(define-syntax qq1 (syntax-rules ()
+                     ((_ a) `(,@a))))
+(define-syntax qq2 (syntax-rules ()
+                     ((_ a) `#(,@a))))
+
+(test "qq1" '()  (lambda () (qq1 '())))
+(test "qq2" '#() (lambda () (qq2 '())))
+
 ;;----------------------------------------------------------------------
 ;; cond, taken from R5RS section 7.3
 
