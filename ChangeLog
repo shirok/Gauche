@@ -1,5 +1,8 @@
 2012-02-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/http.scm (send-headers): Try to send headers in one chunk,
+	  for some http servers prefer headers coming in a single packet.
+
 	* src/compile.scm (quasiquote): Fixed a broken hygienity bug in
 	  unquote-splicing handling used within hygiene macros.
 

@@ -50,15 +50,16 @@
   (use srfi-13)
   (use rfc.822)
   (use rfc.uri)
+  (use rfc.tls)
   (use gauche.net)
   (use gauche.parameter)
   (use gauche.charconv)
   (use gauche.collection)
   (use gauche.uvector)
   (use gauche.partcont)
-  (use rfc.tls)
   (use util.match)
   (use util.list)
+  (use text.tree)
   (export <http-error>
           http-user-agent make-http-connection reset-http-connection
           http-compose-query http-compose-form-data
@@ -624,12 +625,12 @@
 
 ;; send
 (define (send-request out method uri sender headers enc)
-  (display #`",method ,uri HTTP/1.1\r\n" out)
+  (define request-line #`",method ,uri HTTP/1.1\r\n")
   (case method
     [(POST PUT)
      (sender (options->request-headers headers) enc
              (lambda (hdrs)
-               (send-headers hdrs out)
+               (send-headers request-line hdrs out)
                (let ([chunked?
                       (equal? (rfc822-header-ref hdrs "transfer-encoding")
                               "chunked")]
@@ -641,11 +642,17 @@
                    (flush out)
                    out))))]
     [else
-     (send-headers (options->request-headers headers) out)]))
+     (send-headers request-line (options->request-headers headers) out)]))
 
-(define (send-headers hdrs out)
-  (dolist [hdr hdrs] (format out "~a: ~a\r\n" (car hdr) (cadr hdr)))
-  (display "\r\n" out)
+;; NB: We try to send the request line and headers in one packet if possible,
+;; since some http servers assumes important headers can be read in single
+;; read() call.
+(define (send-headers request-line hdrs out)
+  (display (tree->string
+            `(,request-line
+              ,@(map (^h `(,(car h)": ",(cadr h)"\r\n")) hdrs)
+              "\r\n"))
+           out)
   (flush out))
 
 ;; convert key-value list to (("key" "value") ...)
