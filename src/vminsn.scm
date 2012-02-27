@@ -1243,9 +1243,9 @@
   
 (define-insn NUMIDIV2    0 none #f      ; /. (binary)
   ($w/argp arg
-    (if (and (SCM_REALP arg) (SCM_REALP VAL0))
+    (if (and (SCM_FLONUMP arg) (SCM_FLONUMP VAL0))
       ($result:f (/ (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
-      ($result (Scm_Div (Scm_Inexact arg) (Scm_Inexact VAL0))))))
+      ($result (Scm_VMDivInexact arg VAL0)))))
 
 (define-insn NUMADDI     1 none #f      ; +, if one of op is small int
   (let* ([imm::long (SCM_VM_INSN_ARG code)])

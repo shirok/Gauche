@@ -1,3 +1,17 @@
+2012-02-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm (NUMIDIV2), src/libnum.scm (/.),
+	  src/number.c (scm_div):  There was an overflow issue in NUMIDIV2 and
+	  /. when both the dividend and the divisor are too big to be coerced
+	  to double, but the result can be representable in double.  We
+	  shouldn't coerce the arguments to inexact beforehand.  To address
+	  this, we delegate exact / exact -> inexact case into Scm_DivInexact
+	  C routine.  Now, Scm_DivInexact has been used for the backward
+	  compatibiltiy of `inexact-/' (compat.norational) but its behavior
+	  is different from `/.'.   We changed Scm_DivInexact to match the
+	  behavior of `/.', and added Scm_DivCompat to support `inexact-/'.
+	  The compatibility behavior will be removed in 1.0.
+
 2012-02-22  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Added TLS/SSL support module based on Cameron Rich's axTLS.

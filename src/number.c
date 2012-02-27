@@ -1262,8 +1262,11 @@ double Scm_GetDouble(ScmObj obj)
             ScmObj denom = SCM_RATNUM_DENOM(obj);
 
             if (SCM_INTP(numer)) return 0.0;
-            if (SCM_INTP(denom)) return dnumer;
-            else {
+            if (SCM_INTP(denom)) {
+                /* dnumer is infinity.  only its sign matters.*/
+                if (Scm_Sign(denom) < 0) return -dnumer;
+                else                     return dnumer;
+            } else {
                 ScmBignum *bnumer = SCM_BIGNUM(numer);
                 ScmBignum *bdenom = SCM_BIGNUM(denom);
                 int snumer = SCM_BIGNUM_SIZE(bnumer);
@@ -1961,29 +1964,44 @@ DEFINE_DUAL_API2(Scm_Mul, Scm_VMMul, scm_mul)
  * Division
  */
 
-/* In the transient stage towards supporting the full numeric tower,
- * we provide two versions of Scm_Div --- the standard one supports
- * full tower, and a "auto coerce" version works like the old version
- * of Gauche; that is, it returns inexact number for exact integer 
- * division if the result isn't a whole integer.
+/* We have three flavors of division API.
+ * - Scm_Div : Scheme's `/'.  Exact division produces exact result (maybe
+ *             rational)
+ * - Scm_DivInexact : Scheme's `/.'.  The result is always inexact.  Fast.
+ * - Scm_DivCompat : Scheme's `inexact-/'.  This is only for the backward
+ *             compatibility, and probably we'll drop this in 1.0.
+ *             It works as Scm_Div, except that when Scm_Div produces ratnum,
+ *             Scm_DivCompat produces flonum.
+ * There are also two 'VM' API, which can be used if you're returning
+ * the value directly to the VM.
+ * - Scm_VMDiv : The 'VM' version of Scm_Div.
+ * - Scm_VMDivInexact : The 'VM' version of Scm_DivInexact.
  *
- *  Scm_Div            (/ 1 3) => 1/3
- *  Scm_DivInexact     (/ 1 3) => 0.333333333333333333
+ * All these flavors are handled by a single function scm_div, with
+ * three flags specifying the behavior.
  *
- * NB: Scm_DivInexact does exact rational arithmetic if one of the
- * arguments is ratnum.
+ *                      inexact    compat     vmp
+ *  Scm_Div              FALSE      FALSE     FALSE
+ *  Scm_DivInexact       TRUE       FALSE     FALSE
+ *  Scm_DivCompat        d/c        TRUE      FALSE
+ *  Scm_VMDiv            FALSE      FALSE     TRUE
+ *  Scm_VMDivInexact     TRUE       FALSE     TRUE
  */
 
-static ScmObj scm_div(ScmObj arg0, ScmObj arg1, int autocoerce, int vmp)
+static ScmObj
+scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
 {
     double z;
+    ScmObj r = SCM_UNBOUND;
+
+#define SIMPLE_RETURN(x) do { r = (x); goto simple_return; } while (0)
     
     if (SCM_INTP(arg0)) {
         if (SCM_INTP(arg1)) { 
-            if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
-            if (SCM_EXACT_ZERO_P(arg0)) return arg0;
-            if (SCM_EXACT_ONE_P(arg1)) return arg0;
-            if (autocoerce) {
+            if (SCM_EXACT_ZERO_P(arg1)) goto anormal;
+            if (SCM_EXACT_ZERO_P(arg0)) SIMPLE_RETURN(arg0);
+            if (SCM_EXACT_ONE_P(arg1))  SIMPLE_RETURN(arg0);
+            if (compat) {
                 if (SCM_INT_VALUE(arg0)%SCM_INT_VALUE(arg1) == 0) {
                     long q = SCM_INT_VALUE(arg0)/SCM_INT_VALUE(arg1);
                     return Scm_MakeInteger(q);
@@ -1991,78 +2009,92 @@ static ScmObj scm_div(ScmObj arg0, ScmObj arg1, int autocoerce, int vmp)
                     z = (double)SCM_INT_VALUE(arg0)/(double)SCM_INT_VALUE(arg1);
                     RETURN_FLONUM(z);
                 }
+            } else if (inexact) {
+                z = Scm_GetDouble(arg0)/Scm_GetDouble(arg1);
+                RETURN_FLONUM(z);
             } else {
                 return Scm_MakeRational(arg0, arg1);
             }
         }
         if (SCM_BIGNUMP(arg1)) {
-            if (SCM_EXACT_ZERO_P(arg0)) return arg0;
-            if (autocoerce) goto COERCE_INEXACT;
-            return Scm_MakeRational(arg0, arg1);
+            if (SCM_EXACT_ZERO_P(arg0)) SIMPLE_RETURN(arg0);
+            goto ratnum_return;
         }
         if (SCM_RATNUMP(arg1)) {
-            return Scm_MakeRational(Scm_Mul(arg0, SCM_RATNUM_DENOM(arg1)),
-                                    SCM_RATNUM_NUMER(arg1));
+            arg0 = Scm_Mul(arg0, SCM_RATNUM_DENOM(arg1));
+            arg1 = SCM_RATNUM_NUMER(arg1);
+            goto ratnum_return;
         }
         if (SCM_FLONUMP(arg1)) {
-            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto anormal;
             RETURN_FLONUM(SCM_INT_VALUE(arg0)/SCM_FLONUM_VALUE(arg1));
         }
         if (SCM_COMPNUMP(arg1)) {
-            goto DO_COMPLEX1;
+            goto do_complex;
         }
         /* fallback to generic */
     }
     if (SCM_BIGNUMP(arg0)) {
         if (SCM_INTP(arg1)) {
-            if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
-            if (SCM_EXACT_ONE_P(arg1)) return arg0;
-            if (autocoerce) goto COERCE_INEXACT;
-            return Scm_MakeRational(arg0, arg1);
+            if (SCM_EXACT_ZERO_P(arg1)) goto anormal;
+            if (SCM_EXACT_ONE_P(arg1)) SIMPLE_RETURN(arg0);
+            goto ratnum_return;
         }
         if (SCM_BIGNUMP(arg1)) {
-            if (autocoerce) goto COERCE_INEXACT;
-            return Scm_MakeRational(arg0, arg1);
+            goto ratnum_return;
         }
         if (SCM_RATNUMP(arg1)) {
-            return Scm_MakeRational(Scm_Mul(arg0, SCM_RATNUM_DENOM(arg1)),
-                                    SCM_RATNUM_NUMER(arg1));
+            arg0 = Scm_Mul(arg0, SCM_RATNUM_DENOM(arg1));
+            arg1 = SCM_RATNUM_NUMER(arg1);
+            goto ratnum_return;
         }
         if (SCM_FLONUMP(arg1)) {
-            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto anormal;
             RETURN_FLONUM(Scm_GetDouble(arg0)/SCM_FLONUM_VALUE(arg1));
         }
         if (SCM_COMPNUMP(arg1)) {
-            goto DO_COMPLEX1;
+            goto do_complex;
         }
         /* fallback to generic */
     }
     if (SCM_RATNUMP(arg0)) {
         if (SCM_INTP(arg1)) {
-            if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
-            if (SCM_EXACT_ONE_P(arg1)) return arg0;
-            return Scm_MakeRational(SCM_RATNUM_NUMER(arg0),
-                                    Scm_Mul(SCM_RATNUM_DENOM(arg0), arg1));
+            if (SCM_EXACT_ZERO_P(arg1)) goto anormal;
+            if (SCM_EXACT_ONE_P(arg1)) SIMPLE_RETURN(arg0);
+            arg1 = Scm_Mul(SCM_RATNUM_DENOM(arg0), arg1);
+            arg0 = SCM_RATNUM_NUMER(arg0);
+            goto ratnum_return;
         }
         if (SCM_BIGNUMP(arg1)) {
-            return Scm_MakeRational(SCM_RATNUM_NUMER(arg0),
-                                    Scm_Mul(SCM_RATNUM_DENOM(arg0), arg1));
+            arg1 = Scm_Mul(SCM_RATNUM_DENOM(arg0), arg1);
+            arg0 = SCM_RATNUM_NUMER(arg0);
+            goto ratnum_return;
         }
         if (SCM_RATNUMP(arg1)) {
-            return Scm_RatnumDiv(arg0, arg1);
+            if (!compat && !inexact) {
+                return Scm_RatnumDiv(arg0, arg1);
+            } else {
+                ScmObj numer = Scm_Mul(SCM_RATNUM_NUMER(arg0),
+                                       SCM_RATNUM_DENOM(arg1));
+                ScmObj denom = Scm_Mul(SCM_RATNUM_DENOM(arg0),
+                                       SCM_RATNUM_NUMER(arg1));
+                arg0 = numer;
+                arg1 = denom;
+                goto ratnum_return;
+            }   
         }
         if (SCM_FLONUMP(arg1)) {
-            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto anormal;
             RETURN_FLONUM(Scm_GetDouble(arg0)/SCM_FLONUM_VALUE(arg1));
         }
         if (SCM_COMPNUMP(arg1)) {
-            goto DO_COMPLEX1;
+            goto do_complex;
         }
         /* fallback to generic */
     }
     if (SCM_FLONUMP(arg0)) {
         if (SCM_INTP(arg1)) {
-            if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
+            if (SCM_EXACT_ZERO_P(arg1)) goto anormal;
             if (SCM_EXACT_ONE_P(arg1)) return arg0;
             RETURN_FLONUM(SCM_FLONUM_VALUE(arg0)/SCM_INT_VALUE(arg1));
         }
@@ -2070,17 +2102,17 @@ static ScmObj scm_div(ScmObj arg0, ScmObj arg1, int autocoerce, int vmp)
             RETURN_FLONUM(SCM_FLONUM_VALUE(arg0)/Scm_GetDouble(arg1));
         }
         if (SCM_FLONUMP(arg1)) {
-            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto anormal;
             RETURN_FLONUM(SCM_FLONUM_VALUE(arg0)/SCM_FLONUM_VALUE(arg1));
         }
         if (SCM_COMPNUMP(arg1)) {
-            goto DO_COMPLEX1;
+            goto do_complex;
         }
         /* fallback to generic */
     }
     if (SCM_COMPNUMP(arg0)) {
         if (SCM_INTP(arg1)) {
-            if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
+            if (SCM_EXACT_ZERO_P(arg1)) goto anormal;
             if (SCM_EXACT_ONE_P(arg1)) return arg0;
             return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)/SCM_INT_VALUE(arg1),
                                    SCM_COMPNUM_IMAG(arg0)/SCM_INT_VALUE(arg1));
@@ -2091,7 +2123,7 @@ static ScmObj scm_div(ScmObj arg0, ScmObj arg1, int autocoerce, int vmp)
                                    SCM_COMPNUM_IMAG(arg0)/z);
         }
         if (SCM_FLONUMP(arg1)) {
-            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto anormal;
             return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)/SCM_FLONUM_VALUE(arg1),
                                    SCM_COMPNUM_IMAG(arg0)/SCM_FLONUM_VALUE(arg1));
         }
@@ -2110,7 +2142,14 @@ static ScmObj scm_div(ScmObj arg0, ScmObj arg1, int autocoerce, int vmp)
     SCM_FLONUM_ENSURE_MEM(arg1);
     return Scm_ApplyRec(SCM_OBJ(&generic_div), SCM_LIST2(arg0, arg1));
 
-  COERCE_INEXACT:
+  ratnum_return:
+    {
+        /* arg0 and arg1 contains exact numbers.*/
+        if (compat) goto compat_return;
+        if (inexact) goto inexact_return;
+        return Scm_MakeRational(arg0, arg1);
+    }
+  compat_return:
     {
         /* We have exact integer division arg0/arg1 (arg1 != 0).
            If it doesn't produce a whole integer, we coerce the
@@ -2119,18 +2158,34 @@ static ScmObj scm_div(ScmObj arg0, ScmObj arg1, int autocoerce, int vmp)
         ScmObj q = Scm_Quotient(arg0, arg1, &rem);
         if (SCM_EXACT_ZERO_P(rem)) {
             return q;
+        }
+        /*FALLTHROUGH*/
+    }
+  inexact_return:
+    {
+        double numer = Scm_GetDouble(arg0);
+        double denom = Scm_GetDouble(arg1);
+        if (SCM_IS_INF(numer) || SCM_IS_INF(denom)) {
+            /* special path - we need more sophisticated calculaton. */
+            ScmObj r = Scm_MakeRational(arg0, arg1);
+            RETURN_FLONUM(Scm_GetDouble(r));
         } else {
-            RETURN_FLONUM(Scm_GetDouble(arg0)/Scm_GetDouble(arg1));
+            RETURN_FLONUM(numer/denom);
         }
     }
-  ANORMAL:
+  simple_return:
+    {
+        if (inexact) return Scm_Inexact(r);
+        else return r;
+    }
+  anormal:
     {
         int s = Scm_Sign(arg0);
         if (s == 0) return SCM_NAN;
         if (s < 0)  return SCM_NEGATIVE_INFINITY;
         else        return SCM_POSITIVE_INFINITY;
     }
-  DO_COMPLEX1:
+  do_complex:
     {
         double r1 = SCM_COMPNUM_REAL(arg1);
         double i1 = SCM_COMPNUM_IMAG(arg1);
@@ -2142,22 +2197,27 @@ static ScmObj scm_div(ScmObj arg0, ScmObj arg1, int autocoerce, int vmp)
 
 ScmObj Scm_Div(ScmObj x, ScmObj y)
 {
-    return scm_div(x, y, FALSE, FALSE);
+    return scm_div(x, y, FALSE, FALSE, FALSE);
 }
 
 ScmObj Scm_DivInexact(ScmObj x, ScmObj y)
 {
-    return scm_div(x, y, TRUE, FALSE);
+    return scm_div(x, y, TRUE, FALSE, FALSE);
+}
+
+ScmObj Scm_DivCompat(ScmObj x, ScmObj y)
+{
+    return scm_div(x, y, FALSE, TRUE, FALSE);
 }
 
 ScmObj Scm_VMDiv(ScmObj x, ScmObj y)
 {
-    return scm_div(x, y, FALSE, TRUE);
+    return scm_div(x, y, FALSE, FALSE, TRUE);
 }
 
 ScmObj Scm_VMDivInexact(ScmObj x, ScmObj y)
 {
-    return scm_div(x, y, TRUE, TRUE);
+    return scm_div(x, y, TRUE, FALSE, TRUE);
 }
 
 

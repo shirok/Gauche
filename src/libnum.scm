@@ -373,7 +373,7 @@
 ;; by inexact-/ and the old code behaves the same.
 (define-cproc inexact-/ (arg1 :rest args)
   (cond [(SCM_NULLP args) (result (Scm_ReciprocalInexact arg1))]
-        [else (dolist [x args] (set! arg1 (Scm_DivInexact arg1 x)))
+        [else (dolist [x args] (set! arg1 (Scm_DivCompat arg1 x)))
               (result arg1)]))
 
 ;; Inexact arithmetics.  Useful for speed-sensitive code to avoid
@@ -395,7 +395,7 @@
 (define-cproc /. (arg1 :rest args) :constant
   (cond
    [(SCM_NULLP args) (result (Scm_Reciprocal (Scm_Inexact arg1)))]
-   [else (dolist [x args] (set! arg1 (Scm_Div arg1 (Scm_Inexact x))))
+   [else (dolist [x args] (set! arg1 (Scm_DivInexact arg1 x)))
          (result arg1)]))
 
 (define-cproc clamp (x :optional (min #f) (max #f)) :fast-flonum :constant

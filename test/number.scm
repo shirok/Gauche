@@ -566,6 +566,10 @@
        +inf.0 (exact->inexact (/ (expt 10 329) (expt 10 20))))
 (test* "expt (ratnum with large denom and numer) with inexact conversion 7"
        -inf.0 (exact->inexact (/ (expt -10 329) (expt 10 20))))
+(test* "expt (ratnum with large denom and numer) with inexact conversion 8"
+       -inf.0 (exact->inexact (/ (expt 10 329) (- (expt 10 20)))))
+(test* "expt (ratnum with large denom and numer) with inexact conversion 9"
+       +inf.0 (exact->inexact (/ (expt -10 329) (- (expt 10 20)))))
 
 ;;==================================================================
 ;; Predicates
@@ -1909,43 +1913,60 @@
 ;;------------------------------------------------------------------
 (test-section "inexact arithmetics")
 
-(test* "+. (0)" 0.0 (+.))
-(test* "+. (1)" 1.0 (+. 1))
-(test* "+. (1big)" 1.0e20 (+. 100000000000000000000))
-(test* "+. (1rat)" 1.5 (+. 3/2))
-(test* "+. (1cmp)" 1.0+i (+. 1+i))
-(test* "+. (2)" 1.0 (+. 0 1))
-(test* "+. (2big)" 1.0e20 (+. 1 100000000000000000000))
-(test* "+. (2rat)" 1.5 (+. 1 1/2))
-(test* "+. (many)" 15.0 (+. 1 2 3 4 5))
+;; +. etc are inlined, so we want to test both inlined case and
+;; explicitly called case.
+(define-syntax inexact-arith-test
+  (syntax-rules ()
+    [(_ msg exp (op . args))
+     (begin
+       (test* (string-append msg " inlined") exp (op . args))
+       (test* (string-append msg " applied") exp (apply op (list . args))))]))
 
-(test* "-. (1)" -1.0 (-. 1))
-(test* "-. (1big)" -1.0e20 (-. 100000000000000000000))
-(test* "-. (1rat)" -1.5 (-. 3/2))
-(test* "-. (1cmp)" -1.0-i (-. 1+i))
-(test* "-. (2)" -1.0 (-. 0 1))
-(test* "-. (2big)" -1.0e20 (-. 1 100000000000000000000))
-(test* "-. (2rat)" 0.5 (-. 1 1/2))
-(test* "-. (many)" -13.0 (-. 1 2 3 4 5))
+(inexact-arith-test "+. (0)" 0.0 (+.))
+(inexact-arith-test "+. (1)" 1.0 (+. 1))
+(inexact-arith-test "+. (1big)" 1.0e20 (+. 100000000000000000000))
+(inexact-arith-test "+. (1rat)" 1.5 (+. 3/2))
+(inexact-arith-test "+. (1cmp)" 1.0+i (+. 1+i))
+(inexact-arith-test "+. (2)" 1.0 (+. 0 1))
+(inexact-arith-test "+. (2big)" 1.0e20 (+. 1 100000000000000000000))
+(inexact-arith-test "+. (2rat)" 1.5 (+. 1 1/2))
+(inexact-arith-test "+. (many)" 15.0 (+. 1 2 3 4 5))
 
-(test* "*. (0)" 1.0 (*.))
-(test* "*. (1)" 1.0 (*. 1))
-(test* "*. (1big)" 1.0e20 (*. 100000000000000000000))
-(test* "*. (1rat)" 1.5 (*. 3/2))
-(test* "*. (1cmp)" 1.0+i (*. 1+i))
-(test* "*. (2)"  0.0 (*. 0 1))
-(test* "*. (2big)" 1.0e20 (*. 1 100000000000000000000))
-(test* "*. (2rat)" 0.5 (*. 1 1/2))
-(test* "*. (many)" 120.0 (*. 1 2 3 4 5))
+(inexact-arith-test "-. (1)" -1.0 (-. 1))
+(inexact-arith-test "-. (1big)" -1.0e20 (-. 100000000000000000000))
+(inexact-arith-test "-. (1rat)" -1.5 (-. 3/2))
+(inexact-arith-test "-. (1cmp)" -1.0-i (-. 1+i))
+(inexact-arith-test "-. (2)" -1.0 (-. 0 1))
+(inexact-arith-test "-. (2big)" -1.0e20 (-. 1 100000000000000000000))
+(inexact-arith-test "-. (2rat)" 0.5 (-. 1 1/2))
+(inexact-arith-test "-. (many)" -13.0 (-. 1 2 3 4 5))
 
-(test* "/. (1)" 1.0 (/. 1))
-(test* "/. (1big)" 1.0e-20 (/. 100000000000000000000))
-(test* "/. (1rat)" 0.6666666666666666 (/. 3/2))
-(test* "/. (1cmp)" 0.5-0.5i (/. 1+i))
-(test* "/. (2)"  0.0 (/. 0 1))
-(test* "/. (2big)" 1.0e-20 (/. 1 100000000000000000000))
-(test* "/. (2rat)" 2.0 (/. 1 1/2))
-(test* "/. (many)" 0.1 (/. 1 2 5))
+(inexact-arith-test "*. (0)" 1.0 (*.))
+(inexact-arith-test "*. (1)" 1.0 (*. 1))
+(inexact-arith-test "*. (1big)" 1.0e20 (*. 100000000000000000000))
+(inexact-arith-test "*. (1rat)" 1.5 (*. 3/2))
+(inexact-arith-test "*. (1cmp)" 1.0+i (*. 1+i))
+(inexact-arith-test "*. (2)"  0.0 (*. 0 1))
+(inexact-arith-test "*. (2big)" 1.0e20 (*. 1 100000000000000000000))
+(inexact-arith-test "*. (2rat)" 0.5 (*. 1 1/2))
+(inexact-arith-test "*. (many)" 120.0 (*. 1 2 3 4 5))
+
+(inexact-arith-test "/. (1)" 1.0 (/. 1))
+(inexact-arith-test "/. (1big)" 1.0e-20 (/. 100000000000000000000))
+(inexact-arith-test "/. (1rat)" 0.6666666666666666 (/. 3/2))
+(inexact-arith-test "/. (1cmp)" 0.5-0.5i (/. 1+i))
+(inexact-arith-test "/. (2)"  0.0 (/. 0 1))
+(inexact-arith-test "/. (2big)" 1.0e-20 (/. 1 100000000000000000000))
+(inexact-arith-test "/. (2rat)" 2.0 (/. 1 1/2))
+(inexact-arith-test "/. (2rat1)" 0.5 (/. 1/2 1))
+(inexact-arith-test "/. (2rat2)" 2.0 (/. 1/2 1/4))
+(inexact-arith-test "/. (many)" 0.1 (/. 1 2 5))
+
+;; The following takes a special path to avoid overflow.
+(inexact-arith-test "/. fixnum bignum" 0.0 (/. (expt 10 400)))
+(inexact-arith-test "/. bignum fixnum" +inf.0 (/. (expt 10 400) 1))
+(inexact-arith-test "/. bignum fixnum" -inf.0 (/. (expt 10 400) -1))
+(inexact-arith-test "/. bignum bignum" 10.0 (/. (expt 10 401) (expt 10 400)))
 
 ;;------------------------------------------------------------------
 (test-section "sqrt")

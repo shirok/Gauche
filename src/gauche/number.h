@@ -262,6 +262,7 @@ SCM_EXTERN ScmObj Scm_Sub(ScmObj arg1, ScmObj arg2);
 SCM_EXTERN ScmObj Scm_Mul(ScmObj arg1, ScmObj arg2);
 SCM_EXTERN ScmObj Scm_Div(ScmObj arg1, ScmObj arg2);
 SCM_EXTERN ScmObj Scm_DivInexact(ScmObj arg1, ScmObj arg2);
+SCM_EXTERN ScmObj Scm_DivCompat(ScmObj arg1, ScmObj arg2);
 
 SCM_EXTERN ScmObj Scm_Quotient(ScmObj arg1, ScmObj arg2, ScmObj *rem);
 SCM_EXTERN ScmObj Scm_Modulo(ScmObj arg1, ScmObj arg2, int remainder);
