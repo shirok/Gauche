@@ -234,7 +234,7 @@
                  (car arg) a2 (cadr arg)))]
       [(<& >&) (unless (integer? a2)
                  (errorf "redirection '~a' requires an integer file \
-                          descriptor, but got ~s" a2))]
+                          descriptor, but got ~s" (car arg) a2))]
       [else (errorf "invalid redirection entry: ~s" arg)])))
 
 (define (%check-directory dir)
