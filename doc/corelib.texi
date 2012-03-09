@@ -12822,6 +12822,24 @@ applies @var{fn} to each item.  The former discards the results
 次々と適用します。前者は@code{fn}の結果を捨てますが、後者は@code{fn}の
 結果をリストにして返します。
 @c COMMON
+
+@c EN
+For @code{port-fold}, @code{port-map} and @code{port-for-each},
+@code{fn} is always called before the next item is retrieved by @code{reader}.
+@c JP
+@code{port-fold}, @code{port-map}, @code{port-for-each}については、
+@code{fn}は常に@code{reader}によって次の要素が読まれる前に呼ばれます。
+@c COMMON
+
+@c EN
+Note: These procedures can be used independently from ports, so
+the names are somewhat misleading.  They should rather be categorized
+as generator procedures now (@xref{Generators}, for the details on generators).
+@c JP
+註：これらの手続きはポートとは無関係に使うことができるので、
+名前がふさわしくないと思われます。現在ではむしろジェネレータに関する手続きと
+考える方が良いでしょう (ジェネレータについては@ref{Generators}を参照してください)。
+@c COMMON
 @end defun
 
 @node Output,  , Input, Input and output

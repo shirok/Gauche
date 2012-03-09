@@ -139,7 +139,8 @@
              (r    knil))
     (if (eof-object? item)
       r
-      (loop (reader) (fn item r)))))
+      (let1 r (fn item r)
+        (loop (reader) r)))))
 
 ;; This will consume large stack if input file is large.
 (define (port-fold-right fn knil reader)
@@ -159,7 +160,8 @@
              (r    '()))
     (if (eof-object? item)
       (reverse! r)
-      (loop (reader) (cons (fn item) r)))))
+      (let1 x (fn item)
+        (loop (reader) (cons x r))))))
 
 ;; useful for error messages
 (define (port-position-prefix port)
