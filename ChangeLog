@@ -1,3 +1,8 @@
+2012-03-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (fold-left): Added according to R6RS, for the
+	  completeness.
+
 2012-03-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/portutil.scm (port-map, port-fold): Guarantee to call

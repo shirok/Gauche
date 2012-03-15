@@ -2732,6 +2732,82 @@ Examples:
 @end example
 @end defun
 
+@defun fold-left snok knil clist1 clist2 @dots{}
+[R6RS]
+@c EN
+This is another variation of left-associative folding.
+When it is given a single list
+@var{clist1} = (@var{e1} @var{e2} @dots{} @var{en}),
+then this procedure returns:
+@c JP
+これは左結合のfoldの別バージョンです。一つのリスト
+@var{clist1} = (@var{e1} @var{e2} @dots{} @var{en})
+が与えられた場合、次の値を返します。
+@c COMMON
+@example
+(@var{snok} (@dots{} (@var{snok} (@var{snok} @var{knil} @var{e1}) @var{e2}) @dots{}) @var{en})
+@end example
+
+@c EN
+Compare this with @code{fold} above; association is the same, but the order
+of arguments passed to the procedure @var{snok} is reversed from the way
+arguments are passed to @var{kons} in @code{fold}.   If @var{snok} is
+commutative, @code{fold} and @code{fold-left} produces the same result.
+@c JP
+上の@code{fold}と見比べてみてください。結合の順序は同じですが、
+@var{snok}に渡される引数の順序が、@code{fold}において@var{kons}に渡される
+引数の順序とは逆になっています。@code{snok}が可換な演算であれば、
+@code{fold}と@code{fold-left}の結果は同じになります。
+@c COMMON
+
+@example
+(fold-left + 0 '(1 2 3 4 5) @result{} 15
+
+(fold-left cons 'z '(a b c d))
+  @result{} ((((z . a) . b) . c) . d)
+
+(fold-left (^[a b] (cons b a)) 'z '(a b c d))
+  @result{} (a b c d z)
+@end example
+
+@c EN
+If more than one lists are given, @var{snok} is called with
+the current seed value @var{knil} and each corresponding 
+element of the input lists
+@code{clist1} @code{clist2} @dots{}.
+@c JP
+二つ以上のリストが渡された場合、@var{snok}は現在の@var{knil}値および
+入力リスト@code{clist1} @code{clist2} @dots{} の対応する要素を引数として
+呼び出されます。
+@c COMMON
+
+@example
+(fold-left list 'z '(a b c) '(A B C))
+  @result{} (((z a A) b B) c C)
+@end example
+
+@c EN
+Note: Most functional languages have left- and right- associative
+fold operations, which correspond to @code{fold-left} and @code{fold-right},
+respectively.
+(e.g. Haskell's @code{foldl} and @code{foldr}).  In Scheme, @code{SRFI-1}
+first introduced @code{fold} and @code{fold-right}.  R6RS introduced
+@code{fold-left}.  (However, in R6RS the behavior is undefined if the lengths of
+@code{clist1} @code{clist2} @dots{} aren't the same, while in Gauche
+@code{fold-left} terminates as soon as any one of the lists terminates.)
+@c JP
+註：多くの関数型言語で左結合および右結合の畳み込み操作が定義されていますが、
+それは@code{fold-left}と@code{fold-right}に相当します。
+(例: Haskellの@code{foldl}と@code{foldr}。)
+Schemeでは、まず@code{SRFI-1}によって@code{fold}と@code{fold-right}が
+左/右結合の畳み込み演算として導入され、R6RSで@code{fold-left}が定義されました。
+(但し、R6RSの@code{fold-left}では@code{clist1} @code{clist2} @dots{}の
+長さがすべて同じでない場合の動作は未定義ですが、Gaucheでは
+最短のリストが終了した時点でそれまでの結果が返されます。)
+@c COMMON
+@end defun
+
+
 @defun filter pred list
 @defunx filter! pred list
 [SRFI-1]

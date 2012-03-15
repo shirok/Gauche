@@ -51,6 +51,15 @@
 (test* "fold-right" '(a 1 b 2 c 3)
        (fold-right list* '() '(a b c) '(1 2 3 4 5)))
 
+(test* "fold-left" '(((z . a) . b) . c)
+       (fold-left cons 'z '(a b c)))
+(test* "fold-left" '(c b a . z)
+       (fold-left (^[a b] (cons b a)) 'z '(a b c)))
+(test* "fold-left" 21
+       (fold-left + 0 '(1 2 3) '(4 5 6)))
+(test* "fold-left" '(((z a A) b B) c C)
+       (fold-left list 'z '(a b c) '(A B C)))
+
 ;;--------------------------------------------------------------------------
 (test-section "take and drop")
 

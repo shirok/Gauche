@@ -391,6 +391,17 @@
           (loop cdrs (apply kons cars))
           knil)))))
 
+(define (fold-left snok knil lis . more)
+  (if (null? more)
+    (let loop ([lis lis] [knil knil])
+      (if (null-list? lis) knil (loop (cdr lis) (snok knil (car lis)))))
+    (let loop ([liss (cons lis more)] [knil knil])
+      (receive (cars- cdrs)
+          ((with-module gauche.internal %zip-nary-args) liss)
+        (if cars-
+          (loop cdrs (apply snok knil cars-))
+          knil)))))
+
 (define (fold-right kons knil lis . more)
   (if (null? more)
     (let rec ([lis lis])
