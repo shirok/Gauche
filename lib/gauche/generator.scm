@@ -35,6 +35,7 @@
   (use srfi-1)
   (use gauche.sequence)
   (use gauche.partcont)
+  (use util.match)
   (export list->generator vector->generator reverse-vector->generator
           string->generator
           bits->generator reverse-bits->generator
@@ -47,6 +48,7 @@
           circular-generator gunfold giota grange
           gmap gmap-accum gfilter gfilter-map gstate-filter
           gtake gdrop gtake-while gdrop-while grxmatch glet* glet1
+          do-generator
           ))
 (select-module gauche.generator)
 
@@ -239,6 +241,17 @@
        (if (eof-object? var)
          var
          (begin body body2 ...)))]))
+
+;; (do-generator [var generator-expr] body ...)
+;; TODO: possible extension - allow multiple bindings.
+(define-syntax do-generator
+  (syntax-rules ()
+    [(_ (var generator-expr) body ...)
+     (let1 g generator-expr
+       (let loop ()
+         (glet1 var (g)
+           body ...
+           (loop))))]))
 
 ;; gcons* :: (a, ..., () -> a) -> (() -> a)
 (define gcons*

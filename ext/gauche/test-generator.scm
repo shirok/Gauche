@@ -74,6 +74,12 @@
 (test* "circular-generator" '(0 1 2 0 1 2 0 1 2 0)
        (generator->list (circular-generator 0 1 2) 10))
 
+(test* "do-generator" '(4 4 3 3 2 2 1 1 0 0)
+       (rlet1 p '()
+         (do-generator [v (giota 5)]
+           (push! p v)
+           (push! p v))))
+
 (let ()
   (define (test-gcons xs tail)
     (test* (format "gcons* ~s + ~s" xs tail)

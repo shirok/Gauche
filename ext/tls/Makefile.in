@@ -59,9 +59,10 @@ $(SSLTEST): $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS)
 	$(CCLD) $(LOCAL_LFLAGS) $(XLDFLAGS) -o $(SSLTEST) $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS) $(LIBS)
 
 # The 'system' macro hack is to suppress "ignoring result" warning
-$(SSLTEST_GENERATED) : axTLS/ssl/test/ssltest.c
+$(SSLTEST_GENERATED) : axTLS/ssl/test/ssltest.c system-fix.c
 	rm -f $(SSLTEST_GENERATED)
-	echo "#define SYSTEM(x)  do{if(system(x)){0;}}while(0)" > $(SSLTEST_GENERATED)
-	sed -e "s@\.\./ssl/@../../$(srcdir)/axTLS/ssl/@g" -e "s/system/SYSTEM/" $(srcdir)/axTLS/ssl/test/ssltest.c >> $(SSLTEST_GENERATED)
+	@echo "void safe_system(const char*);" > $(SSLTEST_GENERATED)
+	@sed -e "s@\.\./ssl/@../../$(srcdir)/axTLS/ssl/@g" -e "s/system/safe_system/" $(srcdir)/axTLS/ssl/test/ssltest.c >> $(SSLTEST_GENERATED)
+	@cat $(srcdir)/system-fix.c >> $(SSLTEST_GENERATED)
 
 install : install-std

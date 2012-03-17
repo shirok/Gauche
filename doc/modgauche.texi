@@ -4266,6 +4266,27 @@ This is to @code{glet*} as @code{let1} is to @code{let*}.  In other words,
 it is @code{(glet* ([var expr]) body body2 @dots{})}.
 @end defmac
 
+@defmac do-generator (var gexpr) body @dots{}
+This is a generator version of @code{dolist} and @code{dotimes}
+(@xref{Binding constructs}).
+
+@var{Gexpr} is an expression that yields a generator.  It is
+evaluated once.  The resulting generator is called repeatedly
+until it returns EOF.  Every time the generator is called,
+@var{body} @dots{} are evaluated in the scope
+where @var{var} is bound to the value yielded from the generator.
+
+Like @code{dolist} and @code{dotimes}, this macro exists for
+side-effects.  You can write the same thing with @code{for-each} families,
+but sometimes this macro makes the imperative code more readable:
+
+@example
+(do-generator [line (file->line-generator "filename")]
+  ;; do some side-effecting stuff with line
+  )
+@end example
+@end defmac
+
 @defun consume proc gen gen2 @dots{}
 Calls @var{proc} on the values generated from the given generators
 @var{gen}, @var{gen2} @dots{}, until any of the generators is

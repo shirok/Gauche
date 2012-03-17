@@ -1,3 +1,7 @@
+2012-03-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/generator.scm (do-generator): Added.
+
 2012-03-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (fold-left): Added according to R6RS, for the
