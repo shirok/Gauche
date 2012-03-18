@@ -7817,17 +7817,35 @@ Gaucheではどんな型のオブジェクトも適用可能にできるので�
 
 @defun procedure? obj
 [R5RS]
+@c EN
 Returns @code{#t} if @var{obj} is @emph{inherently} applicable
 objects, @code{#f} otherwise.  By @emph{inherently} applicable
 we mean Gauche unconditionally understands that @var{obj} can be called
 as a procedure; an instance of @code{<procedure>} is so,
 as well as generic functions (@code{<generic>}) and methods (@code{<method>}).
 @xref{Generic function and method}, for the details.
+@c JP
+@var{obj}が@emph{生得的}に適用可能なオブジェクトであれば@code{#t}を、
+そうでなければ@code{#f}を返します。@emph{生得的}にというのは、
+Gaucheが最初から手続きとして呼び出せるオブジェクトとして備えているもの、程度の意味です。
+@code{<procedure>}クラスのインスタンスや、
+ジェネリックファンクションやメソッドがそうです。
+(ジェネリックファンクションとメソッドに関しては
+@ref{Generic function and method}を参照してください)。
+@c COMMON
 
+@c EN
 Since you can make any type of objects applicable at any time
 (@xref{Applicable objects}), the fact that @code{procedure?} returned
 @code{#f} doesn't mean that the object cannot be applied.
 To check if an object can be applied or not, use @code{applicable?} below.
+@c JP
+Gaucheでは、どんなオブジェクトも適用可能にすることができます
+(@ref{Applicable objects}参照)。従って、@code{procedure?}が@code{#f}を
+返したからといってそのオブジェクトを手続きのように呼び出せないとは限りません。
+オブジェクトが適用可能かどうかをより正確に調べるには、
+下に説明する@code{applicable?}を使ってください。
+@c COMMON
 @end defun
 
 @defun apply proc arg1 @dots{} args
@@ -7850,6 +7868,7 @@ Returns (a) value(s) @var{proc} returns.
 @end defun
 
 @defun applicable? obj class @dots{}
+@c EN
 Checks if @var{obj} can be called with the types of arguments
 listed in @var{class} @dots{}.  That is, 
 when @code{(applicable? foo <string> <integer>)} returns @code{#t},
@@ -7858,15 +7877,38 @@ then you can call @code{foo} as @code{(foo "x" -2)}, for example.
 only nonnegative integers, which you cannot tell from the result of
 @code{applicable?}.  But if @code{applicable?} returns @code{#t},
 Gauche won't complain ``foo is not applicable'' when you call @code{foo}.
+@c JP
+それぞれの型が@var{class} @dots{}であるような引数リストを伴って
+@var{obj}を呼び出すことができるかどうかを調べます。
+例えば@code{(applicable? foo <string> <integer>)}が@code{#t}を
+返したなら、@code{foo}を@code{(foo "x" -2)}のように呼び出せるということです。
+(これは、エラーが出ないことを保証するものではありません。@code{foo}は
+もしかする非負整数しか受け取れないかもしれませんが、そのことは
+@code{applicable?}の結果からはわかりません。でも、@code{applicable?}が@code{#t}を
+返したなら、@code{foo}を呼び出した時に``foo is not applicable''と
+Gaucheに文句を言われることはありません。)
+@c COMMON
 
+@c EN
 This procedure takes applicable objects into account.  So, for example,
 @code{(applicable? #/a/ <string>)} returns @code{#t}, for the regular
 expressions are applicable to a string (@xref{Regular expressions}).
+@c JP
+この手続きは適用可能オブジェクトも考慮に入れます。
+従って、例えば@code{(applicable? #/a/ <string>)}は@code{#t}を返します。
+正規表現は文字列に適用可能だからです (@ref{Regular expressions}参照)。
+@c COMMON
 
+@c EN
 Traditional Scheme procedures (such as ones created by @code{lambda})
 only cares the number of arguments but not their types; to check
 applicablity of such procedures, just pass @code{<top>} as the argument
-type.
+types.
+@c JP
+@code{lambda}で作られるような通常のScheme手続きは、引数の型は何でも良く、
+個数だけが問題となります。そういった手続きをテストするには、
+引数の型として@code{<top>}を渡してください。
+@c COMMON
 
 @example
 (applicable? cons <top> <top>) @result{} #t
@@ -7879,8 +7921,12 @@ type.
 
 @defun ~ obj key keys @dots{}
 @defunx {(setter ~)} obj key keys @dots{}
+@c EN
 The procedure @code{~} can be used to access a part of various
 aggregate types.
+@c JP
+手続き@code{~}は、様々な集合型のオブジェクトの部分にアクセスするのに使えます。
+@c COMMON
 
 @example
 ;; Access to an element of a sequence by index
@@ -7898,7 +7944,11 @@ aggregate types.
   @result{} 20
 @end example
 
+@c EN
 The access can be chained:
+@c JP
+アクセスはチェインすることができます。
+@c COMMON
 
 @example
 (~ '#((a b c) (d e f) (g h i)) 1 2) @result{} f
@@ -7907,14 +7957,26 @@ The access can be chained:
   @result{} #\c
 @end example
 
+@c EN
 You can think @code{~} as left-associative, that is,
+@c JP
+@code{~}は左結合します。つまり、
+@c COMMON
 @example
 (~ x k j) @equiv{} (~ (~ x k) j)
 @end example
+@c EN
 and so on.
+@c JP
+等。
+@c COMMON
 
+@c EN
 The generalized setter @code{set!} can be used with @code{~} to
 replace the specified element.
+@c JP
+一般化された@code{set!}を@code{~}に使えば、アクセスされる要素を置き換えることができます。
+@c COMMON
 
 @example
 (define z (vector 'a 'b 'c))
@@ -7938,12 +8000,18 @@ z @result{}  #((#(a b c) #(d e f) #(g h i))
 @end example
 @end defun
 
+@c EN
 Internally, a call to @code{~} is implemented by a generic 
 function @code{ref}.  See @ref{Object system} for more about
 generic functions.
+@c JP
+@code{~}は内部的にジェネリックファンクション@code{ref}を使って実現されています。
+ジェネリックファンクションについて詳しくは@ref{Object system}を参照してください。
+@c COMMON
 
 @deffn {Generic function} ref object key :optional args @dots{}
 @deffnx {Generic function} {(setter ref)} object key value
+@c EN
 Many aggregate types defines a specialized method of these
 to provide uniform access and mutation.   Meaning of
 optional arguments @var{args} of @code{ref} depends
@@ -7951,12 +8019,27 @@ on each specialized method,
 but it is common that the first optional argument of @code{ref} 
 is a @emph{fallback} value, which is to be returned when
 @var{object} doesn't have a meaningful association with @var{key}.
+@c JP
+多くの集合型はこのジェネリックファンクションを特殊化し、
+統一されたアクセス方法と変更方法を提供しています。
+@code{ref}のオプショナル引数@var{args}の意味はメソッド毎に異なりますが、
+最初のオプショナル引数は、@var{object}の@var{key}に対する値が無い場合の
+フォールバック値として使われるのが普通です。
+@c COMMON
 
+@c EN
 The manual entry of each aggregate type shows the specialized
 method and its semantics in detail.
+@c JP
+正確な動作の定義は、@code{ref}メソッドを提供しているクラスごとに説明されています。
+@c COMMON
 @end deffn
 
+@c EN
 Conceptually, @code{~} can be understood as follows:
+@c JP
+@code{~}の動作は次のコードで理解できるでしょう。
+@c COMMON
 
 @example
 (define ~
@@ -7970,8 +8053,13 @@ Conceptually, @code{~} can be understood as follows:
       (apply (setter ~) (ref obj selector) selector2 rest)])))
 @end example
 
+@c EN
 (Gauche may use some short-cut for optimization, though,
 so this code may not reflect the actual implementation.)
+@c JP
+(Gaucheは最適化のためにいくつかの型で短絡経路を使うこともあるので、
+実際の実装とは異なります)
+@c COMMON
 
 @node Combinators, Optional argument parsing, Universal accessor, Procedures and continuations
 @subsection Combinators
