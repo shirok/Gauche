@@ -124,6 +124,7 @@
            ((:real-range)  (rename 'srfi-42-real-range))
            ((:char-range)  (rename 'srfi-42-char-range))
            ((:port)        (rename 'srfi-42-port))
+           ((:generator)   (rename 'srfi-42-generator))
            ((:dispatched)  (rename 'srfi-42-dispatched))
            ((:do)          (rename 'srfi-42-do))
            ((:let)         (rename 'srfi-42-let))
@@ -688,19 +689,32 @@
 
 (define-syntax srfi-42-port
   (syntax-rules (index)
-    ((_ cc var (index i) arg1 arg ...)
-     (srfi-42-parallel cc (srfi-42-port var arg1 arg ...) (srfi-42-integers i)) )
-    ((_ cc var arg)
-     (srfi-42-port cc var arg read) )
-    ((_ cc var arg1 arg2)
+    [(_ cc var (index i) arg1 arg ...)
+     (srfi-42-parallel cc (srfi-42-port var arg1 arg ...) (srfi-42-integers i))]
+    [(_ cc var arg)
+     (srfi-42-port cc var arg read)]
+    [(_ cc var arg1 arg2)
      (srfi-42-do cc
           (let ((port arg1) (read-proc arg2)))
           ((var (read-proc port)))
           (not (eof-object? var))
           (let ())
           #t
-          ((read-proc port)) ))))
+          ((read-proc port)) )]))
 
+;; Gauche extension
+(define-syntax srfi-42-generator
+  (syntax-rules (index)
+    [(_ cc var (index i) expr)
+     (srfi-42-parallel cc (srfi-42-generator var expr) (srfi-42-integers i))]
+    [(_ cc var expr)
+     (srfi-42-do cc
+          (let ([gen expr]))
+          ([var (gen)])
+          (not (eof-object? var))
+          (let ())
+          #t
+          [(gen)])]))
 
 ; ==========================================================================
 ; The typed generator :dispatched and utilities for constructing dispatchers
@@ -797,73 +811,64 @@
 (define (make-initial-:-dispatch)
   (lambda (args)
     (case (length args)
-      ((0) 'SRFI42)
-      ((1) (let ((a1 (car args)))
+      [(0) 'SRFI42]
+      [(1) (let ([a1 (car args)])
              (cond
-              ((list? a1)
-               (srfi-42-generator-proc (srfi-42-list a1)) )
-              ((string? a1)
-               (srfi-42-generator-proc (srfi-42-string a1)) )
-              ((vector? a1)
-               (srfi-42-generator-proc (srfi-42-vector a1)) )
-              ((and (integer? a1) (exact? a1))
-               (srfi-42-generator-proc (srfi-42-range a1)) )
-              ((real? a1)
-               (srfi-42-generator-proc (srfi-42-real-range a1)) )
-              ((input-port? a1)
-               (srfi-42-generator-proc (srfi-42-port a1)) )
-              (else
-               #f ))))
-      ((2) (let ((a1 (car args)) (a2 (cadr args)))
+              [(list? a1)
+               (srfi-42-generator-proc (srfi-42-list a1))]
+              [(string? a1)
+               (srfi-42-generator-proc (srfi-42-string a1))]
+              [(vector? a1)
+               (srfi-42-generator-proc (srfi-42-vector a1))]
+              [(and (integer? a1) (exact? a1))
+               (srfi-42-generator-proc (srfi-42-range a1))]
+              [(real? a1)
+               (srfi-42-generator-proc (srfi-42-real-range a1))]
+              [(input-port? a1)
+               (srfi-42-generator-proc (srfi-42-port a1))]
+              [(applicable? a1)
+               (srfi-42-generator-proc (srfi-42-generator a1))]
+              [else #f]))]
+      [(2) (let ([a1 (car args)] [a2 (cadr args)])
              (cond
-              ((and (list? a1) (list? a2))
-               (srfi-42-generator-proc (srfi-42-list a1 a2)) )
-              ((and (string? a1) (string? a1))
-               (srfi-42-generator-proc (srfi-42-string a1 a2)) )
-              ((and (vector? a1) (vector? a2))
-               (srfi-42-generator-proc (srfi-42-vector a1 a2)) )
-              ((and (integer? a1) (exact? a1) (integer? a2) (exact? a2))
-               (srfi-42-generator-proc (srfi-42-range a1 a2)) )
-              ((and (real? a1) (real? a2))
-               (srfi-42-generator-proc (srfi-42-real-range a1 a2)) )
-              ((and (char? a1) (char? a2))
-               (srfi-42-generator-proc (srfi-42-char-range a1 a2)) )
-              ((and (input-port? a1) (procedure? a2))
-               (srfi-42-generator-proc (srfi-42-port a1 a2)) )
-              (else
-               #f ))))
-      ((3) (let ((a1 (car args)) (a2 (cadr args)) (a3 (caddr args)))
+              [(and (list? a1) (list? a2))
+               (srfi-42-generator-proc (srfi-42-list a1 a2)) ]
+              [(and (string? a1) (string? a1))
+               (srfi-42-generator-proc (srfi-42-string a1 a2)) ]
+              [(and (vector? a1) (vector? a2))
+               (srfi-42-generator-proc (srfi-42-vector a1 a2)) ]
+              [(and (integer? a1) (exact? a1) (integer? a2) (exact? a2))
+               (srfi-42-generator-proc (srfi-42-range a1 a2)) ]
+              [(and (real? a1) (real? a2))
+               (srfi-42-generator-proc (srfi-42-real-range a1 a2)) ]
+              [(and (char? a1) (char? a2))
+               (srfi-42-generator-proc (srfi-42-char-range a1 a2)) ]
+              [(and (input-port? a1) (procedure? a2))
+               (srfi-42-generator-proc (srfi-42-port a1 a2)) ]
+              [else #f]))]
+      [(3) (let ([a1 (car args)] [a2 (cadr args)] [a3 (caddr args)])
              (cond
-              ((and (list? a1) (list? a2) (list? a3))
-               (srfi-42-generator-proc (srfi-42-list a1 a2 a3)) )
-              ((and (string? a1) (string? a1) (string? a3))
-               (srfi-42-generator-proc (srfi-42-string a1 a2 a3)) )
-              ((and (vector? a1) (vector? a2) (vector? a3))
-               (srfi-42-generator-proc (srfi-42-vector a1 a2 a3)) )
-              ((and (integer? a1) (exact? a1) 
+              [(and (list? a1) (list? a2) (list? a3))
+               (srfi-42-generator-proc (srfi-42-list a1 a2 a3)) ]
+              [(and (string? a1) (string? a1) (string? a3))
+               (srfi-42-generator-proc (srfi-42-string a1 a2 a3)) ]
+              [(and (vector? a1) (vector? a2) (vector? a3))
+               (srfi-42-generator-proc (srfi-42-vector a1 a2 a3)) ]
+              [(and (integer? a1) (exact? a1) 
                     (integer? a2) (exact? a2)
                     (integer? a3) (exact? a3))
-               (srfi-42-generator-proc (srfi-42-range a1 a2 a3)) )
-              ((and (real? a1) (real? a2) (real? a3))
-               (srfi-42-generator-proc (srfi-42-real-range a1 a2 a3)) )
-              (else
-               #f ))))
-      (else
-       (letrec ((every? 
-                 (lambda (pred args)
-                   (if (null? args)
-                       #t
-                       (and (pred (car args))
-                            (every? pred (cdr args)) )))))
-         (cond
-          ((every? list? args)
-           (srfi-42-generator-proc (srfi-42-list (apply append args))) )
-          ((every? string? args)
-           (srfi-42-generator-proc (srfi-42-string (apply string-append args))) )
-          ((every? vector? args)
-           (srfi-42-generator-proc (srfi-42-list (apply append (map vector->list args)))) )
-          (else
-           #f )))))))
+               (srfi-42-generator-proc (srfi-42-range a1 a2 a3)) ]
+              [(and (real? a1) (real? a2) (real? a3))
+               (srfi-42-generator-proc (srfi-42-real-range a1 a2 a3)) ]
+              [else #f]))]
+      [else (cond
+             [(every list? args)
+              (srfi-42-generator-proc (srfi-42-list (apply append args))) ]
+             [(every string? args)
+              (srfi-42-generator-proc (srfi-42-string (apply string-append args)))]
+             [(every vector? args)
+              (srfi-42-generator-proc (srfi-42-list (apply append (map vector->list args))))]
+             [else #f])])))
 
 (define srfi-42--dispatch
   (make-initial-:-dispatch) )

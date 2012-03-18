@@ -4127,27 +4127,47 @@ after @var{body}.
 
 @defmac do-ec qualifier @dots{} body
 [SRFI-42]
+@c EN
 Repeats @var{body}.  The results of @var{body} is discarded.
 This is for side-effecting operations.
+@c JP
+@var{body}を繰り返します。@var{body}の返り値は捨てられます。
+この形式は副作用目的で使います。
+@c COMMON
 @end defmac
 
 @defmac list-ec qualifier @dots{} body
 [SRFI-42]
-Repeats @code{body} and collects the results into a list.
+@c EN
+Repeats @var{body} and collects the results into a list.
+@c JP
+@var{body}を繰り返し、結果をリストに集めて返します。
+@c COMMON
 @end defmac
 
 @defmac append-ec qualifier @dots{} body
 [SRFI-42]
-Repeats @code{body}, which must yield a list.
+@c EN
+Repeats @var{body}, which must yield a list.
 Returns a list which is the concatenation of all lists retured by @var{body}.
+@c JP
+@var{body}を繰り返し、その結果のリストを結合して返します。
+@var{body}は必ずリストを返さなければなりません。
+@c COMMON
 @end defmac
 
 @defmac string-ec qualifier @dots{} body
 @defmacx string-append-ec qualifier @dots{} body
 [SRFI-42]
+@c EN
 Repeats @var{body}, which must yield a character (in @code{string-ec})
 or a string (in @code{string-append-ec}).  Returns a string that
 consists of the results of @var{body}.
+@c JP
+@var{body}を繰り返します。@var{body}は@code{string-ec}では文字へ、
+@code{string-append-ec}では文字列へと評価されなければなりません。
+結果を集め、または結合した文字列が買えされます。
+@c COMMON
 @end defmac
 
 @defmac vector-ec qualifier @dots{} body
@@ -4245,11 +4265,21 @@ makes no iteration.  Otherwise it calculates the following value:
 
 @subheading Qualifiers
 
+@c EN
 @subsubheading Generational qualifiers
+@c JP
+@subsubheading 生成的qualifier
+@c COMMON
 
+@c EN
 This type of qualifiers generates (possibly infinite) values
 over which the rest of clauses iterate.
+@c JP
+このタイプのqualifierは、いくつかの値(無限個のこともあります)を次々に
+生成し、各値について残りの節を繰り返します。
+@c COMMON
 
+@c EN
 In the following descriptions, @var{vars} refers to either
 a single identifier, or a series of identifier and a form
 @code{(index @var{identifier2})}.  The single identifier
@@ -4258,6 +4288,14 @@ name the variable to which each generated value is bound.
 The @var{identifier2} in the latter case names a variable
 to which a series of integers, increasing with each generated
 element, is bound.   See the following example:
+@c JP
+以下の説明において、@var{vars}というのはひとつの識別子か、
+識別子とフォーム@code{(index @var{identifier2})}の並びです。
+最初の形式での識別子、あるいは二番目の形式での最初の識別子は、
+生成された値が束縛される変数です。二番目の形式の@var{identifier2}は、
+0から始まり値が生成されるたびにインクリメントされる整数値が束縛されます。
+次の例を見てください。
+@c COMMON
 
 @example
 (list-ec (: x '(a b c)) x)
@@ -4267,32 +4305,234 @@ element, is bound.   See the following example:
 @end example
 
 @deffn {EC Qualifier} : vars arg1 args @dots{}
-A generic dispatcher of generational qualifiers.
+@c EN
+A generic dispatcher of generational qualifiers.  
+An appropriate generational qualifier is selected based on the
+types of @var{arg1} @var{args} @dots{}.
+@c JP
+@var{arg1} @var{args} @dots{} の型に基づいて、以下の生成的qualifierの
+いずれかにディスパッチされる、汎用的なqualifierです。
+@c COMMON
 @end deffn
 
 @deffn {EC Qualifier} :list vars arg1 args @dots{}
 @deffnx {EC Qualifier} :vector vars arg1 args @dots{}
 @deffnx {EC Qualifier} :string vars arg1 args @dots{}
+@c EN
+@var{Arg1} @var{args} @dots{} should be all lists, vectors, or strings,
+respectively.  Repeats the subsequent clauses while binding
+each element from those args bound to @var{vars}.
+@c JP
+それぞれのフォームにおいて、
+@var{arg1} @var{args} @dots{}は全てリスト、ベクタ、文字列でなければなりません。
+各要素を@var{vars}に束縛して続く節を繰り返します。
+@c COMMON
+
+@example
+(list-ec (:string c "ab" "cd") c) @result{} (#\a #\b #\c #\d)
+@end example
+
+@c EN
+If the arguments given to the generic qualifier @code{:} are
+all lists, vectors or strings, then these qualifiers are used.
+@c JP
+汎用qualifier@code{:}に渡された引数が全てリスト、ベクタ、あるいは文字列
+であった場合は、これらのqualifierが使われます。
+@c COMMON
 @end deffn
 
 @deffn {EC Qualifier} :integers vars
+@c EN
+Generates infinite series of increasing integers, starting from 0.
+@c JP
+0から始まり1づつ増加しつづける無限正確整数列を生成します。
+@c COMMON
 @end deffn
 
 @deffn {EC Qualifier} :range vars stop
 @deffnx {EC Qualifier} :range vars start stop
 @deffnx {EC Qualifier} :range vars start stop step
+@c EN
+Generates a series of exact integers, starting from
+@var{start} (defaults to 0) and stops below @var{stop},
+stepping by @var{step} (defaults to 1).  Giving a negative
+integer to @var{step} makes a decreasing series.
+@c JP
+@var{start}から始まり、@var{step}づつ増加し、@var{stop}を越えないような
+正確な整数列を生成します。@var{start}が省略された場合は0、
+@var{step}が省略された場合は1が使われます。
+@var{step}に負数を与えれば減少列も作れます。
+@c COMMON
+
+@example
+(list-ec (:range v 5) v)      @result{} (0 1 2 3 4)
+(list-ec (:range v 3 8) v)    @result{} (3 4 5 6 7)
+(list-ec (:range v 1 8 2) v)  @result{} (1 3 5 7)
+(list-ec (:range v 8 1 -2) v) @result{} (8 6 4 2)
+@end example
+
+@c EN
+If one, two or three exact integer(s) is/are given to the generic
+qualifier @code{:}, this qualifier is used.
+@c JP
+汎用qualifier@code{:}に1個から3個の正確な整数が与えられた場合は、
+このqualifierが使われます。
+@c COMMON
 @end deffn
 
 @deffn {EC Qualifier} :real-range vars stop
 @deffnx {EC Qualifier} :real-range vars start stop
 @deffnx {EC Qualifier} :real-range vars start stop step
+@c EN
+Generates a series of real numbers, starting from
+@var{start} (defaults to 0) and stops below @var{stop},
+stepping by @var{step} (defaults to 1).  If all the arguments
+are exact numbers, the result consists of exact numbers; if any
+of the arguments are inexact, the result consists of inexact numbers.
+@c JP
+@var{start}から始まり、@var{step}づつ増加し、@var{stop}を越えないような
+実数列を生成します。@var{start}が省略された場合は0、
+@var{step}が省略された場合は1が使われます。
+全ての引数が正確数であれば正確な数列が、ひとつでも非正確数が混じって入れば
+非正確な数列が生成されます。
+@c COMMON
+
+@example
+(list-ec (:real-range v 5.0) v)
+  @result{} (0.0 1.0 2.0 3.0 4.0)
+(list-ec (:real-range v 1 4 1/3) v)
+  @result{} (1 4/3 5/3 2 7/3 8/3 3 10/3 11/3)
+(list-ec (:real-range v 1 5.0 1/2) v)
+  @result{} (1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5)
+@end example
+
+@c EN
+If one, two or three real numbers is/are given to the generic
+qualifier @code{:}, and any one of them isn't an exact integer,
+then this qualifier is used.
+@c JP
+汎用qualifier@code{:}に1個から3個の実数が与えられ、そのうちどれかひとつでも
+正確な整数でないものがあれば、このqualifierが使われます。
+@c COMMON
 @end deffn
 
 @deffn {EC Qualifier} :char-range vars min max
+@c EN
+Generates a series of characters, starting from @var{min} and
+ending at @var{max} (inclusive).  The characters are enumerated
+in the order defined by @code{char<=?} (@xref{Characters}).
+@c JP
+文字@var{min}から@var{max}まで(両端含む)の文字を順に生成します。
+文字順は@code{char<=?}で比べられるのと同じ順になります (@ref{Characters}参照)。
+@c COMMON
+
+@example
+(list-ec (:char-range v #\a #\e) v)
+  @result{} (#\a #\b #\c #\d #\e)
+@end example
+
+@c EN
+If two characters are given to the generic
+qualifier @code{:}, this qualifier is used.
+@c JP
+汎用qualifier@code{:}に2つの文字が与えられた場合は、
+このqualifierが使われます。
+@c COMMON
 @end deffn
 
 @deffn {EC Qualifier} :port vars port
 @deffnx {EC Qualifier} :port vars port read-proc
+@c EN
+Generates a series of values read from an input port @var{port},
+by the procedure @var{read-proc} (defaults to @code{read}).  The
+series terminates when EOF is read.
+@c JP
+入力ポート@var{port}から、@var{read-proc}を使って読まれる値を、
+EOFに出会うまで次々に生成します。@var{read-proc}が省略された場合は@code{read}
+が使われます。
+@c COMMON
+
+@example
+(call-with-input-string "a \"b\" :c"
+  (^p (list-ec (:port v p) v)))
+  @result{} (a "b" :c)
+@end example
+
+@c EN
+If one or two arguments are given to the generic
+qualifier @code{:} and the first one is an input port, 
+then this qualifier is used.
+@c JP
+汎用qualifier@code{:}に2つの引数が与えられ、最初の引数が入力ポートであれば、
+このqualifierが使われます。
+@c COMMON
+@end deffn
+
+@deffn {EC Qualifier} :generator vars gen
+@c EN
+This is Gauche's extension and not defined in SRFI-42.
+@var{gen} must be a procedure with zero arguments.
+This qualifier repeats until @var{gen} returns EOF.
+
+Gauche has a set of utilities to create and operate on
+such procedures; see @ref{Generators}.
+@c JP
+これはSRFI-42には定義さていない、Gauche独自の拡張です。
+@var{gen}は引数と取らない手続きです。このqualifierは
+@var{gen}がEOFを返すまで繰り返します。
+
+Gaucheは、そのような手続きを作ったり操作したりする便利な関数群を
+提供しています。@ref{Generators}を参照してください。
+@c COMMON
+
+@example
+(use gauche.generator)
+(list-ec (:generator v (grange 1 8)) v)
+  @result{} (1 2 3 4 5 6 7)
+@end example
+
+@c EN
+If one argument is given to the generic
+qualifier @code{:} and it is applicable without arguments,
+then this qualifier is used.
+@c JP
+汎用qualifier@code{:}に1つの引数が与えられ、それが引数無しで呼び出し可能なものであれば、
+このqualifierが使われます。
+@c COMMON
+@end deffn
+
+@deffn {EC Qualifier} :parallel generator @dots{}
+@c EN
+This is used to run through mutiple generators in parallel.
+It terminates when any one of @var{generator} is exhausted.
+@c JP
+複数のジェネレータ節を並列に走査するのに使います。
+@var{generator}のどれかが値を使い切った時点で止まります。
+@c COMMON
+
+@example
+(list-ec (:parallel (: x '(a b c))
+                    (: y "defg"))
+  (cons x y))
+ @result{} ((a . #\d) (b . #\e) (c . #\f))
+
+;; Compare with this:
+(list-ec (: x '(a b c))
+         (: y "defg")
+  (cons x y))
+ @result{} ((a . #\d) (a . #\e) (a . #\f) (a . #\g)
+     (b . #\d) (b . #\e) (b . #\f) (b . #\g)
+     (c . #\d) (c . #\e) (c . #\f) (c . #\g))
+@end example
+@end deffn
+
+@deffn {EC Qualifier} :let vars expr
+@end deffn
+
+@deffn {EC Qualifier} :while generator expr
+@end deffn
+
+@deffn {EC Qualifier} :until generator expr
 @end deffn
 
 @deffn {EC Qualifier} :dispatched vars dispatch arg1 args @dots{}
@@ -4300,18 +4540,6 @@ A generic dispatcher of generational qualifiers.
 
 @deffn {EC Qualifier} :do (lb @dots{}) ne1? (ls @dots{})
 @deffnx {EC Qualifier} :do (let (ob @dots{}) oc @dots{}) (lb @dots{}) ne1? (let (ib @dots{}) ic @dots{}) ne2? (ls @dots{})
-@end deffn
-
-@deffn {EC Qualifier} :let vars expr
-@end deffn
-
-@deffn {EC Qualifier} :parallel generator @dots{}
-@end deffn
-
-@deffn {EC Qualifier} :while generator expr
-@end deffn
-
-@deffn {EC Qualifier} :until generator expr
 @end deffn
 
 @subsubheading Control qualifiers

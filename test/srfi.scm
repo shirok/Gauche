@@ -1036,6 +1036,18 @@
          (call-with-input-file "tmp1.o"
            (lambda (port) (list-ec (:port x port read) x)))))
 
+(test* ":generator" (list-ec (:range n 10) (cons (- 9 n) n))
+       ;; we can't load gauche.generator yet
+       (letrec ([k 10]
+                [g (^[] (if (zero? k) (eof-object) (begin (dec! k) k)))])
+         (list-ec (:generator v (index i) g) (cons v i))))
+
+(test* ":generator" (list-ec (:range n 10) (cons (- 9 n) n))
+       ;; we can't load gauche.generator yet
+       (letrec ([k 10]
+                [g (^[] (if (zero? k) (eof-object) (begin (dec! k) k)))])
+         (list-ec (: v (index i) g) (cons v i))))
+
 (sys-system "rm -f tmp1.o")
 
 (test* ":do" '(0 1 2 3) (list-ec (:do ((i 0)) (< i 4) ((+ i 1))) i))
