@@ -4008,6 +4008,18 @@ sequences, which is actually built on top of generators.
 @c list-expecting procedures via lazy sequences.
 @c ... examples ...
 
+@c EN
+You can construct and combine various generators with this module.
+Eventually, your code need to consume the generated value.
+There are several built-in procedures for that; see
+@ref{Folding generated values}.
+@c JP
+このモジュールを使うと、様々なジェネレータを作って組み合わせることができます。
+いずれ、コードのどこかでそういったジェネレータの生成する値を消費することが必要な
+わけですが、そのために使えるいくつかの組み込み手続きがあります。
+@ref{Folding generated values}を参照してください。
+@c COMMON
+
 @menu
 * Generator constructors::      
 * Generator operations::        
@@ -4223,6 +4235,10 @@ generate, and use @var{g} to update the seed value.
 @node Generator operations,  , Generator constructors, Generators
 @subsection Generator operations
 
+@xref{Folding generated values}, for @code{generator-fold}, 
+@code{generator-fold-right}, @code{generator-for-each} and
+@code{generator-map}.
+
 @defun generator->list generator :optional k
 Reads items from @var{generator} and returns a list of them.
 By default, this reads until the generator is exhausted.  If
@@ -4287,28 +4303,6 @@ but sometimes this macro makes the imperative code more readable:
 @end example
 @end defmac
 
-@defun consume proc gen gen2 @dots{}
-Calls @var{proc} on the values generated from the given generators
-@var{gen}, @var{gen2} @dots{}, until any of the generators is
-exhausted.  The return value of @var{proc} is ignored.
-
-This is to generators what @code{for-each} is to the sequences.
-Actually, this can be implemented trivially by @code{for-each} and
-lazy sequences along this line:
-
-@example
-(for-each proc (generator->lseq gen))
-@end example
-
-We provide this procedure since it is useful as the ``terminator''
-of a chain of generators.  Also, the name @code{comsume} pairs
-with the @code{generate} procedure.
-(This is somewhat special; 
-we don't provide procedures corresponding to other sequence-related
-procedures; if you want to @code{fold} on generators, you can just
-combine @code{fold} and @code{generator->lseq}.)
-@end defun
-
 The following procedures take generators (noted as @var{gen} and
 @var{gen2}) and return a generator.  For the convenience, they
 also accept any collection to @var{gen} and @var{gen2} parameters;
@@ -4341,6 +4335,11 @@ generator, and once it is exhausted, use the second generator, and so on.
 Returns a generator that yields a value returned by @var{proc}
 applied on the values from given generators.  The returned generator
 terminates when any of the given generator is exhausted.
+
+NB: This differs from @code{generator-map} (@xref{Folding generated values})
+which consumes all
+values at once and returns the results as a list, while @code{gmap}
+returns a generator.
 @end defun
 
 @defun gmap-accum proc seed gen gen2 @dots{}

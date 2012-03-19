@@ -104,17 +104,6 @@
                   (^[yield] (let loop ([i 0]) (yield i) (loop (+ i 1))))))
   )
 
-(let ()
-  (define (test-consume expect . gens)
-    (test* "consume" expect
-           (reverse (rlet1 r '()
-                      (apply consume (^ xs (push! r xs)) gens)))))
-
-  (test-consume '() null-generator)
-  (test-consume '((0) (1) (2) (3) (4)) (giota 5))
-  (test-consume '((0 #\a) (1 #\b) (2 #\c)) (giota 5) (x->generator "abc"))
-  )
-
 (test* "gappend" '(0 1 2 3 a b c d A B C D)
        (generator->list (gappend (giota 4) 
                                  (x->generator '(a b c d))

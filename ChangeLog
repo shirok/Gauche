@@ -1,5 +1,8 @@
 2012-03-19  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/generator.scm: Removed consume, for it is the same thing
+	  as generator-for-each.
+
 	* lib/gauche/procedure.scm (generator-fold, generator-fold-right,
 	  generator-for-each, generator-map): Supersedes port-fold etc.
 	  (To avoid build compilication, we still keep port-fold etc.
