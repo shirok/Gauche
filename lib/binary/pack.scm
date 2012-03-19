@@ -196,7 +196,7 @@
      (lambda ()
        (list
         (with-output-to-string
-          (lambda () (port-for-each proc read-byte))))))
+          (cut generator-for-each proc read-byte)))))
     ((procedure? count)
      (let ((unpacker (count 'unpacker)))
        (lambda ()

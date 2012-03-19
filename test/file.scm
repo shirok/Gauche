@@ -197,9 +197,10 @@
        (with-output-to-string
          (lambda ()
            (file-filter (lambda (in out)
-                          (port-for-each (lambda (line)
-                                           (display (string-upcase line) out))
-                                         (lambda () (read-line in))))
+                          (generator-for-each
+                           (lambda (line)
+                             (display (string-upcase line) out))
+                           (lambda () (read-line in))))
                         :input "tmp1.o"))))
 
 (test* "file.filter string -> tmp2.o"
@@ -208,9 +209,10 @@
          (with-input-from-string "aaa bbb ccc ddd\neee fff ggg hhh\n"
            (lambda ()
              (file-filter (lambda (in out)
-                            (port-for-each (lambda (line)
-                                             (display (string-upcase line) out))
-                                           (lambda () (read-line in))))
+                            (generator-for-each
+                             (lambda (line)
+                               (display (string-upcase line) out))
+                             (lambda () (read-line in))))
                           :output "tmp2.o")))
          (call-with-input-file "tmp2.o" port->string)))
 
@@ -246,9 +248,10 @@
                  (lambda ()
                    (file-filter
                     (lambda (in out)
-                      (port-for-each (lambda (line)
-                                       (display (string-upcase line) out))
-                                     (lambda () (read-line in)))
+                      (generator-for-each
+                       (lambda (line)
+                         (display (string-upcase line) out))
+                       (lambda () (read-line in)))
                       (file-exists? "tmp2.o"))
                     :output "tmp2.o"
                     :temporary-file "foo"))))

@@ -44,7 +44,7 @@
      (write '(define (grep args)
                (let ([pat (string->regexp (car args))]
                      [hit 1])
-                 (port-for-each
+                 (generator-for-each
                   (lambda (line)
                     (when (rxmatch pat line) (set! hit 0) (print line)))
                   read-line)

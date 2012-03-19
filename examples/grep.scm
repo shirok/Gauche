@@ -6,7 +6,7 @@
   (exit 2))
 
 (define (grep rx)
-  (port-for-each
+  (generator-for-each
    (lambda (line)
      (when (rx line)
        (format #t "~a:~a: ~a\n"

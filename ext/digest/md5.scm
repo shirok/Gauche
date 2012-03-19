@@ -60,7 +60,7 @@
 (define (md5-digest)
   (let ([md5 (make <md5-context>)]
         [buf (make-u8vector *md5-unit-len*)])
-    (port-for-each
+    (generator-for-each
      (^x (%md5-update md5 x))
      (^[] (let1 count (read-block! buf)
             (cond [(eof-object? count) count]

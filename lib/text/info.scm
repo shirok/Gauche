@@ -115,14 +115,14 @@
             (else (loop (cdr indirect) (cdar indirect))))))
   (with-input-from-string tags
     (lambda ()
-      (port-for-each (lambda (line)
-                       (rxmatch-case line
-                         (#/^Node: ([^\x7f]+)\x7f(\d+)/ (#f node count)
-                           (hash-table-put! (ref info 'node-table)
-                                            node
-                                            (find-file (x->integer count))))
-                         (else line #f)))
-                     read-line)))
+      (generator-for-each (^[line]
+                            (rxmatch-case line
+                              (#/^Node: ([^\x7f]+)\x7f(\d+)/ (#f node count)
+                               (hash-table-put! (ref info 'node-table)
+                                                node
+                                                (find-file (x->integer count))))
+                              (else line #f)))
+                          read-line)))
   )
 
 (define (read-sub-info-file info file opts)

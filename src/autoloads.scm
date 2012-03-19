@@ -9,6 +9,7 @@
 
 (define *autoloads* '())
 
+
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
@@ -126,7 +127,9 @@
           ;;(:macro curry-lambda) (:macro define-curry)
           applicable? arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value disasm
-          ~ ref*)
+          ~ ref*
+          generator-fold generator-fold-right generator-for-each
+          generator-map)
 
 (autoload gauche.time (:macro time))
 

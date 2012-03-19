@@ -949,7 +949,7 @@
 
 (define (%upcase generator sink char?)
   (let1 buf (make-vector SCM_CHAR_FULL_CASE_MAPPING_SIZE)
-    (port-for-each (^[ch] (%tr ch buf CHAR_UPCASE sink char?)) generator)))
+    (generator-for-each (^[ch] (%tr ch buf CHAR_UPCASE sink char?)) generator)))
 
 ;; Greek capital sigma U+03a3 needs context-sensitive conversion.
 (define (%downcase generator sink char?)
@@ -984,17 +984,18 @@
 (define (%foldcase generator sink char?)
   (let ([buf1 (make-vector SCM_CHAR_FULL_CASE_MAPPING_SIZE)]
         [buf2 (make-vector SCM_CHAR_FULL_CASE_MAPPING_SIZE)])
-    (port-for-each (^[ch]
-                     (let1 c (%char-xcase-extended ch buf1 CHAR_UPCASE char?)
-                       (sink (append-ec
-                              (: i c)
-                              (let1 c2 (%char-xcase-extended (vector-ref buf1 i)
-                                                             buf2
-                                                             CHAR_DOWNCASE
-                                                             char?)
-                                (list-ec (: j c2) (vector-ref buf2 j))))
-                             ch)))
-                   generator)))
+    (generator-for-each
+     (^[ch]
+       (let1 c (%char-xcase-extended ch buf1 CHAR_UPCASE char?)
+         (sink (append-ec
+                (: i c)
+                (let1 c2 (%char-xcase-extended (vector-ref buf1 i)
+                                               buf2
+                                               CHAR_DOWNCASE
+                                               char?)
+                  (list-ec (: j c2) (vector-ref buf2 j))))
+               ch)))
+     generator)))
 
 (define string-xcase
   (case (gauche-character-encoding)

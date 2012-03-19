@@ -68,7 +68,7 @@
   (with-input-from-file file
     (^[]
       (prelude file)
-      (port-for-each process read))))
+      (generator-for-each process read))))
 
 (define (process-body file)
   (include-translating file
@@ -100,7 +100,7 @@
                                 (string-append templ ".out.scm")))])
     (with-input-from-file templ
       (^[] (with-output-to-file dest
-             (^[] (port-for-each
+             (^[] (generator-for-each
                    (^[line] (rxmatch-case line
                               [#/^;#include-body "(.*)"/ (#f file)
                                (process-body (adjpath templ file))]

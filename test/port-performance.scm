@@ -8,6 +8,6 @@
         (lambda ()
           (with-output-to-file "/dev/null"
             (lambda ()
-              (port-for-each write-byte read-byte))))))
+              (generator-for-each write-byte read-byte))))))
 
       

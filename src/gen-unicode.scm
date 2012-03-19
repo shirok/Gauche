@@ -443,7 +443,7 @@
                   [e  (dict-get table code)])
               (set! (entry-special-case-info e) (list up lo ti))))))))
   (with-input-from-file file
-    (cut port-for-each handle read-line)))
+    (cut generator-for-each handle read-line)))
 
 ;; Assign case-map slot by either simple-case-map or extended-case-map
 (define (assign-case-mapping db)
@@ -499,7 +499,7 @@
                            (set! (entry-lowercase v) #t)]
                      [(Lt Lm Lo Nl) (set! (entry-alphabetic v) #t)])))
   (with-input-from-file file
-    (cut port-for-each handle read-line)))
+    (cut generator-for-each handle read-line)))
 
 (define (get-break-entry db code)
   (let1 table (unichar-db-break-table db)
@@ -518,7 +518,7 @@
        (let1 e (get-break-entry db (parse-code ss))
          (set! (accessor e) (string->symbol cc)))]))
   (with-input-from-file file
-    (cut port-for-each handle read-line)))
+    (cut generator-for-each handle read-line)))
 
 (define grapheme-break-property (break-property break-entry-grapheme))
 (define word-break-property     (break-property break-entry-word))

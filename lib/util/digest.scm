@@ -61,6 +61,5 @@
 ;; utility
 (define (digest-hexify string)
   (with-string-io string
-    (lambda ()
-      (port-for-each (lambda (x) (format #t "~2,'0x" x)) read-byte))))
+    (cut generator-for-each (cut format #t "~2,'0x" <>) read-byte)))
 

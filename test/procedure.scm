@@ -524,4 +524,45 @@
                   `[(1) . (foo 1 ())]
                   `[(1 2) . (foo 1 (2))])
 
+;;-----------------------------------------------------------------------
+;; generator-*
+(test-section "generator-*")
+
+(define (gen-1arg-test name input expect thunk :optional (wrap identity))
+  (test* (format "~a, 1 arg" name) expect
+         (wrap (with-input-from-string input thunk))))
+
+(gen-1arg-test "generator-fold" "a b c d e" '(e d c b a . z)
+               (cut generator-fold cons 'z read))
+(gen-1arg-test "generator-fold-right" "a b c d e" '(a b c d e . z)
+               (cut generator-fold-right cons 'z read))
+(gen-1arg-test "generator-map" "a b c d e" '("a" "b" "c" "d" "e")
+               (cut generator-map symbol->string read))
+(let1 r '()
+  (gen-1arg-test "generator-for-each" "a b c d e" '(e d c b a)
+                 (cut generator-for-each (^v (push! r v)) read)
+                 (^_ r)))
+
+(define (gen-2arg-test name input1 input2 expect proc :optional (wrap identity))
+  (test* (format "~a, 2 args" name) expect
+         (wrap (call-with-input-string input1
+                 (^x (call-with-input-string input2
+                       (^y (proc x y))))))))
+
+(gen-2arg-test "generator-fold" "a b c d e f" "1 2 3 4 5"
+               '(e 5 (d 4 (c 3 (b 2 (a 1 z)))))
+               (^[x y] (generator-fold list 'z (cut read x) (cut read y))))
+(gen-2arg-test "generator-fold-right" "a b c d e f" "1 2 3 4 5"
+               '(a 1 (b 2 (c 3 (d 4 (e 5 z)))))
+               (^[x y] (generator-fold-right list 'z (cut read x) (cut read y))))
+(gen-2arg-test "generator-map" "1 2 3 4 5" "6 7 8 9"
+               '(7 9 11 13)
+               (^[x y] (generator-map + (cut read x) (cut read y))))
+(let1 r '()
+  (gen-2arg-test "generator-for-each" "1 2 3 4 5" "6 7 8 9"
+                 '(13 11 9 7)
+                 (^[x y] (generator-for-each (^[a b] (push! r (+ a b)))
+                                             (cut read x) (cut read y)))
+                 (^_ r)))
+
 (test-end)

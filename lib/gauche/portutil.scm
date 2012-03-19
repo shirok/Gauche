@@ -130,9 +130,11 @@
 
 ;;-----------------------------------------------------
 ;; Iterators on the input stream
-;;   These constructs take reader function that expects to return
-;;   new data for each invocation, and EOF whe exhausted.  It can
-;;   be any function; need not be bound to a port.
+;;   NB: These are to be superseded by generator-fold, generator-fold-right,
+;;   generator-for-each and generator-map in gauche/procedure.scm.  We keep
+;;   these here for 0.9.3, since these are required to run cgen.* to generate
+;;   some files in src/.  Replace these to aliases of generator-* procs
+;;   after releasing 0.9.3.
 
 (define (port-fold fn knil reader)
   (let loop ((item (reader))

@@ -55,7 +55,7 @@
   (^[] (let ([ctx (make <sha-context>)]
              [buf (make-u8vector *sha-unit-len*)])
          (init ctx)
-         (port-for-each
+         (generator-for-each
           (^x (update ctx x))
           (^[] (let1 count (read-block! buf)
                  (cond [(eof-object? count) count]

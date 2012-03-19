@@ -1,3 +1,13 @@
+2012-03-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/procedure.scm (generator-fold, generator-fold-right,
+	  generator-for-each, generator-map): Supersedes port-fold etc.
+	  (To avoid build compilication, we still keep port-fold etc.
+	  in portutil.scm until 0.9.3 release; see the comments in
+	  portutil.scm.)
+	* src/autoloads.scm: Added autoloads for the above procedures.
+	* various files: Replaced port-for-each to generator-for-each etc.
+
 2012-03-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-42.scm: Added :generator ec-qualifier.

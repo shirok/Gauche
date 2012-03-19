@@ -40,15 +40,13 @@
 
 ;; Escaping ---------------------------------------------
 (define (html-escape)
-  (port-for-each (lambda (c)
-                   (case c
-                     ((#\<) (display "&lt;"))
-                     ((#\>) (display "&gt;"))
-                     ((#\&) (display "&amp;"))
-                     ((#\") (display "&quot;"))
-                     (else (display c))
-                     ))
-                 read-char))
+  (generator-for-each (^c (case c
+                            [(#\<) (display "&lt;")]
+                            [(#\>) (display "&gt;")]
+                            [(#\&) (display "&amp;")]
+                            [(#\") (display "&quot;")]
+                            [else (display c)]))
+                      read-char))
 
 (define (html-escape-string string)
   (with-string-io (x->string string) html-escape))

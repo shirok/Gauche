@@ -30,7 +30,7 @@
 (define reader (make-csv-reader #\,))
 
 (profiler-start)
-(call-with-input-string data (^p (port-for-each identity (cut reader p))))
+(call-with-input-string data (^p (generator-for-each identity (cut reader p))))
 (profiler-stop)
 (profiler-show)
 

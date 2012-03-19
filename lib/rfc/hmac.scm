@@ -75,13 +75,12 @@
     outer))
 
 (define (hmac-digest . args)
-  (let ((hmac (apply make <hmac> args)))
-    (port-for-each
-     (lambda (b) (hmac-update! hmac b))
-     (lambda () (read-block 4096)))
+  (let1 hmac (apply make <hmac> args)
+    (generator-for-each
+     (cut hmac-update! hmac <>)
+     (cut read-block 4096))
     (hmac-final! hmac)))
 
 (define (hmac-digest-string string . args)
   (with-input-from-string string
-    (lambda() (apply hmac-digest args))))
-
+    (cut apply hmac-digest args)))

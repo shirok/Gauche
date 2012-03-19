@@ -54,12 +54,12 @@
 (define (test-writer-reader-invariance file)
   (with-input-from-file file
     (lambda ()
-      (port-for-each (lambda (input)
-                       (let* ((num (string->number input))
-                              (num2 (string->number (number->string num))))
-                         (unless (eqv? num num2)
-                           (print #`"ERROR: ,num and ,num2 (original ,input)"))))
-                     read-line))))
+      (generator-for-each (lambda (input)
+                            (let* ((num (string->number input))
+                                   (num2 (string->number (number->string num))))
+                              (unless (eqv? num num2)
+                                (print #`"ERROR: ,num and ,num2 (original ,input)"))))
+                          read-line))))
 
 
 ;; benchmarking bignum arithmetic
