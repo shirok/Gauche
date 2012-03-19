@@ -11,9 +11,8 @@
 
 (test-section "testing with dbd-null")
 
-(let ((conn #f)
-      (query #f)
-      )
+(let ([conn #f]
+      [query #f])
   (test* "dbi-connect" '<null-connection>
          (begin (set! conn (dbi-connect "dbi:null"))
                 (and (dbi-open? conn)

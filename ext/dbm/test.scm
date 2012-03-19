@@ -89,7 +89,7 @@
                       (unless (equal? v (hash-table-get dataset k #f))
                         (break #f))
                       (set! r (cons v r))))
-      (equal? (reverse r) (dbm-map *current-dbm* (lambda (k v) v))))))
+      (equal? (reverse r) (dbm-map *current-dbm* (^[k v] v))))))
 
 ;; does collection framework work?
 (define (test:collection-read dataset)

@@ -15,32 +15,32 @@
                            character
                            symbol
                            any)
-       (map (lambda (exp)
+       (map (^[exp]
               (match exp
-                ((a b) (list 'huh? a b))
-                (()    'emptylist)
-                (#t    'true)
-                (#f    'false)
-                ("a"   'string)
-                (1     'number)
-                (#\a   'character)
-                ('a    'symbol)
-                (_     'any)))
+                [(a b) (list 'huh? a b)]
+                [()    'emptylist]
+                [#t    'true]
+                [#f    'false]
+                ["a"   'string]
+                [1     'number]
+                [#\a   'character]
+                ['a    'symbol]
+                [_     'any]))
             '(() #t #f "a" 1 #\a a #())))
 
-(test* "pattern" '((5 x (y z))
-                   (4 x y)
-                   (2 x (y z) (u v w))
-                   (1 x y (u v))
-                   (2 x () (y))
-                   (3 x y z))
-       (map (lambda (exp)
+(test* "pattern" '([5 x (y z)]
+                   [4 x y]
+                   [2 x (y z) (u v w)]
+                   [1 x y (u v)]
+                   [2 x () (y)]
+                   [3 x y z])
+       (map (^[exp]
               (match exp
-                (((a b) c)   (list 1 a b c))
-                (((a . b) c) (list 2 a b c))
-                (#(a b c)    (list 3 a b c))
-                ((a b)       (list 4 a b))
-                ((a . b)     (list 5 a b))))
+                [((a b) c)   (list 1 a b c)]
+                [((a . b) c) (list 2 a b c)]
+                [#(a b c)    (list 3 a b c)]
+                [(a b)       (list 4 a b)]
+                [(a . b)     (list 5 a b)]))
             '((x y z)
               (x y)
               ((x y z) (u v w))
@@ -55,12 +55,12 @@
                               (4 1 2 (3 4))
                               (3 1 2 ())
                               (4 1 2 ()))
-       (map (lambda (exp)
+       (map (^[exp]
               (match exp
-                ((a b c ..3)  (list 1 a b c))
-                (#(a b c ..3) (list 2 a b c))
-                ((a b c ...)  (list 3 a b c))
-                (#(a b c ...) (list 4 a b c))
+                [(a b c ..3)  (list 1 a b c)]
+                [#(a b c ..3) (list 2 a b c)]
+                [(a b c ...)  (list 3 a b c)]
+                [#(a b c ...) (list 4 a b c)]
                 ))
             '((1 2 3 4 5)
                                         ;#(1 2 3 4 5)  ; doesn't work?
@@ -71,24 +71,24 @@
 
 (test* "nested pattern" '((1 4) (2 5) (3 6))
        (match '((1 (2 3)) (4 (5 6)))
-         (((a (b c)) ...) (list a b c))))
+         [((a (b c)) ...) (list a b c)]))
 
 ;; a bug pointed by Hira
 (test* "nested pattern, conditional" 'a
        (match '((1 a b) (4 e) (6 q u e r))
-         ((((? number?) (? symbol?) ...) ...) 'a)))
+         [(((? number?) (? symbol?) ...) ...) 'a]))
 
 ;; examples shown in Wright&Duba
 (test* "xmap" '(2 4 6)
-       (letrec ((xmap (lambda (f l)
+       (letrec ([xmap (^[f l]
                         (match l
-                          (() ())
-                          ((x . y) (cons (f x) (xmap f y)))))))
+                          [() ()]
+                          [(x . y) (cons (f x) (xmap f y))]))])
          (xmap (cut * <> 2) '(1 2 3))))
 
 (test* "Y?" '(#t #f)
-       (letrec ((y? (match-lambda
-                      (('lambda (f1)
+       (letrec ([y? (match-lambda
+                      [('lambda (f1)
                          ('lambda (y1)
                            ((('lambda (x1) (f2 ('lambda (z1) ((x2 x3) z2))))
                              ('lambda (a1) (f3 ('lambda (b1) ((a2 a3) b2)))))
@@ -97,8 +97,8 @@
                             (symbol? z1) (symbol? a1) (symbol? b1)
                             (eq? f1 f2) (eq? f1 f3) (eq? y1 y2)
                             (eq? x1 x2) (eq? x1 x3) (eq? z1 z2)
-                            (eq? a1 a2) (eq? a1 a3) (eq? b1 b2)))
-                      (_ #f))))
+                            (eq? a1 a2) (eq? a1 a3) (eq? b1 b2))]
+                      [_ #f])])
          (list
           (y? '(lambda (F)
                  (lambda (Y)
@@ -116,11 +116,11 @@
 
 (test* "pred" '(a b c)
        (match '("abc" a b c)
-         (((? string?) x ...) x)))
+         [((? string?) x ...) x]))
 
 (test* "pred" "abc" 
        (match '("abc" a b c)
-         (((? string? k) x ...) k)))
+         [((? string? k) x ...) k]))
 
 ;;--------------------------------------------------------------
 
@@ -130,15 +130,15 @@
 
 (test* "struct" '(0 "foo")
        (match (make <foo> :a 0 :b "foo")
-         (($ <foo> x y) (list x y))))
+         [($ <foo> x y) (list x y)]))
 
 (test* "field" 0
        (match (make <foo> :a 0 :b "foo")
-         ((= a-of aa) aa)))
+         [(= a-of aa) aa]))
 
 (test* "object" '(1 "bar")
        (match (make <foo> :a 1 :b "bar")
-         ((object <foo> (b bb) (a aa)) (list aa bb))))
+         [(object <foo> (b bb) (a aa)) (list aa bb)]))
 
 ;; examples shown in Wright&Duba
 (define-class Lam ()
@@ -154,16 +154,16 @@
 
 (define parse
   (match-lambda
-   ((and s (? symbol?) (not 'lambda))
-    (make Var :s s))
-   ((? number? n)
-    (make Const :n n))
-   (('lambda (and args ((? symbol?) ...) (not (? repeats?))) body)
-    (make Lam :args args :body (parse body)))
-   ((f args ...)
-    (make App :fun (parse f) :args (map parse args)))
-   (x
-    (error "invalid expression" x))))
+    [(and s (? symbol?) (not 'lambda))
+     (make Var :s s)]
+    [(? number? n)
+     (make Const :n n)]
+    [('lambda (and args ((? symbol?) ...) (not (? repeats?))) body)
+     (make Lam :args args :body (parse body))]
+    [(f args ...)
+     (make App :fun (parse f) :args (map parse args))]
+    [x
+     (error "invalid expression" x)]))
 
 (define (repeats? l)
   (and (not (null? l))
@@ -171,10 +171,10 @@
 
 (define unparse
   (match-lambda
-   (($ Var s) s)
-   (($ Const n) n)
-   (($ Lam args body) `(lambda ,args ,(unparse body)))
-   (($ App f args) `(,(unparse f) ,@(map unparse args)))))
+    [($ Var s) s]
+    [($ Const n) n]
+    [($ Lam args body) `(lambda ,args ,(unparse body))]
+    [($ App f args) `(,(unparse f) ,@(map unparse args))]))
 
 (test* "parse-unparse" '(lambda (a b c) (map (lambda (d) (a d 3)) (list b c)))
        (unparse (parse '(lambda (a b c)
@@ -182,12 +182,12 @@
 
 (define unparse-obj
   (match-lambda
-   ((@ Var (s symbol)) symbol)
-   ((@ Const (n number)) number)
-   ((@ Lam (body body-expr) (args lambda-list))
-    `(lambda ,lambda-list ,(unparse-obj body-expr)))
-   ((@ App (fun f) (args args))
-    `(,(unparse-obj f) ,@(map unparse-obj args)))))
+    [(@ Var (s symbol)) symbol]
+    [(@ Const (n number)) number]
+    [(@ Lam (body body-expr) (args lambda-list))
+     `(lambda ,lambda-list ,(unparse-obj body-expr))]
+    [(@ App (fun f) (args args))
+     `(,(unparse-obj f) ,@(map unparse-obj args))]))
 
 (test* "parse-unparse-obj"
        '(lambda (a b c) (map (lambda (d) (a d 3)) (list b c)))
@@ -197,64 +197,62 @@
 ;;--------------------------------------------------------------
 
 (test* "get! / pair" 3
-       (let ((x (list 1 (list 2 3))))
+       (let1 x (list 1 (list 2 3))
          (match x
-           ((_ (_ (get! getter))) (getter)))))
+           [(_ (_ (get! getter))) (getter)])))
 
 (test* "set! / pair" '(1 (2 4))
-       (let ((x (list 1 (list 2 3))))
+       (rlet1 x (list 1 (list 2 3))
          (match x
-           ((_ (_ (set! setter))) (setter 4)))
-         x))
+           [(_ (_ (set! setter))) (setter 4)])))
 
 (test* "get! / vector" 3
-       (let ((x (vector 1 2 3 4 5)))
+       (let1 x (vector 1 2 3 4 5)
          (match x
-           (#(a b (get! getter) d e) (getter)))))
+           [#(a b (get! getter) d e) (getter)])))
 
 (test* "set! / vector" '#(1 2 o 4 5)
-       (let ((x (vector 1 2 3 4 5)))
+       (rlet1 x (vector 1 2 3 4 5)
          (match x
-           (#(a b (set! setter) d e) (setter 'o)))
-         x))
+           [#(a b (set! setter) d e) (setter 'o)])))
 
 (test* "get! / $" 'foo
-       (let* ((v (make Var :s 'foo))
-              (x (list 0 0 (vector 0 0 v 0) 0)))
+       (let* ([v (make Var :s 'foo)]
+              [x (list 0 0 (vector 0 0 v 0) 0)])
          (match x
-           ((_ _ #(_ _ ($ Var (get! getter)) _) _) (getter)))))
+           [(_ _ #(_ _ ($ Var (get! getter)) _) _) (getter)])))
 
 (test* "get! / @" 'foo
-       (let* ((v (make Var :s 'foo))
-              (x (list 0 0 (vector 0 0 v 0) 0)))
+       (let* ([v (make Var :s 'foo)]
+              [x (list 0 0 (vector 0 0 v 0) 0)])
          (match x
-           ((_ _ #(_ _ (@ Var (s (get! getter))) _) _) (getter)))))
+           [(_ _ #(_ _ (@ Var (s (get! getter))) _) _) (getter)])))
            
 (test* "set! / $" 'bar
-       (let* ((v (make Var :s 'foo))
-              (x (list 0 0 (vector 0 0 v 0) 0)))
+       (let* ([v (make Var :s 'foo)]
+              [x (list 0 0 (vector 0 0 v 0) 0)])
          (match x
-           ((_ _ #(_ _ ($ Var (set! setter)) _) _)
+           [(_ _ #(_ _ ($ Var (set! setter)) _) _)
             (setter 'bar)
-            (ref v 's)))))
+            (ref v 's)])))
            
 (test* "set! / @" 'bar
-       (let* ((v (make Var :s 'foo))
-              (x (list 0 0 (vector 0 0 v 0) 0)))
+       (let* ([v (make Var :s 'foo)]
+              [x (list 0 0 (vector 0 0 v 0) 0)])
          (match x
-           ((_ _ #(_ _ (@ Var (s (set! setter))) _) _)
+           [(_ _ #(_ _ (@ Var (s (set! setter))) _) _)
             (setter 'bar)
-            (ref v 's)))))
+            (ref v 's)])))
 
 ;;--------------------------------------------------------------
 
 ;; test case derived from the bug report from Tatsuya BIZENN.
 
 (define (test-match ls)
-   (match ls
-     ((a b . c)   (=> next) (values a b c))
-     ((a . b)     (=> next) (values #f a b))
-     (()          (=> next) (values #f #f '()))))
+  (match ls
+    [(a b . c)   (=> next) (values a b c)]
+    [(a . b)     (=> next) (values #f a b)]
+    [()          (=> next) (values #f #f '())]))
 
 (test* "failure continuation #1" '(1 2 (3))
        (values->list (test-match '(1 2 3))))
@@ -369,7 +367,7 @@
          (remove-from-queue! (cut eq? <> 'd) q))
 
 
-  (let ((q (make-queue)))
+  (let1 q (make-queue)
     (test* #`",|what| enqueue-unique!" '("a")
            (begin (enqueue-unique! q equal? "a")
                   (queue->list q)))
@@ -398,7 +396,7 @@
 (queue-basic-test "simple queue" make-queue)
 (queue-basic-test "mtqueue"      make-mtqueue)
 
-(let ((q (make-mtqueue :max-length 3)))
+(let1 q (make-mtqueue :max-length 3)
   (test* "mtqueue room" 3 (mtqueue-room q))
 
   (test* "mtqueue maxlen" 'c

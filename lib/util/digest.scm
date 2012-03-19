@@ -56,7 +56,7 @@
 (define-method digest ((class <message-digest-algorithm-meta>))
   #f)
 (define-method digest-string ((class <message-digest-algorithm-meta>) string)
-  (with-input-from-string string (lambda () (digest class))))
+  (with-input-from-string string (cut digest class)))
 
 ;; utility
 (define (digest-hexify string)
