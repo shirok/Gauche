@@ -44,7 +44,10 @@
   (use srfi-43)
   (export <json-parse-error> <json-construct-error>
           parse-json parse-json-string
-          construct-json construct-json-string))
+          construct-json construct-json-string
+
+          json-parser                   ;experimental
+          ))
 (select-module rfc.json)
 
 ;; NB: We have <json-parse-error> independent from <parse-error> for
@@ -133,7 +136,7 @@
               ($sep-by %member %value-separator)
               %end-object)))
 
-(define %json-text ($or %object %array))
+(define json-parser ($seq %ws ($or eof %object %array)))
 
 ;; entry point
 (define (parse-json :optional (port (current-input-port)))
@@ -142,7 +145,7 @@
              (error <json-parse-error>
                     :position (~ e'position) :objects (~ e'objects)
                     :message (~ e'message))])
-    (peg-parse-port %json-text port)))
+    (peg-parse-port json-parser port)))
 
 (define (parse-json-string str)
   (call-with-input-string str (cut parse-json <>)))

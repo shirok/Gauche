@@ -38,12 +38,15 @@
   (use srfi-14)
   (use gauche.collection)
   (use gauche.generator)
+  (use gauche.lazy)
   (use util.list)
   (use util.match)
   (export <parse-error>
           make-peg-parse-error
 
           peg-run-parser peg-parse-string peg-parse-port
+          peg-parse1 ;experimental
+          peg-parser->generator ;experimental
           $return $fail $expect 
           $do $<< $try $seq $or $fold-parsers $fold-parsers-right
           $many $many1 $skip-many
@@ -202,22 +205,54 @@
                     'position pos 'objects objs
                     'message (message pos nexttok))))
 
+(define (construct-peg-parser-error r v s s1)
+  (make-peg-parse-error r v
+                        (let loop ([c 0] [s s])
+                          (cond [(eq? s1 s) c]
+                                [(null? s) 0] ;!!
+                                [else (loop (+ c 1) (cdr s))]))
+                        s1))
+
+;; default driver
 (define (peg-run-parser parser s)
   (receive (r v s1) (parser s)
     (if (parse-success? r)
       (rope-finalize v)
-      (raise (make-peg-parse-error r v
-                                   (let loop ([c 0] [s s])
-                                     (cond [(eq? s1 s) c]
-                                           [(null? s) 0] ;!!
-                                           [else (loop (+ c 1) (cdr s))]))
-                                   s1)))))
+      (raise (construct-peg-parser-error r v s s1)))))
 
-;; entry points
+;; Coerce something to lseq.  accepts generator.
+;; We check applicability of x->lseq first, since an object can be both
+;; passed to x->lseq and applicable as a thunk, but x->lseq should take
+;; precedence.
+;; NB: This is not abstract enough---the gory details should be hidden
+;; in gauche.lazy module.
+(define (%->lseq obj)
+  (cond [(eq? (class-of obj) <pair>) obj] ;avoid forcing a lazy pair
+        [(applicable? x->generator (class-of obj)) (x->generator obj)]
+        [(applicable? obj) (generator->lseq obj)]
+        [else (error "object cannot be used as a source of PEG parser:" obj)]))
+
+;; API
 (define (peg-parse-string parser str)
   (peg-run-parser parser (generator->lseq (string->generator str))))
+;; API
 (define (peg-parse-port parser port)
   (peg-run-parser parser (generator->lseq (cut read-char port))))
+;; API
+(define (peg-parse1 parser src)
+  (peg-run-parser parser (%->lseq src)))
+;; API
+;;  Returns a generator
+(define (peg-parser->generator parser src)
+  (let1 s (%->lseq src)
+    (generate (^[yield]
+                (let loop ([s s])
+                  (receive (r v s1) (parser s)
+                    (if (parse-success? r)
+                      (unless (eof-object? v)
+                        (yield (rope-finalize v))
+                        (loop s1))
+                      (raise (construct-peg-parser-error r v s s1)))))))))
 
 ;;;============================================================
 ;;; Lazily-constructed string
@@ -634,5 +669,5 @@
 (define (eof s)
   (if (pair? s)
     (return-failure/expect "end of input" s)
-    (return-result #t s)))
+    (return-result (eof-object) s)))
 

@@ -33,6 +33,7 @@
 
 (use gauche.test)
 (use srfi-1)
+(use gauche.generator)
 
 (test-start "parser.peg")
 
@@ -44,9 +45,8 @@
 ;;; helper macros
 ;;;
 (define (%compare test-type accessors)
-  (lambda (e o)
-    (and (test-type o)
-         (every equal? e (map (cut <> o) accessors)))))
+  (^[e o] (and (test-type o)
+               (every equal? e (map (cut <> o) accessors)))))
 
 (define-syntax test-succ
   (syntax-rules ()
@@ -150,7 +150,7 @@
            ($satisfy char-numeric? "numeric")
            "a")
 
-(test-succ "eof" #t eof "")
+(test-succ "eof" (eof-object) eof "")
 (test-fail "eof" '(0 "end of input") eof "a")
 
 ;;;============================================================
@@ -598,35 +598,35 @@
              records "\"a  \"\" \n\" , b  , c"))
 
 ;; Poor-man's XML parser
-(letrec ((open-tag ($->rope ($between ($char #\<) alphanum ($char #\>))))
-         (close-tag (lambda (tagname)
-                      ($seq ($string "</") ($string tagname) ($char #\>))))
-         (text ($->rope ($many ($none-of #[<]))))
-         (body ($do [t text]
+(letrec ([open-tag ($->rope ($between ($char #\<) alphanum ($char #\>)))]
+         [close-tag (^[tagname]
+                      ($seq ($string "</") ($string tagname) ($char #\>)))]
+         [text ($->rope ($many ($none-of #[<])))]
+         [body ($do [t text]
                     [r ($many ($do [e element]
                                    [t text]
                                    ($return (list e t))))]
-                    ($return `(,t ,@(apply append r)))))
-         (element ($do [tagname ($try open-tag)]
+                    ($return `(,t ,@(apply append r))))]
+         [element ($do [tagname ($try open-tag)]
                        [body body]
                        [ (close-tag (rope-finalize tagname)) ]
-                       ($return (cons tagname body)))))
+                       ($return (cons tagname body)))])
   (test-succ "tag element" '("a" "")
              element "<a></a>")
   (test-succ "tag element" '("a" "foo" ("b" "bar") "baz")
              element "<a>foo<b>bar</b>baz</a>"))
 
 ;; Calculator
-(letrec ((integer ($do (v ($many digit 1))
-                       ($return (string->number (apply string v)))))
-         (mulop ($or ($seq ($char #\*) ($return *))
-                     ($seq ($char #\/) ($return /))))
-         (addop ($or ($seq ($char #\+) ($return +))
-                     ($seq ($char #\-) ($return -))))
-         (factor ($lazy ($or ($between ($char #\() expr ($char #\)))
-                             integer)))
-         (term ($chain-left factor mulop))
-         (expr ($chain-left term addop)))
+(letrec ([integer ($do (v ($many digit 1))
+                       ($return (string->number (apply string v))))]
+         [mulop ($or ($seq ($char #\*) ($return *))
+                     ($seq ($char #\/) ($return /)))]
+         [addop ($or ($seq ($char #\+) ($return +))
+                     ($seq ($char #\-) ($return -)))]
+         [factor ($lazy ($or ($between ($char #\() expr ($char #\)))
+                             integer))]
+         [term ($chain-left factor mulop)]
+         [expr ($chain-left term addop)])
   (test-succ "calculator" 11 expr "1+2*3+4")
   (test-succ "calculator" 36 expr "2/2+5*(3+4)")
   (test-succ "calculator" -1 expr "1-2"))
@@ -730,6 +730,11 @@
       \"Country\":   \"US\"
    }
 ]"))
+
+(test* "Parsing sequence of json objects"
+       '((("a" . 1)("b" . 2)) (("c" . 3) ("d" . 4)))
+       (with-input-from-string "{\"a\":1, \"b\":2} {\"c\":3, \"d\":4} "
+         (^[] (generator->list (peg-parser->generator json-parser read-char)))))
 
 (let ()
   (define (test-writer name obj)
