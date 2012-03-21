@@ -84,12 +84,11 @@
         (slot-set! self 'post-observers (hook-ref post-hook)))
       )))
 
-(define-method object-apply ((self <parameter>) . maybe-newval)
-  (if (pair? maybe-newval)
-    (if (null? (cdr maybe-newval))
-      ((slot-ref self 'setter) (car maybe-newval))
-      (error "wrong number of arguments for parameter" maybe-newval))
-    ((slot-ref self 'getter))))
+(define-method object-apply ((self <parameter>))
+  ((slot-ref self 'getter)))
+
+(define-method object-apply ((self <parameter>) newval)
+  ((slot-ref self 'setter) newval))
 
 ;; Allow (set! (parameter) value).  By KOGURO, Naoki
 (define-method (setter object-apply) ((obj <parameter>) value)

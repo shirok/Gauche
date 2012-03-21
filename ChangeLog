@@ -1,5 +1,8 @@
 2012-03-21  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/gauche/parameter.scm (object-apply): Splitted methods for
+	  getter and setter; it makes arity checking work better.
+
 	* lib/gauche/test.scm (test-module): Added a feature to check arity
 	  of global procedures, based on the patch by Masahiro Hayashi.
 	* lib/rfc/ip.scm, lib/binary/ftype.scm: Fixed bugs catched by the
