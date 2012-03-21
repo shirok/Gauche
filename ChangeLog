@@ -1,3 +1,11 @@
+2012-03-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (<bottom>), src/libobj.scm (subtype?): Added the bottom
+	  type <bottom>, and type relation predicate subtype?.  <bottom> is
+	  needed for applicable? to be useful.
+	* doc/corelib.texi, doc/object.texi: Reorganized a bit to have
+	  brief introduction of type/class system on top of corelib.texi.
+
 2012-03-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm: Removed consume, for it is the same thing

@@ -86,7 +86,13 @@ static ScmClass *Scm_MethodCPL[] = {
     NULL
 };
 
+/* Class <top> is the superclass of all classes.  The class initialization
+   routine ensures that the class precedence list always terminates by <top>.
+   Class <bottom> is the subclass of all classes.  It won't appear in the
+   class precedence list, but Scm_SubTypeP treats it specially and answers
+   yes to Scm_SubTypeP(<bottom>, <any-class>). */
 SCM_DEFINE_ABSTRACT_CLASS(Scm_TopClass, NULL);
+SCM_DEFINE_ABSTRACT_CLASS(Scm_BottomClass, NULL);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_BoolClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_CharClass, NULL);
@@ -626,7 +632,7 @@ static void find_core_allocator(ScmClass *klass)
 
 static void class_cpl_set(ScmClass *klass, ScmObj val)
 {
-    int len;
+    int len, i;
     ScmObj cp;
     CHECK_MALLEABLE(klass, "(setter cpl)");
 
@@ -639,6 +645,10 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
     cp = SCM_CDR(val);
     if ((len = Scm_Length(cp)) < 0) goto err;
     klass->cpa = class_list_to_array(cp, len);
+    for (i=0; i<len; i++) {
+        /* sanity check */
+        if (klass->cpa[i] == SCM_CLASS_BOTTOM) goto err;
+    }
     if (klass->cpa[len-1] != SCM_CLASS_TOP) goto err;
     klass->cpl = Scm_CopyList(val);
     /* find correct allocation method */
@@ -647,7 +657,8 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
   err:
     Scm_Error("class precedence list must be a proper list of class "
               "metaobject, beginning from the class itself owing the list, "
-              "and ending by the class <top>: %S", val);
+              "and ending by the class <top>, and must not include <bottom>: "
+              "%S", val);
 }
 
 static ScmObj class_direct_supers(ScmClass *klass)
@@ -881,6 +892,7 @@ int Scm_SubtypeP(ScmClass *sub, ScmClass *type)
 {
     ScmClass **p;
     if (sub == type) return TRUE;
+    if (sub == SCM_CLASS_BOTTOM) return TRUE;
 
     p = sub->cpa;
     while (*p) {
@@ -3171,6 +3183,7 @@ void Scm__InitClass(void)
     /* class.c */
     BINIT(SCM_CLASS_CLASS,  "<class>", class_slots);
     BINIT(SCM_CLASS_TOP,    "<top>",     NULL);
+    BINIT(SCM_CLASS_BOTTOM, "<bottom>",  NULL);
     CINIT(SCM_CLASS_BOOL,   "<boolean>");
     CINIT(SCM_CLASS_CHAR,   "<char>");
     BINIT(SCM_CLASS_EOF_OBJECT,"<eof-object>", NULL);

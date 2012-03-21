@@ -981,7 +981,7 @@ For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
 言えるでしょう。
 
 例として、ディストリビューションに含まれる@code{lib/gauche/mop/singleton.scm}や
-@code{lib/gauche/mop/validator}等があります。@code{src/objlib.scm}を
+@code{lib/gauche/mop/validator}等があります。@code{src/libobj.scm}を
 読めば、クラス自身がGaucheでどのように定義されているかがわかります。
 メタオブジェクトプロトコルの更に詳しいことについては、
 @ref{mop,[MOP],MOP}が参考になります。

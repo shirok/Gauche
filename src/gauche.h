@@ -811,6 +811,7 @@ SCM_EXTERN ScmObj Scm_VMSlotBoundP(ScmObj obj, ScmObj slot);
 
 /* built-in classes */
 SCM_CLASS_DECL(Scm_TopClass);
+SCM_CLASS_DECL(Scm_BottomClass);
 SCM_CLASS_DECL(Scm_BoolClass);
 SCM_CLASS_DECL(Scm_CharClass);
 SCM_CLASS_DECL(Scm_ClassClass);
@@ -822,6 +823,7 @@ SCM_CLASS_DECL(Scm_ForeignPointerClass);
 
 
 #define SCM_CLASS_TOP              (&Scm_TopClass)
+#define SCM_CLASS_BOTTOM           (&Scm_BottomClass)
 #define SCM_CLASS_BOOL             (&Scm_BoolClass)
 #define SCM_CLASS_CHAR             (&Scm_CharClass)
 #define SCM_CLASS_CLASS            (&Scm_ClassClass)

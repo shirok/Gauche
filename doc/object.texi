@@ -26,14 +26,13 @@ and so on.
 @c ----------------------------------------------------------------------
 @menu
 * Introduction to the object system::  
-* General Inquiry::             
 * Class::                       
 * Instance::                    
 * Generic function and method::  
 * Metaobject protocol::         
 @end menu
 
-@node Introduction to the object system, General Inquiry, Object system, Object system
+@node Introduction to the object system, Class, Object system, Object system
 @section  Introduction to the object system
 @c NODE オブジェクトシステムの紹介
 
@@ -956,87 +955,8 @@ PostScriptビューワで結果を見てください。
 (with-output-to-file "oointro.ps" shape-sampe)
 @end example
 
-
 @c ----------------------------------------------------------------------
-@node General Inquiry, Class, Introduction to the object system, Object system
-@section  General Inquiry
-@c NODE 一般的な問い合わせ
-
-@defun class-of obj
-@c EN
-Returns a class metaobject of @var{obj}.
-@c JP
-@var{obj}のクラスを返します。
-@c COMMON
-
-@example
-(class-of 3)         @result{} #<class <integer>>
-(class-of "foo")     @result{} #<class <string>>
-(class-of <integer>) @result{} #<class <class>>
-@end example
-@end defun
-
-@defun is-a? obj class
-@c EN
-Returns true if @var{obj} is an instance of @var{class} or an instance
-of descendants of @var{class}.
-@c JP
-@var{obj}が@var{class}のインスタンスであるか、@var{class}のサブクラスの
-インスタンスである場合に、真を返します。
-@c COMMON
-
-@example
-(is-a? 3 <integer>)   @result{} #t
-(is-a? 3 <real>)      @result{} #t
-(is-a? 5+3i <real>)   @result{} #f
-(is-a? :foo <symbol>) @result{} #f
-@end example
-@end defun
-
-@c EN
-If @var{obj}'s class has been redefined, these procedures
-first updates @var{obj} to change its class to the new class.
-So @code{class-of} always returns the new class.
-This behavior is different from stklos 0.55, in which @code{class-of}
-returns an old class if @var{obj} hasn't been updated.
-If you need to get the old class, you should use @code{current-class-of}
-below.  
-See @ref{Class redefinition} for the details of the semantics
-of redefined class.
-@c JP
-@var{obj}のクラスが再定義されてしまうと、これらの手続きは、最初に
-@var{obj}のクラスを新しいクラスに変更します。したがって、@code{class-of} は
-いつも新しいクラスを返します。この振舞いは stklos 0.55 とは異ります。
-stklos 0.55 では @code{class-of}は、@var{obj}が更新されていなければ、
-旧いクラスを返します。もし、旧いクラスが必要なばあいは、以下の
-@code{current-class-of} を使うべきです。クラス再定義のセマンティクスの
-詳細については @ref{Class redefinition} を見てください。
-@c COMMON
-
-@defun current-class-of obj
-@c EN
-Returns a class metaobject of @var{obj}.  If @var{obj}'s class
-has been redefined, but @var{obj} is not updated for the change,
-then this procedure returns the original class of @var{obj}
-without updating @var{obj}.
-
-You need this procedure in rare occasions, such as within
-@code{change-class} method, in which you don't want to trigger
-updating @var{obj} (which would cause infinite loop).
-@c JP
-@var{obj} のクラスメタオブジェクトを返します。@var{obj} のクラスが
-再定義されてしまった場合でも、@var{obj} がその変更に合せて更新されて
-いない場合には、この手続きは @var{obj} の元のクラスを返します。
-この手続きは、@var{obj} を更新しません。
-
-この手続きはめったに必要にはなりません。必要になるのは @code{change-class}
-メソッド内で、@var{obj} の更新のトリガーを引きたくないような場合
-(無限ループを起す可能性がある場合)です。
-@c COMMON
-@end defun
-
-@c ----------------------------------------------------------------------
-@node Class, Instance, General Inquiry, Object system
+@node Class, Instance, Introduction to the object system, Object system
 @section Class
 @c NODE クラス
 
@@ -2614,6 +2534,28 @@ The default method just signals an error.
 @c JP
 @subsubheading 特殊アクセサ
 @c COMMON
+
+@defun current-class-of obj
+@c EN
+Returns a class metaobject of @var{obj}.  If @var{obj}'s class
+has been redefined, but @var{obj} is not updated for the change,
+then this procedure returns the original class of @var{obj}
+without updating @var{obj}.
+
+You need this procedure in rare occasions, such as within
+@code{change-class} method, in which you don't want to trigger
+updating @var{obj} (which would cause infinite loop).
+@c JP
+@var{obj} のクラスメタオブジェクトを返します。@var{obj} のクラスが
+再定義されてしまった場合でも、@var{obj} がその変更に合せて更新されて
+いない場合には、この手続きは @var{obj} の元のクラスを返します。
+この手続きは、@var{obj} を更新しません。
+
+この手続きはめったに必要にはなりません。必要になるのは @code{change-class}
+メソッド内で、@var{obj} の更新のトリガーを引きたくないような場合
+(無限ループを起す可能性がある場合)です。
+@c COMMON
+@end defun
 
 @defun class-slot-ref class slot-name
 @defunx class-slot-set! class slot-name obj

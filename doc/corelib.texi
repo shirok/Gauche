@@ -4,6 +4,7 @@
 
 @c ----------------------------------------------------------------------
 @menu
+* Types and classes::           
 * Equivalence::                 
 * Numbers::                     
 * Booleans::                    
@@ -31,7 +32,167 @@
 * Development helper API::      
 @end menu
 
-@node Equivalence, Numbers, Core library, Core library
+@node Types and classes, Equivalence, Core library, Core library
+@section Types and classes
+@c NODE 型とクラス
+
+@c EN
+Scheme is a dynamically and strongly typed language.  That is,
+every value @emph{knows} its type at run-time, and the type
+determines what kind of operations can be applied on the value.
+@c JP
+Schemeは動的な強い型付けの言語です。つまり、全ての値は
+実行時に自分の型を知っていて、その型が値に適用できる操作を決定します。
+@c COMMON
+
+@c EN
+In Gauche, @emph{classes} are used to describe types.
+A class is also an object you can handle at runtime.
+You can also create a new class in order to have objects
+with distinct types.
+@c JP
+Gaucheでは、@emph{クラス}によって型を記述します。クラス自身もオブジェクトであり、
+実行時に取り扱うことができます。新たなクラスを作成することで、
+既存の型とは異なるユーザ定義型を使うことができます。
+@c COMMON
+
+@c EN
+In this section we introduce the most basic interface
+to the Gauche's type system.
+@xref{Object system}, for the details of
+how to define your own classes and creates values (instances).
+@c JP
+この節ではもっとも基本的な型システムへのインタフェースを説明します。
+新たなクラスを定義し、そのインスタンスを作る方法については
+@ref{Object system}を参照してください。
+@c COMMON
+
+@c EN
+Predefined classes are bound to a global variable; Gauche's
+convention is to name the variable that holds a class
+with brackets @code{<} and @code{>}, e.g. @code{<string>}.
+(It's nothing syntactically special with these brackets; they're valid
+characters to consist of variable names).
+We'll introduce classes for each built-in type as we go through
+this chapter.  Here are a few basic classes to start with:
+@c JP
+あらかじめ定義されているクラスはグローバル変数に束縛されています。Gaucheでの
+慣習として、クラスを格納している変数は@code{<string>}のように
+@code{<}と@code{>}で囲まれた名前を持ちます。
+(この@code{<}や@code{>}は文法的には何ら特別な意味を持ちません。
+普通に変数名として使える文字です)。
+組み込みの型に対応するクラスについては、この章の中で順に紹介してゆきます。
+まずは次のいくつかのクラスから始めましょう。
+@c COMMON
+
+@deftp {Builtin Class} <top>
+@clindex top
+@c EN
+This class represents the supertype of all the types in Gauche.
+That is, for any class @code{X}, @code{(subtype? X <top>)} is @code{#t},
+and for any object @code{x}, @code{(is-a? x <top>)} is @code{#t}.
+@c JP
+全ての型のスーパータイプを表現するクラスです。
+つまり、どんなクラス@code{X}に対しても@code{(subtype? X <top>)}は@code{#t}であり、
+どんなオブジェクト@code{x}に対しても@code{(is-a? x <top>)}は@code{#t}です。
+@c COMMON
+@end deftp
+
+@deftp {Builtin Class} <bottom>
+@clindex bottom
+@c EN
+This class represents the subtype of all the types in Gauche.
+For any class @code{X}, @code{(subtype? <bottom> X)} is @code{#t},
+and for any object @code{x}, @code{(is-a? x <bottom>)} is @code{#f}.
+@c JP
+全ての型のサブタイプを表現するクラスです。
+どんなクラス@code{X}に対しても@code{(subtype? <bottom> X)}は@code{#t}であり、
+どんなオブジェクト@code{x}に対しても@code{(is-a? x <bottom>)}は@code{#f}です。
+@c COMMON
+@end deftp
+
+@deftp {Builtin Class} <object>
+@clindex object
+@c EN
+This class represents a supertype of all user-defined classes.
+@c JP
+このクラスは、ユーザ定義されたクラスのスーパータイプを表現するクラスです。
+@c COMMON
+@end deftp
+
+@defun class-of obj
+@c EN
+Returns a class metaobject of @var{obj}.
+@c JP
+@var{obj}のクラスを返します。
+@c COMMON
+
+@example
+(class-of 3)         @result{} #<class <integer>>
+(class-of "foo")     @result{} #<class <string>>
+(class-of <integer>) @result{} #<class <class>>
+@end example
+
+@c EN
+Note: In Gauche, you can redefine exsting user-defined classes.
+If the new definition has different configuration of the instance,
+@code{class-of} on existing instance triggers instance updates;
+@xref{Class redefinition} for the details.  Using
+@code{current-class-of} supresses instance updates
+(@xref{Accessing instance}).
+@c JP
+註: Gaucheでは、ユーザ定義クラスを再定義することができます。
+新たな定義でインスタンスの構造が変更された場合、以前のクラスか作られた
+インスタンスに@code{class-of}を適用すると、インスタンスが新しいクラスに
+適合するようにアップデートされます。詳しくは@ref{Class redefinition}を参照して
+ください。インスタンスアップデートを避けるには@code{current-class-of}を
+使います(@ref{Accessing instance}参照)。
+@c COMMON
+@end defun
+
+@defun is-a? obj class
+@c EN
+Returns true if @var{obj} is an instance of @var{class} or an instance
+of descendants of @var{class}.
+@c JP
+@var{obj}が@var{class}のインスタンスであるか、@var{class}のサブクラスの
+インスタンスである場合に、真を返します。
+@c COMMON
+
+@example
+(is-a? 3 <integer>)   @result{} #t
+(is-a? 3 <real>)      @result{} #t
+(is-a? 5+3i <real>)   @result{} #f
+(is-a? :foo <symbol>) @result{} #f
+@end example
+
+@c EN
+Note: If @var{obj}'s class has been redefined, @code{is-a?} also
+triggers instance update.
+See @ref{Class redefinition} for the details.
+@c JP
+註：@var{obj}のクラスが再定義されていた場合、@code{is-a?}はインスタンスアップデートを
+トリガします。@ref{Class redefinition}を参照してください。
+@c COMMON
+@end defun
+
+@defun subtype? sub super
+@c EN
+Returns @code{#t} if a class @var{sub} is a subclass of a class @var{super}
+(includes the case that @var{sub} is @var{super}).
+Otherwise, returns @code{#f}.
+
+(The name @code{subtype?} is taken from Common Lisp's procedure
+@code{subtypep}.)
+@c JP
+クラス@var{sub}がクラス@var{super}のサブクラスであれば(@var{sub}と@var{super}が
+同じである場合も含め)@code{#t}を、そうでなければ@code{#f}を返します。
+
+(@code{subtype?}という名前はCommon Lispの@code{subtypep}から来ています)。
+@c COMMON
+@end defun
+
+@node Equivalence, Numbers, Types and classes, Core library
 @section Equivalence
 @c NODE 等価
 
@@ -7901,19 +8062,79 @@ expressions are applicable to a string (@xref{Regular expressions}).
 @c COMMON
 
 @c EN
-Traditional Scheme procedures (such as ones created by @code{lambda})
-only cares the number of arguments but not their types; to check
-applicablity of such procedures, just pass @code{<top>} as the argument
-types.
+For generic functions, @code{applicable?} returns @code{#t} if it has
+at least one method such that each of its specifiers is a superclass
+of the corresponding @var{class} argument given to @code{applicable?}.
 @c JP
-@code{lambda}で作られるような通常のScheme手続きは、引数の型は何でも良く、
-個数だけが問題となります。そういった手続きをテストするには、
-引数の型として@code{<top>}を渡してください。
+ジェネリックファンクションに対しては、
+渡された@var{class}引数それぞれが、対応する特定化子と一致するかサブクラスになっている
+ようなメソッドが最低ひとつあれば、@code{applicable?}は@code{#t}を返します。
+@c COMMON
+
+@example
+(define-method foo ((x <sequence>) (y <integer>)) #f)
+
+(applicable? foo <sequence> <integer>) @result{} #t
+(applicable? foo <string> <integer>) @result{} #t
+(applicable? foo <hash-table> <integer>) @result{} #f
+(applicable? foo <string> <real>) @result{} #f
+@end example
+
+@c EN
+The second example returns @code{#t} since @code{<string>} is
+a subclass of @code{<sequence>}, while 
+the third example returns @code{#f} since @code{<hash-table>}
+isn't a subclass of @code{<sequence>}.  The fource example
+returns @code{#f} since @code{<real>} isn't a subclass of @code{<integer>}.
+@c JP
+2番目の例では、@code{<string>}は@code{<sequence>}のサブクラスなので
+@code{#t}が返ります。一方、3番目の例では@code{<hash-table>}は
+@code{<sequence>}のサブクラスではないので@code{#f}となります。
+4番めの例が@code{#f}なのは、@code{<real>}が@code{<integer>}のサブクラスではないからです。
+@c COMMON
+
+@c EN
+Traditional Scheme procedures (such as ones created by @code{lambda})
+only cares the number of arguments but not their types; it accepts
+any type as far as the number of arguments matches.  To check such
+a condition, pass @code{<top>} as the argument class.  (@code{<top>} is
+a superclass of all classes.)
+@c JP
+伝統的なSchemeの手続き (@code{lambda}で作られるようなもの) は
+引数の数のみで呼び出し可能かどうかが判断されます。オブジェクトが
+引数の型にかかわらず、特定の個数の引数を取るかどうかを判定するには、
+@var{class}引数に@code{<top>}を渡します。(@code{<top>}は
+全てのクラスのスーパークラスです。)
 @c COMMON
 
 @example
 (applicable? cons <top> <top>) @result{} #t
 @end example
+
+@c EN
+If you want to check an object is applicable to a certain
+number of @emph{some} class of arguments, you can pass @code{<bottom>}
+as the argument class instead.   (@code{<bottom>} is a subclass of all
+classes.)
+@c JP
+逆に、@emph{何らかの}特定の型の引数を取るかどうかを調べたい場合は、
+@code{<bottom>}を渡してください。(@code{<bottom>}は全てのクラスのサブクラスです。)
+@c COMMON
+
+@example
+(define-method foo ((x <sequence>) (y <integer>)) #f)
+
+(applicable? foo <top> <top>) @result{} #f
+(applicable? foo <bottom> <bottom>) @result{} #t
+@end example
+
+@c EN
+@xref{Types and classes}, for the details of @code{<top>}, @code{<bottom>} and
+Gauche's type handling.
+@c JP
+@code{<top>}, @code{<bottom>}クラスおよびGaucheでの型の扱いについては
+@ref{Types and classes}を参照してください。
+@c COMMON
 @end defun
 
 @node Universal accessor, Combinators, Procedure class and applicability, Procedures and continuations
