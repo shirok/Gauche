@@ -12700,24 +12700,29 @@ env GAUCHE_TEST_REPORT_ERROR=1 gosh mytest.scm
 @subheading モジュールのテスト
 @c COMMON
 
-@defun test-module module :key allow-undefined
+@defun test-module module :key allow-undefined bypass-arity-check
 @c EN
 @var{Module} must be a symbol module name or a module.
 This procedure performs some heuristic consistency check of
 the given module: (1) whether symbols set as autoload
 in @var{module} can actually be loaded, (2) whether
 the symbols declared in export list is actually defined
-in the module, and (3) whether the global variable referenced
-within functions are all defined.   Although not perfect, 
-this test can catch some careless typo in symbol names.
+in the module, (3) whether the global variable referenced
+within functions are all defined, and (4) if a global variable
+is used as a function, whether the number of arguments given to it
+is consistent to the actual function.
+Although not perfect, 
+this test can catch some careless misses.
 @c JP
 @var{Module}はモジュール名のシンボルかモジュールでなければなりません。
 この手続きはモジュール@var{module}に関していくつかの経験的な一貫性チェックを
 行います：(1) autoloadに設定されたシンボルがちゃんとロードできるか、
 (2) exportにリストされたシンボルがモジュール内で定義されているか、
-(3) 関数中で参照されているグローバル変数が全て定義されたものであるか。
+(3) 関数中で参照されているグローバル変数が全て定義されたものであるか、
+(4) グローバル変数が関数として呼ばれている場合、渡されている引数の個数が
+関数の定義に沿ったものであるか。
 この手続きは完璧ではないものの、
-ケアレスミスによる名前の綴り間違いを発見することができます。
+ケアレスミスを発見することができます。
 @c COMMON
 
 @c EN
@@ -12737,6 +12742,26 @@ keyword argument; the test will excludes them from the check.
 そのようなロジックを追わないため、未定義変数の参照を報告して
 しまいます。そのような場合は、チェックから外す変数名のリストを
 @var{allow-undefined}キーワード引数に渡して下さい。
+@c COMMON
+
+@c EN
+The arity check may also raise false positives, if the module
+count on a behavior of global procedures that will be modified
+after the module is loaded (e.g. a method with different number
+of arguments can be added to a generic function after the module
+is loaded, which would make the code valid.)  If you know
+you're doing right thing and need to suppress the false positives,
+pass a list of names of the functions to @code{bypass-arity-check}
+keyword arguments.
+@c JP
+引数の個数のチェックも、偽陽性のエラーをあげる可能性があります。
+モジュールがロードされた後のグローバルな関数の変更を当てにしている場合などです
+(例えば、コード中であるジェネリックファンクションに渡されている引数の個数が、
+モジュールのロード時点では不正なものだったとしても、そのコードが実行される
+までに該当引数のメソッドが追加されれば、正しいコードとなるわけです)。
+自分のコードは確かに正しく、チェックが誤りであるような場合は、
+該当関数の名前のリストを@code{bypass-arity-check}キーワード引数に
+渡してください。
 @c COMMON
 @end defun
 

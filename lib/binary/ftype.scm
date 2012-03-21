@@ -249,7 +249,7 @@
                           endian
                           (rec (fobject-get uv pos endian)
                             (%check-size ftype uv pos 'src)
-                            (%make-fobject ftype uv pos endian))
+                            (%make-fobject ftype uv pos))
                           (rec (fobject-put! uv pos val endian)
                             (%check-size ftype uv pos 'dest)
                             (let1 off (fobject-offset val)

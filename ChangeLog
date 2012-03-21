@@ -1,5 +1,10 @@
 2012-03-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/test.scm (test-module): Added a feature to check arity
+	  of global procedures, based on the patch by Masahiro Hayashi.
+	* lib/rfc/ip.scm, lib/binary/ftype.scm: Fixed bugs catched by the
+	  above check.
+
 	* src/class.c (<bottom>), src/libobj.scm (subtype?): Added the bottom
 	  type <bottom>, and type relation predicate subtype?.  <bottom> is
 	  needed for applicable? to be useful.

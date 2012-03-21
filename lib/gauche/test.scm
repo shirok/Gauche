@@ -164,7 +164,7 @@
              (sys-access *test-record-file* F_OK)) ; avoid file-exists? to trigger autoload
     (with-input-from-file *test-record-file*
       (lambda ()
-        (let ((m (rxmatch #/Total:\s+(\d+)\s+tests,\s+(\d+)\s+passed,\s+(\d+)\s+failed,\s+(\d+)\s+aborted/ (read-line))))
+        (let [(m (rxmatch #/Total:\s+(\d+)\s+tests,\s+(\d+)\s+passed,\s+(\d+)\s+failed,\s+(\d+)\s+aborted/ (read-line)))]
           (when m
             (for-each (lambda (i)
                         (vector-set! *test-counts* i
@@ -173,7 +173,7 @@
                       '(0 1 2 3)))))))
   ;; We write out aborted+1, in case if the test process fails before test-end
   ;; For normal case, it will be overwritten by test-end.
-  (let ((orig-abort (vector-ref *test-counts* 3)))
+  (let ([orig-abort (vector-ref *test-counts* 3)])
     (vector-set! *test-counts* 3 (+ orig-abort 1))
     (write-summary)
     (vector-set! *test-counts* 3 orig-abort)))
@@ -187,22 +187,22 @@
 
 ;; Tests ------------------------------------------------------------
 
-;; Primitive test.  This doesn't use neither with-error-handler nor
+;; Primitive test.  This uses neither with-error-handler nor the
 ;; object system, so it can be used _before_ those constructs are tested.
 (define (prim-test msg expect thunk . compare)
-  (let ((cmp (if (pair? compare) (car compare) test-check)))
+  (let ([cmp (if (pair? compare) (car compare) test-check)])
     (format/ss #t "test ~a, expects ~s ==> " msg expect)
     (flush)
     (test-count++)
-    (let ((r (thunk)))
-      (cond ((cmp expect r)
+    (let ([r (thunk)])
+      (cond [(cmp expect r)
              (format #t "ok\n")
-             (test-pass++))
-            (else
+             (test-pass++)]
+            [else
              (format/ss #t "ERROR: GOT ~S\n" r)
              (set! *discrepancy-list*
                    (cons (list msg expect r) *discrepancy-list*))
-             (test-fail++)))
+             (test-fail++)])
       (flush)
       )))
 
@@ -210,14 +210,14 @@
 (define (test msg expect thunk . compare)
   (apply prim-test msg expect
          (lambda ()
-           (guard (e (else
+           (guard (e [else
                       (when *test-report-error*
                         (report-error e))
                       (make <test-error>
                         :class (class-of e)
                         :message (if (is-a? e <message-condition>)
                                    (ref e 'message)
-                                   e))))
+                                   e))])
              (thunk)))
          compare))
 
@@ -229,10 +229,11 @@
 
 ;; Try to catch careless typos.  Suggested by Kimura Fuyuki.
 ;; The toplevel undefined variable screening is suggested by Kazuki Tsujimoto.
-;; Keyword argument :allow-undefined may take a list of symbols, which
-;; is excluded from undefined variable check.
+;; Keyword argument :allow-undefined takes a list of symbols, which
+;; is excluded from undefined variable check.  Keyword argument
+;; :bypass-arity-check takes a list of symbols that bypasses arity check.
 
-(define (test-module module :key (allow-undefined '()))
+(define (test-module module :key (allow-undefined '()) (bypass-arity-check '()))
   (test-count++)
   (let1 mod (cond [(module? module) module]
                   [(symbol? module)
@@ -242,10 +243,11 @@
                    (error "test-module requires module or symbol, but got"
                           module)])
     (format #t "testing bindings in ~a ... " mod) (flush)
-    (let ((bad-autoload '())
-          (bad-export '())
-          (bad-gref '())
-          (report '()))
+    (let ([bad-autoload '()]
+          [bad-export '()]
+          [bad-gref '()]
+          [bad-arity '()]
+          [report '()])
       ;; 1. Check if there's no dangling autoloads.
       (hash-table-for-each (module-table mod)
                            (lambda (sym val)
@@ -254,17 +256,22 @@
       ;; 2. Check if all exported symbols are properly defined.
       (when (pair? (module-exports mod))
         (for-each (lambda (sym)
-                    (guard (_ (else (push! bad-export sym)))
+                    (guard (_ [else (push! bad-export sym)])
                       (global-variable-ref mod sym)))
                   (module-exports mod)))
-      ;; 3. Check if all global references are resolvable.
+      ;; 3. Check if all global references are resolvable, and if it is
+      ;; called, gets valid number of arguments.
       (for-each
        (lambda (closure)
-         (for-each (lambda (gref)
-                     (cond ((and (not (memq (slot-ref gref 'name)
-                                            allow-undefined))
-                                 (dangling-gref? gref closure))
-                            => (lambda (bad) (push! bad-gref bad)))))
+         (for-each (lambda (arg)
+                     (let ([gref (car arg)]
+                           [numargs (cadr arg)])
+                       (cond [(memq (slot-ref gref 'name) allow-undefined)]
+                             [(dangling-gref? gref closure)
+                              => (lambda (bad) (push! bad-gref bad))]
+                             [(memq (slot-ref gref 'name) bypass-arity-check)]
+                             [(arity-invalid? gref numargs closure)
+                              => (lambda (bad) (push! bad-arity bad))])))
                    (closure-grefs closure)))
        (toplevel-closures mod))
       ;; report discrepancies
@@ -282,11 +289,20 @@
                                            (format "~a(~a)" (car z) (cdr z)))
                                          bad-gref)
                                     ", "))))
+      (unless (null? bad-arity)
+        (unless (null? report) (push! report " AND "))
+        (push! report
+               (format "procedures received wrong number of argument: ~a"
+                       (string-join (map (lambda (z)
+                                           (format "~a(~a) got ~a"
+                                                   (car z) (cadr z) (caddr z)))
+                                         bad-arity)
+                                    ", "))))
       (cond
        [(null? report) (test-pass++) (format #t "ok\n")]
        [else
         (test-fail++)
-        (let ((s (apply string-append report)))
+        (let ([s (apply string-append report)])
           (format #t "ERROR: ~a\n" s)
           (set! *discrepancy-list*
                 (cons (list (format #f "bindings in module ~a" (module-name mod))
@@ -315,18 +331,40 @@
                   (global-variable-ref module sym #f))
                 (hash-table-keys (module-table module)))))
 
+;; Combs closure's instruction list to extract references for the global
+;; identifiers.  If it is a call to the global function, we also picks
+;; up the number of arguments, so that we can check it against arity.
+;; Returns ((<identifier> <num-args>) ...)
 (define (closure-grefs closure)
   (define code->list (with-module gauche.internal vm-code->list))
-  (let loop ((r '())
-             (code (code->list (closure-code closure))))
+  (define (gref-numargs code) (cadr code))
+  (let loop ([r '()] [code (code->list (closure-code closure))])
     (cond [(null? code) r]
+          [(and (pair? (car code))
+                (memq (caar code) '(GREF-CALL GREF-TAIL-CALL)))
+           (if (pair? (cdr code))
+             (if (identifier? (cadr code))
+               (loop `((,(cadr code) ,(gref-numargs (car code))) ,@r)
+                     (cddr code))
+               (loop r (cddr code)))    ;skip #<gloc>
+             (loop r '()))]
           [(identifier? (car code))
-           (loop (cons (car code) r) (cdr code))]
+           (loop `((,(car code) #f) ,@r) (cdr code))]
           [(is-a? (car code) <compiled-code>)
            (loop (loop r (code->list (car code))) (cdr code))]
-          [(list? (car code)) ; for operand of LOCAL-ENV-CLOSURES
+          [(list? (car code)) ; for the operand of LOCAL-ENV-CLOSURES
            (loop (loop r (car code)) (cdr code))]
           [else (loop r (cdr code))])))
+
+(define (arity-invalid? gref numargs closure)
+  (and-let* ([ numargs ]
+             [proc (global-variable-ref
+                    (slot-ref gref 'module)
+                    (slot-ref gref 'name))]
+             [ (not (apply applicable? proc (make-list numargs <bottom>))) ])
+    (list (slot-ref gref 'name)
+          (slot-ref closure 'info)
+          numargs)))
 
 (define (dangling-gref? ident closure)
   (and (not ((with-module gauche.internal find-binding)

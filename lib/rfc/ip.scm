@@ -70,7 +70,7 @@
      ((6) ,v6)
      (else 
       (errorf "unknown IP protocol version ~a in packet ~s"
-              (ip-version ,packet) ,packet))))
+              (ip-version ,packet ,offset) ,packet))))
   
 (define (ip-header-length packet offset)
   (if-v4 packet offset
