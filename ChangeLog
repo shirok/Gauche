@@ -1,5 +1,8 @@
 2012-03-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/cookie.scm (parse-av-pairs): RFC2616 allows period
+	  appear in cookie attr name.  Fixed.  (Patch from Kirill Zorin).
+
 	* libsrc/gauche/parameter.scm (object-apply): Splitted methods for
 	  getter and setter; it makes arity checking work better.
 

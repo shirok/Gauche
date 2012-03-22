@@ -62,8 +62,8 @@
 (define (parse-av-pairs input version)
   (define attr-regexp
     (if (= version 0)
-      #/\s*([\w$_-]+)\s*([=\;]\s*)?/
-      #/\s*([\w$_-]+)\s*([=\;,]\s*)?/))
+      #/\s*([\w$_.-]+)\s*([=\;]\s*)?/
+      #/\s*([\w$_.-]+)\s*([=\;,]\s*)?/))
   (define attr-delim
     (if (= version 0) #\; #[,\;]))
   
