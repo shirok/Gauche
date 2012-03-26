@@ -113,8 +113,7 @@
    (^[method code headers body]
      (and-let* ([loc (rfc822-header-ref headers "location")])
        (case (x->integer code)
-         [(300) `(,method . ,loc)]      ;multiple choices
-         [(301 307)                     ;moved permanently / temporary redirect
+         [(300 301 305 307)
           (case method [(GET HEAD) `(,method . ,loc)] [else #f])]
          [(302 303)                     ;found / see other
           ;; See rfc2616 notes - the agent isn't supposed to automatically
@@ -123,7 +122,6 @@
           (case method
             [(GET HEAD) `(,method . ,loc)]
             [else `(GET . ,loc)])]
-         [(305) `(,method . ,loc)]      ;use proxy
          [else #f])))))
 
 ;;==============================================================

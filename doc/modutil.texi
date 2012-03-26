@@ -7887,15 +7887,7 @@ The default behavior is as follows:
 @c COMMON
 
 @table @code
-@item 300
-@c EN
-Redirect to the url given to the @code{location} header with the original
-method.
-@c JP
-元のリクエストと同じメソッドを使って、@code{location}ヘッダに与えられたURLにリダイレクト
-します。
-@c COMMON
-@item 301
+@item 300, 301, 305, 307
 @c EN
 Redirect to the url given to the @code{location} header only if
 the original request method is @code{GET} or @code{HEAD}.
@@ -7930,22 +7922,6 @@ Otherwise, @code{GET} method is used.
 @code{location}ヘッダに与えられたURLにリダイレクトします。
 元が@code{HEAD}リクエストなら@code{HEAD}を、それ以外なら@code{GET}リクエストを
 使います。
-@c COMMON
-@item 305
-@c EN
-Redirect to the url given to the @code{location} header with the original
-method.
-@c JP
-元のリクエストと同じメソッドを使って、@code{location}ヘッダに与えられたURLにリダイレクト
-します。
-@c COMMON
-@item 307
-@c EN
-Redirect to the url given to the @code{location} header only if
-the original request method is @code{GET} or @code{HEAD}.
-@c JP
-元のリクエストが@code{GET}か@code{HEAD}の場合に限り、同じリクエストを使って
-@code{location}ヘッダに与えられたURLにリダイレクトします。
 @c COMMON
 @item other than above
 @c EN
