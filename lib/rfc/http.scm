@@ -72,6 +72,7 @@
           
           http-get http-head http-post http-put http-delete
           http-default-auth-handler
+          http-default-redirect-handler
 
           http-secure-connection-available?
           )
@@ -104,6 +105,26 @@
 ;; global proxy settings.  can be overridden by :proxy keyword
 ;; argument.
 (define http-proxy (make-parameter #f))
+
+;; The default redirect handler
+;;  
+(define http-default-redirect-handler
+  (make-parameter
+   (^[method code headers body]
+     (and-let* ([loc (rfc822-header-ref headers "location")])
+       (case (x->integer code)
+         [(300) `(,method . ,loc)]      ;multiple choices
+         [(301 307)                     ;moved permanently / temporary redirect
+          (case method [(GET HEAD) `(,method . ,loc)] [else #f])]
+         [(302 303)                     ;found / see other
+          ;; See rfc2616 notes - the agent isn't supposed to automatically
+          ;; redirect 302 response of POST, but redirect with GET for it is
+          ;; the de-facto behavior.
+          (case method
+            [(GET HEAD) `(,method . ,loc)]
+            [else `(GET . ,loc)])]
+         [(305) `(,method . ,loc)]      ;use proxy
+         [else #f])))))
 
 ;;==============================================================
 ;; Higher-level API
@@ -179,17 +200,29 @@
 ;;
 ;;   host    - the host name passed to the 'host' header field.
 ;;   secure  - if true, using secure connection (via gauche.tls).
-;;   no-redirect - if true, the procedures won't attempt to issue
-;;             the request specified by 3xx response headers.
 ;;   auth-user, auth-password, auth-handler - authentication parameters.
 ;;   request-encoding - when http-* is to construct request-uri and/or
 ;;             request body, this argument specifies the character encoding
 ;;             to be used as the external encoding.
+;;   redirect-handler - Called if the server responds with 3xx status.
+;;             The argument is the request method, a status code, list of
+;;             headers and response body (can be #f).  It may return a
+;;             (METHOD . URL) or #f.   For the first case,
+;;             http-request re-attempts to fetch the URL with the given method.
+;;             (unless we're not looping).  If it returns #f, the original
+;;             code, headers and body are returned from http-request.
+;;             If given #t (default), the procedure bound to the parameter
+;;             http-default-redirect-handler is called.
+;;   no-redirect - If true, we ignore the value of redirect-handler and
+;;             returns without attempting retrying.
+;;             This is provided for the backward compatibility; newer code
+;;             should use :redirect-handler #f
 ;;
 ;; Other unrecognized options are passed as request headers.
 
 (define (http-request method server request-uri
                       :key (host #f)
+                           (redirect-handler #t)
                            (no-redirect #f)
                            auth-handler
                            auth-user
@@ -206,20 +239,28 @@
                                 proxy secure extra-headers)
     (let loop ([history '()]
                [host host]
+               [method method]
                [request-uri (ensure-request-uri request-uri enc)])
       (receive (code headers body)
           (request-response method conn host request-uri sender receiver
                             `(:user-agent ,user-agent ,@opts) enc)
         (or (and-let* ([ (not no-redirect) ]
                        [ (string-prefix? "3" code) ]
-                       [loc (assoc "location" headers)])
+                       [h (case redirect-handler
+                            [(#t) (http-default-redirect-handler)]
+                            [(#f) #f]
+                            [else => identity])]
+                       [r (h method code headers body)]
+                       [method (car r)]
+                       [loc (cdr r)])
               (receive (uri proto new-server path*)
-                  (canonical-uri conn (cadr loc) (ref conn'server))
+                  (canonical-uri conn loc (ref conn'server))
                 (when (or (member uri history)
                           (> (length history) 20))
                   (errorf <http-error> "redirection is looping via ~a" uri))
                 (loop (cons uri history)
                       (ref (redirect conn proto new-server)'server)
+                      method
                       path*)))
             (values code headers body))))))
 

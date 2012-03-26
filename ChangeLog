@@ -1,3 +1,9 @@
+2012-03-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (http-request, http-default-redirect-handler):
+	  Fixed the behavior of redirection for 3xx responses, and made it
+	  customizable.
+
 2012-03-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/cookie.scm (parse-av-pairs): RFC2616 allows period

@@ -7411,27 +7411,33 @@ header fields.  Inherits @code{<error>}.
 @c COMMON
 @end deftp
 
-@defun http-get server request-uri :key sink flusher no-redirect secure @dots{}
-@defunx http-head server request-uri :key no-redirect secure @dots{}
-@defunx http-post server request-uri body :key sink flusher no-redirect secure @dots{}
-@defunx http-put server request-uri body :key sink flusher secure @dots{}
-@defunx http-delete server request-uri :key sink flusher secure @dots{}
+@defun http-get server request-uri :key sink flusher redirect-handler secure @dots{}
+@defunx http-head server request-uri :key redirect-handler secure @dots{}
+@defunx http-post server request-uri body :key sink flusher redirect-handler secure @dots{}
+@defunx http-put server request-uri body :key sink flusher redirect-handler secure @dots{}
+@defunx http-delete server request-uri :key sink flusher redirect-handler secure @dots{}
 
 @c EN
 Send http GET, HEAD, POST, PUT and DELETE requests to the http @var{server},
 respectively, and returns the server's reply.
 
-If the server returns "3xx" redirection reply, these procedures
-try to follow the URI returned in the "location" reply message header
-by default.  See the "keyword arguments" heading below to suppress
-redirection following.
+By default, if the server returns 300, 301, 302, 303, 305 and 307 status,
+these procedures attempts to fetch the redirected URL by the
+"location" reply message header if it is allowed by RFC2616.
+This behavior can be turned off or customized by the @var{redirect-handler}
+keyword argument; 
+see the "keyword arguments" heading below for the details.
 @c JP
 @var{server}に、それぞれHTTPのGET、HEAD、POST、PUT、DELETEリクエストを送り、
 サーバの応答を返します。
 
-サーバが "3xx" のリダイレクトを指示する応答を返した場合、これらの手続きは
-デフォルトで、応答のメッセージヘッダの "location" で返されるURIに従うよう
-試みます。リダイレクションを抑制するには、下の"キーワード引数"を参照してください。
+デフォルトでは、
+サーバがステータスコード 300, 301, 302, 303, 305 の応答を返し、
+RFC2616による自動リダイレクトが許されている場合は、
+これらの手続きは自動的に応答のメッセージヘッダの "location" で返されるURIに対して
+リクエストを再送します。
+この動作は@var{redirect-handler}キーワード引数でカスタマイズしたり
+抑制したりできます。下の"キーワード引数"を参照してください。
 @c COMMON
 
 @c EN
@@ -7704,13 +7710,74 @@ httpプロキシサーバを、@code{hostname}または@code{hostname:port}形�
 文字列で指定します。省略された場合、パラメータ@code{http-proxy}の値が
 使われます。
 @c COMMON
+@item redirect-handler
+@c EN
+Specifies how the redirection is handled when the server responds with
+3xx status code.
+You can pass @code{#f}, @code{#t} or a procedure.  The default is @code{#t}.
+
+If @code{#f} is given, no redirect attempt will be made; the 3xx status
+code and response is just returned from @code{http-*} procedures as they are.
+
+If a procedure is given, it is called when the response status code
+is 3xx.  The procedure takes four arguments, the request method (in symbol,
+e.g. @code{GET}), the response status code (in string, e.g. @code{"302"}),
+the parsed response headers and the response body (a string
+if there's a body, or @code{#f} if the response doesn't have a body).
+
+The procedure can return a pair or @code{#f}.
+If it is a pair, it should be @code{(method . url)}, where @var{method}
+is a symbol (e.g. @code{GET}) and @var{url} is a string representing url.
+If a pair is returned, the @code{http-*} procedures tries to send
+the request with the given method (it allows a redirection of POST request
+to be GET, for example).  If it is @code{#f}, no further attempt of
+redirection is made.
+
+If @var{redirect-handler} is @code{#t}, which is the default,
+then it works as if the value of the parameter
+@code{http-default-redirect-handler} is passed to @var{redirect-handler}.
+The parameter contains a procedure with reasonable default behavior.
+See the @code{http-default-redirect-handler} entry below for the details.
+
+A loop in redirection is detected automatically and @code{<http-error>}
+is thrown.
+@c JP
+サーバが3xxステータスコードを返した場合のリダイレクトの処理を指定します。
+@code{#f}, @code{#t}もしくは手続きを渡すことができます。省略時は@code{#t}となります。
+
+@code{#f}が渡された場合は、リダイレクトは処理されません。3xxステータスコードを
+持つレスポンスもそのまま@code{http-*}から返されます。
+
+手続きが渡された場合は、サーバが3xxステータスコードを返すとその手続きが4つの引数で
+呼ばれます。最初の引数はリクエストメソッド(シンボル、例:@code{GET})、
+次がレスポンスステータスコード(文字列、例:@code{"302"})、
+次がパーズされたレスポンスヘッダ、そして最後がレスポンスボディです(レスポンスボディが
+あれば文字列、なければ@code{#f})。
+
+この手続きは、ペアか@code{#f}を返さねばなりません。ペアの場合、それは
+@code{(method . url)}という形で、@var{method}がシンボルによるリクエストメソッド、
+@var{url}が文字列で次にリクエストすべきURLを表します。
+ペアが返されれば、@code{http-*}手続きはそのURLへ、指定されたメソッドでリクエストを
+再送します。(メソッドを返すことで、例えばPOSTリクエストのリダイレクトをGETリクエストに
+置き換えることが可能です)。
+手続きが@code{#f}を返した場合、リダイレクトは行われません。
+
+@var{redirect-handler}が@code{#t}(デフォルト値)の場合、
+パラメータ@code{http-default-redirect-handler}の値が
+@var{redirect-handler}に渡されたかのように振る舞います。
+このパラメータの初期値は、標準的なリダイレクトの振る舞いをする手続きになっています。
+下の@code{http-default-redirect-handler}の項目を参照してください。
+
+リダイレクトのループは自動的に検出され、@code{<http-error>}が投げられます。
+@c COMMON
 @item no-redirect
 @c EN
-If a true value is given, suppress the redirection tracking;
-i.e. the procedures return "3xx" message as is.
+This is an obsoleted keyword argument kept only for the backward
+compatibility.  If a true value is given, it has the same effect
+as specifying @code{#f} to @var{redirect-handler}.
 @c JP
-真の値が与えられた場合、リダイレクションには従わなくなります。すなわち、
-手続きは"3xx"のメッセージをそのまま返します。
+これは互換性のためだけに残されている、古い引数です。真の値を与えると、
+@var{redirect-handler}に@code{#f}を渡したのと同じ効果を持ちます。
 @c COMMON
 @item secure
 @c EN
@@ -7798,6 +7865,114 @@ The default value is @code{#f} (no proxy).
 使われます。デフォルトの値は@code{#f} (プロキシを使用しない) です。
 @c COMMON
 @end deffn
+
+@deffn {Parameter} http-default-redirect-handler :optional value
+@c EN
+Specifies the behavior of redirection if no @code{redirect-handler} keyword
+argument is given to the @code{http-*} procedures.
+If you change this value, it must be a procedure that follows the
+protocol of @code{redirect-handler}; see the description of @code{http-*}
+procedures above.
+@c JP
+@code{http-*}手続きに@code{redirect-handler}キーワード引数が与えられなかった
+場合のデフォルトの動作を指定します。この値を変える場合、それは
+@code{redirect-handler}引数のプロトコルに従う手続きでなければなりません。
+上の@code{http-*}手続きの項目を参照してください。
+@c COMMON
+
+@c EN
+The default behavior is as follows:
+@c JP
+デフォルトの動作は以下の通りです。
+@c COMMON
+
+@table @code
+@item 300
+@c EN
+Redirect to the url given to the @code{location} header with the original
+method.
+@c JP
+元のリクエストと同じメソッドを使って、@code{location}ヘッダに与えられたURLにリダイレクト
+します。
+@c COMMON
+@item 301
+@c EN
+Redirect to the url given to the @code{location} header only if
+the original request method is @code{GET} or @code{HEAD}.
+@c JP
+元のリクエストが@code{GET}か@code{HEAD}の場合に限り、同じリクエストを使って
+@code{location}ヘッダに与えられたURLにリダイレクトします。
+@c COMMON
+@item 302
+@c EN
+Redirect to the url given to the @code{location} header.  If
+the origianl request method is @code{HEAD}, it is used again.
+Otherwise, @code{GET} method is used.
+
+Strictly speaking, this is a violation of RFC2616.  However, as the note
+in RFC2616 says, many user agent do this, so we follow the flock.
+(We may change this in future.)
+@c JP
+@code{location}ヘッダに与えられたURLにリダイレクトします。
+元が@code{HEAD}リクエストなら@code{HEAD}を、それ以外なら@code{GET}リクエストを
+使います。
+
+厳密に言えばこれはRFC2616違反ですが、RFC2616の注記にもあるように、
+多くのユーザエージェントがこの振る舞いをするので、それに合わせてあります。
+(将来は変えるかもしれません。)
+@c COMMON
+@item 303
+@c EN
+Redirect to the url given to the @code{location} header.  If
+the origianl request method is @code{HEAD}, it is used again.
+Otherwise, @code{GET} method is used.
+@c JP
+@code{location}ヘッダに与えられたURLにリダイレクトします。
+元が@code{HEAD}リクエストなら@code{HEAD}を、それ以外なら@code{GET}リクエストを
+使います。
+@c COMMON
+@item 305
+@c EN
+Redirect to the url given to the @code{location} header with the original
+method.
+@c JP
+元のリクエストと同じメソッドを使って、@code{location}ヘッダに与えられたURLにリダイレクト
+します。
+@c COMMON
+@item 307
+@c EN
+Redirect to the url given to the @code{location} header only if
+the original request method is @code{GET} or @code{HEAD}.
+@c JP
+元のリクエストが@code{GET}か@code{HEAD}の場合に限り、同じリクエストを使って
+@code{location}ヘッダに与えられたURLにリダイレクトします。
+@c COMMON
+@item other than above
+@c EN
+No redirection is made.
+@c JP
+リダイレクトしません。
+@c COMMON
+@end table
+
+@c EN
+The following code is an example of intercepting the default
+behavior in a specific request:
+@c JP
+次のコードは、デフォルトの振る舞いを特定のリクエストでインターセプトする例です。
+@c COMMON
+
+@example
+(http-get server uri
+  :redirect-handler
+  (^[method status headers body]
+    (if (and (equal? status "302")
+             (not (member method '(GET HEAD))))
+        #f
+        ((http-default-request-handler) method status headers body))))
+@end example
+@end deffn
+
 
 @defun http-compose-query path params :optional encoding
 A helper procedure to create a request-uri from

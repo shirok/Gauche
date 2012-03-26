@@ -702,9 +702,9 @@ Content-Length: 4349
 (test* "decode" "a%ay" (uri-decode-string "a%ay"))
 (test* "decode" ""     (uri-decode-string ""))
 
-(test* "uri-scheme&specific" '("http" "//www.shiro.dreamhost.com/scheme/")
+(test* "uri-scheme&specific" '("http" "//practical-scheme.net/gauche/")
        (receive r
-           (uri-scheme&specific "http://www.shiro.dreamhost.com/scheme/")
+           (uri-scheme&specific "http://practical-scheme.net/gauche/")
          r))
 
 (test* "uri-scheme&specific" '(#f "/dev/tty")
@@ -1025,6 +1025,27 @@ Content-Length: 4349
            (http-request 'GET #`"localhost:,*http-port*" "/redirect11")
          (cond ((assoc-ref (read-from-string body) "request-uri")
                 => car))))
+
+(test* "http-get (no redirect)" "/redirect12"
+       (receive (code headers body)
+           (http-request 'GET #`"localhost:,*http-port*" "/redirect11"
+                         :redirect-handler #f)
+         (rfc822-header-ref headers "location")))
+
+(test* "http-get (custon redirect)" "/foofoo"
+       (receive (code headers body)
+           (http-request 'GET #`"localhost:,*http-port*" "/redirect11"
+                         :redirect-handler (^[meth code hdrs body]
+                                             `(GET . "/foofoo")))
+         (cond ((assoc-ref (read-from-string body) "request-uri")
+                => car))))
+
+(test* "http-get (custon redirect to HEAD)" #f
+       (receive (code headers body)
+           (http-request 'GET #`"localhost:,*http-port*" "/redirect11"
+                         :redirect-handler (^[meth code hdrs body]
+                                             `(HEAD . "/foofoo")))
+         body))
 
 (test* "http-get (loop)" (test-error <http-error>)
        (http-request 'GET #`"localhost:,*http-port*" "/loop1"))
