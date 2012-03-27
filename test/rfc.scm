@@ -1032,7 +1032,7 @@ Content-Length: 4349
                          :redirect-handler #f)
          (rfc822-header-ref headers "location")))
 
-(test* "http-get (custon redirect)" "/foofoo"
+(test* "http-get (custom redirect)" "/foofoo"
        (receive (code headers body)
            (http-request 'GET #`"localhost:,*http-port*" "/redirect11"
                          :redirect-handler (^[meth code hdrs body]
@@ -1040,7 +1040,7 @@ Content-Length: 4349
          (cond ((assoc-ref (read-from-string body) "request-uri")
                 => car))))
 
-(test* "http-get (custon redirect to HEAD)" #f
+(test* "http-get (custom redirect to HEAD)" #f
        (receive (code headers body)
            (http-request 'GET #`"localhost:,*http-port*" "/redirect11"
                          :redirect-handler (^[meth code hdrs body]
