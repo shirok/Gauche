@@ -71,6 +71,15 @@ static ScmWord boundaryFrameMark = SCM_VM_INSN(SCM_VM_NOP);
 static ScmWord return_code[] = { SCM_VM_INSN(SCM_VM_RET) };
 #define PC_TO_RETURN  return_code
 
+/* A dummy env frame to indicate C Continuation */
+static ScmEnvFrame ccEnvMark = {
+    NULL,                       /* up */
+    SCM_FALSE,                  /* info */
+    0                           /* size */
+};
+
+#define C_CONTINUATION_P(cont)  ((cont)->env == &ccEnvMark)
+
 /* A dummy compiled code structure used as 'fill-in', when Scm_Apply
    is called without any VM code running.  See Scm_Apply below. */
 static ScmCompiledCode internal_apply_compiled_code = 
@@ -422,10 +431,7 @@ static void vm_unregister(ScmVM *vm)
 
 /* Find the stack bottom next to the continuation frame.
    This macro should be applied only if CONT is in stack. */
-#define CONT_FRAME_END(cont)                                            \
-    ((cont)->argp?                                                      \
-     ((ScmObj*)(cont) + CONT_FRAME_SIZE) :          /*Scheme continuation*/ \
-     ((ScmObj*)(cont) + CONT_FRAME_SIZE + (cont)->size)) /*C continuation*/
+#define CONT_FRAME_END(cont)  ((ScmObj*)(cont) + CONT_FRAME_SIZE)
 
 /* check if *pc is an return instruction.  if so, some
    shortcuts are taken. */
@@ -476,7 +482,6 @@ static void vm_unregister(ScmVM *vm)
         ScmContFrame *newcont = (ScmContFrame*)SP;      \
         newcont->prev = CONT;                           \
         newcont->env = ENV;                             \
-        newcont->argp = ARGP;                           \
         newcont->size = (int)(SP - ARGP);               \
         newcont->pc = next_pc;                          \
         newcont->base = BASE;                           \
@@ -485,34 +490,33 @@ static void vm_unregister(ScmVM *vm)
         ARGP = SP;                                      \
     } while (0)
 
-#define CALL_CCONT(p, v, d) p(v, d)
-
 /* pop a continuation frame, i.e. return from a procedure. */
 #define POP_CONT()                                                      \
     do {                                                                \
-        if (CONT->argp == NULL) {                                       \
+        if (C_CONTINUATION_P(CONT)) {                                   \
             void *data__[SCM_CCONT_DATA_SIZE];                          \
             ScmObj v__ = VAL0;                                          \
             ScmCContinuationProc *after__;                              \
             void **d__ = data__;                                        \
-            void **s__ = (void**)((ScmObj*)CONT + CONT_FRAME_SIZE);     \
-            int i__ = CONT->size;                                       \
-            while (i__-- > 0) {                                         \
+            void **s__ = (void**)CONT - CONT->size;                     \
+            while (s__ < (void**)CONT) {                                \
                 *d__++ = *s__++;                                        \
             }                                                           \
             after__ = (ScmCContinuationProc*)CONT->pc;                  \
-            if (IN_STACK_P((ScmObj*)CONT)) SP = (ScmObj*)CONT;          \
-            ENV = CONT->env;                                            \
+            if (IN_STACK_P((ScmObj*)CONT)) {                            \
+                SP = (ScmObj*)CONT - CONT->size;                        \
+            }                                                           \
+            ENV = NULL;                                                 \
             ARGP = SP;                                                  \
             PC = PC_TO_RETURN;                                          \
             BASE = CONT->base;                                          \
             CONT = CONT->prev;                                          \
             SCM_FLONUM_ENSURE_MEM(v__);                                 \
-            VAL0 = CALL_CCONT(after__, v__, data__);                    \
+            VAL0 = after__(v__, data__);                                \
         } else if (IN_STACK_P((ScmObj*)CONT)) {                         \
-            SP   = CONT->argp + CONT->size;                             \
+            SP   = (ScmObj*)CONT;                                       \
             ENV  = CONT->env;                                           \
-            ARGP = CONT->argp;                                          \
+            ARGP = SP - CONT->size;                                     \
             PC   = CONT->pc;                                            \
             BASE = CONT->base;                                          \
             CONT = CONT->prev;                                          \
@@ -522,12 +526,13 @@ static void vm_unregister(ScmVM *vm)
             ENV = CONT->env;                                            \
             PC = CONT->pc;                                              \
             BASE = CONT->base;                                          \
-            if (CONT->argp && size__) {                                 \
-                ScmObj *s__ = CONT->argp, *d__ = SP;                    \
-                SP += size__;                                           \
-                while (size__-- > 0) {                                  \
+            if (size__) {                                               \
+                ScmObj *s__ = (ScmObj*)CONT - size__;                   \
+                ScmObj *d__ = SP;                                       \
+                while (s__ < (ScmObj*)CONT) {                           \
                     *d__++ = *s__++;                                    \
                 }                                                       \
+                SP = d__;                                               \
             }                                                           \
             CONT = CONT->prev;                                          \
         }                                                               \
@@ -916,7 +921,8 @@ static void save_cont(ScmVM *vm)
     /* First pass */
     do {
         int size = (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj);
-        ScmContFrame *csave = SCM_NEW2(ScmContFrame*, size);
+        ScmObj *heap = SCM_NEW2(ScmObj*, size);
+        ScmContFrame *csave = (ScmContFrame*)(heap + c->size);
 
         /* update env ptr if necessary */
         if (FORWARDED_ENV_P(c->env)) {
@@ -926,22 +932,20 @@ static void save_cont(ScmVM *vm)
         }
 
         /* copy cont frame */
-        if (c->argp) {
-            *csave = *c; /* copy the frame */
+        if (!C_CONTINUATION_P(c)) {
+            s = (ScmObj*)c - c->size;
+            d = heap;
             if (c->size) {
-                /* copy the args */
-                s = c->argp;
-                d = (ScmObj*)csave + CONT_FRAME_SIZE;
                 for (i=c->size; i>0; i--) {
                     SCM_FLONUM_ENSURE_MEM(*s);
                     *d++ = *s++;
                 }
             }
-            csave->argp = ((ScmObj*)csave + CONT_FRAME_SIZE);
+            *(ScmContFrame*)d = *c; /* copy the frame */
         } else {
             /* C continuation */
-            s = (ScmObj*)c;
-            d = (ScmObj*)csave;
+            s = (ScmObj*)c - c->size;
+            d = heap;
             for (i=CONT_FRAME_SIZE + c->size; i>0; i--) {
                 /* NB: C continuation frame contains opaque pointer,
                    so we shouldn't ENSURE_MEM. */
@@ -1122,8 +1126,8 @@ void Scm_VMFlushFPStack(ScmVM *vm)
           next2:
             e = e->up;
         }
-        if (IN_STACK_P(c->argp) && c->size > 0) {
-            p = c->argp;
+        if (IN_STACK_P((ScmObj*)c) && c->size > 0) {
+            p = (ScmObj*)c - c->size;
             for (i=0; i<c->size; i++, p++) SCM_FLONUM_ENSURE_MEM(*p);
         }
         c = c->prev;
@@ -1315,17 +1319,16 @@ void Scm_VMPushCC(ScmCContinuationProc *after,
 
     CHECK_STACK(CONT_FRAME_SIZE+datasize);
     s = SP;
-    cc = (ScmContFrame*)s;
-    s += CONT_FRAME_SIZE;
-    cc->prev = CONT;
-    cc->argp = NULL;
-    cc->size = datasize;
-    cc->pc = (ScmWord*)after;
-    cc->base = BASE;
-    cc->env = ENV;
     for (i=0; i<datasize; i++) {
         *s++ = SCM_OBJ(data[i]);
     }
+    cc = (ScmContFrame*)s;
+    s += CONT_FRAME_SIZE;
+    cc->prev = CONT;
+    cc->size = datasize;
+    cc->pc = (ScmWord*)after;
+    cc->base = BASE;
+    cc->env = &ccEnvMark;
     CONT = cc;
     ARGP = SP = s;
 }
@@ -2717,8 +2720,8 @@ void Scm_VMDump(ScmVM *vm)
     while (cont) {
         Scm_Printf(out, "   %p\n", cont);
         Scm_Printf(out, "              env = %p\n", cont->env);
-        Scm_Printf(out, "             argp = %p[%d]\n", cont->argp, cont->size);
-        if (cont->argp) {
+        Scm_Printf(out, "             size = %d\n", cont->size);
+        if (!C_CONTINUATION_P(cont)) {
             Scm_Printf(out, "               pc = %p ", cont->pc);
             Scm_Printf(out, "(%08x)\n", *cont->pc);
         } else {

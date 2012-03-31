@@ -104,13 +104,28 @@ typedef struct ScmEnvFrameRec {
  * Continuation frame
  *
  *  Continuation is represented as a chain of ScmContFrames.
- *  If argp == NULL && size >= 0, the frame is C continuation.
+ *
+ *   :        :
+ *   +--------+
+ *   |  base  |
+ *   |   pc   |
+ *   | size=N |
+ *   |  env   |
+ *   |..prev..|<--- ScmContFrame* cont
+ *   |arg[N-1]|
+ *   |arg[N-2]|
+ *   :        :
+ *   | arg[0] |
+ *   +--------+
+ *   :        :
+ *
+ *  If env is a special value (&ccEnvMark), this is a C continuation
+ *  and pc contains a C function pointer.
  */
 
 typedef struct ScmContFrameRec {
     struct ScmContFrameRec *prev; /* previous frame */
     ScmEnvFrame *env;             /* saved environment */
-    ScmObj *argp;                 /* saved argument pointer */
     int size;                     /* size of argument frame */
     SCM_PCTYPE pc;                /* next PC */
     ScmCompiledCode *base;        /* base register value */
@@ -615,25 +630,13 @@ enum {
  * C-continuation
  */
 
-#define SCM_CCONT_DATA_SIZE 6
-
 typedef ScmObj ScmCContinuationProc(ScmObj result, void **data);
-
-typedef struct ScmCContinuation {
-    SCM_HEADER;
-    ScmCContinuationProc *func;
-    void *data[SCM_CCONT_DATA_SIZE];
-} ScmCContinuation;
-
-#define SCM_CCONT(obj)            ((ScmCContinuation*)(obj))
-#define SCM_CCONTP(obj)           SCM_XTYPEP(obj, SCM_CLASS_CCONT)
-
-SCM_CLASS_DECL(Scm_CContClass);
-#define SCM_CLASS_CCONT           (&Scm_CContClass)
 
 SCM_EXTERN void Scm_VMPushCC(ScmCContinuationProc *func,
 			     void **data,
 			     int datasize);
+
+#define SCM_CCONT_DATA_SIZE 6   /* Maximum datasize for VMPushCC */
 
 /*
  * Compiler flags

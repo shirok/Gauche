@@ -1,3 +1,14 @@
+2012-03-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/gauche/vm.h: Changed continuation frame structure.
+	  It turned out we don't need to save argp, so we have one word less
+	  in each cont frame.  Previously we marked C continuation frame
+	  by argp=NULL; now it is marked by a special value in env.
+	  The C continuation frame is also changed to have pushed data
+	  before ScmContFrame, which is symmetric to ordinary continuation
+	  frames.  6-8% performance improvement is observed in heavily
+	  recursive micro benchmarks (e.g. fibonacci or ackerman).
+
 2012-03-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c (Scm_CharSetCaseFold), src/regexp.c (match_ci):
