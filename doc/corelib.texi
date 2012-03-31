@@ -5551,12 +5551,10 @@ an instance of @code{<regexp>}.
 @c EN
 If a letter '@code{i}' is given at the end, the created regexp
 becomes @emph{case-folding regexp}, i.e. it matches in the case-insensitive
-way.  (The current version only cares ASCII characters for case-folding---
-beyond ASCII characters, the match is done in the same way as normal match.)
+way.
 @c JP
 末尾に文字@code{i}が与えられた場合は、マッチ時に大文字小文字を区別しない
-正規表現オブジェクトとなります。(現在のバージョンでは、大文字小文字の
-同一視はASCII文字のみに対して行われます。それ以外の文字は通常の方法でマッチします)。
+正規表現オブジェクトとなります。
 @c COMMON
 
 @c EN

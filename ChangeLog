@@ -1,3 +1,9 @@
+2012-03-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c (Scm_CharSetCaseFold), src/regexp.c (match_ci):
+	  Fixed case-folding match beyond ASCII range.  Patch from
+	  OOHASHI Daichi.
+
 2012-03-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-request, http-default-redirect-handler):

@@ -619,4 +619,87 @@
          (rxmatch-after m) ;; memoizes start and length
          (list (rxmatch-before m) (rxmatch-substring m))))
 
+;;-------------------------------------------------------------------
+(test* "regexp/unicode-ci (aa)" "λ"
+       (cond ((rxmatch #/λ/i "λ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci (aA)" "Λ"
+       (cond ((rxmatch #/λ/i "Λ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci (Aa)" "λ"
+       (cond ((rxmatch #/Λ/i "λ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci (AA)" "Λ"
+       (cond ((rxmatch #/Λ/i "Λ") => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp/unicode-ci (uncase + backref, aa)" "λλ"
+       (cond ((rxmatch #/(λ)(?i:\1)/ "λλ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci (uncase + backref, aA)" "λΛ"
+       (cond ((rxmatch #/(λ)(?i:\1)/ "λΛ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci (uncase + backref, Aa)" "Λλ"
+       (cond ((rxmatch #/(Λ)(?i:\1)/ "Λλ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci (uncase + backref, AA)" "ΛΛ"
+       (cond ((rxmatch #/(Λ)(?i:\1)/ "ΛΛ") => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp/unicode-ci (charset, aa)" "λ"
+       (cond ((rxmatch #/[λ]/i "λ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci (charset, aA)" "Λ"
+       (cond ((rxmatch #/[λ]/i "Λ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci (charset, Aa)" "λ"
+       (cond ((rxmatch #/[Λ]/i "λ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci (charset, AA)" "Λ"
+       (cond ((rxmatch #/[Λ]/i "Λ") => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp/unicode-ci" "ΒΓ"
+       (cond ((rxmatch #/βγ/i "ΑΒΓΔ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci" "βΓ"
+       (cond ((rxmatch #/Βγ/i "ΑβΓΔ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci" "βγ"
+       (cond ((rxmatch #/ΒΓ/i "ΑβγΔ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci" #f
+       (cond ((rxmatch #/Βγ/ "ΑβΓΔ") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci" #f
+       (cond ((rxmatch #/ΒΓ/ "ΑΒγΔ") => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp/unicode-ci" "ОНА"
+       (cond ((rxmatch #/о[а-я]а/i "ОНА") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci" "она"
+       (cond ((rxmatch #/О[А-Я]А/i "она") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci" "они"
+       (cond ((rxmatch #/[а-пР-Я][А-Пр-я]./i "они") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci" #f
+       (cond ((rxmatch #/о[а-я]а/ "ОНА") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci" #f
+       (cond ((rxmatch #/О[А-Я]А/ "она") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci" #f
+       (cond ((rxmatch #/[а-пР-Я][А-Пр-я]./ "они") => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci" "она"
+       (cond ((rxmatch (string->regexp "о[А-Я]а" :case-fold #t) "она")
+              => rxmatch-substring)
+             (else #f)))
+(test* "regexp/unicode-ci" #f
+       (cond ((rxmatch (string->regexp "о[А-Я]а") "она")
+              => rxmatch-substring)
+             (else #f)))
+
 (test-end)

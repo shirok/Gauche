@@ -480,15 +480,29 @@ ScmObj Scm_CharSetComplement(ScmCharSet *cs)
     return SCM_OBJ(cs);
 }
 
-/* Make charset case-insensitive.  For now, we only deal with
-   ASCII range. */
+/* Make charset case-insensitive. */
 ScmObj Scm_CharSetCaseFold(ScmCharSet *cs)
 {
+    ScmCharSet *copy = SCM_CHAR_SET(Scm_CharSetCopy(cs));
+    ScmChar c, uch, lch;
+    ScmTreeIter iter;
+    ScmDictEntry *e;
     int ch;
+
     for (ch='a'; ch<='z'; ch++) {
         if (MASK_ISSET(cs, ch) || MASK_ISSET(cs, (ch-('a'-'A')))) {
             MASK_SET(cs, ch);
             MASK_SET(cs, (ch-('a'-'A')));
+        }
+    }
+
+    Scm_TreeIterInit(&iter, &cs->large, NULL);
+    while ((e = Scm_TreeIterNext(&iter)) != NULL) {
+        for (c = e->key; c <= e->value; c++) {
+            uch = Scm_CharUpcase(c);
+            lch = Scm_CharDowncase(c);
+            Scm_CharSetAddRange(cs, uch, uch);
+            Scm_CharSetAddRange(cs, lch, lch);
         }
     }
     return SCM_OBJ(cs);

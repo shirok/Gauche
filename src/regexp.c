@@ -2260,21 +2260,17 @@ struct match_ctx {
 
 static int match_ci(const char **input, const unsigned char **code, int length)
 {
-    unsigned char inch, c;
-    int csize, i;
+    ScmChar inch, c;
+    int csize;
     do {
-        inch = *(*input)++;
-        c = *(*code)++;
-        if ((csize = SCM_CHAR_NFOLLOWS(inch)) == 0) {
-            if (c != SCM_CHAR_DOWNCASE(inch)) return FALSE;
-        } else {
-            if (c != inch) return FALSE;
-            for (i=0; i<csize; i++) {
-                if ((unsigned char)*(*code)++ != (unsigned char)*(*input)++)
-                    return FALSE;
-            }
-        }
-        length -= (csize+1);
+        SCM_CHAR_GET(*input, inch);
+        csize = SCM_CHAR_NBYTES(inch);
+        *input += csize;
+        SCM_CHAR_GET(*code, c);
+        *code += SCM_CHAR_NBYTES(c);
+        if (Scm_CharDowncase(inch) != c)
+            return FALSE;
+        length -= csize;
     } while (length > 0);
     return TRUE;
 }
