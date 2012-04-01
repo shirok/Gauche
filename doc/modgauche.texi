@@ -9045,7 +9045,7 @@ and set it to @code{continue}, then returns the current element @var{e}.
 function @code{for-each-leaf} traverses a tree and
 apply @var{f} on each non-pair element.
 @c JP
-@var{walkre}はリストを取る必要はありません。次に示す@code{for-each-leaf}は
+@var{walker}はリストを取る必要はありません。次に示す@code{for-each-leaf}は
 木を取って、@var{f}をペアでない要素に適用してゆく手続きです。
 @c COMMON
 
