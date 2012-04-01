@@ -137,7 +137,7 @@ argument has no effect, but is accepted for consistency).
 @defunx read-u64 :optional port endian
 @c EN
 Reads 8, 16, 32 or 64 bit unsigned integer from @var{port}
-with specified endian, respectively.  If @var{port} is omitted, 
+with specified endian, respectively.  If @var{port} is omitted,
 current input port is used.  If @var{port} reaches EOF before
 a complete integer is read, EOF is returned.
 @c JP
@@ -154,14 +154,14 @@ a complete integer is read, EOF is returned.
 @defunx read-s64 :optional port endian
 @c EN
 Reads 8, 16, 32 or 64 bit 2's complement signed integer from @var{port}
-with specified endian, respectively.  If @var{port} is omitted, 
+with specified endian, respectively.  If @var{port} is omitted,
 current input port is used.  If @var{port} reaches EOF before
 a complete integer is read, EOF is returned.
 @c JP
 それぞれ指定したエンディアンで@var{port}から8、16、32、64ビット、2の補
 数符号付き整数を読み込みます。@var{port}が省略された場合は、現在の入力
 ポートが使われます。@var{port}が整数の読み込みが完了する前にEOFに到
-達してしまった場合にはEOFが返ります。 
+達してしまった場合にはEOFが返ります。
 @c COMMON
 @end defun
 
@@ -176,7 +176,7 @@ EOF is returned.
 さらに柔軟性が高く、@var{size}オクテットの符号無しあるいは符号付き整数
 を@var{port}から指定のエンディアンで読み込みます。
 @var{port}が整数の読み込みが完了する前にEOFに到
-達してしまった場合にはEOFが返ります。 
+達してしまった場合にはEOFが返ります。
 @c COMMON
 @end defun
 
@@ -263,7 +263,7 @@ IEEE754 double-precision numbers.  16-bit floating
 point number consists of 1-bit sign, 5-bit exponent and
 10-bit mantissa, as used in some HDR image format.
 
-If @var{port} is omitted, 
+If @var{port} is omitted,
 current input port is used.  If @var{port} reaches EOF before
 a complete number is read, EOF is returned.
 @c JP
@@ -274,7 +274,7 @@ HDRイメージフォーマット等に使われている形式です。
 
 @var{port}が省略された場合には、
 現在の入力ポートが使われます。@var{port}が数値の読み込みが完了する前に
-EOFに到達してしまった場合にはEOFが返ります。 
+EOFに到達してしまった場合にはEOFが返ります。
 @c COMMON
 @end defun
 
@@ -282,9 +282,9 @@ EOFに到達してしまった場合にはEOFが返ります。
 @defunx write-f32 val :optional port endian
 @defunx write-f64 val :optional port endian
 @c EN
-Writes a real number @var{val} to @var{port} in 16, 
+Writes a real number @var{val} to @var{port} in 16,
 32, or 64-bit floating point number, respectively.
-If @var{port} is omitted, current output port is used. 
+If @var{port} is omitted, current output port is used.
 @c JP
 実数値@var{val}を、それぞれ16、32、64ビットの浮動小数点数として
 書き出します。
@@ -435,7 +435,7 @@ handling.
 @c COMMON
 
 @c EN
-@code{read-u8} etc. were called @code{read-binary-uint8} etc., and 
+@code{read-u8} etc. were called @code{read-binary-uint8} etc., and
 @code{read-f32} and @code{read-f64} were called @code{read-binary-float}
 and @code{read-binary-double}, respectively.
 These old names are still supported for the backward compatibility
@@ -1284,7 +1284,7 @@ If the pool has positive @code{max-backlog} value, and it
 already has that many jobs to be waiting, then @code{add-job!}
 blocks until some jobs are start being executed.
 You can give a real number in seconds, or a @code{<time>} object
-as an absolute point of time, to the @var{timeout} argument 
+as an absolute point of time, to the @var{timeout} argument
 to set the time limit of blocking.  If timeout is reached,
 @code{add-job!} returns @code{#f} without creating any job.
 Omitting @var{timeout}
@@ -1301,7 +1301,7 @@ or giving @code{#f} to it sets no timeout.
 
 @c EN
 (Note: This behavior is different from 0.9.1, in which @code{add-job!}
-didn't take the timeout argument and always behaved as if zero 
+didn't take the timeout argument and always behaved as if zero
 timeout value was given.  To achieve the same behavior, you have
 to give 0 to the @var{timeout} argument explicitly.)
 @c JP
@@ -1357,7 +1357,7 @@ immediately cancels queued but not started jobs; the status
 of such jobs is set @code{killed}.
 It does not cancels already started jobs, though.
 
-If you want to cancel already started jobs, 
+If you want to cancel already started jobs,
 you can give a timeout value (either @code{<time>} object to
 specify absolute point of time, or a real number indicating
 relative time in seconds) to the @var{force-timeout} argument.
@@ -1438,7 +1438,7 @@ check the password.
 @c COMMON
 
 @example
-(bcrypt-hashpw @var{password} @var{hashed-string}) 
+(bcrypt-hashpw @var{password} @var{hashed-string})
   @result{} @r{hashed-string}
 @end example
 
@@ -1499,7 +1499,7 @@ The @var{count} arugment specifies the amount of iterations;
 the larger the value is, the more time is required to calculate
 the hash value.  Note that for the password hashing, taking more
 time is actually a good thing, for it works against the dictionary attack.
-For normal password checking you need to run the hash routine only 
+For normal password checking you need to run the hash routine only
 once per login, so it doesn't matter if the calculation takes a fraction
 of second.
 The bcrypt algorithm iterates @code{(expt 2 @var{count})} times.
@@ -1535,7 +1535,7 @@ bcryptアルゴリズムでは少なくとも16バイトの長さが必要です
 @deftp {Module} dbi
 @mdindex dbi
 @c EN
-This module provides the unified interface to access various 
+This module provides the unified interface to access various
 relational database systems (RDBMS).  The operations specific
 to individual database systems are packaged
 in database driver (DBD) modules, which is usually loaded
@@ -1629,7 +1629,7 @@ Also the parameter is automatically quoted.
 
 @c EN
 When the query is a @code{SELECT} statement,
-its result is returned as a collection that implements 
+its result is returned as a collection that implements
 the relation protocol.  See @ref{Collection framework}
 and @ref{Relation framework} for the details.
 @c JP
@@ -1665,8 +1665,8 @@ APIを説明をします。すなわち特定の@code{dbd}ドライバを@code{d
 @c COMMON
 
 @menu
-* DBI user API::                
-* Writing drivers for DBI::     
+* DBI user API::
+* Writing drivers for DBI::
 @end menu
 
 @node DBI user API, Writing drivers for DBI, Database independent access layer, Database independent access layer
@@ -1716,7 +1716,7 @@ Holds the requested driver name as a string.
 
 @deftp {Condition Type} <dbi-unsupported-error>
 @c EN
-This condition is thrown when the called method isn't supported 
+This condition is thrown when the called method isn't supported
 by the underlying driver.  Inherits @code{<dbi-error>}.
 @c JP
 呼び出されたメソッドが基盤となるドライバでサポートされていない場合、こ
@@ -1736,7 +1736,7 @@ the prepared query doesn't match the ones in the prepared statement.
 
 @c EN
 Besides these errors, if a driver relies on @code{dbi} to
-parse the prepared SQL statement, @code{<sql-parse-error>} may 
+parse the prepared SQL statement, @code{<sql-parse-error>} may
 be thrown if an invalid SQL statement is passed to @code{dbi-prepare}.
 (@xref{SQL parsing and construction}).
 @c JP
@@ -1774,7 +1774,7 @@ your system.  For example, if @var{dsn} begins with @code{"dbi:mysql:"},
 ばなりません。すなわち、@code{dbd.@var{driver}}がシステムにインストー
 ルされていなければなりません。たとえば、@var{dsn}が@code{"dbi:mysql:"}
 ではじまるとすると、@code{dbi-connect}は@code{dbd.mysql}をロードしよう
-とします。 
+とします。
 @c COMMON
 
 @c EN
@@ -2081,7 +2081,7 @@ See "Retrieving query results" below for how to access the result.
 @c COMMON
 
 @c EN
-If the query is other types, such as @code{create}, @code{insert} 
+If the query is other types, such as @code{create}, @code{insert}
 or @code{delete}, the return value of the query closure is unspecified.
 @c JP
 クエリがSELECT以外の@code{create}、@code{insert}、@code{delete}などの
@@ -2116,7 +2116,7 @@ Returns a string where special characters in @var{str} are escaped.
 @c EN
 The official SQL standard only specify a single quote (@code{'}) as
 such character.  However, it doesn't specify non-printable characters,
-and the database system may use other escaping characters.  So 
+and the database system may use other escaping characters.  So
 it is necessary to use this method rather than doing escaping
 by your own.
 @c JP
@@ -2150,7 +2150,7 @@ SQLの公式標準ではこのような文字としてはシングルクォー�
 
 @c EN
 If the query is a @code{select} statement, it returns an object
-of both @code{<collection>} and @code{<relation>}.   
+of both @code{<collection>} and @code{<relation>}.
 It is a collection of rows (that is, it implements @code{<collection>} API),
 so you can use @code{map}, @code{for-each} or other generic functions
 to access rows.  You can also use the relation API to retrieve column
@@ -2245,10 +2245,10 @@ You have to define the following classes.
 @c EN
 @itemize @bullet
 @item
-Subclass @code{<dbi-driver>}.  
+Subclass @code{<dbi-driver>}.
 The class name @emph{must} be @code{<@var{foo}-driver>}, where
-@var{foo} is the name of the driver.  
-Usually this class produces a singleton instance, 
+@var{foo} is the name of the driver.
+Usually this class produces a singleton instance,
 and is only used to dispatch @code{dbi-make-connection}
 method below.
 @item
@@ -2258,7 +2258,7 @@ the actual connections.
 @item
 Subclass @code{<relation>} and @code{<collection>} to represent
 query results suitable for the driver.  (In most cases, the order of
-the result of SELECT statement is significant, since it may be 
+the result of SELECT statement is significant, since it may be
 sorted by ORDER BY clause.  Thus it is more appropriate to
 inherit @code{<sequence>}, rather than @code{<collection>}).
 @item
@@ -2301,7 +2301,7 @@ The driver need to implement the following methods.
 ドライバは以下のメソッドを実装しなければなりません。
 @c COMMON
 
-@deffn {Method} dbi-make-connection (d <foo-driver>) (options <string>) (option-alist <list>) :key username password @dots{} 
+@deffn {Method} dbi-make-connection (d <foo-driver>) (options <string>) (option-alist <list>) :key username password @dots{}
 @c EN
 This method is called from @code{dbi-connect}, and responsible to
 connect to the database and to create a connection object.
@@ -2344,7 +2344,7 @@ as @var{optons-alist}.
 
 @c EN
 After @var{options-alist}, whatever keyword arguments given to
-@code{dbi-connect} are passed.  DBI protocol currently 
+@code{dbi-connect} are passed.  DBI protocol currently
 specifies only @var{username} and @var{password}.
 The driver may define other keyword arguments.
 It is recommended to name the driver-specific keyword arguments
@@ -2393,7 +2393,7 @@ when the prepared query object is passed to @code{dbi-execute}.
 @c COMMON
 
 @c EN
-The method must set @var{c} to the @code{connection} slot of 
+The method must set @var{c} to the @code{connection} slot of
 the returned query object.
 @c JP
 このメソッドは返されるクエリオブジェクトの@code{connection}スロットに
@@ -2469,7 +2469,7 @@ an appropriate relation object.
 If the default escape method isn't enough, the driver may
 overload this method to implement a specific escaping.
 For example, MySQL treats backslash characters specially
-as well as single quotes, so it has its @code{dbi-escape-sql} 
+as well as single quotes, so it has its @code{dbi-escape-sql}
 method.
 @c JP
 デフォルトのエスケープメソッドでは十分でないとき、ドライバは特別のエス
@@ -2692,12 +2692,12 @@ The following code shows a typical usage of the database.
 @end example
 
 @menu
-* Opening and closing a dbm database::  
-* Accessing a dbm database::    
-* Iterating on a database::     
-* Managing dbm database instance::  
-* Dumping and restoring dbm database::  
-* Writing a dbm implementation::  
+* Opening and closing a dbm database::
+* Accessing a dbm database::
+* Iterating on a database::
+* Managing dbm database instance::
+* Dumping and restoring dbm database::
+* Writing a dbm implementation::
 @end menu
 
 @node Opening and closing a dbm database, Accessing a dbm database, Generic DBM interface, Generic DBM interface
@@ -2785,7 +2785,7 @@ followings:
 The default value.  Keys (values) are not converted.  They must be
 a string.
 @item @code{#t}
-Keys (values) are converted to its string representation, using 
+Keys (values) are converted to its string representation, using
 @code{write}, to store in the database, and converted
 back to Scheme values, using @code{read}, to retrieve from the database.
 The data must have an external representation that can be read back.
@@ -2900,7 +2900,7 @@ This procedure fulfills the need.
 The @var{dbmtype} argument is a symbol that names the type
 of dbm implementation; for example, @code{gdbm} for @code{dbm.gdbm},
 and @code{fsdbm} for @code{dbm.fsdbm}.   We assume that the
-dbm implementation of type @code{@var{foo}} is provided as 
+dbm implementation of type @code{@var{foo}} is provided as
 a module @code{dbm.@var{foo}}, and its class is named
 as @code{<@var{foo}>}.
 
@@ -2961,7 +2961,7 @@ Return true if a value exists for @var{key}, false otherwise.
 
 @deffn {Method} dbm-delete! (dbm @code{<dbm>}) key
 @c EN
-Delete a value associated with @var{key}.  
+Delete a value associated with @var{key}.
 @c JP
 キー@var{key}に関連付けられた値を消去します。値が存在しない場合は何もしません。
 @c COMMON
@@ -3098,7 +3098,7 @@ whether @var{to} is left in incomplete state or not depends
 on the dbm implementation.   The implementation usually tries
 its best to provide transactional behavior, that is,
 to recover original @var{to} when the copy fails.  However,
-for the robust operations the caller have to check the state 
+for the robust operations the caller have to check the state
 of @var{to} if @code{dbm-db-copy} fails.
 @c JP
 @var{from}で指定された@var{class}クラスのデータベースを
@@ -3141,7 +3141,7 @@ its content is destroyed.
 @c NODE DBMデータベースのダンプとリストア
 
 Most dbm implementations use some kind of binary format, and
-some of them are architecture dependent.   
+some of them are architecture dependent.
 That makes it difficult to pass around dbm databases
 between different machines.
 A safe way is to write out the content of a dbm database
@@ -3154,7 +3154,7 @@ scripts that does the job.  They are installed into the
 standard Gauche library directory, so it can be invoked
 by @code{gosh <scriptname>}.
 
-To write out the content of a dbm database named by @var{dbm-name}, 
+To write out the content of a dbm database named by @var{dbm-name},
 you can use @code{dbm/dump} script:
 
 @example
@@ -3240,12 +3240,12 @@ If you don't define them, a fallback method
 opens the specified databases and copies elements one by
 one, and removes the original if the method is  @code{dbm-db-move}.
 Note that the fallback method is not only inefficient,
-but also it may not copy any implementation-specific 
+but also it may not copy any implementation-specific
 meta information.  It is highly recommended for the
 dbm implementation to provide these methods as well.
 @end itemize
 
-It is generally recommended to name the implementation module 
+It is generally recommended to name the implementation module
 as @code{dbm.@var{foo}}, and the class of the implementation
 as @code{<@var{foo}>}.  With this convention it is easier to
 write an application that dynamically loads and uses
@@ -3267,7 +3267,7 @@ Implements fsdbm.  Extends @code{dbm}.
 @code{Fsdbm} is a dbm implementation that directly uses
 the filesystem.  Basically, it uses file names for keys,
 and file content for values.   Unlike other dbm implementations,
-this doesn't depend on external libraries---it is pure Scheme 
+this doesn't depend on external libraries---it is pure Scheme
 implementation---so it is always available, while other dbm
 implementations may not.
 @c JP
@@ -3322,7 +3322,7 @@ characters.
 @end deftp
 
 @c EN
-Fsdbm implements all of the dbm protocol 
+Fsdbm implements all of the dbm protocol
 (see @ref{Generic DBM interface}).
 It doesn't have any fsdbm-specific procedures.
 @c JP
@@ -3657,7 +3657,7 @@ in the processing.
 
 @defun file-filter proc :key input output temporary-file keep-output?
 @c EN
-Calls @var{proc} with two arguments, an input port and 
+Calls @var{proc} with two arguments, an input port and
 an output port.   Returns the result(s) of @var{proc}.
 The input port and output port are chosen depending on the keyword arguments.
 @c JP
@@ -3768,7 +3768,7 @@ procedures described in @ref{Filesystems}.
 Many procedures in this module takes a keyword argument @var{follow-link?},
 which specifies the behavior when the procedure sees a symbolic link.
 If true value is given to @var{follow-link?} (which is the default),
-the procedure operates on the file referenced by the link; if false is 
+the procedure operates on the file referenced by the link; if false is
 given, it operates on the link itself.
 @c JP
 このモジュール内の多くの手続きは@var{follow-link?}というキーワード引数を取ります。
@@ -3793,11 +3793,11 @@ Gaucheでは@emph{両方の}名前を提供することにしました。
 @c COMMON
 
 @menu
-* Directory utilities::         
-* Pathname utilities::          
-* File attribute utilities::    
-* File operations::             
-* Lock files::                  
+* Directory utilities::
+* Pathname utilities::
+* File attribute utilities::
+* File operations::
+* Lock files::
 @end menu
 
 @node Directory utilities, Pathname utilities, Filesystem utilities, Filesystem utilities
@@ -3871,15 +3871,15 @@ The result is sorted by dictionary order.
 
 By default, only the basename (the last component) of the entries
 returned.   If @var{add-path?} is given and true, @var{path} is appended
-to each entry.  If @var{children?} is given and true, @code{"."} and 
-@code{".."} are excluded from the result.  
+to each entry.  If @var{children?} is given and true, @code{"."} and
+@code{".."} are excluded from the result.
 
-If @var{filter} is given, it must be a predicate that takes one argument.  
+If @var{filter} is given, it must be a predicate that takes one argument.
 It is called on every element of the directory entry,
 and only the entries on which
 @var{filter} returns true are included in the result.
 The argument passed to @var{filter} is a basename of the directory entry
-by default, but when @var{filter-add-path?} is true, @var{path} is 
+by default, but when @var{filter-add-path?} is true, @var{path} is
 appended to the entry.
 
 If @var{path} is not a directory, an error is signalled.
@@ -3956,12 +3956,12 @@ Conceptually it works as follows, in recursive way.
 @c EN
 @itemize @bullet
 @item
-If @var{path} is not a directory, calls 
+If @var{path} is not a directory, calls
 @code{(@var{proc} @var{path} @var{seed})} and returns the result.
 @item
 If @var{path} is a directory, calls
 @code{(@var{lister} @var{path} @var{seed})}.  The procedure @var{lister}
-is expected to return two values: a list of pathnames, and the 
+is expected to return two values: a list of pathnames, and the
 next seed value.   Then
 @code{directory-fold} is called on each returned pathname,
 passing the returned seed value to the @var{seed} argument of the
@@ -4034,7 +4034,7 @@ The following example returns a list of pathnames of the emacs backup files
 @example
 (use srfi-13) ;; for string-suffix?
 (directory-fold path
-                (lambda (entry result) 
+                (lambda (entry result)
                   (if (string-suffix? "~" entry)
                       (cons entry result)
                       result))
@@ -4078,9 +4078,9 @@ directory.
 
 
 @defun remove-directory* name
-@defunx delete-directory* name 
+@defunx delete-directory* name
 @c EN
-Deletes directory @var{name} and its content recursively 
+Deletes directory @var{name} and its content recursively
 (like @code{rm -r} command on Unix).   Symbolic links are not
 followed.
 @c JP
@@ -4167,7 +4167,7 @@ The @var{spec} argument is an S-expression with the following structure:
 With the first and second form of @var{spec}, an empty file is created
 with the given name.
 With the third form of @var{spec}, the string becomes the
-content of the file.  
+content of the file.
 
 With the fourth form of @var{spec}, the procedure is called with the
 pathname as an argument, and output to the current output
@@ -4204,7 +4204,7 @@ Takes integer uid/gid of the owner/group of the file/directory.
 Calling process may need special priviledge to change the owner
 and/or group.
 @item :symlink @var{path}
-This is only valid for file spec, and it causes 
+This is only valid for file spec, and it causes
 @code{create-directory-tree} to create a named symbolic link
 whose content is @var{path}.
 @end table
@@ -4235,7 +4235,7 @@ under @var{dir}.  Returns @code{#t} if it exists, or @var{#f} otherwise.
 The format of @var{spec} is the same
 as @code{create-directory-tree} described above.
 
-If @var{spec} contains options, the attributes of existing 
+If @var{spec} contains options, the attributes of existing
 files/directories are also checked if they match the given options.
 @c JP
 @var{spec}で記述されるディレクトリ階層が@var{dir}の下に存在するかどうかを
@@ -4321,7 +4321,7 @@ the basename without extension of @var{path}, and
 the extension of @var{path}.    If the pathname doesn't have an extension,
 the third value is @code{#f}.  If the pathname ends with a directory
 separator, the second and third values are @code{#f}. (Note: This treatment
-of the trailing directory separator differs from 
+of the trailing directory separator differs from
 @code{sys-dirname}/@code{sys-basename}; those follow popular shell's
 convention, which ignores trailing slashes.)
 @c JP
@@ -4380,7 +4380,7 @@ is returned respectively.
 @c EN
 Returns a pathname in which the extension of @var{path} is replaced
 by @var{newext}.  If @var{path} doesn't have an extension,
-"." and @var{newext} is appended to @var{path}.  
+"." and @var{newext} is appended to @var{path}.
 
 If @var{newext} is @code{#f}, it returns @var{path} without extension.
 @c JP
@@ -4445,7 +4445,7 @@ by default.
 
 @defun null-device
 @c EN
-Returns a name of the @emph{null} device.  
+Returns a name of the @emph{null} device.
 On unix platforms (including cygwin) it returns @code{"/dev/null"},
 and on Windows native platforms (including mingw) it returns @code{"NUL"}.
 @c JP
@@ -4719,7 +4719,7 @@ argument @var{if-exists};
 @item :error
 (Default) Signals an error when @var{dst} exists.
 @item :supersede
-Replaces @var{dst} to the copy of @code{src}. 
+Replaces @var{dst} to the copy of @code{src}.
 @item :backup
 Keeps @var{dst} by renaming it.
 @item #f
@@ -4753,9 +4753,9 @@ If @var{src} is a symbolic link, @code{copy-file} follows the
 symlink and copies the actual content by default.  An error
 is raised if @var{src} is a dangling symlink.
 
-Giving @code{#f} to the keyword argument @var{follow-link?} 
+Giving @code{#f} to the keyword argument @var{follow-link?}
 makes @code{copy-file} to copy the link itself.
-It is possible that @var{src} is a dangling 
+It is possible that @var{src} is a dangling
 symlink in this case.
 @c JP
 @var{src}がシンボリックリンクであった場合、@code{copy-file}は
@@ -4806,7 +4806,7 @@ after copying.
 @c COMMON
 
 @c EN
-If the keyword argument @var{keep-mode} is true, the destination file's 
+If the keyword argument @var{keep-mode} is true, the destination file's
 permission bits are set to the same as the source file's.  If it is false
 (default), the destination file's permission remains the same if
 the destination already exists and the @var{safe} argument is false,
@@ -4842,7 +4842,7 @@ The behavior when @var{dst} exists varies by the keyword argument
 @item :error
 (Default) Signals an error when @var{dst} exists.
 @item :supersede
-Replaces @var{dst} by @code{src}. 
+Replaces @var{dst} by @code{src}.
 @item :backup
 Keeps @var{dst} by renaming it.
 @item #f
@@ -4908,7 +4908,7 @@ it to @var{dst}, then removes @var{src}.
 @defun remove-files paths
 @defunx delete-files paths
 @c EN
-Removes each path in a list @var{paths}.  If the path is 
+Removes each path in a list @var{paths}.  If the path is
 a file, it is @code{unlink}ed.  If it is a directory,
 its contents are recursively removed by @code{remove-directory*}.
 If the path doesn't exist, it is simply ignored.
@@ -4947,7 +4947,7 @@ signalled during reading.
 @c EN
 Those procedures take the same keyword arguments as
 @code{call-with-input-file}.
-When the named file doesn't exist, the behavior depends on 
+When the named file doesn't exist, the behavior depends on
 @var{:if-does-not-exist} keyword argument---an error is signalled
 if it is @code{:error}, and @code{#f} is returned if the argument is
 @code{#f}.
@@ -5100,12 +5100,12 @@ However, there are a couple of shortcomings in @code{fcntl} locks.
 
 @itemize
 @item
-It is not guaranteed to work across different platforms, 
+It is not guaranteed to work across different platforms,
 and/or NFS-mounted filesystems.
 @item
 The lock is per-process, per-file.  If you have a lock in a file,
 then calls a library that also locks the file, the lock always
-succeeds.  Worse, if the library unlocks the file, 
+succeeds.  Worse, if the library unlocks the file,
 the lock is completely removed, while the caller doesn't know
 about it.  It also means that, in order to prevent multiple threads
 in a process from accessing the same file, you have to use
@@ -5116,7 +5116,7 @@ Especially because of the second point, it is very difficult
 to use @code{fcntl} lock unless you have total control over and knowledge
 of the entire application.
 It is ok to use the @code{fcntl} lock by the application code to lock
-the application-specific file.  
+the application-specific file.
 Library developers have difficulty, however, to make sure any potential
 user of the library won't try to lock the same file as the library tries
 to lock (usually it can't be done).
@@ -5161,7 +5161,7 @@ Napier's constant.
 @deftp {Module} math.mt-random
 @mdindex math.mt-random
 @c EN
-Provides a pseudo random number generator (RNG) based on 
+Provides a pseudo random number generator (RNG) based on
 "Mersenne Twister" algorithm developed by Makoto Matsumoto and
 Takuji Nishimura.   It is fast, and has huge period of 2^19937-1.
 See @ref{MT,,MT}, for details about the algorithm.
@@ -5317,8 +5317,8 @@ is thrown.
 @end deftp
 
 @menu
-* Windows dialogs::             
-* Windows console API::         
+* Windows dialogs::
+* Windows console API::
 @end menu
 
 @node Windows dialogs, Windows console API, Windows support, Windows support
@@ -5397,19 +5397,19 @@ See the Windows reference for the detail description of what each API does.
 
 @subsubheading Attaching and detaching
 
-@defun sys-alloc-console 
-@defunx sys-free-console 
-[Windows] 
+@defun sys-alloc-console
+@defunx sys-free-console
+[Windows]
 Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @end defun
 
 @defun sys-generate-console-ctrl-event event pgid
-[Windows] 
+[Windows]
 @end defun
 
 @defvr {Constant} CTRL_C_EVENT
 @defvrx {Constant} CTRL_BREAK_EVENT
-[Windows] 
+[Windows]
 @end defvr
 
 @subsubheading Console codepage
@@ -5418,23 +5418,23 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @defunx sys-get-console-output-cp
 @defunx sys-set-console-cp codepage
 @defunx sys-set-console-output-cp codepage
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-get-console-cursor-info handle
 @defunx sys-set-console-cursor-info handle size visible
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-set-console-cursor-position handle x y
-[Windows] 
+[Windows]
 @end defun
 
 @subsubheading Console mode
 
 @defun sys-get-console-mode handle
 @defunx sys-set-console-mode handle mode
-[Windows] 
+[Windows]
 @end defun
 
 @defvr {Constant} ENABLE_LINE_INPUT
@@ -5444,35 +5444,35 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @defvrx {Constant} ENABLE_MOUSE_INPUT
 @defvrx {Constant} ENABLE_PROCESSED_OUTPUT
 @defvrx {Constant} ENABLE_WRAP_AT_EOL_OUTPUT
-[Windows] 
+[Windows]
 @end defvr
 
 @subsubheading Screen buffer
 
 @defun sys-create-console-screen-buffer desired-access share-mode inheritable
-[Windows] 
+[Windows]
 @end defun
 
 @defvr {Constant} GENERIC_READ
 @defvrx {Constant} GENERIC_WRITE
-[Windows] 
+[Windows]
 @end defvr
 
 @defvr {Constant} FILE_SHARE_READ
 @defvrx {Constant} FILE_SHARE_WRITE
-[Windows] 
+[Windows]
 @end defvr
 
 @defun sys-set-console-active-screen-buffer handle
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-scroll-console-screen-buffer handle scroll-rectangle clip-rectangle x y fill
-[Windows] 
+[Windows]
 @end defun
 
 @deftp {Class} <win:console-screen-buffer-info>
-[Windows] 
+[Windows]
 
 @defivar {<win:console-screen-buffer-info>} size.x
 @defivarx {<win:console-screen-buffer-info>} size.y
@@ -5505,25 +5505,25 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @defvrx {Constant} BACKGROUND_GREEN
 @defvrx {Constant} BACKGROUND_RED
 @defvrx {Constant} BACKGROUND_INTENSITY
-[Windows] 
+[Windows]
 @end defvr
 
 @defun sys-get-console-screen-buffer-info handle
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-get-largest-console-window-size handle
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-set-screen-buffer-size handle x y
-[Windows] 
+[Windows]
 @end defun
 
 @subsubheading Console input/output
 
 @deftp {Class} <win:input-record>
-[Windows] 
+[Windows]
 
 @defivar {<win:input-record>} event-type
 @end defivar
@@ -5555,59 +5555,59 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @end deftp
 
 @defun sys-get-number-of-console-input-events handle
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-get-number-of-console-mouse-buttons
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-peek-console-input handle
 @defunx sys-read-console-input handle
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-read-console handle buf
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-read-console-output handle buf w h x y region
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-read-console-output-attribute handle buf x y
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-read-console-output-character handle len x y
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-set-console-text-attribute handle attr
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-set-console-window-info handle absolute window
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-write-console handle string
-[Windows] 
+[Windows]
 @end defun
 
 @defun sys-write-console-output-character handle string x y
-[Windows] 
+[Windows]
 @end defun
 
-@defun sys-get-console-title 
-[Windows] 
+@defun sys-get-console-title
+[Windows]
 @end defun
 
 @subsubheading Standard handles
 
 @defun sys-get-std-handle which
 @defunx sys-set-std-handle which handle
-[Windows] 
+[Windows]
 @end defun
 
 @defvr {Constant} STD_INPUT_HANDLE
@@ -5626,7 +5626,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @c This module implements a parser combinator library
 @c to build parsers based on Parsing Expression Grammer, or PEG.
 
-@c PEG is a @emph{formal grammer} to define a language, like regular 
+@c PEG is a @emph{formal grammer} to define a language, like regular
 @c expressions or context-free grammers, although PEG is more powerful
 @c than those.  An interesting characteristic of PEG is that it can
 @c be directly mapped to a recursive decent parser, which is exactly
@@ -5652,11 +5652,11 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @c @end deftp
 
 @c @menu
-@c * PEG Walkthrough::             
-@c * PEG high-level API::          
-@c * PEG combinators::             
-@c * PEG stream::                  
-@c * PEG performance tips::        
+@c * PEG Walkthrough::
+@c * PEG high-level API::
+@c * PEG combinators::
+@c * PEG stream::
+@c * PEG performance tips::
 @c @end menu
 
 @c @node PEG Walkthrough, PEG high-level API, Parser combinators for PEG, Parser combinators for PEG
@@ -5669,7 +5669,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 
 @c Typically you don't need to write parsers directly in
 @c procedural style.  Instead, you can use procedures that
-@c generates parsers.   A parser can be as simple as the 
+@c generates parsers.   A parser can be as simple as the
 @c following, which accepts a character @code{#\a}.
 
 @c @example
@@ -5725,8 +5725,8 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @c @end example
 
 @c I leave explanation of @code{$many1}, @code{$one-of}, and
-@c @code{$skip-many} for the later section, 
-@c but I guess you can imagine what those parsers do; 
+@c @code{$skip-many} for the later section,
+@c but I guess you can imagine what those parsers do;
 @c @code{digits} accepts a sequence of digits, and
 @c @code{ws} accepts whitespaces.   The @code{separator}
 @c parser accepts a comma, optionally surrounded by whitespaces.
@@ -5753,7 +5753,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @c a form of @code{($do [@var{var} @var{parser}] @dots{} @var{expr})},
 @c applying the @var{parser}s in order, binding the result of each
 @c parser to @var{var}.  The @code{$return} combinator is create a
-@c parser that doesn't consume input and returns the given value; 
+@c parser that doesn't consume input and returns the given value;
 @c you can think that @code{$do} is to pull out a value from,
 @c and @code{$return} to put back a value to, the chain of parsers.
 @c (Note: If you know Monads, you can recognize the pattern.
@@ -5776,7 +5776,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @c (456 789)
 @c @end example
 
-@c Oops, where's 123?  Well, remember that 
+@c Oops, where's 123?  Well, remember that
 @c @code{$seq} discards the results but the last one.
 @c We can use @code{$do} again to keep all the results.
 
@@ -5819,7 +5819,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 
 @c In fact, @code{parser.peg} provides @code{$sep-by} to do the above,
 @c but we've just shown the definition to demonstrate
-@c the power of the combinatorial approach; 
+@c the power of the combinatorial approach;
 @c you can use ordinary procedural abstraction to factor out common patterns.
 
 @c There's one catch in the @code{$or} form.
@@ -5861,7 +5861,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 
 @c Now, let's get back to the integer list example and make
 @c it more intersting.
-@c Suppose the list of integers are surrounded by brackets.  
+@c Suppose the list of integers are surrounded by brackets.
 @c We can just put open and close bracket around the
 @c comma-separated integers (you can omit the parentheses around
 @c the clauses in @code{$do} form, if the parser expression consists
@@ -6040,7 +6040,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 
 @c @defun $string str
 @c @defunx $string-ci str
-@c Returns a parser that accepts an input that matches 
+@c Returns a parser that accepts an input that matches
 @c a string @var{str}.  @code{$string-ci} ignores case.
 @c On success, the semantic value is the input string.
 
@@ -6049,7 +6049,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @c @code{($string "ab")} is not the same as
 @c @code{($do [a ($char #\a)] [b ($char #\b)] ($return (string a b)))};
 @c you may think it is surrouned by implicit @code{$try}.
-@c (If you've used Parsec, 
+@c (If you've used Parsec,
 @c @end defun
 
 @c @defun $one-of cset
@@ -6115,7 +6115,7 @@ Defines a set of functions that parses and constructs the ``Internet
 Message Format'', a text format used to exchange e-mails.
 The most recent specification can be found in
 RFC2822 (@ref{rfc2822,[RFC2822],RFC2822}).
-The format was originally defined in RFC 822, and people still 
+The format was originally defined in RFC 822, and people still
 call it ``RFC822 format'', hence I named this module.
 In the following document, I also refer to the format as ``RFC822 format''.
 @c JP
@@ -6230,7 +6230,7 @@ it is returned, and if not, @code{#f} is returned.
 @c EN
 Several procedures are provided to parse "structured" header fields
 of RFC2822 messages.  These procedures deal with the body of
-a header field, i.e. if the header field is 
+a header field, i.e. if the header field is
 "@code{To: Wandering Schemer <schemer@@example.com>}",
 they parse "@code{Wandering Schemer <schemer@@example.com>}".
 
@@ -6244,7 +6244,7 @@ The reason for this complexity is because you need
 different tokenization schemes depending on the type of the field.
 Rfc2822 also allows comments to appear between tokens for most cases,
 so a simple-minded regexp won't do the job,
-since rfc2822 comment can be nested 
+since rfc2822 comment can be nested
 and can't be represented by regular grammar.
 So, this layer of procedures are designed flexible enough
 to handle various syntaxes.  For the standard header types,
@@ -6286,7 +6286,7 @@ After skipping @code{CFWS}, the procedure peeks a character
 at the head of @var{iport}, and checks it
 against the char-sets in @var{tokenizer-specs} one by one.
 If a char-set that contains the character belongs to is found,
-then a token is retrieved as follows: 
+then a token is retrieved as follows:
 If the tokenizer spec is just a char-set, a sequence of characters
 that belong to the char-set consists a token.
 If it is a cons, the procedure is called with @var{iport} to
@@ -6448,7 +6448,7 @@ If the string is not parsable, all the elements are #f.
 @defun rfc822-date->date string
 @c EN
 Parses RFC822 type date format and returns SRFI-19 @code{<date>} object
-(see @ref{SRFI-19 Date}).  If @var{string} can't be parsed, 
+(see @ref{SRFI-19 Date}).  If @var{string} can't be parsed,
 returns @code{#f} instead.
 
 To consturct rfc822 date string from SRFI-19 date, you can use
@@ -6486,8 +6486,8 @@ I said ``a sort of'' above.  That's because this function doesn't
 (and can't) do the exact inverse.
 Specifically, the caller is responsible for line folding and
 make sure each header line doesn't exceed the ``hard limit'' defined
-by RFC2822 (998 octets).  This procedure cannot do the line 
-folding on behalf of the caller, because the places where 
+by RFC2822 (998 octets).  This procedure cannot do the line
+folding on behalf of the caller, because the places where
 line folding is possible depend on the semantics of each
 header field.
 
@@ -6495,7 +6495,7 @@ It is also the caller's responsibility to make sure header
 field bodies don't have any characters except non-NUL US-ASCII
 characters.  If you want to include characters outside of that
 range, you should convert them in the way allowed by the
-protocol, e.g. MIME.  The @code{rfc.mime} module 
+protocol, e.g. MIME.  The @code{rfc.mime} module
 (@xref{MIME message handling}) provides a convenience procedure
 @code{mime-encode-text} for such purpose.
 Again, this procedure cannot do the encoding automatically,
@@ -6536,7 +6536,7 @@ Header field contains characters outside of US-ASCII or NUL.
 @item line-too-long
 Line length exceeds 998 octet limit.
 @item stray-crlf
-The string contains CR and/or LF character that doesn't consist of 
+The string contains CR and/or LF character that doesn't consist of
 proper line folding.
 @end table
 
@@ -6880,7 +6880,7 @@ an ftp server and calls the given procedure.
 
 @c EN
 The server is specified by @var{host}.  Optionally, you can add user
-name and/or port number by the form 
+name and/or port number by the form
 @code{@var{user}@@@var{servername}:@var{port}}.
 If present, user and port portion in @var{host} supersedes the
 keyword arguments.
@@ -6892,9 +6892,9 @@ keyword arguments.
 @c COMMON
 
 @c EN
-If ftp connection to @var{host} is established successfully, 
+If ftp connection to @var{host} is established successfully,
 @var{proc} is called with one argument, which is an instance
-of @code{<ftp-connection>}.  When @var{proc} returns, 
+of @code{<ftp-connection>}.  When @var{proc} returns,
 the connection is closed and the return value(s) of @var{proc}
 is/are returned from @code{call-with-ftp-connection}.
 When an exception is thrown, the ftp connection is closed
@@ -7138,7 +7138,7 @@ code.  Use @code{ftp-mtime} below to obtain a parsed result.
 @defun ftp-mtime conn path :optional local-time?
 @c EN
 Queries the modification time of the remote file specified by @var{path},
-and returns the result in a @code{<date>} object 
+and returns the result in a @code{<date>} object
 (@xref{Time data types and procedures}).
 If a true value is given to @code{local-time?}, the returned date is
 in local time.  Otherwise, the returned date is in UTC.
@@ -7160,7 +7160,7 @@ FTPコマンド@code{NOOP}を送り、サーバーからのリプライを返し
 
 @defun ftp-list conn :optional path
 @c EN
-Returns the information about the files within the remote file 
+Returns the information about the files within the remote file
 or directory specified by @var{path}, or the current remote directory,
 much like @code{ls(1)} format.  Returns a list of strings, where
 each string is for each line of the server's reply.  The exact
@@ -7202,7 +7202,7 @@ Retrieves a remote file @var{path}.  The retrieved data is
 sent to an output port given to @var{sink}.  Once all the data
 is retrieved, a procedure given to @var{flusher} is called
 with the port @var{sink} as an argument, and its return value(s)
-is/are returned from @code{ftp-get}.  
+is/are returned from @code{ftp-get}.
 @c JP
 リモートファイル@var{path}を検索します。検索データは@var{sink}で与えら
 れた出力ポートに送られます。すべてのデータが検索されたあと、
@@ -7240,8 +7240,8 @@ Returns the server response.
 
 @defun ftp-put-unique conn from-file
 @c EN
-Sends the local file specified by @var{from-file} to the 
-remote server.  The remote side filename is guaranteed to 
+Sends the local file specified by @var{from-file} to the
+remote server.  The remote side filename is guaranteed to
 be unique.  Returns two values---the final server response,
 and the remote file name.  The second value can be @code{#f}
 if the remote host doesn't support RFC1123 (which must be rare).
@@ -7275,7 +7275,7 @@ name @var{to-name}.  Returns the final response of the server.
 This module implements HMAC algorithm,
 Keyed-hashing for message authentication, defined in RFC 2104.
 
-For simple batched keyed hashing, you can use high-level API 
+For simple batched keyed hashing, you can use high-level API
 @code{hmac-digest} and @code{hmac-digest-string}.
 Or you can create @code{<hmac>} object and update its state
 as the data coming in.
@@ -7296,7 +7296,7 @@ as the data coming in.
 Keeps state information of HMAC algorithm.
 Key and the hashing algorithm should be given at the construction
 time, using @code{:key} and @code{:hasher} keyword-arguments respectively.
-You can pass any class object that implements message digest 
+You can pass any class object that implements message digest
 interface (@xref{Message digester framework}),
 such as @code{<md5>} (@xref{MD5 message digest})
 or @code{<sha256>} (@xref{SHA message digest}).
@@ -7425,7 +7425,7 @@ By default, if the server returns 300, 301, 302, 303, 305 and 307 status,
 these procedures attempts to fetch the redirected URL by the
 "location" reply message header if it is allowed by RFC2616.
 This behavior can be turned off or customized by the @var{redirect-handler}
-keyword argument; 
+keyword argument;
 see the "keyword arguments" heading below for the details.
 @c JP
 @var{server}に、それぞれHTTPのGET、HEAD、POST、PUT、DELETEリクエストを送り、
@@ -7478,7 +7478,7 @@ If @var{request-uri} is a list, it must be in the following form:
 Here, @var{path} is a string specifying up to the path component
 of the request-uri.
 From provided alist of @var{name}s and @var{value}s,
-http procedures compose a query string in 
+http procedures compose a query string in
 @code{application/x-www-form-urlencoded} format
 as defined in HTML4, and append it to @var{path}.
 For example, the following two requests have the same effect.
@@ -7501,7 +7501,7 @@ httpリクエスト手続きはHTML4で定められた
 
 @c EN
 If @var{request-encoding} keyword argument is also given,
-@var{name}s and @var{value}s 
+@var{name}s and @var{value}s
 are converted into the specified character encoding before url escaping.
 If it is omitted, gauche's internal character encoding is used.
 @c JP
@@ -7512,7 +7512,7 @@ urlエスケープされます。そうでない場合はgaucheの内部
 @c COMMON
 
 @c EN
-Some procedures take the third argument, @var{body}, 
+Some procedures take the third argument, @var{body},
 to specify the body of the request message.
 It can be a string, which will be copied verbatim to the request body,
 or a list, which will be encoded in @code{multipart/form-data} message.
@@ -7609,7 +7609,7 @@ in a string (such as "200" for success, "404" for "not found").
 
 @c EN
 The second value is a list of parsed headers---each element of list
-is a list of @code{(@var{header-name} @var{value} @dots{})}, 
+is a list of @code{(@var{header-name} @var{value} @dots{})},
 where @var{header-name} is a string name of the header
 (such as "content-type" or "location"), and @var{value} is
 the corresponding value in a string.  The header name is converted
@@ -7673,7 +7673,7 @@ and do not appear in the request headers.
 @item request-encoding
 @c EN
 When a list is given to the @var{request-uri} or @var{body} arguments,
-the characters in names and values of the parameters are first 
+the characters in names and values of the parameters are first
 converted to the character encoding specified by this keyword
 argument, then encoded into @code{application/x-www-form-urlencoded}
 or @code{multipart/form-data} MIME formats.
@@ -7683,7 +7683,7 @@ For @code{multipart/form-data}, you can override character encodings
 for individual parameters by giving @code{content-type} header.
 See the description of @var{body} arguments above.
 
-If you give a string to @var{request-uri} or @var{body}, 
+If you give a string to @var{request-uri} or @var{body},
 it is used without encoding conversion.  It is caller's responsibility
 to ensure desired character encodings are used.
 @c JP
@@ -7963,7 +7963,7 @@ the character encodings to be used.
 
 @defun http-compose-form-data params port :optional encoding
 A helper procedure to create @code{multipart/form-data}
-from a list of parameters.  The format of @var{params} argument 
+from a list of parameters.  The format of @var{params} argument
 is the same as the list format of @var{body} argument of
 http request procedures.  The result is written to an output
 port @var{port}, and the boundary string used to compose
@@ -8089,7 +8089,7 @@ packets.
 @end deftp
 
 @c EN
-For the functions below, @var{buffer} should be a writable 
+For the functions below, @var{buffer} should be a writable
 u8vector of the enough size.
 @c JP
 以下の関数の@var{buffer}は十分なサイズの書き込み可能なu8vectorでなけれ
@@ -8352,7 +8352,7 @@ JSONとScheme間のマッピングについては上の@code{parse-json}のエ�
 @c EN
 This module implements MD5 message digest algorithm, defined in
 RFC 1321 (@ref{rfc1321, [RFC1321], RFC1321}).
-The module extends util.digest 
+The module extends util.digest
 (@xref{Message digester framework}).
 @c JP
 このモジュールは、RFC 1321(@ref{rfc1321, [RFC1321], RFC1321}参照)で
@@ -8368,7 +8368,7 @@ The module extends util.digest
 The instance of this class keeps internal state of MD5 digest algorithm.
 
 This class implements @code{util.digest} framework interface,
-@code{digest-update!}, @code{digest-final!}, 
+@code{digest-update!}, @code{digest-final!},
 @code{digest}, and @code{digest-string}.
 @xref{Message digester framework}, for detailed explanation
 of these methods.
@@ -8385,7 +8385,7 @@ of these methods.
 @end deftp
 
 @c EN
-Besides the digester framework, this module provides to 
+Besides the digester framework, this module provides to
 short-cut procedures.
 @c JP
 ダイジェスタフレームワークに加えて、このモジュールはショートカット手続きを
@@ -8404,7 +8404,7 @@ its digest in an incomplete string.
 
 @defun md5-digest-string string
 @c EN
-Digest the data in @var{string}, and returns the result 
+Digest the data in @var{string}, and returns the result
 in an incomplete string.
 @c JP
 @var{string}にあるデータをダイジェストし、その結果を不完全文字列で
@@ -8467,7 +8467,7 @@ MIME特有のヘッダフィールドをパーズしたり生成したりする�
 @c EN
 If @var{field} is a valid header field for MIME-Version, returns
 its major and minor versions in a list.  Otherwise, returns @code{#f}.
-It is allowed to pass @code{#f} to @var{field}, so that 
+It is allowed to pass @code{#f} to @var{field}, so that
 you can directly pass the result of @code{rfc822-header-ref} to it.
 Given parsed header list by @code{rfc822-read-headers}, you can
 get mime version (currently, it should be @code{(1 0)}) by the
@@ -8573,7 +8573,7 @@ result in a string instead of emitting it to a port.
 @c COMMON
 
 @example
-(call-with-input-string 
+(call-with-input-string
    "; name=foo; filename=\"foo/bar/baz\""
    mime-parse-parameters)
  @result{} (("name" . "foo") ("filename" . "foo/bar/baz"))
@@ -8632,7 +8632,7 @@ RFC2047でエンコードされた@var{word}をデコードします。
 @end defun
 @defun mime-decode-text text
 @c EN
-Returns a string in which 
+Returns a string in which
 all encoded words contained within @var{text} are decoded.
 This procedure can deal with a header field body that may contain
 mixture of non-encoded and encoded parts, and/or multiple encoded
@@ -8656,7 +8656,7 @@ parts.  One of such header field is the Subject field of email.
 
 @c EN
 Care should be taken if you apply this procedure to a ``structured''
-header field body (see RFC2822 section 2.2.2).  
+header field body (see RFC2822 section 2.2.2).
 The proper way of parsing a structured header field body is
 to tokenize it first, then to decode each word using @code{mime-decode-word}.
 since the decoded text may contain characters that affects the tokenization.
@@ -8792,7 +8792,7 @@ encoded wordには文字数でいくらかのオーバヘッドがあるため�
 @c COMMON
 
 @c EN
-The @var{start-column} keyword argument can be used to 
+The @var{start-column} keyword argument can be used to
 shorten the first of folded
 lines to make room for header field name.  For example, if
 you want to encode the body of a Subject header field,
@@ -9035,7 +9035,7 @@ Otherwise, the return value of @var{handler} is stored.
 This slot is only used when composing a MIME message.
 The caller can set this slot a name of the file to be inserted
 into this part, instead of setting the entire content of the
-file to the @code{content} slot.   See 
+file to the @code{content} slot.   See
 @code{mime-compose-message} below for the more details.
 @c JP
 このスロットはMIMEメッセージを作成する時のみ使われます。
@@ -9196,7 +9196,7 @@ for the time being, the second form restricts ASCII-only values.
 
 If @code{<body>} is a string, it is used as the part's content.
 If @code{<body>} is @code{(file @var{filename})}, the content is
-read from the named file.   If @code{<body>} is 
+read from the named file.   If @code{<body>} is
 @code{(subparts @var{part} @dots{})}, the part becomes nested
 MIME part.
 
@@ -9207,7 +9207,7 @@ part must have @code{multipart} content type.
 The caller needs to provide proper @code{content-transfer-encoding}
 header, depending on the application.  If none is given, the content
 is inserted into the message as is, which may be appropriate for
-some applications, but if you want to use the result in email 
+some applications, but if you want to use the result in email
 message you certainly want to encode binary part with base64,
 for example.
 @end defun
@@ -9250,7 +9250,7 @@ The conversion ends when it reads EOF from the current input port.
 書き出します。この変換は、現在の入力ポートからEOFを読み出すと終了します。
 @c COMMON
 @c EN
-The keyword argument @var{line-width} specifies the maximum 
+The keyword argument @var{line-width} specifies the maximum
 line width of the generated output in characters.  If the encoded
 output creates a long line, the procedure inserts a ``soft line break''
 so that the each line is equal to or shorter than this number.
@@ -9308,7 +9308,7 @@ Reads character stream from the current input port,
 decodes it from Quoted-printable
 format and writes the result byte stream to the current output port.
 The conversion ends when it reads EOF.
-If it encounters illegal character sequence (such as '=' followed 
+If it encounters illegal character sequence (such as '=' followed
 by non-hexadecimal characters), it copies them literally to the output.
 @c JP
 現在の入力ポートから文字ストリームを読み込み、それをQuoted-printable
@@ -9338,12 +9338,12 @@ Quoted-printableエンコードされた文字列@var{string}をデコードし�
 @deftp {Module} rfc.sha
 @mdindex rfc.sha
 @c EN
-This module implements US Secure Hash Algorithm 
-defined in RFC 4634.  It provides SHA-1, SHA-224, SHA-256, 
+This module implements US Secure Hash Algorithm
+defined in RFC 4634.  It provides SHA-1, SHA-224, SHA-256,
 SHA-384 and SHA-512 (the latter four are sometimes referred
 as SHA-2 collectively).
 
-The module extends util.digest 
+The module extends util.digest
 (@xref{Message digester framework}).
 @c JP
 このモジュールは、RFC 4634で定義されている
@@ -9384,7 +9384,7 @@ should use @code{rfc.sha}.
 An instance of these class keeps internal state of SHA digest algorithm.
 
 This class implements @code{util.digest} framework interface,
-@code{digest-update!}, @code{digest-final!}, 
+@code{digest-update!}, @code{digest-final!},
 @code{digest}, and @code{digest-string}.
 @xref{Message digester framework}, for detailed explanation
 of these methods.
@@ -9401,7 +9401,7 @@ of these methods.
 @end deftp
 
 @c EN
-Besides the digester framework, this module provides to 
+Besides the digester framework, this module provides to
 short-cut procedures.
 @c JP
 ダイジェスタフレームワークに加えて、このモジュールはショートカット
@@ -9428,7 +9428,7 @@ its digest in an incomplete string.
 @defunx sha384-digest-string string
 @defunx sha512-digest-string string
 @c EN
-Digest the data in @var{string}, and returns the result 
+Digest the data in @var{string}, and returns the result
 in an incomplete string.
 @c JP
 @var{string}のデータをダイジェストし、その結果を不完全文字列で
@@ -9660,7 +9660,7 @@ Some examples:
 @c EN
 Arguments are strings representing
 full or part of URIs.  This procedure resolves @var{relative-uri}
-in relative to @var{base-uri}, as defined in RFC3986 Section 5.2. 
+in relative to @var{base-uri}, as defined in RFC3986 Section 5.2.
 ``Relative Resolution''.
 
 If more @var{realtive-uri2}s are given, first @var{relative-uri}
@@ -9844,7 +9844,7 @@ condition including) one of the following specific classes.
 @deftpx {Condition Type} <zlib-version-error>
 @c EN
 Subclasses of @code{<zlib-error>}.  Those condition type correspond
-to zlib's 
+to zlib's
 @code{Z_NEED_DICT_ERROR},
 @code{Z_STREAM_ERROR},
 @code{Z_DATA_ERROR},
@@ -9861,7 +9861,7 @@ to zlib's
 @c COMMON
 
 @c EN
-When an error occurs during reading data, a compound 
+When an error occurs during reading data, a compound
 condition of a subclass of @code{<zlib-error>} and
 @code{<io-read-error>} is raised.
 When an error occurs without I/O, a simple condition
@@ -9908,7 +9908,7 @@ inflating portが読み出す圧縮データが壊れていた場合、読み出
 @defun open-deflating-port drain :key compression-level buffer-size window-bits memory-level strategy dictionary owner?
 @c EN
 Creates and returns an instance of @code{<deflating-port>},
-an output port that compresses the output data and sends 
+an output port that compresses the output data and sends
 the compressed data to another output port @var{drain}.
 This combines the functionality of zlib's @code{deflateInit2()}
 and @code{deflateSetDictionary()}.
@@ -9951,7 +9951,7 @@ The default is 4096.
 
 @c EN
 The @var{window-bits} argument specifies the size of the window in
-exact integer.   Typically the value should be 
+exact integer.   Typically the value should be
 between 8 and 15, inclusive, and it specifies the base two logarithm
 of the window size used in compression.
 Larger number yields better compression ratio, but more memory usage.
@@ -9969,7 +9969,7 @@ There are a couple of special modes specifiable by @var{window-bits}.
 When an integer between -8 and -15 is given to
 @var{window-bits}, the port produces a raw deflated data,
 that lacks zlib header and trailer.  In this case, Adler32 checksum isn't
-calculated.  The actual window size is determiend by the absolute value of 
+calculated.  The actual window size is determiend by the absolute value of
 @var{window-bits}.
 @c JP
 @var{window-bits}よって、2つばかり特別なモードを指定することができます。
@@ -9980,7 +9980,7 @@ ZLIBヘッダとトレイラのない生のdeflateデータを作成します。
 @c COMMON
 
 @c EN
-When @var{window-bits} is between 24 and 31, the port uses GZIP encoding; 
+When @var{window-bits} is between 24 and 31, the port uses GZIP encoding;
 that is, instead of zlib wrapper,
 the compressed data is enveloped by simple gzip header and trailer.
 The gzip header added by this case doesn't have filenames, comments,
@@ -10083,7 +10083,7 @@ speed.  Any choice produces correct and decompressable data.
 
 @c EN
 You can give an initial dictionary to the @var{dictionary}
-argument to be used in compression.  
+argument to be used in compression.
 The compressor and decompressor must use exactly the same dictionary.
 See the zlib documentation for the details.
 @c JP
@@ -10109,12 +10109,12 @@ is written out.
 
 @c EN
 Note: You @emph{must} close a deflating port explicitly,
-or the compressed data can be chopped prematurely. 
+or the compressed data can be chopped prematurely.
 When you leave a deflating port open to be GCed, the
 finalizer will close it; however, the order in which
 finalizers are called is undeterministic, and it is
 possible that the @var{drain} port is closed before
-the deflating port is closed.  In such cases, 
+the deflating port is closed.  In such cases,
 the deflating port's attempt to flush the buffered data
 and trailer will fail.
 @c JP
@@ -10185,11 +10185,11 @@ Otherwise, a compound condition of
 @defunx zstream-adler32 xflating-port
 @defunx zstream-data-type xflating-port
 @c EN
-The @var{xflating-port} argument must be either 
+The @var{xflating-port} argument must be either
 inflating and deflating port, or an error is raised.
 
 Returns the value of @code{total_in}, @code{total_out},
-@var{adler32}, and @code{data_type} fields of the @code{z_stream} 
+@var{adler32}, and @code{data_type} fields of the @code{z_stream}
 structure associated to the given inflating or deflating port,
 respectively.
 @c JP
@@ -10250,9 +10250,9 @@ skip the data to the full-flush point by @code{inflate-sync}.
 
 @defun inflate-sync inflating-port
 @c EN
-Skip the (possibly corrupted) compressed data up to the 
+Skip the (possibly corrupted) compressed data up to the
 next full-flush point marked by @code{deflating-port-full-flush}.
-You may want to use this procedure when you get 
+You may want to use this procedure when you get
 @code{<zlib-data-error>}.  Returns the number of bytes
 skipped when the next full-flush point is found, or
 @code{#f} when the input reaches EOF before finding the next point.
@@ -10301,7 +10301,7 @@ Zlib圧縮されたデータを文字列で受け取り、展開されたデー�
 @defun gzip-encode-string string options @dots{}
 @defunx gzip-decode-string string options @dots{}
 @c EN
-Like @code{deflate-string} and @code{inflate-string}, but 
+Like @code{deflate-string} and @code{inflate-string}, but
 uses the gzip format instead.  It is same as giving
 more than 15 to the @var{window-bits} argument of @code{deflate-string}
 and @code{inflate-string}.
@@ -10500,10 +10500,10 @@ check out @code{ssax:xml->sxml} in @ref{SSAX Highest-level parsers - XML to SXML
 
 @c ----------------------------------------------------------------------
 @menu
-* SSAX data types::             
-* SSAX low-level parsing code::  
-* SSAX higher-level parsers and scanners::  
-* SSAX Highest-level parsers - XML to SXML::  
+* SSAX data types::
+* SSAX low-level parsing code::
+* SSAX higher-level parsers and scanners::
+* SSAX Highest-level parsers - XML to SXML::
 @end menu
 
 @node SSAX data types, SSAX low-level parsing code, Functional XML parser, Functional XML parser
@@ -10555,9 +10555,9 @@ A symbol:
 @multitable @columnfractions .3 .7
 @item @code{ANY}
 @tab anything goes, expect an END tag.
-@item @code{EMPTY-TAG} 
+@item @code{EMPTY-TAG}
 @tab no content, and no END-tag is coming.
-@item @code{EMPTY} 
+@item @code{EMPTY}
 @tab no content, expect the END-tag as the next token.
 @item @code{PCDATA}
 @tab expect character data only, and no children elements.
@@ -11127,11 +11127,11 @@ Note, @code{&lt;} and @code{&amp;} are not specially recognized (and are not exp
 
 @defun ssax:read-char-ref port
 @example
- [66]  CharRef ::=  '&#' [0-9]+ ';' 
+ [66]  CharRef ::=  '&#' [0-9]+ ';'
                   | '&#x' [0-9a-fA-F]+ ';'
 @end example
 @c EN
-This procedure must be called after we we have read "@code{&#}" 
+This procedure must be called after we we have read "@code{&#}"
 that introduces a char reference.
 The procedure reads this reference and returns the corresponding char.
 The current position in @var{port} will be after "@code{;}" that terminates
@@ -11239,7 +11239,7 @@ This procedure reads and parses a production @code{Attribute*}
 @c COMMON
 @example
  [41] Attribute ::= Name Eq AttValue
- [10] AttValue ::=  '"' ([^<&"] | Reference)* '"' 
+ [10] AttValue ::=  '"' ([^<&"] | Reference)* '"'
                  | "'" ([^<&'] | Reference)* "'"
  [25] Eq ::= S? '=' S?
 @end example
@@ -11410,12 +11410,12 @@ Faults detected:
 こちらも参照のこと。
 @c COMMON
 @example
- VC: XML-Spec.html#enum 
+ VC: XML-Spec.html#enum
  VC: XML-Spec.html#RequiredAttr
  VC: XML-Spec.html#FixedAttr
  VC: XML-Spec.html#ValueType
  WFC: XML-Spec.html#uniqattspec (after namespaces prefixes are resolved)
- VC: XML-Spec.html#elementvalid 
+ VC: XML-Spec.html#elementvalid
  WFC: REC-xml-names/#dt-NSName
 @end example
 
@@ -11439,7 +11439,7 @@ This procedure parses an @code{ExternalID} production.
 @example
  [75] ExternalID ::= 'SYSTEM' S SystemLiteral
                  | 'PUBLIC' S PubidLiteral S SystemLiteral
- [11] SystemLiteral ::= ('"' [^"]* '"') | ("'" [^']* "'") 
+ [11] SystemLiteral ::= ('"' [^"]* '"') | ("'" [^']* "'")
  [12] PubidLiteral ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'"
  [13] PubidChar ::=  #x20 | #xD | #xA | [a-zA-Z0-9]
                 | [-'()+,./:=?;!*#@@$_%]
@@ -11505,7 +11505,7 @@ or an XML element.
 この手続きは、XML文書かXML要素の文字内容を読むためのものです。
 @c COMMON
 @example
- [43] content ::= 
+ [43] content ::=
         (element | CharData | Reference | CDSect | PI
          | Comment)*
 @end example
@@ -11789,7 +11789,7 @@ Faults detected:
 こちらも参照のこと。
 @c COMMON
 @example
- VC: XML-Spec.html#elementvalid 
+ VC: XML-Spec.html#elementvalid
  WFC: XML-Spec.html#GIMatch
 @end example
 @end defmac
@@ -11883,7 +11883,7 @@ is called when an XML document under parsing does contains the @code{DOCTYPE}
 declaration.
 The handler-procedure must generate a new @code{seed} (and verify
 that the name of the root element matches the doctype, if the handler
-so wishes). 
+so wishes).
 The default handler-procedure is the identity function.
 @c JP
 ハンドラ手続きの引数: @var{elem-gi} @var{seed} @*
@@ -11948,12 +11948,12 @@ the rest.
  [22] prolog ::= XMLDecl? Misc* (doctypedec | Misc*)?
  [27] Misc ::= Comment | PI |  S
 
- [28] doctypedecl ::=  '<!DOCTYPE' S Name (S ExternalID)? S? 
+ [28] doctypedecl ::=  '<!DOCTYPE' S Name (S ExternalID)? S?
                         ('[' (markupdecl | PEReference | S)* ']' S?)? '>'
  [29] markupdecl ::= elementdecl | AttlistDecl
                       | EntityDecl
                       | NotationDecl | PI
-                      | Comment 
+                      | Comment
 @end example
 @end defmac
 
@@ -12026,7 +12026,7 @@ XMLドキュメントのSXML表現を返します。
 @mdindex sxml.sxpath
 @c EN
 SXPath is a query language for SXML, an instance of XML Information
-set (Infoset) in the form of s-expressions. 
+set (Infoset) in the form of s-expressions.
 
 It is originally written by Oleg Kiselyov, and
 improved by Dmitry Lizorkin and Kirill Lisovsky.
@@ -12090,9 +12090,9 @@ W3CのXPathコア関数ライブラリのSXML版を実装する拡張ライブ�
 
 @c ----------------------------------------------------------------------
 @menu
-* SXPath basic converters and applicators::  
-* SXPath query language::       
-* SXPath extension::            
+* SXPath basic converters and applicators::
+* SXPath query language::
+* SXPath extension::
 @end menu
 
 @node SXPath basic converters and applicators, SXPath query language, SXML Query Language, SXML Query Language
@@ -12149,7 +12149,7 @@ if @var{obj} is SXML element, otherwise returns @var{#f}.
 @defun ntype-names?? crit
 @c EN
 The function @code{ntype-names??} takes a list of acceptable node names as a
-criterion and returns a function, which, when applied to a node, 
+criterion and returns a function, which, when applied to a node,
 will return @code{#t} if the node name is present in criterion list
 and @code{#f} othervise.
 @c JP
@@ -12177,7 +12177,7 @@ the test.
 @end example
 
 @c EN
-The criterion @var{crit} is 
+The criterion @var{crit} is
 one of the following symbols:
 @c JP
 判定基準@var{crit}は、以下のシンボルのうちの1つです。
@@ -12209,7 +12209,7 @@ tests if the Node is a text node.
 @c COMMON
 @item *data*
 @c EN
-tests if the Node is a data node 
+tests if the Node is a data node
 (text, number, boolean, etc., but not pair).
 @c JP
 そのノードがデータノード(テキスト、数値、真偽値などで、ペアではない)であるか
@@ -12262,7 +12262,7 @@ for nodes with non-qualified names.
 @defun sxml:invert pred
 @c EN
 This function takes a predicate and returns it inverted .
-That is if the given predicate yields @code{#f} or '@code{()} the inverted one  
+That is if the given predicate yields @code{#f} or '@code{()} the inverted one
 yields the given node (@code{#t}) and vice versa.
 @c JP
 この関数は、述語を取り、それを反対にして返します。
@@ -12347,7 +12347,7 @@ till that moment (that is, which fail the predicate).
 @code{take-until} passes
 elements of an ordered input set till (but not including) the first
 element that satisfies the predicate.
-The nodeset returned by @code{((take-until (not pred)) nset)} is a subset -- 
+The nodeset returned by @code{((take-until (not pred)) nset)} is a subset --
 to be more precise, a prefix -- of the nodeset returned by
 @code{((filter pred) nset)}.
 @c JP
@@ -12643,17 +12643,17 @@ to the following rewriting rules:
  (sxpath '()) -> (node-join)
  (sxpath '(path-component ...)) ->
                 (node-join (sxpath1 path-component) (sxpath '(...)))
- (sxpath1 '//) -> (node-or 
+ (sxpath1 '//) -> (node-or
                      (node-self (ntype?? '*any*))
                      (node-closure (ntype?? '*any*)))
  (sxpath1 '(equal? x)) -> (select-kids (node-equal? x))
  (sxpath1 '(eq? x))    -> (select-kids (node-eq? x))
  (sxpath1 '(or@@ ...))  -> (select-kids (ntype-names??
                                           (cdr '(or@@ ...))))
- (sxpath1 '(not@@ ...)) -> (select-kids (sxml:invert 
+ (sxpath1 '(not@@ ...)) -> (select-kids (sxml:invert
                                          (ntype-names??
                                           (cdr '(not@@ ...)))))
- (sxpath1 '(ns-id:* x)) -> (select-kids 
+ (sxpath1 '(ns-id:* x)) -> (select-kids
                                       (ntype-namespace-id?? x))
  (sxpath1 ?symbol)     -> (select-kids (ntype?? ?symbol))
  (sxpath1 ?string)     -> (txpath ?string)
@@ -12862,7 +12862,7 @@ XPathオブジェクトの比較子:
 @c EN
 A helper for XPath equality operations: @code{=} , @code{!=}
 @var{bool-op}, @var{number-op} and
-@var{'string-op} are comparison operations for 
+@var{'string-op} are comparison operations for
 a pair of booleans,  numbers and strings respectively.
 @c JP
 XPathの等値比較: @code{=}、@code{!=}のためのヘルパです。
@@ -12926,16 +12926,16 @@ child-list for PI, Comment and Entity nodes.
 @c EN
 Parent axis.
 
-Given a predicate, it returns a function 
+Given a predicate, it returns a function
 @code{RootNode -> Converter}
-which yields a 
+which yields a
 @code{ node -> parent }
 converter then applied to a rootnode.
 
 Thus, such a converter may be constructed using
 @code{ ((sxml:parent test-pred) rootnode) }
 and returns a parent of a node it is applied to.
-If applied to a nodeset, it returns the 
+If applied to a nodeset, it returns the
 list of parents of nodes in the nodeset. The rootnode does not have
 to be the root node of the whole SXML tree -- it may be a root node
 of a branch of interest.
@@ -13073,11 +13073,11 @@ source code.
 
 @c ----------------------------------------------------------------------
 @menu
-* SXML predicates::             
-* SXML accessors::              
-* SXML modifiers::              
-* SXPath auxiliary utilities::  
-* SXML to markup conversion::   
+* SXML predicates::
+* SXML accessors::
+* SXML modifiers::
+* SXPath auxiliary utilities::
+* SXML to markup conversion::
 @end menu
 
 @c ----------------------------------------------------------------------
@@ -13087,7 +13087,7 @@ source code.
 
 @defun sxml:empty-element? obj
 @c EN
-A predicate which returns @var{#t} if given element @var{obj} is empty. 
+A predicate which returns @var{#t} if given element @var{obj} is empty.
 Empty element has no nested elements, text nodes, @code{PI}s,
 Comments or entities
 but it may contain attributes or namespace-id.
@@ -13207,7 +13207,7 @@ Returns namespace-id part of given name, or @var{#f} if it's LocalName
 @defun sxml:content obj
 @c EN
 Returns the content of given SXML element or nodeset (just text and element
-nodes) representing it as a list of strings and nested elements in document 
+nodes) representing it as a list of strings and nested elements in document
 order.  This list is empty if @var{obj} is empty element or empty list.
 @c JP
 与えられたSXML要素かノードセット(テキストノードと要素ノードのみ)の内容を、
@@ -13223,7 +13223,7 @@ Returns all the content of normalized SXML element except
 Thus it includes @code{PI}, @code{COMMENT} and @code{ENTITY}
 nodes as well as @code{TEXT} and @code{ELEMENT} nodes
 returned by @code{sxml:content}.
-Returns  a list of nodes in document order or empty list if @var{obj} is empty 
+Returns  a list of nodes in document order or empty list if @var{obj} is empty
 element or empty list.
 This function is faster than @code{sxml:content}.
 @c JP
@@ -13371,7 +13371,7 @@ present, so it's mostly intended for nodes with unique names .
 @defun sxml:aux-nodes obj aux-name
 @c EN
 Return a list of aux-node with @var{aux-name}
-given in SXML element @var{obj} 
+given in SXML element @var{obj}
 or '@code{()} if such a node is absent.
 @c JP
 与えられたSXML要素@var{obj}で@var{aux-name}とうい名前の付いている補助ノードの
@@ -13383,7 +13383,7 @@ or '@code{()} if such a node is absent.
 @c EN
 Accessor for an attribute @var{attr-name} of
 given SXML element @var{obj}.
-It returns: 
+It returns:
 the value of the attribute if the attribute is present, or
 @var{#f} if there is no such an attribute in the given element.
 @c JP
@@ -13397,8 +13397,8 @@ the value of the attribute if the attribute is present, or
 @c EN
 Accessor for a numerical attribute @var{attr-name}
 of given SXML element @var{obj}.
-It returns: 
-a value of the attribute as the attribute as a number if the attribute 
+It returns:
+a value of the attribute as the attribute as a number if the attribute
 is present and its value may be converted to number using @code{string->number},
 or @code{#f} if there is no such an attribute in the given element or
 its value can't be converted to a number.
@@ -13415,10 +13415,10 @@ its value can't be converted to a number.
 @defun sxml:attr-u obj attr-name
 @c EN
 Accessor for an attribute @var{attr-name}
-of given SXML element @var{obj} which 
+of given SXML element @var{obj} which
 may also be an attributes-list or nodeset (usually content of SXML element).
 
-It returns: 
+It returns:
 the value of the attribute if the attribute is present,
 or @code{#f} if there is no such an attribute in the given element.
 
@@ -13451,7 +13451,7 @@ Empty list is returned if there is no list of namespaces.
 
 @defun sxml:ns-id->nodes obj namespace-id
 @c EN
-Returns the list of namespace-assoc's for given @var{namespace-id} in 
+Returns the list of namespace-assoc's for given @var{namespace-id} in
 SXML element @var{obj}.
 Analog of @code{((sxpath '(@@@@ *NAMESPACES* namespace-id)) @var{obj})}.
 Empty list is returned if there is no namespace-assoc with
@@ -13503,8 +13503,8 @@ Returns URI for given namespace-assoc list.
 @defun sxml:ns-prefix ns-assoc
 @c EN
 It returns namespace prefix for given namespace-assoc list.
-Original (as in XML document) prefix for namespace-id given 
-has to be strored as the third element in namespace-assoc list 
+Original (as in XML document) prefix for namespace-id given
+has to be strored as the third element in namespace-assoc list
 if it is different from namespace-id.
 If original prefix is omitted in namespace-assoc then
 namespace-id is used instead.
@@ -13612,7 +13612,7 @@ Pure functional counterpart to @code{sxml:add-attr!}.
 @defun sxml:add-attr! obj attr
 @c EN
 Add an attribute @var{attr} for an element @var{obj}.
-Returns @code{#f} if the attribute with given name already exists. 
+Returns @code{#f} if the attribute with given name already exists.
 The resulting SXML node is normalized.
 Linear update counterpart to @code{sxml:add-attr}.
 @c JP
@@ -13627,7 +13627,7 @@ Linear update counterpart to @code{sxml:add-attr}.
 @c EN
 Returns SXML element @var{obj} with changed value of
 attribute @var{attr}, or @code{#f}
-if where is no attribute with given name. 
+if where is no attribute with given name.
 @var{attr} is @code{(@var{attr-name} @var{attr-value})}.
 @c JP
 属性@var{attr}の値が変更されたSXML要素@var{obj}を返します。
@@ -13679,7 +13679,7 @@ Add an auxiliary node @var{aux-node} for an element @var{obj}.
 @defun sxml:squeeze obj
 @defunx sxml:squeeze! obj
 @c EN
-Eliminates empty lists of attributes and aux-lists for given SXML element 
+Eliminates empty lists of attributes and aux-lists for given SXML element
 @var{obj} and its descendants ("minimize" it).
 Returns a minimized and normalized SXML element.
 @c JP
@@ -13691,7 +13691,7 @@ Returns a minimized and normalized SXML element.
 
 @defun sxml:clean obj
 @c EN
-Eliminates empty lists of attributes and all aux-lists for given SXML element 
+Eliminates empty lists of attributes and all aux-lists for given SXML element
 @var{obj} and its descendants.
 Returns a minimized and normalized SXML element.
 @c JP
@@ -13779,7 +13779,7 @@ to a result of this function will return its string-value.
 
 It may be considered as a variant of Oleg Kiselyov's
 @code{SRV:send-reply}:
-While @code{SRV:send-reply} displays fragments, this function returns the list 
+While @code{SRV:send-reply} displays fragments, this function returns the list
 of meaningful fragments and filter out the garbage.
 @c JP
 'fragments'をフィルタします。
@@ -13810,10 +13810,10 @@ Creates the XML markup for attributes.
 
 @defun sxml:string->xml string
 @c EN
-Return a string or a list of strings where all the occurences of 
+Return a string or a list of strings where all the occurences of
 characters @code{<}, @code{>},
 @code{&}, @code{"}, or @code{'} in a given string are
-replaced by corresponding 
+replaced by corresponding
 character entity references. See also @code{sxml:string->html}.
 @c JP
 与えられた文字列中の全ての@code{<}、@code{>}、@code{&}、@code{``}、
@@ -13902,8 +13902,8 @@ sxml.toolsのsxml:sxml->xmlとsxml:sxml->htmlよりも強力です。
 
 @c ----------------------------------------------------------------------
 @menu
-* Simple SXML serializing::     
-* Custom SXML serializing::     
+* Simple SXML serializing::
+* Custom SXML serializing::
 @end menu
 
 @c ----------------------------------------------------------------------
@@ -14043,7 +14043,7 @@ see XSLT 2.0 and XQuery 1.0 Serialization (@uref{http://www.w3.org/TR/2005/CR-xs
 @c JP
 @code{method} - シンボル@code{xml}か@code{html}のどちらか。XMLメソッド
 とHTMLメソッドの相違についての詳しい説明は、XSLT 2.0 と XQuery
-Serialization 
+Serialization
 (@uref{http://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/})
 を参照してください。
 @c COMMON
@@ -14186,7 +14186,7 @@ future versions of the library.
 
 @c EN
 Same as @code{srl:parameterizable} writing output to
-@var{port-or-filename} and without the overhead of parsing parameters. 
+@var{port-or-filename} and without the overhead of parsing parameters.
 This function interface may change in
 future versions of the library.
 @c JP
@@ -14345,10 +14345,10 @@ same as @code{diff}'s.
 
 @c EN
 @var{Writer} is a procedure that takes two arguments, the text element
-and a type, which is either a symbol @code{+}, 
+and a type, which is either a symbol @code{+},
 a symbol @code{-}, or @code{#f}.   If the text element is only
 in @var{src-a}, @var{writer} is called with the element and
-@code{-}.  If the text element is only in @var{src-b}, 
+@code{-}.  If the text element is only in @var{src-b},
 it is called with the element and @code{+}.  If the text element
 is in both sources, it is called with the element and
 @code{#f}.   The default procedure of @var{writer} prints
@@ -14368,7 +14368,7 @@ in unified-diff-like format:
 @example
 (diff-report "a\nb\nc\nd\n" "b\ne\nd\nf\n")
 @end example
-displays: 
+displays:
 @example
 - a
   b
@@ -14489,10 +14489,10 @@ to specify fallbacks.
 @var{Dirs} is the search path of directories which should hold the
 @file{LOCALE/CDIR/} directories which contain the actual message catalogs.
 This is always appended with the system default, e.g.
-@file{"/usr/share/locale"}, and may also inherit from the 
+@file{"/usr/share/locale"}, and may also inherit from the
 @code{GETTEXT_PATH} colon-delimited environment variable.
 
-@var{Cdir} is the category directory, defaulting to either the 
+@var{Cdir} is the category directory, defaulting to either the
 @code{LC_CATEGORY}
 environment variable or the appropriate system default
 (e.g. @code{LC_MESSAGES}).  You generally won't need this.
@@ -14506,7 +14506,7 @@ parameters, and defaults to @code{#t}.
 
 @code{Textdomain} just passes these parameters to the internal
 @code{make-gettext},
-and binds the result to the global dispatch used by @code{gettext}.  
+and binds the result to the global dispatch used by @code{gettext}.
 You may build these closures manually for convenience in using multiple
 separate domains or locales at once (useful for server environments).
 See the description of @code{make-gettext} below.
@@ -14572,7 +14572,7 @@ is returned when @var{num} is 1, and @var{msg-id2} otherwise.
 
 @defun bindtextdomain domain dirs
 @c EN
-Sets the search path of domain @var{domain} to @var{dirs}, which 
+Sets the search path of domain @var{domain} to @var{dirs}, which
 may be just a single directory name or a list of directory names.
 @c JP
 ドメイン @var{domain} のサーチパスを @var{dirs} に設定します。
@@ -14689,7 +14689,7 @@ HTML に含まれる"安全でない"文字をエスケープします。
 @defun html-doctype :key type
 @c EN
 Returns a doctype declaration for an HTML document.
-@var{type} can be either one of the followings (default is 
+@var{type} can be either one of the followings (default is
 @code{:html-4.01-strict}).
 @c JP
 HTML ドキュメントの文書型宣言を返します。
@@ -14812,7 +14812,7 @@ a        abbr       acronym    address     area      b
 base     bdo        big        blockquote  body      br
 button   caption    cite       code        col       colgroup
 dd       del        dfn        div         dl        dt
-em       fieldset   form       frame       frameset  
+em       fieldset   form       frame       frameset
 h1       h2         h3         h4          h5        h6
 head     hr         html       i           iframe    img
 input    ins        kbd        label       legend    li
@@ -15249,7 +15249,7 @@ and an optional numeric argument.
 @item @var{proc} 'show
 @c EN
 Redisplays the progress bar.  All other operations implies redisplay,
-so you don't need to use this unless you have a specific reason to 
+so you don't need to use this unless you have a specific reason to
 redisplay the current state.
 @c JP
 プログレスバーを再表示する。他のどの操作も状態の再表示を行います。
@@ -15445,7 +15445,7 @@ Here's a simple example, using customized numeric part:
   (define (num-format cur max)
     (format "~d/~d(~3d%)" cur max
             (round->exact (/. (* cur 100) max))))
-  
+
   (let ((p (make-text-progress-bar :header "Example"
                                    :header-width 10
                                    :bar-char #\o
@@ -15493,7 +15493,7 @@ safe in SQL, see @code{dbi-escape-sql} in @ref{DBI user API}.
 @defun sql-tokenize sql-string
 @c EN
 Tokenize a SQL statement @var{sql-string}.  The return value is
-a list of tokens, where each token is 
+a list of tokens, where each token is
 represented by one of the following forms.
 @c JP
 SQL文@var{sql-string}をトークン列に分解します。返り値はトークンのリス
@@ -15685,7 +15685,7 @@ Here's some basic examples.
 If @var{to-list} is shorter than @var{from-list}, the behavior
 depends on the keyword argument @var{delete}.  If a true value is
 given,  characters that appear in @var{from-list} but not
-in @var{to-list} are deleted.   Otherwise, 
+in @var{to-list} are deleted.   Otherwise,
 the extra characters in @var{from-list} are just passed through.
 @c JP
 @var{to-list}が@var{from-list}より短い場合、動作はキーワード引数@var{delete}に
@@ -15725,7 +15725,7 @@ Internally, @code{tr} builds a table to map the characters for
 efficiency.  Since Gauche can deal with potentially huge set
 of characters, it limits the use of the table for only smaller
 characters (<256 by default).  If you want to transliterate
-multibyte characters on the large text, however, you might want 
+multibyte characters on the large text, however, you might want
 to use larger table, trading off the memory usage.  You can specify
 the internal table size by @var{table-size} keyword argument.
 For example, if you transliterate lots of EUC-JP hiragana text
@@ -15815,7 +15815,7 @@ current-output-port at the time transliterator is called.
 @c EN
 Defines simple but commonly used functions for a text construction.
 
-When you generate a text by a program, 
+When you generate a text by a program,
 It is a very common operation to concatenate text segments.
 However, using string-append repeatedly causes unnecessary
 copying of intermediate strings, and sometimes such intermediate
@@ -15933,9 +15933,9 @@ fully, no matter what the running Gauche's native encoding is.
 @end deftp
 
 @menu
-* Unicode transfer encodings::  
-* Unicode text segmentation::   
-* Full string case conversion::  
+* Unicode transfer encodings::
+* Unicode text segmentation::
+* Full string case conversion::
 @end menu
 
 @node Unicode transfer encodings, Unicode text segmentation, Unicode utilities, Unicode utilities
@@ -16000,7 +16000,7 @@ may return an integer between 0 and 6, inclusive.
 It allows the codepoint range @code{#x110000} to
 @code{#x7fffffff} as the original utf-8 spec, so
 the maximum number of octets can be up to 6.
-If the input is in the range between @code{#xc0} 
+If the input is in the range between @code{#xc0}
 and @code{#xdf}, inclusive, this procedure returns
 1--it's up to the application how to treat these illegal
 octets.  For other values, it returns @code{0}.
@@ -16044,7 +16044,7 @@ word breaking algorithms defined in UAX #29: Unicode Text Segmentation.
 @defunx codepoints->words sequence
 From given string or codepoint sequence (a @code{<sequence>}
 object containing list of codepoints), returns a list of
-words.  Each cluster is represented as a string, or 
+words.  Each cluster is represented as a string, or
 a sequence of the same type as input, respectively.
 
 @example
@@ -16341,7 +16341,7 @@ while @code{power-set} in breadth-first order.
 @c EN
 Returns a cartesian product of sets in @var{list-of-sets}.
 @code{Cartesian-product} construct the result in left fixed order
-(the rightmost element varies first), while 
+(the rightmost element varies first), while
 @code{cartesian-product-right} in right fixed order
 (the leftmost element varies first).
 @c JP
@@ -16369,7 +16369,7 @@ Returns a cartesian product of sets in @var{list-of-sets}.
 @deftp {Module} util.digest
 @mdindex util.digest
 @c EN
-This module provides a base class and common interface for 
+This module provides a base class and common interface for
 message digest algorithms, such as MD5 (@xref{MD5 message digest})
 and SHA (@xref{SHA message digest}).
 @c JP
@@ -16629,9 +16629,9 @@ as the state value of the next call of either one of the procedures.
 The last state value is returned from @code{lcs-fold}.
 
 The three procedures are called in the following order: Suppose the sequence
-@var{a} consists of @var{a'}@var{c}@var{a''}, and @var{b} consists of 
+@var{a} consists of @var{a'}@var{c}@var{a''}, and @var{b} consists of
 @var{b'}@var{c}@var{b''}, where @var{a'}, @var{b'}, @var{a''}, and @var{b''}
-are subsequences, and @var{c} is the head of the 
+are subsequences, and @var{c} is the head of the
 LCS of @var{a} and @var{b}.   Then @var{a-proc} is called first on
 each element in @var{a'}, @var{b-proc} is called second on
 each element in @var{b'}, then @var{both-proc} is called on @var{c}.
@@ -16711,7 +16711,7 @@ has to be added.  The third hunk means @code{"H"} at the position
 4 of list @var{a} should be removed and @code{"F"} at the position
 4 of list @var{b} should be added, and so on.
 
-If you are familiar with Perl's Algorithm::Diff module, you may 
+If you are familiar with Perl's Algorithm::Diff module, you may
 notice that this is the same structure that its @code{diff} procedure
 returns.
 @c JP
@@ -16762,7 +16762,7 @@ and (2) structure matching is integrated to Gauche's object system.
 @end deftp
 
 @c EN
-We show a list of APIs first, then the table of complete syntax of 
+We show a list of APIs first, then the table of complete syntax of
 patterns, followed by examples.
 @c JP
 まず API のリストを示し、それからパターンの完全な構文のテーブルを示し、
@@ -16802,7 +16802,7 @@ If a matching @var{pat} is found, the @emph{pattern variables} in
 of the last expression of @var{body} @dots{}.
 @c JP
 @var{pat} にマッチする部分が見つかれば、@var{pat} 中の @emph{パターン変数}
-は、@var{expr} 中の対応する要素に束縛され、その後、@var{body} @dots{} 
+は、@var{expr} 中の対応する要素に束縛され、その後、@var{body} @dots{}
 が評価されます。@code{match}は@var{body} @dots{}の最後の式の値を返します。
 @c COMMON
 
@@ -16888,7 +16888,7 @@ It's functionally equivalent to the following expression:
 Generalize @code{let}, @code{let*}, and @code{letrec} to allow
 patterns in the binding position rather than just variables.
 Each @var{expr} is evaluated, and then matched to @var{pat},
-and the bound pattern variables are visible in 
+and the bound pattern variables are visible in
 @var{body-expr} @dots{}.
 @c JP
 束縛部分が単なる変数ではなく、パターンを許す、一般化された @code{let}、
@@ -17014,7 +17014,7 @@ ooo : @b{...}                          ;; zero or more
     | @b{___}                          ;; zero or more
     | @b{..@i{k}}                          ;; @i{k} or more, where @i{k} is an integer.
                                    ;;   Example: @b{..1}, @b{..2} ...
-    | @b{__@i{k}}                          ;; @i{k} or more, where @i{k} is an integer. 
+    | @b{__@i{k}}                          ;; @i{k} or more, where @i{k} is an integer.
                                    ;;   Example: @b{__1}, @b{__2} ...
 @end ifnottex
 @iftex
@@ -17022,7 +17022,7 @@ ooo : ...                          ;; zero or more
     | ___                          ;; zero or more
     | ..@slanted{k}                          ;; @i{k} or more, where @i{k} is an integer.
                                    ;;   Example: ..1, ..2 ...
-    | __@slanted{k}                          ;; @i{k} or more, where @i{k} is an integer. 
+    | __@slanted{k}                          ;; @i{k} or more, where @i{k} is an integer.
                                    ;;   Example: __1, __2 ...
 @end iftex
 
@@ -17240,7 +17240,7 @@ expression, then match the result with @var{pat}.
 @code{(and pat @dots{})}, @code{(or pat @dots{})}, and
 @code{(not pat @dots{})} are boolean operations of patterns.
 @c JP
-@code{(and pat @dots{})}、@code{(or pat @dots{})} および 
+@code{(and pat @dots{})}、@code{(or pat @dots{})} および
 @code{(not pat @dots{})} はパターンの真偽値演算子です。
 @c COMMON
 
@@ -17372,7 +17372,7 @@ is matched to the result of application of the regular expression.
 An example of quasipattern.   In the first expression, the
 pattern except @code{value} is quoted, so the symbols @code{the},
 @code{answer}, and @code{is} are not pattern variables but literal
-symbols.   The second expression shows that; input symbol @code{was} 
+symbols.   The second expression shows that; input symbol @code{was}
 does not match the literal symbol @code{is} in the pattern.
 If we don't use quasiquote, all symbols in the pattern are pattern
 variables, so any four-element list matches as the third expression shows.
@@ -17478,8 +17478,8 @@ The upper bound of the number of items in the queue.
 
 @c EN
 If this slot is zero, the queue cannot hold any items, but
-works as a synchrization device.  
-A writer will block until a reader appears to take the item; 
+works as a synchrization device.
+A writer will block until a reader appears to take the item;
 a reader will block until a writer appears to give the item.
 @c JP
 このスロットが0の場合、キューは要素を中に持つことはできませんが、同期デバイスとして動作します。
@@ -17500,7 +17500,7 @@ Creates and returns an empty simple queue.
 @defun make-mtqueue &key max-length
 @c EN
 Creates and returns an empty mtqueue.  When an integer is given
-to the keyword argument @var{max-length}, it is used to 
+to the keyword argument @var{max-length}, it is used to
 initialize the @code{max-length} slot (Zero indicates unlimited length).
 @c JP
 空のmtqueueを作って返します。整数が@var{max-length}に与えられた場合は、
@@ -17510,7 +17510,7 @@ initialize the @code{max-length} slot (Zero indicates unlimited length).
 
 @defun queue? obj
 @c EN
-Returns @code{#t} if @var{obj} is a queue (either a simple queue 
+Returns @code{#t} if @var{obj} is a queue (either a simple queue
 or an mtqueue).
 @c JP
 @var{obj}がキューであれば(シンプルなキューでもmtqueueでも)@code{#t}を返します。
@@ -17587,7 +17587,7 @@ atomically; no other objects from other threads can be inserted
 between the objects given to a single @code{enqueue!} call.
 Besides, if the value of its @code{max-length} slot
 is positive, and adding @var{obj}s makes the number of
-elements in @var{queue} exceeds @code{max-length}, 
+elements in @var{queue} exceeds @code{max-length},
 an error is signalled and @var{queue} won't be modified.
 (If @code{max-length} is zero, this procedure always fail.
 Use @code{enqueue/wait!} below.)
@@ -17688,7 +17688,7 @@ See also @code{queue->list} below.
 @defunx queue-rear queue :optional fallback
 @c EN
 Peek the head or the tail of the queue and returns the object, respectively.
-@var{util.queue - Queue} is not modified.  
+@var{util.queue - Queue} is not modified.
 If @var{queue} is empty, @var{fallback} is returned if it is given,
 otherwise an error is signalled.
 @c JP
@@ -17831,7 +17831,7 @@ If it is a real number, they wait at least the given number of
 seconds.  If it is a @code{<time>} object (@xref{Time}),
 they wait until the absolute point of time the argument specifies.
 
-In case the call is blocked then timed out, the value of 
+In case the call is blocked then timed out, the value of
 @var{timeout-val} is returned, which defaults to @code{#f}.
 
 When @code{enqueue/wait!} and @code{queue-push/wait!} succeeds
@@ -17851,7 +17851,7 @@ without hitting timeout, they return @code{#t}.
 その時間経過するまでは待ちます。渡されたのが@code{<time>}オブジェクト
 (@ref{Time}参照)である場合は、そのオブジェクトが指定する絶対時刻を
 経過するまで待ちます。
- 
+
 タイムアウトによりブロックが解かれた場合は、@var{timeout-val}で
 指定した値が返されます。@var{timeout-val}の省略時値は@code{#f}です。
 
@@ -17903,7 +17903,7 @@ must have total order.
 @c EN
 API of @code{util.rbtree} is similar to the hash table API
 (@xref{Hashtables}), so the user can use a red black tree
-as if it is a hashtable, with its entries are ordered 
+as if it is a hashtable, with its entries are ordered
 by the keys.
 @c JP
 util.rbtreeのAPIはハッシュテーブルのAPIに似せて作られており、ユーザ
@@ -18085,7 +18085,7 @@ an error.
 @defunx rbtree-extract-max! rbtree :optional fallback
 @c EN
 Looks for an entry with minimum or maximum key, respectively,
-then deletes the entry from @var{rbtree} and returns 
+then deletes the entry from @var{rbtree} and returns
 a pair of the key and its value of the original entry.
 If @var{rbtree} is empty,
 returns @var{fallback} if it is given, otherwise reports
@@ -18101,7 +18101,7 @@ an error.
 @defun rbtree-fold rbtree proc seed
 @defunx rbtree-fold-right rbtree proc seed
 @c EN
-Iterate over elements in @var{rbtree}, applying 
+Iterate over elements in @var{rbtree}, applying
 @var{proc} which has a type @code{(key, value, seed) -> seed}.
 The difference of @code{rbtree-fold} and @code{rbtree-fold-right}
 is the same as @code{fold} and @code{fold-right}---that is,
@@ -18129,9 +18129,9 @@ Some examples:
 @example
 (define tree (alist->rbtree '((3 . a) (7 . b) (5 . c)) = <))
 
-(rbtree-fold tree list* '()) 
+(rbtree-fold tree list* '())
    @result{} (7 b 5 c 3 a)
-(rbtree-fold-right tree list* '()) 
+(rbtree-fold-right tree list* '())
    @result{} (3 a 5 c 7 b)
 @end example
 @end defun
@@ -18316,8 +18316,8 @@ Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
 such that the first element of a tuple is from S1, the second from
 S2, ..., and the n-th from Sn.  In another word, R is a subset of
 Cartesian product of S1, ..., Sn.
-(The definition, as well as the term @emph{relation}, is taken 
-from the Codd's 1970 paper, 
+(The definition, as well as the term @emph{relation}, is taken
+from the Codd's 1970 paper,
 "A Relational Model of Data for Large Shared Data Banks", in
 CACM 13(6) pp.377--387.)
 @c JP
@@ -18441,7 +18441,7 @@ of the specified column.
 @c EN
 A subclass must implement this method. It should returns a procedure
 that takes three arguments, a row from the relation @var{r}, a column
-name, and a value to set. 
+name, and a value to set.
 @c JP
 サブクラスではこのメソッドは必ず実装しなければなりまん。
 3つの引数、リレーション@var{r}の行、カラム名、値をとり、その値をセット
@@ -18459,7 +18459,7 @@ If the relation is read-only, this method returns @code{#f}.
 @c EN
 A subclass must implement this method.
 It should return the underlying instance of @code{<collection>} or
-its subclass (e.g.  @code{<sequence>}) 
+its subclass (e.g.  @code{<sequence>})
 @c JP
 サブクラスではこのメソッドは必ず実装しなければなりまん。
 基盤となっている@code{<collection>}クラスまたはそのサブクラス(たとえば
@@ -18595,7 +18595,7 @@ Deletes a row @var{row} from the relation @var{r}.
 @deffn {Method} relation-fold (r <relation>) proc seed column @dots{}
 @c EN
 Applies @var{proc} to the values of @var{column} @dots{} of each row,
-passing @var{seed} as the state value.  That is, for each row in 
+passing @var{seed} as the state value.  That is, for each row in
 @var{r}, @var{proc} is called as follows:
 @c JP
 @var{proc}を各行のカラム@var{column} @dots{} の値に適用します。
@@ -18657,7 +18657,7 @@ a @emph{sparse table}, a hash table using a sparse vector
 as a backing storage.
 @end deftp
 
-A sparse vector associates a nonnegative integer index 
+A sparse vector associates a nonnegative integer index
 to a value.  It has @emph{vector} in its name since it is indexed
 by an integer, but it isn't like a flat array on contiguous memory;
 it's more like an associative array.  (Internally, the current
@@ -18697,15 +18697,15 @@ The main reason of these sparse data containers are for
 memory efficiency.   If you want to store values in a vector
 but knows you'll use only some entries sparsely, obviously it
 is waste to allocate a large vector and to leave many entries unused.
-But it is worse than that; Gauche's GC doesn't like a large 
-contiguous region of memory.  Using lots of large vectors adds 
+But it is worse than that; Gauche's GC doesn't like a large
+contiguous region of memory.  Using lots of large vectors adds
 GC overhead quickly.  It becomes especially visible when you
 store large number of entries (like >100,000) into hash tables,
 since Gauche's builtin hash tables use a flat vector as a backing
 storage.   You'll see the heap size grows quickly and
 GC runs more frequently and longer.
 On the other hand, sparse table works pretty stable with
-large number of entries.  
+large number of entries.
 
 Sparse data containers does have overhead on access speed.
 They are a bit slower than the ordinary hash tables,
@@ -18723,8 +18723,8 @@ If you see GC Warnings telling ``repeated allocation of large
 blocks'', you should definitely consider sparse tables.
 
 @menu
-* Sparse vectors::              
-* Sparse tables::               
+* Sparse vectors::
+* Sparse tables::
 @end menu
 
 @node Sparse vectors, Sparse tables, Sparse data containers, Sparse data containers
@@ -18733,14 +18733,14 @@ blocks'', you should definitely consider sparse tables.
 
 @deftp {Class} <sparse-vector-base>
 @clindex sparse-vector-base
-An abstract base class of sparse vectors. 
+An abstract base class of sparse vectors.
 Inherits @code{<dictionary>} and @code{<collection>}.
 Note that sparse vectors are @emph{not} @code{<sequence>}; even
 they can be indexable by integers, they don't have
 means of @emph{ordered} access.
 
 Sparse vector may be a general vector
-that can contain any Scheme objects (like @code{<vector>}), 
+that can contain any Scheme objects (like @code{<vector>}),
 or a specialized vector that can contain only certain
 types of numbers (like @code{<s8vector>} etc.).
 
@@ -18774,7 +18774,7 @@ An instance of @code{<sparse-vector>} can contain any Scheme objects.
 The range of values an instance of those classes can hold
 is the same as the corresponding @code{<@var{TAG}vector>} class
 in @code{gauche.uvector} (@xref{Uniform vectors}).  That is,
-@code{<sparse-u8vector>} can have exact integer values 
+@code{<sparse-u8vector>} can have exact integer values
 between 0 and 255.
 @end deftp
 
@@ -18794,7 +18794,7 @@ is created.
 @end defun
 
 @defun sparse-vector-max-index-bits
-Returns maximum number of bits of allowed integer.  If this 
+Returns maximum number of bits of allowed integer.  If this
 returns 32, the index up to @code{(expt 2 32)} is supported.
 It is guaranteed that this is at least 32.
 @end defun
@@ -18806,7 +18806,7 @@ object is passed.
 @defun sparse-vector-copy sv
 Returns a copy of a sparse vector @var{sv}.
 @end defun
- 
+
 @defun sparse-vector-ref sv k :optional default
 Returns @var{k}-th element of a sparse vector @var{sv}, where
 @var{k} must be a nonnegative exact integer.  If @var{k} is
@@ -18863,7 +18863,7 @@ the result value within the range.
 @defunx sparse-vector-pop! sv k :optional fallback
 Convenience routines to fetch-and-update an entry of
 a sparse vector.  Works just like @code{hash-table-update!},
-@code{hash-table-push!} and @code{hash-table-pop!}; 
+@code{hash-table-push!} and @code{hash-table-pop!};
 (@xref{Hashtables}).
 @end defun
 
@@ -18881,7 +18881,7 @@ those walk operation
 
 @defun sparse-vector-fold sv proc seed
 For each entry in @var{sv}, calls @var{proc} as
-@code{(proc @var{k_n} @var{v_n} @var{seed_n})}, where 
+@code{(proc @var{k_n} @var{v_n} @var{seed_n})}, where
 @var{k_n} is an index and @var{v_n} is a value for it,
 and @var{seed_n} is the returned value of the previous
 call to @code{proc} if @var{n} @code{>=} 1, and @var{seed} if @var{n} = 0.
@@ -19308,37 +19308,37 @@ the iteration.  Here's a contrived example:
 
 @example
 (stream->list
- (iterator->stream 
+ (iterator->stream
   (lambda (next end) (for-each next '(1 2 3 4 5)) (end))))
  @result{} (1 2 3 4 5)
 @end example
 
 Internally @code{iterator->stream} uses the ``inversion of iterator''
 technique, so that @var{iter} only iterates to the element that
-are needed by the stream.  Thus @var{iter} can iterate over 
+are needed by the stream.  Thus @var{iter} can iterate over
 an infinite set.  In the following example, @var{iter} is
 an infinite loop calling @var{next} with increasing integers,
 but only the first 10 elements are calculated because of
 @code{stream-take}:
 
 @example
-(stream->list 
+(stream->list
  (stream-take
   (iterator->stream
    (lambda (next end)
-     (let loop ((n 0)) (next n) (loop (+ n 1))))) 
+     (let loop ((n 0)) (next n) (loop (+ n 1)))))
   10))
  @result{} (0 1 2 3 4 5 6 7 8 9)
 @end example
 @end defun
 
 @defun stream-lines stream
-Splits @var{stream} where its element equals to @code{#\n}, and 
+Splits @var{stream} where its element equals to @code{#\n}, and
 returns a stream of splitted streams.
 
 @example
-(stream->list 
- (stream-map stream->string 
+(stream->list
+ (stream-map stream->string
              (stream-lines (string->stream "abc\ndef\nghi"))))
  @result{} ("abc" "def" "ghi")
 @end example
@@ -19409,11 +19409,11 @@ must be a nonnegative exact integer.
 
 @defun stream-take stream count
 @defunx stream-take-safe stream count
-Returns a new stream that consists of the first @var{count} elements 
+Returns a new stream that consists of the first @var{count} elements
 of the given stream.   If the given stream has less than
-@var{count} elements, the stream returned by @code{stream-take} 
+@var{count} elements, the stream returned by @code{stream-take}
 would raise an error when the elements beyond the original stream
-is accessed.  On the other hand, the stream returned by 
+is accessed.  On the other hand, the stream returned by
 @code{stream-take-safe} will return a shortened stream when
 the given steram has less than @var{count} elements.
 
@@ -19435,7 +19435,7 @@ the given steram has less than @var{count} elements.
 
 @defun stream-drop stream count
 @defunx stream-drop-safe stream count
-Returns a new stream that consists of the elements in the given 
+Returns a new stream that consists of the elements in the given
 stream except the first @var{count} elements.
 If the given stream has less than @var{count} elements,
 @code{stream-drop} returns a stream that raises an error
@@ -19541,7 +19541,7 @@ inserted between elements of @var{stream}.
 @c EN
 This module provides @emph{Trie}, a dictionary-like data
 structure that maps keys to values, where a key is an arbitrary sequence.
-Internally it stores the data as a tree where each node corresponds 
+Internally it stores the data as a tree where each node corresponds
 to each element in the key sequence.
 Key lookup is O(n) where n is the length of the key, and not affected
 much by the number of total entries.
@@ -19593,7 +19593,7 @@ Trieでは文字列キーを使うことが多いですが、それに限定さ�
 
 @c EN
 Trie inheris @code{<collection>} and implements collection framework
-including the builder. So you can apply generic collection 
+including the builder. So you can apply generic collection
 operations on a trie (@xref{Collection framework}).
 When iterated, each element of a trie appears as a pair of a key
 and a value.
@@ -19607,7 +19607,7 @@ Trieは@code{<collection>}を継承しており、コレクションフレーム
 
 @deftp {Class} <trie>
 @c EN
-A class for Trie.  No slots are intended for public.  
+A class for Trie.  No slots are intended for public.
 Use the following procedures to operate on tries.
 @c JP
 Trieクラス。パブリックなスロットはありません。trieを操作するには以下の
@@ -19645,10 +19645,10 @@ returns an empty table for a node.
 Returns a child node indexed by @var{elt}, or returns @code{#f}
 if the table doesn't have a child for @var{elt}.
 @item tab-put! @var{tab} @var{elt} @var{child-node}
-If @var{child-node} isn't @code{#f}, 
-stores a @var{child-node} with index @var{elt}.  
-If @var{child-node} is @code{#f}, 
-removes the entry with index @var{elt}. 
+If @var{child-node} isn't @code{#f},
+stores a @var{child-node} with index @var{elt}.
+If @var{child-node} is @code{#f},
+removes the entry with index @var{elt}.
 In both cases, this procedure should return the updated table.
 @item tab-fold @var{tab} @var{proc} @var{seed}
 Calls @var{proc} for every index and node in @var{tab}, while
@@ -19797,7 +19797,7 @@ or returns @code{#f} otherwise.
 
 @defun trie-get trie key :optional fallback
 @c EN
-Returns the value associated with @var{key} in @var{trie}, if 
+Returns the value associated with @var{key} in @var{trie}, if
 such an entry exists.  When there's no entry for @var{key},
 if @var{fallback} is given, it is returned; otherwise,
 an error is signalled.
@@ -19865,7 +19865,7 @@ The order of keys/values are undefined.
 
 @defun trie->hash-table trie ht-type
 @c EN
-Creates a hash table with type @var{ht-type} (see @ref{Hashtables}, 
+Creates a hash table with type @var{ht-type} (see @ref{Hashtables},
 about hash table types), and populates it with every key and value
 pair in @var{trie}.
 @c JP
@@ -19914,10 +19914,10 @@ calls @var{proc} with three argments, the entry's key,
 its value, and the current seed value.  @var{Seed} is
 used for the first seed value, and the value @var{proc}
 returns is used for the seed value of the next call of @var{proc}.
-The last returned value from @var{proc} is returned from 
+The last returned value from @var{proc} is returned from
 @code{trie-common-prefix-fold}.
 The order of entries on which @var{proc} is called is undefined.
-If @var{trie} contains no entry whose key has @var{prefix}, 
+If @var{trie} contains no entry whose key has @var{prefix},
 @var{proc} is never called and @var{seed} is returned.
 @c JP
 @var{prefix}ではじまるキーをもつ各エントリに対して、@var{proc}を3つの
@@ -20047,7 +20047,7 @@ CGIスクリプトを手軽に書くにはこのモジュールの他に、
 @c EN
 Normally, httpd passes a cgi program various information
 via environment variables.
-Most procedures in @code{www.cgi} refer to them (meta-variables). 
+Most procedures in @code{www.cgi} refer to them (meta-variables).
 However, it is sometimes inconvenient to require environment variable access
 while you're developing cgi-related programs.
 With this parameter, you can overrides the information of meta-variables.
@@ -20092,7 +20092,7 @@ and if the named variable is not found, calls @code{sys-getenv}.
 
 CGI scripts may want to use @code{cgi-get-metavariable} instead
 of directly calling @code{sys-getenv}; doing so makes reuse of
-the script easier. 
+the script easier.
 @c JP
 @var{name}で指定されるCGIメタ変数の値を返します。
 この関数はまずパラメータ@code{cgi-metavariables}を探し、
@@ -20114,7 +20114,7 @@ CGIスクリプトは、なるべく@code{sys-getenv}を直接呼ぶのではな
 @c EN
 Parses query string and returns associative list of parameters.
 When a keyword argument @var{query-string} is given, it is used
-as a source query string.  Otherwise, the function checks the 
+as a source query string.  Otherwise, the function checks the
 metavariable @code{REQUEST_METHOD} and obtain the query string
 depending on the value (either from stdin or from the
 metavariable @code{QUERY_STRING}).
@@ -20134,13 +20134,13 @@ query stringとなります。その引数が渡されなければこの手続�
 
 @c EN
 If @code{REQUEST_METHOD} is @code{POST}, this procedure can handle
-both @code{application/x-www-from-urlencoded} and 
+both @code{application/x-www-from-urlencoded} and
 @code{multipart/form-data} as the enctype.  The latter is usually
 used if the form has file-uploading capability.
 
-When the post data is sent by @code{multipart/form-data}, 
+When the post data is sent by @code{multipart/form-data},
 each content of the part is treated as a value of the parameter.
-That is, the content of uploaded file will be seen as one big 
+That is, the content of uploaded file will be seen as one big
 chunk of a string.  The other information, such as the original file
 name, is discarded.   If it is not desirable to read entire file
 into a string, you can customize the behavior by the @var{part-handler}
@@ -20360,7 +20360,7 @@ HTMLページが作成されて出力されます。このエラーページは�
 
 @c EN
 When output the result, @code{cgi-main} refers to
-the value of the parameter @code{cgi-output-character-encoding}, 
+the value of the parameter @code{cgi-output-character-encoding},
 and converts the character encoding if necessary.
 @c JP
 @code{cgi-main}は最終的な結果を出力を書き出す時に
@@ -20489,7 +20489,7 @@ Keeps a list of filenames registered by @code{cgi-add-temporary-file}.
 As explained in @code{cgi-parse-parameters} above, file uploads
 are handled transparently by default, taking the file content
 as the value of the parameter.   Sometimes you might want to change this
-behavior, for the file might be quite big and you don't want 
+behavior, for the file might be quite big and you don't want
 to keep around a huge chunk of a string in memory.  It is possible to
 customize handling of file uploads of @code{cgi-parse-parameters}
 and @code{cgi-main} by @var{part-handlers} argument.
@@ -20510,7 +20510,7 @@ and @code{cgi-main} by @var{part-handlers} argument.
 
 @c EN
 The @var{part-handlers} argument is, if given, a list of lists;
-each inner list is a form of 
+each inner list is a form of
 @code{(@var{name-pattern} @var{action} @var{kv-list} @dots{})}.
 Each uploaded file with a matching parameter name with @var{name-pattern} is
 handled according to @var{action}.  (Here, a parameter name
@@ -20550,7 +20550,7 @@ the parameter is the pathname of the temporary file.
 For this action, you can write an entry like
 @code{(@var{name-pattern} file @var{prefix})}, to specify the
 prefix of the pathname of the temporary file.  For example, if you
-specify @code{("image" file "/var/mycgi/incoming/img")}, 
+specify @code{("image" file "/var/mycgi/incoming/img")},
 the file uploaded as @code{"image"} parameter will be stored as
 something like @file{/var/mycgi/incoming/img49g2Ua}.
 
@@ -20563,7 +20563,7 @@ Like @code{file}, but the value of the parameter is a list of
 tempoary filename and the filename passed by the client.
 It is useful if you want to use client's filename (but do not
 blindly assume the client sends a valid pathname; for example,
-you shouldn't use it to rename the uploaded file without 
+you shouldn't use it to rename the uploaded file without
 validating it).
 
 @item @var{procedure}
@@ -20576,7 +20576,7 @@ the name of the original file (pathname in the client).
 @var{Part-info} is a @code{<mime-part>} object that keeps information
 about this mime part,  and @var{iport} is where the body can be
 read from.
-For the details about these arguments, 
+For the details about these arguments,
 see @ref{MIME message handling}; you might be able to
 use procedures provided by @code{rfc.mime}, such as @code{mime-retrieve-body},
 to construct your own procedure.
@@ -20661,7 +20661,7 @@ as something like @file{/tmp/fooxAgjeQ}.
 @item :mode
 @c EN
 Valid only if @var{action} is either @code{file} or @code{file+name}.
-Specifies the mode of the temporary file in unix-style integer.  By default 
+Specifies the mode of the temporary file in unix-style integer.  By default
 it is @code{#o600}.
 @c JP
 @var{action}が@code{file}か@code{file+name}の時のみ有効です。
@@ -20713,7 +20713,7 @@ you'll get something like the following as the result.
 
 @c EN
 If you pass @code{'(("imagefile" file :prefix "/tmp/mycgi"))}
-to @var{part-handlers} 
+to @var{part-handlers}
 instead,
 you might get something like the following, with the
 content of uploaded file saved in @file{/tmp/mycgi7gq0B}
@@ -20755,7 +20755,7 @@ pathname).
 @c @c COMMON
 
 @c @example
-@c `(("imagefile" 
+@c `(("imagefile"
 @c   ,(lambda (name fname info iport)
 @c      (receive (outp tmpfile) (sys-mkstemp "/var/log/mycgi/tmp")
 @c        (mime-retrieve-body info iport outp)
@@ -20825,21 +20825,21 @@ The following environment variables are set by default.
 @c COMMON
 @multitable @columnfractions .5 .5
 @item Name @tab Value
-@item @code{SERVER_SOFTWARE}   
+@item @code{SERVER_SOFTWARE}
 @tab @code{cgitest/1.0}
-@item @code{SERVER_NAME}       
+@item @code{SERVER_NAME}
 @tab @code{localhost}
-@item @code{GATEWAY_INTERFACE} 
+@item @code{GATEWAY_INTERFACE}
 @tab @code{CGI/1.1}
-@item @code{SERVER_PROTOCOL}   
+@item @code{SERVER_PROTOCOL}
 @tab @code{HTTP/1.1}
-@item @code{SERVER_PORT}       
+@item @code{SERVER_PORT}
 @tab @code{80}
-@item @code{REQUEST_METHOD}    
+@item @code{REQUEST_METHOD}
 @tab @code{GET}
-@item @code{REMOTE_HOST}       
+@item @code{REMOTE_HOST}
 @tab @code{remote}
-@item @code{REMOTE_ADDR}       
+@item @code{REMOTE_ADDR}
 @tab @code{127.0.0.1}
 @end multitable
 @end defun
@@ -20854,7 +20854,7 @@ standard output.
 接続された入力ポートを1つ引数に取る @var{proc} を呼び出します。
 
 @c EN
-The argument @var{script} should be a list of 
+The argument @var{script} should be a list of
 program name and its arguments.  Each element are
 passed to @code{x->string} first to stringify.
 @c JP
@@ -20916,9 +20916,9 @@ You can bypass this mechanism and set up enviornment variable
 A convenient wrapper of @code{call-with-cgi-script}.
 The @var{script}, @var{environment} and @var{parameters} are passed
 to @code{call-with-cgi-script} as they are.
-The output of the script is parsed by 
-@code{run-cgi-script->header&body}.  
-First, the RFC2822 header fields are parsed by 
+The output of the script is parsed by
+@code{run-cgi-script->header&body}.
+First, the RFC2822 header fields are parsed by
 @code{rfc822-read-headers} (@xref{RFC822 message parsing}).
 Then, the @var{reader} is called with an input port which
 is piped to the script's output.
@@ -20948,7 +20948,7 @@ and the return value of @var{reader}.
 @c EN
 This is a procedure that uses @code{ssax:xml->sxml}
 (@xref{Functional XML parser}) as the @var{reader}
-in @code{run-cgi-script->header&body}.  
+in @code{run-cgi-script->header&body}.
 Useful when you're testing a cgi script that produces
 well-formed HTML and/or XML document.
 @c JP
@@ -20963,7 +20963,7 @@ CGIスクリプトをテストする場合に便利です。
 @defun run-cgi-script->string script :key environment parameters
 @defunx run-cgi-script->string-list script :key environment parameters
 @c EN
-These procedures use @code{port->string} 
+These procedures use @code{port->string}
 and @code{port->string-list}
 (@xref{Input utility functions}) as the @var{reader}
 in @code{run-cgi-script->header&body}, respectively.

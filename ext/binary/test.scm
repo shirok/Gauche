@@ -37,7 +37,7 @@
 (define *u64le* '(#xefcdab8967452301 #x78695a4b3c2d1e0f))
 (define *s64be* '(#x0123456789abcdef #x0f1e2d3c4b5a6978))
 (define *s64le* '(#x-1032547698badcff #x78695a4b3c2d1e0f))
-  
+
 (define *bytes-str*
   #*"\x01\x23\x45\x67\x89\xab\xcd\xef\x0f\x1e\x2d\x3c\x4b\x5a\x69\x78")
 
@@ -402,7 +402,7 @@
             '(0 8)))
 (test* "get-f64 arm" '(1.0 -1.0)
        (map (cut get-f64
-                 '#u8(#x00 #x00 #xf0 #x3f #x00 #x00 #x00 #x00 
+                 '#u8(#x00 #x00 #xf0 #x3f #x00 #x00 #x00 #x00
                       #x00 #x00 #xf0 #xbf #x00 #x00 #x00 #x00)
                  <> 'arm-little-endian)
             '(0 8)))
@@ -578,7 +578,7 @@
     (parameterize ([default-endian endian])
       (map (cut fobject-ref/uv ft <> *fobject-storage* off)
            '(a b c d e f g h i))))
-  
+
   (test* "big endian, natural alignment"
          `(-128 1 #x0203 4 #x0607 8 #x0c0d0e0f #x10
                 ,(case (ftype-size ftype:long)
@@ -599,13 +599,13 @@
          (read-all-slots ft1 'big-endian 8))
 
   (test* "big endian, packed"
-         `(-128 1 #x0203 4 #x0506 7 #x08090a0b #x0c 
+         `(-128 1 #x0203 4 #x0506 7 #x08090a0b #x0c
                 ,(case (ftype-size ftype:long)
                    [(4) #x0d0e0f10]
                    [(8) #x0d0e0f1011121314]))
          (read-all-slots ft2 'big-endian))
   (test* "little endian, packed"
-         `(-128 1 #x0302 4 #x0605 7 #x0b0a0908 #x0c 
+         `(-128 1 #x0302 4 #x0605 7 #x0b0a0908 #x0c
                 ,(case (ftype-size ftype:long)
                    [(4) #x100f0e0d]
                    [(8) #x14131211100f0e0d]))
@@ -888,13 +888,13 @@
 (test* "unpack C/C*" '(65 66 67)
   (unpack "C/C*" :from-string "\x03ABC"))
 
-(test* "pack C/C*" "\x03ABC" 
+(test* "pack C/C*" "\x03ABC"
   (pack "C/C*" '(65 66 67) :to-string? #t))
 
 (test* "unpack w/C*" '(65 66 67)
   (unpack "w/C*" :from-string "\x03ABC"))
 
-(test* "pack w/C*" "\x03ABC" 
+(test* "pack w/C*" "\x03ABC"
   (pack "w/C*" '(65 66 67) :to-string? #t))
 
 ;; not sure about supporting implicit type conversions

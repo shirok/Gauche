@@ -1,12 +1,12 @@
 /*
  * module.c - module implementation
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -258,7 +258,7 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
         if (!SCM_GLOC_PHANTOM_BINDING_P(gloc)) goto out;
     }
     if (stay_in_module) goto out;
-    
+
     /* Next, search from imported modules */
     SCM_FOR_EACH(p, module->imported) {
         ScmObj elt = SCM_CAR(p);
@@ -267,10 +267,10 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
 
         SCM_ASSERT(SCM_MODULEP(elt));
         mod = SCM_MODULE(elt);
-        
+
         SCM_FOR_EACH(mp, mod->mpl) {
             ScmGloc *g;
-                
+
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
 
             if (module_visited_p(&searched, SCM_CAR(mp))) continue;
@@ -280,7 +280,7 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
                                            SCM_SYMBOL(m->prefix));
                 if (!SCM_SYMBOLP(sym)) goto skip;
             }
-            
+
             v = Scm_HashTableRef(m->table, SCM_OBJ(sym), SCM_FALSE);
             /* see above comment about the check of gloc->value */
             if (SCM_GLOCP(v)) {
@@ -320,7 +320,7 @@ ScmObj Scm_GlobalVariableRef(ScmModule *module,
 {
     ScmGloc *g = Scm_FindBinding(module, symbol, flags);
     ScmObj val;
-    
+
     if (g == NULL) return SCM_UNBOUND;
     val = SCM_GLOC_GET(g);
     if (SCM_AUTOLOADP(val)) {
@@ -393,7 +393,7 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 
 /*
  * Injecting hidden binding
- *   This inserts a dummy binding with hidden==true so that 
+ *   This inserts a dummy binding with hidden==true so that
  *   the module effectively removes the binding of the given symbol
  *   inherited from parent.
  *   This is not for genreral use.  It is intended to be used for
@@ -405,7 +405,7 @@ void Scm_HideBinding(ScmModule *module, ScmSymbol *symbol)
     ScmGloc *g;
     ScmObj v;
     int err_exists = FALSE;
-    
+
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     v = Scm_HashTableRef(module->table, SCM_OBJ(symbol), SCM_FALSE);
     if (!SCM_FALSEP(v)) {
@@ -575,13 +575,13 @@ ScmObj Scm_ExportAll(ScmModule *module)
 {
     ScmHashIter iter;
     ScmDictEntry *e;
-    
+
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     if (!module->exportAll) {
         /* Mark the module 'export-all' so that the new bindings would get
            exported mark by default. */
         module->exportAll = TRUE;
-        
+
         /* Scan the module and mark all existing bindings as exported. */
         Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(module->table));
         while ((e = Scm_HashIterNext(&iter)) != NULL) {

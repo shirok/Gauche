@@ -1,12 +1,12 @@
 /*
  * class.c - class metaobject implementation
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -342,7 +342,7 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
  *     is used.
  *
  *  int klass->compare(ScmObj x, ScmObj y, int equalp)
- *     X and Y are instances of klass.  If equalp is FALSE, 
+ *     X and Y are instances of klass.  If equalp is FALSE,
  *     return -1, 0, or 1, when X < Y, X == Y or X > Y, respectively.
  *     In case if klass is not orderable, it can signal an error.
  *     If equalp is TRUE, just test the equality: return -1 if X != Y
@@ -403,7 +403,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(instance);
 }
 
-static void class_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx) 
+static void class_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     Scm_Printf(port, "#<class %A%s>",
                SCM_CLASS(obj)->name,
@@ -567,9 +567,9 @@ static ScmObj class_cpl(ScmClass *klass)
 
 /* Subroutine for class_cpl_set.  Scans KLASS's CPL and find out the
    suitable allocator function, C-struct core size, and some flags.
-   If KLASS inherits more than one C-defined classes (BASEs), they must 
+   If KLASS inherits more than one C-defined classes (BASEs), they must
    form a single inheritance chain. */
-static void find_core_allocator(ScmClass *klass) 
+static void find_core_allocator(ScmClass *klass)
 {
     ScmClass **p;
     ScmClass *b = NULL; /* the base class klass gets the allocate func */
@@ -790,7 +790,7 @@ static void class_defined_modules_set(ScmClass *klass, ScmObj val)
     Scm_Error("list of modules required, bot got %S", val);
 }
 
-/* 
+/*
  * The following slots should only be modified by a special MT-safe procedures.
  */
 static ScmObj class_direct_subclasses(ScmClass *klass)
@@ -807,7 +807,7 @@ static ScmObj class_redefined(ScmClass *klass)
 {
     ScmObj r;
     int abandoned = FALSE;
-    
+
     /* If this class is being redefined by other thread, you should wait */
     (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
     while (SCM_VMP(klass->redefined)) {
@@ -931,7 +931,7 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
     SCM_APPEND1(seqh, seqt, Scm_ObjectClass.cpl);
 
     SCM_APPEND1(seqh, seqt, ds);
-    
+
     result = Scm_MonotonicMerge1(seqh);
     if (SCM_FALSEP(result))
         Scm_Error("discrepancy found in class precedence lists of the superclasses: %S",
@@ -987,7 +987,7 @@ void Scm_StartClassRedefinition(ScmClass *klass)
 {
     int success = FALSE;
     ScmVM *vm;
-    
+
     if (SCM_CLASS_CATEGORY(klass) != SCM_CLASS_SCHEME) {
         Scm_Error("cannot redefine class %S, which is not a Scheme-defined class", klass);
     }
@@ -995,7 +995,7 @@ void Scm_StartClassRedefinition(ScmClass *klass)
 
     /* First, acquire the global lock. */
     lock_class_redefinition(vm);
-    
+
     /* Mark this class to be redefined. */
     (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
     if (SCM_FALSEP(klass->redefined)) {
@@ -1017,12 +1017,12 @@ void Scm_StartClassRedefinition(ScmClass *klass)
 void Scm_CommitClassRedefinition(ScmClass *klass, ScmObj newklass)
 {
     ScmVM *vm;
-    
+
     if (SCM_CLASS_CATEGORY(klass) != SCM_CLASS_SCHEME) return;
     if (!SCM_FALSEP(newklass)&&!SCM_CLASSP(newklass)) {
         Scm_Error("class or #f required, but got %S", newklass);
     }
-    
+
     vm = Scm_VM();
 
     /* Release the lock of the class.
@@ -1151,7 +1151,7 @@ void Scm_TransplantInstance(ScmObj src, ScmObj dst)
     memcpy(dst, src, base->coreSize);
 }
 
-/* touch-instance! obj 
+/* touch-instance! obj
  * If obj's class is redefined, update obj.  Otherwise it does nothing.
  * Handy to ensure obj is in the newest state.  Returns obj.
  */
@@ -1508,7 +1508,7 @@ static ScmObj slot_ref_using_class(ScmNextMethod *nm, ScmObj *argv,
     ScmObj obj = argv[1];
     ScmObj slot = argv[2];
     ScmSlotAccessor *sa;
-    
+
     if (!SCM_EQ(SCM_OBJ(klass), SCM_OBJ(Scm_ClassOf(obj)))) {
         Scm_Error("slot-ref-using-class: class %S is not the class of object %S", klass, obj);
     }
@@ -1636,7 +1636,7 @@ static ScmObj slot_set_using_class(ScmNextMethod *nm, ScmObj *argv,
     ScmObj slot = argv[2];
     ScmObj val = argv[3];
     ScmSlotAccessor *sa;
-    
+
     if (!SCM_EQ(SCM_OBJ(klass), SCM_OBJ(Scm_ClassOf(obj)))) {
         Scm_Error("slot-ref-using-class: class %S is not the class of object %S", klass, obj);
     }
@@ -1673,7 +1673,7 @@ ScmObj Scm_VMSlotBoundP(ScmObj obj, ScmObj slot)
 {
     ScmClass *klass = Scm_ClassOf(obj);
     void *data[2];
-    
+
     if (!SCM_FALSEP(klass->redefined)) {
         data[0] = obj;
         data[1] = slot;
@@ -1780,7 +1780,7 @@ static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs)
 static void slot_accessor_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
     ScmSlotAccessor *sa = SCM_SLOT_ACCESSOR(obj);
-    
+
     Scm_Printf(out, "#<slot-accessor %S.%S ",
                (sa->klass? sa->klass->name : SCM_FALSE),
                sa->name);
@@ -2195,7 +2195,7 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
     ScmClass **ys = y->specializers;
     ScmClass *ac, **acpl;
     int i, xreq = SCM_PROCEDURE_REQUIRED(x), yreq = SCM_PROCEDURE_REQUIRED(y);
-    
+
     for (i=0; i<xreq && i<yreq; i++) {
         if (xs[i] != ys[i]) {
             ac = targv[i];
@@ -2213,7 +2213,7 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
     }
     if (xreq > yreq) return TRUE;
     if (xreq < yreq) return FALSE;
-    
+
     /* all specializers match.  the one without optional arg is more special.*/
     if (SCM_PROCEDURE_OPTIONAL(y)) return TRUE;
     else return FALSE;
@@ -2257,7 +2257,7 @@ static SCM_DEFINE_METHOD(method_more_specific_p_rec,
  *  We never need the arguments more than the maximum number of required
  *  arguments among the given methods; when VM calls Scm_SortMethods, it
  *  only puts as many args as gf->maxReqargs.
- * 
+ *
  *  TODO: can't we carry around the method list in array
  *  instead of list, at least internally?
  */
@@ -2435,9 +2435,9 @@ static void method_specializers_set(ScmMethod *m, ScmObj val)
     int len = Scm_Length(val);
     if (len != m->common.required)
         Scm_Error("specializer list doesn't match body's lambda list:", val);
-    if (len == 0) 
+    if (len == 0)
         m->specializers = NULL;
-    else 
+    else
         m->specializers = class_list_to_array(val, len);
 }
 
@@ -2494,7 +2494,7 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
 {
     ScmObj mp, pair;
     int replaced = FALSE, reqs = gf->maxReqargs;
-        
+
     if (method->generic && method->generic != gf)
         Scm_Error("method %S already added to a generic function %S",
                   method, method->generic);
@@ -2798,7 +2798,7 @@ ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr)
 {
     ScmForeignPointer *obj;
     struct foreign_data_rec *data = (struct foreign_data_rec *)klass->data;
-    
+
     if (!klass) {               /* for extra safety */
         Scm_Error("NULL pointer passed to Scm_MakeForeignPointer");
     }
@@ -2936,7 +2936,7 @@ static void initialize_builtin_cpl(ScmClass *klass, ScmObj supers)
 {
     ScmClass **p;
     ScmObj h = SCM_NIL, t = SCM_NIL;
-    
+
     SCM_APPEND1(h, t, SCM_OBJ(klass));
     for (p = klass->cpa; *p; p++) SCM_APPEND1(h, t, SCM_OBJ(*p));
     klass->cpl = h;
@@ -2971,7 +2971,7 @@ static void initialize_builtin_cpl(ScmClass *klass, ScmObj supers)
 /*
  * A common part for builtin class initialization
  */
-static void init_class(ScmClass *klass, 
+static void init_class(ScmClass *klass,
                        const char *name,
                        ScmModule *mod,
                        ScmObj supers,  /* SCM_FALSE if using default */
@@ -2998,14 +2998,14 @@ static void init_class(ScmClass *klass,
         *d = NULL;
         klass->cpa = cpa;
     }
-#endif /*GAUCHE_BROKEN_LINKER_WORKAROUND*/    
+#endif /*GAUCHE_BROKEN_LINKER_WORKAROUND*/
 
     klass->name = SCM_INTERN(name);
     initialize_builtin_cpl(klass, supers);
 
     /* insert binding */
     Scm_Define(mod, SCM_SYMBOL(klass->name), SCM_OBJ(klass));
-    
+
     /* initialize direct slots */
     if (specs) {
         for (;specs->name; specs++) {
@@ -3092,7 +3092,7 @@ void Scm_InitStaticClassWithMeta(ScmClass *klass,
     } else {
         int nlen;
         char *metaname;
-    
+
         nlen = (int)strlen(name);
         metaname = SCM_NEW_ATOMIC2(char *, nlen + 6);
 
@@ -3155,7 +3155,7 @@ void Scm__InitClass(void)
 {
     ScmModule *mod = Scm_GaucheModule();
     static ScmClass *nullcpa[1] = {NULL}; /* for <top> */
-    
+
     key_allocation = SCM_MAKE_KEYWORD("allocation");
     key_builtin = SCM_MAKE_KEYWORD("builtin");
     key_slot_accessor = SCM_MAKE_KEYWORD("slot-accessor");
@@ -3167,7 +3167,7 @@ void Scm__InitClass(void)
 
     (void)SCM_INTERNAL_MUTEX_INIT(class_redefinition_lock.mutex);
     (void)SCM_INTERNAL_COND_INIT(class_redefinition_lock.cv);
-    
+
     /* booting class metaobject */
     Scm_TopClass.cpa = nullcpa;
 
@@ -3179,7 +3179,7 @@ void Scm__InitClass(void)
 
     /* box.c */
     CINIT(SCM_CLASS_BOX,    "<%box>");
-    
+
     /* class.c */
     BINIT(SCM_CLASS_CLASS,  "<class>", class_slots);
     BINIT(SCM_CLASS_TOP,    "<top>",     NULL);
@@ -3253,7 +3253,7 @@ void Scm__InitClass(void)
     /* read.c */
     BINIT(SCM_CLASS_READ_CONTEXT,     "<read-context>", NULL);
     BINIT(SCM_CLASS_READ_REFERENCE,   "<read-reference>", NULL);
-    
+
     /* regexp.c */
     CINIT(SCM_CLASS_REGEXP,           "<regexp>");
     CINIT(SCM_CLASS_REGMATCH,         "<regmatch>");
@@ -3271,7 +3271,7 @@ void Scm__InitClass(void)
 
     /* treemap.c */
     CINIT(SCM_CLASS_TREE_MAP,         "<tree-map>");
-    
+
     /* vector.c */
     CINIT(SCM_CLASS_VECTOR,           "<vector>");
     CINIT(SCM_CLASS_UVECTOR,          "<uvector>");
@@ -3286,7 +3286,7 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_F16VECTOR,        "<f16vector>");
     CINIT(SCM_CLASS_F32VECTOR,        "<f32vector>");
     CINIT(SCM_CLASS_F64VECTOR,        "<f64vector>");
-    
+
     /* weak.c */
     CINIT(SCM_CLASS_WEAK_VECTOR,      "<weak-vector>");
     CINIT(SCM_CLASS_WEAK_HASH_TABLE,  "<weak-hash-table>");

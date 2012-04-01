@@ -82,7 +82,7 @@
             (cond ((break-char-list/pred c))
                   ((eof-object? c) (bad))
                   ((= i limit))
-                  (else                    
+                  (else
                    (display (read-char port))
                    (loop (peek-char port) (+ i 1)))))))
       )
@@ -224,7 +224,7 @@
 
 ;; Skip a value of a given length n, where n could be an integer,
 (define (make-skipper n)
-  (cond 
+  (cond
     ((eq? n #\*)
      (lambda ()
        (while (not (eof-object? (read-block 1024))))))
@@ -794,7 +794,7 @@
            ((#\q)
             (make-number-pack-dispatcher
              read-binary-sint64 write-binary-sint64 64 count vlp))
-           
+
            ;; Q   An unsigned quad value.
            ((#\Q)
             (make-number-pack-dispatcher

@@ -1,6 +1,6 @@
 ;;;
 ;;; SRFI-4  homogeneous numeric vectors
-;;;  
+;;;
 
 ;; Procedures of SRFI-4 are now defined in gauche.uvector.
 

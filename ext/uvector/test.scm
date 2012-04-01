@@ -1319,7 +1319,7 @@
       (fn <f32vector> make-f32vector (/ s 4))
       (fn <f64vector> make-f64vector (/ s 8))
       ))
-  
+
   (run-across (test-default-endian data1))
   (run-across-f (test-default-endian data5))
   (run-across test-reverse-endian)
@@ -1899,7 +1899,7 @@
 ;;; Check that shape arrays work even when they share
 ;;;
 ;;; arr             shp       shq       shr       shs
-;;;    1  2  3  4      0  1      0  1      0  1      0  1 
+;;;    1  2  3  4      0  1      0  1      0  1      0  1
 ;;; 1 10 12 16 20   0 10 12   0 12 20   0 10 10   0 12 12
 ;;; 2 10 11 12 13   1 10 11   1 11 13   1 11 12   1 12 12
 ;;;                                     2 12 16
@@ -1944,7 +1944,7 @@
                    (array-start arr-r 0)
                    (array-end arr-r 0)
                    (array-start arr-r 1)
-                   (array-end arr-r 1) 
+                   (array-end arr-r 1)
                    (array-start arr-r 2)
                    (array-end arr-r 2)
                    (array-start arr-r 3)

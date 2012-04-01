@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions  -*-mode: Makefile-*-
-## 
+##
 
 SHELL       = @SHELL@
 prefix      = @prefix@
@@ -19,7 +19,7 @@ DESTDIR      =
 CC           = @CC@
 AR           = @AR@
 LOCAL_LFLAGS = @LOCAL_LIB@
-LIBS         = $(XLIBS) @LIBS@ 
+LIBS         = $(XLIBS) @LIBS@
 CFLAGS       = @CFLAGS@ @SHLIB_SO_CFLAGS@ $(XCFLAGS)
 CPPFLAGS     = @CPPFLAGS@ $(XCPPFLAGS)
 LDFLAGS      = $(LOCAL_LFLAGS) $(XLDFLAGS) @SHLIB_SO_LDFLAGS@
@@ -114,7 +114,7 @@ pre-package-generate :
 install-std : all
 	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) -T $(GAUCHE_INCDIR) $(HDRFILES)
 	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) -T $(GAUCHE_LIBDIR)/$(SCM_CATEGORY) $(SCMFILES)
-	$(GAUCHE_INSTALL) -m 555 -T $(GAUCHE_ARCHDIR) $(LIBFILES) 
+	$(GAUCHE_INSTALL) -m 555 -T $(GAUCHE_ARCHDIR) $(LIBFILES)
 
 uninstall :
 

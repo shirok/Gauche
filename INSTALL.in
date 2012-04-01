@@ -73,7 +73,7 @@ Thread Support
 スレッドサポートが有効かどうかはconfigureスクリプトの出力の最後に表示されます。
 @c EN
 On most of popular unix variants, Gauche supports native threads.
-The configure script tries to determine automatically whether thread support 
+The configure script tries to determine automatically whether thread support
 can be enabled or not.  It shows at the end of the output whether
 the support is enabled.
 @c COMMON
@@ -86,7 +86,7 @@ the support is enabled.
 @c EN
 If you want to turn off the thread support even when the platform
 allows it for some reason, or if the configure script misrecognizes the platform
-and does not enable the support when it should be, you can use 
+and does not enable the support when it should be, you can use
 the following configure options to turn off or turn on the support
 explicitly.
 @c COMMON
@@ -522,7 +522,7 @@ Machine-dependent information
 * Linux/Crusoe TM5800 - 最近のLinuxでは Crusoe TM5800がi686互換とされる
        ようになったようですが、gc中でi686特有のprefetch命令を使っているところ
        でコンパイルに失敗するという報告がありました。とりあえずのfixは、
-       configure後にgc/Makefile中の 
+       configure後にgc/Makefile中の
 
          -DUSE_I686_PREFETCH
 

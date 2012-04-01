@@ -1,12 +1,12 @@
 /*
  * treemap.c - tree map implementation
  *
- *   Copyright (c) 2007-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2007-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -46,7 +46,7 @@ typedef struct NodeRec {
     intptr_t     value;
     int          color;
     struct NodeRec *parent;
-    struct NodeRec *left; 
+    struct NodeRec *left;
     struct NodeRec *right;
 } Node;
 
@@ -57,7 +57,7 @@ enum TreeOp {
     TREE_DELETE = SCM_DICT_DELETE,
     TREE_NEAR
 };
-    
+
 #define BLACK 0
 #define RED   1
 
@@ -258,10 +258,10 @@ int Scm_TreeIterAtEnd(ScmTreeIter *iter)
 static int check_traverse(Node *node, int depth, int *count)
 {
     int ld, rd;
-    
+
     (*count)++;                 /* entry count */
     if (BLACKP(node)) depth++;
-    
+
     if (node->left) {
         if (REDP(node) && REDP(node->left)) {
             Scm_Error("[internal] tree map has adjacent red nodes");
@@ -520,7 +520,7 @@ static void rotate_left(ScmTreeCore *tc, Node *n)
 static void balance_tree(ScmTreeCore *tc, Node *n)
 {
     Node *p = n->parent, *u, *g;
-    
+
     if (!p) { BALANCE_CASE("1"); n->color = BLACK; return; }  /* root */
     if (BLACKP(p)) { BALANCE_CASE("2"); return; }      /* nothing to do */
 
@@ -569,7 +569,7 @@ static void balance_tree(ScmTreeCore *tc, Node *n)
 static void delete_node1(ScmTreeCore *tc, Node *todie, Node *child)
 {
     Node *sibling, *parent = todie->parent;
-    
+
     replace_node(tc, todie, child);
     if (REDP(todie)) { DELETE_CASE("1"); return; }
     if (REDP(child)) { DELETE_CASE("2"); child->color = BLACK; return; }
@@ -727,7 +727,7 @@ Node *core_ref(ScmTreeCore *tc, intptr_t key, enum TreeOp op,
             }
             return e;
         }
-        
+
         if (tc->cmp? (r < 0) : (e->key < key)) {
             /* Key is larger than E */
             if (e->right) {

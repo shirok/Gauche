@@ -1,12 +1,12 @@
 /*
  * sptab.c - Sparse hash table
  *
- *   Copyright (c) 2009-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2009-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -141,7 +141,7 @@ ScmObj SparseTableRef(SparseTable *sh, ScmObj key, ScmObj fallback)
     u_long hv = sh->hashfn(key);
     TLeaf *z = (TLeaf*)CompactTrieGet(&sh->trie, hv);
     ScmObj cp;
-    
+
     if (z != NULL) {
         if (!leaf_is_chained(z)) {
             if (sh->cmpfn(key, z->entry.key)) return z->entry.value;
@@ -224,7 +224,7 @@ ScmObj SparseTableDelete(SparseTable *st, ScmObj key)
     u_long hv = st->hashfn(key);
     TLeaf *z = (TLeaf*)CompactTrieGet(&st->trie, hv);
     ScmObj retval = SCM_UNBOUND;
-    
+
     if (z != NULL) {
         if (!leaf_is_chained(z)) {
             if (st->cmpfn(key, z->entry.key)) {

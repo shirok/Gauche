@@ -16,7 +16,7 @@ XCLEANFILES = vportlib.c
 
 all : $(LIBFILES)
 
-gauche--vport.$(SOEXT) : $(OBJECTS) 
+gauche--vport.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--vport.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 vportlib.c : vportlib.stub

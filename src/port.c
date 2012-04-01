@@ -1,12 +1,12 @@
 /*
  * port.c - port implementation
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -119,7 +119,7 @@ static void port_finalize(ScmObj obj, void* data)
 
 /*
  * Internal Constructor.
- *   If this port owns the underlying file descriptor/stream, 
+ *   If this port owns the underlying file descriptor/stream,
  *   ownerp must be TRUE.
  */
 static ScmPort *make_port(ScmClass *klass, int dir, int type)
@@ -253,7 +253,7 @@ void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
     if (src->direction != dst->direction)
         Scm_Error("port direction mismatch: got %S and %S",
                   src, dst);
-        
+
     srcfd = (int)(intptr_t)src->src.buf.data;
     dstfd = (int)(intptr_t)dst->src.buf.data;
 
@@ -357,7 +357,7 @@ int Scm_FdReady(int fd, int dir)
  *    The flusher is supposed to output the cnt bytes of data beginning from
  *    the buffer, which is usually up to the current pointer (but the flusher
  *    doesn't need to check the current pointer; it is taken care of by the
- *    caller of the flusher). 
+ *    caller of the flusher).
  *
  *    If the third argument forcep is false, the flusher may return before
  *    entire data is output, in case like underlying device is busy.
@@ -412,7 +412,7 @@ int Scm_FdReady(int fd, int dir)
  *
  *        <--------------- size ---------------->
  *       |****----------------------------------|
- *        ^   ^ 
+ *        ^   ^
  *        bc  e
  *
  *    Then port->src.buf.filler is called.  It is supposed to read as many
@@ -430,7 +430,7 @@ int Scm_FdReady(int fd, int dir)
  *
  *        <--------------- size ---------------->
  *       |************************************--|
- *        ^                                   ^ 
+ *        ^                                   ^
  *        bc                                  e
  *
  *  Close
@@ -505,7 +505,7 @@ ScmObj Scm_MakeBufferedPort(ScmClass *klass,
     ScmPort *p;
     int size = bufrec->size;
     char *buf = bufrec->buffer;
-    
+
     if (size <= 0) size = SCM_PORT_DEFAULT_BUFSIZ;
     if (buf == NULL) buf = SCM_NEW_ATOMIC2(char*, size);
     p = make_port(klass, dir, SCM_PORT_FILE);
@@ -540,7 +540,7 @@ static void bufport_flush(ScmPort *p, int cnt, int forcep)
 {
     int cursiz = SCM_PORT_BUFFER_AVAIL(p);
     int nwrote, force = FALSE;
-    
+
     if (cursiz == 0) return;
     if (cnt <= 0)  { cnt = cursiz; force = TRUE; }
     nwrote = p->src.buf.flusher(p, cnt, forcep);
@@ -647,7 +647,7 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
                 break;
             }
         }
-        
+
         req = MIN(siz, p->src.buf.size);
         r = bufport_fill(p, req, TRUE);
         if (r <= 0) break; /* EOF or an error*/
@@ -705,7 +705,7 @@ static void register_buffered_port(ScmPort *port)
     int i, h, c;
     int tried_gc = FALSE;
     int need_gc  = FALSE;
-    
+
   retry:
     h = i = (int)PORT_HASH(port);
     c = 0;
@@ -717,7 +717,7 @@ static void register_buffered_port(ScmPort *port)
                                          i, SCM_FALSE))) {
         i -= ++c; while (i<0) i+=PORT_VECTOR_SIZE;
         if (i == h) {
-            /* Vector entry is full.  We run global GC to try to collect 
+            /* Vector entry is full.  We run global GC to try to collect
                unused entry. */
             need_gc = TRUE;
             break;
@@ -748,7 +748,7 @@ static void unregister_buffered_port(ScmPort *port)
 {
     int i, h, c;
     ScmObj p;
-    
+
     h = i = (int)PORT_HASH(port);
     c = 0;
     (void)SCM_INTERNAL_MUTEX_LOCK(active_buffered_ports.mutex);
@@ -781,7 +781,7 @@ void Scm_FlushAllPorts(int exitting)
 
     save = SCM_VECTOR(Scm_MakeVector(PORT_VECTOR_SIZE, SCM_FALSE));
     ports = active_buffered_ports.ports;
-    
+
     for (i=0; i<PORT_VECTOR_SIZE;) {
         (void)SCM_INTERNAL_MUTEX_LOCK(active_buffered_ports.mutex);
         for (; i<PORT_VECTOR_SIZE; i++) {
@@ -896,7 +896,7 @@ static int file_flusher(ScmPort *p, int cnt, int forcep)
     int datsiz = SCM_PORT_BUFFER_AVAIL(p);
     int fd = (int)(intptr_t)p->src.buf.data;
     char *datptr = p->src.buf.buffer;
-    
+
     SCM_ASSERT(fd >= 0);
     while ((!forcep && nwrote == 0)
            || (forcep && nwrote < cnt)) {
@@ -942,7 +942,7 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
     int fd, dir = 0;
     ScmObj p;
     ScmPortBuffer bufrec;
-    
+
     if ((flags & O_ACCMODE) == O_RDONLY) dir = SCM_PORT_INPUT;
     else if ((flags & O_ACCMODE) == O_WRONLY) dir = SCM_PORT_OUTPUT;
     else Scm_Error("unsupported file access mode %d to open %s", flags&O_ACCMODE, path);
@@ -984,7 +984,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
 {
     ScmObj p;
     ScmPortBuffer bufrec;
-    
+
     bufrec.buffer = NULL;
     bufrec.size = 0;
     bufrec.mode = bufmode;
@@ -1001,7 +1001,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
     } else {
         bufrec.seeker = file_seeker;
     }
-    
+
     p = Scm_MakeBufferedPort(SCM_CLASS_PORT, name, direction, ownerp, &bufrec);
     return p;
 }
@@ -1072,7 +1072,7 @@ static ScmObj get_remaining_input_string_aux(const char *s, int ssiz,
 ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
 {
     const char *cp, *ep, *sp;
-    
+
     if (SCM_PORT_TYPE(port) != SCM_PORT_ISTR)
         Scm_Error("input string port required, but got %S", port);
     /* NB: we don't need to lock the port, since the string body
@@ -1195,7 +1195,7 @@ ScmObj Scm_MakeVirtualPort(ScmClass *klass, int direction,
                            const ScmPortVTable *vtable)
 {
     ScmPort *p = make_port(klass, direction, SCM_PORT_PROC);
-    
+
     /* Copy vtable, and ensure all entries contain some ptr */
     p->src.vt = *vtable;
     if (!p->src.vt.Getb)  p->src.vt.Getb = null_getb;
@@ -1254,7 +1254,7 @@ static const char *look_for_encoding(const char *buf)
 {
     const char *s;
     char *encoding;
-    
+
   init:
     for (;;) {
         switch (*buf++) {
@@ -1328,7 +1328,7 @@ static void coding_port_recognize_encoding(ScmPort *port,
         }
         SCM_DSTRING_PUTB(&ds, c);
         if (c == '\r') {   /* for the source that only uses '\r' */
-            if (cr_seen) num_newlines++; 
+            if (cr_seen) num_newlines++;
             cr_seen = TRUE;
         } else if (c == '\n' || cr_seen) {
             num_newlines++;
@@ -1339,7 +1339,7 @@ static void coding_port_recognize_encoding(ScmPort *port,
     }
     data->pbuf = Scm_DStringGetz(&ds);
     data->pbufsize = (int)strlen(data->pbuf);
-    
+
     /* Look for the magic comment */
     encoding = look_for_encoding(data->pbuf);
 
@@ -1374,7 +1374,7 @@ static int coding_filler(ScmPort *p, int cnt)
     if (data->state == CODING_PORT_FLUSHED) {
         return Scm_GetzUnsafe(datptr, cnt, data->source);
     }
-    
+
     if (data->state == CODING_PORT_INIT) {
         coding_port_recognize_encoding(p, data);
         data->state = CODING_PORT_RECOGNIZED;
@@ -1508,7 +1508,7 @@ static int limit_getz(char *buf, int buflen, ScmPort *p)
 {
     int rest = 0, size, nread;
     limited_port_data *data = (limited_port_data*)SCM_PORT_VIRTUAL_DATA(p);
-    
+
     if (data->limit_reached) return 0;
     if (BYTE_LIMITED(data)) {
         rest = data->max_bytes - data->byte_count;
@@ -1552,7 +1552,7 @@ static void limit_putz(const char *buf, int size, ScmPort *p)
     limited_port_data *data = (limited_port_data*)SCM_PORT_VIRTUAL_DATA(p);
     if (data->limit_reached) return;
     if (BYTE_LIMITED(data)) {
-        
+
     }
 }
 
@@ -1572,7 +1572,7 @@ ScmObj Scm_MakeLimitedLengthPort(ScmPort *source,
     data->char_count = 0;
     data->limit_reached = FALSE;
 
-    
+
 }
 
 #endif
@@ -1596,7 +1596,7 @@ static ScmObj scm_stderr = SCM_UNBOUND;
         var = SCM_OBJ(port);                            \
         return oldp;                                    \
     }
- 
+
 DEFSTDPORT(Stdin, scm_stdin)
 DEFSTDPORT(Stdout, scm_stdout)
 DEFSTDPORT(Stderr, scm_stderr)
@@ -1657,7 +1657,7 @@ void Scm__InitPort(void)
     Scm_VM()->curin  = SCM_PORT(scm_stdin);
     Scm_VM()->curout = SCM_PORT(scm_stdout);
     Scm_VM()->curerr = SCM_PORT(scm_stderr);
-    
+
     key_full   = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("full")));
     key_modest = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("modest")));
     key_line   = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("line")));

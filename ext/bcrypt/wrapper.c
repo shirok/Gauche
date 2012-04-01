@@ -273,7 +273,7 @@ weak_alias(__crypt_gensalt_ra, crypt_gensalt_ra)
 weak_alias(__crypt_gensalt, crypt_gensalt)
 weak_alias(crypt, fcrypt)
 #else
-/* 
+/*
  * To make fcrypt users happy.
  * They don't need to call init_des.
  */

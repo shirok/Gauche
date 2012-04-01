@@ -105,7 +105,7 @@
   )
 
 (test* "gappend" '(0 1 2 3 a b c d A B C D)
-       (generator->list (gappend (giota 4) 
+       (generator->list (gappend (giota 4)
                                  (x->generator '(a b c d))
                                  (x->generator '(A B C D)))))
 
@@ -128,7 +128,7 @@
               (generator->list (gfn (x->generator s))))
        (test* (format "~s (autoconvert)" 'gfn) (lfn s)
               (generator->list (gfn s))))]))
-       
+
 (define-syntax test-list-like*
   (syntax-rules ()
     [(_  gfn lfn src ...)

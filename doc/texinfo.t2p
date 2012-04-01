@@ -13,7 +13,7 @@
 % \inputs it, texinfo.t2p will be loaded by TeX2page
 % only once.  If jobname.t2p does not exist, or if it
 % does _not_ explicitly \input texinfo.t2p,
-% jobname.texi will implicitly \input 
+% jobname.texi will implicitly \input
 % texinfo.t2p where it tries to \input texinfo.
 
 % [SK] this is an attempt to make Dorai's tex2page work on
@@ -82,7 +82,7 @@
 \evalh{
 (let* ((var (get-peeled-group))
        (val (get-peeled-group)))
-  (set! *texinfo-values* 
+  (set! *texinfo-values*
     (cons (cons var val) *texinfo-values*)))
 }}
 
@@ -438,7 +438,7 @@
 (set! tex2page-massage-file
   (lambda (f)
     (let ((e (file-extension f)))
-      (cond ((and e (member/string-ci=? 
+      (cond ((and e (member/string-ci=?
                      e '(".t2p" ".ind" ".bbl")))
              (deactivate-cdef #\newline)
              f)

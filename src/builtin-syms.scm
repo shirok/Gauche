@@ -22,7 +22,7 @@
   (parameterize ([cgen-current-unit *unit*])
     (cgen-decl "#define LIBGAUCHE_BODY"
                "#include <gauche.h>")
-    
+
     (cgen-extern "SCM_EXTERN ScmSymbol Scm_BuiltinSymbols[];")
     (cgen-body "ScmSymbol Scm_BuiltinSymbols[] = {")
     (cgen-body "#define ENTRY(s) \
@@ -30,7 +30,7 @@
                    SCM_STRING(s), SCM_SYMBOL_FLAG_INTERNED }")
     (cgen-init "#define INTERN(s, i) \
                   Scm_HashTableSet(obtable, s, SCM_OBJ(&Scm_BuiltinSymbols[i]), 0)")
-    
+
     (for-each-with-index
      (^[index entry]
        (let* ([str (cgen-literal (symbol->string (car entry)))]
@@ -46,7 +46,7 @@
     (cgen-body "#undef ENTRY")
     (cgen-body "};")
     (cgen-init "#undef INTERN")
-      
+
     (cgen-emit-h (cgen-current-unit))
     (cgen-emit-c (cgen-current-unit))
     0))
@@ -189,4 +189,4 @@
     (time-utc                  SCM_SYM_TIME_UTC)
     ))
 
-                
+

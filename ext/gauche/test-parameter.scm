@@ -99,7 +99,7 @@
     (let* ([a1 (param)]
            [a2 (parameterize ([param 4]) (param))]
            [a3 (param)])
-      (list a1 a2 a3)))   
+      (list a1 a2 a3)))
 
   (test* "check filter proc isn't called on restoration" '("2" "4" "2")
          (dotest (make-parameter 2 number->string)))

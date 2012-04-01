@@ -12,9 +12,9 @@
 ;;; mailing list, whose addresses can be found at
 ;;;   http://srfi.schemers.org/srfi-43/srfi-43.html
 
-;;; [SK] I added Gauche-specific module stuff, and adjusted some 
+;;; [SK] I added Gauche-specific module stuff, and adjusted some
 ;;; code to make it efficient in Gauche.  If you find a bug, it is likely
-;;; to be introduced by this modification.  Please report bugs to 
+;;; to be introduced by this modification.  Please report bugs to
 ;;; gauche-devel mailing list.
 
 (define-module srfi-43
@@ -577,7 +577,7 @@
 ;;;   with the situation that ELEMENT=? is EQ? to avoid more unnecessary
 ;;;   comparisons, but I believe this optimization is probably fairly
 ;;;   insignificant.)
-;;;   
+;;;
 ;;;   If the number of vector arguments is zero or one, then #T is
 ;;;   automatically returned.  If there are N vector arguments,
 ;;;   VECTOR_1 VECTOR_2 ... VECTOR_N, then VECTOR_1 & VECTOR_2 are

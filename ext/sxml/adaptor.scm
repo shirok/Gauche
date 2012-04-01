@@ -61,7 +61,7 @@
       (cons #\newline
 	(cons (list 'quote (car lst))
 	  (cons ": " (cons (car lst) (make-print-list #\newline (cdr lst)))))))
-     (else 
+     (else
       (cons prefix (cons (car lst) (make-print-list "" (cdr lst)))))))
 
 			; return the list of all unique "interesting"
@@ -71,13 +71,13 @@
     (let loop ((expr expr) (vars '()))
       (cond
        ((not (pair? expr)) vars)	; not an application -- ignore
-       ((memq (car expr) 
+       ((memq (car expr)
 	      '(quote let let* letrec let-values* lambda cond quasiquote
 		      case define do assert))
 	vars)				; won't go there
        (else				; ignore the head of the application
 	(let inner ((expr (cdr expr)) (vars vars))
-	  (cond 
+	  (cond
 	   ((null? expr) vars)
 	   ((symbol? (car expr))
 	    (inner (cdr expr)
@@ -111,7 +111,7 @@
        (else (loop (cons (car reported) exprs) (cdr reported)))))))
 )
 
-;; Macro used in sxpath.scm 
+;; Macro used in sxpath.scm
 
 ; Read-only decrement
 (define-macro (|--| x) `(- ,x 1))

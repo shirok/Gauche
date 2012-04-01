@@ -1,13 +1,13 @@
 /*
  * regexp.c - regular expression
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
  *   Copyright (c) 2006 Rui Ueyama, All rights reserved.
- * 
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -243,7 +243,7 @@ static ScmRegexp *make_regexp(void)
 static int regexp_compare(ScmObj x, ScmObj y, int equalp)
 {
     ScmRegexp *rx, *ry;
-    
+
     if (!equalp) {
         Scm_Error("cannot compare regexps: %S and %S", x, y);
     }
@@ -260,7 +260,7 @@ static int regexp_compare(ScmObj x, ScmObj y, int equalp)
         /* we compare bytecode. */
         int i;
         const u_char *px = rx->code, *py = ry->code;
-        
+
         for (i=0; i<rx->numCodes; i++) {
             if (rx->code[i] != ry->code[i]) return 1;
         }
@@ -1509,7 +1509,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
         /* Assertions can check EOF even other regexps follow, so '$'
            in the last pos of this group should be treated as EOL.
            (?>$) as well.  It is consistent with Perl and Oniguruma. */
-        rc3_seq(ctx, SCM_CDR(ast), TRUE); 
+        rc3_seq(ctx, SCM_CDR(ast), TRUE);
         rc3_emit(ctx, RE_SUCCESS);
         rc3_fill_offset(ctx, ocodep+1, ctx->codep);
         return;
@@ -1747,7 +1747,7 @@ static int is_char_or_charset(ScmObj ast)
 static int is_simple_prefixed(ScmObj ast)
 {
     ScmObj car;
-    
+
     if (!SCM_PAIRP(ast)) return FALSE;
     car = SCM_CAR(ast);
     if (SCM_EQ(car, SCM_SYM_REP_WHILE)) {
@@ -1803,7 +1803,7 @@ static ScmObj calculate_laset(ScmObj head, ScmObj rest)
         return SCM_FALSE;
     }
     head_car = SCM_CAR(head);
-    
+
     if (SCM_EQ(head_car, SCM_SYM_COMP)) {
         SCM_ASSERT(SCM_CHAR_SET_P(SCM_CDR(head)));
         cs = Scm_CharSetCopy(SCM_CHAR_SET(SCM_CDR(head)));
@@ -2792,7 +2792,7 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
     if (!SCM_FALSEP(rx->laset)) {
         ScmObj r;
         const char *next;
-        
+
         if (rx->flags & SCM_REGEXP_SIMPLE_PREFIX) {
             while (start <= start_limit) {
                 r = rex(rx, str, start, end);
@@ -2840,10 +2840,10 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
  * # of characters.  Character counting is expensive, so we try
  * to avoid calling Scm_MBLen as much as possible.   If other two
  * values are known, we just subtract them from the inputLen.
- * 
+ *
  * |<-------original string------------>|
  * |      |<---matched substr -->|      |
- * |      |                      |      | 
+ * |      |                      |      |
  * |<---->|<-------------------->|<---->|
  * |start          length          after|
  * |<---------------------------------->|
@@ -2869,7 +2869,7 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
      + ((sub)->length >= 0 ? 0 : MSUB_SIZE(rm, sub))            \
      + ((sub)->after  >= 0 ? 0 : MSUB_AFTER_SIZE(rm, sub)))
 
-static void regmatch_count_start(ScmRegMatch *rm, 
+static void regmatch_count_start(ScmRegMatch *rm,
                                  struct ScmRegMatchSub *sub)
 {
     if (SCM_REG_MATCH_SINGLE_BYTE_P(rm)) {
@@ -2883,7 +2883,7 @@ static void regmatch_count_start(ScmRegMatch *rm,
     }
 }
 
-static void regmatch_count_length(ScmRegMatch *rm, 
+static void regmatch_count_length(ScmRegMatch *rm,
                                   struct ScmRegMatchSub *sub)
 {
     if (SCM_REG_MATCH_SINGLE_BYTE_P(rm)) {
@@ -2897,7 +2897,7 @@ static void regmatch_count_length(ScmRegMatch *rm,
     }
 }
 
-static void regmatch_count_after(ScmRegMatch *rm, 
+static void regmatch_count_after(ScmRegMatch *rm,
                                  struct ScmRegMatchSub *sub)
 {
     if (SCM_REG_MATCH_SINGLE_BYTE_P(rm)) {

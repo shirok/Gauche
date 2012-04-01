@@ -1,5 +1,5 @@
 ## EUC-JISX0213 (JIS X 0213:2000 Appendix 3) vs Unicode mapping table
-## 
+##
 ## Date: 16 Apr 2002 13:10:00 GMT
 ## License:
 ## 	Copyright (C) 2001 earthian@tama.or.jp, All Rights Reserved.
@@ -16,7 +16,7 @@
 ## 	Private 	UCS private area mapping
 ## 	Some 0213 character can't represent by one UCS character.
 ## 	In this table, such characters are described as 'U+xxxx+xxxx'.
-## 
+##
 ## JIS	Unicode	Name	Note
 0x00	U+0000	# <control>
 0x01	U+0001	# <control>
@@ -9077,8 +9077,8 @@
 0x8EDB	U+FF9B	# HALFWIDTH KATAKANA LETTER RO
 0x8EDC	U+FF9C	# HALFWIDTH KATAKANA LETTER WA
 0x8EDD	U+FF9D	# HALFWIDTH KATAKANA LETTER N
-0x8EDE	U+FF9E	# HALFWIDTH KATAKANA VOICED SOUND MARK 
-0x8EDF	U+FF9F	# HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK 
+0x8EDE	U+FF9E	# HALFWIDTH KATAKANA VOICED SOUND MARK
+0x8EDF	U+FF9F	# HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK
 0x8EE0		# <reserved>
 0x8EE1		# <reserved>
 0x8EE2		# <reserved>

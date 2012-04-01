@@ -75,8 +75,8 @@ recent version on the web:
 @c COMMON
 
 @menu
-* Overview of Gauche::          
-* Notations::                   
+* Overview of Gauche::
+* Notations::
 @end menu
 
 @node Overview of Gauche, Notations, Introduction, Introduction
@@ -129,7 +129,7 @@ Gaucheが長所とするべく重点を置いているのは次のようなポ�
 One of the situation Gauche is aiming at is in the production
 environment, where you write ten-lines throw-away script that
 may invoked very frequently.  This includes CGI scripts as well.
-Gauche provides frequently used common features as a part of rich built-in 
+Gauche provides frequently used common features as a part of rich built-in
 functions or precompiled Scheme libraries that can be loaded very quickly.
 @c JP
 Gaucheが想定している用途のひとつは、プロダクション環境でちょろっと
@@ -169,7 +169,7 @@ Gaucheは内部的に文字列を全て、コンパイル時に選択したエ�
 @c EN
 Gauche has a simple module system to separate namespaces,
 which allows the developers to work in parallel without
-worrying name collision.  
+worrying name collision.
 @c JP
 Gaucheは名前空間を分離する単純なモジュールシステムを備えており、
 名前の衝突を心配せずに複数の開発者が並行して作業をすることができます。
@@ -232,12 +232,12 @@ Gaucheはポートオブジェクトを入出力のための統合された抽�
 @end table
 
 @c EN
-On the other hand, Gauche is @emph{not} designed for 
+On the other hand, Gauche is @emph{not} designed for
 applications such like high-performance number cruncher or
-very large scale database handling. 
+very large scale database handling.
 
 You can still use Gauche as a "glue" language for such applications,
-however.  For example, you can write a performance-critical part 
+however.  For example, you can write a performance-critical part
 in another language that compiles to native code, and use Gauche to set up.
 @c JP
 一方、Gaucheは所詮インタプリタですから、高速に大量の計算をこなしたり

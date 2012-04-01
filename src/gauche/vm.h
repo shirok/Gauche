@@ -1,12 +1,12 @@
 /*
  * vm.h - Virtual machine
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -267,8 +267,8 @@ typedef struct ScmEscapePointRec {
                                    are rewound after an exception is raised
                                    and before the exception handler is called.
                                    If FALSE, the exception handler is called
-                                   first, then the dynamic handlers are 
-                                   rewound.   SRFI-18 model and legacy 
+                                   first, then the dynamic handlers are
+                                   rewound.   SRFI-18 model and legacy
                                    with-error-handler uses the latter model,
                                    but SRFI-34's guard needs the former model.
                                 */
@@ -344,7 +344,7 @@ SCM_EXTERN ScmObj Scm_VMFinalizerRun(ScmVM *vm);
  * Statistics
  *
  *  Not much stats are collected yet, but will grow in future.
- *  Stats collections are only active if SCM_COLLECT_VM_STATS 
+ *  Stats collections are only active if SCM_COLLECT_VM_STATS
  *  runtime flag is TRUE.
  *  Stats are collected per-VM (i.e. per-thread), but currently
  *  we don't have an API to gather them.
@@ -558,14 +558,14 @@ typedef enum {
  *     SCM_NEXT_HANDLER;
  *   } SCM_END_PROTECT;
  *   clean up code on normal situation
- * 
+ *
  *  Note that this construct does not install exception handler or
  *  error handler by itself.   The handler installed by with-error-handler
  *  or with-exception-handler is invoked, and then the SCM_WHEN_ERROR
  *  part is called while the C stack is rewind.
  *  If you want to handle error as well, you should install error handler
  *  by yourself (and deinstall it in the cleanup code).
- * 
+ *
  *  In general, you MUST call SCM_NEXT_HANDLER in the SCM_WHEN_ERROR clause.
  *  In other words, you shouldn't use SCM_UNWIND_PROTECT as "ignore-errors"
  *  construct.  The C stack is rewind not only at the error situation, but
@@ -583,7 +583,7 @@ typedef enum {
        cstack.cont = NULL;                      \
        Scm_VM()->cstack = &cstack;              \
        if (sigsetjmp(cstack.jbuf, FALSE) == 0) {
-           
+
 #define SCM_WHEN_ERROR                          \
        } else {
 

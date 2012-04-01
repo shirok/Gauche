@@ -16,7 +16,7 @@ all : $(LIBFILES)
 
 md5_OBJECTS = rfc--md5.$(OBJEXT) md5c.$(OBJEXT)
 
-rfc--md5.$(SOEXT) : $(md5_OBJECTS) 
+rfc--md5.$(SOEXT) : $(md5_OBJECTS)
 	$(MODLINK) rfc--md5.$(SOEXT) $(md5_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 md5.sci rfc--md5.c : md5.scm

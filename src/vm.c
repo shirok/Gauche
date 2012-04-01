@@ -1,12 +1,12 @@
 /*
  * vm.c - virtual machine
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -82,14 +82,14 @@ static ScmEnvFrame ccEnvMark = {
 
 /* A dummy compiled code structure used as 'fill-in', when Scm_Apply
    is called without any VM code running.  See Scm_Apply below. */
-static ScmCompiledCode internal_apply_compiled_code = 
+static ScmCompiledCode internal_apply_compiled_code =
     SCM_COMPILED_CODE_CONST_INITIALIZER(NULL, 0, 0, 0, 0,
                                         SCM_SYM_INTERNAL_APPLY,
                                         SCM_NIL, SCM_FALSE,
                                         SCM_FALSE, SCM_FALSE);
 
 /*
- * The VM. 
+ * The VM.
  *
  *   VM encapsulates the dynamic status of the current exection.
  *   In Gauche, there's always one active virtual machine per thread,
@@ -145,7 +145,7 @@ static ScmEnvFrame *get_env(ScmVM *vm);
  *   at the initialization stage (see Scm__InitVM()).   For other threads,
  *   it depends on whether the thread is created from Gauche side or not.
  *
- *   If the thread is created from Gauche side (i.e. by Scm_MakeThread() 
+ *   If the thread is created from Gauche side (i.e. by Scm_MakeThread()
  *   C API or make-thread Scheme API), attaching is handled automatically
  *   by Gauche.
  *
@@ -163,7 +163,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 {
     ScmVM *v = SCM_NEW(ScmVM);
     int i;
-    
+
     SCM_SET_CLASS(v, SCM_CLASS_VM);
     v->state = SCM_VM_NEW;
     (void)SCM_INTERNAL_MUTEX_INIT(v->vmlock);
@@ -177,7 +177,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->resultException = SCM_UNDEFINED;
     v->module = proto ? proto->module : Scm_SchemeModule();
     v->cstack = NULL;
-    
+
     v->curin  = proto? proto->curin  : SCM_PORT(Scm_Stdin());
     v->curout = proto? proto->curout : SCM_PORT(Scm_Stdout());
     v->curerr = proto? proto->curerr : SCM_PORT(Scm_Stderr());
@@ -215,7 +215,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->val0 = SCM_UNDEFINED;
     for (i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = SCM_UNDEFINED;
     v->numVals = 1;
-    
+
     v->handlers = SCM_NIL;
 
     v->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
@@ -421,7 +421,7 @@ static void vm_unregister(ScmVM *vm)
 #define CHECK_STACK_PARANOIA(n)  /*empty*/
 #endif
 
-/* Hint for gcc -- at this moment, using __builtin_expect doesn't 
+/* Hint for gcc -- at this moment, using __builtin_expect doesn't
    do any good.  I'll try this later on. */
 #if 0
 #define MOSTLY_FALSE(expr)  __builtin_expect(expr, 0)
@@ -635,7 +635,7 @@ static void vm_unregister(ScmVM *vm)
 
 /* Discard the current procedure's local frame before performing a tail call.
    Just before the tail call, the typical stack position is like this:
-   
+
    SP  >|      |
         | argN |
         |   :  |
@@ -773,7 +773,7 @@ static void run_loop()
 {
     ScmVM *vm = theVM;
     ScmWord code = 0;
-    
+
 #ifdef __GNUC__
     static void *dispatch_table[256] = {
 #define DEFINSN(insn, name, nargs, type)   && SCM_CPP_CAT(LABEL_, insn),
@@ -855,12 +855,12 @@ static void run_loop()
    the order of 10^6 times.   I'm not sure I can optimize this routine
    further without a radical change in stack management code.
 
-   Better strategy is to put an effort in the compiler to avoid closure 
+   Better strategy is to put an effort in the compiler to avoid closure
    creation as much as possible.  */
 
 /* Move the chain of env frames from the stack to the heap,
    replacing the in-stack frames for forwarding env frames.
-   
+
    This routine just moves the env frames, but leaves pointers that
    point to moved frames intact (such pointers are found only in
    the in-stack contniuation frames, chained from vm->cont).
@@ -956,13 +956,13 @@ static void save_cont(ScmVM *vm)
         /* make the orig frame forwarded */
         if (prev) prev->prev = csave;
         prev = csave;
-        
+
         tmp = c->prev;
         c->prev = csave;
         c->size = -1;
         c = tmp;
     } while (IN_STACK_P((ScmObj*)c));
-    
+
     /* Second pass */
     if (FORWARDED_CONT_P(vm->cont)) {
         vm->cont = FORWARDED_CONT(vm->cont);
@@ -1018,7 +1018,7 @@ static ScmEnvFrame *get_env(ScmVM *vm)
 {
     ScmEnvFrame *e;
     ScmContFrame *c;
-    
+
     e = save_env(vm, vm->env);
     if (e != vm->env) {
         vm->env = e;
@@ -1099,7 +1099,7 @@ void Scm_VMFlushFPStack(ScmVM *vm)
         if (visited_index < ENV_CACHE_SIZE) {
             visited[visited_index++] = e;
         }
-        
+
         for (i = 0; i < e->size; i++) {
             p = &ENV_DATA(e, i);
             SCM_FLONUM_ENSURE_MEM(*p);
@@ -1381,7 +1381,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
     cstack.prev = vm->cstack;
     cstack.cont = vm->cont;
     vm->cstack = &cstack;
-    
+
   restart:
     vm->escapeReason = SCM_VM_ESCAPE_NONE;
     if (sigsetjmp(cstack.jbuf, FALSE) == 0) {
@@ -1489,7 +1489,7 @@ ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
     ScmVM *vm = theVM;
 
     if (nargs < 0) {
-        Scm_Error("improper list not allowed: %S", args);        
+        Scm_Error("improper list not allowed: %S", args);
     }
 
     for (i=0; i<nargs; i++) {
@@ -1604,7 +1604,7 @@ static ScmObj safe_eval_thunk(ScmObj *args, int nargs, void *data)
 static ScmObj safe_eval_int(ScmObj *args, int nargs, void *data)
 {
     ScmObj thunk, handler;
-    
+
     thunk   = Scm_MakeSubr(safe_eval_thunk, data, 0, 0, SCM_FALSE);
     handler = Scm_MakeSubr(safe_eval_handler, data, 1, 0, SCM_FALSE);
     return Scm_VMWithErrorHandler(handler, thunk);
@@ -1776,7 +1776,7 @@ static ScmObj dynwind_after_cc(ScmObj result, void **data)
     ScmObj val0 = SCM_OBJ(data[0]);
     int nvals = (int)(intptr_t)data[1];
     ScmVM *vm = theVM;
-    
+
     vm->numVals = nvals;
     if (nvals > 1) {
         SCM_ASSERT(nvals <= SCM_VM_MAX_VALUES);
@@ -1798,7 +1798,7 @@ ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
         after ? Scm_MakeSubr(after, data, 0, 0, SCM_FALSE) : Scm_NullProc();
     bodyproc =
         body ? Scm_MakeSubr(body, data, 0, 0, SCM_FALSE) : Scm_NullProc();
-    
+
     return Scm_VMDynamicWind(beforeproc, bodyproc, afterproc);
 }
 
@@ -1958,7 +1958,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
             SCM_NEXT_HANDLER;
         }
         SCM_END_PROTECT;
-        
+
         /* Install the continuation */
         for (i=0; i<numVals; i++) vm->vals[i] = rvals[i];
         vm->numVals = numVals;
@@ -2010,7 +2010,7 @@ static SCM_DEFINE_SUBR(default_exception_handler_rec, 1, 0,
  * Entry point of throwing exception.
  *
  *  This function can be called from Scheme function raise,
- *  or C-function Scm_Error families and signal handler. 
+ *  or C-function Scm_Error families and signal handler.
  *  So there may be a raw C code in the continuation of this C call.
  *  Thus we can't use Scm_VMApply to call the user-defined exception
  *  handler.
@@ -2094,7 +2094,7 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ep->errorReporting =
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
     ep->rewindBefore = rewindBefore;
-    
+
     vm->escapePoint = ep; /* This will be done in install_ehandler, but
                              make sure ep is visible from save_cont
                              to redirect ep->cont */
@@ -2114,7 +2114,7 @@ ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk)
 }
 
 
-/* 
+/*
  * with-exception-handler
  *
  *   This primitive gives the programmer whole responsibility of
@@ -2188,7 +2188,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
         SCM_ASSERT(SCM_PAIRP(SCM_CAR(handlers)));
         handler = SCM_CAAR(handlers);
         chain   = SCM_CDAR(handlers);
-        
+
         data[0] = (void*)SCM_CDR(handlers);
         data[1] = (void*)ep;
         data[2] = (void*)args;
@@ -2206,7 +2206,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
      * won't be overwritten by execution of the partial continuation.
      */
     if (ep->cstack == NULL) save_cont(vm);
-    
+
     /*
      * now, install the target continuation
      */
@@ -2298,13 +2298,13 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ScmEscapePoint *ep;
     ScmContFrame *c, *cp;
     ScmVM *vm = theVM;
-    
+
     /* save the continuation.  we only need to save the portion above the
        latest boundary frame (+environmentns pointed from them), but for now,
        we save everything to make things easier.  If we want to squeeze
        performance we'll optimize it later. */
     save_cont(vm);
-    
+
     /* find the latest boundary frame */
     for (c = vm->cont, cp = NULL;
          c && !BOUNDARY_FRAME_P(c);
@@ -2366,7 +2366,7 @@ ScmObj Scm_VMValues(ScmVM *vm, ScmObj args)
 {
     ScmObj cp;
     int nvals;
-    
+
     if (!SCM_PAIRP(args)) {
         vm->numVals = 0;
         return SCM_UNDEFINED;
@@ -2470,7 +2470,7 @@ static ScmObj process_queued_requests_cc(ScmObj result, void **data)
     int i;
     ScmObj cp;
     ScmVM *vm = theVM;
-    
+
     vm->numVals = (int)(intptr_t)data[0];
     vm->val0 = data[1];
     if (vm->numVals > 1) {
@@ -2593,7 +2593,7 @@ static ScmObj env2vec(ScmEnvFrame *env, struct EnvTab *etab)
 {
     int i;
     ScmObj vec;
-    
+
     if (!env) return SCM_FALSE;
     for (i=0; i<etab->numEntries; i++) {
         if (etab->entries[i].env == env) {
@@ -2627,7 +2627,7 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
         info = Scm_VMGetSourceInfo(vm->pc);
         SCM_APPEND1(stack, tail, Scm_Cons(info, env2vec(vm->env, &envTab)));
     }
-    
+
     for (; c; c = c->prev) {
         if (!SCM_PAIRP(c->info)) continue;
         info = Scm_VMGetSourceInfo(c->info);
@@ -2715,7 +2715,7 @@ void Scm_VMDump(ScmVM *vm)
         dump_env(env, out);
         env = env->up;
     }
-    
+
     Scm_Printf(out, "conts:\n");
     while (cont) {
         Scm_Printf(out, "   %p\n", cont);

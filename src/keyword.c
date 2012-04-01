@@ -1,12 +1,12 @@
 /*
  * keyword.c - keyword implementation
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -54,7 +54,7 @@ static void keyword_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
            These conventions are useful if we pass the S-expression with
            these keywords to other Scheme implementations that don't support
            CL-style keywords; they would just read those ones as symbols.
-        */ 
+        */
         Scm_WriteSymbolName(SCM_KEYWORD(obj)->name, port, ctx,
                             (SCM_SYMBOL_WRITER_NOESCAPE_INITIAL
                              |SCM_SYMBOL_WRITER_NOESCAPE_EMPTY));

@@ -119,5 +119,4 @@
 
 (define (booleans->integer . lis) (list->integer lis))
 
-      
-    
+

@@ -1,8 +1,8 @@
 ;;;
 ;;; srfi-29 - Localization
-;;;  
+;;;
 ;;;  Alex Shinn
-;;;  
+;;;
 
 ;; This module provides basic support for srfi-29 API.
 ;;

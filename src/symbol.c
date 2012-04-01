@@ -1,12 +1,12 @@
 /*
  * symbol.c - symbol implementation
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -165,7 +165,7 @@ void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
     int siz = SCM_STRING_BODY_SIZE(b), i;
     int escape = FALSE;
     int spmask = ((SCM_WRITE_CASE(ctx) == SCM_WRITE_CASE_FOLD)? 0x12 : 0x02);
-        
+
     if (siz == 0) {         /* special case */
         if (!(flags & SCM_SYMBOL_WRITER_NOESCAPE_EMPTY)) {
             SCM_PUTZ("||", -1, port);

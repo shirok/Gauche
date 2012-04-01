@@ -1,12 +1,12 @@
 /*
- * guess.c - guessing character encoding 
+ * guess.c - guessing character encoding
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -87,7 +87,7 @@ static const char *guess_jp(const char *buf, int buflen, void *data)
                 if (c == '$' || c == '(') return "ISO-2022-JP";
             }
         }
-        
+
         if (DFA_ALIVE(eucj)) {
             if (!DFA_ALIVE(sjis) && !DFA_ALIVE(utf8)) return "EUC-JP";
             DFA_NEXT(eucj, c);

@@ -37,10 +37,10 @@ fi
 
 # build
 if [ -f Makefile ]; then make distclean; fi
-if [ -f examples/spigot/Makefile ]; then 
+if [ -f examples/spigot/Makefile ]; then
   (cd examples/spigot; make maintainer-clean);
 fi
-if [ -f examples/mqueue-cpp/Makefile ]; then 
+if [ -f examples/mqueue-cpp/Makefile ]; then
   (cd examples/mqueue-cpp; make maintainer-clean);
 fi
 
@@ -48,7 +48,7 @@ if [ "$INSTALLER" = yes ]; then
   distdir=`pwd`/winnt/wix/Gauche
 else
   distdir=`pwd`/../Gauche-mingw-dist/Gauche
-fi  
+fi
 rm -rf $distdir
 ./configure --enable-multibyte=utf8 --prefix=$distdir
 make

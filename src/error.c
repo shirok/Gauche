@@ -1,12 +1,12 @@
 /*
  * error.c - error handling
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -130,10 +130,10 @@ static ScmClass *porterror_cpl[] = {
     ERROR_CPL,
     NULL
 };
-    
+
 
 SCM_DEFINE_BASE_CLASS(Scm_ErrorClass, ScmError,
-                      message_print, NULL, NULL, 
+                      message_print, NULL, NULL,
                       message_allocate, error_cpl+1);
 SCM_DEFINE_BASE_CLASS(Scm_SystemErrorClass, ScmSystemError,
                       message_print, NULL, NULL,
@@ -145,22 +145,22 @@ SCM_DEFINE_BASE_CLASS(Scm_ReadErrorClass, ScmReadError,
                       message_print, NULL, NULL,
                       readerror_allocate, error_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_IOErrorClass, ScmIOError,
-                      message_print, NULL, NULL, 
+                      message_print, NULL, NULL,
                       message_allocate, error_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_PortErrorClass, ScmPortError,
-                      message_print, NULL, NULL, 
+                      message_print, NULL, NULL,
                       porterror_allocate, porterror_cpl+1);
 SCM_DEFINE_BASE_CLASS(Scm_IOReadErrorClass, ScmIOReadError,
-                      message_print, NULL, NULL, 
+                      message_print, NULL, NULL,
                       porterror_allocate, porterror_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_IOWriteErrorClass, ScmIOWriteError,
-                      message_print, NULL, NULL, 
+                      message_print, NULL, NULL,
                       porterror_allocate, porterror_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_IOClosedErrorClass, ScmIOClosedError,
-                      message_print, NULL, NULL, 
+                      message_print, NULL, NULL,
                       porterror_allocate, porterror_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_IOUnitErrorClass, ScmIOUnitError,
-                      message_print, NULL, NULL, 
+                      message_print, NULL, NULL,
                       porterror_allocate, porterror_cpl);
 
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs)
@@ -317,10 +317,10 @@ static ScmClass *compound_cpl[] = {
 };
 
 SCM_DEFINE_BASE_CLASS(Scm_CompoundConditionClass, ScmCompoundCondition,
-                      NULL, NULL, NULL, 
+                      NULL, NULL, NULL,
                       compound_allocate, compound_cpl+2);
 SCM_DEFINE_BASE_CLASS(Scm_SeriousCompoundConditionClass, ScmCompoundCondition,
-                      NULL, NULL, NULL, 
+                      NULL, NULL, NULL,
                       compound_allocate, compound_cpl);
 
 static ScmObj compound_allocate(ScmClass *klass, ScmObj initargs)
@@ -361,7 +361,7 @@ ScmObj Scm_MakeCompoundCondition(ScmObj conditions)
         if (SCM_SERIOUS_CONDITION_P(c)) {
             serious = TRUE;
         }
-        
+
         if (SCM_COMPOUND_CONDITION_P(c)) {
             ScmCompoundCondition *cc = SCM_COMPOUND_CONDITION(c);
             SCM_APPEND(h, t, cc->conditions);
@@ -444,7 +444,7 @@ ScmObj Scm_MakeReadError(ScmObj message, ScmPort *port, int line)
 int Scm_ConditionHasType(ScmObj c, ScmObj k)
 {
     ScmObj cp;
-    
+
     if (!SCM_CONDITIONP(c)) return FALSE;
     if (!SCM_CLASSP(k)) return FALSE;
     if (!SCM_COMPOUND_CONDITION_P(c)) return SCM_ISA(c, SCM_CLASS(k));
@@ -482,7 +482,7 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
 
     /* just a safety net */
     if (!SCM_CONDITIONP(c)) return SCM_MAKE_STR("(not a condition)");
-    
+
     if (!SCM_COMPOUND_CONDITION_P(c)) {
         sname = Scm__InternalClassName(Scm_ClassOf(c));
     } else {
@@ -534,7 +534,7 @@ void Scm_Error(const char *msg, ...)
         Scm_VMThrowException(vm, e);
     }
     SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_HANDLED);
-    
+
     SCM_UNWIND_PROTECT {
         va_start(args, msg);
         e = Scm_MakeError(Scm_Vsprintf(msg, args, TRUE));
@@ -607,7 +607,7 @@ void Scm_SysError(const char *msg, ...)
                                    but MinGW doesn't seem to have it yet. */
     SetLastError(0);
 #endif /*GAUCHE_WINDOWS*/
-    
+
     SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
         va_start(args, msg);
@@ -641,7 +641,7 @@ void Scm_TypeError(const char *what, const char *expected, ScmObj got)
  * A convenience function to raise port-relates errors.
  * It creates either one of <port-error>, <io-read-error>,
  * <io-write-error>, <io-closed-error>, or <io-unit-error>,
- * depending on the 'reason' argument being 
+ * depending on the 'reason' argument being
  * SCM_PORT_ERROR_{OTHER,INPUT,OUTPUT,CLOSED,UNIT}, respectively.
  * If errno isn't zero, it also creates a <system-error> and throws
  * a compound condition of both.
@@ -681,7 +681,7 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
         pe = porterror_allocate(peclass, SCM_NIL);
         SCM_ERROR(pe)->message = smsg;
         SCM_PORT_ERROR(pe)->port = port;
-        
+
         if (en != 0) {
             e = Scm_MakeCompoundCondition(SCM_LIST2(Scm_MakeSystemError(smsg, en),
                                                     pe));
@@ -812,9 +812,9 @@ void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
 {
     ScmObj cp;
     int depth = offset;
-    
+
     if (maxdepth == 0) maxdepth = STACK_DEPTH_LIMIT;
-    
+
     SCM_FOR_EACH(cp, stacklite) {
         if (skip-- > 0) continue;
         if (format == FMT_ORIG) {
@@ -915,7 +915,7 @@ void Scm_ReportError(ScmObj e)
            reporter, as far as the error is handled by user-installed
            handler.   The user-installed handler can even invoke a
            continuation that is captured outside; the flag is reset
-           in such case. 
+           in such case.
            Be careful that it is possible that stderr is no longer
            available here (since it may be the very cause of the
            recursive error).  All we can do is to abort. */

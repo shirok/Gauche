@@ -2,7 +2,7 @@
 ;;; sha - SHA-1/SHA-224/SHA-256/SHA-384/SHA-512 message-digest
 ;;;
 ;;;   Copyright (c) 2002-2003 Kimura Fuyuki, All rights reserved.
-;;;   Copyright (c) 2008-2011  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2008-2012  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -122,7 +122,7 @@
 
  "#define LIBGAUCHE_EXT_BODY"
  "#include <gauche/extern.h>  /* fix SCM_EXTERN in SCM_CLASS_DECL */"
- 
+
  "typedef struct ScmShaContextRec {"
  " SCM_HEADER;"
  " SHA_CTX ctx;"

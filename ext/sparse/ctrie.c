@@ -1,12 +1,12 @@
 /*
  * ctrie.c - Compact Trie
  *
- *   Copyright (c) 2009-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2009-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -92,7 +92,7 @@ static Node *node_insert(Node *orig, u_long ind, void *entry, int leafp)
     int size = NODE_NCHILDREN(orig);
     int insertpoint = Scm__CountBitsBelow(orig->emap, ind);
     int i;
-    
+
     if (size&(NODE_SIZE_INCR-1)) {
         /* we have one more room */
         NODE_ARC_SET(orig, ind);
@@ -177,7 +177,7 @@ static Node *add_rec(CompactTrie *ct, Node *n, u_long key, int level,
 {
     Leaf *l;
     u_long ind = KEY2INDEX(key, level);
-    
+
     if (!NODE_HAS_ARC(n, ind)) {
         *result = l = new_leaf(key, creator, data);
         ct->numEntries++;
@@ -285,7 +285,7 @@ Leaf *CompactTrieDelete(CompactTrie *ct, u_long key)
 
 /* 'init' can smash all the contents, but if you want to be more GC-friendly,
    this one clears up all the freed chunks. */
-static void clear_rec(CompactTrie *ct, Node *n, 
+static void clear_rec(CompactTrie *ct, Node *n,
                       void (*clearer)(Leaf*, void*),
                       void *data)
 {
@@ -323,7 +323,7 @@ void CompactTrieClear(CompactTrie *ct,
 static Leaf *next_rec(Node *n, u_long key, int level, int over)
 {
     u_int i, ind = over? 0 : KEY2INDEX(key, level);
-    
+
     for (i = ind; i < MAX_NODE_SIZE; i++) {
         if (!NODE_HAS_ARC(n, i)) continue;
         if (NODE_ARC_IS_LEAF(n, i)) {
@@ -476,11 +476,11 @@ static void leaf_dump(ScmPort *out, Leaf *self, int indent,
     Scm_Printf(out, "\n");
 }
 
-static void node_dump(ScmPort *out, Node *n, int level, 
+static void node_dump(ScmPort *out, Node *n, int level,
                       void (*dumper)(ScmPort*, Leaf*, int, void*), void *data)
 {
     int i;
-    
+
     Scm_Printf(out, "NODE(%p)\n", n);
     for (i=0; i<MAX_NODE_SIZE; i++) {
         if (!NODE_HAS_ARC(n, i)) continue;

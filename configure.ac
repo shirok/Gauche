@@ -21,7 +21,7 @@ AC_ARG_ENABLE(multibyte,
   AC_HELP_STRING([--enable-multibyte=ENCODING],
                  [Use ENCODING as the internal multibyte string encoding.
 Following encodings are currently recognized:
-'euc-jp' (EUC-JP code), 'utf-8' (UTF-8), 'sjis' (Shift-JIS), 
+'euc-jp' (EUC-JP code), 'utf-8' (UTF-8), 'sjis' (Shift-JIS),
 or 'none' (No multibyte support)]),
   [
    case $enable_multibyte in
@@ -54,7 +54,7 @@ AC_ARG_WITH(slib,
 installed under PATH.  If PATH is not specified, or this option is omitted,
 Gauche still tries to find your slib installation from some typical places.]),
   [
-    case $with_slib in 
+    case $with_slib in
       no)  search_slib=no;;
       yes) search_slib=yes;;
       *)   search_slib=no; SLIB_DIR=$with_slib;;
@@ -80,7 +80,7 @@ AC_SUBST(SLIB_DIR)
 
 dnl ----------------------------------------------------------
 dnl  with-local=PATH:...
-dnl  
+dnl
 AC_ARG_WITH(local,
   AC_HELP_STRING([--with-local=PATH:PATH...],
                  [For each PATH, add PATH/include to the include search
@@ -132,14 +132,14 @@ AC_ARG_WITH(rpath,
 
 dnl ----------------------------------------------------------
 dnl   enable-thread=TYPE
-dnl  
+dnl
 GAUCHE_THREAD_TYPE=default
 AC_ARG_ENABLE(threads,
   AC_HELP_STRING([--enable-threads=TYPE],
                  [Choose thread type.  Possible values are: 'none' for not using threads, 'pthreads' to use pthreads, and 'default' to choose system's suitable one (if any). ]),
   [
     case $enableval in
-      pthreads) 
+      pthreads)
        GAUCHE_THREAD_TYPE=pthreads;;
       win32)
        GAUCHE_THREAD_TYPE=win32;;
@@ -234,10 +234,10 @@ case $GAUCHE_THREAD_TYPE in
  ;;
 esac
 case $GAUCHE_THREAD_TYPE in
-  pthreads)        
+  pthreads)
    AC_DEFINE(GAUCHE_USE_PTHREADS,1,[Define if we use pthreads])
    ;;
-  win32)        
+  win32)
    AC_DEFINE(GAUCHE_USE_WTHREADS,1,[Define if we use pthreads])
    ;;
   *)
@@ -250,7 +250,7 @@ echo $GAUCHE_THREAD_TYPE > config.threads
 
 dnl ----------------------------------------------------------
 dnl   enable-framework
-dnl  
+dnl
 ac_gauche_framework=no
 AC_ARG_ENABLE(framework,
   AC_HELP_STRING([--enable-framework],
@@ -399,7 +399,7 @@ AC_CHECK_SIZEOF(rlim_t,,[
 
 dnl Checks non-POSIX members of system structure
 AC_CHECK_MEMBERS([struct group.gr_passwd],,,[#include <grp.h>])
-AC_CHECK_MEMBERS([struct passwd.pw_passwd, 
+AC_CHECK_MEMBERS([struct passwd.pw_passwd,
                   struct passwd.pw_gecos,
                   struct passwd.pw_class],,,[#include <pwd.h>])
 
@@ -564,7 +564,7 @@ case $host in
   *darwin*)
     # -no-cpp-precomp is not related to shared library, but needed to
     # get src/{vm.c,char.c} compiled -skimu
-    # [Shiro] Darwin 1.3 and later needs different flags 
+    # [Shiro] Darwin 1.3 and later needs different flags
     CPPFLAGS="$CPPFLAGS -no-cpp-precomp"
     case $host_os in
       darwin1.[[012]]) FLAT_NAMESPACE="" ;;
@@ -577,7 +577,7 @@ case $host in
     SHLIB_SO_CFLAGS="-no-cpp-precomp -fPIC -fno-common"
     SHLIB_SO_LDFLAGS="-bundle $FLAT_NAMESPACE -undefined suppress -o"
     SHLIB_SO_SUFFIX="so"
-    if test "$ac_gauche_framework" = yes; then 
+    if test "$ac_gauche_framework" = yes; then
       SHLIB_DYLIB_LDFLAGS='-framework CoreFoundation -dynamiclib -o'
       AC_DEFINE(GAUCHE_MACOSX_FRAMEWORK, 1, [Define 1 if building framework on MacOSX])
       xhost="${host}-framework"

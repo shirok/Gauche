@@ -1,12 +1,12 @@
 /*
  * system.h - Gauche system interface
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -91,7 +91,7 @@ typedef struct ScmSysStatRec {
     SCM_HEADER;
     struct stat statrec;
 } ScmSysStat;
-    
+
 SCM_CLASS_DECL(Scm_SysStatClass);
 #define SCM_CLASS_SYS_STAT    (&Scm_SysStatClass)
 #define SCM_SYS_STAT(obj)     ((ScmSysStat*)(obj))
@@ -117,7 +117,7 @@ SCM_EXTERN long Scm_CurrentMicroseconds();
 
 /* Gauche also has a <time> object, as specified in SRFI-18, SRFI-19
  * and SRFI-21.  It can be constructed from the basic system interface
- * such as sys-time or sys-gettimeofday. 
+ * such as sys-time or sys-gettimeofday.
  */
 typedef struct ScmTimeRec {
     SCM_HEADER;
@@ -155,7 +155,7 @@ typedef struct ScmSysTmRec {
     SCM_HEADER;
     struct tm tm;
 } ScmSysTm;
-    
+
 SCM_CLASS_DECL(Scm_SysTmClass);
 #define SCM_CLASS_SYS_TM      (&Scm_SysTmClass)
 #define SCM_SYS_TM(obj)       ((ScmSysTm*)(obj))
@@ -168,7 +168,7 @@ SCM_EXTERN ScmObj Scm_MakeSysTm(struct tm *);
 /*==============================================================
  * Groups and users
  */
-    
+
 /* struct group */
 typedef struct ScmSysGroupRec {
     SCM_HEADER;

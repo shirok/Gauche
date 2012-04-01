@@ -1,6 +1,6 @@
 ;;;
 ;;; srfi-9.scm - defining record types
-;;;  
+;;;
 
 ;; srfi-9 (define-record-type) is superseded by gauche.record
 

@@ -1,27 +1,27 @@
 ;; SRFI-19: Time Data Types and Procedures.
-;; 
-;; Copyright (C) Neodesic Corporation (2000). All Rights Reserved. 
-;; 
-;; This document and translations of it may be copied and furnished to others, 
-;; and derivative works that comment on or otherwise explain it or assist in its 
-;; implementation may be prepared, copied, published and distributed, in whole or 
-;; in part, without restriction of any kind, provided that the above copyright 
-;; notice and this paragraph are included on all such copies and derivative works. 
-;; However, this document itself may not be modified in any way, such as by 
-;; removing the copyright notice or references to the Scheme Request For 
-;; Implementation process or editors, except as needed for the purpose of 
-;; developing SRFIs in which case the procedures for copyrights defined in the SRFI 
-;; process must be followed, or as required to translate it into languages other 
-;; than English. 
-;; 
-;; The limited permissions granted above are perpetual and will not be revoked 
-;; by the authors or their successors or assigns. 
-;; 
-;; This document and the information contained herein is provided on an "AS IS" 
-;; basis and THE AUTHOR AND THE SRFI EDITORS DISCLAIM ALL WARRANTIES, EXPRESS OR 
-;; IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE 
-;; INFORMATION HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF 
-;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
+;;
+;; Copyright (C) Neodesic Corporation (2000). All Rights Reserved.
+;;
+;; This document and translations of it may be copied and furnished to others,
+;; and derivative works that comment on or otherwise explain it or assist in its
+;; implementation may be prepared, copied, published and distributed, in whole or
+;; in part, without restriction of any kind, provided that the above copyright
+;; notice and this paragraph are included on all such copies and derivative works.
+;; However, this document itself may not be modified in any way, such as by
+;; removing the copyright notice or references to the Scheme Request For
+;; Implementation process or editors, except as needed for the purpose of
+;; developing SRFIs in which case the procedures for copyrights defined in the SRFI
+;; process must be followed, or as required to translate it into languages other
+;; than English.
+;;
+;; The limited permissions granted above are perpetual and will not be revoked
+;; by the authors or their successors or assigns.
+;;
+;; This document and the information contained herein is provided on an "AS IS"
+;; basis and THE AUTHOR AND THE SRFI EDITORS DISCLAIM ALL WARRANTIES, EXPRESS OR
+;; IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE
+;; INFORMATION HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
 
@@ -36,7 +36,7 @@
           set-time-type! set-time-second! set-time-nanosecond! copy-time
           time=? time<? time<=? time>? time>=?
           time-difference time-difference! add-duration add-duration!
-          subtract-duration subtract-duration! 
+          subtract-duration subtract-duration!
           make-date date? date-nanosecond date-second date-minute
           date-hour date-day date-month date-year date-zone-offset
           date-year-day date-week-day date-week-number current-date
@@ -180,7 +180,7 @@
     [(_ time type caller)
      (unless (eq? (time-type time) type)
        (errorf "~a: incompatible time type: ~a type required, but got ~a"
-               caller type time))]))    
+               caller type time))]))
 
 ;;;----------------------------------------------------------
 ;;; Current-time
@@ -318,7 +318,7 @@
   (set-time-type! time-out time-utc)
   (set-time-nanosecond! time-out (time-nanosecond time-in))
   (set-time-second!     time-out (- (time-second time-in)
-				    (tm:leap-second-delta 
+				    (tm:leap-second-delta
 				     (time-second time-in))))
   time-out)
 
@@ -334,7 +334,7 @@
   (set-time-type! time-out time-tai)
   (set-time-nanosecond! time-out (time-nanosecond time-in))
   (set-time-second!     time-out (+ (time-second time-in)
-				    (tm:leap-second-delta 
+				    (tm:leap-second-delta
 				     (time-second time-in))))
   time-out)
 
@@ -585,7 +585,7 @@
 (define (leap-year? date)
   (tm:leap-year? (date-year date)))
 
-(define  tm:month-assoc '((1 . 0)  (2 . 31)  (3 . 59)   (4 . 90)   (5 . 120) 
+(define  tm:month-assoc '((1 . 0)  (2 . 31)  (3 . 59)   (4 . 90)   (5 . 120)
 			  (6 . 151) (7 . 181)  (8 . 212)  (9 . 243)
 			  (10 . 273) (11 . 304) (12 . 334)))
 
@@ -599,7 +599,7 @@
 (define (date-year-day date)
   (tm:year-day (date-day date) (date-month date) (date-year date)))
 
-;; from calendar faq 
+;; from calendar faq
 (define (tm:week-day day month year)
   (let* ([a (quotient (- 14 month) 12)]
 	 [y (- year a)]
@@ -625,7 +625,7 @@
   (quotient (- (date-year-day date)
 	       (tm:days-before-first-week  date day-of-week-starting-week))
 	    7))
-    
+
 (define (current-date :optional (off (tm:local-tz-offset)))
   (time-utc->date (current-time time-utc) off))
 
@@ -702,7 +702,7 @@
 
 (define (julian-day->time-tai jdn)
   (time-utc->time-tai! (julian-day->time-utc jdn)))
-			 
+
 (define (julian-day->time-monotonic jdn)
   (time-utc->time-monotonic! (julian-day->time-utc jdn)))
 
@@ -735,10 +735,10 @@
   '#("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat"))
 (define tm:locale-long-weekday-vector
   '#("Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday"))
-;; note empty string in 0th place. 
+;; note empty string in 0th place.
 (define tm:locale-abbr-month-vector
   '#("" "Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul"
-     "Aug" "Sep" "Oct" "Nov" "Dec")) 
+     "Aug" "Sep" "Oct" "Nov" "Dec"))
 (define tm:locale-long-month-vector
   '#("" "January" "February" "March" "April" "May"
      "June" "July" "August" "September" "October" "November" "December"))
@@ -753,7 +753,7 @@
 (define tm:iso-8601-date-time-format "~Y-~m-~dT~H:~M:~S~z")
 
 ;; returns a string rep. of number N, of minimum LENGTH,
-;; padded with character PAD-WITH. If PAD-WITH is #f, 
+;; padded with character PAD-WITH. If PAD-WITH is #f,
 ;; no padding is done, and it's as if number->string was used.
 ;; if string is longer than LENGTH, it's as if number->string was used.
 
@@ -765,7 +765,7 @@
 (define (tm:last-n-digits i n)
   (abs (remainder i (expt 10 n))))
 
-(define (tm:locale-abbr-weekday n) 
+(define (tm:locale-abbr-weekday n)
   (vector-ref tm:locale-abbr-weekday-vector n))
 
 (define (tm:locale-long-weekday n)
@@ -789,9 +789,9 @@
 (define (tm:locale-long-month->index string)
   (find-index (cut string=? string <>) tm:locale-long-month-vector))
 
-;; do nothing. 
+;; do nothing.
 ;; Your implementation might want to do something...
-;; 
+;;
 (define (tm:locale-print-time-zone date)
   (values))
 
@@ -813,7 +813,7 @@
 ;; the second is a procedure that takes the date, a padding character
 ;; (which might be #f), and the output port.
 ;;
-(define tm:directives 
+(define tm:directives
   `((#\~ . ,(^[date pad-with] (display #\~)))
     (#\a . ,(^[date pad-with]
               (display (tm:locale-abbr-weekday (date-week-day date)))))
@@ -926,7 +926,7 @@
           (if-let1 fn (assv ch tm:directives)
             (begin ((cdr fn) date pad) (rec (read-char) (+ ind 1)))
             (bad ind)))
-        
+
         (define (rec ch ind)
           (cond
            [(eof-object? ch)]
@@ -949,7 +949,7 @@
           (cut rec (read-char) 0))))))
 
 (define (tm:char->int ch)
-  (or (digit->integer ch) 
+  (or (digit->integer ch)
       (errorf "bad date template string: non integer character: ~a" ch)))
 
 ;; read an integer upto n characters long on port; upto -> #f if any length
@@ -993,7 +993,7 @@
 (define (tm:make-integer-exact-reader n)
   (^[port] (tm:integer-reader-exact n port)))
 
-(define (tm:zone-reader port) 
+(define (tm:zone-reader port)
   (let ([offset 0]
         [positive? #f])
     (let1 ch (read-char port)
@@ -1027,14 +1027,14 @@
             (set! offset (+ offset (* (tm:char->int ch)
                                       60))))
           (if positive? offset (- offset)))))))
-    
+
 ;; looking at a char, read the char string, run thru indexer, return index
 (define (tm:locale-reader port indexer)
   (let1 string-port (open-output-string)
     (define (read-char-string)
       (let1 ch (peek-char port)
 	(if (char-alphabetic? ch)
-          (begin (write-char (read-char port) string-port) 
+          (begin (write-char (read-char port) string-port)
                  (read-char-string))
           (get-output-string string-port))))
     (let* ([str (read-char-string)]
@@ -1044,7 +1044,7 @@
 
 (define (tm:make-locale-reader indexer)
   (^[port] (tm:locale-reader port indexer)))
-      
+
 (define (tm:make-char-id-reader char)
   (^[port] (if (char=? char (read-char port))
              char
@@ -1052,7 +1052,7 @@
 
 ;; A List of formatted read directives.
 ;; Each entry is a list.
-;; 1. the character directive; 
+;; 1. the character directive;
 ;; a procedure, which takes a character as input & returns
 ;; 2. #t as soon as a character on the input port is acceptable
 ;; for input,
@@ -1062,7 +1062,7 @@
 ;; object (here, always the date) and (probably) side-effects it.
 ;; In some cases (e.g., ~A) the action is to do nothing
 
-(define tm:read-directives 
+(define tm:read-directives
   (let ([ireader4 (tm:make-integer-reader 4)]
         [ireader2 (tm:make-integer-reader 2)]
         [ireaderf (tm:make-integer-reader #f)]
@@ -1078,7 +1078,7 @@
                                      tm:locale-long-month->index)]
         [char-fail (^_ #t)]
         [do-nothing (^[val object] (values))])
-		    
+
   (list
    (list #\~ char-fail (tm:make-char-id-reader #\~) do-nothing)
    (list #\a char-alphabetic? locale-reader-abbr-weekday do-nothing)
@@ -1103,7 +1103,7 @@
          (^[val object] (slot-set! object 'minute val)))
    (list #\S char-numeric? ireader2
          (^[val object] (slot-set! object 'second val)))
-   (list #\y char-fail eireader2 
+   (list #\y char-fail eireader2
 	 (^[val object] (slot-set! object 'year (tm:natural-year val))))
    (list #\Y char-numeric? ireader4
          (^[val object] (slot-set! object 'year val)))
@@ -1115,7 +1115,7 @@
    )))
 
 (define (tm:string->date date index format-string str-len port template-string)
-  (define (bad) 
+  (define (bad)
     (errorf "string->date: bad date format string: \"~a >>>~a<<< ~a\""
             (string-take template-string index)
             (substring template-string index (+ index 1))
@@ -1176,7 +1176,7 @@
 ;; and update as necessary.
 ;; this procedures reads the file in the abover
 ;; format and creates the leap second table
-;; it also calls the almost standard, but not R5 procedures read-line 
+;; it also calls the almost standard, but not R5 procedures read-line
 ;; & open-input-string
 ;; ie (set! tm:leap-second-table (tm:read-tai-utc-data "tai-utc.dat"))
 

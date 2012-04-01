@@ -1,12 +1,12 @@
 /*
  * string.c - string implementation
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -94,7 +94,7 @@ void Scm_StringDump(FILE *out, ScmObj str)
         fputs("...\"\n", out);
     } else {
         fputs("\"\n", out);
-    }       
+    }
 }
 
 /*
@@ -170,7 +170,7 @@ ScmObj Scm_MakeString(const char *str, int size, int len, int flags)
     } else {
         if (len < 0) len = count_length(str, size);
     }
-    
+
     if (flags & SCM_STRING_COPYING) {
         char *nstr = SCM_NEW_ATOMIC2(char *, size + 1);
         memcpy(nstr, str, size);
@@ -205,7 +205,7 @@ ScmObj Scm_ListToString(ScmObj chars)
     char *buf, *bufp;
 
     SCM_FOR_EACH(cp, chars) {
-        if (!SCM_CHARP(SCM_CAR(cp))) 
+        if (!SCM_CHARP(SCM_CAR(cp)))
             Scm_Error("character required, but got %S", SCM_CAR(cp));
         ch = SCM_CHAR_VALUE(SCM_CAR(cp));
         size += SCM_CHAR_NBYTES(ch);
@@ -282,7 +282,7 @@ const char *Scm_GetStringContent(ScmString *str,
 
 /* Copy string.  You can modify the flags of the newly created string
    by FLAGS and MASK arguments; for the bits set in MASK, corresponding
-   bits in FLAGS are copied to the new string, and for other bits, the  
+   bits in FLAGS are copied to the new string, and for other bits, the
    original flags are copied.
 
    The typical semantics of copy-string is achieved by passing 0 to
@@ -301,7 +301,7 @@ ScmObj Scm_CopyStringWithFlags(ScmString *x, int flags, int mask)
     const char *start = SCM_STRING_BODY_START(b);
     int newflags = ((SCM_STRING_BODY_FLAGS(b) & ~mask)
                     | (flags & mask));
-        
+
     return SCM_OBJ(make_str(len, size, start, newflags));
 }
 
@@ -353,7 +353,7 @@ ScmObj Scm_StringIncompleteToComplete(ScmString *x,
                 } else {
                     SCM_CHAR_GET(p, ch);
                 }
-                
+
                 if (ch != SCM_CHAR_INVALID) {
                     Scm_DStringPutc(&ds, ch);
                     p += SCM_CHAR_NBYTES(ch);
@@ -367,7 +367,7 @@ ScmObj Scm_StringIncompleteToComplete(ScmString *x,
             r = Scm_DStringGet(&ds, 0);
         }
     }
-    
+
     return r;
 }
 
@@ -456,7 +456,7 @@ int Scm_StringCiCmp(ScmString *x, ScmString *y)
     const char *px, *py;
     const ScmStringBody *xb = SCM_STRING_BODY(x);
     const ScmStringBody *yb = SCM_STRING_BODY(y);
-    
+
     if ((SCM_STRING_BODY_FLAGS(xb)^SCM_STRING_BODY_FLAGS(yb))&SCM_STRING_INCOMPLETE) {
         Scm_Error("cannot compare incomplete strings in case-insensitive way: %S, %S",
                   SCM_OBJ(x), SCM_OBJ(y));
@@ -465,7 +465,7 @@ int Scm_StringCiCmp(ScmString *x, ScmString *y)
     sizy = SCM_STRING_BODY_SIZE(yb); leny = SCM_STRING_BODY_LENGTH(yb);
     px = SCM_STRING_BODY_START(xb);
     py = SCM_STRING_BODY_START(yb);
-    
+
     if (sizx == lenx && sizy == leny) {
         return sb_strcasecmp(px, sizx, py, sizy);
     } else {
@@ -481,7 +481,7 @@ int Scm_StringCiCmp(ScmString *x, ScmString *y)
 static const char *forward_pos(const char *current, int offset)
 {
     int n;
-    
+
     while (offset--) {
         n = SCM_CHAR_NFOLLOWS(*current);
         current += n + 1;
@@ -600,7 +600,7 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str, int sizey, int leny)
 
     if (sizey < 0) count_size_and_length(str, &sizey, &leny);
     else if (leny < 0) leny = count_length(str, sizey);
-    
+
     p = SCM_NEW_ATOMIC2(char *, sizex + sizey + 1);
     memcpy(p, xb->start, sizex);
     memcpy(p+sizex, str, sizey);
@@ -849,7 +849,7 @@ ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
         /* TODO: fix the policy of handling incomplete string */
         Scm_Error("incomplete string not accepted: %S", str);
     }
-    
+
     while (p < e) {
         ScmChar cc;
         int ncc;
@@ -891,7 +891,7 @@ static inline int boyer_moore(const char *ss1, int siz1,
 
 /* Scan s2 in s1.  If both strings are single-byte, and s1 is long,
    we use Boyer-Moore.
-   
+
    To avoid rescanning of the string, this function can return
    various information, depends on retmode argument.
 
@@ -934,10 +934,10 @@ static ScmObj string_scan(ScmString *s1, const char *ss2,
             return Scm_Values2(SCM_MAKE_STR(""), Scm_CopyString(s1));
         }
     }
-    
+
     if (siz1 == len1) {
         if (siz2 == len2) goto sbstring;
-        goto failed;            /* sbstring can't contain mbstring. */   
+        goto failed;            /* sbstring can't contain mbstring. */
     }
     if (len1 >= len2) {
         const char *ssp = ss1;
@@ -1223,7 +1223,7 @@ ScmObj Scm_MakeStringPointer(ScmString *src, int index, int start, int end)
     SCM_CHECK_START_END(start, end, len);
     while (index < 0) index += (end - start) + 1;
     if (index > (end - start)) goto badindex;
-    
+
     if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb)) {
         sptr = SCM_STRING_BODY_START(srcb) + start;
         ptr = sptr + index;
@@ -1435,9 +1435,9 @@ void Scm__DStringRealloc(ScmDString *dstr, int minincr)
     newchunk = SCM_NEW_ATOMIC2(ScmDStringChunk*,
                                sizeof(ScmDStringChunk)+newsize-SCM_DSTRING_INIT_CHUNK_SIZE);
     newchunk->bytes = 0;
-    
+
     newchain = SCM_NEW(ScmDStringChain);
-    
+
     newchain->next = NULL;
     newchain->chunk = newchunk;
     if (dstr->tail) {
@@ -1466,7 +1466,7 @@ static const char *dstring_getz(ScmDString *dstr, int *plen, int *psiz)
     } else {
         ScmDStringChain *chain = dstr->anchor;
         char *bptr;
-        
+
         size = Scm_DStringSize(dstr);
         len = dstr->length;
         bptr = buf = SCM_NEW_ATOMIC2(char*, size+1);

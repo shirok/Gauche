@@ -41,7 +41,7 @@ dnl
 dnl Check to see if the system provides sockaddr_storage
 dnl
 case "$target" in
- *mingw*) 
+ *mingw*)
    AC_CHECK_TYPES([struct sockaddr_storage],,,[#include <windows.h>]);;
  *)
    AC_CHECK_TYPES([struct sockaddr_storage],,,[#include <sys/socket.h>]);;
@@ -259,7 +259,7 @@ if test $ac_cv_func_getservbyport_r != no; then
 fi
 
 dnl Check for socklen_t
-dnl Windows/MinGW is special and we know the answer, so we just don't 
+dnl Windows/MinGW is special and we know the answer, so we just don't
 dnl bother checking it.
 case "$target" in
   *mingw32*)

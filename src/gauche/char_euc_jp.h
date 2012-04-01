@@ -1,12 +1,12 @@
 /*
  * char-euc-jp.h
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -36,7 +36,7 @@
  * Header part
  */
 
-/* The name of the encoding.  Scheme procedure 
+/* The name of the encoding.  Scheme procedure
  * gauche-character-encoding returns a symbol with this name.
  */
 #define SCM_CHAR_ENCODING_NAME "euc-jp"

@@ -1,6 +1,6 @@
 ;;;
 ;;; srfi-29.scm - Localization
-;;;  
+;;;
 
 ;; srfi-29 defines the 'format' function in a way incompatible to
 ;; Gauche's (and CommonLisp's).   Srfi-29's ~N@* only affects

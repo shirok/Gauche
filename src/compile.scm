@@ -1,23 +1,23 @@
 ;;;
 ;;; compile.scm - The compiler
-;;;  
-;;;   Copyright (c) 2004-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2004-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 (declare) ;; a dummy form to suppress generation of "sci" file
 
@@ -239,7 +239,7 @@
    [(_ offset delta)
     `(let* ([i::int (SCM_INT_VALUE (SCM_VECTOR_ELEMENT lvar ,offset))])
        (set! (SCM_VECTOR_ELEMENT lvar ,offset) (SCM_MAKE_INT (+ i ,delta))))])
- 
+
  (define-cproc lvar-ref++! (lvar) ::<void> (update! LVAR_OFFSET_REF_COUNT +1))
  (define-cproc lvar-ref--! (lvar) ::<void> (update! LVAR_OFFSET_REF_COUNT -1))
  (define-cproc lvar-set++! (lvar) ::<void> (update! LVAR_OFFSET_SET_COUNT +1))
@@ -262,7 +262,7 @@
 ;;                to represent <type> for the convenience.
 ;;
 ;;     exp-name - The "name" of the current expression, that is, the
-;;                name of the variable the result of the current 
+;;                name of the variable the result of the current
 ;;                expression is to be bound.  This slot may contain
 ;;                an identifier (for global binding) or a lvar (for
 ;;                local binding).   This slot may be #f.
@@ -410,7 +410,7 @@
 ;;    #($it)                 ;; refer to the value in the last test clause.
 ;;
 ;;  NB: <src> slot keeps the information of the original source, and
-;;      will be used to generate debug info.  Normally it holds the 
+;;      will be used to generate debug info.  Normally it holds the
 ;;      relevant source code, or #f if there's no relevant code.
 ;;
 ;;  NB: the actual value of the first element is an integer instead of
@@ -509,7 +509,7 @@
    ))
 
 ;; $receive <src> <reqargs> <optarg> <lvars> <expr> <body>
-;;   Multiple value binding construct. 
+;;   Multiple value binding construct.
 (define-simple-struct $receive $RECEIVE $receive
   (src       ; original source for debugging
    reqargs   ; # of required args
@@ -520,7 +520,7 @@
    ))
 
 ;; $lambda <src> <reqargs> <optarg> <lvars> <body> [<flag>]
-;;   Closure. 
+;;   Closure.
 ;;   $lambda has a couple of transient slots, which are used only
 ;;   during the optimization paths and not be saved by pack-iform.
 (define-simple-struct $lambda $LAMBDA $lambda
@@ -606,7 +606,7 @@
 (define-inline ($it? x) (has-tag? x $IT))
 
 ;; The followings are builtin version of standard procedures.
-;; 
+;;
 (define-simple-struct $cons $CONS #f (arg0 arg1))
 
 ;; quasiquote tends to generate nested $cons, which can be
@@ -672,7 +672,7 @@
               (make-string (lvar-set-count lvar) #\!)))
     (define (nl ind)
       (newline) (dec! lines) (when (zero? lines) (return)) (indent ind))
-    
+
     (let rec ([ind 0] [iform iform])
       (case/unquote
        (iform-tag iform)
@@ -1594,7 +1594,7 @@
             (cenv-add-name newenv (lvar-name lvar))
             (cenv-add-name/source newenv (lvar-name lvar) (cdr init&src)))
     (rlet1 iexpr (pass1 (car init&src) e)
-      (lvar-initval-set! lvar iexpr))))  
+      (lvar-initval-set! lvar iexpr))))
 
 (define (pass1/body-rest exprs cenv)
   (match exprs
@@ -1668,7 +1668,7 @@
     iargs
     (receive (reqs opts) (split-at iargs reqargs)
       (append! reqs (list (if (null? opts) ($const '()) ($list #f opts)))))))
-    
+
 ;;----------------------------------------------------------------
 ;; Pass1 syntaxes
 ;;
@@ -1805,7 +1805,7 @@
        ))))
 
 ;; If IFORM generats a closure with local environment, returns
-;; the closure itself ($lambda node) and the environment 
+;; the closure itself ($lambda node) and the environment
 ;; ((lvar . init) ...).
 ;; Typical case is ($let ... ($lambda ...)).  In such case this
 ;; procedure effectively strips $let nodes.
@@ -2170,7 +2170,7 @@
   (define (quasiquote? v)       (global-eq? v 'quasiquote cenv))
   (define (unquote? v)          (global-eq? v 'unquote cenv))
   (define (unquote-splicing? v) (global-eq? v 'unquote-splicing cenv))
-           
+
   ;; In the context where there's no outer list to which we intersperse to.
   (define (quasi obj level)
     (match obj
@@ -2223,7 +2223,7 @@
                   (if (and ($const? x) ($const? xx))
                     ($const (cons ($const-value x) ($const-value xx)))
                     ($cons #f x xx)))]))
-  
+
   (define (build@ iforms rest)
     (match iforms
       [() rest]
@@ -2241,7 +2241,7 @@
       (if (and ($const? xx) ($const? yy))
         ($const (cons ($const-value xx) ($const-value yy)))
         ($cons src xx yy))))
-  
+
   (define (quasi-vector obj level)
     (if (vector-has-splicing? obj)
       ($list->vector obj (quasi* (vector->list obj) level))
@@ -2260,7 +2260,7 @@
             [(and (pair? (vector-ref obj i))
                   (unquote-splicing? (car (vector-ref obj i))))]
             [else (loop (+ i 1))])))
-  
+
   (match form
     [(_ obj) (quasi obj 0)]
     [_ (error "syntax-error: malformed quasiquote:" form)]))
@@ -2365,7 +2365,7 @@
       (if r
         `(((with-module gauche let) ((,r ,garg)) ,@(expand-key ks garg a)))
         (expand-key ks garg a))
-      (let ([binds (map (match-lambda 
+      (let ([binds (map (match-lambda
                           [[? symbol? o] o]
                           [[? identifier? o] o]
                           [(o init) `(,o ,init)]
@@ -2446,7 +2446,7 @@
      ;;  Instead, we use the following expansion, except that we cheat
      ;;  environment during expanding {exp ...} so that the binding of
      ;;  name doesn't interfere with exp ....
-     ;;  
+     ;;
      ;;    (letrec ((name (lambda (var ...) body ...))) (name {exp ...}))
      ;;
      ;;  The reason is that this form can be more easily spotted by
@@ -2749,7 +2749,7 @@
     (any (^s (open-input-file #`",|path|,s" :if-does-not-exist #f :encoding #t))
          (cons "" *load-suffixes*)))
   (define (bad) (error "include file is not readable:" path))
-  
+
   (cond [(absolute-path? path) (or (check path) (bad))]
         [(and includer-path
               (check (build-path (sys-dirname includer-path) path)))]
@@ -3221,7 +3221,7 @@
       (if (has-tag? inlined $SEQ)
         ($seq-body-set! call-node ($seq-body inlined))
         ($seq-body-set! call-node (list inlined)))))
-  
+
   (lvar-ref-count-set! lvar 0)
   ($lambda-flag-set! lambda-node 'dissolved)
   (let loop ([calls calls])
@@ -3418,7 +3418,7 @@
 
 (define (pass2/const-pred pred args)
   (if (pred ($const-value (car args))) ($const-t) ($const-f)))
-         
+
 (define (pass2/const-cxr proc args)
   (let1 v ($const-value (car args))
     (and (pair? v) ($const (proc v)))))
@@ -3540,7 +3540,7 @@
         (if (label-dic-info label-dic)
           (loop iform. (+ count 1))
           iform.)))))
-    
+
 (define (pass3-dump iform count)
   (format #t "~78,,,'=a\n" #`"pass3 #,count ")
   (pp-iform iform))
@@ -3924,7 +3924,7 @@
   ($define ($lambda-src lambda-node) '(const)
            ($lambda-lifted-var lambda-node)
            lambda-node))
-          
+
 ;; Pass4 step1 - scan
 ;;   bs - List of lvars whose binding is introduced in the current scope.
 ;;   fs - List of free lvars found so far in the current scope.
@@ -4066,7 +4066,7 @@
     (let ([orig (gensym)]
           [result (gensym)]
           [setter (if (eq? accessor 'car)
-                    'set-car! 
+                    'set-car!
                     (string->symbol #`",|accessor|-set!"))])
       `(let* ([,orig (,accessor ,expr)]
               [,result (pass4/subst ,orig ,labels)])
@@ -4133,7 +4133,7 @@
 
 ;; This pass passes down a runtime environment, renv.  It is
 ;; a nested list of lvars, and used to generate LREF/LSET instructions.
-;; 
+;;
 ;; The context, ctx, is either one of the following symbols.
 ;;
 ;;   normal/bottom : the FORM is evaluated in the context that the
@@ -4169,7 +4169,7 @@
 (define-inline (top-context? ctx)
   (or (eq? ctx 'normal/top) (eq? ctx 'stmt/top)))
 
-;; context switch 
+;; context switch
 (define-inline (normal-context prev-ctx)
   (if (bottom-context? prev-ctx) 'normal/bottom 'normal/top))
 (define-inline (stmt-context prev-ctx)
@@ -4263,7 +4263,7 @@
             (args ($asm-args test)))
         (cond
          [(eqv? code NULLP)
-          (pass5/if-final iform (car args) BNNULL 0 0 
+          (pass5/if-final iform (car args) BNNULL 0 0
                           ($*-src test) ccb renv ctx)]
          [(eqv? code EQ)
           (pass5/if-eq iform (car args) (cadr args)
@@ -4304,7 +4304,7 @@
       (pass5/if-final iform test BF 0 0 ($*-src iform) ccb renv ctx)]
      )))
 
-;; 
+;;
 (define (pass5/if-eq iform x y info ccb renv ctx)
   (cond
    [($const? x) (pass5/if-final iform y BNEQC ($const-value x)
@@ -4384,7 +4384,7 @@
   (receive (dep off) (renv-lookup renv ($lref-lvar lref))
     (+ (ash off 10) dep)))
 
-           
+
 ;; pass5/if-final: Final stage of emitting branch instruction.
 ;;
 ;; Optimization
@@ -4620,8 +4620,8 @@
 
 ;; $CALL.
 ;;  There are several variations in $CALL node.  Each variation may also
-;;  have tail-call version and non-tail-call version. 
-;;  
+;;  have tail-call version and non-tail-call version.
+;;
 ;;  1. Local call: a $CALL node that has 'local' flag is a call to known
 ;;     local procedure.  Its arguments are already adjusted to match the
 ;;     signature of the procedure.   PROC slot contains an LREF node that
@@ -5055,7 +5055,7 @@
 
 ;; Dispatch table.
 (define *pass5-dispatch-table* (generate-dispatch-table pass5))
-     
+
 ;; Returns depth and offset of local variable reference.
 ;;   renv-lookup : [[Lvar]], Lvar -> Int, Int
 ;;
@@ -5171,7 +5171,7 @@
 ;;  constant folding.   Except the literal numbers we need to call
 ;;  pass1 first on the argument to see if we can get a constant.
 
-;; NB: This part needs serious refactoring after 0.8.10.  
+;; NB: This part needs serious refactoring after 0.8.10.
 
 ;; Utility.  Returns two values.  The first value is a number, if
 ;; the given form yields a constant number.  The second value is
@@ -5852,7 +5852,7 @@
 (define (init-compiler)
   #f
   )
-  
+
 ;;============================================================
 ;; Dummy macros
 ;;
@@ -5860,7 +5860,7 @@
 (select-module gauche)
 
 (declare (keep-private-macro inline-stub define-cproc declare))
- 
+
 ;; The form (inline-stub ...) allows genstub directives embedded
 ;; within a Scheme source.  It is only valid when the source is
 ;; pre-compiled into C.  Technically we can kick C compiler at

@@ -1,23 +1,23 @@
 ;;;
 ;;; gauche.cgen.cise - C in S expression
-;;;  
-;;;   Copyright (c) 2004-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2004-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 (define-module gauche.cgen.cise
   (use srfi-1)
@@ -133,7 +133,7 @@
 
 (define (push-static-decl! stree :optional (context (cise-context)))
   (push! (ref context'static-decls) stree))
-                                
+
 (define (emit-static-decls port :optional (context (cise-context)))
   (dolist [stree (reverse (ref context'static-decls))]
     (render-finalize stree port)))
@@ -364,7 +364,7 @@
       (emit-static-decls outp)
       (display (get-output-string toutp) outp))
     (newline outp))
-  
+
   (eval '(use gauche.cgen.cise) environment)
   (eval '(use util.match) environment)
   (parameterize ([cise-context context])
@@ -427,7 +427,7 @@
       [(':static . body) (record-static name args ret-type)
                          (gen-cfn "static" name args ret-type body)]
       [_                 (gen-cfn "" name args ret-type body)]))
-  
+
   (ensure-toplevel-ctx form env)
   (match form
     [(_ name (args ...) ':: ret-type . body)
@@ -542,7 +542,7 @@
                                   env)))
                 literalss clauses)
          "}")]
-      )))    
+      )))
 
 (define-cise-macro (case form env)
   (ensure-stmt-ctx form env)
@@ -820,7 +820,7 @@
           [(_ a b . x)
            (list* ',op (list ',op a b) x)])
         env))))
-       
+
 (define-nary + "+")
 (define-nary - "-")
 (define-nary * "*")
@@ -1008,7 +1008,7 @@
   (or (memq sym '(* &))
       (type-decl-initial? sym)))
 
-      
+
 (define (cise-render-typed-var typespec var env)
   (match typespec
     [('.array spec (dim ...))

@@ -1,12 +1,12 @@
 /*
  * prof.c - profiler
  *
- *   Copyright (c) 2005-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2005-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -88,7 +88,7 @@ static void sampler_flush(ScmVM *vm)
 {
     int nsamples;
     ssize_t r;
-    
+
     if (vm->prof == NULL) return; /* for safety */
     if (vm->prof->samplerFd < 0 || vm->prof->currentSample == 0) return;
 
@@ -181,7 +181,7 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
     for (i=0; i<ncounts; i++) {
         ScmObj e;
         int cnt;
-        
+
         func = vm->prof->counts[i].func;
         if (SCM_METHODP(func) && SCM_METHOD(func)->func == NULL) {
             /* func is Scheme-defined method.  Record the code of
@@ -189,7 +189,7 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
                profiler later. */
             func = SCM_OBJ(SCM_METHOD(func)->data);
         }
-        
+
         e = Scm_HashTableSet(vm->prof->statHash,
                              vm->prof->counts[i].func,
                              SCM_FALSE,
@@ -235,7 +235,7 @@ void Scm_ProfilerStart(void)
 	vm->prof->samplerFd = Scm_Mkstemp(templat);
 	unlink(templat);
     }
-    
+
     if (vm->prof->state == SCM_PROFILER_RUNNING) return;
     vm->prof->state = SCM_PROFILER_RUNNING;
     vm->profilerRunning = TRUE;
@@ -265,7 +265,7 @@ int Scm_ProfilerStop(void)
 void Scm_ProfilerReset(void)
 {
     ScmVM *vm = Scm_VM();
-    
+
     if (vm->prof == NULL) return;
     if (vm->prof->state == SCM_PROFILER_INACTIVE) return;
     if (vm->prof->state == SCM_PROFILER_RUNNING) Scm_ProfilerStop();
@@ -325,7 +325,7 @@ ScmObj Scm_ProfilerRawResult(void)
     if (ftruncate(vm->prof->samplerFd, 0) < 0) {
         Scm_SysError("profiler: failed to truncate temporary file");
     }
-    
+
     return SCM_OBJ(vm->prof->statHash);
 }
 

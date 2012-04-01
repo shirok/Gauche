@@ -1,23 +1,23 @@
 ;;;
 ;;; libalpha.scm - Procedures needed by other lib*.scm
 ;;;
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 ;; This file is initialized first among lib-*.scm.  Define procedures
 ;; here that are required to run initialization of other lib-*.scm files.
@@ -138,7 +138,7 @@
  ;;  (case-lambda [(x y) a] [(x . y) b]
  ;;  =>
  ;;  #( (lambda (x . y) c)         min-reqargs == 1
- ;;     (lambda (x y) a)  
+ ;;     (lambda (x y) a)
  ;;     (lambda (x . y) c))
  ;;
  ;; In the last example, 2 argument case matches the first procedure,
@@ -214,7 +214,7 @@
             [(null? formals) (%set n)]
             [(pair? formals) (loop (cdr formals) (+ n 1))]
             [else (%set n) (loop formals (+ n 1))])))
-  
+
   (let1 v (make-vector (+ (- maxarg minarg) 2) #f)
     ;; Avoid using for-each, since the definition of for-each itself
     ;; nees to call make-case-lambda.

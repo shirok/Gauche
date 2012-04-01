@@ -10,8 +10,8 @@ dnl   TYPE can be 'none' or 'axtls', defaults axtls
 dnl   In future we may support 'openssl' as well.
 dnl
 AC_ARG_ENABLE(tls,
-  AC_HELP_STRING([--enable-tls=TYPE], [enable TLS/SSL support.  TYPE can be 
-  'axtls' (to use bundled source of Cameron Rich's axTLS), or 'none' 
+  AC_HELP_STRING([--enable-tls=TYPE], [enable TLS/SSL support.  TYPE can be
+  'axtls' (to use bundled source of Cameron Rich's axTLS), or 'none'
   (disable TLS/SSL support)]),
   [
     case $enableval in
@@ -33,7 +33,7 @@ esac
 dnl
 dnl Check openssl command; if available, we use it for axTLS tests.
 dnl This is needed even if we don't support libopenssl binding.
-dnl 
+dnl
 AC_CHECK_PROGS(OPENSSL, openssl)
 
 dnl Local variables:

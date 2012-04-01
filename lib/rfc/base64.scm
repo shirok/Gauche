@@ -1,23 +1,23 @@
 ;;;
 ;;; base64.scm - base64 encoding/decoding routine
-;;;  
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 ;; Implements Base64 encoding/decoding routine
 ;; Ref: RFC2045 section 6.8  <http://www.rfc-editor.org/rfc/rfc2045.txt>
@@ -44,7 +44,7 @@
 
 (define *decode-table*
   ;;    !   "   #   $   %   &   '   (   )   *   +   ,   -   .   /
-  #(#f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  62  #f  #f  #f  63  
+  #(#f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  62  #f  #f  #f  63
   ;;0   1   2   3   4   5   6   7   8   9   :   ;   <   =   >   ?
     52  53  54  55  56  57  58  59  60  61  #f  #f  #f  #f  #f  #f
   ;;@   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O
@@ -145,7 +145,7 @@
       (cond [(eof-object? c)
              (emit* col (* hi 4) 64)]
             [else
-             (e0 (read-byte) 
+             (e0 (read-byte)
                  (emit* col (+ (* hi 4) (quotient c 64)) (modulo c 64)))]))
 
     (e0 (read-byte) 0)))

@@ -1,12 +1,12 @@
 /*
  * bits.c - Bit manipulation utilities
  *
- *   Copyright (c) 2007-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2007-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -225,7 +225,7 @@ int Scm_BitsLowest1(const ScmBits *bits, int start, int end)
     int sb = start%SCM_WORD_BITS;
     int ew = (end-1)/SCM_WORD_BITS;
     int eb = end%SCM_WORD_BITS;
-    
+
     if (start == end) return -1;
     if (ew == sw) {
         u_long w = bits[sw] & SCM_BITS_MASK(sb, eb);
@@ -249,7 +249,7 @@ int Scm_BitsLowest0(const ScmBits *bits, int start, int end)
     int sb = start%SCM_WORD_BITS;
     int ew = (end-1)/SCM_WORD_BITS;
     int eb = end%SCM_WORD_BITS;
-    
+
     if (start == end) return -1;
     if (ew == sw) {
         u_long w = ~bits[sw] & SCM_BITS_MASK(sb, eb);
@@ -275,7 +275,7 @@ int Scm_BitsHighest1(const ScmBits *bits, int start, int end)
     int sb = start%SCM_WORD_BITS;
     int ew = (end-1)/SCM_WORD_BITS;
     int eb = end%SCM_WORD_BITS;
-    
+
     if (start == end) return -1;
     if (ew == sw) {
         u_long w = bits[sw] & SCM_BITS_MASK(sb, eb);
@@ -299,7 +299,7 @@ int Scm_BitsHighest0(const ScmBits *bits, int start, int end)
     int sb = start%SCM_WORD_BITS;
     int ew = (end-1)/SCM_WORD_BITS;
     int eb = end%SCM_WORD_BITS;
-    
+
     if (start == end) return -1;
     if (ew == sw) {
         u_long w = ~bits[sw] & SCM_BITS_MASK(sb, eb);

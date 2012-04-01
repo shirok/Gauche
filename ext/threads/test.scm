@@ -87,7 +87,7 @@
   (thread-cont! t1)
   (test* "thread-status" 'runnable (thread-state t1))
   (thread-terminate! t1)
-  (test* "thread-status" 'terminated 
+  (test* "thread-status" 'terminated
          (guard (e [(<terminated-thread-exception> e)
                     (thread-state t1)])
            (thread-join! t1))))
@@ -158,7 +158,7 @@
 
 ;; This test uses simple-minded spin lock, without using mutex timeouts
 ;; nor condition variables.   Not recommended way for real code.
-(test* "lock and unlock - blocking (simple spin-lock)" 
+(test* "lock and unlock - blocking (simple spin-lock)"
        '((put a) (get a) (put b) (get b) (put c) (get c))
        (let ([log '()]
              [cell #f]
@@ -466,7 +466,7 @@
        (let ([a (atom 0)] [ts '()])
          (dotimes [n 100]
            (push! ts
-                  (thread-start! (make-thread 
+                  (thread-start! (make-thread
                                   (^[] (dotimes [m 10]
                                          (atomic-update! a (pa$ + 1))))))))
          (for-each thread-join! ts)

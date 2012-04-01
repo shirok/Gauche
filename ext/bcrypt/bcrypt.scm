@@ -18,7 +18,7 @@
   extern char *crypt_gensalt_ra(const char *prefix, unsigned long count,
                                 const char *input, int size);
   "
- 
+
  (define-cproc crypt-ra (pass::<const-cstring> setting::<const-cstring>)
    (let* ([data::void* NULL] [size::int 0]
           [c::char* (crypt_ra pass setting (& data) (& size))])

@@ -1,23 +1,23 @@
 ;;;
 ;;; libsys.scm - builtin system inteface
 ;;;
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
 ;; some non-posix functions which are important for programming on Unix.
@@ -454,7 +454,7 @@
 
 (define-cproc sys-environ () Scm_Environ)
 
-;; NB: 
+;; NB:
 (define-cproc sys-setenv (name::<const-cstring>
                           value::<const-cstring>
                           :optional (overwrite::<boolean> #f))
@@ -625,7 +625,7 @@
  (when "!defined(GAUCHE_WINDOWS)"
    (define-cfn check-trailing-separator (path::(const char*))
      ::(const char*) :static (return path)))
- 
+
  (define-cproc sys-stat (path::<const-cstring>) ::<sys-stat> (stat-common stat))
 
  ;; On Windows we don't have lstat.  Omitting sys-lstat from Windows is
@@ -730,7 +730,7 @@
 ;;---------------------------------------------------------------------
 ;; sys/wait.h
 
-;; returns pid and status 
+;; returns pid and status
 (define-cproc sys-wait () (result (Scm_SysWait (SCM_MAKE_INT -1) 0)))
 
 (define-cproc sys-waitpid (process :key (nohang #f) (untraced #f))
@@ -919,7 +919,7 @@
 (define-cproc sys-getppid () ::<int> getppid)
 
 (inline-stub
- (when "!defined(GAUCHE_WINDOWS)" 
+ (when "!defined(GAUCHE_WINDOWS)"
    (define-cproc sys-setgid (gid::<int>) ::<int>
      (SCM_SYSCALL SCM_RESULT (setgid gid))
      (when (< SCM_RESULT 0) (Scm_SysError "setgid failed on %d" gid)))
@@ -1088,7 +1088,7 @@
 (define-cproc sys-isatty (port_or_fd) ::<boolean>
   (let* ([fd::int (Scm_GetPortFd port_or_fd FALSE)])
     (result (and (>= fd 0) (isatty fd)))))
- 
+
 (define-cproc sys-ttyname (port_or_fd) ::<const-cstring>?
   (let* ([fd::int (Scm_GetPortFd port_or_fd FALSE)])
     (result (?: (< fd 0) NULL (ttyname fd)))))
@@ -1193,7 +1193,7 @@
          (result TRUE)
          (begin (check-fd-range fd)
                 (result (FD_ISSET fd (& (-> fdset fdset))))))))
-   
+
    (define-cproc sys-fdset-set! (fdset::<sys-fdset> pf flag::<boolean>) ::<void>
      (let* ([fd::int (Scm_GetPortFd pf FALSE)])
        (when (>= fd 0)
@@ -1252,7 +1252,7 @@
          (Scm_Printf p "#<win:handle process %d @%p>" (Scm_WinProcessPID h) h)]
         [else
          (Scm_Printf p "#<win:handle @%p>" h)])))
-   
+
    (declcode "static ScmClass *WinHandleClass = NULL;")
    (initcode (= WinHandleClass (Scm_MakeForeignPointerClass
                                 (Scm_CurrentModule)
@@ -1297,7 +1297,7 @@
             [h::HANDLE (cast HANDLE (_get_osfhandle fd))])
        (when (== h INVALID_HANDLE_VALUE) (Scm_SysError "get_osfhandle failed"))
        (result (Scm_MakeWinHandle h '#f))))
-   
+
    ) ;; GAUCHE_WINDOWS
  )
 

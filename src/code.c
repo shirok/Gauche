@@ -1,12 +1,12 @@
 /*
  * code.c - compiled code builder/handler
  *
- *   Copyright (c) 2005-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2005-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -145,7 +145,7 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
             info = Scm_Assq(SCM_MAKE_INT(i), cc->info);
             code = SCM_VM_INSN_CODE(insn);
             insn_name = Scm_VMInsnName(code);
-            
+
             switch (Scm_VMInsnNumParams(code)) {
             case 0:
                 Scm_Printf(out, "  %4d %s ", i, insn_name);
@@ -276,7 +276,7 @@ ScmObj check_lifted_closure(ScmWord *p, ScmObj lifted)
         SCM_VM_PUSH_GREF_CALL,
         SCM_VM_PUSH_GREF_TAIL_CALL
     };
-    
+
     if (!SCM_IDENTIFIERP(p[1])) return lifted;
     id = SCM_IDENTIFIER(p[1]);
     if (SCM_SYMBOL_INTERNED(id->name)) return lifted;
@@ -419,7 +419,7 @@ static void finish_transition(cc_builder *b);
 static void cc_builder_flush(cc_builder *b)
 {
     u_int code;
-    
+
     if ((b)->currentInsn == CC_BUILDER_BUFFER_EMPTY) return;
     if ((b)->currentInsn == CC_BUILDER_BUFFER_TRANS) {
         finish_transition(b);
@@ -545,7 +545,7 @@ ScmObj Scm_CompiledCodeNewLabel(ScmCompiledCode *cc)
 void Scm_CompiledCodeSetLabel(ScmCompiledCode *cc, ScmObj label)
 {
     cc_builder *b;
-    
+
     CC_BUILDER_GET(b, cc);
 
     /* Flush buffered insn first. */
@@ -621,7 +621,7 @@ void Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc, int maxstack)
 
     /* set max stack depth */
     cc->maxstack = maxstack;
-    
+
     /* make sure this code is 'fixed'---no more building */
     cc->builder = NULL;
 }
@@ -796,14 +796,14 @@ ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc)
 {
     u_int i, off;
     ScmObj h = SCM_NIL, t = SCM_NIL;
-    
+
     for (i=0; i<(u_int)cc->codeSize; i++) {
         ScmWord insn = cc->code[i];
         u_int code = SCM_VM_INSN_CODE(insn);
         const char *name = Scm_VMInsnName(code);
-        
+
         switch (Scm_VMInsnNumParams(code)) {
-        case 0: 
+        case 0:
             SCM_APPEND1(h, t, SCM_LIST1(SCM_INTERN(name)));
             break;
         case 1:
@@ -942,7 +942,7 @@ int Scm_VMInsnNameToCode(ScmObj name)
     const char *n;
     struct insn_info *info;
     int i;
-    
+
     if (SCM_SYMBOLP(name))  name = SCM_OBJ(SCM_SYMBOL_NAME(name));
     else if (!SCM_STRINGP(name)) {
         Scm_Error("vm-insn-name->code: requires a symbol or a string, but got %S", name);
@@ -962,10 +962,10 @@ int Scm_VMInsnNameToCode(ScmObj name)
 ScmWord Scm_VMInsnBuild(ScmObj obj)
 {
     int len = Scm_Length(obj), code, arg0, arg1;
-    
+
     if (len < 1 || len > 3 || !SCM_SYMBOLP(SCM_CAR(obj))) goto badspec;
     code = Scm_VMInsnNameToCode(SCM_CAR(obj));
-    
+
     switch (Scm_VMInsnNumParams(code)) {
     case 0:
         if (len != 1) {
@@ -993,7 +993,7 @@ ScmWord Scm_VMInsnBuild(ScmObj obj)
         return SCM_VM_INSN2(code, arg0, arg1);
     }
     /*FALLTHROUGH*/
-  badspec:    
+  badspec:
     Scm_Error("Bad VM insn spec: %S", obj);
     return 0;       /* dummy */
 }

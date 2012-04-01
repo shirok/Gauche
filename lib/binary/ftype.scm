@@ -1,23 +1,23 @@
 ;;;
 ;;; binary.ftype - foreign types and foreign objects
-;;;  
-;;;   Copyright (c) 2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2011-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 ;; Experimental
 
@@ -44,7 +44,7 @@
    ftype:schar ftype:uchar  ftype:short ftype:ushort ftype:int ftype:uint
    ftype:long  ftype:ulong  ftype:longlong ftype:ulonglong
    ftype:int8  ftype:uint8  ftype:int16 ftype:uint16 ftype:int32 ftype:uint32
-   ftype:int64 ftype:uint64 
+   ftype:int64 ftype:uint64
    ftype:float ftype:double
 
    ;; type metainformation
@@ -58,7 +58,7 @@
 
    fobject fobject? fobject-type fobject-storage fobject-offset
    make-fobject
-          
+
    fobject-copy fobject-copy!/uv fobject-copy!
 
    get-fobject put-fobject!
@@ -113,7 +113,7 @@
   )
 
 ;; Auxiliary structure to keep each slot's info of ftype:struct.
-;; This isn't a subtype of ftype.  
+;; This isn't a subtype of ftype.
 (define-record-type ftype:slot #t #t
   name              ; slot name
   type              ; ftype
@@ -124,7 +124,7 @@
 ;; Foreign object instance.
 ;;
 
-;; An instance of fobject.  
+;; An instance of fobject.
 (define-record-type fobject %make-fobject fobject?
   type              ; ftype:struct
   storage           ; u8vector.  NB: The storage may be shared.

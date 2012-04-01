@@ -1,23 +1,23 @@
 ;;;
 ;;; gauche.test - test framework
-;;;  
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 #!no-fold-case
 
@@ -147,7 +147,7 @@
 
 (define *test-counts* (vector 0 0 0 0)) ; total/pass/fail/abort
 
-(define (test-count++) 
+(define (test-count++)
   (vector-set! *test-counts* 0 (+ (vector-ref *test-counts* 0) 1)))
 (define (test-pass++)
   (vector-set! *test-counts* 1 (+ (vector-ref *test-counts* 1) 1)))
@@ -177,7 +177,7 @@
     (vector-set! *test-counts* 3 (+ orig-abort 1))
     (write-summary)
     (vector-set! *test-counts* 3 orig-abort)))
-  
+
 (define (write-summary)
   (when (string? *test-record-file*)
     (receive (p nam) (sys-mkstemp *test-record-file*)
@@ -316,11 +316,11 @@
 ;; operand of GREF or GSET.  (This is because identifiers are
 ;; introduced by macro expansion, but quoted identifiers are turned
 ;; back to ortinary symbols when expansion is done.)  However, it
-;; may not be impossible to embed identifiers within literals.  
+;; may not be impossible to embed identifiers within literals.
 ;; Eventually we need a builtin procedure that picks identifiers
 ;; used for GREF/GSET.
 ;;
-;; Note that these identifiers in operands are replaced by GLOCs 
+;; Note that these identifiers in operands are replaced by GLOCs
 ;; once the code is executed.  We don't need to consider them; since
 ;; if the identifier has successufully replaced by a GLOC, it couldn't
 ;; be an undefined reference.
@@ -404,7 +404,7 @@
         (apply format/ss o args)
         (begin (apply format/ss e args)
                (apply format/ss o args))))
-    
+
     (if (null? *discrepancy-list*)
       (fmt "passed.\n")
       (begin

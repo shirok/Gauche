@@ -50,7 +50,7 @@ machine you compile it, probably it is easier to give
 --prefix=/mingw to 'configure'.
 
 If you want to copy compiled Gauche to the machine where
-mingw might not exist, you need to include mingw DLL 
+mingw might not exist, you need to include mingw DLL
 (and zlib DLL if you compiled with zlib).  There's a
 convenience shell script in src/mingw-dist.sh.   Just run
 it on the top of the Gauche source directory, and it will

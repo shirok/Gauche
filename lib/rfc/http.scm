@@ -1,23 +1,23 @@
 ;;;
 ;;; http.scm - HTTP 1.1
-;;;  
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 ;; HTTP handling routines.
 
@@ -63,13 +63,13 @@
   (export <http-error>
           http-user-agent make-http-connection reset-http-connection
           http-compose-query http-compose-form-data
-          
+
           http-proxy http-request
-          http-null-receiver http-string-receiver http-oport-receiver 
+          http-null-receiver http-string-receiver http-oport-receiver
           http-file-receiver http-cond-receiver
           http-null-sender http-string-sender http-blob-sender
           http-file-sender http-multipart-sender
-          
+
           http-get http-head http-post http-put http-delete
           http-default-auth-handler
           http-default-redirect-handler
@@ -79,7 +79,7 @@
   )
 (select-module rfc.http)
 
-;; 
+;;
 (autoload rfc.mime
           mime-compose-message
           mime-compose-message-string
@@ -98,7 +98,7 @@
 ;; Global parameters
 ;;
 
-;; default string to be used for user-agent.  
+;; default string to be used for user-agent.
 (define http-user-agent
   (make-parameter #`"gauche.http/,(gauche-version)"))
 
@@ -107,7 +107,7 @@
 (define http-proxy (make-parameter #f))
 
 ;; The default redirect handler
-;;  
+;;
 (define http-default-redirect-handler
   (make-parameter
    (^[method code headers body]
@@ -482,7 +482,7 @@
 ;; NB: Query string syntax (aka application/x-www-form-urlencoded) is
 ;; not defined in RFC2616.  In fact, it is not clearly defined at all
 ;; in RFC.  The most definitive source might be the HTML4 specification,
-;; section 17.13.4 "Form content types", 
+;; section 17.13.4 "Form content types",
 ;; <http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.1>.
 ;; In reality it is used very frequently with http, so we put it here.
 (define (http-compose-query path params
@@ -541,7 +541,7 @@
   (if (not port)
     (mime-compose-message-string (map translate-param params))
     (mime-compose-message (map translate-param params) port)))
-  
+
 ;;==============================================================
 ;; internal utilities
 ;;
@@ -770,7 +770,7 @@
   (cond-expand
    [gauche.net.tls #t]
    [else #f]))
-     
+
 ;;==============================================================
 ;; authentication handling
 ;;

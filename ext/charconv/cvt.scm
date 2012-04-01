@@ -1,23 +1,23 @@
 ;;;
 ;;; Auxiliary script to generate EUC_JISX0213 <-> Unicode 3.2 table
-;;;  
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 (use srfi-1)
 (use srfi-2)
@@ -173,7 +173,7 @@
     (print "};")
     (newline))
 
-  ;; Body of generate-eucj->ucs 
+  ;; Body of generate-eucj->ucs
   (output-file-header)
   (let* ((sorted (sort data  (lambda (a b) (< (car a) (car b)))))
          (data   (jisx0201 sorted))
@@ -226,7 +226,7 @@
                                 (- (car utf8) #x80))))
           ))
 
-  ;; Look up EUC 
+  ;; Look up EUC
   ;; NB: the original table has entries for 0x80-0x9f as <control>, but
   ;; they are not really assigned, so we exclude them.
   (define (euc-entry data)
@@ -274,7 +274,7 @@
                   s64)
         (print "};\n"))))
 
-  ;; emit the table of 4-byte utf8 range.  u0 is always #xf0.  
+  ;; emit the table of 4-byte utf8 range.  u0 is always #xf0.
   ;;
   (define (emit-utf4b)
     (let1 v0 (hash-table-get root #xf0)
@@ -298,7 +298,7 @@
           (intern (cdr utf8) (car entry)
                   (ensure-node root hash-table-get hash-table-put! (car utf8))
                   )))))
-        
+
   ;; emit the tables
   (output-file-header)
   (emit-utf2b)

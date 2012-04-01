@@ -1,12 +1,12 @@
 /*
  * number.h - Public API for Scheme numbers
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -177,7 +177,7 @@ struct ScmCompnumRec {
  * Some APIs take 'clamp' argument to specify the behavior.  The value
  * can be one of the SCM_CLAMP_* enums.  If an API supports SCM_CLAMP_NONE,
  * it also takes an output argument to return a flag whether the argument
- * is out of range or not.  This output argument can be NULL if the caller 
+ * is out of range or not.  This output argument can be NULL if the caller
  * doesn't specify SCM_CLAMP_NONE flag.
  */
 
@@ -285,7 +285,7 @@ SCM_EXTERN ScmObj Scm_LogNot(ScmObj x);
 SCM_EXTERN int    Scm_LogTest(ScmObj x, ScmObj y);
 SCM_EXTERN int    Scm_LogBit(ScmObj x, int bit);
 SCM_EXTERN ScmObj Scm_Ash(ScmObj x, int cnt);
-    
+
 enum ScmRoundMode {
     SCM_ROUND_FLOOR,
     SCM_ROUND_CEIL,

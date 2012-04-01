@@ -1,12 +1,12 @@
 /*
  * charconv.c - character code conversion library
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -154,7 +154,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     char *outbuf = port->src.buf.end;
 
     if (info->remoteClosed) return 0;
-    
+
     /* Fill the input buffer.  There may be some remaining bytes in the
        inbuf from the last conversion (insize), so we try to fill the
        rest. */
@@ -264,7 +264,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
     guess = findGuessingProc(fromCode);
     if (guess) {
         const char *guessed;
-        
+
         inbuf = SCM_NEW_ATOMIC2(char *, bufsiz);
         preread = Scm_Getz(inbuf, bufsiz, fromPort);
         if (preread <= 0) {
@@ -450,7 +450,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     ScmConvInfo *cinfo;
     ScmPortBuffer bufrec;
     ScmObj name;
-    
+
     if (!SCM_OPORTP(toPort))
         Scm_Error("output port required, but got %S", toPort);
 
@@ -458,7 +458,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     if (bufsiz <= MINIMUM_CONVERSION_BUFFER_SIZE) {
         bufsiz = MINIMUM_CONVERSION_BUFFER_SIZE;
     }
-    
+
     cinfo = jconv_open(toCode, fromCode);
     if (cinfo == NULL) {
         Scm_Error("conversion from code %s to code %s is not supported",
@@ -481,7 +481,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     bufrec.ready = conv_ready;
     bufrec.filenum = conv_fileno;
     bufrec.data = (void*)cinfo;
-    
+
     name = conv_name(SCM_PORT_OUTPUT, toPort, fromCode, toCode);
     return Scm_MakeBufferedPort(SCM_CLASS_PORT, name, SCM_PORT_OUTPUT, TRUE, &bufrec);
 }
@@ -501,7 +501,7 @@ const char *Scm_GuessCES(const char *code, const char *buf, int buflen)
  * UCS4 <-> internal character routine
  *
  * These routines are called when the literal character is given by
- * unicode notation (#\uXXXx, #\UXXXXXXXX or \uXXXX, \UXXXXXXXX inside 
+ * unicode notation (#\uXXXx, #\UXXXXXXXX or \uXXXX, \UXXXXXXXX inside
  * string), or unicode->char routine is called.
  * For this purpose, we keep two global conversion context.
  * Since internal encodings are stateless, we can reuse those
@@ -517,7 +517,7 @@ static ScmChar ucstochar(int ucs4)
     const char *inb = inbuf;
     char *outb = outbuf;
     size_t inroom, outroom, r;
-    
+
     if (ucsconv.ucs2char == NULL) return SCM_CHAR_INVALID;
     inroom = UCS2UTF_NBYTES(ucs4);
     outroom = 6;

@@ -1,12 +1,12 @@
 /*
  * portapi.c - port common API
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -145,7 +145,7 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
     SHORTCUT(p, Scm_PutcUnsafe(c, p); return);
     LOCK(p);
     CLOSE_CHECK(p);
-    
+
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         nb = SCM_CHAR_NBYTES(c);
@@ -193,13 +193,13 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
     SHORTCUT(p, Scm_PutsUnsafe(s, p); return);
     LOCK(p);
     CLOSE_CHECK(p);
-    
+
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE: {
         u_int size;
         const char *ss = Scm_GetStringContent(s, &size, NULL, NULL);
         SAFE_CALL(p, bufport_write(p, ss, size));
-        
+
         if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
             const char *cp = p->src.buf.current;
             while (cp-- > p->src.buf.buffer) {
@@ -503,7 +503,7 @@ static int getc_scratch_unsafe(ScmPort *p)
     char tbuf[SCM_CHAR_MAX_BYTES];
     int nb = SCM_CHAR_NFOLLOWS(p->scratch[0]), ch, i, curr = p->scrcnt;
     int r = 0;
-    
+
     memcpy(tbuf, p->scratch, curr);
     p->scrcnt = 0;
     for (i=curr; i<=nb; i++) {
@@ -560,7 +560,7 @@ int Scm_GetcUnsafe(ScmPort *p)
                 /* The buffer doesn't have enough bytes to consist a char.
                    move the incomplete char to the scratch buffer and try
                    to fetch the rest of the char. */
-                int rest, filled = 0; 
+                int rest, filled = 0;
                 p->scrcnt = (unsigned char)(p->src.buf.end - p->src.buf.current + 1);
                 memcpy(p->scratch, p->src.buf.current-1, p->scrcnt);
                 p->src.buf.current = p->src.buf.end;
@@ -739,7 +739,7 @@ int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *p)
 
 /*=================================================================
  * ReadLine
- *   Reads up to EOL or EOF.  
+ *   Reads up to EOL or EOF.
  */
 
 /* Auxiliary procedures */

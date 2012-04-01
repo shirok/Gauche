@@ -1,12 +1,12 @@
 /*
  * gauche/port.h - Port API
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -72,7 +72,7 @@
    the function pointers filled in, which is copied to the port's
    internal ScmPortBuffer structure.
    See port.c for the details of function pointers. */
-   
+
 typedef struct ScmPortBufferRec {
     char *buffer;       /* ptr to the buffer area */
     char *current;      /* current buffer position */
@@ -120,7 +120,7 @@ typedef struct ScmPortVTableRec {
  * one character, in order to realize `peek-char' (Scheme) or `Ungetc' (C)
  * operation.   'scratch', 'scrcnt', and 'ungotten' fields are used for
  * that purpose, and outside routine shouldn't touch these fields.
- * See portapi.c for the detailed semantics. 
+ * See portapi.c for the detailed semantics.
  */
 
 struct ScmPortRec {
@@ -136,7 +136,7 @@ struct ScmPortRec {
     u_int error     : 1;        /* Error has been occurred */
 
     u_int flags     : 5;        /* see ScmPortFlags below */
-    
+
     char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
 
     ScmChar ungotten;           /* ungotten character.
@@ -421,7 +421,7 @@ void Scm__SetupPortsForWindows(int has_console);
  *  that port access never conflicts in the performance critical code.
  *  (It doesn't make much sense for multiple threads to write to the
  *  same port, since the outputs are mixed in unpredictable way---except
- *  a casual debug print to stderr, but I don't believe performance     
+ *  a casual debug print to stderr, but I don't believe performance
  *  critical part does that.)
  *
  *  The port's lock state is kept in a single pointer, port->lockOwner.
@@ -433,7 +433,7 @@ void Scm__SetupPortsForWindows(int has_console);
  *  (spinlock if available, mutex otherwise) to check the lockOwner
  *  pointer.  If the port is locked, the thread yields CPU and
  *  try again later.
- * 
+ *
  *  It is possible that lockOwner slot changes its value to NULL during
  *  a thread is trying to lock the port, since PORT_UNLOCK doesn't obtain
  *  the system-level lock.  If it happens, the thread trying to lock
@@ -471,7 +471,7 @@ void Scm__SetupPortsForWindows(int has_console);
 #define PORT_UNLOCK(p)                                  \
     do {                                                \
         if (--p->lockCount <= 0) p->lockOwner = NULL;   \
-    } while (0) 
+    } while (0)
 
 /* Should be used while P is locked by calling thread.
    Evaluate C statement CALL, making sure the port is unlocked in case

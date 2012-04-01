@@ -2,7 +2,7 @@
  * FILE:    sha2.h
  * AUTHOR:  Aaron D. Gifford
  *          http://www.aarongifford.com/computers/sha.html
- * 
+ *
  * Copyright (c) 2000-2003, Aaron D. Gifford
  * All rights reserved.
  *
@@ -17,7 +17,7 @@
  * 3. Neither the name of the copyright holder nor the names of contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTOR(S) ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -116,7 +116,7 @@ typedef unsigned long long u_int64_t;  /* 8-bytes (64-bits) */
  *
  *   #include <inttypes.h>
  *
- * If you choose to use <inttypes.h> then please define: 
+ * If you choose to use <inttypes.h> then please define:
  *
  *   #define SHA2_USE_INTTYPES_H
  *

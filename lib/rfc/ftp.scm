@@ -1,7 +1,7 @@
 ;;; ftp.scm - FTP library
 ;;;
 ;;;  Copyright (c) 2005 OOHASHI Daichi, All rights reserved.
-;;;  Copyright (c) 2007-2011  Shiro Kawai  <shiro@acm.org>
+;;;  Copyright (c) 2007-2012  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;  Redistribution and use in source and binary forms, with or without
 ;;;  modification, are permitted provided that the following conditions
@@ -53,7 +53,7 @@
 (select-module rfc.ftp)
 
 (define-constant *default-ftp-port* 21)
- 
+
 (define-constant *anon-user* "anonymous")
 
 (define-constant *anon-pass* "anonymous@")
@@ -306,7 +306,7 @@
 ;; error reporting routine.
 ;; it should be raise conditon with respect to the response code.
 (define-condition-type <ftp-error> <error> #f)
-  
+
 (define (ftp-error res . args)
   (apply error <ftp-error> res args))
 

@@ -8,7 +8,7 @@
 ;;; The part of srfi-40 reference implementation has the copyright shown
 ;;; below:
 ;;;
-;;;  Copyright (C) 2003 by Philip L. Bewig of Saint Louis, Missouri, 
+;;;  Copyright (C) 2003 by Philip L. Bewig of Saint Louis, Missouri,
 ;;;  United States of America. All rights reserved.
 ;;;
 ;;; The part of stream extension library is placed in Public Domain
@@ -49,11 +49,11 @@
           stream-append stream-concatenate stream-reverse stream-count
           stream-remove stream-partition stream-find stream-find-tail
           stream-take-while stream-drop-while stream-span stream-break
-          stream-any stream-every stream-index 
+          stream-any stream-every stream-index
           stream-member stream-memq stream-memv
           stream-delete stream-delete-duplicates
           stream-grep ->stream-char stream-replace stream-translate
-          write-stream 
+          write-stream
           ))
 (select-module util.stream)
 
@@ -183,7 +183,7 @@
                1))))
 
 ;;
-;; What follows is taken from stream-ext.scm by 
+;; What follows is taken from stream-ext.scm by
 ;; Alejandro Forero Cuervo <bachue@bachue.com>
 ;;
 ;; Newer versions might be available at:
@@ -505,7 +505,7 @@
 (define (stream-reverse str :optional (tail stream-null))
   (stream-delay
    (let loop ((head str) (tail tail))
-     (if (stream-null? head) 
+     (if (stream-null? head)
        tail
        (loop (stream-cdr head) (stream-cons (stream-car head) tail))))))
 

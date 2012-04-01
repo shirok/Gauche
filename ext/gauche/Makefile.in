@@ -23,7 +23,7 @@ all : $(LIBFILES)
 # gauche.collection
 gauche-collection_OBJECTS = gauche--collection.$(OBJEXT)
 
-gauche--collection.$(SOEXT) : $(gauche-collection_OBJECTS) 
+gauche--collection.$(SOEXT) : $(gauche-collection_OBJECTS)
 	$(MODLINK) gauche--collection.$(SOEXT) $(gauche-collection_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 gauche--collection.c collection.sci : $(top_srcdir)/libsrc/gauche/collection.scm
@@ -33,7 +33,7 @@ gauche--collection.c collection.sci : $(top_srcdir)/libsrc/gauche/collection.scm
 # gauche.sequence
 gauche-sequence_OBJECTS = gauche--sequence.$(OBJEXT)
 
-gauche--sequence.$(SOEXT) : $(gauche-sequence_OBJECTS) 
+gauche--sequence.$(SOEXT) : $(gauche-sequence_OBJECTS)
 	$(MODLINK) gauche--sequence.$(SOEXT) $(gauche-sequence_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 gauche--sequence.c sequence.sci : $(top_srcdir)/libsrc/gauche/sequence.scm
@@ -43,7 +43,7 @@ gauche--sequence.c sequence.sci : $(top_srcdir)/libsrc/gauche/sequence.scm
 # gauche.parameter
 gauche-parameter_OBJECTS = gauche--parameter.$(OBJEXT)
 
-gauche--parameter.$(SOEXT) : $(gauche-parameter_OBJECTS) 
+gauche--parameter.$(SOEXT) : $(gauche-parameter_OBJECTS)
 	$(MODLINK) gauche--parameter.$(SOEXT) $(gauche-parameter_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 gauche--parameter.c parameter.sci : $(top_srcdir)/libsrc/gauche/parameter.scm
@@ -52,7 +52,7 @@ gauche--parameter.c parameter.sci : $(top_srcdir)/libsrc/gauche/parameter.scm
 # gauche.hook
 gauche-hook_OBJECTS = gauche--hook.$(OBJEXT)
 
-gauche--hook.$(SOEXT) : $(gauche-hook_OBJECTS) 
+gauche--hook.$(SOEXT) : $(gauche-hook_OBJECTS)
 	$(MODLINK) gauche--hook.$(SOEXT) $(gauche-hook_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 gauche--hook.c hook.sci : $(top_srcdir)/libsrc/gauche/hook.scm

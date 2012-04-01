@@ -144,7 +144,7 @@
        (map-to <vector> + '(1 2 3 4 5) '#(2 3 4 5)))
 
 (test* "map-accum" '((45 30 15) 5)
-       (values->list 
+       (values->list
         (map-accum (^[elt seed] (values (* elt seed) seed))
                    5 '(9 6 3))))
 (test* "map-accum" '((10 28 88) 19)

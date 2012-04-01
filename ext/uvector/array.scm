@@ -1,7 +1,7 @@
 ;;;
 ;;; Array operations.  This is superset of SRFI-25.
 ;;;
-;;;  Copyright (c) 2002-2011  Shiro Kawai  <shiro@acm.org>
+;;;  Copyright (c) 2002-2012  Shiro Kawai  <shiro@acm.org>
 ;;;  Copyright(C) 2004      by Alex Shinn  (foof@synthcode.com)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
@@ -223,7 +223,7 @@
 ;;  Mapping
 ;;   off = c0*(i0-b0) + c1*(i1-b1) + .. + cN*(iN-bN)
 ;;
-;;  
+;;
 
 (define (zero-vector? vec)
   (not (s32vector-range-check vec 0 0)))
@@ -410,7 +410,7 @@
 (define-method array-ref ((array <array-base>) (index <array>))
   (unless (= (array-rank index) 1)
     (error "index array must be rank 1" index))
-  ;; This is slow, but we don't know if the index array using 
+  ;; This is slow, but we don't know if the index array using
   ;; standard mapping.
   ((getter-of array)
    ((mapper-of array)
@@ -433,7 +433,7 @@
 (define-method array-set! ((array <array-base>) (index <array>) value)
   (unless (= (array-rank index) 1)
     (error "index array must be rank 1" index))
-  ;; This is slow, but we don't know if the index array using 
+  ;; This is slow, but we don't know if the index array using
   ;; standard mapping.
   ((setter-of array)
    ((mapper-of array)

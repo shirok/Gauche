@@ -1,12 +1,12 @@
 ;;;
 ;;; vminsn.scm - Virtual machine instruction definition
 ;;;
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;; 
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;; 
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
 ;;;
@@ -35,7 +35,7 @@
 ;;; gauche/vminsn.h and vminsn.c, which are then included in vm.c.
 ;;; This file is also used by the compiler.
 ;;;
-;;; 
+;;;
 ;;; (define-insn <name> <num-params> <operand-type> [<combination>] [<body>])
 ;;;
 ;;;   <name> - instruction name.  In C, an enum SCM_VM_<name> is defined.
@@ -82,9 +82,9 @@
 ;                                      (RETURN-OP))
 ;                                    NEXT1)]
                        ))])
-  
+
 ;; variations of $result with type coercion
-(define-cise-stmt $result:b 
+(define-cise-stmt $result:b
   [(_ expr) `($result (SCM_MAKE_BOOL ,expr))])
 (define-cise-stmt $result:i
   [(_ expr) (let1 r (gensym "cise__")
@@ -363,7 +363,7 @@
     (PUSH-CONT next)
     INCR-PC
     NEXT))
-         
+
 ;; combined insn
 (define-insn PUSH-PRE-CALL 1 addr (PUSH PRE-CALL))
 
@@ -389,14 +389,14 @@
     ($include "./vmcall.c")))
 
 ;; TAIL-CALL(NARGS)
-;;  Call procedure in val0.  Same as CALL except this discards the 
+;;  Call procedure in val0.  Same as CALL except this discards the
 ;;  caller's arugment frame and shift the callee's argument frame.
 ;;
 (define-insn TAIL-CALL 1 none #f
   (begin (DISCARD-ENV) ($goto-insn CALL)))
 
 ;; JUMP <addr>
-;;  Jump to <addr>.  
+;;  Jump to <addr>.
 ;;
 (define-insn JUMP      0 addr #f
   (begin (FETCH-LOCATION PC) NEXT))
@@ -559,7 +559,7 @@
     (CHECK-STACK (-> vm base maxstack))
     (SCM_PROF_COUNT_CALL vm (SCM_OBJ (-> vm base)))
     NEXT))
-         
+
 (define-insn LOCAL-ENV-TAIL-CALL 1 none #f
   (let* ([nargs::int (cast int (- SP ARGP))] [to::ScmObj*])
     (VM-ASSERT (SCM_CLOSUREP VAL0))
@@ -604,7 +604,7 @@
 ;; of LREF + BNLT etc. (which would compare stack top and LREF).  These insns
 ;; save one stack operation.  The compiler recognizes the pattern and
 ;; emits these.  See pass5/if-numcmp and pass5/if-numeq.
-(define-insn LREF-VAL0-BNUMNE 2 addr #f ($arg-source lref ($insn-body BNUMNE))) 
+(define-insn LREF-VAL0-BNUMNE 2 addr #f ($arg-source lref ($insn-body BNUMNE)))
 (define-insn LREF-VAL0-BNLT 2 addr #f ($arg-source lref ($insn-body BNLT)))
 (define-insn LREF-VAL0-BNLE 2 addr #f ($arg-source lref ($insn-body BNLE)))
 (define-insn LREF-VAL0-BNGT 2 addr #f ($arg-source lref ($insn-body BNGT)))
@@ -696,7 +696,7 @@
 ;;  into the stack and makes them into an environment.
 ;;  It is used primarily for the occasions that compiler knows it needs
 ;;  to save the values temporarily (e.g. for evaluate 'after' thunk of
-;;  dynamic-wind, the results of its body needs to be saved).  
+;;  dynamic-wind, the results of its body needs to be saved).
 ;;  This must be twined with VALUES-N, which reverses the effects, i.e.
 ;;  turn the values in the env frame into values.
 (define-insn RECEIVE-ALL 0 addr #f
@@ -707,8 +707,8 @@
     (PUSH-CONT nextpc)
     ($goto-insn TAIL-RECEIVE-ALL)))
 
-;; TAIL-RECEIVE-ALL 
-;;  Tail version of RECEIVE-ALL.  
+;; TAIL-RECEIVE-ALL
+;;  Tail version of RECEIVE-ALL.
 (define-insn TAIL-RECEIVE-ALL 0 none #f
   (begin (CHECK-STACK-PARANOIA (ENV-SIZE (+ (-> vm numVals) 1)))
          (PUSH-ARG VAL0)
@@ -944,12 +944,12 @@
         (POP-ARG arg)
         (set! cp (Scm_Cons arg cp))))
     ($result cp)))
-          
+
 (define-insn LENGTH      0 none #f      ; length
   (let* ([len::int (Scm_Length VAL0)])
     (when (< len 0) ($vm-err "proper list required, but got %S" VAL0))
     ($result:i len)))
-    
+
 (define-insn MEMQ 0 none #f ($w/argp v ($result (Scm_Memq v VAL0))))
 (define-insn MEMV 0 none #f ($w/argp v ($result (Scm_Memv v VAL0))))
 (define-insn ASSQ 0 none #f ($w/argp v ($result (Scm_Assq v VAL0))))
@@ -1010,7 +1010,7 @@
   ;; TAIL-CALL processing.  (The unfolding of rest
   ;; argument will be done in ADJUST_ARGUMENT_FRAME later,
   ;; if necessary.)
-  ;; 
+  ;;
   ;;   SP  >|      |
   ;;        | rest |
   ;;        | argN |
@@ -1076,7 +1076,7 @@
         (SCM_FLONUM_ENSURE_MEM arg)
         (set! (SCM_VECTOR_ELEMENT vec 0) arg)))
     ($result vec)))
-    
+
 (define-insn LIST2VEC    0 none #f      ; list->vector
   ($w/argr v ($result (Scm_ListToVector v 0 -1))))
 
@@ -1120,7 +1120,7 @@
       (SCM_FLONUM_ENSURE_MEM v)
       (set! (SCM_VECTOR_ELEMENT vec k) v)
       ($result SCM_UNDEFINED))))
-  
+
 ;; VEC-REF and VEC-SET with immediate index.  VAL0 must be a vector.
 (define-insn VEC-REFI    1 none #f
   ($w/argr vec
@@ -1129,7 +1129,7 @@
       (when (or (< k 0) (>= k (SCM_VECTOR_SIZE vec)))
         ($vm-err "vector-ref index out of range: %d" k))
       ($result (SCM_VECTOR_ELEMENT vec k)))))
-  
+
 (define-insn VEC-SETI    1 none #f
   ($w/argp vec
     ($type-check vec SCM_VECTORP "vector")
@@ -1172,7 +1172,7 @@
      [(and (SCM_FLONUMP VAL0) (SCM_FLONUMP arg))
       ($result:b (== (SCM_FLONUM_VALUE VAL0) (SCM_FLONUM_VALUE arg)))]
      [else ($result:b (Scm_NumEq arg VAL0))])))
-  
+
 (define-insn NUMLT2  0 none #f ($w/numcmp r <  ($result:b r)))
 (define-insn NUMLE2  0 none #f ($w/numcmp r <= ($result:b r)))
 (define-insn NUMGT2  0 none #f ($w/numcmp r >  ($result:b r)))
@@ -1205,7 +1205,7 @@
             (and (SCM_FLONUMP VAL0) (SCM_REALP arg)))
       ($result:f (* (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
       ($result (Scm_Mul arg VAL0)))))
-  
+
 (define-insn NUMDIV2 0 none #f          ; / (binary)
   ($w/argp arg
     (if (or (and (SCM_FLONUMP arg) (SCM_REALP VAL0))
@@ -1214,7 +1214,7 @@
       ($result (Scm_Div arg VAL0)))))
 
 (define-insn LREF-VAL0-NUMADD2 2 none #f ($arg-source lref ($insn-body NUMADD2)))
-  
+
 (define-insn NEGATE  0 none #f          ; -  (unary)
   ($w/argr v
     (cond
@@ -1228,19 +1228,19 @@
       ($result:f (+ (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
       ($result (Scm_Add (Scm_Inexact arg)
                         (Scm_Inexact VAL0))))))
-      
+
 (define-insn NUMISUB2    0 none #f      ; -. (binary)
   ($w/argp arg
     (if (and (SCM_REALP arg) (SCM_REALP VAL0))
       ($result:f (- (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
       ($result (Scm_Sub (Scm_Inexact arg) (Scm_Inexact VAL0))))))
-  
+
 (define-insn NUMIMUL2    0 none #f      ; *.
   ($w/argp arg
     (if (and (SCM_REALP arg) (SCM_REALP VAL0))
       ($result:f (* (Scm_GetDouble arg) (Scm_GetDouble VAL0)))
       ($result (Scm_Mul (Scm_Inexact arg) (Scm_Inexact VAL0))))))
-  
+
 (define-insn NUMIDIV2    0 none #f      ; /. (binary)
   ($w/argp arg
     (if (and (SCM_FLONUMP arg) (SCM_FLONUMP VAL0))
@@ -1265,7 +1265,7 @@
             [(SCM_FLONUMP arg)
              ($result:f (- (cast double imm) (SCM_FLONUM_VALUE arg)))]
             [else           ($result (Scm_Sub (SCM_MAKE_INT imm) arg))]))))
-  
+
 
 ;(define-insn NUMQUOT     0 none)        ; quotient
 ;(define-insn NUMMOD      0 none)        ; modulo
@@ -1288,7 +1288,7 @@
            (set! port SCM_CURIN)])
     (set! ch (Scm_Getc port))
     ($result (?: (< ch 0) SCM_EOF (SCM_MAKE_CHAR ch)))))
-  
+
 (define-insn PEEK-CHAR   1 none #f      ; peek-char
   (let* ([nargs::int (SCM_VM_INSN_ARG code)] [ch::int 0] [port::ScmPort*])
     (cond [(== nargs 1)
@@ -1332,7 +1332,7 @@
       (SCM_FLONUM_ENSURE_MEM slot)
       (SCM_FLONUM_ENSURE_MEM VAL0)
       ($result (Scm_VMSlotSet obj slot VAL0)))))
-  
+
 (define-insn SLOT-REFC   0 obj #f       ; slot-ref with constant slot name
   (let* ((slot))
     (FETCH-OPERAND slot)
@@ -1340,7 +1340,7 @@
     (TAIL-CALL-INSTRUCTION)
     (SCM_FLONUM_ENSURE_MEM VAL0)
     ($result (Scm_VMSlotRef VAL0 slot FALSE))))
-    
+
 (define-insn SLOT-SETC   0 obj #f       ; slot-set! with constant slot name
   (let* ((slot))
     (FETCH-OPERAND slot)
@@ -1366,7 +1366,7 @@
     (SCM_FLONUM_ENSURE_MEM after)
     (set! (-> vm handlers) (Scm_Acons before after (-> vm handlers)))
     NEXT))
-  
+
 (define-insn POP-HANDLERS 0 none #f     ; pop dynamic handlers
   (begin
     (VM-ASSERT (SCM_PAIRP (-> vm handlers)))

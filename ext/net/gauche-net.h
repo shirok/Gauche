@@ -1,12 +1,12 @@
 /*
  * net.h - network interface
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -101,7 +101,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
    We don't consider ss_len, for we don't care the internal structure
    of sockaddr_storage.  Only the size and alignment matters. */
 
-#define _SS_MAXSIZE    128 
+#define _SS_MAXSIZE    128
 #define _SS_ALIGNSIZE  (sizeof (ScmInt64))
 
 #define _SS_PAD1SIZE   (_SS_ALIGNSIZE - sizeof(sa_family_t))
@@ -242,7 +242,7 @@ extern ScmObj Scm_SocketSendMsg(ScmSocket *s, ScmObj msg, int flags);
 extern ScmObj Scm_SocketRecv(ScmSocket *s, int bytes, int flags);
 extern ScmObj Scm_SocketRecvX(ScmSocket *s, ScmUVector *buf, int flags);
 extern ScmObj Scm_SocketRecvFrom(ScmSocket *s, int bytes, int flags);
-extern ScmObj Scm_SocketRecvFromX(ScmSocket *s, ScmUVector *buf, 
+extern ScmObj Scm_SocketRecvFromX(ScmSocket *s, ScmUVector *buf,
                                   ScmObj addrs, int flags);
 
 extern ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
@@ -254,7 +254,7 @@ extern ScmObj Scm_SocketSetOpt(ScmSocket *s, int level,
 extern ScmObj Scm_SocketGetOpt(ScmSocket *s, int level,
                                int option, int resulttype);
 extern ScmObj Scm_SocketIoctl(ScmSocket *s, int requiest, ScmObj data);
-    
+
 /*==================================================================
  * Netdb interface
  */
@@ -296,7 +296,7 @@ SCM_CLASS_DECL(Scm_SysProtoentClass);
 
 extern ScmObj Scm_GetProtoByName(const char *name);
 extern ScmObj Scm_GetProtoByNumber(int proto);
-    
+
 /*
  * Service Entry
  */

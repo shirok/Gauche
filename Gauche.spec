@@ -3,7 +3,7 @@
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
 # is created as a subpackage.  The command
-# 
+#
 #   rpm -ba Gauche.spec
 #
 # builds three packages:

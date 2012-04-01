@@ -65,7 +65,7 @@ new routines aren't defined (but the extra functionality of crypt(3)
 is indeed available).  You need to define _OW_SOURCE to obtain the new
 routines as well.
 
--- 
+--
 Solar Designer <solar at openwall.com>
 
 $Owl: Owl/packages/glibc/crypt_blowfish/README,v 1.6 2006/01/02 19:04:19 solar Exp $

@@ -1,12 +1,12 @@
 /*
  * gauche/vector.h - Vector API
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -129,7 +129,7 @@ SCM_EXTERN ScmObj Scm_MakeUVectorFull(ScmClass *klass, int size, void *init,
 SCM_EXTERN ScmObj Scm_VMUVectorRef(ScmUVector *v, int t, int k, ScmObj fallback);
 
 /* Individual class definitions.
-   
+
    Until 0.8.14, we had individual structure definition for each
    uniform vector type, e.g. ScmU8Vector etc.  It is intended to
    catch type errors in C-level, e.g. prevent accessing u8vector as

@@ -17,13 +17,13 @@ util_match_OBJECTS = util--match.$(OBJEXT)
 
 all : $(LIBFILES)
 
-util--match.$(SOEXT) : $(util_match_OBJECTS) 
+util--match.$(SOEXT) : $(util_match_OBJECTS)
 	$(MODLINK) util--match.$(SOEXT) $(util_match_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 util--match.c match.sci : $(top_srcdir)/libsrc/util/match.scm
 	$(PRECOMP) -e -P -o util--match $(top_srcdir)/libsrc/util/match.scm
 
-util--queue.$(SOEXT) : $(util_queue_OBJECTS) 
+util--queue.$(SOEXT) : $(util_queue_OBJECTS)
 	$(MODLINK) util--queue.$(SOEXT) $(util_queue_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 util--queue.c queue.sci : queue.scm

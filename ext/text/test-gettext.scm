@@ -39,7 +39,7 @@
       (for-each (^t (test* (format "get-~A: ~S" locale (car t))
                            (get-optional (cdr t) (car t))
                            (get (car t))))
-                (assoc-ref *tests* locale)))) 
+                (assoc-ref *tests* locale))))
 
   ;; plural forms
   (dolist [locale *available-locales*]

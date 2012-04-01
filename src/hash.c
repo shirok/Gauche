@@ -1,12 +1,12 @@
 /*
  * hash.c - hash table implementation
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -275,7 +275,7 @@ static Entry *insert_entry(ScmHashCore *table,
 
         newb = SCM_NEW_ARRAY(Entry*, newsize);
         for (i=0; i<newsize; i++) newb[i] = NULL;
-        
+
         Scm_HashIterInit(&iter, table);
         while ((f = (Entry*)Scm_HashIterNext(&iter)) != NULL) {
             index = HASH2INDEX(newsize, newbits, f->hashval);
@@ -284,7 +284,7 @@ static Entry *insert_entry(ScmHashCore *table,
         }
         /* gc friendliness */
         for (i=0; i<table->numBuckets; i++) table->buckets[i] = NULL;
-        
+
         table->numBuckets = newsize;
         table->numBucketsLog2 = newbits;
         table->buckets = (void**)newb;
@@ -341,7 +341,7 @@ static Entry *address_access(ScmHashCore *table,
 
     ADDRESS_HASH(hashval, key);
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
-    
+
     for (e = buckets[index], p = NULL; e; p = e, e = e->next) {
         if (e->key == key) FOUND(table, op, e, p, index);
     }
@@ -396,7 +396,7 @@ static Entry *string_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
     ScmObj key = SCM_OBJ(k);
     Entry *e, *p, **buckets;
     const ScmStringBody *keyb;
-    
+
     if (!SCM_STRINGP(key)) {
         Scm_Error("Got non-string key %S to the string hashtable.", key);
     }
@@ -463,7 +463,7 @@ static Entry *multiword_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
     u_long hashval, index;
     ScmWord keysize = (ScmWord)table->data;
     Entry *e, *p, **buckets;
-    
+
     hashval = multiword_hash(table, k);
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
     buckets = (Entry**)table->buckets;
@@ -489,7 +489,7 @@ static Entry *general_access(ScmHashCore *table, intptr_t key, ScmDictOp op)
     hashval = table->hashfn(table, key);
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
     buckets = (Entry**)table->buckets;
-    
+
     for (e = buckets[index], p = NULL; e; p = e, e = e->next) {
         if (table->cmpfn(table, key, e->key)) FOUND(table, op, e, p, index);
     }
@@ -509,7 +509,7 @@ static void hash_core_init(ScmHashCore *table,
 {
     Entry **b;
     u_int i;
-    
+
     if (initSize != 0) initSize = round2up(initSize);
     else initSize = DEFAULT_NUM_BUCKETS;
 
@@ -617,7 +617,7 @@ void Scm_HashCoreCopy(ScmHashCore *dst, const ScmHashCore *src)
 
     /* A little trick to avoid hazard in careless race condition */
     dst->numBuckets = dst->numEntries = 0;
-    
+
     dst->buckets = (void**)b;
     dst->hashfn   = src->hashfn;
     dst->cmpfn    = src->cmpfn;
@@ -784,7 +784,7 @@ ScmObj Scm_HashTableStat(ScmHashTable *table)
     ScmObj *vp;
     Entry** b = BUCKETS(c);
     int i;
-    
+
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-entries"));
     SCM_APPEND1(h, t, Scm_MakeInteger(c->numEntries));
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-buckets"));
@@ -858,7 +858,7 @@ static unsigned int round2up(unsigned int val)
 /* Backward compatibility.
    NB: Casting ScmDictEntry* to ScmHashEntry* would be invalid if
    sizeof(intptr_t) and sizeof(void*) differ.  I know only one
-   such platform (PlayStation2).  If it is a problem, moving to 
+   such platform (PlayStation2).  If it is a problem, moving to
    the new API is recommended. */
 ScmHashEntry *Scm_HashTableGet(ScmHashTable *ht, ScmObj key)
 {
@@ -926,7 +926,7 @@ ScmObj Scm_MakeHashTableFull(ScmClass *klass, int type, ScmHashProc hashfn,
     case SCM_HASH_GENERAL:;
         return make_hash_table(klass, type, general_access, hashfn,
                                cmpfn, initSize, data);
-    default:    
+    default:
         Scm_Error("[internal error]: wrong TYPE argument passed to Scm_MakeHashTableFull: %d", type);
         return SCM_UNDEFINED;   /* dummy */
     }

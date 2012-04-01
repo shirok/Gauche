@@ -1,12 +1,12 @@
 /*
  * weak.c - weak vectors and tables
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -83,7 +83,7 @@ ScmObj Scm_MakeWeakVector(int size)
     int i;
     ScmObj *p;
     ScmWeakVector *v = SCM_NEW(ScmWeakVector);
-    
+
     SCM_SET_CLASS(v, SCM_CLASS_WEAK_VECTOR);
     v->size = size;
     /* Allocate pointer array by ATOMIC, so that GC won't trace the
@@ -235,7 +235,7 @@ static void weakhash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     case SCM_HASH_GENERAL: type = "general"; break;
     default: Scm_Panic("something wrong with a hash table");
     }
-    /* should we also print weakness info? */       
+    /* should we also print weakness info? */
     Scm_Printf(port, "#<weak-hash-table %s %p>", type, ht);
 }
 
@@ -262,7 +262,7 @@ static u_long weak_key_hash(const ScmHashCore *hc, intptr_t key)
         return k;
     }
 }
-    
+
 
 static int weak_key_compare(const ScmHashCore *hc, intptr_t key,
                             intptr_t entrykey)
@@ -351,7 +351,7 @@ ScmObj Scm_WeakHashTableSet(ScmWeakHashTable *ht, ScmObj key, ScmObj value,
     } else {
         proxy = (intptr_t)key;
     }
-    
+
     e = Scm_HashCoreSearch(SCM_WEAK_HASH_TABLE_CORE(ht), proxy,
                            (flags&SCM_DICT_NO_CREATE)?SCM_DICT_GET:SCM_DICT_CREATE);
     if (!e) return SCM_UNBOUND;
@@ -415,7 +415,7 @@ int Scm_WeakHashIterNext(ScmWeakHashIter *iter, ScmObj *key, ScmObj *value)
         } else {
             *key = (ScmObj)e->key;
         }
-        
+
         if (iter->table->weakness & SCM_WEAK_VALUE) {
             ScmWeakBox *box = (ScmWeakBox*)e->value;
             ScmObj realval = SCM_OBJ(Scm_WeakBoxRef(box));

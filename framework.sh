@@ -8,7 +8,7 @@
 #
 # We don't, and probably won't, support a shared framework, though.
 # A shared framework needs installation process anyway, and it embeds
-# its abosolute path in it so that it can't be casually copied 
+# its abosolute path in it so that it can't be casually copied
 # afterwards.  So it doesn't have the advantage of private frameworks,
 # and we'll get all the disadvantages of the frameworks (e.g. nonstandard
 # header paths, difficulty of using gauche auxiliary scripts, etc).

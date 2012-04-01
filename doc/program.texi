@@ -3,14 +3,14 @@
 @c NODE Gaucheでのプログラミング
 
 @menu
-* Invoking Gosh::               
-* Interactive development::     
-* Writing Scheme scripts::      
-* Debugging::                   
-* Platform-dependent features::  
-* Profiling and tuning::        
-* Writing Gauche modules::      
-* Using extension packages::    
+* Invoking Gosh::
+* Interactive development::
+* Writing Scheme scripts::
+* Debugging::
+* Platform-dependent features::
+* Profiling and tuning::
+* Writing Gauche modules::
+* Using extension packages::
 @end menu
 
 @node Invoking Gosh, Interactive development, Programming in Gauche, Programming in Gauche
@@ -145,7 +145,7 @@ You can specify this option more than once to load multiple files.
 
 @deftp {Command Option} -L file
 @c EN
-Load @var{file} like @code{-l}, but if @var{file} does not exist, 
+Load @var{file} like @code{-l}, but if @var{file} does not exist,
 this silently ignores it instead of reporting an error.
 This option can also be specified multiple times.
 @c JP
@@ -250,7 +250,7 @@ Don't keep source information for debugging.  Consumes less memory.
 Ignore case for symbols as specified in R5RS.
 (It is distinguished by default).  @xref{Case-sensitivity}.
 @item test
-Adds "@code{../src}" and "@code{../lib}" to the load path before loading 
+Adds "@code{../src}" and "@code{../lib}" to the load path before loading
 initialization file.  This is useful when you want to test the
 compiled @code{gosh} interpreter inside source tree, without installing it.
 @end table
@@ -394,7 +394,7 @@ On Windows-native platforms (mingw), two interpreter executables are
 installed.  @code{gosh.exe} is compiled as a Windows console
 application and works just like ordinary @code{gosh}; that is,
 it primarily uses standard i/o for communication.
-Another executable, @code{gosh-noconsole.exe}, is compiled 
+Another executable, @code{gosh-noconsole.exe}, is compiled
 as a Windows no-console (GUI) application.  It is not attached
 to a console when it is started.  Its standard input is connected
 to the @code{NUL} device.  Its standard output and standard error
@@ -1085,8 +1085,8 @@ the patterns Gauche can execute well.
 @c COMMON
 
 @menu
-* Using profiler::              
-* Performance tips::            
+* Using profiler::
+* Performance tips::
 @end menu
 
 @node Using profiler, Performance tips, Profiling and tuning, Profiling and tuning
@@ -1106,7 +1106,7 @@ platforms.   It works only in single-thread applications for now.
 
 @c EN
 To use the profiler non-interactively, give @code{-ptime}
-command-line option to gosh. 
+command-line option to gosh.
 @c JP
 非対話環境でこのプロファイラを使うには、gosh のコマンドラインオプショ
 ンとして @code{-ptime}を指定してください。
@@ -1161,7 +1161,7 @@ the profiler interrupts the process and records the function that is
 executed then.   Compared to the individual execution time per
 function call, which is the order of nanoseconds, this sampling rate
 is very sparse.  However, if we run the program long enough,
-we can expect the distribution of samples per each function 
+we can expect the distribution of samples per each function
 approximately reflects the distribution of time spent in each function.
 @c JP
 時間プロファイラは統計的標本化をおこなっていることに注意してください。
@@ -1175,10 +1175,10 @@ approximately reflects the distribution of time spent in each function.
 @c EN
 Keep in mind that the number is only approximation; the number
 of sample counts for a function may easily vary if the program deals
-with different data sets.   It should also be noted that, for now, GC 
+with different data sets.   It should also be noted that, for now, GC
 time is included in the function in which GC is triggered.
 This sometimes causes a less important function to "float up" to
-near-top of the list.  
+near-top of the list.
 To know the general pattern, it is a good custom to run the program
 with several different data sets.
 @c JP
@@ -1236,7 +1236,7 @@ see @ref{Profiler API}, for the details.
 
 @c EN
 Don't guess, just benchmark.  It is the first rule of
-performance tuning.  Especially for the higher-level languages 
+performance tuning.  Especially for the higher-level languages
 like Scheme, what impacts on performance greatly depends on
 the implementation.  Certain operations that are very cheap
 on an implementation may be costly on others.
@@ -1291,7 +1291,7 @@ Gauche のすべての入出力基本関数はポートをロックします。
 アプリケーションでは無視できないでしょう。
 入出力基本関数は通常呼びだし毎にポートをロックし、そこからの
 下位レベルの入出力はロックのオーバーヘッドの影響を受けずに
-行なわれます。ですから @code{read} や@code{raed-block} 
+行なわれます。ですから @code{read} や@code{raed-block}
 などのより大きな単位で入出力を行なう基本関数では問題と
 なることが少なくなります。
 (注意：これらの基本関数が常にポートをロックしつづけることを
@@ -1380,7 +1380,7 @@ functions if they are not redefined.  Although sometimes it is useful
 to redefine basic functions, you may want to limit the effect.
 For example, put redefined functions in a separate module and
 use the module in the code that absolutely needs those functions
-replaced.  
+replaced.
 @c JP
 @strong{組込み関数の再定義}:
 Gauche のコンパイラはいくつかの組込み関数を(それらが再定義されていなければ)
@@ -1442,7 +1442,7 @@ Gauche用にまとまったSchemeコードを書いたら、それをモジュ�
 
 @c EN
 Usually a module is contained in a file, but you can make
-a multi-file module.   
+a multi-file module.
 First I explain the structure of a single-file module.
 The following template is the convention used in Gauche's libraries.
 @c JP
@@ -1510,7 +1510,7 @@ which modules @code{foo} depends and which symbols it exports.
 @c COMMON
 
 @c EN
-The second form, `@code{select-module}', 
+The second form, `@code{select-module}',
 specifies the rest of the file is evaluated in the
 module @code{foo} you just defined.   Again, this is just a
 convention; you can write entire module body inside @code{define-module}.
@@ -1584,9 +1584,9 @@ module name.
 @c COMMON
 
 @c EN
-Gauche comes with some amount of libraries, but they aren't 
-enough at all to use Gauche in the production environment. 
-There are number of additional libraries available.   We call them 
+Gauche comes with some amount of libraries, but they aren't
+enough at all to use Gauche in the production environment.
+There are number of additional libraries available.   We call them
 @emph{extension packages}, or simply packages.  Each package
 usually provides one or more modules that adds extra
 functionality.   Most of the packages provide
@@ -1664,7 +1664,7 @@ use @code{--install-as} option which runs @code{make install} part via
 the @code{sudo} program.
 @c JP
 ファイルをインストールするのに特別な権限が必要な場合には、
-@code{--install-as} というオプションを使うと、@code{make install} 
+@code{--install-as} というオプションを使うと、@code{make install}
 部分が、@code{sudo} を使って実行されます。
 @c COMMON
 
@@ -1675,7 +1675,7 @@ $ gauche-package install --install-as=root Package-1.0.tar.gz
 @c EN
 If it doesn't work for you, you can just build the package
 by @code{gauche-package build Package-1.0.tar.gz}, then
-manually cd to the @file{Package-1.0} directory and run 
+manually cd to the @file{Package-1.0} directory and run
 @code{make install}.
 @c JP
 上手くいかない場合には、@code{gauche-package build Package-1.0.tar.gz}
@@ -1697,10 +1697,10 @@ $ gauche-package install -C "--prefix=/usr/local" Package-1.0.tar.gz
 @end example
 
 @c EN
-If the package has adopted the new package description file, 
+If the package has adopted the new package description file,
 it can remember the configuration options you have specified, and
 it will automatically reuse them when you install the package
-again.  (If you're a package developer, check out 
+again.  (If you're a package developer, check out
 @file{examples/spigot/README} file in the Gauche source tree
 to see how to cooperate with Gauche's package management system.)
 @c JP

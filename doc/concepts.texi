@@ -11,13 +11,13 @@ Gaucheの動作を正確に理解する助けになると思います。
 @c COMMON
 
 @menu
-* Standard conformance::        
-* Multibyte Strings::           
-* Multibyte scripts::           
-* Case-sensitivity::            
-* Integrated Object System::   
-* Module system::               
-* Compilation::                 
+* Standard conformance::
+* Multibyte Strings::
+* Multibyte scripts::
+* Case-sensitivity::
+* Integrated Object System::
+* Module system::
+* Compilation::
 @end menu
 
 @node Standard conformance, Multibyte Strings, Concepts, Concepts
@@ -132,7 +132,7 @@ generic interface on the SRFI-4 vectors.  @xref{Uniform vectors}.
 
 @c EN
 @item SRFI-5, A compatible let form with signatures and rest arguments
-Supported by the module @code{srfi-5}.  
+Supported by the module @code{srfi-5}.
 @xref{A compatible let form with signatures and rest arguments}.
 @c JP
 @item SRFI-5, シグネチャとrest引数に互換性のあるlet形式
@@ -150,7 +150,7 @@ SRFI-6の手続きは組み込みになっています。@ref{String ports}参�
 
 @c EN
 @item SRFI-7, Feature-based program configuration language
-Supported as an autoloaded macro.  
+Supported as an autoloaded macro.
 @xref{Feature-based program configuration language}.
 @c JP
 @item SRFI-7, 機能ベースプログラム設定言語
@@ -268,7 +268,7 @@ Built-in.   @xref{Signalling exceptions}.
 @c COMMON
 
 @c EN
-@item SRFI-25, Multi-dimensional array primitives. 
+@item SRFI-25, Multi-dimensional array primitives.
 Supported by the module @code{gauche.array}, which defines
 superset of SRFI-25.  @xref{Arrays}.
 @c JP
@@ -612,7 +612,7 @@ with certain character encodings.
 @end table
 
 @c EN
-Conversions from other encoding scheme is provided 
+Conversions from other encoding scheme is provided
 as a special port. @xref{Character code conversion}, for details.
 @c JP
 他の文字エンコーディングからの変換は特別なポートを使って行われます。
@@ -685,9 +685,9 @@ the appropriate character encoding conversion to read the source code:
 
 @c EN
 More precisely, a comment in either first or second line that matches
-a regular expression @code{#/coding[:=]\s*([\w.-]+)/} is recognized, 
+a regular expression @code{#/coding[:=]\s*([\w.-]+)/} is recognized,
 and the first submatch is taken as an encoding name.
-If there are multiple matches, only the first one is effective.   
+If there are multiple matches, only the first one is effective.
 The first two lines must not contain characters other than us-ascii
 in order for this mechanism to work.
 @c JP
@@ -960,7 +960,7 @@ You can subclass @code{<generic>} to customize how the
 applicable methods are selected, which order those methods are
 called, etc.   The mechanism is called @emph{metaobject protocol}.
 Metaobject protocol allows you to extend the language by
-the language itself.  
+the language itself.
 
 To find examples, see the files @code{lib/gauche/singleton.scm} and
 @code{lib/gauche/mop/validator.scm} included in the distribution.

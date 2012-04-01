@@ -704,7 +704,7 @@ void test_f16(void)
                 Scm_HalfToDouble(0xfc00));
     z = Scm_HalfToDouble(0xffff);
     test_true("half->double nan", !(z==z));
-    
+
 
     test_half("double->half 0",    0,      Scm_DoubleToHalf(0.0));
     test_half("double->half 1",    0x3c00, Scm_DoubleToHalf(1.0));
@@ -713,7 +713,7 @@ void test_f16(void)
     test_half("double->half -1.5", 0xbe00, Scm_DoubleToHalf(-1.5));
     test_half("double->half 0.75", 0x3a00, Scm_DoubleToHalf(0.75));
     test_half("double->half 0.875",0x3b00, Scm_DoubleToHalf(0.875));
-    
+
     test_half("double->half all 1", 0x3fff, Scm_DoubleToHalf(1.9990234375));
     test_half("double->half max", 0x7bff, Scm_DoubleToHalf(65504.0));
     test_half("double->half normalized min", 0x0400,
@@ -765,7 +765,7 @@ int main(int argc, char **argv)
     const char *testmsg = "Testing integer arithmetic macros ... ";
 
     Scm_Init(GAUCHE_SIGNATURE);
-    
+
     fprintf(stderr, "%-65s", testmsg);
     message(stdout, testmsg, '=');
 

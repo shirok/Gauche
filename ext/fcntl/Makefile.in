@@ -16,7 +16,7 @@ XCLEANFILES = fcntlib.c
 
 all : $(LIBFILES)
 
-gauche--fcntl.$(SOEXT) : $(OBJECTS) 
+gauche--fcntl.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--fcntl.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 fcntlib.c : fcntlib.stub

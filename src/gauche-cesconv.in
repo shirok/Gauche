@@ -1,6 +1,6 @@
 ;;;
 ;;; gauche-cesconv - a simple Gauche script to convert CESes
-;;;  
+;;;
 
 ;; iconv-like script.  useful to have during make process.
 

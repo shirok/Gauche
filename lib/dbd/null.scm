@@ -29,7 +29,7 @@
 
 (define-method dbi-execute-using-connection ((c <null-connection>) q p)
   (list (apply (ref q 'prepared) p)))
-                                             
+
 (define-method dbi-open? ((c <null-connection>))
   (ref c 'open?))
 

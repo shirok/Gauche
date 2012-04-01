@@ -18,9 +18,9 @@ ICONV_LDFLAGS=
 
 AC_ARG_WITH(iconv,
   AC_HELP_STRING([--with-iconv=PATH],
-                 [Use iconv library installed under PATH. 
+                 [Use iconv library installed under PATH.
 Gauche's charconv module uses iconv if it is available.
-If your system has iconv library in non-trivial location, 
+If your system has iconv library in non-trivial location,
 specify this option.  The include file is looked for in PATH/include,
 and the library file is looked for in PATH/lib.
 If you don't want to use iconv for some reason, say --without-iconv. ]),
@@ -39,7 +39,7 @@ AC_ARG_WITH(iconv-lib,
 and whose name is not libiconv, specify it.
 For example, if you need -lconv to use iconv, say --with-iconv-lib=conv]),
  [
-  ICONV_NAME="$with_iconv_lib"; ICONV_LIB="-l$with_iconv_lib" 
+  ICONV_NAME="$with_iconv_lib"; ICONV_LIB="-l$with_iconv_lib"
  ])
 
 dnl

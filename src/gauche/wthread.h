@@ -1,12 +1,12 @@
 /*
  * wthread.h - win32 thread primitives
  *
- *   Copyright (c) 2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2011-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -91,7 +91,7 @@ SCM_EXTERN void Scm__MutexCleanup(void *); /* in core.c */
 #define SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex) \
     SCM_INTERNAL_MUTEX_LOCK(mutex);               \
     SCM_INTERNAL_THREAD_CLEANUP_PUSH(Scm__MutexCleanup, &mutex)
-         
+
 #define SCM_INTERNAL_MUTEX_SAFE_LOCK_END() \
     SCM_INTERNAL_THREAD_CLEANUP_POP()
 

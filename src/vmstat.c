@@ -1,12 +1,12 @@
 /*
  * vmstat.c - statistics gathering code for vm.c
  *
- *   Copyright (c) 2005-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2005-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -48,7 +48,7 @@ static ScmWord fetch_insn_counting(ScmVM *vm, ScmWord code)
         insn2_freq[SCM_VM_INSN_CODE(code)][SCM_VM_INSN_CODE(*vm->pc)]++;
     }
     code = *vm->pc++;
-    insn1_freq[SCM_VM_INSN_CODE(code)]++; 
+    insn1_freq[SCM_VM_INSN_CODE(code)]++;
     switch (SCM_VM_INSN_CODE(code)) {
     case SCM_VM_LREF0: lref_freq[0][0]++; break;
     case SCM_VM_LREF1: lref_freq[0][1]++; break;

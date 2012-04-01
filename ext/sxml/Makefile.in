@@ -35,7 +35,7 @@ ssax_OBJECTS = sxml--ssax.$(OBJEXT)
 sxml--ssax.$(SOEXT) : $(ssax_OBJECTS)
 	$(MODLINK) sxml--ssax.$(SOEXT) $(ssax_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-sxml--ssax.c ssax.sci : sxml-ssax.scm.in src/SSAX.scm 
+sxml--ssax.c ssax.sci : sxml-ssax.scm.in src/SSAX.scm
 	$(SCMTRANS) $(srcdir)/sxml-ssax.scm.in
 	$(SCMCOMPILE) -e -i ssax.sci -o sxml--ssax sxml-ssax.scm
 

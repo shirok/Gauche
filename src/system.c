@@ -1,12 +1,12 @@
 /*
  * system.c - system interface
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -94,7 +94,7 @@ static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
 
 /*===============================================================
  * Conversion between off_t and Scheme integer.
- * off_t can be either 32bit or 64bit.  
+ * off_t can be either 32bit or 64bit.
  */
 off_t Scm_IntegerToOffset(ScmObj i)
 {
@@ -206,7 +206,7 @@ ScmObj Scm_ReadDirectory(ScmString *pathname)
     ScmVM *vm = Scm_VM();
     struct dirent *dire;
     DIR *dirp = opendir(Scm_GetStringConst(pathname));
-    
+
     if (dirp == NULL) {
         SCM_SIGCHECK(vm);
         Scm_SysError("couldn't open directory %S", pathname);
@@ -552,7 +552,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
             }
         }
     }
-    return Scm_DStringGet(&buf, 0);        
+    return Scm_DStringGet(&buf, 0);
 }
 
 /* Returns system's temporary directory. */
@@ -584,7 +584,7 @@ ScmObj Scm_TmpDir(void)
 /* Basename and dirname.
    On Win32, we need to treat drive names specially, e.g.:
    (sys-dirname "C:/a") == (sys-dirname "C:/") == (sys-dirname "C:") == "C:\\"
-   (sys-basename "C:/") == (sys-basename "C:) == "" 
+   (sys-basename "C:/") == (sys-basename "C:) == ""
 */
 
 ScmObj Scm_BaseName(ScmString *filename)
@@ -707,7 +707,7 @@ ScmObj Scm_SysMkstemp(ScmString *templat)
     u_int siz;
     int fd;
     const char *t = Scm_GetStringContent(templat, &siz, NULL, NULL);
-    if (siz >= MKSTEMP_PATH_MAX-6) { 
+    if (siz >= MKSTEMP_PATH_MAX-6) {
 	Scm_Error("pathname too long: %S", templat);
     }
     memcpy(name, t, siz);
@@ -843,7 +843,7 @@ static int time_compare(ScmObj x, ScmObj y, int equalp)
 {
     ScmTime *tx = SCM_TIME(x);
     ScmTime *ty = SCM_TIME(y);
-    
+
     if (equalp) {
         if (SCM_EQ(tx->type, ty->type)
             && SCM_INT64_EQV(tx->sec, ty->sec)
@@ -861,7 +861,7 @@ static int time_compare(ScmObj x, ScmObj y, int equalp)
             if (tx->nsec < ty->nsec) return -1;
             if (tx->nsec == ty->nsec) return 0;
             else return 1;
-        } 
+        }
         else return 1;
     }
 }
@@ -1074,7 +1074,7 @@ struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec)
             Scm_Error("cannot convert Scheme time to struct timespec: out of range: %S", t);
         }
         spec->tv_sec = SCM_TIME(t)->sec.lo;
-        
+
 #else  /*!SCM_EMULATE_INT64*/
         /* TODO: we might want to check if tv_sec can handle 64bit integer */
         spec->tv_sec = SCM_TIME(t)->sec;
@@ -1217,7 +1217,7 @@ static ScmObj make_group(struct group *g)
 {
     ScmSysGroup *sg = SCM_NEW(ScmSysGroup);
     SCM_SET_CLASS(sg, SCM_CLASS_SYS_GROUP);
-    
+
     sg->name = SCM_MAKE_STR_COPYING(g->gr_name);
 #ifdef HAVE_STRUCT_GROUP_GR_PASSWD
     sg->passwd = SCM_MAKE_STR_COPYING(g->gr_passwd);
@@ -1488,7 +1488,7 @@ char *win_create_command_line(ScmObj args)
  *   show the children's pid.   If fork arg is FALSE, this procedure
  *   of course never returns.
  *
- *   On Windows port, this returns a process handle obejct instead of   
+ *   On Windows port, this returns a process handle obejct instead of
  *   pid of the child process in fork mode.  We need to keep handle, or
  *   the process exit status will be lost when the child process terminates.
  */
@@ -1507,13 +1507,13 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         Scm_Error("argument list must have at least one element: %S", args);
     }
 
-    /* make a C array of C strings */    
+    /* make a C array of C strings */
     argv = Scm_ListToCStringArray(args, TRUE, NULL);
     program = Scm_GetStringConst(file);
 
     /* setting up iomap table */
     fds = Scm_SysPrepareFdMap(iomap);
-    
+
     /*
      * From now on, we have totally different code for Unix and Windows.
      */
@@ -1569,7 +1569,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         /* we need full path for CreateProcess. */
         dir = SCM_STRING(Scm_NormalizePathname(dir, SCM_PATH_ABSOLUTE|SCM_PATH_CANONICALIZE));
         cdir = Scm_GetStringConst(dir);
-        
+
         /* If the program is given in relative pathname,
            it must be adjusted relative to the specified directory. */
         if (program[0] != '/' && program[0] != '\\'
@@ -1583,7 +1583,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
             program = Scm_DStringGetz(&ds);
         }
     }
-    
+
     if (forkp) {
         TCHAR  program_path[MAX_PATH+1], *filepart;
         HANDLE *hs = win_prepare_handles(fds);
@@ -1636,7 +1636,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         /* TODO: We should probably use Windows API to handle various
            options consistently with fork-and-exec case above. */
 	execvp(program, (const char *const*)argv);
-	Scm_Panic("exec failed: %s: %s", program, strerror(errno));	
+	Scm_Panic("exec failed: %s: %s", program, strerror(errno));
     }
     return SCM_FALSE; /* dummy */
 #endif /* GAUCHE_WINDOWS */
@@ -1656,7 +1656,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
    invalid entries.  On the other hand, Scm_SysSwapFds just aborts if
    things goes wrong---not only because of the MT-safety issue, but also
    it is generally impossible to handle errors reasonably since we don't
-   even sure we have stdios.   And the client code is supposed to call  
+   even sure we have stdios.   And the client code is supposed to call
    fork() between these functions.
 
    The client code should treat the returned pointer of Scm_SysPrepareFdMap
@@ -1669,7 +1669,7 @@ int *Scm_SysPrepareFdMap(ScmObj iomap)
         ScmObj iop;
         int iollen = Scm_Length(iomap), i = 0;
         int *tofd, *fromfd;
-        
+
         /* check argument vailidity before duping file descriptors, so that
            we can still use Scm_Error */
         if (iollen < 0) {
@@ -1714,7 +1714,7 @@ int *Scm_SysPrepareFdMap(ScmObj iomap)
 void Scm_SysSwapFds(int *fds)
 {
     int *tofd, *fromfd, nfds, maxfd, i, j, fd;
-    
+
     if (fds == NULL) return;
 
     nfds   = fds[0];
@@ -1744,7 +1744,7 @@ void Scm_SysSwapFds(int *fds)
         if (dup2(fromfd[i], tofd[i]) < 0)
             Scm_Panic("dup2 failed: %s", strerror(errno));
     }
-    
+
     /* Close unused fds */
     for (fd=0; fd<maxfd; fd++) {
         for (j=0; j<nfds; j++) if (fd == tofd[j]) break;
@@ -1774,7 +1774,7 @@ static HANDLE *win_prepare_handles(int *fds)
                                      (HANDLE)_get_osfhandle(from),
                                      GetCurrentProcess(),
                                      &zh,
-                                     0, TRUE, 
+                                     0, TRUE,
                                      DUPLICATE_CLOSE_SOURCE
                                      |DUPLICATE_SAME_ACCESS)) {
                     Scm_SysError("DuplicateHandle failed");
@@ -1826,7 +1826,7 @@ void Scm_SysKill(ScmObj process, int signal)
     } else {
         SCM_TYPE_ERROR(process, "process handle or integer process id");
     }
-    
+
     if (signal == SIGKILL) {
         if (pid_given) {
             p = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
@@ -1844,7 +1844,7 @@ void Scm_SysKill(ScmObj process, int signal)
         return;
     }
     /* another idea; we may map SIGTERM to WM_CLOSE message. */
-    
+
     if (signal == 0) {
         /* We're supposed to do the error check without actually sending
            the signal.   For now we just pretend nothing's wrong. */
@@ -2074,7 +2074,7 @@ static ScmObj select_int(ScmSysFdset *rfds, ScmSysFdset *wfds,
     if (wfds && wfds->maxfd > maxfds) maxfds = wfds->maxfd;
     if (efds && efds->maxfd > maxfds) maxfds = efds->maxfd;
 
-    SCM_SYSCALL(numfds, 
+    SCM_SYSCALL(numfds,
                 select(maxfds+1,
                        (rfds? &rfds->fdset : NULL),
                        (wfds? &wfds->fdset : NULL),
@@ -2130,13 +2130,13 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
 {
 #if defined(HAVE_SETENV)
     int r;
-    
+
     SCM_SYSCALL(r, setenv(name, value, overwrite));
     if (r < 0) Scm_SysError("setenv failed on '%s=%s'", name, value);
 #elif defined(HAVE_PUTENV)
     char *nameval;
     int nlen, vlen, r;
-    
+
     if (!overwrite) {
         /* check the existence of NAME first. */
         if (getenv(name) != NULL) return;
@@ -2168,7 +2168,7 @@ ScmObj Scm_Environ(void)
 #if !defined(GAUCHE_WINDOWS)
 #  if defined(HAVE_CRT_EXTERNS_H)
     char **environ = *_NSGetEnviron(); /* OSX Hack */
-#  endif /*HAVE_CRT_EXTERNS_H*/    
+#  endif /*HAVE_CRT_EXTERNS_H*/
     if (environ == NULL) return SCM_NIL;
     else return Scm_CStringArrayToList((const char**)environ, -1,
                                        SCM_STRING_COPYING);
@@ -2179,7 +2179,7 @@ ScmObj Scm_Environ(void)
     TCHAR *cp = (TCHAR*)ss, *pp;
     TCHAR sbuf[ENV_BUFSIZ], *buf=sbuf;
     int bsize = ENV_BUFSIZ, size;
-    
+
     do {
         for (pp=cp; *pp; pp++) /*proceed ptr*/;
         size = (int)(pp - cp) + 1;
@@ -2265,7 +2265,7 @@ static ScmObj get_relative_processes(int childrenp)
     DWORD myid = GetCurrentProcessId(), parentid;
     int found = FALSE;
     ScmObj h = SCM_NIL, t = SCM_NIL; /* children pids */
-    
+
     snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) {
 	Scm_Error("couldn't take process snapshot in getppid()");
@@ -2516,7 +2516,7 @@ int truncate(const char *path, off_t len)
 {
     HANDLE file;
     int r;
-    
+
     file = CreateFile(SCM_MBS2WCS(path), GENERIC_WRITE,
                       FILE_SHARE_READ|FILE_SHARE_WRITE,
                       NULL, OPEN_EXISTING, 0, NULL);

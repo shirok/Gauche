@@ -9,7 +9,7 @@ include ../Makefile.ext
 LIBFILES = text--gettext.$(SOEXT) text--tr.$(SOEXT) text--unicode.$(SOEXT)
 SCMFILES = gettext.sci tr.sci unicode.sci
 
-GENERATED = Makefile 
+GENERATED = Makefile
 XCLEANFILES = *.c $(SCMFILES)
 
 all : $(LIBFILES)
@@ -22,7 +22,7 @@ install : install-std
 
 text-gettext_OBJECTS = text--gettext.$(OBJEXT)
 
-text--gettext.$(SOEXT) : $(text-gettext_OBJECTS) 
+text--gettext.$(SOEXT) : $(text-gettext_OBJECTS)
 	$(MODLINK) text--gettext.$(SOEXT) $(text-gettext_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 text--gettext.c gettext.sci : gettext.scm
@@ -34,7 +34,7 @@ text--gettext.c gettext.sci : gettext.scm
 
 text-tr_OBJECTS = text--tr.$(OBJEXT)
 
-text--tr.$(SOEXT) : $(text-tr_OBJECTS) 
+text--tr.$(SOEXT) : $(text-tr_OBJECTS)
 	$(MODLINK) text--tr.$(SOEXT) $(text-tr_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 text--tr.c tr.sci : $(top_srcdir)/libsrc/text/tr.scm
@@ -46,7 +46,7 @@ text--tr.c tr.sci : $(top_srcdir)/libsrc/text/tr.scm
 
 text-unicode_OBJECTS = text--unicode.$(OBJEXT)
 
-text--unicode.$(SOEXT) : $(text-unicode_OBJECTS) 
+text--unicode.$(SOEXT) : $(text-unicode_OBJECTS)
 	$(MODLINK) text--unicode.$(SOEXT) $(text-unicode_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 text--unicode.c unicode.sci : unicode.scm

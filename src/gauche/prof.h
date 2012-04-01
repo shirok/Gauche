@@ -1,12 +1,12 @@
 /*
  * prof.h - Profiler
  *
- *   Copyright (c) 2005-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2005-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -94,7 +94,7 @@ typedef struct ScmProfSampleRec {
 typedef struct ScmProfCountRec {
     ScmObj func;                /* Called Function */
 } ScmProfCount;
- 
+
 /* # of on-memory samples for the call counter. */
 #define SCM_PROF_COUNTER_IN_BUFFER  12000
 

@@ -1,7 +1,7 @@
 ;; trie.scm - trie
 ;;
 ;;  Copyright (c) 2005 OOHASHI Daichi, All rights reserved.
-;;  Copyright (c) 2006-2011  Shiro Kawai  <shiro@acm.org>
+;;  Copyright (c) 2006-2012  Shiro Kawai  <shiro@acm.org>
 ;;
 ;;  Redistribution and use in source and binary forms, with or without
 ;;  modification, are permitted provided that the following conditions
@@ -75,7 +75,7 @@
 ;;   tab-get     table, key -> node or #f
 ;;                  lookup the table by the key.  return #f if there's
 ;;                  no entry for the key.
-;;   tab-put! :: table, key, node -> table  
+;;   tab-put! :: table, key, node -> table
 ;;                  put a key&node pair into the table, or delete the
 ;;                  entry if node is #f.  returned table is used for
 ;;                  subsequent opration.
@@ -288,7 +288,7 @@
   (trie-common-prefix-map trie '() proc))
 
 (define (trie-for-each trie proc)
-  (trie-common-prefix-for-each trie '() proc)) 
+  (trie-common-prefix-for-each trie '() proc))
 
 ;;;===========================================================
 ;;; Collection framework

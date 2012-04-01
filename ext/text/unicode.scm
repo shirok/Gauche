@@ -1,23 +1,23 @@
 ;;;
 ;;; text.unicode - Various Unicode-specific operations
-;;;  
-;;;   Copyright (c) 2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2011-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 (define-module text.unicode
   (use gauche.uvector)
@@ -39,7 +39,7 @@
   (use srfi-42)
   (export ucs4->utf8  utf8-length  utf8->ucs4
           ucs4->utf16 utf16-length utf16->ucs4
-                    
+
           make-word-breaker
           make-word-reader
           string->words codepoints->words
@@ -65,7 +65,7 @@
 (define-constant eof (eof-object))
 
 ;;;
-;;; 
+;;;
 ;;; Unicode encoding conversions
 ;;;
 ;;;
@@ -377,7 +377,7 @@
                              ,i))
                 (set! ,var ,i))]
              [else (SCM_TYPE_ERROR scode "char or fixnum")]))])
- 
+
  (define-cproc gb-property (scode) ::<int>
    (let* ([ch::int])
      (get-arg ch scode)
@@ -543,69 +543,69 @@
        (#t   .  2)                      ; Newline (WB3b)
        (#f   .  3)                      ; Extend (WB4)
        (#f   .  3)                      ; Format (WB4)
-       (#t   .  8)                      ; Katakana 
-       (#t   .  4)                      ; ALetter 
-       (#t   . 10)                      ; MidLetter 
-       (#t   . 10)                      ; MidNum 
-       (#t   . 10)                      ; MidNumLet 
-       (#t   .  6)                      ; Numeric 
-       (#t   .  9)                      ; ExtendNumLet 
-       (#t   . 10))                     ; Other 
+       (#t   .  8)                      ; Katakana
+       (#t   .  4)                      ; ALetter
+       (#t   . 10)                      ; MidLetter
+       (#t   . 10)                      ; MidNum
+       (#t   . 10)                      ; MidNumLet
+       (#t   .  6)                      ; Numeric
+       (#t   .  9)                      ; ExtendNumLet
+       (#t   . 10))                     ; Other
      ;; 4 - ALetter
      #((#t   .  1)                      ; CR (WB3b)
        (#t   .  2)                      ; LF (WB3b)
        (#t   .  2)                      ; Newline (WB3b)
        (#f   .  4)                      ; Extend (WB4)
        (#f   .  4)                      ; Format (WB4)
-       (#t   .  8)                      ; Katakana 
+       (#t   .  8)                      ; Katakana
        (#f   .  4)                      ; ALetter (WB5)
        (wb6  .  5)                      ; MidLetter (WB6)
-       (#t   . 10)                      ; MidNum 
+       (#t   . 10)                      ; MidNum
        (wb6  .  5)                      ; MidNumLet (WB6)
        (#f   .  6)                      ; Numeric (WB9)
        (#f   .  9)                      ; ExtendNumLet (WB13a)
-       (#t   . 10))                     ; Other 
+       (#t   . 10))                     ; Other
      ;; 5 - ALetter + (MidLetter|MidNumLet)
      #((#t   .  1)                      ; CR (WB3b)
        (#t   .  2)                      ; LF (WB3b)
        (#t   .  2)                      ; Newline (WB3b)
        (#f   .  5)                      ; Extend (WB4)
        (#f   .  5)                      ; Format (WB4)
-       (#t   .  8)                      ; Katakana 
+       (#t   .  8)                      ; Katakana
        (#f   .  4)                      ; ALetter (WB7)
-       (#t   . 10)                      ; MidLetter 
-       (#t   . 10)                      ; MidNum 
-       (#t   . 10)                      ; MidNumLet 
-       (#t   .  6)                      ; Numeric 
-       (#t   .  9)                      ; ExtendNumLet 
-       (#t   . 10))                     ; Other 
+       (#t   . 10)                      ; MidLetter
+       (#t   . 10)                      ; MidNum
+       (#t   . 10)                      ; MidNumLet
+       (#t   .  6)                      ; Numeric
+       (#t   .  9)                      ; ExtendNumLet
+       (#t   . 10))                     ; Other
      ;; 6 - Numeric
      #((#t   .  1)                      ; CR (WB3b)
        (#t   .  2)                      ; LF (WB3b)
        (#t   .  2)                      ; Newline (WB3b)
        (#f   .  6)                      ; Extend (WB4)
        (#f   .  6)                      ; Format (WB4)
-       (#t   .  8)                      ; Katakana 
+       (#t   .  8)                      ; Katakana
        (#f   .  4)                      ; ALetter (WB10)
-       (#t   . 10)                      ; MidLetter 
+       (#t   . 10)                      ; MidLetter
        (wb12 .  7)                      ; MidNum (WB12)
        (wb12 .  7)                      ; MidNumLet (WB12)
        (#f   .  6)                      ; Numeric (WB8)
        (#f   .  9)                      ; ExtendNumLet (WB13a)
-       (#t   . 10))                     ; Other 
+       (#t   . 10))                     ; Other
      ;; 7 - Numeric + (MidNum|MidNumLet)
      #((#t   .  1)                      ; CR (WB3b)
        (#t   .  2)                      ; LF (WB3b)
        (#t   .  2)                      ; Newline (WB3b)
        (#f   .  7)                      ; Extend (WB4)
        (#f   .  7)                      ; Format (WB4)
-       (#t   .  8)                      ; Katakana 
-       (#t   .  4)                      ; ALetter 
-       (#t   . 10)                      ; MidLetter 
-       (#t   . 10)                      ; MidNum 
-       (#t   . 10)                      ; MidNumLet 
+       (#t   .  8)                      ; Katakana
+       (#t   .  4)                      ; ALetter
+       (#t   . 10)                      ; MidLetter
+       (#t   . 10)                      ; MidNum
+       (#t   . 10)                      ; MidNumLet
        (#f   .  6)                      ; Numeric (WB11)
-       (#t   .  9)                      ; ExtendNumLet 
+       (#t   .  9)                      ; ExtendNumLet
        (#t   . 10))                     ; Other
      ;; 8 - Katakana
      #((#t   .  1)                      ; CR (WB3b)
@@ -688,7 +688,7 @@
 ;; API
 (define make-word-reader
   (make-cluster-reader-maker make-word-breaker))
-            
+
 ;; API
 (define string->words (make-string-splitter make-word-reader))
 (define codepoints->words (make-sequence-splitter make-word-reader))
@@ -910,8 +910,8 @@
                   (?: charp
                       (SCM_MAKE_CHAR (aref (-> pcm ,to_x_full) i))
                       (SCM_MAKE_INT  (aref (-> pcm ,to_x_full) i)))))
-       (when (== i SCM_CHAR_FULL_CASE_MAPPING_SIZE) (result i))])])    
- 
+       (when (== i SCM_CHAR_FULL_CASE_MAPPING_SIZE) (result i))])])
+
  (define-cproc %char-xcase-extended (scode buf::<vector>
                                      kind::<int> charp::<boolean>)
    ::<int>
@@ -936,7 +936,7 @@
 ;;
 ;; Item = Char | Integer
 ;; generator :: IO () -> Item
-;;  
+;;
 ;; sink :: ([Item], Item) -> IO ()
 ;;  Receives a list of items (first arg) and put them (after suitable
 ;;  conversion) to the current output.  If any of the items cannot be

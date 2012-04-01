@@ -118,7 +118,7 @@
        (match '("abc" a b c)
          [((? string?) x ...) x]))
 
-(test* "pred" "abc" 
+(test* "pred" "abc"
        (match '("abc" a b c)
          [((? string? k) x ...) k]))
 
@@ -227,7 +227,7 @@
               [x (list 0 0 (vector 0 0 v 0) 0)])
          (match x
            [(_ _ #(_ _ (@ Var (s (get! getter))) _) _) (getter)])))
-           
+
 (test* "set! / $" 'bar
        (let* ([v (make Var :s 'foo)]
               [x (list 0 0 (vector 0 0 v 0) 0)])
@@ -235,7 +235,7 @@
            [(_ _ #(_ _ ($ Var (set! setter)) _) _)
             (setter 'bar)
             (ref v 's)])))
-           
+
 (test* "set! / @" 'bar
        (let* ([v (make Var :s 'foo)]
               [x (list 0 0 (vector 0 0 v 0) 0)])
@@ -348,7 +348,7 @@
          (any-in-queue (^x (and (eq? x 'z) 'ok)) q))
   (test* #`",|what| every-in-queue?" #t (every-in-queue symbol? q))
   (test* #`",|what| every-in-queue?" #f (every-in-queue (cut eq? <> 'a) q))
-  
+
   (test* #`",|what| remove-from-queue!" #f
          (remove-from-queue! (cut eq? <> 'f) q))
   (test* #`",|what| remove-from-queue!" #t

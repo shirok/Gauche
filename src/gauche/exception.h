@@ -1,12 +1,12 @@
 /*
  * exception.h - more exception classes
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -35,7 +35,7 @@
 #define GAUCHE_EXCEPTION_H
 
 /* Condition class hierarchy
- 
+
   <condition> ; srfi-35
     +- <compound-condition>
     +- <serious-condition> ; srfi-35
@@ -118,7 +118,7 @@ typedef struct ScmSystemErrorRec {
     ScmError common;
     int error_number;           /* errno */
 } ScmSystemError;
-    
+
 SCM_CLASS_DECL(Scm_SystemErrorClass);
 #define SCM_CLASS_SYSTEM_ERROR     (&Scm_SystemErrorClass)
 #define SCM_SYSTEM_ERROR(obj)      ((ScmSystemError*)(obj))

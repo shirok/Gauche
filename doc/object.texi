@@ -25,11 +25,11 @@ and so on.
 
 @c ----------------------------------------------------------------------
 @menu
-* Introduction to the object system::  
-* Class::                       
-* Instance::                    
-* Generic function and method::  
-* Metaobject protocol::         
+* Introduction to the object system::
+* Class::
+* Instance::
+* Generic function and method::
+* Metaobject protocol::
 @end menu
 
 @node Introduction to the object system, Class, Object system, Object system
@@ -52,7 +52,7 @@ It also defines a datatype (strictly speaking,
 it's not the same thing as a datatype,
 but let's skip the complicated part for now).
 
-For example, a point in 2D space can be represented by 
+For example, a point in 2D space can be represented by
 x and y coordinates.
 A point class can be defined using @code{define-class} macro.
 In the shortest form, it can be defined like this:
@@ -106,7 +106,7 @@ to create an instance.  (Don't worry about what generic function
 is---think it as a special type of function, just for now).
 
 @c JP
-(この節の例の定義コードは Gauche ソース配布物のなかの 
+(この節の例の定義コードは Gauche ソース配布物のなかの
 @code{examples/oointro.scm} にあります。)
 
 シンボル @code{<2d-point>} はクラスの名前です。グローバル変数
@@ -310,7 +310,7 @@ gosh> (y-of a-point)
 @end example
 
 @c EN
-The full list of available slot options is described in 
+The full list of available slot options is described in
 @ref{Defining class}.  At a first grance,
 the declarations of such slot options may look verbose.
 The system might have provide a static way to define
@@ -476,7 +476,7 @@ slots:
   methods   : (#<method (move-by! <2d-point> <complex>)> #<method (move-
 gosh> (ref move-by! 'methods)
 (#<method (move-by! <2d-point> <complex>)>
- #<method (move-by! <2d-point> <2d-vector>)> 
+ #<method (move-by! <2d-point> <2d-vector>)>
  #<method (move-by! <2d-point> <top> <top>)>)
 @end example
 
@@ -572,7 +572,7 @@ the details.
 
 Several built-in functions have similar way to extend their
 functionality for user-defined objects.  For example, if
-you specialize a generic function @code{object-equal?}, 
+you specialize a generic function @code{object-equal?},
 you can compare the instances by @code{equal?}:
 @c JP
 srfi-10 のフォーマットを満すように印字表現をカスタマイズし、読み込み時
@@ -608,7 +608,7 @@ srfi-10 のフォーマットを満すように印字表現をカスタマイズ
 
 @c EN
 Let's proceed to more interesting examples.
-Think of a class @code{<shape>}, 
+Think of a class @code{<shape>},
 which is an entity that can be drawn.
 As a base class, it keeps
 common attributes such as a color and line thickness in its slots.
@@ -677,7 +677,7 @@ superclass's method.  Because of multiple-argument
 dispatching and multiple inheritance, @code{next-method} is
 a little bit more complicated, but the basic idea is the same.
 
-So, what's the superclass of @code{<shape>}?  In fact, all 
+So, what's the superclass of @code{<shape>}?  In fact, all
 Scheme-defined class inherits a class called @code{<object>}.
 And it is @code{<object>}'s initialize method which takes care
 of slot initialization.  After calling @code{next-method}
@@ -745,7 +745,7 @@ init-value と init-keyword で初期化されます。@code{next-method} から
 Note the second argument passed to @code{define-class}.
 It indicates that @code{<point-shape>} and @code{<polyline-shape>}
 inherit slots of @code{<shape>} class, and also instances of
-those subclasses can be accepted wherever an instance of 
+those subclasses can be accepted wherever an instance of
 @code{<shape>} class is accepted.
 
 The @code{<point-shape>} adds one slot, @code{point}, which
@@ -769,7 +769,7 @@ There appeared a new slot option in @code{<point-shape>} class.
 The @code{:init-form} slot option specifies the default value of
 the slot when init-keyword is not given to @code{make} method.
 However, unlike @code{:init-value}, with which the value is
-evaluated at the time the class is defined, 
+evaluated at the time the class is defined,
 the value with @code{:init-form} is evaluated when the system
 actually needs the value.  So, in the @code{<point-shape>} instance,
 the default @code{<2d-point>} instance is only created if the
@@ -810,7 +810,7 @@ method polymorphic, we define a postscript output device class,
 この @code{:init-form} をともなう値はシステムが実際のその値を必要とした
 ときに評価されます。したがって、@code{<point-shape>} のインスタンス
 では、@code{<point-shape>} インスタンスが @code{:point} キーワード引数を
-わたされずに生成されたときにのみ、デフォルトの @code{<2d-point>} 
+わたされずに生成されたときにのみ、デフォルトの @code{<2d-point>}
 インスタンスが生成されます。
 
 shape は別のデバイスに別の方法で描画され得ます。いまのところは、
@@ -967,12 +967,12 @@ In this section, a class in Gauche is explained in detail.
 @c COMMON
 
 @menu
-* Defining class::              
-* Inheritance::                 
-* Class object::                
-* Slot definition object::      
-* Class redefinition::          
-* Class definition examples::   
+* Defining class::
+* Inheritance::
+* Class object::
+* Slot definition object::
+* Class redefinition::
+* Class definition examples::
 @end menu
 
 @node Defining class, Inheritance, Class, Class
@@ -997,9 +997,9 @@ It is implicitly added to the right of @var{supers} list, so you
 don't need to specify it.
 See @ref{Inheritance}, for the details about inheritance.
 
-@var{Slot-spec} is a specification of a "slot", sometimes known as 
+@var{Slot-spec} is a specification of a "slot", sometimes known as
 a "field" or an "instance variable" (but you can specify "class variable"
-in @var{slot-spec} as well). 
+in @var{slot-spec} as well).
 The simplest form of @var{slot-spec} is just a symbol, which names
 the slot.  Or you can give a list, whose first element is a symbol
 and whose rest is an interleaved list of keywords and values.
@@ -1021,7 +1021,7 @@ for the usage of metaclass.
 多重継承も使えます。継承の詳細については@ref{Inheritance} を参照して下さい。
 
 @var{Slot-spec} は「スロット」の仕様で、他の言語ではよく
-「フィールド」や「インスタンス変数」と呼ばれるものです 
+「フィールド」や「インスタンス変数」と呼ばれるものです
 (@var{slot-spec} を使って「クラス変数」を指定することもできます)。
 @var{slot-spec} の最も単純なフォームはシンボルそのもので、その名前が
 スロットであるものです。あるいは、最初の要素がシンボルで残りの要素が
@@ -1297,14 +1297,14 @@ do a little more specific task than the original methods.
 @c COMMON
 
 @c EN
-Let's define some terms.  When a class @code{<T>} inherits a 
+Let's define some terms.  When a class @code{<T>} inherits a
 class @code{<S>}, we call @code{<T>} a @emph{subclass} of @code{<S>},
 and @code{<S>} a @emph{superclass} of @code{<T>}.  This relation
 is transitive: @code{<T>}'s subclasses are also @code{<S>}'s subclasses,
 and @code{<S>}'s superclasses are also @code{<T>}'s superclasses.
 Specifically, if @code{<T>} directly inherits @code{<S>}, that is,
 @code{<S>} appeared in the superclass list when @code{<T>} is defined,
-then @code{<S>} is a @emph{direct superclass} of @code{<T>}, 
+then @code{<S>} is a @emph{direct superclass} of @code{<T>},
 and @code{<T>} is a @emph{direct subclass} of @code{<S>}.
 @c JP
 いくつかの用語を定義しておきましょう。クラス @code{<T>} がクラス
@@ -1447,7 +1447,7 @@ CPL 中のスーパークラスの順序は、つねにそのクラスの直接�
 (define-class <hv-grid> (<horizontal-grid> <vertical-grid>) ())
 
 (map class-name (class-precedence-list <hv-grid>))
- @result{} (<hv-grid> <horizontal-grid> <vertical-grid> 
+ @result{} (<hv-grid> <horizontal-grid> <vertical-grid>
      <grid-layout> <object> <top>)
 @end example
 
@@ -1478,8 +1478,8 @@ The following is a little twisted example:
    (<scrollable-pane> <editable-pane>) ())
 
 (map class-name (class-precedence-list <editable-scrollable-pane>))
- @result{} (<editable-scrollable-pane> <scrollable-pane> 
-     <editable-pane> <pane> <scrolling-mixin> <editing-mixin> 
+ @result{} (<editable-scrollable-pane> <scrollable-pane>
+     <editable-pane> <pane> <scrolling-mixin> <editing-mixin>
      <object> <top>)
 @end example
 
@@ -1814,7 +1814,7 @@ Redefinition of a class means the following operations:
 A new class object is created based on the new definition,
 and bound to the variable given to @code{define-class}.
 
-@item 
+@item
 Methods defined on the original class (i.e. methods that have
 the original class in their specializers) are changed so that
 they are defined on the new class.
@@ -1828,7 +1828,7 @@ All the subclasses of the original class are redefined recursively
 so that they reflect the changes of the class.
 Each class remembers its initialization arguments, and
 each redefined subclass gets the same initialization arguments
-as the original subclass. 
+as the original subclass.
 
 @item
 The original class is marked @emph{redefined}.
@@ -1839,7 +1839,7 @@ The original class is marked @emph{redefined}.
 新しいクラスオブジェクトは新しい定義にもとづいて生成され、
 @code{define-class} に与えられた変数に束縛されます。
 
-@item 
+@item
 元々のクラスに対して定義されたメソッド(すなわち、特定化子の中に
 元々のクラスを持つメソッド)は新しいクラス上で定義されたように
 変更されます。
@@ -1865,7 +1865,7 @@ it is originally bound, and replaces the binding to a new class.
 If you keep the direct reference to the original class somewhere else,
 it still refers to the original class; you might want to take extra
 care.  You can customize class redefinition behavior by
-defining the @code{class-redefinition} method; see 
+defining the @code{class-redefinition} method; see
 @ref{Metaobject protocol} for the details.
 @c JP
 元々のクラスと新しいクラスは別のオブジェクトであることに注意してください。
@@ -1881,7 +1881,7 @@ defining the @code{class-redefinition} method; see
 If there are instances of the original class, such instances
 are automatically @emph{updated} when it is about to be accessed or modified
 via @code{class-of}, @code{is-a?}, @code{slot-ref},
-@code{slot-set!}, @code{ref}, a getter method, or a setter method.  
+@code{slot-set!}, @code{ref}, a getter method, or a setter method.
 @c JP
 元々のクラスのインスタンスが存在している場合、それらのインスタンスは
 以下のようなメソッドでアクセスあるいは変更しようとしたときに自動的に
@@ -1916,7 +1916,7 @@ Class redefinition process is non-local operation with full of side-effects.
 It is difficult to guarantee that two threads safely run
 class redefinition protocol simultaneously.   So Gauche uses
 a process-wide lock to limit only one thread to enter the
-class redefinition protocol at a time.  
+class redefinition protocol at a time.
 @c JP
 @subsubheading スレッド安全性について
 
@@ -2026,7 +2026,7 @@ So far, what we get is something like this:
 幅と高さを持ちます。これを階層構造に構成することが可能です。すなわち、
 ある window は別の window 中に置くことができ、親 window へのポインタを
 もっているものとします。window の位置は、親ウィンドウの位置からの
-相対座標、x と y で指定します。スクリーン全体を覆う「ルート」window 
+相対座標、x と y で指定します。スクリーン全体を覆う「ルート」window
 を作り、これがデフォルトの親 window にもなります。ここまでで、次のように
 なります。
 @c COMMON
@@ -2187,9 +2187,9 @@ In this section, we explain how to create and use an instance.
 @c COMMON
 
 @menu
-* Creating instance::           
-* Accessing instance::          
-* Changing classes::            
+* Creating instance::
+* Accessing instance::
+* Changing classes::
 @end menu
 
 @node Creating instance, Accessing instance, Instance, Instance
@@ -2418,7 +2418,7 @@ If the object doesn't have the specified slot, a generic function
 
 @defun slot-bound? obj slot
 @c EN
-Returns true if object @var{obj}'s slot @var{slot} is bound, 
+Returns true if object @var{obj}'s slot @var{slot} is bound,
 otherwise returns false.
 
 If the object doesn't have the specified slot, a generic function
@@ -2460,7 +2460,7 @@ It can be defined like the following code
 
 @defun slot-pop! obj slot :optional fallback
 @c EN
-Reverse operation of @code{slot-push!}.  
+Reverse operation of @code{slot-push!}.
 If the value of @var{slot} of @var{obj}
 is a pair, removes its car and returns the removed item.
 
@@ -2605,7 +2605,7 @@ trigger class redefinition again (see @ref{Changing classes} for details).
 覚書: CLOS とはちがい、@code{slot-ref} などは、その中でジェネリック
 関数版を呼ぶことはありません。それゆえ、@code{slot-ref-using-class} を
 特定化することによって、@code{slot-ref} をカスタマイズすることはできません。
-つまり、これらのジェネリック関数の主たる目的は @code{change-class} 
+つまり、これらのジェネリック関数の主たる目的は @code{change-class}
 メソッドの内部で使われることです。とくに、@code{slot-ref} などは
 クラス再定義を再度起動する(詳細については @ref{Changing classes} を
 参照)ので、@var{obj} の再定義中には使えません。
@@ -2672,7 +2672,7 @@ the @var{obj}---that is, @var{obj} becomes the instance of @var{new-class}
 without changing its identity.
 @end enumerate
 
-Note that @code{initialize} method of @var{new-class} 
+Note that @code{initialize} method of @var{new-class}
 isn't called on @var{obj}.
 If you desire, you can call it by your own @code{change-class} method.
 
@@ -2756,7 +2756,7 @@ for class redefinition.
 
 First, the redefinition changes global binding of the class object.
 So you need to keep the reference to the old class before
-redefining the class, and use the old class to specialize 
+redefining the class, and use the old class to specialize
 @code{change-class} method:
 @c JP
 @subsubheading インスタンス更新のカスタマイズ
@@ -2918,7 +2918,7 @@ lambda 形式の引数リストに似ていますが、それぞれの引数の�
 
 @c EN
 @i{Class} specifies the class that the argument has to belong to.
-If @code{@i{arg}} is just a symbol, it is equivalent to 
+If @code{@i{arg}} is just a symbol, it is equivalent to
 @code{(@i{arg} <top>)}.  You can't specify the type for
 the ``rest'' argument, for it is always bound to a list.
 
@@ -2933,7 +2933,7 @@ these optional and keyword arguments.
 The list of classes of the argument list is called
 @emph{method specializer list}, based on which the generic
 function will select appropriate methods(s).
-Here are some examples of @var{specs} and the corresponding 
+Here are some examples of @var{specs} and the corresponding
 specializer list:
 @c JP
 @i{class} は引数が所属すべきクラスを指定します。@code{@i{arg}} が単に
@@ -2988,8 +2988,8 @@ replaced by the newly defined one.
 When a generic function is applied, first it selects
 methods whose specializer list matches the given arguments.
 For example, suppose a generic function @code{foo} has
-three methods, whose specializer lists are 
-@code{(<string> <top>)}, @code{(<string> <string>)}, 
+three methods, whose specializer lists are
+@code{(<string> <top>)}, @code{(<string> <string>)},
 and @code{(<top> <top>)}, respectively.
 When @code{foo} is applied like @code{(foo "abc" 3)},
 the first and the third method will be selected.
@@ -2999,7 +2999,7 @@ Then the selected methods are sorted from the most
 It is calculated as follows:
 @c JP
 ジェネリック関数は適用されると、まず、与えられた引数に適合する
-特定化子リストを持つメソッドを選択します。たとえば、ジェネリック関数 
+特定化子リストを持つメソッドを選択します。たとえば、ジェネリック関数
 @code{foo} が 3つのメソッドを持っており、それらの特定化子リストが
 それぞれ、@code{(<string> <top>)}、@code{(<string> <string>)}、
 @code{(<top> <top>)} であるとします。@code{foo} が @code{(foo "abc" 3)} の
@@ -3012,7 +3012,7 @@ It is calculated as follows:
 @itemize
 @c EN
 @item
-Suppose we have a method @code{a} that has 
+Suppose we have a method @code{a} that has
 specializers @code{(A1 A2 @dots{})}, and
 a method @code{b} that has @code{(B1 B2 @dots{})}.
 
@@ -3062,7 +3062,7 @@ is bound implicitly.
 束縛されます。
 @c COMMON
 
-@deffn {Next method} next-method 
+@deffn {Next method} next-method
 @deffnx {Next method} next-method args @dots{}
 @c EN
 This variable is bound within a method body
@@ -3100,7 +3100,7 @@ top of itself---that is, things such as the structure of the class,
 how a class is created, how an instance is created and initialized,
 and how a method is dispatched and called, are all defined in terms
 of the object system.  For example, a class is just an instance of
-the class @code{<class>} that defines a generic structure and behavior 
+the class @code{<class>} that defines a generic structure and behavior
 of standard classes.  If you subclass @code{<class>}, then you can
 create your own set of classes that behaves differently than the
 default behavior; in effect, you are creating your own object system.
@@ -3130,10 +3130,10 @@ CLOS 風のオブジェクトシステムでは、オブジェクトシステム
 @c COMMON
 
 @menu
-* Class instantiation::         
-* Customizing slot access::     
-* Method instantiation::        
-* Customizing method application::  
+* Class instantiation::
+* Customizing slot access::
+* Method instantiation::
+* Customizing method application::
 @end menu
 
 
@@ -3150,7 +3150,7 @@ can be a metaclass.
 @subsubheading Expansion of @code{define-class}
 
 The @code{define-class} macro is basically a wrapper of
-the code that creates an instance of @code{<class>} 
+the code that creates an instance of @code{<class>}
 (or specified metaclass) and bind it to the given name.
 Suppose you have the following @code{define-class} form.
 @c JP
@@ -3173,7 +3173,7 @@ Gauche では @code{<class>} クラスおよびそのサブクラスのみがメ
 @end example
 
 @c EN
-It is expanded into a form like this (you can see the exact form 
+It is expanded into a form like this (you can see the exact form
 by looking at the definition of @code{define-class} macro in
 @file{`gauche-config --syslibdir`/gauche/object.scm}).
 @c JP
@@ -3183,7 +3183,7 @@ by looking at the definition of @code{define-class} macro in
 @c COMMON
 @example
 (define @var{name}
-  (let ((tmp1 (make @var{metaclass} 
+  (let ((tmp1 (make @var{metaclass}
                  :name '@var{name} :supers (list @var{supers})
                  :slots (map @var{process-slot-definitions}
                              @var{slot-specs})
@@ -3195,7 +3195,7 @@ by looking at the definition of @code{define-class} macro in
 @end example
 
 @c EN
-The created class's class, i.e. @var{metaclass}, 
+The created class's class, i.e. @var{metaclass},
 is determined by the following rules.
 @c JP
 生成されるクラスのクラス、つまり、@var{metaclass} は以下のルールで
@@ -3214,7 +3214,7 @@ is examined.
 @itemize @bullet
 @item
 If all the metaclasses are @code{<class>}, then
-the created class's metaclass is also @code{<class>}. 
+the created class's metaclass is also @code{<class>}.
 @item
 If all the metaclasses are either @code{<class>} or another metaclass
 @code{A}, then the created class' metaclass is @code{A}.
@@ -3270,7 +3270,7 @@ the global binding of @var{name} is checked.  If it is bound
 to a class, then the class redefinition protocol is invoked
 (see @ref{Class redefinition}).
 
-Then, the methods given to @code{:getter}, @code{:setter} 
+Then, the methods given to @code{:getter}, @code{:setter}
 and @code{:accessor} slot options in @var{slot-spec} are
 collected and registered to the corresponding generic functions.
 @c JP
@@ -3507,8 +3507,8 @@ See the examples below for modifying instance slot access behaviors.
 
 @item a list @code{(@var{get-proc} @var{set-proc} @var{bound?-proc} @var{initializable})}
 The @var{get-proc}, @var{set-proc} and @var{bound?-proc} elements are procedures
-invoked when this slot of an instance is accessed (either via 
-@code{slot-ref}/@code{slot-set!}/@code{slot-bound?}, 
+invoked when this slot of an instance is accessed (either via
+@code{slot-ref}/@code{slot-set!}/@code{slot-bound?},
 or an accessor method specified by @code{:getter}/@code{:setter} slot options).
 The value other than @var{get-proc} may be @code{#f}, and can be omitted
 if all the values after it is also @code{#f}.  That is, the simplest
@@ -3521,9 +3521,9 @@ When this slot is about to be read, @var{get-proc} is called with
 an argument, the instance.  The returned value of @var{get-proc} is
 the value of the slot.
 
-The procedure may return @code{#<undef>} to indicate the slot is 
+The procedure may return @code{#<undef>} to indicate the slot is
 unbound.  It triggers the @code{slot-unbound} generic function.
-(That is, this type of slot cannot have @code{#<undef>} as its value.)   
+(That is, this type of slot cannot have @code{#<undef>} as its value.)
 
 @item
 When this slot is about to be written, @var{set-proc} is called
@@ -3531,7 +3531,7 @@ with two arguments, the instance and the new value.  It is called
 purely for the side effect; the procedure may change the value
 of other slot of the instance, for example.
 
-If this element is @code{#f} or omitted, the slot becomes read-only; 
+If this element is @code{#f} or omitted, the slot becomes read-only;
 any attempt to write to the slot will raise an error.
 
 @item
@@ -3547,7 +3547,7 @@ call @var{get-proc} and returns true if it returns
 @item
 The last element, @var{initializable}, is a flag that indicates
 whether this slot should be initialized when @code{:init-value}
-or @code{:init-form}.  
+or @code{:init-form}.
 @end itemize
 
 @item A @code{<slot-accessor>} object
@@ -3560,7 +3560,7 @@ to @code{compute-slot-accessor} to create a @emph{slot accessor} object,
 which encapsulates how to access and modify the slot.
 
 After all slot definitions are processed by @code{compute-get-n-set}
-and @code{compute-slot-accessor}, an assoc list of 
+and @code{compute-slot-accessor}, an assoc list of
 slot names and @code{<slot-accessor>} objects are stored in the
 class's @code{accessors} slot.
 @end deffn
@@ -3569,7 +3569,7 @@ class's @code{accessors} slot.
 @deffnx {Method} compute-slot-accessor (class <class>) slot access-specifier
 @var{Access-specifier} is a value returned from
 @code{compute-get-n-set}.  The base method creates an instance
-of @code{<slot-accessor>} that encapsulates how to 
+of @code{<slot-accessor>} that encapsulates how to
 access the given slot.
 
 Created slot accessor objects are stored (as an assoc list using
@@ -3603,8 +3603,8 @@ The low-level slot accessing mechanism.  Every function or
 method that needs to read or write to a slot eventually comes
 down to one of these functions.
 
-Ordinary programs need not call these functions directly.  
-If you ever need to call them, you have to be careful not 
+Ordinary programs need not call these functions directly.
+If you ever need to call them, you have to be careful not
 to grab the reference to @var{slot-accessor} too long; if
 @var{obj}'s class is changed or redefined, @var{slot-accessor}
 can no longer be used.
@@ -3646,7 +3646,7 @@ to a @code{:metaclass} argument of @code{define-class}:
   ((temp-c :init-keyword :temp-c :init-value 0)
    (temp-f :allocation :procedural
            :ref   (lambda (o) (+ (*. (ref o 'temp-c) 9/5) 32))
-           :set!  (lambda (o v) 
+           :set!  (lambda (o v)
                     (set! (ref o 'temp-c) (*. (- v 32) 5/9)))
            :bound? (lambda (o) (slot-bound? o 'temp-c))))
   :metaclass <procedural-slot-meta>)

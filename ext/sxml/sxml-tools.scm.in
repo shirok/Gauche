@@ -88,7 +88,7 @@
 (define (sxml:error . messages)
   (apply error "SXML Error: " messages))
 
-;; nl is used in the arg of sxml:error to insert a newline, but 
+;; nl is used in the arg of sxml:error to insert a newline, but
 ;; we don't really need it.
 (define nl "")
 

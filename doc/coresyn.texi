@@ -4,17 +4,17 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* Lexical structure::           
-* Literals::                    
-* Making Procedures::           
-* Assignments::                 
-* Conditionals::                
-* Binding constructs::          
-* Sequencing::                  
-* Iteration::                   
-* Quasiquotation::              
-* Definitions::                 
-* Modules::                     
+* Lexical structure::
+* Literals::
+* Making Procedures::
+* Assignments::
+* Conditionals::
+* Binding constructs::
+* Sequencing::
+* Iteration::
+* Quasiquotation::
+* Definitions::
+* Modules::
 @end menu
 
 @node Lexical structure, Literals, Core syntax, Core syntax
@@ -41,8 +41,8 @@ It can be nested.
 @c EN
 @item Numeric literals
 Either integral part or fraction part of inexact real numbers can be omitted
-if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as 
-real numbers. 
+if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as
+real numbers.
 The number reader recognizes '@code{#}' as insignificant digits.
 Complex numbers can be written both in the rectangular format
 (e.g. @code{1+0.3i}) and in the polar format (e.g. 3.0@@1.57).
@@ -82,7 +82,7 @@ it with '|', e.g. '@code{|this is a symbol|}'.
 
 @c EN
 @item Character literal by character code
-Character literals can be written using its code, 
+Character literals can be written using its code,
 by @code{#\x@var{NN}} (Gauche internal code) or @code{#\u@var{NN}} (Unicode).
 @xref{Characters}, for details.
 @c JP
@@ -371,7 +371,7 @@ space), then the reader assumes it is an interpreter line (shebang) of
 a script and ignores the rest of characters until the end of line.
 (Actually the source doesn't need to be a file.  The reader checks
 whether it is the beginning of a port.)
-      
+
 Other than the above case, @code{#!@var{identifier}} is read as
 a token with special meanings.  This kind token can be a special
 directive for the reader, instead of read as a datum.
@@ -552,7 +552,7 @@ the variable.
 @end example
 
 @item
-@code{(@var{variable_0} @dots{} @var{variable_N-1} . @var{variable_N})} : 
+@code{(@var{variable_0} @dots{} @var{variable_N-1} . @var{variable_N})} :
 @c EN
 The procedure takes at least @var{N} arguments.  The actual arguments
 up to @var{N} is bound to the corresponding variables.
@@ -607,7 +607,7 @@ one of the following forms:
 The @var{variable} names the formal argument, which is bound to
 the value of the actual argument if given, or the value of
 the expression @var{init-expr} otherwise.   If @var{optspec} is just
-a variable, and the actual argument is not given to it, then 
+a variable, and the actual argument is not given to it, then
 @var{variable} will be bound to @code{#<undef>} (@xref{Undefined values}).
 
 The expression @var{init-expr} is only evaluated if the actual
@@ -639,7 +639,7 @@ argument for @var{variable} is not given.  The scope in which
 @end example
 
 @c EN
-The procedure signals an error if more actual arguments than 
+The procedure signals an error if more actual arguments than
 the number of required and optional arguments are given, unless it also has
 @code{:key} or @code{:rest} argument spec.
 @c JP
@@ -658,7 +658,7 @@ the number of required and optional arguments are given, unless it also has
 
 @item :key @var{keyspec} @dots{} [:allow-other-keys [@var{variable}]]
 @c EN
-Specifies keyword arguments.  Each @var{keyspec} can be 
+Specifies keyword arguments.  Each @var{keyspec} can be
 either one of the following forms.
 @c JP
 キーワード引数を指定します。各@var{keyspec}は以下の形式のいずれかです。
@@ -671,7 +671,7 @@ either one of the following forms.
 @end example
 
 @c EN
-The @var{variable} names the formal argument, which is bound to the 
+The @var{variable} names the formal argument, which is bound to the
 actual argument given with the keyword of the same name as @var{variable}.
 When the actual argument is not given, @var{init-expr} is evaluated
 and the result is bound to @var{variable} in the second and third form,
@@ -856,7 +856,7 @@ where @code{c} can be any character in @code{#[_a-z]}.
 [SRFI-26]
 @c EN
 Convenience macros to notate a procedure compactly.
-This form can be used to realize partial application, 
+This form can be used to realize partial application,
 a.k.a sectioning or projection.
 @c JP
 手続きを簡潔に書ける便利なマクロです。
@@ -869,7 +869,7 @@ indicating a 'slot'.
 The last @var{expr-or-slot} can be a symbol @code{<...>},
 indicating a 'rest-slot'.
 @code{Cut} expands into a @code{lambda} form that takes as many arguments
-as the number of slots in the given form, and 
+as the number of slots in the given form, and
 whose body is an expression
 @example
   (@var{expr-or-slot} @var{expr-or-slot2} @dots{})
@@ -1244,7 +1244,7 @@ Gaucheでは、一般化された@code{set!}と同じセマンティクスを持
 @c EN
 Conses @var{item}
 and the value of @var{place}, then sets the result to @var{place}.
-@var{place} is either a variable or a form @var{(proc arg @dots{})}, 
+@var{place} is either a variable or a form @var{(proc arg @dots{})},
 as the second argument of @code{set!}.   The result of this form
 is undefined.
 @c JP
@@ -1479,15 +1479,15 @@ If the last clause is else clause and all tests are failed,
 @defspec case key clause1 clause2 @dots{}
 [R5RS][SRFI-87]
 @c EN
-@var{Key} may be any expression. 
-Each @var{clause} should have the form 
+@var{Key} may be any expression.
+Each @var{clause} should have the form
 @example
 ((@var{datum} ...) @var{expr} @var{expr2} @dots{})
 ((@var{datum} ...) => @var{proc})
 @end example
 where each @var{datum} is an external representation of some object.
 All the @var{datum}s must be distinct. The last @var{clause}
-may be an ``else clause,'' which has the form 
+may be an ``else clause,'' which has the form
 @example
 (else @var{expr} @var{expr2} @dots{})
 (else => @var{proc})
@@ -1584,7 +1584,7 @@ you want to detect when unexpected value is passed just in case.
 @end defmac
 
 @defspec and test @dots{}
-[R5RS] 
+[R5RS]
 @c EN
 The @var{test} expressions are evaluated from left to right,
 and the value of the first expression that evaluates to a false
@@ -1629,7 +1629,7 @@ last expression is returned. If there are no expressions then
 (or (= 2 2) (> 2 1)) @result{} #t
 (or (= 2 2) (< 2 1)) @result{} #t
 (or #f #f #f)        @result{} #f
-(or (memq 'b '(a b c)) 
+(or (memq 'b '(a b c))
     (/ 3 0)) @result{} (b c)
 @end example
 @end defspec
@@ -1840,8 +1840,8 @@ number from a few possibilities (environment variable, configuration file,
 A macro that emulates dynamic scoped variables.
 @var{Var}s must be variables bound in the scope including
 @code{fluid-let} form.  @var{Val}s are expressions.
-@code{Fluid-let} first evaluates @var{val}s, then 
-evaluates @var{body} @dots{}, with binding 
+@code{Fluid-let} first evaluates @var{val}s, then
+evaluates @var{body} @dots{}, with binding
 @var{var}s to the corresponding values during the dynamic
 scope of @var{body} @dots{}.
 
@@ -1908,7 +1908,7 @@ See also @code{call-with-values} in @ref{Multiple values}
 which is the procedural equivalent of @code{receive}.
 You can use @code{define-values} (@xref{Definitions}) to
 bind multiple values to the toplevel variables simultaneously.
-Also @code{let-values} and @code{let*-values} 
+Also @code{let-values} and @code{let*-values}
 in SRFI-11 (@ref{Let-values}) provides
 @code{let}-like syntax with multiple values.
 @c JP
@@ -1952,9 +1952,9 @@ Some examples:
 (rec s (cons 1 (delay s)))
 
 ;; factorial function
-(rec (f n) 
+(rec (f n)
   (if (zero? n)
-      1 
+      1
       (* n (f (- n 1)))))
 @end example
 @end defmac
@@ -2000,7 +2000,7 @@ Here's a trickier example:
 
 @example
 (let ()
-  (begin 
+  (begin
     (define x 2)
     (begin
       (define y 3)
@@ -2020,7 +2020,7 @@ Here's a trickier example:
 @c EN
 Evaluates @var{exp0}, @var{exp1}, @dots{}, then returns the result(s)
 of @var{exp0}.   The name is taken from MzScheme.
-This is called @code{prog1} in CommonLisp.   
+This is called @code{prog1} in CommonLisp.
 
 Unlike @code{begin}, this @emph{does} creates a "block",
 for the @code{begin0} form is expanded as follows.
@@ -2252,7 +2252,7 @@ and @code{(unquote-splicing x)}, respectively.
 @c COMMON
 
 @c EN
-Suppose you want to create a list @code{(foo bar @var{x} @var{y})}, 
+Suppose you want to create a list @code{(foo bar @var{x} @var{y})},
 where @code{foo} and @code{bar} are symbols, and @var{x} and @var{y}
 are the value determined at runtime.  (For the sake of explanation,
 let's assume we have variables @var{x} and @var{y} that provides those
@@ -2286,17 +2286,17 @@ You can do the same thing with quasiquote, like this:
 The difference between the two notations is that the explicit version
 quotes the parts that you want to insert literally into the result,
 while the quasiquote version @emph{unquotes} the parts that you
-don't want to quote.  
+don't want to quote.
 @c JP
 ふたつの記法の違いは、前者では結果に書いたとおりを入れ込みたいところで
 クォートを使い、後者ではクォートしたくないところに@emph{unquotes}を使
-うことです。  
+うことです。
 @c COMMON
 
 @c EN
 The quasiquote version gets simpler and more readable when you
 have lots of static parts with scattered variable parts in your
-structure.  
+structure.
 @c JP
 ほとんどが固定部分でその中に変数部分が散在するような場合には準クォート
 を使った方が単純で読みやすくなります。
@@ -2317,7 +2317,7 @@ that expands to @code{cond} form:
 
 @example
 (define-macro (my-if test then else)
-  `(cond (,test ,then) 
+  `(cond (,test ,then)
          (else ,else)))
 
 (macroexpand '(my-if (< n 0) n (- n)))
@@ -2337,7 +2337,7 @@ the corresponding macro argument is inserted in its place.
 
 @c EN
 Of course you can use quasiquotes unrelated to macros.  It is a general
-way to construct structures.  Some even prefer using quasiquote to 
+way to construct structures.  Some even prefer using quasiquote to
 explicit construction even most of the structure is variable, for
 quasiquoted form can be more concise.  Gauche also tries to minimize
 runtime allocation for quasiquoted forms, so it may potentially
@@ -2359,7 +2359,7 @@ be more efficient; see "How static are quasiquoted forms?" below.
 @c COMMON
 
 @c EN
-When @code{(unquote-splicing @var{expr})} appears in a quasiquoted form, 
+When @code{(unquote-splicing @var{expr})} appears in a quasiquoted form,
 @var{expr} must evaluate to a list, which is @emph{spliced} into the
 surrounding context.  It's easier to see examples:
 @c JP
@@ -2419,7 +2419,7 @@ or unquote-spliced.
 @end smallexample
 
 @c EN
-It is an error for zero or multiple argument 
+It is an error for zero or multiple argument
 @code{unquote}/@code{unquote-splicing} forms appear
 which you cannot splice multiple forms into.
 @c JP
@@ -2438,7 +2438,7 @@ which you cannot splice multiple forms into.
 Note that the abbreviated notations @code{,x} and @code{,@@x} are
 only for single-argument forms.  You have to write @code{unquote}
 or @code{unquote-splicing} explicitly for zero or multiple argument
-forms; thus you don't usually need to use them.  These forms 
+forms; thus you don't usually need to use them.  These forms
 are supported mainly to make the nested unquoting forms such
 as @code{,,@@} and @code{,@@,@@}---R5RS cannot handle
 the case the inner unquote-splicing
@@ -2607,7 +2607,7 @@ hi @result{} 15
 @defspecx define-constant (variable . formals) body @dots{}
 @c EN
 Like @code{define}, but that the compiler assumes
-the value of @var{variable} won't change and generates 
+the value of @var{variable} won't change and generates
 optimized code.
 
 An error is signalled when you use @code{set!} to change the value
@@ -2675,13 +2675,13 @@ Gaucheで使われているモジュールの書法については@ref{Writing G
 @c COMMON
 
 @menu
-* Module semantics::            
-* Modules and libraries::       
-* Defining and selecting modules::  
-* Using modules::               
-* Module inheritance::          
-* Module introspection::        
-* Predefined modules::          
+* Module semantics::
+* Modules and libraries::
+* Defining and selecting modules::
+* Using modules::
+* Module inheritance::
+* Module introspection::
+* Predefined modules::
 @end menu
 
 @node Module semantics, Modules and libraries, Modules, Modules
@@ -2929,7 +2929,7 @@ visible from library users.
 
 @c EN
 Usually a library is provided in the form of one or more Scheme
-source file(s), so it is convenient to have a convention to map 
+source file(s), so it is convenient to have a convention to map
 module names to file names, and vice versa; then, you can load a
 library file and import its module by one action with @code{use}
 macro, for example.
@@ -2953,7 +2953,7 @@ replacing periods to directory separator, i.e.
 
 @c JP
 当分の間、Gauche はこの対応づけのための単純なルールを使用します。すなわち、
-モジュール名は、例えば @code{gauche.mop.validator} のように `@code{.}' 
+モジュール名は、例えば @code{gauche.mop.validator} のように `@code{.}'
 (ピリオド)記号で階層的に区切って構成されます。このようなモジュールが
 要求されても、現在の実行時環境に存在しない場合には、Gauche は
 ピリオド記号をディレクトリ区切りに変換して @code{gauche/mop/validator}
@@ -3487,7 +3487,7 @@ Note that creating modules on-the-fly isn't usually necessary
 for ordinal scripts, since to execute already written program requires modules
 to be specified by name, i.e. syntax @code{define-module}, @code{import},
 @code{extend}, @code{with-module} all take module names, not
-module objects.  
+module objects.
 It is because module are inherently compile-time structures.
 However, there are some cases that dynamically created modules
 are useful, especially the program itself is dynamically created.
@@ -3512,7 +3512,7 @@ You can also pass @code{#f} to @var{name} to create
 @emph{anonymous} module.   Anonymous modules can't be
 looked up by @code{find-module}, nor can be imported
 or inherited (since @code{import} and @code{extend} take
-module names, not modules). 
+module names, not modules).
 It is useful when you want to have a temporary, segregated namespace
 dynamically---for example, you can create an anonymous module
 to evaluate code fragments sent from other program, and

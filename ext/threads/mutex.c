@@ -1,12 +1,12 @@
 /*
  * mutex.c - Scheme-level synchronization devices
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -48,7 +48,7 @@ static ScmClass *default_cpl[] = {
     SCM_CLASS_STATIC_PTR(Scm_TopClass), NULL
 };
 
-SCM_DEFINE_BASE_CLASS(Scm_MutexClass, ScmMutex, 
+SCM_DEFINE_BASE_CLASS(Scm_MutexClass, ScmMutex,
                       mutex_print, NULL, NULL, mutex_allocate,
                       default_cpl);
 
@@ -86,7 +86,7 @@ static void mutex_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     vm = mutex->owner;
     name = mutex->name;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
-    
+
     if (SCM_FALSEP(name)) Scm_Printf(port, "#<mutex %p ", mutex);
     else                  Scm_Printf(port, "#<mutex %S ", name);
     if (locked) {
@@ -177,7 +177,7 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
     ScmObj r = SCM_TRUE;
     ScmVM *abandoned = NULL;
     int intr = FALSE;
-    
+
     pts = Scm_GetTimeSpec(timeout, &ts);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex->mutex);
     while (mutex->locked) {
@@ -217,7 +217,7 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout
 #ifdef GAUCHE_HAS_THREADS
     struct timespec ts, *pts;
     int intr = FALSE;
-    
+
     pts = Scm_GetTimeSpec(timeout, &ts);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex->mutex);
     mutex->locked = FALSE;

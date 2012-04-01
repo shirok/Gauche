@@ -27,10 +27,10 @@ PACKAGE   = @@package@@
 
 ARCHFILES = @@extname@@.$(SOEXT)
 SCMFILES  = $(srcdir)/@@modpath@@.scm
-HEADERS   = 
+HEADERS   =
 
 TARGET    = $(ARCHFILES)
-GENERATED = 
+GENERATED =
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 		   configure.lineno autom4te*.cache $(PACKAGE).gpd
 
@@ -52,13 +52,13 @@ check : all
 
 install : all
 	$(INSTALL) -m 444 -T $(GAUCHE_PKGINCDIR) $(HEADERS)
-	$(INSTALL) -m 444 -T $(GAUCHE_PKGLIBDIR) $(SCMFILES) 
+	$(INSTALL) -m 444 -T $(GAUCHE_PKGLIBDIR) $(SCMFILES)
 	$(INSTALL) -m 555 -T $(GAUCHE_PKGARCHDIR) $(ARCHFILES)
 	$(INSTALL) -m 444 -T $(GAUCHE_PKGLIBDIR)/.packages $(PACKAGE).gpd
 
 uninstall :
 	$(INSTALL) -U $(GAUCHE_PKGINCDIR) $(HEADERS)
-	$(INSTALL) -U $(GAUCHE_PKGLIBDIR) $(SCMFILES) 
+	$(INSTALL) -U $(GAUCHE_PKGLIBDIR) $(SCMFILES)
 	$(INSTALL) -U $(GAUCHE_PKGARCHDIR) $(ARCHFILES)
 	$(INSTALL) -U $(GAUCHE_PKGLIBDIR)/.packages $(PACKAGE).gpd
 

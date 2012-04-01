@@ -21,7 +21,7 @@
 ; syntax of the macro using an explicit rest-slot symbol. The
 ; code to evaluate the non-slots for cute has been proposed by
 ; Dale Jordan. The code to allow a slot for the procedure position
-; and to process the macro using an internal macro is based on 
+; and to process the macro using an internal macro is based on
 ; a suggestion by Al Petrofsky. The code found below is, with
 ; exception of this header and some changes in variable names,
 ; entirely written by Al Petrofsky.
@@ -54,7 +54,7 @@
     ;;  Original code wraps proc in the first clause by (begin proc), hoping
     ;;  the implementation to detect an error in case proc is a macro or a
     ;;  syntax; but in Gauche such error detection is delayed until runtime
-    ;;  anyway, and using (begin proc) suppresses inlining proc, so we 
+    ;;  anyway, and using (begin proc) suppresses inlining proc, so we
     ;;  modified it.
     ((srfi-26-internal-cut (slot-name ...) (proc arg ...))
      (lambda (slot-name ...) (proc arg ...)))

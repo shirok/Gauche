@@ -1,12 +1,12 @@
 /*
  * weak.h - Public API for weak pointers
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -61,7 +61,7 @@ typedef struct ScmWeakVectorRec {
 #define SCM_WEAK_VECTOR_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_WEAK_VECTOR)
 SCM_CLASS_DECL(Scm_WeakVectorClass);
 #define SCM_CLASS_WEAK_VECTOR  (&Scm_WeakVectorClass)
-    
+
 SCM_EXTERN ScmObj Scm_MakeWeakVector(int size);
 SCM_EXTERN ScmObj Scm_WeakVectorRef(ScmWeakVector *v, int index, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj val);

@@ -21,7 +21,7 @@ uvector_OBJECTS = uvector.$(OBJEXT)      \
                   uvlib.$(OBJEXT)        \
                   uvutil.$(OBJEXT)
 
-libgauche-uvector.$(SOEXT) : $(uvector_OBJECTS) 
+libgauche-uvector.$(SOEXT) : $(uvector_OBJECTS)
 	$(MODLINK) libgauche-uvector.$(SOEXT) $(uvector_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 gauche/uvector.h : uvector.h.tmpl uvgen.scm

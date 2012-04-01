@@ -1,12 +1,12 @@
 /*
  * repl.c - repl
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -130,7 +130,7 @@ static ScmObj repl_main(ScmObj *args, int nargs, void *data)
 {
     ScmObj *closure = (ScmObj*)data;
     ScmObj prompter = closure[3];
-    
+
     if (SCM_PROCEDUREP(prompter)) {
         Scm_VMPushCC(repl_prompt_cc, data, 4);
         return Scm_VMApply0(prompter);

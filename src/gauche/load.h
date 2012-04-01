@@ -1,12 +1,12 @@
 /*
  * load.h - Public API for loading files
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -47,17 +47,17 @@ typedef enum {
     SCM_LOAD_QUIET_NOFILE = (1L<<0),
     /* [L,V,F] do not signal an error if the file does not exist;
        just return #f. */
-    
+
     SCM_LOAD_IGNORE_CODING = (1L<<1),
     /* [L,V] do not use coding-aware port to honor 'coding' magic comment */
 
     SCM_LOAD_PROPAGATE_ERROR = (1L<<2),
     /* [L,R] do not capture an error; let the caller handle it.  */
-    
+
     SCM_LOAD_MAIN_SCRIPT = (1L<<3),
     /* [L,V,P] indicates we're loading the file as a "main script"
        ---a script file given to gosh to load. */
-    
+
     SCM_LOAD_SEARCH_ARCHIVE = (1L<<4)
     /* [F] Search a file to load from archive file, using the hook of
        Scm_FindFile.  This is mainly for internal use---Scm_VMLoad etc calls
@@ -80,8 +80,8 @@ SCM_EXTERN void Scm_LoadPacketInit(ScmLoadPacket *p);
 SCM_EXTERN int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *p);
 SCM_EXTERN int Scm_Load(const char *file, u_long flags, ScmLoadPacket *p);
 #else  /*!GAUCHE_API_PRE_0_9*/
-#define Scm_LoadFromPort(port, flags)  Scm__LoadFromPortCompat(port, flags) 
-#define Scm_Load(port, flags)          Scm__LoadCompat(port, flags) 
+#define Scm_LoadFromPort(port, flags)  Scm__LoadFromPortCompat(port, flags)
+#define Scm_Load(port, flags)          Scm__LoadCompat(port, flags)
 SCM_EXTERN void Scm__LoadFromPortCompat(ScmPort *port, int flags);
 SCM_EXTERN int  Scm__LoadCompat(const char *file, int flags);
 #endif /*!GAUCHE_API_PRE_0_9*/

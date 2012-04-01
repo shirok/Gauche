@@ -1,12 +1,12 @@
 /*
  * list.c - List related functions
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -85,7 +85,7 @@ ScmObj Scm_List(ScmObj elt, ...)
     ScmObj cdr;
 
     if (elt == NULL) return SCM_NIL;
-        
+
     va_start(pvar, elt);
     cdr = Scm_VaList(pvar);
     va_end(pvar);
@@ -99,7 +99,7 @@ ScmObj Scm_Conses(ScmObj elt, ...)
     ScmObj cdr;
 
     if (elt == NULL) return SCM_NIL;
-    
+
     va_start(pvar, elt);
     cdr = Scm_VaCons(pvar);
     va_end(pvar);
@@ -111,7 +111,7 @@ ScmObj Scm_Conses(ScmObj elt, ...)
 ScmObj Scm_VaList(va_list pvar)
 {
     ScmObj start = SCM_NIL, cp = SCM_NIL, obj;
-    
+
     for (obj = va_arg(pvar, ScmObj);
 	 obj != NULL;
 	 obj = va_arg(pvar, ScmObj))
@@ -221,7 +221,7 @@ int Scm_Length(ScmObj obj)
     for (;;) {
         if (SCM_NULLP(obj)) break;
         if (!SCM_PAIRP(obj)) return SCM_LIST_DOTTED;
-	
+
 	obj = SCM_CDR(obj);
 	len++;
         if (SCM_NULLP(obj)) break;
@@ -245,7 +245,7 @@ ScmObj Scm_CopyList(ScmObj list)
     ScmObj start = SCM_NIL, last = SCM_NIL;
 
     if (!SCM_PAIRP(list)) return list;
-    
+
     SCM_FOR_EACH(list, list) {
         SCM_APPEND1(start, last, SCM_CAR(list));
     }
@@ -269,8 +269,8 @@ ScmObj Scm_MakeList(int len, ScmObj fill)
     }
     return start;
 }
-     
-    
+
+
 /* Scm_Append2X(list, obj)
  *    Replace cdr of last pair of LIST for OBJ.
  *    If LIST is not a pair, return OBJ.
@@ -360,7 +360,7 @@ ScmObj Scm_Reverse(ScmObj list)
     return Scm_Reverse2(list, SCM_NIL);
 }
 
-    
+
 /* Scm_Reverse2X(list, tail)
  *   Return reversed list of LIST.  Pairs in previous LIST is used to
  *   create new list.  TAIL is appended to the result.
@@ -399,7 +399,7 @@ ScmObj Scm_ListTail(ScmObj list, int i, ScmObj fallback)
         list = SCM_CDR(list);
     }
     return list;
-  err:  
+  err:
     if (SCM_UNBOUNDP(fallback)) Scm_Error("argument out of range: %d", i);
     return fallback;
 }
@@ -554,7 +554,7 @@ ScmObj Scm_AssocDelete(ScmObj elt, ScmObj alist, int cmpmode)
         Scm_Error("assoc-delete: list required, but got %S", alist);
     }
     if (SCM_NULLP(alist)) return SCM_NIL;
-    
+
     SCM_FOR_EACH(cp, alist) {
         p = SCM_CAR(cp);
         if (SCM_PAIRP(p)) {
@@ -627,7 +627,7 @@ ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode)
  *  list.   If there's more than one way to order an element, choose the
  *  first one appears in the given list of lists.
  *  Returns SCM_FALSE if the lists are inconsistent to be ordered
- *  in the way. 
+ *  in the way.
  *
  *  START is an item of the starting point.  It is inserted into the result
  *  first.  SEQUENCES is a list of lists describing the order of preference.
@@ -730,7 +730,7 @@ ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback)
     if (!SCM_EXTENDED_PAIR_P(pair)) {
         goto fallback;
     }
-    
+
     p = Scm_Assq(key, SCM_EXTENDED_PAIR(pair)->attributes);
     if (SCM_PAIRP(p)) return SCM_CDR(p);
   fallback:
@@ -747,7 +747,7 @@ ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value)
         Scm_Error("Cannot set pair attribute (%S) to non-extended pair: %S",
                   key, SCM_OBJ(pair));
     }
-    
+
     p = Scm_Assq(key, SCM_EXTENDED_PAIR(pair)->attributes);
     if (SCM_PAIRP(p)) SCM_SET_CDR(p, value);
     else SCM_EXTENDED_PAIR(pair)->attributes

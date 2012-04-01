@@ -16,7 +16,7 @@ XCLEANFILES =  termiolib.c
 
 all : $(LIBFILES)
 
-gauche--termios.$(SOEXT) : $(OBJECTS) 
+gauche--termios.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--termios.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 termiolib.c : termiolib.stub

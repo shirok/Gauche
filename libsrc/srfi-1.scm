@@ -100,7 +100,7 @@
                     (and (not (null-list? list-c))
                          (= (car list-a) (car list-c))
                          (lp2 (cdr list-a) (cdr list-c)))))))))))
-			
+
 
 ;;;
 ;;; Zipper and unzipper of SRFI-1
@@ -169,7 +169,7 @@
 
 (define (car+cdr pair) (values (car pair) (cdr pair)))
 
-;;; Return (map cdr lists). 
+;;; Return (map cdr lists).
 ;;; However, if any element of LISTS is empty, just abort and return '().
 (define (%cdrs lists)
   (call-with-current-continuation
@@ -278,7 +278,7 @@
       (if (p seed) '()
           (cons (f seed) (recur (g seed)))))))
 
-;; fold and fold-right are built-in      
+;; fold and fold-right are built-in
 (define (pair-fold-right f zero lis1 . lists)
   (if (pair? lists)
     (let recur ((lists (cons lis1 lists)))		; N-ary case
@@ -301,7 +301,7 @@
           (let ((tail (cdr lis)))		; Grab the cdr now,
             (lp tail (f lis ans)))))))	; in case F SET-CDR!s LIS.
 
-      
+
 
 ;;; REDUCE and REDUCE-RIGHT only use RIDENTITY in the empty-list case.
 ;;; These cannot meaningfully be n-ary.
@@ -325,7 +325,7 @@
 
 (define (append-map f lis1 . lists)
   (really-append-map append-map  append  f lis1 lists))
-(define (append-map! f lis1 . lists) 
+(define (append-map! f lis1 . lists)
   (really-append-map append-map! append! f lis1 lists))
 
 (define (really-append-map who appender f lis1 lists)
@@ -384,7 +384,7 @@
         (cond ((null-list? cars) (reverse! r))
               ((apply f cars) => (lambda (x) (recur cdrs (cons x r))))
               (else (recur cdrs r)))))
-    
+
     ;; Fast path.
     (let recur ((lis lis1)
                 (r   '()))

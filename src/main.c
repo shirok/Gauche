@@ -1,12 +1,12 @@
 /*
  * main.c - interpreter main program
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -186,7 +186,7 @@ void further_options(const char *optarg)
 void profiler_options(const char *optarg)
 {
     ScmVM *vm = Scm_VM();
-    
+
     if (strcmp(optarg, "time") == 0) {
         profiling_mode = TRUE;
     }
@@ -316,7 +316,7 @@ void cleanup_main(void *data)
                         SCM_OBJ(Scm_GaucheModule()),
                         NULL); /* ignore errors */
     }
-    
+
     /* EXPERIMENTAL */
     if (stats_mode) {
         fprintf(stderr, "\n;; Statistics (*: main thread only):\n");
@@ -377,7 +377,7 @@ static int init_console(void)
     return TRUE;
 #endif /*!defined(GAUCHE_WINDOWS)*/
 }
-    
+
 /*-----------------------------------------------------------------
  * MAIN
  */
@@ -458,7 +458,7 @@ int main(int argc, char **argv)
     SCM_FOR_EACH(cp, Scm_Reverse(pre_cmds)) {
         ScmObj p = SCM_CAR(cp);
         ScmObj v = SCM_CDR(p);
-        
+
         switch (SCM_CHAR_VALUE(SCM_CAR(p))) {
         case 'I':
             Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(v)), FALSE);
@@ -501,7 +501,7 @@ int main(int argc, char **argv)
                                 SCM_OBJ(Scm_UserModule()),
                                 &epak) < 0) {
                 error_exit(epak.exception);
-            }   
+            }
             break;
         }
     }
@@ -589,7 +589,7 @@ int getopt(int argc, char **argv, const char *spec)
     static int clusterind = 0;
 
     char optchar, *optspec;
-    
+
     do {
         if (optind >= argc) return -1;
         if (clusterind > 0) {
@@ -616,7 +616,7 @@ int getopt(int argc, char **argv, const char *spec)
         /* now we have option char in optchar.  we know spec[0] == '+' so
            we skip it. */
         if ((optspec = strchr(spec+1, optchar)) == NULL) return '?';
-        
+
         if (optspec[1] != ':') return optchar;
 
         /* look for the argument. */

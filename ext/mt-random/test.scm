@@ -89,7 +89,7 @@
                                            (^[] (mt-random-integer m0 (expt 2 32))))
                      (rlet1 v (make-u32vector 100 0)
                        (mt-random-fill-u32vector! m1 v))))))
-        
+
 (test "f64vector" #t
       (^[] (let ([m0 (make <mersenne-twister> :seed 1)]
                  [m1 (make <mersenne-twister> :seed 1)])

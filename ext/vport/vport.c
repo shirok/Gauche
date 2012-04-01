@@ -1,12 +1,12 @@
 /*
  * vport.c - 'virtual port'
  *
- *   Copyright (c) 2004-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2004-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -102,12 +102,12 @@ static int vport_getb(ScmPort *p)
         c = SCM_CHAR_VALUE(ch);
         nb = SCM_CHAR_NBYTES(c);
         SCM_CHAR_PUT(buf, c);
-        
+
         for (i=1; i<nb; i++) {
             /* pushback for later use.  this isn't very efficient;
                if efficiency becomes a problem, we need another API
                to pushback multiple bytes. */
-            Scm_UngetbUnsafe(buf[i], p); 
+            Scm_UngetbUnsafe(buf[i], p);
         }
         return buf[0];
     } else {
@@ -291,7 +291,7 @@ static void vport_puts(ScmString *s, ScmPort *p)
 
     if (!SCM_FALSEP(data->puts_proc)) {
         Scm_ApplyRec(data->puts_proc, SCM_LIST1(SCM_OBJ(s)));
-    } else if (SCM_STRING_BODY_INCOMPLETE_P(b) 
+    } else if (SCM_STRING_BODY_INCOMPLETE_P(b)
                || (SCM_FALSEP(data->putc_proc)
                    && !SCM_FALSEP(data->putb_proc))) {
         /* we perform binary output */
@@ -633,7 +633,7 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
         buf.buffer = NULL;
         buf.size = 0;
     }
-    
+
     buf.current = NULL;
     buf.end     = NULL;
     buf.mode    = SCM_PORT_BUFFER_FULL;
@@ -711,7 +711,7 @@ SCM_EXTENSION_ENTRY void Scm_Init_gauche__vport(void)
     ScmModule *mod;
     SCM_INIT_EXTENSION(gauche__vport);
     mod = SCM_FIND_MODULE("gauche.vport", SCM_FIND_MODULE_CREATE);
-    
+
     Scm_InitStaticClass(&Scm_VirtualInputPortClass,
                         "<virtual-input-port>", mod, viport_slots, 0);
     Scm_InitStaticClass(&Scm_VirtualOutputPortClass,

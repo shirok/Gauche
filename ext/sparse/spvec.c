@@ -1,12 +1,12 @@
 /*
  * spvec.c - Sparse vector
  *
- *   Copyright (c) 2009-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2009-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -354,7 +354,7 @@ U_REF(f64, MASK64, Scm_VMReturnFlonum)
         ULEAF(leaf)->elt[index&mask] = getter(val, SCM_CLAMP_ERROR, NULL); \
         U_SET_CHECK(mask);                                              \
     } while(0)
-    
+
 #define U_SET_CHECK(mask)                       \
     do {                                        \
         int z = U_HAS_ENTRY(leaf, index, mask); \
@@ -577,7 +577,7 @@ ScmObj MakeSparseVector(ScmClass *klass, u_long flags)
         Scm_TypeError("class", "subclass of <sparse-vector-base>",
                       SCM_OBJ(klass));
     }
-    
+
     SCM_SET_CLASS(v, klass);
     CompactTrieInit(&v->trie);
     v->numEntries = 0;

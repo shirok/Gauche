@@ -94,17 +94,17 @@ Prevents reading the default initialization file.
 .BI -I path
 Adds
 .I path
-in front of the load path list.  
+in front of the load path list.
 .TP
 .BI -A path
 Appends
 .I path
-to the tail of the load path list.  
+to the tail of the load path list.
 .TP
 .BI -u module
 Loads and imports
 .I module,
-as if "(use 
+as if "(use
 .I module
 )" is specified in the code.
 .TP
@@ -113,7 +113,7 @@ Loads a Scheme file
 .I file.
 .TP
 .BI -L file
-Like -l, but doesn't complain if 
+Like -l, but doesn't complain if
 .I file
 doesn't exist.
 .TP

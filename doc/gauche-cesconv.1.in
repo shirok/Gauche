@@ -13,15 +13,15 @@ gauche-cesconv \- convert text from one character encoding scheme to another
 .PP
 The
 \fBgauche\-cesconv\fR
-command is a program to convert text from one character encoding scheme (CES) 
+command is a program to convert text from one character encoding scheme (CES)
 to another\&, using Gauche's character conversion module.
 Hence the supported character sets are the same as Gauche's.
 See the info document of Gauche for more details.
 .PP
 There are other commands that provide the same functionality and more,
 such as iconv(1) or nkf(1), but they are not universally available
-by default.  
-This command is provided for Gauche's external packages to ease 
+by default.
+This command is provided for Gauche's external packages to ease
 the installation and configuration process; for those packages,
 it is certain that gauche-cesconv is available, so they don't
 need to check availability of iconv etc.
@@ -34,8 +34,8 @@ is omitted, the text is read from standard input\&.
 \fB\-f\fR, \fB\-\-from\-code=\fR\fB\fIencoding\fR\fR
 .RS 4
 Selects input encoding\&. Can be \'*JP\' to guess the
-character encoding from japanese text, 
-among either ISO2022\-JP(\-1,2,3), EUCJP, SHIFT_JIS or UTF\-8\&. 
+character encoding from japanese text,
+among either ISO2022\-JP(\-1,2,3), EUCJP, SHIFT_JIS or UTF\-8\&.
 If omitted, gauche\'s native CES is used\&.
 .RE
 .PP

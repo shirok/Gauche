@@ -1,12 +1,12 @@
 /*
  * net.c - network interface
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -103,7 +103,7 @@ ScmSocket *make_socket(Socket fd, int type)
 
 ScmObj Scm_MakeSocket(int domain, int type, int protocol)
 {
-    intptr_t sock; 
+    intptr_t sock;
 #if GAUCHE_WINDOWS
     /* On Windows, sockets created by socket() call sets
        WSA_FLAG_OVERLAPPED flag.  When used in threads other than
@@ -177,7 +177,7 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 	infd = _open_osfhandle(sock->fd, O_RDONLY);
 #endif /*GAUCHE_WINDOWS*/
         if (infd == INVALID_SOCKET) sockport_err(sock, "input");
-        
+
         /* NB: I keep the socket itself in the port name, in order to avoid
            the socket from GCed prematurely if application doesn't keep
            pointer to the socket. */
@@ -225,7 +225,7 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
             Scm_Error("attempt to %s a closed socket: %S", op, s);      \
         }                                                               \
     } while (0)
-        
+
 ScmObj Scm_SocketBind(ScmSocket *sock, ScmSockAddr *addr)
 {
     ScmSockAddr *naddr;
@@ -450,7 +450,7 @@ ScmObj Scm_SocketRecvFromX(ScmSocket *sock, ScmUVector *buf,
     struct sockaddr_storage from;
     socklen_t fromlen = sizeof(from);
     ScmObj cp, addr = SCM_FALSE;
-    
+
     CLOSE_CHECK(sock->fd, "recv from", sock);
     z = get_message_buffer(buf, &size);
     SCM_SYSCALL(r, recvfrom(sock->fd, z, size, flags,
@@ -489,7 +489,7 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
         bufsiz = Scm_UVectorSizeInBytes(buf);
         bufptr = (char*)SCM_UVECTOR_ELEMENTS(buf);
     }
-    
+
     if (bufsiz >= sizeof(struct msghdr)) {
         msg = (struct msghdr*)bufptr;
         bufptr += sizeof(struct msghdr); bufsiz -= sizeof(struct msghdr);
@@ -530,7 +530,7 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
         ScmObj cp;
         int ctrllen = 0;
         struct cmsghdr *cmsg;
-        
+
         SCM_FOR_EACH(cp, control) {
             u_int clen;
             ScmObj c = SCM_CAR(cp);
@@ -671,7 +671,7 @@ int inet_pton(int af, const char *src, void *dst)
     INT addrsize;
     struct sockaddr_in sa;
     struct sockaddr_in6 sa6;
-    
+
     switch (af) {
     case AF_INET:
         addrsize = (INT)sizeof(sa);
@@ -699,7 +699,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
     size_t ressize;
     DWORD tressize = ADDR_MAXLEN-1;
     const char *res;
-    
+
     switch (af) {
     case AF_INET:
         memset(&sa, 0, sizeof(sa));
@@ -729,7 +729,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
 #undef ADDR_MAXLEN
 }
 #endif /*GAUCHE_WINDOWS*/
-                          
+
 /*==================================================================
  * Initialization
  */

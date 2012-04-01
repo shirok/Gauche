@@ -2,7 +2,7 @@
 ;;; peg.scm - Parser Expression Grammar Parser
 ;;;
 ;;;   Copyright (c) 2006 Rui Ueyama (rui314@gmail.com)
-;;;   Copyright (c) 2008-2011  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2008-2012  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -47,7 +47,7 @@
           peg-run-parser peg-parse-string peg-parse-port
           peg-parse1 ;experimental
           peg-parser->generator ;experimental
-          $return $fail $expect 
+          $return $fail $expect
           $do $<< $try $seq $or $fold-parsers $fold-parsers-right
           $many $many1 $skip-many
           $repeat $optional
@@ -58,7 +58,7 @@
           $lazy
 
           $s $c $y
-          $string $string-ci 
+          $string $string-ci
           $char $one-of $none-of $many-chars
           $satisfy
 

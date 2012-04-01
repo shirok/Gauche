@@ -1,5 +1,5 @@
 #!/bin/sh
-# TODO: once we implement scsh-ish process utility, rewrite 
+# TODO: once we implement scsh-ish process utility, rewrite
 # this as Gauche script!
 
 TGZ_DEST="$HOME/src/practical-scheme.net/vault/"
@@ -18,7 +18,7 @@ maintainer_clean () {
   done
 
   find . -name '*~' -exec rm {} \;
-  
+
   rm -f DIST_EXCLUDE_X
   cat DIST_EXCLUDE > DIST_EXCLUDE_X
 }

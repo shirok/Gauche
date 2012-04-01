@@ -9,10 +9,10 @@
 ;; or assist in its implementation may be prepared, copied, published and
 ;; distributed, in whole or in part, without restriction of any kind,
 ;  provided that the above copyright notice and this paragraph are
-;; included on all such copies and derivative works. However, this 
-;; document itself may not be modified in any way, such as by removing 
-;; the copyright notice or references to the Scheme Request For 
-;; Implementation process or editors, except as needed for the purpose 
+;; included on all such copies and derivative works. However, this
+;; document itself may not be modified in any way, such as by removing
+;; the copyright notice or references to the Scheme Request For
+;; Implementation process or editors, except as needed for the purpose
 ;; of developing SRFIs in which case the procedures for copyrights
 ;; defined in the SRFI process must be followed, or as required to
 ;; translate it into languages other than English.
@@ -21,9 +21,9 @@
 ;; revoked by the authors or their successors or assigns.
 ;;
 ;; This document and the information contained herein is provided on an
-;; "AS IS" basis and THE AUTHOR AND THE SRFI EDITORS DISCLAIM ALL 
+;; "AS IS" basis and THE AUTHOR AND THE SRFI EDITORS DISCLAIM ALL
 ;; WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY
-;; WARRANTY THAT THE USE OF THE INFORMATION HEREIN WILL NOT INFRINGE 
+;; WARRANTY THAT THE USE OF THE INFORMATION HEREIN WILL NOT INFRINGE
 ;; ANY RIGHTS OR ANY IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS
 ;; FOR A PARTICULAR PURPOSE
 

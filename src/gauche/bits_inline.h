@@ -1,12 +1,12 @@
 /*
  * gauche/bits_inline.h - Some speed-sensitive bit-manipulation routines
  *
- *   Copyright (c) 2007-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2007-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -76,7 +76,7 @@ static inline int Scm__LowestBitNumber(u_long word)
 {
     int n = 0;
     word ^= (word&(word-1));    /* leave the rightmost '1' only */
-    
+
 #if SIZEOF_LONG == 4
     if (word&0xffff0000) n += 16;
     if (word&0xff00ff00) n += 8;

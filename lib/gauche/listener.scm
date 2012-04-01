@@ -1,23 +1,23 @@
 ;;;
 ;;; gauche/listener - listerner utility
-;;;  
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 ;; provides functions useful to implement a repl listener
 
@@ -103,7 +103,7 @@
 ;;
 ;;  - Errors during fatal handler or finalizer are "passed through"
 ;;    to the caller of the listener handler.  Usually it has a
-;;    fatal consequence.  The fatal-handler and finalizer should 
+;;    fatal consequence.  The fatal-handler and finalizer should
 ;;    be written so that foreseeable errors are properly handled
 ;;    within them.
 ;;
@@ -122,7 +122,7 @@
       (guard (e (else (return e)))
         (or (listener-fatal self e) (listener-finalize self))
         (return #f)))
-    
+
     (let1 chunk (guard (e (else (abort e)))
                   (read-block 8192 (ref self 'input-port)))
       (when (eof-object? chunk) (finish))
@@ -148,7 +148,7 @@
                        (lambda ()
                          (let1 expr ((ref self 'reader))
                            (when (eof-object? expr) (finish))
-                           (receive r 
+                           (receive r
                                ((ref self 'evaluator) expr
                                 (ref self 'environment))
                              (guard (e ((sigpipe? e) (abort e)))
@@ -175,7 +175,7 @@
 ;; Note that this test doesn't rule out all invalid sexprs.
 ;;
 ;; NB: This should eventually be folded into build-in read, so that
-;; any nontrivial syntax can be handled consistently. 
+;; any nontrivial syntax can be handled consistently.
 
 (define (complete-sexp? str)
   (with-input-from-string str
@@ -215,7 +215,7 @@
                                   (read-block 10)))
                          (else (rec closer)))))
                 (else (rec closer)))))
-      
+
       (define (rec-escaped closer)
         (let1 ch (read-char)
           (cond ((eof-object? ch) #f)

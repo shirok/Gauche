@@ -1,12 +1,12 @@
 /*
  * load.c - load a program
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -76,7 +76,7 @@ static struct {
     ScmParameterLoc load_main_script;  /* yields #t during loading main script.
                                           see SCM_LOAD_MAIN_SCRIPT flag
                                           in load.h. */
-    
+
     /* Dynamic linking */
     ScmObj dso_suffixes;
     dlobj *dso_list;              /* List of dynamically loaded objects. */
@@ -122,7 +122,7 @@ void Scm_LoadPacketInit(ScmLoadPacket *p)
 /*--------------------------------------------------------------------
  * Scm_LoadFromPort
  * Scm_VMLoadFromPort
- * 
+ *
  *   The most basic function in the load()-family.  Read an expression
  *   from the given port and evaluates it repeatedly, until it reaches
  *   EOF.  Then the port is closed.   The port is locked by the calling
@@ -271,7 +271,7 @@ int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
     }
 
     args = Scm_Cons(SCM_OBJ(port), args);
-    
+
     if (flags&SCM_LOAD_PROPAGATE_ERROR) {
         Scm_ApplyRec(load_from_port, args);
         if (packet) packet->loaded = TRUE;
@@ -291,7 +291,7 @@ int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
  * Scm_VMLoad
  *
  *  Scheme's load().
- * 
+ *
  *  filename   - name of the file.  can be sans suffix.
  *  load_paths - list of pathnames or #f.   If #f, system's load path
  *               is used.
@@ -355,7 +355,7 @@ int Scm_Load(const char *cpath, u_long flags, ScmLoadPacket *packet)
     ScmObj opts = SCM_NIL;
     ScmEvalPacket eresult;
     SCM_BIND_PROC(load_proc, "load", Scm_SchemeModule());
-    
+
     if (flags&SCM_LOAD_QUIET_NOFILE) {
         opts = Scm_Cons(key_error_if_not_found, Scm_Cons(SCM_FALSE, opts));
     }
@@ -470,7 +470,7 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
     ADD_LIST_ITEM(ldinfo.dynload_path_rec->value, dpath, afterp);
     r = ldinfo.load_path_rec->value;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
-    
+
     return r;
 }
 
@@ -663,7 +663,7 @@ static const char *derive_dynload_initfn(const char *filename)
     return name;
 }
 
-/* find dlobj_initfn from the given dlobj with name. 
+/* find dlobj_initfn from the given dlobj with name.
    Assuming the caller holding the lock of OBJ. */
 static dlobj_initfn *find_initfn(dlobj *dlo, const char *name)
 {
@@ -677,7 +677,7 @@ static dlobj_initfn *find_initfn(dlobj *dlo, const char *name)
     fns->initialized = FALSE;
     fns->next = dlo->initfns;
     dlo->initfns = fns;
-    return fns;    
+    return fns;
 }
 
 /* From the given DSO name, find out the path of the actual DSO */
@@ -758,7 +758,7 @@ static void call_initfn(dlobj *dlo, const char *name)
             }
         }
     }
-    
+
     /* Call initialization function.  note that there can be arbitrary
        complex stuff done within func(), including evaluation of
        Scheme procedures and/or calling dynamic-load for other
@@ -847,7 +847,7 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, u_long flags/*reserved*/)
  *   there's no 'provide' form in X.scm, the feature "X" is automatically
  *   provided upon a successful loading of X.scm.
  *
- *   If a 'provide' form appears in X.scm, the autoprovide feature is 
+ *   If a 'provide' form appears in X.scm, the autoprovide feature is
  *   turned off.  It is allowed that X.scm provides features other than
  *   "X".   As a special case, (provide #f) causes the autoprovide feature
  *   to be turned of without providing any feature.
@@ -889,7 +889,7 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
         p = providing;
         SCM_ASSERT(SCM_PAIRP(p) && SCM_PAIRP(SCM_CDR(p)));
         if (SCM_CADR(p) == SCM_OBJ(vm)) { loop = TRUE; break; }
-        
+
         for (;;) {
             q = Scm_Assq(SCM_CDR(p), ldinfo.waiting);
             if (SCM_FALSEP(q)) break;
@@ -917,7 +917,7 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
             return -1;
         }
     }
-        
+
     if (!SCM_FALSEP(provided)) return 0; /* no work to do */
     r = Scm_Load(Scm_GetStringConst(SCM_STRING(feature)), 0, &xresult);
     if (packet) packet->exception = xresult.exception;
@@ -937,7 +937,7 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
     p = Scm_Assoc(feature, ldinfo.providing, SCM_CMP_EQUAL);
     ldinfo.providing = Scm_AssocDeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
     /* `Autoprovide' feature */
-    if (SCM_NULLP(SCM_CDDR(p)) 
+    if (SCM_NULLP(SCM_CDDR(p))
         && SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL))) {
         ldinfo.provided = Scm_Cons(feature, ldinfo.provided);
     }
@@ -951,7 +951,7 @@ ScmObj Scm_Provide(ScmObj feature)
 {
     ScmObj cp;
     ScmVM *self = Scm_VM();
-    
+
     if (!SCM_STRINGP(feature)&&!SCM_FALSEP(feature)) {
         SCM_TYPE_ERROR(feature, "string");
     }
@@ -1055,7 +1055,7 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
     int circular = FALSE;
     ScmModule *prev_module;
     ScmVM *vm = Scm_VM();
-    
+
     /* shortcut in case if somebody else already did the job. */
     if (adata->loaded) return adata->value;
 
@@ -1100,7 +1100,7 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
         /* ok, somebody did the work for me.  just use the result. */
         return adata->value;
     }
-    
+
     if (circular) {
         /* Since we have already checked recursive loading, it isn't normal
            if we reach here.  Right now I have no idea how this happens, but
@@ -1116,7 +1116,7 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
         vm->module = adata->module;
         Scm_Require(SCM_OBJ(adata->path), SCM_LOAD_PROPAGATE_ERROR, NULL);
         vm->module = prev_module;
-    
+
         if (adata->import_from) {
             /* autoloaded file defines import_from module.  we need to
                import the binding individually. */
@@ -1225,7 +1225,7 @@ void Scm__InitLoad(void)
     key_main_script = SCM_MAKE_KEYWORD("main-script");
     key_paths = SCM_MAKE_KEYWORD("paths");
     key_environment = SCM_MAKE_KEYWORD("environment");
-    
+
 #define DEF(rec, sym, val) \
     rec = SCM_GLOC(Scm_Define(m, SCM_SYMBOL(sym), val))
 

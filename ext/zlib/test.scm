@@ -86,7 +86,7 @@
 (test* "<deflating-port>" <deflating-port>
        (class-of (open-deflating-port (open-output-string))))
 (test* "<deflating-port>'s CPL" '(<deflating-port> <port> <top>)
-       (map class-name 
+       (map class-name
             (class-precedence-list
              (class-of (open-deflating-port (open-output-string))))))
 
@@ -148,7 +148,7 @@
 
 (test* "owner? keyword" #f
        (let1 p (open-output-string)
-         (close-output-port (open-deflating-port p)) 
+         (close-output-port (open-deflating-port p))
          (port-closed? p)))
 
 (test* "owner? keyword" #t
@@ -225,7 +225,7 @@
 (test* "<inflating-port>" <inflating-port>
        (class-of (open-inflating-port (open-input-string ""))))
 (test* "<inflating-port>'s CPL" '(<inflating-port> <port> <top>)
-       (map class-name 
+       (map class-name
             (class-precedence-list
              (class-of (open-inflating-port (open-input-string ""))))))
 

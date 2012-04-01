@@ -98,7 +98,7 @@ void MD5_Update(MD5_CTX *ctx, unsigned char const *buf, unsigned len)
 }
 
 /*
- * Final wrapup - pad to 64-byte boundary with the bit pattern 
+ * Final wrapup - pad to 64-byte boundary with the bit pattern
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
 void MD5_Final(unsigned char digest[16], MD5_CTX *ctx)

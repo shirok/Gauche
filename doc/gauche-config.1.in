@@ -8,7 +8,7 @@ gauche-config \- retrieve configuration parameters of Gauche
 .br
 .sp 0.3
 .SH DESCRIPTION
-.I Gauche-config 
+.I Gauche-config
 displays various parameters specified at the configuration time
 of the Gauche Scheme implementation.  It can be used in Makefile
 and other configuration scripts that uses Gauche.
@@ -27,7 +27,7 @@ configuration; just type `gauche-config --reconfigure | sh'.
 .SS Parameters to compile an application using Gauche
 .TP
 .B -I, -L, -l
-List of "-I" options (include directories), 
+List of "-I" options (include directories),
 "-L" options (library directories), and
 "-l" options (libraries) for the compiler
 which are required to compile applications that links Gauche library.
@@ -77,12 +77,12 @@ and '.exe' on Windows.  Note that '.' is a part of suffix in
 this option, as opposed to other -suffix options.
 .TP
 .B --so-suffix
-Extension of the dynamically loadable (dlopen-able) modules 
+Extension of the dynamically loadable (dlopen-able) modules
 (e.g. 'so' or 'dll').
-.TP 
+.TP
 .B --so-cflags
 Flags required to compile shared object.
-.TP 
+.TP
 .B --so-ldflags
 Flags required to link a gauche extension.
 .TP

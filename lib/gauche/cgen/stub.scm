@@ -1,23 +1,23 @@
 ;;;
 ;;; gauce.cgen.stub - stub forms parsing and code generation
-;;;  
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 (define-module gauche.cgen.stub
   (use srfi-1)
@@ -64,7 +64,7 @@
 ;;
 ;;      Create a subr function.
 ;;
-;;      <args> specifies arguments.   
+;;      <args> specifies arguments.
 ;;
 ;;       (<arg> ... [:rest <var>])
 ;;          Each <arg> is variable name or var::type, specifies required
@@ -88,7 +88,7 @@
 ;;          argument in the ScmObj array.  <max> specifies the maximum number
 ;;          of optional arguments that can be passed in the array form.
 ;;          If more than <max> args are given, a list of excessive arguments
-;;          are passed to the rest <var> if it is specified, or 
+;;          are passed to the rest <var> if it is specified, or
 ;;
 ;;      <Rettype> specifies the return type of SUBR.
 ;;
@@ -604,7 +604,7 @@
     (errorf <cgen-stub-error> "bad argument in argspec: ~a in ~a" arg name))
 
   ;; support old &-notation.  will fade away.
-  (define (xlate-old-lambda-keywords specs) 
+  (define (xlate-old-lambda-keywords specs)
     (map (^s (cond [(assq s '((&optional . :optional) (&keyword . :key)
                               (&rest . :rest)
                               (&allow-other-keys . :allow-other-keys)))
@@ -1055,7 +1055,7 @@
   (p "    "(~ arg'scm-name)" = "(get-arg-default arg)";")
   (p "  }")
   (emit-arg-unbox-rec arg))
- 
+
 (define-method emit-arg-unbox ((arg <rest-arg>))
   (p "  "(~ arg'scm-name)" = SCM_SUBRARGS[SCM_ARGCNT-1];")
   (emit-arg-unbox-rec arg))
@@ -1067,7 +1067,7 @@
 (define (get-arg-default arg)
   (cond [(~ arg'default) => cgen-cexpr]
         [else "SCM_UNBOUND"]))
- 
+
 (define (emit-keyword-args-unbox cproc)
   (let ([args (~ cproc'keyword-args)]
         [other-keys? (~ cproc'allow-other-keys?)])
@@ -1217,7 +1217,7 @@
            (p "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
     (p "  ScmObj SCM_SUBRARGS["(length (~ method'args))"];"))
   (p "  int SCM_i;")
-  (let1 k (+ (length (~ method'args)) 
+  (let1 k (+ (length (~ method'args))
              (if (~ method'have-rest-arg?) -1 0))
     (p "  for (SCM_i=0; SCM_i<"k"; SCM_i++) {")
     (p "    SCM_SUBRARGS[SCM_i] = SCM_ARGREF(SCM_i);")
@@ -1298,7 +1298,7 @@
 ;;                  [:c-spec <c-spec>]
 ;;                  [:getter <proc-spec>]
 ;;                  [:setter <proc-spec>])
-;;                  
+;;
 ;; <proc-spec> := <c-code> | (c <c-name>) | #f | #t
 ;;
 ;; <cpa> := (<string> ...)
@@ -1361,7 +1361,7 @@
      [(lset-difference eqv? quals '(:built-in :base :private)) pair?
       => (cut error <cgen-stub-error> "unknown define-cclass qualifier(s)" <>)])
     (match rest
-      [(c-type c-name cpa slot-spec . more) 
+      [(c-type c-name cpa slot-spec . more)
        (check-arg string? c-name)
        (check-arg list? cpa)
        (check-arg list? slot-spec)
@@ -1534,7 +1534,7 @@
 
 ;;===================================================================
 ;; Foreign pointers
-;;  NOT FINISHED YET.  
+;;  NOT FINISHED YET.
 
 ;; (define-class <c-ptr> (<stub>)
 ;;   ((c-type     :init-keyword :c-type)

@@ -16,7 +16,7 @@ XCLEANFILES = gauche--syslog.c $(SCMFILES)
 
 all : $(LIBFILES)
 
-gauche--syslog.$(SOEXT) : $(OBJECTS) 
+gauche--syslog.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--syslog.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 gauche--syslog.c syslog.sci : syslog.scm

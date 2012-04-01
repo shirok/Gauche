@@ -1,23 +1,23 @@
 ;;;
 ;;; gauche.cgen.precomp - Precompile Scheme into C data
-;;;  
-;;;   Copyright (c) 2004-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2004-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 ;;; Precompiler takes compiled VM instruction array and dumps it
 ;;; as C code.
@@ -259,7 +259,7 @@
 ;;
 
 ;; A pair of the name of the generated DSO (w/o extension) and the name
-;; of the initializer function.  
+;; of the initializer function.
 (define dso-name (make-parameter #f))
 
 ;; keep the list of exported bindings (or #t if export-all)
@@ -284,7 +284,7 @@
 ;;================================================================
 ;; Bridge to the internal stuff
 ;;
-  
+
 ;; compatibility kludge
 (define compile       (with-module gauche.internal compile))
 (define %procedure-inliner
@@ -409,7 +409,7 @@
 ;;       compiled by the host compiler.
 ;;    2. use vm-find-insn-info (in gauche.vm.insn module) to map
 ;;       mnemonics to the target compiler's code.
-;;   
+;;
 ;;   For this scheme to work, the following conditions should be satisfied.
 ;;
 ;;    a. gauche.vm.insn should be the one generated from the same
@@ -614,7 +614,7 @@
                (memq name (private-macros-to-keep)))
        (write-ext-module `(define-syntax . ,form)))]
     [_ #f])
-  (cons '(with-module gauche define-syntax) form))  
+  (cons '(with-module gauche define-syntax) form))
 
 (define (handle-define-constant form)
   (match form
@@ -631,7 +631,7 @@
 
 ;;================================================================
 ;; Compiler-specific literal handling definitions
-;;       
+;;
 (define-cgen-literal <cgen-scheme-code> <compiled-code>
   ((code-name   :init-keyword :code-name)
    (code-vector-c-name :init-keyword :code-vector-c-name)

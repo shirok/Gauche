@@ -1,23 +1,23 @@
 ;;;
 ;;; gauche.record - record implementation
-;;;  
-;;;   Copyright (c) 2010-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2010-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 (define-module gauche.record
   (use gauche.sequence)
@@ -296,7 +296,7 @@
       (getter-with-setter
        (^o (vector-ref o k))
        (^(o v) (vector-set! o k v))))))
-       
+
 (define-method rtd-mutator ((rtd <record-meta>) field)
   (receive (k immutable?) (%get-slot-index rtd field #t)
     (when immutable?
@@ -367,7 +367,7 @@
                                (,%mtor ,typename ',f)))]
                   [_ '()])
                 field-specs))
-    
+
   (receive (typename parent) (match type-spec
                                [((? id? name) parent) (values name parent)]
                                [(? id? name) (values name #f)]

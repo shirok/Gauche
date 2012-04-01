@@ -19,7 +19,7 @@ OBJECTS = crypt--bcrypt.$(OBJEXT) \
 
 all : $(LIBFILES)
 
-crypt--bcrypt.$(SOEXT) : $(OBJECTS) 
+crypt--bcrypt.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) crypt--bcrypt.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 bcrypt.sci crypt--bcrypt.c : bcrypt.scm

@@ -29,7 +29,7 @@
       (walker (lambda (n) (if (leaf? n) (proc n) (push! branches n))) node)
       (for-each rec (reverse branches))))
   (if (leaf? tree) (proc tree) (rec tree)))
-                    
+
 (define (tree-fold-bf tree proc knil leaf? folder)
   (define (rec node r)
     (let* ((branches '())
@@ -40,5 +40,5 @@
                       r node)))
       (fold rec r (reverse branches))))
   (if (leaf? tree) (proc tree knil) (rec tree knil)))
-                    
+
 

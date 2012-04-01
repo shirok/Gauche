@@ -1,12 +1,12 @@
 /*
  * proc.c - Procedures
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -79,7 +79,7 @@ ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env)
     c->code = code;
     c->env = env;
     SCM_PROCEDURE(c)->inliner = SCM_COMPILED_CODE(code)->intermediateForm;
-    
+
     return SCM_OBJ(c);
 }
 
@@ -139,8 +139,8 @@ ScmObj Scm_NullProc(void)
  * The # of given argument is indicated by NGIVEN.
  *
  * Note that some of the given arguments are already folded into a list
- * (in case we are called via APPLY).   
- *  
+ * (in case we are called via APPLY).
+ *
  *   when FOLDLEN < 0            when FOLDLEN >= 0
  *    N = NGIVEN-1                 N = NGIVEN-1
  *                                 K = NGIVEN-1-FOLDLEN
@@ -173,7 +173,7 @@ static ScmObj kick_curried(ScmObj *args, int nargs, void *data)
        contains folded arguments, and Scm_VMApply causes to fold the
        arguments again.
     */
-    
+
     switch (p->ngiven + nargs) {
     case 2:
         return Scm_VMApply2(proc, p->argv[0], args[0]);

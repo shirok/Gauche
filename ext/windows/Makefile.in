@@ -16,7 +16,7 @@ OBJECTS = init.$(OBJEXT) windows.$(OBJEXT) console.$(OBJEXT)
 
 all : $(LIBFILES)
 
-os--windows.$(SOEXT) : $(OBJECTS) 
+os--windows.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) os--windows.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 windows.c : windows.stub

@@ -16,7 +16,7 @@ OBJECTS = mt-random.$(OBJEXT) mt-lib.$(OBJEXT)
 
 all : $(LIBFILES)
 
-math--mt-random.$(SOEXT) : $(OBJECTS) 
+math--mt-random.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) math--mt-random.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 mt-lib.c : mt-lib.stub

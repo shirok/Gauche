@@ -11,12 +11,12 @@ SCMFILES = peg.sci
 
 OBJECTS = parser--peg.$(OBJEXT)
 
-GENERATED = Makefile 
+GENERATED = Makefile
 XCLEANFILES = peg.sci *.c
 
 all : $(LIBFILES)
 
-parser--peg.$(SOEXT) : $(OBJECTS) 
+parser--peg.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) parser--peg.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 parser--peg.c peg.sci : peg.scm

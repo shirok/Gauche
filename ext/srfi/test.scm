@@ -807,7 +807,7 @@
                             (current-time time-monotonic))))
 (test* "time comparison"
        '(#t #f #f
-            #t #f #t #f #f 
+            #t #f #t #f #f
             #t #f #t #f #t
             #f #t #f #t #f
             #f #t #f #t #t)
@@ -879,7 +879,7 @@
                  (+ (slot-ref d1 'yday) 1)
                  (slot-ref d1 'wday)))
          (let1 d0  (time-utc->date now)
-           (list (date-year d0) 
+           (list (date-year d0)
                  (date-month d0)
                  (date-day d0)
                  (date-hour d0)
@@ -915,7 +915,7 @@
     (when (> n 500000000)
       (add-duration! time (make-time 'time-duration 0 1)))
     time))
-  
+
 (let1 t0 (make-time time-utc 0 1022191954)
   (test "julian day number, via time-utc"
         t0
@@ -1069,7 +1069,7 @@
               (vector-reverse-copy '#(a b c d e) 2 1))
 
 
-(assert-equal "vector-append 0" 
+(assert-equal "vector-append 0"
               (vector-append '#(x) '#(y))
               '#(x y))
 (assert-equal "vector-append 1"
@@ -1106,40 +1106,40 @@
 (assert-equal "vector-empty? 0" (vector-empty? '#()) #t)
 (assert-equal "vector-empty? 1" (vector-empty? '#(a)) #f)
 
-(assert-equal "vector= 0" 
+(assert-equal "vector= 0"
               (vector= eq? '#(a b c d) '#(a b c d))
               #t)
-(assert-equal "vector= 1" 
+(assert-equal "vector= 1"
               (vector= eq? '#(a b c d) '#(a b c d) '#(a b c d))
               #t)
-(assert-equal "vector= 2" 
+(assert-equal "vector= 2"
               (vector= eq? '#() '#())
               #t)
-(assert-equal "vector= 3" 
+(assert-equal "vector= 3"
               (vector= eq?)
               #t)
-(assert-equal "vector= 4" 
+(assert-equal "vector= 4"
               (vector= eq? '#(a))
               #t)
-(assert-equal "vector= 5" 
+(assert-equal "vector= 5"
               (vector= eq? '#(a b c d) '#(a b d c))
               #f)
-(assert-equal "vector= 6" 
+(assert-equal "vector= 6"
               (vector= eq? '#(a b c d) '#(a b c d) '#(a b d c))
               #f)
-(assert-equal "vector= 7" 
+(assert-equal "vector= 7"
               (vector= eq? '#(a b c) '#(a b d c))
               #f)
-(assert-equal "vector= 8" 
+(assert-equal "vector= 8"
               (vector= eq? '#() '#(a b d c))
               #f)
-(assert-equal "vector= 9" 
+(assert-equal "vector= 9"
               (vector= eq? '#(a b d c) '#())
               #f)
-(assert-equal "vector= 10" 
+(assert-equal "vector= 10"
               (vector= equal? '#("a" "b" "c") '#("a" "b" "c"))
               #t)
-(assert-error "vector= 11" 
+(assert-error "vector= 11"
               (vector= equal? '#("a" "b" "c") '("a" "b" "c")))
 
 ;;;
@@ -1590,7 +1590,7 @@
 (assert-error "list->vector e0" (list->vector '(0 1 2 3) 0 5))
 (assert-error "list->vector e1" (list->vector '(0 1 2 3) -1 1))
 (assert-error "list->vector e2" (list->vector '(0 1 2 3) 2 1))
-                
+
 (assert-equal "reverse-list->vector 0"
               (reverse-list->vector '(a b c))
               '#(c b a))

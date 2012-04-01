@@ -1,23 +1,23 @@
 ;;;
 ;;; util.sparse - sparse data structures
-;;;  
-;;;   Copyright (c) 2007-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2007-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 
 (define-module util.sparse
@@ -112,7 +112,7 @@
          (,set sv k (cdr p))
          (car p))
        )))
-  
+
 ;;===============================================================
 ;; Sparse hashtables
 ;;
@@ -135,7 +135,7 @@
 
  (define-cproc sparse-table-num-entries (st::<sparse-table>) ::<ulong>
    (result (-> st numEntries)))
- 
+
  (define-cproc sparse-table-ref (st::<sparse-table> key :optional fallback)
    (let* ([r (SparseTableRef st key fallback)])
      (when (SCM_UNBOUNDP r)
@@ -156,7 +156,7 @@
    SparseTableClear)
 
  (define-cproc sparse-table-copy (sv::<sparse-table>) SparseTableCopy)
- 
+
  (define-cfn sparse-table-iter (args::ScmObj* nargs::int data::void*) :static
    (let* ([iter::SparseTableIter* (cast SparseTableIter* data)]
           [r (SparseTableIterNext iter)]
@@ -216,7 +216,7 @@
 
  (define-cproc sparse-vector-num-entries (sv::<sparse-vector>) ::<ulong>
    (result (-> sv numEntries)))
- 
+
  (define-cproc sparse-vector-ref
    (sv::<sparse-vector> index::<ulong> :optional fallback)
    (let* ([r (SparseVectorRef sv index fallback)])
@@ -261,7 +261,7 @@
      (SparseVectorIterInit iter sv)
      (result
       (Scm_MakeSubr sparse-vector-iter iter 1 0 '"sparse-vector-iterator"))))
- 
+
  (define-cproc %sparse-vector-dump (sv::<sparse-vector>) ::<void>
    SparseVectorDump)
  )

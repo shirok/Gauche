@@ -1,23 +1,23 @@
 ;;;
 ;;; console.stub - console-related apis
-;;;  
-;;;   Copyright (c) 2010-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2010-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 ;; NB: It appears that, on MinGW, you cannot obtain an usable console
 ;; output handle by GetStdHandle() if you allocated a console by
@@ -195,7 +195,7 @@
   "ScmWinConsoleScreenBufferInfo*" "CONSOLE_SCREEN_BUFFER_INFO"
   "SCM_WIN_CONSOLE_SCREEN_BUFFER_INFO_P"
   "SCM_WIN_CONSOLE_SCREEN_BUFFER_INFO")
-  
+
 (define-cclass <win:console-screen-buffer-info>
   "ScmWinConsoleScreenBufferInfo*" "Scm_WinConsoleScreenBufferInfoClass" ()
   ((size.x :c-name "info.dwSize.X" :type <short>)
@@ -364,7 +364,7 @@
                                        (cast LPWORD (SCM_UVECTOR_ELEMENTS buf))
                                        len coord (& nread)))
     (result nread)))
-         
+
 (define-cproc sys-read-console-output-character (handle len::<ushort>
                                                         x::<short> y::<short>)
   ::<const-cstring>

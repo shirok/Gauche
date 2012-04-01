@@ -16,7 +16,7 @@ OBJECTS = binary.$(OBJEXT) binarylib.$(OBJEXT)
 
 all : $(LIBFILES)
 
-binary--io.$(SOEXT) : $(OBJECTS) 
+binary--io.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) binary--io.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 binarylib.c : binarylib.stub

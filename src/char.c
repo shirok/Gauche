@@ -1,12 +1,12 @@
 /*
  * char.c - character and character set operations
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -221,7 +221,7 @@ static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
             charset_print_ch(out, code, first);
             prev = code;
             first = FALSE;
-        } 
+        }
         else if (!MASK_ISSET(cs, code) && prev >= 0) {
             if (code - prev > 1) {
                 if (code - prev > 2) Scm_Printf(out, "-");
@@ -315,7 +315,7 @@ ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int ndigits,
                                 char *buf, int *nread)
 {
     int i, c, val = 0, dig;
-    
+
     for (i = 0; i < ndigits; i++) {
         SCM_GETC(c, port);
         if (c == EOF) break;
@@ -342,7 +342,7 @@ static int charset_compare(ScmObj x, ScmObj y, int equalp)
 {
     ScmCharSet *xx = SCM_CHAR_SET(x);
     ScmCharSet *yy = SCM_CHAR_SET(y);
-    
+
     if (equalp) {
         return (Scm_CharSetEq(xx, yy)? 0 : 1);
     } else {
@@ -400,7 +400,7 @@ int Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y)
 ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
 {
     ScmDictEntry *e, *lo, *hi;
-    
+
     if (to < from) return SCM_OBJ(cs);
     if (from < SCM_CHAR_SET_SMALL_CHARS) {
         if (to < SCM_CHAR_SET_SMALL_CHARS) {
@@ -446,7 +446,7 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
     ScmDictEntry *e;
 
     if (dst == src) return SCM_OBJ(dst);  /* precaution */
-    
+
     Scm_BitsOperate(dst->small, SCM_BIT_IOR, dst->small, src->small,
                     0, SCM_CHAR_SET_SMALL_CHARS);
     Scm_TreeIterInit(&iter, &src->large, NULL);
@@ -617,7 +617,7 @@ static ScmChar read_charset_xdigits(ScmPort *port, int ndigs, int key)
    charset (except the complimenting caret) is taken as a literal
    character, instead of terminating the charset.  It should be TRUE
    during reading the regexp syntax for compatibility to POSIX regexp.
-   
+
    If complement_p is not NULL, the location get a boolean value of
    whether complement character (caret in the beginning) appeared or not.
    In that case, the returned charset is not complemented. */
@@ -867,7 +867,7 @@ const ScmCharCaseMap *Scm__CharCaseMap(ScmChar ch,
     if (ch < 0x10000) {
         int subtable = casemap_000[(ch >> 8) & 0xff];
         unsigned short cmap;
-        
+
         if (subtable == 255) return &casemap_identity;
 
         cmap = casemap_subtable[subtable][(unsigned char)(ch & 0xff)];

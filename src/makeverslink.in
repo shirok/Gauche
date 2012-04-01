@@ -11,8 +11,8 @@
 # for the backward comatibility.  This feature should be removed on 1.0
 # release.
 
-case "$TARGETLIB" in 
-  "@*") 
+case "$TARGETLIB" in
+  "@*")
     exit 0;;
 esac
 

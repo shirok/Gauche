@@ -126,7 +126,7 @@
   (define (t-utf16->ucs4 from strictness)
     (receive (ucs4 rest) (utf16->ucs4 from strictness)
       (if (eof-object? ucs4) 'eof ucs4)))
-  
+
   (let-syntax ([t (syntax-rules ()
                     [(t fn from to strictness)
                      (test* (format "~s[~a] ~a -> ~a" 'fn strictness

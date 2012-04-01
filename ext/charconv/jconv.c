@@ -1,12 +1,12 @@
 /*
  * jconv.c - alternative japanese code conversion routines
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -93,7 +93,7 @@
  */
 
 /* Shift_JISX0213 -> EUC-JP
- * 
+ *
  * Mapping anormalities
  *
  *   0x5c, 0x7e : Shift_JISX0213 mapping table maps 0x5c to U+00A5
@@ -183,7 +183,7 @@ static size_t sjis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
             m = 2;
             e1 = cvt[(s1-0xf0)*2+((s2 < 0x9f)? 1 : 0)];
         }
-        
+
         if (s2 < 0x7f) {
             e2 = s2 - 0x3f + 0xa0;
         } else if (s2 < 0x9f) {
@@ -236,7 +236,7 @@ static size_t sjis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
         *outchars = 2;
         return 1;
     }
-    
+
     /* s1 == 0x80 or 0xa0 */
     outptr[0] = SUBST1_CHAR;
     *outchars = 1;
@@ -244,7 +244,7 @@ static size_t sjis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
 }
 
 /* EUC_JISX0213 -> Shift_JIS
- * 
+ *
  * Mapping anormalities
  *
  *   0x80--0xa0 except 0x8e and 0x8f : C1 region.
@@ -264,7 +264,7 @@ static size_t sjis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
  *   For double or trible-byte character, subsequent byte has to be in
  *   the range between 0xa1 and 0xfe inclusive.  If not, it is replaced
  *   for the substitution character.
- *   
+ *
  *   If the first byte is in the range of 0xa1--0xfe, two bytes (e1, e2)
  *   is mapped to SJIS (s1, s2) by:
  *
@@ -336,7 +336,7 @@ static size_t eucj2sjis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
         /* triple byte char */
         unsigned char s1, s2;
         unsigned char cvt[] = { 0xf0, 0, 0xf1, 0xf1, 0xf2, 0, 0, 0xf0, 0, 0, 0, 0xf2, 0xf3, 0xf3, 0xf4 };
-        
+
         INCHK(3);
         OUTCHK(2);
         e1 = inptr[1];
@@ -467,7 +467,7 @@ static inline size_t utf2euc_2(ScmConvInfo *cinfo, unsigned char u0,
 {
     unsigned char u1;
     unsigned short *etab = NULL;
-    
+
     INCHK(2);
     u1 = (unsigned char)inptr[1];
     if (u1 < 0x80 || u1 >= 0xc0) return ILLEGAL_SEQUENCE;
@@ -517,7 +517,7 @@ static inline size_t utf2euc_3(ScmConvInfo *cinfo, unsigned char u0,
     INCHK(3);
     u1 = (unsigned char)inptr[1];
     u2 = (unsigned char)inptr[2];
-    
+
     switch (u0) {
     case 0xe1: /* special case : there's only 6 chars */
         {
@@ -571,7 +571,7 @@ static inline size_t utf2euc_4(ScmConvInfo *cinfo, unsigned char u0,
     u1 = (unsigned char)inptr[1];
     u2 = (unsigned char)inptr[2];
     u3 = (unsigned char)inptr[3];
-    
+
     switch (u1) {
     case 0xa0: tab = utf2euc_f0_a0; break;
     case 0xa1: tab = utf2euc_f0_a1; break;
@@ -733,7 +733,7 @@ static size_t eucj2utf(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
 {
     unsigned char e0, e1, e2;
     unsigned int ucs;
-    
+
     e0 = (unsigned char)inptr[0];
     if (e0 < 0xa0) {
         if (e0 == 0x8e) {
@@ -747,7 +747,7 @@ static size_t eucj2utf(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
         else if (e0 == 0x8f) {
             /* JIS X 0213 plane 2 */
             int index;
-            
+
             INCHK(3);
             e1 = (unsigned char)inptr[1];
             e2 = (unsigned char)inptr[2];
@@ -811,7 +811,7 @@ static size_t eucj2utf(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
  *  <ESC> $ ( C   (KS X 1001:1992) unsupported
  *  <ESC> . A     (ISO8859-1:1998) unsupported
  *  <ESC> . F     (ISO8859-7:1998) unsupported
- * 
+ *
  * If other escape sequence is seen, the converter returns ILLEGAL_SEQUENCE.
  *
  * JIS8 kana is allowed.
@@ -897,7 +897,7 @@ static size_t jis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
 {
     unsigned char j0, j1;
     size_t inoffset = 0, r;
-    
+
     j0 = inptr[inoffset];
     /* skip escape sequence */
     while (j0 == 0x1b) {
@@ -911,7 +911,7 @@ static size_t jis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
         }
         j0 = inptr[inoffset];
     }
-    
+
     if (j0 == '\n' || j0 == '\r') {
         cinfo->istate = JIS_ASCII;
         outptr[0] = j0;
@@ -1227,7 +1227,7 @@ static size_t jconv_ident(ScmConvInfo *info, const char **iptr,
         return OUTPUT_NOT_ENOUGH;
     }
 }
-   
+
 /* case (2) or (3) */
 static size_t jconv_1tier(ScmConvInfo *info, const char **iptr,
                           size_t *iroom, char **optr, size_t *oroom)
@@ -1235,7 +1235,7 @@ static size_t jconv_1tier(ScmConvInfo *info, const char **iptr,
     ScmConvProc cvt = info->convproc[0];
     const char *inp = *iptr;
     char *outp = *optr;
-    int inr = (int)*iroom, outr = (int)*oroom; 
+    int inr = (int)*iroom, outr = (int)*oroom;
     size_t outchars, inchars, converted = 0;
 
 #ifdef JCONV_DEBUG
@@ -1261,7 +1261,7 @@ static size_t jconv_1tier(ScmConvInfo *info, const char **iptr,
     *oroom = outr;
     return converted;
 }
-   
+
 /* case (4) */
 #define INTBUFSIZ 20            /* intermediate buffer size */
 static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
@@ -1371,7 +1371,7 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
         convproc[0] = convproc[1] = NULL;
         reset = NULL;
     } else if (incode < 0 || outcode < 0) {
-#ifdef HAVE_ICONV_H        
+#ifdef HAVE_ICONV_H
         /* try iconv */
         handle = iconv_open(toCode, fromCode);
         if (handle == (iconv_t)-1) return NULL;

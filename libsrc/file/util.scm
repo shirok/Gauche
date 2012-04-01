@@ -1,23 +1,23 @@
 ;;;
 ;;; file/util.scm - filesystem utility functions
-;;;  
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 ;;; This module provides convenient utility functions to handle
 ;;; files and directories.   Some functions are provided with
@@ -62,7 +62,7 @@
           file-mtime=? file-mtime<? file-mtime<=? file-mtime>? file-mtime>=?
           file-atime=? file-atime<? file-atime<=? file-atime>? file-atime>=?
           file-ctime=? file-ctime<? file-ctime<=? file-ctime>? file-ctime>=?
-          touch-file touch-files copy-file move-file 
+          touch-file touch-files copy-file move-file
           ;copy-files move-files
           remove-files delete-files
           null-device console-device
@@ -239,7 +239,7 @@
     (copy-file src dst :if-exists if-exists :backup-suffix backsfx
                :follow-link? follow-link?
                :keep-timestamp keeptime :keep-mode keepmode))
-  
+
   (define (rec src dst)
     (cond [(file-is-directory? src)
            (let1 exists? (file-exists? dst)
@@ -318,7 +318,7 @@
            (if (list? content)
              (apply do-dir (mkpath dir n) content opts)
              (apply do-file (mkpath dir n) content opts)))]
-        [_ (error "invalid tree node:" node)]))  
+        [_ (error "invalid tree node:" node)]))
 
     (define (ensure-file path content
                          :key (mode #f) (owner -1) (group -1) (symlink #f))
@@ -465,7 +465,7 @@
 
 (define (find-file-in-paths name
                             :key (paths (cond [(sys-getenv "PATH")
-                                               => (cut string-split <> 
+                                               => (cut string-split <>
                                                        (cond-expand
                                                         [gauche.os.windows #\;]
                                                         [else #\:]))]
@@ -483,7 +483,7 @@
 
 ;; convenient accessors for file stats.  accepts string file name or
 ;; <sys-stat>.  If the named file doesn't exist, returns #f.
-;; accepts keyword argument FOLLOW-LINK? 
+;; accepts keyword argument FOLLOW-LINK?
 (define-syntax define-stat-accessor
   (syntax-rules ()
     [(_ name slot)
@@ -729,7 +729,7 @@
       (do-symlink)
       (do-copy))
     ))
-  
+
 ;; move-file
 ;;  if-exists  - :error :supersede :backup #f
 ;;  backup-suffix
@@ -747,10 +747,10 @@
       (begin (sys-rename src dst) #t)))
   (define (do-copying)
     (and (copy-file src dst :if-exists if-exists
-                    :backup-suffix backsfx 
+                    :backup-suffix backsfx
                     :safe #t :keep-timestamp #t :keep-mode #t)
          (begin (sys-unlink src) #t)))
-  
+
   ;; body of move-file
   (unless (memq if-exists '(#f :error :supersede :backup))
     (error "argument for :if-exists must be either :error, :supersede, :backup or #f, but got" if-exists))
@@ -793,7 +793,7 @@
           [else (sys-unlink p)])))
 
 (define delete-files remove-files)
-  
+
 ;; file->string, file->list, file->string-list, file->sexp-list
 ;; shortcuts of port->string etc.
 ;; NB: call-with-input-file may pass #f to the proc if :if-does-not-exist #f

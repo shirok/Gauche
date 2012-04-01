@@ -3,7 +3,7 @@
  *
  * Note: Most compatibility stuff are in system.c.  This is splitted
  * away so that it can be used from both libgauche and gauche-config,
- * the latter of which doesn't link to the rest of gauche stuff. 
+ * the latter of which doesn't link to the rest of gauche stuff.
  *
  * This file is to included from both system.c and gauche-config.c.
  */

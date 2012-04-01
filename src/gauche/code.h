@@ -1,12 +1,12 @@
 /*
  * code.h - Virtual machine code
  *
- *   Copyright (c) 2005-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2005-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -130,8 +130,8 @@ SCM_EXTERN void   Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc,
                                                 int maxstack);
 SCM_EXTERN void   Scm_CompiledCodeEmit(ScmCompiledCode *cc,
                                        int code,
-                                       int arg0, 
-                                       int arg1, 
+                                       int arg0,
+                                       int arg1,
                                        ScmObj operand,
                                        ScmObj info);
 

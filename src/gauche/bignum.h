@@ -1,12 +1,12 @@
 /*
  * gauche/bignum.h - Internal API for bignums
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -80,7 +80,7 @@ SCM_EXTERN int    Scm_BignumLogCount(ScmBignum *b);
 SCM_EXTERN ScmObj Scm_BignumAsh(ScmBignum *bx, int cnt);
 
 SCM_EXTERN ScmBignum *Scm_MakeBignumWithSize(int size, u_long init);
-SCM_EXTERN ScmBignum *Scm_BignumAccMultAddUI(ScmBignum *acc, 
+SCM_EXTERN ScmBignum *Scm_BignumAccMultAddUI(ScmBignum *acc,
                                              u_long coef, u_long c);
 
 SCM_EXTERN int Scm_DumpBignum(ScmBignum *b, ScmPort *out);

@@ -1,12 +1,12 @@
 /*
  * uthread.h - user level thread primitives
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -46,7 +46,7 @@
 #undef GAUCHE_HAS_THREADS  /*define this if the system supports real threads*/
 
 /* ScmInternalThread - a handle to the system's thread.
-   
+
    The variable of type ScmInternalThread must be initialized by
    SCM_INTERNAL_THREAD_INIT.  You can check if the variable is
    initialized or not by SCM_INTERNAL_THREAD_INITIALIZED_P.
@@ -122,7 +122,7 @@ typedef int ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_UNLOCK(fl)   (0)
 #define SCM_INTENRAL_FASTLOCK_DESTROY(fl)  (0)
 
-/* ScmInternalCond - condition varaiable      
+/* ScmInternalCond - condition varaiable
  *
  *  Pthreads-style condition variables.  SCM_INTERNAL_COND_INITIALIZER
  *  may be used for the placeholder of static variables (but the

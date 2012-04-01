@@ -1,4 +1,4 @@
-/* 
+/*
  * Test VM stack sanity
  */
 
@@ -26,7 +26,7 @@ void test_eval(const char *msg, const char *sexp)
     ScmObj x = Scm_ReadFromCString(sexp);
     printf("%s ... ", msg);
     Scm_Eval(x, SCM_UNBOUND, NULL); /* ignore errors */
-        
+
     post_stack = Scm_VM()->sp;
     if (pre_stack != post_stack) {
         printf("ERROR.\n");
@@ -49,10 +49,10 @@ int main(int argc, char **argv)
     fprintf(stderr, "%-65s", testmsg);
     message(stdout, testmsg, '=');
     Scm_Init(GAUCHE_SIGNATURE);
-    
+
     eproc = Scm_MakeSubr(dummy_eproc, NULL, 0, 1, SCM_FALSE);
     Scm_VM()->defaultEscapeHandler = eproc;
-    
+
     test_eval("simple expression", "(+ 1 2 3)");
     test_eval("with-error-handler (1)",
               "(with-error-handler (lambda (e) #f) (lambda () 1)))");

@@ -63,7 +63,7 @@
   (test* #`",name many numelements" *data-set-size* (%cnt obj))
 
   (when %check (test* #`",name many check" #t (begin (%check obj) #t)))
-    
+
   (test* #`",name many ref" *data-set-size*
          (let/cc return
            (hash-table-fold *data-set*
@@ -195,7 +195,7 @@
       [keys '((0 . 5) (1 . 0) #(0 5) #(1 0))])
 
   (define (vals tab) (map (cut sparse-table-ref tab <> #f) keys))
-  
+
   (sparse-table-set! t '(0 . 5) 'a)
   (sparse-table-set! t '(1 . 0) 'b)
   (sparse-table-set! t '#(0 5) 'c)

@@ -3,7 +3,7 @@
 @c NODE CとSchemeの関数の対応
 
 @c EN
-For the convenience of the programmers familiar to C, 
+For the convenience of the programmers familiar to C,
 I composed a simple table of C operators and library functions with
 the corresponding Scheme functions.
 @c JP
@@ -415,7 +415,7 @@ A file is implictly created by default when you open it for writing.
 See @ref{File ports} for more control over the creation of files.
 @c JP
 デフォルトでは、書き込みのためにファイルをオープンしたときに、暗黙のうちに
-ファイルが作成されます。ファイル作成のより詳しい制御については 
+ファイルが作成されます。ファイル作成のより詳しい制御については
 @ref{File ports} を参照してください。
 @c COMMON
 @item ctermid
@@ -587,7 +587,7 @@ Gauche の @code{fmod}。
 R5RS @code{open-input-file} or @code{open-output-file}
 corresponds to this operation.  @xref{File ports}.
 @c JP
-この操作に対応するのは、R5RS の @code{open-input-file} あるいは 
+この操作に対応するのは、R5RS の @code{open-input-file} あるいは
 @code{open-output-file} です。@ref{File ports} 参照。
 @c COMMON
 @item fork
@@ -632,9 +632,9 @@ Use @code{display}.  @xref{Output}.
 @c COMMON
 @item fread
 @c EN
-Not directly supported.  
+Not directly supported.
 To read binary numbers, see @ref{Binary I/O}.
-If you want to read a chunk of bytes, you may be 
+If you want to read a chunk of bytes, you may be
 able to use @code{read-block!}.
 @xref{Uvector block I/O}.
 @c JP
@@ -700,7 +700,7 @@ Gauche の @code{port-tell}(@xref{Common port operations}参照)を使いまし�
 @c COMMON
 @item fwrite
 @c EN
-Not directly supported.  
+Not directly supported.
 To write binary numbers, see @ref{Binary I/O}.
 If you want to write a chunk of bytes,
 you can simply use @code{display} or @code{write-block}
@@ -862,7 +862,7 @@ Not directly supported, but you can use
 @c COMMON
 @item isdigit
 @c EN
-R5RS @code{char-numeric?}.  @xref{Characters}. 
+R5RS @code{char-numeric?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:digit c)}
 with @code{srfi-14}.   @xref{Character-set library}.
 @c JP
@@ -1021,7 +1021,7 @@ Scheme では必要ありません。
 @itemx mbstowcs
 @itemx mbtowc
 @c EN
-Gauche handles multibyte strings internally, so generally you don't 
+Gauche handles multibyte strings internally, so generally you don't
 need to care about multibyte-ness of the string.   @code{string-length}
 always returns a number of characters for a string in supported
 encoding.   If you want to convert the character encoding,
@@ -1786,7 +1786,7 @@ Gauche の @code{sys-waitpid}。@ref{Process management}参照。
 @item wcstombs
 @itemx wctomb
 @c EN
-Gauche handles multibyte strings internally, so generally you don't 
+Gauche handles multibyte strings internally, so generally you don't
 need to care about multibyte-ness of the string.   @code{string-length}
 always returns a number of characters for a string in supported
 encoding.   If you want to convert the character encoding,

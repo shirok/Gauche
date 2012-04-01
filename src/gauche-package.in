@@ -1,23 +1,23 @@
 ;;;
 ;;; gauche-package - Gauche package builder/manager
-;;;  
-;;;   Copyright (c) 2004-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2004-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 (use gauche.collection)
 (use gauche.config)
@@ -216,7 +216,7 @@ Options:
   ("make-gpd <name> <param> ..."
    "Make gpd file (called from the configure script)"
    "
-  This command is to create a gpd (Gauche package description) file.  
+  This command is to create a gpd (Gauche package description) file.
   Usually the user doens't invoke this command.  It is intended to be
   called within the configure script, like the following:
 
@@ -255,13 +255,13 @@ Options:
 
   By default, this command compiles given files with the options appropriate
   to compile Gauche extensions, then links a dynamically loadable object
-  <extension-name>.so (the suffix may differ among systems).  
-  If '-c' option is given, only compilation of a single file is done.  
+  <extension-name>.so (the suffix may differ among systems).
+  If '-c' option is given, only compilation of a single file is done.
   You can give extra flags for the compiler/linker via options.
 
-  <extension-name> must match the name passed to SCM_INIT_EXTENSION, 
-  and must be a valid C identifier.  (NB: <extension-name> is used only 
-  as the filename and the argument of SCM_INIT_EXTENSION, and has nothing 
+  <extension-name> must match the name passed to SCM_INIT_EXTENSION,
+  and must be a valid C identifier.  (NB: <extension-name> is used only
+  as the filename and the argument of SCM_INIT_EXTENSION, and has nothing
   to do with the package name or the module name.
 
   Note: This command looks at the environment variables CC, CPPFLAGS, CFLAGS,
@@ -318,7 +318,7 @@ Options:
       (let1 v
           (filter values (cons (or given (sys-getenv envname)) additionals))
         (and (not (null? v)) (string-join v))))
-    
+
     (let ([cc       (param cc "CC")]
           [cppflags (param cppflags "CPPFLAGS" (local-paths "-I" "include"))]
           [cflags   (param cflags   "CFLAGS")]
@@ -386,7 +386,7 @@ Options:
       (for-each
        (lambda (file)
          (let* ([src-path (build-path tmpl-dir #`"template.,file")]
-                [dst-name (regexp-replace* 
+                [dst-name (regexp-replace*
                            file
                            #/extension/ extension-name
                            #/module/ (sys-basename

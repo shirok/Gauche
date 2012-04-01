@@ -11,12 +11,12 @@ SCMFILES = threads.sci
 
 OBJECTS = threads.$(OBJEXT) mutex.$(OBJEXT) gauche--threads.$(OBJEXT)
 
-GENERATED = Makefile 
+GENERATED = Makefile
 XCLEANFILES = gauche--threads.c *.sci
 
 all : $(LIBFILES)
 
-gauche--threads.$(SOEXT) : $(OBJECTS) 
+gauche--threads.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--threads.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 threads.sci gauche--threads.c : threads.scm

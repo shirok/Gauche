@@ -1,6 +1,6 @@
 ;;;
 ;;; SRFI-98 An interface to access environment variables
-;;;  
+;;;
 
 ;; Public domain.
 

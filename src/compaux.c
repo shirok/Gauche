@@ -1,12 +1,12 @@
 /*
  * compaux.c - C API bridge for the compiler
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -239,17 +239,17 @@ static ScmClassStaticSlotSpec identifier_slots[] = {
  * Utility functions
  */
 
-/* Convert all identifiers in form into a symbol. 
+/* Convert all identifiers in form into a symbol.
    This keeps linear history to avoid entering infinite loop if
    the given form is circular; but it doens't recover the shared
    substricture. */
 static ScmObj unwrap_rec(ScmObj form, ScmObj history)
 {
     ScmObj newh;
-    
+
     if (!SCM_PTRP(form)) return form;
     if (!SCM_FALSEP(Scm_Memq(form, history))) return form;
-    
+
     if (SCM_PAIRP(form)) {
         ScmObj ca, cd;
         newh = Scm_Cons(form, history);

@@ -5,24 +5,24 @@
 ///(define *tmpl-prologue* '(
 ;;;
 ;;; uvlib.stub - uniform vector library
-;;;  
+;;;
 ;;;   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
-;;;   
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,7 +34,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 "
 #include <math.h>
@@ -55,7 +55,7 @@
 ///)) ;; End prologue
 
 ///;; Begin template ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-///;; 
+///;;
 ///(define *tmpl-body* '(
 
 ;;--------------------------------------------------------------------
@@ -241,7 +241,7 @@
              (+ (cast (const char*) (SCM_UVECTOR_ELEMENTS src)) soff)
              size)))
 
-;;; String operations 
+;;; String operations
 
 (define-cfn string->bytevector
   (klass::ScmClass* s::ScmString* start::int end::int) :static
@@ -253,7 +253,7 @@
            [buf::char* (SCM_NEW_ATOMIC2 (char*) (- ep sp))])
       (memcpy buf sp (- ep sp))
       (return (Scm_MakeUVectorFull klass (cast int (- ep sp)) buf FALSE NULL)))))
-  
+
 (define-cproc string->s8vector
   (s::<string> :optional (start::<fixnum> 0) (end::<fixnum> -1))
   (result (string->bytevector SCM_CLASS_S8VECTOR s start end)))
@@ -279,7 +279,7 @@
             (memcpy buf sp (- ep sp))
             (memcpy buf sp (- tlen tstart))))))
     (return (SCM_OBJ v))))
-               
+
 (define-cproc string->s8vector! (v::<s8vector>
                                  tstart::<int>
                                  s::<string>
@@ -348,7 +348,7 @@
         (let* ([ch::ScmChar (cast ScmChar (aref eltp (post++ start)))])
           (Scm_PutcUnsafe ch (SCM_PORT s)))))
     (return (Scm_GetOutputStringUnsafe (SCM_PORT s) 0))))
-    
+
 (define-cproc s32vector->string (v::<s32vector>
                                  :optional (start::<fixnum> 0)
                                            (end::<fixnum> -1))

@@ -107,7 +107,7 @@ uninstall:
 # after everything is installed.
 # For RPM, this has to be called in the postinstall script instead of
 # installation script.
-slibcat : 
+slibcat :
 	if test -f $(SLIB_DIR)/require.scm && test $(build) = $(host) ; then \
 	  $(exec_prefix)/bin/gosh -ftest -uslib -E"require 'new-catalog" -Eexit;\
 	fi

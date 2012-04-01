@@ -85,7 +85,7 @@
                    :getc (lambda ()
                            (and (pair? x) (pop! x))))))
          (port->string-list p)))
-         
+
 (test* "getb -> read-line" '("abcd" "efg")
        (let* ((x '(97 98 99 100 10 101 102 103 10))
               (p (make <virtual-input-port>
@@ -250,7 +250,7 @@
       (close-output-port p)
       (list (equal? src (get-output-string sink))
             closed?)))
-  
+
   (test* "vport.c"      '(#t #t) (test-boport "vport.c" #f))
   (test* "vport.h" '(#t #t) (test-boport "vport.h" #f))
 
@@ -363,11 +363,11 @@
   (tester 10 9)
   (tester 10 10)
   (tester 10 15)
-  
+
   (tester 20000 19999)
   (tester 20000 20000)
   (tester 20000 20001)
-  
+
   (tester 0  0)
   (tester 0  1)
   (tester 0  10)

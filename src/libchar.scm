@@ -1,23 +1,23 @@
 ;;;
 ;;; libchar.scm - builtin character procedures
-;;;  
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 (select-module gauche.internal)
 
@@ -204,7 +204,7 @@
  )
 
 (define-cproc char-set? (obj) ::<boolean> :constant SCM_CHARSETP)
- 
+
 (define-cproc char-set (:rest chars) ::<char-set>
   (let* ([cs::ScmCharSet* (SCM_CHARSET (Scm_MakeEmptyCharSet))])
     (char_set_add cs chars)
@@ -248,7 +248,7 @@
     (when (> t SCM_CHAR_MAX)
       (Scm_Error "'to' argument out of range: %S" to))
     (result (Scm_CharSetAddRange cs (cast ScmChar f) (cast ScmChar t)))))
- 
+
 (define-cproc %char-set-add! (dst::<char-set> src::<char-set>) Scm_CharSetAdd)
 (define-cproc %char-set-ranges (cs::<char-set>) Scm_CharSetRanges)
 (define-cproc %char-set-predefined (num::<fixnum>) Scm_GetStandardCharSet)

@@ -1,12 +1,12 @@
 /*
  * addr.c - socket address
  *
- *  Copyright (c) 2001-2011  Shiro Kawai  <shiro@acm.org>
+ *  Copyright (c) 2001-2012  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -134,7 +134,7 @@ static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmObj path = Scm_GetKeyword(key_path, initargs, SCM_FALSE);
     ScmSockAddrUn *addr;
-    
+
     if (!SCM_FALSEP(path) && !SCM_STRINGP(path)) {
         Scm_Error(":path parameter must be a string, but got %S", path);
     }
@@ -164,7 +164,7 @@ static int sockaddr_un_compare(ScmObj x, ScmObj y, int equalp)
     ScmSockAddrUn *xx = (ScmSockAddrUn*)x;
     ScmSockAddrUn *yy = (ScmSockAddrUn*)y;
     if (!equalp) Scm_Error("object %S and %S can't be ordered", x, y);
-    
+
     if (xx->addrlen == yy->addrlen
         && memcmp(xx->addr.sun_path, yy->addr.sun_path,
                   sizeof(xx->addr.sun_path)) == 0) {
@@ -335,7 +335,7 @@ static int sockaddr_in6_compare(ScmObj x, ScmObj y, int equalp)
     ScmSockAddrIn6 *xx = (ScmSockAddrIn6*)x;
     ScmSockAddrIn6 *yy = (ScmSockAddrIn6*)y;
     if (!equalp) Scm_Error("object %S and %S can't be ordered", x, y);
-    
+
     if (xx->addrlen == yy->addrlen
         && xx->addr.sin6_family == yy->addr.sin6_family
         && xx->addr.sin6_port == yy->addr.sin6_port

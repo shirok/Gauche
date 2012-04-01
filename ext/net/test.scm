@@ -428,7 +428,7 @@
              (make-client-socket
               (make <sockaddr-in6> :host name :port *inet-port*))))
          '("localhost" "ip6-localhost" "ipv6-localhost" "::1")))
-  
+
   (test* "inet client socket (ipv6)" #t
          (and-let* ([sock (get-ipv6-sock)])
            (call-with-client-socket sock
@@ -558,7 +558,7 @@
                                         z
                                         (u8vector->string z)))
                             $ vector->list data)))))
-       
+
        (test* "udp sendmsg w/sendbuf" '(#t #t) (xtest sbuf))
        (test* "udp sendmsg w/o sendbuf" '(#t #t) (xtest #f)))))]
  [else #f])

@@ -5,7 +5,7 @@
 ;;  in srfi-11 document <http://srfi.schemers.org/srfi-11/srfi-11.html>
 ;;  by Lars T Hansen.
 ;;
-;;  Copyright (C) Lars T Hansen (1999). All Rights Reserved. 
+;;  Copyright (C) Lars T Hansen (1999). All Rights Reserved.
 ;;
 ;;  This document and translations of it may be copied and furnished to
 ;;  others, and derivative works that comment on or otherwise explain it
@@ -44,17 +44,17 @@
   (syntax-rules ()
     ((let-values (?binding ...) ?body0 ?body1 ...)
      (let-values "bind" (?binding ...) () (begin ?body0 ?body1 ...)))
-    
+
     ((let-values "bind" () ?tmps ?body)
      (let ?tmps ?body))
-    
+
     ((let-values "bind" ((?b0 ?e0) ?binding ...) ?tmps ?body)
      (let-values "mktmp" ?b0 ?e0 () (?binding ...) ?tmps ?body))
-    
+
     ((let-values "mktmp" () ?e0 ?args ?bindings ?tmps ?body)
      (receive ?args ?e0
         (let-values "bind" ?bindings ?tmps ?body)))
-    
+
     ((let-values "mktmp" (?a . ?b) ?e0 (?arg ...) ?bindings (?tmp ...) ?body)
      (let-values "mktmp" ?b ?e0 (?arg ... x) ?bindings (?tmp ... (?a x)) ?body))
 

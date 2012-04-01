@@ -9,7 +9,7 @@
 
 (define-macro (assure exp error-msg) `(assert ,exp report: ,error-msg))
 
-    
+
 (define (cout . args)
   (for-each (lambda (x)
               (if (procedure? x) (x) (display x)))

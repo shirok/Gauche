@@ -1,12 +1,12 @@
 /*
  * netdb.c - obtain information about network
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -65,7 +65,7 @@ static ScmSysHostent *make_hostent(struct hostent *he)
     ScmSysHostent *entry = SCM_NEW(ScmSysHostent);
     ScmObj h = SCM_NIL, t = SCM_NIL;
     char **p;
-    
+
     SCM_SET_CLASS(entry, SCM_CLASS_SYS_HOSTENT);
     entry->name = SCM_MAKE_STR_COPYING(he->h_name);
     entry->aliases = Scm_CStringArrayToList((const char**)he->h_aliases, -1,
@@ -97,7 +97,7 @@ ScmObj Scm_GetHostByName(const char *name)
         int herr = 0, bufsiz = DATA_BUFSIZ;
         struct hostent he;
         char staticbuf[DATA_BUFSIZ], *buf = staticbuf;
-        
+
         for (;;) {
 #if GETHOSTBYNAME_R_NUMARGS == 5
             if (gethostbyname_r(name, &he, buf, bufsiz, &herr) != NULL) break;
@@ -140,7 +140,7 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
     if (inet_pton(AF_INET, addr, &iaddr) <= 0) {
         Scm_Error("bad inet address format: %s", addr);
     }
-    
+
 #if defined(GETHOSTBYADDR_R_NUMARGS)
     {
         ScmObj entry = SCM_FALSE;
@@ -175,7 +175,7 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
     {
         volatile ScmObj entry = SCM_FALSE;
         struct hostent *he;
-        
+
         WITH_GLOBAL_LOCK(netdb_data.hostent_mutex,
                          do {
                              he = gethostbyaddr((void*)&iaddr,
@@ -221,7 +221,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysProtoentClass, NULL);
 static ScmSysProtoent *make_protoent(struct protoent *pe)
 {
     ScmSysProtoent *entry = SCM_NEW(ScmSysProtoent);
-    
+
     SCM_SET_CLASS(entry, SCM_CLASS_SYS_PROTOENT);
     entry->name = SCM_MAKE_STR_COPYING(pe->p_name);
     entry->aliases = Scm_CStringArrayToList((const char **)pe->p_aliases, -1,
@@ -238,7 +238,7 @@ ScmObj Scm_GetProtoByName(const char *name)
         int bufsiz = DATA_BUFSIZ;
         struct protoent pe;
         char staticbuf[DATA_BUFSIZ], *buf = staticbuf;
-        
+
         for (;;) {
 #if GETPROTOBYNAME_R_NUMARGS == 4
             if (getprotobyname_r(name, &pe, buf, bufsiz) != NULL) break;
@@ -278,7 +278,7 @@ ScmObj Scm_GetProtoByNumber(int number)
         int bufsiz = DATA_BUFSIZ;
         struct protoent pe;
         char staticbuf[DATA_BUFSIZ], *buf = staticbuf;
-        
+
         for (;;) {
 #if GETPROTOBYNUMBER_R_NUMARGS == 4
             if (getprotobynumber_r(number, &pe, buf, bufsiz) != NULL) break;
@@ -341,7 +341,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysServentClass, NULL);
 static ScmSysServent *make_servent(struct servent *se)
 {
     ScmSysServent *entry = SCM_NEW(ScmSysServent);
-    
+
     SCM_SET_CLASS(entry, SCM_CLASS_SYS_SERVENT);
     entry->name = SCM_MAKE_STR_COPYING(se->s_name);
     entry->aliases = Scm_CStringArrayToList((const char **)se->s_aliases, -1,
@@ -359,7 +359,7 @@ ScmObj Scm_GetServByName(const char *name, const char *proto)
         int bufsiz = DATA_BUFSIZ;
         struct servent se;
         char staticbuf[DATA_BUFSIZ], *buf = staticbuf;
-        
+
         for (;;) {
 #if GETSERVBYNAME_R_NUMARGS == 5
             if (getservbyname_r(name, proto, &se, buf, bufsiz) != NULL) break;
@@ -399,7 +399,7 @@ ScmObj Scm_GetServByPort(int port, const char *proto)
         int bufsiz = DATA_BUFSIZ;
         struct servent se;
         char staticbuf[DATA_BUFSIZ], *buf = staticbuf;
-        
+
         for (;;) {
 #if GETSERVBYPORT_R_NUMARGS == 5
             if (getservbyport_r(htons(port), proto, &se, buf, bufsiz) != NULL)

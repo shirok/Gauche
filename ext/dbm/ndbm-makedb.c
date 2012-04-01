@@ -30,7 +30,7 @@
 int main(int argc, char **argv)
 {
     DBM *dbf;
-    
+
     if (argc != 2) {
         printf("Usage: ndbm-makedb <dbname>\n");
         exit(1);

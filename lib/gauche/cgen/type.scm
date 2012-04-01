@@ -1,23 +1,23 @@
 ;;;
 ;;; gauche.cgen.type - type management
-;;;  
-;;;   Copyright (c) 2004-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2004-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 (define-module gauche.cgen.type
   (use srfi-13)
@@ -201,12 +201,12 @@
    (<uint32>  "u_int" "C integer" "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
    (<float>   "float" "real number" "SCM_REALP" "(float)Scm_GetDouble" "Scm_VMReturnFlonum")
    (<double>  "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
-   
+
    ;; Basic immediate types
    (<boolean> "int" "boolean" "SCM_BOOLP"   "SCM_BOOL_VALUE" "SCM_MAKE_BOOL")
    (<char>    "ScmChar" "character" "SCM_CHARP" "SCM_CHAR_VALUE" "SCM_MAKE_CHAR")
    (<void>    "void" "void" "" "" "SCM_VOID_RETURN_VALUE")
-   (<top>     "ScmObj" "scheme object" "" "") 
+   (<top>     "ScmObj" "scheme object" "" "")
    ;; C string
    (<const-cstring> "const char *" "const C string"
                     "SCM_STRINGP" "SCM_STRING_CONST_CSTRING" "SCM_MAKE_STR_COPYING")

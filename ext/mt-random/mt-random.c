@@ -17,11 +17,11 @@
    A C-program for MT19937, with initialization improved 2002/1/26.
    Coded by Takuji Nishimura and Makoto Matsumoto.
 
-   Before using, initialize the state by using init_genrand(seed)  
+   Before using, initialize the state by using init_genrand(seed)
    or init_by_array(init_key, key_length).
 
    Copyright (C) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura,
-   All rights reserved.                          
+   All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -34,8 +34,8 @@
         notice, this list of conditions and the following disclaimer in the
         documentation and/or other materials provided with the distribution.
 
-     3. The names of its contributors may not be used to endorse or promote 
-        products derived from this software without specific prior written 
+     3. The names of its contributors may not be used to endorse or promote
+        products derived from this software without specific prior written
         permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -59,7 +59,7 @@
 #include <math.h>
 #include "mt-random.h"
 
-/* Period parameters */  
+/* Period parameters */
 #define M 397
 #define MATRIX_A 0x9908b0dfUL   /* constant vector a */
 #define UPPER_MASK 0x80000000UL /* most significant w-r bits */
@@ -71,8 +71,8 @@ void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s)
     int mti;
     mt->mt[0]= s & 0xffffffffUL;
     for (mti=1; mti<N; mti++) {
-        mt->mt[mti] = 
-	    (1812433253UL * (mt->mt[mti-1] ^ (mt->mt[mti-1] >> 30)) + mti); 
+        mt->mt[mti] =
+	    (1812433253UL * (mt->mt[mti-1] ^ (mt->mt[mti-1] >> 30)) + mti);
         /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
         /* In the previous versions, MSBs of the seed affect   */
         /* only MSBs of the array mt[].                        */
@@ -129,7 +129,7 @@ void Scm_MTInitByArray(ScmMersenneTwister *mt,
         if (i>=N) { mt->mt[0] = mt->mt[N-1]; i=1; }
     }
 
-    mt->mt[0] = 0x80000000UL; /* MSB is 1; assuring non-zero initial array */ 
+    mt->mt[0] = 0x80000000UL; /* MSB is 1; assuring non-zero initial array */
 }
 
 /* generates a random number on [0,0xffffffff]-interval */
@@ -159,7 +159,7 @@ unsigned long Scm_MTGenrandU32(ScmMersenneTwister *mt)
 
         mti = 0;
     }
-  
+
     y = mt->mt[mti++];
 
     /* Tempering */
@@ -194,7 +194,7 @@ double Scm_MTGenrandF64(ScmMersenneTwister *mt, int exclude0)
         r = (a*67108864.0+b)*(1.0/9007199254740992.0);
     } while (exclude0 && r == 0.0); /*if we get 0.0, try another one. */;
     return r;
-} 
+}
 
 /*
  * Generic integer routine for [0, n-1], 0 < n <= 2^32
@@ -294,7 +294,7 @@ static ScmObj mt_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmObj seed = Scm_GetKeyword(key_seed, initargs, SCM_FALSE);
     ScmMersenneTwister *mt;
-    
+
     mt = SCM_NEW(ScmMersenneTwister);
     SCM_SET_CLASS(mt, &Scm_MersenneTwisterClass);
     mt->mti = N+1;

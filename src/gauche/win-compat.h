@@ -99,7 +99,7 @@ struct group *getgrgid(gid_t);
 struct group *getgrnam(const char *t);
 
 /*=======================================================================
- * No sigsetjmps.  Fake it with ordinary setjmps. 
+ * No sigsetjmps.  Fake it with ordinary setjmps.
  */
 typedef jmp_buf  sigjmp_buf;
 
@@ -141,7 +141,7 @@ struct sigaction {
     __p_sig_fn_t sa_handler;   /* see mingw/include/signal.h about the type */
 #else  /* MSVC */
     void         (*sa_handler)(int);
-#endif    
+#endif
 };
 
 /* there's a dummy sigaction defined in src/signal.c */

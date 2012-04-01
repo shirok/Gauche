@@ -1,6 +1,6 @@
 ;;;
 ;;; gauche.experimental.ref
-;;;  
+;;;
 
 (define-module gauche.experimental.ref)
 

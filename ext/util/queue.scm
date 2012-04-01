@@ -1,23 +1,23 @@
 ;;;
 ;;; util.queue - queue (fifo) implementation
-;;;  
-;;;   Copyright (c) 2010-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2010-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -66,7 +66,7 @@
 ;;;
 (inline-stub
  "#include <gauche/class.h>"
- 
+
  ;;
  ;; <queue>
  ;;
@@ -91,14 +91,14 @@
      (SCM_SET_CLASS z klass)
      (set! (Q_LENGTH z) 0 (Q_HEAD z) SCM_NIL (Q_TAIL z) SCM_NIL)
      (return (SCM_OBJ z))))
- 
+
  (define-type <queue> "Queue*" "queue" "QP" "Q")
  (define-cclass <queue>
    "Queue*" "QueueClass" ()
    ((length :type <uint> :c-name "len" :setter #f))
    (allocator (return (makeq klass)))
    (printer (Scm_Printf port "#<queue %d @%p>" (Q_LENGTH obj) obj)))
- 
+
  ;;
  ;; <mtqueue>
  ;;
@@ -148,16 +148,16 @@
    (cond [(SCM_UINTP maxlen) (set! (MTQ_MAXLEN mtq) (SCM_INT_VALUE maxlen))]
          [(SCM_FALSEP maxlen) (set! (MTQ_MAXLEN mtq) -1)]
          [else (SCM_TYPE_ERROR maxlen "non-negative fixnum or #f")]))
- 
+
  (define-type <mtqueue> "MtQueue*" "mt-queue" "MTQP" "MTQ")
  (define-cclass <mtqueue>
    "MtQueue*" "MtQueueClass" ("QueueClass")
    ((max-length :getter "return mtq_maxlen_get(obj);"
                 :setter "mtq_maxlen_set(obj, value);"))
-   (allocator 
+   (allocator
     (let* ([ml (Scm_GetKeyword ':max-length initargs SCM_FALSE)])
       (return (makemtq klass (?: (SCM_INTP ml) (SCM_INT_VALUE ml) -1)))))
-   (printer 
+   (printer
     (Scm_Printf port "#<mt-queue %d @%p>" (Q_LENGTH obj) obj)))
 
  ;; lock macros
@@ -171,14 +171,14 @@
     `(begin (SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN (MTQ_MUTEX ,q))
             ,@body
             (SCM_INTERNAL_MUTEX_SAFE_LOCK_END))])
- 
+
  (define-cise-stmt wait-mtq-big-lock    ;to be called while locking mutex
    [(_ q) `(while (big-locked? ,q)
              (SCM_INTERNAL_COND_WAIT (MTQ_CV ,q lockWait) (MTQ_MUTEX ,q)))])
 
  (define-cise-stmt with-mtq-light-lock
    [(_ q . stmts) `(with-mtq-mutex-lock ,q (wait-mtq-big-lock ,q) ,@stmts)])
- 
+
  (define-cise-stmt grab-mtq-big-lock
    [(_ q) `(with-mtq-light-lock ,q (set! (MTQ_LOCKER ,q) (SCM_OBJ (Scm_VM))))])
 
@@ -272,7 +272,7 @@
                     (?: (SCM_UINTP max-length)
                         (SCM_INT_VALUE max-length)
                         -1))))
- 
+
  ;; caller must hold lock
  (define-cproc %queue-set-content! (q::<queue> list) ::<void>
    (let* ([len::int (Scm_Length list)])
@@ -338,7 +338,7 @@
 
  ;; caller must hold big lock
  (define-cproc %qhead (q::<queue>) (result (Q_HEAD q)))
- 
+
  (define-cfn queue-peek-both-int (q::Queue* ph::ScmObj* pt::ScmObj*) ::int
    (when (Q_EMPTY_P q) (return FALSE))
    (set! (* ph) (SCM_CAR (Q_HEAD q))
@@ -449,7 +449,7 @@
    (set! (Q_HEAD q) head
          (Q_TAIL q) (Scm_LastPair tail)
          (Q_LENGTH q) (+ (Q_LENGTH q) cnt)))
-   
+
  (define-cproc queue-push! (q::<queue> obj :rest more-objs)
    (let* ([objs (Scm_Cons obj more-objs)] [head] [tail] [cnt::u_int])
      (if (SCM_NULLP more-objs)
@@ -498,7 +498,7 @@
                (set! (Q_HEAD q) (SCM_CDR (Q_HEAD q)))
                (dec! (Q_LENGTH q))
                (return FALSE)]))
- 
+
  (define-cproc dequeue! (q::<queue> :optional fallback)
    (let* ([empty::int FALSE] [r SCM_UNDEFINED])
      (if (not (MTQP q))
@@ -530,7 +530,7 @@
    (let* ([lis (Q_HEAD q)])
      (set! (Q_LENGTH q) 0 (Q_HEAD q) SCM_NIL (Q_TAIL q) SCM_NIL)
      (return lis)))
- 
+
  (define-cproc dequeue-all! (q::<queue>)
    (if (not (MTQP q))
      (result (dequeue-all-int q))
@@ -548,7 +548,7 @@
     (queue-op q (^[mt?]
                   (let loop ([rs '()] [xs (%qhead q)] [hit #f])
                     (cond [(null? xs)
-                           (when hit 
+                           (when hit
                              (set! removed? #t)
                              (when mt? (%notify-writers q))
                              (%queue-set-content! q (reverse! rs)))]

@@ -45,7 +45,7 @@
 (define (st-ref st)
   (dolist [n *problem-set*]
     (sparse-table-ref st n n)))
-  
+
 (define (bench-speed name %make %ref %set %cleanup)
   (let ([null-timer  (make <user-time-counter>)]
         [set-timer   (make <user-time-counter>)]
@@ -88,7 +88,7 @@
                                  sv-ref sv-set sparse-vector-clear!)]
     [("st" "speed") (bench-speed "Sparse table" (cut make-sparse-table 'eqv?)
                                  st-ref st-set sparse-table-clear!)]
-    
+
     [("ht" "mem") (print "Hash table mem: "
                          (bench-mem (cut ht-set (make-hash-table 'eqv?))))]
     [("sv" "mem") (print "Sparse vector mem: "

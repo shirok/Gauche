@@ -2,7 +2,7 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
-SCM_CATEGORY = 
+SCM_CATEGORY =
 
 include ../Makefile.ext
 
@@ -15,7 +15,7 @@ SCMFILES = srfi-1.sci  \
            srfi-19.sci \
            srfi-43.sci
 
-GENERATED = Makefile 
+GENERATED = Makefile
 XCLEANFILES = *.c *.sci
 
 all : $(LIBFILES)
@@ -28,7 +28,7 @@ install : install-std
 
 srfi_1_OBJECTS = srfi-1.$(OBJEXT)
 
-srfi-1.$(SOEXT) : $(srfi_1_OBJECTS) 
+srfi-1.$(SOEXT) : $(srfi_1_OBJECTS)
 	$(MODLINK) srfi-1.$(SOEXT) $(srfi_1_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 srfi-1.c srfi-1.sci : $(top_srcdir)/libsrc/srfi-1.scm
@@ -40,7 +40,7 @@ srfi-1.c srfi-1.sci : $(top_srcdir)/libsrc/srfi-1.scm
 
 srfi_13_OBJECTS = srfi-13.$(OBJEXT)
 
-srfi-13.$(SOEXT) : $(srfi_13_OBJECTS) 
+srfi-13.$(SOEXT) : $(srfi_13_OBJECTS)
 	$(MODLINK) srfi-13.$(SOEXT) $(srfi_13_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 srfi-13.c srfi-13.sci : $(top_srcdir)/libsrc/srfi-13.scm
@@ -52,7 +52,7 @@ srfi-13.c srfi-13.sci : $(top_srcdir)/libsrc/srfi-13.scm
 
 srfi_19_OBJECTS = srfi-19.$(OBJEXT)
 
-srfi-19.$(SOEXT) : $(srfi_19_OBJECTS) 
+srfi-19.$(SOEXT) : $(srfi_19_OBJECTS)
 	$(MODLINK) srfi-19.$(SOEXT) $(srfi_19_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 srfi-19.c srfi-19.sci : srfi-19.scm
@@ -64,7 +64,7 @@ srfi-19.c srfi-19.sci : srfi-19.scm
 
 srfi_43_OBJECTS = srfi-43.$(OBJEXT)
 
-srfi-43.$(SOEXT) : $(srfi_43_OBJECTS) 
+srfi-43.$(SOEXT) : $(srfi_43_OBJECTS)
 	$(MODLINK) srfi-43.$(SOEXT) $(srfi_43_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 srfi-43.c srfi-43.sci : srfi-43.scm

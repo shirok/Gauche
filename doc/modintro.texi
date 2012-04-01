@@ -41,7 +41,7 @@ we categorize libraries by their purposes.
 
 @c EN
 The following three chapters describe bundled modules,
-grouped by their names.  
+grouped by their names.
 @ref{Library modules - Gauche extensions} contains a description of
 @code{gauche.*} modules, which are more or less considered
 the core features of Gauche but separated since less frequently used.
@@ -83,8 +83,8 @@ See @ref{Operations on libraries}, for the details.
 @c COMMON
 
 @menu
-* Finding libraries you need::  
-* Naming convention of libraries::  
+* Finding libraries you need::
+* Naming convention of libraries::
 @end menu
 
 @node Finding libraries you need, Naming convention of libraries, Library modules - Overview, Library modules - Overview
@@ -151,15 +151,15 @@ brief descriptions.
 @c COMMON
 
 @menu
-* Library directory - data containers::  
-* Library directory - strings and characters::  
-* Library directory - data exchange::  
-* Library directory - files::   
-* Library directory - processes and threads::  
-* Library directory - networking::  
-* Library directory - input and output::  
-* Library directory - time::    
-* Library directory - bits and bytes::  
+* Library directory - data containers::
+* Library directory - strings and characters::
+* Library directory - data exchange::
+* Library directory - files::
+* Library directory - processes and threads::
+* Library directory - networking::
+* Library directory - input and output::
+* Library directory - time::
+* Library directory - bits and bytes::
 @end menu
 
 @node Library directory - data containers, Library directory - strings and characters, Finding libraries you need, Finding libraries you need
@@ -260,7 +260,7 @@ see @ref{Multibyte Strings} for the defatils.
 and @ref{Character-set library}.
 @item
 @emph{Hash table} - hash tables.  See @ref{Hashtables}.
-For very large hash tables (millions of entries), 
+For very large hash tables (millions of entries),
 @ref{Sparse tables} may provide better memory footprint.
 @item
 @emph{Queue} - both fast and thread-safe queues are provided in
@@ -395,7 +395,7 @@ Are you dealing with a structure higher than a mere sequence
 of characters?  Then take a look at  @code{text.*} modules.
 @ref{Parsing input stream} has some basic
 scanners.  @ref{Transliterate characters} implements a
-feature similar to Unix's @code{tr(1)}.  
+feature similar to Unix's @code{tr(1)}.
 You can take @code{diff} of two texts; see
 @ref{Calculate difference of text streams}.
 And if you want to construct large text from string fragments,
@@ -416,7 +416,7 @@ Last but not least, Gauche has support of various character
 encoding schemes.  See @ref{Character code conversion} for
 the basic utilities.  Most higher-level functions such as
 @code{open-input-file} can take @code{:encoding} keyword argument
-to perform character conversion implicitly.  Also see 
+to perform character conversion implicitly.  Also see
 @ref{Multibyte scripts} if you write Scheme program in
 non-ASCII characters.  If you want to process Gauche source code
 which may contain "encoding" magic comment, see @ref{Coding-aware ports}.
@@ -453,7 +453,7 @@ also writing the data in the format the others can understand.
 
 @c EN
 Lots of network-related external formats are defined in RFC,
-and there are corresponding @code{rfc.*} module that handle 
+and there are corresponding @code{rfc.*} module that handle
 some of them.  See @ref{RFC822 message parsing}, for example,
 to handle the pervasive RFC2822 message format.
 Or, JSON can be handled by @ref{JSON parsing and construction}.
@@ -570,7 +570,7 @@ Process-related routines also come in two levels.
 
 @c EN
 The @code{gauche.process} module provides
-high-level routines (@ref{High Level Process Interface}); 
+high-level routines (@ref{High Level Process Interface});
 you can pipe the data into and out of child processes easily, for example.
 @c JP
 @code{gauche.process}モジュールは高レベルのルーチン
@@ -709,10 +709,10 @@ binary data, a la Perl's @code{pack}/@code{unpack}.
 @c COMMON
 
 @c EN
-Gauche core provides bitshift and mask operations. 
+Gauche core provides bitshift and mask operations.
 See @ref{Bitwise operations}.
 @c JP
-Gaucheコアはビットシフトおよびマスク操作を提供しています。 
+Gaucheコアはビットシフトおよびマスク操作を提供しています。
 @ref{Bitwise operations}を見てください。
 @c COMMON
 

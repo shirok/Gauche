@@ -43,6 +43,6 @@
     (t srl:sxml->html-noindent
        "<foo a=\"b\" c=\"d&quot;e&apos;f\"><g>h<i>j<k/></i></g></foo>")
     ))
-  
+
 (test-end)
 

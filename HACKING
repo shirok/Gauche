@@ -94,7 +94,7 @@ not to introduce undesirable dependencies.
   forms are expanded fully in precompilation.
 
 - gencomp, genstub, geninsn shouldn't depend on the extension
-  modules except the 'pre-loaded' ones in HOSTGOSH.  
+  modules except the 'pre-loaded' ones in HOSTGOSH.
 
 - An extension compiled by gencomp shouldn't depend on other
   extension compiled by gencomp.  This is because gencomp is

@@ -1,12 +1,12 @@
 /*
  * core.c - core kernel interface
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -189,7 +189,7 @@ void Scm_Init(const char *signature)
     Scm_Init_libvec();
     Scm_Init_compile();
     Scm_Init_libomega();
-    
+
     Scm__InitCompaux();
 
     Scm_SelectModule(Scm_GaucheModule());
@@ -303,7 +303,7 @@ struct cleanup_handler_rec {
 static struct {
     int dirty;                  /* Flag to avoid cleaning up more than once. */
     struct cleanup_handler_rec *handlers;
-} cleanup = { TRUE, NULL }; 
+} cleanup = { TRUE, NULL };
 
 /* Add cleanup handler.  Returns an opaque handle, which can be
    passed to DeleteCleanupHandler. */
@@ -367,7 +367,7 @@ void Scm_Cleanup(void)
 
     if (!cleanup.dirty) return;
     cleanup.dirty = FALSE;
-    
+
     /* Execute pending dynamic handlers.
        NB: we ignore errors here.  It may not be accurate behavior, though.
        (A handler may intentionally raise an error to skip the rest of
@@ -382,7 +382,7 @@ void Scm_Cleanup(void)
     for (ch = cleanup.handlers; ch; ch = ch->next) {
         ch->handler(ch->data);
     }
-    
+
     /* Flush Scheme ports. */
     Scm_FlushAllPorts(TRUE);
 }
@@ -422,8 +422,8 @@ Scm_GetFeatures()
  * Append FEATURE to the cond-features alist.  Once added, the symbol FEATURE
  * will be recognized by cond-expand.
  *
- *  (cond-expand (FEATURE body ...)) 
- *   
+ *  (cond-expand (FEATURE body ...))
+ *
  * If loading a module is required in order to make FEATURE available,
  * such module name can be specified in MODULE argument.  It can be NULL
  * if the feature is built-in.
@@ -441,7 +441,7 @@ Scm_AddFeature(const char *feature, const char *module)
     } else {
         cell = SCM_LIST1(SCM_INTERN(feature));
     }
-    
+
     (void)SCM_INTERNAL_MUTEX_LOCK(cond_features.mutex);
     cond_features.alist = Scm_Cons(cell, cond_features.alist);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(cond_features.mutex);
@@ -599,7 +599,7 @@ ScmObj Scm_SiteArchitectureDirectory(void)
    the returned values of other Scm_*Directory functions above.
    This is needed to augument the returned values of gauche.config
    module.  Some refactorization is needed in future.
-   
+
    Aside from the current purpose, it will be useful to have a procedure
    to obtain the directory of the running executable.  This function
    can eventually evlove to it.
@@ -646,7 +646,7 @@ void Scm_SimpleMain(int argc, const char *argv[],
     SCM_ASSERT(argc > 0);
     if (Scm_Load("gauche-init.scm", 0, NULL)) {
         Scm_Printf(SCM_CURERR, "%s: Couldn't load gauche-init.scm: %A(%A).\n",
-                   argv[0], 
+                   argv[0],
                    Scm_ConditionMessage(lpak.exception),
                    Scm_ConditionTypeName(lpak.exception));
         Scm_Exit(1);

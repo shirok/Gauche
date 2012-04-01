@@ -21,7 +21,7 @@ sxml.ssax - XML parser.  Parses XML documents to produce SXML structure.
    Based on SSAX CVS version 1.7 (Apr 9, 2003)
           This is available as module sxml.ssax from Gauche.
 
-   SSAX - 
+   SSAX -
 
    SXPATH - XPath for SXML.
 

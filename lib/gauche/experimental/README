@@ -1,4 +1,4 @@
-The contents of this directory is for various experiment.  
+The contents of this directory is for various experiment.
 For now, they're mostly syntactic sugars just to make program shorter,
 rather than introducing new abstractions.   The merit of such syntactic
 sugars is highly subjective, only to be estimated after substantial use

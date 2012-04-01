@@ -26,10 +26,10 @@ Lisp系言語のマクロは、他の言語に見られるマクロ(例えばC�
 @c COMMON
 
 @menu
-* Hygienic Macros::             
-* Traditional Macros::          
-* Macro expansion::             
-* Macro utilities::             
+* Hygienic Macros::
+* Traditional Macros::
+* Macro expansion::
+* Macro utilities::
 @end menu
 
 @node Hygienic Macros, Traditional Macros, Macros, Macros

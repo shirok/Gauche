@@ -115,7 +115,7 @@
     (and (>= str-len suffix-len)
          (string=? (substring str (- str-len suffix-len) str-len) suffix))))
 
-    
+
 
 ;; Local variables:
 ;; mode: scheme

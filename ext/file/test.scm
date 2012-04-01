@@ -24,7 +24,7 @@
     (map normalize (cons pathname pathnames))))
 
 ;; mingw doesn't have fully compatible permissions as unix.
-;; this procedure compensates it.  
+;; this procedure compensates it.
 (define (P perm)
   (cond-expand
    [gauche.os.windows (let1 p (ash perm -6)
@@ -170,7 +170,7 @@
 
 (test* "check-directory-tree" #t
        (check-directory-tree "." *test-tree*))
-           
+
 (test* "directory-list"
        '("." ".." "test.d" "test1.o" "test2.d" "test2.o"
          "test3.o" "test4.o" "test5.o" "test6.o" "test7.o" )
@@ -226,7 +226,7 @@
        '(("test.d" "test2.d")
          ("test1.o" "test2.o" "test3.o" "test4.o"
           "test5.o" "test6.o" "test7.o" ))
-       (values->list 
+       (values->list
         (directory-list2 "test.out"
                          :filter (^p (string-contains p "test")))))
 
@@ -287,7 +287,7 @@
             "test.out/test1.o"
             "test.out/test2.o" "test.out/test3.o"
             "test.out/test6.o" "test.out/test7.o")
-         (reverse 
+         (reverse
           (directory-fold "test.out"
                           (^[path result]
                             (if (= (file-size path) 100)
@@ -390,9 +390,9 @@
  [else])
 (test* "file-eqv?" #f
        (file-eqv? "test.out/test1.o" "test.out/test2.o"))
-(test* "file-equal?" #t      
+(test* "file-equal?" #t
        (file-equal? "test.out/test1.o" "test.out/test1.o"))
-(test* "file-equal?" #t      
+(test* "file-equal?" #t
        (file-equal? "test.out/test1.o" "test.out/test2.o"))
 (test* "file-equal?" #f
        (file-equal? "test.out/test1.o" "test.out/test4.o"))
@@ -565,7 +565,7 @@
   (define (listdir d)
     (map (cut regexp-replace #/^test2?\.out[\/\\]/ <> "")
          (directory-fold d cons '())))
-    
+
   (test* "copy-directory*" (listdir "test.out")
          (begin
            (copy-directory* "test.out" "test2.out")

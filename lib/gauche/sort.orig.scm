@@ -89,7 +89,7 @@
 ;	pairs, no pairs at all will be allocated.  The first pair of the
 ;	result will be either the first pair of list1 or the first pair
 ;	of list2, but you can't predict which.
-;	
+;
 ;	The code of merge and merge! could have been quite a bit simpler,
 ;	but they have been coded to reduce the amount of work done per
 ;	iteration.  (For example, we only have one null? test per iteration.)

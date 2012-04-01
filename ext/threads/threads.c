@@ -1,12 +1,12 @@
 /*
  * thread.c - Scheme thread API
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -201,7 +201,7 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
             }
         }
 #else  /* no threads */
-        Scm_Error("Thread is not available."); 
+        Scm_Error("Thread is not available.");
 #endif
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(vm->vmlock);
@@ -217,7 +217,7 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     struct timespec ts, *pts;
     ScmObj result = SCM_FALSE, resultx = SCM_FALSE;
     int intr = FALSE, tout = FALSE;
-    
+
     pts = Scm_GetTimeSpec(timeout, &ts);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(target->vmlock);
     while (target->state != SCM_VM_TERMINATED) {
@@ -265,9 +265,9 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
                                     * Wait on target->cond
                                       until target->state becomes STOPPED
    * If STOP flag is up,
-     set self->state to STOPPED 
+     set self->state to STOPPED
      and signal self->cond
-     then wait on self->cond until 
+     then wait on self->cond until
      target->state changes from STOPPED
                                     * Inspect target VM state
                                     * Set taget->state to RUNNABLE,
@@ -300,7 +300,7 @@ ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
         /* NB: if target->inspector == vm, it means we have requested to
            stop the thread before, and haven't called ThreadCont yet.
            In that case we don't need to set stopRequest again; either target
-           thread already cleared it and stopped/going to stop, or 
+           thread already cleared it and stopped/going to stop, or
            the target thread hasn't seen the flag and it's still ON. */
         if (target->inspector != vm) {
             target->inspector = vm;

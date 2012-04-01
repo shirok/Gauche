@@ -9,7 +9,7 @@
 
 (define rtd1 #f)
 (define rtd2 #f)
-    
+
 (test* "make-rtd" #t
        (begin (set! rtd1 (make-rtd 'rtd1 #(a b (immutable c))))
               (rtd? rtd1)))
@@ -57,7 +57,7 @@
                 (map (^f ((rtd-accessor rtd1 f) r1a)) '(a b c))))
 
   (test* "rtd-mutator" (test-error) (rtd-mutator rtd1 'c))
-  
+
   (test* "rtd-constructor" rtd2
          (begin (set! r2 ((rtd-constructor rtd2) 1 2 3 4 5 6))
                 (and (record? r2) (record-rtd r2))))
@@ -202,7 +202,7 @@
     (test* "point-x make-cpoint" -1 (point-x (make-cpoint -1 -3 'red)))
     (test* "point-x make-cpoint/abs" 1 (point-x (make-cpoint/abs -1 -3 'red)))
     )
-  ) 
+  )
 
 ;;--------------------------------------------------------------------
 (test-section "syntactic layer")

@@ -4,32 +4,32 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* Types and classes::           
-* Equivalence::                 
-* Numbers::                     
-* Booleans::                    
-* Undefined values::            
-* Pairs and Lists::             
-* Symbols::                     
-* Keywords::                    
-* Identifiers::                 
-* Characters::                  
-* Character set::               
-* Strings::                     
-* Regular expressions::         
-* Vectors::                     
-* Hashtables::                  
-* Treemaps::                    
-* Weak pointers::               
-* Procedures and continuations::  
-* Lazy evaluation::             
-* Exceptions::                  
-* Eval and repl::               
-* Input and output::            
-* Loading Programs::            
-* Comparison and sorting::      
-* System interface::            
-* Development helper API::      
+* Types and classes::
+* Equivalence::
+* Numbers::
+* Booleans::
+* Undefined values::
+* Pairs and Lists::
+* Symbols::
+* Keywords::
+* Identifiers::
+* Characters::
+* Character set::
+* Strings::
+* Regular expressions::
+* Vectors::
+* Hashtables::
+* Treemaps::
+* Weak pointers::
+* Procedures and continuations::
+* Lazy evaluation::
+* Exceptions::
+* Eval and repl::
+* Input and output::
+* Loading Programs::
+* Comparison and sorting::
+* System interface::
+* Development helper API::
 @end menu
 
 @node Types and classes, Equivalence, Core library, Core library
@@ -275,7 +275,7 @@ or @code{(eqv? +nan.0 +nan.0)}.
 @c JP
 NaNの比較には少々奇妙なところがあります。数値比較は、引数に一つでもNaNが
 含まれていれば失敗します。したがって@code{(= +nan.0 +nan.0)}は常に@code{#f}と
-なります。けれども、@code{(eq? +nan.0 +nan.0)} や 
+なります。けれども、@code{(eq? +nan.0 +nan.0)} や
 @code{(eqv? +nan.0 +nan.0)}は@code{#t}を返すことがあるかもしれません。
 @c COMMON
 @end defun
@@ -366,7 +366,7 @@ do not call @code{object-equal?} directly; call @code{equal?} on each element.
 Sometimes you want to test if two aggregate structures
 are topologically equal, i.e., if one has a shared substructure,
 the other has a shared substructure in the same way.
-@code{Equal?} can't handle it; module @code{util.isomorph} 
+@code{Equal?} can't handle it; module @code{util.isomorph}
 provides a procedure @code{isomorphic?} which does the job
 (@xref{Determine isomorphism}).
 @c JP
@@ -413,13 +413,13 @@ Gaucheは次のタイプの数値をサポートしています。
 @c COMMON
 
 @menu
-* Number classes::              
-* Numerical predicates::        
-* Numerical comparison::        
-* Arithmetics::                 
-* Numerical conversions::       
-* Bitwise operations::          
-* Endianness::                  
+* Number classes::
+* Numerical predicates::
+* Numerical comparison::
+* Arithmetics::
+* Numerical conversions::
+* Bitwise operations::
+* Endianness::
 @end menu
 
 @node Number classes, Numerical predicates, Numbers, Numbers
@@ -443,7 +443,7 @@ These classes consist a class hierarchy of number objects.
  and @code{<integer>} inherits @code{<rational>}.
 
 Note that these classes do not exactly correspond to the
-number hierarchy defined in R5RS.  Especially, 
+number hierarchy defined in R5RS.  Especially,
 only exact integers are the instances of the @code{<integer>}
 class.  That is,
 @c JP
@@ -630,7 +630,7 @@ NaNなら@code{#t}を返します。(これはR6RSとは非互換です。R6RS�
 @defunx even? n
 [R5RS]
 @c EN
-Returns @code{#t} if an integer @var{n} is odd and even, 
+Returns @code{#t} if an integer @var{n} is odd and even,
 respectively.  It is an error to pass a non-integral number.
 @c JP
 整数@var{n}がそれぞれ奇数または偶数なら@code{#t}を返します。
@@ -1075,7 +1075,7 @@ returns the closest even integer.
 @defunx truncate->exact x
 @defunx round->exact x
 @c EN
-These are convenience procedures of the popular 
+These are convenience procedures of the popular
 phrase @code{(inexact->exact (floor x))} etc.
 @c JP
 これらは、頻出する@code{(inexact->exact (floor x))} 等を簡潔に書くための
@@ -1142,7 +1142,7 @@ base-@var{z2} logarithm of @var{z1}.
 @defun atan y x
 [R5RS]
 @c EN
-For real numbers @var{x} and @var{y}, 
+For real numbers @var{x} and @var{y},
 returns @code{(angle (make-rectangular x y))}.
 @c JP
 実数@var{x}と@var{y}に対して
@@ -1306,7 +1306,7 @@ The API is taken from ChezScheme.
 @defunx modf x
 @defunx frexp x
 @defunx ldexp x n
-[POSIX] 
+[POSIX]
 @c EN
 These procedures can be used to compose and decompose floating
 point numbers.  @code{Fmod} computes the remainder of dividing @var{x}
@@ -1316,7 +1316,7 @@ to an integer.   @code{Modf} returns two values; a fractional
 part of @var{x} and an integral part of @var{x}.   @code{Frexp}
 returns two values, @var{fraction} and @var{exponent} of @var{x},
 where @var{x} = @var{fraction} * 2^@var{exponent}, and
-0 <= @var{fraction} <= 0.5.  @var{Ldexp} is a reverse operation of 
+0 <= @var{fraction} <= 0.5.  @var{Ldexp} is a reverse operation of
 @code{frexp}; it returns a real number @var{x} * 2^@var{n}.
 @c JP
 これらの手続きは、浮動小数点数を分解したり合成するのに使えます。
@@ -1506,7 +1506,7 @@ it is regarded in 2's complement form, and infinite number of
 
 @c EN
 In regard to the names of those operations, there are two groups
-in the Scheme world; Gauche follows the names of the 
+in the Scheme world; Gauche follows the names of the
 original SLIB's ``logical'' module, which was rooted in CL.
 Another group uses a bit long but descriptive name such as
 @code{arithmetic-shift}.
@@ -1547,7 +1547,7 @@ If @var{count} is negative, @code{ash} shifts @var{n} right with
 (ash -6 -2) @result{} -2  ;@r{[...1111110]}
 @end example
 @end defun
-        
+
 @defun logand n1 @dots{}
 @defunx logior n1 @dots{}
 @defunx logxor n1 @dots{}
@@ -1581,7 +1581,7 @@ Returns bitwise not of an integer @var{n}.
 @defun logbit? index n
 [SRFI-60]
 @c EN
-Returns @code{#t} if @var{index}-th bit of integer @var{n} is 1, 
+Returns @code{#t} if @var{index}-th bit of integer @var{n} is 1,
 @var{#f} otherwise.
 @c JP
 整数@var{n}の@var{index}目のビットが1ならば@code{#t}を、0ならば@code{#f}を
@@ -1641,7 +1641,7 @@ integer @var{from}.
 [SRFI-60]
 @c EN
 If @var{n} is positive, returns the number of @code{1}'s in the
-bits of @var{n}.  If @var{n} is negative, 
+bits of @var{n}.  If @var{n} is negative,
 returns the number of @code{0}'s in the bits of 2's complement
 representation of @var{n}.
 @c JP
@@ -1853,10 +1853,10 @@ otherwise.  Convenient to coerce a value to boolean.
 @c NODE 未定義値
 
 @c EN
-While working with Gauche, sometimes you encounter 
+While working with Gauche, sometimes you encounter
 a value printed as @code{#<undef>}, an @emph{undefined} value.
 @c JP
-Gaucheで作業していると、しばしば未定義値 @code{#<undef>} 
+Gaucheで作業していると、しばしば未定義値 @code{#<undef>}
 に出会うことがあるでしょう。
 @c COMMON
 
@@ -1875,8 +1875,8 @@ or to indicate there's no other suitable value.
 
 @c EN
 Do not confuse undefined values with unbound variables;
-A variable can be bound to @code{#<undef>}, for it is just 
-an ordinaly first-class value.  On the other hand, an 
+A variable can be bound to @code{#<undef>}, for it is just
+an ordinaly first-class value.  On the other hand, an
 unbound variable means there's no value associated with the variable.
 @c JP
 未定義値と未束縛の変数を混同しないようにしてください。
@@ -1885,12 +1885,12 @@ unbound variable means there's no value associated with the variable.
 @c COMMON
 
 @c EN
-However, @code{#<undef>} may be used in certain 
+However, @code{#<undef>} may be used in certain
 occasions to indicate that a value is not provided for
 the variable.  For example, an optional procedure parameter
 without default value is bound to @code{#<undef>} if an
 actual argument is not given (@xref{Making Procedures}).
-Note that it cannot be distinguished from the case 
+Note that it cannot be distinguished from the case
 a value is actually provided, and the value just happens
 to be @code{#<undef>}.  If you get an @code{#<undef>},
 you can say at most is that the value doesn't matter.
@@ -1958,13 +1958,13 @@ Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実�
 @c COMMON
 
 @menu
-* Pair and null class::         
-* List predicates::             
-* List constructors::           
-* List accessors and modifiers::  
-* Walking over lists::          
-* Other list procedures::       
-* Association lists::           
+* Pair and null class::
+* List predicates::
+* List constructors::
+* List accessors and modifiers::
+* Walking over lists::
+* Other list procedures::
+* Association lists::
 @end menu
 
 @node Pair and null class, List predicates, Pairs and Lists, Pairs and Lists
@@ -2026,7 +2026,7 @@ Returns @code{#t} if @var{obj} is a pair, @code{#f} otherwise.
 @end defun
 
 @defun null? obj
-[R5RS] 
+[R5RS]
 @c EN
 Returns @code{#t} if @var{obj} is an empty list, @code{#f} otherwise.
 @c JP
@@ -2105,7 +2105,7 @@ which are considered to be dotted lists of length 0.
 @c NODE リストの作成
 
 @defun cons obj1 obj2
-[R5RS] 
+[R5RS]
 @c EN
 Constructs a pair of @var{obj1} and @var{obj2} and returns it.
 @c JP
@@ -2175,7 +2175,7 @@ this function diverges.
 @end defun
 
 @defun iota count :optional (start 0) (step 1)
-[SRFI-1] 
+[SRFI-1]
 @c EN
 Returns a list of numbers, starting from @var{start},
 increasing by @var{step}.
@@ -2267,7 +2267,7 @@ the resulting list, like unquote-splicing.
 
 @defun car pair
 @defunx cdr pair
-[R5RS] 
+[R5RS]
 @c EN
 Returns car and cdr of @var{pair}, respectively.
 @c JP
@@ -2277,7 +2277,7 @@ Returns car and cdr of @var{pair}, respectively.
 
 @defun set-car! pair obj
 @defunx set-cdr! pair obj
-[R5RS] 
+[R5RS]
 @c EN
 Modifies car and cdr of @var{pair}, by @var{obj}, respectively.
 
@@ -2355,7 +2355,7 @@ If @var{list} is a circular list, this function diverges.
 @end defun
 
 @defun length+ x
-[SRFI-1] 
+[SRFI-1]
 @c EN
 If @var{x} is a proper list, returns its length.
 For all other @var{x}, including a circular list,
@@ -2372,7 +2372,7 @@ it returns @code{#f}.
 [SRFI-1]
 @c EN
 @code{take} returns the first i elements of list x.
-@code{drop} returns all but the first i elements of list x. 
+@code{drop} returns all but the first i elements of list x.
 @c JP
 @code{take} はリスト @var{x} の最初のi個の要素を返します。
 @code{drop} はリスト @var{x} の最初のi個の要素を除いたリストを返します。
@@ -2394,7 +2394,7 @@ it returns @code{#f}.
 @c EN
 @code{drop} is exactly equivalent to performing @var{i} cdr operations
 on @var{x}.  The returned value shares a common tail with @var{x}.
-On the other hand, take always allocates a new list 
+On the other hand, take always allocates a new list
 for result if the argument is a list of non-zero length.
 
 An error is signalled if @var{i} is past the end of list @var{x}.
@@ -2451,7 +2451,7 @@ when the input list is shorter than @var{k} elements.
 @end example
 
 @c EN
-Note: For generic subsequence extraction from any sequence, 
+Note: For generic subsequence extraction from any sequence,
 see @code{subseq} in @ref{Slicing sequence}.
 @c JP
 注意: 一般的な、いかなるシーケンスからのサブシーケンスの抽出については、
@@ -2464,7 +2464,7 @@ see @code{subseq} in @ref{Slicing sequence}.
 [SRFI-1]
 @c EN
 @code{take-right} returns the last @var{k} elements of @var{lis}.
-@code{drop-right} returns all but the last @var{k} elements of @var{lis}. 
+@code{drop-right} returns all but the last @var{k} elements of @var{lis}.
 @c JP
 @code{take-right} は @var{lis} の最後の @var{k}個の要素
 からなるリストを返します。
@@ -2637,7 +2637,7 @@ returning a list of the first @var{i} elements, and the remaining tail.
 @end example
 @c EN
 @code{split-at!} is the linear-update variant. It may destructively
-modifies @var{x} to produce the result. 
+modifies @var{x} to produce the result.
 @c JP
 @code{split-at!} はその場で更新されるバージョンです。
 これは @var{x} を破壊的に更新するかもしれません。
@@ -2820,11 +2820,11 @@ When it is given a single list
 then this procedure returns
 @c JP
 基本的なリスト反復演算子です。単一のリスト
-@var{clist1} = (@var{e1} @var{e2} @dots{} @var{en}) 
+@var{clist1} = (@var{e1} @var{e2} @dots{} @var{en})
 を与えられたときには、以下を返します。
 @c COMMON
 @example
-(@var{kons} @var{en} @dots{} (@var{kons} @var{e2} (@var{kons} @var{e1} @var{knil})) @dots{} ) 
+(@var{kons} @var{en} @dots{} (@var{kons} @var{e2} (@var{kons} @var{e1} @var{knil})) @dots{} )
 @end example
 
 @c EN
@@ -2832,7 +2832,7 @@ If @var{n} list arguments are provided, then the @var{kons}
 function must take @var{n}+1 parameters: one element from each list, and
 the "seed" or fold state, which is initially @var{knil}.
 The fold operation terminates when the shortest list runs out of values.
-At least one of the list arguments must be finite. 
+At least one of the list arguments must be finite.
 
 Examples:
 @c JP
@@ -2861,7 +2861,7 @@ When it is given a single list
 then this procedure returns
 @c JP
 基本的な再帰演算子です。単一のリスト
-@var{clist1} = (@var{e1} @var{e2} @dots{} @var{en}) 
+@var{clist1} = (@var{e1} @var{e2} @dots{} @var{en})
 を与えられたときには、以下を返します。
 @c COMMON
 @example
@@ -2873,9 +2873,9 @@ If @var{n} list arguments are provided, then the @var{kons} function
 must take @var{n}+1 parameters: one element from each list, and
 the "seed" or fold state, which is initially @var{knil}.
 The fold operation terminates when the shortest list runs out of values.
-At least one of the list arguments must be finite. 
+At least one of the list arguments must be finite.
 
-Examples: 
+Examples:
 @c JP
 @var{n} 本のリストが与えられた場合には、@var{kons} 関数は @var{n}+1 個の引数
 をとる関数でなければなりません。それぞれのリストから要素をひとつずつと、
@@ -2933,7 +2933,7 @@ commutative, @code{fold} and @code{fold-left} produces the same result.
 
 @c EN
 If more than one lists are given, @var{snok} is called with
-the current seed value @var{knil} and each corresponding 
+the current seed value @var{knil} and each corresponding
 element of the input lists
 @code{clist1} @code{clist2} @dots{}.
 @c JP
@@ -2994,7 +2994,7 @@ modifies @var{list} to produce the result.
 @defun find pred clist
 [SRFI-1]
 @c EN
-Applies @var{pred} for each element of @var{clist}, from 
+Applies @var{pred} for each element of @var{clist}, from
 left to right, and returns the first element that @var{pred} returns
 true on.  If no element satisfies @var{pred}, @code{#f} is returned.
 @c JP
@@ -3038,7 +3038,7 @@ value, @code{#f} is returned.
 @c EN
 Applies @var{pred} across each element of @var{clist}s, and
 returns @code{#f} as soon as @var{pred} returns @code{#f}.
-If all application of @var{pred} return a non-false value, 
+If all application of @var{pred} return a non-false value,
 @code{every} returns the last result of the applications.
 @c JP
 @var{clist} の各要素に @var{pred} を順に適用し、@var{pred}が
@@ -3095,7 +3095,7 @@ Returns a list consisting of the elements of the first @var{list} followed by
 the elements of the other lists.  The resulting list is always newly
 allocated, except that it shares structure with the last list argument.
 The last argument may actually be any object; an improper list results
-if the last argument is not a proper list. 
+if the last argument is not a proper list.
 @c JP
 渡されたリストの要素を繋げたリストを返します。最後の引数の部分以外は新しいセルがアロケート
 されて使われます。最後の引数は正規のリストである必要がありません。その場合、結果は正規でない
@@ -3174,7 +3174,7 @@ The rationale is the following correspondence:
 @c EN
 Searches @var{obj} in the @var{list}.  If @code{n}-th element of
 @var{list} equals to @var{obj} (in the sense of @code{eq?} for @code{memq},
-@code{eqv?} for @code{memv}, and @code{equal?} for @code{member}), 
+@code{eqv?} for @code{memv}, and @code{equal?} for @code{member}),
 @code{(list-tail @var{list} @var{n})} is returned.
 Otherwise, @code{#f} is returned.
 @c JP
@@ -3487,7 +3487,7 @@ is the same (@code{eq?}) to which.
 
 
 @defun symbol? obj
-[R5RS] 
+[R5RS]
 @c EN
 Returns true if and only if @var{obj} is a symbol.
 @c JP
@@ -4033,13 +4033,13 @@ that doesn't have a corresponding character.
 Converts a character @var{char} to integer UCS codepoint,
 and integer UCS codepoint @var{n} to a character, respectively.
 
-If Gauche is compiled with UTF-8 encoding, these procedures are the 
+If Gauche is compiled with UTF-8 encoding, these procedures are the
 same as @code{char->integer} and @code{integer->char}.
 
 When Gauche's internal encoding differs from UTF-8, these procedures
 implicitly loads @code{gauche.charconv} module to convert internal
 character code to UCS or vice versa (@xref{Character code conversion}).
-If @var{char} doesn't have corresponding UCS codepoint, 
+If @var{char} doesn't have corresponding UCS codepoint,
 @code{char->ucs} returns @code{#f}.  If UCS codepoint @var{n} can't
 be represented in the internal character encoding, @code{ucs->char}
 returns @code{#f}, unless the conversion routine provides a substitution
@@ -4409,7 +4409,7 @@ a sequence of characters, or a sequence of bytes.
 
 @c EN
 It should be emphasized that Gauche's @emph{internal} string object,
-@emph{string body}, is immutable.  
+@emph{string body}, is immutable.
 To comply R5RS in which strings are mutable, a Scheme-level
 string object is an indirect pointer to a string body.
 Mutating a string means that Gauche creates a new immutable
@@ -4431,10 +4431,10 @@ to a specific point by index within the original string may cost
 O(N) because of multibyte string; which is a different story).
 @item
 On the other hand, mutating a string cost O(N) where N is the length
-of string, even for replacing a character.  
+of string, even for replacing a character.
 @end itemize
 
-Gauche does not attempt to make string mutation faster; 
+Gauche does not attempt to make string mutation faster;
 @code{(string-set! s k c)} is exactly as slow as to take
 two substrings, before and after of k-th character, and
 concatenate them with a single-character string inbetween.
@@ -4484,14 +4484,14 @@ SRFI-13については@ref{String library}を参照してください。
 @c COMMON
 
 @menu
-* String syntax::               
-* String Predicates::           
-* String Constructors::         
-* String interpolation::        
-* String Accessors & Modifiers::  
-* String Comparison::           
-* String utilities::            
-* Incomplete strings::          
+* String syntax::
+* String Predicates::
+* String Constructors::
+* String interpolation::
+* String Accessors & Modifiers::
+* String Comparison::
+* String utilities::
+* Incomplete strings::
 @end menu
 
 @node String syntax, String Predicates, Strings, Strings
@@ -4603,7 +4603,7 @@ The following code is an example of backslash-newline escape sequence:
   This is a long message \
   in a literal string.")
 
-*message*  
+*message*
   @result{} "This is a long message in a literal string."
 @end example
 
@@ -4794,7 +4794,7 @@ Schemeはそのような機能を定義していませんが、Gaucheではリ�
 @deftp {Reader syntax} @code{#`}@var{string-literal}
 @c EN
 Evaluates to a string.  If @var{string-literal} contains the
-character sequence @code{,@var{expr}}, where 
+character sequence @code{,@var{expr}}, where
 @var{expr} is a valid external representation
 of a Scheme expression, @var{expr} is evaluated and
 its result is inserted in the original place (by using @code{x->string},
@@ -4896,7 +4896,7 @@ you should write @code{#`",|year|/,|month|/,day ,|hour|:,|minutes|:,seconds"}.
 It may be better always to delimit direct variable references
 in this syntax to avoid confusion.
 @c JP
-@emph{この構文を採用した理由:} 
+@emph{この構文を採用した理由:}
 他のスクリプト言語では、`@code{$expr}' や '@code{#@{...@}}' が良く使われています。
 準クオート (@ref{Quasiquotation}参照) との類似性からこの構文を採用しました。
 変数名の区切りを明確にするのに`|'を使う必要があるのは少々奇妙ですが、
@@ -5048,7 +5048,7 @@ Return value is undefined.
 @c EN
 Returns a substring of @var{string}, starting from @var{start}-th
 character (inclusive) and ending at @var{end}-th character (exclusive).
-The @var{start} and @var{end} arguments must satisfy 
+The @var{start} and @var{end} arguments must satisfy
 @code{0 <= @var{start} < @var{N}},
 @code{0 <= @var{end} <= @var{N}}, and
 @code{@var{start} <= @var{end}}, where @var{N} is the length of the
@@ -5073,9 +5073,9 @@ returns a copy of @var{string}.
 
 @c EN
 Actually, extended @code{string-copy} explained below
-is a superset of @code{substring}.  This procedure is 
+is a superset of @code{substring}.  This procedure is
 kept mostly for compatibility of R5RS programs.
-See also @code{subseq} in @ref{Sequence framework}, 
+See also @code{subseq} in @ref{Sequence framework},
 for the generic version.
 @c JP
 実は後述する拡張された@code{string-copy}は@code{substring}のスーパーセッ
@@ -5087,7 +5087,7 @@ for the generic version.
 @defun string-append string @dots{}
 [R5RS]
 @c EN
-Returns a newly allocated string whose content is concatenation of 
+Returns a newly allocated string whose content is concatenation of
 @var{string} @dots{}.
 @c JP
 @var{string} @dots{}を連結した内容を含む文字列を新しくアロケートして返
@@ -5206,7 +5206,7 @@ is an empty string or a list with a null string.
 である場合は、曖昧に(適当に)動作します。
 @c COMMON
 @example
-(string-join '("apple" "mango" "banana") ", ") 
+(string-join '("apple" "mango" "banana") ", ")
   @result{} "apple, mango, banana"
 (string-join '() ":")
   @result{} ""
@@ -5423,7 +5423,7 @@ Gaucheの内部エンコーディングで正当なマルチバイト文字で�
 @c EN
 Incomplete strings may be genereated in several circumstances;
 reading binary data as a string, reading a string data that has
-been 'chopped' in middle of a multibyte character, or 
+been 'chopped' in middle of a multibyte character, or
 concatenating a string with other incomplete strings, for example.
 @c JP
 不完全文字列が生成される状況はいくつかあります。たとえば、バイナリデー
@@ -5444,7 +5444,7 @@ In fact, we're planning to remove it in the future releases.
 
 @c EN
 Just in case, if you happen to get an incomplete string,
-you can convert it to a complete string by the following 
+you can convert it to a complete string by the following
 procedure:
 @c JP
 万が一、不完全文字列に出会ってしまったら以下の手続を使って完全文字列に
@@ -5507,7 +5507,7 @@ upper-compatible of POSIX extended regular expression, plus
 some extensions from Perl 5 regexp.
 
 A special syntax is provided for literal regular expressions.
-Also regular expressions are applicable, that is, 
+Also regular expressions are applicable, that is,
 it works like procedures that match the given string to itself.
 Combining with these two features enables writing some
 string matching idioms compact.
@@ -5529,9 +5529,9 @@ Gaucheはまた、リテラル正規表現用の構文を備えています。
 @end example
 
 @menu
-* Regular expression syntax::   
-* Using regular expressions::   
-* Inspecting and assembling regular expressions::  
+* Regular expression syntax::
+* Using regular expressions::
+* Inspecting and assembling regular expressions::
 @end menu
 
 @node Regular expression syntax, Using regular expressions, Regular expressions, Regular expressions
@@ -5572,7 +5572,7 @@ If you want to construct regexp on-the-fly, however, use @code{string->regexp}.
 @end deftp
 
 @c EN
-Gauche's built-in regexp syntax follows POSIX extended regular 
+Gauche's built-in regexp syntax follows POSIX extended regular
 expression, with a bit of extensions taken from Perl.
 
 Note that the syntax described here is just a surface syntax.
@@ -5617,7 +5617,7 @@ Bounded repetition.  @code{@i{re}@{@i{n}@}} matches exactly @i{n}
 occurrences of @i{re}.
 @code{@i{re}@{@i{n},@i{m}@}} matches at least @var{n} and at most
 @var{m} occurrences of @i{re}, where @var{n} <= @var{m}.
-In the latter form, either @var{n} or @var{m} can be omitted; omitted @var{n} 
+In the latter form, either @var{n} or @var{m} can be omitted; omitted @var{n}
 is assumed as 0, and omitted @var{m} is assumed infinity.
 @c JP
 回数に範囲のある繰り返しです。
@@ -5677,7 +5677,7 @@ a single @i{re}, but the matched string isn't saved.
 
 @item (?<@i{name}>@i{re}@dots{})
 @c EN
-Named capture and clustering.  Like @code{(@i{re}@dots{})}, 
+Named capture and clustering.  Like @code{(@i{re}@dots{})},
 but adds the name @i{name} to the matched substring.
 You can refer to the matched substring by both index number
 and the name.
@@ -5697,9 +5697,9 @@ returned as the submatch of the named capture.
 @item (?i:@i{re}@dots{})
 @itemx (?-i:@i{re}@dots{})
 @c EN
-Lexical case sensitivity control.  
+Lexical case sensitivity control.
 @code{(?i:@i{re}@dots{})} makes @i{re}@dots{} matches case-insensitively,
-while @code{(?-i:@i{re}@dots{})} makes 
+while @code{(?-i:@i{re}@dots{})} makes
 @i{re}@dots{} matches case-sensitively.
 
 Perl's regexp allows several more flags to appear between '?' and ':'.
@@ -5800,7 +5800,7 @@ Matches the complement character set of @code{\s}, @code{\d} and
 
 @item ^, $
 @c EN
-Beginning and end of string assertion, 
+Beginning and end of string assertion,
 when appears at the beginning or end of the pattern.
 @c JP
 それぞれ、パターンの最初または最後に指定された場合、
@@ -5846,7 +5846,7 @@ and @code{\B} matches an empty string elsewhere.
 @itemx \#
 @c EN
 These are the same as @code{;}, @code{"}, and @code{#}, respectively,
-and can be used to avoid confusing Emacs or other syntax-aware editors 
+and can be used to avoid confusing Emacs or other syntax-aware editors
 that are not familiar with Gauche's extension.
 @c JP
 これらはそれぞれ@code{;}、@code{"}、および@code{#}と同じです。
@@ -5856,8 +5856,8 @@ Emacs等、Scheme構文を理解するエディタを混乱させないために
 @item (?=@i{pattern})
 @itemx (?!@i{pattern})
 @c EN
-Positive/negative lookahead assertion.  
-Match succeeds if @i{pattern} matches (or does not match) 
+Positive/negative lookahead assertion.
+Match succeeds if @i{pattern} matches (or does not match)
 the input string from the current position, but this doesn't
 move the current position itself, so that the following
 regular expression is applied again from the current position.
@@ -5994,7 +5994,7 @@ test counts true.
 @clindex regexp
 @c EN
 Regular expression object.  You can construct a regexp object
-from a string by @code{string->regexp} at run time.  Gauche also 
+from a string by @code{string->regexp} at run time.  Gauche also
 has a special syntax to denote regexp literals, which construct
 regexp object at loading time.
 
@@ -6365,7 +6365,7 @@ value from the procedure is inserted to the output string using
 @c COMMON
 
 @example
-(regexp-replace #/c(.*)g/ "abcdefghi" 
+(regexp-replace #/c(.*)g/ "abcdefghi"
                 (lambda (m)
                   (list->string
                    (reverse
@@ -6374,7 +6374,7 @@ value from the procedure is inserted to the output string using
 @end example
 
 @c EN
-Note: @code{regexp-replace-all} applies itself recursively to the remaining 
+Note: @code{regexp-replace-all} applies itself recursively to the remaining
 of the string after match.  So the beginning of string assertion
 in @var{regexp} doesn't only mean the beginning of input string.
 @c JP
@@ -6740,7 +6740,7 @@ When Gauche reads regexp from string, first it parses
 string representation and construct an abstract
 syntax tree (AST), perform some optimizations on it,
 then compiles into an instruction sequence to be
-executed by the regexp engine.  
+executed by the regexp engine.
 
 The following procedures expose this process to
 user programs.  It may be easier for programs to
@@ -6793,7 +6793,7 @@ If it's the latter, @code{regexp-unparse} just returns @code{#f}.
 
 This is the structure of AST.  Note that this is originally
 developed only for internal use, and not very convenient to manipulate
-from the code (e.g. if you insert or delete a subtree, you have to 
+from the code (e.g. if you insert or delete a subtree, you have to
 renumber capturing groups to make them consitent.)  There's a plan
 to provide a better representation, such as SRE, and a tool
 to convert it to this AST back and forth.   Contributions are welcome.
@@ -6849,7 +6849,7 @@ A vector is a simple 1-dimensional array of Scheme objects.
 You can access its element by index in constant time.
 Once created, a vector can't be resized.
 
-Class @code{<vector>} inherits @code{<sequence>} and 
+Class @code{<vector>} inherits @code{<sequence>} and
 you can use various generic functions such as @code{map} and @code{fold}
 on it.   @xref{Collection framework}, and @xref{Sequence framework}.
 
@@ -6988,7 +6988,7 @@ limit the range of the source.
 
 @c EN
 With @var{gauche.collection} module, you can use
-@code{(coerce-to <list> @var{vector})} and 
+@code{(coerce-to <list> @var{vector})} and
 @code{(coerce-to <vector> @var{list})} as well.
 @c JP
 @code{gauche.collection}モジュールをロードしていれば、
@@ -7121,8 +7121,8 @@ in @code{equal?}-type hash table.  The hash value is an exact
 non-negative integer, and it has two properties:
 @itemize
 @item
-For any object @var{a} and @var{b}, 
-if @code{(equal? @var{a} and @var{b})}, 
+For any object @var{a} and @var{b},
+if @code{(equal? @var{a} and @var{b})},
 then @code{(= (hash @var{a}) (hash @var{b}))},
 while @code{hash} is defined for types of @var{a} and @var{b}.
 @item
@@ -7131,7 +7131,7 @@ of the machine (such as address of the data); so you can safely save
 the hash value to file and read it again with different process
 without losing validity of the hash value.
 @end itemize
-If @var{obj} is either a number, a boolean, a character, 
+If @var{obj} is either a number, a boolean, a character,
 a symbol, a keyword, a string, a list or a vector,
 internal hash function is used to calculate the hash value.
 If @var{obj} is other than that, @code{hash} calls
@@ -7163,7 +7163,7 @@ a generic function @code{object-hash} to calculate the hash value.
 @c EN
 By defining a method for this generic function, objects of
 user-defined types can have a hash value and can be used
-in @code{equal?} hash table.  
+in @code{equal?} hash table.
 
 The method has to return an exact non-negative integer, and
 has to follow the same constraints as of @code{hash}.
@@ -7365,7 +7365,7 @@ Looks for the value for the key @var{key} in the hash table @var{ht}.
 If found and it is a pair, replaces the value for its cdr and returns
 car of the original value.  If no entry for @var{key} is in the table,
 or the value is not a pair, the table is not modified and
-the procedure returns @var{default} if given, or signals an error otherwise.  
+the procedure returns @var{default} if given, or signals an error otherwise.
 
 During the operation the key is looked for only once, thus runs
 efficiently.
@@ -7494,7 +7494,7 @@ O(log n)です。
 
 @c EN
 Unlike hashtables, a tree map keeps the order of the keys, so
-it is easy to traverse entries in the order of keys, to find 
+it is easy to traverse entries in the order of keys, to find
 minimum/maximum keys, or to find a key closest to the given value.
 @c JP
 ハッシュテーブルとはちがい、キーの順序は保存されます。したがってキーの
@@ -7679,7 +7679,7 @@ or maximum key, respectively.   If @var{tree-map} is empty,
 @defunx tree-map-pop-max! tree-map
 @c EN
 Looks for an entry with minimum or maximum key, respectively,
-then deletes the entry from @var{tree-map} and returns 
+then deletes the entry from @var{tree-map} and returns
 a pair of the key and its value of the original entry.
 If @var{tree-map} is empty, @code{#f} is returned.
 @c JP
@@ -7692,7 +7692,7 @@ If @var{tree-map} is empty, @code{#f} is returned.
 @defun tree-map-fold tree-map proc seed
 @defunx tree-map-fold-right tree-map proc seed
 @c EN
-Iterate over elements in @var{tree-map}, applying 
+Iterate over elements in @var{tree-map}, applying
 @var{proc} which has a type @code{(key, value, seed) -> seed}.
 The difference of @code{tree-map-fold} and @code{tree-map-fold-right}
 is the associative order of applying @code{proc},
@@ -7720,9 +7720,9 @@ Some examples:
 @example
 (define tree (alist->tree-map '((3 . a) (7 . b) (5 . c)) = <))
 
-(tree-map-fold tree list* '()) 
+(tree-map-fold tree list* '())
    @result{} (7 b 5 c 3 a)
-(tree-map-fold-right tree list* '()) 
+(tree-map-fold-right tree list* '())
    @result{} (3 a 5 c 7 b)
 @end example
 @end defun
@@ -7755,10 +7755,10 @@ two values, its key and its value.  Otherwise, returns two values,
 
 The criteria of ``closest'' differ slightly among these procedures;
 @code{tree-map-floor} finds the maximum key which is no greater than
-@var{probe}; @code{tree-map-ceiling} finds the minimum key which is 
+@var{probe}; @code{tree-map-ceiling} finds the minimum key which is
 no less than @var{probe}; @code{tree-map-predecessor} finds the
 maximum key which is strictly less than @var{probe};
-and @code{tree-map-successor} finds the minimum key which 
+and @code{tree-map-successor} finds the minimum key which
 is strictly greater than @var{probe}.
 @end defun
 
@@ -7944,15 +7944,15 @@ accept @code{("abc" 2)} can be a valid application syntax.
 @xref{Applicable objects}, for the details.
 
 @menu
-* Procedure class and applicability::  
-* Universal accessor::          
-* Combinators::                 
-* Optional argument parsing::   
-* Procedure arity::             
-* Applicable objects::          
-* Continuations::               
-* Multiple values::             
-* Folding generated values::    
+* Procedure class and applicability::
+* Universal accessor::
+* Combinators::
+* Optional argument parsing::
+* Procedure arity::
+* Applicable objects::
+* Continuations::
+* Multiple values::
+* Folding generated values::
 @end menu
 
 @node Procedure class and applicability, Universal accessor, Procedures and continuations, Procedures and continuations
@@ -8030,7 +8030,7 @@ Returns (a) value(s) @var{proc} returns.
 @defun applicable? obj class @dots{}
 @c EN
 Checks if @var{obj} can be called with the types of arguments
-listed in @var{class} @dots{}.  That is, 
+listed in @var{class} @dots{}.  That is,
 when @code{(applicable? foo <string> <integer>)} returns @code{#t},
 then you can call @code{foo} as @code{(foo "x" -2)}, for example.
 (It doesn't mean you won't get an error; @code{foo} may be accept
@@ -8080,7 +8080,7 @@ of the corresponding @var{class} argument given to @code{applicable?}.
 
 @c EN
 The second example returns @code{#t} since @code{<string>} is
-a subclass of @code{<sequence>}, while 
+a subclass of @code{<sequence>}, while
 the third example returns @code{#f} since @code{<hash-table>}
 isn't a subclass of @code{<sequence>}.  The fource example
 returns @code{#f} since @code{<real>} isn't a subclass of @code{<integer>}.
@@ -8221,7 +8221,7 @@ z @result{}  #((#(a b c) #(d e f) #(g h i))
 @end defun
 
 @c EN
-Internally, a call to @code{~} is implemented by a generic 
+Internally, a call to @code{~} is implemented by a generic
 function @code{ref}.  See @ref{Object system} for more about
 generic functions.
 @c JP
@@ -8236,7 +8236,7 @@ Many aggregate types defines a specialized method of these
 to provide uniform access and mutation.   Meaning of
 optional arguments @var{args} of @code{ref} depends
 on each specialized method,
-but it is common that the first optional argument of @code{ref} 
+but it is common that the first optional argument of @code{ref}
 is a @emph{fallback} value, which is to be returned when
 @var{object} doesn't have a meaningful association with @var{key}.
 @c JP
@@ -8399,7 +8399,7 @@ Some examples:
 
 @c EN
 A couple of edge cases: if only one argument is given, the argument
-itself is returned.  If no arguments are given, the procedure @code{values} 
+itself is returned.  If no arguments are given, the procedure @code{values}
 is returned.
 @c JP
 境界のケース：ひとつだけ引数が渡された場合は、その引数がそのまま返されます。
@@ -8407,7 +8407,7 @@ is returned.
 @c COMMON
 
 @c EN
-Note: The name @code{.$} comes from the fact that @code{.} is 
+Note: The name @code{.$} comes from the fact that @code{.} is
 commonly used for function composition in literatures and some
 programming languages, and that Gauche uses suffix @code{$} to
 indicate combinators.   However, since it is not a valid R5RS/R6RS
@@ -8512,7 +8512,7 @@ Gaucheは省略可能引数やキーワード引数を拡張lambda構文で
 @c COMMON
 
 @example
-(define (foo a b :optional (c #f) (d 'none)) 
+(define (foo a b :optional (c #f) (d 'none))
   body ...)
 
 @c EN
@@ -8844,7 +8844,7 @@ Gaucheでは、特別な組み込みの機構によって任意のオブジェ�
 @deffn {Generic Function} object-apply @var{object} @var{arg} @dots{}
 @c EN
 If an object that is neither a procedure nor a generic function
-is applied to some arguments, 
+is applied to some arguments,
 the object and the arguments are passed to a generic function
 @code{object-apply}.
 
@@ -8967,7 +8967,7 @@ with the arguments given to the continuation procedure.
 @var{proc}を呼び出します。@var{proc}が戻ったら、その返り値が@code{call/cc}の
 値となります。作成された継続手続きがどこかで0個または複数個の引数を伴って呼ばれたら、
 あたかも@code{call/cc}から戻ったかのように実行が継続されます。その場合、
-@code{call/cc}は、継続手続きに与えられた引数を複数の値として返します。  
+@code{call/cc}は、継続手続きに与えられた引数を複数の値として返します。
 @c COMMON
 
 @c EN
@@ -9031,8 +9031,8 @@ to execute step 3 again), an error is signalled as follows.
 @end example
 
 @c EN
-This is because C routines don't expect the calling function to return 
-more than once.  The C stack frame on which the Scheme callbak was 
+This is because C routines don't expect the calling function to return
+more than once.  The C stack frame on which the Scheme callbak was
 originally called
 is likely to be deallocated or modified at the time the continuation
 is invoked.
@@ -9092,7 +9092,7 @@ then @var{after}, then returns whatever value(s) @var{thunk} returned.
 If a control flow goes out from @var{thunk} by invoking a continuation
 captured outside of the dynamic scope of @code{dynamic-wind}
 (for example, an error is signalled in @var{thunk}),
-@var{after} is called.  
+@var{after} is called.
 
 If a control flow goes into @var{thunk} by invoking a continuation
 captured inside @var{thunk} from outside of the dynamic
@@ -9267,7 +9267,7 @@ This is provided for completeness, but it isn't a good way to
 handle generators; in order to combine values right-associatively,
 we should read all the values from the generators (until any one
 of the generator returns EOF), then start
-calling @var{proc} as 
+calling @var{proc} as
 @example
 (proc v0_0 v1_0 ... (proc v0_1 v1_1 ... (proc v0_n v1_n ... seed) ...))
 @end example
@@ -9344,8 +9344,8 @@ internally, its element isn't calculated until it is required.
 @c COMMON
 
 @menu
-* Delay force and lazy::        
-* Lazy sequences::              
+* Delay force and lazy::
+* Lazy sequences::
 @end menu
 
 
@@ -9546,7 +9546,7 @@ way to build lazy sequences.
 
 @defmac lcons car cdr
 Returns a lazy pair consists of @var{car} and @var{cdr}.
-The expression @var{car} is evaluated at the call of @code{lcons}, 
+The expression @var{car} is evaluated at the call of @code{lcons},
 but evaluation of @var{cdr} is delayed.
 
 You can't distinguish a lazy pair from an ordinary pair.  If you
@@ -9621,7 +9621,7 @@ that returns lazy sequences.
 Gauche's exception system consists of three components;
 (1) the way to signal an exceptional case has occurred,
 (2) the way to specify how to handle such a case,
-and (3) the standard objects (@emph{conditions}) 
+and (3) the standard objects (@emph{conditions})
 to communicate the code that
 signals an exceptional case and the code that handles it.
 @c JP
@@ -9659,10 +9659,10 @@ SRFI-35にならって@emph{コンディション(condition)}を使います。
 @c COMMON
 
 @menu
-* Exception handling overview::  
-* Signalling exceptions::       
-* Handling exceptions::         
-* Conditions::                  
+* Exception handling overview::
+* Signalling exceptions::
+* Handling exceptions::
+* Conditions::
 @end menu
 
 @node Exception handling overview, Signalling exceptions, Exceptions, Exceptions
@@ -9697,7 +9697,7 @@ looks like this:
 @end example
 
 @c EN
-The cadr of @code{guard} clause is a form of 
+The cadr of @code{guard} clause is a form of
 @code{(@var{variable} @var{clause} @dots{})}.  In this example,
 the variable is @code{exc}, and it has two clauses.
 Each @var{clause} has the form like the one in @code{cond}.
@@ -9786,7 +9786,7 @@ conditions.
 
 @c EN
 If no tests of @var{clause}s satisfy and no @code{else} clause is given,
-the exception `falls off' the @code{guard} construct, i.e. 
+the exception `falls off' the @code{guard} construct, i.e.
 it will be handled by the outer level of @code{guard} form or
 top-level.  For example, the following @code{guard} form
 only handles @code{<read-error>} and @code{<system-error>};
@@ -9796,7 +9796,7 @@ by outer level.
 もし、@var{clause} のどのテストも満されず、かつ @code{else} 節があたえられて
 いなければ、その例外は @code{guard} から「抜け」ます。すなわち、@code{guard}
 の外側のレベルあるいはトップレベルで処理されることになります。たとえば、
-以下の @code{guard} フォームでは、@code{<read-error>} と 
+以下の @code{guard} フォームでは、@code{<read-error>} と
 @code{<system-error>} としか処理できず、もし、本体が他のタイプのコンディション
 を投げてきたら、その外側のレベルで処理しなければなりません。
 @c COMMON
@@ -9953,7 +9953,7 @@ Gauche のフレームワーク(SRFI-35)に適合させるためには、新し�
 @c COMMON
 
 @c EN
-One way of ensuring the above convention as well as increasing 
+One way of ensuring the above convention as well as increasing
 portability is to use @code{define-condition-type} macro, defined
 in @code{SRFI-35}.
 @c JP
@@ -10074,7 +10074,7 @@ _______________________________________
 The second form can be used to raise an error other than the
 @code{<error>} condition.  @var{condition-type} must be
 a condition type (see @ref{Conditions} for more explanation of
-condition types).  It may be followed by keyword-value list 
+condition types).  It may be followed by keyword-value list
 to initialize the condition slots, and then optionally followed by
 a string and other objects that becomes an error message.
 @c JP
@@ -10093,7 +10093,7 @@ a string and other objects that becomes an error message.
 
 ...
   (unless (memq operation *supported-operations*)
-    (error <my-error> 
+    (error <my-error>
            :reason 'not-supported :priority 'urgent
            "Operation not supported:" operation))
 ...
@@ -10133,7 +10133,7 @@ The second form can be used to raise an error other than an
 
 @defun raise condition
 @c EN
-[SRFI-18] 
+[SRFI-18]
 This is the base mechanism of signalling exceptions.
 
 The procedure invokes the current exception handler.
@@ -10150,7 +10150,7 @@ handler in the way that @code{raise} may return.  The details
 are explained in @ref{Handling exceptions}.
 
 If you don't want @code{raise} to return, the best way is to
-pass a condition which is an instance of @code{<serious-condition>} 
+pass a condition which is an instance of @code{<serious-condition>}
 or one of its subclasses.  Gauche's internal mechanism
 guarantees raising such an exception won't return.
 See @ref{Conditions} for the hierarchy of built-in conditions.
@@ -10349,7 +10349,7 @@ handled outside of the @code{unwind-protect} form.
 
 @c EN
 Although this form looks similar to @code{dynamic-wind}, they
-work at different layers and should not be confused.  
+work at different layers and should not be confused.
 @code{dynamic-wind} is the bottom-level
 building block and used to manage current exception handlers,
 current i/o ports, parameters, etc.
@@ -10359,7 +10359,7 @@ On the other hand, @code{unwind-protect} only cares about
 the Gauche's exception system.  @code{unwind-protect}'s @var{cleanup}
 is called only when @var{body} exits normally or
 throws Gauche's exception.
-In the above example, if control escapes from @code{drill-a-hole} 
+In the above example, if control escapes from @code{drill-a-hole}
 by calling a continuation captured outside of @code{unwind-protect},
 @var{cleanup} is not called; because the control may return to
 @code{drill-a-hole} again.  It can happen if user-level thread
@@ -10473,7 +10473,7 @@ installed, the following action is taken.
 @c COMMON
 
 @itemize @bullet
-@item 
+@item
 @c EN
 If the program is running interactively (in repl), the information
 of the thrown exception and stack trace are displayed, and
@@ -10658,7 +10658,7 @@ error during reading from a file because of device failure may consist
 both @code{<system-error>} @emph{and} @code{<io-read-error>}.
 In such cases, a @emph{compound condition} is raised.
 So you can't just use, for instance, @code{(is-a? obj <io-read-error>)}
-to check if @code{<io-read-error>} is thrown. 
+to check if @code{<io-read-error>} is thrown.
 See the "Condition API" section below.
 @c JP
 いくつかのコンディションが同時に発生することがあることに注意してください。
@@ -10746,7 +10746,7 @@ This is an internal class to represent a compound condition
 with any of its component condition is serious.   Inherits both
 @code{<compound-condition>} and @code{<serious-condition>}.
 @code{make-compound-condition} uses this class if the passed
-conditions includes a serious one.  
+conditions includes a serious one.
 Don't use this class directly.
 @c JP
 深刻なコンディションを含む合成コンディションを表現するための
@@ -10926,7 +10926,7 @@ track of line count.
 @c COMMON
 @end defivar
 
-@defivar {<read-error>} column 
+@defivar {<read-error>} column
 @defivarx {<read-error>} position
 @defivarx {<read-error>} span
 @c EN
@@ -11116,7 +11116,7 @@ it means @code{(is-a? obj <condition-meta>)}.
 @defun make-condition-type name parent field-names
 [SRFI-35]
 @c EN
-A procedural version to create a new condition type. 
+A procedural version to create a new condition type.
 @c JP
 新しいコンディションタイプを生成する手続き版です。
 @c COMMON
@@ -11228,7 +11228,7 @@ with field values extracted from @var{condition}.
 [SRFI-35]
 @c EN
 A convenience macro to create a (possibly compound) condition.
-@var{Type-field-binding} is a form of 
+@var{Type-field-binding} is a form of
 @code{(@var{condition-type} (@var{field-name} @var{value-expr}) @dots{})}.
 @c JP
 コンディションを生成するのに便利なマクロ。
@@ -11422,14 +11422,14 @@ and re-invoke them afterwards.
 @c NODE 入出力
 
 @menu
-* Ports::                       
-* Port and threads::            
-* Common port operations::      
-* File ports::                  
-* String ports::                
-* Coding-aware ports::          
-* Input::                       
-* Output::                      
+* Ports::
+* Port and threads::
+* Common port operations::
+* File ports::
+* String ports::
+* Coding-aware ports::
+* Input::
+* Output::
 @end menu
 
 @node Ports, Port and threads, Input and output, Input and output
@@ -11450,7 +11450,7 @@ Gaucheはportにいくつかの拡張を行い、いろいろなアプリケー�
 @c EN
 Standard Scheme (R5RS) essentially defines a port as an entity that
 you can fetch a character at a time and
-look one character ahead from an input port, 
+look one character ahead from an input port,
 and put a character at a time to an output port.
 Other R5RS I/O routines can be built on top of them.
 @c JP
@@ -11539,13 +11539,13 @@ behavior of the port in Scheme.
 @c NODE ポートとスレッド
 
 @c EN
-When Gauche is compiled with thread support, 
+When Gauche is compiled with thread support,
 the builtin port operations locks the port, so that port access
-from multiple threads will be serialized.   
+from multiple threads will be serialized.
 (It is required by SRFI-18, BTW).
 Here, "builtin port operations" are the port access functions
 that takes a port and does some I/O or query on it,
-such as @code{read}/@code{write}, @code{read-char}/@code{write-char}, 
+such as @code{read}/@code{write}, @code{read-char}/@code{write-char},
 @code{port->string}, etc.
 Note that @code{call-with-*} and @code{with-*} procedures do not
 lock the port during calling the given procedures, since the
@@ -11753,7 +11753,7 @@ Closes input and output @var{port}, respectively
 
 @defun port-type port
 @c EN
-Returns the type of @var{port} in one of the symbols @code{file}, 
+Returns the type of @var{port} in one of the symbols @code{file},
 @code{string} or @code{proc}.
 @c JP
 @var{port}のタイプを、シンボル@code{file}、@code{string}、@code{proc}の
@@ -12178,14 +12178,14 @@ is a string or a symbol that names a character encoding scheme (CES).
 
 For @code{open-input-file}, it can be a wildcard CES (e.g. @code{*jp})
 to guess the file's encoding heuristically
-(@xref{Autodetecting the encoding scheme}), 
+(@xref{Autodetecting the encoding scheme}),
 or @code{#t}, in which case we assume the input file itself has magic
-encoding comment and use @code{open-coding-aware-port} 
+encoding comment and use @code{open-coding-aware-port}
 (@xref{Coding-aware ports}).
 
-If this argument is given, Gauche automatically loads 
+If this argument is given, Gauche automatically loads
 @code{gauche.charconv} module and converts the input/output characters
-as you read to or write from the port.   
+as you read to or write from the port.
 See @ref{Supported character encoding schemes}, for the details of
 character encoding schemes.
 @c JP
@@ -12357,13 +12357,13 @@ as the result of @code{with-input-from-file} and
 
 @c EN
 @emph{Notes on semantics of closing file ports:}
-R5RS states, in the description of @code{call-with-input-file} et al., 
+R5RS states, in the description of @code{call-with-input-file} et al.,
 that @emph{"If @emph{proc} does not return, then the port will
 not be closed automatically unless it is possible
 to prove that the port will never again be used for read or write
 operation."}
 @c JP
-@emph{ポートを閉じるセマンティクスについて:} 
+@emph{ポートを閉じるセマンティクスについて:}
 R5RSは@code{call-with-input-file}等の説明において、次のように述べています。
 「@emph{procが戻って来なかった場合、今後ポートが読み書きに一切使われないことが
 証明できない限りは、ポートは自動的には閉じられない}」。
@@ -12426,7 +12426,7 @@ specifies whether @var{fd} should be closed when the port is closed.
 @c EN
 Interface to the system call @code{dup2(2)}.
 Atomically closes the file descriptor associated to @var{toport},
-creates a copy of the file descriptor associated to @var{fromport}, 
+creates a copy of the file descriptor associated to @var{fromport},
 and sets the new file descriptor to @var{toport}.
 Both @var{toport} and @var{fromport} must be file ports.
 Before the original file descriptor of @var{toport} is closed,
@@ -12435,13 +12435,13 @@ and any buffered input (when @var{toport} is an input port) is discarded.
 
 `Copy' means that, even the two file descriptors differ in their values,
 they both point to the same system's open file table entry.  For example
-they share the current file position; after @var{port-fd-dup!}, 
+they share the current file position; after @var{port-fd-dup!},
 if you call @code{port-seek} on @var{fromport}, the change is also visible
 from @var{toport}, and vice versa.  Note that this 'sharing' is in the
 system-level; if either @var{toport} or @var{fromport} is buffered,
 the buffered contents are not shared.
 
-This procedure is mainly intended for programs that needs to control 
+This procedure is mainly intended for programs that needs to control
 open file descriptos explicitly; e.g. a daemon process would want to redirect
 its I/O to a harmless device such as @file{/dev/null}, and a shell process
 would want to set up file descriptors before executing the child process.
@@ -12672,7 +12672,7 @@ A coding-aware port is a special type of procedural input port that
 is used by @code{load} to read a program source.  The port recognizes
 the magic comment to specify the character encoding of the
 program source, such as @code{;; -*- coding: utf-8 -*-}, and makes
-an appropriate character encoding conversion.  
+an appropriate character encoding conversion.
 See @ref{Multibyte scripts} for the details of coding magic comment.
 @c JP
 コーディング認識ポートは特殊な手続的入力ポートで、@code{load}が
@@ -12734,7 +12734,7 @@ magic comment.
 @end defun
 
 @node Input, Output, Coding-aware ports, Input and output
-@subsection Input 
+@subsection Input
 @c NODE 入力
 
 @c EN
@@ -12746,9 +12746,9 @@ an input port, and when omitted, the current input port is assumed.
 @c COMMON
 
 @menu
-* Reading data::                
-* Read-time constructor::       
-* Input utility functions::     
+* Reading data::
+* Read-time constructor::
+* Input utility functions::
 @end menu
 
 @node Reading data, Read-time constructor, Input, Input
@@ -12801,7 +12801,7 @@ are only provided for srfi-38 compatibility.
 [R5RS]
 @c EN
 Reads one character from @var{iport} and returns it.
-If @var{iport} has already 
+If @var{iport} has already
 reached to the end, returns an eof object.
 If the byte stream in @var{iport} doesn't consist a valid character,
 the behavior is undefined.  (In future, a port will have a option
@@ -12845,7 +12845,7 @@ If @var{iport} has already reached EOF, an eof object is returned.
 
 @defun peek-byte :optional iport
 @c EN
-Peeks one byte at the head of an input port @var{iport}, and returns 
+Peeks one byte at the head of an input port @var{iport}, and returns
 it as an integer in the range between 0 and 255.
 If @var{iport} has already reached EOF, an eof object is returned.
 @c JP
@@ -12871,7 +12871,7 @@ If @var{iport} has already reached EOF, an eof object is returned.
 If a byte sequence is read from @var{iport}
 which doesn't constitute a valid character in the native encoding,
 @code{read-line} signals an error by default.  However, if a true value
-is given to the argument @var{allow-byte-string?}, 
+is given to the argument @var{allow-byte-string?},
 @code{read-line} returns a byte string (incomplete string) in such case,
 without reporting an error.
 It is particularly useful if you read from a source whose
@@ -12894,7 +12894,7 @@ so that you can then use an appropriate character conversion port.
 Reads @var{nbytes} bytes from @var{iport}, and returns an incomplete
 string consisted by those bytes.  The size of returned string may
 shorter than @var{nbytes} when @var{iport} doesn't have enough bytes
-to fill.  
+to fill.
 If @var{nbytes} is zero, a null string is always returned.
 
 If @var{iport} has already reached EOF, an eof object is returned.
@@ -12919,7 +12919,7 @@ the detail explanation of buffering modes).
 @itemize @bullet
 @item
 @c EN
-If the buffering mode is @code{:full}, @code{read-block} waits 
+If the buffering mode is @code{:full}, @code{read-block} waits
 until @var{nbytes} data is read, except it reads EOF.
 @c JP
 バッファリングモードが@code{:full}の場合、@code{read-block}は
@@ -13219,7 +13219,7 @@ until EOF and returns the accumulated data as a string.
 
 @c EN
 @code{port->string-list} is a @code{port->list} specialized
-by @code{read-line}, and 
+by @code{read-line}, and
 @code{port->sexp-list} is a @code{port->list} specialized
 by @code{read}.
 @c JP
@@ -13259,7 +13259,7 @@ We provide these only for the backward compatibility.
 @var{reader}によって読まれる入力に対する便利な繰り返し手続きです。
 
 実際にはこれらの手続きはポートからの入力以外にも使えるため、それぞれ
-@code{generator-fold}, @code{generator-fold-right}, 
+@code{generator-fold}, @code{generator-fold-right},
 @code{generator-for-each}, @code{generator-map}によって置き換えられました。
 詳しくは@ref{Folding generated values}を参照してください。
 
@@ -13323,12 +13323,12 @@ syntax to indicate them.
 @c COMMON
 
 @example
-(write/ss 
+(write/ss
   (let ((x (list 'a)))
     (list x x)))
  @result{} ;; writes (#0=(a) #0#)
 
-(write/ss 
+(write/ss
   (let ((x (list 'a)))
     (set-cdr! x x)
     x))
@@ -13358,7 +13358,7 @@ srfi-38によって@code{write-with-shared-structure}と@code{write/ss}が
 @c COMMON
 
 @c EN
-Note: The user-defined @code{write-object} methods work 
+Note: The user-defined @code{write-object} methods work
 transparently for these procedures as well.
 @c JP
 註: ユーザ定義の@code{write-object}メソッドはこれらの手続きに対して
@@ -13488,7 +13488,7 @@ The format directive can take one or more @var{parameters}, separated
 by comma characters.  A parameter may be an integer or a character;
 if it is a character, it should be preceded by a quote character.
 Parameter can be omitted, in such case the system default value is
-used.  The interpretation of the parameters depends on the 
+used.  The interpretation of the parameters depends on the
 format directive.
 @c JP
 フォーマット指示子は一つ以上のコンマで区切られたパラメータを取ることもできます。
@@ -13630,9 +13630,9 @@ a string ``@code{ ...}'' is attached after it.
 @c COMMON
 
 (format #f "|~,,,,10a|" '(abc def ghi jkl))
-  @result{} "|(abc def gh|" 
+  @result{} "|(abc def gh|"
 (format #f "|~,,,,10:a|" '(abc def ghi jkl))
-  @result{} "|(abc de ...|" 
+  @result{} "|(abc de ...|"
 @end example
 
 @item @b{~}@var{mincol},@var{colinc},@var{minpad},@var{padchar},@var{maxcol}@b{S}
@@ -13663,7 +13663,7 @@ S式出力。対応する引数が@code{write}を使ってフォーマットさ�
 @item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{D}
 @c EN
 Decimal output.  The argument is formatted as an decimal integer.
-If the argument is not an integer, all parameters are ignored 
+If the argument is not an integer, all parameters are ignored
 (after processing `@code{v}' parameters) and
 it is formatted by @code{~A} directive.
 @c JP
@@ -13789,11 +13789,11 @@ absolute position of the arguments, starting from 0.
 @c NODE プログラムのロード
 
 @menu
-* Loading Scheme file::         
-* Loading dynamic library::     
-* Require and provide::         
-* Autoload::                    
-* Operations on libraries::     
+* Loading Scheme file::
+* Loading dynamic library::
+* Require and provide::
+* Autoload::
+* Operations on libraries::
 @end menu
 
 @node Loading Scheme file, Loading dynamic library, Loading Programs, Loading Programs
@@ -13818,8 +13818,8 @@ If the specified file is not found, an error is signalled unless
 the keyword argument @var{error-if-not-found} is @code{#f}, in
 which case @code{load} returns @code{#f}.
 
-By default, @code{load} uses a coding-aware port 
-(@xref{Coding-aware ports}) so that the "@code{coding:}" magic 
+By default, @code{load} uses a coding-aware port
+(@xref{Coding-aware ports}) so that the "@code{coding:}" magic
 comment at the beginning of the source file is effective.
 (See @ref{Multibyte scripts}, for the details of
 the coding magic comment).  If a true value is given to the
@@ -13906,7 +13906,7 @@ Furthermore,
 @code{add-load-path} looks for the architecture dependent directories
 under the specified path and if it exists, sets up the internal
 path list for dynamic loading correctly.   Suppose you have
-your Scheme module in @code{/home/yours/lib}, and that requires 
+your Scheme module in @code{/home/yours/lib}, and that requires
 a dynamic loadable library.  You can put the library under
 @code{/home/yours/lib/@var{ARCH}/}, where @var{ARCH} is
 the value @code{(gauche-architecture)} returns (@xref{Environment Inquiry}).
@@ -13965,7 +13965,7 @@ not a file.
 @item current-load-history
 Returns a list of pairs of a port and a line number (integer),
 representing the nesting of loads.  Suppose you load
-@file{foo.scm}, and from its line 7 it loads @file{bar.scm}, 
+@file{foo.scm}, and from its line 7 it loads @file{bar.scm},
 and from its line 18 it loads @file{baz.scm}.   If you call
 @code{current-load-history} in the file @file{baz.scm}, you'll get
 @example
@@ -14042,7 +14042,7 @@ C function and variable names, not Scheme symbols).
 By default, the symbols
 in @var{file} are not visible from other dynamically loaded libraries.
 If you want to allow other dynamically loaded libraries to call
-C function in your library, you should give @code{#t} to this 
+C function in your library, you should give @code{#t} to this
 argument.  It sets @code{RTLD_GLOBAL} flag for @code{dlopen()}.
 
 Usually a dynamic loadable library is provided with wrapping Scheme
@@ -14163,7 +14163,7 @@ you may want to use a @code{provide} form:
 @item
 @c EN
 To provide a feature (or features) that is/are different from
-the one that caused loading the file.  
+the one that caused loading the file.
 
 Suppose feature X supesedes feature Y and providing
 compatible APIs of Y but with different implementation.
@@ -14204,7 +14204,7 @@ prevents autoproviding by @code{require} without providing any
 feature.
 
 This should also be a temporary solution.  One possible scenario is
-that you are changing @file{X.scm} very frequently during 
+that you are changing @file{X.scm} very frequently during
 development and you want @code{(require "X")} always causes loading
 the file.  Don't forget to remove @code{(provide #f)} when you release
 the file, though.  Besides, for interactive reloading, consider
@@ -14266,7 +14266,7 @@ same rule as of @code{use}), then the binding of @var{item} in the
 @c COMMON
 
 @c EN
-@var{Item} can be either a variable name (symbol), 
+@var{Item} can be either a variable name (symbol),
 or a form @code{(:macro @var{symbol})}.  If it is a variable,
 the named file/module is loaded when the variable is
 about to be evaluated.  If it is the latter form,
@@ -14336,11 +14336,11 @@ certain libraries and/or modules are installed in the system.
 
 In the following descriptions, @var{pattern} is either a
 symbol or a string.  If it is a symbol, it specifies
-a module name (e.g. @code{foo.bar}).  If it is 
+a module name (e.g. @code{foo.bar}).  If it is
 a string, it specifies a partial pathname of the library
 (e.g. @code{"foo/bar"}), which will be searched under
 library search paths.
-You can also use glob-like metacharacters '@code{*}' and 
+You can also use glob-like metacharacters '@code{*}' and
 '@code{?}' in @var{pattern}.
 @c JP
 ある特定のライブラリおよび/あるいはモジュールがシステムにインストールされ
@@ -14356,7 +14356,7 @@ You can also use glob-like metacharacters '@code{*}' and
 @c EN
 A basic iterator for library/module files.
 This procedure searches Scheme program files which matches
-@var{pattern}, under directories listed in @var{paths} 
+@var{pattern}, under directories listed in @var{paths}
 (the default is the standard file load paths, @code{*load-path*}).
 For each matched file, it calls @var{proc} with three arguments:
 the matched module or library name, the full path of the program
@@ -14516,7 +14516,7 @@ the results.
 
 @defun library-exists? mod/path :key paths force-search? strict?
 @c EN
-Search a library or a module specified by @var{mod/path}, 
+Search a library or a module specified by @var{mod/path},
 and returns a true value if it finds one.  @var{Paths} and @var{strict?}
 keyword arguments have the same meaning as @code{library-fold}.
 
@@ -14528,7 +14528,7 @@ without looking into the filesystem.   Passing @code{#t} to
 loaded libraries and modules.
 @c JP
 @var{mod/path} で指定されたライブラリあるいはモジュールを検索し、
-もしあれば、真値を返します。キーワード引数 @var{paths} および 
+もしあれば、真値を返します。キーワード引数 @var{paths} および
 @var{strict?} は @code{library-fold} のそれと同じ意味です。
 
 上述のイテレータ手続きとはちがい、この手続きは呼び出しの過程で
@@ -14543,7 +14543,7 @@ loaded libraries and modules.
 
 @defun library-has-module? path module
 @c EN
-Returns @code{#t} iff a file specified by @var{path} exists and 
+Returns @code{#t} iff a file specified by @var{path} exists and
 appears to implement a module named by @code{module}.  @var{path} must be
 an actual filename.
 @c JP
@@ -14611,7 +14611,7 @@ for user-defined classes.
 @defun sort seq :optional cmpfn
 @defunx sort! seq :optional cmpfn
 @c EN
-Sorts elements in a sequence @var{seq} (a list or a vector) 
+Sorts elements in a sequence @var{seq} (a list or a vector)
 in ascending order and returns the sorted sequence.
 @code{sort!} destructively reuses the original sequence.
 The sorting order is specified by @code{cmpfn}, which is
@@ -14641,7 +14641,7 @@ Always use the returned value of @code{sort!}.
 @c COMMON
 
 @example
-(sort '(("Chopin" "Frederic") 
+(sort '(("Chopin" "Frederic")
         ("Liszt" "Franz")
         ("Alkan" "Charles-Valentin"))
       (lambda (x y) (string<? (car x) (car y))))
@@ -14684,7 +14684,7 @@ add objects one at at time, you can also use treemaps
 @defunx stable-sort! seq :optional cmpfn
 @c EN
 Sort a sequence @var{seq} (a list or a vector), using stable sort algorithm
-(currently they are using merge sort).  
+(currently they are using merge sort).
 The sorting order is specified by @code{cmpfn}, which is
 a procedure takes two elements of @var{list}, and returns @code{#t}
 if the first argument strictly precedes the second.
@@ -14809,17 +14809,17 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してありま�
 @c COMMON
 
 @menu
-* Program termination::         
-* Environment Inquiry::         
-* Filesystems::                 
-* Unix groups and users::       
-* Locale::                      
-* Signal::                      
-* System inquiry::              
-* Time::                        
-* Process management::          
-* I/O multiplexing::            
-* Miscellaneous system calls::  
+* Program termination::
+* Environment Inquiry::
+* Filesystems::
+* Unix groups and users::
+* Locale::
+* Signal::
+* System inquiry::
+* Time::
+* Process management::
+* I/O multiplexing::
+* Miscellaneous system calls::
 @end menu
 
 @node Program termination, Environment Inquiry, System interface, System interface
@@ -14866,10 +14866,10 @@ The precise steps of exitting is as follow.
 正確な段階を次に説明します。
 @c COMMON
 
-@enumerate 
+@enumerate
 @item
 @c EN
-The value of parameter @code{exit-handler} is checked.  
+The value of parameter @code{exit-handler} is checked.
 If it is not @code{#f}, the value is called as a procedure
 with three arguments: @var{code}, @var{fmtstr}, and a list of rest
 arguments.  It is the default procedure of @code{exit-handler}
@@ -14899,7 +14899,7 @@ Any exceptions raised in @var{after} thunks are captured and discarded.
 @c EN
 The clean-up handlers registered via C API @code{Scm_AddCleanupHandler}
 are invoked.  These are usually responsible for under-the-hood cleanup
-jobs for each application that embeds Gauche.  From the Scheme world 
+jobs for each application that embeds Gauche.  From the Scheme world
 there's not much to care.
 @c JP
 C APIの@code{Scm_AddCleanupHandler}で登録されたクリーンアップハンドラが
@@ -14925,8 +14925,8 @@ The process exits with @var{code} as an exit code, via @code{exit(3)}.
 
 @c EN
 The @code{exit-handler} mechanism allows the application to hook its
-exit operation.   Note that it is not for simple cleanup jobs; 
-@code{dynamic-wind}, @code{guard} or @code{unwind-protect} are more appropriate.   
+exit operation.   Note that it is not for simple cleanup jobs;
+@code{dynamic-wind}, @code{guard} or @code{unwind-protect} are more appropriate.
 @code{exit-handler} is for more specific use just upon application exit.
 For example, GUI applications may want to post a dialog
 instead of printing to stderr.
@@ -14940,7 +14940,7 @@ that case you may swap the @code{exit-handler} for the one
 that raises a non-error exception while calling the third-party code.
 Non-error exception isn't caught in @code{exit}, effectivelly
 interrupts the steps explained above.   (Yet the @var{after} thunks
-of dynamic handlers are processed just like normal exception 
+of dynamic handlers are processed just like normal exception
 handling case.)
 Your appication code can then capture the exception.
 You can use @code{parameterize}
@@ -15004,7 +15004,7 @@ responsibility).
 Note on design: Some languages integrates exit handling
 into exception handling, treating exit as a kind of exception.
 It is a tempting idea, so much that we've tried it.  It didn't
-work out well in Gauche; a big annoyance was that when 
+work out well in Gauche; a big annoyance was that when
 an @var{after} thunk raised an exception during
 rewinding @code{dynamic-wind}s, it shadowed the original
 @emph{exit} exception.
@@ -15064,7 +15064,7 @@ No cleanup is done.  Unflushed file output is discarded.
 @defun sys-abort
 [POSIX]
 @c EN
-Calls POSIX abort().  This usually terminates the running process 
+Calls POSIX abort().  This usually terminates the running process
 and dumps core.  No cleanup is done.
 @c JP
 POSIXのabort()を呼びます。通常、現在のプロセスは終了され、コアダンプされます。
@@ -15158,7 +15158,7 @@ These procedures are only available when a feature identifier
 
 @example
 (cond-expand
- [gauche.sys.setenv 
+ [gauche.sys.setenv
    ... use sys-setenv or sys-putenv ... ]
  [else
    ... fallback code ...])
@@ -15178,7 +15178,7 @@ These procedures are only available when a feature identifier
 
 @example
 (cond-expand
- [gauche.sys.unsetenv 
+ [gauche.sys.unsetenv
    ... use sys-unsetenv or sys-clearenv ... ]
  [else
    ... fallback code ...])
@@ -15226,11 +15226,11 @@ on top of the procedures described here.
 @c COMMON
 
 @menu
-* Directories::                 
-* Directory manipulation::      
-* Pathnames::                   
-* File stats::                  
-* Other file operations::       
+* Directories::
+* Directory manipulation::
+* Pathnames::
+* File stats::
+* Other file operations::
 @end menu
 
 @node Directories, Directory manipulation, Filesystems, Filesystems
@@ -15480,7 +15480,7 @@ meanings.
 @c EN
 When it appears at the beginning of a component, it matches
 zero or more characters except a period (@code{.}).  And it
-won't match if the component of the input string begins with 
+won't match if the component of the input string begins with
 a period.
 
 Otherwise, it matches zero or more sequence of any characters.
@@ -15552,7 +15552,7 @@ Actually, @var{glob} is simply written like this:
 
 @c EN
 The meaning of @var{pattern}, @var{separator} and @var{folder}
-is the same as explained above.  
+is the same as explained above.
 @c JP
 @var{pattern}、@var{separator}および@var{folder}の意味を前述のものと同
 じです。
@@ -15562,7 +15562,7 @@ is the same as explained above.
 For each pathname that matches @var{pattern}, @code{glob-fold}
 calls @var{proc} with the pathname and a seed value.  The initial
 seed value is @var{seed}, and the value @var{proc} returns becomes
-the next seed value.  The result of the last call to @var{proc} 
+the next seed value.  The result of the last call to @var{proc}
 becomes the result of @code{glob-fold}.  If there's no matching
 pathnames, @var{proc} is never called and @var{seed} is returned.
 @c JP
@@ -15598,10 +15598,10 @@ the paths where @code{glob-fold} starts to search.
 @example
 gosh> (glob "/tmp/*.scm")
 ("/tmp/x.scm" "/tmp/y.scm")
-gosh> (glob "/*.scm" 
+gosh> (glob "/*.scm"
             :folder (make-glob-fs-fold :root-path "/tmp"))
 ("/tmp/x.scm" "/tmp/y.scm")
-gosh> (glob "*.scm" 
+gosh> (glob "*.scm"
             :folder (make-glob-fs-fold :current-path "/tmp"))
 ("/tmp/x.scm" "/tmp/y.scm")
 @end example
@@ -15618,7 +15618,7 @@ gosh> (glob "*.scm"
 @c NODE ディレクトリ操作
 
 @defun sys-remove filename
-[POSIX] 
+[POSIX]
 @c EN
 If @var{filename} is a file it is removed.
 On some systems this may also work on an empty directory,
@@ -15673,7 +15673,7 @@ The file is opened for writing, and its permission is set to 600.
 @end defun
 
 @defun sys-link existing new
-[POSIX] 
+[POSIX]
 @c EN
 Creates a hard link named @var{new} to the existing file @var{existing}.
 @c JP
@@ -15722,7 +15722,7 @@ this function is unbound.
 @end defun
 
 @defun sys-mkdir pathname mode
-[POSIX] 
+[POSIX]
 @c EN
 Makes a directory @var{pathname} with mode @var{mode}.
 (Note that @var{mode} is masked by the current umask;
@@ -15755,7 +15755,7 @@ in @code{file.util} (@ref{Directory utilities}).
 @end defun
 
 @defun sys-umask :optional mode
-[POSIX] 
+[POSIX]
 @c EN
 Sets umask setting to @var{mode}.  Returns previous umask setting.
 If @var{mode} is omitted or @code{#f}, just returns the current umask without
@@ -15847,7 +15847,7 @@ More than one keyword argument can be specified.
 @c EN
 @code{sys-basename} returns a basename, that is the last component of
 @var{pathname}.  @code{sys-dirname} returns the components of @var{pathname}
-but the last one.   If @var{pathname} has a trailing `@code{/}', 
+but the last one.   If @var{pathname} has a trailing `@code{/}',
 it is simply ignored.
 @c JP
 @code{sys-basename}は与えられたパスのベース名、すなわち最後のコンポーネントを返します。
@@ -15925,7 +15925,7 @@ On Unix-like systems, the environment variable @code{TMPDIR} and @code{TMP}
 are first checked, then falls back to @code{/tmp}.
 
 On Windows-native systems, it uses @code{GetTempPath} Windows API.
-It checks environment variables @code{TMP}, @code{TEMP}, and 
+It checks environment variables @code{TMP}, @code{TEMP}, and
 @code{USERPROFILE} in this order, and falls back to Windows system
 directory.
 
@@ -15949,7 +15949,7 @@ Windowsネイティブの環境では、@code{GetTempPath} Windows APIを呼び�
 いずれのプラットフォームでも、返されたパス名は存在しないかもしれず、
 また書き込み可能ではないかもしれないことに注意してください。
 
-一般的に、ユーザプログラムやライブラリは@code{temporary-directory} 
+一般的に、ユーザプログラムやライブラリは@code{temporary-directory}
 (@ref{Directory utilities}参照) の方を利用するのが良いでしょう。
 @code{sys-tmpdir}はプラットフォームが推奨する生の値を知りたい場合に
 限り使ってください。
@@ -16081,7 +16081,7 @@ A number of seconds since Unix Epoch for those information of @code{struct stat}
 [POSIX]
 @c EN
 Returns a @code{<sys-stat>} object of @var{path}, or
-the underlying file of @var{port-or-fd}, which 
+the underlying file of @var{port-or-fd}, which
 may be a port or a positive exact integer file descriptor, respectively.
 
 If @var{path} is a symbolic link, a stat of the file the link points
@@ -16262,7 +16262,7 @@ See also @code{touch-file} (@xref{File operations}).
 @defun sys-chdir dir
 [POSIX]
 @c EN
-An interface to @code{chdir(2)}. 
+An interface to @code{chdir(2)}.
 See also @code{current-directory} (@xref{Directory utilities}).
 @c JP
 @code{chdir(2)}へのインタフェースです。
@@ -16282,7 +16282,7 @@ The data put to the output port can be read from the input port.
 @c COMMON
 
 @c EN
-@var{Buffering} can be @code{:full}, @code{:line} or @code{:none}, 
+@var{Buffering} can be @code{:full}, @code{:line} or @code{:none},
 and specifies the buffering mode of the ports opened on the pipe.
 @xref{File ports}, for details of the buffering mode.
 The default mode is sufficient for typical cases.
@@ -16546,7 +16546,7 @@ function signals an error.
 This routine is only for the code that needs to check password
 against the system's password database.
 If you are building user database on your own, you @emph{must} use
-@code{crypt.bcrypt} module (@xref{Password hashing}) instead of 
+@code{crypt.bcrypt} module (@xref{Password hashing}) instead of
 this routine.
 @c JP
 これは、@code{crypt(3)}へのインターフェースです。@var{key}と@var{salt}は
@@ -16666,7 +16666,7 @@ See @ref{Signals and threads}, for details.
 When a system call is interrupted by a signal,
 and a programmer defines a handler for the signal that doesn't transfer
 control to other context, the system call is restarted after
-the handler returns.  
+the handler returns.
 @c JP
 システムコールがシグナルによって割り込まれ、
 プログラマがシグナルハンドラをセットしており、そのハンドラが別コンテキストに
@@ -16683,11 +16683,11 @@ Windowsネイティブ環境では、@code{sys-kill}の限定的なサポート�
 @c COMMON
 
 @menu
-* Signals and signal sets::     
-* Sending signals::             
-* Handling signals::            
-* Masking and waiting signals::  
-* Signals and threads::         
+* Signals and signal sets::
+* Sending signals::
+* Handling signals::
+* Masking and waiting signals::
+* Signals and threads::
 @end menu
 
 @node Signals and signal sets, Sending signals, Signal, Signal
@@ -16781,7 +16781,7 @@ A set of signals.   An empty sigset can be created by
 @defun sys-sigset signal @dots{}
 @c EN
 Creates and returns an instance of @code{<sys-sigset>}
-with members @var{signal} @dots{}.  Each @var{signal} 
+with members @var{signal} @dots{}.  Each @var{signal}
 may be either a signal number, another @code{<sys-sigset>}
 object, or @code{#t} for all available signals.
 @c JP
@@ -16968,14 +16968,14 @@ VMがシグナルを処理する前に同じシグナルが到着した場合、
 @c COMMON
 
 @c EN
-When too many signals of the same kind are pending, 
+When too many signals of the same kind are pending,
 Gauche assumes something has
 gone wrong (e.g. infinite loop inside C-routine) and aborts the
 process.  The default of this limit is set rather low (3), to allow
 unresponsive interactive script to be terminated by typing Ctrl-C
 three times.  Note that the counter is individual for each signal;
 Gauche won't abort if one @code{SIGHUP} and two @code{SIGINT}s are
-pending, for example.  You can change this limit by 
+pending, for example.  You can change this limit by
 @code{set-signal-pending-limit} described below.
 @c JP
 同じシグナルがたくさん保留された状態になった場合、
@@ -17075,7 +17075,7 @@ number as an argument.
 By default, the signals in @var{signals} are blocked
 (in addition to the signal mask in effect at that time) during
 @var{handler} is executed, so that @var{handler} won't be
-reentered by the same signal(s).  You can provide 
+reentered by the same signal(s).  You can provide
 a @code{<sys-sigset>} object to the @var{sigmask} arg
 to specify the signals to be blocked explicitly.
 Note that the signal mask
@@ -17114,7 +17114,7 @@ once you return from @var{handler}).
 @c COMMON
 
 @c EN
-If @var{handler} is @code{#t}, the operating system's default 
+If @var{handler} is @code{#t}, the operating system's default
 behavior is set to the specified signal(s).  If @var{handler}
 is @code{#f}, the specified signals(s) will be ignored.
 @c JP
@@ -17130,7 +17130,7 @@ This value isn't as much use in @code{set-signal-handler!} as
 in @code{get-signal-handler}: If @code{#<undef>} is passed
 to @code{set-signal-handler!}, it immeidately returns without
 modifying anything.   However, if you get @code{#<undef>}
-from @code{get-signal-handler}, you can know that the 
+from @code{get-signal-handler}, you can know that the
 signal handler behavior hasn't been modified by Gauche.
 (Note that once Gauche ever installs a signal handler,
 there is no way to revert back to make @code{get-signal-handler}
@@ -17233,7 +17233,7 @@ or a procedure that takes one argument.
 If @var{handler} is a procedure, it will be called when the process
 receives one of specified signal(s), with the received signal
 number as an argument.
-If @var{handler} is @code{#t}, the operating system's default 
+If @var{handler} is @code{#t}, the operating system's default
 behavior is set to the specified signal(s).  If @var{handler}
 is @code{#f}, the specified signals(s) will be ignored.
 @end table
@@ -17378,7 +17378,7 @@ in @var{mask} arrives.
 
 You have to block all signals in @var{mask} in all threads
 before calling @code{sys-sigwait}.  If there's a thread
-that doesn't block the signals, the behavior of 
+that doesn't block the signals, the behavior of
 @code{sys-sigwait} is undefined.
 
 Note: @code{Sys-sigwait} uses system's @code{sigwait} function,
@@ -17618,7 +17618,7 @@ an error is signalled.   See also @code{sys-chdir}
 @c EN
 [POSIX] Returns integer value of real and effective group id of the
 current process, respectively.
-Use @code{sys-gid->group-name} or @code{sys-getgrgid} to obtain 
+Use @code{sys-gid->group-name} or @code{sys-getgrgid} to obtain
 the group's name and other information associated to the returned
 group id (@xref{Unix groups and users}).
 @c JP
@@ -17642,7 +17642,7 @@ group id (@xref{Unix groups and users}).
 @c EN
 [POSIX] Returns integer value of real and effective user id of the
 current process, respectively.
-Use @code{sys-uid->user-name} or @code{sys-getpwuid} to obtain 
+Use @code{sys-uid->user-name} or @code{sys-getpwuid} to obtain
 the user's name and other information associated to the returned
 user id (@xref{Unix groups and users}).
 @c JP
@@ -18202,7 +18202,7 @@ the child.  See @code{fork(2)} of your system for details.
 
 @c EN
 If the child process runs some Scheme code and exits instead of
-calling @code{sys-exec}, it should call @code{sys-exit} 
+calling @code{sys-exec}, it should call @code{sys-exit}
 instead of @code{exit} to terminate itself.
 Normal exit call tries to flush the file
 buffers, and on some OS it messes up the parent's file buffers.
@@ -18214,7 +18214,7 @@ OSによっては親のファイルバッファを混乱させるでしょう。
 @c COMMON
 
 @c EN
-It should be noted that @code{sys-fork} is not safe when 
+It should be noted that @code{sys-fork} is not safe when
 multiple threads are running.  Because @code{fork(2)} copies
 the process' memory image which includes any mutex state,
 a mutex which is locked by another thread at the time of @code{sys-fork}
@@ -18342,7 +18342,7 @@ If it is an instance of @code{<sys-sigset>}, the signal mask of calling
 thread is replaced by it just before @code{exec(2)} is called.
 It is useful, for example, to run an external program from a thread where
 all signals are blocked (which is the default; see @ref{Signals and threads}).
-Without setting @var{sigmask}, the @code{exec}ed process inherits 
+Without setting @var{sigmask}, the @code{exec}ed process inherits
 calling thread's signal mask and become a process that blocks all signals,
 which is not very convenient in most cases.
 @c JP
@@ -18419,7 +18419,7 @@ Like @code{sys-exec}, only redirections of stdin, stdout and stderr
 are handled on Windows native platforms.
 @c JP
 Windowsネイティブ環境では、この手続きはプロセスIDではなく
-作られたプロセスに対するWindowsのハンドルオブジェクト 
+作られたプロセスに対するWindowsのハンドルオブジェクト
 (@code{<win:handle>}) を返します。Windowsプロセスハンドル
 特有の手続きについては後に述べます。
 
@@ -18565,7 +18565,7 @@ Windowsネイティブ環境では、この関数は@var{pid}にWindowsプロセ
 [POSIX]
 The argument is an exit status returned as a second value
 from @code{sys-wait} or @code{sys-waitpid}.
-@code{sys-wait-exited?} returns @code{#t} if the child process is 
+@code{sys-wait-exited?} returns @code{#t} if the child process is
 terminated normally.   @code{sys-wait-exit-status} returns the exit
 code the child process passed to @code{exit(2)}, or the return value
 of @code{main()}.
@@ -18649,7 +18649,7 @@ They are only available on Windows native platforms.
 @end defun
 
 @defun sys-win-process-pid handle
-[Windows] Returns an integer PID of the process represented by 
+[Windows] Returns an integer PID of the process represented by
 a Windows process handle @var{handle}.  An error is signalled
 if @var{handle} is not a valid Windows process handle.
 
@@ -18811,7 +18811,7 @@ the second is the number of microseconds.  If you pass @code{#f},
 
 @c EN
 @code{sys-select} returns four values.  The first value is a number
-of descriptors it detected status change.  It may be zero if 
+of descriptors it detected status change.  It may be zero if
 timeout expired.  The second, third and fourth values are @code{<fdset>}
 object that contains a set of descriptors that changed status
 for reading, writing, and exception, respectively.
@@ -18909,7 +18909,7 @@ POSIX実装間でポータブルにするためには、@var{seconds}を65536よ
 
 @defun sys-nanosleep nanoseconds
 @c EN
-[POSIX] 
+[POSIX]
 Suspends the process until the specified number of nanoseconds elapses,
 or the process receives a signal.  The argument @var{nanoseconds} can be
 a @code{<time>} object (@xref{Time}), or a real number.
@@ -18935,7 +18935,7 @@ is interrupted by a signal.
 
 @c EN
 Note: On Windows native platforms, this function is emulated using
-@code{Sleep}.  The argument is rounded up to millisecond resolution, 
+@code{Sleep}.  The argument is rounded up to millisecond resolution,
 and it won't be interrupted by a signal.
 @c JP
 Windowsネイティブ環境では、この関数は@code{Sleep}によってエミュレートされます。
@@ -19010,8 +19010,8 @@ Gauche には開発者がプログラムを解析するための基本的な組�
 @c COMMON
 
 @menu
-* Debugging aid::               
-* Profiler API::                
+* Debugging aid::
+* Profiler API::
 @end menu
 
 @node Debugging aid, Profiler API, Development helper API, Development helper API
@@ -19040,7 +19040,7 @@ details.
 
 @deffn {Parameter} debug-print-width
 @c EN
-This parameter specifies the maximum width of information to be 
+This parameter specifies the maximum width of information to be
 printed by @code{debug-print}.  If the information takes more
 columns than the value of this parameter, it is truncated.
 @c JP
@@ -19074,7 +19074,7 @@ in @var{obj}, @code{#f} is returned.
 @defun disasm closure
 @c EN
 Disassemble the compiled body of @var{closure} and print it.
-It may not be very useful unless you're tracking a compiler bug, 
+It may not be very useful unless you're tracking a compiler bug,
 or trying to tune the program to its limit.
 @c JP
 コンパイル済の@var{closure}の本体部分をディスアセンブルして印字します。
@@ -19105,7 +19105,7 @@ See @ref{Using profiler} for the explanation of the profiler.
 @c JP
 ここに挙げている関数は、Gauche の組込みプロファイラを制御するためのも
 のです。プロファイラの説明については @ref{Using profiler} を参照してく
-ださい。 
+ださい。
 @c COMMON
 
 @c EN
@@ -19153,7 +19153,7 @@ saved sampled data.
 
 @defun profiler-show :key sort-by max-rows
 @c EN
-Show the saved sampled data.  
+Show the saved sampled data.
 @c JP
 格納されている標本データを表示します。
 @c COMMON

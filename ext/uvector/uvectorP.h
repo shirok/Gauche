@@ -1,12 +1,12 @@
 /*
  * uvectorP.h - internal macros for the uniform vector module
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -53,7 +53,7 @@ static void range_error(const char *type, ScmObj obj)
 static inline long range_s8hi(long val, int clamp)
 {
     if (!(clamp & SCM_CLAMP_HI)) range_error("s8", Scm_MakeInteger(val));
-    return 127; 
+    return 127;
 }
 
 static inline long range_s8lo(long val, int clamp)

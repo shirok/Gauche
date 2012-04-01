@@ -1,12 +1,12 @@
 /*
  * ctrie.h - Compact Trie
  *
- *   Copyright (c) 2009-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2009-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -59,7 +59,7 @@
  * LMAP is always a strict subset of EMAP.   If bit N of EMAP is 1 and
  * bit N of LMAP is 0, the N-th index points to the child node.
  *
- * Suppose EMAP is 0x00001809 and LMAP is 0x00001008.   It means this 
+ * Suppose EMAP is 0x00001809 and LMAP is 0x00001008.   It means this
  * node has entries in index 0, 3, 11, 12.  Entry #0 and #11 points to
  * child NODEs, and entry #3 and #12 are LEAFs.
  *

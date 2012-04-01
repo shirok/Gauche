@@ -1,12 +1,12 @@
 /*
  * parameter.c - parameter support
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -101,7 +101,7 @@ void Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location)
         int i, newsiz = p->numAllocated + PARAMETER_GROW;
         ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, newsiz);
         int *newids = SCM_NEW_ATOMIC2(int*, newsiz*sizeof(int));
-        
+
         for (i=0; i<p->numParameters; i++) {
             newvec[i] = p->vector[i];
             p->vector[i] = SCM_FALSE; /*GC friendly*/
@@ -180,7 +180,7 @@ void Scm_DefinePrimitiveParameter(ScmModule *mod,
     ScmVM *vm = Scm_VM();
     ScmObj sname = SCM_MAKE_STR_IMMUTABLE(name);
     ScmObj subr;
-    
+
     pd->name = name;
     Scm_MakeParameterSlot(vm, &pd->loc);
     Scm_ParameterSet(vm, &pd->loc, initval);

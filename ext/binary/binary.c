@@ -1,12 +1,12 @@
 /*
  * binary.c - Binary I/O routines
  *
- *   Copyright (c) 2004-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2004-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -306,7 +306,7 @@ static void extract(ScmUVector *uv, unsigned char *buf, int off, int eltsize)
     int size = Scm_UVectorSizeInBytes(uv);
     unsigned char *b = (unsigned char*)SCM_UVECTOR_ELEMENTS(uv) + off;
     int i;
-    
+
     if (off < 0 || off+eltsize > size) {
         Scm_Error("offset %d is out of bound of the uvector.", off);
     }
@@ -330,7 +330,7 @@ ScmObj Scm_GetBinaryS8(ScmUVector *uv, int off, ScmSymbol *endian)
     CHECK_ENDIAN(endian);
     extract(uv, &b, off, 1);
     r = b;
-    if (r >= 128) r -= 256; 
+    if (r >= 128) r -= 256;
     return SCM_MAKE_INT(r);
 }
 
@@ -426,7 +426,7 @@ static void inject(ScmUVector *uv, unsigned char *buf, int off, int eltsize)
     int i;
 
     SCM_UVECTOR_CHECK_MUTABLE(SCM_OBJ(uv));
-    
+
     if (off < 0 || off+eltsize > size) {
         Scm_Error("offset %d is out of bound of the uvector.", off);
     }
@@ -474,7 +474,7 @@ void Scm_PutBinaryU32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
     v.val = Scm_GetIntegerU32Clamp(val, FALSE, FALSE);
     SWAP_32(e, v);
     inject(uv, v.buf, off, 4);
-}    
+}
 
 void Scm_PutBinaryS32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {

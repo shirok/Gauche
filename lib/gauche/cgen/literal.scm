@@ -1,23 +1,23 @@
 ;;;
 ;;; gauche.cgen.literal - static literal data
-;;;  
-;;;   Copyright (c) 2004-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2004-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 (define-module gauche.cgen.literal
   (use srfi-1)
@@ -116,7 +116,7 @@
             (rlet1 new (make <cgen-static-data-list>
                          :category category :c-type c-type)
               (push! (~ unit'static-data-list) new))))))
-  
+
   (let ([dl (ensure-static-data-list category c-type)]
         [value-type? (not init-thunk)]
         [ithunk (or init-thunk (if (eq? c-type 'ScmObj) "SCM_UNBOUND" "NULL"))])
@@ -217,7 +217,7 @@
 ;;                            hols the object is returned.
 ;;
 ;;      (extern (self) ...)
-;;      (decl (self) ...) 
+;;      (decl (self) ...)
 ;;      (body (self) ...)
 ;;      (init (self) ...)  -> handle generation of each part.
 ;;                            If slot has <cgen-literal>, they
@@ -227,7 +227,7 @@
 ;;      (static (self) ...) -> used by cgen-literal-static?.
 ;;                            If omitted, #t is returned.
 ;;
-;;   
+;;
 
 ;; <cgen-literal> base class ----------------------------------
 
@@ -324,7 +324,7 @@
     ((define-cgen-literal . _)
      (syntax-error "malformed define-cgen-literal:" (define-cgen-literal . _)))
     ))
-       
+
 ;; method cgen-literal returns a <cgen-literal> node for the
 ;; literal value of given Scheme value.  It first scans the current
 ;; unit's toplevel nodes with the same value, and returns it if found.
@@ -680,7 +680,7 @@
 
 (define (uvector-class->tag-name class)
   (rxmatch->string #/<(.\d+)vector>/ (symbol->string (class-name class)) 1))
-      
+
 (define (uvector-class->c-name class)
   #`"Scm_,(string-upcase (uvector-class->tag-name class))VectorClass")
 
@@ -785,7 +785,7 @@
 ;;  srfi-10 syntax, reader constructor of the inner srfi-10 is invoked
 ;;  in this process.  If the reader constructor have side effects, this
 ;;  routine may cause undesirable side effects as well.  There's no way
-;;  we can know if it is safe. 
+;;  we can know if it is safe.
 
 (define-class <cgen-user-defined-type> (<cgen-literal>)
   ((ctor-name :init-keyword :ctor-name)

@@ -13,7 +13,7 @@ dnl packages like BSD DB or GDBM.  We need to be careful to pick the
 dnl consistent header/library pair.
 dnl
 dnl Autoconf's cache mechanism (at least up to 2.59) can't distinguish
-dnl gdbm-ndbm.h and gdbm/ndbm.h, so we can't put those into single 
+dnl gdbm-ndbm.h and gdbm/ndbm.h, so we can't put those into single
 dnl AC_CHECK_HEADERS macro.  Instead we use nested AC_CHECK_HEADER
 dnl macros, and manage the NDBM_HEADER variable on our own.
 dnl
@@ -77,7 +77,7 @@ AC_CHECK_HEADER(dbm.h, [
         ODBM_HEADER=""], [-lgdbm])
     ])
   ])
-], [  
+], [
 unset ac_cv_header_gdbm_dbm_h;  dnl Ugly hack
 AC_CHECK_HEADER(gdbm/dbm.h, [
   ODBM_HEADER="gdbm/dbm.h"

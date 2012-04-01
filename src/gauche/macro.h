@@ -1,12 +1,12 @@
 /*
  * macro.h - structures used internally in macro expander
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -83,7 +83,7 @@ SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj lietrals,
                                          ScmObj rules, ScmObj mod, ScmObj env);
 
 /*
- * Pattern variable reference object 
+ * Pattern variable reference object
  */
 #define SCM_PVREF_TAG              0x13
 #define SCM_PVREF_P(obj)           ((SCM_WORD(obj)&0xff) == SCM_PVREF_TAG)

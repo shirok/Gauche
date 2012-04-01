@@ -1,23 +1,23 @@
 ;;;
 ;;; mime.scm - parsing MIME (rfc2045) message
-;;;  
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME) Part One:
 ;;            Format of Internet Message Bodies
@@ -113,7 +113,7 @@
                       [ (string? token) ])
              (cons (string-downcase token)
                    (mime-parse-parameters input)))))))
-           
+
 
 ;; parse a parameter-values type header field
 ;;   ;parameter=value;parameter=value
@@ -172,7 +172,7 @@
 ;; Decoding
 
 ;; the end is not anchored, to be used in mime-decode-text.
-(define-constant *mime-encoded-header-rx* 
+(define-constant *mime-encoded-header-rx*
   #/^=\?([-!#-'*+\w\^-~]+)\?([-!#-'*+\w\^-~]+)\?([!->@-~]+)\?=/)
 
 (define (%mime-decode-word word charset encoding body)
@@ -287,7 +287,7 @@
             ;; word for the last resort.
             (list* (string-take str width) "\r\n "
                    (fill (string-drop str width) (- line-width 1))))))
-    
+
     (cond [(or (not line-width) (zero? line-width))
            (if pass-through? body (encode-word body))]
           [(< line-width 30)
@@ -311,7 +311,7 @@
     [(Q q quoted-printable) 'Q]
     [else (error "unsupported MIME header encoding specifier:"
                  transfer-encoding)]))
-  
+
 
 ;;===============================================================
 ;; Virtual port to recognize mime boundary
@@ -334,7 +334,7 @@
 
   (define (deq! q)
     (if (queue-empty? q) eof (dequeue! q)))
-  
+
   (define (fifo! q b)
     (enqueue! q b) (dequeue! q))
 
@@ -369,7 +369,7 @@
             [(= ind max)
              (cond [(memv b '(#x0d #x0a)) ;;found boundary
                     (read-byte srcport)   ;;consume LF or CRLF
-                    (when (and (eqv? #x0d b) 
+                    (when (and (eqv? #x0d b)
                                (eqv? #x0a (peek-byte srcport)))
                       (read-byte srcport))
                     (dequeue-all! q)
@@ -408,7 +408,7 @@
       (if (eof-object? b)
         (begin (set! (ref port 'state) 'eof) b)
         (loop (read-byte srcport)))))
-  
+
   ;; fills vector, until it sees either
   ;;   (1) vec got full
   ;;   (2) srcport reaches EOF
@@ -529,7 +529,7 @@
                                                 chars)))
                  (list->string (reverse! (cons #\return chars)))))]
             [else (loop (read-char inp) (cons c chars))])))
-  
+
   (define (read-text decoder)
     (let loop ((line (read-line/nl)))
       (unless (eof-object? line)
@@ -631,7 +631,7 @@
     [((type subtype . params) (headers ...) body)
      (let1 hs (filter-map canonical-header headers)
        (apply make <mime-part>
-              :type type :subtype subtype :parameters params :headers hs 
+              :type type :subtype subtype :parameters params :headers hs
               :transfer-encoding (rfc822-header-ref hs "content-transfer-encoding")
               (match body
                 [(? string?) `(:content ,body)]
@@ -684,7 +684,7 @@
             [spvs (mime-compose-parameters pv #f
                    :start-column (+ (string-length name) (string-length sval) 2))])
        `(,name ,(if (null? pv) sval #`",|sval|,|spvs|")))]
-    [(name value) h]))  
+    [(name value) h]))
 
 ;; current-input-port -> current-output-port
 (define (mime-generate-part-body part transfer-enc)

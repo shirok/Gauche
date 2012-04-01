@@ -19,14 +19,14 @@ in @i{Proceedings of SIGPLAN '96}, pp. 99--107, 1996.
 
 @anchor{myers86}
 @item [Myers86]
-Eugene Myers, 
+Eugene Myers,
 An O(ND) Difference Algorithm and Its Variations,
 @i{Algorithmica} Vol. 1 No. 2, pp. 251-266, 1986.
 
 @anchor{mop}
 @item [MOP]
 Gregor Kiczales, Jim Des Rivieres, Daniel Bobrow,
-The Art of Metaobject Protocol, 
+The Art of Metaobject Protocol,
 The MIT Press.
 
 @anchor{dylan}
@@ -104,7 +104,7 @@ Olin Shivers, List Library, October 1999. @*
 
 @anchor{srfi-2}
 @item [SRFI-2]
-Oleg Kiselyov, @code{AND-LET*}: an @code{AND} with local bindings, a guarded 
+Oleg Kiselyov, @code{AND-LET*}: an @code{AND} with local bindings, a guarded
 @code{LET*} special form, March 1998. @*
 @url{http://srfi.schemers.org/srfi-2/srfi-2.html}.
 
@@ -170,7 +170,7 @@ Marc Feeley, Readl-time Multithreading Support, April 2000. @*
 
 @anchor{srfi-22}
 @item [SRFI-22]
-Martin Gasbichler and Michael Sperber, 
+Martin Gasbichler and Michael Sperber,
 Running Scheme Scripts on Unix, January 2002. @*
 @url{http://srfi.schemers.org/srfi-22/srfi-22.html}.
 

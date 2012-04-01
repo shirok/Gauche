@@ -246,7 +246,7 @@ static void errfn(const char *fmt, ...)
 #define WCS2MBS(s)  (s)
 #endif /* !(defined(_MSC_VER) && defined(UNICODE)) */
 
-static void print_output(struct cmd_rec *cmd) 
+static void print_output(struct cmd_rec *cmd)
 {
 #if !defined(__MINGW32__) && !defined(_MSC_VER)
     printf("%s\\n", cmd->value);
@@ -280,7 +280,7 @@ static void print_output(struct cmd_rec *cmd)
 	    fprintf(stderr, "PathRemoveFileSpec failed on %s", WCS2MBS(path));
 	    exit(1);
 	}
-	
+
 	fwrite(cmd->value, dir_mark - cmd->value, 1, stdout);
 	fprintf(stdout, "%s%s\\n", WCS2MBS(path), dir_mark+1);
     }
@@ -308,7 +308,7 @@ static void fixup_extension(int argc, char **argv)
         *mm = '\\0';
         module = m;
     }
-    
+
     outfile = (char *)malloc(strlen(file) + sizeof("_head.c") + 1);
     strcpy(outfile, file);
     strcat(outfile, "_head.c");

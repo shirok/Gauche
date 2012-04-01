@@ -68,11 +68,11 @@
 ;;    The tables first maps a codepoint into 16bit entry.  The entry
 ;;    represents either a simple casemap entry, or an index to an
 ;;    extended casemap entry.
-;;    
+;;
 ;;    bit16 == 0:
 ;;      This is a simple entry.  uppercase and titlecase is the same,
 ;;      no special case mappings, and conversion between
-;;      (upper,title) <-> lower is simply done by adding the given offset. 
+;;      (upper,title) <-> lower is simply done by adding the given offset.
 ;;
 ;;      If bit15 is 0, this letter is uppercase.  Converting to uppercase and
 ;;                     titlecase is noop.  Converting to lowercase is to add
@@ -114,7 +114,7 @@
 ;;    http://www.unicode.org/Public/UNIDATA/auxiliary/SentenceBreakProperty.txt
 ;;
 ;;    An entry is 8-bit, indicating the character's Word_Break and
-;;    Grapheme_Break properties. 
+;;    Grapheme_Break properties.
 ;;
 ;;    bit7-4:  Word_Break property
 ;;              0    CR
@@ -641,7 +641,7 @@
   (print "};")
   (print "#endif /*defined(GAUCHE_CHAR_ENCODING_SJIS)*/")
   (print)
-  
+
   ;; Teardown
   (dolist [c +general-categories+]
     (format #t "#undef ~a\n" c))
@@ -656,7 +656,7 @@
   (define extended '())
   ;; returns a list of (code . entry-case-map) with U+HHHxx where HHH is given
   ;; to the hi arg.
-  (define (gather-entries hb) 
+  (define (gather-entries hb)
     (fold-ec '() (: lb 256) (dict-get table (+ (* hb 256) lb) #f)
              (^(e seed) (if (or (not e) (not (entry-case-map e)))
                           seed
@@ -675,7 +675,7 @@
           (set! (~ vec (logand (car p) #xff)) (cdr p)))
         (push! subtables (cons start-code vec))
         (cons start-code table-num))))
-  ;; 
+  ;;
   (define (gather-toptable)
     (list-ec (: hi 256) (gen-subtable (* hi 256) (gather-entries hi))))
 

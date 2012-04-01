@@ -1,12 +1,12 @@
 /*
  * bignum.c - multiple precision exact integer arithmetic
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -475,7 +475,7 @@ ScmObj Scm_BignumNegate(ScmBignum *b)
     SCM_BIGNUM_SIGN(c) = -SCM_BIGNUM_SIGN(c);
     return Scm_NormalizeBignum(SCM_BIGNUM(c));
 }
-    
+
 /*-----------------------------------------------------------------------
  * Compare
  */
@@ -484,7 +484,7 @@ ScmObj Scm_BignumNegate(ScmBignum *b)
 int Scm_BignumCmp(ScmBignum *bx, ScmBignum *by)
 {
     int i;
-    
+
     if (bx->sign < by->sign) return -1;
     if (bx->sign > by->sign) return 1;
     if (bx->size < by->size) return (bx->sign > 0) ? -1 : 1;
@@ -501,7 +501,7 @@ int Scm_BignumCmp(ScmBignum *bx, ScmBignum *by)
 int Scm_BignumAbsCmp(ScmBignum *bx, ScmBignum *by)
 {
     int i;
-    
+
     if (bx->size < by->size) return -1;
     if (bx->size > by->size) return 1;
     for (i=(int)bx->size-1; i>=0; i--) {
@@ -555,7 +555,7 @@ int Scm_BignumCmp3U(ScmBignum *bx, ScmBignum *off, ScmBignum *by)
     tsize = bignum_safe_size_for_add(bx, off);
     ALLOC_TEMP_BIGNUM(br, tsize);
     bignum_add_int(br, bx, off);
-    
+
     if (br->size < by->size) return -1;
     for (i=(int)br->size-1; i>=0; i--) {
         if (i >= (int)by->size) {
@@ -711,7 +711,7 @@ static ScmBignum *bignum_add_si(ScmBignum *bx, long y)
     ScmBignum *br;
 
     if (y == 0) return bx;
-    
+
     br = make_bignum(rsize);
     br->sign = bx->sign;
     if (SCM_BIGNUM_SIGN(bx) == ysign) {
@@ -760,7 +760,7 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
     u_int nwords = amount / WORD_BITS;
     u_int nbits = amount % WORD_BITS;
     int i;
-    
+
     if (bx->size <= nwords) {
         br->size = 0; br->values[0] = 0;
     } else if (nbits == 0) {
@@ -788,7 +788,7 @@ static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
 {
     int nwords, nbits, i;
     u_long x;
-    
+
     nwords = amount / WORD_BITS;
     nbits = amount % WORD_BITS;
     if (nbits == 0) {
@@ -825,7 +825,7 @@ static ScmBignum *bignum_mul_word(ScmBignum *br, ScmBignum *bx,
 {
     u_long hi, lo, x, r0, r1, c;
     u_int i,j;
-    
+
     for (i=0; i<bx->size; i++) {
         x = bx->values[i];
         UMUL(hi, lo, x, y);
@@ -864,7 +864,7 @@ static ScmBignum *bignum_mul_si(ScmBignum *bx, long y)
 {
     ScmBignum *br;
     u_long yabs;
-    
+
     if (y == 1) return bx;
     if (y == 0) {
         br = make_bignum(1);
@@ -914,7 +914,7 @@ static inline int div_normalization_factor(u_long w)
     return 0;                   /* dummy */
 }
 
-/* General case of division.  We use each half word as a digit. 
+/* General case of division.  We use each half word as a digit.
    Assumes digitsof(dividend) >= digitsof(divisor) > 1.
    Assumes enough digits are allocated to quotient.
    Remainder is returned (not normalized) */
@@ -1078,7 +1078,7 @@ ScmObj Scm_BignumDivRem(ScmBignum *dividend, ScmBignum *divisor)
     r = bignum_gdiv(dividend, divisor, q);
     q->sign = dividend->sign * divisor->sign;
     r->sign = dividend->sign;
-    
+
     return Scm_Cons(Scm_NormalizeBignum(q), Scm_NormalizeBignum(r));
 }
 

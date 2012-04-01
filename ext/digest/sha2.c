@@ -2,7 +2,7 @@
  * FILE:	sha2.c
  * AUTHOR:	Aaron D. Gifford
  *		http://www.aarongifford.com/computers/sha.html
- * 
+ *
  * Copyright (c) 2000-2003, Aaron D. Gifford
  * All rights reserved.
  *
@@ -17,7 +17,7 @@
  * 3. Neither the name of the copyright holder nor the names of contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTOR(S) ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -75,7 +75,7 @@
  *
  * And for little-endian machines, add:
  *
- *   #define BYTE_ORDER LITTLE_ENDIAN 
+ *   #define BYTE_ORDER LITTLE_ENDIAN
  *
  * Or for big-endian machines:
  *
@@ -186,7 +186,7 @@ typedef u_int64_t sha_word64;	/* Exactly 8 bytes */
  *   function was named R and the rotate-right function was called S.
  *   (See: http://csrc.nist.gov/cryptval/shs/sha256-384-512.pdf on the
  *   web.)
- *   
+ *
  *   The newer NIST FIPS 180-2 document uses a much clearer naming
  *   scheme, SHR for shift-right, ROTR for rotate-right, and ROTL for
  *   rotate-left.  (See:
@@ -943,11 +943,11 @@ void SHA256_Internal_Transform(SHA_CTX* context, const sha_word32* data) {
 		/* Part of the message block expansion: */
 		s0 = W256[(j+1)&0x0f];
 		s0 = sigma0_256(s0);
-		s1 = W256[(j+14)&0x0f];	
+		s1 = W256[(j+14)&0x0f];
 		s1 = sigma1_256(s1);
 
 		/* Apply the SHA-256 compression function to update a..h */
-		T1 = h + Sigma1_256(e) + Ch(e, f, g) + K256[j] + 
+		T1 = h + Sigma1_256(e) + Ch(e, f, g) + K256[j] +
 		     (W256[j&0x0f] += s1 + W256[(j+9)&0x0f] + s0);
 		T2 = Sigma0_256(a) + Maj(a, b, c);
 		h = g;

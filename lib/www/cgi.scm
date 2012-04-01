@@ -1,23 +1,23 @@
 ;;;
 ;;; cgi.scm - CGI utility
-;;;  
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
 ;; The most reliable document I found is in <http://CGI-Spec.Golux.Com/>
@@ -59,7 +59,7 @@
           cgi-get-parameter
           cgi-header
           cgi-temporary-files
-          cgi-add-temporary-file 
+          cgi-add-temporary-file
           cgi-main
           <cgi-error>
           <cgi-request-size-error>
@@ -99,7 +99,7 @@
 (define-condition-type <cgi-content-type-error> <cgi-error>
   #f
   (content-type))
-  
+
 (define-condition-type <cgi-request-method-error> <cgi-error>
   #f
   (request-method))
@@ -158,7 +158,7 @@
            (or (get-meta "QUERY_STRING") ""))
           ((string-ci=? method "POST")
            (if (equal? typesig '("multipart" "form-data"))
-             'mime 
+             'mime
              (or (and-let* ((lenp (or content-length
                                       (get-meta "CONTENT_LENGTH")))
                             (len  (x->integer lenp))
@@ -227,7 +227,7 @@
 ;;              : ignore       ;; discard the value.
 ;;              : <procedure>  ;; calls <procedure> with
 ;;                             ;;   name, part-info, input-port.
-;;  <options>   keyword-value list. 
+;;  <options>   keyword-value list.
 ;;               :prefix "prefix"  - use "prefix" for temporary file
 ;;                                   (file and file+name only)
 ;;               :mode   <mode>    - set tmpfile's mode to <mode>
@@ -277,7 +277,7 @@
         ;; backward compatibility - will be deleted soon
         (list (cadr clause) :prefix (caddr clause))]
        [else (cdr clause)])))
-               
+
   (define (get-handler action . opts)
     (cond
      [(not action) string-handler]
@@ -387,7 +387,7 @@
               (slices rest 2))
     (push! r "\r\n")
     (reverse r)))
-      
+
 ;;----------------------------------------------------------------
 ;; API: cgi-main proc &keyword on-error merge-cookies
 ;;                             output-proc part-handlers

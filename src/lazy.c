@@ -1,12 +1,12 @@
 /*
  * lazy.c - lazy evaluation constructs
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -46,7 +46,7 @@
  *
  *  forced == TRUE:  the promise is in 'eager' state.  code has a value.
  *  forced == FALSE: the promise is in 'lazy' state.  code has a thunk.
- *      
+ *
  * [syntax]     lazy expr   : Promise a -> Promise a
  *    Creates a lazy promise, delaying evaluation of expr.
  * [procedure]  eager expr  : a -> Promise a
@@ -64,7 +64,7 @@
  *
  * Gauche experimentally tries to address this problem by allowing the
  * program to add a specific KIND object to a promise instance.
- * 
+ *
  * Thread safety: It is safe that more than one thread force a promise
  * simultaneously.  Only one thread does calculation.
  */
@@ -129,7 +129,7 @@ static ScmObj release_promise(ScmObj *args, int nargs, void *data)
 
 static void install_release_thunk(ScmVM *vm, ScmObj promise)
 {
-    /* TODO: the before thunk must be something that 
+    /* TODO: the before thunk must be something that
        prevents restarting the execution process. */
     vm->handlers = Scm_Acons(Scm_NullProc(),
                              Scm_MakeSubr(release_promise,
@@ -141,12 +141,12 @@ static void install_release_thunk(ScmVM *vm, ScmObj promise)
 static ScmObj force_cc(ScmObj result, void **data)
 {
     ScmPromise *p = (ScmPromise*)data[0];
-    
+
     /* Check if the original promise is forced by evaluating
        the delayed expr to detect recursive force situation */
     if (!p->content->forced) {
         if (SCM_PROMISEP(result)) {
-            /* Deal with a recursive promise introduced by lazy operation.  
+            /* Deal with a recursive promise introduced by lazy operation.
                See srfi-45 for the details. */
             p->content->forced = SCM_PROMISE(result)->content->forced;
             p->content->code   = SCM_PROMISE(result)->content->code;
@@ -279,12 +279,12 @@ ScmObj Scm_Force(ScmObj obj)
 
   +---------------+
   |  LazyPair tag |
-  +---------------+   
+  +---------------+
   |     ScmObj    | -\
   +---------------+  |
   |      NIL      |  |
   +---------------+  |
-  |  (AO_t)owner  |  |                      
+  |  (AO_t)owner  |  |
   +---------------+  |
                      |
                      |   +---------------+
@@ -303,12 +303,12 @@ ScmObj Scm_Force(ScmObj obj)
 
   +---------------+
   |  ScmObj item  |
-  +---------------+   
+  +---------------+
   |     ScmObj    | -\
   +---------------+  |
   |      NIL      |  |
   +---------------+  |
-  |  (AO_t)owner  |  |                      
+  |  (AO_t)owner  |  |
   +---------------+  |
                      |
                      |   +---------------+
@@ -327,12 +327,12 @@ ScmObj Scm_Force(ScmObj obj)
 
   +---------------+
   |  ScmObj item  |
-  +---------------+   
+  +---------------+
   |     ScmObj    | -\
   +---------------+  |
   |      NIL      |  |
   +---------------+  |
-  |    (AO_t)1    |  |                      
+  |    (AO_t)1    |  |
   +---------------+  |
                      |
                      |   +---------------+
@@ -371,7 +371,7 @@ ScmObj Scm_Force(ScmObj obj)
   +---------------+
   |  (AO_t)owner  |
   +---------------+
-                   
+
 
   (4') then clear the fourth slot to be GC-friendly.
 
@@ -384,7 +384,7 @@ ScmObj Scm_Force(ScmObj obj)
   +---------------+
   |    (AO_t)1    |
   +---------------+
-                   
+
 
   Each step of the state transitions (0)->(1)->(2)->(3)->(4)->(5) and
   (0)->(1)->(2')->(3')->(4') are atomic, so the observer see either
@@ -436,7 +436,7 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
                 ScmObj val = Scm_ApplyRec0(lp->generator);
                 ScmObj newgen = (vm->numVals == 1)? lp->generator : vm->vals[0];
                 vm->numVals = 1; /* make sure the extra val won't leak out */
-                
+
                 if (SCM_EOFP(val)) {
                     lp->item = SCM_NIL;
                     lp->generator = SCM_NIL;
@@ -498,7 +498,7 @@ int Scm_DecomposeLazyPair(ScmObj obj, ScmObj *item, ScmObj *generator)
         static const struct timespec req = {0, 1000000};
         struct timespec rem;
         ScmVM *vm = Scm_VM();
-        
+
         for (;;) {
             if (AO_compare_and_swap_full(&lp->owner, 0, SCM_WORD(vm))) {
                 *item = lp->item;

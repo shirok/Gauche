@@ -42,5 +42,4 @@
      :input input)
     (dbm-close dbm)))
 
-    
-    
+

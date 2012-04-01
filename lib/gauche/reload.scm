@@ -59,7 +59,7 @@
              path)))
 
 ;; procedure reload <module-name> &optional <rule> ...
-;;   
+;;
 (define (reload module-name . predicates)
   (let1 mod (find-module module-name)
     (if (not mod)

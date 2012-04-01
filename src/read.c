@@ -1,12 +1,12 @@
 /*
  * read.c - reader
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -283,7 +283,7 @@ static ScmObj ref_register(ScmReadContext *ctx, ScmObj obj, int refnum)
 static void read_context_flush(ScmReadContext *ctx)
 {
     ScmObj cp, ep, entry, obj, finisher;
-    
+
     SCM_FOR_EACH(cp, ctx->pending) {
         entry = SCM_CAR(cp);
         SCM_ASSERT(SCM_PAIRP(entry));
@@ -362,7 +362,7 @@ static void read_nested_comment(ScmPort *port, ScmReadContext *ctx)
     int nesting = 0;
     int line = Scm_PortLine(port);
     ScmChar c, c1;
-    
+
     for (c = Scm_GetcUnsafe(port);;) {
         switch (c) {
         case '#':
@@ -410,7 +410,7 @@ static void read_comment(ScmPort *port) /* leading semicolon is already read */
 static int skipws(ScmPort *port, ScmReadContext *ctx)
 {
     ScmChar c0;
-    
+
     for (;;) {
         int c = Scm_GetcUnsafe(port);
         if (c == EOF) return c;
@@ -483,7 +483,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 {
                     int c2;
                     ScmObj form;
-                    
+
                     c2 = Scm_GetcUnsafe(port);
                     switch (c2) {
                     case '=':
@@ -678,7 +678,7 @@ static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
     int has_ref;
     int line = -1;
     ScmObj r;
-    
+
     if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
     r = read_list_int(port, closer, ctx, &has_ref, line);
     r = Scm_ListToVector(r, 0, -1);
@@ -836,7 +836,7 @@ static ScmObj read_string(ScmPort *port, int incompletep,
                 else ACCUMULATE(c);
             }
             break;
-        } 
+        }
         default: ACCUMULATE(c); break;
         }
     }
@@ -847,11 +847,11 @@ static ScmObj read_string(ScmPort *port, int incompletep,
     Scm_ReadError(port, "Invalid line continuation sequence in a string literal: %S...",
                   Scm_DStringGet(&ds, 0));
     /* NOTREACHED */
-    return SCM_FALSE; 
+    return SCM_FALSE;
 }
 
 /*----------------------------------------------------------------
- * Character 
+ * Character
  */
 
 static struct char_name {
@@ -885,7 +885,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
     const char *cname;
     u_int namelen, namesize;
     struct char_name *cntab = char_names;
-    
+
     c = Scm_GetcUnsafe(port);
     switch (c) {
     case EOF: Scm_ReadError(port, "EOF encountered in character literal");
@@ -955,11 +955,11 @@ static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
         if (case_fold && char_word_case_fold(initial)) initial = tolower(initial);
         SCM_DSTRING_PUTC(&ds, initial);
     }
-    
+
     for (;;) {
         c = Scm_GetcUnsafe(port);
         if (c == EOF || !char_word_constituent(c)) {
-            Scm_UngetcUnsafe(c, port); 
+            Scm_UngetcUnsafe(c, port);
             return Scm_DStringGet(&ds, 0);
         }
         if (case_fold && char_word_case_fold(c)) c = tolower(c);
@@ -996,7 +996,7 @@ static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
 {
     int c2 = Scm_GetcUnsafe(port);
     ScmObj name;
-    
+
     if (c2 == '|') {
         name = read_escaped_symbol(port, c2, FALSE); /* read as uninterned */
         return Scm_MakeKeyword(SCM_SYMBOL_NAME(name));
@@ -1012,7 +1012,7 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned)
     int c = 0;
     ScmDString ds;
     Scm_DStringInit(&ds);
-    
+
     for (;;) {
         c = Scm_GetcUnsafe(port);
         if (c == EOF) {
@@ -1183,7 +1183,7 @@ static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx)
     }
 
     if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
-    
+
     form = read_list_int(port, ')', ctx, &has_ref, line);
     len = Scm_Length(form);
     if (len <= 0) {

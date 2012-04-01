@@ -16,13 +16,13 @@ XCLEANFILES = util--sparse.c sparse.sci
 
 all : $(LIBFILES) $(SCMFILES)
 
-util--sparse.$(SOEXT) : $(OBJECTS) 
+util--sparse.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) util--sparse.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 $(OBJECTS): ctrie.h spvec.h sptab.h
 
 util--sparse.c sparse.sci : sparse.scm
-	$(PRECOMP) -e -P -o util--sparse $(srcdir)/sparse.scm 
+	$(PRECOMP) -e -P -o util--sparse $(srcdir)/sparse.scm
 
 install : install-std
 

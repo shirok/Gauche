@@ -15,7 +15,7 @@
 
 (define-macro (cond-expand . clauses)
 
-  ;; Check feature requirement.  Returns #f if requirement is not 
+  ;; Check feature requirement.  Returns #f if requirement is not
   ;; satisfied.  Returns a list of features to be use'd if requirement
   ;; is satisfied (it can be an emptylist, if the requirement is fulfilled
   ;; by Gauche built-in features).
@@ -65,4 +65,4 @@
       (rec (cdr cls)))))
 
   (rec clauses))
-  
+

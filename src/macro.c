@@ -1,12 +1,12 @@
 /*
  * macro.c - macro implementation
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -136,7 +136,7 @@ static void synrule_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntaxRulesClass, synrule_print);
 
-ScmSyntaxRules *make_syntax_rules(int nr) 
+ScmSyntaxRules *make_syntax_rules(int nr)
 {
     ScmSyntaxRules *r = SCM_NEW2(ScmSyntaxRules *,
                                  sizeof(ScmSyntaxRules)+(nr-1)*sizeof(ScmSyntaxRuleBranch));
@@ -255,7 +255,7 @@ ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
  *    in the macro call.
  *
  *  - symbols in the macro call is treated as they are.  Since the result
- *    of macro expansion is immediately compiled in the macro call 
+ *    of macro expansion is immediately compiled in the macro call
  *    environment, those symbols can refer proper bindings.
  */
 
@@ -269,7 +269,7 @@ ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
 /* TODO: avoid unnecessary consing as much as possible */
 
 /* context of pattern traversal */
-typedef struct {                
+typedef struct {
     ScmObj name;                /* name of this macro (for error msg)*/
     ScmObj form;                /* form being compiled (for error msg) */
     ScmObj literals;            /* list of literal identifiers */
@@ -292,7 +292,7 @@ static inline ScmObj add_pvar(PatternContext *ctx,
 {
     ScmObj pvref = SCM_MAKE_PVREF(pat->level, ctx->pvcnt);
     if (!SCM_FALSEP(Scm_Assq(pvar, ctx->pvars))) {
-        Scm_Error("pattern variable %S appears more than once in the macro definition of %S: %S", 
+        Scm_Error("pattern variable %S appears more than once in the macro definition of %S: %S",
                   pvar, ctx->name, ctx->form);
     }
     ctx->pvcnt++;
@@ -334,7 +334,7 @@ static ScmObj id_memq(ScmObj name, ScmObj list)
         n = SCM_OBJ(SCM_IDENTIFIER(name)->name);
     } else {
         n = name;
-    } 
+    }
     SCM_FOR_EACH(lp, list) {
         if (SCM_OBJ(SCM_IDENTIFIER(SCM_CAR(lp))->name) == name)
             return SCM_CAR(lp);
@@ -613,7 +613,7 @@ static void grow_branch(MatchVar *rec, int level)
         rec->sprout = rec->root = SPROUT;
         if (level == 2) return;
     }
-    
+
     trunc = rec->root;
     for (i=1; i<level-1; i++, trunc = SCM_CAR(trunc)) {
         SCM_FOR_EACH(trunc, trunc) {
@@ -738,7 +738,7 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
         }
         if (!SCM_NULLP(pattern))
             return match_synrule(form, pattern, env, mvec);
-        else 
+        else
             return SCM_NULLP(form);
     }
     if (SCM_VECTORP(pattern)) {
@@ -823,7 +823,7 @@ static ScmObj realize_template_rec(ScmObj template,
         ScmObj h = SCM_NIL, t = SCM_NIL, r, *pe;
         int len = SCM_VECTOR_SIZE(template), i;
         pe = SCM_VECTOR_ELEMENTS(template);
-        
+
         for (i=0; i<len; i++, pe++) {
             if (SCM_SYNTAX_PATTERN_P(*pe)) {
                 r = realize_template_rec(*pe, mvec, level, indices, idlist, exlev);
@@ -862,7 +862,7 @@ static ScmObj realize_template(ScmSyntaxRuleBranch *branch,
     int index[DEFAULT_MAX_LEVEL], *indices = index, i;
     int exlev = 0;
     ScmObj idlist = SCM_NIL;
-    
+
     if (branch->maxLevel > DEFAULT_MAX_LEVEL)
         indices = SCM_NEW_ATOMIC2(int*, (branch->maxLevel+1) * sizeof(int));
     for (i=0; i<=branch->maxLevel; i++) indices[i] = 0;
@@ -875,21 +875,21 @@ static ScmObj synrule_expand(ScmObj form, ScmObj env, ScmSyntaxRules *sr)
     ScmObj expanded;
     int i;
 
-#ifdef DEBUG_SYNRULE    
+#ifdef DEBUG_SYNRULE
     Scm_Printf(SCM_CUROUT, "**** synrule_transform: %S\n", form);
 #endif
     for (i=0; i<sr->numRules; i++) {
-#ifdef DEBUG_SYNRULE    
+#ifdef DEBUG_SYNRULE
         Scm_Printf(SCM_CUROUT, "pattern #%d: %S\n", i, sr->rules[i].pattern);
 #endif
         init_matchvec(mvec, sr->rules[i].numPvars);
         if (match_synrule(SCM_CDR(form), sr->rules[i].pattern, env, mvec)) {
-#ifdef DEBUG_SYNRULE    
+#ifdef DEBUG_SYNRULE
             Scm_Printf(SCM_CUROUT, "success #%d:\n", i);
             print_matchvec(mvec, sr->rules[i].numPvars, SCM_CUROUT);
 #endif
             expanded = realize_template(&sr->rules[i], mvec);
-#ifdef DEBUG_SYNRULE    
+#ifdef DEBUG_SYNRULE
             Scm_Printf(SCM_CUROUT, "result: %S\n", expanded);
 #endif
             return expanded;

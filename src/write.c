@@ -1,12 +1,12 @@
 /*
  * write.c - writer
  *
- *   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
- * 
+ *   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -60,11 +60,11 @@ SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
 
 /* Note: in order to support write/ss, we need to pass down the context
    along the call tree.  We can think of a few strategies:
-   
+
   (a) Use separate context argument : this is logically the most natural way.
       The problem is that the legacy code didn't take the context into
       account (especially in the printer of user-defined objects).
-    
+
   (b) Attach context information to the port : this isn't "right", because
       theoretically a user program may want to mix output of write/ss and
       other writes into a single port.  However, it isn't likely a problem,
@@ -82,7 +82,7 @@ SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
 
       Furthermore, I feel it isn't "right" to modify longer-living data
       (port) for the sake of local, dynamically-scoped information (context).
-      
+
       The advantage of this method is that legacy code will work unchanged.
 
   (c) A variation of (b) is to "wrap" the port by a transient procedural
@@ -121,7 +121,7 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
     ScmWriteContext ctx;
     ScmVM *vm;
     ScmPort *port;
-    
+
     if (!SCM_OPORTP(p)) {
         Scm_Error("output port required, but got %S", p);
     }
@@ -141,7 +141,7 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
         write_ss_rec(obj, port, &ctx);
         return;
     }
-    
+
     /* if case mode is not specified, use default taken from VM default */
     if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
 
@@ -155,13 +155,13 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
     PORT_UNLOCK(port);
 }
 
-/* 
+/*
  * Scm_WriteLimited - Write to limited length.
  *
  *  Characters exceeding WIDTH are truncated.
  *  If the output fits within WIDTH, # of characters actually written
  *  is returned.  Othewise, -1 is returned.
- * 
+ *
  *  Current implementation is sloppy, potentially wasting time to write
  *  objects which will be just discarded.
  */
@@ -171,7 +171,7 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
     ScmString *str;
     ScmObj out;
     int nc, sharedp = FALSE;
-    
+
     if (!SCM_OPORTP(port))
         Scm_Error("output port required, but got %S", port);
     out = Scm_MakeOutputStringPort(TRUE);
@@ -314,14 +314,14 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
    hash table of objects that need special treatment.
 
    The second pass ("output" pass) writes out the data.
-   
+
    For the walk pass, we can't use generic traversal algorithm
    if the data contains user-defined structures.  In which case,
    we delegate the walk task to the user-defined print routine.
    In the walk pass, a special dummy port is created.  It is a
    procedural port to which all output is discarded.  If the
    user-defined routine needs to traverse substructure, it calls
-   back system's writer routine such as Scm_Write, Scm_Printf, 
+   back system's writer routine such as Scm_Write, Scm_Printf,
    so we can effectively traverse entire data to be printed.
 
 */
@@ -337,7 +337,7 @@ static ScmPort *make_walker_port(void)
 {
     ScmPort *port;
     ScmObj ht;
-                                          
+
     port = SCM_PORT(Scm_MakeVirtualPort(SCM_CLASS_PORT, SCM_PORT_OUTPUT,
                                         &walker_port_vtable));
     ht = Scm_MakeHashTableSimple(SCM_HASH_EQ, 0);
@@ -361,13 +361,13 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         }                                                       \
         Scm_HashTableSet(ht, obj, SCM_FALSE, 0);                \
     } while (0)
-    
+
     for (;;) {
         if (!SCM_PTRP(obj) || SCM_KEYWORDP(obj) || SCM_NUMBERP(obj)
             || (SCM_SYMBOLP(obj) && SCM_SYMBOL_INTERNED(obj))) {
             return;
         }
-            
+
         if (SCM_PAIRP(obj)) {
             REGISTER(obj);
             elt = SCM_CAR(obj);
@@ -459,7 +459,7 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         write_general(obj, port, ctx);
         return;
     }
-    
+
     if ((SCM_STRINGP(obj) && SCM_STRING_NULL_P(obj))
         || (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) == 0)) {
         /* special case where we don't put a reference tag. */
@@ -510,13 +510,13 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 return;
             }
         }
-        
+
         /* normal case */
         Scm_PutcUnsafe('(', port);
         for (;;) {
 
             write_ss_rec(SCM_CAR(obj), port, ctx);
-        
+
             obj = SCM_CDR(obj);
             if (SCM_NULLP(obj)) { Scm_PutcUnsafe(')', port); return; }
             if (!SCM_PAIRP(obj)) {
@@ -539,7 +539,7 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     } else if (SCM_VECTORP(obj)) {
         int len, i;
         ScmObj *elts;
-        
+
         Scm_PutzUnsafe("#(", -1, port);
         len = SCM_VECTOR_SIZE(obj);
         elts = SCM_VECTOR_ELEMENTS(obj);
@@ -560,7 +560,7 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmPort *walker_port = make_walker_port();
-    
+
     /* pass 1 */
     write_walk(obj, walker_port, ctx);
     Scm_ClosePort(walker_port);
@@ -621,7 +621,7 @@ static void format_pad(ScmPort *out, ScmString *str,
 {
     int padcount = mincol- SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(str));
     int i;
-    
+
     if (padcount > 0) {
         if (colinc > 1) {
             padcount = ((padcount+colinc-1)/colinc)*colinc;
@@ -753,12 +753,12 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
     sctx.flags = 0;
     actx.mode = SCM_WRITE_DISPLAY;
     actx.flags = 0;
-    
+
     for (;;) {
         int atflag, colonflag;
         ScmObj params[MAX_PARAMS];
         int numParams;
-        
+
         ch = Scm_GetcUnsafe(fmtstr);
         if (ch == EOF) {
             if (!backtracked && !SCM_NULLP(args)) {
@@ -774,7 +774,7 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
 
         numParams = 0;
         atflag = colonflag = FALSE;
-        
+
         for (;;) {
             ch = Scm_GetcUnsafe(fmtstr);
             switch (ch) {
@@ -960,7 +960,7 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
 void Scm_Format(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
 {
     ScmVM *vm;
-    
+
     if (!SCM_OPORTP(out)) {
         Scm_Error("output port required, but got %S", out);
     }
@@ -980,7 +980,7 @@ void Scm_Format(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
  *    - The first argument must be Scheme output port.
  *    - In the format string, the following conversion directives can
  *      be used, as well as the standard printf() directives:
- * 
+ *
  *        %[width][.prec]S    - The corresponding argument must be
  *                              ScmObj, which is written out by WRITE
  *                              mode.  If width is specified and no
@@ -1081,7 +1081,7 @@ static void vprintf_proc(ScmPort *out, const char *fmt, ScmObj args,
                     args = SCM_CDR(args);
                     SCM_ASSERT(SCM_STRINGP(val));
                     Scm_PutsUnsafe(SCM_STRING(val), out);
-                    
+
                     /* TODO: support right adjustment such as %-10s.
                        Currently we ignore minus sign and pad chars
                        on the right. */
@@ -1196,7 +1196,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, int sharedp)
     const char *fmtp = fmt;
     ScmVM *vm;
     int c;
-    
+
     if (!SCM_OPORTP(out)) {
         Scm_Error("output port required, but got %S", out);
     }

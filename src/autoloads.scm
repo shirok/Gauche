@@ -92,7 +92,7 @@
 
 (autoload gauche.portutil
           port->string port->list port->string-list port->sexp-list
-          copy-port port-fold port-fold-right port-for-each port-map 
+          copy-port port-fold port-fold-right port-for-each port-map
           port-position-prefix port-tell)
 
 (autoload "gauche/numerical" sinh cosh tanh asinh acosh atanh)
@@ -188,4 +188,4 @@
                           &i/o-error &i/o-port-error
                           &i/o-read-error &i/o-write-error &i/o-closed-error
                           &read-error)
-                          
+

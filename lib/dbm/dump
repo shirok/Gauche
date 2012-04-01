@@ -36,5 +36,4 @@
      :output output :temporary-file output)
     (dbm-close dbm)))
 
-    
-    
+

@@ -1,23 +1,23 @@
 ;;;
 ;;; process.scm - process interface
-;;;  
-;;;   Copyright (c) 2000-2011  Shiro Kawai  <shiro@acm.org>
-;;;   
+;;;
+;;;   Copyright (c) 2000-2012  Shiro Kawai  <shiro@acm.org>
+;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
 ;;;   are met:
-;;;   
+;;;
 ;;;   1. Redistributions of source code must retain the above copyright
 ;;;      notice, this list of conditions and the following disclaimer.
-;;;  
+;;;
 ;;;   2. Redistributions in binary form must reproduce the above copyright
 ;;;      notice, this list of conditions and the following disclaimer in the
 ;;;      documentation and/or other materials provided with the distribution.
-;;;  
+;;;
 ;;;   3. Neither the name of the authors nor the names of its contributors
 ;;;      may be used to endorse or promote products derived from this
 ;;;      software without specific prior written permission.
-;;;  
+;;;
 ;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 ;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-;;;  
+;;;
 
 #!no-fold-case
 
@@ -58,7 +58,7 @@
           ))
 (select-module gauche.process)
 
-;; Delay-load gauche.charconv 
+;; Delay-load gauche.charconv
 (autoload gauche.charconv
           wrap-with-input-conversion wrap-with-output-conversion)
 (autoload gauche.uvector
@@ -115,7 +115,7 @@
     (%run-process-old command args) ;; backward compatibility
     (%run-process-new command args)))
 
-;; Note: I/O redirection 
+;; Note: I/O redirection
 ;;  'Redirects' keyword argument is a generic way to wire child's I/Os.
 ;;  It takes a list of <io-spec>s, where each <io-spec> can be one of
 ;;  the followings:
@@ -164,7 +164,7 @@
 (define (%run-process-new command args)
   (let-keywords* args ((input  #f) (output #f) (error  #f)
                        (redirects '())
-                       (wait   #f) (fork   #t) 
+                       (wait   #f) (fork   #t)
                        (host   #f)    ;remote execution
                        (sigmask #f) (directory #f) (detached #f))
     (let* ([redirs (%canon-redirects redirects input output error)]
@@ -281,7 +281,7 @@
                                            :canonicalize #t)
             (set! val v))))))
 
-;; Build I/O map 
+;; Build I/O map
 (define (%setup-iomap proc redirs)
 
   (define toclose '())  ;list of ports to be closed in parent
@@ -311,7 +311,7 @@
     ;; child's fds.  fd1 may be remapped from the current process, so
     ;; we first search iomap.  If it hasn't remapped, we transfer the
     ;; current process's fd1 to the child.
-    ;; TODO: need to check the direction of 
+    ;; TODO: need to check the direction of
     (if-let1 p (assv fd1 iomap)
       (push! iomap `(,fd0 . ,(cdr p)))
       (guard (e [(<system-error> e)
@@ -327,7 +327,7 @@
                      fd1)))
              (port-fd-dup! dummy-port p))))
         (push! iomap `(,fd0 . ,fd1)))))
-  
+
   (dolist [r redirs]
     (let ([dir (car r)] [fd (cadr r)] [arg (caddr r)])
       (when (memv fd seen)

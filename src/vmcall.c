@@ -18,7 +18,7 @@
  * Input:
  *  In normal call, arguments at the call site are pushed in the stack
  *  in left-to-right order.  For example, if the call site is (f x y z),
- *  the top 3 stack entries of the stack are like this ('|' indicates 
+ *  the top 3 stack entries of the stack are like this ('|' indicates
  *  stack top; stack grows to right):
  *
  *      ... x  y  z|
@@ -36,7 +36,7 @@
  *  If M == 0, it is a fixed-argument procedure.  The stack must contain
  *  N values, and ARGC must be N.
  *
- *  If M > 0, the stack must contain between N+1 to N+M values, where 
+ *  If M > 0, the stack must contain between N+1 to N+M values, where
  *  the last value is the tail of the argument list.  For standard Scheme
  *  variable argument procedure, M is always 1 and the stack contains
  *  N required arguments plus one list of 'rest' argument.
@@ -300,7 +300,7 @@
         }
         if (SCM_NULLP(n->methods)) {
             VAL0 = SCM_OBJ(n->generic);
-            proctype = SCM_PROC_GENERIC;        
+            proctype = SCM_PROC_GENERIC;
         } else {
             nm = Scm_MakeNextMethod(n->generic, SCM_CDR(n->methods),
                                     ARGP, argc, TRUE, apply_call_p);
@@ -330,7 +330,7 @@
            generic, so that it can accept large number of arguments
            without unfolding all of them on the VM stack. */
         ScmObj args;
-        
+
         POP_ARG(args);
         argc--;
         while (SCM_PAIRP(args)) {
