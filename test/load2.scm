@@ -132,7 +132,11 @@
        ;; avoid using process-output->string since it is tested after
        ;; this file.
        (begin
-         (sys-system "./gosh -ftest ../test/relative-load-path > test.o")
+         (cond-expand
+          [gauche.os.windows
+           (sys-system ".\\gosh -ftest ..\\test\\relative-load-path > test.o")]
+          [else
+           (sys-system "./gosh -ftest ../test/relative-load-path > test.o")])
          (rlet1 r (with-input-from-file "test.o" read-line)
            (sys-unlink "test.o"))))
 
