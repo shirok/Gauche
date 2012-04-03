@@ -1846,10 +1846,17 @@ See also the Gauche built-in procedure @code{string-scan}
 @defunx string-downcase s :optional start end
 @defunx string-downcase! s :optional start end
 [SRFI-13]
+@c EN
 Converts a string @var{s} to titlecase, upcase or downcase,
 respectively.  These operations uses character-by-character
 mapping provided by @code{char-upcase} etc.  That is, @code{string-upcase}
 and @code{string-downcase} can be understood as follow:
+@c JP
+文字列@var{s}をタイトルケース、大文字、小文字にそれぞれ変換します。
+これらの手続きは、文字ごとに@code{char-upcase}等を使った変換を行います。
+すなわち、@code{string-upcase}と@code{string-downcase}は以下の操作と
+考えることができます。
+@c COMMON
 
 @example
 (string-upcase s)
@@ -1858,16 +1865,29 @@ and @code{string-downcase} can be understood as follow:
   @equiv{} (string-map char-downcase s)
 @end example
 
+@c EN
 If you need full case mapping that handles the case when
 a character is mapped to more than one characters, use
 the procedures with the same name in @code{text.unicode} module
 (@xref{Full string case conversion}).
+@c JP
+一文字がケース変換によって複数文字になるような場合も考慮したい場合は、
+@code{text.unicode}モジュールに定義されている同名の手続きを使ってください
+(@ref{Full string case conversion}参照)。
+@c COMMON
 
+@c EN
 The linear-update version @code{string-titelcase!}, @code{string-upcase!}
 and @code{string-downcase!} destroys @var{s} to store the result.
 Note that in Gauche, using those procedures doesn't save anything,
 since string mutation is expensive by design.  They are provided merely
 for completeness.
+@c JP
+@code{string-titelcase!}、@code{string-upcase!}、
+@code{string-downcase!}はその場で更新するバージョンで、@var{s}を破壊的に
+変更します。ただし、Gaucheでは文字列の変更は新たな文字列を作るのと効率的に
+何ら変わりがありません。これらの手続きは互換性のためだけに用意されています。
+@c COMMON
 @end defun
 
 
@@ -1959,6 +1979,20 @@ On the other hand, @code{string-map!} modifies @var{s}.
 @defun string-fold kons knil s :optional start end
 @defunx string-fold-right kons knil s :optional start end
 [SRFI-13]
+@c EN
+Like @var{fold} and @var{fold-right} (@xref{Walking over lists}),
+but works on a string instead of a list.
+@c JP
+文字列に対して動作する@var{fold}や@var{fold-right} (@ref{Walking over lists}参照)
+です。
+@c COMMON
+
+@example
+(string-fold cons '() "abcde")
+  @result{} (#\e #\d #\c #\b #\a)
+(string-fold-right cons '() "abcde")
+  @result{} (#\a #\b #\c #\d #\e)
+@end example
 @end defun
 
 @defun string-unfold p f g seed :optional base make-final
