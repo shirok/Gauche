@@ -146,8 +146,8 @@
         ;; If :relative is given, we trust the programmer to give a relative
         ;; pathname to PATH.
         [path (or (and-let* ([ (memq :relative args) ]
-                             [cur (sys-dirname (current-load-path)) ])
-                    (string-append cur "/" path))
+                             [cur (current-load-path) ])
+                    (string-append (sys-dirname cur) "/" path))
                   path)])
     `',((with-module gauche.internal %add-load-path) path afterp)))
 
