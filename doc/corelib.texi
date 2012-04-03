@@ -13890,18 +13890,65 @@ described below, instead.
 @c COMMON
 @end defvar
 
-@defspec add-load-path path :optional (afterp #f)
+@defspec add-load-path path flag @dots{}
 @c EN
 Adds a path @var{path} to the library load path list.
-If a true value is given to @var{afterp}, @var{path} is added
-after the existing paths; otherwise, @var{path} is added before the
-existing paths.
+If @var{path} is a relative path, it is resolved relative to
+the current working directory, unless @code{:relative} flag is given.
+@c JP
+パス@var{path}をライブラリロードパスのリストに加えます。
+@var{path}が相対パスの場合、@code{:relative}フラグが与えられて
+いなければ、プロセスの現在のワーキングディレクトリからの相対と解釈されます。
+@c COMMON
 
+@c EN
+Each @var{flag} argument may be one of the followings.
+@c JP
+以下の値が@var{flag}引数として認識されます。
+@c COMMON
+
+@table @code
+@item :after
+@c EN
+Append @var{path} to the end of the current list of load paths.
+By default, @var{path} is added in front of the load path list.
+@c JP
+@var{path}を現在のロードパスリストの末尾に加えます。
+デフォルトでは、@var{path}はロードパスリストの先頭に加えられます。
+@c COMMON
+@item #t
+@c EN
+The same as @code{:after}.  This is for the backward compatibility.
+@c JP
+@code{:after}と同じです。互換性のために認識されます。
+@c COMMON
+@item :relative
+@c EN
+Interpret @var{path} as a relative path to the directory of
+the current file, instead of the current working directory.
+If the current file can't be determined (e.g. evaluated in REPL, or
+the expression is read from a socket), this flag is ignored.
+@c JP
+@var{path}を、(カレントワーキングディレクトリではなく)
+現在ロード中のファイルのあるディレクトリからの相対パスとして
+解釈します。現在ロード中のファイルが不明な場合 (REPLから
+評価されたり、ソケットから読まれたりしている場合) は、このフラグは無視されます。
+@c COMMON
+@end table
+
+@c EN
 Use this form instead of changing @code{*load-path*} directly.
 This form is a special form and recognized by the compiler;
 if you change @code{*load-path*}, it is in effect at run time,
 and that may be too late for ``use'' or ``require''.
+@c JP
+ロードパスを変更したい場合、@code{*load-path*}を直接替えずにこのフォームを
+使って下さい。このフォームはコンパイル時に解釈されるのに対し、@code{*load-path*}を
+書き換えるコードは実行時に解釈されます。``@code{use}'' や ``@code{require}'' は
+コンパイル時のロードパスを使うので、@code{*load-path*}への変更は反映されないかもしれません。
+@c COMMON
 
+@c EN
 Furthermore,
 @code{add-load-path} looks for the architecture dependent directories
 under the specified path and if it exists, sets up the internal
@@ -13913,15 +13960,6 @@ the value @code{(gauche-architecture)} returns (@xref{Environment Inquiry}).
 Then you can have compiled libraries for multiple platforms and
 Gauche can still find the right library.
 @c JP
-パス@var{path}をライブラリロードパスのリストに加えます。
-@var{afterp}に真の値が与えられていれば@var{path}は既存のリストの末尾に
-追加されます。そうでなければ@var{path}は既存のリストの先頭に追加されます。
-
-ロードパスを変更したい場合、@code{*load-path*}を直接替えずにこのフォームを
-使って下さい。このフォームはコンパイル時に解釈されるのに対し、@code{*load-path*}を
-書き換えるコードは実行時に解釈されます。``@code{use}'' や ``@code{require}'' は
-コンパイル時のロードパスを使うので、@code{*load-path*}への変更は反映されないかもしれません。
-
 更に、@code{add-load-path}は@var{path}の下にアーキテクチャ依存のディレクトリが
 ないかどうかを探し、あればそれを内部の共有ライブラリサーチパスに追加します。
 例えばあなたが自分のSchemeモジュールを@code{/home/yours/lib}に入れていて、

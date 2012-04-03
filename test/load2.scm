@@ -123,7 +123,18 @@
 
 (sys-system "rm -rf test.o")
 
+
+;; relative load path -------------------------------
+
+(test-section "relative load path")
+
+(test* "relative load path" "ok!"
+       ;; avoid using process-output->string since it is tested after
+       ;; this file.
+       (begin
+         (sys-system "./gosh -ftest ../test/relative-load-path > test.o")
+         (rlet1 r (with-input-from-file "test.o" read-line)
+           (sys-unlink "test.o"))))
+
 (test-end)
-
-
 

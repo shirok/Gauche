@@ -116,7 +116,7 @@
 (define-cproc %require (feature) ::<boolean>
   (result (not (Scm_Require feature SCM_LOAD_PROPAGATE_ERROR NULL))))
 
-(define-cproc %add-load-path (path::<const-cstring> :optional (afterp #f))
+(define-cproc %add-load-path (path::<const-cstring> :optional afterp)
   (result (Scm_AddLoadPath path (not (SCM_FALSEP afterp)))))
 
 (define-cproc %autoload (mod::<module> file-or-module entries)
@@ -142,7 +142,14 @@
 ;; more a procedure than a compiler syntax---any ideas?
 (select-module gauche)
 (define-macro (add-load-path path . args)
-  `',(apply (with-module gauche.internal %add-load-path) path args))
+  (let ([afterp (or (memq #t args) (memq :after args))]
+        ;; If :relative is given, we trust the programmer to give a relative
+        ;; pathname to PATH.
+        [path (or (and-let* ([ (memq :relative args) ]
+                             [cur (sys-dirname (current-load-path)) ])
+                    (string-append cur "/" path))
+                  path)])
+    `',((with-module gauche.internal %add-load-path) path afterp)))
 
 ;; Load path hooks
 (select-module gauche.internal)
