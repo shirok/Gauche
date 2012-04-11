@@ -1,3 +1,16 @@
+2012-04-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/librx.scm (regexp-num-groups, regexp-named-groups): Added
+	  accessors to these internal info.
+	* doc/corelib.texi: Made reference from regexp-replace-all to
+	  lrxmatch and grxmatch.
+
+2012-04-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (add-load-path): Enable adding load path
+	  relative to the currently loaded file.  Handy to distribute
+	  scripts that can just copied by directories.
+
 2012-03-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/gauche/vm.h: Changed continuation frame structure.

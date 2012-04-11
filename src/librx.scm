@@ -52,6 +52,11 @@
 (define-cproc regexp-compile (ast)  Scm_RegCompFromAST)
 (define-cproc regexp-optimize (ast) Scm_RegOptimizeAST)
 
+(define-cproc regexp-num-groups (regexp::<regexp>) ::<int>
+  (result (-> regexp numGroups)))
+(define-cproc regexp-named-groups (regexp::<regexp>)
+  (result (-> regexp grpNames)))
+
 (define-cproc rxmatch (regexp str::<string>)
   (let* ([rx::ScmRegexp* NULL])
     (cond [(SCM_STRINGP regexp) (set! rx (SCM_REGEXP (Scm_RegComp

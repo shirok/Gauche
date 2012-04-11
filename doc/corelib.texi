@@ -5525,7 +5525,7 @@ Gaucheはまた、リテラル正規表現用の構文を備えています。
 
 @example
 (find #/pattern/ list-of-strings)
-  @result{} @i{match object} or #t
+  @result{} @i{match object} or #f
 @end example
 
 @menu
@@ -6383,6 +6383,29 @@ in @var{regexp} doesn't only mean the beginning of input string.
 文字列先頭のアサーション (@code{^}) を含んでいても、それは@var{string}の
 先頭だけにマッチするとは限りません。
 @c COMMON
+
+@c EN
+Note: If you want to operate on multiple matches in the string
+instead of replacing it, you can use @code{lrxmatch} in @code{gauche.lazy}
+module or @code{grxmatch} in @code{gauche.generator} module.  Both can
+match a regexp @emph{repeatedly} and @emph{lazily} to the given string,
+and @code{lrxmatch}
+returns a lazy sequence of @code{regmatch}es, while @code{grxmatch}
+returns a generator that yields @code{regmatch}es.
+@c JP
+註: 文字列中の、正規表現にマッチする部分すべてに対して何か操作をしたいが、
+置き換えた文字列が欲しいわけではない、という場合は、
+@code{gauche.lazy}モジュールの@code{lrxmatch}や、
+@code{gauche.generator}モジュールの@code{grxmatch}が使えるでしょう。
+これらは文字列に対して繰り返し正規表現でのマッチを、必要に応じて適用し、
+前者はマッチオブジェクトの遅延シーケンスを、後者はマッチオブジェクトを生成する
+ジェネレータを返します。
+@c COMMON
+
+@example
+(map rxmatch-substring (lrxmatch #/\w+/ "a quick brown fox!?"))
+ @result{} ("a" "quick" "brown" "fox")
+@end example
 @end defun
 
 @defun regexp-replace* string rx1 sub1 rx2 sub2 @dots{}
@@ -6415,6 +6438,40 @@ Returns a string with the characters that are special to regexp escaped.
 @example
 (regexp-quote "[2002/10/12] touched foo.h and *.c")
  @result{} "\\[2002/10/12\\] touched foo\\.h and \\*\\.c"
+@end example
+@end defun
+
+@defun regexp-num-groups regexp
+@defunx regexp-named-groups regexp
+@c EN
+Queries the number of capturing groups, and an alist of named capturing
+groups, in the given @var{regexp}, respectively.
+
+The number of capturing groups corresponds to the number of matches
+returned by @code{rxmatch-num-matches}.  Note that the entire regexp
+forms a group, so the number is always positive.
+
+The alist returned from @code{regexp-named-groups} has the group name
+(symbol) in @code{car}, and its subgroup number in @code{cdr}.
+Note that the order of groups in the alist isn't fixed.
+@c JP
+正規表現@var{regexp}中の、捕捉グループ(サブマッチに使われるグループ)の総数、
+及び名前つき捕捉グループのalistをそれぞれ返します。
+
+捕捉グループの総数は、この正規表現でマッチした場合のマッチオブジェクトの
+@code{rxmatch-num-matches}と同じになります。正規表現全体もひとつのグループだと
+みなされるので、総数は常に1以上です。
+
+@code{regexp-named-groups}から返されるalistは
+@code{car}に名前(シンボル)、@code{cdr}にそのサブマッチ番号を持つペアを
+要素とします。alist内でのグループの順番は不定です。
+@c COMMON
+
+@example
+(regexp-num-groups #/abc(?<foo>def)(ghi(?<bar>jkl)(mno))/)
+  @result{} 5
+(regexp-named-groups #/abc(?<foo>def)(ghi(?<bar>jkl)(mno))/)
+  @result{} ((bar . 3) (foo . 1))
 @end example
 @end defun
 
