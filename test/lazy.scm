@@ -223,6 +223,12 @@
 (test* "CONS instruction" '(2 1 . 0)
        (cons 2 (cons 1 (car (generator->lseq 0 gnull)))))
 
+(test* "CAR-PUSH instruction" 1
+       (abs (car (lcons -1 '()))))
+(test* "CDR-PUSH instruction" #t
+       (let1 x (cdr (lcons -1 '()))
+         (null? x)))
+
 (test* "length" 10 (length (generator->lseq (giota 10))))
 (test* "fold" 45 (fold + 0 (generator->lseq (giota 10))))
 (test* "equal?" #t (equal? '(0 1 2 3 4) (generator->lseq (giota 5))))

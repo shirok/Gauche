@@ -1038,14 +1038,42 @@ static ScmEnvFrame *get_env(ScmVM *vm)
  * so the next time the control returns to the calling VM loop,
  * the first thing it would do is to pop this extra continuation
  * frame (unless other thigs are pushed onto the VM stack by VMPushCC).
+ * Returns TRUE if a new extra frame is pushed, FALSE if not.
+ *
+ * Caveat: This function changes the next instruction to be executed.
+ * It is a problem if this is called during VM insturctions such as
+ * CAR-PUSH, which expects the next instruction to make use of the
+ * pushed value---if we make RET to be executed instead of the original
+ * instruction, the pushed value will be lost.  So, the caller of this
+ * function needs to see if the frame is actually pushed, and call
+ * Scm__VMUnprotectStack below to recover the original instruction.
  */
-void Scm__VMProtectStack(ScmVM *vm)
+int Scm__VMProtectStack(ScmVM *vm)
 {
     if (vm->sp != vm->argp || *vm->pc != SCM_VM_INSN(SCM_VM_RET)) {
         CHECK_STACK(CONT_FRAME_SIZE);
         PUSH_CONT(PC);
         vm->pc = PC_TO_RETURN;
+        return TRUE;
+    } else {
+        return FALSE;
     }
+}
+
+/* The inverse of Scm__VMProtectStack.  This is required if you called
+ * Scm__VMProtectStack _in_the_middle_of_VM_instruction_execution_.
+ * The VM instruciton may push things after that, counting on the fact
+ * that subsequent instructoins use the pushed item.  However,
+ * Scm__VMProtectStack makes the next instruction to be executed
+ * to RET.  This makes the thing pushed by the current instruction be
+ * discarded immediately, before the original subsequent instructions
+ * seeing it.  Calling Scm__VMUnprotectStack restores the original next
+ * instruction (assuming it's properly paired up with Scm__VMProtectStack).
+ */
+void Scm__VMUnprotectStack(ScmVM *vm)
+{
+    SCM_ASSERT(vm->pc == PC_TO_RETURN);
+    POP_CONT();
 }
 
 #if GAUCHE_FFX

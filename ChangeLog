@@ -1,5 +1,16 @@
 2012-04-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c (Scm__VMUnprotectStack),
+	  src/lazy.c (Scm_ForceLazyPair): Fixed a bug that corrupts VM stack
+	  when lazy-pair forcing occurs during a comined instruction such
+	  as CAR-PUSH.  The original code pushed an extra continuation frame
+	  during forcing to protect the stack.  If that happened, CAR-PUSH
+	  pushes the result on top of the extra continuation.  However,
+	  the next instruction to be executed after this CAR-PUSH will be
+	  RET, set by Scm__VMUnprotectStack, which discards the just pushed
+	  value by CAR-PUSH.  The fix correctly adjusts the VM stack
+	  after forcing is done.
+
 	* src/librx.scm (regexp-num-groups, regexp-named-groups): Added
 	  accessors to these internal info.
 	* doc/corelib.texi: Made reference from regexp-replace-all to

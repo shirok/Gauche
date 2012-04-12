@@ -431,7 +431,7 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
             ScmObj item = lp->item;
             /* Calling generator might change VM state, so we protect
                incomplete stack frame if there's any. */
-            Scm__VMProtectStack(vm);
+            int extra_frame_pushed = Scm__VMProtectStack(vm);
             SCM_UNWIND_PROTECT {
                 ScmObj val = Scm_ApplyRec0(lp->generator);
                 ScmObj newgen = (vm->numVals == 1)? lp->generator : vm->vals[0];
@@ -453,6 +453,9 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
                 lp->owner = (AO_t)0; /*NB: See above about error handling*/
                 SCM_NEXT_HANDLER;
             } SCM_END_PROTECT;
+            if (extra_frame_pushed) {
+                Scm__VMUnprotectStack(vm);
+            }
             return SCM_OBJ(lp); /* lp is now an (extended) pair */
         }
         /* Check if we're already working on forcing this pair.  Unlike

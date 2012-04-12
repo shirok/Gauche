@@ -135,7 +135,8 @@ typedef struct ScmContFrameRec {
 
 SCM_EXTERN void Scm_CallCC(ScmObj body);
 
-SCM_EXTERN void Scm__VMProtectStack(ScmVM *vm);
+SCM_EXTERN int  Scm__VMProtectStack(ScmVM *vm);
+SCM_EXTERN void Scm__VMUnprotectStack(ScmVM *vm);
 
 /*
  * Syntactic closure
