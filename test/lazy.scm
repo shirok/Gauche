@@ -305,5 +305,8 @@
            (cadr fib-bad)))
   )
 
+(test* "lcons*" 1 (car (lcons* 1 2 (error "ouch"))))
+(test* "lcons*" *test-error* (cadr (lcons* 1 2 (error "ouch"))))
+
 (test-end)
 

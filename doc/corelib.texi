@@ -9648,6 +9648,26 @@ For performance-critical part,
 you want to use @code{generator->lseq} whenever possible.
 @end defmac
 
+@subsubheading Utilities
+
+@defmac lcons* x @dots{} tail
+@defmacx llist* x @dots{} tail
+A lazy version of @code{cons*} (@xref{List constructors}).
+Both @code{lcons*} and @code{llist*} do the same thing; both
+names are provided for the symmetry to @code{cons*}/@code{list*}.
+
+The @var{tail} argument should be an expression that yields a 
+(possibly lazy) list.   It is evaluated lazily.  Note that
+the preceding elements @var{x} @dots{} are evaluated eagerly.
+The following equivalences hold.
+
+@example
+(lcons* a)           @equiv{} a
+(lcons* a b)         @equiv{} (lcons a b)
+(lcons* a b ... y z) @equiv{} (cons* a b @dots{} (lcons y z))
+@end example
+@end defmac
+
 @defun lrange start :optional end step
 Creates a lazy sequence of numbers starting from @var{start},
 increasing by @var{step} (default 1), to the maximum value that doesn't
@@ -9660,14 +9680,117 @@ so it creates an infinite list.  (Don't type just
 @end example
 @end defun
 
+@defun liota count :optional start step
+A lazy version of @var{iota} (@xref{List constructors}); returns
+a lazy sequence of @var{count} integers, starting from @var{start}
+(default 0), stepping by @var{step} (default 1).
+@end defun
+
 See also @ref{Lazy sequence utilities}, for more utility procedures
 that returns lazy sequences.
 
 @subsubheading Examples
 
+Let's consider calculating an infinite sequence of prime numbers.
 
+Just pretend we already have some prime numbers are
+calculated in a variable @code{*primes*}, and you need
+to calculate a prime number equal to or grater than @var{n}
+(for simplicity, we assume @var{n} is an odd number).
 
+@example
+(define (next-prime n)
+  (let loop ([ps *primes*])
+    (let1 p (car ps)
+      (cond [(> (* p p) n) n]
+            [(zero? (modulo n p)) (next-prime (+ n 2))]
+            [else (loop (cdr ps))]))))
+@end example
 
+This procedure loops over the list of prime numbers, and
+if no prime number @var{p} less than or equal to @code{(sqrt n)}
+divides @var{n}, we can say @var{n} is prime.  (Actual test
+is done by @code{(> (* p p) n)} instead of @code{(> p (sqrt n)},
+for the former is faster.)
+If we find some @var{p} divides @var{n}, we try a new value
+@code{(+ n 2)} with @code{next-prime}.
+
+Using @code{next-prime}, we can make a generator that keeps generating
+prime numbers.  The following procedure returns a generator
+that returns primes above @var{last}.
+
+@example
+(define (gen-primes-above last)
+  (^[] (set! last (next-prime (+ last 2))) last))
+@end example
+
+Using @code{generator->lseq}, we can turn the generator returned
+by @code{gen-primes-above} into a lazy list, which can be used
+as the value of @code{*prime*}.  The only caveat is that we need
+to have some pre-calculated prime numbers:
+
+@example
+(define *primes* (generator->lseq 2 3 5 (gen-primes-above 5)))
+@end example
+
+Be careful not to evaluate @code{*primes*} directly on REPL,
+since it contains an infinite list and it'll blow up your REPL.
+You can look the first 20 prime numbers instead:
+
+@example
+(take *primes* 20)
+ @result{} (2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71)
+@end example
+
+Or find what the 10000-th prime number is:
+
+@example
+(~ *primes* 10000)
+ @result{} 104743
+@end example
+
+Or calculate how many prime numbers there are below 1000000:
+
+@example
+(any (^[p i] (and (>= p 1000000) i)) *primes* (lrange 0))
+ @result{} 78498
+@end example
+
+Note: If you're familiar with a lazy functional approach, this example
+may look strange.  Why do we use side-effecting generators
+while we can define a sequence of prime numbers in
+pure functional way, as follows?
+
+@example
+(use gauche.lazy)
+
+(define (prime? n)
+  (not (any (^p (zero? (mod n p)))
+            (ltake-while (^k (<= (* k k) n)) *primes*))))
+
+(define (primes-from k)
+  (if (prime? k)
+    (lcons k (primes-from (+ k 2)))
+    (primes-from (+ k 2))))
+
+(define *primes* (llist* 2 3 5 (primes-from 7)))
+@end example
+
+(The module @code{gauche.lazy} provides @code{ltake-while}, which
+is a lazy version of @code{take-while}.  We don't need lazy version
+of @code{any}, since it immediately stops when the predicate returns
+a true value.)
+
+The use of @code{lcons} and co-recursion in @code{primes-from}
+is a typical idiom in functional programming.  It's perfectly ok
+to do so in Gauche; except that the generator version is @emph{much} faster
+(when you take first 5000 primes, generator version ran 17 times faster
+than co-recursion version in the author's machine).
+
+It doesn't mean you should avoid co-recursive code; if an algorithm
+can be expressed nicely in co-recursion, it's perfectly ok.  However,
+watch out the subtle semantic difference from lazy functional
+languages---straightforward porting may or may not work.
 
 @c ----------------------------------------------------------------------
 @node Exceptions, Eval and repl, Lazy evaluation, Core library

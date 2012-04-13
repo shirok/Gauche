@@ -33,7 +33,7 @@
 
 (select-module gauche.internal)
 
-(declare (keep-private-macro lcons))
+(declare (keep-private-macro lcons lcons* llist*))
 
 ;;;
 ;;; delay/force/lazy/eager
@@ -119,6 +119,9 @@
         [(and (exact? start) (exact? step)) (generator->lseq start gen-exacts)]
         [else (generator->lseq (inexact start) gen-inexacts)]))
 
+(define-in-module gauche (liota count :optional (start 0) (step 1))
+  (lrange start (+ start count) step))
+
 (select-module gauche)
 (define-macro (lcons a b)
   ;; poor man's explicit renaming.
@@ -129,3 +132,19 @@
                 '())
     `(,%lcons ,a (lambda () ,b))))
 
+(define-macro (lcons* x . args)
+  (let1 %lcons ((with-module gauche.internal make-identifier)
+                '%lcons
+                (find-module 'gauche.internal)
+                '())
+    (cond [(null? args) x]
+          [(null? (cdr args)) `(,%lcons ,x (lambda () ,(car args)))]
+          [else `(cons ,x (lcons* ,@args))])))
+(define-macro (llist* . args) `(lcons* ,@args))
+
+;; Once we are able to precompile hygineic macros ...
+;; (define-syntax lcons*
+;;   (syntax-rules ()
+;;     [(_ x) x]
+;;     [(_ x y) (lcons x y)]
+;;     [(_ x y z ...) (cons x (lcons* y z ...))]))
