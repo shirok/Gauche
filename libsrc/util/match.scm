@@ -286,6 +286,11 @@
                    ,@(car eb-errf))
                ,m))))
 
+(define (symbolize x)
+  (cond [(symbol? x) x]
+        [(identifier? x) (unwrap-syntax x)]
+        [else x]))
+
 (define (pattern-var? x)
   (and-let* ([x (cond [(symbol? x) x]
                       [(identifier? x) (unwrap-syntax x)]
@@ -335,7 +340,7 @@
        ((equal? p '_) '_)
        ((pattern-var? p) p)
        ((pair? p)
-        (case (car p)
+        (case (symbolize (car p))
           ((quasiquote)
            (if (and (pair? (cdr p)) (null? (cddr p)))
              (quasi (cadr p))

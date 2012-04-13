@@ -273,6 +273,14 @@
        (match-let1 ((ca . cd) ...) '((a . 1) (b . 2) (c . 3))
          (list ca cd)))
 
+;;--------------------------------------------------------------
+
+;; Interaction between hygienic macro and match
+(define-syntax gen-match
+  (syntax-rules () [(_) (match 1 [(and 1 x) x])]))
+
+(test* "match in hygienic macro" 1 (gen-match))
+
 ;;-----------------------------------------------
 (test-section "util.queue")
 (use util.queue)

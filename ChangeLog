@@ -1,5 +1,8 @@
 2012-04-12  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/util/match.scm (validate-pattern): Temporary fix for
+	  interference with hygienic macro.
+
 	* src/liblazy.scm (lcons*, llist*, liota): Added for completeness.
 	* doc/corelib.texi: Added lazy sequence examples.
 
