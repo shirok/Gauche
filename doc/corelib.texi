@@ -9782,7 +9782,7 @@ Fibonacci sequence using self-referential lazy structure
 Gaucheの「一つ先の要素まで計算」が問題となる例も見ておきましょう。
 次の例は、自己参照する遅延シーケンスを使った、とても美しい無限フィボナッチ数列の
 定義です (@code{lmap}は遅延バージョンのmapで、@code{gauche.lazy}モジュールで
-帝京されています)。
+提供されています)。
 @c COMMON
 
 @example
