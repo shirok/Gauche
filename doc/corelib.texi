@@ -9518,8 +9518,13 @@ Returns @code{#t} iff @var{obj} is a promise object.
 @subsection  Lazy sequences
 @c NODE 遅延シーケンス
 
+@c EN
 @subsubheading Introduction
+@c JP
+@subsubheading イントロダクション
+@c COMMON
 
+@c EN
 A lazy sequence is a list-like structure
 whose elements are calculated lazily.
 Internally we have a special type of pairs, whose @code{cdr}
@@ -9528,13 +9533,32 @@ However, in Scheme level, you'll never see a distinct
 ``lazy-pair'' type.   As soon as you try to access the
 lazy pair, Gauche automaticlaly @emph{force} the delayed
 calculation, and the lazy pair turns into an ordinary pair.
+@c JP
+遅延シーケンスはリストのようなデータ構造ですが、要素は必要になるまで
+計算されません。内部的には、これは@code{cdr}の評価が遅延される特別な種類の
+ペアを使って実現されています。しかし、Schemeのレベルで
+「遅延ペア」のような特別なデータ型が見えることは決してありません。
+遅延ペアにアクセスしようとした途端、Gaucheは自動的に
+遅延されていた計算を@emph{force}して、遅延ペアは通常のペアに変化してしまうからです。
+@c COMMON
 
+@c EN
 It means you can pass lazy sequences to ordinary list-processing
 procedures such as @code{car}, @code{cdr} or @code{map}.
+@c JP
+これはつまり、遅延シーケンスを@code{car}、@code{cdr}、@code{map}といった
+通常のリスト処理手続きにそのまま渡せるということです。
+@c COMMON
 
+@c EN
 Look at the following example; @code{generator->lseq}
 takes a procedure that generates one value at a time, and
 returns a lazy sequence consists of those values.
+@c JP
+次の例を見てください。@code{generator->lseq}は、
+「呼ばれる度に次の値を返す」という手続きを取り、返される値からなる遅延シーケンス
+にして返す手続きです。
+@c COMMON
 
 @example
 (with-input-from-file "file"
@@ -9545,28 +9569,52 @@ returns a lazy sequence consists of those values.
            [(c . cs) (loop cs (+ i 1))]))))
 @end example
 
+@c EN
 It returns the position of the first occurrence of
-character sequence ``car'' or ``cdr''.
+character sequence ``car'' or ``cdr'' in the file @file{file}.
 Characters are read as needed, so once the sequence is
 found, the rest of the files won't be read.  If we do
 it eagerly, we would have to read entire file first no matter how
-big it is, or give up using the mighty @code{match} macro and code
-to check characters one at a time.
+big it is, or to give up using the mighty @code{match} macro and
+to write a basic state machine that reads one character one at a time.
+@c JP
+このコードは、ファイル@file{file}中に最初に出現する
+``car''または''cdr''という文字列の場所を返します。
+文字は必要に応じて読まれ、目的の文字列が見つかれば残りは読まれません。
+これを遅延無しでやろうとすると、一旦全てのファイルを読み込んでリストに
+変換するか、あるいは便利な@code{match}マクロを使うのを諦めて
+一文字つづ読み込んで処理する原始的な状態機械を書くしかないでしょう。
+@c COMMON
 
+@c EN
 Other than implicit forcing, Gauche's lazy sequences are
-slightly different than the typical lazy stream implementations
+slightly different than the typical lazy stream implementations in Scheme
 in the following ways:
+@c JP
+暗黙のforceの他にも、Gaucheの遅延シーケンスは
+Schemeの典型的な遅延ストリーム実装に比べて次のような違いがあります。
+@c COMMON
 
 @enumerate
 @item
+@c EN
 When you construct a lazy sequence in an iterative lazy algorithm,
 only @code{cdr} side of the lazy pair is lazily evaluated;
 the @code{car} side is evaluated immediately.  On the other hand, with
 @code{stream-cons} in @code{util.stream} (@xref{Stream library}),
 both @code{car} and @code{cdr} sides won't be evaluated until
 it is absolutely needed.
+@c JP
+遅延シーケンスを、繰り返しによる怠惰なアルゴリズムから構築する際に、
+遅延ペアの@code{cdr}側のみが遅延評価の対象となります。
+ペアの@code{car}側は直ちに評価されます。
+一方、@code{util.stream}の@code{stream-cons}では、
+@code{car}と@code{cdr}のどちらも遅延評価の対象となり、
+必要となるまで評価されません (@ref{Stream library}参照)。
+@c COMMON
 @item
-Gauche's lazy sequence evaluates @emph{one item ahead}.
+@c EN
+Gauche's lazy sequence always evaluates @emph{one item ahead}.
 Once you get a lazy pair, its @code{car} part is already
 calculated, even if you don't use it.  In most cases
 you don't need to care, for calculating one item more
@@ -9577,39 +9625,95 @@ elements of itself, a bit of caution is needed;
 a valid code for fully lazy circular structure may not
 terminate in Gauche's lazy sequences.  We'll show a
 concrete example later.  This bit of eagerness
-is also visible when side effects are involved.
+is also visible when side effects are involved;
+for example, lazy character sequence reading from a port
+may read one character ahead.
+@c JP
+Gaucheの遅延シーケンスは、常に@emph{ひとつ余分に}評価します。
+遅延ペアを手にした段階で、その中身にアクセスするかしないかにかかわらず、
+既にその@code{car}は評価済みであるということです。
+ひとつ余分に計算してしまうことのコストは、通常はあまり問題にならないでしょう
+(全てを余分に計算するよりは良いわけですから)。けれども、自分自身を参照
+する遅延データ構造、つまり、遅延シーケンスの次の要素を計算するために
+そのシーケンスの前の方の要素を参照する必要がある場合は注意が必要です。
+遅延評価言語で正しい自己参照遅延データの生成コードが、
+そのままではGaucheで停止しなくなる場合があります。後で例を示します。
+また、評価に副作用がある場合にもこの差異が観測される場合があります。
+例えば、ポートから一文字づつ読む遅延シーケンスは、
+見かけよりも一文字余分に読むことになるでしょう。
+@c COMMON
 @end enumerate
 
+@c EN
 @subsubheading Primitives
+@c JP
+@subsubheading プリミティブ
+@c COMMON
 
 @defun generator->lseq generator
 @defunx generator->lseq item @dots{} generator
+@c EN
 Creates a lazy sequence that consists of items produced
 by @var{generator}, which is just a procedure with zero arguments that yields
-an item at a time; for example, @code{read-char} can work as a generator.
+an item at a time.  Returning EOF marks the end of the sequence
+(EOF itself isn't included in the sequence).
+For example, @code{read-char} can work as a generator.
 Gauche has a set of convenient utilities to deal with generators
 (@xref{Generators}).
+@c JP
+ジェネレータ手続き@var{generator}から生成される値の列を、遅延シーケンスとして返します。
+ジェネレータ手続きは引数を取らない手続きで、呼ばれる度に次の値を返すようなものです。
+EOFが返されたら、シーケンスの終了とみなされます (EOF自体はシーケンスには含まれません)。
+例えば@code{read-char}はそのまま@var{generator}に渡せます。
+ジェネレータ手続きを作ったり加工したりする便利なユーティリティが
+@code{gauche.generator}モジュールで帝京されています (@ref{Generators}参照)。
+@c COMMON
 
+@c EN
 In the second form, the returned lazy sequence is prepended by
 @var{item} @dots{}.  Since there's no way to distinguish lazy
 pairs and ordinary pairs, you can write it as
 @code{(cons* item @dots{} (generator->lseq generator))},
 but that's more verbose.
+@c JP
+二番目の形式では、@var{item} @dots{}が遅延シーケンスの先頭に
+配置されます。遅延ペアと通常のペアは区別できないので、これは
+@code{(cons* item @dots{} (generator->lseq generator))}とも書けますが、
+少々冗長になるでしょう。
+@c COMMON
 
+@c EN
 Internally, Gauche's lazy sequence is optimized to be built
 on top of generators, so this procedure is the most efficient
 way to build lazy sequences.
+@c JP
+内部的には、Gaucheの遅延シーケンスはジェネレータを使うように最適化
+されています。遅延シーケンスを作る最も効率の良い方法はこの手続きを使うことです。
+@c COMMON
 @end defun
 
 @defmac lcons car cdr
+@c EN
 Returns a lazy pair consists of @var{car} and @var{cdr}.
 The expression @var{car} is evaluated at the call of @code{lcons},
 but evaluation of @var{cdr} is delayed.
+@c JP
+@var{car}と@var{cdr}からなる遅延ペアを作って返します。
+@var{car}は@code{lcons}を呼び出した時点で評価されますが、
+@var{cdr}の評価は遅延されます。
+@c COMMON
 
+@c EN
 You can't distinguish a lazy pair from an ordinary pair.  If you
 access either its @code{car} or @code{cdr}, or even you ask @code{pair?}
 to it, its cdr part is implicitly forced and you get an ordinary pair.
+@c JP
+遅延ペアと通常のペアを区別する方法はありません。ペアの@code{car}や@code{cdr}に
+アクセスしたり、それどころか@code{pair?}によって型を確かめただけでも、
+遅延ペアのcdr側はforceされて、遅延ペアは通常のペアへと変化します。
+@c COMMON
 
+@c EN
 Unlike @code{cons}, @var{cdr} should be an expression that yields
 a (lazy or ordinary) list, including an empty list.
 In other words, lazy sequences can always be a null-terminated list
@@ -9618,48 +9722,184 @@ when entirely forced; there are no ``improper lazy sequences''.
 expression to be a proper list before actually evaluating it.
 Currently if @var{cdr} expression yields non-list, we just ignore
 it and treat as if it yielded an empty list.)
+@c JP
+@code{cons}と違って、遅延ペアの@var{cdr}はリスト (遅延でも通常でも) を返す
+関数でなければなりません。遅延シーケンスは全てforceされたら、
+常に空リストで終端されているリストになる、と言っても良いでしょう。つまり、
+ドット対を最後に持つような「不完全なリスト」に対応する「不完全な遅延シーケンス」
+というものはありません。(Schemeは静的型ではないので、実際に評価するまで
+@var{cdr}が完全なリストを生成することを保証することができません。
+現在の実装では、@var{cdr}がリストでない値を生成した場合、
+それを単に無視して空リストが返されたかのように扱います)。
+@c COMMON
 
 @example
 (define z (lcons (begin (print 1) 'a) (begin (print 2) '())))
+@c EN
  @result{} ; prints '1', since the car part is evaluated eagerly.
+@c JP
+ @result{} ; car部はすぐに評価されるので、'1'が表示される
+@c COMMON
 
+@c EN
 (cdr z) @result{} () ;; and prints '2'
+@c JP
+(cdr z) @result{} () ;; そして'2'が表示される
+@c COMMON
 
+@c EN
 ;; This also prints '2', for accessing car of a lazy pair forces
 ;; its cdr, even the cdr part isn't used.
+@c JP
+;; これも'2'を表示する。遅延ペアのcarにアクセスすると、その時点で
+;; cdr部の評価もforceされるので。
+@c COMMON
 (car (lcons 'a (begin (print 2) '()))) @result{} a
 
+@c EN
 ;; So as this; asking pair? to a lazy pair causes forcing its cdr.
+@c JP
+;; これも同じ。pair?と聞くだけで遅延ペアはforceされる
+@c COMMON
 (pair? (lcons 'a (begin (print 2) '()))) @result{} #t
 
+@c EN
 ;; To clarify: This doesn't print '2', because the second lazy
 ;; pair never be accessed, so its cdr isn't evaluated.
+@c JP
+;; 念のため。次の例では'2'は出力されない。二番目の遅延ペアはアクセス
+;; されていないので、そのcdrも評価されない。
+@c COMMON
 (pair? (lcons 'a (lcons 'b (begin (print 2) '())))) @result{} #t
 @end example
 
+@c EN
+Now, let me show you a case where ``one item ahead'' evaluation becomes
+an issue.  The following is an elegant definition of infinite
+Fibonacci sequence using self-referential lazy structure
+(@code{lmap} is a lazy map, defined in @code{gauche.lazy} module):
+@c JP
+Gaucheの「一つ先の要素まで計算」が問題となる例も見ておきましょう。
+次の例は、自己参照する遅延シーケンスを使った、とても美しい無限フィボナッチ数列の
+定義です (@code{lmap}は遅延バージョンのmapで、@code{gauche.lazy}モジュールで
+帝京されています)。
+@c COMMON
+
+@example
+(use gauche.lazy)  ;; for lmap
+(define *fibs* (lcons* 0 1 (lmap + *fibs* (cdr *fibs*)))) ;; BUGGY
+@end example
+
+@c EN
+Unfortunately, Gauche can't handle it well.
+@c JP
+残念ながら、Gaucheではこれはうまく動きません。
+@c COMMON
+
+@example
+(car *fibs*)
+ @result{} 0
+(cadr *fibs*)
+ @result{} *** ERROR: Attempt to recursively force a lazy pair.
+@end example
+
+@c EN
+When we want to access the second argument (@code{cadr}) of @code{*fibs*},
+we take the car of the second pair, 
+which is a lazy pair of @code{1} and @code{(lmap ...)}.  The lazy pair
+is forced and its cdr part needs to be calculated.  The first thing
+@code{lmap} returns needs to see the first and second element of @code{*fibs*},
+but the second element of @code{*fibs*} is what we're calculating now!
+@c JP
+@code{*fibs*}の二番目の要素(@code{cadr})にアクセスするということは、
+@code{*fibs*}の二番目のペアのcarを取るということです。@code{*fibs*}の
+二番目のペアは@code{1}と@code{(lmap ...)}の遅延ペアになっています。
+carを取ろうとした時点でこの遅延ペアはforceされ、そのcdrが計算されます。
+@code{lmap}が最初に返さなければならないのは、@code{*fibs*}の一番目と二番目の
+要素の和です。しかし@code{*fibs*}の二番目の要素は、今まさにアクセスしようと
+している値です!
+@c COMMON
+
+@c EN
+We can workaround this issue by 
+avoiding accessing the immedietely preceding value.
+Fibonacci numbers F(n) = F(n-1) + F(n-2) = 2*F(n-2) + F(n-3), so we
+can write our sequence as follows.
+@c JP
+この問題は、ある要素を計算するために直前の要素を参照しなければ回避できます。
+フィボナッチ数はF(n) = F(n-1) + F(n-2) = 2*F(n-2) + F(n-3)と変形できるので、
+遅延フィボナッチシーケンスはこう定義できます。
+@c COMMON
+
+@example
+(define *fibs*
+  (lcons* 0 1 1 (lmap (^[a b] (+ a (* b 2))) *fibs* (cdr *fibs*))))
+@end example
+
+@c EN
+And this works!
+@c JP
+これでok!
+@c COMMON
+
+@example
+(take *fibs* 20)
+  @result{} (0 1 1 2 3 5 8 13 21 34 55 89 144 233
+     377 610 987 1597 2584 4181)
+@end example
+
+@c EN
 Many lazy algorithms are defined in terms of fully-lazy cons
 at the bottom.  When you port such algorithms to Gauche using @code{lcons},
 keep this bit of eagerness in mind.
+@c JP
+多くの遅延アルゴリズムは、完全な遅延評価をするconsを基礎にしています。
+そういったアルゴリズムを@code{lcons}を使ってGaucheに移植する際には、
+Gaucheのこのちょっとした「熱心さ」に気をつけてください。
+@c COMMON
 
+@c EN
 Note also that @code{lcons} needs to create a thunk to delay
 the evaluation.  So the algorithm to construct lazy list using
 @code{lcons} has an overhead of making closure for each item.
 For performance-critical part,
 you want to use @code{generator->lseq} whenever possible.
+@c JP
+@code{lcons}は、実行の度にcdr部の評価を遅延するためのクロージャを
+作るということにも注意してください。@code{lcons}を使った遅延アルゴリズムでは
+要素ひとつにつきクロージャをひとつ作るオーバヘッドがかかります。
+性能が重要な部分では、可能な限り@code{generator->lseq}を使いましょう。
+@c COMMON
 @end defmac
 
+@c EN
 @subsubheading Utilities
+@c JP
+@subsubheading ユーティリティ
+@c COMMON
 
 @defmac lcons* x @dots{} tail
 @defmacx llist* x @dots{} tail
+@c EN
 A lazy version of @code{cons*} (@xref{List constructors}).
 Both @code{lcons*} and @code{llist*} do the same thing; both
 names are provided for the symmetry to @code{cons*}/@code{list*}.
+@c JP
+遅延バージョンの@code{cons*}です (@ref{List constructors}参照)。
+@code{lcons*}と@code{llist*}は全く同じです。
+@code{cons*}/@code{list*}との対称性から両方の名前が定義されています。
+@c COMMON
 
+@c EN
 The @var{tail} argument should be an expression that yields a 
 (possibly lazy) list.   It is evaluated lazily.  Note that
 the preceding elements @var{x} @dots{} are evaluated eagerly.
 The following equivalences hold.
+@c JP
+@var{tail}引数は(遅延もしくは通常の)リストを生成する式でなければなりません。
+@var{tail}引数の評価は遅延されます。@var{x} @dots{}引数はすぐに
+評価されます。次の関係が成り立ちます。
+@c COMMON
 
 @example
 (lcons* a)           @equiv{} a
@@ -9669,34 +9909,80 @@ The following equivalences hold.
 @end defmac
 
 @defun lrange start :optional end step
+@c EN
 Creates a lazy sequence of numbers starting from @var{start},
 increasing by @var{step} (default 1), to the maximum value that doesn't
 exceed @var{end}.  The default of @var{end} is @code{+inf.0},
 so it creates an infinite list.  (Don't type just
 @code{(lrange 0)} in REPL, or it won't terminate!)
+@c JP
+@var{start}から@var{step}づつ増加し、@var{end}を越える直前までの遅延数列を
+返します。@var{step}のデフォルトは1、@var{end}のデフォルトは無限大です。
+@var{end}を省略すると無限数列になるので、REPLで安易に
+@code{(lrange 0)}など評価しないようにしましょう。
+@c COMMON
+
+@c EN
+If any of @var{start} or @code{step} is inexact, the resulting sequence
+has inexact numbers.
+@c JP
+@var{start}と@var{step}の少なくとも一方が不正確数なら、
+不正確数列が返されます。
+@c COMMON
 
 @example
 (take (lrange -1) 3) @result{} (-1 0 1)
+
+(lrange 0.0 5 0.5)
+  @result{} (0.0 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5)
+
+(lrange 1/4 1 1/8)
+  @result{} (1/4 3/8 1/2 5/8 3/4 7/8)
 @end example
 @end defun
 
 @defun liota count :optional start step
-A lazy version of @var{iota} (@xref{List constructors}); returns
+@c EN
+A lazy version of @code{iota} (@xref{List constructors}); returns
 a lazy sequence of @var{count} integers, starting from @var{start}
 (default 0), stepping by @var{step} (default 1).
+@c JP
+遅延バージョンの@code{iota}です (@ref{List constructors}参照)。
+@var{start}(デフォルト0)から@var{step}(デフォルト1)づつ増加する、
+@var{count}個の遅延数列を返します。
+@c COMMON
 @end defun
 
+@c EN
 See also @ref{Lazy sequence utilities}, for more utility procedures
-that returns lazy sequences.
+that creates lazy sequences.
+@c JP
+遅延シーケンスを作るユーティリティ関数は他にもたくさん提供されています。
+@ref{Lazy sequence utilities}を参照してください。
+@c COMMON
 
+@c EN
 @subsubheading Examples
+@c JP
+@subsubheading 例
+@c COMMON
 
+@c EN
 Let's consider calculating an infinite sequence of prime numbers.
+@c JP
+素数の無限列を計算してみましょう。
+@c COMMON
 
-Just pretend we already have some prime numbers are
+@c EN
+Just pretend we already have some prime numbers
 calculated in a variable @code{*primes*}, and you need
 to calculate a prime number equal to or grater than @var{n}
 (for simplicity, we assume @var{n} is an odd number).
+@c JP
+まず、既にある程度の計算済みの素数列が@code{*primes*}にあるとします。
+すると、与えられた@var{n}以上の素数を計算する手続きが次のとおり書けます
+(@var{n}は奇数とします。)
+@c COMMON
 
 @example
 (define (next-prime n)
@@ -9707,6 +9993,7 @@ to calculate a prime number equal to or grater than @var{n}
             [else (loop (cdr ps))]))))
 @end example
 
+@c EN
 This procedure loops over the list of prime numbers, and
 if no prime number @var{p} less than or equal to @code{(sqrt n)}
 divides @var{n}, we can say @var{n} is prime.  (Actual test
@@ -9714,52 +10001,92 @@ is done by @code{(> (* p p) n)} instead of @code{(> p (sqrt n)},
 for the former is faster.)
 If we find some @var{p} divides @var{n}, we try a new value
 @code{(+ n 2)} with @code{next-prime}.
+@c JP
+この手続きは素数列をループし、@code{(sqrt n)}以下の素数で
+@var{n}を割ろうとします。一つも割りきれる素数がなければ、@var{n}が素数です。
+(実際の条件は、@code{(> p (sqrt n)}より効率の良い@code{(> (* p p) n)}を
+使っています)。
+@var{n}を割り切る素数があった場合は、
+@code{next-prime}を再帰的に呼んで@code{(+ n 2)}を試します。
+@c COMMON
 
+@c EN
 Using @code{next-prime}, we can make a generator that keeps generating
 prime numbers.  The following procedure returns a generator
 that returns primes above @var{last}.
+@c JP
+@code{next-prime}を使うと、次々に素数を生成してゆくジェネレータを書くことができます。
+次の手続きは@var{last}より大きい素数を次々に生成するジェネレータです。
+@c COMMON
 
 @example
 (define (gen-primes-above last)
   (^[] (set! last (next-prime (+ last 2))) last))
 @end example
 
+@c EN
 Using @code{generator->lseq}, we can turn the generator returned
 by @code{gen-primes-above} into a lazy list, which can be used
 as the value of @code{*prime*}.  The only caveat is that we need
 to have some pre-calculated prime numbers:
+@c JP
+@code{generator->lseq}を使えば、
+@code{gen-primes-above}を遅延シーケンスに変換することができ、
+それを@code{*prime*}の値とすることができます。最初の方の素数を計算するために、
+あらかじめ計算済みの素数をいくつか用意しておくのがポイントです。
+@c COMMON
 
 @example
 (define *primes* (generator->lseq 2 3 5 (gen-primes-above 5)))
 @end example
 
+@c EN
 Be careful not to evaluate @code{*primes*} directly on REPL,
 since it contains an infinite list and it'll blow up your REPL.
 You can look the first 20 prime numbers instead:
+@c JP
+@code{*primes*}を直接REPLで評価しないように。無限リストなので、
+REPLの表示が終わらなくなります。
+かわりに、例えばこんなふうにして最初の20個の素数を見たり:
+@c COMMON
 
 @example
 (take *primes* 20)
  @result{} (2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71)
 @end example
 
+@c EN
 Or find what the 10000-th prime number is:
+@c JP
+10000番目の素数は何かを見たり:
+@c COMMON
 
 @example
 (~ *primes* 10000)
  @result{} 104743
 @end example
 
-Or calculate how many prime numbers there are below 1000000:
+@c EN
+Or count how many prime numbers there are below 1000000:
+@c JP
+あるいは1000000以下の素数はいくつあるかを調べたりできます:
+@c COMMON
 
 @example
 (any (^[p i] (and (>= p 1000000) i)) *primes* (lrange 0))
  @result{} 78498
 @end example
 
+@c EN
 Note: If you're familiar with a lazy functional approach, this example
 may look strange.  Why do we use side-effecting generators
 while we can define a sequence of prime numbers in
 pure functional way, as follows?
+@c JP
+註：遅延評価な関数型言語に慣れたプログラマには、この例は奇妙に見えるかもしれません。
+わざわざ副作用のあるジェネレータを経由しないでも、
+次に示すとおり、素数列は純粋に関数的な方法で定義できます。
+@c COMMON
 
 @example
 (use gauche.lazy)
@@ -9776,21 +10103,45 @@ pure functional way, as follows?
 (define *primes* (llist* 2 3 5 (primes-from 7)))
 @end example
 
+@c EN
 (The module @code{gauche.lazy} provides @code{ltake-while}, which
 is a lazy version of @code{take-while}.  We don't need lazy version
 of @code{any}, since it immediately stops when the predicate returns
 a true value.)
+@c JP
+(@code{gauche.lazy}モジュールには、@code{take-while}の
+遅延バージョン@code{ltake-while}が定義されています。
+@code{any}については、遅延バージョンは必要ありません。@code{any}はもともと
+述語が真を返したら直ちに評価をやめて残りは見ないからです)。
+@c COMMON
 
+@c EN
 The use of @code{lcons} and co-recursion in @code{primes-from}
 is a typical idiom in functional programming.  It's perfectly ok
 to do so in Gauche; except that the generator version is @emph{much} faster
 (when you take first 5000 primes, generator version ran 17 times faster
 than co-recursion version in the author's machine).
+@c JP
+@code{primes-from}での@code{lcons}を使った余再帰は、
+関数型プログラミングでの典型的なイディオムです。もちろん、
+Gaucheでもこのようなコードを書くことに何の問題もありません。
+ただし、Gaucheではジェネレータを使った方が@emph{ずっと}効率が良くなります
+(筆者のマシンでは、最初の5000個の素数を計算するのに、
+ジェネレータ版は余再帰版より17倍速いです)。
+@c COMMON
 
+@c EN
 It doesn't mean you should avoid co-recursive code; if an algorithm
 can be expressed nicely in co-recursion, it's perfectly ok.  However,
 watch out the subtle semantic difference from lazy functional
 languages---straightforward porting may or may not work.
+@c JP
+だからといって何が何でも余再帰を避けるべきということにはなりません。
+アルゴリズムが余再帰で自然にかけるならそうして構わないでしょう。
+ただその場合でも、遅延評価な関数型言語とのセマンティクスの違いを
+いつも気をつけるようにしてください。単に遅延評価アルゴリズムのコードを
+そのまま移植しても動くとは限りません。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Exceptions, Eval and repl, Lazy evaluation, Core library
