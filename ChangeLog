@@ -22,7 +22,7 @@
 	  during forcing to protect the stack.  If that happened, CAR-PUSH
 	  pushes the result on top of the extra continuation.  However,
 	  the next instruction to be executed after this CAR-PUSH will be
-	  RET, set by Scm__VMUnprotectStack, which discards the just pushed
+	  RET, set by Scm__VMProtectStack, which discards the just pushed
 	  value by CAR-PUSH.  The fix correctly adjusts the VM stack
 	  after forcing is done.
 
