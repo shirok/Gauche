@@ -10446,7 +10446,7 @@ wont return.   See the description of @code{raise} in
 @ref{Signalling exceptions} for more details.
 @c JP
 @emph{注意事項:} いくつかの言語での例外を投げる機構、たとえば、
-Cl++やJavaの @code{throw} はその継続を破棄します。これとは違い
+C++やJavaの @code{throw} はその継続を破棄します。これとは違い
 Schemeの @code{raise} はその呼び出し元へ戻ることができます。もし、
 @code{raise} で元へもどらないで欲しいのなら、簡便な方法としては、
 常にエラーコンディションの一つをわたるようにするというのがあります。
