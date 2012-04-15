@@ -41,20 +41,19 @@
 #endif
 #include <gauche/extern.h>
 
-#if GAUCHE_USE_AXTLS
-/*
- * axTLS binding
- */
+#if defined(GAUCHE_USE_AXTLS)
 #include "axTLS/ssl/ssl.h"
+#endif /*GAUCHE_USE_AXTLS*/
 
 SCM_DECL_BEGIN
 
 typedef struct ScmTLSRec {
   SCM_HEADER;
-
+#if defined(GAUCHE_USE_AXTLS)
   SSL_CTX* ctx;
   SSL* conn;
   ScmPort* in_port, * out_port;
+#endif /*GAUCHE_USE_AXTLS*/
 } ScmTLS;
 
 SCM_CLASS_DECL(Scm_TLSClass);
@@ -84,9 +83,5 @@ extern ScmObj Scm_TLSInputPortSet(ScmTLS* t, ScmObj port);
 extern ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port);
 
 SCM_DECL_END
-
-#else  /* !GAUCHE_USE_AXTLS */
-/* Nothing - in future, we may have bindings w/ alternative TLS libraries. */
-#endif /* !GAUCHE_USE_AXTLS */
 
 #endif /*GAUCHE_TLS_H */

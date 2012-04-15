@@ -50,7 +50,6 @@
   (use srfi-13)
   (use rfc.822)
   (use rfc.uri)
-  (use rfc.tls)
   (use gauche.net)
   (use gauche.parameter)
   (use gauche.charconv)
@@ -85,6 +84,8 @@
           mime-compose-message-string
           mime-compose-parameters
           mime-parse-content-type)
+(autoload rfc.tls
+          make-tls tls-connect tls-input-port tls-output-port tls-close)
 
 (autoload file.util file-size find-file-in-paths null-device)
 
@@ -760,6 +761,8 @@
     (set! (~ conn'secure-agent) #f)))
 
 (define (start-secure-agent conn)
+  (unless (http-secure-connection-available?)
+    (error "Secure connection is not available on this platform"))
   (when (~ conn'secure-agent) (shutdown-secure-agent conn))
   (let1 tls (make-tls)
     (tls-connect tls (socket-fd (~ conn'socket)))

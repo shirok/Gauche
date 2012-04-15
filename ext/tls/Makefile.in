@@ -6,14 +6,14 @@ include ../Makefile.ext
 
 SCM_CATEGORY = rfc
 
-EXTRA_INCLUDES = -I$(srcdir)/axTLS/crypto -I$(srcdir)/axTLS/ssl -I$(srcdir)/axTLS/config
-
 LIBFILES = rfc--tls.$(SOEXT)
 SCMFILES = tls.sci
 
 OBJECTS = rfc--tls.$(OBJEXT) \
           tls.$(OBJEXT)      \
-	  $(AXTLS_OBJECTS)
+	  $(EXTRA_OBJECTS)
+
+AXTLS_INCLUDES = -I$(srcdir)/axTLS/crypto -I$(srcdir)/axTLS/ssl -I$(srcdir)/axTLS/config
 
 AXTLS_OBJECTS = axTLS/ssl/asn1.$(OBJEXT)		\
 		axTLS/ssl/gen_cert.$(OBJEXT)		\
@@ -35,14 +35,26 @@ AXTLS_OBJECTS = axTLS/ssl/asn1.$(OBJEXT)		\
 		axTLS/crypto/rsa.$(OBJEXT)		\
 		axTLS/crypto/sha1.$(OBJEXT)
 
+@GAUCHE_TLS_SWITCH_AXTLS@EXTRA_OBJECTS = $(AXTLS_OBJECTS)
+@GAUCHE_TLS_SWITCH_NONE@EXTRA_OBJECTS =
+
+@GAUCHE_TLS_SWITCH_AXTLS@EXTRA_INCLUDES = $(AXTLS_INCLUDES)
+@GAUCHE_TLS_SWITCH_NONE@EXTRA_INCLUDES = 
+
 SSLTEST = axTLS/ssl/ssltest$(EXEEXT)
 SSLTEST_GENERATED = axTLS/ssl/test/ssltest.mod.c
 SSLTEST_OBJECTS = axTLS/ssl/test/ssltest.mod.$(OBJEXT)
 
+@GAUCHE_TLS_SWITCH_AXTLS@EXTRA_TEST_BIN = $(SSLTEST)
+@GAUCHE_TLS_SWITCH_NONE@EXTRA_TEST_BIN =
+
+@GAUCHE_TLS_SWITCH_AXTLS@EXTRA_DIRS_TARGET = axtls_dirs
+@GAUCHE_TLS_SWITCH_NONE@EXTRA_DIRS_TARGET = 
+
 GENERATED = Makefile
 XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GENERATED) $(SSLTEST) ssltest.log
 
-all : axtls_dirs $(LIBFILES) $(SSLTEST)
+all : $(EXTRA_DIRS_TARGET) $(LIBFILES) $(EXTRA_TEST_BIN)
 
 rfc--tls.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) rfc--tls.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
