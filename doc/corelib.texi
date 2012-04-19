@@ -2187,6 +2187,16 @@ increasing by @var{step}.
 (iota 5) @result{} (0 1 2 3 4)
 (iota 5 0 -0.1) @result{} (0 -0.1 -0.2 -0.3 -0.4)
 @end example
+
+@c EN
+This creates a list eagerly.  If the list is short it is fast
+enough, but if you want to count tens of thousands of numbers,
+you may want to do so lazily.  See @code{liota} (@xref{Lazy sequences}).
+@c JP
+この手続きはリストを最後まで作って返します。リストが短ければ
+十分速いですが、何万という数をリストにしたければ、遅延リストを使った方が
+良いかもしれません。@code{liota}を見てください(@ref{Lazy sequences}参照)。
+@c COMMON
 @end defun
 
 @defmac cond-list clause @dots{}
