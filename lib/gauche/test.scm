@@ -361,6 +361,10 @@
              [proc (global-variable-ref
                     (slot-ref gref 'module)
                     (slot-ref gref 'name))]
+             ;; We exclude <generic> with no methods.  Such "placeholder"
+             ;; generic function may be used in the base module, expecting
+             ;; the other module adds methods to it.
+             [ (not (and (is-a? proc <generic>) (null? (~ proc'methods)))) ]
              [ (not (apply applicable? proc (make-list numargs <bottom>))) ])
     (list (slot-ref gref 'name)
           (slot-ref closure 'info)

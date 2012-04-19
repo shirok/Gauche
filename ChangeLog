@@ -1,3 +1,8 @@
+2012-04-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (arity-invalid?): Exclude check on generics
+	  with no methods.  See the comment.
+
 2012-04-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/Makefile.in, ext/tls/tls.ac, ext/tls/tls.c,
