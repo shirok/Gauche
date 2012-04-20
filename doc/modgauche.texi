@@ -12306,7 +12306,7 @@ A test script will look like this:
 (test "feature 2-2" (test-error) (lambda () TEST-THAT-SIGNALS-ERROR))
  @dots{}
 
-(test-end)
+(test-end :exit-on-failure #t)
 @end lisp
 
 @c EN
@@ -12366,11 +12366,24 @@ Marks beginning of the group of tests.  This is just for logging.
 @c COMMON
 @end defun
 
-@defun test-end
+@defun test-end :key exit-on-failure
 @c EN
-Prints out list of failed tests, and returns the number of failed tests.
+Prints out list of failed tests.  If @var{exit-on-failure} is @code{#f} or
+omitted, this procedure returns the number of failed tests.
+
+Otherwise, this function terminates the @code{gosh}
+process by @code{exit}.  If a fixnum is given to @code{exit-on-failure}
+it becomes the process's exit status; if other true value is given,
+the exit status will be 1.  When it is omitted or @code{#f} is given,
+this procedure returns the number of failed tests.
 @c JP
-失敗したテストのリストを報告し、その総数を返します。
+失敗したテストのリストを報告します。@var{exit-on-failure}が@code{#f}か
+省略された場合は、この手続きは失敗したテストの数を返します。
+
+そうでなければ、この手続きは@code{exit}を呼んで@code{gosh}を
+終了させます。@code{exit-on-failure}にfixnumが渡された場合は、
+それがプロセスの終了ステータスとして使われます。@code{exit-on-failure}が
+他の真となる値であった場合は、終了ステータスは1となります。
 @c COMMON
 @end defun
 
@@ -12461,6 +12474,58 @@ and this environment variable is ignored.
 そちらが優先され、この環境変数は無視されます。
 @c COMMON
 @end deftp
+
+@defun test-summary-check
+@c EN
+If the test record file is set (either by @code{test-record-file} or
+the enviornment variable @code{GAUCHE_TEST_RECORD_FILE}), read it,
+and then exit with status 1 if the record has nonzero failure
+count and/or nonzero abort count.  If the test record file isn't
+set, this procedure does nothing.
+@c JP
+テストレコードファイルが(@code{test-record-file}もしくは環境変数
+@code{GAUCHE_TEST_RECORD_FILE}によって)設定されていた場合、
+それを読み込んで、失敗カウントとアボートカウントがともに0でなければ
+終了ステータス1でexitします。テストレコードファイルが設定されていなければ
+何もしません。
+@c COMMON
+
+@c EN
+This is useful when you have multiple test scripts and you want
+to let @code{make} fail if any of tests fails, but not before all
+test script is run.  If you make every test script use
+@code{:exit-on-failure} of @code{test-end}, then @code{make}
+stops immediately after the script that fails.  Instead, you
+avoid using @code{:exit-on-failure}, but use the test record file
+and for the last thing you can call this function:
+@c JP
+これは、複数のテストスクリプトを持っていて、どれかが失敗したら@code{make}に
+それを伝えたいけれども、テストスクリプト自体はすべて走らせたい、という場合に便利です。
+各テストスクリプトで@code{test-end}に@code{:exit-on-failure}を
+使ってしまうと、@code{make}は失敗したテストスクリプトのところで処理を打ち切って
+しまいます。そこで@code{:exit-on-failure}を使うのを避け、
+テストレコードファイルを使い、ビルドの最後にこの関数を呼ぶようにします:
+@c COMMON
+
+@example
+   gosh test1.scm >> test.log
+   gosh test2.scm >> test.log
+   cat $GAUCHE_TEST_RECORD_FILE
+   gosh -ugauche.test -Etest-summary-check -Eexit
+@end example
+
+@c EN
+By this, @code{make} will run all the test script no matter how
+many of them fails (since @code{gosh} exits with status 0), but
+detect an error since the last line of @code{gosh} call exits
+with status 1 if there has been any failure.
+@c JP
+こうしておくと@code{make}は失敗があろうともすべてのテストスクリプトを
+実行し (@code{gosh}は常に終了ステータス0で終了するので)、
+最後の行でテストレコードファイルを参照して、失敗があった場合に
+@code{make}にそれを伝えることができます。
+@c COMMON
+@end defun
 
 @c EN
 @subheading Individual tests

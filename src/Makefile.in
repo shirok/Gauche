@@ -356,6 +356,11 @@ test2 : gosh$(EXEEXT)
 	  ./gosh -ftest -I$(top_srcdir)/test $$testfile >> test.log; \
 	done
 
+# test-summary-check is called at the end of all tests and set up exit status.
+test-summary-check : gosh$(EXEEXT)
+	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
+	  ./gosh -ftest -ugauche.test -Etest-summary-check -Eexit
+
 test-vmstack$(EXEEXT) : test-vmstack.$(OBJEXT) $(LIBGAUCHE).$(SOEXT)
 	$(LINK)	-o test-vmstack$(EXEEXT) test-vmstack.$(OBJEXT) $(gosh_LDADD) $(LIBS)
 

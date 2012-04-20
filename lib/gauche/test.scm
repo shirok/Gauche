@@ -84,14 +84,9 @@
 (define-module gauche.test
   (export test test* test-start test-end test-section
           test-module test-error test-one-of
-          test-check test-record-file
+          test-check test-record-file test-summary-check
           *test-error* *test-report-error* test-error? prim-test))
 (select-module gauche.test)
-
-;; we cannot use srfi-1, since we use gauche.test to test srfi-1 itself.
-;; we count on the built-in fold work properly here.
-(define (%filter proc lis)
-  (reverse (fold (lambda (x r) (if (proc x) (cons x r) r)) '() lis)))
 
 ;; An object to represent error.
 (define-class <test-error> ()
@@ -170,7 +165,8 @@
                         (vector-set! *test-counts* i
                                      (string->number
                                       (rxmatch-substring m (+ i 1)))))
-                      '(0 1 2 3)))))))
+                      '(0 1 2 3))))))))
+(define (prepare-summary)
   ;; We write out aborted+1, in case if the test process fails before test-end
   ;; For normal case, it will be overwritten by test-end.
   (let ([orig-abort (vector-ref *test-counts* 3)])
@@ -180,7 +176,7 @@
 
 (define (write-summary)
   (when (string? *test-record-file*)
-    (receive (p nam) (sys-mkstemp *test-record-file*)
+    (receive [p nam] (sys-mkstemp *test-record-file*)
       (display (format-summary) p)
       (close-output-port p)
       (sys-rename nam *test-record-file*))))
@@ -203,8 +199,7 @@
              (set! *discrepancy-list*
                    (cons (list msg expect r) *discrepancy-list*))
              (test-fail++)])
-      (flush)
-      )))
+      (flush))))
 
 ;; Normal test.
 (define (test msg expect thunk . compare)
@@ -326,10 +321,10 @@
 ;; be an undefined reference.
 
 (define (toplevel-closures module)
-  (%filter closure?
-           (map (lambda (sym)
-                  (global-variable-ref module sym #f))
-                (hash-table-keys (module-table module)))))
+  (filter closure?
+          (map (lambda (sym)
+                 (global-variable-ref module sym #f))
+               (hash-table-keys (module-table module)))))
 
 ;; Combs closure's instruction list to extract references for the global
 ;; identifiers.  If it is a call to the global function, we also picks
@@ -379,30 +374,34 @@
 
 ;; Logging and bookkeeping -----------------------------------------
 (define (test-section msg)
-  (let ((msglen (string-length msg)))
+  (let ([msglen (string-length msg)])
     (format #t "<~a>~a\n" msg (make-string (max 5 (- 77 msglen)) #\-))))
 
 (define (test-start msg)
-  (let* ((s (format #f "Testing ~a ... " msg))
-         (pad (make-string (max 3 (- 65 (string-length s))) #\space)))
+  (let* ([s (format #f "Testing ~a ... " msg)]
+         [pad (make-string (max 3 (- 65 (string-length s))) #\space)])
     (display s (current-error-port))
     (display pad (current-error-port))
     (flush (current-error-port))
     (read-summary)
+    (prepare-summary)
     (when (and (sys-isatty (current-error-port))
                (sys-isatty (current-output-port)))
       (newline (current-error-port))))
   (set! *discrepancy-list* '())
   (unless (and (sys-isatty (current-error-port))
                (sys-isatty (current-output-port)))
-    (let ((msglen (string-length msg)))
+    (let ([msglen (string-length msg)])
       (format #t "Testing ~a ~a\n" msg (make-string (max 5 (- 70 msglen)) #\=)))
     (flush))
   )
 
-(define (test-end)
-  (let ((e (current-error-port))
-        (o (current-output-port)))
+;; test-end :key :exit-on-failure
+;; avoid using extended formal list since we need to test it.
+(define (test-end . args)
+  (let ([e (current-error-port)]
+        [o (current-output-port)]
+        [exit-on-failure (get-keyword :exit-on-failure args #f)])
     (define (fmt . args)
       (if (and (sys-isatty e) (sys-isatty o))
         (apply format/ss o args)
@@ -420,6 +419,17 @@
     (when *test-record-file*
       (write-summary))
 
-    ;; Returns the number of failed tests.
-    (length *discrepancy-list*)))
+    ;; the number of failed tests.
+    (let ([num-failures (length *discrepancy-list*)])
+      (when (and (> num-failures 0)
+                 exit-on-failure)
+        (exit (if (fixnum? exit-on-failure) exit-on-failure 1)))
+      num-failures)))
 
+;; Read the test record file (if there's any), and exit with 1
+;; if there has been any failure.
+(define (test-summary-check)
+  (read-summary)
+  (unless (and (zero? (vector-ref *test-counts* 2))
+               (zero? (vector-ref *test-counts* 3)))
+    (exit 1)))

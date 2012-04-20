@@ -45,6 +45,7 @@ check: all
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) check); done
 	@cd src; $(MAKE) test2
 	@cat $(TESTRECORD)
+	@cd src; $(MAKE) test-summary-check
 
 install-check:
 	@echo "Testing installed Gauche"
