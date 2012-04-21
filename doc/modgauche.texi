@@ -12508,9 +12508,11 @@ and for the last thing you can call this function:
 @c COMMON
 
 @example
+check:
+   rm -f $GAUCHE_TEST_RECORD_FILE test.log
    gosh test1.scm >> test.log
    gosh test2.scm >> test.log
-   cat $GAUCHE_TEST_RECORD_FILE
+   cat $GAUCHE_TEST_RECORD_FILE /dev/null
    gosh -ugauche.test -Etest-summary-check -Eexit
 @end example
 
