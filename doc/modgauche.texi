@@ -12374,8 +12374,7 @@ omitted, this procedure returns the number of failed tests.
 Otherwise, this function terminates the @code{gosh}
 process by @code{exit}.  If a fixnum is given to @code{exit-on-failure}
 it becomes the process's exit status; if other true value is given,
-the exit status will be 1.  When it is omitted or @code{#f} is given,
-this procedure returns the number of failed tests.
+the exit status will be 1.
 @c JP
 失敗したテストのリストを報告します。@var{exit-on-failure}が@code{#f}か
 省略された場合は、この手続きは失敗したテストの数を返します。
