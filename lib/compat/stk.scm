@@ -37,7 +37,6 @@
   (use srfi-1)
   (use srfi-13)
   (use srfi-14)
-  (use gauche.auxsys)
   (use gauche.sequence)
   (export *argc*
           copy-tree remq remv remove string->uninterned-symbol bignum?
