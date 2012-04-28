@@ -8776,7 +8776,7 @@ with the continuation saved by the most recent @code{reset}.
 @c JP
 この式からもっとも最近の@code{reset}により切り取られた空の継続までの継続を
 手続きに包み、それを@var{var}に束縛します。
-そしてもっとも最近の@var{reset}式の継続を伴って@var{expr} @dots{}を実行します。
+そしてもっとも近い@var{reset}式の継続を伴って@var{expr} @dots{}を実行します。
 @c COMMON
 
 @c EN
@@ -8916,7 +8916,7 @@ Because of this, @code{reset} alone doesn't show any
 difference in the program behavior.
 @c JP
 ここでひとつ規則を導入します。制御が@code{o}の端に達した場合、
-もっとも最近保存された@code{x}の端から制御を再開するとします。
+直近に保存された@code{x}の端から制御を再開するとします。
 従って、単に@code{reset}を挿入するだけでは、目に見える違いは生じません。
 @c COMMON
 
@@ -8930,7 +8930,7 @@ resetの内部の鎖に@code{shift}を形式的に挿入してみるとこうな
 @c COMMON
 
 @example
-... -> (reset ... X -> Y -> (shift k ... ) -> Y' -> X' ) -> o
+... -> (reset -> X -> Y -> (shift k ... ) -> Y' -> X' ) -> o
 @end example
 
 @c EN
@@ -8960,9 +8960,9 @@ operations until the corresponding @code{reset}.
 @end enumerate
 
 @example
-... -> (reset ... X -> Y -> (shift k ... ) ---------> ) -> o
-                                   |
-                                   \-------> Y' -> X' ) -> o
+... -> (reset -> X -> Y -> (shift k ... ) ---------> ) -> o
+                                  |
+                                  \-------> Y' -> X' ) -> o
 @end example
 
 @c EN
@@ -9037,7 +9037,7 @@ and set it to @code{continue}, then returns the current element @var{e}.
 リストを@code{inv-for-each}に渡すと、呼ばれる度にリストの各要素を順に返す
 イテレータ手続きが得られます。というのも、@code{iter}が呼ばれる度に、
 @code{inv}の中で作られた@code{shift}は@emph{リストの残りの部分をたどって行く}
-という仕事の残りを@code{countine}に束縛して、現在の要素@var{e}を返すからです。
+という仕事の残りを@code{continue}に束縛して、現在の要素@var{e}を返すからです。
 @c COMMON
 
 @c EN
