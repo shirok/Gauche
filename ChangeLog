@@ -1,3 +1,8 @@
+2012-05-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/generator (x->generator): The implementation for
+	  the generic collection was incorrect.
+
 2012-04-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm (test-end, test-summary-check): Extended

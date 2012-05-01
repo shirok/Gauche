@@ -104,6 +104,15 @@
                   (^[yield] (let loop ([i 0]) (yield i) (loop (+ i 1))))))
   )
 
+;; test x->generator <collection>.  this needs to be tested after
+;; the test of 'generate'.
+(test* "x->generator <collection>" '((0 . a) (1 . b) (2 . c))
+       (sort-by (generator->list (x->generator (hash-table 'eqv?
+                                                           '(0 . a)
+                                                           '(1 . b)
+                                                           '(2 . c))))
+                car))
+
 (test* "gappend" '(0 1 2 3 a b c d A B C D)
        (generator->list (gappend (giota 4)
                                  (x->generator '(a b c d))

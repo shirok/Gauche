@@ -138,7 +138,11 @@
 (define-method x->generator ((obj <integer>)) (bits->generator obj))
 
 (define-method x->generator ((obj <collection>))
-  (generate (^[yield] (call-with-iterator obj (^v (yield v))))))
+  (generate
+   (^[yield]
+     (call-with-iterator obj (^[end? next]
+                               (let loop ()
+                                 (unless (end?) (yield (next)) (loop))))))))
 
 ;; debatable - can we assume char-generator?
 (define-method x->generator ((obj <port>))
