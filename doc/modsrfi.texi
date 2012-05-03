@@ -3936,9 +3936,9 @@ A simple example:
 @mdindex srfi-42
 @c EN
 This module provides a generic comprehension mechanism, which some other
-languages (e.g. Haskell and Python) provides as a built-in mechanism.
-It provides rich set of operators so it can be used as not only a list
-generator but a generic loop construct (actually, some may say
+languages (e.g. Haskell and Python) offer as a built-in mechanism.
+It provides a rich set of operators so it can be used not only as a list
+generator but as a generic loop construct (actually, some may say
 it is as powerful/evil as Common Lisp's @emph{loop} macro).
 @c JP
 このモジュールはジェネリックな内包表記(comprehension)機構を提供します。
@@ -3949,19 +3949,20 @@ it is as powerful/evil as Common Lisp's @emph{loop} macro).
 @c COMMON
 
 @c EN
-It also runs eagerly, that is, if it generates a list, it
+It runs eagerly as the name suggests, that is, if it generates a list, it
 creates the entire list when evaluated, instead of generate the
 elements @emph{on demand}.  Thus it can't represent an infinite
-sequence, which Haskell's comprehension naturally does.  In Scheme,
-you can use streams built on top of delayed evaluation for
-such purpose (@xref{Stream library}).
+sequence, which Haskell's comprehension naturally does.  Gauche offers
+a few alternatives to deal with lazy, possibily infinite, sequences:
+See @ref{Lazy sequences}, @ref{Generators} and @ref{Stream library}.
 @c JP
-この機構は先行評価的に走ります。すなわち、リストを生成する場合、評価時
+この機構は名前の通り、先行評価的に走ります。すなわち、リストを生成する場合、評価時
 にすべてのリストを生成します。要素を@emph{要求駆動的}に生成するわけで
 はありません。それゆえ、無限列を表現することはできません。それが自然に
-できる Haskell とは違います。Schemeにおいては無限列を扱うのなら遅延評
-価をするように構築されたストリームが使えます
-(@ref{Stream library}参照)。
+できる Haskell とは違います。Gaucheは、遅延生成される有限/無限列を
+扱う方法を他にいくつか提供しています。
+@ref{Lazy sequences}、@ref{Generators}、@ref{Stream library}を
+参照してください。
 @c COMMON
 @end deftp
 

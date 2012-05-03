@@ -3993,20 +3993,16 @@ generators.  This module provides them.
 A generator is very lightweight, and handy to implement simple
 on-demand calculations.  However, keep in mind that it is
 side-effecting construct; you can't safely backtrack, for example.
-For more functional on-demand calculation, Gauche provides lazy
-sequences, which is actually built on top of generators.
+For more functional on-demand calculation, you can use
+lazy sequences (@xref{Lazy sequences}), which is actually
+built on top of generators.
 @c JP
 ジェネレータは、必要になったら計算を行うようなシステムを簡単に実現でき、
 効率も極めて良いですが、副作用に頼った抽象化であることには注意が必要です。
 例えば、途中まで列を生成した後に、最初にもどってやり直す、といったことはできません。
-より関数的にオンデマンドの計算を行うために、Gaucheには遅延シーケンスも
-備わっています。実のところ、Gaucheの遅延シーケンスはジェネレータを使って
-構築されています。
+より関数的にオンデマンドの計算を行うためには、ジェネレータを使って
+構築された、遅延シーケンスを使うのが便利です (@ref{Lazy sequences}参照)。
 @c COMMON
-@c @xref{Lazy sequences}, for more details.
-@c Especially, you can ``plug'' generators into a
-@c list-expecting procedures via lazy sequences.
-@c ... examples ...
 
 @c EN
 You can construct and combine various generators with this module.
