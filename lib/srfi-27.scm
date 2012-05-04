@@ -59,12 +59,15 @@
 (define (random-source-state-set! source state)
   (mt-random-set-state! source state))
 
+(define (%ensure-random-source source)
+  (unless (random-source? source)
+    (error "random source required, but got" source)))
+
 ;; Randomize
 (define (random-source-randomize! source)
-  (unless (random-source? source)
-    (error "random source required, but got" source))
+  (%ensure-random-source source)
   (mt-random-set-seed! source
-                       (let1 s (* (inexact->exact (sys-time)) (sys-getpid))
+                       (let1 s (* (exact (sys-time)) (sys-getpid))
                          (logior s (ash s -16)))))
 
 (define (random-source-pseudo-randomize! source i j)
@@ -87,8 +90,7 @@
         (interleave-i i q (cons r lis)))))
 
   ;; main body
-  (unless (random-source? source)
-    (error "random source required, but got" source))
+  (%ensure-random-source source)
   (when (or (not (integer? i)) (not (integer? j))
             (negative? i) (negative? j))
     (errorf "indices must be non-negative integers: ~s, ~s" i j))
@@ -98,26 +100,25 @@
 
 ;; Obtain generators from random source.
 (define (random-source-make-integers source)
-  (unless (random-source? source)
-    (error "random source required, but got" source))
-  (lambda (n) (mt-random-integer source n)))
+  (%ensure-random-source source)
+  (^n (mt-random-integer source n)))
 
-(define (random-source-make-reals source . maybe-unit)
-  (unless (random-source? source)
-    (error "random source required, but got" source))
-  (if (null? maybe-unit)
-    (lambda () (mt-random-real source))
-    (let1 unit (car maybe-unit)
-      (unless (< 0 unit 1)
-        (error "unit must be between 0.0 and 1.0 (exclusive), but got" unit))
-      (let* ((1/unit (/. unit))
-             (range (ceiling->exact 1/unit)))
-        (lambda ()
-          (/ (random-integer range) 1/unit))))))
+(define random-source-make-reals
+  (case-lambda
+    [(source)
+     (%ensure-random-source source)
+     (^[] (mt-random-real source))]
+    [(source unit)
+     (%ensure-random-source source)
+     (unless (< 0 unit 1)
+       (error "unit must be between 0.0 and 1.0 (exclusive), but got" unit))
+     (let* ([1/unit (/ unit)]
+            [range (- (floor->exact 1/unit) 1)])
+       (^[] (/ (+ 1 (mt-random-integer source range)) 1/unit)))]))
 
 ;; Default random generators.
 (define-values (random-integer random-real)
   (let1 src default-random-source
-    (values (lambda (n) (mt-random-integer src n))
-            (lambda ()  (mt-random-real src)))))
+    (values (^n (mt-random-integer src n))
+            (^[]  (mt-random-real src)))))
 

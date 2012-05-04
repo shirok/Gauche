@@ -634,6 +634,9 @@
          a))
 
 ;;-----------------------------------------------------------------------
+;; srfi-27 depends on mt-random, and will be tested in ext/mt-random/test.scm
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-29")
 
 (define-module srfi-29-test

@@ -1,3 +1,8 @@
+2012-05-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-27.scm: Fixed bugs in random-source-make-reals.
+	* ext/mt-random/test.scm: Added tests for srfi-27.
+
 2012-05-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator (x->generator): The implementation for
