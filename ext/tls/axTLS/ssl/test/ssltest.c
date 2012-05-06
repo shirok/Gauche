@@ -766,9 +766,15 @@ static int client_socket_init(uint16_t port)
     client_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (connect(client_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
-        perror("socket");
-        SOCKET_CLOSE(client_fd);
-        client_fd = -1;
+        /*<SK> If the machine is heavily loaded, the first attempt may fail
+          because the server isn't ready yet.  We give the server some more
+          time and the retry. */
+        usleep(2000000);
+        if (connect(client_fd, (struct sockaddr *)&address, sizeof(address)) < 0)        {
+            perror("socket");
+            SOCKET_CLOSE(client_fd);
+            client_fd = -1;
+        }
     }
 
     return client_fd;
