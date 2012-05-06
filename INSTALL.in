@@ -68,14 +68,14 @@ Thread Support
 ---------------------------------------------------
 
 @c JP
-ポピュラーなUnix系OSの多くで、Gaucheはネイティブスレッドをサポートします。
+主要なプラットフォームの多くで、Gaucheはネイティブスレッドをサポートします。
 スレッドが使用可能かどうかはconfigure時に自動判定されます。
 スレッドサポートが有効かどうかはconfigureスクリプトの出力の最後に表示されます。
 @c EN
-On most of popular unix variants, Gauche supports native threads.
-The configure script tries to determine automatically whether thread support
-can be enabled or not.  It shows at the end of the output whether
-the support is enabled.
+On most popular platforms, Gauche supports native threads.
+The configure script tries to determine automatically whether thread
+support can be enabled or not.  It shows at the end of the output
+whether the support is enabled.
 @c COMMON
 
 @c JP
@@ -85,14 +85,15 @@ the support is enabled.
 切り替えることができます。
 @c EN
 If you want to turn off the thread support even when the platform
-allows it for some reason, or if the configure script misrecognizes the platform
-and does not enable the support when it should be, you can use
+allows it for some reason, or if the configure script misrecognizes the
+platform and does not enable the support when it should be, you can use
 the following configure options to turn off or turn on the support
 explicitly.
 @c COMMON
 
-  ./configure --enable-threads=none     ;; turn off the thread support
-  ./configure --enable-threads=pthreads ;; turn on the thread support
+  --enable-threads=none     ;; turn off the thread support
+  --enable-threads=pthreads ;; turn on the thread support (pthread)
+  --enable-threads=win32    ;; turn on the thread support (windows)
 
 
 @c JP
@@ -114,10 +115,10 @@ the program text, you have to specify no multibyte encoding, or
 Gauche takes such characters as the first byte of multibyte charaters.
 @c COMMON
 
-  ./configure --enable-multibyte=utf-8   ;; UTF-8 (default)
-  ./configure --enable-multibyte=euc-jp  ;; EUC-JP
-  ./configure --enable-multibyte=sjis    ;; Shift JIS
-  ./configure --enable-multibyte=no      ;; No multibyte string
+  --enable-multibyte=utf-8   ;; UTF-8 (default)
+  --enable-multibyte=euc-jp  ;; EUC-JP
+  --enable-multibyte=sjis    ;; Shift JIS
+  --enable-multibyte=no      ;; No multibyte string
 
 
 @c JP
@@ -134,7 +135,7 @@ you can specify the location of your external
 iconv library by --with-iconv option.
 @c COMMON
 
-  ./configure --with-iconv=DIR
+  --with-iconv=DIR
 
 
 @c JP
@@ -222,6 +223,27 @@ The current implementation is tested on FreeBSD and Linux.
 See the gauche.net section of the reference manual for details.
 @c COMMON
 
+
+@c JP
+TLS/SSL のサポート
+@c EN
+TLS/SSL support
+@c COMMON
+---------------------------------------------------
+
+@c JP
+Gaucheにはセキュアソケット通信のサポートが組み込まれています。デフォルトで
+この機能はONになっていますが、もしext/tlsのビルドがうまく行かないようなら、
+次のオプションで強制的にTLS/SSLサポートをoffにすることもできます。
+@c EN
+Gauche includes secure socket connection support..  The build process
+tries to compile it by default, but if you have a problem during
+building ext/tls, you can turn off TLS/SSL support.
+@c COMMON
+
+  --enable-tls=none     ;; do not include TLS/SSL support
+  --enable-tls=axtls    ;; (default) include TLS/SSL support using
+                           axTLS library (source is included in Gauche).
 
 @c JP
 SLIBの場所

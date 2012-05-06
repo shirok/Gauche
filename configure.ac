@@ -223,6 +223,13 @@ case $GAUCHE_THREAD_TYPE in
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
       ;;
+    *-*-mingw32*)
+      if test $GAUCHE_THREAD_TYPE = "pthreads"; then
+        AC_MSG_ERROR([pthread can't be used on Windows.  Use --enable-threads=win32 to enable threads])
+      else
+        GAUCHE_THREAD_TYPE=win32
+      fi
+      ;;
     *)
       if test $GAUCHE_THREAD_TYPE = "pthreads"; then
         AC_MSG_ERROR([pthread is not supported on $host])
@@ -238,7 +245,7 @@ case $GAUCHE_THREAD_TYPE in
    AC_DEFINE(GAUCHE_USE_PTHREADS,1,[Define if we use pthreads])
    ;;
   win32)
-   AC_DEFINE(GAUCHE_USE_WTHREADS,1,[Define if we use pthreads])
+   AC_DEFINE(GAUCHE_USE_WTHREADS,1,[Define if we use windows threads])
    ;;
   *)
    ;;
