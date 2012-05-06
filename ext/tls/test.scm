@@ -16,6 +16,7 @@
     (any #/S\["OPENSSL"\]=\"openssl\"/
          (file->string-list "../../config.status")))
 
+  (sys-unlink "axTLS/ssl/openssl.pid")
   (test* "ssltest" 0
          (process-exit-status
           (run-process `(./ssltest

@@ -1,3 +1,21 @@
+2012-05-05  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/Makefile.in, ext/tls/system-fix.c, ext/tls/kick_openssl,
+	  ext/tls/test.scm, ext/tls/axTLS/ssl/test/killopenssl.sh,
+	  ext/tls/axTLS/ssl/test/ssltest.c: TLS test fixes
+	  - Avoid using system(), for it doesn't go well with MT on some
+	  OSes (e.g. OSX).  This fix calls /bin/sh explicitly, which may
+	  have its own problem, but let's see.
+	  - Avoid using 'ps' to extract openssl servers to kill.  Instead,
+	  we intercept openssl invocations and record pids.  This (1) avoids
+	  complications of 'ps' difference between OSes, and (2) prevents
+	  collateral damange when there are more than one test is going on.
+	  Again, this fix is quite a kludge and may have other problems.
+	  Note that we substitute strings "openssl " in the ssltest.c in
+	  order to make this work, so be careful changing ssltest.c not to
+	  include the code that can be affected by this substitution
+	  inadvertently.
+
 2012-05-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-27.scm: Fixed bugs in random-source-make-reals.

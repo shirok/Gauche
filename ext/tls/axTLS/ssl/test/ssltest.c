@@ -2124,8 +2124,9 @@ int main(int argc, char *argv[])
     int ret = 1;
     BI_CTX *bi_ctx;
     int fd;
-    /*<SK>*/
-    int have_openssl = 0;
+    /*<SK> NB: String "openssl " will re replaced by the build script, so
+      avoid ending the variable name with "openssl". */
+    int have_openssl_p = 0;
     /*</SK>*/
 
 #ifdef WIN32
@@ -2142,7 +2143,7 @@ int main(int argc, char *argv[])
 
     /*<SK>*/
     if (argc == 2 && strcmp(argv[1], "--exttest") == 0) {
-        have_openssl = 1;
+        have_openssl_p = 1;
     }
     /*</SK>*/
 
@@ -2228,7 +2229,7 @@ int main(int argc, char *argv[])
     system("sh ../ssl/test/killopenssl.sh");
 
     /*<SK>*/
-    if (have_openssl) {
+    if (have_openssl_p) {
     /*</SK>*/
 
     if (SSL_client_tests())
@@ -2243,7 +2244,7 @@ int main(int argc, char *argv[])
     system("sh ../ssl/test/killopenssl.sh");
 
     /*<SK>*/
-    } /*have_openssl*/
+    } /*have_openssl_p*/
     /*</SK>*/
 
 #if 0

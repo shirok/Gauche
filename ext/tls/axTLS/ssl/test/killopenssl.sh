@@ -1,2 +1,2 @@
 #!/bin/sh
-ps -ef|grep openssl | /usr/bin/awk '{print $2}' |xargs kill -9
+awk '{print $1}' "../ssl/openssl.pid" | xargs kill -9
