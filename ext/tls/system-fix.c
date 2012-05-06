@@ -36,9 +36,12 @@ void safe_system(const char *commands)
         }
     }
 #else  /*WIN32*/
+    fprintf(stdout, "system: executing (%s)\n", commands);
     /* We know system() works on MinGW.  Just pretend that we honor the
        return value of system() so that the compiler won't complain.  */
     if (system(commands)) do {} while (0);
+    /* This is needed to give time for kick_openssl to invoke openssl. */
+    Sleep(200);
 #endif /*WIN32*/
 }
 
