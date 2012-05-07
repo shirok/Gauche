@@ -27,8 +27,8 @@
           zip unzip1 unzip2 unzip3 unzip4 unzip5
           count unfold pair-fold reduce unfold-right
           pair-fold-right reduce-right append-map append-map!
-          map! pair-for-each filter-map map-in-order
-          partition remove partition! remove!
+          map! pair-for-each map-in-order
+          partition partition!
           list-index
           take-while drop-while take-while! span break span! break!
           alist-cons
@@ -44,7 +44,8 @@
           take drop take-right drop-right take! drop-right!
           delete delete! delete-duplicates delete-duplicates!
           assoc alist-copy alist-delete alist-delete!
-          any every filter filter! fold fold-right find find-tail
+          any every filter filter! remove remove! filter-map
+          fold fold-right find find-tail
           split-at split-at! iota
           ))
 (select-module srfi-1)
@@ -57,10 +58,11 @@
   `(begin ,@(map (^s `(define ,s (with-module gauche ,s))) syms)))
 
 (re-export null-list? cons* last member
-          take drop take-right drop-right take! drop-right!
+           take drop take-right drop-right take! drop-right!
            delete delete! delete-duplicates delete-duplicates!
            assoc alist-copy alist-delete alist-delete!
-           any every filter filter! fold fold-right find find-tail
+           any every filter filter! remove remove! filter-map
+           fold fold-right find find-tail
            split-at split-at! iota)
 
 ;;;
@@ -200,20 +202,6 @@
                  (receive (cars cdrs) (recur other-lists)
                    (values (cons a cars) (cons d cdrs))))))
          (values '() '()))))))
-
-;;; Like %CARS+CDRS, but we pass in a final elt tacked onto the end of the
-;;; cars list. What a hack.
-(define (%cars+cdrs+ lists cars-final)
-  (call-with-current-continuation
-   (lambda (abort)
-     (let recur ((lists lists))
-       (if (pair? lists)
-         (receive (list other-lists) (car+cdr lists)
-           (if (null-list? list) (abort '() '()) ; LIST is empty -- bail out
-               (receive (a d) (car+cdr list)
-                 (receive (cars cdrs) (recur other-lists)
-                   (values (cons a cars) (cons d cdrs))))))
-         (values (list cars-final) '()))))))
 
 ;;; Like %CARS+CDRS, but blow up if any list is empty.
 (define (%cars+cdrs/no-test lists)
@@ -374,24 +362,6 @@
     (pair-for-each (lambda (pair) (set-car! pair (f (car pair)))) lis1))
   lis1)
 
-
-;;; Map F across L, and save up all the non-false results.
-(define (filter-map f lis1 . lists)
-  (if (pair? lists)
-    (let recur ((lists (cons lis1 lists))
-                (r '()))
-      (receive (cars cdrs) (%cars+cdrs lists)
-        (cond ((null-list? cars) (reverse! r))
-              ((apply f cars) => (lambda (x) (recur cdrs (cons x r))))
-              (else (recur cdrs r)))))
-
-    ;; Fast path.
-    (let recur ((lis lis1)
-                (r   '()))
-      (cond ((null-list? lis) (reverse! r))
-            ((f (car lis)) => (lambda (x) (recur (cdr lis) (cons x r))))
-            (else (recur (cdr lis) r))))))
-
 ;;;
 ;;; Filters of SRFI-1
 ;;;
@@ -449,9 +419,6 @@
                    (scan-in l prev-l (cdr l))
                    (values l lis))		; Done.
                   (else (lp l (cdr l)))))))))
-
-(define (remove! pred l) (filter! (lambda (x) (not (pred x))) l))
-(define (remove  pred l) (filter  (lambda (x) (not (pred x))) l))
 
 ;;;
 ;;; Find and alike of SRFI-1

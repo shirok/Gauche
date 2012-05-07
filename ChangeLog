@@ -1,5 +1,8 @@
 2012-05-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/liblist.scm, libsrc/srfi-1.scm: Moved remove, remove! and
+	  filter-map to the core.
+
 	* gc/libatomic_ops: Backported d923334022938240c43c167d66549b1211aed2ba
 	  of git://github.com/ivmai/libatomic_ops.git to avoid build errors
 	  on certain Xcode version.

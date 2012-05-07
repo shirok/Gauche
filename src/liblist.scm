@@ -380,6 +380,22 @@
 	  [(not (pred (car ans))) (restart (cdr ans))]
           [else (keep! ans (cdr ans)) ans])))
 
+(define (remove  pred l) (filter  (^x (not (pred x))) l))
+(define (remove! pred l) (filter! (^x (not (pred x))) l))
+
+(define (filter-map fn lis . more)
+  (if (null? more)
+    (let loop ([lis lis] [r '()])
+      (cond [(null-list? lis) (reverse r)]
+            [(fn (car lis)) => (^x (loop (cdr lis) (cons x r)))]
+            [else (loop (cdr lis) r)]))
+    (let loop ([liss (cons lis more)] [r '()])
+      (receive (cars cdrs)
+          ((with-module gauche.internal %zip-nary-args) liss)
+        (cond [(not cars) (reverse r)]
+              [(apply fn cars) => (^x (loop cdrs (cons x r)))]
+              [else (loop cdrs r)])))))
+
 (define (fold kons knil lis . more)
   (if (null? more)
     (let loop ([lis lis] [knil knil])

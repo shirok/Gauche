@@ -620,44 +620,7 @@ of @var{clist}s.
 @c COMMON
 @end defun
 
-@defun filter-map  f clist1 clist2 @dots{}
-@c EN
-[SRFI-1]
-Like @code{map}, but only true values are saved.
-At least one of the list arguments must be finite.
-@c JP
-@code{map} と似ていますが、真になる場合の値のみが保存されます。
-引数として与えられるリストの少くともひとつは有限でなければなりません。
-@c COMMON
-@example
-(filter-map (lambda (x) (and (number? x) (* x x)))
-            '(a 1 b 3 c 7))
-  @result{} (1 9 49)
-@end example
-@end defun
-
 @subsubheading List partitioning
-
-@defun remove pred list
-@defunx remove! pred list
-@c EN
-[SRFI-1] A procedure @var{pred} is applied on each element of @var{list},
-and a list of elements that @var{pred} returned false on it is returned.
-@c JP
-[SRFI-1] 手続き @var{pred} が @var{list} の各要素に適用され、
-@var{pred} が偽を返す要素のリストが返されます。
-@c COMMON
-@example
-(remove odd? '(3 1 4 5 9 2 6)) @result{} (4 2 6)
-@end example
-@c EN
-@code{remove!} is the linear-update variant.  It may destructively
-modifies @var{list} to produce the result.
-@c JP
-@code{remove!} はその場で更新されるバージョンです。結果を生成するために
-@var{list} を破壊的に更新するかもしれません。
-@c COMMON
-@end defun
 
 @defun partition pred list
 @defunx partition! pred list
