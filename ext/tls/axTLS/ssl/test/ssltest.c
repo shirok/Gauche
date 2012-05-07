@@ -761,8 +761,8 @@ static int client_socket_init(uint16_t port)
     int client_fd = -1;
     int i;
 
-    /* In case if the server process might not be ready, we retry connecting
-       after some nap. */
+    /* <SK> In case if the server process might not be ready, we retry
+       connecting after some nap. */
     for (i=0; i<3; i++) {
         address.sin_family = AF_INET;
         address.sin_port = htons(port);
@@ -774,6 +774,7 @@ static int client_socket_init(uint16_t port)
         client_fd = -1;
         sleep(2);
     }
+    /* </SK> */
     return client_fd;
 }
 
