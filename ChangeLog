@@ -1,3 +1,9 @@
+2012-05-07  Shiro Kawai  <shiro@acm.org>
+
+	* gc/libatomic_ops: Backported d923334022938240c43c167d66549b1211aed2ba
+	  of git://github.com/ivmai/libatomic_ops.git to avoid build errors
+	  on certain Xcode version.
+
 2012-05-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/Makefile.in, ext/tls/system-fix.c, ext/tls/kick_openssl,
