@@ -1,5 +1,10 @@
 2012-05-07  Shiro Kawai  <shiro@acm.org>
 
+	* winnt/*: Removed old MSVC project files and NSIS-related
+	  sources.  Using MinGW and WiX is now the official way to build
+	  Windows native version.  If anyone wants to support alternative
+	  builds, she can always resurrect those files from the repository.
+
 	* src/liblist.scm, libsrc/srfi-1.scm: Moved remove, remove! and
 	  filter-map to the core.
 
