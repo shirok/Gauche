@@ -116,7 +116,7 @@ clean:
 distclean: clean
 	for d in $(SRIDBUS); do (cd $$d; $(MAKE) distclean); done
 	if test -f $(LIBATOMICDIR)/Makefile; then (cd $(LIBATOMICDIR); $(MAKE) distclean); fi
-	(cd winnt; $(MAKE) clean)
+	(cd winnt/wix; $(MAKE) clean)
 	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean: clean
@@ -124,7 +124,7 @@ maintainer-clean: clean
 	if test -f $(LIBATOMICDIR)/Makefile; then \
 	   (cd $(LIBATOMICDIR); $(MAKE) distclean; rm -f configure);\
 	fi
-	(cd winnt; $(MAKE) clean)
+	(cd winnt/wix; $(MAKE) clean)
 	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL INSTALL.eucjp DIST_EXCLUDE_X gc/configure
 
 # MacOSX Framework specific stuff
