@@ -1022,7 +1022,7 @@ following two code functionally equivalent to each other:
 @end example
 
 @c EN
-It is purely a matter of taste, and aldo this kind of syntax sugars
+It is purely a matter of taste, and also this kind of syntax sugars
 can be easily abused.  Use with care, but it may work well if used
 sparingly, like spices.
 @c JP
