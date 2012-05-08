@@ -53,16 +53,20 @@
  * to parameters), and eagerly copies the vector at the creation of the
  * thread.  Since thread creation in Gauche is already heavy anyway,
  * I take Guile's approach.
+ *
+ * TODO: We now need to allocate a parameter slot to every thread (although
+ * allocation is done lazily).  We may be able to use a tree instead of
+ * a flat vector so that we can avoid allocation of leaf nodes until
+ * they are accessed.
  */
 
 #define PARAMETER_INIT_SIZE 64
 #define PARAMETER_GROW      16
 
 /* Every time a new parameter is created (in any thread), it is
- * given an unique ID in the process.  It prevents a thread from
- * dereferencnig a parameter created by an unrelated thread.
+ * given a unique index in the process.
  */
-static int next_parameter_id = 0;
+static int next_parameter_index = 0;
 ScmInternalMutex parameter_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 
 /* Init table.  For primordial thread, base == NULL.  For non-primordial
@@ -75,48 +79,63 @@ void Scm__VMParameterTableInit(ScmVMParameterTable *table,
     int i;
 
     if (base) {
-        table->vector = SCM_NEW_ARRAY(ScmObj, base->parameters.numAllocated);
-        table->ids = SCM_NEW_ATOMIC2(int*, base->parameters.numAllocated*sizeof(int));
-        table->numAllocated = base->parameters.numAllocated;
-        table->numParameters = base->parameters.numParameters;
-        for (i=0; i<table->numParameters; i++) {
+        /* NB: In this case, the caller is the owner thread of BASE,
+           so we don't need to worry about base->parameters being
+           modified during copying. */
+        table->vector = SCM_NEW_ARRAY(ScmObj, base->parameters.size);
+        table->size = base->parameters.size;
+        for (i=0; i<table->size; i++) {
             table->vector[i] = base->parameters.vector[i];
-            table->ids[i] = base->parameters.ids[i];
         }
     } else {
         table->vector = SCM_NEW_ARRAY(ScmObj, PARAMETER_INIT_SIZE);
-        table->ids = SCM_NEW_ATOMIC2(int*, PARAMETER_INIT_SIZE*sizeof(int));
-        table->numParameters = 0;
-        table->numAllocated = PARAMETER_INIT_SIZE;
+        table->size = PARAMETER_INIT_SIZE;
+        for (i=0; i<table->size; i++) {
+            table->vector[i] = SCM_UNBOUND;
+        }
+    }
+}
+
+static void ensure_parameter_slot(ScmVMParameterTable *p, int index)
+{
+    if (index >= p->size) {
+        int i, newsiz = ((index+PARAMETER_GROW)/PARAMETER_GROW)*PARAMETER_GROW;
+        ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, newsiz);
+
+        for (i=0; i < p->size; i++) {
+            newvec[i] = p->vector[i];
+            p->vector[i] = SCM_FALSE; /*be friendly to GC*/
+        }
+        for (; i < newsiz; i++) {
+            newvec[i] = SCM_UNBOUND;
+        }
+        p->vector = newvec;
+        p->size = newsiz;
     }
 }
 
 /*
- * Allocate new parameter slot
+ * Allocate new parameter slot and initializes LOCATION
  */
+void Scm_InitParameterLoc(ScmVM *vm, ScmParameterLoc *location, ScmObj initval)
+{
+    int index;
+    
+    SCM_INTERNAL_MUTEX_LOCK(parameter_mutex);
+    index = next_parameter_index++;
+    SCM_INTERNAL_MUTEX_UNLOCK(parameter_mutex);
+
+    ensure_parameter_slot(&(vm->parameters), index);
+    location->index = index;
+    location->initialValue = initval;
+}
+
+/* NB: This is for the backward binary compatibility.  */
 void Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location)
 {
-    ScmVMParameterTable *p = &(vm->parameters);
-    if (p->numParameters == p->numAllocated) {
-        int i, newsiz = p->numAllocated + PARAMETER_GROW;
-        ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, newsiz);
-        int *newids = SCM_NEW_ATOMIC2(int*, newsiz*sizeof(int));
-
-        for (i=0; i<p->numParameters; i++) {
-            newvec[i] = p->vector[i];
-            p->vector[i] = SCM_FALSE; /*GC friendly*/
-            newids[i] = p->ids[i];
-        }
-        p->vector = newvec;
-        p->ids = newids;
-        p->numAllocated += PARAMETER_GROW;
-    }
-    p->vector[p->numParameters] = SCM_UNDEFINED;
-    SCM_INTERNAL_MUTEX_LOCK(parameter_mutex);
-    p->ids[p->numParameters] = location->id = next_parameter_id++;
-    SCM_INTERNAL_MUTEX_UNLOCK(parameter_mutex);
-    location->index = p->numParameters++;
+    Scm_InitParameterLoc(vm, location, SCM_FALSE);
 }
+
 
 /*
  * Accessor & modifier
@@ -125,25 +144,30 @@ void Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location)
 ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *loc)
 {
     ScmVMParameterTable *p = &(vm->parameters);
-    SCM_ASSERT(loc->index >= 0);
-    if (loc->index >= p->numParameters || p->ids[loc->index] != loc->id) {
-        Scm_Error("the thread %S doesn't have parameter (%d:%d)",
-                  vm, loc->index, loc->id);
+    ScmObj v;
+    
+    if (loc->index >= p->size) return loc->initialValue;
+    v = p->vector[loc->index];
+    if (SCM_UNBOUNDP(v)) {
+        v = p->vector[loc->index] = loc->initialValue;
     }
-    SCM_ASSERT(p->vector[loc->index] != NULL);
-    return p->vector[loc->index];
+    return v;
 }
 
 ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *loc, ScmObj value)
 {
     ScmObj oldval;
     ScmVMParameterTable *p = &(vm->parameters);
-    SCM_ASSERT(loc->index >= 0);
-    if (loc->index >= p->numParameters || p->ids[loc->index] != loc->id) {
-        Scm_Error("the thread %S doesn't have parameter (%d:%d)",
-                  vm, loc->index, loc->id);
+
+    if (loc->index >= p->size) {
+        ensure_parameter_slot(p, loc->index);
+        oldval = loc->initialValue;
+    } else {
+        oldval = p->vector[loc->index];
+        if (SCM_UNBOUNDP(oldval)) {
+            oldval = loc->initialValue;
+        }
     }
-    oldval = p->vector[loc->index];
     p->vector[loc->index] = value;
     return oldval;
 }
@@ -182,8 +206,7 @@ void Scm_DefinePrimitiveParameter(ScmModule *mod,
     ScmObj subr;
 
     pd->name = name;
-    Scm_MakeParameterSlot(vm, &pd->loc);
-    Scm_ParameterSet(vm, &pd->loc, initval);
+    Scm_InitParameterLoc(vm, &pd->loc, initval);
     subr = Scm_MakeSubr(parameter_handler, pd, 0, 1, sname);
     Scm_Define(mod, SCM_SYMBOL(Scm_Intern(SCM_STRING(sname))), subr);
     *location = pd->loc;

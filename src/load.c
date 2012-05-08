@@ -1247,12 +1247,7 @@ void Scm__InitLoad(void)
                                     SCM_MAKE_STR("." SHLIB_SO_SUFFIX));
     ldinfo.dso_list = NULL;
 
-#define PARAM_INIT(name, val)                           \
-    do {                                                \
-        Scm_MakeParameterSlot(vm, &ldinfo.name);        \
-        PARAM_SET(vm, name, val);                       \
-    } while (0)
-
+#define PARAM_INIT(name, val) Scm_InitParameterLoc(vm, &ldinfo.name, val)
     PARAM_INIT(load_history, SCM_NIL);
     PARAM_INIT(load_next, SCM_NIL);
     PARAM_INIT(load_port, SCM_FALSE);

@@ -293,19 +293,19 @@
 
 ;; exit handler.  we don't want to import the fluff with gauche.parameter,
 ;; so we manually allocate parameter slot.
-
+(select-module gauche.internal)
 (define-in-module gauche exit-handler
-  (receive (index id) (%vm-make-parameter-slot)
+  (let1 index (%vm-make-parameter-slot)
     ;; set default exit handler
-    (%vm-parameter-set! index id
+    (%vm-parameter-set! index #f
                         (^[code fmt args]
                           (when fmt
                             (apply format (standard-error-port) fmt args)
                             (newline (standard-error-port)))))
     (^ maybe-arg
-      (rlet1 old (%vm-parameter-ref index id)
+      (rlet1 old (%vm-parameter-ref index #f)
         (when (pair? maybe-arg)
-          (%vm-parameter-set! index id (car maybe-arg)))))))
+          (%vm-parameter-set! index #f (car maybe-arg)))))))
 
 (define-in-module gauche (exit :optional (code 0) (fmt #f) :rest args)
   (cond [(exit-handler)
@@ -405,24 +405,41 @@
     (SCM_TYPE_ERROR handler "a procedure or #f"))
   (set! (-> vm defaultEscapeHandler) handler))
 
-;; parameter
-(define-cproc %vm-make-parameter-slot () ::(<int> <int>)
-  (let* ([loc::ScmParameterLoc])
-    (Scm_MakeParameterSlot (Scm_VM) (& loc))
-    (set! SCM_RESULT0 (ref loc index)
-          SCM_RESULT1 (ref loc id))))
+;; parameter internal API
+;; These will be called by the public API in gauche.parameter.  The protocol
+;; is a bit weird, for the Scheme-level parameter has its own instance
+;; definition distinct from C-level ScmParameterLoc.  Eventually it would
+;; be nicer if we could merge two.
+(select-module gauche.internal)
 
-(define-cproc %vm-parameter-ref (index::<int> id::<int>)
+(define-cproc %vm-make-parameter-slot () ::<int>
+  (let* ([loc::ScmParameterLoc])
+    (Scm_InitParameterLoc (Scm_VM) (& loc) SCM_FALSE)
+    (result (ref loc index))))
+
+(define-cproc %vm-parameter-ref (index::<int> init-value)
   (let* ([loc::ScmParameterLoc])
     (set! (ref loc index) index
-          (ref loc id) id)
+          (ref loc initialValue) init-value)
     (result (Scm_ParameterRef (Scm_VM) (& loc)))))
 
-(define-cproc %vm-parameter-set! (index::<int> id::<int> value)
+(define-cproc %vm-parameter-set! (index::<int> init-value new-value)
   (let* ([loc::ScmParameterLoc])
     (set! (ref loc index) index
-          (ref loc id) id)
-    (result (Scm_ParameterSet (Scm_VM) (& loc) value))))
+          (ref loc initialValue) init-value)
+    (result (Scm_ParameterSet (Scm_VM) (& loc) new-value))))
+
+;; For the backward compatibility---files precompiled by 0.9.2 or before
+;; can contain reference to the old API (as the result of expansion of
+;; parameterize).  These definition converts them to the new API.
+;; Will be removed on 1.0 release.
+(select-module gauche)
+(define (%vm-make-parameter-slot)
+  (values ((with-module gauche.internal %vm-make-parameter-slot)) 0))
+(define (%vm-parameter-ref index id)
+  ((with-module gauche.internal %vm-parameter-ref) index id #f))
+(define (%vm-parameter-set! index id value)
+  ((with-module gauche.internal %vm-parameter-set!) index id #f value))
 
 ;;;
 ;;;Tentative compiler macro

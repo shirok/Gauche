@@ -55,34 +55,38 @@
 
 (define-method initialize ((self <parameter>) initargs)
   (next-method)
-  (receive (index id) (%vm-make-parameter-slot)
-    (let ([filter (slot-ref self 'filter)]
-          [pre-hook #f]
-          [post-hook #f])
-      (slot-set! self 'getter (^() (%vm-parameter-ref index id)))
-      (slot-set! self 'setter
-                 (if filter
-                   (^(val) (let1 new (filter val)
-                             (rlet1 old (%vm-parameter-ref index id)
-                               (when pre-hook (run-hook pre-hook old new))
-                               (%vm-parameter-set! index id new)
-                               (when post-hook (run-hook post-hook old new)))))
-                   (^(val) (rlet1 old (%vm-parameter-ref index id)
-                             (when pre-hook (run-hook pre-hook old val))
-                             (%vm-parameter-set! index id val)
-                             (when post-hook (run-hook post-hook old val))))))
-      (slot-set! self 'restorer          ;bypass filter proc
-                 (^(val) (rlet1 old (%vm-parameter-ref index id)
+  (let* ([filter (slot-ref self 'filter)]
+         [pre-hook #f]
+         [post-hook #f]
+         [init-value (let1 v (get-keyword :init-value initargs #f)
+                       (if filter (filter v) v))]
+         [index ((with-module gauche.internal %vm-make-parameter-slot))]
+         [%ref  (with-module gauche.internal %vm-parameter-ref)]
+         [%set! (with-module gauche.internal %vm-parameter-set!)])
+    (slot-set! self 'getter (^() (%ref index init-value)))
+    (slot-set! self 'setter
+               (if filter
+                 (^(val) (let1 new (filter val)
+                           (rlet1 old (%ref index init-value)
+                             (when pre-hook (run-hook pre-hook old new))
+                             (%set! index init-value new)
+                             (when post-hook (run-hook post-hook old new)))))
+                 (^(val) (rlet1 old (%ref index init-value)
                            (when pre-hook (run-hook pre-hook old val))
-                           (%vm-parameter-set! index id val)
-                           (when post-hook (run-hook post-hook old val)))))
-      (let-syntax ([hook-ref
-                    (syntax-rules ()
-                      [(_ var) (^() (or var (rlet1 h (make-hook 2)
-                                              (set! var h))))])])
-        (slot-set! self 'pre-observers (hook-ref pre-hook))
-        (slot-set! self 'post-observers (hook-ref post-hook)))
-      )))
+                           (%set! index init-value val)
+                           (when post-hook (run-hook post-hook old val))))))
+    (slot-set! self 'restorer          ;bypass filter proc
+               (^(val) (rlet1 old (%ref index init-value)
+                         (when pre-hook (run-hook pre-hook old val))
+                         (%set! index init-value val)
+                         (when post-hook (run-hook post-hook old val)))))
+    (let-syntax ([hook-ref
+                  (syntax-rules ()
+                    [(_ var) (^() (or var (rlet1 h (make-hook 2)
+                                            (set! var h))))])])
+      (slot-set! self 'pre-observers (hook-ref pre-hook))
+      (slot-set! self 'post-observers (hook-ref post-hook)))
+    ))
 
 (define-method object-apply ((self <parameter>))
   ((slot-ref self 'getter)))
@@ -95,8 +99,7 @@
   (obj value))
 
 (define (make-parameter value :optional (filter #f))
-  (rlet1 p (make <parameter> :filter filter)
-    (p value)))
+  (make <parameter> :filter filter :init-value value))
 
 ;; restore parameter value after parameterize body.  we need to bypass
 ;; the filter procedure (fix for the bug reported by Joo ChurlSoo.

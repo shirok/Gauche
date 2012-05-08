@@ -1,3 +1,15 @@
+2012-05-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/parameter.c, src/gauche/parameter.h, src/libeval.scm,
+	  libsrc/gauche/parameter.scm: Fixed semantics of parameters created
+	  by other threads.  Accessing parameters created by unrelated threads
+	  used to be an error; now it works as if the parameter is defined
+	  in every thread.  This reduces the annoyance if parameter creation
+	  timing is shifted by autoloads, for example.
+	  The internal API is slightly changed.  See the comment in
+	  src/libeval.scm.
+	* src/load.c: Adapted to the above change.
+
 2012-05-07  Shiro Kawai  <shiro@acm.org>
 
 	* winnt/*: Removed old MSVC project files and NSIS-related

@@ -37,6 +37,12 @@
  *  creator.
  */
 
+/* NB: For the time being, we let all threads share the index into the
+ * parameter array---if one thread creates a parameter, we globally allocate
+ * an index for it.  This may make parameter array bigger than necessary,
+ * for it only 
+ */
+
 #ifndef GAUCHE_PARAMETER_H
 #define GAUCHE_PARAMETER_H
 
@@ -46,10 +52,11 @@
    They are not available from C API. */
 typedef struct ScmParameterLocRec {
     int  index;
-    int  id;
+    ScmObj initialValue;
 } ScmParameterLoc;
 
-SCM_EXTERN void   Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location /*out*/);
+
+SCM_EXTERN void Scm_InitParameterLoc(ScmVM *vm, ScmParameterLoc *location, ScmObj initval);
 SCM_EXTERN ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *location);
 SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *location,
                                    ScmObj value);
@@ -61,13 +68,17 @@ SCM_EXTERN void Scm_DefinePrimitiveParameter(ScmModule *mod,
                                              ScmObj initval,
                                              ScmParameterLoc *location /*out*/);
 
+/*OBSOLETED - exposed only for the backward compatiblity - will be gone by 1.0*/
+SCM_EXTERN void   Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location /*out*/);
+
+
 /* PRIVATE STUFF */
 
 typedef struct ScmVMParameterTableRec {
-    int numParameters;
-    int numAllocated;
+    int size;
+    int dummy_;                 /* for ABI */
     ScmObj *vector;
-    int *ids;
+    void *dummy2_;              /* for ABI */
 } ScmVMParameterTable;
 
 SCM_EXTERN void Scm__VMParameterTableInit(ScmVMParameterTable *table,

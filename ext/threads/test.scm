@@ -445,17 +445,37 @@
          (thread-join! th2)
          (list (p) *thr1-val* *thr2-val*)))
 
-(test* "check parameter identification"
-       (test-error)
-       (let1 local #f
-         (thread-join!
-          (thread-start!
-           (make-thread
-            (^[] (set! local (make-parameter 1))))))
-         (thread-join!
-          (thread-start!
-           (make-thread
-            (^[] (local)))))))
+;; Parameters that are created in a different thread
+;; We used to prohibit accessing parameters that are created by different
+;; threads (up to 0.9.2).  But it caused annoyance when a module creating
+;; parameters is loaded after some threads are already started.
+
+(test* "parameters created by different thread" '(2 1 3)
+       (let ([p #f]
+             [handshake #f]
+             [val1 #f]
+             [val2 #f]
+             [val3 #f])
+         (let ([th1 (make-thread (^[]
+                                   (set! p (make-parameter 1))
+                                   (p 2)
+                                   (until handshake (sys-nanosleep 10000))
+                                   (set! val1 (p))))]
+               [th2 (make-thread (^[]
+                                   (until p (sys-nanosleep 10000))
+                                   (set! val2 (p))))]
+               [th3 (make-thread (^[]
+                                   (until p (sys-nanosleep 10000))
+                                   (p 3)
+                                   (set! handshake #t)
+                                   (set! val3 (p))))])
+           (thread-start! th1)
+           (thread-start! th2)
+           (thread-start! th3)
+           (thread-join! th1)
+           (thread-join! th2)
+           (thread-join! th3)
+           (list val1 val2 val3))))
 
 ;;---------------------------------------------------------------------
 (test-section "atoms")

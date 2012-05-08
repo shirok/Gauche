@@ -156,4 +156,6 @@
          (add-init (list (a) (b)))
          (reverse init)))
 
+;; Note: ext/threads has extra tests for parameter/thread cooperation.
+
 (test-end)
