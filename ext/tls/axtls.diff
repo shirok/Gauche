@@ -1,5 +1,5 @@
-*** ../../../axTLS-1.4.5/ssl/tls1.c	Fri May  6 14:12:41 2011
---- axTLS/ssl/tls1.c	Wed Feb 22 23:36:15 2012
+*** /home/shiro/src/axTLS-1.4.5/ssl/tls1.c	Fri May  6 14:12:41 2011
+--- axTLS/ssl/tls1.c	Mon Mar 19 23:07:45 2012
 ***************
 *** 2162,2168 ****
   EXP_FUNC SSL * STDCALL ssl_client_new(SSL_CTX *ssl_ctx, int client_fd, const
@@ -60,11 +60,56 @@
       return NULL;
   }
   
-*** ../../../axTLS-1.4.5/ssl/test/ssltest.c	Fri Jun 24 03:13:05 2011
---- axTLS/ssl/test/ssltest.c	Wed Feb 22 23:36:15 2012
+*** /home/shiro/src/axTLS-1.4.5/ssl/test/ssltest.c	Fri Jun 24 03:13:05 2011
+--- axTLS/ssl/test/ssltest.c	Sun May  6 15:58:11 2012
+***************
+*** 758,776 ****
+  static int client_socket_init(uint16_t port)
+  {
+      struct sockaddr_in address;
+!     int client_fd;
+  
+!     address.sin_family = AF_INET;
+!     address.sin_port = htons(port);
+!     address.sin_addr.s_addr =  inet_addr("127.0.0.1");
+!     client_fd = socket(AF_INET, SOCK_STREAM, 0);
+!     if (connect(client_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
+!     {
+          perror("socket");
+          SOCKET_CLOSE(client_fd);
+          client_fd = -1;
+      }
+! 
+      return client_fd;
+  }
+  
+--- 758,780 ----
+  static int client_socket_init(uint16_t port)
+  {
+      struct sockaddr_in address;
+!     int client_fd = -1;
+!     int i;
+  
+!     /* <SK> In case if the server process might not be ready, we retry
+!        connecting after some nap. */
+!     for (i=0; i<3; i++) {
+!         address.sin_family = AF_INET;
+!         address.sin_port = htons(port);
+!         address.sin_addr.s_addr =  inet_addr("127.0.0.1");
+!         client_fd = socket(AF_INET, SOCK_STREAM, 0);
+!         if (connect(client_fd, (struct sockaddr *)&address, sizeof(address)) == 0) break;
+          perror("socket");
+          SOCKET_CLOSE(client_fd);
+          client_fd = -1;
++         sleep(2);
+      }
+!     /* </SK> */
+      return client_fd;
+  }
+  
 ***************
 *** 1261,1266 ****
---- 1261,1267 ----
+--- 1265,1271 ----
                   NULL, "abcd", DEFAULT_SVR_OPTION)))
           goto cleanup;
   
@@ -74,7 +119,7 @@
        */
 ***************
 *** 1270,1275 ****
---- 1271,1277 ----
+--- 1275,1281 ----
                       "../ssl/test/axTLS.key_1024",
                       NULL, NULL, DEFAULT_SVR_OPTION)))
           goto cleanup;
@@ -97,7 +142,7 @@
       ret = 0;
   
   cleanup:
---- 1634,1647 ----
+--- 1638,1651 ----
   
       printf("SSL client test \"Invalid certificate type\" passed\n");
   
@@ -114,25 +159,26 @@
   cleanup:
 ***************
 *** 2121,2126 ****
---- 2124,2132 ----
+--- 2128,2137 ----
       int ret = 1;
       BI_CTX *bi_ctx;
       int fd;
-+     /*<SK>*/
-+     int have_openssl = 0;
++     /*<SK> NB: String "openssl " will re replaced by the build script, so
++       avoid ending the variable name with "openssl". */
++     int have_openssl_p = 0;
 +     /*</SK>*/
   
   #ifdef WIN32
       WSADATA wsaData;
 ***************
 *** 2134,2139 ****
---- 2140,2151 ----
+--- 2145,2156 ----
       dup2(fd, 2);
   #endif
   
 +     /*<SK>*/
 +     if (argc == 2 && strcmp(argv[1], "--exttest") == 0) {
-+         have_openssl = 1;
++         have_openssl_p = 1;
 +     }
 +     /*</SK>*/
 + 
@@ -141,12 +187,12 @@
       printf("Error: Must compile with default key/certificates\n");
 ***************
 *** 2215,2220 ****
---- 2227,2236 ----
+--- 2232,2241 ----
   
       system("sh ../ssl/test/killopenssl.sh");
   
 +     /*<SK>*/
-+     if (have_openssl) {
++     if (have_openssl_p) {
 +     /*</SK>*/
 + 
       if (SSL_client_tests())
@@ -154,12 +200,12 @@
   
 ***************
 *** 2226,2236 ****
---- 2242,2258 ----
+--- 2247,2263 ----
   
       system("sh ../ssl/test/killopenssl.sh");
   
 +     /*<SK>*/
-+     } /*have_openssl*/
++     } /*have_openssl_p*/
 +     /*</SK>*/
 + 
 + #if 0
@@ -172,8 +218,8 @@
   
       ret = 0;        /* all ok */
       printf("**** ALL TESTS PASSED ****\n"); TTY_FLUSH();
-*** ../../../axTLS-1.4.5/ssl/os_port.h	Fri Jan 14 13:13:14 2011
---- axTLS/ssl/os_port.h	Wed Feb 22 23:36:15 2012
+*** /home/shiro/src/axTLS-1.4.5/ssl/os_port.h	Fri Jan 14 13:13:14 2011
+--- axTLS/ssl/os_port.h	Mon Mar 19 23:07:45 2012
 ***************
 *** 58,63 ****
 --- 58,65 ----
@@ -225,8 +271,8 @@
   
   #else   /* Not Win32 */
   
-*** ../../../axTLS-1.4.5/ssl/os_port.c	Sat Jan  1 21:49:03 2011
---- axTLS/ssl/os_port.c	Wed Feb 22 23:36:15 2012
+*** /home/shiro/src/axTLS-1.4.5/ssl/os_port.c	Sat Jan  1 21:49:03 2011
+--- axTLS/ssl/os_port.c	Mon Mar 19 23:07:45 2012
 ***************
 *** 56,61 ****
 --- 56,62 ----
@@ -247,8 +293,8 @@
   #endif
   
   #undef malloc
-*** ../../../axTLS-1.4.5/ssl/loader.c	Sat Feb 11 01:34:56 2012
---- axTLS/ssl/loader.c	Wed Feb 22 23:36:15 2012
+*** /home/shiro/src/axTLS-1.4.5/ssl/loader.c	Sat Feb 11 01:34:56 2012
+--- axTLS/ssl/loader.c	Mon Mar 19 23:07:45 2012
 ***************
 *** 82,88 ****
   #ifdef CONFIG_SSL_HAS_PEM
@@ -300,8 +346,8 @@
               ret = SSL_ERROR_NOT_SUPPORTED;
               break;
       }
-*** ../../../axTLS-1.4.5/crypto/bigint_impl.h	Sat Jan  1 21:45:25 2011
---- axTLS/crypto/bigint_impl.h	Wed Feb 22 23:36:15 2012
+*** /home/shiro/src/axTLS-1.4.5/crypto/bigint_impl.h	Sat Jan  1 21:45:25 2011
+--- axTLS/crypto/bigint_impl.h	Mon Mar 19 23:07:45 2012
 ***************
 *** 61,67 ****
   typedef uint32_t long_comp;     /**< A double precision component. */
@@ -319,11 +365,11 @@
   #define COMP_RADIX          4294967296i64         
   #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
   #else
-*** ../../../axTLS-1.4.5/config/config.h	Wed Dec 31 14:00:00 1969
---- axTLS/config/config.h	Wed Feb 22 23:38:18 2012
+*** /home/shiro/src/axTLS-1.4.5/config/config.h	Wed Dec 31 14:00:00 1969
+--- axTLS/config/config.h	Mon Mar 19 23:07:45 2012
 ***************
 *** 0 ****
---- 1,108 ----
+--- 1,142 ----
 + /*
 +  * In original axTLS, this file is automatically generated.
 +  * To include in Gauche, we hand-edited this file, so be careful
@@ -432,3 +478,37 @@
 + #define CONFIG_INTEGER_32BIT 1
 + #undef CONFIG_INTEGER_16BIT
 + #undef CONFIG_INTEGER_8BIT
++ 
++ /* The following macros rename APIs in crypto/*.  This is to avoid build-time
++    problems when those names conflict with system-provided ones. */
++ #define AES_set_key       AES_set_key__axtls
++ #define AES_cbc_encrypt   AES_cbc_encrypt__axtls
++ #define AES_cbc_decrypt   AES_cbc_decrypt__axtls
++ #define AES_convert_key   AES_convert_key__axtls
++ #define RC4_setup         RC4_setup__axtls
++ #define RC4_crypt         RC4_crypt__axtls
++ #define SHA1_Init         SHA1_Init__axtls
++ #define SHA1_Update       SHA1_Update__axtls
++ #define SHA1_Final        SHA1_Final__axtls
++ #define MD2_Init          MD2_Init__axtls
++ #define MD2_Update        MD2_Update__axtls
++ #define MD2_final         MD2_Final__axtls
++ #define MD5_Init          MD5_Init__axtls
++ #define MD5_Update        MD5_Update__axtls
++ #define MD5_Final         MD5_Final__axtls
++ #define hmac_md5          hmac_md5__axtls
++ #define hmac_sha1         hmac_sha1__axtls
++ #define RSA_priv_key_new  RSA_priv_key_new__axtls
++ #define RSA_pub_key_new   RSA_pub_key_new__axtls
++ #define RSA_free          RSA_free__axtls
++ #define RSA_decrypt       RSA_decrypt__axtls
++ #define RSA_private       RSA_private__axtls
++ #define RSA_sign_verify   RSA_sign_verify__axtls
++ #define RSA_public        RSA_public__axtls
++ #define RSA_encrypt       RSA_encrypt__axtls
++ #define RSA_print         RSA_print__axtls
++ #define RNG_initialize    RNG_initialize__axtls
++ #define RNG_terminate     RNG_terminate__axtls
++ #define get_random        get_random__axtls
++ #define get_random_NZ     get_random_NZ__axtls
++ 
