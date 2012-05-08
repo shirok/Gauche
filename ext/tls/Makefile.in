@@ -76,7 +76,7 @@ $(SSLTEST_GENERATED) : axTLS/ssl/test/ssltest.c
 	@echo "void safe_system(const char*);" > $(SSLTEST_GENERATED)
 	@sed -e "s@\.\./ssl/@../../$(srcdir)/axTLS/ssl/@g" \
              -e "s/system/safe_system/g" \
-             -e "s@openssl @sh ../../kick_openssl @g" \
+             -e "s@openssl @sh ../../$(srcdir)/kick_openssl @g" \
              $(srcdir)/axTLS/ssl/test/ssltest.c >> $(SSLTEST_GENERATED)
 	@cat $(srcdir)/system-fix.c >> $(SSLTEST_GENERATED)
 
