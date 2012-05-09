@@ -604,7 +604,7 @@
 
 	* ext/util/queue.scm (make-mtqueue, enqueue/wait!, dequeue/wait!):
 	  Added support of zero-length mt-queue.  Zero-length queue cannot
-	  hold any values, bu t cna be used to synchronize producers
+	  hold any values, but can be used to synchronize producers
 	  and consumers---a thread can directly hand a value to another
 	  thread.  THIS IS AN INCOMPATIBLE CHANGE: It used to be that
 	  zero max-length meant to be unlimited length.  Now you have to
