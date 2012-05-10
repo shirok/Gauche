@@ -33,8 +33,9 @@
 
 (define-module gauche.portutil
   (export port->string port->list port->string-list port->sexp-list
-          copy-port port-fold port-fold-right port-for-each port-map
-          port-position-prefix port-tell)
+          copy-port port-position-prefix port-tell
+          ;; transient until 0.9.4 release:
+          port-fold port-fold-right port-for-each port-map)
   )
 (select-module gauche.portutil)
 
@@ -128,43 +129,6 @@
         [else (error "unit must be 'char, 'byte, or non-negative integer" unit)]
         ))
 
-;;-----------------------------------------------------
-;; Iterators on the input stream
-;;   NB: These are to be superseded by generator-fold, generator-fold-right,
-;;   generator-for-each and generator-map in gauche/procedure.scm.  We keep
-;;   these here for 0.9.3, since these are required to run cgen.* to generate
-;;   some files in src/.  Replace these to aliases of generator-* procs
-;;   after releasing 0.9.3.
-
-(define (port-fold fn knil reader)
-  (let loop ((item (reader))
-             (r    knil))
-    (if (eof-object? item)
-      r
-      (let1 r (fn item r)
-        (loop (reader) r)))))
-
-;; This will consume large stack if input file is large.
-(define (port-fold-right fn knil reader)
-  (let loop ((item (reader)))
-    (if (eof-object? item)
-      knil
-      (fn item (loop (reader))))))
-
-(define (port-for-each fn reader)
-  (let loop ((item (reader)))
-    (unless (eof-object? item)
-      (fn item)
-      (loop (reader)))))
-
-(define (port-map fn reader)
-  (let loop ((item (reader))
-             (r    '()))
-    (if (eof-object? item)
-      (reverse! r)
-      (let1 x (fn item)
-        (loop (reader) (cons x r))))))
-
 ;; useful for error messages
 (define (port-position-prefix port)
   (let ((n (port-name port))
@@ -175,9 +139,12 @@
         (format #f "~s: " n))
       "")))
 
-;;-----------------------------------------------------
 ;; useful alias
-;;
-
 (define (port-tell p) (port-seek p 0 SEEK_CUR))
 
+;; in order to compile post-0.9.3 source with 0.9.3, we need these
+;; to be in this module.  Remove them after 0.9.4 release.
+(define port-fold generator-fold)
+(define port-fold-right generator-fold-right)
+(define port-for-each generator-for-each)
+(define port-map generator-map)

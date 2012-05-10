@@ -1,3 +1,12 @@
+2012-05-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/portutil.scm, lib/gauche/procedure.scm: Removed
+	  duplicated definitions of port-fold etc. which was need to compile
+	  0.9.3 by 0.9.2.  The procedures are kept as aliases of
+	  generator-fold etc.
+	* src/autoloads.scm: Autoload port-fold etc. from gauche.procedure
+	  instead of gauche.portutil.
+
 2012-05-09  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.9.3

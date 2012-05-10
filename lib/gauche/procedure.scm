@@ -43,6 +43,8 @@
           case-lambda ~ ref* disasm
           generator-fold generator-fold-right
           generator-for-each generator-map
+          ;; for the backward compatibility
+          port-fold port-fold-right port-for-each port-map
           ))
 
 (select-module gauche.procedure)
@@ -312,14 +314,8 @@
             (reverse r)
             (loop (cons (apply fn items) r))))))))
 
-;; useful for error messages
-(define (port-position-prefix port)
-  (let ((n (port-name port))
-        (l (port-current-line port)))
-    (if n
-      (if (positive? l)
-        (format #f "~s:line ~a: " n l)
-        (format #f "~s: " n))
-      "")))
-
-
+;; For the backward compatibility
+(define port-fold generator-fold)
+(define port-fold-right generator-fold-right)
+(define port-for-each generator-for-each)
+(define port-map generator-map)

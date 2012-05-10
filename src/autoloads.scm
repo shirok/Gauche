@@ -92,8 +92,7 @@
 
 (autoload gauche.portutil
           port->string port->list port->string-list port->sexp-list
-          copy-port port-fold port-fold-right port-for-each port-map
-          port-position-prefix port-tell)
+          copy-port port-position-prefix port-tell)
 
 (autoload "gauche/numerical" sinh cosh tanh asinh acosh atanh)
 
@@ -129,7 +128,9 @@
           <arity-at-least> arity-at-least? arity-at-least-value disasm
           ~ ref*
           generator-fold generator-fold-right generator-for-each
-          generator-map)
+          generator-map
+          ;; for the backward compatibility
+          port-fold port-fold-right port-for-each port-map)
 
 (autoload gauche.time (:macro time))
 
