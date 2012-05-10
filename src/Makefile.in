@@ -213,7 +213,7 @@ gosh-noconsole$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_noconsole_OBJECTS)
 	$(LINK) $(gosh_LDFLAGS) -o gosh-noconsole$(EXEEXT) $(gosh_noconsole_OBJECTS) $(gosh_LDADD) $(LIBS) -Wl,--subsystem,windows
 
 # NB: relink target is only relevant where rpath matter.  notably, we don't
-# need to relink gish.exe (windows no-console version).
+# need to relink gosh-noconsole.exe (windows no-console version).
 relink :
 	$(RELINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_OBJECTS) $(LIBS)
 	$(RELINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT)  $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
@@ -412,7 +412,7 @@ INSTALL_DIRS = $(DESTDIR)$(HEADER_INSTALL_DIR) \
 	       $(DESTDIR)$(SITE_ARCH_DIR)
 @CROSS_COMPILING_no@GAUCHE_CONFIG = ./gauche-config
 @CROSS_COMPILING_yes@GAUCHE_CONFIG = ./$(host)-gauche-config
-@CROSS_COMPILING_no@GAUCHE_INSTALL = ./gauche-install
+@CROSS_COMPILING_no@GAUCHE_INSTALL = ./gosh -ftest $(srcdir)/gauche-install.in
 @CROSS_COMPILING_yes@GAUCHE_INSTALL = gosh $(srcdir)/gauche-install.in
 
 install : install-core install-aux
