@@ -1,5 +1,9 @@
 2012-05-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/libsys.scm (check-trailing-separator): It rised an error
+	  erroneously when "" is given.  It prevented self-building
+	  0.9.3 on Windows/MinGW.
+
 	* lib/gauche/portutil.scm, lib/gauche/procedure.scm: Removed
 	  duplicated definitions of port-fold etc. which was need to compile
 	  0.9.3 by 0.9.2.  The procedures are kept as aliases of

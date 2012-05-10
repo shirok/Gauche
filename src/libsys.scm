@@ -609,6 +609,7 @@
      (let* ([size::int (strlen path)]
             [ends::(const char*) (+ path size)]
             [lastchar::(const char*)])
+       (when (== size 0) (return path))
        (SCM_CHAR_BACKWARD ends path lastchar)
        (unless (and (>= lastchar path) (< lastchar ends))
          (Scm_SysError "invalid pathname: %s" path))
