@@ -140,21 +140,24 @@
                #x00000000000000000000000000010002 AF_INET6)
     (addr-test "v6-4" "::1:2:3:4:5:6:7"
                #x00000001000200030004000500060007 AF_INET6)
-    (addr-test "v6-err1" "::1:2:3:4:5:6:7:8" #f #f)
-    (addr-test "v6-err2" ":1:2:3:4:5:6:7:8" #f #f)
     (addr-test "v6-5" "ffe0::"
                #xffe00000000000000000000000000000 AF_INET6)
     (addr-test "v6-6" "ffe0:1::"
                #xffe00001000000000000000000000000 AF_INET6)
     (addr-test "v6-7" "ffe0::234:567"
                #xffe00000000000000000000002340567 AF_INET6)
-    (addr-test "v6-err3" "ffe0::234::567" #f #f)
-    (addr-test "v6-err4" "ffe0::234:567:" #f #f)
     (addr-test "v6-8" "::192.168.1.2"
                #x000000000000000000000000c0a80102 AF_INET6)
     (addr-test "v6-9" "1::2:0:0:192.168.1.2"
                #x000100000000000200000000c0a80102 AF_INET6)
-    ]
+    (addr-test "v6-err1" ":1:2:3:4:5:6:7:8" #f #f)
+    (addr-test "v6-err2" "ffe0::234::567" #f #f)
+    ;; These two should be an error, but cygwin's inet_pton allows them.
+    (cond-expand
+     [(not gauche.os.cygwin)
+      (addr-test "v6-err3" "::1:2:3:4:5:6:7:8" #f #f)
+      (addr-test "v6-err4" "ffe0::234:567:" #f #f)]
+     [else])]
    [else])
   )
 
