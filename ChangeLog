@@ -1,6 +1,9 @@
 2012-05-10  Shiro Kawai  <shiro@acm.org>
 
-	* src/libsys.scm (check-trailing-separator): It rised an error
+	* release 0.9.3.1 : Special follow-up release for MinGW because
+	  of the previous bug.
+
+	* src/libsys.scm (check-trailing-separator): It raised an error
 	  erroneously when "" is given.  It prevented self-building
 	  0.9.3 on Windows/MinGW.
 

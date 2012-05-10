@@ -59,8 +59,7 @@ if [ "$tgz" = "yes" ]; then
   ./configure --enable-threads=pthreads --enable-multibyte=utf8 -C || exit 1
   make GOSH=gosh pre-package
   make distclean || exit 1
-  # cleanup unnecessary symlinks
-  rm -f gc/libatomic_ops gc/atomic_ops.c gc/atomic_ops_sysdeps.S
+  rm -rf gc/libatomic_ops/autom4te.cache
 
   check_version
   rm -rf ../Gauche-$VERSION
