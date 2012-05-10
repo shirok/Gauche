@@ -9713,7 +9713,7 @@ Gauche has a set of convenient utilities to deal with generators
 EOFが返されたら、シーケンスの終了とみなされます (EOF自体はシーケンスには含まれません)。
 例えば@code{read-char}はそのまま@var{generator}に渡せます。
 ジェネレータ手続きを作ったり加工したりする便利なユーティリティが
-@code{gauche.generator}モジュールで帝京されています (@ref{Generators}参照)。
+@code{gauche.generator}モジュールで提供されています (@ref{Generators}参照)。
 @c COMMON
 
 @c EN
@@ -10044,14 +10044,14 @@ to calculate a prime number equal to or grater than @var{n}
 This procedure loops over the list of prime numbers, and
 if no prime number @var{p} less than or equal to @code{(sqrt n)}
 divides @var{n}, we can say @var{n} is prime.  (Actual test
-is done by @code{(> (* p p) n)} instead of @code{(> p (sqrt n)},
+is done by @code{(> (* p p) n)} instead of @code{(> p (sqrt n))},
 for the former is faster.)
 If we find some @var{p} divides @var{n}, we try a new value
 @code{(+ n 2)} with @code{next-prime}.
 @c JP
 この手続きは素数列をループし、@code{(sqrt n)}以下の素数で
 @var{n}を割ろうとします。一つも割りきれる素数がなければ、@var{n}が素数です。
-(実際の条件は、@code{(> p (sqrt n)}より効率の良い@code{(> (* p p) n)}を
+(実際の条件は、@code{(> p (sqrt n))}より効率の良い@code{(> (* p p) n)}を
 使っています)。
 @var{n}を割り切る素数があった場合は、
 @code{next-prime}を再帰的に呼んで@code{(+ n 2)}を試します。
