@@ -446,7 +446,7 @@ pre-package : $(GENERATED)
 # we don't use $(EXEEXT), for we know it is .exe on MinGW.
 # using it explicitly prevent make from being confused if $(EXEEXT) is empty.
 .in.exe:
-	$(SHELL) mingw-exify $< > $<.c
+	$(SHELL) $(srcdir)/mingw-exify $< > $<.c
 	$(COMPILE) -c -o $<.o $<.c
 	$(LINK) $(gosh_LDFLAGS) -o $@ $<.o $(gosh_LDADD) $(LIBS)
 
