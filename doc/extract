@@ -15,12 +15,10 @@
 
 (use gauche.parseopt)
 (use gauche.charconv)
-(use srfi-1)
+(use gauche.parameter)
 (use srfi-13)
 (use file.util)
 
-(define *outfile* #f)
-(define *lang* 'en)
 (define *version*
   (string-trim-both (file->string (or (find (cut sys-access <> R_OK)
                                             '("../VERSION"
@@ -28,6 +26,9 @@
                                       (error "No VERSION file?")))))
 (define *node-table* '())
 (define *header-table* '())
+
+(define lang   (make-parameter 'en))
+(define srcdir (make-parameter ""))
 
 (define (scan-nodes)
   (let ([current-node #f]
@@ -45,7 +46,7 @@
             (push! *node-table* (cons current-node jn))
             (push! *header-table* (cons current-header jh)))]
          [#/^@include\s+(\S+)/ (#f file)
-           (with-input-from-file (find-file file)
+           (with-input-from-file (find-included-file file)
              (cut scan-nodes) :encoding 'utf8)]
          ))
      read-line)))
@@ -57,11 +58,11 @@
       [pattern-in () (in (read-line))]
       [pattern-out () (out (read-line))]
       [#/^@include\s+(\S+)/ (#f file)
-        (with-input-from-file (find-file file)
+        (with-input-from-file (find-included-file file)
           (cut filter pattern-in pattern-out) :encoding 'utf8)
         (in (read-line))]
       [#/^@c COMMON$/ () (in (read-line))]
-      [test (^_ (eq? *lang* 'en))
+      [test (^_ (eq? (lang) 'en))
             (display (regexp-replace-all #/@VERSION@/ line *version*))
             (newline) (in (read-line))]
       [#/^@node\s+(.*)$/ (#f nodedesc)
@@ -88,8 +89,7 @@
 
   (in (read-line)))
 
-(define (find-file file)
-  (build-path (sys-dirname (port-name (current-input-port))) file))
+(define (find-included-file file) (build-path (srcdir) file))
 
 (define (lookup name table)
   (cond [(assoc (string-trim-both name) table) => cdr]
@@ -122,32 +122,36 @@
   (exit 1))
 
 (define (main args)
-  (let1 a (parse-options (cdr args)
-            (["o=s" (outfile) (set! *outfile* outfile)]
-             ["en"  () (set! *lang* 'en)]
-             ["jp"  () (set! *lang* 'jp)]
-             [else _ (usage)]))
+  (let ([outfile #f]
+        [language 'en])
+    (let1 a (parse-options (cdr args)
+              (["o=s" (file) (set! outfile file)]
+               ["en"  () (set! language 'en)]
+               ["jp"  () (set! language 'jp)]
+               [else _ (usage)]))
 
-    (define (do-it)
-      (case *lang*
-        [(en) (filter #/^@c EN$/ #/^@c JP$/)]
-        [(jp) (filter #/^@c JP$/ #/^@c EN$/)]))
+      (define (do-it)
+        (case language
+          [(en) (filter #/^@c EN$/ #/^@c JP$/)]
+          [(jp) (filter #/^@c JP$/ #/^@c EN$/)]))
 
-    (unless (= (length a) 1) (usage))
+      (unless (= (length a) 1) (usage))
 
-    (when (eq? *lang* 'jp)
-      (with-input-from-file (car a) scan-nodes :encoding 'utf8))
-
-    (with-input-from-file (car a)
-      (^[]
-        (if *outfile*
-          (with-output-to-file *outfile* do-it :encoding 'utf8)
-          (let1 out (wrap-with-output-conversion
-                     (current-output-port) 'utf8)
-            (with-output-to-port out do-it)
-            (close-output-port out))))
-      :encoding 'utf8)
-    0))
+      (parameterize ([srcdir (sys-normalize-pathname (sys-dirname (car a))
+                                                     :absolute #t)]
+                     [lang language])
+        (when (eq? language 'jp)
+          (with-input-from-file (car a) scan-nodes :encoding 'utf8))
+        (with-input-from-file (car a)
+          (^[]
+            (if outfile
+              (with-output-to-file outfile do-it :encoding 'utf8)
+              (let1 out (wrap-with-output-conversion
+                         (current-output-port) 'utf8)
+                (with-output-to-port out do-it)
+                (close-output-port out))))
+          :encoding 'utf8))
+      0)))
 
 ;; Local variables:
 ;; mode: Scheme

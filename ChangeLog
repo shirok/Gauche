@@ -1,3 +1,9 @@
+2012-05-11  Shiro Kawai  <shiro@acm.org>
+
+	* doc/extract: Fixed a bug that caused doc build fail if native
+	  encoding isn't utf-8.  The bug was introduced by out-of-tree
+	  build modification.
+
 2012-05-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (%vm-parameter-ref, %vm-parameter-set!): The
