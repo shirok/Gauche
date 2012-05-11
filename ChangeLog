@@ -1,5 +1,12 @@
 2012-05-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/libeval.scm (%vm-parameter-ref, %vm-parameter-set!): The
+	  compatibility definition of these procedures was incorrect.
+	  If files using parameterize and precompiled by 0.9.2 or before
+	  are used in 0.9.3 an error will be signalled.  Let's see how big
+	  the problem will be and decide whether we'll make another follow-up
+	  release or not.
+
 	* lib/gauche/procedure.scm (generator-map): Fixed a bug that depended
 	  on argument evaluation order.
 

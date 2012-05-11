@@ -437,9 +437,9 @@
 (define (%vm-make-parameter-slot)
   (values ((with-module gauche.internal %vm-make-parameter-slot)) 0))
 (define (%vm-parameter-ref index id)
-  ((with-module gauche.internal %vm-parameter-ref) index id #f))
+  ((with-module gauche.internal %vm-parameter-ref) index #f))
 (define (%vm-parameter-set! index id value)
-  ((with-module gauche.internal %vm-parameter-set!) index id #f value))
+  ((with-module gauche.internal %vm-parameter-set!) index #f value))
 
 ;;;
 ;;;Tentative compiler macro
