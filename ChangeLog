@@ -1,5 +1,7 @@
 2012-05-11  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.9.3.2 : Follow-up release.
+
 	* doc/extract: Fixed a bug that caused doc build fail if native
 	  encoding isn't utf-8.  The bug was introduced by out-of-tree
 	  build modification.
