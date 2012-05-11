@@ -1,5 +1,8 @@
 2012-05-10  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/procedure.scm (generator-map): Fixed a bug that depended
+	  on argument evaluation order.
+
 	* release 0.9.3.1 : Special follow-up release for MinGW because
 	  of the previous bug.
 
