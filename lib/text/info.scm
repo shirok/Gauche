@@ -37,6 +37,7 @@
   (use text.parse)
   (use gauche.process)
   (use file.util)
+  (use rfc.zlib)
   (export <info-file> <info-node>
           open-info-file info-get-node info-parse-menu
           )
@@ -60,8 +61,7 @@
    (content :init-keyword :content)
    ))
 
-;; Find gunzip location
-(define gunzip (find-file-in-paths "gunzip"))
+;; Find bzip2 location
 (define bzip2  (find-file-in-paths "bzip2"))
 
 ;; Read an info file FILE, and returns a list of strings splitted by ^_ (#\x1f)
@@ -70,8 +70,11 @@
   (define (with-input-from-info thunk)
     (cond [(file-exists? file)
            (with-input-from-file file thunk)]
-          [(and gunzip (file-exists? #`",|file|.gz"))
-           (with-input-from-process #`",gunzip -c ,file" thunk)]
+          [(file-exists? #`",|file|.gz")
+           (call-with-input-file #`",|file|.gz"
+             (^p (let1 zp (open-inflating-port p :window-bits 31) ;force gzip format
+                   (unwind-protect (with-input-from-port zp thunk)
+                     (close-input-port zp)))))]
           [(and bzip2 (file-exists? #`",|file|.bz2"))
            (with-input-from-process #`",bzip2 -c -d ,|file|.bz2" thunk)]
           [else (error "can't find info file" file)]))
