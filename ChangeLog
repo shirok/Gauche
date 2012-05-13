@@ -1,5 +1,12 @@
 2012-05-12  Shiro Kawai  <shiro@acm.org>
 
+	* src/Makefile.in: If install location was redirected by DESTDIR,
+	  install-aux target in src/Makefile failed, since it tried to
+	  use ./gosh which was already relinked to use libgauche.so under
+	  $(libdir).   Changed the order of install-aux and install-core
+	  so that we'll first install headers and scripts, then relink and
+	  install binaries.
+
 	* lib/text/info.scm (read-info-file-split): Since we now have rfc.zlib,
 	  use it instead of external gunzip process to read compressed
 	  info files (bonus: it works on Windows/MinGW too).
