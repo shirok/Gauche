@@ -428,7 +428,7 @@ install-core : relink
 	@case `$(GAUCHE_CONFIG) --arch` in *-cygwin*|*-mingw*) \
 	  $(INSTALL) $(INSTALL_LIBS) $(DESTDIR)$(BIN_INSTALL_DIR);;\
 	esac
-	$(INSTALL) $(srcdir)/gauche-init.scm $(DESTDIR)$(SCM_INSTALL_DIR)
+	$(INSTALL) -m 444 $(srcdir)/gauche-init.scm $(DESTDIR)$(SCM_INSTALL_DIR)
 	$(POSTINSTALL)
 
 install-aux :
