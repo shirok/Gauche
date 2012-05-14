@@ -645,7 +645,7 @@ case $host in
     ext_use_uvector=yes
     ext_use_libgauche=yes
     libgauche_version_link=no
-    CYGWIN_FIXDLL=src/cygwin-fixdll.sh
+    CYGWIN_FIXDLL='$(srcdir)/src/cygwin-fixdll.sh'
     ;;
   *mingw*)
     SHLIB_SO_CFLAGS=""
