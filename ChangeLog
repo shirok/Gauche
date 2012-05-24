@@ -1,3 +1,9 @@
+2012-05-24  Shiro Kawai  <shiro@acm.org>
+
+	* test/system.scm (normalize): Avoid using $HOME to calculate the
+	  expected value of tilde-expansion, for $HOME may be altered
+	  during testing.  Use getpwuid instead.
+
 2012-05-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/Makefile.in: If install location was redirected by DESTDIR,

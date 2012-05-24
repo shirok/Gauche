@@ -198,7 +198,7 @@
  (gauche.os.windows #t)
  (else
   (test* "normalize"
-         (n (string-append (get-command-output "echo $HOME") "/abc"))
+         (n (string-append (slot-ref (sys-getpwuid (sys-getuid)) 'dir) "/abc"))
          (sys-normalize-pathname "~/abc" :expand #t))))
 
 (test* "normalize" (n "/a/b/c/d/e")
