@@ -310,10 +310,30 @@ typedef struct ScmEscapePointRec {
  *  unresponsive program from the terminal.
  */
 
+/* NB: AT least on FreeBSD, RT signals are not counted in NSIG.  We should
+   use _SIG_MAXSIG+1 instead to track all signals. */
+#if defined(_SIG_MAXSIG) && (_SIG_MAXSIG+1 > NSIG)
+#define SCM_NSIG (_SIG_MAXSIG+1)
+#else  /*!_SIG_MAXSIG*/
+#define SCM_NSIG NSIG
+#endif /*!_SIG_MAXSIG*/
+
+/* The following #ifdef is to maintain binary compatibility during 0.9 series.
+ */
+#if defined(GAUCHE_API_0_9)
 typedef struct ScmSignalQueueRec {
-    unsigned char sigcounts[NSIG];
+    union {
+        unsigned char dummy[NSIG];
+        unsigned char *sigcounts;
+    };
     ScmObj pending;        /* pending signal handlers */
 } ScmSignalQueue;
+#else  /*!GAUCHE_API_0_9*/
+typedef union ScmSignalQueueRec {
+    unsigned char sigcounts[SCM_NSIG];
+    ScmObj pending;        /* pending signal handlers */
+} ScmSignalQueue;
+#endif /*!GAUCHE_API_0_9*/
 
 SCM_EXTERN void Scm_SignalQueueInit(ScmSignalQueue* q);
 SCM_EXTERN int  Scm_GetSignalPendingLimit(void);

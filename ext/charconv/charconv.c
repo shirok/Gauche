@@ -33,7 +33,6 @@
 
 #include <string.h>
 #include <errno.h>
-#define GAUCHE_API_0_9
 #include <gauche.h>
 #include <gauche/extend.h>
 #include "charconv.h"

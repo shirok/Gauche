@@ -1,3 +1,10 @@
+2012-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/vm.h, src/signal.c (SCM_NSIG): On FreeBSD, NSIG doesn't
+	  count RT signals, having caused signal.c overrun when setting
+	  a handler for SIGRT* signals.  Thanks to Vitaly Magerya for
+	  tracking this down.
+
 2012-05-24  Shiro Kawai  <shiro@acm.org>
 
 	* test/system.scm (normalize): Avoid using $HOME to calculate the

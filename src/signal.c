@@ -75,10 +75,10 @@ static int sigprocmask_win(int how, const sigset_t *set, sigset_t *oldset);
 
 /* Master signal handler vector. */
 static struct sigHandlersRec {
-    ScmObj handlers[NSIG];      /* Scheme signal handlers.  This is #<undef> on
+    ScmObj handlers[SCM_NSIG];  /* Scheme signal handlers.  This is #<undef> on
                                    signals to which Gauche does not install
                                    C-level signal handler (sig_handle). */
-    ScmSysSigset *masks[NSIG];  /* Signal masks during executing Scheme
+    ScmSysSigset *masks[SCM_NSIG];/* Signal masks during executing Scheme
                                    handlers.  Can be NULL, which means
                                    the handling signal(s) are blocked. */
     sigset_t masterSigset;      /* The signals Gauche is _allowed_ to handle.
@@ -364,7 +364,7 @@ static void sig_handle(int signum)
 void Scm_SignalQueueClear(ScmSignalQueue* q)
 {
     int i;
-    for (i=0; i<NSIG; i++) q->sigcounts[i] = 0;
+    for (i=0; i<SCM_NSIG; i++) q->sigcounts[i] = 0;
 }
 
 /*
@@ -372,6 +372,9 @@ void Scm_SignalQueueClear(ScmSignalQueue* q)
  */
 void Scm_SignalQueueInit(ScmSignalQueue* q)
 {
+#if defined(GAUCHE_API_0_9)
+    q->sigcounts = SCM_NEW_ARRAY(unsigned char, SCM_NSIG);
+#endif /* GAUCHE_API_0_9 */
     Scm_SignalQueueClear(q);
     q->pending = SCM_NIL;
 }
@@ -402,12 +405,12 @@ void Scm_SigCheck(ScmVM *vm)
     ScmSignalQueue *q = &vm->sigq;
     sigset_t omask;
     int i;
-    unsigned char sigcounts[NSIG]; /* copy of signal counter */
+    unsigned char sigcounts[SCM_NSIG]; /* copy of signal counter */
 
     /* Copy VM's signal counter to local storage, for we can't call
        storage allocation during blocking signals. */
     SIGPROCMASK(SIG_BLOCK, &sigHandlers.masterSigset, &omask);
-    memcpy(sigcounts, vm->sigq.sigcounts, NSIG * sizeof(unsigned char));
+    memcpy(sigcounts, vm->sigq.sigcounts, SCM_NSIG * sizeof(unsigned char));
     Scm_SignalQueueClear(&vm->sigq);
     vm->signalPending = FALSE;
     SIGPROCMASK(SIG_SETMASK, &omask, NULL);
@@ -427,7 +430,7 @@ void Scm_SigCheck(ScmVM *vm)
        lost---it doesn't look like so, but I may overlook something. */
     tail = q->pending;
     if (!SCM_NULLP(tail)) tail = Scm_LastPair(tail);
-    for (i=0; i<NSIG; i++) {
+    for (i=0; i<SCM_NSIG; i++) {
         if (sigcounts[i] == 0) continue;
         if (SCM_PROCEDUREP(sigHandlers.handlers[i])) {
             cell = Scm_Cons(SCM_LIST3(sigHandlers.handlers[i],
@@ -594,7 +597,7 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
 
     if (SCM_INTP(sigs)) {
         int signum = SCM_INT_VALUE(sigs);
-        if (signum < 0 || signum >= NSIG) {
+        if (signum < 0 || signum >= SCM_NSIG) {
             Scm_Error("bad signal number: %d", signum);
         }
         sigemptyset(&sigset);
@@ -647,7 +650,7 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
 
 ScmObj Scm_GetSignalHandler(int signum)
 {
-    if (signum < 0 || signum >= NSIG) {
+    if (signum < 0 || signum >= SCM_NSIG) {
         Scm_Error("bad signal number: %d", signum);
     }
     /* No lock; atomic pointer access */
@@ -657,7 +660,7 @@ ScmObj Scm_GetSignalHandler(int signum)
 ScmObj Scm_GetSignalHandlerMask(int signum)
 {
     ScmSysSigset *r;
-    if (signum < 0 || signum >= NSIG) {
+    if (signum < 0 || signum >= SCM_NSIG) {
         Scm_Error("bad signal number: %d", signum);
     }
     /* No lock; atomic pointer access */
@@ -668,7 +671,7 @@ ScmObj Scm_GetSignalHandlerMask(int signum)
 ScmObj Scm_GetSignalHandlers(void)
 {
     ScmObj h = SCM_NIL, hp;
-    ScmObj handlers[NSIG];
+    ScmObj handlers[SCM_NSIG];
     struct sigdesc *desc;
     sigset_t masterSet;
     int i;
@@ -676,7 +679,7 @@ ScmObj Scm_GetSignalHandlers(void)
     /* copy handler vector and master sig set locally, so that we won't
        grab the lock for extensive time */
     (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
-    for (i=0; i<NSIG; i++) handlers[i] = sigHandlers.handlers[i];
+    for (i=0; i<SCM_NSIG; i++) handlers[i] = sigHandlers.handlers[i];
     masterSet = sigHandlers.masterSigset;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(sigHandlers.mutex);
         
@@ -908,12 +911,12 @@ int Scm_SigWait(ScmSysSigset *mask)
     int errno_save = 0;
     sigset_t to_wait;        /* real set of signals to wait */
     sigset_t saved;
-    struct sigaction act, oacts[NSIG];
+    struct sigaction act, oacts[SCM_NSIG];
 
     (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
     /* we can't wait for the signals Gauche doesn't handle. */
     to_wait = mask->set;
-    for (i=0; i<NSIG; i++) {
+    for (i=0; i<SCM_NSIG; i++) {
         if (!sigismember(&sigHandlers.masterSigset, i)) {
             sigdelset(&to_wait, i);
         }
@@ -923,7 +926,7 @@ int Scm_SigWait(ScmSysSigset *mask)
     sigemptyset(&saved);
     act.sa_handler = SIG_DFL;
     act.sa_flags = 0;
-    for (i=1; i<NSIG; i++) {
+    for (i=1; i<SCM_NSIG; i++) {
         if (!sigismember(&to_wait, i)) continue;
         if (sigaction(i, &act, &oacts[i]) < 0) {
             failed_sig = i;
@@ -941,7 +944,7 @@ int Scm_SigWait(ScmSysSigset *mask)
     }
 
     /* Restore C-level handlers */
-    for (i=1; i<NSIG; i++) {
+    for (i=1; i<SCM_NSIG; i++) {
         if (!sigismember(&saved, i)) continue;
         if (sigaction(i, &oacts[i], NULL) < 0) {
             failed_sig = i;
@@ -983,7 +986,7 @@ void Scm__InitSignal(void)
 
     (void)SCM_INTERNAL_MUTEX_INIT(sigHandlers.mutex);
     sigemptyset(&sigHandlers.masterSigset);
-    for (i=0; i<NSIG; i++) sigHandlers.handlers[i] = SCM_UNDEFINED;
+    for (i=0; i<SCM_NSIG; i++) sigHandlers.handlers[i] = SCM_UNDEFINED;
     
     Scm_InitStaticClass(&Scm_SysSigsetClass, "<sys-sigset>",
                         mod, NULL, 0);

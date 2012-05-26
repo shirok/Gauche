@@ -42,6 +42,10 @@
 #include <gauche/config.h>
 #include <gauche/config_threads.h>
 
+#ifndef GAUCHE_API_0_9
+#define GAUCHE_API_0_9   1      /* 0.9 API */
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
