@@ -29,7 +29,7 @@
 
 (define (get-files subdir xs)
   (directory-fold (build-path "axTLS" subdir)
-                  (^[p s] (if (#/(\.[ch]$)|(^Makefile$)/ p) (cons p s) s)) xs))
+                  (^[p s] (if (#/(\.[ch]$)|(\.sh$)|(^Makefile$)/ p) (cons p s) s)) xs))
 
 (define (do-diff file dir)
   (let1 orig (build-path dir (regexp-replace #/^axTLS\// file ""))
