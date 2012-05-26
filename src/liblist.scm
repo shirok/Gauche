@@ -221,7 +221,7 @@
 (define (last lis) (car (last-pair lis))) ;srfi-1
 
 (define (iota count :optional (start 0) (step 1)) ;srfi-1
-  (when (< count 0) (errorf "count must be nonnegative: " count))
+  (when (< count 0) (error "count must be nonnegative: " count))
   (if (and (exact? start) (exact? step))
     (do ([c count (- c 1)]
          [v (+ start (* (- count 1) step)) (- v step)]
