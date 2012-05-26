@@ -160,5 +160,7 @@ AO_short_compare_and_swap_release(volatile unsigned short *addr,
 #define AO_HAVE_short_compare_and_swap_release
 
 #ifndef __LP64__
+  /* Generalize first to define more AO_int_... primitives.     */
+# include "../../generalize.h"
 # include "../ao_t_is_int.h"
 #endif

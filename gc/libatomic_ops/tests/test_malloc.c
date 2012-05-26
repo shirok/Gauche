@@ -39,11 +39,19 @@
 #endif
 
 #ifndef LIST_LENGTH
-# define LIST_LENGTH 1000
+# ifdef HAVE_MMAP
+#   define LIST_LENGTH 1000
+# else
+#   define LIST_LENGTH 100
+# endif
 #endif
 
 #ifndef LARGE_OBJ_SIZE
-# define LARGE_OBJ_SIZE 200000
+# ifdef HAVE_MMAP
+#   define LARGE_OBJ_SIZE 200000
+# else
+#   define LARGE_OBJ_SIZE 20000
+# endif
 #endif
 
 #ifdef USE_STANDARD_MALLOC
@@ -74,7 +82,7 @@ ln *cons(int d, ln *tail)
     {
       fprintf(stderr, "Out of memory\n");
         /* Normal for more than about 10 threads without mmap? */
-      abort();
+      exit(2);
     }
 
   result -> data = d;
@@ -154,7 +162,7 @@ void * run_one_test(void * arg) {
       {
         fprintf(stderr, "Out of memory\n");
           /* Normal for more than about 10 threads without mmap? */
-        abort();
+        exit(2);
       }
     q[0] = q[LARGE_OBJ_SIZE/2] = q[LARGE_OBJ_SIZE-1] = 'b';
     if (p[0] != 'a' || p[LARGE_OBJ_SIZE/2] != 'a'

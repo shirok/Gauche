@@ -43,7 +43,8 @@ AO_test_and_set_full(volatile AO_TS_t *addr) {
                 : "=d" (oldval), "=m" (*addr)
                 : "m" (*addr)
                 : "memory");
-   return oldval;
+  /* This cast works due to the above.  */
+  return (AO_TS_VAL_t)oldval;
 }
 #define AO_HAVE_test_and_set_full
 

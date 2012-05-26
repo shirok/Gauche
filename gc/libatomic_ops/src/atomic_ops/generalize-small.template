@@ -157,7 +157,7 @@
 /* XSIZE_fetch_and_add */
 #if defined(AO_HAVE_XSIZE_compare_and_swap_full) \
     && !defined(AO_HAVE_XSIZE_fetch_and_add_full)
-  AO_INLINE AO_t
+  AO_INLINE XCTYPE
   AO_XSIZE_fetch_and_add_full(volatile unsigned XCTYPE *addr,
                               unsigned XCTYPE incr)
   {
@@ -174,7 +174,7 @@
 
 #if defined(AO_HAVE_XSIZE_compare_and_swap_acquire) \
     && !defined(AO_HAVE_XSIZE_fetch_and_add_acquire)
-  AO_INLINE AO_t
+  AO_INLINE XCTYPE
   AO_XSIZE_fetch_and_add_acquire(volatile unsigned XCTYPE *addr,
                                  unsigned XCTYPE incr)
   {
@@ -191,7 +191,7 @@
 
 #if defined(AO_HAVE_XSIZE_compare_and_swap_release) \
     && !defined(AO_HAVE_XSIZE_fetch_and_add_release)
-  AO_INLINE AO_t
+  AO_INLINE XCTYPE
   AO_XSIZE_fetch_and_add_release(volatile unsigned XCTYPE *addr,
                                  unsigned XCTYPE incr)
   {

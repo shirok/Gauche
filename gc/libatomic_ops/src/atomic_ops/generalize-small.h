@@ -157,7 +157,7 @@
 /* char_fetch_and_add */
 #if defined(AO_HAVE_char_compare_and_swap_full) \
     && !defined(AO_HAVE_char_fetch_and_add_full)
-  AO_INLINE AO_t
+  AO_INLINE char
   AO_char_fetch_and_add_full(volatile unsigned char *addr,
                               unsigned char incr)
   {
@@ -174,7 +174,7 @@
 
 #if defined(AO_HAVE_char_compare_and_swap_acquire) \
     && !defined(AO_HAVE_char_fetch_and_add_acquire)
-  AO_INLINE AO_t
+  AO_INLINE char
   AO_char_fetch_and_add_acquire(volatile unsigned char *addr,
                                  unsigned char incr)
   {
@@ -191,7 +191,7 @@
 
 #if defined(AO_HAVE_char_compare_and_swap_release) \
     && !defined(AO_HAVE_char_fetch_and_add_release)
-  AO_INLINE AO_t
+  AO_INLINE char
   AO_char_fetch_and_add_release(volatile unsigned char *addr,
                                  unsigned char incr)
   {
@@ -740,7 +740,7 @@
 /* short_fetch_and_add */
 #if defined(AO_HAVE_short_compare_and_swap_full) \
     && !defined(AO_HAVE_short_fetch_and_add_full)
-  AO_INLINE AO_t
+  AO_INLINE short
   AO_short_fetch_and_add_full(volatile unsigned short *addr,
                               unsigned short incr)
   {
@@ -757,7 +757,7 @@
 
 #if defined(AO_HAVE_short_compare_and_swap_acquire) \
     && !defined(AO_HAVE_short_fetch_and_add_acquire)
-  AO_INLINE AO_t
+  AO_INLINE short
   AO_short_fetch_and_add_acquire(volatile unsigned short *addr,
                                  unsigned short incr)
   {
@@ -774,7 +774,7 @@
 
 #if defined(AO_HAVE_short_compare_and_swap_release) \
     && !defined(AO_HAVE_short_fetch_and_add_release)
-  AO_INLINE AO_t
+  AO_INLINE short
   AO_short_fetch_and_add_release(volatile unsigned short *addr,
                                  unsigned short incr)
   {
@@ -1323,7 +1323,7 @@
 /* int_fetch_and_add */
 #if defined(AO_HAVE_int_compare_and_swap_full) \
     && !defined(AO_HAVE_int_fetch_and_add_full)
-  AO_INLINE AO_t
+  AO_INLINE int
   AO_int_fetch_and_add_full(volatile unsigned int *addr,
                               unsigned int incr)
   {
@@ -1340,7 +1340,7 @@
 
 #if defined(AO_HAVE_int_compare_and_swap_acquire) \
     && !defined(AO_HAVE_int_fetch_and_add_acquire)
-  AO_INLINE AO_t
+  AO_INLINE int
   AO_int_fetch_and_add_acquire(volatile unsigned int *addr,
                                  unsigned int incr)
   {
@@ -1357,7 +1357,7 @@
 
 #if defined(AO_HAVE_int_compare_and_swap_release) \
     && !defined(AO_HAVE_int_fetch_and_add_release)
-  AO_INLINE AO_t
+  AO_INLINE int
   AO_int_fetch_and_add_release(volatile unsigned int *addr,
                                  unsigned int incr)
   {

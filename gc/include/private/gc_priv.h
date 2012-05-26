@@ -431,7 +431,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #     define DebugBreak() _exit(-1) /* there is no abort() in WinCE */
 #   endif
 #   ifdef SMALL_CONFIG
-#       if defined(MSWIN32) || defined(MSWINCE)
+#       if (defined(MSWIN32) && !defined(LINT2)) || defined(MSWINCE)
 #           define ABORT(msg) DebugBreak()
 #       else
 #           define ABORT(msg) abort()
@@ -952,7 +952,7 @@ struct roots {
 #   else
 #     define MAX_HEAP_SECTS 768         /* Separately added heap sections. */
 #   endif
-# elif defined(SMALL_CONFIG)
+# elif defined(SMALL_CONFIG) && !defined(USE_PROC_FOR_LIBRARIES)
 #   define MAX_HEAP_SECTS 128           /* Roughly 256MB (128*2048*1K)  */
 # elif CPP_WORDSZ > 32
 #   define MAX_HEAP_SECTS 1024          /* Roughly 8GB                  */
@@ -1278,6 +1278,11 @@ GC_EXTERN word GC_black_list_spacing;
                         /* "stack-blacklisted", i.e. that are           */
                         /* problematic in the interior of an object.    */
 
+#ifdef GC_GCJ_SUPPORT
+  extern struct hblk * GC_hblkfreelist[];
+                                        /* Remains visible to GNU GCJ. */
+#endif
+
 #ifdef GC_DISABLE_INCREMENTAL
 # define GC_incremental FALSE
                         /* Hopefully allow optimizer to remove some code. */
@@ -1503,8 +1508,8 @@ GC_INNER void GC_set_hdr_marks(hdr * hhdr);
 GC_INNER void GC_set_fl_marks(ptr_t p);
                                     /* Set all mark bits associated with */
                                     /* a free list.                      */
-#ifdef GC_ASSERTIONS
-  void GC_check_fl_marks(ptr_t p);
+#if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
+  void GC_check_fl_marks(void **);
                                     /* Check that all mark bits         */
                                     /* associated with a free list are  */
                                     /* set.  Abort if not.              */
@@ -1564,12 +1569,14 @@ void GC_register_data_segments(void);
             GC_add_to_black_list_stack((word)(bits))
 #endif /* PRINT_BLACK_LIST */
 
-GC_INNER struct hblk * GC_is_black_listed(struct hblk * h, word len);
+struct hblk * GC_is_black_listed(struct hblk * h, word len);
                         /* If there are likely to be false references   */
                         /* to a block starting at h of the indicated    */
                         /* length, then return the next plausible       */
                         /* starting location for h that might avoid     */
-                        /* these false references.                      */
+                        /* these false references.  Remains externally  */
+                        /* visible as used by GNU GCJ currently.        */
+
 GC_INNER void GC_promote_black_lists(void);
                         /* Declare an end to a black listing phase.     */
 GC_INNER void GC_unpromote_black_lists(void);
@@ -1705,9 +1712,6 @@ GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
                                 /* free list nonempty, and return its   */
                                 /* head.  Sz is in granules.            */
 
-GC_INNER void * GC_clear_stack(void *);
-                                /* in misc.c, behaves like identity.    */
-
 #ifdef GC_ADD_CALLER
 # define GC_DBG_RA GC_RETURN_ADDR,
 #else
@@ -1805,7 +1809,7 @@ GC_EXTERN GC_bool GC_have_errors; /* We saw a smashed or leaked object. */
                                   /* without acquiring the lock.        */
 
 #ifndef SMALL_CONFIG
-  /* GC_print_stats should be visible outside the GC in some cases.     */
+  /* GC_print_stats should be visible to extra/MacOS.c. */
   extern int GC_print_stats;    /* Nonzero generates basic GC log.      */
                                 /* VERBOSE generates add'l messages.    */
 #else
@@ -1872,6 +1876,10 @@ GC_EXTERN GC_bool GC_print_back_height;
   GC_INNER void GC_remap(ptr_t start, size_t bytes);
   GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
                              size_t bytes2);
+#endif
+
+#ifdef CAN_HANDLE_FORK
+  GC_EXTERN GC_bool GC_handle_fork;
 #endif
 
 #ifndef GC_DISABLE_INCREMENTAL
@@ -2182,7 +2190,8 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
               /* some other reason.                                     */
 #endif /* PARALLEL_MARK */
 
-#if defined(GC_PTHREADS) && !defined(NACL) && !defined(SIG_SUSPEND)
+#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && !defined(NACL) \
+    && !defined(SIG_SUSPEND)
   /* We define the thread suspension signal here, so that we can refer  */
   /* to it in the dirty bit implementation, if necessary.  Ideally we   */
   /* would allocate a (real-time?) signal using the standard mechanism. */

@@ -21,6 +21,8 @@
 #  this will generate gc.sln
 #
 
+SET(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
+
 PROJECT(gc)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
@@ -153,7 +155,6 @@ IF(CMAKE_USE_PTHREADS_INIT)
         ENDIF()
         IF ( "HOST" MATCHES .*-.*-cygwin.*)
                 ADD_DEFINITIONS("-DGC_THREADS")
-                ADD_DEFINITIONS("-D_REENTRANT")
                 IF (${enable_parallel_mark})
                         ADD_DEFINITIONS("-DPARALLEL_MARK")
                 ENDIF()
@@ -224,6 +225,7 @@ IF(WIN32)
   SET_TARGET_PROPERTIES(cord    PROPERTIES
                       COMPILE_DEFINITIONS GC_NOT_DLL)
   TARGET_LINK_LIBRARIES(cord gc-lib)
+  TARGET_LINK_LIBRARIES(cord gdi32)
 ENDIF(WIN32)
 
 ADD_SUBDIRECTORY(tests)

@@ -1,3 +1,4 @@
+
 #ifndef GC_THREADS
 # define GC_THREADS
 #endif
@@ -79,4 +80,3 @@ int main(void) {
     CHECK_LEAKS();
     return 0;
 }
-

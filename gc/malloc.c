@@ -167,6 +167,8 @@ GC_API void * GC_CALL GC_generic_malloc(size_t lb, int k)
         GC_bool init;
         lg = ROUNDED_UP_GRANULES(lb);
         lb_rounded = GRANULES_TO_BYTES(lg);
+        if (lb_rounded < lb)
+            return((*GC_get_oom_fn())(lb));
         n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
         init = GC_obj_kinds[k].ok_init;
         LOCK();
@@ -306,7 +308,11 @@ GC_API void * GC_CALL GC_malloc_uncollectable(size_t lb)
         /* mark bits.                                                   */
         LOCK();
         set_mark_bit_from_hdr(hhdr, 0); /* Only object. */
-        GC_ASSERT(hhdr -> hb_n_marks == 0);
+#       ifndef THREADS
+          GC_ASSERT(hhdr -> hb_n_marks == 0);
+                /* This is not guaranteed in the multi-threaded case    */
+                /* because the counter could be updated before locking. */
+#       endif
         hhdr -> hb_n_marks = 1;
         UNLOCK();
         return((void *) op);
@@ -354,6 +360,7 @@ void * malloc(size_t lb)
   STATIC void GC_init_lib_bounds(void)
   {
     if (GC_libpthread_start != 0) return;
+    GC_init(); /* if not called yet */
     if (!GC_text_mapping("libpthread-",
                          &GC_libpthread_start, &GC_libpthread_end)) {
         WARN("Failed to find libpthread.so text mapping: Expect crash\n", 0);
@@ -368,8 +375,20 @@ void * malloc(size_t lb)
   }
 #endif /* GC_LINUX_THREADS */
 
+#include <limits.h>
+#ifdef SIZE_MAX
+# define GC_SIZE_MAX SIZE_MAX
+#else
+# define GC_SIZE_MAX (~(size_t)0)
+#endif
+
+#define GC_SQRT_SIZE_MAX ((1U << (WORDSZ / 2)) - 1)
+
 void * calloc(size_t n, size_t lb)
 {
+    if ((lb | n) > GC_SQRT_SIZE_MAX /* fast initial test */
+        && lb && n > GC_SIZE_MAX / lb)
+      return NULL;
 #   if defined(GC_LINUX_THREADS) /* && !defined(USE_PROC_FOR_LIBRARIES) */
         /* libpthread allocated some memory that is only pointed to by  */
         /* mmapped thread stacks.  Make sure it's not collectable.      */
@@ -382,7 +401,7 @@ void * calloc(size_t n, size_t lb)
             GC_init_lib_bounds();
             lib_bounds_set = TRUE;
           }
-          if (caller >= GC_libpthread_start && caller < GC_libpthread_end
+          if ((caller >= GC_libpthread_start && caller < GC_libpthread_end)
               || (caller >= GC_libld_start && caller < GC_libld_end))
             return GC_malloc_uncollectable(n*lb);
           /* The two ranges are actually usually adjacent, so there may */

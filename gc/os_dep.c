@@ -149,7 +149,7 @@
 /* we encounter EOF.                                            */
 STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 {
-    ssize_t num_read = 0;
+    size_t num_read = 0;
     ssize_t result;
 
     ASSERT_CANCEL_DISABLED();
@@ -199,9 +199,8 @@ STATIC ssize_t GC_repeat_read(int fd, char *buf, size_t count)
 GC_INNER char * GC_get_maps(void)
 {
     int f;
-    int result;
-    static char init_buf[1];
-    static char *maps_buf = init_buf;
+    ssize_t result;
+    static char *maps_buf = NULL;
     static size_t maps_buf_sz = 1;
     size_t maps_size, old_maps_size = 0;
 
@@ -260,7 +259,7 @@ GC_INNER char * GC_get_maps(void)
                 if (result <= 0)
                   break;
                 maps_size += result;
-            } while (result == maps_buf_sz-1);
+            } while ((size_t)result == maps_buf_sz-1);
             close(f);
             if (result <= 0)
               return 0;
@@ -349,34 +348,37 @@ GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
     return p;
 }
 
-/* Try to read the backing store base from /proc/self/maps.             */
-/* Return the bounds of the writable mapping with a 0 major device,     */
-/* which includes the address passed as data.                           */
-/* Return FALSE if there is no such mapping.                            */
-GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp, ptr_t *endp)
-{
-  char *prot;
-  ptr_t my_start, my_end;
-  unsigned int maj_dev;
-  char *maps = GC_get_maps();
-  char *buf_ptr = maps;
+#if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)
+  /* Try to read the backing store base from /proc/self/maps.           */
+  /* Return the bounds of the writable mapping with a 0 major device,   */
+  /* which includes the address passed as data.                         */
+  /* Return FALSE if there is no such mapping.                          */
+  GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr, ptr_t *startp,
+                                        ptr_t *endp)
+  {
+    char *prot;
+    ptr_t my_start, my_end;
+    unsigned int maj_dev;
+    char *maps = GC_get_maps();
+    char *buf_ptr = maps;
 
-  if (0 == maps) return(FALSE);
-  for (;;) {
-    buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
-                                 &prot, &maj_dev, 0);
+    if (0 == maps) return(FALSE);
+    for (;;) {
+      buf_ptr = GC_parse_map_entry(buf_ptr, &my_start, &my_end,
+                                   &prot, &maj_dev, 0);
 
-    if (buf_ptr == NULL) return FALSE;
-    if (prot[1] == 'w' && maj_dev == 0) {
-        if (my_end > addr && my_start <= addr) {
-          *startp = my_start;
-          *endp = my_end;
-          return TRUE;
-        }
+      if (buf_ptr == NULL) return FALSE;
+      if (prot[1] == 'w' && maj_dev == 0) {
+          if (my_end > addr && my_start <= addr) {
+            *startp = my_start;
+            *endp = my_end;
+            return TRUE;
+          }
+      }
     }
+    return FALSE;
   }
-  return FALSE;
-}
+#endif /* IA64 || INCLUDE_LINUX_THREAD_DESCR */
 
 #if defined(REDIRECT_MALLOC)
   /* Find the text(code) mapping for the library whose name, after      */
@@ -936,10 +938,21 @@ GC_INNER word GC_page_size = 0;
             for (;;) {
                 if (up) {
                     result += MIN_PAGE_SIZE;
-                    if (result >= bound) return bound;
+                    if (result >= bound) {
+                      result = bound;
+                      break;
+                    }
                 } else {
                     result -= MIN_PAGE_SIZE;
-                    if (result <= bound) return bound;
+                    if (result <= bound) {
+                      result = bound - MIN_PAGE_SIZE;
+                                        /* This is to compensate        */
+                                        /* further result increment (we */
+                                        /* do not modify "up" variable  */
+                                        /* since it might be clobbered  */
+                                        /* by setjmp otherwise).        */
+                      break;
+                    }
                 }
                 GC_noop1((word)(*result));
             }
@@ -1144,7 +1157,8 @@ GC_INNER word GC_page_size = 0;
   {
     ptr_t result; /* also used as "dummy" to get the approx. sp value */
 #   if defined(LINUX) && !defined(NACL) \
-       && (defined(USE_GET_STACKBASE_FOR_MAIN) || defined(THREADS))
+       && (defined(USE_GET_STACKBASE_FOR_MAIN) \
+           || (defined(THREADS) && !defined(REDIRECT_MALLOC)))
       pthread_attr_t attr;
       void *stackaddr;
       size_t size;
@@ -1346,6 +1360,15 @@ GC_INNER word GC_page_size = 0;
   }
 # define HAVE_GET_STACK_BASE
 #endif /* GC_SOLARIS_THREADS */
+
+#ifdef GC_RTEMS_PTHREADS
+  GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
+  {
+    sb->mem_base = rtems_get_stack_bottom();
+    return GC_SUCCESS;
+  }
+# define HAVE_GET_STACK_BASE
+#endif /* GC_RTEMS_PTHREADS */
 
 #ifndef HAVE_GET_STACK_BASE
   /* Retrieve stack base.                                               */
@@ -1809,8 +1832,8 @@ void GC_register_data_segments(void)
   void GC_register_data_segments(void)
   {
 #   ifdef MSWIN32
-      static char dummy;
-      GC_register_root_section((ptr_t)(&dummy));
+      GC_register_root_section((ptr_t)&GC_pages_executable);
+                            /* any other GC global variable would fit too. */
 #   endif
   }
 
@@ -1826,7 +1849,7 @@ void GC_register_data_segments(void)
     word next_page = ((text_end + (word)max_page_size - 1)
                       & ~((word)max_page_size - 1));
     word page_offset = (text_end & ((word)max_page_size - 1));
-    volatile char * result = (char *)(next_page + page_offset);
+    char * volatile result = (char *)(next_page + page_offset);
     /* Note that this isn't equivalent to just adding           */
     /* max_page_size to &etext if &etext is at a page boundary  */
 
@@ -2614,7 +2637,7 @@ STATIC void GC_default_push_other_roots(void)
   /* Add all pages in pht2 to pht1 */
   STATIC void GC_or_pages(page_hash_table pht1, page_hash_table pht2)
   {
-    register int i;
+    register unsigned i;
     for (i = 0; i < PHT_SIZE; i++) pht1[i] |= pht2[i];
   }
 
@@ -3354,8 +3377,8 @@ STATIC void GC_protect_heap(void)
         if (protect_all) {
           PROTECT(start, len);
         } else {
-          GC_ASSERT(PAGE_ALIGNED(len))
-          GC_ASSERT(PAGE_ALIGNED(start))
+          GC_ASSERT(PAGE_ALIGNED(len));
+          GC_ASSERT(PAGE_ALIGNED(start));
           current_start = current = (struct hblk *)start;
           limit = (struct hblk *)(start + len);
           while (current < limit) {
@@ -4042,8 +4065,8 @@ STATIC void *GC_mprotect_thread(void *arg)
    meaningless and safe to ignore. */
 #ifdef BROKEN_EXCEPTION_HANDLING
 
-  /* Updates to this aren't atomic, but the SIGBUSs seem pretty rare.     */
-  /* Even if this doesn't get updated property, it isn't really a proble. */
+  /* Updates to this aren't atomic, but the SIGBUS'es seem pretty rare.    */
+  /* Even if this doesn't get updated property, it isn't really a problem. */
   STATIC int GC_sigbus_count = 0;
 
   STATIC void GC_darwin_sigbus(int num, siginfo_t *sip, void *context)
@@ -4070,6 +4093,21 @@ GC_INNER void GC_dirty_init(void)
   pthread_t thread;
   pthread_attr_t attr;
   exception_mask_t mask;
+
+# ifdef CAN_HANDLE_FORK
+    if (GC_handle_fork) {
+      /* To both support GC incremental mode and GC functions usage in  */
+      /* the forked child, pthread_atfork should be used to install     */
+      /* handlers that switch off GC_dirty_maintained in the child      */
+      /* gracefully (unprotecting all pages and clearing                */
+      /* GC_mach_handler_thread).  For now, we just disable incremental */
+      /* mode if fork() handling is requested by the client.            */
+      if (GC_print_stats)
+        GC_log_printf(
+            "GC incremental mode disabled since fork() handling requested\n");
+      return;
+    }
+# endif
 
   if (GC_print_stats == VERBOSE)
     GC_log_printf(

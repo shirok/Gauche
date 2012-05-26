@@ -85,30 +85,34 @@ AO_test_and_set_full(volatile AO_TS_t *addr) {
 }
 #define AO_HAVE_test_and_set_full
 
-/*AO_INLINE AO_t
-AO_compare_and_swap(volatile AO_t *addr, AO_t old, AO_t new_val) {
+/*AO_INLINE int
+AO_compare_and_swap(volatile AO_t *addr, AO_t old, AO_t new_val)
+{
 # error FIXME Implement me
 }
 #define AO_HAVE_compare_and_swap*/
 
-AO_INLINE AO_t
-AO_compare_and_swap_acquire(volatile AO_t *addr, AO_t old, AO_t new_val) {
-  AO_t result = AO_compare_and_swap(addr, old, new_val);
+AO_INLINE int
+AO_compare_and_swap_acquire(volatile AO_t *addr, AO_t old, AO_t new_val)
+{
+  int result = AO_compare_and_swap(addr, old, new_val);
   AO_lwsync();
   return result;
 }
 #define AO_HAVE_compare_and_swap_acquire
 
-AO_INLINE AO_t
-AO_compare_and_swap_release(volatile AO_t *addr, AO_t old, AO_t new_val) {
+AO_INLINE int
+AO_compare_and_swap_release(volatile AO_t *addr, AO_t old, AO_t new_val)
+{
   AO_lwsync();
   return AO_compare_and_swap(addr, old, new_val);
 }
 #define AO_HAVE_compare_and_swap_release
 
-AO_INLINE AO_t
-AO_compare_and_swap_full(volatile AO_t *addr, AO_t old, AO_t new_val) {
-  AO_t result;
+AO_INLINE int
+AO_compare_and_swap_full(volatile AO_t *addr, AO_t old, AO_t new_val)
+{
+  int result;
   AO_lwsync();
   result = AO_compare_and_swap(addr, old, new_val);
   AO_lwsync();

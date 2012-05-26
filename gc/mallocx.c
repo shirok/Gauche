@@ -182,6 +182,8 @@ GC_INNER void * GC_generic_malloc_ignore_off_page(size_t lb, int k)
         return(GC_generic_malloc((word)lb, k));
     lg = ROUNDED_UP_GRANULES(lb);
     lb_rounded = GRANULES_TO_BYTES(lg);
+    if (lb_rounded < lb)
+        return((*GC_get_oom_fn())(lb));
     n_blocks = OBJ_SZ_TO_BLOCKS(lb_rounded);
     init = GC_obj_kinds[k].ok_init;
     if (GC_have_errors) GC_print_all_errors();
@@ -377,7 +379,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
         my_bytes_allocd = 0;
         for (p = op; p != 0; p = obj_link(p)) {
           my_bytes_allocd += lb;
-          if (my_bytes_allocd >= HBLKSIZE) {
+          if ((word)my_bytes_allocd >= HBLKSIZE) {
             *opp = obj_link(p);
             obj_link(p) = 0;
             break;
@@ -537,7 +539,9 @@ GC_API int GC_CALL GC_posix_memalign(void **memptr, size_t align, size_t lb)
 
         LOCK();
         set_mark_bit_from_hdr(hhdr, 0); /* Only object. */
-        GC_ASSERT(hhdr -> hb_n_marks == 0);
+#       ifndef THREADS
+          GC_ASSERT(hhdr -> hb_n_marks == 0);
+#       endif
         hhdr -> hb_n_marks = 1;
         UNLOCK();
         return((void *) op);

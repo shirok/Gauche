@@ -27,7 +27,7 @@
  * Including this file will generate an error if AO_compare_and_swap_full()
  * cannot be made available.
  * This will be included from platform-specific atomic_ops files
- * if appropriate, and if AO_FORCE_CAS is defined.  It should not be
+ * if appropriate, and if AO_REQUIRE_CAS is defined.  It should not be
  * included directly, especially since it affects the implementation
  * of other atomic update primitives.
  * The implementation assumes that only AO_store_XXX and AO_test_and_set_XXX

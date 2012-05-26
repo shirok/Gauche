@@ -262,6 +262,9 @@
 # if defined(__avr32__)
 #   include "atomic_ops/sysdeps/gcc/avr32.h"
 # endif
+# if defined(__hexagon__)
+#   include "atomic_ops/sysdeps/gcc/hexagon.h"
+# endif
 #endif /* __GNUC__ && !AO_USE_PTHREAD_DEFS */
 
 #if (defined(__IBMC__) || defined(__IBMCPP__)) && !defined(__GNUC__) \

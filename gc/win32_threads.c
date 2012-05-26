@@ -55,6 +55,9 @@
   STATIC void GC_thread_exit_proc(void *arg);
 
 # include <pthread.h>
+# ifdef CAN_HANDLE_FORK
+#   include <unistd.h>
+# endif
 
 #else
 
@@ -529,11 +532,19 @@ STATIC GC_thread GC_lookup_thread_inner(DWORD thread_id)
   }
 }
 
+#ifdef LINT2
+# define CHECK_LOOKUP_MY_THREAD(me) \
+        if (!(me)) ABORT("GC_lookup_thread_inner(GetCurrentThreadId) failed")
+#else
+# define CHECK_LOOKUP_MY_THREAD(me) /* empty */
+#endif
+
 /* Called by GC_finalize() (in case of an allocation failure observed). */
 /* GC_reset_finalizer_nested() is the same as in pthread_support.c.     */
 GC_INNER void GC_reset_finalizer_nested(void)
 {
   GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
+  CHECK_LOOKUP_MY_THREAD(me);
   me->finalizer_nested = 0;
 }
 
@@ -546,7 +557,9 @@ GC_INNER void GC_reset_finalizer_nested(void)
 GC_INNER unsigned char *GC_check_finalizer_nested(void)
 {
   GC_thread me = GC_lookup_thread_inner(GetCurrentThreadId());
-  unsigned nesting_level = me->finalizer_nested;
+  unsigned nesting_level;
+  CHECK_LOOKUP_MY_THREAD(me);
+  nesting_level = me->finalizer_nested;
   if (nesting_level) {
     /* We are inside another GC_invoke_finalizers().            */
     /* Skip some implicitly-called GC_invoke_finalizers()       */
@@ -562,18 +575,16 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
   /* This is called from thread-local GC_malloc(). */
   GC_bool GC_is_thread_tsd_valid(void *tsd)
   {
-    char *me;
+    GC_thread me;
     DCL_LOCK_STATE;
 
     LOCK();
-    me = (char *)GC_lookup_thread_inner(GetCurrentThreadId());
+    me = GC_lookup_thread_inner(GetCurrentThreadId());
     UNLOCK();
-    /* FIXME: We can check tsd more correctly (since now we have access */
-    /* to the right declarations).  This old algorithm (moved from      */
-    /* thread_local_alloc.c) checks only that it's close.               */
-    return((char *)tsd > me && (char *)tsd < me + 1000);
+    return (char *)tsd >= (char *)&me->tlfs
+            && (char *)tsd < (char *)&me->tlfs + sizeof(me->tlfs);
   }
-#endif
+#endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
 /* Make sure thread descriptor t is not protected by the VDB            */
 /* implementation.                                                      */
@@ -712,9 +723,13 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   LOCK();
   me = GC_lookup_thread_inner(thread_id);
   if (me == 0) {
-    GC_register_my_thread_inner(sb, thread_id);
 #   ifdef GC_PTHREADS
+      me = GC_register_my_thread_inner(sb, thread_id);
       me -> flags |= DETACHED;
+          /* Treat as detached, since we do not need to worry about     */
+          /* pointer results.                                           */
+#   else
+      GC_register_my_thread_inner(sb, thread_id);
 #   endif
     UNLOCK();
     return GC_SUCCESS;
@@ -736,6 +751,30 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
   }
 }
 
+/* Similar to that in pthread_support.c.        */
+STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
+{
+  GC_ASSERT(I_HOLD_LOCK());
+  if (GC_incremental && GC_collection_in_progress()) {
+    word old_gc_no = GC_gc_no;
+
+    /* Make sure that no part of our stack is still on the mark stack,  */
+    /* since it's about to be unmapped.                                 */
+    do {
+      ENTER_GC();
+      GC_in_thread_creation = TRUE;
+      GC_collect_a_little_inner(1);
+      GC_in_thread_creation = FALSE;
+      EXIT_GC();
+
+      UNLOCK();
+      Sleep(0); /* yield */
+      LOCK();
+    } while (GC_incremental && GC_collection_in_progress()
+             && (wait_for_all || old_gc_no == GC_gc_no));
+  }
+}
+
 GC_API int GC_CALL GC_unregister_my_thread(void)
 {
   DCL_LOCK_STATE;
@@ -744,7 +783,6 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     GC_log_printf("Unregistering thread 0x%lx\n", (long)GetCurrentThreadId());
 # endif
 
-  /* FIXME: is GC_wait_for_gc_completion(FALSE) needed here? */
   if (GC_win32_dll_threads) {
 #   if defined(THREAD_LOCAL_ALLOC)
       /* Can't happen: see GC_use_threads_discovery(). */
@@ -763,8 +801,10 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     DWORD thread_id = GetCurrentThreadId();
 
     LOCK();
+    GC_wait_for_gc_completion(FALSE);
 #   if defined(THREAD_LOCAL_ALLOC) || defined(GC_PTHREADS)
       me = GC_lookup_thread_inner(thread_id);
+      CHECK_LOOKUP_MY_THREAD(me);
       GC_ASSERT(!KNOWN_FINISHED(me));
 #   endif
 #   if defined(THREAD_LOCAL_ALLOC)
@@ -800,6 +840,7 @@ GC_INNER void GC_do_blocking_inner(ptr_t data, void * context)
 
   LOCK();
   me = GC_lookup_thread_inner(thread_id);
+  CHECK_LOOKUP_MY_THREAD(me);
   GC_ASSERT(me -> thread_blocked_sp == NULL);
 # ifdef IA64
     me -> backing_store_ptr = stack_ptr;
@@ -826,7 +867,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
   LOCK();   /* This will block if the world is stopped.         */
   me = GC_lookup_thread_inner(GetCurrentThreadId());
-
+  CHECK_LOOKUP_MY_THREAD(me);
   /* Adjust our stack base value (this could happen unless      */
   /* GC_get_stack_base() was used which returned GC_SUCCESS).   */
   GC_ASSERT(me -> stack_base != NULL);
@@ -934,6 +975,101 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
   }
 
 #endif /* GC_PTHREADS */
+
+#ifdef CAN_HANDLE_FORK
+    /* Similar to that in pthread_support.c but also rehashes the table */
+    /* since hash map key (thread_id) differs from that in the parent.  */
+    STATIC void GC_remove_all_threads_but_me(void)
+    {
+      int hv;
+      GC_thread p, next, me = NULL;
+      DWORD thread_id;
+      pthread_t pthread_id = pthread_self(); /* same as in parent */
+
+      GC_ASSERT(!GC_win32_dll_threads);
+      for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
+        for (p = GC_threads[hv]; 0 != p; p = next) {
+          next = p -> tm.next;
+          if (THREAD_EQUAL(p -> pthread_id, pthread_id)) {
+            GC_ASSERT(me == NULL);
+            me = p;
+            p -> tm.next = 0;
+          } else {
+#           ifdef THREAD_LOCAL_ALLOC
+              if ((p -> flags & FINISHED) == 0) {
+                GC_destroy_thread_local(&p->tlfs);
+              }
+#           endif
+            if (&first_thread != p)
+              GC_INTERNAL_FREE(p);
+          }
+        }
+        GC_threads[hv] = NULL;
+      }
+
+      /* Put "me" back to GC_threads.   */
+      GC_ASSERT(me != NULL);
+      thread_id = GetCurrentThreadId(); /* differs from that in parent */
+      GC_threads[THREAD_TABLE_INDEX(thread_id)] = me;
+
+      /* Update Win32 thread Id and handle.     */
+      me -> id = thread_id;
+#     ifndef MSWINCE
+        if (!DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
+                        GetCurrentProcess(), (HANDLE *)&me->handle,
+                        0 /* dwDesiredAccess */, FALSE /* bInheritHandle */,
+                        DUPLICATE_SAME_ACCESS))
+          ABORT("DuplicateHandle failed");
+#     endif
+
+#     if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
+        /* For Cygwin, we need to re-assign thread-local pointer to     */
+        /* 'tlfs' (it is ok to call GC_destroy_thread_local and         */
+        /* GC_free_internal before this action).                        */
+        if (GC_setspecific(GC_thread_key, &me->tlfs) != 0)
+          ABORT("GC_setspecific failed (in child)");
+#     endif
+    }
+
+    STATIC void GC_fork_prepare_proc(void)
+    {
+      LOCK();
+#     ifdef PARALLEL_MARK
+        if (GC_parallel)
+          GC_wait_for_reclaim();
+#     endif
+      GC_wait_for_gc_completion(TRUE);
+#     ifdef PARALLEL_MARK
+        if (GC_parallel)
+          GC_acquire_mark_lock();
+#     endif
+    }
+
+    STATIC void GC_fork_parent_proc(void)
+    {
+#     ifdef PARALLEL_MARK
+        if (GC_parallel)
+          GC_release_mark_lock();
+#     endif
+      UNLOCK();
+    }
+
+    STATIC void GC_fork_child_proc(void)
+    {
+#     ifdef PARALLEL_MARK
+        if (GC_parallel) {
+          GC_release_mark_lock();
+          GC_markers = 1;
+          GC_parallel = FALSE;
+                /* Turn off parallel marking in the child, since we are */
+                /* probably just going to exec, and we would have to    */
+                /* restart mark threads.                                */
+        }
+#     endif
+      GC_remove_all_threads_but_me();
+      UNLOCK();
+    }
+#endif /* CAN_HANDLE_FORK */
 
 void GC_push_thread_structures(void)
 {
@@ -1462,7 +1598,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       return;
   }
 
-  GC_ASSERT(current_min > start);
+  GC_ASSERT(current_min > start && plast_stack_min != NULL);
 # ifdef MSWINCE
     if (GC_dont_query_stack_min) {
       *lo = GC_wince_evaluate_stack_min(current_min);
@@ -2238,6 +2374,14 @@ GC_INNER void GC_thr_init(void)
   GC_main_thread = GetCurrentThreadId();
   GC_thr_initialized = TRUE;
 
+# ifdef CAN_HANDLE_FORK
+    /* Prepare for forks if requested.  */
+    if (GC_handle_fork
+        && pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
+                          GC_fork_child_proc) != 0)
+      ABORT("pthread_atfork failed");
+# endif
+
   /* Add the initial thread, so we can stop it. */
 # ifdef GC_ASSERTIONS
     sb_result =
@@ -2502,6 +2646,7 @@ GC_INNER void GC_thr_init(void)
 #   endif
 
     LOCK();
+    GC_wait_for_gc_completion(FALSE);
 #   if defined(THREAD_LOCAL_ALLOC)
       GC_destroy_thread_local(&(me->tlfs));
 #   endif
@@ -2633,6 +2778,7 @@ GC_INNER void GC_thr_init(void)
 GC_INNER void GC_init_parallel(void)
 {
 # if defined(THREAD_LOCAL_ALLOC)
+    GC_thread me;
     DCL_LOCK_STATE;
 # endif
 
@@ -2651,8 +2797,9 @@ GC_INNER void GC_init_parallel(void)
   /* Initialize thread local free lists if used.        */
 # if defined(THREAD_LOCAL_ALLOC)
     LOCK();
-    GC_init_thread_local(
-                &GC_lookup_thread_inner(GetCurrentThreadId())->tlfs);
+    me = GC_lookup_thread_inner(GetCurrentThreadId());
+    CHECK_LOOKUP_MY_THREAD(me);
+    GC_init_thread_local(&me->tlfs);
     UNLOCK();
 # endif
 }
@@ -2724,5 +2871,15 @@ GC_INNER void GC_init_parallel(void)
 # endif /* GC_ASSERTIONS */
 
 #endif /* THREAD_LOCAL_ALLOC ... */
+
+# ifndef GC_NO_THREAD_REDIRECTS
+    /* Restore thread calls redirection.        */
+#   define CreateThread GC_CreateThread
+#   define ExitThread GC_ExitThread
+#   undef _beginthreadex
+#   define _beginthreadex GC_beginthreadex
+#   undef _endthreadex
+#   define _endthreadex GC_endthreadex
+# endif /* !GC_NO_THREAD_REDIRECTS */
 
 #endif /* GC_WIN32_THREADS */

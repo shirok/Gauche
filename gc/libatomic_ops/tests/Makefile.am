@@ -6,19 +6,21 @@ EXTRA_DIST=test_atomic.template list_atomic.template run_parallel.inc \
 BUILT_SOURCES = test_atomic_include.h list_atomic.i
 CLEANFILES = list_atomic.i
 
-AM_CPPFLAGS=-I$(srcdir)/../src
+AM_CPPFLAGS = -I$(top_builddir)/src -I$(top_srcdir)/src
 
+if HAVE_PTHREAD_H
 TESTS=test_atomic test_atomic_pthreads test_stack test_malloc
+test_atomic_pthreads_SOURCES=$(test_atomic_SOURCES)
+test_atomic_pthreads_CPPFLAGS=-DAO_USE_PTHREAD_DEFS $(AM_CPPFLAGS)
+test_atomic_pthreads_LDADD=$(test_atomic_LDADD)
+else
+TESTS=test_atomic test_stack test_malloc
+endif
 
-#create the test_atomic test program
-check_PROGRAMS=test_atomic test_atomic_pthreads test_stack test_malloc
+check_PROGRAMS=$(TESTS)
 
 test_atomic_SOURCES=test_atomic.c
 test_atomic_LDADD=$(THREADDLLIBS) ../src/libatomic_ops.a
-
-test_atomic_pthreads_SOURCES=test_atomic.c
-test_atomic_pthreads_CPPFLAGS=-DAO_USE_PTHREAD_DEFS $(AM_CPPFLAGS)
-test_atomic_pthreads_LDADD=$(THREADDLLIBS) ../src/libatomic_ops.a
 
 test_stack_SOURCES=test_stack.c
 test_stack_LDADD=$(THREADDLLIBS) ../src/libatomic_ops_gpl.a \

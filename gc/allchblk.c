@@ -48,16 +48,23 @@
 # define N_HBLK_FLS (HUGE_THRESHOLD - UNIQUE_THRESHOLD)/FL_COMPRESSION \
                                  + UNIQUE_THRESHOLD
 
-STATIC struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
+#ifndef GC_GCJ_SUPPORT
+  STATIC
+#endif
+  struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
                                 /* List of completely empty heap blocks */
                                 /* Linked through hb_next field of      */
                                 /* header structure associated with     */
-                                /* block.                               */
+                                /* block.  Remains externally visible   */
+                                /* as used by GNU GCJ currently.        */
 
 #ifndef USE_MUNMAP
 
-  STATIC word GC_free_bytes[N_HBLK_FLS+1] = { 0 };
-        /* Number of free bytes on each list.   */
+#ifndef GC_GCJ_SUPPORT
+  STATIC
+#endif
+  word GC_free_bytes[N_HBLK_FLS+1] = { 0 };
+        /* Number of free bytes on each list.  Remains visible to GCJ.  */
 
   /* Return the largest n such that                                     */
   /* Is GC_large_allocd_bytes + the number of free bytes on lists       */
@@ -289,7 +296,7 @@ STATIC void GC_remove_from_fl(hdr *hhdr, int n)
 
     GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
 #   ifndef USE_MUNMAP
-      /* We always need index to mainatin free counts.  */
+      /* We always need index to maintain free counts.  */
       if (FL_UNKNOWN == n) {
           index = GC_hblk_fl_from_blocks(divHBLKSZ(hhdr -> hb_sz));
       } else {
@@ -374,7 +381,7 @@ STATIC void GC_add_to_fl(struct hblk *h, hdr *hhdr)
     GC_ASSERT(((hhdr -> hb_sz) & (HBLKSIZE-1)) == 0);
     GC_hblkfreelist[index] = h;
     INCR_FREE_BYTES(index, hhdr -> hb_sz);
-    FREE_ASSERT(GC_free_bytes[index] <= GC_large_free_bytes)
+    FREE_ASSERT(GC_free_bytes[index] <= GC_large_free_bytes);
     hhdr -> hb_next = second;
     hhdr -> hb_prev = 0;
     if (0 != second) {
@@ -680,14 +687,14 @@ GC_allochblk_nth(size_t sz, int kind, unsigned flags, int n,
                 }
               }
             }
-            if ( !IS_UNCOLLECTABLE(kind) &&
-                 (kind != PTRFREE || size_needed > MAX_BLACK_LIST_ALLOC)) {
+            if ( !IS_UNCOLLECTABLE(kind) && (kind != PTRFREE
+                        || size_needed > (signed_word)MAX_BLACK_LIST_ALLOC)) {
               struct hblk * lasthbp = hbp;
               ptr_t search_end = (ptr_t)hbp + size_avail - size_needed;
               signed_word orig_avail = size_avail;
-              signed_word eff_size_needed = ((flags & IGNORE_OFF_PAGE)?
-                                                HBLKSIZE
-                                                : size_needed);
+              signed_word eff_size_needed = (flags & IGNORE_OFF_PAGE) != 0 ?
+                                                (signed_word)HBLKSIZE
+                                                : size_needed;
 
 
               while ((ptr_t)lasthbp <= search_end

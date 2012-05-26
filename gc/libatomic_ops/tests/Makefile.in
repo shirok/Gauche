@@ -34,10 +34,12 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-TESTS = test_atomic$(EXEEXT) test_atomic_pthreads$(EXEEXT) \
-	test_stack$(EXEEXT) test_malloc$(EXEEXT)
-check_PROGRAMS = test_atomic$(EXEEXT) test_atomic_pthreads$(EXEEXT) \
-	test_stack$(EXEEXT) test_malloc$(EXEEXT)
+@HAVE_PTHREAD_H_FALSE@TESTS = test_atomic$(EXEEXT) test_stack$(EXEEXT) \
+@HAVE_PTHREAD_H_FALSE@	test_malloc$(EXEEXT)
+@HAVE_PTHREAD_H_TRUE@TESTS = test_atomic$(EXEEXT) \
+@HAVE_PTHREAD_H_TRUE@	test_atomic_pthreads$(EXEEXT) \
+@HAVE_PTHREAD_H_TRUE@	test_stack$(EXEEXT) test_malloc$(EXEEXT)
+check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -48,16 +50,24 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+@HAVE_PTHREAD_H_FALSE@am__EXEEXT_1 = test_atomic$(EXEEXT) \
+@HAVE_PTHREAD_H_FALSE@	test_stack$(EXEEXT) test_malloc$(EXEEXT)
+@HAVE_PTHREAD_H_TRUE@am__EXEEXT_1 = test_atomic$(EXEEXT) \
+@HAVE_PTHREAD_H_TRUE@	test_atomic_pthreads$(EXEEXT) \
+@HAVE_PTHREAD_H_TRUE@	test_stack$(EXEEXT) test_malloc$(EXEEXT)
 am_test_atomic_OBJECTS = test_atomic.$(OBJEXT)
 test_atomic_OBJECTS = $(am_test_atomic_OBJECTS)
 am__DEPENDENCIES_1 =
 test_atomic_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	../src/libatomic_ops.a
-am_test_atomic_pthreads_OBJECTS =  \
-	test_atomic_pthreads-test_atomic.$(OBJEXT)
+am__test_atomic_pthreads_SOURCES_DIST = test_atomic.c
+am__objects_1 = test_atomic_pthreads-test_atomic.$(OBJEXT)
+@HAVE_PTHREAD_H_TRUE@am_test_atomic_pthreads_OBJECTS =  \
+@HAVE_PTHREAD_H_TRUE@	$(am__objects_1)
 test_atomic_pthreads_OBJECTS = $(am_test_atomic_pthreads_OBJECTS)
-test_atomic_pthreads_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	../src/libatomic_ops.a
+am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) ../src/libatomic_ops.a
+@HAVE_PTHREAD_H_TRUE@test_atomic_pthreads_DEPENDENCIES =  \
+@HAVE_PTHREAD_H_TRUE@	$(am__DEPENDENCIES_2)
 am_test_malloc_OBJECTS = test_malloc.$(OBJEXT)
 test_malloc_OBJECTS = $(am_test_malloc_OBJECTS)
 test_malloc_DEPENDENCIES = $(am__DEPENDENCIES_1) \
@@ -76,7 +86,8 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(test_atomic_SOURCES) $(test_atomic_pthreads_SOURCES) \
 	$(test_malloc_SOURCES) $(test_stack_SOURCES)
-DIST_SOURCES = $(test_atomic_SOURCES) $(test_atomic_pthreads_SOURCES) \
+DIST_SOURCES = $(test_atomic_SOURCES) \
+	$(am__test_atomic_pthreads_SOURCES_DIST) \
 	$(test_malloc_SOURCES) $(test_stack_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -194,12 +205,12 @@ EXTRA_DIST = test_atomic.template list_atomic.template run_parallel.inc \
 # to regenerate them on Windows without sed.
 BUILT_SOURCES = test_atomic_include.h list_atomic.i
 CLEANFILES = list_atomic.i
-AM_CPPFLAGS = -I$(srcdir)/../src
+AM_CPPFLAGS = -I$(top_builddir)/src -I$(top_srcdir)/src
+@HAVE_PTHREAD_H_TRUE@test_atomic_pthreads_SOURCES = $(test_atomic_SOURCES)
+@HAVE_PTHREAD_H_TRUE@test_atomic_pthreads_CPPFLAGS = -DAO_USE_PTHREAD_DEFS $(AM_CPPFLAGS)
+@HAVE_PTHREAD_H_TRUE@test_atomic_pthreads_LDADD = $(test_atomic_LDADD)
 test_atomic_SOURCES = test_atomic.c
 test_atomic_LDADD = $(THREADDLLIBS) ../src/libatomic_ops.a
-test_atomic_pthreads_SOURCES = test_atomic.c
-test_atomic_pthreads_CPPFLAGS = -DAO_USE_PTHREAD_DEFS $(AM_CPPFLAGS)
-test_atomic_pthreads_LDADD = $(THREADDLLIBS) ../src/libatomic_ops.a
 test_stack_SOURCES = test_stack.c
 test_stack_LDADD = $(THREADDLLIBS) ../src/libatomic_ops_gpl.a \
 	../src/libatomic_ops.a

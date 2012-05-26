@@ -140,7 +140,7 @@ AO_compare_double_and_swap_double_full(volatile AO_double_t *addr,
      GOT pointer.  We can save and restore %ebx because GCC won't be
      using it for anything else (such as any of the m operands) */
   __asm__ __volatile__("pushl %%ebx;"   /* save ebx used for PIC GOT ptr */
-                       "movl %6,%%ebx;" /* move new_val2 to %ebx */
+                       "movl %6,%%ebx;" /* move new_val1 to %ebx */
                        "lock; cmpxchg8b %0; setz %1;"
                        "pop %%ebx;"     /* restore %ebx */
                        : "=m"(*addr), "=a"(result)

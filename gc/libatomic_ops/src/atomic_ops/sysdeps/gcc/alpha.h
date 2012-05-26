@@ -58,6 +58,6 @@ AO_compare_and_swap(volatile AO_t *addr,
                      :"=&r" (temp), "=m" (*addr), "=&r" (was_equal)
                      : "r" (new_val), "Ir" (old)
                      :"memory");
-  return was_equal;
+  return (int)was_equal;
 }
 #define AO_HAVE_compare_and_swap

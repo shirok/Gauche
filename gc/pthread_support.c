@@ -52,7 +52,9 @@
 # include <time.h>
 # include <errno.h>
 # include <unistd.h>
-# include <sys/mman.h>
+# if !defined(GC_RTEMS_PTHREADS)
+#   include <sys/mman.h>
+# endif
 # include <sys/time.h>
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -310,6 +312,7 @@ STATIC long GC_nprocs = 1;
 #   if defined(USE_CUSTOM_SPECIFIC)
       void GC_check_tsd_marks(tsd *key);
 #   endif
+
     /* Check that all thread-local free-lists are completely marked.    */
     /* Also check that thread-specific-data structures are marked.      */
     void GC_check_tls(void)
@@ -329,6 +332,7 @@ STATIC long GC_nprocs = 1;
 #       endif
     }
 # endif /* GC_ASSERTIONS */
+
 #endif /* THREAD_LOCAL_ALLOC */
 
 #ifdef PARALLEL_MARK
@@ -398,7 +402,7 @@ STATIC pthread_t GC_mark_threads[MAX_MARKERS];
 
 static void start_mark_threads(void)
 {
-    unsigned i;
+    int i;
     pthread_attr_t attr;
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
@@ -598,20 +602,18 @@ GC_INNER unsigned char *GC_check_finalizer_nested(void)
   /* This is called from thread-local GC_malloc(). */
   GC_bool GC_is_thread_tsd_valid(void *tsd)
   {
-    char *me;
+    GC_thread me;
     DCL_LOCK_STATE;
 
     LOCK();
-    me = (char *)GC_lookup_thread(pthread_self());
+    me = GC_lookup_thread(pthread_self());
     UNLOCK();
-    /* FIXME: We can check tsd more correctly (since now we have access */
-    /* to the right declarations).  This old algorithm (moved from      */
-    /* thread_local_alloc.c) checks only that it's close.               */
-    return((char *)tsd > me && (char *)tsd < me + 1000);
+    return (char *)tsd >= (char *)&me->tlfs
+            && (char *)tsd < (char *)&me->tlfs + sizeof(me->tlfs);
   }
 #endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
-#ifdef HANDLE_FORK
+#ifdef CAN_HANDLE_FORK
 /* Remove all entries from the GC_threads table, except the     */
 /* one for the current thread.  We need to do this in the child */
 /* process after a fork(), since only the current thread        */
@@ -629,10 +631,25 @@ STATIC void GC_remove_all_threads_but_me(void)
         if (THREAD_EQUAL(p -> id, self)) {
           me = p;
           p -> next = 0;
+#         ifdef GC_DARWIN_THREADS
+            /* Update thread Id after fork (it is ok to call    */
+            /* GC_destroy_thread_local and GC_free_internal     */
+            /* before update).                                  */
+            me -> stop_info.mach_thread = mach_thread_self();
+#         endif
+#         if defined(THREAD_LOCAL_ALLOC) && !defined(USE_CUSTOM_SPECIFIC)
+            /* Some TLS implementations might be not fork-friendly, so  */
+            /* we re-assign thread-local pointer to 'tlfs' for safety   */
+            /* instead of the assertion check (again, it is ok to call  */
+            /* GC_destroy_thread_local and GC_free_internal before).    */
+            if (GC_setspecific(GC_thread_key, &me->tlfs) != 0)
+              ABORT("GC_setspecific failed (in child)");
+#         endif
         } else {
 #         ifdef THREAD_LOCAL_ALLOC
             if (!(p -> flags & FINISHED)) {
               GC_destroy_thread_local(&(p->tlfs));
+              GC_remove_specific(GC_thread_key);
             }
 #         endif
           if (p != &first_thread) GC_INTERNAL_FREE(p);
@@ -641,7 +658,7 @@ STATIC void GC_remove_all_threads_but_me(void)
       GC_threads[hv] = me;
     }
 }
-#endif /* HANDLE_FORK */
+#endif /* CAN_HANDLE_FORK */
 
 #ifdef USE_PROC_FOR_LIBRARIES
   GC_INNER GC_bool GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
@@ -652,9 +669,9 @@ STATIC void GC_remove_all_threads_but_me(void)
     GC_ASSERT(I_HOLD_LOCK());
 #   ifdef PARALLEL_MARK
       for (i = 0; i < GC_markers - 1; ++i) {
-        if (marker_sp[i] > lo & marker_sp[i] < hi) return TRUE;
+        if (marker_sp[i] > lo && marker_sp[i] < hi) return TRUE;
 #       ifdef IA64
-          if (marker_bsp[i] > lo & marker_bsp[i] < hi) return TRUE;
+          if (marker_bsp[i] > lo && marker_bsp[i] < hi) return TRUE;
 #       endif
       }
 #   endif
@@ -701,6 +718,14 @@ STATIC void GC_remove_all_threads_but_me(void)
   }
 #endif /* IA64 */
 
+#ifndef STAT_READ
+  /* Also defined in os_dep.c.  */
+# define STAT_BUF_SIZE 4096
+# define STAT_READ read
+        /* If read is wrapped, this may need to be redefined to call    */
+        /* the real one.                                                */
+#endif
+
 #if defined(GC_LINUX_THREADS) && !defined(PLATFORM_ANDROID) && !defined(NACL)
   /* Return the number of processors. */
   STATIC int GC_get_nprocs(void)
@@ -708,20 +733,9 @@ STATIC void GC_remove_all_threads_but_me(void)
     /* Should be "return sysconf(_SC_NPROCESSORS_ONLN);" but that     */
     /* appears to be buggy in many cases.                             */
     /* We look for lines "cpu<n>" in /proc/stat.                      */
-#   ifndef STAT_READ
-      /* Also defined in os_dep.c. */
-#     define STAT_BUF_SIZE 4096
-#     define STAT_READ read
-#   endif
-    /* If read is wrapped, this may need to be redefined to call      */
-    /* the real one.                                                  */
     char stat_buf[STAT_BUF_SIZE];
     int f;
-    word result = 1;
-    /* Some old kernels only have a single "cpu nnnn ..."     */
-    /* entry in /proc/stat.  We identify those as             */
-    /* uniprocessors.                                         */
-    int i, len;
+    int result, i, len;
 
     f = open("/proc/stat", O_RDONLY);
     if (f < 0) {
@@ -730,6 +744,11 @@ STATIC void GC_remove_all_threads_but_me(void)
     }
     len = STAT_READ(f, stat_buf, STAT_BUF_SIZE);
     close(f);
+
+    result = 1;
+        /* Some old kernels only have a single "cpu nnnn ..."   */
+        /* entry in /proc/stat.  We identify those as           */
+        /* uniprocessors.                                       */
 
     for (i = 0; i < len - 100; ++i) {
       if (stat_buf[i] == '\n' && stat_buf[i+1] == 'c'
@@ -741,7 +760,40 @@ STATIC void GC_remove_all_threads_but_me(void)
     }
     return result;
   }
-#endif /* GC_LINUX_THREADS && !NACL */
+#endif /* GC_LINUX_THREADS && !PLATFORM_ANDROID && !NACL */
+
+#if defined(ARM32) && defined(GC_LINUX_THREADS) && !defined(NACL)
+  /* Some buggy Linux/arm kernels show only non-sleeping CPUs in        */
+  /* /proc/stat (and /proc/cpuinfo), so another data system source is   */
+  /* tried first.  Result <= 0 on error.                                */
+  STATIC int GC_get_nprocs_present(void)
+  {
+    char stat_buf[16];
+    int f;
+    int len;
+
+    f = open("/sys/devices/system/cpu/present", O_RDONLY);
+    if (f < 0)
+      return -1; /* cannot open the file */
+
+    len = STAT_READ(f, stat_buf, sizeof(stat_buf));
+    close(f);
+
+    /* Recognized file format: "0\n" or "0-<max_cpu_id>\n"      */
+    /* The file might probably contain a comma-separated list   */
+    /* but we do not need to handle it (just silently ignore).  */
+    if (len < 2 || stat_buf[0] != '0' || stat_buf[len - 1] != '\n') {
+      return 0; /* read error or unrecognized content */
+    } else if (len == 2) {
+      return 1; /* an uniprocessor */
+    } else if (stat_buf[1] != '-') {
+      return 0; /* unrecognized content */
+    }
+
+    stat_buf[len - 1] = '\0'; /* terminate the string */
+    return atoi(&stat_buf[2]) + 1; /* skip "0-" and parse max_cpu_num */
+  }
+#endif /* ARM32 && GC_LINUX_THREADS && !NACL */
 
 /* We hold the GC lock.  Wait until an in-progress GC has finished.     */
 /* Repeatedly RELEASES GC LOCK in order to wait.                        */
@@ -754,7 +806,7 @@ STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
     GC_ASSERT(I_HOLD_LOCK());
     ASSERT_CANCEL_DISABLED();
     if (GC_incremental && GC_collection_in_progress()) {
-        int old_gc_no = GC_gc_no;
+        word old_gc_no = GC_gc_no;
 
         /* Make sure that no part of our stack is still on the mark stack, */
         /* since it's about to be unmapped.                                */
@@ -772,7 +824,7 @@ STATIC void GC_wait_for_gc_completion(GC_bool wait_for_all)
     }
 }
 
-#ifdef HANDLE_FORK
+#ifdef CAN_HANDLE_FORK
 /* Procedures called before and after a fork.  The goal here is to make */
 /* it safe to call GC_malloc() in a forked child.  It's unclear that is */
 /* attainable, since the single UNIX spec seems to imply that one       */
@@ -837,7 +889,7 @@ STATIC void GC_fork_child_proc(void)
     RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
 }
-#endif /* HANDLE_FORK */
+#endif /* CAN_HANDLE_FORK */
 
 #if defined(GC_DGUX386_THREADS)
   /* Return the number of processors, or i<= 0 if it can't be determined. */
@@ -879,6 +931,8 @@ STATIC void GC_fork_child_proc(void)
 
 #ifdef INCLUDE_LINUX_THREAD_DESCR
   __thread int GC_dummy_thread_local;
+  GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr,
+                                        ptr_t *startp, ptr_t *endp);
 #endif
 
 /* We hold the allocation lock. */
@@ -890,10 +944,12 @@ GC_INNER void GC_thr_init(void)
   if (GC_thr_initialized) return;
   GC_thr_initialized = TRUE;
 
-# ifdef HANDLE_FORK
-    /* Prepare for a possible fork.     */
-    pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
-                   GC_fork_child_proc);
+# ifdef CAN_HANDLE_FORK
+    /* Prepare for forks if requested.  */
+    if (GC_handle_fork
+        && pthread_atfork(GC_fork_prepare_proc, GC_fork_parent_proc,
+                          GC_fork_child_proc) != 0)
+      ABORT("pthread_atfork failed");
 # endif
 # ifdef INCLUDE_LINUX_THREAD_DESCR
     /* Explicitly register the region including the address     */
@@ -906,8 +962,10 @@ GC_INNER void GC_thr_init(void)
       if (!GC_enclosing_mapping(thread_local_addr, &main_thread_start,
                                 &main_thread_end)) {
         ABORT("Failed to find mapping for main thread thread locals");
+      } else {
+        /* main_thread_start and main_thread_end are initialized.       */
+        GC_add_roots_inner(main_thread_start, main_thread_end, FALSE);
       }
-      GC_add_roots_inner(main_thread_start, main_thread_end, FALSE);
     }
 # endif
   /* Add the initial thread, so we can stop it. */
@@ -933,7 +991,13 @@ GC_INNER void GC_thr_init(void)
     GC_nprocs = -1;
     if (nprocs_string != NULL) GC_nprocs = atoi(nprocs_string);
   }
-  if (GC_nprocs <= 0) {
+  if (GC_nprocs <= 0
+#     if defined(ARM32) && defined(GC_LINUX_THREADS) && !defined(NACL)
+        && (GC_nprocs = GC_get_nprocs_present()) <= 1
+                                /* Workaround for some Linux/arm kernels */
+#     endif
+      )
+  {
 #   if defined(GC_HPUX_THREADS)
       GC_nprocs = pthread_num_processors_np();
 #   elif defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
@@ -949,6 +1013,8 @@ GC_INNER void GC_thr_init(void)
       GC_nprocs = get_ncpu();
 #   elif defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
       GC_nprocs = GC_get_nprocs();
+#   elif defined(GC_RTEMS_PTHREADS)
+      GC_nprocs = 1; /* not implemented */
 #   endif
   }
   if (GC_nprocs <= 0) {
@@ -1696,7 +1762,7 @@ GC_INNER void GC_lock(void)
     unsigned my_spin_max;
     static unsigned last_spins = 0;
     unsigned my_last_spins;
-    int i;
+    unsigned i;
 
     if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {
         return;

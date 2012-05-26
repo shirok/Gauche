@@ -156,11 +156,12 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
 {
     struct roots * old;
 
-    /* Adjust and check range boundaries for safety */
-    GC_ASSERT((word)b % sizeof(word) == 0);
-    e = (ptr_t)((word)e & ~(sizeof(word) - 1));
     GC_ASSERT(b <= e);
-    if (b == e) return;  /* nothing to do? */
+    b = (ptr_t)(((word)b + (sizeof(word) - 1)) & ~(sizeof(word) - 1));
+                                        /* round b up to word boundary */
+    e = (ptr_t)((word)e & ~(sizeof(word) - 1));
+                                        /* round e down to word boundary */
+    if (b >= e) return; /* nothing to do */
 
 #   if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
       /* Spend the time to ensure that there are no overlapping */
@@ -176,12 +177,12 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
             old = GC_static_roots + i;
             if (b <= old -> r_end && e >= old -> r_start) {
                 if (b < old -> r_start) {
+                    GC_root_size += old->r_start - b;
                     old -> r_start = b;
-                    GC_root_size += (old -> r_start - b);
                 }
                 if (e > old -> r_end) {
+                    GC_root_size += e - old->r_end;
                     old -> r_end = e;
-                    GC_root_size += (e - old -> r_end);
                 }
                 old -> r_tmp &= tmp;
                 break;
@@ -197,12 +198,12 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
               e = other -> r_end;
               if (b <= old -> r_end && e >= old -> r_start) {
                 if (b < old -> r_start) {
+                    GC_root_size += old->r_start - b;
                     old -> r_start = b;
-                    GC_root_size += (old -> r_start - b);
                 }
                 if (e > old -> r_end) {
+                    GC_root_size += e - old->r_end;
                     old -> r_end = e;
-                    GC_root_size += (e - old -> r_end);
                 }
                 old -> r_tmp &= other -> r_tmp;
                 /* Delete this entry. */

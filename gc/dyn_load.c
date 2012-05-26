@@ -77,8 +77,6 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #endif
 
 #if defined(NETBSD)
-#   include <sys/param.h>
-#   include <dlfcn.h>
 #   include <machine/elf_machdep.h>
 #   define ELFSIZE ARCH_ELFSIZE
 #endif
@@ -93,7 +91,7 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #   include <elf.h>
 # endif
 # ifdef PLATFORM_ANDROID
-    /* The header file is in bionics/linker. */
+    /* The header file is in "bionic/linker" folder of Android sources. */
     /* If you don't need the "dynamic loading" feature, you may build   */
     /* the collector with -D IGNORE_DYNAMIC_LOADING.                    */
 #   include <linker.h>
@@ -187,8 +185,7 @@ GC_FirstDLOpenedLinkMap(void)
 # ifndef USE_PROC_FOR_LIBRARIES
 GC_INNER void GC_register_dynamic_libraries(void)
 {
-  struct link_map *lm = GC_FirstDLOpenedLinkMap();
-
+  struct link_map *lm;
 
   for (lm = GC_FirstDLOpenedLinkMap(); lm != 0; lm = lm->l_next) {
         ElfW(Ehdr) * e;
@@ -275,7 +272,6 @@ STATIC word GC_register_map_entries(char *maps)
 {
     char *prot;
     char *buf_ptr = maps;
-    int count;
     ptr_t start, end;
     unsigned int maj_dev;
     ptr_t least_ha, greatest_ha;
@@ -524,7 +520,7 @@ GC_INNER GC_bool GC_register_main_static_data(void)
     /* zero (otherwise a compiler might issue a warning).               */
     return FALSE;
 # else
-    return (dl_iterate_phdr == 0);
+    return (dl_iterate_phdr == 0); /* implicit conversion to function ptr */
 # endif
 }
 
@@ -551,7 +547,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
   dl_iterate_phdr(GC_register_dynlib_callback, &did_something);
   if (did_something) {
 #   ifdef PT_GNU_RELRO
-      size_t i;
+      int i;
 
       for (i = 0; i < n_load_segs; ++i) {
         if (load_segs[i].end > load_segs[i].start) {
@@ -648,15 +644,6 @@ GC_FirstDLOpenedLinkMap(void)
         return(0);
     }
     if( cachedResult == 0 ) {
-#if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
-        struct link_map *lm = NULL;
-        int rv = dlinfo(RTLD_SELF, RTLD_DI_LINKMAP, &lm); 
-        if (rv != 0)
-            return (0);
-        if (lm == NULL)
-            return (0);
-        cachedResult = lm;
-#else  /* !(defined(NETBSD) && defined(RTLD_DI_LINKMAP)) */
         int tag;
         for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
             if( tag == DT_DEBUG ) {
@@ -666,7 +653,6 @@ GC_FirstDLOpenedLinkMap(void)
                 break;
             }
         }
-#endif /* !(defined(NETBSD) && __NetBSD_Version__ >= 599001900) */
     }
     return cachedResult;
 }
@@ -680,8 +666,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
         return;
     }
 # endif
-  lm = GC_FirstDLOpenedLinkMap();
-  for (lm = GC_FirstDLOpenedLinkMap(); lm != 0;  lm = lm->l_next)
+  for (lm = GC_FirstDLOpenedLinkMap(); lm != 0; lm = lm->l_next)
     {
         ElfW(Ehdr) * e;
         ElfW(Phdr) * p;
@@ -1248,7 +1233,7 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
                               intptr_t slide)
 {
   unsigned long start, end;
-  int i, j;
+  unsigned i, j;
   const struct GC_MACH_SECTION *sec;
   const char *name;
   GC_has_static_roots_func callback = GC_has_static_roots;
@@ -1313,7 +1298,7 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
                                  intptr_t slide)
 {
   unsigned long start, end;
-  int i, j;
+  unsigned i, j;
   const struct GC_MACH_SECTION *sec;
   char secnam[16];
   const char *fmt;

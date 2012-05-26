@@ -279,5 +279,7 @@ AO_int_compare_and_swap_release(volatile unsigned int *addr,
 /* FIXME: Add compare_double_and_swap_double for the _ILP32 case.       */
 
 #ifdef _ILP32
+  /* Generalize first to define more AO_int_... primitives.     */
+# include "../../generalize.h"
 # include "../ao_t_is_int.h"
 #endif

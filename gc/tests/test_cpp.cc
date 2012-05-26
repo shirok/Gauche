@@ -40,15 +40,17 @@ few minutes to complete.
 
 #ifdef USE_STD_ALLOCATOR
 #   include "gc_allocator.h"
-#elif __GNUC__
-#   include "new_gc_alloc.h"
 #else
-#   include "gc_alloc.h"
+#   include "new_gc_alloc.h"
 #endif
 
 extern "C" {
 # include "private/gcconfig.h"
-  GC_API void GC_printf(const char *format, ...);
+
+# ifndef GC_API_PRIV
+#   define GC_API_PRIV GC_API
+# endif
+  GC_API_PRIV void GC_printf(const char * format, ...);
   /* Use GC private output to reach the same log file.  */
   /* Don't include gc_priv.h, since that may include Windows system     */
   /* header files that don't take kindly to this context.               */
@@ -215,11 +217,7 @@ int APIENTRY WinMain(
       xio = gc_allocator_ignore_off_page<int>().allocate(1);
       int **xptr = traceable_allocator<int *>().allocate(1);
 #   else
-#     ifdef __GNUC__
-          int *x = (int *)gc_alloc::allocate(sizeof(int));
-#     else
-          int *x = (int *)alloc::allocate(sizeof(int));
-#     endif
+      int *x = (int *)gc_alloc::allocate(sizeof(int));
 #   endif
     *x = 29;
 #   ifdef USE_STD_ALLOCATOR

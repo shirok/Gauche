@@ -56,14 +56,25 @@
 #   include <windows.h>
 # endif
 
-# ifdef GC_DLL
-#   ifdef GC_PRINT_VERBOSE_STATS
-#     define GC_print_stats VERBOSE
-#   else
-#     define GC_print_stats 0   /* Not exported from DLL */
-                                /* Redefine to 1 to generate output. */
-#   endif
+#ifdef GC_PRINT_VERBOSE_STATS
+# define print_stats VERBOSE
+# define INIT_PRINT_STATS /* empty */
+#else
+  /* Use own variable as GC_print_stats might not be exported.  */
+  static int print_stats = 0;
+# ifdef GC_READ_ENV_FILE
+    /* GETENV uses GC internal function in this case.   */
+#   define INIT_PRINT_STATS /* empty */
+# else
+#   define INIT_PRINT_STATS \
+        { \
+          if (0 != GETENV("GC_PRINT_VERBOSE_STATS")) \
+            print_stats = VERBOSE; \
+          else if (0 != GETENV("GC_PRINT_STATS")) \
+            print_stats = 1; \
+        }
 # endif
+#endif /* !GC_PRINT_VERBOSE_STATS */
 
 # ifdef PCR
 #   include "th/PCR_ThCrSec.h"
@@ -75,21 +86,56 @@
 #   include <pthread.h>
 # endif
 
+# if (!defined(THREADS) || !defined(HANDLE_FORK) \
+      || (defined(DARWIN) && defined(MPROTECT_VDB) \
+          && !defined(NO_INCREMENTAL) && !defined(MAKE_BACK_GRAPH))) \
+     && !defined(NO_TEST_HANDLE_FORK)
+#   define NO_TEST_HANDLE_FORK
+# endif
+
+# ifndef NO_TEST_HANDLE_FORK
+#   include <unistd.h>
+#   define INIT_FORK_SUPPORT GC_set_handle_fork(1)
+# else
+#   define INIT_FORK_SUPPORT /* empty */
+# endif
+
 # if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
     static CRITICAL_SECTION incr_cs;
 # endif
 
 # include <stdarg.h>
 
+#ifndef GC_ALPHA_VERSION
+# define GC_ALPHA_VERSION GC_TMP_ALPHA_VERSION
+#endif
+
+#define CHECH_GCLIB_VERSION \
+            if (GC_get_version() != ((GC_VERSION_MAJOR<<16) \
+                                    | (GC_VERSION_MINOR<<8) \
+                                    | GC_ALPHA_VERSION)) { \
+              GC_printf("libgc version mismatch\n"); \
+              exit(1); \
+            }
+
 /* Call GC_INIT only on platforms on which we think we really need it,  */
 /* so that we can test automatic initialization on the rest.            */
 #if defined(CYGWIN32) || defined (AIX) || defined(DARWIN) \
         || defined(THREAD_LOCAL_ALLOC) \
         || (defined(MSWINCE) && !defined(GC_WINMAIN_REDIRECT))
-#  define GC_COND_INIT() GC_INIT()
+#  define GC_OPT_INIT GC_INIT()
 #else
-#  define GC_COND_INIT()
+#  define GC_OPT_INIT /* empty */
 #endif
+
+#define GC_COND_INIT() \
+    INIT_FORK_SUPPORT; GC_OPT_INIT; CHECH_GCLIB_VERSION; INIT_PRINT_STATS
+
+#define CHECK_OUT_OF_MEMORY(p) \
+            if ((p) == NULL) { \
+              GC_printf("Out of memory\n"); \
+              exit(1); \
+            }
 
 /* Allocation Statistics.  Incremented without synchronization. */
 /* FIXME: We should be using synchronization.                   */
@@ -139,7 +185,7 @@ int realloc_count = 0;
 
 #else /* !AMIGA_FASTALLOC */
 
-# ifdef PCR
+# if defined(PCR) || defined(LINT2)
 #   define FAIL (void)abort()
 # else
 #   define FAIL ABORT("Test failed")
@@ -186,10 +232,7 @@ sexpr cons (sexpr x, sexpr y)
 
     stubborn_count++;
     r = (sexpr) GC_MALLOC_STUBBORN(sizeof(struct SEXPR) + my_extra);
-    if (r == 0) {
-        GC_printf("Out of memory\n");
-        exit(1);
-    }
+    CHECK_OUT_OF_MEMORY(r);
     for (p = (int *)r;
          ((char *)p) < ((char *)r) + my_extra + sizeof(struct SEXPR); p++) {
         if (*p) {
@@ -262,10 +305,7 @@ sexpr small_cons (sexpr x, sexpr y)
 
     collectable_count++;
     r = (sexpr) GC_MALLOC(sizeof(struct SEXPR));
-    if (r == 0) {
-        GC_printf("Out of memory\n");
-        exit(1);
-    }
+    CHECK_OUT_OF_MEMORY(r);
     r -> sexpr_car = x;
     r -> sexpr_cdr = y;
     return(r);
@@ -277,10 +317,7 @@ sexpr small_cons_uncollectable (sexpr x, sexpr y)
 
     uncollectable_count++;
     r = (sexpr) GC_MALLOC_UNCOLLECTABLE(sizeof(struct SEXPR));
-    if (r == 0) {
-        GC_printf("Out of memory\n");
-        exit(1);
-    }
+    CHECK_OUT_OF_MEMORY(r);
     r -> sexpr_car = x;
     r -> sexpr_cdr = (sexpr)(~(GC_word)y);
     return(r);
@@ -297,10 +334,7 @@ sexpr gcj_cons(sexpr x, sexpr y)
     r = (GC_word *) GC_GCJ_MALLOC(sizeof(struct SEXPR)
                                   + sizeof(struct fake_vtable*),
                                    &gcj_class_struct2);
-    if (r == 0) {
-        GC_printf("Out of memory\n");
-        exit(1);
-    }
+    CHECK_OUT_OF_MEMORY(r);
     result = (sexpr)(r + 1);
     result -> sexpr_car = x;
     result -> sexpr_cdr = y;
@@ -562,16 +596,19 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     f = (sexpr *)GC_MALLOC(4 * sizeof(sexpr));
     realloc_count++;
     f = (sexpr *)GC_REALLOC((void *)f, 6 * sizeof(sexpr));
+    CHECK_OUT_OF_MEMORY(f);
     f[5] = ints(1,17);
     collectable_count++;
     g = (sexpr *)GC_MALLOC(513 * sizeof(sexpr));
     realloc_count++;
     g = (sexpr *)GC_REALLOC((void *)g, 800 * sizeof(sexpr));
+    CHECK_OUT_OF_MEMORY(g);
     g[799] = ints(1,18);
     collectable_count++;
     h = (sexpr *)GC_MALLOC(1025 * sizeof(sexpr));
     realloc_count++;
     h = (sexpr *)GC_REALLOC((void *)h, 2000 * sizeof(sexpr));
+    CHECK_OUT_OF_MEMORY(h);
 #   ifdef GC_GCJ_SUPPORT
       h[1999] = gcj_ints(1,200);
       for (i = 0; i < 51; ++i)
@@ -633,8 +670,8 @@ void *GC_CALLBACK reverse_test_inner(void *data)
 #   ifndef THREADS
         a = 0;
 #   endif
-    *(volatile void **)&b = 0;
-    *(volatile void **)&c = 0;
+    *(sexpr volatile *)&b = 0;
+    *(sexpr volatile *)&c = 0;
     return 0;
 }
 
@@ -709,25 +746,23 @@ tn * mktree(int n)
     collectable_count++;
 #   if defined(MACOS)
         /* get around static data limitations. */
-        if (!live_indicators)
-                live_indicators =
-                    (GC_word*)NewPtrClear(MAX_FINALIZED * sizeof(GC_word));
         if (!live_indicators) {
-          GC_printf("Out of memory\n");
-          exit(1);
+          live_indicators =
+                    (GC_word*)NewPtrClear(MAX_FINALIZED * sizeof(GC_word));
+          CHECK_OUT_OF_MEMORY(live_indicators);
         }
 #   endif
     if (n == 0) return(0);
-    if (result == 0) {
-        GC_printf("Out of memory\n");
-        exit(1);
-    }
+    CHECK_OUT_OF_MEMORY(result);
     result -> level = n;
     result -> lchild = mktree(n-1);
     result -> rchild = mktree(n-1);
     if (counter++ % 17 == 0 && n >= 2) {
-        tn * tmp = result -> lchild -> rchild;
+        tn * tmp;
 
+        CHECK_OUT_OF_MEMORY(result->lchild);
+        tmp = result -> lchild -> rchild;
+        CHECK_OUT_OF_MEMORY(result->rchild);
         result -> lchild -> rchild = result -> rchild -> lchild;
         result -> rchild -> lchild = tmp;
     }
@@ -827,6 +862,7 @@ void * alloc8bytes(void)
     if (my_free_list_ptr == 0) {
         uncollectable_count++;
         my_free_list_ptr = GC_NEW_UNCOLLECTABLE(void *);
+        CHECK_OUT_OF_MEMORY(my_free_list_ptr);
         if (pthread_setspecific(fl_key, my_free_list_ptr) != 0) {
             GC_printf("pthread_setspecific failed\n");
             FAIL;
@@ -835,10 +871,7 @@ void * alloc8bytes(void)
     my_free_list = *my_free_list_ptr;
     if (my_free_list == 0) {
         my_free_list = GC_malloc_many(8);
-        if (my_free_list == 0) {
-            GC_printf("alloc8bytes out of memory\n");
-            FAIL;
-        }
+        CHECK_OUT_OF_MEMORY(my_free_list);
     }
     *my_free_list_ptr = GC_NEXT(my_free_list);
     GC_NEXT(my_free_list) = 0;
@@ -942,6 +975,7 @@ void typed_test(void)
     for (i = 0; i < 4000; i++) {
         collectable_count++;
         new = (GC_word *) GC_malloc_explicitly_typed(4 * sizeof(GC_word), d1);
+        CHECK_OUT_OF_MEMORY(new);
         if (0 != new[0] || 0 != new[1]) {
             GC_printf("Bad initialization by GC_malloc_explicitly_typed\n");
             FAIL;
@@ -951,17 +985,20 @@ void typed_test(void)
         old = new;
         collectable_count++;
         new = (GC_word *) GC_malloc_explicitly_typed(4 * sizeof(GC_word), d2);
+        CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
         collectable_count++;
         new = (GC_word *) GC_malloc_explicitly_typed(33 * sizeof(GC_word), d3);
+        CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
         collectable_count++;
         new = (GC_word *) GC_calloc_explicitly_typed(4, 2 * sizeof(GC_word),
                                                      d1);
+        CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
@@ -973,11 +1010,12 @@ void typed_test(void)
           new = (GC_word *) GC_calloc_explicitly_typed(1001,
                                                        3 * sizeof(GC_word),
                                                        d2);
-          if (0 != new[0] || 0 != new[1]) {
+          if (new && (0 != new[0] || 0 != new[1])) {
             GC_printf("Bad initialization by GC_malloc_explicitly_typed\n");
             FAIL;
           }
         }
+        CHECK_OUT_OF_MEMORY(new);
         new[0] = 17;
         new[1] = (GC_word)old;
         old = new;
@@ -1151,8 +1189,14 @@ void run_one_test(void)
 #   endif /* DBG_HDRS_ALL */
     /* Test floating point alignment */
         collectable_count += 2;
-        *(double *)GC_MALLOC(sizeof(double)) = 1.0;
-        *(double *)GC_MALLOC(sizeof(double)) = 1.0;
+        {
+          double *dp = GC_MALLOC(sizeof(double));
+          CHECK_OUT_OF_MEMORY(dp);
+          *dp = 1.0;
+          dp = GC_MALLOC(sizeof(double));
+          CHECK_OUT_OF_MEMORY(dp);
+          *dp = 1.0;
+        }
     /* Test size 0 allocation a bit more */
         {
            size_t i;
@@ -1188,7 +1232,7 @@ void run_one_test(void)
     /* Repeated list reversal test. */
         GET_TIME(start_time);
         reverse_test();
-        if (GC_print_stats) {
+        if (print_stats) {
           GET_TIME(reverse_time);
           time_diff = MS_TIME_DIFF(reverse_time, start_time);
           GC_log_printf("-------------Finished reverse_test at time %u (%p)\n",
@@ -1196,7 +1240,7 @@ void run_one_test(void)
         }
 #   ifndef DBG_HDRS_ALL
       typed_test();
-      if (GC_print_stats) {
+      if (print_stats) {
         GET_TIME(typed_time);
         time_diff = MS_TIME_DIFF(typed_time, start_time);
         GC_log_printf("-------------Finished typed_test at time %u (%p)\n",
@@ -1204,7 +1248,7 @@ void run_one_test(void)
       }
 #   endif /* DBG_HDRS_ALL */
     tree_test();
-    if (GC_print_stats) {
+    if (print_stats) {
       GET_TIME(tree_time);
       time_diff = MS_TIME_DIFF(tree_time, start_time);
       GC_log_printf("-------------Finished tree_test at time %u (%p)\n",
@@ -1212,7 +1256,7 @@ void run_one_test(void)
     }
     /* Run reverse_test a second time, so we hopefully notice corruption. */
       reverse_test();
-      if (GC_print_stats) {
+      if (print_stats) {
         GET_TIME(reverse_time);
         time_diff = MS_TIME_DIFF(reverse_time, start_time);
         GC_log_printf(
@@ -1222,17 +1266,17 @@ void run_one_test(void)
     /* GC_allocate_ml and GC_need_to_lock are no longer exported, and   */
     /* AO_fetch_and_add1() may be unavailable to update a counter.      */
     (void)GC_call_with_alloc_lock(inc_int_counter, &n_tests);
-#   if defined(THREADS) && defined(HANDLE_FORK)
+#   ifndef NO_TEST_HANDLE_FORK
       if (fork() == 0) {
         GC_gcollect();
         tiny_reverse_test(0);
         GC_gcollect();
-        if (GC_print_stats)
+        if (print_stats)
           GC_log_printf("Finished a child process\n");
         exit(0);
       }
 #   endif
-    if (GC_print_stats)
+    if (print_stats)
       GC_log_printf("Finished %p\n", &start_time);
 }
 
@@ -1262,7 +1306,7 @@ void check_heap_stats(void)
 #     if CPP_WORDSZ == 64
         max_heap_sz = 23000000;
 #     else
-        max_heap_sz = 15000000;
+        max_heap_sz = 16000000;
 #     endif
 #   endif
 #   ifdef GC_DEBUG
@@ -1288,7 +1332,7 @@ void check_heap_stats(void)
 #   endif
                 GC_invoke_finalizers();
       }
-      if (GC_print_stats) {
+      if (print_stats) {
           GC_log_printf("Primordial thread stack bottom: %p\n",
                         GC_stackbottom);
       }
@@ -1453,7 +1497,11 @@ void GC_CALLBACK warn_proc(char *msg, GC_word p)
 #   ifdef MSWIN32
       GC_win32_free_heap();
 #   endif
-    return(0);
+#   ifdef RTEMS
+      exit(0);
+#   else
+      return(0);
+#   endif
 }
 # endif
 

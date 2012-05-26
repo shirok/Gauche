@@ -1,3 +1,251 @@
+[7.2]
+
+2012-05-11  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac, README: Bump version to 7.2 (final).
+	* configure: Regenerate.
+
+2012-05-01  H.J. Lu <hjl.tools@gmail.com>
+
+	* src/atomic_ops/sysdeps/gcc/x86_64.h (AO_fetch_and_add_full,
+	AO_and_full, AO_or_full, AO_xor_full, AO_compare_and_swap_full):
+	Remove 'q' suffix in asm instruction.
+
+2012-04-16  H.J. Lu <hjl.tools@gmail.com>
+
+	* src/atomic_ops/sysdeps/gcc/x86_64.h (AO_T_IS_INT): Defined
+	for x32.
+
+2012-03-28  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (PICFLAG): Adjust AC_MSG_CHECKING message; report
+	"none" result if no -fPIC is needed (for Cygwin/MinGW); determine
+	whether GCC -fPIC option causes __PIC__ macro definition; pass
+	-D __PIC__ to PICFLAG (instead of CFLAGS) only if not defined
+	automatically in case -fPIC specified; update comment.
+
+2012-03-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops/sysdeps/standard_ao_double_t.h: Do not use __m128
+	if GCC pre-v4 (at least, xmmintrin.h is missing in gcc-3.4.3-x86_64
+	included in Solaris 10 distribution).
+
+2012-03-26  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops/sysdeps/standard_ao_double_t.h: Fix a typo in
+	comment.
+
+2012-03-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure: Regenerate.
+	* Makefile.in: Likewise.
+
+2011-08-14  Petter Urkedal <paurkedal@gmail.com>
+
+	* atomic_ops.pc.in -> pkgconfig/atomic_ops.pc.in: Moved.
+	* pkgconfig/atomic_ops-uninstalled.pc.in: Added developer version.
+	* configure.ac, Makefile.am: Update accordingly.
+
+2011-08-04  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
+	* atomic_ops.pc.in: new file.
+	* Makefile.am (pkgconfigdir, pkgconfig_DATA): new items.
+	* configure.ac (AC_CONFIG_FILES): add atomic_ops.pc.
+	* configure, Makefile.in: Regenerate.
+
+2012-03-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops/sysdeps/gcc/x86.h
+	(AO_compare_double_and_swap_double_full): Use EDI register for
+	"new_val1" argument instead of a memory operand and use XCHG assembler
+	instruction instead of push/pop in case of PIC mode (to workaround
+	a bug in GCC 4.6.1); update the comment.
+
+2012-03-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops_stack.c (AO_stack_push_release): Make "cptr" local
+	variable volatile to workaround a bug in clang-1.1/x86 compiler; add
+	comment.
+
+2012-03-07  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops/sysdeps/gcc/x86.h
+	(AO_compare_double_and_swap_double_full): Fix argument name in the
+	comment.
+	* src/atomic_ops/sysdeps/sunc/x86.h
+	(AO_compare_double_and_swap_double_full): Likewise.
+
+2012-03-04  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops_malloc.h (AO_malloc_enable_mmap): Fix a typo in the
+	comment.
+
+2012-01-19  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test_atomic.c (main): Put "void" keyword into the arguments
+	specification of the function prototype.
+	* tests/test_stack.c (main): Likewise.
+
+2011-12-16  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops/sysdeps/gcc/arm.h (__ARM_ARCH_7__, __ARM_ARCH_7A__):
+	Recognize to override __ARM_ARCH_5xx__ macros (since Android NDK GCC
+	defines both for armv7); update comment.
+
+2011-11-29  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops/sysdeps/gcc/hexagon.h: Include generalize.h file
+	before ao_t_is_int.h one.
+	* src/atomic_ops/sysdeps/gcc/ia64.h: Likewise.
+	* src/atomic_ops/sysdeps/hpc/ia64.h: Likewise.
+
+2011-11-03  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops/generalize-small.template
+	(AO_XSIZE_fetch_and_add_full, AO_XSIZE_fetch_and_add_acquire,
+	AO_XSIZE_fetch_and_add_release): Change return type from AO_t to
+	XCTYPE.
+	* src/atomic_ops/generalize-small.h: Regenerate.
+
+2011-10-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops/sysdeps/gcc/mips.h (AO_compare_and_swap_full):
+	Change "result" local variable type from AO_t to int.
+	* src/atomic_ops/sysdeps/gcc/powerpc.h (AO_compare_and_swap_full):
+	Likewise.
+
+2011-10-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test_atomic_include.h: Regenerate.
+
+2011-10-24  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test_atomic_include.template (test_atomicXX): Add action for
+	the missing AO_compare_and_swap primitive.
+
+2011-10-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops.c (init_lock): Define only unless AO_USE_NO_SIGNALS.
+
+2011-10-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* doc/README.txt: Fix a typo.
+
+2011-10-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops/sysdeps/gcc/alpha.h (AO_compare_and_swap): Cast
+	returned value to int.
+
+2011-10-17  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops/sysdeps/Makefile.in: Regenerate.
+
+2011-10-17  Ivan Maidanski <ivmai@mail.ru> (really Thorsten Glaser)
+
+	* src/atomic_ops/sysdeps/gcc/m68k.h (AO_test_and_set_full): Cast the
+	returned value.
+
+2011-10-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops/sysdeps/gcc/s390.h (AO_compare_and_swap_full):
+	Change return from AO_t to int.
+	* src/atomic_ops/sysdeps/ibmc/powerpc.h (AO_compare_and_swap_acquire,
+	AO_compare_and_swap_release, AO_compare_and_swap_full): Likewise.
+
+2011-10-11  Ivan Maidanski <ivmai@mail.ru> (really Linas Vepstas)
+
+	* src/atomic_ops/sysdeps/Makefile.am (nobase_private_HEADERS): Add
+	hexagon.h.
+	* src/atomic_ops.h: Include hexagon.h file.
+	* src/atomic_ops/sysdeps/gcc/hexagon.h: New file.
+
+2011-09-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops.c
+	(AO_non_posix_implementation_is_entirely_in_headers): Make external.
+
+2011-09-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure: Regenerate.
+	* tests/Makefile.in: Ditto.
+	* tests/test_atomic_include.h: Ditto.
+
+2011-09-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (PICFLAG, THREADDLLIBS): Define as empty for MinGW.
+	* configure.ac (have_pthreads): New definition (set to true unless
+	MinGW).
+	* configure.ac (HAVE_PTHREAD_H): New AM conditional (based on
+	have_pthreads value).
+	* tests/Makefile.am (test_atomic_pthreads_SOURCES,
+	test_atomic_pthreads_CPPFLAGS, test_atomic_pthreads_LDADD): Define
+	only if HAVE_PTHREAD_H.
+	* tests/Makefile.am (TESTS): Don't include test_atomic_pthreads unless
+	HAVE_PTHREAD_H.
+	* tests/Makefile.am (check_PROGRAMS): Define to TESTS value.
+
+2011-09-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac (PICFLAG): Set to -fPIC if GCC but not Gygwin.
+
+2011-09-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test_malloc.c (LIST_LENGTH, LARGE_OBJ_SIZE): Define to
+	a smaller value unless HAVE_MMAP.
+
+2011-09-21  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/test_malloc.c (cons, run_one_test): Call exit with a non-zero
+	code (instead of abort) if out of memory.
+	* tests/test_stack.c (add_elements): Likewise.
+	* tests/test_stack.c (main): Use a distinct exit code if a thread
+	creation failed.
+
+2011-09-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* src/atomic_ops/sysdeps/emul_cas.h: Fix a typo (replace AO_FORCE_CAS
+	with AO_REQUIRE_CAS in a comment).
+
+2011-09-08  Ivan Maidanski <ivmai@mail.ru> (really Petter Urkedal)
+
+	* src/Makefile.am, tests/Makefile.am: Set compiler include paths
+	to $(top_builddir)/src and $(top_srcdir)/src.
+	* src/Makefile.in: Regenerate.
+	* tests/Makefile.in: Ditto.
+
+2011-07-14  Ivan Maidanski <ivmai@mail.ru>
+
+	* tests/list_atomic.template (list_atomicXX): Remove "addr" local
+	variable (use "&val" instead); initialize "newval" and "oldval"
+	local variables; rename "tsaddr" local variable to "ts" one.
+	* tests/list_atomic.template (list_atomicXX): Fix
+	AO_test_and_setXX call (pass address instead of value).
+	* tests/list_atomic.template: Expand all tabs to spaces; remove
+	trailing spaces at EOLn.
+	* tests/run_parallel.inc: Ditto.
+	* tests/test_atomic.c: Ditto.
+	* tests/list_atomic.c: Regenerate.
+	* tests/run_parallel.inc (AO_PTRDIFF_T): New macro.
+	* tests/run_parallel.inc (tramp): Cast between pointer and integer
+	types via casting to AO_PTRDIFF_T.
+	* tests/test_atomic.c (add1sub1_thr, acqrel_thr): Ditto.
+	* tests/run_parallel.inc (run_parallel): Adjust printf format
+	specifiers for DWORD parameters.
+	* tests/test_stack.c: Skip test if no pthreads.
+
+2011-06-27  Ivan Maidanski <ivmai@mail.ru> (really Jeremy Huddleston)
+
+	* src/atomic_ops/sysdeps/gcc/x86.h (AO_test_and_set_full):
+	Explicitly cast 0xff to unsigned char (otherwise LLVM v2.7 GAS
+	reports an error); don't recognize AO_XCHGB_RET_WORD.
+	* src/atomic_ops/sysdeps/gcc/x86_64.h (AO_test_and_set_full):
+	Ditto.
+
+2011-06-15  Ivan Maidanski <ivmai@mail.ru>
+
+	* configure.ac, README: Change to version 7.2alpha7.
+	* configure: Regenerate.
+
 [7.2alpha6]
 
 2011-06-14  Ivan Maidanski  <ivmai@mail.ru>

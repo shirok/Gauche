@@ -53,13 +53,14 @@
 #endif /* !__thumb__ */
 
 /* NEC LE-IT: gcc has no way to easily check the arm architecture       */
-/* but it defines only one of __ARM_ARCH_x__ to be true.                */
+/* but it defines only one (or several) of __ARM_ARCH_x__ to be true.   */
 #if !defined(__ARM_ARCH_2__) && !defined(__ARM_ARCH_3__) \
     && !defined(__ARM_ARCH_3M__) && !defined(__ARM_ARCH_4__) \
-    && !defined(__ARM_ARCH_4T__) && !defined(__ARM_ARCH_5__) \
-    && !defined(__ARM_ARCH_5E__) && !defined(__ARM_ARCH_5T__) \
-    && !defined(__ARM_ARCH_5TE__) && !defined(__ARM_ARCH_5TEJ__) \
-    && !defined(__ARM_ARCH_6M__)
+    && !defined(__ARM_ARCH_4T__) \
+    && ((!defined(__ARM_ARCH_5__) && !defined(__ARM_ARCH_5E__) \
+         && !defined(__ARM_ARCH_5T__) && !defined(__ARM_ARCH_5TE__) \
+         && !defined(__ARM_ARCH_5TEJ__) && !defined(__ARM_ARCH_6M__)) \
+        || defined(__ARM_ARCH_7__) || defined(__ARM_ARCH_7A__))
 
 #include "../standard_ao_double_t.h"
 

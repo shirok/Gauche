@@ -86,7 +86,7 @@ AO_compare_and_swap_release(volatile AO_t *addr, AO_t old, AO_t new_val) {
 
 AO_INLINE int
 AO_compare_and_swap_full(volatile AO_t *addr, AO_t old, AO_t new_val) {
-  AO_t result;
+  int result;
   AO_nop_full();
   result = AO_compare_and_swap(addr, old, new_val);
   AO_nop_full();

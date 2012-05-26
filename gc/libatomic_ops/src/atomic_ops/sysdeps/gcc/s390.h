@@ -40,8 +40,8 @@
 /* It appears that certain BCR instructions have that effect.   */
 /* Presumably they're cheaper than CS?                          */
 
-AO_INLINE AO_t AO_compare_and_swap_full(volatile AO_t *addr,
-                                        AO_t old, AO_t new_val)
+AO_INLINE int AO_compare_and_swap_full(volatile AO_t *addr,
+                                       AO_t old, AO_t new_val)
 {
   int retval;
   __asm__ __volatile__ (

@@ -47,7 +47,7 @@ AO_fetch_and_add_full (volatile AO_t *p, AO_t incr)
 {
   AO_t result;
 
-  __asm__ __volatile__ ("lock; xaddq %0, %1" :
+  __asm__ __volatile__ ("lock; xadd %0, %1" :
                         "=r" (result), "=m" (*p) : "0" (incr), "m" (*p)
                         : "memory");
   return result;
@@ -93,7 +93,7 @@ AO_int_fetch_and_add_full (volatile unsigned int *p, unsigned int incr)
 AO_INLINE void
 AO_or_full (volatile AO_t *p, AO_t incr)
 {
-  __asm__ __volatile__ ("lock; orq %1, %0" :
+  __asm__ __volatile__ ("lock; or %1, %0" :
                         "=m" (*p) : "r" (incr), "m" (*p) : "memory");
 }
 #define AO_HAVE_or_full
@@ -118,7 +118,7 @@ AO_compare_and_swap_full(volatile AO_t *addr, AO_t old, AO_t new_val)
     return (int)__sync_bool_compare_and_swap(addr, old, new_val);
 # else
     char result;
-    __asm__ __volatile__("lock; cmpxchgq %3, %0; setz %1"
+    __asm__ __volatile__("lock; cmpxchg %3, %0; setz %1"
                          : "=m" (*addr), "=a" (result)
                          : "m" (*addr), "r" (new_val), "a" (old) : "memory");
     return (int) result;
@@ -173,3 +173,7 @@ AO_compare_double_and_swap_double_full(volatile AO_double_t *addr,
 #endif /* AO_WEAK_DOUBLE_CAS_EMULATION */
 
 #endif /* AO_CMPXCHG16B_AVAILABLE */
+
+#ifdef __ILP32__
+# define AO_T_IS_INT
+#endif

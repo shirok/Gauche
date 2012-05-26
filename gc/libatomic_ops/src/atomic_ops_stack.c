@@ -242,7 +242,13 @@ void AO_stack_push_release(AO_stack_t *list, AO_t *element)
 
 AO_t *AO_stack_pop_acquire(AO_stack_t *list)
 {
-    AO_t *cptr;
+#   ifdef __clang__
+      AO_t *volatile cptr;
+                        /* Use volatile to workaround a bug in          */
+                        /* clang-1.1/x86 causing test_stack failure.    */
+#   else
+      AO_t *cptr;
+#   endif
     AO_t next;
     AO_t cversion;
 

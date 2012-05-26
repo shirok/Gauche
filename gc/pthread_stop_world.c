@@ -271,6 +271,10 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context)
 
 STATIC void GC_restart_handler(int sig)
 {
+# if defined(DEBUG_THREADS) || defined(GC_NETBSD_THREADS_WORKAROUND)
+    int old_errno = errno;      /* Preserve errno value.        */
+# endif
+
   if (sig != SIG_THR_RESTART) ABORT("Bad signal in suspend_handler");
 
 # ifdef GC_NETBSD_THREADS_WORKAROUND
@@ -288,6 +292,9 @@ STATIC void GC_restart_handler(int sig)
 # ifdef DEBUG_THREADS
     GC_log_printf("In GC_restart_handler for 0x%x\n",
                   (unsigned)pthread_self());
+# endif
+# if defined(DEBUG_THREADS) || defined(GC_NETBSD_THREADS_WORKAROUND)
+    errno = old_errno;
 # endif
 }
 
@@ -816,14 +823,23 @@ GC_INNER void GC_stop_init(void)
         ABORT("sem_init failed");
 #   endif
 
-    act.sa_flags = SA_RESTART
+#   ifdef SA_RESTART
+      act.sa_flags = SA_RESTART
+#   else
+      act.sa_flags = 0
+#   endif
 #   ifdef SA_SIGINFO
-        | SA_SIGINFO
+                     | SA_SIGINFO
 #   endif
         ;
     if (sigfillset(&act.sa_mask) != 0) {
         ABORT("sigfillset() failed");
     }
+#   ifdef GC_RTEMS_PTHREADS
+      if(sigprocmask(SIG_UNBLOCK, &act.sa_mask, NULL) != 0) {
+        ABORT("rtems sigprocmask() failed");
+      }
+#   endif
     GC_remove_allowed_signals(&act.sa_mask);
     /* SIG_THR_RESTART is set in the resulting mask.            */
     /* It is unmasked by the handler when necessary.            */

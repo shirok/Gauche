@@ -716,20 +716,48 @@ GC_INNER void GC_set_fl_marks(ptr_t q)
    }
 }
 
-#ifdef GC_ASSERTIONS
-  /* Check that all mark bits for the free list whose first entry is q  */
-  /* are set.                                                           */
-  void GC_check_fl_marks(ptr_t q)
+#if defined(GC_ASSERTIONS) && defined(THREADS) && defined(THREAD_LOCAL_ALLOC)
+  /* Check that all mark bits for the free list whose first entry is    */
+  /* (*pfreelist) are set.  Check skipped if points to a special value. */
+  void GC_check_fl_marks(void **pfreelist)
   {
-   ptr_t p;
-   for (p = q; p != 0; p = obj_link(p)) {
-       if (!GC_is_marked(p)) {
-           GC_err_printf("Unmarked object %p on list %p\n", p, q);
-           ABORT("Unmarked local free list entry");
-       }
-   }
+#   ifdef AO_HAVE_load_acquire_read
+      AO_t *list = (AO_t *)AO_load_acquire_read((AO_t *)pfreelist);
+                /* Atomic operations are used because the world is running. */
+      AO_t *prev;
+      AO_t *p;
+
+      if ((word)list <= HBLKSIZE) return;
+
+      prev = (AO_t *)pfreelist;
+      for (p = list; p != NULL;) {
+        AO_t *next;
+
+        if (!GC_is_marked((ptr_t)p)) {
+          GC_err_printf("Unmarked object %p on list %p\n",
+                        (void *)p, (void *)list);
+          ABORT("Unmarked local free list entry");
+        }
+
+        /* While traversing the free-list, it re-reads the pointer to   */
+        /* the current node before accepting its next pointer and       */
+        /* bails out if the latter has changed.  That way, it won't     */
+        /* try to follow the pointer which might be been modified       */
+        /* after the object was returned to the client.  It might       */
+        /* perform the mark-check on the just allocated object but      */
+        /* that should be harmless.                                     */
+        next = (AO_t *)AO_load_acquire_read(p);
+        if (AO_load(prev) != (AO_t)p)
+          break;
+        prev = p;
+        p = next;
+      }
+#   else
+      /* FIXME: Not implemented (just skipped). */
+      (void)pfreelist;
+#   endif
   }
-#endif
+#endif /* GC_ASSERTIONS && THREAD_LOCAL_ALLOC */
 
 /* Clear all mark bits for the free list whose first entry is q */
 /* Decrement GC_bytes_found by number of bytes on free list.    */
