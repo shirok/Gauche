@@ -1,5 +1,11 @@
 2012-05-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/liblist.scm (every): In multi-arg case, the return value
+	  should have been the first non-false return value of PROC but
+	  it was #t.  Patch from koguro.
+	* lib/util/stream.scm (stream-every): Similar fix as above for
+	  the consistency.  Patch from koguro.
+
 	* src/gauche/vm.h, src/signal.c (SCM_NSIG): On FreeBSD, NSIG doesn't
 	  count RT signals, having caused signal.c overrun when setting
 	  a handler for SIGRT* signals.  Thanks to Vitaly Magerya for

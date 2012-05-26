@@ -576,10 +576,14 @@
            (apply stream-any pred (map stream-cdr strs)))))
 
 (define (stream-every pred . strs)
-  (let loop ((strs strs))
-    (or (find stream-null? strs)
-        (and (apply pred (map stream-car strs))
-             (loop (map stream-cdr strs))))))
+  (or (any stream-null? strs)
+      (let loop ([strs strs])
+        (cond [(apply pred (map stream-car strs))
+               => (^r (let1 cdrs (map stream-cdr strs)
+                        (if (any stream-null? cdrs)
+                          r
+                          (loop cdrs))))]
+              [else #f]))))
 
 (define (stream-index pred . strs)
   (let loop ((strs strs) (pos 0))

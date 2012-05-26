@@ -800,6 +800,66 @@
 (test* "stream-count" 4
        (stream-count odd? (stream-iota 8)))
 
+(test* "stream-any" #f
+       (stream-any even? stream-null))
+
+(test* "stream-any" #f
+       (stream-any even? (list->stream '(1 3))))
+
+(test* "stream-any" #t
+       (stream-any even? (list->stream '(1 2))))
+
+(test* "stream-any" 1
+       (stream-any string->number (list->stream '("1" "a"))))
+
+(test* "stream-any" 1
+       (stream-any string->number (list->stream '("1" "2"))))
+
+(test* "stream-any" 1
+       (stream-any string->number
+                   (list->stream '("1" "2"))
+                   (list->stream '(10 10))))
+
+(test* "stream-any" 1
+       (stream-any string->number
+                   (list->stream '("1" "2"))
+                   (list->stream '(10))))
+
+(test* "stream-any" #f
+       (stream-any string->number
+                   (list->stream '("1" "2"))
+                   (list->stream '())))
+
+(test* "stream-every" #t
+       (stream-every odd? stream-null))
+
+(test* "stream-every" #t
+       (stream-every odd? (list->stream '(1 3))))
+
+(test* "stream-every" #f
+       (stream-every odd? (list->stream '(1 2))))
+
+(test* "stream-every" #f
+       (stream-every string->number (list->stream '("1" "a"))))
+
+(test* "stream-every" 2
+       (stream-every string->number (list->stream '("1" "2"))))
+
+(test* "stream-every" 2
+       (stream-every string->number
+                     (list->stream '("1" "2"))
+                     (list->stream '(10 10))))
+
+(test* "stream-every" 1
+       (stream-every string->number
+                     (list->stream '("1" "2"))
+                     (list->stream '(10))))
+
+(test* "stream-every" #t
+       (stream-every string->number
+                   (list->stream '("1" "2"))
+                   (list->stream '())))
+
 ;;-----------------------------------------------
 (test-section "util.toposort")
 (use util.toposort)

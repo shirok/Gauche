@@ -167,6 +167,44 @@
 (test* "delete-duplicates!" '("A" "b" "c" "d" "e")
        (delete-duplicates! '("A" "b" "a" "B" "c" "d" "a" "e") string-ci=?))
 
+(test* "any" #f (any even? '()))
+
+(test* "any" #f (any even? '(1 3)))
+
+(test* "any" #t (any even? '(1 2)))
+
+(test* "any" 1 (any string->number '("1" "a")))
+
+(test* "any" 1 (any string->number '("1" "2")))
+
+(test* "any" 1
+       (any string->number '("1" "2") '(10 10)))
+
+(test* "any" 1
+       (any string->number '("1" "2") '(10)))
+
+(test* "any" #f
+       (any string->number '("1" "2") '()))
+
+(test* "every" #t (every odd? '()))
+
+(test* "every" #t (every odd? '(1 3)))
+
+(test* "every" #f (every odd? '(1 2)))
+
+(test* "every" #f (every string->number '("1" "a")))
+
+(test* "every" 2 (every string->number '("1" "2")))
+
+(test* "every" 2
+       (every string->number '("1" "2") '(10 10)))
+
+(test* "every" 1
+       (every string->number '("1" "2") '(10)))
+
+(test* "every" #t
+       (every string->number '("1" "2") '()))
+
 ;;--------------------------------------------------------------------------
 (test-section "take and drop")
 

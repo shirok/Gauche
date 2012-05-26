@@ -352,11 +352,16 @@
           (cond [(null-list? tail) (pred head)] ; tail call
                 [(not (pred head)) #f]
                 [else (loop (car tail) (cdr tail))])))
-    (let loop ([liss (cons lis more)])
-      (receive (cars cdrs) ((with-module gauche.internal %zip-nary-args) liss)
-        (cond [(not cars)]
-              [(not (apply pred cars)) #f]
-              [else (loop cdrs)])))))
+    (receive (heads tails)
+        ((with-module gauche.internal %zip-nary-args) (cons lis more))
+      (or (not heads)
+          (let loop ([heads heads] [tails tails])
+            (receive (next-heads next-tails)
+                ((with-module gauche.internal %zip-nary-args) tails)
+              (if next-heads
+                  (and (apply pred heads)
+                       (loop next-heads next-tails))
+                  (apply pred heads))))))))
 
 (define (filter pred lis)
   (let loop ([lis lis] [r '()])
