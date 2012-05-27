@@ -73,33 +73,76 @@
 (test* "string-join" "foo::bar::baz"
        (string-join '("foo" "bar" "baz") "::" 'strict-infix))
 
-(test* "string-scan" 3 (string-scan "abcdefghi" "def"))
-(test* "string-scan" 3 (string-scan "abcdefghi" "def" 'index))
-(test* "string-scan" "abc" (string-scan "abcdefghi" "def" 'before))
-(test* "string-scan" "ghi" (string-scan "abcdefghi" "def" 'after))
-(test* "string-scan" '("abc" "defghi")
-       (receive r (string-scan "abcdefghi" "def" 'before*) r))
-(test* "string-scan" '("abcdef" "ghi")
-       (receive r (string-scan "abcdefghi" "def" 'after*) r))
-(test* "string-scan" '("abc" "ghi")
-       (receive r (string-scan "abcdefghi" "def" 'both) r))
+(let ()
+  (define (test-string-scan out s1 s2 . opt)
+    (if (pair? out)
+      (begin
+        (test* "string-scan" (car out) (apply string-scan s1 s2 opt))
+        (test* "string-scan-right" (cadr out)
+               (apply string-scan-right s1 s2 opt)))
+      (apply test-string-scan (list out out) s1 s2 opt)))
+  (define (test-string-scan2 out1 out2 s1 s2 . opt)
+    (if (pair? out1)
+      (begin
+        (test* "string-scan" (list (car out1) (car out2))
+               (receive r (apply string-scan s1 s2 opt) r))
+        (test* "string-scan-right" (list (cadr out1) (cadr out2))
+               (receive r (apply string-scan-right s1 s2 opt) r)))
+      (apply test-string-scan2 (list out1 out1) (list out2 out2) s1 s2 opt)))
 
-(test* "string-scan" 4 (string-scan "abcdefghi" #\e))
-(test* "string-scan" "abcd" (string-scan "abcdefghi" #\e 'before))
-(test* "string-scan" "fghi" (string-scan "abcdefghi" #\e 'after))
-(test* "string-scan" '("abcd" "efghi")
-       (receive r (string-scan "abcdefghi" #\e 'before*) r))
-(test* "string-scan" '("abcde" "fghi")
-       (receive r (string-scan "abcdefghi" #\e 'after*) r))
-(test* "string-scan" '("abcd" "fghi")
-       (receive r (string-scan "abcdefghi" #\e 'both) r))
+  (test-string-scan 3 "abcdefghi" "def")
+  (test-string-scan 3 "abcdefghi" "def" 'index)
+  (test-string-scan "abc" "abcdefghi" "def" 'before)
+  (test-string-scan "ghi" "abcdefghi" "def" 'after)
+  (test-string-scan2 "abc" "defghi" "abcdefghi" "def" 'before*)
+  (test-string-scan2 "abcdef" "ghi" "abcdefghi" "def" 'after*)
+  (test-string-scan2 "abc" "ghi" "abcdefghi" "def" 'both)
 
-(test* "string-scan (boyer-moore)" 216
-       (string-scan "abracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabr"
-                    "abracadabra"))
+  (test-string-scan 4 "abcdefghi" #\e)
+  (test-string-scan "abcd" "abcdefghi" #\e 'before)
+  (test-string-scan "fghi" "abcdefghi" #\e 'after)
+  (test-string-scan2 "abcd" "efghi" "abcdefghi" #\e 'before*)
+  (test-string-scan2 "abcde" "fghi" "abcdefghi" #\e 'after*)
+  (test-string-scan2 "abcd" "fghi" "abcdefghi" #\e 'both)
 
-(test* "string-scan (special case)" 0
-       (string-scan "abakjrgaker" ""))
+  ;; this tests boyer-moore 
+  (test-string-scan 216
+                    "abracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabr"
+                    "abracadabra")
+
+  ;; results differ between leftmost and rightmost
+  (test-string-scan '(1 8) "abracadabra" "br")
+  (test-string-scan '("acadabra" "a") "abracadabra" "br" 'after)
+  (test-string-scan '("a" "abracada") "abracadabra" "br" 'before)
+  (test-string-scan2 '("abr" "abracadabr") '("acadabra" "a")
+                     "abracadabra" "br" 'after*)
+  (test-string-scan2 '("a" "abracada") '("bracadabra" "bra")
+                     "abracadabra" "br" 'before*)
+  (test-string-scan2 '("a" "abracada") '("acadabra" "a")
+                     "abracadabra" "br" 'both)
+
+  ;; edge case
+  (test-string-scan '(0 11) "abakjrgaker" "")
+  (test-string-scan '("abakjrgaker" "") "abakjrgaker" "" 'after)
+  (test-string-scan '("" "abakjrgaker") "abakjrgaker" "" 'before)
+  (test-string-scan2 '("" "abakjrgaker") '("abakjrgaker" "")
+                     "abakjrgaker" "" 'after*)
+  (test-string-scan2 '("" "abakjrgaker") '("abakjrgaker" "")
+                     "abakjrgaker" "" 'before*)
+  (test-string-scan2 '("" "abakjrgaker") '("abakjrgaker" "")
+                     "abakjrgaker" "" 'both)
+
+  ;; incomplete strings
+  (test-string-scan 3 #*"abcdefghi" "def")
+  (test-string-scan 3 "abcdefghi" #*"def")
+  (test-string-scan #*"ghi" #*"abcdefghi" "def" 'after)
+  (test-string-scan #*"abc" #*"abcdefghi" "def" 'before)
+  (test-string-scan2 #*"abcdef" #*"ghi" #*"abcdefghi" "def" 'after*)
+  (test-string-scan2 #*"abc" #*"defghi" #*"abcdefghi" "def" 'before*)
+  (test-string-scan2 #*"abc" #*"ghi" #*"abcdefghi" "def" 'both)
+  (test-string-scan2 #*"abc" #*"ghi" "abcdefghi" #*"def" 'both)
+  (test-string-scan2 #*"abcd" #*"fghi" #*"abcdefghi" #\e 'both)
+  )
 
 ;;-------------------------------------------------------------------
 (test-section "string-split")
@@ -197,18 +240,6 @@
        (string-join '("a" #*"b" "c") ":"))
 (test* "string-join" #*"a:b:c"
        (string-join '("a" "b" "c") #*":"))
-
-(test* "string-scan" 3
-       (string-scan #*"abcdefghi" "def"))
-(test* "string-scan" 3
-       (string-scan "abcdefghi" #*"def"))
-(test* "string-scan" '(#*"abc" #*"ghi")
-       (receive r (string-scan #*"abcdefghi" "def" 'both) r))
-(test* "string-scan" '(#*"abc" #*"ghi")
-       (receive r (string-scan "abcdefghi" #*"def" 'both) r))
-(test* "string-scan" '(#*"abcd" #*"fghi")
-       (receive r (string-scan #*"abcdefghi" #\e 'both) r))
-
 
 ;; NB: should we allow this?
 (test* "string-set!" #*"abQde"

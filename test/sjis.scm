@@ -54,20 +54,40 @@
 (test* "string-join" "Ç”Ç£ÅIÇŒÇüÅIÇŒÇ∏"
        (string-join '("Ç”Ç£" "ÇŒÇü" "ÇŒÇ∏") "ÅI" 'strict-infix))
 
-(test* "string-scan" 7
-       (string-scan "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢"))
-(test* "string-scan" "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†"
-       (string-scan "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢" 'before))
-(test* "string-scan" "Ç§Ç¶Ç®"
-       (string-scan "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢" 'after))
-(test* "string-scan" '("Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†" "Ç®Ç†Ç¢Ç§Ç¶Ç®")
-       (receive r (string-scan "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢" 'before*) r))
-(test* "string-scan" '("Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢" "Ç§Ç¶Ç®")
-       (receive r (string-scan "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢" 'after*) r))
-(test* "string-scan" '("Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†" "Ç§Ç¶Ç®")
-       (receive r (string-scan "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢" 'both) r))
-(test* "string-scan" #f
-       (string-scan "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç¢"))
+(let ()
+  (define (test-string-scan out s1 s2 . opt)
+    (if (pair? out)
+      (begin
+        (test* "string-scan" (car out) (apply string-scan s1 s2 opt))
+        (test* "string-scan-right" (cadr out)
+               (apply string-scan-right s1 s2 opt)))
+      (apply test-string-scan (list out out) s1 s2 opt)))
+  (define (test-string-scan2 out1 out2 s1 s2 . opt)
+    (if (pair? out1)
+      (begin
+        (test* "string-scan" (list (car out1) (car out2))
+               (receive r (apply string-scan s1 s2 opt) r))
+        (test* "string-scan-right" (list (cadr out1) (cadr out2))
+               (receive r (apply string-scan-right s1 s2 opt) r)))
+      (apply test-string-scan2 (list out1 out1) (list out2 out2) s1 s2 opt)))
+
+  (test-string-scan '(7 20)
+                    "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢")
+  (test-string-scan '("Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†" "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†")
+                      "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢" 'before)
+  (test-string-scan '("Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç§Ç¶Ç®")
+                    "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢" 'after)
+  (test-string-scan2 '("Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†" "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†")
+                     '("Ç®Ç†Ç¢Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢Ç§Ç¶Ç®")
+                     "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢" 'before*)
+  (test-string-scan2 '("Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢" "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢")
+                     '("Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç§Ç¶Ç®")
+                     "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢" 'after*)
+  (test-string-scan2 '("Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†" "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†")
+                     '("Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç§Ç¶Ç®")
+                     "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç†Ç¢" 'both)
+  (test-string-scan #f "Ç†Ç¶Ç¢Ç§Ç¶Ç®Ç†Ç®Ç†Ç¢Ç§Ç¶Ç®" "Ç®Ç¢")
+  )
 
 ;;-------------------------------------------------------------------
 (test-section "string-pointer")

@@ -126,22 +126,37 @@
     (result (Scm_HashString str modulo))))
 
 (select-module gauche)
+(inline-stub
+ (define-cfn string-scan-mode (mode) ::int
+   (let* ([rmode::int 0])
+     (cond
+      [(SCM_EQ mode 'index)   (set! rmode SCM_STRING_SCAN_INDEX)]
+      [(SCM_EQ mode 'before)  (set! rmode SCM_STRING_SCAN_BEFORE)]
+      [(SCM_EQ mode 'after)   (set! rmode SCM_STRING_SCAN_AFTER)]
+      [(SCM_EQ mode 'before*) (set! rmode SCM_STRING_SCAN_BEFORE2)]
+      [(SCM_EQ mode 'after*)  (set! rmode SCM_STRING_SCAN_AFTER2)]
+      [(SCM_EQ mode 'both)    (set! rmode SCM_STRING_SCAN_BOTH)]
+      [else (Scm_Error "bad value in mode argumet: %S, must be one of \
+                 'index, 'before, 'after, 'before*, 'after* or 'both." mode)])
+     (return rmode))))
+
 ;; primitive scanner
 (define-cproc string-scan (s1::<string> s2 :optional (mode index))
-  (let* ([rmode::int 0])
-    (cond
-     [(SCM_EQ mode 'index)   (set! rmode SCM_STRING_SCAN_INDEX)]
-     [(SCM_EQ mode 'before)  (set! rmode SCM_STRING_SCAN_BEFORE)]
-     [(SCM_EQ mode 'after)   (set! rmode SCM_STRING_SCAN_AFTER)]
-     [(SCM_EQ mode 'before*) (set! rmode SCM_STRING_SCAN_BEFORE2)]
-     [(SCM_EQ mode 'after*)  (set! rmode SCM_STRING_SCAN_AFTER2)]
-     [(SCM_EQ mode 'both)    (set! rmode SCM_STRING_SCAN_BOTH)]
-     [else (Scm_Error "bad value in mode argumet: %S, must be one of \
-                 'index, 'before, 'after, 'before*, 'after* or 'both." mode)])
+  (let* ([rmode::int (string-scan-mode mode)])
     (cond
      [(SCM_STRINGP s2) (result (Scm_StringScan s1 (SCM_STRING s2) rmode))]
      [(SCM_CHARP s2)
       (result (Scm_StringScanChar s1 (SCM_CHAR_VALUE s2) rmode))]
+     [else (Scm_Error "bad type of argument for s2: %S, must be \
+                       either string or character" s2)
+           (result SCM_UNDEFINED)])))
+
+(define-cproc string-scan-right (s1::<string> s2 :optional (mode index))
+  (let* ([rmode::int (string-scan-mode mode)])
+    (cond
+     [(SCM_STRINGP s2) (result (Scm_StringScanRight s1 (SCM_STRING s2) rmode))]
+     [(SCM_CHARP s2)
+      (result (Scm_StringScanCharRight s1 (SCM_CHAR_VALUE s2) rmode))]
      [else (Scm_Error "bad type of argument for s2: %S, must be \
                        either string or character" s2)
            (result SCM_UNDEFINED)])))

@@ -54,23 +54,40 @@
 (test "string-join" "ふぅ！ばぁ！ばず"
       (lambda () (string-join '("ふぅ" "ばぁ" "ばず") "！" 'strict-infix)))
 
-(test "string-scan" 7
-      (lambda () (string-scan "あえいうえおあおあいうえお" "おあい")))
-(test "string-scan" "あえいうえおあ"
-      (lambda () (string-scan "あえいうえおあおあいうえお" "おあい" 'before)))
-(test "string-scan" "うえお"
-      (lambda () (string-scan "あえいうえおあおあいうえお" "おあい" 'after)))
-(test "string-scan" '("あえいうえおあ" "おあいうえお")
-      (lambda ()
-        (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'before*) r)))
-(test "string-scan" '("あえいうえおあおあい" "うえお")
-      (lambda ()
-        (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'after*) r)))
-(test "string-scan" '("あえいうえおあ" "うえお")
-      (lambda ()
-        (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'both) r)))
-(test "string-scan" #f
-      (lambda () (string-scan "あえいうえおあおあいうえお" "おい")))
+(let ()
+  (define (test-string-scan out s1 s2 . opt)
+    (if (pair? out)
+      (begin
+        (test* "string-scan" (car out) (apply string-scan s1 s2 opt))
+        (test* "string-scan-right" (cadr out)
+               (apply string-scan-right s1 s2 opt)))
+      (apply test-string-scan (list out out) s1 s2 opt)))
+  (define (test-string-scan2 out1 out2 s1 s2 . opt)
+    (if (pair? out1)
+      (begin
+        (test* "string-scan" (list (car out1) (car out2))
+               (receive r (apply string-scan s1 s2 opt) r))
+        (test* "string-scan-right" (list (cadr out1) (cadr out2))
+               (receive r (apply string-scan-right s1 s2 opt) r)))
+      (apply test-string-scan2 (list out1 out1) (list out2 out2) s1 s2 opt)))
+
+  (test-string-scan '(7 20)
+                    "あえいうえおあおあいうえおあえいうえおあおあいうえお" "おあい")
+  (test-string-scan '("あえいうえおあ" "あえいうえおあおあいうえおあえいうえおあ")
+                      "あえいうえおあおあいうえおあえいうえおあおあいうえお" "おあい" 'before)
+  (test-string-scan '("うえおあえいうえおあおあいうえお" "うえお")
+                    "あえいうえおあおあいうえおあえいうえおあおあいうえお" "おあい" 'after)
+  (test-string-scan2 '("あえいうえおあ" "あえいうえおあおあいうえおあえいうえおあ")
+                     '("おあいうえおあえいうえおあおあいうえお" "おあいうえお")
+                     "あえいうえおあおあいうえおあえいうえおあおあいうえお" "おあい" 'before*)
+  (test-string-scan2 '("あえいうえおあおあい" "あえいうえおあおあいうえおあえいうえおあおあい")
+                     '("うえおあえいうえおあおあいうえお" "うえお")
+                     "あえいうえおあおあいうえおあえいうえおあおあいうえお" "おあい" 'after*)
+  (test-string-scan2 '("あえいうえおあ" "あえいうえおあおあいうえおあえいうえおあ")
+                     '("うえおあえいうえおあおあいうえお" "うえお")
+                     "あえいうえおあおあいうえおあえいうえおあおあいうえお" "おあい" 'both)
+  (test-string-scan #f "あえいうえおあおあいうえお" "おい")
+  )
 
 ;;-------------------------------------------------------------------
 (test-section "string-pointer")

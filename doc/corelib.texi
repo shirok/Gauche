@@ -5301,13 +5301,22 @@ Use @var{delim} after each string.
 @end defun
 
 @defun string-scan string item :optional return
+@defunx string-scan-right string item :optional return
 @c EN
 Scan @var{item} (either a string or a character) in @var{string}.
+While @code{string-scan} finds the leftmost match, @code{string-scan-right}
+finds the rightmost match.
+@c JP
+@var{string} から @var{item} (文字列あるいは文字)を探します。
+@code{string-scan}は最も左にある一致を、
+@code{string-scan-right}は最も右にある一致を見つけます。
+@c COMMON
+
+@c EN
 The @var{return} argument specifies what value should be returned
 when @var{item} is found in @var{string}.  It must be one of the
 following symbols.
 @c JP
-@var{string} にある @var{item} (文字列あるいは文字)を探します。
 引数 @var{return} は、@var{string} 中に @var{item} が見つかった
 場合にどの値が返されるかを指定します。それは以下のシンボルのうちの
 一つでなければなりません。

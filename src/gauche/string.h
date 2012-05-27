@@ -232,6 +232,8 @@ enum {
 SCM_EXTERN ScmObj  Scm_StringSplitByChar(ScmString *str, ScmChar ch);
 SCM_EXTERN ScmObj  Scm_StringScan(ScmString *s1, ScmString *s2, int retmode);
 SCM_EXTERN ScmObj  Scm_StringScanChar(ScmString *s1, ScmChar ch, int retmode);
+SCM_EXTERN ScmObj  Scm_StringScanRight(ScmString *s1, ScmString *s2, int retmode);
+SCM_EXTERN ScmObj  Scm_StringScanCharRight(ScmString *s1, ScmChar ch, int retmode);
 
 /* "retmode" argument for string scan */
 enum {

@@ -872,8 +872,8 @@ ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
 }
 
 /* Boyer-Moore string search.  assuming siz1 > siz2, siz2 < 256. */
-static inline int boyer_moore(const char *ss1, int siz1,
-                              const char *ss2, int siz2)
+static int boyer_moore(const char *ss1, int siz1,
+                       const char *ss2, int siz2)
 {
     unsigned char shift[256];
     int i, j, k;
@@ -889,11 +889,128 @@ static inline int boyer_moore(const char *ss1, int siz1,
     return -1;
 }
 
-/* Scan s2 in s1.  If both strings are single-byte, and s1 is long,
-   we use Boyer-Moore.
+static int boyer_moore_reverse(const char *ss1, int siz1,
+                               const char *ss2, int siz2)
+{
+    unsigned char shift[256];
+    int i, j, k;
+    for (i=0; i<256; i++) { shift[i] = siz2; }
+    for (j=siz2-1; j>0; j--) {
+        shift[(unsigned char)ss2[j]] = j;
+    }
+    for (i=siz1-siz2+1; i>=0; i-=shift[(unsigned char)ss1[i]]) {
+        for (j=0, k = i; j<siz2 && ss1[k] == ss2[j]; j++, k++)
+            ;
+        if (j == siz2) return i;
+    }
+    return -1;
+}
 
-   To avoid rescanning of the string, this function can return
-   various information, depends on retmode argument.
+/* A primitive routine to search a substring s2 in s1.
+   Returns TRUE iff found.  Calculates both byte index and character index.
+   If both strings are single-byte and s1 is long, we use Boyer-Moore.
+ */
+static int string_search(const char *s1, int siz1, int len1,
+                         const char *s2, int siz2, int len2,
+                         int *bi /* out */,
+                         int *ci /* out */)
+{
+    int i;
+
+    if (siz2 == 0) {
+        *bi = *ci = 0;
+        return TRUE;
+    }
+
+    if (siz1 == len1) {
+        if (siz2 == len2) {
+            /* short cut for single-byte strings */
+            if (siz1 < siz2) return FALSE;
+            if (siz1 < 256 || siz2 >= 256) {
+                /* brute-force search */
+                for (i=0; i<=siz1-siz2; i++) {
+                    if (memcmp(s2, s1+i, siz2) == 0) break;
+                }
+                if (i == siz1-siz2+1) return FALSE;
+            } else {
+                i = boyer_moore(s1, siz1, s2, siz2);
+                if (i < 0) return FALSE;
+            }
+            *bi = *ci = i;
+            return TRUE;
+        } else {
+            return FALSE;       /* sbstring can't contain mbstring. */
+        }
+    }
+    if (len1 >= len2) {
+        const char *sp = s1;
+        for (i=0; i<=len1-len2; i++) {
+            if (memcmp(sp, s2, siz2) == 0) {
+                *bi = (int)(sp - s1);
+                *ci = i;
+                return TRUE;
+            }
+            sp += SCM_CHAR_NFOLLOWS(*sp) + 1;
+        }
+    }
+    return FALSE;
+}
+
+static int string_search_reverse(const char *s1, int siz1, int len1,
+                                 const char *s2, int siz2, int len2,
+                                 int *bi /* out */,
+                                 int *ci /* out */)
+{
+    int i;
+
+    if (siz2 == 0) {
+        *bi = siz1;
+        *ci = len1;
+        return TRUE;
+    }
+
+    if (siz1 == len1) {
+        if (siz2 == len2) {
+            /* short cut for single-byte strings */
+            if (siz1 < siz2) return FALSE;
+            if (siz1 < 256 || siz2 >= 256) {
+                /* brute-force search */
+                for (i=siz1-siz2-1; i>=0; i--) {
+                    if (memcmp(s2, s1+i, siz2) == 0) break;
+                }
+                if (i == 0) return FALSE;
+            } else {
+                i = boyer_moore_reverse(s1, siz1, s2, siz2);
+                if (i < 0) return FALSE;
+            }
+            *bi = *ci = i;
+            return TRUE;
+        } else {
+            return FALSE;       /* sbstring can't contain mbstring. */
+        }
+    }
+    if (len1 >= len2) {
+        const char *sp = s1 + siz1, *p;
+        for (i=0; i<len2; i++) {
+            SCM_CHAR_BACKWARD(sp, s1, p);
+            SCM_ASSERT(*p);
+            sp = p;
+        }
+        for (i=len1-len2; i>=0; i--) {
+            if (memcmp(sp, s2, siz2) == 0) {
+                *bi = (int)(sp - s1);
+                *ci = i;
+                return TRUE;
+            }
+            SCM_CHAR_BACKWARD(sp, s1, p);
+            sp = p;
+        }
+    }
+    return FALSE;
+}
+
+/* Scan s2 in s1, and calculates appropriate return value(s) according to       
+   retmode.
 
    SCM_STRING_SCAN_INDEX  : return the index of s1
         s1 = "abcde" and s2 = "cd" => 2
@@ -908,13 +1025,15 @@ static inline int boyer_moore(const char *ss1, int siz1,
    SCM_STRING_SCAN_BOTH   : return substring of s1 before and after s2
        s1 = "abcde" and s2 = "cd" => "ab" and "e"
 */
-static ScmObj string_scan(ScmString *s1, const char *ss2,
+static ScmObj string_scan(ScmString *ss1, const char *s2,
                           int siz2, int len2, int incomplete2,
-                          int retmode)
+                          int retmode,
+                          int (*searcher)(const char*, int, int,
+                                          const char*, int, int, int*, int*))
 {
-    int i, incomplete;
-    const ScmStringBody *sb = SCM_STRING_BODY(s1);
-    const char *ss1 = SCM_STRING_BODY_START(sb);
+    int bi, ci, incomplete;
+    const ScmStringBody *sb = SCM_STRING_BODY(ss1);
+    const char *s1 = SCM_STRING_BODY_START(sb);
     int siz1 = SCM_STRING_BODY_SIZE(sb);
     int len1 = SCM_STRING_BODY_LENGTH(sb);
 
@@ -922,104 +1041,39 @@ static ScmObj string_scan(ScmString *s1, const char *ss2,
         Scm_Error("return mode out fo range: %d", retmode);
     }
 
-    if (siz2 == 0) {
-        /* shortcut */
-        switch (retmode) {
-        case SCM_STRING_SCAN_INDEX: return SCM_MAKE_INT(0);
-        case SCM_STRING_SCAN_BEFORE: return SCM_MAKE_STR("");
-        case SCM_STRING_SCAN_AFTER:  return Scm_CopyString(s1);
-        case SCM_STRING_SCAN_BEFORE2:;
-        case SCM_STRING_SCAN_AFTER2:;
-        case SCM_STRING_SCAN_BOTH:
-            return Scm_Values2(SCM_MAKE_STR(""), Scm_CopyString(s1));
+    if (!searcher(s1, siz1, len1, s2, siz2, len2, &bi, &ci)) {
+        if (retmode <= SCM_STRING_SCAN_AFTER) {
+            return SCM_FALSE;
+        } else {
+            return Scm_Values2(SCM_FALSE, SCM_FALSE);
         }
     }
 
-    if (siz1 == len1) {
-        if (siz2 == len2) goto sbstring;
-        goto failed;            /* sbstring can't contain mbstring. */
-    }
-    if (len1 >= len2) {
-        const char *ssp = ss1;
-        for (i=0; i<=len1-len2; i++) {
-            if (memcmp(ssp, ss2, siz2) == 0) {
-                switch (retmode) {
-                case SCM_STRING_SCAN_INDEX:
-                    return Scm_MakeInteger(i);
-                case SCM_STRING_SCAN_BEFORE:
-                    return Scm_MakeString(ss1, (int)(ssp-ss1), i, 0);
-                case SCM_STRING_SCAN_AFTER:
-                    return Scm_MakeString(ssp+siz2,
-                                          (int)(siz1-(ssp-ss1+siz2)),
-                                          len1-i-len2, 0);
-                case SCM_STRING_SCAN_BEFORE2:
-                    return Scm_Values2(Scm_MakeString(ss1, (int)(ssp-ss1),
-                                                      i, 0),
-                                       Scm_MakeString(ssp,
-                                                      (int)(siz1-(ssp-ss1)),
-                                                      len1-i, 0));
-                case SCM_STRING_SCAN_AFTER2:
-                    return Scm_Values2(Scm_MakeString(ss1,
-                                                      (int)(ssp-ss1+siz2),
-                                                      i+len2, 0),
-                                       Scm_MakeString(ssp+siz2,
-                                                      (int)(siz1-(ssp-ss1+siz2)),
-                                                      len1-i-len2, 0));
-                case SCM_STRING_SCAN_BOTH:
-                    return Scm_Values2(Scm_MakeString(ss1, (int)(ssp-ss1), i, 0),
-                                       Scm_MakeString(ssp+siz2,
-                                                      (int)(siz1-(ssp-ss1+siz2)),
-                                                      len1-i-len2, 0));
-                }
-            }
-            ssp += SCM_CHAR_NFOLLOWS(*ssp) + 1;
-        }
-    }
-    goto failed;
-
-  sbstring: /* short cut for single-byte strings */
-    if (siz1 < siz2) goto failed;
-    if (siz1 < 256 || siz2 >= 256) {
-        /* brute-force search */
-        for (i=0; i<=siz1-siz2; i++) {
-            if (memcmp(ss2, ss1+i, siz2) == 0) break;
-        }
-        if (i == siz1-siz2+1) goto failed;
-    } else {
-        i = boyer_moore(ss1, siz1, ss2, siz2);
-        if (i < 0) goto failed;
-    }
     incomplete =
         (SCM_STRING_BODY_INCOMPLETE_P(sb) || incomplete2)?
         SCM_STRING_INCOMPLETE : 0;
+    
     switch (retmode) {
     case SCM_STRING_SCAN_INDEX:
-        return Scm_MakeInteger(i);
+        return Scm_MakeInteger(ci);
     case SCM_STRING_SCAN_BEFORE:
-        return Scm_MakeString(ss1, i, i, incomplete);
+        return Scm_MakeString(s1, bi, ci, incomplete);
     case SCM_STRING_SCAN_AFTER:
-        return Scm_MakeString(ss1+i+siz2, siz1-(i+siz2), siz1-(i+siz2),
-                              incomplete);
+        return Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
+                              len1-ci-len2, incomplete);
     case SCM_STRING_SCAN_BEFORE2:
-        return Scm_Values2(Scm_MakeString(ss1, i, i, incomplete),
-                           Scm_MakeString(ss1+i, siz1-i, siz1-i, incomplete));
+        return Scm_Values2(Scm_MakeString(s1, bi, ci, incomplete),
+                           Scm_MakeString(s1+bi, siz1-bi, len1-ci, incomplete));
     case SCM_STRING_SCAN_AFTER2:
-        return Scm_Values2(Scm_MakeString(ss1, i+siz2, i+siz2, incomplete),
-                           Scm_MakeString(ss1+i+siz2, siz1-(i+siz2),
-                                          siz1-(i+siz2), incomplete));
+        return Scm_Values2(Scm_MakeString(s1, bi+siz2, ci+len2, incomplete),
+                           Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
+                                          len1-ci-len2, incomplete));
     case SCM_STRING_SCAN_BOTH:
-        return Scm_Values2(Scm_MakeString(ss1, i, i, incomplete),
-                           Scm_MakeString(ss1+i+siz2, siz1-(i+siz2),
-                                          siz1-(i+siz2), incomplete));
-    }
-  failed:
-    if (retmode <= SCM_STRING_SCAN_AFTER) {
-        return SCM_FALSE;
-    } else {
-        return Scm_Values2(SCM_FALSE, SCM_FALSE);
+        return Scm_Values2(Scm_MakeString(s1, bi, ci, incomplete),
+                           Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
+                                          len1-ci-len2, incomplete));
     }
 }
-
 
 ScmObj Scm_StringScan(ScmString *s1, ScmString *s2, int retmode)
 {
@@ -1029,14 +1083,34 @@ ScmObj Scm_StringScan(ScmString *s1, ScmString *s2, int retmode)
                        SCM_STRING_BODY_SIZE(s2b),
                        SCM_STRING_BODY_LENGTH(s2b),
                        SCM_STRING_BODY_INCOMPLETE_P(s2b),
-                       retmode);
+                       retmode, string_search);
 }
 
 ScmObj Scm_StringScanChar(ScmString *s1, ScmChar ch, int retmode)
 {
     char buf[SCM_CHAR_MAX_BYTES];
     SCM_CHAR_PUT(buf, ch);
-    return string_scan(s1, buf, SCM_CHAR_NBYTES(ch), 1, FALSE, retmode);
+    return string_scan(s1, buf, SCM_CHAR_NBYTES(ch), 1, FALSE, retmode,
+                       string_search);
+}
+
+ScmObj Scm_StringScanRight(ScmString *s1, ScmString *s2, int retmode)
+{
+    const ScmStringBody *s2b = SCM_STRING_BODY(s2);
+    return string_scan(s1,
+                       SCM_STRING_BODY_START(s2b),
+                       SCM_STRING_BODY_SIZE(s2b),
+                       SCM_STRING_BODY_LENGTH(s2b),
+                       SCM_STRING_BODY_INCOMPLETE_P(s2b),
+                       retmode, string_search_reverse);
+}
+
+ScmObj Scm_StringScanCharRight(ScmString *s1, ScmChar ch, int retmode)
+{
+    char buf[SCM_CHAR_MAX_BYTES];
+    SCM_CHAR_PUT(buf, ch);
+    return string_scan(s1, buf, SCM_CHAR_NBYTES(ch), 1, FALSE, retmode,
+                       string_search_reverse);
 }
 
 /*----------------------------------------------------------------
