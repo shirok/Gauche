@@ -1,5 +1,9 @@
 2012-05-27  Shiro Kawai  <shiro@acm.org>
 
+	* gc/configure.ac: Force HANDLE_FORK defined.  Without it, GC in forked
+	  child process fails on OSX 10.7.3.
+	* test/system.scm: Test code for the above.
+
 	* src/string.c (Scm_StringScanRight, Scm_StringScanCharRight),
 	  src/libstr.scm (string-scan-right): Added.
 

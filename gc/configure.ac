@@ -735,10 +735,8 @@ fi
 dnl [SK] this is _required_ to make Gauche work correctly.
 CFLAGS="$CFLAGS -DDONT_ADD_BYTE_AT_END"
 AC_DEFINE(LARGE_CONFIG)
-dnl [SK] this may also needed to use sys-fork safely in multithreaded
-dnl Gauche, but this seems to hang on some platforms.  So I don't put
-dnl it in by default.
-dnl AC_DEFINE(HANDLE_FORK)
+dnl [SK] needed at least on OSX 10.7.3 
+AC_DEFINE(HANDLE_FORK)
 
 AC_SUBST(UNWINDLIBS)
 
