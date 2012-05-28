@@ -735,8 +735,9 @@ fi
 dnl [SK] this is _required_ to make Gauche work correctly.
 CFLAGS="$CFLAGS -DDONT_ADD_BYTE_AT_END"
 AC_DEFINE(LARGE_CONFIG)
-dnl [SK] needed at least on OSX 10.7.3 
-AC_DEFINE(HANDLE_FORK)
+dnl [SK] this supposed to make GC in forked children work on OSX; it did work
+dnl on OSX 10.7.3, but caused various failures on 10.7.4, so I disable it again.
+dnl AC_DEFINE(HANDLE_FORK)
 
 AC_SUBST(UNWINDLIBS)
 
