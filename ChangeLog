@@ -15,7 +15,7 @@
 
 	* src/liblist.scm (every): In multi-arg case, the return value
 	  should have been the first non-false return value of PROC but
-	  it was #t.  Patch from koguro.
+	  it was #t.  Patch from leque.
 	* lib/util/stream.scm (stream-every): Similar fix as above for
 	  the consistency.  Patch from koguro.
 
