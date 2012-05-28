@@ -1739,12 +1739,25 @@ static ScmObj make_trapper_port()
 void Scm__SetupPortsForWindows(int has_console)
 {
     if (!has_console) {
-        ScmObj trapperPort = make_trapper_port();
-        SCM_INTERNAL_MUTEX_INIT(win_console_mutex);
-        scm_stdout = trapperPort;
-        scm_stderr = trapperPort;
-        Scm_VM()->curout = SCM_PORT(scm_stdout);
-        Scm_VM()->curerr = SCM_PORT(scm_stderr);
+        static int initialized = FALSE;
+        if (!initialized) {
+            static ScmObj orig_stdout, orig_stderr;
+            ScmObj trapperPort = make_trapper_port();
+            initialized = TRUE;
+            SCM_INTERNAL_MUTEX_INIT(win_console_mutex);
+            /* Original scm_stdout and scm_stderr holds ports that are
+               connected to fd=0 and fd=1, respectively.  Losing reference
+               to those ports will eventually lead to close those fds (when
+               those ports are GC-ed), causing complications in the code
+               that assumes fds 0, 1 and 2 are reserved.  To make things
+               easier, we just keep original ports. */
+            orig_stdout = scm_stdout;
+            orig_stderr = scm_stderr;
+            scm_stdout = trapperPort;
+            scm_stderr = trapperPort;
+            Scm_VM()->curout = SCM_PORT(scm_stdout);
+            Scm_VM()->curerr = SCM_PORT(scm_stderr);
+        }
     }
 }
 #endif /*defined(GAUCHE_WINDOWS)*/

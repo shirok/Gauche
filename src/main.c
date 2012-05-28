@@ -359,13 +359,22 @@ static int init_console(void)
 {
 #if defined(GAUCHE_WINDOWS)
 #  if defined(GAUCHE_WINDOWS_NOCONSOLE)
-    close(0);               /* just in case */
-    close(1);               /* ditto */
-    close(2);               /* ditto */
-    open("NUL", O_RDONLY);
-    open("NUL", O_WRONLY);
-    open("NUL", O_WRONLY);
+    char buf[100];
+    int in_fd, out_fd;
+#define ERR(msg) do {sprintf(buf, msg, strerror(errno));goto fail;} while(0)
+
+    if ((in_fd = open("NUL", O_RDONLY)) < 0) ERR("couldn't open NUL: %s");
+    if ((out_fd = open("NUL", O_WRONLY))< 0) ERR("couldn't open NUL: %s");
+    if (_dup2(in_fd, 0) < 0)  ERR("dup2(0) failed (%s)");
+    if (_dup2(out_fd, 1) < 0) ERR("dup2(1) failed (%s)");
+    if (_dup2(out_fd, 2) < 0) ERR("dup2(2) failed (%s)");
+    close(in_fd);
+    close(out_fd);
     return FALSE;
+#undef ERR
+ fail:
+    MessageBoxA(NULL, buf, "gosh-noconsole", MB_OK|MB_ICONERROR);
+    Scm_Exit(1);
 #  else /*!defined(GAUCHE_WINDOWS_NOCONSOLE)*/
     /* This saves so much trouble */
     _setmode(_fileno(stdin),  _O_BINARY);

@@ -1,8 +1,11 @@
 2012-05-27  Shiro Kawai  <shiro@acm.org>
 
-	* gc/configure.ac: Force HANDLE_FORK defined.  Without it, GC in forked
-	  child process fails on OSX 10.7.3.
-	* test/system.scm: Test code for the above.
+	* src/port.c (Scm__SetupPortsForWindows): Protect the origina
+	  scm_stdout and scm_stderr to be GC-ed, for not having fd 1 and 2
+	  open causes problems when spawning child processes and communicate
+	  with them via pipes.  Thanks to @natsutan for tracking the problem.
+	* src/main.c (init_console): make sure fd 0, 1, and 2 are redirected
+	  to NUL in no console mode.
 
 	* src/string.c (Scm_StringScanRight, Scm_StringScanCharRight),
 	  src/libstr.scm (string-scan-right): Added.
