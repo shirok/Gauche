@@ -1,5 +1,7 @@
 2012-05-28  Shiro Kawai  <shiro@acm.org>
 
+	* gc/dyn_load.c: Backport a patch for NetBSD 6.
+
 	* release 0.9.3.3
 
 2012-05-27  Shiro Kawai  <shiro@acm.org>
