@@ -3978,7 +3978,7 @@ It is common practice to abstract the source of values in such a way,
 so it is useful to define utility procedures that work on the
 generators.  This module provides them.
 @c JP
-ジェネレータは、値の列の生成器となるような、引数を取らない手続きです。
+ジェネレータは、値の列の生成器として動作する、引数を取らない手続きです。
 呼ばれる度に列の次の値を返します。列の終端に達した場合はEOFが返されます。
 例えば、@code{read-char}は、現在の入力ポートからの入力を一文字づつ返す
 ジェネレータと考えることができます。
@@ -4023,41 +4023,83 @@ There are several built-in procedures for that; see
 
 @node Generator constructors, Generator operations, Generators, Generators
 @subsection Generator constructors
+@c NODE ジェネレータの生成
 
+@c EN
 A generator isn't a special datatype but just an ordinary procedure,
 so you can make a generator with lambdas.  This module provides
 some common generator constructors for the convenience.
+@c JP
+ジェネレータは特別なデータタイプではなく、普通の手続きに過ぎません。つ
+まり、ジェネレータはlambdaを使って作ることができます。
+このモジュールは、あると便利な
+良く使われるジェネレータの構築子を提供します。
+@c COMMON
 
+@c EN
 If you want to use your procedure as a generator, note that a
 generator can be invoked many times even after it returns EOF once.
 You have to code it so that once it returns EOF, it keeps returning
 EOF for the subsequent calls.
+@c JP
+自分で定義した手続きをジェネレータとして使うこともできますが、その場合、
+ジェネレータを扱う手続きは一度EOFを返したジェネレータさえも繰り替えして
+呼び出す可能性があることに注意してください。
+その手続きがいったんEOFを返したら、それ以降の呼び出しに対してEOFを
+返し続けるよう書かなければなりません。
+@c COMMON
 
+@c EN
 The result of generator constructors is merely a procedure,
 and printing it doesn't show much.  In the examples in this section
 we use @code{generator->list} to convert the generator to the list.
 See @ref{Generator operations} for the description of @code{generator->list}.
+@c JP
+ジェネレータ構築子が返すのは単なる手続きであり、そのまま印字しても
+中身が何かはわかりません。この節の例では、@code{generator->list}を使って
+ジェネレータをリストに変換しています。@code{generator->list}の説明は、
+@ref{Generator operations}を参照してください。
+@c COMMON
 
 @defun null-generator
+@c EN
 An empty generator.  Returns just an EOF object when called.
+@c JP
+空ジェネレータです。呼ばれるたびにEOFオブジェクトを返します。
+@c COMMON
 @end defun
 
 @defun circular-generator arg @dots{}
+@c EN
 Returns an infinite generator that repeats the given arguments.
+@c JP
+与えられた引数を繰り返し生成する、無限ジェネレータを返します。
+@c COMMON
 
 @example
 (generator->list (circular-generator 1 2 3) 10)
   @result{} (1 2 3 1 2 3 1 2 3 1)
 @end example
 
-Note that the above example limits the length of list by 10; otherwise
+@c EN
+Note that the above example limits the length of
+the converted list by 10; otherwise
 @code{generator->list} won't return.
+@c JP
+この例では、変換後のリストの長さを10に制限しています。そうしなければ、
+@code{generator->list}は制御を返さないでしょう。
+@c COMMON
 @end defun
 
 @defun giota count :optional (start 0) (step 1)
+@c EN
 Like @code{iota} (@xref{List constructors}), creates a generator
 of a series of @var{count} numbers, starting from @var{start}
 and increased by @var{step}.
+@c JP
+@code{iota} (@xref{List constructors})のような、@var{start}で始まり
+@var{step}ずつ増加する、@var{count}個の級数のジェネレータを作成します。
+@c COMMON
 
 @example
 (generator->list (giota 10 3 2))
@@ -4066,9 +4108,14 @@ and increased by @var{step}.
 @end defun
 
 @defun grange start :optional (end +inf.0) (step 1)
+@c EN
 Similar to @code{giota}, creates a generator of a series of
 numbers.  The series begins with @var{start}, increased by @var{step},
 and continues while the number is below @var{end}.
+@c JP
+@code{giota}と同様、級数ジェネレータを作成します。この級数は
+@var{start}に始まり、@var{step}ずつ増加して@var{end}直前まで続きます。
+@c COMMON
 
 @example
 (generator->list (grange 3 8))
@@ -4077,21 +4124,44 @@ and continues while the number is below @var{end}.
 @end defun
 
 @defun generate proc
+@c EN
 Creates a generator from coroutine.
+@c JP
+コルーチンからジェネレータを作成します。
+@c COMMON
 
+@c EN
 The @var{proc} argument is a procedure that takes one argument,
 @var{yield}.   When called, @code{generate} immediately returns
 a generator @var{G}.  When @var{G} is called, the @var{proc} runs
 until it calls @var{yield}.  Calling @var{yield} causes to suspend
 the execution of @var{proc} and @var{G} returns the value passed
 to @var{yield}.
+@c JP
+引数@var{proc}は、引数@var{yield}ひとつを取る手続きです。
+@code{generate}は、呼ばれるとジェネレータ@var{G}をただちに返します。
+@var{G}は呼ばれると、その中で@var{yield}が呼ばれるまで@var{proc}を
+実行します。@var{yield}が呼ばれると@var{proc}の実行は中断され、
+@var{yield}に渡した値が@var{G}から返ります。
+@c COMMON
 
+@c EN
 Once @var{proc} returns, it is the end of the series---@var{G} returns
 eof object from then on.  The return value of @var{proc} is ignored.
+@c JP
+いったん@var{proc}が返ると、それが列の終端となります---それ以降、
+@var{G}はEOFオブジェクトを返します。@var{proc}が返す値は無視されます。
+@c COMMON
 
+@c EN
 The following code creates a generator that produces a series
 0, 1, and 2 (effectively the same as @code{(giota 3)} and binds
 it to @code{g}.
+@c JP
+次に挙げるコードは、0、1、2からなる級数を生成するジェネレータを作成し
+(事実上、@code{(giota 3)}と同じ)、@code{g}に束縛しています。
+@c COMMON
+
 @example
 (define g
   (generate
@@ -4108,9 +4178,14 @@ it to @code{g}.
 @defunx string->generator str :optioanl start end
 @defunx bits->generator n :optional start end
 @defunx reverse-bits->generator n :optional start end
+@c EN
 Returns a generator that yields each item in the given argument.
 A generator returned from @code{reverse-*} procedures runs in
 reverse order.
+@c JP
+実引数の各要素を生成するジェネレータを返します。@code{reverse-*}は、逆順
+で値を生成するジェネレータを返します。
+@c COMMON
 
 @example
 (generator->list (list->generator '(1 2 3 4 5)))
@@ -4123,17 +4198,31 @@ reverse order.
   @result{} (#\a #\b #\c #\d #\e)
 @end example
 
+@c EN
 By default the generator is exhausted once all items are retrieved;
 the optional @var{start} and @var{end} arguments can limit the range
 the generator walks across; @var{start} specifies the left bound
 and @var{end} specifies the right bound.
+@c JP
+デフォルトでは、いったん全ての要素を取り出してしまえば
+そのジェネレータは空になります;省略可能引数@var{start}と@var{end}で
+ジェネレータがたどる範囲を制限することができます;@var{start}で
+左の境界を、@var{end}で右の境界を指定します。
+@c COMMON
 
+@c EN
 For forward generators, the first value the generator yields
 is @var{start}-th element, and it ends right before @var{end}-th element.
 For reverse generators, the first value is the item right next
 to the @var{end}-th element, and the last value is the @var{start}-th
 element.
 at the last element, and reverse generators ends at the first element.
+@c JP
+正順のジェネレータでは、最初の値としてジェネレータが生成するのは
+@var{start}番目の要素であり、@var{end}番目の要素の直前の要素が最後に生成する
+値となります。逆順のジェネレータでは、最初の値は@var{end}番目の要素の
+すぐ隣の要素であり、最後の値が@var{start}番目の要素となります。
+@c COMMON
 
 @example
 (generator->list (vector->generator '#(a b c d e) 2))
@@ -4148,10 +4237,16 @@ at the last element, and reverse generators ends at the first element.
   @result{} (b a)
 @end example
 
+@c EN
 @code{bits->generator} and @code{reverse-bits->geneator} takes
 an exact integer and treat it as a sequence of boolean values
 (0 for false and 1 for true), as @code{integer->list} does
 (@xref{Integers as bits}).
+@c JP
+@code{bits->generator}と@code{reverse-bits->geneator}は正確な整数を引数
+に取り、@code{integer->list}がそうであるように(@ref{Integers as bits}参照)、
+それを真偽値のシーケンス(0が偽、1を真)として扱います。
+@c COMMON
 
 @example
 (generator->list (bits->generator #b10110)
@@ -4163,64 +4258,126 @@ an exact integer and treat it as a sequence of boolean values
 
 @defun port->char-generator input-port
 @defunx port->byte-generator input-port
+@c EN
 Returns a generator that reads characters or bytes from the given
 port, respectively.  They're just @code{(cut read-char input-port)}
 and @code{(cut read-byte input-port)}, but we provide them for completeness.
+@c JP
+それぞれ文字、バイトを与えられた入力ポートから読み取るジェネレータを
+返します。つまり、
+@code{(cut read-char input-port)}
+や
+@code{(cut read-byte input-port)}
+と同じですが、完全性のために提供されています。
+@c COMMON
 @end defun
 
 @deffn {Generic function} x->generator obj
+@c EN
 A generic version to convert any collection @var{obj} to a generator
 that walks across the @var{obj}.  Besides, if @var{obj} is an input port,
 @code{port->char-generator} is called.
+@c JP
+任意のコレクション@var{obj}を、@var{obj}をたどるジェネレータに変換する
+ジェネリック関数版です。さらに、@var{obj}が入力ポートである場合は、
+@code{port->char-generator}を呼びます。
+@c COMMON
 @end deffn
 
 @defun file->generator filename reader . open-args
+@c EN
 Opens a file @var{filename}, and returns a generator
 that reads items from the file
 by a procedure @var{reader}, which takes one argument, an input port.
 The arguments @var{open-args} are passed to @code{open-input-file}
-(@xref{File ports}).
+@c JP
+ファイル@var{filename}をオープンし、入力ポートを引数に取る手続き
+@var{reader}によってそのファイルから読み取るジェネレータを返す。
+引数@var{open-args}は、@code{open-input-file}に渡されます
+(@ref{File ports}参照)。
+@c COMMON
 
+@c EN
 The file is closed when the generator is exhausted.  If a generator
 is abandoned before being read to the end, then the file is kept
 open until the generator is garbage-collected.  If you want to
 make sure the file is closed by a certain point of time, you might want
 to use a reader procedure as a generator within the dynamic extent
 of @code{with-input-from-file} etc.
+@c JP
+ファイルは、ジェネレータが尽きたところで閉じられます。最後
+まで読み取る前にジェネレータが破棄された場合は、そのジェネレータ
+がガベージコレクタに回収されるまでファイルは開かれたままです。
+特定の時点までにファイルが確実にクローズしたい場合は、@code{with-input-from-file}
+の動的なエクステントの中で、リーダー手続きをジェネレータとして
+使うのが良いでしょう。
+@c COMMON
 @end defun
 
 @defun file->sexp-generator filename . open-args
 @defunx file->char-generator filename . open-args
 @defunx file->line-generator filename . open-args
 @defunx file->byte-generator filename . open-args
+@c EN
 Returns a generator that reads a series
 of sexps, characters, lines and bytes from a file @var{filename},
 respectively.  These are versions
 of @code{file->generator} specialized by @code{read},
 @code{read-char}, @code{read-line} and @code{read-byte} as the
 @var{reader} argument.
+@c JP
+ファイル@var{filename}からそれぞれS式、文字、行、バイトの列を読むジェネ
+レータを返します。これらは、@code{file->generator}の@var{reader}引数に@code{read}、
+@code{read-char}、@code{read-line}、@code{read-byte}を渡して特定化したものです。
+@c COMMON
 
+@c EN
 Like @code{file->generator}, @var{open-args}
 are passed to @code{open-input-file} (@xref{File ports}).
 The file is closed when the generator is exhausted.
+@c JP
+@code{file->generator}同様、@var{open-args}はそのまま@code{open-input-file}に
+引き渡されます(@ref{File ports}参照)。ジェネレータが使い切られると、
+ファイルは閉じられます。
+@c COMMON
 @end defun
 
 @defun gunfold p f g seed :optional tail-gen
+@c EN
 A generator constructor similar to @var{unfold} (@xref{SRFI-1 List utilities}).
+@c JP
+@var{unfold}に似たジェネレータの構築子です (@ref{SRFI-1 List utilities}参照)。
+@c COMMON
 
+@c EN
 @var{P} is a predicate that takes a seed value and determines
 where to stop.  @var{F} is a procedure that calculates a value
 from a seed value.  @var{G} is a procedure that calculates the
 next seed value from the current seed value.  @var{Tail-gen}
 is a procedure that takes the last seed value and returns a generator
 that generates the tail.
+@c JP
+@var{P}はシード値を引数に取り、いつ止まるかを決める述語です。
+@var{F}はシード値から値を計算する手続きです。@var{G}は現在の
+シード値から次のシード値を計算する手続きです。@var{Tail-gen}
+は最後のシード値を取り、残りを生成するジェネレータを返します。
+@c COMMON
 
+@c EN
 For each call of the resulting generator, @var{p} is called with
 the current seed value.  If it returns a true, then we see we've
 done, and @code{tail-gen} is called (if it is given) to get a
 generator for the tail.  Otherwise,
 we apply @var{f} on the current seed value to get the value to
 generate, and use @var{g} to update the seed value.
+@c JP
+この関数から返されたジェネレータが呼ばれるたびに、@var{p}が現在の
+シード値とともに呼ばれます。これが真を返せば、やるべき事が終わっ
+たことがわかり、(もし与えられていたなら)@code{tail-gen}が残りを
+生成するジェネレータを得るために呼ばれます。さもなければ、生成する
+値を得るために現在のシード値に@var{f}が適用され、シード値を更新
+するために@var{g}が使われます。
+@c COMMON
 
 @example
 (generator->list (gunfold (^s (> s 5)) (^s (* s 2)) (^s (+ s 1)) 0))
@@ -4230,31 +4387,63 @@ generate, and use @var{g} to update the seed value.
 
 @node Generator operations,  , Generator constructors, Generators
 @subsection Generator operations
+@c NODE ジェネレータの操作
 
+@c EN
 @xref{Folding generated values}, for @code{generator-fold},
 @code{generator-fold-right}, @code{generator-for-each} and
 @code{generator-map}.
+@c JP
+@code{generator-fold}、@code{generator-fold-right}、 @code{generator-for-each}、
+@code{generator-map}については、
+@ref{Folding generated values}を参照してください。
+@c COMMON
 
 @defun generator->list generator :optional k
+@c EN
 Reads items from @var{generator} and returns a list of them.
 By default, this reads until the generator is exhausted.  If
 an optional argument @var{k} is given, it must be a nonnegative
 integer, and the list ends either @var{k} items are read,
 or the generator is exhausted.
+@c JP
+@var{generator}から項目を読み取り、それらを要素とするリストを返します。
+デフォルトでは、ジェネレータを使い切るまで読み取ります。省略可能
+引数@var{k}を与える場合、それは非負整数でなければならず、結果のリスト
+は、@var{k}個の項目を読み取るか、ジェネレータを使い切ったところで終わり
+となります。
+@c COMMON
 
+@c EN
 Be careful not to pass an infinite generator to this without
 specifying @var{k}---this procedure won't return but hogs
 all the memory before crash.
+@c JP
+無限ジェネレータを渡す時は必ず@var{k}を指定しましょう。
+さもなくば、この手続きは制御を返さず、全てのメモリを食い尽して
+クラッシュするでしょう。
+@c COMMON
 @end defun
 
 @defmac glet* (binding @dots{}) body body2 @dots{}
+@c EN
 This captures a monadic pattern frequently appears in the generator
 code.  It is in a similar spirit of @code{and-let*}, but returns
 as soon as the evaluating expression returns EOF, instead of @code{#f}
 as @code{and-let*} does.
+@c JP
+これは、ジェネレータコードに頻繁に現れるモナド的なパターンを表現
+するものです。@code{and-let*}の発想に似ていますが、@code{#f}のかわりにEOFを
+返す式を評価すると直ちに返ります。
+@c COMMON
 
+@c EN
 The @var{binding} part can be either @code{(var expr)} or @code{( expr )}.
 The actual definition will explain this syntax clearly.
+@c JP
+@var{binding}部分は@code{(var expr)}か@code{( expr )}の形をとります。
+実際の定義を見れば、この構文が明解に理解できるでしょう。
+@c COMMON
 
 @example
 (define-syntax glet*
@@ -4274,39 +4463,77 @@ The actual definition will explain this syntax clearly.
 @end defmac
 
 @defmac glet1 var expr body body2 @dots{}
+@c EN
 This is to @code{glet*} as @code{let1} is to @code{let*}.  In other words,
 it is @code{(glet* ([var expr]) body body2 @dots{})}.
+@c JP
+これと@code{glet*}の関係は、@code{let1}と@code{let*}のそれと同じです。言葉を
+変えれば、これは@code{(glet* ([var expr]) body body2 @dots{})}と同じです。
+@c COMMON
 @end defmac
 
 @defmac do-generator (var gexpr) body @dots{}
+@c EN
 This is a generator version of @code{dolist} and @code{dotimes}
 (@xref{Binding constructs}).
+@c JP
+これは、ジェネレータ版の@code{dolist}であり@code{dotimes}です(@xref{Binding constructs})。
+@c COMMON
 
+@c EN
 @var{Gexpr} is an expression that yields a generator.  It is
 evaluated once.  The resulting generator is called repeatedly
 until it returns EOF.  Every time the generator is called,
 @var{body} @dots{} are evaluated in the scope
 where @var{var} is bound to the value yielded from the generator.
+@c JP
+@var{gexpr}はジェネレータを生成する式であり、一度だけ評価されます。
+結果となるジェネレータはEOFを返すまで繰り返し呼ばれます。ジェネレータ
+が呼ばれる毎に、ジェネレータが生成する値に束縛される@var{var}の
+スコープ内で@var{body} @dots{}が評価されます。
+@c COMMON
 
+@c EN
 Like @code{dolist} and @code{dotimes}, this macro exists for
 side-effects.  You can write the same thing with @code{for-each} families,
 but sometimes this macro makes the imperative code more readable:
+@c JP
+@code{dolist}や@code{dotimes}がそうであるように、このマクロも副作用のため
+のものです。同じことは@code{for-each}族を使っても書けますが、このマクロを
+使って命令的に記述したコードの方が読みやすいこともあるのです。
+@c COMMON
 
 @example
 (do-generator [line (file->line-generator "filename")]
+@c EN
   ;; do some side-effecting stuff with line
+@c JP
+  ;; lineを使って何か副作用のある作業をする
+@c COMMON
   )
 @end example
 @end defmac
 
+@c EN
 The following procedures take generators (noted as @var{gen} and
 @var{gen2}) and return a generator.  For the convenience, they
 also accept any collection to @var{gen} and @var{gen2} parameters;
 if a collection is passed where a generator is expected,
 it is implicitly coerced into a generator.
+@c JP
+以下に挙げる手続きは、どれもジェネレータ(@var{gen}や@var{gen2}と記述されて
+います)を受け取ってジェネレータを返します。便宜上、これらの手続きは
+@var{gen}や@var{gen2}としてコレクションも受けつけます;ジェネレータが
+想定されているところにコレクションが渡されると、暗黙のうちにジェネレータ
+へと変換されるのです。
+@c COMMON
 
 @defun gcons* item @dots{} gen
+@c EN
 Returns a generator that adds @var{item}s in front of @var{gen}.
+@c JP
+@var{gen}の前に@var{item}を追加するジェネレータを返します。
+@c COMMON
 
 @example
 (generator->list (gcons* 'a 'b (giota 2)))
@@ -4315,8 +4542,14 @@ Returns a generator that adds @var{item}s in front of @var{gen}.
 @end defun
 
 @defun gappend gen @dots{}
+@c EN
 Returns a generator that yields the items from the first given
 generator, and once it is exhausted, use the second generator, and so on.
+@c JP
+最初に与えたジェネレータが生成する値を生成し、それが尽きたら2番目に与えた
+ジェネレータが生成する値を生成し、という具合に、与えられたジェネレータが
+生成する値を順番に生成するジェネレータを返します。
+@c COMMON
 
 @example
 (generator->list (gappend (giota 3) (giota 2)))
@@ -4328,39 +4561,75 @@ generator, and once it is exhausted, use the second generator, and so on.
 @end defun
 
 @defun gmap proc gen gen2 @dots{}
+@c EN
 Returns a generator that yields a value returned by @var{proc}
 applied on the values from given generators.  The returned generator
 terminates when any of the given generator is exhausted.
+@c JP
+与えられたジェネレータから得られる値に@var{proc}を適用して得られる値を
+生成するジェネレータを返します。返り値となるジェネレータは、引数として
+与えられたジェネレータのどれかが尽きたら終了します。
+@c COMMON
 
+@c EN
 NB: This differs from @code{generator-map} (@xref{Folding generated values})
 which consumes all
 values at once and returns the results as a list, while @code{gmap}
-returns a generator.
+returns a generator immediately without consuming input.
+@c JP
+注意: この手続きは、@code{generator-map} (@xref{Folding generated values}参照)
+とは違います。@code{generator-map}は一度に全ての値を消費し、結果をリストとして返しますが、
+@code{gmap}はすぐには入力を消費せずにジェネレータを返すのです。
+@c COMMON
 @end defun
 
 @defun gmap-accum proc seed gen gen2 @dots{}
+@c EN
 A generator version of @code{map-accum} (@xref{Mapping over collection}),
 mapping with states.
+@c JP
+状態を持つマッピングを行う@code{map-accum} (@xref{Mapping over collection})のジェネレータ版
+です。
+@c COMMON
 
+@c EN
 The @var{proc} argument is a procedure that takes as many arguments
 as the input generators plus one.  It is called as
 @code{(proc v v2 @dots{} seed)} where @code{v}, @code{v2}, @dots{} are
 the values yielded from the input generators, and @var{seed} is the
 current seed value.  It must return two values, the yielding value
 and the next seed.
+@c JP
+引数@var{proc}は、入力となるジェネレータの個数プラス1個の引数を取る
+手続きで、@code{(proc v v2 @dots{} seed)}のように呼ばれます。
+@code{v}, @code{v2}, @dots{} は、入力ジェネレータが生成する値であり、
+@var{seed}は現在のシード値です。この手続きは2つの値を返さなければい
+けません。生成する値と、次のシード値です。
+@c COMMON
 @end defun
 
 @defun gfilter pred gen
+@c EN
 Returns a generator that yield the items from the source generator,
 except those who makes @var{pred} answers false.
+@c JP
+ソースジェネレータが生成する値のうち、@var{pred}がfalseを返すもの以外の
+値を生成するジェネレータを返します。
+@c COMMON
 @end defun
 
 @defun gfilter-map proc gen gen2 @dots{}
+@c EN
 Works the same as @code{(gfilter values (gmap proc gen gen2 @dots{}))},
 only slightly efficiently.
+@c JP
+@code{(gfilter values (gmap proc gen gen2 @dots{}))}
+と同様に動作しますが、若干効率的です。
+@c COMMON
 @end defun
 
 @defun gstate-filter proc seed gen
+@c EN
 This allows stateful filtering of a series.  The @var{proc} argument
 must be a procedure that takes a value @var{V} from the source generator and
 a seed value.  It should return two values, a boolean flag and the next
@@ -4368,9 +4637,21 @@ seed value.  If it returns true for the boolean flag, the generator
 yields @var{V}.  Otherwise, the generator keeps calling @var{proc},
 with updating the seed value, until it sees the true flag value
 or the source generator is exhausted.
+@c JP
+この手続きは、一連の値に対するステートフルなフィルタリングを可能にします。
+引数@var{proc}はソースジェネレータからの値@var{v}と、シード値を取る手続きでなければ
+なりません。この手続きが真を返す場合に、返り値となるジェネレータは
+@var{v}を生成します。そうでない場合、ジェネレータは@var{proc}が真を返すか、ソース
+ジェネレータが尽きるまで、シード値を更新しながら@var{proc}を呼び出し続けます。
+@c COMMON
 
+@c EN
 The following example takes a generator of oscillating values
 and yields only values that are greater than their previous value.
+@c JP
+次に挙げる例は、振動する値を生成するジェネレータを受け取り、直前の値よりも
+大きな値のみを生成するジェネレータを返します。
+@c COMMON
 
 @example
 (generator->list
@@ -4382,38 +4663,73 @@ and yields only values that are greater than their previous value.
 
 @defun gtake gen k :optional (fill? #f) (padding #f)
 @defunx gdrop gen k
+@c EN
 The generator version of
 @code{take*} and @code{drop*} (@xref{List accessors and modifiers});
 @code{gtake} returns a generator that yields (at most) first @var{k} items
 of the source generator, while @code{gdrop} returns a generator
 that skips the first @var{k} items of the source generator.
+@c JP
+ジェネレータ版の@code{take*}と@code{drop*} (@ref{List accessors and modifiers}参照)です;
+@code{gtake}は、ソースジェネレータが生成する値を最初から(最大で)@var{k}個
+生成するジェネレータを返します。逆に@code{gdrop}はソースジェネレータが生成
+する値の最初の@var{k}個をスキップするジェネレータを返します。
+@c COMMON
 
+@c EN
 Those won't complain if the source generator is exhausted before generating
 @var{k} items.  By default, the generator returned by @code{gtake}
 terminates as the source ends, but if you give a true value to @code{fill?},
 then the returned generator does yield @var{k} items, using the
 @var{padding} value to fill the rest.
+@c JP
+これらの手続きはソースジェネレータが@var{k}個の値を生成する前に尽きたとしても、
+何も文句を言いません。デフォルトでは、@code{gtake}が返すジェネレータはソース
+ジェネレータが終端に達した時点で終了します。しかし、@code{fill?}に真を与えた
+場合は、返り値のジェネレータは@var{k}個の値を返し、足りない分は@var{padding}
+の値を生成します。
+@c COMMON
 @end defun
 
 @defun gtake-while pred gen
 @defunx gdrop-while pred gen
+@c EN
 The generator version of @code{take-while} and @code{drop-while}
 (@xref{List accessors and modifiers}).  The generator returned
 from @code{gtake-while} yields items from the source generator
 as far as @var{pred} returns true for each.  The generator returned
 from @code{gdrop-while} first reads items from the source generator
 while @var{pred} returns true for them, then start yielding items.
+@c JP
+ジェネレータ版の @code{take-while} と @code{drop-while}
+(@ref{List accessors and modifiers}参照) です。
+@code{gtake-while}が返すジェネレータは、ソースジェネレータが生成する値に対して
+@var{pred}が真を返す限り、その値を生成します。@code{gdrop-while}が返す
+ジェネレータは、まずソースジェネレータから値を読み取り、その値に対して
+@var{pred}が真を返したら、値の生成を開始します。
+@c COMMON
 @end defun
 
 @defun grxmatch regexp gen
+@c EN
 The @var{gen} argument must be, after coerced, a generator that
 yields characters.
+@c JP
+@var{gen}は暗黙の変換後、文字を生成するジェネレータでなければなりません。
+@c COMMON
 
+@c EN
 A generator returned from this procedure
 tries to match @var{regexp} from the character sequence
 generated by @var{gen}, and once it matches, remember the position after
 the match and returns @code{#<rxmatch>} object.  If no more match
 is found, the generator is exhausted.
+@c JP
+この手続きが返すジェネレータは、@var{gen}が生成する文字のシーケンスに対して、
+@var{regexp}をマッチさせようとする。そして一度マッチすると、その位置を記憶して
+@code{#<rxmatch>}オブジェクトを返します。さらにマッチすることがなければ、
+ジェネレータは尽きます。
+@c COMMON
 
 @example
 ($ generator->list
@@ -4422,6 +4738,7 @@ is found, the generator is exhausted.
  @result{} ("The" "quick" "brown" "fox" "jumps" "over" "the" "lazy" "dog")
 @end example
 
+@c EN
 Note: This procedure is efficient if @var{gen} is a string, in which
 case we actually bypass coercing it to a generator.  If @var{gen} is other
 than a string, the current implementation may need to apply @var{regexp}
@@ -4429,11 +4746,25 @@ as many times as O(n^2) where n is the entire length of the character
 sequence generated by @var{gen}, although the coefficient is small.
 This may be improved in future, but be careful using this function
 on very large input.
+@c JP
+注意: この手続きは@var{gen}が文字列の場合、ジェネレータへの変換がバイパスされるため
+効率的です。@var{gen}が文字列ではない場合、現在の実装では、@var{gen}が生成する文字の
+シーケンス全体の長さがnの場合に、係数が小さいとはいえ、必要となる@var{regexp}の適用
+回数は、O(n^2)となるかもしれません。この点について、将来改良されるかもしれませんが、
+大きな入力に対してこの関数を使う場合は、注意してください。
+@c COMMON
 
+@c EN
 Note also that, when @var{gen} is not a string, @var{rxmatch} is applied
 on some buffered partial input.  So @code{rxmatch-after} of the returned
 match does not represents the whole ``rest of input'' after the match,
 but merely the rest of strings within the buffer.
+@c JP
+もう一点注意: @var{gen}が文字列でない場合、@var{rxmatch}はバッファリングされた
+部分的な入力に対して適用されます。このため、返されたマッチの@code{rxmatch-after}
+は、マッチ後の``入力の残り全部''を表現しません。単にバッファの中にある文字列の
+残りになります。
+@c COMMON
 @end defun
 
 
