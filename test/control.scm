@@ -72,7 +72,7 @@
 ;;
 
 (cond-expand
- [gauche.sys.pthreads
+ [gauche.sys.threads
   (test-section "control.thread-pool")
   (use control.thread-pool)
   (test-module 'control.thread-pool)
@@ -173,7 +173,15 @@
            (let1 xjob (add-job! pool work)
              (terminate-all! pool :force-timeout 0.05)
              (job-status xjob))))
-  ]
+
+  ;; This SEGVs on 0.9.3.3 (test code by @cryks)
+  (test* "thread pool termination" 'terminated
+         (let ([t (thread-start! (make-thread (cut undefined)))]
+               [pool (make-thread-pool 10)])
+           (terminate-all! pool)
+           (thread-terminate! t)
+           (thread-state t)))
+  ] ; gauche.sys.pthreads
  [else])
 
 (test-end)

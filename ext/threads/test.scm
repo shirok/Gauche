@@ -100,6 +100,18 @@
            (thread-terminate! t1)
            (thread-join! t1))))
 
+;; this SEGVs on 0.9.3.3. test code from @cryks.
+(test* "thread termination before running" 'terminated
+       (let1 t1 (make-thread (^[] #f))
+         (thread-terminate! t1)
+         (thread-state t1)))
+
+(test* "thread termination while being stopped" 'terminated
+       (let1 t1 (thread-start! (make-thread (^[] (let loop () (loop)))))
+         (thread-stop! t1)
+         (thread-terminate! t1)
+         (thread-state t1)))
+
 ;;---------------------------------------------------------------------
 (test-section "thread and error")
 

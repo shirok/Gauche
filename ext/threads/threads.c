@@ -432,36 +432,41 @@ ScmObj Scm_ThreadTerminate(ScmVM *target)
     }
 
     (void)SCM_INTERNAL_MUTEX_LOCK(target->vmlock);
-    do {
-        /* This ensures only the first call of thread-terminate! on a thread
-           is in effect. */
-        if (target->canceller == NULL) {
-            target->canceller = vm;
+    if (target->state == SCM_VM_RUNNABLE || target->state == SCM_VM_STOPPED) {
+        do {
+            /* This ensures only the first call of thread-terminate! on a
+               thread is in effect. */
+            if (target->canceller == NULL) {
+                target->canceller = vm;
 
-            /* First try */
-            target->stopRequest = SCM_VM_REQUEST_TERMINATE;
-            target->attentionRequest = TRUE;
-            if (wait_for_termination(target)) break;
+                /* First try */
+                target->stopRequest = SCM_VM_REQUEST_TERMINATE;
+                target->attentionRequest = TRUE;
+                if (wait_for_termination(target)) break;
 
-            /* Second try */
+                /* Second try */
+                SCM_ASSERT(target->thread);
 #if defined(GAUCHE_USE_PTHREADS)
 # if defined(GAUCHE_PTHREAD_SIGNAL)
-            pthread_kill(target->thread, GAUCHE_PTHREAD_SIGNAL);
+                pthread_kill(target->thread, GAUCHE_PTHREAD_SIGNAL);
 # endif /*defined(GAUCHE_PTHREAD_SIGNAL)*/
 #elif defined(GAUCHE_USE_WTHREADS)
-            /* TODO: implement signal mechanism using an event */
+                /* TODO: implement signal mechanism using an event */
 #endif  /* defined(GAUCHE_USE_WTHREADS) */
-            if (wait_for_termination(target)) break;
+                if (wait_for_termination(target)) break;
 
-            /* Last resort */
-            thread_cleanup_inner(target);
+                /* Last resort */
+                thread_cleanup_inner(target);
 #if defined(GAUCHE_USE_PTHREADS)
-            pthread_cancel(target->thread);
+                pthread_cancel(target->thread);
 #elif defined(GAUCHE_USE_WTHREADS)
-            TerminateThread(target->thread, 0);
+                TerminateThread(target->thread, 0);
 #endif
-        }
-    } while (0);
+            }
+        } while (0);
+    }
+    /* target either is terminated or hasn't been run */
+    target->state = SCM_VM_TERMINATED;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
     return SCM_UNDEFINED;
 }

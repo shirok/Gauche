@@ -1,3 +1,8 @@
+2012-05-31  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/thread.c (Scm_ThreadTerminate): Fixed SEGV bug when
+	  thread-terminate! is called on a thread that's not running.
+
 2012-05-28  Shiro Kawai  <shiro@acm.org>
 
 	* gc/dyn_load.c: Backport a patch for NetBSD 6.
@@ -6,8 +11,8 @@
 
 2012-05-27  Shiro Kawai  <shiro@acm.org>
 
-	* src/port.c (Scm__SetupPortsForWindows): Protect the origina
-	  scm_stdout and scm_stderr to be GC-ed, for not having fd 1 and 2
+	* src/port.c (Scm__SetupPortsForWindows): Protect the original
+	  scm_stdout and scm_stderr from being GC-ed, for not having fd 1 and 2
 	  open causes problems when spawning child processes and communicate
 	  with them via pipes.  Thanks to @natsutan for tracking the problem.
 	* src/main.c (init_console): make sure fd 0, 1, and 2 are redirected
