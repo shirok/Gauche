@@ -4042,9 +4042,9 @@ generator can be invoked many times even after it returns EOF once.
 You have to code it so that once it returns EOF, it keeps returning
 EOF for the subsequent calls.
 @c JP
-自分で定義した手続きをジェネレータとして使うこともできますが、その場合、
-ジェネレータを扱う手続きは一度EOFを返したジェネレータさえも繰り替えして
-呼び出す可能性があることに注意してください。
+自分で定義した手続きをジェネレータとして使うこともできますが、
+ジェネレータを扱う手続きは、
+一度EOFを返したジェネレータを繰り返して呼び出す可能性があることに注意してください。
 その手続きがいったんEOFを返したら、それ以降の呼び出しに対してEOFを
 返し続けるよう書かなければなりません。
 @c COMMON
