@@ -1,3 +1,8 @@
+2012-06-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in: Avoid race between install-aux and relink in
+	  make -j install.
+
 2012-05-31  Shiro Kawai  <shiro@acm.org>
 
 	* ext/threads/thread.c (Scm_ThreadTerminate): Fixed SEGV bug when

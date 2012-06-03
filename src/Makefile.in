@@ -415,12 +415,20 @@ INSTALL_DIRS = $(DESTDIR)$(HEADER_INSTALL_DIR) \
 @CROSS_COMPILING_no@GAUCHE_INSTALL = ./gosh -ftest $(srcdir)/gauche-install.in
 @CROSS_COMPILING_yes@GAUCHE_INSTALL = gosh $(srcdir)/gauche-install.in
 
-install : all install-dirs install-aux install-core
+install : install-core
 
 install-dirs : 
 	$(MKINSTDIR) $(INSTALL_DIRS)
 
-install-core : relink
+install-aux : all install-dirs
+	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_HEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)
+	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_SUBHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche
+	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_SCMS) $(DESTDIR)$(SCM_INSTALL_DIR)
+
+install-relink : install-aux
+	$(MAKE) relink
+
+install-core : install-relink
 	$(INSTALL)        $(INSTALL_LIBS) $(DESTDIR)$(LIB_INSTALL_DIR)
 	$(INSTALL)        $(INSTALL_LIBS) $(DESTDIR)$(ARCH_INSTALL_DIR)
 	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(BIN_INSTALL_DIR)
@@ -430,11 +438,6 @@ install-core : relink
 	esac
 	$(INSTALL) -m 444 $(srcdir)/gauche-init.scm $(DESTDIR)$(SCM_INSTALL_DIR)
 	$(POSTINSTALL)
-
-install-aux :
-	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_HEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)
-	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_SUBHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche
-	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(INSTALL_SCMS) $(DESTDIR)$(SCM_INSTALL_DIR)
 
 uninstall :
 	for f in $(INSTALL_BINS); do rm -f $(BIN_INSTALL_DIR)/$$f; done
