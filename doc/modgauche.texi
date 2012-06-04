@@ -4555,10 +4555,38 @@ generator, and once it is exhausted, use the second generator, and so on.
 (generator->list (gappend (giota 3) (giota 2)))
  @result{} (0 1 2 0 1)
 
-(generator->list (gappend)
+(generator->list (gappend))
  @result{} ()
 @end example
 @end defun
+
+@defun gconcatenate gen
+@c EN
+The @var{gen} argument should generate generators and/or sequences.
+Returns a generator that yields elements from the first generator/sequence,
+then the second one, then the third, etc.
+
+It is similar to @code{(apply gappend (generator->list gen))}, except
+that @code{gconcatenate} can work even @var{gen} generates infinite
+number of generators.
+@c JP
+@var{gen}引数は、ジェネレータやシーケンスを生成するジェネレータです。
+この関数は、@var{gen}が生成する最初のジェネレータ/シーケンスの要素を次々に
+生成し、それが尽きたら二番目のジェネレータ/シーケンスの要素を次々に生成し… 
+というジェネレータを作って返します。
+
+@code{(apply gappend (generator->list gen))}と似た動作ですが、
+@code{gconcatenate}は@var{gen}が無限ジェネレータであっても動作するという
+利点があります。
+@c COMMON
+
+@example
+($ generator->list $ gconcatenate
+   $ list->generator `(,(giota 3) ,(giota 2)))
+ @result{} (0 1 2 0 1)
+@end example
+@end defun
+
 
 @defun gmap proc gen gen2 @dots{}
 @c EN

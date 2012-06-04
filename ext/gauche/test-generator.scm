@@ -118,6 +118,19 @@
                                  (x->generator '(a b c d))
                                  (x->generator '(A B C D)))))
 
+(test* "gconcatenate" '(0 1 2 3 a b c d A B C D)
+       (generator->list (gconcatenate (x->generator
+                                       (list (x->generator '(0 1 2 3))
+                                             (x->generator '(a b c d))
+                                             (x->generator '(A B C D)))))))
+
+(test* "gconcatenate" '(0 1 2 3 0 1 2 3 0 1)
+       (generator->list (gconcatenate (gunfold (^v #f)
+                                               (^_ (giota 4))
+                                               (^_ #f)
+                                               0))
+                        10))
+
 (test* "gunfold" (unfold (^s (>= s 10))
                          (^s (* s 2))
                          (^s (+ s 1))

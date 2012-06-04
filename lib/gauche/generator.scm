@@ -44,7 +44,7 @@
           port->char-generator port->byte-generator
           x->generator generate
 
-          generator->list null-generator gcons* gappend
+          generator->list null-generator gcons* gappend gconcatenate
           circular-generator gunfold giota grange
           gmap gmap-accum gfilter gfilter-map gstate-filter
           gtake gdrop gtake-while gdrop-while grxmatch glet* glet1
@@ -280,6 +280,18 @@
           (cond [(not (eof-object? v)) v]
                 [(null? gs) v]          ;exhausted
                 [else (set! g #f) (f)]))))))
+
+;; gconcatenate :: [() -> (() -> a)] -> (() -> a)
+(define (gconcatenate gen)
+  (let* ([gen (%->gen gen)]
+         [g (gen)])
+    (^[] (let loop ()
+           (if (eof-object? g)
+             g
+             (let1 v (g)
+               (if (eof-object? v)
+                 (begin (set! g (%->gen (gen))) (loop))
+                 v)))))))
 
 ;; gmap :: (a -> b, () -> a) -> (() -> b)
 (define gmap
