@@ -106,25 +106,6 @@
             ))
 
 ;;-------------------------------------------------------------------------
-(test-section "regexp-writer")
-
-(define-syntax test-regexp-writer
-  (syntax-rules ()
-    [(_ exp pat)
-     (test* exp exp (write-to-string (string->regexp pat)))]))
-
-(test-regexp-writer "#/abc/" "abc")
-(test-regexp-writer "#/a[\\d]/" "a[\\d]")
-(test-regexp-writer "#/a[a-z]/" "a[a-z]")
-(test-regexp-writer "#/a\\/b/"  "a/b")
-(test-regexp-writer "#/\\\\/"  "\\\\")
-(test-regexp-writer "#/ /"  "\x20")
-(test-regexp-writer "#/\\x20/"  "\\x20")
-
-(test* "#/abc/i" "#/abc/i"
-       (write-to-string (string->regexp "abc" :case-fold #t)))
-
-;;-------------------------------------------------------------------------
 (test-section "compile")
 
 (define-syntax test-regexp-compile
@@ -895,6 +876,28 @@
        (equal? #/abc/i #/abc/))
 (test* "equal #/abc/i #/abc/i" #t
        (equal? #/abc/i #/abc/i))
+
+;;-------------------------------------------------------------------------
+(test-section "regexp printer")
+
+(let ()
+  (define (test-regexp-writer exp pat)
+    (test* exp exp (write-to-string (string->regexp pat))))
+
+  (test-regexp-writer "#/abc/" "abc")
+  (test-regexp-writer "#/a[0-9]/" "a[\\d]")
+  (test-regexp-writer "#/a[a-z]/" "a[a-z]")
+  (test-regexp-writer "#/a\\/b/"  "a/b")
+  (test-regexp-writer "#/\\\\/"  "\\\\")
+  (test-regexp-writer "#/ /"  "\x20")
+  (test-regexp-writer "#/ /"  "\\x20")
+  (test-regexp-writer "#/\\//"  "\\/") ; single '/'
+  (test-regexp-writer "#/\\\\\\//"  "\\\\/") ; backslash, then '/'
+  (test-regexp-writer "#/\\\\\\//"  "\\\\\\/") ; backslash, then '/'
+  )
+
+(test* "#/(?i:abc)/" "#/(?i:abc)/"
+       (write-to-string (string->regexp "abc" :case-fold #t)))
 
 ;;-------------------------------------------------------------------------
 (test-section "regexp from AST")

@@ -1,3 +1,28 @@
+2012-06-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (Scm_RegComp): Avoid keeping the original pattern
+	  string as the value of regexp->string.  The regexp->string return
+	  value is calculated from AST when it is used for the first time.
+	  Rationale: There's a many-to-one mapping from input string to
+	  the actual regexp.  We use regexp->string value to make the
+	  external representation of regexp, and we need proper escaping
+	  for that.  But escaping "non-canonical" input string gets pretty
+	  cumbersome.  For example, both "\\/" and "/" would be parsed as
+	  (0 #f #\/), and when printed, both should be printed as #/\//.
+	  It is easier to make regexp->string return "/" in both cases.
+	  A side effect: #/abc/i is now printed as #/(?i:abc)/, reflecting
+	  the internal AST representation.  Let's see if this becomes
+	  an issue.
+	* src/libobj.scm (write-object <regexp>): Rewritten to adapt
+	  the above change, and also to use \uXXXX for non-printable
+	  characters.
+	* lib/gauche/regexp.scm (regexp-unparse): Do not display extra
+	  grouping (?:..) unless necessary in repetition, e.g. #/a?b/
+	  instead of #/(?:a)?b/.  The extra grouping becomes annoying
+	  because of the above change, although it isn't logicaly incorrect.
+	* src/char.c (charset_print_ch): Fixed a bug that didn't escape
+	  '\' within charset.
+
 2012-06-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm (gconcatenate): Added.

@@ -215,7 +215,7 @@ enum {
  * case-folded.
  */
 
-/* NB: regexp printer is defined in objlib.scm */
+/* NB: regexp printer is defined in libobj.scm */
 static int  regexp_compare(ScmObj x, ScmObj y, int equalp);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_RegexpClass,
@@ -304,18 +304,24 @@ typedef struct regcomp_ctx_rec {
     int codemax;                /* [pass3] max codep */
 } regcomp_ctx;
 
-static void rc_ctx_init(regcomp_ctx *ctx, ScmRegexp *rx)
+/* If we run from pass1, input string should be passed to PATTERN.
+   If we run from pass2, PATTERN must be NULL and we take AST from RX. */
+static void rc_ctx_init(regcomp_ctx *ctx,
+                        ScmRegexp *rx,
+                        ScmString *pattern)
 {
     ctx->rx = rx;
-    ctx->pattern = (SCM_FALSEP(rx->pattern)? rx->ast : rx->pattern);
-    ctx->casefoldp = FALSE;
-    ctx->lookbehindp = FALSE;
-    if (SCM_STRINGP(rx->pattern)) {
-        ctx->ipat = SCM_PORT(Scm_MakeInputStringPort(SCM_STRING(rx->pattern),
-                                                     FALSE));
+    if (pattern) {
+        ctx->pattern = Scm_CopyStringWithFlags(pattern,
+                                               SCM_STRING_IMMUTABLE,
+                                               SCM_STRING_IMMUTABLE);
+        ctx->ipat = SCM_PORT(Scm_MakeInputStringPort(pattern, FALSE));
     } else {
+        ctx->pattern = rx->ast;
         ctx->ipat = NULL;
     }
+    ctx->casefoldp = FALSE;
+    ctx->lookbehindp = FALSE;
     ctx->sets = SCM_NIL;
     ctx->grpcount = 0;
     ctx->code = NULL;
@@ -2190,10 +2196,7 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
     if (SCM_STRING_INCOMPLETE_P(pattern)) {
         Scm_Error("incomplete string is not allowed: %S", pattern);
     }
-    rx->pattern = Scm_CopyStringWithFlags(pattern,
-                                          SCM_STRING_IMMUTABLE,
-                                          SCM_STRING_IMMUTABLE);
-    rc_ctx_init(&cctx, rx);
+    rc_ctx_init(&cctx, rx, pattern);
     cctx.casefoldp = flags & SCM_REGEXP_CASE_FOLD;
     rx->flags |= (flags & SCM_REGEXP_CASE_FOLD);
 
@@ -2214,7 +2217,7 @@ ScmObj Scm_RegCompFromAST(ScmObj ast)
 {
     ScmRegexp *rx = make_regexp();
     regcomp_ctx cctx;
-    rc_ctx_init(&cctx, rx);
+    rc_ctx_init(&cctx, rx, NULL);
 
     /* prepare some context */
     if (!SCM_PAIRP(ast) || !SCM_INTP(SCM_CAR(ast))) {

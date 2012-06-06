@@ -744,18 +744,20 @@
 
 ;; Regexp printer.  It doesn't need speed, and it's easier to write in Scheme.
 ;; This is defined here since we can only use it after define-method support.
-;; TODO: eventually we need a converter from internal AST to string regexp
-;; so that we can print the regexp which is created procedurally (via
-;; regexp-compile), hence we have complete read/write invariance.
+;; NB: case-folding regexp is expressed by (?i:...) in regexp->string.
 (define-method write-object ((obj <regexp>) out)
-  (cond [(regexp->string obj)
-         => (^s (format out "#/~a/~a"
-                        (regexp-replace-all*
-                         s #/\// "\\\\/" #/[\x00-\x1f\x7f]/
-                         (lambda (m)
-                           (format "\\x~2,'0x" (char->integer (string-ref (m 0) 0)))))
-                        (if (regexp-case-fold? obj) "i" "")))]
-        [else (format out "#<regexp>")]))
+  (with-input-from-string (regexp->string obj)
+    (^[]
+      (display "#/" out)
+      (let loop ([c (read-char)])
+        (unless (eof-object? c)
+          (cond [(char=? #\/ c) (display #\\ out) (display c out)]
+                [(memq (char-general-category c)
+                       '(Mn Mc Me Cc Cf Cs Co Cn))
+                 (format out "\\u~4,'0x" (char->ucs c))]
+                [else (display c out)])
+          (loop (read-char))))
+      (display "/" out))))
 
 ;;;
 ;;; Make exported symbol visible from outside

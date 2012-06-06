@@ -130,7 +130,13 @@
                (disp ")"))))
 
   (define (unparse-rep op M N . ns)
-    (between "(?:" ns ")")
+    ;; special optimization - if the content is a simple character,
+    ;; or a single group, omit extra grouping
+    (if (and (not (null? ns)) (null? (cdr ns))
+             (or (char? (car ns))
+                 (and (pair? (car ns)) (integer? (caar ns)))))
+      (unparse (car ns))
+      (between "(?:" ns ")"))
     (disp (cond [(not N) (case M
                            [(0 #f) "*"]
                            [(1) "+"]

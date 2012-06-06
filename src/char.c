@@ -195,7 +195,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_CharSetClass,
 
 static void charset_print_ch(ScmPort *out, ScmChar ch, int firstp)
 {
-    if (ch == '[' || ch == ']' || ch == '-' || (ch == '^' && firstp)) {
+    if (ch < 0x80 && (strchr("[]-\\", ch) != NULL || (ch == '^' && firstp))) {
         Scm_Printf(out, "\\%c", ch);
     } else if (ch < 0x20 || ch == 0x7f) {
         Scm_Printf(out, "\\x%02x", ch);
