@@ -752,9 +752,11 @@
       (let loop ([c (read-char)])
         (unless (eof-object? c)
           (cond [(char=? #\/ c) (display #\\ out) (display c out)]
-                [(memq (char-general-category c)
-                       '(Mn Mc Me Cc Cf Cs Co Cn))
-                 (format out "\\u~4,'0x" (char->ucs c))]
+                [(memq (char-general-category c) '(Mn Mc Me Cc Cf Cs Co Cn))
+                 (let1 code (char->ucs c)
+                   (if (< code #x10000)  
+                     (format out "\\u~4,'0x" code)
+                     (format out "\\U~8,'0x" code)))]
                 [else (display c out)])
           (loop (read-char))))
       (display "/" out))))

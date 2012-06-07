@@ -195,16 +195,25 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_CharSetClass,
 
 static void charset_print_ch(ScmPort *out, ScmChar ch, int firstp)
 {
-    if (ch < 0x80 && (strchr("[]-\\", ch) != NULL || (ch == '^' && firstp))) {
+    if (ch != 0 && ch < 0x80
+        && (strchr("[]-\\", ch) != NULL || (ch == '^' && firstp))) {
         Scm_Printf(out, "\\%c", ch);
-    } else if (ch < 0x20 || ch == 0x7f) {
-        Scm_Printf(out, "\\x%02x", ch);
     } else {
-        /* This is a bit tricky.  For maximum portability and read/write
-           invariance, unicode escape would be the best.  However, we also
-           want readability.  At least raw byte sequence here should work
-           as far as the external encoding of reader and writer match. */
-        Scm_Putc(ch, out);
+        switch (Scm_CharGeneralCategory(ch)) {
+        case SCM_CHAR_CATEGORY_Mn:
+        case SCM_CHAR_CATEGORY_Mc:
+        case SCM_CHAR_CATEGORY_Me:
+        case SCM_CHAR_CATEGORY_Cc:
+        case SCM_CHAR_CATEGORY_Cf:
+        case SCM_CHAR_CATEGORY_Cs:
+        case SCM_CHAR_CATEGORY_Co:
+        case SCM_CHAR_CATEGORY_Cn:
+            if (ch < 0x10000) Scm_Printf(out, "\\u%04x", ch);
+            else              Scm_Printf(out, "\\U%08x", ch);
+            break;
+        default:
+            Scm_Putc(ch, out);
+        }
     }
 }
 

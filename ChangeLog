@@ -5,6 +5,11 @@
 	  by the shift op and was sign extended in 64bit architecture,
 	  ending up an incorrect character representation.
 
+	* src/char.c (charset_print_ch): Use unicode escape for all
+	  control and mark characters.
+	* src/libobj.scm (write-object <regexp>): Use \U syntax for the
+	  unicode chars beyond BMP.
+
 	* src/regexp.c (Scm_RegComp): Avoid keeping the original pattern
 	  string as the value of regexp->string.  The regexp->string return
 	  value is calculated from AST when it is used for the first time.
