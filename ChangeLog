@@ -1,5 +1,7 @@
 2012-06-06  Shiro Kawai  <shiro@acm.org>
 
+	* ext/tls/axTLS: updated to axTLS 1.4.6
+
 	* src/gauche.h (SCM_MAKE_CHAR): When extended character (e.g.
 	  #\uffffff) was given in an 'int' variable, it became negative
 	  by the shift op and was sign extended in 64bit architecture,
