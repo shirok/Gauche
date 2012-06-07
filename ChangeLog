@@ -1,5 +1,10 @@
 2012-06-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h (SCM_MAKE_CHAR): When extended character (e.g.
+	  #\uffffff) was given in an 'int' variable, it became negative
+	  by the shift op and was sign extended in 64bit architecture,
+	  ending up an incorrect character representation.
+
 	* src/regexp.c (Scm_RegComp): Avoid keeping the original pattern
 	  string as the value of regexp->string.  The regexp->string return
 	  value is calculated from AST when it is used for the first time.

@@ -324,7 +324,7 @@ typedef struct ScmFlonumRec {
 #define	SCM_CHAR(obj)           ((ScmChar)(obj))
 #define	SCM_CHARP(obj)          ((SCM_WORD(obj)&0xff) == 3)
 #define	SCM_CHAR_VALUE(obj)     SCM_CHAR(((unsigned long)SCM_WORD(obj)) >> 8)
-#define	SCM_MAKE_CHAR(ch)       SCM_OBJ((long)((ch) << 8) + 3)
+#define	SCM_MAKE_CHAR(ch)       SCM_OBJ((((unsigned long)(ch))<<8) + 3)
 
 #define SCM_CHAR_INVALID        ((ScmChar)(-1)) /* indicate invalid char */
 #define SCM_CHAR_MAX            (0xffffff)
