@@ -1,6 +1,8 @@
 2012-06-06  Shiro Kawai  <shiro@acm.org>
 
-	* ext/tls/axTLS: updated to axTLS 1.4.6
+	* ext/tls/axTLS: updated to axTLS 1.4.6.  Also tweaked "client
+	  renegotiation" test in ssltest.c, for it seems to depend on
+	  openssl version/architecture difference.
 
 	* src/gauche.h (SCM_MAKE_CHAR): When extended character (e.g.
 	  #\uffffff) was given in an 'int' variable, it became negative
