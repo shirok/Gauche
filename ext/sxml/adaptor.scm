@@ -118,10 +118,10 @@
 
 ;; Error handler called in SSAX
 (define (parser-error  port msg . args)
-  (let ((err (open-output-string)))
+  (let1 err (open-output-string)
     (display (port-position-prefix port) err)
-    (for-each (lambda (m) ((if (string? m) display write) m err))
-              args)
+    (display msg err)
+    (dolist [m args] ((if (string? m) display write) m err))
     (newline err)
     (error (get-output-string err))))
 

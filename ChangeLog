@@ -1,3 +1,8 @@
+2012-06-16  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sxml/adaptor.scm (parse-error): Fixed that 'msg' part
+	  wasn't included in the error message.
+
 2012-06-06  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/axTLS: updated to axTLS 1.4.6.  Also tweaked "client
