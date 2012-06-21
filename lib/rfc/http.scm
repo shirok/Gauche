@@ -50,6 +50,7 @@
   (use srfi-13)
   (use rfc.822)
   (use rfc.uri)
+  (use rfc.base64)
   (use gauche.net)
   (use gauche.parameter)
   (use gauche.charconv)
@@ -242,7 +243,7 @@
                [request-uri (ensure-request-uri request-uri enc)])
       (receive (code headers body)
           (request-response method conn host request-uri sender receiver
-                            `(:user-agent ,user-agent ,@opts) enc)
+                            `(:user-agent ,user-agent ,@(http-auth-headers conn) ,@opts) enc)
         (or (and-let* ([ (not no-redirect) ]
                        [ (string-prefix? "3" code) ]
                        [h (case redirect-handler
@@ -441,9 +442,9 @@
    (secure-agent  :init-value #f)       ; When using secure connection via
                                         ; tls, this slot holds its handle.
    (persistent    :init-keyword :persistent)   ; true for persistent connection.
-   (auth-handler  :init-keyword :auth-handler) ; unused yet
-   (auth-user     :init-keyword :auth-user)    ; unused yet
-   (auth-password :init-keyword :auth-password); unused yet
+   (auth-handler  :init-keyword :auth-handler  :init-value #f)
+   (auth-user     :init-keyword :auth-user     :init-value #f)
+   (auth-password :init-keyword :auth-password :init-value #f)
    (proxy         :init-keyword :proxy)
    (extra-headers :init-keyword :extra-headers)
    (secure        :init-keyword :secure) ; boolean
@@ -451,15 +452,18 @@
 
 (define (make-http-connection server :key
                               (persistent #t)
-                              (auth-handler  http-default-auth-handler)
+                              (auth-handler  #f)
                               (auth-user     #f)
                               (auth-password #f)
                               (proxy #f)
                               (extra-headers '()))
   (make <http-connection>
     :persistent persistent
-    :server server :auth-handler auth-handler :auth-user auth-user
-    :auth-password auth-password :proxy proxy
+    :server server
+    :auth-handler (or auth-handler (http-default-auth-handler))
+    :auth-user auth-user
+    :auth-password auth-password
+    :proxy proxy
     :extra-headers extra-headers))
 
 (define (redirect conn proto new-server)
@@ -778,5 +782,16 @@
 ;; authentication handling
 ;;
 
-;; dummy - to be written
-(define (http-default-auth-handler . _) #f)
+(define (http-auth-headers conn)
+  (or (and-let* ([auth-handler (~ conn'auth-handler)])
+        (auth-handler conn))
+      '()))
+
+(define (http-basic-auth-handler conn)
+  (and-let* ([user (~ conn 'auth-user)]
+             [pass (or (~ conn 'auth-password) "")])
+    `(:authorization ,($ format "Basic ~a"
+                         $ base64-encode-string #`",|user|:,|pass|"))))
+
+(define http-default-auth-handler
+  (make-parameter http-basic-auth-handler))

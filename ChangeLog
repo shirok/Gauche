@@ -1,3 +1,15 @@
+2012-06-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (http-basic-auth-handler): Added support
+	  for basic authentication, using :auth-user and :auth-password
+	  passed to http-requrest.  The caller no longer need to create
+	  authorization header by itself.   Patch from Bizenn.
+	  Whether the current architecture is enough to handle
+	  other authentication schemes isn't clear yet (apparently
+	  digest authentication requires a lot more complicated handling).
+	  So we don't make the :auth-handler argument and
+	  http-default-auth-handler official yet.
+
 2012-06-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml/adaptor.scm (parse-error): Fixed that 'msg' part

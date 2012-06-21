@@ -7789,6 +7789,15 @@ an error is signalled.  See the ``Secure connection'' section below.
 セキュアな接続が実行中のプラットフォームで利用できない場合はエラーが投げられます。
 下の「セキュアな接続」の項も参照してください。
 @c COMMON
+@item auth-user, auth-password
+@c EN
+If given, the authorization header using Basic Authentication
+(RFC2617) is added to the request.
+In future, we might add support for other authentication scheme.
+@c JP
+これらのキーワード引数が与えられた場合、Basic認証用のAuthorizationヘッダが
+リクエストに付加されます。将来はBasic認証以外の認証方式もサポートするかもしれません。
+@c COMMON
 @item sink, flusher
 @c EN
 You can customize how the reply message body is handled by these
