@@ -60,7 +60,7 @@
 ;; Parse optspec clause, and returns
 ;;  (<option-spec> ...)
 ;; <a-spec> is (<optspec> <handler>) or
-;; ((<optspec> <help-string>) <handler)
+;; ((<optspec> <help-string>) <handler>)
 (define (compose-entry a-spec)
   (let ((optspec (if (pair? (car a-spec)) (caar a-spec) (car a-spec)))
         (helpstr (and-let* ((l (length+ (car a-spec)))
