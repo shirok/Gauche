@@ -1639,16 +1639,16 @@ void Scm__InitPort(void)
     Scm_InitStaticClass(&Scm_CodingAwarePortClass, "<coding-aware-port>",
                         Scm_GaucheModule(), NULL, 0);
 
-    scm_stdin  = Scm_MakePortWithFd(SCM_MAKE_STR("(stdin)"),
+    scm_stdin  = Scm_MakePortWithFd(SCM_MAKE_STR("(standard input)"),
                                     SCM_PORT_INPUT, 0,
                                     SCM_PORT_BUFFER_FULL, TRUE);
-    scm_stdout = Scm_MakePortWithFd(SCM_MAKE_STR("(stdout)"),
+    scm_stdout = Scm_MakePortWithFd(SCM_MAKE_STR("(standard output)"),
                                     SCM_PORT_OUTPUT, 1,
                                     isatty(1)
                                     ? SCM_PORT_BUFFER_LINE
                                     : SCM_PORT_BUFFER_FULL,
                                     TRUE);
-    scm_stderr = Scm_MakePortWithFd(SCM_MAKE_STR("(stderr)"),
+    scm_stderr = Scm_MakePortWithFd(SCM_MAKE_STR("(standard error output)"),
                                     SCM_PORT_OUTPUT, 2,
                                     SCM_PORT_BUFFER_NONE, TRUE);
 
