@@ -4256,17 +4256,24 @@ an exact integer and treat it as a sequence of boolean values
 @end example
 @end defun
 
-@defun port->char-generator input-port
+@defun port->sexp-generator input-port
+@defunx port->line-generator input-port
+@defunx port->char-generator input-port
 @defunx port->byte-generator input-port
 @c EN
 Returns a generator that reads characters or bytes from the given
-port, respectively.  They're just @code{(cut read-char input-port)}
-and @code{(cut read-byte input-port)}, but we provide them for completeness.
+port, respectively.  They're just
+@code{(cut read input-port)},
+@code{(cut read-line input-port)},
+@code{(cut read-char input-port)}
+and @code{(cut read-byte input-port)}, respectively,
+but we provide them for completeness.
 @c JP
 それぞれ文字、バイトを与えられた入力ポートから読み取るジェネレータを
-返します。つまり、
-@code{(cut read-char input-port)}
-や
+返します。つまり、それぞれ
+@code{(cut read input-port)}、
+@code{(cut read-line input-port)}、
+@code{(cut read-char input-port)}、
 @code{(cut read-byte input-port)}
 と同じですが、完全性のために提供されています。
 @c COMMON

@@ -1,3 +1,8 @@
+2012-06-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/generator.scm (port->sexp-generator)
+	  port->line-generator): Added for completeness.
+
 2012-06-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-basic-auth-handler): Added support

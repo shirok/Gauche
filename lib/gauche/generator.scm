@@ -41,7 +41,8 @@
           bits->generator reverse-bits->generator
           file->generator file->sexp-generator file->char-generator
           file->line-generator file->byte-generator
-          port->char-generator port->byte-generator
+          port->sexp-generator port->char-generator
+          port->line-generator port->byte-generator
           x->generator generate
 
           generator->list null-generator gcons* gappend gconcatenate
@@ -128,6 +129,8 @@
   (apply file->generator filename read-byte open-args))
 
 ;; simple, but useful
+(define (port->sexp-generator port) (cut read port))
+(define (port->line-generator port) (cut read-line port))
 (define (port->char-generator port) (cut read-char port))
 (define (port->byte-generator port) (cut read-byte port))
 
