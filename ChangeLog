@@ -1,3 +1,7 @@
+2012-06-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (string_search_reverse): Fixed off-by-one bug.
+
 2012-06-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm (port->sexp-generator)

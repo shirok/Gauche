@@ -92,6 +92,9 @@
 
   (test-string-scan 3 "abcdefghi" "def")
   (test-string-scan 3 "abcdefghi" "def" 'index)
+  (test-string-scan 6 "abcdefghi" "ghi")
+  (test-string-scan 0 "abcdefghi" "abc")
+  (test-string-scan '(0 6) "abcabcabc" "abc")
   (test-string-scan "abc" "abcdefghi" "def" 'before)
   (test-string-scan "ghi" "abcdefghi" "def" 'after)
   (test-string-scan2 "abc" "defghi" "abcdefghi" "def" 'before*)
@@ -99,6 +102,9 @@
   (test-string-scan2 "abc" "ghi" "abcdefghi" "def" 'both)
 
   (test-string-scan 4 "abcdefghi" #\e)
+  (test-string-scan 8 "abcdefghi" #\i)
+  (test-string-scan 0 "abcdefghi" #\a)
+  (test-string-scan '(0 8) "abcdefgha" #\a)
   (test-string-scan "abcd" "abcdefghi" #\e 'before)
   (test-string-scan "fghi" "abcdefghi" #\e 'after)
   (test-string-scan2 "abcd" "efghi" "abcdefghi" #\e 'before*)
@@ -109,6 +115,9 @@
   (test-string-scan 216
                     "abracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabr"
                     "abracadabra")
+  (test-string-scan '(0 365)
+                    "axaxcadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababaxaxax"
+                    "axax")
 
   ;; results differ between leftmost and rightmost
   (test-string-scan '(1 8) "abracadabra" "br")

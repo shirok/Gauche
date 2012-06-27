@@ -975,10 +975,10 @@ static int string_search_reverse(const char *s1, int siz1, int len1,
             if (siz1 < siz2) return FALSE;
             if (siz1 < 256 || siz2 >= 256) {
                 /* brute-force search */
-                for (i=siz1-siz2-1; i>=0; i--) {
+                for (i=siz1-siz2; i>=0; i--) {
                     if (memcmp(s2, s1+i, siz2) == 0) break;
                 }
-                if (i == 0) return FALSE;
+                if (i < 0) return FALSE;
             } else {
                 i = boyer_moore_reverse(s1, siz1, s2, siz2);
                 if (i < 0) return FALSE;
