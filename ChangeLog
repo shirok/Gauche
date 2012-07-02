@@ -1,3 +1,9 @@
+2012-07-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (find-load-file): Allow non-regular file (e.g.
+	  device files and pipes) to be loaded.  It can be used as a dummy
+	  script for one-liner: 'gosh -E... /dev/null "$@"', for example.
+
 2012-06-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (string_search_reverse): Fixed off-by-one bug.

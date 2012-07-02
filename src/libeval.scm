@@ -197,10 +197,13 @@
 (define (find-load-file filename paths suffixes
                         :optional (error-if-not-found #f)
                                   (allow-archive #f))
+  (define (file-ok? file)
+    (and (file-exists? file)
+         (not (file-is-directory? file))))
   (define (try-suffixes stem)
-    (cond [(file-is-regular? stem) stem]
+    (cond [(file-ok? stem) stem]
           [else (any (^s (let1 file (string-append stem s)
-                           (and (file-is-regular? file) file)))
+                           (and (file-ok? file) file)))
                      suffixes)]))
   (define (do-absolute stem)
     (if-let1 found (try-suffixes stem)
