@@ -134,7 +134,7 @@ Returns a class metaobject of @var{obj}.
 @end example
 
 @c EN
-Note: In Gauche, you can redefine exsting user-defined classes.
+Note: In Gauche, you can redefine existing user-defined classes.
 If the new definition has different configuration of the instance,
 @code{class-of} on existing instance triggers instance updates;
 @xref{Class redefinition} for the details.  Using
@@ -4044,6 +4044,93 @@ return @code{#f} for all other characters.
 今のところ、これらの手続きはASCII文字のみで動作します。
 それ以外の文字に対しては@code{#f}が返されます。
 @c COMMON
+@end defun
+
+@defun char-general-category char
+[R6RS]
+@c EN
+Returns one of the following symbols, representing the Unicode general category of @var{char}.
+@c JP
+文字@var{char}のUnicode general categoryを表す、以下のシンボルのいずれかを返します。
+@c COMMON
+
+@multitable {aaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@item @code{Cc} @tab Other, Control
+@item @code{Cf} @tab Other, Format
+@item @code{Cn} @tab Other, Not Assigned
+@item @code{Co} @tab Other, Private Use
+@item @code{Cs} @tab Other, Surrogate
+@item @code{Ll} @tab Letter, Lowercase
+@item @code{Lm} @tab Letter, Modifier
+@item @code{Lo} @tab Letter, Other
+@item @code{Lt} @tab Letter, Titlecase
+@item @code{Lu} @tab Letter, Uppercase
+@item @code{Mc} @tab Mark, Spacing Combining
+@item @code{Me} @tab Mark, Enclosing
+@item @code{Mn} @tab Mark, Nonspacing
+@item @code{Nd} @tab Number, Decimal Digit
+@item @code{Nl} @tab Number, Letter
+@item @code{No} @tab Number, Other
+@item @code{Pc} @tab Punctuation, Connector
+@item @code{Pd} @tab Punctuation, Dash
+@item @code{Pe} @tab Punctuation, Close
+@item @code{Pf} @tab Punctuation, Final quote
+@item @code{Pi} @tab Punctuation, Initial quote
+@item @code{Po} @tab Punctuation, Other
+@item @code{Ps} @tab Punctuation, Open
+@item @code{Sc} @tab Symbol, Currency
+@item @code{Sk} @tab Symbol, Modifier
+@item @code{Sm} @tab Symbol, Math
+@item @code{So} @tab Symbol, Other
+@item @code{Zl} @tab Separator, Line
+@item @code{Zp} @tab Separator, Paragraph
+@item @code{Zs} @tab Separator, Space
+@end multitable
+
+@c EN
+If Gauche is compiled with euc-jp or shift_jis encoding,
+there are characters that don't have corresponding Unicode codepoint
+(each of them are represented by one unicode character plus one
+unicode modifier character).  A provisional category is assigned
+to those charcters.  If future versions of Unicode incorporates
+these characters, the category may be reassigned.
+@c JP
+Gaucheがeuc-jpかshift_jisエンコーディングでコンパイルされている場合、
+Unicodeに対応するものがない文字がいくつかあります
+(各文字は、Unicode一文字＋Unicode結合文字で表現できます)。
+これらの文字については、以下のとおり暫定的にカテゴリを割り当てています。
+将来のUnicodeにこれらの文字が取り込まれた場合は、Unicodeで決められる
+カテゴリに変更されるでしょう。
+@c COMMON
+
+@multitable {aaaa} {aaaa} {aaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} 
+@item SJIS @tab EUC @tab Cat  @tab Unicode
+@item @code{82F5} @tab @code{A4F7} @tab @code{Lo} @tab @code{U+304B U+309A} (Semi-voiced Hiragana KA)
+@item @code{82F6} @tab @code{A4F8} @tab @code{Lo} @tab @code{U+304D U+309A} (Semi-voiced Hiragana KI)
+@item @code{82F7} @tab @code{A4F9} @tab @code{Lo} @tab @code{U+304F U+309A} (Semi-voicdd Hiragana KU)
+@item @code{82F8} @tab @code{A4FA} @tab @code{Lo} @tab @code{U+3051 U+309A} (Semi-voiced Hiragana KE)
+@item @code{82F9} @tab @code{A4FB} @tab @code{Lo} @tab @code{U+3053 U+309A} (Semi-voiced Hiragana KO)
+@item @code{8397} @tab @code{A5F7} @tab @code{Lo} @tab @code{U+30AB U+309A} (Semi-voiced Katakana KA)
+@item @code{8398} @tab @code{A5F8} @tab @code{Lo} @tab @code{U+30AD U+309A} (Semi-voiced Katakana KI)
+@item @code{8399} @tab @code{A5F9} @tab @code{Lo} @tab @code{U+30AF U+309A} (Semi-voiced Katakana KU)
+@item @code{839A} @tab @code{A5FA} @tab @code{Lo} @tab @code{U+30B1 U+309A} (Semi-voiced Katakana KE)
+@item @code{839B} @tab @code{A5FB} @tab @code{Lo} @tab @code{U+30B3 U+309A} (Semi-voiced Katakana KO)
+@item @code{839C} @tab @code{A5FC} @tab @code{Lo} @tab @code{U+30BB U+309A} (Semi-voiced Katakana SE)
+@item @code{839D} @tab @code{A5FD} @tab @code{Lo} @tab @code{U+30C4 U+309A} (Semi-voiced Katakana TSU)
+@item @code{839E} @tab @code{A5FE} @tab @code{Lo} @tab @code{U+30C8 U+309A} (Semi-voiced Katakana TO)
+@item @code{83F6} @tab @code{A6F8} @tab @code{Lo} @tab @code{U+31F7 U+309A} (Semi-voiced small Katakana FU)
+@item @code{8663} @tab @code{ABC4} @tab @code{Ll} @tab @code{U+00E6 U+0300} (Accented latin small ae)
+@item @code{8667} @tab @code{ABC8} @tab @code{Ll} @tab @code{U+0254 U+0300} (Accented latin small open o)
+@item @code{8668} @tab @code{ABC9} @tab @code{Ll} @tab @code{U+0254 U+0301} (Accented latin small open o)
+@item @code{8669} @tab @code{ABCA} @tab @code{Ll} @tab @code{U+028C U+0300} (Accented latin small turned v)
+@item @code{866A} @tab @code{ABCB} @tab @code{Ll} @tab @code{U+028C U+0301} (Accented latin small turned v)
+@item @code{866B} @tab @code{ABCC} @tab @code{Ll} @tab @code{U+0259 U+0300} (Accented latin small schwa)
+@item @code{866C} @tab @code{ABCD} @tab @code{Ll} @tab @code{U+0259 U+0301} (Accented latin small schwa)
+@item @code{866D} @tab @code{ABCE} @tab @code{Ll} @tab @code{U+025A U+0300} (Accented latin small schwa w/hook)
+@item @code{866E} @tab @code{ABCF} @tab @code{Ll} @tab @code{U+025A U+0301} (Accented latin small schwa w/hook)
+@item @code{8685} @tab @code{ABE5} @tab @code{Sk} @tab @code{U+02E9 U+02E5}
+@item @code{8686} @tab @code{ABE6} @tab @code{Sk} @tab @code{U+02E5 U+02E9}
+@end multitable
 @end defun
 
 @defun char->integer char
