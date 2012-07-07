@@ -4034,15 +4034,24 @@ foldcaseについては下の@code{char-foldcase}を参照してください。
 [R5RS]
 @c EN
 Returns true if a character @var{char} is an alphabetic character
-(@code{[A-Za-z]}), a numeric character (@code{[0-9]}), a whitespace
-character, an upper case character or a lower case character, respectively.
-Currently, these procedures works only for ASCII characters.  They
-return @code{#f} for all other characters.
+(Unicode character category @code{Lu}, @code{Ll}, @code{Lt},
+@code{Lm}, @code{Lo}, @code{Nl}),
+a numeric character
+(Unicode character category @code{Nd}),
+a whitespace character,
+(Unicode character category @code{Zs}, @code{Zp}, @code{Zl}),
+an upper case character
+(Unicode character category @code{Lu}),
+or a lower case character
+(Unicode character category @code{Ll}), respectively.
 @c JP
-文字@var{char}がそれぞれ英字(@code{[A-Za-z]})、数字(@code{[0-9]})、
-空白文字、大文字および小文字の時に真の値を返します。
-今のところ、これらの手続きはASCII文字のみで動作します。
-それ以外の文字に対しては@code{#f}が返されます。
+文字@var{char}がそれぞれアルファベット
+(Unicode文字カテゴリ @code{Lu}、@code{Ll}、@code{Lt}、
+@code{Lm}、@code{Lo}、@code{Nl})、
+数字 (Unicode文字カテゴリ @code{Nd})、
+空白文字 (Unicode文字カテゴリ @code{Zs}、@code{Zp}、@code{Zl})、
+大文字 (Unicode文字カテゴリ @code{Lu})、
+小文字 (Unicode文字カテゴリ @code{Ll})の時に真の値を返します。
 @c COMMON
 @end defun
 
