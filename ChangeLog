@@ -1,3 +1,8 @@
+2012-07-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-19.scm (tm:leap-second-table): Reflected the leap
+	  second in 2012-07-01.
+
 2012-07-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-14.scm (char-set-hash): The hash value wasn't distributed
