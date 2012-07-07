@@ -1,3 +1,9 @@
+2012-07-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-14.scm (char-set-hash): The hash value wasn't distributed
+	  enough.  NB: This changes the hash value.  Watch out if it causes
+	  any inter-version compatibility issues.
+
 2012-07-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (find-load-file): Allow non-regular file (e.g.

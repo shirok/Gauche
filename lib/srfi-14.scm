@@ -90,39 +90,43 @@
 (define char-set-complement  (with-module gauche char-set-complement))
 (define char-set-complement! (with-module gauche char-set-complement!))
 
+;; Predefined charsets
+;;  NB: Should char-set:symbol be extended to full Unicode range?
+
+(define char-set:letter+digit (%char-set-predefined 0))  ; ALNUM
+(define char-set:letter      (%char-set-predefined 1))   ; ALPHA
+(define char-set:blank       (%char-set-predefined 2))   ; BLANK
+(define char-set:iso-control (%char-set-predefined 3))   ; CNTRL
+(define char-set:digit       (%char-set-predefined 4))   ; DIGIT
+(define char-set:graphic     (%char-set-predefined 5))   ; GRAPH
+(define char-set:lower-case  (%char-set-predefined 6))   ; LOWER
+(define char-set:printing    (%char-set-predefined 7))   ; PRINT
+(define char-set:punctuation (%char-set-predefined 8))   ; PUNCT
+(define char-set:whitespace  (%char-set-predefined 9))   ; SPACE
+(define char-set:upper-case  (%char-set-predefined 10))  ; UPPER
+(define char-set:title-case  (%char-set-predefined 10))  ; UPPER
+(define char-set:hex-digit   (%char-set-predefined 11))  ; XDIGITS
+
+(define char-set:symbol      (%char-set-add-chars! (char-set)
+                                                   (string->list "$+<=>^`|~")))
+(define char-set:ascii       (%char-set-add-range! (char-set) 0 128))
+(define char-set:empty       (char-set))
+(define char-set:full        (char-set-complement! (char-set)))
+
 ;;-------------------------------------------------------------------
 ;; Comparison
-(define (char-set= . args)
-  (cond ((null? args) #t)
-        ((null? (cdr args)) #t)
-        (else (let loop ((cs (car args))
-                         (rest (cdr args)))
-                (cond ((null? rest) #t)
-                      ((%char-set-equal? cs (car rest))
-                       (loop cs (cdr rest)))
-                      (else #f))))
-        ))
+(define char-set=
+  (case-lambda [() #t]
+               [args (every %char-set-equal? args (cdr args))]))
 
-(define (char-set<= . args)
-  (cond ((null? args) #t)
-        ((null? (cdr args)) #t)
-        (else (let loop ((cs (car args))
-                         (rest (cdr args)))
-                (cond ((null? rest) #t)
-                      ((%char-set<=? cs (car rest))
-                       (loop (car rest) (cdr rest)))
-                      (else #f))))
-        ))
+(define char-set<=
+  (case-lambda [() #t]
+               [args (every %char-set<=? args (cdr args))]))
 
 ;; I'm not sure this works well.  at least it won't break anything.
-(define (char-set-hash cs . args)
-  (let ((bound (if (pair? args) (car args) #x1fffffff)))
-    (let loop ((ranges (%char-set-ranges cs))
-               (value 0))
-      (if (null? ranges)
-          value
-          (loop (cdr ranges)
-                (modulo (+ value (caar ranges) (cdar ranges)) bound))))))
+(define (char-set-hash cs :optional (bound #x1fffffff))
+  (fold (^[range val] (modulo (hash (+ val (car range) (cdr range))) bound))
+        0 (%char-set-ranges cs)))
 
 ;;-------------------------------------------------------------------
 ;; Iteration
@@ -132,61 +136,59 @@
 ;; cursor === (code . ranges) | #f
 
 (define (char-set-cursor cs)
-  (let ((ranges (%char-set-ranges cs)))
+  (let1 ranges (%char-set-ranges cs)
     (if (null? ranges) #f (cons (caar ranges) ranges))))
 
 (define (char-set-ref cs cursor)
   (if (and (pair? cursor) (integer? (car cursor)))
-      (integer->char (car cursor))
-      (error "bad character-set cursor:" cursor)))
+    (integer->char (car cursor))
+    (error "bad character-set cursor:" cursor)))
 
 (define (char-set-cursor-next cs cursor)
   (if (pair? cursor)
-      (let ((code (car cursor))
-            (range (cadr cursor)))
-        (cond ((< code (cdr range))  (cons (+ code 1) (cdr cursor)))
-              ((null? (cddr cursor)) #f)
-              (else (cons (caaddr cursor) (cddr cursor)))))
-      (error "bad character-set cursor:" cursor)))
+    (let ([code (car cursor)]
+          [range (cadr cursor)])
+      (cond [(< code (cdr range))  (cons (+ code 1) (cdr cursor))]
+            [(null? (cddr cursor)) #f]
+            [else (cons (caaddr cursor) (cddr cursor))]))
+    (error "bad character-set cursor:" cursor)))
 
 (define (end-of-char-set? cursor) (not cursor))
 
 ;; functional ops
 
 (define (char-set-fold kons knil cs)
-  (let loop ((cursor (char-set-cursor cs))
-             (result knil))
+  (let loop ([cursor (char-set-cursor cs)]
+             [result knil])
     (if (end-of-char-set? cursor)
-        result
-        (loop (char-set-cursor-next cs cursor)
-              (kons (char-set-ref cs cursor) result)))))
+      result
+      (loop (char-set-cursor-next cs cursor)
+            (kons (char-set-ref cs cursor) result)))))
 
 (define (char-set-unfold! pred fun gen seed base)
-  (let loop ((seed seed))
+  (let loop ([seed seed])
     (if (pred seed)
-        base
-        (let ((c (fun seed)))
-          (%char-set-add-range! base c c)
-          (loop (gen seed))))))
+      base
+      (let1 c (fun seed)
+        (%char-set-add-range! base c c)
+        (loop (gen seed))))))
 
-(define (char-set-unfold pred fun gen seed . args)
-  (let ((base (if (pair? args) (char-set-copy (car args)) (char-set))))
-    (char-set-unfold! pred fun gen seed base)))
+(define (char-set-unfold pred fun gen seed :optional (base char-set:empty))
+  (char-set-unfold! pred fun gen seed (char-set-copy base)))
 
 (define (char-set-for-each proc cs)
-  (let loop ((cursor (char-set-cursor cs)))
+  (let loop ([cursor (char-set-cursor cs)])
     (unless (end-of-char-set? cursor)
       (proc (char-set-ref cs cursor))
       (loop (char-set-cursor-next cs cursor)))))
 
 (define (char-set-map proc cs)
-  (let ((new (char-set)))
-    (let loop ((cursor (char-set-cursor cs)))
-      (if (end-of-char-set? cursor)
-          new
-          (let ((c (proc (char-set-ref cs cursor))))
-            (%char-set-add-range! new c c)
-            (loop (char-set-cursor-next cs cursor)))))))
+  (rlet1 new (char-set)
+    (let loop ([cursor (char-set-cursor cs)])
+      (unless (end-of-char-set? cursor)
+        (let1 c (proc (char-set-ref cs cursor))
+          (%char-set-add-range! new c c)
+          (loop (char-set-cursor-next cs cursor)))))))
 
 ;;-------------------------------------------------------------------
 ;; Construction
@@ -195,56 +197,47 @@
 ;; char-set-copy : native
 ;; char-set : native
 
-(define (list->char-set chars . args)
-  (let ((base (if (pair? args) (char-set-copy (car args)) (char-set))))
-    (%char-set-add-chars! base chars)))
+(define (list->char-set chars :optional (base char-set:empty))
+  (%char-set-add-chars! (char-set-copy base) chars))
 
 (define (list->char-set! chars base)
   (%char-set-add-chars! base chars))
 
-(define (string->char-set str . args)
-  (let ((base (if (pair? args) (char-set-copy (car args)) (char-set))))
-    (%char-set-add-chars! base (string->list str))))
+(define (string->char-set str :optional (base char-set:empty))
+  (%char-set-add-chars! (char-set-copy base) (string->list str)))
 
 (define (string->char-set! str base)
   (%char-set-add-chars! base (string->list str)))
 
-(define (char-set-filter pred cs . args)
-  (let ((base (if (pair? args) (char-set-copy (car args)) (char-set))))
-    (char-set-filter! pred cs base)))
+(define (char-set-filter pred cs :optional (base char-set:empty))
+  (char-set-filter! pred cs (char-set-copy base)))
 
 (define (char-set-filter! pred cs base)
-  (let loop ((cursor (char-set-cursor cs)))
+  (let loop ([cursor (char-set-cursor cs)])
     (if (end-of-char-set? cursor)
-        base
-        (let ((c (char-set-ref cs cursor)))
-          (when (pred c) (%char-set-add-range! base c c))
-          (loop (char-set-cursor-next cs cursor))))))
+      base
+      (let1 c (char-set-ref cs cursor)
+        (when (pred c) (%char-set-add-range! base c c))
+        (loop (char-set-cursor-next cs cursor))))))
 
-(define (integer-range->char-set low upper . args)
-  (let ((error? (and (pair? args) (car args)))
-        (base (if (and (pair? args) (pair? (cdr args)))
-                  (char-set-copy (cadr args))
-                  (char-set))))
-    (integer-range->char-set! low upper error? base)))
+(define (integer-range->char-set low upper :optional (error? #f)
+                                                     (base char-set:empty))
+  (integer-range->char-set! low upper error? (char-set-copy base)))
 
 (define (integer-range->char-set! low upper error? base)
   (when (< low 0)
     (if error?
-        (error "argument out of range:" low)
-        (set! low 0)))
+      (error "argument out of range:" low)
+      (set! low 0)))
   (when (> upper (+ *char-code-max* 1))
     (if error?
-        (error "argument out of range:" upper)
-        (set! upper (+ *char-code-max* 1))))
+      (error "argument out of range:" upper)
+      (set! upper (+ *char-code-max* 1))))
   (%char-set-add-range! base low (- upper 1)))
 
-(define (ucs-range->char-set low upper . args)
-  (let ((error? (and (pair? args) (car args)))
-        (base (if (and (pair? args) (pair? (cdr args)))
-                (char-set-copy (cadr args))
-                (char-set))))
-    (ucs-range->char-set! low upper error? base)))
+(define (ucs-range->char-set low upper :optional (error? #f)
+                                                 (base char-set:empty))
+  (ucs-range->char-set! low upper error? (char-set-copy base)))
 
 (define ucs-range->char-set!
   (if (eq? (gauche-character-encoding) 'utf-8)
@@ -260,9 +253,9 @@
           (when (< low 128)
             (%char-set-add-range! base low 128)
             (set! low 128))
-          (do ((i low (+ i 1)))
-              ((>= i upper) base)
-            (let ((c (ucs->char i)))
+          (do ([i low (+ i 1)])
+              [(>= i upper) base]
+            (let1 c (ucs->char i)
               (if c
                 (%char-set-add-range! base c c)
                 (if error?
@@ -273,11 +266,11 @@
     ))
 
 (define (->char-set obj)
-  (cond ((list? obj)   (list->char-set obj))
-        ((string? obj) (string->char-set obj))
-        ((char-set? obj) obj)
-        ((char? obj) (char-set obj))
-        (else (errorf "cannot coerse ~s into a char-set" obj))))
+  (cond [(list? obj)   (list->char-set obj)]
+        [(string? obj) (string->char-set obj)]
+        [(char-set? obj) obj]
+        [(char? obj) (char-set obj)]
+        [else (errorf "cannot coerse ~s into a char-set" obj)]))
 
 ;;-------------------------------------------------------------------
 ;; Querying
@@ -299,30 +292,4 @@
                           char-set-xor char-set-xor!
                           char-set-diff+intersection
                           char-set-diff+intersection!)
-
-;;-------------------------------------------------------------------
-;; Predefined charsets
-;;
-
-;; We need to switch charset contents by underlying character encoding.
-;; for now, I put ascii stuff.
-
-(define char-set:letter+digit (%char-set-predefined 0))  ; ALNUM
-(define char-set:letter      (%char-set-predefined 1))   ; ALPHA
-(define char-set:blank       (%char-set-predefined 2))   ; BLANK
-(define char-set:iso-control (%char-set-predefined 3))   ; CNTRL
-(define char-set:digit       (%char-set-predefined 4))   ; DIGIT
-(define char-set:graphic     (%char-set-predefined 5))   ; GRAPH
-(define char-set:lower-case  (%char-set-predefined 6))   ; LOWER
-(define char-set:printing    (%char-set-predefined 7))   ; PRINT
-(define char-set:punctuation (%char-set-predefined 8))   ; PUNCT
-(define char-set:whitespace  (%char-set-predefined 9))   ; SPACE
-(define char-set:upper-case  (%char-set-predefined 10))  ; UPPER
-(define char-set:title-case  (%char-set-predefined 10))  ; UPPER
-(define char-set:hex-digit   (%char-set-predefined 11))  ; XDIGITS
-
-(define char-set:symbol      (string->char-set "$+<=>^`|~"))
-(define char-set:ascii       (integer-range->char-set 0 128))
-(define char-set:empty       (char-set))
-(define char-set:full        (char-set-complement! (char-set)))
 

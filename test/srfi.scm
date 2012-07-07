@@ -234,6 +234,10 @@
                   (char-set-unfold null? car cdr
                                    '(#\a #\e #\i #\o #\u #\u #\u)
                                    char-set:digit)))
+(test* "char-set-unfold (default)" #t
+       (char-set= (string->char-set "aeiou")
+                  (char-set-unfold null? car cdr
+                                   '(#\a #\e #\i #\o #\u #\u #\u))))
 (test* "char-set-unfold!" #t
        
        (char-set= (string->char-set "eiaou246801357999")
