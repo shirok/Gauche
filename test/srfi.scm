@@ -1347,5 +1347,11 @@
                         #f #f #f #f #f #f #f #t)))
 
 (test* "booleans->integer" 9 (booleans->integer #f #f #t #f #f #t))
- 
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-98")
+
+(use srfi-98)
+(test-module 'srfi-98)
+
 (test-end)
