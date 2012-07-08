@@ -58,27 +58,25 @@
 (define-method referencer ((obj <tree-map>))
   (define (ref o k from-right)
     (let loop ((i k) (iter (%tree-map-iter o)))
-      (cond ((zero? i) (receive (k v) (iter #f from-right) (cons k v)))
-            (else (iter #f from-right) (loop (- i 1) iter)))))
-  (lambda (o i . opt)
+      (cond [(zero? i) (receive (k v) (iter #f from-right) (cons k v))]
+            [else (iter #f from-right) (loop (- i 1) iter)])))
+  (^[o i . opt]
     (check-arg integer? i)
     (check-arg exact? i)
     (let1 siz (tree-map-num-entries o)
-      (cond ((or (< i 0) (<= siz i))
-             (get-optional opt (error "index out of range:" i)))
-            ((< (* i 2) siz) (ref o i #f))
-            (else (ref o (- siz i 1) #t))))))
+      (cond [(or (< i 0) (<= siz i))
+             (get-optional opt (error "index out of range:" i))]
+            [(< (* i 2) siz) (ref o i #f)]
+            [else (ref o (- siz i 1) #t)]))))
 
 (define-method modifier ((obj <list>))
-  (lambda (o i v) (set-car! (list-tail o i) v)))
+  (^[o i v] (set-car! (list-tail o i) v)))
 (define-method modifier ((obj <vector>)) vector-set!)
 (define-method modifier ((obj <weak-vector>)) weak-vector-set!)
 (define-method modifier ((obj <string>)) string-set!)
 
-(define-method modifier   ((obj <sequence>))
-  ;; fallback
-  (errorf "Modifying ~a by index isn't supported."
-          (class-of obj)))
+(define-method modifier   ((obj <sequence>)) ;fallback
+  (errorf "Modifying ~a by index isn't supported." (class-of obj)))
 
 ;; ref and (setter ref) --------------------------------
 
@@ -103,21 +101,21 @@
   (when (< end 0) (set! end (modulo end (size-of seq))))
   (when (> start end)
     (errorf "start ~a must be smaller than or equal to end ~a" start end))
-  (let ((size (- end start)))
+  (let1 size (- end start)
     (with-builder ((class-of seq) add! get :size size)
       (with-iterator (seq end? next :start start)
-        (dotimes (i size (get)) (add! (next)))))))
+        (dotimes [i size (get)] (add! (next)))))))
 
 (define-method (setter subseq) ((seq <sequence>) start vals)
   (with-iterator (vals end? next)
-    (do ((index start (+ index 1)))
-        ((end?))
+    (do ([index start (+ index 1)])
+        [(end?)]
       (set! (ref seq index) (next)))))
 
 (define-method (setter subseq) ((seq <sequence>) start end vals)
   (with-iterator (vals end? next)
-    (do ((index start (+ index 1)))
-        ((>= index end))
+    (do ([index start (+ index 1)])
+        [(>= index end)]
       (when (end?) (error "not enough values for (setter subseq)" vals))
       (set! (ref seq index) (next)))))
 
@@ -135,13 +133,12 @@
             (proc elt (rec))))))
     (call-with-iterators
      (cons seq more)
-     (lambda (ends? nexts)
+     (^[ends? nexts]
        (let rec ()
          (if (any (cut <>) ends?)
            seed
            (let1 elts (map (cut <>) nexts)
-             (apply proc (append! elts (list (rec)))))))))
-    ))
+             (apply proc (append! elts (list (rec)))))))))))
 
 ;; for list arguments, built-in fold-right is faster.
 (define-method fold-right (proc seed (seq <list>))
@@ -155,78 +152,70 @@
 (define-method fold-with-index (proc knil (seq <sequence>) . more)
   (if (null? more)
     (with-iterator (seq end? next)
-      (do ((i 0    (+ i 1))
-           (r knil (proc i (next) r)))
-          ((end?) r)
-        #f))
+      (do ([i 0    (+ i 1)]
+           [r knil (proc i (next) r)])
+          [(end?) r]))
     (call-with-iterators
      (cons seq more)
-     (lambda (ends? nexts)
-       (do ((i 0    (+ i 1))
-            (r knil (apply proc i (fold-right (lambda (p r) (cons (p) r))
+     (^[ends? nexts]
+       (do ([i 0    (+ i 1)]
+            [r knil (apply proc i (fold-right (^[p r] (cons (p) r))
                                               (list r)
-                                              nexts))))
-           ((any (cut <>) ends?) r)
-         #f)))))
+                                              nexts))])
+           [(any (cut <>) ends?) r])))))
 
 ;; shortcut
 (define-method fold-with-index (proc knil (seq <list>))
-  (do ((i 0     (+ i 1))
-       (seq seq (cdr seq))
-       (r knil  (proc i (car seq) r)))
-      ((null? seq) r)
-    #f))
+  (do ([i 0     (+ i 1)]
+       [seq seq (cdr seq)]
+       [r knil  (proc i (car seq) r)])
+      [(null? seq) r]))
 
 (define-method fold-with-index (proc knil (seq <vector>))
-  (do ((len (vector-length seq))
-       (i 0 (+ i 1))
-       (r knil (proc i (vector-ref seq i) r)))
-      ((= i len) r)
-    #f))
+  (do ([len (vector-length seq)]
+       [i 0 (+ i 1)]
+       [r knil (proc i (vector-ref seq i) r)])
+      [(= i len) r]))
 
 (define-method map-with-index (proc (seq <sequence>) . more)
   (if (null? more)
     (with-iterator (seq end? next)
-      (do ((i 0   (+ i 1))
-           (r '() (cons (proc i (next)) r)))
-          ((end?) (reverse! r))
-        #f))
+      (do ([i 0   (+ i 1)]
+           [r '() (cons (proc i (next)) r)])
+          [(end?) (reverse! r)]))
     (call-with-iterators
      (cons seq more)
-     (lambda (ends? nexts)
-       (do ((i 0   (+ i 1))
-            (r '() (cons (apply proc i (map (cut <>) nexts)) r)))
-           ((any (cut <>) ends?) (reverse! r))
-         #f)))))
+     (^[ends? nexts]
+       (do ([i 0   (+ i 1)]
+            [r '() (cons (apply proc i (map (cut <>) nexts)) r)])
+           [(any (cut <>) ends?) (reverse! r)])))))
 
 ;; shortcut
 (define-method map-with-index (proc (seq <list>))
-  (do ((i 0   (+ i 1))
-       (seq seq (cdr seq))
-       (r '() (cons (proc i (car seq)) r)))
-      ((null? seq) (reverse! r))
-    #f))
+  (do ([i 0   (+ i 1)]
+       [seq seq (cdr seq)]
+       [r '() (cons (proc i (car seq)) r)])
+      [(null? seq) (reverse! r)]))
 
 (define-method map-with-index (proc (seq <vector>))
-  (do ((len (vector-length seq))
-       (i 0   (+ i 1))
-       (r '() (cons (proc i (vector-ref seq i)) r)))
-      ((= i len) (reverse! r))
-    #f))
+  (do ([len (vector-length seq)]
+       [i 0   (+ i 1)]
+       [r '() (cons (proc i (vector-ref seq i)) r)])
+      [(= i len) (reverse! r)]))
 
 (define-method map-to-with-index (class proc (seq <sequence>) . more)
   (if (null? more)
       (with-builder (class add! get :size (size-of seq))
         (with-iterator (seq end? next)
-          (do ((i 0   (+ i 1)))
-              ((end?) (get))
+          (do ([i 0   (+ i 1)])
+              [(end?) (get)]
             (add! (proc i (next))))))
       (with-builder (class add! get :size (maybe-minimum-size seq more))
         (call-with-iterators
          (cons seq more)
-         (lambda (ends? nexts)
-           (do ((i 0   (+ i 1)))
-               ((any (cut <>) ends?) (get))
+         (^[ends? nexts]
+           (do ([i 0   (+ i 1)])
+               [(any (cut <>) ends?) (get)]
              (add! (apply proc i (map (cut <>) nexts)))))))))
 
 (define-method map-to-with-index ((class <list-meta>) proc (seq <sequence>) . more)
@@ -234,28 +223,28 @@
 
 (define-method for-each-with-index (proc (seq <sequence>) . more)
   (if (null? more)
-      (with-iterator (seq end? next)
-        (do ((i 0   (+ i 1)))
-            ((end?))
-          (proc i (next))))
-      (call-with-iterators
-       (cons seq more)
-       (lambda (ends? nexts)
-         (do ((i 0   (+ i 1)))
-             ((any (cut <>) ends?))
-           (apply proc i (map (cut <>) nexts)))))))
+    (with-iterator (seq end? next)
+      (do ([i 0   (+ i 1)])
+          [(end?)]
+        (proc i (next))))
+    (call-with-iterators
+     (cons seq more)
+     (^[ends? nexts]
+       (do ([i 0   (+ i 1)])
+           [(any (cut <>) ends?)]
+         (apply proc i (map (cut <>) nexts)))))))
 
 ;; shortcut
 (define-method for-each-with-index (proc (seq <list>))
-  (do ((i 0   (+ i 1))
-       (seq seq (cdr seq)))
-      ((null? seq))
+  (do ([i 0   (+ i 1)]
+       [seq seq (cdr seq)])
+      [(null? seq)]
     (proc i (car seq))))
 
 (define-method for-each-with-index (proc (seq <vector>))
-  (do ((len (vector-length seq))
-       (i 0 (+ i 1)))
-      ((= i len))
+  (do ([len (vector-length seq)]
+       [i 0 (+ i 1)])
+      [(= i len)]
     (proc i (vector-ref seq i))))
 
 ;; find with index ------------------------------------
@@ -264,48 +253,48 @@
   (with-iterator (seq end? next)
     (let loop ((i 0))
       (if (end?)
-          (values #f #f)
-          (let1 elt (next)
-            (if (pred elt)
-                (values i elt)
-                (loop (+ i 1))))))))
+        (values #f #f)
+        (let1 elt (next)
+          (if (pred elt)
+            (values i elt)
+            (loop (+ i 1))))))))
 
 ;; shortcut
 (define-method find-with-index (pred (seq <list>))
-  (let loop ((i 0) (seq seq))
-    (cond ((null? seq) (values #f #f))
-          ((pred (car seq)) (values i (car seq)))
-          (else (loop (+ i 1) (cdr seq))))))
+  (let loop ([i 0] [seq seq])
+    (cond [(null? seq) (values #f #f)]
+          [(pred (car seq)) (values i (car seq))]
+          [else (loop (+ i 1) (cdr seq))])))
 (define-method find-with-index (pred (seq <vector>))
-  (let loop ((i 0) (len (vector-length seq)))
-    (cond ((= i len) (values #f #f))
-          ((pred (vector-ref seq i)) (values i (vector-ref seq i)))
-          (else (loop (+ i 1) len)))))
+  (let loop ([i 0] [len (vector-length seq)])
+    (cond [(= i len) (values #f #f)]
+          [(pred (vector-ref seq i)) (values i (vector-ref seq i))]
+          [else (loop (+ i 1) len)])))
 
 (define-method find-index (pred (seq <sequence>))
   (receive (i e) (find-with-index pred seq) i))
 
 ;; group-sequence ----------------------------------------------
 
-(define-method group-sequence ((seq <sequence>) . args)
-  (let-keywords args ((key-proc  :key identity)
-                      (test-proc :test  eqv?))
-    (receive (bucket results)
-        (fold2 (lambda (elt bucket results)
-                 (let1 key (key-proc elt)
-                   (cond
-                    ((null? bucket) (values (list key elt) results))
-                    ((test-proc key (car bucket))
-                     (push! (cdr bucket) elt)
-                     (values bucket results))
-                    (else
-                     (values (list key elt)
-                             (cons (reverse! (cdr bucket)) results))))))
-               '() '() seq)
-      (if (null? bucket)
-        (reverse! results)
-        (reverse! (cons (reverse! (cdr bucket)) results)))
-      )))
+(define-method group-sequence ((seq <sequence>)
+                               :key ((:key key-proc) identity)
+                                    ((:test test-proc) eqv?))
+  (receive (bucket results)
+      (fold2 (^[elt bucket results]
+               (let1 key (key-proc elt)
+                 (cond
+                  [(null? bucket) (values (list key elt) results)]
+                  [(test-proc key (car bucket))
+                   (push! (cdr bucket) elt)
+                   (values bucket results)]
+                  [else
+                   (values (list key elt)
+                           (cons (reverse! (cdr bucket)) results))])))
+             '() '() seq)
+    (if (null? bucket)
+      (reverse! results)
+      (reverse! (cons (reverse! (cdr bucket)) results)))
+    ))
 
 ;; permute -------------------------------------------------------
 
@@ -314,11 +303,9 @@
   (let1 *ref (referencer src)
     (with-builder (class add! get :size (lazy-size-of ord))
       (with-iterator (ord end? next)
-        (let loop ()
-          (cond [(end?) (get)]
-                [else (let1 k (next)
-                        (add! (apply *ref src k maybe-fallback)))
-                      (loop)]))))))
+        (do ()
+            [(end?) (get)]
+          (add! (apply *ref src (next) maybe-fallback)))))))
 
 (define-method permute ((src <sequence>) (ord <sequence>) . maybe-fallback)
   (apply permute-to (class-of src) src ord maybe-fallback))
@@ -331,13 +318,12 @@
   ;; allow looser ORD and we choose optimal method on the fly.
   ;; Let's see.  Just don't forget to replace this for better one > me.
   (%permute!-arg-check seq ord)
-  (let ((permuted (permute seq ord))
-        (*set     (modifier seq)))
+  (let ([permuted (permute seq ord)]
+        [*set     (modifier seq)])
     (with-iterator (permuted end? next)
-      (let loop ((i 0))
-        (cond [(end?) seq]
-              [else (*set seq i (next))
-                    (loop (+ i 1))])))))
+      (do ([i 0 (+ i 1)])
+          [(end?) seq]
+        (*set seq i (next))))))
 
 (define-method permute! ((seq <string>) (ord <sequence>))
   ;; for string, this one is faster.
@@ -363,8 +349,8 @@
   (apply shuffle! (vector-copy seq) args))
 
 (define-method shuffle! ((seq <sequence>) . args)
-  (let* ((size (size-of seq))
-         (shuffler (make-vector size)))
+  (let* ([size (size-of seq)]
+         [shuffler (make-vector size)])
     (dotimes (i size) (vector-set! shuffler i i))
     (shuffle! shuffler)
     (permute! seq shuffler)))
