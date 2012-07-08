@@ -300,6 +300,8 @@
 (test* "size-of (custom)" 5 (size-of (sseq 1 2 3 4 5)))
 (test* "size-of (hash-table)" 4
        (size-of (hash-table 'eq? '(a . "a") '(b . "b") '(c . "c") '(z . "b"))))
+(test* "size-of (char-set)" 0 (size-of (char-set)))
+(test* "size-of (char-set)" 5 (size-of #[abAB0]))
 
 (test* "coerce-to (list->list)" '(1 2 3)
        (coerce-to <list> '(1 2 3)))

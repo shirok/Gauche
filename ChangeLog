@@ -1,3 +1,10 @@
+2012-07-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c (<char-set>), libsrc/gauche/collection.scm: Let <char-set>
+	  class inherit <collection> and implement collection framework.
+	* src/libchar.scm, lib/srfi-14/query.scm (char-set-size): Moved
+	  char-set-size to builtin.
+
 2012-07-07  Shiro Kawai  <shiro@acm.org>
 
 	* ext/srfi/srfi-19.scm (tm:leap-second-table): Reflected the leap

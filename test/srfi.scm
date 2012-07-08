@@ -345,6 +345,9 @@
        (char-set= (->char-set #\x)
                   (->char-set "y")
                   (->char-set (char-set #\x))))
+(test* "->char-set" #t
+       (char-set= (->char-set "abc")
+                  (->char-set '#(#\c #\a #\b #\a))))
 (test* "char-set-size" 10
        (char-set-size (char-set-intersection char-set:ascii char-set:digit)))
 (test* "char-set-count" 5

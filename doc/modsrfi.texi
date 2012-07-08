@@ -2105,18 +2105,29 @@ SRFI-14で定義された文字集合ライブラリを実装します (@ref{srf
 char-set char-set? char-set-contains? char-set-copy
 char-set-complement char-set-complement!
 @end example
+
+@c EN
+In Gauche,
+the @code{<char-set>} class inherits @code{<collection>} and implements
+the collection protocol, so that the generic operations defined in
+@code{gauche.collection} can also be used (@xref{Collection framework}).
+@c JP
+Gaucheでは@code{<char-set>}クラスは@code{<collection>}を継承し、
+コレクションプロトコルを実装しているので、@code{gauche.collection}モジュールで
+提供される操作も使えます (@ref{Collection framework}参照)。
+@c COMMON
 @end deftp
 
 @menu
 * SRFI-14 Character-set constructors::
-* SRFI-14 Character-set Comparison::
+* SRFI-14 Character-set comparison::
 * SRFI-14 Character-set iteration::
 * SRFI-14 Character-set query::
 * SRFI-14 Character-set algebra::
 * SRFI-14 Predefined character-set::
 @end menu
 
-@node SRFI-14 Character-set constructors, SRFI-14 Character-set Comparison, Character-set library, Character-set library
+@node SRFI-14 Character-set constructors, SRFI-14 Character-set comparison, Character-set library, Character-set library
 @subsection Character-set constructors
 @c NODE 文字セットの構築子
 
@@ -2172,7 +2183,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @defunx ucs-range->char-set! lower upper error? base-cs
 [SRFI-14]
 @c EN
-
+Creates 
 @c JP
 @c COMMON
 @end defun
@@ -2187,19 +2198,49 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @defun ->char-set x
 [SRFI-14]
 @c EN
+A convenience function to coerce various kinds of objects to a char-set.
+The argument @var{x} can be a collection of characters,
+a char-set, or a character.  If the argument is a char-set, 
+it is returned as-is.  If the argument is a character,
+a char-set with that single character is returned.
 @c JP
+様々な種類のオブジェクトを文字セットに変換する関数です。@var{x}に
+文字のコレクション、文字セット、あるいは文字を渡すことができます。
+引数が文字セットの場合はそれがそのまま返されます。
+引数が文字の場合は、その文字のみを含む文字セットが返されます。
+@c COMMON
+
+@c EN
+Note: SRFI-14's @code{->char-set} only accepts a string, a char-set
+or a character as an argument.  Gauche extends it so that it can
+accept any collection of characters.
+@c JP
+註: SRFI-14の@code{->char-set}は文字列、文字セット、文字のいずれかのみを
+引数に取ります。Gaucheでは文字の任意のコレクションを取るように拡張しました。
 @c COMMON
 @end defun
 
-@node SRFI-14 Character-set Comparison, SRFI-14 Character-set iteration, SRFI-14 Character-set constructors, Character-set library
+@node SRFI-14 Character-set comparison, SRFI-14 Character-set iteration, SRFI-14 Character-set constructors, Character-set library
 @subsection Character-set comparison
 @c NODE 文字セットの比較
 
 @defun char-set= char-set1 @dots{}
 [SRFI-14]
 @c EN
+Returns @code{#t} iff all the character sets have exactly the
+same members.
 @c JP
+与えられた文字セットが全て同じ要素を持っている場合に限り@code{#t}を返します。
 @c COMMON
+
+@example
+(char-set=)  @result{} #t
+(char-set= (char-set)) @result{} #t
+(char-set= (string->char-set "cba")
+           (list->char-set #\a #\b #\c))
+  @result{} #t
+@end example
+
 @end defun
 
 @defun char-set<= char-set1 @dots{}
@@ -2216,7 +2257,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @c COMMON
 @end defun
 
-@node SRFI-14 Character-set iteration, SRFI-14 Character-set query, SRFI-14 Character-set Comparison, Character-set library
+@node SRFI-14 Character-set iteration, SRFI-14 Character-set query, SRFI-14 Character-set comparison, Character-set library
 @subsection Character-set iteration
 @c NODE 文字セットのイテレーション
 
@@ -2280,22 +2321,6 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @node SRFI-14 Character-set query, SRFI-14 Character-set algebra, SRFI-14 Character-set iteration, Character-set library
 @subsection Character-set query
 @c NODE 文字セットへの問い合わせ
-
-@defun char-set-size char-set
-[SRFI-14]
-@c EN
-Returns a number of characters in the given charset.
-@c JP
-文字セットに含まれる文字数を返します。
-@c COMMON
-
-@example
-gosh> (char-set-size #[])
-0
-gosh> (char-set-size #[[:alnum:]])
-62
-@end example
-@end defun
 
 @defun char-set-every pred char-set
 @defunx char-set-any pred char-set

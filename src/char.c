@@ -182,7 +182,7 @@ static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext*);
 static int charset_compare(ScmObj x, ScmObj y, int equalp);
 SCM_DEFINE_BUILTIN_CLASS(Scm_CharSetClass,
                          charset_print, charset_compare, NULL, NULL,
-                         SCM_CLASS_DEFAULT_CPL);
+                         SCM_CLASS_COLLECTION_CPL);
 
 #define MASK_ISSET(cs, ch)  SCM_BITS_TEST(cs->small, ch)
 #define MASK_SET(cs, ch)    SCM_BITS_SET(cs->small, ch)

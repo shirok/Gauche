@@ -35,13 +35,6 @@
 
 (select-module srfi-14)
 
-(define (char-set-size cs)
-  (let ((count 0))
-    (for-each (lambda (range)
-                (set! count (+ count (- (cdr range) (car range)) 1)))
-              (%char-set-ranges cs))
-    count))
-
 (define (char-set-count pred cs)
   (char-set-fold (lambda (c r) (if (pred c) (+ r 1) r)) 0 cs))
 

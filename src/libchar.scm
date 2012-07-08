@@ -212,6 +212,11 @@
 
 (define-cproc char-set-copy (cs::<char-set>) Scm_CharSetCopy)
 
+(define (char-set-size cs)
+  (rlet1 count 0
+    (for-each (^[range] (inc! count (- (cdr range) (car range) -1)))
+              ((with-module gauche.internal %char-set-ranges) cs))))
+
 (define-cproc read-char-set
   (port::<input-port> :key (error::<boolean> #t) (posix-bracket::<boolean> #t))
   (result (Scm_CharSetRead port NULL error posix-bracket)))

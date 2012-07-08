@@ -109,6 +109,16 @@
               (begin0 (cons k v)
                       (set!-values (k v) (iter eof-marker #f))))))))
 
+;; NB: Do not depend on srfi-14.scm.
+(define-method call-with-iterator ((coll <char-set>) proc . args)
+  (let* ([ranges ((with-module gauche.internal %char-set-ranges) coll)]
+         [cursor (if (null? ranges) #f (caar ranges))])
+    (proc (^[] (not cursor))
+          (^[] (rlet1 c (integer->char cursor)
+                 (cond [(< cursor (cdar ranges)) (inc! cursor)]
+                       [(null? (cdr ranges)) (set! cursor #f)]
+                       [else (pop! ranges) (set! cursor (caar ranges))]))))))
+
 ;; n-ary case aux. proc
 (define (call-with-iterators colls proc)
   (let loop ((colls colls)
@@ -194,6 +204,14 @@
               (tree-map-put! tree (car item) (cdr item)))
             (lambda () tree)))))
 
+;; NB: size key is unused
+(define-method call-with-builder ((class <char-set-meta>) proc :key (size #f))
+  (let1 cs (char-set)
+    (proc (^c (unless (char? c)
+                (error "character required to build a char-set, but got" c))
+              ((with-module gauche.internal %char-set-add-chars!) cs (list c)))
+          (^[] cs))))
+
 ;; utility.  return minimum size of collections if it's easily known, or #f.
 (define (maybe-minimum-size col more)
   (let1 size (and-let* ((siz (lazy-size-of col))
@@ -271,28 +289,28 @@
 ;; generic way.  this shadows builtin map.
 (define-method map (proc (coll <collection>) . more)
   (if (null? more)
-      (with-iterator (coll end? next)
-        (do ((q (make-queue)))
-            ((end?) (queue->list q))
-          (enqueue! q (proc (next)))))
-      (let ((%map (with-module gauche map)))
-        (call-with-iterators
-         (cons coll more)
-         (lambda (ends? nexts)
-           (do ((q (make-queue)))
-               ((any (cut <>) ends?)
-                (queue->list q))
-             (enqueue! q (apply proc (%map (cut <>) nexts))))))
-        )))
+    (with-iterator (coll end? next)
+      (do ((q (make-queue)))
+          ((end?) (queue->list q))
+        (enqueue! q (proc (next)))))
+    (let ((%map (with-module gauche map)))
+      (call-with-iterators
+       (cons coll more)
+       (lambda (ends? nexts)
+         (do ((q (make-queue)))
+             ((any (cut <>) ends?)
+              (queue->list q))
+           (enqueue! q (apply proc (%map (cut <>) nexts))))))
+      )))
 
 ;; for list arguments, built-in map is much faster.
 (define-method map (proc (coll <list>) . more)
   (let ((%map (with-module gauche map)))
     (if (null? more)
-        (%map proc coll)
-        (if (every pair? more)
-            (apply %map proc coll more)
-            (next-method)))))
+      (%map proc coll)
+      (if (every pair? more)
+        (apply %map proc coll more)
+        (next-method)))))
 
 ;; redefine map$ to use generic version of map
 (define (map$ proc) (pa$ map proc))
@@ -385,6 +403,7 @@
 (define-method size-of ((coll <vector>))      (vector-length coll))
 (define-method size-of ((coll <weak-vector>)) (weak-vector-length coll))
 (define-method size-of ((coll <string>))      (string-length coll))
+(define-method size-of ((coll <char-set>))    (char-set-size coll))
 
 (define-method lazy-size-of ((coll <list>))        (length coll))
 (define-method lazy-size-of ((coll <vector>))      (vector-length coll))

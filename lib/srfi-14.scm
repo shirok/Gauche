@@ -51,6 +51,7 @@
 ;;    integer-range->char-set integer-range->char-set!
 
 (define-module srfi-14
+  (use gauche.lazy)
   (export char-set= char-set<= char-set-hash
           char-set-cursor char-set-ref char-set-cursor-next end-of-char-set?
           char-set-fold char-set-unfold char-set-unfold!
@@ -270,13 +271,14 @@
         [(string? obj) (string->char-set obj)]
         [(char-set? obj) obj]
         [(char? obj) (char-set obj)]
+        [(is-a? obj <collection>) (list->char-set (x->lseq obj))]
         [else (errorf "cannot coerse ~s into a char-set" obj)]))
 
 ;;-------------------------------------------------------------------
 ;; Querying
 ;;
 
-(autoload "srfi-14/query" char-set-size char-set-count
+(autoload "srfi-14/query" char-set-count
                           char-set->list char-set->string
                           char-set-every char-set-any)
 

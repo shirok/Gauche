@@ -4348,12 +4348,19 @@ Character set class.  Character set object represents a set of characters.
 Gauche provides built-in support of character set creation and
 a predicate that tests whether a character is in the set or not.
 
+The class implements the collection protocol (@xref{Collection framework}),
+so that the standard collection methods provided in the 
+@code{gauche.collection} module can be used.
+
 Further operations, such as set algebra, is defined in SRFI-14
 module (@xref{Character-set library}).
 @c JP
 文字の集合を取り扱う、文字集合(キャラクタセット)のクラスです。
 Gaucheは文字集合オブジェクトのサポートと、
 ある文字がその集合に属するかどうかを調べる手続きを言語組み込みで持っています。
+
+コレクションプロトコル (@ref{Collection framework}参照) を実装しているので、
+@code{gauche.collection}で提供される標準のコレクションメソッドが使えます。
 
 文字集合に関する他の操作、例えば集合演算などは、SRFI-14モジュール
 (@ref{Character-set library}参照) で提供されています。
@@ -4509,6 +4516,22 @@ Creates a character set that contains @var{char} @dots{}.
 @c JP
 (char-set #\あ #\い #\う) @result{} #[あいう]
 @c COMMON
+@end example
+@end defun
+
+@defun char-set-size char-set
+[SRFI-14]
+@c EN
+Returns a number of characters in the given charset.
+@c JP
+文字セットに含まれる文字数を返します。
+@c COMMON
+
+@example
+gosh> (char-set-size #[])
+0
+gosh> (char-set-size #[[:alnum:]])
+62
 @end example
 @end defun
 
