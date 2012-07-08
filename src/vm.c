@@ -2678,10 +2678,12 @@ static ScmObj get_debug_info(ScmCompiledCode *base, SCM_PCTYPE pc)
         || (pc < base->code || pc >= base->code + base->codeSize)) {
         return SCM_FALSE;
     }
-    off = (int)(pc - base->code - 1);  /* pc is already incremented, so -1. */
+    off = (int)(pc - base->code);
     SCM_FOR_EACH(ip, base->info) {
         ScmObj p = SCM_CAR(ip);
         if (!SCM_PAIRP(p) || !SCM_INTP(SCM_CAR(p))) continue;
+        /* PC points to the next instruction,
+           search for info entry right before it. */
         if (SCM_INT_VALUE(SCM_CAR(p)) < off) {
             return SCM_CDR(p);
             break;

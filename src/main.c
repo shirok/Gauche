@@ -532,8 +532,9 @@ int main(int argc, char **argv)
         ScmObj mainproc = SCM_FALSE;
         ScmEvalPacket epak;
 
-        if (Scm_Load(scriptfile, 0, &lpak) < 0) {
-            error_exit(lpak.exception);
+        Scm_Load(scriptfile, SCM_LOAD_PROPAGATE_ERROR, &lpak);
+        if (!lpak.loaded) {
+            Scm_Exit(1);
         }
 
         /* If symbol 'main is bound, call it (SRFI-22).   */

@@ -788,7 +788,7 @@ ScmObj Scm_RaiseCondition(ScmObj condition_type, ...)
 
 /*
  * Show stack trace.
- *   stacklite - return value of Scm_GetStackLite
+ *   stacklite - return value of Scm_VMGetStackLite
  *   maxdepth - maximum # of stacks to be shown.
  *              0 to use the default.  -1 for unlimited.
  *   skip     - ignore this number of frames.  Useful to call this from
