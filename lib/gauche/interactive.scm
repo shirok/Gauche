@@ -112,7 +112,7 @@
     (format #t "~s is an instance of class ~a\n" object (class-name class))
     (unless (null? slots)
       (format #t "slots:\n")
-      (dotimes [s (map slot-definition-name slots)]
+      (dolist [s (map slot-definition-name slots)]
         (format #t "  ~10s: ~a\n" s
                 (if (slot-bound? object s)
                   (with-output-to-string
