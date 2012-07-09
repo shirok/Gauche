@@ -32,7 +32,7 @@
 ;;;
 
 (define-module gauche.modutil
-  (export export-if-defined use-version)
+  (export export-if-defined use-version describe-symbol-bindings)
   )
 (select-module gauche.modutil)
 
@@ -63,3 +63,27 @@
                (require ,compat)
                (import ,module))))))))
 
+;; Called when you describe a symbol in REPL.  Look for the symbol
+;; in all named modules.
+(define (describe-symbol-bindings sym)
+  (define const?     (with-module gauche.internal gloc-const?))
+  (define inlinable? (with-module gauche.internal gloc-inlinable?))
+  (define find-b     (with-module gauche.internal find-binding))
+  (define (describe-binding mod gloc val)
+    (let1 attrs (cond-list [(const? gloc) 'const]
+                           [(inlinable? gloc) 'inlinable])
+      (format #t "  In module `~s'" (module-name mod))
+      (unless (null? attrs) (format #t " ~s" attrs))
+      (format #t ":\n    ~a\n"
+              (guard [e (else "#<unprintable>")]
+                (format "~,,,,50:a" val)))))
+  (let1 bindings (filter-map (^m (and-let* ([g (find-b m sym #t)]
+                                            [ (global-variable-bound? m sym) ])
+                                   (list m g (global-variable-ref m sym))))
+                             (all-modules))
+    (if (null? bindings)
+      (format #t "No known bindings for variable ~a.\n" sym)
+      (begin (format #t "Known binding~a for variable ~a:\n"
+                     (if (null? (cdr bindings)) "" "s") sym)
+             (for-each (cut apply describe-binding <>) bindings))))
+  (values))

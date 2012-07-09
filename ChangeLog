@@ -1,3 +1,8 @@
+2012-07-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm (describe): When a symbol is described,
+	  show the known bindings on the symbol for the convenience.
+
 2012-07-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (get_debug_info), src/main.c (main): Fixed lost stack

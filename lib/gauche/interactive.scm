@@ -107,22 +107,22 @@
 ;;
 
 (define-method describe (object)
-  (let* ((class (class-of object))
-         (slots (class-slots class)))
-    (format #t "~s is an instance of class ~a\n"
-            object (class-name class))
+  (let* ([class (class-of object)]
+         [slots (class-slots class)])
+    (format #t "~s is an instance of class ~a\n" object (class-name class))
     (unless (null? slots)
       (format #t "slots:\n")
-      (for-each (lambda (s)
-                  (format #t "  ~10s: ~a\n" s
-                          (if (slot-bound? object s)
-                              (with-output-to-string
-                                (lambda () (write-limited (slot-ref object s)
-                                                          60)))
-                              "#<unbound>")))
-                (map slot-definition-name slots)))
-    (values)
-    ))
+      (dotimes [s (map slot-definition-name slots)]
+        (format #t "  ~10s: ~a\n" s
+                (if (slot-bound? object s)
+                  (with-output-to-string
+                    (^[] (write-limited (slot-ref object s) 60)))
+                  "#<unbound>"))))
+    (values)))
+
+(define-method describe ((s <symbol>))
+  (format #t "~s is an instance of class ~a\n" s (class-name (class-of s)))
+  (describe-symbol-bindings s)) ;; autoloaded from gauche.modutil
 
 ;; For convenience
 ;; This may interfere with other code.
@@ -141,6 +141,9 @@
 ;; Autoload module reloader
 (autoload gauche.reload reload reload-modified-modules
                         module-reload-rules reload-verbose)
+
+;; See (describe <symbol>) above
+(autoload gauche.modutil describe-symbol-bindings)
 
 ;; For convenience
 (let ((dotfile (sys-normalize-pathname "~/.gaucherc" :expand #t)))
