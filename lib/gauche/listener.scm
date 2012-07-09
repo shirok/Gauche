@@ -79,12 +79,12 @@
    ))
 
 (define-method listener-show-prompt ((self <listener>))
-  (guard (e ((sigpipe? e)
+  (guard (e [(sigpipe? e)
              (or (listener-fatal self e)
                  (listener-finalize self))
-             #f))
+             #f])
     (with-output-to-port (ref self 'output-port)
-      (lambda ()
+      (^[]
         ((ref self 'prompter))
         (flush)
         #t))))
@@ -115,43 +115,43 @@
 
   (define (body return)
     (define (finish)
-      (guard (e (else (return e)))
+      (guard (e [else (return e)])
         (listener-finalize self)
         (return #f)))
     (define (abort e)
-      (guard (e (else (return e)))
+      (guard (e [else (return e)])
         (or (listener-fatal self e) (listener-finalize self))
         (return #f)))
 
-    (let1 chunk (guard (e (else (abort e)))
+    (let1 chunk (guard (e [else (abort e)])
                   (read-block 8192 (ref self 'input-port)))
       (when (eof-object? chunk) (finish))
       (with-ports
           (ref self 'input-port)
           (ref self 'output-port)
           (ref self 'error-port)
-        (lambda ()
+        (^[]
           (update! (ref self 'rbuf) (cut string-append <> chunk))
           (string-incomplete->complete! (ref self 'rbuf))
-          (guard (e (else
+          (guard (e [else
                      (set! (ref self 'rbuf) "")
-                     (guard (e1 (else (abort e1)))
+                     (guard (e1 [else (abort e1)])
                        ((ref self 'error-handler) e)
                        (listener-show-prompt self)
-                       #f)))
+                       #f)])
             (let loop ()
               (update! (ref self 'rbuf) (cut string-trim <> #[\s]))
               (and (not (string-null? (ref self 'rbuf)))
                    (complete-sexp? (ref self 'rbuf))
                    (begin
                      (with-input-from-string (ref self 'rbuf)
-                       (lambda ()
+                       (^[]
                          (let1 expr ((ref self 'reader))
                            (when (eof-object? expr) (finish))
                            (receive r
                                ((ref self 'evaluator) expr
                                 (ref self 'environment))
-                             (guard (e ((sigpipe? e) (abort e)))
+                             (guard (e [(sigpipe? e) (abort e)])
                                (apply (ref self 'printer) r)
                                (flush)))
                            (set! (ref self 'rbuf)
@@ -166,9 +166,9 @@
   (set! (ref self 'original-error-port)  (current-error-port))
 
   ;; Returns a handler closure.
-  (lambda ()
-    (cond ((call/cc body) => raise)
-          (else #t)))
+  (^[]
+    (cond [(call/cc body) => raise]
+          [else #t]))
   )
 
 ;; Check if the given string can be parsed as a complete sexp.
@@ -179,66 +179,66 @@
 
 (define (complete-sexp? str)
   (with-input-from-string str
-    (lambda ()
+    (^[]
       ;; charset that delimits token
       (define special-chars #[\x00-\x20\"\'()\,\;\[\\\]\`{|}\x7f])
 
       ;; main loop
       (define (rec closer)
         (let1 ch (read-char)
-          (cond ((eof-object? ch) (if closer #f #t))
-                ((eqv? closer ch) #t)
-                ((eqv? #\( ch) (and (rec #\) ) (rec closer)))
-                ((eqv? #\[ ch) (and (rec #\] ) (rec closer)))
-                ((eqv? #\{ ch) (and (rec #\} ) (rec closer)))
-                ((eqv? #\" ch) (and (rec-escaped #\") (rec closer)))
-                ((eqv? #\| ch) (and (rec-escaped #\|) (rec closer)))
-                ((eqv? #\; ch) (skip-to-nl) (rec closer))
-                ((eqv? #\# ch)
+          (cond [(eof-object? ch) (if closer #f #t)]
+                [(eqv? closer ch) #t]
+                [(eqv? #\( ch) (and (rec #\) ) (rec closer))]
+                [(eqv? #\[ ch) (and (rec #\] ) (rec closer))]
+                [(eqv? #\{ ch) (and (rec #\} ) (rec closer))]
+                [(eqv? #\" ch) (and (rec-escaped #\") (rec closer))]
+                [(eqv? #\| ch) (and (rec-escaped #\|) (rec closer))]
+                [(eqv? #\; ch) (skip-to-nl) (rec closer)]
+                [(eqv? #\# ch)
                  (let1 c2 (read-char)
-                   (cond ((eof-object? c2) #f)
-                         ((eqv? c2 #\\)
+                   (cond [(eof-object? c2) #f]
+                         [(eqv? c2 #\\)
                           (and (not (eof-object? (read-char)))
-                               (begin (skip-token) (rec closer))))
-                         ((eqv? c2 #\/) (and (rec-escaped #\/) (rec closer)))
-                         ((eqv? c2 #\[) (and (rec-escaped #\]) (rec closer)))
-                         ((eqv? c2 #\,)
+                               (begin (skip-token) (rec closer)))]
+                         [(eqv? c2 #\/) (and (rec-escaped #\/) (rec closer))]
+                         [(eqv? c2 #\[) (and (rec-escaped #\]) (rec closer))]
+                         [(eqv? c2 #\,)
                           (let1 c3 (skip-ws)
-                            (cond ((eof-object? c3) #f)
-                                  ((eqv? #\( c3) (and (rec #\) ) (rec closer)))
-                                  ((eqv? #\[ c3) (and (rec #\] ) (rec closer)))
-                                  ((eqv? #\{ c3) (and (rec #\} ) (rec closer)))
-                                  (else (skip-token) (rec closer)))))
-                         ((eqv? c2 #\() (and (rec #\)) (rec closer)))
-                         ((eqv? c2 #\<)
+                            (cond [(eof-object? c3) #f]
+                                  [(eqv? #\( c3) (and (rec #\) ) (rec closer))]
+                                  [(eqv? #\[ c3) (and (rec #\] ) (rec closer))]
+                                  [(eqv? #\{ c3) (and (rec #\} ) (rec closer))]
+                                  [else (skip-token) (rec closer)]))]
+                         [(eqv? c2 #\() (and (rec #\)) (rec closer))]
+                         [(eqv? c2 #\<)
                           (errorf "unreadable sequence #<~a..."
-                                  (read-block 10)))
-                         (else (rec closer)))))
-                (else (rec closer)))))
+                                  (read-block 10))]
+                         [else (rec closer)]))]
+                [else (rec closer)])))
 
       (define (rec-escaped closer)
         (let1 ch (read-char)
-          (cond ((eof-object? ch) #f)
-                ((eqv? closer ch) #t)
-                ((eqv? #\\ ch) (read-char) (rec-escaped closer))
-                (else (rec-escaped closer)))))
+          (cond [(eof-object? ch) #f]
+                [(eqv? closer ch) #t]
+                [(eqv? #\\ ch) (read-char) (rec-escaped closer)]
+                [else (rec-escaped closer)])))
 
       (define (skip-token)
-        (let loop ((ch (peek-char)))
+        (let loop ([ch (peek-char)])
           (unless (or (eof-object? ch)
                       (char-set-contains? special-chars ch))
             (read-char)
             (loop (peek-char)))))
 
       (define (skip-ws)
-        (let loop ((ch (read-char)))
+        (let loop ([ch (read-char)])
           (if (or (eof-object? ch)
                   (char-set-contains? #[\S] ch))
-              ch
-              (loop (read-char)))))
+            ch
+            (loop (read-char)))))
 
       (define (skip-to-nl)
-        (let loop ((ch (read-char)))
+        (let loop ([ch (read-char)])
           (unless (or (eof-object? ch)
                       (eqv? ch #\newline))
             (loop (read-char)))))
@@ -252,7 +252,7 @@
 ;;;
 
 (define-method listener-finalize ((self <listener>))
-  (and-let* ((f (ref self 'finalizer)))
+  (and-let* ([f (ref self 'finalizer)])
     (with-ports
         (ref self 'original-input-port)
         (ref self 'original-output-port)
@@ -260,7 +260,7 @@
       f)))
 
 (define-method listener-fatal ((self <listener>) e)
-  (and-let* ((f (ref self 'fatal-handler)))
+  (and-let* ([f (ref self 'fatal-handler)])
     (with-ports
         (ref self 'original-input-port)
         (ref self 'original-output-port)
@@ -269,7 +269,7 @@
 
 (define (sigpipe? e)
   (cond-expand
-   (gauche.os.windows #f)
-   (else (and (<unhandled-signal-error> e)
-              (eqv? (ref e 'signal) SIGPIPE)))))
+   [gauche.os.windows #f]
+   [else (and (<unhandled-signal-error> e)
+              (eqv? (ref e 'signal) SIGPIPE))]))
 

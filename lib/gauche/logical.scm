@@ -43,23 +43,22 @@
 
 (define (copy-bit index from bit)
   (if bit
-      (logior (ash 1 index) from)
-      (logand (lognot (ash 1 index)) from)))
+    (logior (ash 1 index) from)
+    (logand (lognot (ash 1 index)) from)))
 
 (define (bit-field n start end)
   (check-arg integer? start)
   (check-arg integer? end)
   (if (< start end)
-      (let ((mask (- (ash 1 (- end start)) 1)))
-        (logand (ash n (- start)) mask))
-      0))
+    (let1 mask (- (ash 1 (- end start)) 1)
+      (logand (ash n (- start)) mask))
+    0))
 
 (define (copy-bit-field to start end from)
   (check-arg integer? start)
   (check-arg integer? end)
   (if (< start end)
-      (let ((mask (- (ash 1 (- end start)) 1)))
-        (logior (logand to (lognot (ash mask start)))
-                (ash (logand from mask) start)))
-      from))
-
+    (let1 mask (- (ash 1 (- end start)) 1)
+      (logior (logand to (lognot (ash mask start)))
+              (ash (logand from mask) start)))
+    from))

@@ -60,32 +60,30 @@
   ;; file - path components after prefix, e.g. gauche/mop
   ;; base - the last component of file, e.g. mop
   (define (search pats prefix file base seed)
-    (let* ((path (topath prefix file)))
-      (cond ((and (not (null? (cdr pats)))
+    (let* ([path (topath prefix file)])
+      (cond [(and (not (null? (cdr pats)))
                   (match? (car pats) base)
                   (file-is-directory? path))
-             (fold (lambda (subfile seed)
+             (fold (^[subfile seed]
                      (search (cdr pats) prefix #`",|file|/,|subfile|"
                              subfile seed))
-                   seed (readdir path)))
-            ((and (null? (cdr pats))
+                   seed (readdir path))]
+            [(and (null? (cdr pats))
                   (or (string-suffix? ".scm" base)
                       (string-suffix? ".sci" base))
                   (match? (car pats) (string-drop-right base 4))
                   (file-exists? path))
-             (cond (allow-duplicates?  (proc (ensure path file) path seed))
-                   ((member file seen) seed)
-                   ((ensure path file)
-                    => (lambda (mod)
-                         (push! seen file)
-                         (proc mod path seed)))
-                   (else seed)))
-            (else seed))))
+             (cond [allow-duplicates?  (proc (ensure path file) path seed)]
+                   [(member file seen) seed]
+                   [(ensure path file)
+                    => (^[mod] (push! seen file) (proc mod path seed))]
+                   [else seed])]
+            [else seed])))
 
   (define (match? pat component)
     (let1 rx (module-glob-pattern->regexp pat)
-      (cond ((rx component) => (lambda (m) (m 0)))
-            (else #f))))
+      (cond [(rx component) => (^m (m 0))]
+            [else #f])))
   (define (ensure path file)
     (if search-module?
       (let1 modname (path->module-name (string-drop-right file 4))
@@ -95,12 +93,11 @@
       (string-drop-right file 4)))
 
   ;; main body
-  (let ((pats (if search-module?
-                (string-split (x->string pattern) #\.)
-                (string-split pattern #\/))))
-    (fold (lambda (prefix seed)
-            (fold (lambda (file seed)
-                    (search pats prefix file file seed))
+  (let1 pats (if search-module?
+               (string-split (x->string pattern) #\.)
+               (string-split pattern #\/))
+    (fold (^[prefix seed]
+            (fold (^[file seed] (search pats prefix file file seed))
                   seed (readdir prefix)))
           seed paths))
 
@@ -136,28 +133,26 @@
            (or (and (string? mod/path) (provided? mod/path))
                (and (symbol? mod/path) (find-module mod/path))))
       ;; scan the filesystem
-      (call/cc
-       (lambda (found)
-         (library-fold mod/path
-                       (lambda (mod path seed) (found #t))
-                       #f
-                       :strict? strict? :paths paths)))))
+      (let/cc found
+        (library-fold mod/path
+                      (^[mod path seed] (found #t))
+                      #f
+                      :strict? strict? :paths paths))))
 
 ;; Convenience wrappers
 (define (library-map mod/path proc . opts)
   (reverse! (apply library-fold mod/path
-                   (lambda (mod path seed) (cons (proc mod path) seed))
+                   (^[mod path seed] (cons (proc mod path) seed))
                    '() opts)))
 
 (define (library-for-each mod/path proc . opts)
-  (apply library-fold mod/path (lambda (mod path seed) (proc mod path))
-         '() opts))
+  (apply library-fold mod/path (^[mod path seed] (proc mod path)) '() opts))
 
 ;; Try to determine the file is a module source file
 ;;  NB: this will be more involved when we allow more than one modules
 ;;  in a file.  Or should we?
 (define (library-has-module? file name)
-  (let1 exp (guard (e (else #f))
+  (let1 exp (guard (e [else #f])
               (with-input-from-file file read :if-does-not-exist #f))
     (and (pair? exp)
          (eq? (car exp) 'define-module)
@@ -171,10 +166,10 @@
 ;; readdir with removing "." and "..".
 (define (readdir dir)
   (if (file-is-directory? dir)
-    (let loop ((p (sys-readdir dir)) (r '()))
-      (cond ((null? p) (reverse! r))
-            ((member (car p) '("." "..")) (loop (cdr p) r))
-            (else (loop (cdr p) (cons (car p) r)))))
+    (let loop ([p (sys-readdir dir)] (r '()))
+      (cond [(null? p) (reverse! r)]
+            [(member (car p) '("." "..")) (loop (cdr p) r)]
+            [else (loop (cdr p) (cons (car p) r))]))
     '()))
 
 (define (topath prefix file)
@@ -182,20 +177,20 @@
 
 ;; NB: this is also used by gauche.reload
 (define (module-glob-pattern->regexp pat)
-  (guard (e (else (error "bad glob pattern" pat)))
+  (guard (e [else (error "bad glob pattern" pat)])
     (string->regexp
      (with-string-io pat
-       (lambda ()
+       (^[]
          (display "^")
-         (let loop ((c (read-char)))
+         (let loop ([c (read-char)])
            (unless (eof-object? c)
              (case c
-               ((#\?) (display "[^.]") (loop (read-char)))
-               ((#\*) (display "[^.]*") (loop (read-char)))
-               ((#\\) (let1 c2 (read-char)
+               [(#\?) (display "[^.]") (loop (read-char))]
+               [(#\*) (display "[^.]*") (loop (read-char))]
+               [(#\\) (let1 c2 (read-char)
                         (unless (eof-object? c2)
-                          (write-char c2) (loop (read-char)))))
-               ((#\.) (display "\\.") (loop (read-char)))
-               (else (write-char c) (loop (read-char))))))
+                          (write-char c2) (loop (read-char))))]
+               [(#\.) (display "\\.") (loop (read-char))]
+               [else (write-char c) (loop (read-char))])))
          (display "$"))))))
 

@@ -21,8 +21,6 @@
 ;; Development-only utility to reload modules while retaining data.
 
 (define-module gauche.reload
-  (use srfi-1)
-  (use srfi-2)
   (use file.util)
   (use srfi-13)
   (use gauche.libutil)
@@ -54,9 +52,7 @@
 ;; find-file-in-paths from file.util doesn't work on foo/bar searches
 (define (find-in-path file path)
   (find file-is-regular?
-        (map (lambda (d)
-               (sys-normalize-pathname (string-append d "/" file)))
-             path)))
+        (map (^d (sys-normalize-pathname (string-append d "/" file))) path)))
 
 ;; procedure reload <module-name> &optional <rule> ...
 ;;
@@ -64,13 +60,13 @@
   (let1 mod (find-module module-name)
     (if (not mod)
       (warn "no such module: ~S" module-name)
-      (let ((table (module-table mod))
-            (saves (make-hash-table 'eq?)))
+      (let ([table (module-table mod)]
+            [saves (make-hash-table 'eq?)])
         ;; remember data
         (if (not (null? predicates))
           (hash-table-for-each
            table
-           (lambda (sym gloc)
+           (^[sym gloc]
              (let1 value (eval sym mod)
                (define (check keep?)
                  (cond [(procedure? keep?) (keep? value)]
@@ -87,7 +83,7 @@
                            (or (check (car keep?))
                                (check (cdr keep?)))])]
                        [else (error "invalid predicate: " keep?)]))
-               (let loop ((preds predicates))
+               (let loop ([preds predicates])
                  (if (not (null? preds))
                    (if (check (car preds))
                      (begin
@@ -100,21 +96,19 @@
         ;; restore any remembered data
         (hash-table-for-each
          saves
-         (lambda (sym value)
-           (eval `(set! ,sym (quote ,value)) mod)))))))
+         (^[sym value] (eval `(set! ,sym (quote ,value)) mod)))))))
 
 ;; procedure reload-modified-modules &optional <reload-rules>
 ;;   Reloads modules that are modified after this module is loaded.
 (define reload-modified-modules
-  (let ((init (sys-time))
-        (mod-times (make-hash-table 'eq?)))
+  (let ([init (sys-time)]
+        [mod-times (make-hash-table 'eq?)])
     (lambda rl
       ;; get default rules from module-reload-rules, and convert to
       ;; regexps up front
       (define rules
-        (map (lambda (x)
-               (cons (module-glob-pattern->regexp (symbol->string (car x)))
-                     (cdr x)))
+        (map (^x (cons (module-glob-pattern->regexp (symbol->string (car x)))
+                       (cdr x)))
              (if (pair? rl) (car rl) (module-reload-rules))))
       ;; search for the module name in ls
       (define (find-rule name ls)
@@ -124,7 +118,7 @@
       ;; check each loaded module to see if it has changed
       (let1 now (sys-time)
         (for-each
-         (lambda (mod)
+         (^[mod]
            (and-let* ([name (module-name mod)]
                       [last-load (hash-table-get mod-times name init)]
                       [p1 (string-append (module-name->path name) ".scm")]

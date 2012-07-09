@@ -49,9 +49,9 @@
 
 (define (port->list reader port)
   (with-port-locking port
-    (lambda ()
-      (let loop ((obj (reader port))
-                 (result '()))
+    (^[]
+      (let loop ([obj (reader port)]
+                 [result '()])
         (if (eof-object? obj)
           (reverse! result)
           (loop (reader port) (cons obj result)))))))
@@ -68,11 +68,11 @@
 
 (define-macro (%do-copy reader writer incr)
   `(with-port-locking src
-     (lambda ()
+     (^[]
        (with-port-locking dst
-         (lambda ()
-           (let loop ((data  ,reader)
-                      (count 0))
+         (^[]
+           (let loop ([data  ,reader]
+                      [count 0])
              (if (eof-object? data)
                count
                (begin ,writer
@@ -80,9 +80,9 @@
 
 (define-macro (%do-copy/limit1 reader writer limit)
   `(with-port-locking src
-     (lambda ()
+     (^[]
        (with-port-locking dst
-         (lambda ()
+         (^[]
            (let loop ((count 0))
              (if (>= count ,limit)
                count
@@ -94,9 +94,9 @@
 
 (define (%do-copy/limitN src dst buf unit limit)
   (with-port-locking src
-    (lambda ()
+    (^[]
       (with-port-locking dst
-        (lambda ()
+        (^[]
           (let loop ((count 0))
             (if (>= count limit)
               count
@@ -131,8 +131,8 @@
 
 ;; useful for error messages
 (define (port-position-prefix port)
-  (let ((n (port-name port))
-        (l (port-current-line port)))
+  (let ([n (port-name port)]
+        [l (port-current-line port)])
     (if n
       (if (positive? l)
         (format #f "~s:line ~a: " n l)

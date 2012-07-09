@@ -92,16 +92,16 @@
 
 (define (log-format-prefix drain pstr)
   (with-string-io pstr
-    (lambda ()
-      (let loop ((c (read-char)))
-        (cond ((eof-object? c))
-              ((char=? c #\~ )
-               (let ((c1 (read-char)))
-                 (cond ((eof-object? c1) (display c))
-                       ((char=? c1 #\P)
+    (^[]
+      (let loop ([c (read-char)])
+        (cond [(eof-object? c)]
+              [(char=? c #\~ )
+               (let1 c1 (read-char)
+                 (cond [(eof-object? c1) (display c)]
+                       [(char=? c1 #\P)
                         (display (slot-ref drain 'program-name))
-                        (loop (read-char)))
-                       ((char=? c1 #\T)
+                        (loop (read-char))]
+                       [(char=? c1 #\T)
                         ;; NB: I used to use (sys-strftime "%b %e %H:%M:%S"), but
                         ;; not all implementations supports %e, which is like
                         ;; %d (day of the month) but suppressing the leading
@@ -113,30 +113,30 @@
                                   (slot-ref t 'hour)
                                   (slot-ref t 'min)
                                   (slot-ref t 'sec)))
-                        (loop (read-char)))
-                       ((char=? c1 #\Y)
+                        (loop (read-char))]
+                       [(char=? c1 #\Y)
                         (display (sys-strftime "%Y" (sys-localtime (sys-time))))
-                        (loop (read-char)))
-                       ((char=? c1 #\$)
+                        (loop (read-char))]
+                       [(char=? c1 #\$)
                         (display (sys-getpid))
-                        (loop (read-char)))
-                       ((char=? c1 #\U)
+                        (loop (read-char))]
+                       [(char=? c1 #\U)
                         (display (or (sys-uid->user-name (sys-geteuid))
                                      (sys-geteuid)))
-                        (loop (read-char)))
-                       ((char=? c1 #\H)
+                        (loop (read-char))]
+                       [(char=? c1 #\H)
                         (display (sys-gethostname))
-                        (loop (read-char)))
-                       (else
-                        (display c) (display c1) (loop (read-char))))))
-              (else (display c) (loop (read-char))))
+                        (loop (read-char))]
+                       [else
+                        (display c) (display c1) (loop (read-char))]))]
+              [else (display c) (loop (read-char))])
         ))))
 
 (define (log-get-prefix drain)
-  (let ((pstr (slot-ref drain 'prefix)))
-    (cond ((string? pstr) (log-format-prefix drain pstr))
-          ((not pstr) "")
-          (else (pstr drain)))))
+  (let1 pstr (slot-ref drain 'prefix)
+    (cond [(string? pstr) (log-format-prefix drain pstr)]
+          [(not pstr) ""]
+          [else (pstr drain)])))
 
 ;; File lock handling
 ;;   Only called if the drain is a file and successfully opened.
@@ -153,76 +153,74 @@
 (define (determine-lock-policy drain port)
   (set! (slot-ref drain 'lock-policy)
         (cond-expand
-         (gauche.sys.fcntl
-          (guard (e ((<system-error> e) 'file))
-            (let ((lk (make <sys-flock> :type F_WRLCK :whence 0))
-                  (un (make <sys-flock> :type F_UNLCK :whence 0)))
+         [gauche.sys.fcntl
+          (guard (e [(<system-error> e) 'file])
+            (let ([lk (make <sys-flock> :type F_WRLCK :whence 0)]
+                  [un (make <sys-flock> :type F_UNLCK :whence 0)])
               (and (sys-fcntl port F_SETLK lk)
                    (sys-fcntl port F_SETLK un))
-              'fcntl)))
-         (else
-          'file)))
+              'fcntl))]
+         [else 'file]))
   drain)
 
 (define (lock-data drain port)
   (case (slot-ref drain 'lock-policy)
-    ((fcntl) (make <sys-flock> :type F_WRLCK :whence 0))
-    ((file)  (string-append (slot-ref drain 'path) ".lock"))
-    ((tbd)   (lock-data (determine-lock-policy drain port) port))
-    (else    #t)))
+    [(fcntl) (make <sys-flock> :type F_WRLCK :whence 0)]
+    [(file)  (string-append (slot-ref drain 'path) ".lock")]
+    [(tbd)   (lock-data (determine-lock-policy drain port) port)]
+    [else    #t]))
 
 (define (lock-file drain port data)
   (case (slot-ref drain 'lock-policy)
-    ((fcntl) (sys-fcntl port F_SETLKW data))
-    ((file)
-     (let loop ((retry 0)
-                (o (open-output-file data :if-exists #f)))
-       (cond (o (close-output-port o) #t)
-             ((> retry (slot-ref drain 'retry))
+    [(fcntl) (sys-fcntl port F_SETLKW data)]
+    [(file)
+     (let loop ([retry 0]
+                [o (open-output-file data :if-exists #f)])
+       (cond [o (close-output-port o) #t]
+             [(> retry (slot-ref drain 'retry))
               (errorf "couldn't obtain lock with ~a (retry limit reached)"
-                      data))
-             ((file-mtime<? data (- (sys-time) FILE_LOCK_TIMEOUT))
+                      data)]
+             [(file-mtime<? data (- (sys-time) FILE_LOCK_TIMEOUT))
               ;; maybe the lock file is stale.
               (sys-unlink data)
-              (loop 0 (open-output-file data :if-exists #f)))
-             (else
+              (loop 0 (open-output-file data :if-exists #f))]
+             [else
               (sys-sleep 1)
-              (loop (+ retry 1) (open-output-file data :if-exists #f))))))
-    ((tbd)
-     (lock-file (determine-lock-policy drain port) port data))
-    (else #t)))
+              (loop (+ retry 1) (open-output-file data :if-exists #f))]))]
+    [(tbd)
+     (lock-file (determine-lock-policy drain port) port data)]
+    [else #t]))
 
 (define (unlock-file drain port data)
   (case (slot-ref drain 'lock-policy)
-    ((fcntl)
+    [(fcntl)
      (slot-set! data 'type F_UNLCK)
-     (sys-fcntl port F_SETLK data))
-    ((file)
-     (sys-unlink data))
-    ((tdb)
-     (unlock-file (determine-lock-policy drain port) port data))
-    (else #t)))
+     (sys-fcntl port F_SETLK data)]
+    [(file)
+     (sys-unlink data)]
+    [(tbd)
+     (unlock-file (determine-lock-policy drain port) port data)]
+    [else #t]))
 
 ;; Write log
 (define (with-log-output drain proc)
-  (let ((path (slot-ref drain 'path)))
-    (cond ((string? path)
-           (let* ((p (open-output-file path :if-exists :append))
-                  (l (lock-data drain p)))
+  (let1 path (slot-ref drain 'path)
+    (cond [(string? path)
+           (let* ([p (open-output-file path :if-exists :append)]
+                  [l (lock-data drain p)])
              (dynamic-wind
-              (lambda () (lock-file drain p l))
-              (lambda () (proc p))
-              (lambda () (unlock-file drain p l) (close-output-port p)))))
-          ((eq? path #t)
-           (proc (current-error-port)))
-          ((eq? path #f)
-           (call-with-output-string proc))
-          ((eq? path 'syslog)
+              (^[] (lock-file drain p l))
+              (^[] (proc p))
+              (^[] (unlock-file drain p l) (close-output-port p))))]
+          [(eq? path #t)
+           (proc (current-error-port))]
+          [(eq? path #f)
+           (call-with-output-string proc)]
+          [(eq? path 'syslog)
            (sys-syslog (logior (slot-ref drain 'syslog-facility)
                                (slot-ref drain 'syslog-priority))
-                       (call-with-output-string proc)))
-          (else
-           #f))))
+                       (call-with-output-string proc))]
+          [else #f])))
 
 ;; External APIs
 ;; log-format "fmtstr" arg ...
@@ -232,16 +230,15 @@
   (apply log-format (log-default-drain) fmtstr args))
 
 (define-method log-format ((drain <log-drain>) fmt . args)
-  (let* ((prefix (log-get-prefix drain))
-         (str (string-concatenate
-               (fold-right
-                (lambda (data rest)
-                  (if (and (null? rest) (string-null? data))
-                      '()          ;ignore trailing newlines
-                      (list* prefix data "\n" rest)))
-                '()
-                (string-split (apply format #f fmt args) #\newline)))))
-    (with-log-output drain (lambda (p) (display str p)))))
+  (let* ([prefix (log-get-prefix drain)]
+         [str ($ string-concatenate
+                 $ fold-right (^[data rest]
+                                (if (and (null? rest) (string-null? data))
+                                  '()          ;ignore trailing newlines
+                                  (list* prefix data "\n" rest)))
+                              '()
+                 $ string-split (apply format #f fmt args) #\newline)])
+    (with-log-output drain (^p (display str p)))))
 
 ;; log-open path &keyword :program-name :prefix
 

@@ -62,11 +62,11 @@
 ;; <a-spec> is (<optspec> <handler>) or
 ;; ((<optspec> <help-string>) <handler>)
 (define (compose-entry a-spec)
-  (let ((optspec (if (pair? (car a-spec)) (caar a-spec) (car a-spec)))
-        (helpstr (and-let* ((l (length+ (car a-spec)))
-                            ( (>= l 2 ) ))
-                   (cadar a-spec)))
-        (handler (cadr a-spec)))
+  (let ([optspec (if (pair? (car a-spec)) (caar a-spec) (car a-spec))]
+        [helpstr (and-let* ([l (length+ (car a-spec))]
+                            [ (>= l 2 ) ])
+                   (cadar a-spec))]
+        [handler (cadr a-spec)])
     (unless (string? optspec)
       (error "option spec must be a string, but got" optspec))
     (rxmatch-if (rxmatch #/^-*([-+\w|]+)(\*)?(?:([=:])(.+))?$/ optspec)
@@ -89,8 +89,7 @@
    [(null? args) (values #f '())]
    [(string=? (car args) "--") (values #f (cdr args))]
    [(#/^--?(\w[-+\w]*)(=)?/ (car args))
-    => (lambda (m)
-         (values (m 1) (if (m 2) (cons (m'after) (cdr args)) (cdr args))))]
+    => (^m (values (m 1) (if (m 2) (cons (m'after) (cdr args)) (cdr args))))]
    [else (values #f args)]))
 
 ;; From the list of optarg spec and given command line arguments,
@@ -155,22 +154,21 @@
 
 ;; Now, this is the argument parser body.
 (define (parse-cmdargs args speclist fallback)
-  (let loop ((args args))
+  (let loop ([args args])
     (receive (option nextargs) (next-option args)
       (if option
-        (cond [(find (lambda (e) (equal? option (~ e'name))) speclist)
-               => (lambda (entry)
-                    (receive (optargs nextargs)
-                        (get-optargs entry nextargs)
-                      (apply (~ entry'handler) optargs)
-                      (loop nextargs)))]
+        (cond [(find (^e (equal? option (~ e'name))) speclist)
+               => (^[entry] (receive (optargs nextargs)
+                                (get-optargs entry nextargs)
+                              (apply (~ entry'handler) optargs)
+                              (loop nextargs)))]
               [else (fallback option nextargs loop)])
         nextargs))))
 
 ;; Build
 (define (build-option-parser spec fallback)
-  (let ((speclist (append-map compose-entry spec)))
-    (lambda (args . maybe-fallback)
+  (let1 speclist (append-map compose-entry spec)
+    (^[args . maybe-fallback]
       (parse-cmdargs args speclist (get-optional maybe-fallback fallback)))))
 
 ;;;
@@ -179,33 +177,32 @@
 
 (define-syntax make-option-parser
   (syntax-rules ()
-    ((_ clauses)
-     (make-option-parser-int clauses ()))))
+    [(_ clauses)
+     (make-option-parser-int clauses ())]))
 
 (define-syntax make-option-parser-int
   (syntax-rules (else =>)
-    ((_ () specs)
+    [(_ () specs)
      (build-option-parser (list . specs)
-                          (lambda (option args looper)
+                          (^[option args looper]
                             (error <parseopt-error> :option-name #f
-                                   "unrecognized option:" option))))
-    ((_ ((else args . body)) specs)
-     (build-option-parser (list . specs) (lambda args . body)))
-    ((_ ((else => proc)) specs)
-     (build-option-parser (list . specs) proc))
-    ((_ ((optspec => proc) . clause) (spec ...))
-     (make-option-parser-int clause (spec ... (list optspec proc))))
-    ((_ ((optspec vars . body) . clause) (spec ...))
-     (make-option-parser-int clause
-                             (spec ... (list optspec (lambda vars . body)))))
-    ((_ (other . clause) specs)
-     (syntax-error "make-option-parser: malformed clause:" other))
+                                   "unrecognized option:" option)))]
+    [(_ ((else args . body)) specs)
+     (build-option-parser (list . specs) (^ args . body))]
+    [(_ ((else => proc)) specs)
+     (build-option-parser (list . specs) proc)]
+    [(_ ((optspec => proc) . clause) (spec ...))
+     (make-option-parser-int clause (spec ... (list optspec proc)))]
+    [(_ ((optspec vars . body) . clause) (spec ...))
+     (make-option-parser-int clause (spec ... (list optspec (^ vars . body))))]
+    [(_ (other . clause) specs)
+     (syntax-error "make-option-parser: malformed clause:" other)]
     ))
 
 (define-syntax parse-options
   (syntax-rules ()
-    ((_ args clauses)
-     ((make-option-parser clauses) args))))
+    [(_ args clauses)
+     ((make-option-parser clauses) args)]))
 
 ;;;
 ;;; The alternative way : let-args
@@ -233,107 +230,107 @@
     ;; Handle var == #f case first.  This is only useful for side-effects
     ;; or recognizing option (and then discard).
     ;;
-    ((_ args binds (opts ...) ((#f spec1 def => callback) . varspecs) body)
+    [(_ args binds (opts ...) ((#f spec1 def => callback) . varspecs) body)
      (let-args-internal args
         binds
         (opts ... (spec1 => callback))
         varspecs
-        body))
-    ((_ args binds (opts ...) ((#f spec1 => callback) . varspecs) body)
+        body)]
+    [(_ args binds (opts ...) ((#f spec1 => callback) . varspecs) body)
      (let-args-internal args
         binds
         (opts ... (spec1 => callback))
         varspecs
-        body))
-    ((_ args binds opts ((#f spec1 ignore) . varspecs) body)
+        body)]
+    [(_ args binds opts ((#f spec1 ignore) . varspecs) body)
      (let-args-internal args
         binds
         opts
-        ((#f spec1 => (lambda _ #f)) . varspecs)
-        body))
-    ((_ args binds opts ((#f spec1) . varspecs) body)
+        ((#f spec1 => (^ _ #f)) . varspecs)
+        body)]
+    [(_ args binds opts ((#f spec1) . varspecs) body)
      (let-args-internal args
         binds
         opts
-        ((#f spec1 => (lambda _ #f)) . varspecs)
-        body))
+        ((#f spec1 => (^ _ #f)) . varspecs)
+        body)]
     ;;
     ;; Handle else clause
     ;; The contents of clause must evaluated outside of binding scope.
     ;;
-    ((_ args binds (opts ...) ((else => else-cb) . varspecs) body)
+    [(_ args binds (opts ...) ((else => else-cb) . varspecs) body)
      (let-args-internal args
          ((e else-cb) . binds)
          (opts ... (else f (apply e f)))
          varspecs
-         body))
-    ((_ args binds (opts ...) ((else formals . forms) . varspecs) body)
+         body)]
+    [(_ args binds (opts ...) ((else formals . forms) . varspecs) body)
      (let-args-internal args
-         ((e (lambda formals . forms)) . binds)
+         ((e (^ formals . forms)) . binds)
          (opts ... (else f (apply e f)))
          varspecs
-         body))
+         body)]
     ;;
     ;; Handle explicit callbacks.
     ;;
-    ((_ args binds (opts ...) ((var1 spec1 default1 => callback) . varspecs) body)
+    [(_ args binds (opts ...) ((var1 spec1 default1 => callback) . varspecs) body)
      (let-args-internal args
          ((var1 default1) (cb1 callback) . binds)
-         (opts ... (spec1 => (lambda x (set! var1 (apply cb1 x)))))
+         (opts ... (spec1 => (^ x (set! var1 (apply cb1 x)))))
          varspecs
-         body))
-    ((_ args binds (opts ...) ((var1 spec1 => callback) . varspecs) body)
+         body)]
+    [(_ args binds (opts ...) ((var1 spec1 => callback) . varspecs) body)
      (let-args-internal args
          binds
          (opts ...)
          ((var1 spec1 #f => callback) . varspecs)
-         body))
+         body)]
     ;; Normal case.
     ;; Transform base form into a let w/ a callback to set its value
     ;; we don't know # of values to receive unless we parse the optspec,
     ;; so the callback needs extra trick.  (Ugly... needs rework).
     ;;
-    ((_ args binds (opts ...) ((var1 spec1 default1) . varspecs) body)
+    [(_ args binds (opts ...) ((var1 spec1 default1) . varspecs) body)
      (let-args-internal args
          ((var1 default1) . binds)
-         (opts ... (spec1 => (lambda x
+         (opts ... (spec1 => (^ x
                                (set! var1
-                                     (cond ((null? x) #t) ;; no arg
-                                           ((null? (cdr x)) (car x))
-                                           (else x))))))
+                                     (cond [(null? x) #t] ;; no arg
+                                           [(null? (cdr x)) (car x)]
+                                           [else x])))))
          varspecs
-         body))
+         body)]
     ;;
     ;; No default means #f
     ;;
-    ((_ args binds (opts ...) ((var1 spec1) . varspecs) body)
+    [(_ args binds (opts ...) ((var1 spec1) . varspecs) body)
      (let-args-internal args
          binds
          (opts ...)
          ((var1 spec1 #f) . varspecs)
-         body))
+         body)]
     ;;
     ;; Capture invalid clause
     ;;
-    ((_ args binds (opts ...) (other . varspecs) body)
-     (syntax-error "let-args: invalid clause:" other))
+    [(_ args binds (opts ...) (other . varspecs) body)
+     (syntax-error "let-args: invalid clause:" other)]
     ;;
     ;; Finish
     ;; Extra let() allows body contains internal defines.
     ;;
-    ((_ args binds opts () body)
-     (let binds (parse-options args opts) (let () . body)))
-    ((_ args binds opts rest body)
-     (let binds (let ((rest (parse-options args opts))) (let () . body))))
+    [(_ args binds opts () body)
+     (let binds (parse-options args opts) (let () . body))]
+    [(_ args binds opts rest body)
+     (let binds (let ((rest (parse-options args opts))) (let () . body)))]
     ))
 
 (define-syntax let-args
   (syntax-rules ()
     ;; transfer to let-args-internal which collects the parse-options
     ;; form
-    ((_ args varspecs . body)
-     (let-args-internal args () () varspecs body))
-    ((_ . otherwise)
-     (syntax-error "malformed let-args:" (let-args . otherwise)))
+    [(_ args varspecs . body)
+     (let-args-internal args () () varspecs body)]
+    [(_ . otherwise)
+     (syntax-error "malformed let-args:" (let-args . otherwise))]
     ))
 

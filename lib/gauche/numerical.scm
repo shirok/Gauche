@@ -46,33 +46,31 @@
 (define-in-module scheme (gcd . args)
   (define (recn arg args)
     (if (null? args)
-        arg
-        (recn (%gcd arg (car args)) (cdr args))))
-  (let ((args (map (lambda (arg)
-                     (unless (integer? arg)
-                       (error "integer required, but got" arg))
-                     (abs arg))
-                   args)))
-    (cond ((null? args) 0)
-          ((null? (cdr args)) (car args))
-          (else (recn (car args) (cdr args))))))
+      arg
+      (recn (%gcd arg (car args)) (cdr args))))
+  (let1 args (map (^[arg] (unless (integer? arg)
+                            (error "integer required, but got" arg))
+                    (abs arg))
+                  args)
+    (cond [(null? args) 0]
+          [(null? (cdr args)) (car args)]
+          [else (recn (car args) (cdr args))])))
 
 (define-in-module scheme (lcm . args)
   (define (lcm2 u v)
-    (let ((g (%gcd u v)))
+    (let1 g (%gcd u v)
       (if (zero? u) 0 (* (quotient u g) v))))
   (define (recn arg args)
     (if (null? args)
-        arg
-        (recn (lcm2 arg (car args)) (cdr args))))
-  (let ((args (map (lambda (arg)
-                     (unless (integer? arg)
-                       (error "integer required, but got" arg))
-                     (abs arg))
-                   args)))
-    (cond ((null? args) 1)
-          ((null? (cdr args)) (car args))
-          (else (recn (car args) (cdr args))))))
+      arg
+      (recn (lcm2 arg (car args)) (cdr args))))
+  (let1 args (map (^[arg] (unless (integer? arg)
+                            (error "integer required, but got" arg))
+                    (abs arg))
+                  args)
+    (cond [(null? args) 1]
+          [(null? (cdr args)) (car args)]
+          [else (recn (car args) (cdr args))])))
 
 ;;
 ;; Complex numbers

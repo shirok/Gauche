@@ -41,35 +41,28 @@
 
 (define (string-interpolate str)
   (if (string? str)
-      (%string-interpolate str)
-      (errorf "malformed string-interpolate: ~s"
-              (list 'string-interpolate str)))
-  )
+    (%string-interpolate str)
+    (errorf "malformed string-interpolate: ~s" (list 'string-interpolate str))))
 
 (define (%string-interpolate str)
   (define (accum c acc)
-    (cond ((eof-object? c) (list (get-output-string acc)))
-          ((char=? c #\,)
-           (let ((c2 (peek-char)))
-             (cond ((eof-object? c2) (write-char c acc) (accum c2 acc))
-                   ((char=? c2 #\,)
-                    (write-char (read-char) acc) (accum (read-char) acc))
-                   ((char-set-contains? #[\x00-\x20\),\;\\\]\}\x7f] c2)
-                    (write-char c acc) (accum (read-char) acc))
-                   (else
-                    (cons (get-output-string acc) (insert))))))
-          (else
-           (write-char c acc) (accum (read-char) acc))))
+    (cond [(eof-object? c) (list (get-output-string acc))]
+          [(char=? c #\,)
+           (let1 c2 (peek-char)
+             (cond [(eof-object? c2) (write-char c acc) (accum c2 acc)]
+                   [(char=? c2 #\,)
+                    (write-char (read-char) acc) (accum (read-char) acc)]
+                   [(char-set-contains? #[\x00-\x20\),\;\\\]\}\x7f] c2)
+                    (write-char c acc) (accum (read-char) acc)]
+                   [else (cons (get-output-string acc) (insert))]))]
+          [else (write-char c acc) (accum (read-char) acc)]))
   (define (insert)
-    (let* ((item
-            (guard (e ((<read-error> e)
-                       (errorf "unmatched parenthesis in interpolating string: ~s" str)))
-              (read)))
-           (rest
-            (accum (read-char) (open-output-string))))
+    (let* ([item (guard (e [(<read-error> e)
+                            (errorf "unmatched parenthesis in interpolating string: ~s" str)])
+                   (read))]
+           [rest (accum (read-char) (open-output-string))])
       (cons `(x->string ,item) rest)))
   (cons 'string-append
         (with-input-from-string str
-          (lambda () (accum (read-char) (open-output-string)))))
-  )
+          (^[] (accum (read-char) (open-output-string))))))
 

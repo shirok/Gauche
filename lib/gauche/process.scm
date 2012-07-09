@@ -322,9 +322,9 @@
         ;; try dup2 it into a dummy port to see if fd1 is valid.
         ((if (eq? dir '<&) call-with-input-file call-with-output-file)
          *nulldev*
-         (lambda (dummy-port)
-           (let ((p ((if (eq? dir '<&) open-input-fd-port open-output-fd-port)
-                     fd1)))
+         (^[dummy-port]
+           (let1 p ((if (eq? dir '<&) open-input-fd-port open-output-fd-port)
+                    fd1)
              (port-fd-dup! dummy-port p))))
         (push! iomap `(,fd0 . ,fd1)))))
 
@@ -376,7 +376,7 @@
   (cond
    [(is-a? mask <sys-sigset>) mask]
    [(and (list? mask) (every integer? mask))
-    (fold (lambda (sig m) (sys-sigset-add! m sig) m) (make <sys-sigset>) mask)]
+    (fold (^[sig m] (sys-sigset-add! m sig) m) (make <sys-sigset>) mask)]
    [(not mask) #f]
    [else (error "run-process: sigmask argument must be either #f, \
                  <sys-sigset>, or a list of integers, but got:" mask)]))
@@ -424,7 +424,7 @@
   (and (not (null? (process-list)))
        (receive (pid status) (sys-waitpid -1 :nohang nohang?)
          (and (not (eqv? pid 0))
-              (and-let* ((p (find (lambda (pp) (eqv? (process-pid pp) pid))
+              (and-let* ((p (find (^[pp] (eqv? (process-pid pp) pid))
                                   (process-list))))
                 (update! (ref p 'processes) (cut delete p <>))
                 (set! (ref p 'status) status)
@@ -521,10 +521,8 @@
 
 (define (process-output->string command . opts)
   (apply call-with-input-process command
-         (lambda (p)
-           (with-port-locking p
-             (lambda ()
-               (string-join (string-tokenize (port->string p)) " "))))
+         (^p (with-port-locking p
+               (^[] (string-join (string-tokenize (port->string p)) " "))))
          opts))
 
 (define (process-output->string-list command . opts)
@@ -559,30 +557,27 @@
 ;; provide consistent behavior.  Something to think about.
 (define (%apply-run-process command stdin stdout stderr host)
   (apply run-process
-         (cond ((string? command)
-                (cond-expand
-                 (gauche.os.windows
-                  `("cmd" "/c" ,command))
-                 (else
-                  `("/bin/sh" "-c" ,command))))
-               ((list? command) command)
-               (else (error "Bad command spec" command)))
+         (cond [(string? command)
+                (cond-expand [gauche.os.windows `("cmd" "/c" ,command)]
+                             [else        `("/bin/sh" "-c" ,command)])]
+               [(list? command) command]
+               [else (error "Bad command spec" command)])
          :input stdin :output stdout :host host
-         (cond ((string? stderr) `(:error ,stderr))
-               (else '()))))
+         (cond [(string? stderr) `(:error ,stderr)]
+               [else '()])))
 
 ;; Possibly wrap the process port by a conversion port
 (define (wrap-input-process-port process opts)
-  (let-keywords opts ((encoding #f)
-                      (conversion-buffer-size 0))
+  (let-keywords opts ([encoding #f]
+                      [conversion-buffer-size 0])
     (if encoding
       (wrap-with-input-conversion (process-output process) encoding
                                   :buffer-size conversion-buffer-size)
       (process-output process))))
 
 (define (wrap-output-process-port process opts)
-  (let-keywords opts ((encoding #f)
-                      (conversion-buffer-size 0))
+  (let-keywords opts ([encoding #f]
+                      [conversion-buffer-size 0])
     (if encoding
       (wrap-with-output-conversion (process-input process) encoding
                                   :buffer-size conversion-buffer-size)
@@ -590,8 +585,8 @@
 
 (define (handle-abnormal-exit on-abnormal-exit process)
   (case on-abnormal-exit
-    ((:error) (%check-normal-exit process))
-    ((:ignore))
-    (else (unless (zero? (process-exit-status process))
-            (on-abnormal-exit process)))))
+    [(:error) (%check-normal-exit process)]
+    [(:ignore)]
+    [else (unless (zero? (process-exit-status process))
+            (on-abnormal-exit process))]))
 

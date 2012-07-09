@@ -47,47 +47,43 @@
 
 (define-syntax with-signal-handlers
   (syntax-rules (=>)
-    ((_ "loop" () handlers thunk)
-     (%with-signal-handlers (list . handlers) thunk))
-    ((_ "loop" ((sigs => proc) . clauses) handlers thunk)
+    [(_ "loop" () handlers thunk)
+     (%with-signal-handlers (list . handlers) thunk)]
+    [(_ "loop" ((sigs => proc) . clauses) handlers thunk)
      (with-signal-handlers "loop" clauses
                            ((cons (%make-sigset sigs) proc) . handlers)
-                           thunk))
-    ((_ "loop" ((sigs expr ...) . clauses) handlers thunk)
+                           thunk)]
+    [(_ "loop" ((sigs expr ...) . clauses) handlers thunk)
      (with-signal-handlers "loop" clauses
-                           ((cons (%make-sigset sigs) (lambda _ expr ...))
+                           ((cons (%make-sigset sigs) (^ _ expr ...))
                             . handlers)
-                           thunk))
-    ((_ "loop" whatever handlers thunk)
-     (syntax-error "bad clause in with-signal-handlers" whatever))
-    ((_ (clause ...) thunk)
-     (with-signal-handlers "loop" (clause ...) () thunk))
-    ((_ . whatever)
+                           thunk)]
+    [(_ "loop" whatever handlers thunk)
+     (syntax-error "bad clause in with-signal-handlers" whatever)]
+    [(_ (clause ...) thunk)
+     (with-signal-handlers "loop" (clause ...) () thunk)]
+    [(_ . whatever)
      (syntax-error "malformed with-signal-handlers"
-                   (with-signal-handlers . whatever)))
+                   (with-signal-handlers . whatever))]
     ))
 
 (define (%make-sigset signals)
-  (cond
-   ((is-a? signals <sys-sigset>) signals)
-   ((or (integer? signals) (eq? signals #t))
-    (sys-sigset-add! (make <sys-sigset>) signals))
-   ((and (list? signals)
-         (every integer? signals))
-    (apply sys-sigset-add! (make <sys-sigset>) signals))
-   (else
-    (error "bad signal set" signals))))
+  (cond [(is-a? signals <sys-sigset>) signals]
+        [(or (integer? signals) (eq? signals #t))
+         (sys-sigset-add! (make <sys-sigset>) signals)]
+        [(and (list? signals)
+              (every integer? signals))
+         (apply sys-sigset-add! (make <sys-sigset>) signals)]
+        [else (error "bad signal set" signals)]))
 
 (define (%with-signal-handlers handlers-alist thunk)
-  (let ((ohandlers (get-signal-handlers)))
+  (let1 ohandlers (get-signal-handlers)
     (dynamic-wind
-     (lambda ()
-       (for-each (lambda (p) (set-signal-handler! (car p) (cdr p)))
-                 handlers-alist))
+     (^[] (for-each (^p (set-signal-handler! (car p) (cdr p)))
+                    handlers-alist))
      thunk
-     (lambda ()
-       (for-each (lambda (p) (set-signal-handler! (car p) (cdr p)))
-                 ohandlers)))))
+     (^[] (for-each (^p (set-signal-handler! (car p) (cdr p)))
+                    ohandlers)))))
 
 
 

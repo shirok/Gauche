@@ -50,22 +50,21 @@
 
 (define (redefine-class! old new)
   (%start-class-redefinition! old) ;; MT safety
-  (guard (e (else
+  (guard (e [else
              (%commit-class-redefinition! old #f)
-             (warn "Class redefinition of ~S is aborted.  The state of the class may be inconsistent" old)))
+             (warn "Class redefinition of ~S is aborted.  The state of the class may be inconsistent" old)])
     (class-redefinition old new)
     (%commit-class-redefinition! old new)))
 
 (define-generic class-redefinition)
 (define-method class-redefinition ((old <class>) (new <class>))
-  (for-each (lambda (m)
-              (if (is-a? m <accessor-method>)
-                (delete-method! (slot-ref m 'generic) m)
-                (update-direct-method! m old new)))
+  (for-each (^m (if (is-a? m <accessor-method>)
+                  (delete-method! (slot-ref m 'generic) m)
+                  (update-direct-method! m old new)))
             (class-direct-methods old))
-  (for-each (lambda (sup) (%delete-direct-subclass! sup old))
+  (for-each (^[sup] (%delete-direct-subclass! sup old))
             (class-direct-supers old))
-  (for-each (lambda (sub) (update-direct-subclass! sub old new))
+  (for-each (^[sub] (update-direct-subclass! sub old new))
             (class-direct-subclasses old))
   )
 
@@ -74,32 +73,31 @@
                                         (orig <class>)
                                         (new <class>))
   (define (new-supers supers)
-    (map (lambda (s) (if (eq? s orig) new s)) supers))
+    (map (^s (if (eq? s orig) new s)) supers))
 
   (define (fix-initargs initargs supers metaclass)
-    (let loop ((args initargs) (r '()))
-      (cond ((null? args) (reverse! r))
-            ((eq? (car args) :supers)
-             (loop (cddr args) (list* supers :supers r)))
-            ((eq? (car args) :metaclass)
-             (loop (cddr args) (list* metaclass :metaclass r)))
-            (else
-             (loop (cddr args) (list* (cadr args) (car args) r))))))
-
-  (let* ((initargs (slot-ref sub 'initargs))
-         (supers   (new-supers (class-direct-supers sub)))
+    (let loop ([args initargs] [r '()])
+      (cond [(null? args) (reverse! r)]
+            [(eq? (car args) :supers)
+             (loop (cddr args) (list* supers :supers r))]
+            [(eq? (car args) :metaclass)
+             (loop (cddr args) (list* metaclass :metaclass r))]
+            [else (loop (cddr args) (list* (cadr args) (car args) r))])))
+  
+  (let* ([initargs (slot-ref sub 'initargs)]
+         [supers   (new-supers (class-direct-supers sub))]
          ;; NB: this isn't really correct!
-         (metaclass (or (get-keyword :metaclass initargs #f)
-                        (%get-default-metaclass supers)))
-         (new-sub  (apply make metaclass
-                          (fix-initargs initargs supers metaclass))))
+         [metaclass (or (get-keyword :metaclass initargs #f)
+                        (%get-default-metaclass supers))]
+         [new-sub  (apply make metaclass
+                          (fix-initargs initargs supers metaclass))])
     (redefine-class! sub new-sub)
     ;; Trick: redefine-class! above removes subclass form original
     ;; superclass's direct-subclass list, but we want to keep it.
     ;; so we add to it again.  We can't do this within class-redefinition,
     ;; for we don't know if it is called on the top of redefinition
     ;; or in the subclasses' redefinition.
-    (for-each (lambda (sup) (%add-direct-subclass! sup sub))
+    (for-each (^[sup] (%add-direct-subclass! sup sub))
               (class-direct-supers sub))
     ;; If the subclass has global bindings, replace them.
     (%replace-class-binding! sub new-sub)))

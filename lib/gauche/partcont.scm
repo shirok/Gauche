@@ -8,12 +8,12 @@
 (define-syntax reset
   (syntax-rules ()
     [(reset expr ...)
-     (%reset (lambda () expr ...))]))
+     (%reset (^[] expr ...))]))
 
 (define (call/pc proc)
-  (%call/pc (lambda (k) (proc (lambda args (reset (apply k args)))))))
+  (%call/pc (^k (proc (^ args (reset (apply k args)))))))
 
 (define-syntax shift
   (syntax-rules ()
     [(shift var expr ...)
-     (call/pc (lambda (var) expr ...))]))
+     (call/pc (^[var] expr ...))]))

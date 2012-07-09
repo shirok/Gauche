@@ -98,37 +98,37 @@
 ;; Utility method
 
 (define-method write-to-string-with-serializer ((class <class>) obj . options)
-  (let ((out (open-output-string)))
+  (let1 out (open-output-string)
     (write-to-serializer
      (apply make class :port out :direction :out options)
      obj)
     (get-output-string out)))
 
 (define-method read-from-string-with-serializer ((class <class>) str . options)
-  (let ((in (open-input-string str)))
+  (let1 in (open-input-string str)
     (read-from-serializer
      (apply make class :port in :direction :in options))))
 
 (define-method write-to-file-with-serializer ((class <class>) obj file . options)
   (call-with-output-file file
-   (lambda (port)
+   (^[port]
      (write-to-serializer
       (apply make class :port port :direction :out options)
       obj))))
 
 (define-method read-from-file-with-serializer ((class <class>) file . options)
   (call-with-input-file file
-   (lambda (port)
+   (^[port]
      (read-from-serializer
       (apply make class :port port :direction :in options)))))
 
 ;; For generic object serializer
 (define-method get-serializable-slots ((obj <object>))
-  (let loop ((slots (class-slots (class-of obj)))
-             (result '()))
-    (cond ((null? slots) (reverse result))
-          ((not (eqv? (slot-definition-allocation (car slots)) :virtual))
-           (loop (cdr slots) (cons (slot-definition-name (car slots)) result)))
-          (else (loop (cdr slots) result)))))
+  (let loop ([slots (class-slots (class-of obj))]
+             [result '()])
+    (cond [(null? slots) (reverse result)]
+          [(not (eqv? (slot-definition-allocation (car slots)) :virtual))
+           (loop (cdr slots) (cons (slot-definition-name (car slots)) result))]
+          [else (loop (cdr slots) result)])))
 
 

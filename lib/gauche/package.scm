@@ -97,12 +97,12 @@
    ))
 
 (define (path->gauche-package-description path)
-  (guard (e ((or (<io-error> e) (<read-error> e))
+  (guard (e [(or (<io-error> e) (<read-error> e))
              (errorf "couldn't read the package description ~s: ~a"
-                     path (ref e 'message))))
+                     path (ref e 'message))])
     (call-with-input-file path
-      (lambda (in)
-        (let ((f (read in)))
+      (^[in]
+        (let1 f (read in)
           (if (and (list? f)
                    (>= (length f) 2)
                    (eq? (car f) 'define-gauche-package)
@@ -112,17 +112,15 @@
             (error "malformed define-gauche-package")))))))
 
 (define-method write-gauche-package-description
-    ((desc <gauche-package-description>) . maybe-port)
-  (let ((out (get-optional maybe-port (current-output-port))))
-    (format out ";; -*-Scheme-*-\n")
-    (format out ";; Gauche Package Description\n\n")
-    (format out "(define-gauche-package ~s\n" (ref desc 'name))
-    (for-each (lambda (slot)
-                (unless (eq? slot 'name)
-                  (format out "  :~a ~s\n" slot (ref desc slot))))
-              (map slot-definition-name
-                   (class-slots <gauche-package-description>)))
-    (format out ")\n")))
+    ((desc <gauche-package-description>) :optional (out (current-output-port)))
+  (format out ";; -*-Scheme-*-\n")
+  (format out ";; Gauche Package Description\n\n")
+  (format out "(define-gauche-package ~s\n" (ref desc 'name))
+  (for-each (^[slot] (unless (eq? slot 'name)
+                       (format out "  :~a ~s\n" slot (ref desc slot))))
+            (map slot-definition-name
+                 (class-slots <gauche-package-description>)))
+  (format out ")\n"))
 
 ;;;
 ;;; Searching .gpd files
@@ -161,9 +159,9 @@
 ;; Iterator protocol
 (define-method call-with-iterator ((gpd <gauche-package-description-paths>)
                                    proc . args)
-  (let ((paths (ref gpd 'paths))
-        (files '())
-        (visited (make-hash-table 'string=?)))
+  (let ([paths (ref gpd 'paths)]
+        [files '()]
+        [visited (make-hash-table 'string=?)])
     (define (interesting? path)
       (and (#/\.gpd$/ path)
            (not (hash-table-get visited (sys-basename path) #f))
@@ -174,23 +172,22 @@
         (let loop ()
           (if (null? paths)
             #f
-            (let ((dir (build-path (pop! paths) ".packages")))
-              (cond ((file-is-directory? dir)
+            (let1 dir (build-path (pop! paths) ".packages")
+              (cond [(file-is-directory? dir)
                      (set! files
                            (directory-list dir
                                            :add-path? #t :filter interesting?))
-                     (pick-next))
-                    (else (loop))))))
+                     (pick-next)]
+                    [else (loop)]))))
         (pop! files)))
-    (let ((buf (pick-next)))
+    (let1 buf (pick-next)
       (define (end?) (not buf))
       (define (next) (begin0 buf (set! buf (pick-next))))
       (proc end? next))))
 
 ;; utility
 (define (find-gauche-package-description name :key (all-versions #f))
-  (and-let* ((path (find (string->regexp #`"/,|name|\\.gpd$")
+  (and-let* ([path (find (string->regexp #`"/,|name|\\.gpd$")
                          (gauche-package-description-paths
-                          :all-versions all-versions))))
+                          :all-versions all-versions))])
     (path->gauche-package-description path)))
-

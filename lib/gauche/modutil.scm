@@ -44,21 +44,21 @@
   ;; avoid this form unless you really need it.
   ;; NB: filter is in srfi-1, and we don't want to load it here.  Ugh.
   `(export
-    ,@(let loop ((syms symbols) (r '()))
-        (cond ((null? syms) (reverse! r))
-              ((not (symbol? (car syms)))
-               (error "non-symbol in export-if-defined form:" (car syms)))
-              ((global-variable-bound? #f (car syms))
-               (loop (cdr syms) (cons (car syms) r)))
-              (else (loop (cdr syms) r))))))
+    ,@(let loop ([syms symbols] [r '()])
+        (cond [(null? syms) (reverse! r)]
+              [(not (symbol? (car syms)))
+               (error "non-symbol in export-if-defined form:" (car syms))]
+              [(global-variable-bound? #f (car syms))
+               (loop (cdr syms) (cons (car syms) r))]
+              [else (loop (cdr syms) r)]))))
 
 ;; Inter-version compatibility.
 (define-macro (use-version version)
-  (let ((compat (string-append "gauche/compat/" version)))
+  (let1 compat (string-append "gauche/compat/" version)
     (unless (provided? compat)
-      (let ((path (string-append (gauche-library-directory) "/" compat ".scm")))
+      (let1 path (string-append (gauche-library-directory) "/" compat ".scm")
         (when (file-exists? path)
-          (let ((module (string->symbol (string-append "gauche-" version))))
+          (let1 module (string->symbol (string-append "gauche-" version))
             `(begin
                (require ,compat)
                (import ,module))))))))

@@ -59,7 +59,7 @@
 (define (sys-stat->type s)  (slot-ref s 'type))
 
 (define (sys-tm->alist tm)
-  (map (lambda (n s) (cons n (slot-ref tm s)))
+  (map (^[n s] (cons n (slot-ref tm s)))
        '(tm_sec tm_min tm_hour tm_mday tm_mon tm_year tm_wday tm_yday tm_isdst)
        '(sec min hour mday mon year wday yday isdst)))
 
@@ -92,17 +92,14 @@
 
 ;; NB: we avoid util.match due to the hairy dependency problem.
 (define (glob-fold-1 pattern proc seed opts)
-  (let-keywords opts ((separator #[/])
-                      (folder glob-fs-folder))
+  (let-keywords opts ([separator #[/]]
+                      [folder glob-fs-folder])
     (define (rec node matcher seed)
       (cond [(null? matcher) seed]
-            [(eq? (car matcher) '**)
-             (rec* node (cdr matcher) seed)]
-            [(null? (cdr matcher))
-             (folder proc seed node (car matcher) #f)]
-            [else
-             (folder (lambda (node seed) (rec node (cdr matcher) seed))
-                     seed node (car matcher) #t)]))
+            [(eq? (car matcher) '**) (rec* node (cdr matcher) seed)]
+            [(null? (cdr matcher)) (folder proc seed node (car matcher) #f)]
+            [else (folder (^[node seed] (rec node (cdr matcher) seed))
+                          seed node (car matcher) #t)]))
     (define (rec* node matcher seed)
       (fold (cut rec* <> matcher <>)
             (rec node matcher seed)
@@ -132,16 +129,16 @@
 ;;
 (define (glob-expand-braces pattern seed)
   (define (parse str pres level)
-    (let loop ((str str)
-               (segs pres))
+    (let loop ([str str]
+               [segs pres])
       (cond
        [(rxmatch #/[{}]/ str) =>
-        (lambda (m)
+        (^m
           (cond [(equal? (m 0) "{")
                  (receive (ins post) (parse (m'after) '("") (+ level 1))
                    (loop post
-                         (fold (lambda (seg seed)
-                                 (fold (lambda (in seed)
+                         (fold (^[seg seed]
+                                 (fold (^[in seed]
                                          (cons (string-append seg in) seed))
                                        seed ins))
                                '()
@@ -168,7 +165,7 @@
   (regexp-compile
    (regexp-optimize
     (with-input-from-string pattern
-      (lambda ()
+      (^[]
         (define (element0 ch ct)
           (case ch
             [(#\*) (element0* (n) ct)]
@@ -204,19 +201,18 @@
 ;; if rx is just test perfect match, e.g. #/^string$/, returns
 ;; string portion.
 (define (fixed-regexp? rx)
-  (let ((ast (regexp-ast rx)))
+  (let1 ast (regexp-ast rx)
     (and (> (length ast) 4)
          (eq? (caddr ast) 'bol)
-         (let loop ((cs (cdddr ast)) (r '()))
+         (let loop ([cs (cdddr ast)] [r '()])
            (cond [(null? (cdr cs))
                   (and (eq? (car cs) 'eol) (list->string (reverse r)))]
                  [(char? (car cs)) (loop (cdr cs) (cons (car cs) r))]
                  [else #f])))))
 
 (define (make-glob-fs-fold :key (root-path #f) (current-path #f))
-  (let ((separ (cond-expand
-                (gauche.os.windows "\\")
-                (else "/"))))
+  (let1 separ (cond-expand [gauche.os.windows "\\"]
+                           [else "/"])
     (define (ensure-dirname s)
       (and s
            (or (and-let* ([len (string-length s)]
@@ -227,7 +223,7 @@
                s)))
     (define root-path/    (ensure-dirname root-path))
     (define current-path/ (ensure-dirname current-path))
-    (lambda (proc seed node regexp non-leaf?)
+    (^[proc seed node regexp non-leaf?]
       (let1 prefix (case node
                      [(#t) (or root-path/ separ)]
                      [(#f) (or current-path/ "")]
@@ -248,7 +244,7 @@
                           (proc full seed)
                           seed)))]
               [else
-               (fold (lambda (child seed)
+               (fold (^[child seed]
                        (or (and-let* ([ (regexp child) ]
                                       [full (string-append prefix child)]
                                       [ (or (not non-leaf?)

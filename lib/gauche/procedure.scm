@@ -52,16 +52,14 @@
 ;; Combinator utilities -----------------------------------------
 
 (define (pa$ fn . args)                  ;partial apply
-  (lambda more-args (apply fn (append args more-args))))
+  (^ more-args (apply fn (append args more-args))))
 
 (define (compose . fns)
-  (cond ((null? fns) values)
-        ((null? (cdr fns)) (car fns))
-        ((null? (cddr fns))
-         (lambda args
-           (call-with-values (lambda () (apply (cadr fns) args)) (car fns))))
-        (else
-         (compose (car fns) (apply compose (cdr fns))))))
+  (cond [(null? fns) values]
+        [(null? (cdr fns)) (car fns)]
+        [(null? (cddr fns))
+         (^ args (call-with-values (^[] (apply (cadr fns) args)) (car fns)))]
+        [else (compose (car fns) (apply compose (cdr fns)))]))
 
 (define .$ compose)                     ;experimental
 
@@ -69,10 +67,10 @@
 
 (define (complement fn)
   (case (arity fn) ;; some optimization
-    ((0) (lambda () (not (fn))))
-    ((1) (lambda (x) (not (fn x))))
-    ((2) (lambda (x y) (not (fn x y))))
-    (else (lambda args (not (apply fn args))))))
+    [(0) (^[] (not (fn)))]
+    [(1) (^[x] (not (fn x)))]
+    [(2) (^[x y] (not (fn x y)))]
+    [else (^ args (not (apply fn args)))]))
 
 (define (map$ proc)      (pa$ map proc))
 (define (for-each$ proc) (pa$ for-each proc))
@@ -81,13 +79,13 @@
 ;; partial evaluation version of srfi-1 procedures
 (define (count$ pred) (pa$ count pred))
 (define (fold$ kons . maybe-knil)
-  (lambda lists (apply fold kons (append maybe-knil lists))))
+  (^ lists (apply fold kons (append maybe-knil lists))))
 (define (fold-right$ kons . maybe-knil)
-  (lambda lists (apply fold-right kons (append maybe-knil lists))))
+  (^ lists (apply fold-right kons (append maybe-knil lists))))
 (define (reduce$ f . maybe-ridentity)
-  (lambda args (apply reduce f (append maybe-ridentity args))))
+  (^ args (apply reduce f (append maybe-ridentity args))))
 (define (reduce-right$ f . maybe-ridentity)
-  (lambda args (apply reduce-right f (append maybe-ridentity args))))
+  (^ args (apply reduce-right f (append maybe-ridentity args))))
 (define (filter$ pred) (pa$ filter pred))
 (define (partition$ pred) (pa$ partition pred))
 (define (remove$ pred) (pa$ remove pred))
@@ -101,22 +99,18 @@
 
 
 (define (any-pred . preds)
-  (lambda args
-    (let loop ((preds preds))
-      (cond ((null? preds) #f)
-            ((apply (car preds) args))
-            (else (loop (cdr preds)))))))
+  (^ args (let loop ([preds preds])
+            (cond [(null? preds) #f]
+                  [(apply (car preds) args)]
+                  [else (loop (cdr preds))]))))
 
 (define (every-pred . preds)
   (if (null? preds)
-      (lambda args #t)
-      (lambda args
-        (let loop ((preds preds))
-          (cond ((null? (cdr preds))
-                 (apply (car preds) args))
-                ((apply (car preds) args)
-                 (loop (cdr preds)))
-                (else #f))))))
+    (^ args #t)
+    (^ args (let loop ([preds preds])
+              (cond [(null? (cdr preds)) (apply (car preds) args)]
+                    [(apply (car preds) args) (loop (cdr preds))]
+                    [else #f])))))
 
 ;; Curryable procedures ------------------------------------
 
