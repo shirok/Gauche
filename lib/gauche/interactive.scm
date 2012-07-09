@@ -54,35 +54,34 @@
 
 (define-syntax apropos
   (syntax-rules ()
-    ((_ item) (%apropos item (current-module) #f))
-    ((_ item module) (%apropos item module #t))
+    [(_ item) (%apropos item (current-module) #f)]
+    [(_ item module) (%apropos item module #t)]
     ))
 
 (define (%apropos item module stay-in-module)
-  (let ((module (cond ((module? module) module)
-                      ((symbol? module)
+  (let ([module (cond [(module? module) module]
+                      [(symbol? module)
                        (or (find-module module)
-                           (error "No such module: " module)))
-                      (else (error "Bad object for module: " module))))
-        (matcher (cond ((symbol? item)
-                        (let ((substr (symbol->string item)))
-                          (lambda (name) (string-scan name substr))))
-                       ((string? item)
+                           (error "No such module: " module))]
+                      [else (error "Bad object for module: " module)])]
+        [matcher (cond [(symbol? item)
+                        (let1 substr (symbol->string item)
+                          (^[name] (string-scan name substr)))]
+                       [(string? item)
                         ;; Note: future extention
-                        (error "Bad object for item: " item))
-                       ((is-a? item <regexp>)
-                        (lambda (name) (rxmatch item name)))
-                       (else
-                        (error "Bad object for item: " item))))
-        (result '())
-        (searched '()))
+                        (error "Bad object for item: " item)]
+                       [(is-a? item <regexp>) (^[name] (rxmatch item name))]
+                       [else
+                        (error "Bad object for item: " item)])]
+        [result '()]
+        [searched '()])
 
     (define (search mod)
       (unless (memq mod searched)
         (set! searched (cons mod searched))
         (hash-table-for-each
          (module-table mod)
-         (lambda (symbol value)
+         (^[symbol value]
            (when (matcher (symbol->string symbol))
              (found mod symbol))))))
 
@@ -93,12 +92,10 @@
 
     ;; mimics the Scm_FindBinding
     (if stay-in-module
-        (search module)
-        (begin
-          (for-each (lambda (m)
-                      (for-each search (module-precedence-list m)))
-                    (module-imports module))
-          (for-each search (module-precedence-list module))))
+      (search module)
+      (begin (for-each (^m (for-each search (module-precedence-list m)))
+                       (module-imports module))
+             (for-each search (module-precedence-list module))))
     (for-each display (sort result))
     (values)
     ))
