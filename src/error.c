@@ -904,9 +904,9 @@ ScmObj Scm_RaiseCondition(ScmObj condition_type, ...)
 }
 
 /*
- * Show stack trace.
- *   stacklite - return value of Scm_VMGetStackLite
- *   maxdepth - maximum # of stacks to be shown.
+ * Show stack or call trace.
+ *   stacklite - return value of Scm_VMGetStackLite or Scm_VMGetCallTraceLite
+ *   maxdepth - maximum # of entries to be shown.
  *              0 to use the default.  -1 for unlimited.
  *   skip     - ignore this number of frames.  Useful to call this from
  *              a Scheme error handling routine, in order to skip the
@@ -938,6 +938,12 @@ void Scm_DumpStackTrace(ScmVM *vm, ScmPort *port)
     SCM_PUTZ("Stack Trace:\n", -1, port);
     SCM_PUTZ("_______________________________________\n", -1, port);
     Scm_ShowStackTrace(port, stack, 0, 0, 0, 0);
+#if SCM_CALL_TRACE_SIZE
+    ScmObj trace = Scm_VMGetCallTraceLite(vm);
+    SCM_PUTZ("Call Trace:\n", -1, port);
+    SCM_PUTZ("_______________________________________\n", -1, port);
+    Scm_ShowStackTrace(port, trace, 0, 0, 0, 0);
+#endif /*SCM_CALL_TRACE_SIZE*/
     SCM_FLUSH(port);
 }
 

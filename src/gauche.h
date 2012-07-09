@@ -622,6 +622,7 @@ SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN int    Scm_VMGetNumResults(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetResult(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetStackLite(ScmVM *vm);
+SCM_EXTERN ScmObj Scm_VMGetCallTraceLite(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetStack(ScmVM *vm);
 
 /* A box is to keep a reference.  It is mainly used for mutable local variables.

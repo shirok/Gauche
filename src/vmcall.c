@@ -146,6 +146,12 @@
     argc = (int)(SP - ARGP);
     vm->numVals = 1; /* default */
 
+#if SCM_CALL_TRACE_SIZE
+    vm->callTrace[vm->callTraceTop].base = BASE;
+    vm->callTrace[vm->callTraceTop].pc = PC;
+    vm->callTraceTop = (vm->callTraceTop+1) % SCM_CALL_TRACE_SIZE;
+#endif /*SCM_CALL_TRACE_SIZE*/
+
     /* object-apply hook.  shift args, and insert val0 into
        the fist arg slot, then call GenericObjectApply. */
     if (MOSTLY_FALSE(!SCM_PROCEDUREP(VAL0))) {
