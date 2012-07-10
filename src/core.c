@@ -85,7 +85,6 @@ extern void Scm__InitSignal(void);
 extern void Scm__InitSystem(void);
 extern void Scm__InitCode(void);
 extern void Scm__InitVM(void);
-extern void Scm__InitRepl(void);
 extern void Scm__InitAutoloads(void);
 extern void Scm__InitCollection(void);
 
@@ -166,7 +165,6 @@ void Scm_Init(const char *signature)
     Scm__InitRead();
     Scm__InitSignal();
     Scm__InitSystem();
-    Scm__InitRepl();
 
     Scm_Init_libalpha();
     Scm_Init_libbool();

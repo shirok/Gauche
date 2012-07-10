@@ -239,6 +239,38 @@
         [else (do-relative paths)]))
 
 ;;;
+;;; Repl
+;;;
+
+(select-module gauche.internal)
+
+(define (%repl-eval expr _) (eval expr (vm-current-module)))
+(define (%repl-print . vals) (for-each (^e (write/ss e) (newline)) vals))
+(define (%repl-prompt) (display "gosh> ") (flush))
+
+(define-in-module gauche (read-eval-print-loop :optional (reader #f)
+                                                         (evaluator #f)
+                                                         (printer #f)
+                                                         (prompter #f))
+  (let ([reader    (or reader read)]
+        [evaluator (or evaluator %repl-eval)]
+        [printer   (or printer %repl-print)]
+        [prompter  (or prompter %repl-prompt)])
+    (let loop1 ()
+      (and
+       (with-error-handler
+           (^e (report-error e) #t)
+         (^[]
+           (let loop2 ()
+             (prompter)
+             (let1 exp (reader)
+               (and (not (eof-object? exp))
+                    (receive results (evaluator exp (current-module))
+                      (apply printer results)
+                      (loop2)))))))
+       (loop1)))))
+
+;;;
 ;;; Macros
 ;;;
 

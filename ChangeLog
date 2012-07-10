@@ -1,3 +1,10 @@
+2012-07-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/repl.c, src/libeval.scm (read-eval-print-loop): Reimplemented
+	  read-eval-print-loop in Scheme instead of C.  C API Scm_Repl calls
+	  Scheme version.  Scm_VMRepl is obsoleted (it never was an official
+	  API).
+
 2012-07-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (describe): When a symbol is described,
