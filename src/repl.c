@@ -35,6 +35,8 @@
 #include "gauche.h"
 #include "gauche/vm.h"
 
+/* This file will be gone in 1.0 release */
+
 /* This has never been exposed in public header files, but it wasn't 'static'
    so it was visible.  To keep binary-level compatibility, we provide
    this stub---but nobody should've called this. */
@@ -45,7 +47,15 @@ ScmObj Scm_VMRepl(ScmObj reader, ScmObj evaluator,
     return SCM_UNDEFINED;
 }
 
-/* C API */
+/* C API - deprecated
+   main.c used to call this to invoke repl, but now it uses
+   Scm_EvalCString.   Now we have multiple versions of read-eval-print-loop
+   (the 'bare' one in libeval.scm and the user-friendly one in
+   gauche.interactive), we want to allow the caller to specify which.
+   Furthermore, the caller always use Scm_Eval family to call desired
+   read-eval-print-loop.   Hence the point of having this API as is
+   is diminishing.
+ */
 void Scm_Repl(ScmObj reader, ScmObj evaluator, ScmObj printer,
               ScmObj prompter)
 {

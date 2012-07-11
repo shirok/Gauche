@@ -244,7 +244,6 @@
 
 (select-module gauche.internal)
 
-(define (%repl-eval expr _) (eval expr (vm-current-module)))
 (define (%repl-print . vals) (for-each (^e (write/ss e) (newline)) vals))
 (define (%repl-prompt) (display "gosh> ") (flush))
 
@@ -253,7 +252,7 @@
                                                          (printer #f)
                                                          (prompter #f))
   (let ([reader    (or reader read)]
-        [evaluator (or evaluator %repl-eval)]
+        [evaluator (or evaluator eval)]
         [printer   (or printer %repl-print)]
         [prompter  (or prompter %repl-prompt)])
     (let loop1 ()
@@ -265,7 +264,7 @@
              (prompter)
              (let1 exp (reader)
                (and (not (eof-object? exp))
-                    (receive results (evaluator exp (current-module))
+                    (receive results (evaluator exp (vm-current-module))
                       (apply printer results)
                       (loop2)))))))
        (loop1)))))

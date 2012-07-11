@@ -1,3 +1,12 @@
+2012-07-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm (read-eval-print-loop): Make extended
+	  REPL feature available when gauche.interactive is loaded.
+	* src/main.c: Changed to call "visible" read-eval-print-loop.  This
+	  makes the extended REPL available by default, but uses the
+	  gauche#read-eval-print-loop if gauche.interactive isn't loaded.
+	* src/repl.c: Scm_Repl is no longer used.  Marked obsoleted.
+
 2012-07-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/repl.c, src/libeval.scm (read-eval-print-loop): Reimplemented

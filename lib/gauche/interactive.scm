@@ -34,23 +34,24 @@
 #!no-fold-case
 
 (define-module gauche.interactive
-  (export apropos describe d
+  (export apropos describe d read-eval-print-loop
           ;; autoloaded symbols follow
           info reload reload-modified-modules module-reload-rules
           reload-verbose)
   )
 (select-module gauche.interactive)
 
-;; Apropos - search bound symbols matching given pattern
-;;
-;;  (apropos 'open)             print bound symbols that contains "open"
-;;                              in its name
-;;  (apropos #/^(open|close)/)  you can use regexp
-;;
-;;  (apropos 'open 'scheme)     search symbols only in a single module
-;;
-;; Apropos is implemented as macro, for it requires to get the current
-;; module which is only available at the compile time.
+;;;
+;;; Apropos - search bound symbols matching given pattern
+;;;
+;;;  (apropos 'open)             print bound symbols that contains "open"
+;;;                              in its name
+;;;  (apropos #/^(open|close)/)  you can use regexp
+;;;
+;;;  (apropos 'open 'scheme)     search symbols only in a single module
+;;;
+;;; Apropos is implemented as macro, for it requires to get the current
+;;; module which is only available at the compile time.
 
 (define-syntax apropos
   (syntax-rules ()
@@ -100,8 +101,9 @@
     (values)
     ))
 
-;; Describe - describe object
-;;
+;;;
+;;; Describe - describe object
+;;;
 
 (define-method describe (object)
   (let* ([class (class-of object)]
@@ -121,16 +123,70 @@
   (format #t "~s is an instance of class ~a\n" s (class-name (class-of s)))
   (describe-symbol-bindings s)) ;; autoloaded from gauche.modutil
 
-;; For convenience
-;; This may interfere with other code.
-;(define-syntax a
-;  (syntax-rules ()
-;    ((_ . ?args) (apropos . ?args))))
-
 (define d describe)
 
-;; Turn on debugger
-;(enable-debug)
+;;;
+;;; Enhanced REPL
+;;;
+
+;; Evaluation history.
+;; We define history variables in gauche module so that they are visible
+;; from any modules that inherits gauche.
+(define-in-module gauche *1 #f)
+(define-in-module gauche *1+ '())
+(define-in-module gauche *2 #f)
+(define-in-module gauche *2+ '())
+(define-in-module gauche *3 #f)
+(define-in-module gauche *3+ '())
+(define-in-module gauche *e #f)
+
+(define (%set-history-expr! r)
+  (unless (null? r)
+    (set! *3 *2) (set! *3+ *2+)
+    (set! *2 *1) (set! *2+ *1+)
+    (set! *1 (car r)) (set! *1+ r)))
+
+(define (%set-history-exception! e) (set! *e e))
+
+;; Will be extended for fancier printer
+(define (repl-print x) (write/ss x) (flush))
+
+(define-in-module gauche (*history)
+  (display "*1: ") (repl-print *1) (newline)
+  (display "*2: ") (repl-print *2) (newline)
+  (display "*3: ") (repl-print *3) (newline)
+  (values))
+
+(define *repl-name* "gosh")
+
+(define %prompter
+  (let1 user-module (find-module 'user)
+    (^[] (let1 m ((with-module gauche.internal vm-current-module))
+           (if (eq? m user-module)
+             (format #t "~a> " *repl-name*)
+             (format #t "~a[~a]> " *repl-name* (module-name m)))
+           (flush)))))
+
+;; error printing will be handled by the original read-eval-print-loop
+(define (%evaluator expr env)
+  (guard (e [else (%set-history-exception! e) (raise e)])
+    (receive r (eval expr env)
+      (%set-history-expr! r)
+      (apply values r))))
+
+;; This shadows gauche#read-eval-print-loop
+(define (read-eval-print-loop :optional (reader #f)
+                                        (evaluator #f)
+                                        (printer #f)
+                                        (prompter #f))
+  (let ([evaluator (or evaluator %evaluator)]
+        [prompter (or prompter %prompter)])
+    ((with-module gauche read-eval-print-loop)
+     reader evaluator printer prompter)))
+
+;;;
+;;; Misc. setup
+;;;
 
 ;; Autoload online info viewer
 (autoload gauche.interactive.info info)

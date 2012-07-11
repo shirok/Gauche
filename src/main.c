@@ -582,7 +582,12 @@ int main(int argc, char **argv)
             Scm_LoadFromPort(SCM_PORT(Scm_Stdin()), SCM_LOAD_PROPAGATE_ERROR,
                              NULL);
         } else {
-            Scm_Repl(SCM_FALSE, SCM_FALSE, SCM_FALSE, SCM_FALSE);
+            /* Call read-eval-print-loop.  If gauche.interactive is loaded,
+               this will invoke 'user-friendly' version of repl; otherwise,
+               this calls the 'bare' version in libeval.scm. */
+            Scm_EvalCString("(read-eval-print-loop)",
+                            SCM_OBJ(SCM_CURRENT_MODULE()),
+                            NULL);
         }
     }
 
