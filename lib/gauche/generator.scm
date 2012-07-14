@@ -48,8 +48,8 @@
           generator->list null-generator gcons* gappend gconcatenate
           circular-generator gunfold giota grange
           gmap gmap-accum gfilter gfilter-map gstate-filter
-          gtake gdrop gtake-while gdrop-while grxmatch glet* glet1
-          do-generator
+          gtake gdrop gtake-while gdrop-while grxmatch gslices
+          glet* glet1 do-generator
           ))
 (select-module gauche.generator)
 
@@ -226,6 +226,8 @@
 ;;; Generator operations
 ;;;
 
+;; data Generator a = () -> a
+
 ;; A monadic syntax sugar
 (define-syntax glet*
   (syntax-rules ()
@@ -260,7 +262,7 @@
            body ...
            (loop))))]))
 
-;; gcons* :: (a, ..., () -> a) -> (() -> a)
+;; gcons* :: (a, ..., Generator a) -> Generator a
 (define gcons*
   (case-lambda
     [() (error "gcons* needs at least one argument")]
@@ -272,7 +274,7 @@
      (let* ([lp (last-pair args)] [g (%->gen (car lp))])
        (^[] (if (eq? args lp) (g) (pop! args))))]))
 
-;; gappend :: [() -> a] -> (() -> a)
+;; gappend :: [Generator a] -> Generator a
 (define (gappend . gens)
   (let ([gs gens] [g #f])
     (if (null? gs)
@@ -284,7 +286,7 @@
                 [(null? gs) v]          ;exhausted
                 [else (set! g #f) (f)]))))))
 
-;; gconcatenate :: [() -> (() -> a)] -> (() -> a)
+;; gconcatenate :: Generator Generator a -> Generator a
 (define (gconcatenate gen)
   (let* ([gen (%->gen gen)]
          [g (gen)])
@@ -296,7 +298,7 @@
                  (begin (set! g (%->gen (gen))) (loop))
                  v)))))))
 
-;; gmap :: (a -> b, () -> a) -> (() -> b)
+;; gmap :: (a -> b, Generator a) -> Generator b
 (define gmap
   (case-lambda
     [(fn gen)
@@ -307,7 +309,7 @@
        (^[] (let1 vs (map (^f (f)) gs)
               (if (any eof-object? vs) (eof-object) (apply fn vs)))))]))
 
-;; gmap-accum :: ((a,b) -> (c,b), b, () -> a) -> (() -> c)
+;; gmap-accum :: ((a,b) -> (c,b), b, Generator a) -> Generator c
 (define gmap-accum
   (case-lambda
     [(fn seed gen)
@@ -326,7 +328,7 @@
                 (set! seed seed_)
                 v_))))]))
 
-;; gfilter :: (a -> Bool, () -> a) -> (() -> a)
+;; gfilter :: (a -> Bool, Generator a) -> Generator a
 (define (gfilter pred gen)
   (let1 gen (%->gen gen)
     (^[] (let loop ([v (gen)])
@@ -334,7 +336,7 @@
                  [(pred v) v]
                  [else (loop (gen))])))))
 
-;; gfilter-map :: (a -> b, () -> a) -> (() -> b)
+;; gfilter-map :: (a -> b, Generator a) -> Generator b
 (define gfilter-map
   (case-lambda
     [(fn gen)
@@ -350,7 +352,7 @@
                       [(apply fn vs)]
                       [else (loop)])))))]))
 
-;; gstate-filter :: ((a,b) -> (Bool,b), b, () -> a) -> (() -> a)
+;; gstate-filter :: ((a,b) -> (Bool,b), b, Generator a) -> Generator a
 (define (gstate-filter proc seed gen)
   (let1 gen (%->gen gen)
     (^[] (let loop ()
@@ -359,10 +361,10 @@
                (set! seed seed1)
                (if flag v (loop))))))))
 
-;; gtake :: (() -> a, Int) -> (() -> a)
-;; gdrop :: (() -> a, Int) -> (() -> a)
+;; gtake :: (Generator a, Int) -> Generator a
+;; gdrop :: (Generator a, Int) -> Generator a
 (define (gtake gen n :optional (fill? #f) (padding #f))
-  (let ([k 0] [gen (%->gen gen)])
+  (let ([k 0] [end #f] [gen (%->gen gen)])
     (if fill?
       (^[] (if (< k n)
              (let1 v (gen)
@@ -374,8 +376,8 @@
   (let ([k 0] [gen (%->gen gen)])
     (^[] (when (< k n) (dotimes [i n] (inc! k) (gen))) (gen))))
 
-;; gtake-while :: (a -> Bool, () -> a) -> (() -> a)
-;; gdrop-while :: (a -> Bool, () -> a) -> (() -> a)
+;; gtake-while :: (a -> Bool, Generator a) -> Generator a
+;; gdrop-while :: (a -> Bool, Generator a) -> Generator a
 (define (gtake-while pred gen)
   (let ([end? #f] [gen (%->gen gen)])
     (^[] (if end?
@@ -394,7 +396,7 @@
                  (loop)
                  (begin (set! found? #t) v))))))))
 
-;; generate :: ((a -> ()) -> ()) -> (() -> a)
+;; generate :: ((a -> ()) -> ()) -> Generator a
 (define (generate proc)
   (define (cont)
     (reset (proc (^[value] (shift k (set! cont k) value)))
@@ -402,8 +404,8 @@
            (eof-object)))
   (^[] (cont)))
 
-;; grxmatch :: (Regexp, (() -> char)) -> (() -> RegMatch)
-;;          |  (Regexp, String) -> (() -> RegMatch)
+;; grxmatch :: (Regexp, Generator Char) -> Generator RegMatch
+;;          |  (Regexp, String) -> Generator RegMatch
 (define (grxmatch rx gen)
   (if (string? gen)
     (let1 str gen
@@ -440,6 +442,21 @@
                        m))
               (expand-buffer #f)))
           (eof-object))))))
+
+;; gslices :: (Generator a, Int) -> Generator [a]
+(define (gslices gen k :optional (fill? #f) (padding #f))
+  ;; It's tempting to do this:
+  ;; (let1 elts (generator->list (gtake gen k fill? padding))
+  ;;   (if (null? elts) (eof-object) elts)))))
+  ;; but it doesn't work, since gtake with fill?=#t always returns generator
+  ;; of k items, even the input generator is exhausted.
+  (let1 gen (%->gen gen)
+    (^[] (let* ([elts (generator->list gen k)]
+                [len (length elts)])
+           (cond [(null? elts) (eof-object)]
+                 [(= len k) elts]
+                 [fill? (append elts (make-list (- k len) padding))]
+                 [else elts])))))
 
 ;; TODO:
 ;;  (gen-ec (: i ...) ...)

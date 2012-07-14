@@ -4724,6 +4724,20 @@ then the returned generator does yield @var{k} items, using the
 場合は、返り値のジェネレータは@var{k}個の値を返し、足りない分は@var{padding}
 の値を生成します。
 @c COMMON
+
+@c EN
+Note: If you pass true to @var{fill?}, @code{gtake} always returns a generator
+that generates exactly @var{k} elements even the input generator is already
+exhausted---there's no general way to know whether you've reached
+the end of the input.  If you need to take @var{k} items repeatedly
+from the input generator, you may want to use @code{gslices} below.
+@c JP
+註: @var{fill?}引数に真の値を渡した場合、たとえ入力ジェネレータが終端に達していたとしても
+@code{gtake}が返すジェネレータは@var{k}個の値を生成します。つまりその場合、
+入力が使い尽くされたかどうかを判定する汎用的な方法はありません。
+「入力が尽きるまで@var{k}個の要素を次々に取り出したい」という場合は
+下に説明する@code{gslices}の方が使い勝手が良いかもしれません。
+@c COMMON
 @end defun
 
 @defun gtake-while pred gen
@@ -4743,6 +4757,47 @@ while @var{pred} returns true for them, then start yielding items.
 ジェネレータは、まずソースジェネレータから値を読み取り、その値に対して
 @var{pred}が真を返したら、値の生成を開始します。
 @c COMMON
+@end defun
+
+@defun gslices gen k :optional (fill? #f) (padding #f)
+@c EN
+The generator version of @code{slices} (@xref{List accessors and modifiers}).
+This returns a generator, that yields a list of @var{k} items from
+the input generator @var{gen} at a time.
+@c JP
+@code{slices}のジェネレータ版です (@ref{List accessors and modifiers}参照。
+入力のジェネレータ@var{gen}から@var{k}要素づつ読み出して、そのリストを生成する
+ジェネレータを返します。
+@c COMMON
+
+@example
+(generator->list (gslices (giota 7) 3))
+  @result{} ((0 1 2) (3 4 5) (6))
+@end example
+
+@c EN
+The @var{fill?} and @var{padding} arguments controls how the end
+of input is handled, just like @code{gtake}.  When @var{fill?} is
+@code{#f} (default), the last item from output generator may not
+have @var{k} items if the input is short to fill them, as shown
+in the above example.  If @var{fill?} is true and the input is
+short to complete @var{k} items, @var{padding} argument is used
+to fill the rest.
+@c JP
+@var{fill?}引数と@var{padding}引数は、@code{gtake}のそれと同様に、
+入力が足りなかった場合の処理を指定します。デフォルトの、@var{fill?}が
+@code{#f}の場合、入力が@var{k}要素に満たなければ、出力の要素も
+切り詰められます (上の例参照)。@var{fill}が真の値であれば、
+入力が足りない分は@var{padding}が当てられ、出力の最後のリストも@var{k}要素になります。
+@c COMMON
+
+@example
+(generator->list (gslices (giota 6) 3 #t 'x))
+  @result{} ((0 1 2) (3 4 5))
+(generator->list (gslices (giota 7) 3 #t 'x))
+  @result{} ((0 1 2) (3 4 5) (6 x x))
+@end example
+
 @end defun
 
 @defun grxmatch regexp gen

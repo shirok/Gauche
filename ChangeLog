@@ -1,3 +1,7 @@
+2012-07-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/generator.scm (gslices): Added.
+
 2012-07-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (read-eval-print-loop): Make extended

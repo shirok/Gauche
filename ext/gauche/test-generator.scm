@@ -207,6 +207,16 @@
                 (cut drop-while even? <>)
                 '(2 4 0 1 3) '(1 2 4 4 8) '() '(2 2) '(3 5))
 
+(test-list-like (cut gslices <> 3)
+                (cut slices <> 3)
+                '(1 2 3 4 5 6 7 8 9) '(1 2 3 4) '(1)  '())
+(test-list-like (cut gslices <> 3 #t)
+                (cut slices <> 3 #t)
+                '(1 2 3 4 5 6 7 8 9) '(1 2 3 4) '(1)  '())
+(test-list-like (cut gslices <> 3 #t 'z)
+                (cut slices <> 3 #t 'z)
+                '(1 2 3 4 5 6 7 8 9) '(1 2 3 4) '(1)  '())
+
 (test* "gstate-filter"
        '(1 2 3 1 2 3 1 2 3)
        (generator->list
