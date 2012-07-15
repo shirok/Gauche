@@ -3,14 +3,14 @@
 @c NODE Gaucheでのプログラミング
 
 @menu
-* Invoking Gosh::
-* Interactive development::
-* Writing Scheme scripts::
-* Debugging::
-* Platform-dependent features::
-* Profiling and tuning::
-* Writing Gauche modules::
-* Using extension packages::
+* Invoking Gosh::               
+* Interactive development::     
+* Writing Scheme scripts::      
+* Debugging::                   
+* Platform-dependent features::  
+* Profiling and tuning::        
+* Writing Gauche modules::      
+* Using extension packages::    
 @end menu
 
 @node Invoking Gosh, Interactive development, Programming in Gauche, Programming in Gauche
@@ -456,10 +456,10 @@ Schemeプログラムを走らせることができます。
 
 @c EN
 When @code{gosh} is invoked without any script files,
-it goes into interactive read-eval-print loop.
+it goes into interactive read-eval-print loop (REPL).
 @c JP
 スクリプトファイルが与えられなかった場合、
-@code{gosh}はインタラクティブなread-eval-printループに入ります。
+@code{gosh}はインタラクティブなread-eval-printループ(REPL)に入ります。
 @c COMMON
 
 @c EN
@@ -471,7 +471,7 @@ or evaluate @code{(exit)}.
 @c COMMON
 
 @c EN
-In interactive session, @code{gosh} loads @code{gauche.interactive}
+In the interactive session, @code{gosh} loads @code{gauche.interactive}
 module (@xref{Interactive session}) for the
 convenience.  The module also loads a file @file{.gaucherc} under
 the user's home directory if it exists.
@@ -517,12 +517,173 @@ internal character encodings.
 内部エンコーディングと合わせるようにして下さい。
 @c COMMON
 
+@menu
+* Working in REPL::             
+@end menu
+
+@node Working in REPL,  , Interactive development, Interactive development
+@subsection Working in REPL
+@c NODE REPLでの開発
+
 @c EN
-Currently @code{gosh} has no fancy features such as
-line-editing or command history.   They'll be added in future.
+When you enter REPL, Gauche prompts you to enter a Scheme expression:
 @c JP
-今のところ、@code{gosh}は行編集やコマンドヒストリなどの便利な機能を
-備えていません。将来はこのへんも充実してゆくでしょう。
+REPLに入ると、Gaucheはプロンプトを出してScheme式の入力を待ちます。
+@c COMMON
+
+@example
+gosh>
+@end example
+
+@c EN
+After you complete a Scheme expression and type ENTER,
+the result of evaluation is printed.
+@c JP
+完全なScheme式を入力してENTERをタイプすると、そのS式の評価結果が表示されます。
+@c COMMON
+
+@example
+gosh> @i{(+ 1 2)}
+3
+gosh> 
+@end example
+
+@c EN
+The REPL session binds the last three results of evaluation
+in the global variables @code{*1}, @code{*2} and @code{*3}.
+You can use the previous results via those history variables
+in subsequent expressions.
+@c JP
+REPLセッションは、過去3回分の評価結果をグローバル変数
+@code{*1}、@code{*2}、@code{*3} に束縛します。これらのヒストリ変数を
+使って、以前の結果を後続の式の中で使えます。
+@c COMMON
+
+@example
+gosh> @i{*1}
+3
+gosh> @i{(+ *2 3)}
+6
+@end example
+
+@c EN
+If the Scheme expression yields multiple values
+(@xref{Multiple values}), they are printed one by one.
+@c JP
+Scheme式が複数の値を返した場合
+(@ref{Multiple values}参照)は、各値が順に表示されます。
+@c COMMON
+
+@example
+gosh> @i{(min&max 1 -1 8 3)}
+-1
+8
+gosh> 
+@end example
+
+@c EN
+The history variable @code{*1}, @code{*2} and @code{*3} only
+binds the first value.  A list of all values are bound to
+@code{*1+}, @code{*2+} and @code{*3+}.
+@c JP
+式が多値を返しても、変数@code{*1}、@code{*2}、@code{*3}
+に束縛されるのは最初の値のみです。しかし別のグローバル変数
+@code{*1+}、@code{*2+}、@code{*3+}に、全ての値をリストにしたものが
+束縛されています。
+@c COMMON
+
+@example
+gosh> @i{*1}
+-1
+gosh> @i{*2+}
+(-1 8)
+@end example
+
+@c EN
+(Note that, when you evaluate @code{*1} in the above example, the
+history is shifted---so you need to use @code{*2+} to refer to the
+result of @code{(min&max 1 -1 8 3)}.)
+@c JP
+(上の例で、@code{*1}を評価した時点でヒストリがひとつずれてしまっていることに
+注意してください。@code{(min&max 1 -1 8 3)}の結果を見るためには
+@code{*2+}を参照する必要があります。)
+@c COMMON
+
+@c EN
+The @code{*history} procedure shows the value of history variables:
+@c JP
+手続き@code{*history}はヒストリ変数の値を表示します。
+@c COMMON
+
+@example
+gosh> @i{(*history)}
+*1: (-1 8)
+*2: -1
+*3: -1
+gosh> 
+@end example
+
+@c EN
+As a special case, if an evaluation yields zero values, history
+isn't updated.   The @code{*history} procedure returns
+no values, so merely looking at the history won't change the history
+itself.
+@c JP
+特別な場合として、式の評価がゼロ個の値を返した場合は、ヒストリ変数は更新されません。
+@code{*history}手続きはゼロ個の値を返すので、ヒストリを見るだけでヒストリが
+進んでしまうということはありません。
+@c COMMON
+
+@example
+gosh> @i{(*history)}
+*1: (-1 8)
+*2: -1
+*3: -1
+gosh> (values)
+gosh> @i{(*history)}
+*1: (-1 8)
+*2: -1
+*3: -1
+@end example
+
+
+@c EN
+Finally, a global variable @code{*e} is bound to the last uncaught
+error condition object.
+@c JP
+最後に、評価途中で捕捉されないエラーが発生した場合は、エラーコンディションオブジェクトが
+グローバル変数@code{*e}に束縛されます。
+@c COMMON
+
+@example
+gosh> @i{(filter odd? '(1 2 x 4 5))}
+*** ERROR: integer required, but got x
+Stack Trace:
+_______________________________________
+  0  (eval expr env)
+        At line 173 of "/usr/share/gauche-0.9/0.9.3.3/lib/gauche/interactive.scm"
+gosh> @i{*e}
+#<error "integer required, but got x">
+@end example
+
+@c EN
+(The error stack trace may differ depending on your installation.)
+@c JP
+(エラースタックトレースの表示はインストールの状況によって異なる場合があります。)
+@c COMMON
+
+@c EN
+Note: If you invoke @code{gosh} with @code{-q} option, which tells
+@code{gosh} not to load the initialization files, you still get
+a REPL prompt but no fancy features such as history variables
+are available.  Those convenience features are implemented in
+@code{gauche.interactive} module, which isn't loaded with @code{-q}
+option.
+@c JP
+註: @code{gosh}を@code{-q}オプション (初期化ファイルをロードしない) で
+起動した場合もREPLに入りますが、そこではヒストリ変数などは使えません。
+REPLの便利機能は@code{gauche.interactive}モジュールで実装されていますが、
+@code{-q}オプションをつけると@code{gauche.interactive}がロードされないからです。
 @c COMMON
 
 @c ----------------------------------------------------------------------
@@ -1085,8 +1246,8 @@ the patterns Gauche can execute well.
 @c COMMON
 
 @menu
-* Using profiler::
-* Performance tips::
+* Using profiler::              
+* Performance tips::            
 @end menu
 
 @node Using profiler, Performance tips, Profiling and tuning, Profiling and tuning
