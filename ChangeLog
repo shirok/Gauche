@@ -4,8 +4,10 @@
 	  (bits->generator, reverse-bits->generator): Fixed the semantics
 	  of start and end arguments; the previous spec wasn't useful, for
 	  we get used to count the bit numbers from LSB to MSB; it is much
-	  more convnienent to be able to say (bits->generator num 8 0) to
-	  take always the least significant 8 bits.
+	  more convenient to be able to say (bits->generator num 0 8) to
+	  take always the least significant 8 bits.  The direction of bits
+	  is also reversed, to align to start/end; bits->generator takes
+	  bits from LSB, while reverse-bits->generator takes from MSB.
 
 2012-07-11  Shiro Kawai  <shiro@acm.org>
 
