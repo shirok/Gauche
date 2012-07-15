@@ -4176,8 +4176,6 @@ it to @code{g}.
 @defunx vector->generator vec :optional start end
 @defunx reverse-vector->generator vec :optional start end
 @defunx string->generator str :optioanl start end
-@defunx bits->generator n :optional start end
-@defunx reverse-bits->generator n :optional start end
 @c EN
 Returns a generator that yields each item in the given argument.
 A generator returned from @code{reverse-*} procedures runs in
@@ -4236,15 +4234,17 @@ at the last element, and reverse generators ends at the first element.
 (generator->list (reverse-vector->generator '#(a b c d e) #f 2))
   @result{} (b a)
 @end example
+@end defun
 
+@defun bits->generator n :optional start end
+@defunx reverse-bits->generator n :optional start end
 @c EN
-@code{bits->generator} and @code{reverse-bits->geneator} takes
-an exact integer and treat it as a sequence of boolean values
-(0 for false and 1 for true), as @code{integer->list} does
+These procedures take an exact integer and treat it as a sequence of
+boolean values (0 for false and 1 for true), as @code{integer->list} does
 (@xref{Integers as bits}).
 @c JP
-@code{bits->generator}と@code{reverse-bits->geneator}は正確な整数を引数
-に取り、@code{integer->list}がそうであるように(@ref{Integers as bits}参照)、
+これらの手続きは正確な整数を引数に取り、
+@code{integer->list}と同様に(@ref{Integers as bits}参照)、
 それを真偽値のシーケンス(0が偽、1を真)として扱います。
 @c COMMON
 
@@ -4253,6 +4253,28 @@ an exact integer and treat it as a sequence of boolean values
  @result{} (#t #f #t #t #f)
 (generator->list (reverse-bits->generator #b10110)
  @result{} (#f #t #t #f #t)
+@end example
+
+@c EN
+The optional @var{start} and/or @var{end} arguments are used to specify
+the range of bitfield, LSB being 0.  Unlike @code{list->generator} etc,
+@var{start} (left limit) isn't included and @var{end} (right limit) is
+included, and @var{start} is greater than @var{end}:
+@c JP
+省略可能引数@var{start}と@var{end}はビットフィールドの範囲を指定します
+(LSBが0)。@code{list->generator}等の同名の引数と違って、
+@var{start}側 (左端)は含まれず、@var{end}側 (右端) は含まれること、
+また@var{start}が@var{end}より大きくなることに注意してください。
+@c COMMON
+
+@example
+(generator->list (bits->generator #x56 4)
+  @result{} (#f #t #t #f)  ; takes bit 3, 2, 1 and 0
+(generator->list (bits->generator #x56 8 4)
+  @result{} (#f #t #f #t)  ; takes bit 7, 6, 5 and 4 
+
+(generator->list (reverse-bits->generator #x56 8 4)
+  @result{} (#t #f #t #f)  ; takes bit 4, 5, 6 and 7
 @end example
 @end defun
 

@@ -1,6 +1,11 @@
 2012-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm (gslices): Added.
+	  (bits->generator, reverse-bits->generator): Fixed the semantics
+	  of start and end arguments; the previous spec wasn't useful, for
+	  we get used to count the bit numbers from LSB to MSB; it is much
+	  more convnienent to be able to say (bits->generator num 8 0) to
+	  take always the least significant 8 bits.
 
 2012-07-11  Shiro Kawai  <shiro@acm.org>
 

@@ -97,16 +97,14 @@
     (^[] (read-char p))))
 
 (define (bits->generator n :optional (start #f) (end #f))
-  (let* ([len-1 (- (integer-length n) 1)]
-         [k     (- len-1 (or start 0))]
-         [end   (if end (- len-1 end) -1)])
-    (^[] (if (<= k end) (eof-object) (%begin0 (logbit? k n) (dec! k))))))
+  (let* ([k     (- (or start (integer-length n)) 1)]
+         [end   (or end 0)])
+    (^[] (if (< k end) (eof-object) (%begin0 (logbit? k n) (dec! k))))))
 
 (define (reverse-bits->generator n :optional (start #f) (end #f))
-  (let* ([len-1 (- (integer-length n) 1)]
-         [start (- len-1 (or start 0))]
-         [k     (if end (- len-1 end -1) 0)])
-    (^[] (if (> k start) (eof-object) (%begin0 (logbit? k n) (inc! k))))))
+  (let* ([start (or start (integer-length n))]
+         [k     (or end 0)])
+    (^[] (if (>= k start) (eof-object) (%begin0 (logbit? k n) (inc! k))))))
 
 (define (file->generator filename reader . open-args)
   ;; If the generator is abanboned before reaching EOF, we have to rely
