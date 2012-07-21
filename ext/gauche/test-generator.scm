@@ -24,6 +24,16 @@
        (generator->list (giota 5) 3))
 (test* "giota + generator->list(n)" '(0 1 2 3 4)
        (generator->list (giota 5) 10))
+(test* "giota + generator->list(+inf.0)" '(0 1 2 3 4 5 6 7 8 9)
+       (generator->list (giota) 10))
+(test* "giota + generator->list(+inf.0)" '(5 6 7 8 9 10 11 12 13 14)
+       (generator->list (giota +inf.0 5) 10))
+(test* "giota + generator->list(-1)" '(5 6 7 8 9 10 11 12 13 14)
+       (generator->list (giota -1 5) 10))
+(test* "giota + generator->list(step 1/2)" '(1 3/2 2 5/2 3)
+       (generator->list (giota +inf.0 1 1/2) 5))
+(test* "giota + generator->list(step 1/2, inexact)" '(1.0 1.5 2.0 2.5 3.0)
+       (generator->list (giota +inf.0 1.0 1/2) 5))
 
 (test* "grange + generator->list" '(0 1 2 3 4)
        (generator->list (grange 0 5)))
@@ -31,6 +41,10 @@
        (generator->list (grange 2 6)))
 (test* "grange + generator->list" '(2 5 8 11)
        (generator->list (grange 2 14 3)))
+(test* "grange + generator->list" '(1 3/2 2 5/2)
+       (generator->list (grange 1 3 1/2)))
+(test* "grange + generator->list" '(1.0 1.5 2.0 2.5)
+       (generator->list (grange 1.0 3 1/2)))
 
 ;; converters
 (let-syntax ((t (syntax-rules ()

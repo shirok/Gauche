@@ -233,6 +233,17 @@
 (test* "fold" 45 (fold + 0 (generator->lseq (giota 10))))
 (test* "equal?" #t (equal? '(0 1 2 3 4) (generator->lseq (giota 5))))
 
+(test* "liota" '(0 1 2 3 4) (liota 5))
+(test* "liota" '(0.0 1.0 2.0 3.0 4.0) (liota 5 0.0))
+(test* "liota" '(0 1 2 3 4) (take (liota) 5))
+(test* "liota" '(1/2 7/6 11/6 5/2 19/6) (liota 5 1/2 2/3))
+(test* "liota" '(1.0 0.9 0.8 0.7 0.6) (liota 5 1.0 -0.1))
+
+(test* "lrange" '(1 2 3 4 5) (take (lrange 1) 5))
+(test* "lrange" '(1 2 3 4 5) (lrange 1 6))
+(test* "lrange" '(1 13/7 19/7 25/7 31/7 37/7) (lrange 1 6 6/7))
+(test* "lrange" '(1.0 1.5 2.0 2.5) (lrange 1 3 0.5))
+
 ;; Interference with partial continuations
 (use gauche.partcont)
 (let ()

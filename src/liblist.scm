@@ -221,12 +221,16 @@
 (define (last lis) (car (last-pair lis))) ;srfi-1
 
 (define (iota count :optional (start 0) (step 1)) ;srfi-1
-  (when (< count 0) (error "count must be nonnegative: " count))
+  (unless (and (integer? count) (>= count 0))
+    (error "count must be nonnegative integer: " count))
   (if (and (exact? start) (exact? step))
-    (do ([c count (- c 1)]
-         [v (+ start (* (- count 1) step)) (- v step)]
-         [r '() (cons v r)])
-        [(<= c 0) r])
+    ;; we allow inexact integer as 'count', for the consistency of
+    ;; giota and liota in which we can also accept +inf.0 as count.
+    (let1 count (exact count)
+      (do ([c count (- c 1)]
+           [v (+ start (* (- count 1) step)) (- v step)]
+           [r '() (cons v r)])
+          [(<= c 0) r]))
     ;; for inexact numbers, we use multiplication to avoid error accumulation.
     (do ([c count (- c 1)]
          [r '() (cons (+ start (* (- c 1) step)) r)])

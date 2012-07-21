@@ -4091,7 +4091,7 @@ the converted list by 10; otherwise
 @c COMMON
 @end defun
 
-@defun giota count :optional (start 0) (step 1)
+@defun giota :optional (count +inf.0) (start 0) (step 1)
 @c EN
 Like @code{iota} (@xref{List constructors}), creates a generator
 of a series of @var{count} numbers, starting from @var{start}
@@ -4105,6 +4105,22 @@ and increased by @var{step}.
 (generator->list (giota 10 3 2))
   @result{} (3 5 7 9 11 13 15 17 19 21)
 @end example
+
+@c EN
+If both @var{start} and @var{step} are exact, the generator
+yields exact numbers; otherwise it yields inexact numbers.
+@c JP
+@var{start}と@var{end}がともに正確数であれば、ジェネレータは
+正確数を生成します。そうでなければ非正確数を生成します。
+@c COMMON
+
+@example
+(generator->list (giota +inf.0 1/2 1/3) 6)
+  @result{} (1/2 5/6 7/6 3/2 11/6 13/6)
+(generator->list (giota +inf.0 1.0 2.0) 5)
+  @result{} (1.0 3.0 5.0 7.0 9.0)
+@end example
+
 @end defun
 
 @defun grange start :optional (end +inf.0) (step 1)

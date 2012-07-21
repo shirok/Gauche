@@ -119,8 +119,22 @@
         [(and (exact? start) (exact? step)) (generator->lseq start gen-exacts)]
         [else (generator->lseq (inexact start) gen-inexacts)]))
 
-(define-in-module gauche (liota count :optional (start 0) (step 1))
-  (lrange start (+ start count) step))
+(define-in-module gauche (liota :optional (count +inf.0) (start 0) (step 1))
+  (let1 count (if (< count 0) +inf.0 count) ; like stream-iota
+    (define gen
+      (if (and (exact? start) (exact? step))
+        (if (infinite? count)
+          (^[] (rlet1 v start (inc! start step)))
+          (^[] (if (<= count 0)
+                 (eof-object)
+                 (rlet1 v start (inc! start step) (dec! count)))))
+        (let1 k 0
+          (if (infinite? count)
+            (^[] (rlet1 v (+ start (* k step)) (inc! k)))
+            (^[] (if (<= count 0)
+                   (eof-object)
+                   (rlet1 v (+ start (* k step)) (inc! k) (dec! count))))))))
+    (generator->lseq gen)))
 
 (select-module gauche)
 (define-macro (lcons a b)

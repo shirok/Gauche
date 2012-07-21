@@ -208,17 +208,36 @@
                 (tail)]
                [else (%begin0 (f seed) (set! seed (g seed)))]))))
 
-(define (giota num :optional (start 0) (step 1))
-  (let1 val start
-    (^[] (if (<= num 0)
-           (eof-object)
-           (%begin0 val (inc! val step) (dec! num))))))
+(define (giota :optional (count +inf.0) (start 0) (step 1))
+  (if (and (exact? start) (exact? step))
+    (let1 val start
+      ;; NB: We allow count < 0 to mean "infinite", for the consistentcy
+      ;; of stream-iota.
+      (if (or (infinite? count) (< count 0))
+        (^[] (%begin0 val (inc! val step)))
+        (^[] (if (<= count 0)
+               (eof-object)
+               (%begin0 val (inc! val step) (dec! count))))))
+    (let ([val (inexact start)]
+          [k   0])
+      (if (or (infinite? count) (< count 0))
+        (^[] (%begin0 (+ val (* k step)) (inc! k)))
+        (^[] (if (<= count 0)
+               (eof-object)
+               (%begin0 (+ val (* k step)) (inc! k) (dec! count))))))))
 
 (define (grange :optional (start 0) (end +inf.0) (step 1))
-  (let1 val start
-    (^[] (if (>= val end)
-           (eof-object)
-           (%begin0 val (inc! val step))))))
+  (if (and (exact? start) (exact? step))
+    (let1 val start
+      (^[] (if (>= val end)
+             (eof-object)
+             (%begin0 val (inc! val step)))))
+    (let ([val (inexact start)]
+          [k   0])
+      (^[] (let1 v (+ val (* k step))
+             (if (>= v end)
+               (eof-object)
+               (begin (inc! k) v)))))))
 
 ;;;
 ;;; Generator operations

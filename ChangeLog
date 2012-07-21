@@ -1,3 +1,12 @@
+2012-07-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (iota): Reject if count is non-integer.  And even
+	  if count is inexact, we still return exact numbers if start and step
+	  are exact.
+	* src/liblazy.scm (liota, lrange): Fix inexact/exact number handling
+	  and the case when step isn't an integer.
+	* lib/gauche/generator.scm (giota, grange): Fix inexact/exact handling.
+
 2012-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm (gslices): Added.

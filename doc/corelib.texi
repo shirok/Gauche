@@ -2177,14 +2177,21 @@ this function diverges.
 @defun iota count :optional (start 0) (step 1)
 [SRFI-1]
 @c EN
-Returns a list of numbers, starting from @var{start},
-increasing by @var{step}.
+Returns a list of @var{count} numbers, starting from @var{start},
+increasing by @var{step}.   @var{Count} must be a nonnegative
+integer.  If both @var{start} and @var{step} are exact,
+the result is a list of exact numbers; otherwise, it is a list
+of inexact numbers.
 @c JP
 @var{start}から始まり、@var{step}ずつ増加する、
-@var{count} 個の要素からなる数値のリストを返します。
+@var{count} 個の要素からなる数値のリストを返します。@var{count}は
+非負の整数でなければなりません。@var{start}と@var{step}が
+ともに正確数であれば、結果は正確数のリストになります。そうでなければ
+結果は非正確数のリストです。
 @c COMMON
 @example
-(iota 5) @result{} (0 1 2 3 4)
+(iota 5)        @result{} (0 1 2 3 4)
+(iota 5 1 3/7)  @result{} (1 10/7 13/7 16/7 19/7)
 (iota 5 0 -0.1) @result{} (0 -0.1 -0.2 -0.3 -0.4)
 @end example
 
@@ -10116,15 +10123,24 @@ has inexact numbers.
 @end example
 @end defun
 
-@defun liota count :optional start step
+@defun liota :optional (count +inf.0) (start 0) (step 1)
 @c EN
 A lazy version of @code{iota} (@xref{List constructors}); returns
-a lazy sequence of @var{count} integers, starting from @var{start}
-(default 0), stepping by @var{step} (default 1).
+a lazy sequence of @var{count} integers (default: positive infinity),
+starting from @var{start} (default: 0), stepping by @var{step} (default: 1).
 @c JP
 遅延バージョンの@code{iota}です (@ref{List constructors}参照)。
 @var{start}(デフォルト0)から@var{step}(デフォルト1)づつ増加する、
-@var{count}個の遅延数列を返します。
+@var{count}個(デフォルト無限大)の遅延数列を返します。
+@c COMMON
+
+@c EN
+Just like @code{iota}, the result consists of exact numbers
+if and only if both @var{start} and @var{step} are exact; otherwise
+the result consists of inexact numbers.
+@c JP
+@code{iota}と同様、@var{start}と@var{step}の両方が正確数の時に限り、
+結果は正確数のリストとなり、そうでなければ非正確数のリストとなります。
 @c COMMON
 @end defun
 
