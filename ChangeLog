@@ -1,3 +1,7 @@
+2012-07-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_IntegerP): Fixed (integer? +inf.0) => #t etc.
+
 2012-07-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (iota): Reject if count is non-integer.  And even

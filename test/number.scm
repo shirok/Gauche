@@ -584,6 +584,9 @@
 (test* "integer?" #f (integer? 3+4i))
 (test* "integer?" #t (integer? 3+0i))
 (test* "integer?" #f (integer? #f))
+(test* "integer?" #f (integer? +inf.0))
+(test* "integer?" #f (integer? -inf.0))
+(test* "integer?" #f (integer? +nan.0))
 
 (test* "rational?" #t (rational? 0))
 (test* "rational?" #t (rational? 85736847562938475634534245))

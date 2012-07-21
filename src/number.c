@@ -1299,6 +1299,7 @@ int Scm_IntegerP(ScmObj obj)
     if (SCM_FLONUMP(obj)) {
         double d = SCM_FLONUM_VALUE(obj);
         double f, i;
+        if (SCM_IS_INF(d) || SCM_IS_NAN(d)) return FALSE;
         if ((f = modf(d, &i)) == 0.0) return TRUE;
         return FALSE;
     }
