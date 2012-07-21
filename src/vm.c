@@ -2344,7 +2344,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ep = SCM_NEW(ScmEscapePoint);
     ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
-    ep->cont = vm->cont;
+    ep->cont = (cp? vm->cont : NULL);
     ep->handlers = vm->handlers;
     ep->cstack = NULL; /* so that the partial continuation can be run
                           on any cstack state. */

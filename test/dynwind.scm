@@ -510,6 +510,46 @@
   (test "inversion" (eof-object) iter)
   (test "inversion" (eof-object) iter))
 
+;; A-normal conversion, from
+;; http://pllab.is.ocha.ac.jp/(J~asai/cw2011tutorial/main-j.pdf pp. 11--12(B
+(let ()
+  (define (gensym) 't) ;; to have reproducible results
+  (define (a-normal term)
+    (cond [(and (pair? term)
+                (eq? (car term) 'lambda))
+           (let ((var (car (cadr term)))
+                 (body (caddr term)))
+             `(lambda (,var) ,(reset (a-normal body))))]
+          [(pair? term)
+           (let ((abs (car term))
+                 (arg (cadr term)))
+             (shift k
+                    (let* ((v (gensym))
+                           (body (k v)))
+                      `(let ((,v (,(a-normal abs) ,(a-normal arg))))
+                         ,body))))]
+          [else term]))
+
+  (test "a-normal"
+        '(lambda (x) (lambda (y) (let ((t (x y))) t)))
+        (lambda () (a-normal '(lambda (x) (lambda (y) (x y))))))
+  )
+
+;; Typed Printf via Delimited Continuations 
+;; http://www.cs.ox.ac.uk/ralf.hinze/WG2.8/27/slides/kenichi2.pdf
+(let ()
+  (define (sprintf format)
+    (reset (format)))
+  (define (fmt dir)
+    (shift k (lambda (v) (k (dir v)))))
+  (define s values)
+  (test "sprintf" "hello, world"
+        (lambda ()
+          ((sprintf (lambda () (string-append "hello, " (fmt s)))) "world")))
+  (test "sprintf" "world"
+        (lambda () ((sprintf (lambda () (fmt s))) "world")))
+  )
+
 ;; To be written:
 ;;  - tests for interactions of dynamic handlers and partial continuaions.
 ;;  - tests for interactions of partial and full continuations.

@@ -1,5 +1,10 @@
 2012-07-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c (Scm_VMCallPC): Fixed a bug that a valid partial
+	  continuation usage caused "attempt to return from ghost
+	  continuation" error when the captured partial continuation
+	  was empty.
+
 	* src/number.c (Scm_IntegerP): Fixed (integer? +inf.0) => #t etc.
 
 2012-07-20  Shiro Kawai  <shiro@acm.org>
