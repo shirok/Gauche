@@ -1,3 +1,9 @@
+2012-07-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (receive-body-chunked): Rewrote to avoid using
+	  shift/reset.  The naive use of delimited continuation won't work
+	  if the caller also tries to use delimited continuations.
+
 2012-07-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm_VMCallPC): Fixed a bug that a valid partial

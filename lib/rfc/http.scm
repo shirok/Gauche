@@ -56,7 +56,6 @@
   (use gauche.charconv)
   (use gauche.collection)
   (use gauche.uvector)
-  (use gauche.partcont)
   (use util.match)
   (use util.list)
   (use text.tree)
@@ -719,41 +718,56 @@
         [else (error <http-error> "bad reply from server" line)]))
 
 (define (receive-body remote code headers receiver)
-  (let* ([total (and-let* ([p (assoc "content-length" headers)])
-                  (x->integer (cadr p)))]
-         [handler (reset (receiver code headers total (^() (shift k k))))])
-    (cond
-     [(assoc "transfer-encoding" headers)
-      => (^p (unless (equal? (cadr p) "chunked")
-               (error <http-error> "unsupported transfer-encoding" (cadr p)))
-             (receive-body-chunked remote handler))]
-     [total
-      (when (> total 0) (set! handler (handler remote total)))
-      (handler remote 0)]
-     [else      ; length is unknown.  we call the handler with size=#f.
-      (set! handler (handler remote #f))
-      (handler remote 0)])))
+  (let1 total (and-let* ([p (assoc "content-length" headers)])
+                (x->integer (cadr p)))
+    (if-let1 enc (assoc "transfer-encoding" headers)
+      (if (equal? (cadr enc) "chunked")
+        (receive-body-chunked remote code headers total receiver)
+        (error <http-error> "unsupported transfer-encoding" (cadr enc)))
+      (receive-body-once remote code headers total receiver))))
+
+(define (receive-body-once remote code headers total receiver)
+  ;; Callback will be called twice (unless total is 0).  The first
+  ;; time we return # of total bytes, the second time zero.
+  (let1 rest total
+    (define (callback)
+      (if (equal? rest 0)
+        (values remote 0)
+        (begin (set! rest 0)
+               (values remote total))))
+    (receiver code headers total callback)))
 
 ;; NB: chunk extension and trailer are ignored for now.
-(define (receive-body-chunked remote handler)
-  (guard (e [else (handler remote -1) (raise e)])
-    (let loop ([line (read-line remote)])
-      (when (eof-object? line)
-        (error <http-error> "chunked body ended prematurely"))
-      (rxmatch-if (#/^([[:xdigit:]]+)/ line) (#f digits)
-        (let1 chunk-size (string->number digits 16)
-          (if (zero? chunk-size)
-            ;; finish reading trailer
-            (do ([line (read-line remote) (read-line remote)])
-                [(or (eof-object? line) (string-null? line))
-                 (handler remote 0)]
-              #f)
+(define (receive-body-chunked remote code headers total receiver)
+  (define chunk-size #f)
+  (define condition #f)
+  (define (callback)
+    (if (equal? chunk-size 0)
+      (values remote 0) ;; finalize
+      ;; If we get an error during receiving from the server, we need
+      ;; to return -1 to give the chance to the receiver to clean up
+      ;; things.  After the receiver returns we reraise the condition.
+      (guard (e [else (set! condition e) (values remote -1)])
+        ;; If we've already handled some chunks, we need to skip
+        ;; the trailing CRLF of the previous chunk.
+        (when chunk-size
+          (read-line remote))
+        (let1 line (read-line remote)
+          (when (eof-object? line)
+            (error <http-error> "chunked body ended prematurely"))
+          (rxmatch-if (#/^([[:xdigit:]]+)/ line) (#f digits)
             (begin
-              (set! handler (handler remote chunk-size))
-              (read-line remote) ;skip the following CRLF
-              (loop (read-line remote)))))
-        ;; something's wrong
-        (error <http-error> "bad line in chunked data:" line)))))
+              (set! chunk-size (string->number digits 16))
+              (if (zero? chunk-size)
+                ;; finish reading trailer
+                (do ([line (read-line remote) (read-line remote)])
+                    [(or (eof-object? line) (string-null? line))
+                     (values remote 0)])
+                (values remote chunk-size)))
+            ;; something's wrong
+            (error <http-error> "bad line in chunked data:" line))))))
+  (begin0 (receiver code headers total callback)
+    (when condition (raise condition))))
 
 ;;==============================================================
 ;; secure agent handling
