@@ -54,7 +54,7 @@
   (use gauche.net)
   (use gauche.parameter)
   (use gauche.charconv)
-  (use gauche.collection)
+  (use gauche.sequence)
   (use gauche.uvector)
   (use util.match)
   (use util.list)
@@ -267,7 +267,7 @@
 ;; Pre-defined receivers
 ;;
 (define (http-string-receiver)
-  (lambda (code hdrs total retr)
+  (^[code hdrs total retr]
     ;; TODO: check headers for encoding
     (let loop ([sink (open-output-string)])
       (receive (remote size) (retr)
@@ -276,22 +276,21 @@
                (copy-port remote sink :size size) (loop sink)])))))
 
 (define (http-null-receiver)
-  (lambda (code hdrs total retr)
-    (let loop ([sink (open-output-file (cond-expand [gauche.os.windows "NUL"]
-                                                    [else "/dev/null"]))])
+  (^[code hdrs total retr]
+    (let loop ([sink (open-output-file (null-device))])
       (receive (remote size) (retr)
         (cond [(and size (<= size 0)) (close-output-port sink)]
               [else (copy-port remote sink :size size) (loop sink)])))))
 
 (define (http-oport-receiver sink flusher)
-  (lambda (code hdrs total retr)
+  (^[code hdrs total retr]
     (let loop ()
       (receive (remote size) (retr)
         (cond [(and size (<= size 0)) (flusher sink hdrs)]
               [else (copy-port remote sink :size size) (loop)])))))
 
 (define (http-file-receiver filename :key (temporary #f))
-  (lambda (code hdrs total retr)
+  (^[code hdrs total retr]
     (receive (port tmpname) (sys-mkstemp filename)
       (let loop ()
         (receive (remote size) (retr)
@@ -309,13 +308,13 @@
     [(_) (http-null-receiver)]
     [(_ [else . exprs]) (begin . exprs)]
     [(_ [cc => proc] . rest)
-     (lambda (code hdrs total retr)
+     (^[code hdrs total retr]
        ((if (match-status-code? cc code)
           proc
           (http-cond-receiver . rest))
         code hdrs total retr))]
     [(_ [cc . exprs] . rest)
-     (lambda (code hdrs total retr)
+     (^[code hdrs total retr]
        ((if (match-status-code? cc code '(cc . exprs))
           (begin . exprs)
           (http-cond-receiver . rest))
@@ -334,12 +333,12 @@
 ;;
 
 (define (http-null-sender)
-  (lambda (hdrs encoding header-sink)
-    (let ((body-sink (header-sink `(("content-length" "0") ,@hdrs))))
+  (^[hdrs encoding header-sink]
+    (let1 body-sink (header-sink `(("content-length" "0") ,@hdrs))
       (body-sink 0))))
 
 (define (http-string-sender string)     ;honors encoding
-  (lambda (hdrs encoding header-sink)
+  (^[hdrs encoding header-sink]
     (let* ([body (if (ces-equivalent? encoding (gauche-character-encoding))
                    string
                    (ces-convert string (gauche-character-encoding) encoding))]
@@ -351,7 +350,7 @@
       (body-sink 0))))
 
 (define (http-blob-sender blob)        ;blob may be a string or uvector
-  (lambda (hdrs encoding header-sink)
+  (^[hdrs encoding header-sink]
     (let* ([size (if (string? blob) (string-size blob) (uvector-size blob))]
            [body-sink (header-sink `(("content-length" ,(x->string size))
                                      ,@hdrs))]
@@ -365,7 +364,7 @@
 ;; TODO: The file size may be changed while sending out.  If it gets
 ;; bigger, we can just ignore the rest, but what if it gets shorter?
 (define (http-file-sender filename)
-  (lambda (hdrs encoding header-sink)
+  (^[hdrs encoding header-sink]
     (let* ([size (file-size filename)]
            [body-sink (header-sink `(("content-length" ,(x->string size))
                                      ,@hdrs))]
@@ -376,7 +375,7 @@
 ;; See http-compose-form-data definition for params spec.
 ;; TODO: support chunked sending, instead of building entire body at once.
 (define (http-multipart-sender params)
-  (lambda (hdrs encoding header-sink)
+  (^[hdrs encoding header-sink]
     (receive (body boundary) (http-compose-form-data params #f encoding)
       (let* ([size (string-size body)]
              [hdrs `(("content-length" ,(x->string size))
@@ -538,10 +537,11 @@
          `(,type ,subtype ("charset" . ,(x->string encoding)) ,@options))]))
   (define (make-content-disposition name file)
     (with-output-to-string
-      (lambda ()
+      (^[]
         (display "form-data")
-        (mime-compose-parameters `(("name" . ,name)
-                                   ,@(cond-list [file `("filename" . ,file)]))))))
+        (mime-compose-parameters
+         `(("name" . ,name)
+           ,@(cond-list [file `("filename" . ,file)]))))))
   (if (not port)
     (mime-compose-message-string (map translate-param params))
     (mime-compose-message (map translate-param params) port)))
@@ -624,15 +624,14 @@
                           sender receiver options enc)
   (define no-body-replies '("204" "304"))
   (receive (host uri) (consider-proxy conn (or host (~ conn'server)) request-uri)
-    (let1 req-headers `(,@(if (~ conn'persistent)
-                            (if (~ conn'proxy)
-                              '(:proxy-connection keep-alive)
-                              '(:connection keep-alive))
-                            '())
-                        :host ,host ,@options)
+    (let1 req-headers (cond-list [(~ conn'persistent)
+                                  @ (if (~ conn'proxy)
+                                      '(:proxy-connection keep-alive)
+                                      '(:connection keep-alive))]
+                                 [#t @ `(:host ,host ,@options)])
       (with-connection
        conn
-       (lambda (in out)
+       (^[in out]
          (send-request out method uri sender req-headers enc)
          (receive (code rep-headers) (receive-header in)
            (values code
@@ -669,23 +668,23 @@
 ;; send
 (define (send-request out method uri sender headers enc)
   (define request-line #`",method ,uri HTTP/1.1\r\n")
+  (define request-headers ($ map (cut map x->string <>) $ slices headers 2))
   (case method
     [(POST PUT)
-     (sender (options->request-headers headers) enc
-             (lambda (hdrs)
+     (sender request-headers enc
+             (^[hdrs]
                (send-headers request-line hdrs out)
                (let ([chunked?
                       (equal? (rfc822-header-ref hdrs "transfer-encoding")
                               "chunked")]
                      [first-time #t])
-                 (lambda (size)
+                 (^[size]
                    (when chunked?
                      (unless first-time (display "\r\n" out))
                      (format out "~x\r\n" size))
                    (flush out)
                    out))))]
-    [else
-     (send-headers request-line (options->request-headers headers) out)]))
+    [else (send-headers request-line request-headers out)]))
 
 ;; NB: We try to send the request line and headers in one packet if possible,
 ;; since some http servers assumes important headers can be read in single
@@ -697,14 +696,6 @@
               "\r\n"))
            out)
   (flush out))
-
-;; convert key-value list to (("key" "value") ...)
-(define (options->request-headers options)
-  (let loop ([options options] [r '()])
-    (if (or (null? options) (null? (cdr options))) ;be permissive
-      (reverse r)
-      (loop (cddr options)
-            `((,(x->string (car options)) ,(x->string (cadr options))) ,@r)))))
 
 ;; receive
 (define (receive-header remote)
@@ -733,8 +724,7 @@
     (define (callback)
       (if (equal? rest 0)
         (values remote 0)
-        (begin (set! rest 0)
-               (values remote total))))
+        (begin (set! rest 0) (values remote total))))
     (receiver code headers total callback)))
 
 ;; NB: chunk extension and trailer are ignored for now.
