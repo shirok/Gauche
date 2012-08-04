@@ -4638,6 +4638,38 @@ number of generators.
 @end example
 @end defun
 
+@defun gmerge less-than gen gen2 @dots{}
+@c EN
+Creates a generator that yields elements out of input generators,
+with the order determined by a procedure @code{less-than}.
+The procedure is called as
+@code{(less-than a b)} and
+must return @code{#t} iff the element @code{a} must precede
+the element @code{b}.
+
+Each input generator must yield an ordered elements by itself;
+otherwise the result won't be ordered.
+
+If only one generator is given, it is just returned (after coercing the
+input to a generator).  In that case, @code{less-than} won't be called at all.
+@c JP
+入力ジェネレータから生成される要素を、手続き@code{less-than}で決められる順
+に生成するジェネレータを作って返します。
+@code{less-than}は入力ジェネレータの二つの要素@code{a}, @code{b}に対して
+呼び出され、@code{a}が@code{b}に先行すべき時のみ@code{#t}を返します。
+
+入力のジェネレータはそれぞれが要素を正しい順で生成しなければなりません。
+そうでない場合、出力が正しい順になっていることは保証されません。
+
+入力が一つだけ渡された場合は、(それをジェネレータへと型変換した後で)それがそのまま
+変えされ、@code{less-than}は呼ばれません。
+@c COMMON
+
+@example
+(generator->list (gmerge < '(1 3 8) '(5) '(2 4)))
+  @result{} '(1 2 3 4 5 8)
+@end example
+@end defun
 
 @defun gmap proc gen gen2 @dots{}
 @c EN

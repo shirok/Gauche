@@ -1,3 +1,7 @@
+2012-08-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/generator.scm (gmerge): Added.
+
 2012-07-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (receive-body-chunked): Rewrote to avoid using

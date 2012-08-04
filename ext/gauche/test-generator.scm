@@ -151,18 +151,38 @@
                                  (x->generator '(a b c d))
                                  (x->generator '(A B C D)))))
 
-(test* "gconcatenate" '(0 1 2 3 a b c d A B C D)
-       (generator->list (gconcatenate (x->generator
-                                       (list (x->generator '(0 1 2 3))
-                                             (x->generator '(a b c d))
-                                             (x->generator '(A B C D)))))))
-
 (test* "gconcatenate" '(0 1 2 3 0 1 2 3 0 1)
        (generator->list (gconcatenate (gunfold (^v #f)
                                                (^_ (giota 4))
                                                (^_ #f)
                                                0))
                         10))
+
+(let ([exp '(0 1 2 3 4 5 6 7 8 9)])
+  (define (t-gmerge2 a b)
+    (test* (format "gmerge ~s ~s" a b) exp
+           (generator->list (gmerge < (x->generator a) (x->generator b))))
+    (test* (format "gmerge ~s ~s" b a) exp
+           (generator->list (gmerge < (x->generator b) (x->generator a)))))
+  (t-gmerge2 '(1 4 5 7 8) '(0 2 3 6 9))
+  (t-gmerge2 '(1 2 3) '(0 4 5 6 7 8 9))
+  (t-gmerge2 '() '(0 1 2 3 4 5 6 7 8 9)))
+
+(test* "gmerge () ()" '()
+       (generator->list (gmerge < null-generator null-generator)))
+
+(test* "gmerge (0 1 2 3)" '(0 1 2 3)
+       (generator->list (gmerge < '(0 1 2 3))))
+(test* "gmerge multi-way" '(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16)
+       (generator->list (gmerge <
+                                '(0 15) '(11) '(3 7 14) '(4 10) '() '(16)
+                                '(1 5) '(6 8 9) '(2) '(12) '(13))))
+
+(test* "gconcatenate" '(0 1 2 3 a b c d A B C D)
+       (generator->list (gconcatenate (x->generator
+                                       (list (x->generator '(0 1 2 3))
+                                             (x->generator '(a b c d))
+                                             (x->generator '(A B C D)))))))
 
 (test* "gunfold" (unfold (^s (>= s 10))
                          (^s (* s 2))
