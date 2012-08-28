@@ -675,7 +675,8 @@ enum {
                                                  optimization (pass3). */
     SCM_COMPILE_NO_LIFTING = (1L<<7),      /* Do not run lambda lifting pass
                                               (pass4). */
-    SCM_COMPILE_INCLUDE_VERBOSE = (1L<<8)  /* Report expansion of 'include' */
+    SCM_COMPILE_INCLUDE_VERBOSE = (1L<<8), /* Report expansion of 'include' */
+    SCM_COMPILE_ENABLE_CEXPR = (1L<<9)     /* Support C-expressions by reader */
 };
 
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))

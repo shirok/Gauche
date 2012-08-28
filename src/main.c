@@ -176,6 +176,10 @@ void further_options(const char *optarg)
     else if (strcmp(optarg, "limit-module-mutation") == 0) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_LIMIT_MODULE_MUTATION);
     }
+    /* Experimental */
+    else if (strcmp(optarg, "c-expr") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_ENABLE_CEXPR);
+    }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
         fprintf(stderr, "supported options are: -fcase-fold or -fload-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-source-info, -fno-post-inline-pass, -fno-lambda-lifting-pass, -ftest\n");

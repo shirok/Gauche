@@ -1,3 +1,10 @@
+2012-08-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c, src/libio.scm, src/main.c, src/compile.scm,
+	  src/gauche/vm.h: *HIGHLY EXPERIMENTAL*: Support srfi-105 draft
+	  cexpr to try it out.  This feature may be changed incompatibly
+	  at any time, according to how the srfi will turn out.
+
 2012-08-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/generator.scm (gmerge): Added.

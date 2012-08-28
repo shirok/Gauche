@@ -460,6 +460,27 @@
 (define-in-module gauche read-with-shared-structure read)
 (define-in-module gauche read/ss read)
 
+;; srfi-105
+(select-module gauche.internal)
+(define (%xform-cexpr cex)
+  (define (simple-cexpr? op tail)
+    (cond [(not (pair? tail)) #f]
+          [(null? (cdr tail)) #t]
+          [(and (pair? (cdr tail)) (eq? op (cadr tail)))
+           (simple-cexpr? op (cddr tail))]
+          [else #f]))
+  (define (gather-args args) ; args is a list with even elements
+    (if (null? (cdr args))
+      args
+      (cons (car args) (gather-args (cddr args)))))
+  (cond [(not (pair? cex)) cex]         ;includes {} -> ()
+        [(null? (cdr cex)) (car cex)]   ; {e} -> e
+        [(and (pair? (cdr cex)) (null? (cddr cex))) cex] ; {x y} -> (x y)
+        [(and (pair? (cdr cex)) (pair? (cddr cex)) (symbol? (cadr cex))
+              (simple-cexpr? (cadr cex) (cddr cex)))
+         (cons* (cadr cex) (car cex) (gather-args (cddr cex)))]
+        [else (cons 'nfx cex)]))
+
 ;;;
 ;;; Output
 ;;;
@@ -668,6 +689,13 @@
 (define-reader-directive 'no-fold-case
   (^[sym port ctx]
     (port-case-fold-set! port #f)
+    (values)))
+
+;; HIGHLY EXPERIMENTAL
+(define-reader-directive 'c-expr
+  (^[sym port ctx]
+    ((with-module gauche.internal vm-compiler-flag-set!)
+     SCM_COMPILE_ENABLE_CEXPR)
     (values)))
 
 
