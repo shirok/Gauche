@@ -706,6 +706,14 @@ Returns a maximum or minimum number in the given real numbers, respectively.
 @c JP
 与えられた実数のうち、それぞれ最大と最小のものを返します。
 @c COMMON
+
+@c EN
+See also @code{find-min} and @code{find-max} in
+@ref{Selection and searching in collection}.
+@c JP
+@ref{Selection and searching in collection}の
+@code{find-min}と@code{find-max}も参照。
+@c COMMON
 @end defun
 
 @defun min&max x1 x2 @dots{}
@@ -713,6 +721,14 @@ Returns a maximum or minimum number in the given real numbers, respectively.
 Returns a maximum and minimum number in the given real numbers.
 @c JP
 与えられた実数から、最大値と最小値の二つの値を返します。
+@c COMMON
+
+@c EN
+See also @code{find-min&max} in
+@ref{Selection and searching in collection}.
+@c JP
+@ref{Selection and searching in collection}の
+@code{find-min&max}も参照。
 @c COMMON
 @end defun
 
