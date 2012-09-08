@@ -7767,22 +7767,44 @@ The @code{<tree-map>} class inherits @code{<sequence>} and
 @end deftp
 
 @defun make-tree-map key=? key<?
+@defunx make-tree-map key-compare
+@defunx make-tree-map
 @c EN
 Creates and returns an instance of @code{<tree-map>}.
-The arguments @var{key=?} and @var{key<?} are both
-procedures that take two arguments, which are the keys.
-The @code{key=?} procedure should return @code{#t} if
-two arguments are equivalent, or @code{#f} otherwise.
-The @code{key<?} procedure should return @code{#t} if
-the first argument is strictly less than the second argument,
-or @code{#f} otherwise.
+
+If you give two arguments (the first form), each must
+be a procedure that takes two keys; the first one returns
+@code{#t} iff two keys are equal, and the second one returns
+@code{#t} iff the first key is strictly smaller than the second.
+
+The second form takes one comparison procedure @var{key-compare}, that
+takes two keys and return either @code{-1} (the first argument
+is smaller than the second), @code{0} (two arguments are the same),
+or @code{1} (the first argument is grater than the second).
+
+Actually, the built-in procedure @code{compare} works as @var{key-compare}
+on most orderable built-in types (@xref{Comparison and sorting}), 
+and you can omit the @var{key-compare} argument if the built-in
+@code{compare} is for your need
+(the third form).
 @c JP
 @code{<tree-map>}オブジェクトを作成して返します。
-@var{key=?}、@var{key<?}はそれぞれ引
-数を2つ受け取り真偽値を返す手続きであり、要素のキーが渡されます。
-@var{key=?}は、2つの引数a, b が同値の場合に真を、それ以外の場合に@code{#f}を
-返す手続きです。@var{key<?}は、@code{a < b}が成り立つ場合に真を、それ以外の
-場合に@code{#f}を返す手続きです。
+
+最初の形式のとおり、2つの引数を与える場合、それぞれの引数は
+2つの引数を受け取って比較する手続きでなければなりません。
+引数にはツリーマップに格納されるキーが渡されます。
+最初の手続き@var{key=?}は、2つのキーが等しい場合にのみ真を返し、
+2番目の手続き@var{key<?}は、最初のキーが2番目のキーより前にある(小さい)場合にのみ
+真を返すようにします。
+
+1つの引数を取る2番目の形式では、@var{key-compare}は2つのキーを比較し、
+最初のキーの方が小さければ@code{-1}を、2つのキーが等しければ@code{0}を、
+最初のキーの方が大きければ@code{1}を返す関数です。
+
+大抵の比較可能な組み込み型に対してそのように振る舞う
+組み込み関数@code{compare}があり(@ref{Comparison and sorting}参照)、
+それで十分な場合は@var{key-compare}引数を省略することもできます
+(3番目の形式)。
 @c COMMON
 @end defun
 

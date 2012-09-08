@@ -41,11 +41,12 @@
   )
 (select-module gauche.treeutil)
 
-(define (make-tree-map key=? key<?)
-  (%make-tree-map (lambda (x y)
-                    (cond ((key=? x y) 0)
-                          ((key<? x y) -1)
-                          (else        1)))))
+(define make-tree-map
+  (case-lambda
+    [() (%make-tree-map compare)]
+    [(cmp) (%make-tree-map cmp)]
+    [(=? <?)
+     (%make-tree-map (^[x y](cond [(=? x y) 0] [(<? x y) -1] [else 1])))]))
 
 (define (tree-map-empty? tm) (zero? (tree-map-num-entries tm)))
 

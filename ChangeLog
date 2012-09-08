@@ -1,3 +1,8 @@
+2012-09-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/treeutil.scm (make-tree-map): Allow a single 'compare'
+	  procedure instead of '=' and '<'.
+
 2012-08-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c, src/libio.scm, src/main.c, src/compile.scm,
