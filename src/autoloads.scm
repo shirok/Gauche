@@ -75,10 +75,11 @@
 ;;==========================================================
 (autoload-scheme "gauche/numerical"
                  exp log sqrt exact-integer-sqrt expt cos sin tan asin
-                 acos atan gcd lcm inexact exact
+                 acos atan gcd lcm inexact exact rationalize
                  real-valued? rational-valued? integer-valued?
                  div-and-mod div mod div0-and-mod0 div0 mod0
                  nearly=?)
+(autoload "gauche/numerical" continued-fraction)
 
 (autoload "gauche/redefutil"
           redefine-class! class-redefinition

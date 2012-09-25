@@ -73,6 +73,56 @@
           [else (recn (car args) (cdr args))])))
 
 ;;
+;; Rationalize
+;;
+
+;; Aux. function to calculate (regular) continued fraction representation
+;; of rational Q.
+(define (continued-fraction Q)
+  (let ([a (numerator Q)] [b (denominator Q)])
+    (generator->lseq
+     (^[] (if (zero? b)
+            (eof-object)
+            (receive (q r) (quotient&remainder a b)
+              (set! a b) (set! b r)
+              q))))))
+
+(define-in-module scheme (rationalize x e)
+
+  (define (refine xn yn an) ; returns reverse continued fraction
+    (cond [(or (null? xn) (null? yn)) an]
+          [(= (car xn) (car yn))
+           (refine (cdr xn) (cdr yn) (cons (car xn) an))]
+          [else (cons (+ 1 (min (car xn) (car yn))) an)]))
+
+  (define (realize rcf) ; reverse continued fraction -> rational
+    (let loop ([r (car rcf)] [as (cdr rcf)])
+      (if (null? as) r (loop (+ (car as) (/ r)) (cdr as)))))
+
+  (define (find-rational x e)
+    (if (< x 0)
+      (- (find-rational (- x) e))
+      (realize (refine (continued-fraction (ensure-exact (- x e)))
+                       (continued-fraction (ensure-exact (+ x e)))
+                       '()))))
+
+  (define (ensure-exact n) ;; dumb exact rationalize
+    (if (exact? n)
+      n
+      (let1 v (decode-float n)
+        (* (~ v 2)                        ; sign
+           (~ v 0)                        ; mantissa
+           (expt 2 (~ v 1))))))           ; exponent
+
+  (cond
+   [(or (nan? x) (nan? e)) +nan.0]
+   [(infinite? e) (if (infinite? x) +nan.0 0)]
+   [(infinite? x) x]
+   [(integer? x) x]
+   [(or (inexact? x) (inexact? e)) (inexact (find-rational x e))]
+   [else (find-rational x e)]))
+
+;;
 ;; Complex numbers
 ;;
 

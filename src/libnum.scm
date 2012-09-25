@@ -254,8 +254,7 @@
 (define-cproc round (v) ::<number> :fast-flonum :constant
   (result (Scm_Round v SCM_ROUND_ROUND)))
 
-;; rationalize - not implemented
-
+;; rationalize - in gauche/numerical.scm
 
 ;; Transcedental functions.  Complex numbers are handled in Scheme.
 

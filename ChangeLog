@@ -1,3 +1,7 @@
+2012-09-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/numerical.scm (rationalize, continued-fraction): Added.
+
 2012-09-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/treeutil.scm (make-tree-map): Allow a single 'compare'
