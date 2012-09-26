@@ -66,10 +66,10 @@ The reader can recognize '@code{#}' as insignificant digits.
 @c COMMON
 @item
 @c EN
-Procedures @code{rationalize}, @code{transcript-on} and @code{transcript-off}
+Procedures @code{transcript-on} and @code{transcript-off}
 are not supported.
 @c JP
-手続き@code{rationalize}、@code{transcript-on}、及び@code{transcript-off}
+手続き@code{transcript-on}、@code{transcript-off}
 はサポートされていません。
 @c COMMON
 @end itemize
