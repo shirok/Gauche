@@ -79,7 +79,7 @@
                  real-valued? rational-valued? integer-valued?
                  div-and-mod div mod div0-and-mod0 div0 mod0
                  nearly=?)
-(autoload "gauche/numerical" continued-fraction)
+(autoload "gauche/numerical" continued-fraction real->rational)
 
 (autoload "gauche/redefutil"
           redefine-class! class-redefinition

@@ -1,3 +1,10 @@
+2012-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/numerical.scm (rationalize, real->rational): Factored
+	  out more general rationalization algorithm as real->rational,
+	  and implemented rationalize on top of it.  Also fixed the case
+	  when e >= 1 in rationalize.
+
 2012-09-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numerical.scm (rationalize, continued-fraction): Added.

@@ -87,24 +87,58 @@
               (set! a b) (set! b r)
               q))))))
 
-(define-in-module scheme (rationalize x e)
+;; More general version of rationalize.  Given real number x,
+;; returns an exact rational number q such that
+;;   x - dx- <= q <= x + dx+   ;if open? is #f
+;;   x - dx- <  q <  x + dx+   ;if open? is #t
+;; If you omit all of optional args, you can get the exact rational
+;; representation of x.
+(define (real->rational x :optional (dx+ 0) (dx- 0) (open? #f))
 
-  (define (refine xn yn an) ; returns reverse continued fraction
-    (cond [(or (null? xn) (null? yn)) an]
+  ;; refine/* returns reverse list of continued fraction of
+  ;; approximated rational.  /c is for closed interval, /o for open.
+  (define (refine/c xn yn an)
+    (cond [(null? (cdr xn)) `(,(if (null? (cdr yn))
+                                 (min (car xn) (car yn))
+                                 (car xn)))]
+          [(null? (cdr yn)) `(,(car yn))]
           [(= (car xn) (car yn))
-           (refine (cdr xn) (cdr yn) (cons (car xn) an))]
+           (refine/c (cdr xn) (cdr yn) (cons (car xn) an))]
+          [else (cons (+ 1 (min (car xn) (car yn))) an)]))
+
+  (define (refine/o xn yn an)
+    (cond [(null? (cdr xn))
+           ;; There can be the following cases.
+           ;; (1) X and Y are the same length
+           ;;    X = [..., xn], Y = [..., yn], xn != yn
+           ;;    If |xn-yn| > 1, Z = [..., min(xn,yn)+1]
+           ;;    If |xn-yn| = 1, Z = [..., min(xn,yn), 2] *
+           ;; (2) otherwise, Y = [..., yn, ym, ...].
+           ;;    If yn > (xn)+1, Z = [..., (xn)+1]
+           ;;    If yn = (xn)+1, Z = [..., xn, 2] *
+           ;;    If yn = xn,     Z = [..., (xn)-1, 2] *
+           ;;    If yn = (xn)-1, Z = [..., yn, (ym)+1] *
+           ;;    If yn < (xn)-1, Z = [..., (yn)+1]
+           ;; The * cases uses the fact that [..., an] (n>1) can also be
+           ;; represented as [..., (an)-1, 1].
+           (if (null? (cdr yn))
+             (case (- (car xn) (car yn))
+               [(-1 1) (cons* 2 (min (car xn) (car yn)) an)]
+               [else   (cons (+ 1 (min (car xn) (car yn))) an)])
+             (let ([x (car xn)] [y (car yn)])
+               (cond [(> y (+ x 1)) (cons (+ x 1) an)]
+                     [(= y (+ x 1)) (cons* 2 x an)]
+                     [(= y x)       (cons* 2 (- x 1) an)]
+                     [(= y (- x 1)) (cons* (+ (cadr yn) 1) y an)]
+                     [else          (cons (+ y 1) an)])))]
+          [(null? (cdr yn)) (refine/o yn xn an)]
+          [(= (car xn) (car yn))
+           (refine/o (cdr xn) (cdr yn) (cons (car xn) an))]
           [else (cons (+ 1 (min (car xn) (car yn))) an)]))
 
   (define (realize rcf) ; reverse continued fraction -> rational
     (let loop ([r (car rcf)] [as (cdr rcf)])
       (if (null? as) r (loop (+ (car as) (/ r)) (cdr as)))))
-
-  (define (find-rational x e)
-    (if (< x 0)
-      (- (find-rational (- x) e))
-      (realize (refine (continued-fraction (ensure-exact (- x e)))
-                       (continued-fraction (ensure-exact (+ x e)))
-                       '()))))
 
   (define (ensure-exact n) ;; dumb exact rationalize
     (if (exact? n)
@@ -114,13 +148,28 @@
            (~ v 0)                        ; mantissa
            (expt 2 (~ v 1))))))           ; exponent
 
+  (define (find-rational x dx+ dx-) ; x >= 0
+    (let ([ub (+ (ensure-exact x) (ensure-exact dx+))]
+          [lb (- (ensure-exact x) (ensure-exact dx-))])
+      (if (< lb 0)
+        0
+        (realize ((if open? refine/o refine/c)
+                  (continued-fraction ub)
+                  (continued-fraction lb)
+                  '())))))
+
+  (if (< x 0)
+    (- (find-rational (- x) dx- dx+))
+    (find-rational x dx+ dx-)))
+
+(define-in-module scheme (rationalize x e)
   (cond
+   [(< e 0) (error "rationalize needs nonnegative error bound, but got" e)]
    [(or (nan? x) (nan? e)) +nan.0]
-   [(infinite? e) (if (infinite? x) +nan.0 0)]
+   [(infinite? e) (if (infinite? x) +nan.0 0.0)]
    [(infinite? x) x]
-   [(integer? x) x]
-   [(or (inexact? x) (inexact? e)) (inexact (find-rational x e))]
-   [else (find-rational x e)]))
+   [(or (inexact? x) (inexact? e)) (inexact (real->rational x e e))]
+   [else (real->rational x e e)]))
 
 ;;
 ;; Complex numbers

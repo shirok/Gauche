@@ -571,6 +571,26 @@
 (test* "expt (ratnum with large denom and numer) with inexact conversion 9"
        +inf.0 (exact->inexact (/ (expt -10 329) (- (expt 10 20)))))
 
+(test* "rationalize (edge cases)" '(#t #t #t +inf.0 -inf.0 0.0)
+       (list (nan? (rationalize +nan.0 0))
+             (nan? (rationalize 0 +nan.0))
+             (nan? (rationalize +inf.0 +inf.0))
+             (rationalize +inf.0 0)
+             (rationalize -inf.0 0)
+             (rationalize 1234 +inf.0)))
+(test* "rationalize (integers)" '(1 2 0 -1 -2 0)
+       (list (rationalize 1 1/2)
+             (rationalize 5 3)
+             (rationalize 1 3)
+             (rationalize -1 1/2)
+             (rationalize -5 3)
+             (rationalize -1 3)))
+(test* "rationalize (exactness)" '(#t #f #f #f)
+       (list (exact? (rationalize 1/2 1/3))
+             (exact? (rationalize 0.5 1/3))
+             (exact? (rationalize 1/2 0.1))
+             (exact? (rationalize 0.5 0.1))))
+
 ;;==================================================================
 ;; Predicates
 ;;
