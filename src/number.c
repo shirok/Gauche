@@ -1522,12 +1522,13 @@ ScmObj Scm_Exact(ScmObj obj)
                 obj = SCM_MAKE_INT((long)d);
             }
         } else {
-            ScmObj m;
-            int exp, sign;
-            m = Scm_DecodeFlonum(d, &exp, &sign);
-            SCM_ASSERT(exp < 0); /* exp >= 0 case should be handled above */
-            obj = Scm_Div(m, Scm_Ash(SCM_MAKE_INT(1), -exp));
-            if (sign < 0) obj = Scm_Negate(obj);
+            /* We'd find out the simplest rational numebr within the precision
+               of IEEE double floating point number.  The actual code is in
+               lib/gauche/numerical.scm. */
+            static ScmObj real_to_rational = SCM_UNDEFINED;
+            SCM_BIND_PROC(real_to_rational, "real->rational",
+                          Scm_GaucheModule());
+            obj = Scm_ApplyRec1(real_to_rational, obj);
         }
     } else if (SCM_COMPNUMP(obj)) {
         Scm_Error("exact complex is not supported: %S", obj);

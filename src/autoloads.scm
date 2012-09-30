@@ -38,21 +38,20 @@
 
   ;; loop
   (dolist (al (reverse *autoloads*))
-    (let* ((where     (if (eq? (car al) 'scheme) 'scheme 'gauche))
-           (path&from (if (string? (cadr al))
+    (let* ([where     (car al)]
+           [path&from (if (string? (cadr al))
                         (let1 str (cgen-literal (cadr al))
                           (cons (cgen-cexpr str) "NULL"))
                         (let1 sym (cgen-literal (cadr al))
                           (cons (format "Scm_ModuleNameToPath(SCM_SYMBOL(~a))"
                                         (cgen-cexpr sym))
-                                (format "SCM_SYMBOL(~a)" (cgen-cexpr sym))))))
-           )
+                                (format "SCM_SYMBOL(~a)" (cgen-cexpr sym)))))])
       (cgen-init #`"  path = ,(car path&from);"
                  #`"  import_from = ,(cdr path&from);")
-      (dolist (ent (caddr al))
-        (let ((str (cgen-literal (symbol->string (car ent)))))
+      (dolist [ent (caddr al)]
+        (let1 str (cgen-literal (symbol->string (car ent)))
           (cgen-init
-           #`"  sym = SCM_SYMBOL(Scm_Intern(SCM_STRING(,(cgen-cexpr str))));"
+           #`"  sym = SCM_SYMBOL(Scm_Intern(SCM_STRING(,(cgen-cexpr str)))); /* ,(cgen-safe-comment (car ent)) */"
            #`"  al = Scm_MakeAutoload(SCM_CURRENT_MODULE(), sym, SCM_STRING(path), import_from);")
           (if (cdr ent) ;; macro?
             (cgen-init
@@ -66,20 +65,18 @@
 
 ;; Override autoload macro
 (define-macro (autoload file . vars)
-  `(register-autoload #f ',file ',vars))
+  `(register-autoload 'gauche ',file ',vars))
 
 (define-macro (autoload-scheme file . vars)
   `(register-autoload 'scheme ',file ',vars))
 
-
 ;;==========================================================
-(autoload-scheme "gauche/numerical"
-                 exp log sqrt exact-integer-sqrt expt cos sin tan asin
-                 acos atan gcd lcm inexact exact rationalize
-                 real-valued? rational-valued? integer-valued?
-                 div-and-mod div mod div0-and-mod0 div0 mod0
-                 nearly=?)
-(autoload "gauche/numerical" continued-fraction real->rational)
+(autoload "gauche/numerical"
+          exact-integer-sqrt
+          continued-fraction real->rational
+          real-valued? rational-valued? integer-valued?
+          div-and-mod div mod div0-and-mod0 div0 mod0
+          nearly=?)
 
 (autoload "gauche/redefutil"
           redefine-class! class-redefinition

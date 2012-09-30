@@ -497,11 +497,27 @@
      ))
  `((0  . 0.0)
    (1  . 1.0)
-   (-1 . -1.0)
    (,(%expt 2 52) . ,(%expt 2.0 52))
    (,(%expt 2 53) . ,(%expt 2.0 53))
    (,(%expt 2 54) . ,(%expt 2.0 54))
+
+   (1/2 . 0.5)
+   (3/4 . 0.75)
+
+   (1/3 . 0.3333333333333333)
    ))
+
+;; Boundary conditions for inexact->exact
+;; Since inexact->exact returns a simplest rational within the flonum precision,
+;; the roundtrip of exact -> inexact -> exact isn't necessary kept, but
+;; inexact -> exact -> inexact is.
+(let ([one-plus-delta 1.0000000000000002]
+      [one-minus-half-delta 0.9999999999999999])
+  (define (t what orig expect)
+    (test* (format "inexact->exact->inexact roundtrip ~s" what)
+           expect (exact->inexact (inexact->exact orig))))
+  (t "1+d" one-plus-delta one-plus-delta)
+  (t "1-d" one-minus-half-delta one-minus-half-delta))
 
 ;; Rounding bignum to flonum, edge cases.
 ;; Test patterns:

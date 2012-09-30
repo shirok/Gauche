@@ -168,6 +168,11 @@
 (define-cproc exact->inexact (obj) :fast-flonum :constant Scm_Inexact)
 (define-cproc inexact->exact (obj) :fast-flonum :constant Scm_Exact)
 
+(select-module gauche)
+(define exact   inexact->exact)           ;R6RS
+(define inexact exact->inexact)           ;R6RS
+
+(select-module scheme)
 (define-cproc number->string
   (obj :optional (radix::<fixnum> 10) (use-upper? #f)) :fast-flonum :constant
   (result (Scm_NumberToString obj radix (not (SCM_FALSEP use_upperP)))))
@@ -240,11 +245,56 @@
 (define-cproc modulo (n1 n2)    :fast-flonum :constant
   (result (Scm_Modulo n1 n2 FALSE)))
 
-(define-cproc %gcd (n1 n2)    :fast-flonum :constant Scm_Gcd)
+;; gcd, lcm: these are the simplest ones.  If you need efficiency, consult
+;; Knuth: "The Art of Computer Programming" Chap. 4.5.2
+(define-in-module scheme (gcd . args)
+  (define (recn arg args)
+    (if (null? args)
+      arg
+      (recn ((with-module gauche.internal %gcd) arg (car args)) (cdr args))))
+  (let1 args (map (^[arg] (unless (integer? arg)
+                            (error "integer required, but got" arg))
+                    (abs arg))
+                  args)
+    (cond [(null? args) 0]
+          [(null? (cdr args)) (car args)]
+          [else (recn (car args) (cdr args))])))
+
+(define-in-module scheme (lcm . args)
+  (define (lcm2 u v)
+    (let1 g ((with-module gauche.internal %gcd) u v)
+      (if (zero? u) 0 (* (quotient u g) v))))
+  (define (recn arg args)
+    (if (null? args)
+      arg
+      (recn (lcm2 arg (car args)) (cdr args))))
+  (let1 args (map (^[arg] (unless (integer? arg)
+                            (error "integer required, but got" arg))
+                    (abs arg))
+                  args)
+    (cond [(null? args) 1]
+          [(null? (cdr args)) (car args)]
+          [else (recn (car args) (cdr args))])))
+
+(select-module gauche.internal)
+(define-cproc %gcd (n1 n2) :fast-flonum :constant Scm_Gcd)
+
+(select-module scheme)
 (define-cproc numerator (n)   :fast-flonum :constant Scm_Numerator)
 (define-cproc denominator (n) :fast-flonum :constant Scm_Denominator)
-;; gcd, lcd - in gauche/numerical.scm
 
+(select-module gauche)
+(define-in-module scheme (rationalize x e)
+  ;; NB: real->rational is in gauche/numerical.scm
+  (cond
+   [(< e 0) (error "rationalize needs nonnegative error bound, but got" e)]
+   [(or (nan? x) (nan? e)) +nan.0]
+   [(infinite? e) (if (infinite? x) +nan.0 0.0)]
+   [(infinite? x) x]
+   [(or (inexact? x) (inexact? e)) (inexact (real->rational x e e))]
+   [else (real->rational x e e)]))
+
+(select-module scheme)
 (define-cproc floor (v) ::<number> :fast-flonum :constant
   (result (Scm_Round v SCM_ROUND_FLOOR)))
 (define-cproc ceiling (v) ::<number> :fast-flonum :constant
@@ -254,10 +304,9 @@
 (define-cproc round (v) ::<number> :fast-flonum :constant
   (result (Scm_Round v SCM_ROUND_ROUND)))
 
-;; rationalize - in gauche/numerical.scm
+;; Transcedental functions.   First, real-only versions.
 
-;; Transcedental functions.  Complex numbers are handled in Scheme.
-
+(select-module gauche)
 (define-cproc %exp (x::<real>) ::<real> :fast-flonum :constant exp)
 
 (define-cproc %log (x) ::<number> :fast-flonum :constant
@@ -304,6 +353,181 @@
     (result (Scm_VMReturnFlonum (sqrt x)))))
 
 (define-cproc %expt (x y) :fast-flonum :constant Scm_Expt)
+
+;; Now, handles complex numbers.
+;;  Cf. Teiji Takagi: "Kaiseki Gairon" pp.193--198
+(define-in-module scheme (exp z)
+  (cond [(real? z) (%exp z)]
+        [(complex? z) (make-polar (%exp (real-part z)) (imag-part z))]
+        [else (error "number required, but got" z)]))
+
+(define-in-module scheme (log z . base)
+  (if (null? base)
+    (cond [(real? z) (%log z)]
+          [(complex? z) (make-rectangular (%log (magnitude z)) (angle z))]
+          [else (error "number required, but got" z)])
+    (/ (log z) (log (car base)))))  ; R6RS addition
+
+(define-in-module scheme (sqrt z)
+  (cond
+   [(and (exact? z) (>= z 0))
+    ;; Gauche doesn't have exact complex, so we have real z.
+    (if (integer? z)
+      (receive (s r) ((with-module gauche.internal %exact-integer-sqrt) z)
+        (if (= r 0) s (%sqrt z)))
+      ;; we have ratnum.  take expensive path.
+      (let ([n (numerator z)]
+            [d (denominator z)])
+        (receive (ns nr)
+            ((with-module gauche.internal %exact-integer-sqrt) n)
+          (if (= nr 0)
+            (receive (ds dr)
+                ((with-module gauche.internal %exact-integer-sqrt) d)
+              (if (= dr 0)
+                (/ ns ds)
+                (%sqrt z)))
+            (%sqrt z)))))]
+   [(real? z) (%sqrt z)]
+   [(complex? z) (make-polar (%sqrt (magnitude z)) (/ (angle z) 2.0))]
+   [else (error "number required, but got" z)]))
+
+(define-in-module gauche.internal (%exact-integer-sqrt k) ; k >= 0
+  (if (< k 9007199254740992)            ;2^53
+    ;; k can be converted to a double without loss.
+    (let1 s (floor->exact (%sqrt k))
+      (values s (- k (* s s))))
+    ;; use Newton-Rhapson
+    ;; If k is representable with double, we use (%sqrt k) as the initial
+    ;; estimate, for calculating double sqrt is fast.  If k is too large,
+    ;; we use 2^floor((log2(k)+1)/2) as the initial value.
+    ;; TODO: integer-length can be a lot faster if we make it built-in.
+    (let loop ([s (let1 ik (%sqrt k)
+                    (if (finite? ik)
+                      (floor->exact (%sqrt k))
+                      (ash 1 (quotient (integer-length k) 2))))])
+      (let1 s2 (* s s)
+        (if (< k s2)
+          (loop (quotient (+ s2 k) (* 2 s)))
+          (let1 s2+ (+ s2 (* 2 s) 1)
+            (if (< k s2+)
+              (values s (- k s2))
+              (loop (quotient (+ s2 k) (* 2 s))))))))))
+
+(define-in-module scheme (expt x y)
+  (cond [(real? x)
+         (cond [(real? y) (%expt x y)]
+               [(number? y)
+                (* (%expt x (real-part y))
+                   (exp (* +i (imag-part y) (%log x))))]
+               [else (error "number required, but got" y)])]
+        [(number? x) (exp (* y (log x)))]
+        [else (error "number required, but got" x)]))
+
+(define-in-module scheme (cos z)
+  (cond [(real? z) (%cos z)]
+        [(number? z)
+         (let ((x (real-part z))
+               (y (imag-part z)))
+           (make-rectangular (* (%cos x) (%cosh y))
+                             (- (* (%sin x) (%sinh y)))))]
+        [else (error "number required, but got" z)]))
+
+(define (cosh z)
+  (cond [(real? z) (%cosh z)]
+        [(number? z)
+         (let ((x (real-part z))
+               (y (imag-part z)))
+           (make-rectangular (* (%cosh x) (%cos y))
+                             (* (%sinh x) (%sin y))))]
+        [else (error "number required, but got" z)]))
+
+(define-in-module scheme (sin z)
+  (cond [(real? z) (%sin z)]
+        [(number? z)
+         (let ((x (real-part z))
+               (y (imag-part z)))
+           (make-rectangular (* (%sin x) (%cosh y))
+                             (* (%cos x) (%sinh y))))]
+        [else (error "number required, but got" z)]))
+
+(define (sinh z)
+  (cond [(real? z) (%sinh z)]
+        [(number? z)
+         (let ((x (real-part z))
+               (y (imag-part z)))
+           (make-rectangular (* (%sinh x) (%cos y))
+                             (* (%cosh x) (%sin y))))]
+        [else (error "number required, but got" z)]))
+
+(define-in-module scheme (tan z)
+  (cond [(real? z) (%tan z)]
+        [(number? z)
+         (let ((iz (* +i z)))
+           (* -i
+              (/ (- (exp iz) (exp (- iz)))
+                 (+ (exp iz) (exp (- iz))))))]
+        [else (error "number required, but got" z)]))
+
+(define (tanh z)
+  (cond [(real? z) (%tanh z)]
+        [(number? z)
+         (/ (- (exp z) (exp (- z)))
+            (+ (exp z) (exp (- z))))]
+        [else (error "number required, but got" z)]))
+
+(define-in-module scheme (asin z)
+  (cond [(real? z) (%asin z)]
+        [(number? z)
+         ;; The definition of asin is
+         ;;   (* -i (log (+ (* +i z) (sqrt (- 1 (* z z))))))
+         ;; This becomes unstable when the term in the log is reaching
+         ;; toward 0.0.  The term, k = (+ (* +i z) (sqrt (- 1 (* z z)))),
+         ;; gets closer to zero when |z| gets bigger, but for large |z|,
+         ;; k is prone to lose precision and starts drifting around
+         ;; the point zero.
+         ;; For now, I let asin to return NaN in such cases.
+         (let1 zz (+ (* +i z) (sqrt (- 1 (* z z))))
+           (if (< (/. (magnitude zz) (magnitude z)) 1.0e-8)
+             (make-rectangular +nan.0 +nan.0)
+             (* -i (log zz))))]
+        [else (error "number required, but got" z)]))
+
+(define (asinh z)
+  (let1 zz (+ z (sqrt (+ (* z z) 1)))
+    (if (< (/. (magnitude zz) (magnitude z)) 1.0e-8)
+      (make-rectangular +nan.0 +nan.0)
+      (log (+ z (sqrt (+ (* z z) 1)))))))
+
+(define-in-module scheme (acos z)
+  (cond [(real? z) (%acos z)]
+        [(number? z)
+         ;; The definition of acos is
+         ;;  (* -i (log (+ z (* +i (sqrt (- 1 (* z z)))))))))
+         ;; This also falls in the victim of numerical unstability; worse than
+         ;; asin, sometimes the real part of marginal value "hops" between
+         ;; +pi and -pi.  It's rather stable to use asin.
+         (- 1.5707963267948966 (asin z))]
+        [else (error "number required, but got" z)]))
+
+(define (acosh z)
+  ;; See the discussion of CLtL2, pp. 313-314
+  (* 2 (log (+ (sqrt (/ (+ z 1) 2))
+               (sqrt (/ (- z 1) 2))))))
+
+(define-in-module scheme (atan z . x)
+  (if (null? x)
+    (cond [(real? z) (%atan z)]
+          [(number? z)
+           (let1 iz (* z +i)
+             (/ (- (log (+ 1 iz))
+                   (log (- 1 iz)))
+                +2i))]
+          [else (error "number required, but got" z)])
+    (%atan z (car x))))
+
+(define (atanh z)
+  (/ (- (log (+ 1 z)) (log (- 1 z))) 2))
+
 
 (select-module gauche)
 
@@ -421,7 +645,7 @@
 ;; Complex numbers
 ;;
 
-(select-module gauche)
+(select-module scheme)
 (define-cproc make-rectangular (a::<real> b::<real>) :constant Scm_MakeComplex)
 (define-cproc make-polar (r::<real> t::<real>) :constant Scm_MakeComplexPolar)
 

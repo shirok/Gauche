@@ -1,3 +1,15 @@
+2012-09-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_Exact), lib/gauche/numerical.scm (real->rational):
+	  Let 'exact' return the simplest rational within the precision of
+	  the flonum, instead of the dumb rationalization.  E.g.
+	  (exact (/ 3.0)) => 1/3 instead of 6004799503160661/18014398509481984.
+	  The calculation is implemented in real->rational, and Scm_Exact
+	  calls it when needed.
+	* src/libnum.scm, lib/gauche/numerical.scm: Moved R5RS procedures
+	  from the latter to the former.
+	* src/autoloads.scm: Changed accordingly.
+
 2012-09-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/literal.scm (define-cgen-literal): Fixed complex
