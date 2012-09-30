@@ -139,7 +139,7 @@
       (cond [(< lb 0) 0]
             [(= ub lb)
              (if open?
-               (error "range can't eb open when error boundary is zero")
+               (error "real->rational: range can't be open when error boundary is zero")
                ub)]
             [else (realize ((if open? refine/o refine/c)
                             (continued-fraction ub)
