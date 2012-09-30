@@ -136,12 +136,15 @@
   (define (find-rational-1 x dx+ dx- open?) ; x >= 0
     (let ([ub (+ (ensure-exact x) (ensure-exact dx+))]
           [lb (- (ensure-exact x) (ensure-exact dx-))])
-      (if (< lb 0)
-        0
-        (realize ((if open? refine/o refine/c)
-                  (continued-fraction ub)
-                  (continued-fraction lb)
-                  '())))))
+      (cond [(< lb 0) 0]
+            [(= ub lb)
+             (if open?
+               (error "range can't eb open when error boundary is zero")
+               ub)]
+            [else (realize ((if open? refine/o refine/c)
+                            (continued-fraction ub)
+                            (continued-fraction lb)
+                            '()))])))
 
   (define (find-rational x dx+ dx-)     ; x >= 0
     (if (and (inexact? x) (or (not dx+) (not dx-)))
