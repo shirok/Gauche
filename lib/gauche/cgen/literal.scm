@@ -593,7 +593,13 @@
   (init (self)
     (let ([real (real-part (~ self'value))]
           [imag (imag-part (~ self'value))])
-      (print "  "(cgen-c-name self)" = Scm_MakeComplex("real", "imag");")))
+      (define (double-literal v)
+        (cond [(finite? v) v]
+              [(nan? v) "SCM_DBL_NAN"]
+              [(positive? v) "SCM_DBL_POSITIVE_INFINITY"]
+              [else "SCM_DBL_NEGATIVE_INFINITY"]))
+      (print "  "(cgen-c-name self)" = "
+             "Scm_MakeComplex("(double-literal real)", "(double-literal imag)");")))
   (static (self) #f))
 
 ;; pair ---------------------------------------------------------

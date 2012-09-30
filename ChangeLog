@@ -1,3 +1,9 @@
+2012-09-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/literal.scm (define-cgen-literal): Fixed complex
+	  literal generation when real-part and/or imag-part contains
+	  NaN or infinities.
+
 2012-09-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numerical.scm (rationalize, real->rational): Factored
