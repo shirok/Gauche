@@ -1,5 +1,10 @@
 2012-09-30  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/literal.scm: Temporarily replaced refereces of expt
+	  for %expt, otherwise compiling HEAD with 0.9.3.3 could trigger
+	  autoload of expt, while it is no longer in gauche/numerical.scm
+	  in the current source tree.  We can revert it after 0.9.4 release.
+
 	* src/number.c (Scm_Exact), lib/gauche/numerical.scm (real->rational):
 	  Let 'exact' return the simplest rational within the precision of
 	  the flonum, instead of the dumb rationalization.  E.g.

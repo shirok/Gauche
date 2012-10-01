@@ -528,7 +528,7 @@
     (cond
      [(fixnum? value)
       (make <cgen-scheme-integer> :value value :c-name #f)]
-     [(< (- (expt 2 31)) value (- (expt 2 32)))
+     [(< (- (%expt 2 31)) value (- (%expt 2 32)))
       (make <cgen-scheme-integer> :value value
             :c-name (cgen-allocate-static-datum))]
      [else
@@ -547,9 +547,9 @@
       ;; we can use 64bit literal, but we'll leave it for later revision.
       (let ([val   (~ self'value)]
             [cname (cgen-c-name self)])
-        (cond [(< (- (expt 2 31)) val 0)
+        (cond [(< (- (%expt 2 31)) val 0)
                (print "  " cname " = Scm_MakeInteger("val");")]
-              [(<= 0 val (- (expt 2 32) 1))
+              [(<= 0 val (- (%expt 2 32) 1))
                (print "  " cname " = Scm_MakeIntegerU("val"U);")]
               [else
                (print "  " cname " = Scm_StringToNumber(SCM_STRING("
@@ -726,7 +726,7 @@
     (print "#endif /*!WORDS_BIGENDIAN*/")
     (print "#else  /*SIZEOF_LONG == 4 && !SCM_EMULATE_INT64*/")
     (format #t " (((int64_t)~dl << 32)|~dl),\n"
-            (ash v -32) (logand v (- (expt 2 32) 1)))
+            (ash v -32) (logand v (- (%expt 2 32) 1)))
     (print "#endif /*SIZEOF_LONG == 4 && !SCM_EMULATE_INT64*/")]
    [(eq? class <u64vector>)
     (print "#if SIZEOF_LONG == 8")
@@ -737,7 +737,7 @@
     (print "#endif /*!WORDS_BIGENDIAN*/")
     (print "#else  /*SIZEOF_LONG == 4 && !SCM_EMULATE_INT64*/")
     (format #t " (((int64_t)~dlu << 32)|~dlu),\n"
-            (ash v -32) (logand v (- (expt 2 32) 1)))
+            (ash v -32) (logand v (- (%expt 2 32) 1)))
     (print "#endif /*SIZEOF_LONG == 4 && !SCM_EMULATE_INT64*/")]
    [(eq? class <f16vector>)
     (error "gauche.cgen.literal: literal f16vector isn't supported yet")]
