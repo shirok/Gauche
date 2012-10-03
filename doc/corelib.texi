@@ -1421,49 +1421,68 @@ where @var{x} = @var{fraction} * 2^@var{exponent}, and
 [R6RS]
 @c EN
 Returns an exact or an inexact representation of the
-given number @var{z}, respectively.
+given number @var{z}, respectively.  Passing an exact number
+to @code{exact}, and an inexact number to @code{inexact}, are no-op.
 
-Since we have finite precision to represent floating numbers,
-it is always possible to convert arbitrary inexact real number
-to an exact rational number.  It may not be what you want, though.
-See the following example:
+Gauche doesn't have exact complex number with non-zero imaginary part,
+nor exact infinites and NaNs, so passing those to @code{exact} raises
+an error.
 @c JP
 それぞれ数@var{z}の正確な表現および不正確な表現を返します。
+正確数を@code{exact}に渡した場合や、不正確数を@code{inexact}に渡した場合は
+渡した値がそのまま返されます。
 
-浮動小数点数の表現が有限精度であるため、任意の不正確な実数を正確な
-有理数に変換することは常に可能です。しかしそれはあなたの求めるもの
-ではないかもしれません。次の例を見てください。
+Gaucheは、虚部がゼロでない正確な複素数や、正確な無限大/NaNをサポートしないので、
+これらの数が@code{exact}に渡された場合はエラーとなります。
 @c COMMON
 
 @example
-(exact 3.1415926535879)
-  @result{} 7074237752024177/2251799813685248
+(inexact 1)    @result{} 1.0
+(inexact 1/10) @result{} 0.1
 @end example
 
 @c EN
-If you intend to obtain an exact integer by rounding an inexact
-real number, you have to use one of @code{floor}, @code{ceiling},
-@code{truncate} or @code{round} explicitly.  You may also use
-@code{floor->exact}, @code{round->exact} etc.
+If an inexact finite real number is passed to @code{exact},
+the simplest exact rational number within the precision of the
+floating point representation is returned.
 @c JP
-不正確な実数を丸めた正確な整数が欲しい場合は、@code{floor}、@code{ceiling}、
-@code{truncate}もしくは@code{round}を明示的に使って下さい。
-@code{floor->exact}、@code{round->exact}等を使うという手もあります。
+不正確で有限な実数が@code{exact}に渡された場合は、
+浮動小数点数演算の精度の中で最も簡単な表現となる正確な有理数が返されます。
 @c COMMON
 
 @example
-(exact (round 3.1415926535879)) @result{} 3
-
-(round->exact 3.1415926535879)  @result{} 3
+(exact 1.0)     @result{} 1
+(exact 0.1)     @result{} 1/10
+(exact (/ 3.0)) @result{} 1/3
 @end example
 
 @c EN
-Gauche doesn't support exact complex numbers.  Passing an inexact
-complex number with non-zero imaginary part to @code{exact}
-causes an error.
+For all finite inexact real number @var{x}, 
+@code{(inexact (exact @var{x}))} is always @code{eqv?} to
+the orignal number @var{x}.
 @c JP
-Gaucheは正確な複素数をサポートしません。虚数部がゼロでない不正確な
-複素数を@code{exact}に渡すとエラーとなります。
+あらゆる有限の不正確な実数@var{x}について、
+@code{(inexact (exact @var{x}))} は常に元の数@var{x}と
+@code{eqv?}になります。
+@c COMMON
+
+@c EN
+(Note that the inverse doesn't hold, that is, an exact number @var{n}
+and @code{(exact (inexact @var{n}))} aren't necessarily the same.
+It's because many (actually, infinite number of) exact numbers
+can be mapped to one inexact number.)
+@c JP
+(その逆、つまり正確数 @var{n} と @code{(exact (inexact @var{n}))} は
+必ずしも等しくならないことに注意してください。
+ある不正確数へと写像される正確数は無数にあり得るためです。)
+@c COMMON
+
+@c EN
+To specify the error tolerance when converting inexact real numbers
+to exact rational numbers, use @code{rationalize} or @code{real->rational}.
+@c JP
+誤差の許容範囲を指定して非正確な実数を正確な有理数に直したい場合は、
+@code{rationalize}および@code{real->rational}を参照してください。
 @c COMMON
 @end defun
 
@@ -1499,6 +1518,80 @@ R5RS実装の中には、非正確数を@code{exact->inexact}に渡したりす�
 一般的には、@code{exact}および@code{inexact}を使う方が
 簡潔で良いでしょう。こちらの手続きはR5RSプログラムとの互換性の
 ために用意されています。
+@c COMMON
+@end defun
+
+@defun real->rational x :optional hi lo open?
+@c EN
+Find the simplest rational representation of a finite real
+number @var{x} within the specified error bounds.  This is the low-level
+routine called by @code{rationalize} and @code{exact}.
+@c JP
+指定されたエラー範囲の中で、有限な実数@var{x}の正確な有理数表現のうち
+最も簡単なものを返します。@code{ratinalize}や@code{exact}はこの手続きを
+下請けとして呼び出しています。
+@c COMMON
+
+@c EN
+The result
+rational value @var{r} satisfies the following condition:
+@c JP
+返される有理数は次の条件を満たします。
+@c COMMON
+
+@example
+(<= (- x lo) r (+ x hi))   ; when open? is #f
+(<  (- x lo) r (+ x hi))   ; otherwise
+@end example
+
+@c EN
+Note that both @var{hi} and @var{lo} must be nonnegative.
+
+If @var{hi} and/or @var{lo} is omitted, it is determined by @var{x}:
+if @var{x} is exact, @var{hi} and @var{lo} are defaulted to zero; if
+@var{x} is inexact, @var{hi} and @var{lo} depend on
+the precision of the floating point representation of @var{x}.
+In the latter case, the @var{open?} also depends on @var{x}---it is true
+if the mantissa of @var{x} is odd, and false otherwise, reflecting
+the round-to-even rule.   So, if you call @code{real->rational} with
+one finite number, you'll get the same result as @code{exact}:
+@c JP
+@var{hi}と@var{lo}は非負でなければなりません。
+
+@var{hi}と@var{lo}の両方、もしくは一方が省略された場合、それは@var{x}の値に応じて
+決定されます。@var{x}が正確数の場合、省略された@var{hi}/@var{lo}はゼロとみなされます。
+@var{x}が非正確数の場合は、@var{x}の浮動小数点数表現の精度に基づいて
+@var{hi}/@var{lo}が決定されます。後者の場合、@var{open?}の値もまた、
+@var{x}の値で決まります。浮動小数点数の「偶数丸め」規則に対応して、
+@var{x}の仮数部が奇数であれば@var{open?}は真、そうでなければ偽となります。
+従って、@code{real->rational}にひとつの有限の数値だけを渡した場合、
+その動作は@code{exact}と同じになります。
+@c COMMON
+
+@example
+(real->rational 0.1) @result{} 1/10
+@end example
+
+@c EN
+Passing zeros to the error bounds makes it return the exact
+conversion of the floating number itself (that is, the exact
+calculation of @code{(* sign mantissa (expt 2 exponent))}).
+@c JP
+エラー範囲にゼロを渡すと、引数の浮動小数点数の正確な数値表現
+(つまり、@code{(* sign mantissa (expt 2 exponent))}を正確値で計算した結果)
+が返されます。
+@c COMMON
+
+@example
+(real->rational 0.1 0 0) @result{} 3602879701896397/36028797018963968
+@end example
+
+@c EN
+(If you give both @var{hi} and @var{lo}, but omit @var{open?}, 
+we assume closed range.)
+@c JP
+(@var{hi}と@var{lo}引数を与えて @var{open?}を省略した場合は、
+閉じた範囲と考えます。)
 @c COMMON
 @end defun
 
