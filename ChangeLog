@@ -1,3 +1,10 @@
+2012-10-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c: Raises an error for division by exact zero, instead
+	  of coercing it to inexact; R5RS allows implicit coercing, but R6RS
+	  explicitly requires raising error.  Patch from leque.
+	  Also making 1/0 an error, while we still allow #i1/0 => +inf.0.
+
 2012-09-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/literal.scm: Temporarily replaced refereces of expt

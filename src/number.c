@@ -554,6 +554,9 @@ ScmObj Scm_MakeRatnum(ScmObj numer, ScmObj denom)
     if (!SCM_INTEGERP(denom)) {
         Scm_Error("denominator must be an exact integer, but got %S", denom);
     }
+    if (SCM_EXACT_ZERO_P(denom)) {
+        Scm_Error("attempt to calculate a division by zero");
+    }
     r = SCM_NEW(ScmRatnum);
     SCM_SET_CLASS(r, SCM_CLASS_RATIONAL);
     r->numerator = numer;
@@ -571,6 +574,9 @@ ScmObj Scm_MakeRational(ScmObj numer, ScmObj denom)
     }
     if (!SCM_INTEGERP(denom)) {
         Scm_Error("denominator must be an exact integer, but got %S", denom);
+    }
+    if (SCM_EXACT_ZERO_P(denom)) {
+        Scm_Error("attempt to calculate a division by zero");
     }
     if (SCM_EXACT_ONE_P(denom)) return numer;
     if (SCM_EXACT_ZERO_P(numer)) return SCM_MAKE_INT(0);
@@ -2000,7 +2006,10 @@ scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
 
     if (SCM_INTP(arg0)) {
         if (SCM_INTP(arg1)) {
-            if (SCM_EXACT_ZERO_P(arg1)) goto anormal;
+            if (SCM_EXACT_ZERO_P(arg1)) {
+                if (inexact) goto anormal;
+                else goto div_by_zero;
+            }
             if (SCM_EXACT_ZERO_P(arg0)) SIMPLE_RETURN(arg0);
             if (SCM_EXACT_ONE_P(arg1))  SIMPLE_RETURN(arg0);
             if (compat) {
@@ -2038,7 +2047,10 @@ scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
     }
     if (SCM_BIGNUMP(arg0)) {
         if (SCM_INTP(arg1)) {
-            if (SCM_EXACT_ZERO_P(arg1)) goto anormal;
+            if (SCM_EXACT_ZERO_P(arg1)) {
+                if (inexact) goto anormal;
+                else goto div_by_zero;
+            }
             if (SCM_EXACT_ONE_P(arg1)) SIMPLE_RETURN(arg0);
             goto ratnum_return;
         }
@@ -2061,7 +2073,10 @@ scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
     }
     if (SCM_RATNUMP(arg0)) {
         if (SCM_INTP(arg1)) {
-            if (SCM_EXACT_ZERO_P(arg1)) goto anormal;
+            if (SCM_EXACT_ZERO_P(arg1)) {
+                if (inexact) goto anormal;
+                else goto div_by_zero;
+            }
             if (SCM_EXACT_ONE_P(arg1)) SIMPLE_RETURN(arg0);
             arg1 = Scm_Mul(SCM_RATNUM_DENOM(arg0), arg1);
             arg0 = SCM_RATNUM_NUMER(arg0);
@@ -2179,6 +2194,10 @@ scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
     {
         if (inexact) return Scm_Inexact(r);
         else return r;
+    }
+  div_by_zero:
+    {
+      Scm_Error("attempt to calculate a division by zero");
     }
   anormal:
     {
@@ -3734,7 +3753,7 @@ static ScmObj read_real(const char **strp, int *lenp,
             if (SCM_FALSEP(denom)) return SCM_FALSE;
             if (SCM_EXACT_ZERO_P(denom)) {
                 if (lensave > *lenp) {
-                    if (ctx->exactness == EXACT) {
+                    if (ctx->exactness != INEXACT) {
                         return numread_error("(exact infinity/nan is not supported.)",
                                              ctx);
                     }

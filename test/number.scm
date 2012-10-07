@@ -1211,6 +1211,32 @@
 (test* "exact reciprocal" -5/6 (/ -6/5))
 (test* "exact reciprocal" 7/4692297364841 (/ 4692297364841/7))
 
+;; avoid inlining
+(define (divide . args)
+  (apply / args))
+
+(define (divide. . args)
+  (apply /. args))
+
+(test* "division by zero" (test-error) (divide 0))
+(test* "division by zero" (test-error) (divide 0 0))
+(test* "division by zero" (test-error) (divide 3 0))
+(test* "division by zero" (test-error) (divide 1/2 0))
+(test* "division by zero" +inf.0 (divide 0.0))
+(test* "division by zero" #t (nan? (divide 0.0 0)))
+(test* "division by zero" #t (nan? (divide 0 0.0)))
+(test* "division by zero" #t (nan? (divide 0.0 0.0)))
+(test* "division by zero" +inf.0 (divide 0.5 0))
+
+(test* "division by zero" +inf.0 (divide. 0))
+(test* "division by zero" #t (nan? (divide. 0 0)))
+(test* "division by zero" +inf.0 (divide. 3 0))
+(test* "division by zero" +inf.0 (divide. 1/2 0))
+(test* "division by zero" #t (nan? (divide. 0.0 0)))
+(test* "division by zero" #t (nan? (divide. 0 0.0)))
+(test* "division by zero" #t (nan? (divide. 0.0 0.0)))
+(test* "division by zero" +inf.0 (divide. 0.5 0))
+
 (define (almost=? x y)
   (define (flonum=? x y)
     (let ((ax (abs x)) (ay (abs y)))
