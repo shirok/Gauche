@@ -172,10 +172,18 @@
 
 (test* "rational reader" '(1 #t)
        (rational-test (string->number "3/03")))
-(test* "rational reader" '(+inf.0 #f)
+(test* "rational reader" #f
        (rational-test (string->number "3/0")))
-(test* "rational reader" '(-inf.0 #f)
+(test* "rational reader" #f
        (rational-test (string->number "-3/0")))
+(test* "rational reader" #f
+       (rational-test (string->number "0/0")))
+(test* "rational reader" '(+inf.0 #f)
+       (rational-test (string->number "#i3/0")))
+(test* "rational reader" '(-inf.0 #f)
+       (rational-test (string->number "#i-3/0")))
+(test* "rational reader" '(+nan.0 #f)
+       (rational-test (string->number "#i0/0")))
 (test* "rational reader" #f
        (rational-test (string->number "3/3/4")))
 (test* "rational reader" #f
@@ -404,7 +412,7 @@
 (test* "complex reader" '(0.0 0.5) (decompose-complex 0+1/2i))
 (test* "complex reader" '(0.0 -0.5) (decompose-complex -1/2i))
 (test* "complex reader" 1/2 (decompose-complex 1/2-0/2i))
-(test* "complex reader" '(0.5 -inf.0) (decompose-complex (string->number "1/2-1/0i")))
+(test* "complex reader" #f (decompose-complex (string->number "1/2-1/0i")))
 
 (test* "complex reader (polar)" (make-polar 1.0 1.0) 1.0@1.0)
 (test* "complex reader (polar)" (make-polar 1.0 -1.0) 1.0@-1.0)
@@ -1236,6 +1244,21 @@
 (test* "division by zero" #t (nan? (divide. 0 0.0)))
 (test* "division by zero" #t (nan? (divide. 0.0 0.0)))
 (test* "division by zero" +inf.0 (divide. 0.5 0))
+
+(test* "division by zero" +inf.0+inf.0i (/ 1+2i 0.0))
+(test* "division by zero" +inf.0-inf.0i (/ 1-2i 0.0))
+(test* "division by zero" -inf.0+inf.0i (/ -1+2i 0.0))
+(test* "division by zero" -inf.0-inf.0i (/ -1-2i 0.0))
+
+(test* "division by zero" #t
+       (let ((r (/ 0+1i 0)))
+         (and (nan? (real-part r))
+              (= (imag-part r) +inf.0))))
+
+(test* "division by zero" #t
+       (let ((r (/ 0+1i 0.0)))
+         (and (nan? (real-part r))
+              (= (imag-part r) +inf.0))))
 
 (define (almost=? x y)
   (define (flonum=? x y)

@@ -4,6 +4,7 @@
 	  of coercing it to inexact; R5RS allows implicit coercing, but R6RS
 	  explicitly requires raising error.  Patch from leque.
 	  Also making 1/0 an error, while we still allow #i1/0 => +inf.0.
+	  (scm_div): Also fixed (/ <compnum> <zero>) cases.  Patch from leque.
 
 2012-09-30  Shiro Kawai  <shiro@acm.org>
 

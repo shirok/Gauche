@@ -2129,7 +2129,8 @@ scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
     }
     if (SCM_COMPNUMP(arg0)) {
         if (SCM_INTP(arg1)) {
-            if (SCM_EXACT_ZERO_P(arg1)) goto anormal;
+            /* NB: Gauche has no exact compnum */
+            if (SCM_EXACT_ZERO_P(arg1)) goto anormal_comp;
             if (SCM_EXACT_ONE_P(arg1)) return arg0;
             return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)/SCM_INT_VALUE(arg1),
                                    SCM_COMPNUM_IMAG(arg0)/SCM_INT_VALUE(arg1));
@@ -2140,7 +2141,7 @@ scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
                                    SCM_COMPNUM_IMAG(arg0)/z);
         }
         if (SCM_FLONUMP(arg1)) {
-            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto anormal;
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto anormal_comp;
             return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)/SCM_FLONUM_VALUE(arg1),
                                    SCM_COMPNUM_IMAG(arg0)/SCM_FLONUM_VALUE(arg1));
         }
@@ -2205,6 +2206,20 @@ scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
         if (s == 0) return SCM_NAN;
         if (s < 0)  return SCM_NEGATIVE_INFINITY;
         else        return SCM_POSITIVE_INFINITY;
+    }
+  anormal_comp:
+    {
+        double r0 = SCM_COMPNUM_REAL(arg0);
+        double i0 = SCM_COMPNUM_IMAG(arg0);
+        double r =
+            (r0 > 0.0) ? SCM_DBL_POSITIVE_INFINITY
+            : (r0 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
+            : SCM_DBL_NAN;
+        double i =
+            (i0 > 0.0) ? SCM_DBL_POSITIVE_INFINITY
+            : (i0 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
+            : SCM_DBL_NAN;
+        return Scm_MakeComplex(r, i);
     }
   do_complex:
     {
