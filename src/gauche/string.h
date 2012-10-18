@@ -162,12 +162,14 @@ SCM_EXTERN ScmObj  Scm_CopyStringWithFlags(ScmString *str, int flags, int mask);
 
 SCM_EXTERN char*   Scm_GetString(ScmString *str);
 SCM_EXTERN const char* Scm_GetStringConst(ScmString *str);
+SCM_EXTERN const char* Scm_GetStringConstSafe(ScmString *str);
 SCM_EXTERN const char* Scm_GetStringContent(ScmString *str,
                                             unsigned int *psize,
                                             unsigned int *plen,
                                             unsigned int *pflags);
 
 #define SCM_STRING_CONST_CSTRING(obj) Scm_GetStringConst(SCM_STRING(obj))
+#define SCM_STRING_CONST_CSTRING_SAFE(obj) Scm_GetStringConstSafe(SCM_STRING(obj))
 
 /*
  * Conversions

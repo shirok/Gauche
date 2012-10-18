@@ -104,6 +104,9 @@
 ;;                                         by Scm_GetStringConst.
 ;;                                         For return values, C string is boxed
 ;;                                         by SCM_MAKE_STR_COPYING.
+;;   <const-cstring-safe> <string> const char*  Like <const-cstring>,
+;;                                         but when converting from Scheme,
+;;                                         reject string with NUL chars in it.
 ;;
 ;;   <pair>       <pair>       ScmPair*
 ;;   <list>       <list>       ScmObj
@@ -210,6 +213,8 @@
    ;; C string
    (<const-cstring> "const char *" "const C string"
                     "SCM_STRINGP" "SCM_STRING_CONST_CSTRING" "SCM_MAKE_STR_COPYING")
+   (<const-cstring-safe> "const char *" "const C string"
+                    "SCM_STRINGP" "SCM_STRING_CONST_CSTRING_SAFE" "SCM_MAKE_STR_COPYING")
 
    ;; Aggregate types
    (<pair> "ScmPair*" "pair" "SCM_PAIRP" "SCM_PAIR" "SCM_OBJ")

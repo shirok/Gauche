@@ -265,6 +265,21 @@ const char *Scm_GetStringConst(ScmString *str)
     return get_string_from_body(SCM_STRING_BODY(str));
 }
 
+
+/* Like Scm_GetStringConst, but do not allow string containing NUL
+   characters.  Should be used where passing such strings can be a
+   security hazard (e.g. filename) */
+const char *Scm_GetStringConstSafe(ScmString *str)
+{
+    const ScmStringBody *b = SCM_STRING_BODY(str);
+    if (memchr(SCM_STRING_BODY_START(b), 0, SCM_STRING_BODY_SIZE(b))) {
+        Scm_Error("A string containing NUL character is not allowed: %S",
+                  SCM_OBJ(str));
+    }
+    return get_string_from_body(b);
+}
+
+
 /* Atomically extracts C-string, length, size, and incomplete flag.
    MT-safe. */
 const char *Scm_GetStringContent(ScmString *str,

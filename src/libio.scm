@@ -174,7 +174,8 @@
                           if-does-not-exist)])
     (let* ([bufmode::int (Scm_BufferingMode buffering SCM_PORT_INPUT
                                             SCM_PORT_BUFFER_FULL)]
-           [o (Scm_OpenFilePort (Scm_GetStringConst path) O_RDONLY bufmode 0)])
+           [o (Scm_OpenFilePort (Scm_GetStringConstSafe path)
+                                O_RDONLY bufmode 0)])
       (when (and (SCM_FALSEP o) (not (%open/allow-noexist? ignerr)))
         (Scm_SysError "couldn't open input file: %S" path))
       (result o))))
@@ -210,7 +211,8 @@
                           if-does-not-exist)])
     (let* ([bufmode::int
             (Scm_BufferingMode buffering SCM_PORT_OUTPUT SCM_PORT_BUFFER_FULL)]
-           [o (Scm_OpenFilePort (Scm_GetStringConst path) flags bufmode mode)])
+           [o (Scm_OpenFilePort (Scm_GetStringConstSafe path)
+                                flags bufmode mode)])
       (when (and (SCM_FALSEP o)
                  (not (%open/allow-noexist? ignerr-noexist))
                  (not (%open/allow-exist? ignerr-exist)))

@@ -1,3 +1,18 @@
+2012-10-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (Scm_GetStringConstSafe),
+	  lib/gauche/cgen/type.c (<const-cstring-safe>): Converting Scheme
+	  string to C string with extra check of NUL character.  This should
+	  be used to obtain strings to be passed to system procedures
+	  (e.g. pathnames for file operations) to avoid security risk.
+	* src/libio.scm (%open-input-file, %open-output-file),
+	  src/libsys.scm (sys-remove, sys-rename, sys-system, sys-setenv,
+	  sys-unsetenv, sys-stat, sys-lstat, sys-mkfifo, file-exists?,
+	  file-is-regular?, file-is-directory?, sys-utime, sys-access,
+	  sys-chdir, sys-chmod, sys-chown, sys-lchown, sys-link, sys-mkdir,
+	  sys-rmdir, sys-unlink, sys-truncate, sys-symlink, sys-readlink):
+	  Use <const-cstring-safe>.
+
 2012-10-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c: Raises an error for division by exact zero, instead
