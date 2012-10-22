@@ -278,13 +278,13 @@
          (gs (map (lambda (_) (gensym)) bv)))
     (unreachable plist match-expr)
     `(begin ,@(map (lambda (v) `(define ,v #f)) bv)
-            `(let ((,x ,exp)
-                   (,code (lambda ,gs
-                            ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)
-                            (cond (#f #f))))
-                   ,@bindings
-                   ,@(car eb-errf))
-               ,m))))
+            (let ((,x ,exp)
+                  (,code (lambda ,gs
+                           ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)
+                           (cond (#f #f))))
+                  ,@bindings
+                  ,@(car eb-errf))
+              ,m))))
 
 (define (symbolize x)
   (cond [(symbol? x) x]
