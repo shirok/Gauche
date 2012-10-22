@@ -84,4 +84,39 @@ typedef double          ScmLongDouble;
 #define SCM_DBL_NAN           (0.0/0.0)
 #endif
 
+/*
+ * Floating pointer control register
+ *
+ *  In some places we need to make sure the FP calculations are done
+ *  with IEEE double precision, not with x87 extended double precision,
+ *  for the latter would cause inaccuracy because of double-rounding.
+ *
+ *  Unfortunately setting FP control modes differ among platforms.
+ */
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include <float.h>
+
+/* Recent versions of Mingw GCC (4.6.1 and 4.7.0, afaik) has a bug that
+   Windows float.h isn't included by mingw-gcc's float.h.  This is a kludge
+   to let us use _controlfp().*/
+#  ifndef _MCW_PC
+extern unsigned int __cdecl _controlfp(unsigned int, unsigned int);
+#define _PC_53          0x00010000
+#define _MCW_PC         0x00030000
+#  endif /*_MCW_PC*/
+
+#define SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN()        \
+    { unsigned int old_fpc_val__ = _controlfp(0, 0);  \
+      _controlfp(_PC_53, _MCW_PC);
+
+#define SCM_FP_ENSURE_DOUBLE_PRECISION_END() \
+      _controlfp(old_fpc_val__, _MCW_PC); }
+    
+#else  /* fallback */
+#define SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN() /* nothing */
+#define SCM_FP_ENSURE_DOUBLE_PRECISION_END()   /* nothing */
+#endif
+
+
 #endif /*GAUCHE_FLOAT_H*/

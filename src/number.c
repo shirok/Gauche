@@ -30,7 +30,6 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/bignum.h"
@@ -1261,6 +1260,7 @@ double Scm_GetDouble(ScmObj obj)
          */
         double dnumer = Scm_GetDouble(SCM_RATNUM_NUMER(obj));
         double ddenom = Scm_GetDouble(SCM_RATNUM_DENOM(obj));
+        volatile double result;
 
         if (SCM_IS_INF(dnumer) || SCM_IS_INF(ddenom)) {
             /* This path should be rare, so we don't bother performance. */
@@ -1287,7 +1287,19 @@ double Scm_GetDouble(ScmObj obj)
                 ddenom = Scm_GetDouble(Scm_Ash(SCM_RATNUM_DENOM(obj), -shift));
             }
         }
-        return dnumer/ddenom;
+        SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN();
+        /* It is critical to perform this division in IEEE double (53bit
+           mantissa) precision, _not_ in x87 extended double precision;
+           if the latter were used, double-rounding would yield different
+           results, which makes inexact -> exact -> inexact round-trip
+           fail.  For example, (inexact 3002399751580332/3002399751580331)
+           should be 1.0000000000000002 (1LSB greater than 1.0), but
+           extended double precision division yields
+           1.0000000000000004 (2LSB greater than 1.0).
+        */
+        result = dnumer/ddenom;
+        SCM_FP_ENSURE_DOUBLE_PRECISION_END();
+        return result;
     }
     else return 0.0;
 }
