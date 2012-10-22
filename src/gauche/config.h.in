@@ -89,6 +89,9 @@
 /* Define if you have forkpty */
 #undef HAVE_FORKPTY
 
+/* Define if you have fpu_control.h */
+#undef HAVE_FPU_CONTROL_H
+
 /* Define to 1 if the system has getdomainname */
 #undef HAVE_GETDOMAINNAME
 

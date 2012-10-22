@@ -39,6 +39,10 @@
 #ifndef GAUCHE_FLOAT_H
 #define GAUCHE_FLOAT_H
 
+#if defined(HAVE_FPU_CONTROL_H)
+#include <fpu_control.h>
+#endif
+
 /* assuming gauche/config.h is read. */
 
 /*
@@ -102,8 +106,8 @@ typedef double          ScmLongDouble;
    to let us use _controlfp().*/
 #  ifndef _MCW_PC
 extern unsigned int __cdecl _controlfp(unsigned int, unsigned int);
-#define _PC_53          0x00010000
-#define _MCW_PC         0x00030000
+#  define _PC_53          0x00010000
+#  define _MCW_PC         0x00030000
 #  endif /*_MCW_PC*/
 
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN()        \
@@ -112,7 +116,18 @@ extern unsigned int __cdecl _controlfp(unsigned int, unsigned int);
 
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_END() \
       _controlfp(old_fpc_val__, _MCW_PC); }
-    
+
+#elif defined(_FPU_GETCW)       /* linux */
+
+#define SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN()        \
+    { fpu_control_t old_fpc_val__, new_fpc_val__;     \
+      _FPU_GETCW(old_fpc_val__);                      \
+      new_fpc_val__ = (old_fpc_val__ & ~_FPU_EXTENDED | _FPU_DOUBLE); \
+      _FPU_SETCW(new_fpc_val__);
+
+#define SCM_FP_ENSURE_DOUBLE_PRECISION_END() \
+      _FPU_SETCW(old_fpc_val__); }
+
 #else  /* fallback */
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN() /* nothing */
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_END()   /* nothing */

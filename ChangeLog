@@ -1,3 +1,12 @@
+2012-10-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/float.h (SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN),
+	  (SCM_FP_ENSURE_DOUBLE_PRECISION_END): A compatibility layer
+	  to tweak FPU control register.
+	* src/number.c (Scm_GetDouble): Make sure ratnum -> flonum
+	  routine uses IEEE double, not x87 extended double
+	  (so far, on MinGW and Linux.)
+
 2012-10-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (Scm_GetStringConstSafe),
