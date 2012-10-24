@@ -34,6 +34,7 @@
 (use gauche.test)
 (use srfi-1)
 (use gauche.generator)
+(use gauche.parameter)
 
 (test-start "parser.peg")
 
@@ -736,6 +737,16 @@
        (with-input-from-string "{\"a\":1, \"b\":2} {\"c\":3, \"d\":4} "
          (^[] (generator->list (peg-parser->generator json-parser read-char)))))
 
+(test* "Customizing consturctors"
+       '(object ("x" array 1 2 3) ("y" array #f #t null))
+       (parameterize ([json-array-handler (^[elts] (cons 'array elts))]
+                      [json-object-handler (^[pairs] (cons 'object pairs))]
+                      [json-special-handler (^y (case y
+                                                  [(false) #f]
+                                                  [(true) #t]
+                                                  [(null) 'null]))])
+         (parse-json-string "{\"x\":[1,2,3],\"y\":[false,true,null]}")))
+
 (let ()
   (define (test-writer name obj)
     (test* name obj
@@ -779,7 +790,13 @@
            (construct-json-string obj)))
   (t "a")
   (t '#(1 2 x))
-  (t '(("a" . 2) (3 . "b")))
   (t '(("a" . 2) 9)))
+
+(test* "generalized array" "[1,2,3]"
+       (construct-json-string '#u8(1 2 3)))
+(test* "generalized object" (test-one-of "{\"a\":1,\"b\":2}"
+                                         "{\"b\":2,\"a\":1}")
+       (construct-json-string (hash-table 'eq? '(a . 1) '(b . 2))))
+       
 
 (test-end)

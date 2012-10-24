@@ -8247,22 +8247,21 @@ JSON表記を@var{input-port} (省略された場合はcurrent-input-port)から
 
 @c EN
 The following table shows how JSON datatypes are
-mapped to Scheme objects.  (In future, we might add
-some mechanism to customize the mapping.)
+mapped to Scheme objects.
 @c JP
 下のテーブルに、JSONのデータ型がどのようにSchemeにマップされるかを示します。
-(将来は、このマッピングをカスタマイズできるようにするかもしれません。)
 @c COMMON
 
 @table @asis
 @c EN
 @item @code{true}, @code{false}, @code{null}
 Symbols @code{true}, @code{false} and @code{null}.
+(Customizable by @code{json-special-handler})
 @item Arrays
-Scheme vectors.
+Scheme vectors.  (Customizable by @code{json-array-handler})
 @item Objects
 Scheme assoc-lists, in which keys are strings, and values
-are Scheme objects.
+are Scheme objects.  (Customizable by @code{json-object-handler})
 @item Numbers
 Scheme inexact real numbers.
 @item Strings
@@ -8270,10 +8269,12 @@ Scheme strings.
 @c JP
 @item @code{true}, @code{false}, @code{null}
 シンボル@code{true}, @code{false} and @code{null}。
+(@code{json-special-handler}で変更可能)
 @item 配列
-Schemeのベクタ。
+Schemeのベクタ。 (@code{json-array-handler}で変更可能)
 @item オブジェクト
 Schemeの連想リスト。キーは文字列で、値はSchemeオブジェクト。
+(@code{json-object-handler}で変更可能)
 @item 数値
 Schemeの不正確な実数。
 @item 文字列
@@ -8298,6 +8299,54 @@ JSONのデータ型とSchemeの型とのマッピングについては上の@cod
 を参照してください。
 @c COMMON
 @end defun
+
+@deffn {Parameter} json-array-handler
+@deffnx {Parameter} json-object-handler
+@deffnx {Parameter} json-special-handler
+@c EN
+The value of these parameters must be a procedure that takes
+one argument: for @code{json-array-handler}, it is a list of
+elements of a JSON array, for @code{json-object-handler},
+it is a list of conses of key and value of a JSON object,
+and for @code{json-object-handler}, it is one of the
+symbols @code{false}, @code{true} or @code{null}.
+
+Whenever @code{parse-json} reads a JSON array, a JSON object,
+or one of those special values,
+it calls corresponding parameter to get a Scheme object.
+
+The default value of these parameters are @code{list->vector},
+@code{identity}, and @code{identity}, respectively.
+
+The following example maps JSON objects to hash tables.
+@c JP
+これらのパラメータの値は、引数をひとつ取る手続きでなければなりません。
+@code{json-array-handler}の値の手続きに渡される引数は、
+JSON配列の要素のリストです。
+@code{json-object-handler}では
+JSONオブジェクトのキーと値をconsしたもののリスト、
+@code{json-special-handler}では
+シンボル@code{false}, @code{true}, @code{null}のいずれかです。
+
+@code{parse-json}はJSON配列やオブジェクト、false、true、nullに
+出会う度に、
+このパラメータの値の手続きを起動して、JSONに対応するSchemeオブジェクトを
+得ます。
+
+これらのパラメータのデフォルト値はそれぞれ@code{list->object}、
+@code{identity}、@code{identity}です。
+
+次の例では、JSONオブジェクトをハッシュテーブルに変換しています。
+@c COMMON
+
+@example
+(use gauche.parameter)
+(parameterize ([json-object-handler (cut alist->hash-table <> 'string=?)])
+  (parse-json-string "@{\"a\":1, \"b\":2@}"))
+ @result{} #<hash-table ...>
+@end example
+@end deffn
+
 
 @deftp {Condition type} <json-construct-error>
 @c EN
@@ -8334,8 +8383,8 @@ either a JSON object or a JSON array.
 If @var{obj} contains a Scheme object that cannot be mapped
 to JSON representation, a @code{<json-construct-error>} condition
 is raised.
-See the entry of @code{parse-json} above for the mapping between
-JSON and Scheme.
+
+Scheme objects are mapped to JSON as follows:
 @c JP
 Schemeオブジェクト@var{obj}のJSON表現を作ります。
 @code{construct-json}は結果を@var{output-port}に書き出します。デフォルトは
@@ -8346,9 +8395,44 @@ RFC4627はJSONテキストはobjectかarrayであると定めているので、
 
 @var{obj}がJSONにマップできないオブジェクトを含んでいた場合は
 @code{<json-consturct-error>}コンディションが投げられます。
-JSONとScheme間のマッピングについては上の@code{parse-json}のエントリを
-参照してください。
+
+Schemeオブジェクトは以下のようにJSONへと変換されます。
 @c COMMON
+
+@table @asis
+@c EN
+@item symbol @code{false}, @code{#f}
+@code{false}
+@item symbol @code{true}, @code{#t}
+@code{true}
+@item symbol @code{null}
+@code{null}
+@item list, instance of @code{<dictionary>}
+JSON object (list must be an assoc list of key and value).
+@item string
+string
+@item real number
+number
+@item instance of @code{<sequence>} (except strings and lists)
+JSON array
+@c JP
+@item シンボル@code{false}, @code{#f}
+@code{false}
+@item シンボル@code{true}, @code{#t}
+@code{true}
+@item シンボル@code{null}
+@code{null}
+@item リスト、 @code{<dictionary>}のインスタンス
+JSONオブジェクト (リストはキーと値の連想リストでなければならない)
+@item 文字列
+文字列
+@item 実数
+数値
+@item @code{<sequence>}のインスタンス (文字列とリストを除く)
+JSON配列
+@c COMMON
+@end table
+
 @end defun
 
 @c ----------------------------------------------------------------------

@@ -38,6 +38,8 @@
 ;; this will likely to be rewritten once parser.peg's API is changed.
 
 (define-module rfc.json
+  (use gauche.parameter)
+  (use gauche.sequence)
   (use parser.peg)
   (use srfi-13)
   (use srfi-14)
@@ -45,6 +47,8 @@
   (export <json-parse-error> <json-construct-error>
           parse-json parse-json-string
           construct-json construct-json-string
+
+          json-array-handler json-object-handler json-special-handler
 
           json-parser                   ;experimental
           ))
@@ -59,6 +63,14 @@
 (define-condition-type <json-construct-error> <error> #f
   (object))                             ;offending object
 
+(define json-array-handler   (make-parameter list->vector))
+(define json-object-handler  (make-parameter identity))
+(define json-special-handler (make-parameter identity))
+
+(define (build-array elts) ((json-array-handler) elts))
+(define (build-object pairs) ((json-object-handler) pairs))
+(define (build-special symbol) ((json-special-handler) symbol))
+
 ;;;============================================================
 ;;; Parser
 ;;;
@@ -71,47 +83,40 @@
 (define %name-separator  ($seq ($char #\:) %ws))
 (define %value-separator ($seq ($char #\,) %ws))
 
-(define %false ($do [($string "false")] ($return 'false)))
-(define %null  ($do [($string "null")]  ($return 'null)))
-(define %true  ($do [($string "true")]  ($return 'true)))
+(define %special
+  ($fmap ($ build-special $ string->symbol $ rope-finalize $)
+         ($or ($string "false") ($string "true") ($string "null"))))
 
 (define %value
-  ($lazy ($do [v ($or %false %null %true %object %array %number %string)]
-              %ws
-              ($return v))))
+  ($lazy
+   ($fmap (^[v _] v) ($or %special %object %array %number %string) %ws)))
 
 (define %array
-  ($do %begin-array
-       [lis ($sep-by %value %value-separator)]
-       %end-array
-       ($return (list->vector (rope-finalize lis)))))
+  ($fmap (^[_0 lis _1] (build-array (rope-finalize lis)))
+         %begin-array ($sep-by %value %value-separator) %end-array))
 
 (define %number
-  (let* ((%sign ($or ($do [($char #\-)] ($return -1))
+  (let* ([%sign ($or ($do [($char #\-)] ($return -1))
                      ($do [($char #\+)] ($return 1))
-                     ($return 1)))
-         (%digits ($do [d ($many digit 1)]
-                       ($return (string->number (list->string d)))))
-         (%int %digits)
-         (%frac ($do [($char #\.)]
+                     ($return 1))]
+         [%digits ($fmap ($ string->number $ list->string $) ($many digit 1))]
+         [%int %digits]
+         [%frac ($do [($char #\.)]
                      [d ($many digit 1)]
-                     ($return (string->number (apply string #\0 #\. d)))))
-         (%exp ($do [($one-of #[eE])] [s %sign] [d %digits]
-                    ($return (* s d)))))
-    ($do (sign %sign)
-         (int %int)
-         (frac ($or %frac ($return 0)))
-         (exp ($or %exp ($return #f)))
-         ($return (let ((mantissa (+ int frac)))
-                    (* sign (if exp (exact->inexact mantissa) mantissa)
-                       (if exp (expt 10 exp) 1)))))))
+                     ($return (string->number (apply string #\0 #\. d))))]
+         [%exp ($fmap (^[_ s d] (* s d)) ($one-of #[eE]) %sign %digits)])
+    ($fmap (^[sign int frac exp]
+             (let1 mantissa (+ int frac)
+               (* sign (if exp (exact->inexact mantissa) mantissa)
+                  (if exp (expt 10 exp) 1))))
+           %sign %int ($or %frac ($return 0)) ($or %exp ($return #f)))))
 
 (define %string
-  (let* ((%dquote ($char #\"))
-         (%escape ($char #\\))
-         (%hex4 ($do [s ($many hexdigit 4 4)]
-                     ($return (string->number (list->string s) 16))))
-         (%special-char
+  (let* ([%dquote ($char #\")]
+         [%escape ($char #\\)]
+         [%hex4 ($fmap (^s (string->number (list->string s) 16))
+                       ($many hexdigit 4 4))]
+         [%special-char
           ($do %escape
                ($or ($char #\")
                     ($char #\\)
@@ -121,10 +126,10 @@
                     ($do [($char #\n)] ($return #\newline))
                     ($do [($char #\r)] ($return #\return))
                     ($do [($char #\t)] ($return #\tab))
-                    ($do [($char #\u)] (c %hex4) ($return (ucs->char c))))))
-         (%unescaped ($none-of #[\"]))
-         (%body-char ($or %special-char %unescaped))
-         (%string-body ($->rope ($many %body-char))))
+                    ($do [($char #\u)] (c %hex4) ($return (ucs->char c)))))]
+         [%unescaped ($none-of #[\"])]
+         [%body-char ($or %special-char %unescaped)]
+         [%string-body ($->rope ($many %body-char))])
     ($between %dquote %string-body %dquote)))
 
 (define %object
@@ -133,7 +138,8 @@
                      [v %value]
                      ($return (cons k v)))
     ($between %begin-object
-              ($sep-by %member %value-separator)
+              ($fmap ($ build-object $ rope-finalize $)
+                     ($sep-by %member %value-separator))
               %end-object)))
 
 (define json-parser ($seq %ws ($or eof %object %array)))
@@ -155,26 +161,26 @@
 ;;;
 
 (define (print-value obj)
-  (cond [(eq? obj 'false) (display "false")]
+  (cond [(or (eq? obj 'false) (eq? obj #f)) (display "false")]
+        [(or (eq? obj 'true) (eq? obj #t))  (display "true")]
         [(eq? obj 'null)  (display "null")]
-        [(eq? obj 'true)  (display "true")]
         [(list? obj)      (print-object obj)]
-        [(vector? obj)    (print-array obj)]
-        [(number? obj)    (print-number obj)]
         [(string? obj)    (print-string obj)]
+        [(number? obj)    (print-number obj)]
+        [(is-a? obj <dictionary>) (print-object obj)]
+        [(is-a? obj <sequence>)   (print-array obj)]
         [else (error <json-construct-error> :object obj
-                     "construct-json expects list or vector, but got:" obj)]))
+                     "can't convert Scheme object to json:" obj)]))
 
 (define (print-object obj)
   (display "{")
-  (fold (lambda (attr comma)
-          (unless (and (pair? attr)
-                       (string? (car attr)))
+  (fold (^[attr comma]
+          (unless (pair? attr)
             (error <json-construct-error> :object obj
-                   "construct-json needs an assoc list with all keys being \
-                    string, but got:" obj))
+                   "construct-json needs an assoc list or dictionary, \
+                    but got:" obj))
           (display comma)
-          (print-string (car attr))
+          (print-string (x->string (car attr)))
           (display ":")
           (print-value (cdr attr))
           ",")
@@ -183,10 +189,10 @@
 
 (define (print-array obj)
   (display "[")
-  (vector-for-each (lambda (i val)
-                     (unless (zero? i) (display ","))
-                     (print-value val))
-                   obj)
+  (for-each-with-index (^[i val]
+                         (unless (zero? i) (display ","))
+                         (print-value val))
+                       obj)
   (display "]"))
 
 (define (print-number num)
@@ -214,8 +220,8 @@
 (define (construct-json x :optional (oport (current-output-port)))
   (with-output-to-port oport
     (^()
-      (cond [(list? x)   (print-object x)]
-            [(vector? x) (print-array x)]
+      (cond [(or (list? x) (is-a? x <dictionary>)) (print-object x)]
+            [(and (is-a? x <sequence>) (not (string? x))) (print-array x)]
             [else (error <json-construct-error> :object x
                          "construct-json expects a list or a vector, \
                           but got" x)]))))

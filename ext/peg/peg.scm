@@ -47,7 +47,7 @@
           peg-run-parser peg-parse-string peg-parse-port
           peg-parse1 ;experimental
           peg-parser->generator ;experimental
-          $return $fail $expect
+          $return $fail $expect $fmap
           $do $<< $try $seq $or $fold-parsers $fold-parsers-right
           $many $many1 $skip-many
           $repeat $optional
@@ -324,6 +324,19 @@
         (if (parse-success? r)
           ((f v) s1)
           (values r v s1)))))
+
+;; $fmap :: (a,...) -> b, (Parser,..) -> Parser
+;; ($fmap f parser) == ($do [x parser] ($return (f x)))
+(define ($fmap f . parsers)
+  ;; We don't use the straightforward definition (using $do or $bind)
+  ;; to reduce closure construction.
+  (^s (let accum ([s s] [parsers parsers] [vs '()])
+        (if (null? parsers)
+          (return-result (apply f (reverse vs)) s)
+          (receive [r v s1] ((car parsers) s)
+            (if (parse-success? r)
+              (accum s1 (cdr parsers) (cons v vs))
+              (values r v s1)))))))
 
 ;; $do clause ... body
 ;;   where

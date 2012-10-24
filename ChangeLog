@@ -1,3 +1,18 @@
+2012-10-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm ($fmap): Experimentally added functor interface.
+	  ($do [x parser1] [y parser2] ($return (f x y))) can be writtern
+	  as ($fmap f parser1 parser2).  See how it works.
+	* lib/rfc/json.scm (json-array-handler, json-object-handler)
+	  (json-special-handler):  Make json array|object -> Scheme
+	  mapping customizable.
+	  (construct-json): Generalized array and object handling: Now
+	  any <dictionary> instance is mapped to json object (and its keys
+	  can be anything, converted by x->string), and any <sequence>
+	  except strings and lists is mapped to json array.
+	  Above two enhancements are inspired by Teppei Hamada's
+	  Gauche-text-json package (http://teppey.github.com/Gauche-text-json/).
+
 2012-10-22  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/util/match.scm (gendefine): Fixed match-define expansion
