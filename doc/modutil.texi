@@ -1030,66 +1030,140 @@ gosh> #i1/3
 @c ----------------------------------------------------------------------
 @node A common job descriptor for control modules, Thread pools, Rational-less arithmetic, Library modules - Utilities
 @section @code{control.job} - A common job descriptor for control modules
+@c NODE 制御モジュールのための汎用ジョブ記述子, @code{control.job} - 制御モジュールのための汎用ジョブ記述子
 
 @deftp {Module} control.job
 @mdindex control.job
+@c EN
 This module provides a @code{job} record type, a lightweight
 structure to be used in the control flow subsystems
 (@code{control.*} modules).
 Currently the only user is @code{control.thread-pool}, but
 some other modules are planned to use @code{job} records.
+@c JP
+このモジュールは、制御フローサブシステム(@code{control.*}モジュール)
+の中で使う軽量な構造である @code{job} レコード型を提供します。
+現在のところ、これを使っているのは@code{control.thread-pool}だけですが、
+他にもいくつかのモジュールが@code{job}レコードを使う予定です。
+@c COMMON
 
+@c EN
 A @code{job} record may be returned to an application
 by other @code{control.*} modules so that the application
 can keep track of the job.  It's not meant for
 general use, however.   An application isn't supposed to
 create a new job, or to modify its content; it can just query
 the job's properties.
+@c JP
+@code{control.*}モジュールは、アプリケーションがジョブを追跡できるように
+@code{job}レコードを返すことができます。ただし、
+これは、アプリケーションが普通に使用するための
+ものではありません。アプリケーションが新しいジョブを
+作成したり、その内容を変更したりすることは想定されていません;
+できるのは、そのジョブの属性について問い合わせることだけです。
+@c COMMON
 
+@c EN
 In this section we only describe procedures an application
 needs to know.  The interface for control subsystems is still
 fluid and may be changed as more subsystems are developed.
+@c JP
+この節では、アプリケーションが知るべき手続きだけを説明します。
+制御サブシステムのためのインタフェースは未だ流動的であり、
+さらなるサブシステムの開発が進むにつれて、変更されるかもしれません。
+@c COMMON
 
+@c EN
 Different control flow subsystems may use job structure differently.
 This section only describes the common properties.  Check the
 individual control flow module to know how to handle returned job
 objects.
+@c JP
+異なる制御フローサブシステムは、ジョブ構造の使い方が異なる
+かもしれません。この節では、共通する属性のみを説明します。
+返されたジョブオブジェクトの扱い方については、個々の制御フロー
+モジュールを調べて下さい。
+@c COMMON
 @end deftp
 
 @deftp {Record type} job
+@c EN
 A record type denotes the job.  Applications should treat it
 as an opaque structure.
+@c JP
+ジョブを表すレコード型です。アプリケーションはこれを、不透明(opaque)な
+構造として扱うべきです。
+@c COMMON
 @end deftp
 
 @defun job? obj
+@c EN
 Returns @code{#t} iff @var{obj} is a job record, @code{#f} otherwise.
+@c JP
+@var{obj}がジョブレコードだったら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun job-status job
+@c EN
 Returns the status of the job.  It may be either one of the followings.
+@c JP
+ジョブの状態を返します。ジョブの状態は以下のいずれかになります。
+@c COMMON
 @table @code
 @item #f
+@c EN
 Newborn or orphaned job.  Usually an application won't see a job
 in this status.
+@c JP
+作成したてか、孤児のジョブです。通常、アプリケーションがジョブの
+この状態に遭遇することはありません。
+@c COMMON
 @item acknowledged
+@c EN
 A job is recognized by a control flow library, but haven't yet
 been run.
+@c JP
+ジョブは制御フローライブラリによって認識されていますが、まだ
+実行されてはいません。
+@c COMMON
 @item running
+@c EN
 A job is being processed.
+@c JP
+ジョブは実行中です。
+@c COMMON
 @item done
+@c EN
 A job is finished.  An application can retrieve its result
 by @code{job-result}.
+@c JP
+ジョブは完了しています。アプリケーションはその処理の結果を、
+@code{job-result}を使って受け取ることができます。
+@c COMMON
 @item error
+@c EN
 A job is terminated by an error.  An application can retrieve the
 error causing condition by @code{job-result}.
+@c JP
+ジョブはエラーで終了しています。アプリケーションはエラーの原因となった
+コンディションを、@code{job-result}を使って受け取ることができます。
+@c COMMON
 @item killed
+@c EN
 A job is killed by external force.  An application can retrieve the
 reason of kill (which is specific to a particular control flow
 subsystem) by @code{job-result}.
+@c JP
+ジョブは外部から殺されています。アプリケーションは殺された理由を、
+@code{job-result}を使って受け取ることができます。
+どのような理由でジョブが殺されるかは制御フローサブシステムによります。
+@c COMMON
 @end table
 @end defun
 
 @defun job-result job
+@c EN
 If the job is in @code{done} status, it returns the result of the job.
 If the job is in @code{error} status, it returns the condition object
 that describes the error.
@@ -1098,14 +1172,31 @@ the reason of kill.  The details of the object depends on a particular
 control flow library.
 Calling @code{job-result} on a job in any other status may return
 anything; you can't rely on the result.
+@c JP
+与えられたジョブが@code{done}状態だったら、そのジョブの処理結果を返します。
+与えられたジョブが@code{error}状態だったら、そのエラーを説明する
+コンディションオブジェクトを返します。そのジョブが@code{killed}状態だったら、
+殺された理由を説明するオブジェクトを返します。このオブジェクトの詳細は、
+実際の制御フローライブラリに依存することになります。これら以外の状態の
+ジョブに対して@code{job-result}を読んだ場合、何が返るかはわかりません;
+その結果を当てにすることはできません。
+@c COMMON
 @end defun
 
 @defun job-wait job :optional timeout timeout-val
+@c EN
 Suspends the calling thread until the job becomes either
 @code{done}, @code{error} or @code{killed} status.  If the job
 is already in one of those status, it returns immediately.
 Returns job's status.
+@c JP
+与えられたジョブが@code{done}、@code{error}もしくは@code{killed}
+状態になるまで、呼び出したスレッドの実行をサスペンドします。
+ジョブがすでにこれらの状態であった時は、ただちに制御を戻します。
+ジョブの状態が返ります。
+@c COMMON
 
+@c EN
 If @var{timeout} is given and not @code{#f}, it must be
 a valid timeout spec (a @code{<time>} object that represents
 an absolute time point, or a real number that represents a
@@ -1114,22 +1205,51 @@ the same as in @code{mutex-unlock!} (@xref{Synchronization primitives}).
 Once the timeout reaches, @code{job-wait} returns no matter
 how the job's status is, and returns the value specified
 to @var{timeout-val}, which defaults to @code{#f}.
+@c JP
+@var{timeout}が与えられ、それが@code{#f}ではない場合は、
+タイムアウトのスペックとして有効なもの(時間の絶対値を表す
+@code{<time>}か、現時点からの相対的な秒数を表す実数)で
+なければなりません。@var{timeout}の意味は、@code{mutex-unlock!}
+(@xref{Synchronization primitives})のそれと同じです。
+タイムアウトすると、そのジョブの状態が何であれ、
+@code{job-wait}は引数@var{timeout-val}として指定された
+値を返します。デフォルト値は@code{#f}です。
+@c COMMON
 
+@c EN
 Depending on the control flow subsystem, jobs created by it
 may not be waitable; check out each subsystem's documentation for the details.
+@c JP
+そのジョブを作成する制御フローサブシステムによっては、
+待ち受けできないかもしれません。それぞれのサブシステムの
+ドキュメントを調べて詳細を確認してください。
+@c COMMON
 @end defun
 
 @defun job-acknowledge-time job
 @defunx job-start-time job
 @defunx job-finish-time job
+@c EN
 If the control flow subsystem keeps track of timestamps,
 these procedure returns the time (in @code{<time>} objects)
 when the job is acknowledged, started and finished (either normally,
 or abnormally by an error or by being killed).  If the job hasn't
 reached to certain status, @code{#f} is returned instead.
+@c JP
+制御フローサブシステムがジョブのタイムスタンプを記録する場合、
+これらの手続きは、そのジョブがサブシステムによって認識された時刻、
+開始された時刻、(正常に、あるいはエラーや殺されるなど異常に)
+終了した時刻を(@code{<time>}オブジェクトとして)返します。
+ジョブがそうした状態に達していない場合は@code{#f}を返します。
+@c COMMON
 
-If the subsystem does not trak timestamps, these procedures
+@c EN
+If the subsystem does not track timestamps, these procedures
 always returns @code{#f}.
+@c JP
+そのサブシステムがタイムスタンプを記録しない場合、これらの
+手続きは常に@code{#f}を返します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
