@@ -4662,7 +4662,7 @@ input to a generator).  In that case, @code{less-than} won't be called at all.
 そうでない場合、出力が正しい順になっていることは保証されません。
 
 入力が一つだけ渡された場合は、(それをジェネレータへと型変換した後で)それがそのまま
-変えされ、@code{less-than}は呼ばれません。
+返され、@code{less-than}は呼ばれません。
 @c COMMON
 
 @example
