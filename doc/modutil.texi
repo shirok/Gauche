@@ -8428,7 +8428,7 @@ The value of these parameters must be a procedure that takes
 one argument: for @code{json-array-handler}, it is a list of
 elements of a JSON array, for @code{json-object-handler},
 it is a list of conses of key and value of a JSON object,
-and for @code{json-object-handler}, it is one of the
+and for @code{json-special-handler}, it is one of the
 symbols @code{false}, @code{true} or @code{null}.
 
 Whenever @code{parse-json} reads a JSON array, a JSON object,
