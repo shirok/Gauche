@@ -8402,6 +8402,31 @@ Schemeの文字列。
 @c COMMON
 @end table
 
+@c EN
+Since the parser used internally in @code{parse-json} prefetches
+characters, some characters after the parsed JSON expression
+may already been read from @var{port} when @code{parse-json} returns.
+That is, you cannot call @code{parse-json} repeatedly on @var{port}
+to read subsequent JSON expressions.  Use @code{parse-json*} if you
+need to read multiple JSON expressions.
+@c JP
+@code{parse-json}内で使っているパーザは文字の先読みを行う可能性があるので、
+@code{parse-json}が戻って来た時点で、パーズされたJSON式以降のいくつかの文字が
+@var{port}から既に読まれてしまっている可能性があります。
+すなわち、複数のJSON式を読み出すのに、@var{port}に対して@code{parse-json}
+を繰り返し呼び出すのはうまくいきません。複数のJSON式をパーズしたい場合は
+@code{parse-json*}を使ってください。
+@c COMMON
+@end defun
+
+@defun parse-json* :optional input-port
+@c EN
+Read JSON repeatedly from @var{input-port} until it reaches EOF,
+and returns parsed results as a list.
+@c JP
+@var{input-port}から、EOFに達するまでJSON式を繰り返し読み取り、
+パーズ結果をリストにして返します。
+@c COMMON
 @end defun
 
 @defun parse-json-string str

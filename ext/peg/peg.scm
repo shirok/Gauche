@@ -44,8 +44,8 @@
   (export <parse-error>
           make-peg-parse-error
 
-          peg-run-parser peg-parse-string peg-parse-port
-          peg-parse1 ;experimental
+          peg-run-parser
+          peg-parse-string peg-parse-port
           peg-parser->generator ;experimental
           $return $fail $expect $fmap
           $do $<< $try $seq $or $fold-parsers $fold-parsers-right
@@ -213,11 +213,12 @@
                                 [else (loop (+ c 1) (cdr s))]))
                         s1))
 
-;; default driver
+;; API
+;;   Default driver.  Returns parsed value and next stream
 (define (peg-run-parser parser s)
   (receive (r v s1) (parser s)
     (if (parse-success? r)
-      (rope-finalize v)
+      (values (rope-finalize v) s1)
       (raise (construct-peg-parser-error r v s s1)))))
 
 ;; Coerce something to lseq.  accepts generator.
@@ -228,31 +229,33 @@
 ;; in gauche.lazy module.
 (define (%->lseq obj)
   (cond [(eq? (class-of obj) <pair>) obj] ;avoid forcing a lazy pair
-        [(applicable? x->generator (class-of obj)) (x->generator obj)]
+        [(applicable? x->generator (class-of obj))
+         (generator->lseq (x->generator obj))]
         [(applicable? obj) (generator->lseq obj)]
         [else (error "object cannot be used as a source of PEG parser:" obj)]))
 
 ;; API
+;;   NB: We can consolidate peg-parse-string and peg-parse-port via
+;;   x->generator, but should we?
 (define (peg-parse-string parser str)
-  (peg-run-parser parser (generator->lseq (string->generator str))))
+  (check-arg string? str)
+  (values-ref (peg-run-parser parser (x->lseq str)) 0))
 ;; API
 (define (peg-parse-port parser port)
-  (peg-run-parser parser (generator->lseq (cut read-char port))))
-;; API
-(define (peg-parse1 parser src)
-  (peg-run-parser parser (%->lseq src)))
+  (check-arg input-port? port)
+  (values-ref (peg-run-parser parser (x->lseq port)) 0))
+
 ;; API
 ;;  Returns a generator
 (define (peg-parser->generator parser src)
   (let1 s (%->lseq src)
-    (generate (^[yield]
-                (let loop ([s s])
-                  (receive (r v s1) (parser s)
-                    (if (parse-success? r)
-                      (unless (eof-object? v)
-                        (yield (rope-finalize v))
-                        (loop s1))
-                      (raise (construct-peg-parser-error r v s s1)))))))))
+    (^[] (if (null? s)
+           (eof-object)
+           (receive (r v s1) (parser s)
+             (cond [(not (parse-success? r))
+                    (raise (construct-peg-parser-error r v s s1))]
+                   [(eof-object? v) (set! s '()) v]
+                   [else (set! s s1) (rope-finalize v)]))))))
 
 ;;;============================================================
 ;;; Lazily-constructed string

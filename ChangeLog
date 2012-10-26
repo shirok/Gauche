@@ -1,3 +1,10 @@
+2012-10-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm (peg-run-parser): Let it return the "rest of the
+	  input" as the second value for the generality.  This is an
+	  incompatible change.
+	* lib/rfc/json.scm (parse-json*): Added.
+
 2012-10-24  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm ($fmap): Experimentally added functor interface.

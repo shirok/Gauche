@@ -734,8 +734,8 @@
 
 (test* "Parsing sequence of json objects"
        '((("a" . 1)("b" . 2)) (("c" . 3) ("d" . 4)))
-       (with-input-from-string "{\"a\":1, \"b\":2} {\"c\":3, \"d\":4} "
-         (^[] (generator->list (peg-parser->generator json-parser read-char)))))
+       (with-input-from-string "{\"a\":1, \"b\":2}{\"c\":3, \"d\":4}"
+         parse-json*))
 
 (test* "Customizing consturctors"
        '(object ("x" array 1 2 3) ("y" array #f #t null))
@@ -797,6 +797,6 @@
 (test* "generalized object" (test-one-of "{\"a\":1,\"b\":2}"
                                          "{\"b\":2,\"a\":1}")
        (construct-json-string (hash-table 'eq? '(a . 1) '(b . 2))))
-       
+
 
 (test-end)

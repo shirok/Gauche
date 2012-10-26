@@ -40,12 +40,14 @@
 (define-module rfc.json
   (use gauche.parameter)
   (use gauche.sequence)
+  (use gauche.generator)
   (use parser.peg)
   (use srfi-13)
   (use srfi-14)
   (use srfi-43)
   (export <json-parse-error> <json-construct-error>
           parse-json parse-json-string
+          parse-json*
           construct-json construct-json-string
 
           json-array-handler json-object-handler json-special-handler
@@ -155,6 +157,14 @@
 
 (define (parse-json-string str)
   (call-with-input-string str (cut parse-json <>)))
+
+(define (parse-json* :optional (port (current-input-port)))
+  (guard (e [(<parse-error> e)
+             ;; not to expose parser.peg's <parse-error>.
+             (error <json-parse-error>
+                    :position (~ e'position) :objects (~ e'objects)
+                    :message (~ e'message))])
+    (generator->list (peg-parser->generator json-parser port))))
 
 ;;;============================================================
 ;;; Writer
