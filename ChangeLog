@@ -1,3 +1,8 @@
+2012-10-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (write_walk, write_ss_rec): Avoid recursion, for it
+	  may bust the C stack when dealing with deeply nested structures.
+
 2012-10-25  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm (peg-run-parser): Let it return the "rest of the

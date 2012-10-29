@@ -183,6 +183,14 @@
               (bar (make <bar> :a x :b x)))
          (write-to-string bar write/ss)))
 
+;; This test doesn't involve shared structure.  It is to test
+;; we can handle deep list without busting C stack.
+(test* "deep list doesn't bust C stack" 2000002
+       (let loop ([cnt 0] [ls '()])
+         (if (< cnt 1000000)
+           (loop (+ cnt 1) (list ls))
+           (string-length (write-to-string ls)))))
+
 ;;---------------------------------------------------------------
 (test-section "format/ss")
 

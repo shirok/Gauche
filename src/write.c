@@ -324,7 +324,30 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
    back system's writer routine such as Scm_Write, Scm_Printf,
    so we can effectively traverse entire data to be printed.
 
-*/
+   NB: write_walk and write_ss_rec need to traverse recursive structure.
+   A simple way is to recurse to each element (e.g. car of a list,
+   and each element of a vector) and loop over the sequence.
+   However it busts the C stack when deep structure is passed.
+   Thus we avoided recursion by managing traversal stack by our own
+   ('stack' local variable).    It made the code ugly.  Oh well.
+
+   We can't avoid recusion via class printer.  It would need a major
+   overhaul to fix that.  However, just preventing blowup by lists
+   and vectors is still useful.
+
+   The stack is a list, whose element can be (#t . list) or
+   (index . vector).  In the first case, the list part is the
+   rest of the list we should process after the current item is
+   written out.  In the second case, we're processing the vector,
+   and the next item we should process is pointed by index.
+ 
+   We also set a limit of stack depth in write_ss_rec; in case
+   car-circular list (e.g. #0=(#0#) ) is given to the plain write.
+   It used to SEGV by busting C stack.  With the change of making it
+   non-recursive, it would hog all the heap before crash, which is
+   rather unpleasant, so we make it bail out before that.
+ */
+
 
 /* Dummy port for the walk pass */
 static ScmPortVTable walker_port_vtable = {
@@ -351,208 +374,300 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmHashTable *ht = SCM_HASH_TABLE(SCM_CDR(port->data));
     ScmObj elt;
+    ScmObj stack = SCM_NIL;
 
 #define REGISTER(obj)                                           \
     do {                                                        \
         ScmObj e = Scm_HashTableRef(ht, (obj), SCM_UNBOUND);    \
         if (!SCM_UNBOUNDP(e)) {                                 \
             Scm_HashTableSet(ht, (obj), SCM_TRUE, 0);           \
-            return;                                             \
+            goto next;                                          \
         }                                                       \
         Scm_HashTableSet(ht, obj, SCM_FALSE, 0);                \
     } while (0)
 
     for (;;) {
+    walk1:
         if (!SCM_PTRP(obj) || SCM_KEYWORDP(obj) || SCM_NUMBERP(obj)
             || (SCM_SYMBOLP(obj) && SCM_SYMBOL_INTERNED(obj))) {
-            return;
+            goto next;
         }
 
-        if (SCM_PAIRP(obj)) {
-            REGISTER(obj);
-            elt = SCM_CAR(obj);
-            if (SCM_PTRP(elt)) write_walk(SCM_CAR(obj), port, ctx);
-            obj = SCM_CDR(obj);
-            continue;
-        }
-        if (SCM_STRINGP(obj) && !SCM_STRING_NULL_P(obj)) {
-            REGISTER(obj);
-            return;
-        }
-        if (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) > 0) {
-            int i, len = SCM_VECTOR_SIZE(obj);
-            REGISTER(obj);
-            for (i=0; i<len; i++) {
-                elt = SCM_VECTOR_ELEMENT(obj, i);
-                if (SCM_PTRP(elt)) write_walk(elt, port, ctx);
-            }
-            return;
+        if (SCM_STRINGP(obj)) {
+            if (!SCM_STRING_NULL_P(obj)) REGISTER(obj);
+            goto next;
         }
         if (SCM_SYMBOLP(obj)) {
             SCM_ASSERT(!SCM_SYMBOL_INTERNED(obj));
             REGISTER(obj);
-            return;
+            goto next;
         }
-        else {
-            /* Now we have user-defined object.
-               Call the user's print routine. */
+
+        if (SCM_PAIRP(obj)) {
             REGISTER(obj);
-            write_general(obj, port, ctx);
-            return;
+            stack = Scm_Acons(SCM_TRUE, SCM_CDR(obj), stack);
+            obj = SCM_CAR(obj);
+            goto walk1;
         }
+        if (SCM_VECTORP(obj)) {
+            if (SCM_VECTOR_SIZE(obj) == 0) goto next;
+            REGISTER(obj);
+            stack = Scm_Acons(SCM_MAKE_INT(1), obj, stack);
+            obj = SCM_VECTOR_ELEMENT(obj, 0);
+            goto walk1;
+        }
+        /* Now we have user-defined object.
+           Call the user's print routine. */
+        REGISTER(obj);
+        write_general(obj, port, ctx);
+        goto next;
+    next:
+        while (SCM_PAIRP(stack)) {
+            ScmObj top = SCM_CAR(stack);
+            SCM_ASSERT(top);
+            if (SCM_INTP(SCM_CAR(top))) {
+                ScmObj v = SCM_CDR(top);
+                int i = SCM_INT_VALUE(SCM_CAR(top));
+                if (i == SCM_VECTOR_SIZE(v)) {
+                    stack = SCM_CDR(stack);
+                } else {
+                    obj = SCM_VECTOR_ELEMENT(v, i);
+                    SCM_SET_CAR(top, SCM_MAKE_INT(i+1));
+                    goto walk1;
+                }
+            } else {
+                /* A simple way would be:
+                 *   obj = SCM_CDR(top); stack = SCM_CDR(stack); goto walk1;
+                 * However it will cause consing for every cdr traversal.
+                 * We'd rather reuse the cell.
+                 */
+                ScmObj v = SCM_CDR(top);
+                if (SCM_PAIRP(v)) {
+                    ScmObj e = Scm_HashTableRef(ht, v, SCM_UNBOUND);
+                    if (!SCM_UNBOUNDP(e)) {
+                        Scm_HashTableSet(ht, v, SCM_TRUE, 0);
+                        stack = SCM_CDR(stack);
+                    } else {
+                        Scm_HashTableSet(ht, v, SCM_FALSE, 0);
+                        obj = SCM_CAR(v);
+                        SCM_SET_CDR(top, SCM_CDR(v)); /*  reuse stack top */
+                        goto walk1;
+                    }
+                } else {
+                    obj = v;
+                    stack = SCM_CDR(stack);
+                    goto walk1;
+                }
+            }
+        }
+        break;
     }
 }
 
 /* pass 2 */
+
+static void write_ss_nonptr(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    if (SCM_IMMEDIATEP(obj)) {
+        switch (SCM_ITAG(obj)) {
+            CASE_ITAG(SCM_FALSE,     "#f");
+            CASE_ITAG(SCM_TRUE,      "#t");
+            CASE_ITAG(SCM_NIL,       "()");
+            CASE_ITAG(SCM_EOF,       "#<eof>");
+            CASE_ITAG(SCM_UNDEFINED, "#<undef>");
+            CASE_ITAG(SCM_UNBOUND,   "#<unbound>");
+        default:
+            Scm_Panic("write: unknown itag object: %08x", SCM_WORD(obj));
+        }
+    }
+    else if (SCM_INTP(obj)) {
+        char buf[SPBUFSIZ];
+        snprintf(buf, SPBUFSIZ, "%ld", SCM_INT_VALUE(obj));
+        Scm_PutzUnsafe(buf, -1, port);
+    }
+    else if (SCM_FLONUMP(obj)) {
+        write_general(obj, port, ctx);
+        return;
+    }
+    else if (SCM_CHARP(obj)) {
+        ScmChar ch = SCM_CHAR_VALUE(obj);
+        if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
+            Scm_PutcUnsafe(ch, port);
+        } else {
+            Scm_PutzUnsafe("#\\", -1, port);
+            if (ch <= 0x20)       Scm_PutzUnsafe(char_names[ch], -1, port);
+            else if (ch == 0x7f)  Scm_PutzUnsafe("del", -1, port);
+            else                  Scm_PutcUnsafe(ch, port);
+        }
+    }
+    else Scm_Panic("write: got a bogus object: %08x", SCM_WORD(obj));
+    return;
+}
+
+/* A limit of stack depth to detect (potential) car-circular structure
+   when we're writing out without shared structure notation.  This is
+   an arbitrary limit, but we used to SEGVed in such case, so it's better
+   than that. */
+#define STACK_LIMIT  0x1000000
+
 static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmObj e;
     char numbuf[50];  /* enough to contain long number */
     ScmHashTable *ht = NULL;
+    ScmObj stack = SCM_NIL;
+    int stack_depth = 0;
 
-    if (ctx->flags & WRITE_LIMITED) {
-        if (port->src.ostr.length >= ctx->limit) return;
-    }
+#define PUSH(elt)                                       \
+    do {                                                \
+        stack = Scm_Cons(elt, stack);                   \
+        if (!ht && ++stack_depth > STACK_LIMIT) {       \
+            Scm_Error("write recursed too deeply; "     \
+                      "maybe a circular structure?");   \
+        }                                               \
+    } while (0)
+#define POP()                                   \
+    do {                                        \
+        stack = SCM_CDR(stack);                 \
+        if (ht) stack_depth--;                  \
+    } while (0)
+    
 
     if (SCM_PAIRP(port->data) && SCM_HASH_TABLE_P(SCM_CDR(port->data))) {
         ht = SCM_HASH_TABLE(SCM_CDR(port->data));
     }
 
-    if (!SCM_PTRP(obj)) {
-        if (SCM_IMMEDIATEP(obj)) {
-            switch (SCM_ITAG(obj)) {
-                CASE_ITAG(SCM_FALSE,     "#f");
-                CASE_ITAG(SCM_TRUE,      "#t");
-                CASE_ITAG(SCM_NIL,       "()");
-                CASE_ITAG(SCM_EOF,       "#<eof>");
-                CASE_ITAG(SCM_UNDEFINED, "#<undef>");
-                CASE_ITAG(SCM_UNBOUND,   "#<unbound>");
-            default:
-                Scm_Panic("write: unknown itag object: %08x", SCM_WORD(obj));
-            }
+    for (;;) {
+    write1:
+        if (ctx->flags & WRITE_LIMITED) {
+            if (port->src.ostr.length >= ctx->limit) return;
         }
-        else if (SCM_INTP(obj)) {
-            char buf[SPBUFSIZ];
-            snprintf(buf, SPBUFSIZ, "%ld", SCM_INT_VALUE(obj));
-            Scm_PutzUnsafe(buf, -1, port);
+
+        if (!SCM_PTRP(obj)) {
+            write_ss_nonptr(obj, port, ctx);
+            goto next;
         }
-        else if (SCM_FLONUMP(obj)) {
+        if (SCM_NUMBERP(obj)) {
+            /* number may be heap allocated, but we don't use srfi-38 notation. */
             write_general(obj, port, ctx);
-            return;
+            goto next;
         }
-        else if (SCM_CHARP(obj)) {
-            ScmChar ch = SCM_CHAR_VALUE(obj);
-            if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
-                Scm_PutcUnsafe(ch, port);
-            } else {
-                Scm_PutzUnsafe("#\\", -1, port);
-                if (ch <= 0x20)       Scm_PutzUnsafe(char_names[ch], -1, port);
-                else if (ch == 0x7f)  Scm_PutzUnsafe("del", -1, port);
-                else                  Scm_PutcUnsafe(ch, port);
-            }
-        }
-        else Scm_Panic("write: got a bogus object: %08x", SCM_WORD(obj));
-        return;
-    }
-    if (SCM_NUMBERP(obj)) {
-        /* number may be heap allocated, but we don't use srfi-38 notation. */
-        write_general(obj, port, ctx);
-        return;
-    }
-
-    if ((SCM_STRINGP(obj) && SCM_STRING_NULL_P(obj))
-        || (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) == 0)) {
-        /* special case where we don't put a reference tag. */
-        write_general(obj, port, ctx);
-        return;
-    }
-
-    if (ht) {
-        e = Scm_HashTableRef(ht, obj, SCM_FALSE);
-        if (!SCM_FALSEP(e)) {
-            if (SCM_INTP(e)) {
-                /* This object is already printed. */
-                snprintf(numbuf, 50, "#%ld#", SCM_INT_VALUE(e));
-                Scm_PutzUnsafe(numbuf, -1, port);
-                return;
-            } else {
-                /* This object will be seen again. Put a reference tag. */
-                int count = SCM_INT_VALUE(SCM_CAR(port->data));
-                snprintf(numbuf, 50, "#%d=", count);
-                Scm_HashTableSet(ht, obj, SCM_MAKE_INT(count), 0);
-                SCM_SET_CAR(port->data, SCM_MAKE_INT(count+1));
-                Scm_PutzUnsafe(numbuf, -1, port);
-            }
-        }
-    }
-
-    /* Writes aggregates */
-    if (SCM_PAIRP(obj)) {
-        /* special case for quote etc.
-           NB: we need to check if we've seen SCM_CDR(obj), otherwise we'll
-           get infinite recursion for the case like (cdr '#1='#1#). */
-        if (SCM_PAIRP(SCM_CDR(obj)) && SCM_NULLP(SCM_CDDR(obj))
-            && (!ht
-                || SCM_FALSEP(Scm_HashTableRef(ht, SCM_CDR(obj), SCM_FALSE)))){
-            const char *prefix = NULL;
-            if (SCM_CAR(obj) == SCM_SYM_QUOTE) {
-                prefix = "'";
-            } else if (SCM_CAR(obj) == SCM_SYM_QUASIQUOTE) {
-                prefix = "`";
-            } else if (SCM_CAR(obj) == SCM_SYM_UNQUOTE) {
-                prefix = ",";
-            } else if (SCM_CAR(obj) == SCM_SYM_UNQUOTE_SPLICING) {
-                prefix = ",@";
-            }
-            if (prefix) {
-                Scm_PutzUnsafe(prefix, -1, port);
-                write_ss_rec(SCM_CADR(obj), port, ctx);
-                return;
-            }
+        if ((SCM_STRINGP(obj) && SCM_STRING_NULL_P(obj))
+                 || (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) == 0)) {
+            /* special case where we don't put a reference tag. */
+            write_general(obj, port, ctx);
+            goto next;
         }
 
-        /* normal case */
-        Scm_PutcUnsafe('(', port);
-        for (;;) {
-
-            write_ss_rec(SCM_CAR(obj), port, ctx);
-
-            obj = SCM_CDR(obj);
-            if (SCM_NULLP(obj)) { Scm_PutcUnsafe(')', port); return; }
-            if (!SCM_PAIRP(obj)) {
-                Scm_PutzUnsafe(" . ", -1, port);
-                write_ss_rec(obj, port, ctx);
-                Scm_PutcUnsafe(')', port);
-                return;
-            }
-            if (ht) {
-                e = Scm_HashTableRef(ht, obj, SCM_FALSE); /* check for shared cdr */
-                if (!SCM_FALSEP(e)) {
-                    Scm_PutzUnsafe(" . ", -1, port);
-                    write_ss_rec(obj, port, ctx);
-                    Scm_PutcUnsafe(')', port);
-                    return;
+        if (ht) {
+            e = Scm_HashTableRef(ht, obj, SCM_FALSE);
+            if (!SCM_FALSEP(e)) {
+                if (SCM_INTP(e)) {
+                    /* This object is already printed. */
+                    snprintf(numbuf, 50, "#%ld#", SCM_INT_VALUE(e));
+                    Scm_PutzUnsafe(numbuf, -1, port);
+                    goto next;
+                } else {
+                    /* This object will be seen again. Put a reference tag. */
+                    int count = SCM_INT_VALUE(SCM_CAR(port->data));
+                    snprintf(numbuf, 50, "#%d=", count);
+                    Scm_HashTableSet(ht, obj, SCM_MAKE_INT(count), 0);
+                    SCM_SET_CAR(port->data, SCM_MAKE_INT(count+1));
+                    Scm_PutzUnsafe(numbuf, -1, port);
                 }
             }
-            Scm_PutcUnsafe(' ', port);
         }
-    } else if (SCM_VECTORP(obj)) {
-        int len, i;
-        ScmObj *elts;
 
-        Scm_PutzUnsafe("#(", -1, port);
-        len = SCM_VECTOR_SIZE(obj);
-        elts = SCM_VECTOR_ELEMENTS(obj);
-        for (i=0; i<len-1; i++) {
-            write_ss_rec(elts[i], port, ctx);
-            Scm_PutcUnsafe(' ', port);
+        /* Writes aggregates */
+        if (SCM_PAIRP(obj)) {
+            /* special case for quote etc.
+               NB: we need to check if we've seen SCM_CDR(obj), otherwise we'll
+               get infinite recursion for the case like (cdr '#1='#1#). */
+            if (SCM_PAIRP(SCM_CDR(obj)) && SCM_NULLP(SCM_CDDR(obj))
+                && (!ht
+                    || SCM_FALSEP(Scm_HashTableRef(ht, SCM_CDR(obj), SCM_FALSE)))){
+                const char *prefix = NULL;
+                if (SCM_CAR(obj) == SCM_SYM_QUOTE) {
+                    prefix = "'";
+                } else if (SCM_CAR(obj) == SCM_SYM_QUASIQUOTE) {
+                    prefix = "`";
+                } else if (SCM_CAR(obj) == SCM_SYM_UNQUOTE) {
+                    prefix = ",";
+                } else if (SCM_CAR(obj) == SCM_SYM_UNQUOTE_SPLICING) {
+                    prefix = ",@";
+                }
+                if (prefix) {
+                    Scm_PutzUnsafe(prefix, -1, port);
+                    obj = SCM_CADR(obj);
+                    goto write1;
+                }
+            }
+
+            /* normal case */
+            Scm_PutcUnsafe('(', port);
+            PUSH(Scm_Cons(SCM_TRUE, SCM_CDR(obj)));
+            obj = SCM_CAR(obj);
+            goto write1;
+        } else if (SCM_VECTORP(obj)) {
+            Scm_PutzUnsafe("#(", -1, port);
+            PUSH(Scm_Cons(SCM_MAKE_INT(1), obj));
+            obj = SCM_VECTOR_ELEMENT(obj, 0);
+            goto write1;
+        } else {
+            /* string or user-defined object */
+            write_general(obj, port, ctx);
+            goto next;
         }
-        write_ss_rec(elts[i], port, ctx);
-        Scm_PutcUnsafe(')', port);
-    } else {
-        /* string or user-defined object */
-        write_general(obj, port, ctx);
+
+    next:
+        while (SCM_PAIRP(stack)) {
+            ScmObj top = SCM_CAR(stack);
+            SCM_ASSERT(SCM_PAIRP(top));
+            if (SCM_INTP(SCM_CAR(top))) {
+                /* we're processing a vector */
+                ScmObj v = SCM_CDR(top);
+                int i = SCM_INT_VALUE(SCM_CAR(top));
+                int len = SCM_VECTOR_SIZE(v);
+
+                if (i == len) { /* we've done this vector */
+                    Scm_PutcUnsafe(')', port);
+                    POP();
+                } else {
+                    Scm_PutcUnsafe(' ', port);
+                    obj = SCM_VECTOR_ELEMENT(v, i);
+                    SCM_SET_CAR(top, SCM_MAKE_INT(i+1));
+                    goto write1;
+                }
+            } else {
+                /* we're processing a list */
+                ScmObj v = SCM_CDR(top);
+                if (SCM_NULLP(v)) { /* we've done with this list */
+                    Scm_PutcUnsafe(')', port);
+                    POP();
+                } else if (!SCM_PAIRP(v)) {
+                    Scm_PutzUnsafe(" . ", -1, port);
+                    obj = v;
+                    SCM_SET_CDR(top, SCM_NIL);
+                    goto write1;
+                } else if (ht && !SCM_FALSEP(e = Scm_HashTableRef(ht, v, SCM_FALSE))) {
+                    /* cdr part is shared */
+                    Scm_PutzUnsafe(" . ", -1, port);
+                    obj = v;
+                    SCM_SET_CDR(top, SCM_NIL);
+                    goto write1;
+                } else {
+                    Scm_PutcUnsafe(' ', port);
+                    obj = SCM_CAR(v);
+                    SCM_SET_CDR(top, SCM_CDR(v));
+                    goto write1;
+                }
+            }
+        }
+        break;
     }
+
+#undef PUSH
+#undef POP
 }
 
 /* Write/ss main driver
