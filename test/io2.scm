@@ -122,6 +122,22 @@
        (let1 x ""
          (write-to-string (cons x x) write/ss)))
 
+(test* "mixed" "#0=(a #1=#(#2=\"xyz\" #0# #1# #2#) . #0#)"
+       (let* ([a (list 'a)]
+              [b "xyz"]
+              [c (vector b a 'x b)])
+         (set-cdr! a (cons c a))
+         (vector-set! c 2 c)
+         (write-to-string a write/ss)))
+(test* "deeply nested" "#0=(((#1=(#0# #0# z) #1# y) . #2=(#1# #0# . x)) #2#)"
+       (let* ([a (list 'a 'a)]
+              [b (list a a 'z)]
+              [c (list b b 'y)]
+              [d (list* c b a 'x)])
+         (set-car! a d)
+         (set-car! (cdr a) (cdr d))
+         (write-to-string a write/ss)))
+
 (test* "more than 10 substructures"
        "(#0=(a) #1=(b) #2=(c) #3=(d) #4=(e) #5=(f) #6=(g) #7=(h) #8=(i) #9=(j) #10=(k) #10# #9# #8# #7# #6# #5# #4# #3# #2# #1# #0#)"
        (let ((a '(a)) (b '(b)) (c '(c)) (d '(d)) (e '(e))
