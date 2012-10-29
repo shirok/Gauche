@@ -1144,6 +1144,11 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
         }
         ref_register(ctx, ref, refnum);
         val = read_item(port, ctx);
+        if (ref == val) {
+            /* an edge case: #0=#0# */
+            Scm_ReadError(port, "indeterminate read reference: #%d=#%d#",
+                          refnum, refnum);
+        }
         SCM_READ_REFERENCE(ref)->value = val;
         return val;
     }
