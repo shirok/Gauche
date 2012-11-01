@@ -330,7 +330,7 @@ uvectorの内容を保持するメモリイメージから直接読み込まれ�
 @defunx get-f64 uv pos :optional endian
 @c EN
 Reads a number of a specific format from a uniform vector @var{uv},
-starting at a byte position @var{pos}.  An error is signalled
+starting at a byte position @var{pos}.  An error is signaled
 if the specified position makes reference outside of the uniform
 vector's content.  Returns the read number.
 @c JP
@@ -386,7 +386,7 @@ handling.
 @c EN
 Writes a number @var{val} into a uniform vector @var{uv} in
 a specific format, starting at a byte position @var{pos}.
-An error is signalled
+An error is signaled
 if the specified position makes reference outside of the uniform
 vector's content.
 @c JP
@@ -1927,7 +1927,7 @@ supported arguments.  The driver may recognize more keyword arguments.
 @c EN
 If a connection to the database is successfully established,
 a connection object (an instance of a subclass of @code{<dbi-connection>})
-is returned.  Otherwise, an error is signalled.
+is returned.  Otherwise, an error is signaled.
 @c JP
 データベースへの接続が成功したら、コネクションオブジェクト
 (@code{<dbi-connection>}のサブクラスのインスタンス)が返ります。さもな
@@ -3064,7 +3064,7 @@ Put a @var{value} with @var{key}.
 @c EN
 Get a value associated with @var{key}.  If no value exists for @var{key}
 and @var{default} is specified, it is returned.  If no value exists for
-@var{key} and @var{default} is not specified, an error is signalled.
+@var{key} and @var{default} is not specified, an error is signaled.
 @c JP
 キー@var{key}に関連付けられた値を返します。もし値が存在しなければ、@var{default}が
 与えられていればそれを返し、そうでなければエラーを報告します。
@@ -3930,7 +3930,7 @@ When called with no argument, this returns the pathname of the current
 working directory.  When called with a string argument @var{new-directory},
 this sets the current working directory of the process to it.
 If the process can't change directory to @var{new-directory}, an error is
-signalled.
+signaled.
 
 This function is in ChezScheme, MzScheme and some other Scheme
 implementations.
@@ -4002,7 +4002,7 @@ The argument passed to @var{filter} is a basename of the directory entry
 by default, but when @var{filter-add-path?} is true, @var{path} is
 appended to the entry.
 
-If @var{path} is not a directory, an error is signalled.
+If @var{path} is not a directory, an error is signaled.
 @c JP
 ディレクトリ@var{path}中のエントリのリストを返します。
 リストは文字列順にソートされます。
@@ -4413,7 +4413,7 @@ check if @var{path} exists and/or readable.
 Expands @var{path} like @code{expand-path},
 then resolve symbolic links for every components
 of the path.  If @var{path} does not exist, or contains dangling link,
-or contains unreadable directory, an error is signalled.
+or contains unreadable directory, an error is signaled.
 @c JP
 @var{path}を@code{expand-path}と同様に展開し、
 続いて@var{path}の各コンポーネントに対してそれがシンボリックリンクであればリンク先の
@@ -5054,7 +5054,7 @@ They first open the named file, then call @code{port->string},
 @code{port->list}, @code{port->string-list} and @code{port->sexp-list}
 on the opened file, respectively.  (@xref{Input utility functions}).
 The file is closed if all the content is read or an error is
-signalled during reading.
+signaled during reading.
 @c JP
 ファイル @var{filename} から読み込むための便利手続き。
 これらの手続きは、まず、指定された名前のファイルをオープンし、その
@@ -5068,7 +5068,7 @@ signalled during reading.
 Those procedures take the same keyword arguments as
 @code{call-with-input-file}.
 When the named file doesn't exist, the behavior depends on
-@var{:if-does-not-exist} keyword argument---an error is signalled
+@var{:if-does-not-exist} keyword argument---an error is signaled
 if it is @code{:error}, and @code{#f} is returned if the argument is
 @code{#f}.
 @c JP
@@ -6640,7 +6640,7 @@ the header field body, and the type of violation explained below.
 The procedure may correct the problem and return two values,
 the corrected header field name and body.  The returned values
 are checked again.  If the procedure returns the
-header field name and body unchanged, an error is signalled
+header field name and body unchanged, an error is signaled
 in the same way as @code{:error} is specified.
 @end table
 
@@ -7903,7 +7903,7 @@ as specifying @code{#f} to @var{redirect-handler}.
 @c EN
 If a true value is given, use secure connection (https).
 If a secure connection is not available on the running platform,
-an error is signalled.  See the ``Secure connection'' section below.
+an error is signaled.  See the ``Secure connection'' section below.
 @c JP
 真の値が与えられた場合、セキュアな接続(https)を使います。
 セキュアな接続が実行中のプラットフォームで利用できない場合はエラーが投げられます。
@@ -15299,7 +15299,7 @@ If @var{port} is omitted, the current input port is used.
 @c EN
 @var{char-list/number} is either a char-list or a number.
 If it is a number; it reads that many characters and returns @code{#f}.
-If the input is not long enough, an error is signalled.
+If the input is not long enough, an error is signaled.
 If @var{char-list/number} is a char-list, it reads from @var{port}
 until it sees a character that belongs to the char-list.
 Then the character is returned.
@@ -15344,7 +15344,7 @@ The collected characters are returned as a string.
 The break character remains in the @var{port}.
 
 If the function encounters EOF and @code{*eof*} is not included in
-@var{break-char-list}, an error is signalled with @var{comment} is
+@var{break-char-list}, an error is signaled with @var{comment} is
 included in the message.
 @c JP
 @var{prefix-char-list} に含まれる文字はいくつでもスキップします。
@@ -17826,7 +17826,7 @@ between the objects given to a single @code{enqueue!} call.
 Besides, if the value of its @code{max-length} slot
 is positive, and adding @var{obj}s makes the number of
 elements in @var{queue} exceeds @code{max-length},
-an error is signalled and @var{queue} won't be modified.
+an error is signaled and @var{queue} won't be modified.
 (If @code{max-length} is zero, this procedure always fail.
 Use @code{enqueue/wait!} below.)
 @c JP
@@ -17891,7 +17891,7 @@ Both function works the same, but @code{queue-pop!} may be used to
 emphasize it works with @code{queue-push!}.
 
 If @var{queue} is empty, @var{fallback} is returned if given,
-otherwise an error is signalled.
+otherwise an error is signaled.
 
 If @var{queue} is an mtqueue and its @code{max-length} is zero,
 the queue is always empty.  Use @code{dequeue/wait!} to use
@@ -17928,7 +17928,7 @@ See also @code{queue->list} below.
 Peek the head or the tail of the queue and returns the object, respectively.
 @var{util.queue - Queue} is not modified.
 If @var{queue} is empty, @var{fallback} is returned if it is given,
-otherwise an error is signalled.
+otherwise an error is signaled.
 @c JP
 キュー@var{queue}の先頭もしくは末尾の要素を返します。キューそのものは変更されません。
 キューが空の場合、@var{fallback}が与えられていればその値を返し、
@@ -18754,7 +18754,7 @@ returns @code{#f}.
 @var{Row} is a row from the relation @var{r}.  Returns value of
 the @var{column} in @var{row}.  If @var{column} is not a valid
 column name, @var{default} is returned if it is given, otherwise
-an error is signalled.
+an error is signaled.
 @c JP
 @var{row}はリレーション@var{r}の行です。@var{row}の@var{column}の値を
 返します。@var{column}が不正なカラム名である場合、@var{default}が与え
@@ -18919,7 +18919,7 @@ a value to any index in the supported range.
 @end example
 
 If you try to access an element that hasn't been set,
-an error is signalled by default.  You can give a
+an error is signaled by default.  You can give a
 fallback value to @code{sparse-vector-ref} to suppress
 the error.
 
@@ -19038,7 +19038,7 @@ It is guaranteed that this is at least 32.
 @end defun
 
 In the following entries, the argument @var{sv} denotes
-an instance of sparse vector; an error is signalled if other
+an instance of sparse vector; an error is signaled if other
 object is passed.
 
 @defun sparse-vector-copy sv
@@ -19049,11 +19049,11 @@ Returns a copy of a sparse vector @var{sv}.
 Returns @var{k}-th element of a sparse vector @var{sv}, where
 @var{k} must be a nonnegative exact integer.  If @var{k} is
 equal to or greater than the allowed index range, an error
-is signalled.
+is signaled.
 
 If @var{k} is within the allowed range but the sparse vector
 doesn't have a value for @var{k}, @var{default} is returned
-if it is provided, otherwise an error is signalled.
+if it is provided, otherwise an error is signaled.
 @end defun
 
 @defun sparse-vector-set! sv k value
@@ -19062,7 +19062,7 @@ Sets @var{value} for @var{k}-th element of a sparse vector @var{sv}.
 allowed index.
 
 If @var{sv} is a numeric sparse vector, @var{value} must also be
-within the allowed range, or an error is signalled.
+within the allowed range, or an error is signaled.
 @end defun
 
 @defun sparse-vector-num-entries sv
@@ -19092,7 +19092,7 @@ for numeric sparse vectors.
 @end example
 
 If the result of addition exceeds the allowed value range of @var{sv},
-an error is signalled.  In future we'll allow an option to clamp
+an error is signaled.  In future we'll allow an option to clamp
 the result value within the range.
 @end defun
 
@@ -19173,7 +19173,7 @@ Returns the number of entries in a sparse table @var{st}.
 @defun sparse-table-ref st key :optional fallback
 Retrieves a value associated to the @var{key} in @var{st}.
 If no entry with @var{key} exists, @var{fallback} is returned
-when it is provided, or an error is signalled otherwise.
+when it is provided, or an error is signaled otherwise.
 @end defun
 
 @defun sparse-table-set! st key value
@@ -19503,7 +19503,7 @@ to @code{(format fmt arg @dots{})}.
 Converts a stream to a list or a string.  All of @var{stream}'s
 elements are @code{force}d; if @var{stream} is infinite, these
 procedures won't terminate.  For @code{stream->string},
-all @var{stream} must be characters, or an error is signalled.
+all @var{stream} must be characters, or an error is signaled.
 @end defun
 
 @defun list->stream list
@@ -20038,7 +20038,7 @@ or returns @code{#f} otherwise.
 Returns the value associated with @var{key} in @var{trie}, if
 such an entry exists.  When there's no entry for @var{key},
 if @var{fallback} is given, it is returned; otherwise,
-an error is signalled.
+an error is signaled.
 @c JP
 @var{trie}中の@var{key}をもつエントリがあれば、それにむすびついている
 値を返します。そのようなエントリがない場合、@var{fallback}が与えられて
@@ -20227,7 +20227,7 @@ object, as far as it can be compared by the procedure @var{eqproc},
 which is @var{eqv?} by default (@xref{Equivalence}).
 Returns a list of @code{<node>}s sorted topologically.
 
-If the graph contains circular reference, an error is signalled.
+If the graph contains circular reference, an error is signaled.
 @c JP
 @var{Graph}は有向非循環グラフ(DAG)を表現するリストです。
 リストの各要素は次の形をしています。
@@ -20582,7 +20582,7 @@ by @code{write-tree}, then returns zero.
 @c COMMON
 
 @c EN
-If an error is signalled in @var{proc}, it is caught and an HTML
+If an error is signaled in @var{proc}, it is caught and an HTML
 page reporting the error is generated.  You can customize the
 error page by providing a procedure to the @var{on-error} keyword argument.
 The procedure takes an @code{<condition>} object (@xref{Conditions}),

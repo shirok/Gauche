@@ -1785,7 +1785,7 @@ slot options of @var{slot-def}, respectively.
 @c EN
 Returns the value of slot option @var{option} of @var{slot-def}.
 If there's no such an option, @var{default} is returned
-if given, or an error is signalled otherwise.
+if given, or an error is signaled otherwise.
 @c JP
 @var{slot-def} のスロットオプション @var{option} の値を返します。
 そのようなオプションがない場合には、@var{default} が与えられていれば
@@ -2466,7 +2466,7 @@ is a pair, removes its car and returns the removed item.
 
 When the value of @var{slot} is not a pair, or the @var{slot} is unbound,
 @var{fallback} is returned if it is provided, otherwise an error is
-signalled.
+signaled.
 @c JP
 @code{slot-push!}と逆の操作です。@var{obj}の@var{slot}の値が
 ペアの場合、そのcarを@var{slot}の値から取り除き、取り除かれた値を返します。
@@ -3075,7 +3075,7 @@ Passing @var{args} @dots{} explicitly invokes the next method
 with the passed arguments.
 
 If @code{next-method} is called in the least specific method,
-i.e. there's no "next method", an error is signalled.
+i.e. there's no "next method", an error is signaled.
 @c JP
 この変数は、メソッド本体内部で、ソートされたメソッドリストで次のメソッド
 をカプセル化した特別なオブジェクトに束縛されます。

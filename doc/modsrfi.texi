@@ -92,7 +92,7 @@ The last clause may begin with a symbol @code{else} instead of
 @var{feature-requirement}.  If no condition is fulfilled before
 it, then the macro expands to the @var{command-or-definition}s
 of the else clause.  If there's no else clause and no condition
-is fulfilled, an error is signalled.
+is fulfilled, an error is signaled.
 
 Currently, Gauche recognizes srfi names (e.g. @code{srfi-1})
 that it supports (@xref{Standard conformance}, for the list of
@@ -1270,7 +1270,7 @@ lambda parameters.
 
 @c EN
 If the number of values returned by @var{expr} doesn't match
-what @var{vars} expects, an error is signalled.
+what @var{vars} expects, an error is signaled.
 @c JP
 @var{expr} によって返された値の数と @var{vars} が期待する数とが一致しない
 場合にはエラーになります。
@@ -1557,7 +1557,7 @@ that the @var{end} argument is optional.
 @var{target} from the position @var{tstart}.
 Optional @var{start} and @var{end} arguments limits the range of @var{s}.
 If the copied string run over the end of @var{target}, an error is
-signalled.
+signaled.
 @c JP
 [SRFI-13] 文字列@var{s}を、文字列@var{target}の@var{tstart}番目以降へコピーします。
 オプションの引数@var{start}と@var{end}は、@var{s}の範囲を制限します。
@@ -3214,7 +3214,7 @@ character, such as @code{~@@a}.
 @c with the matched components are filled.
 
 @c If the input string does not match @var{template-string},
-@c an error is signalled.  (The SRFI-19 spec doesn't explicitly
+@c an error is signaled.  (The SRFI-19 spec doesn't explicitly
 @c state what happens if @code{string->date} doesn't accept the
 @c input, which actually reduces usability of @code{string->date}
 
@@ -4218,7 +4218,7 @@ the results, respectively.
 [SRFI-42]
 @var{body} must yield a numeric value.  Returns maximum and minimum value
 of the results, respectively.  @var{body} must be evaluated at least once,
-or an error is signalled.
+or an error is signaled.
 @end defmac
 
 @defmac any?-ec qualifier @dots{} test

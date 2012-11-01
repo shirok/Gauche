@@ -209,7 +209,7 @@ the @code{main} procedure is looked for, instead of the @code{user} module.
 See @ref{Writing Scheme scripts} for the details of executing scripts.
 
 If the named module doesn't exist after loading the script,
-an error is signalled.
+an error is signaled.
 
 This is useful to write a Scheme module that can also be executed
 as a script.

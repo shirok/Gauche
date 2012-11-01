@@ -2533,7 +2533,7 @@ The corresponding setters are also defined.
 [R5RS]
 @c EN
 Returns the length of a proper list @var{list}.
-If @var{list} is a dotted list, an error is signalled.
+If @var{list} is a dotted list, an error is signaled.
 If @var{list} is a circular list, this function diverges.
 @c JP
 正規のリスト@var{list}の長さを返します。
@@ -2585,7 +2585,7 @@ on @var{x}.  The returned value shares a common tail with @var{x}.
 On the other hand, take always allocates a new list
 for result if the argument is a list of non-zero length.
 
-An error is signalled if @var{i} is past the end of list @var{x}.
+An error is signaled if @var{i} is past the end of list @var{x}.
 See @code{take*} and @code{drop*} below for more tolerant version.
 
 For generic subsequence extraction from any sequence, see @code{subseq}
@@ -2680,7 +2680,7 @@ tail with @var{lis}.
 @code{drop-right} always allocates a new list
 if the argument is a list of non-zero length.
 
-An error is signalled if @var{k} is larger than the length of @var{lis}.
+An error is signaled if @var{k} is larger than the length of @var{lis}.
 See @code{take-right*} and @code{drop-right*} below, for more tolerant
 version.
 @c JP
@@ -2744,7 +2744,7 @@ Returns @var{k}-th cdr of @var{list}.
 If @var{k} is negative or larger than the length of @var{list},
 the behavior depends on whether the optional @var{fallback} argument
 is given or not.  If @var{fallback} is given, it is returned.
-Otherwise, an error is signalled.
+Otherwise, an error is signaled.
 @c JP
 @var{list}の@var{k}番目のcdrを返します。@var{list}は
 正規のリストでもドットリストでも循環リストでも構いません。
@@ -3730,7 +3730,7 @@ Returns true if and only if @var{obj} is a symbol.
 @defun symbol-interned? symbol
 @c EN
 Returns @code{#t} if @var{symbol} is an interned symbol,
-@code{#f} if it is an uninterned symbol.   An error is signalled
+@code{#f} if it is an uninterned symbol.   An error is signaled
 if @var{symbol} is not a symbol.
 @c JP
 シンボル@var{symbol}がインターンされていらば@code{#t}を、
@@ -4057,7 +4057,7 @@ Otherwise, the reader reads subsequent characters until it sees
 a non word-constituent character.  If only one character is read,
 it is the character.  Otherwise, the reader matches the read characters
 with predefined character names.  If it doesn't match any, an error
-is signalled.
+is signaled.
 
 The following character names are recognized.
 These character names are case insensitive.
@@ -4090,7 +4090,7 @@ If Gauche is compiled with the internal encoding other than UTF-8,
 the reader uses @code{gauche.charconv} module to convert Unicode
 to the internal character code.  Note that the specified character
 may not be defined in the internal encoding; in which case, either
-a substitution character is used, or an error is signalled.
+a substitution character is used, or an error is signaled.
 @end table
 @c JP
 リテラルの文字オブジェクトを表現します。
@@ -5295,7 +5295,7 @@ For incomplete string, its length and its size always match.
 Returns @var{k}-th character of a complete string @var{cstring}.
 It is an error to pass an incomplete string.
 
-By default, an error is signalled if @code{k} is out of range
+By default, an error is signaled if @code{k} is out of range
 (negative, or greater than or equal to the length of @var{cstring}).
 However, if an optional argument @var{fallback} is given,
 it is returned in such case.  This is Gauche's extension.
@@ -5465,7 +5465,7 @@ as specified in SRFI-13.
 
 @c EN
 For @var{list->string}, every elements of @var{list} must be
-a character, or an error is signalled.  If you want to build
+a character, or an error is signaled.  If you want to build
 a string out of a mixed list of strings and characters, you
 may want to use @code{tree->string} in @ref{Lazy text construction}.
 @c JP
@@ -7146,15 +7146,15 @@ The @code{parse-date} example above becomes simpler if you use
 @subsection Inspecting and assembling regular expressions
 @c NODE 正規表現の調査と合成
 
-When Gauche reads regexp from string, first it parses
-string representation and construct an abstract
-syntax tree (AST), perform some optimizations on it,
-then compiles into an instruction sequence to be
+When Gauche reads regexp from a string, first it parses
+the string representation and construct an abstract
+syntax tree (AST), performs some optimizations on it,
+then compiles it into an instruction sequence to be
 executed by the regexp engine.
 
 The following procedures expose this process to
 user programs.  It may be easier for programs to
-manipulate AST than string representation.
+manipulate an AST than a string representation.
 
 @defun regexp-parse string :key case-fold
 Parses a string specification of regexp in @var{string}
@@ -7176,9 +7176,11 @@ to make it cleverer in future.
 @end defun
 
 @defun regexp-compile ast
-Takes an regexp AST and returns a regexp object.
+Takes a regexp AST and returns a regexp object.
 Currently the outermost form of @var{ast} must be
-a zero-th capturing group.  It is always added
+the zero-th capturing group.  (That is, @var{ast}
+should have the form @code{(0 #f @var{x} @dots{})}.)
+The outer grouping is always added
 by @code{regexp-parse} to capture the entire regexp.
 
 Note: The function does some basic check to see the given AST
@@ -7196,8 +7198,8 @@ Returns AST used for the regexp object @var{regexp}.
 @defun regexp-unparse ast :key (on-error :error)
 From the regexp's @var{ast}, reconstruct the string representation
 of the regexp.  The keyword argument @var{on-error} can be
-a keyword @code{:error} (default) or @code{#f}.  If its the former,
-an error is signalled when @var{ast} isn't valid regexp AST.
+a keyword @code{:error} (default) or @code{#f}.  If it's the former,
+an error is signaled when @var{ast} isn't valid regexp AST.
 If it's the latter, @code{regexp-unparse} just returns @code{#f}.
 @end defun
 
@@ -7689,7 +7691,7 @@ and its cdr is used as a value.
 @c EN
 Search @var{key} from a hash table @var{ht}, and returns its value
 if found.  If the key is not found in the table and @var{default} is
-given, it is returned.  Otherwise an error is signalled.
+given, it is returned.  Otherwise an error is signaled.
 @c JP
 キー@var{key}をハッシュテーブル@var{ht}から探します。見つかればキーに対応する
 値を返します。キーが見つからなかった場合、@var{default}が与えられていればそれを
@@ -9451,7 +9453,7 @@ The continuation captured in 2 is invoked.
 @c EN
 It is no problem to invoke the continuation, but if the control
 is about to return to the Scheme routine to the C runtime (that is,
-to execute step 3 again), an error is signalled as follows.
+to execute step 3 again), an error is signaled as follows.
 @c JP
 継続を起動すること自体には問題は無いのですが、
 制御がSchemeからCへと再び戻ろうとすると (つまり、step 3が再び実行されようとすると)
@@ -9523,7 +9525,7 @@ then @var{after}, then returns whatever value(s) @var{thunk} returned.
 
 If a control flow goes out from @var{thunk} by invoking a continuation
 captured outside of the dynamic scope of @code{dynamic-wind}
-(for example, an error is signalled in @var{thunk}),
+(for example, an error is signaled in @var{thunk}),
 @var{after} is called.
 
 If a control flow goes into @var{thunk} by invoking a continuation
@@ -10575,12 +10577,12 @@ SRFI-35にならって@emph{コンディション(condition)}を使います。
 
 @menu
 * Exception handling overview::
-* Signalling exceptions::
+* Signaling exceptions::
 * Handling exceptions::
 * Conditions::
 @end menu
 
-@node Exception handling overview, Signalling exceptions, Exceptions, Exceptions
+@node Exception handling overview, Signaling exceptions, Exceptions, Exceptions
 @subsection Exception handling overview
 @c NODE 例外処理の概要
 
@@ -10734,7 +10736,7 @@ other lower-level exception handling constructs.
 
 
 @c EN
-@subsubheading Signalling exceptions from your code
+@subsubheading Signaling exceptions from your code
 @c JP
 @subsubheading 自分のコードから例外を通知する
 @c COMMON
@@ -10827,7 +10829,7 @@ Scheme's @code{raise} may return to its caller.   If you don't
 want @code{raise} to return, a rule of thumb is always to pass
 one of error conditions to it; then Gauche guarantees @code{raise}
 wont return.   See the description of @code{raise} in
-@ref{Signalling exceptions} for more details.
+@ref{Signaling exceptions} for more details.
 @c JP
 @emph{注意事項:} いくつかの言語での例外を投げる機構、たとえば、
 C++やJavaの @code{throw} はその継続を破棄します。これとは違い
@@ -10835,7 +10837,7 @@ Schemeの @code{raise} はその呼び出し元へ戻ることができます。
 @code{raise} で元へもどらないで欲しいのなら、簡便な方法としては、
 常にエラーコンディションの一つをわたるようにするというのがあります。
 そうすると Gauche では @code{raise} は戻らないことを保証します。
-@code{raise}の詳細については、@ref{Signalling exceptions}を参照してください。
+@code{raise}の詳細については、@ref{Signaling exceptions}を参照してください。
 @c COMMON
 
 
@@ -10939,12 +10941,12 @@ Gauche のオブジェクトシステムでコンディション型がどのよ�
 @code{define-condition-type}マクロの解説を参照してください。
 @c COMMON
 
-@node Signalling exceptions, Handling exceptions, Exception handling overview, Exceptions
-@subsection Signalling exceptions
+@node Signaling exceptions, Handling exceptions, Exception handling overview, Exceptions
+@subsection Signaling exceptions
 @c NODE 例外の通知
 
 @c EN
-@subsubheading Signalling errors
+@subsubheading Signaling errors
 @c JP
 @subsubheading エラーの通知
 @c COMMON
@@ -11041,7 +11043,7 @@ The second form can be used to raise an error other than an
 @end defun
 
 @c EN
-@subsubheading Signalling generic conditions
+@subsubheading Signaling generic conditions
 @c JP
 @subsubheading 一般的な条件の通知
 @c COMMON
@@ -11049,7 +11051,7 @@ The second form can be used to raise an error other than an
 @defun raise condition
 @c EN
 [SRFI-18]
-This is the base mechanism of signalling exceptions.
+This is the base mechanism of signaling exceptions.
 
 The procedure invokes the current exception handler.
 The argument @var{condition} represents the nature of the exception,
@@ -11093,7 +11095,7 @@ Gaucheの組み込み手続きやライブラリ手続きは常に、@code{<cond
 @end defun
 
 
-@node Handling exceptions, Conditions, Signalling exceptions, Exceptions
+@node Handling exceptions, Conditions, Signaling exceptions, Exceptions
 @subsection Handling exceptions
 @c NODE 例外の処理
 
@@ -11311,7 +11313,7 @@ systems have similar macros in different names, such as
 @c EN
 Makes @var{handler} the active error handler and executes @var{thunk}.
 If @var{thunk} returns normally, the result(s) will be returned.
-If an error is signalled during execution of @var{thunk},
+If an error is signaled during execution of @var{thunk},
 @var{handler} is called with one argument, an exception object
 representing the error, with the continuation of @code{with-error-handler}.
 That is, @code{with-error-handler} returns whatever value(s) @var{handler}
@@ -12947,7 +12949,7 @@ existing file remains.
 @c COMMON
 @item :error
 @c EN
-An error is signalled.
+An error is signaled.
 @c JP
 エラーが報告されます。
 @c COMMON
@@ -12968,7 +12970,7 @@ This keyword argument specifies the action when @var{filename} does not exist.
 @table @code
 @item :error
 @c EN
-An error is signalled.  This is the default behavior of
+An error is signaled.  This is the default behavior of
 @code{open-input-file}.
 @c JP
 エラーを報告します。これが@code{open-input-file}の既定の動作です。
@@ -13206,7 +13208,7 @@ Gaucheでは、@code{open-input-file}と@code{open-output-file}は
 @c EN
 Opens a file specified by @var{string} for input/output,
 and call @var{proc} with one argument, the file port.  When @var{proc}
-returns, or an error is signalled from @var{proc} that is not captured
+returns, or an error is signaled from @var{proc} that is not captured
 within @var{proc}, the file is closed.
 @c JP
 @var{string}で示されるファイルを入力または出力用にオープンし、
@@ -13243,7 +13245,7 @@ Returns the value(s) @code{proc} returned.
 Opens a file specified by @var{string} for input or output
 and makes the opened port as the current input or output port,
 then calls @var{thunk}.  The file is closed when @var{thunk}
-returns or an error is signalled from @var{thunk} that is not
+returns or an error is signaled from @var{thunk} that is not
 captured within @var{thunk}.
 
 Returns the value(s) @code{thunk} returns.
@@ -13289,7 +13291,7 @@ Gauche's implementation slightly misses this criteria; the mere fact
 that an uncaptured error is thrown in @var{proc} does not prove
 the port will never be used.  Nevertheless, it is very difficult
 to think the situation that you can do meaningful operation on
-the port after such an error is signalled; you'd have no idea
+the port after such an error is signaled; you'd have no idea
 what kind of state the port is in.  In practical programs, you
 should capture error explicitly inside @var{proc} if you still want
 to do some meaningful operation with the port.
@@ -14729,7 +14731,7 @@ Or you can explicitly specify the search path by passing
 a list of directory names to the keyword argument @var{paths}.
 
 On success, @code{load} returns @code{#t}.
-If the specified file is not found, an error is signalled unless
+If the specified file is not found, an error is signaled unless
 the keyword argument @var{error-if-not-found} is @code{#f}, in
 which case @code{load} returns @code{#f}.
 
@@ -15235,7 +15237,7 @@ which enables autoloading macros.
 @c COMMON
 
 @c EN
-@var{file/module} must define @var{symbol} in it, or an error is signalled
+@var{file/module} must define @var{symbol} in it, or an error is signaled
 when @var{file/module} is autoloaded.
 @c JP
 @var{symbol}は@var{file/module}の中で定義されなければなりません。
@@ -16200,7 +16202,7 @@ See also @ref{Directory utilities} for high-level API.
 @c EN
 @var{path} must be a string that denotes valid pathname of an existing
 directory.  This function returns a list of strings of the directory
-entries.  The returned list is not sorted.  An error is signalled
+entries.  The returned list is not sorted.  An error is signaled
 if @var{path} doesn't exists or is not a directory.
 @c JP
 @var{path}は存在するディレクトリを示すパス名でなければなりません。
@@ -16640,7 +16642,7 @@ Creates a hard link named @var{new} to the existing file @var{existing}.
 Removes @var{pathname}.  It can't be a directory.
 Returns @code{#t} if it is successfully removed, or
 @var{#f} if @var{pathname} doesn't exist.
-An error is signalled otherwise.
+An error is signaled otherwise.
 @c JP
 @var{pathname}で示されるファイルを消去します。
 @var{pathname}はディレクトリであってはなりません。
@@ -16664,7 +16666,7 @@ this function is unbound.
 @c EN
 If a file specified by @var{path} is a symbolic link, its content is
 returned.  If @var{path} doesn't exist or is not a symbolic link, an
-error is signalled.
+error is signaled.
 On systems that don't support symbolic links,
 this function is unbound.
 @c JP
@@ -16773,7 +16775,7 @@ More than one keyword argument can be specified.
     Otherwise, characters following `@code{~}' until either `@code{/}' or
     the end of @var{pathname} are taken as a user name, and the user's
     home directory is replaced in place of it.  If there's no such
-    user, an error is signalled.
+    user, an error is signaled.
 @c JP
     上記以外の場合、`@code{~}'以降、`@code{/}'か@var{pathname}の終端までの文字列
     がユーザ名とみなされ、そのユーザのホームディレクトリに置換されます。もし該当するユーザが
@@ -16852,7 +16854,7 @@ may return @code{"/"} for the argument @code{"/"}, and
 that does not include ``@code{.}'', ``@code{..}'' or symbolic links.
 If @var{pathname} does not exist, it includes a dangling symbolic
 link, or the caller doesn't have enough permission to access to
-the path, an error is signalled.
+the path, an error is signaled.
 @c JP
 @code{sys-realpath}は``@code{.}'', ``@code{..}''およびシンボリックリン
 クを含まない@var{pathname}の絶対パスを返します。@var{pathname}自体が存在しなかったり、
@@ -18555,7 +18557,7 @@ Returns the domain name.  If the system doesn't have getdomainname(),
 @c EN
 [POSIX] Returns the current working directory by a string.
 If the current working directory couldn't be obtained from the system,
-an error is signalled.   See also @code{sys-chdir}
+an error is signaled.   See also @code{sys-chdir}
  (@xref{Other file operations}), @code{current-directory}
 (@xref{Directory utilities}).
 @c JP
@@ -19464,7 +19466,7 @@ id is equal to the absolute value of @var{pid}.
 @c EN
 If there's no child process to wait, or a specific @var{pid} is
 given but it's not a child process of the current process,
-an error (@code{<system-error>}, @code{ECHILD}) is signalled.
+an error (@code{<system-error>}, @code{ECHILD}) is signaled.
 @c JP
 待つべき子プロセスが存在しない場合や、@var{pid}に具体的なプロセスIDが
 与えられたがそれが現在のプロセスの子プロセスで内場合は
@@ -19603,7 +19605,7 @@ They are only available on Windows native platforms.
 
 @defun sys-win-process-pid handle
 [Windows] Returns an integer PID of the process represented by
-a Windows process handle @var{handle}.  An error is signalled
+a Windows process handle @var{handle}.  An error is signaled
 if @var{handle} is not a valid Windows process handle.
 
 Note that the API to get a pid from a process handle is only

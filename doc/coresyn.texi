@@ -1093,7 +1093,7 @@ In the first form, the binding of @var{symbol} is modified
 so that next reference of @var{symbol} will return
 the result of @var{expression}.
 If @var{symbol} is not locally bound, the global variable named @var{symbol}
-must already exist, or an error is signalled.
+must already exist, or an error is signaled.
 @c JP
 まず@var{expression}が評価されます。最初の形式では、@var{symbol}への束縛が
 @var{expression}の結果を指すように変更されます。
@@ -2610,7 +2610,7 @@ Like @code{define}, but that the compiler assumes
 the value of @var{variable} won't change and generates
 optimized code.
 
-An error is signalled when you use @code{set!} to change the value
+An error is signaled when you use @code{set!} to change the value
 of @var{variable}.   It is allowed to redefine @var{variable},
 but a warning is printed.
 @c JP
@@ -2820,7 +2820,7 @@ at run time, the binding is again looked for from the marked module
 (@emph{not} the current module at the run time) and if found,
 the variable reference code is replaced for the the code to
 access the binding.  If the variable reference is not found even
-at run time, an 'undefined variable' error is signalled.
+at run time, an 'undefined variable' error is signaled.
 @c JP
 コンパイル中のどの時点でも、「カレントモジュール」が一意に決定され、
 グローバル変数の束縛はそのカレントモジュールを起点に探されます。
@@ -3022,7 +3022,7 @@ not affected.
 @c EN
 Evaluates @var{body} sequentially in the module
 named @var{name}.  Returns the last result(s).
-If no module named @var{name}, an error is signalled.
+If no module named @var{name}, an error is signaled.
 @c JP
 名前@var{name}を持つモジュールをカレントモジュールとした状態で@var{body} @dots{}
 を順に評価し、最後の結果を返します。該当するモジュールが存在しなければエラーとなります。
@@ -3381,7 +3381,7 @@ precedence list, A has to appear before B in the resulting module
 precedence list; and (2) if a module A appears before module B
 in @code{extend} form, A has to appear before B in the resulting
 module precedence list.   If no precedence list can be constructed
-with these constraints, an error is signalled.
+with these constraints, an error is signaled.
 @c JP
 各モジュールは@emph{module precedence list}というモジュールのリストを
 持っています。そこにリストされた順に束縛が探されます。
@@ -3473,7 +3473,7 @@ If the named module doesn't exist, @code{#f} is returned.
 Creates and returns a module that has symbol @var{name}.
 If the named module already exists, the behavior is specified by
 @var{if-exists} keyword argument.  If it is @code{:error} (default),
-an error is signalled.  If it is @code{#f}, @code{#f} is returned.
+an error is signaled.  If it is @code{#f}, @code{#f} is returned.
 @c JP
 シンボルの名前@var{name}を持つモジュールを作成して返します。
 その名前を持つモジュールが既に存在していた場合、その動作は
@@ -3628,7 +3628,7 @@ Returns a value globally bound to the @var{symbol} visible
 from @var{module}.  @var{Module} must be a module object or
 a symbol name of an existing module.  If there's no visible
 global binding from @var{module} for @var{symbol},
-an error is signalled, unless the @var{default} argument is
+an error is signaled, unless the @var{default} argument is
 provided, in which case it is returned instead.
 @c JP
 モジュール@var{module}から可視の、シンボル@var{symbol}のグローバルな

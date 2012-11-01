@@ -136,8 +136,8 @@ These procedures can be used to expand globally defined macros.
 @defmacx syntax-errorf fmt arg @dots{}
 @c EN
 Signal an error.  They are same as
-@code{error} and @code{errorf} (@xref{Signalling exceptions}),
-except that the error is signalled at macro-expansion time
+@code{error} and @code{errorf} (@xref{Signaling exceptions}),
+except that the error is signaled at macro-expansion time
 (i.e. compile time) rather than run time.
 
 They are useful to tell the user the wrong usage of macro in
@@ -146,7 +146,7 @@ expander.   Because of the purpose, @var{arg} @dots{} are first
 passed to @code{unwrap-syntax} described below, to strip off
 the internal syntactic binding informations.
 @c JP
-これらは@code{error}と@code{errorf} (@ref{Signalling exceptions}参照) と
+これらは@code{error}と@code{errorf} (@ref{Signaling exceptions}参照) と
 ほぼ同じですが、実行時ではなくマクロ展開時(すなわち、コンパイル時)に
 エラーを通知するところが異なります。
 

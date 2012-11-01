@@ -1067,7 +1067,7 @@ iconvによる変換でマップ不可能な文字に出会った場合の処理
 
 @c EN
 If the conversion routine encounters an input sequence that
-is illegal in the input CES, an error is signalled.
+is illegal in the input CES, an error is signaled.
 @c JP
 変換ルーチンが、入力CESとして不正な入力文字列に出会った場合は
 エラーが報告されます。
@@ -5185,8 +5185,8 @@ If an environment variable @code{INFOPATH} is defined,
 this function searches for the info file from the directories in it.
 Otherwise, this function guesses info file location from the
 @code{gosh}'s library directory.   If the info file can't be
-found, an error is signalled.   If the info file is found,
-but @var{symbol} is not in its index, an error is signalled as well.
+found, an error is signaled.   If the info file is found,
+but @var{symbol} is not in its index, an error is signaled as well.
 So this function doesn't work if you haven't installed info file.
 @c JP
 Gaucheのinfoドキュメント中から、
@@ -5543,7 +5543,7 @@ The default value is @code{#f}.
 @c EN
 A procedure that takes one argument, an error exception.  It is
 called when an error occurs during read-eval-print stage,
-with the same dynamic environment as the error is signalled.
+with the same dynamic environment as the error is signaled.
 The default value is a procedure that simply prints the
 error exception by @code{report-error}.
 @c JP
@@ -6243,7 +6243,7 @@ The propagated slot has to have @code{:propagate} slot option
 which specifies the name of the slot that points to an object
 that actually holds the value of the slot.
 If a slot has @code{:propagated} slot allocation but
-does not have @code{:propagate} slot option, an error is signalled.
+does not have @code{:propagate} slot option, an error is signaled.
 
 The @code{:propagate} slot option should have a value
 of either a symbol, or a list of two symbols.
@@ -7343,7 +7343,7 @@ symbols.
 @c EN
 Binds @var{socket} to the local network address @var{address}.
 It is usually used to associate specific address to the server port.
-If binding failed, an error is signalled (most likely the address is
+If binding failed, an error is signaled (most likely the address is
 already in use).
 
 For the inet domain address, you can pass @var{address} with port=0;
@@ -9822,7 +9822,7 @@ an integer, or an input port.
 
 If it is a string, it names a file opened for read
 and the child process can reads the content of the file from @var{fd}.
-An error is signalled if the file does not exist or cannot open for read.
+An error is signaled if the file does not exist or cannot open for read.
 
 If it is a symbol, an unidirectional pipe is created, whose reader end
 is connected to the child's @var{fd}, and whose writer end is
@@ -10127,7 +10127,7 @@ of the argument values.
 If a string is given to @var{directory},
 the process starts with @var{directory} as its working directory.
 If @var{directory} is @code{#f}, this argument is ignored.
-An error is signalled if @var{directory} is other type of objects,
+An error is signaled if @var{directory} is other type of objects,
 or it is a string but is not a name of a existing directory.
 
 When @var{host} keyword argunmet is also given, this argument
@@ -11316,7 +11316,7 @@ to hold the contents.   See @ref{Pseudo record types} for the details.
 Returns a procedure that takes one argument, an instance of @var{rtd},
 and returns the value of the @var{field-name} of the instance.
 
-An error is signalled if the record type doesn't have the field
+An error is signaled if the record type doesn't have the field
 of name @var{field-name}.
 
 If @var{rtd} is inherits other record types, and it defines a field
@@ -11330,7 +11330,7 @@ Returns a procedure that takes two arguments, an instance of @var{rtd}
 and a value, and sets the latter as the value of the @var{field-name}
 of the instance.
 
-An error is signalled if the record type doesn't have the field
+An error is signaled if the record type doesn't have the field
 of name @var{field-name}, or the named field is immutable.
 
 Like @code{rtd-accessor}, if the record has a field with the same
@@ -11763,7 +11763,7 @@ This method enables uniform access for any sequence types.
 
 When @var{index} is less than zero, or greater than or equal to the
 size of the sequence, @var{fallback} is returned if provided, or
-an error is signalled if not.
+an error is signaled if not.
 @c JP
 シーケンス@var{seq}の@var{index}番目の要素を返します。
 このメソッドによって、全てのシーケンスが統一的にアクセスできます。
@@ -12103,7 +12103,7 @@ in @var{permuter}.
 @end example
 
 If an integer in @var{permuter} is out of the valid range as the index
-of @var{src}, then an error is signalled unless @var{fallback} is given.
+of @var{src}, then an error is signaled unless @var{fallback} is given.
 If @var{fallback} is given, what value is used depends on the result of
 @code{(ref @var{src} @var{i} @var{fallback})}---which usually returns
 @var{fallback} for the out-of-range index @var{i}.
@@ -12420,7 +12420,7 @@ changes to the @code{c_cc} array.
 Throughout this section, argument @var{port-or-fd} refers to
 either a port object or a small integer representing system's file
 descriptor.  If @var{port} is not associated
-to the system terminal, an error is signalled.  (You can check if @var{port}
+to the system terminal, an error is signaled.  (You can check if @var{port}
 has an associated terminal by @code{sys-isatty?}.
 @xref{Other file operations}).
 @c JP
@@ -13978,7 +13978,7 @@ That is, the target thread may stop at some point in future.
 The caller thread is expected to call @var{thread-stop!}
 again to complete the stop operation.
 
-An error is signalled if the target thread has already been
+An error is signaled if the target thread has already been
 stopped by another thread (including the ``pending'' stop
 request issued by other threads), or the target thread
 is in neither @code{runnable} nor @code{stopped} state.
@@ -15352,7 +15352,7 @@ IEEE floating point number.
 
 @c EN
 When you try to store a number out of the range of the vector type,
-an error is signalled by default.  However, some procedures take
+an error is signaled by default.  However, some procedures take
 an optional argument @var{clamp} that specifies alternative behavior
 in such a case.  @var{Clamp} argument may take one of the following values.
 @c JP
@@ -15614,7 +15614,7 @@ by @code{(write-block @var{uvector} port @var{start} @var{end})}.
 @c EN
 Returns the @var{k}-th element of @var{TAG}vector @var{vec}.
 
-If the index @var{k} is out of the valid range, an error is signalled
+If the index @var{k} is out of the valid range, an error is signaled
 unless an optional argument @var{fallback} is given; in that case,
 @var{fallback} is returned.
 
@@ -16169,7 +16169,7 @@ is aligned suitable for any uniform vectors.  So, for example,
 if you're creating u32vector from u8vector, the @var{start} and
 @var{end} must be multiple of 4 (or, if they're omitted, the length
 of the original u8vector must be multiple of 4).
-An error is signalled when the given parameters doesn't satisfy
+An error is signaled when the given parameters doesn't satisfy
 alignment constraint.
 @c JP
 @var{uvector-class}がs8vectorかu8vector以外の場合、
@@ -16870,7 +16870,7 @@ The reason of having @code{<pre-subrelease>} is to allow
 @c EN
 Returns a boolean value depending on the order of two version number
 string @var{ver1} and @var{ver2}.  If the arguments contain invalid
-strings as the defined version number, an error is signalled.
+strings as the defined version number, an error is signaled.
 @c JP
 ふたつのバージョン番号文字列 @var{ver1} と @var{ver2} の順序関係によって
 真偽値を返します。もし引数が、バージョン番号を定義するのに不正な文字列を
