@@ -3,6 +3,7 @@
 ;;
 
 (use gauche.test)
+(use gauche.generator)
 (test-start "file utilities")
 (use srfi-1)
 (use srfi-13)
@@ -231,22 +232,95 @@
 
 (sys-unlink "tmp2.o")
 
-(test* "file.filter temporary"
-       '(#f "AAA BBB CCC DDDEEE FFF GGG HHH")
-       (let* ([r1
-               (with-input-from-string "aaa bbb ccc ddd\neee fff ggg hhh\n"
-                 (cut file-filter
-                      (^[in out]
-                        (generator-for-each
-                         (^[line] (display (string-upcase line) out))
-                         (cut read-line in))
-                        (file-exists? "tmp2.o"))
-                      :output "tmp2.o"
-                      :temporary-file "foo"))]
-              [r2 (call-with-input-file "tmp2.o" port->string)])
-         (list r1 r2)))
+(let ()
+  (define (t tempfile)
+    (test* "file.filter temporary"
+           '(#f "AAA BBB CCC DDDEEE FFF GGG HHH")
+           (let* ([r1
+                   (with-input-from-string "aaa bbb ccc ddd\neee fff ggg hhh\n"
+                     (cut file-filter
+                          (^[in out]
+                            (do-generator [line (cut read-line in)]
+                               (display (string-upcase line) out))
+                            (file-exists? "tmp2.o"))
+                          :output "tmp2.o"
+                          :temporary-file tempfile))]
+                  [r2 (call-with-input-file "tmp2.o" port->string)])
+             (sys-unlink "tmp2.o")
+             (list r1 r2))))
+  (t "foo")
+  (t #t))
 
 (sys-unlink "tmp1.o")
 (sys-unlink "tmp2.o")
+
+(test* "file.filter rename-hook" #t
+       (begin
+         (with-output-to-file "tmp1.o" (cut display "foo"))
+         (let1 i1 (~ (sys-stat "tmp1.o")'ino)
+           (file-filter (^[in out] (copy-port in out))
+                        :input (open-input-string "foo")
+                        :output "tmp1.o"
+                        :temporary-file #t
+                        :leave-unchanged #t)
+           (eqv? i1 (~ (sys-stat "tmp1.o")'ino)))))
+
+(sys-unlink "tmp1.o")
+
+(let ()
+  (define (f2s f) (call-with-input-file f
+                    (^i (call-with-output-string (^o (copy-port i o))))))
+  (define (t reader expect-result expect-output)
+    (test* (format "file-filter-fold") (list expect-result expect-output)
+           (let1 r (file-filter-fold
+                    (^[elt seed out] (write elt out) (+ seed 1))
+                    0
+                    :input "test1.o"
+                    :output "test2.o"
+                    :reader reader)
+             (list r (f2s "test2.o"))))
+    (test* (format "file-filter-map") (list expect-result expect-output)
+           (let1 r (file-filter-map
+                    (^[elt out] (write elt out) #t)
+                    :input "test1.o"
+                    :output "test2.o"
+                    :reader reader)
+             (list (length r) (f2s "test2.o"))))
+    (test* (format "file-filter-for-each") (list expect-result expect-output)
+           (let1 r 0
+             (file-filter-for-each
+              (^[elt out] (write elt out) (inc! r))
+              :input "test1.o"
+              :output "test2.o"
+              :reader reader)
+             (list r (f2s "test2.o")))))
+  
+  (with-output-to-file "test1.o" (cut display "abc\n(def\nghi)"))
+  (unwind-protect
+      (begin
+        (t read-line 3 "\"abc\"\"(def\"\"ghi)\"")
+        (t read-char 13 "#\\a#\\b#\\c#\\newline#\\(#\\d#\\e#\\f#\\newline#\\g#\\h#\\i#\\)")
+        (t read 2 "abc(def ghi)"))
+    (sys-unlink "test1.o")
+    (sys-unlink "test2.o")))
+
+(test* "file-filter-fold example"
+       "  1: abc\n  3: def\n"
+       (unwind-protect
+           (begin
+             (with-output-to-file "test1.o"
+               (^[]
+                 (print "abc")
+                 (print "123")
+                 (print "def")))
+             (file-filter-fold (^[line nc out]
+                                 (when (#/[a-z]/ line)
+                                   (format out "~3d: ~a\n" nc line))
+                                 (+ nc 1))
+                               1 :input "test1.o" :output "test2.o")
+             (call-with-input-file "test2.o" 
+               (^i (call-with-output-string (^o (copy-port i o))))))
+         (sys-unlink "test1.o")
+         (sys-unlink "test2.o")))
 
 (test-end)

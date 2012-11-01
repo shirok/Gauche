@@ -3775,7 +3775,7 @@ in the processing.
 @c COMMON
 @end deftp
 
-@defun file-filter proc :key input output temporary-file keep-output?
+@defun file-filter proc :key input output temporary-file keep-output? rename-hook
 @c EN
 Calls @var{proc} with two arguments, an input port and
 an output port.   Returns the result(s) of @var{proc}.
@@ -3824,34 +3824,37 @@ If this argument is omitted, the current output port is passed.
 @c COMMON
 @item temporary-file
 @c EN
-If a string file name is given to this argument, the named file
-is opened for output during the processing, instead of the file
-name as @var{output}.   The output port @var{proc} receives
-is connected to this file.  When @var{proc}
-returns normally, the file is renamed to the name given to @var{output}
-keyword argument.
+The value must be a boolean or a string.  If a non-false value
+is given, and output is a file, then a fresh temporary file is
+created and opened for output and passed to @var{proc}.
+When @var{proc} returns normally, the file is renamed
+to the name given to @var{output} keyword argument.
+
+If @code{#t} is given, a temporary file name is generated
+based on the name of the output file.
+If a string file name is given to this argument, the name
+is used for @code{sys-mkstemp}.
 
 If the given file name begins with characters except @code{"/"}, @code{"./"}
 or @code{"../"}, the directory of the file name given to @var{output} argument
 is attached before it.
-Furthermore, a unique name is attached to the temporary file name
-(the temporary file is opened by @code{sys-mkstemp}.)
 
-This argument is ignored when @var{output} argument is not a string
-file name.
+The default value is @code{#f} (do not use a temporary file).
 @c JP
-文字列でファイル名が渡された場合、処理の間の出力先として@var{output}に指定された
-ファイルのかわりにそのファイルがオープンされます。
-@var{proc}にはその一時ファイルへの出力ポートが渡されます。
-@var{proc}が正常に返って来た時点で、一時ファイルは@var{output}に指定された
+値は真偽値か文字列でなければなりません。@code{#f}でない値が渡され、
+かつ出力がファイルである場合、新たな一時ファイルが出力用に作成され@var{proc}に
+渡されます。
+そして@var{proc}が正常に返って来た時点で、一時ファイルは@var{output}に指定された
 ファイルへとリネームされます。
+
+この引数が@code{#t}の場合、一時ファイル名は出力ファイル名をもとに作られます。
+この引数が文字列の場合はそれが@code{sys-mkstemp}に渡されます。
 
 もし一時ファイル名が@code{"/"}、@code{"./"}、@code{"../"}以外の
 文字で始まっていた場合は、@var{output}に与えられたファイル名のディレクトリが
-一時ファイルの前に追加されます。さらに、ユニークなサフィックスが一時ファイルの後に
-追加されます(一時ファイルは@code{sys-mkstemp}を使ってオープンされます)。
+一時ファイルの前に追加されます。
 
-この引数は、@var{output}にファイル名が与えられなかった場合は無視されます。
+デフォルトの値は@code{#f} (一時ファイルを使わない) です。
 @c COMMON
 @item keep-output?
 @c EN
@@ -3864,8 +3867,83 @@ By default, the output (or the temporary file when
 デフォルトでは、出力ファイル(もしくは@var{temporary-file}が与えられた場合は
 そのファイル)はエラーの場合には削除されます。
 @c COMMON
+@item leave-unchanged
+@c EN
+When a temporary file is used, and a true value is given to this argument,
+the existing output file is left intact when the generated output in
+the temporary file exactly matches the original content of the output
+file.  It is useful if touching output file may trigger some actions
+(e.g. by @code{make}) and you want to avoid invoking unnecessary
+actions.  The default value is @code{#f} (always replace the output).
+@c JP
+一時ファイルを使う場合に、この引数に真の値が与えられると、
+出力ファイルが既に存在して一時ファイルに生成された内容と全く同じだった場合に、
+出力ファイルをそのままにします。これは、出力ファイルに触ることで何らかの
+アクションが起きるようになっている場合に(例: @code{make})、
+不必要なアクションを起こさないために便利です。
+デフォルトの値は@code{#f} (常に出力ファイルを置き換える) です。
+@c COMMON
 @end table
 @end defun
+
+@defun file-filter-for-each proc seed :key reader input output temporary-file keep-output? rename-hook
+@c EN
+A convenience wrapper of @code{file-filter}.
+Call @var{proc} for each item read from input
+by @var{reader} (@code{read-line} by default).  The argument
+@var{proc} receives is the item, the seed value and the output port;
+@var{proc} can emit the output, as well as returning some value
+that is passed along as the seed value.  Other keyword arguments
+are passed to @code{file-filter}.
+
+For example, the following code reads each line from @file{file.txt} and
+displays lines matching @code{#/regexp/} with line numbers.
+@c JP
+@file{file-filter}の便利なラッパー手続きです。
+入力から@var{reader}によって読まれるデータに対して次々に@var{proc}を
+呼び出します。@var{reader}のデフォルトは@code{read-line}です。
+@var{proc}の引数は、読まれたデータ、シード値、出力ポートです。
+@var{proc}は何かを出力することもできますし、値を返せばそれが
+次のシード値として受け渡されてゆきます。他のキーワード引数は
+@code{file-filter}にそのまま渡されます。
+
+例えば次のコードは、@file{file.txt}を1行づつ読み、@code{#/regexp/}に
+マッチする行を行番号つきで出力します。
+@c COMMON
+
+@example
+(file-filer-fold
+  (^[line nc out]
+    (when (#/regexp/ line) (format out "~3d: ~a\n" nc line))
+    (+ nc 1))
+  1 :input "file.txt")
+@end example
+@end defun
+
+@defun file-filter-map proc :key reader input output temporary-file keep-output? rename-hook
+@defunx file-filter-for-each proc :key reader input output temporary-file keep-output? rename-hook
+@c EN
+Utilities similar to @code{file-filter-fold},
+like @code{map} and @code{for-each} to @code{fold}.
+
+The procedure @var{proc} is called with two arguments,
+an item read from the input and an output port.
+The results of @var{proc} are collected as a list and retured
+by @code{file-filter-map}, and discarded by @code{file-filter-for-each}.
+
+The meaning of keyword arguments are the same as @code{file-filter-fold}.
+@c JP
+@code{file-filter-fold}に似たユーティリティです。
+@code{fold}に対する@code{map}、@code{for-each}に相当します。
+
+手続き@var{proc}は二つの引数、入力から読まれたデータと出力ポートを受けとります。
+@var{proc}の結果は、@code{file-filter-map}では集められてリストとして
+戻り値となり、@code{file-filter-for-each}では捨てられます。
+
+キーワード引数の意味は@code{file-filter-fold}と同じです。
+@c COMMON
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Filesystem utilities, Mathematic constants, Filtering file content, Library modules - Utilities

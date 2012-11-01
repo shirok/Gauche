@@ -44,65 +44,81 @@
 ;;;
 
 (define-module file.filter
-  (use srfi-11)
   (use srfi-13)
-  (export file-filter)
-  )
+  (use file.util)
+  (export file-filter file-filter-fold file-filter-map file-filter-for-each))
 (select-module file.filter)
 
 (define (file-filter proc :key
                      (input (current-input-port))
                      (output (current-output-port))
                      (temporary-file #f)
-                     (keep-output? #f))
+                     (keep-output? #f)
+                     (leave-unchanged #f))
 
   (define (process-with-output oport)
     (cond
-     ((input-port? input) (proc input oport))
-     ((string? input)
-      (call-with-input-file input (lambda (iport) (proc iport oport))))
-     (else
-      (error "input must be either an input port or a file name, but got"
-             input))))
+     [(input-port? input) (proc input oport)]
+     [(string? input) (call-with-input-file input (cut proc <> oport))]
+     [else (error "input must be either an input port or a file name, but got"
+                  input)]))
 
-  (define (process-with-tempfile ofile)
-    (let*-values (((tempfile) (cond ((string-prefix? "/" temporary-file)
-                                     temporary-file)
-                                    ((string-prefix? "./" temporary-file)
-                                     temporary-file)
-                                    ((string-prefix? "../" temporary-file)
-                                     temporary-file)
-                                    (else (string-append
-                                           (sys-dirname ofile)
-                                           "/"
-                                           temporary-file))))
-                  ((tport tfile) (sys-mkstemp tempfile)))
-      (guard (e
-              (else
-               (unless keep-output? (sys-unlink tfile))
-               (raise e)))
-        (receive r (process-with-output tport)
-          (close-output-port tport)
-          (sys-rename tfile ofile)
-          (apply values r)))))
+  (define (process-with-tempfile ofile tmpf)
+    (let1 tempfile (cond [(string-prefix? "/" tmpf) tmpf]
+                         [(string-prefix? "./" tmpf) tmpf]
+                         [(string-prefix? "../" tmpf) tmpf]
+                         [else (build-path (sys-dirname ofile) tmpf)])
+      (receive (tport tfile) (sys-mkstemp tempfile)
+        (guard (e [else (unless keep-output? (sys-unlink tfile))
+                        (raise e)])
+          (begin0 (process-with-output tport)
+            (close-output-port tport)
+            (if (rename-ok? tfile ofile)
+              (sys-rename tfile ofile)
+              (sys-unlink tfile)))))))
+
+  (define (rename-ok? tfile ofile)
+    (or (not leave-unchanged)
+        (and (file-is-readable? ofile)
+             (file-is-readable? tfile)
+             (not (file-equal? tfile ofile)))))
 
   (cond
-   ((output-port? output) (process-with-output output))
-   ((string? output)
-    (if temporary-file
-      (process-with-tempfile output)
-      (with-error-handler
-          (lambda (e)
-            (unless keep-output? (sys-unlink output))
-            (raise e))
-        (lambda ()
-          (call-with-output-file output process-with-output)))))
-   (else
-    (error "output must be either an output port or a file name, but got"
-           output)))
-  )
+   [(output-port? output) (process-with-output output)]
+   [(string? output)
+    (cond [(string? temporary-file)
+           (process-with-tempfile output temporary-file)]
+          [(eq? temporary-file #t)
+           (process-with-tempfile output #`",|output|.tmp")]
+          [(not temporary-file)
+           (guard (e [else (unless keep-output? (sys-unlink output))
+                           (raise e)])
+             (call-with-output-file output process-with-output))]
+          [else (error "temporary-file must be a boolean or a string, but got"
+                       temporary-file)])]
+   [else (error "output must be either an output port or a file name, but got"
+                output)]))
 
 
+(define (file-filter-fold proc seed
+                          :key (reader read-line) :allow-other-keys keys)
+  (apply file-filter
+         (^[in out] (fold (^[elt seed] (proc elt seed out))
+                          seed (generator->lseq (cut reader in))))
+         keys))
 
+(define (file-filter-map proc :key (reader read-line) :allow-other-keys keys)
+  (apply file-filter
+         (^[in out] (map (^[elt] (proc elt out))
+                         (generator->lseq (cut reader in))))
+         keys))
 
+(define (file-filter-for-each proc
+                              :key (reader read-line) :allow-other-keys keys)
+  (apply file-filter
+         (^[in out] (generator-for-each (cut proc <> out) (cut reader in)))
+         keys))
+  
+         
+  
 

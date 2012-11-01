@@ -1,3 +1,9 @@
+2012-11-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/file/filter.scm (file-filter): Added :leave-unchanged option,
+	  allow #t to :temporary-file option.
+	  (file-filter-fold, file-filter-map, file-filter-for-each): Added.
+
 2012-10-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_reference): Reject indeterminate read reference,
