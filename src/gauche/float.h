@@ -128,6 +128,20 @@ extern unsigned int __cdecl _controlfp(unsigned int, unsigned int);
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_END() \
       _FPU_SETCW(old_fpc_val__); }
 
+#elif defined(__CYGWIN__)
+
+/* Cygwin doesn't seem to have fpu_control.h
+   We're too sloppy and don't bother restoring control word for now.
+ */
+
+#define SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN()  \
+    do {                                        \
+        static const u_short cw = 0x27f;        \
+        asm volatile("fldcw %0": : "m"(cw));    \
+    } while(0)
+    
+#define SCM_FP_ENSURE_DOUBLE_PRECISION_END()
+
 #else  /* fallback */
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN() /* nothing */
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_END()   /* nothing */
