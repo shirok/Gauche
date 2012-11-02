@@ -1577,14 +1577,14 @@ During the processing, a "current unit" is kept in a parameter
 The following slot are for public use.  They are used to tailor
 the output.  Usually you set those slots at initializatoin time.
 The effect is undefined if you change them in the middle of
-code geneartion process.
+the code geneartion process.
 
 @defivar {<cgen-unit>} name
 A string to name this unit.  This is used for the default name
 of the generated files (@file{@var{name}.c} and @file{@var{name}.h})
 and the suffix of the default name of initialization function.
 Other cgen modules may use this to generate names.  Avoid using
-characters that are valid for C identifiers.
+characters that are not valid for C identifiers.
 
 You can override those default names by setting the other slots.
 @end defivar
