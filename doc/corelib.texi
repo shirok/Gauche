@@ -10606,10 +10606,10 @@ looks like this:
 
 @example
 (guard (exc
-        ((condition-has-type? exc <read-error>)
+        [(condition-has-type? exc <read-error>)
          (format #t "read error!")
-         'read-error)
-        (else 'other-error))
+         'read-error]
+        [else 'other-error])
   (read-from-string "(abc"))
 @end example
 
@@ -10683,8 +10683,8 @@ SRFI-35 で定義されていますが、これはちょっと冗長です。Gau
 
 @example
 (guard (exc
-        ((<read-error> exc) 'read-error)
-        (else 'other-error))
+        [(<read-error> exc) (format #t "read error!") 'read-error]
+        [else 'other-error])
   (read-from-string "(abc")))
 @end example
 
@@ -10720,8 +10720,8 @@ by outer level.
 
 @example
 (guard (exc
-        ((<read-error> exc) (handle-read-error))
-        ((<system-error> exc) (handle-system-error))
+        [(<read-error> exc) (handle-read-error)]
+        [(<system-error> exc) (handle-system-error)]
         )
   body @dots{})
 @end example
@@ -10765,7 +10765,7 @@ as this:
 
 @example
 (guard (exc
-        ((integer? exc) 'raised))
+        [(integer? exc) 'raised])
   (raise 3))
 @end example
 
@@ -10900,10 +10900,10 @@ condition type like the following code:
 
 @example
 (guard (exc
-         ((myapp-error? exc)
-          (let ((debug-info (myapp-error-debug-info exc))
-                (reason (myapp-error-reason exc)))
-            ... handle myapp-error ...)))
+         [(myapp-error? exc)
+          (let ([debug-info (myapp-error-debug-info exc)]
+                [reason (myapp-error-reason exc)])
+            ... handle myapp-error ...)])
   ...
   ...
   (if (something-went-wrong)
@@ -11203,15 +11203,15 @@ handler is evaluated before the dynamic environment are unwound.
 @c COMMON
 
 @example
-(let ((z '()))
-  (guard (e (else (push! z 'caught)))
+(let ([z '()])
+  (guard (e [else (push! z 'caught)])
     (dynamic-wind (lambda () (push! z 'pre))
                   (lambda () (error "foo"))
                   (lambda () (push! z 'post))))
   (reverse z))
  @result{} (pre post caught)
 
-(guard (e (else (print 'OUTER) #f))
+(guard (e [else (print 'OUTER) #f])
   (with-output-to-string ()
     (print 'INNER)
     (error "foo")))
@@ -11369,7 +11369,7 @@ should be written like this:
 次のように書き直すことができます。
 @c COMMON
 @example
-(guard (e (else (cleanup) (raise e)))
+(guard (e [else (cleanup) (raise e)])
   body @dots{})
 @end example
 @end defun
