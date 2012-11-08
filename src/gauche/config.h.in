@@ -137,6 +137,9 @@
 /* Define to 1 if you have the <libutil.h> header file. */
 #undef HAVE_LIBUTIL_H
 
+/* Define to 1 if you have the <bsd/libutil.h> header file. */
+#undef HAVE_BSD_LIBUTIL_H
+
 /* Define to 1 if you have the `lrand48' function. */
 #undef HAVE_LRAND48
 

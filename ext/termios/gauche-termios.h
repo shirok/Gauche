@@ -39,16 +39,23 @@
 #if !defined(GAUCHE_WINDOWS)
 
 #include <termios.h>
-#ifdef HAVE_PTY_H
+
+#if   defined(HAVE_PTY_H)
 #include <pty.h>
 #endif
-#ifdef HAVE_UTIL_H
+
+#if   defined(HAVE_UTIL_H)
 #include <util.h>
 #endif
-#ifdef HAVE_LIBUTIL_H
+
+/* libutil.h is superseded by bsd/libutil.h */
+#if   defined(HAVE_BSD_LIBUTIL_H)
+#include <bsd/libutil.h>
+#elif defined(HAVE_LIBUTIL_h)
 #include <libutil.h>
 #endif
-#ifdef HAVE_UNISTD_H
+
+#if   defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
 

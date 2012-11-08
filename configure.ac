@@ -352,7 +352,7 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/time.h sys/types.h glob.h dlfcn.h getopt.h sched.h unistd.h)
 AC_CHECK_HEADERS(stdint.h inttypes.h rpc/types.h malloc.h)
 AC_CHECK_HEADERS(syslog.h crypt.h)
-AC_CHECK_HEADERS(pty.h util.h libutil.h sys/loadavg.h sys/resource.h)
+AC_CHECK_HEADERS(pty.h util.h bsd/libutil.h libutil.h sys/loadavg.h sys/resource.h)
 
 dnl glibc specific
 AC_CHECK_HEADERS(fpu_control.h)
