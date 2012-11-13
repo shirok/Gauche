@@ -3224,7 +3224,17 @@ static inline int numcmp3(ScmObj x, ScmObj d, ScmObj y)
     }
 }
 
-static void double_print(char *buf, int buflen, double val, int plus_sign)
+/* The main routine to get string representation of double.
+   Convert VAL to a string and store to BUF.  True for PLUS_SIGN
+   forces adding '+' for nonnegative numbers.  EXP_LO and EXP_HI
+   control when to switch exponential representation.  We use
+   n.nnne+zz representation when zz can be smaller than or equal to EXP_LO,
+   or greater than or equal to EXP_HI.  Finally, PRECISION specifies the
+   number of digits to be printed after the decimal point; -1 means
+   no limit.
+   */
+static void double_print(char *buf, int buflen, double val, int plus_sign,
+                         int precision, int exp_lo, int exp_hi)
 {
     /* Handle a few special cases first.
        The notation of infinity is provisional; see how srfi-70 becomes. */
@@ -3251,6 +3261,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         ScmObj f, r, s, mp, mm, q;
         int exp, sign, est, tc1, tc2, tc3, digs, point, round;
         int mp2 = FALSE, fixup = FALSE;
+        int digcnt = 0;         /* count digits below the decimal point */
 
         IEXPT10_INIT();
         if (val < 0) val = -val;
@@ -3316,14 +3327,14 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
 
         /* determine position of decimal point.  we avoid exponential
            notation if exponent is small, i.e. 0.9 and 30.0 instead of
-           9.0e-1 and 3.0e1.   The magic number 10 is arbitrary. */
-        if (est < 10 && est > -3) {
+           9.0e-1 and 3.0e1.  */
+        if (est < exp_hi && est > exp_lo) {
             point = est; est = 1;
         } else {
             point = 1;
         }
 
-        /* generate */
+        /* print preceding zeros if necessary */
         if (point <= 0) {
             *buf++ = '0'; buflen--;
             *buf++ = '.', buflen--;
@@ -3331,6 +3342,8 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
                 *buf++ = '0'; buflen--;
             }
         }
+
+        /* generate the digits */
         for (digs=1;buflen>5;digs++) {
             ScmObj r10 = Scm_Mul(r, SCM_MAKE_INT(10));
             q = Scm_Quotient(r10, s, &r);
@@ -3374,6 +3387,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
             }
         }
 
+        /* print the trailing zeros if necessary */
         if (digs <= point) {
             for (;digs<point&&buflen>5;digs++) {
                 *buf++ = '0', buflen--;
@@ -3428,7 +3442,7 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
     } else if (SCM_BIGNUMP(obj)) {
         r = Scm_BignumToString(SCM_BIGNUM(obj), radix, use_upper);
     } else if (SCM_FLONUMP(obj)) {
-        double_print(buf, FLT_BUF, SCM_FLONUM_VALUE(obj), FALSE);
+        double_print(buf, FLT_BUF, SCM_FLONUM_VALUE(obj), FALSE, -1, -3, 10);
         r = SCM_MAKE_STR_COPYING(buf);
     } else if (SCM_RATNUMP(obj)) {
         ScmDString ds; ScmObj s;
@@ -3441,9 +3455,9 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
         return Scm_DStringGet(&ds, 0);
     } else if (SCM_COMPNUMP(obj)) {
         ScmObj p = Scm_MakeOutputStringPort(TRUE);
-        double_print(buf, FLT_BUF, SCM_COMPNUM_REAL(obj), FALSE);
+        double_print(buf, FLT_BUF, SCM_COMPNUM_REAL(obj), FALSE, -1, -3, 10);
         SCM_PUTZ(buf, -1, SCM_PORT(p));
-        double_print(buf, FLT_BUF, SCM_COMPNUM_IMAG(obj), TRUE);
+        double_print(buf, FLT_BUF, SCM_COMPNUM_IMAG(obj), TRUE, -1, -3, 10);
         SCM_PUTZ(buf, -1, SCM_PORT(p));
         SCM_PUTC('i', SCM_PORT(p));
         r = Scm_GetOutputString(SCM_PORT(p), 0);
@@ -3458,7 +3472,7 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
 void Scm_PrintDouble(ScmPort *port, double d, int flags)
 {
     char buf[FLT_BUF];
-    double_print(buf, FLT_BUF, d, FALSE);
+    double_print(buf, FLT_BUF, d, FALSE, -1, -3, 10);
     Scm_Putz(buf, (int)strlen(buf), port);
 }
 
