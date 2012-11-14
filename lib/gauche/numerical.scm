@@ -103,8 +103,7 @@
           [else (cons (+ 1 (min (car xn) (car yn))) an)]))
 
   (define (realize rcf) ; reverse continued fraction -> rational
-    (let loop ([r (car rcf)] [as (cdr rcf)])
-      (if (null? as) r (loop (+ (car as) (/ r)) (cdr as)))))
+    (fold (^[a r] (+ a (/ r))) (car rcf) (cdr rcf)))
 
   (define (ensure-exact n) ;; dumb exact rationalize
     (if (exact? n)
