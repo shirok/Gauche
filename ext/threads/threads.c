@@ -411,7 +411,10 @@ static int wait_for_termination(ScmVM *target)
     int r;
     ScmObj t = Scm_MakeFlonum(0.001); /* 1ms. somewhat arbitrary */
     Scm_GetTimeSpec(t, &ts);
-    r = SCM_INTERNAL_COND_TIMEDWAIT(target->cond, target->vmlock, &ts);
+    do {
+        r = SCM_INTERNAL_COND_TIMEDWAIT(target->cond, target->vmlock, &ts);
+    } while (r != SCM_INTERNAL_COND_TIMEDOUT
+             && target->state != SCM_VM_TERMINATED);
     return (r == 0);
 }
 

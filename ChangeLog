@@ -1,3 +1,10 @@
+2012-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c (Scm_SigCheck),
+	  ext/threads/threads.c (wait_for_termination): Fixed timing hazard
+	  when a thread is killed via pthread_kill().  The hazard was visible
+	  on cygwin.
+
 2012-11-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (Scm_MakeForeignPointer): Make the identity hashtable

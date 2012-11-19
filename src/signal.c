@@ -419,7 +419,11 @@ void Scm_SigCheck(ScmVM *vm)
     /* We may use GAUCHE_PTHREAD_SIGNAL signal to terminate a thread
        gracefully.  See Scm_ThreadTerminate in ext/threads/threads.c */
     if (sigcounts[GAUCHE_PTHREAD_SIGNAL] > 0) {
-        vm->state = SCM_VM_TERMINATED;
+        /* We need to hold the lock, since thread cleanup handler
+           (thread_cleanup_inner, in ext/threads/threads.c) requires so.
+           The thread state will be set to TERMINATED by the cleanup
+           handler so we don't need to change it. */
+        SCM_INTERNAL_MUTEX_LOCK(vm->vmlock);
         SCM_INTERNAL_THREAD_EXIT();
         /* NOTREACHED */
     }
