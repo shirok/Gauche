@@ -171,6 +171,11 @@ gosh_noconsole_OBJECTS = winmain.$(OBJEXT)
 gosh_LDADD   = -l@LINKGAUCHE@
 gosh_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
 
+test_extra_SOURCES = test-extra.c libextra.scm
+test_extra_OBJECTS = test-extra.$(OBJEXT) libextra.$(OBJEXT)
+test_extra_LDADD   = -l@LINKGAUCHE@
+test_extra_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
+
 libgauche_LIBRARY = $(LIBGAUCHE).$(SOEXT)
 libgauche_OBJECTS = \
         box.$(OBJEXT) core.$(OBJEXT) vm.$(OBJEXT) compaux.$(OBJEXT) \
@@ -201,7 +206,7 @@ HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
 OBJECTS = $(libgauche_OBJECTS) $(gosh_OBJECTS)
 
-@CROSS_COMPILING_no@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS)
+@CROSS_COMPILING_no@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS) test-extra$(EXEEXT)
 @CROSS_COMPILING_yes@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS) $(host)-gauche-config
 
 gosh$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_OBJECTS) 
@@ -211,6 +216,10 @@ gosh$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_OBJECTS)
 gosh-noconsole$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_noconsole_OBJECTS) 
 	@rm -f gosh-noconsole$(EXEEXT)
 	$(LINK) $(gosh_LDFLAGS) -o gosh-noconsole$(EXEEXT) $(gosh_noconsole_OBJECTS) $(gosh_LDADD) $(LIBS) -Wl,--subsystem,windows
+
+test-extra$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(test_extra_OBJECTS)
+	@rm -f test-extra$(EXEEXT)
+	$(LINK) $(test_extra_LDFLAGS) -o test-extra$(EXEEXT) $(test_extra_OBJECTS) $(test_extra_LDADD) $(LIBS)
 
 # NB: relink target is only relevant where rpath matter.  notably, we don't
 # need to relink gosh-noconsole.exe (windows no-console version).
@@ -251,6 +260,7 @@ libstr.c   : libstr.scm $(PRECOMP_DEPENDENCY)
 libsym.c   : libsym.scm $(PRECOMP_DEPENDENCY)
 libsys.c   : libsys.scm $(PRECOMP_DEPENDENCY)
 libvec.c   : libvec.scm $(PRECOMP_DEPENDENCY)
+libextra.c : libextra.scm $(PRECOMP_DEPENDENCY)
 
 # char_attr.c and ext/text/unicode_attr.h are automatically generated
 # by gen-unicode.scm, from Unicode character database.  They need to
@@ -331,7 +341,7 @@ TESTRECORD = $(top_builddir)/test.record
 
 check : test
 
-test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT)
+test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEXT)
 	@rm -f test.log $(TESTRECORD)
 	./test-vmstack >> test.log
 	./test-arith >> test.log
@@ -340,6 +350,9 @@ test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT)
           top_srcdir=$(top_srcdir) \
 	  ./gosh -ftest -I$(top_srcdir)/test $$testfile >> test.log; \
 	done
+	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
+          top_srcdir=$(top_srcdir) \
+	 ./test-extra $(top_srcdir)/test/capi.scm >> test.log
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
           top_srcdir=$(top_srcdir) \
 	 ./gosh -ftest -e "(define *case-fold* #f)" $(top_srcdir)/test/symcase.scm >> test.log
@@ -382,12 +395,12 @@ GENERATED = compile.c autoloads.c builtin-syms.c \
 	    libalpha.c libbool.c libchar.c libdict.c libeval.c libexc.c \
 	    libio.c liblazy.c liblist.c libmisc.c libmod.c libnum.c \
 	    libobj.c libproc.c librx.c libstr.c libsym.c libsys.c \
-	    libvec.c libomega.c
+	    libvec.c libomega.c libextra.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h
 
 clean :
 	rm -rf core core.[0-9]* gosh$(EXEEXT) gauche-config$(EXEEXT) \
-	       test-vmstack$(EXEEXT) test-arith$(EXEEXT)   \
+	       test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEXT) \
 	       $(GENERATED_SCRIPTS) gauche-config.c \
 	       $(LIBGAUCHE).$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe \
 	       test.log test.dir so_locations gauche/*~ gauche/arch.h \

@@ -1,3 +1,17 @@
+2012-11-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (Scm_MakeForeignPointer): Make the identity hashtable
+	  lookup thread-safe.  Added Scm_MakeForeignPointerWithAttr (see
+	  the comment; the attributes should be used mostly in read-only
+	  manner.
+	  (Scm_ForeignPointerAttrSet): Made it thread-safe. Not tuned for
+	  performance, but modifying attrs are not encouraged anyway.
+	* src/libmisc.scm (foreign-pointer-attribute-set!): Rename it with
+	  bang for the consistency.  Keep old name (no bang) for the backward
+	  compatibility.
+	* src/test-extra.c, src/libextra.scm, test/capi.scm: Added
+	  to test stuff that aren't exposed to Scheme by default.
+
 2012-11-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/file/filter.scm (file-filter): Added :leave-unchanged option,

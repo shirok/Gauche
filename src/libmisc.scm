@@ -86,8 +86,11 @@
                                              key :optional fallback)
   Scm_ForeignPointerAttrGet)
 
-(define-cproc foreign-pointer-attribute-set (fp::<foreign-pointer> key value)
+(define-cproc foreign-pointer-attribute-set! (fp::<foreign-pointer> key value)
   Scm_ForeignPointerAttrSet)
+
+; for backward compatibility - deprecated
+(define foreign-pointer-attribute-set foreign-pointer-attribute-set!)
 
 ;;
 ;; Static configuration

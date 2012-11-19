@@ -938,6 +938,8 @@ SCM_EXTERN ScmClass *Scm_MakeForeignPointerClass(ScmModule *module,
                                                  ScmForeignCleanupProc cleanup,
                                                  int flags);
 SCM_EXTERN ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr);
+SCM_EXTERN ScmObj Scm_MakeForeignPointerWithAttr(ScmClass *klass, void *ptr,
+                                                 ScmObj attr);
 
 /* foreign pointer flags */
 enum {

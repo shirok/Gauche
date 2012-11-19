@@ -2734,7 +2734,13 @@ static void accessor_method_slot_accessor_set(ScmAccessorMethod *m, ScmObj v)
 struct foreign_data_rec {
     int flags;
     ScmForeignCleanupProc cleanup;
-    ScmHashCore *identity_map;
+    ScmInternalMutex attr_mutex;     /* lock for updating foreign pointer's
+                                        "attribute" slot.  we use one-per-class
+                                        mutex, assuming the mutation of attrs
+                                        is rare and saving space per foreign
+                                        pointer is more important. */
+    ScmHashCore *identity_map;       /* for KEEP_IDENTITY */
+    ScmInternalMutex identity_mutex; /* lock for identity_map */
 };
 
 ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
@@ -2764,7 +2770,9 @@ ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
     fp->accessors = SCM_NIL;
     data->flags = flags;
     data->cleanup = cleanup_proc;
+    (void)SCM_INTERNAL_MUTEX_INIT(data->attr_mutex);
     if (flags & SCM_FOREIGN_POINTER_KEEP_IDENTITY) {
+        (void)SCM_INTERNAL_MUTEX_INIT(data->identity_mutex);
         data->identity_map = SCM_NEW(ScmHashCore);
         Scm_HashCoreInitSimple(data->identity_map, SCM_HASH_WORD, 256, NULL);
     } else {
@@ -2780,21 +2788,30 @@ static void fp_finalize(ScmObj obj, void *data)
     cleanup(obj);
 }
 
+/* This shouldn't raise an error. */
 static ScmForeignPointer *make_foreign_int(ScmClass *klass, void *ptr,
+                                           ScmObj attr,
                                            struct foreign_data_rec *data)
 {
     ScmForeignPointer *obj;
     obj = SCM_NEW(ScmForeignPointer);
     SCM_SET_CLASS(obj, klass);
     obj->ptr = ptr;
-    obj->attributes = SCM_NIL;
+    obj->attributes = attr;
     if (data->cleanup) {
         Scm_RegisterFinalizer(SCM_OBJ(obj), fp_finalize, data->cleanup);
     }
     return obj;
 }
 
+/* Note for future API: Scm_MakeForeignPointer should take attr argument.
+   We add *WithAttr only to keep ABI compatibility. */
 ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr)
+{
+    Scm_MakeForeignPointerWithAttr(klass, ptr, SCM_NIL);
+}
+
+ScmObj Scm_MakeForeignPointerWithAttr(ScmClass *klass, void *ptr, ScmObj attr)
 {
     ScmForeignPointer *obj;
     struct foreign_data_rec *data = (struct foreign_data_rec *)klass->data;
@@ -2811,21 +2828,24 @@ ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr)
     }
 
     if (data->identity_map) {
-        ScmDictEntry *e = Scm_HashCoreSearch(data->identity_map,
-                                             (intptr_t)ptr, SCM_DICT_CREATE);
+        ScmDictEntry *e;
+        (void)SCM_INTERNAL_MUTEX_LOCK(data->identity_mutex);
+        e = Scm_HashCoreSearch(data->identity_map,
+                               (intptr_t)ptr, SCM_DICT_CREATE);
         if (e->value) {
             if (Scm_WeakBoxEmptyP((ScmWeakBox*)e->value)) {
-                obj = make_foreign_int(klass, ptr, data);
+                obj = make_foreign_int(klass, ptr, attr, data);
                 Scm_WeakBoxSet((ScmWeakBox*)e->value, obj);
             } else {
                 obj = (ScmForeignPointer*)Scm_WeakBoxRef((ScmWeakBox*)e->value);
             }
         } else {
-            obj = make_foreign_int(klass, ptr, data);
+            obj = make_foreign_int(klass, ptr, attr, data);
             e->value = (intptr_t)Scm_MakeWeakBox(obj);
         }
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(data->identity_mutex);
     } else {
-        obj = make_foreign_int(klass, ptr, data);
+        obj = make_foreign_int(klass, ptr, attr, data);
     }
     return SCM_OBJ(obj);
 }
@@ -2838,6 +2858,8 @@ ScmObj Scm_ForeignPointerAttr(ScmForeignPointer *fp)
 ScmObj Scm_ForeignPointerAttrGet(ScmForeignPointer *fp,
                                  ScmObj key, ScmObj fallback)
 {
+    /* no need to lock, for AttrSet won't make fp->attributes inconsisnent
+       at any moment. */
     ScmObj p = Scm_Assq(key, fp->attributes);
     if (SCM_PAIRP(p)) return SCM_CDR(p);
     if (SCM_UNBOUNDP(fallback)) {
@@ -2850,10 +2872,25 @@ ScmObj Scm_ForeignPointerAttrGet(ScmForeignPointer *fp,
 ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
                                  ScmObj key, ScmObj value)
 {
-    ScmObj p = Scm_Assq(key, fp->attributes);
-    if (SCM_PAIRP(p)) return SCM_SET_CDR(p, value);
-    else fp->attributes = Scm_Acons(key, value, fp->attributes);
-    return SCM_UNDEFINED;
+    ScmObj p, r = SCM_UNDEFINED;
+    struct foreign_data_rec *data
+        = (struct foreign_data_rec*)(SCM_CLASS_OF(fp)->data);
+
+    /* NB: We presume mutating foreign pointer attributes is rare operation,
+       so we don't try hard to make it efficient.   Particularly, we use
+       one mutex shared among all instances of the same class, in order to
+       keep the size of each foreign pointer instance small.  We'll reconsider
+       the design if the performance ever becomes a problem.  */
+    (void)SCM_INTERNAL_MUTEX_LOCK(data->attr_mutex);
+    p = Scm_Assq(key, fp->attributes);
+    if (SCM_PAIRP(p)) {
+        SCM_SET_CDR(p, value);
+        r = value;
+    } else {
+        fp->attributes = Scm_Acons(key, value, fp->attributes);
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(data->attr_mutex);
+    return r;
 }
 
 /*=====================================================================
