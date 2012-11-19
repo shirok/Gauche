@@ -15,6 +15,9 @@ int main(int argc, const char **argv)
 {
     GC_INIT();
     Scm_Init(GAUCHE_SIGNATURE);
+    Scm_AddLoadPath("../src/", FALSE);
+    Scm_AddLoadPath("../libsrc/", FALSE);
+    Scm_AddLoadPath("../lib/", FALSE);
     Scm_Init_libextra(Scm_UserModule());
     Scm_SimpleMain(argc, argv, NULL, 0);
     return 0;

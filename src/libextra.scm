@@ -5,10 +5,6 @@
 
 (select-module user)
 
-(add-load-path "../src")
-(add-load-path "../libsrc")
-(add-load-path "../lib")
-
 ;; Foreign pointer features
 
 (inline-stub
