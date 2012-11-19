@@ -33,8 +33,6 @@
 
 "#include \"gauche/fcntl.h\""
 
-(define-type <sys-fcntl> "ScmSysFcntl*")
-
 (define-enum F_DUPFD)
 (define-enum F_GETFD)
 (define-enum F_SETFD)
