@@ -14908,33 +14908,68 @@ gosh> (time (length (sort (call-with-input-file "/usr/share/dict/words"
 @subheading ベンチマーク
 @c COMMON
 
+@c EN
 It is not unusual that the routine you want to measure takes only
 a fraction of second, so you have to run it many times for better
 measurement.  It is also common that you want to compare results
 of measurement of two or more implementation strategies.
 Here are useful procedures to do so.
+@c JP
+計測したいルーチンの一回の実行が一瞬で終わるために、
+何度も繰り返して実行してより正確に時間を測りたいということはよくあります。
+また、複数の実装を計測して比べてみたいということもよくあります。
+ここに挙げるのは、そのために便利な手続きです。
+@c COMMON
 
+@c EN
 The name and behavior of those benchmarking routines are inspired
 by Perl's Benchmark module.
+@c JP
+これらベンチマーク手続きの名前と振る舞いは、PerlのBenchmarkモジュールを
+参考にしています。
+@c COMMON
 
 @defun time-this how thunk
+@c EN
 Calls @var{thunk} many times and measure its execution time.
 The argument @var{how} can be one of the following forms.
+@c JP
+@var{thunk}を何度も呼び出し、実行時間を測ります。
+@var{how}には次の形が指定できます。
+@c COMMON
 
 @table @code
 @item @var{integer}
+@c EN
 It calls @var{thunk} as many times as the given number.
+@c JP
+指定された回数だけ、@var{thunk}を呼びます。
+@c COMMON
 @item (cpu @var{real})
+@c EN
 It calls @var{thunk} as many times as the total cpu time exceeds
 the given number of seconds.
+@c JP
+CPU時間の合計が指定された数値(秒)を越えるまで@var{thunk}を繰り返し呼びます。
+@c COMMON
 @end table
 
+@c EN
 It also runs an empty loop as the same times and subtract the
 time took for the empty loop from the measured time, to get
 more accurate result.
+@c JP
+このルーチンはまた、@var{thunk}を実行するのと同じ回数だけ
+空のループを実行して、その時間を結果から引くので、
+結果には@var{thunk}の実行時間のみが反映されます。
+@c COMMON
 
+@c EN
 The result is returned in a @code{<time-result>} record, described below.
 Here are some examples:
+@c JP
+戻り値は後述する@code{<time-result>}レコードです。先に例を示しておきます。
+@c COMMON
 @smallexample
 ;; Run the thunk 1,000,000 times
 (time-this 1000000 (lambda () (expt 100 30)))
@@ -14947,44 +14982,77 @@ Here are some examples:
 @end defun
 
 @deftp {Record} <time-result>
+@c EN
 A record to hold the benchmark result.
 Following slots are defined.
+@c JP
+ベンチマーク結果を保持するレコードです。以下のスロットがあります。
+@c COMMON
 
 @defivar {<time-result>} count
 @fnindex time-result-count
+@c EN
 The number of times the thunk was run.   This slot is also
 accessed by a procedure @code{time-result-count}.
+@c JP
+@var{thunk}が実行された回数です。
+このスロットはアクセサ手続き@code{time-result-count}でもアクセスできます。
+@c COMMON
 @end defivar
 
 @defivar {<time-result>} real
 @fnindex time-result-real
+@c EN
 The total real (elapsed) time running the thunk took.
 This slot is also accessed by a procedure @code{time-result-real}.
+@c JP
+@var{thunk}の実行にかかった実経過時間の合計です。
+このスロットはアクセサ手続き@code{time-result-real}でもアクセスできます。
+@c COMMON
 @end defivar
 
 @defivar {<time-result>} user
 @fnindex time-result-user
+@c EN
 The total user cpu time running the thunk took.
 This slot is also accessed by a procedure @code{time-result-user}.
+@c JP
+@var{thunk}の実行にかかったユーザCPU時間の合計です。
+このスロットはアクセサ手続き@code{time-result-user}でもアクセスできます。
+@c COMMON
 @end defivar
 
 @defivar {<time-result>} sys
 @fnindex time-result-sys
+@c EN
 The total system cpu time running the thunk took.
 This slot is also accessed by a procedure @code{time-result-sys}.
+@c JP
+@var{thunk}の実行にかかったシステムCPU時間の合計です。
+このスロットはアクセサ手続き@code{time-result-sys}でもアクセスできます。
+@c COMMON
 @end defivar
 @end deftp
 
 @defun make-time-result count real user sys
+@c EN
 The constructor of @code{<time-result>} records.
+@c JP
+@code{<time-result>}レコードのコンストラクタです。
+@c COMMON
 @end defun
 
 @defun time-result? obj
+@c EN
 The predicate of @code{<time-result>} records.
+@c JP
+@code{<time-result>}レコードかどうかを判定します。
+@c COMMON
 @end defun
 
 @defun time-result+ t1 t2 :key (with-count #f)
 @defunx time-result- t1 t2 :key (with-count #f)
+@c EN
 Add or subtract two @code{<time-result>} records and returns a new record.
 
 If @var{with-count} is false,
@@ -14997,6 +15065,18 @@ If @var{with-count} is true,
 then the values of count slot is also added or subtracted.
 It is supposed to calculate on
 multiple benchmark results of the same code.
+@c JP
+ふたつの@code{<time-result>}レコードの和と差を求め、新しいレコードを返します。
+
+@var{with-count}が偽なら、
+real, user, sysの各スロットのみが計算対象となり、
+結果のcountスロットは@var{t1}のcountスロットの値がそのまま引き継がれます。
+これは、部分ごとに別々に計測された結果を対象に計算する場合を意図しています。
+
+@var{with-count}が真なら、
+countスロットも同様に計算対象となります。
+これは、何度か走らせたベンチマーク結果を対象に計算する場合を意図しています。
+@c COMMON
 @end defun
 
 @defun time-these how alist
