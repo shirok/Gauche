@@ -1,3 +1,8 @@
+2012-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (%prepare-remote): Fixed regexp to recognize
+	  hostname (thanks to BIZENN).
+
 2012-11-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/signal.c (Scm_SigCheck),

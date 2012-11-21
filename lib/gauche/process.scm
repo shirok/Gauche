@@ -259,7 +259,7 @@
 
 ;; Prepare remote execution via ssh
 (define (%prepare-remote host argv dir)
-  (rxmatch-let (#/^(?:([\w-]+):)?(?:([\w-]+)@)?([\w._]+)(?::(\d+))?$/ host)
+  (rxmatch-let (#/^(?:([\w-]+):)?(?:([\w-]+)@)?([-\w.]+)(?::(\d+))?$/ host)
       (#f proto user server port)
     (unless (or (not proto) (equal? proto "ssh"))
       (error "Remote execution protocol other than 'ssh' is not supported:"
