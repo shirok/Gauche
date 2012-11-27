@@ -838,7 +838,7 @@
       :c-name  (cgen-allocate-static-datum)
       :gf-name (cgen-literal (ref value 'name))))
   (init (self)
-    (format #t "  ~a = Scm_SymbolValue(~a, SCM_SYMBOL(~a));\n"
+    (format #t "  ~a = Scm_GlobalVariableRef(SCM_MODULE(~a), SCM_SYMBOL(~a), FALSE);\n"
             (~ self'c-name)
             (current-tmodule-cname)
             (~ self'gf-name'c-name)))
