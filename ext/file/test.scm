@@ -290,7 +290,8 @@
          (reverse
           (directory-fold "test.out"
                           (^[path result]
-                            (if (= (file-size path) 100)
+                            (if (and (file-is-regular? path)
+				     (= (file-size path) 100))
                                 (cons path result)
                                 result))
                           '()
