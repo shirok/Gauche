@@ -494,9 +494,9 @@
 
 (test* "atom" #t (atom? (atom 0 1 2)))
 
-(test* "atomic counting" 1000
+(test* "atomic counting" 300
        (let ([a (atom 0)] [ts '()])
-         (dotimes [n 100]
+         (dotimes [n 30]
            (push! ts
                   (thread-start! (make-thread
                                   (^[] (dotimes [m 10]
