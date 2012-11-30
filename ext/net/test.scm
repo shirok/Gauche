@@ -315,13 +315,14 @@
                     (selector-add! sel (socket-fd s) handler '(r)))
                   (do () [#f] (selector-select sel)))))
       (write `(define (main args)
-                (simple-server ,sockargs)
-                0)))
+                (guard (e (else (begin (display "failed.\n") 22)))
+                  (simple-server ,sockargs)
+                  0))))
     :if-exists :supersede)
   (let1 p (run-process `("../../src/gosh" "-ftest" "./testserv.o")
                        :output :pipe)
-    (read-line (process-output p)) ;; handshake
-    #t))
+    (let ((line (read-line (process-output p)))) ;; handshake
+      (not (string= line "failed.")))))
 
 ;; max size of the packet.  increase this to test robustness for
 ;; buffer overrun attack.  right now, Gauche can bear fairly large
@@ -338,9 +339,9 @@
  [gauche.os.windows #f]
  [else
   (test* "unix server socket" #f
-	 (begin
-	   (run-simple-server '(list (make-server-socket 'unix "sock.o")))
-	   (let1 stat (sys-stat "sock.o")
+         (begin
+           (run-simple-server '(list (make-server-socket 'unix "sock.o")))
+           (let1 stat (sys-stat "sock.o")
              (not (memq (sys-stat->file-type stat) '(socket fifo))))))
 
   (test* "unix client socket" '("ABC" "XYZ")
@@ -417,12 +418,6 @@
 
 (cond-expand
  [gauche.net.ipv6
-  (test* "inet server socket (ipv6)" #t
-         (run-simple-server `(list (make-server-socket
-                                    (make <sockaddr-in6>
-                                      :host :any :port ,*inet-port*)
-                                    :reuse-addr? #t))))
-
   ;; On IPv6 system, the loopback may have different name than "localhost".
   ;; We apply some heuristics here.
   (define (get-ipv6-sock)
@@ -432,22 +427,31 @@
               (make <sockaddr-in6> :host name :port *inet-port*))))
          '("localhost" "ip6-localhost" "ipv6-localhost" "::1")))
 
-  (test* "inet client socket (ipv6)" #t
-         (and-let* ([sock (get-ipv6-sock)])
-           (call-with-client-socket sock
-             (^[in out]
-               (display (make-string *chunk-size* #\a) out)
-               (newline out)
-               (flush out)
-               (string=? (read-line in) (make-string *chunk-size* #\A))))))
+  ;; We need runtime check to see if ipv6 is really available.
+  (when (and-let* ([ (run-simple-server `(list (make-server-socket
+                                                (make <sockaddr-in6>
+                                                  :host :any :port ,*inet-port*)
+                                                :reuse-addr? #t))) ]
+                   [sock (get-ipv6-sock)])
+          (socket-close sock)
+          #t)
+    (test* "inet client socket (ipv6)" #t
+           (and-let* ((sock (get-ipv6-sock)))
+             (call-with-client-socket sock
+               (^[in out]
+                 (display (make-string *chunk-size* #\a) out)
+                 (newline out)
+                 (flush out)
+                 (string=? (read-line in)
+                           (make-string *chunk-size* #\A))))))
 
-  (test* "inet client socket (ipv6, termination)" 33
-         (and-let* ([sock (get-ipv6-sock)])
-           (call-with-client-socket sock
-             (^[in out]
-               (display "END\n" out) (flush out)
-               (receive (pid code) (sys-wait)
-                 (sys-wait-exit-status code))))))
+    (test* "inet client socket (ipv6, termination)" 33
+           (and-let* ((sock (get-ipv6-sock)))
+             (call-with-client-socket sock
+               (^[in out]
+                 (display "END\n" out) (flush out)
+                 (receive (pid code) (sys-wait)
+                   (sys-wait-exit-status code)))))))
   ]
  [else])
 
@@ -546,13 +550,13 @@
   (with-sr-udp
    (^[s-sock s-addr r-sock r-addr]
      (let ([from   (make <sockaddr-in>)]
-	   [data   `#(,(make-string 255 #\a) ,(make-u8vector 255 48))]
-	   [sbuf   (make-u8vector 1024)]
-	   [rbuf   (make-u8vector 1024 0)])
+           [data   `#(,(make-string 255 #\a) ,(make-u8vector 255 48))]
+           [sbuf   (make-u8vector 1024)]
+           [rbuf   (make-u8vector 1024 0)])
 
        (define (xtest sbuf)
-	 (socket-sendmsg s-sock (socket-buildmsg r-addr data '() 0 sbuf))
-	 (receive (size f-addr) (socket-recvfrom! r-sock rbuf (list from))
+         (socket-sendmsg s-sock (socket-buildmsg r-addr data '() 0 sbuf))
+         (receive (size f-addr) (socket-recvfrom! r-sock rbuf (list from))
            (list (eq? f-addr from)
                  (equal? (uvector-alias <u8vector> rbuf 0 size)
                          ($ string->u8vector
