@@ -757,6 +757,7 @@
 (define-insn GSET        0 obj #f
   (let* ((loc))
     (FETCH-OPERAND loc)
+    (SCM_FLONUM_ENSURE_MEM VAL0)
     (cond
      [(SCM_GLOCP loc) (SCM_GLOC_SET (SCM_GLOC loc) VAL0)]
      [(SCM_IDENTIFIERP loc)

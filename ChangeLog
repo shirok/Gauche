@@ -1,3 +1,8 @@
+2012-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm (GSET): Missing FLONUM_ENSURE_MEM caused flonum
+	  assigned to a global variable to be overwritten.
+
 2012-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm (%prepare-remote): Fixed regexp to recognize
