@@ -81,6 +81,9 @@
 (define-cproc infinite? (x::<number>) ::<boolean> :fast-flonum Scm_InfiniteP)
 (define-cproc nan?      (x::<number>) ::<boolean> :fast-flonum Scm_NanP)
 
+(define-cproc exact-integer? (obj) ::<boolean> :fast-flonum :constant
+  SCM_INTEGERP)
+
 ;;
 ;; Platform introspection
 ;;

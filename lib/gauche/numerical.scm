@@ -155,6 +155,18 @@
     (- (find-rational (- x) dx- dx+))
     (find-rational x dx+ dx-)))
 
+;; modulus exponent
+(define (expt-mod n e m)  ; (modulo (expt n e) m)
+  (if (and (exact-integer? n) (exact-integer? e) (exact-integer? m) (> e 0))
+    (if (< (* (integer-length n) e) (fixnum-width))
+      (modulo (expt n e) m) ; in fixnum range, it's fast enough
+      (let loop ([b (ash 1 (- (integer-length e) 1))]
+                 [r 1])
+        (cond [(zero? b) r]
+              [(zero? (logand b e)) (loop (ash b -1) (modulo (* r r) m))]
+              [else (loop (ash b -1) (modulo (* (modulo (* r r) m) n) m))])))
+    (modulo (expt (inexact n) e) m))) ; inexact fallback
+
 ;;
 ;; Some R6RS stuff
 ;;

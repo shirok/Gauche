@@ -492,6 +492,21 @@
        (expt 2 1/2)
        (lambda (x y) (nearly=? 10e7 x y))) ;; NB: pa$ will be tested later
 
+;; expt-mod
+(define (test-expt-mod base mod)
+  ;; NB: we haven't tested iota.
+  (let1 es (do ([e 1 (+ e 3)] [r '() (cons e r)])
+               [(> e 100) (reverse r)])
+    (test* (format "expt-mod(~a, e, ~a)" base mod)
+           (map (^e (modulo (expt base e) mod)) es)
+           (map (^e (expt-mod base e mod)) es))))
+
+(test-expt-mod 35 41)
+(test-expt-mod 15841875 319999357)
+(test-expt-mod 915151975010144550184898988758 1775619891701751758948583493979350)
+(test-expt-mod -324574950475018750175057087501 100184859387038471089598349534598)
+(test-expt-mod 324574950475018750175057087501 -100184859387038471089598349534598)
+
 (test-section "exact<->inexact")
 
 (for-each

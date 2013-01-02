@@ -572,6 +572,14 @@ respectively.
 @end example
 @end defun
 
+@defun exact-integer? obj
+@c EN
+Same as @code{(and (exact? obj) (integer? obj))}, but more efficient.
+@c JP
+@code{(and (exact? obj) (integer? obj))}と等価ですが、より高速です。
+@c COMMON
+@end defun
+
 @defun zero? z
 [R5RS]
 @c EN
@@ -1299,6 +1307,15 @@ where @var{z1} and @var{z2} are complex numbers.
 @var{z1}^@var{z2} (@var{z1}の@var{z2}乗)を返します。
 @c COMMON
 @end defun
+
+@defun expt-mod base exponent mod
+@c EN
+Calculates @code{(modulo (expt base exponent) mod)} efficiently.
+@c JP
+@code{(modulo (expt base exponent) mod)} を効率よく計算します。
+@c COMMON
+@end defun
+
 
 @c NB: These should be moved to a separate subsection once we got
 @c more fixnum-specific operation support.
