@@ -5370,6 +5370,18 @@ Makoto MatsumotoとTakuji Nishimuraにより開発された、
 高速で、2^19937-1という極めて長大な周期を持ちます。
 アルゴリズムの詳細については、@ref{MT,,MT}を参照して下さい。
 @c COMMON
+
+@c EN
+For typical use cases of random number generators,
+we recommended to use @code{srfi-27} which is implemented
+on top of this module and provides portable API.
+You should use this module directly only when you need
+functions that aren't available in @code{srfi-27}.
+@c JP
+乱数発生器の通常の用途には、@code{srfi-27}を使うことをお勧めします。
+@code{srfi-27}はこのモジュールの上に実装されていますが、ポータブルなAPIを提供しています。
+@code{srfi-27}にない機能が必要な時のみこのモジュールを直接使うようにしてください。
+@c COMMON
 @end deftp
 
 @deftp {Class} <mersenne-twister>
@@ -5483,6 +5495,43 @@ faster than getting one by one.
 では、0.0と1.0(含まれない)の間の不正確実数で埋められます。
 @c COMMON
 @end defun
+
+@c @c ----------------------------------------------------------------------
+@c @node Prime numbers
+@c @section @code{math.prime} - Prime numbers
+@c @c NODE 素数, @code{math.prime} - 素数
+
+@c @deftp {Module} math.prime
+@c @mdindex math.prime
+@c @c EN
+@c This module provides utilities related to prime numbers.
+@c @c JP
+@c このモジュールは、素数を扱うユーティリティ関数を提供します。
+@c @c COMMON
+@c @end deftp
+
+@c @defvar *primes*
+@c @c EN
+@c An infinite lazy sequence of primes.
+@c @c JP
+@c 素数の無限遅延シーケンスです。
+@c @c COMMON
+
+@c @example
+@c ;; show 10 prime numbers from 100-th one.
+@c (take (drop *primes* 100) 10)
+@c  @result{} (547 557 563 569 571 577 587 593 599 601)
+@c @end example
+@c @end defvar
+
+@c @defun reset-primes
+@c @c EN
+@c Once you take very large number of 
+
+@c @c JP
+@c @c COMMON
+@c @end defun
+
 
 @c ----------------------------------------------------------------------
 @node Windows support, RFC822 message parsing, Mersenne-Twister random number generator, Library modules - Utilities

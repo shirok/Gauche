@@ -1,3 +1,4 @@
+math.scm
 optimize.scm
 control.scm
 debug.scm
